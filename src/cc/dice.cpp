@@ -226,7 +226,7 @@ bool mySenddicetransaction(std::string res,uint256 entropyused,int32_t entropyvo
             //fprintf(stderr,"%s\n%s\n",res.c_str(),uint256_str(str,tx.GetHash()));
             if ( funcid == 'R' || (retval= DiceEntropyUsed(oldbetTx,oldbettxid,oldentropyvout,entropyused,bettxid,betTx,entropyvout)) >= 0 )
             {
-                //LOCK(cs_main);
+                LOCK(cs_main);
                 if ( myAddtomempool(tx) != 0 )
                 {
                     RelayTransaction(tx);
@@ -472,7 +472,7 @@ void *dicefinish(void *_ptr)
                         }
                     }
                 }
-                else if ( newblock != 0 )
+                else if ( 0 && newblock != 0 )
                     dicefinish_utxosget(num,0,0,coinaddr);
                 free(utxos);
                 if ( 0 && newblock != 0 && num < DICE_MINUTXOS )
