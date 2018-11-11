@@ -526,7 +526,7 @@ void DiceQueue(int32_t iswin,uint64_t sbits,uint256 fundingtxid,uint256 bettxid,
         ptr->winamount = betTx.vout[1].nValue * ((betTx.vout[2].nValue - txfee)+1);
         ptr->entropyvout = entropyvout;
         DL_APPEND(DICEFINISH_LIST,ptr);
-        fprintf(stderr,"queued iswin.%d %.8f -> %.8f %s\n",iswin,(double)betTx.vout[1].nValue/COIN,(double)ptr->winamount/COIN,bettxid.GetHex().c_str());
+        fprintf(stderr,"queued %dx iswin.%d %.8f -> %.8f %s\n",(int32_t)(betTx.vout[2].nValue - txfee),iswin,(double)betTx.vout[1].nValue/COIN,(double)ptr->winamount/COIN,bettxid.GetHex().c_str());
     }
     else
     {
@@ -1332,7 +1332,7 @@ UniValue DiceList()
 std::string DiceCreateFunding(uint64_t txfee,char *planstr,int64_t funds,int64_t minbet,int64_t maxbet,int64_t maxodds,int64_t timeoutblocks)
 {
     CMutableTransaction mtx; uint256 zero; CScript fundingPubKey; CPubKey mypk,dicepk; int64_t a,b,c,d; uint64_t sbits; struct CCcontract_info *cp,C;
-    if ( funds < 0 || minbet < 0 || maxbet < 0 || maxodds < 2 || maxodds > 9999 || timeoutblocks < 0 || timeoutblocks > 1440 )
+    if ( funds < 0 || minbet < 0 || maxbet < 0 || maxodds < 1 || maxodds > 9999 || timeoutblocks < 0 || timeoutblocks > 1440 )
     {
         CCerror = "invalid parameter error";
         fprintf(stderr,"%s\n", CCerror.c_str() );
@@ -1416,7 +1416,7 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
         CCerror = "bet must be positive";
         return("");
     }
-    if ( odds < 2 || odds > 9999 )
+    if ( odds < 1 || odds > 9999 )
     {
         CCerror = "odds must be between 2 and 9999";
         return("");
