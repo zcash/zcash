@@ -1708,7 +1708,8 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
             DicePlanFunds(entropyval,entropytxid,refsbits,cp,dicepk,fundingtxid,entropytxs,false);
             if ( entropytxs < DICE_MINUTXOS )
             {
-                for (i=0; i<DICE_MINUTXOS - entropytxs && i<10; i++)
+                n = sqrt(DICE_MINUTXOS - entropytxs) + 10;
+                for (i=0; i<DICE_MINUTXOS - entropytxs && i<n; i++)
                 {
                     res = DiceAddfunding(txfee,planstr,fundingtxid,COIN/100);
                     if ( res.empty() == 0 && res.size() > 64 && is_hexstr((char *)res.c_str(),0) > 64 )
@@ -1718,7 +1719,7 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
                             //LOCK(cs_main);
                             if ( myAddtomempool(tx) != 0 )
                             {
-                                fprintf(stderr,"ENTROPY %s: %d of %d\n",tx.GetHash().GetHex().c_str(),i,DICE_MINUTXOS - entropytxs);
+                                fprintf(stderr,"ENTROPY %s: %d of %d, %d\n",tx.GetHash().GetHex().c_str(),i,n,DICE_MINUTXOS - entropytxs);
                                 RelayTransaction(tx);
                             } else break;
                         } else break;
