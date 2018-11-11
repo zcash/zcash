@@ -51,7 +51,7 @@ one other technical note is that komodod has the insight-explorer extensions bui
 #include "../utlist.h"
 #include "../uthash.h"
 
-extern int32_t KOMODO_CONNECTING,KOMODO_CCACTIVATE;
+extern int32_t KOMODO_CONNECTING,KOMODO_CCACTIVATE,KOMODO_DEALERNODE;
 extern uint32_t ASSETCHAINS_CC;
 extern char ASSETCHAINS_SYMBOL[];
 extern std::string CCerror;

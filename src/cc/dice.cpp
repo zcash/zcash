@@ -975,7 +975,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                     if ( (iswin= DiceIsWinner(entropy,entropyvout,txid,tx,vinTx,hash,sbits,minbet,maxbet,maxodds,timeoutblocks,fundingtxid)) != 0 )
                     {
                         // will only happen for fundingPubKey
-                        if ( KOMODO_INSYNC != 0 )
+                        if ( KOMODO_INSYNC != 0 && KOMODO_DEALERNODE != 0 )
                             DiceQueue(iswin,sbits,fundingtxid,txid,tx,entropyvout);
                     }
                     else
@@ -1735,13 +1735,13 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
                 }
             }
         }
-        if ( 0 && scriptPubKey == fundingPubKey )
+        if ( KOMODO_DEALERNODE == 0 && scriptPubKey == fundingPubKey )
         {
             CTransaction tx; uint64_t entropyval; uint256 entropytxid; int32_t entropytxs;
             DicePlanFunds(entropyval,entropytxid,refsbits,cp,dicepk,fundingtxid,entropytxs,false);
             if ( entropytxs < DICE_MINUTXOS )
             {
-                n = 10;//sqrt(DICE_MINUTXOS - entropytxs) + 10;
+                n = sqrt(DICE_MINUTXOS - entropytxs) + 10;
                 for (i=0; i<DICE_MINUTXOS - entropytxs && i<n; i++)
                 {
                     res = DiceAddfunding(txfee,planstr,fundingtxid,COIN/100);
