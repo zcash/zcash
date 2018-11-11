@@ -109,6 +109,8 @@ static int32_t entropyvouts[MAX_ENTROPYUSED];
 
 pthread_mutex_t DICE_MUTEX,DICEREVEALED_MUTEX;
 
+struct dicefinish_utxo { uint256 txid; int32_t vout; };
+
 struct dicefinish_info
 {
     struct dicefinish_info *prev,*next;
