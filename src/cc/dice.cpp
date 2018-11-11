@@ -1425,11 +1425,8 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
         return("");
     }
     if ( (cp= Diceinit(fundingPubKey,fundingtxid,&C,planstr,txfee,mypk,dicepk,sbits,minbet,maxbet,maxodds,timeoutblocks)) == 0 ) {
-<<<<<<< HEAD
-        CCerror = "Diceinit error in bet, is your transaction confirmed?";
-=======
+
         CCerror = "error in Diceinit";
->>>>>>> 880fda004f9487b7ca227f54d2f733f3139d935e
         return("");
     }
     if ( bet < minbet || bet > maxbet || odds > maxodds )
@@ -1437,10 +1434,6 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
         CCerror = strprintf("Dice plan %s illegal bet %.8f: minbet %.8f maxbet %.8f or odds %d vs max.%d\n",planstr,(double)bet/COIN,(double)minbet/COIN,(double)maxbet/COIN,(int32_t)odds,(int32_t)maxodds);
         return("");
     }
-<<<<<<< HEAD
-    int32_t entropytxs;
-    if ( (funding= DicePlanFunds(entropyval,entropytxid,sbits,cp,dicepk,fundingtxid,entropytxs)) >= 2*bet*odds+txfee && entropyval != 0 )
-=======
     int32_t entropytxs=0,emptyvar=0;
     funding = DicePlanFunds(entropyval,entropytxid,sbits,cp,dicepk,fundingtxid,entropytxs,false);
     DicePlanFunds(entropyval2,entropytxid2,sbits,cp,dicepk,fundingtxid,emptyvar,true);
@@ -1450,7 +1443,6 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
         entropytxid = entropytxid2;
     }
     if ( ( funding >= 2*bet*odds+txfee && entropyval != 0 ) )
->>>>>>> 880fda004f9487b7ca227f54d2f733f3139d935e
     {
         if ( entropytxs < 100 ) {
             CCerror = "Your dealer is broke, find a new casino.";
