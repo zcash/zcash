@@ -168,7 +168,7 @@ struct dicehash_entry *_dicehash_add(uint256 bettxid)
 
 int32_t _dicerevealed_find(uint256 &oldbettxid,CTransaction &oldbetTx,int32_t &oldentropyvout,uint256 entropyused,uint256 bettxid,int32_t entropyvout)
 {
-    struct dicehash_entry *ptr;
+    struct dice_entropy *ptr;
     HASH_FIND(hh,DICE_ENTROPY,&entropyused,sizeof(entropyused),ptr);
     if ( ptr != 0 )
     {
@@ -187,7 +187,7 @@ int32_t _dicerevealed_find(uint256 &oldbettxid,CTransaction &oldbetTx,int32_t &o
                 oldentropyvout = ptr->entropyvout;
                 return(-1);
             }
-        } else fprintf(stderr,"shared entropy.%s vouts %d vs %d\n",entropyused.GetHex().c_str(),entropyvout,entropyvouts[i]);
+        } else fprintf(stderr,"shared entropy.%s vouts %d vs %d\n",entropyused.GetHex().c_str(),entropyvout,ptr->entropyvout);
     }
     return(0);
     /*int32_t i;
