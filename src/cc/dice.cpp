@@ -319,10 +319,11 @@ void dicefinish_delete(struct dicefinish_info *ptr)
 
 void *dicefinish(void *_ptr)
 {
-    std::vector<uint8_t> mypk; struct CCcontract_info *cp,C; char name[32],coinaddr[64],CCaddr[64]; std::string res; int32_t newht,newblock,entropyvout,numblocks,lastheight=0,vin0_needed,i,n,m,num,iter,result; struct dicefinish_info *ptr,*tmp; uint32_t now; struct dicefinish_utxo *utxos; uint256 hashBlock,entropyused; CTransaction betTx,finishTx;
+    std::vector<uint8_t> mypk; struct CCcontract_info *cp,C; char name[32],coinaddr[64],CCaddr[64]; std::string res; int32_t newht,newblock,entropyvout,numblocks,lastheight=0,vin0_needed,i,n,m,num,iter,result; struct dicefinish_info *ptr,*tmp; uint32_t now; struct dicefinish_utxo *utxos; uint256 hashBlock,entropyused; CPubkey dicepk; CTransaction betTx,finishTx,tx;
     mypk = Mypubkey();
     pubkey2addr(coinaddr,mypk.data());
     cp = CCinit(&C,EVAL_DICE);
+    dicepk = GetUnspendable(cp,0);
     GetCCaddress(cp,CCaddr,GetUnspendable(cp,0));
     fprintf(stderr,"start dicefinish thread %s CCaddr.%s\n",coinaddr,CCaddr);
     if ( (newht= KOMODO_INSYNC) == 0 )
@@ -491,6 +492,35 @@ void *dicefinish(void *_ptr)
                         fprintf(stderr,"make 0.023 utxos\n");
                         if ( system("cc/dapps/sendmany") != 0 )
                             fprintf(stderr,"system error issuing.(cc/dapps/sendmany)\n");
+                    }
+                }
+                if ( newblock != 0 )
+                {
+                    CTransaction tx; uint64_t entropyval; uint64_t sbits; uint256 fundingtxid,entropytxid; int32_t entropytxs; uint8_t pubkey33[33];
+                    decode_hex(pubkey33,33,"0354ad90c26923962bbdfc7fd4956cb52db73682b58df9ee3ffc4751e61c8d465d");
+                    if ( memcmp(pubkey33,mypk.data(),33) == 0 )
+                    {
+                        fundingtxid = uint256S("0x5be49570c56d036abb08b6d084da93a8a86f58fc48db4a1086be95540d752d6f");
+                        sbits = stringbits((char *)"KMDICE");
+                        fprintf(stderr,"do the entropy tx\n");
+                        DicePlanFunds(entropyval,entropytxid,sbits,cp,dicepk,fundingtxid,entropytxs,false);
+                        if ( entropytxs < DICE_MINUTXOS )
+                        {
+                            n = sqrt(DICE_MINUTXOS - entropytxs);
+                            res = DiceAddfunding(10000,planstr,fundingtxid,COIN/100);
+                            if ( res.empty() == 0 && res.size() > 64 && is_hexstr((char *)res.c_str(),0) > 64 )
+                            {
+                                if ( DecodeHexTx(tx,res) != 0 )
+                                {
+                                    //LOCK(cs_main);
+                                    if ( myAddtomempool(tx) != 0 )
+                                    {
+                                        fprintf(stderr,"ENTROPY %s: %d of %d, %d\n",tx.GetHash().GetHex().c_str(),i,n,DICE_MINUTXOS - entropytxs);
+                                        RelayTransaction(tx);
+                                    } else break;
+                                } else break;
+                            } else break;
+                        }
                     }
                 }
             }
@@ -1702,7 +1732,7 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
                 }
             }
         }
-        if ( scriptPubKey == fundingPubKey )
+        if ( 0 && scriptPubKey == fundingPubKey )
         {
             CTransaction tx; uint64_t entropyval; uint256 entropytxid; int32_t entropytxs;
             DicePlanFunds(entropyval,entropytxid,refsbits,cp,dicepk,fundingtxid,entropytxs,false);
