@@ -168,8 +168,9 @@ int32_t _dicehash_clear(uint256 bettxid)
     return(0);*/
 }
 
-void _dicehash_add(uint256 bettxid)
+struct dicehash_entry *_dicehash_add(uint256 bettxid)
 {
+    struct dicehash_entry *ptr;
     /*int32_t i;
     for (i=0; i<MAX_ENTROPYUSED; i++)
         if ( bettxids[i] == zeroid )
@@ -178,7 +179,8 @@ void _dicehash_add(uint256 bettxid)
             return;
         }
     bettxids[rand() % MAX_ENTROPYUSED] = bettxid;*/
-    HASH_ADD(hh,DICEHASH_TABLE,bettxid);
+    HASH_ADD(hh,DICEHASH_TABLE,bettxid,sizeof(bettxid),ptr);
+    return(ptr);
 }
 
 int32_t _dicerevealed_find(uint256 &oldbettxid,CTransaction &oldbetTx,int32_t &oldentropyvout,uint256 entropyused,uint256 bettxid,int32_t entropyvout)
