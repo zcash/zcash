@@ -50,7 +50,9 @@ UniValue assetchainproof(const UniValue& params, bool fHelp)
 
 UniValue crosschainproof(const UniValue& params, bool fHelp)
 {
-    
+    UniValue ret(UniValue::VOBJ);
+    //fprintf(stderr,"crosschainproof needs to be implemented\n");
+    return(ret);
 }
 
 
