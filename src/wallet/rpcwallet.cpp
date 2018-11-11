@@ -1059,7 +1059,7 @@ UniValue cleanwalletnotarisations(const UniValue& params, bool fHelp)
         {
             const CWalletTx& wtx = (*it).second;
             fprintf(stderr, "[%s] depth : %d\n", wtx.GetHash().ToString().c_str(),wtx.GetDepthInMainChain());
-            if (!CheckFinalTx(wtx) || wtx.GetBlocksToMaturity() > 0 || wtx.GetDepthInMainChain() < 360 )
+            if (!CheckFinalTx(wtx) || wtx.GetBlocksToMaturity() > 0 || wtx.GetDepthInMainChain() > 360 )
                 continue;
 
             CCoins coins;
@@ -1082,7 +1082,10 @@ UniValue cleanwalletnotarisations(const UniValue& params, bool fHelp)
                       if ( GetTransaction(wtx.vin[n].prevout.hash,vintx,hashBlock,false) != 0 )
                       {
                           for (unsigned int z = 0; z < vintx.vin.size() ; z++)
-                              TxToRemove.push_back(vintx.vin[z].prevout.hash);
+                          {
+                            fprintf(stderr, "[ %s ] depth : %d\n", vintx.GetHash().ToString().c_str(),vintx.GetDepthInMainChain());
+                            TxToRemove.push_back(vintx.vin[z].prevout.hash);
+                          }
                       }
                       TxToRemove.push_back(wtx.vin[n].prevout.hash);
                   }
