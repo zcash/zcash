@@ -605,6 +605,10 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                     else if ( DiceVerifyTimeout(vinTx,timeoutblocks) == 0 )
                         return eval->Invalid("invalid timeout claim for timeout");
                     break;
+                default:
+                    fprintf(stderr,"illegal dice funcid.(%c)\n",funcid);
+                    return eval->Invalid("unexpected dice funcid");
+                    break;
             }
         }
         return(PreventCC(eval,tx,preventCCvins,numvins,preventCCvouts,numvouts));
