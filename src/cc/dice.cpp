@@ -364,7 +364,7 @@ void *dicefinish(void *_ptr)
                     {
                         ptr->orphaned++;
                         fprintf(stderr,"ORPHANED.%d finish txid.%s\n",ptr->orphaned,ptr->txid.GetHex().c_str());
-                        if ( ptr->orphaned < 3 )
+                        if ( ptr->orphaned < 4 )
                             continue;
                         if ( ptr->rawtx.empty() == 0 )
                             ptr->rawtx.clear();
