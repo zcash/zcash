@@ -102,10 +102,9 @@ What is needed is for the dealer node to track the entropy tx that was already b
 extern int32_t KOMODO_INSYNC;
 
 
-//static uint256 bettxids[MAX_ENTROPYUSED];
-static uint256 Entropyused[MAX_ENTROPYUSED][2]; // change to hashtable
-static CTransaction betTxs[MAX_ENTROPYUSED];
-static int32_t entropyvouts[MAX_ENTROPYUSED];
+//static uint256 Entropyused[MAX_ENTROPYUSED][2]; // change to hashtable
+//static CTransaction betTxs[MAX_ENTROPYUSED];
+//static int32_t entropyvouts[MAX_ENTROPYUSED];
 
 pthread_mutex_t DICE_MUTEX,DICEREVEALED_MUTEX;
 
@@ -130,21 +129,19 @@ struct dicehash_entry
     uint256 bettxid;
 } *DICEHASH_TABLE;
 
-int32_t _dicehash_find(uint256 bettxid)
+struct dice_entropy
+{
+    UT_hash_handle hh;
+    uint256 entropyused,bettxid;
+    CTransaction betTx;
+    int32_t entropyvout;
+} *DICE_ENTROPY;
+
+struct dicehash_entry *_dicehash_find(uint256 bettxid)
 {
     struct dicehash_entry *ptr;
     HASH_FIND(hh,DICEHASH_TABLE,&bettxid,sizeof(bettxid),ptr);
-    if ( ptr != 0 )
-    {
-        fprintf(stderr,"hash_find %s got %s\n",bettxid.GetHex().c_str(),ptr->bettxid.GetHex().c_str());
-        return(1);
-    }
-    return(0);
-    /*int32_t i;
-    for (i=0; i<MAX_ENTROPYUSED; i++)
-        if ( bettxids[i] == bettxid )
-            return(1);
-    return(0);*/
+    return(ptr);
 }
 
 int32_t _dicehash_clear(uint256 bettxid)
@@ -158,14 +155,6 @@ int32_t _dicehash_clear(uint256 bettxid)
         return(0);
     } else fprintf(stderr,"hashdelete couldnt find %s\n",bettxid.GetHex().c_str());
     return(-1);
-    /*int32_t i;
-    for (i=0; i<MAX_ENTROPYUSED; i++)
-        if ( bettxids[i] == bettxid )
-        {
-            bettxids[i] = zeroid;
-            return(1);
-        }
-    return(0);*/
 }
 
 struct dicehash_entry *_dicehash_add(uint256 bettxid)
@@ -173,21 +162,35 @@ struct dicehash_entry *_dicehash_add(uint256 bettxid)
     struct dicehash_entry *ptr;
     ptr = (struct dicehash_entry *)calloc(1,sizeof(*ptr));
     ptr->bettxid = bettxid;
-    /*int32_t i;
-    for (i=0; i<MAX_ENTROPYUSED; i++)
-        if ( bettxids[i] == zeroid )
-        {
-            bettxids[i] = bettxid;
-            return;
-        }
-    bettxids[rand() % MAX_ENTROPYUSED] = bettxid;*/
     HASH_ADD(hh,DICEHASH_TABLE,bettxid,sizeof(bettxid),ptr);
     return(ptr);
 }
 
 int32_t _dicerevealed_find(uint256 &oldbettxid,CTransaction &oldbetTx,int32_t &oldentropyvout,uint256 entropyused,uint256 bettxid,int32_t entropyvout)
 {
-    int32_t i;
+    struct dicehash_entry *ptr;
+    HASH_FIND(hh,DICE_ENTROPY,&entropyused,sizeof(entropyused),ptr);
+    if ( ptr != 0 )
+    {
+        if ( entropyvout == ptr->entropyvout )
+        {
+            if ( bettxid == ptr->bettxid )
+            {
+                fprintf(stderr,"identical %s E.%s v.%d\n",bettxid.GetHex().c_str(),entropyused.GetHex().c_str(),entropyvout);
+                return(entropyvout+1);
+            }
+            else
+            {
+                fprintf(stderr,"found identical entropy used.%s %s vs %s v.%d vs %d\n",entropyused.GetHex().c_str(),bettxid.GetHex().c_str(),ptr->bettxid.GetHex().c_str(),entropyvout,ptr->entropyvout);
+                oldbettxid = ptr->bettxid;
+                oldbetTx = ptr->betTx;
+                oldentropyvout = ptr->entropyvout;
+                return(-1);
+            }
+        } else fprintf(stderr,"shared entropy.%s vouts %d vs %d\n",entropyused.GetHex().c_str(),entropyvout,entropyvouts[i]);
+    }
+    return(0);
+    /*int32_t i;
     for (i=0; i<MAX_ENTROPYUSED; i++)
     {
         if ( Entropyused[i][0] == entropyused )
@@ -204,11 +207,20 @@ int32_t _dicerevealed_find(uint256 &oldbettxid,CTransaction &oldbetTx,int32_t &o
             } else fprintf(stderr,"shared entropy.%s vouts %d vs %d\n",entropyused.GetHex().c_str(),entropyvout,entropyvouts[i]);
         }
     }
-    return(0);
+    return(0);*/
 }
 
-void _dicerevealed_add(uint256 entropyused,uint256 bettxid,CTransaction betTx,int32_t entropyvout)
+struct dice_entropy *_dicerevealed_add(uint256 entropyused,uint256 bettxid,CTransaction betTx,int32_t entropyvout)
 {
+    struct dice_entropy *ptr;
+    ptr = (struct dice_entropy *)calloc(1,sizeof(*ptr));
+    ptr->entropyused = entropyused;
+    ptr->bettxid = bettxid;
+    ptr->betTx = betTx;
+    ptr->entropyvout = entropyvout;
+    HASH_ADD(hh,DICE_ENTROPY,entropyused,sizeof(entropyused),ptr);
+    return(ptr);
+/*
     int32_t i;
     for (i=0; i<MAX_ENTROPYUSED; i++)
     {
@@ -220,7 +232,7 @@ void _dicerevealed_add(uint256 entropyused,uint256 bettxid,CTransaction betTx,in
     Entropyused[i][0] = entropyused;
     Entropyused[i][1] = bettxid;
     entropyvouts[i] = entropyvout;
-    betTxs[i] = betTx;
+    betTxs[i] = betTx;*/
 }
 
 int32_t DiceEntropyUsed(CTransaction &oldbetTx,uint256 &oldbettxid,int32_t &oldentropyvout,uint256 entropyused,uint256 bettxid,CTransaction betTx,int32_t entropyvout)
