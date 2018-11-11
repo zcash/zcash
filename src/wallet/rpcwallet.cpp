@@ -1059,7 +1059,7 @@ UniValue cleanwalletnotarisations(const UniValue& params, bool fHelp)
         {
             const CWalletTx& wtx = (*it).second;
             fprintf(stderr, "[%s] depth : %d\n", wtx.GetHash().ToString().c_str(),wtx.GetDepthInMainChain());
-            if (!CheckFinalTx(wtx) || wtx.GetBlocksToMaturity() > 0 || wtx.GetDepthInMainChain() > 360 )
+            if (!CheckFinalTx(wtx) || wtx.GetBlocksToMaturity() > 0 || wtx.GetDepthInMainChain() < 360 )
                 continue;
 
             CCoins coins;
