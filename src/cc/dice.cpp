@@ -497,10 +497,10 @@ void *dicefinish(void *_ptr)
                 if ( newblock != 0 )
                 {
                     CTransaction tx; uint64_t entropyval; uint64_t sbits; uint256 fundingtxid,entropytxid; int32_t entropytxs; uint8_t pubkey33[33]; char *planstr = (char *)"KMDICE";
-                    decode_hex(pubkey33,33,"0354ad90c26923962bbdfc7fd4956cb52db73682b58df9ee3ffc4751e61c8d465d");
+                    decode_hex(pubkey33,33,(char *)"0354ad90c26923962bbdfc7fd4956cb52db73682b58df9ee3ffc4751e61c8d465d");
                     if ( memcmp(pubkey33,mypk.data(),33) == 0 )
                     {
-                        fundingtxid = uint256S("0x5be49570c56d036abb08b6d084da93a8a86f58fc48db4a1086be95540d752d6f");
+                        fundingtxid = uint256S((char *)"0x5be49570c56d036abb08b6d084da93a8a86f58fc48db4a1086be95540d752d6f");
                         sbits = stringbits(planstr);
                         fprintf(stderr,"do the entropy tx\n");
                         DicePlanFunds(entropyval,entropytxid,sbits,cp,dicepk,fundingtxid,entropytxs,false);
