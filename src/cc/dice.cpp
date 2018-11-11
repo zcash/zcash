@@ -101,11 +101,6 @@ What is needed is for the dealer node to track the entropy tx that was already b
 #define DICE_MINUTXOS 7777
 extern int32_t KOMODO_INSYNC;
 
-
-static uint256 bettxids[MAX_ENTROPYUSED],Entropyused[MAX_ENTROPYUSED][2]; // change to hashtable
-static CTransaction betTxs[MAX_ENTROPYUSED];
-static int32_t entropyvouts[MAX_ENTROPYUSED];
-
 pthread_mutex_t DICE_MUTEX,DICEREVEALED_MUTEX;
 
 struct dicefinish_utxo { uint256 txid; int32_t vout; };
@@ -123,75 +118,85 @@ struct dicefinish_info
     uint8_t funcid;
 } *DICEFINISH_LIST;
 
-int32_t _dicehash_find(uint256 bettxid)
+struct dicehash_entry
 {
-    int32_t i;
-    for (i=0; i<MAX_ENTROPYUSED; i++)
-        if ( bettxids[i] == bettxid )
-            return(1);
-    return(0);
+    UT_hash_handle hh;
+    uint256 bettxid;
+} *DICEHASH_TABLE;
+
+struct dice_entropy
+{
+    UT_hash_handle hh;
+    uint256 entropyused,bettxid;
+    CTransaction betTx;
+    int32_t entropyvout;
+} *DICE_ENTROPY;
+
+struct dicehash_entry *_dicehash_find(uint256 bettxid)
+{
+    struct dicehash_entry *ptr;
+    HASH_FIND(hh,DICEHASH_TABLE,&bettxid,sizeof(bettxid),ptr);
+    return(ptr);
 }
 
 int32_t _dicehash_clear(uint256 bettxid)
 {
-    int32_t i;
-    for (i=0; i<MAX_ENTROPYUSED; i++)
-        if ( bettxids[i] == bettxid )
-        {
-            bettxids[i] = zeroid;
-            return(1);
-        }
-    return(0);
+    struct dicehash_entry *ptr;
+    HASH_FIND(hh,DICEHASH_TABLE,&bettxid,sizeof(bettxid),ptr);
+    if ( ptr != 0 )
+    {
+        fprintf(stderr,"delete %s\n",bettxid.GetHex().c_str());
+        HASH_DELETE(hh,DICEHASH_TABLE,ptr);
+        return(0);
+    } else fprintf(stderr,"hashdelete couldnt find %s\n",bettxid.GetHex().c_str());
+    return(-1);
 }
 
-void _dicehash_add(uint256 bettxid)
+struct dicehash_entry *_dicehash_add(uint256 bettxid)
 {
-    int32_t i;
-    for (i=0; i<MAX_ENTROPYUSED; i++)
-        if ( bettxids[i] == zeroid )
-        {
-            bettxids[i] = bettxid;
-            return;
-        }
-    bettxids[rand() % MAX_ENTROPYUSED] = bettxid;
+    struct dicehash_entry *ptr;
+    ptr = (struct dicehash_entry *)calloc(1,sizeof(*ptr));
+    ptr->bettxid = bettxid;
+    HASH_ADD(hh,DICEHASH_TABLE,bettxid,sizeof(bettxid),ptr);
+    return(ptr);
 }
 
 int32_t _dicerevealed_find(uint256 &oldbettxid,CTransaction &oldbetTx,int32_t &oldentropyvout,uint256 entropyused,uint256 bettxid,int32_t entropyvout)
 {
-    int32_t i;
-    for (i=0; i<MAX_ENTROPYUSED; i++)
+    struct dice_entropy *ptr;
+    HASH_FIND(hh,DICE_ENTROPY,&entropyused,sizeof(entropyused),ptr);
+    if ( ptr != 0 )
     {
-        if ( Entropyused[i][0] == entropyused )
+        if ( entropyvout == ptr->entropyvout )
         {
-            if ( entropyvout == entropyvouts[i] )
+            if ( bettxid == ptr->bettxid )
             {
-                if ( bettxid == Entropyused[i][1] )
-                    return(i+1);
-                fprintf(stderr,"found identical entropy used.%d B different bettxid!\n",i);
-                oldbettxid = Entropyused[i][1];
-                oldbetTx = betTxs[i];
-                oldentropyvout = entropyvouts[i];
+                //fprintf(stderr,"identical %s E.%s v.%d\n",bettxid.GetHex().c_str(),entropyused.GetHex().c_str(),entropyvout);
+                return(entropyvout+1);
+            }
+            else
+            {
+                fprintf(stderr,"found identical entropy used.%s %s vs %s v.%d vs %d\n",entropyused.GetHex().c_str(),bettxid.GetHex().c_str(),ptr->bettxid.GetHex().c_str(),entropyvout,ptr->entropyvout);
+                oldbettxid = ptr->bettxid;
+                oldbetTx = ptr->betTx;
+                oldentropyvout = ptr->entropyvout;
                 return(-1);
-            } else fprintf(stderr,"shared entropy.%s vouts %d vs %d\n",entropyused.GetHex().c_str(),entropyvout,entropyvouts[i]);
-        }
+            }
+        } else fprintf(stderr,"shared entropy.%s vouts %d vs %d\n",entropyused.GetHex().c_str(),entropyvout,ptr->entropyvout);
     }
     return(0);
 }
 
-void _dicerevealed_add(uint256 entropyused,uint256 bettxid,CTransaction betTx,int32_t entropyvout)
+struct dice_entropy *_dicerevealed_add(uint256 entropyused,uint256 bettxid,CTransaction betTx,int32_t entropyvout)
 {
-    int32_t i;
-    for (i=0; i<MAX_ENTROPYUSED; i++)
-    {
-        if ( Entropyused[i][0] == zeroid )
-            break;
-    }
-    if ( i == MAX_ENTROPYUSED )
-        i = (rand() % MAX_ENTROPYUSED);
-    Entropyused[i][0] = entropyused;
-    Entropyused[i][1] = bettxid;
-    entropyvouts[i] = entropyvout;
-    betTxs[i] = betTx;
+    struct dice_entropy *ptr;
+    ptr = (struct dice_entropy *)calloc(1,sizeof(*ptr));
+    ptr->entropyused = entropyused;
+    ptr->bettxid = bettxid;
+    ptr->betTx = betTx;
+    ptr->entropyvout = entropyvout;
+    HASH_ADD(hh,DICE_ENTROPY,entropyused,sizeof(entropyused),ptr);
+    return(ptr);
 }
 
 int32_t DiceEntropyUsed(CTransaction &oldbetTx,uint256 &oldbettxid,int32_t &oldentropyvout,uint256 entropyused,uint256 bettxid,CTransaction betTx,int32_t entropyvout)
@@ -352,7 +357,7 @@ void *dicefinish(void *_ptr)
                     else if ( mytxid_inmempool(ptr->bettxid) != 0 )
                         ptr->bettxid_ready = (uint32_t)time(NULL);
                 }
-                else if ( newblock != 0 && myGetTransaction(ptr->bettxid,betTx,hashBlock) == 0 )
+                else if ( newblock != 0 && (myGetTransaction(ptr->bettxid,betTx,hashBlock) == 0 || now > ptr->bettxid_ready+600) )
                 {
                     fprintf(stderr,"ORPHANED bettxid.%s\n",ptr->bettxid.GetHex().c_str());
                     dicefinish_delete(ptr);
@@ -364,7 +369,7 @@ void *dicefinish(void *_ptr)
                     {
                         ptr->orphaned++;
                         fprintf(stderr,"ORPHANED.%d finish txid.%s\n",ptr->orphaned,ptr->txid.GetHex().c_str());
-                        if ( ptr->orphaned < 3 )
+                        if ( ptr->orphaned < 4 )
                             continue;
                         if ( ptr->rawtx.empty() == 0 )
                             ptr->rawtx.clear();
@@ -526,7 +531,7 @@ void DiceQueue(int32_t iswin,uint64_t sbits,uint256 fundingtxid,uint256 bettxid,
         ptr->winamount = betTx.vout[1].nValue * ((betTx.vout[2].nValue - txfee)+1);
         ptr->entropyvout = entropyvout;
         DL_APPEND(DICEFINISH_LIST,ptr);
-        fprintf(stderr,"queued iswin.%d %.8f -> %.8f %s\n",iswin,(double)betTx.vout[1].nValue/COIN,(double)ptr->winamount/COIN,bettxid.GetHex().c_str());
+        fprintf(stderr,"queued %dx iswin.%d %.8f -> %.8f %s\n",(int32_t)(betTx.vout[2].nValue - txfee),iswin,(double)betTx.vout[1].nValue/COIN,(double)ptr->winamount/COIN,bettxid.GetHex().c_str());
     }
     else
     {
@@ -1332,7 +1337,7 @@ UniValue DiceList()
 std::string DiceCreateFunding(uint64_t txfee,char *planstr,int64_t funds,int64_t minbet,int64_t maxbet,int64_t maxodds,int64_t timeoutblocks)
 {
     CMutableTransaction mtx; uint256 zero; CScript fundingPubKey; CPubKey mypk,dicepk; int64_t a,b,c,d; uint64_t sbits; struct CCcontract_info *cp,C;
-    if ( funds < 0 || minbet < 0 || maxbet < 0 || maxodds < 2 || maxodds > 9999 || timeoutblocks < 0 || timeoutblocks > 1440 )
+    if ( funds < 0 || minbet < 0 || maxbet < 0 || maxodds < 1 || maxodds > 9999 || timeoutblocks < 0 || timeoutblocks > 1440 )
     {
         CCerror = "invalid parameter error";
         fprintf(stderr,"%s\n", CCerror.c_str() );
