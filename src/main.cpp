@@ -532,28 +532,17 @@ namespace {
 
 } // anon namespace
 
-bool GetNodeStateStats(NodeId nodeid, CNodeStateStats &stats)
-{
-    static int32_t depth;
-    if ( depth < 0 )
-        depth = 0;
-    if ( depth == 0 )
-    {
-        LOCK(cs_main);
-        CNodeState *state = State(nodeid);
-        if (state == NULL)
-        {
-            depth--;
-            return false;
-        }
-        stats.nMisbehavior = state->nMisbehavior;
-        stats.nSyncHeight = state->pindexBestKnownBlock ? state->pindexBestKnownBlock->nHeight : -1;
-        stats.nCommonHeight = state->pindexLastCommonBlock ? state->pindexLastCommonBlock->nHeight : -1;
-        BOOST_FOREACH(const QueuedBlock& queue, state->vBlocksInFlight) {
-            if (queue.pindex)
-                stats.vHeightInFlight.push_back(queue.pindex->nHeight);
-        }
-        depth--;
+bool GetNodeStateStats(NodeId nodeid, CNodeStateStats &stats) {
+    LOCK(cs_main);
+    CNodeState *state = State(nodeid);
+    if (state == NULL)
+        return false;
+    stats.nMisbehavior = state->nMisbehavior;
+    stats.nSyncHeight = state->pindexBestKnownBlock ? state->pindexBestKnownBlock->nHeight : -1;
+    stats.nCommonHeight = state->pindexLastCommonBlock ? state->pindexLastCommonBlock->nHeight : -1;
+    BOOST_FOREACH(const QueuedBlock& queue, state->vBlocksInFlight) {
+        if (queue.pindex)
+            stats.vHeightInFlight.push_back(queue.pindex->nHeight);
     }
     return true;
 }
