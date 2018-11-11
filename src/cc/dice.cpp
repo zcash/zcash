@@ -1720,7 +1720,7 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
                                 DiceQueue(iswin,sbits,fundingtxid,txid,betTx,entropyvout);
                             }
                         }
-                        if ( KOMODO_DEALERNODE == 0 || scriptPubKey != fundingPubKey )
+                        if ( scriptPubKey != fundingPubKey )
                         {
                             fprintf(stderr,"serialized bettxid %d: iswin.%d W.%d L.%d %s/v%d (%c %.8f) %.8f\n",n,iswin,win,loss,txid.GetHex().c_str(),vout,funcid,(double)it->second.satoshis/COIN,(double)sum/COIN);
                             res = DiceBetFinish(funcid,entropyused,entropyvout,&result,txfee,planstr,fundingtxid,txid,scriptPubKey == fundingPubKey,zeroid,-1);
