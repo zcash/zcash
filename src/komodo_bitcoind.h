@@ -1115,7 +1115,7 @@ uint64_t komodo_commission(const CBlock *pblock,int32_t height)
     if ( ASSETCHAINS_FOUNDERS != 0 )
     {
         nSubsidy = GetBlockSubsidy(height,Params().GetConsensus());
-        fprintf(stderr,"ht.%d nSubsidy %.8f prod %llu\n",height,(double)nSubsidy/COIN,(long long)(nSubsidy * ASSETCHAINS_COMMISSION));
+        //fprintf(stderr,"ht.%d nSubsidy %.8f prod %llu\n",height,(double)nSubsidy/COIN,(long long)(nSubsidy * ASSETCHAINS_COMMISSION));
         return((nSubsidy * ASSETCHAINS_COMMISSION) / COIN);
         n = pblock->vtx[0].vout.size();
         for (j=0; j<n; j++)
@@ -1482,7 +1482,7 @@ int64_t komodo_checkcommission(CBlock *pblock,int32_t height)
     if ( ASSETCHAINS_COMMISSION != 0 )
     {
         checktoshis = komodo_commission(pblock,height);
-        fprintf(stderr,"height.%d commission %.8f\n",height,(double)checktoshis/COIN);
+        //fprintf(stderr,"height.%d commission %.8f\n",height,(double)checktoshis/COIN);
         /*if ( checktoshis > 10000 && pblock->vtx[0].vout.size() != 2 )  jl777: not sure why this was here
             return(-1);
         else*/ if ( checktoshis != 0 )
