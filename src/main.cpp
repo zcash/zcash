@@ -3188,7 +3188,8 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             else fprintf(stderr,"checktoshis %.8f numvouts %d\n",dstr(checktoshis),(int32_t)block.vtx[0].vout.size());
         }
     }
-    if ( block.vtx[0].GetValueOut() > blockReward+1 )
+
+    if ( ( block.vtx[0].GetValueOut() > blockReward+1 && is_STAKED(ASSETCHAINS_SYMBOL) != 0 ) || ( block.vtx[0].GetValueOut() > blockReward ) )
     {
         if ( ASSETCHAINS_SYMBOL[0] != 0 || pindex->nHeight >= KOMODO_NOTARIES_HEIGHT1 || block.vtx[0].vout[0].nValue > blockReward )
         {

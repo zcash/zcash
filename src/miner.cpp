@@ -979,20 +979,20 @@ void static BitcoinMiner()
                 HASHTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
                 if ( ASSETCHAINS_STAKED < 100 )
                 {
-                    for (z=31; z>=0; z--)
-                        fprintf(stderr,"%02x",((uint8_t *)&HASHTarget_POW)[z]);
-                    fprintf(stderr," PoW for staked coin PoS %d%% vs target %d%%\n",percPoS,(int32_t)ASSETCHAINS_STAKED);
+                    //for (z=31; z>=0; z--)
+                    //    fprintf(stderr,"%02x",((uint8_t *)&HASHTarget_POW)[z]);
+                    LogPrintf("Block %d : PoS %d%% vs target %d%% \n",Mining_height,percPoS,(int32_t)ASSETCHAINS_STAKED);
                 }
             }
             while (true)
             {
-                /*if ( KOMODO_INSYNC == 0 && Mining_height > ASSETCHAINS_MINHEIGHT )
+                if ( KOMODO_INSYNC == 0 && KOMODO_LONGESTCHAIN != 0 )
                 {
                     fprintf(stderr,"Mining when blockchain might not be in sync longest.%d vs %d\n",KOMODO_LONGESTCHAIN,Mining_height);
                     if ( KOMODO_LONGESTCHAIN != 0 && Mining_height >= KOMODO_LONGESTCHAIN )
                         KOMODO_INSYNC = 1;
                     sleep(3);
-                } */
+                }
                 // Hash state
                 KOMODO_CHOSEN_ONE = 0;
                 crypto_generichash_blake2b_state state;
