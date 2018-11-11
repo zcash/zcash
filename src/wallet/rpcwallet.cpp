@@ -1064,7 +1064,7 @@ UniValue cleanwalletnotarisations(const UniValue& params, bool fHelp)
         for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it)
         {
             const CWalletTx& wtx = (*it).second;
-            if (!CheckFinalTx(wtx) || wtx.GetBlocksToMaturity() > 0 || wtx.GetDepthInMainChain() < 50 )
+            if (!CheckFinalTx(wtx) || wtx.GetBlocksToMaturity() > 0 || wtx.GetDepthInMainChain() < 360 )
                 continue;
 
             CCoins coins;
@@ -1080,12 +1080,19 @@ UniValue cleanwalletnotarisations(const UniValue& params, bool fHelp)
                }
                if ( spents == mine )
                {
-                  TxToRemove.push_back(wtx.GetHash());
                   for (unsigned int n = 0; n < wtx.vin.size() ; n++)
                   {
-                      if ( pwalletMain->IsMine(wtx.vin[n]) )
-                          TxToRemove.push_back(wtx.vin[n].prevout.hash);
+                      CTransaction vintx; uint256 hashBlock;
+                      if ( GetTransaction(wtx.vin[n].prevout.hash,vintx,hashBlock,false) != 0 )
+                      {
+                          for (unsigned int z = 0; z < vintx.vin.size() ; z++)
+                          {
+                            TxToRemove.push_back(vintx.vin[z].prevout.hash);
+                          }
+                      }
+                      TxToRemove.push_back(wtx.vin[n].prevout.hash);
                   }
+                  TxToRemove.push_back(wtx.GetHash());
                }
             }
 
@@ -1108,7 +1115,7 @@ UniValue cleanwalletnotarisations(const UniValue& params, bool fHelp)
                   if ( SpentHash == tx.vin[n].prevout.hash )
                   {
                       pwalletMain->EraseFromWallet(tx.GetHash());
-                      //fprintf(stderr, "ERASED Notarisation: %s\n",tx.GetHash().ToString().c_str());
+                      LogPrintf("ERASED Notarisation: %s\n",tx.GetHash().ToString().c_str());
                   }
               }
           }
@@ -1119,7 +1126,7 @@ UniValue cleanwalletnotarisations(const UniValue& params, bool fHelp)
     BOOST_FOREACH (uint256& hash, TxToRemove)
     {
         pwalletMain->EraseFromWallet(hash);
-        //fprintf(stderr, "ERASED spent Tx: %s\n",hash.ToString().c_str());
+        LogPrintf("ERASED spent Tx: %s\n",hash.ToString().c_str());
     }
 
     // build return JSON for stats.
