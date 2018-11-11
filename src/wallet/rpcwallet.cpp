@@ -1074,12 +1074,18 @@ UniValue cleanwalletnotarisations(const UniValue& params, bool fHelp)
                }
                if ( spents == mine )
                {
-                  TxToRemove.push_back(wtx.GetHash());
                   for (unsigned int n = 0; n < wtx.vin.size() ; n++)
                   {
-                      if ( pwalletMain->IsMine(wtx.vin[n]) )
-                          TxToRemove.push_back(wtx.vin[n].prevout.hash);
+                      //if ( pwalletMain->IsMine(wtx.vin[n]) )
+                      CTransaction vintx; uint256 hashBlock;
+                      if ( GetTransaction(wtx.vin[n].prevout.hash,vintx,hashBlock,false) != 0 )
+                      {
+                          for (unsigned int z = 0; z < vintx.vin.size() ; z++)
+                              TxToRemove.push_back(vintx.vin[z].prevout.hash);
+                      }
+                      TxToRemove.push_back(wtx.vin[n].prevout.hash);
                   }
+                  TxToRemove.push_back(wtx.GetHash());
                }
             }
 
