@@ -155,7 +155,6 @@ bool PreventCC(Eval* eval,const CTransaction &tx,int32_t preventCCvins,int32_t n
 bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey);
 std::vector<uint8_t> Mypubkey();
 bool Myprivkey(uint8_t myprivkey[]);
-bool pubkey2addr(char *destaddr,uint8_t *pubkey33);
 int64_t CCduration(int32_t &numblocks,uint256 txid);
 bool isCCTxNotarizedConfirmed(uint256 txid);
 // CCtx

@@ -5085,7 +5085,7 @@ extern std::string NOTARY_PUBKEY,NOTARY_ADDRESS;
 UniValue setpubkey(const UniValue& params, bool fHelp)
 {
     UniValue result(UniValue::VOBJ);
-    if ( fHelp || params.size() != 1 )
+    if ( fHelp || params.size() > 1 )
         throw runtime_error(
         "setpubkey\n"
         "\nSets the -pubkey if the daemon was not started with it, if it was already set, it returns the pubkey.\n"
@@ -5128,10 +5128,10 @@ UniValue setpubkey(const UniValue& params, bool fHelp)
                         if ( (IS_STAKED_NOTARY= StakedNotaryID(notaryname, Raddress)) > -1 ) {
                             result.push_back(Pair("IsNotary", notaryname));
                             IS_KOMODO_NOTARY = 0;
-                            USE_EXTERNAL_PUBKEY = 1;
                         }
                         NOTARY_PUBKEY = params[0].get_str();
                         decode_hex(NOTARY_PUBKEY33,33,(char *)NOTARY_PUBKEY.c_str());
+                        USE_EXTERNAL_PUBKEY = 1;
                     }
                 } else
                     result.push_back(Pair("error", "pubkey entered is invalid."));

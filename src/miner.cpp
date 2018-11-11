@@ -674,7 +674,7 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey,int32_t nHeight,in
     }
     else if ( USE_EXTERNAL_PUBKEY != 0 )
     {
-        //fprintf(stderr,"use notary pubkey\n");
+        fprintf(stderr,"use notary pubkey\n");
         scriptPubKey = CScript() << ParseHex(NOTARY_PUBKEY) << OP_CHECKSIG;
     } else
     {
