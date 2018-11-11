@@ -32,6 +32,7 @@ using namespace std;
 extern void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry);
 void ScriptPubKeyToJSON(const CScript& scriptPubKey, UniValue& out, bool fIncludeHex);
 int32_t komodo_longestchain();
+int32_t komodo_dpowconfs(int32_t height,int32_t numconfs);
 
 double GetDifficultyINTERNAL(const CBlockIndex* blockindex, bool networkDifficulty)
 {
@@ -117,7 +118,8 @@ UniValue blockheaderToJSON(const CBlockIndex* blockindex)
     // Only report confirmations if the block is on the main chain
     if (chainActive.Contains(blockindex))
         confirmations = chainActive.Height() - blockindex->nHeight + 1;
-    result.push_back(Pair("confirmations", confirmations));
+    result.push_back(Pair("confirmations", komodo_dpowconfs(blockindex->nHeight,confirmations)));
+    result.push_back(Pair("rawconfirmations", confirmations));
     result.push_back(Pair("height", blockindex->nHeight));
     result.push_back(Pair("version", blockindex->nVersion));
     result.push_back(Pair("merkleroot", blockindex->hashMerkleRoot.GetHex()));
@@ -148,7 +150,8 @@ UniValue blockToDeltasJSON(const CBlock& block, const CBlockIndex* blockindex)
     } else {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Block is an orphan");
     }
-    result.push_back(Pair("confirmations", confirmations));
+    result.push_back(Pair("confirmations", komodo_dpowconfs(blockindex->nHeight,confirmations)));
+    result.push_back(Pair("rawconfirmations", confirmations));
     result.push_back(Pair("size", (int)::GetSerializeSize(block, SER_NETWORK, PROTOCOL_VERSION)));
     result.push_back(Pair("height", blockindex->nHeight));
     result.push_back(Pair("version", block.nVersion));
@@ -265,7 +268,8 @@ UniValue blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool tx
     // Only report confirmations if the block is on the main chain
     if (chainActive.Contains(blockindex))
         confirmations = chainActive.Height() - blockindex->nHeight + 1;
-    result.push_back(Pair("confirmations", confirmations));
+    result.push_back(Pair("confirmations", komodo_dpowconfs(blockindex->nHeight,confirmations)));
+    result.push_back(Pair("rawconfirmations", confirmations));
     result.push_back(Pair("size", (int)::GetSerializeSize(block, SER_NETWORK, PROTOCOL_VERSION)));
     result.push_back(Pair("height", blockindex->nHeight));
     result.push_back(Pair("version", block.nVersion));
@@ -370,6 +374,18 @@ bool myIsutxo_spentinmempool(uint256 txid,int32_t vout)
                 return(true);
         }
         //fprintf(stderr,"are vins for %s\n",uint256_str(str,hash));
+    }
+    return(false);
+}
+
+bool mytxid_inmempool(uint256 txid)
+{
+    BOOST_FOREACH(const CTxMemPoolEntry &e,mempool.mapTx)
+    {
+        const CTransaction &tx = e.GetTx();
+        const uint256 &hash = tx.GetHash();
+        if ( txid == hash )
+            return(true);
     }
     return(false);
 }
@@ -1150,7 +1166,11 @@ UniValue gettxout(const UniValue& params, bool fHelp)
     ret.push_back(Pair("bestblock", pindex->GetBlockHash().GetHex()));
     if ((unsigned int)coins.nHeight == MEMPOOL_HEIGHT)
         ret.push_back(Pair("confirmations", 0));
-    else ret.push_back(Pair("confirmations", pindex->nHeight - coins.nHeight + 1));
+    else
+    {
+        ret.push_back(Pair("confirmations", komodo_dpowconfs(coins.nHeight,pindex->nHeight - coins.nHeight + 1)));
+        ret.push_back(Pair("rawconfirmations", pindex->nHeight - coins.nHeight + 1));
+    }
     ret.push_back(Pair("value", ValueFromAmount(coins.vout[n].nValue)));
     uint64_t interest; int32_t txheight; uint32_t locktime;
     if ( (interest= komodo_accrued_interest(&txheight,&locktime,hash,n,coins.nHeight,coins.vout[n].nValue,(int32_t)pindex->nHeight)) != 0 )

@@ -179,6 +179,8 @@ int32_t komodo_longestchain()
         //fprintf(stderr,"komodo_longestchain iter.%d\n",n);
         CNodeStateStats statestats;
         bool fStateStats = GetNodeStateStats(stats.nodeid,statestats);
+        if ( statestats.nSyncHeight < 0 )
+            continue;
         ht = 0;
         if ( stats.nStartingHeight > ht )
             ht = stats.nStartingHeight;
@@ -190,7 +192,6 @@ int32_t komodo_longestchain()
             maxheight = ht, num = 1;
         else if ( ht > maxheight*0.99 )
             num++;
-        n++;
         if ( ht > height )
             height = ht;
     }
