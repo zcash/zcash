@@ -357,7 +357,7 @@ void *dicefinish(void *_ptr)
                     else if ( mytxid_inmempool(ptr->bettxid) != 0 )
                         ptr->bettxid_ready = (uint32_t)time(NULL);
                 }
-                else if ( newblock != 0 && myGetTransaction(ptr->bettxid,betTx,hashBlock) == 0 )
+                else if ( newblock != 0 && (myGetTransaction(ptr->bettxid,betTx,hashBlock) == 0 || now > ptr->bettxid_ready+600) )
                 {
                     fprintf(stderr,"ORPHANED bettxid.%s\n",ptr->bettxid.GetHex().c_str());
                     dicefinish_delete(ptr);
