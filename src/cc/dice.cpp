@@ -171,6 +171,8 @@ int32_t _dicehash_clear(uint256 bettxid)
 struct dicehash_entry *_dicehash_add(uint256 bettxid)
 {
     struct dicehash_entry *ptr;
+    ptr = (struct dicehash_entry *)calloc(1,sizeof(*ptr));
+    ptr->bettxid = bettxid;
     /*int32_t i;
     for (i=0; i<MAX_ENTROPYUSED; i++)
         if ( bettxids[i] == zeroid )
