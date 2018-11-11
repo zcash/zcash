@@ -574,7 +574,7 @@ void DiceQueue(int32_t iswin,uint64_t sbits,uint256 fundingtxid,uint256 bettxid,
     else
     {
         //fprintf(stderr,"DiceQueue status bettxid.%s already in list\n",bettxid.GetHex().c_str());
-        //_dicehash_clear(bettxid);
+        _dicehash_clear(bettxid);
     }
     pthread_mutex_unlock(&DICE_MUTEX);
 }
