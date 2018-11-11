@@ -483,6 +483,7 @@ void *dicefinish(void *_ptr)
                     fprintf(stderr,"num normal 0.0002 utxos.%d < %d -> n.%d\n",num,DICE_MINUTXOS,n);
                     for (i=0; i<n; i++)
                     {
+                        fprintf(stderr,"%d of %d: ",i,n);
                         if ( system(cmd) != 0 )
                             fprintf(stderr,"system error issuing.(%s)\n",cmd);
                     }
