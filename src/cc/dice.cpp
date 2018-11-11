@@ -1729,6 +1729,8 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
                             {
                                 mySenddicetransaction(res,entropyused,entropyvout,txid,betTx,funcid,0);
                                 n++;
+                                if ( n > 10 )
+                                    break;
                             }
                         }
                     } else fprintf(stderr,"bettxid.%s cant find entropyTx.%s\n",txid.GetHex().c_str(),betTx.vin[0].prevout.hash.GetHex().c_str());
