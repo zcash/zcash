@@ -1421,7 +1421,7 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
         CCerror = "bet must be positive";
         return("");
     }
-    if ( odds < 1 || odds > 9999 )
+    if ( odds < 2 || odds > 9999 )
     {
         CCerror = "odds must be between 2 and 9999";
         return("");
