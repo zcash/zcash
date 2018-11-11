@@ -1083,7 +1083,7 @@ UniValue cleanwalletnotarisations(const UniValue& params, bool fHelp)
                       {
                           for (unsigned int z = 0; z < vintx.vin.size() ; z++)
                           {
-                            fprintf(stderr, "TX: %s in block : %s\n", vintx.GetHash().ToString().c_str(),hashBlock.ToString().c_str();
+                            fprintf(stderr, "TX: %s in block : %s\n", vintx.GetHash().ToString().c_str(),hashBlock.ToString().c_str());
                             TxToRemove.push_back(vintx.vin[z].prevout.hash);
                           }
                       }
