@@ -1382,7 +1382,7 @@ void komodo_passport_iteration()
     {
         if ( ASSETCHAINS_SYMBOL[0] == 0 )
             komodo_interestsum();
-        komodo_longestchain();
+        //komodo_longestchain();
         lastinterest = komodo_chainactive_timestamp();
     }
     refsp = komodo_stateptr(symbol,dest);
