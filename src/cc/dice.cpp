@@ -1643,12 +1643,7 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
     CScript fundingPubKey,scriptPubKey; CTransaction spenttx,betTx,entropyTx; uint256 hentropyproof,entropyused,hash,proof,txid,hashBlock,spenttxid,bettorentropy; CPubKey mypk,dicepk,fundingpk; struct CCcontract_info *cp,C; int32_t i,entropyvout,flag,win,loss,duplicate=0,result,iswin,vout,n=0; int64_t minbet,maxbet,maxodds,timeoutblocks,sum=0; uint64_t sbits,refsbits; char coinaddr[64]; std::string res; uint8_t funcid;
     if ( (cp= Diceinit(fundingPubKey,fundingtxid,&C,planstr,txfee,mypk,dicepk,refsbits,minbet,maxbet,maxodds,timeoutblocks)) == 0 )
     {
-<<<<<<< HEAD
-        CCerror = "Diceinit error in status, is your transaction confirmed?";
-        fprintf(stderr,"%s\n", CCerror.c_str() );
-=======
         CCerror = "Diceinit error in status";
->>>>>>> 880fda004f9487b7ca227f54d2f733f3139d935e
         return(0.);
     }
     win = loss = 0;
