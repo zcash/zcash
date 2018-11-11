@@ -386,7 +386,7 @@ int64_t CCduration(int32_t &numblocks,uint256 txid)
     numblocks = 0;
     if ( myGetTransaction(txid,tx,hashBlock) == 0 )
     {
-        fprintf(stderr,"CCduration cant find duration txid %s\n",uint256_str(str,txid));
+        //fprintf(stderr,"CCduration cant find duration txid %s\n",uint256_str(str,txid));
         return(0);
     }
     else if ( hashBlock == zeroid )
