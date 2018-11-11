@@ -24,7 +24,7 @@ extern int32_t ASSETCHAINS_STREAM;
 
 unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params)
 {
-    if ( ASSETCHAINS_STREAM == 0)
+    if ( ASSETCHAINS_STREAM != 2 )
     {
       unsigned int nProofOfWorkLimit = UintToArith256(params.powLimit).GetCompact();
       // Genesis block

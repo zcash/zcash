@@ -1600,6 +1600,11 @@ void komodo_args(char *argv0)
             ASSETCHAINS_DECAY = 0;
             printf("ASSETCHAINS_DECAY cant be more than 100000000\n");
         }
+				if ( strlen(ASSETCHAINS_OVERRIDE_PUBKEY.c_str()) != 66 && ASSETCHAINS_STREAM != 0 )
+				{
+						printf("ASSETCHAINS_STREAM needs ASSETCHAINS_OVERRIDE_PUBKEY! \n");
+						exit(0);
+				}
         if ( strlen(ASSETCHAINS_OVERRIDE_PUBKEY.c_str()) == 66 || ASSETCHAINS_SCRIPTPUB.size() > 1 )
         {
             if ( strlen(ASSETCHAINS_OVERRIDE_PUBKEY.c_str()) == 66 )
@@ -1607,11 +1612,6 @@ void komodo_args(char *argv0)
                 decode_hex(ASSETCHAINS_OVERRIDE_PUBKEY33,33,(char *)ASSETCHAINS_OVERRIDE_PUBKEY.c_str());
                 calc_rmd160_sha256(ASSETCHAINS_OVERRIDE_PUBKEYHASH,ASSETCHAINS_OVERRIDE_PUBKEY33,33);
             }
-						else if ( ASSETCHAINS_STREAM != 0)
-						{
-								printf("ASSETCHAINS_STREAM needs ASSETCHAINS_OVERRIDE_PUBKEY! \n");
-								exit(0);
-						}
             if ( ASSETCHAINS_COMMISSION == 0 && ASSETCHAINS_FOUNDERS != 0 )
             {
                 ASSETCHAINS_COMMISSION = 53846154; // maps to 35%
@@ -1661,7 +1661,7 @@ void komodo_args(char *argv0)
             MAX_MONEY = 1000000LL*SATOSHIDEN;
         if ( MAX_MONEY <= 0 || MAX_MONEY > 1000000000LL*SATOSHIDEN )
             MAX_MONEY = 1000000000LL*SATOSHIDEN;
-        //fprintf(stderr,"MAX_MONEY %llu %.8f\n",(long long)MAX_MONEY,(double)MAX_MONEY/SATOSHIDEN);
+        fprintf(stderr,"MAX_MONEY %llu %.8f\n",(long long)MAX_MONEY,(double)MAX_MONEY/SATOSHIDEN);
         //printf("baseid.%d MAX_MONEY.%s %.8f\n",baseid,ASSETCHAINS_SYMBOL,(double)MAX_MONEY/SATOSHIDEN);
         ASSETCHAINS_P2PPORT = komodo_port(ASSETCHAINS_SYMBOL,ASSETCHAINS_SUPPLY,&ASSETCHAINS_MAGIC,extraptr,extralen);
         while ( (dirname= (char *)GetDataDir(false).string().c_str()) == 0 || dirname[0] == 0 )
