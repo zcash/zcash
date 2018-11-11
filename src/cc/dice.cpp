@@ -502,24 +502,27 @@ void *dicefinish(void *_ptr)
                     {
                         fundingtxid = uint256S((char *)"0x5be49570c56d036abb08b6d084da93a8a86f58fc48db4a1086be95540d752d6f");
                         sbits = stringbits(planstr);
-                        fprintf(stderr,"do the entropy tx\n");
                         DicePlanFunds(entropyval,entropytxid,sbits,cp,dicepk,fundingtxid,entropytxs,false);
+                        fprintf(stderr,"do the entropy tx %d vs %d\n",entropytxs,DICE_MINUTXOS);
                         if ( entropytxs < DICE_MINUTXOS )
                         {
                             n = sqrt(DICE_MINUTXOS - entropytxs);
-                            res = DiceAddfunding(10000,planstr,fundingtxid,COIN/100);
-                            if ( res.empty() == 0 && res.size() > 64 && is_hexstr((char *)res.c_str(),0) > 64 )
+                            for (i=0; i<n; i++)
                             {
-                                if ( DecodeHexTx(tx,res) != 0 )
+                                res = DiceAddfunding(10000,planstr,fundingtxid,COIN/100);
+                                if ( res.empty() == 0 && res.size() > 64 && is_hexstr((char *)res.c_str(),0) > 64 )
                                 {
-                                    //LOCK(cs_main);
-                                    if ( myAddtomempool(tx) != 0 )
+                                    if ( DecodeHexTx(tx,res) != 0 )
                                     {
-                                        fprintf(stderr,"ENTROPY %s: %d of %d, %d\n",tx.GetHash().GetHex().c_str(),i,n,DICE_MINUTXOS - entropytxs);
-                                        RelayTransaction(tx);
+                                        //LOCK(cs_main);
+                                        if ( myAddtomempool(tx) != 0 )
+                                        {
+                                            fprintf(stderr,"ENTROPY %s: %d of %d, %d\n",tx.GetHash().GetHex().c_str(),i,n,DICE_MINUTXOS - entropytxs);
+                                            RelayTransaction(tx);
+                                        } else break;
                                     } else break;
                                 } else break;
-                            } else break;
+                            }
                         }
                     }
                 }
