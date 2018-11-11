@@ -1709,6 +1709,7 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
                         flag = KOMODO_DEALERNODE != 0;
                         if ( KOMODO_DEALERNODE != 0 && scriptPubKey == fundingPubKey )
                         {
+                            flag = 0;
                             bettorentropy = DiceGetEntropy(betTx,'B');
                             if ( (iswin= DiceIsWinner(hentropyproof,entropyvout,txid,betTx,entropyTx,bettorentropy,sbits,minbet,maxbet,maxodds,timeoutblocks,fundingtxid)) != 0 )
                             {
@@ -1722,7 +1723,7 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
                         }
                         if ( flag != 0 || scriptPubKey != fundingPubKey )
                         {
-                            if ( flag != 0 )
+                            if ( 0 && flag != 0 )
                                 fprintf(stderr,"illegal bettxid %d: iswin.%d W.%d L.%d %s/v%d (%c %.8f) %.8f\n",n,iswin,win,loss,txid.GetHex().c_str(),vout,funcid,(double)it->second.satoshis/COIN,(double)sum/COIN);
                             res = DiceBetFinish(funcid,entropyused,entropyvout,&result,txfee,planstr,fundingtxid,txid,scriptPubKey == fundingPubKey,zeroid,-1);
                             if ( result > 0 )
