@@ -242,7 +242,7 @@ extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 
 UniValue stop(const UniValue& params, bool fHelp)
 {
-    char buf[64];
+    char buf[66+128];
    // Accept the deprecated and ignored 'detach' boolean argument
     if (fHelp || params.size() > 1)
         throw runtime_error(
@@ -250,7 +250,7 @@ UniValue stop(const UniValue& params, bool fHelp)
             "\nStop Komodo server.");
     // Shutdown will take long enough that the response should get back
     StartShutdown();
-    sprintf(buf,"%s Komodo server stopping",ASSETCHAINS_SYMBOL);
+    sprintf(buf,"%s server stopping",ASSETCHAINS_SYMBOL[0] != 0 ? ASSETCHAINS_SYMBOL : "Komodo");
     return buf;
 }
 
@@ -350,16 +350,16 @@ static const CRPCCommand vRPCCommands[] =
 #endif
     /* auction */
     { "auction",       "auctionaddress",    &auctionaddress,  true },
-    
+
     /* lotto */
     { "lotto",       "lottoaddress",    &lottoaddress,  true },
-    
+
     /* fsm */
     { "FSM",       "FSMaddress",   &FSMaddress, true },
     { "FSM", "FSMcreate",    &FSMcreate,  true },
     { "FSM",   "FSMlist",      &FSMlist,    true },
     { "FSM",   "FSMinfo",      &FSMinfo,    true },
-    
+
     /* rewards */
     { "rewards",       "rewardslist",       &rewardslist,     true },
     { "rewards",       "rewardsinfo",       &rewardsinfo,     true },
@@ -368,25 +368,24 @@ static const CRPCCommand vRPCCommands[] =
     { "rewards",       "rewardslock",       &rewardslock,     true },
     { "rewards",       "rewardsunlock",     &rewardsunlock,   true },
     { "rewards",       "rewardsaddress",    &rewardsaddress,  true },
-    
+
     /* faucet */
     { "faucet",       "faucetinfo",      &faucetinfo,         true },
     { "faucet",       "faucetfund",      &faucetfund,         true },
     { "faucet",       "faucetget",       &faucetget,          true },
     { "faucet",       "faucetaddress",   &faucetaddress,      true },
-    
-    /* MofN */
-    { "MofN",       "mofnaddress",   &mofnaddress,      true },
-    
+
+    /* Heir */
+    { "heir",       "heiraddress",   &heiraddress,      true },
+
     /* Channels */
     { "channels",       "channelsaddress",   &channelsaddress,   true },
     { "channels",       "channelsinfo",      &channelsinfo,      true },
     { "channels",       "channelsopen",      &channelsopen,      true },
     { "channels",       "channelspayment",   &channelspayment,   true },
-    { "channels",       "channelscollect",   &channelscollect,   true },
-    { "channels",       "channelsstop",      &channelsstop,      true },
+    { "channels",       "channelsclose",     &channelsclose,      true },
     { "channels",       "channelsrefund",    &channelsrefund,    true },
-    
+
     /* Oracles */
     { "oracles",       "oraclesaddress",   &oraclesaddress,     true },
     { "oracles",       "oracleslist",      &oracleslist,        true },
@@ -396,7 +395,7 @@ static const CRPCCommand vRPCCommands[] =
     { "oracles",       "oraclessubscribe", &oraclessubscribe,   true },
     { "oracles",       "oraclesdata",      &oraclesdata,        true },
     { "oracles",       "oraclessamples",   &oraclessamples,     true },
-    
+
     /* Prices */
     { "prices",       "pricesaddress",      &pricesaddress,      true },
     { "prices",       "priceslist",         &priceslist,         true },
@@ -406,16 +405,16 @@ static const CRPCCommand vRPCCommands[] =
     { "prices",       "pricesbet",          &pricesbet,          true },
     { "prices",       "pricesstatus",       &pricesstatus,       true },
     { "prices",       "pricesfinish",       &pricesfinish,       true },
-    
+
     /* Pegs */
     { "pegs",       "pegsaddress",   &pegsaddress,      true },
-    
+
     /* Triggers */
     { "triggers",       "triggersaddress",   &triggersaddress,      true },
-    
+
     /* Payments */
     { "payments",       "paymentsaddress",   &paymentsaddress,      true },
-    
+
     /* Gateways */
     { "gateways",       "gatewaysaddress",   &gatewaysaddress,      true },
     { "gateways",       "gatewayslist",      &gatewayslist,         true },
@@ -427,6 +426,7 @@ static const CRPCCommand vRPCCommands[] =
     { "gateways",       "gatewayspending",   &gatewayspending,      true },
     { "gateways",       "gatewaysmultisig",  &gatewaysmultisig,     true },
     { "gateways",       "gatewaysmarkdone",  &gatewaysmarkdone,     true },
+    { "gateways",       "gatewayspartialsign",  &gatewayspartialsign,     true },
 
     /* dice */
     { "dice",       "dicelist",      &dicelist,         true },
@@ -522,6 +522,7 @@ static const CRPCCommand vRPCCommands[] =
     { "wallet",             "sendmany",               &sendmany,               false },
     { "wallet",             "sendtoaddress",          &sendtoaddress,          false },
     { "wallet",             "setaccount",             &setaccount,             true  },
+    { "wallet",             "setpubkey",              &setpubkey,              true  },
     { "wallet",             "settxfee",               &settxfee,               true  },
     { "wallet",             "signmessage",            &signmessage,            true  },
     { "wallet",             "walletlock",             &walletlock,             true  },

@@ -391,7 +391,7 @@ int32_t notarizedtxid_height(char *dest,char *txidstr,int32_t *kmdnotarized_heig
             {
                 if ( (item= jobj(json,(char *)"result")) != 0 )
                 {
-                    txid_confirmations = jint(item,(char *)"confirmations");
+                    txid_confirmations = jint(item,(char *)"rawconfirmations");
                     if ( txid_confirmations > 0 && height > txid_confirmations )
                         txid_height = height - txid_confirmations;
                     else txid_height = height;
@@ -1106,18 +1106,33 @@ int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_
  PoS stake must be without txfee and in the last tx in the block at vout[0]
  */
 
-uint64_t komodo_commission(const CBlock *pblock)
+CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams);
+
+uint64_t komodo_commission(const CBlock *pblock,int32_t height)
 {
-    int32_t i,j,n=0,txn_count; uint64_t commission,total = 0;
+    int32_t i,j,n=0,txn_count; int64_t nSubsidy; uint64_t commission,total = 0;
     txn_count = pblock->vtx.size();
-    for (i=0; i<txn_count; i++)
+    if ( ASSETCHAINS_FOUNDERS != 0 )
     {
-        n = pblock->vtx[i].vout.size();
+        nSubsidy = GetBlockSubsidy(height,Params().GetConsensus());
+        //fprintf(stderr,"ht.%d nSubsidy %.8f prod %llu\n",height,(double)nSubsidy/COIN,(long long)(nSubsidy * ASSETCHAINS_COMMISSION));
+        return((nSubsidy * ASSETCHAINS_COMMISSION) / COIN);
+        n = pblock->vtx[0].vout.size();
         for (j=0; j<n; j++)
+            if ( j != 1 )
+                total += pblock->vtx[0].vout[j].nValue;
+    }
+    else
+    {
+        for (i=0; i<txn_count; i++)
         {
-            //fprintf(stderr,"(%d %.8f).%d ",i,dstr(block.vtx[i].vout[j].nValue),j);
-            if ( i != 0 || j != 1 )
-                total += pblock->vtx[i].vout[j].nValue;
+            n = pblock->vtx[i].vout.size();
+            for (j=0; j<n; j++)
+            {
+                //fprintf(stderr,"(%d %.8f).%d ",i,dstr(block.vtx[i].vout[j].nValue),j);
+                if ( i != 0 || j != 1 )
+                    total += pblock->vtx[i].vout[j].nValue;
+            }
         }
     }
     //fprintf(stderr,"txn.%d n.%d commission total %.8f -> %.8f\n",txn_count,n,dstr(total),dstr((total * ASSETCHAINS_COMMISSION) / COIN));
@@ -1164,7 +1179,7 @@ int8_t komodo_segid(int32_t nocache,int32_t height)
     return(segid);
 }
 
-int32_t komodo_segids(uint8_t *hashbuf,int32_t height,int32_t n)
+void komodo_segids(uint8_t *hashbuf,int32_t height,int32_t n)
 {
     static uint8_t prevhashbuf[100]; static int32_t prevheight;
     int32_t i;
@@ -1284,7 +1299,7 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
 
 arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t height,int32_t goalperc)
 {
-    int32_t oldflag = 0;
+    int32_t oldflag = 0,dispflag = 0;
     CBlockIndex *pindex; arith_uint256 easydiff,bnTarget,hashval,sum,ave; bool fNegative,fOverflow; int32_t i,n,m,ht,percPoS,diff,val;
     *percPoSp = percPoS = 0;
     if ( height <= 10 || (ASSETCHAINS_STAKED == 100 && height <= 100) )
@@ -1303,23 +1318,23 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
             {
                 n++;
                 percPoS++;
-                if ( ASSETCHAINS_STAKED < 100 )
+                if ( dispflag != 0 && ASSETCHAINS_STAKED < 100 )
                     fprintf(stderr,"0");
             }
             else
             {
-                if ( ASSETCHAINS_STAKED < 100 )
+                if ( dispflag != 0 && ASSETCHAINS_STAKED < 100 )
                     fprintf(stderr,"1");
                 sum += UintToArith256(pindex->GetBlockHash());
                 m++;
             }
         }
-        if ( ASSETCHAINS_STAKED < 100 && (i % 10) == 9 )
+        if ( dispflag != 0 && ASSETCHAINS_STAKED < 100 && (i % 10) == 9 )
             fprintf(stderr," %d, ",percPoS);
     }
     if ( m+n < 100 )
         percPoS = ((percPoS * n) + (goalperc * (100-n))) / 100;
-    if ( ASSETCHAINS_STAKED < 100 )
+    if ( dispflag != 0 && ASSETCHAINS_STAKED < 100 )
         fprintf(stderr," -> %d%% percPoS vs goalperc.%d ht.%d\n",percPoS,goalperc,height);
     *percPoSp = percPoS;
     if ( m > 0 )
@@ -1332,12 +1347,10 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
         percPoS = 1;
     if ( percPoS < goalperc ) // increase PoW diff -> lower bnTarget
     {
-        //if ( oldflag != 0 )
-        //    bnTarget = (ave * arith_uint256(percPoS * percPoS)) / arith_uint256(goalperc * goalperc * goalperc);
         if ( oldflag != 0 )
             bnTarget = (ave / arith_uint256(goalperc * goalperc * goalperc)) * arith_uint256(percPoS * percPoS);
         else bnTarget = (ave / arith_uint256(goalperc * goalperc * goalperc * goalperc)) * arith_uint256(percPoS * percPoS);
-        if ( ASSETCHAINS_STAKED < 100 )
+        if ( dispflag != 0 && ASSETCHAINS_STAKED < 100 )
         {
             for (i=31; i>=24; i--)
                 fprintf(stderr,"%02x",((uint8_t *)&ave)[i]);
@@ -1355,7 +1368,6 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
         if ( oldflag != 0 )
         {
             bnTarget = ((ave * arith_uint256(goalperc)) + (easydiff * arith_uint256(percPoS))) / arith_uint256(percPoS + goalperc);
-            //bnTarget = (bnTarget * arith_uint256(percPoS * percPoS * percPoS)) / arith_uint256(goalperc * goalperc);
             bnTarget = (bnTarget / arith_uint256(goalperc * goalperc)) * arith_uint256(percPoS * percPoS * percPoS);
         }
         else bnTarget = (ave / arith_uint256(goalperc * goalperc)) * arith_uint256(percPoS * percPoS * percPoS);
@@ -1367,7 +1379,7 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
             if ( bnTarget < ave )
                 bnTarget = ave;
         }
-        if ( 1 )
+        if ( dispflag != 0 )
         {
             for (i=31; i>=24; i--)
                 fprintf(stderr,"%02x",((uint8_t *)&ave)[i]);
@@ -1453,7 +1465,7 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
                 bnTarget = komodo_PoWtarget(&PoSperc,bnTarget,height,ASSETCHAINS_STAKED);
                 if ( bhash < bnTarget )
                 {
-                    fprintf(stderr,"ht.%d isPoS but meets PoW diff!\n",height);
+                    //fprintf(stderr,"ht.%d isPoS but meets PoW diff!\n",height);
                     isPoS = 0;
                 }
             }
@@ -1466,17 +1478,39 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
 
 int64_t komodo_checkcommission(CBlock *pblock,int32_t height)
 {
-    int64_t checktoshis=0; uint8_t *script;
+    int64_t checktoshis=0; uint8_t *script,scripthex[8192]; int32_t scriptlen,matched = 0;
     if ( ASSETCHAINS_COMMISSION != 0 )
     {
-        checktoshis = komodo_commission(pblock);
-        if ( checktoshis > 10000 && pblock->vtx[0].vout.size() != 2 )
+        checktoshis = komodo_commission(pblock,height);
+        //fprintf(stderr,"height.%d commission %.8f\n",height,(double)checktoshis/COIN);
+        /*if ( checktoshis > 10000 && pblock->vtx[0].vout.size() != 2 )  jl777: not sure why this was here
             return(-1);
-        else if ( checktoshis != 0 )
+        else*/ if ( checktoshis != 0 )
         {
             script = (uint8_t *)pblock->vtx[0].vout[1].scriptPubKey.data();
-            if ( script[0] != 33 || script[34] != OP_CHECKSIG || memcmp(script+1,ASSETCHAINS_OVERRIDE_PUBKEY33,33) != 0 )
+            scriptlen = (int32_t)pblock->vtx[0].vout[1].scriptPubKey.size();
+            if ( ASSETCHAINS_SCRIPTPUB.size() > 1 )
+            {
+                if ( ASSETCHAINS_SCRIPTPUB.size()/2 == scriptlen && scriptlen < sizeof(scripthex) )
+                {
+                    decode_hex(scripthex,scriptlen,(char *)ASSETCHAINS_SCRIPTPUB.c_str());
+                    if ( memcmp(scripthex,script,scriptlen) == 0 )
+                        matched = scriptlen;
+                }
+            }
+            else if ( scriptlen == 35 && script[0] == 33 && script[34] == OP_CHECKSIG && memcmp(script+1,ASSETCHAINS_OVERRIDE_PUBKEY33,33) == 0 )
+                matched = 35;
+            else if ( scriptlen == 25 && script[0] == OP_DUP && script[1] == OP_HASH160 && script[2] == 20 && script[23] == OP_EQUALVERIFY && script[24] == OP_CHECKSIG && memcmp(script+3,ASSETCHAINS_OVERRIDE_PUBKEYHASH,20) == 0 )
+                matched = 25;
+            if ( matched == 0 )
+            {
+                int32_t i;
+                for (i=0; i<25; i++)
+                    fprintf(stderr,"%02x",script[i]);
+                fprintf(stderr," payment to wrong pubkey scriptlen.%d, scriptpub[%d]\n",scriptlen,(int32_t)ASSETCHAINS_SCRIPTPUB.size()/2);
                 return(-1);
+         
+            }
             if ( pblock->vtx[0].vout[1].nValue != checktoshis )
             {
                 fprintf(stderr,"ht.%d checktoshis %.8f vs actual vout[1] %.8f\n",height,dstr(checktoshis),dstr(pblock->vtx[0].vout[1].nValue));
