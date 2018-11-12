@@ -1639,7 +1639,7 @@ void *dealer0_loop(void *_arg)
     fprintf(stderr,"dealer0 node running\n");
     while ( 1 )
     {
-        DicePlanFunds(entropyval,entropytxid,refsbits,cp,dicepk,fundingtxid,entropytxs,false);
+        DicePlanFunds(entropyval,entropytxid,refsbits,cp,dicepk,dealer0_fundingtxid,entropytxs,false);
         if ( entropytxs < DICE_MINUTXOS )
         {
             n = sqrt(DICE_MINUTXOS - entropytxs) + 10;
