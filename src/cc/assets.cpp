@@ -249,8 +249,8 @@ bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
             }
             fprintf(stderr,"fillbuy validated\n");
             break;
-        case 'e': // selloffer
-            break; // disable swaps
+        //case 'e': // selloffer
+        //    break; // disable swaps
         case 's': // selloffer
             //vin.0: normal input
             //vin.1+: valid CC output for sale
@@ -322,6 +322,7 @@ bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
             fprintf(stderr,"fill validated\n");
             break;
         case 'E': // fillexchange
+            return eval->Invalid("unexpected assets fillexchange funcid");
             break; // disable asset swaps
             //vin.0: normal input
             //vin.1: unspendable.(vout.0 assetoshis from selloffer) sellTx.vout[0]
@@ -370,6 +371,10 @@ bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
                 }
             }
             fprintf(stderr,"fill validated\n");
+            break;
+        default:
+            fprintf(stderr,"illegal assets funcid.(%c)\n",funcid);
+            return eval->Invalid("unexpected assets funcid");
             break;
     }
     return(PreventCC(eval,tx,preventCCvins,numvins,preventCCvouts,numvouts));
