@@ -1254,12 +1254,9 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
     } else {
         return(0);
     }
-<<<<<<< HEAD
     fprintf(stderr,"numentropy tx %d: %.8f\n",n,(double)totalinputs/COIN);
     entropytxs = n;
     return(totalinputs);
-=======
->>>>>>> 4d711ae4aa4c84f55cb63c56770205b46332f40a
 }
 
 bool DicePlanExists(CScript &fundingPubKey,uint256 &fundingtxid,struct CCcontract_info *cp,uint64_t refsbits,CPubKey dicepk,int64_t &minbet,int64_t &maxbet,int64_t &maxodds,int64_t &timeoutblocks)
@@ -1351,14 +1348,8 @@ UniValue DiceInfo(uint256 diceid)
     result.push_back(Pair("timeoutblocks",timeoutblocks));
     cp = CCinit(&C,EVAL_DICE);
     dicepk = GetUnspendable(cp,0);
-<<<<<<< HEAD
-    int32_t entropytxs = 0;
-    funding = DicePlanFunds(entropyval,entropytxid,sbits,cp,dicepk,diceid,entropytxs);
-    result.push_back(Pair("entropytxs",entropytxs));
-=======
     int32_t entropytxs;
     funding = DicePlanFunds(entropyval,entropytxid,sbits,cp,dicepk,diceid,entropytxs,false);
->>>>>>> 4d711ae4aa4c84f55cb63c56770205b46332f40a
     sprintf(numstr,"%.8f",(double)funding/COIN);
     result.push_back(Pair("funding",numstr));
     result.push_back(Pair("entropytxs",entropytxs));
@@ -1485,10 +1476,6 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
         CCerror = strprintf("Dice plan %s illegal bet %.8f: minbet %.8f maxbet %.8f or odds %d vs max.%d\n",planstr,(double)bet/COIN,(double)minbet/COIN,(double)maxbet/COIN,(int32_t)odds,(int32_t)maxodds);
         return("");
     }
-<<<<<<< HEAD
-    int32_t entropytxs;
-    if ( (funding= DicePlanFunds(entropyval,entropytxid,sbits,cp,dicepk,fundingtxid,entropytxs)) >= 2*bet*odds+txfee && entropyval != 0 )
-=======
     int32_t entropytxs=0,emptyvar=0;
     funding = DicePlanFunds(entropyval,entropytxid,sbits,cp,dicepk,fundingtxid,entropytxs,false);
     DicePlanFunds(entropyval2,entropytxid2,sbits,cp,dicepk,fundingtxid,emptyvar,true);
@@ -1498,7 +1485,6 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
         entropytxid = entropytxid2;
     }
     if ( ( funding >= 2*bet*odds+txfee && entropyval != 0 ) )
->>>>>>> 4d711ae4aa4c84f55cb63c56770205b46332f40a
     {
         if ( entropytxs < 100 ) {
             CCerror = "Your dealer is broke, find a new casino.";
