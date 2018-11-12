@@ -267,6 +267,14 @@ libbitcoin_server_a_SOURCES = \
   cc/dice.cpp \
   cc/lotto.cpp \
   cc/fsm.cpp \
+  cc/heir.cpp \
+  cc/oracles.cpp \
+  cc/prices.cpp \
+  cc/pegs.cpp \
+  cc/triggers.cpp \
+  cc/payments.cpp \
+  cc/gateways.cpp \
+  cc/channels.cpp \
   cc/auction.cpp \
   cc/betprotocol.cpp \
   chain.cpp \

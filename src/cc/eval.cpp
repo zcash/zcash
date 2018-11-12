@@ -38,7 +38,7 @@ bool RunCCEval(const CC *cond, const CTransaction &tx, unsigned int nIn)
     pthread_mutex_lock(&KOMODO_CC_mutex);
     bool out = eval->Dispatch(cond, tx, nIn);
     pthread_mutex_unlock(&KOMODO_CC_mutex);
-   //fprintf(stderr,"out %d vs %d isValid\n",(int32_t)out,(int32_t)eval->state.IsValid());
+    //fprintf(stderr,"out %d vs %d isValid\n",(int32_t)out,(int32_t)eval->state.IsValid());
     assert(eval->state.IsValid() == out);
 
     if (eval->state.IsValid()) return true;
@@ -76,11 +76,11 @@ bool Eval::Dispatch(const CC *cond, const CTransaction &txTo, unsigned int nIn)
         case EVAL_IMPORTPAYOUT:
             return ImportPayout(vparams, txTo, nIn);
             break;
-            
+
         case EVAL_IMPORTCOIN:
             return ImportCoin(vparams, txTo, nIn);
             break;
-            
+
         default:
             return(ProcessCC(cp,this, vparams, txTo, nIn));
             break;
@@ -98,10 +98,9 @@ bool Eval::GetSpendsConfirmed(uint256 hash, std::vector<CTransaction> &spends) c
 
 bool Eval::GetTxUnconfirmed(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock) const
 {
-    // there is a LOCK(cs_main) in the normal GetTransaction(), which leads to deadlocks
-    //bool fAllowSlow = false; // Don't allow slow
-    //return GetTransaction(hash, txOut, hashBlock, fAllowSlow);
-    return myGetTransaction(hash, txOut,hashBlock);
+    if (!myGetTransaction(hash, txOut,hashBlock)) {
+        return(GetTransaction(hash, txOut,hashBlock));
+    } else return(true);
 }
 
 
@@ -114,7 +113,6 @@ bool Eval::GetTxConfirmed(const uint256 &hash, CTransaction &txOut, CBlockIndex 
         return false;
     return true;
 }
-
 
 unsigned int Eval::GetCurrentHeight() const
 {

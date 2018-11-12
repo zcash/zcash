@@ -1148,7 +1148,7 @@ public:
                           int minDepth=1,
                           bool ignoreSpent=true,
                           bool ignoreUnspendable=true);
-    
+
 };
 
 /** A key allocated from the key pool. */
@@ -1204,4 +1204,10 @@ public:
         READWRITE(vchPubKey);
     }
 };
+
+/** Error status printout */
+#define ERR_RESULT(x) result.push_back(Pair("result", "error")) , result.push_back(Pair("error", x));
+
+#define RETURN_IF_ERROR(CCerror) if ( CCerror != "" ) { ERR_RESULT(CCerror); return(result); }
+
 #endif // BITCOIN_WALLET_WALLET_H

@@ -73,8 +73,10 @@ bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, vector<vector<unsi
 
     if (IsCryptoConditionsEnabled()) {
         // Shortcut for pay-to-crypto-condition
-        if (scriptPubKey.IsPayToCryptoCondition()) {
-            if (scriptPubKey.MayAcceptCryptoCondition()) {
+        if (scriptPubKey.IsPayToCryptoCondition())
+        {
+            if (scriptPubKey.MayAcceptCryptoCondition())
+            {
                 typeRet = TX_CRYPTOCONDITION;
                 vector<unsigned char> hashBytes; uint160 x; int32_t i; uint8_t hash20[20],*ptr;;
                 x = Hash160(scriptPubKey);
@@ -167,7 +169,7 @@ bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, vector<vector<unsi
                 // small pushdata, <= nMaxDatacarrierBytes
                 if (vch1.size() > nMaxDatacarrierBytes)
                 {
-                    fprintf(stderr,"size.%d > nMaxDatacarrier.%d\n",(int32_t)vch1.size(),(int32_t)nMaxDatacarrierBytes);
+                    //fprintf(stderr,"size.%d > nMaxDatacarrier.%d\n",(int32_t)vch1.size(),(int32_t)nMaxDatacarrierBytes);
                     break;
                 }
             }
@@ -212,10 +214,10 @@ bool IsStandard(const CScript& scriptPubKey, txnouttype& whichType)
     vector<valtype> vSolutions;
     if (!Solver(scriptPubKey, whichType, vSolutions))
     {
-        int32_t i; uint8_t *ptr = (uint8_t *)scriptPubKey.data();
-        for (i=0; i<scriptPubKey.size(); i++)
-            fprintf(stderr,"%02x",ptr[i]);
-        fprintf(stderr," non-standard scriptPubKey\n");
+        //int32_t i; uint8_t *ptr = (uint8_t *)scriptPubKey.data();
+        //for (i=0; i<scriptPubKey.size(); i++)
+        //    fprintf(stderr,"%02x",ptr[i]);
+        //fprintf(stderr," non-standard scriptPubKey\n");
         return false;
     }
 
@@ -244,7 +246,7 @@ bool ExtractDestination(const CScript& scriptPubKey, CTxDestination& addressRet)
         CPubKey pubKey(vSolutions[0]);
         if (!pubKey.IsValid())
         {
-            fprintf(stderr,"TX_PUBKEY invalid pubkey\n");
+            //fprintf(stderr,"TX_PUBKEY invalid pubkey\n");
             return false;
         }
 

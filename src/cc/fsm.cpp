@@ -17,11 +17,13 @@
 #include "../txmempool.h"
 
 /*
+ FSM CC is a highlevel CC contract that mostly uses other CC contracts. A finite state machine is defined, which combines triggers, payments and whatever other events/actions into a state machine
+ 
 */
 
 // start of consensus code
 
-uint64_t IsFSMvout(struct CCcontract_info *cp,const CTransaction& tx,int32_t v)
+int64_t IsFSMvout(struct CCcontract_info *cp,const CTransaction& tx,int32_t v)
 {
     char destaddr[64];
     if ( tx.vout[v].scriptPubKey.IsPayToCryptoCondition() != 0 )
@@ -35,7 +37,7 @@ uint64_t IsFSMvout(struct CCcontract_info *cp,const CTransaction& tx,int32_t v)
 bool FSMExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx,int32_t minage,uint64_t txfee)
 {
     static uint256 zerohash;
-    CTransaction vinTx; uint256 hashBlock,activehash; int32_t i,numvins,numvouts; uint64_t inputs=0,outputs=0,assetoshis;
+    CTransaction vinTx; uint256 hashBlock,activehash; int32_t i,numvins,numvouts; int64_t inputs=0,outputs=0,assetoshis;
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
     for (i=0; i<numvins; i++)
@@ -118,9 +120,10 @@ bool FSMValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
 
 // helper functions for rpc calls in rpcwallet.cpp
 
-uint64_t AddFSMInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,uint64_t total,int32_t maxinputs)
+int64_t AddFSMInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,int64_t total,int32_t maxinputs)
 {
-    char coinaddr[64]; uint64_t nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t n = 0;
+    // add threshold check
+    char coinaddr[64]; int64_t nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t n = 0;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     GetCCaddress(cp,coinaddr,pk);
     SetCCunspents(unspentOutputs,coinaddr);
@@ -149,12 +152,12 @@ uint64_t AddFSMInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKe
 
 std::string FSMList()
 {
-    return(0);
+    return("");
 }
 
 std::string FSMCreate(uint64_t txfee,std::string name,std::string states)
 {
-    CMutableTransaction mtx; CPubKey mypk,fsmpk; CScript opret; uint64_t inputs,CCchange=0,nValue=COIN; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx; CPubKey mypk,fsmpk; CScript opret; int64_t inputs,CCchange=0,nValue=COIN; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_FSM);
     if ( txfee == 0 )
         txfee = 10000;
@@ -169,16 +172,16 @@ std::string FSMCreate(uint64_t txfee,std::string name,std::string states)
         mtx.vout.push_back(CTxOut(nValue,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
         return(FinalizeCCTx(-1LL,cp,mtx,mypk,txfee,opret));
     } else fprintf(stderr,"cant find fsm inputs\n");
-    return(0);
+    return("");
 }
 
 std::string FSMInfo(uint256 fsmtxid)
 {
-    CMutableTransaction mtx; CPubKey mypk,fsmpk; uint64_t funds = 0; CScript opret; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx; CPubKey mypk,fsmpk; int64_t funds = 0; CScript opret; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_FSM);
     mypk = pubkey2pk(Mypubkey());
     fsmpk = GetUnspendable(cp,0);
-    return(0);
+    return("");
 }
 
 

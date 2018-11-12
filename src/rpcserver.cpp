@@ -242,7 +242,7 @@ extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 
 UniValue stop(const UniValue& params, bool fHelp)
 {
-    char buf[64];
+    char buf[66+128];
    // Accept the deprecated and ignored 'detach' boolean argument
     if (fHelp || params.size() > 1)
         throw runtime_error(
@@ -250,7 +250,7 @@ UniValue stop(const UniValue& params, bool fHelp)
             "\nStop Komodo server.");
     // Shutdown will take long enough that the response should get back
     StartShutdown();
-    sprintf(buf,"%s Komodo server stopping",ASSETCHAINS_SYMBOL);
+    sprintf(buf,"%s server stopping",ASSETCHAINS_SYMBOL[0] != 0 ? ASSETCHAINS_SYMBOL : "Komodo");
     return buf;
 }
 
@@ -299,10 +299,12 @@ static const CRPCCommand vRPCCommands[] =
     { "blockchain",         "gettxoutsetinfo",        &gettxoutsetinfo,        true  },
     { "blockchain",         "verifychain",            &verifychain,            true  },
     { "blockchain",         "getspentinfo",           &getspentinfo,           false },
-    { "blockchain",         "paxprice",               &paxprice,               true  },
-    { "blockchain",         "paxpending",             &paxpending,             true  },
-    { "blockchain",         "paxprices",              &paxprices,              true  },
+    //{ "blockchain",         "paxprice",               &paxprice,               true  },
+    //{ "blockchain",         "paxpending",             &paxpending,             true  },
+    //{ "blockchain",         "paxprices",              &paxprices,              true  },
     { "blockchain",         "notaries",               &notaries,               true  },
+    //{ "blockchain",         "height_MoM",             &height_MoM,             true  },
+    //{ "blockchain",         "txMoMproof",             &txMoMproof,             true  },
     { "blockchain",         "minerids",               &minerids,               true  },
     { "blockchain",         "kvsearch",               &kvsearch,               true  },
     { "blockchain",         "kvupdate",               &kvupdate,               true  },
@@ -313,6 +315,8 @@ static const CRPCCommand vRPCCommands[] =
     { "crosschain",         "height_MoM",             &height_MoM,             true  },
     { "crosschain",         "assetchainproof",        &assetchainproof,        true  },
     { "crosschain",         "crosschainproof",        &crosschainproof,        true  },
+    { "crosschain",         "getNotarisationsForBlock", &getNotarisationsForBlock, true },
+    { "crosschain",         "scanNotarisationsDB",    &scanNotarisationsDB,    true },
     { "crosschain",         "migrate_converttoexport", &migrate_converttoexport, true  },
     { "crosschain",         "migrate_createimporttransaction", &migrate_createimporttransaction, true  },
     { "crosschain",         "migrate_completeimporttransaction", &migrate_completeimporttransaction, true  },
@@ -346,16 +350,16 @@ static const CRPCCommand vRPCCommands[] =
 #endif
     /* auction */
     { "auction",       "auctionaddress",    &auctionaddress,  true },
-    
+
     /* lotto */
     { "lotto",       "lottoaddress",    &lottoaddress,  true },
-    
+
     /* fsm */
     { "FSM",       "FSMaddress",   &FSMaddress, true },
-    { "FSMcreate", "FSMcreate",    &FSMcreate,  true },
-    { "FSMlist",   "FSMlist",      &FSMlist,    true },
-    { "FSMinfo",   "FSMinfo",      &FSMinfo,    true },
-    
+    { "FSM", "FSMcreate",    &FSMcreate,  true },
+    { "FSM",   "FSMlist",      &FSMlist,    true },
+    { "FSM",   "FSMinfo",      &FSMinfo,    true },
+
     /* rewards */
     { "rewards",       "rewardslist",       &rewardslist,     true },
     { "rewards",       "rewardsinfo",       &rewardsinfo,     true },
@@ -364,13 +368,66 @@ static const CRPCCommand vRPCCommands[] =
     { "rewards",       "rewardslock",       &rewardslock,     true },
     { "rewards",       "rewardsunlock",     &rewardsunlock,   true },
     { "rewards",       "rewardsaddress",    &rewardsaddress,  true },
-    
+
     /* faucet */
     { "faucet",       "faucetinfo",      &faucetinfo,         true },
     { "faucet",       "faucetfund",      &faucetfund,         true },
     { "faucet",       "faucetget",       &faucetget,          true },
     { "faucet",       "faucetaddress",   &faucetaddress,      true },
-    
+
+    /* Heir */
+    { "heir",       "heiraddress",   &heiraddress,      true },
+
+    /* Channels */
+    { "channels",       "channelsaddress",   &channelsaddress,   true },
+    { "channels",       "channelsinfo",      &channelsinfo,      true },
+    { "channels",       "channelsopen",      &channelsopen,      true },
+    { "channels",       "channelspayment",   &channelspayment,   true },
+    { "channels",       "channelsclose",     &channelsclose,      true },
+    { "channels",       "channelsrefund",    &channelsrefund,    true },
+
+    /* Oracles */
+    { "oracles",       "oraclesaddress",   &oraclesaddress,     true },
+    { "oracles",       "oracleslist",      &oracleslist,        true },
+    { "oracles",       "oraclesinfo",      &oraclesinfo,        true },
+    { "oracles",       "oraclescreate",    &oraclescreate,      true },
+    { "oracles",       "oraclesregister",  &oraclesregister,    true },
+    { "oracles",       "oraclessubscribe", &oraclessubscribe,   true },
+    { "oracles",       "oraclesdata",      &oraclesdata,        true },
+    { "oracles",       "oraclessamples",   &oraclessamples,     true },
+
+    /* Prices */
+    { "prices",       "pricesaddress",      &pricesaddress,      true },
+    { "prices",       "priceslist",         &priceslist,         true },
+    { "prices",       "pricesinfo",         &pricesinfo,         true },
+    { "prices",       "pricescreate",       &pricescreate,       true },
+    { "prices",       "pricesaddfunding",   &pricesaddfunding,   true },
+    { "prices",       "pricesbet",          &pricesbet,          true },
+    { "prices",       "pricesstatus",       &pricesstatus,       true },
+    { "prices",       "pricesfinish",       &pricesfinish,       true },
+
+    /* Pegs */
+    { "pegs",       "pegsaddress",   &pegsaddress,      true },
+
+    /* Triggers */
+    { "triggers",       "triggersaddress",   &triggersaddress,      true },
+
+    /* Payments */
+    { "payments",       "paymentsaddress",   &paymentsaddress,      true },
+
+    /* Gateways */
+    { "gateways",       "gatewaysaddress",   &gatewaysaddress,      true },
+    { "gateways",       "gatewayslist",      &gatewayslist,         true },
+    { "gateways",       "gatewaysinfo",      &gatewaysinfo,         true },
+    { "gateways",       "gatewaysbind",      &gatewaysbind,         true },
+    { "gateways",       "gatewaysdeposit",   &gatewaysdeposit,      true },
+    { "gateways",       "gatewaysclaim",     &gatewaysclaim,        true },
+    { "gateways",       "gatewayswithdraw",  &gatewayswithdraw,     true },
+    { "gateways",       "gatewayspending",   &gatewayspending,      true },
+    { "gateways",       "gatewaysmultisig",  &gatewaysmultisig,     true },
+    { "gateways",       "gatewaysmarkdone",  &gatewaysmarkdone,     true },
+    { "gateways",       "gatewayspartialsign",  &gatewayspartialsign,     true },
+
     /* dice */
     { "dice",       "dicelist",      &dicelist,         true },
     { "dice",       "diceinfo",      &diceinfo,         true },
@@ -397,6 +454,7 @@ static const CRPCCommand vRPCCommands[] =
     { "tokens",       "tokencancelask",   &tokencancelask,    true },
     { "tokens",       "tokenfillask",     &tokenfillask,      true },
     //{ "tokens",       "tokenfillswap",    &tokenfillswap,     true },
+    { "tokens",       "tokenconvert",         &tokenconvert,          true },
 
 /* Address index */
     { "addressindex",       "getaddressmempool",      &getaddressmempool,      true  },
@@ -464,6 +522,7 @@ static const CRPCCommand vRPCCommands[] =
     { "wallet",             "sendmany",               &sendmany,               false },
     { "wallet",             "sendtoaddress",          &sendtoaddress,          false },
     { "wallet",             "setaccount",             &setaccount,             true  },
+    { "wallet",             "setpubkey",              &setpubkey,              true  },
     { "wallet",             "settxfee",               &settxfee,               true  },
     { "wallet",             "signmessage",            &signmessage,            true  },
     { "wallet",             "walletlock",             &walletlock,             true  },

@@ -45,7 +45,7 @@ bool UnmarshalBurnTx(const CTransaction &burnTx, std::string &targetSymbol, uint
 {
     std::vector<uint8_t> burnOpret;
     if (burnTx.vout.size() == 0) return false;
-    GetOpReturnData(burnTx.vout[0].scriptPubKey, burnOpret);
+    GetOpReturnData(burnTx.vout.back().scriptPubKey, burnOpret);
     return E_UNMARSHAL(burnOpret, ss >> VARINT(*targetCCid);
                                   ss >> targetSymbol; 
                                   ss >> payoutsHash);
@@ -61,7 +61,7 @@ CAmount GetCoinImportValue(const CTransaction &tx)
     CTransaction burnTx;
     std::vector<CTxOut> payouts;
     if (UnmarshalImportTx(tx, proof, burnTx, payouts)) {
-        return burnTx.vout.size() ? burnTx.vout[0].nValue : 0;
+        return burnTx.vout.size() ? burnTx.vout.back().nValue : 0;
     }
     return 0;
 }

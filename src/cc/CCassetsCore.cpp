@@ -58,16 +58,20 @@ bool ValidateBidRemainder(int64_t remaining_units,int64_t remaining_nValue,int64
     }
     else
     {
-        unitprice = (orig_nValue * COIN) / totalunits;
-        recvunitprice = (received_nValue * COIN) / paidunits;
+        //unitprice = (orig_nValue * COIN) / totalunits;
+        //recvunitprice = (received_nValue * COIN) / paidunits;
+        //if ( remaining_units != 0 )
+        //    newunitprice = (remaining_nValue * COIN) / remaining_units;
+        unitprice = (orig_nValue / totalunits);
+        recvunitprice = (received_nValue / paidunits);
         if ( remaining_units != 0 )
-            newunitprice = (remaining_nValue * COIN) / remaining_units;
+            newunitprice = (remaining_nValue / remaining_units);
         if ( recvunitprice < unitprice )
         {
-            fprintf(stderr,"error recvunitprice %.16f < %.16f unitprice, new unitprice %.16f\n",(double)recvunitprice/(COIN*COIN),(double)unitprice/(COIN*COIN),(double)newunitprice/(COIN*COIN));
+            fprintf(stderr,"error recvunitprice %.8f < %.8f unitprice, new unitprice %.8f\n",(double)recvunitprice/(COIN),(double)unitprice/(COIN),(double)newunitprice/(COIN));
             return(false);
         }
-        fprintf(stderr,"orig %llu total %llu, recv %llu paid %llu,recvunitprice %.16f >= %.16f unitprice, new unitprice %.16f\n",(long long)orig_nValue,(long long)totalunits,(long long)received_nValue,(long long)paidunits,(double)recvunitprice/(COIN*COIN),(double)unitprice/(COIN*COIN),(double)newunitprice/(COIN*COIN));
+        fprintf(stderr,"orig %llu total %llu, recv %llu paid %llu,recvunitprice %.8f >= %.8f unitprice, new unitprice %.8f\n",(long long)orig_nValue,(long long)totalunits,(long long)received_nValue,(long long)paidunits,(double)recvunitprice/(COIN),(double)unitprice/(COIN),(double)newunitprice/(COIN));
     }
     return(true);
 }
@@ -89,8 +93,10 @@ bool SetBidFillamounts(int64_t &received_nValue,int64_t &remaining_units,int64_t
         return(true);
     }
     remaining_units = (totalunits - paidunits);
-    unitprice = (orig_nValue * COIN) / totalunits;
-    received_nValue = (paidunits * unitprice) / COIN;
+    //unitprice = (orig_nValue * COIN) / totalunits;
+    //received_nValue = (paidunits * unitprice) / COIN;
+    unitprice = (orig_nValue / totalunits);
+    received_nValue = (paidunits * unitprice);
     if ( unitprice > 0 && received_nValue > 0 && received_nValue <= orig_nValue )
     {
         remaining_nValue = (orig_nValue - received_nValue);
@@ -216,10 +222,10 @@ bool ValidateSwapRemainder(int64_t remaining_price,int64_t remaining_nValue,int6
             newunitprice = (remaining_nValue * COIN) / remaining_price;
         if ( recvunitprice < unitprice )
         {
-            fprintf(stderr,"error recvunitprice %.16f < %.16f unitprice, new unitprice %.16f\n",(double)recvunitprice/(COIN*COIN),(double)unitprice/(COIN*COIN),(double)newunitprice/(COIN*COIN));
+            fprintf(stderr,"error recvunitprice %.8f < %.8f unitprice, new unitprice %.8f\n",(double)recvunitprice/(COIN*COIN),(double)unitprice/(COIN*COIN),(double)newunitprice/(COIN*COIN));
             return(false);
         }
-        fprintf(stderr,"recvunitprice %.16f >= %.16f unitprice, new unitprice %.16f\n",(double)recvunitprice/(COIN*COIN),(double)unitprice/(COIN*COIN),(double)newunitprice/(COIN*COIN));
+        fprintf(stderr,"recvunitprice %.8f >= %.8f unitprice, new unitprice %.8f\n",(double)recvunitprice/(COIN*COIN),(double)unitprice/(COIN*COIN),(double)newunitprice/(COIN*COIN));
     }
     return(true);
 }
@@ -348,7 +354,7 @@ int64_t IsAssetvout(int64_t &price,std::vector<uint8_t> &origpubkey,const CTrans
             return(0);
         if ( (funcid= DecodeAssetOpRet(tx.vout[n-1].scriptPubKey,assetid,assetid2,price,origpubkey)) == 0 )
         {
-            fprintf(stderr,"null decodeopret\n");
+            fprintf(stderr,"null decodeopret v.%d\n",v);
             return(0);
         }
         else if ( funcid == 'c' )
@@ -361,7 +367,10 @@ int64_t IsAssetvout(int64_t &price,std::vector<uint8_t> &origpubkey,const CTrans
         else if ( funcid != 'E' )
         {
             if ( assetid == refassetid )
+            {
+                //fprintf(stderr,"returning %.8f\n",(double)nValue/COIN);
                 return(nValue);
+            }
         }
         else if ( funcid == 'E' )
         {
@@ -441,7 +450,7 @@ int64_t AssetValidateSellvin(struct CCcontract_info *cp,Eval* eval,int64_t &tmpp
 
 bool AssetExactAmounts(struct CCcontract_info *cp,int64_t &inputs,int32_t starti,int64_t &outputs,Eval* eval,const CTransaction &tx,uint256 assetid)
 {
-    CTransaction vinTx; uint256 hashBlock; int32_t i,numvins,numvouts; int64_t assetoshis; std::vector<uint8_t> tmporigpubkey; int64_t tmpprice;
+    CTransaction vinTx; uint256 hashBlock,id,id2; int32_t i,flag,numvins,numvouts; int64_t assetoshis; std::vector<uint8_t> tmporigpubkey; int64_t tmpprice;
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
     inputs = outputs = 0;
@@ -459,13 +468,31 @@ bool AssetExactAmounts(struct CCcontract_info *cp,int64_t &inputs,int32_t starti
                 fprintf(stderr,"vin%d %llu, ",i,(long long)assetoshis);
                 inputs += assetoshis;
             }
+            else
+            {
+                if ( vinTx.vout[i].scriptPubKey.IsPayToCryptoCondition() != 0 && DecodeAssetOpRet(vinTx.vout[vinTx.vout.size()-1].scriptPubKey,id,id2,tmpprice,tmporigpubkey) == 't' && id == assetid )
+                {
+                    assetoshis = vinTx.vout[i].nValue;
+                    fprintf(stderr,"vin%d %llu special case, ",i,(long long)assetoshis);
+                    inputs += assetoshis;
+                }
+            }
         }
     }
+    if ( DecodeAssetOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,id,id2,tmpprice,tmporigpubkey) == 't' && id == assetid )
+        flag = 1;
+    else flag = 0;
     for (i=0; i<numvouts; i++)
     {
         if ( (assetoshis= IsAssetvout(tmpprice,tmporigpubkey,tx,i,assetid)) != 0 )
         {
             fprintf(stderr,"vout%d %llu, ",i,(long long)assetoshis);
+            outputs += assetoshis;
+        }
+        else if ( flag != 0 && tx.vout[i].scriptPubKey.IsPayToCryptoCondition() != 0 )
+        {
+            assetoshis = tx.vout[i].nValue;
+            fprintf(stderr,"vout%d %llu special case, ",i,(long long)assetoshis);
             outputs += assetoshis;
         }
     }

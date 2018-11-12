@@ -106,10 +106,10 @@ void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, 
 
 #include "komodo_defs.h"
 
-extern int32_t KOMODO_LONGESTCHAIN,ASSETCHAINS_SEED,IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,KOMODO_CHOSEN_ONE,ASSETCHAIN_INIT,KOMODO_INITDONE,KOMODO_ON_DEMAND,KOMODO_INITDONE,KOMODO_PASSPORT_INITDONE;
+extern int32_t KOMODO_MININGTHREADS,KOMODO_LONGESTCHAIN,ASSETCHAINS_SEED,IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,KOMODO_CHOSEN_ONE,ASSETCHAIN_INIT,KOMODO_INITDONE,KOMODO_ON_DEMAND,KOMODO_INITDONE,KOMODO_PASSPORT_INITDONE;
 extern uint64_t ASSETCHAINS_REWARD,ASSETCHAINS_COMMISSION,ASSETCHAINS_STAKED;
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
-extern std::string NOTARY_PUBKEY,ASSETCHAINS_OVERRIDE_PUBKEY;
+extern std::string NOTARY_PUBKEY,ASSETCHAINS_OVERRIDE_PUBKEY,ASSETCHAINS_SCRIPTPUB;
 void vcalc_sha256(char deprecated[(256 >> 3) * 2 + 1],uint8_t hash[256 >> 3],uint8_t *src,int32_t len);
 
 extern uint8_t NOTARY_PUBKEY33[33],ASSETCHAINS_OVERRIDE_PUBKEY33[33];
@@ -119,7 +119,7 @@ int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33,
 int32_t komodo_pax_opreturn(int32_t height,uint8_t *opret,int32_t maxsize);
 int32_t komodo_baseid(char *origbase);
 int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_t nTime,int32_t dispflag);
-uint64_t komodo_commission(const CBlock *block);
+uint64_t komodo_commission(const CBlock *block,int32_t height);
 int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blocktimep,uint32_t *txtimep,uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep,uint8_t *utxosig);
 int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33);
 
@@ -335,6 +335,16 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
                 //fprintf(stderr,"dont have inputs\n");
                 continue;
             }
+            if ( 0 )
+            {
+                CValidationState state;
+                auto verifier = libzcash::ProofVerifier::Disabled();
+                if ( !CheckTransaction(tx, state, verifier) )
+                {
+                    fprintf(stderr,"skip tx.(%s) that failed CheckTransaction\n",hash.GetHex().c_str());
+                    continue;
+                }
+            }
             CAmount nTxFees = view.GetValueIn(chainActive.LastTip()->nHeight,&interest,tx,chainActive.LastTip()->nTime)-tx.GetValueOut();
             
             nTxSigOps += GetP2SHSigOpCount(tx, view);
@@ -393,7 +403,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
         //pblock->nTime = blocktime + 1;
         pblock->nBits         = GetNextWorkRequired(pindexPrev, pblock, Params().GetConsensus());
         //LogPrintf("CreateNewBlock(): total size %u blocktime.%u nBits.%08x\n", nBlockSize,blocktime,pblock->nBits);
-        if ( ASSETCHAINS_SYMBOL[0] != 0 && ASSETCHAINS_STAKED != 0 && GetArg("-genproclimit", 0) == 0 )
+        if ( ASSETCHAINS_SYMBOL[0] != 0 && ASSETCHAINS_STAKED != 0 && KOMODO_MININGTHREADS == 0 )
         {
             uint64_t txfees,utxovalue; uint32_t txtime; uint256 utxotxid,revtxid; int32_t i,siglen,numsigs,utxovout; uint8_t utxosig[128],*ptr;
             CMutableTransaction txStaked = CreateNewContextualCMutableTransaction(Params().GetConsensus(), chainActive.Height() + 1);
@@ -428,17 +438,22 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
         txNew.vin[0].scriptSig = CScript() << nHeight << OP_0;
                 
         pblock->vtx[0] = txNew;
-        if ( nHeight > 1 && ASSETCHAINS_SYMBOL[0] != 0 && ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 && ASSETCHAINS_COMMISSION != 0 && (commission= komodo_commission((CBlock*)&pblocktemplate->block)) != 0 )
+        if ( nHeight > 1 && ASSETCHAINS_SYMBOL[0] != 0 && (ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 || ASSETCHAINS_SCRIPTPUB.size() > 1) && ASSETCHAINS_COMMISSION != 0 && (commission= komodo_commission((CBlock*)&pblocktemplate->block,(int32_t)nHeight)) != 0 )
         {
             int32_t i; uint8_t *ptr;
             txNew.vout.resize(2);
             txNew.vout[1].nValue = commission;
-            txNew.vout[1].scriptPubKey.resize(35);
-            ptr = (uint8_t *)txNew.vout[1].scriptPubKey.data();
-            ptr[0] = 33;
-            for (i=0; i<33; i++)
-                ptr[i+1] = ASSETCHAINS_OVERRIDE_PUBKEY33[i];
-            ptr[34] = OP_CHECKSIG;
+            if ( ASSETCHAINS_SCRIPTPUB.size() > 1 )
+                txNew.vout[1].scriptPubKey = CScript() << ParseHex(ASSETCHAINS_SCRIPTPUB);
+            else
+            {
+                txNew.vout[1].scriptPubKey.resize(35);
+                ptr = (uint8_t *)txNew.vout[1].scriptPubKey.data();
+                ptr[0] = 33;
+                for (i=0; i<33; i++)
+                    ptr[i+1] = ASSETCHAINS_OVERRIDE_PUBKEY33[i];
+                ptr[34] = OP_CHECKSIG;
+            }
             //printf("autocreate commision vout\n");
             pblock->vtx[0] = txNew;
         }
@@ -453,7 +468,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
         // Fill in header
         pblock->hashPrevBlock  = pindexPrev->GetBlockHash();
         pblock->hashReserved   = uint256();
-        if ( ASSETCHAINS_SYMBOL[0] == 0 || ASSETCHAINS_STAKED == 0 ||  GetArg("-genproclimit", 0) > 0 )
+        if ( ASSETCHAINS_SYMBOL[0] == 0 || ASSETCHAINS_STAKED == 0 || KOMODO_MININGTHREADS > 0 )
         {
             UpdateTime(pblock, Params().GetConsensus(), pindexPrev);
             pblock->nBits         = GetNextWorkRequired(pindexPrev, pblock, Params().GetConsensus());
@@ -739,7 +754,7 @@ void static BitcoinMiner()
     
     unsigned int n = chainparams.EquihashN();
     unsigned int k = chainparams.EquihashK();
-    uint8_t *script; uint64_t total,checktoshis; int32_t i,j,gpucount=KOMODO_MAXGPUCOUNT,notaryid = -1;
+    uint8_t *script; uint64_t total; int32_t i,j,gpucount=KOMODO_MAXGPUCOUNT,notaryid = -1;
     while ( (ASSETCHAIN_INIT == 0 || KOMODO_INITDONE == 0) )
     {
         sleep(1);
@@ -788,7 +803,7 @@ void static BitcoinMiner()
                     }
                     if (!fvNodesEmpty )//&& !IsInitialBlockDownload())
                         break;
-                    MilliSleep(5000);
+                    MilliSleep(15000);
                     //fprintf(stderr,"fvNodesEmpty %d IsInitialBlockDownload(%s) %d\n",(int32_t)fvNodesEmpty,ASSETCHAINS_SYMBOL,(int32_t)IsInitialBlockDownload());
                     
                 } while (true);
@@ -930,7 +945,7 @@ void static BitcoinMiner()
                 {
                     fprintf(stderr,"Mining when blockchain might not be in sync longest.%d vs %d\n",KOMODO_LONGESTCHAIN,Mining_height);
                     if ( KOMODO_LONGESTCHAIN != 0 && Mining_height >= KOMODO_LONGESTCHAIN )
-                        KOMODO_INSYNC = 1;
+                        KOMODO_INSYNC = Mining_height;
                     sleep(3);
                 }
                 // Hash state
@@ -950,7 +965,7 @@ void static BitcoinMiner()
                 // (x_1, x_2, ...) = A(I, V, n, k)
                 LogPrint("pow", "Running Equihash solver \"%s\" with nNonce = %s\n",solver, pblock->nNonce.ToString());
                 arith_uint256 hashTarget;
-                if (  GetArg("-genproclimit", 0) > 0 && ASSETCHAINS_STAKED > 0 && ASSETCHAINS_STAKED < 100 && Mining_height > 10 )
+                if ( KOMODO_MININGTHREADS > 0 && ASSETCHAINS_STAKED > 0 && ASSETCHAINS_STAKED < 100 && Mining_height > 10 )
                     hashTarget = HASHTarget_POW;
                 else hashTarget = HASHTarget;
                 std::function<bool(std::vector<unsigned char>)> validBlock =
@@ -978,7 +993,7 @@ void static BitcoinMiner()
                     fprintf(stderr," POW\n");*/
                     if ( h > hashTarget )
                     {
-                        //if ( ASSETCHAINS_STAKED != 0 && GetArg("-genproclimit", 0) == 0 )
+                        //if ( ASSETCHAINS_STAKED != 0 && KOMODO_MININGTHREADS == 0 )
                         //    sleep(1);
                         return false;
                     }
