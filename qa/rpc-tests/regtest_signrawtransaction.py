@@ -11,7 +11,7 @@ class RegtestSignrawtransactionTest (BitcoinTestFramework):
     def setup_nodes(self):
         return start_nodes(4, self.options.tmpdir, [[
             "-nuparams=5ba81b19:200", # Overwinter
-            "-nuparams=76b809bb:204", # Sapling
+            "-nuparams=76b809bb:206", # Sapling
         ]] * 4)
 
     def run_test(self):

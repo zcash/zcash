@@ -14,7 +14,7 @@ class WalletListNotes(BitcoinTestFramework):
     def setup_nodes(self):
         return start_nodes(4, self.options.tmpdir, [[
             '-nuparams=5ba81b19:202', # Overwinter
-            '-nuparams=76b809bb:204', # Sapling
+            '-nuparams=76b809bb:214', # Sapling
         ]] * 4)
 
     def run_test(self):
@@ -105,9 +105,9 @@ class WalletListNotes(BitcoinTestFramework):
         assert_equal(unspent_tx[1], unspent_tx_filter[0])
         
         # Set current height to 204 -> Sapling
-        self.nodes[0].generate(2)
+        self.nodes[0].generate(12)
         self.sync_all()
-        assert_equal(204, self.nodes[0].getblockcount())
+        assert_equal(214, self.nodes[0].getblockcount())
         
         # No funds in saplingzaddr yet
         assert_equal(0, len(self.nodes[0].z_listunspent(0, 9999, False, [saplingzaddr])))
