@@ -394,6 +394,7 @@ void *dicefinish(void *_ptr)
                             fprintf(stderr,"send refund!\n");
                             mySenddicetransaction(ptr->rawtx,ptr->entropyused,ptr->entropyvout,ptr->bettxid,ptr->betTx,ptr->funcid,ptr);
                         }
+                        dicefinish_delete(ptr);
                         continue;
                     }
                 }
