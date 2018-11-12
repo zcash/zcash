@@ -1645,7 +1645,7 @@ void *dealer0_loop(void *_arg)
             n = sqrt(DICE_MINUTXOS - entropytxs) + 10;
             for (i=0; i<DICE_MINUTXOS - entropytxs && i<n; i++)
             {
-                res = DiceAddfunding(txfee,planstr,fundingtxid,COIN/100);
+                res = DiceAddfunding(txfee,planstr,dealer0_fundingtxid,COIN/100);
                 if ( res.empty() == 0 && res.size() > 64 && is_hexstr((char *)res.c_str(),0) > 64 )
                 {
                     if ( DecodeHexTx(tx,res) != 0 )
