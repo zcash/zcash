@@ -226,7 +226,7 @@ bool mySenddicetransaction(std::string res,uint256 entropyused,int32_t entropyvo
             //fprintf(stderr,"%s\n%s\n",res.c_str(),uint256_str(str,tx.GetHash()));
             if ( funcid == 'R' || (retval= DiceEntropyUsed(oldbetTx,oldbettxid,oldentropyvout,entropyused,bettxid,betTx,entropyvout)) >= 0 )
             {
-                LOCK(mempool.cs);
+                LOCK(cs_main);
                 if ( myAddtomempool(tx) != 0 )
                 {
                     RelayTransaction(tx);
@@ -298,7 +298,7 @@ int32_t dice_betspent(char *debugstr,uint256 bettxid)
         return(1);
     }
     {
-        LOCK(mempool.cs);
+        //LOCK(mempool.cs);
         if ( myIsutxo_spentinmempool(bettxid,0) != 0 || myIsutxo_spentinmempool(bettxid,1) != 0 )
         {
             fprintf(stderr,"%s bettxid.%s already spent in mempool\n",debugstr,bettxid.GetHex().c_str());
@@ -1650,7 +1650,7 @@ void *dealer0_loop(void *_arg)
                 {
                     if ( DecodeHexTx(tx,res) != 0 )
                     {
-                        LOCK(mempool.cs);
+                        LOCK(cs_main);
                         if ( myAddtomempool(tx) != 0 )
                         {
                             fprintf(stderr,"ENTROPY %s: %d of %d, %d\n",tx.GetHash().GetHex().c_str(),i,n,DICE_MINUTXOS - entropytxs);
