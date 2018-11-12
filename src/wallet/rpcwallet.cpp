@@ -5095,17 +5095,17 @@ UniValue gatewaysaddress(const UniValue& params, bool fHelp)
     return(CCaddress(cp,(char *)"Gateways",pubkey));
 }
 
-UniValue mofnaddress(const UniValue& params, bool fHelp)
+UniValue heiraddress(const UniValue& params, bool fHelp)
 {
     struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
-    cp = CCinit(&C,EVAL_MOFN);
+    cp = CCinit(&C,EVAL_HEIR);
     if ( fHelp || params.size() > 1 )
-        throw runtime_error("mofnaddress [pubkey]\n");
+        throw runtime_error("heiraddress [pubkey]\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     if ( params.size() == 1 )
         pubkey = ParseHex(params[0].get_str().c_str());
-    return(CCaddress(cp,(char *)"MofN",pubkey));
+    return(CCaddress(cp,(char *)"Heir",pubkey));
 }
 
 UniValue lottoaddress(const UniValue& params, bool fHelp)
@@ -6182,7 +6182,7 @@ UniValue dicebet(const UniValue& params, bool fHelp)
 
 UniValue dicefinish(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); uint8_t funcid; char *name; uint256 entropyused,fundingtxid,bettxid; std::string hex; int32_t r;
+    UniValue result(UniValue::VOBJ); uint8_t funcid; char *name; uint256 entropyused,fundingtxid,bettxid; std::string hex; int32_t r,entropyvout;
     if ( fHelp || params.size() != 3 )
         throw runtime_error("dicefinish name fundingtxid bettxid\n");
     if ( ensure_CCrequirements() < 0 )
@@ -6196,7 +6196,7 @@ UniValue dicefinish(const UniValue& params, bool fHelp)
     }
     fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
     bettxid = Parseuint256((char *)params[2].get_str().c_str());
-    hex = DiceBetFinish(funcid,entropyused,&r,0,name,fundingtxid,bettxid,1,zeroid,-1);
+    hex = DiceBetFinish(funcid,entropyused,entropyvout,&r,0,name,fundingtxid,bettxid,1,zeroid,-1);
     if ( CCerror != "" )
     {
         ERR_RESULT(CCerror);

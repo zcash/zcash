@@ -292,7 +292,7 @@ std::string LottoCreate(uint64_t txfee,char *planstr,int64_t funding,int32_t tic
     sbits = stringbits(planstr);
     if ( AddNormalinputs(mtx,mypk,funding+txfee,60) > 0 )
     {
-        hentropy = DiceHashEntropy(entropy,mtx.vin[0].prevout.hash);
+        hentropy = DiceHashEntropy(entropy,mtx.vin[0].prevout.hash,mtx.vin[0].prevout.n,1);
         mtx.vout.push_back(MakeCC1vout(EVAL_LOTTO,funding,lottopk));
         return(FinalizeCCTx(0,cp,mtx,mypk,txfee,CScript() << OP_RETURN << E_MARSHAL(ss << (uint8_t)EVAL_LOTTO << (uint8_t)'F' << sbits << ticketsize << odds << firstheight << period << hentropy)));
     }

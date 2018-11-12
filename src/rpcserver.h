@@ -222,7 +222,7 @@ extern UniValue tokenask(const UniValue& params, bool fHelp);
 extern UniValue tokencancelask(const UniValue& params, bool fHelp);
 extern UniValue tokenfillask(const UniValue& params, bool fHelp);
 extern UniValue tokenconvert(const UniValue& params, bool fHelp);
-extern UniValue mofnaddress(const UniValue& params, bool fHelp);
+extern UniValue heiraddress(const UniValue& params, bool fHelp);
 extern UniValue channelsaddress(const UniValue& params, bool fHelp);
 extern UniValue oraclesaddress(const UniValue& params, bool fHelp);
 extern UniValue oracleslist(const UniValue& params, bool fHelp);

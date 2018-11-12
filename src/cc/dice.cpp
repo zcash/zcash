@@ -98,12 +98,8 @@ What is needed is for the dealer node to track the entropy tx that was already b
 #include "../compat/endian.h"
 
 #define MAX_ENTROPYUSED 8192
-#define DICE_MINUTXOS 7777
+#define DICE_MINUTXOS 10000
 extern int32_t KOMODO_INSYNC;
-
-
-static uint256 bettxids[MAX_ENTROPYUSED],entropytxids[MAX_ENTROPYUSED][2]; // change to hashtable
-static CTransaction betTxs[MAX_ENTROPYUSED];
 
 pthread_mutex_t DICE_MUTEX,DICEREVEALED_MUTEX;
 
@@ -112,83 +108,98 @@ struct dicefinish_utxo { uint256 txid; int32_t vout; };
 struct dicefinish_info
 {
     struct dicefinish_info *prev,*next;
+    CTransaction betTx;
     uint256 fundingtxid,bettxid,entropyused,txid;
     uint64_t sbits;
     int64_t winamount;
-    int32_t iswin;
+    int32_t iswin,entropyvout,orphaned;
     uint32_t bettxid_ready,revealed;
-    CTransaction betTx;
     std::string rawtx;
     uint8_t funcid;
 } *DICEFINISH_LIST;
 
-int32_t _dicehash_find(uint256 bettxid)
+struct dicehash_entry
 {
-    int32_t i;
-    for (i=0; i<MAX_ENTROPYUSED; i++)
-        if ( bettxids[i] == bettxid )
-            return(1);
-    return(0);
+    UT_hash_handle hh;
+    uint256 bettxid;
+} *DICEHASH_TABLE;
+
+struct dice_entropy
+{
+    UT_hash_handle hh;
+    uint256 entropyused,bettxid;
+    CTransaction betTx;
+    int32_t entropyvout;
+} *DICE_ENTROPY;
+
+struct dicehash_entry *_dicehash_find(uint256 bettxid)
+{
+    struct dicehash_entry *ptr;
+    HASH_FIND(hh,DICEHASH_TABLE,&bettxid,sizeof(bettxid),ptr);
+    return(ptr);
 }
 
 int32_t _dicehash_clear(uint256 bettxid)
 {
-    int32_t i;
-    for (i=0; i<MAX_ENTROPYUSED; i++)
-        if ( bettxids[i] == bettxid )
-        {
-            bettxids[i] = zeroid;
-            return(1);
-        }
-    return(0);
-}
-
-void _dicehash_add(uint256 bettxid)
-{
-    int32_t i;
-    for (i=0; i<MAX_ENTROPYUSED; i++)
-        if ( bettxids[i] == zeroid )
-        {
-            bettxids[i] = bettxid;
-            return;
-        }
-    bettxids[rand() % MAX_ENTROPYUSED] = bettxid;
-}
-
-int32_t _dicerevealed_find(uint256 &oldbettxid,CTransaction &oldbetTx,uint256 entropyused,uint256 bettxid)
-{
-    int32_t i;
-    for (i=0; i<MAX_ENTROPYUSED; i++)
+    struct dicehash_entry *ptr;
+    HASH_FIND(hh,DICEHASH_TABLE,&bettxid,sizeof(bettxid),ptr);
+    if ( ptr != 0 )
     {
-        if ( entropytxids[i][0] == entropyused )
+        fprintf(stderr,"delete %s\n",bettxid.GetHex().c_str());
+        HASH_DELETE(hh,DICEHASH_TABLE,ptr);
+        return(0);
+    } else fprintf(stderr,"hashdelete couldnt find %s\n",bettxid.GetHex().c_str());
+    return(-1);
+}
+
+struct dicehash_entry *_dicehash_add(uint256 bettxid)
+{
+    struct dicehash_entry *ptr;
+    ptr = (struct dicehash_entry *)calloc(1,sizeof(*ptr));
+    ptr->bettxid = bettxid;
+    HASH_ADD(hh,DICEHASH_TABLE,bettxid,sizeof(bettxid),ptr);
+    return(ptr);
+}
+
+int32_t _dicerevealed_find(uint256 &oldbettxid,CTransaction &oldbetTx,int32_t &oldentropyvout,uint256 entropyused,uint256 bettxid,int32_t entropyvout)
+{
+    struct dice_entropy *ptr;
+    HASH_FIND(hh,DICE_ENTROPY,&entropyused,sizeof(entropyused),ptr);
+    if ( ptr != 0 )
+    {
+        if ( entropyvout == ptr->entropyvout )
         {
-            if ( bettxid == entropytxids[i][1] )
-                return(i+1);
-            fprintf(stderr,"found identical entropy used.%d B different bettxid!\n",i);
-            oldbettxid = entropytxids[i][1];
-            oldbetTx = betTxs[i];
-            return(-1);
-        }
+            if ( bettxid == ptr->bettxid )
+            {
+                //fprintf(stderr,"identical %s E.%s v.%d\n",bettxid.GetHex().c_str(),entropyused.GetHex().c_str(),entropyvout);
+                return(entropyvout+1);
+            }
+            else
+            {
+                fprintf(stderr,"found identical entropy used.%s %s vs %s v.%d vs %d\n",entropyused.GetHex().c_str(),bettxid.GetHex().c_str(),ptr->bettxid.GetHex().c_str(),entropyvout,ptr->entropyvout);
+                oldbettxid = ptr->bettxid;
+                oldbetTx = ptr->betTx;
+                oldentropyvout = ptr->entropyvout;
+                return(-1);
+            }
+        } else fprintf(stderr,"shared entropy.%s vouts %d vs %d\n",entropyused.GetHex().c_str(),entropyvout,ptr->entropyvout);
     }
     return(0);
 }
 
-void _dicerevealed_add(uint256 entropyused,uint256 bettxid,CTransaction betTx)
+struct dice_entropy *_dicerevealed_add(uint256 entropyused,uint256 bettxid,CTransaction betTx,int32_t entropyvout)
 {
-    int32_t i;
-    for (i=0; i<MAX_ENTROPYUSED; i++)
-    {
-        if ( entropytxids[i][0] == zeroid )
-            break;
-    }
-    if ( i == MAX_ENTROPYUSED )
-        i = (rand() % MAX_ENTROPYUSED);
-    entropytxids[i][0] = entropyused;
-    entropytxids[i][1] = bettxid;
-    betTxs[i] = betTx;
+    struct dice_entropy *ptr;
+    ptr = (struct dice_entropy *)calloc(1,sizeof(*ptr));
+    ptr->entropyused = entropyused;
+    ptr->bettxid = bettxid;
+    ptr->betTx = betTx;
+    ptr->entropyvout = entropyvout;
+    HASH_ADD(hh,DICE_ENTROPY,entropyused,sizeof(entropyused),ptr);
+    return(ptr);
 }
 
-int32_t DiceEntropyUsed(CTransaction &oldbetTx,uint256 &oldbettxid,uint256 entropyused,uint256 bettxid,CTransaction betTx)
+int32_t DiceEntropyUsed(CTransaction &oldbetTx,uint256 &oldbettxid,int32_t &oldentropyvout,uint256 entropyused,uint256 bettxid,CTransaction betTx,int32_t entropyvout)
 {
     int32_t retval;
     oldbettxid = zeroid;
@@ -198,14 +209,14 @@ int32_t DiceEntropyUsed(CTransaction &oldbetTx,uint256 &oldbettxid,uint256 entro
         return(1);
     }
     pthread_mutex_lock(&DICEREVEALED_MUTEX);
-    retval = _dicerevealed_find(oldbettxid,oldbetTx,entropyused,bettxid);
+    retval = _dicerevealed_find(oldbettxid,oldbetTx,oldentropyvout,entropyused,bettxid,entropyvout);
     pthread_mutex_unlock(&DICEREVEALED_MUTEX);
     return(retval);
 }
 
-bool mySenddicetransaction(std::string res,uint256 entropyused,uint256 bettxid,CTransaction betTx,uint8_t funcid,struct dicefinish_info *ptr)
+bool mySenddicetransaction(std::string res,uint256 entropyused,int32_t entropyvout,uint256 bettxid,CTransaction betTx,uint8_t funcid,struct dicefinish_info *ptr)
 {
-    CTransaction tx; int32_t i=0,retval=-1; uint256 oldbettxid; CTransaction oldbetTx;
+    CTransaction tx; int32_t i=0,retval=-1,oldentropyvout; uint256 oldbettxid; CTransaction oldbetTx;
     if ( res.empty() == 0 && res.size() > 64 && is_hexstr((char *)res.c_str(),0) > 64 )
     {
         if ( DecodeHexTx(tx,res) != 0 )
@@ -213,9 +224,9 @@ bool mySenddicetransaction(std::string res,uint256 entropyused,uint256 bettxid,C
             if ( ptr != 0 )
                 ptr->txid = tx.GetHash();
             //fprintf(stderr,"%s\n%s\n",res.c_str(),uint256_str(str,tx.GetHash()));
-            if ( funcid == 'R' || (retval= DiceEntropyUsed(oldbetTx,oldbettxid,entropyused,bettxid,betTx)) >= 0 )
+            if ( funcid == 'R' || (retval= DiceEntropyUsed(oldbetTx,oldbettxid,oldentropyvout,entropyused,bettxid,betTx,entropyvout)) >= 0 )
             {
-                //LOCK(cs_main);
+                LOCK(cs_main);
                 if ( myAddtomempool(tx) != 0 )
                 {
                     RelayTransaction(tx);
@@ -224,7 +235,7 @@ bool mySenddicetransaction(std::string res,uint256 entropyused,uint256 bettxid,C
                         if ( ptr != 0 )
                             ptr->revealed = (uint32_t)time(NULL);
                         pthread_mutex_lock(&DICEREVEALED_MUTEX);
-                        _dicerevealed_add(entropyused,bettxid,betTx);
+                        _dicerevealed_add(entropyused,bettxid,betTx,entropyvout);
                         pthread_mutex_unlock(&DICEREVEALED_MUTEX);
                         fprintf(stderr,"added.%c to mempool.[%d] and broadcast entropyused.%s bettxid.%s -> %s\n",funcid,i,entropyused.GetHex().c_str(),bettxid.GetHex().c_str(),tx.GetHash().GetHex().c_str());
                     } else fprintf(stderr,"rebroadcast.%c to mempool.[%d] and broadcast entropyused.%s bettxid.%s -> %s\n",funcid,i,entropyused.GetHex().c_str(),bettxid.GetHex().c_str(),tx.GetHash().GetHex().c_str());
@@ -308,10 +319,11 @@ void dicefinish_delete(struct dicefinish_info *ptr)
 
 void *dicefinish(void *_ptr)
 {
-    std::vector<uint8_t> mypk; struct CCcontract_info *cp,C; char name[32],coinaddr[64],CCaddr[64]; std::string res; int32_t newht,newblock,numblocks,lastheight=0,vin0_needed,n,m,num,iter,result; struct dicefinish_info *ptr,*tmp; uint32_t now; struct dicefinish_utxo *utxos; uint256 hashBlock; CTransaction betTx,finishTx;
+    std::vector<uint8_t> mypk; struct CCcontract_info *cp,C; char name[32],coinaddr[64],CCaddr[64]; std::string res; int32_t newht,newblock,entropyvout,numblocks,lastheight=0,vin0_needed,i,n,m,num,iter,result; struct dicefinish_info *ptr,*tmp; uint32_t now; struct dicefinish_utxo *utxos; uint256 hashBlock,entropyused; CPubKey dicepk; CTransaction betTx,finishTx,tx;
     mypk = Mypubkey();
     pubkey2addr(coinaddr,mypk.data());
     cp = CCinit(&C,EVAL_DICE);
+    dicepk = GetUnspendable(cp,0);
     GetCCaddress(cp,CCaddr,GetUnspendable(cp,0));
     fprintf(stderr,"start dicefinish thread %s CCaddr.%s\n",coinaddr,CCaddr);
     if ( (newht= KOMODO_INSYNC) == 0 )
@@ -346,22 +358,44 @@ void *dicefinish(void *_ptr)
                     else if ( mytxid_inmempool(ptr->bettxid) != 0 )
                         ptr->bettxid_ready = (uint32_t)time(NULL);
                 }
-                else if ( myGetTransaction(ptr->bettxid,betTx,hashBlock) == 0 )
+                else if ( newblock != 0 && (myGetTransaction(ptr->bettxid,betTx,hashBlock) == 0 || now > ptr->bettxid_ready+600) )
                 {
                     fprintf(stderr,"ORPHANED bettxid.%s\n",ptr->bettxid.GetHex().c_str());
                     dicefinish_delete(ptr);
                     continue;
                 }
-                else if ( ptr->txid != zeroid )
+                else if ( newblock != 0 && ptr->txid != zeroid )
                 {
                     if ( myGetTransaction(ptr->txid,finishTx,hashBlock) == 0 )
                     {
-                        fprintf(stderr,"ORPHANED finish txid.%s\n",ptr->txid.GetHex().c_str());
-                        //dicefinish_delete(ptr);
-                        //continue;
+                        ptr->orphaned++;
+                        fprintf(stderr,"ORPHANED.%d finish txid.%s\n",ptr->orphaned,ptr->txid.GetHex().c_str());
+                        if ( ptr->orphaned < 4 )
+                            continue;
                         if ( ptr->rawtx.empty() == 0 )
                             ptr->rawtx.clear();
                         ptr->txid = zeroid;
+                        unstringbits(name,ptr->sbits);
+                        result = 0;
+                        ptr->orphaned = 0;
+                        res = DiceBetFinish(ptr->funcid,entropyused,entropyvout,&result,0,name,ptr->fundingtxid,ptr->bettxid,ptr->iswin,zeroid,-2);
+                        if ( ptr->entropyused == zeroid )
+                        {
+                            ptr->entropyused = entropyused;
+                            ptr->entropyvout = entropyvout;
+                        }
+                        if ( entropyused != ptr->entropyused || entropyvout != ptr->entropyvout )
+                        {
+                            fprintf(stderr,"WARNING entropy %s != %s || %d != %d\n",entropyused.GetHex().c_str(),ptr->entropyused.GetHex().c_str(),entropyvout,ptr->entropyvout);
+                        }
+                        if ( result > 0 )
+                        {
+                            ptr->rawtx = res;
+                            fprintf(stderr,"send refund!\n");
+                            mySenddicetransaction(ptr->rawtx,ptr->entropyused,ptr->entropyvout,ptr->bettxid,ptr->betTx,ptr->funcid,ptr);
+                        }
+                        dicefinish_delete(ptr);
+                        continue;
                     }
                 }
                 if ( ptr->bettxid_ready != 0 )
@@ -369,9 +403,9 @@ void *dicefinish(void *_ptr)
                     if ( newblock != 0 && ptr->txid != zeroid )
                     {
                         CCduration(numblocks,ptr->txid);
-                        fprintf(stderr,"duration finish txid.%s\n",ptr->txid.GetHex().c_str());
+                        //fprintf(stderr,"duration finish txid.%s\n",ptr->txid.GetHex().c_str());
                         if ( numblocks == 0 )
-                            mySenddicetransaction(ptr->rawtx,ptr->entropyused,ptr->bettxid,ptr->betTx,ptr->funcid,ptr);
+                            mySenddicetransaction(ptr->rawtx,ptr->entropyused,ptr->entropyvout,ptr->bettxid,ptr->betTx,ptr->funcid,ptr);
                         else continue;
                     }
                     if ( ptr->txid == zeroid )
@@ -385,7 +419,7 @@ void *dicefinish(void *_ptr)
                 utxos = (struct dicefinish_utxo *)calloc(vin0_needed,sizeof(*utxos));
                 if ( (n= dicefinish_utxosget(num,utxos,vin0_needed,coinaddr)) > 0 )
                 {
-                    //fprintf(stderr,"iter.%d vin0_needed.%d got %d\n",iter,vin0_needed,n);
+                    //fprintf(stderr,"iter.%d vin0_needed.%d got %d, num 0.0002 %d\n",iter,vin0_needed,n,num);
                     m = 0;
                     DL_FOREACH_SAFE(DICEFINISH_LIST,ptr,tmp)
                     {
@@ -408,11 +442,20 @@ void *dicefinish(void *_ptr)
                         {
                             unstringbits(name,ptr->sbits);
                             result = 0;
-                            res = DiceBetFinish(ptr->funcid,ptr->entropyused,&result,0,name,ptr->fundingtxid,ptr->bettxid,ptr->iswin,utxos[m].txid,utxos[m].vout);
+                            res = DiceBetFinish(ptr->funcid,entropyused,entropyvout,&result,0,name,ptr->fundingtxid,ptr->bettxid,ptr->iswin,utxos[m].txid,utxos[m].vout);
+                            if ( ptr->entropyused == zeroid )
+                            {
+                                ptr->entropyused = entropyused;
+                                ptr->entropyvout = entropyvout;
+                            }
+                            if ( entropyused != ptr->entropyused || entropyvout != ptr->entropyvout )
+                            {
+                                fprintf(stderr,"WARNING entropy %s != %s || %d != %d\n",entropyused.GetHex().c_str(),ptr->entropyused.GetHex().c_str(),entropyvout,ptr->entropyvout);
+                            }
                             if ( result > 0 )
                             {
                                 ptr->rawtx = res;
-                                mySenddicetransaction(ptr->rawtx,ptr->entropyused,ptr->bettxid,ptr->betTx,ptr->funcid,ptr);
+                                mySenddicetransaction(ptr->rawtx,ptr->entropyused,ptr->entropyvout,ptr->bettxid,ptr->betTx,ptr->funcid,ptr);
                             }
                             else if ( result != -2 )
                             {
@@ -430,24 +473,7 @@ void *dicefinish(void *_ptr)
                         }
                     }
                 }
-                else if ( newblock != 0 )
-                    dicefinish_utxosget(num,0,0,coinaddr);
                 free(utxos);
-                if ( newblock != 0 && num < DICE_MINUTXOS )
-                {
-                    char *cmd = (char *)malloc(100 * 128);
-                    sprintf(cmd,"./komodo-cli -ac_name=%s sendmany \"\"  \"{\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002}\"",ASSETCHAINS_SYMBOL,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr);
-                    fprintf(stderr,"num normal 0.0002 utxos.%d < %d\n",num,DICE_MINUTXOS);
-                    if ( system(cmd) != 0 )
-                        fprintf(stderr,"system error issuing.(%s)\n",cmd);
-                    free(cmd);
-                    if ( (rand() % 100) == 0 )
-                    {
-                        fprintf(stderr,"make 0.023 utxos\n");
-                        if ( system("cc/dapps/sendmany") != 0 )
-                            fprintf(stderr,"system error issuing.(cc/dapps/sendmany)\n");
-                    }
-                }
             }
         }
         if ( (newht= KOMODO_INSYNC) == 0 || newht == lastheight )
@@ -457,7 +483,7 @@ void *dicefinish(void *_ptr)
     return(0);
 }
 
-void DiceQueue(int32_t iswin,uint64_t sbits,uint256 fundingtxid,uint256 bettxid,CTransaction betTx)
+void DiceQueue(int32_t iswin,uint64_t sbits,uint256 fundingtxid,uint256 bettxid,CTransaction betTx,int32_t entropyvout)
 {
     static int32_t didinit;
     struct dicefinish_info *ptr; int32_t i,duplicate=0; uint64_t txfee = 10000;
@@ -488,13 +514,14 @@ void DiceQueue(int32_t iswin,uint64_t sbits,uint256 fundingtxid,uint256 bettxid,
         ptr->sbits = sbits;
         ptr->iswin = iswin;
         ptr->winamount = betTx.vout[1].nValue * ((betTx.vout[2].nValue - txfee)+1);
+        ptr->entropyvout = entropyvout;
         DL_APPEND(DICEFINISH_LIST,ptr);
-        fprintf(stderr,"queued iswin.%d %.8f -> %.8f %s\n",iswin,(double)betTx.vout[1].nValue/COIN,(double)ptr->winamount/COIN,bettxid.GetHex().c_str());
+        fprintf(stderr,"queued %dx iswin.%d %.8f -> %.8f %s\n",(int32_t)(betTx.vout[2].nValue - txfee),iswin,(double)betTx.vout[1].nValue/COIN,(double)ptr->winamount/COIN,bettxid.GetHex().c_str());
     }
     else
     {
         //fprintf(stderr,"DiceQueue status bettxid.%s already in list\n",bettxid.GetHex().c_str());
-        //_dicehash_clear(bettxid);
+        _dicehash_clear(bettxid);
     }
     pthread_mutex_unlock(&DICE_MUTEX);
 }
@@ -512,11 +539,16 @@ CPubKey DiceFundingPk(CScript scriptPubKey)
     return(pk);
 }
 
-uint256 DiceHashEntropy(uint256 &entropy,uint256 _txidpriv) // max 1 vout per txid used
+uint256 DiceHashEntropy(uint256 &entropy,uint256 _txidpriv,int32_t vout,int32_t usevout)
 {
     int32_t i; uint8_t _entropy[32],_hentropy[32]; bits256 tmp256,txidpub,txidpriv,mypriv,mypub,ssecret,ssecret2; uint256 hentropy;
     memset(&hentropy,0,32);
     endiancpy(txidpriv.bytes,(uint8_t *)&_txidpriv,32);
+    if ( usevout != 0 )
+    {
+        txidpriv.bytes[1] ^= (vout & 0xff);
+        txidpriv.bytes[2] ^= ((vout>>8) & 0xff);
+    }
     txidpriv.bytes[0] &= 0xf8, txidpriv.bytes[31] &= 0x7f, txidpriv.bytes[31] |= 0x40;
     txidpub = curve25519(txidpriv,curve25519_basepoint9());
 
@@ -741,7 +773,7 @@ bool DiceIsmine(const CScript scriptPubKey)
     return(strcmp(destaddr,myaddr) == 0);
 }
 
-int32_t DiceIsWinner(uint256 &entropy,uint256 txid,CTransaction tx,CTransaction vinTx,uint256 bettorentropy,uint64_t sbits,int64_t minbet,int64_t maxbet,int64_t maxodds,int64_t timeoutblocks,uint256 fundingtxid)
+int32_t DiceIsWinner(uint256 &entropy,int32_t &entropyvout,uint256 txid,CTransaction tx,CTransaction vinTx,uint256 bettorentropy,uint64_t sbits,int64_t minbet,int64_t maxbet,int64_t maxodds,int64_t timeoutblocks,uint256 fundingtxid)
 {
     uint64_t vinsbits,winnings; uint256 vinproof,vinfundingtxid,hentropy,hentropy2; uint8_t funcid;
     //char str[65],str2[65];
@@ -749,7 +781,14 @@ int32_t DiceIsWinner(uint256 &entropy,uint256 txid,CTransaction tx,CTransaction 
     {
         if ( ((funcid= DecodeDiceOpRet(txid,vinTx.vout[vinTx.vout.size()-1].scriptPubKey,vinsbits,vinfundingtxid,hentropy,vinproof)) == 'E' || funcid == 'W' || funcid == 'L') && sbits == vinsbits && fundingtxid == vinfundingtxid )
         {
-            hentropy2 = DiceHashEntropy(entropy,vinTx.vin[0].prevout.hash);
+            hentropy2 = DiceHashEntropy(entropy,vinTx.vin[0].prevout.hash,vinTx.vin[0].prevout.n,0);
+            entropyvout = vinTx.vin[0].prevout.n;
+            //fprintf(stderr,"bettxid %s -> vin0 %s/v%d -> %s\n",txid.GetHex().c_str(),vinTx.vin[0].prevout.hash.GetHex().c_str(),entropyvout,entropy.GetHex().c_str());
+            if ( hentropy != hentropy2 )
+            {
+                hentropy2 = DiceHashEntropy(entropy,vinTx.vin[0].prevout.hash,vinTx.vin[0].prevout.n,1);
+                //fprintf(stderr,"alt bettxid %s -> vin0 %s/v%d -> %s\n",txid.GetHex().c_str(),vinTx.vin[0].prevout.hash.GetHex().c_str(),entropyvout,entropy.GetHex().c_str());
+            }
             if ( hentropy == hentropy2 )
             {
                 winnings = DiceCalc(tx.vout[1].nValue,tx.vout[2].nValue,minbet,maxbet,maxodds,timeoutblocks,entropy,bettorentropy);
@@ -765,7 +804,11 @@ int32_t DiceIsWinner(uint256 &entropy,uint256 txid,CTransaction tx,CTransaction 
                     // queue 'W' winning tx
                     return(1);
                 }
-            } else fprintf(stderr,"hentropy != hentropy2\n");
+            }
+            else
+            {
+                fprintf(stderr,"both hentropy != hentropy2\n");
+            }
         } else fprintf(stderr,"funcid.%c sbits %llx vs %llx cmp.%d\n",funcid,(long long)sbits,(long long)vinsbits,fundingtxid == vinfundingtxid);
     } //else fprintf(stderr,"notmine.%d or not CC.%d\n",DiceIsmine(vinTx.vout[1].scriptPubKey) != 0,vinTx.vout[0].scriptPubKey.IsPayToCryptoCondition() != 0);
     return(0);
@@ -781,7 +824,7 @@ bool DiceVerifyTimeout(CTransaction &betTx,int32_t timeoutblocks)
 
 bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
 {
-    uint256 txid,fundingtxid,vinfundingtxid,vinhentropy,vinproof,hashBlock,hash,proof,entropy; int64_t minbet,maxbet,maxodds,timeoutblocks,odds,winnings; uint64_t vinsbits,refsbits=0,sbits,amount,inputs,outputs,txfee=10000; int32_t numvins,numvouts,preventCCvins,preventCCvouts,i,iswin; uint8_t funcid; CScript fundingPubKey; CTransaction fundingTx,vinTx,vinofvinTx; char CCaddr[64];
+    uint256 txid,fundingtxid,vinfundingtxid,vinhentropy,vinproof,hashBlock,hash,proof,entropy; int64_t minbet,maxbet,maxodds,timeoutblocks,odds,winnings; uint64_t vinsbits,refsbits=0,sbits,amount,inputs,outputs,txfee=10000; int32_t numvins,entropyvout,numvouts,preventCCvins,preventCCvouts,i,iswin; uint8_t funcid; CScript fundingPubKey; CTransaction fundingTx,vinTx,vinofvinTx; char CCaddr[64];
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
     preventCCvins = preventCCvouts = -1;
@@ -877,11 +920,11 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                             }
                         }
                     }
-                    if ( (iswin= DiceIsWinner(entropy,txid,tx,vinTx,hash,sbits,minbet,maxbet,maxodds,timeoutblocks,fundingtxid)) != 0 )
+                    if ( (iswin= DiceIsWinner(entropy,entropyvout,txid,tx,vinTx,hash,sbits,minbet,maxbet,maxodds,timeoutblocks,fundingtxid)) != 0 )
                     {
                         // will only happen for fundingPubKey
-                        if ( KOMODO_INSYNC != 0 )
-                            DiceQueue(iswin,sbits,fundingtxid,txid,tx);
+                        if ( KOMODO_INSYNC != 0 && KOMODO_DEALERNODE != 0 )
+                            DiceQueue(iswin,sbits,fundingtxid,txid,tx,entropyvout);
                     }
                     else
                     {
@@ -1020,11 +1063,12 @@ uint64_t AddDiceInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubK
                 unstringbits(sstr,sbits);
                 if ( sbits == refsbits && (funcid == 'F' && reffundingtxid == txid) || reffundingtxid == fundingtxid )
                 {
-                    if ( funcid == 'F' || funcid == 'E' || funcid == 'W' || funcid == 'L' || funcid == 'T' )
+                    if ( funcid == 'R' || funcid == 'F' || funcid == 'E' || funcid == 'W' || funcid == 'L' || funcid == 'T' )
                     {
                         if ( total != 0 && maxinputs != 0 )
                         {
-                            fprintf(stderr,"use (%c) %.8f %s %s/v%d\n",funcid,(double)tx.vout[0].nValue/COIN,sstr,uint256_str(str,txid),vout);
+                            if ( funcid == 'R' )
+                                fprintf(stderr,">>>>>>>>>>>> use (%c) %.8f %s %s/v%d\n",funcid,(double)tx.vout[0].nValue/COIN,sstr,uint256_str(str,txid),vout);
                             mtx.vin.push_back(CTxIn(txid,vout,CScript()));
                         }
                         totalinputs += it->second.satoshis;
@@ -1081,7 +1125,7 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
                 if ( (funcid == 'F' && reffundingtxid == txid) || reffundingtxid == fundingtxid )
                 {
                     //fprintf(stderr,"%d: %s/v%d (%c %.8f) %.8f %.8f\n",n,uint256_str(str,txid),vout,funcid,(double)it->second.satoshis/COIN,(double)totalinputs/COIN,(double)sum/COIN);
-                    if ( (nValue= IsDicevout(cp,tx,vout,refsbits,reffundingtxid)) >= 10000 && (funcid == 'F' || funcid == 'E' || funcid == 'W' || funcid == 'L' || funcid == 'T')  )
+                    if ( (nValue= IsDicevout(cp,tx,vout,refsbits,reffundingtxid)) >= 10000 && (funcid == 'R' || funcid == 'F' || funcid == 'E' || funcid == 'W' || funcid == 'L' || funcid == 'T')  )
                     {
                         if ( funcid == 'L' || funcid == 'W' || funcid == 'E' )
                             n++;
@@ -1124,7 +1168,7 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
                                 {
                                     entropytxid = txid;
                                     entropyval = tx.vout[0].nValue;
-                                    fprintf(stderr,"funcid.%c first.%d entropytxid.%s val %.8f\n",funcid,first,txid.GetHex().c_str(),(double)entropyval/COIN);
+                                    //fprintf(stderr,"funcid.%c first.%d entropytxid.%s val %.8f\n",funcid,first,txid.GetHex().c_str(),(double)entropyval/COIN);
                                     first = 1;
                                     if (random) {
                                         fprintf(stderr, "chosen entropy on loop: %d\n",loops);
@@ -1144,7 +1188,9 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
                                 fprintf(stderr," (%c) tx vin.%d fundingPubKey mismatch %s\n",funcid,tx.vin[0].prevout.n,uint256_str(str,tx.vin[0].prevout.hash));
                             }
                         }
-                    } else fprintf(stderr,"%s %c refsbits.%llx sbits.%llx nValue %.8f\n",uint256_str(str,txid),funcid,(long long)refsbits,(long long)sbits,(double)nValue/COIN);
+                    }
+                    else if ( 0 && funcid != 'B' )
+                        fprintf(stderr,"%s %c refsbits.%llx sbits.%llx nValue %.8f\n",uint256_str(str,txid),funcid,(long long)refsbits,(long long)sbits,(double)nValue/COIN);
                 } //else fprintf(stderr,"else case funcid (%c) %d %s vs %s\n",funcid,funcid,uint256_str(str,reffundingtxid),uint256_str(str2,fundingtxid));
             } //else fprintf(stderr,"funcid.%d %c skipped %.8f\n",funcid,funcid,(double)tx.vout[vout].nValue/COIN);
         } i = i + 1;
@@ -1277,7 +1323,7 @@ UniValue DiceList()
 std::string DiceCreateFunding(uint64_t txfee,char *planstr,int64_t funds,int64_t minbet,int64_t maxbet,int64_t maxodds,int64_t timeoutblocks)
 {
     CMutableTransaction mtx; uint256 zero; CScript fundingPubKey; CPubKey mypk,dicepk; int64_t a,b,c,d; uint64_t sbits; struct CCcontract_info *cp,C;
-    if ( funds < 0 || minbet < 0 || maxbet < 0 || maxodds < 2 || maxodds > 9999 || timeoutblocks < 0 || timeoutblocks > 1440 )
+    if ( funds < 0 || minbet < 0 || maxbet < 0 || maxodds < 1 || maxodds > 9999 || timeoutblocks < 0 || timeoutblocks > 1440 )
     {
         CCerror = "invalid parameter error";
         fprintf(stderr,"%s\n", CCerror.c_str() );
@@ -1292,7 +1338,7 @@ std::string DiceCreateFunding(uint64_t txfee,char *planstr,int64_t funds,int64_t
     memset(&zero,0,sizeof(zero));
     if ( (cp= Diceinit(fundingPubKey,zero,&C,planstr,txfee,mypk,dicepk,sbits,a,b,c,d)) == 0 )
     {
-        CCerror = "Diceinit error in create funding";
+        CCerror = "Diceinit error in create funding, is your transaction confirmed?";
         fprintf(stderr,"%s\n", CCerror.c_str() );
         return("");
     }
@@ -1317,8 +1363,10 @@ std::string DiceAddfunding(uint64_t txfee,char *planstr,uint256 fundingtxid,int6
         fprintf(stderr,"%s\n", CCerror.c_str() );
         return("");
     }
-    if ( (cp= Diceinit(fundingPubKey,fundingtxid,&C,planstr,txfee,mypk,dicepk,sbits,minbet,maxbet,maxodds,timeoutblocks)) == 0 )
+    if ( (cp= Diceinit(fundingPubKey,fundingtxid,&C,planstr,txfee,mypk,dicepk,sbits,minbet,maxbet,maxodds,timeoutblocks)) == 0 ) {
+        CCerror = "Diceinit error in add funding, is your transaction confirmed?";
         return("");
+    }
     scriptPubKey = CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG;
     if ( 0 )
     {
@@ -1336,7 +1384,7 @@ std::string DiceAddfunding(uint64_t txfee,char *planstr,uint256 fundingtxid,int6
     {
         if ( AddNormalinputs(mtx,mypk,amount+2*txfee,1) > 0 )
         {
-            hentropy = DiceHashEntropy(entropy,mtx.vin[0].prevout.hash);
+            hentropy = DiceHashEntropy(entropy,mtx.vin[0].prevout.hash,mtx.vin[0].prevout.n,1);
             mtx.vout.push_back(MakeCC1vout(cp->evalcode,amount,dicepk));
             mtx.vout.push_back(CTxOut(txfee,fundingPubKey));
             return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeDiceOpRet('E',sbits,fundingtxid,hentropy,zeroid)));
@@ -1365,7 +1413,7 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
         return("");
     }
     if ( (cp= Diceinit(fundingPubKey,fundingtxid,&C,planstr,txfee,mypk,dicepk,sbits,minbet,maxbet,maxodds,timeoutblocks)) == 0 ) {
-        CCerror = "error in Diceinit";
+        CCerror = "Diceinit error in bet, is your transaction confirmed?";
         return("");
     }
     if ( bet < minbet || bet > maxbet || odds > maxodds )
@@ -1395,7 +1443,7 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
         mtx.vin.push_back(CTxIn(entropytxid,0,CScript()));
         if ( AddNormalinputs(mtx,mypk,bet+2*txfee+odds,60) > 0 )
         {
-            hentropy = DiceHashEntropy(entropy,mtx.vin[0].prevout.hash);
+            hentropy = DiceHashEntropy(entropy,mtx.vin[0].prevout.hash,mtx.vin[0].prevout.n,1);
             mtx.vout.push_back(MakeCC1vout(cp->evalcode,entropyval,dicepk));
             mtx.vout.push_back(MakeCC1vout(cp->evalcode,bet,dicepk));
             mtx.vout.push_back(CTxOut(txfee+odds,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
@@ -1409,16 +1457,16 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
     return("");
 }
 
-std::string DiceBetFinish(uint8_t &funcid,uint256 &entropyused,int32_t *resultp,uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettxid,int32_t winlosetimeout,uint256 vin0txid,int32_t vin0vout)
+std::string DiceBetFinish(uint8_t &funcid,uint256 &entropyused,int32_t &entropyvout,int32_t *resultp,uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettxid,int32_t winlosetimeout,uint256 vin0txid,int32_t vin0vout)
 {
-    CMutableTransaction mtx; CScript scriptPubKey,fundingPubKey; CTransaction oldbetTx,betTx,entropyTx; uint256 hentropyproof,entropytxid,hashBlock,bettorentropy,entropy,hentropy,oldbettxid; CPubKey mypk,dicepk,fundingpk; struct CCcontract_info *cp,C; int64_t inputs=0,CCchange=0,odds,fundsneeded,minbet,maxbet,maxodds,timeoutblocks; int32_t retval,iswin=0; uint64_t entropyval,sbits;
+    CMutableTransaction mtx; CScript scriptPubKey,fundingPubKey; CTransaction oldbetTx,betTx,entropyTx; uint256 hentropyproof,entropytxid,hashBlock,bettorentropy,entropy,hentropy,oldbettxid; CPubKey mypk,dicepk,fundingpk; struct CCcontract_info *cp,C; int64_t inputs=0,CCchange=0,odds,fundsneeded,minbet,maxbet,maxodds,timeoutblocks; int32_t oldentropyvout,retval=0,iswin=0; uint64_t entropyval,sbits;
     entropyused = zeroid;
     *resultp = 0;
     funcid = 0;
     //char str[65]; fprintf(stderr,"DiceBetFinish.%s %s\n",planstr,uint256_str(str,bettxid));
     if ( (cp= Diceinit(fundingPubKey,fundingtxid,&C,planstr,txfee,mypk,dicepk,sbits,minbet,maxbet,maxodds,timeoutblocks)) == 0 )
     {
-        CCerror = "Diceinit error in finish";
+        CCerror = "Diceinit error in finish, is your transaction confirmed?";
         fprintf(stderr,"%s\n", CCerror.c_str() );
         return("");
     }
@@ -1442,7 +1490,7 @@ std::string DiceBetFinish(uint8_t &funcid,uint256 &entropyused,int32_t *resultp,
             return("");
         }*/
         bettorentropy = DiceGetEntropy(betTx,'B');
-        if ( winlosetimeout == 0 || (iswin= DiceIsWinner(hentropyproof,bettxid,betTx,entropyTx,bettorentropy,sbits,minbet,maxbet,maxodds,timeoutblocks,fundingtxid)) != 0 )
+        if ( winlosetimeout == 0 || (iswin= DiceIsWinner(hentropyproof,entropyvout,bettxid,betTx,entropyTx,bettorentropy,sbits,minbet,maxbet,maxodds,timeoutblocks,fundingtxid)) != 0 )
         {
             if ( vin0txid == zeroid || vin0vout < 0 )
             {
@@ -1461,12 +1509,14 @@ std::string DiceBetFinish(uint8_t &funcid,uint256 &entropyused,int32_t *resultp,
             if ( winlosetimeout != 0 ) // dealernode
             {
                 entropyused = hentropyproof;
+                if ( vin0vout == -2 )
+                    retval = -1;
                 /*if ( iswin == 0 )
                 {
                     retval = -1;
                     fprintf(stderr,"invalid dicebet %s\n",bettxid.GetHex().c_str());
                 } else retval = 0;*/
-                if ( (retval= DiceEntropyUsed(oldbetTx,oldbettxid,entropyused,bettxid,betTx)) != 0 )
+                if ( retval < 0 || (retval= DiceEntropyUsed(oldbetTx,oldbettxid,oldentropyvout,entropyused,bettxid,betTx,entropyvout)) != 0 )
                 {
                     if ( retval < 0 )
                     {
@@ -1475,7 +1525,8 @@ std::string DiceBetFinish(uint8_t &funcid,uint256 &entropyused,int32_t *resultp,
                         mtx.vin.push_back(CTxIn(bettxid,0,CScript()));
                         mtx.vin.push_back(CTxIn(bettxid,1,CScript()));
                         funcid = 'R';
-                        mtx.vout.push_back(CTxOut(betTx.vout[0].nValue,fundingPubKey));
+                        mtx.vout.push_back(MakeCC1vout(cp->evalcode,betTx.vout[0].nValue,dicepk));
+                        //mtx.vout.push_back(CTxOut(betTx.vout[0].nValue,fundingPubKey));
                         mtx.vout.push_back(CTxOut(txfee,fundingPubKey));
                         mtx.vout.push_back(CTxOut(betTx.vout[1].nValue,betTx.vout[2].scriptPubKey));
                         *resultp = 1;
@@ -1557,7 +1608,7 @@ std::string DiceBetFinish(uint8_t &funcid,uint256 &entropyused,int32_t *resultp,
                 }
                 //fprintf(stderr,"make tx.%c\n",funcid);
                 if ( funcid == 'L' || funcid == 'W' ) // dealernode only
-                    hentropy = DiceHashEntropy(entropy,mtx.vin[0].prevout.hash);
+                    hentropy = DiceHashEntropy(entropy,mtx.vin[0].prevout.hash,mtx.vin[0].prevout.n,1);
                 *resultp = 1;
                 //char str[65],str2[65];
                 //fprintf(stderr,"iswin.%d house entropy %s vs bettor %s\n",iswin,uint256_str(str,hentropyproof),uint256_str(str2,bettorentropy));
@@ -1575,12 +1626,76 @@ std::string DiceBetFinish(uint8_t &funcid,uint256 &entropyused,int32_t *resultp,
     return("couldnt find bettx or entropytx");
 }
 
+static uint256 dealer0_fundingtxid;
+void *dealer0_loop(void *_arg)
+{
+    char *planstr = (char *)_arg;
+    CTransaction tx; CPubKey mypk,dicepk; uint64_t entropyval; uint256 entropytxid; int32_t entropytxs,i,n,num; CScript fundingPubKey; struct CCcontract_info *cp,C; char coinaddr[64]; std::string res; int64_t minbet,maxbet,maxodds,timeoutblocks; uint64_t refsbits,txfee = 10000;
+    if ( (cp= Diceinit(fundingPubKey,dealer0_fundingtxid,&C,planstr,txfee,mypk,dicepk,refsbits,minbet,maxbet,maxodds,timeoutblocks)) == 0 )
+    {
+        fprintf(stderr,"error initializing dealer0_loop\n");
+        exit(-1);
+    }
+    fprintf(stderr,"dealer0 node running\n");
+    while ( 1 )
+    {
+        DicePlanFunds(entropyval,entropytxid,refsbits,cp,dicepk,dealer0_fundingtxid,entropytxs,false);
+        if ( entropytxs < DICE_MINUTXOS )
+        {
+            n = sqrt(DICE_MINUTXOS - entropytxs) + 10;
+            for (i=0; i<DICE_MINUTXOS - entropytxs && i<n; i++)
+            {
+                res = DiceAddfunding(txfee,planstr,dealer0_fundingtxid,COIN/100);
+                if ( res.empty() == 0 && res.size() > 64 && is_hexstr((char *)res.c_str(),0) > 64 )
+                {
+                    if ( DecodeHexTx(tx,res) != 0 )
+                    {
+                        LOCK(cs_main);
+                        if ( myAddtomempool(tx) != 0 )
+                        {
+                            fprintf(stderr,"ENTROPY %s: %d of %d, %d\n",tx.GetHash().GetHex().c_str(),i,n,DICE_MINUTXOS - entropytxs);
+                            RelayTransaction(tx);
+                        } else break;
+                    } else break;
+                } else break;
+            }
+        }
+        pubkey2addr(coinaddr,Mypubkey().data());
+        dicefinish_utxosget(num,0,0,coinaddr);
+        fprintf(stderr,"have %d 0.0002 utxos, need %d\n",num,DICE_MINUTXOS);
+        if ( num < DICE_MINUTXOS ) // this deadlocks, need to put it in a different thread
+        {
+            char *cmd = (char *)malloc(100 * 128);
+            sprintf(cmd,"./komodo-cli -ac_name=%s sendmany \"\"  \"{\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002}\"",ASSETCHAINS_SYMBOL,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr);
+            n = sqrt((DICE_MINUTXOS - num) / 100)*2 + 1;
+            fprintf(stderr,"num normal 0.0002 utxos.%d < %d -> n.%d\n",num,DICE_MINUTXOS,n);
+            for (i=0; i<n; i++)
+            {
+                fprintf(stderr,"%d of %d: ",i,n);
+                if ( system(cmd) != 0 )
+                    fprintf(stderr,"system error issuing.(%s)\n",cmd);
+            }
+            free(cmd);
+            if ( (rand() % 100) == 0 )
+            {
+                fprintf(stderr,"make 0.023 utxos\n");
+                if ( system("cc/dapps/sendmany") != 0 )
+                    fprintf(stderr,"system error issuing.(cc/dapps/sendmany)\n");
+            }
+        }
+        sleep(60);
+    }
+    return(0);
+}
+
 double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettxid)
 {
-    CScript fundingPubKey,scriptPubKey; CTransaction spenttx,betTx,entropyTx; uint256 hentropyproof,entropyused,hash,proof,txid,hashBlock,spenttxid,bettorentropy; CPubKey mypk,dicepk,fundingpk; struct CCcontract_info *cp,C; int32_t i,flag,win,loss,duplicate=0,result,iswin,vout,n=0; int64_t minbet,maxbet,maxodds,timeoutblocks,sum=0; uint64_t sbits,refsbits; char coinaddr[64]; std::string res; uint8_t funcid;
+    static int32_t didinit; static char _planstr[64];
+    CScript fundingPubKey,scriptPubKey; CTransaction spenttx,betTx,entropyTx; uint256 hentropyproof,entropyused,hash,proof,txid,hashBlock,spenttxid,bettorentropy; CPubKey mypk,dicepk,fundingpk; struct CCcontract_info *cp,C; int32_t i,entropyvout,flag,win,num,loss,duplicate=0,result,iswin,vout,n=0; int64_t minbet,maxbet,maxodds,timeoutblocks,sum=0; uint64_t sbits,refsbits; char coinaddr[64]; std::string res; uint8_t funcid;
     if ( (cp= Diceinit(fundingPubKey,fundingtxid,&C,planstr,txfee,mypk,dicepk,refsbits,minbet,maxbet,maxodds,timeoutblocks)) == 0 )
     {
-        CCerror = "Diceinit error in status";
+        CCerror = "Diceinit error in status, is your transaction confirmed?";
+        fprintf(stderr,"%s\n", CCerror.c_str() );
         return(0.);
     }
     win = loss = 0;
@@ -1604,58 +1719,42 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
                 {
                     if ( myGetTransaction(betTx.vin[0].prevout.hash,entropyTx,hashBlock) != 0 )
                     {
-                        flag = 0;
-                        if ( scriptPubKey == fundingPubKey )
+                        flag = KOMODO_DEALERNODE != 0;
+                        if ( KOMODO_DEALERNODE != 0 && scriptPubKey == fundingPubKey )
                         {
                             bettorentropy = DiceGetEntropy(betTx,'B');
-                            if ( (iswin= DiceIsWinner(hentropyproof,txid,betTx,entropyTx,bettorentropy,sbits,minbet,maxbet,maxodds,timeoutblocks,fundingtxid)) != 0 )
+                            if ( (iswin= DiceIsWinner(hentropyproof,entropyvout,txid,betTx,entropyTx,bettorentropy,sbits,minbet,maxbet,maxodds,timeoutblocks,fundingtxid)) != 0 )
                             {
                                 if ( iswin > 0 )
                                     win++;
                                 else if ( iswin < 0 )
                                     loss++;
                                 n++;
-                                DiceQueue(iswin,sbits,fundingtxid,txid,betTx);
-                            } //else flag = 1;
+                                DiceQueue(iswin,sbits,fundingtxid,txid,betTx,entropyvout);
+                            }
                         }
-                        if ( flag != 0 || scriptPubKey != fundingPubKey )
+                        if ( scriptPubKey != fundingPubKey )
                         {
-                            if ( flag != 0 )
-                                fprintf(stderr,"illegal bettxid %d: iswin.%d W.%d L.%d %s/v%d (%c %.8f) %.8f\n",n,iswin,win,loss,txid.GetHex().c_str(),vout,funcid,(double)it->second.satoshis/COIN,(double)sum/COIN);
-                            res = DiceBetFinish(funcid,entropyused,&result,txfee,planstr,fundingtxid,txid,scriptPubKey == fundingPubKey,zeroid,-1);
+                            fprintf(stderr,"serialized bettxid %d: iswin.%d W.%d L.%d %s/v%d (%c %.8f) %.8f\n",n,iswin,win,loss,txid.GetHex().c_str(),vout,funcid,(double)it->second.satoshis/COIN,(double)sum/COIN);
+                            res = DiceBetFinish(funcid,entropyused,entropyvout,&result,txfee,planstr,fundingtxid,txid,scriptPubKey == fundingPubKey,zeroid,-1);
                             if ( result > 0 )
                             {
-                                mySenddicetransaction(res,entropyused,txid,betTx,funcid,0);
+                                mySenddicetransaction(res,entropyused,entropyvout,txid,betTx,funcid,0);
                                 n++;
+                                if ( n > 10 )
+                                    break;
                             }
                         }
                     } else fprintf(stderr,"bettxid.%s cant find entropyTx.%s\n",txid.GetHex().c_str(),betTx.vin[0].prevout.hash.GetHex().c_str());
                 }
             }
         }
-        if ( scriptPubKey == fundingPubKey )
+        if ( didinit == 0 && KOMODO_DEALERNODE == 0 && scriptPubKey == fundingPubKey )
         {
-            CTransaction tx; uint64_t entropyval; uint256 entropytxid; int32_t entropytxs;
-            DicePlanFunds(entropyval,entropytxid,refsbits,cp,dicepk,fundingtxid,entropytxs,false);
-            if ( entropytxs < DICE_MINUTXOS )
-            {
-                for (i=0; i<DICE_MINUTXOS - entropytxs && i<10; i++)
-                {
-                    res = DiceAddfunding(txfee,planstr,fundingtxid,COIN/100);
-                    if ( res.empty() == 0 && res.size() > 64 && is_hexstr((char *)res.c_str(),0) > 64 )
-                    {
-                        if ( DecodeHexTx(tx,res) != 0 )
-                        {
-                            //LOCK(cs_main);
-                            if ( myAddtomempool(tx) != 0 )
-                            {
-                                fprintf(stderr,"ENTROPY %s: %d of %d\n",tx.GetHash().GetHex().c_str(),i,DICE_MINUTXOS - entropytxs);
-                                RelayTransaction(tx);
-                            } else break;
-                        } else break;
-                    } else break;
-                }
-            }
+            strcpy(_planstr,planstr);
+            dealer0_fundingtxid = fundingtxid;
+            if ( pthread_create((pthread_t *)malloc(sizeof(pthread_t)),NULL,dealer0_loop,_planstr) == 0 )
+                didinit = 1;
         }
         return(n);
     }
@@ -1676,11 +1775,11 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
             return(-1.);
         }
         else if ( scriptPubKey == fundingPubKey )
-            res = DiceBetFinish(funcid,entropyused,&result,txfee,planstr,fundingtxid,bettxid,1,zeroid,-1);
-        else res = DiceBetFinish(funcid,entropyused,&result,txfee,planstr,fundingtxid,bettxid,0,zeroid,-1);
+            res = DiceBetFinish(funcid,entropyused,entropyvout,&result,txfee,planstr,fundingtxid,bettxid,1,zeroid,-1);
+        else res = DiceBetFinish(funcid,entropyused,entropyvout,&result,txfee,planstr,fundingtxid,bettxid,0,zeroid,-1);
         if ( result > 0 )
         {
-            mySenddicetransaction(res,entropyused,bettxid,betTx,funcid,0);
+            mySenddicetransaction(res,entropyused,entropyvout,bettxid,betTx,funcid,0);
             sleep(1);
             if ( (vout= myIsutxo_spent(spenttxid,bettxid,1)) >= 0 )
             {

@@ -51,7 +51,7 @@ one other technical note is that komodod has the insight-explorer extensions bui
 #include "../utlist.h"
 #include "../uthash.h"
 
-extern int32_t KOMODO_CONNECTING,KOMODO_CCACTIVATE;
+extern int32_t KOMODO_CONNECTING,KOMODO_CCACTIVATE,KOMODO_DEALERNODE;
 extern uint32_t ASSETCHAINS_CC;
 extern char ASSETCHAINS_SYMBOL[];
 extern std::string CCerror;
@@ -125,7 +125,7 @@ CPubKey GetUnspendable(struct CCcontract_info *cp,uint8_t *unspendablepriv);
 // CCutils
 CPubKey buf2pk(uint8_t *buf33);
 void endiancpy(uint8_t *dest,uint8_t *src,int32_t len);
-uint256 DiceHashEntropy(uint256 &entropy,uint256 _txidpriv);
+uint256 DiceHashEntropy(uint256 &entropy,uint256 _txidpriv,int32_t entropyvout,int32_t usevout);
 CTxOut MakeCC1vout(uint8_t evalcode,CAmount nValue,CPubKey pk);
 CTxOut MakeCC1of2vout(uint8_t evalcode,CAmount nValue,CPubKey pk,CPubKey pk2);
 CC *MakeCCcond1(uint8_t evalcode,CPubKey pk);

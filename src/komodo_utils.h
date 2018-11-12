@@ -1503,7 +1503,7 @@ void komodo_args(char *argv0)
 {
     extern int64_t MAX_MONEY;
     extern const char *Notaries_elected1[][2];
-    std::string name,addn; char *dirname,fname[512],arg0str[64],magicstr[9]; uint8_t magic[4],extrabuf[256],*extraptr=0; FILE *fp; uint64_t val; uint16_t port; int32_t i,baseid,len,n,extralen = 0;
+    std::string name,addn; char *dirname,fname[512],arg0str[64],magicstr[9]; uint8_t magic[4],extrabuf[8192],*extraptr=0; FILE *fp; uint64_t val; uint16_t port; int32_t i,baseid,len,n,extralen = 0;
     IS_KOMODO_NOTARY = GetBoolArg("-notary", false);
     if ( GetBoolArg("-gen", false) != 0 )
         KOMODO_MININGTHREADS = GetArg("-genproclimit",1);
@@ -1512,6 +1512,7 @@ void komodo_args(char *argv0)
         fprintf(stderr,"KOMODO_EXCHANGEWALLET mode active\n");
     DONATION_PUBKEY = GetArg("-donation", "");
     NOTARY_PUBKEY = GetArg("-pubkey", "");
+    KOMODO_DEALERNODE = GetArg("-dealer",0);
     if ( strlen(NOTARY_PUBKEY.c_str()) == 66 )
     {
         USE_EXTERNAL_PUBKEY = 1;
@@ -1555,6 +1556,7 @@ void komodo_args(char *argv0)
     {
         MAX_BLOCK_SIGOPS = 60000;
         ASSETCHAINS_TXPOW = GetArg("-ac_txpow",0) & 3;
+        ASSETCHAINS_FOUNDERS = GetArg("-ac_founders",0) & 1;
         ASSETCHAINS_SUPPLY = GetArg("-ac_supply",10);
         ASSETCHAINS_ENDSUBSIDY = GetArg("-ac_end",0);
         ASSETCHAINS_REWARD = GetArg("-ac_reward",0);
@@ -1562,6 +1564,7 @@ void komodo_args(char *argv0)
         ASSETCHAINS_DECAY = GetArg("-ac_decay",0);
         ASSETCHAINS_COMMISSION = GetArg("-ac_perc",0);
         ASSETCHAINS_OVERRIDE_PUBKEY = GetArg("-ac_pubkey","");
+        ASSETCHAINS_SCRIPTPUB = GetArg("-ac_script","");
         if ( (ASSETCHAINS_STAKED= GetArg("-ac_staked",0)) > 100 )
             ASSETCHAINS_STAKED = 100;
         if ( ASSETCHAINS_STAKED != 0 && ASSETCHAINS_PRIVATE != 0 )
@@ -1584,14 +1587,33 @@ void komodo_args(char *argv0)
             ASSETCHAINS_DECAY = 0;
             printf("ASSETCHAINS_DECAY cant be more than 100000000\n");
         }
-        if ( strlen(ASSETCHAINS_OVERRIDE_PUBKEY.c_str()) == 66 )
-            decode_hex(ASSETCHAINS_OVERRIDE_PUBKEY33,33,(char *)ASSETCHAINS_OVERRIDE_PUBKEY.c_str());
-        else if ( ASSETCHAINS_COMMISSION != 0 )
+        if ( strlen(ASSETCHAINS_OVERRIDE_PUBKEY.c_str()) == 66 || ASSETCHAINS_SCRIPTPUB.size() > 1 )
         {
-            ASSETCHAINS_COMMISSION = 0;
-            printf("ASSETCHAINS_COMMISSION needs an ASETCHAINS_OVERRIDE_PUBKEY and cant be more than 100000000 (100%%)\n");
+            if ( strlen(ASSETCHAINS_OVERRIDE_PUBKEY.c_str()) == 66 )
+            {
+                decode_hex(ASSETCHAINS_OVERRIDE_PUBKEY33,33,(char *)ASSETCHAINS_OVERRIDE_PUBKEY.c_str());
+                calc_rmd160_sha256(ASSETCHAINS_OVERRIDE_PUBKEYHASH,ASSETCHAINS_OVERRIDE_PUBKEY33,33);
+            }
+            if ( ASSETCHAINS_COMMISSION == 0 && ASSETCHAINS_FOUNDERS != 0 )
+            {
+                ASSETCHAINS_COMMISSION = 53846154; // maps to 35%
+                printf("ASSETCHAINS_COMMISSION defaulted to 35%% when founders reward active\n");
+            }
         }
-        if ( ASSETCHAINS_ENDSUBSIDY != 0 || ASSETCHAINS_REWARD != 0 || ASSETCHAINS_HALVING != 0 || ASSETCHAINS_DECAY != 0 || ASSETCHAINS_COMMISSION != 0 || ASSETCHAINS_PUBLIC != 0 || ASSETCHAINS_PRIVATE != 0 || ASSETCHAINS_TXPOW != 0 )
+        else
+        {
+            if ( ASSETCHAINS_COMMISSION != 0 )
+            {
+                ASSETCHAINS_COMMISSION = 0;
+                printf("ASSETCHAINS_COMMISSION needs an ASETCHAINS_OVERRIDE_PUBKEY and cant be more than 100000000 (100%%)\n");
+            }
+            if ( ASSETCHAINS_FOUNDERS != 0 )
+            {
+                ASSETCHAINS_FOUNDERS = 0;
+                printf("ASSETCHAINS_FOUNDERS needs an ASETCHAINS_OVERRIDE_PUBKEY\n");
+            }
+        }
+        if ( ASSETCHAINS_ENDSUBSIDY != 0 || ASSETCHAINS_REWARD != 0 || ASSETCHAINS_HALVING != 0 || ASSETCHAINS_DECAY != 0 || ASSETCHAINS_COMMISSION != 0 || ASSETCHAINS_PUBLIC != 0 || ASSETCHAINS_PRIVATE != 0 || ASSETCHAINS_TXPOW != 0 || ASSETCHAINS_FOUNDERS != 0 || ASSETCHAINS_SCRIPTPUB.size() > 1 )
         {
             fprintf(stderr,"end.%llu blocks, reward %.8f halving.%llu blocks, decay.%llu perc %.4f%% ac_pub=[%02x...]\n",(long long)ASSETCHAINS_ENDSUBSIDY,dstr(ASSETCHAINS_REWARD),(long long)ASSETCHAINS_HALVING,(long long)ASSETCHAINS_DECAY,dstr(ASSETCHAINS_COMMISSION)*100,ASSETCHAINS_OVERRIDE_PUBKEY33[0]);
             extraptr = extrabuf;
@@ -1602,6 +1624,10 @@ void komodo_args(char *argv0)
             extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_DECAY),(void *)&ASSETCHAINS_DECAY);
             val = ASSETCHAINS_COMMISSION | (((uint64_t)ASSETCHAINS_STAKED & 0xff) << 32) | (((uint64_t)ASSETCHAINS_CC & 0xffff) << 40) | ((ASSETCHAINS_PUBLIC != 0) << 7) | ((ASSETCHAINS_PRIVATE != 0) << 6) | ASSETCHAINS_TXPOW;
             extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(val),(void *)&val);
+            if ( ASSETCHAINS_FOUNDERS != 0 )
+                extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_FOUNDERS),(void *)&ASSETCHAINS_FOUNDERS);
+            if ( ASSETCHAINS_SCRIPTPUB.size() > 1 )
+                extralen += iguana_rwnum(1,&extraptr[extralen],(int32_t)ASSETCHAINS_SCRIPTPUB.size(),(void *)ASSETCHAINS_SCRIPTPUB.c_str());
         }
         addn = GetArg("-seednode","");
         if ( strlen(addn.c_str()) > 0 )
@@ -1613,6 +1639,11 @@ void komodo_args(char *argv0)
             MAX_MONEY = (ASSETCHAINS_SUPPLY+100) * SATOSHIDEN;
         else MAX_MONEY = (ASSETCHAINS_SUPPLY+100) * SATOSHIDEN + ASSETCHAINS_REWARD * (ASSETCHAINS_ENDSUBSIDY==0 ? 10000000 : ASSETCHAINS_ENDSUBSIDY);
         MAX_MONEY += (MAX_MONEY * ASSETCHAINS_COMMISSION) / SATOSHIDEN;
+        if ( ASSETCHAINS_CC >= KOMODO_FIRSTFUNGIBLEID && MAX_MONEY < 1000000LL*SATOSHIDEN )
+            MAX_MONEY = 1000000LL*SATOSHIDEN;
+        if ( MAX_MONEY <= 0 || MAX_MONEY > 10000100000LL*SATOSHIDEN )
+            MAX_MONEY = 10000100000LL*SATOSHIDEN;
+        //fprintf(stderr,"MAX_MONEY %llu %.8f\n",(long long)MAX_MONEY,(double)MAX_MONEY/SATOSHIDEN);
         //printf("baseid.%d MAX_MONEY.%s %.8f\n",baseid,ASSETCHAINS_SYMBOL,(double)MAX_MONEY/SATOSHIDEN);
         ASSETCHAINS_P2PPORT = komodo_port(ASSETCHAINS_SYMBOL,ASSETCHAINS_SUPPLY,&ASSETCHAINS_MAGIC,extraptr,extralen);
         while ( (dirname= (char *)GetDataDir(false).string().c_str()) == 0 || dirname[0] == 0 )
