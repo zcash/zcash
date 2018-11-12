@@ -13,30 +13,16 @@
  *                                                                            *
  ******************************************************************************/
 
-#include "CCMofN.h"
+#include "CCHeir.h"
 
 /*
- The idea of MofN CC is to allow non-interactive multisig, preferably in a cross chain compatible way, ie. for actual bitcoin multisig.
- 
- full redeemscript in an initial tx with opreturn
- ability to post partial signatures and construct a full transaction from M such partial signatures
- a new transaction would refer to the initialtx and other partial would refer to both
- 
- There is no need for a CC contract to use it for normal multisig as normal multisig transactions are already supported.
- 
- In order to take advantage of CC powers, we can create a more powerful multisig using shamir's secret MofN (up to 255) algo to allow spends. Using the same non-interactive partial signing is possible. also, in addition to spending, data payload can have additional data that is also revealed when the funds are spent.
- 
- rpc calls needed:
- 1) create msig address (normal or shamir)
- 2) post payment with partial sig
- 3) add partial sig to 2)
- 4) combine and submit M partial sigs
- 
+ The idea of Heir CC is to allow crypto inheritance.
+ A special 1of2 CC address is created that is freely spendable by the creator. The heir is only allowed to spend after the specified amount of idle blocks. The idea is that if the address doesnt spend any funds for a year (or whatever amount set), then it is time to allow the heir to spend. The design requires the heir to spend all the funds at once
 */
 
 // start of consensus code
 
-int64_t IsMofNvout(struct CCcontract_info *cp,const CTransaction& tx,int32_t v)
+int64_t IsHeirvout(struct CCcontract_info *cp,const CTransaction& tx,int32_t v)
 {
     char destaddr[64];
     if ( tx.vout[v].scriptPubKey.IsPayToCryptoCondition() != 0 )
@@ -47,7 +33,7 @@ int64_t IsMofNvout(struct CCcontract_info *cp,const CTransaction& tx,int32_t v)
     return(0);
 }
 
-bool MofNExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx,int32_t minage,uint64_t txfee)
+bool HeirExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx,int32_t minage,uint64_t txfee)
 {
     static uint256 zerohash;
     CTransaction vinTx; uint256 hashBlock,activehash; int32_t i,numvins,numvouts; int64_t inputs=0,outputs=0,assetoshis;
@@ -65,8 +51,8 @@ bool MofNExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction &
             {
                 //fprintf(stderr,"vini.%d check hash and vout\n",i);
                 if ( hashBlock == zerohash )
-                    return eval->Invalid("cant MofN from mempool");
-                if ( (assetoshis= IsMofNvout(cp,vinTx,tx.vin[i].prevout.n)) != 0 )
+                    return eval->Invalid("cant Heir from mempool");
+                if ( (assetoshis= IsHeirvout(cp,vinTx,tx.vin[i].prevout.n)) != 0 )
                     inputs += assetoshis;
             }
         }
@@ -74,7 +60,7 @@ bool MofNExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction &
     for (i=0; i<numvouts; i++)
     {
         //fprintf(stderr,"i.%d of numvouts.%d\n",i,numvouts);
-        if ( (assetoshis= IsMofNvout(cp,tx,i)) != 0 )
+        if ( (assetoshis= IsHeirvout(cp,tx,i)) != 0 )
             outputs += assetoshis;
     }
     if ( inputs != outputs+txfee )
@@ -85,7 +71,7 @@ bool MofNExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction &
     else return(true);
 }
 
-bool MofNValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
+bool HeirValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
 {
     int32_t numvins,numvouts,preventCCvins,preventCCvouts,i,numblocks; bool retval; uint256 txid; uint8_t hash[32]; char str[65],destaddr[64];
     return(false);
@@ -105,9 +91,9 @@ bool MofNValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
             }
         }
         //fprintf(stderr,"check amounts\n");
-        if ( MofNExactAmounts(cp,eval,tx,1,10000) == false )
+        if ( HeirExactAmounts(cp,eval,tx,1,10000) == false )
         {
-            fprintf(stderr,"mofnget invalid amount\n");
+            fprintf(stderr,"Heirget invalid amount\n");
             return false;
         }
         else
@@ -116,8 +102,8 @@ bool MofNValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
             memcpy(hash,&txid,sizeof(hash));
             retval = PreventCC(eval,tx,preventCCvins,numvins,preventCCvouts,numvouts);
             if ( retval != 0 )
-                fprintf(stderr,"mofnget validated\n");
-            else fprintf(stderr,"mofnget invalid\n");
+                fprintf(stderr,"Heirget validated\n");
+            else fprintf(stderr,"Heirget invalid\n");
             return(retval);
         }
     }
@@ -126,8 +112,9 @@ bool MofNValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
 
 // helper functions for rpc calls in rpcwallet.cpp
 
-int64_t AddMofNInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,int64_t total,int32_t maxinputs)
+int64_t AddHeirInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,int64_t total,int32_t maxinputs)
 {
+    // add threshold check
     char coinaddr[64]; int64_t nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t vout,n = 0;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     GetCCaddress(cp,coinaddr,pk);
@@ -139,7 +126,7 @@ int64_t AddMofNInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKe
         // no need to prevent dup
         if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
         {
-            if ( (nValue= IsMofNvout(cp,vintx,vout)) > 1000000 && myIsutxo_spentinmempool(txid,vout) == 0 )
+            if ( (nValue= IsHeirvout(cp,vintx,vout)) > 1000000 && myIsutxo_spentinmempool(txid,vout) == 0 )
             {
                 if ( total != 0 && maxinputs != 0 )
                     mtx.vin.push_back(CTxIn(txid,vout,CScript()));
@@ -154,27 +141,27 @@ int64_t AddMofNInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKe
     return(totalinputs);
 }
 
-std::string MofNGet(uint64_t txfee,int64_t nValue)
+std::string HeirGet(uint64_t txfee,int64_t nValue)
 {
-    CMutableTransaction mtx,tmpmtx; CPubKey mypk,mofnpk; int64_t inputs,CCchange=0; struct CCcontract_info *cp,C; std::string rawhex; uint32_t j; int32_t i,len; uint8_t buf[32768]; bits256 hash;
-    cp = CCinit(&C,EVAL_MOFN);
+    CMutableTransaction mtx,tmpmtx; CPubKey mypk,Heirpk; int64_t inputs,CCchange=0; struct CCcontract_info *cp,C; std::string rawhex; uint32_t j; int32_t i,len; uint8_t buf[32768]; bits256 hash;
+    cp = CCinit(&C,EVAL_HEIR);
     if ( txfee == 0 )
         txfee = 10000;
-    mofnpk = GetUnspendable(cp,0);
+    Heirpk = GetUnspendable(cp,0);
     mypk = pubkey2pk(Mypubkey());
-    if ( (inputs= AddMofNInputs(cp,mtx,mofnpk,nValue+txfee,60)) > 0 )
+    if ( (inputs= AddHeirInputs(cp,mtx,Heirpk,nValue+txfee,60)) > 0 )
     {
         if ( inputs > nValue )
             CCchange = (inputs - nValue - txfee);
         if ( CCchange != 0 )
-            mtx.vout.push_back(MakeCC1vout(EVAL_MOFN,CCchange,mofnpk));
+            mtx.vout.push_back(MakeCC1vout(EVAL_HEIR,CCchange,Heirpk));
         mtx.vout.push_back(CTxOut(nValue,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
         fprintf(stderr,"start at %u\n",(uint32_t)time(NULL));
         j = rand() & 0xfffffff;
         for (i=0; i<1000000; i++,j++)
         {
             tmpmtx = mtx;
-            rawhex = FinalizeCCTx(-1LL,cp,tmpmtx,mypk,txfee,CScript() << OP_RETURN << E_MARSHAL(ss << (uint8_t)EVAL_MOFN << (uint8_t)'G' << j));
+            rawhex = FinalizeCCTx(-1LL,cp,tmpmtx,mypk,txfee,CScript() << OP_RETURN << E_MARSHAL(ss << (uint8_t)EVAL_HEIR << (uint8_t)'G' << j));
             if ( (len= (int32_t)rawhex.size()) > 0 && len < 65536 )
             {
                 len >>= 1;
@@ -190,35 +177,35 @@ std::string MofNGet(uint64_t txfee,int64_t nValue)
         }
         fprintf(stderr,"couldnt generate valid txid %u\n",(uint32_t)time(NULL));
         return("");
-    } else fprintf(stderr,"cant find mofn inputs\n");
+    } else fprintf(stderr,"cant find Heir inputs\n");
     return("");
 }
 
-std::string MofNFund(uint64_t txfee,int64_t funds)
+std::string HeirFund(uint64_t txfee,int64_t funds)
 {
-    CMutableTransaction mtx; CPubKey mypk,mofnpk; CScript opret; struct CCcontract_info *cp,C;
-    cp = CCinit(&C,EVAL_MOFN);
+    CMutableTransaction mtx; CPubKey mypk,Heirpk; CScript opret; struct CCcontract_info *cp,C;
+    cp = CCinit(&C,EVAL_HEIR);
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
-    mofnpk = GetUnspendable(cp,0);
+    Heirpk = GetUnspendable(cp,0);
     if ( AddNormalinputs(mtx,mypk,funds+txfee,64) > 0 )
     {
-        mtx.vout.push_back(MakeCC1vout(EVAL_MOFN,funds,mofnpk));
+        mtx.vout.push_back(MakeCC1vout(EVAL_HEIR,funds,Heirpk));
         return(FinalizeCCTx(0,cp,mtx,mypk,txfee,opret));
     }
     return("");
 }
 
-UniValue MofNInfo()
+UniValue HeirInfo()
 {
     UniValue result(UniValue::VOBJ); char numstr[64];
-    CMutableTransaction mtx; CPubKey mofnpk; struct CCcontract_info *cp,C; int64_t funding;
+    CMutableTransaction mtx; CPubKey Heirpk; struct CCcontract_info *cp,C; int64_t funding;
     result.push_back(Pair("result","success"));
-    result.push_back(Pair("name","MofN"));
-    cp = CCinit(&C,EVAL_MOFN);
-    mofnpk = GetUnspendable(cp,0);
-    funding = AddMofNInputs(cp,mtx,mofnpk,0,0);
+    result.push_back(Pair("name","Heir"));
+    cp = CCinit(&C,EVAL_HEIR);
+    Heirpk = GetUnspendable(cp,0);
+    funding = AddHeirInputs(cp,mtx,Heirpk,0,0);
     sprintf(numstr,"%.8f",(double)funding/COIN);
     result.push_back(Pair("funding",numstr));
     return(result);
