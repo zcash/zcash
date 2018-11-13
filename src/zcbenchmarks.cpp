@@ -280,10 +280,15 @@ double benchmark_large_tx(size_t nInputs)
     return timer_stop(tv_start);
 }
 
-double benchmark_try_decrypt_sprout_notes(size_t nAddrs)
+// The two benchmarks, try_decrypt_sprout_notes and try_decrypt_sapling_notes,
+// are checking a worst-case scenarios. In both we add n keys to a wallet, 
+// create a transaction using a key not in our original list of n, and then
+// check that the transaction is not associated with any of the keys in our 
+// wallet. We call assert(...) to ensure that this is true.
+double benchmark_try_decrypt_sprout_notes(size_t nKeys)
 {
     CWallet wallet;
-    for (int i = 0; i < nAddrs; i++) {
+    for (int i = 0; i < nKeys; i++) {
         auto sk = libzcash::SproutSpendingKey::random();
         wallet.AddSproutSpendingKey(sk);
     }
@@ -293,11 +298,13 @@ double benchmark_try_decrypt_sprout_notes(size_t nAddrs)
 
     struct timeval tv_start;
     timer_start(tv_start);
-    auto nd = wallet.FindMySproutNotes(tx);
+    auto noteDataMap = wallet.FindMySproutNotes(tx);
+
+    assert(noteDataMap.empty());
     return timer_stop(tv_start);
 }
 
-double benchmark_try_decrypt_sapling_notes(size_t nAddrs)
+double benchmark_try_decrypt_sapling_notes(size_t nKeys)
 {
     // Set params
     auto consensusParams = Params().GetConsensus();
@@ -305,20 +312,20 @@ double benchmark_try_decrypt_sapling_notes(size_t nAddrs)
     auto masterKey = GetMasterSaplingSpendingKey();
 
     CWallet wallet;
-    wallet.AddSaplingSpendingKey(masterKey, masterKey.DefaultAddress());
 
     int i;
-    for (i = 0; i < nAddrs; i++) {
+    for (i = 0; i < nKeys; i++) {
         auto sk = masterKey.Derive(i);
         wallet.AddSaplingSpendingKey(sk, sk.DefaultAddress());
     }
 
     auto sk = masterKey.Derive(i);
-    auto tx = GetValidSaplingTx(consensusParams, sk, 10);
+    auto tx = GetValidSaplingReceive(consensusParams, wallet, sk, 10);
 
     struct timeval tv_start;
     timer_start(tv_start);
-    auto saplingNoteDataAndAddressesToAdd = wallet.FindMySaplingNotes(tx);
+    auto noteDataMapAndAddressesToAdd = wallet.FindMySaplingNotes(tx);
+    assert(noteDataMapAndAddressesToAdd.first.empty());
     return timer_stop(tv_start);
 }
 
@@ -337,25 +344,7 @@ CWalletTx CreateSproutTxWithNoteData(const libzcash::SproutSpendingKey& sk) {
     return wtx;
 }
 
-CWalletTx CreateSaplingTxWithNoteData(const Consensus::Params& consensusParams,
-                                      const libzcash::SaplingExtendedSpendingKey &sk) {
-    auto wtx = GetValidSaplingTx(consensusParams, sk, 10);
-    auto testNote = GetTestSaplingNote(sk.DefaultAddress(), 10);
-    auto fvk = sk.expsk.full_viewing_key();
-    auto nullifier = testNote.note.nullifier(fvk, testNote.tree.witness().position()).get();
-
-    mapSaplingNoteData_t noteDataMap;
-    SaplingOutPoint outPoint {wtx.GetHash(), 0};
-    auto ivk = fvk.in_viewing_key();
-    SaplingNoteData noteData {ivk, nullifier};
-    noteDataMap[outPoint] = noteData;
-
-    wtx.SetSaplingNoteData(noteDataMap);
-
-    return wtx;
-}
-
-double benchmark_increment_note_witnesses(size_t nTxs)
+double benchmark_increment_note_witnesses_sprout(size_t nTxs)
 {
     auto consensusParams = Params().GetConsensus();
 
@@ -366,24 +355,10 @@ double benchmark_increment_note_witnesses(size_t nTxs)
     auto sproutSpendingKey = libzcash::SproutSpendingKey::random();
     wallet.AddSproutSpendingKey(sproutSpendingKey);
 
-    auto saplingSpendingKey = GetMasterSaplingSpendingKey();
-    wallet.AddSaplingSpendingKey(saplingSpendingKey, saplingSpendingKey.DefaultAddress());
-
-    // Half Sprout and half Sapling txs (+1 for Sapling if nTxs is odd)
-    size_t numSproutTxs = nTxs / 2;
-    size_t numSaplingTxs = nTxs - numSproutTxs;
-
     // First block
     CBlock block1;
-    // Sprout
-    for (int i = 0; i < numSproutTxs; ++i) {
+    for (int i = 0; i < nTxs; ++i) {
         auto wtx = CreateSproutTxWithNoteData(sproutSpendingKey);
-        wallet.AddToWallet(wtx, true, NULL);
-        block1.vtx.push_back(wtx);
-    }
-    // Sapling
-    for (int i = 0; i < numSaplingTxs; ++i) {
-        auto wtx = CreateSaplingTxWithNoteData(consensusParams, saplingSpendingKey);
         wallet.AddToWallet(wtx, true, NULL);
         block1.vtx.push_back(wtx);
     }
@@ -401,8 +376,66 @@ double benchmark_increment_note_witnesses(size_t nTxs)
         auto sproutTx = CreateSproutTxWithNoteData(sproutSpendingKey);
         wallet.AddToWallet(sproutTx, true, NULL);
         block2.vtx.push_back(sproutTx);
+    }
 
-        auto saplingTx = CreateSaplingTxWithNoteData(consensusParams, saplingSpendingKey);
+    CBlockIndex index2(block2);
+    index2.nHeight = 2;
+
+    struct timeval tv_start;
+    timer_start(tv_start);
+    wallet.ChainTip(&index2, &block2, sproutTree, saplingTree, true);
+    return timer_stop(tv_start);
+}
+
+CWalletTx CreateSaplingTxWithNoteData(const Consensus::Params& consensusParams,
+                                      CBasicKeyStore& keyStore,
+                                      const libzcash::SaplingExtendedSpendingKey &sk) {
+    auto wtx = GetValidSaplingReceive(consensusParams, keyStore, sk, 10);
+    auto testNote = GetTestSaplingNote(sk.DefaultAddress(), 10);
+    auto fvk = sk.expsk.full_viewing_key();
+    auto nullifier = testNote.note.nullifier(fvk, testNote.tree.witness().position()).get();
+
+    mapSaplingNoteData_t noteDataMap;
+    SaplingOutPoint outPoint {wtx.GetHash(), 0};
+    auto ivk = fvk.in_viewing_key();
+    SaplingNoteData noteData {ivk, nullifier};
+    noteDataMap[outPoint] = noteData;
+
+    wtx.SetSaplingNoteData(noteDataMap);
+
+    return wtx;
+}
+
+double benchmark_increment_note_witnesses_sapling(size_t nTxs)
+{
+    auto consensusParams = Params().GetConsensus();
+
+    CWallet wallet;
+    SproutMerkleTree sproutTree;
+    SaplingMerkleTree saplingTree;
+
+    auto saplingSpendingKey = GetMasterSaplingSpendingKey();
+    wallet.AddSaplingSpendingKey(saplingSpendingKey, saplingSpendingKey.DefaultAddress());
+
+    // First block
+    CBlock block1;
+    for (int i = 0; i < nTxs; ++i) {
+        auto wtx = CreateSaplingTxWithNoteData(consensusParams, wallet, saplingSpendingKey);
+        wallet.AddToWallet(wtx, true, NULL);
+        block1.vtx.push_back(wtx);
+    }
+
+    CBlockIndex index1(block1);
+    index1.nHeight = 1;
+
+    // Increment to get transactions witnessed
+    wallet.ChainTip(&index1, &block1, sproutTree, saplingTree, true);
+
+    // Second block
+    CBlock block2;
+    block2.hashPrevBlock = block1.GetHash();
+    {
+        auto saplingTx = CreateSaplingTxWithNoteData(consensusParams, wallet, saplingSpendingKey);
         wallet.AddToWallet(saplingTx, true, NULL);
         block1.vtx.push_back(saplingTx);
     }

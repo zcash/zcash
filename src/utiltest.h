@@ -47,8 +47,9 @@ CKey AddCKeyToKeyStore(CBasicKeyStore& keyStore);
  */
 TestSaplingNote GetTestSaplingNote(const libzcash::SaplingPaymentAddress& pa, CAmount value);
 
-CWalletTx GetValidSaplingTx(const Consensus::Params& consensusParams,
-                            const libzcash::SaplingExtendedSpendingKey &sk,
-                            CAmount value);
+CWalletTx GetValidSaplingReceive(const Consensus::Params& consensusParams,
+                                 CBasicKeyStore& keyStore,
+                                 const libzcash::SaplingExtendedSpendingKey &sk,
+                                 CAmount value);
 
 #endif // ZCASH_UTIL_TEST_H
