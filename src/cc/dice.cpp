@@ -400,13 +400,22 @@ void *dicefinish(void *_ptr)
                 }
                 if ( ptr->bettxid_ready != 0 )
                 {
-                    if ( newblock != 0 && ptr->txid != zeroid )
+                    if ( now > ptr->bettxid_ready + 2*3600 )
                     {
-                        CCduration(numblocks,ptr->txid);
-                        //fprintf(stderr,"duration finish txid.%s\n",ptr->txid.GetHex().c_str());
-                        if ( numblocks == 0 )
-                            mySenddicetransaction(ptr->rawtx,ptr->entropyused,ptr->entropyvout,ptr->bettxid,ptr->betTx,ptr->funcid,ptr);
-                        else continue;
+                        fprintf(stderr,"purge bettxid_ready %s\n",ptr->bettxid.GetHex().c_str());
+                        dicefinish_delete(ptr);
+                        continue;
+                    }
+                    else if ( newblock != 0 )
+                    {
+                        if ( ptr->txid != zeroid )
+                        {
+                            CCduration(numblocks,ptr->txid);
+                            //fprintf(stderr,"duration finish txid.%s\n",ptr->txid.GetHex().c_str());
+                            if ( numblocks == 0 )
+                                mySenddicetransaction(ptr->rawtx,ptr->entropyused,ptr->entropyvout,ptr->bettxid,ptr->betTx,ptr->funcid,ptr);
+                            else continue;
+                        }
                     }
                     if ( ptr->txid == zeroid )
                         vin0_needed++;
