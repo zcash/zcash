@@ -4976,7 +4976,7 @@ UniValue setpubkey(const UniValue& params, bool fHelp)
     } else {
         result.push_back(Pair("error", "Can only set pubkey once, to change it you need to restart your daemon, pubkey in use is below."));
         pubkey2addr((char *)Raddress,(uint8_t *)NOTARY_PUBKEY33);
-        std::string address_ret.assign(Raddress);
+        std::string address_ret; address_ret.assign(Raddress);
         result.push_back(Pair("address",address_ret));
     }
     result.push_back(Pair("pubkey", NOTARY_PUBKEY));
