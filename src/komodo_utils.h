@@ -1520,7 +1520,8 @@ void komodo_args(char *argv0)
         fprintf(stderr,"KOMODO_EXCHANGEWALLET mode active\n");
     DONATION_PUBKEY = GetArg("-donation", "");
     NOTARY_PUBKEY = GetArg("-pubkey", "");
-		if ( strlen(NOTARY_PUBKEY.c_str()) == 66 )
+    KOMODO_DEALERNODE = GetArg("-dealer",0);
+    if ( strlen(NOTARY_PUBKEY.c_str()) == 66 )
     {
         USE_EXTERNAL_PUBKEY = 1;
         if ( IS_KOMODO_NOTARY == 0 )
@@ -1659,8 +1660,8 @@ void komodo_args(char *argv0)
         MAX_MONEY += (MAX_MONEY * ASSETCHAINS_COMMISSION) / SATOSHIDEN;
         if ( ASSETCHAINS_CC >= KOMODO_FIRSTFUNGIBLEID && MAX_MONEY < 1000000LL*SATOSHIDEN )
             MAX_MONEY = 1000000LL*SATOSHIDEN;
-        if ( MAX_MONEY <= 0 || MAX_MONEY > 1000000000LL*SATOSHIDEN )
-            MAX_MONEY = 1000000000LL*SATOSHIDEN;
+        if ( MAX_MONEY <= 0 || MAX_MONEY > 10000100000LL*SATOSHIDEN )
+            MAX_MONEY = 10000100000LL*SATOSHIDEN;
         //fprintf(stderr,"MAX_MONEY %llu %.8f\n",(long long)MAX_MONEY,(double)MAX_MONEY/SATOSHIDEN);
         //printf("baseid.%d MAX_MONEY.%s %.8f\n",baseid,ASSETCHAINS_SYMBOL,(double)MAX_MONEY/SATOSHIDEN);
         ASSETCHAINS_P2PPORT = komodo_port(ASSETCHAINS_SYMBOL,ASSETCHAINS_SUPPLY,&ASSETCHAINS_MAGIC,extraptr,extralen);
@@ -1764,6 +1765,8 @@ void komodo_args(char *argv0)
             dpowconfs = 0;
     } else BITCOIND_RPCPORT = GetArg("-rpcport", BaseParams().RPCPort());
     KOMODO_DPOWCONFS = GetArg("-dpowconfs",dpowconfs);
+    if ( ASSETCHAINS_SYMBOL[0] == 0 || strcmp(ASSETCHAINS_SYMBOL,"SUPERNET") == 0 || strcmp(ASSETCHAINS_SYMBOL,"DEX") == 0 || strcmp(ASSETCHAINS_SYMBOL,"COQUI") == 0 || strcmp(ASSETCHAINS_SYMBOL,"PIRATE") == 0 )
+        KOMODO_EXTRASATOSHI = 1;
 }
 
 void komodo_nameset(char *symbol,char *dest,char *source)

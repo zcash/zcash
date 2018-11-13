@@ -58,7 +58,7 @@ using namespace std;
 
 CCriticalSection cs_main;
 extern uint8_t NOTARY_PUBKEY33[33];
-extern int32_t KOMODO_LOADINGBLOCKS,KOMODO_LONGESTCHAIN,KOMODO_INSYNC,KOMODO_CONNECTING;
+extern int32_t KOMODO_LOADINGBLOCKS,KOMODO_LONGESTCHAIN,KOMODO_INSYNC,KOMODO_CONNECTING,KOMODO_EXTRASATOSHI;
 int32_t KOMODO_NEWBLOCKS;
 int32_t komodo_block2pubkey33(uint8_t *pubkey33,CBlock *block);
 void komodo_broadcast(CBlock *pblock,int32_t limit);
@@ -3191,8 +3191,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             else fprintf(stderr,"checktoshis %.8f numvouts %d\n",dstr(checktoshis),(int32_t)block.vtx[0].vout.size());
         }
     }
-
-    if ( ( block.vtx[0].GetValueOut() > blockReward && is_STAKED(ASSETCHAINS_SYMBOL) != 0 ) || ( block.vtx[0].GetValueOut() > blockReward+1 ) )
+    if ( block.vtx[0].GetValueOut() > blockReward+KOMODO_EXTRASATOSHI )
     {
         if ( ASSETCHAINS_SYMBOL[0] != 0 || pindex->nHeight >= KOMODO_NOTARIES_HEIGHT1 || block.vtx[0].vout[0].nValue > blockReward )
         {

@@ -30,5 +30,6 @@ std::string DiceCreateFunding(uint64_t txfee,char *planstr,int64_t funds,int64_t
 std::string DiceAddfunding(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t amount);
 UniValue DiceInfo(uint256 diceid);
 UniValue DiceList();
+int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbits,struct CCcontract_info *cp,CPubKey dicepk,uint256 reffundingtxid, int32_t &entropytxs,bool random);
 
 #endif

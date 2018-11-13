@@ -16,7 +16,8 @@
 #include "CCHeir.h"
 
 /*
- The idea of Heir CC is to allow crypto inheritance
+ The idea of Heir CC is to allow crypto inheritance.
+ A special 1of2 CC address is created that is freely spendable by the creator. The heir is only allowed to spend after the specified amount of idle blocks. The idea is that if the address doesnt spend any funds for a year (or whatever amount set), then it is time to allow the heir to spend. The design requires the heir to spend all the funds at once
 */
 
 // start of consensus code
