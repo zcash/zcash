@@ -12,15 +12,12 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-static const std::string tSecretRegtest = "cND2ZvtabDbJ1gucx9GWH6XT9kgTAqfb6cotPt5Q5CyxVDhid2EN";
-
 TEST(TransactionBuilder, Invoke)
 {
     auto consensusParams = ActivateSapling();
 
     CBasicKeyStore keystore;
-    CKey tsk = DecodeSecret(tSecretRegtest);
-    keystore.AddKey(tsk);
+    CKey tsk = AddCKeyToKeyStore(keystore);
     auto scriptPubKey = GetScriptForDestination(tsk.GetPubKey().GetID());
 
     auto sk_from = libzcash::SaplingSpendingKey::random();
@@ -131,8 +128,7 @@ TEST(TransactionBuilder, FailsWithNegativeChange)
 
     // Set up dummy transparent address
     CBasicKeyStore keystore;
-    CKey tsk = DecodeSecret(tSecretRegtest);
-    keystore.AddKey(tsk);
+    CKey tsk = AddCKeyToKeyStore(keystore);
     auto tkeyid = tsk.GetPubKey().GetID();
     auto scriptPubKey = GetScriptForDestination(tkeyid);
     CTxDestination taddr = tkeyid;
@@ -182,8 +178,7 @@ TEST(TransactionBuilder, ChangeOutput)
 
     // Set up dummy transparent address
     CBasicKeyStore keystore;
-    CKey tsk = DecodeSecret(tSecretRegtest);
-    keystore.AddKey(tsk);
+    CKey tsk = AddCKeyToKeyStore(keystore);
     auto tkeyid = tsk.GetPubKey().GetID();
     auto scriptPubKey = GetScriptForDestination(tkeyid);
     CTxDestination taddr = tkeyid;

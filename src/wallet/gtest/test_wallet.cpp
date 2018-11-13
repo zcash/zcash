@@ -25,8 +25,6 @@ ACTION(ThrowLogicError) {
     throw std::logic_error("Boom");
 }
 
-static const std::string tSecretRegtest = "cND2ZvtabDbJ1gucx9GWH6XT9kgTAqfb6cotPt5Q5CyxVDhid2EN";
-
 class MockWalletDB {
 public:
     MOCK_METHOD0(TxnBegin, bool());
@@ -1571,8 +1569,7 @@ TEST(WalletTests, SetBestChainIgnoresTxsWithoutShieldedData) {
     CBlockLocator loc;
 
     // Set up transparent address
-    CKey tsk = DecodeSecret(tSecretRegtest);
-    wallet.AddKey(tsk);
+    CKey tsk = AddCKeyToKeyStore(wallet);
     auto scriptPubKey = GetScriptForDestination(tsk.GetPubKey().GetID());
 
     // Set up a Sprout address
@@ -1885,8 +1882,7 @@ TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
 
     // Set up transparent address
     CBasicKeyStore keystore;
-    CKey tsk = DecodeSecret(tSecretRegtest);
-    keystore.AddKey(tsk);
+    CKey tsk = AddCKeyToKeyStore(keystore);
     auto scriptPubKey = GetScriptForDestination(tsk.GetPubKey().GetID());
 
     // Generate shielding tx from transparent to Sapling

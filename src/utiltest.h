@@ -5,6 +5,7 @@
 #ifndef ZCASH_UTIL_TEST_H
 #define ZCASH_UTIL_TEST_H
 
+#include "key_io.h"
 #include "wallet/wallet.h"
 #include "zcash/JoinSplit.hpp"
 #include "zcash/Note.hpp"
@@ -26,6 +27,8 @@ CWalletTx GetValidSproutSpend(ZCJoinSplit& params,
                               CAmount value);
 
 // Sapling
+static const std::string T_SECRET_REGTEST = "cND2ZvtabDbJ1gucx9GWH6XT9kgTAqfb6cotPt5Q5CyxVDhid2EN";
+
 struct TestSaplingNote {
     libzcash::SaplingNote note;
     SaplingMerkleTree tree;
@@ -36,6 +39,8 @@ const Consensus::Params& ActivateSapling();
 void DeactivateSapling();
 
 libzcash::SaplingExtendedSpendingKey GetMasterSaplingSpendingKey();
+
+CKey AddCKeyToKeyStore(CBasicKeyStore& keyStore);
 
 /**
  * Generate a dummy SaplingNote and a SaplingMerkleTree with that note's commitment.

@@ -175,6 +175,12 @@ libzcash::SaplingExtendedSpendingKey GetMasterSaplingSpendingKey() {
     return libzcash::SaplingExtendedSpendingKey::Master(seed);
 }
 
+CKey AddCKeyToKeyStore(CBasicKeyStore& keyStore) {
+    CKey tsk = DecodeSecret(T_SECRET_REGTEST);
+    keyStore.AddKey(tsk);
+    return tsk;
+}
+
 TestSaplingNote GetTestSaplingNote(const libzcash::SaplingPaymentAddress& pa, CAmount value) {
     // Generate dummy Sapling note
     libzcash::SaplingNote note(pa, value);
