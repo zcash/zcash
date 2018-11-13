@@ -1425,12 +1425,8 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
         return("");
     }
     if ( (cp= Diceinit(fundingPubKey,fundingtxid,&C,planstr,txfee,mypk,dicepk,sbits,minbet,maxbet,maxodds,timeoutblocks)) == 0 ) {
-<<<<<<< HEAD
 
         CCerror = "error in Diceinit";
-=======
-        CCerror = "Diceinit error in bet, is your transaction confirmed?";
->>>>>>> 08b2f80458cd1f0313af8089c9fda3b9a82ea68c
         return("");
     }
     if ( bet < minbet || bet > maxbet || odds > maxodds )
