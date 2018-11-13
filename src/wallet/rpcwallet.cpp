@@ -4921,7 +4921,7 @@ bool pubkey2addr(char *destaddr,uint8_t *pubkey33);
 UniValue setpubkey(const UniValue& params, bool fHelp)
 {
     UniValue result(UniValue::VOBJ);
-    if ( fHelp || params.size() != 1 )
+    if ( fHelp || params.size() > 1 )
         throw runtime_error(
         "setpubkey\n"
         "\nSets the -pubkey if the daemon was not started with it, if it was already set, it returns the pubkey.\n"
@@ -4938,16 +4938,10 @@ UniValue setpubkey(const UniValue& params, bool fHelp)
         + HelpExampleRpc("setpubkey", "02f7597468703c1c5c8465dd6d43acaae697df9df30bed21494d193412a1ea193e")
       );
 
-#ifdef ENABLE_WALLET
     LOCK2(cs_main, pwalletMain ? &pwalletMain->cs_wallet : NULL);
-#else
-    LOCK(cs_main);
-#endif
 
     char Raddress[18];
     uint8_t pubkey33[33];
-    extern uint8_t NOTARY_PUBKEY33[];
-    extern std::string NOTARY_PUBKEY;
     if ( NOTARY_PUBKEY33[0] == 0 ) {
         if (strlen(params[0].get_str().c_str()) == 66) {
             decode_hex(pubkey33,33,(char *)params[0].get_str().c_str());
@@ -4960,23 +4954,39 @@ UniValue setpubkey(const UniValue& params, bool fHelp)
                 if (isValid)
                 {
                     CTxDestination dest = address.Get();
-                    string currentAddress = address.ToString();
-                    result.push_back(Pair("address", currentAddress));
-#ifdef ENABLE_WALLET
                     isminetype mine = pwalletMain ? IsMine(*pwalletMain, dest) : ISMINE_NO;
-                    result.push_back(Pair("ismine", (mine & ISMINE_SPENDABLE) ? true : false));
-#endif
+                    if ( mine == ISMINE_NO ) {
+                        result.push_back(Pair("WARNING", "privkey for this pubkey is not imported to wallet!"));
+                    } else {
+                        result.push_back(Pair("ismine", "true"));
+                        std::string notaryname;
+                        if ( (IS_STAKED_NOTARY= StakedNotaryID(notaryname, Raddress)) > -1 ) {
+                            result.push_back(Pair("IsNotary", notaryname));
+                            IS_KOMODO_NOTARY = 0;
+                        }
+                    }
+                    NOTARY_PUBKEY = params[0].get_str();
+                    decode_hex(NOTARY_PUBKEY33,33,(char *)NOTARY_PUBKEY.c_str());
+                    USE_EXTERNAL_PUBKEY = 1;
+                    NOTARY_ADDRESS = address.ToString();
+                  } else {
+                    result.push_back(Pair("error", "pubkey entered is invalid."));
                 }
-                NOTARY_PUBKEY = params[0].get_str();
-                decode_hex(NOTARY_PUBKEY33,33,(char *)NOTARY_PUBKEY.c_str());
             }
         } else {
             result.push_back(Pair("error", "pubkey is wrong length, must be 66 char hex string."));
         }
     } else {
+        if ( NOTARY_ADDRESS.empty() ) {
+          pubkey2addr((char *)Raddress,(uint8_t *)NOTARY_PUBKEY33);
+          NOTARY_ADDRESS.assign(Raddress);
+        }
         result.push_back(Pair("error", "Can only set pubkey once, to change it you need to restart your daemon."));
     }
-    result.push_back(Pair("pubkey", NOTARY_PUBKEY));
+    if ( NOTARY_PUBKEY33[0] != 0 && !NOTARY_ADDRESS.empty() ) {
+        result.push_back(Pair("address", NOTARY_ADDRESS));
+        result.push_back(Pair("pubkey", NOTARY_PUBKEY));
+    }
     return result;
 }
 
@@ -5620,7 +5630,7 @@ UniValue gatewayswithdraw(const UniValue& params, bool fHelp)
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
     bindtxid = Parseuint256((char *)params[0].get_str().c_str());
-    coin = params[1].get_str(); 
+    coin = params[1].get_str();
     withdrawpub = ParseHex(params[2].get_str());
     amount = atof((char *)params[3].get_str().c_str()) * COIN;
     hex = GatewaysWithdraw(0,bindtxid,coin,pubkey2pk(withdrawpub),amount);
@@ -5673,7 +5683,7 @@ UniValue gatewaysmultisig(const UniValue& params, bool fHelp)
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     const CKeyStore& keystore = *pwalletMain;
-    LOCK2(cs_main, pwalletMain->cs_wallet);    
+    LOCK2(cs_main, pwalletMain->cs_wallet);
     txidaddr = (char *)params[0].get_str().c_str();
     return(GatewaysMultisig(txidaddr));
 }
@@ -5686,7 +5696,7 @@ UniValue gatewayspartialsign(const UniValue& params, bool fHelp)
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     const CKeyStore& keystore = *pwalletMain;
-    LOCK2(cs_main, pwalletMain->cs_wallet);    
+    LOCK2(cs_main, pwalletMain->cs_wallet);
     txid = Parseuint256((char *)params[0].get_str().c_str());
     coin = params[1].get_str();
     parthex = params[2].get_str();
