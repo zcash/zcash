@@ -906,7 +906,8 @@ bool ContextualCheckTransaction(
 
         // Reject transactions with non-Sapling version group ID
         if (tx.fOverwintered && tx.nVersionGroupId != SAPLING_VERSION_GROUP_ID) {
-            return state.DoS(dosLevel, error("CheckTransaction(): invalid Sapling tx version"),
+            return state.DoS(isInitBlockDownload() ? 0 : dosLevel,
+                    error("CheckTransaction(): invalid Sapling tx version"),
                     REJECT_INVALID, "bad-sapling-tx-version-group-id");
         }
 
@@ -930,7 +931,8 @@ bool ContextualCheckTransaction(
 
         // Reject transactions with non-Overwinter version group ID
         if (tx.fOverwintered && tx.nVersionGroupId != OVERWINTER_VERSION_GROUP_ID) {
-            return state.DoS(dosLevel, error("CheckTransaction(): invalid Overwinter tx version"),
+            return state.DoS(isInitBlockDownload() ? 0 : dosLevel,
+                    error("CheckTransaction(): invalid Overwinter tx version"),
                     REJECT_INVALID, "bad-overwinter-tx-version-group-id");
         }
 
