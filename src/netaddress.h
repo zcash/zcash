@@ -62,7 +62,7 @@ class CNetAddr
         Network m_net{NET_IPV6};
 
         unsigned char ip[16]; // in network byte order
-        uint32_t scopeId; // for scoped/link-local ipv6 addresses
+        uint32_t scopeId{0}; // for scoped/link-local ipv6 addresses
 
     public:
         CNetAddr();
