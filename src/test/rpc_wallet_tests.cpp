@@ -626,7 +626,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
     BOOST_CHECK(myaddrs == listaddrs);
 
     // Add one more address
-    BOOST_CHECK_NO_THROW(retValue = CallRPC("z_getnewaddress"));
+    BOOST_CHECK_NO_THROW(retValue = CallRPC("z_getnewaddress sprout"));
     std::string newaddress = retValue.get_str();
     auto address = DecodePaymentAddress(newaddress);
     BOOST_CHECK(IsValidPaymentAddress(address));
@@ -1366,7 +1366,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_encrypted_wallet_zkeys)
 
     // create keys
     for (int i = 0; i < n; i++) {
-        CallRPC("z_getnewaddress");
+        CallRPC("z_getnewaddress sprout");
     }
 
     // Verify we can list the keys imported
@@ -1391,14 +1391,14 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_encrypted_wallet_zkeys)
     BOOST_CHECK(arr.size() == n);
 
     // Try to add a new key, but we can't as the wallet is locked
-    BOOST_CHECK_THROW(CallRPC("z_getnewaddress"), runtime_error);
+    BOOST_CHECK_THROW(CallRPC("z_getnewaddress sprout"), runtime_error);
 
     // We can't call RPC walletpassphrase as that invokes RPCRunLater which breaks tests.
     // So we manually unlock.
     BOOST_CHECK(pwalletMain->Unlock(strWalletPass));
 
     // Now add a key
-    BOOST_CHECK_NO_THROW(CallRPC("z_getnewaddress"));
+    BOOST_CHECK_NO_THROW(CallRPC("z_getnewaddress sprout"));
 
     // Verify the key has been added
     BOOST_CHECK_NO_THROW(retValue = CallRPC("z_listaddresses"));
@@ -1507,7 +1507,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_listunspent_parameters)
     BOOST_CHECK_THROW(CallRPC("z_listunspent 1 999 true [\"zcMuhvq8sEkHALuSU2i4NbNQxshSAYrpCExec45ZjtivYPbuiFPwk6WHy4SvsbeZ4siy1WheuRGjtaJmoD1J8bFqNXhsG6U\"]"), runtime_error);
 
     // create shielded address so we have the spending key
-    BOOST_CHECK_NO_THROW(retValue = CallRPC("z_getnewaddress"));
+    BOOST_CHECK_NO_THROW(retValue = CallRPC("z_getnewaddress sprout"));
     std::string myzaddr = retValue.get_str();
 
     // return empty array for this address
