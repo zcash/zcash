@@ -1615,7 +1615,7 @@ void komodo_args(char *argv0)
         }
         if ( ASSETCHAINS_ENDSUBSIDY != 0 || ASSETCHAINS_REWARD != 0 || ASSETCHAINS_HALVING != 0 || ASSETCHAINS_DECAY != 0 || ASSETCHAINS_COMMISSION != 0 || ASSETCHAINS_PUBLIC != 0 || ASSETCHAINS_PRIVATE != 0 || ASSETCHAINS_TXPOW != 0 || ASSETCHAINS_FOUNDERS != 0 || ASSETCHAINS_SCRIPTPUB.size() > 1 )
         {
-            fprintf(stderr,"end.%llu blocks, reward %.8f halving.%llu blocks, decay.%llu perc %.4f%% ac_pub=[%02x...]\n",(long long)ASSETCHAINS_ENDSUBSIDY,dstr(ASSETCHAINS_REWARD),(long long)ASSETCHAINS_HALVING,(long long)ASSETCHAINS_DECAY,dstr(ASSETCHAINS_COMMISSION)*100,ASSETCHAINS_OVERRIDE_PUBKEY33[0]);
+            fprintf(stderr,"end.%llu blocks, reward %.8f halving.%llu blocks, decay.%llu perc %.4f%% ac_pub=[%02x%02x%02x...]\n",(long long)ASSETCHAINS_ENDSUBSIDY,dstr(ASSETCHAINS_REWARD),(long long)ASSETCHAINS_HALVING,(long long)ASSETCHAINS_DECAY,dstr(ASSETCHAINS_COMMISSION)*100,ASSETCHAINS_OVERRIDE_PUBKEY33[0],ASSETCHAINS_OVERRIDE_PUBKEY33[1],ASSETCHAINS_OVERRIDE_PUBKEY33[2]);
             extraptr = extrabuf;
             memcpy(extraptr,ASSETCHAINS_OVERRIDE_PUBKEY33,33), extralen = 33;
             extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_ENDSUBSIDY),(void *)&ASSETCHAINS_ENDSUBSIDY);
@@ -1746,6 +1746,8 @@ void komodo_args(char *argv0)
             dpowconfs = 0;
     } else BITCOIND_RPCPORT = GetArg("-rpcport", BaseParams().RPCPort());
     KOMODO_DPOWCONFS = GetArg("-dpowconfs",dpowconfs);
+    if ( ASSETCHAINS_SYMBOL[0] == 0 || strcmp(ASSETCHAINS_SYMBOL,"SUPERNET") == 0 || strcmp(ASSETCHAINS_SYMBOL,"DEX") == 0 || strcmp(ASSETCHAINS_SYMBOL,"COQUI") == 0 || strcmp(ASSETCHAINS_SYMBOL,"PIRATE") == 0 )
+        KOMODO_EXTRASATOSHI = 1;
 }
 
 void komodo_nameset(char *symbol,char *dest,char *source)
