@@ -46,6 +46,7 @@ using namespace libzcash;
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 extern UniValue TxJoinSplitToJSON(const CTransaction& tx);
 extern uint8_t ASSETCHAINS_PRIVATE;
+extern int32_t USE_EXTERNAL_PUBKEY;
 uint32_t komodo_segid32(char *coinaddr);
 int32_t komodo_dpowconfs(int32_t height,int32_t numconfs);
 int32_t komodo_isnotaryvout(char *coinaddr); // from ac_private chains only
@@ -4969,6 +4970,7 @@ UniValue setpubkey(const UniValue& params, bool fHelp)
                 }
                 NOTARY_PUBKEY = params[0].get_str();
                 decode_hex(NOTARY_PUBKEY33,33,(char *)NOTARY_PUBKEY.c_str());
+                USE_EXTERNAL_PUBKEY = 1;
             }
         } else {
             result.push_back(Pair("error", "pubkey is wrong length, must be 66 char hex string."));
