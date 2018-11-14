@@ -40,7 +40,10 @@ bool SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const CScrip
 std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey mypk,uint64_t txfee,CScript opret)
 {
     auto consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
-    CTransaction vintx; std::string hex; uint256 hashBlock; uint64_t mask=0,nmask=0,vinimask=0; int64_t utxovalues[64],change,normalinputs=0,totaloutputs=0,normaloutputs=0,totalinputs=0; int32_t i,utxovout,n,err = 0; char myaddr[64],destaddr[64],unspendable[64]; uint8_t *privkey,myprivkey[32],unspendablepriv[32],*msg32 = 0; CC *mycond=0,*othercond=0,*othercond2=0,*othercond3=0,*cond; CPubKey unspendablepk;
+    CTransaction vintx; std::string hex; uint256 hashBlock; uint64_t mask=0,nmask=0,vinimask=0;
+    int64_t utxovalues[64],change,normalinputs=0,totaloutputs=0,normaloutputs=0,totalinputs=0,normalvins=0,ccvins=0; 
+    int32_t i,utxovout,n,err = 0; char myaddr[64],destaddr[64],unspendable[64];
+    uint8_t *privkey,myprivkey[32],unspendablepriv[32],*msg32 = 0; CC *mycond=0,*othercond=0,*othercond2=0,*othercond3=0,*cond; CPubKey unspendablepk;
     n = mtx.vout.size();
     for (i=0; i<n; i++)
     {
@@ -71,11 +74,13 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
             if ( vintx.vout[utxovout].scriptPubKey.IsPayToCryptoCondition() == 0 )
             {
                 //fprintf(stderr,"vin.%d is normal %.8f\n",i,(double)utxovalues[i]/COIN);
+                if (ccvins==0) normalvins++;
                 normalinputs += utxovalues[i];
                 vinimask |= (1LL << i);
             }
             else
             {
+                ccvins++;
                 mask |= (1LL << i);
             }
         } else fprintf(stderr,"FinalizeCCTx couldnt find %s\n",mtx.vin[i].prevout.hash.ToString().c_str());
@@ -91,7 +96,17 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
     if ( opret.size() > 0 )
         mtx.vout.push_back(CTxOut(0,opret));
     PrecomputedTransactionData txdata(mtx);
-    n = mtx.vin.size();
+    n = mtx.vin.size(); 
+    //Reorder vins so that for multiple normal vins all other except vin0 goes to the end
+    //This is a must to avoid hardfork change of validation in every CC, because there could be maximum one normal vin at the begining with current validation.   
+    if (normalvins>1)
+    {        
+        for(i=1;i<normalvins;i++)
+        {   
+            mtx.vin.push_back(mtx.vin[1]);
+            mtx.vin.erase(mtx.vin.begin() + 1);            
+        }
+    }               
     for (i=0; i<n; i++)
     {
         if ( GetTransaction(mtx.vin[i].prevout.hash,vintx,hashBlock,false) != 0 )
@@ -159,7 +174,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
                 }
             }
         } else fprintf(stderr,"FinalizeCCTx couldnt find %s\n",mtx.vin[i].prevout.hash.ToString().c_str());
-    }
+    }     
     if ( mycond != 0 )
         cc_free(mycond);
     if ( othercond != 0 )
