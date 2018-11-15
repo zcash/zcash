@@ -1438,7 +1438,7 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
         entropyval = entropyval2;
         entropytxid = entropytxid2;
     }
-    if ( ( funding >= 2*bet*odds+txfee && entropyval != 0 ) )
+    if ( funding >= 2*bet*odds+txfee && entropyval != 0 )
     {
         if ( entropytxs < 100 ) {
             CCerror = "Your dealer is broke, find a new casino.";
