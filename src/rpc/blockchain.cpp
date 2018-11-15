@@ -33,6 +33,8 @@ using namespace std;
 extern void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry);
 void ScriptPubKeyToJSON(const CScript& scriptPubKey, UniValue& out, bool fIncludeHex);
 int32_t komodo_longestchain();
+int32_t komodo_dpowconfs(int32_t height,int32_t numconfs);
+extern int32_t KOMODO_LONGESTCHAIN;
 
 double GetDifficultyINTERNAL(const CBlockIndex* blockindex, bool networkDifficulty)
 {
@@ -118,7 +120,8 @@ UniValue blockheaderToJSON(const CBlockIndex* blockindex)
     // Only report confirmations if the block is on the main chain
     if (chainActive.Contains(blockindex))
         confirmations = chainActive.Height() - blockindex->GetHeight() + 1;
-    result.push_back(Pair("confirmations", confirmations));
+    result.push_back(Pair("confirmations", komodo_dpowconfs(blockindex->GetHeight(),confirmations)));
+    result.push_back(Pair("rawconfirmations", confirmations));
     result.push_back(Pair("height", blockindex->GetHeight()));
     result.push_back(Pair("version", blockindex->nVersion));
     result.push_back(Pair("merkleroot", blockindex->hashMerkleRoot.GetHex()));
@@ -150,7 +153,8 @@ UniValue blockToDeltasJSON(const CBlock& block, const CBlockIndex* blockindex)
     } else {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Block is an orphan");
     }
-    result.push_back(Pair("confirmations", confirmations));
+    result.push_back(Pair("confirmations", komodo_dpowconfs(blockindex->GetHeight(),confirmations)));
+    result.push_back(Pair("rawconfirmations", confirmations));
     result.push_back(Pair("size", (int)::GetSerializeSize(block, SER_NETWORK, PROTOCOL_VERSION)));
     result.push_back(Pair("height", blockindex->GetHeight()));
     result.push_back(Pair("version", block.nVersion));
@@ -267,7 +271,8 @@ UniValue blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool tx
     // Only report confirmations if the block is on the main chain
     if (chainActive.Contains(blockindex))
         confirmations = chainActive.Height() - blockindex->GetHeight() + 1;
-    result.push_back(Pair("confirmations", confirmations));
+    result.push_back(Pair("confirmations", komodo_dpowconfs(blockindex->GetHeight(),confirmations)));
+    result.push_back(Pair("rawconfirmations", confirmations));
     result.push_back(Pair("size", (int)::GetSerializeSize(block, SER_NETWORK, PROTOCOL_VERSION)));
     result.push_back(Pair("height", blockindex->GetHeight()));
     result.push_back(Pair("version", block.nVersion));
@@ -375,6 +380,18 @@ bool myIsutxo_spentinmempool(uint256 txid,int32_t vout)
                 return(true);
         }
         //fprintf(stderr,"are vins for %s\n",uint256_str(str,hash));
+    }
+    return(false);
+}
+
+bool mytxid_inmempool(uint256 txid)
+{
+    BOOST_FOREACH(const CTxMemPoolEntry &e,mempool.mapTx)
+    {
+        const CTransaction &tx = e.GetTx();
+        const uint256 &hash = tx.GetHash();
+        if ( txid == hash )
+            return(true);
     }
     return(false);
 }
@@ -851,7 +868,7 @@ UniValue kvsearch(const UniValue& params, bool fHelp)
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("kvsearch", "examplekey")
-            + HelpExampleRpc("kvsearch", "examplekey")
+            + HelpExampleRpc("kvsearch", "\"examplekey\"")
         );
     LOCK(cs_main);
     if ( (keylen= (int32_t)strlen(params[0].get_str().c_str())) > 0 )
@@ -1176,7 +1193,11 @@ UniValue gettxout(const UniValue& params, bool fHelp)
     ret.push_back(Pair("bestblock", pindex->GetBlockHash().GetHex()));
     if ((unsigned int)coins.nHeight == MEMPOOL_HEIGHT)
         ret.push_back(Pair("confirmations", 0));
-    else ret.push_back(Pair("confirmations", pindex->GetHeight() - coins.nHeight + 1));
+    else
+    {
+        ret.push_back(Pair("confirmations", komodo_dpowconfs(coins.nHeight,pindex->GetHeight() - coins.nHeight + 1)));
+        ret.push_back(Pair("rawconfirmations", pindex->GetHeight() - coins.nHeight + 1));
+    }
     ret.push_back(Pair("value", ValueFromAmount(coins.vout[n].nValue)));
     uint64_t interest; int32_t txheight; uint32_t locktime;
     if ( (interest= komodo_accrued_interest(&txheight,&locktime,hash,n,coins.nHeight,coins.vout[n].nValue,(int32_t)pindex->GetHeight())) != 0 )
@@ -1333,7 +1354,7 @@ UniValue getblockchaininfo(const UniValue& params, bool fHelp)
     if ( ASSETCHAINS_SYMBOL[0] == 0 ) {
         progress = Checkpoints::GuessVerificationProgress(Params().Checkpoints(), chainActive.LastTip());
     } else {
-	    int32_t longestchain = komodo_longestchain();
+        int32_t longestchain = KOMODO_LONGESTCHAIN;//komodo_longestchain();
 	    progress = (longestchain > 0 ) ? (double) chainActive.Height() / longestchain : 1.0;
     }
     UniValue obj(UniValue::VOBJ);
@@ -1404,6 +1425,8 @@ struct CompareBlocksByHeight
     }
 };
 
+#include <pthread.h>
+
 UniValue getchaintips(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 0)
@@ -1442,17 +1465,33 @@ UniValue getchaintips(const UniValue& params, bool fHelp)
     /* Build up a list of chain tips.  We start with the list of all
        known blocks, and successively remove blocks that appear as pprev
        of another block.  */
+    /*static pthread_mutex_t mutex; static int32_t didinit;
+    if ( didinit == 0 )
+    {
+        pthread_mutex_init(&mutex,NULL);
+        didinit = 1;
+    }
+    pthread_mutex_lock(&mutex);*/
     std::set<const CBlockIndex*, CompareBlocksByHeight> setTips;
+    int32_t n = 0;
     BOOST_FOREACH(const PAIRTYPE(const uint256, CBlockIndex*)& item, mapBlockIndex)
+    {
+        n++;
         setTips.insert(item.second);
+    }
+    fprintf(stderr,"iterations getchaintips %d\n",n);
+    n = 0;
     BOOST_FOREACH(const PAIRTYPE(const uint256, CBlockIndex*)& item, mapBlockIndex)
     {
         const CBlockIndex* pprev=0;
+        n++;
         if ( item.second != 0 )
             pprev = item.second->pprev;
         if (pprev)
             setTips.erase(pprev);
     }
+    fprintf(stderr,"iterations getchaintips %d\n",n);
+    //pthread_mutex_unlock(&mutex);
 
     // Always report the currently active tip.
     setTips.insert(chainActive.LastTip());

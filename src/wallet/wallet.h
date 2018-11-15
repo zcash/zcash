@@ -1473,5 +1473,6 @@ public:
     SpendingKeyAddResult operator()(const libzcash::InvalidEncoding& no) const;    
 };
 
+#define RETURN_IF_ERROR(CCerror) if ( CCerror != "" ) { ERR_RESULT(CCerror); return(result); }
 
 #endif // BITCOIN_WALLET_WALLET_H

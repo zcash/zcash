@@ -22,7 +22,7 @@
 #include "CCauction.h"
 #include "CClotto.h"
 #include "CCfsm.h"
-#include "CCMofN.h"
+#include "CCHeir.h"
 #include "CCchannels.h"
 #include "CCOracles.h"
 #include "CCPrices.h"
@@ -30,7 +30,6 @@
 #include "CCTriggers.h"
 #include "CCPayments.h"
 #include "CCGateways.h"
-#include "StakeGuard.h"
 
 /*
  CCcustom has most of the functions that need to be extended to create a new CC contract.
@@ -55,11 +54,6 @@
  */
 
 // to create a new CCaddr, add to rpcwallet the CCaddress and start with -pubkey= with the pubkey of the new address, with its wif already imported. set normaladdr and CChexstr. run CCaddress and it will print the privkey along with autocorrect the CCaddress. which should then update the CCaddr here
-
-// StakeGuard - nothing at stake
-std::string StakeGuardAddr = "RCG8KwJNDVwpUBcdoa6AoHqHVJsA1uMYMR";
-std::string StakeGuardPubKey = "03166b7813a4855a88e9ef7340a692ef3c2decedfdc2c7563ec79537e89667d935";
-std::string StakeGuardWIF = "Uw7vRYHGKjyi1FaJ8Lv1USSuj7ntUti8fAhSDiCdbzuV6yDagaTn";
 
 // Assets, aka Tokens
 #define FUNCNAME IsAssetsInput
@@ -140,13 +134,13 @@ uint8_t AuctionCCpriv[32] = { 0x8c, 0x1b, 0xb7, 0x8c, 0x02, 0xa3, 0x9d, 0x21, 0x
 #undef FUNCNAME
 #undef EVALCODE
 
-// MofN
-#define FUNCNAME IsMofNInput
-#define EVALCODE EVAL_MOFN
-const char *MofNCCaddr = "RDVHcSekmXgeYBqRupNTmqo3Rn8QRXNduy";
-const char *MofNNormaladdr = "RTPwUjKYECcGn6Y4KYChLhgaht1RSU4jwf";
-char MofNCChexstr[67] = { "03c91bef3d7cc59c3a89286833a3446b29e52a5e773f738a1ad2b09785e5f4179e" };
-uint8_t MofNCCpriv[32] = { 0x9d, 0xa1, 0xf8, 0xf7, 0xba, 0x0a, 0x91, 0x36, 0x89, 0x9a, 0x86, 0x30, 0x63, 0x20, 0xd7, 0xdf, 0xaa, 0x35, 0xe3, 0x99, 0x32, 0x2b, 0x63, 0xc0, 0x66, 0x9c, 0x93, 0xc4, 0x5e, 0x9d, 0xb9, 0xce };
+// Heir
+#define FUNCNAME IsHeirInput
+#define EVALCODE EVAL_HEIR
+const char *HeirCCaddr = "RDVHcSekmXgeYBqRupNTmqo3Rn8QRXNduy";
+const char *HeirNormaladdr = "RTPwUjKYECcGn6Y4KYChLhgaht1RSU4jwf";
+char HeirCChexstr[67] = { "03c91bef3d7cc59c3a89286833a3446b29e52a5e773f738a1ad2b09785e5f4179e" };
+uint8_t HeirCCpriv[32] = { 0x9d, 0xa1, 0xf8, 0xf7, 0xba, 0x0a, 0x91, 0x36, 0x89, 0x9a, 0x86, 0x30, 0x63, 0x20, 0xd7, 0xdf, 0xaa, 0x35, 0xe3, 0x99, 0x32, 0x2b, 0x63, 0xc0, 0x66, 0x9c, 0x93, 0xc4, 0x5e, 0x9d, 0xb9, 0xce };
 #include "CCcustom.inc"
 #undef FUNCNAME
 #undef EVALCODE
@@ -221,7 +215,7 @@ uint8_t PaymentsCCpriv[32] = { 0x03, 0xc9, 0x73, 0xc2, 0xb8, 0x30, 0x3d, 0xbd, 0
 #define FUNCNAME IsGatewaysInput
 #define EVALCODE EVAL_GATEWAYS
 const char *GatewaysCCaddr = "RKWpoK6vTRtq5b9qrRBodLkCzeURHeEk33";
-const char *GatewaysNormaladdr = "RGJKV97ZN1wBfunuMt1tebiiHENNEq73Yh";
+const char *GatewaysNormaladdr = "RGJKV97ZN1wBfunuMt1tebiiHENNEq73Yh"; // wif UxJFYqEvLAjWPPRvn8NN1fRWscBxQZXZB5BBgc3HiapKVQBYNcmo
 char GatewaysCChexstr[67] = { "03ea9c062b9652d8eff34879b504eda0717895d27597aaeb60347d65eed96ccb40" };
 uint8_t GatewaysCCpriv[32] = { 0xf7, 0x4b, 0x5b, 0xa2, 0x7a, 0x5e, 0x9c, 0xda, 0x89, 0xb1, 0xcb, 0xb9, 0xe6, 0x9c, 0x2c, 0x70, 0x85, 0x37, 0xdd, 0x00, 0x7a, 0x67, 0xff, 0x7c, 0x62, 0x1b, 0xe2, 0xfb, 0x04, 0x8f, 0x85, 0xbf };
 #include "CCcustom.inc"
@@ -233,15 +227,6 @@ struct CCcontract_info *CCinit(struct CCcontract_info *cp, uint8_t evalcode)
     cp->evalcode = evalcode;
     switch ( evalcode )
     {
-        case EVAL_STAKEGUARD:
-            strcpy(cp->unspendableCCaddr,StakeGuardAddr.c_str());
-            strcpy(cp->normaladdr,StakeGuardAddr.c_str());
-            strcpy(cp->CChexstr,StakeGuardPubKey.c_str());
-            memcpy(cp->CCpriv,DecodeSecret(StakeGuardWIF).begin(),32);
-            cp->validate = StakeGuardValidate;
-            cp->ismyvin = IsStakeGuardInput;
-            break;
-
         case EVAL_ASSETS:
             strcpy(cp->unspendableCCaddr,AssetsCCaddr);
             strcpy(cp->normaladdr,AssetsNormaladdr);
@@ -298,13 +283,13 @@ struct CCcontract_info *CCinit(struct CCcontract_info *cp, uint8_t evalcode)
             cp->validate = AuctionValidate;
             cp->ismyvin = IsAuctionInput;
             break;
-        case EVAL_MOFN:
-            strcpy(cp->unspendableCCaddr,MofNCCaddr);
-            strcpy(cp->normaladdr,MofNNormaladdr);
-            strcpy(cp->CChexstr,MofNCChexstr);
-            memcpy(cp->CCpriv,MofNCCpriv,32);
-            cp->validate = MofNValidate;
-            cp->ismyvin = IsMofNInput;
+        case EVAL_HEIR:
+            strcpy(cp->unspendableCCaddr,HeirCCaddr);
+            strcpy(cp->normaladdr,HeirNormaladdr);
+            strcpy(cp->CChexstr,HeirCChexstr);
+            memcpy(cp->CCpriv,HeirCCpriv,32);
+            cp->validate = HeirValidate;
+            cp->ismyvin = IsHeirInput;
             break;
         case EVAL_CHANNELS:
             strcpy(cp->unspendableCCaddr,ChannelsCCaddr);

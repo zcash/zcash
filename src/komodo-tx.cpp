@@ -40,7 +40,6 @@ uint64_t komodo_accrued_interest(int32_t *txheightp,uint32_t *locktimep,uint256 
 static bool fCreateBlank;
 static std::map<std::string,UniValue> registers;
 static const int CONTINUE_EXECUTION=-1;
-boost::optional<libzcash::SaplingPaymentAddress> cheatCatcher;
 
 //
 // This function returns either one of EXIT_ codes when it's expected to stop the process or

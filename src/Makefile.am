@@ -291,15 +291,13 @@ libbitcoin_server_a_SOURCES = \
   cc/CCcustom.cpp \
   cc/CCtx.cpp \
   cc/CCutils.cpp \
-  cc/StakeGuard.cpp \
-  cc/StakeGuard.h \
   cc/assets.cpp \
   cc/faucet.cpp \
   cc/rewards.cpp \
   cc/dice.cpp \
   cc/lotto.cpp \
   cc/fsm.cpp \
-  cc/MofN.cpp \
+  cc/heir.cpp \
   cc/oracles.cpp \
   cc/prices.cpp \
   cc/pegs.cpp \
@@ -310,8 +308,6 @@ libbitcoin_server_a_SOURCES = \
   cc/auction.cpp \
   cc/betprotocol.cpp \
   chain.cpp \
-  cheatcatcher.h \
-  cheatcatcher.cpp \
   checkpoints.cpp \
   crosschain.cpp \
   crypto/haraka.h \

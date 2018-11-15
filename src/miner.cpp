@@ -10,7 +10,6 @@
 
 #include "amount.h"
 #include "chainparams.h"
-#include "cc/StakeGuard.h"
 #include "importcoin.h"
 #include "consensus/consensus.h"
 #include "consensus/upgrades.h"
@@ -124,7 +123,7 @@ extern uint64_t ASSETCHAINS_REWARD[ASSETCHAINS_MAX_ERAS], ASSETCHAINS_TIMELOCKGT
 extern const char *ASSETCHAINS_ALGORITHMS[];
 extern int32_t VERUS_MIN_STAKEAGE, ASSETCHAINS_ALGO, ASSETCHAINS_EQUIHASH, ASSETCHAINS_VERUSHASH, ASSETCHAINS_LASTERA, ASSETCHAINS_LWMAPOS, ASSETCHAINS_NONCESHIFT[], ASSETCHAINS_HASHESPERROUND[];
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
-extern std::string NOTARY_PUBKEY,ASSETCHAINS_OVERRIDE_PUBKEY;
+extern std::string NOTARY_PUBKEY,ASSETCHAINS_OVERRIDE_PUBKEY,ASSETCHAINS_SCRIPTPUB;
 void vcalc_sha256(char deprecated[(256 >> 3) * 2 + 1],uint8_t hash[256 >> 3],uint8_t *src,int32_t len);
 
 extern uint8_t NOTARY_PUBKEY33[33],ASSETCHAINS_OVERRIDE_PUBKEY33[33];
@@ -135,7 +134,7 @@ int32_t komodo_pax_opreturn(int32_t height,uint8_t *opret,int32_t maxsize);
 int32_t komodo_baseid(char *origbase);
 int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_t nTime,int32_t dispflag);
 int64_t komodo_block_unlocktime(uint32_t nHeight);
-uint64_t komodo_commission(const CBlock *block);
+uint64_t komodo_commission(const CBlock *block,int32_t height);
 int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blocktimep,uint32_t *txtimep,uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep,uint8_t *utxosig);
 int32_t verus_staked(CBlock *pBlock, CMutableTransaction &txNew, uint32_t &nBits, arith_uint256 &hashResult, uint8_t *utxosig, CPubKey &pk);
 int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33);
@@ -236,94 +235,6 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
         // This vector will be sorted into a priority queue:
         vector<TxPriority> vecPriority;
         vecPriority.reserve(mempool.mapTx.size() + 1);
-
-        // check if we should add cheat transaction
-        CBlockIndex *ppast;
-        CTransaction cb;
-        int cheatHeight = nHeight - COINBASE_MATURITY < 1 ? 1 : nHeight - COINBASE_MATURITY;
-        if (cheatCatcher &&
-            sapling && chainActive.Height() > 100 && 
-            (ppast = chainActive[cheatHeight]) && 
-            ppast->IsVerusPOSBlock() && 
-            cheatList.IsHeightOrGreaterInList(cheatHeight))
-        {
-            // get the block and see if there is a cheat candidate for the stake tx
-            CBlock b;
-            if (!(fHavePruned && !(ppast->nStatus & BLOCK_HAVE_DATA) && ppast->nTx > 0) && ReadBlockFromDisk(b, ppast, 1))
-            {
-                CTransaction &stakeTx = b.vtx[b.vtx.size() - 1];
-
-                if (cheatList.IsCheatInList(stakeTx, &cheatTx))
-                {
-                    // make and sign the cheat transaction to spend the coinbase to our address
-                    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(consensusParams, nHeight);
-
-                    uint32_t voutNum;
-                    // get the first vout with value
-                    for (voutNum = 0; voutNum < b.vtx[0].vout.size(); voutNum++)
-                    {
-                        if (b.vtx[0].vout[voutNum].nValue > 0)
-                            break;
-                    }
-
-                    // send to the same pub key as the destination of this block reward
-                    if (MakeCheatEvidence(mtx, b.vtx[0], voutNum, cheatTx))
-                    {
-                        extern CWallet *pwalletMain;
-                        LOCK(pwalletMain->cs_wallet);
-                        TransactionBuilder tb = TransactionBuilder(consensusParams, nHeight);
-                        cb = b.vtx[0];
-                        cbHash = cb.GetHash();
-
-                        bool hasInput = false;
-                        for (uint32_t i = 0; i < cb.vout.size(); i++)
-                        {
-                            // add the spends with the cheat
-                            if (cb.vout[i].nValue > 0)
-                            {
-                                tb.AddTransparentInput(COutPoint(cbHash,i), cb.vout[0].scriptPubKey, cb.vout[0].nValue);
-                                hasInput = true;
-                            }
-                        }
-
-                        if (hasInput)
-                        {
-                            // this is a send from a t-address to a sapling address, which we don't have an ovk for. 
-                            // Instead, generate a common one from the HD seed. This ensures the data is
-                            // recoverable, at least for us, while keeping it logically separate from the ZIP 32
-                            // Sapling key hierarchy, which the user might not be using.
-                            uint256 ovk;
-                            HDSeed seed;
-                            if (pwalletMain->GetHDSeed(seed)) {
-                                ovk = ovkForShieldingFromTaddr(seed);
-
-                                // send everything to Sapling address
-                                tb.SendChangeTo(cheatCatcher.value(), ovk);
-
-                                tb.AddOpRet(mtx.vout[mtx.vout.size() - 1].scriptPubKey);
-
-                                cheatSpend = tb.Build();
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        if (cheatSpend)
-        {
-            cheatTx = cheatSpend.value();
-            std::list<CTransaction> removed;
-            mempool.removeConflicts(cheatTx, removed);
-            printf("Found cheating stake! Adding cheat spend for %.8f at block #%d, coinbase tx\n%s\n",
-                (double)cb.GetValueOut() / (double)COIN, nHeight, cheatSpend.value().vin[0].prevout.hash.GetHex().c_str());
-
-            // add to mem pool and relay
-            if (myAddtomempool(cheatTx))
-            {
-                RelayTransaction(cheatTx);
-            }
-        }
 
         // now add transactions from the mem pool
         for (CTxMemPool::indexed_transaction_set::iterator mi = mempool.mapTx.begin();
@@ -573,9 +484,7 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
             {
                 CAmount txfees;
 
-                // after Sapling, stake transactions have a fee, but it is recovered in the reward
-                // this ensures that a rebroadcast goes through quickly to begin staking again
-                txfees = sapling ? DEFAULT_STAKE_TXFEE : 0;
+                txfees = 0;
 
                 pblock->vtx.push_back(txStaked);
                 pblocktemplate->vTxFees.push_back(txfees);
@@ -595,27 +504,6 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
         txNew.vout.resize(1);
         txNew.vout[0].scriptPubKey = scriptPubKeyIn;
         txNew.vout[0].nValue = GetBlockSubsidy(nHeight,consensusParams) + nFees;
-
-        // once we get to Sapling, enable CC StakeGuard for stake transactions
-        if (isStake && sapling)
-        {
-            // if there is a specific destination, use it
-            CTransaction stakeTx = pblock->vtx[pblock->vtx.size() - 1];
-            CStakeParams p;
-            if (ValidateStakeTransaction(stakeTx, p, false))
-            {
-                if (!p.pk.IsValid() || !MakeGuardedOutput(txNew.vout[0].nValue, p.pk, stakeTx, txNew.vout[0]))
-                {
-                    fprintf(stderr,"CreateNewBlock: failed to make GuardedOutput on staking coinbase\n");
-                    return 0;
-                }
-            }
-            else
-            {
-                fprintf(stderr,"CreateNewBlock: invalid stake transaction\n");
-                return 0;
-            }
-        }
 
         txNew.nExpiryHeight = 0;
         txNew.nLockTime = std::max(pindexPrev->GetMedianTimePast()+1, GetAdjustedTime());
@@ -647,17 +535,22 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
             txNew.vout[1].scriptPubKey = CScriptExt().OpReturnScript(opretScript, OPRETTYPE_TIMELOCK);
             txNew.vout[1].nValue = 0;
         } // timelocks and commissions are currently incompatible due to validation complexity of the combination
-        else if ( nHeight > 1 && ASSETCHAINS_SYMBOL[0] != 0 && ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 && ASSETCHAINS_COMMISSION != 0 && (commission= komodo_commission((CBlock*)&pblocktemplate->block)) != 0 )
+        else if ( nHeight > 1 && ASSETCHAINS_SYMBOL[0] != 0 && (ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 || ASSETCHAINS_SCRIPTPUB.size() > 1) && ASSETCHAINS_COMMISSION != 0 && (commission= komodo_commission((CBlock*)&pblocktemplate->block,(int32_t)nHeight)) != 0 )
         {
             int32_t i; uint8_t *ptr;
             txNew.vout.resize(2);
             txNew.vout[1].nValue = commission;
-            txNew.vout[1].scriptPubKey.resize(35);
-            ptr = (uint8_t *)&txNew.vout[1].scriptPubKey[0];
-            ptr[0] = 33;
-            for (i=0; i<33; i++)
-                ptr[i+1] = ASSETCHAINS_OVERRIDE_PUBKEY33[i];
-            ptr[34] = OP_CHECKSIG;
+            if ( ASSETCHAINS_SCRIPTPUB.size() > 1 )
+                txNew.vout[1].scriptPubKey = CScript() << ParseHex(ASSETCHAINS_SCRIPTPUB);
+            else
+            {
+                txNew.vout[1].scriptPubKey.resize(35);
+                ptr = (uint8_t *)&txNew.vout[1].scriptPubKey[0];
+                ptr[0] = 33;
+                for (i=0; i<33; i++)
+                    ptr[i+1] = ASSETCHAINS_OVERRIDE_PUBKEY33[i];
+                ptr[34] = OP_CHECKSIG;
+            }
             //printf("autocreate commision vout\n");
         }
 
@@ -1455,7 +1348,7 @@ void static BitcoinMiner()
     
     unsigned int n = chainparams.EquihashN();
     unsigned int k = chainparams.EquihashK();
-    uint8_t *script; uint64_t total,checktoshis; int32_t i,j,gpucount=KOMODO_MAXGPUCOUNT,notaryid = -1;
+    uint8_t *script; uint64_t total; int32_t i,j,gpucount=KOMODO_MAXGPUCOUNT,notaryid = -1;
     while ( (ASSETCHAIN_INIT == 0 || KOMODO_INITDONE == 0) )
     {
         sleep(1);
@@ -1648,7 +1541,7 @@ void static BitcoinMiner()
                 {
                     fprintf(stderr,"Mining when blockchain might not be in sync longest.%d vs %d\n",KOMODO_LONGESTCHAIN,Mining_height);
                     if ( KOMODO_LONGESTCHAIN != 0 && Mining_height >= KOMODO_LONGESTCHAIN )
-                        KOMODO_INSYNC = 1;
+                        KOMODO_INSYNC = Mining_height;
                     sleep(3);
                 }
                 // Hash state
@@ -1904,35 +1797,6 @@ void static BitcoinMiner()
     void GenerateBitcoins(bool fGenerate, int nThreads)
 #endif
     {
-        // if we are supposed to catch stake cheaters, there must be a valid sapling parameter, we need it at
-        // initialization, and this is the first time we can get it. store the Sapling address here
-        extern boost::optional<libzcash::SaplingPaymentAddress> cheatCatcher;
-        extern std::string VERUS_CHEATCATCHER;
-        libzcash::PaymentAddress addr = DecodePaymentAddress(VERUS_CHEATCATCHER);
-        if (VERUS_CHEATCATCHER.size() > 0 && IsValidPaymentAddress(addr))
-        {
-            try
-            {
-                cheatCatcher = boost::get<libzcash::SaplingPaymentAddress>(addr);
-            } 
-            catch (...)
-            {
-            }
-        }
-        if (VERUS_CHEATCATCHER.size() > 0)
-        {
-            if (cheatCatcher == boost::none)
-            {
-                LogPrintf("ERROR: -cheatcatcher parameter is invalid Sapling payment address\n");
-                fprintf(stderr, "-cheatcatcher parameter is invalid Sapling payment address\n");
-            }
-            else
-            {
-                LogPrintf("Cheat Catcher active on %s\n", VERUS_CHEATCATCHER.c_str());
-                fprintf(stderr, "Cheat Catcher active on %s\n", VERUS_CHEATCATCHER.c_str());
-            }
-        }
-
         static boost::thread_group* minerThreads = NULL;
         
         if (nThreads < 0)

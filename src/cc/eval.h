@@ -36,9 +36,9 @@
  * there should be a code identifying it. For example,
  * a possible code is EVAL_BITCOIN_SCRIPT, where the entire binary
  * after the code is interpreted as a bitcoin script.
+ * Verus EVAL_STAKEGUARD is 0x01
  */
 #define FOREACH_EVAL(EVAL)             \
-        EVAL(EVAL_STAKEGUARD, 0x1)  \
         EVAL(EVAL_IMPORTPAYOUT, 0xe1)  \
         EVAL(EVAL_IMPORTCOIN,   0xe2)  \
         EVAL(EVAL_ASSETS,   0xe3)  \
@@ -48,7 +48,7 @@
         EVAL(EVAL_FSM, 0xe7) \
         EVAL(EVAL_AUCTION, 0xe8) \
         EVAL(EVAL_LOTTO, 0xe9) \
-        EVAL(EVAL_MOFN, 0xea) \
+        EVAL(EVAL_HEIR, 0xea) \
         EVAL(EVAL_CHANNELS, 0xeb) \
         EVAL(EVAL_ORACLES, 0xec) \
         EVAL(EVAL_PRICES, 0xed) \

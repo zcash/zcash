@@ -12,17 +12,16 @@ This version of Komodo contains Bitcore support for komodo and all its assetchai
 This software is the VerusCoin enhanced Komodo client. Generally, you will use this if you want to mine VRSC or setup a full node. When you run the wallet it launches komodod automatically. On first launch it downloads Zcash parameters, roughly 1GB, which is mildly slow.
 The wallet downloads and stores the block chain or asset chain of the coin you select. It downloads and stores the entire history of the coins transactions; depending on the speed of your computer and network connection, the synchronization process could take a day or more once the blockchain has reached a significant size.
 
-## Development Resources
-- VerusCoin:[https://veruscoin.io/](https://veruscoin.io/) Wallets and CLI tools
-- Komodo Web: [https://komodoplatform.com/](https://komodoplatform.com/)
-- Organization web: [https://komodoplatform.com/](https://komodoplatform.com/)
-- Forum: [https://forum.komodoplatform.com/](https://forum.komodoplatform.com/)
+- Komodo Website: [https://komodoplatform.com](https://komodoplatform.com/)
+- Komodo Blockexplorer: [https://kmdexplorer.io](https://kmdexplorer.io/)
+- Komodo Discord: [https://komodoplatform.com/discord](https://komodoplatform.com/discord)
+- Forum: [https://forum.komodoplatform.com](https://forum.komodoplatform.com/)
 - Mail: [info@komodoplatform.com](mailto:info@komodoplatform.com)
 - Support: [https://support.komodoplatform.com/support/home](https://support.komodoplatform.com/support/home)
-- Knowledgebase & How-to: [https://komodoplatform.atlassian.net/wiki/spaces/KPSD/pages](https://komodoplatform.atlassian.net/wiki/spaces/KPSD/pages)
-- API references: [http://docs.komodoplatform.com/](http://docs.komodoplatform.com/)
-- Blog: [http://blog.komodoplatform.com/](http://blog.komodoplatform.com/)
-- Whitepaper: [Komodo Whitepaper](https://komodoplatform.com/wp-content/uploads/2018/03/2018-03-12-Komodo-White-Paper-Full.pdf)
+- Knowledgebase & How-to: [https://support.komodoplatform.com/en/support/solutions](https://support.komodoplatform.com/en/support/solutions)
+- API references & Dev Documentation: [https://docs.komodoplatform.com](https://docs.komodoplatform.com/)
+- Blog: [https://blog.komodoplatform.com](https://blog.komodoplatform.com/)
+- Whitepaper: [Komodo Whitepaper](https://komodoplatform.com/whitepaper)
 - Komodo Platform public material: [Komodo Platform public material](https://docs.google.com/document/d/1AbhWrtagu4vYdkl-vsWz-HSNyNvK-W-ZasHCqe7CZy0)
 
 ## List of Komodo Platform Technologies

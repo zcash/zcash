@@ -74,6 +74,7 @@ CC* GetCryptoCondition(CScript const& scriptSig)
     std::vector<unsigned char> ffbin;
     if (scriptSig.GetOp(pc, opcode, ffbin))
         return cc_readFulfillmentBinary((uint8_t*)ffbin.data(), ffbin.size()-1);
+    else return(0);
 }
 
 bool IsCCInput(CScript const& scriptSig)
@@ -238,6 +239,16 @@ bool GetCCParams(Eval* eval, const CTransaction &tx, uint32_t nIn,
         }
     }
     return false;
+    //fprintf(stderr,"ExtractDestination failed\n");
+    return(false);
+}
+
+bool pubkey2addr(char *destaddr,uint8_t *pubkey33)
+{
+    std::vector<uint8_t>pk; int32_t i;
+    for (i=0; i<33; i++)
+        pk.push_back(pubkey33[i]);
+    return(Getscriptaddress(destaddr,CScript() << pk << OP_CHECKSIG));
 }
 
 CPubKey CCtxidaddr(char *txidaddr,uint256 txid)
@@ -420,12 +431,12 @@ int64_t CCduration(int32_t &numblocks,uint256 txid)
     numblocks = 0;
     if ( myGetTransaction(txid,tx,hashBlock) == 0 )
     {
-        fprintf(stderr,"CCduration cant find duration txid %s\n",uint256_str(str,txid));
+        //fprintf(stderr,"CCduration cant find duration txid %s\n",uint256_str(str,txid));
         return(0);
     }
     else if ( hashBlock == zeroid )
     {
-        fprintf(stderr,"CCduration no hashBlock for txid %s\n",uint256_str(str,txid));
+        //fprintf(stderr,"CCduration no hashBlock for txid %s\n",uint256_str(str,txid));
         return(0);
     }
     else if ( (pindex= mapBlockIndex[hashBlock]) == 0 || (txtime= pindex->nTime) == 0 || (txheight= pindex->GetHeight()) <= 0 )
@@ -435,12 +446,22 @@ int64_t CCduration(int32_t &numblocks,uint256 txid)
     }
     else if ( (pindex= chainActive.LastTip()) == 0 || pindex->nTime < txtime || pindex->GetHeight() <= txheight )
     {
-        fprintf(stderr,"CCduration backwards timestamps %u %u for txid %s hts.(%d %d)\n",(uint32_t)pindex->nTime,txtime,uint256_str(str,txid),txheight,(int32_t)pindex->GetHeight());
+        if ( pindex->nTime < txtime )
+            fprintf(stderr,"CCduration backwards timestamps %u %u for txid %s hts.(%d %d)\n",(uint32_t)pindex->nTime,txtime,uint256_str(str,txid),txheight,(int32_t)pindex->GetHeight());
         return(0);
     }
     numblocks = (pindex->GetHeight() - txheight);
     duration = (pindex->nTime - txtime);
-    fprintf(stderr,"duration %d (%u - %u) numblocks %d (%d - %d)\n",(int32_t)duration,(uint32_t)pindex->nTime,txtime,numblocks,pindex->GetHeight(),txheight);
+    //fprintf(stderr,"duration %d (%u - %u) numblocks %d (%d - %d)\n",(int32_t)duration,(uint32_t)pindex->nTime,txtime,numblocks,pindex->GetHeight(),txheight);
     return(duration);
 }
 
+bool isCCTxNotarizedConfirmed(uint256 txid)
+{
+    int32_t confirms;
+
+    CCduration(confirms,txid);
+    if (confirms >= MIN_NOTARIZATION_CONFIRMS)
+        return (true);
+    return (false);
+}

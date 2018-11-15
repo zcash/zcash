@@ -472,30 +472,7 @@ CChainPower GetBlockProof(const CBlockIndex& block)
 
     CBlockHeader header = block.GetBlockHeader();
 
-    // if POS block, add stake
-    if (!NetworkUpgradeActive(block.GetHeight(), Params().GetConsensus(), Consensus::UPGRADE_SAPLING) || !header.IsVerusPOSBlock())
-    {
-        return CChainPower(0, bnStakeTarget, (~bnWorkTarget / (bnWorkTarget + 1)) + 1);
-    }
-    else
-    {
-        bnStakeTarget.SetCompact(header.GetVerusPOSTarget(), &fNegative, &fOverflow);
-        if (fNegative || fOverflow || bnStakeTarget == 0)
-            return CChainPower(0);
-        // as the nonce has a fixed definition for a POS block, add the random amount of "work" from the nonce, so there will
-        // statistically always be a deterministic winner in POS
-        arith_uint256 aNonce;
-
-        // random amount of additional stake added is capped to 1/2 the current stake target
-        aNonce = UintToArith256(block.nNonce) | (bnStakeTarget << (uint64_t)1);
-
-        // We need to compute 2**256 / (bnTarget+1), but we can't represent 2**256
-        // as it's too large for a arith_uint256. However, as 2**256 is at least as large
-        // as bnTarget+1, it is equal to ((2**256 - bnTarget - 1) / (bnTarget+1)) + 1,
-        // or ~bnTarget / (nTarget+1) + 1.
-        return CChainPower(0, ((~bnStakeTarget / (bnStakeTarget + 1)) + 1) + ((~aNonce / (aNonce + 1)) + 1),
-                        (~bnWorkTarget / (bnWorkTarget + 1)) + 1);
-    }
+    return CChainPower(0, bnStakeTarget, (~bnWorkTarget / (bnWorkTarget + 1)) + 1);
 }
 
 int64_t GetBlockProofEquivalentTime(const CBlockIndex& to, const CBlockIndex& from, const CBlockIndex& tip, const Consensus::Params& params)

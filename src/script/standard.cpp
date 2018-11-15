@@ -371,7 +371,7 @@ bool ExtractDestination(const CScript& _scriptPubKey, CTxDestination& addressRet
         CPubKey pubKey(vSolutions[0]);
         if (!pubKey.IsValid())
         {
-            fprintf(stderr,"TX_PUBKEY invalid pubkey\n");
+            //fprintf(stderr,"TX_PUBKEY invalid pubkey\n");
             return false;
         }
 

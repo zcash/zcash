@@ -18,7 +18,8 @@
 
 using namespace std;
 
-typedef std::vector<unsigned char> valtype;
+typedef vector<unsigned char> valtype;
+extern uint8_t ASSETCHAINS_TXPOW;
 
 TransactionSignatureCreator::TransactionSignatureCreator(const CKeyStore* keystoreIn, const CTransaction* txToIn, unsigned int nInIn, const CAmount& amountIn, int nHashTypeIn) : BaseSignatureCreator(keystoreIn), txTo(txToIn), nIn(nInIn), nHashType(nHashTypeIn), amount(amountIn), checker(txTo, nIn, amountIn) {}
 
@@ -48,10 +49,20 @@ bool TransactionSignatureCreator::CreateSig(std::vector<unsigned char>& vchSig, 
     }
     else
     {
-        if (!key.Sign(hash, vchSig))
-            return false;
+        if ( ASSETCHAINS_TXPOW == 0 )
+        {
+            if (!key.Sign(hash, vchSig))
+                return false;
+        }
+        else
+        {
+            if (!key.Sign(hash, vchSig, rand()))
+                return false;
+        }
     }
+
     vchSig.push_back((unsigned char)nHashType);
+
     return true;
 }
 
@@ -97,11 +108,6 @@ CC *CCcond1(uint8_t evalcode,CPubKey pk)
     return CCNewThreshold(2, {condCC, Sig});
 }
 
-// TODO: these are redundant and should be cleaned up to one file
-std::string _StakeGuardAddr = "RCG8KwJNDVwpUBcdoa6AoHqHVJsA1uMYMR";
-std::string _StakeGuardPubKey = "03166b7813a4855a88e9ef7340a692ef3c2decedfdc2c7563ec79537e89667d935";
-std::string _StakeGuardWIF = "Uw7vRYHGKjyi1FaJ8Lv1USSuj7ntUti8fAhSDiCdbzuV6yDagaTn";
-
 std::vector<CCcontract_info> &GetCryptoConditions()
 {
     static bool initialized = false;
@@ -110,14 +116,7 @@ std::vector<CCcontract_info> &GetCryptoConditions()
 
     if (!initialized)
     {
-        C.evalcode = EVAL_STAKEGUARD;
-        strcpy(C.unspendableCCaddr,_StakeGuardAddr.c_str());
-        strcpy(C.normaladdr,_StakeGuardAddr.c_str());
-        strcpy(C.CChexstr,_StakeGuardPubKey.c_str());
-        memcpy(C.CCpriv, DecodeSecret(_StakeGuardWIF).begin(),32);
-        vCC.push_back(C);
-
-        initialized = true;
+        // this should initialize any desired auto-signed crypto-conditions
     }
     return vCC;
 }
