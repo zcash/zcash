@@ -46,6 +46,7 @@ using namespace libzcash;
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 extern UniValue TxJoinSplitToJSON(const CTransaction& tx);
 extern uint8_t ASSETCHAINS_PRIVATE;
+extern int32_t USE_EXTERNAL_PUBKEY;
 uint32_t komodo_segid32(char *coinaddr);
 int32_t komodo_dpowconfs(int32_t height,int32_t numconfs);
 int32_t komodo_isnotaryvout(char *coinaddr); // from ac_private chains only
@@ -4924,7 +4925,7 @@ UniValue setpubkey(const UniValue& params, bool fHelp)
     if ( fHelp || params.size() != 1 )
         throw runtime_error(
         "setpubkey\n"
-        "\nSets the -pubkey if the daemon was not started with it, if it was already set, it returns the pubkey.\n"
+        "\nSets the -pubkey if the daemon was not started with it, if it was already set, it returns the pubkey, and its Raddress.\n"
         "\nArguments:\n"
         "1. \"pubkey\"         (string) pubkey to set.\n"
         "\nResult:\n"
@@ -4969,12 +4970,16 @@ UniValue setpubkey(const UniValue& params, bool fHelp)
                 }
                 NOTARY_PUBKEY = params[0].get_str();
                 decode_hex(NOTARY_PUBKEY33,33,(char *)NOTARY_PUBKEY.c_str());
+                USE_EXTERNAL_PUBKEY = 1;
             }
         } else {
             result.push_back(Pair("error", "pubkey is wrong length, must be 66 char hex string."));
         }
     } else {
-        result.push_back(Pair("error", "Can only set pubkey once, to change it you need to restart your daemon."));
+        result.push_back(Pair("error", "Can only set pubkey once, to change it you need to restart your daemon, pubkey in use is below."));
+        pubkey2addr((char *)Raddress,(uint8_t *)NOTARY_PUBKEY33);
+        std::string address_ret; address_ret.assign(Raddress);
+        result.push_back(Pair("address",address_ret));
     }
     result.push_back(Pair("pubkey", NOTARY_PUBKEY));
     return result;
@@ -5620,7 +5625,7 @@ UniValue gatewayswithdraw(const UniValue& params, bool fHelp)
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
     bindtxid = Parseuint256((char *)params[0].get_str().c_str());
-    coin = params[1].get_str(); 
+    coin = params[1].get_str();
     withdrawpub = ParseHex(params[2].get_str());
     amount = atof((char *)params[3].get_str().c_str()) * COIN + 0.00000000499999;
     hex = GatewaysWithdraw(0,bindtxid,coin,pubkey2pk(withdrawpub),amount);
@@ -5673,7 +5678,7 @@ UniValue gatewaysmultisig(const UniValue& params, bool fHelp)
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     const CKeyStore& keystore = *pwalletMain;
-    LOCK2(cs_main, pwalletMain->cs_wallet);    
+    LOCK2(cs_main, pwalletMain->cs_wallet);
     txidaddr = (char *)params[0].get_str().c_str();
     return(GatewaysMultisig(txidaddr));
 }
@@ -5686,7 +5691,7 @@ UniValue gatewayspartialsign(const UniValue& params, bool fHelp)
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     const CKeyStore& keystore = *pwalletMain;
-    LOCK2(cs_main, pwalletMain->cs_wallet);    
+    LOCK2(cs_main, pwalletMain->cs_wallet);
     txid = Parseuint256((char *)params[0].get_str().c_str());
     coin = params[1].get_str();
     parthex = params[2].get_str();
