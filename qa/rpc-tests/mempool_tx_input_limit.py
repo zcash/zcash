@@ -45,7 +45,7 @@ class MempoolTxInputLimitTest(BitcoinTestFramework):
         # Check 1: z_sendmany is limited by -mempooltxinputlimit
 
         # Add zaddr to node 0
-        node0_zaddr = self.nodes[0].z_getnewaddress()
+        node0_zaddr = self.nodes[0].z_getnewaddress('sprout')
 
         # Send three inputs from node 0 taddr to zaddr to get out of coinbase
         node0_taddr = self.nodes[0].getnewaddress()

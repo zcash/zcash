@@ -18,7 +18,7 @@ class WalletNullifiersTest (BitcoinTestFramework):
 
     def run_test (self):
         # add zaddr to node 0
-        myzaddr0 = self.nodes[0].z_getnewaddress()
+        myzaddr0 = self.nodes[0].z_getnewaddress('sprout')
 
         # send node 0 taddr to zaddr to get out of coinbase
         mytaddr = self.nodes[0].getnewaddress()
@@ -32,7 +32,7 @@ class WalletNullifiersTest (BitcoinTestFramework):
         self.sync_all()
 
         # add zaddr to node 2
-        myzaddr = self.nodes[2].z_getnewaddress()
+        myzaddr = self.nodes[2].z_getnewaddress('sprout')
 
         # import node 2 zaddr into node 1
         myzkey = self.nodes[2].z_exportkey(myzaddr)
@@ -64,7 +64,7 @@ class WalletNullifiersTest (BitcoinTestFramework):
         assert_equal(self.nodes[1].z_getbalance(myzaddr), zsendmanynotevalue)
 
         # add zaddr to node 3
-        myzaddr3 = self.nodes[3].z_getnewaddress()
+        myzaddr3 = self.nodes[3].z_getnewaddress('sprout')
 
         # send node 2 zaddr to note 3 zaddr
         recipients = []

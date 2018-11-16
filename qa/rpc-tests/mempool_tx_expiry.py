@@ -23,9 +23,9 @@ class MempoolTxExpiryTest(BitcoinTestFramework):
     # chain is at block height 199 when run_test executes
     def run_test(self):
         alice = self.nodes[0].getnewaddress()
-        z_alice = self.nodes[0].z_getnewaddress()
+        z_alice = self.nodes[0].z_getnewaddress('sprout')
         bob = self.nodes[2].getnewaddress()
-        z_bob = self.nodes[2].z_getnewaddress()
+        z_bob = self.nodes[2].z_getnewaddress('sprout')
 
         # When Overwinter not yet activated, no expiryheight in tx
         sapling_tx = self.nodes[0].sendtoaddress(bob, 0.01)

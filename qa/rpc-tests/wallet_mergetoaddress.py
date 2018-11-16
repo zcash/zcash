@@ -54,7 +54,7 @@ class WalletMergeToAddressTest (BitcoinTestFramework):
         assert_equal(self.nodes[2].getbalance(), 30)
 
         # Shield the coinbase
-        myzaddr = self.nodes[0].z_getnewaddress()
+        myzaddr = self.nodes[0].z_getnewaddress('sprout')
         result = self.nodes[0].z_shieldcoinbase("*", myzaddr, 0)
         wait_and_assert_operationid_status(self.nodes[0], result['opid'])
         self.sync_all()
@@ -172,7 +172,7 @@ class WalletMergeToAddressTest (BitcoinTestFramework):
         assert_equal(self.nodes[2].getbalance(), 30)
 
         # Shield all notes to another z-addr
-        myzaddr2 = self.nodes[0].z_getnewaddress()
+        myzaddr2 = self.nodes[0].z_getnewaddress('sprout')
         result = self.nodes[0].z_mergetoaddress(["ANY_ZADDR"], myzaddr2, 0)
         assert_equal(result["mergingUTXOs"], Decimal('0'))
         assert_equal(result["remainingUTXOs"], Decimal('0'))
