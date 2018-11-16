@@ -35,9 +35,9 @@ class WalletOverwinterTxTest (BitcoinTestFramework):
         taddr0 = self.nodes[0].getnewaddress()
         taddr1 = self.nodes[1].getnewaddress()
         taddr2 = self.nodes[2].getnewaddress()
-        zaddr2 = self.nodes[2].z_getnewaddress()
+        zaddr2 = self.nodes[2].z_getnewaddress('sprout')
         taddr3 = self.nodes[3].getnewaddress()
-        zaddr3 = self.nodes[3].z_getnewaddress()
+        zaddr3 = self.nodes[3].z_getnewaddress('sprout')
 
         #
         # Currently at block 198. The next block to be mined 199 is a Sprout block

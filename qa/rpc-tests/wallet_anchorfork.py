@@ -44,7 +44,7 @@ class WalletAnchorForkTest (BitcoinTestFramework):
 
         # Node 0 creates a joinsplit transaction
         mytaddr0 = self.nodes[0].getnewaddress()
-        myzaddr0 = self.nodes[0].z_getnewaddress()
+        myzaddr0 = self.nodes[0].z_getnewaddress('sprout')
         recipients = []
         recipients.append({"address":myzaddr0, "amount": Decimal('10.0') - Decimal('0.0001')})
         myopid = self.nodes[0].z_sendmany(mytaddr0, recipients)
