@@ -3734,17 +3734,11 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
                         "Cannot send to both Sprout and Sapling addresses using z_sendmany");
                 }
 
-                // If we are sending from a shielded address, all recipient
-                // shielded addresses must be of the same type.
-                if (fromSprout && toSapling) {
+                // If sending between shielded addresses, they must be the same type
+                if ((fromSprout && toSapling) || (fromSapling && toSprout)) {
                     throw JSONRPCError(
                         RPC_INVALID_PARAMETER,
-                        "Cannot send from a Sprout address to a Sapling address using z_sendmany");
-                }
-                if (fromSapling && toSprout) {
-                    throw JSONRPCError(
-                        RPC_INVALID_PARAMETER,
-                        "Cannot send from a Sapling address to a Sprout address using z_sendmany");
+                        "Cannot send between Sprout and Sapling addresses using z_sendmany");
                 }
             } else {
                 throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, unknown address format: ")+address );
@@ -4403,19 +4397,17 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
         if (!saplingActive && saplingEntries.size() > 0) {
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, Sapling has not activated");
         }
-
+        // Sending from both Sprout and Sapling is currently unsupported using z_mergetoaddress
         if (sproutEntries.size() > 0 && saplingEntries.size() > 0) {
             throw JSONRPCError(
                 RPC_INVALID_PARAMETER,
                 "Cannot send from both Sprout and Sapling addresses using z_mergetoaddress");
-        } else if (saplingEntries.size() > 0 && isToSproutZaddr) {
+        }
+        // If sending between shielded addresses, they must be the same type
+        if ((saplingEntries.size() > 0 && isToSproutZaddr) || (sproutEntries.size() > 0 && isToSaplingZaddr)) {
             throw JSONRPCError(
                 RPC_INVALID_PARAMETER,
-                "Cannot send from Sprout to Sapling addresses using z_mergetoaddress");
-        } else if (sproutEntries.size() > 0 && isToSaplingZaddr) {
-            throw JSONRPCError(
-                RPC_INVALID_PARAMETER,
-                "Cannot send from Sapling to Sprout addresses using z_mergetoaddress");
+                "Cannot send between Sprout and Sapling addresses using z_mergetoaddress");
         }
 
         // Find unspent notes and update estimated size
