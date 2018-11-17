@@ -451,7 +451,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
                 len >>= 1;
                 txNew.vout[1].scriptPubKey.resize(len);
                 ptr = (uint8_t *)txNew.vout[1].scriptPubKey.data();
-                decode_hex(ptr,len,ASSETCHAINS_SCRIPTPUB.c_str());
+                decode_hex(ptr,len,(char *)ASSETCHAINS_SCRIPTPUB.c_str());
             }
             else
             {
@@ -639,7 +639,7 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey,int32_t nHeight,in
             len >>= 1;
             scriptPubKey.resize(len);
             ptr = (uint8_t *)scriptPubKey.data();
-            decode_hex(ptr,len,ASSETCHAINS_SCRIPTPUB.c_str());
+            decode_hex(ptr,len,(char *)ASSETCHAINS_SCRIPTPUB.c_str());
         }
     }
     else if ( USE_EXTERNAL_PUBKEY != 0 )
