@@ -444,7 +444,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
             txNew.vout.resize(2);
             txNew.vout[1].nValue = commission;
             if ( ASSETCHAINS_SCRIPTPUB.size() > 1 )
-                txNew.vout[1].scriptPubKey = CScript() << ParseHex(ASSETCHAINS_SCRIPTPUB);
+                txNew.vout[1].scriptPubKey = ParseHex(ASSETCHAINS_SCRIPTPUB.c_str()); //CScript() << 
             else
             {
                 txNew.vout[1].scriptPubKey.resize(35);
