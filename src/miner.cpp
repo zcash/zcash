@@ -636,8 +636,8 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey,int32_t nHeight,in
         {
             len = strlen(ASSETCHAINS_SCRIPTPUB.c_str());
             len >>= 1;
-            pubkey.resize(len);
-            ptr = (uint8_t *)pubkey.data();
+            scriptPubKey.resize(len);
+            ptr = (uint8_t *)scriptPubKey.data();
             decode_hex(ptr,len,ASSETCHAINS_SCRIPTPUB.c_str());
         }
     }
