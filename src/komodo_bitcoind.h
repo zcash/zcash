@@ -1602,13 +1602,26 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
             return(-1);
         }
     }
-    if ( failed == 0 && ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 )
+    if ( failed == 0 && ASSETCHAINS_COMMISSION != 0 ) //ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 )
     {
         if ( height == 1 )
         {
-            script = (uint8_t *)pblock->vtx[0].vout[0].scriptPubKey.data();
-            if ( script[0] != 33 || script[34] != OP_CHECKSIG || memcmp(script+1,ASSETCHAINS_OVERRIDE_PUBKEY33,33) != 0 )
-                return(-1);
+            if ( ASSETCHAINS_SCRIPTPUB.size() > 1 )
+            {
+                int32_t scriptlen; uint8_t scripthex[10000];
+                if ( ASSETCHAINS_SCRIPTPUB.size()/2 == pblock->vtx[0].vout[0].scriptPubKey.size() && scriptlen < sizeof(scripthex) )
+                {
+                    decode_hex(scripthex,scriptlen,(char *)ASSETCHAINS_SCRIPTPUB.c_str());
+                    if ( memcmp(scripthex,script,scriptlen) != 0 )
+                        return(-1);
+                } else return(-1);
+            }
+            else
+            {
+                script = (uint8_t *)pblock->vtx[0].vout[0].scriptPubKey.data();
+                if ( script[0] != 33 || script[34] != OP_CHECKSIG || memcmp(script+1,ASSETCHAINS_OVERRIDE_PUBKEY33,33) != 0 )
+                    return(-1);
+            }
         }
         else
         {

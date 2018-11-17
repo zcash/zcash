@@ -444,7 +444,14 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
             txNew.vout.resize(2);
             txNew.vout[1].nValue = commission;
             if ( ASSETCHAINS_SCRIPTPUB.size() > 1 )
-                txNew.vout[1].scriptPubKey = CScript() << ParseHex(ASSETCHAINS_SCRIPTPUB.c_str());
+            {
+                //txNew.vout[1].scriptPubKey = CScript() << ParseHex();
+                int32_t len = strlen(ASSETCHAINS_SCRIPTPUB.c_str());
+                len >>= 1;
+                txNew.vout[1].scriptPubKey.resize(len);
+                ptr = (uint8_t *)txNew.vout[1].scriptPubKey.data();
+                decode_hex(ptr,len,ASSETCHAINS_SCRIPTPUB.c_str());
+            }
             else
             {
                 txNew.vout[1].scriptPubKey.resize(35);
@@ -620,10 +627,19 @@ void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& 
 
 CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey,int32_t nHeight,int32_t gpucount)
 {
-    CPubKey pubkey; CScript scriptPubKey; uint8_t *script,*ptr; int32_t i;
-    if ( nHeight == 1 && ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 )
+    CPubKey pubkey; CScript scriptPubKey; uint8_t *script,*ptr; int32_t i,len;
+    if ( nHeight == 1 && ASSETCHAINS_COMMISSION != 0 )
     {
-        scriptPubKey = CScript() << ParseHex(ASSETCHAINS_OVERRIDE_PUBKEY) << OP_CHECKSIG;
+        if ( ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 )
+            scriptPubKey = CScript() << ParseHex(ASSETCHAINS_OVERRIDE_PUBKEY) << OP_CHECKSIG;
+        else
+        {
+            len = strlen(ASSETCHAINS_SCRIPTPUB.c_str());
+            len >>= 1;
+            pubkey.resize(len);
+            ptr = (uint8_t *)pubkey.data();
+            decode_hex(ptr,len,ASSETCHAINS_SCRIPTPUB.c_str());
+        }
     }
     else if ( USE_EXTERNAL_PUBKEY != 0 )
     {
