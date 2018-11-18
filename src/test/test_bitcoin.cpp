@@ -75,6 +75,7 @@ BasicTestingSetup::BasicTestingSetup()
     assert(init_and_check_sodium() != -1);
     ECC_Start();
     SetupEnvironment();
+    SetupNetworking();
     fPrintToDebugLog = false; // don't want to write to debug.log file
     fCheckBlockIndex = true;
     SelectParams(CBaseChainParams::MAIN);

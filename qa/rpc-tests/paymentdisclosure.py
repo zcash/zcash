@@ -47,7 +47,7 @@ class PaymentDisclosureTest (BitcoinTestFramework):
         assert_equal(self.nodes[2].getbalance(), 30)
 
         mytaddr = self.nodes[0].getnewaddress()
-        myzaddr = self.nodes[0].z_getnewaddress()
+        myzaddr = self.nodes[0].z_getnewaddress('sprout')
 
         # Check that Node 2 has payment disclosure disabled.
         try:
@@ -164,7 +164,7 @@ class PaymentDisclosureTest (BitcoinTestFramework):
         assert_equal(output_value_sum, Decimal('39.99990000'))
 
         # Create a z->z transaction, sending shielded funds from node 0 to node 1
-        node1zaddr = self.nodes[1].z_getnewaddress()
+        node1zaddr = self.nodes[1].z_getnewaddress('sprout')
         recipients = [{"address":node1zaddr, "amount":Decimal('1')}]
         myopid = self.nodes[0].z_sendmany(myzaddr, recipients)
         txid = wait_and_assert_operationid_status(self.nodes[0], myopid)

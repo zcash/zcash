@@ -69,10 +69,20 @@ class WalletPersistenceTest (BitcoinTestFramework):
         # Verify shielded balance
         assert_equal(self.nodes[0].z_getbalance(sapling_addr), Decimal('20'))
 
+        # Verify size of shielded pools
+        pools = self.nodes[0].getblockchaininfo()['valuePools']
+        assert_equal(pools[0]['chainValue'], Decimal('0'))  # Sprout
+        assert_equal(pools[1]['chainValue'], Decimal('20')) # Sapling
+
         # Restart the nodes
         stop_nodes(self.nodes)
         wait_bitcoinds()
         self.setup_network()
+
+        # Verify size of shielded pools
+        pools = self.nodes[0].getblockchaininfo()['valuePools']
+        assert_equal(pools[0]['chainValue'], Decimal('0'))  # Sprout
+        assert_equal(pools[1]['chainValue'], Decimal('20')) # Sapling
 
         # Node 0 sends some shielded funds to Node 1
         dest_addr = self.nodes[1].z_getnewaddress('sapling')

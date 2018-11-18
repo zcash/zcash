@@ -1040,6 +1040,22 @@ class msg_getdata(object):
         return "msg_getdata(inv=%s)" % (repr(self.inv))
 
 
+class msg_notfound(object):
+    command = "notfound"
+
+    def __init__(self):
+        self.inv = []
+
+    def deserialize(self, f):
+        self.inv = deser_vector(f, CInv)
+
+    def serialize(self):
+        return ser_vector(self.inv)
+
+    def __repr__(self):
+        return "msg_notfound(inv=%s)" % (repr(self.inv))
+
+
 class msg_getblocks(object):
     command = "getblocks"
 
@@ -1308,6 +1324,7 @@ class NodeConnCB(object):
             "alert": self.on_alert,
             "inv": self.on_inv,
             "getdata": self.on_getdata,
+            "notfound": self.on_notfound,
             "getblocks": self.on_getblocks,
             "tx": self.on_tx,
             "block": self.on_block,
@@ -1350,6 +1367,7 @@ class NodeConnCB(object):
     def on_addr(self, conn, message): pass
     def on_alert(self, conn, message): pass
     def on_getdata(self, conn, message): pass
+    def on_notfound(self, conn, message): pass
     def on_getblocks(self, conn, message): pass
     def on_tx(self, conn, message): pass
     def on_block(self, conn, message): pass
@@ -1375,6 +1393,7 @@ class NodeConn(asyncore.dispatcher):
         "alert": msg_alert,
         "inv": msg_inv,
         "getdata": msg_getdata,
+        "notfound": msg_notfound,
         "getblocks": msg_getblocks,
         "tx": msg_tx,
         "block": msg_block,

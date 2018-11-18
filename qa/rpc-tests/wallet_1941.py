@@ -47,7 +47,7 @@ class Wallet1941RegressionTest (BitcoinTestFramework):
         self.nodes[0].generate(101)
 
         mytaddr = self.nodes[0].getnewaddress()     # where coins were mined
-        myzaddr = self.nodes[0].z_getnewaddress()
+        myzaddr = self.nodes[0].z_getnewaddress('sprout')
 
         # Send 10 coins to our zaddr.
         recipients = []
@@ -74,7 +74,7 @@ class Wallet1941RegressionTest (BitcoinTestFramework):
         # Start the new wallet
         self.add_second_node()
         self.nodes[1].getnewaddress()
-        self.nodes[1].z_getnewaddress()
+        self.nodes[1].z_getnewaddress('sprout')
         self.nodes[1].generate(101)
         self.sync_all()
 

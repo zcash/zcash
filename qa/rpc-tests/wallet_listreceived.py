@@ -20,11 +20,13 @@ class ListReceivedTest (BitcoinTestFramework):
     def setup_nodes(self):
         return start_nodes(4, self.options.tmpdir, [[
             "-nuparams=5ba81b19:201", # Overwinter
-            "-nuparams=76b809bb:204", # Sapling
+            "-nuparams=76b809bb:214", # Sapling
         ]] * 4)
 
     def generate_and_sync(self, new_height):
-        self.nodes[0].generate(1)
+        current_height = self.nodes[0].getblockcount()
+        assert(new_height > current_height)
+        self.nodes[0].generate(new_height - current_height)
         self.sync_all()
         assert_equal(new_height, self.nodes[0].getblockcount())
 
@@ -92,7 +94,7 @@ class ListReceivedTest (BitcoinTestFramework):
 
     def run_test(self):
         self.run_test_release('sprout', 200)
-        self.run_test_release('sapling', 204)
+        self.run_test_release('sapling', 214)
 
 if __name__ == '__main__':
     ListReceivedTest().main()

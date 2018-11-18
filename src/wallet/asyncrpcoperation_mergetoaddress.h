@@ -9,6 +9,7 @@
 #include "asyncrpcoperation.h"
 #include "paymentdisclosure.h"
 #include "primitives/transaction.h"
+#include "transaction_builder.h"
 #include "wallet.h"
 #include "zcash/Address.hpp"
 #include "zcash/JoinSplit.hpp"
@@ -24,11 +25,13 @@
 
 using namespace libzcash;
 
-// Input UTXO is a tuple of txid, vout, amount
-typedef std::tuple<COutPoint, CAmount> MergeToAddressInputUTXO;
+// Input UTXO is a tuple of txid, vout, amount, script
+typedef std::tuple<COutPoint, CAmount, CScript> MergeToAddressInputUTXO;
 
 // Input JSOP is a tuple of JSOutpoint, note, amount, spending key
-typedef std::tuple<JSOutPoint, SproutNote, CAmount, SpendingKey> MergeToAddressInputNote;
+typedef std::tuple<JSOutPoint, SproutNote, CAmount, SproutSpendingKey> MergeToAddressInputSproutNote;
+
+typedef std::tuple<SaplingOutPoint, SaplingNote, CAmount, SaplingExpandedSpendingKey> MergeToAddressInputSaplingNote;
 
 // A recipient is a tuple of address, memo (optional if zaddr)
 typedef std::tuple<std::string, std::string> MergeToAddressRecipient;
@@ -53,9 +56,11 @@ class AsyncRPCOperation_mergetoaddress : public AsyncRPCOperation
 {
 public:
     AsyncRPCOperation_mergetoaddress(
+        boost::optional<TransactionBuilder> builder,
         CMutableTransaction contextualTx,
         std::vector<MergeToAddressInputUTXO> utxoInputs,
-        std::vector<MergeToAddressInputNote> noteInputs,
+        std::vector<MergeToAddressInputSproutNote> sproutNoteInputs,
+        std::vector<MergeToAddressInputSaplingNote> saplingNoteInputs,
         MergeToAddressRecipient recipient,
         CAmount fee = MERGE_TO_ADDRESS_OPERATION_DEFAULT_MINERS_FEE,
         UniValue contextInfo = NullUniValue);
@@ -79,7 +84,8 @@ private:
     friend class TEST_FRIEND_AsyncRPCOperation_mergetoaddress; // class for unit testing
 
     UniValue contextinfo_; // optional data to include in return value from getStatus()
-
+    
+    bool isUsingBuilder_; // Indicates that no Sprout addresses are involved
     uint32_t consensusBranchId_;
     CAmount fee_;
     int mindepth_;
@@ -96,8 +102,10 @@ private:
     std::unordered_map<std::string, MergeToAddressWitnessAnchorData> jsopWitnessAnchorMap;
 
     std::vector<MergeToAddressInputUTXO> utxoInputs_;
-    std::vector<MergeToAddressInputNote> noteInputs_;
+    std::vector<MergeToAddressInputSproutNote> sproutNoteInputs_;
+    std::vector<MergeToAddressInputSaplingNote> saplingNoteInputs_;
 
+    TransactionBuilder builder_;
     CTransaction tx_;
 
     std::array<unsigned char, ZC_MEMO_SIZE> get_memo_from_hex_string(std::string s);

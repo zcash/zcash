@@ -35,9 +35,9 @@ class WalletOverwinterTxTest (BitcoinTestFramework):
         taddr0 = self.nodes[0].getnewaddress()
         taddr1 = self.nodes[1].getnewaddress()
         taddr2 = self.nodes[2].getnewaddress()
-        zaddr2 = self.nodes[2].z_getnewaddress()
+        zaddr2 = self.nodes[2].z_getnewaddress('sprout')
         taddr3 = self.nodes[3].getnewaddress()
-        zaddr3 = self.nodes[3].z_getnewaddress()
+        zaddr3 = self.nodes[3].z_getnewaddress('sprout')
 
         #
         # Currently at block 198. The next block to be mined 199 is a Sprout block
@@ -117,6 +117,11 @@ class WalletOverwinterTxTest (BitcoinTestFramework):
         except JSONRPCException,e:
             errorString = e.error['message']
         assert_equal("Invalid parameter, expiryheight must be nonnegative and less than 500000000" in errorString, True)
+        try:
+            self.nodes[0].createrawtransaction([], {}, 0, 200)
+        except JSONRPCException,e:
+            errorString = e.error['message']
+        assert_equal("Invalid parameter, expiryheight should be at least 203 to avoid transaction expiring soon" in errorString, True)
 
         # Node 0 sends transparent funds to Node 3
         tsendamount = Decimal('1.0')

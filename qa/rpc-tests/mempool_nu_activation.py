@@ -6,6 +6,7 @@
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, initialize_chain_clean, \
     start_node, connect_nodes, wait_and_assert_operationid_status
+from test_framework.authproxy import JSONRPCException
 
 from decimal import Decimal
 
@@ -41,7 +42,7 @@ class MempoolUpgradeActivationTest(BitcoinTestFramework):
 
         # Shield some ZEC
         node1_taddr = self.nodes[1].getnewaddress()
-        node0_zaddr = self.nodes[0].z_getnewaddress()
+        node0_zaddr = self.nodes[0].z_getnewaddress('sprout')
         recipients = [{'address': node0_zaddr, 'amount': Decimal('10')}]
         myopid = self.nodes[1].z_sendmany(node1_taddr, recipients, 1, Decimal('0'))
         print wait_and_assert_operationid_status(self.nodes[1], myopid)
@@ -63,8 +64,16 @@ class MempoolUpgradeActivationTest(BitcoinTestFramework):
             # Fill the mempool with twice as many transactions as can fit into blocks
             node0_taddr = self.nodes[0].getnewaddress()
             x_txids = []
+            info = self.nodes[0].getblockchaininfo()
+            chaintip_branchid = info["consensus"]["chaintip"]
             while self.nodes[1].getmempoolinfo()['bytes'] < 2 * 4000:
-                x_txids.append(self.nodes[1].sendtoaddress(node0_taddr, Decimal('0.001')))
+                try:
+                    x_txids.append(self.nodes[1].sendtoaddress(node0_taddr, Decimal('0.001')))
+                    assert_equal(chaintip_branchid, "00000000")
+                except JSONRPCException:
+                    # This fails due to expiring soon threshold, which applies from Overwinter onwards.
+                    assert_equal(info["upgrades"][chaintip_branchid]["name"], "Overwinter")
+                    break
             self.sync_all()
 
             # Spends should be in the mempool
@@ -79,12 +88,14 @@ class MempoolUpgradeActivationTest(BitcoinTestFramework):
             # mempool should be empty.
             assert_equal(set(self.nodes[0].getrawmempool()), set())
 
+            # When transitioning from Sprout to Overwinter, where expiring soon threshold does not apply:
             # Block H - 1 should contain a subset of the original mempool
             # (with all other transactions having been dropped)
             block_txids = self.nodes[0].getblock(self.nodes[0].getbestblockhash())['tx']
-            assert(len(block_txids) < len(x_txids))
-            for txid in block_txids[1:]: # Exclude coinbase
-                assert(txid in x_txids)
+            if chaintip_branchid is "00000000":
+                assert(len(block_txids) < len(x_txids))
+                for txid in block_txids[1:]: # Exclude coinbase
+                    assert(txid in x_txids)
 
             # Create some transparent Y transactions
             y_txids = [self.nodes[1].sendtoaddress(node0_taddr, Decimal('0.001')) for i in range(10)]

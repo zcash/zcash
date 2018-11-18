@@ -282,7 +282,7 @@ class WalletTest (BitcoinTestFramework):
         assert_equal(0, len(myvjoinsplits))
 
         # z_sendmany is expected to fail if tx size breaks limit
-        myzaddr = self.nodes[0].z_getnewaddress()
+        myzaddr = self.nodes[0].z_getnewaddress('sprout')
 
         recipients = []
         num_t_recipients = 3000
@@ -316,7 +316,7 @@ class WalletTest (BitcoinTestFramework):
             newtaddr = self.nodes[2].getnewaddress()
             recipients.append({"address":newtaddr, "amount":amount_per_recipient})
         for i in xrange(0,num_z_recipients):
-            newzaddr = self.nodes[2].z_getnewaddress()
+            newzaddr = self.nodes[2].z_getnewaddress('sprout')
             recipients.append({"address":newzaddr, "amount":amount_per_recipient})
 
         # Issue #2759 Workaround START
@@ -334,7 +334,7 @@ class WalletTest (BitcoinTestFramework):
         amount_per_recipient = Decimal('0.00000001')
         errorString = ''
         for i in xrange(0,num_z_recipients):
-            newzaddr = self.nodes[2].z_getnewaddress()
+            newzaddr = self.nodes[2].z_getnewaddress('sprout')
             recipients.append({"address":newzaddr, "amount":amount_per_recipient})
         try:
             self.nodes[0].z_sendmany(myzaddr, recipients)
@@ -343,7 +343,7 @@ class WalletTest (BitcoinTestFramework):
         assert("Invalid parameter, too many zaddr outputs" in errorString)
 
         # add zaddr to node 2
-        myzaddr = self.nodes[2].z_getnewaddress()
+        myzaddr = self.nodes[2].z_getnewaddress('sprout')
 
         # send node 2 taddr to zaddr
         recipients = []
@@ -437,7 +437,7 @@ class WalletTest (BitcoinTestFramework):
 
         assert_equal("not an integer" in errorString, True)
 
-        myzaddr     = self.nodes[0].z_getnewaddress()
+        myzaddr     = self.nodes[0].z_getnewaddress('sprout')
         recipients  = [ {"address": myzaddr, "amount": Decimal('0.0') } ]
         errorString = ''
 
