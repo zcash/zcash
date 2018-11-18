@@ -1008,7 +1008,7 @@ UniValue cleanwallettransactions(const UniValue& params, bool fHelp)
     if (fHelp || params.size() > 1 )
         throw runtime_error(
             "cleanwallettransactions \"txid\"\n"
-            "\nRemove all txs which are totally spent, you can clear all txs bar one, by specifiying a txid.\n"
+            "\nRemove all txs that are spent. You can clear all txs bar one, by specifiying a txid.\n"
             "\nPlease backup your wallet.dat before running this command.\n"
             "\nArguments:\n"
             "1. \"txid\"    (string, optional) The transaction id to keep.\n"
@@ -1068,18 +1068,14 @@ UniValue cleanwallettransactions(const UniValue& params, bool fHelp)
           if ( out.nDepth > oldestTxDepth )
               oldestTxDepth = out.nDepth;
         }
-        oldestTxDepth = oldestTxDepth + 1;
-        fprintf(stderr, "oldestTxDepth.%i\n",oldestTxDepth);
+        oldestTxDepth = oldestTxDepth + 1; // add extra block just for safety.
 
         // then add all txs in the wallet before this block to the list to remove.
         for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it)
         {
             const CWalletTx& wtx = (*it).second;
             if (wtx.GetDepthInMainChain() > oldestTxDepth)
-            {
                 TxToRemove.push_back(wtx.GetHash());
-                fprintf(stderr, "[%s] : depth.%i \n",wtx.GetHash().ToString().c_str(),wtx.GetDepthInMainChain());
-            }
         }
     }
 
@@ -1087,7 +1083,7 @@ UniValue cleanwallettransactions(const UniValue& params, bool fHelp)
     BOOST_FOREACH (uint256& hash, TxToRemove)
     {
         pwalletMain->EraseFromWallet(hash);
-        LogPrintf("ERASED spent Tx: %s\n",hash.ToString().c_str());
+        LogPrintf("Erased %s from wallet.\n",hash.ToString().c_str());
     }
 
     // build return JSON for stats.
