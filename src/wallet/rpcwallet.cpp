@@ -999,15 +999,15 @@ CAmount GetAccountBalance(const string& strAccount, int nMinDepth, const isminef
     return GetAccountBalance(walletdb, strAccount, nMinDepth, filter);
 }
 
-UniValue cleanwalletnotarisations(const UniValue& params, bool fHelp)
+UniValue cleanwallettransactions(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
     if (fHelp || params.size() > 1 )
         throw runtime_error(
-            "cleanwalletnotarisations \"txid\"\n"
-            "\nRemove all txs which are totally spent and all notarisations created from them, you can clear all txs bar one, by specifiying a txid.\n"
+            "cleanwallettransactions \"txid\"\n"
+            "\nRemove all txs which are totally spent, you can clear all txs bar one, by specifiying a txid.\n"
             "\nPlease backup your wallet.dat before running this command.\n"
             "\nArguments:\n"
             "1. \"txid\"    (string, optional) The transaction id to keep.\n"
@@ -1042,7 +1042,6 @@ UniValue cleanwalletnotarisations(const UniValue& params, bool fHelp)
             {
                 for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it)
                 {
-                    txs++;
                     const CWalletTx& wtx = (*it).second;
                     if ( wtx.GetHash() != exception )
                     {
@@ -1058,7 +1057,23 @@ UniValue cleanwalletnotarisations(const UniValue& params, bool fHelp)
     }
     else
     {
-        std::vector<CWalletTx> NotarisationTxs;
+      // listunspent call... this gets us all the txids that are unspent, we search this list for the oldest tx,
+      // then delete all txs in the wallet before this block + 10 as safety buffer.
+      vector<COutput> vecOutputs;
+      assert(pwalletMain != NULL);
+      pwalletMain->AvailableCoins(vecOutputs, false, NULL, true);
+      int32_t oldestTxHeight = 0;
+      BOOST_FOREACH(const COutput& out, vecOutputs)
+      {
+        int32_t txheight = out.nDepth;
+        fprintf(stderr, "txheight.%i\n", txheight);
+        if ( txheight > oldestTxHeight )
+            oldestTxHeight = txheight;
+      }
+      fprintf(stderr, "oldestTxHeight.%i\n",oldestTxHeight);
+
+
+        /*std::vector<CWalletTx> NotarisationTxs;
         for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it)
         {
             const CWalletTx& wtx = (*it).second;
@@ -1117,15 +1132,15 @@ UniValue cleanwalletnotarisations(const UniValue& params, bool fHelp)
                   }
               }
           }
-        }
+        } */
     }
 
     // erase txs
-    BOOST_FOREACH (uint256& hash, TxToRemove)
+    /*BOOST_FOREACH (uint256& hash, TxToRemove)
     {
         pwalletMain->EraseFromWallet(hash);
         LogPrintf("ERASED spent Tx: %s\n",hash.ToString().c_str());
-    }
+    } */
 
     // build return JSON for stats.
     int remaining = pwalletMain->mapWallet.size();
@@ -5755,7 +5770,7 @@ UniValue gatewayswithdraw(const UniValue& params, bool fHelp)
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
     bindtxid = Parseuint256((char *)params[0].get_str().c_str());
-    coin = params[1].get_str(); 
+    coin = params[1].get_str();
     withdrawpub = ParseHex(params[2].get_str());
     amount = atof((char *)params[3].get_str().c_str()) * COIN;
     hex = GatewaysWithdraw(0,bindtxid,coin,pubkey2pk(withdrawpub),amount);
@@ -5808,7 +5823,7 @@ UniValue gatewaysmultisig(const UniValue& params, bool fHelp)
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     const CKeyStore& keystore = *pwalletMain;
-    LOCK2(cs_main, pwalletMain->cs_wallet);    
+    LOCK2(cs_main, pwalletMain->cs_wallet);
     txidaddr = (char *)params[0].get_str().c_str();
     return(GatewaysMultisig(txidaddr));
 }
@@ -5821,7 +5836,7 @@ UniValue gatewayspartialsign(const UniValue& params, bool fHelp)
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     const CKeyStore& keystore = *pwalletMain;
-    LOCK2(cs_main, pwalletMain->cs_wallet);    
+    LOCK2(cs_main, pwalletMain->cs_wallet);
     txid = Parseuint256((char *)params[0].get_str().c_str());
     coin = params[1].get_str();
     parthex = params[2].get_str();
