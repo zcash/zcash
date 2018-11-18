@@ -1620,10 +1620,10 @@ void komodo_args(char *argv0)
                     ASSETCHAINS_COMMISSION = 53846154; // maps to 35%
                     printf("ASSETCHAINS_COMMISSION defaulted to 35%% when founders reward active\n");
                 }
-                else
+                else if ( ASSETCHAINS_STREAM == 0 )
                 {
                     ASSETCHAINS_OVERRIDE_PUBKEY.clear();
-                    printf("-ac_perc must be set with -ac_pubkey\n");
+                    printf("-ac_perc or -ac_stream must be set with -ac_pubkey\n");
                 }
             }
         }

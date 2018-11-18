@@ -24,35 +24,31 @@ extern int32_t ASSETCHAINS_STREAM;
 
 unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params)
 {
-    if ( ASSETCHAINS_STREAM != 2 )
-    {
-      unsigned int nProofOfWorkLimit = UintToArith256(params.powLimit).GetCompact();
-      // Genesis block
-      if (pindexLast == NULL )
-          return nProofOfWorkLimit;
-
-      // Find the first block in the averaging interval
-      const CBlockIndex* pindexFirst = pindexLast;
-      arith_uint256 bnTot {0};
-      for (int i = 0; pindexFirst && i < params.nPowAveragingWindow; i++) {
-          arith_uint256 bnTmp;
-          bnTmp.SetCompact(pindexFirst->nBits);
-          bnTot += bnTmp;
-          pindexFirst = pindexFirst->pprev;
-      }
-
-      // Check we have enough blocks
-      if (pindexFirst == NULL)
-          return nProofOfWorkLimit;
-
-      arith_uint256 bnAvg {bnTot / params.nPowAveragingWindow};
-
-      return CalculateNextWorkRequired(bnAvg, pindexLast->GetMedianTimePast(), pindexFirst->GetMedianTimePast(), params);
-    }
-    else
-    {
+    if ( ASSETCHAINS_STREAM == 2 )
       return 537857807;
+
+    unsigned int nProofOfWorkLimit = UintToArith256(params.powLimit).GetCompact();
+    // Genesis block
+    if (pindexLast == NULL )
+        return nProofOfWorkLimit;
+
+    // Find the first block in the averaging interval
+    const CBlockIndex* pindexFirst = pindexLast;
+    arith_uint256 bnTot {0};
+    for (int i = 0; pindexFirst && i < params.nPowAveragingWindow; i++) {
+        arith_uint256 bnTmp;
+        bnTmp.SetCompact(pindexFirst->nBits);
+        bnTot += bnTmp;
+        pindexFirst = pindexFirst->pprev;
     }
+
+    // Check we have enough blocks
+    if (pindexFirst == NULL)
+        return nProofOfWorkLimit;
+
+    arith_uint256 bnAvg {bnTot / params.nPowAveragingWindow};
+
+    return CalculateNextWorkRequired(bnAvg, pindexLast->GetMedianTimePast(), pindexFirst->GetMedianTimePast(), params);
 }
 
 unsigned int CalculateNextWorkRequired(arith_uint256 bnAvg,
