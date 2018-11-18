@@ -1064,7 +1064,7 @@ UniValue cleanwallettransactions(const UniValue& params, bool fHelp)
         int32_t oldestTxDepth = 0;
         BOOST_FOREACH(const COutput& out, vecOutputs)
         {
-          if ( out.nDepth > oldestTxHeight )
+          if ( out.nDepth > oldestTxDepth )
               oldestTxDepth = out.nDepth;
         }
         oldestTxDepth = oldestTxDepth + 1;
