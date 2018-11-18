@@ -74,11 +74,11 @@ bool Eval::Dispatch(const CC *cond, const CTransaction &txTo, unsigned int nIn)
     switch ( ecode )
     {
         case EVAL_IMPORTPAYOUT:
-            return ImportPayout(vparams, txTo, nIn);
+            //return ImportPayout(vparams, txTo, nIn);
             break;
 
         case EVAL_IMPORTCOIN:
-            return ImportCoin(vparams, txTo, nIn);
+            //return ImportCoin(vparams, txTo, nIn);
             break;
 
         default:
@@ -156,7 +156,8 @@ bool Eval::CheckNotaryInputs(const CTransaction &tx, uint32_t height, uint32_t t
         if (tx.vout.size() < txIn.prevout.n) return false;
         CScript spk = tx.vout[txIn.prevout.n].scriptPubKey;
         if (spk.size() != 35) return false;
-        const unsigned char *pk = spk.data();
+        std::vector<unsigned char> scriptVec = std::vector<unsigned char>(spk.begin(),spk.end());
+        const unsigned char *pk = scriptVec.data();
         if (pk++[0] != 33) return false;
         if (pk[33] != OP_CHECKSIG) return false;
 
@@ -185,7 +186,7 @@ bool Eval::GetNotarisationData(const uint256 notaryHash, NotarisationData &data)
     CTransaction notarisationTx;
     CBlockIndex block;
     if (!GetTxConfirmed(notaryHash, notarisationTx, block)) return false;
-    if (!CheckNotaryInputs(notarisationTx, block.nHeight, block.nTime)) return false;
+    if (!CheckNotaryInputs(notarisationTx, block.GetHeight(), block.nTime)) return false;
     if (!ParseNotarisationOpReturn(notarisationTx, data)) return false;
     return true;
 }

@@ -5,7 +5,6 @@ import plyvel
 import progressbar
 import os
 import stat
-import struct
 import subprocess
 import sys
 import tarfile

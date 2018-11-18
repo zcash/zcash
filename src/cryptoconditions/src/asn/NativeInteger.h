@@ -12,7 +12,7 @@
 #ifndef	_NativeInteger_H_
 #define	_NativeInteger_H_
 
-#include <asn_application.h>
+#include "asn_application.h"
 #include <INTEGER.h>
 
 #ifdef __cplusplus

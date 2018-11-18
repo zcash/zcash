@@ -106,7 +106,7 @@ bool test_merkle_gadget(
     mgadget1.generate_r1cs_constraints();
     mgadget2.generate_r1cs_constraints();
 
-    ZCIncrementalMerkleTree tree;
+    SproutMerkleTree tree;
     uint256 commitment1_data = uint256S("54d626e08c1c802b305dad30b7e54a82f102390cc92c7d4db112048935236e9c");
     uint256 commitment2_data = uint256S("59d2cde5e65c1414c32ba54f0fe4bdb3d67618125286e6a191317917c812c6d7");
     tree.append(commitment1_data);
