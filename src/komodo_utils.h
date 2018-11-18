@@ -1594,10 +1594,18 @@ void komodo_args(char *argv0)
                 decode_hex(ASSETCHAINS_OVERRIDE_PUBKEY33,33,(char *)ASSETCHAINS_OVERRIDE_PUBKEY.c_str());
                 calc_rmd160_sha256(ASSETCHAINS_OVERRIDE_PUBKEYHASH,ASSETCHAINS_OVERRIDE_PUBKEY33,33);
             }
-            if ( ASSETCHAINS_COMMISSION == 0 && ASSETCHAINS_FOUNDERS != 0 )
+            if ( ASSETCHAINS_COMMISSION == 0 )
             {
-                ASSETCHAINS_COMMISSION = 53846154; // maps to 35%
-                printf("ASSETCHAINS_COMMISSION defaulted to 35%% when founders reward active\n");
+                if (ASSETCHAINS_FOUNDERS != 0 )
+                {
+                    ASSETCHAINS_COMMISSION = 53846154; // maps to 35%
+                    printf("ASSETCHAINS_COMMISSION defaulted to 35%% when founders reward active\n");
+                }
+                else
+                {
+                    ASSETCHAINS_OVERRIDE_PUBKEY.clear();
+                    printf("-ac_perc must be set with -ac_pubkey\n");
+                }
             }
         }
         else
