@@ -552,10 +552,10 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
 #endif
     }
 
-    std::string strMode = "template";
     UniValue lpval = NullUniValue;
     // TODO: Re-enable coinbasevalue once a specification has been written
     bool coinbasetxn = true;
+    std::string strMode;
     if (params.size() > 0)
     {
         const UniValue& oparam = params[0].get_obj();
@@ -564,11 +564,14 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
             strMode = modeval.get_str();
         else if (modeval.isNull())
         {
-            /* Do nothing */
+            strMode = "template";
         }
         else
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid mode");
         lpval = find_value(oparam, "longpollid");
+
+        if (strMode == "disablecb")
+            coinbasetxn = false;
 
         if (strMode == "proposal")
         {
@@ -614,37 +617,6 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
     }
     if (Params().MiningRequiresPeers() && (IsNotInSync() || fvNodesEmpty))
     {
-        /*
-        int loops = 0, blockDiff = 0, newDiff = 0;
-        const int delay = 15;
-        do {
-            if (fvNodesEmpty)
-            {
-                MilliSleep(1000 + rand() % 4000);
-                LOCK(cs_vNodes);
-                fvNodesEmpty = vNodes.empty();
-                loops = 0;
-                blockDiff = 0;
-            }
-            if ((newDiff = IsNotInSync()) > 1)
-            {
-                if (blockDiff != newDiff)
-                {
-                    blockDiff = newDiff;
-                }
-                else
-                {
-                    if (++loops <= delay)
-                    {
-                        MilliSleep(1000);
-                    }
-                    else break;
-                }
-            }
-        } while (fvNodesEmpty || IsNotInSync());
-        if (loops > delay)
-            throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, "Cannot get a block template while no peers are connected or chain not in sync!");
-        */
         throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, "Cannot get a block template while no peers are connected or chain not in sync!");
     }
 
@@ -748,8 +720,8 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
         uint256 txHash = tx.GetHash();
         setTxIndex[txHash] = i++;
 
-        if (tx.IsCoinBase() && !coinbasetxn)
-            continue;
+        //if (tx.IsCoinBase() && !coinbasetxn)
+        //    continue;
 
         UniValue entry(UniValue::VOBJ);
 
@@ -769,7 +741,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
         entry.push_back(Pair("fee", pblocktemplate->vTxFees[index_in_template]));
         entry.push_back(Pair("sigops", pblocktemplate->vTxSigOps[index_in_template]));
 
-        if (tx.IsCoinBase()) {
+        if (tx.IsCoinBase() && coinbasetxn == true ) {
             // Show founders' reward if it is required
             //if (pblock->vtx[0].vout.size() > 1) {
                 // Correct this if GetBlockTemplate changes the order
@@ -805,10 +777,10 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
     if (coinbasetxn) {
         assert(txCoinbase.isObject());
         result.push_back(Pair("coinbasetxn", txCoinbase));
-    } else {
-        result.push_back(Pair("coinbaseaux", aux));
-        result.push_back(Pair("coinbasevalue", (int64_t)pblock->vtx[0].vout[0].nValue));
-    }
+    } // else {
+      //  result.push_back(Pair("coinbaseaux", aux));
+      //  result.push_back(Pair("coinbasevalue", (int64_t)pblock->vtx[0].vout[0].nValue));
+    //}
     result.push_back(Pair("longpollid", chainActive.LastTip()->GetBlockHash().GetHex() + i64tostr(nTransactionsUpdatedLast)));
     if ( ASSETCHAINS_STAKED != 0 )
     {
@@ -831,6 +803,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
     //fprintf(stderr,"return complete template\n");
     return result;
 }
+
 
 class submitblock_StateCatcher : public CValidationInterface
 {
