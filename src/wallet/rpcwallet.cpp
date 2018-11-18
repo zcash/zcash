@@ -1003,15 +1003,15 @@ CAmount GetAccountBalance(const string& strAccount, int nMinDepth, const isminef
     return GetAccountBalance(walletdb, strAccount, nMinDepth, filter);
 }
 
-UniValue cleanwalletnotarisations(const UniValue& params, bool fHelp)
+UniValue cleanwallettransactions(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
     if (fHelp || params.size() > 1 )
         throw runtime_error(
-            "cleanwalletnotarisations \"txid\"\n"
-            "\nRemove all txs which are totally spent and all notarisations created from them, you can clear all txs bar one, by specifiying a txid.\n"
+            "cleanwallettransactions \"txid\"\n"
+            "\nRemove all txs that are spent. You can clear all txs bar one, by specifiying a txid.\n"
             "\nPlease backup your wallet.dat before running this command.\n"
             "\nArguments:\n"
             "1. \"txid\"    (string, optional) The transaction id to keep.\n"
@@ -1022,10 +1022,10 @@ UniValue cleanwalletnotarisations(const UniValue& params, bool fHelp)
             "  \"removed_transactons\" : n,       (numeric) The number of transactions removed.\n"
             "}\n"
             "\nExamples:\n"
-            + HelpExampleCli("cleanoldtxs", "")
-            + HelpExampleCli("cleanoldtxs","\"1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d\"")
-            + HelpExampleRpc("cleanoldtxs", "")
-            + HelpExampleRpc("cleanoldtxs","\"1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d\"")
+            + HelpExampleCli("cleanwallettransactions", "")
+            + HelpExampleCli("cleanwallettransactions","\"1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d\"")
+            + HelpExampleRpc("cleanwallettransactions", "")
+            + HelpExampleRpc("cleanwallettransactions","\"1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d\"")
         );
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -1046,7 +1046,6 @@ UniValue cleanwalletnotarisations(const UniValue& params, bool fHelp)
             {
                 for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it)
                 {
-                    txs++;
                     const CWalletTx& wtx = (*it).second;
                     if ( wtx.GetHash() != exception )
                     {
@@ -1062,65 +1061,24 @@ UniValue cleanwalletnotarisations(const UniValue& params, bool fHelp)
     }
     else
     {
-        std::vector<CWalletTx> NotarisationTxs;
+        // listunspent call... this gets us all the txids that are unspent, we search this list for the oldest tx,
+        vector<COutput> vecOutputs;
+        assert(pwalletMain != NULL);
+        pwalletMain->AvailableCoins(vecOutputs, false, NULL, true);
+        int32_t oldestTxDepth = 0;
+        BOOST_FOREACH(const COutput& out, vecOutputs)
+        {
+          if ( out.nDepth > oldestTxDepth )
+              oldestTxDepth = out.nDepth;
+        }
+        oldestTxDepth = oldestTxDepth + 1; // add extra block just for safety.
+
+        // then add all txs in the wallet before this block to the list to remove.
         for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it)
         {
             const CWalletTx& wtx = (*it).second;
-            if (!CheckFinalTx(wtx) || wtx.GetBlocksToMaturity() > 0 || wtx.GetDepthInMainChain() < 360 )
-                continue;
-
-            CCoins coins;
-            if (!pcoinsTip->GetCoins(wtx.GetHash(), coins))
-            {
-                int spents = 0; int mine = 0;
-                for (unsigned int n = 0; n < wtx.vout.size() ; n++)
-                {
-                    if ( pwalletMain->IsMine(wtx.vout[n]) )
-                        mine++;
-                    if ( ((unsigned int)n >= coins.vout.size() || coins.vout[n].IsNull() ) )
-                       spents++;
-               }
-               if ( spents == mine )
-               {
-                  for (unsigned int n = 0; n < wtx.vin.size() ; n++)
-                  {
-                      CTransaction vintx; uint256 hashBlock;
-                      if ( GetTransaction(wtx.vin[n].prevout.hash,vintx,hashBlock,false) != 0 )
-                      {
-                          for (unsigned int z = 0; z < vintx.vin.size() ; z++)
-                          {
-                            TxToRemove.push_back(vintx.vin[z].prevout.hash);
-                          }
-                      }
-                      TxToRemove.push_back(wtx.vin[n].prevout.hash);
-                  }
-                  TxToRemove.push_back(wtx.GetHash());
-               }
-            }
-
-            CTxDestination address;
-            // get all  notarisations
-            if ( ExtractDestination(wtx.vout[0].scriptPubKey, address) )
-            {
-                if ( strcmp(CBitcoinAddress(address).ToString().c_str(),CRYPTO777_KMDADDR) == 0 )
-                    NotarisationTxs.push_back(wtx);
-            }
-        }
-
-        // Erase notarisations spending from fully spent splits.
-        BOOST_FOREACH (CWalletTx& tx, NotarisationTxs)
-        {
-          for (int n = 0; n < tx.vin.size(); n++)
-          {
-              BOOST_FOREACH (uint256& SpentHash, TxToRemove)
-              {
-                  if ( SpentHash == tx.vin[n].prevout.hash )
-                  {
-                      pwalletMain->EraseFromWallet(tx.GetHash());
-                      LogPrintf("ERASED Notarisation: %s\n",tx.GetHash().ToString().c_str());
-                  }
-              }
-          }
+            if (wtx.GetDepthInMainChain() > oldestTxDepth)
+                TxToRemove.push_back(wtx.GetHash());
         }
     }
 
@@ -1128,7 +1086,7 @@ UniValue cleanwalletnotarisations(const UniValue& params, bool fHelp)
     BOOST_FOREACH (uint256& hash, TxToRemove)
     {
         pwalletMain->EraseFromWallet(hash);
-        LogPrintf("ERASED spent Tx: %s\n",hash.ToString().c_str());
+        LogPrintf("Erased %s from wallet.\n",hash.ToString().c_str());
     }
 
     // build return JSON for stats.
