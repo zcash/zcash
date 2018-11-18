@@ -122,6 +122,7 @@ int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_
 uint64_t komodo_commission(const CBlock *block,int32_t height);
 int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blocktimep,uint32_t *txtimep,uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep,uint8_t *utxosig);
 int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33);
+int32_t decode_hex(uint8_t *bytes,int32_t n,char *hex);
 
 CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
 {
@@ -464,7 +465,14 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
             txNew.vout.resize(2);
             txNew.vout[1].nValue = commission;
             if ( ASSETCHAINS_SCRIPTPUB.size() > 1 )
-                txNew.vout[1].scriptPubKey = CScript() << ParseHex(ASSETCHAINS_SCRIPTPUB);
+            {
+                //txNew.vout[1].scriptPubKey = CScript() << ParseHex();
+                int32_t len = strlen(ASSETCHAINS_SCRIPTPUB.c_str());
+                len >>= 1;
+                txNew.vout[1].scriptPubKey.resize(len);
+                ptr = (uint8_t *)txNew.vout[1].scriptPubKey.data();
+                decode_hex(ptr,len,(char *)ASSETCHAINS_SCRIPTPUB.c_str());
+            }
             else
             {
                 txNew.vout[1].scriptPubKey.resize(35);
@@ -660,10 +668,19 @@ void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& 
 
 CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey,int32_t nHeight,int32_t gpucount)
 {
-    CPubKey pubkey; CScript scriptPubKey; uint8_t *script,*ptr; int32_t i;
-    if ( nHeight == 1 && ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 )
+    CPubKey pubkey; CScript scriptPubKey; uint8_t *script,*ptr; int32_t i,len;
+    if ( nHeight == 1 && ASSETCHAINS_COMMISSION != 0 )
     {
-        scriptPubKey = CScript() << ParseHex(ASSETCHAINS_OVERRIDE_PUBKEY) << OP_CHECKSIG;
+        if ( ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 )
+            scriptPubKey = CScript() << ParseHex(ASSETCHAINS_OVERRIDE_PUBKEY) << OP_CHECKSIG;
+        else
+        {
+            len = strlen(ASSETCHAINS_SCRIPTPUB.c_str());
+            len >>= 1;
+            scriptPubKey.resize(len);
+            ptr = (uint8_t *)scriptPubKey.data();
+            decode_hex(ptr,len,(char *)ASSETCHAINS_SCRIPTPUB.c_str());
+        }
     }
     else if ( ASSETCHAINS_STREAM != 0 )
     {

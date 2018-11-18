@@ -49,6 +49,7 @@ extern std::string ASSETCHAINS_OVERRIDE_PUBKEY;
 extern int32_t ASSETCHAINS_STREAM;
 extern UniValue TxJoinSplitToJSON(const CTransaction& tx);
 extern uint8_t ASSETCHAINS_PRIVATE;
+extern int32_t USE_EXTERNAL_PUBKEY;
 uint32_t komodo_segid32(char *coinaddr);
 int32_t komodo_dpowconfs(int32_t height,int32_t numconfs);
 int32_t komodo_isnotaryvout(char *coinaddr); // from ac_private chains only
@@ -5088,7 +5089,7 @@ UniValue setpubkey(const UniValue& params, bool fHelp)
     if ( fHelp || params.size() > 1 )
         throw runtime_error(
         "setpubkey\n"
-        "\nSets the -pubkey if the daemon was not started with it, if it was already set, it returns the pubkey.\n"
+        "\nSets the -pubkey if the daemon was not started with it, if it was already set, it returns the pubkey, and its Raddress.\n"
         "\nArguments:\n"
         "1. \"pubkey\"         (string) pubkey to set.\n"
         "\nResult:\n"
@@ -5144,7 +5145,7 @@ UniValue setpubkey(const UniValue& params, bool fHelp)
         if ( NOTARY_ADDRESS.empty() ) {
           pubkey2addr((char *)Raddress,(uint8_t *)NOTARY_PUBKEY33);
           NOTARY_ADDRESS.assign(Raddress);
-        }    
+        }
         result.push_back(Pair("error", "Can only set pubkey once, to change it you need to restart your daemon."));
     }
     if ( NOTARY_PUBKEY33[0] != 0 && !NOTARY_ADDRESS.empty() ) {
@@ -5511,7 +5512,7 @@ UniValue rewardscreatefunding(const UniValue& params, bool fHelp)
     minseconds = maxseconds = 60 * 3600 * 24;
     mindeposit = 100 * COIN;
     name = (char *)params[0].get_str().c_str();
-    funds = atof(params[1].get_str().c_str()) * COIN;
+    funds = atof(params[1].get_str().c_str()) * COIN + 0.00000000499999;
 
     if (!VALID_PLAN_NAME(name)) {
         ERR_RESULT(strprintf("Plan name can be at most %d ASCII characters",PLAN_NAME_MAX));
@@ -5549,7 +5550,7 @@ UniValue rewardscreatefunding(const UniValue& params, bool fHelp)
                     return result;
                 }
                 if ( params.size() > 5 )
-                    mindeposit = atof(params[5].get_str().c_str()) * COIN;
+                    mindeposit = atof(params[5].get_str().c_str()) * COIN + 0.00000000499999;
                     if ( mindeposit <= 0 ) {
                         ERR_RESULT("mindeposit must be positive");
                         return result;
@@ -5577,7 +5578,7 @@ UniValue rewardslock(const UniValue& params, bool fHelp)
     LOCK2(cs_main, pwalletMain->cs_wallet);
     name = (char *)params[0].get_str().c_str();
     fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
-    amount = atof(params[2].get_str().c_str()) * COIN;
+    amount = atof(params[2].get_str().c_str()) * COIN + 0.00000000499999;
     hex = RewardsLock(0,name,fundingtxid,amount);
 
     if (!VALID_PLAN_NAME(name)) {
@@ -5607,7 +5608,7 @@ UniValue rewardsaddfunding(const UniValue& params, bool fHelp)
     LOCK2(cs_main, pwalletMain->cs_wallet);
     name = (char *)params[0].get_str().c_str();
     fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
-    amount = atof(params[2].get_str().c_str()) * COIN;
+    amount = atof(params[2].get_str().c_str()) * COIN + 0.00000000499999;
     hex = RewardsAddfunding(0,name,fundingtxid,amount);
 
     if (!VALID_PLAN_NAME(name)) {
@@ -5750,7 +5751,7 @@ UniValue gatewaysdeposit(const UniValue& params, bool fHelp)
     deposithex = params[5].get_str();
     proof = ParseHex(params[6].get_str());
     destpub = ParseHex(params[7].get_str());
-    amount = atof((char *)params[8].get_str().c_str()) * COIN;
+    amount = atof((char *)params[8].get_str().c_str()) * COIN + 0.00000000499999;
     if ( amount <= 0 || claimvout < 0 )
         throw runtime_error("invalid param: amount, numpks or claimvout\n");
     hex = GatewaysDeposit(0,bindtxid,height,coin,cointxid,claimvout,deposithex,proof,pubkey2pk(destpub),amount);
@@ -5775,7 +5776,7 @@ UniValue gatewaysclaim(const UniValue& params, bool fHelp)
     coin = params[1].get_str();
     deposittxid = Parseuint256((char *)params[2].get_str().c_str());
     destpub = ParseHex(params[3].get_str());
-    amount = atof((char *)params[4].get_str().c_str()) * COIN;
+    amount = atof((char *)params[4].get_str().c_str()) * COIN + 0.00000000499999;
     hex = GatewaysClaim(0,bindtxid,coin,deposittxid,pubkey2pk(destpub),amount);
     if ( hex.size() > 0 )
     {
@@ -5797,7 +5798,7 @@ UniValue gatewayswithdraw(const UniValue& params, bool fHelp)
     bindtxid = Parseuint256((char *)params[0].get_str().c_str());
     coin = params[1].get_str();
     withdrawpub = ParseHex(params[2].get_str());
-    amount = atof((char *)params[3].get_str().c_str()) * COIN;
+    amount = atof((char *)params[3].get_str().c_str()) * COIN + 0.00000000499999;
     hex = GatewaysWithdraw(0,bindtxid,coin,pubkey2pk(withdrawpub),amount);
     if ( hex.size() > 0 )
     {
@@ -5905,7 +5906,7 @@ UniValue oraclesregister(const UniValue& params, bool fHelp)
     LOCK2(cs_main, pwalletMain->cs_wallet);
     txid = Parseuint256((char *)params[0].get_str().c_str());
     if ( (datafee= atol((char *)params[1].get_str().c_str())) == 0 )
-        datafee = atof((char *)params[1].get_str().c_str()) * COIN;
+        datafee = atof((char *)params[1].get_str().c_str()) * COIN + 0.00000000499999;
     hex = OracleRegister(0,txid,datafee);
     if ( hex.size() > 0 )
     {
@@ -5926,7 +5927,7 @@ UniValue oraclessubscribe(const UniValue& params, bool fHelp)
     LOCK2(cs_main, pwalletMain->cs_wallet);
     txid = Parseuint256((char *)params[0].get_str().c_str());
     pubkey = ParseHex(params[1].get_str().c_str());
-    amount = atof((char *)params[2].get_str().c_str()) * COIN;
+    amount = atof((char *)params[2].get_str().c_str()) * COIN + 0.00000000499999;
     hex = OracleSubscribe(0,txid,pubkey2pk(pubkey),amount);
     if ( hex.size() > 0 )
     {
@@ -6083,7 +6084,7 @@ UniValue faucetfund(const UniValue& params, bool fHelp)
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
-    funds = atof(params[0].get_str().c_str()) * COIN;
+    funds = atof(params[0].get_str().c_str()) * COIN + 0.00000000499999;
     if (funds > 0) {
         hex = FaucetFund(0,(uint64_t) funds);
         if ( hex.size() > 0 )
@@ -6148,7 +6149,7 @@ UniValue pricescreate(const UniValue& params, bool fHelp)
     longtoken = Parseuint256((char *)params[4].get_str().c_str());
     shorttoken = Parseuint256((char *)params[5].get_str().c_str());
     maxleverage = atol(params[6].get_str().c_str());
-    funding = atof(params[7].get_str().c_str()) * COIN;
+    funding = atof(params[7].get_str().c_str()) * COIN + 0.00000000499999;
     n = atoi(params[8].get_str().c_str());
     if ( n > 0 )
     {
@@ -6184,7 +6185,7 @@ UniValue pricesaddfunding(const UniValue& params, bool fHelp)
     LOCK2(cs_main, pwalletMain->cs_wallet);
     fundingtxid = Parseuint256((char *)params[0].get_str().c_str());
     bettoken = Parseuint256((char *)params[1].get_str().c_str());
-    amount = atof(params[2].get_str().c_str()) * COIN;
+    amount = atof(params[2].get_str().c_str()) * COIN + 0.00000000499999;
     hex = PricesAddFunding(0,bettoken,fundingtxid,amount);
     if ( hex.size() > 0 )
     {
@@ -6209,7 +6210,7 @@ UniValue pricesbet(const UniValue& params, bool fHelp)
     LOCK2(cs_main, pwalletMain->cs_wallet);
     fundingtxid = Parseuint256((char *)params[0].get_str().c_str());
     bettoken = Parseuint256((char *)params[1].get_str().c_str());
-    amount = atof(params[2].get_str().c_str()) * COIN;
+    amount = atof(params[2].get_str().c_str()) * COIN + 0.00000000499999;
     leverage = atoi(params[3].get_str().c_str());
     hex = PricesBet(0,bettoken,fundingtxid,amount,leverage);
     if ( hex.size() > 0 )
@@ -6272,9 +6273,9 @@ UniValue dicefund(const UniValue& params, bool fHelp)
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
     name = (char *)params[0].get_str().c_str();
-    funds = atof(params[1].get_str().c_str()) * COIN;
-    minbet = atof(params[2].get_str().c_str()) * COIN;
-    maxbet = atof(params[3].get_str().c_str()) * COIN;
+    funds = atof(params[1].get_str().c_str()) * COIN + 0.00000000499999;
+    minbet = atof(params[2].get_str().c_str()) * COIN + 0.00000000499999;
+    maxbet = atof(params[3].get_str().c_str()) * COIN + 0.00000000499999;
     maxodds = atol(params[4].get_str().c_str());
     timeoutblocks = atol(params[5].get_str().c_str());
 
@@ -6306,7 +6307,7 @@ UniValue diceaddfunds(const UniValue& params, bool fHelp)
     LOCK2(cs_main, pwalletMain->cs_wallet);
     name = (char *)params[0].get_str().c_str();
     fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
-    amount = atof(params[2].get_str().c_str()) * COIN;
+    amount = atof(params[2].get_str().c_str()) * COIN + 0.00000000499999;
     if (!VALID_PLAN_NAME(name)) {
         ERR_RESULT(strprintf("Plan name can be at most %d ASCII characters",PLAN_NAME_MAX));
         return(result);
@@ -6334,7 +6335,7 @@ UniValue dicebet(const UniValue& params, bool fHelp)
     LOCK2(cs_main, pwalletMain->cs_wallet);
     name = (char *)params[0].get_str().c_str();
     fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
-    amount = atof(params[2].get_str().c_str()) * COIN;
+    amount = atof(params[2].get_str().c_str()) * COIN + 0.00000000499999;
     odds = atol(params[3].get_str().c_str());
 
     if (!VALID_PLAN_NAME(name)) {
@@ -6523,7 +6524,7 @@ UniValue tokencreate(const UniValue& params, bool fHelp)
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
     name = params[0].get_str();
-    supply = atof(params[1].get_str().c_str()) * COIN;
+    supply = atof(params[1].get_str().c_str()) * COIN + 0.00000000499999;
     if ( name.size() == 0 || name.size() > 32)
     {
         ERR_RESULT("Token name must not be empty and up to 32 characters");
