@@ -1057,90 +1057,37 @@ UniValue cleanwallettransactions(const UniValue& params, bool fHelp)
     }
     else
     {
-      // listunspent call... this gets us all the txids that are unspent, we search this list for the oldest tx,
-      // then delete all txs in the wallet before this block + 10 as safety buffer.
-      vector<COutput> vecOutputs;
-      assert(pwalletMain != NULL);
-      pwalletMain->AvailableCoins(vecOutputs, false, NULL, true);
-      int32_t oldestTxHeight = 0;
-      BOOST_FOREACH(const COutput& out, vecOutputs)
-      {
-        int32_t txheight = out.nDepth;
-        fprintf(stderr, "txheight.%i\n", txheight);
-        if ( txheight > oldestTxHeight )
-            oldestTxHeight = txheight;
-      }
-      fprintf(stderr, "oldestTxHeight.%i\n",oldestTxHeight);
+        // listunspent call... this gets us all the txids that are unspent, we search this list for the oldest tx,
+        vector<COutput> vecOutputs;
+        assert(pwalletMain != NULL);
+        pwalletMain->AvailableCoins(vecOutputs, false, NULL, true);
+        int32_t oldestTxDepth = 0;
+        BOOST_FOREACH(const COutput& out, vecOutputs)
+        {
+          if ( out.nDepth > oldestTxHeight )
+              oldestTxDepth = out.nDepth;
+        }
+        oldestTxDepth = oldestTxDepth + 1;
+        fprintf(stderr, "oldestTxHeight.%i\n",oldestTxHeight);
 
-
-        /*std::vector<CWalletTx> NotarisationTxs;
+        // then add all txs in the wallet before this block to the list to remove.
         for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it)
         {
             const CWalletTx& wtx = (*it).second;
-            if (!CheckFinalTx(wtx) || wtx.GetBlocksToMaturity() > 0 || wtx.GetDepthInMainChain() < 360 )
-                continue;
-
-            CCoins coins;
-            if (!pcoinsTip->GetCoins(wtx.GetHash(), coins))
+            if (wtx.GetDepthInMainChain() < oldestTxDepth)
             {
-                int spents = 0; int mine = 0;
-                for (unsigned int n = 0; n < wtx.vout.size() ; n++)
-                {
-                    if ( pwalletMain->IsMine(wtx.vout[n]) )
-                        mine++;
-                    if ( ((unsigned int)n >= coins.vout.size() || coins.vout[n].IsNull() ) )
-                       spents++;
-               }
-               if ( spents == mine )
-               {
-                  for (unsigned int n = 0; n < wtx.vin.size() ; n++)
-                  {
-                      CTransaction vintx; uint256 hashBlock;
-                      if ( GetTransaction(wtx.vin[n].prevout.hash,vintx,hashBlock,false) != 0 )
-                      {
-                          for (unsigned int z = 0; z < vintx.vin.size() ; z++)
-                          {
-                            TxToRemove.push_back(vintx.vin[z].prevout.hash);
-                          }
-                      }
-                      TxToRemove.push_back(wtx.vin[n].prevout.hash);
-                  }
-                  TxToRemove.push_back(wtx.GetHash());
-               }
-            }
-
-            CTxDestination address;
-            // get all  notarisations
-            if ( ExtractDestination(wtx.vout[0].scriptPubKey, address) )
-            {
-                if ( strcmp(CBitcoinAddress(address).ToString().c_str(),CRYPTO777_KMDADDR) == 0 )
-                    NotarisationTxs.push_back(wtx);
+                TxToRemove.push_back(wtx.GetHash());
+                fprintf(stderr, "[%s] : depth.%i \n",wtx.GetHash(),wtx.GetDepthInMainChain());
             }
         }
-
-        // Erase notarisations spending from fully spent splits.
-        BOOST_FOREACH (CWalletTx& tx, NotarisationTxs)
-        {
-          for (int n = 0; n < tx.vin.size(); n++)
-          {
-              BOOST_FOREACH (uint256& SpentHash, TxToRemove)
-              {
-                  if ( SpentHash == tx.vin[n].prevout.hash )
-                  {
-                      pwalletMain->EraseFromWallet(tx.GetHash());
-                      LogPrintf("ERASED Notarisation: %s\n",tx.GetHash().ToString().c_str());
-                  }
-              }
-          }
-        } */
     }
 
     // erase txs
-    /*BOOST_FOREACH (uint256& hash, TxToRemove)
+    BOOST_FOREACH (uint256& hash, TxToRemove)
     {
         pwalletMain->EraseFromWallet(hash);
         LogPrintf("ERASED spent Tx: %s\n",hash.ToString().c_str());
-    } */
+    }
 
     // build return JSON for stats.
     int remaining = pwalletMain->mapWallet.size();
