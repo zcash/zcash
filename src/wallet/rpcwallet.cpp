@@ -1077,7 +1077,7 @@ UniValue cleanwallettransactions(const UniValue& params, bool fHelp)
             if (wtx.GetDepthInMainChain() < oldestTxDepth)
             {
                 TxToRemove.push_back(wtx.GetHash());
-                fprintf(stderr, "[%s] : depth.%i \n",wtx.GetHash(),wtx.GetDepthInMainChain());
+                fprintf(stderr, "[%s] : depth.%i \n",wtx.GetHash().ToString().c_str(),wtx.GetDepthInMainChain());
             }
         }
     }
