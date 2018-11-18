@@ -1442,7 +1442,7 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
         entropyval = entropyval2;
         entropytxid = entropytxid2;
     }
-    if ( ( funding >= 2*bet*odds+txfee && entropyval != 0 ) )
+    if ( funding >= 2*bet*odds+txfee && entropyval != 0 )
     {
         if ( entropytxs < 100 ) {
             CCerror = "Your dealer is broke, find a new casino.";
@@ -1476,7 +1476,6 @@ std::string DiceBetFinish(uint8_t &funcid,uint256 &entropyused,int32_t &entropyv
     entropyused = zeroid;
     *resultp = 0;
     funcid = 0;
-    //char str[65]; fprintf(stderr,"DiceBetFinish.%s %s\n",planstr,uint256_str(str,bettxid));
     if ( (cp= Diceinit(fundingPubKey,fundingtxid,&C,planstr,txfee,mypk,dicepk,sbits,minbet,maxbet,maxodds,timeoutblocks)) == 0 )
     {
         CCerror = "Diceinit error in finish, is your transaction confirmed?";

@@ -756,6 +756,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
     return result;
 }
 
+
 class submitblock_StateCatcher : public CValidationInterface
 {
 public:
