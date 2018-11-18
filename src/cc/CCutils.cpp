@@ -186,7 +186,7 @@ void CCaddr3set(struct CCcontract_info *cp,uint8_t evalcode,CPubKey pk,uint8_t *
     strcpy(cp->unspendableaddr3,coinaddr);
 }
 
-bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey)
+/*bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey)
 {
     CTxDestination address; 
     txnouttype whichType;
@@ -198,6 +198,18 @@ bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey)
         return(true);
     }
     fprintf(stderr,"Solver for scriptPubKey failed\n%s\n", scriptPubKey.ToString().c_str());
+    return(false);
+}*/
+
+bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey)
+{
+    CTxDestination address; txnouttype whichType;
+    if ( ExtractDestination(scriptPubKey,address) != 0 )
+    {
+        strcpy(destaddr,(char *)CBitcoinAddress(address).ToString().c_str());
+        return(true);
+    }
+    //fprintf(stderr,"ExtractDestination failed\n");
     return(false);
 }
 
