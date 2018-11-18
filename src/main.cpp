@@ -1335,6 +1335,8 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
             //fprintf(stderr,"private chain nValue %.8f iscoinbase.%d\n",(double)txout.nValue/COIN,iscoinbase);
             if (iscoinbase == 0 && txout.nValue > 0)
             {
+                // TODO: if we are upgraded to Sapling, we can allow Sprout sourced funds to sit in a transparent address
+                //
                 char destaddr[65];
                 Getscriptaddress(destaddr,txout.scriptPubKey);
                 if ( komodo_isnotaryvout(destaddr) == 0 )
