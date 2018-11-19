@@ -1637,7 +1637,11 @@ uint64_t komodo_ac_block_subsidy(int nHeight)
     }
     if ( nHeight == 1 )
         if ( ASSETCHAINS_LASTERA == 0 )
-            subsidy = ASSETCHAINS_SUPPLY * SATOSHIDEN + (ASSETCHAINS_MAGIC & 0xffffff);
+        {
+            if ( ASSETCHAINS_STAKED == 0 )
+                subsidy = ASSETCHAINS_SUPPLY * SATOSHIDEN + (ASSETCHAINS_MAGIC & 0xffffff);
+            else subsidy = ASSETCHAINS_SUPPLY * SATOSHIDEN + ASSETCHAINS_MAGIC;
+        }
         else
             subsidy += ASSETCHAINS_SUPPLY * SATOSHIDEN + (ASSETCHAINS_MAGIC & 0xffffff);
 
