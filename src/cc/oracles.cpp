@@ -235,7 +235,7 @@ int64_t OracleDatafee(CScript &scriptPubKey,uint256 oracletxid,CPubKey publisher
         }
         else
         {
-            fprintf(stderr,"Could not decode op_ret from transaction %x\nscriptPubKey: %s\n", oracletxid, oracletx.vout[numvouts-1].scriptPubKey.ToString().c_str());
+            fprintf(stderr,"Could not decode op_ret from transaction %s\nscriptPubKey: %s\n", oracletxid.GetHex().c_str(), oracletx.vout[numvouts-1].scriptPubKey.ToString().c_str());
         }
     }
     return(datafee);
