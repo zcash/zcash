@@ -545,7 +545,7 @@ bool OraclesDataValidate(struct CCcontract_info *cp,Eval* eval,const CTransactio
     CTransaction vinTx; uint256 hashBlock,activehash; int32_t i,numvins,numvouts; int64_t inputs=0,outputs=0,assetoshis; CScript scriptPubKey;
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
-    if ( OracleDatafee(scriptPubKey,oracletxid,publisher) > datafee )
+    if ( OracleDatafee(scriptPubKey,oracletxid,publisher) != datafee )
         return eval->Invalid("mismatched datafee");
     scriptPubKey = MakeCC1vout(cp->evalcode,0,publisher).scriptPubKey;
     for (i=0; i<numvins; i++)
