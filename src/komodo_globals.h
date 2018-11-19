@@ -159,9 +159,14 @@ int64_t komodo_current_supply(uint32_t nHeight)
                     uint32_t modulo = (curEnd - lastEnd) % period;
                     uint64_t decay = ASSETCHAINS_DECAY[j];
 
+                    if (!period)
+                    {
+                        // no halving, straight multiply
+                        cur_money += reward * (nHeight - 1);
+                    }
                     // if exactly SATOSHIDEN, linear decay to zero or to next era, same as:
                     // (next_era_reward + (starting reward - next_era_reward) / 2) * num_blocks
-                    if ( decay == SATOSHIDEN )
+                    else if ( decay == SATOSHIDEN )
                     {
                         int64_t lowestSubsidy, subsidyDifference, stepDifference, stepTriangle;
                         int64_t denominator, modulo;
