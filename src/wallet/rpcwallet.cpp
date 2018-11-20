@@ -1068,7 +1068,7 @@ UniValue cleanwallettransactions(const UniValue& params, bool fHelp)
           if ( out.nDepth > oldestTxDepth )
               oldestTxDepth = out.nDepth;
         }
-        oldestTxDepth = oldestTxDepth + 1; // add extra block just for safety.
+        oldestTxDepth = oldestTxDepth + 1; // add extra 10 blocks just for safety.
 
         // then add all txs in the wallet before this block to the list to remove.
         for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it)
