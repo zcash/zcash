@@ -1636,11 +1636,13 @@ uint64_t komodo_ac_block_subsidy(int nHeight)
         }
     }
     if ( nHeight == 1 )
+    {
+        uint32_t magicExtra = ASSETCHAINS_STAKED ? ASSETCHAINS_MAGIC : (ASSETCHAINS_MAGIC & 0xffffff);
         if ( ASSETCHAINS_LASTERA == 0 )
-            subsidy = ASSETCHAINS_SUPPLY * SATOSHIDEN + (ASSETCHAINS_MAGIC & 0xffffff);
+            subsidy = ASSETCHAINS_SUPPLY * SATOSHIDEN + magicExtra;
         else
-            subsidy += ASSETCHAINS_SUPPLY * SATOSHIDEN + (ASSETCHAINS_MAGIC & 0xffffff);
-
+            subsidy += ASSETCHAINS_SUPPLY * SATOSHIDEN + magicExtra;
+    }
     return(subsidy);
 }
 
