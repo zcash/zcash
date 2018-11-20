@@ -6668,8 +6668,10 @@ UniValue dicestatus(const UniValue& params, bool fHelp)
         {
             if ( params.size() == 3 )
             {
+                int64_t val;
+                val = winnings * COIN + 0.00000000499999;
                 result.push_back(Pair("status", "win"));
-                result.push_back(Pair("won", winnings));
+                result.push_back(Pair("won", ValueFromAmount(val)));
             }
             else
             {
