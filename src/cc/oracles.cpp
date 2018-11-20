@@ -794,12 +794,14 @@ std::string OracleData(int64_t txfee,uint256 oracletxid,std::vector <uint8_t> da
     mypk = pubkey2pk(Mypubkey());
     if ( data.size() > 8192 )
     {
-        fprintf(stderr,"datasize %d is too big\n",(int32_t)data.size());
+        CCerror = strprintf("datasize %d is too big\n",(int32_t)data.size());
+        fprintf(stderr,"%s\n", CCerror.c_str() );
         return("");
     }
     if ( (datafee= OracleDatafee(pubKey,oracletxid,mypk)) <= 0 )
     {
-        fprintf(stderr,"datafee %.8f is illegal\n",(double)datafee/COIN);
+        CCerror = strprintf("datafee %.8f is illegal\n",(double)datafee/COIN);
+        fprintf(stderr,"%s\n", CCerror.c_str() );
         return("");
     }
     if ( txfee == 0 )
