@@ -5975,6 +5975,7 @@ UniValue gatewaysbind(const UniValue& params, bool fHelp)
         pubkeys.push_back(pubkey2pk(pubkey));
     }
     hex = GatewaysBind(0,coin,tokenid,totalsupply,oracletxid,M,N,pubkeys);
+    RETURN_IF_ERROR(CCerror);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
@@ -6004,6 +6005,8 @@ UniValue gatewaysdeposit(const UniValue& params, bool fHelp)
     if ( amount <= 0 || claimvout < 0 )
         throw runtime_error("invalid param: amount, numpks or claimvout\n");
     hex = GatewaysDeposit(0,bindtxid,height,coin,cointxid,claimvout,deposithex,proof,pubkey2pk(destpub),amount);
+
+    RETURN_IF_ERROR(CCerror);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
@@ -6027,6 +6030,7 @@ UniValue gatewaysclaim(const UniValue& params, bool fHelp)
     destpub = ParseHex(params[3].get_str());
     amount = atof((char *)params[4].get_str().c_str()) * COIN + 0.00000000499999;
     hex = GatewaysClaim(0,bindtxid,coin,deposittxid,pubkey2pk(destpub),amount);
+    RETURN_IF_ERROR(CCerror);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
@@ -6049,6 +6053,7 @@ UniValue gatewayswithdraw(const UniValue& params, bool fHelp)
     withdrawpub = ParseHex(params[2].get_str());
     amount = atof((char *)params[3].get_str().c_str()) * COIN + 0.00000000499999;
     hex = GatewaysWithdraw(0,bindtxid,coin,pubkey2pk(withdrawpub),amount);
+    RETURN_IF_ERROR(CCerror);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
@@ -6070,6 +6075,7 @@ UniValue gatewaysmarkdone(const UniValue& params, bool fHelp)
     coin = params[1].get_str();
     cointxid = Parseuint256((char *)params[2].get_str().c_str());
     hex = GatewaysMarkdone(0,withdrawtxid,coin,cointxid);
+    RETURN_IF_ERROR(CCerror);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
@@ -6116,6 +6122,7 @@ UniValue gatewayspartialsign(const UniValue& params, bool fHelp)
     coin = params[1].get_str();
     parthex = params[2].get_str();
     hex = GatewaysPartialSign(0,txid,coin,parthex);
+    RETURN_IF_ERROR(CCerror);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
