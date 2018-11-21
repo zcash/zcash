@@ -1075,7 +1075,7 @@ UniValue cleanwallettransactions(const UniValue& params, bool fHelp)
         }
         oldestTxDepth = oldestTxDepth + 1; // add extra block just for safety.
         // lock all the previouly locked coins.
-        BOOST_FOREACH(COutPoint &outpt, vOutpts) {
+        BOOST_FOREACH(COutPoint &outpt, vLockedUTXO) {
             pwalletMain->LockCoin(outpt);
         }
 
