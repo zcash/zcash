@@ -1579,9 +1579,9 @@ std::string DiceBetFinish(uint8_t &funcid,uint256 &entropyused,int32_t &entropyv
                     }
                     CCchange = betTx.vout[0].nValue + betTx.vout[1].nValue;
                     fundsneeded = txfee + (odds+1)*betTx.vout[1].nValue;
+                    savemtx = mtx;
                     if ( CCchange >= fundsneeded )
                         CCchange -= fundsneeded;
-                    savemtx = mtx;
                     else if ( (inputs= AddDiceInputs(cp,mtx,dicepk,fundsneeded,1,sbits,fundingtxid)) >= fundsneeded )
                     {
                         if ( inputs > fundsneeded )
