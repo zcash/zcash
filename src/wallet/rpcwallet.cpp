@@ -2347,9 +2347,9 @@ UniValue listunspent(const UniValue& params, bool fHelp)
             "\nArguments:\n"
             "1. minconf          (numeric, optional, default=1) The minimum confirmations to filter\n"
             "2. maxconf          (numeric, optional, default=9999999) The maximum confirmations to filter\n"
-            "3. \"addresses\"    (string) A json array of Zcash addresses to filter\n"
+            "3. \"addresses\"      (string) A json array of Zcash addresses to filter\n"
             "    [\n"
-            "      \"address\"   (string) Zcash address\n"
+            "      \"address\"     (string) Zcash address\n"
             "      ,...\n"
             "    ]\n"
             "\nResult\n"
@@ -2357,14 +2357,14 @@ UniValue listunspent(const UniValue& params, bool fHelp)
             "  {\n"
             "    \"txid\" : \"txid\",          (string) the transaction id \n"
             "    \"vout\" : n,               (numeric) the vout value\n"
-            "    \"generated\" : true|false  (boolean) true if txout is a coinbase transaction output\n"
+            "    \"generated\" : true|false, (boolean) true if txout is a coinbase transaction output\n"
             "    \"address\" : \"address\",    (string) the Zcash address\n"
             "    \"account\" : \"account\",    (string) DEPRECATED. The associated account, or \"\" for the default account\n"
             "    \"scriptPubKey\" : \"key\",   (string) the script key\n"
             "    \"amount\" : x.xxx,         (numeric) the transaction amount in " + CURRENCY_UNIT + "\n"
             "    \"confirmations\" : n,      (numeric) The number of confirmations\n"
-            "    \"redeemScript\" : n        (string) The redeemScript if scriptPubKey is P2SH\n"
-            "    \"spendable\" : xxx         (bool) Whether we have the private keys to spend this output\n"
+            "    \"redeemScript\" : n,       (string) The redeemScript if scriptPubKey is P2SH\n"
+            "    \"spendable\" : true|false, (bool) Whether we have the private keys to spend this output\n"
             "  }\n"
             "  ,...\n"
             "]\n"
@@ -2464,7 +2464,7 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
             "1. minconf          (numeric, optional, default=1) The minimum confirmations to filter\n"
             "2. maxconf          (numeric, optional, default=9999999) The maximum confirmations to filter\n"
             "3. includeWatchonly (bool, optional, default=false) Also include watchonly addresses (see 'z_importviewingkey')\n"
-            "4. \"addresses\"      (string) A json array of zaddrs (both Sprout and Sapling) to filter on.  Duplicate addresses not allowed.\n"
+            "4. \"addresses\"      (string) A json array of zaddrs (either Sprout and Sapling) to filter on.  Duplicate addresses not allowed.\n"
             "    [\n"
             "      \"address\"     (string) zaddr\n"
             "      ,...\n"
@@ -2472,16 +2472,16 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
             "\nResult\n"
             "[                             (array of json object)\n"
             "  {\n"
-            "    \"txid\" : \"txid\",          (string) the transaction id \n"
-            "    \"jsindex\" (sprout) : n,       (numeric) the joinsplit index\n"
-            "    \"jsoutindex\" (sprout) : n,       (numeric) the output index of the joinsplit\n"
-            "    \"outindex\" (sapling) : n,       (numeric) the output index\n"
+            "    \"txid\" : \"txid\",           (string) the transaction id \n"
+            "    \"jsindex\" (sprout) : n,    (numeric) the joinsplit index\n"
+            "    \"jsoutindex\" (sprout) : n, (numeric) the output index of the joinsplit\n"
+            "    \"outindex\" (sapling) : n,  (numeric) the output index\n"
             "    \"confirmations\" : n,       (numeric) the number of confirmations\n"
             "    \"spendable\" : true|false,  (boolean) true if note can be spent by wallet, false if address is watchonly\n"
-            "    \"address\" : \"address\",    (string) the shielded address\n"
-            "    \"amount\": xxxxx,          (numeric) the amount of value in the note\n"
-            "    \"memo\": xxxxx,            (string) hexademical string representation of memo field\n"
-            "    \"change\": true|false,     (boolean) true if the address that received the note is also one of the sending addresses\n"
+            "    \"address\" : \"address\",     (string) the shielded address\n"
+            "    \"amount\": xxxxx,           (numeric) the amount of value in the note\n"
+            "    \"memo\": xxxxx,             (string) hexademical string representation of memo field\n"
+            "    \"change\": true|false,      (boolean) true if the address that received the note is also one of the sending addresses\n"
             "  }\n"
             "  ,...\n"
             "]\n"
@@ -2536,78 +2536,86 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
             string address = o.get_str();
             auto zaddr = DecodePaymentAddress(address);
             if (!IsValidPaymentAddress(zaddr)) {
-                throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, address is not a valid zaddr: ") + address);
+                throw JSONRPCError(RPC_INVALID_PARAMETER,
+                    string("Invalid parameter, address is not a valid zaddr: ") + address);
             }
-            auto hasSpendingKey = boost::apply_visitor(HaveSpendingKeyForPaymentAddress(pwalletMain), zaddr);
-            if (!fIncludeWatchonly && !hasSpendingKey) {
-                throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, spending key for address does not belong to wallet: ") + address);
+            if (!fIncludeWatchonly &&
+                !boost::apply_visitor(HaveSpendingKeyForPaymentAddress(pwalletMain), zaddr))
+            {
+                throw JSONRPCError(RPC_INVALID_PARAMETER,
+                    string("Invalid parameter, spending key for address does not belong to wallet: ") + address);
             }
             zaddrs.insert(zaddr);
 
             if (setAddress.count(address)) {
-                throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, duplicated address: ") + address);
+                throw JSONRPCError(RPC_INVALID_PARAMETER,
+                    string("Invalid parameter, duplicated address: ") + address);
             }
             setAddress.insert(address);
         }
     }
     else {
         // User did not provide zaddrs, so use default i.e. all addresses
-        std::set<libzcash::SproutPaymentAddress> sproutzaddrs = {};
-        pwalletMain->GetSproutPaymentAddresses(sproutzaddrs);
-        
-        // Sapling support
-        std::set<libzcash::SaplingPaymentAddress> saplingzaddrs = {};
-        pwalletMain->GetSaplingPaymentAddresses(saplingzaddrs);
-        
-        zaddrs.insert(sproutzaddrs.begin(), sproutzaddrs.end());
-        zaddrs.insert(saplingzaddrs.begin(), saplingzaddrs.end());
+        {
+            set<libzcash::SproutPaymentAddress> za;
+            pwalletMain->GetSproutPaymentAddresses(za);
+            zaddrs.insert(za.begin(), za.end());
+        }
+        {
+            set<libzcash::SaplingPaymentAddress> za;
+            pwalletMain->GetSaplingPaymentAddresses(za);
+            zaddrs.insert(za.begin(), za.end());
+        }
     }
 
     UniValue results(UniValue::VARR);
 
-    if (zaddrs.size() > 0) {
-        std::vector<CSproutNotePlaintextEntry> sproutEntries;
-        std::vector<SaplingNoteEntry> saplingEntries;
-        pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, zaddrs, nMinDepth, nMaxDepth, true, !fIncludeWatchonly, false);
-        std::set<std::pair<PaymentAddress, uint256>> nullifierSet = pwalletMain->GetNullifiersForAddresses(zaddrs);
-        
-        for (auto & entry : sproutEntries) {
-            UniValue obj(UniValue::VOBJ);
-            obj.push_back(Pair("txid", entry.jsop.hash.ToString()));
-            obj.push_back(Pair("jsindex", (int)entry.jsop.js ));
-            obj.push_back(Pair("jsoutindex", (int)entry.jsop.n));
-            obj.push_back(Pair("confirmations", entry.confirmations));
-            bool hasSproutSpendingKey = pwalletMain->HaveSproutSpendingKey(boost::get<libzcash::SproutPaymentAddress>(entry.address));
-            obj.push_back(Pair("spendable", hasSproutSpendingKey));
-            obj.push_back(Pair("address", EncodePaymentAddress(entry.address)));
-            obj.push_back(Pair("amount", ValueFromAmount(CAmount(entry.plaintext.value()))));
-            std::string data(entry.plaintext.memo().begin(), entry.plaintext.memo().end());
-            obj.push_back(Pair("memo", HexStr(data)));
-            if (hasSproutSpendingKey) {
-                obj.push_back(Pair("change", pwalletMain->IsNoteSproutChange(nullifierSet, entry.address, entry.jsop)));
-            }
-            results.push_back(obj);
+    if (zaddrs.empty()) {
+        return results;
+    }
+    std::vector<CSproutNotePlaintextEntry> sproutEntries;
+    std::vector<SaplingNoteEntry> saplingEntries;
+    pwalletMain->GetFilteredNotes(
+        sproutEntries, saplingEntries, zaddrs, nMinDepth, nMaxDepth, true, !fIncludeWatchonly, false);
+    set<std::pair<PaymentAddress, uint256>> nullifierSet =
+        pwalletMain->GetNullifiersForAddresses(zaddrs);
+
+    for (auto & entry : sproutEntries) {
+        UniValue obj(UniValue::VOBJ);
+        obj.push_back(Pair("txid", entry.jsop.hash.ToString()));
+        obj.push_back(Pair("jsindex", (int)entry.jsop.js ));
+        obj.push_back(Pair("jsoutindex", (int)entry.jsop.n));
+        obj.push_back(Pair("confirmations", entry.confirmations));
+        bool hasSproutSpendingKey = pwalletMain->HaveSproutSpendingKey(boost::get<libzcash::SproutPaymentAddress>(entry.address));
+        obj.push_back(Pair("spendable", hasSproutSpendingKey));
+        obj.push_back(Pair("address", EncodePaymentAddress(entry.address)));
+        obj.push_back(Pair("amount", ValueFromAmount(CAmount(entry.plaintext.value()))));
+        obj.push_back(Pair("memo", HexStr(entry.plaintext.memo())));
+        if (hasSproutSpendingKey) {
+            // Change can't be detected without the spending key
+            obj.push_back(Pair("change", pwalletMain->IsNoteSproutChange(nullifierSet, entry.address, entry.jsop)));
         }
-        
-        for (auto & entry : saplingEntries) {
-            UniValue obj(UniValue::VOBJ);
-            obj.push_back(Pair("txid", entry.op.hash.ToString()));
-            obj.push_back(Pair("outindex", (int)entry.op.n));
-            obj.push_back(Pair("confirmations", entry.confirmations));
-            libzcash::SaplingIncomingViewingKey ivk;
-            libzcash::SaplingFullViewingKey fvk;
-            pwalletMain->GetSaplingIncomingViewingKey(boost::get<libzcash::SaplingPaymentAddress>(entry.address), ivk);
-            pwalletMain->GetSaplingFullViewingKey(ivk, fvk);
-            bool hasSaplingSpendingKey = pwalletMain->HaveSaplingSpendingKey(fvk);
-            obj.push_back(Pair("spendable", hasSaplingSpendingKey));
-            obj.push_back(Pair("address", EncodePaymentAddress(entry.address)));
-            obj.push_back(Pair("amount", ValueFromAmount(CAmount(entry.note.value())))); // note.value() is equivalent to plaintext.value()
-            obj.push_back(Pair("memo", HexStr(entry.memo)));
-            if (hasSaplingSpendingKey) {
-                obj.push_back(Pair("change", pwalletMain->IsNoteSaplingChange(nullifierSet, entry.address, entry.op)));
-            }
-            results.push_back(obj);
+        results.push_back(obj);
+    }
+    for (auto & entry : saplingEntries) {
+        UniValue obj(UniValue::VOBJ);
+        obj.push_back(Pair("txid", entry.op.hash.ToString()));
+        obj.push_back(Pair("outindex", (int)entry.op.n));
+        obj.push_back(Pair("confirmations", entry.confirmations));
+        libzcash::SaplingIncomingViewingKey ivk;
+        pwalletMain->GetSaplingIncomingViewingKey(boost::get<libzcash::SaplingPaymentAddress>(entry.address), ivk);
+        libzcash::SaplingFullViewingKey fvk;
+        pwalletMain->GetSaplingFullViewingKey(ivk, fvk);
+        bool hasSaplingSpendingKey = pwalletMain->HaveSaplingSpendingKey(fvk);
+        obj.push_back(Pair("spendable", hasSaplingSpendingKey));
+        obj.push_back(Pair("address", EncodePaymentAddress(entry.address)));
+        obj.push_back(Pair("amount", ValueFromAmount(CAmount(entry.note.value())))); // note.value() == plaintext.value()
+        obj.push_back(Pair("memo", HexStr(entry.memo)));
+        if (hasSaplingSpendingKey) {
+            // Change can't be detected without the spending key
+            obj.push_back(Pair("change", pwalletMain->IsNoteSaplingChange(nullifierSet, entry.address, entry.op)));
         }
+        results.push_back(obj);
     }
 
     return results;
@@ -3345,7 +3353,8 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
 
     // Visitor to support Sprout and Sapling addrs
     if (!boost::apply_visitor(PaymentAddressBelongsToWallet(pwalletMain), zaddr)) {
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "From address does not belong to this node, zaddr spending key or viewing key not found.");
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY,
+            "From address does not belong to this node, zaddr spending key or viewing key not found.");
     }
 
     UniValue result(UniValue::VARR);
@@ -3359,32 +3368,30 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
         nullifierSet = pwalletMain->GetNullifiersForAddresses({zaddr});
     }
 
-    if (boost::get<libzcash::SproutPaymentAddress>(&zaddr) != nullptr) {
-        for (CSproutNotePlaintextEntry & entry : sproutEntries) {
-            UniValue obj(UniValue::VOBJ);
-            obj.push_back(Pair("txid", entry.jsop.hash.ToString()));
-            obj.push_back(Pair("amount", ValueFromAmount(CAmount(entry.plaintext.value()))));
-            std::string data(entry.plaintext.memo().begin(), entry.plaintext.memo().end());
-            obj.push_back(Pair("memo", HexStr(data)));
-            obj.push_back(Pair("jsindex", entry.jsop.js));
-            obj.push_back(Pair("jsoutindex", entry.jsop.n));
-            if (hasSpendingKey) {
-                obj.push_back(Pair("change", pwalletMain->IsNoteSproutChange(nullifierSet, entry.address, entry.jsop)));
-            }
-            result.push_back(obj);
+    for (CSproutNotePlaintextEntry & entry : sproutEntries) {
+        UniValue obj(UniValue::VOBJ);
+        obj.push_back(Pair("txid", entry.jsop.hash.ToString()));
+        obj.push_back(Pair("amount", ValueFromAmount(CAmount(entry.plaintext.value()))));
+        obj.push_back(Pair("memo", HexStr(entry.plaintext.memo())));
+        obj.push_back(Pair("jsindex", entry.jsop.js));
+        obj.push_back(Pair("jsoutindex", entry.jsop.n));
+        if (hasSpendingKey) {
+            // Change can't be detected without the spending key
+            obj.push_back(Pair("change", pwalletMain->IsNoteSproutChange(nullifierSet, entry.address, entry.jsop)));
         }
-    } else if (boost::get<libzcash::SaplingPaymentAddress>(&zaddr) != nullptr) {
-        for (SaplingNoteEntry & entry : saplingEntries) {
-            UniValue obj(UniValue::VOBJ);
-            obj.push_back(Pair("txid", entry.op.hash.ToString()));
-            obj.push_back(Pair("amount", ValueFromAmount(CAmount(entry.note.value()))));
-            obj.push_back(Pair("memo", HexStr(entry.memo)));
-            obj.push_back(Pair("outindex", (int)entry.op.n));
-            if (hasSpendingKey) {
-              obj.push_back(Pair("change", pwalletMain->IsNoteSaplingChange(nullifierSet, entry.address, entry.op)));
-            }
-            result.push_back(obj);
+        result.push_back(obj);
+    }
+    for (SaplingNoteEntry & entry : saplingEntries) {
+        UniValue obj(UniValue::VOBJ);
+        obj.push_back(Pair("txid", entry.op.hash.ToString()));
+        obj.push_back(Pair("amount", ValueFromAmount(CAmount(entry.note.value()))));
+        obj.push_back(Pair("memo", HexStr(entry.memo)));
+        obj.push_back(Pair("outindex", (int)entry.op.n));
+        if (hasSpendingKey) {
+            // Change can't be detected without the spending key
+            obj.push_back(Pair("change", pwalletMain->IsNoteSaplingChange(nullifierSet, entry.address, entry.op)));
         }
+        result.push_back(obj);
     }
     return result;
 }
