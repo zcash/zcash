@@ -85,15 +85,16 @@ class CryptoConditionsTest (BitcoinTestFramework):
         self.sync_all()
         print("Done setting up network")
 
-    def send_and_mine(self, xtn):
-        txid = self.rpc.sendrawtransaction(xtn)
+    def send_and_mine(self, xtn, rpc_connection):
+        txid = rpc_connection.sendrawtransaction(xtn)
         assert txid, 'got txid'
         # we need the tx above to be confirmed in the next block
-        self.rpc.generate(1)
+        rpc_connection.generate(1)
         return txid
 
     def run_faucet_tests(self):
         rpc = self.rpc
+        rpc1 = self.rpc1
 
         # basic sanity tests
         result = rpc.getwalletinfo()
@@ -138,6 +139,7 @@ class CryptoConditionsTest (BitcoinTestFramework):
 
         # we need the tx above to be confirmed in the next block
         rpc.generate(1)
+        self.sync_all()
 
         result   = rpc.getwalletinfo()
         balance2 =  result['balance']
@@ -148,18 +150,21 @@ class CryptoConditionsTest (BitcoinTestFramework):
         assert_success(result)
         assert_greater_than( result['funding'], 0 )
 
-        result = rpc.faucetget()
-        assert_success(result)
-        assert result['hex'], "hex key found"
+        # claiming faucet on second node
+        faucetgethex = rpc1.faucetget()
+        assert_success(faucetgethex)
+        assert faucetgethex['hex'], "hex key found"
 
-        # try to broadcast the xtn, but we will get 'faucet is only for brand new addresses'
-        assert_raises(JSONRPCException, rpc.sendrawtransaction, [ result['hex'] ])
+        balance1 = rpc1.getwalletinfo()['balance']
 
-        newaddr = rpc.getnewaddress()
-        assert newaddr, "got a new address"
-        result  = rpc.validateaddress(newaddr)
-        newpubkey = result['pubkey']
-        assert newpubkey, "got a pubkey for new address"
+        # try to broadcast the faucetget transaction
+        result = self.send_and_mine(faucetgethex['hex'], rpc1)
+        assert txid, "transaction broadcasted"
+
+        balance2 = rpc1.getwalletinfo()['balance']
+        assert_greater_than(balance2, balance1)
+
+        self.sync_all()
 
     def run_dice_tests(self):
         rpc     = self.nodes[0]
@@ -192,7 +197,7 @@ class CryptoConditionsTest (BitcoinTestFramework):
 
         # creating dice plan
         dicefundtx  = rpc.dicefund("LUCKY","1000","1","800","10","5")
-        diceid = self.send_and_mine(dicefundtx['hex'])
+        diceid = self.send_and_mine(dicefundtx['hex'], rpc)
 
         # checking if it in plans list now
         result = rpc.dicelist()
@@ -211,7 +216,7 @@ class CryptoConditionsTest (BitcoinTestFramework):
 
         # adding funds to plan
         addfundstx = rpc.diceaddfunds(dicename,diceid,"1100")
-        result = self.send_and_mine(addfundstx['hex'])
+        result = self.send_and_mine(addfundstx['hex'], rpc)
 
         # checking if funds added to plan
         result = rpc.diceinfo(diceid)
@@ -263,7 +268,7 @@ class CryptoConditionsTest (BitcoinTestFramework):
 
         # valid bet placing
         placebet = rpc.dicebet(dicename,diceid,"100","1")
-        betid = self.send_and_mine(placebet["hex"])
+        betid = self.send_and_mine(placebet["hex"], rpc)
         assert result, "bet placed"
 
         # check bet status
@@ -276,7 +281,7 @@ class CryptoConditionsTest (BitcoinTestFramework):
         while entropytx < 10:
              fundingsuminput = str(fundingsum)
              fundinghex = rpc.diceaddfunds(dicename,diceid,fundingsuminput)
-             result = self.send_and_mine(fundinghex['hex'])
+             result = self.send_and_mine(fundinghex['hex'], rpc)
              entropytx = entropytx + 1
              fundingsum = fundingsum + 1
 
@@ -294,9 +299,9 @@ class CryptoConditionsTest (BitcoinTestFramework):
 
         while (betcounter < 10):
             placebet = rpc.dicebet(dicename,diceid,"1","1")
-            betid = self.send_and_mine(placebet["hex"])
+            betid = self.send_and_mine(placebet["hex"], rpc)
             finish = rpc.dicefinish(dicename,diceid,betid)
-            self.send_and_mine(finish["hex"])
+            self.send_and_mine(finish["hex"], rpc)
             betresult = rpc.dicestatus(dicename,diceid,betid)
             betcounter = betcounter + 1
             if betresult["status"] == "loss":
@@ -336,7 +341,7 @@ class CryptoConditionsTest (BitcoinTestFramework):
         result = rpc.tokencreate("DUKE", "1987.420", "Duke's custom token")
         assert_success(result)
 
-        tokenid = self.send_and_mine(result['hex'])
+        tokenid = self.send_and_mine(result['hex'], rpc)
 
         result = rpc.tokenlist()
         assert_equal(result[0], tokenid)
@@ -400,7 +405,7 @@ class CryptoConditionsTest (BitcoinTestFramework):
         # valid ask
         tokenask = rpc.tokenask("100", tokenid, "7.77")
         tokenaskhex = tokenask['hex']
-        tokenaskid = self.send_and_mine(tokenask['hex'])
+        tokenaskid = self.send_and_mine(tokenask['hex'], rpc)
         result = rpc.tokenorders()
         order = result[0]
         assert order, "found order"
@@ -415,7 +420,7 @@ class CryptoConditionsTest (BitcoinTestFramework):
 
         # valid ask fillunits
         fillask = rpc.tokenfillask(tokenid, tokenaskid, "777")
-        result = self.send_and_mine(fillask['hex'])
+        result = self.send_and_mine(fillask['hex'], rpc)
         txid   = result[0]
         assert txid, "found txid"
 
@@ -425,9 +430,9 @@ class CryptoConditionsTest (BitcoinTestFramework):
 
         # checking ask cancellation
         testorder = rpc.tokenask("100", tokenid, "7.77")
-        testorderid = self.send_and_mine(testorder['hex'])
+        testorderid = self.send_and_mine(testorder['hex'], rpc)
         cancel = rpc.tokencancelask(tokenid, testorderid)
-        self.send_and_mine(cancel["hex"])
+        self.send_and_mine(cancel["hex"], rpc)
         result = rpc.tokenorders()
         assert_equal(result, [])
 
@@ -453,7 +458,7 @@ class CryptoConditionsTest (BitcoinTestFramework):
 
         tokenbid = rpc.tokenbid("100", tokenid, "10")
         tokenbidhex = tokenbid['hex']
-        tokenbidid = self.send_and_mine(tokenbid['hex'])
+        tokenbidid = self.send_and_mine(tokenbid['hex'], rpc)
         result = rpc.tokenorders()
         order = result[0]
         assert order, "found order"
@@ -468,7 +473,7 @@ class CryptoConditionsTest (BitcoinTestFramework):
 
         # valid bid fillunits
         fillbid = rpc.tokenfillbid(tokenid, tokenbidid, "1000")
-        result = self.send_and_mine(fillbid['hex'])
+        result = self.send_and_mine(fillbid['hex'], rpc)
         txid   = result[0]
         assert txid, "found txid"
 
@@ -478,9 +483,9 @@ class CryptoConditionsTest (BitcoinTestFramework):
 
         # checking bid cancellation
         testorder = rpc.tokenbid("100", tokenid, "7.77")
-        testorderid = self.send_and_mine(testorder['hex'])
+        testorderid = self.send_and_mine(testorder['hex'], rpc)
         cancel = rpc.tokencancelbid(tokenid, testorderid)
-        self.send_and_mine(cancel["hex"])
+        self.send_and_mine(cancel["hex"], rpc)
         result = rpc.tokenorders()
         assert_equal(result, [])
 
@@ -495,7 +500,7 @@ class CryptoConditionsTest (BitcoinTestFramework):
 
         # valid token transfer
         sendtokens = rpc.tokentransfer(tokenid,randompubkey,"1")
-        self.send_and_mine(sendtokens["hex"])
+        self.send_and_mine(sendtokens["hex"], rpc)
         result = rpc.tokenbalance(tokenid,randompubkey)
         assert_equal(result["balance"], 1)
 
@@ -569,7 +574,7 @@ class CryptoConditionsTest (BitcoinTestFramework):
 
         # adding valid funding
         result = rpc.rewardsaddfunding("STUFF", fundingtxid, "555")
-        addfundingtxid = self.send_and_mine(result['hex'])
+        addfundingtxid = self.send_and_mine(result['hex'], rpc)
         assert addfundingtxid, 'got funding txid'
 
         # checking if funding added to rewardsplan
@@ -653,7 +658,7 @@ class CryptoConditionsTest (BitcoinTestFramework):
         for f in valid_formats:
             result = rpc.oraclescreate("Test", "Test", f)
             assert_success(result)
-            globals()["oracle_{}".format(f)] = self.send_and_mine(result['hex'])
+            globals()["oracle_{}".format(f)] = self.send_and_mine(result['hex'], rpc)
 
 
 
@@ -662,17 +667,17 @@ class CryptoConditionsTest (BitcoinTestFramework):
     def run_test (self):
         print("Mining blocks...")
         rpc     = self.nodes[0]
-        rpc1 = self.nodes[1]
+        rpc1    = self.nodes[1]
         # utxos from block 1 become mature in block 101
-        rpc.generate(10)
+        rpc.generate(101)
+        self.sync_all()
         rpc.getinfo()
         rpc1.getinfo()
-        self.sync_all()
         # this corresponds to -pubkey above
         print("Importing privkeys")
         rpc.importprivkey(self.privkey)
         rpc1.importprivkey(self.privkey1)
-        #self.run_faucet_tests()
+        self.run_faucet_tests()
         self.run_rewards_tests()
         self.run_dice_tests()
         self.run_token_tests()

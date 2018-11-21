@@ -80,7 +80,7 @@ def initialize_datadir(dirname, n):
     # plus CLI arguments. This is for komodod tests
     print("Writing to " + os.path.join(datadir,"komodo.conf"))
     with open(os.path.join(datadir, "komodo.conf"), 'w') as f:
-        #f.write("regtest=1\n");
+        f.write("regtest=1\n");
         f.write("txindex=1\n");
         f.write("server=1\n");
         f.write("showmetrics=0\n");
