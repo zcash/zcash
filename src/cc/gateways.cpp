@@ -576,7 +576,8 @@ std::string GatewaysBind(uint64_t txfee,std::string coin,uint256 tokenid,int64_t
         mtx.vout.push_back(MakeCC1vout(cp->evalcode,txfee,gatewayspk));
         return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeGatewaysBindOpRet('B',coin,tokenid,totalsupply,oracletxid,M,N,pubkeys,taddr,prefix,prefix2)));
     }
-    fprintf(stderr,"cant find enough inputs\n");
+    CCerror = strprintf("cant find enough inputs");
+    fprintf(stderr,"%s\n", CCerror.c_str() );
     return("");
 }
 
@@ -797,7 +798,8 @@ std::string GatewaysClaim(uint64_t txfee,uint256 bindtxid,std::string refcoin,ui
             return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeAssetOpRet('t',assetid,zeroid,0,Mypubkey())));
         }
     }
-    fprintf(stderr,"cant find enough inputs or mismatched total\n");
+    CCerror = strprintf("cant find enough inputs or mismatched total");
+    fprintf(stderr,"%s\n", CCerror.c_str() );
     return("");
 }
 
@@ -836,7 +838,8 @@ std::string GatewaysWithdraw(uint64_t txfee,uint256 bindtxid,std::string refcoin
             return(FinalizeCCTx(0,cp,mtx,mypk,txfee,opret));
         }
     }
-    fprintf(stderr,"cant find enough inputs or mismatched total\n");
+    CCerror = strprintf("cant find enough inputs or mismatched total");
+    fprintf(stderr,"%s\n", CCerror.c_str() );
     return("");
 }
 
