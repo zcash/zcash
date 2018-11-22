@@ -111,7 +111,7 @@ UniValue getiguanajson(const UniValue& params, bool fHelp)
 
 UniValue getnotarysendmany(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() != 1)
+    if (fHelp || params.size() != 2)
         throw runtime_error("getnotarysendmany\n<era> <amount to send>");
     // era
     int32_t era = params[0].get_int() - 1;
