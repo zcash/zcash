@@ -3823,9 +3823,9 @@ int32_t komodo_activate_sapling(CBlockIndex *pindex)
     }
     if ( activation != 0 )
     {
-        mainParams.consensus.vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight = activation;
-        mainParams.consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight = activation;
-        KOMODO_SAPLING = activation;
+        Params().GetConsensus().vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight = activation;
+        Params().GetConsensus().vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight = activation;
+        ASSETCHAINS_SAPLING = activation;
         fprintf(stderr,"%s sapling activation at %d\n",ASSETCHAINS_SYMBOL,activation);
     }
 }
@@ -5557,6 +5557,7 @@ bool static LoadBlockIndexDB()
 	      progress);
 
     EnforceNodeDeprecation(chainActive.Height(), true);
+    CBlockIndex *pindex;
     if ( (pindex= chainActive.LastTip()) != 0 )
     {
         fprintf(stderr,"set sapling height, if possible from ht.%d %u\n",(int32_t)pindex->GetHeight(),(uint32_t)pindex->nTime);
