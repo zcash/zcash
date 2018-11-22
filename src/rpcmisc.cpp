@@ -66,9 +66,48 @@ extern std::string NOTARY_PUBKEY,NOTARY_ADDRESS; extern uint8_t NOTARY_PUBKEY33[
 
 UniValue getiguanajson(const UniValue& params, bool fHelp)
 {
-    if ( params.size() != 1 )
-        throw runtime_error("please supply old staked.json!\n");
-    UniValue json = params[0].get_obj();
+    if (fHelp || params.size() != 0)
+      throw runtime_error("getiguanajson\nreturns json for iguana, for the current ERA.");
+
+    UniValue json(UniValue::VOBJ);
+    UniValue seeds(UniValue::VARR);
+    UniValue notaries(UniValue::VARR);
+    // get the current era, use local time for now.
+    // should ideally take blocktime of last known block.
+    int now = time(NULL); int32_t era;
+    for (int32_t i = 0; i < NUM_STAKED_ERAS; i++) {
+        if ( now <= STAKED_NOTARIES_TIMESTAMP[i] ) {
+            era = i + 1;
+            break;
+        }
+    }
+    if ( era != 2 )
+        throw runtime_error("its not era2 yet!");
+
+    // loop over seeds array and push back to json array for seeds
+    for (int8_t i = 0; i < 8; i++) {
+        seeds.push_back(iguanaSeeds[i][0]);
+    }
+
+    // loop over era's notaries and push back each pair to the notary array
+    for (int8_t i = 0; i < num_notaries_STAKED2; i++) {
+        UniValue notary(UniValue::VOBJ);
+        notary.push_back(Pair(notaries_STAKED2[i][0],notaries_STAKED2[i][1]));
+        notaries.push_back(notary);
+    }
+
+    // get the min sigs
+    int minsigs;
+    if ( num_notaries_STAKED2/5 > overrideMinSigs )
+        minsigs = (num_notaries_STAKED2 + 4) / 5;
+    else
+        minsigs = overrideMinSigs;
+
+    json.push_back(Pair("port",iguanaPort));
+    json.push_back(Pair("BTCminsigs",BTCminsigs));
+    json.push_back(Pair("minsigs",minsigs));
+    json.push_back(Pair("seeds", seeds));
+    json.push_back(Pair("notaries",notaries));
     return json;
 }
 

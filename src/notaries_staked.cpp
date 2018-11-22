@@ -10,6 +10,18 @@ extern int32_t STAKED_ERA,IS_STAKED_NOTARY,IS_KOMODO_NOTARY;
 extern pthread_mutex_t staked_mutex;
 extern uint8_t NOTARY_PUBKEY33[33],NUM_NOTARIES;
 
+const char *iguanaSeeds[8][1] =
+{
+  {"80.240.17.222"},
+  {"103.6.12.112"},
+  {"18.224.176.46"},
+  {"45.76.120.247"},
+  {"103.6.12.112"},
+  {"103.6.12.112"},
+  {"103.6.12.112"},
+  {"103.6.12.112"},
+};
+
 // Era 1 set of pubkeys
 const char *notaries_STAKED1[][2] =
 {
@@ -113,9 +125,9 @@ int num_notaries_STAKED4 = (sizeof(notaries_STAKED4)/sizeof(*notaries_STAKED4));
 
 int8_t is_STAKED(const char *chain_name) {
   int STAKED = 0;
-  if ( (strcmp(chain_name, "STAKED") == 0) || (strncmp(chain_name, "STAKED", 6) == 0) )
+  if ( (strcmp(chain_name, "LABS") == 0) || (strncmp(chain_name, "LABS", 4) == 0) )
     STAKED = 1;
-  else if ( (strcmp(chain_name, "STKD") == 0) || (strncmp(chain_name, "STKD", 4) == 0) )
+  else if ( (strcmp(chain_name, "LAB") == 0) || (strncmp(chain_name, "LAB", 3) == 0) )
     STAKED = 2;
   else if ( (strcmp(chain_name, "CFEK") == 0) || (strncmp(chain_name, "CFEK", 4) == 0) )
     STAKED =  3;
@@ -126,13 +138,13 @@ int8_t is_STAKED(const char *chain_name) {
 int32_t STAKED_era(int timestamp)
 {
   int8_t era = 0;
-  if (timestamp <= STAKED_NOTARIES_TIMESTAMP1)
+  if (timestamp <= STAKED_NOTARIES_TIMESTAMP[0])
     era = 1;
-  else if (timestamp <= STAKED_NOTARIES_TIMESTAMP2 && timestamp >= (STAKED_NOTARIES_TIMESTAMP1 + STAKED_ERA_GAP))
+  else if (timestamp <= STAKED_NOTARIES_TIMESTAMP[1] && timestamp >= (STAKED_NOTARIES_TIMESTAMP[0] + STAKED_ERA_GAP))
     era = 2;
-  else if (timestamp <= STAKED_NOTARIES_TIMESTAMP3 && timestamp >= (STAKED_NOTARIES_TIMESTAMP2 + STAKED_ERA_GAP))
+  else if (timestamp <= STAKED_NOTARIES_TIMESTAMP[2] && timestamp >= (STAKED_NOTARIES_TIMESTAMP[1] + STAKED_ERA_GAP))
     era = 3;
-  else if (timestamp <= STAKED_NOTARIES_TIMESTAMP4 && timestamp >= (STAKED_NOTARIES_TIMESTAMP3 + STAKED_ERA_GAP))
+  else if (timestamp <= STAKED_NOTARIES_TIMESTAMP[3] && timestamp >= (STAKED_NOTARIES_TIMESTAMP[2] + STAKED_ERA_GAP))
     era = 4;
   else
     era = 0;

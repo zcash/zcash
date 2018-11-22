@@ -5,12 +5,15 @@
 #include "crosschain.h"
 #include "cc/CCinclude.h"
 
+static const int32_t iguanaPort = 9997;
+static const int8_t BTCminsigs = 13;
+static const int8_t overrideMinSigs = 0;
+extern const char *iguanaSeeds[8][1];
+
 static const int STAKED_ERA_GAP = 777;
 
-static const int STAKED_NOTARIES_TIMESTAMP1 = 1604211111;
-static const int STAKED_NOTARIES_TIMESTAMP2 = 1604222222;
-static const int STAKED_NOTARIES_TIMESTAMP3 = 1604233333;
-static const int STAKED_NOTARIES_TIMESTAMP4 = 1604244444;
+static const int NUM_STAKED_ERAS = 4;
+static const int STAKED_NOTARIES_TIMESTAMP[NUM_STAKED_ERAS] = {1542885514, 1604222222, 1604233333, 1604244444};
 
 extern const char *notaries_STAKED1[][2];
 extern int num_notaries_STAKED1;
