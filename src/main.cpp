@@ -3824,8 +3824,9 @@ int32_t komodo_activate_sapling(CBlockIndex *pindex)
     }
     if ( activation != 0 )
     {
-        komodo_setactivation(activation);
+        //komodo_setactivation(activation);
         fprintf(stderr,"%s sapling activation at %d\n",ASSETCHAINS_SYMBOL,activation);
+        ASSETCHAINS_SAPLING = activation;
     }
 }
 
