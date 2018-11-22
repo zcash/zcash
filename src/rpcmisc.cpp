@@ -109,7 +109,28 @@ UniValue getiguanajson(const UniValue& params, bool fHelp)
     return json;
 }
 
-
+UniValue getnotarysendmany(const UniValue& params, bool fHelp)
+{
+    if (fHelp || params.size() != 1)
+        throw runtime_error("getnotarysendmany\n<era> <amount to send>");
+    // era
+    int32_t era = params[0].get_int() - 1;
+    if ( era < 0 || era > NUM_STAKED_ERAS )
+        throw JSONRPCError(RPC_TYPE_ERROR, "Invalid era");
+    // Amount
+    CAmount nAmount = AmountFromValue(params[1]);
+    if (nAmount <= 0)
+        throw JSONRPCError(RPC_TYPE_ERROR, "Invalid amount for send");
+    UniValue ret(UniValue::VOBJ)
+    for (int i = 0; i<num_notaries_STAKED[era]; i++)
+    {
+        char *ADDRESS; uint8_t pubkey[33];
+        decode_hex(pubkey,33,(char *)notaries_STAKED[era][i][1]);
+        pubkey2addr((char *)ADDRESS,(uint8_t *)pubkey);
+        ret.push_back(Pair(ADDRESS,ValueFromAmount(nAmount)));
+    }
+    return ret;
+}
 
 UniValue getinfo(const UniValue& params, bool fHelp)
 {
