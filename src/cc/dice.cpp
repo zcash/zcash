@@ -1464,7 +1464,7 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
 
 std::string DiceBetFinish(uint8_t &funcid,uint256 &entropyused,int32_t &entropyvout,int32_t *resultp,uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettxid,int32_t winlosetimeout,uint256 vin0txid,int32_t vin0vout)
 {
-    CMutableTransaction mtx; CScript scriptPubKey,fundingPubKey; CTransaction oldbetTx,betTx,entropyTx; uint256 hentropyproof,entropytxid,hashBlock,bettorentropy,entropy,hentropy,oldbettxid; CPubKey mypk,dicepk,fundingpk; struct CCcontract_info *cp,C; int64_t inputs=0,CCchange=0,odds,fundsneeded,minbet,maxbet,maxodds,timeoutblocks; int32_t oldentropyvout,retval=0,iswin=0; uint64_t entropyval,sbits;
+    CMutableTransaction mtx,savemtx; CScript scriptPubKey,fundingPubKey; CTransaction oldbetTx,betTx,entropyTx; uint256 hentropyproof,entropytxid,hashBlock,bettorentropy,entropy,hentropy,oldbettxid; CPubKey mypk,dicepk,fundingpk; struct CCcontract_info *cp,C; int64_t inputs=0,CCchange=0,odds,fundsneeded,minbet,maxbet,maxodds,timeoutblocks; int32_t oldentropyvout,retval=0,iswin=0; uint64_t entropyval,sbits;
     entropyused = zeroid;
     *resultp = 0;
     funcid = 0;
@@ -1579,6 +1579,7 @@ std::string DiceBetFinish(uint8_t &funcid,uint256 &entropyused,int32_t &entropyv
                     }
                     CCchange = betTx.vout[0].nValue + betTx.vout[1].nValue;
                     fundsneeded = txfee + (odds+1)*betTx.vout[1].nValue;
+                    savemtx = mtx;
                     if ( CCchange >= fundsneeded )
                         CCchange -= fundsneeded;
                     else if ( (inputs= AddDiceInputs(cp,mtx,dicepk,fundsneeded,1,sbits,fundingtxid)) >= fundsneeded )
@@ -1588,6 +1589,7 @@ std::string DiceBetFinish(uint8_t &funcid,uint256 &entropyused,int32_t &entropyv
                     }
                     else
                     {
+                        mtx = savemtx;
                         if ( (inputs= AddDiceInputs(cp,mtx,dicepk,fundsneeded,60,sbits,fundingtxid)) > 0 )
                         {
                             if ( inputs > fundsneeded )
