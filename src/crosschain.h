@@ -9,8 +9,8 @@ const int CROSSCHAIN_STAKED = 3;
 
 typedef struct CrosschainAuthority {
     uint8_t notaries[64][33];
-    size_t size;
-    size_t requiredSigs;
+    int8_t size;
+    int8_t requiredSigs;
 } CrosschainAuthority;
 
 int GetSymbolAuthority(const char* symbol);
