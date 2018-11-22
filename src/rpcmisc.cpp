@@ -126,7 +126,7 @@ UniValue getnotarysendmany(const UniValue& params, bool fHelp)
     UniValue ret(UniValue::VOBJ);
     for (int i = 0; i<num_notaries_STAKED[era]; i++)
     {
-        char *ADDRESS; uint8_t pubkey[33];
+        char ADDRESS[36]; uint8_t pubkey[33];
         decode_hex(pubkey,33,(char *)notaries_STAKED[era][i][1]);
         pubkey2addr((char *)ADDRESS,(uint8_t *)pubkey);
         ret.push_back(Pair(ADDRESS,ValueFromAmount(nAmount)));
