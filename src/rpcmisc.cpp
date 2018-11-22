@@ -121,7 +121,7 @@ UniValue getnotarysendmany(const UniValue& params, bool fHelp)
     CAmount nAmount = AmountFromValue(params[1]);
     if (nAmount <= 0)
         throw JSONRPCError(RPC_TYPE_ERROR, "Invalid amount for send");
-    UniValue ret(UniValue::VOBJ)
+    UniValue ret(UniValue::VOBJ);
     for (int i = 0; i<num_notaries_STAKED[era]; i++)
     {
         char *ADDRESS; uint8_t pubkey[33];
