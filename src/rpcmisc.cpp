@@ -114,7 +114,7 @@ UniValue getnotarysendmany(const UniValue& params, bool fHelp)
     if (fHelp || params.size() != 2)
         throw runtime_error("getnotarysendmany <amount to send> <era>");
     // era
-    int32_t era = params[1].get_int() - 1;
+    era = params[1].get_int() - 1;
     if ( era < 0 || era > NUM_STAKED_ERAS )
         throw JSONRPCError(RPC_TYPE_ERROR, "Invalid era");
     // Amount
