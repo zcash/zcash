@@ -811,7 +811,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
         return;
     }
     //fprintf(stderr,"%s connect.%d\n",ASSETCHAINS_SYMBOL,pindex->nHeight);
-    if ( is_STAKED(ASSETCHAINS_SYMBOL) != 0 )
+    if ( is_STAKED(ASSETCHAINS_SYMBOL) != 0 || IS_STAKED_NOTARY > -1 )
     {
         staked_era = STAKED_era(pindex->GetBlockTime());
         if ( staked_era != lastStakedEra )
