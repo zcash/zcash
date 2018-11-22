@@ -68,8 +68,7 @@ int32_t getera(int now)
 {
     for (int32_t i = 0; i < NUM_STAKED_ERAS; i++) {
         if ( now <= STAKED_NOTARIES_TIMESTAMP[i] ) {
-            era = i;
-            break;
+            return(i);
         }
     }
 }
