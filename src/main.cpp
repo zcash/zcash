@@ -3775,6 +3775,61 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
     return true;
 }
 
+int32_t komodo_activate_sapling(CBlockIndex *pindex)
+{
+    uint32_t blocktime,prevtime; CBlockIndex *prev; int32_t i,transition=0,height,prevht,activation = 0;
+    if ( pindex == 0 )
+        return(0);
+    for (i=0; i<60; i++)
+    {
+        if ( (prev= pindex->pprev) == 0 )
+            break;
+        pindex = prev;
+    }
+    if ( i != 60 )
+    {
+        fprintf(stderr,"couldnt go backwards 60 blocks\n");
+        return(0);
+    }
+    height = pindex->GetHeight();
+    blocktime = (uint32_t)pindex->nTime
+    if ( blocktime > KOMODO_SAPLING_ACTIVATION ) // find the earliest transition
+    {
+        while ( (prev= pindex->pprev) != 0 )
+        {
+            prevht = prev->GetHeight();
+            prevtime = (uint32_t)prev->nTime;
+            if ( prevht+1 != height )
+            {
+                fprintf(stderr,"komodo_activate_sapling: unexpected non-contiguous ht %d vs %d\n",prevht,height);
+                return(0);
+            }
+            if ( prevtime < KOMODO_SAPLING_ACTIVATION-3600*24 )
+                break;
+            if ( prevtime <= KOMODO_SAPLING_ACTIVATION && blocktime > KOMODO_SAPLING_ACTIVATION )
+            {
+                transition = height;
+                fprintf(stderr,"%s transition at %d (%d, %u) -> (%d, %u)\n",ASSETCHAINS_SYMBOL,height,prevht,prevtime,height,blocktime);
+            }
+            pindex = prev;
+            height = prevht;
+            blocktime = prevtime;
+        }
+        if ( transition != 0 )
+        {
+            activation = transition + 60;
+            fprintf(stderr,"%s set activation at %d\n",ASSETCHAINS_SYMBOL,activation);
+        }
+    }
+    if ( activation != 0 )
+    {
+        mainParams.consensus.vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight = activation;
+        mainParams.consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight = activation;
+        KOMODO_SAPLING = activation;
+        fprintf(stderr,"%s sapling activation at %d\n",ASSETCHAINS_SYMBOL,activation);
+    }
+}
+
 static int64_t nTimeReadFromDisk = 0;
 static int64_t nTimeConnectTotal = 0;
 static int64_t nTimeFlush = 0;
@@ -3861,6 +3916,8 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
     //fprintf(stderr,"connect.%d insync.%d\n",(int32_t)pindexNew->GetHeight(),KOMODO_INSYNC);
     if ( ASSETCHAINS_SYMBOL[0] == 0 && KOMODO_INSYNC != 0 )
         komodo_broadcast(pblock,8);
+    if ( ASSETCHAINS_SAPLING == 0 )
+        komodo_activate_sapling(pindexNew);
     return true;
 }
 
@@ -5487,21 +5544,24 @@ bool static LoadBlockIndexDB()
 
     double progress;
     if ( ASSETCHAINS_SYMBOL[0] == 0 ) {
-        progress = Checkpoints::GuessVerificationProgress(chainparams.Checkpoints(), chainActive.Tip());
+        progress = Checkpoints::GuessVerificationProgress(chainparams.Checkpoints(), chainActive.LastTip());
     } else {
-	int32_t longestchain = komodo_longestchain();
-	// TODO: komodo_longestchain does not have the data it needs at the time LoadBlockIndexDB
-	// runs, which makes it return 0, so we guess 50% for now
-	progress = (longestchain > 0 ) ? (double) chainActive.Height() / longestchain : 0.5;
+        int32_t longestchain = komodo_longestchain();
+        // TODO: komodo_longestchain does not have the data it needs at the time LoadBlockIndexDB
+        // runs, which makes it return 0, so we guess 50% for now
+        progress = (longestchain > 0 ) ? (double) chainActive.Height() / longestchain : 0.5;
     }
-
     LogPrintf("%s: hashBestChain=%s height=%d date=%s progress=%f\n", __func__,
               chainActive.LastTip()->GetBlockHash().ToString(), chainActive.Height(),
               DateTimeStrFormat("%Y-%m-%d %H:%M:%S", chainActive.LastTip()->GetBlockTime()),
 	      progress);
 
     EnforceNodeDeprecation(chainActive.Height(), true);
-
+    if ( (pindex= chainActive.LastTip()) != 0 )
+    {
+        fprintf(stderr,"set sapling height, if possible from ht.%d %u\n",(int32_t)pindex->GetHeight(),(uint32_t)pindex->nTime);
+        komodo_activate_sapling(pindex);
+    }
     return true;
 }
 
