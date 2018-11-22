@@ -20,6 +20,7 @@ class CChainPower;
 
 static const int SPROUT_VALUE_VERSION = 1001400;
 static const int SAPLING_VALUE_VERSION = 1010100;
+extern int32_t ASSETCHAINS_LWMAPOS;
 
 struct CDiskBlockPos
 {
@@ -448,7 +449,9 @@ public:
 
     bool IsVerusPOSBlock() const
     {
-        return GetBlockHeader().IsVerusPOSBlock();
+        if ( ASSETCHAINS_LWMAPOS != 0 )
+            return GetBlockHeader().IsVerusPOSBlock();
+        else return(0);
     }
 };
 
