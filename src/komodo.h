@@ -811,9 +811,11 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
         return;
     }
     //fprintf(stderr,"%s connect.%d\n",ASSETCHAINS_SYMBOL,pindex->nHeight);
-    if ( is_STAKED(ASSETCHAINS_SYMBOL) != 0 || IS_STAKED_NOTARY != -1 ) {
+    if ( is_STAKED(ASSETCHAINS_SYMBOL) != 0 )
+    {
         staked_era = STAKED_era(pindex->GetBlockTime());
-        if ( staked_era != lastStakedEra ) {
+        if ( staked_era != lastStakedEra )
+        {
             uint8_t tmp_pubkeys[64][33];
             int8_t numSN = numStakedNotaries(tmp_pubkeys,staked_era);
             UpdateNotaryAddrs(tmp_pubkeys,numSN);

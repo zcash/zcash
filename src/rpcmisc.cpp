@@ -64,6 +64,14 @@ extern uint32_t ASSETCHAINS_MAGIC;
 extern uint64_t ASSETCHAINS_ENDSUBSIDY,ASSETCHAINS_REWARD,ASSETCHAINS_HALVING,ASSETCHAINS_DECAY,ASSETCHAINS_COMMISSION,ASSETCHAINS_STAKED,ASSETCHAINS_SUPPLY;
 extern std::string NOTARY_PUBKEY,NOTARY_ADDRESS; extern uint8_t NOTARY_PUBKEY33[];
 
+UniValue getiguanajson(const UniValue& params, bool fHelp)
+{
+    if ( params.size() != 1 )
+        throw runtime_error("please supply old staked.json!\n");
+    UniValue json = params[0].get_obj();
+    return json;
+}
+
 UniValue getinfo(const UniValue& params, bool fHelp)
 {
     uint256 notarized_hash,notarized_desttxid; int32_t prevMoMheight,notarized_height,longestchain,kmdnotarized_height,txid_height;
