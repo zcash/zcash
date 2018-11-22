@@ -4895,7 +4895,7 @@ bool AcceptBlockHeader(int32_t *futureblockp,const CBlockHeader& block, CValidat
         if (mi == mapBlockIndex.end())
         {
             LogPrintf("AcceptBlockHeader hashPrevBlock %s not found\n",block.hashPrevBlock.ToString().c_str());
-            *futureblockp = 1;
+            //*futureblockp = 1;
             return(false);
             //return state.DoS(10, error("%s: prev block not found", __func__), 0, "bad-prevblk");
         }
