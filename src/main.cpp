@@ -3784,6 +3784,9 @@ int32_t komodo_activate_sapling(CBlockIndex *pindex)
         fprintf(stderr,"komodo_activate_sapling null pindex\n");
         return(0);
     }
+    height = pindex->GetHeight();
+    blocktime = (uint32_t)pindex->nTime;
+    fprintf(stderr,"komodo_activate_sapling.%d starting blocktime %u cmp.%d\n",height,blocktime,blocktime > KOMODO_SAPLING_ACTIVATION);
     for (i=0; i<60; i++)
     {
         if ( (prev= pindex->pprev) == 0 )
@@ -3797,14 +3800,14 @@ int32_t komodo_activate_sapling(CBlockIndex *pindex)
     }
     height = pindex->GetHeight();
     blocktime = (uint32_t)pindex->nTime;
-    //fprintf(stderr,"starting blocktime %u cmp.%d\n",blocktime,blocktime > KOMODO_SAPLING_ACTIVATION);
+    fprintf(stderr,"starting blocktime %u cmp.%d\n",blocktime,blocktime > KOMODO_SAPLING_ACTIVATION);
     if ( blocktime > KOMODO_SAPLING_ACTIVATION ) // find the earliest transition
     {
         while ( (prev= pindex->pprev) != 0 )
         {
             prevht = prev->GetHeight();
             prevtime = (uint32_t)prev->nTime;
-            //fprintf(stderr,"(%d, %u) -> (%d, %u)\n",prevht,prevtime,height,blocktime);
+            fprintf(stderr,"(%d, %u) -> (%d, %u)\n",prevht,prevtime,height,blocktime);
             if ( prevht+1 != height )
             {
                 fprintf(stderr,"komodo_activate_sapling: unexpected non-contiguous ht %d vs %d\n",prevht,height);
