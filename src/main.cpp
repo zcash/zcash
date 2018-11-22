@@ -69,6 +69,7 @@ int32_t komodo_block2pubkey33(uint8_t *pubkey33,CBlock *block);
 void komodo_broadcast(CBlock *pblock,int32_t limit);
 void komodo_broadcast(CBlock *pblock,int32_t limit);
 bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey);
+void komodo_setactivation(int32_t height);
 
 BlockMap mapBlockIndex;
 CChain chainActive;
@@ -3823,8 +3824,9 @@ int32_t komodo_activate_sapling(CBlockIndex *pindex)
     }
     if ( activation != 0 )
     {
-        Params().GetConsensus().vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight = activation;
-        Params().GetConsensus().vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight = activation;
+        komodo_setactivation(activation);
+        //Params().GetConsensus().vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight = activation;
+        //Params().GetConsensus().vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight = activation;
         ASSETCHAINS_SAPLING = activation;
         fprintf(stderr,"%s sapling activation at %d\n",ASSETCHAINS_SYMBOL,activation);
     }
