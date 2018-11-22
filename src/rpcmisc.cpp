@@ -77,12 +77,10 @@ UniValue getiguanajson(const UniValue& params, bool fHelp)
     int now = time(NULL); int32_t era;
     for (int32_t i = 0; i < NUM_STAKED_ERAS; i++) {
         if ( now <= STAKED_NOTARIES_TIMESTAMP[i] ) {
-            era = i + 1;
+            era = i;
             break;
         }
     }
-    if ( era != 2 )
-        throw runtime_error("its not era2 yet!");
 
     // loop over seeds array and push back to json array for seeds
     for (int8_t i = 0; i < 8; i++) {
@@ -90,16 +88,16 @@ UniValue getiguanajson(const UniValue& params, bool fHelp)
     }
 
     // loop over era's notaries and push back each pair to the notary array
-    for (int8_t i = 0; i < num_notaries_STAKED2; i++) {
+    for (int8_t i = 0; i < num_notaries_STAKED[era]; i++) {
         UniValue notary(UniValue::VOBJ);
-        notary.push_back(Pair(notaries_STAKED2[i][0],notaries_STAKED2[i][1]));
+        notary.push_back(Pair(notaries_STAKED[era][i][0],notaries_STAKED[era][i][1]));
         notaries.push_back(notary);
     }
 
     // get the min sigs
     int minsigs;
-    if ( num_notaries_STAKED2/5 > overrideMinSigs )
-        minsigs = (num_notaries_STAKED2 + 4) / 5;
+    if ( num_notaries_STAKED[era]/5 > overrideMinSigs )
+        minsigs = (num_notaries_STAKED[era] + 4) / 5;
     else
         minsigs = overrideMinSigs;
 
