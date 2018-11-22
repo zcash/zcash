@@ -3807,7 +3807,7 @@ int32_t komodo_activate_sapling(CBlockIndex *pindex)
         {
             prevht = prev->GetHeight();
             prevtime = (uint32_t)prev->nTime;
-            fprintf(stderr,"(%d, %u).%d -> (%d, %u).%d\n",prevht,prevtime,prevtime > KOMODO_SAPLING_ACTIVATION,height,blocktime,blocktime > KOMODO_SAPLING_ACTIVATION);
+            //fprintf(stderr,"(%d, %u).%d -> (%d, %u).%d\n",prevht,prevtime,prevtime > KOMODO_SAPLING_ACTIVATION,height,blocktime,blocktime > KOMODO_SAPLING_ACTIVATION);
             if ( prevht+1 != height )
             {
                 fprintf(stderr,"komodo_activate_sapling: unexpected non-contiguous ht %d vs %d\n",prevht,height);
