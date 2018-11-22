@@ -449,7 +449,7 @@ public:
 
     bool IsVerusPOSBlock() const
     {
-        if ( 1 || ASSETCHAINS_LWMAPOS != 0 )
+        if ( ASSETCHAINS_LWMAPOS != 0 )
             return GetBlockHeader().IsVerusPOSBlock();
         else return(0);
     }
