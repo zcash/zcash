@@ -235,7 +235,7 @@ int64_t OracleDatafee(CScript &scriptPubKey,uint256 oracletxid,CPubKey publisher
         }
         else
         {
-            fprintf(stderr,"Could not decode op_ret from transaction %x\nscriptPubKey: %s\n", oracletxid, oracletx.vout[numvouts-1].scriptPubKey.ToString().c_str());
+            fprintf(stderr,"Could not decode op_ret from transaction %s\nscriptPubKey: %s\n", oracletxid.GetHex().c_str(), oracletx.vout[numvouts-1].scriptPubKey.ToString().c_str());
         }
     }
     return(datafee);
@@ -545,7 +545,7 @@ bool OraclesDataValidate(struct CCcontract_info *cp,Eval* eval,const CTransactio
     CTransaction vinTx; uint256 hashBlock,activehash; int32_t i,numvins,numvouts; int64_t inputs=0,outputs=0,assetoshis; CScript scriptPubKey;
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
-    if ( OracleDatafee(scriptPubKey,oracletxid,publisher) > datafee )
+    if ( OracleDatafee(scriptPubKey,oracletxid,publisher) != datafee )
         return eval->Invalid("mismatched datafee");
     scriptPubKey = MakeCC1vout(cp->evalcode,0,publisher).scriptPubKey;
     for (i=0; i<numvins; i++)
