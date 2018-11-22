@@ -18,7 +18,7 @@ int8_t is_STAKED(const char *chain_name) {
     STAKED = 2;
   else if ( (strcmp(chain_name, "CFEK") == 0) || (strncmp(chain_name, "CFEK", 4) == 0) )
     STAKED =  3;
-  //fprintf(stderr, "This chains is: %s which is: %d\n", chain_name,STAKED);
+  //fprintf(stderr, "This chain is: %s which is: %d\n", chain_name,STAKED);
   return(STAKED);
 };
 
@@ -30,7 +30,7 @@ int32_t STAKED_era(int timestamp)
     for (int32_t i = 1; i < NUM_STAKED_ERAS; i++)
     {
         if (timestamp <= STAKED_NOTARIES_TIMESTAMP[i] && timestamp >= (STAKED_NOTARIES_TIMESTAMP[i-1] + STAKED_ERA_GAP))
-            return(i);
+            return(i+1);
     }
   // if we are in a gap, return era 0, this allows to invalidate notarizations when in GAP.
   return(0);
