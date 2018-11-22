@@ -3792,7 +3792,7 @@ int32_t komodo_activate_sapling(CBlockIndex *pindex)
         return(0);
     }
     height = pindex->GetHeight();
-    blocktime = (uint32_t)pindex->nTime
+    blocktime = (uint32_t)pindex->nTime;
     if ( blocktime > KOMODO_SAPLING_ACTIVATION ) // find the earliest transition
     {
         while ( (prev= pindex->pprev) != 0 )
