@@ -40,6 +40,7 @@ testScripts=(
     'rawtransactions.py'
     'getrawtransaction_insight.py'
     'rest.py'
+    'already_spent.py'
     'mempool_spendcoinbase.py'
     'mempool_reorg.py'
     'mempool_tx_input_limit.py'

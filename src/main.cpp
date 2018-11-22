@@ -902,9 +902,9 @@ bool ContextualCheckTransaction(
 
     // If Sprout rules apply, reject transactions which are intended for Overwinter and beyond
     if (isSprout && tx.fOverwintered) {
+        LogPrintStr("ContextualCheckTransaction(): overwinter is not active yet");
         return state.DoS(isInitBlockDownload(chainparams) ? 0 : dosLevel,
-                         error("ContextualCheckTransaction(): overwinter is not active yet"),
-                         REJECT_INVALID, "tx-overwinter-not-active");
+            false, REJECT_INVALID, "tx-overwinter-not-active");
     }
 
     if (saplingActive) {
@@ -916,9 +916,9 @@ bool ContextualCheckTransaction(
 
         // Reject transactions with non-Sapling version group ID
         if (tx.fOverwintered && tx.nVersionGroupId != SAPLING_VERSION_GROUP_ID) {
+            LogPrintStr("CheckTransaction(): invalid Sapling tx version");
             return state.DoS(isInitBlockDownload(chainparams) ? 0 : dosLevel,
-                    error("CheckTransaction(): invalid Sapling tx version"),
-                    REJECT_INVALID, "bad-sapling-tx-version-group-id");
+                false, REJECT_INVALID, "bad-sapling-tx-version-group-id");
         }
 
         // Reject transactions with invalid version
@@ -941,9 +941,9 @@ bool ContextualCheckTransaction(
 
         // Reject transactions with non-Overwinter version group ID
         if (tx.fOverwintered && tx.nVersionGroupId != OVERWINTER_VERSION_GROUP_ID) {
+            LogPrintStr("CheckTransaction(): invalid Overwinter tx version");
             return state.DoS(isInitBlockDownload(chainparams) ? 0 : dosLevel,
-                    error("CheckTransaction(): invalid Overwinter tx version"),
-                    REJECT_INVALID, "bad-overwinter-tx-version-group-id");
+                false, REJECT_INVALID, "bad-overwinter-tx-version-group-id");
         }
 
         // Reject transactions with invalid version
@@ -1005,9 +1005,9 @@ bool ContextualCheckTransaction(
                                         dataToBeSigned.begin(), 32,
                                         tx.joinSplitPubKey.begin()
                                         ) != 0) {
+            LogPrintStr("CheckTransaction(): invalid joinsplit signature");
             return state.DoS(isInitBlockDownload(chainparams) ? 0 : 100,
-                                error("CheckTransaction(): invalid joinsplit signature"),
-                                REJECT_INVALID, "bad-txns-invalid-joinsplit-signature");
+                false, REJECT_INVALID, "bad-txns-invalid-joinsplit-signature");
         }
     }
 
@@ -1469,14 +1469,15 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         }
 
         // are the actual inputs available?
-        if (!view.HaveInputs(tx))
-            return state.Invalid(error("AcceptToMemoryPool: inputs already spent"),
-                                 REJECT_DUPLICATE, "bad-txns-inputs-spent");
-
+        if (!view.HaveInputs(tx)) {
+            LogPrintStr("AcceptToMemoryPool: inputs already spent\n");
+            return state.Invalid(false, REJECT_DUPLICATE, "bad-txns-inputs-spent");
+        }
         // are the joinsplits' and sapling spends' requirements met in tx(valid anchors/nullifiers)?
-        if (!view.HaveShieldedRequirements(tx))
-            return state.Invalid(error("AcceptToMemoryPool: shielded requirements not met"),
-                                 REJECT_DUPLICATE, "bad-txns-shielded-requirements-not-met");
+        if (!view.HaveShieldedRequirements(tx)) {
+            LogPrintStr("AcceptToMemoryPool: shielded requirements not met\n");
+            return state.Invalid(false, REJECT_DUPLICATE, "bad-txns-shielded-requirements-not-met");
+        }
 
         // Bring the best block into scope
         view.GetBestBlock();
