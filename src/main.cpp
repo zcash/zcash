@@ -3813,13 +3813,13 @@ int32_t komodo_activate_sapling(CBlockIndex *pindex)
                 fprintf(stderr,"komodo_activate_sapling: unexpected non-contiguous ht %d vs %d\n",prevht,height);
                 return(0);
             }
-            if ( prevtime < KOMODO_SAPLING_ACTIVATION-3600*24 )
-                break;
             if ( prevtime <= KOMODO_SAPLING_ACTIVATION && blocktime > KOMODO_SAPLING_ACTIVATION )
             {
                 activation = height + 60;
                 fprintf(stderr,"%s transition at %d (%d, %u) -> (%d, %u)\n",ASSETCHAINS_SYMBOL,height,prevht,prevtime,height,blocktime);
             }
+            if ( prevtime < KOMODO_SAPLING_ACTIVATION-3600*24 )
+                break;
             pindex = prev;
             height = prevht;
             blocktime = prevtime;
