@@ -111,7 +111,7 @@ public:
 
     bool IsVerusPOSBlock() const
     {
-        if ( ASSETCHAINS_LWMAPOS != 0 )
+        if ( 1 || ASSETCHAINS_LWMAPOS != 0 )
             return nNonce.IsPOSNonce();
         else return(0);
     }
