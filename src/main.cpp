@@ -3797,14 +3797,14 @@ int32_t komodo_activate_sapling(CBlockIndex *pindex)
     }
     height = pindex->GetHeight();
     blocktime = (uint32_t)pindex->nTime;
-    fprintf(stderr,"starting blocktime %u cmp.%d\n",blocktime,blocktime > KOMODO_SAPLING_ACTIVATION);
+    //fprintf(stderr,"starting blocktime %u cmp.%d\n",blocktime,blocktime > KOMODO_SAPLING_ACTIVATION);
     if ( blocktime > KOMODO_SAPLING_ACTIVATION ) // find the earliest transition
     {
         while ( (prev= pindex->pprev) != 0 )
         {
             prevht = prev->GetHeight();
             prevtime = (uint32_t)prev->nTime;
-            fprintf(stderr,"(%d, %u) -> (%d, %u)\n",prevht,prevtime,height,blocktime);
+            //fprintf(stderr,"(%d, %u) -> (%d, %u)\n",prevht,prevtime,height,blocktime);
             if ( prevht+1 != height )
             {
                 fprintf(stderr,"komodo_activate_sapling: unexpected non-contiguous ht %d vs %d\n",prevht,height);
@@ -3814,23 +3814,17 @@ int32_t komodo_activate_sapling(CBlockIndex *pindex)
                 break;
             if ( prevtime <= KOMODO_SAPLING_ACTIVATION && blocktime > KOMODO_SAPLING_ACTIVATION )
             {
-                transition = height;
+                activation = height + 60;
                 fprintf(stderr,"%s transition at %d (%d, %u) -> (%d, %u)\n",ASSETCHAINS_SYMBOL,height,prevht,prevtime,height,blocktime);
             }
             pindex = prev;
             height = prevht;
             blocktime = prevtime;
         }
-        fprintf(stderr,"ht.%d %u, transition.%d\n",height,blocktime,transition);
-        if ( transition != 0 )
-        {
-            activation = transition + 60;
-            fprintf(stderr,"%s set activation at %d\n",ASSETCHAINS_SYMBOL,activation);
-        }
     }
     if ( activation != 0 )
     {
-        //komodo_setactivation(activation);
+        komodo_setactivation(activation);
         fprintf(stderr,"%s sapling activation at %d\n",ASSETCHAINS_SYMBOL,activation);
     }
 }
