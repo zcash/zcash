@@ -3189,7 +3189,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         }
     }
 
-    if ( ( block.vtx[0].GetValueOut() > blockReward+1 )
+    if ( block.vtx[0].GetValueOut() > blockReward+1 )
     {
         if ( ASSETCHAINS_SYMBOL[0] != 0 || pindex->nHeight >= KOMODO_NOTARIES_HEIGHT1 || block.vtx[0].vout[0].nValue > blockReward )
         {
