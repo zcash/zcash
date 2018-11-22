@@ -3787,15 +3787,15 @@ int32_t komodo_activate_sapling(CBlockIndex *pindex)
     height = pindex->GetHeight();
     blocktime = (uint32_t)pindex->nTime;
     fprintf(stderr,"komodo_activate_sapling.%d starting blocktime %u cmp.%d\n",height,blocktime,blocktime > KOMODO_SAPLING_ACTIVATION);
-    for (i=0; i<60; i++)
+    for (i=0; i<30; i++)
     {
         if ( (prev= pindex->pprev) == 0 )
             break;
         pindex = prev;
     }
-    if ( i != 60 )
+    if ( i != 30 )
     {
-        fprintf(stderr,"couldnt go backwards 60 blocks\n");
+        fprintf(stderr,"couldnt go backwards 30 blocks\n");
         return(0);
     }
     height = pindex->GetHeight();
