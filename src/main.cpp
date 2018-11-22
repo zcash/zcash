@@ -2844,52 +2844,31 @@ bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex
             for (unsigned int k = tx.vout.size(); k-- > 0;) {
                 const CTxOut &out = tx.vout[k];
 
-                if (out.scriptPubKey.IsPayToScriptHash()) {
-                    vector<unsigned char> hashBytes(out.scriptPubKey.begin()+2, out.scriptPubKey.begin()+22);
-
-                    // undo receiving activity
-                    addressIndex.push_back(make_pair(CAddressIndexKey(2, uint160(hashBytes), pindex->GetHeight(), i, hash, k, false), out.nValue));
-
-                    // undo unspent index
-                    addressUnspentIndex.push_back(make_pair(CAddressUnspentKey(2, uint160(hashBytes), hash, k), CAddressUnspentValue()));
-
+                vector<vector<unsigned char>> vSols;
+                CTxDestination vDest;
+                txnouttype txType = TX_PUBKEYHASH;
+                int keyType = 1;
+                if ((Solver(out.scriptPubKey, txType, vSols) || ExtractDestination(out.scriptPubKey, vDest)) && txType != TX_MULTISIG) {
+                    if (vDest.which())
+                    {
+                        CKeyID kid;
+                        if (CBitcoinAddress(vDest).GetKeyID(kid))
+                        {
+                            vSols.push_back(vector<unsigned char>(kid.begin(), kid.end()));
+                        }
+                    }
+                    else if (txType == TX_SCRIPTHASH)
+                    {
+                        keyType =  2;
+                    }
+                    for (auto addr : vSols)
+                    {
+                        uint160 addrHash = addr.size() == 20 ? uint160(addr) : Hash160(addr);
+                        addressIndex.push_back(make_pair(CAddressIndexKey(keyType, addrHash, pindex->GetHeight(), i, hash, k, false), out.nValue));
+                        addressUnspentIndex.push_back(make_pair(CAddressUnspentKey(keyType, addrHash, hash, k), CAddressUnspentValue()));
+                    }
                 }
-                else if (out.scriptPubKey.IsPayToPublicKeyHash()) {
-                    vector<unsigned char> hashBytes(out.scriptPubKey.begin()+3, out.scriptPubKey.begin()+23);
-
-                    // undo receiving activity
-                    addressIndex.push_back(make_pair(CAddressIndexKey(1, uint160(hashBytes), pindex->GetHeight(), i, hash, k, false), out.nValue));
-
-                    // undo unspent index
-                    addressUnspentIndex.push_back(make_pair(CAddressUnspentKey(1, uint160(hashBytes), hash, k), CAddressUnspentValue()));
-
-                }
-                else if (out.scriptPubKey.IsPayToPublicKey()) {
-                    vector<unsigned char> hashBytes(out.scriptPubKey.begin()+1, out.scriptPubKey.begin()+34);
-
-                    // undo receiving activity
-                    addressIndex.push_back(make_pair(CAddressIndexKey(1, Hash160(hashBytes), pindex->GetHeight(), i, hash, k, false), out.nValue));
-                    
-                    // undo unspent index
-                    addressUnspentIndex.push_back(make_pair(CAddressUnspentKey(1, Hash160(hashBytes), hash, k), CAddressUnspentValue()));
-
-                }
-                else if (out.scriptPubKey.IsPayToCryptoCondition()) {
-                    vector<unsigned char> hashBytes(out.scriptPubKey.begin(), out.scriptPubKey.end());
-
-                    // undo receiving activity
-                    addressIndex.push_back(make_pair(CAddressIndexKey(1, Hash160(hashBytes), pindex->GetHeight(), i, hash, k, false), out.nValue));
-                    
-                    // undo unspent index
-                    addressUnspentIndex.push_back(make_pair(CAddressUnspentKey(1, Hash160(hashBytes), hash, k), CAddressUnspentValue()));
-
-                }
-                else {
-                    continue;
-                }
-
             }
-
         }
 
         // Check that all outputs are available and match the outputs in the block itself
@@ -2934,49 +2913,36 @@ bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex
 
                 if (fAddressIndex) {
                     const CTxOut &prevout = view.GetOutputFor(tx.vin[j]);
-                    if (prevout.scriptPubKey.IsPayToScriptHash()) {
-                        vector<unsigned char> hashBytes(prevout.scriptPubKey.begin()+2, prevout.scriptPubKey.begin()+22);
 
-                        // undo spending activity
-                        addressIndex.push_back(make_pair(CAddressIndexKey(2, uint160(hashBytes), pindex->GetHeight(), i, hash, j, true), prevout.nValue * -1));
+                    vector<vector<unsigned char>> vSols;
+                    CTxDestination vDest;
+                    txnouttype txType = TX_PUBKEYHASH;
+                    int keyType = 1;
+                    // some non-standard types, like time lock coinbases, don't solve, but do extract
+                    if ((Solver(prevout.scriptPubKey, txType, vSols) || ExtractDestination(prevout.scriptPubKey, vDest)))
+                    {
+                        // if we failed to solve, and got a vDest, assume P2PKH or P2PK address returned
+                        if (vDest.which())
+                        {
+                            CKeyID kid;
+                            if (CBitcoinAddress(vDest).GetKeyID(kid))
+                            {
+                                vSols.push_back(vector<unsigned char>(kid.begin(), kid.end()));
+                            }
+                        }
+                        else if (txType == TX_SCRIPTHASH)
+                        {
+                            keyType =  2;
+                        }
+                        for (auto addr : vSols)
+                        {
+                            uint160 addrHash = addr.size() == 20 ? uint160(addr) : Hash160(addr);
+                            // undo spending activity
+                            addressIndex.push_back(make_pair(CAddressIndexKey(keyType, addrHash, pindex->GetHeight(), i, hash, j, true), prevout.nValue * -1));
 
-                        // restore unspent index
-                        addressUnspentIndex.push_back(make_pair(CAddressUnspentKey(2, uint160(hashBytes), input.prevout.hash, input.prevout.n), CAddressUnspentValue(prevout.nValue, prevout.scriptPubKey, undo.nHeight)));
-
-
-                    }
-                    else if (prevout.scriptPubKey.IsPayToPublicKeyHash()) {
-                        vector<unsigned char> hashBytes(prevout.scriptPubKey.begin()+3, prevout.scriptPubKey.begin()+23);
-
-                        // undo spending activity
-                        addressIndex.push_back(make_pair(CAddressIndexKey(1, uint160(hashBytes), pindex->GetHeight(), i, hash, j, true), prevout.nValue * -1));
-
-                        // restore unspent index
-                        addressUnspentIndex.push_back(make_pair(CAddressUnspentKey(1, uint160(hashBytes), input.prevout.hash, input.prevout.n), CAddressUnspentValue(prevout.nValue, prevout.scriptPubKey, undo.nHeight)));
-
-                    }
-                    else if (prevout.scriptPubKey.IsPayToPublicKey()) {
-                        vector<unsigned char> hashBytes(prevout.scriptPubKey.begin()+1, prevout.scriptPubKey.begin()+34);
-
-                        // undo spending activity
-                        addressIndex.push_back(make_pair(CAddressIndexKey(1, Hash160(hashBytes), pindex->GetHeight(), i, hash, j, true), prevout.nValue * -1));
-                        
-                        // restore unspent index
-                        addressUnspentIndex.push_back(make_pair(CAddressUnspentKey(1, Hash160(hashBytes), input.prevout.hash, input.prevout.n), CAddressUnspentValue(prevout.nValue, prevout.scriptPubKey, undo.nHeight)));
-
-                    }
-                    else if (prevout.scriptPubKey.IsPayToCryptoCondition()) {
-                        vector<unsigned char> hashBytes(prevout.scriptPubKey.begin(), prevout.scriptPubKey.end());
-
-                        // undo spending activity
-                        addressIndex.push_back(make_pair(CAddressIndexKey(1, Hash160(hashBytes), pindex->GetHeight(), i, hash, j, true), prevout.nValue * -1));
-                        
-                        // restore unspent index
-                        addressUnspentIndex.push_back(make_pair(CAddressUnspentKey(1, Hash160(hashBytes), input.prevout.hash, input.prevout.n), CAddressUnspentValue(prevout.nValue, prevout.scriptPubKey, undo.nHeight)));
-
-                    }
-                    else {
-                        continue;
+                            // restore unspent index
+                            addressUnspentIndex.push_back(make_pair(CAddressUnspentKey(keyType, addrHash, input.prevout.hash, input.prevout.n), CAddressUnspentValue(prevout.nValue, prevout.scriptPubKey, undo.nHeight)));
+                        }
                     }
                 }
             }
@@ -3269,45 +3235,47 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
                     const CTxIn input = tx.vin[j];
                     const CTxOut &prevout = view.GetOutputFor(tx.vin[j]);
-                    uint160 hashBytes;
-                    int addressType;
 
-                    if (prevout.scriptPubKey.IsPayToScriptHash()) {
-                        hashBytes = uint160(vector <unsigned char>(prevout.scriptPubKey.begin()+2, prevout.scriptPubKey.begin()+22));
-                        addressType = 2;
-                    }
-                    else if (prevout.scriptPubKey.IsPayToPublicKeyHash()) {
-                        hashBytes = uint160(vector <unsigned char>(prevout.scriptPubKey.begin()+3, prevout.scriptPubKey.begin()+23));
-                        addressType = 1;
-                    }
-                    else if (prevout.scriptPubKey.IsPayToPublicKey()) {
-                        hashBytes = Hash160(vector <unsigned char>(prevout.scriptPubKey.begin()+1, prevout.scriptPubKey.begin()+34));
-                        addressType = 1;
-                    }
-                    else if (prevout.scriptPubKey.IsPayToCryptoCondition()) {
-                        hashBytes = Hash160(vector <unsigned char>(prevout.scriptPubKey.begin(), prevout.scriptPubKey.end()));
-                        addressType = 1;
-                    }
-                    else {
-                        hashBytes.SetNull();
-                        addressType = 0;
-                    }
+                    vector<vector<unsigned char>> vSols;
+                    CTxDestination vDest;
+                    txnouttype txType = TX_PUBKEYHASH;
+                    uint160 addrHash;
+                    int keyType = 0;
+                    // some non-standard types, like time lock coinbases, don't solve, but do extract
+                    if ((Solver(prevout.scriptPubKey, txType, vSols) || ExtractDestination(prevout.scriptPubKey, vDest)))
+                    {
+                        keyType = 1;
 
-                    if (fAddressIndex && addressType > 0) {
-                        // record spending activity
-                        addressIndex.push_back(make_pair(CAddressIndexKey(addressType, hashBytes, pindex->GetHeight(), i, txhash, j, true), prevout.nValue * -1));
+                        // if we failed to solve, and got a vDest, assume P2PKH or P2PK address returned
+                        if (vDest.which())
+                        {
+                            CKeyID kid;
+                            if (CBitcoinAddress(vDest).GetKeyID(kid))
+                            {
+                                vSols.push_back(vector<unsigned char>(kid.begin(), kid.end()));
+                            }
+                        }
+                        else if (txType == TX_SCRIPTHASH)
+                        {
+                            keyType =  2;
+                        }
+                        for (auto addr : vSols)
+                        {
+                            addrHash = addr.size() == 20 ? uint160(addr) : Hash160(addr);
+                            // record spending activity
+                            addressIndex.push_back(make_pair(CAddressIndexKey(keyType, addrHash, pindex->GetHeight(), i, txhash, j, true), prevout.nValue * -1));
 
-                        // remove address from unspent index
-                        addressUnspentIndex.push_back(make_pair(CAddressUnspentKey(addressType, hashBytes, input.prevout.hash, input.prevout.n), CAddressUnspentValue()));
+                            // remove address from unspent index
+                            addressUnspentIndex.push_back(make_pair(CAddressUnspentKey(keyType, addrHash, input.prevout.hash, input.prevout.n), CAddressUnspentValue()));
+                        }
                     }
 
                     if (fSpentIndex) {
                         // add the spent index to determine the txid and input that spent an output
                         // and to find the amount and address from an input
-                        spentIndex.push_back(make_pair(CSpentIndexKey(input.prevout.hash, input.prevout.n), CSpentIndexValue(txhash, j, pindex->GetHeight(), prevout.nValue, addressType, hashBytes)));
+                        spentIndex.push_back(make_pair(CSpentIndexKey(input.prevout.hash, input.prevout.n), CSpentIndexValue(txhash, j, pindex->GetHeight(), prevout.nValue, keyType, addrHash)));
                     }
                 }
-
             }
             // Add in sigops done by pay-to-script-hash inputs;
             // this is to prevent a "rogue miner" from creating
@@ -3334,51 +3302,39 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         if (fAddressIndex) {
             for (unsigned int k = 0; k < tx.vout.size(); k++) {
                 const CTxOut &out = tx.vout[k];
-//fprintf(stderr,"add %d vouts\n",(int32_t)tx.vout.size());
-                if (out.scriptPubKey.IsPayToScriptHash()) {
-                    vector<unsigned char> hashBytes(out.scriptPubKey.begin()+2, out.scriptPubKey.begin()+22);
 
-                    // record receiving activity
-                    addressIndex.push_back(make_pair(CAddressIndexKey(2, uint160(hashBytes), pindex->GetHeight(), i, txhash, k, false), out.nValue));
+                uint160 addrHash;
 
-                    // record unspent output
-                    addressUnspentIndex.push_back(make_pair(CAddressUnspentKey(2, uint160(hashBytes), txhash, k), CAddressUnspentValue(out.nValue, out.scriptPubKey, pindex->GetHeight())));
+                vector<vector<unsigned char>> vSols;
+                CTxDestination vDest;
+                txnouttype txType = TX_PUBKEYHASH;
+                int keyType = 1;
+                // some non-standard types, like time lock coinbases, don't solve, but do extract
+                if ((Solver(out.scriptPubKey, txType, vSols) || ExtractDestination(out.scriptPubKey, vDest)) && txType != TX_MULTISIG)
+                {
+                    // if we failed to solve, and got a vDest, assume P2PKH or P2PK address returned
+                    if (vDest.which())
+                    {
+                        CKeyID kid;
+                        if (CBitcoinAddress(vDest).GetKeyID(kid))
+                        {
+                            vSols.push_back(vector<unsigned char>(kid.begin(), kid.end()));
+                        }
+                    }
+                    else if (txType == TX_SCRIPTHASH)
+                    {
+                        keyType =  2;
+                    }
+                    for (auto addr : vSols)
+                    {
+                        addrHash = addr.size() == 20 ? uint160(addr) : Hash160(addr);
+                        // record receiving activity
+                        addressIndex.push_back(make_pair(CAddressIndexKey(keyType, addrHash, pindex->GetHeight(), i, txhash, k, false), out.nValue));
 
+                        // record unspent output
+                        addressUnspentIndex.push_back(make_pair(CAddressUnspentKey(keyType, addrHash, txhash, k), CAddressUnspentValue(out.nValue, out.scriptPubKey, pindex->GetHeight())));
+                    }
                 }
-                else if (out.scriptPubKey.IsPayToPublicKeyHash()) {
-                    vector<unsigned char> hashBytes(out.scriptPubKey.begin()+3, out.scriptPubKey.begin()+23);
-
-                    // record receiving activity
-                    addressIndex.push_back(make_pair(CAddressIndexKey(1, uint160(hashBytes), pindex->GetHeight(), i, txhash, k, false), out.nValue));
-
-                    // record unspent output
-                    addressUnspentIndex.push_back(make_pair(CAddressUnspentKey(1, uint160(hashBytes), txhash, k), CAddressUnspentValue(out.nValue, out.scriptPubKey, pindex->GetHeight())));
-
-                }
-                else if (out.scriptPubKey.IsPayToPublicKey()) {
-                    vector<unsigned char> hashBytes(out.scriptPubKey.begin()+1, out.scriptPubKey.begin()+34);
-
-                    // record receiving activity
-                    addressIndex.push_back(make_pair(CAddressIndexKey(1, Hash160(hashBytes), pindex->GetHeight(), i, txhash, k, false), out.nValue));
-                    
-                    // record unspent output
-                    addressUnspentIndex.push_back(make_pair(CAddressUnspentKey(1, Hash160(hashBytes), txhash, k), CAddressUnspentValue(out.nValue, out.scriptPubKey, pindex->GetHeight())));
-                    
-                }
-                else if (out.scriptPubKey.IsPayToCryptoCondition()) {
-                    vector<unsigned char> hashBytes(out.scriptPubKey.begin(), out.scriptPubKey.end());
-
-                    // record receiving activity
-                    addressIndex.push_back(make_pair(CAddressIndexKey(1, Hash160(hashBytes), pindex->GetHeight(), i, txhash, k, false), out.nValue));
-                    
-                    // record unspent output
-                    addressUnspentIndex.push_back(make_pair(CAddressUnspentKey(1, Hash160(hashBytes), txhash, k), CAddressUnspentValue(out.nValue, out.scriptPubKey, pindex->GetHeight())));
-                    
-                }
-                else {
-                    continue;
-                }
-
             }
         }
 

@@ -123,6 +123,16 @@ public:
         return true;
     }
 
+    bool GetKeyDataStream(CDataStream &ssKey) {
+        leveldb::Slice slKey = piter->key();
+        try {
+            ssKey = CDataStream(slKey.data(), slKey.data() + slKey.size(), SER_DISK, CLIENT_VERSION);
+        } catch(std::exception &e) {
+            return false;
+        }
+        return true;
+    }
+
     unsigned int GetKeySize() {
         return piter->key().size();
     }

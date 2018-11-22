@@ -134,63 +134,64 @@ void CTxMemPool::addAddressIndex(const CTxMemPoolEntry &entry, const CCoinsViewC
     for (unsigned int j = 0; j < tx.vin.size(); j++) {
         const CTxIn input = tx.vin[j];
         const CTxOut &prevout = view.GetOutputFor(input);
-        if (prevout.scriptPubKey.IsPayToScriptHash()) {
-            vector<unsigned char> hashBytes(prevout.scriptPubKey.begin()+2, prevout.scriptPubKey.begin()+22);
-            CMempoolAddressDeltaKey key(2, uint160(hashBytes), txhash, j, 1);
-            CMempoolAddressDelta delta(entry.GetTime(), prevout.nValue * -1, input.prevout.hash, input.prevout.n);
-            mapAddress.insert(make_pair(key, delta));
-            inserted.push_back(key);
+
+        vector<vector<unsigned char>> vSols;
+        txnouttype txType = TX_PUBKEYHASH;
+        int keyType = 1;
+
+        CTxDestination vDest;
+        if (Solver(prevout.scriptPubKey, txType, vSols) || ExtractDestination(prevout.scriptPubKey, vDest))
+        {
+            if (vDest.which())
+            {
+                uint160 hashBytes;
+                if (CBitcoinAddress(vDest).GetIndexKey(hashBytes, keyType))
+                {
+                    vSols.push_back(vector<unsigned char>(hashBytes.begin(), hashBytes.end()));
+                }
+            }
+            if (txType == TX_SCRIPTHASH)
+            {
+                keyType =  2;
+            }
+            for (auto addr : vSols)
+            {
+                CMempoolAddressDeltaKey key(keyType, addr.size() == 20 ? uint160(addr) : Hash160(addr), txhash, j, true);
+                CMempoolAddressDelta delta(entry.GetTime(), prevout.nValue * -1, input.prevout.hash, input.prevout.n);
+                mapAddress.insert(make_pair(key, delta));
+                inserted.push_back(key);
+            }
         }
-        else if (prevout.scriptPubKey.IsPayToPublicKeyHash()) {
-            vector<unsigned char> hashBytes(prevout.scriptPubKey.begin()+3, prevout.scriptPubKey.begin()+23);
-            CMempoolAddressDeltaKey key(1, uint160(hashBytes), txhash, j, 1);
-            CMempoolAddressDelta delta(entry.GetTime(), prevout.nValue * -1, input.prevout.hash, input.prevout.n);
-            mapAddress.insert(make_pair(key, delta));
-            inserted.push_back(key);
-        }
-        else if (prevout.scriptPubKey.IsPayToPublicKey()) {
-            vector<unsigned char> hashBytes(prevout.scriptPubKey.begin()+1, prevout.scriptPubKey.begin()+34);
-            CMempoolAddressDeltaKey key(1, Hash160(hashBytes), txhash, j, 1);
-            CMempoolAddressDelta delta(entry.GetTime(), prevout.nValue * -1, input.prevout.hash, input.prevout.n);
-            mapAddress.insert(make_pair(key, delta));
-            inserted.push_back(key);
-        }
-        else if (prevout.scriptPubKey.IsPayToCryptoCondition()) {
-            vector<unsigned char> hashBytes(prevout.scriptPubKey.begin(), prevout.scriptPubKey.end());
-            CMempoolAddressDeltaKey key(1, Hash160(hashBytes), txhash, j, 1);
-            CMempoolAddressDelta delta(entry.GetTime(), prevout.nValue * -1, input.prevout.hash, input.prevout.n);
-            mapAddress.insert(make_pair(key, delta));
-            inserted.push_back(key);
-        }   }
+    }
 
     for (unsigned int k = 0; k < tx.vout.size(); k++) {
         const CTxOut &out = tx.vout[k];
-        if (out.scriptPubKey.IsPayToScriptHash()) {
-            vector<unsigned char> hashBytes(out.scriptPubKey.begin()+2, out.scriptPubKey.begin()+22);
-            CMempoolAddressDeltaKey key(2, uint160(hashBytes), txhash, k, 0);
-            mapAddress.insert(make_pair(key, CMempoolAddressDelta(entry.GetTime(), out.nValue)));
-            inserted.push_back(key);
-        }
-        else if (out.scriptPubKey.IsPayToPublicKeyHash()) {
-            vector<unsigned char> hashBytes(out.scriptPubKey.begin()+3, out.scriptPubKey.begin()+23);
-            std::pair<addressDeltaMap::iterator,bool> ret;
-            CMempoolAddressDeltaKey key(1, uint160(hashBytes), txhash, k, 0);
-            mapAddress.insert(make_pair(key, CMempoolAddressDelta(entry.GetTime(), out.nValue)));
-            inserted.push_back(key);
-        }
-        else if (out.scriptPubKey.IsPayToPublicKey()) {
-            vector<unsigned char> hashBytes(out.scriptPubKey.begin()+1, out.scriptPubKey.begin()+34);
-            std::pair<addressDeltaMap::iterator,bool> ret;
-            CMempoolAddressDeltaKey key(1, Hash160(hashBytes), txhash, k, 0);
-            mapAddress.insert(make_pair(key, CMempoolAddressDelta(entry.GetTime(), out.nValue)));
-            inserted.push_back(key);
-        }
-        else if (out.scriptPubKey.IsPayToCryptoCondition()) {
-            vector<unsigned char> hashBytes(out.scriptPubKey.begin(), out.scriptPubKey.end());
-            std::pair<addressDeltaMap::iterator,bool> ret;
-            CMempoolAddressDeltaKey key(1, Hash160(hashBytes), txhash, k, 0);
-            mapAddress.insert(make_pair(key, CMempoolAddressDelta(entry.GetTime(), out.nValue)));
-            inserted.push_back(key);
+
+        vector<vector<unsigned char>> vSols;
+        CTxDestination vDest;
+        txnouttype txType = TX_PUBKEYHASH;
+        int keyType = 1;
+        if ((Solver(out.scriptPubKey, txType, vSols) || ExtractDestination(out.scriptPubKey, vDest)) && txType != TX_MULTISIG)
+        {
+            // if we failed to solve, and got a vDest, assume P2PKH or P2PK address returned
+            if (vDest.which())
+            {
+                uint160 hashBytes;
+                if (CBitcoinAddress(vDest).GetIndexKey(hashBytes, keyType))
+                {
+                    vSols.push_back(vector<unsigned char>(hashBytes.begin(), hashBytes.end()));
+                }
+            }
+            else if (txType == TX_SCRIPTHASH)
+            {
+                keyType =  2;
+            }
+            for (auto addr : vSols)
+            {
+                CMempoolAddressDeltaKey key(keyType, addr.size() == 20 ? uint160(addr) : Hash160(addr), txhash, k, 0);
+                mapAddress.insert(make_pair(key, CMempoolAddressDelta(entry.GetTime(), out.nValue)));
+                inserted.push_back(key);
+            }
         }
     }
 
@@ -238,38 +239,46 @@ void CTxMemPool::addSpentIndex(const CTxMemPoolEntry &entry, const CCoinsViewCac
     for (unsigned int j = 0; j < tx.vin.size(); j++) {
         const CTxIn input = tx.vin[j];
         const CTxOut &prevout = view.GetOutputFor(input);
-        uint160 addressHash;
-        int addressType;
 
-        if (prevout.scriptPubKey.IsPayToScriptHash()) {
-            addressHash = uint160(vector<unsigned char> (prevout.scriptPubKey.begin()+2, prevout.scriptPubKey.begin()+22));
-            addressType = 2;
-        }
-        else if (prevout.scriptPubKey.IsPayToPublicKeyHash()) {
-            addressHash = uint160(vector<unsigned char> (prevout.scriptPubKey.begin()+3, prevout.scriptPubKey.begin()+23));
-            addressType = 1;
-        }
-        else if (prevout.scriptPubKey.IsPayToPublicKey()) {
-            addressHash = Hash160(vector<unsigned char> (prevout.scriptPubKey.begin()+1, prevout.scriptPubKey.begin()+34));
-            addressType = 1;
-        }
-        else if (prevout.scriptPubKey.IsPayToCryptoCondition()) {
-            addressHash = Hash160(vector<unsigned char> (prevout.scriptPubKey.begin(), prevout.scriptPubKey.end()));
-            addressType = 1;
-        }
-        else {
-            addressHash.SetNull();
-            addressType = 0;
-        }
+        vector<vector<unsigned char>> vSols;
+        CTxDestination vDest;
+        txnouttype txType = TX_PUBKEYHASH;
+        int keyType = 1;
+        // some non-standard types, like time lock coinbases, don't solve, but do extract
+        if ((Solver(prevout.scriptPubKey, txType, vSols) || ExtractDestination(prevout.scriptPubKey, vDest)) && txType != TX_MULTISIG)
+        {
+            // if we failed to solve, and got a vDest, assume P2PKH or P2PK address returned
+            if (vDest.which())
+            {
+                CKeyID kid;
+                if (CBitcoinAddress(vDest).GetKeyID(kid))
+                {
+                    vSols.push_back(vector<unsigned char>(kid.begin(), kid.end()));
+                }
+            }
+            else if (txType == TX_SCRIPTHASH)
+            {
+                keyType =  2;
+            }
+            for (auto addr : vSols)
+            {
+                CSpentIndexKey key = CSpentIndexKey(input.prevout.hash, input.prevout.n);
+                CSpentIndexValue value = CSpentIndexValue(txhash, j, -1, prevout.nValue, keyType, addr.size() == 20 ? uint160(addr) : Hash160(addr));
 
-        CSpentIndexKey key = CSpentIndexKey(input.prevout.hash, input.prevout.n);
-        CSpentIndexValue value = CSpentIndexValue(txhash, j, -1, prevout.nValue, addressType, addressHash);
+                mapSpent.insert(make_pair(key, value));
+                inserted.push_back(key);
+            }
+        }
+        else
+        {
+            // don't know exactly how, but it was spent
+            CSpentIndexKey key = CSpentIndexKey(input.prevout.hash, input.prevout.n);
+            CSpentIndexValue value = CSpentIndexValue(txhash, j, -1, prevout.nValue, 0, uint160());
 
-        mapSpent.insert(make_pair(key, value));
-        inserted.push_back(key);
-
+            mapSpent.insert(make_pair(key, value));
+            inserted.push_back(key);
+        }
     }
-
     mapSpentInserted.insert(make_pair(txhash, inserted));
 }
 
