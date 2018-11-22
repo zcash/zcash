@@ -64,6 +64,16 @@ extern uint32_t ASSETCHAINS_MAGIC;
 extern uint64_t ASSETCHAINS_ENDSUBSIDY,ASSETCHAINS_REWARD,ASSETCHAINS_HALVING,ASSETCHAINS_DECAY,ASSETCHAINS_COMMISSION,ASSETCHAINS_STAKED,ASSETCHAINS_SUPPLY;
 extern std::string NOTARY_PUBKEY,NOTARY_ADDRESS; extern uint8_t NOTARY_PUBKEY33[];
 
+int32_t getera(int now)
+{
+    for (int32_t i = 0; i < NUM_STAKED_ERAS; i++) {
+        if ( now <= STAKED_NOTARIES_TIMESTAMP[i] ) {
+            era = i;
+            break;
+        }
+    }
+}
+
 UniValue getiguanajson(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 0)
@@ -74,13 +84,8 @@ UniValue getiguanajson(const UniValue& params, bool fHelp)
     UniValue notaries(UniValue::VARR);
     // get the current era, use local time for now.
     // should ideally take blocktime of last known block.
-    int now = time(NULL); int32_t era;
-    for (int32_t i = 0; i < NUM_STAKED_ERAS; i++) {
-        if ( now <= STAKED_NOTARIES_TIMESTAMP[i] ) {
-            era = i;
-            break;
-        }
-    }
+    int now = time(NULL);
+    int32_t era = getera(now);
 
     // loop over seeds array and push back to json array for seeds
     for (int8_t i = 0; i < 8; i++) {
@@ -111,13 +116,10 @@ UniValue getiguanajson(const UniValue& params, bool fHelp)
 
 UniValue getnotarysendmany(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() != 2)
-        throw runtime_error("getnotarysendmany <amount to send> <era>");
+    if (fHelp || params.size() != 1)
+        throw runtime_error("getnotarysendmany <amount to send>");
     // era
-    int era = AmountFromValue(params[1]);
-    printf("%i\n",era );
-    if ( era < 0 || era > NUM_STAKED_ERAS )
-        throw JSONRPCError(RPC_TYPE_ERROR, "Invalid era");
+    int32_t era = getera(time(NULL));
     // Amount
     CAmount nAmount = AmountFromValue(params[0]);
     if (nAmount <= 0)
