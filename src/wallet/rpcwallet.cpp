@@ -3540,6 +3540,8 @@ UniValue z_getnewaddress(const UniValue& params, bool fHelp)
     }
 
     if (addrType == ADDR_TYPE_SPROUT) {
+        if ( GetTime() >= KOMODO_SAPLING_DEADLINE )
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "sprout not valid anymore");
         return EncodePaymentAddress(pwalletMain->GenerateNewSproutZKey());
     } else if (addrType == ADDR_TYPE_SAPLING) {
         return EncodePaymentAddress(pwalletMain->GenerateNewSaplingZKey());
@@ -4101,7 +4103,11 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
                         RPC_INVALID_PARAMETER,
                         "Cannot send to both Sprout and Sapling addresses using z_sendmany");
                 }
-
+                if ( GetTime() > KOMODO_SAPLING_DEADLINE )
+                {
+                    if ( fromSprout || toSprout )
+                        throw JSONRPCError(RPC_INVALID_PARAMETER,"Sprout usage has expired");
+                }
                 // If we are sending from a shielded address, all recipient
                 // shielded addresses must be of the same type.
                 if (fromSprout && toSapling) {
