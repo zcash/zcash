@@ -6842,7 +6842,7 @@ fprintf(stderr,"netmsg: %s\n", strCommand.c_str());
 
         LOCK(cs_main);
 
-        if (chainActive.LastTip() != 0 && chainActive.LastTip().GetHeight() > 100000 && IsInitialBlockDownload())
+        if (chainActive.LastTip() != 0 && chainActive.LastTip()->GetHeight() > 100000 && IsInitialBlockDownload())
         {
             fprintf(stderr,"dont process getheaders during initial download\n");
             return true;
