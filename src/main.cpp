@@ -7598,7 +7598,7 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
         if (pindexBestHeader == NULL)
             pindexBestHeader = chainActive.Tip();
         bool fFetch = state.fPreferredDownload || (nPreferredDownload == 0 && !pto->fClient && !pto->fOneShot); // Download if this is a nice peer, or we have no nice peers and this one might do.
-        if (!state.fSyncStarted && !pto->fClient && !fImporting && !fReindex) {
+        if (KOMODO_INSYNC == 0 || (!state.fSyncStarted && !pto->fClient && !fImporting && !fReindex)) {
             // Only actively request headers from a single peer, unless we're close to today.
             if ((nSyncStarted == 0 && fFetch) || pindexBestHeader->GetBlockTime() > GetAdjustedTime() - 24 * 60 * 60) {
                 state.fSyncStarted = true;
