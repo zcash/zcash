@@ -1388,7 +1388,7 @@ void komodo_passport_iteration()
         lastinterest = komodo_chainactive_timestamp();
     }
     refsp = komodo_stateptr(symbol,dest);
-    if ( ASSETCHAINS_SYMBOL[0] == 0 )
+    if ( ASSETCHAINS_SYMBOL[0] == 0 || strcmp(ASSETCHAINS_SYMBOL,"KMDCC") == 0 )
     {
         refid = 33;
         limit = 10000000;
