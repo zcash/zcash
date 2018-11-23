@@ -115,23 +115,15 @@ UniValue getiguanajson(const UniValue& params, bool fHelp)
 
 UniValue getnotarysendmany(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() > 2)
+    if (fHelp || params.size() != 1)
         throw runtime_error(
-            "getnotarysendmany ( era amount_to_send )\n"
-            "\nReturn a sendmany array for all notary address in defined era.\n"
+            "getnotarysendmany ( amount_to_send )\n"
+            "\nReturn a sendmany array for all notary address in current era.\n"
         );
     // era
-    int era = 0;
-    if (params.size() > 0) {
-        era = params[0].get_int();
-    }
-    if (era < 0 || era > NUM_STAKED_ERAS) {
-        throw JSONRPCError(RPC_INVALID_PARAMETER, "era is not valid");
-    }
+    int era = getera(time(NULL));
     // Amount
-    CAmount nAmount;
-    if (params.size() > 1)
-        nAmount = AmountFromValue(params[1]);
+    CAmount nAmount = AmountFromValue(params[1]);
 
     if (nAmount <= 0)
         throw JSONRPCError(RPC_TYPE_ERROR, "Invalid amount for send");
