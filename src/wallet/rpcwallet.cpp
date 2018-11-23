@@ -4473,7 +4473,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
               if (nValue > maximum_utxo_size) {
                 continue;
               } else {
-                if (out.tx->vout[out.i].scriptPubKey.size() == 35) {
+                if (out.tx->vout[out.i].scriptPubKey.size() == 35 && nValue == 10000) {
                   continue;
                 }
               }
