@@ -64,7 +64,7 @@ Possible third iteration:
 
 int64_t IsChannelsvout(struct CCcontract_info *cp,const CTransaction& tx,CPubKey srcpub, CPubKey destpub,int32_t v)
 {
-    char destaddr[64],channeladdr[64];
+    char destaddr[65],channeladdr[65];
 
     GetCCaddress1of2(cp,channeladdr,srcpub,destpub);
     if ( tx.vout[v].scriptPubKey.IsPayToCryptoCondition() != 0 )
@@ -77,7 +77,7 @@ int64_t IsChannelsvout(struct CCcontract_info *cp,const CTransaction& tx,CPubKey
 
 int64_t IsChannelsMarkervout(struct CCcontract_info *cp,const CTransaction& tx,CPubKey srcpub,int32_t v)
 {
-    char destaddr[64],ccaddr[64];
+    char destaddr[65],ccaddr[65];
 
     GetCCaddress(cp,ccaddr,srcpub);
     if ( tx.vout[v].scriptPubKey.IsPayToCryptoCondition() != 0 )
@@ -348,8 +348,12 @@ bool ChannelsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
                                 return eval->Invalid("invalid amount, refund amount and funds in channel must match!");
                         }
                         break;
+                    default:
+                        fprintf(stderr,"illegal channels funcid.(%c)\n",funcid);
+                        return eval->Invalid("unexpected channels funcid");
+                        break;
                 }
-            }
+            } else return eval->Invalid("unexpected channels missing funcid");
             retval = PreventCC(eval,tx,preventCCvins,numvins,preventCCvouts,numvouts);
             if ( retval != 0 )
                 fprintf(stderr,"Channel tx validated\n");
@@ -364,7 +368,7 @@ bool ChannelsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
 
 int64_t AddChannelsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx, CTransaction openTx, uint256 &prevtxid)
 {
-    char coinaddr[64]; int64_t param2,totalinputs = 0,numvouts; uint256 txid=zeroid,tmp_txid,hashBlock,param3; CTransaction tx; int32_t param1;
+    char coinaddr[65]; int64_t param2,totalinputs = 0,numvouts; uint256 txid=zeroid,tmp_txid,hashBlock,param3; CTransaction tx; int32_t param1;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     CPubKey srcpub,destpub;
     uint8_t myprivkey[32];
@@ -442,7 +446,7 @@ std::string ChannelOpen(uint64_t txfee,CPubKey destpub,int32_t numpayments,int64
     funds = numpayments * payment;
     if ( AddNormalinputs(mtx,mypk,funds+3*txfee,64) > 0 )
     {
-        hentropy = DiceHashEntropy(entropy,mtx.vin[0].prevout.hash);
+        hentropy = DiceHashEntropy(entropy,mtx.vin[0].prevout.hash,mtx.vin[0].prevout.n,1);
         endiancpy(hash,(uint8_t *)&hentropy,32);
         for (i=0; i<numpayments; i++)
         {
@@ -522,7 +526,7 @@ std::string ChannelPayment(uint64_t txfee,uint256 opentxid,int64_t amount, uint2
                     }
                     else
                     {
-                        hentropy = DiceHashEntropy(entropy, channelOpenTx.vin[0].prevout.hash);
+                        hentropy = DiceHashEntropy(entropy,channelOpenTx.vin[0].prevout.hash,channelOpenTx.vin[0].prevout.n,1);
                         if (prevdepth-numpayments)
                         {
                             endiancpy(hash, (uint8_t * ) & hentropy, 32);
@@ -661,7 +665,7 @@ std::string ChannelRefund(uint64_t txfee,uint256 opentxid,uint256 closetxid)
             if ((GetTransaction(prevtxid,prevTx,hashblock,false) != 0) && (numvouts=prevTx.vout.size()) > 0 &&
                 DecodeChannelsOpRet(prevTx.vout[numvouts-1].scriptPubKey, txid, srcpub, destpub, param1, param2, param3) != 0)
             {
-                hentropy = DiceHashEntropy(entropy, channelOpenTx.vin[0].prevout.hash);
+                hentropy = DiceHashEntropy(entropy, channelOpenTx.vin[0].prevout.hash, channelOpenTx.vin[0].prevout.n,1);
                 endiancpy(hash, (uint8_t * ) & hentropy, 32);
                 for (i = 0; i < param1; i++)
                 {
@@ -692,7 +696,7 @@ std::string ChannelRefund(uint64_t txfee,uint256 opentxid,uint256 closetxid)
 UniValue ChannelsInfo(uint256 channeltxid)
 {
     UniValue result(UniValue::VOBJ); CTransaction tx,opentx; uint256 txid,tmp_txid,hashBlock,param3,opentxid,hashchain,prevtxid;
-    struct CCcontract_info *cp,C; char myCCaddr[64],addr[64],str1[256],str2[64]; int32_t vout,numvouts,param1,numpayments;
+    struct CCcontract_info *cp,C; char myCCaddr[65],addr[65],str1[512],str2[256]; int32_t vout,numvouts,param1,numpayments;
     int64_t nValue,param2,payment; CPubKey srcpub,destpub,mypk;
     std::vector<std::pair<CAddressIndexKey, CAmount> > txids;
 

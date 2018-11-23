@@ -74,6 +74,7 @@ CC* GetCryptoCondition(CScript const& scriptSig)
     std::vector<unsigned char> ffbin;
     if (scriptSig.GetOp(pc, opcode, ffbin))
         return cc_readFulfillmentBinary((uint8_t*)ffbin.data(), ffbin.size()-1);
+    else return(0);
 }
 
 bool IsCCInput(CScript const& scriptSig)
@@ -193,7 +194,7 @@ bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey)
         strcpy(destaddr,(char *)CBitcoinAddress(address).ToString().c_str());
         return(true);
     }
-    fprintf(stderr,"ExtractDestination failed\n");
+    //fprintf(stderr,"ExtractDestination failed\n");
     return(false);
 }
 
@@ -385,12 +386,12 @@ int64_t CCduration(int32_t &numblocks,uint256 txid)
     numblocks = 0;
     if ( myGetTransaction(txid,tx,hashBlock) == 0 )
     {
-        fprintf(stderr,"CCduration cant find duration txid %s\n",uint256_str(str,txid));
+        //fprintf(stderr,"CCduration cant find duration txid %s\n",uint256_str(str,txid));
         return(0);
     }
     else if ( hashBlock == zeroid )
     {
-        fprintf(stderr,"CCduration no hashBlock for txid %s\n",uint256_str(str,txid));
+        //fprintf(stderr,"CCduration no hashBlock for txid %s\n",uint256_str(str,txid));
         return(0);
     }
     else if ( (pindex= mapBlockIndex[hashBlock]) == 0 || (txtime= pindex->nTime) == 0 || (txheight= pindex->nHeight) <= 0 )
@@ -400,7 +401,8 @@ int64_t CCduration(int32_t &numblocks,uint256 txid)
     }
     else if ( (pindex= chainActive.LastTip()) == 0 || pindex->nTime < txtime || pindex->nHeight <= txheight )
     {
-        fprintf(stderr,"CCduration backwards timestamps %u %u for txid %s hts.(%d %d)\n",(uint32_t)pindex->nTime,txtime,uint256_str(str,txid),txheight,(int32_t)pindex->nHeight);
+        if ( pindex->nTime < txtime )
+            fprintf(stderr,"CCduration backwards timestamps %u %u for txid %s hts.(%d %d)\n",(uint32_t)pindex->nTime,txtime,uint256_str(str,txid),txheight,(int32_t)pindex->nHeight);
         return(0);
     }
     numblocks = (pindex->nHeight - txheight);

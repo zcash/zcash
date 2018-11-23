@@ -64,6 +64,70 @@ extern uint32_t ASSETCHAINS_MAGIC;
 extern uint64_t ASSETCHAINS_ENDSUBSIDY,ASSETCHAINS_REWARD,ASSETCHAINS_HALVING,ASSETCHAINS_DECAY,ASSETCHAINS_COMMISSION,ASSETCHAINS_STAKED,ASSETCHAINS_SUPPLY;
 extern std::string NOTARY_PUBKEY,NOTARY_ADDRESS; extern uint8_t NOTARY_PUBKEY33[];
 
+int32_t getera(int now)
+{
+    for (int32_t i = 0; i < NUM_STAKED_ERAS; i++) {
+        if ( now <= STAKED_NOTARIES_TIMESTAMP[i] ) {
+            return(i);
+        }
+    }
+}
+
+UniValue getiguanajson(const UniValue& params, bool fHelp)
+{
+    if (fHelp || params.size() != 0)
+      throw runtime_error("getiguanajson\nreturns json for iguana, for the current ERA.");
+
+    UniValue json(UniValue::VOBJ);
+    UniValue seeds(UniValue::VARR);
+    UniValue notaries(UniValue::VARR);
+    // get the current era, use local time for now.
+    // should ideally take blocktime of last known block.
+    int now = time(NULL);
+    int32_t era = getera(now);
+
+    // loop over seeds array and push back to json array for seeds
+    for (int8_t i = 0; i < 8; i++) {
+        seeds.push_back(iguanaSeeds[i][0]);
+    }
+
+    // loop over era's notaries and push back each pair to the notary array
+    for (int8_t i = 0; i < num_notaries_STAKED[era]; i++) {
+        UniValue notary(UniValue::VOBJ);
+        notary.push_back(Pair(notaries_STAKED[era][i][0],notaries_STAKED[era][i][1]));
+        notaries.push_back(notary);
+    }
+
+    // get the min sigs
+    int minsigs;
+    if ( num_notaries_STAKED[era]/5 > overrideMinSigs )
+        minsigs = (num_notaries_STAKED[era] + 4) / 5;
+    else
+        minsigs = overrideMinSigs;
+
+    json.push_back(Pair("port",iguanaPort));
+    json.push_back(Pair("BTCminsigs",BTCminsigs));
+    json.push_back(Pair("minsigs",minsigs));
+    json.push_back(Pair("seeds", seeds));
+    json.push_back(Pair("notaries",notaries));
+    return json;
+}
+
+UniValue getnotarysendmany(const UniValue& params, bool fHelp)
+{
+    int era = getera(time(NULL));
+
+    UniValue ret(UniValue::VOBJ);
+    for (int i = 0; i<num_notaries_STAKED[era]; i++)
+    {
+        char Raddress[18]; uint8_t pubkey33[33];
+        decode_hex(pubkey33,33,(char *)notaries_STAKED[era][i][1]);
+        pubkey2addr((char *)Raddress,(uint8_t *)pubkey33);
+        ret.push_back(Pair(Raddress,(int)10);
+    }
+    return ret;
+}
+
 UniValue getinfo(const UniValue& params, bool fHelp)
 {
     uint256 notarized_hash,notarized_desttxid; int32_t prevMoMheight,notarized_height,longestchain,kmdnotarized_height,txid_height;
@@ -124,9 +188,15 @@ UniValue getinfo(const UniValue& params, bool fHelp)
 #ifdef ENABLE_WALLET
     if (pwalletMain) {
         obj.push_back(Pair("walletversion", pwalletMain->GetVersion()));
-        obj.push_back(Pair("balance",       ValueFromAmount(KOMODO_WALLETBALANCE))); //pwalletMain->GetBalance()
         if ( ASSETCHAINS_SYMBOL[0] == 0 )
-            obj.push_back(Pair("interest",       ValueFromAmount(KOMODO_INTERESTSUM))); //komodo_interestsum()
+        {
+            obj.push_back(Pair("interest",       ValueFromAmount(KOMODO_INTERESTSUM)));
+            obj.push_back(Pair("balance",       ValueFromAmount(KOMODO_WALLETBALANCE))); //pwalletMain->GetBalance()
+        }
+        else
+        {
+            obj.push_back(Pair("balance",       ValueFromAmount(pwalletMain->GetBalance()))); //
+        }
     }
 #endif
     //fprintf(stderr,"after wallet %u\n",(uint32_t)time(NULL));
@@ -168,13 +238,13 @@ UniValue getinfo(const UniValue& params, bool fHelp)
     if ( ASSETCHAINS_CC != 0 )
         obj.push_back(Pair("CCid",        (int)ASSETCHAINS_CC));
     obj.push_back(Pair("name",        ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSETCHAINS_SYMBOL));
+    obj.push_back(Pair("p2pport",        ASSETCHAINS_P2PPORT));
+    obj.push_back(Pair("rpcport",        ASSETCHAINS_RPCPORT));
     if ( ASSETCHAINS_SYMBOL[0] != 0 )
     {
         if ( is_STAKED(ASSETCHAINS_SYMBOL) != 0 )
             obj.push_back(Pair("StakedEra",        STAKED_ERA));
         //obj.push_back(Pair("name",        ASSETCHAINS_SYMBOL));
-        obj.push_back(Pair("p2pport",        ASSETCHAINS_P2PPORT));
-        obj.push_back(Pair("rpcport",        ASSETCHAINS_RPCPORT));
         obj.push_back(Pair("magic",        (int)ASSETCHAINS_MAGIC));
         if ( ASSETCHAINS_SUPPLY != 0 )
             obj.push_back(Pair("premine",        ASSETCHAINS_SUPPLY));

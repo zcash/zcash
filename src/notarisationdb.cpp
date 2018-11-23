@@ -50,6 +50,7 @@ NotarisationsInBlock ScanBlockNotarisations(const CBlock &block, int nHeight)
               // pass era slection off to notaries_staked.cpp file
               auth_STAKED = Choose_auth_STAKED(staked_era);
             }
+            printf("minsigs.%i era.%i authsize.%i\n",auth_STAKED.requiredSigs,staked_era,auth_STAKED.size);
             if (!CheckTxAuthority(tx, auth_STAKED))
                 continue;
             printf("Authorised notarisation data for %s \n",data.symbol);

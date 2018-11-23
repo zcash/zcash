@@ -58,7 +58,7 @@ using namespace std;
 
 CCriticalSection cs_main;
 extern uint8_t NOTARY_PUBKEY33[33];
-extern int32_t KOMODO_LOADINGBLOCKS,KOMODO_LONGESTCHAIN,KOMODO_INSYNC,KOMODO_CONNECTING;
+extern int32_t KOMODO_LOADINGBLOCKS,KOMODO_LONGESTCHAIN,KOMODO_INSYNC,KOMODO_CONNECTING,KOMODO_EXTRASATOSHI;
 int32_t KOMODO_NEWBLOCKS;
 int32_t komodo_block2pubkey33(uint8_t *pubkey33,CBlock *block);
 void komodo_broadcast(CBlock *pblock,int32_t limit);
@@ -95,6 +95,7 @@ unsigned int expiryDelta = DEFAULT_TX_EXPIRY_DELTA;
 CFeeRate minRelayTxFee = CFeeRate(DEFAULT_MIN_RELAY_TX_FEE);
 
 CTxMemPool mempool(::minRelayTxFee);
+CTxMemPool tmpmempool(::minRelayTxFee);
 
 struct COrphanTx {
     CTransaction tx;
@@ -1365,7 +1366,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
     }
 
     auto verifier = libzcash::ProofVerifier::Strict();
-    if ( komodo_validate_interest(tx,chainActive.LastTip()->nHeight+1,chainActive.LastTip()->GetMedianTimePast() + 777,0) < 0 )
+    if ( ASSETCHAINS_SYMBOL[0] == 0 && komodo_validate_interest(tx,chainActive.LastTip()->nHeight+1,chainActive.LastTip()->GetMedianTimePast() + 777,0) < 0 )
     {
         //fprintf(stderr,"AcceptToMemoryPool komodo_validate_interest failure\n");
         return error("AcceptToMemoryPool: komodo_validate_interest failed");
@@ -1716,8 +1717,10 @@ bool myAddtomempool(CTransaction &tx)
 {
     CValidationState state; CTransaction Ltx; bool fMissingInputs,fOverrideFees = false;
     if ( mempool.lookup(tx.GetHash(),Ltx) == 0 )
+    {
+        //fprintf(stderr,"call AcceptToMemoryPool\n");
         return(AcceptToMemoryPool(mempool, state, tx, false, &fMissingInputs, !fOverrideFees));
-    else return(true);
+    } else return(true);
 }
 
 bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock)
@@ -3149,7 +3152,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         }
 
         //if ( ASSETCHAINS_SYMBOL[0] == 0 )
-        //    komodo_earned_interest(pindex->nHeight,sum);
+        //    komod0o_earned_interest(pindex->nHeight,sum);
         CTxUndo undoDummy;
         if (i > 0) {
             blockundo.vtxundo.push_back(CTxUndo());
@@ -3178,18 +3181,17 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     LogPrint("bench", "      - Connect %u transactions: %.2fms (%.3fms/tx, %.3fms/txin) [%.2fs]\n", (unsigned)block.vtx.size(), 0.001 * (nTime1 - nTimeStart), 0.001 * (nTime1 - nTimeStart) / block.vtx.size(), nInputs <= 1 ? 0 : 0.001 * (nTime1 - nTimeStart) / (nInputs-1), nTimeConnect * 0.000001);
 
     CAmount blockReward = nFees + GetBlockSubsidy(pindex->nHeight, chainparams.GetConsensus()) + sum;
-    if ( ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 && (ASSETCHAINS_COMMISSION != 0 || ASSETCHAINS_STREAM != 0) )
+    if ( ASSETCHAINS_COMMISSION != 0 || ASSETCHAINS_STREAM != 0 ) //ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 &&
     {
         uint64_t checktoshis;
-        if ( (checktoshis= komodo_commission((CBlock *)&block)) != 0 )
+        if ( (checktoshis= komodo_commission((CBlock *)&block,(int32_t)pindex->nHeight)) != 0 )
         {
-            if ( block.vtx[0].vout.size() == 2 && block.vtx[0].vout[1].nValue == checktoshis )
+            if ( block.vtx[0].vout.size() >= 2 && block.vtx[0].vout[1].nValue == checktoshis )
                 blockReward += checktoshis;
             else fprintf(stderr,"checktoshis %.8f numvouts %d\n",dstr(checktoshis),(int32_t)block.vtx[0].vout.size());
         }
     }
-
-    if ( block.vtx[0].GetValueOut() > blockReward+1 )
+    if ( block.vtx[0].GetValueOut() > blockReward+KOMODO_EXTRASATOSHI )
     {
         if ( ASSETCHAINS_SYMBOL[0] != 0 || pindex->nHeight >= KOMODO_NOTARIES_HEIGHT1 || block.vtx[0].vout[0].nValue > blockReward )
         {
@@ -3636,7 +3638,7 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
     LogPrint("bench", "  - Connect postprocess: %.2fms [%.2fs]\n", (nTime6 - nTime5) * 0.001, nTimePostConnect * 0.000001);
     LogPrint("bench", "- Connect block: %.2fms [%.2fs]\n", (nTime6 - nTime1) * 0.001, nTimeTotal * 0.000001);
     if ( KOMODO_LONGESTCHAIN != 0 && pindexNew->nHeight >= KOMODO_LONGESTCHAIN )
-        KOMODO_INSYNC = 1;
+        KOMODO_INSYNC = (int32_t)pindexNew->nHeight;
     else KOMODO_INSYNC = 0;
     //fprintf(stderr,"connect.%d insync.%d\n",(int32_t)pindexNew->nHeight,KOMODO_INSYNC);
     if ( ASSETCHAINS_SYMBOL[0] == 0 && KOMODO_INSYNC != 0 )
@@ -4303,6 +4305,22 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
     {
         CValidationState stateDummy; int32_t i,j,rejects=0,lastrejects=0;
         //fprintf(stderr,"put block's tx into mempool\n");
+        // Copy all non Z-txs in mempool to temporary mempool because there can be tx in local mempool that make the block invalid.
+        LOCK(mempool.cs);
+        list<CTransaction> transactionsToRemove;
+        BOOST_FOREACH(const CTxMemPoolEntry& e, mempool.mapTx) {
+            const CTransaction &tx = e.GetTx();
+            const uint256 &hash = tx.GetHash();
+            if ( tx.vjoinsplit.size() == 0 ) {
+                transactionsToRemove.push_back(tx);
+                tmpmempool.addUnchecked(hash,e,!IsInitialBlockDownload());
+            }
+        }
+        BOOST_FOREACH(const CTransaction& tx, transactionsToRemove) {
+            list<CTransaction> removed;
+            mempool.remove(tx, removed, false);
+        }
+        // add all the txs in the block to the empty mempool.
         while ( 1 )
         {
             for (i=0; i<block.vtx.size(); i++)
@@ -4350,6 +4368,24 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
         //    fprintf(stderr,"check deposit rejection\n");
         LogPrintf("CheckBlockHeader komodo_check_deposit error");
         return(false);
+    }
+    if ( ASSETCHAINS_CC != 0 )
+    {
+        // here we add back all txs from the temp mempool to the main mempool.
+        // which removes any tx locally that were invalid after the block arrives.
+        int invalidtxs = 0;
+        BOOST_FOREACH(const CTxMemPoolEntry& e, tmpmempool.mapTx) {
+            CTransaction tx = e.GetTx();
+            CValidationState state; bool fMissingInputs,fOverrideFees = false;
+
+            if (AcceptToMemoryPool(mempool, state, tx, false, &fMissingInputs, !fOverrideFees) == false )
+                invalidtxs++;
+            //else fprintf(stderr, "added mempool tx back to mempool\n");
+        }
+        if ( 0 && invalidtxs > 0 )
+            fprintf(stderr, "number of invalid txs: %d\n",invalidtxs );
+        // empty the temp mempool for next time.
+        tmpmempool.clear();
     }
     return true;
 }
@@ -4481,7 +4517,15 @@ bool AcceptBlockHeader(int32_t *futureblockp,const CBlockHeader& block, CValidat
         if (ppindex)
             *ppindex = pindex;
         if ( pindex != 0 && pindex->nStatus & BLOCK_FAILED_MASK )
-            return state.Invalid(error("%s: block is marked invalid", __func__), 0, "duplicate");
+        {
+            if ( ASSETCHAINS_CC == 0 )
+                return state.Invalid(error("%s: block is marked invalid", __func__), 0, "duplicate");
+            else
+            {
+                fprintf(stderr,"reconsider block %s\n",hash.GetHex().c_str());
+                pindex->nStatus &= ~BLOCK_FAILED_MASK;
+            }
+        }
         /*if ( pindex != 0 && hash == komodo_requestedhash )
         {
             fprintf(stderr,"AddToBlockIndex A komodo_requestedhash %s\n",komodo_requestedhash.ToString().c_str());

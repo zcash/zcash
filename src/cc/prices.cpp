@@ -129,6 +129,7 @@ bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
 
 int64_t AddTokensInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,char *destaddr,uint256 tolenid,int64_t total,int32_t maxinputs)
 {
+    // add threshold check
     int64_t nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t vout,n = 0;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     SetCCunspents(unspentOutputs,destaddr);
