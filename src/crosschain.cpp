@@ -25,6 +25,7 @@
 
 
 int NOTARISATION_SCAN_LIMIT_BLOCKS = 1440;
+CBlockIndex *komodo_getblockindex(uint256 hash);
 
 
 /* On KMD */
