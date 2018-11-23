@@ -6467,7 +6467,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         return true;
     }
 
-fprintf(stderr,"netmsg: %s\n", strCommand.c_str());
+//fprintf(stderr,"netmsg: %s\n", strCommand.c_str());
 
     if (strCommand == "version")
     {
@@ -6844,7 +6844,7 @@ fprintf(stderr,"netmsg: %s\n", strCommand.c_str());
 
         if (chainActive.LastTip() != 0 && chainActive.LastTip()->GetHeight() > 100000 && IsInitialBlockDownload())
         {
-            fprintf(stderr,"dont process getheaders during initial download\n");
+            //fprintf(stderr,"dont process getheaders during initial download\n");
             return true;
         }
         CBlockIndex* pindex = NULL;
@@ -6854,7 +6854,7 @@ fprintf(stderr,"netmsg: %s\n", strCommand.c_str());
             BlockMap::iterator mi = mapBlockIndex.find(hashStop);
             if (mi == mapBlockIndex.end())
             {
-                fprintf(stderr,"mi == end()\n");
+                //fprintf(stderr,"mi == end()\n");
                 return true;
             }
             pindex = (*mi).second;
@@ -6883,7 +6883,6 @@ fprintf(stderr,"netmsg: %s\n", strCommand.c_str());
                 if (--nLimit <= 0 || pindex->GetBlockHash() == hashStop)
                     break;
             }
-fprintf(stderr,"send headers\n");
             pfrom->PushMessage("headers", vHeaders);
         }
         /*else if ( IS_KOMODO_NOTARY != 0 )
