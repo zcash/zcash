@@ -266,7 +266,7 @@ TxProof GetAssetchainProof(uint256 hash)
         if (blockHash.IsNull())
             throw std::runtime_error("tx still in mempool");
 
-        blockIndex = mapBlockIndex[blockHash];
+        blockIndex = komodo_getblockindex(blockHash);
         int h = blockIndex->GetHeight();
         // The assumption here is that the first notarisation for a height GTE than
         // the transaction block height will contain the corresponding MoM. If there

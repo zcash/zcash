@@ -5172,7 +5172,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
             {
                 if ( IsMine(*pwalletMain,address) == 0 )
                     continue;
-                if ( GetTransaction(out.tx->GetHash(),tx,hashBlock,true) != 0 && (pindex= mapBlockIndex[hashBlock]) != 0 )
+                if ( GetTransaction(out.tx->GetHash(),tx,hashBlock,true) != 0 && (pindex= komodo_getblockindex(hashBlock)) != 0 )
                 {
                     array = komodo_addutxo(array,&numkp,&maxkp,(uint32_t)pindex->nTime,(uint64_t)nValue,out.tx->GetHash(),out.i,(char *)CBitcoinAddress(address).ToString().c_str(),hashbuf,(CScript)pk);
                 }

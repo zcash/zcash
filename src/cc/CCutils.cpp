@@ -436,7 +436,7 @@ int64_t CCduration(int32_t &numblocks,uint256 txid)
         //fprintf(stderr,"CCduration no hashBlock for txid %s\n",uint256_str(str,txid));
         return(0);
     }
-    else if ( (pindex= mapBlockIndex[hashBlock]) == 0 || (txtime= pindex->nTime) == 0 || (txheight= pindex->GetHeight()) <= 0 )
+    else if ( (pindex= komodo_getblockindex(hashBlock)) == 0 || (txtime= pindex->nTime) == 0 || (txheight= pindex->GetHeight()) <= 0 )
     {
         fprintf(stderr,"CCduration no txtime %u or txheight.%d %p for txid %s\n",txtime,txheight,pindex,uint256_str(str,txid));
         return(0);

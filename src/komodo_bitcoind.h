@@ -578,6 +578,12 @@ uint32_t komodo_txtime(uint64_t *valuep,uint256 hash, int32_t n, char *destaddr)
     return(tx.nLockTime);
 }
 
+CBlockIndex *komodo_getblockindex(uint256 hash)
+{
+    BlockMap::const_iterator it = mapBlockIndex.find(hash);
+    return((it != mapBlockIndex.end()) ? it->second : NULL);
+}
+
 uint32_t komodo_txtime2(uint64_t *valuep,uint256 hash,int32_t n,char *destaddr)
 {
     CTxDestination address; CBlockIndex *pindex; CTransaction tx; uint256 hashBlock; uint32_t txtime = 0;
@@ -591,7 +597,7 @@ uint32_t komodo_txtime2(uint64_t *valuep,uint256 hash,int32_t n,char *destaddr)
         //fprintf(stderr,"ERROR: %s/v%d locktime.%u\n",hash.ToString().c_str(),n,(uint32_t)tx.nLockTime);
         return(0);
     }
-    if ( (pindex= mapBlockIndex[hashBlock]) != 0 )
+    if ( (pindex= komodo_getblockindex(hashBlock)) != 0 )
         txtime = pindex->nTime;
     else txtime = tx.nLockTime;
     //fprintf(stderr,"%s/v%d locktime.%u\n",hash.ToString().c_str(),n,(uint32_t)tx.nLockTime);
@@ -1024,7 +1030,7 @@ uint32_t komodo_interest_args(uint32_t *txheighttimep,int32_t *txheightp,uint32_
     uint32_t locktime = 0;
     if ( n < tx.vout.size() )
     {
-        if ( (pindex= mapBlockIndex[hashBlock]) != 0 )
+        if ( (pindex= komodo_getblockindex(hashBlock)) != 0 )
         {
             *valuep = tx.vout[n].nValue;
             *txheightp = pindex->GetHeight();

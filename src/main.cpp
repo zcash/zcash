@@ -5065,7 +5065,7 @@ CBlockIndex *komodo_ensure(CBlock *pblock, uint256 hash)
 CBlockIndex *oldkomodo_ensure(CBlock *pblock, uint256 hash)
 {
     CBlockIndex *pindex=0,*previndex=0;
-    if ( (pindex = mapBlockIndex[hash]) == 0 )
+    if ( (pindex = komodo_getblockindex(hash)) == 0 )
     {
         pindex = new CBlockIndex();
         if (!pindex)
@@ -7720,7 +7720,7 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
             }
         }
         /*CBlockIndex *pindex;
-        if ( komodo_requestedhash != zero && komodo_requestedcount < 16 && (pindex= mapBlockIndex[komodo_requestedhash]) != 0 )
+        if ( komodo_requestedhash != zero && komodo_requestedcount < 16 && (pindex= komodo_getblockindex(komodo_requestedhash)) != 0 )
         {
             LogPrint("net","komodo_requestedhash.%d request %s to nodeid.%d\n",komodo_requestedcount,komodo_requestedhash.ToString().c_str(),pto->GetId());
             fprintf(stderr,"komodo_requestedhash.%d request %s to nodeid.%d\n",komodo_requestedcount,komodo_requestedhash.ToString().c_str(),pto->GetId());
