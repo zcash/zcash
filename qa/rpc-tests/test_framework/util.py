@@ -198,6 +198,21 @@ def start_node(i, dirname, extra_args=None, rpchost=None, timewait=None, binary=
     Start a komodod and return RPC connection to it
     """
     datadir = os.path.join(dirname, "node"+str(i))
+    # creating special config in case of cryptocondition asset chain test
+    if extra_args[0] == '-ac_name=REGTEST':
+        configpath = datadir + "/REGTEST.conf"
+        with open(configpath, "w+") as config:
+            config.write("regtest=1\n")
+            config.write("rpcuser=rt\n")
+            config.write("rpcpassword=rt\n")
+            port = extra_args[3]
+            config.write("rpcport=" + (port[9:]) + "\n")
+            config.write("server=1\n")
+            config.write("txindex=1\n")
+            config.write("rpcworkqueue=256\n")
+            config.write("rpcallowip=127.0.0.1\n")
+            config.write("bind=127.0.0.1\n")
+            config.write("rpcbind=127.0.0.1")
     if binary is None:
         binary = os.getenv("BITCOIND", "komodod")
     args = [ binary, "-datadir="+datadir, "-keypool=1", "-discover=0", "-rest" ]
@@ -223,10 +238,8 @@ def start_node(i, dirname, extra_args=None, rpchost=None, timewait=None, binary=
     if os.getenv("PYTHON_DEBUG", ""):
         print "start_node: calling komodo-cli -rpcwait getblockcount returned"
     devnull.close()
-    if extra_args[0] == '-ac_name=REGTEST':
-        url = "http://rt:rt@%s:%d" % (rpchost or '127.0.0.1', 64368)
-    else:
-        url = "http://rt:rt@%s:%d" % (rpchost or '127.0.0.1', rpc_port(i))
+    port = extra_args[3]
+    url = "http://rt:rt@%s:%d" % (rpchost or '127.0.0.1', int(port[9:]))
     print("connecting to " + url)
     if timewait is not None:
         proxy = AuthServiceProxy(url, timeout=timewait)
