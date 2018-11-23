@@ -1829,7 +1829,6 @@ int64_t komodo_newcoins(int64_t *zfundsp,int32_t nHeight,CBlock *pblock)
     for (i=0; i<n; i++)
     {
         CTransaction vintx,&tx = pblock->vtx[i];
-        zfunds += (tx.GetValueOut() - tx.GetShieldedValueIn());
         if ( (m= tx.vin.size()) > 0 )
         {
             for (j=0; j<m; j++)
@@ -1861,6 +1860,12 @@ int64_t komodo_newcoins(int64_t *zfundsp,int32_t nHeight,CBlock *pblock)
                     voutsum += tx.vout[j].nValue;
             }
         }
+        BOOST_FOREACH(const JSDescription& joinsplit, tx.vjoinsplit)
+        {
+            zfunds -= joinsplit.vpub_new;
+            zfunds += joinsplit.vpub_old;
+        }
+        zfunds += tx.valueBalance;
     }
     *zfundsp = zfunds;
     if ( ASSETCHAINS_SYMBOL[0] == 0 && (voutsum-vinsum) == 100003*SATOSHIDEN ) // 15 times
