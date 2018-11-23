@@ -115,11 +115,7 @@ UniValue getiguanajson(const UniValue& params, bool fHelp)
 
 UniValue getnotarysendmany(const UniValue& params, bool fHelp)
 {
-
-    // era:
     int era = getera(time(NULL));
-    // Amount
-    CAmount nAmount = AmountFromValue(10);
 
     UniValue ret(UniValue::VOBJ);
     for (int i = 0; i<num_notaries_STAKED[era]; i++)
@@ -127,8 +123,7 @@ UniValue getnotarysendmany(const UniValue& params, bool fHelp)
         char Raddress[18]; uint8_t pubkey33[33];
         decode_hex(pubkey33,33,(char *)notaries_STAKED[era][i][1]);
         pubkey2addr((char *)Raddress,(uint8_t *)pubkey33);
-        fprintf(stderr, "radd: %s\n",Raddress);
-        ret.push_back(Pair(Raddress,ValueFromAmount(nAmount)));
+        ret.push_back(Pair(Raddress,(int)10);
     }
     return ret;
 }

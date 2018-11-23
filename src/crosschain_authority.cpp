@@ -45,7 +45,7 @@ bool CheckTxAuthority(const CTransaction &tx, CrosschainAuthority auth)
                     printf("seennotary.%i\n",i);
                     goto found;
                 } else {
-                    printf("notary.%i is not valid!\n",i);
+                    //printf("notary.%i is not valid!\n",i);
                 }
             }
         }
