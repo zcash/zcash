@@ -6843,15 +6843,20 @@ fprintf(stderr,"netmsg: %s\n", strCommand.c_str());
         LOCK(cs_main);
 
         if (IsInitialBlockDownload())
+        {
+            fprintf(stderr,"dont process getheaders during initial download\n");
             return true;
-
+        }
         CBlockIndex* pindex = NULL;
         if (locator.IsNull())
         {
             // If locator is null, return the hashStop block
             BlockMap::iterator mi = mapBlockIndex.find(hashStop);
             if (mi == mapBlockIndex.end())
+            {
+                fprintf(stderr,"mi == end()\n");
                 return true;
+            }
             pindex = (*mi).second;
         }
         else
@@ -6878,6 +6883,7 @@ fprintf(stderr,"netmsg: %s\n", strCommand.c_str());
                 if (--nLimit <= 0 || pindex->GetBlockHash() == hashStop)
                     break;
             }
+fprintf(stderr,"send headers\n");
             pfrom->PushMessage("headers", vHeaders);
         }
         /*else if ( IS_KOMODO_NOTARY != 0 )
