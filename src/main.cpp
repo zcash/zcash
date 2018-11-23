@@ -1380,7 +1380,7 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
         if ( ASSETCHAINS_PUBLIC != 0 )
         {
             return state.DoS(100, error("CheckTransaction(): this is a public chain, no privacy allowed"),
-                             REJECT_INVALID, "bad-txns-acprivacy-chain");
+                             REJECT_INVALID, "bad-txns-acpublic-chain");
         }
         if (joinsplit.vpub_old < 0) {
             return state.DoS(100, error("CheckTransaction(): joinsplit.vpub_old negative"),

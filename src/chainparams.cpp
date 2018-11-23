@@ -218,6 +218,7 @@ void komodo_setactivation(int32_t height)
     mainParams.consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight = height;
     mainParams.consensus.vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight = height;
     ASSETCHAINS_SAPLING = height;
+    fprintf(stderr,"SET SAPLING ACTIVATION height.%d\n",height);
 }
 
 void *chainparams_commandline(void *ptr)
