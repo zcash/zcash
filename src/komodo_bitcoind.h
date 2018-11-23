@@ -1865,7 +1865,7 @@ int64_t komodo_newcoins(int64_t *zfundsp,int32_t nHeight,CBlock *pblock)
             zfunds -= joinsplit.vpub_new;
             zfunds += joinsplit.vpub_old;
         }
-        zfunds += tx.valueBalance;
+        zfunds -= tx.valueBalance;
     }
     *zfundsp = zfunds;
     if ( ASSETCHAINS_SYMBOL[0] == 0 && (voutsum-vinsum) == 100003*SATOSHIDEN ) // 15 times
