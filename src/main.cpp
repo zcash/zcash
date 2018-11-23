@@ -1193,7 +1193,7 @@ bool ContextualCheckTransaction(
     return true;
 }
 
-bool CheckTransaction(const CTransaction& tx, CValidationState &state,
+bool CheckTransaction(uint32_t tiptime,const CTransaction& tx, CValidationState &state,
                       libzcash::ProofVerifier& verifier)
 {
     static uint256 array[64]; static int32_t numbanned,indallvouts; int32_t j,k,n;
@@ -1218,7 +1218,7 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state,
         transactionsValidated.increment();
     }
 
-    if (!CheckTransactionWithoutProofVerification(tx, state)) {
+    if (!CheckTransactionWithoutProofVerification(tiptime,tx, state)) {
         return false;
     } else {
         // Ensure that zk-SNARKs v|| y
@@ -1254,10 +1254,10 @@ int32_t komodo_isnotaryvout(char *coinaddr) // from ac_private chains only
     return(0);
 }
 
-bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidationState &state)
+bool CheckTransactionWithoutProofVerification(uint32_t tiptime,const CTransaction& tx, CValidationState &state)
 {
     // Basic checks that don't depend on any context
-
+    int32_t invalid_private_taddr=0,z_z=0,z_t=0,t_z=0,acpublic = ASSETCHAINS_PUBLIC;
     /**
      * Previously:
      * 1. The consensus rule below was:
@@ -1341,7 +1341,10 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
                 char destaddr[65];
                 Getscriptaddress(destaddr,txout.scriptPubKey);
                 if ( komodo_isnotaryvout(destaddr) == 0 )
-                    return state.DoS(100, error("CheckTransaction(): this is a private chain, no public allowed"),REJECT_INVALID, "bad-txns-acprivacy-chain");
+                {
+                    invalid_private_taddr = 1;
+                    //return state.DoS(100, error("CheckTransaction(): this is a private chain, no public allowed"),REJECT_INVALID, "bad-txns-acprivacy-chain");
+                }
             }
         }
         if ( txout.scriptPubKey.size() > IGUANA_MAXSCRIPTSIZE )
@@ -1357,12 +1360,18 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
         return state.DoS(100, error("CheckTransaction(): tx.valueBalance has no sources or sinks"),
                             REJECT_INVALID, "bad-txns-valuebalance-nonzero");
     }
-    if ( ASSETCHAINS_PUBLIC != 0 && (tx.vShieldedSpend.empty() == 0 || tx.vShieldedOutput.empty() == 0) )
+    if ( ASSETCHAINS_SYMBOL[0] == 0 && tiptime >= KOMODO_SAPLING_DEADLINE )
+        acpublic = 1;
+    if ( acpublic != 0 && (tx.vShieldedSpend.empty() == 0 || tx.vShieldedOutput.empty() == 0) )
     {
         return state.DoS(100, error("CheckTransaction(): this is a public chain, no sapling allowed"),
                          REJECT_INVALID, "bad-txns-acpublic-chain");
     }
-
+    if ( ASSETCHAINS_PRIVATE != 0 && invalid_private_taddr != 0 && tx.vShieldedSpend.empty() == 0 )
+    {
+        return state.DoS(100, error("CheckTransaction(): this is a private chain, no sapling -> taddr"),
+                         REJECT_INVALID, "bad-txns-acprivate-chain");
+    }
     // Check for overflow valueBalance
     if (tx.valueBalance > MAX_MONEY || tx.valueBalance < -MAX_MONEY) {
         return state.DoS(100, error("CheckTransaction(): abs(tx.valueBalance) too large"),
@@ -1382,10 +1391,15 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
     // Ensure that joinsplit values are well-formed
     BOOST_FOREACH(const JSDescription& joinsplit, tx.vjoinsplit)
     {
-        if ( ASSETCHAINS_PUBLIC != 0 )
+        if ( acpublic != 0 )
         {
             return state.DoS(100, error("CheckTransaction(): this is a public chain, no privacy allowed"),
                              REJECT_INVALID, "bad-txns-acpublic-chain");
+        }
+        if ( tiptime >= KOMODO_SAPLING_DEADLINE )
+        {
+            return state.DoS(100, error("CheckTransaction(): no more sprout after deadline"),
+                             REJECT_INVALID, "bad-txns-sprout-expired");
         }
         if (joinsplit.vpub_old < 0) {
             return state.DoS(100, error("CheckTransaction(): joinsplit.vpub_old negative"),
@@ -1417,8 +1431,20 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
             return state.DoS(100, error("CheckTransaction(): txout total out of range"),
                              REJECT_INVALID, "bad-txns-txouttotal-toolarge");
         }
+        if ( joinsplit.vpub_new == 0 && joinsplit.vpub_old == 0 )
+            z_z++;
+        else if ( joinsplit.vpub_new == 0 && joinsplit.vpub_old != 0 )
+            z_t++;
+        else if ( joinsplit.vpub_new != 0 && joinsplit.vpub_old == 0 )
+            t_z++;
     }
-    if ( ASSETCHAINS_TXPOW != 0 && tx.vjoinsplit.size() == 0 )
+    if ( ASSETCHAINS_PRIVATE != 0 && invalid_private_taddr != 0 )
+    {
+        fprintf(stderr,"found taddr in private chain: z_z.%d z_t.%d t_z.%d\n",z_z,z_t,t_z);
+        if ( z_z != 0 || t_z != 0 )
+            return state.DoS(100, error("CheckTransaction(): this is a private chain, only sprout -> taddr allowed until deadline"),REJECT_INVALID, "bad-txns-acprivacy-chain");
+    }
+    if ( ASSETCHAINS_TXPOW != 0 )
     {
         // genesis coinbase 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b
         uint256 txid = tx.GetHash();
@@ -1569,10 +1595,12 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
     AssertLockHeld(cs_main);
     if (pfMissingInputs)
         *pfMissingInputs = false;
-
+    uint32_t tiptime;
     int flag=0,nextBlockHeight = chainActive.Height() + 1;
     auto consensusBranchId = CurrentEpochBranchId(nextBlockHeight, Params().GetConsensus());
-
+    if ( nextBlockHeight <= 1 || chainActive.LastTip() == 0 )
+        tiptime = (uint32_t)time(NULL);
+    else tiptime = (uint32_t)chainActive.LastTip()->nTime;
     // Node operator can choose to reject tx by number of transparent inputs
     static_assert(std::numeric_limits<size_t>::max() >= std::numeric_limits<int64_t>::max(), "size_t too small");
     size_t limit = (size_t) GetArg("-mempooltxinputlimit", 0);
@@ -1593,7 +1621,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         //fprintf(stderr,"AcceptToMemoryPool komodo_validate_interest failure\n");
         return error("AcceptToMemoryPool: komodo_validate_interest failed");
     }
-    if (!CheckTransaction(tx, state, verifier))
+    if (!CheckTransaction(tiptime,tx, state, verifier))
     {
         return error("AcceptToMemoryPool: CheckTransaction failed");
     }
@@ -4557,7 +4585,7 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
                 libzcash::ProofVerifier& verifier,
                 bool fCheckPOW, bool fCheckMerkleRoot)
 {
-    uint8_t pubkey33[33]; uint256 hash;
+    uint8_t pubkey33[33]; uint256 hash; uint32_t tiptime = (uint32_t)block.nTime;
     // These are checks that are independent of context.
     hash = block.GetHash();
     // Check that the header is valid (particularly PoW).  This is mostly redundant with the call in AcceptBlockHeader.
@@ -4569,6 +4597,8 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
             return false;
         }
     }
+    if ( pindex != 0 && pindex->pprev != 0 )
+        tiptime = (uint32_t)pindex->pprev->nTime;
     if ( fCheckPOW )
     {
         //if ( !CheckEquihashSolution(&block, Params()) )
@@ -4682,7 +4712,7 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
         const CTransaction& tx = block.vtx[i];
         if ( komodo_validate_interest(tx,height == 0 ? komodo_block2height((CBlock *)&block) : height,block.nTime,0) < 0 )
             return error("CheckBlock: komodo_validate_interest failed");
-        if (!CheckTransaction(tx, state, verifier))
+        if (!CheckTransaction(tiptime,tx, state, verifier))
             return error("CheckBlock: CheckTransaction failed");
     }
     unsigned int nSigOps = 0;

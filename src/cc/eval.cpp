@@ -98,9 +98,10 @@ bool Eval::GetSpendsConfirmed(uint256 hash, std::vector<CTransaction> &spends) c
 
 bool Eval::GetTxUnconfirmed(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock) const
 {
-    if (!myGetTransaction(hash, txOut,hashBlock)) {
+    return(myGetTransaction(hash, txOut,hashBlock);
+    /*if (!myGetTransaction(hash, txOut,hashBlock)) {
         return(GetTransaction(hash, txOut,hashBlock));
-    } else return(true);
+    } else return(true);*/
 }
 
 
