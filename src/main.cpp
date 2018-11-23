@@ -1357,6 +1357,11 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
         return state.DoS(100, error("CheckTransaction(): tx.valueBalance has no sources or sinks"),
                             REJECT_INVALID, "bad-txns-valuebalance-nonzero");
     }
+    if ( ASSETCHAINS_PUBLIC != 0 && (tx.vShieldedSpend.empty() == 0 || tx.vShieldedOutput.empty() == 0) )
+    {
+        return state.DoS(100, error("CheckTransaction(): this is a public chain, no sapling allowed"),
+                         REJECT_INVALID, "bad-txns-acpublic-chain");
+    }
 
     // Check for overflow valueBalance
     if (tx.valueBalance > MAX_MONEY || tx.valueBalance < -MAX_MONEY) {
