@@ -120,6 +120,7 @@ UniValue getnotarysendmany(const UniValue& params, bool fHelp)
             "getnotarysendmany ( era amount_to_send )\n"
             "\nReturn a sendmany array for all notary address in defined era.\n"
         );
+    // era
     int era = 0;
     if (params.size() > 0) {
         era = params[0].get_int();
@@ -128,8 +129,9 @@ UniValue getnotarysendmany(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "era is not valid");
     }
     // Amount
+    CAmount nAmount;
     if (params.size() > 1)
-        CAmount nAmount = AmountFromValue(params[1]);
+        nAmount = AmountFromValue(params[1]);
 
     if (nAmount <= 0)
         throw JSONRPCError(RPC_TYPE_ERROR, "Invalid amount for send");
