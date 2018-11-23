@@ -5151,7 +5151,14 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
         }
         CheckBlockIndex();
         if (!ret && futureblock == 0)
+        {
+            if ( KOMODO_INSYNC == 0 )
+            {
+                fprintf(stderr,"request headers from failed process block peer\n");
+                pfrom->PushMessage("getheaders", chainActive.GetLocator(chainActive.LastTip()), uint256());
+            }
             return error("%s: AcceptBlock FAILED", __func__);
+        }
         //else fprintf(stderr,"added block %s %p\n",pindex->GetBlockHash().ToString().c_str(),pindex->pprev);
     }
 
@@ -7598,7 +7605,7 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
         if (pindexBestHeader == NULL)
             pindexBestHeader = chainActive.Tip();
         bool fFetch = state.fPreferredDownload || (nPreferredDownload == 0 && !pto->fClient && !pto->fOneShot); // Download if this is a nice peer, or we have no nice peers and this one might do.
-        if (KOMODO_INSYNC == 0 || (!state.fSyncStarted && !pto->fClient && !fImporting && !fReindex)) {
+        if (!state.fSyncStarted && !pto->fClient && !fImporting && !fReindex) {
             // Only actively request headers from a single peer, unless we're close to today.
             if ((nSyncStarted == 0 && fFetch) || pindexBestHeader->GetBlockTime() > GetAdjustedTime() - 24 * 60 * 60) {
                 state.fSyncStarted = true;
