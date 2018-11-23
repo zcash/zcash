@@ -43,7 +43,7 @@ class CryptoConditionsTest (BitcoinTestFramework):
         self.privkey1 = "UtdydP56pGTFmawHzHr1wDrc4oUwCNW1ttX8Pc3KrvH3MA8P49Wi"
         self.nodes   = start_nodes(self.num_nodes, self.options.tmpdir,
                     extra_args=[[
-                    # always give -ac_name as first extra_arg
+                    # always give -ac_name as first extra_arg and port as third
                     '-ac_name=REGTEST',
                     '-conf='+self.options.tmpdir+'/node0/REGTEST.conf',
                     '-port=64367',
@@ -57,7 +57,7 @@ class CryptoConditionsTest (BitcoinTestFramework):
                     '-ac_cc=2',
                     '-whitelist=127.0.0.1',
                     '-debug',
-                    '-daemon',
+                    '--daemon',
                     '-rpcuser=rt',
                     '-rpcpassword=rt'
                     ],
@@ -75,7 +75,7 @@ class CryptoConditionsTest (BitcoinTestFramework):
                     '-whitelist=127.0.0.1',
                     '-debug',
                     '-addnode=127.0.0.1:64367',
-                    '-daemon',
+                    '--daemon',
                     '-rpcuser=rt',
                     '-rpcpassword=rt']]
         )
@@ -674,6 +674,7 @@ class CryptoConditionsTest (BitcoinTestFramework):
         #     assert_success(result)
         #     globals()["oracle_{}".format(f)] = self.send_and_mine(result['hex'], rpc)
 
+
     def run_test (self):
         print("Mining blocks...")
         rpc     = self.nodes[0]
@@ -688,9 +689,13 @@ class CryptoConditionsTest (BitcoinTestFramework):
         rpc.importprivkey(self.privkey)
         rpc1.importprivkey(self.privkey1)
         self.run_faucet_tests()
+        self.sync_all()
         self.run_rewards_tests()
+        self.sync_all()
         self.run_dice_tests()
+        self.sync_all()
         self.run_token_tests()
+        self.sync_all()
         self.run_oracles_tests()
 
 
