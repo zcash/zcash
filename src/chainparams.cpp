@@ -218,7 +218,7 @@ void CChainParams::SetCheckpointData(CChainParams::CCheckpointData checkpointDat
 int32_t MAX_BLOCK_SIZE(int32_t height)
 {
     if ( height >= mainParams.consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight )
-        return(4000000);
+        return(4096 * 1024);
     else return(2000000);
 }
 void komodo_setactivation(int32_t height)
