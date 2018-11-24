@@ -52,7 +52,7 @@ static const char *notaries_STAKED[NUM_STAKED_ERAS][64][2] =
         {"alright", "0285657c689b903218c97f5f10fe1d10ace2ed6595112d9017f54fb42ea1c1dda8" }, //RXmXeQ8LfJK6Y1aTM97cRz9Gu5f6fmR3sg
         {"webworker01", "031d1fb39ae4dca28965c3abdbd21faa0f685f6d7b87a60561afa7c448343fef6d" }, //RGsQiArk5sTmjXZV9UzGMW5njyvtSnsTN8
         {"CrisF", "024d19acf0d5de212cdd50326cd143292545d366a71b2b9c6df9f2110de2dfa1f2" }, // RKtAD2kyRRMx4EiG1eeTNprF5h2nmGbzzu
-        {"smk762", "0330e8fbdb6d560095d33da86a139c755b7896eb5b85239966fa7b235db16d4037" }, // RFB8zewwMNcLMPuQ84B6PofxJBBsuYxiN8
+        {"smk762", "029f6c1f38c4d6825acb3b4b5147f7992e943b617cdaa0f4f5f36187e239d52d5a" }, // RPy6Xj2LWrxNoEW9YyREDgBZDZZ5qURXBU
         {"jorian", "0288e682c1ac449f1b85c4acb2d0bcd216d5df34c15fd18b8a8dd5fa64b8ece8ef" }, // RR1yT5aB19VwFoUCGTW4q4pk4qmhHEEE4t
         {"TonyL", "021a559101e355c907d9c553671044d619769a6e71d624f68bfec7d0afa6bd6a96" }, // RHq3JsvLxU45Z8ufYS6RsDpSG4wi6ucDev
         {"Emman", "038f642dcdacbdf510b7869d74544dbc6792548d9d1f8d73a999dd9f45f513c935" }, //RN2KsQGW36Ah4NorJDxLJp2xiYJJEzk9Y6
