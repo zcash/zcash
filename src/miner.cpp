@@ -1555,14 +1555,15 @@ void static BitcoinMiner()
             }
             while (true)
             {
-                if ( KOMODO_INSYNC == 0 )
+                /*if ( KOMODO_INSYNC == 0 )
                 {
                     KOMODO_LONGESTCHAIN = komodo_longestchain();
                     fprintf(stderr,"Mining when blockchain might not be in sync longest.%d vs %d\n",KOMODO_LONGESTCHAIN,Mining_height);
                     if ( KOMODO_LONGESTCHAIN != 0 && Mining_height >= KOMODO_LONGESTCHAIN )
                         KOMODO_INSYNC = Mining_height;
                     sleep(3);
-                }
+                }*/
+                komodo_longestchain();
                 // Hash state
                 KOMODO_CHOSEN_ONE = 0;
                 
