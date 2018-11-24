@@ -2252,7 +2252,7 @@ bool IsInitialBlockDownload()
         fprintf(stderr,"nullptr in IsInitialDownload\n");
         return true;
     }
-    if (ptr->chainPower < CChainPower(ptr, bigZero, minWork))
+    if (0 && ptr->chainPower < CChainPower(ptr, bigZero, minWork))
     {
         fprintf(stderr,"chainpower insufficient in IsInitialDownload\n");
         return true;
