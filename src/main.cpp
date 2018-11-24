@@ -2220,7 +2220,8 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
 bool IsInitialBlockDownload()
 {
     const CChainParams& chainParams = Params();
-
+    if ( KOMODO_INSYNC != 0 )
+        return(false);
     // Once this function has returned false, it must remain false.
     static std::atomic<bool> latchToFalse{false};
     // Optimization: pre-test latch before taking the lock.
@@ -6896,7 +6897,7 @@ fprintf(stderr,"netmsg: %s\n", strCommand.c_str());
             BlockMap::iterator mi = mapBlockIndex.find(hashStop);
             if (mi == mapBlockIndex.end())
             {
-                fprintf(stderr,"mi == end()\n");
+                //fprintf(stderr,"mi == end()\n");
                 return true;
             }
             pindex = (*mi).second;
