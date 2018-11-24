@@ -12,7 +12,7 @@
 #include "uint256.h"
 #include "arith_uint256.h"
 
-extern int32_t ASSETCHAINS_LWMAPOS;
+//extern int32_t ASSETCHAINS_LWMAPOS;
 
 /** Nodes collect new transactions into a block, hash them into a hash tree,
  * and scan through nonce values to make the block's hash satisfy proof-of-work
@@ -111,9 +111,9 @@ public:
 
     bool IsVerusPOSBlock() const
     {
-        if ( ASSETCHAINS_LWMAPOS != 0 )
+        //if ( ASSETCHAINS_LWMAPOS != 0 )
             return nNonce.IsPOSNonce();
-        else return(0);
+        //else return(0);
     }
 
     void SetVerusPOSTarget(uint32_t nBits)
