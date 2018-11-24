@@ -62,7 +62,7 @@ static const char *notaries_STAKED[NUM_STAKED_ERAS][64][2] =
         {"mylo", "03f6b7fcaf0b8b8ec432d0de839a76598b78418dadd50c8e5594c0e557d914ec09" }, // RXN4hoZkhUkkrnef9nTUDw3E3vVALAD8Kx
         {"greentea", "02054c14ae81838a063d22a75eaa3c961415f6825a57c8b8e4148d19dad64f128e" }, // REF7R76WpL1v7nSXjjiNHtRa2xYtq5qk1p
         {"CMaurice", "025830ce81bd1301fb67d5872344efa7a9ff99ae85fe1234f18c085db9072b740f" }, // RX7pXUaV24xFn6DVKV8t3PrRF3gKw6TBjf
-        {"kmdkrazy", "02f7597468703c1c5c8465dd6d43acaae697df9df30bed21494d193412a1ea193e" }, // RWHGbrLSP89fTzNVF9U9xiekDYJqcibTca
+        {"kmdkrazy", "02da444a2627d420f1f622fcdfb9bddb67d6d4241ad6b4d5054716ddbde8a25dfb" }, // RJPJBbHcm5mkAxhkkERHRfEE9Cvkr4Euoi
         {"Bar_F1sh_Rel", "0395f2d9dd9ccb78caf74bff49b6d959afb95af746462e1b35f4a167d8e82b3666" }, // RBbLxJagCA9QHDazQvfnDZe874V1K4Gu8t
         {"zatJUM", "030fff499b6dc0215344b28a0b6b4becdfb00cd34cd1b36b983ec14f47965fd4bc" }, // RSoEDLBasth7anxS8gbkg6KgeGiz8rhqv1
         {"dwy", "03669457b2934d98b5761121dd01b243aed336479625b293be9f8c43a6ae7aaeff" }, // RKhZMqRF361FSGFAzstP5AhozekPjoVh5q
