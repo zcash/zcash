@@ -2232,13 +2232,13 @@ bool IsInitialBlockDownload()
 
     if (fImporting || fReindex)
     {
-        fprintf(stderr,"IsInitialBlockDownload: fImporting %d || %d fReindex\n",(int32_t)fImporting,(int32_t)fReindex);
+        //fprintf(stderr,"IsInitialBlockDownload: fImporting %d || %d fReindex\n",(int32_t)fImporting,(int32_t)fReindex);
         return true;
     }
 
     if (fCheckpointsEnabled && chainActive.Height() < Checkpoints::GetTotalBlocksEstimate(chainParams.Checkpoints()))
     {
-        fprintf(stderr,"IsInitialBlockDownload: checkpoint -> initialdownload - %d blocks\n", Checkpoints::GetTotalBlocksEstimate(chainParams.Checkpoints()));
+        //fprintf(stderr,"IsInitialBlockDownload: checkpoint -> initialdownload - %d blocks\n", Checkpoints::GetTotalBlocksEstimate(chainParams.Checkpoints()));
         return true;
     }
 
@@ -2249,7 +2249,7 @@ bool IsInitialBlockDownload()
 
     if (ptr == NULL)
     {
-        fprintf(stderr,"nullptr in IsInitialDownload\n");
+        //fprintf(stderr,"nullptr in IsInitialDownload\n");
         return true;
     }
     if (0 && ptr->chainPower < CChainPower(ptr, bigZero, minWork))
@@ -2265,8 +2265,7 @@ bool IsInitialBlockDownload()
     {
         LogPrintf("Leaving InitialBlockDownload (latching to false)\n");
         latchToFalse.store(true, std::memory_order_relaxed);
-    }
-    else fprintf(stderr,"state.%d  ht.%d vs %d, t.%u\n",state,(int32_t)chainActive.Height(),(uint32_t)ptr->GetHeight(),(int32_t)ptr->GetBlockTime());
+    } // else fprintf(stderr,"state.%d  ht.%d vs %d, t.%u\n",state,(int32_t)chainActive.Height(),(uint32_t)ptr->GetHeight(),(int32_t)ptr->GetBlockTime());
     return state;
 }
 
@@ -5200,7 +5199,7 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
         {
             if ( ASSETCHAINS_SYMBOL[0] == 0 )
             {
-                fprintf(stderr,"request headers from failed process block peer\n");
+                //fprintf(stderr,"request headers from failed process block peer\n");
                 pfrom->PushMessage("getheaders", chainActive.GetLocator(chainActive.LastTip()), uint256());
             }
             komodo_longestchain();
