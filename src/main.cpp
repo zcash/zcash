@@ -1433,9 +1433,9 @@ bool CheckTransactionWithoutProofVerification(uint32_t tiptime,const CTransactio
         if ( joinsplit.vpub_new == 0 && joinsplit.vpub_old == 0 )
             z_z++;
         else if ( joinsplit.vpub_new == 0 && joinsplit.vpub_old != 0 )
-            z_t++;
-        else if ( joinsplit.vpub_new != 0 && joinsplit.vpub_old == 0 )
             t_z++;
+        else if ( joinsplit.vpub_new != 0 && joinsplit.vpub_old == 0 )
+            z_t++;
     }
     if ( ASSETCHAINS_PRIVATE != 0 && invalid_private_taddr != 0 )
     {
