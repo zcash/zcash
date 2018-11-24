@@ -408,7 +408,7 @@ namespace {
         CNodeState *state = State(nodeid);
         assert(state != NULL);
 
-        /*if (!state->hashLastUnknownBlock.IsNull()) {
+        if (!state->hashLastUnknownBlock.IsNull()) {
             BlockMap::iterator itOld = mapBlockIndex.find(state->hashLastUnknownBlock);
             if (itOld != mapBlockIndex.end() && itOld->second != 0 && (itOld->second->chainPower > CChainPower()))
             {
@@ -416,17 +416,7 @@ namespace {
                     state->pindexBestKnownBlock = itOld->second;
                 state->hashLastUnknownBlock.SetNull();
             }
-        }*/
-        if (!state->hashLastUnknownBlock.IsNull()) {
-            BlockMap::iterator itOld = mapBlockIndex.find(state->hashLastUnknownBlock);
-            if (itOld != mapBlockIndex.end() && itOld->second != 0 && (itOld->second->nChainWork > 0))
-            {
-                if (state->pindexBestKnownBlock == NULL || itOld->second->nChainWork >= state->pindexBestKnownBlock->nChainWork)
-                    state->pindexBestKnownBlock = itOld->second;
-                state->hashLastUnknownBlock.SetNull();
-            }
         }
-
     }
 
     /** Update tracking information about which blocks a peer is assumed to have. */
