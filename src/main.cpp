@@ -2259,7 +2259,8 @@ bool IsInitialBlockDownload()
     }
     state = ((chainActive.Height() < ptr->GetHeight() - 24*60) ||
              ptr->GetBlockTime() < (GetTime() - nMaxTipAge));
-
+    if ( KOMODO_INSYNC != 0 )
+        state = false;
     if (!state)
     {
         LogPrintf("Leaving InitialBlockDownload (latching to false)\n");
