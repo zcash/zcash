@@ -221,6 +221,7 @@ int32_t MAX_BLOCK_SIZE(int32_t height)
         return(4096 * 1024);
     else return(2000000);
 }
+
 void komodo_setactivation(int32_t height)
 {
     mainParams.consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight = height;

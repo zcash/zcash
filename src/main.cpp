@@ -3901,6 +3901,7 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
         pblock = &block;
     }
     KOMODO_CONNECTING = (int32_t)pindexNew->GetHeight();
+    fprintf(stderr,"connecting ht.%d maxsize.%d vs %d\n",(int32_t)pindexNew->nHeight,MAX_BLOCK_SIZE(pindexNew->nHeight),(int32_t)pblock->size());
     // Get the current commitment tree
     SproutMerkleTree oldSproutTree;
     SaplingMerkleTree oldSaplingTree;
