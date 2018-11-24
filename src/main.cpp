@@ -5194,7 +5194,7 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
         {
             if ( KOMODO_INSYNC == 0 )
             {
-                fprintf(stderr,"request headers from failed process block peer\n");
+                //fprintf(stderr,"request headers from failed process block peer\n");
                 pfrom->PushMessage("getheaders", chainActive.GetLocator(chainActive.LastTip()), uint256());
             }
             return error("%s: AcceptBlock FAILED", __func__);
