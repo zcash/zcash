@@ -256,6 +256,6 @@ int64_t komodo_current_supply(uint32_t nHeight)
             }
         }
     }
-    return((int64_t)(cur_money + (cur_money * ASSETCHAINS_COMMISSION) / SATOSHIDEN));
+    return((int64_t)(cur_money + (cur_money * ASSETCHAINS_COMMISSION)));
 }
 
