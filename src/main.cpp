@@ -2220,8 +2220,6 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
 bool IsInitialBlockDownload()
 {
     const CChainParams& chainParams = Params();
-    if ( KOMODO_INSYNC != 0 )
-        return(false);
     // Once this function has returned false, it must remain false.
     static std::atomic<bool> latchToFalse{false};
     // Optimization: pre-test latch before taking the lock.
@@ -2234,13 +2232,13 @@ bool IsInitialBlockDownload()
 
     if (fImporting || fReindex)
     {
-        //fprintf(stderr,"IsInitialBlockDownload: fImporting %d || %d fReindex\n",(int32_t)fImporting,(int32_t)fReindex);
+        fprintf(stderr,"IsInitialBlockDownload: fImporting %d || %d fReindex\n",(int32_t)fImporting,(int32_t)fReindex);
         return true;
     }
 
     if (fCheckpointsEnabled && chainActive.Height() < Checkpoints::GetTotalBlocksEstimate(chainParams.Checkpoints()))
     {
-        //fprintf(stderr,"IsInitialBlockDownload: checkpoint -> initialdownload - %d blocks\n", Checkpoints::GetTotalBlocksEstimate(chainParams.Checkpoints()));
+        fprintf(stderr,"IsInitialBlockDownload: checkpoint -> initialdownload - %d blocks\n", Checkpoints::GetTotalBlocksEstimate(chainParams.Checkpoints()));
         return true;
     }
 
@@ -2250,19 +2248,24 @@ bool IsInitialBlockDownload()
     CBlockIndex *ptr = chainActive.Tip();
 
     if (ptr == NULL)
+    {
+        fprintf(stderr,"nullptr in IsInitialDownload\n");
         return true;
+    }
     if (ptr->chainPower < CChainPower(ptr, bigZero, minWork))
+    {
+        fprintf(stderr,"chainpower insufficient in IsInitialDownload\n");
         return true;
-
+    }
     state = ((chainActive.Height() < ptr->GetHeight() - 24*60) ||
              ptr->GetBlockTime() < (GetTime() - nMaxTipAge));
 
-    //fprintf(stderr,"state.%d  ht.%d vs %d, t.%u %u\n",state,(int32_t)chainActive.Height(),(uint32_t)ptr->GetHeight(),(int32_t)ptr->GetBlockTime(),(uint32_t)(GetTime() - chainParams.MaxTipAge()));
     if (!state)
     {
         LogPrintf("Leaving InitialBlockDownload (latching to false)\n");
         latchToFalse.store(true, std::memory_order_relaxed);
     }
+    else fprintf(stderr,"state.%d  ht.%d vs %d, t.%u %u\n",state,(int32_t)chainActive.Height(),(uint32_t)ptr->GetHeight(),(int32_t)ptr->GetBlockTime(),(uint32_t)(GetTime() - chainParams.MaxTipAge()));
     return state;
 }
 
