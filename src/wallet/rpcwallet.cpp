@@ -4979,54 +4979,15 @@ UniValue z_migrate(const UniValue& params, bool fHelp)
     uint32_t branchId = CurrentEpochBranchId(chainActive.Height(), Params().GetConsensus());
     
     UniValue addresses = params[0].get_array();
-    if (addresses.size()==0)
-        throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, fromaddresses array is empty.");
+    if (addresses.size()!=0)
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, fromaddresses isnt empty.");
     
     // Keep track of addresses to spot duplicates
     std::set<std::string> setAddress;
     
     // Sources
     bool containsSaplingZaddrSource = false;
-    for (const UniValue& o : addresses.getValues()) {
-        if (!o.isStr())
-            throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, expected string");
-        
-        std::string address = o.get_str();
-        if (address == "*") {
-            useAny = true;
-        } else if (address == "ANY_TADDR") {
-            useAnyUTXO = true;
-        } else if (address == "ANY_ZADDR") {
-            useAnyNote = true;
-        } else {
-            CTxDestination taddr = DecodeDestination(address);
-            if (IsValidDestination(taddr)) {
-                // Ignore any listed t-addrs if we are using all of them
-                if (!(useAny || useAnyUTXO)) {
-                    taddrs.insert(taddr);
-                }
-            } else {
-                auto zaddr = DecodePaymentAddress(address);
-                if (IsValidPaymentAddress(zaddr, branchId)) {
-                    // Ignore listed z-addrs if we are using all of them
-                    if (!(useAny || useAnyNote)) {
-                        zaddrs.insert(zaddr);
-                    }
-                    // Check if z-addr is Sapling
-                    bool isSapling = boost::get<libzcash::SaplingPaymentAddress>(&zaddr) != nullptr;
-                    containsSaplingZaddrSource |= isSapling;
-                } else {
-                    throw JSONRPCError(
-                                       RPC_INVALID_PARAMETER,
-                                       string("Invalid parameter, unknown address format: ") + address);
-                }
-            }
-        }
-        if (setAddress.count(address))
-            throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, duplicated address: ") + address);
-        setAddress.insert(address);
-    }
-    
+    useAnyNote = true;
 
     // Validate the destination address
     auto destaddress = params[1].get_str();
@@ -5269,6 +5230,8 @@ UniValue z_migrate(const UniValue& params, bool fHelp)
                                                  new AsyncRPCOperation_mergetoaddress(contextualTx, utxoInputs, noteInputs, recipient, nFee, contextInfo) );
     q->addOperation(operation);
     AsyncRPCOperationId operationId = operation->getId();
+    
+    // and queue z_sendmany taddr -> sapling 10000
     
     // Return continuation information
     UniValue o(UniValue::VOBJ);
