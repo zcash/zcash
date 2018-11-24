@@ -89,6 +89,7 @@ class CMainParams : public CChainParams {
 public:
     CMainParams()
     {
+
         strNetworkID = "main";
         strCurrencyUnits = "KMD";
         bip44CoinType = 133; // As registered in https://github.com/satoshilabs/slips/blob/master/slip-0044.md (ZCASH, should be VRSC)
@@ -206,6 +207,7 @@ public:
         }
     }
 };
+
 static CMainParams mainParams;
 
 void CChainParams::SetCheckpointData(CChainParams::CCheckpointData checkpointData)
@@ -213,6 +215,12 @@ void CChainParams::SetCheckpointData(CChainParams::CCheckpointData checkpointDat
     CChainParams::checkpointData = checkpointData;
 }
 
+int32_t MAX_BLOCK_SIZE(int32_t height)
+{
+    if ( height >= mainParams.consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight )
+        return(4000000);
+    else return(2000000);
+}
 void komodo_setactivation(int32_t height)
 {
     mainParams.consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight = height;
@@ -224,6 +232,7 @@ void komodo_setactivation(int32_t height)
 void *chainparams_commandline(void *ptr)
 {
     CChainParams::CCheckpointData checkpointData;
+    mainParams.consensus.vUpgrades[Consensus::UPGRADE_SAPLING].MAX_BLOCKSIZE = 2000000;
     while ( ASSETCHAINS_P2PPORT == 0 )
     {
         #ifdef _WIN32

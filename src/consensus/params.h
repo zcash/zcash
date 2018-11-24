@@ -10,6 +10,8 @@
 
 #include <boost/optional.hpp>
 
+int32_t MAX_BLOCK_SIZE(int32_t height);
+
 namespace Consensus {
 
 /**
@@ -40,7 +42,6 @@ struct NetworkUpgrade {
      * Height of the first block for which the new consensus rules will be active
      */
     int nActivationHeight;
-
     /**
      * Special value for nActivationHeight indicating that the upgrade is always active.
      * This is useful for testing, as it means tests don't need to deal with the activation
