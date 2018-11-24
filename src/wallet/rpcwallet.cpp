@@ -5026,8 +5026,6 @@ UniValue z_migrate(const UniValue& params, bool fHelp)
             throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, duplicated address: ") + address);
         setAddress.insert(address);
     }
-    if ( address != "*" )
-        throw JSONRPCError(RPC_INVALID_PARAMETER, string("z_migrate can only have * as input array "));
     
 
     // Validate the destination address
