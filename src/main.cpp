@@ -3952,7 +3952,7 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
         KOMODO_INSYNC = (int32_t)pindexNew->GetHeight();
     else KOMODO_INSYNC = 0;
     //fprintf(stderr,"connect.%d insync.%d ASSETCHAINS_SAPLING.%d\n",(int32_t)pindexNew->GetHeight(),KOMODO_INSYNC,ASSETCHAINS_SAPLING);
-    if ( ASSETCHAINS_SYMBOL[0] == 0 && KOMODO_INSYNC != 0 )
+    if ( KOMODO_INSYNC != 0 ) //ASSETCHAINS_SYMBOL[0] == 0 && 
         komodo_broadcast(pblock,8);
     if ( ASSETCHAINS_SAPLING <= 0 )
         komodo_activate_sapling(pindexNew);
