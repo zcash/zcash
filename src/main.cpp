@@ -2265,7 +2265,7 @@ bool IsInitialBlockDownload()
         LogPrintf("Leaving InitialBlockDownload (latching to false)\n");
         latchToFalse.store(true, std::memory_order_relaxed);
     }
-    else fprintf(stderr,"state.%d  ht.%d vs %d, t.%u %u\n",state,(int32_t)chainActive.Height(),(uint32_t)ptr->GetHeight(),(int32_t)ptr->GetBlockTime(),(uint32_t)(GetTime() - chainParams.MaxTipAge()));
+    else fprintf(stderr,"state.%d  ht.%d vs %d, t.%u\n",state,(int32_t)chainActive.Height(),(uint32_t)ptr->GetHeight(),(int32_t)ptr->GetBlockTime());
     return state;
 }
 
