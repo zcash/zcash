@@ -232,7 +232,6 @@ void komodo_setactivation(int32_t height)
 void *chainparams_commandline(void *ptr)
 {
     CChainParams::CCheckpointData checkpointData;
-    mainParams.consensus.vUpgrades[Consensus::UPGRADE_SAPLING].MAX_BLOCKSIZE = 2000000;
     while ( ASSETCHAINS_P2PPORT == 0 )
     {
         #ifdef _WIN32
