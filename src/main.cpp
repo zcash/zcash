@@ -5193,11 +5193,11 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
         CheckBlockIndex();
         if (!ret && futureblock == 0)
         {
-            /*if ( KOMODO_INSYNC == 0 )
+            if ( ASSETCHAINS_SYMBOL[0] == 0 )
             {
-                //fprintf(stderr,"request headers from failed process block peer\n");
+                fprintf(stderr,"request headers from failed process block peer\n");
                 pfrom->PushMessage("getheaders", chainActive.GetLocator(chainActive.LastTip()), uint256());
-            }*/
+            }
             komodo_longestchain();
             return error("%s: AcceptBlock FAILED", __func__);
         }
@@ -6509,7 +6509,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         return true;
     }
 
-//fprintf(stderr,"netmsg: %s\n", strCommand.c_str());
+fprintf(stderr,"netmsg: %s\n", strCommand.c_str());
 
     if (strCommand == "version")
     {
@@ -6886,7 +6886,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
 
         if (chainActive.LastTip() != 0 && chainActive.LastTip()->GetHeight() > 100000 && IsInitialBlockDownload())
         {
-            //fprintf(stderr,"dont process getheaders during initial download\n");
+            fprintf(stderr,"dont process getheaders during initial download\n");
             return true;
         }
         CBlockIndex* pindex = NULL;
@@ -6896,7 +6896,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
             BlockMap::iterator mi = mapBlockIndex.find(hashStop);
             if (mi == mapBlockIndex.end())
             {
-                //fprintf(stderr,"mi == end()\n");
+                fprintf(stderr,"mi == end()\n");
                 return true;
             }
             pindex = (*mi).second;
