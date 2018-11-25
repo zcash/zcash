@@ -5,10 +5,41 @@
 #include "zcash/IncrementalMerkleTree.hpp"
 #include "crypto/sha256.h"
 #include "zcash/util.h"
+#include "librustzcash.h"
 
 namespace libzcash {
 
-SHA256Compress SHA256Compress::combine(const SHA256Compress& a, const SHA256Compress& b)
+PedersenHash PedersenHash::combine(
+    const PedersenHash& a,
+    const PedersenHash& b,
+    size_t depth
+)
+{
+    PedersenHash res = PedersenHash();
+
+    librustzcash_merkle_hash(
+        depth,
+        a.begin(),
+        b.begin(),
+        res.begin()
+    );
+
+    return res;
+}
+
+PedersenHash PedersenHash::uncommitted() {
+    PedersenHash res = PedersenHash();
+
+    librustzcash_tree_uncommitted(res.begin());
+
+    return res;
+}
+
+SHA256Compress SHA256Compress::combine(
+    const SHA256Compress& a,
+    const SHA256Compress& b,
+    size_t depth
+)
 {
     SHA256Compress res = SHA256Compress();
 
@@ -44,9 +75,6 @@ public:
 
 template<size_t Depth, typename Hash>
 EmptyMerkleRoots<Depth, Hash> PathFiller<Depth, Hash>::emptyroots;
-
-template<size_t Depth, typename Hash>
-EmptyMerkleRoots<Depth, Hash> IncrementalMerkleTree<Depth, Hash>::emptyroots;
 
 template<size_t Depth, typename Hash>
 void IncrementalMerkleTree<Depth, Hash>::wfcheck() const {
@@ -114,7 +142,7 @@ void IncrementalMerkleTree<Depth, Hash>::append(Hash obj) {
         right = obj;
     } else {
         // Combine the leaves and propagate it up the tree
-        boost::optional<Hash> combined = Hash::combine(*left, *right);
+        boost::optional<Hash> combined = Hash::combine(*left, *right, 0);
 
         // Set the "left" leaf to the object and make the "right" leaf none
         left = obj;
@@ -123,7 +151,7 @@ void IncrementalMerkleTree<Depth, Hash>::append(Hash obj) {
         for (size_t i = 0; i < Depth; i++) {
             if (i < parents.size()) {
                 if (parents[i]) {
-                    combined = Hash::combine(*parents[i], *combined);
+                    combined = Hash::combine(*parents[i], *combined, i+1);
                     parents[i] = boost::none;
                 } else {
                     parents[i] = *combined;
@@ -205,15 +233,15 @@ Hash IncrementalMerkleTree<Depth, Hash>::root(size_t depth,
     Hash combine_left =  left  ? *left  : filler.next(0);
     Hash combine_right = right ? *right : filler.next(0);
 
-    Hash root = Hash::combine(combine_left, combine_right);
+    Hash root = Hash::combine(combine_left, combine_right, 0);
 
     size_t d = 1;
 
     BOOST_FOREACH(const boost::optional<Hash>& parent, parents) {
         if (parent) {
-            root = Hash::combine(*parent, root);
+            root = Hash::combine(*parent, root, d);
         } else {
-            root = Hash::combine(root, filler.next(d));
+            root = Hash::combine(root, filler.next(d), d);
         }
 
         d++;
@@ -222,7 +250,7 @@ Hash IncrementalMerkleTree<Depth, Hash>::root(size_t depth,
     // We may not have parents for ancestor trees, so we fill
     // the rest in here.
     while (d < depth) {
-        root = Hash::combine(root, filler.next(d));
+        root = Hash::combine(root, filler.next(d), d);
         d++;
     }
 
@@ -325,5 +353,11 @@ template class IncrementalMerkleTree<INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, SHA2
 
 template class IncrementalWitness<INCREMENTAL_MERKLE_TREE_DEPTH, SHA256Compress>;
 template class IncrementalWitness<INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, SHA256Compress>;
+
+template class IncrementalMerkleTree<SAPLING_INCREMENTAL_MERKLE_TREE_DEPTH, PedersenHash>;
+template class IncrementalMerkleTree<INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, PedersenHash>;
+
+template class IncrementalWitness<SAPLING_INCREMENTAL_MERKLE_TREE_DEPTH, PedersenHash>;
+template class IncrementalWitness<INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, PedersenHash>;
 
 } // end namespace `libzcash`

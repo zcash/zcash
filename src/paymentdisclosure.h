@@ -14,6 +14,7 @@
 // For JSOutPoint
 #include "wallet/wallet.h"
 
+#include <array>
 #include <cstdint>
 #include <string>
 
@@ -38,17 +39,17 @@ struct PaymentDisclosureInfo {
     uint256 joinSplitPrivKey; // primitives/transaction.h
     // ed25519 - not tied to implementation e.g. libsodium, see ed25519 rfc
 
-    libzcash::PaymentAddress zaddr;
+    libzcash::SproutPaymentAddress zaddr;
 
     PaymentDisclosureInfo() : version(PAYMENT_DISCLOSURE_VERSION_EXPERIMENTAL) {
     }
 
-    PaymentDisclosureInfo(uint8_t v, uint256 esk, uint256 key, libzcash::PaymentAddress zaddr) : version(v), esk(esk), joinSplitPrivKey(key), zaddr(zaddr) { }
+    PaymentDisclosureInfo(uint8_t v, uint256 esk, uint256 key, libzcash::SproutPaymentAddress zaddr) : version(v), esk(esk), joinSplitPrivKey(key), zaddr(zaddr) { }
 
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+    inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITE(version);
         READWRITE(esk);
         READWRITE(joinSplitPrivKey);
@@ -73,19 +74,15 @@ struct PaymentDisclosurePayload {
     uint8_t version;        // 0 = experimental, 1 = first production version, etc.
     uint256 esk;            // zcash/NoteEncryption.cpp
     uint256 txid;           // primitives/transaction.h
-    #ifdef __LP64__
-    uint64_t js;
-    #else
-    size_t js;              // Index into CTransaction.vjoinsplit
-    #endif
+    uint64_t js;            // Index into CTransaction.vjoinsplit
     uint8_t n;              // Index into JSDescription fields of length ZC_NUM_JS_OUTPUTS
-    libzcash::PaymentAddress zaddr; // zcash/Address.hpp
+    libzcash::SproutPaymentAddress zaddr; // zcash/Address.hpp
     std::string message;     // parameter to RPC call
 
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+    inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITE(marker);
         READWRITE(version);
         READWRITE(esk);
@@ -116,18 +113,18 @@ struct PaymentDisclosurePayload {
 };
 
 struct PaymentDisclosure {
-    PaymentDisclosurePayload            payload;
-    boost::array<unsigned char, 64>     payloadSig;
+    PaymentDisclosurePayload payload;
+    std::array<unsigned char, 64> payloadSig;
     // We use boost array because serialize doesn't like char buffer, otherwise we could do: unsigned char payloadSig[64];
 
     PaymentDisclosure() {};
-    PaymentDisclosure(const PaymentDisclosurePayload payload, const boost::array<unsigned char, 64> sig) : payload(payload), payloadSig(sig) {};
+    PaymentDisclosure(const PaymentDisclosurePayload payload, const std::array<unsigned char, 64> sig) : payload(payload), payloadSig(sig) {};
     PaymentDisclosure(const uint256& joinSplitPubKey, const PaymentDisclosureKey& key, const PaymentDisclosureInfo& info, const std::string& message);
 
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+    inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITE(payload);
         READWRITE(payloadSig);
     }

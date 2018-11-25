@@ -53,6 +53,8 @@ extern bool fLogIPs;
 extern std::atomic<bool> fReopenDebugLog;
 extern CTranslationInterface translationInterface;
 
+[[noreturn]] extern void new_handler_terminate();
+
 /**
  * Translation function: Call Translate signal on UI interface, which returns a boost::optional result.
  * If no translation slot is registered, nothing is returned, and simply return the input.
@@ -156,6 +158,17 @@ inline bool IsSwitchChar(char c)
     return c == '-';
 #endif
 }
+
+/**
+ * Return string argument or default value
+ *
+ * @param strVal string to split
+ * @param outVals array of numbers from string or default
+ *      if the string is null, nDefault is used for all array entries
+ *      else if the string has fewer than _MAX_ERAS entries, then the last 
+ *      entry fills remaining entries
+ */
+void Split(const std::string& strVal, uint64_t *outVals, uint64_t nDefault);
 
 /**
  * Return string argument or default value

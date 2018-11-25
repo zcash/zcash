@@ -79,7 +79,7 @@ void _basic_parallel_radix2_FFT_inner(std::vector<FieldT> &a, const FieldT &omeg
 
     const size_t m = a.size();
     const size_t log_m = log2(m);
-    assert_except(m == UINT64_C(1)<<log_m);
+    assert(m == UINT64_C(1)<<log_m);
 
     if (log_m < log_cpus)
     {

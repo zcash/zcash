@@ -6,7 +6,7 @@
 #ifndef	_PER_SUPPORT_H_
 #define	_PER_SUPPORT_H_
 
-#include <asn_system.h>		/* Platform-specific types */
+#include "asn_system.h"		/* Platform-specific types */
 
 #ifdef __cplusplus
 extern "C" {

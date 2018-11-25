@@ -8,6 +8,7 @@
 
 #include "threadsafety.h"
 
+#undef __cpuid
 #include <boost/thread/condition_variable.hpp>
 #include <boost/thread/locks.hpp>
 #include <boost/thread/mutex.hpp>

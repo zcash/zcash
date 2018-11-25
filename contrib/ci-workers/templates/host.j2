@@ -1,3 +1,3 @@
 OS: {{ ansible_distribution }} {{ ansible_distribution_version }}
 Memory: {{ ansible_memtotal_mb }} MB
-CPU: {{ ansible_processor[1] }}
+CPU: {{ ansible_processor if ansible_processor is string else ansible_processor[1] }} ({{ ansible_processor_cores }} cores)

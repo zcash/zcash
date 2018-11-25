@@ -14,6 +14,7 @@
  ******************************************************************************/
 
 #include "CCinclude.h"
+#include "key_io.h"
 
 /*
  FinalizeCCTx is a very useful function that will properly sign both CC and normal inputs, adds normal change and the opreturn.
@@ -348,7 +349,7 @@ int64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int3
     LOCK2(cs_main, pwalletMain->cs_wallet);
     pwalletMain->AvailableCoins(vecOutputs, false, NULL, true);
     utxos = (struct CC_utxo *)calloc(maxutxos,sizeof(*utxos));
-    threshold = total/maxinputs;
+    threshold = total/(maxinputs+1);
     if ( maxinputs > maxutxos )
         maxutxos = maxinputs;
     sum = 0;
