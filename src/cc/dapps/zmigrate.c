@@ -806,7 +806,7 @@ int32_t tx_has_voutaddress(char *refcoin,char *acname,bits256 txid,char *coinadd
     return(hasvout);
 }
 
-int32_t have_pending_opid(char *coinstr)
+int32_t have_pending_opid(char *coinstr,int32_t clearresults)
 {
     cJSON *array,*status,*result; int32_t i,n,j,m,pending = 0; char *statusstr;
     if ( (array= z_listoperationids(coinstr,"")) != 0 )
@@ -828,13 +828,13 @@ int32_t have_pending_opid(char *coinstr)
                                     pending++;
                                     printf("pending.%d\n",pending);
                                 }
-                                /*else
-                                 {
-                                 if ( (result= z_getoperationresult(coinstr,jstri(array,i))) != 0 )
-                                 {
-                                 free_json(result);
-                                 }
-                                 }*/
+                                else if ( clearresults != 0 )
+                                {
+                                    if ( (result= z_getoperationresult(coinstr,jstri(array,i))) != 0 )
+                                    {
+                                        free_json(result);
+                                    }
+                                }
                             }
                         }
                     }
@@ -883,7 +883,7 @@ int32_t main(int32_t argc,char **argv)
     txfee = 10000;
     while ( 1 )
     {
-        if ( have_pending_opid(coinstr) != 0 )
+        if ( have_pending_opid(coinstr,0) != 0 )
         {
             sleep(3);
             continue;
@@ -912,5 +912,6 @@ int32_t main(int32_t argc,char **argv)
             break;
     }
     printf("%s %s ALLDONE!\n",coinstr,zsaddr);
+    have_pending_opid(coinstr,1);
     return(0);
 }
