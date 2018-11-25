@@ -905,7 +905,7 @@ int32_t main(int32_t argc,char **argv)
     }
     zsaddr = clonestr(argv[2]);
     printf("%s: %s %s\n",REFCOIN_CLI,coinstr,zsaddr);
-    char coinaddr[64],zcaddr[128],opidstr[128]; int32_t alldone,finished; int64_t amount,stdamount,txfee;
+    uint32_t lastopid=0; char coinaddr[64],zcaddr[128],opidstr[128]; int32_t finished; int64_t amount,stdamount,txfee;
     stdamount = 1000 * SATOSHIDEN;
     txfee = 10000;
 again:
@@ -918,16 +918,15 @@ again:
             sleep(60);
             continue;
         }
-        alldone = 1;
         if ( (amount= find_onetime_amount(coinstr,coinaddr)) > txfee )
         {
             // find taddr with funds and send all to zsaddr
             z_sendmany(opidstr,coinstr,"",coinaddr,zsaddr,amount-txfee);
-            alldone = 0;
+            lastopid = (uint32_t)time(NULL);
             sleep(1);
             continue;
         }
-        if ( alldone != 0 && (amount= find_sprout_amount(coinstr,zcaddr)) > txfee )
+        if ( (amount= find_sprout_amount(coinstr,zcaddr)) > txfee )
         {
             // generate taddr, send max of 10000.0001
             if ( amount > stdamount+txfee )
@@ -935,17 +934,13 @@ again:
             if ( getnewaddress(coinaddr,coinstr,"") == 0 )
             {
                 z_sendmany(opidstr,coinstr,"",zcaddr,coinaddr,amount-txfee);
+                lastopid = (uint32_t)time(NULL);
             } else printf("couldnt getnewaddress!\n");
-            alldone = 0;
             sleep(30);
             continue;
         }
-        if ( alldone != 0 && find_onetime_amount(coinstr,coinaddr) == 0 && find_sprout_amount(coinstr,zcaddr) == 0 )
-        {
-            if ( finished++ > 10 )
-                break;
-            printf("%s %s finished.%d taddr %.8f sprout %.8f mempool empty.%d\n",coinstr,zsaddr,finished,dstr(find_onetime_amount(coinstr,coinaddr)),dstr(find_sprout_amount(coinstr,zcaddr)),empty_mempool(coinstr,""));
-        } else finished = 0 ;
+        if ( time(NULL) > lastopid+600 )
+            break;
     }
     sleep(3);
     printf("%s %s ALLDONE! taddr %.8f sprout %.8f mempool empty.%d\n",coinstr,zsaddr,dstr(find_onetime_amount(coinstr,coinaddr)),dstr(find_sprout_amount(coinstr,zcaddr)),empty_mempool(coinstr,""));
