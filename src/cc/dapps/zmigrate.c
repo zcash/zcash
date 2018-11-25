@@ -735,6 +735,19 @@ int32_t z_sendmany(char *opidstr,char *coinstr,char *acname,char *srcaddr,char *
     }
 }
 
+int32_t empty_mempool(char *coinstr,char *acname)
+{
+    cJSON *array; int32_t n;
+    if ( (array= get_rawmempool(coinstr,acname)) != 0 )
+    {
+        if ( (n= cJSON_GetArraySize(array)) > 0 )
+            return(0);
+        free_json(array);
+        return(1);
+    }
+    return(-1);
+}
+
 cJSON *getinputarray(int64_t *totalp,cJSON *unspents,int64_t required)
 {
     cJSON *vin,*item,*vins = cJSON_CreateArray(); int32_t i,n,v; int64_t satoshis; bits256 txid;
@@ -908,7 +921,7 @@ int32_t main(int32_t argc,char **argv)
             alldone = 0;
             sleep(10);
         }
-        if ( alldone != 0 && find_onetime_amount(coinstr,coinaddr) == 0 && find_sprout_amount(coinstr,zcaddr) == 0 )
+        if ( alldone != 0 && find_onetime_amount(coinstr,coinaddr) == 0 && find_sprout_amount(coinstr,zcaddr) == 0 && empty_mempool(coinstr,"") > 0 )
             break;
     }
     printf("%s %s ALLDONE!\n",coinstr,zsaddr);
