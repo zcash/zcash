@@ -233,6 +233,10 @@ int64_t OracleDatafee(CScript &scriptPubKey,uint256 oracletxid,CPubKey publisher
             CCtxidaddr(markeraddr,oracletxid);
             datafee = OracleCurrentDatafee(oracletxid,markeraddr,publisher);
         }
+        else
+        {
+            fprintf(stderr,"Could not decode op_ret from transaction %s\nscriptPubKey: %s\n", oracletxid.GetHex().c_str(), oracletx.vout[numvouts-1].scriptPubKey.ToString().c_str());
+        }
     }
     return(datafee);
 }
@@ -593,7 +597,7 @@ bool OraclesDataValidate(struct CCcontract_info *cp,Eval* eval,const CTransactio
     else return(true);
 }
 
-bool OraclesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
+bool OraclesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
 {
     uint256 txid,oracletxid,batontxid; uint64_t txfee=10000; int32_t numvins,numvouts,preventCCvins,preventCCvouts; uint8_t *script; std::vector<uint8_t> vopret,data; CScript scriptPubKey; CPubKey publisher;
     numvins = tx.vin.size();
@@ -790,12 +794,14 @@ std::string OracleData(int64_t txfee,uint256 oracletxid,std::vector <uint8_t> da
     mypk = pubkey2pk(Mypubkey());
     if ( data.size() > 8192 )
     {
-        fprintf(stderr,"datasize %d is too big\n",(int32_t)data.size());
+        CCerror = strprintf("datasize %d is too big",(int32_t)data.size());
+        fprintf(stderr,"%s\n", CCerror.c_str() );
         return("");
     }
     if ( (datafee= OracleDatafee(pubKey,oracletxid,mypk)) <= 0 )
     {
-        fprintf(stderr,"datafee %.8f is illegal\n",(double)datafee/COIN);
+        CCerror = strprintf("datafee %.8f is illegal",(double)datafee/COIN);
+        fprintf(stderr,"%s\n", CCerror.c_str() );
         return("");
     }
     if ( txfee == 0 )
@@ -816,8 +822,14 @@ std::string OracleData(int64_t txfee,uint256 oracletxid,std::vector <uint8_t> da
             mtx.vout.push_back(MakeCC1vout(cp->evalcode,txfee,batonpk));
             mtx.vout.push_back(CTxOut(datafee,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
             return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeOraclesData('D',oracletxid,batontxid,mypk,data)));
-        } else fprintf(stderr,"couldnt find enough oracle inputs %s, limit 1 per utxo\n",coinaddr);
-    } else fprintf(stderr,"couldnt add normal inputs\n");
+        } else {
+            CCerror = strprintf("couldnt find enough oracle inputs %s, limit 1 per utxo\n",coinaddr);
+            fprintf(stderr,"%s\n", CCerror.c_str() );
+        }
+    } else {
+        CCerror = strprintf("couldnt add normal inputs\n");
+        fprintf(stderr,"%s\n", CCerror.c_str() );
+    }
     return("");
 }
 

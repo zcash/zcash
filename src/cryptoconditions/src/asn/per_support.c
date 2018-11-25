@@ -5,7 +5,7 @@
  */
 #include <asn_system.h>
 #include <asn_internal.h>
-#include <per_support.h>
+#include "per_support.h"
 
 char *
 per_data_string(asn_per_data_t *pd) {

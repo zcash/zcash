@@ -97,19 +97,13 @@ int main()
 
     enter_block("Test QAP with binary input");
 
-    test_qap<Fr<mnt6_pp> >(basic_domain_size, num_inputs, true);
-    test_qap<Fr<mnt6_pp> >(step_domain_size, num_inputs, true);
-    test_qap<Fr<mnt6_pp> >(extended_domain_size, num_inputs, true);
-    test_qap<Fr<mnt6_pp> >(extended_domain_size_special, num_inputs, true);
+    test_qap<Fr<alt_bn128_pp> >(UINT64_C(1) << 21, num_inputs, true);
 
     leave_block("Test QAP with binary input");
 
     enter_block("Test QAP with field input");
 
-    test_qap<Fr<mnt6_pp> >(basic_domain_size, num_inputs, false);
-    test_qap<Fr<mnt6_pp> >(step_domain_size, num_inputs, false);
-    test_qap<Fr<mnt6_pp> >(extended_domain_size, num_inputs, false);
-    test_qap<Fr<mnt6_pp> >(extended_domain_size_special, num_inputs, false);
+    test_qap<Fr<alt_bn128_pp> >(UINT64_C(1) << 21, num_inputs, false);
 
     leave_block("Test QAP with field input");
 }
