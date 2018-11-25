@@ -645,7 +645,7 @@ int32_t main(int32_t argc,char **argv)
         printf("invalid sapling address (%s)\n",argv[2]);
         return(-2);
     }
-    if ( z_validateaddress(coinstr,"",argv[2],"ismine") < 0 )
+    if ( z_validateaddress(coinstr,"",argv[2],"ismine") == 0 )
     {
         printf("invalid sapling address (%s)\n",argv[2]);
         return(-3);
