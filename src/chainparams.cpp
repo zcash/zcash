@@ -217,8 +217,8 @@ void CChainParams::SetCheckpointData(CChainParams::CCheckpointData checkpointDat
 
 int32_t MAX_BLOCK_SIZE(int32_t height)
 {
-    fprintf(stderr,"MAX_BLOCK_SIZE %d vs. %d\n",height,mainParams.consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight);
-    if ( height >= mainParams.consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight )
+    //fprintf(stderr,"MAX_BLOCK_SIZE %d vs. %d\n",height,mainParams.consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight);
+    if ( mainParams.consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight > 0 && height >= mainParams.consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight )
         return(4096 * 1024);
     else return(2000000);
 }

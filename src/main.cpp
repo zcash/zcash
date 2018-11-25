@@ -4648,6 +4648,7 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
     // because we receive the wrong transactions for it.
 
     // Size limits
+    fprintf(stderr,"checkblock %d -> %d\n",height,MAX_BLOCK_SIZE(height));
     if (block.vtx.empty() || block.vtx.size() > MAX_BLOCK_SIZE(height) || ::GetSerializeSize(block, SER_NETWORK, PROTOCOL_VERSION) > MAX_BLOCK_SIZE(height))
         return state.DoS(100, error("CheckBlock: size limits failed"),
                          REJECT_INVALID, "bad-blk-length");
