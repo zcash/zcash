@@ -659,7 +659,7 @@ int64_t find_onetime_amount(char *coinstr,char *coinaddr)
                 if ( (addr= jstr(item,"address")) != 0 )
                 {
                     strcpy(coinaddr,addr);
-                    amount = z_getbalance(coinaddr);
+                    amount = z_getbalance(coinaddr,"");
                     printf("found address.(%s) with amount %.8f\n",coinaddr,dstr(amount));
                     break;
                 }
@@ -684,7 +684,7 @@ int64_t find_sprout_amount(char *coinstr,char *zcaddr)
                 if ( (addr= jstr(item,"address")) != 0 && addr[0] == 'z' && addr[1] == 'c' )
                 {
                     strcpy(zcaddr,addr);
-                    amount = z_getbalance(coinaddr);
+                    amount = z_getbalance(coinaddr,"");
                     printf("found address.(%s) with amount %.8f\n",zcaddr,dstr(amount));
                     break;
                 }
@@ -718,7 +718,7 @@ int32_t sapling_send(char *coinstr,char *coinaddr,char *zsaddr,int64_t amount)
 
 int32_t sprout_send(char *coinstr,char *zcaddr,char *coinaddr,int64_t amount)
 {
-    printf("do sapling send %s %s -> %s %.8f\n",coinstr,coinaddr,zsaddr,dstr(amount));
+    printf("do sapling send %s %s -> %s %.8f\n",coinstr,zcaddr,coinaddr,dstr(amount));
     return(0);
 }
 
@@ -874,7 +874,7 @@ int32_t main(int32_t argc,char **argv)
             alldone = 0;
             sleep(1);
         }
-        if ( (amount= find_sprout_amount(zcaddr)) > txfee )
+        if ( (amount= find_sprout_amount(coinstr,zcaddr)) > txfee )
         {
             // generate taddr, send max of 10000.0001
             if ( amount > stdamount+txfee )
