@@ -894,6 +894,8 @@ int32_t main(int32_t argc,char **argv)
     char coinaddr[64],zcaddr[128],opidstr[128]; int32_t alldone; int64_t amount,stdamount,txfee;
     stdamount = 100 * SATOSHIDEN;
     txfee = 10000;
+again:
+    printf("start processing zmigrate\n");
     while ( 1 )
     {
         if ( have_pending_opid(coinstr,0) != 0 )
@@ -924,12 +926,14 @@ int32_t main(int32_t argc,char **argv)
         if ( alldone != 0 && find_onetime_amount(coinstr,coinaddr) == 0 && find_sprout_amount(coinstr,zcaddr) == 0 && empty_mempool(coinstr,"") > 0 )
             break;
     }
+    sleep(3);
     printf("%s %s ALLDONE! taddr %.8f sprout %.8f mempool empty.%d\n",coinstr,zsaddr,dstr(find_onetime_amount(coinstr,coinaddr)),dstr(find_sprout_amount(coinstr,zcaddr)),empty_mempool(coinstr,""));
+    sleep(3);
     if ( find_onetime_amount(coinstr,coinaddr) == 0 && find_sprout_amount(coinstr,zcaddr) == 0 && empty_mempool(coinstr,"") > 0 )
     {
         printf("about to purge all opid results!. ctrl-C to abort, <enter> to proceed\n");
         getchar();
         have_pending_opid(coinstr,1);
-    }
+    } else goto again;
     return(0);
 }
