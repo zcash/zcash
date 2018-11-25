@@ -21,7 +21,7 @@
 
 #define EVAL_AUCTION 0xe8
 
-bool AuctionValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx);
+bool AuctionValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn);
 
 std::string AuctionPost(uint64_t txfee,uint256 itemhash,int64_t minbid,char *title,char *description);
 std::string AuctionBid(uint64_t txfee,uint256 itemhash,int64_t amount);

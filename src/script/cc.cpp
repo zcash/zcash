@@ -86,6 +86,14 @@ CScript CCSig(const CC *cond)
     return CScript() << ffill;
 }
 
+std::vector<unsigned char> CCSigVec(const CC *cond)
+{
+    unsigned char buf[10000];
+    size_t len = cc_fulfillmentBinary(cond, buf, 10000);
+    auto ffill = std::vector<unsigned char>(buf, buf+len);
+    ffill.push_back(1);  // SIGHASH_ALL
+    return ffill;
+}
 
 std::string CCShowStructure(CC *cond)
 {

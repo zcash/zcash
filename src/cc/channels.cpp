@@ -151,7 +151,7 @@ bool ChannelsExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransacti
     else return(true);
 }
 
-bool ChannelsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
+bool ChannelsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
 {
     int32_t numvins,numvouts,preventCCvins,preventCCvouts,i,numpayments,p1,param1; bool retval;
     uint256 txid,hashblock,p3,param3,opentxid,tmp_txid,genhashchain,hashchain;
