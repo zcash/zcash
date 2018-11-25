@@ -924,7 +924,7 @@ again:
             alldone = 0;
             sleep(10);
         }
-        if ( alldone != 0 && find_onetime_amount(coinstr,coinaddr) == 0 && find_sprout_amount(coinstr,zcaddr) == 0 && empty_mempool(coinstr,"") > 0 )
+        if ( alldone != 0 && find_onetime_amount(coinstr,coinaddr) == 0 && find_sprout_amount(coinstr,zcaddr) == 0 )
         {
             if ( finished++ > 10 )
                 break;
@@ -933,7 +933,7 @@ again:
     sleep(3);
     printf("%s %s ALLDONE! taddr %.8f sprout %.8f mempool empty.%d\n",coinstr,zsaddr,dstr(find_onetime_amount(coinstr,coinaddr)),dstr(find_sprout_amount(coinstr,zcaddr)),empty_mempool(coinstr,""));
     sleep(3);
-    if ( find_onetime_amount(coinstr,coinaddr) == 0 && find_sprout_amount(coinstr,zcaddr) == 0 && empty_mempool(coinstr,"") > 0 )
+    if ( find_onetime_amount(coinstr,coinaddr) == 0 && find_sprout_amount(coinstr,zcaddr) == 0 )
     {
         printf("about to purge all opid results!. ctrl-C to abort, <enter> to proceed\n");
         getchar();
