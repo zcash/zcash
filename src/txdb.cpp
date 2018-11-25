@@ -473,15 +473,17 @@ UniValue CBlockTreeDB::Snapshot(int top)
             char chType = keyObj.first;
             CAddressIndexKey indexKey = keyObj.second;
 
-            fprintf(stderr, "chType=%d\n", chType);
+            fprintf(stderr, "chType=%d vs. %d, %d\n", chType,DB_ADDRESSUNSPENTINDEX,DB_ADDRESSINDEX);
             if (chType == DB_ADDRESSUNSPENTINDEX)
             {
                 try {
-                    std::vector<unsigned char> slValue = std::vector<unsigned char>();
+                    /*std::vector<unsigned char> slValue = std::vector<unsigned char>();
                     iter->GetValue(slValue);
-                    CDataStream ssValue(slValue, SER_DISK, CLIENT_VERSION);
+                    CDataStream ssValue(slValue, SER_DISK, CLIENT_VERSION);*/
                     CAmount nValue;
-                    ssValue >> nValue;
+                    //ssValue >> nValue;
+
+                    iter->GetValue(nValue);
 
                     getAddressFromIndex(indexKey.type, indexKey.hashBytes, address);
 
