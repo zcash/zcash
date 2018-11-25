@@ -714,15 +714,21 @@ void importaddress(char *refcoin,char *acname,char *depositaddr)
     }
 }
 
-int32_t sapling_send(char *coinstr,char *coinaddr,char *zsaddr,int64_t amount)
+int32_t z_sendmany(char *coinstr,char *acname,char *srcaddr,char *destaddr,int64_t amount)
 {
-    printf("do sapling send %s %s -> %s %.8f\n",coinstr,coinaddr,zsaddr,dstr(amount));
-    return(0);
-}
-
-int32_t sprout_send(char *coinstr,char *zcaddr,char *coinaddr,int64_t amount)
-{
-    printf("do sprout send %s %s -> %s %.8f\n",coinstr,zcaddr,coinaddr,dstr(amount));
+    cJSON *retjson; char *retstr,params[1024];
+    sprintf(params,"[\"%s\", [{\"address\":\"%s\",\"amount\":%.8f}], 1]",srcaddr,destaddr,amount);
+    printf("params.%s\n",params);
+    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"z_sendmany",params,"","","")) != 0 )
+    {
+        printf("z_sendmany.(%s)\n",jprint(retjson,0));
+        free_json(retjson);
+    }
+    else if ( retstr != 0 )
+    {
+        fprintf(stderr,"z_sendmany.(%s) %s error.(%s)\n",refcoin,acname,retstr);
+        free(retstr);
+    }
     return(0);
 }
 
@@ -874,7 +880,7 @@ int32_t main(int32_t argc,char **argv)
         if ( (amount= find_onetime_amount(coinstr,coinaddr)) > txfee )
         {
             // find taddr with funds and send all to zsaddr
-            sapling_send(coinstr,coinaddr,zsaddr,amount-txfee);
+            z_sendmany(coinstr,"",coinaddr,zsaddr,amount-txfee);
             alldone = 0;
             sleep(1);
         }
@@ -885,7 +891,7 @@ int32_t main(int32_t argc,char **argv)
                 amount = stdamount + txfee;
             if ( getnewaddress(coinaddr,coinstr,"") == 0 )
             {
-                sprout_send(coinstr,zcaddr,coinaddr,amount);
+                z_sendmany(coinstr,"",zcaddr,coinaddr,amount-txfee);
             } else printf("couldnt getnewaddress!\n");
             alldone = 0;
             sleep(10);
