@@ -936,7 +936,7 @@ again:
                 z_sendmany(opidstr,coinstr,"",zcaddr,coinaddr,amount-txfee);
             } else printf("couldnt getnewaddress!\n");
             alldone = 0;
-            sleep(10);
+            sleep(30);
         }
         if ( alldone != 0 && find_onetime_amount(coinstr,coinaddr) == 0 && find_sprout_amount(coinstr,zcaddr) == 0 )
         {
