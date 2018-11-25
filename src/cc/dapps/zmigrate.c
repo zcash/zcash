@@ -684,7 +684,7 @@ int64_t find_sprout_amount(char *coinstr,char *zcaddr)
                 if ( (addr= jstr(item,"address")) != 0 && addr[0] == 'z' && addr[1] == 'c' )
                 {
                     strcpy(zcaddr,addr);
-                    amount = z_getbalance(coinstr,"",coinaddr);
+                    amount = z_getbalance(coinstr,"",zcaddr);
                     printf("found address.(%s) with amount %.8f\n",zcaddr,dstr(amount));
                     break;
                 }
