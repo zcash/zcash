@@ -614,7 +614,7 @@ int32_t z_validateaddress(char *refcoin,char *acname,char *depositaddr, char *co
 
 int64_t z_getbalance(char *refcoin,char *acname,char *coinaddr)
 {
-    cJSON *retjson; char *retstr; int64_t amount=0;
+    cJSON *retjson; char *retstr,cmpstr[64]; int64_t amount=0;
     if ( (retjson= get_komodocli(refcoin,&retstr,acname,"z_getbalance",coinaddr,"","","")) != 0 )
     {
         fprintf(stderr,"z_getbalance.(%s) %s returned json!\n",refcoin,acname);
@@ -622,7 +622,10 @@ int64_t z_getbalance(char *refcoin,char *acname,char *coinaddr)
     }
     else if ( retstr != 0 )
     {
-        amount = atof(retstr) * SATOSHIDEN + 0.0000000099999;
+        amount = atof(retstr) * SATOSHIDEN;
+        sprintf(cmpstr,"%.8f",dstr(amount));
+        if ( strcmp(retstr,cmpstr) != 0 )
+            amount++;
         printf("retstr %s -> %.8f\n",retstr,dstr(amount));
         free(retstr);
     }
