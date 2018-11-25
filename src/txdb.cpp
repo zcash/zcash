@@ -424,8 +424,7 @@ bool getAddressFromIndex(const int &type, const uint160 &hash, std::string &addr
 
 UniValue CBlockTreeDB::Snapshot(int top)
 {
-    //char chType;
-    int64_t total = 0; int64_t totalAddresses = 0; std::string address;
+    char chType; int64_t total = 0; int64_t totalAddresses = 0; std::string address;
     int64_t utxos = 0; int64_t ignoredAddresses;
     boost::scoped_ptr<CDBIterator> iter(NewIterator());
     std::map <std::string, CAmount> addressAmounts;
@@ -460,30 +459,23 @@ UniValue CBlockTreeDB::Snapshot(int top)
         boost::this_thread::interruption_point();
         try
         {
-            /*std::vector<unsigned char> slKey = std::vector<unsigned char>();
+            std::vector<unsigned char> slKey = std::vector<unsigned char>();
             iter->GetKey(slKey);
             CDataStream ssKey(slKey, SER_DISK, CLIENT_VERSION);
             CAddressIndexIteratorKey indexKey;
 
             ssKey >> chType;
-            ssKey >> indexKey;*/
+            ssKey >> indexKey;
 
-            pair<char, CAddressIndexKey> keyObj;
-            iter->GetKey(keyObj);
-            char chType = keyObj.first;
-            CAddressIndexKey indexKey = keyObj.second;
-
-            fprintf(stderr, "chType=%d vs. %d, %d\n", chType,DB_ADDRESSUNSPENTINDEX,DB_ADDRESSINDEX);
+            //fprintf(stderr, "chType=%d\n", chType);
             if (chType == DB_ADDRESSUNSPENTINDEX)
             {
                 try {
-                    /*std::vector<unsigned char> slValue = std::vector<unsigned char>();
+                    std::vector<unsigned char> slValue = std::vector<unsigned char>();
                     iter->GetValue(slValue);
-                    CDataStream ssValue(slValue, SER_DISK, CLIENT_VERSION);*/
+                    CDataStream ssValue(slValue, SER_DISK, CLIENT_VERSION);
                     CAmount nValue;
-                    //ssValue >> nValue;
-
-                    iter->GetValue(nValue);
+                    ssValue >> nValue;
 
                     getAddressFromIndex(indexKey.type, indexKey.hashBytes, address);
 
