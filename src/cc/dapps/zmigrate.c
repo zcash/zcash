@@ -891,11 +891,12 @@ int32_t main(int32_t argc,char **argv)
     }
     zsaddr = clonestr(argv[2]);
     printf("%s: %s %s\n",REFCOIN_CLI,coinstr,zsaddr);
-    char coinaddr[64],zcaddr[128],opidstr[128]; int32_t alldone; int64_t amount,stdamount,txfee;
+    char coinaddr[64],zcaddr[128],opidstr[128]; int32_t alldone,finished; int64_t amount,stdamount,txfee;
     stdamount = 100 * SATOSHIDEN;
     txfee = 10000;
 again:
     printf("start processing zmigrate\n");
+    finished = 0;
     while ( 1 )
     {
         if ( have_pending_opid(coinstr,0) != 0 )
@@ -924,7 +925,10 @@ again:
             sleep(10);
         }
         if ( alldone != 0 && find_onetime_amount(coinstr,coinaddr) == 0 && find_sprout_amount(coinstr,zcaddr) == 0 && empty_mempool(coinstr,"") > 0 )
-            break;
+        {
+            if ( finished++ > 10 )
+                break;
+        } else finished = 0 ;
     }
     sleep(3);
     printf("%s %s ALLDONE! taddr %.8f sprout %.8f mempool empty.%d\n",coinstr,zsaddr,dstr(find_onetime_amount(coinstr,coinaddr)),dstr(find_sprout_amount(coinstr,zcaddr)),empty_mempool(coinstr,""));
