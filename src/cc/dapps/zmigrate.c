@@ -550,7 +550,7 @@ cJSON *z_listoperationids(char *refcoin,char *acname)
 cJSON *z_getoperationstatus(char *refcoin,char *acname,char *opid)
 {
     cJSON *retjson; char *retstr,str[65],params[512];
-    sprintf(params,"[\"%s\"]",opid);
+    sprintf(params,"'[\"%s\"]'",opid);
     if ( (retjson= get_komodocli(refcoin,&retstr,acname,"z_getoperationstatus",params,"","","")) != 0 )
     {
         return(retjson);
@@ -566,7 +566,7 @@ cJSON *z_getoperationstatus(char *refcoin,char *acname,char *opid)
 cJSON *z_getoperationresult(char *refcoin,char *acname,char *opid)
 {
     cJSON *retjson; char *retstr,str[65],params[512];
-    sprintf(params,"[\"%s\"]",opid);
+    sprintf(params,"'[\"%s\"]'",opid);
     if ( (retjson= get_komodocli(refcoin,&retstr,acname,"z_getoperationresult",params,"","","")) != 0 )
     {
         return(retjson);
@@ -714,22 +714,24 @@ void importaddress(char *refcoin,char *acname,char *depositaddr)
     }
 }
 
-int32_t z_sendmany(char *coinstr,char *acname,char *srcaddr,char *destaddr,int64_t amount)
+int32_t z_sendmany(char *opidstr,char *coinstr,char *acname,char *srcaddr,char *destaddr,int64_t amount)
 {
     cJSON *retjson; char *retstr,params[1024],addr[128];
     sprintf(params,"'[{\"address\":\"%s\",\"amount\":%.8f}]'",destaddr,dstr(amount));
     sprintf(addr,"\"%s\"",srcaddr);
     if ( (retjson= get_komodocli(coinstr,&retstr,acname,"z_sendmany",addr,params,"","")) != 0 )
     {
-        printf("z_sendmany.(%s)\n",jprint(retjson,0));
+        printf("unexpected json z_sendmany.(%s)\n",jprint(retjson,0));
         free_json(retjson);
+        return(-1);
     }
     else if ( retstr != 0 )
     {
-        fprintf(stderr,"z_sendmany.(%s) %s error.(%s)\n",coinstr,acname,retstr);
+        fprintf(stderr,"z_sendmany.(%s) -> opid.(%s)\n",coinstr,retstr);
+        strcpy(opidstr,retstr);
         free(retstr);
+        return(0);
     }
-    return(0);
 }
 
 cJSON *getinputarray(int64_t *totalp,cJSON *unspents,int64_t required)
@@ -866,7 +868,7 @@ int32_t main(int32_t argc,char **argv)
     }
     zsaddr = clonestr(argv[2]);
     printf("%s: %s %s\n",REFCOIN_CLI,coinstr,zsaddr);
-    char coinaddr[64],zcaddr[128]; int32_t alldone; int64_t amount,stdamount,txfee;
+    char coinaddr[64],zcaddr[128],opidstr[128]; int32_t alldone; int64_t amount,stdamount,txfee;
     stdamount = 100 * SATOSHIDEN;
     txfee = 10000;
     while ( 1 )
@@ -880,7 +882,7 @@ int32_t main(int32_t argc,char **argv)
         if ( (amount= find_onetime_amount(coinstr,coinaddr)) > txfee )
         {
             // find taddr with funds and send all to zsaddr
-            z_sendmany(coinstr,"",coinaddr,zsaddr,amount-txfee);
+            z_sendmany(opidstr,coinstr,"",coinaddr,zsaddr,amount-txfee);
             alldone = 0;
             sleep(1);
         }
@@ -891,7 +893,7 @@ int32_t main(int32_t argc,char **argv)
                 amount = stdamount + txfee;
             if ( getnewaddress(coinaddr,coinstr,"") == 0 )
             {
-                z_sendmany(coinstr,"",zcaddr,coinaddr,amount-txfee);
+                z_sendmany(opidstr,coinstr,"",zcaddr,coinaddr,amount-txfee);
             } else printf("couldnt getnewaddress!\n");
             alldone = 0;
             sleep(10);
