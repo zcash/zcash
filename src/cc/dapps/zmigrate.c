@@ -830,7 +830,7 @@ int32_t have_pending_opid(char *coinstr,int32_t clearresults)
                                 }
                                 else if ( clearresults != 0 )
                                 {
-                                    if ( (result= z_getoperationresult(coinstr,jstri(array,i))) != 0 )
+                                    if ( (result= z_getoperationresult(coinstr,"",jstri(array,i))) != 0 )
                                     {
                                         free_json(result);
                                     }
