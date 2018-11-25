@@ -808,7 +808,7 @@ int32_t tx_has_voutaddress(char *refcoin,char *acname,bits256 txid,char *coinadd
 
 int32_t have_pending_opid(char *coinstr)
 {
-    cJSON *array,*status,*result; int32_t i,n,j,n,pending = 0; char *statusstr;
+    cJSON *array,*status,*result; int32_t i,n,j,m,pending = 0; char *statusstr;
     if ( (array= z_listoperationids(coinstr,"")) != 0 )
     {
         if ( (n= cJSON_GetArraySize(array)) > 0 )
