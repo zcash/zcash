@@ -726,7 +726,7 @@ int32_t z_sendmany(char *coinstr,char *acname,char *srcaddr,char *destaddr,int64
     }
     else if ( retstr != 0 )
     {
-        fprintf(stderr,"z_sendmany.(%s) %s error.(%s)\n",refcoin,acname,retstr);
+        fprintf(stderr,"z_sendmany.(%s) %s error.(%s)\n",coinstr,acname,retstr);
         free(retstr);
     }
     return(0);
