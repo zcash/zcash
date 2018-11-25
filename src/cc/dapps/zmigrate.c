@@ -502,6 +502,83 @@ cJSON *get_rawtransaction(char *refcoin,char *acname,bits256 txid)
     return(0);
 }
 
+cJSON *get_listunspent(char *refcoin,char *acname)
+{
+    cJSON *retjson; char *retstr,str[65];
+    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"listunspent","","","","")) != 0 )
+    {
+        return(retjson);
+    }
+    else if ( retstr != 0 )
+    {
+        fprintf(stderr,"get_listunspent.(%s) %s error.(%s)\n",refcoin,acname,retstr);
+        free(retstr);
+    }
+    return(0);
+}
+
+cJSON *z_listunspent(char *refcoin,char *acname)
+{
+    cJSON *retjson; char *retstr,str[65];
+    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"z_listunspent","","","","")) != 0 )
+    {
+        return(retjson);
+    }
+    else if ( retstr != 0 )
+    {
+        fprintf(stderr,"get_zlistunspent.(%s) %s error.(%s)\n",refcoin,acname,retstr);
+        free(retstr);
+    }
+    return(0);
+}
+
+cJSON *z_listoperationids(char *refcoin,char *acname)
+{
+    cJSON *retjson; char *retstr,str[65];
+    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"z_listoperationids","","","","")) != 0 )
+    {
+        return(retjson);
+    }
+    else if ( retstr != 0 )
+    {
+        fprintf(stderr,"get_zlistoperationids.(%s) %s error.(%s)\n",refcoin,acname,retstr);
+        free(retstr);
+    }
+    return(0);
+}
+
+cJSON *z_getoperationstatus(char *refcoin,char *acname,char *opid)
+{
+    cJSON *retjson; char *retstr,str[65],params[512];
+    sprintf(params,"[%s]",opid);
+    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"z_getoperationstatus",params,"","","")) != 0 )
+    {
+        return(retjson);
+    }
+    else if ( retstr != 0 )
+    {
+        fprintf(stderr,"get_zgetoperationstatus.(%s) %s error.(%s)\n",refcoin,acname,retstr);
+        free(retstr);
+    }
+    return(0);
+}
+
+cJSON *z_getoperationresult(char *refcoin,char *acname,char *opid)
+{
+    cJSON *retjson; char *retstr,str[65],params[512];
+    sprintf(params,"[%s]",opid);
+    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"z_getoperationresult",params,"","","")) != 0 )
+    {
+        return(retjson);
+    }
+    else if ( retstr != 0 )
+    {
+        fprintf(stderr,"get_zgetoperationstatus.(%s) %s error.(%s)\n",refcoin,acname,retstr);
+        free(retstr);
+    }
+    return(0);
+}
+
 int32_t validateaddress(char *refcoin,char *acname,char *depositaddr, char* compare)
 {
     cJSON *retjson; char *retstr; int32_t res=0;
@@ -535,6 +612,89 @@ int32_t z_validateaddress(char *refcoin,char *acname,char *depositaddr, char *co
     return (res);
 }
 
+int64_t z_getbalance(char *refcoin,char *acname,char *coinaddr)
+{
+    cJSON *retjson; char *retstr; int64_t amount=0;
+    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"z_getbalance",coinaddr,"","","")) != 0 )
+    {
+        fprintf(stderr,"z_getbalance.(%s) %s returned json!\n",refcoin,acname);
+        free_json(retjson);
+    }
+    else if ( retstr != 0 )
+    {
+        amount = atof(retstr) * SATOSHIDEN + 0.0000000049999;
+        free(retstr);
+    }
+    return (amount);
+}
+
+int32_t getnewaddress(char *coinaddr,char *refcoin,char *acname)
+{
+    cJSON *retjson; char *retstr; int64_t amount=0;
+    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"getnewaddress","","","","")) != 0 )
+    {
+        fprintf(stderr,"getnewaddress.(%s) %s returned json!\n",refcoin,acname);
+        free_json(retjson);
+        return(-1);
+    }
+    else if ( retstr != 0 )
+    {
+        strcpy(coinaddr,retstr);
+        free(retstr);
+        return(0);
+    }
+}
+
+int64_t find_onetime_amount(char *coinstr,char *coinaddr)
+{
+    cJSON *array,*item; int32_t i,n; char *addr; int64_t amount = 0;
+    coinaddr[0] = 0;
+    if ( (array= get_listunspent(coinstr,"")) != 0 )
+    {
+        if ( (n= cJSON_GetArraySize(array)) > 0 )
+        {
+            for (i=0; i<n; i++)
+            {
+                item = jitem(array,i);
+                if ( (addr= jstr(item,"address")) != 0 )
+                {
+                    strcpy(coinaddr,addr);
+                    amount = z_getbalance(coinaddr);
+                    printf("found address.(%s) with amount %.8f\n",coinaddr,dstr(amount));
+                    break;
+                }
+            }
+        }
+        free_json(array);
+    }
+    return(amount);
+}
+
+int64_t find_sprout_amount(char *coinstr,char *zcaddr)
+{
+    cJSON *array,*item; int32_t i,n; char *addr; int64_t amount = 0;
+    coinaddr[0] = 0;
+    if ( (array= z_listunspent(coinstr,"")) != 0 )
+    {
+        if ( (n= cJSON_GetArraySize(array)) > 0 )
+        {
+            for (i=0; i<n; i++)
+            {
+                item = jitem(array,i);
+                if ( (addr= jstr(item,"address")) != 0 && addr[0] == 'z' && addr[1] == 'c' )
+                {
+                    strcpy(zcaddr,addr);
+                    amount = z_getbalance(coinaddr);
+                    printf("found address.(%s) with amount %.8f\n",zcaddr,dstr(amount));
+                    break;
+                }
+            }
+        }
+        free_json(array);
+    }
+    return(amount);
+}
+
 void importaddress(char *refcoin,char *acname,char *depositaddr)
 {
     cJSON *retjson; char *retstr;
@@ -548,6 +708,18 @@ void importaddress(char *refcoin,char *acname,char *depositaddr)
         fprintf(stderr,"importaddress.(%s) %s error.(%s)\n",refcoin,acname,retstr);
         free(retstr);
     }
+}
+
+int32_t sapling_send(char *coinstr,char *coinaddr,char *zsaddr,int64_t amount)
+{
+    printf("do sapling send %s %s -> %s %.8f\n",coinstr,coinaddr,zsaddr,dstr(amount));
+    return(0);
+}
+
+int32_t sprout_send(char *coinstr,char *zcaddr,char *coinaddr,int64_t amount)
+{
+    printf("do sapling send %s %s -> %s %.8f\n",coinstr,coinaddr,zsaddr,dstr(amount));
+    return(0);
 }
 
 cJSON *getinputarray(int64_t *totalp,cJSON *unspents,int64_t required)
@@ -621,6 +793,38 @@ int32_t tx_has_voutaddress(char *refcoin,char *acname,bits256 txid,char *coinadd
     return(hasvout);
 }
 
+int32_t have_pending_opid(char *coinstr)
+{
+    cJSON *array,*status,*result; int32_t i,n,pending = 0; char *statusstr;
+    if ( (array= z_listoperationids(coinstr,"")) != 0 )
+    {
+        if ( (n= cJSON_GetArraySize(array)) > 0 )
+        {
+            for (i=0; i<n; i++)
+            {
+                if ( (status= z_getoperationstatus(coinstr,"",jstri(array,i))) != 0 )
+                {
+                    if ( (statusstr= jstr(status,"status")) != 0 )
+                    {
+                        if ( strcmp(statusstr,"executing") == 0 )
+                            pending++;
+                        /*else
+                        {
+                            if ( (result= z_getoperationresult(coinstr,jstri(array,i))) != 0 )
+                            {
+                                free_json(result);
+                            }
+                        }*/
+                    }
+                    free_json(status);
+                }
+            }
+        }
+        free_json(array);
+    }
+    return(pending);
+}
+
 int32_t main(int32_t argc,char **argv)
 {
     char buf[1024],*zsaddr,*coinstr;
@@ -652,5 +856,39 @@ int32_t main(int32_t argc,char **argv)
     }
     zsaddr = clonestr(argv[2]);
     printf("%s: %s %s\n",REFCOIN_CLI,coinstr,zsaddr);
+    char coinaddr[64],zcaddr[128]; int32_t alldone; int64_t amount,stdamount,txfee;
+    stdamount = 100 * SATOSHIDEN;
+    txfee = 10000;
+    while ( 1 )
+    {
+        if ( have_pending_opid(coinstr) != 0 )
+        {
+            sleep(3);
+            continue;
+        }
+        alldone = 1;
+        if ( (amount= find_onetime_amount(coinstr,coinaddr)) > txfee )
+        {
+            // find taddr with funds and send all to zsaddr
+            sapling_send(coinstr,coinaddr,zsaddr,amount-txfee);
+            alldone = 0;
+            sleep(1);
+        }
+        if ( (amount= find_sprout_amount(zcaddr)) > txfee )
+        {
+            // generate taddr, send max of 10000.0001
+            if ( amount > stdamount+txfee )
+                amount = stdamount + txfee;
+            if ( getnewaddress(coinaddr,coinstr,"") == 0 )
+            {
+                sprout_send(coinstr,zcaddr,coinaddr,amount);
+            } else printf("couldnt getnewaddress!\n");
+            alldone = 0;
+            sleep(10);
+        }
+        if ( alldone != 0 )
+            break;
+    }
+    printf("%s %s ALLDONE!\n",coinstr,zsaddr);
     return(0);
 }
