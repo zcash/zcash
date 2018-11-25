@@ -925,6 +925,7 @@ again:
             z_sendmany(opidstr,coinstr,"",coinaddr,zsaddr,amount-txfee);
             alldone = 0;
             sleep(1);
+            continue;
         }
         if ( alldone != 0 && (amount= find_sprout_amount(coinstr,zcaddr)) > txfee )
         {
@@ -937,11 +938,13 @@ again:
             } else printf("couldnt getnewaddress!\n");
             alldone = 0;
             sleep(30);
+            continue;
         }
         if ( alldone != 0 && find_onetime_amount(coinstr,coinaddr) == 0 && find_sprout_amount(coinstr,zcaddr) == 0 )
         {
             if ( finished++ > 10 )
                 break;
+            printf("%s %s finished.%d taddr %.8f sprout %.8f mempool empty.%d\n",coinstr,zsaddr,finished,dstr(find_onetime_amount(coinstr,coinaddr)),dstr(find_sprout_amount(coinstr,zcaddr)),empty_mempool(coinstr,""));
         } else finished = 0 ;
     }
     sleep(3);
