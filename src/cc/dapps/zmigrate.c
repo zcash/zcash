@@ -659,7 +659,7 @@ int64_t find_onetime_amount(char *coinstr,char *coinaddr)
                 if ( (addr= jstr(item,"address")) != 0 )
                 {
                     strcpy(coinaddr,addr);
-                    amount = z_getbalance(coinaddr,"");
+                    amount = z_getbalance(coinstr,"",coinaddr);
                     printf("found address.(%s) with amount %.8f\n",coinaddr,dstr(amount));
                     break;
                 }
@@ -684,7 +684,7 @@ int64_t find_sprout_amount(char *coinstr,char *zcaddr)
                 if ( (addr= jstr(item,"address")) != 0 && addr[0] == 'z' && addr[1] == 'c' )
                 {
                     strcpy(zcaddr,addr);
-                    amount = z_getbalance(coinaddr,"");
+                    amount = z_getbalance(coinstr,"",coinaddr);
                     printf("found address.(%s) with amount %.8f\n",zcaddr,dstr(amount));
                     break;
                 }
