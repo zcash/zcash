@@ -312,7 +312,7 @@ cJSON *get_komodocli(char *refcoin,char **retstrp,char *acname,char *method,char
     else if ( REFCOIN_CLI != 0 && REFCOIN_CLI[0] != 0 )
     {
         sprintf(cmdstr,"%s %s %s %s %s %s > %s\n",REFCOIN_CLI,method,arg0,arg1,arg2,arg3,fname);
-        printf("ref.(%s) REFCOIN_CLI (%s)\n",refcoin,cmdstr);
+        //printf("ref.(%s) REFCOIN_CLI (%s)\n",refcoin,cmdstr);
     }
     system(cmdstr);
     *retstrp = 0;
@@ -626,7 +626,7 @@ int64_t z_getbalance(char *refcoin,char *acname,char *coinaddr)
         sprintf(cmpstr,"%.8f",dstr(amount));
         if ( strcmp(retstr,cmpstr) != 0 )
             amount++;
-        printf("retstr %s -> %.8f\n",retstr,dstr(amount));
+        //printf("retstr %s -> %.8f\n",retstr,dstr(amount));
         free(retstr);
     }
     return (amount);
@@ -722,7 +722,7 @@ int32_t sapling_send(char *coinstr,char *coinaddr,char *zsaddr,int64_t amount)
 
 int32_t sprout_send(char *coinstr,char *zcaddr,char *coinaddr,int64_t amount)
 {
-    printf("do sapling send %s %s -> %s %.8f\n",coinstr,zcaddr,coinaddr,dstr(amount));
+    printf("do sprout send %s %s -> %s %.8f\n",coinstr,zcaddr,coinaddr,dstr(amount));
     return(0);
 }
 
