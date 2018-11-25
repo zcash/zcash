@@ -553,7 +553,7 @@ cJSON *z_getoperationstatus(char *refcoin,char *acname,char *opid)
     sprintf(params,"'[\"%s\"]'",opid);
     if ( (retjson= get_komodocli(refcoin,&retstr,acname,"z_getoperationstatus",params,"","","")) != 0 )
     {
-        printf("got status (%s)\n",jprint(retjson,0));
+        //printf("got status (%s)\n",jprint(retjson,0));
         return(retjson);
     }
     else if ( retstr != 0 )
@@ -808,7 +808,7 @@ int32_t tx_has_voutaddress(char *refcoin,char *acname,bits256 txid,char *coinadd
 
 int32_t have_pending_opid(char *coinstr)
 {
-    cJSON *array,*status,*result; int32_t i,n,pending = 0; char *statusstr;
+    cJSON *array,*status,*result; int32_t i,n,j,n,pending = 0; char *statusstr;
     if ( (array= z_listoperationids(coinstr,"")) != 0 )
     {
         if ( (n= cJSON_GetArraySize(array)) > 0 )
@@ -817,18 +817,26 @@ int32_t have_pending_opid(char *coinstr)
             {
                 if ( (status= z_getoperationstatus(coinstr,"",jstri(array,i))) != 0 )
                 {
-                    printf("status.(%s)\n",jprint(status,0));
-                    if ( (statusstr= jstr(status,"status")) != 0 )
+                    if ( (m= cJSON_GetArraySize(status)) > 0 )
                     {
-                        if ( strcmp(statusstr,"executing") == 0 )
-                            pending++;
-                        /*else
+                        for (j=0; j<m; j++)
                         {
-                            if ( (result= z_getoperationresult(coinstr,jstri(array,i))) != 0 )
+                            if ( (statusstr= jstr(jitem(status,j),"status")) != 0 )
                             {
-                                free_json(result);
+                                if ( strcmp(statusstr,"executing") == 0 )
+                                {
+                                    pending++;
+                                    printf("pending.%d\n",pending);
+                                }
+                                /*else
+                                 {
+                                 if ( (result= z_getoperationresult(coinstr,jstri(array,i))) != 0 )
+                                 {
+                                 free_json(result);
+                                 }
+                                 }*/
                             }
-                        }*/
+                        }
                     }
                     free_json(status);
                 }
