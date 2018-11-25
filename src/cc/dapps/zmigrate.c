@@ -905,11 +905,12 @@ int32_t main(int32_t argc,char **argv)
     }
     zsaddr = clonestr(argv[2]);
     printf("%s: %s %s\n",REFCOIN_CLI,coinstr,zsaddr);
-    uint32_t lastopid=0; char coinaddr[64],zcaddr[128],opidstr[128]; int32_t finished; int64_t amount,stdamount,txfee;
+    uint32_t lastopid; char coinaddr[64],zcaddr[128],opidstr[128]; int32_t finished; int64_t amount,stdamount,txfee;
     stdamount = 1000 * SATOSHIDEN;
     txfee = 10000;
 again:
     printf("start processing zmigrate\n");
+    lastopid = (uint32_t)time(NULL);
     finished = 0;
     while ( 1 )
     {
