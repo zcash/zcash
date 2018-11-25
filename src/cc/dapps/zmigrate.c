@@ -550,7 +550,7 @@ cJSON *z_listoperationids(char *refcoin,char *acname)
 cJSON *z_getoperationstatus(char *refcoin,char *acname,char *opid)
 {
     cJSON *retjson; char *retstr,str[65],params[512];
-    sprintf(params,"[%s]",opid);
+    sprintf(params,"[\"%s\"]",opid);
     if ( (retjson= get_komodocli(refcoin,&retstr,acname,"z_getoperationstatus",params,"","","")) != 0 )
     {
         return(retjson);
@@ -566,14 +566,14 @@ cJSON *z_getoperationstatus(char *refcoin,char *acname,char *opid)
 cJSON *z_getoperationresult(char *refcoin,char *acname,char *opid)
 {
     cJSON *retjson; char *retstr,str[65],params[512];
-    sprintf(params,"[%s]",opid);
+    sprintf(params,"[\"%s\"]",opid);
     if ( (retjson= get_komodocli(refcoin,&retstr,acname,"z_getoperationresult",params,"","","")) != 0 )
     {
         return(retjson);
     }
     else if ( retstr != 0 )
     {
-        fprintf(stderr,"get_zgetoperationstatus.(%s) %s error.(%s)\n",refcoin,acname,retstr);
+        fprintf(stderr,"z_getoperationresult.(%s) %s error.(%s)\n",refcoin,acname,retstr);
         free(retstr);
     }
     return(0);
@@ -622,7 +622,7 @@ int64_t z_getbalance(char *refcoin,char *acname,char *coinaddr)
     }
     else if ( retstr != 0 )
     {
-        amount = atof(retstr) * SATOSHIDEN + 0.0000000049999;
+        amount = atof(retstr) * SATOSHIDEN;
         free(retstr);
     }
     return (amount);
