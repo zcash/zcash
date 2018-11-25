@@ -15,6 +15,7 @@ variables:
   AGAMA_ARTIFACTS_WINDOWS_CHECKSUM: ${AGAMA_ARTIFACTS_WINDOWS}.md5
   AGAMA_ARTIFACTS_MACOS_CHECKSUM: ${AGAMA_ARTIFACTS_MACOS}.md5
   ARTIFACT_EXPIRATION: 1 week
+
 ########################################################################################################################
 ####END####                                        PROJECT LEVEL VARIABLES                                   ####END####
 ########################################################################################################################
@@ -27,7 +28,7 @@ variables:
 ########################################################################################################################
 build:ubuntu:
   stage: build
-  image: asherd/komodo-builders:komodo-ubuntu
+  image: ca333/komodo-builders:komodo-ubuntu
   variables:
     DOCKER_DRIVER: overlay2
   cache:
@@ -48,7 +49,8 @@ build:ubuntu:
     paths:
     - ${AGAMA_ARTIFACTS_LINUX}
     - ${AGAMA_ARTIFACTS_LINUX_CHECKSUM}
-    expire_in: ${ARTIFACT_EXPIRATION}
+    expire_in: 1 week
+
 ########################################################################################################################
 ####END####                                              LINUX                                               ####END####
 ########################################################################################################################
@@ -56,7 +58,7 @@ build:ubuntu:
 ########################################################################################################################
 build:windows:
   stage: build
-  image:  asherd/komodo-builders:komodo-windows
+  image:  ca333/komodo-builders:komodo-windows
   variables:
     DOCKER_DRIVER: overlay2
   cache:
@@ -65,18 +67,18 @@ build:windows:
     - depends/built
   script:
   - zcutil/build-win.sh -j$(nproc)
-  - mkdir ${PACKAGE_DIR_WINDOWS}.
+  - mkdir ${PACKAGE_DIR_WINDOWS}
   - cp src/komodod.exe
     src/komodo-cli.exe
     src/komodo-tx.exe
     ${PACKAGE_DIR_WINDOWS}
-  - zip -r ${PACKAGE_DIR_WINDOWS}
+  - zip -r ${PACKAGE_DIR_WINDOWS}.zip ${PACKAGE_DIR_WINDOWS}
   - md5sum ${AGAMA_ARTIFACTS_WINDOWS} > ${AGAMA_ARTIFACTS_WINDOWS_CHECKSUM}
   artifacts:
     paths:
     - ${AGAMA_ARTIFACTS_WINDOWS}
     - ${AGAMA_ARTIFACTS_WINDOWS_CHECKSUM}
-    expire_in: ${ARTIFACT_EXPIRATION}
+    expire_in: 1 week
 ########################################################################################################################
 ####END####                                             WINDOWS                                              ####END####
 ########################################################################################################################
@@ -98,7 +100,7 @@ build:macos:
     paths:
     - ${AGAMA_ARTIFACTS_MACOS}
     - ${AGAMA_ARTIFACTS_MACOS_CHECKSUM}
-    expire_in: ${ARTIFACT_EXPIRATION}
+    expire_in: 1 week
 ########################################################################################################################
 ####END####                                              MACOS                                               ####END####
 ########################################################################################################################
