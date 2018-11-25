@@ -839,7 +839,7 @@ int32_t have_pending_opid(char *coinstr,int32_t clearresults)
                                 if ( strcmp(statusstr,"executing") == 0 )
                                 {
                                     pending++;
-                                    printf("pending.%d\n",pending);
+                                    //printf("pending.%d\n",pending);
                                 }
                                 else if ( clearresults != 0 )
                                 {
