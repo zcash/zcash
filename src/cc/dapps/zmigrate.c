@@ -924,7 +924,12 @@ int32_t main(int32_t argc,char **argv)
         if ( alldone != 0 && find_onetime_amount(coinstr,coinaddr) == 0 && find_sprout_amount(coinstr,zcaddr) == 0 && empty_mempool(coinstr,"") > 0 )
             break;
     }
-    printf("%s %s ALLDONE!\n",coinstr,zsaddr);
-    have_pending_opid(coinstr,1);
+    printf("%s %s ALLDONE! taddr %.8f sprout %.8f mempool empty.%d\n",coinstr,zsaddr,dstr(find_onetime_amount(coinstr,coinaddr)),dstr(find_sprout_amount(coinstr,zcaddr)),empty_mempool(coinstr,""));
+    if ( find_onetime_amount(coinstr,coinaddr) == 0 && find_sprout_amount(coinstr,zcaddr) == 0 && empty_mempool(coinstr,"") > 0 )
+    {
+        printf("about to purge all opid results!. ctrl-C to abort, <enter> to proceed\n");
+        getchar();
+        have_pending_opid(coinstr,1);
+    }
     return(0);
 }
