@@ -816,6 +816,7 @@ int32_t have_pending_opid(char *coinstr)
             {
                 if ( (status= z_getoperationstatus(coinstr,"",jstri(array,i))) != 0 )
                 {
+                    printf("status.(%s)\n",jprint(status,0));
                     if ( (statusstr= jstr(status,"status")) != 0 )
                     {
                         if ( strcmp(statusstr,"executing") == 0 )
