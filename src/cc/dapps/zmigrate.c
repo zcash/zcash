@@ -717,9 +717,9 @@ void importaddress(char *refcoin,char *acname,char *depositaddr)
 int32_t z_sendmany(char *coinstr,char *acname,char *srcaddr,char *destaddr,int64_t amount)
 {
     cJSON *retjson; char *retstr,params[1024];
-    sprintf(params,"[\"%s\", [{\"address\":\"%s\",\"amount\":%.8f}], 1]",srcaddr,destaddr,amount);
+    sprintf(params,"[\"%s\", [{\"address\":\"%s\",\"amount\":%.8f}], 1]",srcaddr,destaddr,dstr(amount));
     printf("params.%s\n",params);
-    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"z_sendmany",params,"","","")) != 0 )
+    if ( (retjson= get_komodocli(coinstr,&retstr,acname,"z_sendmany",params,"","","")) != 0 )
     {
         printf("z_sendmany.(%s)\n",jprint(retjson,0));
         free_json(retjson);
