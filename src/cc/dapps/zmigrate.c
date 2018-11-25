@@ -908,7 +908,7 @@ int32_t main(int32_t argc,char **argv)
             alldone = 0;
             sleep(10);
         }
-        if ( alldone != 0 )
+        if ( alldone != 0 && find_onetime_amount(coinstr,coinaddr) == 0 && find_sprout_amount(coinstr,zcaddr) == 0 )
             break;
     }
     printf("%s %s ALLDONE!\n",coinstr,zsaddr);
