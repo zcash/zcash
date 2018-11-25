@@ -526,7 +526,7 @@ cJSON *z_listunspent(char *refcoin,char *acname)
     }
     else if ( retstr != 0 )
     {
-        fprintf(stderr,"get_zlistunspent.(%s) %s error.(%s)\n",refcoin,acname,retstr);
+        fprintf(stderr,"z_listunspent.(%s) %s error.(%s)\n",refcoin,acname,retstr);
         free(retstr);
     }
     return(0);
@@ -541,7 +541,7 @@ cJSON *z_listoperationids(char *refcoin,char *acname)
     }
     else if ( retstr != 0 )
     {
-        fprintf(stderr,"get_zlistoperationids.(%s) %s error.(%s)\n",refcoin,acname,retstr);
+        fprintf(stderr,"z_listoperationids.(%s) %s error.(%s)\n",refcoin,acname,retstr);
         free(retstr);
     }
     return(0);
@@ -553,11 +553,12 @@ cJSON *z_getoperationstatus(char *refcoin,char *acname,char *opid)
     sprintf(params,"'[\"%s\"]'",opid);
     if ( (retjson= get_komodocli(refcoin,&retstr,acname,"z_getoperationstatus",params,"","","")) != 0 )
     {
+        printf("got status (%s)\n",jprint(retjson,0));
         return(retjson);
     }
     else if ( retstr != 0 )
     {
-        fprintf(stderr,"get_zgetoperationstatus.(%s) %s error.(%s)\n",refcoin,acname,retstr);
+        fprintf(stderr,"z_getoperationstatus.(%s) %s error.(%s)\n",refcoin,acname,retstr);
         free(retstr);
     }
     return(0);
