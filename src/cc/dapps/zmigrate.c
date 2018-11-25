@@ -622,7 +622,7 @@ int64_t z_getbalance(char *refcoin,char *acname,char *coinaddr)
     }
     else if ( retstr != 0 )
     {
-        amount = atof(retstr) * SATOSHIDEN + 0.00000000499999;
+        amount = atof(retstr) * SATOSHIDEN + 0.0000000099999;
         printf("retstr %s -> %.8f\n",retstr,dstr(amount));
         free(retstr);
     }
