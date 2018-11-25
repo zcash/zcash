@@ -719,7 +719,7 @@ int32_t z_sendmany(char *coinstr,char *acname,char *srcaddr,char *destaddr,int64
     cJSON *retjson; char *retstr,params[1024];
     sprintf(params,"[{\"address\":\"%s\",\"amount\":%.8f}]",destaddr,dstr(amount));
     printf("params.%s\n",params);
-    if ( (retjson= get_komodocli(coinstr,&retstr,acname,"z_sendmany",srcaddr,params,1,"")) != 0 )
+    if ( (retjson= get_komodocli(coinstr,&retstr,acname,"z_sendmany",srcaddr,params,"1","")) != 0 )
     {
         printf("z_sendmany.(%s)\n",jprint(retjson,0));
         free_json(retjson);
