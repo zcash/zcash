@@ -673,7 +673,7 @@ int64_t find_onetime_amount(char *coinstr,char *coinaddr)
 int64_t find_sprout_amount(char *coinstr,char *zcaddr)
 {
     cJSON *array,*item; int32_t i,n; char *addr; int64_t amount = 0;
-    coinaddr[0] = 0;
+    zcaddr[0] = 0;
     if ( (array= z_listunspent(coinstr,"")) != 0 )
     {
         if ( (n= cJSON_GetArraySize(array)) > 0 )
