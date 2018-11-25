@@ -312,7 +312,7 @@ cJSON *get_komodocli(char *refcoin,char **retstrp,char *acname,char *method,char
     else if ( REFCOIN_CLI != 0 && REFCOIN_CLI[0] != 0 )
     {
         sprintf(cmdstr,"%s %s %s %s %s %s > %s\n",REFCOIN_CLI,method,arg0,arg1,arg2,arg3,fname);
-        //printf("ref.(%s) REFCOIN_CLI (%s)\n",refcoin,cmdstr);
+        printf("ref.(%s) REFCOIN_CLI (%s)\n",refcoin,cmdstr);
     }
     system(cmdstr);
     *retstrp = 0;
@@ -719,7 +719,7 @@ int32_t z_sendmany(char *coinstr,char *acname,char *srcaddr,char *destaddr,int64
     cJSON *retjson; char *retstr,params[1024];
     sprintf(params,"[{\"address\":\"%s\",\"amount\":%.8f}]",destaddr,dstr(amount));
     printf("params.%s\n",params);
-    if ( (retjson= get_komodocli(coinstr,&retstr,acname,"z_sendmany",srcaddr,params,"1","")) != 0 )
+    if ( (retjson= get_komodocli(coinstr,&retstr,acname,"z_sendmany",srcaddr,params,"","")) != 0 )
     {
         printf("z_sendmany.(%s)\n",jprint(retjson,0));
         free_json(retjson);
@@ -884,7 +884,7 @@ int32_t main(int32_t argc,char **argv)
             alldone = 0;
             sleep(1);
         }
-        if ( (amount= find_sprout_amount(coinstr,zcaddr)) > txfee )
+        if ( alldone != 0 && (amount= find_sprout_amount(coinstr,zcaddr)) > txfee )
         {
             // generate taddr, send max of 10000.0001
             if ( amount > stdamount+txfee )
