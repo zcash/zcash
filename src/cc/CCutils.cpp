@@ -498,6 +498,7 @@ bool komodo_txnotarizedconfirmed(uint256 txid)
         {   
             if ( txheight >= sp->NOTARIZED_HEIGHT )
                 confirms = (txheight - sp->NOTARIZED_HEIGHT);
+            else notarized = 0;
         }
     }
 #ifdef TESTMODE           
