@@ -739,7 +739,7 @@ std::string OracleCreate(int64_t txfee,std::string name,std::string description,
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
     Oraclespk = GetUnspendable(cp,0);
-    if ( AddNormalinputs(mtx,mypk,2*txfee,1) > 0 )
+    if ( AddNormalinputs(mtx,mypk,2*txfee,3) > 0 )
     {
         mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(Oraclespk)) << OP_CHECKSIG));
         return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeOraclesCreateOpRet('C',name,description,format)));
@@ -778,7 +778,7 @@ std::string OracleSubscribe(int64_t txfee,uint256 oracletxid,CPubKey publisher,i
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
     markerpubkey = CCtxidaddr(markeraddr,oracletxid);
-    if ( AddNormalinputs(mtx,mypk,amount + 2*txfee,1) > 0 )
+    if ( AddNormalinputs(mtx,mypk,amount + 2*txfee,64) > 0 )
     {
         mtx.vout.push_back(MakeCC1vout(cp->evalcode,amount,publisher));
         mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(markerpubkey)) << OP_CHECKSIG));

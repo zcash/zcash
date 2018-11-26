@@ -5981,6 +5981,8 @@ UniValue gatewaysbind(const UniValue& params, bool fHelp)
         if ( params.size() < 6+i+1 )
             throw runtime_error("not enough parameters for N pubkeys\n");
         pubkey = ParseHex(params[6+i].get_str().c_str());
+        if (pubkey.size()!= 33)    
+            throw runtime_error("invalid destination pubkey");
         pubkeys.push_back(pubkey2pk(pubkey));
     }
     hex = GatewaysBind(0,coin,tokenid,totalsupply,oracletxid,M,N,pubkeys);
@@ -6013,6 +6015,8 @@ UniValue gatewaysdeposit(const UniValue& params, bool fHelp)
     amount = atof((char *)params[8].get_str().c_str()) * COIN + 0.00000000499999;
     if ( amount <= 0 || claimvout < 0 )
         throw runtime_error("invalid param: amount, numpks or claimvout\n");
+    if (destpub.size()!= 33)    
+        throw runtime_error("invalid destination pubkey");       
     hex = GatewaysDeposit(0,bindtxid,height,coin,cointxid,claimvout,deposithex,proof,pubkey2pk(destpub),amount);
 
     RETURN_IF_ERROR(CCerror);
@@ -6037,7 +6041,9 @@ UniValue gatewaysclaim(const UniValue& params, bool fHelp)
     coin = params[1].get_str();
     deposittxid = Parseuint256((char *)params[2].get_str().c_str());
     destpub = ParseHex(params[3].get_str());
-    amount = atof((char *)params[4].get_str().c_str()) * COIN + 0.00000000499999;
+    amount = atof((char *)params[4].get_str().c_str()) * COIN + 0.00000000499999;    
+    if (destpub.size()!= 33)    
+        throw runtime_error("invalid destination pubkey");  
     hex = GatewaysClaim(0,bindtxid,coin,deposittxid,pubkey2pk(destpub),amount);
     RETURN_IF_ERROR(CCerror);
     if ( hex.size() > 0 )
@@ -6060,7 +6066,9 @@ UniValue gatewayswithdraw(const UniValue& params, bool fHelp)
     bindtxid = Parseuint256((char *)params[0].get_str().c_str());
     coin = params[1].get_str();
     withdrawpub = ParseHex(params[2].get_str());
-    amount = atof((char *)params[3].get_str().c_str()) * COIN + 0.00000000499999;
+    amount = atof((char *)params[3].get_str().c_str()) * COIN + 0.00000000499999;    
+    if (withdrawpub.size()!= 33)    
+        throw runtime_error("invalid destination pubkey");  
     hex = GatewaysWithdraw(0,bindtxid,coin,pubkey2pk(withdrawpub),amount);
     RETURN_IF_ERROR(CCerror);
     if ( hex.size() > 0 )
@@ -6071,19 +6079,61 @@ UniValue gatewayswithdraw(const UniValue& params, bool fHelp)
     return(result);
 }
 
-UniValue gatewaysmarkdone(const UniValue& params, bool fHelp)
+UniValue gatewayspartialsign(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); uint256 withdrawtxid,cointxid; std::string hex,coin;
+    UniValue result(UniValue::VOBJ); std::string coin,parthex,hex; uint256 txid;
     if ( fHelp || params.size() != 3 )
-        throw runtime_error("gatewaysmarkdone withdrawtxid coin cointxid\n");
+        throw runtime_error("gatewayspartialsign txidaddr refcoin hex\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    const CKeyStore& keystore = *pwalletMain;
+    LOCK2(cs_main, pwalletMain->cs_wallet);    
+    txid = Parseuint256((char *)params[0].get_str().c_str());
+    coin = params[1].get_str();
+    parthex = params[2].get_str();
+    hex = GatewaysPartialSign(0,txid,coin,parthex);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex",hex));
+    } else ERR_RESULT("couldnt gatewayspartialsign");
+    return(result);
+}
+
+UniValue gatewayscompletesigning(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); uint256 withdrawtxid; std::string txhex,hex,coin;
+    if ( fHelp || params.size() != 3 )
+        throw runtime_error("gatewayscompletesigning withdrawtxid coin hex\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
     withdrawtxid = Parseuint256((char *)params[0].get_str().c_str());
     coin = params[1].get_str();
-    cointxid = Parseuint256((char *)params[2].get_str().c_str());
-    hex = GatewaysMarkdone(0,withdrawtxid,coin,cointxid);
+    txhex = params[2].get_str();
+    hex = GatewaysCompleteSigning(0,withdrawtxid,coin,txhex);
+    RETURN_IF_ERROR(CCerror);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else ERR_RESULT("couldnt gatewayscompletesigning");
+    return(result);
+}
+
+UniValue gatewaysmarkdone(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); uint256 completetxid; std::string hex,coin;
+    if ( fHelp || params.size() != 2 )
+        throw runtime_error("gatewaysmarkdone completesigningtx coin\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    const CKeyStore& keystore = *pwalletMain;
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+    completetxid = Parseuint256((char *)params[0].get_str().c_str());
+    coin = params[1].get_str();    
+    hex = GatewaysMarkDone(0,completetxid,coin);
     RETURN_IF_ERROR(CCerror);
     if ( hex.size() > 0 )
     {
@@ -6105,6 +6155,18 @@ UniValue gatewayspending(const UniValue& params, bool fHelp)
     return(GatewaysPendingWithdraws(bindtxid,coin));
 }
 
+UniValue gatewaysprocessed(const UniValue& params, bool fHelp)
+{
+    uint256 bindtxid; std::string coin;
+    if ( fHelp || params.size() != 2 )
+        throw runtime_error("gatewaysprocessed bindtxid coin\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    bindtxid = Parseuint256((char *)params[0].get_str().c_str());
+    coin = params[1].get_str();
+    return(GatewaysProcessedWithdraws(bindtxid,coin));
+}
+
 UniValue gatewaysmultisig(const UniValue& params, bool fHelp)
 {
     UniValue result(UniValue::VOBJ); std::string hex; char *txidaddr;
@@ -6116,28 +6178,6 @@ UniValue gatewaysmultisig(const UniValue& params, bool fHelp)
     LOCK2(cs_main, pwalletMain->cs_wallet);
     txidaddr = (char *)params[0].get_str().c_str();
     return(GatewaysMultisig(txidaddr));
-}
-
-UniValue gatewayspartialsign(const UniValue& params, bool fHelp)
-{
-    UniValue result(UniValue::VOBJ); std::string coin,parthex,hex; uint256 txid;
-    if ( fHelp || params.size() != 3 )
-        throw runtime_error("gatewayspartialsign txidaddr refcoin hex\n");
-    if ( ensure_CCrequirements() < 0 )
-        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
-    const CKeyStore& keystore = *pwalletMain;
-    LOCK2(cs_main, pwalletMain->cs_wallet);
-    txid = Parseuint256((char *)params[0].get_str().c_str());
-    coin = params[1].get_str();
-    parthex = params[2].get_str();
-    hex = GatewaysPartialSign(0,txid,coin,parthex);
-    RETURN_IF_ERROR(CCerror);
-    if ( hex.size() > 0 )
-    {
-        result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex",hex));
-    } else ERR_RESULT("couldnt gatewaysmultisig");
-    return(result);
 }
 
 UniValue oracleslist(const UniValue& params, bool fHelp)

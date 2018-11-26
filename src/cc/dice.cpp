@@ -1498,7 +1498,7 @@ std::string DiceBetFinish(uint8_t &funcid,uint256 &entropyused,int32_t &entropyv
         {
             if ( vin0txid == zeroid || vin0vout < 0 )
             {
-                if ( AddNormalinputs(mtx,mypk,2*txfee,1) == 0 ) // must be a single vin!!
+                if ( AddNormalinputs(mtx,mypk,2*txfee,3) == 0 ) // must be a single vin!!
                 {
                     CCerror = "no txfee inputs for win/lose";
                     fprintf(stderr,"%s\n", CCerror.c_str() );

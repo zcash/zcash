@@ -328,13 +328,18 @@ cJSON *get_komodocli(char *refcoin,char **retstrp,char *acname,char *method,char
     {
         sprintf(cmdstr,"%s %s %s %s %s %s > %s\n",REFCOIN_CLI,method,arg0,arg1,arg2,arg3,fname);
         printf("ref.(%s) REFCOIN_CLI (%s)\n",refcoin,cmdstr);
-    }
+    }   
+#ifdef TESTMODE    
+    fprintf(stderr,"cmd: %s\n",cmdstr); 
+#endif // TESTMODE
     system(cmdstr);
     *retstrp = 0;
     if ( (jsonstr= filestr(&fsize,fname)) != 0 )
     {       
         jsonstr[strlen(jsonstr)-1]='\0';
-        //fprintf(stderr,"%s -> jsonstr.(%s)\n",cmdstr,jsonstr);
+#ifdef TESTMODE   
+        fprintf(stderr,"jsonstr.(%s)\n",jsonstr);
+#endif // TESTMODE
         if ( (jsonstr[0] != '{' && jsonstr[0] != '[') || (retjson= cJSON_Parse(jsonstr)) == 0 )
             *retstrp = jsonstr;
         else free(jsonstr);
@@ -483,6 +488,22 @@ cJSON *get_gatewayspending(char *refcoin,char *acname,char *bindtxidstr)
     return(0);
 }
 
+cJSON *get_gatewaysprocessed(char *refcoin,char *acname,char *bindtxidstr)
+{
+    cJSON *retjson; char *retstr;
+    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"gatewaysprocessed",bindtxidstr,refcoin,"","")) != 0 )
+    {
+        //printf("pending.(%s)\n",jprint(retjson,0));
+        return(retjson);
+    }
+    else if ( retstr != 0 )
+    {
+        fprintf(stderr,"%s get_gatewaysprocessed.(%s) error.(%s)\n",refcoin,acname,retstr);
+        free(retstr);
+    }
+    return(0);
+}
+
 cJSON *get_rawmempool(char *refcoin,char *acname)
 {
     cJSON *retjson; char *retstr;
@@ -550,10 +571,12 @@ int32_t validateaddress(char *refcoin,char *acname,char *depositaddr, char* comp
     return (res);
 }
 
-void importaddress(char *refcoin,char *acname,char *depositaddr)
+void importaddress(char *refcoin,char *acname,char *depositaddr, char *label,int rescan)
 {
-    cJSON *retjson; char *retstr;
-    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"importaddress",depositaddr,"","true","")) != 0 )
+    cJSON *retjson; char *retstr; char rescanstr[10];
+    if (rescan) strcpy(rescanstr,"true");
+    else strcpy(rescanstr,"false");
+    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"importaddress",depositaddr,label,rescanstr,"")) != 0 )
     {
         printf("importaddress.(%s)\n",jprint(retjson,0));
         free_json(retjson);
@@ -610,7 +633,7 @@ cJSON *getinputarray(int64_t *totalp,cJSON *unspents,int64_t required)
     return(vins);
 }
 
-char *createmultisig(char *refcoin,char *acname,char *depositaddr,char *signeraddr,char *withdrawaddr,int64_t satoshis)
+char *createrawtx(char *refcoin,char *acname,char *depositaddr,char *withdrawaddr,char *txidaddr,int64_t satoshis)
 {
     char *retstr,*retstr2,array[128],*txstr = 0; cJSON *retjson2,*retjson,*vins,*vouts; int64_t txfee,total,change = 0;
     if ( strcmp(refcoin,"BTC") == 0 )
@@ -618,7 +641,7 @@ char *createmultisig(char *refcoin,char *acname,char *depositaddr,char *signerad
     else txfee = 10000;
     if ( satoshis < txfee )
     {
-        printf("createmultisig satoshis %.8f < txfee %.8f\n",(double)satoshis/SATOSHIDEN,(double)txfee/SATOSHIDEN);
+        printf("createrawtx satoshis %.8f < txfee %.8f\n",(double)satoshis/SATOSHIDEN,(double)txfee/SATOSHIDEN);
         return(0);
     }
     satoshis -= txfee;
@@ -631,8 +654,9 @@ char *createmultisig(char *refcoin,char *acname,char *depositaddr,char *signerad
             if ( total >= satoshis )
             {
                 vouts = cJSON_CreateObject();
-                jaddnum(vouts,withdrawaddr,(double)satoshis/SATOSHIDEN);
-                if ( total > satoshis+txfee )
+                jaddnum(vouts,withdrawaddr,(double)(satoshis-2*txfee)/SATOSHIDEN);
+                jaddnum(vouts,txidaddr,(double)txfee/SATOSHIDEN);
+                if ( total > satoshis)
                 {
                     change = (total - satoshis);
                     jaddnum(vouts,depositaddr,(double)change/SATOSHIDEN);
@@ -645,29 +669,30 @@ char *createmultisig(char *refcoin,char *acname,char *depositaddr,char *signerad
                 sprintf(argB,"\'%s\'",tmpB);                
                 if ( (retjson2= get_komodocli(refcoin,&txstr,acname,"createrawtransaction",argA,argB,"","")) != 0 )
                 {
-                    printf("createmultisig: unexpected JSON2.(%s)\n",jprint(retjson2,0));
+                    printf("createrawtx: unexpected JSON2.(%s)\n",jprint(retjson2,0));
                     free_json(retjson2);
                 }
                 else if ( txstr == 0 )
-                    printf("createmultisig: null txstr and JSON2\n");
+                    printf("createrawtx: null txstr and JSON2\n");
                 free(tmpA);
                 free(tmpB);
                 free(argA);
                 free(argB);
             }
+            else printf("not enough funds to create withdraw tx\n");
         }
         free_json(retjson);
     }
     else if ( retstr != 0 )
     {
-        printf("createmultisig: unexpected null JSON, retstr.(%s)\n",retstr);
+        printf("createrawtx: unexpected null JSON, retstr.(%s)\n",retstr);
         free(retstr);
     }
-    else printf("createmultisig: null retstr and JSON\n");
+    else printf("createrawtx: null retstr and JSON\n");
     return(txstr);
 }
 
-cJSON *addmultisignature(char *refcoin,char *acname,char *signeraddr,char *rawtx)
+cJSON *addsignature(char *refcoin,char *acname,char *rawtx)
 {
     char *retstr,*hexstr; cJSON *retjson;
     if ( (retjson= get_komodocli(refcoin,&retstr,acname,"signrawtransaction",rawtx,"","","")) != 0 )
@@ -680,6 +705,11 @@ cJSON *addmultisignature(char *refcoin,char *acname,char *signeraddr,char *rawtx
             return(retjson);
         }
         free_json(retjson);
+    }
+    else if ( retstr != 0 )
+    {
+        printf("error parsing signrawtransaction.(%s)\n",retstr);
+        free(retstr);
     }
     return(0);
 }
@@ -695,6 +725,11 @@ char *get_gatewaysmultisig(char *refcoin,char *acname,char *txidaddr,int32_t *K)
         }
         *K=jint(retjson,"number_of_signs");   
         free_json(retjson);
+    }
+    else if ( retstr != 0 )
+    {
+        printf("error parsing gatewaysmultisig.(%s)\n",retstr);
+        free(retstr);
     }
     return(hex);
 }
@@ -714,11 +749,27 @@ bits256 gatewayspartialsign(char *refcoin,char *acname,bits256 txid,char *hex)
     return (zeroid);
 }
 
-void gatewaysmarkdone(char *refcoin,char *acname,bits256 withtxid,char *coin,bits256 cointxid)
+void gatewayscompletesigning(char *refcoin,char *acname,bits256 withtxid,char *coin,char *hex)
 {
     char str[65],str2[65],*retstr; cJSON *retjson;
     printf("spend %s %s/v2 as marker\n",acname,bits256_str(str,withtxid));
-    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"gatewaysmarkdone",bits256_str(str,withtxid),coin,bits256_str(str2,cointxid),"")) != 0 )
+    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"gatewayscompletesigning",bits256_str(str,withtxid),coin,hex,"")) != 0 )
+    {
+        komodobroadcast(refcoin,acname,retjson);
+        free_json(retjson);
+    }
+    else if ( retstr != 0 )
+    {
+        printf("error parsing gatewayscompletesigning.(%s)\n",retstr);
+        free(retstr);
+    }
+}
+
+void gatewaysmarkdone(char *refcoin,char *acname,bits256 withtxid,char *coin)
+{
+    char str[65],str2[65],*retstr; cJSON *retjson;
+    printf("spend %s %s/v2 as marker\n",acname,bits256_str(str,withtxid));
+    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"gatewaysmarkdone",bits256_str(str,withtxid),coin,"","")) != 0 )
     {
         komodobroadcast(refcoin,acname,retjson);
         free_json(retjson);
@@ -771,6 +822,22 @@ int32_t get_gatewaysinfo(char *refcoin,char *acname,char *depositaddr,int32_t *M
     else return(0);
 }
 
+int32_t tx_notarizedconfirmed(char *refcoin,char *acname,bits256 txid)
+{
+    char *retstr,str[65]; cJSON *retjson; int32_t result;
+    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"txnotarizedconfirmed",bits256_str(str,txid),"","","")) != 0 )
+    {
+        if (is_cJSON_True(jobj(retjson,"result")) != 0 ) result=1;
+        else result=0;        
+        free_json(retjson);
+    }
+    else if ( retstr != 0 )
+    {
+        printf("error parsing txnotarizedconfirmed.(%s)\n",retstr);
+        free(retstr);
+    }
+}
+
 int32_t tx_has_voutaddress(char *refcoin,char *acname,bits256 txid,char *coinaddr)
 {
     cJSON *txobj,*vouts,*vout,*vins,*vin,*sobj,*addresses; char *addr,str[65]; int32_t i,j,n,numarray,retval = 0, hasvout=0;
@@ -788,8 +855,7 @@ int32_t tx_has_voutaddress(char *refcoin,char *acname,bits256 txid,char *coinadd
                         {
                             addr = jstri(addresses,j);
                             if ( strcmp(addr,coinaddr) == 0 )
-                            {
-                                //fprintf(stderr,"found %s in %s v%d\n",coinaddr,bits256_str(str,txid),i);
+                            {                                
                                 hasvout = 1;
                                 break;
                             }
@@ -798,23 +864,44 @@ int32_t tx_has_voutaddress(char *refcoin,char *acname,bits256 txid,char *coinadd
                 }
                 if (hasvout==1) break;
             }
-        }
-        // if (hasvout==1 && (vins=jarray(&numarray,txobj,"vin"))!=0)
-        // {                          
-        //     for (int i=0;i<numarray;i++)
-        //     {
-        //         if ((vin=jitem(vins,i))!=0 && validateaddress(refcoin,acname,jstr(vin,"address"),"ismine")!=0)
-        //         {
-        //             retval=1;
-        //             break;
-        //         }
-        //     }                       
-        // }
+        }        
         free_json(txobj);
     }
     return(hasvout);
 }
 
+
+int32_t markerexists(char *refcoin,char *acname,char *coinaddr)
+{
+    cJSON *array; int32_t i,n,num=0; bits256 txid;
+    if ( (array= get_addressutxos(refcoin,acname,coinaddr)) != 0 )
+    {
+        num=cJSON_GetArraySize(array);
+        free_json(array); 
+    }
+    if ( num == 0 )
+    {
+        if ( (array= get_rawmempool(refcoin,acname)) != 0 )
+        {
+            if ( (n= cJSON_GetArraySize(array)) != 0 )
+            {
+                for (i=0; i<n; i++)
+                {
+                    txid = jbits256i(array,i);
+                    if ( tx_has_voutaddress(refcoin,acname,txid,coinaddr) > 0 )
+                    {
+                        num = 1;
+                        break;
+                    }
+                }
+            }
+            free_json(array);
+        } 
+    }
+    fprintf(stderr,"Num=%d\n",num);
+    return(num);
+            
+}
 int32_t markerfromthisnodeorunconfirmed(char *refcoin,char *acname,char *coinaddr)
 {
     cJSON *array,*item,*rawtx,*vins,*vin; bits256 txid,tmptxid; int32_t i,n,m,num=0; char *retstr;
@@ -887,54 +974,42 @@ void update_gatewayspending(char *refcoin,char *acname,char *bindtxidstr,int32_t
                     //process item.0 {"txid":"10ec8f4dad6903df6b249b361b879ac77b0617caad7629b97e10f29fa7e99a9b","txidaddr":"RMbite4TGugVmkGmu76ytPHDEQZQGSUjxz","withdrawaddr":"RNJmgYaFF5DbnrNUX6pMYz9rcnDKC2tuAc","amount":"1.00000000","depositaddr":"RHV2As4rox97BuE3LK96vMeNY8VsGRTmBj","signeraddr":"RHV2As4rox97BuE3LK96vMeNY8VsGRTmBj"}
                     if ( (txidaddr= jstr(item,"txidaddr")) != 0 && (withdrawaddr= jstr(item,"withdrawaddr")) != 0 && (depositaddr= jstr(item,"depositaddr")) != 0 && (signeraddr= jstr(item,"signeraddr")) != 0 )
                     {
-                        if ( (satoshis= jdouble(item,"amount")*SATOSHIDEN) != 0 && markerfromthisnodeorunconfirmed("KMD",acname,txidaddr) == 0)
-                        {   
-                            // the actual withdraw
+                        if ( (satoshis= jdouble(item,"amount")*SATOSHIDEN) != 0 && is_cJSON_True(jobj(item,"confirmed_or_notarized")) != 0 && markerfromthisnodeorunconfirmed("KMD",acname,txidaddr) == 0)
+                        {                               
                             if ( strcmp(depositaddr,signeraddr) == 0 )
-                            {
-                                txid= sendtoaddress("KMD",acname,txidaddr,10000);
-                                if (bits256_nonz(txid) != 0)
+                            {                                
+                                rawtx = createrawtx(refcoin,"",depositaddr,withdrawaddr,txidaddr,satoshis);
+                                if ( rawtx != 0 )
                                 {
-                                    cointxid = sendtoaddress(refcoin,"",withdrawaddr,satoshis);
-                                    if ( bits256_nonz(cointxid) != 0)
-                                    {
-                                        fprintf(stderr,"withdraw %s %s %s %.8f processed\n",refcoin,bits256_str(str,cointxid),withdrawaddr,(double)satoshis/SATOSHIDEN);
-                                        gatewaysmarkdone("KMD",acname,origtxid,refcoin,cointxid);
-                                        processed++;
+                                    if ( (clijson= addsignature(refcoin,"",rawtx)) != 0 && is_cJSON_True(jobj(clijson,"complete")) != 0)
+                                    {                                        
+                                        gatewayscompletesigning("KMD",acname,origtxid,refcoin,jstr(clijson,"hex"));                                        
+                                        fprintf(stderr,"withdraw %.8f %s to %s processed\n",(double)satoshis/SATOSHIDEN,refcoin,withdrawaddr);
+                                        free_json(clijson);
                                     }
-                                    else
-                                    {
-                                        fprintf(stderr,"ERROR withdraw %s %s %s %.8f processed\n",refcoin,bits256_str(str,cointxid),withdrawaddr,(double)satoshis/SATOSHIDEN);
-                                    }
-                                }
-                                else
-                                {
-                                    fprintf(stderr,"ERROR sending withdraw marker %s %s to %s %.8f processed\n",refcoin,bits256_str(str,cointxid),txidaddr,(double)10000/SATOSHIDEN);
-                                }
+                                    processed++;
+                                    free(rawtx);
+                                } else fprintf(stderr,"couldnt create rawtx\n");                               
                             }
                             else
                             {
                                 if ( (rawtx= get_gatewaysmultisig(refcoin,acname,txidaddr,&K)) == 0)
                                 {
-                                    rawtx = createmultisig(refcoin,"",depositaddr,signeraddr,withdrawaddr,satoshis);
+                                    rawtx = createrawtx(refcoin,"",depositaddr,withdrawaddr,txidaddr,satoshis);
                                 }
                                 if ( rawtx != 0 )
                                 {
-                                    if ( (clijson= addmultisignature(refcoin,"",signeraddr,rawtx)) != 0 )
+                                    if ( (clijson= addsignature(refcoin,"",rawtx)) != 0 )
                                     {
                                         if ( is_cJSON_True(jobj(clijson,"complete")) != 0 )
-                                        {
-                                            cointxid = komodobroadcast(refcoin,"",clijson);
-                                            if ( bits256_nonz(cointxid) != 0 )
-                                            {
-                                                fprintf(stderr,"withdraw %s M.%d N.%d %s %s %.8f processed\n",refcoin,M,N,bits256_str(str,cointxid),withdrawaddr,(double)satoshis/SATOSHIDEN);
-                                                gatewaysmarkdone("KMD",acname,origtxid,refcoin,cointxid);
-                                            }
+                                        {   
+                                            gatewayscompletesigning("KMD",acname,origtxid,refcoin,jstr(clijson,"hex"));                                          
+                                            fprintf(stderr,"withdraw %.8f %s M.%d N.%d to %s processed\n",(double)satoshis/SATOSHIDEN,refcoin,M,N,withdrawaddr);
                                         }
                                         else if ( jint(clijson,"partialtx") != 0 )
                                         {
                                             txid=gatewayspartialsign(refcoin,acname,origtxid,jstr(clijson,"hex"));                                            
-                                            fprintf(stderr,"%d of %d partialtx %s sent\n",K+1,N,bits256_str(str,txid));
+                                            fprintf(stderr,"%d sign(s) %dof%d partialtx %s sent\n",K+1,M,N,bits256_str(str,txid));
                                         }
                                         free_json(clijson);
                                     }
@@ -948,6 +1023,33 @@ void update_gatewayspending(char *refcoin,char *acname,char *bindtxidstr,int32_t
             }
         }
         free_json(retjson);
+    }
+    if ( (retjson= get_gatewaysprocessed("KMD",acname,bindtxidstr)) != 0 )
+    {
+        if ( jint(retjson,"queueflag") != 0 && (coinstr= jstr(retjson,"coin")) != 0 && strcmp(coinstr,refcoin) == 0 )
+        {            
+            if ( (pending=jarray(&n,retjson,"processed")) != 0 )
+            {                
+                for (i=0; i<n; i++)
+                {
+                    item = jitem(pending,i);
+                    origtxid = jbits256(item,"txid");                    
+                    txidaddr = jstr(item,"withdrawtxidaddr");
+                    if (validateaddress(refcoin,"",txidaddr,"iswatchonly")==0 && validateaddress(refcoin,"",txidaddr,"ismine")==0)
+                        importaddress(refcoin,"",txidaddr,jstr(item,"txid"),0);
+                    if ( txidaddr != 0 && markerexists(refcoin,"",txidaddr)==0)
+                    {   
+                        cointxid = komodobroadcast(refcoin,"",item);
+                        if ( bits256_nonz(cointxid) != 0 )
+                        {
+                            withdrawaddr = jstr(item,"withdrawaddr");
+                            fprintf(stderr,"withdraw %.8f %s to %s - %s broadcasted on %s\n",(double)satoshis/SATOSHIDEN,refcoin,withdrawaddr,bits256_str(str,cointxid),refcoin);   
+                            gatewaysmarkdone("KMD",acname,origtxid,refcoin);
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -1050,9 +1152,9 @@ int32_t main(int32_t argc,char **argv)
                     printf("cant find bindtxid.(%s)\n",bindtxidstr);
                     exit(0);
                 }
-                if (validateaddress(refcoin,"",depositaddr,"iswatchonly")==0)
+                if (validateaddress(refcoin,"",depositaddr,"iswatchonly")==0 && validateaddress(refcoin,"",depositaddr,"ismine")==0)
                 {
-                    if (M==N==1) importaddress(refcoin,"",depositaddr);
+                    if (M==N==1) importaddress(refcoin,"",depositaddr,bindtxidstr,0);
                     else addmultisigaddress(refcoin,"",M,pubkeys,bindtxidstr);
                 }
                 if (pubkeys!=0) free(pubkeys);
@@ -1075,9 +1177,9 @@ int32_t main(int32_t argc,char **argv)
                                 {
                                     prevheight = height;
                                     acheight = get_coinheight(refcoin,"");
-                                    printf("%s ht.%d <- %s\n",refcoin,height,hexstr);
-                                    update_gatewayspending(refcoin,acname,bindtxidstr,M,N);
-                                }
+                                    printf("%s ht.%d <- %s\n",refcoin,height,hexstr);   
+                                    update_gatewayspending(refcoin,acname,bindtxidstr,M,N);                                                                 
+                                }                                
                                 free_json(clijson2);
                             }
                             else if ( retstr2 != 0 )
@@ -1085,7 +1187,7 @@ int32_t main(int32_t argc,char **argv)
                                 printf("error parsing oraclesdata.(%s)\n",retstr2);
                                 free(retstr2);
                             }
-                        }
+                        }                                                    
                         break;
                     }
                 }

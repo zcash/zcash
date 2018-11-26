@@ -47,6 +47,7 @@ int32_t Jumblr_secretaddradd(char *secretaddr);
 uint64_t komodo_interestsum();
 int32_t komodo_longestchain();
 int32_t komodo_notarized_height(int32_t *prevhtp,uint256 *hashp,uint256 *txidp);
+bool komodo_txnotarizedconfirmed(uint256 txid);
 uint32_t komodo_chainactive_timestamp();
 int32_t komodo_whoami(char *pubkeystr,int32_t height,uint32_t timestamp);
 extern uint64_t KOMODO_INTERESTSUM,KOMODO_WALLETBALANCE;
@@ -1293,6 +1294,32 @@ UniValue getspentinfo(const UniValue& params, bool fHelp)
     obj.push_back(Pair("height", value.blockHeight));
 
     return obj;
+}
+
+UniValue txnotarizedconfirmed(const UniValue& params, bool fHelp)
+{
+    bool notarizedconfirmed; uint256 txid;
+
+    if (fHelp || params.size() < 1 || params.size() > 1)
+    {
+        string msg = "txnotarizedconfirmed txid\n"
+            "\nReturns true if transaction is notarized on chain that has dPoW or if confirmation number is greater than 60 on chain taht does not have dPoW.\n"           
+
+            "\nArguments:\n"
+            "1. txid      (string, required) Transaction id.\n"            
+
+            "\nResult:\n"
+            "{\n"
+            "  true,  (bool) The value the check.\n"            
+            "}\n"            
+        ;
+        throw runtime_error(msg);
+    }
+    txid = uint256S((char *)params[0].get_str().c_str());
+    notarizedconfirmed=komodo_txnotarizedconfirmed(txid);
+    UniValue result(UniValue::VOBJ);
+    result.push_back(Pair("result", notarizedconfirmed));    
+    return result;
 }
 
 static const CRPCCommand commands[] =
