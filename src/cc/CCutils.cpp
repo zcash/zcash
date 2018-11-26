@@ -465,7 +465,7 @@ int64_t CCduration(int32_t &numblocks,uint256 txid)
 bool komodo_txnotarizedconfirmed(uint256 txid)
 {
     char str[65];
-    uint32_t confirms,notarized,txheight;
+    uint32_t confirms,notarized=0,txheight;
     CTransaction tx;
     uint256 hashBlock;
     CBlockIndex *pindex;    
@@ -494,7 +494,7 @@ bool komodo_txnotarizedconfirmed(uint256 txid)
     confirms=1 + pindex->GetHeight() - txheight;        
     if ( txheight > 0 && confirms > 0 && (sp= komodo_stateptr(symbol,dest)) != 0 )
     {
-        if ( (notarized=sp->NOTARIZED_HEIGHT) > 0 )
+        if ( (notarized= sp->NOTARIZED_HEIGHT) > 0 )
         {   
             if ( txheight >= sp->NOTARIZED_HEIGHT )
                 confirms = (txheight - sp->NOTARIZED_HEIGHT);
