@@ -11,6 +11,7 @@ export BITCOIND=${REAL_BITCOIND}
 #Run the tests
 
 testScripts=(
+    'ac_private.py'
     'verushash.py'
     'cryptoconditions.py'
     'paymentdisclosure.py'
