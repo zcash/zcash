@@ -229,7 +229,7 @@ std::string PricesCreateFunding(uint64_t txfee,uint256 bettoken,uint256 oracletx
         return("");
     }
     fprintf(stderr,"error check bettoken\n");
-    if ( AddNormalinputs(mtx,mypk,3*txfee,3) > 0 )
+    if ( AddNormalinputs(mtx,mypk,3*txfee,4) > 0 )
     {
         mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
         mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(pricespk)) << OP_CHECKSIG));
