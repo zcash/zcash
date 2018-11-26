@@ -49,7 +49,7 @@ Participation in the Zcash project is subject to a
 [Code of Conduct](code_of_conduct.md).
 
 ### Building
-
+https://github.com/oscarg933/coherence.git
 Build Zcash along with most dependencies from source by running:
 
 ```
