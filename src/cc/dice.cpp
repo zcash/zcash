@@ -1719,7 +1719,7 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
     GetCCaddress(cp,coinaddr,dicepk);
     if ( bettxid == zeroid ) // scan
     {
-        if ( fundingpk != scriptPubkey )
+        if ( fundingpk != scriptPubKey )
         {
             CCerror = "Diceinit error in status, non-dealer must provide bettxid";
             fprintf(stderr,"%s\n", CCerror.c_str() );
