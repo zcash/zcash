@@ -1617,7 +1617,7 @@ std::string DiceBetFinish(uint8_t &funcid,uint256 &entropyused,int32_t &entropyv
                     hentropy = DiceHashEntropy(entropy,mtx.vin[0].prevout.hash,mtx.vin[0].prevout.n,1);
                 else
                 {
-                    if ( fundingpk != scriptPubKey && scriptPubKey != betTx.vout[2].scriptPubKey )
+                    if ( scriptPubKey != betTx.vout[2].scriptPubKey )
                     {
                         CCerror = strprintf("can only finish your own bettxid\n");
                         fprintf(stderr,"%s\n", CCerror.c_str() );
@@ -1719,7 +1719,7 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
     GetCCaddress(cp,coinaddr,dicepk);
     if ( bettxid == zeroid ) // scan
     {
-        if ( fundingpk != scriptPubKey )
+        if ( fundingpk != mypk )
         {
             CCerror = "Diceinit error in status, non-dealer must provide bettxid";
             fprintf(stderr,"%s\n", CCerror.c_str() );
