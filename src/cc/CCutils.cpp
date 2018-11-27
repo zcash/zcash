@@ -13,11 +13,20 @@
  *                                                                            *
  ******************************************************************************/
 
-#include "CCinclude.h"
-
 /*
  CCutils has low level functions that are universally useful for all contracts.
  */
+#include "CCinclude.h"
+#include "komodo_structs.h"
+
+#ifdef TESTMODE           
+    #define MIN_NON_NOTARIZED_CONFIRMS 2
+#else
+    #define MIN_NON_NOTARIZED_CONFIRMS 101
+#endif // TESTMODE
+int32_t komodo_dpowconfs(int32_t height,int32_t numconfs);
+struct komodo_state *komodo_stateptr(char *symbol,char *dest);
+extern uint32_t KOMODO_DPOWCONFS;
 
 void endiancpy(uint8_t *dest,uint8_t *src,int32_t len)
 {
@@ -453,12 +462,43 @@ int64_t CCduration(int32_t &numblocks,uint256 txid)
     return(duration);
 }
 
-bool isCCTxNotarizedConfirmed(uint256 txid)
+bool komodo_txnotarizedconfirmed(uint256 txid)
 {
-    int32_t confirms;
+    char str[65];
+    uint32_t confirms,notarized=0,txheight;
+    CTransaction tx;
+    uint256 hashBlock;
+    CBlockIndex *pindex;    
+    char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; struct komodo_state *sp;
 
-    CCduration(confirms,txid);
-    if (confirms >= MIN_NOTARIZATION_CONFIRMS)
+    if ( myGetTransaction(txid,tx,hashBlock) == 0 )
+    {
+        fprintf(stderr,"komodo_txnotarizedconfirmed cant find txid %s\n",txid.ToString().c_str());
+        return(0);
+    }
+    else if ( hashBlock == zeroid )
+    {
+        fprintf(stderr,"komodo_txnotarizedconfirmed no hashBlock for txid %s\n",txid.ToString().c_str());
+        return(0);
+    }
+    else if ( (pindex= mapBlockIndex[hashBlock]) == 0 || (txheight= pindex->GetHeight()) <= 0 )
+    {
+        fprintf(stderr,"komodo_txnotarizedconfirmed no txheight.%d %p for txid %s\n",txheight,pindex,txid.ToString().c_str());
+        return(0);
+    }
+    else if ( (pindex= chainActive.LastTip()) == 0 || pindex->GetHeight() < txheight )
+    {
+        fprintf(stderr,"komodo_txnotarizedconfirmed backwards heights for txid %s hts.(%d %d)\n",txid.ToString().c_str(),txheight,(int32_t)pindex->GetHeight());
+        return(0);
+    }    
+    confirms=1 + pindex->GetHeight() - txheight;        
+    if ((sp= komodo_stateptr(symbol,dest)) != 0 && (notarized=sp->NOTARIZED_HEIGHT) > 0 && txheight > sp->NOTARIZED_HEIGHT)  notarized=0;            
+#ifdef TESTMODE           
+    notarized=0;
+#endif //TESTMODE
+    if (notarized>0 && confirms > 1)
+        return (true);
+    else if (notarized==0 && confirms >= MIN_NON_NOTARIZED_CONFIRMS)
         return (true);
     return (false);
 }

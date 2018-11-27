@@ -199,7 +199,7 @@ bool ChannelsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
                         //vout.3: normal output of payment amount to receiver pubkey
                         //vout.n-2: normal change
                         //vout.n-1: opreturn - 'P' opentxid senderspubkey receiverspubkey depth numpayments secret
-                        if (isCCTxNotarizedConfirmed(opentxid) == 0)
+                        if (komodo_txnotarizedconfirmed(opentxid) == 0)
                             return eval->Invalid("channelOpen is not yet confirmed(notarised)!");
                         else if ( IsCCInput(tx.vin[0].scriptSig) != 0 )
                             return eval->Invalid("vin.0 is normal for channelPayment!");
@@ -261,7 +261,7 @@ bool ChannelsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
                         //vout.2: CC vout marker to receiver pubkey
                         //vout.n-2: normal change
                         //vout.n-1: opreturn - 'C' opentxid senderspubkey receiverspubkey 0 0 0
-                        if (isCCTxNotarizedConfirmed(opentxid) == 0)
+                        if (komodo_txnotarizedconfirmed(opentxid) == 0)
                             return eval->Invalid("channelOpen is not yet confirmed(notarised)!");
                         else if ( IsCCInput(tx.vin[0].scriptSig) != 0 )
                             return eval->Invalid("vin.0 is normal for channelClose!");
@@ -304,9 +304,9 @@ bool ChannelsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
                         //vout.2: normal output of CC input to senders pubkey
                         //vout.n-2: normal change
                         //vout.n-1: opreturn - 'R' opentxid senderspubkey receiverspubkey numpayments payment closetxid
-                        if (isCCTxNotarizedConfirmed(opentxid) == 0)
+                        if (komodo_txnotarizedconfirmed(opentxid) == 0)
                             return eval->Invalid("channelOpen is not yet confirmed(notarised)!");
-                        else if (isCCTxNotarizedConfirmed(param3) == 0)
+                        else if (komodo_txnotarizedconfirmed(param3) == 0)
                             return eval->Invalid("channelClose is not yet confirmed(notarised)!");
                         else if ( IsCCInput(tx.vin[0].scriptSig) != 0 )
                             return eval->Invalid("vin.0 is normal for channelRefund!");
@@ -479,7 +479,7 @@ std::string ChannelPayment(uint64_t txfee,uint256 opentxid,int64_t amount, uint2
         fprintf(stderr, "invalid channel open txid\n");
         return ("");
     }
-    if (AddNormalinputs(mtx,mypk,2*txfee,1) > 0)
+    if (AddNormalinputs(mtx,mypk,2*txfee,3) > 0)
     {
         if ((funds=AddChannelsInputs(cp,mtx,channelOpenTx,prevtxid)) !=0 && (change=funds-amount-txfee)>=0)
         {
@@ -595,7 +595,7 @@ std::string ChannelClose(uint64_t txfee,uint256 opentxid)
         fprintf(stderr,"cannot close, you are not channel owner\n");
         return("");
     }
-    if ( AddNormalinputs(mtx,mypk,2*txfee,1) > 0 )
+    if ( AddNormalinputs(mtx,mypk,2*txfee,3) > 0 )
     {
         if ((funds=AddChannelsInputs(cp,mtx,channelOpenTx,prevtxid)) !=0 && funds-txfee>0)
         {
@@ -658,7 +658,7 @@ std::string ChannelRefund(uint64_t txfee,uint256 opentxid,uint256 closetxid)
         fprintf(stderr,"cannot refund, you are not the channel owenr\n");
         return("");
     }
-    if ( AddNormalinputs(mtx,mypk,2*txfee,1) > 0 )
+    if ( AddNormalinputs(mtx,mypk,2*txfee,3) > 0 )
     {
         if ((funds=AddChannelsInputs(cp,mtx,channelOpenTx,prevtxid)) !=0 && funds-txfee>0)
         {
