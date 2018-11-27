@@ -86,7 +86,7 @@ uint8_t DecodePricesFundingOpRet(CScript scriptPubKey,CPubKey &planpk,uint256 &o
     return(0);
 }
 
-bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
+bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
 {
     int32_t numvins,numvouts,preventCCvins,preventCCvouts,i,numblocks; bool retval; uint256 txid; uint8_t hash[32]; char str[65],destaddr[64];
     return(false);
@@ -229,7 +229,7 @@ std::string PricesCreateFunding(uint64_t txfee,uint256 bettoken,uint256 oracletx
         return("");
     }
     fprintf(stderr,"error check bettoken\n");
-    if ( AddNormalinputs(mtx,mypk,3*txfee,3) > 0 )
+    if ( AddNormalinputs(mtx,mypk,3*txfee,4) > 0 )
     {
         mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
         mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(pricespk)) << OP_CHECKSIG));

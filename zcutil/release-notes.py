@@ -1,4 +1,4 @@
-import re, sys, os, os.path
+import re, os, os.path
 import subprocess
 import argparse
 from itertools import islice
