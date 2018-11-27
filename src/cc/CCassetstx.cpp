@@ -17,15 +17,17 @@
 
 int64_t AddAssetInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,uint256 assetid,int64_t total,int32_t maxinputs)
 {
-    char coinaddr[64],destaddr[64]; int64_t nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t j,vout,n = 0;
+    char coinaddr[64],destaddr[64]; int64_t threshold,nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t j,vout,n = 0;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     GetCCaddress(cp,coinaddr,pk);
     SetCCunspents(unspentOutputs,coinaddr);
-
+    threshold = total/(maxinputs!=0?maxinputs:64);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
         vout = (int32_t)it->first.index;
+        if ( it->second.satoshis < threshold )
+            continue;
         for (j=0; j<mtx.vin.size(); j++)
             if ( txid == mtx.vin[j].prevout.hash && vout == mtx.vin[j].prevout.n )
                 break;
@@ -220,7 +222,7 @@ std::string AssetTransfer(int64_t txfee,uint256 assetid,std::vector<uint8_t> des
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
-    if ( AddNormalinputs(mtx,mypk,txfee,1) > 0 )
+    if ( AddNormalinputs(mtx,mypk,txfee,3) > 0 )
     {
         /*n = outputs.size();
         if ( n == amounts.size() )
@@ -255,7 +257,7 @@ std::string AssetConvert(int64_t txfee,uint256 assetid,std::vector<uint8_t> dest
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
-    if ( AddNormalinputs(mtx,mypk,txfee,1) > 0 )
+    if ( AddNormalinputs(mtx,mypk,txfee,3) > 0 )
     {
         if ( (inputs= AddAssetInputs(cp,mtx,mypk,assetid,total,60)) > 0 )
         {
@@ -311,7 +313,7 @@ std::string CreateSell(int64_t txfee,int64_t askamount,uint256 assetid,int64_t p
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
-    if ( AddNormalinputs(mtx,mypk,txfee,1) > 0 )
+    if ( AddNormalinputs(mtx,mypk,txfee,3) > 0 )
     {
         mask = ~((1LL << mtx.vin.size()) - 1);
         if ( (inputs= AddAssetInputs(cp,mtx,mypk,assetid,askamount,60)) > 0 )
@@ -345,7 +347,7 @@ std::string CreateSwap(int64_t txfee,int64_t askamount,uint256 assetid,uint256 a
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
-    if ( AddNormalinputs(mtx,mypk,txfee,1) > 0 )
+    if ( AddNormalinputs(mtx,mypk,txfee,3) > 0 )
     {
         mask = ~((1LL << mtx.vin.size()) - 1);
         if ( (inputs= AddAssetInputs(cp,mtx,mypk,assetid,askamount,60)) > 0 )
@@ -377,7 +379,7 @@ std::string CancelBuyOffer(int64_t txfee,uint256 assetid,uint256 bidtxid)
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
-    if ( AddNormalinputs(mtx,mypk,txfee,1) > 0 )
+    if ( AddNormalinputs(mtx,mypk,txfee,3) > 0 )
     {
         mask = ~((1LL << mtx.vin.size()) - 1);
         if ( GetTransaction(bidtxid,vintx,hashBlock,false) != 0 )
@@ -398,7 +400,7 @@ std::string CancelSell(int64_t txfee,uint256 assetid,uint256 asktxid)
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
-    if ( AddNormalinputs(mtx,mypk,txfee,1) > 0 )
+    if ( AddNormalinputs(mtx,mypk,txfee,3) > 0 )
     {
         mask = ~((1LL << mtx.vin.size()) - 1);
         if ( GetTransaction(asktxid,vintx,hashBlock,false) != 0 )
@@ -424,7 +426,7 @@ std::string FillBuyOffer(int64_t txfee,uint256 assetid,uint256 bidtxid,int64_t f
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
-    if ( AddNormalinputs(mtx,mypk,txfee,1) > 0 )
+    if ( AddNormalinputs(mtx,mypk,txfee,3) > 0 )
     {
         mask = ~((1LL << mtx.vin.size()) - 1);
         if ( GetTransaction(bidtxid,vintx,hashBlock,false) != 0 )
@@ -472,7 +474,7 @@ std::string FillSell(int64_t txfee,uint256 assetid,uint256 assetid2,uint256 askt
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
-    if ( AddNormalinputs(mtx,mypk,txfee,1) > 0 )
+    if ( AddNormalinputs(mtx,mypk,txfee,3) > 0 )
     {
         mask = ~((1LL << mtx.vin.size()) - 1);
         if ( GetTransaction(asktxid,vintx,hashBlock,false) != 0 )

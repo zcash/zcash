@@ -5,7 +5,7 @@
 #ifndef	_CONSTR_SET_OF_H_
 #define	_CONSTR_SET_OF_H_
 
-#include <asn_application.h>
+#include "asn_application.h"
 
 #ifdef __cplusplus
 extern "C" {

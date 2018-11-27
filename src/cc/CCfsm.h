@@ -21,7 +21,7 @@
 
 #define EVAL_FSM 0xe7
 
-bool FSMValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx);
+bool FSMValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn);
 
 std::string FSMList();
 std::string FSMInfo(uint256 fsmtxid);

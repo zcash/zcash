@@ -1,6 +1,5 @@
-## Install for Mac OS X
 
-First off you need Apple's Xcode (at least version 7, preferably 8.x or later) and the Xcode Command Line Tools:
+You will need Apple's Xcode (at least version 7, preferably 8.x) and the Xcode Command Line Tools:
 
 https://itunes.apple.com/us/app/xcode/id497799835?mt=12
 
@@ -8,16 +7,10 @@ And Homebrew:
 
 http://brew.sh/
 
-And this is the list of brew packages you'll need installed:
+Use the brewfile to install the necessary packages:
 
 ```shell
-brew tap discoteq/discoteq; brew install flock
-brew install autoconf autogen automake
-brew install gcc@6
-brew install binutils
-brew install protobuf
-brew install coreutils
-brew install wget
+brew bundle
 ```
 
 or 
@@ -29,13 +22,13 @@ brew tap discoteq/discoteq; brew install flock autoconf autogen automake gcc@6 b
 Get all that installed, then run:
 
 ```shell
-git clone https://github.com/jl777/komodo.git
-cd komodo
+git clone https://github.com/VerusCoin/VerusCoin.git
+cd VerusCoin
 ./zcutil/build-mac.sh
 ./zcutil/fetch-params.sh
 ```
 
-To build a distributable version of komodo then run the makeDistrib.sh script after building.
+To build a distributable version of VerusCoin then run the makeReleaseMac.sh script after building. This will fix the dependency references and move the komodod and komodo-cli binaries to the kmd/mac/verus-cli directory along with the 6 libraries required for it to work properly.
 
 When you are done building, you need to create `Komodo.conf` the Mac way. 
 

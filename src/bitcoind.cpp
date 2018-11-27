@@ -4,7 +4,7 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "clientversion.h"
-#include "rpcserver.h"
+#include "rpc/server.h"
 #include "init.h"
 #include "main.h"
 #include "noui.h"
@@ -12,7 +12,6 @@
 #include "util.h"
 #include "httpserver.h"
 #include "httprpc.h"
-#include "rpcserver.h"
 
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/filesystem.hpp>
@@ -42,6 +41,7 @@
  */
 
 static bool fDaemon;
+#include "komodo_defs.h"
 #define KOMODO_ASSETCHAIN_MAXLEN 65
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 void komodo_passport_iteration();
@@ -62,8 +62,8 @@ void WaitForShutdown(boost::thread_group* threadGroup)
         }
         else
         {
-            komodo_interestsum();
-            komodo_longestchain();
+            //komodo_interestsum();
+            //komodo_longestchain();
             MilliSleep(20000);
         }
         fShutdown = ShutdownRequested();
@@ -115,7 +115,7 @@ bool AppInit(int argc, char* argv[])
         }
 
         fprintf(stdout, "%s", strUsage.c_str());
-        return false;
+        return true;
     }
 
     try
@@ -179,7 +179,7 @@ bool AppInit(int argc, char* argv[])
         if (fCommandLine)
         {
             fprintf(stderr, "Error: There is no RPC client functionality in komodod. Use the komodo-cli utility instead.\n");
-            exit(1);
+            exit(EXIT_FAILURE);
         }
 
 #ifndef _WIN32
@@ -236,5 +236,5 @@ int main(int argc, char* argv[])
     // Connect bitcoind signal handlers
     noui_connect();
 
-    return (AppInit(argc, argv) ? 0 : 1);
+    return (AppInit(argc, argv) ? EXIT_SUCCESS : EXIT_FAILURE);
 }

@@ -13,11 +13,20 @@
  *                                                                            *
  ******************************************************************************/
 
-#include "CCinclude.h"
-
 /*
  CCutils has low level functions that are universally useful for all contracts.
  */
+#include "CCinclude.h"
+#include "komodo_structs.h"
+
+#ifdef TESTMODE           
+    #define MIN_NON_NOTARIZED_CONFIRMS 2
+#else
+    #define MIN_NON_NOTARIZED_CONFIRMS 101
+#endif // TESTMODE
+int32_t komodo_dpowconfs(int32_t height,int32_t numconfs);
+struct komodo_state *komodo_stateptr(char *symbol,char *dest);
+extern uint32_t KOMODO_DPOWCONFS;
 
 void endiancpy(uint8_t *dest,uint8_t *src,int32_t len)
 {
@@ -63,7 +72,6 @@ CTxOut MakeCC1of2vout(uint8_t evalcode,CAmount nValue,CPubKey pk1,CPubKey pk2)
     CTxOut vout;
     CC *payoutCond = MakeCCcond1of2(evalcode,pk1,pk2);
     vout = CTxOut(nValue,CCPubKey(payoutCond));
-    fprintf(stderr,"payoutCond: %s\n",cc_conditionToJSONString(payoutCond));
     cc_free(payoutCond);
     return(vout);
 }
@@ -75,6 +83,7 @@ CC* GetCryptoCondition(CScript const& scriptSig)
     std::vector<unsigned char> ffbin;
     if (scriptSig.GetOp(pc, opcode, ffbin))
         return cc_readFulfillmentBinary((uint8_t*)ffbin.data(), ffbin.size()-1);
+    else return(0);
 }
 
 bool IsCCInput(CScript const& scriptSig)
@@ -194,7 +203,49 @@ bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey)
         strcpy(destaddr,(char *)CBitcoinAddress(address).ToString().c_str());
         return(true);
     }
-    fprintf(stderr,"ExtractDestination failed\n");
+    //fprintf(stderr,"ExtractDestination failed\n");
+    return(false);
+}
+
+bool GetCCParams(Eval* eval, const CTransaction &tx, uint32_t nIn,
+                 CTransaction &txOut, std::vector<std::vector<unsigned char>> &preConditions, std::vector<std::vector<unsigned char>> &params)
+{
+    uint256 blockHash;
+
+    if (myGetTransaction(tx.vin[nIn].prevout.hash, txOut, blockHash) && txOut.vout.size() > tx.vin[nIn].prevout.n)
+    {
+        CBlockIndex index;
+        if (eval->GetBlock(blockHash, index))
+        {
+            // read preconditions
+            CScript subScript = CScript();
+            preConditions.clear();
+            if (txOut.vout[tx.vin[nIn].prevout.n].scriptPubKey.IsPayToCryptoCondition(&subScript, preConditions))
+            {
+                // read any available parameters in the output transaction
+                params.clear();
+                if (tx.vout.size() > 0 && tx.vout[tx.vout.size() - 1].scriptPubKey.IsOpReturn())
+                {
+                    if (tx.vout[tx.vout.size() - 1].scriptPubKey.GetOpretData(params) && params.size() == 1)
+                    {
+                        CScript scr = CScript(params[0].begin(), params[0].end());
+
+                        // printf("Script decoding inner:\n%s\nouter:\n%s\n", scr.ToString().c_str(), tx.vout[tx.vout.size() - 1].scriptPubKey.ToString().c_str());
+
+                        if (!scr.GetPushedData(scr.begin(), params))
+                        {
+                            return false;
+                        }
+                        else return true;
+                    }
+                    else return false;
+                }
+                else return true;
+            }
+        }
+    }
+    return false;
+    //fprintf(stderr,"ExtractDestination failed\n");
     return(false);
 }
 
@@ -368,9 +419,9 @@ bool ProcessCC(struct CCcontract_info *cp,Eval* eval, std::vector<uint8_t> param
     cp->unspendableaddr2[0] = cp->unspendableaddr3[0] = 0;
     if ( paramsNull.size() != 0 ) // Don't expect params
         return eval->Invalid("Cannot have params");
-    else if ( ctx.vout.size() == 0 )
-        return eval->Invalid("no-vouts");
-    else if ( (*cp->validate)(cp,eval,ctx) != 0 )
+    //else if ( ctx.vout.size() == 0 )      // spend can go to z-addresses
+    //    return eval->Invalid("no-vouts");
+    else if ( (*cp->validate)(cp,eval,ctx,nIn) != 0 )
     {
         //fprintf(stderr,"done CC %02x\n",cp->evalcode);
         //cp->prevtxid = txid;
@@ -386,27 +437,68 @@ int64_t CCduration(int32_t &numblocks,uint256 txid)
     numblocks = 0;
     if ( myGetTransaction(txid,tx,hashBlock) == 0 )
     {
-        fprintf(stderr,"CCduration cant find duration txid %s\n",uint256_str(str,txid));
+        //fprintf(stderr,"CCduration cant find duration txid %s\n",uint256_str(str,txid));
         return(0);
     }
     else if ( hashBlock == zeroid )
     {
-        fprintf(stderr,"CCduration no hashBlock for txid %s\n",uint256_str(str,txid));
+        //fprintf(stderr,"CCduration no hashBlock for txid %s\n",uint256_str(str,txid));
         return(0);
     }
-    else if ( (pindex= mapBlockIndex[hashBlock]) == 0 || (txtime= pindex->nTime) == 0 || (txheight= pindex->nHeight) <= 0 )
+    else if ( (pindex= komodo_getblockindex(hashBlock)) == 0 || (txtime= pindex->nTime) == 0 || (txheight= pindex->GetHeight()) <= 0 )
     {
         fprintf(stderr,"CCduration no txtime %u or txheight.%d %p for txid %s\n",txtime,txheight,pindex,uint256_str(str,txid));
         return(0);
     }
-    else if ( (pindex= chainActive.LastTip()) == 0 || pindex->nTime < txtime || pindex->nHeight <= txheight )
+    else if ( (pindex= chainActive.LastTip()) == 0 || pindex->nTime < txtime || pindex->GetHeight() <= txheight )
     {
-        fprintf(stderr,"CCduration backwards timestamps %u %u for txid %s hts.(%d %d)\n",(uint32_t)pindex->nTime,txtime,uint256_str(str,txid),txheight,(int32_t)pindex->nHeight);
+        if ( pindex->nTime < txtime )
+            fprintf(stderr,"CCduration backwards timestamps %u %u for txid %s hts.(%d %d)\n",(uint32_t)pindex->nTime,txtime,uint256_str(str,txid),txheight,(int32_t)pindex->GetHeight());
         return(0);
     }
-    numblocks = (pindex->nHeight - txheight);
+    numblocks = (pindex->GetHeight() - txheight);
     duration = (pindex->nTime - txtime);
-    fprintf(stderr,"duration %d (%u - %u) numblocks %d (%d - %d)\n",(int32_t)duration,(uint32_t)pindex->nTime,txtime,numblocks,pindex->nHeight,txheight);
+    //fprintf(stderr,"duration %d (%u - %u) numblocks %d (%d - %d)\n",(int32_t)duration,(uint32_t)pindex->nTime,txtime,numblocks,pindex->GetHeight(),txheight);
     return(duration);
 }
 
+bool komodo_txnotarizedconfirmed(uint256 txid)
+{
+    char str[65];
+    uint32_t confirms,notarized=0,txheight;
+    CTransaction tx;
+    uint256 hashBlock;
+    CBlockIndex *pindex;    
+    char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; struct komodo_state *sp;
+
+    if ( myGetTransaction(txid,tx,hashBlock) == 0 )
+    {
+        fprintf(stderr,"komodo_txnotarizedconfirmed cant find txid %s\n",txid.ToString().c_str());
+        return(0);
+    }
+    else if ( hashBlock == zeroid )
+    {
+        fprintf(stderr,"komodo_txnotarizedconfirmed no hashBlock for txid %s\n",txid.ToString().c_str());
+        return(0);
+    }
+    else if ( (pindex= mapBlockIndex[hashBlock]) == 0 || (txheight= pindex->GetHeight()) <= 0 )
+    {
+        fprintf(stderr,"komodo_txnotarizedconfirmed no txheight.%d %p for txid %s\n",txheight,pindex,txid.ToString().c_str());
+        return(0);
+    }
+    else if ( (pindex= chainActive.LastTip()) == 0 || pindex->GetHeight() < txheight )
+    {
+        fprintf(stderr,"komodo_txnotarizedconfirmed backwards heights for txid %s hts.(%d %d)\n",txid.ToString().c_str(),txheight,(int32_t)pindex->GetHeight());
+        return(0);
+    }    
+    confirms=1 + pindex->GetHeight() - txheight;        
+    if ((sp= komodo_stateptr(symbol,dest)) != 0 && (notarized=sp->NOTARIZED_HEIGHT) > 0 && txheight > sp->NOTARIZED_HEIGHT)  notarized=0;            
+#ifdef TESTMODE           
+    notarized=0;
+#endif //TESTMODE
+    if (notarized>0 && confirms > 1)
+        return (true);
+    else if (notarized==0 && confirms >= MIN_NON_NOTARIZED_CONFIRMS)
+        return (true);
+    return (false);
+}
