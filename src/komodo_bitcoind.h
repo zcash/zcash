@@ -1064,7 +1064,7 @@ uint64_t komodo_accrued_interest(int32_t *txheightp,uint32_t *locktimep,uint256 
 
 int32_t komodo_nextheight()
 {
-    int32_t ht,longest = komodo_longestchain();
+    CBlockIndex *pindex; int32_t ht,longest = komodo_longestchain();
     if ( (pindex= chainActive.LastTip()) != 0 && (ht= pindex->GetHeight()) >= longest )
         return(ht+1);
     else return(longest + 1);
