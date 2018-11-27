@@ -1475,9 +1475,9 @@ std::string DiceBetFinish(uint8_t &funcid,uint256 &entropyused,int32_t &entropyv
         return("");
     }
     fundingpk = DiceFundingPk(fundingPubKey);
+    scriptPubKey = CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG;
     if ( winlosetimeout != 0 ) // must be dealernode
     {
-        scriptPubKey = CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG;
         if ( scriptPubKey != fundingPubKey )
         {
             //fprintf(stderr,"only dice fund creator can submit winner or loser\n");
@@ -1615,6 +1615,15 @@ std::string DiceBetFinish(uint8_t &funcid,uint256 &entropyused,int32_t &entropyv
                 //fprintf(stderr,"make tx.%c\n",funcid);
                 if ( funcid == 'L' || funcid == 'W' ) // dealernode only
                     hentropy = DiceHashEntropy(entropy,mtx.vin[0].prevout.hash,mtx.vin[0].prevout.n,1);
+                else
+                {
+                    if ( scriptPubKey != betTx.vout[2].scriptPubKey )
+                    {
+                        CCerror = strprintf("can only finish your own bettxid\n");
+                        fprintf(stderr,"%s\n", CCerror.c_str() );
+                        return("");
+                    }
+                }
                 *resultp = 1;
                 //char str[65],str2[65];
                 //fprintf(stderr,"iswin.%d house entropy %s vs bettor %s\n",iswin,uint256_str(str,hentropyproof),uint256_str(str2,bettorentropy));
@@ -1710,6 +1719,12 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
     GetCCaddress(cp,coinaddr,dicepk);
     if ( bettxid == zeroid ) // scan
     {
+        if ( fundingpk != mypk )
+        {
+            CCerror = "Diceinit error in status, non-dealer must provide bettxid";
+            fprintf(stderr,"%s\n", CCerror.c_str() );
+            return(0.);
+        }
         std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
         SetCCunspents(unspentOutputs,coinaddr);
         for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
