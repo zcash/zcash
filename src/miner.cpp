@@ -274,8 +274,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
                     }
                     dPriority += (double)nValueIn * nConf;
                 }
-                fprintf(stderr, "minsigs.%i vs numsigs.%i\n",(NUM_NOTARIES/5),numNotaryVins);
-                if ( numNotaryVins > NUM_NOTARIES / 5 )
+                if ( numNotaryVins >= NUM_NOTARIES / 5 )
                     fNotarisation = true;
                 nTotalIn += tx.GetJoinSplitValueIn();
             }
