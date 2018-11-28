@@ -25,6 +25,7 @@
 #include "cc/utils.h"
 #include "primitives/transaction.h"
 
+int32_t komodo_nextheight();
 
 std::vector<CC*> BetProtocol::PlayerConditions()
 {
