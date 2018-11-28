@@ -143,7 +143,8 @@ int64_t AddHeirInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKe
 
 std::string HeirGet(uint64_t txfee,int64_t nValue)
 {
-    CMutableTransaction mtx,tmpmtx; CPubKey mypk,Heirpk; int64_t inputs,CCchange=0; struct CCcontract_info *cp,C; std::string rawhex; uint32_t j; int32_t i,len; uint8_t buf[32768]; bits256 hash;
+    CMutableTransaction tmpmtx,mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    CPubKey mypk,Heirpk; int64_t inputs,CCchange=0; struct CCcontract_info *cp,C; std::string rawhex; uint32_t j; int32_t i,len; uint8_t buf[32768]; bits256 hash;
     cp = CCinit(&C,EVAL_HEIR);
     if ( txfee == 0 )
         txfee = 10000;
@@ -183,7 +184,8 @@ std::string HeirGet(uint64_t txfee,int64_t nValue)
 
 std::string HeirFund(uint64_t txfee,int64_t funds)
 {
-    CMutableTransaction mtx; CPubKey mypk,Heirpk; CScript opret; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    CPubKey mypk,Heirpk; CScript opret; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_HEIR);
     if ( txfee == 0 )
         txfee = 10000;
@@ -199,8 +201,9 @@ std::string HeirFund(uint64_t txfee,int64_t funds)
 
 UniValue HeirInfo()
 {
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     UniValue result(UniValue::VOBJ); char numstr[64];
-    CMutableTransaction mtx; CPubKey Heirpk; struct CCcontract_info *cp,C; int64_t funding;
+    CPubKey Heirpk; struct CCcontract_info *cp,C; int64_t funding;
     result.push_back(Pair("result","success"));
     result.push_back(Pair("name","Heir"));
     cp = CCinit(&C,EVAL_HEIR);
