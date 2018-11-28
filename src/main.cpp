@@ -5623,9 +5623,11 @@ bool static LoadBlockIndexDB()
     CBlockIndex *pindex;
     if ( (pindex= chainActive.LastTip()) != 0 )
     {
-        fprintf(stderr,"set sapling height, if possible from ht.%d %u\n",(int32_t)pindex->GetHeight(),(uint32_t)pindex->nTime);
         if ( ASSETCHAINS_SAPLING <= 0 )
+        {
+            fprintf(stderr,"set sapling height, if possible from ht.%d %u\n",(int32_t)pindex->GetHeight(),(uint32_t)pindex->nTime);
             komodo_activate_sapling(pindex);
+        }
     }
     return true;
 }
