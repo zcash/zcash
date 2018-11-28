@@ -292,7 +292,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
 
             if (fNotarisation) {
                 dPriority = 1e16;
-                fprintf(stderr, "Notarisation.%s set to maximum priority.\n",tx.hash.ToString().c_str());
+                fprintf(stderr, "Notarisation.%s set to maximum priority.\n",hash.ToString().c_str());
             }
 
             if (porphan)
