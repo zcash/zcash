@@ -118,7 +118,8 @@
   },
   {
     "ac_name": "EQL",
-    "ac_supply": "500000000"
+    "ac_supply": "500000000",
+    "ac_ccactivate": "205000"
   },
   {
     "ac_name": "ZILLA",

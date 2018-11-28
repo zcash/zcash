@@ -6,6 +6,8 @@
 #ifndef BITCOIN_CHAIN_H
 #define BITCOIN_CHAIN_H
 
+class CChainPower;
+
 #include "arith_uint256.h"
 #include "primitives/block.h"
 #include "pow.h"
@@ -17,6 +19,8 @@
 #include <boost/foreach.hpp>
 
 static const int SPROUT_VALUE_VERSION = 1001400;
+static const int SAPLING_VALUE_VERSION = 1010100;
+extern int32_t ASSETCHAINS_LWMAPOS;
 
 struct CDiskBlockPos
 {
@@ -26,7 +30,7 @@ struct CDiskBlockPos
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+    inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITE(VARINT(nFile));
         READWRITE(VARINT(nPos));
     }
@@ -102,6 +106,101 @@ enum BlockStatus: uint32_t {
 //! Blocks with this validity are assumed to satisfy all consensus rules.
 static const BlockStatus BLOCK_VALID_CONSENSUS = BLOCK_VALID_SCRIPTS;
 
+class CBlockIndex;
+
+// This class provides an accumulator for both the chainwork and the chainPOS value
+// CChainPower's can be compared, and the comparison ensures that work and proof of stake power
+// are both used equally to determine which chain has the most work. This makes an attack
+// that involves mining in secret completely ineffective, even before dPOW, unless a large part 
+// of the staking supply is also controlled. It also enables a faster deterministic convergence, 
+// aided by both POS and POW.
+class CChainPower
+{
+    public:
+        arith_uint256 chainWork;
+        arith_uint256 chainStake;
+        int32_t nHeight;
+
+        CChainPower() : nHeight(0), chainStake(0), chainWork(0) {}
+        CChainPower(CBlockIndex *pblockIndex);
+        CChainPower(CBlockIndex *pblockIndex, const arith_uint256 &stake, const arith_uint256 &work);
+        CChainPower(int32_t height) : nHeight(height), chainStake(0), chainWork(0) {}
+        CChainPower(int32_t height, const arith_uint256 &stake, const arith_uint256 &work) : 
+                    nHeight(height), chainStake(stake), chainWork(work) {}
+
+        CChainPower &operator=(const CChainPower &chainPower)
+        {
+            chainWork = chainPower.chainWork;
+            chainStake = chainPower.chainStake;
+            nHeight = chainPower.nHeight;
+            return *this;
+        }
+
+        CChainPower &operator+=(const CChainPower &chainPower)
+        {
+            this->chainWork += chainPower.chainWork;
+            this->chainStake += chainPower.chainStake;
+            return *this;
+        }
+
+        friend CChainPower operator+(const CChainPower &chainPowerA, const CChainPower &chainPowerB)
+        {
+            CChainPower result = CChainPower(chainPowerA);
+            result.chainWork += chainPowerB.chainWork;
+            result.chainStake += chainPowerB.chainStake;
+            return result;
+        }
+
+        friend CChainPower operator-(const CChainPower &chainPowerA, const CChainPower &chainPowerB)
+        {
+            CChainPower result = CChainPower(chainPowerA);
+            result.chainWork -= chainPowerB.chainWork;
+            result.chainStake -= chainPowerB.chainStake;
+            return result;
+        }
+
+        friend CChainPower operator*(const CChainPower &chainPower, int32_t x)
+        {
+            CChainPower result = CChainPower(chainPower);
+            result.chainWork *= x;
+            result.chainStake *= x;
+            return result;
+        }
+
+        CChainPower &addStake(const arith_uint256 &nChainStake)
+        {
+            chainStake += nChainStake;
+            return *this;
+        }
+
+        CChainPower &addWork(const arith_uint256 &nChainWork)
+        {
+            chainWork += nChainWork;
+            return *this;
+        }
+
+        friend bool operator==(const CChainPower &p1, const CChainPower &p2);
+
+        friend bool operator!=(const CChainPower &p1, const CChainPower &p2)
+        {
+            return !(p1 == p2);
+        }
+
+        friend bool operator<(const CChainPower &p1, const CChainPower &p2);
+
+        friend bool operator<=(const CChainPower &p1, const CChainPower &p2);
+
+        friend bool operator>(const CChainPower &p1, const CChainPower &p2)
+        {
+            return !(p1 <= p2);
+        }
+
+        friend bool operator>=(const CChainPower &p1, const CChainPower &p2)
+        {
+            return !(p1 < p2);
+        }
+};
+
 /** The block chain is a tree shaped structure starting with the
  * genesis block at the root, with each block potentially having multiple
  * candidates to be the next block. A blockindex may have multiple pprev pointing
@@ -120,7 +219,6 @@ public:
     CBlockIndex* pskip;
 
     //! height of the entry in the chain. The genesis block has height 0
-    int nHeight;
     int64_t newcoins,zfunds; int8_t segid; // jl777 fields
     //! Which # file this block is stored in (blk?????.dat)
     int nFile;
@@ -132,7 +230,7 @@ public:
     unsigned int nUndoPos;
 
     //! (memory only) Total amount of work (expected number of hashes) in the chain up to and including this block
-    arith_uint256 nChainWork;
+    CChainPower chainPower;
 
     //! Number of transactions in this block.
     //! Note: in a potential headers-first mode, this number cannot be relied upon
@@ -152,10 +250,10 @@ public:
     boost::optional<uint32_t> nCachedBranchId;
 
     //! The anchor for the tree state up to the start of this block
-    uint256 hashAnchor;
+    uint256 hashSproutAnchor;
 
     //! (memory only) The anchor for the tree state up to the end of this block
-    uint256 hashAnchorEnd;
+    uint256 hashFinalSproutRoot;
 
     //! Change in value held by the Sprout circuit over this block.
     //! Will be boost::none for older blocks on old nodes until a reindex has taken place.
@@ -166,10 +264,19 @@ public:
     //! Will be boost::none if nChainTx is zero.
     boost::optional<CAmount> nChainSproutValue;
 
+    //! Change in value held by the Sapling circuit over this block.
+    //! Not a boost::optional because this was added before Sapling activated, so we can
+    //! rely on the invariant that every block before this was added had nSaplingValue = 0.
+    CAmount nSaplingValue;
+
+    //! (memory only) Total value held by the Sapling circuit up to and including this block.
+    //! Will be boost::none if nChainTx is zero.
+    boost::optional<CAmount> nChainSaplingValue;
+
     //! block header
     int nVersion;
     uint256 hashMerkleRoot;
-    uint256 hashReserved;
+    uint256 hashFinalSaplingRoot;
     unsigned int nTime;
     unsigned int nBits;
     uint256 nNonce;
@@ -185,24 +292,25 @@ public:
         segid = -2;
         pprev = NULL;
         pskip = NULL;
-        nHeight = 0;
         nFile = 0;
         nDataPos = 0;
         nUndoPos = 0;
-        nChainWork = arith_uint256();
+        chainPower = CChainPower();
         nTx = 0;
         nChainTx = 0;
         nStatus = 0;
         nCachedBranchId = boost::none;
-        hashAnchor = uint256();
-        hashAnchorEnd = uint256();
+        hashSproutAnchor = uint256();
+        hashFinalSproutRoot = uint256();
         nSequenceId = 0;
         nSproutValue = boost::none;
         nChainSproutValue = boost::none;
+        nSaplingValue = 0;
+        nChainSaplingValue = boost::none;
 
         nVersion       = 0;
         hashMerkleRoot = uint256();
-        hashReserved   = uint256();
+        hashFinalSaplingRoot   = uint256();
         nTime          = 0;
         nBits          = 0;
         nNonce         = uint256();
@@ -220,11 +328,21 @@ public:
 
         nVersion       = block.nVersion;
         hashMerkleRoot = block.hashMerkleRoot;
-        hashReserved   = block.hashReserved;
+        hashFinalSaplingRoot   = block.hashFinalSaplingRoot;
         nTime          = block.nTime;
         nBits          = block.nBits;
         nNonce         = block.nNonce;
         nSolution      = block.nSolution;
+    }
+
+    int32_t SetHeight(int32_t height)
+    {
+        this->chainPower.nHeight = height;
+    }
+
+    inline int32_t GetHeight() const
+    {
+        return this->chainPower.nHeight;
     }
 
     CDiskBlockPos GetBlockPos() const {
@@ -252,7 +370,7 @@ public:
         if (pprev)
             block.hashPrevBlock = pprev->GetBlockHash();
         block.hashMerkleRoot = hashMerkleRoot;
-        block.hashReserved   = hashReserved;
+        block.hashFinalSaplingRoot   = hashFinalSaplingRoot;
         block.nTime          = nTime;
         block.nBits          = nBits;
         block.nNonce         = nNonce;
@@ -289,7 +407,7 @@ public:
     std::string ToString() const
     {
         return strprintf("CBlockIndex(pprev=%p, nHeight=%d, merkle=%s, hashBlock=%s)",
-            pprev, nHeight,
+            pprev, this->chainPower.nHeight,
             hashMerkleRoot.ToString(),
             GetBlockHash().ToString());
     }
@@ -324,6 +442,17 @@ public:
     CBlockIndex* GetAncestor(int height);
     const CBlockIndex* GetAncestor(int height) const;
 
+    int32_t GetVerusPOSTarget() const
+    {
+        return GetBlockHeader().GetVerusPOSTarget();
+    }
+
+    bool IsVerusPOSBlock() const
+    {
+        if ( ASSETCHAINS_LWMAPOS != 0 )
+            return GetBlockHeader().IsVerusPOSBlock();
+        else return(0);
+    }
 };
 
 /** Used to marshal pointers into hashes for db storage. */
@@ -332,7 +461,7 @@ class CDiskBlockIndex : public CBlockIndex
 public:
     uint256 hashPrev;
 
-    CDiskBlockIndex() {
+    CDiskBlockIndex() : CBlockIndex() {
         hashPrev = uint256();
     }
 
@@ -343,11 +472,15 @@ public:
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
-        if (!(nType & SER_GETHASH))
+    inline void SerializationOp(Stream& s, Operation ser_action) {
+        int nVersion = s.GetVersion();
+        if (!(s.GetType() & SER_GETHASH))
             READWRITE(VARINT(nVersion));
 
-        READWRITE(VARINT(nHeight));
+        if (ser_action.ForRead()) {
+            chainPower = CChainPower();
+        }
+        READWRITE(VARINT(chainPower.nHeight));
         READWRITE(VARINT(nStatus));
         READWRITE(VARINT(nTx));
         if (nStatus & (BLOCK_HAVE_DATA | BLOCK_HAVE_UNDO))
@@ -368,13 +501,13 @@ public:
                 READWRITE(branchId);
             }
         }
-        READWRITE(hashAnchor);
+        READWRITE(hashSproutAnchor);
 
         // block header
         READWRITE(this->nVersion);
         READWRITE(hashPrev);
         READWRITE(hashMerkleRoot);
-        READWRITE(hashReserved);
+        READWRITE(hashFinalSaplingRoot);
         READWRITE(nTime);
         READWRITE(nBits);
         READWRITE(nNonce);
@@ -382,8 +515,14 @@ public:
 
         // Only read/write nSproutValue if the client version used to create
         // this index was storing them.
-        if ((nType & SER_DISK) && (nVersion >= SPROUT_VALUE_VERSION)) {
+        if ((s.GetType() & SER_DISK) && (nVersion >= SPROUT_VALUE_VERSION)) {
             READWRITE(nSproutValue);
+        }
+
+        // Only read/write nSaplingValue if the client version used to create
+        // this index was storing them.
+        if ((s.GetType() & SER_DISK) && (nVersion >= SAPLING_VALUE_VERSION)) {
+            READWRITE(nSaplingValue);
         }
     }
 
@@ -393,7 +532,7 @@ public:
         block.nVersion        = nVersion;
         block.hashPrevBlock   = hashPrev;
         block.hashMerkleRoot  = hashMerkleRoot;
-        block.hashReserved    = hashReserved;
+        block.hashFinalSaplingRoot    = hashFinalSaplingRoot;
         block.nTime           = nTime;
         block.nBits           = nBits;
         block.nNonce          = nNonce;
@@ -450,18 +589,18 @@ public:
 
     /** Efficiently check whether a block is present in this chain. */
     bool Contains(const CBlockIndex *pindex) const {
-        return (*this)[pindex->nHeight] == pindex;
+        return (*this)[pindex->GetHeight()] == pindex;
     }
 
     /** Find the successor of a block in this chain, or NULL if the given index is not found or is the tip. */
     CBlockIndex *Next(const CBlockIndex *pindex) const {
         if (Contains(pindex))
-            return (*this)[pindex->nHeight + 1];
+            return (*this)[pindex->GetHeight() + 1];
         else
             return NULL;
     }
 
-    /** Return the maximal height in the chain. Is equal to chain.Tip() ? chain.Tip()->nHeight : -1. */
+    /** Return the maximal height in the chain. Is equal to chain.Tip() ? chain.Tip()->GetHeight() : -1. */
     int Height() const {
         return vChain.size() - 1;
     }

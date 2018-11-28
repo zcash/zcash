@@ -210,7 +210,7 @@ Fp_model<n,modulus>::Fp_model(const int64_t x, const bool is_unsigned)
 }
 
 template<mp_size_t n, const bigint<n>& modulus>
-void Fp_model<n,modulus>::set_ulong(const uint64_t x)
+void Fp_model<n,modulus>::set_uint64(const uint64_t x)
 {
     this->mont_repr.clear();
     this->mont_repr.data[0] = x;
@@ -237,9 +237,9 @@ bigint<n> Fp_model<n,modulus>::as_bigint() const
 }
 
 template<mp_size_t n, const bigint<n>& modulus>
-uint64_t Fp_model<n,modulus>::as_ulong() const
+uint64_t Fp_model<n,modulus>::as_uint64() const
 {
-    return this->as_bigint().as_ulong();
+    return this->as_bigint().as_uint64();
 }
 
 template<mp_size_t n, const bigint<n>& modulus>
@@ -690,7 +690,7 @@ Fp_model<n, modulus> Fp_model<n,modulus>::random_element() /// returns random el
             const uint64_t part = bitno/GMP_NUMB_BITS;
             const uint64_t bit = bitno - (GMP_NUMB_BITS*part);
 
-            r.mont_repr.data[part] &= ~(1ull<<bit);
+            r.mont_repr.data[part] &= ~(UINT64_C(1)<<bit);
 
             bitno--;
         }

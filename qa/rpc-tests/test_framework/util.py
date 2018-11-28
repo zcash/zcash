@@ -198,6 +198,21 @@ def start_node(i, dirname, extra_args=None, rpchost=None, timewait=None, binary=
     Start a komodod and return RPC connection to it
     """
     datadir = os.path.join(dirname, "node"+str(i))
+    # creating special config in case of cryptocondition asset chain test
+    if extra_args[0] == '-ac_name=REGTEST':
+        configpath = datadir + "/REGTEST.conf"
+        with open(configpath, "w+") as config:
+            config.write("regtest=1\n")
+            config.write("rpcuser=rt\n")
+            config.write("rpcpassword=rt\n")
+            port = extra_args[3]
+            config.write("rpcport=" + (port[9:]) + "\n")
+            config.write("server=1\n")
+            config.write("txindex=1\n")
+            config.write("rpcworkqueue=256\n")
+            config.write("rpcallowip=127.0.0.1\n")
+            config.write("bind=127.0.0.1\n")
+            config.write("rpcbind=127.0.0.1")
     if binary is None:
         binary = os.getenv("BITCOIND", "komodod")
     args = [ binary, "-datadir="+datadir, "-keypool=1", "-discover=0", "-rest" ]
@@ -223,10 +238,8 @@ def start_node(i, dirname, extra_args=None, rpchost=None, timewait=None, binary=
     if os.getenv("PYTHON_DEBUG", ""):
         print "start_node: calling komodo-cli -rpcwait getblockcount returned"
     devnull.close()
-    if extra_args[0] == '-ac_name=REGTEST':
-        url = "http://rt:rt@%s:%d" % (rpchost or '127.0.0.1', 64368)
-    else:
-        url = "http://rt:rt@%s:%d" % (rpchost or '127.0.0.1', rpc_port(i))
+    port = extra_args[3]
+    url = "http://rt:rt@%s:%d" % (rpchost or '127.0.0.1', int(port[9:]))
     print("connecting to " + url)
     if timewait is not None:
         proxy = AuthServiceProxy(url, timeout=timewait)
@@ -389,9 +402,18 @@ def random_transaction(nodes, amount, min_fee, fee_increment, fee_variants):
 
     return (txid, signresult["hex"], fee)
 
-def assert_equal(thing1, thing2):
-    if thing1 != thing2:
-        raise AssertionError("%s != %s"%(str(thing1),str(thing2)))
+def assert_equal(expected, actual, message=""):
+    if expected != actual:
+        if message:
+            message = "; %s" % message 
+        raise AssertionError("(left == right)%s\n  left: <%s>\n right: <%s>" % (message, str(expected), str(actual)))
+
+def assert_true(condition, message = ""):
+    if not condition:
+        raise AssertionError(message)
+        
+def assert_false(condition, message = ""):
+    assert_true(not condition, message)
 
 def assert_greater_than(thing1, thing2):
     if thing1 <= thing2:
@@ -408,31 +430,36 @@ def assert_raises(exc, fun, *args, **kwds):
         raise AssertionError("No exception raised")
 
 # Returns txid if operation was a success or None
-def wait_and_assert_operationid_status(node, myopid, in_status='success', in_errormsg=None):
+def wait_and_assert_operationid_status(node, myopid, in_status='success', in_errormsg=None, timeout=300):
     print('waiting for async operation {}'.format(myopid))
-    opids = []
-    opids.append(myopid)
-    timeout = 300
-    status = None
-    errormsg = None
-    txid = None
-    for x in xrange(1, timeout):
-        results = node.z_getoperationresult(opids)
-        if len(results)==0:
-            time.sleep(1)
-        else:
-            status = results[0]["status"]
-            if status == "failed":
-                errormsg = results[0]['error']['message']
-            elif status == "success":
-                txid = results[0]['result']['txid']
+    result = None
+    for _ in xrange(1, timeout):
+        results = node.z_getoperationresult([myopid])
+        if len(results) > 0:
+            result = results[0]
             break
-    assert_equal(in_status, status)
-    if errormsg is not None:
-        assert(in_errormsg is not None)
-        assert_equal(in_errormsg in errormsg, True)
+        time.sleep(1)
+
+    assert_true(result is not None, "timeout occured")
+    status = result['status']
+
+    txid = None
+    errormsg = None
+    if status == "failed":
+        errormsg = result['error']['message']
+    elif status == "success":
+        txid = result['result']['txid']
+
     if os.getenv("PYTHON_DEBUG", ""):
         print('...returned status: {}'.format(status))
         if errormsg is not None:
             print('...returned error: {}'.format(errormsg))
-    return txid
+    
+    assert_equal(in_status, status, "Operation returned mismatched status. Error Message: {}".format(errormsg))
+
+    if errormsg is not None:
+        assert_true(in_errormsg is not None, "No error retured. Expected: {}".format(errormsg))
+        assert_true(in_errormsg in errormsg, "Error returned: {}. Error expected: {}".format(errormsg, in_errormsg))
+        return result # if there was an error return the result
+    else:
+        return txid # otherwise return the txid

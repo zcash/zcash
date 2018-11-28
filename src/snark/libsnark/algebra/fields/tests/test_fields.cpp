@@ -89,7 +89,7 @@ void test_Frobenius()
 template<typename FieldT>
 void test_unitary_inverse()
 {
-    assert(FieldT::extension_degree() % 2 == 0);
+    EXPECT_EQ(FieldT::extension_degree() % 2, 0u);
     FieldT a = FieldT::random_element();
     FieldT aqcubed_minus1 = a.Frobenius_map(FieldT::extension_degree()/2) * a.inverse();
     assert(aqcubed_minus1.inverse() == aqcubed_minus1.unitary_inverse());
