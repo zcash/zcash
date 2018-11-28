@@ -290,8 +290,10 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
 
             CFeeRate feeRate(nTotalIn-tx.GetValueOut(), nTxSize);
 
-            if (fNotarisation)
+            if (fNotarisation) {
                 dPriority = 1e16;
+                fprintf(stderr, "Notarisation.%s set to maximum priority.\n",tx.hash.ToString().c_str());
+            }
 
             if (porphan)
             {
