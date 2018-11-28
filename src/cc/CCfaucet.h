@@ -22,7 +22,7 @@
 #define EVAL_FAUCET 0xe4
 #define FAUCETSIZE (COIN / 10)
 
-bool FaucetValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx);
+bool FaucetValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn);
 
 // CCcustom
 std::string FaucetFund(uint64_t txfee,int64_t funds);

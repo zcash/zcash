@@ -7,6 +7,8 @@
 #include "zcash/Address.hpp"
 #include "wallet/wallet.h"
 #include "amount.h"
+
+#include <array>
 #include <memory>
 #include <string>
 #include <set>
@@ -91,14 +93,13 @@ public:
 // Note that the zpd: prefix is not part of the payment disclosure blob itself.  It is only
 // used as convention to improve the user experience when sharing payment disclosure blobs.
 TEST(paymentdisclosure, mainnet) {
-    ECC_Start();
     SelectParams(CBaseChainParams::MAIN);
 
     boost::filesystem::path pathTemp = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path();
     boost::filesystem::create_directories(pathTemp);
     mapArgs["-datadir"] = pathTemp.string();
 
-    std::cout << "Test payment disclosure database created in folder: " << pathTemp.native() << std::endl;
+    std::cout << "Test payment disclosure database created in folder: " << pathTemp.string() << std::endl;
 
     PaymentDisclosureDBTest mydb(pathTemp);
 
@@ -120,7 +121,7 @@ TEST(paymentdisclosure, mainnet) {
         PaymentDisclosureInfo info;
         info.esk = random_uint256();
         info.joinSplitPrivKey = joinSplitPrivKey;
-        info.zaddr = libzcash::SpendingKey::random().address();
+        info.zaddr = libzcash::SproutSpendingKey::random().address();
         ASSERT_TRUE(mydb.Put(key, info));
 
         // Retrieve info from test database into new local variable and test it matches
@@ -131,7 +132,7 @@ TEST(paymentdisclosure, mainnet) {
         // Modify this local variable and confirm it no longer matches
         info2.esk = random_uint256();
         info2.joinSplitPrivKey = random_uint256();
-        info2.zaddr = libzcash::SpendingKey::random().address();        
+        info2.zaddr = libzcash::SproutSpendingKey::random().address();        
         ASSERT_NE(info, info2);
 
         // Using the payment info object, let's create a dummy payload
@@ -167,7 +168,7 @@ TEST(paymentdisclosure, mainnet) {
         }
 
         // Convert signature buffer to boost array
-        boost::array<unsigned char, 64> arrayPayloadSig;
+        std::array<unsigned char, 64> arrayPayloadSig;
         memcpy(arrayPayloadSig.data(), &payloadSig[0], 64);
 
         // Payment disclosure blob to pass around
@@ -207,6 +208,4 @@ TEST(paymentdisclosure, mainnet) {
 #if DUMP_DATABASE_TO_STDOUT == true
     mydb.DebugDumpAllStdout();
 #endif
-
-    ECC_Stop();
 }
