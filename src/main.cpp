@@ -4313,7 +4313,7 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
             const uint256 &hash = tx.GetHash();
             if ( tx.vjoinsplit.size() == 0 ) {
                 transactionsToRemove.push_back(tx);
-                tmpmempool.addUnchecked(hash,e,!IsInitialBlockDownload());
+                tmpmempool.addUnchecked(hash,e,false);
             }
         }
         BOOST_FOREACH(const CTransaction& tx, transactionsToRemove) {
