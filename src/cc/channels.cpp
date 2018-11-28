@@ -430,7 +430,8 @@ int64_t AddChannelsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx, C
 
 std::string ChannelOpen(uint64_t txfee,CPubKey destpub,int32_t numpayments,int64_t payment)
 {
-    CMutableTransaction mtx; uint8_t hash[32],hashdest[32]; uint64_t funds; int32_t i; uint256 hashchain,entropy,hentropy;
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    uint8_t hash[32],hashdest[32]; uint64_t funds; int32_t i; uint256 hashchain,entropy,hentropy;
     CPubKey mypk; struct CCcontract_info *cp,C;
     
     if ( numpayments <= 0 || payment <= 0 || numpayments > CHANNELS_MAXPAYMENTS )
@@ -464,7 +465,8 @@ std::string ChannelOpen(uint64_t txfee,CPubKey destpub,int32_t numpayments,int64
 
 std::string ChannelPayment(uint64_t txfee,uint256 opentxid,int64_t amount, uint256 secret)
 {
-    CMutableTransaction mtx; CPubKey mypk,srcpub,destpub; uint256 txid,hashchain,gensecret,hashblock,entropy,hentropy,prevtxid,param3;
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    CPubKey mypk,srcpub,destpub; uint256 txid,hashchain,gensecret,hashblock,entropy,hentropy,prevtxid,param3;
     struct CCcontract_info *cp,C; int32_t i,funcid,prevdepth,numvouts,numpayments,totalnumpayments;
     int64_t payment,change,funds,param2;
     uint8_t hash[32],hashdest[32];
@@ -569,7 +571,8 @@ std::string ChannelPayment(uint64_t txfee,uint256 opentxid,int64_t amount, uint2
 
 std::string ChannelClose(uint64_t txfee,uint256 opentxid)
 {
-    CMutableTransaction mtx; CPubKey mypk,srcpub,destpub; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    CPubKey mypk,srcpub,destpub; struct CCcontract_info *cp,C;
     CTransaction channelOpenTx;
     uint256 hashblock,tmp_txid,prevtxid,hashchain;
     int32_t numvouts,numpayments;
@@ -616,7 +619,8 @@ std::string ChannelClose(uint64_t txfee,uint256 opentxid)
 
 std::string ChannelRefund(uint64_t txfee,uint256 opentxid,uint256 closetxid)
 {
-    CMutableTransaction mtx; CPubKey mypk; struct CCcontract_info *cp,C; int64_t funds,payment,param2;
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    CPubKey mypk; struct CCcontract_info *cp,C; int64_t funds,payment,param2;
     int32_t i,numpayments,numvouts,param1;
     uint256 hashchain,hashblock,txid,prevtxid,param3,entropy,hentropy,secret;
     CTransaction channelOpenTx,channelCloseTx,prevTx;
