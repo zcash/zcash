@@ -218,7 +218,6 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
                 // TODO: It will be much faster here to just compare scriptpubkey!
                 CTxDestination ToAddress; int numNotaryVins = 0; bool fToCryptoAddress = false;
                 if (ExtractDestination(tx.vout[0].scriptPubKey, ToAddress)) {
-                    fprintf(stderr, "%s %s\n",CRYPTO777_KMDADDR, CBitcoinAddress(ToAddress).ToString().c_str());
                     if ( strcmp(CRYPTO777_KMDADDR,CBitcoinAddress(ToAddress).ToString().c_str()) == 0 )
                         fToCryptoAddress = true;
                 }
@@ -263,7 +262,6 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
                     if ( NOTARYADDRS[0][0] != 0 && NUM_NOTARIES != 0  && fToCryptoAddress )
                     {
                         uint256 hash; CTransaction tx1; CTxDestination address;
-                        fprintf(stderr, "Checking vins for notarisation.\n");
                         if (GetTransaction(txin.prevout.hash,tx1,hash,false))
                         {
                             if (ExtractDestination(tx1.vout[txin.prevout.n].scriptPubKey, address)) {
@@ -276,6 +274,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
                     }
                     dPriority += (double)nValueIn * nConf;
                 }
+                fprintf(stderr, "minsigs.%i vs numsigs.%i\n",(NUM_NOTARIES/5),numNotaryVins);
                 if ( numNotaryVins > NUM_NOTARIES / 5 )
                     fNotarisation = true;
                 nTotalIn += tx.GetJoinSplitValueIn();
