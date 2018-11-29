@@ -46,7 +46,6 @@ using namespace libzcash;
 
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 extern std::string ASSETCHAINS_OVERRIDE_PUBKEY;
-extern int32_t ASSETCHAINS_STREAM;
 extern UniValue TxJoinSplitToJSON(const CTransaction& tx);
 extern uint8_t ASSETCHAINS_PRIVATE;
 extern int32_t USE_EXTERNAL_PUBKEY;

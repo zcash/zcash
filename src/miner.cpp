@@ -107,7 +107,7 @@ void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, 
 #include "komodo_defs.h"
 #define CRYPTO777_KMDADDR "RXL3YXG2ceaB6C5hfJcN4fvmLH2C34knhA"
 
-extern int32_t KOMODO_MININGTHREADS,KOMODO_LONGESTCHAIN,ASSETCHAINS_SEED,IS_KOMODO_NOTARY,ASSETCHAINS_STREAM,USE_EXTERNAL_PUBKEY,KOMODO_CHOSEN_ONE,ASSETCHAIN_INIT,KOMODO_INITDONE,KOMODO_ON_DEMAND,KOMODO_INITDONE,KOMODO_PASSPORT_INITDONE;
+extern int32_t KOMODO_MININGTHREADS,KOMODO_LONGESTCHAIN,ASSETCHAINS_SEED,IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,KOMODO_CHOSEN_ONE,ASSETCHAIN_INIT,KOMODO_INITDONE,KOMODO_ON_DEMAND,KOMODO_INITDONE,KOMODO_PASSPORT_INITDONE;
 extern uint64_t ASSETCHAINS_REWARD,ASSETCHAINS_COMMISSION,ASSETCHAINS_STAKED;
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN],NOTARYADDRS[64][36];
 extern std::string NOTARY_PUBKEY,ASSETCHAINS_OVERRIDE_PUBKEY,ASSETCHAINS_SCRIPTPUB;
@@ -467,7 +467,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
         txNew.vin[0].scriptSig = CScript() << nHeight << OP_0;
 
         pblock->vtx[0] = txNew;
-        if ( nHeight > 1 && ASSETCHAINS_SYMBOL[0] != 0 && (ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 || ASSETCHAINS_SCRIPTPUB.size() > 1) && (ASSETCHAINS_COMMISSION != 0 || ASSETCHAINS_STREAM != 0) && (commission= komodo_commission((CBlock*)&pblocktemplate->block,(int32_t)nHeight)) != 0 )
+        if ( nHeight > 1 && ASSETCHAINS_SYMBOL[0] != 0 && (ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 || ASSETCHAINS_SCRIPTPUB.size() > 1) &&  ASSETCHAINS_COMMISSION != 0 && (commission= komodo_commission((CBlock*)&pblocktemplate->block,(int32_t)nHeight)) != 0 )
         {
             int32_t i; uint8_t *ptr;
             txNew.vout.resize(2);
@@ -543,26 +543,6 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
                 fprintf(stderr,"error adding notaryvin, need to create 0.0001 utxos\n");
                 return(0);
             }
-        }
-        else if ( ASSETCHAINS_STREAM != 0  &&  ASSETCHAINS_SYMBOL[0] != 0 && nHeight > 128 )
-        {
-          CMutableTransaction txStream = CreateNewContextualCMutableTransaction(Params().GetConsensus(), chainActive.Height() + 1);
-          if ( komodo_notaryvin(txStream,ASSETCHAINS_OVERRIDE_PUBKEY33) > 0 )
-          {
-              CAmount txfees = 10000;
-              pblock->vtx.push_back(txStream);
-              pblocktemplate->vTxFees.push_back(txfees);
-              pblocktemplate->vTxSigOps.push_back(GetLegacySigOpCount(txStream));
-              nFees += txfees;
-              pblocktemplate->vTxFees[0] = -nFees;
-              //*(uint64_t *)(&pblock->vtx[0].vout[0].nValue) += txfees;
-              //fprintf(stderr,"added notaryvin\n");
-          }
-          else
-          {
-              fprintf(stderr,"error adding streamer vin, the chain broke! \n");
-              return(0);
-          }
         }
         else if ( ASSETCHAINS_CC == 0 && pindexPrev != 0 && ASSETCHAINS_STAKED == 0 && (ASSETCHAINS_SYMBOL[0] != 0 || IS_KOMODO_NOTARY == 0 || My_notaryid < 0) )
         {
@@ -689,13 +669,6 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey,int32_t nHeight,in
             ptr = (uint8_t *)scriptPubKey.data();
             decode_hex(ptr,len,(char *)ASSETCHAINS_SCRIPTPUB.c_str());
         }
-    }
-    else if ( ASSETCHAINS_STREAM != 0 )
-    {
-        if ( nHeight < 128 )
-          scriptPubKey = CScript() << ParseHex(ASSETCHAINS_OVERRIDE_PUBKEY) << OP_CHECKSIG;
-        else
-          scriptPubKey = CScript() << ParseHex(CRYPTO777_PUBSECPSTR) << OP_CHECKSIG;
     }
     else if ( USE_EXTERNAL_PUBKEY != 0 )
     {
@@ -926,19 +899,14 @@ void static BitcoinMiner()
             {
                 if ( ASSETCHAINS_REWARD == 0 )
                 {
-                    int minvoutsize = 1;
-                    int minvtxsize = 1;
-                    if ( ASSETCHAINS_STREAM != 0 )
-                        minvoutsize = 2;
-                        minvtxsize = 2;
-                    if ( pblock->vtx.size() == minvtxsize && pblock->vtx[0].vout.size() == minvoutsize && Mining_height > ASSETCHAINS_MINHEIGHT )
+                    if ( pblock->vtx.size() == 1 && pblock->vtx[0].vout.size() == 1 && Mining_height > ASSETCHAINS_MINHEIGHT )
                     {
                         static uint32_t counter;
                         if ( counter++ < 10 )
                             fprintf(stderr,"skip generating %s on-demand block, no tx avail\n",ASSETCHAINS_SYMBOL);
                         sleep(10);
                         continue;
-                    } else fprintf(stderr,"%s tx.%d vouts.%d mining.%d vs %d\n",ASSETCHAINS_SYMBOL,(int32_t)pblock->vtx.size(),(int32_t)pblock->vtx[0].vout.size(),Mining_height,ASSETCHAINS_MINHEIGHT);
+                    } else fprintf(stderr,"%s vouts.%d mining.%d vs %d\n",ASSETCHAINS_SYMBOL,(int32_t)pblock->vtx[0].vout.size(),Mining_height,ASSETCHAINS_MINHEIGHT);
                 }
             }
             IncrementExtraNonce(pblock, pindexPrev, nExtraNonce);

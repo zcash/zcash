@@ -1105,7 +1105,6 @@ int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_
  commission must be in coinbase.vout[1] and must be >= 10000 sats
  PoS stake must be without txfee and in the last tx in the block at vout[0]
  */
-extern int32_t ASSETCHAINS_STREAM;
 
 CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams);
 
@@ -1113,29 +1112,26 @@ uint64_t komodo_commission(const CBlock *pblock,int32_t height)
 {
     int32_t i,j,n=0,txn_count; int64_t nSubsidy; uint64_t commission,total = 0;
     txn_count = pblock->vtx.size();
-    if ( ASSETCHAINS_STREAM == 0 )
+    if ( ASSETCHAINS_FOUNDERS != 0 )
     {
-        if ( ASSETCHAINS_FOUNDERS != 0 )
+        nSubsidy = GetBlockSubsidy(height,Params().GetConsensus());
+        //fprintf(stderr,"ht.%d nSubsidy %.8f prod %llu\n",height,(double)nSubsidy/COIN,(long long)(nSubsidy * ASSETCHAINS_COMMISSION));
+        return((nSubsidy * ASSETCHAINS_COMMISSION) / COIN);
+        n = pblock->vtx[0].vout.size();
+        for (j=0; j<n; j++)
+            if ( j != 1 )
+                total += pblock->vtx[0].vout[j].nValue;
+    }
+    else
+    {
+        for (i=0; i<txn_count; i++)
         {
-            nSubsidy = GetBlockSubsidy(height,Params().GetConsensus());
-            //fprintf(stderr,"ht.%d nSubsidy %.8f prod %llu\n",height,(double)nSubsidy/COIN,(long long)(nSubsidy * ASSETCHAINS_COMMISSION));
-            return((nSubsidy * ASSETCHAINS_COMMISSION) / COIN);
-            n = pblock->vtx[0].vout.size();
+            n = pblock->vtx[i].vout.size();
             for (j=0; j<n; j++)
-                if ( j != 1 )
-                    total += pblock->vtx[0].vout[j].nValue;
-        }
-        else
-        {
-            for (i=0; i<txn_count; i++)
             {
-                n = pblock->vtx[i].vout.size();
-                for (j=0; j<n; j++)
-                {
-                    //fprintf(stderr,"(%d %.8f).%d ",i,dstr(block.vtx[i].vout[j].nValue),j);
-                    if ( i != 0 || j != 1 )
-                        total += pblock->vtx[i].vout[j].nValue;
-                }
+                //fprintf(stderr,"(%d %.8f).%d ",i,dstr(block.vtx[i].vout[j].nValue),j);
+                if ( i != 0 || j != 1 )
+                    total += pblock->vtx[i].vout[j].nValue;
             }
         }
     }
@@ -1483,7 +1479,7 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
 int64_t komodo_checkcommission(CBlock *pblock,int32_t height)
 {
     int64_t checktoshis=0; uint8_t *script,scripthex[8192]; int32_t scriptlen,matched = 0;
-    if ( ASSETCHAINS_COMMISSION != 0 || ASSETCHAINS_STREAM != 0 )
+    if ( ASSETCHAINS_COMMISSION != 0 )
     {
         checktoshis = komodo_commission(pblock,height);
         //fprintf(stderr,"height.%d commission %.8f\n",height,(double)checktoshis/COIN);
@@ -1631,20 +1627,6 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
         {
             if ( komodo_checkcommission(pblock,height) < 0 )
                 return(-1);
-        }
-        if ( ASSETCHAINS_STREAM != 0 && height > 128 )
-        {
-            int lasttx = ( pblock->vtx.size() -1 );
-            if ( lasttx == 0 )
-                return(-1);
-            uint256 hash; CTransaction tx;
-            if (GetTransaction(pblock->vtx[lasttx].vin[0].prevout.hash,tx,hash,false))
-            {
-                script = (uint8_t *)tx.vout[pblock->vtx[lasttx].vin[0].prevout.n].scriptPubKey.data();
-                if ( script[0] != 33 || script[34] != OP_CHECKSIG || memcmp(script+1,ASSETCHAINS_OVERRIDE_PUBKEY33,33) != 0 ) {
-                    return(-1);
-                }
-            }
         }
     }
     //fprintf(stderr,"komodo_checkPOW possible.%d slowflag.%d ht.%d notaryid.%d failed.%d\n",possible,slowflag,height,notaryid,failed);

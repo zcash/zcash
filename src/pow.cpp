@@ -20,13 +20,9 @@
 #include "librustzcash.h"
 #endif // ENABLE_RUST
 uint32_t komodo_chainactive_timestamp();
-extern int32_t ASSETCHAINS_STREAM;
 
 unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params)
 {
-    if ( ASSETCHAINS_STREAM == 2 )
-      return 537857807;
-
     unsigned int nProofOfWorkLimit = UintToArith256(params.powLimit).GetCompact();
     // Genesis block
     if (pindexLast == NULL )

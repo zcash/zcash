@@ -1573,12 +1573,7 @@ void komodo_args(char *argv0)
         ASSETCHAINS_COMMISSION = GetArg("-ac_perc",0);
         ASSETCHAINS_OVERRIDE_PUBKEY = GetArg("-ac_pubkey","");
 				ASSETCHAINS_SCRIPTPUB = GetArg("-ac_script","");
-				ASSETCHAINS_STREAM = GetArg("-ac_stream",0);
 
-				if ( ASSETCHAINS_STREAM != 0 && ( ASSETCHAINS_COMMISSION != 0 || ASSETCHAINS_ENDSUBSIDY != 0 || ASSETCHAINS_REWARD != 0 || ASSETCHAINS_HALVING != 0 || ASSETCHAINS_DECAY != 0 || ASSETCHAINS_PRIVATE != 0 )) {
-					printf("ASSETCHAINS_STREAM cannot be used with:\n ASSETCHAINS_COMMISSION \n ASSETCHAINS_ENDSUBSIDY\n ASSETCHAINS_REWARD\n ASSETCHAINS_HALVING\n ASSETCHAINS_DECAY\n ASSETCHAINS_PRIVATE\n");
-					exit(0);
-				}
         if ( (ASSETCHAINS_STAKED= GetArg("-ac_staked",0)) > 100 )
             ASSETCHAINS_STAKED = 100;
         if ( ASSETCHAINS_STAKED != 0 && ASSETCHAINS_PRIVATE != 0 )
@@ -1601,11 +1596,6 @@ void komodo_args(char *argv0)
             ASSETCHAINS_DECAY = 0;
             printf("ASSETCHAINS_DECAY cant be more than 100000000\n");
         }
-				if ( strlen(ASSETCHAINS_OVERRIDE_PUBKEY.c_str()) != 66 && ASSETCHAINS_STREAM != 0 )
-				{
-						printf("ASSETCHAINS_STREAM needs ASSETCHAINS_OVERRIDE_PUBKEY! \n");
-						exit(0);
-				}
         if ( strlen(ASSETCHAINS_OVERRIDE_PUBKEY.c_str()) == 66 || ASSETCHAINS_SCRIPTPUB.size() > 1 )
         {
             if ( strlen(ASSETCHAINS_OVERRIDE_PUBKEY.c_str()) == 66 )
@@ -1620,10 +1610,10 @@ void komodo_args(char *argv0)
                     ASSETCHAINS_COMMISSION = 53846154; // maps to 35%
                     printf("ASSETCHAINS_COMMISSION defaulted to 35%% when founders reward active\n");
                 }
-                else if ( ASSETCHAINS_STREAM == 0 )
+								else
                 {
                     ASSETCHAINS_OVERRIDE_PUBKEY.clear();
-                    printf("-ac_perc or -ac_stream must be set with -ac_pubkey\n");
+                    printf("-ac_perc must be set with -ac_pubkey\n");
                 }
             }
         }
