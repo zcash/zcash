@@ -17,6 +17,8 @@
 #include <event2/buffer.h>
 #include <event2/keyvalq_struct.h>
 #include "support/events.h"
+uint16_t BITCOIND_RPCPORT = 7771;
+char ASSETCHAINS_SYMBOL[65];
 
 #include <univalue.h>
 
@@ -65,7 +67,7 @@ public:
 
 };
 
-#ifdef FROM_CLI
+/*
 #define FROM_CLI
 #include "uint256.h"
 #include "arith_uint256.h"
@@ -77,7 +79,6 @@ public:
 #include "komodo_cJSON.c"
 #include "komodo_notary.h"
 #include "notaries_staked.cpp"
-#endif
 
 
 void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotaries,uint8_t notaryid,uint256 txhash,uint64_t voutmask,uint8_t numvouts,uint32_t *pvals,uint8_t numpvals,int32_t KMDheight,uint32_t KMDtimestamp,uint64_t opretvalue,uint8_t *opretbuf,uint16_t opretlen,uint16_t vout,uint256 MoM,int32_t MoMdepth)
@@ -89,6 +90,7 @@ uint32_t komodo_heightstamp(int32_t height)
 {
     return(0);
 }
+*/
 
 //
 // This function returns either one of EXIT_ codes when it's expected to stop the process or
@@ -104,7 +106,12 @@ static int AppInitRPC(int argc, char* argv[])
     // Parameters
     //
     ParseParameters(argc, argv);
-    komodo_args(argv[0]);
+    //komodo_args(argv[0]);
+    std:string name;
+    name = GetArg("-ac_name","");
+    if ( !name.empty() )
+        strncpy(ASSETCHAINS_SYMBOL,name.c_str(),sizeof(ASSETCHAINS_SYMBOL)-1);
+
     if (argc<2 || mapArgs.count("-?") || mapArgs.count("-h") || mapArgs.count("-help") || mapArgs.count("-version")) {
         std::string strUsage = _("Komodo RPC client version") + " " + FormatFullVersion() + "\n" + PrivacyInfo();
         if (!mapArgs.count("-version")) {
@@ -218,7 +225,7 @@ UniValue CallRPC(const std::string& strMethod, const UniValue& params)
 {
     std::string host = GetArg("-rpcconnect", "127.0.0.1");
     int port = GetArg("-rpcport", BaseParams().RPCPort());
-    BITCOIND_RPCPORT = port;
+    //BITCOIND_RPCPORT = port;
     // Obtain event base
     raii_event_base base = obtain_event_base();
 
