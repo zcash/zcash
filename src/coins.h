@@ -456,7 +456,6 @@ class CTransactionExceptionData
         CTransactionExceptionData() : scriptPubKey(), voutMask() {}
 };
 
-#ifdef SERVER
 class CLaunchMap
 {
     public:
@@ -479,7 +478,6 @@ class CLaunchMap
         }
 };
 static CLaunchMap launchMap = CLaunchMap();
-#endif
 
 /** CCoinsView that adds a memory cache for transactions to another CCoinsView */
 class CCoinsViewCache : public CCoinsViewBacked
