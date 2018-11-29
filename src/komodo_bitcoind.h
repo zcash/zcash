@@ -1135,10 +1135,6 @@ uint64_t komodo_commission(const CBlock *pblock,int32_t height)
             }
         }
     }
-    else
-    {
-        commission = 10000;
-    }
     return(commission);
 }
 
