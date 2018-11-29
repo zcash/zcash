@@ -276,8 +276,8 @@ obj/build.h: FORCE
 libbitcoin_util_a-clientversion.$(OBJEXT): obj/build.h
 
 # server: zcashd
-libbitcoin_server_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(EVENT_CFLAGS) $(EVENT_PTHREADS_CFLAGS) -DSERVER
-libbitcoin_server_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS) -DSERVER
+libbitcoin_server_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(EVENT_CFLAGS) $(EVENT_PTHREADS_CFLAGS)
+libbitcoin_server_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 libbitcoin_server_a_SOURCES = \
   sendalert.cpp \
   addrman.cpp \
@@ -581,9 +581,9 @@ endif
 
 # bitcoin-cli binary #
 komodo_cli_SOURCES = bitcoin-cli.cpp
-komodo_cli_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(EVENT_CFLAGS)
-komodo_cli_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-komodo_cli_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
+komodo_cli_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(EVENT_CFLAGS) -DCLI
+komodo_cli_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS) -DCLI
+komodo_cli_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS) -DCLI
 
 # wallet-utility binary #
 if ENABLE_WALLET
