@@ -19,5 +19,9 @@ extern double benchmark_connectblock_slow();
 extern double benchmark_sendtoaddress(CAmount amount);
 extern double benchmark_loadwallet();
 extern double benchmark_listunspent();
+extern double benchmark_create_sapling_spend();
+extern double benchmark_create_sapling_output();
+extern double benchmark_verify_sapling_spend();
+extern double benchmark_verify_sapling_output();
 
 #endif

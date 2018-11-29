@@ -24,6 +24,10 @@
 #endif
 #include <unistd.h>
 
+extern uint64_t ASSETCHAINS_TIMELOCKGTE;
+extern uint32_t ASSETCHAINS_ALGO, ASSETCHAINS_VERUSHASH;
+int64_t komodo_block_unlocktime(uint32_t nHeight);
+
 void AtomicTimer::start()
 {
     std::unique_lock<std::mutex> lock(mtx);
@@ -69,21 +73,33 @@ double AtomicTimer::rate(const AtomicCounter& count)
     return duration > 0 ? (double)count.get() / duration : 0;
 }
 
-CCriticalSection cs_metrics;
-
 boost::synchronized_value<int64_t> nNodeStartTime;
 boost::synchronized_value<int64_t> nNextRefresh;
+int64_t nHashCount;
 AtomicCounter transactionsValidated;
 AtomicCounter ehSolverRuns;
 AtomicCounter solutionTargetChecks;
-AtomicCounter minedBlocks;
+static AtomicCounter minedBlocks;
 AtomicTimer miningTimer;
+CCriticalSection cs_metrics;
 
-boost::synchronized_value<std::list<uint256>> trackedBlocks;
+double AtomicTimer::rate(const int64_t count)
+{
+    std::unique_lock<std::mutex> lock(mtx);
+    LOCK(cs_metrics);
+    int64_t duration = total_time;
+    if (threads > 0) {
+        // Timer is running, so get the latest count
+        duration += GetTime() - start_time;
+    }
+    return duration > 0 ? (double)count / duration : 0;
+}
 
-boost::synchronized_value<std::list<std::string>> messageBox;
-boost::synchronized_value<std::string> initMessage;
-bool loaded = false;
+static boost::synchronized_value<std::list<uint256>> trackedBlocks;
+
+static boost::synchronized_value<std::list<std::string>> messageBox;
+static boost::synchronized_value<std::string> initMessage;
+static bool loaded = false;
 
 extern int64_t GetNetworkHashPS(int lookup, int height);
 
@@ -106,7 +122,12 @@ int64_t GetUptime()
 
 double GetLocalSolPS()
 {
-    return miningTimer.rate(solutionTargetChecks);
+    if (ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASH)
+    {
+        return miningTimer.rate(nHashCount);
+    }
+    else
+        return miningTimer.rate(solutionTargetChecks);
 }
 
 int EstimateNetHeightInner(int height, int64_t tipmediantime,
@@ -330,12 +351,14 @@ int printMetrics(size_t cols, bool mining)
                 auto hash = *it;
                 if (mapBlockIndex.count(hash) > 0 &&
                         chainActive.Contains(mapBlockIndex[hash])) {
-                    int height = mapBlockIndex[hash]->nHeight;
+                    int height = mapBlockIndex[hash]->GetHeight();
                     CAmount subsidy = GetBlockSubsidy(height, consensusParams);
                     if ((height > 0) && (height <= consensusParams.GetLastFoundersRewardBlockHeight())) {
                         subsidy -= subsidy/5;
                     }
-                    if (std::max(0, COINBASE_MATURITY - (tipHeight - height)) > 0) {
+
+                    if ((std::max(0, COINBASE_MATURITY - (tipHeight - height)) > 0) ||
+                        (tipHeight < komodo_block_unlocktime(height) && subsidy >= ASSETCHAINS_TIMELOCKGTE)) {
                         immature += subsidy;
                     } else {
                         mature += subsidy;
@@ -415,6 +438,30 @@ int printInitMessage()
     return 2;
 }
 
+#ifdef WIN32
+#define ENABLE_VIRTUAL_TERMINAL_PROCESSING 0x0004
+
+bool enableVTMode()
+{
+    // Set output mode to handle virtual terminal sequences
+    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    if (hOut == INVALID_HANDLE_VALUE) {
+        return false;
+    }
+
+    DWORD dwMode = 0;
+    if (!GetConsoleMode(hOut, &dwMode)) {
+        return false;
+    }
+
+    dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+    if (!SetConsoleMode(hOut, dwMode)) {
+        return false;
+    }
+    return true;
+}
+#endif
+
 void ThreadShowMetricsScreen()
 {
     // Make this thread recognisable as the metrics screen thread
@@ -426,6 +473,10 @@ void ThreadShowMetricsScreen()
     int64_t nRefresh = GetArg("-metricsrefreshtime", isTTY ? 1 : 600);
 
     if (isScreen) {
+#ifdef WIN32
+        enableVTMode();
+#endif
+
         // Clear screen
         std::cout << "\e[2J";
 
@@ -450,15 +501,16 @@ void ThreadShowMetricsScreen()
         // Get current window size
         if (isTTY) {
 #ifdef _WIN32
-          CONSOLE_SCREEN_BUFFER_INFO csbi;
-          GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
-          cols = csbi.srWindow.Right - csbi.srWindow.Left + 1;
-          #else
-          struct winsize w;
-          w.ws_col = 0;
-          if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) != -1 && w.ws_col != 0) {
-            cols = w.ws_col;
-          }
+            CONSOLE_SCREEN_BUFFER_INFO csbi;
+            if (GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi) != 0) {
+                cols = csbi.srWindow.Right - csbi.srWindow.Left + 1;
+            }
+#else
+            struct winsize w;
+            w.ws_col = 0;
+            if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) != -1 && w.ws_col != 0) {
+                cols = w.ws_col;
+            }
 #endif
         }
 
@@ -484,7 +536,13 @@ void ThreadShowMetricsScreen()
 
         if (isScreen) {
             // Explain how to exit
-            std::cout << "[" << _("Press Ctrl+C to exit") << "] [" << _("Set 'showmetrics=0' to hide") << "]" << std::endl;
+            std::cout << "[";
+#ifdef WIN32
+            std::cout << _("'zcash-cli.exe stop' to exit");
+#else
+            std::cout << _("Press Ctrl+C to exit");
+#endif
+            std::cout << "] [" << _("Set 'showmetrics=0' to hide") << "]" << std::endl;
         } else {
             // Print delineator
             std::cout << "----------------------------------------" << std::endl;

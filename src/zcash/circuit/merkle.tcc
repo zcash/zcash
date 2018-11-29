@@ -52,7 +52,7 @@ public:
         // number thing in its API.
         size_t path_index = convertVectorToInt(path.index);
 
-        positions.fill_with_bits_of_ulong(this->pb, path_index);
+        positions.fill_with_bits_of_uint64(this->pb, path_index);
 
         authvars->generate_r1cs_witness(path_index, path.authentication_path);
         auth->generate_r1cs_witness();
