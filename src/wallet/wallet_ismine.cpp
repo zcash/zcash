@@ -9,6 +9,7 @@
 #include "keystore.h"
 #include "script/script.h"
 #include "script/standard.h"
+#include "cc/eval.h"
 
 #include <boost/foreach.hpp>
 
@@ -34,10 +35,21 @@ isminetype IsMine(const CKeyStore &keystore, const CTxDestination& dest)
     return IsMine(keystore, script);
 }
 
-isminetype IsMine(const CKeyStore &keystore, const CScript& scriptPubKey)
+isminetype IsMine(const CKeyStore &keystore, const CScript& _scriptPubKey)
 {
     vector<valtype> vSolutions;
     txnouttype whichType;
+    CScript scriptPubKey = _scriptPubKey;
+
+    if (scriptPubKey.IsCheckLockTimeVerify())
+    {
+        uint8_t pushOp = scriptPubKey[0];
+        uint32_t scriptStart = pushOp + 3;
+
+        // continue with post CLTV script
+        scriptPubKey = CScript(scriptPubKey.size() > scriptStart ? scriptPubKey.begin() + scriptStart : scriptPubKey.end(), scriptPubKey.end());
+    }
+
     if (!Solver(scriptPubKey, whichType, vSolutions)) {
         if (keystore.HaveWatchOnly(scriptPubKey))
             return ISMINE_WATCH_ONLY;
@@ -49,6 +61,16 @@ isminetype IsMine(const CKeyStore &keystore, const CScript& scriptPubKey)
     {
     case TX_NONSTANDARD:
     case TX_NULL_DATA:
+        break;
+    case TX_CRYPTOCONDITION:
+        // for now, default is that the first value returned will be the script, subsequent values will be
+        // pubkeys. if we have the first pub key in our wallet, we consider this spendable
+        if (vSolutions.size() > 1)
+        {
+            keyID = CPubKey(vSolutions[1]).GetID();
+            if (keystore.HaveKey(keyID))
+                return ISMINE_SPENDABLE;
+        }
         break;
     case TX_PUBKEY:
         keyID = CPubKey(vSolutions[0]).GetID();
@@ -71,7 +93,6 @@ isminetype IsMine(const CKeyStore &keystore, const CScript& scriptPubKey)
         }
         break;
     }
-
     case TX_MULTISIG:
     {
         // Only consider transactions "mine" if we own ALL the

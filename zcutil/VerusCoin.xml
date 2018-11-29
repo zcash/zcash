@@ -1,0 +1,432 @@
+<project>
+    <shortName>VerusCoin</shortName>
+    <fullName>VerusCoin</fullName>
+    <version>0.3.12</version>
+    <installerFilename>${product_shortname}-v${product_version}-${platform_name}-installer.${platform_exec_suffix}</installerFilename>
+    <licenseFile>../COPYING</licenseFile>
+    <leftImage>../assets/imgs/VRSC_256x256.png</leftImage>
+    <logoImage>../assets/imgs/VRSC_256x256.png</logoImage>
+    <splashImage>../assets/imgs/VRSC_256x256.png</splashImage>
+    <allowLanguageSelection>1</allowLanguageSelection>
+    <componentList>
+        <componentGroup>
+            <name>VerusCoin</name>
+            <description>VerusCoin CLI</description>
+            <canBeEdited>1</canBeEdited>
+            <downloadable>1</downloadable>
+            <selected>1</selected>
+            <show>1</show>
+            <componentList>
+                <component>
+                    <name>Agama</name>
+                    <description>Verus-Enhanced Agama Wallet</description>
+                    <canBeEdited>1</canBeEdited>
+                    <downloadable>1</downloadable>
+                    <selected>1</selected>
+                    <show>1</show>
+                    <desktopShortcutList>
+                        <shortcut>
+                            <comment>Start Agama App</comment>
+                            <exec></exec>
+                            <icon>../assets/icons/agama_icons/256x256.png</icon>
+                            <name>Agama App</name>
+                            <path></path>
+                            <platforms>all</platforms>
+                            <runAsAdmin>0</runAsAdmin>
+                            <runInTerminal>0</runInTerminal>
+                            <windowsExec>${installdir}/Agama/Agama-win32-x64/Agama.exe</windowsExec>
+                            <windowsExecArgs></windowsExecArgs>
+                            <windowsIcon></windowsIcon>
+                            <windowsPath>${windows_folder_common_programs}/</windowsPath>
+                        </shortcut>
+                    </desktopShortcutList>
+                    <folderList>
+                        <folder>
+                            <description>Verus-Enhanced Agama Wallet</description>
+                            <destination>${installdir}/Agama</destination>
+                            <name>Agama</name>
+                            <platforms>all</platforms>
+                            <distributionFileList>
+                                <distributionDirectory>
+                                    <origin>../Agama-win32-x64</origin>
+                                </distributionDirectory>
+                            </distributionFileList>
+                        </folder>
+                    </folderList>
+                </component>
+            </componentList>
+            <folderList>
+                <folder>
+                    <description>Program Files</description>
+                    <destination>${installdir}</destination>
+                    <name>programfiles</name>
+                    <platforms>all</platforms>
+                    <shortcutList>
+                        <shortcut>
+                            <comment>Uninstall</comment>
+                            <exec>${installdir}/${uninstallerName}</exec>
+                            <icon></icon>
+                            <name>Uninstall ${product_fullname}</name>
+                            <path>${installdir}</path>
+                            <platforms>all</platforms>
+                            <runAsAdmin>0</runAsAdmin>
+                            <runInTerminal>0</runInTerminal>
+                            <windowsExec>${installdir}/${uninstallerName}.exe</windowsExec>
+                            <windowsExecArgs></windowsExecArgs>
+                            <windowsIcon></windowsIcon>
+                            <windowsPath>${installdir}</windowsPath>
+                        </shortcut>
+                    </shortcutList>
+                </folder>
+                <folder>
+                    <description>VerusCoin</description>
+                    <destination>${installdir}/</destination>
+                    <name>VerusCoin</name>
+                    <platforms>all</platforms>
+                    <distributionFileList>
+                        <distributionDirectory>
+                            <origin>../verus-cli</origin>
+                        </distributionDirectory>
+                    </distributionFileList>
+                </folder>
+            </folderList>
+        </componentGroup>
+    </componentList>
+    <preInstallationActionList>
+        <registryGetMatch>
+            <key>HKEY_LOCAL_MACHINE\SOFTWARE\${project.shortname}</key>
+            <name>uninstaller_path</name>
+            <variable>uninstaller_path</variable>
+        </registryGetMatch>
+        <setInstallerVariable>
+            <name>previous_installation_exists</name>
+            <value>1</value>
+            <ruleList>
+                <fileTest condition="exists" path="${uninstaller_path}"/>
+            </ruleList>
+        </setInstallerVariable>
+    </preInstallationActionList>
+    <readyToInstallActionList>
+        <runProgram>
+            <program>${uninstaller_path}</program>
+            <programArguments></programArguments>
+            <ruleList>
+                <compareValues>
+                    <logic>equals</logic>
+                    <value1>${previous_installation_exists}</value1>
+                    <value2>1</value2>
+                </compareValues>
+            </ruleList>
+        </runProgram>
+        <deleteFile>
+            <explanation>Deleting user data</explanation>
+            <path>${windows_folder_appdata}/Agama</path>
+            <progressText>Deleting user data</progressText>
+            <ruleList>
+                <compareValues>
+                    <logic>equals</logic>
+                    <value1>${previous_installation_exists}</value1>
+                    <value2>1</value2>
+                </compareValues>
+                <compareValues>
+                    <logic>equals</logic>
+                    <value1>${installation_type}</value1>
+                    <value2>uninstall</value2>
+                </compareValues>
+                <compareValues>
+                    <logic>equals</logic>
+                    <value1>${delete_user_data}</value1>
+                    <value2>1</value2>
+                </compareValues>
+            </ruleList>
+        </deleteFile>
+        <deleteFile>
+            <explanation>Deleting iguana config json</explanation>
+            <path>${windows_folder_appdata}/Iguana/config.json</path>
+            <progressText>Deleting iguana config</progressText>
+            <ruleList>
+                <compareValues>
+                    <logic>equals</logic>
+                    <value1>${previous_installation_exists}</value1>
+                    <value2>1</value2>
+                </compareValues>
+                <compareValues>
+                    <logic>equals</logic>
+                    <value1>${installation_type}</value1>
+                    <value2>uninstall</value2>
+                </compareValues>
+                <compareValues>
+                    <logic>equals</logic>
+                    <value1>${delete_config_data}</value1>
+                    <value2>1</value2>
+                </compareValues>
+            </ruleList>
+        </deleteFile>
+        <exit>
+            <explanation>Uninstalled</explanation>
+            <progressText>Uninstalled</progressText>
+            <ruleList>
+                <compareValues>
+                    <logic>equals</logic>
+                    <value1>${previous_installation_exists}</value1>
+                    <value2>1</value2>
+                </compareValues>
+                <compareValues>
+                    <logic>equals</logic>
+                    <value1>${installation_type}</value1>
+                    <value2>uninstall</value2>
+                </compareValues>
+            </ruleList>
+        </exit>
+        <showProgressDialog>
+            <title>Downloading files</title>
+            <actionList>
+                <httpGet>
+                    <abortOnError>0</abortOnError>
+                    <explanation>Visual C++ Redistributable for Visual Studio 2015 library files are needed for Agama daemon</explanation>
+                    <filename>${system_temp_directory}/vc_redist.x64.exe</filename>
+                    <progressText>Downloading Visual C++ Redistributable for Visual Studio 2015</progressText>
+                    <showMessageOnError>0</showMessageOnError>
+                    <url>https://download.microsoft.com/download/9/3/F/93FCF1E7-E6A4-478B-96E7-D4B285925B00/vc_redist.x64.exe</url>
+                </httpGet>
+            </actionList>
+            <ruleList>
+                <fileExists>
+                    <negate>1</negate>
+                    <path>${system_temp_directory}/vc_redist.x64.exe</path>
+                </fileExists>
+            </ruleList>
+        </showProgressDialog>
+        <runProgram>
+            <abortOnError>0</abortOnError>
+            <explanation>Visual C++ Redistributable for Visual Studio 2015 library files are needed for Agama daemon</explanation>
+            <program>${system_temp_directory}/vc_redist.x64.exe</program>
+            <programArguments>/install /passive</programArguments>
+            <progressText>Downloading Visual C++ Redistributable for Visual Studio 2015</progressText>
+            <showMessageOnError>0</showMessageOnError>
+        </runProgram>
+        <showProgressDialog>
+            <title>Downloading files</title>
+            <actionList>
+                <httpGet>
+                    <abortOnError>0</abortOnError>
+                    <explanation>Visual C++ Redistributable for Visual Studio 2015 library files are needed for Agama daemon</explanation>
+                    <filename>${system_temp_directory}/vc_redist.x86.exe</filename>
+                    <progressText>Downloading Visual C++ Redistributable for Visual Studio 2015</progressText>
+                    <showMessageOnError>0</showMessageOnError>
+                    <url>https://download.microsoft.com/download/9/3/F/93FCF1E7-E6A4-478B-96E7-D4B285925B00/vc_redist.x86.exe</url>
+                </httpGet>
+            </actionList>
+            <ruleList>
+                <fileExists>
+                    <negate>1</negate>
+                    <path>${system_temp_directory}/vc_redist.x86.exe</path>
+                </fileExists>
+            </ruleList>
+        </showProgressDialog>
+        <runProgram>
+            <abortOnError>0</abortOnError>
+            <explanation>Visual C++ Redistributable for Visual Studio 2015 library files are needed for Agama daemon</explanation>
+            <program>${system_temp_directory}/vc_redist.x86.exe</program>
+            <programArguments>/install /passive</programArguments>
+            <progressText>Downloading Visual C++ Redistributable for Visual Studio 2015</progressText>
+            <showMessageOnError>0</showMessageOnError>
+        </runProgram>
+        <createDirectory>
+            <abortOnError>0</abortOnError>
+            <explanation>Creating ZcashParam directory</explanation>
+            <path>${windows_folder_appdata}/ZcashParams/</path>
+            <progressText>Creating ZcashParam directory</progressText>
+            <showMessageOnError>0</showMessageOnError>
+        </createDirectory>
+        <showProgressDialog>
+            <abortOnError>0</abortOnError>
+            <explanation>Zcash Params file: sprout-proving.key</explanation>
+            <progressText>Zcash Params file: sprout-proving.key</progressText>
+            <showMessageOnError>0</showMessageOnError>
+            <title>Downloading Zcash Params file</title>
+            <actionList>
+                <httpGet>
+                    <abortOnError>0</abortOnError>
+                    <explanation>Zcash Params file: sprout-proving.key</explanation>
+                    <filename>${windows_folder_appdata}/ZcashParams/sprout-proving.key</filename>
+                    <progressText>Zcash Params file: sprout-proving.key</progressText>
+                    <showMessageOnError>0</showMessageOnError>
+                    <url>https://z.cash/downloads/sprout-proving.key</url>
+                </httpGet>
+            </actionList>
+            <ruleList>
+                <fileExists>
+                    <negate>1</negate>
+                    <path>${windows_folder_appdata}/ZcashParams/sprout-proving.key</path>
+                </fileExists>
+            </ruleList>
+        </showProgressDialog>
+        <showProgressDialog>
+            <abortOnError>0</abortOnError>
+            <explanation>Zcash Params file: sprout-verifying.key</explanation>
+            <progressText>Zcash Params file: sprout-verifying.key</progressText>
+            <title>Downloading Zcash Params files</title>
+            <actionList>
+                <httpGet>
+                    <abortOnError>0</abortOnError>
+                    <explanation>Zcash Params file: sprout-verifying.key</explanation>
+                    <filename>${windows_folder_appdata}/ZcashParams/sprout-verifying.key</filename>
+                    <progressText>Zcash Params file: sprout-verifying.key</progressText>
+                    <showMessageOnError>0</showMessageOnError>
+                    <url>https://z.cash/downloads/sprout-verifying.key</url>
+                </httpGet>
+            </actionList>
+            <ruleList>
+                <fileExists>
+                    <negate>1</negate>
+                    <path>${windows_folder_appdata}/ZcashParams/sprout-verifying.key</path>
+                </fileExists>
+            </ruleList>
+        </showProgressDialog>
+    </readyToInstallActionList>
+    <postInstallationActionList>
+        <addEnvironmentVariable>
+            <name>VERUS_HOME</name>
+            <scope>system</scope>
+            <value>${installdir}/verus-cli/</value>
+        </addEnvironmentVariable>
+        <registrySet>
+            <key>HKEY_LOCAL_MACHINE\SOFTWARE\${project.shortname}</key>
+            <name>uninstaller_path</name>
+            <type>REG_SZ</type>
+            <value>${installdir}/${uninstallerName}.exe</value>
+        </registrySet>
+        <actionGroup>
+            <actionList>
+                <copyFile>
+                    <destination>C:\Windows\System32\</destination>
+                    <explanation>Copying ReqCopying Required DLL filesuired DLL files</explanation>
+                    <origin>${installdir}/resources/app/windeps/x86/vcruntime140d.dll</origin>
+                    <progressText>Copying ReqCopying Required DLL filesuired DLL files</progressText>
+                </copyFile>
+            </actionList>
+            <ruleList>
+                <platformTest type="windows-x86"/>
+            </ruleList>
+        </actionGroup>
+        <actionGroup>
+            <actionList>
+                <copyFile>
+                    <destination>C:\Windows\System32\</destination>
+                    <explanation>Copying ReqCopying Required DLL filesuired DLL files</explanation>
+                    <origin>${installdir}/resources/app/windeps/x64/ucrtbased.dll</origin>
+                    <progressText>Copying ReqCopying Required DLL filesuired DLL files</progressText>
+                </copyFile>
+                <copyFile>
+                    <destination>C:\Windows\System32\</destination>
+                    <explanation>Copying ReqCopying Required DLL filesuired DLL files</explanation>
+                    <origin>${installdir}/resources/app/windeps/x64/vcruntime140d.dll</origin>
+                    <progressText>Copying ReqCopying Required DLL filesuired DLL files</progressText>
+                </copyFile>
+                <copyFile>
+                    <destination>C:\Windows\SysWOW64\</destination>
+                    <explanation>Copying ReqCopying Required DLL filesuired DLL files</explanation>
+                    <origin>${installdir}/resources/app/windeps/x86/ucrtbased.dll</origin>
+                    <progressText>Copying ReqCopying Required DLL filesuired DLL files</progressText>
+                </copyFile>
+                <copyFile>
+                    <destination>C:\Windows\SysWOW64\</destination>
+                    <explanation>Copying ReqCopying Required DLL filesuired DLL files</explanation>
+                    <origin>${installdir}/resources/app/windeps/x86/vcruntime140d.dll</origin>
+                    <progressText>Copying ReqCopying Required DLL filesuired DLL files</progressText>
+                </copyFile>
+            </actionList>
+            <ruleList>
+                <platformTest type="windows-x64"/>
+            </ruleList>
+        </actionGroup>
+    </postInstallationActionList>
+    <postUninstallationActionList>
+        <registryDelete>
+            <key>HKEY_LOCAL_MACHINE\SOFTWARE\${project.shortname}</key>
+            <name>uninstaller_path</name>
+        </registryDelete>
+    </postUninstallationActionList>
+    <allowAddRemoveComponents>1</allowAddRemoveComponents>
+    <allowComponentSelection>1</allowComponentSelection>
+    <enableDebugger>1</enableDebugger>
+    <enableRollback>1</enableRollback>
+    <enableTimestamp>1</enableTimestamp>
+    <outputDirectory>../builds</outputDirectory>
+    <replaceLockedFilesOnReboot>1</replaceLockedFilesOnReboot>
+    <rollbackBackupDirectory>${windows_folder_appdata}</rollbackBackupDirectory>
+    <saveRelativePaths>1</saveRelativePaths>
+    <singleInstanceCheck>1</singleInstanceCheck>
+    <vendor>VerusCoin</vendor>
+    <windows64bitMode>1</windows64bitMode>
+    <parameterList>
+        <directoryParameter>
+            <name>installdir</name>
+            <description>Installer.Parameter.installdir.description</description>
+            <explanation>Installer.Parameter.installdir.explanation</explanation>
+            <value></value>
+            <default>${platform_install_prefix}/${product_shortname}</default>
+            <allowEmptyValue>0</allowEmptyValue>
+            <cliOptionName>prefix</cliOptionName>
+            <mustBeWritable>1</mustBeWritable>
+            <mustExist>0</mustExist>
+            <width>30</width>
+            <validationActionList>
+                <throwError>
+                    <text>You don't have enough disk space to install the application,
+                        please select another installation directory</text>
+                    <ruleList>
+                        <checkFreeDiskSpace>
+                            <logic>less</logic>
+                            <path>${installdir}</path>
+                            <size>${required_diskspace}</size>
+                        </checkFreeDiskSpace>
+                    </ruleList>
+                </throwError>
+            </validationActionList>
+        </directoryParameter>
+        <choiceParameterGroup>
+            <name>installation_type</name>
+            <title>Instalation type</title>
+            <description>Existing instalation is detected</description>
+            <explanation>Existing instalation is detected</explanation>
+            <value>uninstall</value>
+            <default>uninstall</default>
+            <parameterList>
+                <parameterGroup>
+                    <name>uninstall</name>
+                    <title>Uninstall</title>
+                    <explanation>Uninstall</explanation>
+                    <value></value>
+                    <default></default>
+                    <parameterList>
+                        <booleanParameter name="delete_user_data" description="Delete user data" displayStyle="checkbox-left">
+                            <explanation></explanation>
+                            <value>0</value>
+                            <default>0</default>
+                        </booleanParameter>
+                        <booleanParameter name="delete_zcash_params" description="Delete Zcash params" displayStyle="checkbox-left">
+                            <explanation></explanation>
+                            <value>0</value>
+                            <default>0</default>
+                        </booleanParameter>
+                    </parameterList>
+                </parameterGroup>
+                <labelParameter name="Upgrade" description="Upgrade to current version">
+                    <title>Upgrade</title>
+                    <explanation></explanation>
+                    <image></image>
+                </labelParameter>
+            </parameterList>
+            <ruleList>
+                <compareValues>
+                    <logic>equals</logic>
+                    <value1>${previous_installation_exists}</value1>
+                    <value2>1</value2>
+                </compareValues>
+            </ruleList>
+        </choiceParameterGroup>
+    </parameterList>
+</project>
+

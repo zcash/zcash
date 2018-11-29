@@ -21,7 +21,7 @@
 
 #define EVAL_HEIR 0xea
 
-bool HeirValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx);
+bool HeirValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn);
 
 // CCcustom
 UniValue HeirInfo();
