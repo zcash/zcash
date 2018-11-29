@@ -36,11 +36,6 @@ int32_t STAKED_era(int timestamp)
   return(0);
 };
 
-#ifdef CLI
-int8_t updateStakedNotary() {
-    return(-1);
-}
-#else
 int8_t updateStakedNotary() {
     std::string notaryname;
     char Raddress[18]; uint8_t pubkey33[33];
@@ -50,7 +45,6 @@ int8_t updateStakedNotary() {
     NOTARY_ADDRESS.assign(Raddress);
     return(StakedNotaryID(notaryname,Raddress));
 }
-#endif
 
 int8_t StakedNotaryID(std::string &notaryname, char *Raddress) {
     if ( STAKED_ERA != 0 )
@@ -160,12 +154,8 @@ void UpdateNotaryAddrs(uint8_t pubkeys[64][33],int8_t numNotaries) {
         // staked era is set.
         pthread_mutex_lock(&staked_mutex);
         for (int i = 0; i<numNotaries; i++) {
-#ifdef CLI
-            NUM_NOTARIES = 0;
-#else
             pubkey2addr((char *)NOTARYADDRS[i],(uint8_t *)pubkeys[i]);
             NUM_NOTARIES = numNotaries;
-#endif
         }
         pthread_mutex_unlock(&staked_mutex);
     }

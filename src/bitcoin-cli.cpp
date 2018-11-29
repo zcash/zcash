@@ -67,31 +67,6 @@ public:
 
 };
 
-/*
-#define FROM_CLI
-#include "uint256.h"
-#include "arith_uint256.h"
-
-#include "komodo_structs.h"
-
-#include "komodo_globals.h"
-#include "komodo_utils.h"
-#include "komodo_cJSON.c"
-#include "komodo_notary.h"
-#include "notaries_staked.cpp"
-
-
-void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotaries,uint8_t notaryid,uint256 txhash,uint64_t voutmask,uint8_t numvouts,uint32_t *pvals,uint8_t numpvals,int32_t KMDheight,uint32_t KMDtimestamp,uint64_t opretvalue,uint8_t *opretbuf,uint16_t opretlen,uint16_t vout,uint256 MoM,int32_t MoMdepth)
-{
-
-}
-
-uint32_t komodo_heightstamp(int32_t height)
-{
-    return(0);
-}
-*/
-
 //
 // This function returns either one of EXIT_ codes when it's expected to stop the process or
 // CONTINUE_EXECUTION when it's expected to continue further.
@@ -106,7 +81,6 @@ static int AppInitRPC(int argc, char* argv[])
     // Parameters
     //
     ParseParameters(argc, argv);
-    //komodo_args(argv[0]);
     std:string name;
     name = GetArg("-ac_name","");
     if ( !name.empty() )
@@ -225,7 +199,7 @@ UniValue CallRPC(const std::string& strMethod, const UniValue& params)
 {
     std::string host = GetArg("-rpcconnect", "127.0.0.1");
     int port = GetArg("-rpcport", BaseParams().RPCPort());
-    //BITCOIND_RPCPORT = port;
+    BITCOIND_RPCPORT = port;
     // Obtain event base
     raii_event_base base = obtain_event_base();
 
