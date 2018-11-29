@@ -26,7 +26,7 @@
 #include "CCinclude.h"
 
 // CCcustom
-bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx);
+bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn);
 
 // CCassetsCore
 //CTxOut MakeAssetsVout(CAmount nValue,CPubKey pk);

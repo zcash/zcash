@@ -15,10 +15,10 @@ TEST(PoW, DifficultyAveraging) {
     std::vector<CBlockIndex> blocks(lastBlk+1);
     for (int i = 0; i <= lastBlk; i++) {
         blocks[i].pprev = i ? &blocks[i - 1] : nullptr;
-        blocks[i].nHeight = i;
+        blocks[i].SetHeight(i);
         blocks[i].nTime = 1269211443 + i * params.nPowTargetSpacing;
         blocks[i].nBits = 0x1e7fffff; /* target 0x007fffff000... */
-        blocks[i].nChainWork = i ? blocks[i - 1].nChainWork + GetBlockProof(blocks[i - 1]) : arith_uint256(0);
+        blocks[i].chainPower = i ? (CChainPower(&blocks[i]) + blocks[i - 1].chainPower) + GetBlockProof(blocks[i - 1]) : CChainPower(&blocks[i]);
     }
 
     // Result should be the same as if last difficulty was used
@@ -67,4 +67,45 @@ TEST(PoW, DifficultyAveraging) {
                                         blocks[firstBlk].GetMedianTimePast(),
                                         params),
               GetNextWorkRequired(&blocks[lastBlk], nullptr, params));
+}
+
+TEST(PoW, MinDifficultyRules) {
+    SelectParams(CBaseChainParams::TESTNET);
+    const Consensus::Params& params = Params().GetConsensus();
+    size_t lastBlk = 2*params.nPowAveragingWindow;
+    size_t firstBlk = lastBlk - params.nPowAveragingWindow;
+
+    // Start with blocks evenly-spaced and equal difficulty
+    std::vector<CBlockIndex> blocks(lastBlk+1);
+    for (int i = 0; i <= lastBlk; i++) {
+        blocks[i].pprev = i ? &blocks[i - 1] : nullptr;
+        blocks[i].nHeight = params.nPowAllowMinDifficultyBlocksAfterHeight.get() + i;
+        blocks[i].nTime = 1269211443 + i * params.nPowTargetSpacing;
+        blocks[i].nBits = 0x1e7fffff; /* target 0x007fffff000... */
+        blocks[i].nChainWork = i ? blocks[i - 1].nChainWork + GetBlockProof(blocks[i - 1]) : arith_uint256(0);
+    }
+
+    // Create a new block at the target spacing
+    CBlockHeader next;
+    next.nTime = blocks[lastBlk].nTime + params.nPowTargetSpacing;
+
+    // Result should be unchanged, modulo integer division precision loss
+    arith_uint256 bnRes;
+    bnRes.SetCompact(0x1e7fffff);
+    bnRes /= params.AveragingWindowTimespan();
+    bnRes *= params.AveragingWindowTimespan();
+    EXPECT_EQ(GetNextWorkRequired(&blocks[lastBlk], &next, params), bnRes.GetCompact());
+
+    // Delay last block up to the edge of the min-difficulty limit
+    next.nTime += params.nPowTargetSpacing * 5;
+
+    // Result should be unchanged, modulo integer division precision loss
+    EXPECT_EQ(GetNextWorkRequired(&blocks[lastBlk], &next, params), bnRes.GetCompact());
+
+    // Delay last block over the min-difficulty limit
+    next.nTime += 1;
+
+    // Result should be the minimum difficulty
+    EXPECT_EQ(GetNextWorkRequired(&blocks[lastBlk], &next, params),
+              UintToArith256(params.powLimit).GetCompact());
 }

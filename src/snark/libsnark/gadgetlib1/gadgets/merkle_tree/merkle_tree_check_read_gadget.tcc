@@ -175,7 +175,7 @@ void test_merkle_tree_check_read_gadget()
     ml.generate_r1cs_constraints();
 
     address_bits_va.fill_with_bits(pb, address_bits);
-    assert(address_bits_va.get_field_element_from_bits(pb).as_ulong() == address);
+    assert(address_bits_va.get_field_element_from_bits(pb).as_uint64() == address);
     leaf_digest.generate_r1cs_witness(leaf);
     path_var.generate_r1cs_witness(address, path);
     ml.generate_r1cs_witness();

@@ -48,7 +48,8 @@
 using namespace std;
 
 namespace {
-    const int MAX_OUTBOUND_CONNECTIONS = 8;
+    const int MAX_OUTBOUND_CONNECTIONS = 16;
+    const int MAX_INBOUND_FROMIP = 5;
 
     struct ListenSocket {
         SOCKET socket;
@@ -61,6 +62,8 @@ namespace {
 //
 // Global state variables
 //
+extern uint16_t ASSETCHAINS_P2PPORT;
+
 bool fDiscover = true;
 bool fListen = true;
 uint64_t nLocalServices = NODE_NETWORK;
@@ -73,6 +76,7 @@ static std::vector<ListenSocket> vhListenSocket;
 CAddrMan addrman;
 int nMaxConnections = DEFAULT_MAX_PEER_CONNECTIONS;
 bool fAddressesInitialized = false;
+std::string strSubVersion;
 
 vector<CNode*> vNodes;
 CCriticalSection cs_vNodes;
@@ -82,10 +86,10 @@ CCriticalSection cs_mapRelay;
 limitedmap<CInv, int64_t> mapAlreadyAskedFor(MAX_INV_SZ);
 
 static deque<string> vOneShots;
-CCriticalSection cs_vOneShots;
+static CCriticalSection cs_vOneShots;
 
-set<CNetAddr> setservAddNodeAddresses;
-CCriticalSection cs_setservAddNodeAddresses;
+static set<CNetAddr> setservAddNodeAddresses;
+static CCriticalSection cs_setservAddNodeAddresses;
 
 vector<std::string> vAddedNodes;
 CCriticalSection cs_vAddedNodes;
@@ -94,7 +98,7 @@ NodeId nLastNodeId = 0;
 CCriticalSection cs_nLastNodeId;
 
 static CSemaphore *semOutbound = NULL;
-boost::condition_variable messageHandlerCondition;
+static boost::condition_variable messageHandlerCondition;
 
 // Signals for message handling
 static CNodeSignals g_signals;
@@ -436,7 +440,7 @@ void CNode::PushVersion()
     else
         LogPrint("net", "send version message: version %d, blocks=%d, us=%s, peer=%d\n", PROTOCOL_VERSION, nBestHeight, addrMe.ToString(), id);
     PushMessage("version", PROTOCOL_VERSION, nLocalServices, nTime, addrYou, addrMe,
-                nLocalHostNonce, FormatSubVersion(CLIENT_NAME, CLIENT_VERSION, std::vector<string>()), nBestHeight, true);
+                nLocalHostNonce, strSubVersion, nBestHeight, true);
 }
 
 
@@ -820,22 +824,26 @@ static bool AttemptToEvictConnection(bool fPreferNewConnection) {
     }
 
     const Consensus::Params& params = Params().GetConsensus();
-    int nActivationHeight = params.vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight;
+    auto nextEpoch = NextEpoch(height, params);
+    if (nextEpoch) {
+        auto idx = nextEpoch.get();
+        int nActivationHeight = params.vUpgrades[idx].nActivationHeight;
 
-    if (nActivationHeight > 0 &&
-        height < nActivationHeight &&
-        height >= nActivationHeight - NETWORK_UPGRADE_PEER_PREFERENCE_BLOCK_PERIOD)
-    {
-        // Find any nodes which don't support Overwinter protocol version
-        BOOST_FOREACH(const CNodeRef &node, vEvictionCandidates) {
-            if (node->nVersion < params.vUpgrades[Consensus::UPGRADE_OVERWINTER].nProtocolVersion) {
-                vTmpEvictionCandidates.push_back(node);
+        if (nActivationHeight > 0 &&
+            height < nActivationHeight &&
+            height >= nActivationHeight - NETWORK_UPGRADE_PEER_PREFERENCE_BLOCK_PERIOD)
+        {
+            // Find any nodes which don't support the protocol version for the next upgrade
+            for (const CNodeRef &node : vEvictionCandidates) {
+                if (node->nVersion < params.vUpgrades[idx].nProtocolVersion) {
+                    vTmpEvictionCandidates.push_back(node);
+                }
             }
-        }
 
-        // Prioritize these nodes by replacing eviction set with them
-        if (vTmpEvictionCandidates.size() > 0) {
-            vEvictionCandidates = vTmpEvictionCandidates;
+            // Prioritize these nodes by replacing eviction set with them
+            if (vTmpEvictionCandidates.size() > 0) {
+                vEvictionCandidates = vTmpEvictionCandidates;
+            }
         }
     }
 
@@ -907,11 +915,21 @@ static void AcceptConnection(const ListenSocket& hListenSocket) {
             LogPrintf("Warning: Unknown socket family\n");
 
     bool whitelisted = hListenSocket.whitelisted || CNode::IsWhitelistedRange(addr);
+    int nInboundThisIP = 0;
+
     {
         LOCK(cs_vNodes);
+        struct sockaddr_storage tmpsockaddr;
+        socklen_t tmplen = sizeof(sockaddr);
         BOOST_FOREACH(CNode* pnode, vNodes)
+        {
             if (pnode->fInbound)
+            {
                 nInbound++;
+                if (pnode->addr.GetSockAddr((struct sockaddr*)&tmpsockaddr, &tmplen) && (tmplen == len) && (memcmp(&sockaddr, &tmpsockaddr, tmplen) == 0))
+                    nInboundThisIP++;
+            }
+        }
     }
 
     if (hSocket == INVALID_SOCKET)
@@ -944,6 +962,14 @@ static void AcceptConnection(const ListenSocket& hListenSocket) {
             CloseSocket(hSocket);
             return;
         }
+    }
+
+    if (nInboundThisIP >= MAX_INBOUND_FROMIP)
+    {
+        // No connection to evict, disconnect the new connection
+        LogPrint("net", "too many connections from %s, connection refused\n", addr.ToString());
+        CloseSocket(hSocket);
+        return;
     }
 
     // According to the internet TCP_NODELAY is not carried into accepted sockets
@@ -1267,8 +1293,12 @@ void ThreadDNSAddressSeed()
                     int nOneDay = 24*3600;
                     CAddress addr = CAddress(CService(ip, Params().GetDefaultPort()));
                     addr.nTime = GetTime() - 3*nOneDay - GetRand(4*nOneDay); // use a random age between 3 and 7 days old
-                    vAdd.push_back(addr);
-                    found++;
+                    // only add seeds with the right port
+                    if (addr.GetPort() == ASSETCHAINS_P2PPORT)
+                    {
+                        vAdd.push_back(addr);
+                        found++;
+                    }
                 }
             }
             addrman.Add(vAdd, CNetAddr(seed.name, true));
@@ -1277,16 +1307,6 @@ void ThreadDNSAddressSeed()
 
     LogPrintf("%d addresses found from DNS seeds\n", found);
 }
-
-
-
-
-
-
-
-
-
-
 
 
 void DumpAddresses()
@@ -1351,10 +1371,12 @@ void ThreadOpenConnections()
         boost::this_thread::interruption_point();
 
         // Add seed nodes if DNS seeds are all down (an infrastructure attack?).
-        if (addrman.size() == 0 && (GetTime() - nStart > 60)) {
+        // if (addrman.size() == 0 && (GetTime() - nStart > 60)) {
+        if (GetTime() - nStart > 60) {
             static bool done = false;
             if (!done) {
-                LogPrintf("Adding fixed seed nodes as DNS doesn't seem to be available.\n");
+                //LogPrintf("Adding fixed seed nodes as DNS doesn't seem to be available.\n");
+                LogPrintf("Adding fixed seed nodes.\n");
                 addrman.Add(convertSeed6(Params().FixedSeeds()), CNetAddr("127.0.0.1"));
                 done = true;
             }
@@ -1587,10 +1609,6 @@ void ThreadMessageHandler()
 }
 
 
-
-
-
-
 bool BindListenPort(const CService &addrBind, string& strError, bool fWhitelisted)
 {
     strError = "";
@@ -1806,7 +1824,7 @@ bool StopNode()
     return true;
 }
 
-class CNetCleanup
+static class CNetCleanup
 {
 public:
     CNetCleanup() {}
@@ -1842,12 +1860,6 @@ public:
     }
 }
 instance_of_cnetcleanup;
-
-
-
-
-
-
 
 void RelayTransaction(const CTransaction& tx)
 {

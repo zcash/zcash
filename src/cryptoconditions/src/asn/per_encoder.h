@@ -5,8 +5,8 @@
 #ifndef	_PER_ENCODER_H_
 #define	_PER_ENCODER_H_
 
-#include <asn_application.h>
-#include <per_support.h>
+#include "asn_application.h"
+#include "per_support.h"
 
 #ifdef __cplusplus
 extern "C" {
