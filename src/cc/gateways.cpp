@@ -707,6 +707,7 @@ int64_t AddGatewaysInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CP
                 char str[65],str2[65]; fprintf(stderr,"vout.%d %d:%d (%c) check for refassetid.%s vs %s %.8f\n",vout,evalcode,cp->evalcode,funcid,uint256_str(str,refassetid),uint256_str(str2,assetid),(double)vintx.vout[vout].nValue/COIN);
                 if ( assetid == refassetid && funcid == 't' && (nValue= vintx.vout[vout].nValue) > 0 && myIsutxo_spentinmempool(txid,vout) == 0 )
                 {
+                    // call IsAssetsVout?
                     //fprintf(stderr,"total %llu maxinputs.%d %.8f\n",(long long)total,maxinputs,(double)it->second.satoshis/COIN);
                     if ( total != 0 && maxinputs != 0 )
                         mtx.vin.push_back(CTxIn(txid,vout,CScript()));
