@@ -65,19 +65,19 @@ public:
 
 };
 
+#ifdef FROM_CLI
 #define FROM_CLI
 #include "uint256.h"
 #include "arith_uint256.h"
 
-//#include "komodo_structs.h"
+#include "komodo_structs.h"
 
-//#include "komodo_globals.h"
-//#include "komodo_utils.h"
-//#include "komodo_cJSON.c"
-//#include "komodo_notary.h"
-//#include "notaries_staked.h"
-//#include "notaries_staked.cpp"
-
+#include "komodo_globals.h"
+#include "komodo_utils.h"
+#include "komodo_cJSON.c"
+#include "komodo_notary.h"
+#include "notaries_staked.cpp"
+#endif
 
 
 void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotaries,uint8_t notaryid,uint256 txhash,uint64_t voutmask,uint8_t numvouts,uint32_t *pvals,uint8_t numpvals,int32_t KMDheight,uint32_t KMDtimestamp,uint64_t opretvalue,uint8_t *opretbuf,uint16_t opretlen,uint16_t vout,uint256 MoM,int32_t MoMdepth)
@@ -104,7 +104,7 @@ static int AppInitRPC(int argc, char* argv[])
     // Parameters
     //
     ParseParameters(argc, argv);
-    //komodo_args(argv[0]);
+    komodo_args(argv[0]);
     if (argc<2 || mapArgs.count("-?") || mapArgs.count("-h") || mapArgs.count("-help") || mapArgs.count("-version")) {
         std::string strUsage = _("Komodo RPC client version") + " " + FormatFullVersion() + "\n" + PrivacyInfo();
         if (!mapArgs.count("-version")) {
