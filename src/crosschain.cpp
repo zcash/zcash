@@ -284,7 +284,7 @@ bool CheckMoMoM(uint256 kmdNotarisationHash, uint256 momom)
         return nota.second.MoMoM == momom;
     };
 
-    return (bool) ScanNotarisationsFromHeight(block.nHeight-100, checkMoMoM, nota);
+    return (bool) ScanNotarisationsFromHeight(block.GetHeight()-100, checkMoMoM, nota);
 
 }
 
