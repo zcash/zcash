@@ -4678,7 +4678,7 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
             const uint256 &hash = tx.GetHash();
             if ( tx.vjoinsplit.size() == 0 ) {
                 transactionsToRemove.push_back(tx);
-                tmpmempool.addUnchecked(hash,e,!IsInitialBlockDownload());
+                tmpmempool.addUnchecked(hash,e,true);
             }
         }
         BOOST_FOREACH(const CTransaction& tx, transactionsToRemove) {
@@ -4756,6 +4756,7 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
         // here we add back all txs from the temp mempool to the main mempool.
         // which removes any tx locally that were invalid after the block arrives.
         int invalidtxs = 0;
+        LOCK(mempool.cs);
         BOOST_FOREACH(const CTxMemPoolEntry& e, tmpmempool.mapTx) {
             CTransaction tx = e.GetTx();
             CValidationState state; bool fMissingInputs,fOverrideFees = false;
@@ -5623,8 +5624,11 @@ bool static LoadBlockIndexDB()
     CBlockIndex *pindex;
     if ( (pindex= chainActive.LastTip()) != 0 )
     {
-        fprintf(stderr,"set sapling height, if possible from ht.%d %u\n",(int32_t)pindex->GetHeight(),(uint32_t)pindex->nTime);
-        komodo_activate_sapling(pindex);
+        if ( ASSETCHAINS_SAPLING <= 0 )
+        {
+            fprintf(stderr,"set sapling height, if possible from ht.%d %u\n",(int32_t)pindex->GetHeight(),(uint32_t)pindex->nTime);
+            komodo_activate_sapling(pindex);
+        }
     }
     return true;
 }

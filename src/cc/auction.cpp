@@ -150,7 +150,8 @@ int64_t AddAuctionInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPu
 
 std::string AuctionBid(uint64_t txfee,uint256 itemhash,int64_t amount)
 {
-    CMutableTransaction mtx; CPubKey mypk,Auctionpk; CScript opret; int64_t inputs,CCchange=0,nValue=COIN; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    CPubKey mypk,Auctionpk; CScript opret; int64_t inputs,CCchange=0,nValue=COIN; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_AUCTION);
     if ( txfee == 0 )
         txfee = 10000;
@@ -170,7 +171,8 @@ std::string AuctionBid(uint64_t txfee,uint256 itemhash,int64_t amount)
 
 std::string AuctionDeliver(uint64_t txfee,uint256 itemhash,uint256 bidtxid)
 {
-    CMutableTransaction mtx; CPubKey mypk,Auctionpk; CScript opret; int64_t inputs,CCchange=0,nValue=COIN; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    CPubKey mypk,Auctionpk; CScript opret; int64_t inputs,CCchange=0,nValue=COIN; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_AUCTION);
     if ( txfee == 0 )
         txfee = 10000;
@@ -190,7 +192,8 @@ std::string AuctionDeliver(uint64_t txfee,uint256 itemhash,uint256 bidtxid)
 
 std::string AuctionPost(uint64_t txfee,uint256 itemhash,int64_t minbid,char *title,char *description)
 {
-    CMutableTransaction mtx; CPubKey mypk,Auctionpk; int64_t funds = 0; CScript opret; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    CPubKey mypk,Auctionpk; int64_t funds = 0; CScript opret; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_AUCTION);
     if ( txfee == 0 )
         txfee = 10000;
