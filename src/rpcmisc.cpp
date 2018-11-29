@@ -82,7 +82,7 @@ UniValue getiguanajson(const UniValue& params, bool fHelp)
     UniValue seeds(UniValue::VARR);
     UniValue notaries(UniValue::VARR);
     // get the current era, use local time for now.
-    // should ideally take blocktime of last known block.
+    // should ideally take blocktime of last known block?
     int now = time(NULL);
     int32_t era = getera(now);
 
@@ -98,10 +98,10 @@ UniValue getiguanajson(const UniValue& params, bool fHelp)
         notaries.push_back(notary);
     }
 
-    // get the min sigs
+    // get the min sigs .. this always rounds UP so mine sigs in iguana is +1 min sigs in komodod, due to some rounding error.
     int minsigs;
     if ( num_notaries_STAKED[era]/5 > overrideMinSigs )
-        minsigs = (num_notaries_STAKED[era] + 4) / 5;
+        minsigs = (num_notaries_STAKED[era] / 5) + 1;
     else
         minsigs = overrideMinSigs;
 

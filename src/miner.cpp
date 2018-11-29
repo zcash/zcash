@@ -215,7 +215,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
                 nTotalIn += nValueIn;
                 dPriority += (double)nValueIn * 1000;  // flat multiplier
             } else {
-                // TODO: It will be much faster here to just compare scriptpubkey!
+                // TODO: It will be much faster here to just compare scriptpubkey to the crypto pubkey!
                 CTxDestination ToAddress; int numNotaryVins = 0; bool fToCryptoAddress = false;
                 if (ExtractDestination(tx.vout[0].scriptPubKey, ToAddress)) {
                     if ( strcmp(CRYPTO777_KMDADDR,CBitcoinAddress(ToAddress).ToString().c_str()) == 0 )
