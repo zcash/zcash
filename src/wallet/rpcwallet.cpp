@@ -5548,9 +5548,9 @@ UniValue heiraddress(const UniValue& params, bool fHelp)
 	if(params.size() == 4)
 		destPubkey = ParseHex(params[3].get_str().c_str());
 
-	return HeirFundBad(funcid, assetid, funds, destPubkey);
+	//return HeirFundBad(funcid, assetid, funds, destPubkey);
 
-    //return(CCaddress(cp,(char *)"Heir",pubkey));
+    return(CCaddress(cp,(char *)"Heir",destPubkey));
 }
 
 UniValue lottoaddress(const UniValue& params, bool fHelp)
