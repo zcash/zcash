@@ -6579,8 +6579,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
             nVersion = 300;
         if ( is_STAKED(ASSETCHAINS_SYMBOL) != 0 )
         {
-          fprintf(stderr, "Is Staked!\n");
-          if (pfrom->nVersion < STAKEDMIN_PEER_PROTO_VERSION)
+          if (nVersion < STAKEDMIN_PEER_PROTO_VERSION)
           {
               // disconnect from peers older than this proto version
               LogPrintf("peer=%d using obsolete version %i; disconnecting\n", pfrom->id, pfrom->nVersion);
@@ -6592,8 +6591,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         }
         else
         {
-          fprintf(stderr, "Is not staked!\n");
-          if (pfrom->nVersion < MIN_PEER_PROTO_VERSION)
+          if (nVersion < MIN_PEER_PROTO_VERSION)
           {
               // disconnect from peers older than this proto version
               LogPrintf("peer=%d using obsolete version %i; disconnecting\n", pfrom->id, pfrom->nVersion);
