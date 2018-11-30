@@ -38,19 +38,22 @@ int64_t AddAssetInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubK
             Getscriptaddress(destaddr,vintx.vout[vout].scriptPubKey);
             if ( strcmp(destaddr,coinaddr) != 0 && strcmp(destaddr,cp->unspendableCCaddr) != 0 && strcmp(destaddr,cp->unspendableaddr2) != 0 )
                 continue;
-            fprintf(stderr,"check %s %.8f\n",destaddr,(double)vintx.vout[vout].nValue/COIN);
-            if ( (nValue= IsAssetvout(price,origpubkey,vintx,vout,assetid)) > 0 && myIsutxo_spentinmempool(txid,vout) == 0 )
+            fprintf(stderr,"AddAssetInputs() check destaddress=%s vout amount=%.8f\n",destaddr,(double)vintx.vout[vout].nValue/COIN);
+            if ( (nValue= IsAssetvout(1, cp, NULL, price,origpubkey,vintx,vout,assetid)) > 0 && myIsutxo_spentinmempool(txid,vout) == 0 )
             {
                 if ( total != 0 && maxinputs != 0 )
                     mtx.vin.push_back(CTxIn(txid,vout,CScript()));
                 nValue = it->second.satoshis;
                 totalinputs += nValue;
+				//std::cerr << "AddAssetInputs() adding input nValue=" << nValue  << std::endl;
                 n++;
                 if ( (total > 0 && totalinputs >= total) || (maxinputs > 0 && n >= maxinputs) )
                     break;
             }
         }
     }
+
+	//std::cerr << "AddAssetInputs() found totalinputs=" << totalinputs << std::endl;
     return(totalinputs);
 }
 
@@ -235,6 +238,11 @@ std::string AssetTransfer(int64_t txfee,uint256 assetid,std::vector<uint8_t> des
         mask = ~((1LL << mtx.vin.size()) - 1);
         if ( (inputs= AddAssetInputs(cp,mtx,mypk,assetid,total,60)) > 0 )
         {
+
+			if (inputs < total) {   //added dimxy
+				std::cerr << "AssetTransfer(): insufficient funds" << std::endl;
+				return ("");
+			}
             if ( inputs > total )
                 CCchange = (inputs - total);
             //for (i=0; i<n; i++)
@@ -310,6 +318,9 @@ std::string CreateSell(int64_t txfee,int64_t askamount,uint256 assetid,int64_t p
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     CPubKey mypk; uint64_t mask; int64_t inputs,CCchange; CScript opret; struct CCcontract_info *cp,C;
+
+	//std::cerr << "CreateSell() askamount=" << askamount << " pricetotal=" << pricetotal << std::endl;
+
     if ( askamount < 0 || pricetotal < 0 )
     {
         fprintf(stderr,"negative askamount %lld, askamount %lld\n",(long long)pricetotal,(long long)askamount);
@@ -324,8 +335,12 @@ std::string CreateSell(int64_t txfee,int64_t askamount,uint256 assetid,int64_t p
         mask = ~((1LL << mtx.vin.size()) - 1);
         if ( (inputs= AddAssetInputs(cp,mtx,mypk,assetid,askamount,60)) > 0 )
         {
-            if ( inputs < askamount )
-                askamount = inputs;
+			if (inputs < askamount) {
+				//askamount = inputs;
+				std::cerr << "CreateSell(): insufficient tokens for ask" << std::endl;
+				return ("");
+			}
+
             mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,askamount,GetUnspendable(cp,0)));
             if ( inputs > askamount )
                 CCchange = (inputs - askamount);
@@ -333,9 +348,14 @@ std::string CreateSell(int64_t txfee,int64_t askamount,uint256 assetid,int64_t p
                 mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,CCchange,mypk));
             opret = EncodeAssetOpRet('s',assetid,zeroid,pricetotal,Mypubkey());
             return(FinalizeCCTx(mask,cp,mtx,mypk,txfee,opret));
-        } else fprintf(stderr,"need some assets to place ask\n");
+		}
+		else {
+			fprintf(stderr, "need some assets to place ask\n");
+		}
     }
-    fprintf(stderr,"need some native coins to place ask\n");
+	else {  // dimxy added 'else', because it was misleading message before
+		fprintf(stderr, "need some native coins to place ask\n");
+	}
     return("");
 }
 
@@ -373,9 +393,15 @@ std::string CreateSwap(int64_t txfee,int64_t askamount,uint256 assetid,uint256 a
                 opret = EncodeAssetOpRet('e',assetid,assetid2,pricetotal,Mypubkey());
             }
             return(FinalizeCCTx(mask,cp,mtx,mypk,txfee,opret));
-        } else fprintf(stderr,"need some assets to place ask\n");
+        } 
+		else {
+			fprintf(stderr, "need some assets to place ask\n");
+		}
     }
-    fprintf(stderr,"need some native coins to place ask\n");
+	else { // dimxy added 'else', because it was misleading message before
+		fprintf(stderr,"need some native coins to place ask\n");
+	}
+    
     return("");
 }
 

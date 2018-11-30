@@ -129,6 +129,64 @@
  vout.n-1: opreturn [EVAL_ASSETS] ['E'] [assetid vin0+1] [assetid vin2] [remaining asset2 required] [origpubkey]
 */
 
+
+
+// Recursively browses and verifies  tx's vins to make sure no fake tokens have been 'planted'
+// This func should be call with maxlevels = 2
+// on the first level it validates that current tx does not have invalid non-cc inputs
+// on the second level it validates that all cc inputs of this tx also don't have 'feeding' non-cc inputs
+/*
+bool ValidateInputsTraversal(int32_t maxlevels, struct CCcontract_info *cp, Eval* eval, const CTransaction &tx, uint256 assetid)
+{
+	int64_t dummyPrice;
+	std::vector<uint8_t> dummyPubkey;
+	uint256 dummyAsset, dummyAsset2;
+
+	int32_t numvins = tx.vin.size();
+	int32_t numvouts = tx.vout.size();
+
+	// check it for the sake of..
+	if (numvouts == 0)
+		return false;
+
+	uint8_t funcId = DecodeAssetOpRet(tx.vout[numvouts - 1].scriptPubKey, dummyAsset, dummyAsset2, dummyPrice, dummyPubkey);
+
+	// this is initial tokenbase tx:
+	if (tx.GetHash() == assetid && funcId == 'c') {
+		std::cerr << "ValidateInputsTraversal() found initial tx=" << assetid.GetHex() << std::endl;
+		return true;
+	}
+
+	int64_t myCCVinsAmount = 0;
+	int64_t myCCVoutsAmount = 0;
+	std::vector<CTransaction> ccVinsTxs;
+
+	bool isCCEqual = AssetExactAmounts(cp, myCCVinsAmount, 0, myCCVoutsAmount, eval, tx, assetid);
+	if (!isCCEqual) {   //Note: for the spending tx (1-st level) this condition is also checked in AssetsValidate() itself   -- dimxy
+		std::cerr << "ValidateInputsTraversal() found bad uxto txid=" << tx.GetHash().GetHex() << " ccVinsAmount=" << myCCVinsAmount << " ccVoutsAmount=" << myCCVoutsAmount << std::endl;
+		eval->Invalid("deep search found bad non-cc uxto");
+		return false;
+	}
+
+	// recursively validate vins' txs (only for one level - see maxlevels var):
+	bool allVinTxsGood = true;
+
+	if (--maxlevels > 0) {
+		for (int32_t i = 0; i < ccVinsTxs.size(); i++) {
+			if (!ValidateInputsTraversal(maxlevels, cp, eval, ccVinsTxs[i], assetid)) {
+				allVinTxsGood = false;
+				break;
+			}
+		}
+	}
+
+	std::cerr << "ValidateInputsTraversal() for txid=" << tx.GetHash().GetHex() << " allVinTxsGood=" << std::boolalpha << allVinTxsGood << std::endl;
+
+	return allVinTxsGood;
+}
+*/
+
+// tx validation
 bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
 {
     static uint256 zero;
@@ -155,9 +213,13 @@ bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
         else starti = 1;
         if ( assetid == zero )
             return eval->Invalid("illegal assetid");
-        else if ( AssetExactAmounts(cp,inputs,starti,outputs,eval,tx,assetid) == false )
+        else if ( AssetExactAmounts(2, cp,inputs,starti,outputs,eval,tx,assetid) == false )
             return eval->Invalid("asset inputs != outputs");
     }
+
+//	if( !ValidateInputsTraversal(2, cp, eval, tx, assetid) )
+//		return false;
+
     switch ( funcid )
     {
         case 'c': // create wont be called to be verified as it has no CC inputs
@@ -321,7 +383,7 @@ bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
             }
             fprintf(stderr,"fill validated\n");
             break;
-        case 'E': // fillexchange
+        case 'E': // fillexchange	
             return eval->Invalid("unexpected assets fillexchange funcid");
             break; // disable asset swaps
             //vin.0: normal input
@@ -333,7 +395,7 @@ bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
             //vout.3: CC output for asset2 change (if any)
             //vout.3/4: normal output for change (if any)
             //vout.n-1: opreturn [EVAL_ASSETS] ['E'] [assetid vin0+1] [assetid vin2] [remaining asset2 required] [origpubkey]
-            if ( AssetExactAmounts(cp,inputs,1,outputs,eval,tx,assetid2) == false )
+            if ( AssetExactAmounts(1, cp,inputs,1,outputs,eval,tx,assetid2) == false )    
                 eval->Invalid("asset2 inputs != outputs");
             if ( (assetoshis= AssetValidateSellvin(cp,eval,totalunits,tmporigpubkey,CCaddr,origaddr,tx,assetid)) == 0 )
                 return(false);
