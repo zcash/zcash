@@ -131,60 +131,6 @@
 
 
 
-// Recursively browses and verifies  tx's vins to make sure no fake tokens have been 'planted'
-// This func should be call with maxlevels = 2
-// on the first level it validates that current tx does not have invalid non-cc inputs
-// on the second level it validates that all cc inputs of this tx also don't have 'feeding' non-cc inputs
-/*
-bool ValidateInputsTraversal(int32_t maxlevels, struct CCcontract_info *cp, Eval* eval, const CTransaction &tx, uint256 assetid)
-{
-	int64_t dummyPrice;
-	std::vector<uint8_t> dummyPubkey;
-	uint256 dummyAsset, dummyAsset2;
-
-	int32_t numvins = tx.vin.size();
-	int32_t numvouts = tx.vout.size();
-
-	// check it for the sake of..
-	if (numvouts == 0)
-		return false;
-
-	uint8_t funcId = DecodeAssetOpRet(tx.vout[numvouts - 1].scriptPubKey, dummyAsset, dummyAsset2, dummyPrice, dummyPubkey);
-
-	// this is initial tokenbase tx:
-	if (tx.GetHash() == assetid && funcId == 'c') {
-		std::cerr << "ValidateInputsTraversal() found initial tx=" << assetid.GetHex() << std::endl;
-		return true;
-	}
-
-	int64_t myCCVinsAmount = 0;
-	int64_t myCCVoutsAmount = 0;
-	std::vector<CTransaction> ccVinsTxs;
-
-	bool isCCEqual = AssetExactAmounts(cp, myCCVinsAmount, 0, myCCVoutsAmount, eval, tx, assetid);
-	if (!isCCEqual) {   //Note: for the spending tx (1-st level) this condition is also checked in AssetsValidate() itself   -- dimxy
-		std::cerr << "ValidateInputsTraversal() found bad uxto txid=" << tx.GetHash().GetHex() << " ccVinsAmount=" << myCCVinsAmount << " ccVoutsAmount=" << myCCVoutsAmount << std::endl;
-		eval->Invalid("deep search found bad non-cc uxto");
-		return false;
-	}
-
-	// recursively validate vins' txs (only for one level - see maxlevels var):
-	bool allVinTxsGood = true;
-
-	if (--maxlevels > 0) {
-		for (int32_t i = 0; i < ccVinsTxs.size(); i++) {
-			if (!ValidateInputsTraversal(maxlevels, cp, eval, ccVinsTxs[i], assetid)) {
-				allVinTxsGood = false;
-				break;
-			}
-		}
-	}
-
-	std::cerr << "ValidateInputsTraversal() for txid=" << tx.GetHash().GetHex() << " allVinTxsGood=" << std::boolalpha << allVinTxsGood << std::endl;
-
-	return allVinTxsGood;
-}
-*/
 
 // tx validation
 bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
@@ -217,8 +163,6 @@ bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
             return eval->Invalid("asset inputs != outputs");
     }
 
-//	if( !ValidateInputsTraversal(2, cp, eval, tx, assetid) )
-//		return false;
 
     switch ( funcid )
     {
