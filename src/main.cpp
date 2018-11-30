@@ -6556,7 +6556,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         return true;
     }
 
-//fprintf(stderr,"netmsg: %s\n", strCommand.c_str());
+    fprintf(stderr,"netmsg: %s\n", strCommand.c_str());
 
     if (strCommand == "version")
     {
@@ -6572,12 +6572,14 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         CAddress addrMe;
         CAddress addrFrom;
         uint64_t nNonce = 1;
+        fprintf(stderr, "version.%i\n",pfrom->nVersion);
         int nVersion;           // use temporary for version, don't set version number until validated as connected
         vRecv >> nVersion >> pfrom->nServices >> nTime >> addrMe;
         if (nVersion == 10300)
             nVersion = 300;
         if ( is_STAKED(ASSETCHAINS_SYMBOL) != 0 )
         {
+          fprintf(stderr, "Is Staked!\n");
           if (pfrom->nVersion < STAKEDMIN_PEER_PROTO_VERSION)
           {
               // disconnect from peers older than this proto version
@@ -6587,8 +6589,10 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
               pfrom->fDisconnect = true;
               return false;
           }
-        } else
+        }
+        else
         {
+          fprintf(stderr, "Is not staked!\n");
           if (pfrom->nVersion < MIN_PEER_PROTO_VERSION)
           {
               // disconnect from peers older than this proto version

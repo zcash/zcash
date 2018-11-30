@@ -80,7 +80,7 @@ static int AppInitRPC(int argc, char* argv[])
     //
     // Parameters
     //
-    ParseParameters(argc, argv);
+    ParseParameters(argc, lolargv);
     std:string name;
     name = GetArg("-ac_name","");
     if ( !name.empty() )
