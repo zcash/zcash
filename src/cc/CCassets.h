@@ -35,7 +35,7 @@ CScript EncodeAssetOpRet(uint8_t funcid,uint256 assetid,uint256 assetid2,int64_t
 bool DecodeAssetCreateOpRet(const CScript &scriptPubKey,std::vector<uint8_t> &origpubkey,std::string &name,std::string &description);
 uint8_t DecodeAssetOpRet(const CScript &scriptPubKey,uint256 &assetid,uint256 &assetid2,int64_t &price,std::vector<uint8_t> &origpubkey);
 bool SetAssetOrigpubkey(std::vector<uint8_t> &origpubkey,int64_t &price,const CTransaction &tx);
-int64_t IsAssetvout(int64_t &price,std::vector<uint8_t> &origpubkey,const CTransaction& tx,int32_t v,uint256 refassetid);
+int64_t IsAssetvout(int32_t maxAssetExactAmountDepth, struct CCcontract_info *cp, Eval* eval, int64_t &price,std::vector<uint8_t> &origpubkey,const CTransaction& tx,int32_t v,uint256 refassetid);
 bool ValidateBidRemainder(int64_t remaining_price,int64_t remaining_nValue,int64_t orig_nValue,int64_t received_nValue,int64_t paidprice,int64_t totalprice);
 bool ValidateAskRemainder(int64_t remaining_price,int64_t remaining_nValue,int64_t orig_nValue,int64_t received_nValue,int64_t paidprice,int64_t totalprice);
 bool ValidateSwapRemainder(int64_t remaining_price,int64_t remaining_nValue,int64_t orig_nValue,int64_t received_nValue,int64_t paidprice,int64_t totalprice);
@@ -44,7 +44,8 @@ bool SetAskFillamounts(int64_t &paid,int64_t &remaining_price,int64_t orig_nValu
 bool SetSwapFillamounts(int64_t &paid,int64_t &remaining_price,int64_t orig_nValue,int64_t &received,int64_t totalprice);
 int64_t AssetValidateBuyvin(struct CCcontract_info *cp,Eval* eval,int64_t &tmpprice,std::vector<uint8_t> &tmporigpubkey,char *CCaddr,char *origaddr,const CTransaction &tx,uint256 refassetid);
 int64_t AssetValidateSellvin(struct CCcontract_info *cp,Eval* eval,int64_t &tmpprice,std::vector<uint8_t> &tmporigpubkey,char *CCaddr,char *origaddr,const CTransaction &tx,uint256 assetid);
-bool AssetExactAmounts(struct CCcontract_info *cp,int64_t &inputs,int32_t starti,int64_t &outputs,Eval* eval,const CTransaction &tx,uint256 assetid);
+bool AssetExactAmounts(int32_t maxDepth, struct CCcontract_info *cp,int64_t &inputs,int32_t starti,int64_t &outputs,Eval* eval,const CTransaction &tx,uint256 assetid);
+//bool AssetExactAmounts(bool doValidateTx, struct CCcontract_info *cp, int64_t &inputs, int32_t starti, int64_t &outputs, Eval* eval, const CTransaction &tx, uint256 assetid, std::vector<CTransaction> &ccVinsTxs);
 
 // CCassetstx
 int64_t GetAssetBalance(CPubKey pk,uint256 tokenid);
