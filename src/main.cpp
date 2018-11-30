@@ -6556,7 +6556,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         return true;
     }
 
-    fprintf(stderr,"netmsg: %s\n", strCommand.c_str());
+    //fprintf(stderr,"netmsg: %s\n", strCommand.c_str());
 
     if (strCommand == "version")
     {
@@ -6572,7 +6572,6 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         CAddress addrMe;
         CAddress addrFrom;
         uint64_t nNonce = 1;
-        fprintf(stderr, "version.%i\n",pfrom->nVersion);
         int nVersion;           // use temporary for version, don't set version number until validated as connected
         vRecv >> nVersion >> pfrom->nServices >> nTime >> addrMe;
         if (nVersion == 10300)
