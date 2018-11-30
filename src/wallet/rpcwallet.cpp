@@ -1319,9 +1319,9 @@ UniValue sendmany(const UniValue& params, bool fHelp)
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, std::string("Invalid Zcash address: ") + name_);
         }
 
-        if (destinations.count(dest)) {
+        /*if (destinations.count(dest)) {
             throw JSONRPCError(RPC_INVALID_PARAMETER, std::string("Invalid parameter, duplicated address: ") + name_);
-        }
+        }*/
         destinations.insert(dest);
 
         CScript scriptPubKey = GetScriptForDestination(dest);
@@ -5548,9 +5548,9 @@ UniValue heiraddress(const UniValue& params, bool fHelp)
 	if(params.size() == 4)
 		destPubkey = ParseHex(params[3].get_str().c_str());
 
-	return HeirFundBad(funcid, assetid, funds, destPubkey);
+	//return HeirFundBad(funcid, assetid, funds, destPubkey);
 
-    //return(CCaddress(cp,(char *)"Heir",pubkey));
+    return(CCaddress(cp,(char *)"Heir",destPubkey));
 }
 
 UniValue lottoaddress(const UniValue& params, bool fHelp)
