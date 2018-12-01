@@ -5146,7 +5146,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
     if ( (minage= nHeight*3) > 6000 ) // about 100 blocks
         minage = 6000;
     komodo_segids(hashbuf,nHeight-101,100);
-    if ( *blocktimep > tipindex->nTime+60 )
+    if ( *blocktimep < tipindex->nTime+60 )
         *blocktimep = tipindex->nTime+60;
     //fprintf(stderr,"Start scan of utxo for staking %u ht.%d\n",(uint32_t)time(NULL),nHeight);
     if ( time(NULL) > lasttime+600 || array == 0 )
