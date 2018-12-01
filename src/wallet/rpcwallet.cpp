@@ -5059,10 +5059,10 @@ struct komodo_staking *komodo_addutxo(struct komodo_staking *array,int32_t *numk
     {
         *maxkp += 1000;
         array = (struct komodo_staking *)realloc(array,sizeof(*array) * (*maxkp));
-        fprintf(stderr,"realloc max.%d array.%p\n",*maxkp,array);
+        //fprintf(stderr,"realloc max.%d array.%p\n",*maxkp,array);
     }
     kp = &array[(*numkp)++];
-    fprintf(stderr,"kp.%p num.%d\n",kp,*numkp);
+    //fprintf(stderr,"kp.%p num.%d\n",kp,*numkp);
     memset(kp,0,sizeof(*kp));
     strcpy(kp->address,address);
     kp->txid = txid;
@@ -5101,9 +5101,9 @@ uint32_t komodo_eligible(arith_uint256 bnTarget,arith_uint256 ratio,struct komod
     kp->hashval = UintToArith256(hash);
     segid = ((nHeight + kp->segid32) & 0x3f);
     hashval = _komodo_eligible(kp,ratio,blocktime,maxiters,minage,segid,nHeight,prevtime);
-    //for (int i=32; i>=0; i--)
-    //    fprintf(stderr,"%02x",((uint8_t *)&hashval)[i]);
-    //fprintf(stderr," b.%u minage.%d segid.%d ht.%d prev.%u\n",blocktime,minage,segid,nHeight,prevtime);
+    for (int i=32; i>=0; i--)
+        fprintf(stderr,"%02x",((uint8_t *)&hashval)[i]);
+    fprintf(stderr," b.%u minage.%d segid.%d ht.%d prev.%u\n",blocktime,minage,segid,nHeight,prevtime);
     if ( hashval <= bnTarget )
     {
         for (iter=0; iter<maxiters; iter++)
@@ -5119,7 +5119,7 @@ uint32_t komodo_eligible(arith_uint256 bnTarget,arith_uint256 ratio,struct komod
                 return(blocktime);
             }
         }
-    }
+    } else fprintf(stderr,"maxiters is not good enough\n");
     return(0);
 }
 
@@ -5182,14 +5182,14 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
                 if ( GetTransaction(out.tx->GetHash(),tx,hashBlock,true) != 0 && (pindex= komodo_getblockindex(hashBlock)) != 0 )
                 {
                     array = komodo_addutxo(array,&numkp,&maxkp,(uint32_t)pindex->nTime,(uint64_t)nValue,out.tx->GetHash(),out.i,(char *)CBitcoinAddress(address).ToString().c_str(),hashbuf,(CScript)pk);
-                    fprintf(stderr,"addutxo numkp.%d vs max.%d\n",numkp,maxkp);
+                    //fprintf(stderr,"addutxo numkp.%d vs max.%d\n",numkp,maxkp);
                 }
             }
         }
         lasttime = (uint32_t)time(NULL);
-fprintf(stderr,"finished kp data of utxo for staking %u ht.%d numkp.%d maxkp.%d\n",(uint32_t)time(NULL),nHeight,numkp,maxkp);
+//fprintf(stderr,"finished kp data of utxo for staking %u ht.%d numkp.%d maxkp.%d\n",(uint32_t)time(NULL),nHeight,numkp,maxkp);
     }
-fprintf(stderr,"numkp.%d\n",numkp);
+fprintf(stderr,"numkp.%d blocktime.%u\n",numkp,*blocktimep);
     block_from_future_rejecttime = (uint32_t)GetAdjustedTime() + 57;
     for (i=winners=0; i<numkp; i++)
     {
