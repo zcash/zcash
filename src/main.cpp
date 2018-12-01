@@ -1979,6 +1979,7 @@ bool myAddtomempool(CTransaction &tx, CValidationState *pstate)
 
 bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock)
 {
+    memset(&hashBlock,0,sizeof(hashBlock));
     // need a GetTransaction without lock so the validation code for assets can run without deadlock
     {
         //fprintf(stderr,"check mempool\n");
@@ -2022,6 +2023,7 @@ bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlo
 bool GetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock, bool fAllowSlow)
 {
     CBlockIndex *pindexSlow = NULL;
+    memset(&hashBlock,0,sizeof(hashBlock));
 
     LOCK(cs_main);
 
@@ -5202,11 +5204,11 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
         CheckBlockIndex();
         if (!ret && futureblock == 0)
         {
-            if ( ASSETCHAINS_SYMBOL[0] == 0 )
+            /*if ( ASSETCHAINS_SYMBOL[0] == 0 )
             {
                 //fprintf(stderr,"request headers from failed process block peer\n");
                 pfrom->PushMessage("getheaders", chainActive.GetLocator(chainActive.LastTip()), uint256());
-            }
+            }*/
             komodo_longestchain();
             return error("%s: AcceptBlock FAILED", __func__);
         }
