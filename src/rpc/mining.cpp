@@ -611,9 +611,6 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
         strMode = "template";
     }
 
-    //if (strMode != "template")
-      //  throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid mode");
-
     bool fvNodesEmpty;
     {
         LOCK(cs_vNodes);
