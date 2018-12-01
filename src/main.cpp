@@ -1979,6 +1979,7 @@ bool myAddtomempool(CTransaction &tx, CValidationState *pstate)
 
 bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock)
 {
+    memset(&hashBlock,0,sizeof(hashBlock));
     // need a GetTransaction without lock so the validation code for assets can run without deadlock
     {
         //fprintf(stderr,"check mempool\n");
@@ -2022,6 +2023,7 @@ bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlo
 bool GetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock, bool fAllowSlow)
 {
     CBlockIndex *pindexSlow = NULL;
+    memset(&hashBlock,0,sizeof(hashBlock));
 
     LOCK(cs_main);
 
@@ -3824,7 +3826,7 @@ int32_t komodo_activate_sapling(CBlockIndex *pindex)
     }
     height = pindex->GetHeight();
     blocktime = (uint32_t)pindex->nTime;
-    fprintf(stderr,"komodo_activate_sapling.%d starting blocktime %u cmp.%d\n",height,blocktime,blocktime > KOMODO_SAPLING_ACTIVATION);
+    //fprintf(stderr,"komodo_activate_sapling.%d starting blocktime %u cmp.%d\n",height,blocktime,blocktime > KOMODO_SAPLING_ACTIVATION);
 
     // avoid trying unless we have at least 30 blocks
     if (height < 30)
@@ -3901,7 +3903,7 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
         pblock = &block;
     }
     KOMODO_CONNECTING = (int32_t)pindexNew->GetHeight();
-    fprintf(stderr,"%s connecting ht.%d maxsize.%d vs %d\n",ASSETCHAINS_SYMBOL,(int32_t)pindexNew->GetHeight(),MAX_BLOCK_SIZE(pindexNew->GetHeight()),(int32_t)::GetSerializeSize(*pblock, SER_NETWORK, PROTOCOL_VERSION));
+    //fprintf(stderr,"%s connecting ht.%d maxsize.%d vs %d\n",ASSETCHAINS_SYMBOL,(int32_t)pindexNew->GetHeight(),MAX_BLOCK_SIZE(pindexNew->GetHeight()),(int32_t)::GetSerializeSize(*pblock, SER_NETWORK, PROTOCOL_VERSION));
     // Get the current commitment tree
     SproutMerkleTree oldSproutTree;
     SaplingMerkleTree oldSaplingTree;
@@ -4678,7 +4680,7 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
             const uint256 &hash = tx.GetHash();
             if ( tx.vjoinsplit.size() == 0 ) {
                 transactionsToRemove.push_back(tx);
-                tmpmempool.addUnchecked(hash,e,!IsInitialBlockDownload());
+                tmpmempool.addUnchecked(hash,e,true);
             }
         }
         BOOST_FOREACH(const CTransaction& tx, transactionsToRemove) {
@@ -4756,6 +4758,7 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
         // here we add back all txs from the temp mempool to the main mempool.
         // which removes any tx locally that were invalid after the block arrives.
         int invalidtxs = 0;
+        LOCK(mempool.cs);
         BOOST_FOREACH(const CTxMemPoolEntry& e, tmpmempool.mapTx) {
             CTransaction tx = e.GetTx();
             CValidationState state; bool fMissingInputs,fOverrideFees = false;
@@ -5201,11 +5204,11 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
         CheckBlockIndex();
         if (!ret && futureblock == 0)
         {
-            if ( ASSETCHAINS_SYMBOL[0] == 0 )
+            /*if ( ASSETCHAINS_SYMBOL[0] == 0 )
             {
                 //fprintf(stderr,"request headers from failed process block peer\n");
                 pfrom->PushMessage("getheaders", chainActive.GetLocator(chainActive.LastTip()), uint256());
-            }
+            }*/
             komodo_longestchain();
             return error("%s: AcceptBlock FAILED", __func__);
         }
@@ -5623,8 +5626,11 @@ bool static LoadBlockIndexDB()
     CBlockIndex *pindex;
     if ( (pindex= chainActive.LastTip()) != 0 )
     {
-        fprintf(stderr,"set sapling height, if possible from ht.%d %u\n",(int32_t)pindex->GetHeight(),(uint32_t)pindex->nTime);
-        komodo_activate_sapling(pindex);
+        if ( ASSETCHAINS_SAPLING <= 0 )
+        {
+            fprintf(stderr,"set sapling height, if possible from ht.%d %u\n",(int32_t)pindex->GetHeight(),(uint32_t)pindex->nTime);
+            komodo_activate_sapling(pindex);
+        }
     }
     return true;
 }

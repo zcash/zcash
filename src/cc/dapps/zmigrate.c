@@ -19,6 +19,20 @@
 #include <memory.h>
 #include "cJSON.c"
 
+/*
+z_migrate: the purpose of z_migrate is to make converting of all sprout outputs into sapling. the usage would be for the user to specify a sapling address and call z_migrate zsaddr, until it returns that there is nothing left to be done.
+
+its main functionality is quite similar to a z_mergetoaddress ANY_ZADDR -> onetime_taddr followed by a z_sendmany onetime_taddr -> zsaddr
+
+since the z_mergetoaddress will take time, it would just queue up an async operation. When it starts, it should see if there are any onetime_taddr with 10000.0001 funds in it, that is a signal for it to do the sapling tx and it can just do that without async as it is fast enough, especially with a taddr input. Maybe it limits itself to one,  or it does all possible taddr -> sapling as fast as it can. either is fine as it will be called over and over anyway.
+
+It might be that there is nothing to do, but some operations are pending. in that case it would return such a status. as soon as the operation finishes, there would be more work to do.
+
+the amount sent to the taddr, should be 10000.0001
+
+The GUI or user would be expected to generate a sapling address and then call z_migrate saplingaddr in a loop, until it returns that it is all done. this loop should pause for 10 seconds or so, if z_migrate is just waiting for opid to complete.
+*/
+
 bits256 zeroid;
 
 char hexbyte(int32_t c)
@@ -891,28 +905,29 @@ int32_t main(int32_t argc,char **argv)
     }
     zsaddr = clonestr(argv[2]);
     printf("%s: %s %s\n",REFCOIN_CLI,coinstr,zsaddr);
-    char coinaddr[64],zcaddr[128],opidstr[128]; int32_t alldone,finished; int64_t amount,stdamount,txfee;
-    stdamount = 1000 * SATOSHIDEN;
+    uint32_t lastopid; char coinaddr[64],zcaddr[128],opidstr[128]; int32_t finished; int64_t amount,stdamount,txfee;
+    stdamount = 10000 * SATOSHIDEN;
     txfee = 10000;
 again:
     printf("start processing zmigrate\n");
+    lastopid = (uint32_t)time(NULL);
     finished = 0;
     while ( 1 )
     {
         if ( have_pending_opid(coinstr,0) != 0 )
         {
-            sleep(3);
+            sleep(60);
             continue;
         }
-        alldone = 1;
         if ( (amount= find_onetime_amount(coinstr,coinaddr)) > txfee )
         {
             // find taddr with funds and send all to zsaddr
             z_sendmany(opidstr,coinstr,"",coinaddr,zsaddr,amount-txfee);
-            alldone = 0;
+            lastopid = (uint32_t)time(NULL);
             sleep(1);
+            continue;
         }
-        if ( alldone != 0 && (amount= find_sprout_amount(coinstr,zcaddr)) > txfee )
+        if ( (amount= find_sprout_amount(coinstr,zcaddr)) > txfee )
         {
             // generate taddr, send max of 10000.0001
             if ( amount > stdamount+txfee )
@@ -920,15 +935,13 @@ again:
             if ( getnewaddress(coinaddr,coinstr,"") == 0 )
             {
                 z_sendmany(opidstr,coinstr,"",zcaddr,coinaddr,amount-txfee);
+                lastopid = (uint32_t)time(NULL);
             } else printf("couldnt getnewaddress!\n");
-            alldone = 0;
-            sleep(10);
+            sleep(30);
+            continue;
         }
-        if ( alldone != 0 && find_onetime_amount(coinstr,coinaddr) == 0 && find_sprout_amount(coinstr,zcaddr) == 0 )
-        {
-            if ( finished++ > 10 )
-                break;
-        } else finished = 0 ;
+        if ( time(NULL) > lastopid+600 )
+            break;
     }
     sleep(3);
     printf("%s %s ALLDONE! taddr %.8f sprout %.8f mempool empty.%d\n",coinstr,zsaddr,dstr(find_onetime_amount(coinstr,coinaddr)),dstr(find_sprout_amount(coinstr,zcaddr)),empty_mempool(coinstr,""));

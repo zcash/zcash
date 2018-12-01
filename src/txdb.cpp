@@ -424,7 +424,7 @@ bool getAddressFromIndex(const int &type, const uint160 &hash, std::string &addr
 
 UniValue CBlockTreeDB::Snapshot(int top)
 {
-    char chType; int64_t total = 0; int64_t totalAddresses = 0; std::string address;
+    int64_t total = 0; int64_t totalAddresses = 0; std::string address;
     int64_t utxos = 0; int64_t ignoredAddresses;
     boost::scoped_ptr<CDBIterator> iter(NewIterator());
     std::map <std::string, CAmount> addressAmounts;
@@ -460,22 +460,18 @@ UniValue CBlockTreeDB::Snapshot(int top)
         try
         {
             std::vector<unsigned char> slKey = std::vector<unsigned char>();
-            iter->GetKey(slKey);
-            CDataStream ssKey(slKey, SER_DISK, CLIENT_VERSION);
-            CAddressIndexIteratorKey indexKey;
+            pair<char, CAddressIndexIteratorKey> keyObj;
+            iter->GetKey(keyObj);
 
-            ssKey >> chType;
-            ssKey >> indexKey;
+            char chType = keyObj.first;
+            CAddressIndexIteratorKey indexKey = keyObj.second;
 
             //fprintf(stderr, "chType=%d\n", chType);
             if (chType == DB_ADDRESSUNSPENTINDEX)
             {
                 try {
-                    std::vector<unsigned char> slValue = std::vector<unsigned char>();
-                    iter->GetValue(slValue);
-                    CDataStream ssValue(slValue, SER_DISK, CLIENT_VERSION);
                     CAmount nValue;
-                    ssValue >> nValue;
+                    iter->GetValue(nValue);
 
                     getAddressFromIndex(indexKey.type, indexKey.hashBytes, address);
 

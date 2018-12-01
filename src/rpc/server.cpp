@@ -437,10 +437,12 @@ static const CRPCCommand vRPCCommands[] =
     { "gateways",       "gatewaysdeposit",   &gatewaysdeposit,      true },
     { "gateways",       "gatewaysclaim",     &gatewaysclaim,        true },
     { "gateways",       "gatewayswithdraw",  &gatewayswithdraw,     true },
-    { "gateways",       "gatewayspending",   &gatewayspending,      true },
-    { "gateways",       "gatewaysmultisig",  &gatewaysmultisig,     true },
-    { "gateways",       "gatewaysmarkdone",  &gatewaysmarkdone,     true },
     { "gateways",       "gatewayspartialsign",  &gatewayspartialsign,     true },
+    { "gateways",       "gatewayscompletesigning",  &gatewayscompletesigning,     true },
+    { "gateways",       "gatewaysmarkdone",  &gatewaysmarkdone,     true },
+    { "gateways",       "gatewayspending",   &gatewayspending,      true },
+    { "gateways",       "gatewaysprocessed",   &gatewaysprocessed,  true },
+    { "gateways",       "gatewaysmultisig",  &gatewaysmultisig,     true },
 
     // dice
     { "dice",       "dicelist",      &dicelist,         true },
@@ -468,6 +470,7 @@ static const CRPCCommand vRPCCommands[] =
     { "tokens",       "tokencancelask",   &tokencancelask,    true },
     { "tokens",       "tokenfillask",     &tokenfillask,      true },
     //{ "tokens",       "tokenfillswap",    &tokenfillswap,     true },
+    { "tokens",       "tokenconvert", &tokenconvert, true },
 
     /* Address index */
     { "addressindex",       "getaddressmempool",      &getaddressmempool,      true  },
@@ -481,6 +484,7 @@ static const CRPCCommand vRPCCommands[] =
     { "util",               "createmultisig",         &createmultisig,         true  },
     { "util",               "validateaddress",        &validateaddress,        true  }, /* uses wallet if enabled */
     { "util",               "verifymessage",          &verifymessage,          true  },
+    { "util",               "txnotarizedconfirmed",   &txnotarizedconfirmed,   true  },
     { "util",               "estimatefee",            &estimatefee,            true  },
     { "util",               "estimatepriority",       &estimatepriority,       true  },
     { "util",               "z_validateaddress",      &z_validateaddress,      true  }, /* uses wallet if enabled */

@@ -57,9 +57,12 @@ extern char ASSETCHAINS_SYMBOL[];
 extern std::string CCerror;
 
 #define SMALLVAL 0.000000000000001
-#define MIN_NOTARIZATION_CONFIRMS 2
-union _bits256 { uint8_t bytes[32]; uint16_t ushorts[16]; uint32_t uints[8]; uint64_t ulongs[4]; uint64_t txid; };
-typedef union _bits256 bits256;
+#ifndef _BITS256
+#define _BITS256
+    union _bits256 { uint8_t bytes[32]; uint16_t ushorts[16]; uint32_t uints[8]; uint64_t ulongs[4]; uint64_t txid; };
+    typedef union _bits256 bits256;
+#endif
+
 
 struct CC_utxo
 {
@@ -102,6 +105,7 @@ extern CWallet* pwalletMain;
 #endif
 bool GetAddressUnspent(uint160 addressHash, int type,std::vector<std::pair<CAddressUnspentKey,CAddressUnspentValue> > &unspentOutputs);
 CBlockIndex *komodo_getblockindex(uint256 hash);
+int32_t komodo_nextheight();
 
 static const uint256 zeroid;
 bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock);
@@ -167,13 +171,14 @@ bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey);
 std::vector<uint8_t> Mypubkey();
 bool Myprivkey(uint8_t myprivkey[]);
 int64_t CCduration(int32_t &numblocks,uint256 txid);
-bool isCCTxNotarizedConfirmed(uint256 txid);
+bool komodo_txnotarizedconfirmed(uint256 txid);
 // CCtx
 bool SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const CScript scriptPubKey);
 std::string FinalizeCCTx(uint64_t skipmask,struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey mypk,uint64_t txfee,CScript opret);
 void SetCCunspents(std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > &unspentOutputs,char *coinaddr);
 void SetCCtxids(std::vector<std::pair<CAddressIndexKey, CAmount> > &addressIndex,char *coinaddr);
 int64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int32_t maxinputs);
+int64_t AddNormalinputs2(CMutableTransaction &mtx,int64_t total,int32_t maxinputs);
 int64_t CCutxovalue(char *coinaddr,uint256 utxotxid,int32_t utxovout);
 
 // curve25519 and sha256
