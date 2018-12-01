@@ -431,3 +431,92 @@ int64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int3
 #endif
     return(0);
 }
+
+
+int64_t AddNormalinputs2(CMutableTransaction &mtx,int64_t total,int32_t maxinputs)
+{
+    int32_t abovei,belowi,ind,vout,i,n = 0,maxutxos=64; int64_t sum,threshold,above,below; int64_t remains,nValue,totalinputs = 0; char coinaddr[64]; uint256 txid,hashBlock; CTransaction tx; struct CC_utxo *utxos,*up;
+    std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
+    utxos = (struct CC_utxo *)calloc(maxutxos,sizeof(*utxos));
+    threshold = total/(maxinputs+1);
+    if ( maxinputs > maxutxos )
+        maxutxos = maxinputs;
+    sum = 0;
+    Getscriptaddress(coinaddr,CScript() << Mypubkey() << OP_CHECKSIG);
+    SetCCunspents(unspentOutputs,coinaddr);
+    for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
+    {
+        txid = it->first.txhash;
+        vout = (int32_t)it->first.index;
+        if ( it->second.satoshis < threshold )
+            continue;
+        if ( myGetTransaction(txid,tx,hashBlock) != 0 && tx.vout.size() > 0 && vout < tx.vout.size() && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() == 0 )
+        {
+            //fprintf(stderr,"check %.8f to vins array.%d of %d %s/v%d\n",(double)out.tx->vout[out.i].nValue/COIN,n,maxutxos,txid.GetHex().c_str(),(int32_t)vout);
+            if ( mtx.vin.size() > 0 )
+            {
+                for (i=0; i<mtx.vin.size(); i++)
+                    if ( txid == mtx.vin[i].prevout.hash && vout == mtx.vin[i].prevout.n )
+                        break;
+                if ( i != mtx.vin.size() )
+                    continue;
+            }
+            if ( n > 0 )
+            {
+                for (i=0; i<n; i++)
+                    if ( txid == utxos[i].txid && vout == utxos[i].vout )
+                        break;
+                if ( i != n )
+                    continue;
+            }
+            if ( myIsutxo_spentinmempool(txid,vout) == 0 )
+            {
+                up = &utxos[n++];
+                up->txid = txid;
+                up->nValue = it->second.satoshis;
+                up->vout = vout;
+                sum += up->nValue;
+                //fprintf(stderr,"add %.8f to vins array.%d of %d\n",(double)up->nValue/COIN,n,maxutxos);
+                if ( n >= maxutxos || sum >= total )
+                    break;
+            }
+        }
+    }
+    remains = total;
+    for (i=0; i<maxinputs && n>0; i++)
+    {
+        below = above = 0;
+        abovei = belowi = -1;
+        if ( CC_vinselect(&abovei,&above,&belowi,&below,utxos,n,remains) < 0 )
+        {
+            printf("error finding unspent i.%d of %d, %.8f vs %.8f\n",i,n,(double)remains/COIN,(double)total/COIN);
+            free(utxos);
+            return(0);
+        }
+        if ( belowi < 0 || abovei >= 0 )
+            ind = abovei;
+        else ind = belowi;
+        if ( ind < 0 )
+        {
+            printf("error finding unspent i.%d of %d, %.8f vs %.8f, abovei.%d belowi.%d ind.%d\n",i,n,(double)remains/COIN,(double)total/COIN,abovei,belowi,ind);
+            free(utxos);
+            return(0);
+        }
+        up = &utxos[ind];
+        mtx.vin.push_back(CTxIn(up->txid,up->vout,CScript()));
+        totalinputs += up->nValue;
+        remains -= up->nValue;
+        utxos[ind] = utxos[--n];
+        memset(&utxos[n],0,sizeof(utxos[n]));
+        //fprintf(stderr,"totalinputs %.8f vs total %.8f i.%d vs max.%d\n",(double)totalinputs/COIN,(double)total/COIN,i,maxinputs);
+        if ( totalinputs >= total || (i+1) >= maxinputs )
+            break;
+    }
+    free(utxos);
+    if ( totalinputs >= total )
+    {
+        //fprintf(stderr,"return totalinputs %.8f\n",(double)totalinputs/COIN);
+        return(totalinputs);
+    }
+    return(0);
+}
