@@ -5237,11 +5237,11 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
         CheckBlockIndex();
         if (!ret && futureblock == 0)
         {
-            if ( ASSETCHAINS_SYMBOL[0] == 0 )
+            /*if ( ASSETCHAINS_SYMBOL[0] == 0 )
             {
                 //fprintf(stderr,"request headers from failed process block peer\n");
                 pfrom->PushMessage("getheaders", chainActive.GetLocator(chainActive.LastTip()), uint256());
-            }
+            }*/
             komodo_longestchain();
             return error("%s: AcceptBlock FAILED", __func__);
         }
