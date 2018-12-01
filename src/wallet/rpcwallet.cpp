@@ -5083,7 +5083,7 @@ arith_uint256 _komodo_eligible(struct komodo_staking *kp,arith_uint256 ratio,uin
         diff = 3600*24*30;
     if ( iter > 0 )
         diff += segid*2;
-    coinage = ((uint64_t)kp->nValue/COIN * diff);
+    coinage = ((uint64_t)kp->nValue * diff);
     if ( blocktime+iter+segid*2 > prevtime+480 )
         coinage *= ((blocktime+iter+segid*2) - (prevtime+400));
     //if ( nHeight >= 2500 && blocktime+iter+segid*2 > prevtime+180 )
@@ -5188,7 +5188,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
             }
         }
         lasttime = (uint32_t)time(NULL);
-fprintf(stderr,"finished kp data of utxo for staking %u ht.%d numkp.%d maxkp.%d\n",(uint32_t)time(NULL),nHeight,numkp,maxkp);
+//fprintf(stderr,"finished kp data of utxo for staking %u ht.%d numkp.%d maxkp.%d\n",(uint32_t)time(NULL),nHeight,numkp,maxkp);
     }
     block_from_future_rejecttime = (uint32_t)GetAdjustedTime() + 57;
     for (i=winners=0; i<numkp; i++)
