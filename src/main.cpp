@@ -1979,7 +1979,7 @@ bool myAddtomempool(CTransaction &tx, CValidationState *pstate)
 
 bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock)
 {
-    hashBlock = zeroid;
+    memset(&hashBlock,0,sizeof(hashBlock));
     // need a GetTransaction without lock so the validation code for assets can run without deadlock
     {
         //fprintf(stderr,"check mempool\n");
@@ -2023,7 +2023,7 @@ bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlo
 bool GetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock, bool fAllowSlow)
 {
     CBlockIndex *pindexSlow = NULL;
-    hashBlock = zeroid;
+    memset(&hashBlock,0,sizeof(hashBlock));
 
     LOCK(cs_main);
 
