@@ -5238,7 +5238,7 @@ fprintf(stderr,"ht.%d validated winning [%d] -> %.8f eligible.%u test prior\n",n
                 fprintf(stderr,"ht.%d earliest.%u [%d].%d (%s) nValue %.8f locktime.%u counter.%d winners.%d\n",nHeight,earliest,(int32_t)(earliest - tipindex->nTime),m,kp->address,(double)kp->nValue/COIN,*txtimep,counter,winners);
             }
         } else fprintf(stderr,"utxo not eligible\n");
-    } else fprintf(stderr,"no tipindex\n");
+    }
     if ( numkp < 10000 && array != 0 )
     {
         free(array);
