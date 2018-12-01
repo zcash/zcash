@@ -1652,7 +1652,7 @@ static uint256 dealer0_fundingtxid;
 void *dealer0_loop(void *_arg)
 {
     char *planstr = (char *)_arg;
-    CTransaction tx,*entropytxs,entropytx; CPubKey mypk,dicepk; uint64_t entropyval; uint256 entropytxid,txid; int32_t height,lastht,entropytxs,i,n,m,num; CScript fundingPubKey; struct CCcontract_info *cp,C; char coinaddr[64]; std::string res; int64_t minbet,maxbet,maxodds,timeoutblocks; uint64_t refsbits,txfee = 10000;
+    CTransaction tx,*entropytxs,entropytx; CPubKey mypk,dicepk; uint64_t entropyval; uint256 entropytxid,txid; int32_t height,lastht,numentropytxs,i,n,m,num; CScript fundingPubKey; struct CCcontract_info *cp,C; char coinaddr[64]; std::string res; int64_t minbet,maxbet,maxodds,timeoutblocks; uint64_t refsbits,txfee = 10000;
     if ( (cp= Diceinit(fundingPubKey,dealer0_fundingtxid,&C,planstr,txfee,mypk,dicepk,refsbits,minbet,maxbet,maxodds,timeoutblocks)) == 0 )
     {
         fprintf(stderr,"error initializing dealer0_loop\n");
@@ -1669,13 +1669,13 @@ void *dealer0_loop(void *_arg)
         }
         lastht = height;
         fprintf(stderr,"New height.%d\n",height);
-        DicePlanFunds(entropyval,entropytxid,refsbits,cp,dicepk,dealer0_fundingtxid,entropytxs,false);
-        if ( entropytxs < DICE_MINUTXOS )
+        DicePlanFunds(entropyval,entropytxid,refsbits,cp,dicepk,dealer0_fundingtxid,numentropytxs,false);
+        if ( numentropytxs < DICE_MINUTXOS )
         {
-            n = sqrt(DICE_MINUTXOS - entropytxs);
+            n = sqrt(DICE_MINUTXOS - numentropytxs);
             //if ( n > 10 )
             //    n = 10;
-            for (i=m=0; i<DICE_MINUTXOS - entropytxs && i<n; i++)
+            for (i=m=0; i<DICE_MINUTXOS - numentropytxs && i<n; i++)
             {
                 res = DiceAddfunding(txfee,planstr,dealer0_fundingtxid,1000*COIN);///100);
                 if ( res.empty() == 0 && res.size() > 64 && is_hexstr((char *)res.c_str(),0) > 64 )
@@ -1685,7 +1685,7 @@ void *dealer0_loop(void *_arg)
                         LOCK(cs_main);
                         if ( myAddtomempool(tx) != 0 )
                         {
-                            fprintf(stderr,"ENTROPY %s: %d of %d, %d\n",tx.GetHash().GetHex().c_str(),i,n,DICE_MINUTXOS - entropytxs);
+                            fprintf(stderr,"ENTROPY %s: %d of %d, %d\n",tx.GetHash().GetHex().c_str(),i,n,DICE_MINUTXOS - numentropytxs);
                             RelayTransaction(tx);
                             entropytxs[m++] = tx;
                         } else break;
