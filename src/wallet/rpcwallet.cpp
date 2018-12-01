@@ -5151,7 +5151,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
     if ( *blocktimep > tipindex->nTime+60 )
         *blocktimep = tipindex->nTime+60;
     //fprintf(stderr,"Start scan of utxo for staking %u ht.%d\n",(uint32_t)time(NULL),nHeight);
-    if ( time(NULL) > lasttime+600 )
+    if ( time(NULL) > lasttime+600 || array == 0 )
     {
         if ( array != 0 )
         {
