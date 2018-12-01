@@ -1672,8 +1672,8 @@ void *dealer0_loop(void *_arg)
         if ( entropytxs < DICE_MINUTXOS )
         {
             n = sqrt(DICE_MINUTXOS - entropytxs);
-            if ( n > 10 )
-                n = 10;
+            //if ( n > 10 )
+            //    n = 10;
             for (i=0; i<DICE_MINUTXOS - entropytxs && i<n; i++)
             {
                 res = DiceAddfunding(txfee,planstr,dealer0_fundingtxid,1000*COIN);///100);
