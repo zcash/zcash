@@ -1707,13 +1707,13 @@ void *dealer0_loop(void *_arg)
                             fprintf(stderr,"resend ENTROPY %s: %d of %d\n",txid.GetHex().c_str(),i,m);
                             RelayTransaction(tx);
                         }
-                        sleep(10);
                     }
                     else
                     {
                         fprintf(stderr,"found %s in %s\n",txid.GetHex().c_str(),hashBlock.GetHex().c_str());
                         break;
                     }
+                    sleep(10);
                 }
             }
         }
