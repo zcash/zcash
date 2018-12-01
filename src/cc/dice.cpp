@@ -1652,7 +1652,7 @@ static uint256 dealer0_fundingtxid;
 void *dealer0_loop(void *_arg)
 {
     char *planstr = (char *)_arg;
-    CTransaction tx,*entropytxs,entropytx; CPubKey mypk,dicepk; uint64_t entropyval; uint256 entropytxid,txid; int32_t height,lastht,numentropytxs,i,n,m,num; CScript fundingPubKey; struct CCcontract_info *cp,C; char coinaddr[64]; std::string res; int64_t minbet,maxbet,maxodds,timeoutblocks; uint64_t refsbits,txfee = 10000;
+    CTransaction tx,*entropytxs,entropytx; CPubKey mypk,dicepk; uint64_t entropyval; uint256 hashBlock,entropytxid,txid; int32_t height,lastht,numentropytxs,i,n,m,num; CScript fundingPubKey; struct CCcontract_info *cp,C; char coinaddr[64]; std::string res; int64_t minbet,maxbet,maxodds,timeoutblocks; uint64_t refsbits,txfee = 10000;
     if ( (cp= Diceinit(fundingPubKey,dealer0_fundingtxid,&C,planstr,txfee,mypk,dicepk,refsbits,minbet,maxbet,maxodds,timeoutblocks)) == 0 )
     {
         fprintf(stderr,"error initializing dealer0_loop\n");
