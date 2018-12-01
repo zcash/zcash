@@ -24,6 +24,8 @@ Check that there are no surprising performance regressions:
 
 Ensure that new performance metrics appear on that site.
 
+Update `src/chainparams.cpp` nMinimumChainWork with information from the getblockchaininfo rpc.
+
 ### Protocol Safety Checks:
 
 If this release changes the behavior of the protocol or fixes a serious

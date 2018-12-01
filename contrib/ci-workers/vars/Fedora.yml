@@ -1,5 +1,6 @@
 ---
 build_deps:
+  - cmake
   - gcc
   - gcc-c++
   - make
