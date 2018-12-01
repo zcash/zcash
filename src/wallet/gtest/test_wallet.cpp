@@ -1649,13 +1649,13 @@ TEST(WalletTests, SetBestChainIgnoresTxsWithoutShieldedData) {
     t.vout[0].nValue = 90*CENT;
     t.vout[0].scriptPubKey = scriptPubKey;
     CWalletTx wtxTransparent {nullptr, t};
-    wallet.AddToWallet(wtxTransparent, true, NULL);
+    wallet.AddToWallet(wtxTransparent, true, nullptr);
 
     // Generate a Sprout transaction that is ours
     auto wtxSprout = GetValidReceive(sk, 10, true);
     auto noteMap = wallet.FindMySproutNotes(wtxSprout);
     wtxSprout.SetSproutNoteData(noteMap);
-    wallet.AddToWallet(wtxSprout, true, NULL);
+    wallet.AddToWallet(wtxSprout, true, nullptr);
 
     // Generate a Sprout transaction that only involves our transparent address
     auto sk2 = libzcash::SproutSpendingKey::random();
@@ -1664,8 +1664,8 @@ TEST(WalletTests, SetBestChainIgnoresTxsWithoutShieldedData) {
     auto wtxTmp = GetValidSpend(sk2, note, 5);
     CMutableTransaction mtx {wtxTmp};
     mtx.vout[0].scriptPubKey = scriptPubKey;
-    CWalletTx wtxSproutTransparent {NULL, mtx};
-    wallet.AddToWallet(wtxSproutTransparent, true, NULL);
+    CWalletTx wtxSproutTransparent {nullptr, mtx};
+    wallet.AddToWallet(wtxSproutTransparent, true, nullptr);
 
     EXPECT_CALL(walletdb, TxnBegin())
         .WillOnce(Return(true));
