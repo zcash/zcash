@@ -1660,7 +1660,7 @@ void *dealer0_loop(void *_arg)
     }
     fprintf(stderr,"dealer0 node running\n");
     height = lastht = 0;
-    entropytx = (CTransaction *)calloc(sizeof(*entropytx),DICE_MINUTXOS);
+    entropytx = (CTransaction *)calloc(sizeof(*entropytxs),DICE_MINUTXOS);
     while ( 1 )
     {
         while ( KOMODO_INSYNC == 0 || (height= KOMODO_INSYNC) == lastht )
