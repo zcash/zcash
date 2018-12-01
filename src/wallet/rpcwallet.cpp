@@ -5086,12 +5086,8 @@ arith_uint256 _komodo_eligible(struct komodo_staking *kp,arith_uint256 ratio,uin
     coinage = ((uint64_t)kp->nValue * diff);
     if ( blocktime+iter+segid*2 > prevtime+480 )
         coinage *= ((blocktime+iter+segid*2) - (prevtime+400));
-    //if ( nHeight >= 2500 && blocktime+iter+segid*2 > prevtime+180 )
-    //    coinage *= ((blocktime+iter+segid*2) - (prevtime+60));
     coinage256 = arith_uint256(coinage+1);
     hashval = ratio * (kp->hashval / coinage256);
-    //if ( nHeight >= 900 && nHeight < 916 )
-    //    hashval = (hashval / coinage256);
     return(hashval);
 }
 
@@ -5170,19 +5166,23 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
             counter++;
             if ( out.nDepth < nMinDepth || out.nDepth > nMaxDepth )
             {
-                //fprintf(stderr,"komodo_staked invalid depth %d\n",(int32_t)out.nDepth);
+fprintf(stderr,"komodo_staked invalid depth %d\n",(int32_t)out.nDepth);
                 continue;
             }
             CAmount nValue = out.tx->vout[out.i].nValue;
             if ( nValue < COIN  || !out.fSpendable )
                 continue;
             const CScript& pk = out.tx->vout[out.i].scriptPubKey;
+            fprintf(stderr,"ExtractDestination\n");
             if ( ExtractDestination(pk,address) != 0 )
             {
+                fprintf(stderr,"IsMine\n");
                 if ( IsMine(*pwalletMain,address) == 0 )
                     continue;
+                fprintf(stderr,"GetTransaction\n");
                 if ( GetTransaction(out.tx->GetHash(),tx,hashBlock,true) != 0 && (pindex= komodo_getblockindex(hashBlock)) != 0 )
                 {
+                    fprintf(stderr,"addutxo\n");
                     array = komodo_addutxo(array,&numkp,&maxkp,(uint32_t)pindex->nTime,(uint64_t)nValue,out.tx->GetHash(),out.i,(char *)CBitcoinAddress(address).ToString().c_str(),hashbuf,(CScript)pk);
                 }
             }
