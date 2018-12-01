@@ -1667,6 +1667,27 @@ TEST(WalletTests, SetBestChainIgnoresTxsWithoutShieldedData) {
     CWalletTx wtxSproutTransparent {nullptr, mtx};
     wallet.AddToWallet(wtxSproutTransparent, true, nullptr);
 
+    // Generate a fake Sapling transaction
+    CMutableTransaction mtxSapling;
+    mtxSapling.fOverwintered = true;
+    mtxSapling.nVersion = SAPLING_TX_VERSION;
+    mtxSapling.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
+    mtxSapling.vShieldedOutput.resize(1);
+    mtxSapling.vShieldedOutput[0].cv = libzcash::random_uint256();
+    CWalletTx wtxSapling {nullptr, mtxSapling};
+    SetSaplingNoteData(wtxSapling);
+    wallet.AddToWallet(wtxSapling, true, nullptr);
+
+    // Generate a fake Sapling transaction that would only involve our transparent addresses
+    CMutableTransaction mtxSaplingTransparent;
+    mtxSaplingTransparent.fOverwintered = true;
+    mtxSaplingTransparent.nVersion = SAPLING_TX_VERSION;
+    mtxSaplingTransparent.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
+    mtxSaplingTransparent.vShieldedOutput.resize(1);
+    mtxSaplingTransparent.vShieldedOutput[0].cv = libzcash::random_uint256();
+    CWalletTx wtxSaplingTransparent {nullptr, mtxSaplingTransparent};
+    wallet.AddToWallet(wtxSaplingTransparent, true, nullptr);
+
     EXPECT_CALL(walletdb, TxnBegin())
         .WillOnce(Return(true));
     EXPECT_CALL(walletdb, WriteTx(wtxTransparent.GetHash(), wtxTransparent))
@@ -1674,6 +1695,10 @@ TEST(WalletTests, SetBestChainIgnoresTxsWithoutShieldedData) {
     EXPECT_CALL(walletdb, WriteTx(wtxSprout.GetHash(), wtxSprout))
         .Times(1).WillOnce(Return(true));
     EXPECT_CALL(walletdb, WriteTx(wtxSproutTransparent.GetHash(), wtxSproutTransparent))
+        .Times(0);
+    EXPECT_CALL(walletdb, WriteTx(wtxSapling.GetHash(), wtxSapling))
+        .Times(1).WillOnce(Return(true));
+    EXPECT_CALL(walletdb, WriteTx(wtxSaplingTransparent.GetHash(), wtxSaplingTransparent))
         .Times(0);
     EXPECT_CALL(walletdb, WriteWitnessCacheSize(0))
         .WillOnce(Return(true));
