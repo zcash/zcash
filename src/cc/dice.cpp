@@ -1696,7 +1696,7 @@ void *dealer0_loop(void *_arg)
             {
                 tx = entropytxs[i];
                 txid = tx.GetHash();
-                fprintf(stderr,"found %d of %d: %s\n",i,m,txid.GetHex().c_str());
+                fprintf(stderr,"check %d of %d: %s\n",i,m,txid.GetHex().c_str());
                 while ( 1 )
                 {
                     if ( myGetTransaction(txid,entropytx,hashBlock) == 0 || hashBlock == zeroid )
@@ -1708,7 +1708,12 @@ void *dealer0_loop(void *_arg)
                             RelayTransaction(tx);
                         }
                         sleep(10);
-                    } else break;
+                    }
+                    else
+                    {
+                        fprintf(stderr,"found %s in %s\n",txid.GetHex().c_str(),hashBlock.GetHex().c_str());
+                        break;
+                    }
                 }
             }
         }
