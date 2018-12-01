@@ -98,7 +98,7 @@ What is needed is for the dealer node to track the entropy tx that was already b
 #include "../compat/endian.h"
 
 #define MAX_ENTROPYUSED 8192
-#define DICE_MINUTXOS 10000
+#define DICE_MINUTXOS 15000
 extern int32_t KOMODO_INSYNC;
 
 pthread_mutex_t DICE_MUTEX,DICEREVEALED_MUTEX;
@@ -1392,7 +1392,7 @@ std::string DiceAddfunding(uint64_t txfee,char *planstr,uint256 fundingtxid,int6
     }
     if ( scriptPubKey == fundingPubKey )
     {
-        if ( AddNormalinputs(mtx,mypk,amount+2*txfee,1) > 0 )
+        if ( AddNormalinputs(mtx,mypk,amount+2*txfee,60) > 0 )
         {
             hentropy = DiceHashEntropy(entropy,mtx.vin[0].prevout.hash,mtx.vin[0].prevout.n,1);
             mtx.vout.push_back(MakeCC1vout(cp->evalcode,amount,dicepk));
@@ -1667,7 +1667,7 @@ void *dealer0_loop(void *_arg)
             n = sqrt(DICE_MINUTXOS - entropytxs) + 10;
             for (i=0; i<DICE_MINUTXOS - entropytxs && i<n; i++)
             {
-                res = DiceAddfunding(txfee,planstr,dealer0_fundingtxid,COIN/100);
+                res = DiceAddfunding(txfee,planstr,dealer0_fundingtxid,1000*COIN);///100);
                 if ( res.empty() == 0 && res.size() > 64 && is_hexstr((char *)res.c_str(),0) > 64 )
                 {
                     if ( DecodeHexTx(tx,res) != 0 )
