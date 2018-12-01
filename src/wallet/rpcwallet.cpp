@@ -5059,8 +5059,10 @@ struct komodo_staking *komodo_addutxo(struct komodo_staking *array,int32_t *numk
     {
         *maxkp += 1000;
         array = (struct komodo_staking *)realloc(array,sizeof(*array) * (*maxkp));
+        fprintf(stderr,"realloc max.%d array.%p\n",*maxkp,array);
     }
     kp = &array[(*numkp)++];
+    fprintf(stderr,"kp.%p num.%d\n",kp,*numkp);
     memset(kp,0,sizeof(*kp));
     strcpy(kp->address,address);
     kp->txid = txid;
@@ -5166,30 +5168,28 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
             counter++;
             if ( out.nDepth < nMinDepth || out.nDepth > nMaxDepth )
             {
-fprintf(stderr,"komodo_staked invalid depth %d\n",(int32_t)out.nDepth);
+                fprintf(stderr,"komodo_staked invalid depth %d\n",(int32_t)out.nDepth);
                 continue;
             }
             CAmount nValue = out.tx->vout[out.i].nValue;
             if ( nValue < COIN  || !out.fSpendable )
                 continue;
             const CScript& pk = out.tx->vout[out.i].scriptPubKey;
-            fprintf(stderr,"ExtractDestination\n");
             if ( ExtractDestination(pk,address) != 0 )
             {
-                fprintf(stderr,"IsMine\n");
                 if ( IsMine(*pwalletMain,address) == 0 )
                     continue;
-                fprintf(stderr,"GetTransaction\n");
                 if ( GetTransaction(out.tx->GetHash(),tx,hashBlock,true) != 0 && (pindex= komodo_getblockindex(hashBlock)) != 0 )
                 {
-                    fprintf(stderr,"addutxo\n");
                     array = komodo_addutxo(array,&numkp,&maxkp,(uint32_t)pindex->nTime,(uint64_t)nValue,out.tx->GetHash(),out.i,(char *)CBitcoinAddress(address).ToString().c_str(),hashbuf,(CScript)pk);
+                    fprintf(stderr,"addutxo numkp.%d vs max.%d\n",numkp,maxkp);
                 }
             }
         }
         lasttime = (uint32_t)time(NULL);
-//fprintf(stderr,"finished kp data of utxo for staking %u ht.%d numkp.%d maxkp.%d\n",(uint32_t)time(NULL),nHeight,numkp,maxkp);
+fprintf(stderr,"finished kp data of utxo for staking %u ht.%d numkp.%d maxkp.%d\n",(uint32_t)time(NULL),nHeight,numkp,maxkp);
     }
+fprintf(stderr,"numkp.%d\n",numkp);
     block_from_future_rejecttime = (uint32_t)GetAdjustedTime() + 57;
     for (i=winners=0; i<numkp; i++)
     {
