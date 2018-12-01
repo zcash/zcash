@@ -1652,21 +1652,28 @@ static uint256 dealer0_fundingtxid;
 void *dealer0_loop(void *_arg)
 {
     char *planstr = (char *)_arg;
-    CTransaction tx; CPubKey mypk,dicepk; uint64_t entropyval; uint256 entropytxid; int32_t entropytxs,i,n,num; CScript fundingPubKey; struct CCcontract_info *cp,C; char coinaddr[64]; std::string res; int64_t minbet,maxbet,maxodds,timeoutblocks; uint64_t refsbits,txfee = 10000;
+    CTransaction tx; CPubKey mypk,dicepk; uint64_t entropyval; uint256 entropytxid; int32_t height,lastht,entropytxs,i,n,num; CScript fundingPubKey; struct CCcontract_info *cp,C; char coinaddr[64]; std::string res; int64_t minbet,maxbet,maxodds,timeoutblocks; uint64_t refsbits,txfee = 10000;
     if ( (cp= Diceinit(fundingPubKey,dealer0_fundingtxid,&C,planstr,txfee,mypk,dicepk,refsbits,minbet,maxbet,maxodds,timeoutblocks)) == 0 )
     {
         fprintf(stderr,"error initializing dealer0_loop\n");
         exit(-1);
     }
     fprintf(stderr,"dealer0 node running\n");
+    height = lastht = 0;
     while ( 1 )
     {
+        while ( KOMODO_INSYNC == 0 || (height= KOMODO_INSYNC) == lastht )
+        {
+            sleep(3);
+        }
+        lastht = height;
+        fprintf(stderr,"New height.%d\n",height);
         DicePlanFunds(entropyval,entropytxid,refsbits,cp,dicepk,dealer0_fundingtxid,entropytxs,false);
         if ( entropytxs < DICE_MINUTXOS )
         {
             n = sqrt(DICE_MINUTXOS - entropytxs);
-            if ( n > 10 )
-                n = 10;
+            //if ( n > 10 )
+            //    n = 10;
             for (i=0; i<DICE_MINUTXOS - entropytxs && i<n; i++)
             {
                 res = DiceAddfunding(txfee,planstr,dealer0_fundingtxid,1000*COIN);///100);
