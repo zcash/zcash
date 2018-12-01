@@ -25,6 +25,7 @@
 
 
 int NOTARISATION_SCAN_LIMIT_BLOCKS = 1440;
+CBlockIndex *komodo_getblockindex(uint256 hash);
 
 
 /* On KMD */
@@ -133,7 +134,7 @@ TxProof GetCrossChainProof(const uint256 txid, const char* targetSymbol, uint32_
         CBlockIndex blockIdx;
         if (!eval->GetTxConfirmed(assetChainProof.first, sourceNotarisation, blockIdx))
             throw std::runtime_error("Notarisation not found");
-        kmdHeight = blockIdx.nHeight;
+        kmdHeight = blockIdx.GetHeight();
     }
 
     // We now have a kmdHeight of the notarisation from chain A. So we know that a MoM exists
@@ -241,7 +242,7 @@ bool GetNextBacknotarisation(uint256 kmdNotarisationTxid, Notarisation &out)
         return false;
     }
 
-    return (bool) ScanNotarisationsFromHeight(block.nHeight+1, &IsSameAssetChain, out);
+    return (bool) ScanNotarisationsFromHeight(block.GetHeight()+1, &IsSameAssetChain, out);
 }
 
 
@@ -266,20 +267,20 @@ TxProof GetAssetchainProof(uint256 hash)
         if (blockHash.IsNull())
             throw std::runtime_error("tx still in mempool");
 
-        blockIndex = mapBlockIndex[blockHash];
-        int h = blockIndex->nHeight;
+        blockIndex = komodo_getblockindex(blockHash);
+        int h = blockIndex->GetHeight();
         // The assumption here is that the first notarisation for a height GTE than
         // the transaction block height will contain the corresponding MoM. If there
         // are sequence issues with the notarisations this may fail.
         auto isTarget = [&](Notarisation &nota) {
             if (!IsSameAssetChain(nota)) return false;
-            return nota.second.height >= blockIndex->nHeight;
+            return nota.second.height >= blockIndex->GetHeight();
         };
-        if (!ScanNotarisationsFromHeight(blockIndex->nHeight, isTarget, nota))
+        if (!ScanNotarisationsFromHeight(blockIndex->GetHeight(), isTarget, nota))
             throw std::runtime_error("backnotarisation not yet confirmed");
         
         // index of block in MoM leaves
-        nIndex = nota.second.height - blockIndex->nHeight;
+        nIndex = nota.second.height - blockIndex->GetHeight();
     }
 
     // build merkle chain from blocks to MoM

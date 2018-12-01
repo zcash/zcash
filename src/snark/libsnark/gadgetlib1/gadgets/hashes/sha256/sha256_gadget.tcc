@@ -117,7 +117,7 @@ void sha256_compression_function_gadget<FieldT>::generate_r1cs_witness()
     printf("Input:\n");
     for (size_t j = 0; j < 16; ++j)
     {
-        printf("%lx ", this->pb.val(packed_W[j]).as_ulong());
+        printf("%lx ", this->pb.val(packed_W[j]).as_uint64());
     }
     printf("\n");
 #endif
@@ -142,7 +142,7 @@ void sha256_compression_function_gadget<FieldT>::generate_r1cs_witness()
     printf("Output:\n");
     for (size_t j = 0; j < 8; ++j)
     {
-        printf("%lx ", this->pb.val(reduced_output[j]).as_ulong());
+        printf("%lx ", this->pb.val(reduced_output[j]).as_uint64());
     }
     printf("\n");
 #endif
