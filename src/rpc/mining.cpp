@@ -606,9 +606,10 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
             return BIP22ValidationResult(state);
         }
     }
-
-    if (strMode != "template")
-        throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid mode");
+    else
+    {
+        strMode = "template";
+    }
 
     bool fvNodesEmpty;
     {
