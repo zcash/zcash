@@ -1319,7 +1319,7 @@ bool CheckTransactionWithoutProofVerification(uint32_t tiptime,const CTransactio
     if (tx.vin.empty() && tx.vjoinsplit.empty() && tx.vShieldedSpend.empty()) {
         return state.DoS(10, error("CheckTransaction(): vin empty"),
                          REJECT_INVALID, "bad-txns-vin-empty");
-        printf("vim empty for tx: %s\n",tx.GetHash().ToString().c_str());
+        fprintf(stderr,"vin empty for tx: %s\n",tx.GetHash().ToString().c_str());
     }
     // Transactions containing empty `vout` must have either non-empty
     // `vjoinsplit` or non-empty `vShieldedOutput`.
@@ -1759,7 +1759,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
                     {
                         if (pfMissingInputs)
                             *pfMissingInputs = true;
-                        fprintf(stderr,"missing inputs in %s\n",tx.GetHash().ToString().c_str());
+                        //fprintf(stderr,"missing inputs in %s\n",tx.GetHash().ToString().c_str());
                         return state.DoS(0, error("AcceptToMemoryPool: tx inputs not found"),REJECT_INVALID, "bad-txns-inputs-missing");
                     }
                 }
