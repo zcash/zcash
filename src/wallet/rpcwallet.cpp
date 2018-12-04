@@ -5365,7 +5365,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
             }
         } //else fprintf(stderr,"utxo not eligible\n");
     }
-    if ( numkp < 1000000 && array != 0 )
+    if ( numkp < 10000 && array != 0 )
     {
         free(array);
         array = 0;
