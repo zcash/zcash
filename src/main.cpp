@@ -1317,9 +1317,9 @@ bool CheckTransactionWithoutProofVerification(uint32_t tiptime,const CTransactio
     // Transactions containing empty `vin` must have either non-empty
     // `vjoinsplit` or non-empty `vShieldedSpend`.
     if (tx.vin.empty() && tx.vjoinsplit.empty() && tx.vShieldedSpend.empty()) {
+        fprintf(stderr,"vin empty for tx: %s\n",tx.GetHash().ToString().c_str());
         return state.DoS(10, error("CheckTransaction(): vin empty"),
                          REJECT_INVALID, "bad-txns-vin-empty");
-        fprintf(stderr,"vin empty for tx: %s\n",tx.GetHash().ToString().c_str());
     }
     // Transactions containing empty `vout` must have either non-empty
     // `vjoinsplit` or non-empty `vShieldedOutput`.
