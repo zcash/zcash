@@ -1569,7 +1569,7 @@ void static BitcoinMiner()
                     } //else fprintf(stderr,"duplicate at j.%d\n",j);
                 } else Mining_start = 0;
             } else Mining_start = 0;
-            if ( ASSETCHAINS_STAKED != 0 )
+            if ( ASSETCHAINS_STAKED > 0 )
             {
                 int32_t percPoS,z; bool fNegative,fOverflow;
                 HASHTarget_POW = komodo_PoWtarget(&percPoS,HASHTarget,Mining_height,ASSETCHAINS_STAKED);
@@ -1858,8 +1858,10 @@ void static BitcoinMiner()
         }
 
         //fprintf(stderr,"nThreads.%d fGenerate.%d\n",(int32_t)nThreads,fGenerate);
-        if ( nThreads == 0 && ASSETCHAINS_STAKED )
+        if ( ASSETCHAINS_STAKED > 0 &&  pwallet != NULL && nThreads == 0 )
             nThreads = 1;
+        else
+            return;
 
         if ((nThreads == 0 || !fGenerate) && (VERUS_MINTBLOCKS == 0 || pwallet == NULL))
             return;

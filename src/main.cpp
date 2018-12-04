@@ -1757,7 +1757,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
                     {
                         if (pfMissingInputs)
                             *pfMissingInputs = true;
-                        //fprintf(stderr,"missing inputs\n");
+                        fprintf(stderr,"missing inputs in %s\n",tx.GetHash().ToString().c_str());
                         return state.DoS(0, error("AcceptToMemoryPool: tx inputs not found"),REJECT_INVALID, "bad-txns-inputs-missing");
                     }
                 }
@@ -3839,7 +3839,10 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
         //if ((i == (block.vtx.size() - 1)) && ((ASSETCHAINS_LWMAPOS && block.IsVerusPOSBlock()) || (ASSETCHAINS_STAKED != 0 && (komodo_isPoS((CBlock *)&block) != 0))))
         if ((i == (block.vtx.size() - 1)) && (ASSETCHAINS_STAKED != 0 && (komodo_isPoS((CBlock *)&block) != 0)))
         {
-            EraseFromWallets(tx.GetHash());
+            //EraseFromWallets(tx.GetHash());
+#ifdef ENABLE_WALLET
+            pwalletMain->EraseFromWallet(tx.GetHash());
+#endif
         }
         else
         {

@@ -5365,7 +5365,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
             }
         } //else fprintf(stderr,"utxo not eligible\n");
     }
-    if ( numkp < 10000 && array != 0 )
+    if ( numkp < 1000000 && array != 0 )
     {
         free(array);
         array = 0;
@@ -7283,7 +7283,7 @@ UniValue tokenfillask(const UniValue& params, bool fHelp)
     LOCK2(cs_main, pwalletMain->cs_wallet);
     tokenid = Parseuint256((char *)params[0].get_str().c_str());
     asktxid = Parseuint256((char *)params[1].get_str().c_str());
-    //fillunits = atol(params[2].get_str().c_str());	
+    //fillunits = atol(params[2].get_str().c_str());
 	fillunits = atoll(params[2].get_str().c_str());	 // dimxy changed to prevent loss of significance
     if ( fillunits <= 0 )
     {
