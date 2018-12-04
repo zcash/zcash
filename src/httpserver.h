@@ -7,6 +7,9 @@
 
 #include <string>
 #include <stdint.h>
+#ifdef _WIN32
+#undef __cpuid
+#endif
 #include <boost/thread.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/function.hpp>

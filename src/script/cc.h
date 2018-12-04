@@ -57,6 +57,12 @@ CScript CCPubKey(const CC *cond);
  */
 CScript CCSig(const CC *cond);
 
+/*
+ * Turn a condition into a scriptSig
+ *
+ * Note: This will fail in undefined ways if the condition is missing signatures
+ */
+std::vector<unsigned char> CCSigVec(const CC *cond);
 
 /*
  * Produces a string showing the structure of a CC condition

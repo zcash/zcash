@@ -56,8 +56,6 @@ typedef struct CC {
     };
 } CC;
 
-
-
 /*
  * Crypto Condition Visitor
  */
@@ -87,6 +85,7 @@ struct CC*      cc_conditionFromJSON(cJSON *params, char *err);
 struct CC*      cc_conditionFromJSONString(const char *json, char *err);
 struct CC*      cc_readConditionBinary(const uint8_t *cond_bin, size_t cond_bin_len);
 struct CC*      cc_readFulfillmentBinary(const uint8_t *ffill_bin, size_t ffill_bin_len);
+int             cc_readFulfillmentBinaryExt(const unsigned char *ffill_bin, size_t ffill_bin_len, CC **ppcc);
 struct CC*      cc_new(int typeId);
 struct cJSON*   cc_conditionToJSON(const CC *cond);
 char*           cc_conditionToJSONString(const CC *cond);

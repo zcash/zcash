@@ -2,6 +2,7 @@
 buildbot_deps: [] # Empty to remove python-pip
 build_deps:
   - bzip2
+  - cmake
   - gcc
   - gcc-c++
   - make
@@ -10,4 +11,3 @@ dist_deps:
   - pkgconfig # Required until b556beda264308e040f8d88aca4f2f386a0183d9 is pulled in
   - python-devel
   - redhat-rpm-config
-pip_bin_dir: /usr/bin

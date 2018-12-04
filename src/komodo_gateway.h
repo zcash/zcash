@@ -687,15 +687,17 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
             }
         }
     }
-    n = block.vtx[0].vout.size();
-    //script = (uint8_t *)block.vtx[0].vout[n-1].scriptPubKey.data();
-    //if ( n <= 2 || script[0] != 0x6a )
+    // we don't want these checks in VRSC, leave it at the Sapling upgrade
+    if ( ASSETCHAINS_SYMBOL[0] == 0 || 
+         (ASSETCHAINS_COMMISSION != 0 && height > 1) ||
+         NetworkUpgradeActive(height, Params().GetConsensus(), Consensus::UPGRADE_SAPLING) )
     {
+        n = block.vtx[0].vout.size();
         int64_t val,prevtotal = 0; int32_t strangeout=0,overflow = 0;
         total = 0;
         for (i=1; i<n; i++)
         {
-            script = (uint8_t *)block.vtx[0].vout[i].scriptPubKey.data();
+            script = (uint8_t *)&block.vtx[0].vout[i].scriptPubKey[0];
             if ( (val= block.vtx[0].vout[i].nValue) < 0 || val >= MAX_MONEY )
             {
                 overflow = 1;
@@ -737,7 +739,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
             }
             else if ( height > 814000 )
             {
-                script = (uint8_t *)block.vtx[0].vout[0].scriptPubKey.data();
+                script = (uint8_t *)&block.vtx[0].vout[0].scriptPubKey[0];
                 return(-1 * (komodo_electednotary(&num,script+1,height,0) >= 0) * (height > 1000000));
             }
         }
@@ -762,12 +764,12 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
             {
                 fprintf(stderr,"checkdeposit: ht.%d checktoshis %.8f overflow.%d total %.8f strangeout.%d\n",height,dstr(checktoshis),overflow,dstr(total),strangeout);
                 if ( strangeout != 0 )
-                    fprintf(stderr,">>>>>>>>>>>>> %s DUST ht.%d strangout.%d notmatched.%d <<<<<<<<<\n",ASSETCHAINS_SYMBOL,height,strangeout,notmatched);
+                    fprintf(stderr,">>>>>>>>>>>>> %s DUST ht.%d strangeout.%d notmatched.%d <<<<<<<<<\n",ASSETCHAINS_SYMBOL,height,strangeout,notmatched);
                 return(-1);
             }
         }
-        return(0);
     }
+    return(0);
 }
 
 const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int32_t opretlen,uint256 txid,uint16_t vout,char *source)
@@ -1380,12 +1382,13 @@ void komodo_passport_iteration()
     }
     if ( komodo_chainactive_timestamp() > lastinterest )
     {
-        komodo_interestsum();
-        komodo_longestchain();
+        if ( ASSETCHAINS_SYMBOL[0] == 0 )
+            komodo_interestsum();
+        //komodo_longestchain();
         lastinterest = komodo_chainactive_timestamp();
     }
     refsp = komodo_stateptr(symbol,dest);
-    if ( ASSETCHAINS_SYMBOL[0] == 0 )
+    if ( ASSETCHAINS_SYMBOL[0] == 0 || strcmp(ASSETCHAINS_SYMBOL,"KMDCC") == 0 )
     {
         refid = 33;
         limit = 10000000;
@@ -1492,7 +1495,7 @@ void komodo_passport_iteration()
             komodo_statefname(fname,baseid<32?base:(char *)"",(char *)"realtime");
             if ( (fp= fopen(fname,"wb")) != 0 )
             {
-                buf[0] = (uint32_t)chainActive.LastTip()->nHeight;
+                buf[0] = (uint32_t)chainActive.LastTip()->GetHeight();
                 buf[1] = (uint32_t)komodo_longestchain();
                 if ( buf[0] != 0 && buf[0] == buf[1] )
                 {

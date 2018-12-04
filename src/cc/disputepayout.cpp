@@ -46,7 +46,7 @@ bool Eval::DisputePayout(AppVM &vm, std::vector<uint8_t> params, const CTransact
         if (!GetTxConfirmed(disputeTx.vin[0].prevout.hash, sessionTx, sessionBlock))
             return Error("couldnt-get-parent");
 
-        if (GetCurrentHeight() < sessionBlock.nHeight + waitBlocks)
+        if (GetCurrentHeight() < sessionBlock.GetHeight() + waitBlocks)
             return Invalid("dispute-too-soon");  // Not yet
     }
 

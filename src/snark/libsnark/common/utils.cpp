@@ -15,8 +15,8 @@
 
 namespace libsnark {
 
-uint64_t log2(uint64_t n)
-/* returns ceil(log2(n)), so 1ul<<log2(n) is the smallest power of 2,
+size_t log2(size_t n)
+/* returns ceil(log2(n)), so UINT64_C(1)<<log2(n) is the smallest power of 2,
    that is not less than n. */
 {
     uint64_t r = ((n & (n-1)) == 0 ? 0 : 1); // add 1 if n is not power of 2

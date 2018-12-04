@@ -72,7 +72,7 @@ bool FSMExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
     else return(true);
 }
 
-bool FSMValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
+bool FSMValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
 {
     int32_t numvins,numvouts,preventCCvins,preventCCvouts,i; bool retval;
     return(false); // reject any FSM CC for now
@@ -122,6 +122,7 @@ bool FSMValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
 
 int64_t AddFSMInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,int64_t total,int32_t maxinputs)
 {
+    // add threshold check
     char coinaddr[64]; int64_t nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t n = 0;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     GetCCaddress(cp,coinaddr,pk);
@@ -156,7 +157,8 @@ std::string FSMList()
 
 std::string FSMCreate(uint64_t txfee,std::string name,std::string states)
 {
-    CMutableTransaction mtx; CPubKey mypk,fsmpk; CScript opret; int64_t inputs,CCchange=0,nValue=COIN; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    CPubKey mypk,fsmpk; CScript opret; int64_t inputs,CCchange=0,nValue=COIN; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_FSM);
     if ( txfee == 0 )
         txfee = 10000;
@@ -176,7 +178,8 @@ std::string FSMCreate(uint64_t txfee,std::string name,std::string states)
 
 std::string FSMInfo(uint256 fsmtxid)
 {
-    CMutableTransaction mtx; CPubKey mypk,fsmpk; int64_t funds = 0; CScript opret; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    CPubKey mypk,fsmpk; int64_t funds = 0; CScript opret; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_FSM);
     mypk = pubkey2pk(Mypubkey());
     fsmpk = GetUnspendable(cp,0);

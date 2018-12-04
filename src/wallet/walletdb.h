@@ -11,6 +11,7 @@
 #include "key.h"
 #include "keystore.h"
 #include "zcash/Address.hpp"
+#include "zcash/zip32.h"
 
 #include <list>
 #include <stdint.h>
@@ -40,12 +41,49 @@ enum DBErrors
     DB_NEED_REWRITE
 };
 
+/* simple hd chain data model */
+class CHDChain
+{
+public:
+    static const int VERSION_HD_BASE = 1;
+    static const int CURRENT_VERSION = VERSION_HD_BASE;
+    int nVersion;
+    uint256 seedFp;
+    int64_t nCreateTime; // 0 means unknown
+    uint32_t saplingAccountCounter;
+
+    CHDChain() { SetNull(); }
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action)
+    {
+        READWRITE(nVersion);
+        READWRITE(seedFp);
+        READWRITE(nCreateTime);
+        READWRITE(saplingAccountCounter);
+    }
+
+    void SetNull()
+    {
+        nVersion = CHDChain::CURRENT_VERSION;
+        seedFp.SetNull();
+        nCreateTime = 0;
+        saplingAccountCounter = 0;
+    }
+};
+
 class CKeyMetadata
 {
 public:
-    static const int CURRENT_VERSION=1;
+    static const int VERSION_BASIC=1;
+    static const int VERSION_WITH_HDDATA=10;
+    static const int CURRENT_VERSION=VERSION_WITH_HDDATA;
     int nVersion;
     int64_t nCreateTime; // 0 means unknown
+    std::string hdKeypath; //optional HD/zip32 keypath
+    uint256 seedFp;
 
     CKeyMetadata()
     {
@@ -53,23 +91,29 @@ public:
     }
     CKeyMetadata(int64_t nCreateTime_)
     {
-        nVersion = CKeyMetadata::CURRENT_VERSION;
+        SetNull();
         nCreateTime = nCreateTime_;
     }
 
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+    inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITE(this->nVersion);
-        nVersion = this->nVersion;
         READWRITE(nCreateTime);
+        if (this->nVersion >= VERSION_WITH_HDDATA)
+        {
+            READWRITE(hdKeypath);
+            READWRITE(seedFp);
+        }
     }
 
     void SetNull()
     {
         nVersion = CKeyMetadata::CURRENT_VERSION;
         nCreateTime = 0;
+        hdKeypath.clear();
+        seedFp.SetNull();
     }
 };
 
@@ -133,15 +177,28 @@ public:
     static bool Recover(CDBEnv& dbenv, const std::string& filename, bool fOnlyKeys);
     static bool Recover(CDBEnv& dbenv, const std::string& filename);
 
+    bool WriteHDSeed(const HDSeed& seed);
+    bool WriteCryptedHDSeed(const uint256& seedFp, const std::vector<unsigned char>& vchCryptedSecret);
+    //! write the hdchain model (external chain child index counter)
+    bool WriteHDChain(const CHDChain& chain);
+
     /// Write spending key to wallet database, where key is payment address and value is spending key.
-    bool WriteZKey(const libzcash::PaymentAddress& addr, const libzcash::SpendingKey& key, const CKeyMetadata &keyMeta);
-    bool WriteCryptedZKey(const libzcash::PaymentAddress & addr,
+    bool WriteZKey(const libzcash::SproutPaymentAddress& addr, const libzcash::SproutSpendingKey& key, const CKeyMetadata &keyMeta);
+    bool WriteSaplingZKey(const libzcash::SaplingIncomingViewingKey &ivk,
+                          const libzcash::SaplingExtendedSpendingKey &key,
+                          const CKeyMetadata  &keyMeta);
+    bool WriteSaplingPaymentAddress(const libzcash::SaplingPaymentAddress &addr,
+                                    const libzcash::SaplingIncomingViewingKey &ivk);
+    bool WriteCryptedZKey(const libzcash::SproutPaymentAddress & addr,
                           const libzcash::ReceivingKey & rk,
                           const std::vector<unsigned char>& vchCryptedSecret,
                           const CKeyMetadata &keyMeta);
+    bool WriteCryptedSaplingZKey(const libzcash::SaplingExtendedFullViewingKey &extfvk,
+                          const std::vector<unsigned char>& vchCryptedSecret,
+                          const CKeyMetadata &keyMeta);
 
-    bool WriteViewingKey(const libzcash::ViewingKey &vk);
-    bool EraseViewingKey(const libzcash::ViewingKey &vk);
+    bool WriteSproutViewingKey(const libzcash::SproutViewingKey &vk);
+    bool EraseSproutViewingKey(const libzcash::SproutViewingKey &vk);
 
 private:
     CWalletDB(const CWalletDB&);

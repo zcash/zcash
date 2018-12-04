@@ -6,7 +6,7 @@
 #ifndef	_CONSTR_CHOICE_H_
 #define	_CONSTR_CHOICE_H_
 
-#include <asn_application.h>
+#include "asn_application.h"
 
 #ifdef __cplusplus
 extern "C" {
