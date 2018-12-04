@@ -331,7 +331,7 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
                     }
                     dPriority += (double)nValueIn * nConf;
                 }
-                if ( numNotaryVins >= NUM_NOTARIES / 5 )
+                if ( NUM_NOTARIES != 0 && numNotaryVins >= NUM_NOTARIES / 5 )
                     fNotarisation = true;
                 nTotalIn += tx.GetShieldedValueIn();
             }
