@@ -5185,8 +5185,10 @@ struct komodo_staking *komodo_addutxo(struct komodo_staking *array,int32_t *numk
     {
         *maxkp += 1000;
         array = (struct komodo_staking *)realloc(array,sizeof(*array) * (*maxkp));
+        //fprintf(stderr,"realloc max.%d array.%p\n",*maxkp,array);
     }
     kp = &array[(*numkp)++];
+    //fprintf(stderr,"kp.%p num.%d\n",kp,*numkp);
     memset(kp,0,sizeof(*kp));
     strcpy(kp->address,address);
     kp->txid = txid;
@@ -5209,15 +5211,11 @@ arith_uint256 _komodo_eligible(struct komodo_staking *kp,arith_uint256 ratio,uin
         diff = 3600*24*30;
     if ( iter > 0 )
         diff += segid*2;
-    coinage = ((uint64_t)kp->nValue/COIN * diff);
+    coinage = ((uint64_t)kp->nValue * diff);
     if ( blocktime+iter+segid*2 > prevtime+480 )
         coinage *= ((blocktime+iter+segid*2) - (prevtime+400));
-    //if ( nHeight >= 2500 && blocktime+iter+segid*2 > prevtime+180 )
-    //    coinage *= ((blocktime+iter+segid*2) - (prevtime+60));
     coinage256 = arith_uint256(coinage+1);
     hashval = ratio * (kp->hashval / coinage256);
-    //if ( nHeight >= 900 && nHeight < 916 )
-    //    hashval = (hashval / coinage256);
     return(hashval);
 }
 
@@ -5247,7 +5245,7 @@ uint32_t komodo_eligible(arith_uint256 bnTarget,arith_uint256 ratio,struct komod
                 return(blocktime);
             }
         }
-    }
+    } else fprintf(stderr,"maxiters is not good enough\n");
     return(0);
 }
 
@@ -5274,10 +5272,10 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
     if ( (minage= nHeight*3) > 6000 ) // about 100 blocks
         minage = 6000;
     komodo_segids(hashbuf,nHeight-101,100);
-    if ( *blocktimep > tipindex->nTime+60 )
+    if ( *blocktimep < tipindex->nTime+60 )
         *blocktimep = tipindex->nTime+60;
     //fprintf(stderr,"Start scan of utxo for staking %u ht.%d\n",(uint32_t)time(NULL),nHeight);
-    if ( time(NULL) > lasttime+600 )
+    if ( time(NULL) > lasttime+600 || array == 0 )
     {
         if ( array != 0 )
         {
@@ -5296,7 +5294,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
             counter++;
             if ( out.nDepth < nMinDepth || out.nDepth > nMaxDepth )
             {
-                //fprintf(stderr,"komodo_staked invalid depth %d\n",(int32_t)out.nDepth);
+                fprintf(stderr,"komodo_staked invalid depth %d\n",(int32_t)out.nDepth);
                 continue;
             }
             CAmount nValue = out.tx->vout[out.i].nValue;
@@ -5310,12 +5308,14 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
                 if ( GetTransaction(out.tx->GetHash(),tx,hashBlock,true) != 0 && (pindex= komodo_getblockindex(hashBlock)) != 0 )
                 {
                     array = komodo_addutxo(array,&numkp,&maxkp,(uint32_t)pindex->nTime,(uint64_t)nValue,out.tx->GetHash(),out.i,(char *)CBitcoinAddress(address).ToString().c_str(),hashbuf,(CScript)pk);
+                    //fprintf(stderr,"addutxo numkp.%d vs max.%d\n",numkp,maxkp);
                 }
             }
         }
         lasttime = (uint32_t)time(NULL);
-        //fprintf(stderr,"finished kp data of utxo for staking %u ht.%d numkp.%d maxkp.%d\n",(uint32_t)time(NULL),nHeight,numkp,maxkp);
+//fprintf(stderr,"finished kp data of utxo for staking %u ht.%d numkp.%d maxkp.%d\n",(uint32_t)time(NULL),nHeight,numkp,maxkp);
     }
+//fprintf(stderr,"numkp.%d blocktime.%u\n",numkp,*blocktimep);
     block_from_future_rejecttime = (uint32_t)GetAdjustedTime() + 57;
     for (i=winners=0; i<numkp; i++)
     {
@@ -5328,7 +5328,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
         if ( (eligible2= komodo_eligible(bnTarget,ratio,kp,nHeight,*blocktimep,(uint32_t)tipindex->nTime+27,minage,hashbuf)) == 0 )
             continue;
         eligible = komodo_stake(0,bnTarget,nHeight,kp->txid,kp->vout,0,(uint32_t)tipindex->nTime+27,kp->address);
-        //fprintf(stderr,"i.%d %u vs %u\n",i,eligible2,eligible);
+//fprintf(stderr,"i.%d %u vs %u\n",i,eligible2,eligible);
         if ( eligible > 0 )
         {
             besttime = m = 0;
@@ -5341,7 +5341,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
                     if ( eligible < block_from_future_rejecttime ) // nothing gained by going earlier
                         break;
                     m++;
-                    //fprintf(stderr,"m.%d ht.%d validated winning blocktime %u -> %.8f eligible.%u test prior\n",m,nHeight,*blocktimep,(double)kp->nValue/COIN,eligible);
+//fprintf(stderr,"m.%d ht.%d validated winning blocktime %u -> %.8f eligible.%u test prior\n",m,nHeight,*blocktimep,(double)kp->nValue/COIN,eligible);
                 }
             }
             else
@@ -5351,7 +5351,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
             }
             eligible = besttime;
             winners++;
-            //fprintf(stderr,"ht.%d validated winning [%d] -> %.8f eligible.%u test prior\n",nHeight,(int32_t)(eligible - tipindex->nTime),(double)kp->nValue/COIN,eligible);
+//fprintf(stderr,"ht.%d validated winning [%d] -> %.8f eligible.%u test prior\n",nHeight,(int32_t)(eligible - tipindex->nTime),(double)kp->nValue/COIN,eligible);
             if ( earliest == 0 || eligible < earliest || (eligible == earliest && (*utxovaluep == 0 || kp->nValue < *utxovaluep)) )
             {
                 earliest = eligible;
@@ -5364,7 +5364,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
                 fprintf(stderr,"ht.%d earliest.%u [%d].%d (%s) nValue %.8f locktime.%u counter.%d winners.%d\n",nHeight,earliest,(int32_t)(earliest - tipindex->nTime),m,kp->address,(double)kp->nValue/COIN,*txtimep,counter,winners);
             }
         } //else fprintf(stderr,"utxo not eligible\n");
-    } //else fprintf(stderr,"no tipindex\n");
+    }
     if ( numkp < 10000 && array != 0 )
     {
         free(array);
@@ -5399,7 +5399,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
             for (i=0; i<siglen; i++)
                 utxosig[i] = ptr[i];//, fprintf(stderr,"%02x",ptr[i]);
             //fprintf(stderr," siglen.%d\n",siglen);
-            //fprintf(stderr,"best %u from %u, gap %d lag.%d\n",earliest,*blocktimep,(int32_t)(earliest - *blocktimep),(int32_t)(time(NULL) - *blocktimep));
+//fprintf(stderr,"best %u from %u, gap %d lag.%d\n",earliest,*blocktimep,(int32_t)(earliest - *blocktimep),(int32_t)(time(NULL) - *blocktimep));
             *blocktimep = earliest;
         }
     } //else fprintf(stderr,"no earliest utxo for staking\n");
