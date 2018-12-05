@@ -1947,7 +1947,7 @@ void UpdateCoins(const CTransaction& tx, CCoinsViewCache& inputs, CTxUndo &txund
     inputs.SetNullifiers(tx, true);
 
     // add outputs
-    inputs.ModifyCoins(tx.GetHash())->FromTx(tx, nHeight);
+    inputs.ModifyNewCoins(tx.GetHash())->FromTx(tx, nHeight);
 }
 
 void UpdateCoins(const CTransaction& tx, CCoinsViewCache& inputs, int nHeight)
@@ -2531,7 +2531,8 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             nFees += view.GetValueIn(tx)-tx.GetValueOut();
 
             std::vector<CScriptCheck> vChecks;
-            if (!ContextualCheckInputs(tx, state, view, fExpensiveChecks, flags, false, txdata[i], chainparams.GetConsensus(), consensusBranchId, nScriptCheckThreads ? &vChecks : NULL))
+            bool fCacheResults = fJustCheck; /* Don't cache results if we're actually connecting blocks (still consult the cache, though) */
+            if (!ContextualCheckInputs(tx, state, view, fExpensiveChecks, flags, fCacheResults, txdata[i], chainparams.GetConsensus(), consensusBranchId, nScriptCheckThreads ? &vChecks : NULL))
                 return false;
             control.Add(vChecks);
         }
