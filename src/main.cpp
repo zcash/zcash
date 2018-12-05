@@ -1259,12 +1259,12 @@ int32_t komodo_isnotaryvout(char *coinaddr) // from ac_private chains only
     return(0);
 }
 
-int32_t komodo_acpublic();
+int32_t komodo_acpublic(uint32_t tiptime);
 
 bool CheckTransactionWithoutProofVerification(uint32_t tiptime,const CTransaction& tx, CValidationState &state)
 {
     // Basic checks that don't depend on any context
-    int32_t invalid_private_taddr=0,z_z=0,z_t=0,t_z=0,acpublic = komodo_acpublic();
+    int32_t invalid_private_taddr=0,z_z=0,z_t=0,t_z=0,acpublic = komodo_acpublic(tiptime);
     /**
      * Previously:
      * 1. The consensus rule below was:

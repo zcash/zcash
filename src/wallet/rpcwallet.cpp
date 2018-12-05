@@ -2342,7 +2342,7 @@ UniValue walletlock(const UniValue& params, bool fHelp)
     return NullUniValue;
 }
 
-int32_t komodo_acpublic();
+int32_t komodo_acpublic(uint32_t tiptime);
 
 UniValue encryptwallet(const UniValue& params, bool fHelp)
 {
@@ -2350,7 +2350,7 @@ UniValue encryptwallet(const UniValue& params, bool fHelp)
         return NullUniValue;
 
     string enableArg = "developerencryptwallet";
-    flag = (komodo_acpublic() || ASSETCHAINS_SYMBOL[0] == 0);
+    flag = (komodo_acpublic(0) || ASSETCHAINS_SYMBOL[0] == 0);
     auto fEnableWalletEncryption = fExperimentalMode && GetBoolArg("-" + enableArg, flag);
 
     std::string strWalletEncryptionDisabledMsg = "";

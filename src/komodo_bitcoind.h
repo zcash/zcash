@@ -1832,11 +1832,19 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
     else return(0);
 }
 
-int32_t komodo_acpublic()
+int32_t komodo_acpublic(uint32_t tiptime)
 {
-    int32_t acpublic = ASSETCHAINS_PUBLIC;
-    if ( (ASSETCHAINS_SYMBOL[0] == 0 || strcmp(ASSETCHAINS_SYMBOL,"ZEX") == 0) && tiptime >= KOMODO_SAPLING_DEADLINE )
-        acpublic = 1;
+    int32_t acpublic = ASSETCHAINS_PUBLIC; CBlockPtr *pindex;
+    if ( acpublic == 0 )
+    {
+        if ( tiptime == 0 )
+        {
+            if ( (pindex= chainActive.LastTip()) != 0 )
+                tiptime = pindex->nTime;
+        }
+        if ( (ASSETCHAINS_SYMBOL[0] == 0 || strcmp(ASSETCHAINS_SYMBOL,"ZEX") == 0) && tiptime >= KOMODO_SAPLING_DEADLINE )
+            acpublic = 1;
+    }
     return(acpublic);
 }
 
