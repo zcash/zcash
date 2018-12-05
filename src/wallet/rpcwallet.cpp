@@ -2342,6 +2342,7 @@ UniValue walletlock(const UniValue& params, bool fHelp)
     return NullUniValue;
 }
 
+int32_t komodo_acpublic();
 
 UniValue encryptwallet(const UniValue& params, bool fHelp)
 {
@@ -2349,7 +2350,8 @@ UniValue encryptwallet(const UniValue& params, bool fHelp)
         return NullUniValue;
 
     string enableArg = "developerencryptwallet";
-    auto fEnableWalletEncryption = fExperimentalMode && GetBoolArg("-" + enableArg, false);
+    flag = (komodo_acpublic() || ASSETCHAINS_SYMBOL[0] == 0);
+    auto fEnableWalletEncryption = fExperimentalMode && GetBoolArg("-" + enableArg, flag);
 
     std::string strWalletEncryptionDisabledMsg = "";
     if (!fEnableWalletEncryption) {
@@ -4528,7 +4530,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
         return NullUniValue;
     
     string enableArg = "zmergetoaddress";
-    auto fEnableMergeToAddress = fExperimentalMode && GetBoolArg("-" + enableArg, false);
+    auto fEnableMergeToAddress = fExperimentalMode && GetBoolArg("-" + enableArg, true);
     std::string strDisabledMsg = "";
     if (!fEnableMergeToAddress) {
         strDisabledMsg = experimentalDisabledHelpMsg("z_mergetoaddress", enableArg);
