@@ -2350,7 +2350,7 @@ UniValue encryptwallet(const UniValue& params, bool fHelp)
         return NullUniValue;
 
     string enableArg = "developerencryptwallet";
-    flag = (komodo_acpublic(0) || ASSETCHAINS_SYMBOL[0] == 0);
+    int32_t flag = (komodo_acpublic(0) || ASSETCHAINS_SYMBOL[0] == 0);
     auto fEnableWalletEncryption = fExperimentalMode && GetBoolArg("-" + enableArg, flag);
 
     std::string strWalletEncryptionDisabledMsg = "";
