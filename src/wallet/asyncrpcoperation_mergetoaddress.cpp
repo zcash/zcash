@@ -662,7 +662,7 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
                 if (mapBlockIndex.find(wtx.hashBlock) == mapBlockIndex.end()) {
                     throw JSONRPCError(RPC_WALLET_ERROR, strprintf("mapBlockIndex does not contain block hash %s", wtx.hashBlock.ToString()));
                 }
-                wtxHeight = mapBlockIndex[wtx.hashBlock]->nHeight;
+                wtxHeight = mapBlockIndex[wtx.hashBlock]->GetHeight();
                 wtxDepth = wtx.GetDepthInMainChain();
             }
             LogPrint("zrpcunsafe", "%s: spending note (txid=%s, vjoinsplit=%d, ciphertext=%d, amount=%s, height=%d, confirmations=%d)\n",
