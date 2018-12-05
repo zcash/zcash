@@ -13,14 +13,14 @@ pkgconfig_DATA = libzcashconsensus.pc
 endif
 
 
-BITCOIND_BIN=$(top_builddir)/src/zcashd$(EXEEXT)
-BITCOIN_CLI_BIN=$(top_builddir)/src/zcash-cli$(EXEEXT)
+BITCOIND_BIN=$(top_builddir)/src/komodod$(EXEEXT)
+BITCOIN_CLI_BIN=$(top_builddir)/src/komodo-cli$(EXEEXT)
 #WALLET_UTILITY_BIN=$(top_builddir)/src/wallet-utility$(EXEEXT)
 BITCOIN_WIN_INSTALLER=$(PACKAGE)-$(PACKAGE_VERSION)-win$(WINDOWS_BITS)-setup$(EXEEXT)
 
 if TARGET_DARWIN
-OSX_APP=Bitcoin-Qt.app
-OSX_DMG=Bitcoin-Core.dmg
+OSX_APP=Agama.app
+OSX_DMG=Agama.dmg
 OSX_BACKGROUND_IMAGE=background.tiff
 OSX_DEPLOY_SCRIPT=$(top_srcdir)/contrib/macdeploy/macdeployqtplus
 OSX_FANCY_PLIST=$(top_srcdir)/contrib/macdeploy/fancy.plist

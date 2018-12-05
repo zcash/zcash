@@ -8,7 +8,7 @@
 #define	_ConditionTypes_H_
 
 
-#include <asn_application.h>
+#include "asn_application.h"
 
 /* Including external dependencies */
 #include <BIT_STRING.h>

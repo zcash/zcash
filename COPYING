@@ -1,6 +1,8 @@
-Copyright (c) 2016-2018 The Komodo developers
-Copyright (c) 2016-2017 The Zcash developers
 Copyright (c) 2009-2017 The Bitcoin Core developers
+Copyright (c) 2009-2018 Bitcoin Developers
+Copyright (c) 2016-2017 The Zcash developers
+Copyright (c) 2016-2018 The Komodo developers
+Copyright (c) 2018 The VerusCoin developers
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -32,7 +34,7 @@ OpenSSL Toolkit (https://www.openssl.org/). This product includes cryptographic
 software written by Eric Young (eay@cryptsoft.com).
 
 
-Although almost all of the Zcash code is licensed under "permissive" open source
+Although almost all of the Zcash/Komodo/VerusCoin code is licensed under "permissive" open source
 licenses, users and distributors should note that when built using the default
 build options, Zcash depends on Oracle Berkeley DB 6.2.x, which is licensed
 under the GNU Affero General Public License.

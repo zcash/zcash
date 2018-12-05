@@ -216,6 +216,35 @@ end:
     return cond;
 }
 
+int cc_readFulfillmentBinaryExt(const unsigned char *ffill_bin, size_t ffill_bin_len, CC **ppcc) {
+
+    int error = 0;
+    unsigned char *buf = calloc(1,ffill_bin_len);
+    Fulfillment_t *ffill = 0;
+    asn_dec_rval_t rval = ber_decode(0, &asn_DEF_Fulfillment, (void **)&ffill, ffill_bin, ffill_bin_len);
+    if (rval.code != RC_OK) {
+        error = rval.code;
+        goto end;
+    }
+    // Do malleability check
+    asn_enc_rval_t rc = der_encode_to_buffer(&asn_DEF_Fulfillment, ffill, buf, ffill_bin_len);
+    if (rc.encoded == -1) {
+        fprintf(stderr, "FULFILLMENT NOT ENCODED\n");
+        error = -1;
+        goto end;
+    }
+    if (rc.encoded != ffill_bin_len || 0 != memcmp(ffill_bin, buf, rc.encoded)) {
+        error = (rc.encoded == ffill_bin_len) ? -3 : -2;
+        goto end;
+    }
+    
+    *ppcc = fulfillmentToCC(ffill);
+end:
+    free(buf);
+    if (ffill) ASN_STRUCT_FREE(asn_DEF_Fulfillment, ffill);
+    return error;
+}
+
 
 int cc_visit(CC *cond, CCVisitor visitor) {
     int out = visitor.visit(cond, visitor);
@@ -224,7 +253,6 @@ int cc_visit(CC *cond, CCVisitor visitor) {
     }
     return out;
 }
-
 
 int cc_verify(const struct CC *cond, const unsigned char *msg, size_t msgLength, int doHashMsg,
               const unsigned char *condBin, size_t condBinLength,

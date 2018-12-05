@@ -8,6 +8,8 @@
 #include <mutex>
 #include <string>
 
+extern int64_t nHashCount;
+
 struct AtomicCounter {
     std::atomic<uint64_t> value;
 
@@ -21,7 +23,7 @@ struct AtomicCounter {
         --value;
     }
 
-    int get() const {
+    uint64_t get() const {
         return value.load();
     }
 };
@@ -52,6 +54,8 @@ public:
     uint64_t threadCount();
 
     double rate(const AtomicCounter& count);
+    double rate(const int64_t count);
+
 };
 
 extern AtomicCounter transactionsValidated;

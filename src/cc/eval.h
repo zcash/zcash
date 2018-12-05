@@ -36,6 +36,7 @@
  * there should be a code identifying it. For example,
  * a possible code is EVAL_BITCOIN_SCRIPT, where the entire binary
  * after the code is interpreted as a bitcoin script.
+ * Verus EVAL_STAKEGUARD is 0x01
  */
 #define FOREACH_EVAL(EVAL)             \
         EVAL(EVAL_IMPORTPAYOUT, 0xe1)  \
@@ -174,7 +175,7 @@ public:
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+    inline void SerializationOp(Stream& s, Operation ser_action) {
 
         bool IsBack = IsBackNotarisation;
         if (2 == IsBackNotarisation) IsBack = DetectBackNotarisation(s, ser_action);
@@ -270,7 +271,7 @@ public:
     ADD_SERIALIZE_METHODS;
     
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+    inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITE(VARINT(nIndex));
         READWRITE(branch);
     }

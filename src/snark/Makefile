@@ -15,8 +15,13 @@ endif
 
 # To override these, use "make OPTFLAGS=..." etc.
 CURVE = BN128
-OPTFLAGS = -O2 -march=native -mtune=native
-FEATUREFLAGS = -DUSE_ASM -DMONTGOMERY_OUTPUT
+OPTFLAGS = -O2 -march=x86-64 -g -mtune=x86-64
+
+ifneq ($(PLATFORM),darwin)
+	FEATUREFLAGS = -DUSE_ASM -DMONTGOMERY_OUTPUT
+else
+	FEATUREFLAGS = -DUSE_ASM -DMONTGOMERY_OUTPUT -D__SIZE_TYPE__="unsigned long long"
+endif
 
 # Initialize this using "CXXFLAGS=... make". The makefile appends to that.
 CXXFLAGS += -std=c++11 -Wall -Wextra -Wno-unused-parameter -Wno-comment -Wfatal-errors $(OPTFLAGS) $(FEATUREFLAGS) -DCURVE_$(CURVE)
@@ -26,7 +31,7 @@ DEPINST = depinst
 
 CXXFLAGS += -I$(DEPINST)/include -Ilibsnark
 LDFLAGS += -L$(DEPINST)/lib -Wl,-rpath,$(DEPINST)/lib
-LDLIBS += -lgmpxx -lgmp -lboost_program_options-mt -lsodium
+LDLIBS += -lgmpxx -lgmp -lboost_program_options -lsodium
 # List of .a files to include within libsnark.a and libsnark.so:
 AR_LIBS =
 # List of library files to install:
@@ -139,7 +144,10 @@ ifeq ($(PROFILE_OP_COUNTS),1)
 endif
 
 ifeq ($(STATIC),1)
-	CXXFLAGS += -static -DSTATIC
+ifneq ($(PLATFORM),darwin)
+	CXXFLAGS += -static
+endif
+	CXXFLAGS += -DSTATIC
 else
 	CXXFLAGS += -fPIC
 endif
@@ -158,7 +166,7 @@ ifeq ($(DEBUG),1)
 endif
 
 ifeq ($(PERFORMANCE),1)
-        OPTFLAGS = -O3 -march=native -mtune=native
+        OPTFLAGS = -O3 -march=x86-64 -g -mtune=x86-64
         CXXFLAGS += -DNDEBUG
         # Enable link-time optimization:
         CXXFLAGS += -flto -fuse-linker-plugin

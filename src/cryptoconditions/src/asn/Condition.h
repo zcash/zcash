@@ -8,7 +8,7 @@
 #define	_Condition_H_
 
 
-#include <asn_application.h>
+#include "asn_application.h"
 
 /* Including external dependencies */
 #include "SimpleSha256Condition.h"

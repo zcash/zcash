@@ -19,6 +19,7 @@
 
 #include <boost/foreach.hpp>
 #include <boost/test/unit_test.hpp>
+#include <boost/test/data/test_case.hpp>
 
 using namespace std;
 
@@ -43,9 +44,10 @@ sign_multisig(CScript scriptPubKey, vector<CKey> keys, CTransaction transaction,
     return result;
 }
 
-BOOST_AUTO_TEST_CASE(multisig_verify)
+// Parameterized testing over consensus branch ids
+BOOST_DATA_TEST_CASE(multisig_verify, boost::unit_test::data::xrange(static_cast<int>(Consensus::MAX_NETWORK_UPGRADES)))
 {
-    uint32_t consensusBranchId = SPROUT_BRANCH_ID;
+    uint32_t consensusBranchId = NetworkUpgradeInfo[sample].nBranchId;
     unsigned int flags = SCRIPT_VERIFY_P2SH | SCRIPT_VERIFY_STRICTENC;
 
     ScriptError err;
@@ -277,9 +279,10 @@ BOOST_AUTO_TEST_CASE(multisig_Solver1)
     }
 }
 
-BOOST_AUTO_TEST_CASE(multisig_Sign)
+// Parameterized testing over consensus branch ids
+BOOST_DATA_TEST_CASE(multisig_Sign, boost::unit_test::data::xrange(static_cast<int>(Consensus::MAX_NETWORK_UPGRADES)))
 {
-    uint32_t consensusBranchId = SPROUT_BRANCH_ID;
+    uint32_t consensusBranchId = NetworkUpgradeInfo[sample].nBranchId;
 
     // Test SignSignature() (and therefore the version of Solver() that signs transactions)
     CBasicKeyStore keystore;
