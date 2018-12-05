@@ -25,7 +25,13 @@
 #include <assert.h>
 
 typedef uint16_t u16;
+#ifdef _WIN32
+typedef unsigned long long u64;
+#elif __linux__
 typedef uint64_t u64;
+#else
+typedef unsigned long u64;
+#endif
 
 #ifdef EQUIHASH_TROMP_ATOMIC
 #include <atomic>

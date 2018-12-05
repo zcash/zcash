@@ -20,13 +20,13 @@ namespace libsnark {
 
 typedef std::vector<bool> bit_vector;
 
-/// returns ceil(log2(n)), so 1ul<<log2(n) is the smallest power of 2, that is not less than n
-uint64_t log2(uint64_t n);
+/// returns ceil(log2(n)), so UINT64_C(1)<<log2(n) is the smallest power of 2, that is not less than n
+size_t log2(size_t n);
 
-inline uint64_t exp2(uint64_t k) { return 1ull << k; }
+inline size_t exp2(size_t k) { return UINT64_C(1) << k; }
 
 uint64_t bitreverse(uint64_t n, const uint64_t l);
-bit_vector int_list_to_bits(const std::initializer_list<uint64_t> &l, const uint64_t wordsize);
+bit_vector int_list_to_bits(const std::initializer_list<uint64_t> &l, const size_t wordsize);
 int64_t div_ceil(int64_t x, int64_t y);
 
 bool is_little_endian();

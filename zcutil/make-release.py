@@ -217,7 +217,7 @@ def patch_version_in_files(release, releaseprev):
     patch_gitian_linux_yml(release, releaseprev)
 
 
-@phase('Patching release height for auto-senescence.')
+@phase('Patching release height for end-of-support halt.')
 def patch_release_height(releaseheight):
     rgx = re.compile(
         r'^(static const int APPROX_RELEASE_HEIGHT = )\d+(;)$',

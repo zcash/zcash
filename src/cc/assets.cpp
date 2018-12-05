@@ -129,7 +129,11 @@
  vout.n-1: opreturn [EVAL_ASSETS] ['E'] [assetid vin0+1] [assetid vin2] [remaining asset2 required] [origpubkey]
 */
 
-bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
+
+
+
+// tx validation
+bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
 {
     static uint256 zero;
     CTxDestination address; CTransaction vinTx,createTx; uint256 hashBlock,assetid,assetid2; int32_t i,starti,numvins,numvouts,preventCCvins,preventCCvouts; int64_t remaining_price,nValue,assetoshis,outputs,inputs,tmpprice,totalunits,ignore; std::vector<uint8_t> origpubkey,tmporigpubkey,ignorepubkey; uint8_t funcid; char destaddr[64],origaddr[64],CCaddr[64];
@@ -155,9 +159,11 @@ bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
         else starti = 1;
         if ( assetid == zero )
             return eval->Invalid("illegal assetid");
-        else if ( AssetExactAmounts(cp,inputs,starti,outputs,eval,tx,assetid) == false )
+        else if ( AssetExactAmounts(2, cp,inputs,starti,outputs,eval,tx,assetid) == false )
             return eval->Invalid("asset inputs != outputs");
     }
+
+
     switch ( funcid )
     {
         case 'c': // create wont be called to be verified as it has no CC inputs
@@ -321,8 +327,8 @@ bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
             }
             fprintf(stderr,"fill validated\n");
             break;
-        case 'E': // fillexchange
-            return eval->Invalid("unexpected assets funcid");
+        case 'E': // fillexchange	
+            return eval->Invalid("unexpected assets fillexchange funcid");
             break; // disable asset swaps
             //vin.0: normal input
             //vin.1: unspendable.(vout.0 assetoshis from selloffer) sellTx.vout[0]
@@ -333,7 +339,7 @@ bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
             //vout.3: CC output for asset2 change (if any)
             //vout.3/4: normal output for change (if any)
             //vout.n-1: opreturn [EVAL_ASSETS] ['E'] [assetid vin0+1] [assetid vin2] [remaining asset2 required] [origpubkey]
-            if ( AssetExactAmounts(cp,inputs,1,outputs,eval,tx,assetid2) == false )
+            if ( AssetExactAmounts(1, cp,inputs,1,outputs,eval,tx,assetid2) == false )    
                 eval->Invalid("asset2 inputs != outputs");
             if ( (assetoshis= AssetValidateSellvin(cp,eval,totalunits,tmporigpubkey,CCaddr,origaddr,tx,assetid)) == 0 )
                 return(false);
@@ -376,7 +382,7 @@ bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
             fprintf(stderr,"illegal assets funcid.(%c)\n",funcid);
             return eval->Invalid("unexpected assets funcid");
             break;
-   }
+    }
     return(PreventCC(eval,tx,preventCCvins,numvins,preventCCvouts,numvouts));
 }
 

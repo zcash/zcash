@@ -10,6 +10,7 @@
 
 #include <map>
 
+#undef __cpuid
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/once.hpp>
 

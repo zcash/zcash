@@ -94,7 +94,8 @@
   },
   {
     "ac_name": "OOT",
-    "ac_supply": "216000000"
+    "ac_supply": "216000000",
+    "ac_sapling": "5000000"
   },
   {
     "ac_name": "BNTN",
@@ -118,7 +119,8 @@
   },
   {
     "ac_name": "EQL",
-    "ac_supply": "500000000"
+    "ac_supply": "500000000",
+    "ac_ccactivate": "205000"
   },
   {
     "ac_name": "ZILLA",
@@ -166,6 +168,48 @@
     "ac_end": "2629800",
     "addnode": [
       "142.93.27.180"
+    ]
+  },
+  {
+    "ac_name": "PGT",
+    "ac_supply": "10000000",
+    "ac_end": "1",
+    "addnode": [
+      "190.114.254.104"
+    ]
+  },
+  {
+    "ac_name": "DION",
+    "ac_supply": "3900000000",
+    "ac_reward": "22260000000",
+    "ac_staked": "100",
+    "ac_cc": "1",
+    "ac_end": "4300000000",
+    "addnode": [
+      "51.75.124.34"
+    ]
+  },
+  {
+     "ac_name": "KMDICE",
+     "ac_supply": "10500000",
+     "ac_reward": "2500000000",
+     "ac_halving": "210000",
+     "ac_cc": "2",
+     "addressindex": "1",
+     "spentindex": "1",
+     "addnode": [
+       "144.76.217.232"
+     ]
+   },
+   {
+    "ac_name": "ZEX",
+    "ac_founders": "1",
+    "ac_reward": "13000000000",
+    "ac_halving": "525600",
+    "ac_cc": "2",
+    "ac_pubkey": "039d4a50cc70d1184e462a22edb3b66385da97cc8059196f8305c184a3e21440af",
+    "addnode": [
+      "5.9.102.210"
     ]
   }
 ]

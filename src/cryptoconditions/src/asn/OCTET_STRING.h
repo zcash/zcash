@@ -5,7 +5,7 @@
 #ifndef	_OCTET_STRING_H_
 #define	_OCTET_STRING_H_
 
-#include <asn_application.h>
+#include "asn_application.h"
 
 #ifdef __cplusplus
 extern "C" {

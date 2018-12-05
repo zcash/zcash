@@ -112,7 +112,7 @@ bool LottoExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction 
     else return(true);
 }
 
-bool LottoValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
+bool LottoValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
 {
     int32_t numvins,numvouts,preventCCvins,preventCCvouts,i; bool retval;
     return(false); // reject any lotto CC for now
@@ -162,6 +162,7 @@ bool LottoValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
 
 int64_t AddLottoInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,int64_t total,int32_t maxinputs)
 {
+    // add threshold check
     char coinaddr[64]; int64_t nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t n = 0;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     GetCCaddress(cp,coinaddr,pk);
@@ -282,7 +283,8 @@ UniValue LottoList()
 
 std::string LottoCreate(uint64_t txfee,char *planstr,int64_t funding,int32_t ticketsize,int32_t odds,int32_t firstheight,int32_t period)
 {
-    CMutableTransaction mtx; uint256 entropy,hentropy; CPubKey mypk,lottopk; uint64_t sbits; int64_t inputs,CCchange=0,nValue=COIN; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    uint256 entropy,hentropy; CPubKey mypk,lottopk; uint64_t sbits; int64_t inputs,CCchange=0,nValue=COIN; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_LOTTO);
     if ( txfee == 0 )
         txfee = 10000;
@@ -291,15 +293,17 @@ std::string LottoCreate(uint64_t txfee,char *planstr,int64_t funding,int32_t tic
     sbits = stringbits(planstr);
     if ( AddNormalinputs(mtx,mypk,funding+txfee,60) > 0 )
     {
-        hentropy = DiceHashEntropy(entropy,mtx.vin[0].prevout.hash);
+        hentropy = DiceHashEntropy(entropy,mtx.vin[0].prevout.hash,mtx.vin[0].prevout.n,1);
         mtx.vout.push_back(MakeCC1vout(EVAL_LOTTO,funding,lottopk));
         return(FinalizeCCTx(0,cp,mtx,mypk,txfee,CScript() << OP_RETURN << E_MARSHAL(ss << (uint8_t)EVAL_LOTTO << (uint8_t)'F' << sbits << ticketsize << odds << firstheight << period << hentropy)));
     }
+    return("");
 }
 
 std::string LottoTicket(uint64_t txfee,uint256 lottoid,int64_t numtickets)
 {
-    CMutableTransaction mtx; CPubKey mypk,lottopk; CScript opret; int64_t inputs,CCchange=0,nValue=COIN; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    CPubKey mypk,lottopk; CScript opret; int64_t inputs,CCchange=0,nValue=COIN; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_LOTTO);
     if ( txfee == 0 )
         txfee = 10000;
@@ -319,7 +323,8 @@ std::string LottoTicket(uint64_t txfee,uint256 lottoid,int64_t numtickets)
 
 std::string LottoWinner(uint64_t txfee)
 {
-    CMutableTransaction mtx; CPubKey mypk,lottopk; int64_t winnings = 0; CScript opret; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    CPubKey mypk,lottopk; int64_t winnings = 0; CScript opret; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_LOTTO);
     if ( txfee == 0 )
         txfee = 10000;

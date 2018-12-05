@@ -5,7 +5,7 @@
 #ifndef	_DER_ENCODER_H_
 #define	_DER_ENCODER_H_
 
-#include <asn_application.h>
+#include "asn_application.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -25,7 +25,7 @@ public:
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+    inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITE(data);
     }
 
@@ -58,7 +58,7 @@ public:
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+    inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITE(data);
     }
 
@@ -93,7 +93,7 @@ public:
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+    inline void SerializationOp(Stream& s, Operation ser_action) {
         unsigned char leadingByte = G1_PREFIX_MASK;
 
         if (y_lsb) {
@@ -143,7 +143,7 @@ public:
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+    inline void SerializationOp(Stream& s, Operation ser_action) {
         unsigned char leadingByte = G2_PREFIX_MASK;
 
         if (y_gt) {
@@ -176,7 +176,7 @@ public:
 };
 
 // Compressed zkSNARK proof
-class ZCProof {
+class PHGRProof {
 private:
     CompressedG1 g_A;
     CompressedG1 g_A_prime;
@@ -188,23 +188,23 @@ private:
     CompressedG1 g_H;
 
 public:
-    ZCProof() : g_A(), g_A_prime(), g_B(), g_B_prime(), g_C(), g_C_prime(), g_K(), g_H() { }
+    PHGRProof() : g_A(), g_A_prime(), g_B(), g_B_prime(), g_C(), g_C_prime(), g_K(), g_H() { }
 
     // Produces a compressed proof using a libsnark zkSNARK proof
     template<typename libsnark_proof>
-    ZCProof(const libsnark_proof& proof);
+    PHGRProof(const libsnark_proof& proof);
 
     // Produces a libsnark zkSNARK proof out of this proof,
     // or throws an exception if it is invalid.
     template<typename libsnark_proof>
     libsnark_proof to_libsnark_proof() const;
 
-    static ZCProof random_invalid();
+    static PHGRProof random_invalid();
 
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+    inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITE(g_A);
         READWRITE(g_A_prime);
         READWRITE(g_B);
@@ -215,7 +215,7 @@ public:
         READWRITE(g_H);
     }
 
-    friend bool operator==(const ZCProof& a, const ZCProof& b)
+    friend bool operator==(const PHGRProof& a, const PHGRProof& b)
     {
         return (
             a.g_A == b.g_A &&
@@ -229,7 +229,7 @@ public:
         );
     }
 
-    friend bool operator!=(const ZCProof& a, const ZCProof& b)
+    friend bool operator!=(const PHGRProof& a, const PHGRProof& b)
     {
         return !(a == b);
     }
