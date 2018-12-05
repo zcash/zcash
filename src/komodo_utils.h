@@ -1772,6 +1772,7 @@ void komodo_args(char *argv0)
         ASSETCHAINS_COMMISSION = GetArg("-ac_perc",0);
         ASSETCHAINS_OVERRIDE_PUBKEY = GetArg("-ac_pubkey","");
 				ASSETCHAINS_SCRIPTPUB = GetArg("-ac_script","");
+				ASSETCHAINS_FOUNDERS_PERIOD = GetArg("-ac_period",0);
 
         if ( (ASSETCHAINS_STAKED= GetArg("-ac_staked",0)) > 100 )
             ASSETCHAINS_STAKED = 100;
