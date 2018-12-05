@@ -1124,13 +1124,13 @@ uint64_t komodo_commission(const CBlock *pblock,int32_t height)
     {
         nSubsidy = GetBlockSubsidy(height,Params().GetConsensus());
         //fprintf(stderr,"ht.%d nSubsidy %.8f prod %llu\n",height,(double)nSubsidy/COIN,(long long)(nSubsidy * ASSETCHAINS_COMMISSION));
-        comission = ((nSubsidy * ASSETCHAINS_COMMISSION) / COIN)
+        commission = ((nSubsidy * ASSETCHAINS_COMMISSION) / COIN)
         if ( ASSETCHAINS_FOUNDERS_PERIOD != 0 )
         {
             if ( pblock->nHeight % ASSETCHAINS_FOUNDERS_PERIOD == 0 )
-                comission = comission * ASSETCHAINS_FOUNDERS_PERIOD;
+                commission = commission * ASSETCHAINS_FOUNDERS_PERIOD;
             else
-                comission = 0;
+                commission = 0;
         }
     }
     else
