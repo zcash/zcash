@@ -1318,9 +1318,9 @@ UniValue sendmany(const UniValue& params, bool fHelp)
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, std::string("Invalid Zcash address: ") + name_);
         }
 
-        if (destinations.count(dest)) {
+        /*if (destinations.count(dest)) {
             throw JSONRPCError(RPC_INVALID_PARAMETER, std::string("Invalid parameter, duplicated address: ") + name_);
-        }
+        }*/
         destinations.insert(dest);
 
         CScript scriptPubKey = GetScriptForDestination(dest);
@@ -5058,8 +5058,10 @@ struct komodo_staking *komodo_addutxo(struct komodo_staking *array,int32_t *numk
     {
         *maxkp += 1000;
         array = (struct komodo_staking *)realloc(array,sizeof(*array) * (*maxkp));
+        //fprintf(stderr,"realloc max.%d array.%p\n",*maxkp,array);
     }
     kp = &array[(*numkp)++];
+    //fprintf(stderr,"kp.%p num.%d\n",kp,*numkp);
     memset(kp,0,sizeof(*kp));
     strcpy(kp->address,address);
     kp->txid = txid;
@@ -5082,15 +5084,11 @@ arith_uint256 _komodo_eligible(struct komodo_staking *kp,arith_uint256 ratio,uin
         diff = 3600*24*30;
     if ( iter > 0 )
         diff += segid*2;
-    coinage = ((uint64_t)kp->nValue/COIN * diff);
+    coinage = ((uint64_t)kp->nValue * diff);
     if ( blocktime+iter+segid*2 > prevtime+480 )
         coinage *= ((blocktime+iter+segid*2) - (prevtime+400));
-    //if ( nHeight >= 2500 && blocktime+iter+segid*2 > prevtime+180 )
-    //    coinage *= ((blocktime+iter+segid*2) - (prevtime+60));
     coinage256 = arith_uint256(coinage+1);
     hashval = ratio * (kp->hashval / coinage256);
-    //if ( nHeight >= 900 && nHeight < 916 )
-    //    hashval = (hashval / coinage256);
     return(hashval);
 }
 
@@ -5120,7 +5118,7 @@ uint32_t komodo_eligible(arith_uint256 bnTarget,arith_uint256 ratio,struct komod
                 return(blocktime);
             }
         }
-    }
+    } else fprintf(stderr,"maxiters is not good enough\n");
     return(0);
 }
 
@@ -5147,10 +5145,10 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
     if ( (minage= nHeight*3) > 6000 ) // about 100 blocks
         minage = 6000;
     komodo_segids(hashbuf,nHeight-101,100);
-    if ( *blocktimep > tipindex->nTime+60 )
+    if ( *blocktimep < tipindex->nTime+60 )
         *blocktimep = tipindex->nTime+60;
     //fprintf(stderr,"Start scan of utxo for staking %u ht.%d\n",(uint32_t)time(NULL),nHeight);
-    if ( time(NULL) > lasttime+600 )
+    if ( time(NULL) > lasttime+600 || array == 0 )
     {
         if ( array != 0 )
         {
@@ -5169,7 +5167,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
             counter++;
             if ( out.nDepth < nMinDepth || out.nDepth > nMaxDepth )
             {
-                //fprintf(stderr,"komodo_staked invalid depth %d\n",(int32_t)out.nDepth);
+                fprintf(stderr,"komodo_staked invalid depth %d\n",(int32_t)out.nDepth);
                 continue;
             }
             CAmount nValue = out.tx->vout[out.i].nValue;
@@ -5183,12 +5181,14 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
                 if ( GetTransaction(out.tx->GetHash(),tx,hashBlock,true) != 0 && (pindex= komodo_getblockindex(hashBlock)) != 0 )
                 {
                     array = komodo_addutxo(array,&numkp,&maxkp,(uint32_t)pindex->nTime,(uint64_t)nValue,out.tx->GetHash(),out.i,(char *)CBitcoinAddress(address).ToString().c_str(),hashbuf,(CScript)pk);
+                    //fprintf(stderr,"addutxo numkp.%d vs max.%d\n",numkp,maxkp);
                 }
             }
         }
         lasttime = (uint32_t)time(NULL);
-        //fprintf(stderr,"finished kp data of utxo for staking %u ht.%d numkp.%d maxkp.%d\n",(uint32_t)time(NULL),nHeight,numkp,maxkp);
+//fprintf(stderr,"finished kp data of utxo for staking %u ht.%d numkp.%d maxkp.%d\n",(uint32_t)time(NULL),nHeight,numkp,maxkp);
     }
+//fprintf(stderr,"numkp.%d blocktime.%u\n",numkp,*blocktimep);
     block_from_future_rejecttime = (uint32_t)GetAdjustedTime() + 57;
     for (i=winners=0; i<numkp; i++)
     {
@@ -5201,7 +5201,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
         if ( (eligible2= komodo_eligible(bnTarget,ratio,kp,nHeight,*blocktimep,(uint32_t)tipindex->nTime+27,minage,hashbuf)) == 0 )
             continue;
         eligible = komodo_stake(0,bnTarget,nHeight,kp->txid,kp->vout,0,(uint32_t)tipindex->nTime+27,kp->address);
-        //fprintf(stderr,"i.%d %u vs %u\n",i,eligible2,eligible);
+//fprintf(stderr,"i.%d %u vs %u\n",i,eligible2,eligible);
         if ( eligible > 0 )
         {
             besttime = m = 0;
@@ -5214,7 +5214,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
                     if ( eligible < block_from_future_rejecttime ) // nothing gained by going earlier
                         break;
                     m++;
-                    //fprintf(stderr,"m.%d ht.%d validated winning blocktime %u -> %.8f eligible.%u test prior\n",m,nHeight,*blocktimep,(double)kp->nValue/COIN,eligible);
+//fprintf(stderr,"m.%d ht.%d validated winning blocktime %u -> %.8f eligible.%u test prior\n",m,nHeight,*blocktimep,(double)kp->nValue/COIN,eligible);
                 }
             }
             else
@@ -5224,7 +5224,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
             }
             eligible = besttime;
             winners++;
-            //fprintf(stderr,"ht.%d validated winning [%d] -> %.8f eligible.%u test prior\n",nHeight,(int32_t)(eligible - tipindex->nTime),(double)kp->nValue/COIN,eligible);
+//fprintf(stderr,"ht.%d validated winning [%d] -> %.8f eligible.%u test prior\n",nHeight,(int32_t)(eligible - tipindex->nTime),(double)kp->nValue/COIN,eligible);
             if ( earliest == 0 || eligible < earliest || (eligible == earliest && (*utxovaluep == 0 || kp->nValue < *utxovaluep)) )
             {
                 earliest = eligible;
@@ -5237,7 +5237,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
                 fprintf(stderr,"ht.%d earliest.%u [%d].%d (%s) nValue %.8f locktime.%u counter.%d winners.%d\n",nHeight,earliest,(int32_t)(earliest - tipindex->nTime),m,kp->address,(double)kp->nValue/COIN,*txtimep,counter,winners);
             }
         } //else fprintf(stderr,"utxo not eligible\n");
-    } //else fprintf(stderr,"no tipindex\n");
+    }
     if ( numkp < 10000 && array != 0 )
     {
         free(array);
@@ -5272,7 +5272,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
             for (i=0; i<siglen; i++)
                 utxosig[i] = ptr[i];//, fprintf(stderr,"%02x",ptr[i]);
             //fprintf(stderr," siglen.%d\n",siglen);
-            //fprintf(stderr,"best %u from %u, gap %d lag.%d\n",earliest,*blocktimep,(int32_t)(earliest - *blocktimep),(int32_t)(time(NULL) - *blocktimep));
+//fprintf(stderr,"best %u from %u, gap %d lag.%d\n",earliest,*blocktimep,(int32_t)(earliest - *blocktimep),(int32_t)(time(NULL) - *blocktimep));
             *blocktimep = earliest;
         }
     } //else fprintf(stderr,"no earliest utxo for staking\n");
@@ -5309,6 +5309,7 @@ int32_t ensure_CCrequirements()
 #include "../cc/CCOracles.h"
 #include "../cc/CCGateways.h"
 #include "../cc/CCPrices.h"
+#include "../cc/CCHeir.h"
 
 UniValue CCaddress(struct CCcontract_info *cp,char *name,std::vector<unsigned char> &pubkey)
 {
@@ -5530,15 +5531,25 @@ UniValue gatewaysaddress(const UniValue& params, bool fHelp)
 
 UniValue heiraddress(const UniValue& params, bool fHelp)
 {
-    struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
+    struct CCcontract_info *cp,C; std::vector<unsigned char> destPubkey;
+
     cp = CCinit(&C,EVAL_HEIR);
-    if ( fHelp || params.size() > 1 )
-        throw runtime_error("heiraddress [pubkey]\n");
+    if ( fHelp || (params.size() != 4 && params.size() != 3))
+        throw runtime_error("heiraddress func txid amount [destpubkey]\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
-    if ( params.size() == 1 )
-        pubkey = ParseHex(params[0].get_str().c_str());
-    return(CCaddress(cp,(char *)"Heir",pubkey));
+    //if ( params.size() == 1 )
+    //    pubkey = ParseHex(params[0].get_str().c_str());
+
+	char funcid = ((char *)params[0].get_str().c_str())[0];
+	uint256 assetid = Parseuint256((char *)params[1].get_str().c_str());
+	int64_t funds = atof(params[2].get_str().c_str()) * COIN ;
+	if(params.size() == 4)
+		destPubkey = ParseHex(params[3].get_str().c_str());
+
+	//return HeirFundBad(funcid, assetid, funds, destPubkey);
+
+    return(CCaddress(cp,(char *)"Heir",destPubkey));
 }
 
 UniValue lottoaddress(const UniValue& params, bool fHelp)
@@ -6836,7 +6847,7 @@ UniValue tokencreate(const UniValue& params, bool fHelp)
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
     name = params[0].get_str();
-    supply = atof(params[1].get_str().c_str()) * COIN + 0.00000000499999;
+    supply = atof(params[1].get_str().c_str()) * COIN + 0.00000000499999;   // what for is this '+0.00000000499999'? it will be lost while converting double to int64_t (dimxy)
     if ( name.size() == 0 || name.size() > 32)
     {
         ERR_RESULT("Token name must not be empty and up to 32 characters");
@@ -6876,7 +6887,8 @@ UniValue tokentransfer(const UniValue& params, bool fHelp)
     LOCK2(cs_main, pwalletMain->cs_wallet);
     tokenid = Parseuint256((char *)params[0].get_str().c_str());
     std::vector<unsigned char> pubkey(ParseHex(params[1].get_str().c_str()));
-    amount = atol(params[2].get_str().c_str());
+    //amount = atol(params[2].get_str().c_str());
+	amount = atoll(params[2].get_str().c_str()); // dimxy changed to prevent loss of significance
     if ( tokenid == zeroid )
     {
         ERR_RESULT("invalid tokenid");
@@ -6912,7 +6924,8 @@ UniValue tokenconvert(const UniValue& params, bool fHelp)
     evalcode = atoi(params[0].get_str().c_str());
     tokenid = Parseuint256((char *)params[1].get_str().c_str());
     std::vector<unsigned char> pubkey(ParseHex(params[2].get_str().c_str()));
-    amount = atol(params[3].get_str().c_str());
+    //amount = atol(params[3].get_str().c_str());
+	amount = atoll(params[3].get_str().c_str()); // dimxy changed to prevent loss of significance
     if ( tokenid == zeroid )
     {
         ERR_RESULT("invalid tokenid");
@@ -6945,7 +6958,8 @@ UniValue tokenbid(const UniValue& params, bool fHelp)
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
-    numtokens = atoi(params[0].get_str().c_str());
+    //numtokens = atoi(params[0].get_str().c_str());
+	numtokens = atoll(params[0].get_str().c_str());  // dimxy changed to prevent loss of significance
     tokenid = Parseuint256((char *)params[1].get_str().c_str());
     price = atof(params[2].get_str().c_str());
     bidamount = (price * numtokens) * COIN + 0.0000000049999;
@@ -7013,7 +7027,8 @@ UniValue tokenfillbid(const UniValue& params, bool fHelp)
     LOCK2(cs_main, pwalletMain->cs_wallet);
     tokenid = Parseuint256((char *)params[0].get_str().c_str());
     bidtxid = Parseuint256((char *)params[1].get_str().c_str());
-    fillamount = atol(params[2].get_str().c_str());
+    // fillamount = atol(params[2].get_str().c_str());
+	fillamount = atoll(params[2].get_str().c_str());		// dimxy changed to prevent loss of significance
     if ( fillamount <= 0 )
     {
         ERR_RESULT("fillamount must be positive");
@@ -7042,10 +7057,12 @@ UniValue tokenask(const UniValue& params, bool fHelp)
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
-    numtokens = atoi(params[0].get_str().c_str());
+    //numtokens = atoi(params[0].get_str().c_str());
+	numtokens = atoll(params[0].get_str().c_str());			// dimxy changed to prevent loss of significance
     tokenid = Parseuint256((char *)params[1].get_str().c_str());
     price = atof(params[2].get_str().c_str());
     askamount = (price * numtokens) * COIN + 0.0000000049999;
+	//std::cerr << std::boolalpha << "tokenask(): (tokenid == zeroid) is "  << (tokenid == zeroid) << " (numtokens <= 0) is " << (numtokens <= 0) << " (price <= 0) is " << (price <= 0) << " (askamount <= 0) is " << (askamount <= 0) << std::endl;
     if ( tokenid == zeroid || numtokens <= 0 || price <= 0 || askamount <= 0 )
     {
         ERR_RESULT("invalid parameter");
@@ -7074,7 +7091,8 @@ UniValue tokenswapask(const UniValue& params, bool fHelp)
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
-    numtokens = atoi(params[0].get_str().c_str());
+    //numtokens = atoi(params[0].get_str().c_str());
+	numtokens = atoll(params[0].get_str().c_str());			// dimxy changed to prevent loss of significance
     tokenid = Parseuint256((char *)params[1].get_str().c_str());
     otherid = Parseuint256((char *)params[2].get_str().c_str());
     price = atof(params[3].get_str().c_str());
@@ -7128,7 +7146,8 @@ UniValue tokenfillask(const UniValue& params, bool fHelp)
     LOCK2(cs_main, pwalletMain->cs_wallet);
     tokenid = Parseuint256((char *)params[0].get_str().c_str());
     asktxid = Parseuint256((char *)params[1].get_str().c_str());
-    fillunits = atol(params[2].get_str().c_str());
+    //fillunits = atol(params[2].get_str().c_str());	
+	fillunits = atoll(params[2].get_str().c_str());	 // dimxy changed to prevent loss of significance
     if ( fillunits <= 0 )
     {
         ERR_RESULT("fillunits must be positive");
@@ -7168,7 +7187,8 @@ UniValue tokenfillswap(const UniValue& params, bool fHelp)
     tokenid = Parseuint256((char *)params[0].get_str().c_str());
     otherid = Parseuint256((char *)params[1].get_str().c_str());
     asktxid = Parseuint256((char *)params[2].get_str().c_str());
-    fillunits = atol(params[3].get_str().c_str());
+    //fillunits = atol(params[3].get_str().c_str());
+	fillunits = atoll(params[3].get_str().c_str());  // dimxy changed to prevent loss of significance
     hex = FillSell(0,tokenid,otherid,asktxid,fillunits);
     if (fillunits > 0) {
         if ( hex.size() > 0 ) {
