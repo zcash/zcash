@@ -4,15 +4,12 @@
 
 #include "base58.h"
 
-#include "hash.h"
-#include "uint256.h"
-
-#include "version.h"
-#include "streams.h"
+#include <hash.h>
+#include <uint256.h>
 
 #include <assert.h>
-#include <stdint.h>
 #include <string.h>
+#include <stdint.h>
 #include <vector>
 #include <string>
 #include <boost/variant/apply_visitor.hpp>
@@ -104,7 +101,7 @@ std::string EncodeBase58(const unsigned char* pbegin, const unsigned char* pend)
 
 std::string EncodeBase58(const std::vector<unsigned char>& vch)
 {
-    return EncodeBase58(&vch[0], &vch[0] + vch.size());
+    return EncodeBase58(vch.data(), vch.data() + vch.size());
 }
 
 bool DecodeBase58(const std::string& str, std::vector<unsigned char>& vchRet)
@@ -142,6 +139,7 @@ bool DecodeBase58Check(const std::string& str, std::vector<unsigned char>& vchRe
 {
     return DecodeBase58Check(str.c_str(), vchRet);
 }
+
 
 CBase58Data::CBase58Data()
 {
@@ -215,6 +213,7 @@ public:
     CBitcoinAddressVisitor(CBitcoinAddress* addrIn) : addr(addrIn) {}
 
     bool operator()(const CKeyID& id) const { return addr->Set(id); }
+    bool operator()(const CPubKey& key) const { return addr->Set(key); }
     bool operator()(const CScriptID& id) const { return addr->Set(id); }
     bool operator()(const CNoDestination& no) const { return false; }
 };
@@ -223,6 +222,13 @@ public:
 
 bool CBitcoinAddress::Set(const CKeyID& id)
 {
+    SetData(Params().Base58Prefix(CChainParams::PUBKEY_ADDRESS), &id, 20);
+    return true;
+}
+
+bool CBitcoinAddress::Set(const CPubKey& key)
+{
+    CKeyID id = key.GetID();
     SetData(Params().Base58Prefix(CChainParams::PUBKEY_ADDRESS), &id, 20);
     return true;
 }
@@ -302,6 +308,14 @@ bool CBitcoinAddress::GetKeyID(CKeyID& keyID) const
     return true;
 }
 
+bool CBitcoinAddress::GetKeyID_NoCheck(CKeyID& keyID) const
+{
+    uint160 id;
+    memcpy(&id, &vchData[0], 20);
+    keyID = CKeyID(id);
+    return true;
+}
+
 bool CBitcoinAddress::IsScript() const
 {
     return IsValid() && vchVersion == Params().Base58Prefix(CChainParams::SCRIPT_ADDRESS);
@@ -373,27 +387,3 @@ DATA_TYPE CZCEncoding<DATA_TYPE, PREFIX, SER_SIZE>::Get() const
     ss >> ret;
     return ret;
 }
-
-// Explicit instantiations for libzcash::PaymentAddress
-template bool CZCEncoding<libzcash::PaymentAddress,
-                          CChainParams::ZCPAYMENT_ADDRRESS,
-                          libzcash::SerializedPaymentAddressSize>::Set(const libzcash::PaymentAddress& addr);
-template libzcash::PaymentAddress CZCEncoding<libzcash::PaymentAddress,
-                                              CChainParams::ZCPAYMENT_ADDRRESS,
-                                              libzcash::SerializedPaymentAddressSize>::Get() const;
-
-// Explicit instantiations for libzcash::ViewingKey
-template bool CZCEncoding<libzcash::ViewingKey,
-                          CChainParams::ZCVIEWING_KEY,
-                          libzcash::SerializedViewingKeySize>::Set(const libzcash::ViewingKey& vk);
-template libzcash::ViewingKey CZCEncoding<libzcash::ViewingKey,
-                                          CChainParams::ZCVIEWING_KEY,
-                                          libzcash::SerializedViewingKeySize>::Get() const;
-
-// Explicit instantiations for libzcash::SpendingKey
-template bool CZCEncoding<libzcash::SpendingKey,
-                          CChainParams::ZCSPENDING_KEY,
-                          libzcash::SerializedSpendingKeySize>::Set(const libzcash::SpendingKey& sk);
-template libzcash::SpendingKey CZCEncoding<libzcash::SpendingKey,
-                                           CChainParams::ZCSPENDING_KEY,
-                                           libzcash::SerializedSpendingKeySize>::Get() const;

@@ -12,8 +12,8 @@
 #ifndef	_CONSTR_TYPE_H_
 #define	_CONSTR_TYPE_H_
 
-#include <ber_tlv_length.h>
-#include <ber_tlv_tag.h>
+#include "ber_tlv_length.h"
+#include "ber_tlv_tag.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,13 +35,13 @@ typedef struct asn_struct_ctx_s {
 	ber_tlv_len_t left;	/* Number of bytes left, -1 for indefinite */
 } asn_struct_ctx_t;
 
-#include <ber_decoder.h>	/* Basic Encoding Rules decoder */
-#include <der_encoder.h>	/* Distinguished Encoding Rules encoder */
-#include <xer_decoder.h>	/* Decoder of XER (XML, text) */
-#include <xer_encoder.h>	/* Encoder into XER (XML, text) */
-#include <per_decoder.h>	/* Packet Encoding Rules decoder */
-#include <per_encoder.h>	/* Packet Encoding Rules encoder */
-#include <constraints.h>	/* Subtype constraints support */
+#include "ber_decoder.h"	/* Basic Encoding Rules decoder */
+#include "der_encoder.h"	/* Distinguished Encoding Rules encoder */
+#include "xer_decoder.h"	/* Decoder of XER (XML, text) */
+#include "xer_encoder.h"	/* Encoder into XER (XML, text) */
+#include "per_decoder.h"	/* Packet Encoding Rules decoder */
+#include "per_encoder.h"	/* Packet Encoding Rules encoder */
+#include "constraints.h"	/* Subtype constraints support */
 
 /*
  * Free the structure according to its specification.

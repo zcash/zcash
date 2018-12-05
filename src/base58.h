@@ -58,13 +58,13 @@ std::string EncodeBase58Check(const std::vector<unsigned char>& vchIn);
  * Decode a base58-encoded string (psz) that includes a checksum into a byte
  * vector (vchRet), return true if decoding is successful
  */
-inline bool DecodeBase58Check(const char* psz, std::vector<unsigned char>& vchRet);
+bool DecodeBase58Check(const char* psz, std::vector<unsigned char>& vchRet);
 
 /**
  * Decode a base58-encoded string (str) that includes a checksum into a byte
  * vector (vchRet), return true if decoding is successful
  */
-inline bool DecodeBase58Check(const std::string& str, std::vector<unsigned char>& vchRet);
+bool DecodeBase58Check(const std::string& str, std::vector<unsigned char>& vchRet);
 
 /**
  * Base class for all base58-encoded data
@@ -107,39 +107,6 @@ public:
     DATA_TYPE Get() const;
 };
 
-class CZCPaymentAddress : public CZCEncoding<libzcash::PaymentAddress, CChainParams::ZCPAYMENT_ADDRRESS, libzcash::SerializedPaymentAddressSize> {
-protected:
-    std::string PrependName(const std::string& s) const { return "payment address" + s; }
-
-public:
-    CZCPaymentAddress() {}
-
-    CZCPaymentAddress(const std::string& strAddress) { SetString(strAddress.c_str(), 2); }
-    CZCPaymentAddress(const libzcash::PaymentAddress& addr) { Set(addr); }
-};
-
-class CZCViewingKey : public CZCEncoding<libzcash::ViewingKey, CChainParams::ZCVIEWING_KEY, libzcash::SerializedViewingKeySize> {
-protected:
-    std::string PrependName(const std::string& s) const { return "viewing key" + s; }
-
-public:
-    CZCViewingKey() {}
-
-    CZCViewingKey(const std::string& strViewingKey) { SetString(strViewingKey.c_str(), 3); }
-    CZCViewingKey(const libzcash::ViewingKey& vk) { Set(vk); }
-};
-
-class CZCSpendingKey : public CZCEncoding<libzcash::SpendingKey, CChainParams::ZCSPENDING_KEY, libzcash::SerializedSpendingKeySize> {
-protected:
-    std::string PrependName(const std::string& s) const { return "spending key" + s; }
-
-public:
-    CZCSpendingKey() {}
-
-    CZCSpendingKey(const std::string& strAddress) { SetString(strAddress.c_str(), 2); }
-    CZCSpendingKey(const libzcash::SpendingKey& addr) { Set(addr); }
-};
-
 /** base58-encoded Bitcoin addresses.
  * Public-key-hash-addresses have version 0 (or 111 testnet).
  * The data vector contains RIPEMD160(SHA256(pubkey)), where pubkey is the serialized public key.
@@ -149,6 +116,7 @@ public:
 class CBitcoinAddress : public CBase58Data {
 public:
     bool Set(const CKeyID &id);
+    bool Set(const CPubKey &key);
     bool Set(const CScriptID &id);
     bool Set(const CTxDestination &dest);
     bool IsValid() const;
@@ -163,6 +131,7 @@ public:
 
     CTxDestination Get() const;
     bool GetKeyID(CKeyID &keyID) const;
+    bool GetKeyID_NoCheck(CKeyID& keyID) const;
     bool GetIndexKey(uint160& hashBytes, int& type) const;
     bool IsScript() const;
 };

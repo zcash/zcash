@@ -33,7 +33,7 @@ bool CheckTxAuthority(const CTransaction &tx, CrosschainAuthority auth)
         if (tx.vout.size() < txIn.prevout.n) return false;
         CScript spk = tx.vout[txIn.prevout.n].scriptPubKey;
         if (spk.size() != 35) return false;
-        const unsigned char *pk = spk.data();
+        const unsigned char *pk = &spk[0];
         if (pk++[0] != 33) return false;
         if (pk[33] != OP_CHECKSIG) return false;
 

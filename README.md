@@ -23,23 +23,23 @@ This is the official Komodo sourcecode repository based on https://github.com/jl
 
 ## List of Komodo Platform Technologies
 
-- Delayed Proof of Work (dPoW) - Additional security layer and Komodos own consensus algorithm.
-- zk-SNARKs - Komodo Platform's privacy technology for shielded transactions
-- Tokens/Assets Technology - create "colored coins" on the Komodo Platform and use them as a layer for securites
-- Reward API - Komodo CC technology for securities
-- CC - Crypto Conditions to realize "smart contract" logic on top of the Komodo Platform
-- Jumblr - Decentralized tumbler for KMD and other cryptocurrencies
-- Assetchains - Create your own Blockchain that inherits all Komodo Platform functionalities and blockchain interoperability
-- Pegged Assets - Chains that maintain a peg to fiat currencies
-- Peerchains - Scalability solution where sibling chains form a network of blockchains
-- More in depth covered [here](https://docs.google.com/document/d/1AbhWrtagu4vYdkl-vsWz-HSNyNvK-W-ZasHCqe7CZy0)
-- Also note you receive 5% APR on your holdings.
-[See this article for more details](https://komodoplatform.atlassian.net/wiki/spaces/KPSD/pages/20480015/Claim+KMD+Interest+in+Agama)
+- Delayed Proof of Work (dPoW) - Additional security layer and Komodos own consensus algorithm  
+- zk-SNARKs - Komodo Platform's privacy technology for shielded transactions  
+- Tokens/Assets Technology - create "colored coins" on the Komodo Platform and use them as a layer for securites  
+- Reward API - Komodo CC technology for securities  
+- CC - Crypto Conditions to realize "smart contract" logic on top of the Komodo Platform  
+- Jumblr - Decentralized tumbler for KMD and other cryptocurrencies  
+- Assetchains - Create your own Blockchain that inherits all Komodo Platform functionalities and blockchain interoperability  
+- Pegged Assets - Chains that maintain a peg to fiat currencies  
+- Peerchains - Scalability solution where sibling chains form a network of blockchains  
+- More in depth covered [here](https://docs.google.com/document/d/1AbhWrtagu4vYdkl-vsWz-HSNyNvK-W-ZasHCqe7CZy0)  
+- Also note you receive 5% Active User Reward on your balance.  
+[See this article for more details](https://support.komodoplatform.com/en/support/solutions/articles/29000024515-how-to-claim-the-kmd-active-user-reward-in-agama)
 
 ## Tech Specification
-- Max Supply: 200 million KMD.
-- Block Time: 1M 2s
-- Block Reward: 3KMD
+- Max Supply: 200 million KMD
+- Block Time: 1m 2s
+- Block Reward: 3 KMD
 - Mining Algorithm: Equihash
 
 ## About this Project
@@ -51,7 +51,7 @@ Komodo is based on Zcash and has been extended by our innovative consensus algor
 
 ```shell
 #The following packages are needed:
-sudo apt-get install build-essential pkg-config libc6-dev m4 g++-multilib autoconf libtool ncurses-dev unzip git python python-zmq zlib1g-dev wget libcurl4-openssl-dev bsdmainutils automake curl
+sudo apt-get install build-essential pkg-config libc6-dev m4 g++-multilib autoconf libtool ncurses-dev unzip git python python-zmq zlib1g-dev wget libcurl4-gnutls-dev bsdmainutils automake curl
 ```
 
 ### Build Komodo
@@ -86,7 +86,11 @@ cd komodo
 #### Windows
 Use a debian cross-compilation setup with mingw for windows and run:
 ```shell
-git clone https://github.com/komodoplatform/komodo --branch master --single-branch
+sudo apt-get install build-essential pkg-config libc6-dev m4 g++-multilib autoconf libtool ncurses-dev unzip git python python-zmq zlib1g-dev wget libcurl4-gnutls-dev bsdmainutils automake curl cmake mingw-w64
+curl https://sh.rustup.rs -sSf | sh
+source $HOME/.cargo/env
+rustup target add x86_64-pc-windows-gnu
+git clone https://github.com/jl777/komodo --branch master --single-branch
 cd komodo
 ./zcutil/fetch-params.sh
 # -j8 = using 8 threads for the compilation - replace 8 with number of threads you want to use
@@ -146,10 +150,10 @@ There is a small chance that an outbound transaction will give an error due to m
 
 **To change modes:**
 
-a) backup all privkeys (launch komodod with `-exportdir=<path>` and `dumpwallet`)
-b) start a totally new sync including `wallet.dat`, launch with same `exportdir`
-c) stop it before it gets too far and import all the privkeys from a) using `komodo-cli importwallet filename`
-d) resume sync till it gets to chaintip
+a) backup all privkeys (launch komodod with `-exportdir=<path>` and `dumpwallet`)  
+b) start a totally new sync including `wallet.dat`, launch with same `exportdir`  
+c) stop it before it gets too far and import all the privkeys from a) using `komodo-cli importwallet filename`  
+d) resume sync till it gets to chaintip  
 
 For example:
 ```shell

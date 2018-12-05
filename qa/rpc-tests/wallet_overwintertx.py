@@ -6,6 +6,7 @@
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, initialize_chain_clean, \
     start_nodes, connect_nodes_bi, wait_and_assert_operationid_status
+from test_framework.authproxy import JSONRPCException
 
 from decimal import Decimal
 
@@ -45,6 +46,13 @@ class WalletOverwinterTxTest (BitcoinTestFramework):
         assert_equal(bci['consensus']['chaintip'], '00000000')
         assert_equal(bci['consensus']['nextblock'], '00000000')
         assert_equal(bci['upgrades']['5ba81b19']['status'], 'pending')
+
+        # Cannot use the expiryheight parameter of createrawtransaction if Overwinter is not active in the next block
+        try:
+            self.nodes[0].createrawtransaction([], {}, 0, 99)
+        except JSONRPCException,e:
+            errorString = e.error['message']
+        assert_equal("Invalid parameter, expiryheight can only be used if Overwinter is active when the transaction is mined" in errorString, True)
 
         # Node 0 sends transparent funds to Node 2
         tsendamount = Decimal('1.0')
@@ -91,6 +99,24 @@ class WalletOverwinterTxTest (BitcoinTestFramework):
         assert_equal(bci['consensus']['chaintip'], '00000000')
         assert_equal(bci['consensus']['nextblock'], '5ba81b19')
         assert_equal(bci['upgrades']['5ba81b19']['status'], 'pending')
+
+        # Test using expiryheight parameter of createrawtransaction when Overwinter is active in the next block
+        errorString = ""
+        try:
+            self.nodes[0].createrawtransaction([], {}, 0, 499999999)
+        except JSONRPCException,e:
+            errorString = e.error['message']
+        assert_equal("", errorString)
+        try:
+            self.nodes[0].createrawtransaction([], {}, 0, -1)
+        except JSONRPCException,e:
+            errorString = e.error['message']
+        assert_equal("Invalid parameter, expiryheight must be nonnegative and less than 500000000" in errorString, True)
+        try:
+            self.nodes[0].createrawtransaction([], {}, 0, 500000000)
+        except JSONRPCException,e:
+            errorString = e.error['message']
+        assert_equal("Invalid parameter, expiryheight must be nonnegative and less than 500000000" in errorString, True)
 
         # Node 0 sends transparent funds to Node 3
         tsendamount = Decimal('1.0')

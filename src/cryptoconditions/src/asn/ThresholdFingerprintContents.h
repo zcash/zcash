@@ -8,7 +8,7 @@
 #define	_ThresholdFingerprintContents_H_
 
 
-#include <asn_application.h>
+#include "asn_application.h"
 
 /* Including external dependencies */
 #include <NativeInteger.h>

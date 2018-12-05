@@ -54,7 +54,7 @@
 #define __BYTE_ORDER    BYTE_ORDER
 #endif
 */
-EhSolverCancelledException solver_cancelled;
+static EhSolverCancelledException solver_cancelled;
 
 template<unsigned int N, unsigned int K>
 int Equihash<N,K>::InitialiseState(eh_HashState& base_state)

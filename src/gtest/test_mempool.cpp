@@ -19,11 +19,15 @@ class FakeCoinsViewDB : public CCoinsView {
 public:
     FakeCoinsViewDB() {}
 
-    bool GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const {
+    bool GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const {
         return false;
     }
 
-    bool GetNullifier(const uint256 &nf) const {
+    bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const {
+        return false;
+    }
+
+    bool GetNullifier(const uint256 &nf, ShieldedType type) const {
         return false;
     }
 
@@ -47,16 +51,19 @@ public:
         return a;
     }
 
-    uint256 GetBestAnchor() const {
+    uint256 GetBestAnchor(ShieldedType type) const {
         uint256 a;
         return a;
     }
 
     bool BatchWrite(CCoinsMap &mapCoins,
                     const uint256 &hashBlock,
-                    const uint256 &hashAnchor,
-                    CAnchorsMap &mapAnchors,
-                    CNullifiersMap &mapNullifiers) {
+                    const uint256 &hashSproutAnchor,
+                    const uint256 &hashSaplingAnchor,
+                    CAnchorsSproutMap &mapSproutAnchors,
+                    CAnchorsSaplingMap &mapSaplingAnchors,
+                    CNullifiersMap &mapSproutNullifiers,
+                    CNullifiersMap &mapSaplingNullifiers) {
         return false;
     }
 
@@ -96,7 +103,7 @@ TEST(Mempool, PriorityStatsDoNotCrash) {
 }
 
 TEST(Mempool, TxInputLimit) {
-    SelectParams(CBaseChainParams::TESTNET);
+    SelectParams(CBaseChainParams::REGTEST);
 
     CTxMemPool pool(::minRelayTxFee);
     bool missingInputs;
@@ -133,13 +140,30 @@ TEST(Mempool, TxInputLimit) {
     // The -mempooltxinputlimit check doesn't set a reason
     EXPECT_EQ(state3.GetRejectReason(), "");
 
-    // Clear the limit
-    mapArgs.erase("-mempooltxinputlimit");
+    // Activate Overwinter
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
 
     // Check it no longer fails due to exceeding the limit
     CValidationState state4;
     EXPECT_FALSE(AcceptToMemoryPool(pool, state4, tx3, false, &missingInputs));
     EXPECT_EQ(state4.GetRejectReason(), "bad-txns-version-too-low");
+
+    // Deactivate Overwinter
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+
+    // Check it now fails due to exceeding the limit
+    CValidationState state5;
+    EXPECT_FALSE(AcceptToMemoryPool(pool, state5, tx3, false, &missingInputs));
+    // The -mempooltxinputlimit check doesn't set a reason
+    EXPECT_EQ(state5.GetRejectReason(), "");
+
+    // Clear the limit
+    mapArgs.erase("-mempooltxinputlimit");
+
+    // Check it no longer fails due to exceeding the limit
+    CValidationState state6;
+    EXPECT_FALSE(AcceptToMemoryPool(pool, state6, tx3, false, &missingInputs));
+    EXPECT_EQ(state6.GetRejectReason(), "bad-txns-version-too-low");
 }
 
 // Valid overwinter v3 format tx gets rejected because overwinter hasn't activated yet.
@@ -152,7 +176,7 @@ TEST(Mempool, OverwinterNotActiveYet) {
     CMutableTransaction mtx = GetValidTransaction();
     mtx.vjoinsplit.resize(0); // no joinsplits
     mtx.fOverwintered = true;
-    mtx.nVersion = 3;
+    mtx.nVersion = OVERWINTER_TX_VERSION;
     mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
     mtx.nExpiryHeight = 0;
     CValidationState state1;
@@ -224,7 +248,7 @@ TEST(Mempool, SproutNegativeVersionTxWhenOverwinterActive) {
     mtx.vjoinsplit.resize(0); // no joinsplits
     mtx.fOverwintered = false;
 
-    // A Sprout transaction with version -3 is created using Sprout code (as found in Zcashd <= 1.0.14).
+    // A Sprout transaction with version -3 is created using Sprout code (as found in zcashd <= 1.0.14).
     // First four bytes of transaction, parsed as an uint32_t, has the value: 0xfffffffd
     // This test simulates an Overwinter node receiving this transaction, but incorrectly deserializing the
     // transaction due to a (pretend) bug of not detecting the most significant bit, which leads
@@ -242,7 +266,7 @@ TEST(Mempool, SproutNegativeVersionTxWhenOverwinterActive) {
         EXPECT_EQ(state1.GetRejectReason(), "bad-txns-version-too-low");
     }
 
-    // A Sprout transaction with version -3 created using Overwinter code (as found in Zcashd >= 1.0.15).
+    // A Sprout transaction with version -3 created using Overwinter code (as found in zcashd >= 1.0.15).
     // First four bytes of transaction, parsed as an uint32_t, has the value: 0x80000003
     // This test simulates the same pretend bug described above.
     // The resulting Sprout tx with nVersion -2147483645 should be rejected by the Overwinter node's mempool.
