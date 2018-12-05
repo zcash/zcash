@@ -140,7 +140,7 @@ UniValue getnotarysendmany(const UniValue& params, bool fHelp)
         char Raddress[18]; uint8_t pubkey33[33];
         decode_hex(pubkey33,33,(char *)notaries_STAKED[era][i][1]);
         pubkey2addr((char *)Raddress,(uint8_t *)pubkey33);
-        ret.push_back(Pair(Raddress,(int)10));
+        ret.push_back(Pair(Raddress,amount));
     }
     return ret;
 }
