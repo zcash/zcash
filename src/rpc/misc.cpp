@@ -128,7 +128,7 @@ UniValue getnotarysendmany(const UniValue& params, bool fHelp)
           + HelpExampleRpc("getnotarysendmany", "10")
       );
     int amount = 0;
-    if ( params.size() = 1 ) {
+    if ( params.size() == 1 ) {
         amount = params[0].get_int();
     }
 
