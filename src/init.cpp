@@ -1501,7 +1501,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             fReindex = true;
         }
     }
-    
+
     bool clearWitnessCaches = false;
 
     bool fLoaded = false;
