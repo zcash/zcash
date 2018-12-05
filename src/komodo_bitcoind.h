@@ -1127,7 +1127,7 @@ uint64_t komodo_commission(const CBlock *pblock,int32_t height)
         commission = ((nSubsidy * ASSETCHAINS_COMMISSION) / COIN);
         if ( ASSETCHAINS_FOUNDERS_PERIOD != 0 )
         {
-            if ( pblock.GetHeight() % ASSETCHAINS_FOUNDERS_PERIOD == 0 )
+            if ( pblock->GetHeight() % ASSETCHAINS_FOUNDERS_PERIOD == 0 )
                 commission = commission * ASSETCHAINS_FOUNDERS_PERIOD;
             else
                 commission = 0;
