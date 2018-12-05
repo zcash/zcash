@@ -1834,7 +1834,7 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
 
 int32_t komodo_acpublic(uint32_t tiptime)
 {
-    int32_t acpublic = ASSETCHAINS_PUBLIC; CBlockPtr *pindex;
+    int32_t acpublic = ASSETCHAINS_PUBLIC; CBlockIndex *pindex;
     if ( acpublic == 0 )
     {
         if ( tiptime == 0 )
