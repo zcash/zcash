@@ -1263,6 +1263,7 @@ void ThreadSocketHandler()
 
 void ThreadDNSAddressSeed()
 {
+    return;
     // goal: only query DNS seeds if address need is acute
     if ((addrman.size() > 0) &&
         (!GetBoolArg("-forcednsseed", false))) {
