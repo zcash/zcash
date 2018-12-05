@@ -4960,10 +4960,10 @@ void CWallet::GetFilteredNotes(
             }
 
             // skip locked notes
-            // TODO: Add locking for Sapling notes
-            // if (ignoreLocked && IsLockedNote(op)) {
-            //     continue;
-            // }
+            // TODO: Add locking for Sapling notes -> done
+             if (ignoreLocked && IsLockedNote(op)) {
+                 continue;
+             }
 
             auto note = notePt.note(nd.ivk).get();
             saplingEntries.push_back(SaplingNoteEntry {
