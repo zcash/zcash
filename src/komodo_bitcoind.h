@@ -1112,6 +1112,7 @@ int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_
  commission must be in coinbase.vout[1] and must be >= 10000 sats
  PoS stake must be without txfee and in the last tx in the block at vout[0]
  */
+int32_t ASSETCHAINS_FOUNDERS_PERIOD = 5;
 
 CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams);
 
@@ -1123,11 +1124,14 @@ uint64_t komodo_commission(const CBlock *pblock,int32_t height)
     {
         nSubsidy = GetBlockSubsidy(height,Params().GetConsensus());
         //fprintf(stderr,"ht.%d nSubsidy %.8f prod %llu\n",height,(double)nSubsidy/COIN,(long long)(nSubsidy * ASSETCHAINS_COMMISSION));
-        return((nSubsidy * ASSETCHAINS_COMMISSION) / COIN);
-        n = pblock->vtx[0].vout.size();
-        for (j=0; j<n; j++)
-            if ( j != 1 )
-                total += pblock->vtx[0].vout[j].nValue;
+        comission = ((nSubsidy * ASSETCHAINS_COMMISSION) / COIN)
+        if ( ASSETCHAINS_FOUNDERS_PERIOD != 0 )
+        {
+            if ( pblock->nHeight % ASSETCHAINS_FOUNDERS_PERIOD == 0 )
+                comission = comission * ASSETCHAINS_FOUNDERS_PERIOD;
+            else
+                comission = 0;
+        }
     }
     else
     {
@@ -1141,7 +1145,10 @@ uint64_t komodo_commission(const CBlock *pblock,int32_t height)
                     total += pblock->vtx[i].vout[j].nValue;
             }
         }
+        commission = ((total * ASSETCHAINS_COMMISSION) / COIN);
     }
+    if ( commission < 10000 )
+        commission = 0;
     return(commission);
 }
 
@@ -1541,7 +1548,7 @@ bool verusCheckPOSBlock(int32_t slowflag, CBlock *pblock, int32_t height)
                 {
                     fprintf(stderr,"ERROR: chain not fully loaded or invalid PoS block %s - no past block found\n",blkHash.ToString().c_str());
                 }
-                else 
+                else
 #ifndef KOMODO_ZCASH
                 if (!GetTransaction(txid, tx, Params().GetConsensus(), blkHash, true))
 #else
@@ -1574,7 +1581,7 @@ bool verusCheckPOSBlock(int32_t slowflag, CBlock *pblock, int32_t height)
                     {
                         BlockMap::const_iterator it = mapBlockIndex.find(blkHash);
                         if ((it == mapBlockIndex.end()) ||
-                            !(pastBlockIndex = it->second) || 
+                            !(pastBlockIndex = it->second) ||
                             (height - pastBlockIndex->GetHeight()) < VERUS_MIN_STAKEAGE)
                         {
                             fprintf(stderr,"ERROR: invalid PoS block %s - stake source too new or not found\n",blkHash.ToString().c_str());
@@ -1665,9 +1672,7 @@ int64_t komodo_checkcommission(CBlock *pblock,int32_t height)
     {
         checktoshis = komodo_commission(pblock,height);
         //fprintf(stderr,"height.%d commission %.8f\n",height,(double)checktoshis/COIN);
-        /*if ( checktoshis > 10000 && pblock->vtx[0].vout.size() != 2 )  jl777: not sure why this was here
-            return(-1);
-        else*/ if ( checktoshis != 0 )
+        if ( checktoshis != 0 )
         {
             script = (uint8_t *)&pblock->vtx[0].vout[1].scriptPubKey[0];
             scriptlen = (int32_t)pblock->vtx[0].vout[1].scriptPubKey.size();
