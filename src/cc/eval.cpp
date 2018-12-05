@@ -74,11 +74,11 @@ bool Eval::Dispatch(const CC *cond, const CTransaction &txTo, unsigned int nIn)
     switch ( ecode )
     {
         case EVAL_IMPORTPAYOUT:
-            //return ImportPayout(vparams, txTo, nIn);
+            return ImportPayout(vparams, txTo, nIn);
             break;
 
         case EVAL_IMPORTCOIN:
-            //return ImportCoin(vparams, txTo, nIn);
+            return ImportCoin(vparams, txTo, nIn);
             break;
 
         default:
