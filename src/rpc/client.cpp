@@ -36,6 +36,8 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "sendtoaddress", 1 },
     { "sendtoaddress", 4 },
     { "settxfee", 0 },
+    { "getnotarysendmany", 0 },
+    { "getnotarysendmany", 1 },
     { "getreceivedbyaddress", 1 },
     { "getreceivedbyaccount", 1 },
     { "listreceivedbyaddress", 0 },

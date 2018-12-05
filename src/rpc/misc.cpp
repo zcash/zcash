@@ -119,6 +119,19 @@ UniValue getiguanajson(const UniValue& params, bool fHelp)
 
 UniValue getnotarysendmany(const UniValue& params, bool fHelp)
 {
+    if (fHelp || params.size() > 1)
+      throw runtime_error(
+          "getnotarysendmany\n"
+          "Returns a sendmany JSON array with all current notaries Raddress's.\n"
+          "\nExamples:\n"
+          + HelpExampleCli("getnotarysendmany", "10")
+          + HelpExampleRpc("getnotarysendmany", "10")
+      );
+    int amount = 0;
+    if ( params.size() = 1 ) {
+        amount = params[0].get_int();
+    }
+
     int era = getera(time(NULL));
 
     UniValue ret(UniValue::VOBJ);
