@@ -118,7 +118,7 @@ saplingNoteInputs_(saplingNoteInputs), recipient_(recipient), fee_(fee), context
     lock_notes();
     
     // Enable payment disclosure if requested
-    paymentDisclosureMode = fExperimentalMode && GetBoolArg("-paymentdisclosure", false);
+    paymentDisclosureMode = fExperimentalMode && GetBoolArg("-paymentdisclosure", true);
 }
 
 AsyncRPCOperation_mergetoaddress::~AsyncRPCOperation_mergetoaddress()

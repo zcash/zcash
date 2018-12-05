@@ -78,7 +78,7 @@ public:
     
     bool testmode = false; // Set to true to disable sending txs and generating proofs
     
-    bool paymentDisclosureMode = false; // Set to true to save esk for encrypted notes in payment disclosure database.
+    bool paymentDisclosureMode = true; // Set to true to save esk for encrypted notes in payment disclosure database.
     
 private:
     friend class TEST_FRIEND_AsyncRPCOperation_mergetoaddress; // class for unit testing

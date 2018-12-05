@@ -123,7 +123,7 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
 
 
     // Enable payment disclosure if requested
-    paymentDisclosureMode = fExperimentalMode && GetBoolArg("-paymentdisclosure", false);
+    paymentDisclosureMode = fExperimentalMode && GetBoolArg("-paymentdisclosure", true);
 }
 
 AsyncRPCOperation_sendmany::~AsyncRPCOperation_sendmany() {
