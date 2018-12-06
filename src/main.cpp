@@ -3835,20 +3835,40 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
     assert(pcoinsTip->GetSaplingAnchorAt(pcoinsTip->GetBestAnchor(SAPLING), newSaplingTree));
     // Let wallets know transactions went from 1-confirmed to
     // 0-confirmed or conflicted:
+    std::vector<uint256> TxToRemove;
     for (int i = 0; i < block.vtx.size(); i++)
     {
         CTransaction &tx = block.vtx[i];
         //if ((i == (block.vtx.size() - 1)) && ((ASSETCHAINS_LWMAPOS && block.IsVerusPOSBlock()) || (ASSETCHAINS_STAKED != 0 && (komodo_isPoS((CBlock *)&block) != 0))))
         if ((i == (block.vtx.size() - 1)) && (ASSETCHAINS_STAKED != 0 && (komodo_isPoS((CBlock *)&block) != 0)))
         {
-            //EraseFromWallets(tx.GetHash());
 #ifdef ENABLE_WALLET
-            pwalletMain->EraseFromWallet(tx.GetHash());
+            TxToRemove.push_back(tx.GetHash());
+            //pwalletMain->EraseFromWallet(tx.GetHash());
 #endif
         }
         else
         {
             SyncWithWallets(tx, NULL);
+        }
+    }
+    if ( ASSETCHAINS_STAKED != 0 ) // If Staked chain, scan wallet for orphaned txs and delete them.
+    {
+        LOCK2(cs_main, pwalletMain->cs_wallet);
+        for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it)
+        {
+            CTransaction tx;
+            uint256 hashBlock;
+            if (!GetTransaction((*it).first,tx,hashBlock,true))
+            {
+                fprintf(stderr, "TX Does Not Exist: %s\n",(*it).first.ToString().c_str());
+                TxToRemove.push_back((*it).first);
+            }
+        }
+        BOOST_FOREACH (uint256& hash, TxToRemove)
+        {
+            pwalletMain->EraseFromWallet(hash);
+            fprintf(stderr, "Erased %s from wallet.\n",hash.ToString().c_str());
         }
     }
     // Update cached incremental witnesses
