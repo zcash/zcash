@@ -17,6 +17,7 @@
 #include "scheduler.h"
 #include "ui_interface.h"
 #include "crypto/common.h"
+#include "notaries_staked.h"
 
 #ifdef _WIN32
 #include <string.h>
@@ -1260,7 +1261,6 @@ void ThreadSocketHandler()
     }
 }
 extern char ASSETCHAINS_SYMBOL;
-extern int8_t is_STAKED(const char *chain_name);
 
 void ThreadDNSAddressSeed()
 {
