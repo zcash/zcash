@@ -760,23 +760,27 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey, int32_t nHeight, 
     }
     else if ( USE_EXTERNAL_PUBKEY != 0 )
     {
-        //fprintf(stderr,"use notary pubkey\n");
+        fprintf(stderr,"use notary pubkey\n");
         scriptPubKey = CScript() << ParseHex(NOTARY_PUBKEY) << OP_CHECKSIG;
     } else
     {
+        fprintf(stderr,"do not use notary pubkey\n");
         if (!isStake)
         {
+            fprintf(stderr,"is not stake.. whatever that means...\n");
             if (!reservekey.GetReservedKey(pubkey))
             {
+                fprintf(stderr,"returning null here\n");
                 return NULL;
             }
             scriptPubKey.resize(35);
             ptr = (uint8_t *)pubkey.begin();
             scriptPubKey[0] = 33;
-            for (i=0; i<33; i++)
+            for (i=0; i<33; i++) {
                 scriptPubKey[i+1] = ptr[i];
+                fprintf(stderr,"%02x",scriptPubKey[i+1]);
+            }
             scriptPubKey[34] = OP_CHECKSIG;
-            //scriptPubKey = CScript() << ToByteVector(pubkey) << OP_CHECKSIG;
         }
     }
     return CreateNewBlock(scriptPubKey, gpucount, isStake);
