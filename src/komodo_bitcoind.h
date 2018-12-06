@@ -1771,12 +1771,12 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
     {
         if ( (is_PoSblock= komodo_is_PoSblock(slowflag,height,pblock,bnTarget,bhash)) == 0 )
         {
+            if ( slowflag == 0 ) // need all past 100 blocks to calculate PoW target
+                return(0);
             if ( ASSETCHAINS_STAKED == 100 && height > 100 )  // only PoS allowed! POSTEST64
                 return(-1);
             else
             {
-                if ( slowflag == 0 ) // need all past 100 blocks to calculate PoW target
-                    return(0);
                 if ( slowflag != 0 )
                     bnTarget = komodo_PoWtarget(&PoSperc,bnTarget,height,ASSETCHAINS_STAKED);
                 if ( bhash > bnTarget )
@@ -1796,6 +1796,8 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
             fprintf(stderr,"unexpected negative is_PoSblock.%d\n",is_PoSblock);
             return(-1);
         }
+        else if ( ASSETCHAINS_STAKED != 0 )
+            failed = 0;
     }
     if ( failed == 0 && ASSETCHAINS_COMMISSION != 0 ) //ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 )
     {
@@ -1824,10 +1826,26 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
                 return(-1);
         }
     }
-    //fprintf(stderr,"komodo_checkPOW possible.%d slowflag.%d ht.%d notaryid.%d failed.%d\n",possible,slowflag,height,notaryid,failed);
+//fprintf(stderr,"komodo_checkPOW possible.%d slowflag.%d ht.%d notaryid.%d failed.%d\n",possible,slowflag,height,notaryid,failed);
     if ( failed != 0 && possible == 0 && notaryid < 0 )
         return(-1);
     else return(0);
+}
+
+int32_t komodo_acpublic(uint32_t tiptime)
+{
+    int32_t acpublic = ASSETCHAINS_PUBLIC; CBlockIndex *pindex;
+    if ( acpublic == 0 )
+    {
+        if ( tiptime == 0 )
+        {
+            if ( (pindex= chainActive.LastTip()) != 0 )
+                tiptime = pindex->nTime;
+        }
+        if ( (ASSETCHAINS_SYMBOL[0] == 0 || strcmp(ASSETCHAINS_SYMBOL,"ZEX") == 0) && tiptime >= KOMODO_SAPLING_DEADLINE )
+            acpublic = 1;
+    }
+    return(acpublic);
 }
 
 int64_t komodo_newcoins(int64_t *zfundsp,int32_t nHeight,CBlock *pblock)

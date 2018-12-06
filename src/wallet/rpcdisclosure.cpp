@@ -42,7 +42,7 @@ UniValue z_getpaymentdisclosure(const UniValue& params, bool fHelp)
         return NullUniValue;
 
     string enableArg = "paymentdisclosure";
-    auto fEnablePaymentDisclosure = fExperimentalMode && GetBoolArg("-" + enableArg, false);
+    auto fEnablePaymentDisclosure = fExperimentalMode && GetBoolArg("-" + enableArg, true);
     string strPaymentDisclosureDisabledMsg = "";
     if (!fEnablePaymentDisclosure) {
         strPaymentDisclosureDisabledMsg = experimentalDisabledHelpMsg("z_getpaymentdisclosure", enableArg);
@@ -149,7 +149,7 @@ UniValue z_validatepaymentdisclosure(const UniValue& params, bool fHelp)
         return NullUniValue;
 
     string enableArg = "paymentdisclosure";
-    auto fEnablePaymentDisclosure = fExperimentalMode && GetBoolArg("-" + enableArg, false);
+    auto fEnablePaymentDisclosure = fExperimentalMode && GetBoolArg("-" + enableArg, true);
     string strPaymentDisclosureDisabledMsg = "";
     if (!fEnablePaymentDisclosure) {
         strPaymentDisclosureDisabledMsg = experimentalDisabledHelpMsg("z_validatepaymentdisclosure", enableArg);
