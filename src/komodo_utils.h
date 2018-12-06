@@ -1771,8 +1771,8 @@ void komodo_args(char *argv0)
         ASSETCHAINS_SUPPLY = GetArg("-ac_supply",10);
         ASSETCHAINS_COMMISSION = GetArg("-ac_perc",0);
         ASSETCHAINS_OVERRIDE_PUBKEY = GetArg("-ac_pubkey","");
-				ASSETCHAINS_SCRIPTPUB = GetArg("-ac_script","");
-				ASSETCHAINS_FOUNDERS_PERIOD = GetArg("-ac_period",0);
+		ASSETCHAINS_SCRIPTPUB = GetArg("-ac_script","");
+		ASSETCHAINS_FOUNDERS_PERIOD = GetArg("-ac_period",0);
 
         if ( (ASSETCHAINS_STAKED= GetArg("-ac_staked",0)) > 100 )
             ASSETCHAINS_STAKED = 100;
@@ -1874,7 +1874,11 @@ void komodo_args(char *argv0)
             val = ASSETCHAINS_COMMISSION | (((uint64_t)ASSETCHAINS_STAKED & 0xff) << 32) | (((uint64_t)ASSETCHAINS_CC & 0xffff) << 40) | ((ASSETCHAINS_PUBLIC != 0) << 7) | ((ASSETCHAINS_PRIVATE != 0) << 6) | ASSETCHAINS_TXPOW;
             extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(val),(void *)&val);
             if ( ASSETCHAINS_FOUNDERS != 0 )
-                extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_FOUNDERS),(void *)&ASSETCHAINS_FOUNDERS);
+			{
+                extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_FOUNDERS_PERIOD),(void *)&ASSETCHAINS_FOUNDERS_PERIOD);
+				if ( ASSETCHAINS_FOUNDERS_PERIOD != 0 )
+					extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_FOUNDERS_PERIOD),(void *)&ASSETCHAINS_FOUNDERS_PERIOD);
+			}
             if ( ASSETCHAINS_SCRIPTPUB.size() > 1 )
                 extralen += iguana_rwnum(1,&extraptr[extralen],(int32_t)ASSETCHAINS_SCRIPTPUB.size(),(void *)ASSETCHAINS_SCRIPTPUB.c_str());
         }
