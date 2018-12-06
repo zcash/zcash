@@ -158,7 +158,7 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
     for (int i=0; i<33; i++) {
         fprintf(stderr,"%02x",scriptPubKeyIn[i+1]);
     }
-    fprintf(stderr,"/n");
+    fprintf(stderr,"\n");
 
     uint64_t deposits; int32_t isrealtime,kmdheight; uint32_t blocktime; const CChainParams& chainparams = Params();
     //fprintf(stderr,"create new block\n");
@@ -773,6 +773,7 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey, int32_t nHeight, 
         {
             if (!reservekey.GetReservedKey(pubkey))
             {
+                fprintf(stderr,"selected NULL pubkey.");
                 return NULL;
             }
             scriptPubKey.resize(35);
@@ -788,7 +789,7 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey, int32_t nHeight, 
     for (i=0; i<33; i++) {
         fprintf(stderr,"%02x",scriptPubKey[i+1]);
     }
-    fprintf(stderr,"/n");
+    fprintf(stderr,"\n");
     return CreateNewBlock(scriptPubKey, gpucount, isStake);
 }
 
