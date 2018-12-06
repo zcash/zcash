@@ -456,7 +456,7 @@ class CTransactionExceptionData
         CTransactionExceptionData() : scriptPubKey(), voutMask() {}
 };
 
-class CLaunchMap
+/*class CLaunchMap
 {
     public:
         std::unordered_map<std::string, CTransactionExceptionData> lmap;
@@ -477,7 +477,7 @@ class CLaunchMap
             }
         }
 };
-static CLaunchMap launchMap = CLaunchMap();
+static CLaunchMap launchMap = CLaunchMap();*/
 
 /** CCoinsView that adds a memory cache for transactions to another CCoinsView */
 class CCoinsViewCache : public CCoinsViewBacked
