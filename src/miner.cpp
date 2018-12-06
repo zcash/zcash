@@ -1479,7 +1479,7 @@ void static BitcoinMiner()
 
 #ifdef ENABLE_WALLET
             // notaries always default to staking
-            CBlockTemplate *ptr = CreateNewBlockWithKey(reservekey, pindexPrev->GetHeight()+1, gpucount, 0;
+            CBlockTemplate *ptr = CreateNewBlockWithKey(reservekey, pindexPrev->GetHeight()+1, gpucount, 0);
 #else
             CBlockTemplate *ptr = CreateNewBlockWithKey();
 #endif
