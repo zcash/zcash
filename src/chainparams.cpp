@@ -216,6 +216,12 @@ void CChainParams::SetCheckpointData(CChainParams::CCheckpointData checkpointDat
     CChainParams::checkpointData = checkpointData;
 }
 
+void ClearSeeds()
+{
+    vSeeds.clear();
+    vFixedSeeds.clear();
+}
+
 int32_t MAX_BLOCK_SIZE(int32_t height)
 {
     //fprintf(stderr,"MAX_BLOCK_SIZE %d vs. %d\n",height,mainParams.consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight);

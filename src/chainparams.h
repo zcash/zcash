@@ -104,6 +104,7 @@ public:
 
     void SetDefaultPort(uint16_t port) { nDefaultPort = port; }
     void SetCheckpointData(CCheckpointData checkpointData);
+    void ClearSeeds();
 
     //void setnonce(uint32_t nonce) { memcpy(&genesis.nNonce,&nonce,sizeof(nonce)); }
     //void settimestamp(uint32_t timestamp) { genesis.nTime = timestamp; }
@@ -111,8 +112,6 @@ public:
     //void recalc_genesis(uint32_t nonce) { genesis = CreateGenesisBlock(ASSETCHAINS_TIMESTAMP, nonce, GENESIS_NBITS, 1, COIN); };
     CMessageHeader::MessageStartChars pchMessageStart; // jl777 moved
     Consensus::Params consensus;
-    std::vector<SeedSpec6> vFixedSeeds;
-    std::vector<CDNSSeedData> vSeeds;
 
 protected:
     CChainParams() {}
@@ -125,12 +124,14 @@ protected:
     uint64_t nPruneAfterHeight = 0;
     unsigned int nEquihashN = 0;
     unsigned int nEquihashK = 0;
+    std::vector<CDNSSeedData> vSeeds;
     std::vector<unsigned char> base58Prefixes[MAX_BASE58_TYPES];
     std::string bech32HRPs[MAX_BECH32_TYPES];
     std::string strNetworkID;
     std::string strCurrencyUnits;
     uint32_t bip44CoinType;
     CBlock genesis;
+    std::vector<SeedSpec6> vFixedSeeds;
     bool fMiningRequiresPeers = false;
     bool fDefaultConsistencyChecks = false;
     bool fRequireStandard = false;
