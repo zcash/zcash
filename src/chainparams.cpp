@@ -6,6 +6,7 @@
 #include "key_io.h"
 #include "main.h"
 #include "crypto/equihash.h"
+#include "notaries_staked.h"
 
 #include "util.h"
 #include "utilstrencodings.h"
@@ -201,6 +202,14 @@ public:
         fMineBlocksOnDemand = false;
         fTestnetToBeDeprecatedFieldRPC = false;
 
+        // skip DNS seeds for staked chains.
+        if ( is_STAKED(ASSETCHAINS_SYMBOL) != 0 )
+        {
+            fprintf(stderr, "STAKED CHAIN DISABLED ALL SEEDS!\n", );
+            vFixedSeeds.clear();
+            vSeeds.clear();
+        }
+
         if ( pthread_create((pthread_t *)malloc(sizeof(pthread_t)),NULL,chainparams_commandline,(void *)&consensus) != 0 )
         {
 
@@ -257,7 +266,7 @@ void *chainparams_commandline(void *ptr)
         if (ASSETCHAINS_ALGO != ASSETCHAINS_EQUIHASH)
         {
             // this is only good for 60 second blocks with an averaging window of 45. for other parameters, use:
-            // nLwmaAjustedWeight = (N+1)/2 * (0.9989^(500/nPowAveragingWindow)) * nPowTargetSpacing 
+            // nLwmaAjustedWeight = (N+1)/2 * (0.9989^(500/nPowAveragingWindow)) * nPowTargetSpacing
             mainParams.consensus.nLwmaAjustedWeight = 1350;
             mainParams.consensus.nPowAveragingWindow = 45;
             mainParams.consensus.powAlternate = uint256S("00000f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f");
@@ -632,7 +641,7 @@ public:
         BOOST_STATIC_ASSERT(equihash_parameters_acceptable(N, K));
         nEquihashN = N;
         nEquihashK = K;
-        
+
         genesis = CreateGenesisBlock(
             1296688602,
             uint256S("0x0000000000000000000000000000000000000000000000000000000000000009"),

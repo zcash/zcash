@@ -17,7 +17,6 @@
 #include "scheduler.h"
 #include "ui_interface.h"
 #include "crypto/common.h"
-#include "notaries_staked.h"
 
 #ifdef _WIN32
 #include <string.h>
@@ -1263,9 +1262,6 @@ void ThreadSocketHandler()
 
 void ThreadDNSAddressSeed()
 {
-    // skip DNS seeds for staked chains.
-    if ( is_STAKED(ASSETCHAINS_SYMBOL) != 0 )
-        return;
     // goal: only query DNS seeds if address need is acute
     if ((addrman.size() > 0) &&
         (!GetBoolArg("-forcednsseed", false))) {
