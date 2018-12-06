@@ -1260,12 +1260,12 @@ void ThreadSocketHandler()
         }
     }
 }
-extern char ASSETCHAINS_SYMBOL;
+//extern char ASSETCHAINS_SYMBOL[];
 
 void ThreadDNSAddressSeed()
 {
     // skip DNS seeds for staked chains.
-    if ( is_STAKED((const char*)ASSETCHAINS_SYMBOL) != 0 )
+    if ( is_STAKED(ASSETCHAINS_SYMBOL) != 0 )
         return;
     // goal: only query DNS seeds if address need is acute
     if ((addrman.size() > 0) &&
