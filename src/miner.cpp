@@ -773,7 +773,6 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey, int32_t nHeight, 
         {
             if (!reservekey.GetReservedKey(pubkey))
             {
-                fprintf(stderr,"selected NULL pubkey.");
                 return NULL;
             }
             scriptPubKey.resize(35);
@@ -784,6 +783,7 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey, int32_t nHeight, 
             }
             scriptPubKey[34] = OP_CHECKSIG;
         }
+        else fprintf(stderr,"IsStake\n");
     }
     fprintf(stderr,"selected pubkey for new block: ");
     for (i=0; i<33; i++) {
