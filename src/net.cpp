@@ -1260,7 +1260,6 @@ void ThreadSocketHandler()
         }
     }
 }
-//extern char ASSETCHAINS_SYMBOL[];
 
 void ThreadDNSAddressSeed()
 {
