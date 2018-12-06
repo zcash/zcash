@@ -6,7 +6,6 @@
 #include "key_io.h"
 #include "main.h"
 #include "crypto/equihash.h"
-#include "notaries_staked.h"
 
 #include "util.h"
 #include "utilstrencodings.h"
@@ -77,6 +76,7 @@ static CBlock CreateGenesisBlock(uint32_t nTime, const uint256& nNonce, const st
  */
 void *chainparams_commandline(void *ptr);
 #include "komodo_defs.h"
+#include "notaries_staked.h"
 
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 extern uint16_t ASSETCHAINS_P2PPORT,ASSETCHAINS_RPCPORT;
