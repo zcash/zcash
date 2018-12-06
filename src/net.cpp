@@ -1263,12 +1263,12 @@ void ThreadSocketHandler()
 void ThreadDNSAddressSeed()
 {
     extern int8_t is_STAKED(const char *chain_name);
+    extern char ASSETCHAINS_SYMBOL[65];
     // skip DNS seeds for staked chains.
     if ( is_STAKED(ASSETCHAINS_SYMBOL) != 0 )
     {
         fprintf(stderr, "STAKED CHAIN DISABLED ALL SEEDS!\n");
-        mainParams.vFixedSeeds.clear();
-        mainParams.vSeeds.clear();
+        return;
     }
 
     // goal: only query DNS seeds if address need is acute
