@@ -104,7 +104,6 @@ public:
     virtual bool GetBlock(uint256 hash, CBlockIndex& blockIdx) const;
     virtual int32_t GetNotaries(uint8_t pubkeys[64][33], int32_t height, uint32_t timestamp) const;
     virtual bool GetNotarisationData(uint256 notarisationHash, NotarisationData &data) const;
-    virtual bool GetProofRoot(uint256 kmdNotarisationHash, uint256 &momom) const;
     virtual bool CheckNotaryInputs(const CTransaction &tx, uint32_t height, uint32_t timestamp) const;
     virtual uint32_t GetAssetchainsCC() const;
     virtual std::string GetAssetchainsSymbol() const;
