@@ -154,6 +154,11 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
         if (txT == TX_PUBKEY)
             pk = CPubKey(vAddrs[0]);
     }
+    fprintf(stderr,"selected pubkey inside CreateBlock: ");
+    for (i=0; i<33; i++) {
+        fprintf(stderr,"%02x",scriptPubKeyIn[i+1]);
+    }
+    fprintf(stderr,"/n");
 
     uint64_t deposits; int32_t isrealtime,kmdheight; uint32_t blocktime; const CChainParams& chainparams = Params();
     //fprintf(stderr,"create new block\n");
