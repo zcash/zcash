@@ -96,8 +96,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
     }
     if ( opret.size() > 0 )
         mtx.vout.push_back(CTxOut(0,opret));
-    PrecomputedTransactionData txdata(mtx);
-    n = mtx.vin.size(); 
+    n = mtx.vin.size();
     //Reorder vins so that for multiple normal vins all other except vin0 goes to the end
     //This is a must to avoid hardfork change of validation in every CC, because there could be maximum one normal vin at the begining with current validation.   
     if (normalvins>1)
@@ -108,6 +107,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
             mtx.vin.erase(mtx.vin.begin() + 1);            
         }
     }               
+    PrecomputedTransactionData txdata(mtx);
     for (i=0; i<n; i++)
     {
         if ( GetTransaction(mtx.vin[i].prevout.hash,vintx,hashBlock,false) != 0 )
