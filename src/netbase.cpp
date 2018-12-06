@@ -511,7 +511,7 @@ bool static ConnectSocketDirectly(const CService &addrConnect, SOCKET& hSocketRe
         else
 #endif
         {
-            fprintf(stderr, "%s\n", NetworkErrorString(WSAGetLastError()));
+            fprintf(stderr, "%s\n", NetworkErrorString(WSAGetLastError()).c_str());
             if ( NetworkErrorString(WSAGetLastError()) != "101")
                 LogPrintf("connect() to %s failed: %s\n", addrConnect.ToString(), NetworkErrorString(WSAGetLastError()));
             CloseSocket(hSocket);
