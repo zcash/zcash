@@ -507,7 +507,7 @@ public:
     ~CCoinsViewCache();
 
     // Standard CCoinsView methods
-    static CLaunchMap &LaunchMap() { return launchMap; }
+    //static CLaunchMap &LaunchMap() { return launchMap; }
     bool GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const;
     bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const;
     bool GetNullifier(const uint256 &nullifier, ShieldedType type) const;
