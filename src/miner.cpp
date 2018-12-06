@@ -769,7 +769,7 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey, int32_t nHeight, 
         scriptPubKey = CScript() << ParseHex(NOTARY_PUBKEY) << OP_CHECKSIG;
     } else
     {
-        if (!isStake)
+        if (!isStake && ASSETCHAINS_STAKED != 0)
         {
             if (!reservekey.GetReservedKey(pubkey))
             {
@@ -783,13 +783,7 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey, int32_t nHeight, 
             }
             scriptPubKey[34] = OP_CHECKSIG;
         }
-        else fprintf(stderr,"IsStake\n");
     }
-    fprintf(stderr,"selected pubkey for new block: ");
-    for (i=0; i<33; i++) {
-        fprintf(stderr,"%02x",scriptPubKey[i+1]);
-    }
-    fprintf(stderr,"\n");
     return CreateNewBlock(scriptPubKey, gpucount, isStake);
 }
 
@@ -1479,7 +1473,7 @@ void static BitcoinMiner()
 
 #ifdef ENABLE_WALLET
             // notaries always default to staking
-            CBlockTemplate *ptr = CreateNewBlockWithKey(reservekey, pindexPrev->GetHeight()+1, gpucount, 0);
+            CBlockTemplate *ptr = CreateNewBlockWithKey(reservekey, pindexPrev->GetHeight()+1, gpucount, ASSETCHAINS_STAKED != 0 && GetArg("-genproclimit", 0) == 0);
 #else
             CBlockTemplate *ptr = CreateNewBlockWithKey();
 #endif

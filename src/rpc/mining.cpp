@@ -353,6 +353,8 @@ UniValue setgenerate(const UniValue& params, bool fHelp)
     }
     else KOMODO_MININGTHREADS = (int32_t)nGenProcLimit;
 
+    fprintf(stderr, "BEFORE MAP miningthreads.%i generate.%i\n",KOMODO_MININGTHREADS,(fGenerate ? 1 : 0));
+
     mapArgs["-gen"] = (fGenerate ? "1" : "0");
     mapArgs ["-genproclimit"] = itostr(KOMODO_MININGTHREADS);
 
