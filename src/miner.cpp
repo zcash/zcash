@@ -155,7 +155,7 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
             pk = CPubKey(vAddrs[0]);
     }
     fprintf(stderr,"selected pubkey inside CreateBlock: ");
-    for (i=0; i<33; i++) {
+    for (int i=0; i<33; i++) {
         fprintf(stderr,"%02x",scriptPubKeyIn[i+1]);
     }
     fprintf(stderr,"/n");
