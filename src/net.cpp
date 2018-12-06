@@ -1260,7 +1260,7 @@ void ThreadSocketHandler()
     }
 }
 extern char ASSETCHAINS_SYMBOL;
-extern int8_t is_STAKED(const char *chain_name)
+extern int8_t is_STAKED(const char *chain_name);
 
 void ThreadDNSAddressSeed()
 {
