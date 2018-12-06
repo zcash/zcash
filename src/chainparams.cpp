@@ -216,12 +216,6 @@ void CChainParams::SetCheckpointData(CChainParams::CCheckpointData checkpointDat
     CChainParams::checkpointData = checkpointData;
 }
 
-void ClearSeeds()
-{
-    vSeeds.clear();
-    vFixedSeeds.clear();
-}
-
 int32_t MAX_BLOCK_SIZE(int32_t height)
 {
     //fprintf(stderr,"MAX_BLOCK_SIZE %d vs. %d\n",height,mainParams.consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight);
@@ -259,13 +253,6 @@ void *chainparams_commandline(void *ptr)
         mainParams.pchMessageStart[1] = (ASSETCHAINS_MAGIC >> 8) & 0xff;
         mainParams.pchMessageStart[2] = (ASSETCHAINS_MAGIC >> 16) & 0xff;
         mainParams.pchMessageStart[3] = (ASSETCHAINS_MAGIC >> 24) & 0xff;
-        // skip DNS seeds for staked chains.
-        if ( is_STAKED(ASSETCHAINS_SYMBOL) != 0 )
-        {
-            fprintf(stderr, "STAKED CHAIN DISABLED ALL SEEDS!\n");
-            mainParams.vFixedSeeds.clear();
-            mainParams.vSeeds.clear();
-        }
         fprintf(stderr,">>>>>>>>>> %s: p2p.%u rpc.%u magic.%08x %u %u coins\n",ASSETCHAINS_SYMBOL,ASSETCHAINS_P2PPORT,ASSETCHAINS_RPCPORT,ASSETCHAINS_MAGIC,ASSETCHAINS_MAGIC,(uint32_t)ASSETCHAINS_SUPPLY);
 
         if (ASSETCHAINS_ALGO != ASSETCHAINS_EQUIHASH)
