@@ -344,7 +344,10 @@ UniValue setgenerate(const UniValue& params, bool fHelp)
     {
         VERUS_MINTBLOCKS = 1;
         fGenerate = GetBoolArg("-gen", false);
-        nGenProcLimit = KOMODO_MININGTHREADS;
+        if ( ASSETCHAINS_STAKED != 0 )
+            nGenProcLimit = KOMODO_MININGTHREADS;
+        else
+            KOMODO_MININGTHREADS = nGenProcLimit;
     }
     else if (!fGenerate)
     {
@@ -352,8 +355,6 @@ UniValue setgenerate(const UniValue& params, bool fHelp)
         KOMODO_MININGTHREADS = 0;
     }
     else KOMODO_MININGTHREADS = (int32_t)nGenProcLimit;
-
-    fprintf(stderr, "BEFORE MAP miningthreads.%i generate.%i\n",KOMODO_MININGTHREADS,(fGenerate ? 1 : 0));
 
     mapArgs["-gen"] = (fGenerate ? "1" : "0");
     mapArgs ["-genproclimit"] = itostr(KOMODO_MININGTHREADS);

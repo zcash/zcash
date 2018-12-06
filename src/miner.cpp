@@ -769,7 +769,7 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey, int32_t nHeight, 
         scriptPubKey = CScript() << ParseHex(NOTARY_PUBKEY) << OP_CHECKSIG;
     } else
     {
-        if (!isStake && ASSETCHAINS_STAKED != 0)
+        if (!isStake || ASSETCHAINS_STAKED != 0)
         {
             if (!reservekey.GetReservedKey(pubkey))
             {
