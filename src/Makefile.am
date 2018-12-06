@@ -261,7 +261,7 @@ BITCOIN_CORE_H = \
   wallet/wallet.h \
   wallet/wallet_ismine.h \
   wallet/walletdb.h \
-  veruslaunch.h \
+#  veruslaunch.h \
   zmq/zmqabstractnotifier.h \
   zmq/zmqconfig.h\
   zmq/zmqnotificationinterface.h \
@@ -483,7 +483,7 @@ libbitcoin_common_a_SOURCES = \
   script/script_error.cpp \
   script/sign.cpp \
   script/standard.cpp \
-  veruslaunch.cpp \
+#  veruslaunch.cpp \
   transaction_builder.cpp \
   $(BITCOIN_CORE_H) \
   $(LIBZCASH_H)
