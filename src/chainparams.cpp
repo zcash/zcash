@@ -83,6 +83,7 @@ extern uint32_t ASSETCHAIN_INIT, ASSETCHAINS_MAGIC;
 extern int32_t VERUS_BLOCK_POSUNITS, ASSETCHAINS_LWMAPOS, ASSETCHAINS_SAPLING, ASSETCHAINS_OVERWINTER;
 extern uint64_t ASSETCHAINS_SUPPLY, ASSETCHAINS_ALGO, ASSETCHAINS_EQUIHASH, ASSETCHAINS_VERUSHASH;
 
+extern int8_t is_STAKED(const char *chain_name);
 const arith_uint256 maxUint = UintToArith256(uint256S("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
 
 class CMainParams : public CChainParams {
@@ -201,21 +202,6 @@ public:
         fMineBlocksOnDemand = false;
         fTestnetToBeDeprecatedFieldRPC = false;
 
-        // skip DNS seeds for staked chains.
-        int8_t STAKED = 0;
-        if ( (strcmp(ASSETCHAINS_SYMBOL, "LABS") == 0) || (strncmp(ASSETCHAINS_SYMBOL, "LABS", 4) == 0) )
-            STAKED = 1;
-        else if ( (strcmp(ASSETCHAINS_SYMBOL, "LAB") == 0) || (strncmp(ASSETCHAINS_SYMBOL, "LAB", 3) == 0) )
-            STAKED = 2;
-        else if ( (strcmp(ASSETCHAINS_SYMBOL, "CFEK") == 0) || (strncmp(ASSETCHAINS_SYMBOL, "CFEK", 4) == 0) )
-            STAKED =  3;
-        if ( STAKED != 0 )
-        {
-            fprintf(stderr, "STAKED CHAIN DISABLED ALL SEEDS!\n");
-            vFixedSeeds.clear();
-            vSeeds.clear();
-        }
-
         if ( pthread_create((pthread_t *)malloc(sizeof(pthread_t)),NULL,chainparams_commandline,(void *)&consensus) != 0 )
         {
 
@@ -267,6 +253,13 @@ void *chainparams_commandline(void *ptr)
         mainParams.pchMessageStart[1] = (ASSETCHAINS_MAGIC >> 8) & 0xff;
         mainParams.pchMessageStart[2] = (ASSETCHAINS_MAGIC >> 16) & 0xff;
         mainParams.pchMessageStart[3] = (ASSETCHAINS_MAGIC >> 24) & 0xff;
+        // skip DNS seeds for staked chains.
+        if ( is_STAKED(ASSETCHAINS_SYMBOL) != 0 )
+        {
+            fprintf(stderr, "STAKED CHAIN DISABLED ALL SEEDS!\n");
+            mainParams.vFixedSeeds.clear();
+            mainParams.vSeeds.clear();
+        }
         fprintf(stderr,">>>>>>>>>> %s: p2p.%u rpc.%u magic.%08x %u %u coins\n",ASSETCHAINS_SYMBOL,ASSETCHAINS_P2PPORT,ASSETCHAINS_RPCPORT,ASSETCHAINS_MAGIC,ASSETCHAINS_MAGIC,(uint32_t)ASSETCHAINS_SUPPLY);
 
         if (ASSETCHAINS_ALGO != ASSETCHAINS_EQUIHASH)
