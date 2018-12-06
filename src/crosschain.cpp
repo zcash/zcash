@@ -96,8 +96,9 @@ template <typename IsTarget>
 int ScanNotarisationsFromHeight(int nHeight, const IsTarget f, Notarisation &found)
 {
     int limit = std::min(nHeight + NOTARISATION_SCAN_LIMIT_BLOCKS, chainActive.Height());
+    int start = std::max(nHeight, 1);
     
-    for (int h=nHeight; h<limit; h++) {
+    for (int h=start; h<limit; h++) {
         NotarisationsInBlock notarisations;
 
         if (!GetBlockNotarisations(*chainActive[h]->phashBlock, notarisations))
@@ -243,6 +244,38 @@ bool GetNextBacknotarisation(uint256 kmdNotarisationTxid, Notarisation &out)
     }
 
     return (bool) ScanNotarisationsFromHeight(block.GetHeight()+1, &IsSameAssetChain, out);
+}
+
+
+bool CheckMoMoM(uint256 kmdNotarisationHash, uint256 momom)
+{
+    /*
+     * Given a notarisation hash and an MoMoM. Backnotarisations may arrive out of order
+     * or multiple in the same block. So dereference the notarisation hash to the corresponding
+     * backnotarisation and scan around the kmdheight to see if the MoMoM is a match.
+     * This is a sledgehammer approach...
+     */
+
+    Notarisation bn;
+    if (!GetBackNotarisation(kmdNotarisationHash, bn))
+        return false;
+
+    // Need to get block height of that backnotarisation
+    EvalRef eval;
+    CBlockIndex block;
+    CTransaction tx;
+    if (!eval->GetTxConfirmed(bn.first, tx, block)){
+        fprintf(stderr, "Can't get height of backnotarisation, this should not happen\n");
+        return false;
+    }
+
+    Notarisation nota;
+    auto checkMoMoM = [&](Notarisation &nota) {
+        return nota.second.MoMoM == momom;
+    };
+
+    return (bool) ScanNotarisationsFromHeight(block.nHeight-100, checkMoMoM, nota);
+
 }
 
 
