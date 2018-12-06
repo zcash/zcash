@@ -1259,11 +1259,14 @@ void ThreadSocketHandler()
         }
     }
 }
-
+extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN]
+extern int8_t is_STAKED(const char *chain_name)
 
 void ThreadDNSAddressSeed()
 {
-    return;
+    // skip DNS seeds for staked chains.
+    if ( is_STAKED(ASSETCHAINS_SYMBOL) != 0 )
+        return;
     // goal: only query DNS seeds if address need is acute
     if ((addrman.size() > 0) &&
         (!GetBoolArg("-forcednsseed", false))) {
