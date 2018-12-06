@@ -205,7 +205,7 @@ public:
         // skip DNS seeds for staked chains.
         if ( is_STAKED(ASSETCHAINS_SYMBOL) != 0 )
         {
-            fprintf(stderr, "STAKED CHAIN DISABLED ALL SEEDS!\n", );
+            fprintf(stderr, "STAKED CHAIN DISABLED ALL SEEDS!\n");
             vFixedSeeds.clear();
             vSeeds.clear();
         }
