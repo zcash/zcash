@@ -192,17 +192,6 @@ bool Eval::GetNotarisationData(const uint256 notaryHash, NotarisationData &data)
     return true;
 }
 
-/*
- * Get MoMoM corresponding to a notarisation tx hash (on assetchain)
- */
-bool Eval::GetProofRoot(uint256 kmdNotarisationHash, uint256 &momom) const
-{
-    std::pair<uint256,NotarisationData> out;
-    if (!GetNextBacknotarisation(kmdNotarisationHash, out)) return false;
-    momom = out.second.MoMoM;
-    return true;
-}
-
 
 uint32_t Eval::GetAssetchainsCC() const
 {
