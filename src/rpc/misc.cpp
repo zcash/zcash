@@ -119,6 +119,19 @@ UniValue getiguanajson(const UniValue& params, bool fHelp)
 
 UniValue getnotarysendmany(const UniValue& params, bool fHelp)
 {
+    if (fHelp || params.size() > 1)
+      throw runtime_error(
+          "getnotarysendmany\n"
+          "Returns a sendmany JSON array with all current notaries Raddress's.\n"
+          "\nExamples:\n"
+          + HelpExampleCli("getnotarysendmany", "10")
+          + HelpExampleRpc("getnotarysendmany", "10")
+      );
+    int amount = 0;
+    if ( params.size() == 1 ) {
+        amount = params[0].get_int();
+    }
+
     int era = getera(time(NULL));
 
     UniValue ret(UniValue::VOBJ);
@@ -127,7 +140,7 @@ UniValue getnotarysendmany(const UniValue& params, bool fHelp)
         char Raddress[18]; uint8_t pubkey33[33];
         decode_hex(pubkey33,33,(char *)notaries_STAKED[era][i][1]);
         pubkey2addr((char *)Raddress,(uint8_t *)pubkey33);
-        ret.push_back(Pair(Raddress,(int)10));
+        ret.push_back(Pair(Raddress,amount));
     }
     return ret;
 }
