@@ -1259,8 +1259,8 @@ void ThreadSocketHandler()
         }
     }
 }
-extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN]
-int8_t is_STAKED(const char *chain_name)
+extern char ASSETCHAINS_SYMBOL;
+extern int8_t is_STAKED(const char *chain_name)
 
 void ThreadDNSAddressSeed()
 {
