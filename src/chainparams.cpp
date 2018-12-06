@@ -83,7 +83,6 @@ extern uint32_t ASSETCHAIN_INIT, ASSETCHAINS_MAGIC;
 extern int32_t VERUS_BLOCK_POSUNITS, ASSETCHAINS_LWMAPOS, ASSETCHAINS_SAPLING, ASSETCHAINS_OVERWINTER;
 extern uint64_t ASSETCHAINS_SUPPLY, ASSETCHAINS_ALGO, ASSETCHAINS_EQUIHASH, ASSETCHAINS_VERUSHASH;
 
-int8_t is_STAKED(const char *chain_name);
 const arith_uint256 maxUint = UintToArith256(uint256S("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
 
 class CMainParams : public CChainParams {
@@ -203,7 +202,14 @@ public:
         fTestnetToBeDeprecatedFieldRPC = false;
 
         // skip DNS seeds for staked chains.
-        if ( is_STAKED(ASSETCHAINS_SYMBOL) != 0 )
+        int8_t STAKED = 0;
+        if ( (strcmp(chain_name, "LABS") == 0) || (strncmp(chain_name, "LABS", 4) == 0) )
+            STAKED = 1;
+        else if ( (strcmp(chain_name, "LAB") == 0) || (strncmp(chain_name, "LAB", 3) == 0) )
+            STAKED = 2;
+        else if ( (strcmp(chain_name, "CFEK") == 0) || (strncmp(chain_name, "CFEK", 4) == 0) )
+            STAKED =  3;
+        if ( STAKED != 0 )
         {
             fprintf(stderr, "STAKED CHAIN DISABLED ALL SEEDS!\n");
             vFixedSeeds.clear();
