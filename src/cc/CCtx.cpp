@@ -69,8 +69,8 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
     {
         if ( GetTransaction(mtx.vin[i].prevout.hash,vintx,hashBlock,false) != 0 )
         {
-            if ( vintx.vout[utxovout].scriptPubKey.IsPayToCryptoCondition() == 0 )
-                if (ccvins==0) normalvins++;            
+            if ( vintx.vout[mtx.vin[i].prevout.n].scriptPubKey.IsPayToCryptoCondition() == 0 && ccvins==0)
+                normalvins++;            
             else ccvins++;
         }            
     }
