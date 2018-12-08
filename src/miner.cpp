@@ -737,7 +737,7 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey, int32_t nHeight, 
     }
     else
     {
-        if (!isStake)
+        //if ( !isStake || ASSETCHAINS_STAKED != 0 )
         {
             if (!reservekey.GetReservedKey(pubkey))
             {

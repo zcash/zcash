@@ -3615,7 +3615,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
     if (!NetworkUpgradeActive(nextBlockHeight, Params().GetConsensus(), Consensus::UPGRADE_SAPLING)) {
         max_tx_size = MAX_TX_SIZE_BEFORE_SAPLING;
     }
-
+/*
     // Discourage fee sniping.
     //
     // However because of a off-by-one-error in previous versions we need to
@@ -3636,7 +3636,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
         txNew.nLockTime = std::max(0, (int)txNew.nLockTime - GetRandInt(100));
 
     assert(txNew.nLockTime <= (unsigned int)chainActive.Height());
-    assert(txNew.nLockTime < LOCKTIME_THRESHOLD);
+    assert(txNew.nLockTime < LOCKTIME_THRESHOLD);*/
 
     {
         LOCK2(cs_main, cs_wallet);

@@ -62,8 +62,26 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
     GetCCaddress(cp,myaddr,mypk);
     mycond = MakeCCcond1(cp->evalcode,mypk);
     GetCCaddress(cp,unspendable,unspendablepk);
-    othercond = MakeCCcond1(cp->evalcode,unspendablepk);
-    //fprintf(stderr,"myCCaddr.(%s) %p vs unspendable.(%s) %p\n",myaddr,mycond,unspendable,othercond);
+    othercond = MakeCCcond1(cp->evalcode,unspendablepk);    
+    //Reorder vins so that for multiple normal vins all other except vin0 goes to the end
+    //This is a must to avoid hardfork change of validation in every CC, because there could be maximum one normal vin at the begining with current validation.
+    for (i=0; i<n; i++)
+    {
+        if ( GetTransaction(mtx.vin[i].prevout.hash,vintx,hashBlock,false) != 0 )
+        {
+            if ( vintx.vout[mtx.vin[i].prevout.n].scriptPubKey.IsPayToCryptoCondition() == 0 && ccvins==0)
+                normalvins++;            
+            else ccvins++;
+        }            
+    }
+    if (normalvins>1 && ccvins)
+    {        
+        for(i=1;i<normalvins;i++)
+        {   
+            mtx.vin.push_back(mtx.vin[1]);
+            mtx.vin.erase(mtx.vin.begin() + 1);            
+        }
+    }
     memset(utxovalues,0,sizeof(utxovalues));
     for (i=0; i<n; i++)
     {
@@ -74,14 +92,12 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
             totalinputs += utxovalues[i];
             if ( vintx.vout[utxovout].scriptPubKey.IsPayToCryptoCondition() == 0 )
             {
-                //fprintf(stderr,"vin.%d is normal %.8f\n",i,(double)utxovalues[i]/COIN);
-                if (ccvins==0) normalvins++;
+                //fprintf(stderr,"vin.%d is normal %.8f\n",i,(double)utxovalues[i]/COIN);               
                 normalinputs += utxovalues[i];
                 vinimask |= (1LL << i);
             }
             else
-            {
-                ccvins++;
+            {                
                 mask |= (1LL << i);
             }
         } else fprintf(stderr,"FinalizeCCTx couldnt find %s\n",mtx.vin[i].prevout.hash.ToString().c_str());
@@ -98,16 +114,6 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
         mtx.vout.push_back(CTxOut(0,opret));
     PrecomputedTransactionData txdata(mtx);
     n = mtx.vin.size(); 
-    //Reorder vins so that for multiple normal vins all other except vin0 goes to the end
-    //This is a must to avoid hardfork change of validation in every CC, because there could be maximum one normal vin at the begining with current validation.   
-    if (normalvins>1)
-    {        
-        for(i=1;i<normalvins;i++)
-        {   
-            mtx.vin.push_back(mtx.vin[1]);
-            mtx.vin.erase(mtx.vin.begin() + 1);            
-        }
-    }               
     for (i=0; i<n; i++)
     {
         if ( GetTransaction(mtx.vin[i].prevout.hash,vintx,hashBlock,false) != 0 )
