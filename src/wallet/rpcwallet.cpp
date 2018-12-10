@@ -1817,7 +1817,7 @@ UniValue listtransactions(const UniValue& params, bool fHelp)
         CWalletTx *const pwtx = (*it).second.first;
         if (pwtx != 0)
         {
-            fprintf(stderr,"pwtx iter %s\n",pwtx->GetHash().GetHex().c_str());
+            fprintf(stderr,"pwtx iter.%d %s\n",(int32_t)pwtx->nOrderPos,pwtx->GetHash().GetHex().c_str());
             ListTransactions(*pwtx, strAccount, 0, true, ret, filter);
         }
         //else fprintf(stderr,"null pwtx\n");
