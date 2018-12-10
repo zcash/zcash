@@ -1817,7 +1817,7 @@ UniValue listtransactions(const UniValue& params, bool fHelp)
         CWalletTx *const pwtx = (*it).second.first;
         if (pwtx != 0)
             ListTransactions(*pwtx, strAccount, 0, true, ret, filter);
-        else fprintf(stderr,"null pwtx\n");
+        //else fprintf(stderr,"null pwtx\n");
         CAccountingEntry *const pacentry = (*it).second.second;
         if (pacentry != 0)
             AcentryToJSON(*pacentry, strAccount, ret);

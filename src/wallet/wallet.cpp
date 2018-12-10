@@ -2533,11 +2533,16 @@ void CWalletTx::GetAmounts(list<COutputEntry>& listReceived,
         {
             // Don't report 'change' txouts
             if (!(filter & ISMINE_CHANGE) && pwallet->IsChange(txout))
+            {
+                fprintf(stderr,"skip change vout\n");
                 continue;
+            }
         }
         else if (!(fIsMine & filter))
+        {
+            fprintf(stderr,"skip filtered vout %d %d\n",(int32_t)fIsMine,(int32_t)filter);
             continue;
-
+        }
         // In either case, we need to get the destination address
         CTxDestination address;
         if (!ExtractDestination(txout.scriptPubKey, address))
@@ -2551,10 +2556,12 @@ void CWalletTx::GetAmounts(list<COutputEntry>& listReceived,
         // If we are debited by the transaction, add the output as a "sent" entry
         if (nDebit > 0)
             listSent.push_back(output);
+        else fprintf(stderr,"not sent vout %d %d\n",(int32_t)fIsMine,(int32_t)filter);
 
         // If we are receiving the output, add it as a "received" entry
         if (fIsMine & filter)
             listReceived.push_back(output);
+        else fprintf(stderr,"not received vout %d %d\n",(int32_t)fIsMine,(int32_t)filter);
     }
 
 }
