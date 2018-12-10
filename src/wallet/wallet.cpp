@@ -1304,7 +1304,7 @@ CWallet::TxItems CWallet::OrderedTxItems(std::list<CAccountingEntry>& acentries,
     {
         CWalletTx* wtx = &((*it).second);
         txOrdered.insert(make_pair(wtx->nOrderPos, TxPair(wtx, (CAccountingEntry*)0)));
-        fprintf(stderr,"ordered iter %s\n",wtx->GetHash().GetHex().c_str());
+        //fprintf(stderr,"ordered iter %s\n",wtx->GetHash().GetHex().c_str());
     }
     acentries.clear();
     walletdb.ListAccountCreditDebit(strAccount, acentries);
