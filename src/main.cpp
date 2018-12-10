@@ -1980,7 +1980,7 @@ bool myAddtomempool(CTransaction &tx, CValidationState *pstate)
         pstate = &state;
     CTransaction Ltx; bool fMissingInputs,fOverrideFees = false;
     if ( mempool.lookup(tx.GetHash(),Ltx) == 0 )
-        return(AcceptToMemoryPool(mempool, *pstate, tx, true, &fMissingInputs, !fOverrideFees));
+        return(AcceptToMemoryPool(mempool, *pstate, tx, false, &fMissingInputs, !fOverrideFees));
     else return(true);
 }
 
