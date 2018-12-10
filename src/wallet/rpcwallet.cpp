@@ -1819,8 +1819,7 @@ UniValue listtransactions(const UniValue& params, bool fHelp)
         {
             //fprintf(stderr,"pwtx iter.%d %s\n",(int32_t)pwtx->nOrderPos,pwtx->GetHash().GetHex().c_str());
             ListTransactions(*pwtx, strAccount, 0, true, ret, filter);
-        }
-        //else fprintf(stderr,"null pwtx\n");
+        } //else fprintf(stderr,"null pwtx\n");
         CAccountingEntry *const pacentry = (*it).second.second;
         if (pacentry != 0)
             AcentryToJSON(*pacentry, strAccount, ret);
