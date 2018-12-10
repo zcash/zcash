@@ -2537,14 +2537,14 @@ void CWalletTx::GetAmounts(list<COutputEntry>& listReceived,
             {
                 if ( oneshot++ > 1 )
                 {
-                    fprintf(stderr,"skip change vout\n");
+                    //fprintf(stderr,"skip change vout\n");
                     continue;
                 }
             }
         }
         else if (!(fIsMine & filter))
         {
-            fprintf(stderr,"skip filtered vout %d %d\n",(int32_t)fIsMine,(int32_t)filter);
+            //fprintf(stderr,"skip filtered vout %d %d\n",(int32_t)fIsMine,(int32_t)filter);
             continue;
         }
         // In either case, we need to get the destination address
