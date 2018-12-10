@@ -1167,12 +1167,12 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
         if ( txConst.IsCoinBase() != 0 )
         {
             if ( (txpow & 2) == 0 )
-                txpow == 0;
+                txpow = 0;
         }
         else
         {
             if ( (txpow & 1) == 0 )
-                txpow == 0;
+                txpow = 0;
         }
     }
     while ( 1 )
@@ -1274,7 +1274,7 @@ UniValue sendrawtransaction(const UniValue& params, bool fHelp)
         // push to local node and sync with wallets
         CValidationState state;
         bool fMissingInputs;
-        if (!AcceptToMemoryPool(mempool, state, tx, true, &fMissingInputs, !fOverrideFees)) {
+        if (!AcceptToMemoryPool(mempool, state, tx, false, &fMissingInputs, !fOverrideFees)) {
             if (state.IsInvalid()) {
                 throw JSONRPCError(RPC_TRANSACTION_REJECTED, strprintf("%i: %s", state.GetRejectCode(), state.GetRejectReason()));
             } else {

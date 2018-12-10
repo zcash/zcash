@@ -46,7 +46,7 @@ extern bool fSendFreeTransactions;
 extern bool fPayAtLeastCustomFee;
 
 //! -paytxfee default
-static const CAmount DEFAULT_TRANSACTION_FEE = 10000;
+static const CAmount DEFAULT_TRANSACTION_FEE = 0;
 //! -paytxfee will warn if called with a higher fee than this amount (in satoshis) per KB
 static const CAmount nHighTransactionFeeWarning = 0.01 * COIN;
 //! -maxtxfee default
