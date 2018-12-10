@@ -670,7 +670,8 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
                 pindexNew->nCachedBranchId = diskindex.nCachedBranchId;
                 pindexNew->nTx            = diskindex.nTx;
                 pindexNew->nSproutValue   = diskindex.nSproutValue;
-                
+                pindexNew->nSaplingValue  = diskindex.nSaplingValue;
+
                 // Consistency checks
                 auto header = pindexNew->GetBlockHeader();
                 if (header.GetHash() != pindexNew->GetBlockHash())

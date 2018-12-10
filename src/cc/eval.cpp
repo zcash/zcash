@@ -74,11 +74,11 @@ bool Eval::Dispatch(const CC *cond, const CTransaction &txTo, unsigned int nIn)
     switch ( ecode )
     {
         case EVAL_IMPORTPAYOUT:
-            //return ImportPayout(vparams, txTo, nIn);
+            return ImportPayout(vparams, txTo, nIn);
             break;
 
         case EVAL_IMPORTCOIN:
-            //return ImportCoin(vparams, txTo, nIn);
+            return ImportCoin(vparams, txTo, nIn);
             break;
 
         default:
@@ -189,17 +189,6 @@ bool Eval::GetNotarisationData(const uint256 notaryHash, NotarisationData &data)
     if (!GetTxConfirmed(notaryHash, notarisationTx, block)) return false;
     if (!CheckNotaryInputs(notarisationTx, block.GetHeight(), block.nTime)) return false;
     if (!ParseNotarisationOpReturn(notarisationTx, data)) return false;
-    return true;
-}
-
-/*
- * Get MoMoM corresponding to a notarisation tx hash (on assetchain)
- */
-bool Eval::GetProofRoot(uint256 kmdNotarisationHash, uint256 &momom) const
-{
-    std::pair<uint256,NotarisationData> out;
-    if (!GetNextBacknotarisation(kmdNotarisationHash, out)) return false;
-    momom = out.second.MoMoM;
     return true;
 }
 
