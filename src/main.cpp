@@ -77,7 +77,7 @@ static int64_t nTimeBestReceived = 0;
 CWaitableCriticalSection csBestBlock;
 CConditionVariable cvBlockChange;
 int nScriptCheckThreads = 0;
-bool fExperimentalMode = false;
+bool fExperimentalMode = true;
 bool fImporting = false;
 bool fReindex = false;
 bool fTxIndex = false;
@@ -1034,9 +1034,12 @@ bool ContextualCheckTransaction(
         }
 
         // Reject transactions with non-Sapling version group ID
-        if (tx.fOverwintered && tx.nVersionGroupId != SAPLING_VERSION_GROUP_ID) {
-            return state.DoS(dosLevel, error("CheckTransaction(): invalid Sapling tx version"),
-                    REJECT_INVALID, "bad-sapling-tx-version-group-id");
+        if (tx.fOverwintered && tx.nVersionGroupId != SAPLING_VERSION_GROUP_ID)
+        {
+            //return state.DoS(dosLevel, error("CheckTransaction(): invalid Sapling tx version"),REJECT_INVALID, "bad-sapling-tx-version-group-id");
+            return state.DoS(isInitBlockDownload() ? 0 : dosLevel,
+                             error("CheckTransaction(): invalid Sapling tx version"),
+                             REJECT_INVALID, "bad-sapling-tx-version-group-id");
         }
 
         // Reject transactions with invalid version
@@ -1058,9 +1061,12 @@ bool ContextualCheckTransaction(
         }
 
         // Reject transactions with non-Overwinter version group ID
-        if (tx.fOverwintered && tx.nVersionGroupId != OVERWINTER_VERSION_GROUP_ID) {
-            return state.DoS(dosLevel, error("CheckTransaction(): invalid Overwinter tx version"),
-                    REJECT_INVALID, "bad-overwinter-tx-version-group-id");
+        if (tx.fOverwintered && tx.nVersionGroupId != OVERWINTER_VERSION_GROUP_ID)
+        {
+            //return state.DoS(dosLevel, error("CheckTransaction(): invalid Overwinter tx version"),REJECT_INVALID, "bad-overwinter-tx-version-group-id");
+            return state.DoS(isInitBlockDownload() ? 0 : dosLevel,
+                             error("CheckTransaction(): invalid Overwinter tx version"),
+                             REJECT_INVALID, "bad-overwinter-tx-version-group-id");
         }
 
         // Reject transactions with invalid version
@@ -1253,10 +1259,12 @@ int32_t komodo_isnotaryvout(char *coinaddr) // from ac_private chains only
     return(0);
 }
 
+int32_t komodo_acpublic(uint32_t tiptime);
+
 bool CheckTransactionWithoutProofVerification(uint32_t tiptime,const CTransaction& tx, CValidationState &state)
 {
     // Basic checks that don't depend on any context
-    int32_t invalid_private_taddr=0,z_z=0,z_t=0,t_z=0,acpublic = ASSETCHAINS_PUBLIC;
+    int32_t invalid_private_taddr=0,z_z=0,z_t=0,t_z=0,acpublic = komodo_acpublic(tiptime);
     /**
      * Previously:
      * 1. The consensus rule below was:
@@ -1359,8 +1367,6 @@ bool CheckTransactionWithoutProofVerification(uint32_t tiptime,const CTransactio
         return state.DoS(100, error("CheckTransaction(): tx.valueBalance has no sources or sinks"),
                             REJECT_INVALID, "bad-txns-valuebalance-nonzero");
     }
-    if ( (ASSETCHAINS_SYMBOL[0] == 0 || strcmp(ASSETCHAINS_SYMBOL,"ZEX") == 0) && tiptime >= KOMODO_SAPLING_DEADLINE )
-        acpublic = 1;
     if ( acpublic != 0 && (tx.vShieldedSpend.empty() == 0 || tx.vShieldedOutput.empty() == 0) )
     {
         return state.DoS(100, error("CheckTransaction(): this is a public chain, no sapling allowed"),
@@ -1725,7 +1731,8 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
                         if (pfMissingInputs)
                             *pfMissingInputs = true;
                         //fprintf(stderr,"missing inputs\n");
-                        return state.DoS(0, error("AcceptToMemoryPool: tx inputs not found"),REJECT_INVALID, "bad-txns-inputs-missing");
+                        //return state.DoS(0, error("AcceptToMemoryPool: tx inputs not found"),REJECT_INVALID, "bad-txns-inputs-missing");
+                        return(false);
                     }
                 }
 
@@ -1973,12 +1980,13 @@ bool myAddtomempool(CTransaction &tx, CValidationState *pstate)
         pstate = &state;
     CTransaction Ltx; bool fMissingInputs,fOverrideFees = false;
     if ( mempool.lookup(tx.GetHash(),Ltx) == 0 )
-        return(AcceptToMemoryPool(mempool, *pstate, tx, false, &fMissingInputs, !fOverrideFees));
+        return(AcceptToMemoryPool(mempool, *pstate, tx, true, &fMissingInputs, !fOverrideFees));
     else return(true);
 }
 
 bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock)
 {
+    memset(&hashBlock,0,sizeof(hashBlock));
     // need a GetTransaction without lock so the validation code for assets can run without deadlock
     {
         //fprintf(stderr,"check mempool\n");
@@ -2022,6 +2030,7 @@ bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlo
 bool GetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock, bool fAllowSlow)
 {
     CBlockIndex *pindexSlow = NULL;
+    memset(&hashBlock,0,sizeof(hashBlock));
 
     LOCK(cs_main);
 
@@ -4678,7 +4687,7 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
             const uint256 &hash = tx.GetHash();
             if ( tx.vjoinsplit.size() == 0 ) {
                 transactionsToRemove.push_back(tx);
-                tmpmempool.addUnchecked(hash,e,!IsInitialBlockDownload());
+                tmpmempool.addUnchecked(hash,e,true);
             }
         }
         BOOST_FOREACH(const CTransaction& tx, transactionsToRemove) {
@@ -4756,6 +4765,7 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
         // here we add back all txs from the temp mempool to the main mempool.
         // which removes any tx locally that were invalid after the block arrives.
         int invalidtxs = 0;
+        LOCK(mempool.cs);
         BOOST_FOREACH(const CTxMemPoolEntry& e, tmpmempool.mapTx) {
             CTransaction tx = e.GetTx();
             CValidationState state; bool fMissingInputs,fOverrideFees = false;
@@ -5201,11 +5211,11 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
         CheckBlockIndex();
         if (!ret && futureblock == 0)
         {
-            if ( ASSETCHAINS_SYMBOL[0] == 0 )
+            /*if ( ASSETCHAINS_SYMBOL[0] == 0 )
             {
                 //fprintf(stderr,"request headers from failed process block peer\n");
                 pfrom->PushMessage("getheaders", chainActive.GetLocator(chainActive.LastTip()), uint256());
-            }
+            }*/
             komodo_longestchain();
             return error("%s: AcceptBlock FAILED", __func__);
         }
@@ -5623,8 +5633,11 @@ bool static LoadBlockIndexDB()
     CBlockIndex *pindex;
     if ( (pindex= chainActive.LastTip()) != 0 )
     {
-        fprintf(stderr,"set sapling height, if possible from ht.%d %u\n",(int32_t)pindex->GetHeight(),(uint32_t)pindex->nTime);
-        komodo_activate_sapling(pindex);
+        if ( ASSETCHAINS_SAPLING <= 0 )
+        {
+            fprintf(stderr,"set sapling height, if possible from ht.%d %u\n",(int32_t)pindex->GetHeight(),(uint32_t)pindex->nTime);
+            komodo_activate_sapling(pindex);
+        }
     }
     return true;
 }

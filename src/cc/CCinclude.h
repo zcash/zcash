@@ -105,6 +105,7 @@ extern CWallet* pwalletMain;
 #endif
 bool GetAddressUnspent(uint160 addressHash, int type,std::vector<std::pair<CAddressUnspentKey,CAddressUnspentValue> > &unspentOutputs);
 CBlockIndex *komodo_getblockindex(uint256 hash);
+int32_t komodo_nextheight();
 
 static const uint256 zeroid;
 bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock);
@@ -177,6 +178,7 @@ std::string FinalizeCCTx(uint64_t skipmask,struct CCcontract_info *cp,CMutableTr
 void SetCCunspents(std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > &unspentOutputs,char *coinaddr);
 void SetCCtxids(std::vector<std::pair<CAddressIndexKey, CAmount> > &addressIndex,char *coinaddr);
 int64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int32_t maxinputs);
+int64_t AddNormalinputs2(CMutableTransaction &mtx,int64_t total,int32_t maxinputs);
 int64_t CCutxovalue(char *coinaddr,uint256 utxotxid,int32_t utxovout);
 
 // curve25519 and sha256

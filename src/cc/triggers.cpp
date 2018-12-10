@@ -143,7 +143,8 @@ int64_t AddTriggersInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CP
 
 std::string TriggersGet(uint64_t txfee,int64_t nValue)
 {
-    CMutableTransaction mtx,tmpmtx; CPubKey mypk,Triggerspk; int64_t inputs,CCchange=0; struct CCcontract_info *cp,C; std::string rawhex; uint32_t j; int32_t i,len; uint8_t buf[32768]; bits256 hash;
+    CMutableTransaction tmpmtx,mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    CPubKey mypk,Triggerspk; int64_t inputs,CCchange=0; struct CCcontract_info *cp,C; std::string rawhex; uint32_t j; int32_t i,len; uint8_t buf[32768]; bits256 hash;
     cp = CCinit(&C,EVAL_TRIGGERS);
     if ( txfee == 0 )
         txfee = 10000;
@@ -183,7 +184,8 @@ std::string TriggersGet(uint64_t txfee,int64_t nValue)
 
 std::string TriggersFund(uint64_t txfee,int64_t funds)
 {
-    CMutableTransaction mtx; CPubKey mypk,Triggerspk; CScript opret; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    CPubKey mypk,Triggerspk; CScript opret; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_TRIGGERS);
     if ( txfee == 0 )
         txfee = 10000;
@@ -200,7 +202,8 @@ std::string TriggersFund(uint64_t txfee,int64_t funds)
 UniValue TriggersInfo()
 {
     UniValue result(UniValue::VOBJ); char numstr[64];
-    CMutableTransaction mtx; CPubKey Triggerspk; struct CCcontract_info *cp,C; int64_t funding;
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    CPubKey Triggerspk; struct CCcontract_info *cp,C; int64_t funding;
     result.push_back(Pair("result","success"));
     result.push_back(Pair("name","Triggers"));
     cp = CCinit(&C,EVAL_TRIGGERS);

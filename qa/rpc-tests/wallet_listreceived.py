@@ -28,7 +28,7 @@ class ListReceivedTest (BitcoinTestFramework):
         self.sync_all()
         assert_equal(new_height, self.nodes[0].getblockcount())
 
-    def run_test_release(self, release, expected_memo, height):
+    def run_test_release(self, release, height):
         self.generate_and_sync(height+1)
         taddr = self.nodes[1].getnewaddress()
         zaddr1 = self.nodes[1].z_getnewaddress(release)
@@ -61,7 +61,7 @@ class ListReceivedTest (BitcoinTestFramework):
         # Generate some change by sending part of zaddr1 to zaddr2
         zaddr2 = self.nodes[1].z_getnewaddress(release)
         opid = self.nodes[1].z_sendmany(zaddr1,
-            [{'address': zaddr2, 'amount': 0.6, 'memo': my_memo}])
+            [{'address': zaddr2, 'amount': 0.6}])
         txid = wait_and_assert_operationid_status(self.nodes[1], opid)
         self.sync_all()
         self.generate_and_sync(height+4)
@@ -74,12 +74,12 @@ class ListReceivedTest (BitcoinTestFramework):
         assert_equal(txid, r[0]['txid'])
         assert_equal(Decimal('0.4')-fee, r[0]['amount'])
         assert_true(r[0]['change'], "Note valued at (0.4-fee) should be change")
-        assert_equal(expected_memo, r[0]['memo'])
+        assert_equal(no_memo, r[0]['memo'])
 
         # The old note still exists (it's immutable), even though it is spent
         assert_equal(Decimal('1.0'), r[1]['amount'])
         assert_false(r[1]['change'], "Note valued at 1.0 should not be change")
-        assert_equal(expected_memo, r[0]['memo'])
+        assert_equal(my_memo, r[1]['memo'])
 
         # zaddr2 should not have change
         r = self.nodes[1].z_listreceivedbyaddress(zaddr2, 0)
@@ -88,11 +88,11 @@ class ListReceivedTest (BitcoinTestFramework):
         assert_equal(txid, r[0]['txid'])
         assert_equal(Decimal('0.6'), r[0]['amount'])
         assert_false(r[0]['change'], "Note valued at 0.6 should not be change")
-        assert_equal(my_memo, r[0]['memo'])
+        assert_equal(no_memo, r[0]['memo'])
 
     def run_test(self):
-        self.run_test_release('sprout', no_memo, 200)
-        self.run_test_release('sapling', no_memo, 204)
+        self.run_test_release('sprout', 200)
+        self.run_test_release('sapling', 204)
 
 if __name__ == '__main__':
     ListReceivedTest().main()

@@ -151,7 +151,8 @@ int64_t AddPegsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKe
 
 std::string PegsGet(uint64_t txfee,int64_t nValue)
 {
-    CMutableTransaction mtx,tmpmtx; CPubKey mypk,Pegspk; int64_t inputs,CCchange=0; struct CCcontract_info *cp,C; std::string rawhex; uint32_t j; int32_t i,len; uint8_t buf[32768]; bits256 hash;
+    CMutableTransaction tmpmtx,mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    CPubKey mypk,Pegspk; int64_t inputs,CCchange=0; struct CCcontract_info *cp,C; std::string rawhex; uint32_t j; int32_t i,len; uint8_t buf[32768]; bits256 hash;
     cp = CCinit(&C,EVAL_PEGS);
     if ( txfee == 0 )
         txfee = 10000;
@@ -191,7 +192,8 @@ std::string PegsGet(uint64_t txfee,int64_t nValue)
 
 std::string PegsFund(uint64_t txfee,int64_t funds)
 {
-    CMutableTransaction mtx; CPubKey mypk,Pegspk; CScript opret; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    CPubKey mypk,Pegspk; CScript opret; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_PEGS);
     if ( txfee == 0 )
         txfee = 10000;
@@ -208,7 +210,8 @@ std::string PegsFund(uint64_t txfee,int64_t funds)
 UniValue PegsInfo()
 {
     UniValue result(UniValue::VOBJ); char numstr[64];
-    CMutableTransaction mtx; CPubKey Pegspk; struct CCcontract_info *cp,C; int64_t funding;
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    CPubKey Pegspk; struct CCcontract_info *cp,C; int64_t funding;
     result.push_back(Pair("result","success"));
     result.push_back(Pair("name","Pegs"));
     cp = CCinit(&C,EVAL_PEGS);
