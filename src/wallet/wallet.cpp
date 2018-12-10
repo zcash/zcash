@@ -1304,7 +1304,7 @@ CWallet::TxItems CWallet::OrderedTxItems(std::list<CAccountingEntry>& acentries,
     {
         CWalletTx* wtx = &((*it).second);
         txOrdered.insert(make_pair(wtx->nOrderPos, TxPair(wtx, (CAccountingEntry*)0)));
-        fprintf(stderr,"ordered iter.%d %s\n",(int32_t)wtx->nOrderPos,wtx->GetHash().GetHex().c_str());
+        //fprintf(stderr,"ordered iter.%d %s\n",(int32_t)wtx->nOrderPos,wtx->GetHash().GetHex().c_str());
     }
     acentries.clear();
     walletdb.ListAccountCreditDebit(strAccount, acentries);
@@ -2522,6 +2522,7 @@ void CWalletTx::GetAmounts(list<COutputEntry>& listReceived,
     }
 
     // Sent/received.
+    int32_t oneshot = 0;
     for (unsigned int i = 0; i < vout.size(); ++i)
     {
         const CTxOut& txout = vout[i];
@@ -2534,8 +2535,11 @@ void CWalletTx::GetAmounts(list<COutputEntry>& listReceived,
             // Don't report 'change' txouts
             if (!(filter & ISMINE_CHANGE) && pwallet->IsChange(txout))
             {
-                fprintf(stderr,"skip change vout\n");
-                continue;
+                if ( oneshot++ > 1 )
+                {
+                    fprintf(stderr,"skip change vout\n");
+                    continue;
+                }
             }
         }
         else if (!(fIsMine & filter))
