@@ -1016,108 +1016,7 @@ CAmount GetAccountBalance(const string& strAccount, int nMinDepth, const isminef
     return GetAccountBalance(walletdb, strAccount, nMinDepth, filter);
 }
 
-UniValue cleanwallettransactions(const UniValue& params, bool fHelp)
-{
-    if (!EnsureWalletIsAvailable(fHelp))
-        return NullUniValue;
 
-    if (fHelp || params.size() > 1 )
-        throw runtime_error(
-            "cleanwallettransactions \"txid\"\n"
-            "\nRemove all txs that are spent. You can clear all txs bar one, by specifiying a txid.\n"
-            "\nPlease backup your wallet.dat before running this command.\n"
-            "\nArguments:\n"
-            "1. \"txid\"    (string, optional) The transaction id to keep.\n"
-            "\nResult:\n"
-            "{\n"
-            "  \"total_transactons\" : n,         (numeric) Transactions in wallet of " + strprintf("%s",komodo_chainname()) + "\n"
-            "  \"remaining_transactons\" : n,     (numeric) Transactions in wallet after clean.\n"
-            "  \"removed_transactons\" : n,       (numeric) The number of transactions removed.\n"
-            "}\n"
-            "\nExamples:\n"
-            + HelpExampleCli("cleanwallettransactions", "")
-            + HelpExampleCli("cleanwallettransactions","\"1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d\"")
-            + HelpExampleRpc("cleanwallettransactions", "")
-            + HelpExampleRpc("cleanwallettransactions","\"1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d\"")
-        );
-
-    LOCK2(cs_main, pwalletMain->cs_wallet);
-    UniValue ret(UniValue::VOBJ);
-    uint256 exception; int32_t txs = pwalletMain->mapWallet.size();
-    std::vector<uint256> TxToRemove;
-    if (params.size() == 1)
-    {
-        exception.SetHex(params[0].get_str());
-        uint256 tmp_hash; CTransaction tmp_tx;
-        if (GetTransaction(exception,tmp_tx,tmp_hash,false))
-        {
-            if ( !pwalletMain->IsMine(tmp_tx) )
-            {
-                throw runtime_error("\nThe transaction is not yours!\n");
-            }
-            else
-            {
-                for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it)
-                {
-                    const CWalletTx& wtx = (*it).second;
-                    if ( wtx.GetHash() != exception )
-                    {
-                        TxToRemove.push_back(wtx.GetHash());
-                    }
-                }
-            }
-        }
-        else
-        {
-            throw runtime_error("\nThe transaction could not be found!\n");
-        }
-    }
-    else
-    {
-        // get all locked utxos to relock them later.
-        vector<COutPoint> vLockedUTXO;
-        pwalletMain->ListLockedCoins(vLockedUTXO);
-        // unlock all coins so that the following call containes all utxos.
-        pwalletMain->UnlockAllCoins();
-        // listunspent call... this gets us all the txids that are unspent, we search this list for the oldest tx,
-        vector<COutput> vecOutputs;
-        assert(pwalletMain != NULL);
-        pwalletMain->AvailableCoins(vecOutputs, false, NULL, true);
-        int32_t oldestTxDepth = 0;
-        BOOST_FOREACH(const COutput& out, vecOutputs)
-        {
-          if ( out.nDepth > oldestTxDepth )
-              oldestTxDepth = out.nDepth;
-        }
-        oldestTxDepth = oldestTxDepth + 1; // add extra block just for safety.
-        // lock all the previouly locked coins.
-        BOOST_FOREACH(COutPoint &outpt, vLockedUTXO) {
-            pwalletMain->LockCoin(outpt);
-        }
-
-        // then add all txs in the wallet before this block to the list to remove.
-        for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it)
-        {
-            const CWalletTx& wtx = (*it).second;
-            if (wtx.GetDepthInMainChain() > oldestTxDepth)
-                TxToRemove.push_back(wtx.GetHash());
-        }
-    }
-
-    // erase txs
-    BOOST_FOREACH (uint256& hash, TxToRemove)
-    {
-        pwalletMain->EraseFromWallet(hash);
-        LogPrintf("Erased %s from wallet.\n",hash.ToString().c_str());
-    }
-
-    // build return JSON for stats.
-    int remaining = pwalletMain->mapWallet.size();
-    ret.push_back(Pair("total_transactons", (int)txs));
-    ret.push_back(Pair("remaining_transactons", (int)remaining));
-    ret.push_back(Pair("removed_transactions", (int)(txs-remaining)));
-    return  (ret);
-}
 
 UniValue getbalance(const UniValue& params, bool fHelp)
 {
@@ -1776,7 +1675,7 @@ void ListTransactions(const CWalletTx& wtx, const string& strAccount, int nMinDe
                 if(involvesWatchonly || (::IsMine(*pwalletMain, r.destination) & ISMINE_WATCH_ONLY))
                     entry.push_back(Pair("involvesWatchonly", true));
                 entry.push_back(Pair("account", account));
-                
+
                 CTxDestination dest;
                 if (CScriptExt::ExtractVoutDestination(wtx, r.vout, dest))
                     MaybePushAddress(entry, dest);
@@ -3017,11 +2916,11 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
         // User did not provide zaddrs, so use default i.e. all addresses
         std::set<libzcash::SproutPaymentAddress> sproutzaddrs = {};
         pwalletMain->GetSproutPaymentAddresses(sproutzaddrs);
-        
+
         // Sapling support
         std::set<libzcash::SaplingPaymentAddress> saplingzaddrs = {};
         pwalletMain->GetSaplingPaymentAddresses(saplingzaddrs);
-        
+
         zaddrs.insert(sproutzaddrs.begin(), sproutzaddrs.end());
         zaddrs.insert(saplingzaddrs.begin(), saplingzaddrs.end());
     }
@@ -3033,7 +2932,7 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
         std::vector<SaplingNoteEntry> saplingEntries;
         pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, zaddrs, nMinDepth, nMaxDepth, true, !fIncludeWatchonly, false);
         std::set<std::pair<PaymentAddress, uint256>> nullifierSet = pwalletMain->GetNullifiersForAddresses(zaddrs);
-        
+
         for (auto & entry : sproutEntries) {
             UniValue obj(UniValue::VOBJ);
             obj.push_back(Pair("txid", entry.jsop.hash.ToString()));
@@ -3051,7 +2950,7 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
             }
             results.push_back(obj);
         }
-        
+
         for (auto & entry : saplingEntries) {
             UniValue obj(UniValue::VOBJ);
             obj.push_back(Pair("txid", entry.op.hash.ToString()));
@@ -6083,7 +5982,7 @@ UniValue gatewaysbind(const UniValue& params, bool fHelp)
         if ( params.size() < 6+i+1 )
             throw runtime_error("not enough parameters for N pubkeys\n");
         pubkey = ParseHex(params[6+i].get_str().c_str());
-        if (pubkey.size()!= 33)    
+        if (pubkey.size()!= 33)
             throw runtime_error("invalid destination pubkey");
         pubkeys.push_back(pubkey2pk(pubkey));
     }
@@ -6117,8 +6016,8 @@ UniValue gatewaysdeposit(const UniValue& params, bool fHelp)
     amount = atof((char *)params[8].get_str().c_str()) * COIN + 0.00000000499999;
     if ( amount <= 0 || claimvout < 0 )
         throw runtime_error("invalid param: amount, numpks or claimvout\n");
-    if (destpub.size()!= 33)    
-        throw runtime_error("invalid destination pubkey");       
+    if (destpub.size()!= 33)
+        throw runtime_error("invalid destination pubkey");
     hex = GatewaysDeposit(0,bindtxid,height,coin,cointxid,claimvout,deposithex,proof,pubkey2pk(destpub),amount);
 
     RETURN_IF_ERROR(CCerror);
@@ -6143,9 +6042,9 @@ UniValue gatewaysclaim(const UniValue& params, bool fHelp)
     coin = params[1].get_str();
     deposittxid = Parseuint256((char *)params[2].get_str().c_str());
     destpub = ParseHex(params[3].get_str());
-    amount = atof((char *)params[4].get_str().c_str()) * COIN + 0.00000000499999;    
-    if (destpub.size()!= 33)    
-        throw runtime_error("invalid destination pubkey");  
+    amount = atof((char *)params[4].get_str().c_str()) * COIN + 0.00000000499999;
+    if (destpub.size()!= 33)
+        throw runtime_error("invalid destination pubkey");
     hex = GatewaysClaim(0,bindtxid,coin,deposittxid,pubkey2pk(destpub),amount);
     RETURN_IF_ERROR(CCerror);
     if ( hex.size() > 0 )
@@ -6168,9 +6067,9 @@ UniValue gatewayswithdraw(const UniValue& params, bool fHelp)
     bindtxid = Parseuint256((char *)params[0].get_str().c_str());
     coin = params[1].get_str();
     withdrawpub = ParseHex(params[2].get_str());
-    amount = atof((char *)params[3].get_str().c_str()) * COIN + 0.00000000499999;    
-    if (withdrawpub.size()!= 33)    
-        throw runtime_error("invalid destination pubkey");  
+    amount = atof((char *)params[3].get_str().c_str()) * COIN + 0.00000000499999;
+    if (withdrawpub.size()!= 33)
+        throw runtime_error("invalid destination pubkey");
     hex = GatewaysWithdraw(0,bindtxid,coin,pubkey2pk(withdrawpub),amount);
     RETURN_IF_ERROR(CCerror);
     if ( hex.size() > 0 )
@@ -6189,7 +6088,7 @@ UniValue gatewayspartialsign(const UniValue& params, bool fHelp)
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     const CKeyStore& keystore = *pwalletMain;
-    LOCK2(cs_main, pwalletMain->cs_wallet);    
+    LOCK2(cs_main, pwalletMain->cs_wallet);
     txid = Parseuint256((char *)params[0].get_str().c_str());
     coin = params[1].get_str();
     parthex = params[2].get_str();
@@ -6234,7 +6133,7 @@ UniValue gatewaysmarkdone(const UniValue& params, bool fHelp)
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
     completetxid = Parseuint256((char *)params[0].get_str().c_str());
-    coin = params[1].get_str();    
+    coin = params[1].get_str();
     hex = GatewaysMarkDone(0,completetxid,coin);
     RETURN_IF_ERROR(CCerror);
     if ( hex.size() > 0 )
