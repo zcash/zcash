@@ -141,6 +141,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
 int32_t verus_staked(CBlock *pBlock, CMutableTransaction &txNew, uint32_t &nBits, arith_uint256 &hashResult, uint8_t *utxosig, CPubKey &pk);
 int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33);
 int32_t decode_hex(uint8_t *bytes,int32_t n,char *hex);
+int32_t komodo_is_notarytx(const CTransaction& tx);
 
 CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount, bool isStake)
 {
