@@ -526,7 +526,7 @@ UniValue CBlockTreeDB::Snapshot(int top)
       	char amount[32];
       	sprintf(amount, "%.8f", (double) it->first / COIN);
       	obj.push_back( make_pair("amount", amount) );
-        obj.push_back( make_pair("segid",((int32_t)komodo_segid32((char *)it->second.c_str() & 0x3f)) );
+        obj.push_back( make_pair("segid",(int32_t)komodo_segid32((char *)it->second.c_str()) & 0x3f) );
       	total += it->first;
       	addressesSorted.push_back(obj);
       	topN++;
