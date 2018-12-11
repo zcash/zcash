@@ -153,10 +153,9 @@ void UpdateNotaryAddrs(uint8_t pubkeys[64][33],int8_t numNotaries) {
     {
         // staked era is set.
         pthread_mutex_lock(&staked_mutex);
-        for (int i = 0; i<numNotaries; i++) {
+        for (int i = 0; i<numNotaries; i++)
             pubkey2addr((char *)NOTARYADDRS[i],(uint8_t *)pubkeys[i]);
-            NUM_NOTARIES = numNotaries;
-        }
+        NUM_NOTARIES = numNotaries;
         pthread_mutex_unlock(&staked_mutex);
     }
 }
