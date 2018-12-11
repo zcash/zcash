@@ -114,7 +114,7 @@ void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, 
 }
 
 #include "komodo_defs.h"
-#define CRYPTO777_KMDADDR "RXL3YXG2ceaB6C5hfJcN4fvmLH2C34knhA"
+//#define CRYPTO777_KMDADDR "RXL3YXG2ceaB6C5hfJcN4fvmLH2C34knhA"
 
 extern CCriticalSection cs_metrics;
 extern int32_t KOMODO_MININGTHREADS,KOMODO_LONGESTCHAIN,ASSETCHAINS_SEED,IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,KOMODO_CHOSEN_ONE,ASSETCHAIN_INIT,KOMODO_INITDONE,KOMODO_ON_DEMAND,KOMODO_INITDONE,KOMODO_PASSPORT_INITDONE;
@@ -272,12 +272,16 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
                 nTotalIn += nValueIn;
                 dPriority += (double)nValueIn * 1000;  // flat multiplier
             } else {
-                // TODO: It will be much faster here to just compare scriptpubkey to the crypto pubkey!
-                CTxDestination ToAddress; int numNotaryVins = 0; bool fToCryptoAddress = false;
+                int numNotaryVins = 0; bool fToCryptoAddress = false;
+                if ( komodo_is_notarytx(tx) == 1 )
+                    fToCryptoAddress = true;
+
+                /*CTxDestination ToAddress;
                 if (ExtractDestination(tx.vout[0].scriptPubKey, ToAddress)) {
                     if ( strcmp(CRYPTO777_KMDADDR,CBitcoinAddress(ToAddress).ToString().c_str()) == 0 )
                         fToCryptoAddress = true;
-                }
+                } */
+
                 BOOST_FOREACH(const CTxIn& txin, tx.vin)
                 {
                     // Read prev transaction
