@@ -527,7 +527,7 @@ UniValue CBlockTreeDB::Snapshot(int top)
       	sprintf(amount, "%.8f", (double) it->first / COIN);
       	obj.push_back( make_pair("amount", amount) );
         int segid = (short) komodo_segid32( (char *)it->second.c_str() );
-        obj.push_back( make_pair("segid",(int) segid)) );
+        obj.push_back( make_pair("segid",(int) segid) );
       	total += it->first;
       	addressesSorted.push_back(obj);
       	topN++;
