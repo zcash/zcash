@@ -4695,6 +4695,7 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
             mempool.remove(tx, removed, false);
         }
         // add all the txs in the block to the empty mempool.
+        // CC validation shouldnt (cant) depend on the state of mempool!
         while ( 1 )
         {
             for (i=0; i<block.vtx.size(); i++)
@@ -4764,18 +4765,28 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
     {
         // here we add back all txs from the temp mempool to the main mempool.
         // which removes any tx locally that were invalid after the block arrives.
-        int invalidtxs = 0;
+        int numadded,numiters = 0;
+        CValidationState state; bool fMissingInputs,fOverrideFees = false;
+        list<CTransaction> removed;
         LOCK(mempool.cs);
-        BOOST_FOREACH(const CTxMemPoolEntry& e, tmpmempool.mapTx) {
-            CTransaction tx = e.GetTx();
-            CValidationState state; bool fMissingInputs,fOverrideFees = false;
-
-            if (AcceptToMemoryPool(mempool, state, tx, false, &fMissingInputs, !fOverrideFees) == false )
-                invalidtxs++;
-            //else fprintf(stderr, "added mempool tx back to mempool\n");
+        while ( 1 )
+        {
+            numiters++;
+            numadded = 0;
+            BOOST_FOREACH(const CTxMemPoolEntry& e, tmpmempool.mapTx)
+            {
+                CTransaction tx = e.GetTx();
+                if (AcceptToMemoryPool(mempool, state, tx, false, &fMissingInputs, !fOverrideFees) == true )
+                {
+                    numadded++;
+                    tmpmempool.remove(tx, removed, false);
+                }
+            }
+            if ( numadded == 0 )
+                break;
         }
-        if ( 0 && invalidtxs > 0 )
-            fprintf(stderr, "number of invalid txs: %d\n",invalidtxs );
+        if ( 0 && numadded > 0 )
+            fprintf(stderr, "CC mempool add: numiters.%d numadded.%d remains.%d\n",numiters,numadded,(int32_t)tmpmempool.size());
         // empty the temp mempool for next time.
         tmpmempool.clear();
     }
