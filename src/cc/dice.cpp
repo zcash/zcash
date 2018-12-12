@@ -427,7 +427,7 @@ void *dicefinish(void *_ptr)
             if ( vin0_needed > 0 )
             {
                 num = 0;
-                //fprintf(stderr,"iter.%d vin0_needed.%d\n",iter,vin0_needed);
+fprintf(stderr,"iter.%d vin0_needed.%d\n",iter,vin0_needed);
                 utxos = (struct dicefinish_utxo *)calloc(vin0_needed,sizeof(*utxos));
                 if ( (n= dicefinish_utxosget(num,utxos,vin0_needed,coinaddr)) > 0 )
                 {
