@@ -187,6 +187,7 @@ BITCOIN_CORE_H = \
   random.h \
   reverse_iterator.h \
   reverselock.h \
+  rpc/docbuilder.h \
   rpc/client.h \
   rpc/protocol.h \
   rpc/server.h \
@@ -422,6 +423,7 @@ libbitcoin_util_a_SOURCES = \
   fs.cpp \
   logging.cpp \
   random.cpp \
+  rpc/docbuilder.cpp \
   rpc/protocol.cpp \
   support/cleanse.cpp \
   sync.cpp \
