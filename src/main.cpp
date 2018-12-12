@@ -4785,7 +4785,7 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
             if ( numadded == 0 )
                 break;
         }
-        if ( numadded > 0 )
+        if ( 0 && numadded > 0 )
             fprintf(stderr, "CC mempool add: numiters.%d numadded.%d remains.%d\n",numiters,numadded,(int32_t)tmpmempool.size());
         // empty the temp mempool for next time.
         tmpmempool.clear();
