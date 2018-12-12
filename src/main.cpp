@@ -103,6 +103,7 @@ unsigned int expiryDelta = DEFAULT_TX_EXPIRY_DELTA;
 CFeeRate minRelayTxFee = CFeeRate(DEFAULT_MIN_RELAY_TX_FEE);
 
 CTxMemPool mempool(::minRelayTxFee);
+CTxMemPool tmpmempool(::minRelayTxFee);
 
 struct COrphanTx {
     CTransaction tx;
@@ -4674,15 +4675,12 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
     // Check transactions
     CTransaction sTx;
     CTransaction *ptx = NULL;
-    CTxMemPool savedmempool(::minRelayTxFee);
     if ( ASSETCHAINS_CC != 0 ) // CC contracts might refer to transactions in the current block, from a CC spend within the same block and out of order
     {
         int32_t i,j,rejects=0,lastrejects=0;
         //fprintf(stderr,"put block's tx into mempool\n");
         // Copy all non Z-txs in mempool to temporary mempool because there can be tx in local mempool that make the block invalid.
         LOCK(mempool.cs);
-        CTxMemPool tmpmempool(::minRelayTxFee);
-        savedmempool = mempool;
         list<CTransaction> transactionsToRemove;
         BOOST_FOREACH(const CTxMemPoolEntry& e, mempool.mapTx) {
             const CTransaction &tx = e.GetTx();
@@ -4697,6 +4695,7 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
             mempool.remove(tx, removed, false);
         }
         // add all the txs in the block to the empty mempool.
+        // CC validation shouldnt (cant) depend on the state of mempool!
         while ( 1 )
         {
             for (i=0; i<block.vtx.size(); i++)
@@ -4766,21 +4765,30 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
     {
         // here we add back all txs from the temp mempool to the main mempool.
         // which removes any tx locally that were invalid after the block arrives.
-        //int invalidtxs = 0;
+        int numadded,numadded = 0;
+        CValidationState state; bool fMissingInputs,fOverrideFees = false;
+        list<CTransaction> removed;
         LOCK(mempool.cs);
-        /*BOOST_FOREACH(const CTxMemPoolEntry& e, tmpmempool.mapTx) {
-            CTransaction tx = e.GetTx();
-            CValidationState state; bool fMissingInputs,fOverrideFees = false;
-
-            if (AcceptToMemoryPool(mempool, state, tx, false, &fMissingInputs, !fOverrideFees) == false )
-                invalidtxs++;
-            //else fprintf(stderr, "added mempool tx back to mempool\n");
+        while ( 1 )
+        {
+            numiters++;
+            numadded = 0;
+            BOOST_FOREACH(const CTxMemPoolEntry& e, tmpmempool.mapTx)
+            {
+                CTransaction tx = e.GetTx();
+                if (AcceptToMemoryPool(mempool, state, tx, false, &fMissingInputs, !fOverrideFees) == true )
+                {
+                    numadded++;
+                    tmpmempool.remove(tx, removed, false);
+                }
+            }
+            if ( numadded == 0 )
+                break;
         }
-        if ( 0 && invalidtxs > 0 )
-            fprintf(stderr, "number of invalid txs: %d\n",invalidtxs );
+        if ( numadded > 0 )
+            fprintf(stderr, "CC mempool add: numiters.%d numadded.%d remains.%d\n",numiters,numadded,(int32_t)tmpmempool.size());
         // empty the temp mempool for next time.
-        tmpmempool.clear();*/
-        mempool = savedmempool;
+        tmpmempool.clear();
     }
     return true;
 }
