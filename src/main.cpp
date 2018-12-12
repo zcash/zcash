@@ -4765,7 +4765,7 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
     {
         // here we add back all txs from the temp mempool to the main mempool.
         // which removes any tx locally that were invalid after the block arrives.
-        int numadded,numadded = 0;
+        int numadded,numiters = 0;
         CValidationState state; bool fMissingInputs,fOverrideFees = false;
         list<CTransaction> removed;
         LOCK(mempool.cs);
