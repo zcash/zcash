@@ -431,7 +431,7 @@ void *dicefinish(void *_ptr)
                 utxos = (struct dicefinish_utxo *)calloc(vin0_needed,sizeof(*utxos));
                 if ( (n= dicefinish_utxosget(num,utxos,vin0_needed,coinaddr)) > 0 )
                 {
-                    //fprintf(stderr,"iter.%d vin0_needed.%d got %d, num 0.0002 %d\n",iter,vin0_needed,n,num);
+fprintf(stderr,"iter.%d vin0_needed.%d got %d, num 0.0002 %d\n",iter,vin0_needed,n,num);
                     m = 0;
                     DL_FOREACH_SAFE(DICEFINISH_LIST,ptr,tmp)
                     {
@@ -533,7 +533,7 @@ void DiceQueue(int32_t iswin,uint64_t sbits,uint256 fundingtxid,uint256 bettxid,
     else
     {
         //fprintf(stderr,"DiceQueue status bettxid.%s already in list\n",bettxid.GetHex().c_str());
-        _dicehash_clear(bettxid);
+        //_dicehash_clear(bettxid);
     }
     pthread_mutex_unlock(&DICE_MUTEX);
 }
