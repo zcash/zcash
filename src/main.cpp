@@ -103,7 +103,6 @@ unsigned int expiryDelta = DEFAULT_TX_EXPIRY_DELTA;
 CFeeRate minRelayTxFee = CFeeRate(DEFAULT_MIN_RELAY_TX_FEE);
 
 CTxMemPool mempool(::minRelayTxFee);
-CTxMemPool tmpmempool(::minRelayTxFee);
 
 struct COrphanTx {
     CTransaction tx;
@@ -4675,12 +4674,15 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
     // Check transactions
     CTransaction sTx;
     CTransaction *ptx = NULL;
+    CTxMemPool savedmempool(::minRelayTxFee);
     if ( ASSETCHAINS_CC != 0 ) // CC contracts might refer to transactions in the current block, from a CC spend within the same block and out of order
     {
         int32_t i,j,rejects=0,lastrejects=0;
         //fprintf(stderr,"put block's tx into mempool\n");
         // Copy all non Z-txs in mempool to temporary mempool because there can be tx in local mempool that make the block invalid.
         LOCK(mempool.cs);
+        CTxMemPool tmpmempool(::minRelayTxFee);
+        savedmempool = mempool;
         list<CTransaction> transactionsToRemove;
         BOOST_FOREACH(const CTxMemPoolEntry& e, mempool.mapTx) {
             const CTransaction &tx = e.GetTx();
@@ -4764,9 +4766,9 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
     {
         // here we add back all txs from the temp mempool to the main mempool.
         // which removes any tx locally that were invalid after the block arrives.
-        int invalidtxs = 0;
+        //int invalidtxs = 0;
         LOCK(mempool.cs);
-        BOOST_FOREACH(const CTxMemPoolEntry& e, tmpmempool.mapTx) {
+        /*BOOST_FOREACH(const CTxMemPoolEntry& e, tmpmempool.mapTx) {
             CTransaction tx = e.GetTx();
             CValidationState state; bool fMissingInputs,fOverrideFees = false;
 
@@ -4777,7 +4779,8 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
         if ( 0 && invalidtxs > 0 )
             fprintf(stderr, "number of invalid txs: %d\n",invalidtxs );
         // empty the temp mempool for next time.
-        tmpmempool.clear();
+        tmpmempool.clear();*/
+        mempool = savedmempool;
     }
     return true;
 }
