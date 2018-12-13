@@ -155,6 +155,8 @@ int64_t komodo_current_supply(uint32_t nHeight)
                     uint64_t lastEnd = j == 0 ? 0 : ASSETCHAINS_ENDSUBSIDY[j - 1];
                     uint64_t curEnd = ASSETCHAINS_ENDSUBSIDY[j] == 0 ? nHeight : nHeight > ASSETCHAINS_ENDSUBSIDY[j] ? ASSETCHAINS_ENDSUBSIDY[j] : nHeight;
                     uint64_t period = ASSETCHAINS_HALVING[j];
+                    if ( period == 0 )
+                        period = 210000;
                     uint32_t nSteps = (curEnd - lastEnd) / period;
                     uint32_t modulo = (curEnd - lastEnd) % period;
                     uint64_t decay = ASSETCHAINS_DECAY[j];
@@ -208,7 +210,8 @@ int64_t komodo_current_supply(uint32_t nHeight)
 
                         // calculate amount in one step's triangular protrusion over minor triangle's hypotenuse
                         denominator = nSteps * period;
-
+                        if ( denominator == 0 )
+                            denominator = 1;
                         // difference of one step vs. total
                         stepDifference = (period * subsidyDifference) / denominator;
 
