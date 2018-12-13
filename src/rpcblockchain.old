@@ -33,7 +33,10 @@ extern void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& 
 void ScriptPubKeyToJSON(const CScript& scriptPubKey, UniValue& out, bool fIncludeHex);
 int32_t komodo_longestchain();
 int32_t komodo_dpowconfs(int32_t height,int32_t numconfs);
+<<<<<<< HEAD:src/rpcblockchain.old
 extern int32_t KOMODO_LONGESTCHAIN;
+=======
+>>>>>>> master:src/rpcblockchain.cpp
 
 double GetDifficultyINTERNAL(const CBlockIndex* blockindex, bool networkDifficulty)
 {

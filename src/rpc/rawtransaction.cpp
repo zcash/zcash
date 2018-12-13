@@ -1167,12 +1167,12 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
         if ( txConst.IsCoinBase() != 0 )
         {
             if ( (txpow & 2) == 0 )
-                txpow == 0;
+                txpow = 0;
         }
         else
         {
             if ( (txpow & 1) == 0 )
-                txpow == 0;
+                txpow = 0;
         }
     }
     while ( 1 )

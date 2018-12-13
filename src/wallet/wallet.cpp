@@ -1304,6 +1304,7 @@ CWallet::TxItems CWallet::OrderedTxItems(std::list<CAccountingEntry>& acentries,
     {
         CWalletTx* wtx = &((*it).second);
         txOrdered.insert(make_pair(wtx->nOrderPos, TxPair(wtx, (CAccountingEntry*)0)));
+        //fprintf(stderr,"ordered iter.%d %s\n",(int32_t)wtx->nOrderPos,wtx->GetHash().GetHex().c_str());
     }
     acentries.clear();
     walletdb.ListAccountCreditDebit(strAccount, acentries);
@@ -2594,6 +2595,7 @@ void CWalletTx::GetAmounts(list<COutputEntry>& listReceived,
     }
 
     // Sent/received.
+    int32_t oneshot = 0;
     for (unsigned int i = 0; i < vout.size(); ++i)
     {
         const CTxOut& txout = vout[i];
@@ -2605,11 +2607,19 @@ void CWalletTx::GetAmounts(list<COutputEntry>& listReceived,
         {
             // Don't report 'change' txouts
             if (!(filter & ISMINE_CHANGE) && pwallet->IsChange(txout))
-                continue;
+            {
+                if ( oneshot++ > 1 )
+                {
+                    //fprintf(stderr,"skip change vout\n");
+                    continue;
+                }
+            }
         }
         else if (!(fIsMine & filter))
+        {
+            //fprintf(stderr,"skip filtered vout %d %d\n",(int32_t)fIsMine,(int32_t)filter);
             continue;
-
+        }
         // In either case, we need to get the destination address
         CTxDestination address;
         if (!ExtractDestination(txout.scriptPubKey, address))
@@ -2623,10 +2633,12 @@ void CWalletTx::GetAmounts(list<COutputEntry>& listReceived,
         // If we are debited by the transaction, add the output as a "sent" entry
         if (nDebit > 0)
             listSent.push_back(output);
+        //else fprintf(stderr,"not sent vout %d %d\n",(int32_t)fIsMine,(int32_t)filter);
 
         // If we are receiving the output, add it as a "received" entry
         if (fIsMine & filter)
             listReceived.push_back(output);
+        //else fprintf(stderr,"not received vout %d %d\n",(int32_t)fIsMine,(int32_t)filter);
     }
 
 }
@@ -3688,7 +3700,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
     if (!NetworkUpgradeActive(nextBlockHeight, Params().GetConsensus(), Consensus::UPGRADE_SAPLING)) {
         max_tx_size = MAX_TX_SIZE_BEFORE_SAPLING;
     }
-
+/*
     // Discourage fee sniping.
     //
     // However because of a off-by-one-error in previous versions we need to
@@ -3709,7 +3721,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
         txNew.nLockTime = std::max(0, (int)txNew.nLockTime - GetRandInt(100));
 
     assert(txNew.nLockTime <= (unsigned int)chainActive.Height());
-    assert(txNew.nLockTime < LOCKTIME_THRESHOLD);
+    assert(txNew.nLockTime < LOCKTIME_THRESHOLD);*/
 
     {
         LOCK2(cs_main, cs_wallet);
@@ -5033,10 +5045,10 @@ void CWallet::GetFilteredNotes(
             }
 
             // skip locked notes
-            // TODO: Add locking for Sapling notes
-            // if (ignoreLocked && IsLockedNote(op)) {
-            //     continue;
-            // }
+            // TODO: Add locking for Sapling notes -> done
+             if (ignoreLocked && IsLockedNote(op)) {
+                 continue;
+             }
 
             auto note = notePt.note(nd.ivk).get();
             saplingEntries.push_back(SaplingNoteEntry {

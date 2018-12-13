@@ -78,7 +78,7 @@ static int64_t nTimeBestReceived = 0;
 CWaitableCriticalSection csBestBlock;
 CConditionVariable cvBlockChange;
 int nScriptCheckThreads = 0;
-bool fExperimentalMode = false;
+bool fExperimentalMode = true;
 bool fImporting = false;
 bool fReindex = false;
 bool fTxIndex = false;
@@ -1035,9 +1035,12 @@ bool ContextualCheckTransaction(
         }
 
         // Reject transactions with non-Sapling version group ID
-        if (tx.fOverwintered && tx.nVersionGroupId != SAPLING_VERSION_GROUP_ID) {
-            return state.DoS(dosLevel, error("CheckTransaction(): invalid Sapling tx version"),
-                    REJECT_INVALID, "bad-sapling-tx-version-group-id");
+        if (tx.fOverwintered && tx.nVersionGroupId != SAPLING_VERSION_GROUP_ID)
+        {
+            //return state.DoS(dosLevel, error("CheckTransaction(): invalid Sapling tx version"),REJECT_INVALID, "bad-sapling-tx-version-group-id");
+            return state.DoS(isInitBlockDownload() ? 0 : dosLevel,
+                             error("CheckTransaction(): invalid Sapling tx version"),
+                             REJECT_INVALID, "bad-sapling-tx-version-group-id");
         }
 
         // Reject transactions with invalid version
@@ -1059,9 +1062,12 @@ bool ContextualCheckTransaction(
         }
 
         // Reject transactions with non-Overwinter version group ID
-        if (tx.fOverwintered && tx.nVersionGroupId != OVERWINTER_VERSION_GROUP_ID) {
-            return state.DoS(dosLevel, error("CheckTransaction(): invalid Overwinter tx version"),
-                    REJECT_INVALID, "bad-overwinter-tx-version-group-id");
+        if (tx.fOverwintered && tx.nVersionGroupId != OVERWINTER_VERSION_GROUP_ID)
+        {
+            //return state.DoS(dosLevel, error("CheckTransaction(): invalid Overwinter tx version"),REJECT_INVALID, "bad-overwinter-tx-version-group-id");
+            return state.DoS(isInitBlockDownload() ? 0 : dosLevel,
+                             error("CheckTransaction(): invalid Overwinter tx version"),
+                             REJECT_INVALID, "bad-overwinter-tx-version-group-id");
         }
 
         // Reject transactions with invalid version
@@ -1268,10 +1274,12 @@ int32_t komodo_isnotaryvout(char *coinaddr) // from ac_private chains only
     return(0);
 }
 
+int32_t komodo_acpublic(uint32_t tiptime);
+
 bool CheckTransactionWithoutProofVerification(uint32_t tiptime,const CTransaction& tx, CValidationState &state)
 {
     // Basic checks that don't depend on any context
-    int32_t invalid_private_taddr=0,z_z=0,z_t=0,t_z=0,acpublic = ASSETCHAINS_PUBLIC;
+    int32_t invalid_private_taddr=0,z_z=0,z_t=0,t_z=0,acpublic = komodo_acpublic(tiptime);
     /**
      * Previously:
      * 1. The consensus rule below was:
@@ -1376,8 +1384,6 @@ bool CheckTransactionWithoutProofVerification(uint32_t tiptime,const CTransactio
         return state.DoS(100, error("CheckTransaction(): tx.valueBalance has no sources or sinks"),
                             REJECT_INVALID, "bad-txns-valuebalance-nonzero");
     }
-    if ( (ASSETCHAINS_SYMBOL[0] == 0 || strcmp(ASSETCHAINS_SYMBOL,"ZEX") == 0) && tiptime >= KOMODO_SAPLING_DEADLINE )
-        acpublic = 1;
     if ( acpublic != 0 && (tx.vShieldedSpend.empty() == 0 || tx.vShieldedOutput.empty() == 0) )
     {
         return state.DoS(100, error("CheckTransaction(): this is a public chain, no sapling allowed"),
@@ -1758,8 +1764,9 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
                     {
                         if (pfMissingInputs)
                             *pfMissingInputs = true;
-                        //fprintf(stderr,"missing inputs in %s\n",tx.GetHash().ToString().c_str());
-                        return state.DoS(0, error("AcceptToMemoryPool: tx inputs not found"),REJECT_INVALID, "bad-txns-inputs-missing");
+                        //fprintf(stderr,"missing inputs\n");
+                        //return state.DoS(0, error("AcceptToMemoryPool: tx inputs not found"),REJECT_INVALID, "bad-txns-inputs-missing");
+                        return(false);
                     }
                 }
 
@@ -4745,6 +4752,7 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
             mempool.remove(tx, removed, false);
         }
         // add all the txs in the block to the empty mempool.
+        // CC validation shouldnt (cant) depend on the state of mempool!
         while ( 1 )
         {
             for (i=0; i<block.vtx.size(); i++)
@@ -4814,18 +4822,28 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
     {
         // here we add back all txs from the temp mempool to the main mempool.
         // which removes any tx locally that were invalid after the block arrives.
-        int invalidtxs = 0;
+        int numadded,numiters = 0;
+        CValidationState state; bool fMissingInputs,fOverrideFees = false;
+        list<CTransaction> removed;
         LOCK(mempool.cs);
-        BOOST_FOREACH(const CTxMemPoolEntry& e, tmpmempool.mapTx) {
-            CTransaction tx = e.GetTx();
-            CValidationState state; bool fMissingInputs,fOverrideFees = false;
-
-            if (AcceptToMemoryPool(mempool, state, tx, false, &fMissingInputs, !fOverrideFees) == false )
-                invalidtxs++;
-            //else fprintf(stderr, "added mempool tx back to mempool\n");
+        while ( 1 )
+        {
+            numiters++;
+            numadded = 0;
+            BOOST_FOREACH(const CTxMemPoolEntry& e, tmpmempool.mapTx)
+            {
+                CTransaction tx = e.GetTx();
+                if (AcceptToMemoryPool(mempool, state, tx, false, &fMissingInputs, !fOverrideFees) == true )
+                {
+                    numadded++;
+                    tmpmempool.remove(tx, removed, false);
+                }
+            }
+            if ( numadded == 0 )
+                break;
         }
-        if ( 0 && invalidtxs > 0 )
-            fprintf(stderr, "number of invalid txs: %d\n",invalidtxs );
+        if ( 0 && numadded > 0 )
+            fprintf(stderr, "CC mempool add: numiters.%d numadded.%d remains.%d\n",numiters,numadded,(int32_t)tmpmempool.size());
         // empty the temp mempool for next time.
         tmpmempool.clear();
     }

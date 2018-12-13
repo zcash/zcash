@@ -844,7 +844,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     const CChainParams& chainparams = Params();
 
     // Set this early so that experimental features are correctly enabled/disabled
-    fExperimentalMode = GetBoolArg("-experimentalfeatures", false);
+    fExperimentalMode = GetBoolArg("-experimentalfeatures", true);
 
     // Fail early if user has set experimental options without the global flag
     if (!fExperimentalMode) {
