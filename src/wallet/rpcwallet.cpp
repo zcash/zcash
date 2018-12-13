@@ -7,7 +7,7 @@
 #include "consensus/upgrades.h"
 #include "consensus/params.h"
 #include "core_io.h"
-#include "experimental_features.h"
+#include "rpc/docbuilder.h"
 #include "init.h"
 #include "key_io.h"
 #include "main.h"
@@ -4028,34 +4028,25 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
 
     if (fHelp || params.size() < 2 || params.size() > 4)
         throw runtime_error(
-            "z_sendmany \"fromaddress\" [{\"address\":... ,\"amount\":...},...] ( minconf ) ( fee )\n"
-            "\nSend multiple times. Amounts are decimal numbers with at most 8 digits of precision."
-            "\nChange generated from one or more transparent addresses flows to a new transparent"
-            "\naddress, while change generated from a shielded address returns to itself."
-            "\nWhen sending coinbase UTXOs to a shielded address, change is not allowed."
-            "\nThe entire value of the UTXO(s) must be consumed."
-            + strprintf("\nBefore Sapling activates, the maximum number of zaddr outputs is %d due to transaction size limits.\n", Z_SENDMANY_MAX_ZADDR_OUTPUTS_BEFORE_SAPLING)
-            + HelpRequiringPassphrase() + "\n"
-            "\nArguments:\n"
-            "1. \"fromaddress\"         (string, required) The transparent or shielded address to send the funds from.\n"
-            "                           The following special strings are also accepted:\n"
-            "                               - \"ANY_TADDR\": Select non-coinbase UTXOs from any transparent addresses belonging to the wallet.\n"
-            "                                              Use z_shieldcoinbase to shield coinbase UTXOs from multiple transparent addresses.\n"
-            "2. \"amounts\"             (array, required) An array of json objects representing the amounts to send.\n"
-            "    [{\n"
-            "      \"address\":address  (string, required) The address is a taddr or zaddr\n"
-            "      \"amount\":amount    (numeric, required) The numeric amount in " + CURRENCY_UNIT + " is the value\n"
-            "      \"memo\":memo        (string, optional) If the address is a zaddr, raw data represented in hexadecimal string format\n"
-            "    }, ... ]\n"
-            "3. minconf               (numeric, optional, default=1) Only use funds confirmed at least this many times.\n"
-            "4. fee                   (numeric, optional, default="
-            + strprintf("%s", FormatMoney(DEFAULT_FEE)) + ") The fee amount to attach to this transaction.\n"
-            "\nResult:\n"
-            "\"operationid\"          (string) An operationid to pass to z_getoperationstatus to get the result of the operation.\n"
-            "\nExamples:\n"
-            + HelpExampleCli("z_sendmany", "\"t1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\" '[{\"address\": \"ztfaW34Gj9FrnGUEf833ywDVL62NWXBM81u6EQnM6VR45eYnXhwztecW1SjxA7JrmAXKJhxhj3vDNEpVCQoSvVoSpmbhtjf\", \"amount\": 5.0}]'")
-            + HelpExampleCli("z_sendmany", "\"ANY_TADDR\" '[{\"address\": \"t1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\", \"amount\": 2.0}]'")
-            + HelpExampleRpc("z_sendmany", "\"t1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\", [{\"address\": \"ztfaW34Gj9FrnGUEf833ywDVL62NWXBM81u6EQnM6VR45eYnXhwztecW1SjxA7JrmAXKJhxhj3vDNEpVCQoSvVoSpmbhtjf\", \"amount\": 5.0}]")
+            RpcDocBuilder("z_sendmany")
+                .SetDescription(
+                    "Send multiple times. Amounts are decimal numbers with at most 8 digits of precision.\n"
+                    "Change generated from a taddr flows to a new taddr address, while change generated from a zaddr returns to itself.\n"
+                    "When sending coinbase UTXOs to a zaddr, change is not allowed. The entire value of the UTXO(s) must be consumed.\n"
+                    + strprintf("Before Sapling activates, the maximum number of zaddr outputs is %d due to transaction size limits.\n", Z_SENDMANY_MAX_ZADDR_OUTPUTS_BEFORE_SAPLING)
+                    + HelpRequiringPassphrase())
+                .AddArgument(RpcArgument::String("fromaddress", "The taddr or zaddr to send the funds from."))
+                .AddArgument(RpcArgument::Array("amounts", "An array of json objects representing the amounts to send")
+                    .Of(RpcArgument::Object()
+                        .With(RpcArgument::String("address", "The address is a taddr or zaddr"))
+                        .With(RpcArgument::Amount("amount", "The numeric amount in " + CURRENCY_UNIT + " is the value"))
+                        .With(RpcArgument::OptionalHexString("memo", "", "If the address is a zaddr, raw data represented in hexadecimal string format"))))
+                .AddArgument(RpcArgument::OptionalInteger("minconf", "1", "Only use funds confirmed at least this many times."))
+                .AddArgument(RpcArgument::OptionalAmount("fee", FormatMoney(ASYNC_RPC_OPERATION_DEFAULT_MINERS_FEE), "The fee amount to attach to this transaction."))
+                .AddResult(RpcArgument::String("operationid", "An operationid to pass to z_getoperationstatus to get the result of the operation."))
+                .AddHelpExampleCli("\"t1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\" '[{\"address\": \"ztfaW34Gj9FrnGUEf833ywDVL62NWXBM81u6EQnM6VR45eYnXhwztecW1SjxA7JrmAXKJhxhj3vDNEpVCQoSvVoSpmbhtjf\", \"amount\": 5.0}]'")
+                .AddHelpExampleRpc("\"t1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\", [{\"address\": \"ztfaW34Gj9FrnGUEf833ywDVL62NWXBM81u6EQnM6VR45eYnXhwztecW1SjxA7JrmAXKJhxhj3vDNEpVCQoSvVoSpmbhtjf\", \"amount\": 5.0}]")
+                .ToString()
         );
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
