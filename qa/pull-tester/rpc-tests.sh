@@ -14,6 +14,7 @@ testScripts=(
     'ac_private.py'
     'verushash.py'
     'cryptoconditions.py'
+    'cryptoconditions_channels.py'
     'cryptoconditions_dice.py'
     'cryptoconditions_faucet.py'
     'cryptoconditions_oracles.py'
