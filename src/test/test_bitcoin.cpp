@@ -21,6 +21,7 @@
 #include "txdb.h"
 #include "txmempool.h"
 #include "ui_interface.h"
+#include "noui.h"
 #include "rpc/server.h"
 #include "rpc/register.h"
 
@@ -36,10 +37,9 @@ CClientUIInterface uiInterface; // Declared but not defined in ui_interface.h
 
 TracingHandle* pTracingHandle = nullptr;
 uint256 insecure_rand_seed = GetRandHash();
-FastRandomContext insecure_rand_ctx(insecure_rand_seed);
+thread_local FastRandomContext g_insecure_rand_ctx(insecure_rand_seed);
 
 extern bool fPrintToConsole;
-extern void noui_connect();
 
 JoinSplitTestingSetup::JoinSplitTestingSetup(const std::string& chainName) : BasicTestingSetup(chainName)
 {
@@ -88,41 +88,41 @@ BasicTestingSetup::~BasicTestingSetup()
 TestingSetup::TestingSetup(const std::string& chainName) : JoinSplitTestingSetup(chainName)
 {
     const CChainParams& chainparams = Params();
-        // Ideally we'd move all the RPC tests to the functional testing framework
-        // instead of unit tests, but for now we need these here.
-        RegisterAllCoreRPCCommands(tableRPC);
+    // Ideally we'd move all the RPC tests to the functional testing framework
+    // instead of unit tests, but for now we need these here.
+    RegisterAllCoreRPCCommands(tableRPC);
 
-        // Save current path, in case a test changes it
-        orig_current_path = fs::current_path();
+    // Save current path, in case a test changes it
+    orig_current_path = fs::current_path();
 
-        ClearDatadirCache();
-        pathTemp = fs::temp_directory_path() / strprintf("test_bitcoin_%lu_%i", (unsigned long)GetTime(), (int)(GetRand(100000)));
-        fs::create_directories(pathTemp);
-        mapArgs["-datadir"] = pathTemp.string();
-        pblocktree = new CBlockTreeDB(1 << 20, true);
-        pcoinsdbview = new CCoinsViewDB(1 << 23, true);
-        pcoinsTip = new CCoinsViewCache(pcoinsdbview);
-        InitBlockIndex(chainparams);
-        nScriptCheckThreads = 3;
-        for (int i=0; i < nScriptCheckThreads-1; i++)
-            threadGroup.create_thread(&ThreadScriptCheck);
-        RegisterNodeSignals(GetNodeSignals());
+    ClearDatadirCache();
+    pathTemp = fs::temp_directory_path() / strprintf("test_bitcoin_%lu_%i", (unsigned long)GetTime(), (int)(GetRand(100000)));
+    fs::create_directories(pathTemp);
+    mapArgs["-datadir"] = pathTemp.string();
+    pblocktree = new CBlockTreeDB(1 << 20, true);
+    pcoinsdbview = new CCoinsViewDB(1 << 23, true);
+    pcoinsTip = new CCoinsViewCache(pcoinsdbview);
+    InitBlockIndex(chainparams);
+    nScriptCheckThreads = 3;
+    for (int i=0; i < nScriptCheckThreads-1; i++)
+        threadGroup.create_thread(&ThreadScriptCheck);
+    RegisterNodeSignals(GetNodeSignals());
 }
 
 TestingSetup::~TestingSetup()
 {
-        UnregisterNodeSignals(GetNodeSignals());
-        threadGroup.interrupt_all();
-        threadGroup.join_all();
-        UnloadBlockIndex();
-        delete pcoinsTip;
-        delete pcoinsdbview;
-        delete pblocktree;
+    UnregisterNodeSignals(GetNodeSignals());
+    threadGroup.interrupt_all();
+    threadGroup.join_all();
+    UnloadBlockIndex();
+    delete pcoinsTip;
+    delete pcoinsdbview;
+    delete pblocktree;
 
-        // Restore the previous current path so temporary directory can be deleted
-        fs::current_path(orig_current_path);
+    // Restore the previous current path so temporary directory can be deleted
+    fs::current_path(orig_current_path);
 
-        fs::remove_all(pathTemp);
+    fs::remove_all(pathTemp);
 }
 
 #ifdef ENABLE_MINING
