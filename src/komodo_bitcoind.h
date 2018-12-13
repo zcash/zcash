@@ -889,9 +889,9 @@ int32_t komodo_eligiblenotary(uint8_t pubkeys[66][33],int32_t *mids,uint32_t blo
 
 int32_t komodo_minerids(uint8_t *minerids,int32_t height,int32_t width)
 {
-    int32_t i,j,n,nonz,numnotaries; CBlock block; CBlockIndex *pindex; uint8_t notarypubs33[64][33],pubkey33[33];
+    int32_t i,j,nonz,numnotaries; CBlock block; CBlockIndex *pindex; uint8_t notarypubs33[64][33],pubkey33[33];
     numnotaries = komodo_notaries(notarypubs33,height,0);
-    for (i=nonz=0; i<width; i++,n++)
+    for (i=nonz=0; i<width; i++)
     {
         if ( height-i <= 0 )
             continue;
