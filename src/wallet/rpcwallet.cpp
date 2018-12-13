@@ -4641,7 +4641,6 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     if (!fEnableMergeToAddress) {
         strDisabledMsg = experimentalDisabledHelpMsg("z_mergetoaddress", enableArg);
     }
-<<<<<<< HEAD
 
     if (fHelp || params.size() < 2 || params.size() > 7)
         throw runtime_error(
@@ -4694,58 +4693,6 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
             + HelpExampleRpc("z_mergetoaddress", "[\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\"], \"ztfaW34Gj9FrnGUEf833ywDVL62NWXBM81u6EQnM6VR45eYnXhwztecW1SjxA7JrmAXKJhxhj3vDNEpVCQoSvVoSpmbhtjf\"")
         );
 
-=======
-
-    if (fHelp || params.size() < 2 || params.size() > 6)
-        throw runtime_error(
-                            "z_mergetoaddress [\"fromaddress\", ... ] \"toaddress\" ( fee ) ( transparent_limit ) ( shielded_limit ) ( memo )\n"
-                            + strDisabledMsg +
-                            "\nMerge multiple UTXOs and notes into a single UTXO or note.  Coinbase UTXOs are ignored; use `z_shieldcoinbase`"
-                            "\nto combine those into a single note."
-                            "\n\nThis is an asynchronous operation, and UTXOs selected for merging will be locked.  If there is an error, they"
-                            "\nare unlocked.  The RPC call `listlockunspent` can be used to return a list of locked UTXOs."
-                            "\n\nThe number of UTXOs and notes selected for merging can be limited by the caller.  If the transparent limit"
-                            "\nparameter is set to zero, and Overwinter is not yet active, the -mempooltxinputlimit option will determine the"
-                            "\nnumber of UTXOs.  Any limit is constrained by the consensus rule defining a maximum transaction size of"
-                            + strprintf("\n%d bytes before Sapling, and %d bytes once Sapling activates.", MAX_TX_SIZE_BEFORE_SAPLING, MAX_TX_SIZE_AFTER_SAPLING)
-                            + HelpRequiringPassphrase() + "\n"
-                            "\nArguments:\n"
-                            "1. fromaddresses         (string, required) A JSON array with addresses.\n"
-                            "                         The following special strings are accepted inside the array:\n"
-                            "                             - \"ANY_TADDR\":   Merge UTXOs from any t-addrs belonging to the wallet.\n"
-                            "                             - \"ANY_SPROUT\":  Merge notes from any Sprout z-addrs belonging to the wallet.\n"
-                            "                             - \"ANY_SAPLING\": Merge notes from any Sapling z-addrs belonging to the wallet.\n"
-                            "                         If a special string is given, any given addresses of that type will be ignored.\n"
-                            "    [\n"
-                            "      \"address\"          (string) Can be a t-addr or a z-addr\n"
-                            "      ,...\n"
-                            "    ]\n"
-                            "2. \"toaddress\"           (string, required) The t-addr or z-addr to send the funds to.\n"
-                            "3. fee                   (numeric, optional, default="
-                            + strprintf("%s", FormatMoney(MERGE_TO_ADDRESS_OPERATION_DEFAULT_MINERS_FEE)) + ") The fee amount to attach to this transaction.\n"
-                            "4. transparent_limit     (numeric, optional, default="
-                            + strprintf("%d", MERGE_TO_ADDRESS_DEFAULT_TRANSPARENT_LIMIT) + ") Limit on the maximum number of UTXOs to merge.  Set to 0 to use node option -mempooltxinputlimit (before Overwinter), or as many as will fit in the transaction (after Overwinter).\n"
-                            "4. shielded_limit        (numeric, optional, default="
-                            + strprintf("%d Sprout or %d Sapling Notes", MERGE_TO_ADDRESS_DEFAULT_SPROUT_LIMIT, MERGE_TO_ADDRESS_DEFAULT_SAPLING_LIMIT) + ") Limit on the maximum number of notes to merge.  Set to 0 to merge as many as will fit in the transaction.\n"
-                            "5. \"memo\"                (string, optional) Encoded as hex. When toaddress is a z-addr, this will be stored in the memo field of the new note.\n"
-                            "\nResult:\n"
-                            "{\n"
-                            "  \"remainingUTXOs\": xxx               (numeric) Number of UTXOs still available for merging.\n"
-                            "  \"remainingTransparentValue\": xxx    (numeric) Value of UTXOs still available for merging.\n"
-                            "  \"remainingNotes\": xxx               (numeric) Number of notes still available for merging.\n"
-                            "  \"remainingShieldedValue\": xxx       (numeric) Value of notes still available for merging.\n"
-                            "  \"mergingUTXOs\": xxx                 (numeric) Number of UTXOs being merged.\n"
-                            "  \"mergingTransparentValue\": xxx      (numeric) Value of UTXOs being merged.\n"
-                            "  \"mergingNotes\": xxx                 (numeric) Number of notes being merged.\n"
-                            "  \"mergingShieldedValue\": xxx         (numeric) Value of notes being merged.\n"
-                            "  \"opid\": xxx          (string) An operationid to pass to z_getoperationstatus to get the result of the operation.\n"
-                            "}\n"
-                            "\nExamples:\n"
-                            + HelpExampleCli("z_mergetoaddress", "'[\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\"]' ztfaW34Gj9FrnGUEf833ywDVL62NWXBM81u6EQnM6VR45eYnXhwztecW1SjxA7JrmAXKJhxhj3vDNEpVCQoSvVoSpmbhtjf")
-                            + HelpExampleRpc("z_mergetoaddress", "[\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\"], \"zs14d8tc0hl9q0vg5l28uec5vk6sk34fkj2n8s7jalvw5fxpy6v39yn4s2ga082lymrkjk0x2nqg37\"")
-                            );
-
->>>>>>> e719e666307adb77fb4b79c7737256ea959fe188
     if (!fEnableMergeToAddress) {
         throw JSONRPCError(RPC_WALLET_ERROR, "Error: z_mergetoaddress is disabled.");
     }
