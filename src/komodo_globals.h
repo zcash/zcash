@@ -44,7 +44,7 @@ struct komodo_state KOMODO_STATES[34];
 #define _COINBASE_MATURITY 100
 int COINBASE_MATURITY = _COINBASE_MATURITY;//100;
 
-int32_t KOMODO_MININGTHREADS = -1,IS_KOMODO_NOTARY,IS_STAKED_NOTARY,USE_EXTERNAL_PUBKEY,KOMODO_CHOSEN_ONE,ASSETCHAINS_SEED,KOMODO_ON_DEMAND,KOMODO_EXTERNAL_NOTARIES,KOMODO_PASSPORT_INITDONE,KOMODO_PAX,KOMODO_EXCHANGEWALLET,KOMODO_REWIND,STAKED_ERA,KOMODO_CONNECTING = -1,KOMODO_DEALERNODE,KOMODO_EXTRASATOSHI,ASSETCHAINS_FOUNDERS_PERIOD;
+int32_t KOMODO_MININGTHREADS = -1,IS_KOMODO_NOTARY,IS_STAKED_NOTARY,USE_EXTERNAL_PUBKEY,KOMODO_CHOSEN_ONE,ASSETCHAINS_SEED,KOMODO_ON_DEMAND,KOMODO_EXTERNAL_NOTARIES,KOMODO_PASSPORT_INITDONE,KOMODO_PAX,KOMODO_EXCHANGEWALLET,KOMODO_REWIND,STAKED_ERA,KOMODO_CONNECTING = -1,KOMODO_DEALERNODE,KOMODO_EXTRASATOSHI,ASSETCHAINS_FOUNDERS
 int32_t KOMODO_INSYNC,KOMODO_LASTMINED,prevKOMODO_LASTMINED,KOMODO_CCACTIVATE,JUMBLR_PAUSE = 1;
 std::string NOTARY_PUBKEY,ASSETCHAINS_NOTARIES,ASSETCHAINS_OVERRIDE_PUBKEY,DONATION_PUBKEY,ASSETCHAINS_SCRIPTPUB,NOTARY_ADDRESS,WHITELIST_ADDRESS;
 uint8_t NOTARY_PUBKEY33[33],ASSETCHAINS_OVERRIDE_PUBKEY33[33],ASSETCHAINS_OVERRIDE_PUBKEYHASH[20],ASSETCHAINS_PUBLIC,ASSETCHAINS_PRIVATE,ASSETCHAINS_TXPOW,ASSETCHAINS_FOUNDERS,NUM_NOTARIES;
@@ -154,6 +154,8 @@ int64_t komodo_current_supply(uint32_t nHeight)
                     uint64_t lastEnd = j == 0 ? 0 : ASSETCHAINS_ENDSUBSIDY[j - 1];
                     uint64_t curEnd = ASSETCHAINS_ENDSUBSIDY[j] == 0 ? nHeight : nHeight > ASSETCHAINS_ENDSUBSIDY[j] ? ASSETCHAINS_ENDSUBSIDY[j] : nHeight;
                     uint64_t period = ASSETCHAINS_HALVING[j];
+                    if ( period == 0 )
+                        period = 210000;
                     uint32_t nSteps = (curEnd - lastEnd) / period;
                     uint32_t modulo = (curEnd - lastEnd) % period;
                     uint64_t decay = ASSETCHAINS_DECAY[j];
@@ -207,7 +209,8 @@ int64_t komodo_current_supply(uint32_t nHeight)
 
                         // calculate amount in one step's triangular protrusion over minor triangle's hypotenuse
                         denominator = nSteps * period;
-
+                        if ( denominator == 0 )
+                            denominator = 1;
                         // difference of one step vs. total
                         stepDifference = (period * subsidyDifference) / denominator;
 

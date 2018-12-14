@@ -1500,6 +1500,9 @@ uint32_t komodo_assetmagic(char *symbol,uint64_t supply,uint8_t *extraptr,int32_
     {
         vcalc_sha256(0,hash.bytes,extraptr,extralen);
         crc0 = hash.uints[0];
+        int32_t i; for (i=0; i<extralen; i++)
+            fprintf(stderr,"%02x",extraptr[i]);
+        fprintf(stderr," extralen.%d crc0.%x\n",extralen,crc0);
     }
     return(calc_crc32(crc0,buf,len));
 }
@@ -1767,12 +1770,17 @@ void komodo_args(char *argv0)
 
         MAX_BLOCK_SIGOPS = 60000;
         ASSETCHAINS_TXPOW = GetArg("-ac_txpow",0) & 3;
-        ASSETCHAINS_FOUNDERS = GetArg("-ac_founders",0) & 1;
+        ASSETCHAINS_FOUNDERS = GetArg("-ac_founders",0);// & 1;
         ASSETCHAINS_SUPPLY = GetArg("-ac_supply",10);
         ASSETCHAINS_COMMISSION = GetArg("-ac_perc",0);
         ASSETCHAINS_OVERRIDE_PUBKEY = GetArg("-ac_pubkey","");
+<<<<<<< HEAD
 		ASSETCHAINS_SCRIPTPUB = GetArg("-ac_script","");
 		ASSETCHAINS_FOUNDERS_PERIOD = GetArg("-ac_period",0);
+=======
+        ASSETCHAINS_SCRIPTPUB = GetArg("-ac_script","");
+        //ASSETCHAINS_FOUNDERS_PERIOD = GetArg("-ac_period",0);
+>>>>>>> 655ef3c8ae43446c2cd361677699dcbe37f8fea4
 
         if ( (ASSETCHAINS_STAKED= GetArg("-ac_staked",0)) > 100 )
             ASSETCHAINS_STAKED = 100;
@@ -1827,7 +1835,7 @@ void komodo_args(char *argv0)
         }
         if ( ASSETCHAINS_ENDSUBSIDY[0] != 0 || ASSETCHAINS_REWARD[0] != 0 || ASSETCHAINS_HALVING[0] != 0 || ASSETCHAINS_DECAY[0] != 0 || ASSETCHAINS_COMMISSION != 0 || ASSETCHAINS_PUBLIC != 0 || ASSETCHAINS_PRIVATE != 0 || ASSETCHAINS_TXPOW != 0 || ASSETCHAINS_FOUNDERS != 0 || ASSETCHAINS_SCRIPTPUB.size() > 1 )
         {
-            fprintf(stderr,"perc %.4f%% ac_pub=[%02x%02x%02x...]\n",dstr(ASSETCHAINS_COMMISSION)*100,ASSETCHAINS_OVERRIDE_PUBKEY33[0],ASSETCHAINS_OVERRIDE_PUBKEY33[1],ASSETCHAINS_OVERRIDE_PUBKEY33[2]);
+            fprintf(stderr,"perc %.4f%% ac_pub=[%02x%02x%02x...] acsize.%d\n",dstr(ASSETCHAINS_COMMISSION)*100,ASSETCHAINS_OVERRIDE_PUBKEY33[0],ASSETCHAINS_OVERRIDE_PUBKEY33[1],ASSETCHAINS_OVERRIDE_PUBKEY33[2],(int32_t)ASSETCHAINS_SCRIPTPUB.size());
             extraptr = extrabuf;
             memcpy(extraptr,ASSETCHAINS_OVERRIDE_PUBKEY33,33), extralen = 33;
 
@@ -1874,13 +1882,19 @@ void komodo_args(char *argv0)
             val = ASSETCHAINS_COMMISSION | (((uint64_t)ASSETCHAINS_STAKED & 0xff) << 32) | (((uint64_t)ASSETCHAINS_CC & 0xffff) << 40) | ((ASSETCHAINS_PUBLIC != 0) << 7) | ((ASSETCHAINS_PRIVATE != 0) << 6) | ASSETCHAINS_TXPOW;
             extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(val),(void *)&val);
             if ( ASSETCHAINS_FOUNDERS != 0 )
-						{
-                extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_FOUNDERS),(void *)&ASSETCHAINS_FOUNDERS);
-								if ( ASSETCHAINS_FOUNDERS_PERIOD != 0 )
-									extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_FOUNDERS_PERIOD),(void *)&ASSETCHAINS_FOUNDERS_PERIOD);
-						}
+            {
+                uint8_t tmp = 1;
+                extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(tmp),(void *)&tmp);
+                if ( ASSETCHAINS_FOUNDERS > 1 )
+                    extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_FOUNDERS),(void *)&ASSETCHAINS_FOUNDERS);
+            }
             if ( ASSETCHAINS_SCRIPTPUB.size() > 1 )
-                extralen += iguana_rwnum(1,&extraptr[extralen],(int32_t)ASSETCHAINS_SCRIPTPUB.size(),(void *)ASSETCHAINS_SCRIPTPUB.c_str());
+            {
+                decode_hex(&extraptr[extralen],ASSETCHAINS_SCRIPTPUB.size()/2,(char *)ASSETCHAINS_SCRIPTPUB.c_str());
+                extralen += ASSETCHAINS_SCRIPTPUB.size()/2;
+                //extralen += iguana_rwnum(1,&extraptr[extralen],(int32_t)ASSETCHAINS_SCRIPTPUB.size(),(void *)ASSETCHAINS_SCRIPTPUB.c_str());
+                fprintf(stderr,"append ac_script %s\n",ASSETCHAINS_SCRIPTPUB.c_str());
+            }
         }
 
         addn = GetArg("-seednode","");
@@ -1907,11 +1921,11 @@ void komodo_args(char *argv0)
         while ( (dirname= (char *)GetDataDir(false).string().c_str()) == 0 || dirname[0] == 0 )
         {
             fprintf(stderr,"waiting for datadir\n");
-						#ifndef _WIN32
+#ifndef _WIN32
             sleep(3);
-						#else
-						boost::this_thread::sleep(boost::posix_time::milliseconds(3000));
-						#endif
+#else
+            boost::this_thread::sleep(boost::posix_time::milliseconds(3000));
+#endif
         }
         //fprintf(stderr,"Got datadir.(%s)\n",dirname);
         if ( ASSETCHAINS_SYMBOL[0] != 0 )

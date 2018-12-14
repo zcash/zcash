@@ -889,9 +889,9 @@ int32_t komodo_eligiblenotary(uint8_t pubkeys[66][33],int32_t *mids,uint32_t blo
 
 int32_t komodo_minerids(uint8_t *minerids,int32_t height,int32_t width)
 {
-    int32_t i,j,n,nonz,numnotaries; CBlock block; CBlockIndex *pindex; uint8_t notarypubs33[64][33],pubkey33[33];
+    int32_t i,j,nonz,numnotaries; CBlock block; CBlockIndex *pindex; uint8_t notarypubs33[64][33],pubkey33[33];
     numnotaries = komodo_notaries(notarypubs33,height,0);
-    for (i=nonz=0; i<width; i++,n++)
+    for (i=nonz=0; i<width; i++)
     {
         if ( height-i <= 0 )
             continue;
@@ -1125,12 +1125,11 @@ uint64_t komodo_commission(const CBlock *pblock,int32_t height)
         nSubsidy = GetBlockSubsidy(height,Params().GetConsensus());
         //fprintf(stderr,"ht.%d nSubsidy %.8f prod %llu\n",height,(double)nSubsidy/COIN,(long long)(nSubsidy * ASSETCHAINS_COMMISSION));
         commission = ((nSubsidy * ASSETCHAINS_COMMISSION) / COIN);
-        if ( ASSETCHAINS_FOUNDERS_PERIOD != 0 )
+        if ( ASSETCHAINS_FOUNDERS > 1 )
         {
-            if ( height % ASSETCHAINS_FOUNDERS_PERIOD == 0 )
-                commission = commission * ASSETCHAINS_FOUNDERS_PERIOD;
-            else
-                commission = 0;
+            if ( (height % ASSETCHAINS_FOUNDERS) == 0 )
+                commission = commission * ASSETCHAINS_FOUNDERS;
+            else commission = 0;
         }
     }
     else
@@ -1807,7 +1806,9 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
             if ( ASSETCHAINS_SCRIPTPUB.size() > 1 )
             {
                 int32_t scriptlen; uint8_t scripthex[10000];
-                if ( ASSETCHAINS_SCRIPTPUB.size()/2 == pblock->vtx[0].vout[0].scriptPubKey.size() && scriptlen < sizeof(scripthex) )
+                script = (uint8_t *)&pblock->vtx[0].vout[0].scriptPubKey[0];
+                scriptlen = (int32_t)pblock->vtx[0].vout[0].scriptPubKey.size();
+                if ( ASSETCHAINS_SCRIPTPUB.size()/2 == scriptlen && scriptlen < sizeof(scripthex) )
                 {
                     decode_hex(scripthex,scriptlen,(char *)ASSETCHAINS_SCRIPTPUB.c_str());
                     if ( memcmp(scripthex,script,scriptlen) != 0 )
