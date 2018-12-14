@@ -10,7 +10,7 @@ from test_framework.util import assert_equal, assert_greater_than, \
     initialize_chain_clean, initialize_chain, start_nodes, start_node, connect_nodes_bi, \
     stop_nodes, sync_blocks, sync_mempools, wait_bitcoinds, rpc_port, assert_raises
 from cryptoconditions import assert_success, assert_error, generate_random_string
-
+import subprocess
 
 class CryptoconditionsGatewaysTest(BitcoinTestFramework):
 
@@ -137,12 +137,14 @@ class CryptoconditionsGatewaysTest(BitcoinTestFramework):
         result = rpc.gatewayslist()
         assert_equal(result[0], bind_txid)
 
+
     def run_test(self):
         print("Mining blocks...")
         rpc = self.nodes[0]
         rpc1 = self.nodes[1]
         # utxos from block 1 become mature in block 101
-        rpc.generate(101)
+        if not self.options.noshutdown:
+            rpc.generate(101)
         self.sync_all()
         rpc.getinfo()
         rpc1.getinfo()

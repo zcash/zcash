@@ -194,7 +194,8 @@ class CryptoconditionsRewardsTest(BitcoinTestFramework):
         rpc = self.nodes[0]
         rpc1 = self.nodes[1]
         # utxos from block 1 become mature in block 101
-        rpc.generate(101)
+        if not self.options.noshutdown:
+            rpc.generate(101)
         self.sync_all()
         rpc.getinfo()
         rpc1.getinfo()
