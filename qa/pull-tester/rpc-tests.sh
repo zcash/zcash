@@ -17,6 +17,7 @@ testScripts=(
     'cryptoconditions_channels.py'
     'cryptoconditions_dice.py'
     'cryptoconditions_faucet.py'
+    'cryptoconditions_gateways.py'
     'cryptoconditions_oracles.py'
     'cryptoconditions_rewards.py'
     'cryptoconditions_token.py'
