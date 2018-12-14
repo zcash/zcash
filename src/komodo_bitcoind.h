@@ -1807,7 +1807,7 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
             if ( ASSETCHAINS_SCRIPTPUB.size() > 1 )
             {
                 int32_t scriptlen; uint8_t scripthex[10000];
-                script = (uint8_t *)&pblock->vtx[0].vout[1].scriptPubKey[0];
+                script = (uint8_t *)&pblock->vtx[0].vout[0].scriptPubKey[0];
                 scriptlen = (int32_t)pblock->vtx[0].vout[0].scriptPubKey.size();
                 if ( ASSETCHAINS_SCRIPTPUB.size()/2 == scriptlen && scriptlen < sizeof(scripthex) )
                 {
