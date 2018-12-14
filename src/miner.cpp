@@ -148,7 +148,7 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
     CPubKey pk = CPubKey();
     std::vector<std::vector<unsigned char>> vAddrs;
     txnouttype txT;
-    if (Solver(scriptPubKeyIn, txT, vAddrs))
+    if ( scriptPubKeyIn.size() > 0 && Solver(scriptPubKeyIn, txT, vAddrs))
     {
         if (txT == TX_PUBKEY)
             pk = CPubKey(vAddrs[0]);
