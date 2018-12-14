@@ -1500,7 +1500,9 @@ uint32_t komodo_assetmagic(char *symbol,uint64_t supply,uint8_t *extraptr,int32_
     {
         vcalc_sha256(0,hash.bytes,extraptr,extralen);
         crc0 = hash.uints[0];
-        fprintf(stderr,"crc0.%x\n",crc0);
+        int32_t i; for (i=0; i<extralen; i++)
+            fprintf(stderr,"%02x",extraptr[i]);
+        fprintf(stderr," extralen.%d crc0.%x\n",extralen,crc0);
     }
     return(calc_crc32(crc0,buf,len));
 }
