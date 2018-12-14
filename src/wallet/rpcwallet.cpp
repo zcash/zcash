@@ -4679,55 +4679,63 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
+    string enableArg = "zmergetoaddress";
+    auto fEnableMergeToAddress = fExperimentalMode && GetBoolArg("-" + enableArg, false);
+    std::string strDisabledMsg = "";
+    if (!fEnableMergeToAddress) {
+        strDisabledMsg = experimentalDisabledHelpMsg("z_mergetoaddress", enableArg) + "\n";
+    }
+
     if (fHelp || params.size() < 2 || params.size() > 6)
         throw runtime_error(
-            "z_mergetoaddress [\"fromaddress\", ... ] \"toaddress\" ( fee ) ( transparent_limit ) ( shielded_limit ) ( memo )\n"
-            "\nMerge multiple UTXOs and notes into a single UTXO or note.  Coinbase UTXOs are ignored; use `z_shieldcoinbase`"
-            "\nto combine those into a single note."
-            "\n\nThis is an asynchronous operation, and UTXOs selected for merging will be locked.  If there is an error, they"
-            "\nare unlocked.  The RPC call `listlockunspent` can be used to return a list of locked UTXOs."
-            "\n\nThe number of UTXOs and notes selected for merging can be limited by the caller.  If the transparent limit"
-            "\nparameter is set to zero will mean limit the number of UTXOs based on the size of the transaction.  Any limit is"
-            "\nconstrained by the consensus rule defining a maximum transaction size of "
-            + strprintf("%d bytes before Sapling, and %d", MAX_TX_SIZE_BEFORE_SAPLING, MAX_TX_SIZE_AFTER_SAPLING)
-            + "\nbytes once Sapling activates."
-            + HelpRequiringPassphrase() + "\n"
-            "\nArguments:\n"
-            "1. fromaddresses         (array, required) A JSON array with addresses.\n"
-            "                         The following special strings are accepted inside the array:\n"
-            "                             - \"ANY_TADDR\":   Merge UTXOs from any taddrs belonging to the wallet.\n"
-            "                             - \"ANY_SPROUT\":  Merge notes from any Sprout zaddrs belonging to the wallet.\n"
-            "                             - \"ANY_SAPLING\": Merge notes from any Sapling zaddrs belonging to the wallet.\n"
-            "                         While it is possible to use a variety of different combinations of addresses and the above values,\n"
-            "                         it is not possible to send funds from both sprout and sapling addresses simultaneously. If a special\n"
-            "                         string is given, any given addresses of that type will be counted as duplicates and cause an error.\n"
-            "    [\n"
-            "      \"address\"          (string) Can be a taddr or a zaddr\n"
-            "      ,...\n"
-            "    ]\n"
-            "2. \"toaddress\"           (string, required) The taddr or zaddr to send the funds to.\n"
-            "3. fee                   (numeric, optional, default="
-            + strprintf("%s", FormatMoney(DEFAULT_FEE)) + ") The fee amount to attach to this transaction.\n"
-            "4. transparent_limit     (numeric, optional, default="
-            + strprintf("%d", MERGE_TO_ADDRESS_DEFAULT_TRANSPARENT_LIMIT) + ") Limit on the maximum number of UTXOs to merge.  Set to 0 to use as many as will fit in the transaction.\n"
-            "5. shielded_limit        (numeric, optional, default="
-            + strprintf("%d Sprout or %d Sapling Notes", MERGE_TO_ADDRESS_DEFAULT_SPROUT_LIMIT, MERGE_TO_ADDRESS_DEFAULT_SAPLING_LIMIT) + ") Limit on the maximum number of notes to merge.  Set to 0 to merge as many as will fit in the transaction.\n"
-            "6. \"memo\"                (string, optional) Encoded as hex. When toaddress is a zaddr, this will be stored in the memo field of the new note.\n"
-            "\nResult:\n"
-            "{\n"
-            "  \"remainingUTXOs\": xxx               (numeric) Number of UTXOs still available for merging.\n"
-            "  \"remainingTransparentValue\": xxx    (numeric) Value of UTXOs still available for merging.\n"
-            "  \"remainingNotes\": xxx               (numeric) Number of notes still available for merging.\n"
-            "  \"remainingShieldedValue\": xxx       (numeric) Value of notes still available for merging.\n"
-            "  \"mergingUTXOs\": xxx                 (numeric) Number of UTXOs being merged.\n"
-            "  \"mergingTransparentValue\": xxx      (numeric) Value of UTXOs being merged.\n"
-            "  \"mergingNotes\": xxx                 (numeric) Number of notes being merged.\n"
-            "  \"mergingShieldedValue\": xxx         (numeric) Value of notes being merged.\n"
-            "  \"opid\": xxx                         (string) An operationid to pass to z_getoperationstatus to get the result of the operation.\n"
-            "}\n"
-            "\nExamples:\n"
-            + HelpExampleCli("z_mergetoaddress", "'[\"ANY_SAPLING\", \"t1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\"]' ztestsapling19rnyu293v44f0kvtmszhx35lpdug574twc0lwyf4s7w0umtkrdq5nfcauxrxcyfmh3m7slemqsj")
-            + HelpExampleRpc("z_mergetoaddress", "[\"ANY_SAPLING\", \"t1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\"], \"ztestsapling19rnyu293v44f0kvtmszhx35lpdug574twc0lwyf4s7w0umtkrdq5nfcauxrxcyfmh3m7slemqsj\"")
+            RpcDocBuilder("z_mergetoaddress")
+                .SetDescription(
+                    strDisabledMsg
+                    + "Merge multiple UTXOs and notes into a single UTXO or note.  Coinbase UTXOs are ignored; use `z_shieldcoinbase`\n"
+                    "to combine those into a single note.\n"
+                    "\n"
+                    "This is an asynchronous operation, and UTXOs selected for merging will be locked.  If there is an error, they\n"
+                    "are unlocked.  The RPC call `listlockunspent` can be used to return a list of locked UTXOs.\n"
+                    "\n"
+                    "The number of UTXOs and notes selected for merging can be limited by the caller.  If the transparent limit\n"
+                    "parameter is set to zero, and Overwinter is not yet active, the -mempooltxinputlimit option will determine the\n"
+                    "number of UTXOs.  After Overwinter has activated -mempooltxinputlimit is ignored and having a transparent\n"
+                    "input limit of zero will mean limit the number of UTXOs based on the size of the transaction.  Any limit is\n"
+                    "constrained by the consensus rule defining a maximum transaction size of " 
+                        + strprintf("%d bytes before Sapling, and %d", MAX_TX_SIZE_BEFORE_SAPLING, MAX_TX_SIZE_AFTER_SAPLING) + "\n"
+                    + "bytes once Sapling activates."
+                    + HelpRequiringPassphrase())
+                .AddArgument(RpcArgument::Array("fromaddresses", "A JSON array with addresses.")
+                    .AddDescription("The following special strings are accepted inside the array:")
+                    .AddDescription("    - \"ANY_TADDR\":   Merge UTXOs from any taddrs belonging to the wallet.")
+                    .AddDescription("    - \"ANY_SPROUT\":  Merge notes from any Sprout zaddrs belonging to the wallet.")
+                    .AddDescription("    - \"ANY_SAPLING\": Merge notes from any Sapling zaddrs belonging to the wallet.")
+                    .AddDescription("If a special string is given, any given addresses of that type will be counted as duplicates and cause an error.")
+                    .Of(RpcArgument::String("address", "Can be a taddr or a zaddr")))
+                .AddArgument(RpcArgument::String("toaddress", "The taddr or zaddr to send the funds to."))
+                .AddArgument(RpcArgument::OptionalAmount("fee", FormatMoney(MERGE_TO_ADDRESS_OPERATION_DEFAULT_MINERS_FEE), "The fee amount to attach to this transaction."))
+                .AddArgument(RpcArgument::OptionalInteger("transparent_limit", std::to_string(MERGE_TO_ADDRESS_DEFAULT_TRANSPARENT_LIMIT),
+                    "Limit on the maximum number of UTXOs to merge.")
+                    .AddDescription("Set to 0 to use node option -mempooltxinputlimit (before Overwinter),")
+                    .AddDescription("or as many as will fit in the transaction (after Overwinter)."))
+                .AddArgument(RpcArgument::OptionalInteger("shielded_limit", strprintf("%d Sprout or %d Sapling Notes", MERGE_TO_ADDRESS_DEFAULT_SPROUT_LIMIT, MERGE_TO_ADDRESS_DEFAULT_SAPLING_LIMIT),
+                    "Limit on the maximum number of notes to merge.")
+                    .AddDescription("Set to 0 to merge as many as will fit in the transaction."))
+                .AddArgument(RpcArgument::OptionalHexString("memo", "", "Encoded as hex. When toaddress is a zaddr,")
+                    .AddDescription("this will be stored in the memo field of the new note."))
+                .AddResult(RpcArgument::Object()
+                    .With(RpcArgument::Integer("remainingUTXOs", "Number of UTXOs still available for merging."))
+                    .With(RpcArgument::Integer("remainingTransparentValue", "Value of UTXOs still available for merging."))
+                    .With(RpcArgument::Integer("remainingNotes", "Number of notes still available for merging."))
+                    .With(RpcArgument::Integer("remainingShieldedValue", "Value of notes still available for merging."))
+                    .With(RpcArgument::Integer("mergingUTXOs", "Number of UTXOs being merged."))
+                    .With(RpcArgument::Integer("mergingTransparentValue", "Value of UTXOs being merged."))
+                    .With(RpcArgument::Integer("mergingNotes", "Number of notes being merged."))
+                    .With(RpcArgument::Integer("mergingShieldedValue", "Value of notes being merged."))
+                    .With(RpcArgument::String("opid", "An operationid to pass to z_getoperationstatus to get the result of the operation.")))
+                .AddHelpExampleCli("'[\"ANY_SAPLING\", \"t1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\"]' ztestsapling19rnyu293v44f0kvtmszhx35lpdug574twc0lwyf4s7w0umtkrdq5nfcauxrxcyfmh3m7slemqsj")
+                .AddHelpExampleRpc("[\"ANY_SAPLING\", \"t1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\"], \"ztestsapling19rnyu293v44f0kvtmszhx35lpdug574twc0lwyf4s7w0umtkrdq5nfcauxrxcyfmh3m7slemqsj\"")
+                .ToString()
         );
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
