@@ -1068,7 +1068,7 @@ uint64_t komodo_block_prg(uint32_t nHeight)
 
 // given a block height, this returns the unlock time for that block height, derived from
 // the ASSETCHAINS_MAGIC number as well as the block height, providing different random numbers
-// for corresponding blocks across chains, but the same sequence in each chain 
+// for corresponding blocks across chains, but the same sequence in each chain
 int64_t komodo_block_unlocktime(uint32_t nHeight)
 {
     uint64_t fromTime, toTime, unlocktime;
@@ -1500,6 +1500,9 @@ uint32_t komodo_assetmagic(char *symbol,uint64_t supply,uint8_t *extraptr,int32_
     {
         vcalc_sha256(0,hash.bytes,extraptr,extralen);
         crc0 = hash.uints[0];
+        int32_t i; for (i=0; i<extralen; i++)
+            fprintf(stderr,"%02x",extraptr[i]);
+        fprintf(stderr," extralen.%d crc0.%x\n",extralen,crc0);
     }
     return(calc_crc32(crc0,buf,len));
 }
@@ -1604,7 +1607,7 @@ uint64_t komodo_ac_block_subsidy(int nHeight)
                                 subsidyDifference = subsidy;
                             }
                             else
-                            {    
+                            {
                                 // Ex: -ac_eras=3 -ac_reward=0,384,24 -ac_end=1440,260640,0 -ac_halving=1,1440,2103840 -ac_decay 100000000,97750000,0
                                 subsidyDifference = subsidy - ASSETCHAINS_REWARD[curEra + 1];
                                 if (subsidyDifference < 0)
@@ -1765,11 +1768,13 @@ void komodo_args(char *argv0)
 
         MAX_BLOCK_SIGOPS = 60000;
         ASSETCHAINS_TXPOW = GetArg("-ac_txpow",0) & 3;
-        ASSETCHAINS_FOUNDERS = GetArg("-ac_founders",0) & 1;
+        ASSETCHAINS_FOUNDERS = GetArg("-ac_founders",0);// & 1;
         ASSETCHAINS_SUPPLY = GetArg("-ac_supply",10);
         ASSETCHAINS_COMMISSION = GetArg("-ac_perc",0);
         ASSETCHAINS_OVERRIDE_PUBKEY = GetArg("-ac_pubkey","");
         ASSETCHAINS_SCRIPTPUB = GetArg("-ac_script","");
+        //ASSETCHAINS_FOUNDERS_PERIOD = GetArg("-ac_period",0);
+
         if ( (ASSETCHAINS_STAKED= GetArg("-ac_staked",0)) > 100 )
             ASSETCHAINS_STAKED = 100;
 
@@ -1777,7 +1782,7 @@ void komodo_args(char *argv0)
         // other values
         if ( (ASSETCHAINS_LWMAPOS = GetArg("-ac_veruspos",0)) != 0 )
             ASSETCHAINS_LWMAPOS = 50;
-        
+
         ASSETCHAINS_SAPLING = GetArg("-ac_sapling", -1);
         if (ASSETCHAINS_SAPLING == -1)
         {
@@ -1823,7 +1828,7 @@ void komodo_args(char *argv0)
         }
         if ( ASSETCHAINS_ENDSUBSIDY[0] != 0 || ASSETCHAINS_REWARD[0] != 0 || ASSETCHAINS_HALVING[0] != 0 || ASSETCHAINS_DECAY[0] != 0 || ASSETCHAINS_COMMISSION != 0 || ASSETCHAINS_PUBLIC != 0 || ASSETCHAINS_PRIVATE != 0 || ASSETCHAINS_TXPOW != 0 || ASSETCHAINS_FOUNDERS != 0 || ASSETCHAINS_SCRIPTPUB.size() > 1 )
         {
-            fprintf(stderr,"perc %.4f%% ac_pub=[%02x%02x%02x...]\n",dstr(ASSETCHAINS_COMMISSION)*100,ASSETCHAINS_OVERRIDE_PUBKEY33[0],ASSETCHAINS_OVERRIDE_PUBKEY33[1],ASSETCHAINS_OVERRIDE_PUBKEY33[2]);
+            fprintf(stderr,"perc %.4f%% ac_pub=[%02x%02x%02x...] acsize.%d\n",dstr(ASSETCHAINS_COMMISSION)*100,ASSETCHAINS_OVERRIDE_PUBKEY33[0],ASSETCHAINS_OVERRIDE_PUBKEY33[1],ASSETCHAINS_OVERRIDE_PUBKEY33[2],(int32_t)ASSETCHAINS_SCRIPTPUB.size());
             extraptr = extrabuf;
             memcpy(extraptr,ASSETCHAINS_OVERRIDE_PUBKEY33,33), extralen = 33;
 
@@ -1870,9 +1875,19 @@ void komodo_args(char *argv0)
             val = ASSETCHAINS_COMMISSION | (((uint64_t)ASSETCHAINS_STAKED & 0xff) << 32) | (((uint64_t)ASSETCHAINS_CC & 0xffff) << 40) | ((ASSETCHAINS_PUBLIC != 0) << 7) | ((ASSETCHAINS_PRIVATE != 0) << 6) | ASSETCHAINS_TXPOW;
             extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(val),(void *)&val);
             if ( ASSETCHAINS_FOUNDERS != 0 )
-                extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_FOUNDERS),(void *)&ASSETCHAINS_FOUNDERS);
+            {
+                uint8_t tmp = 1;
+                extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(tmp),(void *)&tmp);
+                if ( ASSETCHAINS_FOUNDERS > 1 )
+                    extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_FOUNDERS),(void *)&ASSETCHAINS_FOUNDERS);
+            }
             if ( ASSETCHAINS_SCRIPTPUB.size() > 1 )
-                extralen += iguana_rwnum(1,&extraptr[extralen],(int32_t)ASSETCHAINS_SCRIPTPUB.size(),(void *)ASSETCHAINS_SCRIPTPUB.c_str());
+            {
+                decode_hex(&extraptr[extralen],ASSETCHAINS_SCRIPTPUB.size()/2,(char *)ASSETCHAINS_SCRIPTPUB.c_str());
+                extralen += ASSETCHAINS_SCRIPTPUB.size()/2;
+                //extralen += iguana_rwnum(1,&extraptr[extralen],(int32_t)ASSETCHAINS_SCRIPTPUB.size(),(void *)ASSETCHAINS_SCRIPTPUB.c_str());
+                fprintf(stderr,"append ac_script %s\n",ASSETCHAINS_SCRIPTPUB.c_str());
+            }
         }
 
         addn = GetArg("-seednode","");
@@ -1899,11 +1914,11 @@ void komodo_args(char *argv0)
         while ( (dirname= (char *)GetDataDir(false).string().c_str()) == 0 || dirname[0] == 0 )
         {
             fprintf(stderr,"waiting for datadir\n");
-						#ifndef _WIN32
+#ifndef _WIN32
             sleep(3);
-						#else
-						boost::this_thread::sleep(boost::posix_time::milliseconds(3000));
-						#endif
+#else
+            boost::this_thread::sleep(boost::posix_time::milliseconds(3000));
+#endif
         }
         //fprintf(stderr,"Got datadir.(%s)\n",dirname);
         if ( ASSETCHAINS_SYMBOL[0] != 0 )
@@ -2051,4 +2066,3 @@ void komodo_prefetch(FILE *fp)
     }
     fseek(fp,fpos,SEEK_SET);
 }
-
