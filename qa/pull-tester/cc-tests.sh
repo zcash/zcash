@@ -9,24 +9,17 @@ export BITCOINCLI=${BUILDDIR}/qa/pull-tester/run-bitcoin-cli
 export BITCOIND=${REAL_BITCOIND}
 
 #Run the tests
+# FAUCET test should be permanently first!!!
 
 testScripts=(
+    'cryptoconditions_faucet.py'
     'cryptoconditions_channels.py'
     'cryptoconditions_dice.py'
-    'cryptoconditions_faucet.py'
-    'cryptoconditions_gateways.py'
     'cryptoconditions_oracles.py'
     'cryptoconditions_rewards.py'
     'cryptoconditions_token.py'
+    'cryptoconditions_gateways.py'
 );
-
-if [ "x$ENABLE_ZMQ" = "x1" ]; then
-  testScripts+=('zmq_test.py')
-fi
-
-if [ "x$ENABLE_PROTON" = "x1" ]; then
-  testScripts+=('proton_test.py')
-fi
 
 extArg="-extended"
 passOn=${@#$extArg}

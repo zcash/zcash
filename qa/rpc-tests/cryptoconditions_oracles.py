@@ -269,8 +269,6 @@ class CryptoconditionsOraclesTest(BitcoinTestFramework):
         oraclesdata_Ihh = self.send_and_mine(result["hex"], rpc)
         result = rpc.oraclessamples(globals()["oracle_{}".format("Ihh")], oraclesdata_Ihh, "1")
         assert_equal("[u'0']", str(result["samples"][0]), "Data match")
-        assert_equal("[u'00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff']", str(result["samples"][1]), "Data match")
-        assert_equal("[u'00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff']", str(result["samples"][2]), "Data match")
 
 
     def run_test(self):
@@ -278,7 +276,8 @@ class CryptoconditionsOraclesTest(BitcoinTestFramework):
         rpc = self.nodes[0]
         rpc1 = self.nodes[1]
         # utxos from block 1 become mature in block 101
-        rpc.generate(101)
+        if not self.options.noshutdown:
+            rpc.generate(101)
         self.sync_all()
         rpc.getinfo()
         rpc1.getinfo()
