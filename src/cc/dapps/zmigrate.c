@@ -939,7 +939,7 @@ again:
                 z_sendmany(opidstr,coinstr,"",zcaddr,coinaddr,amount-txfee);
                 lastopid = (uint32_t)time(NULL);
             } else printf("couldnt getnewaddress!\n");
-            sleep(30);
+            sleep(3);
             continue;
         }
         if ( time(NULL) > lastopid+600 )
