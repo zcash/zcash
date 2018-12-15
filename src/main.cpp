@@ -4920,7 +4920,7 @@ bool AcceptBlockHeader(int32_t *futureblockp,const CBlockHeader& block, CValidat
             *ppindex = pindex;
         if ( pindex != 0 && pindex->nStatus & BLOCK_FAILED_MASK )
         {
-            if ( ASSETCHAINS_CC == 0 && pindex->nHeight != mainParams.consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight )
+            if ( ASSETCHAINS_CC == 0 && pindex->GetHeight() != mainParams.consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight )
                 return state.Invalid(error("%s: block is marked invalid", __func__), 0, "duplicate");
             else
             {
