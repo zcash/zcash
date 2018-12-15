@@ -932,20 +932,22 @@ again:
         if ( (amount= find_sprout_amount(coinstr,zcaddr)) > txfee )
         {
             // generate taddr, send max of 10000.0001
-            static int64_t lastamount,lastamount2,lastamount3,lastamount4;
-            stdamount = 500 * SATOSHIDEN;
+            static int64_t lastamount,lastamount2,lastamount3,lastamount4,refamount = 5000 * SATOSHIDEN;
+            stdamount = refamount;
             if ( amount == lastamount && amount == lastamount2 )
             {
                 stdamount /= 10;
                 if ( amount == lastamount3 && amount == lastamount4 )
-                    stdamount /= 5;
+                    stdamount /= 10;
             }
+            if ( stdamount < refamount )
+                refamount = stdamount;
             lastamount4 = lastamount3;
             lastamount3 = lastamount2;
             lastamount2 = lastamount;
             lastamount = amount;
-            if ( amount > stdamount+txfee )
-                amount = stdamount + txfee;
+            if ( amount > stdamount+2*txfee )
+                amount = stdamount + 2*txfee;
             if ( getnewaddress(coinaddr,coinstr,"") == 0 )
             {
                 z_sendmany(opidstr,coinstr,"",zcaddr,coinaddr,amount-txfee);
