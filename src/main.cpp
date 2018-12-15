@@ -1020,10 +1020,9 @@ bool ContextualCheckTransaction(
 
     // If Sprout rules apply, reject transactions which are intended for Overwinter and beyond
     if (isSprout && tx.fOverwintered) {
-        return state.DoS(isInitBlockDownload() ? 0 : dosLevel,
-                         error("ContextualCheckTransaction(): ht.%d activates.%d dosLevel.%d overwinter is not active yet",
-                               nHeight, Params().GetConsensus().vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight, dosLevel),
-                         REJECT_INVALID, "tx-overwinter-not-active");
+        int32_t ht = Params().GetConsensus().vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight;
+        return state.DoS((ht < 0 || nHeight < ht) ? 0 : dosLevel,error("ContextualCheckTransaction(): ht.%d activates.%d dosLevel.%d overwinter is not active yet",nHeight, Params().GetConsensus().vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight, dosLevel),REJECT_INVALID, "tx-overwinter-not-active");
+        //return state.DoS(isInitBlockDownload() ? 0 : dosLevel,error("ContextualCheckTransaction(): ht.%d activates.%d dosLevel.%d overwinter is not active yet",nHeight, Params().GetConsensus().vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight, dosLevel),REJECT_INVALID, "tx-overwinter-not-active");
     }
 
     if (saplingActive) {
@@ -1080,8 +1079,8 @@ bool ContextualCheckTransaction(
     if (overwinterActive) {
         // Reject transactions intended for Sprout
         if (!tx.fOverwintered) {
-            return state.DoS(dosLevel, error("ContextualCheckTransaction: overwinter is active"),
-                             REJECT_INVALID, "tx-overwinter-active");
+            int32_t ht = Params().GetConsensus().vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight;
+            return state.DoS((ht < 0 || nHeight < ht) ? 0 : dosLevel, error("ContextualCheckTransaction: overwinter is active"),REJECT_INVALID, "tx-overwinter-active");
         }
 
         // Check that all transactions are unexpired
@@ -1446,7 +1445,7 @@ bool CheckTransactionWithoutProofVerification(uint32_t tiptime,const CTransactio
     if ( ASSETCHAINS_PRIVATE != 0 && invalid_private_taddr != 0 )
     {
         static uint32_t counter;
-        //if ( counter++ < 10 )
+        if ( counter++ < 10 )
             fprintf(stderr,"found taddr in private chain: z_z.%d z_t.%d t_z.%d vinsize.%d\n",z_z,z_t,t_z,(int32_t)tx.vin.size());
         if ( z_t == 0 || z_z != 0 || t_z != 0 || tx.vin.size() != 0 )
             return state.DoS(100, error("CheckTransaction(): this is a private chain, only sprout -> taddr allowed until deadline"),REJECT_INVALID, "bad-txns-acprivacy-chain");

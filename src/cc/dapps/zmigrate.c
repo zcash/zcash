@@ -908,7 +908,7 @@ int32_t main(int32_t argc,char **argv)
     zsaddr = clonestr(argv[2]);
     printf("%s: %s %s\n",REFCOIN_CLI,coinstr,zsaddr);
     uint32_t lastopid; char coinaddr[64],zcaddr[128],opidstr[128]; int32_t finished; int64_t amount,stdamount,txfee;
-    stdamount = 500 * SATOSHIDEN;
+    //stdamount = 500 * SATOSHIDEN;
     txfee = 10000;
 again:
     printf("start processing zmigrate\n");
@@ -932,6 +932,18 @@ again:
         if ( (amount= find_sprout_amount(coinstr,zcaddr)) > txfee )
         {
             // generate taddr, send max of 10000.0001
+            static int64_t lastamount,lastamount2,lastamount3,lastamount4;
+            stdamount = 500 * SATOSHIDEN;
+            if ( amount == lastamount && amount == lastamount2 )
+            {
+                stdamount /= 10;
+                if ( amount == lastamount3 && amount == lastamount4 )
+                    stdamount /= 5;
+            }
+            lastamount4 = lastamount3;
+            lastamount3 = lastamount2;
+            lastamount2 = lastamount;
+            lastamount = amount;
             if ( amount > stdamount+txfee )
                 amount = stdamount + txfee;
             if ( getnewaddress(coinaddr,coinstr,"") == 0 )
