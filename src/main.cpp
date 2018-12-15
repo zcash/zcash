@@ -1446,8 +1446,8 @@ bool CheckTransactionWithoutProofVerification(uint32_t tiptime,const CTransactio
     if ( ASSETCHAINS_PRIVATE != 0 && invalid_private_taddr != 0 )
     {
         static uint32_t counter;
-        if ( counter++ < 10 )
-            fprintf(stderr,"found taddr in private chain: z_z.%d z_t.%d t_z.%d\n",z_z,z_t,t_z);
+        //if ( counter++ < 10 )
+            fprintf(stderr,"found taddr in private chain: z_z.%d z_t.%d t_z.%d vinsize.%d\n",z_z,z_t,t_z,(int32_t)tx.vin.size());
         if ( z_t == 0 || z_z != 0 || t_z != 0 || tx.vin.size() != 0 )
             return state.DoS(100, error("CheckTransaction(): this is a private chain, only sprout -> taddr allowed until deadline"),REJECT_INVALID, "bad-txns-acprivacy-chain");
     }
@@ -3879,9 +3879,7 @@ int32_t komodo_activate_sapling(CBlockIndex *pindex)
     }
     if ( activation != 0 )
     {
-//#if KOMODO_SAPLING_ACTIVATION != 1544832000
         komodo_setactivation(activation);
-//#endif
         fprintf(stderr,"%s sapling activation at %d\n",ASSETCHAINS_SYMBOL,activation);
         ASSETCHAINS_SAPLING = activation;
     }

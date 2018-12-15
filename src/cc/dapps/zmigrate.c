@@ -670,6 +670,7 @@ int64_t find_onetime_amount(char *coinstr,char *coinaddr)
     coinaddr[0] = 0;
     if ( (array= get_listunspent(coinstr,"")) != 0 )
     {
+        //printf("got listunspent.(%s)\n",jprint(array,0));
         if ( (n= cJSON_GetArraySize(array)) > 0 )
         {
             for (i=0; i<n; i++)
@@ -734,6 +735,7 @@ int32_t z_sendmany(char *opidstr,char *coinstr,char *acname,char *srcaddr,char *
     cJSON *retjson; char *retstr,params[1024],addr[128];
     sprintf(params,"'[{\"address\":\"%s\",\"amount\":%.8f}]'",destaddr,dstr(amount));
     sprintf(addr,"\"%s\"",srcaddr);
+    printf("z_sendmany from.(%s) -> %s\n",srcaddr,params);
     if ( (retjson= get_komodocli(coinstr,&retstr,acname,"z_sendmany",addr,params,"","")) != 0 )
     {
         printf("unexpected json z_sendmany.(%s)\n",jprint(retjson,0));
@@ -906,7 +908,7 @@ int32_t main(int32_t argc,char **argv)
     zsaddr = clonestr(argv[2]);
     printf("%s: %s %s\n",REFCOIN_CLI,coinstr,zsaddr);
     uint32_t lastopid; char coinaddr[64],zcaddr[128],opidstr[128]; int32_t finished; int64_t amount,stdamount,txfee;
-    stdamount = 1000 * SATOSHIDEN;
+    stdamount = 100 * SATOSHIDEN;
     txfee = 10000;
 again:
     printf("start processing zmigrate\n");
@@ -916,7 +918,7 @@ again:
     {
         if ( have_pending_opid(coinstr,0) != 0 )
         {
-            sleep(60);
+            sleep(10);
             continue;
         }
         if ( (amount= find_onetime_amount(coinstr,coinaddr)) > txfee )
@@ -937,7 +939,7 @@ again:
                 z_sendmany(opidstr,coinstr,"",zcaddr,coinaddr,amount-txfee);
                 lastopid = (uint32_t)time(NULL);
             } else printf("couldnt getnewaddress!\n");
-            sleep(30);
+            sleep(3);
             continue;
         }
         if ( time(NULL) > lastopid+600 )
