@@ -1079,7 +1079,9 @@ bool ContextualCheckTransaction(
     if (overwinterActive) {
         // Reject transactions intended for Sprout
         if (!tx.fOverwintered) {
-            return state.DoS(dosLevel, error("ContextualCheckTransaction: overwinter is active"),
+            int32_t ht = Params().GetConsensus().vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight;
+            return state.DoS(
+                             return state.DoS((ht < 0 || nHeight < ht) ? 0 : dosLevel, error("ContextualCheckTransaction: overwinter is active"),
                              REJECT_INVALID, "tx-overwinter-active");
         }
 
