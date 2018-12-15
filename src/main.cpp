@@ -3833,7 +3833,7 @@ int32_t komodo_activate_sapling(CBlockIndex *pindex)
     }
     height = pindex->GetHeight();
     blocktime = (uint32_t)pindex->nTime;
-    //fprintf(stderr,"komodo_activate_sapling.%d starting blocktime %u cmp.%d\n",height,blocktime,blocktime > KOMODO_SAPLING_ACTIVATION);
+    fprintf(stderr,"komodo_activate_sapling.%d starting blocktime %u cmp.%d\n",height,blocktime,blocktime > KOMODO_SAPLING_ACTIVATION);
 
     // avoid trying unless we have at least 30 blocks
     if (height < 30)
@@ -3852,7 +3852,7 @@ int32_t komodo_activate_sapling(CBlockIndex *pindex)
     }
     height = pindex->GetHeight();
     blocktime = (uint32_t)pindex->nTime;
-    //fprintf(stderr,"starting blocktime %u cmp.%d\n",blocktime,blocktime > KOMODO_SAPLING_ACTIVATION);
+    fprintf(stderr,"starting blocktime %u cmp.%d\n",blocktime,blocktime > KOMODO_SAPLING_ACTIVATION);
     if ( blocktime > KOMODO_SAPLING_ACTIVATION ) // find the earliest transition
     {
         while ( (prev= pindex->pprev) != 0 )
