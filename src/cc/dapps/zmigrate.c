@@ -918,7 +918,7 @@ again:
     {
         if ( have_pending_opid(coinstr,0) != 0 )
         {
-            sleep(60);
+            sleep(10);
             continue;
         }
         if ( (amount= find_onetime_amount(coinstr,coinaddr)) > txfee )
