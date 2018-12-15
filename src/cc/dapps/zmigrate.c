@@ -932,10 +932,16 @@ again:
         if ( (amount= find_sprout_amount(coinstr,zcaddr)) > txfee )
         {
             // generate taddr, send max of 10000.0001
-            static int64_t lastamount,lastamount2;
+            static int64_t lastamount,lastamount2,lastamount3,lastamount4;
             stdamount = 500 * SATOSHIDEN;
             if ( amount == lastamount && amount == lastamount2 )
+            {
                 stdamount /= 10;
+                if ( amount == lastamount3 && amount == lastamount4 )
+                    stdamount /= 5;
+            }
+            lastamount4 = lastamount3;
+            lastamount3 = lastamount2;
             lastamount2 = lastamount;
             lastamount = amount;
             if ( amount > stdamount+txfee )
