@@ -1076,10 +1076,13 @@ bool ContextualCheckTransaction(
     }
 
     // Rules that apply to Overwinter or later:
-    if (overwinterActive) {
+    if (overwinterActive)
+    {
         // Reject transactions intended for Sprout
-        if (!tx.fOverwintered) {
+        if (!tx.fOverwintered)
+        {
             int32_t ht = Params().GetConsensus().vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight;
+            fprintf(stderr,"overwinter is active tx.%s not, ht.%d vs %d\n",tx.GetHash().ToString(),nHeight,ht);
             return state.DoS((ASSETCHAINS_PRIVATE != 0 || ht < 0 || nHeight < ht) ? 0 : dosLevel, error("ContextualCheckTransaction: overwinter is active"),REJECT_INVALID, "tx-overwinter-active");
         }
 
