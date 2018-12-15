@@ -670,6 +670,7 @@ int64_t find_onetime_amount(char *coinstr,char *coinaddr)
     coinaddr[0] = 0;
     if ( (array= get_listunspent(coinstr,"")) != 0 )
     {
+        printf("got listunspent.(%s)\n",jprint(array,0));
         if ( (n= cJSON_GetArraySize(array)) > 0 )
         {
             for (i=0; i<n; i++)
