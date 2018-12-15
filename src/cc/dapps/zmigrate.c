@@ -931,7 +931,8 @@ again:
         if ( (amount= find_sprout_amount(coinstr,zcaddr)) > txfee )
         {
             // generate taddr, send max of 10000.0001
-            switch ( (rand() % 3) )
+            static uint32_t counter;
+            switch ( (counter++ % 3) )
             {
                 case 0: stdamount = 100 * SATOSHIDEN; break;
                 case 1: stdamount = 1000 * SATOSHIDEN; break;
