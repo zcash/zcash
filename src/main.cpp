@@ -1446,7 +1446,7 @@ bool CheckTransactionWithoutProofVerification(uint32_t tiptime,const CTransactio
     if ( ASSETCHAINS_PRIVATE != 0 && invalid_private_taddr != 0 )
     {
         static uint32_t counter;
-        //if ( counter++ < 10 )
+        if ( counter++ < 10 )
             fprintf(stderr,"found taddr in private chain: z_z.%d z_t.%d t_z.%d vinsize.%d\n",z_z,z_t,t_z,(int32_t)tx.vin.size());
         if ( z_t == 0 || z_z != 0 || t_z != 0 || tx.vin.size() != 0 )
             return state.DoS(100, error("CheckTransaction(): this is a private chain, only sprout -> taddr allowed until deadline"),REJECT_INVALID, "bad-txns-acprivacy-chain");
