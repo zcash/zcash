@@ -946,8 +946,8 @@ again:
             lastamount3 = lastamount2;
             lastamount2 = lastamount;
             lastamount = amount;
-            if ( amount > stdamount+txfee )
-                amount = stdamount + txfee;
+            if ( amount > stdamount+2*txfee )
+                amount = stdamount + 2*txfee;
             if ( getnewaddress(coinaddr,coinstr,"") == 0 )
             {
                 z_sendmany(opidstr,coinstr,"",zcaddr,coinaddr,amount-txfee);
