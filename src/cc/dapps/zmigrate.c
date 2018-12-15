@@ -932,6 +932,12 @@ again:
         if ( (amount= find_sprout_amount(coinstr,zcaddr)) > txfee )
         {
             // generate taddr, send max of 10000.0001
+            static int64_t lastamount,lastamount2;
+            stdamount = 500 * SATOSHIDEN;
+            if ( amount == lastamount && amount == lastamount2 )
+                stdamount /= 10;
+            lastamount2 = lastamount;
+            lastamount = amount;
             if ( amount > stdamount+txfee )
                 amount = stdamount + txfee;
             if ( getnewaddress(coinaddr,coinstr,"") == 0 )
