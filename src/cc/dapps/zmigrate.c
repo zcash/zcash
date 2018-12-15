@@ -326,7 +326,7 @@ cJSON *get_komodocli(char *refcoin,char **retstrp,char *acname,char *method,char
     else if ( REFCOIN_CLI != 0 && REFCOIN_CLI[0] != 0 )
     {
         sprintf(cmdstr,"%s %s %s %s %s %s > %s\n",REFCOIN_CLI,method,arg0,arg1,arg2,arg3,fname);
-        printf("ref.(%s) REFCOIN_CLI (%s)\n",refcoin,cmdstr);
+        //printf("ref.(%s) REFCOIN_CLI (%s)\n",refcoin,cmdstr);
     }
     system(cmdstr);
     *retstrp = 0;
@@ -670,7 +670,7 @@ int64_t find_onetime_amount(char *coinstr,char *coinaddr)
     coinaddr[0] = 0;
     if ( (array= get_listunspent(coinstr,"")) != 0 )
     {
-        printf("got listunspent.(%s)\n",jprint(array,0));
+        //printf("got listunspent.(%s)\n",jprint(array,0));
         if ( (n= cJSON_GetArraySize(array)) > 0 )
         {
             for (i=0; i<n; i++)
