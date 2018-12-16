@@ -12,7 +12,7 @@ This tool converts Sprout zaddress funds into Sapling funds in a new Sapling add
 
 ### Usage
 
-    ./zmigrate zsaplingaddr
+    ./zmigrate COIN zsaplingaddr
 
 The above command may need to be run multiple times to complete the process.
 
