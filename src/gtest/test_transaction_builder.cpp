@@ -95,6 +95,7 @@ TEST(TransactionBuilder, Invoke)
 
 TEST(TransactionBuilder, ThrowsOnTransparentInputWithoutKeyStore)
 {
+    SelectParams(CBaseChainParams::REGTEST);
     auto consensusParams = Params().GetConsensus();
 
     auto builder = TransactionBuilder(consensusParams, 1);
@@ -103,6 +104,7 @@ TEST(TransactionBuilder, ThrowsOnTransparentInputWithoutKeyStore)
 
 TEST(TransactionBuilder, RejectsInvalidTransparentOutput)
 {
+    SelectParams(CBaseChainParams::REGTEST);
     auto consensusParams = Params().GetConsensus();
 
     // Default CTxDestination type is an invalid address
@@ -113,6 +115,7 @@ TEST(TransactionBuilder, RejectsInvalidTransparentOutput)
 
 TEST(TransactionBuilder, RejectsInvalidTransparentChangeAddress)
 {
+    SelectParams(CBaseChainParams::REGTEST);
     auto consensusParams = Params().GetConsensus();
 
     // Default CTxDestination type is an invalid address
