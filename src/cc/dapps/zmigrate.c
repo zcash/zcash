@@ -20,18 +20,18 @@
 #include "cJSON.c"
 
 /*
-z_migrate: the purpose of z_migrate is to make converting of all sprout outputs into sapling. the usage would be for the user to specify a sapling address and call z_migrate zsaddr, until it returns that there is nothing left to be done.
-
-its main functionality is quite similar to a z_mergetoaddress ANY_ZADDR -> onetime_taddr followed by a z_sendmany onetime_taddr -> zsaddr
-
-since the z_mergetoaddress will take time, it would just queue up an async operation. When it starts, it should see if there are any onetime_taddr with 10000.0001 funds in it, that is a signal for it to do the sapling tx and it can just do that without async as it is fast enough, especially with a taddr input. Maybe it limits itself to one,  or it does all possible taddr -> sapling as fast as it can. either is fine as it will be called over and over anyway.
-
-It might be that there is nothing to do, but some operations are pending. in that case it would return such a status. as soon as the operation finishes, there would be more work to do.
-
-the amount sent to the taddr, should be 10000.0001
-
-The GUI or user would be expected to generate a sapling address and then call z_migrate saplingaddr in a loop, until it returns that it is all done. this loop should pause for 10 seconds or so, if z_migrate is just waiting for opid to complete.
-*/
+ z_migrate: the purpose of z_migrate is to make converting of all sprout outputs into sapling. the usage would be for the user to specify a sapling address and call z_migrate zsaddr, until it returns that there is nothing left to be done.
+ 
+ its main functionality is quite similar to a z_mergetoaddress ANY_ZADDR -> onetime_taddr followed by a z_sendmany onetime_taddr -> zsaddr
+ 
+ since the z_mergetoaddress will take time, it would just queue up an async operation. When it starts, it should see if there are any onetime_taddr with 10000.0001 funds in it, that is a signal for it to do the sapling tx and it can just do that without async as it is fast enough, especially with a taddr input. Maybe it limits itself to one,  or it does all possible taddr -> sapling as fast as it can. either is fine as it will be called over and over anyway.
+ 
+ It might be that there is nothing to do, but some operations are pending. in that case it would return such a status. as soon as the operation finishes, there would be more work to do.
+ 
+ the amount sent to the taddr, should be 10000.0001
+ 
+ The GUI or user would be expected to generate a sapling address and then call z_migrate saplingaddr in a loop, until it returns that it is all done. this loop should pause for 10 seconds or so, if z_migrate is just waiting for opid to complete.
+ */
 
 bits256 zeroid;
 
@@ -331,7 +331,7 @@ cJSON *get_komodocli(char *refcoin,char **retstrp,char *acname,char *method,char
     system(cmdstr);
     *retstrp = 0;
     if ( (jsonstr= filestr(&fsize,fname)) != 0 )
-    {       
+    {
         jsonstr[strlen(jsonstr)-1]='\0';
         //fprintf(stderr,"%s -> jsonstr.(%s)\n",cmdstr,jsonstr);
         if ( (jsonstr[0] != '{' && jsonstr[0] != '[') || (retjson= cJSON_Parse(jsonstr)) == 0 )
@@ -599,13 +599,13 @@ int32_t validateaddress(char *refcoin,char *acname,char *depositaddr, char* comp
     cJSON *retjson; char *retstr; int32_t res=0;
     if ( (retjson= get_komodocli(refcoin,&retstr,acname,"validateaddress",depositaddr,"","","")) != 0 )
     {
-        if (is_cJSON_True(jobj(retjson,compare)) != 0 ) res=1;        
+        if (is_cJSON_True(jobj(retjson,compare)) != 0 ) res=1;
         free_json(retjson);
     }
     else if ( retstr != 0 )
     {
         fprintf(stderr,"validateaddress.(%s) %s error.(%s)\n",refcoin,acname,retstr);
-        free(retstr);        
+        free(retstr);
     }
     return (res);
 }
@@ -670,6 +670,7 @@ int64_t find_onetime_amount(char *coinstr,char *coinaddr)
     coinaddr[0] = 0;
     if ( (array= get_listunspent(coinstr,"")) != 0 )
     {
+        //printf("got listunspent.(%s)\n",jprint(array,0));
         if ( (n= cJSON_GetArraySize(array)) > 0 )
         {
             for (i=0; i<n; i++)
@@ -734,6 +735,7 @@ int32_t z_sendmany(char *opidstr,char *coinstr,char *acname,char *srcaddr,char *
     cJSON *retjson; char *retstr,params[1024],addr[128];
     sprintf(params,"'[{\"address\":\"%s\",\"amount\":%.8f}]'",destaddr,dstr(amount));
     sprintf(addr,"\"%s\"",srcaddr);
+    printf("z_sendmany from.(%s) -> %s\n",srcaddr,params);
     if ( (retjson= get_komodocli(coinstr,&retstr,acname,"z_sendmany",addr,params,"","")) != 0 )
     {
         printf("unexpected json z_sendmany.(%s)\n",jprint(retjson,0));
@@ -797,7 +799,7 @@ int32_t tx_has_voutaddress(char *refcoin,char *acname,bits256 txid,char *coinadd
         if ( (vouts= jarray(&numarray,txobj,"vout")) != 0 )
         {
             for (i=0; i<numarray; i++)
-            {            
+            {
                 if ((vout = jitem(vouts,i)) !=0 && (sobj= jobj(vout,"scriptPubKey")) != 0 )
                 {
                     if ( (addresses= jarray(&n,sobj,"addresses")) != 0 )
@@ -818,7 +820,7 @@ int32_t tx_has_voutaddress(char *refcoin,char *acname,bits256 txid,char *coinadd
             }
         }
         // if (hasvout==1 && (vins=jarray(&numarray,txobj,"vin"))!=0)
-        // {                          
+        // {
         //     for (int i=0;i<numarray;i++)
         //     {
         //         if ((vin=jitem(vins,i))!=0 && validateaddress(refcoin,acname,jstr(vin,"address"),"ismine")!=0)
@@ -826,7 +828,7 @@ int32_t tx_has_voutaddress(char *refcoin,char *acname,bits256 txid,char *coinadd
         //             retval=1;
         //             break;
         //         }
-        //     }                       
+        //     }
         // }
         free_json(txobj);
     }
@@ -906,7 +908,7 @@ int32_t main(int32_t argc,char **argv)
     zsaddr = clonestr(argv[2]);
     printf("%s: %s %s\n",REFCOIN_CLI,coinstr,zsaddr);
     uint32_t lastopid; char coinaddr[64],zcaddr[128],opidstr[128]; int32_t finished; int64_t amount,stdamount,txfee;
-    stdamount = 10000 * SATOSHIDEN;
+    //stdamount = 500 * SATOSHIDEN;
     txfee = 10000;
 again:
     printf("start processing zmigrate\n");
@@ -916,7 +918,7 @@ again:
     {
         if ( have_pending_opid(coinstr,0) != 0 )
         {
-            sleep(60);
+            sleep(10);
             continue;
         }
         if ( (amount= find_onetime_amount(coinstr,coinaddr)) > txfee )
@@ -930,14 +932,33 @@ again:
         if ( (amount= find_sprout_amount(coinstr,zcaddr)) > txfee )
         {
             // generate taddr, send max of 10000.0001
-            if ( amount > stdamount+txfee )
-                amount = stdamount + txfee;
+            static int64_t lastamount,lastamount2,lastamount3,lastamount4,refamount = 5000 * SATOSHIDEN;
+            stdamount = refamount;
+            if ( amount == lastamount && amount == lastamount2 )
+            {
+                stdamount /= 10;
+                if ( amount == lastamount3 && amount == lastamount4 )
+                    stdamount /= 10;
+            }
+            if ( stdamount < COIN )
+            {
+                stdamount = COIN;
+                refamount = COIN * 50;
+            }
+            if ( stdamount < refamount )
+                refamount = stdamount;
+            lastamount4 = lastamount3;
+            lastamount3 = lastamount2;
+            lastamount2 = lastamount;
+            lastamount = amount;
+            if ( amount > stdamount+2*txfee )
+                amount = stdamount + 2*txfee;
             if ( getnewaddress(coinaddr,coinstr,"") == 0 )
             {
                 z_sendmany(opidstr,coinstr,"",zcaddr,coinaddr,amount-txfee);
                 lastopid = (uint32_t)time(NULL);
             } else printf("couldnt getnewaddress!\n");
-            sleep(30);
+            sleep(3);
             continue;
         }
         if ( time(NULL) > lastopid+600 )
