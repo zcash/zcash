@@ -4686,7 +4686,7 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
         BOOST_FOREACH(const CTxMemPoolEntry& e, mempool.mapTx) {
             const CTransaction &tx = e.GetTx();
             const uint256 &hash = tx.GetHash();
-            if ( tx.vjoinsplit.size() == 0 ) {
+            if ( tx.vjoinsplit.empty() || tx.vShieldedSpend.empty()) {
                 transactionsToRemove.push_back(tx);
                 tmpmempool.addUnchecked(hash,e,true);
             }
@@ -4705,7 +4705,7 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
                 CValidationState state;
                 CTransaction Tx;
                 const CTransaction &tx = (CTransaction)block.vtx[i];
-                if (tx.IsCoinBase() || tx.vjoinsplit.size() != 0 || ((i == (block.vtx.size() - 1)) && (ASSETCHAINS_STAKED && komodo_isPoS((CBlock *)&block) != 0)))
+                if (tx.IsCoinBase() || !tx.vjoinsplit.empty() || !tx.vShieldedSpend.empty() || ((i == (block.vtx.size() - 1)) && (ASSETCHAINS_STAKED && komodo_isPoS((CBlock *)&block) != 0)))
                     continue;
                 Tx = tx;
                 if ( myAddtomempool(Tx, &state) == false ) // happens with out of order tx in block on resync
@@ -4773,9 +4773,7 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
         {
             const CTransaction &tx = e.GetTx();
             const uint256 &hash = tx.GetHash();
-            if ( tx.vjoinsplit.size() == 0 ) {
-                mempool.addUnchecked(hash,e,true);
-            }
+            mempool.addUnchecked(hash,e,true);
         }
         //fprintf(stderr, "finished adding back. mempoolsize.%ld\n",mempool.size());
         // empty the temp mempool for next time.
