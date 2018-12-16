@@ -1676,11 +1676,11 @@ void komodo_args(char *argv0)
             for (i=0; i<64; i++)
                 if ( strcmp(NOTARY_PUBKEY.c_str(),Notaries_elected1[i][1]) == 0 )
                 {
-                    IS_KOMODO_NOTARY = 1;
+										IS_KOMODO_NOTARY = 1;
 										KOMODO_MININGTHREADS = 1;
 										mapArgs ["-genproclimit"] = itostr(KOMODO_MININGTHREADS);
-                    fprintf(stderr,"running as notary.%d %s\n",i,Notaries_elected1[i][0]);
-                    break;
+										fprintf(stderr,"running as notary.%d %s\n",i,Notaries_elected1[i][0]);
+										break;
                 }
         }
         //KOMODO_PAX = 1;
@@ -1784,7 +1784,7 @@ void komodo_args(char *argv0)
 				{
             ASSETCHAINS_LWMAPOS = 50;
 						if ( GetBoolArg("-gen", false) != 0 )
-								VERUS_MINTBLOCKS = true;	
+								VERUS_MINTBLOCKS = true;
 				}
         ASSETCHAINS_SAPLING = GetArg("-ac_sapling", -1);
         if (ASSETCHAINS_SAPLING == -1)
