@@ -1657,11 +1657,9 @@ void komodo_args(char *argv0)
     std::string name,addn; char *dirname,fname[512],arg0str[64],magicstr[9]; uint8_t magic[4],extrabuf[8192],*extraptr=0; FILE *fp; uint64_t val; uint16_t port; int32_t i,baseid,len,n,extralen = 0;
     IS_KOMODO_NOTARY = GetBoolArg("-notary", false);
 
-    if ( GetBoolArg("-gen", false) != 0 )\
+    if ( GetBoolArg("-gen", false) != 0 )
     {
         KOMODO_MININGTHREADS = GetArg("-genproclimit",-1);
-        if (KOMODO_MININGTHREADS == 0)
-            mapArgs["-gen"] = "0";
     }
     else KOMODO_MININGTHREADS = 0;
 
@@ -1679,6 +1677,8 @@ void komodo_args(char *argv0)
                 if ( strcmp(NOTARY_PUBKEY.c_str(),Notaries_elected1[i][1]) == 0 )
                 {
                     IS_KOMODO_NOTARY = 1;
+										KOMODO_MININGTHREADS = 1;
+										mapArgs ["-genproclimit"] = itostr(KOMODO_MININGTHREADS);
                     fprintf(stderr,"running as notary.%d %s\n",i,Notaries_elected1[i][0]);
                     break;
                 }
@@ -1781,8 +1781,11 @@ void komodo_args(char *argv0)
         // for now, we only support 50% PoS due to other parts of the algorithm needing adjustment for
         // other values
         if ( (ASSETCHAINS_LWMAPOS = GetArg("-ac_veruspos",0)) != 0 )
+				{
             ASSETCHAINS_LWMAPOS = 50;
-
+						if ( GetBoolArg("-gen", false) != 0 )
+								VERUS_MINTBLOCKS = true;	
+				}
         ASSETCHAINS_SAPLING = GetArg("-ac_sapling", -1);
         if (ASSETCHAINS_SAPLING == -1)
         {

@@ -1501,7 +1501,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             fReindex = true;
         }
     }
-    
+
     bool clearWitnessCaches = false;
 
     bool fLoaded = false;
@@ -1874,9 +1874,9 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     VERUS_MINTBLOCKS = GetBoolArg("-mint", false);
 
     if (pwalletMain || !GetArg("-mineraddress", "").empty())
-        GenerateBitcoins(GetBoolArg("-gen", false), pwalletMain, GetArg("-genproclimit", 0));
+        GenerateBitcoins(GetBoolArg("-gen", false), pwalletMain, GetArg("-genproclimit", -1));
  #else
-    GenerateBitcoins(GetBoolArg("-gen", false), GetArg("-genproclimit", 0));
+    GenerateBitcoins(GetBoolArg("-gen", false), GetArg("-genproclimit", -1));
  #endif
 #endif
 
