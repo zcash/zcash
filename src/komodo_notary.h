@@ -207,58 +207,54 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
     int32_t i,htind,n; uint64_t mask = 0; struct knotary_entry *kp,*tmp;
 
     if ( timestamp == 0 && ASSETCHAINS_SYMBOL[0] != 0 )
-          timestamp = komodo_heightstamp(height);
+        timestamp = komodo_heightstamp(height);
     else if ( ASSETCHAINS_SYMBOL[0] == 0 )
-          timestamp = 0;
+        timestamp = 0;
 
     // If this chain is not a staked chain, use the normal Komodo logic to determine notaries. This allows KMD to still sync and use its proper pubkeys for dPoW.
     if (is_STAKED(ASSETCHAINS_SYMBOL) == 0)
     {
-      if ( height >= KOMODO_NOTARIES_HARDCODED || ASSETCHAINS_SYMBOL[0] != 0 )
-      {
-          if ( (timestamp != 0 && timestamp <= KOMODO_NOTARIES_TIMESTAMP1) || (ASSETCHAINS_SYMBOL[0] == 0 && height <= KOMODO_NOTARIES_HEIGHT1) )
-          {
-              if ( did0 == 0 )
-              {
-                  n0 = (int32_t)(sizeof(Notaries_elected0)/sizeof(*Notaries_elected0));
-                  for (i=0; i<n0; i++) {
-                      decode_hex(elected_pubkeys0[i],33,(char *)Notaries_elected0[i][1]);
-                  }
-                  did0 = 1;
-              }
-              memcpy(pubkeys,elected_pubkeys0,n0 * 33);
-              //if ( ASSETCHAINS_SYMBOL[0] != 0 )
-              //fprintf(stderr,"%s height.%d t.%u elected.%d notaries\n",ASSETCHAINS_SYMBOL,height,timestamp,n0);
-              return(n0);
-          }
-          else //if ( (timestamp != 0 && timestamp <= KOMODO_NOTARIES_TIMESTAMP2) || height <= KOMODO_NOTARIES_HEIGHT2 )
-          {
-              if ( did1 == 0 )
-              {
-  	            n1 = (int32_t)(sizeof(Notaries_elected1)/sizeof(*Notaries_elected1));
+        if ( height >= KOMODO_NOTARIES_HARDCODED || ASSETCHAINS_SYMBOL[0] != 0 )
+            timestamp = 0;
+        if ( (timestamp != 0 && timestamp <= KOMODO_NOTARIES_TIMESTAMP1) || (ASSETCHAINS_SYMBOL[0] == 0 && height <= KOMODO_NOTARIES_HEIGHT1) )
+        {
+            if ( did0 == 0 )
+            {
+                n0 = (int32_t)(sizeof(Notaries_elected0)/sizeof(*Notaries_elected0));
+                for (i=0; i<n0; i++) {
+                    decode_hex(elected_pubkeys0[i],33,(char *)Notaries_elected0[i][1]);
+                }
+                did0 = 1;
+            }
+            memcpy(pubkeys,elected_pubkeys0,n0 * 33);
+            //if ( ASSETCHAINS_SYMBOL[0] != 0 )
+            //fprintf(stderr,"%s height.%d t.%u elected.%d notaries\n",ASSETCHAINS_SYMBOL,height,timestamp,n0);
+            return(n0);
+        }
+        else //if ( (timestamp != 0 && timestamp <= KOMODO_NOTARIES_TIMESTAMP2) || height <= KOMODO_NOTARIES_HEIGHT2 )
+        {
+          if ( did1 == 0 )
+            {
+    	          n1 = (int32_t)(sizeof(Notaries_elected1)/sizeof(*Notaries_elected1));
                 for (i=0; i<n1; i++) {
-                    decode_hex(elected_pubkeys1[i],33,(char *)Notaries_elected1[i][1]);
+                  decode_hex(elected_pubkeys1[i],33,(char *)Notaries_elected1[i][1]);
                 }
                 if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
                     fprintf(stderr,"%s height.%d t.%u elected.%d notaries2\n",ASSETCHAINS_SYMBOL,height,timestamp,n1);
                 did1 = 1;
-              }
-              memcpy(pubkeys,elected_pubkeys1,n1 * 33);
-              return(n1);
-          }
-      }
-    }
-    else
-    { // here we can activate our pubkeys for STAKED chains everythig is in notaries_staked.cpp
-        if (timestamp != 0)
-        {
-            int32_t staked_era; int8_t numSN;
-            uint8_t staked_pubkeys[64][33];
-            staked_era = STAKED_era(timestamp);
-            numSN = numStakedNotaries(staked_pubkeys,staked_era);
-            memcpy(pubkeys,staked_pubkeys,numSN * 33);
-            return(numSN);
+            }
+            memcpy(pubkeys,elected_pubkeys1,n1 * 33);
+            return(n1);
         }
+    }
+    else if (timestamp != 0)
+    { // here we can activate our pubkeys for STAKED chains everythig is in notaries_staked.cpp
+        int32_t staked_era; int8_t numSN;
+        uint8_t staked_pubkeys[64][33];
+        staked_era = STAKED_era(timestamp);
+        numSN = numStakedNotaries(staked_pubkeys,staked_era);
+        memcpy(pubkeys,staked_pubkeys,numSN * 33);
+        return(numSN);
     }
 
     htind = height / KOMODO_ELECTION_GAP;

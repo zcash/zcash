@@ -1112,7 +1112,6 @@ int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_
  commission must be in coinbase.vout[1] and must be >= 10000 sats
  PoS stake must be without txfee and in the last tx in the block at vout[0]
  */
-extern int32_t ASSETCHAINS_FOUNDERS_PERIOD;
 
 CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams);
 

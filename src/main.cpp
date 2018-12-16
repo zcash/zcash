@@ -1244,7 +1244,8 @@ int32_t komodo_isnotaryvout(char *coinaddr) // from ac_private chains only
 {
   if ( is_STAKED(ASSETCHAINS_SYMBOL) != 0 )
   {
-      if ( NOTARYADDRS[0][0] != 0 && NUM_NOTARIES != 0 ) {
+      if ( NOTARYADDRS[0][0] != 0 && NUM_NOTARIES != 0 )
+      {
           for (int32_t i=0; i<=NUM_NOTARIES; i++)
               if ( strcmp(coinaddr,NOTARYADDRS[i]) == 0 )
                   return(1);
@@ -1764,8 +1765,10 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
                         if (pfMissingInputs)
                             *pfMissingInputs = true;
                         //fprintf(stderr,"missing inputs\n");
-                        return state.DoS(0, error("AcceptToMemoryPool: tx inputs not found"),REJECT_INVALID, "bad-txns-inputs-missing");
-                        return(false);
+                        if (!fSkipExpiry)
+                            return state.DoS(0, error("AcceptToMemoryPool: tx inputs not found"),REJECT_INVALID, "bad-txns-inputs-missing");
+                        else
+                            return(false);
                     }
                 }
 
@@ -1773,7 +1776,10 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
                 if (!view.HaveInputs(tx))
                 {
                     //fprintf(stderr,"accept failure.1\n");
-                    return state.Invalid(error("AcceptToMemoryPool: inputs already spent"),REJECT_DUPLICATE, "bad-txns-inputs-spent");
+                    if (!fSkipExpiry)
+                        return state.Invalid(error("AcceptToMemoryPool: inputs already spent"),REJECT_DUPLICATE, "bad-txns-inputs-spent");
+                    else
+                        return(false);
                 }
             }
             // are the joinsplit's requirements met?
@@ -3302,7 +3308,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         {
             if (!view.HaveInputs(tx))
             {
-                return state.DoS(100, error("ConnectBlock(): inputs missing/spent"),
+                return state.DoS(100, error("ConnectBlock(): inputs missing/spent %s",tx.GetHash().ToString().c_str()),
                                  REJECT_INVALID, "bad-txns-inputs-missingorspent");
             }
             // are the JoinSplit's requirements met?
@@ -3846,32 +3852,12 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
         if ((i == (block.vtx.size() - 1)) && (ASSETCHAINS_STAKED != 0 && (komodo_isPoS((CBlock *)&block) != 0)))
         {
 #ifdef ENABLE_WALLET
-            TxToRemove.push_back(tx.GetHash());
-            //pwalletMain->EraseFromWallet(tx.GetHash());
+            pwalletMain->EraseFromWallet(tx.GetHash());
 #endif
         }
         else
         {
             SyncWithWallets(tx, NULL);
-        }
-    }
-    if ( ASSETCHAINS_STAKED != 0 ) // If Staked chain, scan wallet for orphaned txs and delete them.
-    {
-        LOCK2(cs_main, pwalletMain->cs_wallet);
-        for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it)
-        {
-            CTransaction tx;
-            uint256 hashBlock;
-            if (!GetTransaction((*it).first,tx,hashBlock,true))
-            {
-                fprintf(stderr, "TX Does Not Exist: %s\n",(*it).first.ToString().c_str());
-                TxToRemove.push_back((*it).first);
-            }
-        }
-        BOOST_FOREACH (uint256& hash, TxToRemove)
-        {
-            pwalletMain->EraseFromWallet(hash);
-            fprintf(stderr, "Erased %s from wallet.\n",hash.ToString().c_str());
         }
     }
     // Update cached incremental witnesses
@@ -6601,32 +6587,20 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         CAddress addrFrom;
         uint64_t nNonce = 1;
         int nVersion;           // use temporary for version, don't set version number until validated as connected
+        int minVersion = MIN_PEER_PROTO_VERSION;
+        if ( is_STAKED(ASSETCHAINS_SYMBOL) != 0 )
+            minVersion = STAKEDMIN_PEER_PROTO_VERSION;
         vRecv >> nVersion >> pfrom->nServices >> nTime >> addrMe;
         if (nVersion == 10300)
             nVersion = 300;
-        if ( is_STAKED(ASSETCHAINS_SYMBOL) != 0 )
+        if (nVersion < minVersion)
         {
-          if (nVersion < STAKEDMIN_PEER_PROTO_VERSION)
-          {
-              // disconnect from peers older than this proto version
-              LogPrintf("peer=%d using obsolete version %i; disconnecting\n", pfrom->id, pfrom->nVersion);
-              pfrom->PushMessage("reject", strCommand, REJECT_OBSOLETE,
-                                strprintf("Version must be %d or greater", MIN_PEER_PROTO_VERSION));
-              pfrom->fDisconnect = true;
-              return false;
-          }
-        }
-        else
-        {
-          if (nVersion < MIN_PEER_PROTO_VERSION)
-          {
-              // disconnect from peers older than this proto version
-              LogPrintf("peer=%d using obsolete version %i; disconnecting\n", pfrom->id, pfrom->nVersion);
-              pfrom->PushMessage("reject", strCommand, REJECT_OBSOLETE,
-                                strprintf("Version must be %d or greater", MIN_PEER_PROTO_VERSION));
-              pfrom->fDisconnect = true;
-              return false;
-          }
+            // disconnect from peers older than this proto version
+            LogPrintf("peer=%d using obsolete version %i; disconnecting\n", pfrom->id, pfrom->nVersion);
+            pfrom->PushMessage("reject", strCommand, REJECT_OBSOLETE,
+                            strprintf("Version must be %d or greater", minVersion));
+            pfrom->fDisconnect = true;
+            return false;
         }
 
         // Reject incoming connections from nodes that don't know about the current epoch

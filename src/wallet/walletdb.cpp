@@ -867,8 +867,6 @@ static bool IsKeyType(string strType)
             strType == "mkey" || strType == "ckey");
 }
 
-extern uint64_t ASSETCHAINS_STAKED;
-
 DBErrors CWalletDB::LoadWallet(CWallet* pwallet)
 {
     pwallet->vchDefaultKey = CPubKey();
@@ -920,9 +918,8 @@ DBErrors CWalletDB::LoadWallet(CWallet* pwallet)
                 {
                     // Leave other errors alone, if we try to fix them we might make things worse.
                     fNoncriticalErrors = true; // ... but do warn the user there is something wrong.
-                    if (strType == "tx" && ASSETCHAINS_STAKED == 0 )
+                    if (strType == "tx" )
                         // Rescan if there is a bad transaction record..
-                        // But dont on staked chains!
                         SoftSetBoolArg("-rescan", true);
                 }
             }
