@@ -24,7 +24,7 @@ so you can pay to a pubkey, or to its hash. or to a script's hash. the last is h
 all of the above are the standard bitcoin vout types and there should be plenty of materials about it
 Encrypted by a verified device
 what I did with the CC contracts is created a fourth type of vout, the CC vout. this is using the cryptoconditions standard and it is even a different signature mechanism. ed25519 instead of secp256k1. it is basically a big extension to the bitcoin script. There is a special opcode that is added that says it is a CC script.
- 
+
 but it gets more interesting
 each CC script has an evalcode
 this is just an arbitrary number. but what it does is allows to create a self-contained universe of CC utxo that all have the same evalcode and that is how a faucet CC differentiates itself from a dice CC, the eval code is different
@@ -73,7 +73,7 @@ struct CC_utxo
 
 // these are the parameters stored after Verus crypto-condition vouts. new versions may change
 // the format
-struct CC_meta 
+struct CC_meta
 {
     std::vector<unsigned char> version;
     uint8_t evalCode;
@@ -110,7 +110,7 @@ int32_t komodo_nextheight();
 static const uint256 zeroid;
 bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock);
 int32_t is_hexstr(char *str,int32_t n);
-bool myAddtomempool(CTransaction &tx, CValidationState *pstate = NULL);
+bool myAddtomempool(CTransaction &tx, CValidationState *pstate = NULL, bool fSkipExpiry = false);
 //uint64_t myGettxout(uint256 hash,int32_t n);
 bool myIsutxo_spentinmempool(uint256 txid,int32_t vout);
 bool mytxid_inmempool(uint256 txid);
