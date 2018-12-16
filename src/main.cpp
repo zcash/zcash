@@ -5048,6 +5048,18 @@ bool AcceptBlock(int32_t *futureblockp,CBlock& block, CValidationState& state, C
     auto verifier = libzcash::ProofVerifier::Disabled();
     if ((!CheckBlock(futureblockp,pindex->GetHeight(),pindex,block, state, verifier,0)) || !ContextualCheckBlock(block, state, pindex->pprev))
     {
+        static int32_t saplinght = -1;
+        CBlockIndex *tmpptr;
+        if ( saplinght == -1 )
+            saplinght = Params().GetConsensus().vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight;
+        if ( saplinght < 0 )
+            *futureblockp = 1;
+        if ( saplinght > 0 && (tmpptr= chainActive().LastTip()) != 0 )
+        {
+            fprintf(stderr,"saplinght.%d tipht.%d blockht.%d cmp.%d\n",saplinght,(int32_t)tmpptr->nHeight,pindex->nHeight,pindex->nHeight < 0 || pindex->nHeight >= saplinght || (tmpptr->nHeight > saplinght-720 && tmpptr->nHeight < saplinht+720));
+            if ( pindex->nHeight < 0 || pindex->nHeight >= saplinght || (tmpptr->nHeight > saplinght-720 && tmpptr->nHeight < saplinht+720) )
+                *futureblockp = 1;
+        }
         if ( *futureblockp == 0 )
         {
             if (state.IsInvalid() && !state.CorruptionPossible()) {
