@@ -110,7 +110,7 @@ int32_t komodo_nextheight();
 static const uint256 zeroid;
 bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock);
 int32_t is_hexstr(char *str,int32_t n);
-bool myAddtomempool(CTransaction &tx, CValidationState *pstate = NULL);
+bool myAddtomempool(CTransaction &tx, CValidationState *pstate = NULL, bool fSkipExpiry = false);
 //uint64_t myGettxout(uint256 hash,int32_t n);
 bool myIsutxo_spentinmempool(uint256 txid,int32_t vout);
 bool mytxid_inmempool(uint256 txid);
