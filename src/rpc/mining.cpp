@@ -344,7 +344,10 @@ UniValue setgenerate(const UniValue& params, bool fHelp)
     {
         VERUS_MINTBLOCKS = 1;
         fGenerate = GetBoolArg("-gen", false);
-        nGenProcLimit = KOMODO_MININGTHREADS;
+        if ( ASSETCHAINS_STAKED == 0 )
+            nGenProcLimit = KOMODO_MININGTHREADS;
+        else
+            KOMODO_MININGTHREADS = nGenProcLimit;
     }
     else if (!fGenerate)
     {
