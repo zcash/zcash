@@ -5048,6 +5048,19 @@ bool AcceptBlock(int32_t *futureblockp,CBlock& block, CValidationState& state, C
     auto verifier = libzcash::ProofVerifier::Disabled();
     if ((!CheckBlock(futureblockp,pindex->GetHeight(),pindex,block, state, verifier,0)) || !ContextualCheckBlock(block, state, pindex->pprev))
     {
+        static int32_t saplinght = -1;
+        CBlockIndex *tmpptr;
+        if ( saplinght == -1 )
+            saplinght = Params().GetConsensus().vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight;
+        if ( saplinght < 0 )
+            *futureblockp = 1;
+        // the problem is when a future sapling block comes in before we detected saplinght
+        if ( saplinght > 0 && (tmpptr= chainActive.LastTip()) != 0 )
+        {
+            fprintf(stderr,"saplinght.%d tipht.%d blockht.%d cmp.%d\n",saplinght,(int32_t)tmpptr->GetHeight(),pindex->GetHeight(),pindex->GetHeight() < 0 || pindex->GetHeight() >= saplinght || (tmpptr->GetHeight() > saplinght-720 && tmpptr->GetHeight() < saplinght+720));
+            if ( pindex->GetHeight() < 0 || pindex->GetHeight() >= saplinght || (tmpptr->GetHeight() > saplinght-720 && tmpptr->GetHeight() < saplinght+720) )
+                *futureblockp = 1;
+        }
         if ( *futureblockp == 0 )
         {
             if (state.IsInvalid() && !state.CorruptionPossible()) {
