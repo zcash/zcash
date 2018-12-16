@@ -1731,8 +1731,10 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
                         if (pfMissingInputs)
                             *pfMissingInputs = true;
                         //fprintf(stderr,"missing inputs\n");
-                        return state.DoS(0, error("AcceptToMemoryPool: tx inputs not found"),REJECT_INVALID, "bad-txns-inputs-missing");
-                        return(false);
+                        if (!fSkipExpiry)
+                            return state.DoS(0, error("AcceptToMemoryPool: tx inputs not found"),REJECT_INVALID, "bad-txns-inputs-missing");
+                        else
+                            return(false);
                     }
                 }
 
@@ -1740,7 +1742,10 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
                 if (!view.HaveInputs(tx))
                 {
                     //fprintf(stderr,"accept failure.1\n");
-                    return state.Invalid(error("AcceptToMemoryPool: inputs already spent"),REJECT_DUPLICATE, "bad-txns-inputs-spent");
+                    if (!fSkipExpiry)
+                        return state.Invalid(error("AcceptToMemoryPool: inputs already spent"),REJECT_DUPLICATE, "bad-txns-inputs-spent");
+                    else
+                        return(false);
                 }
             }
             // are the joinsplit's requirements met?
