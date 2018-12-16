@@ -1851,9 +1851,9 @@ int32_t komodo_acpublic(uint32_t tiptime)
     return(acpublic);
 }
 
-int64_t komodo_newcoins(int64_t *zfundsp,int32_t nHeight,CBlock *pblock)
+int64_t komodo_newcoins(int64_t *zfundsp,int64_t *sproutfundsp,int32_t nHeight,CBlock *pblock)
 {
-    CTxDestination address; int32_t i,j,m,n,vout; uint8_t *script; uint256 txid,hashBlock; int64_t zfunds=0,vinsum=0,voutsum=0;
+    CTxDestination address; int32_t i,j,m,n,vout; uint8_t *script; uint256 txid,hashBlock; int64_t zfunds=0,vinsum=0,voutsum=0,sproutfunds=0;
     n = pblock->vtx.size();
     for (i=0; i<n; i++)
     {
@@ -1893,10 +1893,13 @@ int64_t komodo_newcoins(int64_t *zfundsp,int32_t nHeight,CBlock *pblock)
         {
             zfunds -= joinsplit.vpub_new;
             zfunds += joinsplit.vpub_old;
+            sproutfunds -= joinsplit.vpub_new;
+            sproutfunds += joinsplit.vpub_old;
         }
         zfunds -= tx.valueBalance;
     }
     *zfundsp = zfunds;
+    *sproutfundsp = sproutfunds;
     if ( ASSETCHAINS_SYMBOL[0] == 0 && (voutsum-vinsum) == 100003*SATOSHIDEN ) // 15 times
         return(3 * SATOSHIDEN);
     //if ( voutsum-vinsum+zfunds > 100000*SATOSHIDEN || voutsum-vinsum+zfunds < 0 )
