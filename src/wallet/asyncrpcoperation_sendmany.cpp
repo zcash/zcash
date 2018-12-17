@@ -169,9 +169,9 @@ void AsyncRPCOperation_sendmany::main() {
 
 #ifdef ENABLE_MINING
   #ifdef ENABLE_WALLET
-    GenerateBitcoins(GetBoolArg("-gen",false), pwalletMain, GetArg("-genproclimit", 0));
+    GenerateBitcoins(GetBoolArg("-gen",false), pwalletMain, GetArg("-genproclimit", 1));
   #else
-    GenerateBitcoins(GetBoolArg("-gen",false), GetArg("-genproclimit", 0));
+    GenerateBitcoins(GetBoolArg("-gen",false), GetArg("-genproclimit", 1));
   #endif
 #endif
 
@@ -807,9 +807,9 @@ bool AsyncRPCOperation_sendmany::main_impl() {
 
             vOutPoints.push_back(jso);
             vInputNotes.push_back(note);
-            
+
             jsInputValue += noteFunds;
-            
+
             int wtxHeight = -1;
             int wtxDepth = -1;
             {
@@ -832,14 +832,14 @@ bool AsyncRPCOperation_sendmany::main_impl() {
                     wtxDepth
                     );
         }
-                    
+
         // Add history of previous commitments to witness
         if (vInputNotes.size() > 0) {
 
             if (vInputWitnesses.size()==0) {
                 throw JSONRPCError(RPC_WALLET_ERROR, "Could not find witness for note commitment");
             }
-            
+
             for (auto & optionalWitness : vInputWitnesses) {
                 if (!optionalWitness) {
                     throw JSONRPCError(RPC_WALLET_ERROR, "Witness for note commitment is null");
@@ -1061,7 +1061,7 @@ bool AsyncRPCOperation_sendmany::find_utxos(bool fAcceptCoinbase=false) {
             continue;
 
         CAmount nValue = out.tx->vout[out.i].nValue;
-        
+
         SendManyInputUTXO utxo(out.tx->GetHash(), out.i, nValue, isCoinbase, dest);
         t_inputs_.push_back(utxo);
     }
@@ -1368,7 +1368,7 @@ void AsyncRPCOperation_sendmany::add_taddr_change_output_to_tx(CBitcoinAddress *
 std::array<unsigned char, ZC_MEMO_SIZE> AsyncRPCOperation_sendmany::get_memo_from_hex_string(std::string s) {
     // initialize to default memo (no_memo), see section 5.5 of the protocol spec
     std::array<unsigned char, ZC_MEMO_SIZE> memo = {{0xF6}};
-    
+
     std::vector<unsigned char> rawMemo = ParseHex(s.c_str());
 
     // If ParseHex comes across a non-hex char, it will stop but still return results so far.

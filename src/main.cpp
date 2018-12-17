@@ -1077,11 +1077,14 @@ bool ContextualCheckTransaction(
     }
 
     // Rules that apply to Overwinter or later:
-    if (overwinterActive) {
+    if (overwinterActive)
+    {
         // Reject transactions intended for Sprout
-        if (!tx.fOverwintered) {
+        if (!tx.fOverwintered)
+        {
             int32_t ht = Params().GetConsensus().vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight;
-            return state.DoS((ht < 0 || nHeight < ht) ? 0 : dosLevel, error("ContextualCheckTransaction: overwinter is active"),REJECT_INVALID, "tx-overwinter-active");
+            fprintf(stderr,"overwinter is active tx.%s not, ht.%d vs %d\n",tx.GetHash().ToString().c_str(),nHeight,ht);
+            return state.DoS((ASSETCHAINS_PRIVATE != 0 || ht < 0 || nHeight < ht) ? 0 : dosLevel, error("ContextualCheckTransaction: overwinter is active"),REJECT_INVALID, "tx-overwinter-active");
         }
 
         // Check that all transactions are unexpired
@@ -4961,7 +4964,7 @@ bool AcceptBlockHeader(int32_t *futureblockp,const CBlockHeader& block, CValidat
             *ppindex = pindex;
         if ( pindex != 0 && pindex->nStatus & BLOCK_FAILED_MASK )
         {
-            if ( ASSETCHAINS_CC == 0 )
+            if ( ASSETCHAINS_CC == 0 )//&& (ASSETCHAINS_PRIVATE == 0 || KOMODO_INSYNC >= Params().GetConsensus().vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight) )
                 return state.Invalid(error("%s: block is marked invalid", __func__), 0, "duplicate");
             else
             {
@@ -5083,6 +5086,19 @@ bool AcceptBlock(int32_t *futureblockp,CBlock& block, CValidationState& state, C
     auto verifier = libzcash::ProofVerifier::Disabled();
     if ((!CheckBlock(futureblockp,pindex->GetHeight(),pindex,block, state, verifier,0)) || !ContextualCheckBlock(block, state, pindex->pprev))
     {
+        static int32_t saplinght = -1;
+        CBlockIndex *tmpptr;
+        if ( saplinght == -1 )
+            saplinght = Params().GetConsensus().vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight;
+        if ( saplinght < 0 )
+            *futureblockp = 1;
+        // the problem is when a future sapling block comes in before we detected saplinght
+        if ( saplinght > 0 && (tmpptr= chainActive.LastTip()) != 0 )
+        {
+            fprintf(stderr,"saplinght.%d tipht.%d blockht.%d cmp.%d\n",saplinght,(int32_t)tmpptr->GetHeight(),pindex->GetHeight(),pindex->GetHeight() < 0 || pindex->GetHeight() >= saplinght || (tmpptr->GetHeight() > saplinght-720 && tmpptr->GetHeight() < saplinght+720));
+            if ( pindex->GetHeight() < 0 || pindex->GetHeight() >= saplinght || (tmpptr->GetHeight() > saplinght-720 && tmpptr->GetHeight() < saplinght+720) )
+                *futureblockp = 1;
+        }
         if ( *futureblockp == 0 )
         {
             if (state.IsInvalid() && !state.CorruptionPossible()) {
