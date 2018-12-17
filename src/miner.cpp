@@ -1579,6 +1579,7 @@ void static BitcoinMiner()
                     LogPrintf("Block %d : PoS %d%% vs target %d%% \n",Mining_height,percPoS,(int32_t)ASSETCHAINS_STAKED);
                 }
             }
+            bool breakLoop;
             while (true)
             {
                 /*if ( KOMODO_INSYNC == 0 )
@@ -1589,7 +1590,7 @@ void static BitcoinMiner()
                         KOMODO_INSYNC = Mining_height;
                     sleep(3);
                 }*/
-                bool breakLoop = false;
+                breakLoop = false;
                 komodo_longestchain();
                 // Hash state
                 KOMODO_CHOSEN_ONE = 0;
