@@ -4788,9 +4788,9 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     
     if (useAnySprout || useAnySapling || zaddrs.size() > 0) {
         // Get available notes
-        std::vector<CSproutNotePlaintextEntry> sproutEntries;
-        std::vector<SaplingNoteEntry> saplingEntries;
-        pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, zaddrs);
+        std::vector<CSproutNotePlaintextEntry> sproutEntries,skipsprout;
+        std::vector<SaplingNoteEntry> saplingEntries,skipsapling;
+        pwalletMain->GetFilteredNotes(useAnySprout != 0 ? sproutEntries : skipsprout, useAnySapling != 0 ? saplingEntries : skipsapling, zaddrs);
         
         // If Sapling is not active, do not allow sending from a sapling addresses.
         if (!saplingActive && saplingEntries.size() > 0) {
