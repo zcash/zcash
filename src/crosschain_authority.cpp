@@ -42,7 +42,6 @@ bool CheckTxAuthority(const CTransaction &tx, CrosschainAuthority auth)
             if (!seen[i]) {
                 if (memcmp(pk, auth.notaries[i], 33) == 0) {
                     seen[i] = 1;
-                    printf("seennotary.%i\n",i);
                     goto found;
                 } else {
                     //printf("notary.%i is not valid!\n",i);
