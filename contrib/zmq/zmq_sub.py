@@ -41,7 +41,7 @@ try:
             print '- RAW TX ('+sequence+') -'
             print binascii.hexlify(body)
         elif topic == "checkedblock":
-            print ' - CHECKED BLOCK ('+sequence+') -'
+            print '- CHECKED BLOCK ('+sequence+') -'
             print binascii.hexlify(body[:80])
 
 except KeyboardInterrupt:
