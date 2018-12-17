@@ -1579,7 +1579,6 @@ void static BitcoinMiner()
                     LogPrintf("Block %d : PoS %d%% vs target %d%% \n",Mining_height,percPoS,(int32_t)ASSETCHAINS_STAKED);
                 }
             }
-            //bool breakLoop;
             while (true)
             {
                 /*if ( KOMODO_INSYNC == 0 )
