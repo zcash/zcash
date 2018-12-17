@@ -1614,7 +1614,7 @@ void static BitcoinMiner()
                 else hashTarget = HASHTarget;
                 std::function<bool(std::vector<unsigned char>)> validBlock =
 #ifdef ENABLE_WALLET
-                [&pblock, &hashTarget, &pwallet, &reservekey, &m_cs, &cancelSolver, &chainparams]
+                [&pblock, &hashTarget, &pwallet, &reservekey, &m_cs, &cancelSolver, &chainparams, &breakLoop]
 #else
                 [&pblock, &hashTarget, &m_cs, &cancelSolver, &chainparams]
 #endif
