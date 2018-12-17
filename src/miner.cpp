@@ -1579,7 +1579,7 @@ void static BitcoinMiner()
                     LogPrintf("Block %d : PoS %d%% vs target %d%% \n",Mining_height,percPoS,(int32_t)ASSETCHAINS_STAKED);
                 }
             }
-            bool breakLoop;
+            //bool breakLoop;
             while (true)
             {
                 /*if ( KOMODO_INSYNC == 0 )
@@ -1590,7 +1590,7 @@ void static BitcoinMiner()
                         KOMODO_INSYNC = Mining_height;
                     sleep(3);
                 }*/
-                breakLoop = false;
+                bool breakLoop = false;
                 komodo_longestchain();
                 // Hash state
                 KOMODO_CHOSEN_ONE = 0;
@@ -1716,7 +1716,8 @@ void static BitcoinMiner()
                         std::lock_guard<std::mutex> lock{m_cs};
                         return cancelSolver;
                     };
-
+                    if (breakLoop)
+                        break;
                     // TODO: factor this out into a function with the same API for each solver.
                     if (solver == "tromp" ) { //&& notaryid >= 0 ) {
                         // Create solver and initialize it.
@@ -1821,8 +1822,6 @@ void static BitcoinMiner()
                         }
                     }*/
                 }
-                if (breakLoop)
-                    break;
             }
         }
         catch (const boost::thread_interrupted&)
