@@ -1466,7 +1466,7 @@ void static BitcoinMiner()
 
 #ifdef ENABLE_WALLET
             // notaries always default to staking
-            CBlockTemplate *ptr = CreateNewBlockWithKey(reservekey, pindexPrev->GetHeight()+1, gpucount, ASSETCHAINS_STAKED != 0 && GetArg("-genproclimit", 0) == 0);
+            CBlockTemplate *ptr = CreateNewBlockWithKey(reservekey, pindexPrev->GetHeight()+1, gpucount, ASSETCHAINS_STAKED != 0 && GetArg("-genproclimit", -1) == 0);
 #else
             CBlockTemplate *ptr = CreateNewBlockWithKey();
 #endif
@@ -1856,8 +1856,7 @@ void static BitcoinMiner()
         }
 
         //fprintf(stderr,"nThreads.%d fGenerate.%d\n",(int32_t)nThreads,fGenerate);
-
-        if ( ASSETCHAINS_STAKED > 0 && nThreads == 0 )
+        if ( ASSETCHAINS_STAKED > 0 && nThreads == 0 && fGenerate )
         {
             if ( pwallet != NULL )
                 nThreads = 1;

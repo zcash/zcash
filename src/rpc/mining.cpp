@@ -339,22 +339,25 @@ UniValue setgenerate(const UniValue& params, bool fHelp)
         //if (nGenProcLimit == 0)
         //    fGenerate = false;
     }
-
-    if (fGenerate && !nGenProcLimit)
+    if ( ASSETCHAINS_LWMAPOS != 0 )
     {
-        VERUS_MINTBLOCKS = 1;
-        fGenerate = GetBoolArg("-gen", false);
-        if ( ASSETCHAINS_STAKED == 0 )
-            nGenProcLimit = KOMODO_MININGTHREADS;
-        else
+        if (fGenerate && !nGenProcLimit)
+        {
+            VERUS_MINTBLOCKS = 1;
+            fGenerate = GetBoolArg("-gen", false);
             KOMODO_MININGTHREADS = nGenProcLimit;
+        }
+        else if (!fGenerate)
+        {
+            VERUS_MINTBLOCKS = 0;
+            KOMODO_MININGTHREADS = 0;
+        }
+        else KOMODO_MININGTHREADS = (int32_t)nGenProcLimit;
     }
-    else if (!fGenerate)
+    else
     {
-        VERUS_MINTBLOCKS = 0;
-        KOMODO_MININGTHREADS = 0;
+        KOMODO_MININGTHREADS = (int32_t)nGenProcLimit;
     }
-    else KOMODO_MININGTHREADS = (int32_t)nGenProcLimit;
 
     mapArgs["-gen"] = (fGenerate ? "1" : "0");
     mapArgs ["-genproclimit"] = itostr(KOMODO_MININGTHREADS);
