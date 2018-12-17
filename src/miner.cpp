@@ -1589,7 +1589,6 @@ void static BitcoinMiner()
                         KOMODO_INSYNC = Mining_height;
                     sleep(3);
                 }*/
-                bool breakLoop = false;
                 komodo_longestchain();
                 // Hash state
                 KOMODO_CHOSEN_ONE = 0;
@@ -1614,7 +1613,7 @@ void static BitcoinMiner()
                 else hashTarget = HASHTarget;
                 std::function<bool(std::vector<unsigned char>)> validBlock =
 #ifdef ENABLE_WALLET
-                [&pblock, &hashTarget, &pwallet, &reservekey, &m_cs, &cancelSolver, &chainparams, &breakLoop]
+                [&pblock, &hashTarget, &pwallet, &reservekey, &m_cs, &cancelSolver, &chainparams]
 #else
                 [&pblock, &hashTarget, &m_cs, &cancelSolver, &chainparams]
 #endif
@@ -1683,8 +1682,6 @@ void static BitcoinMiner()
                         for (z=31; z>=0; z--)
                             fprintf(stderr,"%02x",((uint8_t *)&h)[z]);
                         fprintf(stderr," Invalid block mined, try again\n");
-                        if ( ASSETCHAINS_STAKED != 0 )
-                            breakLoop = true;
                         return(false);
                     }
                     KOMODO_CHOSEN_ONE = 1;
@@ -1715,8 +1712,6 @@ void static BitcoinMiner()
                         std::lock_guard<std::mutex> lock{m_cs};
                         return cancelSolver;
                     };
-                    if (breakLoop)
-                        break;
                     // TODO: factor this out into a function with the same API for each solver.
                     if (solver == "tromp" ) { //&& notaryid >= 0 ) {
                         // Create solver and initialize it.
