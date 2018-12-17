@@ -1589,6 +1589,7 @@ void static BitcoinMiner()
                         KOMODO_INSYNC = Mining_height;
                     sleep(3);
                 }*/
+                bool breakLoop = false;
                 komodo_longestchain();
                 // Hash state
                 KOMODO_CHOSEN_ONE = 0;
@@ -1682,8 +1683,9 @@ void static BitcoinMiner()
                         for (z=31; z>=0; z--)
                             fprintf(stderr,"%02x",((uint8_t *)&h)[z]);
                         fprintf(stderr," Invalid block mined, try again\n");
-                        break;
-                        //return(false);
+                        if ( ASSETCHAINS_STAKED != 0 )
+                            breakLoop = true;
+                        return(false);
                     }
                     KOMODO_CHOSEN_ONE = 1;
                     // Found a solution
@@ -1818,6 +1820,8 @@ void static BitcoinMiner()
                         }
                     }*/
                 }
+                if (breakLoop)
+                    break;
             }
         }
         catch (const boost::thread_interrupted&)
