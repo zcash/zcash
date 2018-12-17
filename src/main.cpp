@@ -3311,7 +3311,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         {
             if (!view.HaveInputs(tx))
             {
-                fprintf(stderr, "Connect Block missing inputs tx_number.%d \nvin txid.%s vout.%ld \n",i,tx.vin[0].prevout.hash.ToString().c_str(),tx.vin[0].prevout.n);
+                fprintf(stderr, "Connect Block missing inputs tx_number.%d \nvin txid.%s vout.%d \n",i,tx.vin[0].prevout.hash.ToString().c_str(),tx.vin[0].prevout.n);
                 return state.DoS(100, error("ConnectBlock(): inputs missing/spent"),
                                  REJECT_INVALID, "bad-txns-inputs-missingorspent");
             }
