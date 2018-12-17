@@ -38,7 +38,7 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
 
     if (!UnmarshalImportTx(importTx, proof, burnTx, payouts))
         return Invalid("invalid-params");
-    
+
     // Control all aspects of this transaction
     // It should not be at all malleable
     if (MakeImportCoinTransaction(proof, burnTx, payouts).GetHash() != importTx.GetHash())
@@ -83,5 +83,3 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
 
     return Valid();
 }
-
-

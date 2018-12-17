@@ -547,7 +547,7 @@ int32_t gettxout_scriptPubKey(uint8_t *scriptPubKey,int32_t maxsize,uint256 txid
     uint256 hashBlock;
     if ( GetTransaction(txid,tx,hashBlock,false) == 0 )
         return(-1);
-    else if ( n < tx.vout.size() ) 
+    else if ( n < tx.vout.size() )
     {
         ptr = (uint8_t *)&tx.vout[n].scriptPubKey[0];
         m = tx.vout[n].scriptPubKey.size();
@@ -1286,7 +1286,7 @@ UniValue sendrawtransaction(const UniValue& params, bool fHelp)
         }
     } else if (fHaveChain) {
         throw JSONRPCError(RPC_TRANSACTION_ALREADY_IN_CHAIN, "transaction already in block chain");
-    }    
+    }
     RelayTransaction(tx);
 
     return hashTx.GetHex();

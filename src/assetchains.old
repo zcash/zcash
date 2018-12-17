@@ -39,7 +39,7 @@ echo $pubkey
 ~/VerusCoin/src/komodod -pubkey=$pubkey -ac_name=VRSC -ac_algo=verushash -ac_cc=1 -ac_veruspos=50 -ac_supply=0 -ac_eras=3 -ac_reward=0,38400000000,2400000000 -ac_halving=1,43200,1051920 -ac_decay=100000000,0,0 -ac_end=10080,226080,0 -ac_timelockgte=19200000000 -ac_timeunlockfrom=129600 -ac_timeunlockto=1180800 -addnode=185.25.48.236 -addnode=185.64.105.111 &
 ./komodod -pubkey=$pubkey -ac_name=SEC -ac_cc=333 -ac_supply=1000000000 -addnode=185.148.145.43 &
 ./komodod -pubkey=$pubkey -ac_name=CCL -ac_supply=200000000 -ac_end=1 -ac_cc=2 -addressindex=1 -spentindex=1 -addnode=142.93.136.89 -addnode=195.201.22.89 &
-./komodod -pubkey=$pubkey -ac_name=PIRATE -ac_supply=0 -ac_reward=25600000000 -ac_halving=77777 -ac_private=1 -addnode=136.243.102.225 &
+./komodod -pubkey=$pubkey -ac_name=PIRATE -ac_supply=0 -ac_reward=25600000000 -ac_halving=77777 -ac_private=1 -addnode=178.63.77.56 &
 ./komodod -pubkey=$pubkey -ac_name=MGNX -ac_supply=12465003 -ac_staked=90 -ac_reward=2000000000 -ac_halving=525960 -ac_cc=2 -ac_end=2629800 -addnode=142.93.27.180 &
 ./komodod -pubkey=$pubkey -ac_name=PGT -ac_supply=10000000 -ac_end=1 -addnode=190.114.254.104 &
 ./komodod -pubkey=$pubkey -ac_name=KMDICE -ac_supply=10500000 -ac_reward=2500000000 -ac_halving=210000 -ac_cc=2 -addressindex=1 -spentindex=1 -addnode=144.76.217.232 &

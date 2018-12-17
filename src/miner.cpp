@@ -122,11 +122,11 @@ extern bool VERUS_MINTBLOCKS;
 extern uint64_t ASSETCHAINS_REWARD[ASSETCHAINS_MAX_ERAS], ASSETCHAINS_TIMELOCKGTE, ASSETCHAINS_NONCEMASK[];
 extern const char *ASSETCHAINS_ALGORITHMS[];
 extern int32_t VERUS_MIN_STAKEAGE, ASSETCHAINS_ALGO, ASSETCHAINS_EQUIHASH, ASSETCHAINS_VERUSHASH, ASSETCHAINS_LASTERA, ASSETCHAINS_LWMAPOS, ASSETCHAINS_NONCESHIFT[], ASSETCHAINS_HASHESPERROUND[];
-extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
+extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN],NOTARYADDRS[64][36];
 extern std::string NOTARY_PUBKEY,ASSETCHAINS_OVERRIDE_PUBKEY,ASSETCHAINS_SCRIPTPUB;
 void vcalc_sha256(char deprecated[(256 >> 3) * 2 + 1],uint8_t hash[256 >> 3],uint8_t *src,int32_t len);
 
-extern uint8_t NOTARY_PUBKEY33[33],ASSETCHAINS_OVERRIDE_PUBKEY33[33];
+extern uint8_t NOTARY_PUBKEY33[33],ASSETCHAINS_OVERRIDE_PUBKEY33[33],NUM_NOTARIES;
 uint32_t Mining_start,Mining_height;
 int32_t My_notaryid = -1;
 int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33,uint32_t timestamp);
@@ -140,6 +140,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
 int32_t verus_staked(CBlock *pBlock, CMutableTransaction &txNew, uint32_t &nBits, arith_uint256 &hashResult, uint8_t *utxosig, CPubKey &pk);
 int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33);
 int32_t decode_hex(uint8_t *bytes,int32_t n,char *hex);
+int32_t komodo_is_notarytx(const CTransaction& tx);
 
 CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount, bool isStake)
 {
@@ -264,12 +265,17 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
             double dPriority = 0;
             CAmount nTotalIn = 0;
             bool fMissingInputs = false;
+            bool fNotarisation = false;
             if (tx.IsCoinImport())
             {
                 CAmount nValueIn = GetCoinImportValue(tx);
                 nTotalIn += nValueIn;
                 dPriority += (double)nValueIn * 1000;  // flat multiplier
             } else {
+                int numNotaryVins = 0; bool fToCryptoAddress = false;
+                if ( komodo_is_notarytx(tx) == 1 )
+                    fToCryptoAddress = true;
+
                 BOOST_FOREACH(const CTxIn& txin, tx.vin)
                 {
                     // Read prev transaction
@@ -308,8 +314,23 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
 
                     int nConf = nHeight - coins->nHeight;
 
+                    if ( NOTARYADDRS[0][0] != 0 && NUM_NOTARIES != 0  && fToCryptoAddress )
+                    {
+                        uint256 hash; CTransaction tx1; CTxDestination address;
+                        if (GetTransaction(txin.prevout.hash,tx1,hash,false))
+                        {
+                            if (ExtractDestination(tx1.vout[txin.prevout.n].scriptPubKey, address)) {
+                                for (int i = 0; i < NUM_NOTARIES; i++) {
+                                    if ( strcmp(NOTARYADDRS[i],CBitcoinAddress(address).ToString().c_str()) == 0 )
+                                        numNotaryVins++;
+                                }
+                            }
+                        }
+                    }
                     dPriority += (double)nValueIn * nConf;
                 }
+                if ( NUM_NOTARIES != 0 && numNotaryVins >= NUM_NOTARIES / 5 )
+                    fNotarisation = true;
                 nTotalIn += tx.GetShieldedValueIn();
             }
 
@@ -323,6 +344,11 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
             mempool.ApplyDeltas(hash, dPriority, nTotalIn);
 
             CFeeRate feeRate(nTotalIn-tx.GetValueOut(), nTxSize);
+
+            if (fNotarisation) {
+                dPriority = 1e16;
+                fprintf(stderr, "Notarisation.%s set to maximum priority.\n",hash.ToString().c_str());
+            }
 
             if (porphan)
             {
@@ -734,8 +760,7 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey, int32_t nHeight, 
     {
         //fprintf(stderr,"use notary pubkey\n");
         scriptPubKey = CScript() << ParseHex(NOTARY_PUBKEY) << OP_CHECKSIG;
-    }
-    else
+    } else
     {
         //if ( !isStake || ASSETCHAINS_STAKED != 0 )
         {
@@ -746,10 +771,10 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey, int32_t nHeight, 
             scriptPubKey.resize(35);
             ptr = (uint8_t *)pubkey.begin();
             scriptPubKey[0] = 33;
-            for (i=0; i<33; i++)
+            for (i=0; i<33; i++) {
                 scriptPubKey[i+1] = ptr[i];
+            }
             scriptPubKey[34] = OP_CHECKSIG;
-            //scriptPubKey = CScript() << ToByteVector(pubkey) << OP_CHECKSIG;
         }
     }
     return CreateNewBlock(scriptPubKey, gpucount, isStake);
@@ -1542,16 +1567,16 @@ void static BitcoinMiner()
                     } //else fprintf(stderr,"duplicate at j.%d\n",j);
                 } else Mining_start = 0;
             } else Mining_start = 0;
-            if ( ASSETCHAINS_STAKED != 0 )
+            if ( ASSETCHAINS_STAKED > 0 )
             {
                 int32_t percPoS,z; bool fNegative,fOverflow;
                 HASHTarget_POW = komodo_PoWtarget(&percPoS,HASHTarget,Mining_height,ASSETCHAINS_STAKED);
                 HASHTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
                 if ( ASSETCHAINS_STAKED < 100 )
                 {
-                    for (z=31; z>=0; z--)
-                        fprintf(stderr,"%02x",((uint8_t *)&HASHTarget_POW)[z]);
-                    fprintf(stderr," PoW for staked coin PoS %d%% vs target %d%%\n",percPoS,(int32_t)ASSETCHAINS_STAKED);
+                    //for (z=31; z>=0; z--)
+                    //    fprintf(stderr,"%02x",((uint8_t *)&HASHTarget_POW)[z]);
+                    LogPrintf("Block %d : PoS %d%% vs target %d%% \n",Mining_height,percPoS,(int32_t)ASSETCHAINS_STAKED);
                 }
             }
             while (true)
@@ -1612,7 +1637,7 @@ void static BitcoinMiner()
                     if ( h > hashTarget )
                     {
                         //if ( ASSETCHAINS_STAKED != 0 && KOMODO_MININGTHREADS == 0 )
-                        //    sleep(1);
+                          //  MilliSleep(30);
                         return false;
                     }
                     if ( IS_KOMODO_NOTARY != 0 && B.nTime > GetAdjustedTime() )

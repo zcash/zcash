@@ -1260,9 +1260,17 @@ void ThreadSocketHandler()
     }
 }
 
-
 void ThreadDNSAddressSeed()
 {
+    extern int8_t is_STAKED(const char *chain_name);
+    extern char ASSETCHAINS_SYMBOL[65];
+    // skip DNS seeds for staked chains.
+    if ( is_STAKED(ASSETCHAINS_SYMBOL) != 0 )
+    {
+        fprintf(stderr, "STAKED CHAIN DISABLED ALL SEEDS!\n");
+        return;
+    }
+
     // goal: only query DNS seeds if address need is acute
     if ((addrman.size() > 0) &&
         (!GetBoolArg("-forcednsseed", false))) {
@@ -1372,13 +1380,19 @@ void ThreadOpenConnections()
 
         // Add seed nodes if DNS seeds are all down (an infrastructure attack?).
         // if (addrman.size() == 0 && (GetTime() - nStart > 60)) {
-        if (GetTime() - nStart > 60) {
-            static bool done = false;
-            if (!done) {
-                //LogPrintf("Adding fixed seed nodes as DNS doesn't seem to be available.\n");
-                LogPrintf("Adding fixed seed nodes.\n");
-                addrman.Add(convertSeed6(Params().FixedSeeds()), CNetAddr("127.0.0.1"));
-                done = true;
+        extern int8_t is_STAKED(const char *chain_name);
+        extern char ASSETCHAINS_SYMBOL[65];
+        // skip DNS seeds for staked chains.
+        if ( is_STAKED(ASSETCHAINS_SYMBOL) == 0 )
+        {
+            if (GetTime() - nStart > 60) {
+                static bool done = false;
+                if (!done) {
+                    //LogPrintf("Adding fixed seed nodes as DNS doesn't seem to be available.\n");
+                    LogPrintf("Adding fixed seed nodes.\n");
+                    addrman.Add(convertSeed6(Params().FixedSeeds()), CNetAddr("127.0.0.1"));
+                    done = true;
+                }
             }
         }
 
