@@ -5672,6 +5672,15 @@ UniValue tokenaddress(const UniValue& params, bool fHelp)
     return(CCaddress(cp,(char *)"Assets",pubkey));
 }
 
+UniValue channelslist(const UniValue& params, bool fHelp)
+{
+    if ( fHelp || params.size() > 0 )
+        throw runtime_error("channelsinfo\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");    
+    return(ChannelsList());
+}
+
 UniValue channelsinfo(const UniValue& params, bool fHelp)
 {
     uint256 opentxid;
