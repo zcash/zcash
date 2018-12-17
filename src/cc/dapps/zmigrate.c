@@ -940,6 +940,11 @@ again:
                 if ( amount == lastamount3 && amount == lastamount4 )
                     stdamount /= 10;
             }
+            if ( stdamount < SATOSHIDEN )
+            {
+                stdamount = SATOSHIDEN;
+                refamount = SATOSHIDEN * 50;
+            }
             if ( stdamount < refamount )
                 refamount = stdamount;
             lastamount4 = lastamount3;
