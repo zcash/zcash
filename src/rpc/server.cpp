@@ -364,16 +364,16 @@ static const CRPCCommand vRPCCommands[] =
 
     // auction
     { "auction",       "auctionaddress",    &auctionaddress,  true },
-    
+
     // lotto
     { "lotto",       "lottoaddress",    &lottoaddress,  true },
-    
+
     // fsm
     { "FSM",       "FSMaddress",   &FSMaddress, true },
     { "FSM", "FSMcreate",    &FSMcreate,  true },
     { "FSM",   "FSMlist",      &FSMlist,    true },
     { "FSM",   "FSMinfo",      &FSMinfo,    true },
-    
+
     // rewards
     { "rewards",       "rewardslist",       &rewardslist,     true },
     { "rewards",       "rewardsinfo",       &rewardsinfo,     true },
@@ -382,7 +382,7 @@ static const CRPCCommand vRPCCommands[] =
     { "rewards",       "rewardslock",       &rewardslock,     true },
     { "rewards",       "rewardsunlock",     &rewardsunlock,   true },
     { "rewards",       "rewardsaddress",    &rewardsaddress,  true },
-    
+
     // faucet
     { "faucet",       "faucetinfo",      &faucetinfo,         true },
     { "faucet",       "faucetfund",      &faucetfund,         true },
@@ -399,7 +399,7 @@ static const CRPCCommand vRPCCommands[] =
     { "channels",       "channelspayment",   &channelspayment,   true },
     { "channels",       "channelsclose",     &channelsclose,      true },
     { "channels",       "channelsrefund",    &channelsrefund,    true },
-    
+
     // Oracles
     { "oracles",       "oraclesaddress",   &oraclesaddress,     true },
     { "oracles",       "oracleslist",      &oracleslist,        true },
@@ -508,6 +508,7 @@ static const CRPCCommand vRPCCommands[] =
     { "wallet",             "getaccountaddress",      &getaccountaddress,      true  },
     { "wallet",             "getaccount",             &getaccount,             true  },
     { "wallet",             "getaddressesbyaccount",  &getaddressesbyaccount,  true  },
+    { "wallet",             "cleanwallettransactions", &cleanwallettransactions, false },
     { "wallet",             "getbalance",             &getbalance,             false },
     { "wallet",             "getbalance64",           &getbalance64,             false },
     { "wallet",             "getnewaddress",          &getnewaddress,          true  },

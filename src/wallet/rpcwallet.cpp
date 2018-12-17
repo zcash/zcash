@@ -1015,6 +1015,108 @@ CAmount GetAccountBalance(const string& strAccount, int nMinDepth, const isminef
     return GetAccountBalance(walletdb, strAccount, nMinDepth, filter);
 }
 
+UniValue cleanwallettransactions(const UniValue& params, bool fHelp)
+{
+    if (!EnsureWalletIsAvailable(fHelp))
+        return NullUniValue;
+
+    if (fHelp || params.size() > 1 )
+        throw runtime_error(
+            "cleanwallettransactions \"txid\"\n"
+            "\nRemove all txs that are spent. You can clear all txs bar one, by specifiying a txid.\n"
+            "\nPlease backup your wallet.dat before running this command.\n"
+            "\nArguments:\n"
+            "1. \"txid\"    (string, optional) The transaction id to keep.\n"
+            "\nResult:\n"
+            "{\n"
+            "  \"total_transactons\" : n,         (numeric) Transactions in wallet of " + strprintf("%s",komodo_chainname()) + "\n"
+            "  \"remaining_transactons\" : n,     (numeric) Transactions in wallet after clean.\n"
+            "  \"removed_transactons\" : n,       (numeric) The number of transactions removed.\n"
+            "}\n"
+            "\nExamples:\n"
+            + HelpExampleCli("cleanwallettransactions", "")
+            + HelpExampleCli("cleanwallettransactions","\"1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d\"")
+            + HelpExampleRpc("cleanwallettransactions", "")
+            + HelpExampleRpc("cleanwallettransactions","\"1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d\"")
+        );
+
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+    UniValue ret(UniValue::VOBJ);
+    uint256 exception; int32_t txs = pwalletMain->mapWallet.size();
+    std::vector<uint256> TxToRemove;
+    if (params.size() == 1)
+    {
+        exception.SetHex(params[0].get_str());
+        uint256 tmp_hash; CTransaction tmp_tx;
+        if (GetTransaction(exception,tmp_tx,tmp_hash,false))
+        {
+            if ( !pwalletMain->IsMine(tmp_tx) )
+            {
+                throw runtime_error("\nThe transaction is not yours!\n");
+            }
+            else
+            {
+                for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it)
+                {
+                    const CWalletTx& wtx = (*it).second;
+                    if ( wtx.GetHash() != exception )
+                    {
+                        TxToRemove.push_back(wtx.GetHash());
+                    }
+                }
+            }
+        }
+        else
+        {
+            throw runtime_error("\nThe transaction could not be found!\n");
+        }
+    }
+    else
+    {
+        // get all locked utxos to relock them later.
+        vector<COutPoint> vLockedUTXO;
+        pwalletMain->ListLockedCoins(vLockedUTXO);
+        // unlock all coins so that the following call containes all utxos.
+        pwalletMain->UnlockAllCoins();
+        // listunspent call... this gets us all the txids that are unspent, we search this list for the oldest tx,
+        vector<COutput> vecOutputs;
+        assert(pwalletMain != NULL);
+        pwalletMain->AvailableCoins(vecOutputs, false, NULL, true);
+        int32_t oldestTxDepth = 0;
+        BOOST_FOREACH(const COutput& out, vecOutputs)
+        {
+          if ( out.nDepth > oldestTxDepth )
+              oldestTxDepth = out.nDepth;
+        }
+        oldestTxDepth = oldestTxDepth + 1; // add extra block just for safety.
+        // lock all the previouly locked coins.
+        BOOST_FOREACH(COutPoint &outpt, vLockedUTXO) {
+            pwalletMain->LockCoin(outpt);
+        }
+
+        // then add all txs in the wallet before this block to the list to remove.
+        for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it)
+        {
+            const CWalletTx& wtx = (*it).second;
+            if (wtx.GetDepthInMainChain() > oldestTxDepth)
+                TxToRemove.push_back(wtx.GetHash());
+        }
+    }
+
+    // erase txs
+    BOOST_FOREACH (uint256& hash, TxToRemove)
+    {
+        pwalletMain->EraseFromWallet(hash);
+        LogPrintf("Erased %s from wallet.\n",hash.ToString().c_str());
+    }
+
+    // build return JSON for stats.
+    int remaining = pwalletMain->mapWallet.size();
+    ret.push_back(Pair("total_transactons", (int)txs));
+    ret.push_back(Pair("remaining_transactons", (int)remaining));
+    ret.push_back(Pair("removed_transactions", (int)(txs-remaining)));
+    return  (ret);
+}
 
 UniValue getbalance(const UniValue& params, bool fHelp)
 {
@@ -1674,7 +1776,7 @@ void ListTransactions(const CWalletTx& wtx, const string& strAccount, int nMinDe
                 if(involvesWatchonly || (::IsMine(*pwalletMain, r.destination) & ISMINE_WATCH_ONLY))
                     entry.push_back(Pair("involvesWatchonly", true));
                 entry.push_back(Pair("account", account));
-                
+
                 CTxDestination dest;
                 if (CScriptExt::ExtractVoutDestination(wtx, r.vout, dest))
                     MaybePushAddress(entry, dest);
@@ -2920,11 +3022,11 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
         // User did not provide zaddrs, so use default i.e. all addresses
         std::set<libzcash::SproutPaymentAddress> sproutzaddrs = {};
         pwalletMain->GetSproutPaymentAddresses(sproutzaddrs);
-        
+
         // Sapling support
         std::set<libzcash::SaplingPaymentAddress> saplingzaddrs = {};
         pwalletMain->GetSaplingPaymentAddresses(saplingzaddrs);
-        
+
         zaddrs.insert(sproutzaddrs.begin(), sproutzaddrs.end());
         zaddrs.insert(saplingzaddrs.begin(), saplingzaddrs.end());
     }
@@ -2936,7 +3038,7 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
         std::vector<SaplingNoteEntry> saplingEntries;
         pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, zaddrs, nMinDepth, nMaxDepth, true, !fIncludeWatchonly, false);
         std::set<std::pair<PaymentAddress, uint256>> nullifierSet = pwalletMain->GetNullifiersForAddresses(zaddrs);
-        
+
         for (auto & entry : sproutEntries) {
             UniValue obj(UniValue::VOBJ);
             obj.push_back(Pair("txid", entry.jsop.hash.ToString()));
@@ -2954,7 +3056,7 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
             }
             results.push_back(obj);
         }
-        
+
         for (auto & entry : saplingEntries) {
             UniValue obj(UniValue::VOBJ);
             obj.push_back(Pair("txid", entry.op.hash.ToString()));
@@ -4115,7 +4217,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
                 }
                 if ( toSapling && ASSETCHAINS_SYMBOL[0] == 0 )
                     throw JSONRPCError(RPC_INVALID_PARAMETER,"Sprout usage will expire soon");
-   
+
                 // If we are sending from a shielded address, all recipient
                 // shielded addresses must be of the same type.
                 if ((fromSprout && toSapling) || (fromSapling && toSprout)) {
@@ -4534,14 +4636,14 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
-    
+
     string enableArg = "zmergetoaddress";
     auto fEnableMergeToAddress = fExperimentalMode && GetBoolArg("-" + enableArg, true);
     std::string strDisabledMsg = "";
     if (!fEnableMergeToAddress) {
         strDisabledMsg = experimentalDisabledHelpMsg("z_mergetoaddress", enableArg);
     }
-    
+
     if (fHelp || params.size() < 2 || params.size() > 6)
         throw runtime_error(
                             "z_mergetoaddress [\"fromaddress\", ... ] \"toaddress\" ( fee ) ( transparent_limit ) ( shielded_limit ) ( memo )\n"
@@ -4590,33 +4692,33 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
                             + HelpExampleCli("z_mergetoaddress", "'[\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\"]' ztfaW34Gj9FrnGUEf833ywDVL62NWXBM81u6EQnM6VR45eYnXhwztecW1SjxA7JrmAXKJhxhj3vDNEpVCQoSvVoSpmbhtjf")
                             + HelpExampleRpc("z_mergetoaddress", "[\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\"], \"zs14d8tc0hl9q0vg5l28uec5vk6sk34fkj2n8s7jalvw5fxpy6v39yn4s2ga082lymrkjk0x2nqg37\"")
                             );
-    
+
     if (!fEnableMergeToAddress) {
         throw JSONRPCError(RPC_WALLET_ERROR, "Error: z_mergetoaddress is disabled.");
     }
-    
+
     LOCK2(cs_main, pwalletMain->cs_wallet);
-    
+
     bool useAnyUTXO = false;
     bool useAnySprout = false;
     bool useAnySapling = false;
     std::set<CTxDestination> taddrs = {};
     std::set<libzcash::PaymentAddress> zaddrs = {};
-    
+
     UniValue addresses = params[0].get_array();
     if (addresses.size()==0)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, fromaddresses array is empty.");
-    
+
     // Keep track of addresses to spot duplicates
     std::set<std::string> setAddress;
-    
+
     // Sources
     for (const UniValue& o : addresses.getValues()) {
         if (!o.isStr())
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, expected string");
-        
+
         std::string address = o.get_str();
-        
+
         if (address == "ANY_TADDR") {
             useAnyUTXO = true;
         } else if (address == "ANY_SPROUT") {
@@ -4636,23 +4738,23 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
                 }
             }
         }
-        
+
         if (setAddress.count(address))
             throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, duplicated address: ") + address);
         setAddress.insert(address);
     }
-    
+
     if (useAnyUTXO && taddrs.size() > 0) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Cannot specify specific t-addrs when using \"ANY_TADDR\"");
     }
     if ((useAnySprout || useAnySapling) && zaddrs.size() > 0) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Cannot specify specific z-addrs when using \"ANY_SPROUT\" or \"ANY_SAPLING\"");
     }
-    
+
     const int nextBlockHeight = chainActive.Height() + 1;
     const bool overwinterActive = NetworkUpgradeActive(nextBlockHeight, Params().GetConsensus(), Consensus::UPGRADE_OVERWINTER);
     const bool saplingActive = NetworkUpgradeActive(nextBlockHeight, Params().GetConsensus(), Consensus::UPGRADE_SAPLING);
-    
+
     // Validate the destination address
     auto destaddress = params[1].get_str();
     bool isToSproutZaddr = false;
@@ -4674,7 +4776,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
             throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, unknown address format: ") + destaddress );
         }
     }
-    
+
     // Convert fee from currency format to zatoshis
     CAmount nFee = SHIELD_COINBASE_DEFAULT_MINERS_FEE;
     if (params.size() > 2) {
@@ -4684,7 +4786,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
             nFee = AmountFromValue( params[2] );
         }
     }
-    
+
     int nUTXOLimit = MERGE_TO_ADDRESS_DEFAULT_TRANSPARENT_LIMIT;
     if (params.size() > 3) {
         nUTXOLimit = params[3].get_int();
@@ -4692,7 +4794,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Limit on maximum number of UTXOs cannot be negative");
         }
     }
-    
+
     int sproutNoteLimit = MERGE_TO_ADDRESS_DEFAULT_SPROUT_LIMIT;
     int saplingNoteLimit = MERGE_TO_ADDRESS_DEFAULT_SAPLING_LIMIT;
     if (params.size() > 4) {
@@ -4703,7 +4805,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
         sproutNoteLimit = nNoteLimit;
         saplingNoteLimit = nNoteLimit;
     }
-    
+
     std::string memo;
     if (params.size() > 5) {
         memo = params[5].get_str();
@@ -4716,9 +4818,9 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
             throw JSONRPCError(RPC_INVALID_PARAMETER,  strprintf("Invalid parameter, size of memo is larger than maximum allowed %d", ZC_MEMO_SIZE ));
         }
     }
-    
+
     MergeToAddressRecipient recipient(destaddress, memo);
-    
+
     // Prepare to get UTXOs and notes
     std::vector<MergeToAddressInputUTXO> utxoInputs;
     std::vector<MergeToAddressInputSproutNote> sproutNoteInputs;
@@ -4732,7 +4834,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     bool maxedOutUTXOsFlag = false;
     bool maxedOutNotesFlag = false;
     size_t mempoolLimit = (nUTXOLimit != 0) ? nUTXOLimit : (overwinterActive ? 0 : (size_t)GetArg("-mempooltxinputlimit", 0));
-    
+
     unsigned int max_tx_size = saplingActive ? MAX_TX_SIZE_AFTER_SAPLING : MAX_TX_SIZE_BEFORE_SAPLING;
     size_t estimatedTxSize = 200;  // tx overhead + wiggle room
     if (isToSproutZaddr) {
@@ -4740,20 +4842,20 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     } else if (isToSaplingZaddr) {
         estimatedTxSize += OUTPUTDESCRIPTION_SIZE;
     }
-    
+
     if (useAnyUTXO || taddrs.size() > 0) {
         // Get available utxos
         vector<COutput> vecOutputs;
         pwalletMain->AvailableCoins(vecOutputs, true, NULL, false, false);
-        
+
         // Find unspent utxos and update estimated size
         for (const COutput& out : vecOutputs) {
             if (!out.fSpendable) {
                 continue;
             }
-            
+
             CScript scriptPubKey = out.tx->vout[out.i].scriptPubKey;
-            
+
             CTxDestination address;
             if (!ExtractDestination(scriptPubKey, address)) {
                 continue;
@@ -4762,10 +4864,10 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
             if (taddrs.size() > 0 && !taddrs.count(address)) {
                 continue;
             }
-            
+
             utxoCounter++;
             CAmount nValue = out.tx->vout[out.i].nValue;
-            
+
             if (!maxedOutUTXOsFlag) {
                 size_t increase = (boost::get<CScriptID>(&address) != nullptr) ? CTXIN_SPEND_P2SH_SIZE : CTXIN_SPEND_DUST_SIZE;
                 if (estimatedTxSize + increase >= max_tx_size ||
@@ -4779,19 +4881,19 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
                     mergedUTXOValue += nValue;
                 }
             }
-            
+
             if (maxedOutUTXOsFlag) {
                 remainingUTXOValue += nValue;
             }
         }
     }
-    
+
     if (useAnySprout || useAnySapling || zaddrs.size() > 0) {
         // Get available notes
         std::vector<CSproutNotePlaintextEntry> sproutEntries;
         std::vector<SaplingNoteEntry> saplingEntries;
         pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, zaddrs);
-        
+
         // If Sapling is not active, do not allow sending from a sapling addresses.
         if (!saplingActive && saplingEntries.size() > 0) {
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, Sapling has not activated");
@@ -4808,12 +4910,12 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
                                RPC_INVALID_PARAMETER,
                                "Cannot send between Sprout and Sapling addresses using z_mergetoaddress");
         }
-        
+
         // Find unspent notes and update estimated size
         for (const CSproutNotePlaintextEntry& entry : sproutEntries) {
             noteCounter++;
             CAmount nValue = entry.plaintext.value();
-            
+
             if (!maxedOutNotesFlag) {
                 // If we haven't added any notes yet and the merge is to a
                 // z-address, we have already accounted for the first JoinSplit.
@@ -4831,12 +4933,12 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
                     mergedNoteValue += nValue;
                 }
             }
-            
+
             if (maxedOutNotesFlag) {
                 remainingNoteValue += nValue;
             }
         }
-        
+
         for (const SaplingNoteEntry& entry : saplingEntries) {
             noteCounter++;
             CAmount nValue = entry.note.value();
@@ -4856,20 +4958,20 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
                     mergedNoteValue += nValue;
                 }
             }
-            
+
             if (maxedOutNotesFlag) {
                 remainingNoteValue += nValue;
             }
         }
     }
-    
+
     size_t numUtxos = utxoInputs.size();
     size_t numNotes = sproutNoteInputs.size() + saplingNoteInputs.size();
-    
+
     if (numUtxos == 0 && numNotes == 0) {
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Could not find any funds to merge.");
     }
-    
+
     // Sanity check: Don't do anything if:
     // - We only have one from address
     // - It's equal to toaddress
@@ -4877,26 +4979,26 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     if (setAddress.size() == 1 && setAddress.count(destaddress) && (numUtxos + numNotes) == 1) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Destination address is also the only source address, and all its funds are already merged.");
     }
-    
+
     CAmount mergedValue = mergedUTXOValue + mergedNoteValue;
     if (mergedValue < nFee) {
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS,
                            strprintf("Insufficient funds, have %s, which is less than miners fee %s",
                                      FormatMoney(mergedValue), FormatMoney(nFee)));
     }
-    
+
     // Check that the user specified fee is sane (if too high, it can result in error -25 absurd fee)
     CAmount netAmount = mergedValue - nFee;
     if (nFee > netAmount) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, strprintf("Fee %s is greater than the net amount to be shielded %s", FormatMoney(nFee), FormatMoney(netAmount)));
     }
-    
+
     // Keep record of parameters in context object
     UniValue contextInfo(UniValue::VOBJ);
     contextInfo.push_back(Pair("fromaddresses", params[0]));
     contextInfo.push_back(Pair("toaddress", params[1]));
     contextInfo.push_back(Pair("fee", ValueFromAmount(nFee)));
-    
+
     // Contextual transaction we will build on
     CMutableTransaction contextualTx = CreateNewContextualCMutableTransaction(
                                                                               Params().GetConsensus(),
@@ -4905,7 +5007,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     if (contextualTx.nVersion == 1 && isSproutShielded) {
         contextualTx.nVersion = 2; // Tx format should support vjoinsplit
     }
-    
+
     // Builder (used if Sapling addresses are involved)
     boost::optional<TransactionBuilder> builder;
     if (isToSaplingZaddr || saplingNoteInputs.size() > 0) {
@@ -4917,7 +5019,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
                                                  new AsyncRPCOperation_mergetoaddress(builder, contextualTx, utxoInputs, sproutNoteInputs, saplingNoteInputs, recipient, nFee, contextInfo) );
     q->addOperation(operation);
     AsyncRPCOperationId operationId = operation->getId();
-    
+
     // Return continuation information
     UniValue o(UniValue::VOBJ);
     o.push_back(Pair("remainingUTXOs", static_cast<uint64_t>(utxoCounter - numUtxos)));
@@ -6018,7 +6120,7 @@ UniValue gatewaysbind(const UniValue& params, bool fHelp)
         if ( params.size() < 6+i+1 )
             throw runtime_error("not enough parameters for N pubkeys\n");
         pubkey = ParseHex(params[6+i].get_str().c_str());
-        if (pubkey.size()!= 33)    
+        if (pubkey.size()!= 33)
             throw runtime_error("invalid destination pubkey");
         pubkeys.push_back(pubkey2pk(pubkey));
     }
@@ -6052,8 +6154,8 @@ UniValue gatewaysdeposit(const UniValue& params, bool fHelp)
     amount = atof((char *)params[8].get_str().c_str()) * COIN + 0.00000000499999;
     if ( amount <= 0 || claimvout < 0 )
         throw runtime_error("invalid param: amount, numpks or claimvout\n");
-    if (destpub.size()!= 33)    
-        throw runtime_error("invalid destination pubkey");       
+    if (destpub.size()!= 33)
+        throw runtime_error("invalid destination pubkey");
     hex = GatewaysDeposit(0,bindtxid,height,coin,cointxid,claimvout,deposithex,proof,pubkey2pk(destpub),amount);
 
     RETURN_IF_ERROR(CCerror);
@@ -6078,9 +6180,9 @@ UniValue gatewaysclaim(const UniValue& params, bool fHelp)
     coin = params[1].get_str();
     deposittxid = Parseuint256((char *)params[2].get_str().c_str());
     destpub = ParseHex(params[3].get_str());
-    amount = atof((char *)params[4].get_str().c_str()) * COIN + 0.00000000499999;    
-    if (destpub.size()!= 33)    
-        throw runtime_error("invalid destination pubkey");  
+    amount = atof((char *)params[4].get_str().c_str()) * COIN + 0.00000000499999;
+    if (destpub.size()!= 33)
+        throw runtime_error("invalid destination pubkey");
     hex = GatewaysClaim(0,bindtxid,coin,deposittxid,pubkey2pk(destpub),amount);
     RETURN_IF_ERROR(CCerror);
     if ( hex.size() > 0 )
@@ -6103,9 +6205,9 @@ UniValue gatewayswithdraw(const UniValue& params, bool fHelp)
     bindtxid = Parseuint256((char *)params[0].get_str().c_str());
     coin = params[1].get_str();
     withdrawpub = ParseHex(params[2].get_str());
-    amount = atof((char *)params[3].get_str().c_str()) * COIN + 0.00000000499999;    
-    if (withdrawpub.size()!= 33)    
-        throw runtime_error("invalid destination pubkey");  
+    amount = atof((char *)params[3].get_str().c_str()) * COIN + 0.00000000499999;
+    if (withdrawpub.size()!= 33)
+        throw runtime_error("invalid destination pubkey");
     hex = GatewaysWithdraw(0,bindtxid,coin,pubkey2pk(withdrawpub),amount);
     RETURN_IF_ERROR(CCerror);
     if ( hex.size() > 0 )
@@ -6124,7 +6226,7 @@ UniValue gatewayspartialsign(const UniValue& params, bool fHelp)
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     const CKeyStore& keystore = *pwalletMain;
-    LOCK2(cs_main, pwalletMain->cs_wallet);    
+    LOCK2(cs_main, pwalletMain->cs_wallet);
     txid = Parseuint256((char *)params[0].get_str().c_str());
     coin = params[1].get_str();
     parthex = params[2].get_str();
@@ -6169,7 +6271,7 @@ UniValue gatewaysmarkdone(const UniValue& params, bool fHelp)
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
     completetxid = Parseuint256((char *)params[0].get_str().c_str());
-    coin = params[1].get_str();    
+    coin = params[1].get_str();
     hex = GatewaysMarkDone(0,completetxid,coin);
     RETURN_IF_ERROR(CCerror);
     if ( hex.size() > 0 )
@@ -7173,7 +7275,7 @@ UniValue tokenfillask(const UniValue& params, bool fHelp)
     LOCK2(cs_main, pwalletMain->cs_wallet);
     tokenid = Parseuint256((char *)params[0].get_str().c_str());
     asktxid = Parseuint256((char *)params[1].get_str().c_str());
-    //fillunits = atol(params[2].get_str().c_str());	
+    //fillunits = atol(params[2].get_str().c_str());
 	fillunits = atoll(params[2].get_str().c_str());	 // dimxy changed to prevent loss of significance
     if ( fillunits <= 0 )
     {
