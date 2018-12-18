@@ -790,7 +790,7 @@ int32_t z_sendmany(char *opidstr,char *coinstr,char *acname,char *srcaddr,char *
 int32_t z_mergetoaddress(char *opidstr,char *coinstr,char *acname,char *destaddr)
 {
     cJSON *retjson; char *retstr,addr[128],*opstr; int32_t retval = -1;
-    sprintf(addr,"[\"ANY_SPROUT\"]");
+    sprintf(addr,"[\\""ANY_SPROUT\\""]");
     //printf("z_sendmany from.(%s) -> %s\n",addr,destaddr);
     if ( (retjson= get_komodocli(coinstr,&retstr,acname,"z_mergetoaddress",addr,destaddr,"","")) != 0 )
     {
