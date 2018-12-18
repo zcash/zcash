@@ -14,6 +14,8 @@ You can run a single test by calling `qa/pull-tester/rpc-tests.sh <testname>`.
 
 Run all possible tests with `qa/pull-tester/rpc-tests.sh -extended`.
 
+Also it's possible to run CryptoConditions tests only by `qa/pull-tester/cc-tests.sh --noshutdown --tracerpc`
+
 Possible options:
 
 ```
