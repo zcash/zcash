@@ -647,12 +647,48 @@ int64_t z_getbalance(char *refcoin,char *acname,char *coinaddr)
     return (amount);
 }
 
+int32_t z_exportkey(char *privkey,char *refcoin,char *acname,char *zaddr)
+{
+    cJSON *retjson; char *retstr,cmpstr[64]; int64_t amount=0;
+    privkey[0] = 0;
+    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"z_exportkey",zaddr,"","","")) != 0 )
+    {
+        fprintf(stderr,"z_exportkey.(%s) %s returned json!\n",refcoin,acname);
+        free_json(retjson);
+        return(-1);
+    }
+    else if ( retstr != 0 )
+    {
+        //printf("retstr %s -> %.8f\n",retstr,dstr(amount));
+        strcpy(privkey,retstr);
+        free(retstr);
+        return(0);
+    }
+}
+
 int32_t getnewaddress(char *coinaddr,char *refcoin,char *acname)
 {
     cJSON *retjson; char *retstr; int64_t amount=0;
     if ( (retjson= get_komodocli(refcoin,&retstr,acname,"getnewaddress","","","","")) != 0 )
     {
         fprintf(stderr,"getnewaddress.(%s) %s returned json!\n",refcoin,acname);
+        free_json(retjson);
+        return(-1);
+    }
+    else if ( retstr != 0 )
+    {
+        strcpy(coinaddr,retstr);
+        free(retstr);
+        return(0);
+    }
+}
+
+int32_t z_getnewaddress(char *coinaddr,char *refcoin,char *acname,char *typestr)
+{
+    cJSON *retjson; char *retstr; int64_t amount=0;
+    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"z_getnewaddress",typestr,"","","")) != 0 )
+    {
+        fprintf(stderr,"z_getnewaddress.(%s) %s returned json!\n",refcoin,acname);
         free_json(retjson);
         return(-1);
     }
@@ -749,6 +785,39 @@ int32_t z_sendmany(char *opidstr,char *coinstr,char *acname,char *srcaddr,char *
         free(retstr);
         return(0);
     }
+}
+
+int32_t z_mergetoaddress(char *opidstr,char *coinstr,char *acname,char *destaddr)
+{
+    cJSON *retjson; char *retstr,addr[128],*opstr; int32_t retval = -1;
+    sprintf(addr,"[\\\"ANY_SPROUT\\\"]");
+    //printf("z_sendmany from.(%s) -> %s\n",addr,destaddr);
+    if ( (retjson= get_komodocli(coinstr,&retstr,acname,"z_mergetoaddress",addr,destaddr,"","")) != 0 )
+    {
+        /*{
+            "remainingUTXOs": 0,
+            "remainingTransparentValue": 0.00000000,
+            "remainingNotes": 222,
+            "remainingShieldedValue": 5413.39093055,
+            "mergingUTXOs": 0,
+            "mergingTransparentValue": 0.00000000,
+            "mergingNotes": 10,
+            "mergingShieldedValue": 822.47447172,
+            "opid": "opid-f28f6261-4120-436c-aca5-859870a40a70"
+        }*/
+        if ( (opstr= jstr(retjson,"opid")) != 0 )
+            strcpy(opidstr,opstr);
+        retval = jint(retjson,"remainingNotes");
+        fprintf(stderr,"%s\n",jprint(retjson,0));
+        free_json(retjson);
+    }
+    else if ( retstr != 0 )
+    {
+        fprintf(stderr,"z_mergetoaddress.(%s) -> opid.(%s)\n",coinstr,retstr);
+        strcpy(opidstr,retstr);
+        free(retstr);
+    }
+    return(retval);
 }
 
 int32_t empty_mempool(char *coinstr,char *acname)
@@ -907,10 +976,17 @@ int32_t main(int32_t argc,char **argv)
     }
     zsaddr = clonestr(argv[2]);
     printf("%s: %s %s\n",REFCOIN_CLI,coinstr,zsaddr);
-    uint32_t lastopid; char coinaddr[64],zcaddr[128],opidstr[128]; int32_t finished; int64_t amount,stdamount,txfee;
+    uint32_t lastopid; char coinaddr[64],privkey[1024],zcaddr[128],opidstr[128]; int32_t finished; int64_t amount,stdamount,txfee;
     //stdamount = 500 * SATOSHIDEN;
     txfee = 10000;
 again:
+    if ( z_getnewaddress(zcaddr,coinstr,"","sprout") == 0 )
+    {
+        z_exportkey(privkey,coinstr,"",zcaddr);
+        printf("zcaddr.(%s) -> z_exportkey.(%s)\n",zcaddr,privkey);
+        while ( z_mergetoaddress(opidstr,coinstr,"",zcaddr) > 0 )
+            ;
+    }
     printf("start processing zmigrate\n");
     lastopid = (uint32_t)time(NULL);
     finished = 0;
