@@ -683,10 +683,10 @@ int32_t getnewaddress(char *coinaddr,char *refcoin,char *acname)
     }
 }
 
-int32_t z_getnewaddress(char *coinaddr,char *refcoin,char *acname)
+int32_t z_getnewaddress(char *coinaddr,char *refcoin,char *acname,char *typestr)
 {
     cJSON *retjson; char *retstr; int64_t amount=0;
-    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"z_getnewaddress","","","","")) != 0 )
+    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"z_getnewaddress",typestr,"","","")) != 0 )
     {
         fprintf(stderr,"z_getnewaddress.(%s) %s returned json!\n",refcoin,acname);
         free_json(retjson);
@@ -981,7 +981,7 @@ int32_t main(int32_t argc,char **argv)
     txfee = 10000;
 again:
     printf("start processing zmigrate\n");
-    if ( z_getnewaddress(zcaddr,coinstr,"") == 0 )
+    if ( z_getnewaddress(zcaddr,coinstr,"","sprout") == 0 )
     {
         z_exportkey(privkey,coinstr,"",zcaddr);
         printf("zcaddr.(%s) -> z_exportkey.(%s)\n",zcaddr,privkey);
