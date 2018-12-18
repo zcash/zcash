@@ -737,9 +737,14 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
                 if ( height > 1000000 && strangeout != 0 )
                     return(-1);
             }
-            else if ( height > 814000  && KOMODO_INSYNC != 0 )
+            else if ( height > 814000 )
             {
                 script = (uint8_t *)&block.vtx[0].vout[0].scriptPubKey[0];
+                //int32_t notary = komodo_electednotary(&num,script+1,height,0);
+                //if ( (-1 * (komodo_electednotary(&num,script+1,height,0) >= 0) * (height > 1000000)) < 0 )
+                //    fprintf(stderr, ">>>>>>> FAILED BLOCK.%d notary.%d insync.%d\n",height,notary,KOMODO_INSYNC);
+                //else
+                //    fprintf(stderr, "<<<<<<< VALID BLOCK.%d notary.%d insync.%d\n",height,notary,KOMODO_INSYNC);
                 return(-1 * (komodo_electednotary(&num,script+1,height,0) >= 0) * (height > 1000000));
             }
         }
