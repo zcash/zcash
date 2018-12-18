@@ -271,6 +271,7 @@ extern UniValue gatewaysmarkdone(const UniValue& params, bool fHelp);
 extern UniValue gatewayspending(const UniValue& params, bool fHelp);
 extern UniValue gatewaysprocessed(const UniValue& params, bool fHelp);
 extern UniValue gatewaysmultisig(const UniValue& params, bool fHelp);
+extern UniValue channelslist(const UniValue& params, bool fHelp);
 extern UniValue channelsinfo(const UniValue& params, bool fHelp);
 extern UniValue channelsopen(const UniValue& params, bool fHelp);
 extern UniValue channelspayment(const UniValue& params, bool fHelp);
