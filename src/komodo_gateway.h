@@ -688,7 +688,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
         }
     }
     // we don't want these checks in VRSC, leave it at the Sapling upgrade
-    if ( ASSETCHAINS_SYMBOL[0] == 0 || 
+    if ( ASSETCHAINS_SYMBOL[0] == 0 ||
          (ASSETCHAINS_COMMISSION != 0 && height > 1) ||
          NetworkUpgradeActive(height, Params().GetConsensus(), Consensus::UPGRADE_SAPLING) )
     {
@@ -740,6 +740,11 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
             else if ( height > 814000 )
             {
                 script = (uint8_t *)&block.vtx[0].vout[0].scriptPubKey[0];
+                //int32_t notary = komodo_electednotary(&num,script+1,height,0);
+                //if ( (-1 * (komodo_electednotary(&num,script+1,height,0) >= 0) * (height > 1000000)) < 0 )
+                //    fprintf(stderr, ">>>>>>> FAILED BLOCK.%d notary.%d insync.%d\n",height,notary,KOMODO_INSYNC);
+                //else
+                //    fprintf(stderr, "<<<<<<< VALID BLOCK.%d notary.%d insync.%d\n",height,notary,KOMODO_INSYNC);
                 return(-1 * (komodo_electednotary(&num,script+1,height,0) >= 0) * (height > 1000000));
             }
         }
