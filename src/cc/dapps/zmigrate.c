@@ -984,8 +984,16 @@ again:
     {
         z_exportkey(privkey,coinstr,"",zcaddr);
         printf("zcaddr.(%s) -> z_exportkey.(%s)\n",zcaddr,privkey);
-        while ( z_mergetoaddress(opidstr,coinstr,"",zcaddr) > 0 )
-            ;
+        while ( 1 )
+        {
+            if ( have_pending_opid(coinstr,0) != 0 )
+            {
+                sleep(10);
+                continue;
+            }
+            if ( z_mergetoaddress(opidstr,coinstr,"",zcaddr) <= 0 )
+                break;
+        }
     }
     printf("start processing zmigrate\n");
     lastopid = (uint32_t)time(NULL);
