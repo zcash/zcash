@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 # Copyright (c) 2015 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
@@ -6,6 +6,8 @@
 #
 # Test ZMQ interface
 #
+
+import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, bytes_to_hex_str, start_nodes
