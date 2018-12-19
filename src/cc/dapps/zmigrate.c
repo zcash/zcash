@@ -712,6 +712,10 @@ int64_t find_onetime_amount(char *coinstr,char *coinaddr)
             for (i=0; i<n; i++)
             {
                 item = jitem(array,i);
+                if (is_cJSON_False(jobj(item, "spendable")) != 0)
+                {
+                    continue;
+                }
                 if ( (addr= jstr(item,"address")) != 0 )
                 {
                     strcpy(coinaddr,addr);
