@@ -639,23 +639,12 @@ UniValue getlastsegidstakes(const UniValue& params, bool fHelp)
     for (int64_t i = chainActive.Height(); i >  chainActive.Height()-depth; i--)
     {
         CBlockIndex* pblockindex = chainActive[i];
-        CBlock block;
 
-        if (fHavePruned && !(pblockindex->nStatus & BLOCK_HAVE_DATA) && pblockindex->nTx > 0)
-            throw JSONRPCError(RPC_INTERNAL_ERROR, "Block not available (pruned data)");
+        //if (fHavePruned && !(pblockindex->nStatus & BLOCK_HAVE_DATA) && pblockindex->nTx > 0)
+        //    throw JSONRPCError(RPC_INTERNAL_ERROR, "Block not available (pruned data)");
 
-        if(!ReadBlockFromDisk(block, pblockindex,1))
-            throw JSONRPCError(RPC_INTERNAL_ERROR, "Can't read block from disk");
-
-        if ( komodo_isPoS((CBlock *)&block) != 0 )
-        {
-            CTxDestination voutaddress; int32_t segid;
-            if ( ExtractDestination(block.vtx[block.vtx.size()-1].vout[0].scriptPubKey,voutaddress) )
-            {
-                segid = (int32_t)komodo_segid32((char *)CBitcoinAddress(voutaddress).ToString().c_str()) & 0x3f;
-                segids[segid] += 1;
-            }
-        }
+        if ( pblockindex->segid >= 0 )
+            segids[pblockindex->segid] += 1;
     }
 
     UniValue ret(UniValue::VOBJ);

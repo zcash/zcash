@@ -26,7 +26,7 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
 int32_t komodo_electednotary(int32_t *numnotariesp,uint8_t *pubkey33,int32_t height,uint32_t timestamp);
 unsigned int lwmaGetNextPOSRequired(const CBlockIndex* pindexLast, const Consensus::Params& params);
 bool EnsureWalletIsAvailable(bool avoidException);
-
+extern bool fRequestShutdown;
 //#define issue_curl(cmdstr) bitcoind_RPC(0,(char *)"curl",(char *)"http://127.0.0.1:7776",0,0,(char *)(cmdstr))
 
 struct MemoryStruct { char *memory; size_t size; };
@@ -1462,7 +1462,7 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
                 if ( slowflag != 0 && pindex != 0 )
                 {
                     pindex->segid = -1;
-                    fprintf(stderr,"PoW block detected set segid.%d <- %d\n",height,pindex->segid);
+                    //fprintf(stderr,"PoW block detected set segid.%d <- %d\n",height,pindex->segid);
                 }
             }
             else
@@ -1470,11 +1470,17 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
                 isPoS = 2; // 2 means staking utxo validated
                 if ( slowflag != 0 && height > 100 )
                 {
-                    segid = -3;
-                    if ( pindex != 0 && pindex->segid == -2 && (segid= komodo_segid(1,height)) >= 0 )
+                    CTxDestination voutaddress; char voutaddr[64];
+                    if ( ExtractDestination(pblock->vtx[txn_count-1].vout[0].scriptPubKey,voutaddress) )
+                    {
+                        strcpy(voutaddr,CBitcoinAddress(voutaddress).ToString().c_str());
+                        segid = komodo_segid32(voutaddr) & 0x3f;
+                        //fprintf(stderr,"komodo_segid.(%d) -> %d\n",height,segid);
+                    }
+                    if ( pindex != 0 && segid >= 0 )
                     {
                         pindex->segid = segid;
-                        fprintf(stderr,"B set segid.%d <- %d\n",height,pindex->segid);
+                        //fprintf(stderr,"B set segid.%d <- %d\n",height,pindex->segid);
                     } //else fprintf(stderr,"unexpected null pindex for slowflag set ht.%d segid.%d:%d\n",height,pindex!=0?pindex->segid:-3,segid);
                 }
             }
@@ -2125,6 +2131,8 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
     block_from_future_rejecttime = (uint32_t)GetAdjustedTime() + 57;
     for (i=winners=0; i<numkp; i++)
     {
+        if (fRequestShutdown)
+            break;
         if ( (tipindex= chainActive.Tip()) == 0 || tipindex->GetHeight()+1 > nHeight )
         {
             fprintf(stderr,"chain tip changed during staking loop t.%u counter.%d\n",(uint32_t)time(NULL),counter);
