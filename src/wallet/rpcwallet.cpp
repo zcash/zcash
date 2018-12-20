@@ -4891,7 +4891,6 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
             }
 
             utxoCounter++;
-            CAmount nValue = out.tx->vout[out.i].nValue;
             if (!maxedOutUTXOsFlag) {
                 size_t increase = (boost::get<CScriptID>(&address) != nullptr) ? CTXIN_SPEND_P2SH_SIZE : CTXIN_SPEND_DUST_SIZE;
                 if (estimatedTxSize + increase >= max_tx_size ||
@@ -4938,7 +4937,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
         // Find unspent notes and update estimated size
         for (const CSproutNotePlaintextEntry& entry : sproutEntries) {
             noteCounter++;
-            nValue = entry.plaintext.value();
+            CAmount nValue = entry.plaintext.value();
 
             if (!maxedOutNotesFlag) {
                 // If we haven't added any notes yet and the merge is to a
@@ -4965,7 +4964,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
 
         for (const SaplingNoteEntry& entry : saplingEntries) {
             noteCounter++;
-            nValue = entry.note.value();
+            CAmount nValue = entry.note.value();
             if (!maxedOutNotesFlag) {
                 size_t increase = SPENDDESCRIPTION_SIZE;
                 if (estimatedTxSize + increase >= max_tx_size ||
