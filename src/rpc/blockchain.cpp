@@ -639,10 +639,6 @@ UniValue getlastsegidstakes(const UniValue& params, bool fHelp)
     for (int64_t i = chainActive.Height(); i >  chainActive.Height()-depth; i--)
     {
         CBlockIndex* pblockindex = chainActive[i];
-
-        //if (fHavePruned && !(pblockindex->nStatus & BLOCK_HAVE_DATA) && pblockindex->nTx > 0)
-        //    throw JSONRPCError(RPC_INTERNAL_ERROR, "Block not available (pruned data)");
-
         if ( pblockindex->segid >= 0 )
             segids[pblockindex->segid] += 1;
     }
