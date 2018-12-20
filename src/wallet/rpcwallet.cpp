@@ -4878,6 +4878,8 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
                 continue;
             }
 
+            CAmount nValue = out.tx->vout[out.i].nValue;
+
             if (maximum_utxo_size != 0) {
               if (nValue > maximum_utxo_size) {
                 continue;
@@ -4936,7 +4938,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
         // Find unspent notes and update estimated size
         for (const CSproutNotePlaintextEntry& entry : sproutEntries) {
             noteCounter++;
-            CAmount nValue = entry.plaintext.value();
+            nValue = entry.plaintext.value();
 
             if (!maxedOutNotesFlag) {
                 // If we haven't added any notes yet and the merge is to a
@@ -4963,7 +4965,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
 
         for (const SaplingNoteEntry& entry : saplingEntries) {
             noteCounter++;
-            CAmount nValue = entry.note.value();
+            nValue = entry.note.value();
             if (!maxedOutNotesFlag) {
                 size_t increase = SPENDDESCRIPTION_SIZE;
                 if (estimatedTxSize + increase >= max_tx_size ||
