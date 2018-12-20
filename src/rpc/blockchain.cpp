@@ -606,6 +606,51 @@ UniValue getblockhash(const UniValue& params, bool fHelp)
     return pblockindex->GetBlockHash().GetHex();
 }
 
+extern uint64_t ASSETCHAINS_STAKED;
+
+UniValue getlastsegidstakes(const UniValue& params, bool fHelp)
+{
+    if (fHelp || params.size() != 1)
+        throw runtime_error(
+            "getlastsegidstakes depth\n"
+            "\nReturns object containing the counts of the last X blocks staked by each segid.\n"
+            "\nArguments:\n"
+            "1. depth           (numeric, required) The amount of blocks to scan back."
+            "\nResult:\n"
+            "{\n"
+            "  \"0\" : n,       (numeric) number of stakes from segid 0 in the last X blocks.\n"
+            "  .....\n"
+            "}\n"
+            "\nExamples:\n"
+            + HelpExampleCli("getlastsegidstakes", "1000")
+            + HelpExampleRpc("getlastsegidstakes", "1000")
+        );
+
+    if ( ASSETCHAINS_STAKED == 0 )
+        throw runtime_error("Only applies to ac_staked chains\n");
+
+    LOCK(cs_main);
+
+    int depth = params[0].get_int();
+    int32_t segids[64] = {0};
+
+    for (int64_t i = chainActive.Height(); i >  chainActive.Height()-depth; i--)
+    {
+        CBlockIndex* pblockindex = chainActive[i];
+        if ( pblockindex->segid >= 0 )
+            segids[pblockindex->segid] += 1;
+    }
+
+    UniValue ret(UniValue::VOBJ);
+    for (int8_t i = 0; i < 64; i++)
+    {
+        char str[4];
+        sprintf(str, "%d", i);
+        ret.push_back(Pair(str,segids[i]));
+    }
+    return ret;
+}
+
 /*uint256 _komodo_getblockhash(int32_t nHeight)
 {
     uint256 hash;
@@ -859,7 +904,7 @@ UniValue kvsearch(const UniValue& params, bool fHelp)
             "  \"currentheight\": xxxxx,     (numeric) current height of the chain\n"
             "  \"key\": \"xxxxx\",           (string) key\n"
             "  \"keylen\": xxxxx,            (string) length of the key \n"
-            "  \"owner\": \"xxxxx\"          (string) hex string representing the owner of the key \n" 
+            "  \"owner\": \"xxxxx\"          (string) hex string representing the owner of the key \n"
             "  \"height\": xxxxx,            (numeric) height the key was stored at\n"
             "  \"expiration\": xxxxx,        (numeric) height the key will expire\n"
             "  \"flags\": x                  (numeric) 1 if the key was created with a password; 0 otherwise.\n"
