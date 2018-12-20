@@ -4809,6 +4809,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
         saplingNoteLimit = nNoteLimit;
     }
 
+    std::string memo;
     CAmount maximum_utxo_size;
     if (params.size() > 5) {
       maximum_utxo_size = AmountFromValue( params[5] );
@@ -4891,7 +4892,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
             }
 
             utxoCounter++;
-
+            CAmount nValue = out.tx->vout[out.i].nValue;
             if (!maxedOutUTXOsFlag) {
                 size_t increase = (boost::get<CScriptID>(&address) != nullptr) ? CTXIN_SPEND_P2SH_SIZE : CTXIN_SPEND_DUST_SIZE;
                 if (estimatedTxSize + increase >= max_tx_size ||
