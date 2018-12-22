@@ -601,7 +601,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
             boost::unique_lock<boost::mutex> lock(csBestBlock);
             while (chainActive.Tip()->GetBlockHash() == hashWatchedChain && IsRPCRunning())
             {
-                // Release the main lock while waiting
+                // Release the lock while waiting
                 LEAVE_CRITICAL_SECTION(cs_main);
 
                 // Before waiting, generate the coinbase for the block following the next
