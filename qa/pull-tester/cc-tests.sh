@@ -18,7 +18,7 @@ testScripts=(
     'cryptoconditions_oracles.py'
     'cryptoconditions_rewards.py'
     'cryptoconditions_token.py'
-    'cryptoconditions_gateways.py'
+    #'cryptoconditions_gateways.py'
 );
 
 extArg="-extended"
