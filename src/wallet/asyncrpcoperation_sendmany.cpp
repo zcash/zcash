@@ -216,6 +216,8 @@ bool AsyncRPCOperation_sendmany::main_impl() {
     bool isPureTaddrOnlyTx = (isfromtaddr_ && z_outputs_.size() == 0);
     CAmount minersFee = fee_;
 
+    bool fCoinbaseMustBeProtected = Params().GetConsensus().fCoinbaseMustBeProtected;
+
     // When spending coinbase utxos, you can only specify a single zaddr as the change must go somewhere
     // and if there are multiple zaddrs, we don't know where to send it.
     if (isfromtaddr_) {
@@ -225,12 +227,18 @@ bool AsyncRPCOperation_sendmany::main_impl() {
                 throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Insufficient funds, no UTXOs found for taddr from address.");
             }
         } else {
-            bool b = find_utxos(false);
+            bool b = find_utxos(!fCoinbaseMustBeProtected);
             if (!b) {
                 if (isMultipleZaddrOutput) {
-                    throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Could not find any non-coinbase UTXOs to spend. Coinbase UTXOs can only be sent to a single zaddr recipient.");
+                    if (fCoinbaseMustBeProtected)
+                        throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Could not find any non-coinbase UTXOs to spend. Coinbase UTXOs can only be sent to a single zaddr recipient.");
+                    else
+                        throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Could not find any UTXOs to spend.");
                 } else {
-                    throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Could not find any non-coinbase UTXOs to spend.");
+                    if (fCoinbaseMustBeProtected)
+                        throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Could not find any non-coinbase UTXOs to spend.");
+                    else
+                        throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Could not find any UTXOs to spend.");
                 }
             }
         }        
@@ -608,7 +616,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         CAmount change = funds - fundsSpent;
         
         if (change > 0) {
-            if (selectedUTXOCoinbase) {
+            if (fCoinbaseMustBeProtected && selectedUTXOCoinbase) {
                 assert(isSingleZaddrOutput);
                 throw JSONRPCError(RPC_WALLET_ERROR, strprintf(
                     "Change %s not allowed. When shielding coinbase funds, the wallet does not "
