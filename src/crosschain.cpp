@@ -26,6 +26,8 @@
 
 int NOTARISATION_SCAN_LIMIT_BLOCKS = 1440;
 CBlockIndex *komodo_getblockindex(uint256 hash);
+extern std::string ASSETCHAINS_SELFIMPORT;
+int32_t GetSelfimportProof(TxProof &proof,CTransaction burnTx,uint256 hash);
 
 
 /* On KMD */
@@ -284,13 +286,20 @@ bool CheckMoMoM(uint256 kmdNotarisationHash, uint256 momom)
  * in: txid
  * out: pair<notarisationTxHash,merkleBranch>
  */
-TxProof GetAssetchainProof(uint256 hash)
+
+TxProof GetAssetchainProof(uint256 hash,CTransaction burnTx)
 {
     int nIndex;
     CBlockIndex* blockIndex;
     Notarisation nota;
     std::vector<uint256> branch;
-
+    if ( ASSETCHAINS_SELFIMPORT.size() > 0 )
+    {
+        TxProof proof;
+        if ( GetSelfimportProof(proof,burnTx,hash) < 0 )
+            throw std::runtime_error("Failed validating selfimport");
+        return(proof);
+    }
     {
         uint256 blockHash;
         CTransaction tx;

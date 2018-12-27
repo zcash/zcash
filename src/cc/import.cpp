@@ -25,7 +25,90 @@
  *
  * This method should control every parameter of the ImportCoin transaction, since it has no signature
  * to protect it from malleability.
+ 
+ ##### 0xffffffff is a special CCid for single chain/dual daemon imports
  */
+
+extern std::string ASSETCHAINS_SELFIMPORT;
+extern uint16_t ASSETCHAINS_CODAPORT,ASSETCHAINS_BEAMPORT;
+
+int32_t GetBEAMProof(TxProof &proof,CTransaction burnTx,uint256 hash)
+{
+    // confirm via ASSETCHAINS_BEAMPORT that burnTx/hash is a valid BEAM burn
+    return(-1);
+}
+
+int32_t GetCODAProof(TxProof &proof,CTransaction burnTx,uint256 hash)
+{
+    // confirm via ASSETCHAINS_CODAPORT that burnTx/hash is a valid CODA burn
+    return(-1);
+}
+
+int32_t GetPUBKEYProof(TxProof &proof,CTransaction burnTx,uint256 hash)
+{
+    // make sure vin0 is signed by ASSETCHAINS_OVERRIDE_PUBKEY33
+    return(-1);
+}
+
+int32_t GetGATEWAYProof(TxProof &proof,CTransaction burnTx,uint256 hash)
+{
+    // external coin is the assetchains symbol in the burnTx OP_RETURN
+    return(-1);
+}
+
+int32_t GetSelfimportProof(TxProof &proof,CTransaction burnTx,uint256 hash) // find burnTx with hash from "other" daemon
+{
+    if ( ASSETCHAINS_SELFIMPORT == "BEAM" )
+    {
+        if ( GetBEAMproof(proof,burnTx,hash) < 0 )
+            return(-1);
+    }
+    else if ( ASSETCHAINS_SELFIMPORT == "CODA" )
+    {
+        if ( GetCODAproof(proof,burnTx,hash) < 0 )
+            return(-1);
+    }
+    else if ( ASSETCHAINS_SELFIMPORT == "PUBKEY" )
+    {
+        if ( GetPUBKEYproof(proof,burnTx,hash) < 0 )
+            return(-1);
+    }
+    else if ( ASSETCHAINS_SELFIMPORT == "GATEWAY" )
+    {
+        if ( GetGATEWAYproof(proof,burnTx,hash) < 0 ) // extract source coin from burnTx opreturn
+            return(-1);
+    }
+    else return(-1);
+    return(0);
+}
+
+// use proof from the above functions to validate the import
+
+int32_t CheckBEAMimport(TxProof proof,CTransaction burnTx,td::vector<CTxOut> payouts)
+{
+    // check with dual-BEAM daemon via ASSETCHAINS_BEAMPORT for validity of burnTx
+    return(-1);
+}
+
+int32_t CheckCODAimport(TxProof proof,CTransaction burnTx,td::vector<CTxOut> payouts)
+{
+    // check with dual-CODA daemon via ASSETCHAINS_CODAPORT for validity of burnTx
+    return(-1);
+}
+
+int32_t CheckGATEWAYimport(std::string coin,TxProof proof,CTransaction burnTx,td::vector<CTxOut> payouts)
+{
+    // check for valid burn from external coin blockchain and if valid return(0);
+    return(-1);
+}
+
+int32_t CheckPUBKEYimport(TxProof proof,CTransaction burnTx,td::vector<CTxOut> payouts)
+{
+    // if burnTx has ASSETCHAINS_PUBKEY vin, it is valid return(0);
+    return(0);
+    return(-1);
+}
+
 bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &importTx, unsigned int nIn)
 {
     if (importTx.vout.size() < 2)
@@ -52,12 +135,6 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
     if (!UnmarshalBurnTx(burnTx, targetSymbol, &targetCcid, payoutsHash))
         return Invalid("invalid-burn-tx");
 
-    if (targetCcid != GetAssetchainsCC() || targetSymbol != GetAssetchainsSymbol())
-        return Invalid("importcoin-wrong-chain");
-
-    if (targetCcid < KOMODO_FIRSTFUNGIBLEID)
-        return Invalid("chain-not-fungible");
-
     // check burn amount
     {
         uint64_t burnAmount = burnTx.vout.back().nValue;
@@ -74,13 +151,41 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
     if (payoutsHash != SerializeHash(payouts))
         return Invalid("wrong-payouts");
 
+    if (targetCcid < KOMODO_FIRSTFUNGIBLEID)
+        return Invalid("chain-not-fungible");
+    
     // Check proof confirms existance of burnTx
+    if ( targetCcid != 0xffffffff )
     {
+        if (targetCcid != GetAssetchainsCC() || targetSymbol != GetAssetchainsSymbol())
+            return Invalid("importcoin-wrong-chain");
         uint256 target = proof.second.Exec(burnTx.GetHash());
         if (!CheckMoMoM(proof.first, target))
             return Invalid("momom-check-fail");
     }
-
+    else if ( ASSETCHAINS_SELFIMPORT == targetSymbol || ASSETCHAINS_SELFIMPORT == "GATEWAY" ) // various selfchain imports
+    {
+        if ( GetAssetchainsSymbol() == "BEAM" )
+        {
+            if ( CheckBEAMimport(proof,burnTx,payouts) < 0 )
+                return Invalid("BEAM-import-failure");
+        }
+        else if ( GetAssetchainsSymbol() == "CODA" )
+        {
+            if ( CheckCODAimport(proof,burnTx,payouts) < 0 )
+                return Invalid("CODA-import-failure");
+        }
+        else if ( GetAssetchainsSymbol() == "PUBKEY" )
+        {
+            if ( CheckPUBKEYimport(proof,burnTx,payouts) < 0 )
+                return Invalid("PUBKEY-import-failure");
+        }
+        else
+        {
+            if ( CheckGATEWAYimport(GetAssetchainsSymbol(),proof,burnTx,payouts) < 0 )
+                return Invalid("GATEWAY-import-failure");
+        }
+    }
     return Valid();
 }
 

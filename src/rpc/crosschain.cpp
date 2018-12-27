@@ -30,7 +30,7 @@ int32_t komodo_MoM(int32_t *notarized_htp,uint256 *MoMp,uint256 *kmdtxidp,int32_
 int32_t komodo_MoMoMdata(char *hexstr,int32_t hexsize,struct komodo_ccdataMoMoM *mdata,char *symbol,int32_t kmdheight,int32_t notarized_height);
 struct komodo_ccdata_entry *komodo_allMoMs(int32_t *nump,uint256 *MoMoMp,int32_t kmdstarti,int32_t kmdendi);
 uint256 komodo_calcMoM(int32_t height,int32_t MoMdepth);
-
+extern std::string ASSETCHAINS_SELFIMPORT;
 
 UniValue assetchainproof(const UniValue& params, bool fHelp)
 {
@@ -41,8 +41,8 @@ UniValue assetchainproof(const UniValue& params, bool fHelp)
         throw runtime_error("assetchainproof needs a txid");
 
     hash = uint256S(params[0].get_str());
-
-    auto proof = GetAssetchainProof(hash);
+    CTransaction tx;
+    auto proof = GetAssetchainProof(hash,tx);
     auto proofData = E_MARSHAL(ss << proof);
     return HexStr(proofData);
 }
@@ -145,6 +145,7 @@ UniValue calc_MoM(const UniValue& params, bool fHelp)
 
 UniValue migrate_converttoexport(const UniValue& params, bool fHelp)
 {
+    uint32_t ccid = ASSETCHAINS_CC;
     if (fHelp || params.size() != 3)
         throw runtime_error(
             "migrate_converttoexport rawTx dest_symbol export_amount\n"
@@ -180,8 +181,14 @@ UniValue migrate_converttoexport(const UniValue& params, bool fHelp)
         if (burnAmount < needed)
             throw runtime_error("export_amount too small");
     }
-
-    CTxOut burnOut = MakeBurnOutput(burnAmount, ASSETCHAINS_CC, targetSymbol, tx.vout);
+    if ( ASSETCHAINS_SELFIMPORT.size() > 0 )
+    {
+        if ( ASSETCHAINS_SELFIMPORT == targetSymbol || ASSETCHAINS_SELFIMPORT == "GATEWAY" )
+        {
+            ccid = 0xffffffff;
+        } // else maybe clusters of self-import chains can be supported?
+    }
+    CTxOut burnOut = MakeBurnOutput(burnAmount, ccid, targetSymbol, tx.vout);
     UniValue ret(UniValue::VOBJ);
     ret.push_back(Pair("payouts", HexStr(E_MARSHAL(ss << tx.vout))));
     tx.vout.clear();
@@ -229,7 +236,7 @@ UniValue migrate_createimporttransaction(const UniValue& params, bool fHelp)
         throw runtime_error("Couldn't parse payouts");
 
     uint256 txid = burnTx.GetHash();
-    TxProof proof = GetAssetchainProof(burnTx.GetHash());
+    TxProof proof = GetAssetchainProof(burnTx.GetHash(),burnTx);
 
     CTransaction importTx = MakeImportCoinTransaction(proof, burnTx, payouts);
     return HexStr(E_MARSHAL(ss << importTx));
