@@ -84,25 +84,25 @@ int32_t GetSelfimportProof(TxProof &proof,CTransaction burnTx,uint256 hash) // f
 
 // use proof from the above functions to validate the import
 
-int32_t CheckBEAMimport(TxProof proof,CTransaction burnTx,td::vector<CTxOut> payouts)
+int32_t CheckBEAMimport(TxProof proof,CTransaction burnTx,std::vector<CTxOut> payouts)
 {
     // check with dual-BEAM daemon via ASSETCHAINS_BEAMPORT for validity of burnTx
     return(-1);
 }
 
-int32_t CheckCODAimport(TxProof proof,CTransaction burnTx,td::vector<CTxOut> payouts)
+int32_t CheckCODAimport(TxProof proof,CTransaction burnTx,std::vector<CTxOut> payouts)
 {
     // check with dual-CODA daemon via ASSETCHAINS_CODAPORT for validity of burnTx
     return(-1);
 }
 
-int32_t CheckGATEWAYimport(std::string coin,TxProof proof,CTransaction burnTx,td::vector<CTxOut> payouts)
+int32_t CheckGATEWAYimport(std::string coin,TxProof proof,CTransaction burnTx,std::vector<CTxOut> payouts)
 {
     // check for valid burn from external coin blockchain and if valid return(0);
     return(-1);
 }
 
-int32_t CheckPUBKEYimport(TxProof proof,CTransaction burnTx,td::vector<CTxOut> payouts)
+int32_t CheckPUBKEYimport(TxProof proof,CTransaction burnTx,std::vector<CTxOut> payouts)
 {
     // if burnTx has ASSETCHAINS_PUBKEY vin, it is valid return(0);
     return(0);
