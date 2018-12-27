@@ -1777,10 +1777,13 @@ void komodo_args(char *argv0)
         ASSETCHAINS_CODAPORT = GetArg("-ac_coda",0);
         
         ASSETCHAINS_SELFIMPORT = GetArg("-ac_import",""); // BEAM, CODA, PUBKEY, GATEWAY
-        if ( ASSETCHAINS_SELFIMPORT == "PUBKEY" && strlen(ASSETCHAINS_OVERRIDE_PUBKEY.c_str()) != 66 )
+        if ( ASSETCHAINS_SELFIMPORT == "PUBKEY" )
         {
-            fprintf(stderr,"invalid -ac_pubkey for -ac_import=PUBKEY\n");
-            ASSETCHAINS_SELFIMPORT = "";
+            if ( strlen(ASSETCHAINS_OVERRIDE_PUBKEY.c_str()) != 66 )
+            {
+                fprintf(stderr,"invalid -ac_pubkey for -ac_import=PUBKEY\n");
+                ASSETCHAINS_SELFIMPORT = "";
+            }
         }
         else if ( ASSETCHAINS_SELFIMPORT == "BEAM" && ASSETCHAINS_BEAMPORT == 0 )
         {
@@ -1831,7 +1834,7 @@ void komodo_args(char *argv0)
                     ASSETCHAINS_COMMISSION = 53846154; // maps to 35%
                     printf("ASSETCHAINS_COMMISSION defaulted to 35%% when founders reward active\n");
                 }
-                else
+                else if ( ASSETCHAINS_SELFIMPORT.size() == 0 )
                 {
                     //ASSETCHAINS_OVERRIDE_PUBKEY.clear();
                     printf("-ac_perc must be set with -ac_pubkey\n");
