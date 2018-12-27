@@ -32,50 +32,26 @@
 extern std::string ASSETCHAINS_SELFIMPORT;
 extern uint16_t ASSETCHAINS_CODAPORT,ASSETCHAINS_BEAMPORT;
 
-int32_t GetBEAMProof(TxProof &proof,CTransaction burnTx,uint256 hash)
-{
-    // confirm via ASSETCHAINS_BEAMPORT that burnTx/hash is a valid BEAM burn
-    return(-1);
-}
-
-int32_t GetCODAProof(TxProof &proof,CTransaction burnTx,uint256 hash)
-{
-    // confirm via ASSETCHAINS_CODAPORT that burnTx/hash is a valid CODA burn
-    return(-1);
-}
-
-int32_t GetPUBKEYProof(TxProof &proof,CTransaction burnTx,uint256 hash)
-{
-    // make sure vin0 is signed by ASSETCHAINS_OVERRIDE_PUBKEY33
-    return(-1);
-}
-
-int32_t GetGATEWAYProof(TxProof &proof,CTransaction burnTx,uint256 hash)
-{
-    // external coin is the assetchains symbol in the burnTx OP_RETURN
-    return(-1);
-}
-
 int32_t GetSelfimportProof(TxProof &proof,CTransaction burnTx,uint256 hash) // find burnTx with hash from "other" daemon
 {
     if ( ASSETCHAINS_SELFIMPORT == "BEAM" )
     {
-        if ( GetBEAMproof(proof,burnTx,hash) < 0 )
+        // confirm via ASSETCHAINS_BEAMPORT that burnTx/hash is a valid BEAM burn
             return(-1);
     }
     else if ( ASSETCHAINS_SELFIMPORT == "CODA" )
     {
-        if ( GetCODAproof(proof,burnTx,hash) < 0 )
+        // confirm via ASSETCHAINS_CODAPORT that burnTx/hash is a valid CODA burn
             return(-1);
     }
     else if ( ASSETCHAINS_SELFIMPORT == "PUBKEY" )
     {
-        if ( GetPUBKEYproof(proof,burnTx,hash) < 0 )
+        // make sure vin0 is signed by ASSETCHAINS_OVERRIDE_PUBKEY33
             return(-1);
     }
     else if ( ASSETCHAINS_SELFIMPORT == "GATEWAY" )
     {
-        if ( GetGATEWAYproof(proof,burnTx,hash) < 0 ) // extract source coin from burnTx opreturn
+        // external coin is the assetchains symbol in the burnTx OP_RETURN
             return(-1);
     }
     else return(-1);
