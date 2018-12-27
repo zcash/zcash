@@ -47,7 +47,7 @@ int32_t GetSelfimportProof(TxProof &proof,CTransaction burnTx,uint256 hash) // f
     else if ( ASSETCHAINS_SELFIMPORT == "PUBKEY" )
     {
         // make sure vin0 is signed by ASSETCHAINS_OVERRIDE_PUBKEY33
-            return(-1);
+            return(0);
     }
     else if ( ASSETCHAINS_SELFIMPORT == "GATEWAY" )
     {
