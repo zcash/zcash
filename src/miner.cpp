@@ -783,6 +783,8 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey, int32_t nHeight, 
 
 void komodo_broadcast(CBlock *pblock,int32_t limit)
 {
+    if (IsInitialBlockDownload())
+        return;
     int32_t n = 1;
     //fprintf(stderr,"broadcast new block t.%u\n",(uint32_t)time(NULL));
     {

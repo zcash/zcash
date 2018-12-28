@@ -607,8 +607,6 @@ UniValue getblockhash(const UniValue& params, bool fHelp)
 }
 
 extern uint64_t ASSETCHAINS_STAKED;
-int32_t komodo_isPoS(CBlock *pblock);
-uint32_t komodo_segid32(char *coinaddr);
 
 UniValue getlastsegidstakes(const UniValue& params, bool fHelp)
 {

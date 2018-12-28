@@ -63,6 +63,8 @@ namespace {
 // Global state variables
 //
 extern uint16_t ASSETCHAINS_P2PPORT;
+extern int8_t is_STAKED(const char *chain_name);
+extern char ASSETCHAINS_SYMBOL[65];
 
 bool fDiscover = true;
 bool fListen = true;
@@ -1262,15 +1264,6 @@ void ThreadSocketHandler()
 
 void ThreadDNSAddressSeed()
 {
-    extern int8_t is_STAKED(const char *chain_name);
-    extern char ASSETCHAINS_SYMBOL[65];
-    // skip DNS seeds for staked chains.
-    if ( is_STAKED(ASSETCHAINS_SYMBOL) != 0 )
-    {
-        fprintf(stderr, "STAKED CHAIN DISABLED ALL SEEDS!\n");
-        return;
-    }
-
     // goal: only query DNS seeds if address need is acute
     if ((addrman.size() > 0) &&
         (!GetBoolArg("-forcednsseed", false))) {
@@ -1380,21 +1373,19 @@ void ThreadOpenConnections()
 
         // Add seed nodes if DNS seeds are all down (an infrastructure attack?).
         // if (addrman.size() == 0 && (GetTime() - nStart > 60)) {
-        extern int8_t is_STAKED(const char *chain_name);
-        extern char ASSETCHAINS_SYMBOL[65];
-        // skip DNS seeds for staked chains.
-        if ( is_STAKED(ASSETCHAINS_SYMBOL) == 0 )
-        {
-            if (GetTime() - nStart > 60) {
-                static bool done = false;
-                if (!done) {
+        if (GetTime() - nStart > 60) {
+            static bool done = false;
+            if (!done) {
+                // skip DNS seeds for staked chains.
+                if ( is_STAKED(ASSETCHAINS_SYMBOL) == 0 ) {
                     //LogPrintf("Adding fixed seed nodes as DNS doesn't seem to be available.\n");
                     LogPrintf("Adding fixed seed nodes.\n");
                     addrman.Add(convertSeed6(Params().FixedSeeds()), CNetAddr("127.0.0.1"));
-                    done = true;
                 }
+                done = true;
             }
         }
+
 
         //
         // Choose an address to connect to based on most recently seen
@@ -1801,6 +1792,12 @@ void StartNode(boost::thread_group& threadGroup, CScheduler& scheduler)
         pnodeLocalHost = new CNode(INVALID_SOCKET, CAddress(CService("127.0.0.1", 0), nLocalServices));
 
     Discover(threadGroup);
+
+    // skip DNS seeds for staked chains.
+    extern int8_t is_STAKED(const char *chain_name);
+    extern char ASSETCHAINS_SYMBOL[65];
+    if ( is_STAKED(ASSETCHAINS_SYMBOL) != 0 )
+        SoftSetBoolArg("-dnsseed", false);
 
     //
     // Start threads
