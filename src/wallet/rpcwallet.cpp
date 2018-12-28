@@ -4890,9 +4890,9 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
 
     if (useAnySprout || useAnySapling || zaddrs.size() > 0) {
         // Get available notes
-        std::vector<CSproutNotePlaintextEntry> sproutEntries;
-        std::vector<SaplingNoteEntry> saplingEntries;
-        pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, zaddrs);
+        std::vector<CSproutNotePlaintextEntry> sproutEntries,skipsprout;
+        std::vector<SaplingNoteEntry> saplingEntries,skipsapling;
+        pwalletMain->GetFilteredNotes(sproutEntries, useAnySprout == 0 ? saplingEntries : skipsapling, zaddrs);
 
         // If Sapling is not active, do not allow sending from a sapling addresses.
         if (!saplingActive && saplingEntries.size() > 0) {
@@ -5772,6 +5772,15 @@ UniValue tokenaddress(const UniValue& params, bool fHelp)
     if ( params.size() == 1 )
         pubkey = ParseHex(params[0].get_str().c_str());
     return(CCaddress(cp,(char *)"Assets",pubkey));
+}
+
+UniValue channelslist(const UniValue& params, bool fHelp)
+{
+    if ( fHelp || params.size() > 0 )
+        throw runtime_error("channelsinfo\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    return(ChannelsList());
 }
 
 UniValue channelsinfo(const UniValue& params, bool fHelp)

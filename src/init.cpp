@@ -76,6 +76,7 @@ using namespace std;
 extern void ThreadSendAlert();
 extern int32_t KOMODO_LOADINGBLOCKS;
 extern bool VERUS_MINTBLOCKS;
+extern char ASSETCHAINS_SYMBOL[];
 
 ZCJoinSplit* pzcashParams = NULL;
 
@@ -195,7 +196,10 @@ void Shutdown()
     /// for example if the data directory was found to be locked.
     /// Be sure that anything that writes files or flushes caches only does this if the respective
     /// module was initialized.
-    RenameThread("verus-shutoff");
+    static char shutoffstr[128];
+    sprintf(shutoffstr,"%s-shutoff",ASSETCHAINS_SYMBOL);
+    //RenameThread("verus-shutoff");
+    RenameThread(shutoffstr);
     mempool.AddTransactionsUpdated(1);
 
     StopHTTPRPC();
