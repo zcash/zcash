@@ -1804,7 +1804,7 @@ void komodo_args(char *argv0)
             ASSETCHAINS_SELFIMPORT = "";
             exit(0);
         }
-        if ( ASSETCHAINS_SELFIMPORT.size() > 0 && ASSETCHAINS_CC >= KOMODO_FIRST_FUNGIBLEID )
+        if ( ASSETCHAINS_SELFIMPORT.size() > 0 && ASSETCHAINS_CC >= KOMODO_FIRSTFUNGIBLEID )
         {
             fprintf(stderr,"selfimport chains cant be in a fungible cluster\n");
             exit(0);
