@@ -221,6 +221,13 @@ public:
 typedef boost::variant<InvalidEncoding, SproutPaymentAddress, SaplingPaymentAddress> PaymentAddress;
 typedef boost::variant<InvalidEncoding, SproutViewingKey> ViewingKey;
 
+class DefaultAddressFromSpendingKey : public boost::static_visitor<PaymentAddress> {
+public:
+    PaymentAddress operator()(const SproutSpendingKey&) const;
+    PaymentAddress operator()(const struct SaplingExtendedSpendingKey&) const;
+    PaymentAddress operator()(const InvalidEncoding&) const;
+};
+
 }
 
 /** Check whether a PaymentAddress is not an InvalidEncoding. */

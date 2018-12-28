@@ -3,6 +3,7 @@
 #include "hash.h"
 #include "prf.h"
 #include "streams.h"
+#include "zcash/zip32.h"
 
 #include <librustzcash.h>
 
@@ -107,6 +108,16 @@ SaplingPaymentAddress SaplingSpendingKey::default_address() const {
     auto addrOpt = full_viewing_key().in_viewing_key().address(default_diversifier(*this));
     assert(addrOpt != boost::none);
     return addrOpt.value();
+}
+
+PaymentAddress DefaultAddressFromSpendingKey::operator()(const SproutSpendingKey &sk) const {
+    return sk.address();
+}
+PaymentAddress DefaultAddressFromSpendingKey::operator()(const SaplingExtendedSpendingKey &sk) const {
+    return sk.DefaultAddress();
+}
+PaymentAddress DefaultAddressFromSpendingKey::operator()(const InvalidEncoding&) const {
+    throw std::invalid_argument("Cannot derive default address from invalid spending key");
 }
 
 }

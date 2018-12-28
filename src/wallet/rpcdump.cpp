@@ -571,7 +571,6 @@ UniValue dumpwallet_impl(const UniValue& params, bool fHelp, bool fDumpZKeys)
     return exportfilepath.string();
 }
 
-
 UniValue z_importkey(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
@@ -586,6 +585,7 @@ UniValue z_importkey(const UniValue& params, bool fHelp)
             "2. rescan             (string, optional, default=\"whenkeyisnew\") Rescan the wallet for transactions - can be \"yes\", \"no\" or \"whenkeyisnew\"\n"
             "3. startHeight        (numeric, optional, default=0) Block height to start rescan from\n"
             "\nNote: This call can take minutes to complete if rescan is true.\n"
+            "\nResult: A payment address derived from the imported key.\n"
             "\nExamples:\n"
             "\nExport a zkey\n"
             + HelpExampleCli("z_exportkey", "\"myaddress\"") +
@@ -651,16 +651,22 @@ UniValue z_importkey(const UniValue& params, bool fHelp)
     if (addResult == KeyNotAdded) {
         throw JSONRPCError(RPC_WALLET_ERROR, "Error adding spending key to wallet");
     }
-    
+
     // whenever a key is imported, we need to scan the whole chain
     pwalletMain->nTimeFirstKey = 1; // 0 would be considered 'no value'
-    
+
     // We want to scan for transactions and notes
     if (fRescan) {
         pwalletMain->ScanForWalletTransactions(chainActive[nRescanHeight], true);
     }
 
-    return NullUniValue;
+    auto addr = boost::apply_visitor(
+            libzcash::DefaultAddressFromSpendingKey{}, spendingkey);
+
+    UniValue result(UniValue::VOBJ);
+    result.pushKV("defaultAddress", EncodePaymentAddress(addr));
+
+    return result;
 }
 
 UniValue z_importviewingkey(const UniValue& params, bool fHelp)
