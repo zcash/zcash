@@ -45,10 +45,10 @@ struct komodo_state KOMODO_STATES[34];
 #define _COINBASE_MATURITY 100
 int COINBASE_MATURITY = _COINBASE_MATURITY;//100;
 
-int32_t KOMODO_MININGTHREADS = -1,IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,KOMODO_CHOSEN_ONE,ASSETCHAINS_SEED,KOMODO_ON_DEMAND,KOMODO_EXTERNAL_NOTARIES,KOMODO_PASSPORT_INITDONE,KOMODO_PAX,KOMODO_EXCHANGEWALLET,KOMODO_REWIND,KOMODO_CONNECTING = -1,KOMODO_DEALERNODE,KOMODO_EXTRASATOSHI;
+int32_t KOMODO_MININGTHREADS = -1,IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,KOMODO_CHOSEN_ONE,ASSETCHAINS_SEED,KOMODO_ON_DEMAND,KOMODO_EXTERNAL_NOTARIES,KOMODO_PASSPORT_INITDONE,KOMODO_PAX,KOMODO_EXCHANGEWALLET,KOMODO_REWIND,KOMODO_CONNECTING = -1,KOMODO_DEALERNODE,KOMODO_EXTRASATOSHI,ASSETCHAINS_FOUNDERS;
 int32_t KOMODO_INSYNC,KOMODO_LASTMINED,prevKOMODO_LASTMINED,KOMODO_CCACTIVATE,JUMBLR_PAUSE = 1;
 std::string NOTARY_PUBKEY,ASSETCHAINS_NOTARIES,ASSETCHAINS_OVERRIDE_PUBKEY,DONATION_PUBKEY,ASSETCHAINS_SCRIPTPUB;
-uint8_t NOTARY_PUBKEY33[33],ASSETCHAINS_OVERRIDE_PUBKEY33[33],ASSETCHAINS_OVERRIDE_PUBKEYHASH[20],ASSETCHAINS_PUBLIC,ASSETCHAINS_PRIVATE,ASSETCHAINS_TXPOW,ASSETCHAINS_FOUNDERS;
+uint8_t NOTARY_PUBKEY33[33],ASSETCHAINS_OVERRIDE_PUBKEY33[33],ASSETCHAINS_OVERRIDE_PUBKEYHASH[20],ASSETCHAINS_PUBLIC,ASSETCHAINS_PRIVATE,ASSETCHAINS_TXPOW;
 bool VERUS_MINTBLOCKS;
 
 char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN],ASSETCHAINS_USERPASS[4096];
@@ -131,7 +131,7 @@ int64_t komodo_current_supply(uint32_t nHeight)
 
     if ( (baseid = komodo_baseid(ASSETCHAINS_SYMBOL)) >= 0 && baseid < 32 )
         cur_money = ASSETCHAINS_GENESISTXVAL + ASSETCHAINS_SUPPLY + nHeight * ASSETCHAINS_REWARD[0] / SATOSHIDEN;
-    else 
+    else
     {
         // figure out max_money by adding up supply to a maximum of 10,000,000 blocks
         cur_money = (ASSETCHAINS_SUPPLY+1) * SATOSHIDEN + (ASSETCHAINS_MAGIC & 0xffffff) + ASSETCHAINS_GENESISTXVAL;
@@ -144,7 +144,7 @@ int64_t komodo_current_supply(uint32_t nHeight)
             for ( int j = 0; j <= ASSETCHAINS_LASTERA; j++ )
             {
                 // if any condition means we have no more rewards, break
-                if (j != 0 && (nHeight <= ASSETCHAINS_ENDSUBSIDY[j - 1] || (ASSETCHAINS_ENDSUBSIDY[j - 1] == 0 && 
+                if (j != 0 && (nHeight <= ASSETCHAINS_ENDSUBSIDY[j - 1] || (ASSETCHAINS_ENDSUBSIDY[j - 1] == 0 &&
                     (ASSETCHAINS_REWARD[j] == 0 && (j == ASSETCHAINS_LASTERA || ASSETCHAINS_DECAY[j] != SATOSHIDEN)))))
                     break;
 
@@ -155,6 +155,8 @@ int64_t komodo_current_supply(uint32_t nHeight)
                     uint64_t lastEnd = j == 0 ? 0 : ASSETCHAINS_ENDSUBSIDY[j - 1];
                     uint64_t curEnd = ASSETCHAINS_ENDSUBSIDY[j] == 0 ? nHeight : nHeight > ASSETCHAINS_ENDSUBSIDY[j] ? ASSETCHAINS_ENDSUBSIDY[j] : nHeight;
                     uint64_t period = ASSETCHAINS_HALVING[j];
+                    if ( period == 0 )
+                        period = 210000;
                     uint32_t nSteps = (curEnd - lastEnd) / period;
                     uint32_t modulo = (curEnd - lastEnd) % period;
                     uint64_t decay = ASSETCHAINS_DECAY[j];
@@ -178,7 +180,7 @@ int64_t komodo_current_supply(uint32_t nHeight)
                             lowestSubsidy = 0;
                         }
                         else
-                        {    
+                        {
                             // Ex: -ac_eras=3 -ac_reward=0,384,24 -ac_end=1440,260640,0 -ac_halving=1,1440,2103840 -ac_decay 100000000,97750000,0
                             subsidyDifference = reward - ASSETCHAINS_REWARD[j + 1];
                             if (subsidyDifference < 0)
@@ -208,7 +210,8 @@ int64_t komodo_current_supply(uint32_t nHeight)
 
                         // calculate amount in one step's triangular protrusion over minor triangle's hypotenuse
                         denominator = nSteps * period;
-
+                        if ( denominator == 0 )
+                            denominator = 1;
                         // difference of one step vs. total
                         stepDifference = (period * subsidyDifference) / denominator;
 
@@ -231,7 +234,7 @@ int64_t komodo_current_supply(uint32_t nHeight)
                             // if negative slope, the minor triangle is the full number of steps, as the highest
                             // level step is full. lowest subsidy is just the lowest so far
                             lowestSubsidy = reward - (stepDifference * nSteps);
-                            
+
                             // add the step triangles, one per step
                             cur_money += stepTriangle * nSteps;
 
@@ -258,4 +261,3 @@ int64_t komodo_current_supply(uint32_t nHeight)
     }
     return((int64_t)(cur_money + (cur_money * ASSETCHAINS_COMMISSION)));
 }
-

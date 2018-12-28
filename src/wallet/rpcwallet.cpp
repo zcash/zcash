@@ -1767,6 +1767,7 @@ void ListTransactions(const CWalletTx& wtx, const string& strAccount, int nMinDe
         BOOST_FOREACH(const COutputEntry& r, listReceived)
         {
             string account;
+            //fprintf(stderr,"recv iter %s\n",wtx.GetHash().GetHex().c_str());
             if (pwalletMain->mapAddressBook.count(r.destination))
                 account = pwalletMain->mapAddressBook[r.destination].name;
             if (fAllAccounts || (account == strAccount))
@@ -1917,7 +1918,10 @@ UniValue listtransactions(const UniValue& params, bool fHelp)
     {
         CWalletTx *const pwtx = (*it).second.first;
         if (pwtx != 0)
+        {
+            //fprintf(stderr,"pwtx iter.%d %s\n",(int32_t)pwtx->nOrderPos,pwtx->GetHash().GetHex().c_str());
             ListTransactions(*pwtx, strAccount, 0, true, ret, filter);
+        } //else fprintf(stderr,"null pwtx\n");
         CAccountingEntry *const pacentry = (*it).second.second;
         if (pacentry != 0)
             AcentryToJSON(*pacentry, strAccount, ret);
@@ -4211,6 +4215,9 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
                     if ( fromSprout || toSprout )
                         throw JSONRPCError(RPC_INVALID_PARAMETER,"Sprout usage has expired");
                 }
+                if ( toSapling && ASSETCHAINS_SYMBOL[0] == 0 )
+                    throw JSONRPCError(RPC_INVALID_PARAMETER,"Sprout usage will expire soon");
+
                 // If we are sending from a shielded address, all recipient
                 // shielded addresses must be of the same type.
                 if ((fromSprout && toSapling) || (fromSapling && toSprout)) {
@@ -4629,14 +4636,14 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
-    
+
     string enableArg = "zmergetoaddress";
     auto fEnableMergeToAddress = fExperimentalMode && GetBoolArg("-" + enableArg, true);
     std::string strDisabledMsg = "";
     if (!fEnableMergeToAddress) {
         strDisabledMsg = experimentalDisabledHelpMsg("z_mergetoaddress", enableArg);
     }
-    
+
     if (fHelp || params.size() < 2 || params.size() > 6)
         throw runtime_error(
                             "z_mergetoaddress [\"fromaddress\", ... ] \"toaddress\" ( fee ) ( transparent_limit ) ( shielded_limit ) ( memo )\n"
@@ -4685,33 +4692,33 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
                             + HelpExampleCli("z_mergetoaddress", "'[\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\"]' ztfaW34Gj9FrnGUEf833ywDVL62NWXBM81u6EQnM6VR45eYnXhwztecW1SjxA7JrmAXKJhxhj3vDNEpVCQoSvVoSpmbhtjf")
                             + HelpExampleRpc("z_mergetoaddress", "[\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\"], \"zs14d8tc0hl9q0vg5l28uec5vk6sk34fkj2n8s7jalvw5fxpy6v39yn4s2ga082lymrkjk0x2nqg37\"")
                             );
-    
+
     if (!fEnableMergeToAddress) {
         throw JSONRPCError(RPC_WALLET_ERROR, "Error: z_mergetoaddress is disabled.");
     }
-    
+
     LOCK2(cs_main, pwalletMain->cs_wallet);
-    
+
     bool useAnyUTXO = false;
     bool useAnySprout = false;
     bool useAnySapling = false;
     std::set<CTxDestination> taddrs = {};
     std::set<libzcash::PaymentAddress> zaddrs = {};
-    
+
     UniValue addresses = params[0].get_array();
     if (addresses.size()==0)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, fromaddresses array is empty.");
-    
+
     // Keep track of addresses to spot duplicates
     std::set<std::string> setAddress;
-    
+
     // Sources
     for (const UniValue& o : addresses.getValues()) {
         if (!o.isStr())
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, expected string");
-        
+
         std::string address = o.get_str();
-        
+
         if (address == "ANY_TADDR") {
             useAnyUTXO = true;
         } else if (address == "ANY_SPROUT") {
@@ -4731,23 +4738,23 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
                 }
             }
         }
-        
+
         if (setAddress.count(address))
             throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, duplicated address: ") + address);
         setAddress.insert(address);
     }
-    
+
     if (useAnyUTXO && taddrs.size() > 0) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Cannot specify specific t-addrs when using \"ANY_TADDR\"");
     }
     if ((useAnySprout || useAnySapling) && zaddrs.size() > 0) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Cannot specify specific z-addrs when using \"ANY_SPROUT\" or \"ANY_SAPLING\"");
     }
-    
+
     const int nextBlockHeight = chainActive.Height() + 1;
     const bool overwinterActive = NetworkUpgradeActive(nextBlockHeight, Params().GetConsensus(), Consensus::UPGRADE_OVERWINTER);
     const bool saplingActive = NetworkUpgradeActive(nextBlockHeight, Params().GetConsensus(), Consensus::UPGRADE_SAPLING);
-    
+
     // Validate the destination address
     auto destaddress = params[1].get_str();
     bool isToSproutZaddr = false;
@@ -4769,7 +4776,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
             throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, unknown address format: ") + destaddress );
         }
     }
-    
+
     // Convert fee from currency format to zatoshis
     CAmount nFee = SHIELD_COINBASE_DEFAULT_MINERS_FEE;
     if (params.size() > 2) {
@@ -4779,7 +4786,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
             nFee = AmountFromValue( params[2] );
         }
     }
-    
+
     int nUTXOLimit = MERGE_TO_ADDRESS_DEFAULT_TRANSPARENT_LIMIT;
     if (params.size() > 3) {
         nUTXOLimit = params[3].get_int();
@@ -4787,7 +4794,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Limit on maximum number of UTXOs cannot be negative");
         }
     }
-    
+
     int sproutNoteLimit = MERGE_TO_ADDRESS_DEFAULT_SPROUT_LIMIT;
     int saplingNoteLimit = MERGE_TO_ADDRESS_DEFAULT_SAPLING_LIMIT;
     if (params.size() > 4) {
@@ -4798,7 +4805,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
         sproutNoteLimit = nNoteLimit;
         saplingNoteLimit = nNoteLimit;
     }
-    
+
     std::string memo;
     if (params.size() > 5) {
         memo = params[5].get_str();
@@ -4811,9 +4818,9 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
             throw JSONRPCError(RPC_INVALID_PARAMETER,  strprintf("Invalid parameter, size of memo is larger than maximum allowed %d", ZC_MEMO_SIZE ));
         }
     }
-    
+
     MergeToAddressRecipient recipient(destaddress, memo);
-    
+
     // Prepare to get UTXOs and notes
     std::vector<MergeToAddressInputUTXO> utxoInputs;
     std::vector<MergeToAddressInputSproutNote> sproutNoteInputs;
@@ -4827,7 +4834,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     bool maxedOutUTXOsFlag = false;
     bool maxedOutNotesFlag = false;
     size_t mempoolLimit = (nUTXOLimit != 0) ? nUTXOLimit : (overwinterActive ? 0 : (size_t)GetArg("-mempooltxinputlimit", 0));
-    
+
     unsigned int max_tx_size = saplingActive ? MAX_TX_SIZE_AFTER_SAPLING : MAX_TX_SIZE_BEFORE_SAPLING;
     size_t estimatedTxSize = 200;  // tx overhead + wiggle room
     if (isToSproutZaddr) {
@@ -4835,20 +4842,20 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     } else if (isToSaplingZaddr) {
         estimatedTxSize += OUTPUTDESCRIPTION_SIZE;
     }
-    
+
     if (useAnyUTXO || taddrs.size() > 0) {
         // Get available utxos
         vector<COutput> vecOutputs;
         pwalletMain->AvailableCoins(vecOutputs, true, NULL, false, false);
-        
+
         // Find unspent utxos and update estimated size
         for (const COutput& out : vecOutputs) {
             if (!out.fSpendable) {
                 continue;
             }
-            
+
             CScript scriptPubKey = out.tx->vout[out.i].scriptPubKey;
-            
+
             CTxDestination address;
             if (!ExtractDestination(scriptPubKey, address)) {
                 continue;
@@ -4857,10 +4864,10 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
             if (taddrs.size() > 0 && !taddrs.count(address)) {
                 continue;
             }
-            
+
             utxoCounter++;
             CAmount nValue = out.tx->vout[out.i].nValue;
-            
+
             if (!maxedOutUTXOsFlag) {
                 size_t increase = (boost::get<CScriptID>(&address) != nullptr) ? CTXIN_SPEND_P2SH_SIZE : CTXIN_SPEND_DUST_SIZE;
                 if (estimatedTxSize + increase >= max_tx_size ||
@@ -4874,19 +4881,19 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
                     mergedUTXOValue += nValue;
                 }
             }
-            
+
             if (maxedOutUTXOsFlag) {
                 remainingUTXOValue += nValue;
             }
         }
     }
-    
+
     if (useAnySprout || useAnySapling || zaddrs.size() > 0) {
         // Get available notes
         std::vector<CSproutNotePlaintextEntry> sproutEntries;
         std::vector<SaplingNoteEntry> saplingEntries;
         pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, zaddrs);
-        
+
         // If Sapling is not active, do not allow sending from a sapling addresses.
         if (!saplingActive && saplingEntries.size() > 0) {
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, Sapling has not activated");
@@ -4903,12 +4910,12 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
                                RPC_INVALID_PARAMETER,
                                "Cannot send between Sprout and Sapling addresses using z_mergetoaddress");
         }
-        
+
         // Find unspent notes and update estimated size
         for (const CSproutNotePlaintextEntry& entry : sproutEntries) {
             noteCounter++;
             CAmount nValue = entry.plaintext.value();
-            
+
             if (!maxedOutNotesFlag) {
                 // If we haven't added any notes yet and the merge is to a
                 // z-address, we have already accounted for the first JoinSplit.
@@ -4926,12 +4933,12 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
                     mergedNoteValue += nValue;
                 }
             }
-            
+
             if (maxedOutNotesFlag) {
                 remainingNoteValue += nValue;
             }
         }
-        
+
         for (const SaplingNoteEntry& entry : saplingEntries) {
             noteCounter++;
             CAmount nValue = entry.note.value();
@@ -4951,20 +4958,20 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
                     mergedNoteValue += nValue;
                 }
             }
-            
+
             if (maxedOutNotesFlag) {
                 remainingNoteValue += nValue;
             }
         }
     }
-    
+
     size_t numUtxos = utxoInputs.size();
     size_t numNotes = sproutNoteInputs.size() + saplingNoteInputs.size();
-    
+
     if (numUtxos == 0 && numNotes == 0) {
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Could not find any funds to merge.");
     }
-    
+
     // Sanity check: Don't do anything if:
     // - We only have one from address
     // - It's equal to toaddress
@@ -4972,26 +4979,26 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     if (setAddress.size() == 1 && setAddress.count(destaddress) && (numUtxos + numNotes) == 1) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Destination address is also the only source address, and all its funds are already merged.");
     }
-    
+
     CAmount mergedValue = mergedUTXOValue + mergedNoteValue;
     if (mergedValue < nFee) {
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS,
                            strprintf("Insufficient funds, have %s, which is less than miners fee %s",
                                      FormatMoney(mergedValue), FormatMoney(nFee)));
     }
-    
+
     // Check that the user specified fee is sane (if too high, it can result in error -25 absurd fee)
     CAmount netAmount = mergedValue - nFee;
     if (nFee > netAmount) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, strprintf("Fee %s is greater than the net amount to be shielded %s", FormatMoney(nFee), FormatMoney(netAmount)));
     }
-    
+
     // Keep record of parameters in context object
     UniValue contextInfo(UniValue::VOBJ);
     contextInfo.push_back(Pair("fromaddresses", params[0]));
     contextInfo.push_back(Pair("toaddress", params[1]));
     contextInfo.push_back(Pair("fee", ValueFromAmount(nFee)));
-    
+
     // Contextual transaction we will build on
     CMutableTransaction contextualTx = CreateNewContextualCMutableTransaction(
                                                                               Params().GetConsensus(),
@@ -5000,7 +5007,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     if (contextualTx.nVersion == 1 && isSproutShielded) {
         contextualTx.nVersion = 2; // Tx format should support vjoinsplit
     }
-    
+
     // Builder (used if Sapling addresses are involved)
     boost::optional<TransactionBuilder> builder;
     if (isToSaplingZaddr || saplingNoteInputs.size() > 0) {
@@ -5012,7 +5019,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
                                                  new AsyncRPCOperation_mergetoaddress(builder, contextualTx, utxoInputs, sproutNoteInputs, saplingNoteInputs, recipient, nFee, contextInfo) );
     q->addOperation(operation);
     AsyncRPCOperationId operationId = operation->getId();
-    
+
     // Return continuation information
     UniValue o(UniValue::VOBJ);
     o.push_back(Pair("remainingUTXOs", static_cast<uint64_t>(utxoCounter - numUtxos)));
@@ -7268,7 +7275,7 @@ UniValue tokenfillask(const UniValue& params, bool fHelp)
     LOCK2(cs_main, pwalletMain->cs_wallet);
     tokenid = Parseuint256((char *)params[0].get_str().c_str());
     asktxid = Parseuint256((char *)params[1].get_str().c_str());
-    //fillunits = atol(params[2].get_str().c_str());	
+    //fillunits = atol(params[2].get_str().c_str());
 	fillunits = atoll(params[2].get_str().c_str());	 // dimxy changed to prevent loss of significance
     if ( fillunits <= 0 )
     {
