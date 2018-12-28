@@ -1783,22 +1783,31 @@ void komodo_args(char *argv0)
             {
                 fprintf(stderr,"invalid -ac_pubkey for -ac_import=PUBKEY\n");
                 ASSETCHAINS_SELFIMPORT = "";
+                exit(0);
             }
         }
         else if ( ASSETCHAINS_SELFIMPORT == "BEAM" && ASSETCHAINS_BEAMPORT == 0 )
         {
             fprintf(stderr,"missing -ac_beam for BEAM rpcport\n");
             ASSETCHAINS_SELFIMPORT = "";
+            exit(0);
         }
         else if ( ASSETCHAINS_SELFIMPORT == "CODA" && ASSETCHAINS_CODAPORT == 0 )
         {
             fprintf(stderr,"missing -ac_coda for CODA rpcport\n");
             ASSETCHAINS_SELFIMPORT = "";
+            exit(0);
         }
-        else if ( ASSETCHAINS_SELFIMPORT != "GATEWAY" )
+        else if ( ASSETCHAINS_SELFIMPORT.size() > 0 && ASSETCHAINS_SELFIMPORT != "GATEWAY" )
         {
             fprintf(stderr,"invalid -ac_import type\n");
             ASSETCHAINS_SELFIMPORT = "";
+            exit(0);
+        }
+        if ( ASSETCHAINS_SELFIMPORT.size() > 0 && ASSETCHAINS_CC >= KOMODO_FIRST_FUNGIBLEID )
+        {
+            fprintf(stderr,"selfimport chains cant be in a fungible cluster\n");
+            exit(0);
         }
         //ASSETCHAINS_FOUNDERS_PERIOD = GetArg("-ac_period",0);
 
@@ -1834,11 +1843,11 @@ void komodo_args(char *argv0)
                     ASSETCHAINS_COMMISSION = 53846154; // maps to 35%
                     printf("ASSETCHAINS_COMMISSION defaulted to 35%% when founders reward active\n");
                 }
-                else if ( ASSETCHAINS_SELFIMPORT.size() == 0 )
+                /*else if ( ASSETCHAINS_SELFIMPORT.size() == 0 )
                 {
                     //ASSETCHAINS_OVERRIDE_PUBKEY.clear();
                     printf("-ac_perc must be set with -ac_pubkey\n");
-                }
+                }*/
             }
         }
         else
@@ -1946,7 +1955,12 @@ void komodo_args(char *argv0)
             MAX_MONEY = 10000100000LL*SATOSHIDEN;
         //fprintf(stderr,"MAX_MONEY %llu %.8f\n",(long long)MAX_MONEY,(double)MAX_MONEY/SATOSHIDEN);
         //printf("baseid.%d MAX_MONEY.%s %.8f\n",baseid,ASSETCHAINS_SYMBOL,(double)MAX_MONEY/SATOSHIDEN);
-        ASSETCHAINS_P2PPORT = komodo_port(ASSETCHAINS_SYMBOL,ASSETCHAINS_SUPPLY,&ASSETCHAINS_MAGIC,extraptr,extralen);
+        port = komodo_port(ASSETCHAINS_SYMBOL,ASSETCHAINS_SUPPLY,&ASSETCHAINS_MAGIC,extraptr,extralen);
+        if ( GetArgs("-port",0) == 0 )
+            ASSETCHAINS_P2PPORT = GetArgs("-port",0);
+        else ASSETCHAINS_P2PPORT = port;
+        mainParams.SetDefaultPort(ASSETCHAINS_P2PPORT);
+
         while ( (dirname= (char *)GetDataDir(false).string().c_str()) == 0 || dirname[0] == 0 )
         {
             fprintf(stderr,"waiting for datadir\n");
