@@ -1956,10 +1956,10 @@ void komodo_args(char *argv0)
         //fprintf(stderr,"MAX_MONEY %llu %.8f\n",(long long)MAX_MONEY,(double)MAX_MONEY/SATOSHIDEN);
         //printf("baseid.%d MAX_MONEY.%s %.8f\n",baseid,ASSETCHAINS_SYMBOL,(double)MAX_MONEY/SATOSHIDEN);
         uint16_t tmpport = komodo_port(ASSETCHAINS_SYMBOL,ASSETCHAINS_SUPPLY,&ASSETCHAINS_MAGIC,extraptr,extralen);
-        if ( GetArg("-port",0) == 0 )
+        if ( GetArg("-port",0) != 0 )
         {
             ASSETCHAINS_P2PPORT = GetArg("-port",0);
-            fprintf(stderr,"set port.%u\n",ASSETCHAINS_P2PPORT);
+            fprintf(stderr,"set p2pport.%u\n",ASSETCHAINS_P2PPORT);
         } else ASSETCHAINS_P2PPORT = tmpport;
 
         while ( (dirname= (char *)GetDataDir(false).string().c_str()) == 0 || dirname[0] == 0 )
