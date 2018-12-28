@@ -21,6 +21,7 @@
 #include "consensus/params.h"
 #include "komodo_defs.h"
 #include "script/standard.h"
+#include "cc/CCinclude.h"
 
 int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestamp);
 int32_t komodo_electednotary(int32_t *numnotariesp,uint8_t *pubkey33,int32_t height,uint32_t timestamp);
@@ -1964,7 +1965,6 @@ int64_t komodo_coinsupply(int64_t *zfundsp,int64_t *sproutfundsp,int32_t height)
     *sproutfundsp = sproutfunds;
     return(supply);
 }
-
 struct komodo_staking
 {
     char address[64];

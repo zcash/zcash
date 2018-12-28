@@ -4891,7 +4891,6 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
             }
 
             utxoCounter++;
-
             if (!maxedOutUTXOsFlag) {
                 size_t increase = (boost::get<CScriptID>(&address) != nullptr) ? CTXIN_SPEND_P2SH_SIZE : CTXIN_SPEND_DUST_SIZE;
                 if (estimatedTxSize + increase >= max_tx_size ||
