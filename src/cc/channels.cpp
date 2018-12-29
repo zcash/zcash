@@ -429,6 +429,12 @@ int64_t AddChannelsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx, C
     else return 0;
 }
 
+
+int32_t komodo_nextheight()
+{
+    return(100000000);
+}
+
 std::string ChannelOpen(uint64_t txfee,CPubKey destpub,int32_t numpayments,int64_t payment)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
