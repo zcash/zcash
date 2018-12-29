@@ -5,6 +5,7 @@
 #include "hash.h"
 #include "script/cc.h"
 #include "primitives/transaction.h"
+#include "wallet/wallet.h"
 
 int32_t komodo_nextheight();
 
