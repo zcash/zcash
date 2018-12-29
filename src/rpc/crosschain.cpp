@@ -263,7 +263,6 @@ UniValue migrate_completeimporttransaction(const UniValue& params, bool fHelp)
     return HexStr(E_MARSHAL(ss << importTx));
 }
 
-#ifdef selfimport
 UniValue selfimport(const UniValue& params, bool fHelp)
 {
     TxProof proof; CTransaction importTx,burnTx; CTxOut burnOut; uint64_t burnAmount; uint256 blockHash;
@@ -272,10 +271,10 @@ UniValue selfimport(const UniValue& params, bool fHelp)
     if (fHelp || params.size() != 2)
         throw runtime_error("selfimport txid burnamount\n\n"
                             "creates signed selfimport transaction from txid");
-    //txid =
-    //burnAmount =
-    
-    if ( GetTransaction(txid,burnTx,hashBlock,false) == 0 )
+    txid = Parseuint256((char *)params[0].get_str().c_str());
+    burnAmount = atof(params[1].get_str().c_str()) * COIN + 0.00000000499999;
+
+    if ( GetTransaction(txid,burnTx,blockHash,false) == 0 )
         throw runtime_error("selfimport couldnt find txid");
     if ( GetSelfimportProof(proof,burnTx,txid) < 0 )
         throw std::runtime_error("Failed validating selfimport");
@@ -284,8 +283,8 @@ UniValue selfimport(const UniValue& params, bool fHelp)
     importTx = MakeImportCoinTransaction(proof,burnTx,payouts);
     importTx.vout.clear();
     importTx.vout.push_back(burnOut);
+    return HexStr(E_MARSHAL(ss << importTx));
 }
-#endif
 
 UniValue getNotarisationsForBlock(const UniValue& params, bool fHelp)
 {
