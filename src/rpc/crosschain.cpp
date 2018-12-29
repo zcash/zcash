@@ -265,7 +265,8 @@ UniValue migrate_completeimporttransaction(const UniValue& params, bool fHelp)
 
 UniValue selfimport(const UniValue& params, bool fHelp)
 {
-    TxProof proof; CTransaction importTx,burnTx; CTxOut burnOut; uint64_t burnAmount; uint256 txid,blockHash;
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    TxProof proof; CTransaction burnTx; CTxOut burnOut; uint64_t burnAmount; uint256 txid,blockHash;
     if ( ASSETCHAINS_SELFIMPORT.size() == 0 )
         throw runtime_error("selfimport only works on -ac_import chains");
     if (fHelp || params.size() != 2)
@@ -280,10 +281,10 @@ UniValue selfimport(const UniValue& params, bool fHelp)
         throw std::runtime_error("Failed validating selfimport");
     
     burnOut = MakeBurnOutput(burnAmount,0xffffffff,ASSETCHAINS_SELFIMPORT,burnTx.vout);
-    importTx = MakeImportCoinTransaction(proof,burnTx,burnTx.vout);
-    importTx.vout.clear();
-    importTx.vout.push_back(burnOut);
-    return HexStr(E_MARSHAL(ss << importTx));
+    mtx = MakeImportCoinTransaction(proof,burnTx,burnTx.vout);
+    mtx.vout.clear();
+    mtx.vout.push_back(burnOut);
+    return HexStr(E_MARSHAL(ss << mtx));
 }
 
 UniValue getNotarisationsForBlock(const UniValue& params, bool fHelp)
