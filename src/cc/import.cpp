@@ -141,17 +141,17 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
     }
     else if ( ASSETCHAINS_SELFIMPORT == targetSymbol || ASSETCHAINS_SELFIMPORT == "GATEWAY" ) // various selfchain imports
     {
-        if ( GetAssetchainsSymbol() == "BEAM" )
+        if ( ASSETCHAINS_SELFIMPORT == "BEAM" )
         {
             if ( CheckBEAMimport(proof,burnTx,payouts) < 0 )
                 return Invalid("BEAM-import-failure");
         }
-        else if ( GetAssetchainsSymbol() == "CODA" )
+        else if ( ASSETCHAINS_SELFIMPORT == "CODA" )
         {
             if ( CheckCODAimport(proof,burnTx,payouts) < 0 )
                 return Invalid("CODA-import-failure");
         }
-        else if ( GetAssetchainsSymbol() == "PUBKEY" )
+        else if ( ASSETCHAINS_SELFIMPORT == "PUBKEY" )
         {
             if ( CheckPUBKEYimport(proof,burnTx,payouts) < 0 )
                 return Invalid("PUBKEY-import-failure");
