@@ -122,8 +122,9 @@ TESTS =
   bin_PROGRAMS += komodod
 #endif
 
+# komodo-tx
 if BUILD_BITCOIN_UTILS
-  bin_PROGRAMS += komodo-cli komodo-tx
+  bin_PROGRAMS += komodo-cli 
 endif
 if ENABLE_WALLET
   bin_PROGRAMS += wallet-utility
