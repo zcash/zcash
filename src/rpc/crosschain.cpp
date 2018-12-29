@@ -270,7 +270,7 @@ UniValue migrate_completeimporttransaction(const UniValue& params, bool fHelp)
 UniValue selfimport(const UniValue& params, bool fHelp)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    TxProof proof; CTransaction burnTx; CTxOut burnOut,savevout; uint64_t burnAmount; uint256 txid,blockHash; std::vector<CTxOut> vouts;
+    TxProof proof; CTransaction burnTx,tx; CTxOut burnOut,savevout; uint64_t burnAmount; uint256 txid,blockHash; std::vector<CTxOut> vouts;
     if ( ASSETCHAINS_SELFIMPORT.size() == 0 )
         throw runtime_error("selfimport only works on -ac_import chains");
     if (fHelp || params.size() != 2)
@@ -280,21 +280,21 @@ UniValue selfimport(const UniValue& params, bool fHelp)
     burnAmount = atof(params[1].get_str().c_str()) * COIN + 0.00000000499999;
     // txid is just used to specify the import recv address
     // in reality it would be rawtx from the other chain
-    if ( GetTransaction(txid,burnTx,blockHash,false) == 0 )
+    if ( GetTransaction(txid,tx,blockHash,false) == 0 )
         throw runtime_error("selfimport couldnt find txid");
-    savevout = burnTx.vout[0];
-    mtx = burnTx;
+    savevout = tx.vout[0];
+    mtx = tx;
     mtx.vout.clear();
     mtx.vout.resize(1);
     mtx.vout[0] = savevout;
     mtx.vout[0].nValue = burnAmount;
     vouts = mtx.vout;
     burnOut = MakeBurnOutput(burnAmount,0xffffffff,ASSETCHAINS_SELFIMPORT,vouts);
-    mtx = burnTx;
+    mtx = tx;
     mtx.vout.clear();
     mtx.vout.push_back(burnOut);
     burnTx = mtx;
-    if ( GetSelfimportProof(proof,burnTx,burnTx.GetHash()) < 0 )
+    if ( GetSelfimportProof(proof,tx,txid) < 0 )
         throw std::runtime_error("Failed validating selfimport");
     return HexStr(E_MARSHAL(ss << MakeImportCoinTransaction(proof,burnTx,vouts)));
 }
