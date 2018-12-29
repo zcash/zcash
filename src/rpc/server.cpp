@@ -334,6 +334,7 @@ static const CRPCCommand vRPCCommands[] =
     { "crosschain",         "migrate_converttoexport", &migrate_converttoexport, true  },
     { "crosschain",         "migrate_createimporttransaction", &migrate_createimporttransaction, true  },
     { "crosschain",         "migrate_completeimporttransaction", &migrate_completeimporttransaction, true  },
+    { "crosschain",         "selfimport", &selfimport, true  },
 
     /* Mining */
     { "mining",             "getblocktemplate",       &getblocktemplate,       true  },
