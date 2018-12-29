@@ -270,7 +270,7 @@ UniValue migrate_completeimporttransaction(const UniValue& params, bool fHelp)
 UniValue selfimport(const UniValue& params, bool fHelp)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    TxProof proof; CTransaction burnTx; CTxOut burnOut,savevout; uint64_t burnAmount; uint256 txid,blockHash; std::vector CTxOut vouts;
+    TxProof proof; CTransaction burnTx; CTxOut burnOut,savevout; uint64_t burnAmount; uint256 txid,blockHash; std::vector<CTxOut> vouts;
     if ( ASSETCHAINS_SELFIMPORT.size() == 0 )
         throw runtime_error("selfimport only works on -ac_import chains");
     if (fHelp || params.size() != 2)
