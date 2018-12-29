@@ -291,8 +291,9 @@ UniValue selfimport(const UniValue& params, bool fHelp)
     if ( GetSelfimportProof(proof,burnTx,burnTx.GetHash()) < 0 )
         throw std::runtime_error("Failed validating selfimport");
     mtx = MakeImportCoinTransaction(proof,burnTx,vouts);
-    //mtx.vout[1] = savevout;
-    //mtx.vout[1].nValue = burnAmount;
+    mtx.vout.resize(2);
+    mtx.vout[1] = savevout;
+    mtx.vout[1].nValue = burnAmount;
     return HexStr(E_MARSHAL(ss << mtx));
 }
 
