@@ -5,7 +5,7 @@
 
 
 /* On assetchain */
-TxProof GetAssetchainProof(uint256 hash);
+TxProof GetAssetchainProof(uint256 hash,CTransaction burnTx);
 
 /* On KMD */
 uint256 CalculateProofRoot(const char* symbol, uint32_t targetCCid, int kmdHeight,

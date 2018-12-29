@@ -284,13 +284,13 @@ bool CheckMoMoM(uint256 kmdNotarisationHash, uint256 momom)
  * in: txid
  * out: pair<notarisationTxHash,merkleBranch>
  */
-TxProof GetAssetchainProof(uint256 hash)
+
+TxProof GetAssetchainProof(uint256 hash,CTransaction burnTx)
 {
     int nIndex;
     CBlockIndex* blockIndex;
     Notarisation nota;
     std::vector<uint256> branch;
-
     {
         uint256 blockHash;
         CTransaction tx;

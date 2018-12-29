@@ -1773,6 +1773,42 @@ void komodo_args(char *argv0)
         ASSETCHAINS_COMMISSION = GetArg("-ac_perc",0);
         ASSETCHAINS_OVERRIDE_PUBKEY = GetArg("-ac_pubkey","");
         ASSETCHAINS_SCRIPTPUB = GetArg("-ac_script","");
+        ASSETCHAINS_BEAMPORT = GetArg("-ac_beam",0);
+        ASSETCHAINS_CODAPORT = GetArg("-ac_coda",0);
+        
+        ASSETCHAINS_SELFIMPORT = GetArg("-ac_import",""); // BEAM, CODA, PUBKEY, GATEWAY
+        if ( ASSETCHAINS_SELFIMPORT == "PUBKEY" )
+        {
+            if ( strlen(ASSETCHAINS_OVERRIDE_PUBKEY.c_str()) != 66 )
+            {
+                fprintf(stderr,"invalid -ac_pubkey for -ac_import=PUBKEY\n");
+                ASSETCHAINS_SELFIMPORT = "";
+                exit(0);
+            }
+        }
+        else if ( ASSETCHAINS_SELFIMPORT == "BEAM" && ASSETCHAINS_BEAMPORT == 0 )
+        {
+            fprintf(stderr,"missing -ac_beam for BEAM rpcport\n");
+            ASSETCHAINS_SELFIMPORT = "";
+            exit(0);
+        }
+        else if ( ASSETCHAINS_SELFIMPORT == "CODA" && ASSETCHAINS_CODAPORT == 0 )
+        {
+            fprintf(stderr,"missing -ac_coda for CODA rpcport\n");
+            ASSETCHAINS_SELFIMPORT = "";
+            exit(0);
+        }
+        else if ( ASSETCHAINS_SELFIMPORT.size() > 0 && ASSETCHAINS_SELFIMPORT != "GATEWAY" )
+        {
+            fprintf(stderr,"invalid -ac_import type\n");
+            ASSETCHAINS_SELFIMPORT = "";
+            exit(0);
+        }
+        if ( ASSETCHAINS_SELFIMPORT.size() > 0 && ASSETCHAINS_CC >= KOMODO_FIRSTFUNGIBLEID )
+        {
+            fprintf(stderr,"selfimport chains cant be in a fungible cluster\n");
+            exit(0);
+        }
         //ASSETCHAINS_FOUNDERS_PERIOD = GetArg("-ac_period",0);
 
         if ( (ASSETCHAINS_STAKED= GetArg("-ac_staked",0)) > 100 )
@@ -1807,11 +1843,11 @@ void komodo_args(char *argv0)
                     ASSETCHAINS_COMMISSION = 53846154; // maps to 35%
                     printf("ASSETCHAINS_COMMISSION defaulted to 35%% when founders reward active\n");
                 }
-                else
+                /*else if ( ASSETCHAINS_SELFIMPORT.size() == 0 )
                 {
-                    ASSETCHAINS_OVERRIDE_PUBKEY.clear();
+                    //ASSETCHAINS_OVERRIDE_PUBKEY.clear();
                     printf("-ac_perc must be set with -ac_pubkey\n");
-                }
+                }*/
             }
         }
         else
@@ -1827,7 +1863,7 @@ void komodo_args(char *argv0)
                 printf("ASSETCHAINS_FOUNDERS needs an ASETCHAINS_OVERRIDE_PUBKEY\n");
             }
         }
-        if ( ASSETCHAINS_ENDSUBSIDY[0] != 0 || ASSETCHAINS_REWARD[0] != 0 || ASSETCHAINS_HALVING[0] != 0 || ASSETCHAINS_DECAY[0] != 0 || ASSETCHAINS_COMMISSION != 0 || ASSETCHAINS_PUBLIC != 0 || ASSETCHAINS_PRIVATE != 0 || ASSETCHAINS_TXPOW != 0 || ASSETCHAINS_FOUNDERS != 0 || ASSETCHAINS_SCRIPTPUB.size() > 1 )
+        if ( ASSETCHAINS_ENDSUBSIDY[0] != 0 || ASSETCHAINS_REWARD[0] != 0 || ASSETCHAINS_HALVING[0] != 0 || ASSETCHAINS_DECAY[0] != 0 || ASSETCHAINS_COMMISSION != 0 || ASSETCHAINS_PUBLIC != 0 || ASSETCHAINS_PRIVATE != 0 || ASSETCHAINS_TXPOW != 0 || ASSETCHAINS_FOUNDERS != 0 || ASSETCHAINS_SCRIPTPUB.size() > 1 || ASSETCHAINS_SELFIMPORT.size() > 0 || ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 || ASSETCHAINS_TIMELOCKGTE != _ASSETCHAINS_TIMELOCKOFF|| ASSETCHAINS_ALGO != ASSETCHAINS_EQUIHASH || ASSETCHAINS_LWMAPOS != 0 || ASSETCHAINS_LASTERA > 0 )
         {
             fprintf(stderr,"perc %.4f%% ac_pub=[%02x%02x%02x...] acsize.%d\n",dstr(ASSETCHAINS_COMMISSION)*100,ASSETCHAINS_OVERRIDE_PUBKEY33[0],ASSETCHAINS_OVERRIDE_PUBKEY33[1],ASSETCHAINS_OVERRIDE_PUBKEY33[2],(int32_t)ASSETCHAINS_SCRIPTPUB.size());
             extraptr = extrabuf;
@@ -1888,6 +1924,14 @@ void komodo_args(char *argv0)
                 extralen += ASSETCHAINS_SCRIPTPUB.size()/2;
                 //extralen += iguana_rwnum(1,&extraptr[extralen],(int32_t)ASSETCHAINS_SCRIPTPUB.size(),(void *)ASSETCHAINS_SCRIPTPUB.c_str());
                 fprintf(stderr,"append ac_script %s\n",ASSETCHAINS_SCRIPTPUB.c_str());
+            }
+            if ( ASSETCHAINS_SELFIMPORT.size() > 0 )
+            {
+                memcpy(&extraptr[extralen],(char *)ASSETCHAINS_SELFIMPORT.c_str(),ASSETCHAINS_SELFIMPORT.size());
+                for (i=0; i<ASSETCHAINS_SELFIMPORT.size(); i++)
+                    fprintf(stderr,"%c",extraptr[extralen+i]);
+                fprintf(stderr," selfimport\n");
+                extralen += ASSETCHAINS_SELFIMPORT.size();
             }
         }
 
@@ -2013,7 +2057,7 @@ void komodo_args(char *argv0)
         if ( strcmp("PIRATE",ASSETCHAINS_SYMBOL) == 0 && ASSETCHAINS_HALVING[0] == 77777 )
         {
             ASSETCHAINS_HALVING[0] *= 5;
-            fprintf(stderr,"PIRATE halving changed to %d %.1f days\n",(int32_t)ASSETCHAINS_HALVING[0],(double)ASSETCHAINS_HALVING[0]/1440);
+            fprintf(stderr,"PIRATE halving changed to %d %.1f days ASSETCHAINS_LASTERA.%d\n",(int32_t)ASSETCHAINS_HALVING[0],(double)ASSETCHAINS_HALVING[0]/1440,ASSETCHAINS_LASTERA);
         }
         else if ( strcmp("VRSC",ASSETCHAINS_SYMBOL) == 0 )
             dpowconfs = 0;
