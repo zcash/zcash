@@ -290,8 +290,6 @@ UniValue selfimport(const UniValue& params, bool fHelp)
         throw std::runtime_error("Failed validating selfimport");
     burnOut = MakeBurnOutput(burnAmount,0xffffffff,ASSETCHAINS_SELFIMPORT,burnTx.vout);
     mtx = MakeImportCoinTransaction(proof,burnTx,burnTx.vout);
-    mtx.vout.clear();
-    mtx.vout.push_back(burnOut);
     return HexStr(E_MARSHAL(ss << mtx));
 }
 
