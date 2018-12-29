@@ -107,7 +107,7 @@ void AddImportTombstone(const CTransaction &importTx, CCoinsViewCache &inputs, i
     uint256 burnHash = importTx.vin[0].prevout.hash;
     CCoinsModifier modifier = inputs.ModifyCoins(burnHash);
     modifier->nHeight = nHeight;
-    modifier->nVersion = 1;
+    modifier->nVersion = 4;
     modifier->vout.push_back(CTxOut(0, CScript() << OP_0));
 }
 
