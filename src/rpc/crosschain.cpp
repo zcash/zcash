@@ -31,6 +31,10 @@ int32_t komodo_MoMoMdata(char *hexstr,int32_t hexsize,struct komodo_ccdataMoMoM 
 struct komodo_ccdata_entry *komodo_allMoMs(int32_t *nump,uint256 *MoMoMp,int32_t kmdstarti,int32_t kmdendi);
 uint256 komodo_calcMoM(int32_t height,int32_t MoMdepth);
 extern std::string ASSETCHAINS_SELFIMPORT;
+int komodo_nextheight();
+uint256 Parseuint256(char *hexstr);
+int32_t GetSelfimportProof(TxProof &proof,CTransaction burnTx,uint256 hash);
+
 
 UniValue assetchainproof(const UniValue& params, bool fHelp)
 {
