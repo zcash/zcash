@@ -104,6 +104,7 @@ bool VerifyCoinImport(const CScript& scriptSig, TransactionSignatureChecker& che
 void AddImportTombstone(const CTransaction &importTx, CCoinsViewCache &inputs, int nHeight)
 {
     uint256 burnHash = importTx.vin[0].prevout.hash;
+    fprintf(stderr,"add tombstone.(%s)\n",burnHash.GetHex());
     CCoinsModifier modifier = inputs.ModifyCoins(burnHash);
     modifier->nHeight = nHeight;
     modifier->nVersion = 4;//1;
@@ -121,5 +122,6 @@ void RemoveImportTombstone(const CTransaction &importTx, CCoinsViewCache &inputs
 int ExistsImportTombstone(const CTransaction &importTx, const CCoinsViewCache &inputs)
 {
     uint256 burnHash = importTx.vin[0].prevout.hash;
+    fprintf(stderr,"check tombstone.(%s)\n",burnHash.GetHex());
     return inputs.HaveCoins(burnHash);
 }
