@@ -178,6 +178,12 @@ static void RegisterLoad(const std::string& strInput)
 }
 
 
+int32_t komodo_nextheight()
+{
+    return(100000000);
+}
+
+
 // Set default values of new CMutableTransaction based on consensus rules at given height.
 CMutableTransaction CreateNewContextualCMutableTransaction(const Consensus::Params& consensusParams, int nHeight)
 {
