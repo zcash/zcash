@@ -10,7 +10,7 @@
 CTransaction MakeImportCoinTransaction(const TxProof proof, const CTransaction burnTx, const std::vector<CTxOut> payouts)
 {
     std::vector<uint8_t> payload = E_MARSHAL(ss << EVAL_IMPORTCOIN);
-    CMutableTransaction mtx;
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     mtx.vin.push_back(CTxIn(COutPoint(burnTx.GetHash(), 10e8), CScript() << payload));
     mtx.vout = payouts;
     auto importData = E_MARSHAL(ss << proof; ss << burnTx);
@@ -47,7 +47,7 @@ bool UnmarshalBurnTx(const CTransaction &burnTx, std::string &targetSymbol, uint
     if (burnTx.vout.size() == 0) return false;
     GetOpReturnData(burnTx.vout.back().scriptPubKey, burnOpret);
     return E_UNMARSHAL(burnOpret, ss >> VARINT(*targetCCid);
-                                  ss >> targetSymbol; 
+                                  ss >> targetSymbol;
                                   ss >> payoutsHash);
 }
 
@@ -76,7 +76,7 @@ bool VerifyCoinImport(const CScript& scriptSig, TransactionSignatureChecker& che
     auto pc = scriptSig.begin();
     opcodetype opcode;
     std::vector<uint8_t> evalScript;
-    
+
     auto f = [&] () {
         if (!scriptSig.GetOp(pc, opcode, evalScript))
             return false;
