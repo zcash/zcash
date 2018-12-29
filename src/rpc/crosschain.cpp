@@ -281,12 +281,16 @@ UniValue selfimport(const UniValue& params, bool fHelp)
     
     if ( GetTransaction(txid,burnTx,blockHash,false) == 0 )
         throw runtime_error("selfimport couldnt find txid");
+    burnOut = MakeBurnOutput(burnAmount,0xffffffff,ASSETCHAINS_SELFIMPORT,burnTx.vout);
     savevout = burnTx.vout[0];
     mtx = burnTx;
-    mtx.vin.clear();
+    mtx.vout.clear();
+    mtx.vout.push_back(burnOut);
     burnTx = mtx;
-    if ( GetSelfimportProof(proof,burnTx,txid) < 0 )
+    if ( GetSelfimportProof(proof,burnTx,burnTx.GetHash()) < 0 )
         throw std::runtime_error("Failed validating selfimport");
+    if ( GetTransaction(txid,burnTx,blockHash,false) == 0 )
+        throw runtime_error("selfimport couldnt find txid");
     burnOut = MakeBurnOutput(burnAmount,0xffffffff,ASSETCHAINS_SELFIMPORT,burnTx.vout);
     mtx = MakeImportCoinTransaction(proof,burnTx,burnTx.vout);
     mtx.vout[1] = savevout;
