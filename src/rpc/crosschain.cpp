@@ -282,7 +282,12 @@ UniValue selfimport(const UniValue& params, bool fHelp)
     if ( GetTransaction(txid,burnTx,blockHash,false) == 0 )
         throw runtime_error("selfimport couldnt find txid");
     savevout = burnTx.vout[0];
-    vouts = burnTx.vout;
+    mtx = burnTx;
+    mtx.vout.clear();
+    mtx.vout.resize(1);
+    mtx.vout[0] = savevout;
+    mtx.vout[0].nValue = burnValue;
+    vouts = mtx.vout;
     burnOut = MakeBurnOutput(burnAmount,0xffffffff,ASSETCHAINS_SELFIMPORT,vouts);
     mtx = burnTx;
     mtx.vout.clear();
