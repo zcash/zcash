@@ -919,8 +919,13 @@ DBErrors CWalletDB::LoadWallet(CWallet* pwallet)
                     // Leave other errors alone, if we try to fix them we might make things worse.
                     fNoncriticalErrors = true; // ... but do warn the user there is something wrong.
                     if (strType == "tx" )
+                    {
                         // Rescan if there is a bad transaction record..
-                        SoftSetBoolArg("-rescan", true);
+                        //SoftSetBoolArg("-rescan", true);
+                        uint256 hash;
+                        ssKey >> hash;
+                        fprintf(stderr, "TX corrupted hash: %s\n", hash.ToString().c_str());
+                    }
                 }
             }
             if (!strErr.empty())
