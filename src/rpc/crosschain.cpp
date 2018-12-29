@@ -286,7 +286,7 @@ UniValue selfimport(const UniValue& params, bool fHelp)
     mtx.vout.clear();
     mtx.vout.resize(1);
     mtx.vout[0] = savevout;
-    mtx.vout[0].nValue = burnValue;
+    mtx.vout[0].nValue = burnAmount;
     vouts = mtx.vout;
     burnOut = MakeBurnOutput(burnAmount,0xffffffff,ASSETCHAINS_SELFIMPORT,vouts);
     mtx = burnTx;
