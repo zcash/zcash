@@ -6,6 +6,7 @@
 #include "script/cc.h"
 #include "primitives/transaction.h"
 
+int32_t komodo_nextheight();
 
 CTransaction MakeImportCoinTransaction(const TxProof proof, const CTransaction burnTx, const std::vector<CTxOut> payouts)
 {
