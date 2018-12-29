@@ -290,12 +290,11 @@ UniValue selfimport(const UniValue& params, bool fHelp)
     burnTx = mtx;
     if ( GetSelfimportProof(proof,burnTx,burnTx.GetHash()) < 0 )
         throw std::runtime_error("Failed validating selfimport");
-    mtx.clear();
-    mtx = MakeImportCoinTransaction(proof,burnTx,vouts);
+    //mtx = MakeImportCoinTransaction(proof,burnTx,vouts);
     //mtx.vout.resize(2);
     //mtx.vout[1] = savevout;
     //mtx.vout[1].nValue = burnAmount;
-    return HexStr(E_MARSHAL(ss << mtx));
+    return HexStr(E_MARSHAL(ss << MakeImportCoinTransaction(proof,burnTx,vouts)));
 }
 
 UniValue getNotarisationsForBlock(const UniValue& params, bool fHelp)
