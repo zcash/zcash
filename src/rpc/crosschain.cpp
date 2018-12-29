@@ -278,7 +278,8 @@ UniValue selfimport(const UniValue& params, bool fHelp)
                             "creates signed selfimport transaction from txid");
     txid = Parseuint256((char *)params[0].get_str().c_str());
     burnAmount = atof(params[1].get_str().c_str()) * COIN + 0.00000000499999;
-    
+    // txid is just used to specify the import recv address
+    // in reality it would be rawtx from the other chain
     if ( GetTransaction(txid,burnTx,blockHash,false) == 0 )
         throw runtime_error("selfimport couldnt find txid");
     savevout = burnTx.vout[0];
