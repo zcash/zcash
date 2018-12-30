@@ -145,7 +145,7 @@ UniValue calc_MoM(const UniValue& params, bool fHelp)
 
 UniValue migrate_converttoexport(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() != 3 || params.size() != 2)
+    if (fHelp || params.size() != 2)
         throw runtime_error(
             "migrate_converttoexport rawTx dest_symbol\n"
             "\nConvert a raw transaction to a cross-chain export.\n"
