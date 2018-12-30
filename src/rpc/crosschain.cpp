@@ -145,9 +145,9 @@ UniValue calc_MoM(const UniValue& params, bool fHelp)
 
 UniValue migrate_converttoexport(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() != 3)
+    if (fHelp || params.size() != 3 || params.size() != 2)
         throw runtime_error(
-            "migrate_converttoexport rawTx dest_symbol export_amount\n"
+            "migrate_converttoexport rawTx dest_symbol\n"
             "\nConvert a raw transaction to a cross-chain export.\n"
             "If neccesary, the transaction should be funded using fundrawtransaction.\n"
             "Finally, the transaction should be signed using signrawtransaction\n"
@@ -174,17 +174,13 @@ UniValue migrate_converttoexport(const UniValue& params, bool fHelp)
     if (strcmp(ASSETCHAINS_SYMBOL,targetSymbol.c_str()) == 0)
         throw runtime_error("cant send a coin to the same chain");
 
-    CAmount burnAmount = AmountFromValue(params[2]);
+    CAmount burnAmount = 0;
+    
+    for (int i=0; i<tx.vout.size(); i++) burnAmount += tx.vout[i].nValue;
     if (burnAmount <= 0)
-        throw JSONRPCError(RPC_TYPE_ERROR, "Invalid amount for export");
+        throw JSONRPCError(RPC_TYPE_ERROR, "Cannot export a negative or zero value.");
     if (burnAmount > 1000000LL*COIN)
-        throw JSONRPCError(RPC_TYPE_ERROR, "Invalid amount for export, cannot export more than 1 million coins per export.");
-    {
-        CAmount needed = 0;
-        for (int i=0; i<tx.vout.size(); i++) needed += tx.vout[i].nValue;
-        if (burnAmount < needed)
-            throw runtime_error("export_amount too small");
-    }
+        throw JSONRPCError(RPC_TYPE_ERROR, "Cannot export more than 1 million coins per export.");
 
     CTxOut burnOut = MakeBurnOutput(burnAmount, ASSETCHAINS_CC, targetSymbol, tx.vout);
     UniValue ret(UniValue::VOBJ);
