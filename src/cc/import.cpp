@@ -32,8 +32,10 @@
 extern std::string ASSETCHAINS_SELFIMPORT;
 extern uint16_t ASSETCHAINS_CODAPORT,ASSETCHAINS_BEAMPORT;
 int32_t komodo_nextheight();
+bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock);
+uint8_t ASSETCHAINS_OVERRIDE_PUBKEY33[33];
 
-int32_t GetSelfimportProof(CMutableTransaction &mtx,CScript &scriptPubKey,TxProof &proof,uint64_t burnAmount,std::vector<uint8_t> rawtx,uint256 hash,std::vector<uint8_t> rawproof) // find burnTx with hash from "other" daemon
+int32_t GetSelfimportProof(CMutableTransaction &mtx,CScript &scriptPubKey,TxProof &proof,uint64_t burnAmount,std::vector<uint8_t> rawtx,uint256 txid,std::vector<uint8_t> rawproof) // find burnTx with hash from "other" daemon
 {
     MerkleBranch newBranch; CMutableTransaction &tmpmtx; CTransaction tx,vintx; uint256 blockHash; char destaddr[64],pkaddr[64];
     tmpmtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(),komodo_nextheight());
@@ -53,10 +55,10 @@ int32_t GetSelfimportProof(CMutableTransaction &mtx,CScript &scriptPubKey,TxProo
             return(-1);
         scriptPubKey = tx.vout[0].scriptPubKey;
         mtx = tx;
-        mtx.fOverwintered = tmptx.fOverwintered;
-        mtx.nExpiryHeight = tmptx.nExpiryHeight;
-        mtx.nVersionGroupId = tmptx.nVersionGroupId;
-        mtx.nVersion = tmptx.nVersion;
+        mtx.fOverwintered = tmpmtx.fOverwintered;
+        mtx.nExpiryHeight = tmpmtx.nExpiryHeight;
+        mtx.nVersionGroupId = tmpmtx.nVersionGroupId;
+        mtx.nVersion = tmpmtx.nVersion;
         mtx.vout.clear();
         mtx.vout.resize(1);
         mtx.vout[0].nValue = burnAmount;
@@ -66,9 +68,9 @@ int32_t GetSelfimportProof(CMutableTransaction &mtx,CScript &scriptPubKey,TxProo
         if ( ASSETCHAINS_SELFIMPORT == "PUBKEY" )
         {
             // make sure vin0 is signed by ASSETCHAINS_OVERRIDE_PUBKEY33
-            if ( GetTransaction(tx.vin[0].prevout,vintx,blockHash,false) == 0 )
+            if ( myGetTransaction(tx.vin[0].prevout,vintx,blockHash) == 0 )
                 return(-1);
-            if ( tx.vin[0].prevn < vintx.vout.size() && Getscriptaddress(destaddr,vintx.vout[tx.vin[0].prevn].scriptPubKey) != 0 )
+            if ( tx.vin[0].n < vintx.vout.size() && Getscriptaddress(destaddr,vintx.vout[tx.vin[0].n].scriptPubKey) != 0 )
             {
                 pubkey2addr(pkaddr,ASSETCHAINS_OVERRIDE_PUBKEY33.data());
                 if ( strcmp(pkaddr,destaddr) == 0 )
@@ -76,7 +78,7 @@ int32_t GetSelfimportProof(CMutableTransaction &mtx,CScript &scriptPubKey,TxProo
                     proof = std::make_pair(txid,newBranch);
                     return(0);
                 }
-                fprintf(stderr,"vin0[%d] -> %s vs %s\n",tx.vin[0].prevn,destaddr,pkaddr);
+                fprintf(stderr,"vin0[%d] -> %s vs %s\n",tx.vin[0].n,destaddr,pkaddr);
             }
             return(-1);
         }
