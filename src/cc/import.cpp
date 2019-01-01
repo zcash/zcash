@@ -31,11 +31,7 @@
 
 extern std::string ASSETCHAINS_SELFIMPORT;
 extern uint16_t ASSETCHAINS_CODAPORT,ASSETCHAINS_BEAMPORT;
-//int32_t komodo_nextheight();
-//bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock);
-uint8_t ASSETCHAINS_OVERRIDE_PUBKEY33[33];
-//CMutableTransaction CreateNewContextualCMutableTransaction(const Consensus::Params& consensusParams, int nHeight);
-//bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey);
+extern uint8_t ASSETCHAINS_OVERRIDE_PUBKEY33[33];
 
 int32_t GetSelfimportProof(CMutableTransaction &mtx,CScript &scriptPubKey,TxProof &proof,uint64_t burnAmount,std::vector<uint8_t> rawtx,uint256 txid,std::vector<uint8_t> rawproof) // find burnTx with hash from "other" daemon
 {
