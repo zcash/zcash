@@ -1,3 +1,18 @@
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 #include "amount.h"
 #include "chain.h"
 #include "chainparams.h"
@@ -279,7 +294,7 @@ UniValue selfimport(const UniValue& params, bool fHelp)
     txid = Parseuint256((char *)params[0].get_str().c_str());
     burnAmount = atof(params[1].get_str().c_str()) * COIN + 0.00000000499999;
     // txid is just used to specify the import recv address
-    // in reality it would be rawtx from the other chain
+    // in reality it would be rawtx from the other chain and maybe better to specify address
     if ( GetTransaction(txid,tx,blockHash,false) == 0 )
         throw runtime_error("selfimport couldnt find txid");
     savevout = tx.vout[0];
