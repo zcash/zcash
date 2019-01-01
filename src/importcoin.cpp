@@ -1,3 +1,18 @@
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 #include "crosschain.h"
 #include "importcoin.h"
 #include "cc/utils.h"
@@ -104,6 +119,7 @@ bool VerifyCoinImport(const CScript& scriptSig, TransactionSignatureChecker& che
 void AddImportTombstone(const CTransaction &importTx, CCoinsViewCache &inputs, int nHeight)
 {
     uint256 burnHash = importTx.vin[0].prevout.hash;
+    //fprintf(stderr,"add tombstone.(%s)\n",burnHash.GetHex().c_str());
     CCoinsModifier modifier = inputs.ModifyCoins(burnHash);
     modifier->nHeight = nHeight;
     modifier->nVersion = 4;//1;
@@ -114,6 +130,7 @@ void AddImportTombstone(const CTransaction &importTx, CCoinsViewCache &inputs, i
 void RemoveImportTombstone(const CTransaction &importTx, CCoinsViewCache &inputs)
 {
     uint256 burnHash = importTx.vin[0].prevout.hash;
+    //fprintf(stderr,"remove tombstone.(%s)\n",burnHash.GetHex().c_str());
     inputs.ModifyCoins(burnHash)->Clear();
 }
 
@@ -121,5 +138,6 @@ void RemoveImportTombstone(const CTransaction &importTx, CCoinsViewCache &inputs
 int ExistsImportTombstone(const CTransaction &importTx, const CCoinsViewCache &inputs)
 {
     uint256 burnHash = importTx.vin[0].prevout.hash;
+    //fprintf(stderr,"check tombstone.(%s) in %s\n",burnHash.GetHex().c_str(),importTx.GetHash().GetHex().c_str());
     return inputs.HaveCoins(burnHash);
 }

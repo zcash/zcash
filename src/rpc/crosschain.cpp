@@ -1,3 +1,18 @@
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 #include "amount.h"
 #include "chain.h"
 #include "chainparams.h"
@@ -270,7 +285,7 @@ UniValue migrate_completeimporttransaction(const UniValue& params, bool fHelp)
 UniValue selfimport(const UniValue& params, bool fHelp)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    TxProof proof; CTransaction burnTx; CTxOut burnOut; uint64_t burnAmount; uint256 txid,blockHash;
+    TxProof proof; CTransaction burnTx,tx; CTxOut burnOut,savevout; uint64_t burnAmount; uint256 txid,blockHash; std::vector<CTxOut> vouts;
     if ( ASSETCHAINS_SELFIMPORT.size() == 0 )
         throw runtime_error("selfimport only works on -ac_import chains");
     if (fHelp || params.size() != 2)
@@ -278,17 +293,25 @@ UniValue selfimport(const UniValue& params, bool fHelp)
                             "creates signed selfimport transaction from txid");
     txid = Parseuint256((char *)params[0].get_str().c_str());
     burnAmount = atof(params[1].get_str().c_str()) * COIN + 0.00000000499999;
-
-    if ( GetTransaction(txid,burnTx,blockHash,false) == 0 )
+    // txid is just used to specify the import recv address
+    // in reality it would be rawtx from the other chain and maybe better to specify address
+    if ( GetTransaction(txid,tx,blockHash,false) == 0 )
         throw runtime_error("selfimport couldnt find txid");
-    if ( GetSelfimportProof(proof,burnTx,txid) < 0 )
-        throw std::runtime_error("Failed validating selfimport");
-    
-    burnOut = MakeBurnOutput(burnAmount,0xffffffff,ASSETCHAINS_SELFIMPORT,burnTx.vout);
-    mtx = MakeImportCoinTransaction(proof,burnTx,burnTx.vout);
+    savevout = tx.vout[0];
+    mtx = tx;
+    mtx.vout.clear();
+    mtx.vout.resize(1);
+    mtx.vout[0] = savevout;
+    mtx.vout[0].nValue = burnAmount;
+    vouts = mtx.vout;
+    burnOut = MakeBurnOutput(burnAmount,0xffffffff,ASSETCHAINS_SELFIMPORT,vouts);
+    mtx = tx;
     mtx.vout.clear();
     mtx.vout.push_back(burnOut);
-    return HexStr(E_MARSHAL(ss << mtx));
+    burnTx = mtx;
+    if ( GetSelfimportProof(proof,tx,txid) < 0 )
+        throw std::runtime_error("Failed validating selfimport");
+    return HexStr(E_MARSHAL(ss << MakeImportCoinTransaction(proof,burnTx,vouts)));
 }
 
 UniValue getNotarisationsForBlock(const UniValue& params, bool fHelp)
