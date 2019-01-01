@@ -44,12 +44,10 @@ int32_t GetSelfimportProof(CMutableTransaction &mtx,CScript &scriptPubKey,TxProo
     if ( ASSETCHAINS_SELFIMPORT == "BEAM" )
     {
         // confirm via ASSETCHAINS_BEAMPORT that burnTx/hash is a valid BEAM burn
-            return(-1);
     }
     else if ( ASSETCHAINS_SELFIMPORT == "CODA" )
     {
         // confirm via ASSETCHAINS_CODAPORT that burnTx/hash is a valid CODA burn
-            return(-1);
     }
     else
     {
@@ -80,19 +78,16 @@ int32_t GetSelfimportProof(CMutableTransaction &mtx,CScript &scriptPubKey,TxProo
                     proof = std::make_pair(txid,newBranch);
                     return(0);
                 }
-                fprintf(stderr,"vin0[%d] -> %s vs %s\n",tx.vin[0].prevout.n,destaddr,pkaddr);
+                fprintf(stderr,"mismatched vin0[%d] -> %s vs %s\n",tx.vin[0].prevout.n,destaddr,pkaddr);
             }
-            return(-1);
         }
         else
         {
             // ASSETCHAINS_SELFIMPORT and external coin is the assetchains symbol in the burnTx OP_RETURN
             // burnAmount, rawtx and rawproof should be enough for gatewaysdeposit equivalent
-            return(-1);
         }
     }
-    else return(-1);
-    return(0);
+    return(-1);
 }
 
 // use proof from the above functions to validate the import
