@@ -18,7 +18,7 @@
 #include "importcoin.h"
 #include "crosschain.h"
 #include "primitives/transaction.h"
-
+#include "cc/CCinclude.h"
 
 /*
  * CC Eval method for import coin.
@@ -31,11 +31,11 @@
 
 extern std::string ASSETCHAINS_SELFIMPORT;
 extern uint16_t ASSETCHAINS_CODAPORT,ASSETCHAINS_BEAMPORT;
-int32_t komodo_nextheight();
-bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock);
+//int32_t komodo_nextheight();
+//bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock);
 uint8_t ASSETCHAINS_OVERRIDE_PUBKEY33[33];
-CMutableTransaction CreateNewContextualCMutableTransaction(const Consensus::Params& consensusParams, int nHeight);
-bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey);
+//CMutableTransaction CreateNewContextualCMutableTransaction(const Consensus::Params& consensusParams, int nHeight);
+//bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey);
 
 int32_t GetSelfimportProof(CMutableTransaction &mtx,CScript &scriptPubKey,TxProof &proof,uint64_t burnAmount,std::vector<uint8_t> rawtx,uint256 txid,std::vector<uint8_t> rawproof) // find burnTx with hash from "other" daemon
 {
@@ -70,11 +70,11 @@ int32_t GetSelfimportProof(CMutableTransaction &mtx,CScript &scriptPubKey,TxProo
         if ( ASSETCHAINS_SELFIMPORT == "PUBKEY" )
         {
             // make sure vin0 is signed by ASSETCHAINS_OVERRIDE_PUBKEY33
-            if ( myGetTransaction(tx.vin[0].prevout,vintx,blockHash) == 0 )
+            if ( myGetTransaction(tx.vin[0].prevhash,vintx,blockHash) == 0 )
                 return(-1);
             if ( tx.vin[0].prevout < vintx.vout.size() && Getscriptaddress(destaddr,vintx.vout[tx.vin[0].prevout].scriptPubKey) != 0 )
             {
-                pubkey2addr(pkaddr,ASSETCHAINS_OVERRIDE_PUBKEY33.data());
+                pubkey2addr(pkaddr,ASSETCHAINS_OVERRIDE_PUBKEY33);
                 if ( strcmp(pkaddr,destaddr) == 0 )
                 {
                     proof = std::make_pair(txid,newBranch);
