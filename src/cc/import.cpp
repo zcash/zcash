@@ -70,9 +70,9 @@ int32_t GetSelfimportProof(CMutableTransaction &mtx,CScript &scriptPubKey,TxProo
         if ( ASSETCHAINS_SELFIMPORT == "PUBKEY" )
         {
             // make sure vin0 is signed by ASSETCHAINS_OVERRIDE_PUBKEY33
-            if ( myGetTransaction(tx.vin[0].prevhash,vintx,blockHash) == 0 )
+            if ( myGetTransaction(tx.vin[0].prevout.hash,vintx,blockHash) == 0 )
                 return(-1);
-            if ( tx.vin[0].prevout < vintx.vout.size() && Getscriptaddress(destaddr,vintx.vout[tx.vin[0].prevout].scriptPubKey) != 0 )
+            if ( tx.vin[0].prevout.n < vintx.vout.size() && Getscriptaddress(destaddr,vintx.vout[tx.vin[0].prevout.n].scriptPubKey) != 0 )
             {
                 pubkey2addr(pkaddr,ASSETCHAINS_OVERRIDE_PUBKEY33);
                 if ( strcmp(pkaddr,destaddr) == 0 )
@@ -80,7 +80,7 @@ int32_t GetSelfimportProof(CMutableTransaction &mtx,CScript &scriptPubKey,TxProo
                     proof = std::make_pair(txid,newBranch);
                     return(0);
                 }
-                fprintf(stderr,"vin0[%d] -> %s vs %s\n",tx.vin[0].prevout,destaddr,pkaddr);
+                fprintf(stderr,"vin0[%d] -> %s vs %s\n",tx.vin[0].prevout.n,destaddr,pkaddr);
             }
             return(-1);
         }
@@ -118,7 +118,7 @@ int32_t CheckGATEWAYimport(std::string coin,TxProof proof,CTransaction burnTx,st
 int32_t CheckPUBKEYimport(TxProof proof,CTransaction burnTx,std::vector<CTxOut> payouts)
 {
     // if burnTx has ASSETCHAINS_PUBKEY vin, it is valid return(0);
-    fprintf(stderr,"proof txid.%s\n",proof.first.GetHex().ToString().c_str());
+    fprintf(stderr,"proof txid.%s\n",proof.first.GetHex().c_str());
     return(0);
     return(-1);
 }
