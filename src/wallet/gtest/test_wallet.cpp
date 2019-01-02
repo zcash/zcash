@@ -1559,6 +1559,14 @@ TEST(WalletTests, WriteWitnessCache) {
     wallet.AddSproutSpendingKey(sk);
 
     auto wtx = GetValidReceive(sk, 10, true);
+    auto note = GetNote(sk, wtx, 0, 1);
+    auto nullifier = note.nullifier(sk);
+
+    mapSproutNoteData_t noteData;
+    JSOutPoint jsoutpt {wtx.GetHash(), 0, 1};
+    SproutNoteData nd {sk.address(), nullifier};
+    noteData[jsoutpt] = nd;
+    wtx.SetSproutNoteData(noteData);
     wallet.AddToWallet(wtx, true, NULL);
 
     // TxnBegin fails
