@@ -370,7 +370,7 @@ int32_t oracle_format(uint256 *hashp,int64_t *valp,char *str,uint8_t fmt,uint8_t
             {
                 for (i=0; i<dlen; i++)
                     sprintf(&str[i<<1],"%02x",data[offset++]);
-                str[i] = 0;
+                str[i<<1] = 0;
             } else return(-1);
         }
     }
