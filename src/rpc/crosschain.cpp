@@ -47,7 +47,7 @@ struct komodo_ccdata_entry *komodo_allMoMs(int32_t *nump,uint256 *MoMoMp,int32_t
 uint256 komodo_calcMoM(int32_t height,int32_t MoMdepth);
 extern std::string ASSETCHAINS_SELFIMPORT;
 uint256 Parseuint256(char *hexstr);
-int32_t GetSelfimportProof(CMutableTransaction &mtx,CScript &scriptPubKey,TxProof &proof,uint64_t burnAmount,std::vector<uint8_t> rawtx,uint256 txid,std::vector<uint8_t> rawproof);
+int32_t GetSelfimportProof(std::string source,CMutableTransaction &mtx,CScript &scriptPubKey,TxProof &proof,uint64_t burnAmount,std::vector<uint8_t> rawtx,uint256 txid,std::vector<uint8_t> rawproof);
 
 
 UniValue assetchainproof(const UniValue& params, bool fHelp)
@@ -199,8 +199,8 @@ UniValue migrate_converttoexport(const UniValue& params, bool fHelp)
         if (burnAmount < needed)
             throw runtime_error("export_amount too small");
     }
-    if ( ASSETCHAINS_SELFIMPORT.size() > 0 )
-        throw runtime_error("self-import chains cant be fungible");
+    //if ( ASSETCHAINS_SELFIMPORT.size() > 0 )
+    //    throw runtime_error("self-import chains cant be fungible");
     CTxOut burnOut = MakeBurnOutput(burnAmount, ccid, targetSymbol, tx.vout);
     UniValue ret(UniValue::VOBJ);
     ret.push_back(Pair("payouts", HexStr(E_MARSHAL(ss << tx.vout))));
@@ -278,18 +278,23 @@ UniValue migrate_completeimporttransaction(const UniValue& params, bool fHelp)
 UniValue selfimport(const UniValue& params, bool fHelp)
 {
     CMutableTransaction mtx;
-    TxProof proof; CTransaction burnTx,tx; CTxOut burnOut; uint64_t burnAmount; uint256 txid,blockHash; std::vector<CTxOut> vouts; std::vector<uint8_t> rawtx,rawproof; CScript scriptPubKey;
+    std::string source; TxProof proof; CTransaction burnTx,tx; CTxOut burnOut; uint64_t burnAmount; uint256 txid,blockHash; std::vector<CTxOut> vouts; std::vector<uint8_t> rawtx,rawproof; CScript scriptPubKey;
     if ( ASSETCHAINS_SELFIMPORT.size() == 0 )
         throw runtime_error("selfimport only works on -ac_import chains");
-    if (fHelp || params.size() < 3 || params.size() > 4)
-        throw runtime_error("selfimport rawtx txid burnamount\n\n"
+    if (fHelp || params.size() < 3 || params.size() > 5 )
+        throw runtime_error("selfimport rawtx txid burnamount [rawproof source]\n\n"
                             "creates signed selfimport transaction from txid");
     rawtx = ParseHex(params[0].get_str().c_str());
     txid = Parseuint256((char *)params[1].get_str().c_str()); // allow for txid != hash(rawtx)
     burnAmount = atof(params[2].get_str().c_str()) * COIN + 0.00000000499999;
-    if ( params.size() == 4 )
+    source = ASSETCHAINS_SELFIMPORT;
+    if ( params.size() >= 4 )
+    {
         rawproof = ParseHex(params[3].get_str().c_str());
-    if ( GetSelfimportProof(mtx,scriptPubKey,proof,burnAmount,rawtx,txid,rawproof) < 0 )
+        if ( params.size() == 5 )
+            source = params[4].get_str();
+    }
+    if ( GetSelfimportProof(source,mtx,scriptPubKey,proof,burnAmount,rawtx,txid,rawproof) < 0 )
         throw std::runtime_error("Failed validating selfimport");
     vouts = mtx.vout;
     burnOut = MakeBurnOutput(burnAmount,0xffffffff,ASSETCHAINS_SELFIMPORT,vouts);

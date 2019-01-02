@@ -33,17 +33,23 @@ extern std::string ASSETCHAINS_SELFIMPORT;
 extern uint16_t ASSETCHAINS_CODAPORT,ASSETCHAINS_BEAMPORT;
 extern uint8_t ASSETCHAINS_OVERRIDE_PUBKEY33[33];
 
-int32_t GetSelfimportProof(CMutableTransaction &mtx,CScript &scriptPubKey,TxProof &proof,uint64_t burnAmount,std::vector<uint8_t> rawtx,uint256 txid,std::vector<uint8_t> rawproof) // find burnTx with hash from "other" daemon
+int32_t GetSelfimportProof(std::string source,CMutableTransaction &mtx,CScript &scriptPubKey,TxProof &proof,uint64_t burnAmount,std::vector<uint8_t> rawtx,uint256 txid,std::vector<uint8_t> &rawproof) // find burnTx with hash from "other" daemon
 {
     MerkleBranch newBranch; CMutableTransaction tmpmtx; CTransaction tx,vintx; uint256 blockHash; char destaddr[64],pkaddr[64];
     tmpmtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(),komodo_nextheight());
-    if ( ASSETCHAINS_SELFIMPORT == "BEAM" )
+    if ( source == "BEAM" )
     {
+        if ( ASSETCHAINS_BEAMPORT == 0 )
+            return(-1);
         // confirm via ASSETCHAINS_BEAMPORT that burnTx/hash is a valid BEAM burn
+        // return(0);
     }
-    else if ( ASSETCHAINS_SELFIMPORT == "CODA" )
+    else if ( source == "CODA" )
     {
+        if ( ASSETCHAINS_CODAPORT == 0 )
+            return(-1);
         // confirm via ASSETCHAINS_CODAPORT that burnTx/hash is a valid CODA burn
+        // return(0);
     }
     else
     {
@@ -61,7 +67,7 @@ int32_t GetSelfimportProof(CMutableTransaction &mtx,CScript &scriptPubKey,TxProo
         mtx.vout[0].scriptPubKey = scriptPubKey;
         if ( tx.GetHash() != txid )
             return(-1);
-        if ( ASSETCHAINS_SELFIMPORT == "PUBKEY" )
+        if ( source == "PUBKEY" )
         {
             // make sure vin0 is signed by ASSETCHAINS_OVERRIDE_PUBKEY33
             if ( myGetTransaction(tx.vin[0].prevout.hash,vintx,blockHash) == 0 )
@@ -77,9 +83,9 @@ int32_t GetSelfimportProof(CMutableTransaction &mtx,CScript &scriptPubKey,TxProo
                 fprintf(stderr,"mismatched vin0[%d] -> %s vs %s\n",tx.vin[0].prevout.n,destaddr,pkaddr);
             }
         }
-        else
+        else if ( source == ASSETCHAINS_SELFIMPORT )
         {
-            // ASSETCHAINS_SELFIMPORT and external coin is the assetchains symbol in the burnTx OP_RETURN
+            // source is external coin is the assetchains symbol in the burnTx OP_RETURN
             // burnAmount, rawtx and rawproof should be enough for gatewaysdeposit equivalent
         }
     }
@@ -88,25 +94,26 @@ int32_t GetSelfimportProof(CMutableTransaction &mtx,CScript &scriptPubKey,TxProo
 
 // use proof from the above functions to validate the import
 
-int32_t CheckBEAMimport(TxProof proof,CTransaction burnTx,std::vector<CTxOut> payouts)
+int32_t CheckBEAMimport(TxProof proof,std::vector<uint8_t> rawproof,CTransaction burnTx,std::vector<CTxOut> payouts)
 {
     // check with dual-BEAM daemon via ASSETCHAINS_BEAMPORT for validity of burnTx
     return(-1);
 }
 
-int32_t CheckCODAimport(TxProof proof,CTransaction burnTx,std::vector<CTxOut> payouts)
+int32_t CheckCODAimport(TxProof proof,std::vector<uint8_t> rawproof,CTransaction burnTx,std::vector<CTxOut> payouts)
 {
     // check with dual-CODA daemon via ASSETCHAINS_CODAPORT for validity of burnTx
     return(-1);
 }
 
-int32_t CheckGATEWAYimport(std::string coin,TxProof proof,CTransaction burnTx,std::vector<CTxOut> payouts)
+int32_t CheckGATEWAYimport(TxProof proof,std::vector<uint8_t> rawproof,CTransaction burnTx,std::vector<CTxOut> payouts)
 {
+    // ASSETCHAINS_SELFIMPORT is coin
     // check for valid burn from external coin blockchain and if valid return(0);
     return(-1);
 }
 
-int32_t CheckPUBKEYimport(TxProof proof,CTransaction burnTx,std::vector<CTxOut> payouts)
+int32_t CheckPUBKEYimport(TxProof proof,std::vector<uint8_t> rawproof,CTransaction burnTx,std::vector<CTxOut> payouts)
 {
     // if burnTx has ASSETCHAINS_PUBKEY vin, it is valid return(0);
     fprintf(stderr,"proof txid.%s\n",proof.first.GetHex().c_str());
@@ -117,19 +124,18 @@ int32_t CheckPUBKEYimport(TxProof proof,CTransaction burnTx,std::vector<CTxOut> 
 bool Eval::ImportCoin(const std::vector<uint8_t> params,const CTransaction &importTx,unsigned int nIn)
 {
     TxProof proof; CTransaction burnTx; std::vector<CTxOut> payouts; uint64_t txfee = 10000;
-    uint32_t targetCcid; std::string targetSymbol; uint256 payoutsHash;
-    if (importTx.vout.size() < 2)
+    uint32_t targetCcid; std::string targetSymbol; uint256 payoutsHash; std::vector<uint8_t> rawproof;
+    if ( importTx.vout.size() < 2 )
         return Invalid("too-few-vouts");
     // params
     if (!UnmarshalImportTx(importTx, proof, burnTx, payouts))
         return Invalid("invalid-params");
-    
     // Control all aspects of this transaction
     // It should not be at all malleable
     if (MakeImportCoinTransaction(proof, burnTx, payouts).GetHash() != importTx.GetHash())
         return Invalid("non-canonical");
     // burn params
-    if (!UnmarshalBurnTx(burnTx, targetSymbol, &targetCcid, payoutsHash))
+    if (!UnmarshalBurnTx(burnTx, targetSymbol, &targetCcid, payoutsHash,rawproof))
         return Invalid("invalid-burn-tx");
     // check burn amount
     {
@@ -156,26 +162,34 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params,const CTransaction &impo
         if (!CheckMoMoM(proof.first, target))
             return Invalid("momom-check-fail");
     }
-    else if ( ASSETCHAINS_SELFIMPORT == targetSymbol ) // various selfchain imports
+    else
     {
-        if ( ASSETCHAINS_SELFIMPORT == "BEAM" )
+        if ( targetSymbol == "BEAM" )
         {
-            if ( CheckBEAMimport(proof,burnTx,payouts) < 0 )
+            if ( ASSETCHAINS_BEAMPORT == 0 )
+                return Invalid("BEAM-import-without-port");
+            else if ( CheckBEAMimport(proof,rawproof,burnTx,payouts) < 0 )
                 return Invalid("BEAM-import-failure");
         }
-        else if ( ASSETCHAINS_SELFIMPORT == "CODA" )
+        else if ( targetSymbol == "CODA" )
         {
-            if ( CheckCODAimport(proof,burnTx,payouts) < 0 )
+            if ( ASSETCHAINS_CODAPORT == 0 )
+                return Invalid("CODA-import-without-port");
+            else if ( CheckCODAimport(proof,rawproof,burnTx,payouts) < 0 )
                 return Invalid("CODA-import-failure");
         }
-        else if ( ASSETCHAINS_SELFIMPORT == "PUBKEY" )
+        else if ( targetSymbol == "PUBKEY" )
         {
-            if ( CheckPUBKEYimport(proof,burnTx,payouts) < 0 )
+            if ( ASSETCHAINS_SELFIMPORT != "PUBKEY" )
+                return Invalid("PUBKEY-import-when-notPUBKEY");
+            else if ( CheckPUBKEYimport(proof,rawproof,burnTx,payouts) < 0 )
                 return Invalid("PUBKEY-import-failure");
         }
         else
         {
-            if ( CheckGATEWAYimport(targetSymbol,proof,burnTx,payouts) < 0 )
+            if ( targetSymbol != ASSETCHAINS_SELFIMPORT )
+                return Invalid("invalid-gateway-import-coin");
+            else if ( CheckGATEWAYimport(proof,rawproof,burnTx,payouts) < 0 )
                 return Invalid("GATEWAY-import-failure");
         }
     }

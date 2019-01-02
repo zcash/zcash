@@ -38,11 +38,22 @@ CTransaction MakeImportCoinTransaction(const TxProof proof, const CTransaction b
 }
 
 
-CTxOut MakeBurnOutput(CAmount value, uint32_t targetCCid, std::string targetSymbol, const std::vector<CTxOut> payouts)
+CTxOut MakeBurnOutput(CAmount value, uint32_t targetCCid, std::string targetSymbol, const std::vector<CTxOut> payouts,std::vector<uint8_t> rawproof)
 {
-    std::vector<uint8_t> opret = E_MARSHAL(ss << VARINT(targetCCid);
-                                           ss << targetSymbol;
-                                           ss << SerializeHash(payouts));
+    std::vector<uint8_t> opret;
+    if ( targetCCid != 0xffffffff )
+    {
+        opret = E_MARSHAL(ss << VARINT(targetCCid);
+                          ss << targetSymbol;
+                          ss << SerializeHash(payouts));
+    }
+    else
+    {
+        opret = E_MARSHAL(ss << VARINT(targetCCid);
+                          ss << targetSymbol;
+                          ss << SerializeHash(payouts);
+                          ss << rawproof);
+    }
     return CTxOut(value, CScript() << OP_RETURN << opret);
 }
 
@@ -60,14 +71,25 @@ bool UnmarshalImportTx(const CTransaction &importTx, TxProof &proof, CTransactio
 }
 
 
-bool UnmarshalBurnTx(const CTransaction &burnTx, std::string &targetSymbol, uint32_t *targetCCid, uint256 &payoutsHash)
+bool UnmarshalBurnTx(const CTransaction &burnTx, std::string &targetSymbol, uint32_t *targetCCid, uint256 &payoutsHash,std::vector<uint8_t>&rawproof)
 {
-    std::vector<uint8_t> burnOpret;
+    std::vector<uint8_t> burnOpret; uint32_t ccid = 0;
     if (burnTx.vout.size() == 0) return false;
     GetOpReturnData(burnTx.vout.back().scriptPubKey, burnOpret);
-    return E_UNMARSHAL(burnOpret, ss >> VARINT(*targetCCid);
-                                  ss >> targetSymbol; 
-                                  ss >> payoutsHash);
+    E_UNMARSHAL(burnOpret, ss >> VARINT(ccid));
+    if ( ccid != 0xffffffff )
+    {
+        return E_UNMARSHAL(burnOpret, ss >> VARINT(*targetCCid);
+                                    ss >> targetSymbol;
+                                    ss >> payoutsHash);
+    }
+    else
+    {
+        return E_UNMARSHAL(burnOpret, ss >> VARINT(*targetCCid);
+                           ss >> targetSymbol;
+                           ss >> payoutsHash;
+                           ss >> rawproof);
+    }
 }
 
 
