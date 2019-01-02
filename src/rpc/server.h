@@ -3,6 +3,21 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 #ifndef BITCOIN_RPCSERVER_H
 #define BITCOIN_RPCSERVER_H
 
@@ -395,6 +410,7 @@ extern UniValue getchaintips(const UniValue& params, bool fHelp);
 extern UniValue invalidateblock(const UniValue& params, bool fHelp);
 extern UniValue reconsiderblock(const UniValue& params, bool fHelp);
 extern UniValue getspentinfo(const UniValue& params, bool fHelp);
+extern UniValue selfimport(const UniValue& params, bool fHelp);
 
 extern UniValue getblocksubsidy(const UniValue& params, bool fHelp);
 
@@ -426,6 +442,7 @@ extern UniValue assetchainproof(const UniValue& params, bool fHelp);
 extern UniValue crosschainproof(const UniValue& params, bool fHelp);
 extern UniValue getNotarisationsForBlock(const UniValue& params, bool fHelp);
 extern UniValue scanNotarisationsDB(const UniValue& params, bool fHelp);
+extern UniValue getimports(const UniValue& params, bool fHelp);
 extern UniValue migrate_converttoexport(const UniValue& params, bool fHelp);
 extern UniValue migrate_createimporttransaction(const UniValue& params, bool fHelp);
 extern UniValue migrate_completeimporttransaction(const UniValue& params, bool fHelp);

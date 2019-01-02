@@ -3,6 +3,21 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 #include "wallet/walletdb.h"
 
 #include "consensus/validation.h"
@@ -859,7 +874,7 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
 
 static bool IsKeyType(string strType)
 {
-    return (strType== "key" || strType == "wkey" ||
+    return (strType == "key" || strType == "wkey" ||
             strType == "hdseed" || strType == "chdseed" ||
             strType == "zkey" || strType == "czkey" ||
             strType == "sapzkey" || strType == "csapzkey" ||
@@ -922,9 +937,7 @@ DBErrors CWalletDB::LoadWallet(CWallet* pwallet)
                     {
                         // Rescan if there is a bad transaction record..
                         //SoftSetBoolArg("-rescan", true);
-                        uint256 hash;
-                        ssKey >> hash;
-                        fprintf(stderr, "TX corrupted hash: %s\n", hash.ToString().c_str());
+                        fprintf(stderr, "TX corrupted.. aborted rescan!\n");
                     }
                 }
             }
