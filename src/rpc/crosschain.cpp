@@ -163,7 +163,7 @@ UniValue calc_MoM(const UniValue& params, bool fHelp)
 
 UniValue migrate_converttoexport(const UniValue& params, bool fHelp)
 {
-    uint32_t ccid = ASSETCHAINS_CC;
+    std::vector<uint8_t> rawproof; uint32_t ccid = ASSETCHAINS_CC;
     if (fHelp || params.size() != 3)
         throw runtime_error(
             "migrate_converttoexport rawTx dest_symbol export_amount\n"
@@ -201,7 +201,7 @@ UniValue migrate_converttoexport(const UniValue& params, bool fHelp)
     }
     //if ( ASSETCHAINS_SELFIMPORT.size() > 0 )
     //    throw runtime_error("self-import chains cant be fungible");
-    CTxOut burnOut = MakeBurnOutput(burnAmount, ccid, targetSymbol, tx.vout);
+    CTxOut burnOut = MakeBurnOutput(burnAmount, ccid, targetSymbol, tx.vout,rawproof);
     UniValue ret(UniValue::VOBJ);
     ret.push_back(Pair("payouts", HexStr(E_MARSHAL(ss << tx.vout))));
     tx.vout.clear();
@@ -297,7 +297,7 @@ UniValue selfimport(const UniValue& params, bool fHelp)
     if ( GetSelfimportProof(source,mtx,scriptPubKey,proof,burnAmount,rawtx,txid,rawproof) < 0 )
         throw std::runtime_error("Failed validating selfimport");
     vouts = mtx.vout;
-    burnOut = MakeBurnOutput(burnAmount,0xffffffff,ASSETCHAINS_SELFIMPORT,vouts);
+    burnOut = MakeBurnOutput(burnAmount,0xffffffff,ASSETCHAINS_SELFIMPORT,vouts,rawproof);
     mtx.vout.clear();
     mtx.vout.push_back(burnOut);
     burnTx = mtx;

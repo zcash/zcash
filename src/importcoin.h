@@ -28,7 +28,7 @@ CAmount GetCoinImportValue(const CTransaction &tx);
 CTransaction MakeImportCoinTransaction(const TxProof proof,
         const CTransaction burnTx, const std::vector<CTxOut> payouts);
 
-CTxOut MakeBurnOutput(CAmount value, uint32_t targetCCid, std::string targetSymbol, const std::vector<CTxOut> payouts);
+CTxOut MakeBurnOutput(CAmount value, uint32_t targetCCid, std::string targetSymbol, const std::vector<CTxOut> payouts,std::vector<uint8_t> rawproof);
 
 bool UnmarshalBurnTx(const CTransaction &burnTx, std::string &targetSymbol, uint32_t *targetCCid, uint256 &payoutsHash,std::vector<uint8_t> &rawproof);
 bool UnmarshalImportTx(const CTransaction &importTx, TxProof &proof, CTransaction &burnTx,
