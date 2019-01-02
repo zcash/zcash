@@ -163,7 +163,7 @@ UniValue calc_MoM(const UniValue& params, bool fHelp)
 
 UniValue migrate_converttoexport(const UniValue& params, bool fHelp)
 {
-    std::vector<uint8_t> rawproof; uint32_t ccid = ASSETCHAINS_CC;
+    std::vector<uint8_t> rawproof; uint8_t *ptr; int32_t i; uint32_t ccid = ASSETCHAINS_CC;
     if (fHelp || params.size() != 3)
         throw runtime_error(
             "migrate_converttoexport rawTx dest_symbol export_amount\n"
@@ -201,7 +201,10 @@ UniValue migrate_converttoexport(const UniValue& params, bool fHelp)
     }
     //if ( ASSETCHAINS_SELFIMPORT.size() > 0 )
     //    throw runtime_error("self-import chains cant be fungible");
-    rawproof = GetArg("-ac_name","");
+    rawproof.resize(strlen(ASSETCHAINS_SYMBOL));
+    ptr = rawproof.data();
+    for (i=0; i<rawproof.size(); i++)
+        ptr[i] = ASSETCHAIN_SYMBOL[i];
     CTxOut burnOut = MakeBurnOutput(burnAmount, ccid, targetSymbol, tx.vout,rawproof);
     UniValue ret(UniValue::VOBJ);
     ret.push_back(Pair("payouts", HexStr(E_MARSHAL(ss << tx.vout))));
