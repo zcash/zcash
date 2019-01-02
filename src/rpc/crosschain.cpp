@@ -307,3 +307,108 @@ UniValue scanNotarisationsDB(const UniValue& params, bool fHelp)
     out.pushKV("opreturn", HexStr(E_MARSHAL(ss << nota.second)));
     return out;
 }
+
+UniValue getimports(const UniValue& params, bool fHelp)
+{
+    if (fHelp || params.size() != 1)
+        throw runtime_error(
+            "getmigrates \"hash|height\"\n"
+            "\n\n"
+            "\nResult:\n"
+            "{\n"
+            "  \"imports\" : [                  (json array)\n"
+            "       \"transactionid\" : {       (json object)\n"
+            "           \"value\" :             (numeric)\n"
+            "           \"address\" :           (string)\n"
+            "           \"export\" {                (json object)\n"
+            "               \"txid\" :              (string)\n"
+            "               \"value\" :             (numeric)\n"
+            "               \"chain\" :             (string)\n" //TODO!
+            "           }\n"
+            "       }"
+            "  ]\n"
+            "  \"TotalImported\" :              (numeric)\n"
+            "  \"time\" :                       (numeric)\n"
+            "}\n"
+            "\nExamples:\n"
+            + HelpExampleCli("getmigrates", "\"00000000febc373a1da2bd9f887b105ad79ddc26ac26c2b28652d64e5207c5b5\"")
+            + HelpExampleRpc("getmigrates", "\"00000000febc373a1da2bd9f887b105ad79ddc26ac26c2b28652d64e5207c5b5\"")
+            + HelpExampleCli("getmigrates", "12800")
+            + HelpExampleRpc("getmigrates", "12800")
+        );
+
+    LOCK(cs_main);
+
+    std::string strHash = params[0].get_str();
+
+    // If height is supplied, find the hash
+    if (strHash.size() < (2 * sizeof(uint256))) {
+        // std::stoi allows characters, whereas we want to be strict
+        regex r("[[:digit:]]+");
+        if (!regex_match(strHash, r)) {
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid block height parameter");
+        }
+
+        int nHeight = -1;
+        try {
+            nHeight = std::stoi(strHash);
+        }
+        catch (const std::exception &e) {
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid block height parameter");
+        }
+
+        if (nHeight < 0 || nHeight > chainActive.Height()) {
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
+        }
+        strHash = chainActive[nHeight]->GetBlockHash().GetHex();
+    }
+
+    uint256 hash(uint256S(strHash));
+
+    if (mapBlockIndex.count(hash) == 0)
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Block not found");
+
+    CBlock block;
+    CBlockIndex* pblockindex = mapBlockIndex[hash];
+
+    if (fHavePruned && !(pblockindex->nStatus & BLOCK_HAVE_DATA) && pblockindex->nTx > 0)
+        throw JSONRPCError(RPC_INTERNAL_ERROR, "Block not available (pruned data)");
+
+    if(!ReadBlockFromDisk(block, pblockindex,1))
+        throw JSONRPCError(RPC_INTERNAL_ERROR, "Can't read block from disk");
+
+    UniValue result(UniValue::VOBJ);
+    CAmount TotalImported;
+    UniValue imports(UniValue::VARR);
+    BOOST_FOREACH(const CTransaction&tx, block.vtx)
+    {
+        if(tx.IsCoinImport())
+        {
+            UniValue objTx(UniValue::VOBJ);
+            objTx.push_back(Pair("txid",tx.GetHash().ToString()));
+            TxProof proof;
+            CTransaction burnTx;
+            std::vector<CTxOut> payouts;
+            TotalImported += tx.vout[1].nValue;
+            printf("nvalue.%li TotalImported.%li\n",tx.vout[1].nValue,TotalImported);
+            objTx.push_back(Pair("amount", ValueFromAmount(tx.vout[1].nValue)));
+            CTxDestination importaddress;
+            if (ExtractDestination(tx.vout[1].scriptPubKey, importaddress))
+            {
+                objTx.push_back(Pair("address", CBitcoinAddress(importaddress).ToString()));
+            }
+            UniValue objBurnTx(UniValue::VOBJ);            
+            if (UnmarshalImportTx(tx, proof, burnTx, payouts)) {
+                objBurnTx.push_back(Pair("txid", burnTx.GetHash().ToString()));
+                objBurnTx.push_back(Pair("amount", ValueFromAmount(burnTx.vout.size() ? burnTx.vout.back().nValue : 0)));
+                // TODO: add source chain, using new data in burn OP_RETURN from upsteam.
+            }
+            objTx.push_back(Pair("export", objBurnTx));
+            imports.push_back(objTx);
+        }
+    }
+    result.push_back(Pair("imports", imports));
+    result.push_back(Pair("TotalImported", ValueFromAmount(TotalImported)));    
+    result.push_back(Pair("time", block.GetBlockTime()));
+    return result;
+}

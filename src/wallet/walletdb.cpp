@@ -859,7 +859,7 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
 
 static bool IsKeyType(string strType)
 {
-    return (strType== "key" || strType == "wkey" ||
+    return (strType == "key" || strType == "wkey" ||
             strType == "hdseed" || strType == "chdseed" ||
             strType == "zkey" || strType == "czkey" ||
             strType == "sapzkey" || strType == "csapzkey" ||
@@ -922,9 +922,7 @@ DBErrors CWalletDB::LoadWallet(CWallet* pwallet)
                     {
                         // Rescan if there is a bad transaction record..
                         //SoftSetBoolArg("-rescan", true);
-                        uint256 hash;
-                        ssKey >> hash;
-                        fprintf(stderr, "TX corrupted hash: %s\n", hash.ToString().c_str());
+                        fprintf(stderr, "TX corrupted.. aborted rescan!\n");
                     }
                 }
             }
