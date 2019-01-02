@@ -41,19 +41,10 @@ CTransaction MakeImportCoinTransaction(const TxProof proof, const CTransaction b
 CTxOut MakeBurnOutput(CAmount value, uint32_t targetCCid, std::string targetSymbol, const std::vector<CTxOut> payouts,std::vector<uint8_t> rawproof)
 {
     std::vector<uint8_t> opret;
-    if ( targetCCid != 0xffffffff )
-    {
-        opret = E_MARSHAL(ss << VARINT(targetCCid);
-                          ss << targetSymbol;
-                          ss << SerializeHash(payouts));
-    }
-    else
-    {
-        opret = E_MARSHAL(ss << VARINT(targetCCid);
-                          ss << targetSymbol;
-                          ss << SerializeHash(payouts);
-                          ss << rawproof);
-    }
+    opret = E_MARSHAL(ss << VARINT(targetCCid);
+                      ss << targetSymbol;
+                      ss << SerializeHash(payouts);
+                      ss << rawproof);
     return CTxOut(value, CScript() << OP_RETURN << opret);
 }
 
