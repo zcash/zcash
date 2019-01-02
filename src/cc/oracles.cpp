@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright © 2014-2018 The SuperNET Developers.                             *
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
  *                                                                            *
  * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
  * the top-level directory of this distribution for the individual copyright  *
@@ -108,7 +108,7 @@ uint8_t DecodeOraclesCreateOpRet(const CScript &scriptPubKey,std::string &name,s
     std::vector<uint8_t> vopret; uint8_t *script,e,f,funcid;
     GetOpReturnData(scriptPubKey,vopret);
     script = (uint8_t *)vopret.data();
-    if ( script[0] == EVAL_ORACLES )
+    if ( vopret.size() > 2 && script[0] == EVAL_ORACLES )
     {
         if ( script[1] == 'C' )
         {
@@ -133,7 +133,7 @@ uint8_t DecodeOraclesOpRet(const CScript &scriptPubKey,uint256 &oracletxid,CPubK
     std::vector<uint8_t> vopret; uint8_t *script,e,f;
     GetOpReturnData(scriptPubKey,vopret);
     script = (uint8_t *)vopret.data();
-    if ( vopret.size() > 1  && script[0] == EVAL_ORACLES )
+    if ( vopret.size() > 2 && script[0] == EVAL_ORACLES )
     {
         if (script[0] == EVAL_ORACLES && (script[1]== 'R' || script[1] == 'S') && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> oracletxid; ss >> pk; ss >> num)!=0)
             return(f);
@@ -154,7 +154,7 @@ uint8_t DecodeOraclesData(const CScript &scriptPubKey,uint256 &oracletxid,uint25
     std::vector<uint8_t> vopret; uint8_t *script,e,f;
     GetOpReturnData(scriptPubKey,vopret);
     script = (uint8_t *)vopret.data();
-    if ( vopret.size() > 1 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> oracletxid; ss >> batontxid; ss >> pk; ss >> data) != 0 )
+    if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> oracletxid; ss >> batontxid; ss >> pk; ss >> data) != 0 )
     {
         if ( e == EVAL_ORACLES && f == 'D' )
             return(f);
@@ -370,7 +370,7 @@ int32_t oracle_format(uint256 *hashp,int64_t *valp,char *str,uint8_t fmt,uint8_t
             {
                 for (i=0; i<dlen; i++)
                     sprintf(&str[i<<1],"%02x",data[offset++]);
-                str[i] = 0;
+                str[i<<1] = 0;
             } else return(-1);
         }
     }
