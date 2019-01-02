@@ -146,7 +146,7 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params,const CTransaction &impo
         for (int i=0; i<importTx.vout.size(); i++)
             totalOut += importTx.vout[i].nValue;
         if (totalOut > burnAmount || totalOut < burnAmount-txfee )
-            return Invalid("payout-too-high");
+            return Invalid("payout-too-high-or-too-low");
     }
     // Check burntx shows correct outputs hash
     if (payoutsHash != SerializeHash(payouts))
