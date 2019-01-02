@@ -214,16 +214,14 @@ cont:
  */
 void CompleteImportTransaction(CTransaction &importTx)
 {
-    TxProof proof;
-    CTransaction burnTx;
-    std::vector<CTxOut> payouts;
+    TxProof proof; CTransaction burnTx; std::vector<CTxOut> payouts; std::vector<uint8_t> rawproof;
     if (!UnmarshalImportTx(importTx, proof, burnTx, payouts))
         throw std::runtime_error("Couldn't parse importTx");
 
     std::string targetSymbol;
     uint32_t targetCCid;
     uint256 payoutsHash;
-    if (!UnmarshalBurnTx(burnTx, targetSymbol, &targetCCid, payoutsHash))
+    if (!UnmarshalBurnTx(burnTx, targetSymbol, &targetCCid, payoutsHash, rawproof))
         throw std::runtime_error("Couldn't parse burnTx");
 
     proof = GetCrossChainProof(burnTx.GetHash(), targetSymbol.data(), targetCCid, proof);
