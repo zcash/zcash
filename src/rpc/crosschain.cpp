@@ -283,7 +283,7 @@ UniValue selfimport(const UniValue& params, bool fHelp)
         throw runtime_error("selfimport only works on -ac_import chains");
     if (fHelp || params.size() < 3 || params.size() > 5 )
         throw runtime_error("selfimport rawtx txid burnamount [rawproof source]\n\n"
-                            "creates signed selfimport transaction from txid");
+                            "creates signed selfimport transaction");
     rawtx = ParseHex(params[0].get_str().c_str());
     txid = Parseuint256((char *)params[1].get_str().c_str()); // allow for txid != hash(rawtx)
     burnAmount = atof(params[2].get_str().c_str()) * COIN + 0.00000000499999;
