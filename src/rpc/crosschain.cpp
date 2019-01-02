@@ -201,6 +201,7 @@ UniValue migrate_converttoexport(const UniValue& params, bool fHelp)
     }
     //if ( ASSETCHAINS_SELFIMPORT.size() > 0 )
     //    throw runtime_error("self-import chains cant be fungible");
+    rawproof = GetArg("-ac_name","");
     CTxOut burnOut = MakeBurnOutput(burnAmount, ccid, targetSymbol, tx.vout,rawproof);
     UniValue ret(UniValue::VOBJ);
     ret.push_back(Pair("payouts", HexStr(E_MARSHAL(ss << tx.vout))));
