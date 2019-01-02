@@ -163,7 +163,7 @@ UniValue calc_MoM(const UniValue& params, bool fHelp)
 
 UniValue migrate_converttoexport(const UniValue& params, bool fHelp)
 {
-    std::vector<uint8_t> rawproof; uint8_t *ptr; int32_t i; uint32_t ccid = ASSETCHAINS_CC;
+    std::vector<uint8_t> rawproof; uint8_t *ptr; uint8_t i; uint32_t ccid = ASSETCHAINS_CC;
     if (fHelp || params.size() != 2)
         throw runtime_error(
             "migrate_converttoexport rawTx dest_symbol\n"
@@ -374,7 +374,7 @@ UniValue getimports(const UniValue& params, bool fHelp)
             "           \"export\" {                (json object)\n"
             "               \"txid\" :              (string)\n"
             "               \"value\" :             (numeric)\n"
-            "               \"chain\" :             (string)\n" //TODO!
+            "               \"chain\" :             (string)\n"
             "           }\n"
             "       }"
             "  ]\n"
@@ -437,22 +437,40 @@ UniValue getimports(const UniValue& params, bool fHelp)
         {
             UniValue objTx(UniValue::VOBJ);
             objTx.push_back(Pair("txid",tx.GetHash().ToString()));
-            TxProof proof;
-            CTransaction burnTx;
-            std::vector<CTxOut> payouts;
+            TxProof proof; CTransaction burnTx; std::vector<CTxOut> payouts; CTxDestination importaddress;
             TotalImported += tx.vout[1].nValue;
-            printf("nvalue.%li TotalImported.%li\n",tx.vout[1].nValue,TotalImported);
             objTx.push_back(Pair("amount", ValueFromAmount(tx.vout[1].nValue)));
-            CTxDestination importaddress;
             if (ExtractDestination(tx.vout[1].scriptPubKey, importaddress))
             {
                 objTx.push_back(Pair("address", CBitcoinAddress(importaddress).ToString()));
             }
             UniValue objBurnTx(UniValue::VOBJ);            
-            if (UnmarshalImportTx(tx, proof, burnTx, payouts)) {
+            if (UnmarshalImportTx(tx, proof, burnTx, payouts)) 
+            {
+                if (burnTx.vout.size() == 0)
+                    continue;
                 objBurnTx.push_back(Pair("txid", burnTx.GetHash().ToString()));
-                objBurnTx.push_back(Pair("amount", ValueFromAmount(burnTx.vout.size() ? burnTx.vout.back().nValue : 0)));
-                // TODO: add source chain, using new data in burn OP_RETURN from upsteam.
+                objBurnTx.push_back(Pair("amount", ValueFromAmount(burnTx.vout.back().nValue)));
+                // extract op_return to get burn source chain.
+                std::vector<uint8_t> burnOpret; std::string targetSymbol; uint32_t targetCCid; uint256 payoutsHash; std::vector<uint8_t>rawproof;
+                GetOpReturnData(burnTx.vout.back().scriptPubKey, burnOpret);
+                if (E_UNMARSHAL(burnOpret, ss >> VARINT(targetCCid);
+                                   ss >> targetSymbol;
+                                   ss >> payoutsHash;
+                                   ss >> rawproof));
+                {
+                    if (rawproof.size() > 0)
+                    {
+                        char *buffer; int32_t n;
+                        buffer = (char*) malloc (65);
+                        if (buffer!=NULL)
+                        {
+                            for (n=0; n<65; n++)
+                                buffer[n]=rawproof[n];
+                            objBurnTx.push_back(Pair("source", buffer));
+                        }
+                    }
+                }
             }
             objTx.push_back(Pair("export", objBurnTx));
             imports.push_back(objTx);
