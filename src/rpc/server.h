@@ -356,6 +356,7 @@ extern UniValue walletlock(const UniValue& params, bool fHelp);
 extern UniValue encryptwallet(const UniValue& params, bool fHelp);
 extern UniValue validateaddress(const UniValue& params, bool fHelp);
 extern UniValue txnotarizedconfirmed(const UniValue& params, bool fHelp);
+extern UniValue decodeccopret(const UniValue& params, bool fHelp);
 extern UniValue getinfo(const UniValue& params, bool fHelp);
 extern UniValue setpubkey(const UniValue& params, bool fHelp);
 extern UniValue getwalletinfo(const UniValue& params, bool fHelp);
