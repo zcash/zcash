@@ -124,7 +124,11 @@
   },
   {
     "ac_name": "ZILLA",
-    "ac_supply": "11000000"
+    "ac_supply": "11000000",
+    "ac_sapling": "5000000",
+    "addnode": [
+      "51.68.215.104"
+    ]
   },
   {
     "ac_name": "RFOX",
@@ -211,5 +215,14 @@
     "addnode": [
       "5.9.102.210"
     ]
-  }
+  },
+  {
+   "ac_name": "KSB",
+   "ac_supply": "1000000000",
+   "ac_end": "1",
+   "ac_public": "1",
+   "addnode": [
+     "37.187.225.231"
+   ]
+ }
 ]
