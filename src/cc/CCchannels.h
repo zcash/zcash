@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright © 2014-2018 The SuperNET Developers.                             *
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
  *                                                                            *
  * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
  * the top-level directory of this distribution for the individual copyright  *
@@ -25,7 +25,7 @@ std::string ChannelOpen(uint64_t txfee,CPubKey destpub,int32_t numpayments,int64
 std::string ChannelPayment(uint64_t txfee,uint256 opentxid,int64_t amount, uint256 secret);
 std::string ChannelClose(uint64_t txfee,uint256 opentxid);
 std::string ChannelRefund(uint64_t txfee,uint256 opentxid,uint256 closetxid);
-
+UniValue ChannelsList();
 // CCcustom
 UniValue ChannelsInfo(uint256 opentxid);
 

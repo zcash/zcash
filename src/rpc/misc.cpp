@@ -3,6 +3,21 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 #include "clientversion.h"
 #include "init.h"
 #include "key_io.h"
@@ -54,7 +69,7 @@ extern uint64_t KOMODO_INTERESTSUM,KOMODO_WALLETBALANCE;
 extern int32_t KOMODO_LASTMINED,JUMBLR_PAUSE,KOMODO_LONGESTCHAIN;
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 uint32_t komodo_segid32(char *coinaddr);
-int64_t komodo_coinsupply(int64_t *zfundsp,int32_t height);
+int64_t komodo_coinsupply(int64_t *zfundsp,int64_t *sproutfundsp,int32_t height);
 int32_t notarizedtxid_height(char *dest,char *txidstr,int32_t *kmdnotarized_heightp);
 #define KOMODO_VERSION "0.3.1"
 #define VERUS_VERSION "0.4.0g"
@@ -282,7 +297,7 @@ public:
 
 UniValue coinsupply(const UniValue& params, bool fHelp)
 {
-    int32_t height = 0; int32_t currentHeight; int64_t zfunds,supply = 0; UniValue result(UniValue::VOBJ);
+    int32_t height = 0; int32_t currentHeight; int64_t sproutfunds,zfunds,supply = 0; UniValue result(UniValue::VOBJ);
     if (fHelp || params.size() > 1)
         throw runtime_error("coinsupply <height>\n"
             "\nReturn coin supply information at a given block height. If no height is given, the current height is used.\n"
@@ -295,7 +310,8 @@ UniValue coinsupply(const UniValue& params, bool fHelp)
             "  \"height\" : 420,               (integer) The height of this coin supply data\n"
             "  \"supply\" : \"777.0\",           (float) The transparent coin supply\n"
             "  \"zfunds\" : \"0.777\",           (float) The shielded coin supply (in zaddrs)\n"
-            "  \"total\" :  \"777.777\",         (float) The total coin supply, i.e. sum of supply + zfunds\n"
+            "  \"sprout\" : \"0.077\",           (float) The sprout coin supply (in zcaddrs)\n"
+           "  \"total\" :  \"777.777\",         (float) The total coin supply, i.e. sum of supply + zfunds\n"
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("coinsupply", "420")
@@ -307,13 +323,14 @@ UniValue coinsupply(const UniValue& params, bool fHelp)
     currentHeight = chainActive.Height();
 
     if (height >= 0 && height <= currentHeight) {
-        if ( (supply= komodo_coinsupply(&zfunds,height)) > 0 )
+        if ( (supply= komodo_coinsupply(&zfunds,&sproutfunds,height)) > 0 )
         {
             result.push_back(Pair("result", "success"));
             result.push_back(Pair("coin", ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSETCHAINS_SYMBOL));
             result.push_back(Pair("height", (int)height));
             result.push_back(Pair("supply", ValueFromAmount(supply)));
             result.push_back(Pair("zfunds", ValueFromAmount(zfunds)));
+            result.push_back(Pair("sprout", ValueFromAmount(sproutfunds)));
             result.push_back(Pair("total", ValueFromAmount(zfunds + supply)));
         } else result.push_back(Pair("error", "couldnt calculate supply"));
     } else {

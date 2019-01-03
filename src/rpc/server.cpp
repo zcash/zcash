@@ -3,6 +3,21 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 #include "rpc/server.h"
 
 #include "init.h"
@@ -302,6 +317,7 @@ static const CRPCCommand vRPCCommands[] =
     { "blockchain",         "getblockhashes",         &getblockhashes,         true  },
     { "blockchain",         "getblockhash",           &getblockhash,           true  },
     { "blockchain",         "getblockheader",         &getblockheader,         true  },
+    { "blockchain",         "getlastsegidstakes",     &getlastsegidstakes,     true  },
     { "blockchain",         "getchaintips",           &getchaintips,           true  },
     { "blockchain",         "getdifficulty",          &getdifficulty,          true  },
     { "blockchain",         "getmempoolinfo",         &getmempoolinfo,         true  },
@@ -333,6 +349,7 @@ static const CRPCCommand vRPCCommands[] =
     { "crosschain",         "migrate_converttoexport", &migrate_converttoexport, true  },
     { "crosschain",         "migrate_createimporttransaction", &migrate_createimporttransaction, true  },
     { "crosschain",         "migrate_completeimporttransaction", &migrate_completeimporttransaction, true  },
+    { "crosschain",         "selfimport", &selfimport, true  },
 
     /* Mining */
     { "mining",             "getblocktemplate",       &getblocktemplate,       true  },
@@ -364,16 +381,16 @@ static const CRPCCommand vRPCCommands[] =
 
     // auction
     { "auction",       "auctionaddress",    &auctionaddress,  true },
-    
+
     // lotto
     { "lotto",       "lottoaddress",    &lottoaddress,  true },
-    
+
     // fsm
     { "FSM",       "FSMaddress",   &FSMaddress, true },
     { "FSM", "FSMcreate",    &FSMcreate,  true },
     { "FSM",   "FSMlist",      &FSMlist,    true },
     { "FSM",   "FSMinfo",      &FSMinfo,    true },
-    
+
     // rewards
     { "rewards",       "rewardslist",       &rewardslist,     true },
     { "rewards",       "rewardsinfo",       &rewardsinfo,     true },
@@ -382,7 +399,7 @@ static const CRPCCommand vRPCCommands[] =
     { "rewards",       "rewardslock",       &rewardslock,     true },
     { "rewards",       "rewardsunlock",     &rewardsunlock,   true },
     { "rewards",       "rewardsaddress",    &rewardsaddress,  true },
-    
+
     // faucet
     { "faucet",       "faucetinfo",      &faucetinfo,         true },
     { "faucet",       "faucetfund",      &faucetfund,         true },
@@ -394,12 +411,13 @@ static const CRPCCommand vRPCCommands[] =
 
     // Channels
     { "channels",       "channelsaddress",   &channelsaddress,   true },
+    { "channels",       "channelslist",      &channelslist,      true },
     { "channels",       "channelsinfo",      &channelsinfo,      true },
     { "channels",       "channelsopen",      &channelsopen,      true },
     { "channels",       "channelspayment",   &channelspayment,   true },
     { "channels",       "channelsclose",     &channelsclose,      true },
     { "channels",       "channelsrefund",    &channelsrefund,    true },
-    
+
     // Oracles
     { "oracles",       "oraclesaddress",   &oraclesaddress,     true },
     { "oracles",       "oracleslist",      &oracleslist,        true },

@@ -3,6 +3,21 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 #include "amount.h"
 #include "chainparams.h"
 #include "consensus/consensus.h"
@@ -339,19 +354,25 @@ UniValue setgenerate(const UniValue& params, bool fHelp)
         //if (nGenProcLimit == 0)
         //    fGenerate = false;
     }
-
-    if (fGenerate && !nGenProcLimit)
+    if ( ASSETCHAINS_LWMAPOS != 0 )
     {
-        VERUS_MINTBLOCKS = 1;
-        fGenerate = GetBoolArg("-gen", false);
-        nGenProcLimit = KOMODO_MININGTHREADS;
+        if (fGenerate && !nGenProcLimit)
+        {
+            VERUS_MINTBLOCKS = 1;
+            fGenerate = GetBoolArg("-gen", false);
+            KOMODO_MININGTHREADS = nGenProcLimit;
+        }
+        else if (!fGenerate)
+        {
+            VERUS_MINTBLOCKS = 0;
+            KOMODO_MININGTHREADS = 0;
+        }
+        else KOMODO_MININGTHREADS = (int32_t)nGenProcLimit;
     }
-    else if (!fGenerate)
+    else
     {
-        VERUS_MINTBLOCKS = 0;
-        KOMODO_MININGTHREADS = 0;
+        KOMODO_MININGTHREADS = (int32_t)nGenProcLimit;
     }
-    else KOMODO_MININGTHREADS = (int32_t)nGenProcLimit;
 
     mapArgs["-gen"] = (fGenerate ? "1" : "0");
     mapArgs ["-genproclimit"] = itostr(KOMODO_MININGTHREADS);
