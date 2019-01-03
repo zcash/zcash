@@ -69,20 +69,20 @@ bool UnmarshalBurnTx(const CTransaction &burnTx, std::string &targetSymbol, uint
     std::vector<uint8_t> burnOpret; uint32_t ccid = 0;
     if (burnTx.vout.size() == 0) return false;
     GetOpReturnData(burnTx.vout.back().scriptPubKey, burnOpret);
-    E_UNMARSHAL(burnOpret, ss >> VARINT(ccid));
-    if ( ccid != 0xffffffff )
+    //E_UNMARSHAL(burnOpret, ss >> VARINT(ccid));
+    /*if ( ccid != 0xffffffff )
     {
         return E_UNMARSHAL(burnOpret, ss >> VARINT(*targetCCid);
                                     ss >> targetSymbol;
                                     ss >> payoutsHash);
     }
     else
-    {
+    {*/
         return E_UNMARSHAL(burnOpret, ss >> VARINT(*targetCCid);
                            ss >> targetSymbol;
                            ss >> payoutsHash;
                            ss >> rawproof);
-    }
+    //}
 }
 
 
