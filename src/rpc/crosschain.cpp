@@ -453,22 +453,12 @@ UniValue getimports(const UniValue& params, bool fHelp)
                 objBurnTx.push_back(Pair("amount", ValueFromAmount(burnTx.vout.back().nValue)));
                 // extract op_return to get burn source chain.
                 std::vector<uint8_t> burnOpret; std::string targetSymbol; uint32_t targetCCid; uint256 payoutsHash; std::vector<uint8_t>rawproof;
-                GetOpReturnData(burnTx.vout.back().scriptPubKey, burnOpret);
-                if (E_UNMARSHAL(burnOpret, ss >> VARINT(targetCCid);
-                                   ss >> targetSymbol;
-                                   ss >> payoutsHash;
-                                   ss >> rawproof));
+                if (UnmarshalBurnTx(burnTx, targetSymbol, &targetCCid, payoutsHash, rawproof))
                 {
                     if (rawproof.size() > 0)
                     {
-                        char *buffer; int32_t n;
-                        buffer = (char*) malloc (65);
-                        if (buffer!=NULL)
-                        {
-                            for (n=0; n<65; n++)
-                                buffer[n]=rawproof[n];
-                            objBurnTx.push_back(Pair("source", buffer));
-                        }
+                        std::string sourceSymbol(rawproof.begin(), rawproof.end());
+                        objBurnTx.push_back(Pair("source", sourceSymbol));
                     }
                 }
             }
