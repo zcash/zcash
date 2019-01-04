@@ -965,7 +965,7 @@ DBErrors CWalletDB::LoadWallet(CWallet* pwallet)
                 reAdded++;
             }
         }
-        fprintf(stderr, "Cleared %lu corrupted transactions from wallet. Readded %i on chain transactions.\n",deadTxns.size(),reAdded);
+        fprintf(stderr, "Cleared %lu corrupted transactions from wallet. Readded %i known transactions.\n",deadTxns.size(),reAdded);
         deadTxns.clear();
     }
 
