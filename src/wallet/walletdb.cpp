@@ -489,7 +489,7 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
                 fprintf(stderr, "Removing corrupt tx from wallet.%s\n", hash.ToString().c_str());
                 deadTxns.push_back(hash);
                 return false;
-            }
+            } 
             // Undo serialize changes in 31600
             if (31404 <= wtx.fTimeReceivedIsTxTime && wtx.fTimeReceivedIsTxTime <= 31703)
             {
@@ -953,11 +953,19 @@ DBErrors CWalletDB::LoadWallet(CWallet* pwallet)
     
     if (!deadTxns.empty())
     {
+        int32_t reAdded = 0;
         BOOST_FOREACH (uint256& hash, deadTxns) {
             if (!EraseTx(hash))
                 fprintf(stderr, "could not delete tx.%s\n",hash.ToString().c_str());
+            uint256 blockhash; CTransaction tx;
+            if (GetTransaction(hash,tx,blockhash,true))
+            {
+                CWalletTx wtx(pwallet,tx);
+                pwallet->AddToWallet(wtx, true, NULL);
+                reAdded++;
+            }
         }
-        fprintf(stderr, "Cleared %i corrupted transactions from wallet.\n",deadTxns.size());
+        fprintf(stderr, "Cleared %lu corrupted transactions from wallet. Readded %i on chain transactions.\n",deadTxns.size(),reAdded);
         deadTxns.clear();
     }
 

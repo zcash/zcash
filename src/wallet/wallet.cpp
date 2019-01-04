@@ -1753,8 +1753,6 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
         AssertLockHeld(cs_wallet);
         if ( tx.IsCoinBase() && tx.vout[0].nValue == 0 )
             return false;
-        if ( tx.vin.empty() )
-            return false;
         bool fExisted = mapWallet.count(tx.GetHash()) != 0;
         if (fExisted && !fUpdate) return false;
         auto sproutNoteData = FindMySproutNotes(tx);
