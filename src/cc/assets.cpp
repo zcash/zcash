@@ -45,32 +45,20 @@
  
  valid CC output: create or transfer or buyoffer or selloffer or exchange or cancel or fill
  
- create
- vin.0: normal input
- vout.0: issuance assetoshis to CC
- vout.1: tag sent to normal address of AssetsCCaddress
- vout.2: normal output for change (if any)
- vout.n-1: opreturn [EVAL_ASSETS] ['c'] [origpubkey] "<assetname>" "<description>"
- 
- transfer
- vin.0: normal input
- vin.1 .. vin.n-1: valid CC outputs
- vout.0 to n-2: assetoshis output to CC
- vout.n-2: normal output for change (if any)
- vout.n-1: opreturn [EVAL_ASSETS] ['t'] [assetid]
  
  buyoffer:
  vins.*: normal inputs (bid + change)
  vout.0: amount of bid to unspendable
- vout.1: normal output for change (if any)
+ vout.1: CC output for marker
+ vout.2: normal output for change (if any)
  vout.n-1: opreturn [EVAL_ASSETS] ['b'] [assetid] [amount of asset required] [origpubkey]
 
  cancelbuy:
- vin.0: normal input
- vin.1: unspendable.(vout.0 from buyoffer) buyTx.vout[0]
+ vin.0: unspendable.(vout.0 from buyoffer) buyTx.vout[0]
+ vin.1: CC marker from buyoffer for txfee
  vout.0: vin.1 value to original pubkey buyTx.vout[0].nValue -> [origpubkey]
  vout.1: normal output for change (if any)
- vout.n-1: opreturn [EVAL_ASSETS] ['o'] [assetid]
+ vout.n-1: opreturn [EVAL_ASSETS] ['o'] [assetid] 0 0 [origpubkey]
  
  fillbuy:
  vin.0: normal input
@@ -87,8 +75,9 @@
  vin.0: normal input
  vin.1+: valid CC output for sale
  vout.0: vin.1 assetoshis output to CC to unspendable
- vout.1: CC output for change (if any)
- vout.2: normal output for change (if any)
+ vout.1: CC output for marker
+ vout.2: CC output for change (if any)
+ vout.3: normal output for change (if any)
  vout.n-1: opreturn [EVAL_ASSETS] ['s'] [assetid] [amount of native coin required] [origpubkey]
  
  exchange:
@@ -100,8 +89,8 @@
  vout.n-1: opreturn [EVAL_ASSETS] ['e'] [assetid] [assetid2] [amount of asset2 required] [origpubkey]
  
  cancel:
- vin.0: normal input
- vin.1: unspendable.(vout.0 from exchange or selloffer) sellTx/exchangeTx.vout[0] inputTx
+ vin.0: unspendable.(vout.0 from exchange or selloffer) sellTx/exchangeTx.vout[0] inputTx
+ vin.1: CC marker from selloffer for txfee
  vout.0: vin.1 assetoshis to original pubkey CC sellTx/exchangeTx.vout[0].nValue -> [origpubkey]
  vout.1: normal output for change (if any)
  vout.n-1: opreturn [EVAL_ASSETS] ['x'] [assetid]
@@ -213,7 +202,8 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
         case 'b': // buyoffer
             //vins.*: normal inputs (bid + change)
             //vout.0: amount of bid to unspendable
-            //vout.1: normal output for change (if any)
+            //vout.1: CC output for marker
+            //vout.2: normal output for change (if any)
             // vout.n-1: opreturn [EVAL_ASSETS] ['b'] [assetid] [amount of asset required] [origpubkey]
             if( remaining_price == 0 )
                 return eval->Invalid("illegal null amount for buyoffer");
@@ -225,8 +215,8 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
             break;
             
         case 'o': // cancelbuy
-            //vin.0: normal input
-            //vin.1: unspendable.(vout.0 from buyoffer) buyTx.vout[0]
+            //vin.0: unspendable.(vout.0 from buyoffer) buyTx.vout[0]
+            //vin.1: CC marker from buyoffer for txfee
             //vout.0: vin.1 value to original pubkey buyTx.vout[0].nValue -> [origpubkey]
             //vout.1: normal output for change (if any)
             //vout.n-1: opreturn [EVAL_ASSETS] ['o']
@@ -234,7 +224,7 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
                 return(false);
             else if( ConstrainVout(tx.vout[0],0, origaddr, nValue) == 0 )
                 return eval->Invalid("invalid refund for cancelbuy");
-            preventCCvins = 2;
+            preventCCvins = 3;
             preventCCvouts = 0;
             fprintf(stderr,"cancelbuy validated to origaddr.(%s)\n",origaddr);
             break;
@@ -288,29 +278,32 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
             //vin.0: normal input
             //vin.1+: valid CC output for sale
             //vout.0: vin.1 assetoshis output to CC to unspendable
-            //vout.1: CC output for change (if any)
-            //vout.2: normal output for change (if any)
+            //vout.1: CC output for marker
+            //vout.2: CC output for change (if any)
+            //vout.3: normal output for change (if any)
             //'s'.vout.n-1: opreturn [EVAL_ASSETS] ['s'] [assetid] [amount of native coin required] [origpubkey]
             //'e'.vout.n-1: opreturn [EVAL_ASSETS] ['e'] [assetid] [assetid2] [amount of asset2 required] [origpubkey]
-            preventCCvouts = 1;
+            preventCCvouts = 2;
             if( remaining_price == 0 )
                 return eval->Invalid("illegal null remaining_price for selloffer");
-            if( tx.vout[1].scriptPubKey.IsPayToCryptoCondition() != 0 )   // is cc change present?
+            if ( tx.vout[1].scriptPubKey.IsPayToCryptoCondition() == 0 )
+                return eval->Invalid("invalid normal vout1 for sellvin");
+            if( tx.vout[2].scriptPubKey.IsPayToCryptoCondition() != 0 )
             {
                 preventCCvouts++;
                 if( ConstrainVout(tx.vout[0], 1, (char *)cpTokens->unspendableCCaddr, 0) == 0 ) // check also vout[0]
                     return eval->Invalid("mismatched vout0 TokensCCaddr for selloffer");
-                else if( tx.vout[0].nValue + tx.vout[1].nValue != inputs )
-                    return eval->Invalid("mismatched vout0+vout1 total for selloffer");
+                else if( tx.vout[0].nValue + tx.vout[2].nValue != inputs )
+                    return eval->Invalid("mismatched vout0+vout2 total for selloffer");
             } 
 			else if( ConstrainVout(tx.vout[0], 1, (char *)cpTokens->unspendableCCaddr, inputs) == 0 )  // no cc change, just vout[0]
                 return eval->Invalid("mismatched vout0 TokensCCaddr for selloffer");
             //fprintf(stderr,"remaining.%d for sell\n",(int32_t)remaining_price);
             break;
             
-        case 'x': // cancel
-            //vin.0: normal input
-            //vin.1: unspendable.(vout.0 from exchange or selloffer) sellTx/exchangeTx.vout[0] inputTx
+        case 'x': // cancel            
+            //vin.0: unspendable.(vout.0 from exchange or selloffer) sellTx/exchangeTx.vout[0] inputTx
+            //vin.1: CC marker from selloffer for txfee
             //vout.0: vin.1 assetoshis to original pubkey CC sellTx/exchangeTx.vout[0].nValue -> [origpubkey]
             //vout.1: normal output for change (if any)
             //vout.n-1: opreturn [EVAL_ASSETS] ['x'] [assetid]
@@ -318,7 +311,7 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
                 return(false);
             else if( ConstrainVout(tx.vout[0], 1, tokensCCaddr, assetoshis) == 0 )  
                 return eval->Invalid("invalid vout for cancel");
-            preventCCvins = 2;
+            preventCCvins = 3;
             preventCCvouts = 1;
             break;
             

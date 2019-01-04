@@ -432,6 +432,8 @@ int64_t AssetValidateBuyvin(struct CCcontract_info *cp,Eval* eval,int64_t &tmppr
         return(0);  
     else if ( vinTx.vout[0].scriptPubKey.IsPayToCryptoCondition() == 0 )
         return eval->Invalid("invalid normal vout0 for buyvin");
+    else if ( vinTx.vout[1].scriptPubKey.IsPayToCryptoCondition() == 0 )
+        return eval->Invalid("invalid normal vout1 for buyvin");
     else
     {
         //fprintf(stderr,"have %.8f checking assetid origaddr.(%s)\n",(double)nValue/COIN,origaddr);
