@@ -54,10 +54,12 @@
  vout.n-1: opreturn [EVAL_ASSETS] ['b'] [assetid] [amount of asset required] [origpubkey]
 
  cancelbuy:
- vin.0: unspendable.(vout.0 from buyoffer) buyTx.vout[0]
- vin.1: CC marker from buyoffer for txfee
+ vin.0: normal input
+ vin.1: unspendable.(vout.0 from buyoffer) buyTx.vout[0]
+ vin.2: CC marker from buyoffer for txfee
  vout.0: vin.1 value to original pubkey buyTx.vout[0].nValue -> [origpubkey]
- vout.1: normal output for change (if any)
+ vout.1: vin.2 back to users pubkey
+ vout.2: normal output for change (if any)
  vout.n-1: opreturn [EVAL_ASSETS] ['o'] [assetid] 0 0 [origpubkey]
  
  fillbuy:
@@ -89,10 +91,12 @@
  vout.n-1: opreturn [EVAL_ASSETS] ['e'] [assetid] [assetid2] [amount of asset2 required] [origpubkey]
  
  cancel:
- vin.0: unspendable.(vout.0 from exchange or selloffer) sellTx/exchangeTx.vout[0] inputTx
- vin.1: CC marker from selloffer for txfee
+ vin.0: normal input
+ vin.1: unspendable.(vout.0 from exchange or selloffer) sellTx/exchangeTx.vout[0] inputTx
+ vin.2: CC marker from selloffer for txfee
  vout.0: vin.1 assetoshis to original pubkey CC sellTx/exchangeTx.vout[0].nValue -> [origpubkey]
- vout.1: normal output for change (if any)
+ vout.1: vin.2 back to users pubkey
+ vout.2: normal output for change (if any)
  vout.n-1: opreturn [EVAL_ASSETS] ['x'] [assetid]
  
  fillsell:
@@ -215,10 +219,12 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
             break;
             
         case 'o': // cancelbuy
-            //vin.0: unspendable.(vout.0 from buyoffer) buyTx.vout[0]
-            //vin.1: CC marker from buyoffer for txfee
+            //vin.0: normal input
+            //vin.1: unspendable.(vout.0 from buyoffer) buyTx.vout[0]
+            //vin.2: CC marker from buyoffer for txfee
             //vout.0: vin.1 value to original pubkey buyTx.vout[0].nValue -> [origpubkey]
-            //vout.1: normal output for change (if any)
+            //vout.1: vin.2 back to users pubkey
+            //vout.2: normal output for change (if any)
             //vout.n-1: opreturn [EVAL_ASSETS] ['o']
             if( (nValue= AssetValidateBuyvin(cpAssets, eval, tmpprice, tmporigpubkey, assetsCCaddr, origaddr, tx, assetid)) == 0 )
                 return(false);
@@ -302,10 +308,12 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
             break;
             
         case 'x': // cancel            
-            //vin.0: unspendable.(vout.0 from exchange or selloffer) sellTx/exchangeTx.vout[0] inputTx
-            //vin.1: CC marker from selloffer for txfee
+            //vin.0: normal input
+            //vin.1: unspendable.(vout.0 from exchange or selloffer) sellTx/exchangeTx.vout[0] inputTx
+            //vin.2: CC marker from selloffer for txfee
             //vout.0: vin.1 assetoshis to original pubkey CC sellTx/exchangeTx.vout[0].nValue -> [origpubkey]
-            //vout.1: normal output for change (if any)
+            //vout.1: vin.2 back to users pubkey
+            //vout.2: normal output for change (if any)
             //vout.n-1: opreturn [EVAL_ASSETS] ['x'] [assetid]
             if( (assetoshis= AssetValidateSellvin(cpTokens, eval, tmpprice, tmporigpubkey, tokensCCaddr, origaddr, tx, assetid)) == 0 )
                 return(false);
