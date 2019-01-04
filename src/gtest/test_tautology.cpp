@@ -4,7 +4,7 @@ TEST(tautologies, SevenEqSeven) {
     ASSERT_EQ(7, 7);
 }
 
-TEST(tautologies, DISABLEDObviousFailure)
+TEST(tautologies, DISABLED_ObviousFailure)
 {
     FAIL() << "This is expected";
 }
