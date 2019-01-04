@@ -1,7 +1,9 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 # Copyright (c) 2018 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
+import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, assert_true, start_nodes
@@ -61,6 +63,8 @@ def parse_wallet_file(dump_path):
     # We expect information about the HDSeed and fingerpring in the header
     assert_true("HDSeed" in file_lines[4], "Expected HDSeed")
     assert_true("fingerprint" in file_lines[4], "Expected fingerprint")
+    seed_comment_line = file_lines[4][2:].split()  # ["HDSeed=...", "fingerprint=..."]
+    assert_true(seed_comment_line[0].split("=")[1] != seed_comment_line[1].split("=")[1], "The seed should not equal the fingerprint")
     (t_keys, i) = parse_wallet_file_lines(file_lines, 0)
     (sprout_keys, i) = parse_wallet_file_lines(file_lines, i)
     (sapling_keys, i) = parse_wallet_file_lines(file_lines, i)

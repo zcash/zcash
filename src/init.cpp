@@ -28,6 +28,7 @@
 #include "rpc/server.h"
 #include "rpc/register.h"
 #include "script/standard.h"
+#include "script/sigcache.h"
 #include "scheduler.h"
 #include "txdb.h"
 #include "torcontrol.h"
@@ -418,7 +419,7 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-sendfreetransactions", strprintf(_("Send transactions as zero-fee transactions if possible (default: %u)"), 0));
     strUsage += HelpMessageOpt("-spendzeroconfchange", strprintf(_("Spend unconfirmed change when sending transactions (default: %u)"), 1));
     strUsage += HelpMessageOpt("-txconfirmtarget=<n>", strprintf(_("If paytxfee is not set, include enough fee so transactions begin confirmation on average within n blocks (default: %u)"), DEFAULT_TX_CONFIRM_TARGET));
-    strUsage += HelpMessageOpt("-txexpirydelta", strprintf(_("Set the number of blocks after which a transaction that has not been mined will become invalid (default: %u)"), DEFAULT_TX_EXPIRY_DELTA));
+    strUsage += HelpMessageOpt("-txexpirydelta", strprintf(_("Set the number of blocks after which a transaction that has not been mined will become invalid (min: %u, default: %u)"), TX_EXPIRING_SOON_THRESHOLD + 1, DEFAULT_TX_EXPIRY_DELTA));
     strUsage += HelpMessageOpt("-maxtxfee=<amt>", strprintf(_("Maximum total fees (in %s) to use in a single wallet transaction; setting this too low may abort large transactions (default: %s)"),
         CURRENCY_UNIT, FormatMoney(maxTxFee)));
     strUsage += HelpMessageOpt("-upgradewallet", _("Upgrade wallet to latest format") + " " + _("on startup"));
@@ -470,7 +471,7 @@ std::string HelpMessage(HelpMessageMode mode)
     {
         strUsage += HelpMessageOpt("-limitfreerelay=<n>", strprintf("Continuously rate-limit free transactions to <n>*1000 bytes per minute (default: %u)", 15));
         strUsage += HelpMessageOpt("-relaypriority", strprintf("Require high priority for relaying free or low-fee transactions (default: %u)", 0));
-        strUsage += HelpMessageOpt("-maxsigcachesize=<n>", strprintf("Limit size of signature cache to <n> entries (default: %u)", 50000));
+        strUsage += HelpMessageOpt("-maxsigcachesize=<n>", strprintf("Limit size of signature cache to <n> MiB (default: %u)", DEFAULT_MAX_SIG_CACHE_SIZE));
         strUsage += HelpMessageOpt("-maxtipage=<n>", strprintf("Maximum tip age in seconds to consider node in initial block download (default: %u)", DEFAULT_MAX_TIP_AGE));
     }
     strUsage += HelpMessageOpt("-minrelaytxfee=<amt>", strprintf(_("Fees (in %s/kB) smaller than this are considered zero fee for relaying (default: %s)"),
@@ -718,21 +719,27 @@ static void ZC_LoadParams(
     elapsed = float(tv_end.tv_sec-tv_start.tv_sec) + (tv_end.tv_usec-tv_start.tv_usec)/float(1000000);
     LogPrintf("Loaded verifying key in %fs seconds.\n", elapsed);
 
-    std::string sapling_spend_str = sapling_spend.string();
-    std::string sapling_output_str = sapling_output.string();
-    std::string sprout_groth16_str = sprout_groth16.string();
+    static_assert(
+        sizeof(boost::filesystem::path::value_type) == sizeof(codeunit),
+        "librustzcash not configured correctly");
+    auto sapling_spend_str = sapling_spend.native();
+    auto sapling_output_str = sapling_output.native();
+    auto sprout_groth16_str = sprout_groth16.native();
 
-    LogPrintf("Loading Sapling (Spend) parameters from %s\n", sapling_spend_str.c_str());
-    LogPrintf("Loading Sapling (Output) parameters from %s\n", sapling_output_str.c_str());
-    LogPrintf("Loading Sapling (Sprout Groth16) parameters from %s\n", sprout_groth16_str.c_str());
+    LogPrintf("Loading Sapling (Spend) parameters from %s\n", sapling_spend.string().c_str());
+    LogPrintf("Loading Sapling (Output) parameters from %s\n", sapling_output.string().c_str());
+    LogPrintf("Loading Sapling (Sprout Groth16) parameters from %s\n", sprout_groth16.string().c_str());
     gettimeofday(&tv_start, 0);
 
     librustzcash_init_zksnark_params(
-        sapling_spend_str.c_str(),
+        reinterpret_cast<const codeunit*>(sapling_spend_str.c_str()),
+        sapling_spend_str.length(),
         "8270785a1a0d0bc77196f000ee6d221c9c9894f55307bd9357c3f0105d31ca63991ab91324160d8f53e2bbd3c2633a6eb8bdf5205d822e7f3f73edac51b2b70c",
-        sapling_output_str.c_str(),
+        reinterpret_cast<const codeunit*>(sapling_output_str.c_str()),
+        sapling_output_str.length(),
         "657e3d38dbb5cb5e7dd2970e8b03d69b4787dd907285b5a7f0790dcc8072f60bf593b32cc2d1c030e00ff5ae64bf84c5c3beb84ddc841d48264b4a171744d028",
-        sprout_groth16_str.c_str(),
+        reinterpret_cast<const codeunit*>(sprout_groth16_str.c_str()),
+        sprout_groth16_str.length(),
         "e9b238411bd6c0ec4791e9d04245ec350c9c5744f5610dfcce4365d5ca49dfefd5054e371842b3f88fa1b9d7e8e075249b3ebabd167fa8b0f3161292d36c180a"
     );
 
@@ -836,6 +843,8 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             return InitError(_("Payment disclosure requires -experimentalfeatures."));
         } else if (mapArgs.count("-zmergetoaddress")) {
             return InitError(_("RPC method z_mergetoaddress requires -experimentalfeatures."));
+        } else if (mapArgs.count("-savesproutr1cs")) {
+            return InitError(_("Saving the Sprout R1CS requires -experimentalfeatures."));
         }
     }
 
@@ -1054,6 +1063,10 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     }
     nTxConfirmTarget = GetArg("-txconfirmtarget", DEFAULT_TX_CONFIRM_TARGET);
     expiryDelta = GetArg("-txexpirydelta", DEFAULT_TX_EXPIRY_DELTA);
+    uint32_t minExpiryDelta = TX_EXPIRING_SOON_THRESHOLD + 1;
+    if (expiryDelta < minExpiryDelta) {
+        return InitError(strprintf(_("Invalid value for -expiryDelta='%u' (must be least %u)"), expiryDelta, minExpiryDelta));
+    }
     bSpendZeroConfChange = GetBoolArg("-spendzeroconfchange", true);
     fSendFreeTransactions = GetBoolArg("-sendfreetransactions", false);
 
@@ -1210,6 +1223,14 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     // Initialize Zcash circuit parameters
     ZC_LoadParams(chainparams);
+
+    if (GetBoolArg("-savesproutr1cs", false)) {
+        boost::filesystem::path r1cs_path = ZC_GetParamsDir() / "r1cs";
+
+        LogPrintf("Saving Sprout R1CS to %s\n", r1cs_path.string());
+
+        pzcashParams->saveR1CS(r1cs_path.string());
+    }
 
     /* Start the RPC server already.  It will be started in "warmup" mode
      * and not really process calls already (but it will signify connections

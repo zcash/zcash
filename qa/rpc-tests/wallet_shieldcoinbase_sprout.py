@@ -1,4 +1,6 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
+import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
+
 import inspect
 import os
 

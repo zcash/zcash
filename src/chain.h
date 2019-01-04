@@ -401,6 +401,9 @@ public:
         if ((s.GetType() & SER_DISK) && (nVersion >= SAPLING_VALUE_VERSION)) {
             READWRITE(nSaplingValue);
         }
+
+        // If you have just added new serialized fields above, remember to add
+        // them to CBlockTreeDB::LoadBlockIndexGuts() in txdb.cpp :)
     }
 
     uint256 GetBlockHash() const

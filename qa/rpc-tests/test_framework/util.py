@@ -355,11 +355,11 @@ def random_transaction(nodes, amount, min_fee, fee_increment, fee_variants):
 
     return (txid, signresult["hex"], fee)
 
-def assert_equal(expected, actual, message = ""):
+def assert_equal(expected, actual, message=""):
     if expected != actual:
         if message:
-            message = "%s; " % message 
-        raise AssertionError("%sexpected: <%s> but was: <%s>" % (message, str(expected), str(actual)))
+            message = "; %s" % message 
+        raise AssertionError("(left == right)%s\n  left: <%s>\n right: <%s>" % (message, str(expected), str(actual)))
 
 def assert_true(condition, message = ""):
     if not condition:
@@ -381,6 +381,9 @@ def assert_raises(exc, fun, *args, **kwds):
         raise AssertionError("Unexpected exception raised: "+type(e).__name__)
     else:
         raise AssertionError("No exception raised")
+
+def fail(message=""):
+    raise AssertionError(message)
 
 # Returns txid if operation was a success or None
 def wait_and_assert_operationid_status(node, myopid, in_status='success', in_errormsg=None, timeout=300):

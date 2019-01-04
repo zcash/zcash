@@ -21,7 +21,6 @@ testScripts=(
     'wallet_shieldcoinbase_sprout.py'
     'wallet_shieldcoinbase_sapling.py'
     'wallet_listreceived.py'
-    'wallet_mergetoaddress.py'
     'wallet.py'
     'wallet_overwintertx.py'
     'wallet_persistence.py'
@@ -30,6 +29,8 @@ testScripts=(
     'wallet_addresses.py'
     'wallet_sapling.py'
     'wallet_listnotes.py'
+    'mergetoaddress_sprout.py'
+    'mergetoaddress_sapling.py'
     'listtransactions.py'
     'mempool_resurrect_test.py'
     'txn_doublespend.py'
@@ -66,8 +67,10 @@ testScripts=(
     'p2p_nu_peer_management.py'
     'rewind_index.py'
     'p2p_txexpiry_dos.py'
+    'p2p_txexpiringsoon.py'
     'p2p_node_bloom.py'
     'regtest_signrawtransaction.py'
+    'finalsaplingroot.py'
 );
 testScriptsExt=(
     'getblocktemplate_longpoll.py'

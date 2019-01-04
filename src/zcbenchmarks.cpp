@@ -30,6 +30,8 @@
 
 #include "zcash/Zcash.h"
 #include "zcash/IncrementalMerkleTree.hpp"
+#include "zcash/Note.hpp"
+#include "librustzcash.h"
 
 using namespace libzcash;
 // This method is based on Shutdown from init.cpp
@@ -470,5 +472,161 @@ double benchmark_listunspent()
     struct timeval tv_start;
     timer_start(tv_start);
     auto unspent = listunspent(params, false);
+    return timer_stop(tv_start);
+}
+
+double benchmark_create_sapling_spend()
+{
+    auto sk = libzcash::SaplingSpendingKey::random();
+    auto expsk = sk.expanded_spending_key();
+    auto address = sk.default_address();
+    SaplingNote note(address, GetRand(MAX_MONEY));
+    SaplingMerkleTree tree;
+    auto maybe_cm = note.cm();
+    tree.append(maybe_cm.get());
+    auto anchor = tree.root();
+    auto witness = tree.witness();
+    auto maybe_nf = note.nullifier(expsk.full_viewing_key(), witness.position());
+    if (!(maybe_cm && maybe_nf)) {
+        throw JSONRPCError(RPC_INTERNAL_ERROR, "Could not create note commitment and nullifier");
+    }
+
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    ss << witness.path();
+    std::vector<unsigned char> witnessChars(ss.begin(), ss.end());
+
+    uint256 alpha;
+    librustzcash_sapling_generate_r(alpha.begin());
+
+    auto ctx = librustzcash_sapling_proving_ctx_init();
+
+    struct timeval tv_start;
+    timer_start(tv_start);
+
+    SpendDescription sdesc;
+    bool result = librustzcash_sapling_spend_proof(
+        ctx,
+        expsk.full_viewing_key().ak.begin(),
+        expsk.nsk.begin(),
+        note.d.data(),
+        note.r.begin(),
+        alpha.begin(),
+        note.value(),
+        anchor.begin(),
+        witnessChars.data(),
+        sdesc.cv.begin(),
+        sdesc.rk.begin(),
+        sdesc.zkproof.data());
+
+    double t = timer_stop(tv_start);
+    librustzcash_sapling_proving_ctx_free(ctx);
+    if (!result) {
+        throw JSONRPCError(RPC_INTERNAL_ERROR, "librustzcash_sapling_spend_proof() should return true");
+    }
+    return t;
+}
+
+double benchmark_create_sapling_output()
+{
+    auto sk = libzcash::SaplingSpendingKey::random();
+    auto address = sk.default_address();
+
+    std::array<unsigned char, ZC_MEMO_SIZE> memo;
+    SaplingNote note(address, GetRand(MAX_MONEY));
+
+    libzcash::SaplingNotePlaintext notePlaintext(note, memo);
+    auto res = notePlaintext.encrypt(note.pk_d);
+    if (!res) {
+        throw JSONRPCError(RPC_INTERNAL_ERROR, "SaplingNotePlaintext::encrypt() failed");
+    }
+
+    auto enc = res.get();
+    auto encryptor = enc.second;
+
+    auto ctx = librustzcash_sapling_proving_ctx_init();
+
+    struct timeval tv_start;
+    timer_start(tv_start);
+
+    OutputDescription odesc;
+    bool result = librustzcash_sapling_output_proof(
+        ctx,
+        encryptor.get_esk().begin(),
+        note.d.data(),
+        note.pk_d.begin(),
+        note.r.begin(),
+        note.value(),
+        odesc.cv.begin(),
+        odesc.zkproof.begin());
+
+    double t = timer_stop(tv_start);
+    librustzcash_sapling_proving_ctx_free(ctx);
+    if (!result) {
+        throw JSONRPCError(RPC_INTERNAL_ERROR, "librustzcash_sapling_output_proof() should return true");
+    }
+    return t;
+}
+
+// Verify Sapling spend from testnet
+// txid: abbd823cbd3d4e3b52023599d81a96b74817e95ce5bb58354f979156bd22ecc8
+// position: 0
+double benchmark_verify_sapling_spend()
+{
+    SpendDescription spend;
+    CDataStream ss(ParseHex("8c6cf86bbb83bf0d075e5bd9bb4b5cd56141577be69f032880b11e26aa32aa5ef09fd00899e4b469fb11f38e9d09dc0379f0b11c23b5fe541765f76695120a03f0261d32af5d2a2b1e5c9a04200cd87d574dc42349de9790012ce560406a8a876a1e54cfcdc0eb74998abec2a9778330eeb2a0ac0e41d0c9ed5824fbd0dbf7da930ab299966ce333fd7bc1321dada0817aac5444e02c754069e218746bf879d5f2a20a8b028324fb2c73171e63336686aa5ec2e6e9a08eb18b87c14758c572f4531ccf6b55d09f44beb8b47563be4eff7a52598d80959dd9c9fee5ac4783d8370cb7d55d460053d3e067b5f9fe75ff2722623fb1825fcba5e9593d4205b38d1f502ff03035463043bd393a5ee039ce75a5d54f21b395255df6627ef96751566326f7d4a77d828aa21b1827282829fcbc42aad59cdb521e1a3aaa08b99ea8fe7fff0a04da31a52260fc6daeccd79bb877bdd8506614282258e15b3fe74bf71a93f4be3b770119edf99a317b205eea7d5ab800362b97384273888106c77d633600"), SER_NETWORK, PROTOCOL_VERSION);
+    ss >> spend;
+    uint256 dataToBeSigned = uint256S("0x2dbf83fe7b88a7cbd80fac0c719483906bb9a0c4fc69071e4780d5f2c76e592c");
+
+    auto ctx = librustzcash_sapling_verification_ctx_init();
+
+    struct timeval tv_start;
+    timer_start(tv_start);
+
+    bool result = librustzcash_sapling_check_spend(
+                ctx,
+                spend.cv.begin(),
+                spend.anchor.begin(),
+                spend.nullifier.begin(),
+                spend.rk.begin(),
+                spend.zkproof.begin(),
+                spend.spendAuthSig.begin(),
+                dataToBeSigned.begin()
+            );
+
+    double t = timer_stop(tv_start);
+    librustzcash_sapling_verification_ctx_free(ctx);
+    if (!result) {
+        throw JSONRPCError(RPC_INTERNAL_ERROR, "librustzcash_sapling_check_spend() should return true");
+    }
+    return t;
+}
+
+// Verify Sapling output from testnet
+// txid: abbd823cbd3d4e3b52023599d81a96b74817e95ce5bb58354f979156bd22ecc8
+// position: 0
+double benchmark_verify_sapling_output()
+{
+    OutputDescription output;
+    CDataStream ss(ParseHex("edd742af18857e5ec2d71d346a7fe2ac97c137339bd5268eea86d32e0ff4f38f76213fa8cfed3347ac4e8572dd88aff395c0c10a59f8b3f49d2bc539ed6c726667e29d4763f914ddd0abf1cdfa84e44de87c233434c7e69b8b5b8f4623c8aa444163425bae5cef842972fed66046c1c6ce65c866ad894d02e6e6dcaae7a962d9f2ef95757a09c486928e61f0f7aed90ad0a542b0d3dc5fe140dfa7626b9315c77e03b055f19cbacd21a866e46f06c00e0c7792b2a590a611439b510a9aaffcf1073bad23e712a9268b36888e3727033eee2ab4d869f54a843f93b36ef489fb177bf74b41a9644e5d2a0a417c6ac1c8869bc9b83273d453f878ed6fd96b82a5939903f7b64ecaf68ea16e255a7fb7cc0b6d8b5608a1c6b0ed3024cc62c2f0f9c5cfc7b431ae6e9d40815557aa1d010523f9e1960de77b2274cb6710d229d475c87ae900183206ba90cb5bbc8ec0df98341b82726c705e0308ca5dc08db4db609993a1046dfb43dfd8c760be506c0bed799bb2205fc29dc2e654dce731034a23b0aaf6da0199248702ee0523c159f41f4cbfff6c35ace4dd9ae834e44e09c76a0cbdda1d3f6a2c75ad71212daf9575ab5f09ca148718e667f29ddf18c8a330a86ace18a86e89454653902aa393c84c6b694f27d0d42e24e7ac9fe34733de5ec15f5066081ce912c62c1a804a2bb4dedcef7cc80274f6bb9e89e2fce91dc50d6a73c8aefb9872f1cf3524a92626a0b8f39bbf7bf7d96ca2f770fc04d7f457021c536a506a187a93b2245471ddbfb254a71bc4a0d72c8d639a31c7b1920087ffca05c24214157e2e7b28184e91989ef0b14f9b34c3dc3cc0ac64226b9e337095870cb0885737992e120346e630a416a9b217679ce5a778fb15779c136bcecca5efe79012013d77d90b4e99dd22c8f35bc77121716e160d05bd30d288ee8886390ee436f85bdc9029df888a3a3326d9d4ddba5cb5318b3274928829d662e96fea1d601f7a306251ed8c6cc4e5a3a7a98c35a3650482a0eee08f3b4c2da9b22947c96138f1505c2f081f8972d429f3871f32bef4aaa51aa6945df8e9c9760531ac6f627d17c1518202818a91ca304fb4037875c666060597976144fcbbc48a776a2c61beb9515fa8f3ae6d3a041d320a38a8ac75cb47bb9c866ee497fc3cd13299970c4b369c1c2ceb4220af082fbecdd8114492a8e4d713b5a73396fd224b36c1185bd5e20d683e6c8db35346c47ae7401988255da7cfffdced5801067d4d296688ee8fe424b4a8a69309ce257eefb9345ebfda3f6de46bb11ec94133e1f72cd7ac54934d6cf17b3440800e70b80ebc7c7bfc6fb0fc2c"), SER_NETWORK, PROTOCOL_VERSION);
+    ss >> output;
+
+    auto ctx = librustzcash_sapling_verification_ctx_init();
+
+    struct timeval tv_start;
+    timer_start(tv_start);
+
+    bool result = librustzcash_sapling_check_output(
+                ctx,
+                output.cv.begin(),
+                output.cm.begin(),
+                output.ephemeralKey.begin(),
+                output.zkproof.begin()
+            );
+
+    double t = timer_stop(tv_start);
+    librustzcash_sapling_verification_ctx_free(ctx);
+    if (!result) {
+        throw JSONRPCError(RPC_INTERNAL_ERROR, "librustzcash_sapling_check_output() should return true");
+    }
     return timer_stop(tv_start);
 }

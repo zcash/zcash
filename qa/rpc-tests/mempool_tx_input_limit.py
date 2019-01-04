@@ -1,7 +1,9 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 # Copyright (c) 2017 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
+import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
@@ -45,7 +47,7 @@ class MempoolTxInputLimitTest(BitcoinTestFramework):
         # Check 1: z_sendmany is limited by -mempooltxinputlimit
 
         # Add zaddr to node 0
-        node0_zaddr = self.nodes[0].z_getnewaddress()
+        node0_zaddr = self.nodes[0].z_getnewaddress('sprout')
 
         # Send three inputs from node 0 taddr to zaddr to get out of coinbase
         node0_taddr = self.nodes[0].getnewaddress()

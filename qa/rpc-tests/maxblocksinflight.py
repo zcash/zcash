@@ -1,8 +1,10 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 #
 # Distributed under the MIT/X11 software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 #
+
+import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
 
 from test_framework.mininode import NodeConn, NodeConnCB, NetworkThread, \
     EarlyDisconnectError, CInv, msg_inv, mininode_lock

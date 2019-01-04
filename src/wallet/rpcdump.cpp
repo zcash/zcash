@@ -508,7 +508,8 @@ UniValue dumpwallet_impl(const UniValue& params, bool fHelp, bool fDumpZKeys)
     {
         HDSeed hdSeed;
         pwalletMain->GetHDSeed(hdSeed);
-        file << strprintf("# HDSeed=%s fingerprint=%s", pwalletMain->GetHDChain().seedFp.GetHex(), hdSeed.Fingerprint().GetHex());
+        auto rawSeed = hdSeed.RawSeed();
+        file << strprintf("# HDSeed=%s fingerprint=%s", HexStr(rawSeed.begin(), rawSeed.end()), hdSeed.Fingerprint().GetHex());
         file << "\n";
     }
     file << "\n";

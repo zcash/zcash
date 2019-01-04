@@ -1,7 +1,9 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 # Copyright (c) 2018 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
+import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, initialize_chain_clean, \
@@ -44,7 +46,7 @@ class WalletAnchorForkTest (BitcoinTestFramework):
 
         # Node 0 creates a joinsplit transaction
         mytaddr0 = self.nodes[0].getnewaddress()
-        myzaddr0 = self.nodes[0].z_getnewaddress()
+        myzaddr0 = self.nodes[0].z_getnewaddress('sprout')
         recipients = []
         recipients.append({"address":myzaddr0, "amount": Decimal('10.0') - Decimal('0.0001')})
         myopid = self.nodes[0].z_sendmany(mytaddr0, recipients)

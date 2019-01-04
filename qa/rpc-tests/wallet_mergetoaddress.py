@@ -1,7 +1,9 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 # Copyright (c) 2017 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
+import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
@@ -54,7 +56,7 @@ class WalletMergeToAddressTest (BitcoinTestFramework):
         assert_equal(self.nodes[2].getbalance(), 30)
 
         # Shield the coinbase
-        myzaddr = self.nodes[0].z_getnewaddress()
+        myzaddr = self.nodes[0].z_getnewaddress('sprout')
         result = self.nodes[0].z_shieldcoinbase("*", myzaddr, 0)
         wait_and_assert_operationid_status(self.nodes[0], result['opid'])
         self.sync_all()
@@ -172,7 +174,7 @@ class WalletMergeToAddressTest (BitcoinTestFramework):
         assert_equal(self.nodes[2].getbalance(), 30)
 
         # Shield all notes to another z-addr
-        myzaddr2 = self.nodes[0].z_getnewaddress()
+        myzaddr2 = self.nodes[0].z_getnewaddress('sprout')
         result = self.nodes[0].z_mergetoaddress(["ANY_ZADDR"], myzaddr2, 0)
         assert_equal(result["mergingUTXOs"], Decimal('0'))
         assert_equal(result["remainingUTXOs"], Decimal('0'))

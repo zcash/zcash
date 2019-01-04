@@ -1,7 +1,9 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 # Copyright (c) 2018 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
+import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
@@ -16,15 +18,16 @@ class WalletPersistenceTest (BitcoinTestFramework):
 
     def setup_chain(self):
         print("Initializing test directory " + self.options.tmpdir)
-        initialize_chain_clean(self.options.tmpdir, 2)
+        initialize_chain_clean(self.options.tmpdir, 3)
 
     def setup_network(self, split=False):
-        self.nodes = start_nodes(2, self.options.tmpdir,
+        self.nodes = start_nodes(3, self.options.tmpdir,
             extra_args=[[
                 '-nuparams=5ba81b19:100', # Overwinter
                 '-nuparams=76b809bb:201', # Sapling
-            ]] * 2)
+            ]] * 3)
         connect_nodes_bi(self.nodes,0,1)
+        connect_nodes_bi(self.nodes,1,2)
         self.is_network_split=False
         self.sync_all()
 
@@ -68,10 +71,20 @@ class WalletPersistenceTest (BitcoinTestFramework):
         # Verify shielded balance
         assert_equal(self.nodes[0].z_getbalance(sapling_addr), Decimal('20'))
 
+        # Verify size of shielded pools
+        pools = self.nodes[0].getblockchaininfo()['valuePools']
+        assert_equal(pools[0]['chainValue'], Decimal('0'))  # Sprout
+        assert_equal(pools[1]['chainValue'], Decimal('20')) # Sapling
+
         # Restart the nodes
         stop_nodes(self.nodes)
         wait_bitcoinds()
         self.setup_network()
+
+        # Verify size of shielded pools
+        pools = self.nodes[0].getblockchaininfo()['valuePools']
+        assert_equal(pools[0]['chainValue'], Decimal('0'))  # Sprout
+        assert_equal(pools[1]['chainValue'], Decimal('20')) # Sapling
 
         # Node 0 sends some shielded funds to Node 1
         dest_addr = self.nodes[1].z_getnewaddress('sapling')
@@ -96,6 +109,35 @@ class WalletPersistenceTest (BitcoinTestFramework):
         # Verify balances
         assert_equal(self.nodes[0].z_getbalance(sapling_addr), Decimal('5'))
         assert_equal(self.nodes[1].z_getbalance(dest_addr), Decimal('15'))
+
+        # Verify importing a spending key will update and persist the nullifiers and witnesses correctly
+        sk0 = self.nodes[0].z_exportkey(sapling_addr)
+        self.nodes[2].z_importkey(sk0, "yes")
+        assert_equal(self.nodes[2].z_getbalance(sapling_addr), Decimal('5'))
+
+        # Restart the nodes
+        stop_nodes(self.nodes)
+        wait_bitcoinds()
+        self.setup_network()
+
+        # Verify nullifiers persisted correctly by checking balance
+        # Prior to PR #3590, there will be an error as spent notes are considered unspent:
+        #    Assertion failed: expected: <25.00000000> but was: <5>
+        assert_equal(self.nodes[2].z_getbalance(sapling_addr), Decimal('5'))
+
+        # Verity witnesses persisted correctly by sending shielded funds
+        recipients = []
+        recipients.append({"address": dest_addr, "amount": Decimal('1')})
+        myopid = self.nodes[2].z_sendmany(sapling_addr, recipients, 1, 0)
+        wait_and_assert_operationid_status(self.nodes[2], myopid)
+
+        self.sync_all()
+        self.nodes[0].generate(1)
+        self.sync_all()
+
+        # Verify balances
+        assert_equal(self.nodes[2].z_getbalance(sapling_addr), Decimal('4'))
+        assert_equal(self.nodes[1].z_getbalance(dest_addr), Decimal('16'))
 
 if __name__ == '__main__':
     WalletPersistenceTest().main()

@@ -394,7 +394,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             if (!pwalletMain->GetHDSeed(seed)) {
                 throw JSONRPCError(
                     RPC_WALLET_ERROR,
-                    "CWallet::GenerateNewSaplingZKey(): HD seed not found");
+                    "AsyncRPCOperation_sendmany::main_impl(): HD seed not found");
             }
             ovk = ovkForShieldingFromTaddr(seed);
         }
@@ -1333,7 +1333,8 @@ void AsyncRPCOperation_sendmany::add_taddr_change_output_to_tx(CAmount amount) {
 }
 
 std::array<unsigned char, ZC_MEMO_SIZE> AsyncRPCOperation_sendmany::get_memo_from_hex_string(std::string s) {
-    std::array<unsigned char, ZC_MEMO_SIZE> memo = {{0x00}};
+    // initialize to default memo (no_memo), see section 5.5 of the protocol spec
+    std::array<unsigned char, ZC_MEMO_SIZE> memo = {{0xF6}};
     
     std::vector<unsigned char> rawMemo = ParseHex(s.c_str());
 

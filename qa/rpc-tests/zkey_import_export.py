@@ -1,7 +1,9 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 # Copyright (c) 2017 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
+import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
 
 from decimal import Decimal
 from test_framework.test_framework import BitcoinTestFramework
@@ -83,7 +85,7 @@ class ZkeyImportExportTest (BitcoinTestFramework):
         miner.generate(100)
         self.sync_all()
         # Shield Alice's coinbase funds to her zaddr
-        alice_zaddr = alice.z_getnewaddress()
+        alice_zaddr = alice.z_getnewaddress('sprout')
         res = alice.z_shieldcoinbase("*", alice_zaddr)
         wait_and_assert_operationid_status(alice, res['opid'])
         self.sync_all()
@@ -91,7 +93,7 @@ class ZkeyImportExportTest (BitcoinTestFramework):
         self.sync_all()
 
         # Now get a pristine z-address for receiving transfers:
-        bob_zaddr = bob.z_getnewaddress()
+        bob_zaddr = bob.z_getnewaddress('sprout')
         verify_utxos(bob, [], bob_zaddr)
         # TODO: Verify that charlie doesn't have funds in addr
         # verify_utxos(charlie, [])

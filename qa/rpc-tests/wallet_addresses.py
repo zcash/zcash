@@ -1,7 +1,9 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 # Copyright (c) 2018 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
+import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, start_nodes
@@ -37,41 +39,41 @@ class WalletAddressesTest(BitcoinTestFramework):
         assert_equal(self.nodes[0].getblockcount(), 200)
 
         # Current height = 200 -> Sprout
-        # Default address type is Sprout
+        # Default address type is Sapling
         print "Testing height 200 (Sprout)"
-        addr_checks('sprout')
+        addr_checks('sapling')
 
         self.nodes[0].generate(1)
         self.sync_all()
 
         # Current height = 201 -> Sprout
-        # Default address type is Sprout
+        # Default address type is Sapling
         print "Testing height 201 (Sprout)"
-        addr_checks('sprout')
+        addr_checks('sapling')
 
         self.nodes[0].generate(1)
         self.sync_all()
 
         # Current height = 202 -> Overwinter
-        # Default address type is Sprout
+        # Default address type is Sapling
         print "Testing height 202 (Overwinter)"
-        addr_checks('sprout')
+        addr_checks('sapling')
 
         self.nodes[0].generate(1)
         self.sync_all()
 
         # Current height = 203 -> Overwinter
-        # Default address type is Sprout
+        # Default address type is Sapling
         print "Testing height 203 (Overwinter)"
-        addr_checks('sprout')
+        addr_checks('sapling')
 
         self.nodes[0].generate(1)
         self.sync_all()
 
         # Current height = 204 -> Sapling
-        # Default address type is Sprout
+        # Default address type is Sapling
         print "Testing height 204 (Sapling)"
-        addr_checks('sprout')
+        addr_checks('sapling')
 
 if __name__ == '__main__':
     WalletAddressesTest().main()

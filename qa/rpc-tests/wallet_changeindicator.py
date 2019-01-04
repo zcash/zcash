@@ -1,7 +1,9 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 # Copyright (c) 2018 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
+import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, assert_true, assert_false, wait_and_assert_operationid_status
@@ -18,8 +20,8 @@ class WalletChangeIndicatorTest (BitcoinTestFramework):
     # Tests
     def run_test(self):
         taddr = self.nodes[1].getnewaddress()
-        zaddr1 = self.nodes[1].z_getnewaddress()
-        zaddr2 = self.nodes[1].z_getnewaddress()
+        zaddr1 = self.nodes[1].z_getnewaddress('sprout')
+        zaddr2 = self.nodes[1].z_getnewaddress('sprout')
 
         self.nodes[0].sendtoaddress(taddr, Decimal('1.0'))
         self.generate_and_sync()

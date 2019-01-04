@@ -23,6 +23,8 @@ author_aliases = {
     'Simon': 'Simon Liu',
     'bitcartel': 'Simon Liu',
     'EthanHeilman': 'Ethan Heilman',
+    'arielgabizon' : 'Ariel Gabizon',
+    'Charlie OKeefe' : 'Charlie O\'Keefe',
 }
 
 def apply_author_aliases(name):

@@ -182,9 +182,11 @@ EOF
         # This may be the first time the user's run this script, so give
         # them some info, especially about bandwidth usage:
         cat <<EOF
-The parameters are currently just under 911MB in size, so plan accordingly
-for your bandwidth constraints. If the files are already present and
-have the correct sha256sum, no networking is used.
+The complete parameters are currently just under 1.7GB in size, so plan 
+accordingly for your bandwidth constraints. If the Sprout parameters are
+already present the additional Sapling parameters required are just under 
+800MB in size. If the files are already present and have the correct 
+sha256sum, no networking is used.
 
 Creating params directory. For details about this directory, see:
 $README_PATH
