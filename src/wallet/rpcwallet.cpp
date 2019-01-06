@@ -2963,10 +2963,27 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
 
         for (auto & entry : sproutEntries) {
             UniValue obj(UniValue::VOBJ);
+            int nHeight = 0;
+            CTransaction tx;
+            uint256 hashBlock;
+
             obj.push_back(Pair("txid", entry.jsop.hash.ToString()));
             obj.push_back(Pair("jsindex", (int)entry.jsop.js ));
             obj.push_back(Pair("jsoutindex", (int)entry.jsop.n));
-            int nHeight = mapBlockIndex[entry.jsop.hash]->GetHeight();
+
+            if (!GetTransaction(entry.jsop.hash, tx, hashBlock, true)) {
+                // TODO: should we throw JSONRPCError ?
+                fprintf(stderr,"tx hash %s does not exist!\n", entry.jsop.hash.ToString().c_str() );
+            }
+
+            BlockMap::const_iterator it = mapBlockIndex.find(hashBlock);
+            if (it != mapBlockIndex.end()) {
+                nHeight = it->second->GetHeight();
+                fprintf(stderr,"blockHash %s height %d\n",hashBlock.ToString().c_str(), nHeight);
+            } else {
+                // TODO: should we throw JSONRPCError ?
+                fprintf(stderr,"block hash %s does not exist!\n", hashBlock.ToString().c_str() );
+            }
             obj.push_back(Pair("confirmations", komodo_dpowconfs(nHeight, entry.confirmations)));
             obj.push_back(Pair("rawconfirmations", entry.confirmations));
             bool hasSproutSpendingKey = pwalletMain->HaveSproutSpendingKey(boost::get<libzcash::SproutPaymentAddress>(entry.address));
@@ -2985,7 +3002,23 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
             UniValue obj(UniValue::VOBJ);
             obj.push_back(Pair("txid", entry.op.hash.ToString()));
             obj.push_back(Pair("outindex", (int)entry.op.n));
-            int nHeight = mapBlockIndex[entry.op.hash]->GetHeight();
+            // this is a txid hash but needs to be block hash
+            int nHeight = 0;
+            CTransaction tx;
+            uint256 hashBlock;
+            if (!GetTransaction(entry.op.hash, tx, hashBlock, true)) {
+                // TODO: should we throw JSONRPCError ?
+                fprintf(stderr,"tx hash %s does not exist!\n", entry.op.hash.ToString().c_str() );
+            }
+
+            BlockMap::const_iterator it = mapBlockIndex.find(hashBlock);
+            if (it != mapBlockIndex.end()) {
+                nHeight = it->second->GetHeight();
+                fprintf(stderr,"blockHash %s height %d\n",hashBlock.ToString().c_str(), nHeight);
+            } else {
+                // TODO: should we throw JSONRPCError ?
+                fprintf(stderr,"block hash %s does not exist!\n", hashBlock.ToString().c_str() );
+            }
             obj.push_back(Pair("confirmations", komodo_dpowconfs(nHeight, entry.confirmations)));
             obj.push_back(Pair("rawconfirmations", entry.confirmations));
             libzcash::SaplingIncomingViewingKey ivk;
