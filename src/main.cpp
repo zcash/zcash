@@ -4809,6 +4809,7 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
 
     if ( ASSETCHAINS_CC != 0 )
     {
+        LOCK2(cs_main,mempool.cs);
         // here we add back all txs from the temp mempool to the main mempool.
         BOOST_FOREACH(const CTxMemPoolEntry& e, tmpmempool.mapTx)
         {

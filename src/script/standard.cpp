@@ -468,26 +468,27 @@ bool ExtractDestinations(const CScript& scriptPubKey, txnouttype& typeRet, vecto
         if (addressRet.empty())
             return false;
     }
-    else if (IsCryptoConditionsEnabled() != 0 && typeRet == TX_CRYPTOCONDITION)
-    {
-        nRequiredRet = vSolutions.front()[0];
-        for (unsigned int i = 1; i < vSolutions.size()-1; i++)
-        {
-            CTxDestination address;
-            if (vSolutions[i].size() == 20)
-            {
-                address = CKeyID(uint160(vSolutions[i]));
-            }
-            else
-            {
-                address = CPubKey(vSolutions[i]);
-            }
-            addressRet.push_back(address);
-        }
+    // Removed to get CC address printed in getrawtransaction and decoderawtransaction
+    // else if (IsCryptoConditionsEnabled() != 0 && typeRet == TX_CRYPTOCONDITION)
+    // {
+    //     nRequiredRet = vSolutions.front()[0];
+    //     for (unsigned int i = 1; i < vSolutions.size()-1; i++)
+    //     {
+    //         CTxDestination address;
+    //         if (vSolutions[i].size() == 20)
+    //         {
+    //             address = CKeyID(uint160(vSolutions[i]));
+    //         }
+    //         else
+    //         {
+    //             address = CPubKey(vSolutions[i]);
+    //         }
+    //         addressRet.push_back(address);
+    //     }
 
-        if (addressRet.empty())
-            return false;
-    }
+    //     if (addressRet.empty())
+    //         return false;
+    // }
     else
     {
         nRequiredRet = 1;

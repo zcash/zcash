@@ -6221,9 +6221,7 @@ UniValue oraclesdata(const UniValue& params, bool fHelp)
     txid = Parseuint256((char *)params[0].get_str().c_str());
     data = ParseHex(params[1].get_str().c_str());
     hex = OracleData(0,txid,data);
-
     RETURN_IF_ERROR(CCerror);
-
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
@@ -6257,24 +6255,6 @@ UniValue oraclescreate(const UniValue& params, bool fHelp)
     if ( format.size() > 4096 )
     {
         ERR_RESULT("oracles format must be <= 4096 characters");
-        return(result);
-    }
-    // list of oracle valid formats from oracles.cpp -> oracle_format
-    const UniValue valid_formats[13] = {"s","S","d","D","c","C","t","T","i","I","l","L","h"};
-    const UniValue header_type = "Ihh";
-    // checking if oracle data type is valid
-    bool is_valid_format = false;
-    for ( int i = 0; i < 13; ++i ) {
-        if ( valid_formats[i].get_str() == format ) {
-            is_valid_format = true;
-        }
-    }
-    // additional check for special Ihh data type
-    if ( format == header_type.get_str() ) {
-        is_valid_format = true;
-    }
-    if ( !is_valid_format ) {
-        ERR_RESULT("oracles format not valid");
         return(result);
     }
     hex = OracleCreate(0,name,description,format);

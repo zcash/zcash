@@ -29,6 +29,7 @@
 #include "txmempool.h"
 #include "util.h"
 #include "notaries_staked.h"
+#include "cc/eval.h"
 #ifdef ENABLE_WALLET
 #include "wallet/wallet.h"
 #include "wallet/walletdb.h"
@@ -1417,6 +1418,52 @@ UniValue txnotarizedconfirmed(const UniValue& params, bool fHelp)
     notarizedconfirmed=komodo_txnotarizedconfirmed(txid);
     UniValue result(UniValue::VOBJ);
     result.push_back(Pair("result", notarizedconfirmed));
+    return result;
+}
+
+UniValue decodeccopret(const UniValue& params, bool fHelp)
+{
+    CTransaction tx; uint256 txid,hashBlock;
+    std::vector<uint8_t> vopret; uint8_t *script;
+    UniValue result(UniValue::VOBJ);
+
+    if (fHelp || params.size() < 1 || params.size() > 1)
+    {
+        string msg = "decodeccopret hex\n"
+            "\nReturns eval code and function id for CC OP RETURN data.\n"           
+
+            "\nArguments:\n"
+            "1. txid      (string, required) Transaction id.\n"          
+
+            "\nResult:\n"
+            "{\n"
+            "  eval_code,  (string) Eval code name.\n" 
+            "  function,   (char) Function id char.\n"           
+            "}\n"           
+        ;
+        throw runtime_error(msg);
+    }
+    txid = uint256S((char *)params[0].get_str().c_str());
+    {
+        LOCK(cs_main);
+            if (!GetTransaction(txid, tx, hashBlock, true))
+                throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "No information available about transaction");
+    }
+    GetOpReturnData(tx.vout[tx.vout.size()-1].scriptPubKey,vopret);
+    script = (uint8_t *)vopret.data();
+    if ( vopret.size() > 1)
+    {        
+        char func[5];
+        sprintf(func,"%c",script[1]);
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("eval_code", EvalToStr(script[0])));
+        result.push_back(Pair("function", func));
+    }
+    else
+    {
+        result.push_back(Pair("result", "error"));
+        result.push_back(Pair("error", "invalid or no CC opret data"));
+    }
     return result;
 }
 
