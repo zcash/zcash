@@ -3002,7 +3002,6 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
             UniValue obj(UniValue::VOBJ);
             obj.push_back(Pair("txid", entry.op.hash.ToString()));
             obj.push_back(Pair("outindex", (int)entry.op.n));
-            // this is a txid hash but needs to be block hash
             int nHeight = 0;
             CTransaction tx;
             uint256 hashBlock;
