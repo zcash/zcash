@@ -1,3 +1,18 @@
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 #include "cc/eval.h"
 #include "crosschain.h"
 #include "importcoin.h"
@@ -199,16 +214,14 @@ cont:
  */
 void CompleteImportTransaction(CTransaction &importTx)
 {
-    TxProof proof;
-    CTransaction burnTx;
-    std::vector<CTxOut> payouts;
+    TxProof proof; CTransaction burnTx; std::vector<CTxOut> payouts; std::vector<uint8_t> rawproof;
     if (!UnmarshalImportTx(importTx, proof, burnTx, payouts))
         throw std::runtime_error("Couldn't parse importTx");
 
     std::string targetSymbol;
     uint32_t targetCCid;
     uint256 payoutsHash;
-    if (!UnmarshalBurnTx(burnTx, targetSymbol, &targetCCid, payoutsHash))
+    if (!UnmarshalBurnTx(burnTx, targetSymbol, &targetCCid, payoutsHash, rawproof))
         throw std::runtime_error("Couldn't parse burnTx");
 
     proof = GetCrossChainProof(burnTx.GetHash(), targetSymbol.data(), targetCCid, proof);
@@ -284,13 +297,13 @@ bool CheckMoMoM(uint256 kmdNotarisationHash, uint256 momom)
  * in: txid
  * out: pair<notarisationTxHash,merkleBranch>
  */
-TxProof GetAssetchainProof(uint256 hash)
+
+TxProof GetAssetchainProof(uint256 hash,CTransaction burnTx)
 {
     int nIndex;
     CBlockIndex* blockIndex;
     Notarisation nota;
     std::vector<uint256> branch;
-
     {
         uint256 blockHash;
         CTransaction tx;

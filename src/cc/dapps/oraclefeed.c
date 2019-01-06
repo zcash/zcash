@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright © 2014-2018 The SuperNET Developers.                             *
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
  *                                                                            *
  * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
  * the top-level directory of this distribution for the individual copyright  *
@@ -820,22 +820,6 @@ int32_t get_gatewaysinfo(char *refcoin,char *acname,char *depositaddr,int32_t *M
     if ( *Mp <= 0 || *Np <= 0 )
         return(-1);
     else return(0);
-}
-
-int32_t tx_notarizedconfirmed(char *refcoin,char *acname,bits256 txid)
-{
-    char *retstr,str[65]; cJSON *retjson; int32_t result;
-    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"txnotarizedconfirmed",bits256_str(str,txid),"","","")) != 0 )
-    {
-        if (is_cJSON_True(jobj(retjson,"result")) != 0 ) result=1;
-        else result=0;        
-        free_json(retjson);
-    }
-    else if ( retstr != 0 )
-    {
-        printf("error parsing txnotarizedconfirmed.(%s)\n",retstr);
-        free(retstr);
-    }
 }
 
 int32_t tx_has_voutaddress(char *refcoin,char *acname,bits256 txid,char *coinaddr)
