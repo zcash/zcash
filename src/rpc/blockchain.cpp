@@ -695,7 +695,8 @@ UniValue getblockheader(const UniValue& params, bool fHelp)
             "\nResult (for verbose = true):\n"
             "{\n"
             "  \"hash\" : \"hash\",     (string) the block hash (same as provided)\n"
-            "  \"confirmations\" : n,   (numeric) The number of confirmations, or -1 if the block is not on the main chain\n"
+            "  \"confirmations\" : n,   (numeric) The number of notarized DPoW confirmations, or -1 if the block is not on the main chain\n"
+            "  \"rawconfirmations\" : n,(numeric) The number of raw confirmations, or -1 if the block is not on the main chain\n"
             "  \"height\" : n,          (numeric) The block height or index\n"
             "  \"version\" : n,         (numeric) The block version\n"
             "  \"merkleroot\" : \"xxxx\", (string) The merkle root\n"
@@ -755,7 +756,8 @@ UniValue getblock(const UniValue& params, bool fHelp)
             "\nResult (for verbosity = 1):\n"
             "{\n"
             "  \"hash\" : \"hash\",       (string) the block hash (same as provided hash)\n"
-            "  \"confirmations\" : n,   (numeric) The number of confirmations, or -1 if the block is not on the main chain\n"
+            "  \"confirmations\" : n,   (numeric) The number of notarized DPoW confirmations, or -1 if the block is not on the main chain\n"
+            "  \"rawconfirmations\" : n,(numeric) The number of raw confirmations, or -1 if the block is not on the main chain\n"
             "  \"size\" : n,            (numeric) The block size\n"
             "  \"height\" : n,          (numeric) The block height or index (same as provided height)\n"
             "  \"version\" : n,         (numeric) The block version\n"
@@ -1198,7 +1200,8 @@ UniValue gettxout(const UniValue& params, bool fHelp)
             "\nResult:\n"
             "{\n"
             "  \"bestblock\" : \"hash\",    (string) the block hash\n"
-            "  \"confirmations\" : n,       (numeric) The number of confirmations\n"
+            "  \"confirmations\" : n,       (numeric) The number of notarized DPoW confirmations\n"
+            "  \"rawconfirmations\" : n,    (numeric) The number of raw confirmations\n"
             "  \"value\" : x.xxx,           (numeric) The transaction value in " + CURRENCY_UNIT + "\n"
             "  \"scriptPubKey\" : {         (json object)\n"
             "     \"asm\" : \"code\",       (string) \n"
@@ -1251,10 +1254,10 @@ UniValue gettxout(const UniValue& params, bool fHelp)
     BlockMap::iterator it = mapBlockIndex.find(pcoinsTip->GetBestBlock());
     CBlockIndex *pindex = it->second;
     ret.push_back(Pair("bestblock", pindex->GetBlockHash().GetHex()));
-    if ((unsigned int)coins.nHeight == MEMPOOL_HEIGHT)
+    if ((unsigned int)coins.nHeight == MEMPOOL_HEIGHT) {
         ret.push_back(Pair("confirmations", 0));
-    else
-    {
+        ret.push_back(Pair("rawconfirmations", 0));
+    } else {
         ret.push_back(Pair("confirmations", komodo_dpowconfs(coins.nHeight,pindex->GetHeight() - coins.nHeight + 1)));
         ret.push_back(Pair("rawconfirmations", pindex->GetHeight() - coins.nHeight + 1));
     }
