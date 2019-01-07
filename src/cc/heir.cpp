@@ -14,7 +14,7 @@
  ******************************************************************************/
 
 #include "CCHeir.h"
-#include "CCassets.h"
+#include "CCtokens.h"
 
 #include "heir_validate.h"
 
@@ -433,47 +433,79 @@ bool HeirExactAmounts(struct CCcontract_info* cp, Eval* eval, const CTransaction
 }
 
 // makes coin initial tx opret
-CScript EncodeHeirCreateOpRet(uint8_t eval, uint8_t funcid, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t inactivityTimeSec, std::string heirName)
+CScript EncodeHeirCreateOpRet(uint8_t funcid, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t inactivityTimeSec, std::string heirName)
 {
-	return CScript() << OP_RETURN << E_MARSHAL(ss << (uint8_t)eval << (uint8_t)funcid << ownerPubkey << heirPubkey << inactivityTimeSec << heirName);
+	uint8_t evalcode = EVAL_HEIR;
+
+	return CScript() << OP_RETURN << E_MARSHAL(ss << (uint8_t)evalcode << (uint8_t)funcid << ownerPubkey << heirPubkey << inactivityTimeSec << heirName);
 }
 
 // makes coin additional tx opret
-CScript EncodeHeirOpRet(uint8_t eval, uint8_t funcid,  uint256 fundingtxid)
+CScript EncodeHeirOpRet(uint8_t funcid,  uint256 fundingtxid)
 {
+	uint8_t evalcode = EVAL_HEIR;
+
 	fundingtxid = revuint256(fundingtxid);
-	return CScript() << OP_RETURN << E_MARSHAL(ss << (uint8_t)eval << (uint8_t)funcid << fundingtxid);
+	return CScript() << OP_RETURN << E_MARSHAL(ss << (uint8_t)evalcode << (uint8_t)funcid << fundingtxid);
 }
 // makes opret for tokens while they are inside Heir contract address space - initial funding
-CScript EncodeHeirAssetsCreateOpRet(uint8_t eval, uint8_t funcid, uint256 tokenid, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t inactivityTimeSec, std::string hearName)
+CScript EncodeHeirTokensCreateOpRet(uint8_t funcid, uint256 tokenid, std::vector<CPubKey> voutPubkeys, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t inactivityTimeSec, std::string hearName)
 {
+	uint8_t evalcode = EVAL_TOKENS;
+	uint8_t ccType = 0;
+	if (voutPubkeys.size() >= 1 && voutPubkeys.size() <= 2)
+		ccType = voutPubkeys.size();
+
 	tokenid = revuint256(tokenid);
-	return CScript() << OP_RETURN << E_MARSHAL(ss << (uint8_t)eval << (uint8_t)'t' << tokenid << (uint8_t)funcid << ownerPubkey << heirPubkey << inactivityTimeSec << hearName);
+	return CScript() << OP_RETURN << E_MARSHAL(ss << (uint8_t)evalcode << (uint8_t)'t' << tokenid << (uint8_t)funcid << ccType; if (ccType >= 1) ss << voutPubkeys[0]; if (ccType == 2) ss << voutPubkeys[1]; ss << ownerPubkey << heirPubkey << inactivityTimeSec << hearName);
 }
 // makes opret for tokens while they are inside Heir contract address space - additional funding
-CScript EncodeHeirAssetsOpRet(uint8_t eval, uint8_t funcid, uint256 tokenid, uint256 fundingtxid)
+CScript EncodeHeirTokensOpRet(uint8_t funcid, uint256 tokenid, std::vector<CPubKey> voutPubkeys, uint256 fundingtxid)
 {
+	uint8_t evalcode = EVAL_HEIR;
+	uint8_t ccType = 0;
+	if (voutPubkeys.size() >= 1 && voutPubkeys.size() <= 2)
+		ccType = voutPubkeys.size();
+
 	tokenid = revuint256(tokenid);
 	fundingtxid = revuint256(fundingtxid);
-	return CScript() << OP_RETURN << E_MARSHAL(ss << (uint8_t)eval << (uint8_t)'t' << tokenid << (uint8_t)funcid << fundingtxid);
+	return CScript() << OP_RETURN << E_MARSHAL(ss << (uint8_t)evalcode << (uint8_t)'t' << tokenid << ccType; if (ccType >= 1) ss << voutPubkeys[0]; if (ccType == 2) ss << voutPubkeys[1]; ss << (uint8_t)funcid << fundingtxid);
 }
 
+// helper for decode heir opret payload
+// NOTE: Heir for coins has the same opret as Heir for tokens
+uint8_t _UnmarshalOpret(std::vector<uint8_t> vopretExtra, CPubKey& ownerPubkey, CPubKey& heirPubkey, int64_t& inactivityTime, std::string& heirName, uint256& fundingTxidInOpret) {
+	uint8_t heirFuncId = 0;
+
+	bool result = E_UNMARSHAL(vopretExtra, { ss >> heirFuncId; ss >> ownerPubkey; ss >> heirPubkey; ss >> inactivityTime; if (IS_CHARINSTR(heirFuncId, "F")) { ss >> heirName; } if (IS_CHARINSTR(heirFuncId, "AC")) { ss >> fundingTxidInOpret; } });
+	if (!result /*|| assetFuncId != 't' -- any tx is ok*/)
+		return (uint8_t)0;
+
+	return heirFuncId;
+}
 /**
 * decode opret vout for Heir contract
 */
 template <class Helper> uint8_t _DecodeHeirOpRet(CScript scriptPubKey, uint256 &tokenid, CPubKey& ownerPubkey, CPubKey& heirPubkey, int64_t& inactivityTime, std::string& heirName, uint256& fundingTxidInOpret, bool noLogging)
 {
-	std::vector<uint8_t> vopret;
-	uint8_t opretEval = 0;
-	uint8_t funcId = 0;
+	uint8_t evalCodeInOpret = 0;
+
+	std::vector<uint8_t> vopretExtra;
+	uint256 dummyTokenid;
+	std::vector<CPubKey> voutPubkeysDummy;
 
 	fundingTxidInOpret = zeroid; //to init
+	tokenid = zeroid;
 
-	GetOpReturnData(scriptPubKey, vopret);
 
-	if (vopret.size() > 1) {
+	// First - decode token opret:
+	uint8_t funcId = DecodeTokenOpRet(scriptPubKey, evalCodeInOpret, tokenid, voutPubkeysDummy, vopretExtra);
+
+	//GetOpReturnData(scriptPubKey, vopret);
+
+	if (funcId != 0 && vopretExtra.size() > 1) {  // TODO: add this funcId cond in Assets too
 		// NOTE: it unmarshals for all F, A and C
-		Helper::UnmarshalOpret(vopret, opretEval, funcId, tokenid, ownerPubkey, heirPubkey, inactivityTime, heirName, fundingTxidInOpret);
+		uint8_t heirFuncId = _UnmarshalOpret(vopretExtra, ownerPubkey, heirPubkey, inactivityTime, heirName, fundingTxidInOpret);
 		
 		/*
 		std::cerr << "DecodeHeirOpRet() e=" << (int)e 
@@ -484,14 +516,14 @@ template <class Helper> uint8_t _DecodeHeirOpRet(CScript scriptPubKey, uint256 &
 		*/
 
 		//if (e == EVAL_HEIR && IS_CHARINSTR(funcId, "FAC"))
-		if (opretEval == EVAL_HEIR && Helper::isMyFuncId(funcId)) {
+		if (evalCodeInOpret == EVAL_HEIR && Helper::isMyFuncId(heirFuncId)) {
 			tokenid = revuint256(tokenid);
 			fundingTxidInOpret = revuint256(fundingTxidInOpret);
-			return funcId;
+			return heirFuncId;
 		}
 		else
 		{
-			if(!noLogging) std::cerr << "DecodeHeirOpRet() warning unexpected OP_RETURN eval=" << (int)opretEval << " or field type=" << (char)(funcId ? funcId : ' ') << '\n';
+			if(!noLogging) std::cerr << "DecodeHeirOpRet() warning unexpected OP_RETURN eval=" << (int)evalCodeInOpret << " or field type=" << (char)(heirFuncId ? heirFuncId : ' ') << '\n';
 		}
 	}
 	else {
@@ -843,10 +875,15 @@ template <typename Helper> std::string HeirFund(uint64_t txfee, int64_t amount, 
 				mtx.vout.push_back(Helper::makeUserVout(change, myPubkey));
 			}
 
+			// add 1of2 vout validation pubkeys:
+			std::vector<CPubKey> voutTokenPubkeys;
+			voutTokenPubkeys.push_back(myPubkey);
+			voutTokenPubkeys.push_back(heirPubkey);
+
 			// add change for txfee and opreturn vouts and sign tx:
 			return (FinalizeCCTx(0, cp, mtx, myPubkey, txfee,
 				// CScript() << OP_RETURN << E_MARSHAL(ss << (uint8_t)EVAL_HEIR << (uint8_t)'F' << myPubkey << heirPubkey << inactivityTimeSec << heirName)));
-				Helper::makeCreateOpRet(tokenid, myPubkey, heirPubkey, inactivityTimeSec, heirName)));
+				Helper::makeCreateOpRet(tokenid, voutTokenPubkeys, myPubkey, heirPubkey, inactivityTimeSec, heirName)));
 		}
 		else  // TODO: need result return unification with heiradd and claim
 			std::cerr << "HeirFund() could not find owner inputs" << std::endl;
@@ -928,9 +965,14 @@ template <class Helper> UniValue HeirAdd(uint256 fundingtxid, uint64_t txfee, in
 					mtx.vout.push_back(Helper::makeUserVout(change, myPubkey));
 				}
 
+				// add 1of2 vout validation pubkeys:
+				std::vector<CPubKey> voutTokenPubkeys;
+				voutTokenPubkeys.push_back(ownerPubkey);
+				voutTokenPubkeys.push_back(heirPubkey);
+
 				// add opreturn 'A'  and sign tx:						// this txfee ignored
 				std::string rawhextx = (FinalizeCCTx(0, cp, mtx, myPubkey, txfee,
-					Helper::makeAddOpRet(tokenid, fundingtxid)));
+					Helper::makeAddOpRet(tokenid, voutTokenPubkeys, fundingtxid)));
 
 				result.push_back(Pair("result", "success"));
 				result.push_back(Pair("hextx", rawhextx));
@@ -1068,9 +1110,14 @@ template <typename Helper>UniValue HeirClaim(uint256 fundingtxid, uint64_t txfee
 
 				CCaddr1of2set(cp, ownerPubkey, heirPubkey, coinaddr);
 
+				// add 1of2 vout validation pubkeys:
+				std::vector<CPubKey> voutTokenPubkeys;
+				voutTokenPubkeys.push_back(ownerPubkey);
+				voutTokenPubkeys.push_back(heirPubkey);
+
                 // add opreturn 'C' and sign tx:				  // this txfee will be ignored
 				std::string rawhextx = FinalizeCCTx(0, cp, mtx, myPubkey, txfee,
-					Helper::makeClaimOpRet(tokenid, fundingtxid));
+					Helper::makeClaimOpRet(tokenid, voutTokenPubkeys, fundingtxid));
 
                 result.push_back(Pair("result", "success"));
                 result.push_back(Pair("hextx", rawhextx));

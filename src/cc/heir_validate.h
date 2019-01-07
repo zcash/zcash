@@ -11,12 +11,12 @@
 
 
 // makes coin initial tx opret
-CScript EncodeHeirCreateOpRet(uint8_t eval, uint8_t funcid, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t inactivityTimeSec, std::string heirName);
+CScript EncodeHeirCreateOpRet(uint8_t funcid, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t inactivityTimeSec, std::string heirName);
 // makes coin additional tx opret
-CScript EncodeHeirOpRet(uint8_t eval, uint8_t funcid,  uint256 fundingtxid);
+CScript EncodeHeirOpRet(uint8_t funcid,  uint256 fundingtxid);
 
-CScript EncodeHeirAssetsCreateOpRet(uint8_t eval, uint8_t funcid, uint256 tokenid, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t inactivityTimeSec, std::string hearName);
-CScript EncodeHeirAssetsOpRet(uint8_t eval, uint8_t funcid, uint256 tokenid, uint256 fundingtxid);
+CScript EncodeHeirTokensCreateOpRet(uint8_t funcid, uint256 tokenid, std::vector<CPubKey> voutPubkeys, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t inactivityTimeSec, std::string hearName);
+CScript EncodeHeirTokensOpRet(uint8_t funcid, uint256 tokenid, std::vector<CPubKey> voutPubkeys, uint256 fundingtxid);
 //CScript EncodeHeirConvertedAssetsOpRet(uint8_t eval, uint8_t funcid, uint256 tokenid, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t inactivityTimeSec, uint256 fundingtxid);
 
 template <class Helper> uint256 FindLatestFundingTx(uint256 fundingtxid, uint256 &tokenid, CScript& opRetScript, bool &isHeirSpendingBegan);
@@ -37,18 +37,14 @@ public:
 		return AddNormalinputs(mtx, ownerPubkey, total, maxinputs);
 	}
 
-	static CScript makeCreateOpRet(uint256 dummyid, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t inactivityTimeSec, std::string heirName) {
-		return EncodeHeirCreateOpRet((uint8_t)EVAL_HEIR, (uint8_t)'F', ownerPubkey, heirPubkey, inactivityTimeSec, heirName);
+	static CScript makeCreateOpRet(uint256 dummyid, std::vector<CPubKey> dummyPubkeys, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t inactivityTimeSec, std::string heirName) {
+		return EncodeHeirCreateOpRet((uint8_t)'F', ownerPubkey, heirPubkey, inactivityTimeSec, heirName);
 	}
-	static CScript makeAddOpRet(uint256 dummyid, uint256 fundingtxid) {
-		return EncodeHeirOpRet((uint8_t)EVAL_HEIR, (uint8_t)'A', fundingtxid);
+	static CScript makeAddOpRet(uint256 dummyid, std::vector<CPubKey> dummyPubkeys, uint256 fundingtxid) {
+		return EncodeHeirOpRet((uint8_t)'A', fundingtxid);
 	}
-	static CScript makeClaimOpRet(uint256 dummyid, uint256 fundingtxid) {
-		return EncodeHeirOpRet((uint8_t)EVAL_HEIR, (uint8_t)'C', fundingtxid);
-	}
-
-	static void UnmarshalOpret(std::vector<uint8_t> vopret, uint8_t &e, uint8_t &funcId, uint256 &dummytokenid, CPubKey& ownerPubkey, CPubKey& heirPubkey, int64_t& inactivityTime, std::string& heirName, uint256& fundingTxidInOpret) {
-		E_UNMARSHAL(vopret, { ss >> e; ss >> funcId; ss >> ownerPubkey; ss >> heirPubkey; ss >> inactivityTime; if (IS_CHARINSTR(funcId, "F")) { ss >> heirName; } if (IS_CHARINSTR(funcId, "AC")) { ss >> fundingTxidInOpret; } });
+	static CScript makeClaimOpRet(uint256 dummyid, std::vector<CPubKey> dummyPubkeys, uint256 fundingtxid) {
+		return EncodeHeirOpRet((uint8_t)'C', fundingtxid);
 	}
 
 	static bool isSpendingTx(uint8_t funcid) { return (funcid == 'C'); }
@@ -64,29 +60,22 @@ public:
 // helper class to allow polymorphic behaviour for HeirXXX() functions in case of tokens
 class TokenHelper {
 public:
-
 	static bool isMyFuncId(uint8_t funcid) { return IS_CHARINSTR(funcid, "FAC"); }   
 	static uint8_t getMyEval() { return EVAL_TOKENS; }
 	static int64_t addOwnerInputs(struct CCcontract_info* cp, uint256 tokenid, CMutableTransaction& mtx, CPubKey ownerPubkey, int64_t total, int32_t maxinputs) {
 		return AddTokenCCInputs(cp, mtx, ownerPubkey, tokenid, total, maxinputs);
 	}
 
-	static CScript makeCreateOpRet(uint256 tokenid, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t inactivityTimeSec, std::string heirName) {
-		return EncodeHeirAssetsCreateOpRet((uint8_t)EVAL_HEIR, (uint8_t)'F', tokenid, ownerPubkey, heirPubkey, inactivityTimeSec, heirName);
+	static CScript makeCreateOpRet(uint256 tokenid, std::vector<CPubKey> voutTokenPubkeys, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t inactivityTimeSec, std::string heirName) {
+		return EncodeHeirTokensCreateOpRet((uint8_t)'F', tokenid, voutTokenPubkeys, ownerPubkey, heirPubkey, inactivityTimeSec, heirName);
 	}
-	static CScript makeAddOpRet(uint256 tokenid, uint256 fundingtxid) {
-		return EncodeHeirAssetsOpRet((uint8_t)EVAL_HEIR, (uint8_t)'A', tokenid, fundingtxid);
+	static CScript makeAddOpRet(uint256 tokenid, std::vector<CPubKey> voutTokenPubkeys, uint256 fundingtxid) {
+		return EncodeHeirTokensOpRet((uint8_t)'A', tokenid, voutTokenPubkeys, fundingtxid);
 	}
-	static CScript makeClaimOpRet(uint256 tokenid, uint256 fundingtxid) {
-		return EncodeHeirAssetsOpRet((uint8_t)EVAL_HEIR, (uint8_t)'C', tokenid, fundingtxid);
+	static CScript makeClaimOpRet(uint256 tokenid, std::vector<CPubKey> voutTokenPubkeys, uint256 fundingtxid) {
+		return EncodeHeirTokensOpRet((uint8_t)'C', tokenid, voutTokenPubkeys, fundingtxid);
 	}
 
-	static void UnmarshalOpret(std::vector<uint8_t> vopret, uint8_t &e, uint8_t &funcId, uint256 &tokenid, CPubKey& ownerPubkey, CPubKey& heirPubkey, int64_t& inactivityTime, std::string& heirName, uint256& fundingtxidInOpret) {
-		uint8_t assetFuncId = '\0';
-		bool result = E_UNMARSHAL(vopret, { ss >> e; ss >> assetFuncId; ss >> tokenid; ss >> funcId; if (IS_CHARINSTR(funcId, "F")) { ss >> ownerPubkey; ss >> heirPubkey; ss >> inactivityTime; ss >> heirName; } if (IS_CHARINSTR(funcId, "AC")) { ss >> fundingtxidInOpret; } });
-		if (!result /*|| assetFuncId != 't' -- any tx is ok*/) 
-			funcId = 0;
-	}
 	static bool isSpendingTx(uint8_t funcid) { return (funcid == 'C'); }
 
 	static CTxOut makeUserVout(int64_t amount, CPubKey myPubkey) {

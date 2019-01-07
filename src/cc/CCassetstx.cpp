@@ -597,7 +597,7 @@ std::string CancelSell(int64_t txfee,uint256 assetid,uint256 asktxid)
             uint8_t myPrivkey[32];
             Myprivkey(myPrivkey);
             GetCCaddress(cpAssets, myCCaddr, mypk);
-            CCaddr2set(cpTokens, EVAL_ASSETS, mypk, myPrivkey, myCCaddr);
+            CCaddr2set(cpTokens, EVAL_ASSETS, mypk, myPrivkey, myCCaddr);  //do we need this? Seems FinalizeCCTx can attach to any evalcode cc addr by calling Getscriptaddress 
 
             return(FinalizeCCTx(mask, cpTokens, mtx, mypk, txfee, EncodeAssetOpRet('x', assetid, zeroid, 0, voutTokenPubkeys, Mypubkey())));
         }
