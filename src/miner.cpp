@@ -848,7 +848,7 @@ static bool ProcessBlockFound(CBlock* pblock)
         return error("KomodoMiner: ProcessNewBlock, block not accepted");
 
     TrackMinedBlock(pblock->GetHash());
-    komodo_broadcast(pblock,16);
+    //komodo_broadcast(pblock,16);
     return true;
 }
 
