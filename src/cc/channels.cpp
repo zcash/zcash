@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright © 2014-2018 The SuperNET Developers.                             *
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
  *                                                                            *
  * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
  * the top-level directory of this distribution for the individual copyright  *
@@ -207,7 +207,7 @@ bool ChannelsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
                             return eval->Invalid("vin.1 is CC for channelPayment!");
                         else if ( IsCCInput(tx.vin[2].scriptSig) == 0 )
                             return eval->Invalid("vin.2  is CC for channelPayment!");
-                        else if ( IsChannelsvout(cp,tx,srcpub,destpub,0)==0 )
+                        else if ( tx.vout[0].scriptPubKey.IsPayToCryptoCondition()==0 )
                             return eval->Invalid("vout.0 is CC for channelPayment!");
                         else if ( IsChannelsMarkervout(cp,tx,srcpub,1)==0 )
                             return eval->Invalid("vout.1 is CC for channelPayment (marker to srcPub)!");
@@ -746,7 +746,7 @@ UniValue ChannelsInfo(uint256 channeltxid)
         result.push_back(Pair("Channel CC address",CCaddr));
         result.push_back(Pair("Destination address",addr));
         result.push_back(Pair("Number of payments",param1));
-        result.push_back(Pair("Denomination",param2));
+        result.push_back(Pair("Denomination",i64tostr(param2)+" satoshi"));
         result.push_back(Pair("Amount",i64tostr(param1*param2)+" satoshi"));
         SetCCtxids(addressIndex,CCaddr);                      
         for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=addressIndex.begin(); it!=addressIndex.end(); it++)
@@ -781,10 +781,11 @@ UniValue ChannelsInfo(uint256 channeltxid)
                     {
                         Getscriptaddress(str,tx.vout[3].scriptPubKey);  
                         obj.push_back(Pair("Payment",txid.GetHex().data()));
-                        obj.push_back(Pair("Number",param2));
+                        obj.push_back(Pair("Number of payments",param2));
                         obj.push_back(Pair("Amount",param2*payment));
                         obj.push_back(Pair("Destination",str));
                         obj.push_back(Pair("Secret",param3.ToString().c_str()));
+                        obj.push_back(Pair("Payments left",param1));
                     }
                 }
                 else if (DecodeChannelsOpRet(tx.vout[numvouts-1].scriptPubKey,opentxid,srcpub,destpub,param1,param2,param3) == 'C' && opentxid==channeltxid)
