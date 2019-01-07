@@ -49,6 +49,7 @@ std::string FormattedArgumentString(
 }
 
 /* Factory methods for aguments */
+// Primitives
 PrimitiveArgument RpcArgument::Boolean(const std::string& name, const std::string& description) {
     return PrimitiveArgument(name, PrimitiveType::BOOLEAN, true, "", description);
 }
@@ -129,6 +130,80 @@ PrimitiveArgument RpcArgument::OptionalHexString(const std::string& description)
     return PrimitiveArgument("", PrimitiveType::HEX_STRING, false, "", description);
 }
 
+// Additional primitives
+PrimitiveArgument RpcArgument::Amount(const std::string& name, const std::string& description) {
+    return PrimitiveArgument(name, PrimitiveType::AMOUNT, true, "", description);
+}
+
+PrimitiveArgument RpcArgument::Amount(const std::string& description) {
+    return PrimitiveArgument("", PrimitiveType::AMOUNT, true, "", description);
+}
+
+PrimitiveArgument RpcArgument::OptionalAmount(const std::string& name, const std::string& defaultValue, const std::string& description) {
+       return PrimitiveArgument(name, PrimitiveType::AMOUNT, false, defaultValue, description);
+}
+
+PrimitiveArgument RpcArgument::OptionalAmount(const std::string& description) {
+    return PrimitiveArgument("", PrimitiveType::AMOUNT, false, "", description);
+}
+
+PrimitiveArgument RpcArgument::Timestamp(const std::string& name, const std::string& description) {
+    return PrimitiveArgument(name, PrimitiveType::TIMESTAMP, true, "", description);
+}
+
+PrimitiveArgument RpcArgument::Timestamp(const std::string& description) {
+    return PrimitiveArgument("", PrimitiveType::TIMESTAMP, true, "", description);
+}
+
+PrimitiveArgument RpcArgument::OptionalTimestamp(const std::string& name, const std::string& defaultValue, const std::string& description) {
+    return PrimitiveArgument(name, PrimitiveType::TIMESTAMP, false, defaultValue, description);
+}
+
+PrimitiveArgument RpcArgument::OptionalTimestamp(const std::string& description) {
+    return PrimitiveArgument("", PrimitiveType::TIMESTAMP, false, "", description);
+}
+
+PrimitiveArgument RpcArgument::Asm(const std::string& name, const std::string& description) {
+    return PrimitiveArgument(name, PrimitiveType::ASM, true, "", description);
+}
+
+PrimitiveArgument RpcArgument::Asm(const std::string& description) {
+    return PrimitiveArgument("", PrimitiveType::ASM, true, "", description);
+}
+    
+PrimitiveArgument RpcArgument::IPAddress(const std::string& name, const std::string& description) {
+    return PrimitiveArgument(name, PrimitiveType::IP_ADDRESS, true, "", description);
+}
+
+PrimitiveArgument RpcArgument::IPAddress(const std::string& description) {
+    return PrimitiveArgument("", PrimitiveType::IP_ADDRESS, true, "", description);
+}
+
+PrimitiveArgument RpcArgument::OptionalIPAddress(const std::string& name, const std::string& defaultValue, const std::string& description) {
+    return PrimitiveArgument(name, PrimitiveType::IP_ADDRESS, false, defaultValue, description);
+}
+
+PrimitiveArgument RpcArgument::OptionalIPAddress(const std::string& description) {
+    return PrimitiveArgument("", PrimitiveType::IP_ADDRESS, false, "", description);
+}
+
+PrimitiveArgument RpcArgument::SocketAddress(const std::string& name, const std::string& description) {
+    return PrimitiveArgument(name, PrimitiveType::SOCKET_ADDRESS, true, "", description);
+}
+
+PrimitiveArgument RpcArgument::SocketAddress(const std::string& description) {
+    return PrimitiveArgument("", PrimitiveType::SOCKET_ADDRESS, true, "", description);
+}
+
+PrimitiveArgument RpcArgument::OptionalSocketAddress(const std::string& name, const std::string& defaultValue, const std::string& description) {
+    return PrimitiveArgument(name, PrimitiveType::SOCKET_ADDRESS, false, defaultValue, description);
+}
+
+PrimitiveArgument RpcArgument::OptionalSocketAddress(const std::string& description) {
+    return PrimitiveArgument("", PrimitiveType::SOCKET_ADDRESS, false, "", description);
+}
+
+// Array and Object
 ArrayArgument RpcArgument::Array(const std::string name, const std::string description) {
     return ArrayArgument(name, true, description);
 }
@@ -178,10 +253,15 @@ std::string PrimitiveArgument::TypeString(bool pluralize) const {
         break;
     case PrimitiveType::INTEGER:
     case PrimitiveType::DECIMAL:
+    case PrimitiveType::AMOUNT:
+    case PrimitiveType::TIMESTAMP:
         typeName = "numeric";
         break;
     case PrimitiveType::STRING:
     case PrimitiveType::HEX_STRING:
+    case PrimitiveType::ASM:
+    case PrimitiveType::IP_ADDRESS:
+    case PrimitiveType::SOCKET_ADDRESS:
         typeName = "string";
         break;
     }
@@ -196,9 +276,14 @@ std::string FormatAsType(const std::string& value, const PrimitiveType& type) {
     case PrimitiveType::BOOLEAN:
     case PrimitiveType::INTEGER:
     case PrimitiveType::DECIMAL:
+    case PrimitiveType::AMOUNT:
+    case PrimitiveType::TIMESTAMP:
         return value;
     case PrimitiveType::STRING:
     case PrimitiveType::HEX_STRING:
+    case PrimitiveType::ASM:
+    case PrimitiveType::IP_ADDRESS:
+    case PrimitiveType::SOCKET_ADDRESS:
         // Don't escape empty string or strings that start with '\"'
         return value.empty() || value.find("\"") == 0 ? value : "\"" + value + "\"";
     }
@@ -216,6 +301,16 @@ std::string ExampleValue(const PrimitiveType& type) {
         return "\"xxx\"";
     case PrimitiveType::HEX_STRING:
         return "\"hex\"";
+    case PrimitiveType::AMOUNT:
+        return "x.xxxxxxxx";
+    case PrimitiveType::TIMESTAMP:
+        return "ttt";
+    case PrimitiveType::ASM:
+        return "\"code\"";
+    case PrimitiveType::IP_ADDRESS:
+        return "\"192.168.0.201\"";
+    case PrimitiveType::SOCKET_ADDRESS:
+        return "\"192.168.0.201:8233\"";
     }
 }
 
