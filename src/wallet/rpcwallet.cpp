@@ -3,6 +3,21 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 #include "amount.h"
 #include "consensus/upgrades.h"
 #include "core_io.h"
@@ -1420,11 +1435,13 @@ struct tallyitem
     int nConf;
     vector<uint256> txids;
     bool fIsWatchonly;
+    int nHeight;
     tallyitem()
     {
         nAmount = 0;
         nConf = std::numeric_limits<int>::max();
         fIsWatchonly = false;
+        nHeight = 0;
     }
 };
 
@@ -1470,6 +1487,7 @@ UniValue ListReceived(const UniValue& params, bool fByAccounts)
             tallyitem& item = mapTally[address];
             item.nAmount += txout.nValue; // komodo_interest?
             item.nConf = min(item.nConf, nDepth);
+            item.nHeight = mapBlockIndex[wtx.hashBlock]->GetHeight();
             item.txids.push_back(wtx.GetHash());
             if (mine & ISMINE_WATCH_ONLY)
                 item.fIsWatchonly = true;
@@ -1489,11 +1507,13 @@ UniValue ListReceived(const UniValue& params, bool fByAccounts)
         CAmount nAmount = 0;
         int nConf = std::numeric_limits<int>::max();
         bool fIsWatchonly = false;
+        int nHeight=0;
         if (it != mapTally.end())
         {
             nAmount = (*it).second.nAmount;
             nConf = (*it).second.nConf;
             fIsWatchonly = (*it).second.fIsWatchonly;
+            nHeight = (*it).second.nHeight;
         }
 
         if (fByAccounts)
@@ -1506,12 +1526,14 @@ UniValue ListReceived(const UniValue& params, bool fByAccounts)
         else
         {
             UniValue obj(UniValue::VOBJ);
+
             if(fIsWatchonly)
                 obj.push_back(Pair("involvesWatchonly", true));
             obj.push_back(Pair("address",       EncodeDestination(dest)));
             obj.push_back(Pair("account",       strAccount));
             obj.push_back(Pair("amount",        ValueFromAmount(nAmount)));
-            obj.push_back(Pair("confirmations", (nConf == std::numeric_limits<int>::max() ? 0 : nConf)));
+            obj.push_back(Pair("rawconfirmations", (nConf == std::numeric_limits<int>::max() ? 0 : nConf)));
+            obj.push_back(Pair("confirmations", (nConf == std::numeric_limits<int>::max() ? 0 : komodo_dpowconfs(nHeight, nConf))));
             UniValue transactions(UniValue::VARR);
             if (it != mapTally.end())
             {
@@ -1531,12 +1553,14 @@ UniValue ListReceived(const UniValue& params, bool fByAccounts)
         {
             CAmount nAmount = (*it).second.nAmount;
             int nConf = (*it).second.nConf;
+            int nHeight = (*it).second.nHeight;
             UniValue obj(UniValue::VOBJ);
             if((*it).second.fIsWatchonly)
                 obj.push_back(Pair("involvesWatchonly", true));
             obj.push_back(Pair("account",       (*it).first));
             obj.push_back(Pair("amount",        ValueFromAmount(nAmount)));
-            obj.push_back(Pair("confirmations", (nConf == std::numeric_limits<int>::max() ? 0 : nConf)));
+            obj.push_back(Pair("rawconfirmations", (nConf == std::numeric_limits<int>::max() ? 0 : nConf)));
+            obj.push_back(Pair("confirmations", (nConf == std::numeric_limits<int>::max() ? 0 : komodo_dpowconfs(nHeight, nConf))));
             ret.push_back(obj);
         }
     }
@@ -1674,7 +1698,7 @@ void ListTransactions(const CWalletTx& wtx, const string& strAccount, int nMinDe
                 if(involvesWatchonly || (::IsMine(*pwalletMain, r.destination) & ISMINE_WATCH_ONLY))
                     entry.push_back(Pair("involvesWatchonly", true));
                 entry.push_back(Pair("account", account));
-                
+
                 CTxDestination dest;
                 if (CScriptExt::ExtractVoutDestination(wtx, r.vout, dest))
                     MaybePushAddress(entry, dest);
@@ -2920,11 +2944,11 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
         // User did not provide zaddrs, so use default i.e. all addresses
         std::set<libzcash::SproutPaymentAddress> sproutzaddrs = {};
         pwalletMain->GetSproutPaymentAddresses(sproutzaddrs);
-        
+
         // Sapling support
         std::set<libzcash::SaplingPaymentAddress> saplingzaddrs = {};
         pwalletMain->GetSaplingPaymentAddresses(saplingzaddrs);
-        
+
         zaddrs.insert(sproutzaddrs.begin(), sproutzaddrs.end());
         zaddrs.insert(saplingzaddrs.begin(), saplingzaddrs.end());
     }
@@ -2936,13 +2960,32 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
         std::vector<SaplingNoteEntry> saplingEntries;
         pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, zaddrs, nMinDepth, nMaxDepth, true, !fIncludeWatchonly, false);
         std::set<std::pair<PaymentAddress, uint256>> nullifierSet = pwalletMain->GetNullifiersForAddresses(zaddrs);
-        
+
         for (auto & entry : sproutEntries) {
             UniValue obj(UniValue::VOBJ);
+            int nHeight = 0;
+            CTransaction tx;
+            uint256 hashBlock;
+
             obj.push_back(Pair("txid", entry.jsop.hash.ToString()));
             obj.push_back(Pair("jsindex", (int)entry.jsop.js ));
             obj.push_back(Pair("jsoutindex", (int)entry.jsop.n));
-            obj.push_back(Pair("confirmations", entry.confirmations));
+
+            if (!GetTransaction(entry.jsop.hash, tx, hashBlock, true)) {
+                // TODO: should we throw JSONRPCError ?
+                fprintf(stderr,"tx hash %s does not exist!\n", entry.jsop.hash.ToString().c_str() );
+            }
+
+            BlockMap::const_iterator it = mapBlockIndex.find(hashBlock);
+            if (it != mapBlockIndex.end()) {
+                nHeight = it->second->GetHeight();
+                fprintf(stderr,"blockHash %s height %d\n",hashBlock.ToString().c_str(), nHeight);
+            } else {
+                // TODO: should we throw JSONRPCError ?
+                fprintf(stderr,"block hash %s does not exist!\n", hashBlock.ToString().c_str() );
+            }
+            obj.push_back(Pair("confirmations", komodo_dpowconfs(nHeight, entry.confirmations)));
+            obj.push_back(Pair("rawconfirmations", entry.confirmations));
             bool hasSproutSpendingKey = pwalletMain->HaveSproutSpendingKey(boost::get<libzcash::SproutPaymentAddress>(entry.address));
             obj.push_back(Pair("spendable", hasSproutSpendingKey));
             obj.push_back(Pair("address", EncodePaymentAddress(entry.address)));
@@ -2954,12 +2997,29 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
             }
             results.push_back(obj);
         }
-        
+
         for (auto & entry : saplingEntries) {
             UniValue obj(UniValue::VOBJ);
             obj.push_back(Pair("txid", entry.op.hash.ToString()));
             obj.push_back(Pair("outindex", (int)entry.op.n));
-            obj.push_back(Pair("confirmations", entry.confirmations));
+            int nHeight = 0;
+            CTransaction tx;
+            uint256 hashBlock;
+            if (!GetTransaction(entry.op.hash, tx, hashBlock, true)) {
+                // TODO: should we throw JSONRPCError ?
+                fprintf(stderr,"tx hash %s does not exist!\n", entry.op.hash.ToString().c_str() );
+            }
+
+            BlockMap::const_iterator it = mapBlockIndex.find(hashBlock);
+            if (it != mapBlockIndex.end()) {
+                nHeight = it->second->GetHeight();
+                fprintf(stderr,"blockHash %s height %d\n",hashBlock.ToString().c_str(), nHeight);
+            } else {
+                // TODO: should we throw JSONRPCError ?
+                fprintf(stderr,"block hash %s does not exist!\n", hashBlock.ToString().c_str() );
+            }
+            obj.push_back(Pair("confirmations", komodo_dpowconfs(nHeight, entry.confirmations)));
+            obj.push_back(Pair("rawconfirmations", entry.confirmations));
             libzcash::SaplingIncomingViewingKey ivk;
             libzcash::SaplingFullViewingKey fvk;
             pwalletMain->GetSaplingIncomingViewingKey(boost::get<libzcash::SaplingPaymentAddress>(entry.address), ivk);
@@ -3687,7 +3747,11 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
             "{\n"
             "  \"txid\": xxxxx,           (string) the transaction id\n"
             "  \"amount\": xxxxx,         (numeric) the amount of value in the note\n"
-            "  \"memo\": xxxxx,           (string) hexademical string representation of memo field\n"
+            "  \"memo\": xxxxx,           (string) hexadecimal string representation of memo field\n"
+            "  \"confirmations\" : n,     (numeric) the number of confirmations\n"
+            "  \"jsindex\" (sprout) : n,     (numeric) the joinsplit index\n"
+            "  \"jsoutindex\" (sprout) : n,     (numeric) the output index of the joinsplit\n"
+            "  \"outindex\" (sapling) : n,     (numeric) the output index\n"
             "  \"change\": true|false,    (boolean) true if the address that received the note is also one of the sending addresses\n"
             "}\n"
             "\nExamples:\n"
@@ -3732,12 +3796,30 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
     if (boost::get<libzcash::SproutPaymentAddress>(&zaddr) != nullptr) {
         for (CSproutNotePlaintextEntry & entry : sproutEntries) {
             UniValue obj(UniValue::VOBJ);
+            int nHeight = 0;
+            CTransaction tx;
+            uint256 hashBlock;
+
+            if (GetTransaction(entry.jsop.hash, tx, hashBlock, true)) {
+                BlockMap::const_iterator it = mapBlockIndex.find(hashBlock);
+                if (it != mapBlockIndex.end()) {
+                    nHeight = it->second->GetHeight();
+                    fprintf(stderr,"blockHash %s height %d\n",hashBlock.ToString().c_str(), nHeight);
+                } else {
+                    fprintf(stderr,"block hash %s does not exist!\n", hashBlock.ToString().c_str() );
+                }
+            } else {
+                fprintf(stderr,"tx hash %s does not exist!\n", entry.jsop.hash.ToString().c_str() );
+            }
+
             obj.push_back(Pair("txid", entry.jsop.hash.ToString()));
             obj.push_back(Pair("amount", ValueFromAmount(CAmount(entry.plaintext.value()))));
             std::string data(entry.plaintext.memo().begin(), entry.plaintext.memo().end());
             obj.push_back(Pair("memo", HexStr(data)));
             obj.push_back(Pair("jsindex", entry.jsop.js));
             obj.push_back(Pair("jsoutindex", entry.jsop.n));
+            obj.push_back(Pair("rawconfirmations", entry.confirmations));
+            obj.push_back(Pair("confirmations", komodo_dpowconfs(nHeight, entry.confirmations)));
             if (hasSpendingKey) {
                 obj.push_back(Pair("change", pwalletMain->IsNoteSproutChange(nullifierSet, entry.address, entry.jsop)));
             }
@@ -3746,10 +3828,27 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
     } else if (boost::get<libzcash::SaplingPaymentAddress>(&zaddr) != nullptr) {
         for (SaplingNoteEntry & entry : saplingEntries) {
             UniValue obj(UniValue::VOBJ);
+            int nHeight = 0;
+            CTransaction tx;
+            uint256 hashBlock;
+
+            if (GetTransaction(entry.op.hash, tx, hashBlock, true)) {
+                BlockMap::const_iterator it = mapBlockIndex.find(hashBlock);
+                if (it != mapBlockIndex.end()) {
+                    nHeight = it->second->GetHeight();
+                    fprintf(stderr,"blockHash %s height %d\n",hashBlock.ToString().c_str(), nHeight);
+                } else {
+                    fprintf(stderr,"block hash %s does not exist!\n", hashBlock.ToString().c_str() );
+                }
+            } else {
+                fprintf(stderr,"tx hash %s does not exist!\n", entry.op.hash.ToString().c_str() );
+            }
             obj.push_back(Pair("txid", entry.op.hash.ToString()));
             obj.push_back(Pair("amount", ValueFromAmount(CAmount(entry.note.value()))));
             obj.push_back(Pair("memo", HexStr(entry.memo)));
             obj.push_back(Pair("outindex", (int)entry.op.n));
+            obj.push_back(Pair("rawconfirmations", entry.confirmations));
+            obj.push_back(Pair("confirmations", komodo_dpowconfs(nHeight, entry.confirmations)));
             if (hasSpendingKey) {
               obj.push_back(Pair("change", pwalletMain->IsNoteSaplingChange(nullifierSet, entry.address, entry.op)));
             }
@@ -4115,7 +4214,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
                 }
                 if ( toSapling && ASSETCHAINS_SYMBOL[0] == 0 )
                     throw JSONRPCError(RPC_INVALID_PARAMETER,"Sprout usage will expire soon");
-   
+
                 // If we are sending from a shielded address, all recipient
                 // shielded addresses must be of the same type.
                 if ((fromSprout && toSapling) || (fromSapling && toSprout)) {
@@ -4534,14 +4633,14 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
-    
+
     string enableArg = "zmergetoaddress";
     auto fEnableMergeToAddress = fExperimentalMode && GetBoolArg("-" + enableArg, true);
     std::string strDisabledMsg = "";
     if (!fEnableMergeToAddress) {
         strDisabledMsg = experimentalDisabledHelpMsg("z_mergetoaddress", enableArg);
     }
-    
+
     if (fHelp || params.size() < 2 || params.size() > 6)
         throw runtime_error(
                             "z_mergetoaddress [\"fromaddress\", ... ] \"toaddress\" ( fee ) ( transparent_limit ) ( shielded_limit ) ( memo )\n"
@@ -4590,33 +4689,33 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
                             + HelpExampleCli("z_mergetoaddress", "'[\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\"]' ztfaW34Gj9FrnGUEf833ywDVL62NWXBM81u6EQnM6VR45eYnXhwztecW1SjxA7JrmAXKJhxhj3vDNEpVCQoSvVoSpmbhtjf")
                             + HelpExampleRpc("z_mergetoaddress", "[\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\"], \"zs14d8tc0hl9q0vg5l28uec5vk6sk34fkj2n8s7jalvw5fxpy6v39yn4s2ga082lymrkjk0x2nqg37\"")
                             );
-    
+
     if (!fEnableMergeToAddress) {
         throw JSONRPCError(RPC_WALLET_ERROR, "Error: z_mergetoaddress is disabled.");
     }
-    
+
     LOCK2(cs_main, pwalletMain->cs_wallet);
-    
+
     bool useAnyUTXO = false;
     bool useAnySprout = false;
     bool useAnySapling = false;
     std::set<CTxDestination> taddrs = {};
     std::set<libzcash::PaymentAddress> zaddrs = {};
-    
+
     UniValue addresses = params[0].get_array();
     if (addresses.size()==0)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, fromaddresses array is empty.");
-    
+
     // Keep track of addresses to spot duplicates
     std::set<std::string> setAddress;
-    
+
     // Sources
     for (const UniValue& o : addresses.getValues()) {
         if (!o.isStr())
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, expected string");
-        
+
         std::string address = o.get_str();
-        
+
         if (address == "ANY_TADDR") {
             useAnyUTXO = true;
         } else if (address == "ANY_SPROUT") {
@@ -4636,23 +4735,23 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
                 }
             }
         }
-        
+
         if (setAddress.count(address))
             throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, duplicated address: ") + address);
         setAddress.insert(address);
     }
-    
+
     if (useAnyUTXO && taddrs.size() > 0) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Cannot specify specific t-addrs when using \"ANY_TADDR\"");
     }
     if ((useAnySprout || useAnySapling) && zaddrs.size() > 0) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Cannot specify specific z-addrs when using \"ANY_SPROUT\" or \"ANY_SAPLING\"");
     }
-    
+
     const int nextBlockHeight = chainActive.Height() + 1;
     const bool overwinterActive = NetworkUpgradeActive(nextBlockHeight, Params().GetConsensus(), Consensus::UPGRADE_OVERWINTER);
     const bool saplingActive = NetworkUpgradeActive(nextBlockHeight, Params().GetConsensus(), Consensus::UPGRADE_SAPLING);
-    
+
     // Validate the destination address
     auto destaddress = params[1].get_str();
     bool isToSproutZaddr = false;
@@ -4674,7 +4773,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
             throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, unknown address format: ") + destaddress );
         }
     }
-    
+
     // Convert fee from currency format to zatoshis
     CAmount nFee = SHIELD_COINBASE_DEFAULT_MINERS_FEE;
     if (params.size() > 2) {
@@ -4684,7 +4783,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
             nFee = AmountFromValue( params[2] );
         }
     }
-    
+
     int nUTXOLimit = MERGE_TO_ADDRESS_DEFAULT_TRANSPARENT_LIMIT;
     if (params.size() > 3) {
         nUTXOLimit = params[3].get_int();
@@ -4692,7 +4791,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Limit on maximum number of UTXOs cannot be negative");
         }
     }
-    
+
     int sproutNoteLimit = MERGE_TO_ADDRESS_DEFAULT_SPROUT_LIMIT;
     int saplingNoteLimit = MERGE_TO_ADDRESS_DEFAULT_SAPLING_LIMIT;
     if (params.size() > 4) {
@@ -4703,7 +4802,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
         sproutNoteLimit = nNoteLimit;
         saplingNoteLimit = nNoteLimit;
     }
-    
+
     std::string memo;
     if (params.size() > 5) {
         memo = params[5].get_str();
@@ -4716,9 +4815,9 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
             throw JSONRPCError(RPC_INVALID_PARAMETER,  strprintf("Invalid parameter, size of memo is larger than maximum allowed %d", ZC_MEMO_SIZE ));
         }
     }
-    
+
     MergeToAddressRecipient recipient(destaddress, memo);
-    
+
     // Prepare to get UTXOs and notes
     std::vector<MergeToAddressInputUTXO> utxoInputs;
     std::vector<MergeToAddressInputSproutNote> sproutNoteInputs;
@@ -4732,7 +4831,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     bool maxedOutUTXOsFlag = false;
     bool maxedOutNotesFlag = false;
     size_t mempoolLimit = (nUTXOLimit != 0) ? nUTXOLimit : (overwinterActive ? 0 : (size_t)GetArg("-mempooltxinputlimit", 0));
-    
+
     unsigned int max_tx_size = saplingActive ? MAX_TX_SIZE_AFTER_SAPLING : MAX_TX_SIZE_BEFORE_SAPLING;
     size_t estimatedTxSize = 200;  // tx overhead + wiggle room
     if (isToSproutZaddr) {
@@ -4740,20 +4839,20 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     } else if (isToSaplingZaddr) {
         estimatedTxSize += OUTPUTDESCRIPTION_SIZE;
     }
-    
+
     if (useAnyUTXO || taddrs.size() > 0) {
         // Get available utxos
         vector<COutput> vecOutputs;
         pwalletMain->AvailableCoins(vecOutputs, true, NULL, false, false);
-        
+
         // Find unspent utxos and update estimated size
         for (const COutput& out : vecOutputs) {
             if (!out.fSpendable) {
                 continue;
             }
-            
+
             CScript scriptPubKey = out.tx->vout[out.i].scriptPubKey;
-            
+
             CTxDestination address;
             if (!ExtractDestination(scriptPubKey, address)) {
                 continue;
@@ -4762,10 +4861,10 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
             if (taddrs.size() > 0 && !taddrs.count(address)) {
                 continue;
             }
-            
+
             utxoCounter++;
             CAmount nValue = out.tx->vout[out.i].nValue;
-            
+
             if (!maxedOutUTXOsFlag) {
                 size_t increase = (boost::get<CScriptID>(&address) != nullptr) ? CTXIN_SPEND_P2SH_SIZE : CTXIN_SPEND_DUST_SIZE;
                 if (estimatedTxSize + increase >= max_tx_size ||
@@ -4779,19 +4878,19 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
                     mergedUTXOValue += nValue;
                 }
             }
-            
+
             if (maxedOutUTXOsFlag) {
                 remainingUTXOValue += nValue;
             }
         }
     }
-    
+
     if (useAnySprout || useAnySapling || zaddrs.size() > 0) {
         // Get available notes
         std::vector<CSproutNotePlaintextEntry> sproutEntries,skipsprout;
         std::vector<SaplingNoteEntry> saplingEntries,skipsapling;
         pwalletMain->GetFilteredNotes(sproutEntries, useAnySprout == 0 ? saplingEntries : skipsapling, zaddrs);
-        
+
         // If Sapling is not active, do not allow sending from a sapling addresses.
         if (!saplingActive && saplingEntries.size() > 0) {
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, Sapling has not activated");
@@ -4808,12 +4907,12 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
                                RPC_INVALID_PARAMETER,
                                "Cannot send between Sprout and Sapling addresses using z_mergetoaddress");
         }
-        
+
         // Find unspent notes and update estimated size
         for (const CSproutNotePlaintextEntry& entry : sproutEntries) {
             noteCounter++;
             CAmount nValue = entry.plaintext.value();
-            
+
             if (!maxedOutNotesFlag) {
                 // If we haven't added any notes yet and the merge is to a
                 // z-address, we have already accounted for the first JoinSplit.
@@ -4831,12 +4930,12 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
                     mergedNoteValue += nValue;
                 }
             }
-            
+
             if (maxedOutNotesFlag) {
                 remainingNoteValue += nValue;
             }
         }
-        
+
         for (const SaplingNoteEntry& entry : saplingEntries) {
             noteCounter++;
             CAmount nValue = entry.note.value();
@@ -4856,20 +4955,20 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
                     mergedNoteValue += nValue;
                 }
             }
-            
+
             if (maxedOutNotesFlag) {
                 remainingNoteValue += nValue;
             }
         }
     }
-    
+
     size_t numUtxos = utxoInputs.size();
     size_t numNotes = sproutNoteInputs.size() + saplingNoteInputs.size();
-    
+
     if (numUtxos == 0 && numNotes == 0) {
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Could not find any funds to merge.");
     }
-    
+
     // Sanity check: Don't do anything if:
     // - We only have one from address
     // - It's equal to toaddress
@@ -4877,26 +4976,26 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     if (setAddress.size() == 1 && setAddress.count(destaddress) && (numUtxos + numNotes) == 1) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Destination address is also the only source address, and all its funds are already merged.");
     }
-    
+
     CAmount mergedValue = mergedUTXOValue + mergedNoteValue;
     if (mergedValue < nFee) {
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS,
                            strprintf("Insufficient funds, have %s, which is less than miners fee %s",
                                      FormatMoney(mergedValue), FormatMoney(nFee)));
     }
-    
+
     // Check that the user specified fee is sane (if too high, it can result in error -25 absurd fee)
     CAmount netAmount = mergedValue - nFee;
     if (nFee > netAmount) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, strprintf("Fee %s is greater than the net amount to be shielded %s", FormatMoney(nFee), FormatMoney(netAmount)));
     }
-    
+
     // Keep record of parameters in context object
     UniValue contextInfo(UniValue::VOBJ);
     contextInfo.push_back(Pair("fromaddresses", params[0]));
     contextInfo.push_back(Pair("toaddress", params[1]));
     contextInfo.push_back(Pair("fee", ValueFromAmount(nFee)));
-    
+
     // Contextual transaction we will build on
     CMutableTransaction contextualTx = CreateNewContextualCMutableTransaction(
                                                                               Params().GetConsensus(),
@@ -4905,7 +5004,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     if (contextualTx.nVersion == 1 && isSproutShielded) {
         contextualTx.nVersion = 2; // Tx format should support vjoinsplit
     }
-    
+
     // Builder (used if Sapling addresses are involved)
     boost::optional<TransactionBuilder> builder;
     if (isToSaplingZaddr || saplingNoteInputs.size() > 0) {
@@ -4917,7 +5016,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
                                                  new AsyncRPCOperation_mergetoaddress(builder, contextualTx, utxoInputs, sproutNoteInputs, saplingNoteInputs, recipient, nFee, contextInfo) );
     q->addOperation(operation);
     AsyncRPCOperationId operationId = operation->getId();
-    
+
     // Return continuation information
     UniValue o(UniValue::VOBJ);
     o.push_back(Pair("remainingUTXOs", static_cast<uint64_t>(utxoCounter - numUtxos)));
@@ -5066,247 +5165,6 @@ int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33)
     return(siglen);
 }
 
-struct komodo_staking
-{
-    char address[64];
-    uint256 txid;
-    arith_uint256 hashval;
-    uint64_t nValue;
-    uint32_t segid32,txtime;
-    int32_t vout;
-    CScript scriptPubKey;
-};
-
-struct komodo_staking *komodo_addutxo(struct komodo_staking *array,int32_t *numkp,int32_t *maxkp,uint32_t txtime,uint64_t nValue,uint256 txid,int32_t vout,char *address,uint8_t *hashbuf,CScript pk)
-{
-    uint256 hash; uint32_t segid32; struct komodo_staking *kp;
-    segid32 = komodo_stakehash(&hash,address,hashbuf,txid,vout);
-    if ( *numkp >= *maxkp )
-    {
-        *maxkp += 1000;
-        array = (struct komodo_staking *)realloc(array,sizeof(*array) * (*maxkp));
-        //fprintf(stderr,"realloc max.%d array.%p\n",*maxkp,array);
-    }
-    kp = &array[(*numkp)++];
-    //fprintf(stderr,"kp.%p num.%d\n",kp,*numkp);
-    memset(kp,0,sizeof(*kp));
-    strcpy(kp->address,address);
-    kp->txid = txid;
-    kp->vout = vout;
-    kp->hashval = UintToArith256(hash);
-    kp->txtime = txtime;
-    kp->segid32 = segid32;
-    kp->nValue = nValue;
-    kp->scriptPubKey = pk;
-    return(array);
-}
-
-arith_uint256 _komodo_eligible(struct komodo_staking *kp,arith_uint256 ratio,uint32_t blocktime,int32_t iter,int32_t minage,int32_t segid,int32_t nHeight,uint32_t prevtime)
-{
-    int32_t diff; uint64_t coinage; arith_uint256 coinage256,hashval;
-    diff = (iter + blocktime - kp->txtime - minage);
-    if ( diff < 0 )
-        diff = 60;
-    else if ( diff > 3600*24*30 )
-        diff = 3600*24*30;
-    if ( iter > 0 )
-        diff += segid*2;
-    coinage = ((uint64_t)kp->nValue * diff);
-    if ( blocktime+iter+segid*2 > prevtime+480 )
-        coinage *= ((blocktime+iter+segid*2) - (prevtime+400));
-    coinage256 = arith_uint256(coinage+1);
-    hashval = ratio * (kp->hashval / coinage256);
-    return(hashval);
-}
-
-uint32_t komodo_eligible(arith_uint256 bnTarget,arith_uint256 ratio,struct komodo_staking *kp,int32_t nHeight,uint32_t blocktime,uint32_t prevtime,int32_t minage,uint8_t *hashbuf)
-{
-    int32_t maxiters = 600; uint256 hash;
-    int32_t segid,iter,diff; uint64_t coinage; arith_uint256 hashval,coinage256;
-    komodo_stakehash(&hash,kp->address,hashbuf,kp->txid,kp->vout);
-    kp->hashval = UintToArith256(hash);
-    segid = ((nHeight + kp->segid32) & 0x3f);
-    hashval = _komodo_eligible(kp,ratio,blocktime,maxiters,minage,segid,nHeight,prevtime);
-    //for (int i=32; i>=0; i--)
-    //    fprintf(stderr,"%02x",((uint8_t *)&hashval)[i]);
-    //fprintf(stderr," b.%u minage.%d segid.%d ht.%d prev.%u\n",blocktime,minage,segid,nHeight,prevtime);
-    if ( hashval <= bnTarget )
-    {
-        for (iter=0; iter<maxiters; iter++)
-        {
-            if ( blocktime+iter+segid*2 < kp->txtime+minage )
-                continue;
-            hashval = _komodo_eligible(kp,ratio,blocktime,iter,minage,segid,nHeight,prevtime);
-            if ( hashval <= bnTarget )
-            {
-                //fprintf(stderr,"winner %.8f blocktime.%u iter.%d segid.%d\n",(double)kp->nValue/COIN,blocktime,iter,segid);
-                blocktime += iter;
-                blocktime += segid * 2;
-                return(blocktime);
-            }
-        }
-    } else fprintf(stderr,"maxiters is not good enough\n");
-    return(0);
-}
-
-int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blocktimep,uint32_t *txtimep,uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep,uint8_t *utxosig)
-{
-    static struct komodo_staking *array; static int32_t numkp,maxkp; static uint32_t lasttime;
-    set<CBitcoinAddress> setAddress; struct komodo_staking *kp; int32_t winners,segid,minage,nHeight,counter=0,i,m,siglen=0,nMinDepth = 1,nMaxDepth = 99999999; vector<COutput> vecOutputs; uint32_t block_from_future_rejecttime,besttime,eligible,eligible2,earliest = 0; CScript best_scriptPubKey; arith_uint256 mindiff,ratio,bnTarget; CBlockIndex *tipindex,*pindex; CTxDestination address; bool fNegative,fOverflow; uint8_t hashbuf[256]; CTransaction tx; uint256 hashBlock;
-    if (!EnsureWalletIsAvailable(0))
-        return 0;
-
-    bnTarget.SetCompact(nBits, &fNegative, &fOverflow);
-    mindiff.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
-    ratio = (mindiff / bnTarget);
-    assert(pwalletMain != NULL);
-    LOCK2(cs_main, pwalletMain->cs_wallet);
-    *utxovaluep = 0;
-    memset(utxotxidp,0,sizeof(*utxotxidp));
-    memset(utxovoutp,0,sizeof(*utxovoutp));
-    memset(utxosig,0,72);
-    pwalletMain->AvailableCoins(vecOutputs, false, NULL, true);
-    if ( (tipindex= chainActive.Tip()) == 0 )
-        return(0);
-    nHeight = tipindex->GetHeight() + 1;
-    if ( (minage= nHeight*3) > 6000 ) // about 100 blocks
-        minage = 6000;
-    komodo_segids(hashbuf,nHeight-101,100);
-    if ( *blocktimep < tipindex->nTime+60 )
-        *blocktimep = tipindex->nTime+60;
-    //fprintf(stderr,"Start scan of utxo for staking %u ht.%d\n",(uint32_t)time(NULL),nHeight);
-    if ( time(NULL) > lasttime+600 || array == 0 )
-    {
-        if ( array != 0 )
-        {
-            free(array);
-            array = 0;
-            maxkp = numkp = 0;
-            lasttime = 0;
-        }
-        BOOST_FOREACH(const COutput& out, vecOutputs)
-        {
-            if ( (tipindex= chainActive.Tip()) == 0 || tipindex->GetHeight()+1 > nHeight )
-            {
-                fprintf(stderr,"chain tip changed during staking loop t.%u counter.%d\n",(uint32_t)time(NULL),counter);
-                return(0);
-            }
-            counter++;
-            if ( out.nDepth < nMinDepth || out.nDepth > nMaxDepth )
-            {
-                fprintf(stderr,"komodo_staked invalid depth %d\n",(int32_t)out.nDepth);
-                continue;
-            }
-            CAmount nValue = out.tx->vout[out.i].nValue;
-            if ( nValue < COIN  || !out.fSpendable )
-                continue;
-            const CScript& pk = out.tx->vout[out.i].scriptPubKey;
-            if ( ExtractDestination(pk,address) != 0 )
-            {
-                if ( IsMine(*pwalletMain,address) == 0 )
-                    continue;
-                if ( GetTransaction(out.tx->GetHash(),tx,hashBlock,true) != 0 && (pindex= komodo_getblockindex(hashBlock)) != 0 )
-                {
-                    array = komodo_addutxo(array,&numkp,&maxkp,(uint32_t)pindex->nTime,(uint64_t)nValue,out.tx->GetHash(),out.i,(char *)CBitcoinAddress(address).ToString().c_str(),hashbuf,(CScript)pk);
-                    //fprintf(stderr,"addutxo numkp.%d vs max.%d\n",numkp,maxkp);
-                }
-            }
-        }
-        lasttime = (uint32_t)time(NULL);
-//fprintf(stderr,"finished kp data of utxo for staking %u ht.%d numkp.%d maxkp.%d\n",(uint32_t)time(NULL),nHeight,numkp,maxkp);
-    }
-//fprintf(stderr,"numkp.%d blocktime.%u\n",numkp,*blocktimep);
-    block_from_future_rejecttime = (uint32_t)GetAdjustedTime() + 57;
-    for (i=winners=0; i<numkp; i++)
-    {
-        if ( (tipindex= chainActive.Tip()) == 0 || tipindex->GetHeight()+1 > nHeight )
-        {
-            fprintf(stderr,"chain tip changed during staking loop t.%u counter.%d\n",(uint32_t)time(NULL),counter);
-            return(0);
-        }
-        kp = &array[i];
-        if ( (eligible2= komodo_eligible(bnTarget,ratio,kp,nHeight,*blocktimep,(uint32_t)tipindex->nTime+27,minage,hashbuf)) == 0 )
-            continue;
-        eligible = komodo_stake(0,bnTarget,nHeight,kp->txid,kp->vout,0,(uint32_t)tipindex->nTime+27,kp->address);
-//fprintf(stderr,"i.%d %u vs %u\n",i,eligible2,eligible);
-        if ( eligible > 0 )
-        {
-            besttime = m = 0;
-            if ( eligible == komodo_stake(1,bnTarget,nHeight,kp->txid,kp->vout,eligible,(uint32_t)tipindex->nTime+27,kp->address) )
-            {
-                while ( eligible == komodo_stake(1,bnTarget,nHeight,kp->txid,kp->vout,eligible,(uint32_t)tipindex->nTime+27,kp->address) )
-                {
-                    besttime = eligible;
-                    eligible--;
-                    if ( eligible < block_from_future_rejecttime ) // nothing gained by going earlier
-                        break;
-                    m++;
-//fprintf(stderr,"m.%d ht.%d validated winning blocktime %u -> %.8f eligible.%u test prior\n",m,nHeight,*blocktimep,(double)kp->nValue/COIN,eligible);
-                }
-            }
-            else
-            {
-                fprintf(stderr,"ht.%d error validating winning blocktime %u -> %.8f eligible.%u test prior\n",nHeight,*blocktimep,(double)kp->nValue/COIN,eligible);
-                continue;
-            }
-            eligible = besttime;
-            winners++;
-//fprintf(stderr,"ht.%d validated winning [%d] -> %.8f eligible.%u test prior\n",nHeight,(int32_t)(eligible - tipindex->nTime),(double)kp->nValue/COIN,eligible);
-            if ( earliest == 0 || eligible < earliest || (eligible == earliest && (*utxovaluep == 0 || kp->nValue < *utxovaluep)) )
-            {
-                earliest = eligible;
-                best_scriptPubKey = kp->scriptPubKey; //out.tx->vout[out.i].scriptPubKey;
-                *utxovaluep = (uint64_t)kp->nValue;
-                //decode_hex((uint8_t *)utxotxidp,32,(char *)out.tx->GetHash().GetHex().c_str());
-                decode_hex((uint8_t *)utxotxidp,32,(char *)kp->txid.GetHex().c_str());
-                *utxovoutp = kp->vout;
-                *txtimep = kp->txtime;//(uint32_t)out.tx->nLockTime;
-                fprintf(stderr,"ht.%d earliest.%u [%d].%d (%s) nValue %.8f locktime.%u counter.%d winners.%d\n",nHeight,earliest,(int32_t)(earliest - tipindex->nTime),m,kp->address,(double)kp->nValue/COIN,*txtimep,counter,winners);
-            }
-        } //else fprintf(stderr,"utxo not eligible\n");
-    }
-    if ( numkp < 10000 && array != 0 )
-    {
-        free(array);
-        array = 0;
-        maxkp = numkp = 0;
-        lasttime = 0;
-    }
-    if ( earliest != 0 )
-    {
-        bool signSuccess; SignatureData sigdata; uint64_t txfee; uint8_t *ptr; uint256 revtxid,utxotxid;
-        auto consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
-        const CKeyStore& keystore = *pwalletMain;
-        txNew.vin.resize(1);
-        txNew.vout.resize(1);
-        txfee = 0;
-        for (i=0; i<32; i++)
-            ((uint8_t *)&revtxid)[i] = ((uint8_t *)utxotxidp)[31 - i];
-        txNew.vin[0].prevout.hash = revtxid;
-        txNew.vin[0].prevout.n = *utxovoutp;
-        txNew.vout[0].scriptPubKey = best_scriptPubKey;// CScript() << ParseHex(NOTARY_PUBKEY) << OP_CHECKSIG;
-        txNew.vout[0].nValue = *utxovaluep - txfee;
-        txNew.nLockTime = earliest;
-        CTransaction txNewConst(txNew);
-        signSuccess = ProduceSignature(TransactionSignatureCreator(&keystore, &txNewConst, 0, *utxovaluep, SIGHASH_ALL), best_scriptPubKey, sigdata, consensusBranchId);
-        if (!signSuccess)
-            fprintf(stderr,"failed to create signature\n");
-        else
-        {
-            UpdateTransaction(txNew,0,sigdata);
-            ptr = (uint8_t *)&sigdata.scriptSig[0];
-            siglen = sigdata.scriptSig.size();
-            for (i=0; i<siglen; i++)
-                utxosig[i] = ptr[i];//, fprintf(stderr,"%02x",ptr[i]);
-            //fprintf(stderr," siglen.%d\n",siglen);
-//fprintf(stderr,"best %u from %u, gap %d lag.%d\n",earliest,*blocktimep,(int32_t)(earliest - *blocktimep),(int32_t)(time(NULL) - *blocktimep));
-            *blocktimep = earliest;
-        }
-    } //else fprintf(stderr,"no earliest utxo for staking\n");
-    //fprintf(stderr,"end scan of utxo for staking t.%u counter.%d numkp.%d winners.%d\n",(uint32_t)time(NULL),counter,numkp,winners);
-    return(siglen);
-}
-
 int32_t verus_staked(CBlock *pBlock, CMutableTransaction &txNew, uint32_t &nBits, arith_uint256 &hashResult, uint8_t *utxosig, CPubKey &pk)
 {
     return pwalletMain->VerusStakeTransaction(pBlock, txNew, nBits, hashResult, utxosig, pk);
@@ -5337,6 +5195,7 @@ int32_t ensure_CCrequirements()
 #include "../cc/CCGateways.h"
 #include "../cc/CCPrices.h"
 #include "../cc/CCHeir.h"
+#include "../cc/CCMarmara.h"
 
 UniValue CCaddress(struct CCcontract_info *cp,char *name,std::vector<unsigned char> &pubkey)
 {
@@ -5517,17 +5376,17 @@ UniValue pegsaddress(const UniValue& params, bool fHelp)
     return(CCaddress(cp,(char *)"Pegs",pubkey));
 }
 
-UniValue triggersaddress(const UniValue& params, bool fHelp)
+UniValue marmaraaddress(const UniValue& params, bool fHelp)
 {
     struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
-    cp = CCinit(&C,EVAL_TRIGGERS);
+    cp = CCinit(&C,EVAL_MARMARA);
     if ( fHelp || params.size() > 1 )
-        throw runtime_error("triggersaddress [pubkey]\n");
+        throw runtime_error("Marmaraaddress [pubkey]\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     if ( params.size() == 1 )
         pubkey = ParseHex(params[0].get_str().c_str());
-    return(CCaddress(cp,(char *)"Triggers",pubkey));
+    return(CCaddress(cp,(char *)"Marmara",pubkey));
 }
 
 UniValue paymentsaddress(const UniValue& params, bool fHelp)
@@ -5677,7 +5536,7 @@ UniValue channelslist(const UniValue& params, bool fHelp)
     if ( fHelp || params.size() > 0 )
         throw runtime_error("channelsinfo\n");
     if ( ensure_CCrequirements() < 0 )
-        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");    
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     return(ChannelsList());
 }
 
@@ -6027,7 +5886,7 @@ UniValue gatewaysbind(const UniValue& params, bool fHelp)
         if ( params.size() < 6+i+1 )
             throw runtime_error("not enough parameters for N pubkeys\n");
         pubkey = ParseHex(params[6+i].get_str().c_str());
-        if (pubkey.size()!= 33)    
+        if (pubkey.size()!= 33)
             throw runtime_error("invalid destination pubkey");
         pubkeys.push_back(pubkey2pk(pubkey));
     }
@@ -6061,8 +5920,8 @@ UniValue gatewaysdeposit(const UniValue& params, bool fHelp)
     amount = atof((char *)params[8].get_str().c_str()) * COIN + 0.00000000499999;
     if ( amount <= 0 || claimvout < 0 )
         throw runtime_error("invalid param: amount, numpks or claimvout\n");
-    if (destpub.size()!= 33)    
-        throw runtime_error("invalid destination pubkey");       
+    if (destpub.size()!= 33)
+        throw runtime_error("invalid destination pubkey");
     hex = GatewaysDeposit(0,bindtxid,height,coin,cointxid,claimvout,deposithex,proof,pubkey2pk(destpub),amount);
 
     RETURN_IF_ERROR(CCerror);
@@ -6087,9 +5946,9 @@ UniValue gatewaysclaim(const UniValue& params, bool fHelp)
     coin = params[1].get_str();
     deposittxid = Parseuint256((char *)params[2].get_str().c_str());
     destpub = ParseHex(params[3].get_str());
-    amount = atof((char *)params[4].get_str().c_str()) * COIN + 0.00000000499999;    
-    if (destpub.size()!= 33)    
-        throw runtime_error("invalid destination pubkey");  
+    amount = atof((char *)params[4].get_str().c_str()) * COIN + 0.00000000499999;
+    if (destpub.size()!= 33)
+        throw runtime_error("invalid destination pubkey");
     hex = GatewaysClaim(0,bindtxid,coin,deposittxid,pubkey2pk(destpub),amount);
     RETURN_IF_ERROR(CCerror);
     if ( hex.size() > 0 )
@@ -6112,9 +5971,9 @@ UniValue gatewayswithdraw(const UniValue& params, bool fHelp)
     bindtxid = Parseuint256((char *)params[0].get_str().c_str());
     coin = params[1].get_str();
     withdrawpub = ParseHex(params[2].get_str());
-    amount = atof((char *)params[3].get_str().c_str()) * COIN + 0.00000000499999;    
-    if (withdrawpub.size()!= 33)    
-        throw runtime_error("invalid destination pubkey");  
+    amount = atof((char *)params[3].get_str().c_str()) * COIN + 0.00000000499999;
+    if (withdrawpub.size()!= 33)
+        throw runtime_error("invalid destination pubkey");
     hex = GatewaysWithdraw(0,bindtxid,coin,pubkey2pk(withdrawpub),amount);
     RETURN_IF_ERROR(CCerror);
     if ( hex.size() > 0 )
@@ -6133,7 +5992,7 @@ UniValue gatewayspartialsign(const UniValue& params, bool fHelp)
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     const CKeyStore& keystore = *pwalletMain;
-    LOCK2(cs_main, pwalletMain->cs_wallet);    
+    LOCK2(cs_main, pwalletMain->cs_wallet);
     txid = Parseuint256((char *)params[0].get_str().c_str());
     coin = params[1].get_str();
     parthex = params[2].get_str();
@@ -6178,7 +6037,7 @@ UniValue gatewaysmarkdone(const UniValue& params, bool fHelp)
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
     completetxid = Parseuint256((char *)params[0].get_str().c_str());
-    coin = params[1].get_str();    
+    coin = params[1].get_str();
     hex = GatewaysMarkDone(0,completetxid,coin);
     RETURN_IF_ERROR(CCerror);
     if ( hex.size() > 0 )
@@ -6315,9 +6174,7 @@ UniValue oraclesdata(const UniValue& params, bool fHelp)
     txid = Parseuint256((char *)params[0].get_str().c_str());
     data = ParseHex(params[1].get_str().c_str());
     hex = OracleData(0,txid,data);
-
     RETURN_IF_ERROR(CCerror);
-
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
@@ -6351,24 +6208,6 @@ UniValue oraclescreate(const UniValue& params, bool fHelp)
     if ( format.size() > 4096 )
     {
         ERR_RESULT("oracles format must be <= 4096 characters");
-        return(result);
-    }
-    // list of oracle valid formats from oracles.cpp -> oracle_format
-    const UniValue valid_formats[13] = {"s","S","d","D","c","C","t","T","i","I","l","L","h"};
-    const UniValue header_type = "Ihh";
-    // checking if oracle data type is valid
-    bool is_valid_format = false;
-    for ( int i = 0; i < 13; ++i ) {
-        if ( valid_formats[i].get_str() == format ) {
-            is_valid_format = true;
-        }
-    }
-    // additional check for special Ihh data type
-    if ( format == header_type.get_str() ) {
-        is_valid_format = true;
-    }
-    if ( !is_valid_format ) {
-        ERR_RESULT("oracles format not valid");
         return(result);
     }
     hex = OracleCreate(0,name,description,format);
@@ -7182,7 +7021,7 @@ UniValue tokenfillask(const UniValue& params, bool fHelp)
     LOCK2(cs_main, pwalletMain->cs_wallet);
     tokenid = Parseuint256((char *)params[0].get_str().c_str());
     asktxid = Parseuint256((char *)params[1].get_str().c_str());
-    //fillunits = atol(params[2].get_str().c_str());	
+    //fillunits = atol(params[2].get_str().c_str());
 	fillunits = atoll(params[2].get_str().c_str());	 // dimxy changed to prevent loss of significance
     if ( fillunits <= 0 )
     {
