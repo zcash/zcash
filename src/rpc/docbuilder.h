@@ -60,6 +60,25 @@ public:
     static PrimitiveArgument OptionalHexString(const std::string& name, const std::string& defaultValue, const std::string& description);
     static PrimitiveArgument OptionalHexString(const std::string& description);
 
+    static PrimitiveArgument Amount(const std::string& name, const std::string& description);
+    static PrimitiveArgument Amount(const std::string& description);
+    static PrimitiveArgument OptionalAmount(const std::string& name, const std::string& defaultValue, const std::string& description);
+    static PrimitiveArgument OptionalAmount(const std::string& description);
+    static PrimitiveArgument Timestamp(const std::string& name, const std::string& description);
+    static PrimitiveArgument Timestamp(const std::string& description);
+    static PrimitiveArgument OptionalTimestamp(const std::string& name, const std::string& defaultValue, const std::string& description);
+    static PrimitiveArgument OptionalTimestamp(const std::string& description);
+    static PrimitiveArgument Asm(const std::string& name, const std::string& description);
+    static PrimitiveArgument Asm(const std::string& description);
+    static PrimitiveArgument IPAddress(const std::string& name, const std::string& description);
+    static PrimitiveArgument IPAddress(const std::string& description);
+    static PrimitiveArgument OptionalIPAddress(const std::string& name, const std::string& defaultValue, const std::string& description);
+    static PrimitiveArgument OptionalIPAddress(const std::string& description);
+    static PrimitiveArgument SocketAddress(const std::string& name, const std::string& description);
+    static PrimitiveArgument SocketAddress(const std::string& description);
+    static PrimitiveArgument OptionalSocketAddress(const std::string& name, const std::string& defaultValue, const std::string& description);
+    static PrimitiveArgument OptionalSocketAddress(const std::string& description);
+
     static ArrayArgument Array(const std::string name, const std::string description);
     static ArrayArgument Array(const std::string description);
     static ArrayArgument Array();
@@ -78,7 +97,12 @@ enum class PrimitiveType {
     INTEGER,
     DECIMAL,
     STRING,
-    HEX_STRING
+    HEX_STRING,
+    AMOUNT,
+    TIMESTAMP,
+    ASM,
+    IP_ADDRESS,
+    SOCKET_ADDRESS
 };
 
 class PrimitiveArgument : public RpcArgument

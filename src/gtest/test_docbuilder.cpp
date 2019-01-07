@@ -19,6 +19,28 @@ TEST(DocBuilderTests, PrimitiveArgumentCliHeaderString) {
     EXPECT_EQ("(\"hexStrArg\")", RpcArgument::OptionalHexString("hexStrArg", "", "").CliHeaderString());
 }
 
+TEST(DocBuilderTests, PrimitiveExampleValues) {
+    EXPECT_EQ("true|false(boolean)", RpcArgument::Boolean("").ArgumentString(0, 0, false));
+    EXPECT_EQ("true|false(boolean, optional)", RpcArgument::OptionalBoolean("").ArgumentString(0, 0, false));
+    EXPECT_EQ("n (numeric)", RpcArgument::Integer("").ArgumentString(0, 0, false));
+    EXPECT_EQ("n (numeric, optional)", RpcArgument::OptionalInteger("").ArgumentString(0, 0, false));
+    EXPECT_EQ("x.xxx(numeric)", RpcArgument::Decimal("").ArgumentString(0, 0, false));
+    EXPECT_EQ("x.xxx(numeric, optional)", RpcArgument::OptionalDecimal("").ArgumentString(0, 0, false));
+    EXPECT_EQ("\"xxx\"(string)", RpcArgument::String("").ArgumentString(0, 0, false));
+    EXPECT_EQ("\"xxx\"(string, optional)", RpcArgument::OptionalString("").ArgumentString(0, 0, false));
+    EXPECT_EQ("\"hex\"(string)", RpcArgument::HexString("").ArgumentString(0, 0, false));
+    EXPECT_EQ("\"hex\"(string, optional)", RpcArgument::OptionalHexString("").ArgumentString(0, 0, false));
+    EXPECT_EQ("x.xxxxxxxx(numeric)", RpcArgument::Amount("").ArgumentString(0, 0, false));
+    EXPECT_EQ("x.xxxxxxxx(numeric, optional)", RpcArgument::OptionalAmount("").ArgumentString(0, 0, false));
+    EXPECT_EQ("ttt(numeric)", RpcArgument::Timestamp("").ArgumentString(0, 0, false));
+    EXPECT_EQ("ttt(numeric, optional)", RpcArgument::OptionalTimestamp("").ArgumentString(0, 0, false));
+    EXPECT_EQ("\"code\"(string)", RpcArgument::Asm("").ArgumentString(0, 0, false));
+    EXPECT_EQ("\"192.168.0.201\"(string)", RpcArgument::IPAddress("").ArgumentString(0, 0, false));
+    EXPECT_EQ("\"192.168.0.201\"(string, optional)", RpcArgument::OptionalIPAddress("").ArgumentString(0, 0, false));
+    EXPECT_EQ("\"192.168.0.201:8233\"(string)", RpcArgument::SocketAddress("").ArgumentString(0, 0, false));
+    EXPECT_EQ("\"192.168.0.201:8233\"(string, optional)", RpcArgument::OptionalSocketAddress("").ArgumentString(0, 0, false));
+}
+
 TEST(DocBuilderTests, ThreeArgumentsOneResult) {
     std::string testDoc = RpcDocBuilder("testrpc")
         .SetDescription("This is a description.")
