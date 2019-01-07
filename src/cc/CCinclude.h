@@ -86,12 +86,27 @@ struct CC_meta
 
 struct CCcontract_info
 {
-    char unspendableCCaddr[64],CChexstr[72],normaladdr[64],unspendableaddr2[64],unspendableaddr3[64];
-    uint8_t CCpriv[32],unspendablepriv2[32],unspendablepriv3[32];
-    CPubKey unspendablepk2,unspendablepk3;
-    bool (*validate)(struct CCcontract_info *cp, Eval* eval, const CTransaction &tx, uint32_t nIn);
-    bool (*ismyvin)(CScript const& scriptSig);
-    uint8_t evalcode,evalcode2,evalcode3,didinit;
+	// this is for spending from 'unspendable' CC address
+	uint8_t evalcode;
+	char unspendableCCaddr[64], CChexstr[72], normaladdr[64];
+	uint8_t CCpriv[32];
+
+	// this for 1of2 key spending condition (for this evalcode)
+	// NOTE: only one evalcode is allowed at this time
+	char unspendable1of2addr[64];
+	CPubKey unspendable1of2pk[2];
+
+	// this is for spending from two additional 'unspendable' CC addresses of other eval codes 
+	// (that is, for spending from several cc contract 'unspendable' addresses):
+	uint8_t evalcode2, evalcode3;
+	char    unspendableaddr2[64], unspendableaddr3[64];
+	uint8_t unspendablepriv2[32], unspendablepriv3[32];
+    CPubKey unspendablepk2,       unspendablepk3;
+
+    bool (*validate)(struct CCcontract_info *cp, Eval* eval, const CTransaction &tx, uint32_t nIn);  // cc contract tx validation callback
+    bool (*ismyvin)(CScript const& scriptSig);	// checks if evalcode is present in the scriptSig param
+
+    uint8_t didinit;
 };
 struct CCcontract_info *CCinit(struct CCcontract_info *cp,uint8_t evalcode);
 
@@ -164,6 +179,7 @@ CC *MakeCCcond1of2(uint8_t evalcode,CPubKey pk1,CPubKey pk2);
 CC* GetCryptoCondition(CScript const& scriptSig);
 void CCaddr2set(struct CCcontract_info *cp,uint8_t evalcode,CPubKey pk,uint8_t *priv,char *coinaddr);
 void CCaddr3set(struct CCcontract_info *cp,uint8_t evalcode,CPubKey pk,uint8_t *priv,char *coinaddr);
+void CCaddr1of2set(struct CCcontract_info *cp, CPubKey pk1, CPubKey pk2, char *coinaddr);
 bool IsCCInput(CScript const& scriptSig);
 int32_t unstringbits(char *buf,uint64_t bits);
 uint64_t stringbits(char *str);
