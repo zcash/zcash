@@ -3,6 +3,21 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 #include "amount.h"
 #include "chain.h"
 #include "chainparams.h"
@@ -606,6 +621,51 @@ UniValue getblockhash(const UniValue& params, bool fHelp)
     return pblockindex->GetBlockHash().GetHex();
 }
 
+extern uint64_t ASSETCHAINS_STAKED;
+
+UniValue getlastsegidstakes(const UniValue& params, bool fHelp)
+{
+    if (fHelp || params.size() != 1)
+        throw runtime_error(
+            "getlastsegidstakes depth\n"
+            "\nReturns object containing the counts of the last X blocks staked by each segid.\n"
+            "\nArguments:\n"
+            "1. depth           (numeric, required) The amount of blocks to scan back."
+            "\nResult:\n"
+            "{\n"
+            "  \"0\" : n,       (numeric) number of stakes from segid 0 in the last X blocks.\n"
+            "  .....\n"
+            "}\n"
+            "\nExamples:\n"
+            + HelpExampleCli("getlastsegidstakes", "1000")
+            + HelpExampleRpc("getlastsegidstakes", "1000")
+        );
+
+    if ( ASSETCHAINS_STAKED == 0 )
+        throw runtime_error("Only applies to ac_staked chains\n");
+
+    LOCK(cs_main);
+
+    int depth = params[0].get_int();
+    int32_t segids[64] = {0};
+
+    for (int64_t i = chainActive.Height(); i >  chainActive.Height()-depth; i--)
+    {
+        CBlockIndex* pblockindex = chainActive[i];
+        if ( pblockindex->segid >= 0 )
+            segids[pblockindex->segid] += 1;
+    }
+
+    UniValue ret(UniValue::VOBJ);
+    for (int8_t i = 0; i < 64; i++)
+    {
+        char str[4];
+        sprintf(str, "%d", i);
+        ret.push_back(Pair(str,segids[i]));
+    }
+    return ret;
+}
+
 /*uint256 _komodo_getblockhash(int32_t nHeight)
 {
     uint256 hash;
@@ -635,7 +695,8 @@ UniValue getblockheader(const UniValue& params, bool fHelp)
             "\nResult (for verbose = true):\n"
             "{\n"
             "  \"hash\" : \"hash\",     (string) the block hash (same as provided)\n"
-            "  \"confirmations\" : n,   (numeric) The number of confirmations, or -1 if the block is not on the main chain\n"
+            "  \"confirmations\" : n,   (numeric) The number of notarized DPoW confirmations, or -1 if the block is not on the main chain\n"
+            "  \"rawconfirmations\" : n,(numeric) The number of raw confirmations, or -1 if the block is not on the main chain\n"
             "  \"height\" : n,          (numeric) The block height or index\n"
             "  \"version\" : n,         (numeric) The block version\n"
             "  \"merkleroot\" : \"xxxx\", (string) The merkle root\n"
@@ -695,7 +756,8 @@ UniValue getblock(const UniValue& params, bool fHelp)
             "\nResult (for verbosity = 1):\n"
             "{\n"
             "  \"hash\" : \"hash\",       (string) the block hash (same as provided hash)\n"
-            "  \"confirmations\" : n,   (numeric) The number of confirmations, or -1 if the block is not on the main chain\n"
+            "  \"confirmations\" : n,   (numeric) The number of notarized DPoW confirmations, or -1 if the block is not on the main chain\n"
+            "  \"rawconfirmations\" : n,(numeric) The number of raw confirmations, or -1 if the block is not on the main chain\n"
             "  \"size\" : n,            (numeric) The block size\n"
             "  \"height\" : n,          (numeric) The block height or index (same as provided height)\n"
             "  \"version\" : n,         (numeric) The block version\n"
@@ -859,7 +921,7 @@ UniValue kvsearch(const UniValue& params, bool fHelp)
             "  \"currentheight\": xxxxx,     (numeric) current height of the chain\n"
             "  \"key\": \"xxxxx\",           (string) key\n"
             "  \"keylen\": xxxxx,            (string) length of the key \n"
-            "  \"owner\": \"xxxxx\"          (string) hex string representing the owner of the key \n" 
+            "  \"owner\": \"xxxxx\"          (string) hex string representing the owner of the key \n"
             "  \"height\": xxxxx,            (numeric) height the key was stored at\n"
             "  \"expiration\": xxxxx,        (numeric) height the key will expire\n"
             "  \"flags\": x                  (numeric) 1 if the key was created with a password; 0 otherwise.\n"
@@ -1138,7 +1200,8 @@ UniValue gettxout(const UniValue& params, bool fHelp)
             "\nResult:\n"
             "{\n"
             "  \"bestblock\" : \"hash\",    (string) the block hash\n"
-            "  \"confirmations\" : n,       (numeric) The number of confirmations\n"
+            "  \"confirmations\" : n,       (numeric) The number of notarized DPoW confirmations\n"
+            "  \"rawconfirmations\" : n,    (numeric) The number of raw confirmations\n"
             "  \"value\" : x.xxx,           (numeric) The transaction value in " + CURRENCY_UNIT + "\n"
             "  \"scriptPubKey\" : {         (json object)\n"
             "     \"asm\" : \"code\",       (string) \n"
@@ -1191,10 +1254,10 @@ UniValue gettxout(const UniValue& params, bool fHelp)
     BlockMap::iterator it = mapBlockIndex.find(pcoinsTip->GetBestBlock());
     CBlockIndex *pindex = it->second;
     ret.push_back(Pair("bestblock", pindex->GetBlockHash().GetHex()));
-    if ((unsigned int)coins.nHeight == MEMPOOL_HEIGHT)
+    if ((unsigned int)coins.nHeight == MEMPOOL_HEIGHT) {
         ret.push_back(Pair("confirmations", 0));
-    else
-    {
+        ret.push_back(Pair("rawconfirmations", 0));
+    } else {
         ret.push_back(Pair("confirmations", komodo_dpowconfs(coins.nHeight,pindex->GetHeight() - coins.nHeight + 1)));
         ret.push_back(Pair("rawconfirmations", pindex->GetHeight() - coins.nHeight + 1));
     }
