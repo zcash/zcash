@@ -4698,7 +4698,7 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
         int32_t i,j,rejects=0,lastrejects=0;
         //fprintf(stderr,"put block's tx into mempool\n");
         // Copy all non Z-txs in mempool to temporary mempool because there can be tx in local mempool that make the block invalid.
-        LOCK(mempool.cs);
+        LOCK2(cs_main,mempool.cs);
         //fprintf(stderr, "starting... mempoolsize.%ld\n",mempool.size());
         list<CTransaction> transactionsToRemove;
         BOOST_FOREACH(const CTxMemPoolEntry& e, mempool.mapTx) {
@@ -4786,6 +4786,7 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
 
     if ( ASSETCHAINS_CC != 0 )
     {
+        LOCK2(cs_main,mempool.cs);
         // here we add back all txs from the temp mempool to the main mempool.
         BOOST_FOREACH(const CTxMemPoolEntry& e, tmpmempool.mapTx)
         {
