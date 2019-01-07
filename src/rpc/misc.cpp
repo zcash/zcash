@@ -3,6 +3,21 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 #include "clientversion.h"
 #include "init.h"
 #include "key_io.h"
@@ -13,6 +28,7 @@
 #include "timedata.h"
 #include "txmempool.h"
 #include "util.h"
+#include "cc/eval.h"
 #ifdef ENABLE_WALLET
 #include "wallet/wallet.h"
 #include "wallet/walletdb.h"
@@ -56,7 +72,7 @@ extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 uint32_t komodo_segid32(char *coinaddr);
 int64_t komodo_coinsupply(int64_t *zfundsp,int64_t *sproutfundsp,int32_t height);
 int32_t notarizedtxid_height(char *dest,char *txidstr,int32_t *kmdnotarized_heightp);
-#define KOMODO_VERSION "0.3.1"
+#define KOMODO_VERSION "0.3.3"
 #define VERUS_VERSION "0.4.0g"
 extern uint16_t ASSETCHAINS_P2PPORT,ASSETCHAINS_RPCPORT;
 extern uint32_t ASSETCHAINS_CC;
@@ -1320,7 +1336,53 @@ UniValue txnotarizedconfirmed(const UniValue& params, bool fHelp)
     txid = uint256S((char *)params[0].get_str().c_str());
     notarizedconfirmed=komodo_txnotarizedconfirmed(txid);
     UniValue result(UniValue::VOBJ);
-    result.push_back(Pair("result", notarizedconfirmed));    
+    result.push_back(Pair("result", notarizedconfirmed));
+    return result;
+}
+
+UniValue decodeccopret(const UniValue& params, bool fHelp)
+{
+    CTransaction tx; uint256 txid,hashBlock;
+    std::vector<uint8_t> vopret; uint8_t *script;
+    UniValue result(UniValue::VOBJ);
+
+    if (fHelp || params.size() < 1 || params.size() > 1)
+    {
+        string msg = "decodeccopret hex\n"
+            "\nReturns eval code and function id for CC OP RETURN data.\n"           
+
+            "\nArguments:\n"
+            "1. txid      (string, required) Transaction id.\n"          
+
+            "\nResult:\n"
+            "{\n"
+            "  eval_code,  (string) Eval code name.\n" 
+            "  function,   (char) Function id char.\n"           
+            "}\n"           
+        ;
+        throw runtime_error(msg);
+    }
+    txid = uint256S((char *)params[0].get_str().c_str());
+    {
+        LOCK(cs_main);
+            if (!GetTransaction(txid, tx, hashBlock, true))
+                throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "No information available about transaction");
+    }
+    GetOpReturnData(tx.vout[tx.vout.size()-1].scriptPubKey,vopret);
+    script = (uint8_t *)vopret.data();
+    if ( vopret.size() > 1)
+    {        
+        char func[5];
+        sprintf(func,"%c",script[1]);
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("eval_code", EvalToStr(script[0])));
+        result.push_back(Pair("function", func));
+    }
+    else
+    {
+        result.push_back(Pair("result", "error"));
+        result.push_back(Pair("error", "invalid or no CC opret data"));
+    }
     return result;
 }
 

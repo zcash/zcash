@@ -26,10 +26,10 @@ class CryptoconditionsChannelsTest(CryptoconditionsTestFramework):
         rpc1 = self.nodes[1]
 
         # getting empty channels list
-        result = rpc.channelsinfo()
+        result = rpc.channelslist()
         assert_equal(len(result), 2)
         assert_equal(result["result"], "success")
-        assert_equal(result["name"], "Channels Info")
+        assert_equal(result["name"], "Channels List")
 
         # 10 payments, 100000 sat denomination channel opening with second node pubkey
         new_channel_hex = rpc.channelsopen(self.pubkey1, "10", "100000")
@@ -38,13 +38,13 @@ class CryptoconditionsChannelsTest(CryptoconditionsTestFramework):
         assert channel_txid, "got channel txid"
 
         # checking if our new channel in common channels list
-        result = rpc.channelsinfo()
+        result = rpc.channelslist()
         assert_equal(len(result), 3)
 
         # checking info about channel directly
         result = rpc.channelsinfo(channel_txid)
         assert_success(result)
-        assert_equal(result["Open"], "10 payments of 100000 satoshi")
+        assert_equal(result["Transactions"][0]["Open"], channel_txid)
 
         # open transaction should be confirmed
         rpc.generate(1)
@@ -69,7 +69,7 @@ class CryptoconditionsChannelsTest(CryptoconditionsTestFramework):
 
         # now in channelinfo payment information should appear
         result = rpc.channelsinfo(channel_txid)
-        assert_equal(result["Payment"], "100000 satoshi to {}, 9 payments left".format(self.addr1))
+        assert_equal(result["Transactions"][1]["Payment"], payment_tx_id)
 
         # executing channel close
         result = rpc.channelsclose(channel_txid)
@@ -82,7 +82,7 @@ class CryptoconditionsChannelsTest(CryptoconditionsTestFramework):
 
         # now in channelinfo closed flag should appear
         result = rpc.channelsinfo(channel_txid)
-        assert_equal(result["Close"], "channel")
+        assert_equal(result["Transactions"][2]["Close"], channel_close_txid)
 
         # executing channel refund
         result = rpc.channelsrefund(channel_txid, channel_close_txid)
