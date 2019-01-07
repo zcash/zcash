@@ -18,12 +18,33 @@
 #define CC_HEIR_H
 
 #include "CCinclude.h"
+#include "CCtokens.h"
 
-#define EVAL_HEIR 0xea
+//#define EVAL_HEIR 0xea
 
 bool HeirValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn);
 
+class CoinHelper;
+class TokenHelper;
+
 // CCcustom
-UniValue HeirInfo();
+
+// this would not link
+//template <class Helper> std::string HeirFund(uint64_t txfee,int64_t funds, std::string heirName, CPubKey heirPubkey, int64_t inactivityTimeSec, uint256 assetid);
+//template <class Helper> UniValue HeirAdd(uint256 fundingtxid, uint64_t txfee, int64_t amount);
+//template <class Helper> UniValue HeirClaim(uint256 fundingtxid, uint64_t txfee, int64_t nValue);
+
+std::string HeirFundCoinCaller(uint64_t txfee, int64_t funds, std::string heirName, CPubKey heirPubkey, int64_t inactivityTimeSec, uint256 assetid);
+std::string HeirFundTokenCaller(uint64_t txfee, int64_t funds, std::string heirName, CPubKey heirPubkey, int64_t inactivityTimeSec, uint256 assetid);
+UniValue HeirClaimCoinCaller(uint256 fundingtxid, uint64_t txfee, int64_t amount);
+UniValue HeirClaimTokenCaller(uint256 fundingtxid, uint64_t txfee, int64_t amount);
+UniValue HeirAddCoinCaller(uint256 fundingtxid, uint64_t txfee, int64_t amount);
+UniValue HeirAddTokenCaller(uint256 fundingtxid, uint64_t txfee, int64_t amount);
+
+UniValue HeirInfo(uint256 fundingtxid);
+UniValue HeirList();
+//std::string Heir_MakeBadTx(uint256 fundingtxid, uint8_t funcId, int64_t amount, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t inactivityTime, uint32_t errMask);
+
+//bool HeirExactTokenAmounts(bool compareTotals, struct CCcontract_info *cpHeir, Eval* eval, uint256 assetid, const CTransaction &tx);
 
 #endif

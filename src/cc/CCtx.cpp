@@ -144,9 +144,9 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
                 {
                     //fprintf(stderr,"matched %s unspendable2!\n",cp->unspendableaddr2);
                     privkey = cp->unspendablepriv2;
-                    if ( othercond2 == 0 && cp->evalcode != EVAL_CHANNELS && cp->evalcode != EVAL_HEIR )
+                    if ( othercond2 == 0 && cp->evalcode != EVAL_CHANNELS && cp->evalcode != EVAL_HEIR && cp->evalcode != EVAL_ASSETS && cp->evalcode != EVAL_TOKENS)
                         othercond2 = MakeCCcond1(cp->evalcode2,cp->unspendablepk2);
-                    else if ( othercond2 == 0 && (cp->evalcode == EVAL_CHANNELS || cp->evalcode == EVAL_HEIR) )
+                    else if ( othercond2 == 0 && (cp->evalcode == EVAL_CHANNELS || cp->evalcode == EVAL_HEIR || cp->evalcode == EVAL_ASSETS || cp->evalcode == EVAL_TOKENS) )
                         othercond2 = MakeCCcond1of2(cp->evalcode2,cp->unspendablepk2,cp->unspendablepk3);
                     cond = othercond2;
                 }
@@ -297,7 +297,7 @@ int64_t CCfullsupply(uint256 tokenid)
     uint256 hashBlock; int32_t numvouts; CTransaction tx; std::vector<uint8_t> origpubkey; std::string name,description;
     if ( GetTransaction(tokenid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 0 )
     {
-        if ( DecodeAssetCreateOpRet(tx.vout[numvouts-1].scriptPubKey,origpubkey,name,description) > 0 )
+        if (DecodeTokenCreateOpRet(tx.vout[numvouts-1].scriptPubKey,origpubkey,name,description))
         {
             return(tx.vout[0].nValue);
         }
@@ -307,8 +307,11 @@ int64_t CCfullsupply(uint256 tokenid)
 
 int64_t CCtoken_balance(char *coinaddr,uint256 tokenid)
 {
-    int64_t price,sum = 0; int32_t numvouts; CTransaction tx; uint256 assetid,assetid2,txid,hashBlock; std::vector<uint8_t> origpubkey;
+    int64_t price,sum = 0; int32_t numvouts; CTransaction tx; uint256 assetid,assetid2,txid,hashBlock; 
+	std::vector<uint8_t>  vopretExtra;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
+	uint8_t evalCode;
+
     SetCCunspents(unspentOutputs,coinaddr);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
@@ -316,7 +319,7 @@ int64_t CCtoken_balance(char *coinaddr,uint256 tokenid)
         if ( GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 0 )
         {
             char str[65]; fprintf(stderr,"check %s %.8f\n",uint256_str(str,txid),(double)it->second.satoshis/COIN);
-            if ( DecodeAssetOpRet(tx.vout[numvouts-1].scriptPubKey,assetid,assetid2,price,origpubkey) != 0 && assetid == tokenid )
+            if ( DecodeTokenOpRet(tx.vout[numvouts-1].scriptPubKey, evalCode, assetid, vopretExtra) != 0 && assetid == tokenid )
             {
                 sum += it->second.satoshis;
             }

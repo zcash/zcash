@@ -290,6 +290,7 @@ libbitcoin_server_a_SOURCES = \
   cc/CCcustom.cpp \
   cc/CCtx.cpp \
   cc/CCutils.cpp \
+  cc/CCtokens.cpp \
   cc/assets.cpp \
   cc/faucet.cpp \
   cc/rewards.cpp \
