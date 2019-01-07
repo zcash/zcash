@@ -35,6 +35,7 @@
 #include "script/sign.h"
 #include "script/standard.h"
 #include "uint256.h"
+#include "importcoin.h"
 #ifdef ENABLE_WALLET
 #include "wallet/wallet.h"
 #endif
@@ -202,6 +203,25 @@ void TxToJSONExpanded(const CTransaction& tx, const uint256 hashBlock, UniValue&
             in.push_back(Pair("coinbase", HexStr(txin.scriptSig.begin(), txin.scriptSig.end())));
         else if (tx.IsCoinImport()) {
             in.push_back(Pair("is_import", "1"));
+            TxProof proof; CTransaction burnTx; std::vector<CTxOut> payouts; CTxDestination importaddress;
+            if (UnmarshalImportTx(tx, proof, burnTx, payouts)) 
+            {
+                if (burnTx.vout.size() == 0)
+                    continue;
+                in.push_back(Pair("txid", burnTx.GetHash().ToString()));
+                in.push_back(Pair("value", ValueFromAmount(burnTx.vout.back().nValue)));
+                in.push_back(Pair("valueSat", burnTx.vout.back().nValue));
+                // extract op_return to get burn source chain.
+                std::vector<uint8_t> burnOpret; std::string targetSymbol; uint32_t targetCCid; uint256 payoutsHash; std::vector<uint8_t>rawproof;
+                if (UnmarshalBurnTx(burnTx, targetSymbol, &targetCCid, payoutsHash, rawproof))
+                {
+                    if (rawproof.size() > 0)
+                    {
+                        std::string sourceSymbol(rawproof.begin(), rawproof.end());
+                        in.push_back(Pair("source", sourceSymbol));
+                    }
+                }
+            }
         }
         else {
             in.push_back(Pair("txid", txin.prevout.hash.GetHex()));
