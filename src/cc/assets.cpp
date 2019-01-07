@@ -135,6 +135,8 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
 	uint8_t funcid, evalCodeInOpret; 
 	char destaddr[64], origaddr[64], assetsCCaddr[64], tokensCCaddr[64];
 
+	//return true;
+
 	// we need this for validating tokens' vins/vous:
 	struct CCcontract_info *cpTokens, tokensC;
 	cpTokens = CCinit(&tokensC, EVAL_TOKENS);

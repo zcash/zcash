@@ -51,14 +51,19 @@ CScript EncodeTokenCreateOpRet(uint8_t funcid,std::vector<uint8_t> origpubkey,st
 }
 
 //  this is for other contracts which use tokens and build customized extra payloads to token's opret:
-CScript EncodeTokenOpRet(uint8_t tokenFuncId, uint8_t evalCodeInOpret, uint256 tokenid, std::vector<uint8_t> payload)
+CScript EncodeTokenOpRet(uint8_t tokenFuncId, uint8_t evalCodeInOpret, uint256 tokenid, std::vector<CPubKey> voutPubkeys)
 {
     CScript opret; 
+	uint8_t ccType = 0;
+	if (voutPubkeys.size() >= 1 && voutPubkeys.size() <= 2)
+		ccType = voutPubkeys.size();
+
 	//uint8_t evalcode = EVAL_TOKENS;
     tokenid = revuint256(tokenid);
 	//uint8_t tokenFuncId = (isTransferrable) ? (uint8_t)'t' : (uint8_t)'l';
 
-    opret << OP_RETURN << E_MARSHAL(ss << evalCodeInOpret << tokenFuncId << tokenid << payload);
+    //opret << OP_RETURN << E_MARSHAL(ss << evalCodeInOpret << tokenFuncId << tokenid << payload);
+	opret << OP_RETURN << E_MARSHAL(ss << evalCodeInOpret << tokenFuncId << tokenid << ccType; if (ccType >= 1) ss << voutPubkeys[0]; if (ccType == 2) ss << voutPubkeys[1];);
     return(opret);
 }  
 
@@ -148,6 +153,8 @@ bool TokensValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction &
 	char destaddr[64], origaddr[64], CCaddr[64];
 	std::vector<CPubKey> voutTokenPubkeys;
 
+	//return true;
+
 	numvins = tx.vin.size();
 	numvouts = tx.vout.size();
 	outputs = inputs = 0;
@@ -161,7 +168,7 @@ bool TokensValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction &
 	if (eval->GetTxUnconfirmed(tokenid, createTx, hashBlock) == 0)
 		return eval->Invalid("cant find token create txid");
 	else if (IsCCInput(tx.vin[0].scriptSig) != 0)
-		return eval->Invalid("illegal token vin0");  // why? (dimxy)
+		return eval->Invalid("illegal token vin0");
 	else if (numvouts < 1)
 		return eval->Invalid("no vouts");
 	else if (funcid != 'c')
@@ -176,10 +183,6 @@ bool TokensValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction &
 		}
 	}
 
-	// init for forwarding validation call
-	struct CCcontract_info *cpOther = NULL, C;
-	if (evalCodeInOpret != EVAL_TOKENS)
-		cpOther = CCinit(&C, evalCodeInOpret);
 
 	switch (funcid)
 	{
@@ -211,11 +214,17 @@ bool TokensValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction &
 	}
 
 	// forward validation if evalcode in opret is not EVAL_TOKENS
-	if (cpOther)
-		return cpOther->validate(cpOther, eval, tx, nIn);
-	else
-		return eval->Invalid("unsupported evalcode in opret");
+	// init for forwarding validation call
+	if (evalCodeInOpret != EVAL_TOKENS) {		// TODO: should we check also only allowed for tokens evalcodes, like EVAL_ASSETS, EVAL_GATEWAYS?
+		struct CCcontract_info *cpOther = NULL, C;
 
+		cpOther = CCinit(&C, evalCodeInOpret);
+		if (cpOther)
+			return cpOther->validate(cpOther, eval, tx, nIn);
+		else
+			return eval->Invalid("unsupported evalcode in opret");
+	}
+	return true;
 	// what does this do?
 	// return(PreventCC(eval,tx,preventCCvins,numvins,preventCCvouts,numvouts));
 }
@@ -404,7 +413,7 @@ bool TokensExactAmounts(bool goDeeper, struct CCcontract_info *cpTokens, int64_t
 				tokenValIndentSize++;
 				// validate vouts of vintx  
 				//std::cerr << indentStr << "TokenExactAmounts() check vin i=" << i << " nValue=" << vinTx.vout[tx.vin[i].prevout.n].nValue << std::endl;
-				tokenoshis = IsTokensvout(goDeeper, false/*<--do not have pubkeys*/, cpTokens, eval, tmporigpubkey, vinTx, tx.vin[i].prevout.n, tokenid, vinPubkeysEmpty);
+				tokenoshis = IsTokensvout(goDeeper, false/*<--do not have pubkeys for now*/, cpTokens, eval, tmporigpubkey, vinTx, tx.vin[i].prevout.n, tokenid, vinPubkeysEmpty);
 				tokenValIndentSize--;
 				if (tokenoshis != 0)
 				{
@@ -435,7 +444,7 @@ bool TokensExactAmounts(bool goDeeper, struct CCcontract_info *cpTokens, int64_t
 
 	if (inputs != outputs) {
 		if (tx.GetHash() != tokenid)
-			std::cerr << indentStr << "TokenExactAmounts() found unequal inputs=" << inputs << " vs outputs=" << outputs << " for txid=" << tx.GetHash().GetHex() << " and this is not create tx" << std::endl;
+			std::cerr << indentStr << "TokenExactAmounts() found unequal token cc inputs=" << inputs << " vs cc outputs=" << outputs << " for txid=" << tx.GetHash().GetHex() << " and this is not the create tx" << std::endl;
 		return false;  // do not call eval->Invalid() here!
 	}
 	else
@@ -477,7 +486,7 @@ int64_t AddTokenCCInputs(struct CCcontract_info *cp, CMutableTransaction &mtx, C
 			fprintf(stderr, "AddTokenCCInputs() check destaddress=%s vout amount=%.8f\n", destaddr, (double)vintx.vout[vout].nValue / COIN);
 
 			std::vector<CPubKey> vinPubkeysEmpty;
-			if ((nValue = IsTokensvout(true, false, cp, NULL, vopretExtra, vintx, vout, tokenid, vinPubkeysEmpty)) > 0 && myIsutxo_spentinmempool(txid, vout) == 0)
+			if ((nValue = IsTokensvout(true, false/*<-- do not check spending outside EVAL_TOKENS for now */, cp, NULL, vopretExtra, vintx, vout, tokenid, vinPubkeysEmpty)) > 0 && myIsutxo_spentinmempool(txid, vout) == 0)
 			{
 				if (total != 0 && maxinputs != 0)
 					mtx.vin.push_back(CTxIn(txid, vout, CScript()));
@@ -559,13 +568,22 @@ std::string TokenTransfer(int64_t txfee, uint256 assetid, std::vector<uint8_t> d
 			if (inputs > total)
 				CCchange = (inputs - total);
 			//for (i=0; i<n; i++)
-			mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS, total, pubkey2pk(destpubkey)));
+			mtx.vout.push_back(MakeCC1vout(EVAL_TOKENS, total, pubkey2pk(destpubkey)));
 			if (CCchange != 0)
-				mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS, CCchange, mypk));
-			return(FinalizeCCTx(mask, cp, mtx, mypk, txfee, EncodeTokenOpRet('t', EVAL_TOKENS, assetid, emptyExtraOpret)));  // By setting EVA_TOKENS we're getting out from assets validation code
+				mtx.vout.push_back(MakeCC1vout(EVAL_TOKENS, CCchange, mypk));
+
+			std::vector<CPubKey> voutTokenPubkeys;
+			voutTokenPubkeys.push_back(pubkey2pk(destpubkey));  // dest pubkey for validating vout
+
+			return(FinalizeCCTx(mask, cp, mtx, mypk, txfee, EncodeTokenOpRet('t', EVAL_TOKENS, assetid, voutTokenPubkeys)));  // By setting EVAL_TOKENS we're getting out from assets validation code
 		}
-		else fprintf(stderr, "not enough CC asset inputs for %.8f\n", (double)total / COIN);
+		else {
+			fprintf(stderr, "not enough CC token inputs for %.8f\n", (double)total / COIN);
+		}
 		//} else fprintf(stderr,"numoutputs.%d != numamounts.%d\n",n,(int32_t)amounts.size());
+	}
+	else {
+		fprintf(stderr, "not enough normal inputs for txfee\n");
 	}
 	return("");
 }

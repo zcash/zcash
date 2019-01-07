@@ -407,20 +407,6 @@ bool CScript::MayAcceptCryptoCondition() const
     cc_free(cond);
     return out;
 }
-struct CC *CScript::GetCryptoCondition() const
-{
-	// Get the type mask of the condition
-	const_iterator pc = this->begin();
-	vector<unsigned char> data;
-	opcodetype opcode;
-	if (!this->GetOp(pc, opcode, data)) return NULL;
-	if (!(opcode > OP_0 && opcode < OP_PUSHDATA1)) return NULL;
-	struct CC *cond = cc_readConditionBinary(data.data(), data.size());
-	if (!cond) return NULL;
-	//bool out = IsSupportedCryptoCondition(cond);
-	//cc_free(cond);
-	return cond;
-}
 
 bool CScript::IsCoinImport() const
 {
