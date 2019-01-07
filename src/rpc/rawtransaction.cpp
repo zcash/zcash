@@ -218,7 +218,7 @@ void TxToJSONExpanded(const CTransaction& tx, const uint256 hashBlock, UniValue&
                     if (rawproof.size() > 0)
                     {
                         std::string sourceSymbol(rawproof.begin(), rawproof.end());
-                        in.push_back(Pair("source", sourceSymbol));
+                        in.push_back(Pair("address", sourceSymbol));
                     }
                 }
             }
