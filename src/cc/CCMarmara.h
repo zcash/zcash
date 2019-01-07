@@ -19,9 +19,9 @@
 
 #include "CCinclude.h"
 
-bool TriggersValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn);
+bool MarmaraValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn);
 
 // CCcustom
-UniValue TriggersInfo();
+UniValue MarmaraInfo();
 
 #endif
