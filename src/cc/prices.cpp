@@ -326,7 +326,9 @@ std::string PricesAddFunding(uint64_t txfee,uint256 refbettoken,uint256 fundingt
                     CCchange = (inputs - amount);
                 mtx.vout.push_back(MakeCC1vout(cp->evalcode,CCchange,mypk));
                 // add addr2
-                return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeAssetOpRet('t',bettoken,zeroid,0,Mypubkey())));
+
+				std::vector<CPubKey> voutTokenPubkeysEmpty; //TODO: add token vout pubkeys
+                return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeAssetOpRet('t',bettoken,zeroid,0, voutTokenPubkeysEmpty, Mypubkey())));
             }
             else
             {

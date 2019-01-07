@@ -333,7 +333,8 @@ int64_t CCtoken_balance(char *coinaddr,uint256 tokenid)
         if ( GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 0 )
         {
             char str[65]; fprintf(stderr,"check %s %.8f\n",uint256_str(str,txid),(double)it->second.satoshis/COIN);
-            if ( DecodeTokenOpRet(tx.vout[numvouts-1].scriptPubKey, evalCode, assetid, vopretExtra) != 0 && assetid == tokenid )
+			std::vector<CPubKey> voutTokenPubkeys;
+            if ( DecodeTokenOpRet(tx.vout[numvouts-1].scriptPubKey, evalCode, assetid, voutTokenPubkeys, vopretExtra) != 0 && assetid == tokenid )
             {
                 sum += it->second.satoshis;
             }
