@@ -276,6 +276,14 @@ void TxToJSONExpanded(const CTransaction& tx, const uint256 hashBlock, UniValue&
         out.push_back(Pair("n", (int64_t)i));
         UniValue o(UniValue::VOBJ);
         ScriptPubKeyToJSON(txout.scriptPubKey, o, true);
+        if (txout.scriptPubKey.IsOpReturn() && txout.nValue != 0)
+        {
+            std::vector<uint8_t> burnOpret; std::string targetSymbol; uint32_t targetCCid; uint256 payoutsHash; std::vector<uint8_t>rawproof;
+            if (UnmarshalBurnTx(tx, targetSymbol, &targetCCid, payoutsHash, rawproof)) 
+            {
+                out.push_back(Pair("target", "EXPORT->" +  targetSymbol));
+            }
+        }
         out.push_back(Pair("scriptPubKey", o));
 
         // Add spent information if spentindex is enabled
