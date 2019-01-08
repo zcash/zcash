@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright © 2014-2018 The SuperNET Developers.                             *
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
  *                                                                            *
  * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
  * the top-level directory of this distribution for the individual copyright  *
@@ -13,16 +13,16 @@
  *                                                                            *
  ******************************************************************************/
 
-#include "CCTriggers.h"
+#include "CCMarmara.h"
 
 /*
- Triggers CC is a building block CC that allows creation of event -> action processing, where events are defined during trigger creation and actions to be mostly done via payments, but by making payments to other CC contracts, it can be used to invoke other CC contracts
+ Marmara CC is for the MARMARA project
  
 */
 
 // start of consensus code
 
-int64_t IsTriggersvout(struct CCcontract_info *cp,const CTransaction& tx,int32_t v)
+int64_t IsMarmaravout(struct CCcontract_info *cp,const CTransaction& tx,int32_t v)
 {
     char destaddr[64];
     if ( tx.vout[v].scriptPubKey.IsPayToCryptoCondition() != 0 )
@@ -33,7 +33,7 @@ int64_t IsTriggersvout(struct CCcontract_info *cp,const CTransaction& tx,int32_t
     return(0);
 }
 
-bool TriggersExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx,int32_t minage,uint64_t txfee)
+bool MarmaraExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx,int32_t minage,uint64_t txfee)
 {
     static uint256 zerohash;
     CTransaction vinTx; uint256 hashBlock,activehash; int32_t i,numvins,numvouts; int64_t inputs=0,outputs=0,assetoshis;
@@ -51,8 +51,8 @@ bool TriggersExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransacti
             {
                 //fprintf(stderr,"vini.%d check hash and vout\n",i);
                 if ( hashBlock == zerohash )
-                    return eval->Invalid("cant Triggers from mempool");
-                if ( (assetoshis= IsTriggersvout(cp,vinTx,tx.vin[i].prevout.n)) != 0 )
+                    return eval->Invalid("cant Marmara from mempool");
+                if ( (assetoshis= IsMarmaravout(cp,vinTx,tx.vin[i].prevout.n)) != 0 )
                     inputs += assetoshis;
             }
         }
@@ -60,7 +60,7 @@ bool TriggersExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransacti
     for (i=0; i<numvouts; i++)
     {
         //fprintf(stderr,"i.%d of numvouts.%d\n",i,numvouts);
-        if ( (assetoshis= IsTriggersvout(cp,tx,i)) != 0 )
+        if ( (assetoshis= IsMarmaravout(cp,tx,i)) != 0 )
             outputs += assetoshis;
     }
     if ( inputs != outputs+txfee )
@@ -71,7 +71,7 @@ bool TriggersExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransacti
     else return(true);
 }
 
-bool TriggersValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
+bool MarmaraValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
 {
     int32_t numvins,numvouts,preventCCvins,preventCCvouts,i,numblocks; bool retval; uint256 txid; uint8_t hash[32]; char str[65],destaddr[64];
     return(false);
@@ -91,9 +91,9 @@ bool TriggersValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
             }
         }
         //fprintf(stderr,"check amounts\n");
-        if ( TriggersExactAmounts(cp,eval,tx,1,10000) == false )
+        if ( MarmaraExactAmounts(cp,eval,tx,1,10000) == false )
         {
-            fprintf(stderr,"Triggersget invalid amount\n");
+            fprintf(stderr,"Marmaraget invalid amount\n");
             return false;
         }
         else
@@ -102,8 +102,8 @@ bool TriggersValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
             memcpy(hash,&txid,sizeof(hash));
             retval = PreventCC(eval,tx,preventCCvins,numvins,preventCCvouts,numvouts);
             if ( retval != 0 )
-                fprintf(stderr,"Triggersget validated\n");
-            else fprintf(stderr,"Triggersget invalid\n");
+                fprintf(stderr,"Marmaraget validated\n");
+            else fprintf(stderr,"Marmaraget invalid\n");
             return(retval);
         }
     }
@@ -112,7 +112,7 @@ bool TriggersValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
 
 // helper functions for rpc calls in rpcwallet.cpp
 
-int64_t AddTriggersInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,int64_t total,int32_t maxinputs)
+int64_t AddMarmaraInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,int64_t total,int32_t maxinputs)
 {
     // add threshold check
     char coinaddr[64]; int64_t nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t vout,n = 0;
@@ -126,7 +126,7 @@ int64_t AddTriggersInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CP
         // no need to prevent dup
         if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
         {
-            if ( (nValue= IsTriggersvout(cp,vintx,vout)) > 1000000 && myIsutxo_spentinmempool(txid,vout) == 0 )
+            if ( (nValue= IsMarmaravout(cp,vintx,vout)) > 1000000 && myIsutxo_spentinmempool(txid,vout) == 0 )
             {
                 if ( total != 0 && maxinputs != 0 )
                     mtx.vin.push_back(CTxIn(txid,vout,CScript()));
@@ -141,28 +141,28 @@ int64_t AddTriggersInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CP
     return(totalinputs);
 }
 
-std::string TriggersGet(uint64_t txfee,int64_t nValue)
+std::string MarmaraGet(uint64_t txfee,int64_t nValue)
 {
     CMutableTransaction tmpmtx,mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    CPubKey mypk,Triggerspk; int64_t inputs,CCchange=0; struct CCcontract_info *cp,C; std::string rawhex; uint32_t j; int32_t i,len; uint8_t buf[32768]; bits256 hash;
-    cp = CCinit(&C,EVAL_TRIGGERS);
+    CPubKey mypk,Marmarapk; int64_t inputs,CCchange=0; struct CCcontract_info *cp,C; std::string rawhex; uint32_t j; int32_t i,len; uint8_t buf[32768]; bits256 hash;
+    cp = CCinit(&C,EVAL_MARMARA);
     if ( txfee == 0 )
         txfee = 10000;
-    Triggerspk = GetUnspendable(cp,0);
+    Marmarapk = GetUnspendable(cp,0);
     mypk = pubkey2pk(Mypubkey());
-    if ( (inputs= AddTriggersInputs(cp,mtx,Triggerspk,nValue+txfee,60)) > 0 )
+    if ( (inputs= AddMarmaraInputs(cp,mtx,Marmarapk,nValue+txfee,60)) > 0 )
     {
         if ( inputs > nValue )
             CCchange = (inputs - nValue - txfee);
         if ( CCchange != 0 )
-            mtx.vout.push_back(MakeCC1vout(EVAL_TRIGGERS,CCchange,Triggerspk));
+            mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA,CCchange,Marmarapk));
         mtx.vout.push_back(CTxOut(nValue,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
         fprintf(stderr,"start at %u\n",(uint32_t)time(NULL));
         j = rand() & 0xfffffff;
         for (i=0; i<1000000; i++,j++)
         {
             tmpmtx = mtx;
-            rawhex = FinalizeCCTx(-1LL,cp,tmpmtx,mypk,txfee,CScript() << OP_RETURN << E_MARSHAL(ss << (uint8_t)EVAL_TRIGGERS << (uint8_t)'G' << j));
+            rawhex = FinalizeCCTx(-1LL,cp,tmpmtx,mypk,txfee,CScript() << OP_RETURN << E_MARSHAL(ss << (uint8_t)EVAL_MARMARA << (uint8_t)'G' << j));
             if ( (len= (int32_t)rawhex.size()) > 0 && len < 65536 )
             {
                 len >>= 1;
@@ -178,37 +178,37 @@ std::string TriggersGet(uint64_t txfee,int64_t nValue)
         }
         fprintf(stderr,"couldnt generate valid txid %u\n",(uint32_t)time(NULL));
         return("");
-    } else fprintf(stderr,"cant find Triggers inputs\n");
+    } else fprintf(stderr,"cant find Marmara inputs\n");
     return("");
 }
 
-std::string TriggersFund(uint64_t txfee,int64_t funds)
+std::string MarmaraFund(uint64_t txfee,int64_t funds)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    CPubKey mypk,Triggerspk; CScript opret; struct CCcontract_info *cp,C;
-    cp = CCinit(&C,EVAL_TRIGGERS);
+    CPubKey mypk,Marmarapk; CScript opret; struct CCcontract_info *cp,C;
+    cp = CCinit(&C,EVAL_MARMARA);
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
-    Triggerspk = GetUnspendable(cp,0);
+    Marmarapk = GetUnspendable(cp,0);
     if ( AddNormalinputs(mtx,mypk,funds+txfee,64) > 0 )
     {
-        mtx.vout.push_back(MakeCC1vout(EVAL_TRIGGERS,funds,Triggerspk));
+        mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA,funds,Marmarapk));
         return(FinalizeCCTx(0,cp,mtx,mypk,txfee,opret));
     }
     return("");
 }
 
-UniValue TriggersInfo()
+UniValue MarmaraInfo()
 {
     UniValue result(UniValue::VOBJ); char numstr[64];
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    CPubKey Triggerspk; struct CCcontract_info *cp,C; int64_t funding;
+    CPubKey Marmarapk; struct CCcontract_info *cp,C; int64_t funding;
     result.push_back(Pair("result","success"));
-    result.push_back(Pair("name","Triggers"));
-    cp = CCinit(&C,EVAL_TRIGGERS);
-    Triggerspk = GetUnspendable(cp,0);
-    funding = AddTriggersInputs(cp,mtx,Triggerspk,0,0);
+    result.push_back(Pair("name","Marmara"));
+    cp = CCinit(&C,EVAL_MARMARA);
+    Marmarapk = GetUnspendable(cp,0);
+    funding = AddMarmaraInputs(cp,mtx,Marmarapk,0,0);
     sprintf(numstr,"%.8f",(double)funding/COIN);
     result.push_back(Pair("funding",numstr));
     return(result);

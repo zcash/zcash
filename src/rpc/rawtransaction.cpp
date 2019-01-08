@@ -3,6 +3,21 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 #include "consensus/upgrades.h"
 #include "consensus/validation.h"
 #include "core_io.h"
@@ -282,6 +297,7 @@ void TxToJSONExpanded(const CTransaction& tx, const uint256 hashBlock, UniValue&
         } else {
             entry.push_back(Pair("height", -1));
             entry.push_back(Pair("confirmations", 0));
+            entry.push_back(Pair("rawconfirmations", 0));
         }
     }
 
@@ -364,9 +380,10 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
                 entry.push_back(Pair("confirmations", komodo_dpowconfs(pindex->GetHeight(),1 + chainActive.Height() - pindex->GetHeight())));
                 entry.push_back(Pair("time", pindex->GetBlockTime()));
                 entry.push_back(Pair("blocktime", pindex->GetBlockTime()));
-            }
-            else
+            } else {
                 entry.push_back(Pair("confirmations", 0));
+                entry.push_back(Pair("rawconfirmations", 0));
+            }
         }
     }
 }
@@ -454,7 +471,8 @@ UniValue getrawtransaction(const UniValue& params, bool fHelp)
             "     ,...\n"
             "  ],\n"
             "  \"blockhash\" : \"hash\",   (string) the block hash\n"
-            "  \"confirmations\" : n,      (numeric) The confirmations\n"
+            "  \"confirmations\" : n,      (numeric) The number of notarized DPoW confirmations\n"
+            "  \"rawconfirmations\" : n,   (numeric) The number of raw confirmations\n"
             "  \"time\" : ttt,             (numeric) The transaction time in seconds since epoch (Jan 1 1970 GMT)\n"
             "  \"blocktime\" : ttt         (numeric) The block time in seconds since epoch (Jan 1 1970 GMT)\n"
             "}\n"
