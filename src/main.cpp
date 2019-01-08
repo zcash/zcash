@@ -1603,7 +1603,7 @@ bool CheckTransactionWithoutProofVerification(uint32_t tiptime,const CTransactio
 CAmount GetMinRelayFee(const CTransaction& tx, unsigned int nBytes, bool fAllowFree)
 {
     {
-        LOCK(mempool.cs);
+        LOCK2(cs_main, mempool.cs);
         uint256 hash = tx.GetHash();
         double dPriorityDelta = 0;
         CAmount nFeeDelta = 0;
