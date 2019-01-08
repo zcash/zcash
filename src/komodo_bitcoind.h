@@ -449,7 +449,7 @@ int32_t komodo_verifynotarization(char *symbol,char *dest,int32_t height,int32_t
     }
     else if ( strcmp(dest,"BTC") == 0 )
     {
-        if ( BTCUSERPASS[0] != 0 && KOMODO_PASSPORT_INITDONE == 1 )
+        if ( BTCUSERPASS[0] != 0 )
         {
             //printf("BTCUSERPASS.(%s)\n",BTCUSERPASS);
             jsonstr = komodo_issuemethod(BTCUSERPASS,(char *)"getrawtransaction",params,8332);
