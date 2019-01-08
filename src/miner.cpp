@@ -285,9 +285,10 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
                 bool fNotarisation = false;
                 if (tx.IsCoinImport())
                 {
-                    CAmount nValueIn = GetCoinImportValue(tx);
-                    nTotalIn += nValueIn;
-                    dPriority += (double)nValueIn * 1000;  // flat multiplier
+                    CAmount nValueIn = GetCoinImportValue(tx); // burn amount
+                    //tx.vout[1].nValue import amount
+                    //nTotalIn += nValueIn;
+                    dPriority += 1e16; //(double)nValueIn * 1000;  // flat multiplier
                 } else {
                     int numNotaryVins = 0; bool fToCryptoAddress = false;
                     if ( komodo_is_notarytx(tx) == 1 )

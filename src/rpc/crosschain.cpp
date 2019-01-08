@@ -205,7 +205,7 @@ UniValue migrate_converttoexport(const UniValue& params, bool fHelp)
     ptr = rawproof.data();
     for (i=0; i<rawproof.size(); i++)
         ptr[i] = ASSETCHAINS_SYMBOL[i];
-    CTxOut burnOut = MakeBurnOutput(burnAmount, ccid, targetSymbol, tx.vout,rawproof);
+    CTxOut burnOut = MakeBurnOutput(burnAmount-0.0001, ccid, targetSymbol, tx.vout,rawproof);
     UniValue ret(UniValue::VOBJ);
     ret.push_back(Pair("payouts", HexStr(E_MARSHAL(ss << tx.vout))));
     tx.vout.clear();
