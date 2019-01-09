@@ -3180,7 +3180,11 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         //fprintf(stderr,"checkblock failure in connectblock futureblock.%d\n",futureblock);
         return false;
     }
-
+    if ( fCheckPOW != 0 && pindex->nTime > 1546028567 && !ContextualCheckBlock(block, state, pindex->pprev) )
+    {
+        fprintf(stderr,"ContextualCheckBlock failed ht.%d\n",(int32_t)pindex->nHeight);
+        return false;
+    }
     // verify that the view's current state corresponds to the previous block
     uint256 hashPrevBlock = pindex->pprev == NULL ? uint256() : pindex->pprev->GetBlockHash();
     if ( hashPrevBlock != view.GetBestBlock() )
