@@ -3182,7 +3182,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     }
     if ( fCheckPOW != 0 && pindex->nTime > 1546028567 && !ContextualCheckBlock(block, state, pindex->pprev) )
     {
-        fprintf(stderr,"ContextualCheckBlock failed ht.%d\n",(int32_t)pindex->nHeight);
+        fprintf(stderr,"ContextualCheckBlock failed ht.%d\n",(int32_t)pindex->GetHeight());
         return false;
     }
     // verify that the view's current state corresponds to the previous block
