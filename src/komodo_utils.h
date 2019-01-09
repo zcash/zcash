@@ -1650,7 +1650,6 @@ uint64_t komodo_ac_block_subsidy(int nHeight)
 }
 
 extern int64_t MAX_MONEY;
-extern unsigned int WITNESS_CACHE_SIZE;
 
 void komodo_args(char *argv0)
 {
