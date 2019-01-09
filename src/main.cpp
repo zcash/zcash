@@ -3170,6 +3170,13 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         //fprintf(stderr,"checkblock failure in connectblock futureblock.%d\n",futureblock);
         return false;
     }
+    if ( fCheckPOW != 0 && !ContextualCheckBlock(block, state, pindex->pprev) ) // Activate Jan 15th, 2019
+    {
+        fprintf(stderr,"ContextualCheckBlock failed ht.%d\n",(int32_t)pindex->GetHeight());
+        if ( pindex->nTime > 1547510400 )
+            return false;
+        fprintf(stderr,"grandfathered exception, until jan 15th 2019\n");
+    }
 
     // verify that the view's current state corresponds to the previous block
     uint256 hashPrevBlock = pindex->pprev == NULL ? uint256() : pindex->pprev->GetBlockHash();
@@ -4071,7 +4078,7 @@ static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMo
     //   then pindexFork will be null, and we would need to remove the entire chain including
     //   our genesis block. In practice this (probably) won't happen because of checks elsewhere.
     auto reorgLength = pindexOldTip ? pindexOldTip->GetHeight() - (pindexFork ? pindexFork->GetHeight() : -1) : 0;
-    static_assert(MAX_REORG_LENGTH > 0, "We must be able to reorg some distance");
+    assert(MAX_REORG_LENGTH > 0);//, "We must be able to reorg some distance");
     if (reorgLength > MAX_REORG_LENGTH)
     {
         int32_t notarizedht,prevMoMheight; uint256 notarizedhash,txid;
