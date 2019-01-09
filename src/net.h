@@ -63,11 +63,7 @@ static const unsigned int MAX_INV_SZ = 50000;
 /** The maximum number of new addresses to accumulate before announcing. */
 static const unsigned int MAX_ADDR_TO_SEND = 1000;
 /** Maximum length of incoming protocol messages (no message over 2 MiB is currently acceptable). */
-<<<<<<< HEAD
-static const unsigned int MAX_PROTOCOL_MESSAGE_LENGTH = 4 * 1024 * 1024;
-=======
 static const unsigned int MAX_PROTOCOL_MESSAGE_LENGTH = 4 * 1024 * 1024; // depends on MAX_BLOCK_SIZE
->>>>>>> e755fa0e7bfc079b94c0aa80e80d3b990c9f4b64
 /** Maximum length of strSubVer in `version` message */
 static const unsigned int MAX_SUBVERSION_LENGTH = 256;
 /** -listen default */
