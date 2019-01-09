@@ -92,7 +92,7 @@ uint8_t DecodeTokenOpRet(const CScript scriptPubKey, uint8_t &evalCode, uint256 
     script = (uint8_t *)vopret.data();
 	tokenid = zeroid;
 
-    if (script != 0 /*enable all evals: && script[0] == EVAL_TOKENS*/)
+    if (script != 0 && vopret.size() > 2)
     {
 		// NOTE: if parse error occures, parse might not be able to set error. It is safer to treat that it was eof if it is not set!
 		bool isEof = true;
@@ -114,7 +114,7 @@ uint8_t DecodeTokenOpRet(const CScript scriptPubKey, uint8_t &evalCode, uint256 
 				{
 
 					if (!(ccType >= 0 && ccType <= 2)) { //incorrect ccType
-						std::cerr << "DecodeTokenOpRet() incorrect ccType=" << (int)ccType << std::endl;
+						std::cerr << "DecodeTokenOpRet() incorrect ccType=" << (int)ccType << " tokenid=" << revuint256(tokenid).GetHex() << std::endl;
 						return (uint8_t)0;
 					}
 
@@ -128,7 +128,7 @@ uint8_t DecodeTokenOpRet(const CScript scriptPubKey, uint8_t &evalCode, uint256 
 					tokenid = revuint256(tokenid);
 					return(funcId);
 				}
-				std::cerr << "DecodeTokenOpRet() warning: bad opret format, isEof=" << isEof << " ccType=" << ccType << " tokenid=" << revuint256(tokenid).GetHex() << std::endl;
+				std::cerr << "DecodeTokenOpRet() bad opret format, isEof=" << isEof << " ccType=" << ccType << " tokenid=" << revuint256(tokenid).GetHex() << std::endl;
 				return (uint8_t)0;
 
             default:
@@ -136,6 +136,9 @@ uint8_t DecodeTokenOpRet(const CScript scriptPubKey, uint8_t &evalCode, uint256 
 				return (uint8_t)0;
         }
     }
+	else	{
+		std::cerr << "DecodeTokenOpRet() empty opret, could not parse" << std::endl;
+	}
 	return (uint8_t)0;
 }
 
@@ -247,7 +250,7 @@ bool ValidateTokenOpret(CTransaction tx, int32_t v, uint256 tokenid, std::vector
 
 	if ((funcid = DecodeTokenOpRet(tx.vout[n - 1].scriptPubKey, evalCode, tokenidOpret, voutPubkeys, vopretExtra)) == 0)
 	{
-		std::cerr << indentStr << "ValidateTokenOpret() DecodeOpret returned null for n-1=" << n - 1 << " txid=" << tx.GetHash().GetHex() << std::endl;
+		std::cerr << indentStr << "ValidateTokenOpret() DecodeTokenOpret could not parse opret for txid=" << tx.GetHash().GetHex() << std::endl;
 		return(false);
 	}
 	else if (funcid == 'c')
@@ -330,7 +333,7 @@ int64_t IsTokensvout(bool goDeeper, bool checkPubkeys, struct CCcontract_info *c
 						testVout = MakeCC1of2vout(EVAL_TOKENS, tx.vout[v].nValue, voutPubkeys[0], voutPubkeys[1]);
 
 					if (tx.vout[v].scriptPubKey == testVout.scriptPubKey) {
-						std::cerr << indentStr << "IsTokensvout() vout is EVAL_TOKENS, returning nValue=" << tx.vout[v].nValue << " for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl;
+						//std::cerr << indentStr << "IsTokensvout() vout is EVAL_TOKENS, returning nValue=" << tx.vout[v].nValue << " for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl;
 						return tx.vout[v].nValue;
 					}
 				}
@@ -340,7 +343,7 @@ int64_t IsTokensvout(bool goDeeper, bool checkPubkeys, struct CCcontract_info *c
 					CTxOut testVout = MakeCC1vout(EVAL_TOKENS, tx.vout[v].nValue, *it);
 
 					if (tx.vout[v].scriptPubKey == testVout.scriptPubKey) {
-						std::cerr << indentStr << "IsTokensvout() vout is EVAL_TOKENS change, returning nValue=" << tx.vout[v].nValue << " for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl;
+						//std::cerr << indentStr << "IsTokensvout() vout is EVAL_TOKENS change, returning nValue=" << tx.vout[v].nValue << " for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl;
 						return tx.vout[v].nValue;
 					}
 				}
@@ -382,7 +385,7 @@ bool TokensExactAmounts(bool goDeeper, struct CCcontract_info *cpTokens, int64_t
 
 				if (cc_typeId(cond) == CC_Secp256k1) {
 					*(CPubKey*)_.context = buf2pk(cond->publicKey);
-					std::cerr << "findEval found pubkey=" << HexStr(*(CPubKey*)_.context) << std::endl;
+					//std::cerr << "findEval found pubkey=" << HexStr(*(CPubKey*)_.context) << std::endl;
 					r = true;
 				}
 				// false for a match, true for continue
@@ -483,7 +486,7 @@ int64_t AddTokenCCInputs(struct CCcontract_info *cp, CMutableTransaction &mtx, C
 			Getscriptaddress(destaddr, vintx.vout[vout].scriptPubKey);
 			if (strcmp(destaddr, coinaddr) != 0 && strcmp(destaddr, cp->unspendableCCaddr) != 0 && strcmp(destaddr, cp->unspendableaddr2) != 0)
 				continue;
-			fprintf(stderr, "AddTokenCCInputs() check destaddress=%s vout amount=%.8f\n", destaddr, (double)vintx.vout[vout].nValue / COIN);
+			//fprintf(stderr, "AddTokenCCInputs() check destaddress=%s vout amount=%.8f\n", destaddr, (double)vintx.vout[vout].nValue / COIN);
 
 			std::vector<CPubKey> vinPubkeysEmpty;
 			if ((nValue = IsTokensvout(true, false/*<-- do not check spending outside EVAL_TOKENS for now */, cp, NULL, vopretExtra, vintx, vout, tokenid, vinPubkeysEmpty)) > 0 && myIsutxo_spentinmempool(txid, vout) == 0)

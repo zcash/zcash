@@ -135,7 +135,6 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
                 {
                     privkey = myprivkey;
                     cond = mycond;
-
                 }
                 else if ( strcmp(destaddr,unspendable) == 0 )
                 {

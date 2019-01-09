@@ -12,20 +12,14 @@
 
 // makes coin initial tx opret
 CScript EncodeHeirCreateOpRet(uint8_t funcid, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t inactivityTimeSec, std::string heirName);
-// makes coin additional tx opret
-CScript EncodeHeirOpRet(uint8_t funcid,  uint256 fundingtxid);
-
+CScript EncodeHeirOpRet(uint8_t funcid,  uint256 fundingtxid, uint8_t isHeirSpendingBegan);
+// makes token opret
 CScript EncodeHeirTokensCreateOpRet(uint8_t funcid, uint256 tokenid, std::vector<CPubKey> voutPubkeys, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t inactivityTimeSec, std::string hearName);
-CScript EncodeHeirTokensOpRet(uint8_t funcid, uint256 tokenid, std::vector<CPubKey> voutPubkeys, uint256 fundingtxid);
-//CScript EncodeHeirConvertedAssetsOpRet(uint8_t eval, uint8_t funcid, uint256 tokenid, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t inactivityTimeSec, uint256 fundingtxid);
+CScript EncodeHeirTokensOpRet(uint8_t funcid, uint256 tokenid, std::vector<CPubKey> voutPubkeys, uint256 fundingtxid, uint8_t isHeirSpendingBegan);
 
-template <class Helper> uint256 FindLatestFundingTx(uint256 fundingtxid, uint256 &tokenid, CScript& opRetScript, bool &isHeirSpendingBegan);
-template <class Helper> uint8_t DecodeHeirOpRet(CScript scriptPubKey, uint256 &tokenid, uint256& fundingtxid, bool noLogging = false);
-//template <class Helper> uint8_t DecodeHeirOpRet(CScript scriptPubKey, uint256 &tokenid, CPubKey& ownerPubkey, CPubKey& heirPubkey, int64_t& inactivityTime, std::string& heirName, bool noLogging = false);
+template <class Helper> uint256 FindLatestFundingTx(uint256 fundingtxid, uint256 &tokenid, CScript& opRetScript, uint8_t &isHeirSpendingBegan);
+template <class Helper> uint8_t DecodeHeirOpRet(CScript scriptPubKey, uint256 &tokenid, uint256& fundingtxid, uint8_t &isHeirSpendingBegan, bool noLogging = false);
 template <class Helper> uint8_t DecodeHeirOpRet(CScript scriptPubKey, uint256 &tokenid, CPubKey& ownerPubkey, CPubKey& heirPubkey, int64_t& inactivityTime, std::string& heirName,  bool noLogging = false);
-
-//int64_t AddHeirTokenInputs(struct CCcontract_info *cp, CMutableTransaction &mtx, CPubKey pk, uint256 reftokenid, int64_t total, int32_t maxinputs);
-
 
 // helper class to allow polymorphic behaviour for HeirXXX() functions in case of coins
 class CoinHelper {
@@ -40,11 +34,11 @@ public:
 	static CScript makeCreateOpRet(uint256 dummyid, std::vector<CPubKey> dummyPubkeys, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t inactivityTimeSec, std::string heirName) {
 		return EncodeHeirCreateOpRet((uint8_t)'F', ownerPubkey, heirPubkey, inactivityTimeSec, heirName);
 	}
-	static CScript makeAddOpRet(uint256 dummyid, std::vector<CPubKey> dummyPubkeys, uint256 fundingtxid) {
-		return EncodeHeirOpRet((uint8_t)'A', fundingtxid);
+	static CScript makeAddOpRet(uint256 dummyid, std::vector<CPubKey> dummyPubkeys, uint256 fundingtxid, uint8_t isHeirSpendingBegan) {
+		return EncodeHeirOpRet((uint8_t)'A', fundingtxid, isHeirSpendingBegan);
 	}
-	static CScript makeClaimOpRet(uint256 dummyid, std::vector<CPubKey> dummyPubkeys, uint256 fundingtxid) {
-		return EncodeHeirOpRet((uint8_t)'C', fundingtxid);
+	static CScript makeClaimOpRet(uint256 dummyid, std::vector<CPubKey> dummyPubkeys, uint256 fundingtxid, uint8_t isHeirSpendingBegan) {
+		return EncodeHeirOpRet((uint8_t)'C', fundingtxid, isHeirSpendingBegan);
 	}
 
 	static bool isSpendingTx(uint8_t funcid) { return (funcid == 'C'); }
@@ -69,11 +63,11 @@ public:
 	static CScript makeCreateOpRet(uint256 tokenid, std::vector<CPubKey> voutTokenPubkeys, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t inactivityTimeSec, std::string heirName) {
 		return EncodeHeirTokensCreateOpRet((uint8_t)'F', tokenid, voutTokenPubkeys, ownerPubkey, heirPubkey, inactivityTimeSec, heirName);
 	}
-	static CScript makeAddOpRet(uint256 tokenid, std::vector<CPubKey> voutTokenPubkeys, uint256 fundingtxid) {
-		return EncodeHeirTokensOpRet((uint8_t)'A', tokenid, voutTokenPubkeys, fundingtxid);
+	static CScript makeAddOpRet(uint256 tokenid, std::vector<CPubKey> voutTokenPubkeys, uint256 fundingtxid, uint8_t isHeirSpendingBegan) {
+		return EncodeHeirTokensOpRet((uint8_t)'A', tokenid, voutTokenPubkeys, fundingtxid, isHeirSpendingBegan);
 	}
-	static CScript makeClaimOpRet(uint256 tokenid, std::vector<CPubKey> voutTokenPubkeys, uint256 fundingtxid) {
-		return EncodeHeirTokensOpRet((uint8_t)'C', tokenid, voutTokenPubkeys, fundingtxid);
+	static CScript makeClaimOpRet(uint256 tokenid, std::vector<CPubKey> voutTokenPubkeys, uint256 fundingtxid, uint8_t isHeirSpendingBegan) {
+		return EncodeHeirTokensOpRet((uint8_t)'C', tokenid, voutTokenPubkeys, fundingtxid, isHeirSpendingBegan);
 	}
 
 	static bool isSpendingTx(uint8_t funcid) { return (funcid == 'C'); }
@@ -85,9 +79,6 @@ public:
 		return MakeCC1vout(EVAL_TOKENS, amount, myPubkey);
 	}
 };
-
-//#define OPTIONAL_VOUT 0			// if vout is optional then in a validation plan it will be skipped without error, if all validators return false 
-
 
 
 /**
@@ -104,10 +95,8 @@ public:
 *
 * For validating vouts COutputValidator is configured for each vector of validators with the vout index to which these validators are applied
 * (see constructors of both CInputValidator and COutputValidator)
-*
-*
-* Base class for all validators
 */
+
 /**
  * base class for all validators
  */
@@ -123,7 +112,6 @@ protected:
 	CCcontract_info * m_cp;
 };
 
-
 /**
  * Base class for classes which identify vins as normal or cc inputs
  */
@@ -136,9 +124,6 @@ public:
 protected:
 	CCcontract_info * m_cp;
 };
-
-
-
 
 /**
 * Encapsulates an array containing rows of validators
@@ -222,7 +207,7 @@ public:
 			return eval->Invalid("incorrect tx structure: not all required vins are present.");
 		}
 
-		std::cerr << "CInputValidationPlan::validate() returns with true" << std::endl;
+		//std::cerr << "CInputValidationPlan::validate() returns with true" << std::endl;
 		return true;
 	}
 
@@ -246,7 +231,7 @@ private:
 		// get requested row of validators:
 		ValidatorsRow vValidators = m_arrayValidators[ival].second;
 
-		std::cerr << "CInputValidationPlan::execValidatorsInRow() calling validators" << " for vin iv=" << iv << " ival=" << ival << std::endl;
+		//std::cerr << "CInputValidationPlan::execValidatorsInRow() calling validators" << " for vin iv=" << iv << " ival=" << ival << std::endl;
 
 		for (auto v : vValidators) {
 			bool result;
@@ -327,7 +312,7 @@ public:
 
 		}
 
-		std::cerr << "COutputValidationPlan::validate() returns with true" << std::endl;
+		//std::cerr << "COutputValidationPlan::validate() returns with true" << std::endl;
 		return true;
 	}
 
@@ -351,7 +336,7 @@ private:
 		// get requested row of validators:
 		ValidatorsRow vValidators = m_arrayValidators[ival].second;
 
-		std::cerr << "COutputValidationPlan::execRow() calling validators" << " for vout iv=" << iv << " ival=" << ival << std::endl;
+		//std::cerr << "COutputValidationPlan::execRow() calling validators" << " for vout iv=" << iv << " ival=" << ival << std::endl;
 
 		for (auto v : vValidators) {
 
@@ -422,7 +407,7 @@ public:
 		GetCCaddress1of2(m_cp, shouldBeAddr, ownerPubkey, heirPubkey);
 		if (vout.scriptPubKey.IsPayToCryptoCondition()) {
 			if (Getscriptaddress(ccAddr, vout.scriptPubKey) && strcmp(shouldBeAddr, ccAddr) == 0) {
-				std::cerr << "CCC1of2AddressValidator::validateVout() exits with true" << std::endl;
+				//std::cerr << "CCC1of2AddressValidator::validateVout() exits with true" << std::endl;
 				return true;
 			}
 			else {
@@ -476,23 +461,24 @@ public:
 		if (m_checkNormals)  {
 			ownerScript = CoinHelper::makeUserVout(vout.nValue, ownerPubkey).scriptPubKey;
 			heirScript = CoinHelper::makeUserVout(vout.nValue, heirPubkey).scriptPubKey;
+			std::cerr << "CMyPubkeyVoutValidator::validateVout() vout.scriptPubKey=" << vout.scriptPubKey.ToString() << " makeUserVout(coin,owner)=" << CoinHelper::makeUserVout(vout.nValue, ownerPubkey).scriptPubKey.ToString() << " makeUserVout(coin,heir)=" << CoinHelper::makeUserVout(vout.nValue, heirPubkey).scriptPubKey.ToString() << std::endl;
 		}
 		else  {
 			ownerScript = Helper::makeUserVout(vout.nValue, ownerPubkey).scriptPubKey;
 			heirScript = Helper::makeUserVout(vout.nValue, heirPubkey).scriptPubKey;
+			std::cerr << "CMyPubkeyVoutValidator::validateVout() vout.scriptPubKey=" << vout.scriptPubKey.ToString() << " makeUserVout(owner)=" << Helper::makeUserVout(vout.nValue, ownerPubkey).scriptPubKey.ToString() << " makeUserVout(heir)=" << Helper::makeUserVout(vout.nValue, heirPubkey).scriptPubKey.ToString() << std::endl;
 		}
-
-		//std::cerr << "CMyPubkeyVoutValidator::validateVout() vout.scriptPubKey=" << vout.scriptPubKey.ToString() <<  " makeUserVout=" << Helper::makeUserVout(vout.nValue, ownerPubkey).scriptPubKey.ToString() << std::endl;
 
 		// recreate scriptPubKey for owner and heir and compare it with that of the vout to check:
 		if (vout.scriptPubKey == ownerScript ||	vout.scriptPubKey == heirScript) {
 			// this is vout to owner or heir addr:
-			std::cerr << "CMyPubkeyVoutValidator::validateVout() exits with true" << std::endl;
+			//std::cerr << "CMyPubkeyVoutValidator::validateVout() exits with true" << std::endl;
 			return true;
 
 		}
 
 		std::cerr << "CMyPubkeyVoutValidator::validateVout() exits with false (not the owner's or heir's addresses)" << std::endl;
+		message = std::string("invalid pubkey");
 		return false;
 	}
 	virtual bool validateVin(CTxIn vin, CTxOut prevVout, std::string& message) const { return true; }
@@ -509,7 +495,7 @@ private:
 template <class Helper> class CHeirSpendValidator : CValidatorBase
 {
 public:
-	CHeirSpendValidator(CCcontract_info* cp, CScript opRetScript, uint256 latesttxid, bool isHeirSpendingBegan)
+	CHeirSpendValidator(CCcontract_info* cp, CScript opRetScript, uint256 latesttxid, uint8_t isHeirSpendingBegan)
 		: m_fundingOpretScript(opRetScript), m_latesttxid(latesttxid), m_isHeirSpendingBegan(isHeirSpendingBegan), CValidatorBase(cp) {}
 
 	virtual bool isVinValidator() const { return false; }
@@ -547,7 +533,7 @@ public:
 			}
 		}
 
-		std::cerr << "CHeirSpendValidator::validateVout() exits with true" << std::endl;
+		//std::cerr << "CHeirSpendValidator::validateVout() exits with true" << std::endl;
 
 		// this is not heir:
 		return true;
@@ -557,7 +543,7 @@ public:
 private:
 	CScript m_fundingOpretScript;
 	uint256 m_latesttxid;
-	bool m_isHeirSpendingBegan;
+	uint8_t m_isHeirSpendingBegan;
 };
 
 /**
@@ -576,12 +562,13 @@ public:
 
 		uint8_t funcId, initialFuncId;		// do not check heir name
 		uint256 fundingTxidInOpret = zeroid, dummyTxid, tokenid, initialTokenid;
+		uint8_t dummyIsHeirSpendingBegan;
 
-		if ((funcId = DecodeHeirOpRet<Helper>(vout.scriptPubKey, tokenid, fundingTxidInOpret)) == 0) {
+		if ((funcId = DecodeHeirOpRet<Helper>(vout.scriptPubKey, tokenid, fundingTxidInOpret, dummyIsHeirSpendingBegan)) == 0) {
 			message = std::string("invalid opreturn format");
 			return false;
 		}
-		if ((initialFuncId = DecodeHeirOpRet<Helper>(m_fundingOpretScript, initialTokenid, dummyTxid)) == 0) {
+		if ((initialFuncId = DecodeHeirOpRet<Helper>(m_fundingOpretScript, initialTokenid, dummyTxid, dummyIsHeirSpendingBegan)) == 0) {
 			message = std::string("invalid initial tx opreturn format");
 			return false;
 		}
@@ -606,6 +593,19 @@ private:
 	CScript m_fundingOpretScript;
 };
 
+/**
+* empty validator always returns true
+*/
+template <class Helper> class CNullValidator : CValidatorBase
+{
+public:
+	CNullValidator(CCcontract_info* cp)
+		: CValidatorBase(cp) {	}
+
+	virtual bool isVinValidator() const { return false; }
+	virtual bool validateVout(CTxOut vout, std::string& message) const { return true; }
+	virtual bool validateVin(CTxIn vin, CTxOut prevVout, std::string& message) const { return true; }
+};
 
 
 #endif
