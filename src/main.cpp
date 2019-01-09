@@ -1091,6 +1091,7 @@ bool ContextualCheckTransaction(
     }
 
     // Rules that apply to Overwinter or later:
+    fprintf(stderr,"ht.%d overwinterActive.%d tx.overwintered.%d\n",nHeight,overwinterActive,overwinterActive);
     if (overwinterActive)
     {
         // Reject transactions intended for Sprout
@@ -3180,7 +3181,8 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         //fprintf(stderr,"checkblock failure in connectblock futureblock.%d\n",futureblock);
         return false;
     }
-    if ( fCheckPOW != 0 && pindex->nTime > 1547510400 && !ContextualCheckBlock(block, state, pindex->pprev) ) // Activate Jan 15th, 2019
+    fprintf(stderr,"connect.%d checkPOW.%d nTime.%u %d\n",fCheckPOW,(uint32_t)pindex->nTime,ContextualCheckBlock(block, state, pindex->pprev));
+    if ( fCheckPOW != 0 && !ContextualCheckBlock(block, state, pindex->pprev) ) //&& pindex->nTime > 1547510400 Activate Jan 15th, 2019
     {
         fprintf(stderr,"ContextualCheckBlock failed ht.%d\n",(int32_t)pindex->GetHeight());
         return false;
