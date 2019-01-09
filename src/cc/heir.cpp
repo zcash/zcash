@@ -126,14 +126,14 @@ bool HeirValidate(struct CCcontract_info* cpHeir, Eval* eval, const CTransaction
     uint256 fundingTxidInOpret = zeroid, latestTxid = zeroid, dummyTokenid, tokenid = zeroid;
     
 	CScript fundingTxOpRetScript;
-	uint8_t hasHeirSpendingBegun = 0, dummyhasHeirSpendingBegun;
+	uint8_t hasHeirSpendingBegun = 0, dummyHasHeirSpendingBegun;
 
 	int32_t heirType = NOT_HEIR;
-	funcId = DecodeHeirOpRet<CoinHelper>(tx.vout[numvouts - 1].scriptPubKey, dummyTokenid, fundingTxidInOpret, dummyhasHeirSpendingBegun, true);
+	funcId = DecodeHeirOpRet<CoinHelper>(tx.vout[numvouts - 1].scriptPubKey, dummyTokenid, fundingTxidInOpret, dummyHasHeirSpendingBegun, true);
 	if(funcId != 0)
 		heirType = HEIR_COINS;
 	else  {
-		funcId = DecodeHeirOpRet<TokenHelper>(tx.vout[numvouts - 1].scriptPubKey, tokenid, fundingTxidInOpret, dummyhasHeirSpendingBegun, false);
+		funcId = DecodeHeirOpRet<TokenHelper>(tx.vout[numvouts - 1].scriptPubKey, tokenid, fundingTxidInOpret, dummyHasHeirSpendingBegun, false);
 		if (funcId != 0)
 			heirType = HEIR_TOKENS;
 	}
@@ -434,9 +434,9 @@ template <class Helper> uint8_t _DecodeHeirOpRet(CScript scriptPubKey, uint256 &
 template <class Helper> uint8_t DecodeHeirOpRet(CScript scriptPubKey, uint256 &tokenid, CPubKey& ownerPubkey, CPubKey& heirPubkey, int64_t& inactivityTime, std::string& heirName, bool noLogging)
 {
 	uint256 dummytxid;
-	uint8_t dummyhasHeirSpendingBegun;
+	uint8_t dummyHasHeirSpendingBegun;
 
-	return _DecodeHeirOpRet<Helper>(scriptPubKey, tokenid, ownerPubkey, heirPubkey, inactivityTime, heirName, dummytxid, dummyhasHeirSpendingBegun, noLogging);
+	return _DecodeHeirOpRet<Helper>(scriptPubKey, tokenid, ownerPubkey, heirPubkey, inactivityTime, heirName, dummytxid, dummyHasHeirSpendingBegun, noLogging);
 }
 
 /**
@@ -517,11 +517,11 @@ template <class Helper> uint256 _FindLatestFundingTx(uint256 fundingtxid, uint8_
 
 			/*{	// debug code:
 				uint256 debAssetid;
-				uint8_t debhasHeirSpendingBegun;
-				uint8_t debfuncid = DecodeHeirOpRet<Helper>(regtx.vout[regtx.vout.size() - 1].scriptPubKey, debAssetid, fundingTxidInOpret, debhasHeirSpendingBegun, true);
+				uint8_t debHasHeirSpendingBegun;
+				uint8_t debfuncid = DecodeHeirOpRet<Helper>(regtx.vout[regtx.vout.size() - 1].scriptPubKey, debAssetid, fundingTxidInOpret, debHasHeirSpendingBegun, true);
 
 				std::cerr << "FindLatestFundingTx() regtx.vout.size()=" << regtx.vout.size() << " funcId=" << (char)(debfuncid ? debfuncid : ' ') 
-					<< " tokenid=" << debAssetid.GetHex() << " fundingtxidInOpret=" << fundingTxidInOpret.GetHex() << " debhasHeirSpendingBegun=" << (int)debhasHeirSpendingBegun << std::endl;
+					<< " tokenid=" << debAssetid.GetHex() << " fundingtxidInOpret=" << fundingTxidInOpret.GetHex() << " debHasHeirSpendingBegun=" << (int)debHasHeirSpendingBegun << std::endl;
 			}*/
 
 			uint256 dummyTokenid;  // not to contaminate the tokenid from the params!
@@ -595,9 +595,9 @@ template <class Helper> int64_t Add1of2AddressInputs(struct CCcontract_info* cp,
         if (GetTransaction(txid, heirtx, hashBlock, false) != 0) {
 			uint256 tokenid;
             uint256 fundingTxidInOpret;
-			uint8_t dummyhasHeirSpendingBegun;
+			uint8_t dummyHasHeirSpendingBegun;
 			
-			uint8_t funcId = DecodeHeirOpRet<Helper>(heirtx.vout[heirtx.vout.size() - 1].scriptPubKey, tokenid, fundingTxidInOpret, dummyhasHeirSpendingBegun, true);
+			uint8_t funcId = DecodeHeirOpRet<Helper>(heirtx.vout[heirtx.vout.size() - 1].scriptPubKey, tokenid, fundingTxidInOpret, dummyHasHeirSpendingBegun, true);
             if ((txid == fundingtxid || fundingTxidInOpret == fundingtxid) && 
 				funcId != 0 &&
 				Helper::isMyFuncId(funcId) &&     
@@ -642,9 +642,9 @@ template <class Helper> int64_t LifetimeHeirContractFunds(struct CCcontract_info
 			uint256 tokenid;
             uint256 fundingTxidInOpret;
             const int32_t ivout = 0;
-			uint8_t dummyhasHeirSpendingBegun;
+			uint8_t dummyHasHeirSpendingBegun;
 
-			funcId = DecodeHeirOpRet<Helper>(tx.vout[tx.vout.size() - 1].scriptPubKey, tokenid, fundingTxidInOpret, dummyhasHeirSpendingBegun, true);
+			funcId = DecodeHeirOpRet<Helper>(tx.vout[tx.vout.size() - 1].scriptPubKey, tokenid, fundingTxidInOpret, dummyHasHeirSpendingBegun, true);
 
             //std::cerr << "LifetimeHeirContractFunds() found tx=" << txid.GetHex() << " vout[0].nValue=" << subtx.vout[ccVoutIdx].nValue << " opreturn=" << (char)funcId << '\n';
 
