@@ -36,6 +36,9 @@ PARAM_FILES = {
 PARAMS_URL = "https://z.cash/downloads/"
 SPROUT_IPFS = "/ipfs/QmZKKx7Xup7LiAtFRhYsE1M7waXcv9ir9eCECyXAFGxhEo"
 
+DOWNLOADING = 1
+DOWNLOADED = 0
+
 #get system information to setup according platform lock and unlock methods
 HOST_OS = platform.system()
 
@@ -139,13 +142,13 @@ def use_https(filename):
                 handle.write(chunk)
                 size += len(chunk)
             else:
-                logging.warning("Recieved response that was not content data.")
+                logging.warning("Received response that was not content data.")
         unlock(handle)
     
     logging.info(" '%s' saved [%d/%d]", filename, size, total_size)
     
     if size == total_size :
-        verify_file(path, PARAM_FILES.get(filename))
+        verify_file(path, PARAM_FILES.get(filename), DOWNLOADING)
 
 def download_file(filename, protocol):
     if protocol == "HTTPS":
@@ -155,9 +158,9 @@ def download_file(filename, protocol):
     elif protocol == "IPFS":
         use_ipfs(filename)
     else:
-        logging.error("%s is not currenlty supported for retrieving Zcash params.\n", protocol)
+        logging.error("%s is not currently supported for retrieving Zcash params.\n", protocol)
 
-def verify_file(filename, sha256):
+def verify_file(filename, sha256, download_state):
     logging.debug("Checking SHA256 for: %s", filename) 
     with open(filename, 'rb') as f:
         try:
@@ -169,15 +172,20 @@ def verify_file(filename, sha256):
         if local_sha256 != sha256 :
             logging.error("Download failed: SHA256 on %s does NOT match.", filename)
             return
-    
-    logging.info("Download successful!")
-    logging.info("%s: OK", filename)
-    try:
-        os.rename(filename, filename[:-3])
-    except:
-        logging.exception("Unable to rename file.")
+            
+    if download_state == DOWNLOADING :
+        logging.info("Download successful!")
+        logging.info("%s: OK", filename)
+        
+        try:
+            os.rename(filename, filename[:-3])
+        except:
+            logging.exception("Unable to rename file.")
 
-    logging.info("renamed '%s' -> '%s' \n", filename, filename[:-3])
+        logging.info("renamed '%s' -> '%s' \n", filename, filename[:-3])
+    
+    if download_state == DOWNLOADED :
+        logging.info("%s: OK", filename)
 
 def get_params(param_file_list):
     for filename in param_file_list:
@@ -185,7 +193,22 @@ def get_params(param_file_list):
 
 def check_params(param_file_list):
     for key in param_file_list:
-        verify_file(PARAMS_DIR + key + ".dl", param_file_list.get(key) )
+        if os.path.exists(PARAMS_DIR + key) == True :
+            verify_file(PARAMS_DIR + key , param_file_list.get(key), DOWNLOADED )
+        else :
+            logging.warning("File does not exists. Unable to verify SHA for : %s", PARAMS_DIR + key )
+
+def create_readme():
+    try:
+        os.mkdir(PARAMS_DIR)
+        f = open(PARAMS_DIR + "README", "w+")
+        f.write("This directory stores common Zcash zkSNARK parameters. Note that it is \n")
+        f.write("distinct from the daemon's -datadir argument because the parameters are \n")
+        f.write("large and may be shared across multiple distinct -datadir's such as when \n")
+        f.write("setting up test networks.")
+        f.close()
+    except OSError as e:
+        logging.exception("Exception occured")
 
 def print_intro():
     print "Zcash - fetch-pyarams.py \n "
@@ -203,22 +226,14 @@ def print_intro_info():
 
 def main():
     lock_this = singleton.SingleInstance()
-
     print_intro()
 
     if os.path.exists(PARAMS_DIR) == False:
-        try:
-            os.mkdir(PARAMS_DIR)
-            f = open(PARAMS_DIR + "README", "w+")
-            f.write("This directory stores common Zcash zkSNARK parameters. Note that it is \n")
-            f.write("distinct from the daemon's -datadir argument because the parameters are \n")
-            f.write("large and may be shared across multiple distinct -datadir's such as when \n")
-            f.write("setting up test networks.")
-            f.close()
-            print_intro_info()
-            get_params(PARAM_FILES)
-        except OSError as e:
-            logging.exception("Exception occured")
+        create_readme()
+        print_intro_info()
+        get_params(PARAM_FILES)
+    else:
+        check_params(PARAM_FILES)
     
 if __name__ == "__main__":
     main()
