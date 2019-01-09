@@ -70,9 +70,9 @@ bool UnmarshalBurnTx(const CTransaction &burnTx, std::string &targetSymbol, uint
     if (burnTx.vout.size() == 0) return false;
     GetOpReturnData(burnTx.vout.back().scriptPubKey, burnOpret);
     return E_UNMARSHAL(burnOpret, ss >> VARINT(*targetCCid);
-                           ss >> targetSymbol;
-                           ss >> payoutsHash;
-                           ss >> rawproof);
+                    ss >> targetSymbol;
+                    ss >> payoutsHash;
+                    ss >> rawproof);
 }
 
 

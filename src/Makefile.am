@@ -302,7 +302,7 @@ libbitcoin_server_a_SOURCES = \
   cc/oracles.cpp \
   cc/prices.cpp \
   cc/pegs.cpp \
-  cc/triggers.cpp \
+  cc/marmara.cpp \
   cc/payments.cpp \
   cc/gateways.cpp \
   cc/channels.cpp \

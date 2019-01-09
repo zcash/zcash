@@ -444,8 +444,8 @@ static const CRPCCommand vRPCCommands[] =
     // Pegs
     { "pegs",       "pegsaddress",   &pegsaddress,      true },
 
-    // Triggers
-    { "triggers",       "triggersaddress",   &triggersaddress,      true },
+    // Marmara
+    { "marmara",       "Marmaraaddress",   &marmaraaddress,      true },
 
     // Payments
     { "payments",       "paymentsaddress",   &paymentsaddress,      true },
