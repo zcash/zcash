@@ -163,7 +163,7 @@ UniValue calc_MoM(const UniValue& params, bool fHelp)
 
 UniValue migrate_converttoexport(const UniValue& params, bool fHelp)
 {
-    std::vector<uint8_t> rawproof; uint8_t *ptr; uint8_t i; uint32_t ccid = ASSETCHAINS_CC;
+    std::vector<uint8_t> rawproof; uint8_t *ptr; uint8_t i; uint32_t ccid = ASSETCHAINS_CC; uint64_t txfee = 10000;
     if (fHelp || params.size() != 2)
         throw runtime_error(
             "migrate_converttoexport rawTx dest_symbol\n"
@@ -205,7 +205,7 @@ UniValue migrate_converttoexport(const UniValue& params, bool fHelp)
     ptr = rawproof.data();
     for (i=0; i<rawproof.size(); i++)
         ptr[i] = ASSETCHAINS_SYMBOL[i];
-    CTxOut burnOut = MakeBurnOutput(burnAmount, ccid, targetSymbol, tx.vout,rawproof);
+    CTxOut burnOut = MakeBurnOutput(burnAmount+txfee, ccid, targetSymbol, tx.vout,rawproof);
     UniValue ret(UniValue::VOBJ);
     ret.push_back(Pair("payouts", HexStr(E_MARSHAL(ss << tx.vout))));
     tx.vout.clear();

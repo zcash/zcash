@@ -1603,7 +1603,7 @@ bool CheckTransactionWithoutProofVerification(uint32_t tiptime,const CTransactio
 CAmount GetMinRelayFee(const CTransaction& tx, unsigned int nBytes, bool fAllowFree)
 {
     {
-        LOCK2(cs_main, mempool.cs);
+        LOCK(mempool.cs);
         uint256 hash = tx.GetHash();
         double dPriorityDelta = 0;
         CAmount nFeeDelta = 0;
@@ -1872,7 +1872,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
             nLastTime = nNow;
             // -limitfreerelay unit is thousand-bytes-per-minute
             // At default rate it would take over a month to fill 1GB
-            if (dFreeCount >= GetArg("-limitfreerelay", 15)*10*50000)
+            if (dFreeCount >= GetArg("-limitfreerelay", 15)*10*1000)
             {
                 fprintf(stderr,"accept failure.7\n");
                 return state.DoS(0, error("AcceptToMemoryPool: free transaction rejected by rate limiter"), REJECT_INSUFFICIENTFEE, "rate limited free transaction");
@@ -2709,6 +2709,7 @@ bool ContextualCheckInputs(
 
     if (tx.IsCoinImport())
     {
+        LOCK(cs_main);
         ServerTransactionSignatureChecker checker(&tx, 0, 0, false, txdata);
         return VerifyCoinImport(tx.vin[0].scriptSig, checker, state);
     }
