@@ -76,7 +76,7 @@ static const unsigned int MAX_FREE_TRANSACTION_CREATE_SIZE = 1000;
 //  Should be large enough that we can expect not to reorg beyond our cache
 //  unless there is some exceptional network disruption.
 #define _COINBASE_MATURITY 100
-static const unsigned int WITNESS_CACHE_SIZE = _COINBASE_MATURITY+10;
+unsigned int WITNESS_CACHE_SIZE = _COINBASE_MATURITY+10;
 
 //! Size of HD seed in bytes
 static const size_t HD_WALLET_SEED_LENGTH = 32;

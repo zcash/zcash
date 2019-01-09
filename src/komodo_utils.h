@@ -1650,6 +1650,7 @@ uint64_t komodo_ac_block_subsidy(int nHeight)
 }
 
 extern int64_t MAX_MONEY;
+extern unsigned int WITNESS_CACHE_SIZE;
 
 void komodo_args(char *argv0)
 {
@@ -1702,6 +1703,8 @@ void komodo_args(char *argv0)
     }
     KOMODO_STOPAT = GetArg("-stopat",0);
     MAX_REORG_LENGTH = GetArg("-maxreorg",MAX_REORG_LENGTH);
+    WITNESS_CACHE_SIZE = MAX_REORG_LENGTH+10;
+
     ASSETCHAINS_CC = GetArg("-ac_cc",0);
     KOMODO_CCACTIVATE = GetArg("-ac_ccactivate",0);
     ASSETCHAINS_PUBLIC = GetArg("-ac_public",0);
