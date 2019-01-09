@@ -1203,8 +1203,8 @@ void CWallet::DecrementNoteWitnesses(const CBlockIndex* pindex)
     else
     {
         if ( nWitnessCacheSize > 0 )
-            nWitnessCacheSize--
-            }
+            nWitnessCacheSize--;
+    }
     // For performance reasons, we write out the witness cache in
     // CWallet::SetBestChain() (which also ensures that overall consistency
     // of the wallet.dat is maintained).
