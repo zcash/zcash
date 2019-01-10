@@ -131,6 +131,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
             {
                 Getscriptaddress(destaddr,vintx.vout[utxovout].scriptPubKey);
                 //fprintf(stderr,"FinalizeCCTx() vin.%d is CC %.8f -> (%s)\n",i,(double)utxovalues[i]/COIN,destaddr);
+				std::cerr << "FinalizeCCtx() destaddr=" << destaddr << " myaddr=" << myaddr << std::endl;
                 if ( strcmp(destaddr,myaddr) == 0 )
                 {
                     privkey = myprivkey;
