@@ -158,7 +158,7 @@ bool HeirValidate(struct CCcontract_info* cpHeir, Eval* eval, const CTransaction
 		fundingTxOpRetScript = tx.vout[numvouts - 1].scriptPubKey;
 	}
 
-	std::cerr << "HeirValidate funcid=" << (char)funcId << " evalcode=" << cpHeir->evalcode << std::endl;
+	std::cerr << "HeirValidate funcid=" << (char)funcId << " evalcode=" << (int)cpHeir->evalcode << std::endl;
 
 	//////////////// temp ////////////////////////
 	return true;
