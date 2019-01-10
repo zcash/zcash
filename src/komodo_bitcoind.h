@@ -2106,7 +2106,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
             counter++;
             if ( out.nDepth < nMinDepth || out.nDepth > nMaxDepth )
             {
-                fprintf(stderr,"komodo_staked invalid depth %d\n",(int32_t)out.nDepth);
+                //fprintf(stderr,"komodo_staked invalid depth %d\n",(int32_t)out.nDepth);
                 continue;
             }
             CAmount nValue = out.tx->vout[out.i].nValue;
@@ -2160,7 +2160,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
             }
             else
             {
-                fprintf(stderr,"ht.%d error validating winning blocktime %u -> %.8f eligible.%u test prior\n",nHeight,*blocktimep,(double)kp->nValue/COIN,eligible);
+                //fprintf(stderr,"ht.%d error validating winning blocktime %u -> %.8f eligible.%u test prior\n",nHeight,*blocktimep,(double)kp->nValue/COIN,eligible);
                 continue;
             }
             eligible = besttime;

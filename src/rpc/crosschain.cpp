@@ -363,7 +363,7 @@ UniValue getimports(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 1)
         throw runtime_error(
-            "getmigrates \"hash|height\"\n"
+            "getimports \"hash|height\"\n"
             "\n\n"
             "\nResult:\n"
             "{\n"
@@ -429,7 +429,7 @@ UniValue getimports(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_INTERNAL_ERROR, "Can't read block from disk");
 
     UniValue result(UniValue::VOBJ);
-    CAmount TotalImported;
+    CAmount TotalImported = 0;
     UniValue imports(UniValue::VARR);
     BOOST_FOREACH(const CTransaction&tx, block.vtx)
     {
@@ -467,7 +467,7 @@ UniValue getimports(const UniValue& params, bool fHelp)
         }
     }
     result.push_back(Pair("imports", imports));
-    result.push_back(Pair("TotalImported", ValueFromAmount(TotalImported)));    
+    result.push_back(Pair("TotalImported", TotalImported > 0 ? ValueFromAmount(TotalImported) : 0 ));    
     result.push_back(Pair("time", block.GetBlockTime()));
     return result;
 }
