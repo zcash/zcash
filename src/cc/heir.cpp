@@ -864,7 +864,8 @@ template <typename Helper>UniValue HeirClaim(uint256 fundingtxid, uint64_t txfee
 	uint8_t hasHeirSpendingBegun = 0;
 
 
-    cp = CCinit(&C, Helper::getMyEval());
+    //cp = CCinit(&C, Helper::getMyEval());
+	cp = CCinit(&C, EVAL_HEIR);
     if (txfee == 0)
         txfee = 10000;
 
