@@ -242,7 +242,7 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
         CCoinsViewCache view(pcoinsTip);
         uint32_t expired; uint64_t commission;
         
-        SaplingMerkleTree sapling_tree; uint64_t commission;
+        SaplingMerkleTree sapling_tree;
         assert(view.GetSaplingAnchorAt(view.GetBestAnchor(SAPLING), sapling_tree));
 
         // Priority order to process transactions
