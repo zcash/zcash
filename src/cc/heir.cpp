@@ -690,7 +690,7 @@ template <typename Helper> std::string HeirFund(uint64_t txfee, int64_t amount, 
 
 		if ((inputs=Helper::addOwnerInputs(cp, tokenid, mtx, myPubkey, amount, (int32_t)64)) > 0) { // 2 x txfee: 1st for marker vout, 2nd to miners
 			//mtx.vout.push_back(MakeCC1vout(EVAL_HEIR,amount,HeirCCpk));
-			mtx.vout.push_back(MakeCC1of2vout(Helper::getMyEval(), amount, myPubkey, heirPubkey)); // add cryptocondition to spend amount for either pk
+			mtx.vout.push_back(MakeTokensCC1of2vout(/*Helper::getMyEval()*/EVAL_HEIR, amount, myPubkey, heirPubkey)); // add cryptocondition to spend amount for either pk
 
 			// add a marker for finding all plans in HeirList()
 			CPubKey HeirContractPubKey = GetUnspendable(cp, 0);

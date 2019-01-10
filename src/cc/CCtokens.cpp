@@ -51,7 +51,7 @@ CScript EncodeTokenCreateOpRet(uint8_t funcid,std::vector<uint8_t> origpubkey,st
 }
 
 //  this is for other contracts which use tokens and build customized extra payloads to token's opret:
-CScript EncodeTokenOpRet(uint8_t tokenFuncId, uint8_t evalCodeInOpret, uint256 tokenid, std::vector<CPubKey> voutPubkeys)
+CScript EncodeTokenOpRet(uint8_t tokenFuncId, uint8_t evalCodeInOpret, uint256 tokenid, std::vector<CPubKey> voutPubkeys, CScript payload)
 {
     CScript opret; 
 	uint8_t ccType = 0;
@@ -63,9 +63,13 @@ CScript EncodeTokenOpRet(uint8_t tokenFuncId, uint8_t evalCodeInOpret, uint256 t
 	//uint8_t tokenFuncId = (isTransferrable) ? (uint8_t)'t' : (uint8_t)'l';
 
     //opret << OP_RETURN << E_MARSHAL(ss << evalCodeInOpret << tokenFuncId << tokenid << payload);
-	opret << OP_RETURN << E_MARSHAL(ss << evalCodeInOpret << tokenFuncId << tokenid << ccType; if (ccType >= 1) ss << voutPubkeys[0]; if (ccType == 2) ss << voutPubkeys[1];);
+	opret << OP_RETURN << E_MARSHAL(ss << evalCodeInOpret << tokenFuncId << tokenid << ccType; \
+		if(ccType >= 1) ss << voutPubkeys[0]; \
+		if(ccType == 2) ss << voutPubkeys[1]; \
+		if(payload.size() > 0) ss << payload);
     return(opret);
 }  
+
 
 uint8_t DecodeTokenCreateOpRet(const CScript &scriptPubKey,std::vector<uint8_t> &origpubkey,std::string &name,std::string &description)
 {
@@ -578,7 +582,7 @@ std::string TokenTransfer(int64_t txfee, uint256 assetid, std::vector<uint8_t> d
 			std::vector<CPubKey> voutTokenPubkeys;
 			voutTokenPubkeys.push_back(pubkey2pk(destpubkey));  // dest pubkey for validating vout
 
-			return(FinalizeCCTx(mask, cp, mtx, mypk, txfee, EncodeTokenOpRet('t', EVAL_TOKENS, assetid, voutTokenPubkeys)));  // By setting EVAL_TOKENS we're getting out from assets validation code
+			return(FinalizeCCTx(mask, cp, mtx, mypk, txfee, EncodeTokenOpRet('t', EVAL_TOKENS, assetid, voutTokenPubkeys, CScript())));  // By setting EVAL_TOKENS we're getting out from assets validation code
 		}
 		else {
 			fprintf(stderr, "not enough CC token inputs for %.8f\n", (double)total / COIN);

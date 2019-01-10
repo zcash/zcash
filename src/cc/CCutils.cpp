@@ -76,6 +76,39 @@ CTxOut MakeCC1of2vout(uint8_t evalcode,CAmount nValue,CPubKey pk1,CPubKey pk2)
     return(vout);
 }
 
+CC *MakeTokensCCcond1of2(uint8_t evalcode, CPubKey pk1, CPubKey pk2)
+{
+	// make 1of2 sigs cond 
+	std::vector<CC*> pks;
+	pks.push_back(CCNewSecp256k1(pk1));
+	pks.push_back(CCNewSecp256k1(pk2));
+	CC *condEvalCC = CCNewEval(E_MARSHAL(ss << evalcode));	// this is eval cc
+	CC *cond1of2Sig = CCNewThreshold(1, pks);		// this is 1 of 2 sigs cc
+	CC *cond1of2Threshold = CCNewThreshold(2, { condEvalCC, cond1of2Sig });
+
+	// make token cond
+	struct CCcontract_info *cpTokens, tokensC;
+	cpTokens = CCinit(&tokensC, EVAL_TOKENS);
+	CPubKey unspendableTokensPk = GetUnspendable(cpTokens, NULL);
+
+	std::vector<CC*> pksTokens;
+	pks.push_back(CCNewSecp256k1(unspendableTokensPk));
+	CC *condEvalTokensCC = CCNewEval(E_MARSHAL(ss << (uint8_t)EVAL_TOKENS));	// this is eval cc
+	CC *condUnspendableSig = CCNewThreshold(1, pksTokens);		// this is 1 of 2 sigs cc
+	CC *condTopThreshold = CCNewThreshold(2, { condEvalTokensCC, condUnspendableSig });
+
+	return CCNewThreshold(2, { cond1of2Threshold, condTopThreshold });
+}
+
+CTxOut MakeTokensCC1of2vout(uint8_t evalcode, CAmount nValue, CPubKey pk1, CPubKey pk2)
+{
+	CTxOut vout;
+	CC *payoutCond = MakeTokensCCcond1of2(evalcode, pk1, pk2);
+	vout = CTxOut(nValue, CCPubKey(payoutCond));
+	cc_free(payoutCond);
+	return(vout);
+}
+
 CC* GetCryptoCondition(CScript const& scriptSig)
 {
     auto pc = scriptSig.begin();
@@ -198,9 +231,17 @@ void CCaddr3set(struct CCcontract_info *cp,uint8_t evalcode,CPubKey pk,uint8_t *
 // set pubkeys, myprivkey and 1of2 cc addr for spending from 1of2 cryptocondition vout:
 void CCaddr1of2set(struct CCcontract_info *cp, CPubKey pk1, CPubKey pk2, char *coinaddr)
 {
-	cp->unspendable1of2pk[0] = pk1;
-	cp->unspendable1of2pk[1] = pk2;
-	strcpy(cp->unspendable1of2addr, coinaddr);
+	cp->coins1of2pk[0] = pk1;
+	cp->coins1of2pk[1] = pk2;
+	strcpy(cp->coins1of2addr, coinaddr);
+}
+
+// set pubkeys, myprivkey and 1of2 cc addr for spending from 1of2 tokens cryptocondition vout:
+void CCaddr1of2setTokens(struct CCcontract_info *cp, CPubKey pk1, CPubKey pk2, char *coinaddr)
+{
+	cp->tokens1of2pk[0] = pk1;
+	cp->tokens1of2pk[1] = pk2;
+	strcpy(cp->tokens1of2addr, coinaddr);
 }
 
 bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey)

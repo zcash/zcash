@@ -91,10 +91,14 @@ struct CCcontract_info
 	char unspendableCCaddr[64], CChexstr[72], normaladdr[64];
 	uint8_t CCpriv[32];
 
-	// this for 1of2 key spending condition (for this evalcode)
+	// this for 1of2 keys coins cryptocondition (for this evalcode)
 	// NOTE: only one evalcode is allowed at this time
-	char unspendable1of2addr[64];
-	CPubKey unspendable1of2pk[2];
+	char coins1of2addr[64];
+	CPubKey coins1of2pk[2];
+
+	// the same for tokens 1of2 keys cc 
+	char tokens1of2addr[64];
+	CPubKey tokens1of2pk[2];
 
 	// this is for spending from two additional 'unspendable' CC addresses of other eval codes 
 	// (that is, for spending from several cc contract 'unspendable' addresses):
@@ -153,15 +157,15 @@ uint256 OraclesBatontxid(uint256 oracletxid,CPubKey pk);
 int64_t AddTokenCCInputs(struct CCcontract_info *cp, CMutableTransaction &mtx, CPubKey pk, uint256 tokenid, int64_t total, int32_t maxinputs);
 int64_t IsTokensvout(bool goDeeper, bool checkPubkeys, struct CCcontract_info *cp, Eval* eval, std::vector<uint8_t> &origpubkey, const CTransaction& tx, int32_t v, uint256 reftokenid, std::vector<CPubKey> vinPubkeys);
 
-
 bool DecodeHexTx(CTransaction& tx, const std::string& strHexTx);
 CScript EncodeAssetOpRet(uint8_t assetFuncId, uint256 tokenid, uint256 assetid2, int64_t price, std::vector<CPubKey> voutPubkeys, std::vector<uint8_t> origpubkey);
 bool DecodeAssetCreateOpRet(const CScript &scriptPubKey, std::vector<uint8_t> &origpubkey, std::string &name, std::string &description);
 uint8_t DecodeAssetOpRet(const CScript &scriptPubKey, uint8_t &evalCodeInOpret, uint256 &tokenid, uint256 &assetid2, int64_t &price, std::vector<uint8_t> &origpubkey);
+
+CScript EncodeTokenOpRet(uint8_t tokenFuncId, uint8_t evalCodeInOpret, uint256 tokenid, std::vector<CPubKey> voutPubkeys, CScript payload);
 uint8_t DecodeTokenCreateOpRet(const CScript &scriptPubKey, std::vector<uint8_t> &origpubkey, std::string &name, std::string &description);
 uint8_t DecodeTokenOpRet(const CScript scriptPubKey, uint8_t &evalCode, uint256 &tokenid, std::vector<CPubKey> &voutPubkeys, std::vector<uint8_t>  &vopretExtra);
 
-//uint8_t DecodeAssetOpRet(const CScript &scriptPubKey, uint8_t &evalCode, uint256 &assetid,uint256 &assetid2,int64_t &price,std::vector<uint8_t> &origpubkey);
 uint8_t DecodeOraclesData(const CScript &scriptPubKey,uint256 &oracletxid,uint256 &batontxid,CPubKey &pk,std::vector <uint8_t>&data);
 int32_t oracle_format(uint256 *hashp,int64_t *valp,char *str,uint8_t fmt,uint8_t *data,int32_t offset,int32_t datalen);
 
@@ -182,6 +186,10 @@ CC* GetCryptoCondition(CScript const& scriptSig);
 void CCaddr2set(struct CCcontract_info *cp,uint8_t evalcode,CPubKey pk,uint8_t *priv,char *coinaddr);
 void CCaddr3set(struct CCcontract_info *cp,uint8_t evalcode,CPubKey pk,uint8_t *priv,char *coinaddr);
 void CCaddr1of2set(struct CCcontract_info *cp, CPubKey pk1, CPubKey pk2, char *coinaddr);
+
+CTxOut MakeTokensCC1of2vout(uint8_t evalcode, CAmount nValue, CPubKey pk1, CPubKey pk2);
+CC *MakeTokensCCcond1of2(uint8_t evalcode, CPubKey pk1, CPubKey pk2);
+
 bool IsCCInput(CScript const& scriptSig);
 int32_t unstringbits(char *buf,uint64_t bits);
 uint64_t stringbits(char *str);
