@@ -587,7 +587,7 @@ template <class Helper> int64_t Add1of2AddressInputs(struct CCcontract_info* cp,
     //   char markeraddr[64];
     //   CCtxidaddr(markeraddr, fundingtxid);
     //   SetCCunspents(unspentOutputs, markeraddr);
-    // std::cerr << "Add1of2AddressInputs() using 1of2addr=" << coinaddr << " unspentOutputs.size()=" << unspentOutputs.size() << std::endl;
+    std::cerr << "Add1of2AddressInputs() using 1of2addr=" << coinaddr << " unspentOutputs.size()=" << unspentOutputs.size() << std::endl;
 
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue>>::const_iterator it = unspentOutputs.begin(); it != unspentOutputs.end(); it++) {
         uint256 txid = it->first.txhash;
@@ -595,6 +595,9 @@ template <class Helper> int64_t Add1of2AddressInputs(struct CCcontract_info* cp,
         int32_t voutIndex = (int32_t)it->first.index;
         // no need to prevent dup
         // dimxy: maybe it is good to put tx's in cache?
+
+		std::cerr << "Add1of2AddressInputs() txid=" << txid.GetHex() << std::endl;
+
         if (GetTransaction(txid, heirtx, hashBlock, false) != 0) {
 			uint256 tokenid;
             uint256 fundingTxidInOpret;
@@ -608,7 +611,7 @@ template <class Helper> int64_t Add1of2AddressInputs(struct CCcontract_info* cp,
                 (voutValue = IsHeirFundingVout(cp, heirtx, voutIndex, ownerPubkey, heirPubkey)) > 0 &&
                 !myIsutxo_spentinmempool(txid, voutIndex)) 
 			{
-                //std::cerr << "Add1of2AddressInputs() voutValue=" << voutValue << " satoshis=" << it->second.satoshis << '\n';
+                std::cerr << "Add1of2AddressInputs() voutValue=" << voutValue << " satoshis=" << it->second.satoshis << '\n';
                 if (total != 0 && maxinputs != 0)
                     mtx.vin.push_back(CTxIn(txid, voutIndex, CScript()));
                 nValue = it->second.satoshis;
