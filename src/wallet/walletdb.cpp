@@ -486,9 +486,12 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             auto verifier = libzcash::ProofVerifier::Strict();
             if (!(CheckTransaction(0,wtx, state, verifier) && (wtx.GetHash() == hash) && state.IsValid()))
             {
-                fprintf(stderr, "Removing corrupt tx from wallet.%s\n", hash.ToString().c_str());
-                deadTxns.push_back(hash);
-                return false;
+                if (state.GetRejectReason() != "tx-overwinter-expired")
+                {
+                    fprintf(stderr, "Removing corrupt tx from wallet.%s\n", hash.ToString().c_str());
+                    deadTxns.push_back(hash);
+                    return false;
+                }
             } 
             // Undo serialize changes in 31600
             if (31404 <= wtx.fTimeReceivedIsTxTime && wtx.fTimeReceivedIsTxTime <= 31703)
