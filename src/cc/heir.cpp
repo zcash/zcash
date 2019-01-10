@@ -160,6 +160,9 @@ bool HeirValidate(struct CCcontract_info* cpHeir, Eval* eval, const CTransaction
 
 	std::cerr << "HeirValidate funcid=" << (char)funcId << std::endl;
 
+	//////////////// temp ////////////////////////
+	return true;
+
     switch (funcId) {
     case 'F': 
 			  // fund coins:
