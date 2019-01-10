@@ -337,7 +337,7 @@ int64_t IsTokensvout(bool goDeeper, bool checkPubkeys, struct CCcontract_info *c
 					if (voutPubkeys.size() == 1)
 						testVout = MakeCC1vout(EVAL_TOKENS, tx.vout[v].nValue, voutPubkeys[0]);
 					else // voutPubkeys.size() == 2
-						testVout = MakeCC1of2vout(EVAL_TOKENS, tx.vout[v].nValue, voutPubkeys[0], voutPubkeys[1]);
+						testVout = MakeTokensCC1of2vout(EVAL_TOKENS, tx.vout[v].nValue, voutPubkeys[0], voutPubkeys[1]);
 
 					if (tx.vout[v].scriptPubKey == testVout.scriptPubKey) {
 						//std::cerr << indentStr << "IsTokensvout() vout is EVAL_TOKENS, returning nValue=" << tx.vout[v].nValue << " for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl;

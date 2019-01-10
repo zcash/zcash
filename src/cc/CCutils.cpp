@@ -237,7 +237,7 @@ void CCaddr1of2set(struct CCcontract_info *cp, CPubKey pk1, CPubKey pk2, char *c
 }
 
 // set pubkeys, myprivkey and 1of2 cc addr for spending from 1of2 tokens cryptocondition vout:
-void CCaddr1of2setTokens(struct CCcontract_info *cp, CPubKey pk1, CPubKey pk2, char *coinaddr)
+void CCaddrTokens1of2set(struct CCcontract_info *cp, CPubKey pk1, CPubKey pk2, char *coinaddr)
 {
 	cp->tokens1of2pk[0] = pk1;
 	cp->tokens1of2pk[1] = pk2;
@@ -346,6 +346,18 @@ bool GetCCaddress1of2(struct CCcontract_info *cp,char *destaddr,CPubKey pk,CPubK
         cc_free(payoutCond);
     }
     return(destaddr[0] != 0);
+}
+
+bool GetTokensCCaddress1of2(struct CCcontract_info *cp, char *destaddr, CPubKey pk, CPubKey pk2)
+{
+	CC *payoutCond;
+	destaddr[0] = 0;
+	if ((payoutCond = MakeTokensCCcond1of2(cp->evalcode, pk, pk2)) != 0)
+	{
+		Getscriptaddress(destaddr, CCPubKey(payoutCond));
+		cc_free(payoutCond);
+	}
+	return(destaddr[0] != 0);
 }
 
 bool ConstrainVout(CTxOut vout, int32_t CCflag, char *cmpaddr, int64_t nValue)

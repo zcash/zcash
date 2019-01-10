@@ -189,6 +189,8 @@ void CCaddr1of2set(struct CCcontract_info *cp, CPubKey pk1, CPubKey pk2, char *c
 
 CTxOut MakeTokensCC1of2vout(uint8_t evalcode, CAmount nValue, CPubKey pk1, CPubKey pk2);
 CC *MakeTokensCCcond1of2(uint8_t evalcode, CPubKey pk1, CPubKey pk2);
+bool GetTokensCCaddress1of2(struct CCcontract_info *cp, char *destaddr, CPubKey pk, CPubKey pk2);
+void CCaddrTokens1of2set(struct CCcontract_info *cp, CPubKey pk1, CPubKey pk2, char *coinaddr);
 
 bool IsCCInput(CScript const& scriptSig);
 int32_t unstringbits(char *buf,uint64_t bits);

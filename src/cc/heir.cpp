@@ -578,7 +578,7 @@ template <class Helper> int64_t Add1of2AddressInputs(struct CCcontract_info* cp,
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue>> unspentOutputs;
 
     char coinaddr[64];
-    GetCCaddress1of2(cp, coinaddr, ownerPubkey, heirPubkey); // get address of cryptocondition '1 pubkey of 2 pubkeys'
+    GetTokensCCaddress1of2(cp, coinaddr, ownerPubkey, heirPubkey); // get address of cryptocondition '1 pubkey of 2 pubkeys'
     SetCCunspents(unspentOutputs, coinaddr);
 
     //   char markeraddr[64];
@@ -930,7 +930,7 @@ template <typename Helper>UniValue HeirClaim(uint256 fundingtxid, uint64_t txfee
                 uint8_t myprivkey[32];
                 char coinaddr[64];
                 // set priv key addresses in CC structure:
-                GetCCaddress1of2(cp, coinaddr, ownerPubkey, heirPubkey);
+                GetTokensCCaddress1of2(cp, coinaddr, ownerPubkey, heirPubkey);
                 Myprivkey(myprivkey);
 
 				////fprintf(stderr,"HeirClaim() before setting unspendable CC addr2= (%s) addr3= (%s)\n", cp->unspendableaddr2, cp->unspendableaddr3);
@@ -938,7 +938,7 @@ template <typename Helper>UniValue HeirClaim(uint256 fundingtxid, uint64_t txfee
 				//CCaddr3set(cp, Helper::getMyEval(), heirPubkey, myprivkey, coinaddr);
 				////fprintf(stderr, "HeirClaim() after  setting unspendable CC addr2=(%s) addr3=(%s)\n", cp->unspendableaddr2, cp->unspendableaddr3);
 
-				CCaddr1of2set(cp, ownerPubkey, heirPubkey, coinaddr);
+				CCaddrTokens1of2set(cp, ownerPubkey, heirPubkey, coinaddr);
 
 				// add 1of2 vout validation pubkeys:
 				std::vector<CPubKey> voutTokenPubkeys;
