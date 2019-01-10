@@ -252,7 +252,7 @@ int64_t IsHeirFundingVout(struct CCcontract_info* cp, const CTransaction& tx, in
 {
 	char destaddr[65], heirFundingAddr[65];
 
-	GetCCaddress1of2(cp, heirFundingAddr, ownerPubkey, heirPubkey);
+	GetTokensCCaddress1of2(cp, heirFundingAddr, ownerPubkey, heirPubkey);
 	if (tx.vout[voutIndex].scriptPubKey.IsPayToCryptoCondition() != 0) {
 		// NOTE: dimxy it was unsafe 'Getscriptaddress(destaddr,tx.vout[voutIndex].scriptPubKey) > 0' here:
 		if (Getscriptaddress(destaddr, tx.vout[voutIndex].scriptPubKey) && strcmp(destaddr, heirFundingAddr) == 0)
