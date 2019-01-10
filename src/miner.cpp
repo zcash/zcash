@@ -477,6 +477,8 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
         //LogPrintf("CreateNewBlock(): total size %u blocktime.%u nBits.%08x\n", nBlockSize,blocktime,pblock->nBits);
         if ( ASSETCHAINS_SYMBOL[0] != 0 && isStake )
         {
+            LEAVE_CRITICAL_SECTION(cs_main);
+            LEAVE_CRITICAL_SECTION(mempool.cs);
             uint64_t txfees,utxovalue; uint32_t txtime; uint256 utxotxid; int32_t i,siglen,numsigs,utxovout; uint8_t utxosig[128],*ptr;
             CMutableTransaction txStaked = CreateNewContextualCMutableTransaction(Params().GetConsensus(), stakeHeight);
 
@@ -497,11 +499,7 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
                 blocktime = GetAdjustedTime();
                 //if ( blocktime > pindexPrev->GetMedianTimePast()+60 )
                 //    blocktime = pindexPrev->GetMedianTimePast() + 60;
-                LEAVE_CRITICAL_SECTION(cs_main);
-                LEAVE_CRITICAL_SECTION(mempool.cs);
                 siglen = komodo_staked(txStaked, pblock->nBits, &blocktime, &txtime, &utxotxid, &utxovout, &utxovalue, utxosig);
-                ENTER_CRITICAL_SECTION(cs_main);
-                ENTER_CRITICAL_SECTION(mempool.cs);
             }
 
             if ( siglen > 0 )
@@ -655,8 +653,11 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
             //fprintf(stderr,"valid\n");
         }
     }
-    LEAVE_CRITICAL_SECTION(cs_main);
-    LEAVE_CRITICAL_SECTION(mempool.cs);
+    if ( ASSETCHAINS_SYMBOL[0] == 0 ||  (ASSETCHAINS_SYMBOL[0] != 0 && !isStake) )
+    {
+        LEAVE_CRITICAL_SECTION(cs_main);
+        LEAVE_CRITICAL_SECTION(mempool.cs);
+    }
     //fprintf(stderr,"done new block\n");
     return pblocktemplate.release();
 }
