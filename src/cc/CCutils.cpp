@@ -83,21 +83,11 @@ CC *MakeTokensCCcond1of2(uint8_t evalcode, CPubKey pk1, CPubKey pk2)
 	pks.push_back(CCNewSecp256k1(pk1));
 	pks.push_back(CCNewSecp256k1(pk2));
 	CC *condEvalCC = CCNewEval(E_MARSHAL(ss << evalcode));	// this is eval cc
+	CC *condEvalTokensCC = CCNewEval(E_MARSHAL(ss << (uint8_t)EVAL_TOKENS));	// this is eval token cc
 	CC *cond1of2Sig = CCNewThreshold(1, pks);		// this is 1 of 2 sigs cc
-	CC *cond1of2Threshold = CCNewThreshold(2, { condEvalCC, cond1of2Sig });
+	CC *cond1of2Threshold = CCNewThreshold(3, { condEvalCC, condEvalTokensCC, cond1of2Sig  });
 
-	// make token cond
-	struct CCcontract_info *cpTokens, tokensC;
-	cpTokens = CCinit(&tokensC, EVAL_TOKENS);
-	CPubKey unspendableTokensPk = GetUnspendable(cpTokens, NULL);
-
-	std::vector<CC*> pksTokens;
-	pks.push_back(CCNewSecp256k1(unspendableTokensPk));
-	CC *condEvalTokensCC = CCNewEval(E_MARSHAL(ss << (uint8_t)EVAL_TOKENS));	// this is eval cc
-	CC *condUnspendableSig = CCNewThreshold(1, pksTokens);		// this is 1 of 2 sigs cc
-	CC *condTopThreshold = CCNewThreshold(2, { condEvalTokensCC, condUnspendableSig });
-
-	return CCNewThreshold(2, { cond1of2Threshold, condTopThreshold });
+	return cond1of2Threshold;
 }
 
 CTxOut MakeTokensCC1of2vout(uint8_t evalcode, CAmount nValue, CPubKey pk1, CPubKey pk2)
