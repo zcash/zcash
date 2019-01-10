@@ -2979,7 +2979,7 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
             BlockMap::const_iterator it = mapBlockIndex.find(hashBlock);
             if (it != mapBlockIndex.end()) {
                 nHeight = it->second->GetHeight();
-                fprintf(stderr,"blockHash %s height %d\n",hashBlock.ToString().c_str(), nHeight);
+                //fprintf(stderr,"blockHash %s height %d\n",hashBlock.ToString().c_str(), nHeight);
             } else {
                 // TODO: should we throw JSONRPCError ?
                 fprintf(stderr,"block hash %s does not exist!\n", hashBlock.ToString().c_str() );
@@ -3013,7 +3013,7 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
             BlockMap::const_iterator it = mapBlockIndex.find(hashBlock);
             if (it != mapBlockIndex.end()) {
                 nHeight = it->second->GetHeight();
-                fprintf(stderr,"blockHash %s height %d\n",hashBlock.ToString().c_str(), nHeight);
+                //fprintf(stderr,"blockHash %s height %d\n",hashBlock.ToString().c_str(), nHeight);
             } else {
                 // TODO: should we throw JSONRPCError ?
                 fprintf(stderr,"block hash %s does not exist!\n", hashBlock.ToString().c_str() );
@@ -3804,7 +3804,7 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
                 BlockMap::const_iterator it = mapBlockIndex.find(hashBlock);
                 if (it != mapBlockIndex.end()) {
                     nHeight = it->second->GetHeight();
-                    fprintf(stderr,"blockHash %s height %d\n",hashBlock.ToString().c_str(), nHeight);
+                    //fprintf(stderr,"blockHash %s height %d\n",hashBlock.ToString().c_str(), nHeight);
                 } else {
                     fprintf(stderr,"block hash %s does not exist!\n", hashBlock.ToString().c_str() );
                 }
@@ -3836,7 +3836,7 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
                 BlockMap::const_iterator it = mapBlockIndex.find(hashBlock);
                 if (it != mapBlockIndex.end()) {
                     nHeight = it->second->GetHeight();
-                    fprintf(stderr,"blockHash %s height %d\n",hashBlock.ToString().c_str(), nHeight);
+                    //fprintf(stderr,"blockHash %s height %d\n",hashBlock.ToString().c_str(), nHeight);
                 } else {
                     fprintf(stderr,"block hash %s does not exist!\n", hashBlock.ToString().c_str() );
                 }
