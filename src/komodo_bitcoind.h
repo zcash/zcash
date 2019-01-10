@@ -1481,7 +1481,7 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
                     if ( pindex != 0 && segid >= 0 )
                     {
                         pindex->segid = segid;
-                        fprintf(stderr,"PoS block set segid.%d <- %d\n",height,pindex->segid);
+                        //fprintf(stderr,"PoS block set segid.%d <- %d\n",height,pindex->segid);
                     } //else fprintf(stderr,"unexpected null pindex for slowflag set ht.%d segid.%d:%d\n",height,pindex!=0?pindex->segid:-3,segid);
                 }
             }
@@ -1826,7 +1826,7 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
                     pindex = it != mapBlockIndex.end() ? it->second : NULL;
                     if ( pindex != 0 && height > 100 && pindex->segid == -2  ) {
                         pindex->segid = -1;
-                        fprintf(stderr,"PoW block detected set segid.%d <- %d\n",height,pindex->segid);
+                        //fprintf(stderr,"PoW block detected set segid.%d <- %d\n",height,pindex->segid);
                     }
                 } 
             }
