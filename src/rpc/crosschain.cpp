@@ -382,10 +382,10 @@ UniValue getimports(const UniValue& params, bool fHelp)
             "  \"time\" :                       (numeric)\n"
             "}\n"
             "\nExamples:\n"
-            + HelpExampleCli("getmigrates", "\"00000000febc373a1da2bd9f887b105ad79ddc26ac26c2b28652d64e5207c5b5\"")
-            + HelpExampleRpc("getmigrates", "\"00000000febc373a1da2bd9f887b105ad79ddc26ac26c2b28652d64e5207c5b5\"")
-            + HelpExampleCli("getmigrates", "12800")
-            + HelpExampleRpc("getmigrates", "12800")
+            + HelpExampleCli("getimports", "\"00000000febc373a1da2bd9f887b105ad79ddc26ac26c2b28652d64e5207c5b5\"")
+            + HelpExampleRpc("getimports", "\"00000000febc373a1da2bd9f887b105ad79ddc26ac26c2b28652d64e5207c5b5\"")
+            + HelpExampleCli("getimports", "12800")
+            + HelpExampleRpc("getimports", "12800")
         );
 
     LOCK(cs_main);

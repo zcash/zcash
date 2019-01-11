@@ -2055,7 +2055,7 @@ uint32_t komodo_eligible(arith_uint256 bnTarget,arith_uint256 ratio,struct komod
                 return(blocktime);
             }
         }
-    } else fprintf(stderr,"maxiters is not good enough\n");
+    } //else fprintf(stderr,"maxiters is not good enough\n");
     return(0);
 }
 
@@ -2186,7 +2186,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
                 decode_hex((uint8_t *)utxotxidp,32,(char *)kp->txid.GetHex().c_str());
                 *utxovoutp = kp->vout;
                 *txtimep = kp->txtime;//(uint32_t)out.tx->nLockTime;
-                fprintf(stderr,"ht.%d earliest.%u [%d].%d (%s) nValue %.8f locktime.%u counter.%d winners.%d\n",nHeight,earliest,(int32_t)(earliest - tipindex->nTime),m,kp->address,(double)kp->nValue/COIN,*txtimep,counter,winners);
+                //fprintf(stderr,"ht.%d earliest.%u [%d].%d (%s) nValue %.8f locktime.%u counter.%d winners.%d\n",nHeight,earliest,(int32_t)(earliest - tipindex->nTime),m,kp->address,(double)kp->nValue/COIN,*txtimep,counter,winners);
             }
         } //else fprintf(stderr,"utxo not eligible\n");
     }

@@ -49,6 +49,7 @@ extern void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& 
 void ScriptPubKeyToJSON(const CScript& scriptPubKey, UniValue& out, bool fIncludeHex);
 int32_t komodo_longestchain();
 int32_t komodo_dpowconfs(int32_t height,int32_t numconfs);
+extern int8_t komodo_segid(int32_t nocache,int32_t height);
 extern int32_t KOMODO_LONGESTCHAIN;
 
 double GetDifficultyINTERNAL(const CBlockIndex* blockindex, bool networkDifficulty)
@@ -147,7 +148,7 @@ UniValue blockheaderToJSON(const CBlockIndex* blockindex)
     result.push_back(Pair("bits", strprintf("%08x", blockindex->nBits)));
     result.push_back(Pair("difficulty", GetDifficulty(blockindex)));
     result.push_back(Pair("chainwork", blockindex->chainPower.chainWork.GetHex()));
-    result.push_back(Pair("segid", (int64_t)blockindex->segid));
+    result.push_back(Pair("segid", (int)komodo_segid(0,blockindex->GetHeight())));
 
     if (blockindex->pprev)
         result.push_back(Pair("previousblockhash", blockindex->pprev->GetBlockHash().GetHex()));
@@ -174,7 +175,7 @@ UniValue blockToDeltasJSON(const CBlock& block, const CBlockIndex* blockindex)
     result.push_back(Pair("height", blockindex->GetHeight()));
     result.push_back(Pair("version", block.nVersion));
     result.push_back(Pair("merkleroot", block.hashMerkleRoot.GetHex()));
-    result.push_back(Pair("segid", (int64_t)blockindex->segid));
+    result.push_back(Pair("segid", (int)komodo_segid(0,blockindex->GetHeight())));
 
     UniValue deltas(UniValue::VARR);
 
@@ -292,7 +293,7 @@ UniValue blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool tx
     result.push_back(Pair("height", blockindex->GetHeight()));
     result.push_back(Pair("version", block.nVersion));
     result.push_back(Pair("merkleroot", block.hashMerkleRoot.GetHex()));
-    result.push_back(Pair("segid", (int64_t)blockindex->segid));
+    result.push_back(Pair("segid", (int)komodo_segid(0,blockindex->GetHeight())));
     result.push_back(Pair("finalsaplingroot", block.hashFinalSaplingRoot.GetHex()));
     UniValue txs(UniValue::VARR);
     BOOST_FOREACH(const CTransaction&tx, block.vtx)
@@ -647,22 +648,39 @@ UniValue getlastsegidstakes(const UniValue& params, bool fHelp)
     LOCK(cs_main);
 
     int depth = params[0].get_int();
+    if ( depth > chainActive.Height() )
+        throw runtime_error("Not enough blocks to scan back that far.\n");
+    
     int32_t segids[64] = {0};
+    int32_t pow = 0;
+    int32_t notset = 0;
 
     for (int64_t i = chainActive.Height(); i >  chainActive.Height()-depth; i--)
     {
-        CBlockIndex* pblockindex = chainActive[i];
-        if ( pblockindex->segid >= 0 )
-            segids[pblockindex->segid] += 1;
+        int8_t segid = komodo_segid(0,i);
+        //CBlockIndex* pblockindex = chainActive[i];
+        if ( segid >= 0 )
+            segids[segid] += 1;
+        else if ( segid == -1 )
+            pow++;
+        else
+            notset++;
     }
-
+    
+    int8_t posperc = 100*(depth-pow)/depth;
+    
     UniValue ret(UniValue::VOBJ);
+    UniValue objsegids(UniValue::VOBJ);
     for (int8_t i = 0; i < 64; i++)
     {
         char str[4];
         sprintf(str, "%d", i);
-        ret.push_back(Pair(str,segids[i]));
+        objsegids.push_back(Pair(str,segids[i]));
     }
+    ret.push_back(Pair("NotSet",notset));
+    ret.push_back(Pair("PoW",pow));
+    ret.push_back(Pair("PoSPerc",posperc));
+    ret.push_back(Pair("SegIds",objsegids));
     return ret;
 }
 
