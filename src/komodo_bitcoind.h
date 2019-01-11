@@ -1202,7 +1202,8 @@ int8_t komodo_segid(int32_t nocache,int32_t height)
                     if ( strcmp(destaddr,voutaddr) == 0 && block.vtx[txn_count-1].vout[0].nValue == value )
                     {
                         segid = komodo_segid32(voutaddr) & 0x3f;
-                        //fprintf(stderr,"komodo_segid.(%d) -> %02x\n",height,segid);
+                        pindex->segid = segid;
+                        //fprintf(stderr,"komodo_segid.(%d) -> %d\n",height,pindex->segid);
                     }
                 } else fprintf(stderr,"komodo_segid ht.%d couldnt extract voutaddress\n",height);
             }
@@ -1476,7 +1477,6 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
                     {
                         strcpy(voutaddr,CBitcoinAddress(voutaddress).ToString().c_str());
                         segid = komodo_segid32(voutaddr) & 0x3f;
-                        //fprintf(stderr,"komodo_segid.(%d) -> %d\n",height,segid);
                     }
                     if ( pindex != 0 && segid >= 0 )
                     {
