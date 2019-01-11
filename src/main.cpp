@@ -2694,6 +2694,7 @@ bool ContextualCheckInputs(
 
     if (tx.IsCoinImport())
     {
+        LOCK(cs_main);
         ServerTransactionSignatureChecker checker(&tx, 0, 0, false, txdata);
         return VerifyCoinImport(tx.vin[0].scriptSig, checker, state);
     }
