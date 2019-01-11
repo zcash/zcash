@@ -486,7 +486,7 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             auto verifier = libzcash::ProofVerifier::Strict();
             if (!(CheckTransaction(0,wtx, state, verifier) && (wtx.GetHash() == hash) && state.IsValid()))
             {
-                if (state.GetRejectReason() != "tx-overwinter-expired")
+                if (state.GetRejectReason() != "tx-overwinter-expired" && state.GetRejectReason() != "tx-overwinter-active")
                 {
                     fprintf(stderr, "Removing corrupt tx from wallet.%s\n", hash.ToString().c_str());
                     deadTxns.push_back(hash);
