@@ -285,7 +285,7 @@ bool ExtractVinPubkeys(struct CCcontract_info *cp, CTransaction tx, std::vector<
 thread_local uint32_t tokenValIndentSize = 0;
 
 // validates opret for token tx:
-bool ValidateTokenOpret(CTransaction tx, int32_t v, uint256 tokenid, std::vector<CPubKey> &voutPubkeys, std::vector<uint8_t> &vopretExtra) {
+uint8_t ValidateTokenOpret(CTransaction tx, int32_t v, uint256 tokenid, std::vector<CPubKey> &voutPubkeys, std::vector<uint8_t> &vopretExtra) {
 
 	uint256 tokenidOpret, tokenidOpret2;
 	uint8_t funcid;
@@ -305,7 +305,7 @@ bool ValidateTokenOpret(CTransaction tx, int32_t v, uint256 tokenid, std::vector
 	{
 		if (tokenid != zeroid && tokenid == tx.GetHash() && v == 0) {
 			//std::cerr << indentStr << "ValidateTokenOpret() this is the tokenbase 'c' tx, txid=" << tx.GetHash().GetHex() << " vout=" << v << " returning true" << std::endl;
-			return(true);
+			return funcid;
 		}
 	}
 	else if (funcid == 't')  
@@ -313,18 +313,18 @@ bool ValidateTokenOpret(CTransaction tx, int32_t v, uint256 tokenid, std::vector
 		//std::cerr << indentStr << "ValidateTokenOpret() tokenid=" << tokenid.GetHex() << " tokenIdOpret=" << tokenidOpret.GetHex() << " txid=" << tx.GetHash().GetHex() << std::endl;
 		if (tokenid != zeroid && tokenid == tokenidOpret) {
 			//std::cerr << indentStr << "ValidateTokenOpret() this is a transfer 't' tx, txid=" << tx.GetHash().GetHex() << " vout=" << v << " returning true" << std::endl;
-			return(true);
+			return funcid;
 		}
 	}
 	//std::cerr << indentStr << "ValidateTokenOpret() return false funcid=" << (char)funcid << " tokenid=" << tokenid.GetHex() << " tokenIdOpret=" << tokenidOpret.GetHex() << " txid=" << tx.GetHash().GetHex() << std::endl;
-	return false;
+	return (uint8_t)0;
 }
 
-
-
 // Checks if the vout is a really Tokens CC vout
-// compareTotals == true, the func also validates the passed transaction itself: 
+// also checks tokenid in opret or txid if this is 'c' tx
+// goDeeper is true: the func also validates amounts of the passed transaction: 
 // it should be either sum(cc vins) == sum(cc vouts) or the transaction is the 'tokenbase' ('c') tx
+// checkPubkeys is true: validates if the vout is token vout1 or token vout1of2. Should always be true!
 int64_t IsTokensvout(bool goDeeper, bool checkPubkeys, struct CCcontract_info *cp, Eval* eval, std::vector<uint8_t> &vopretExtra, const CTransaction& tx, int32_t v, uint256 reftokenid, std::vector<CPubKey> vinPubkeys)
 {
 
@@ -365,12 +365,12 @@ int64_t IsTokensvout(bool goDeeper, bool checkPubkeys, struct CCcontract_info *c
 
 		// moved opret checking to this new reusable func (dimxy):
 		std::vector<CPubKey> voutPubkeys;
-		const bool valOpret = ValidateTokenOpret(tx, v, reftokenid, voutPubkeys, vopretExtra);
+		const uint8_t funcId = ValidateTokenOpret(tx, v, reftokenid, voutPubkeys, vopretExtra);
 		//std::cerr << indentStr << "IsTokensvout() ValidateTokenOpret returned=" << std::boolalpha << valOpret << " for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl;
-		if (valOpret) {
+		if (funcId != 0) {
 			//std::cerr << indentStr << "IsTokensvout() ValidateTokenOpret returned true"  << " for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl;
 
-			if (checkPubkeys) { // verify that the vout is within EVAL_TOKENS:
+			if (checkPubkeys && funcId != 'c') { // verify that the vout is token's (for 'c' there is no pubkeys!):
 
 				CScript contractScript = CScript(vopretExtra);
 				std::vector<uint8_t> vcontractOpret;
@@ -605,7 +605,7 @@ std::string TokenTransfer(int64_t txfee, uint256 assetid, std::vector<uint8_t> d
 			if (inputs > total)
 				CCchange = (inputs - total);
 			//for (i=0; i<n; i++)
-			mtx.vout.push_back(MakeCC1vout(EVAL_TOKENS, total, pubkey2pk(destpubkey)));
+			mtx.vout.push_back(MakeCC1vout(EVAL_TOKENS, total, pubkey2pk(destpubkey)));  // TODO: or MakeTokensCC1vout??
 			if (CCchange != 0)
 				mtx.vout.push_back(MakeCC1vout(EVAL_TOKENS, CCchange, mypk));
 

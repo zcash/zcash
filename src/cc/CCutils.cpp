@@ -82,22 +82,28 @@ CC *MakeTokensCCcond1of2(uint8_t evalcode, CPubKey pk1, CPubKey pk2)
 	std::vector<CC*> pks;
 	pks.push_back(CCNewSecp256k1(pk1));
 	pks.push_back(CCNewSecp256k1(pk2));
-	CC *condEvalCC = CCNewEval(E_MARSHAL(ss << evalcode));	// this is eval cc
-	CC *condEvalTokensCC = CCNewEval(E_MARSHAL(ss << (uint8_t)EVAL_TOKENS));	// this is eval token cc
-	CC *cond1of2Sig = CCNewThreshold(1, pks);		// this is 1 of 2 sigs cc
-	CC *cond1of2Threshold = CCNewThreshold(3, { condEvalCC, condEvalTokensCC, cond1of2Sig  });
 
-	return cond1of2Threshold;
+	std::vector<CC*> thresholds;
+	thresholds.push_back( CCNewEval(E_MARSHAL(ss << evalcode)) );
+	if( evalcode != EVAL_TOKENS )	// if evalCode == EVAL_TOKENS, it is actually MakeCCcond1of2()!
+		thresholds.push_back(CCNewEval(E_MARSHAL(ss << (uint8_t)EVAL_TOKENS)));	// this is eval token cc
+	thresholds.push_back(CCNewThreshold(1, pks));		// this is 1 of 2 sigs cc
+
+	return CCNewThreshold(thresholds.size(), thresholds);
 }
 
 CC *MakeTokensCCcond1(uint8_t evalcode, CPubKey pk)
 {
 	std::vector<CC*> pks;
 	pks.push_back(CCNewSecp256k1(pk));
-	CC *condEvalCC = CCNewEval(E_MARSHAL(ss << evalcode));						// add eval cc
-	CC *condEvalTokensCC = CCNewEval(E_MARSHAL(ss << (uint8_t)EVAL_TOKENS));	// add also eval token cc
-	CC *Sig = CCNewThreshold(1, pks);
-	return CCNewThreshold(3, { condEvalCC, condEvalTokensCC, Sig });
+
+	std::vector<CC*> thresholds;
+	thresholds.push_back(CCNewEval(E_MARSHAL(ss << evalcode)));
+	if (evalcode != EVAL_TOKENS)  // if evalCode == EVAL_TOKENS, it is actually MakeCCcond1()!
+		thresholds.push_back(CCNewEval(E_MARSHAL(ss << (uint8_t)EVAL_TOKENS)));	// this is eval token cc
+	thresholds.push_back(CCNewThreshold(1, pks));			// signature
+
+	return CCNewThreshold(thresholds.size(), thresholds);
 }
 
 CTxOut MakeTokensCC1of2vout(uint8_t evalcode, CAmount nValue, CPubKey pk1, CPubKey pk2)
