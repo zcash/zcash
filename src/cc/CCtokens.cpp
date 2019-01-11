@@ -239,23 +239,63 @@ bool TokensValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction &
 	// return(PreventCC(eval,tx,preventCCvins,numvins,preventCCvouts,numvouts));
 }
 
+// helper funcs:
 
+// extract my vins pubkeys:
+bool ExtractVinPubkeys(struct CCcontract_info *cp, CTransaction tx, std::vector<CPubKey> &vinPubkeys) {
+
+	bool found = false;
+	CPubKey pubkey;
+
+	for (int32_t i = 0; i < tx.vin.size(); i++)
+	{												  // check for additional contracts which may send tokens to the Tokens contract
+		if( (*cp->ismyvin)(tx.vin[i].scriptSig) )
+		{
+
+			auto findEval = [](CC *cond, struct CCVisitor _) {
+				bool r = false; //cc_typeId(cond) == CC_Eval && cond->codeLength == 1 && cond->code[0] == EVAL_TOKENS;
+
+				if (cc_typeId(cond) == CC_Secp256k1) {
+					*(CPubKey*)_.context = buf2pk(cond->publicKey);
+					//std::cerr << "findEval found pubkey=" << HexStr(*(CPubKey*)_.context) << std::endl;
+					r = true;
+				}
+				// false for a match, true for continue
+				return r ? 0 : 1;
+			};
+
+			CC *cond = GetCryptoCondition(tx.vin[i].scriptSig);
+
+			if (cond) {
+				CCVisitor visitor = { findEval, (uint8_t*)"", 0, &pubkey };
+				bool out = !cc_visit(cond, visitor);
+				cc_free(cond);
+
+				if (pubkey.IsValid()) {
+					vinPubkeys.push_back(pubkey);
+					found = true;
+				}
+			}
+		}
+	}
+	return found;
+}
 
 // this is just for log messages indentation fur debugging recursive calls:
 thread_local uint32_t tokenValIndentSize = 0;
 
 // validates opret for token tx:
-bool ValidateTokenOpret(CTransaction tx, int32_t v, uint256 tokenid, std::vector<CPubKey> &voutPubkeys, std::vector<uint8_t> &vopretExtra) {
+bool ValidateTokenOpret(CTransaction tx, int32_t v, uint256 tokenid, uint8_t &evalCodeInOpret, std::vector<CPubKey> &voutPubkeys, std::vector<uint8_t> &vopretExtra) {
 
 	uint256 tokenidOpret, tokenidOpret2;
-	uint8_t funcid, evalCode;
+	uint8_t funcid;
 
 	// this is just for log messages indentation fur debugging recursive calls:
 	std::string indentStr = std::string().append(tokenValIndentSize, '.');
 
 	int32_t n = tx.vout.size();
 
-	if ((funcid = DecodeTokenOpRet(tx.vout[n - 1].scriptPubKey, evalCode, tokenidOpret, voutPubkeys, vopretExtra)) == 0)
+	if ((funcid = DecodeTokenOpRet(tx.vout[n - 1].scriptPubKey, evalCodeInOpret, tokenidOpret, voutPubkeys, vopretExtra)) == 0)
 	{
 		std::cerr << indentStr << "ValidateTokenOpret() DecodeTokenOpret could not parse opret for txid=" << tx.GetHash().GetHex() << std::endl;
 		return(false);
@@ -324,20 +364,20 @@ int64_t IsTokensvout(bool goDeeper, bool checkPubkeys, struct CCcontract_info *c
 
 		// moved opret checking to this new reusable func (dimxy):
 		std::vector<CPubKey> voutPubkeys;
-		const bool valOpret = ValidateTokenOpret(tx, v, reftokenid, voutPubkeys, vopretExtra);
+		uint8_t evalCodeInOpret = 0;
+		const bool valOpret = ValidateTokenOpret(tx, v, reftokenid, evalCodeInOpret, voutPubkeys, vopretExtra);
 		//std::cerr << indentStr << "IsTokensvout() ValidateTokenOpret returned=" << std::boolalpha << valOpret << " for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl;
 		if (valOpret) {
 			//std::cerr << indentStr << "IsTokensvout() ValidateTokenOpret returned true"  << " for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl;
 
-			if (checkPubkeys) {
-				// verify that the vout is within EVAL_TOKENS:
+			if (checkPubkeys) { // verify that the vout is within EVAL_TOKENS:
 
 				if (voutPubkeys.size() >= 1 && voutPubkeys.size() <= 2) {
 					CTxOut testVout;
 					if (voutPubkeys.size() == 1)
-						testVout = MakeCC1vout(EVAL_TOKENS, tx.vout[v].nValue, voutPubkeys[0]);
+						testVout = MakeTokensCC1vout(evalCodeInOpret, tx.vout[v].nValue, voutPubkeys[0]);
 					else // voutPubkeys.size() == 2
-						testVout = MakeTokensCC1of2vout(EVAL_HEIR, tx.vout[v].nValue, voutPubkeys[0], voutPubkeys[1]);
+						testVout = MakeTokensCC1of2vout(evalCodeInOpret, tx.vout[v].nValue, voutPubkeys[0], voutPubkeys[1]);
 
 					if (tx.vout[v].scriptPubKey == testVout.scriptPubKey) {
 						//std::cerr << indentStr << "IsTokensvout() vout is EVAL_TOKENS, returning nValue=" << tx.vout[v].nValue << " for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl;
@@ -345,9 +385,9 @@ int64_t IsTokensvout(bool goDeeper, bool checkPubkeys, struct CCcontract_info *c
 					}
 				}
 
-				// maybe it is change?
+				// maybe it is token change?
 				for(std::vector<CPubKey>::iterator it = vinPubkeys.begin(); it != vinPubkeys.end(); it++) {
-					CTxOut testVout = MakeCC1vout(EVAL_TOKENS, tx.vout[v].nValue, *it);
+					CTxOut testVout = MakeTokensCC1vout(evalCodeInOpret, tx.vout[v].nValue, *it);
 
 					if (tx.vout[v].scriptPubKey == testVout.scriptPubKey) {
 						//std::cerr << indentStr << "IsTokensvout() vout is EVAL_TOKENS change, returning nValue=" << tx.vout[v].nValue << " for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl;
@@ -371,7 +411,6 @@ bool TokensExactAmounts(bool goDeeper, struct CCcontract_info *cpTokens, int64_t
 {
 	CTransaction vinTx; uint256 hashBlock, id, id2; int32_t flag; int64_t tokenoshis; std::vector<uint8_t> tmporigpubkey; int64_t tmpprice;
 	std::vector<CPubKey> vinPubkeys, vinPubkeysEmpty;
-	CPubKey pubkey;
 
 	int32_t numvins = tx.vin.size();
 	int32_t numvouts = tx.vout.size();
@@ -380,37 +419,12 @@ bool TokensExactAmounts(bool goDeeper, struct CCcontract_info *cpTokens, int64_t
 	// this is just for log messages indentation for debugging recursive calls:
 	std::string indentStr = std::string().append(tokenValIndentSize, '.');
 
+	ExtractVinPubkeys(cpTokens, tx, vinPubkeys);
+
 	for (int32_t i = 0; i<numvins; i++)
 	{												  // check for additional contracts which may send tokens to the Tokens contract
 		if ((*cpTokens->ismyvin)(tx.vin[i].scriptSig) /*|| IsVinAllowed(tx.vin[i].scriptSig) != 0*/)
 		{
-			
-			// extract my vins pubkeys:
-
-			auto findEval = [](CC *cond, struct CCVisitor _) {
-				bool r = false; //cc_typeId(cond) == CC_Eval && cond->codeLength == 1 && cond->code[0] == EVAL_TOKENS;
-
-				if (cc_typeId(cond) == CC_Secp256k1) {
-					*(CPubKey*)_.context = buf2pk(cond->publicKey);
-					//std::cerr << "findEval found pubkey=" << HexStr(*(CPubKey*)_.context) << std::endl;
-					r = true;
-				}
-				// false for a match, true for continue
-				return r ? 0 : 1;
-			};
-
-			CC *cond = GetCryptoCondition(tx.vin[i].scriptSig);
-
-			if (cond) {
-				CCVisitor visitor = { findEval, (uint8_t*)"", 0, &pubkey };
-				bool out = !cc_visit(cond, visitor);
-				cc_free(cond);
-
-				if (pubkey.IsValid())
-					vinPubkeys.push_back(pubkey);
-			}
-
-
 			//std::cerr << indentStr << "TokensExactAmounts() eval is true=" << (eval != NULL) << " ismyvin=ok for_i=" << i << std::endl;
 			// we are not inside the validation code -- dimxy
 			if ((eval && eval->GetTxUnconfirmed(tx.vin[i].prevout.hash, vinTx, hashBlock) == 0) || (!eval && !myGetTransaction(tx.vin[i].prevout.hash, vinTx, hashBlock)))
@@ -423,7 +437,7 @@ bool TokensExactAmounts(bool goDeeper, struct CCcontract_info *cpTokens, int64_t
 				tokenValIndentSize++;
 				// validate vouts of vintx  
 				//std::cerr << indentStr << "TokenExactAmounts() check vin i=" << i << " nValue=" << vinTx.vout[tx.vin[i].prevout.n].nValue << std::endl;
-				tokenoshis = IsTokensvout(goDeeper, false/*<--do not have pubkeys for now*/, cpTokens, eval, tmporigpubkey, vinTx, tx.vin[i].prevout.n, tokenid, vinPubkeysEmpty);
+				tokenoshis = IsTokensvout(goDeeper, true, cpTokens, eval, tmporigpubkey, vinTx, tx.vin[i].prevout.n, tokenid, vinPubkeys);
 				tokenValIndentSize--;
 				if (tokenoshis != 0)
 				{
@@ -488,21 +502,23 @@ int64_t AddTokenCCInputs(struct CCcontract_info *cp, CMutableTransaction &mtx, C
 				break;
 		if (j != mtx.vin.size())
 			continue;
+
 		if (GetTransaction(txid, vintx, hashBlock, false) != 0)
 		{
 			Getscriptaddress(destaddr, vintx.vout[vout].scriptPubKey);
 			if (strcmp(destaddr, coinaddr) != 0 && strcmp(destaddr, cp->unspendableCCaddr) != 0 && strcmp(destaddr, cp->unspendableaddr2) != 0)
 				continue;
-			//fprintf(stderr, "AddTokenCCInputs() check destaddress=%s vout amount=%.8f\n", destaddr, (double)vintx.vout[vout].nValue / COIN);
+			fprintf(stderr, "AddTokenCCInputs() check destaddress=%s vout amount=%.8f\n", destaddr, (double)vintx.vout[vout].nValue / COIN);
 
-			std::vector<CPubKey> vinPubkeysEmpty;
-			if ((nValue = IsTokensvout(true, false/*<-- do not check spending outside EVAL_TOKENS for now */, cp, NULL, vopretExtra, vintx, vout, tokenid, vinPubkeysEmpty)) > 0 && myIsutxo_spentinmempool(txid, vout) == 0)
+			std::vector<CPubKey> vinPubkeys;
+			
+			if ((nValue = IsTokensvout(true, true/*<--add only checked uxtos */, cp, NULL, vopretExtra, vintx, vout, tokenid, vinPubkeys)) > 0 && myIsutxo_spentinmempool(txid, vout) == 0)
 			{
 				if (total != 0 && maxinputs != 0)
 					mtx.vin.push_back(CTxIn(txid, vout, CScript()));
 				nValue = it->second.satoshis;
 				totalinputs += nValue;
-				//std::cerr << "AddTokenInputs() adding input nValue=" << nValue  << std::endl;
+				std::cerr << "AddTokenInputs() adding input nValue=" << nValue  << std::endl;
 				n++;
 				if ((total > 0 && totalinputs >= total) || (maxinputs > 0 && n >= maxinputs))
 					break;

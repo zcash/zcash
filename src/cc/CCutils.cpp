@@ -90,10 +90,29 @@ CC *MakeTokensCCcond1of2(uint8_t evalcode, CPubKey pk1, CPubKey pk2)
 	return cond1of2Threshold;
 }
 
+CC *MakeTokensCCcond1(uint8_t evalcode, CPubKey pk)
+{
+	std::vector<CC*> pks;
+	pks.push_back(CCNewSecp256k1(pk));
+	CC *condEvalCC = CCNewEval(E_MARSHAL(ss << evalcode));
+	CC *condEvalTokensCC = CCNewEval(E_MARSHAL(ss << (uint8_t)EVAL_TOKENS));	// this is eval token cc
+	CC *Sig = CCNewThreshold(1, pks);
+	return CCNewThreshold(3, { condEvalCC, condEvalTokensCC, Sig });
+}
+
 CTxOut MakeTokensCC1of2vout(uint8_t evalcode, CAmount nValue, CPubKey pk1, CPubKey pk2)
 {
 	CTxOut vout;
 	CC *payoutCond = MakeTokensCCcond1of2(evalcode, pk1, pk2);
+	vout = CTxOut(nValue, CCPubKey(payoutCond));
+	cc_free(payoutCond);
+	return(vout);
+}
+
+CTxOut MakeTokensCC1vout(uint8_t evalcode, CAmount nValue, CPubKey pk)
+{
+	CTxOut vout;
+	CC *payoutCond = MakeTokensCCcond1(evalcode, pk);
 	vout = CTxOut(nValue, CCPubKey(payoutCond));
 	cc_free(payoutCond);
 	return(vout);
