@@ -201,10 +201,10 @@ bool TokensValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction &
 			  //vout.0: issuance tokenoshis to CC
 			  //vout.1: normal output for change (if any)
 			  //vout.n-1: opreturn EVAL_TOKENS 'c' <tokenname> <description>
-		if (evalCodeInOpret != EVAL_TOKENS)
-			return eval->Invalid("unexpected TokenValidate for createtoken");
-		else
-			return true;
+		//if (evalCodeInOpret != EVAL_TOKENS)
+		//	return eval->Invalid("unexpected TokenValidate for createtoken");
+		//else
+		return true;
 		
 	case 't': // transfer
 			  //vin.0: normal input
@@ -225,15 +225,15 @@ bool TokensValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction &
 
 	// forward validation if evalcode in opret is not EVAL_TOKENS
 	// init for forwarding validation call
-	if (evalCodeInOpret != EVAL_TOKENS) {		// TODO: should we check also only allowed for tokens evalcodes, like EVAL_ASSETS, EVAL_GATEWAYS?
-		struct CCcontract_info *cpOther = NULL, C;
+	//if (evalCodeInOpret != EVAL_TOKENS) {		// TODO: should we check also only allowed for tokens evalcodes, like EVAL_ASSETS, EVAL_GATEWAYS?
+	//	struct CCcontract_info *cpOther = NULL, C;
 
-		cpOther = CCinit(&C, evalCodeInOpret);
-		if (cpOther)
-			return cpOther->validate(cpOther, eval, tx, nIn);
-		else
-			return eval->Invalid("unsupported evalcode in opret");
-	}
+	//	cpOther = CCinit(&C, evalCodeInOpret);
+	//	if (cpOther)
+	//		return cpOther->validate(cpOther, eval, tx, nIn);
+	//	else
+	//		return eval->Invalid("unsupported evalcode in opret");
+	//}
 	return true;
 	// what does this do?
 	// return(PreventCC(eval,tx,preventCCvins,numvins,preventCCvouts,numvouts));
@@ -285,17 +285,18 @@ bool ExtractVinPubkeys(struct CCcontract_info *cp, CTransaction tx, std::vector<
 thread_local uint32_t tokenValIndentSize = 0;
 
 // validates opret for token tx:
-bool ValidateTokenOpret(CTransaction tx, int32_t v, uint256 tokenid, uint8_t &evalCodeInOpret, std::vector<CPubKey> &voutPubkeys, std::vector<uint8_t> &vopretExtra) {
+bool ValidateTokenOpret(CTransaction tx, int32_t v, uint256 tokenid, std::vector<CPubKey> &voutPubkeys, std::vector<uint8_t> &vopretExtra) {
 
 	uint256 tokenidOpret, tokenidOpret2;
 	uint8_t funcid;
+	uint8_t dummyEvalCode;
 
 	// this is just for log messages indentation fur debugging recursive calls:
 	std::string indentStr = std::string().append(tokenValIndentSize, '.');
 
 	int32_t n = tx.vout.size();
 
-	if ((funcid = DecodeTokenOpRet(tx.vout[n - 1].scriptPubKey, evalCodeInOpret, tokenidOpret, voutPubkeys, vopretExtra)) == 0)
+	if ((funcid = DecodeTokenOpRet(tx.vout[n - 1].scriptPubKey, dummyEvalCode, tokenidOpret, voutPubkeys, vopretExtra)) == 0)
 	{
 		std::cerr << indentStr << "ValidateTokenOpret() DecodeTokenOpret could not parse opret for txid=" << tx.GetHash().GetHex() << std::endl;
 		return(false);
@@ -364,13 +365,23 @@ int64_t IsTokensvout(bool goDeeper, bool checkPubkeys, struct CCcontract_info *c
 
 		// moved opret checking to this new reusable func (dimxy):
 		std::vector<CPubKey> voutPubkeys;
-		uint8_t evalCodeInOpret = 0;
-		const bool valOpret = ValidateTokenOpret(tx, v, reftokenid, evalCodeInOpret, voutPubkeys, vopretExtra);
+		const bool valOpret = ValidateTokenOpret(tx, v, reftokenid, voutPubkeys, vopretExtra);
 		//std::cerr << indentStr << "IsTokensvout() ValidateTokenOpret returned=" << std::boolalpha << valOpret << " for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl;
 		if (valOpret) {
 			//std::cerr << indentStr << "IsTokensvout() ValidateTokenOpret returned true"  << " for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl;
 
 			if (checkPubkeys) { // verify that the vout is within EVAL_TOKENS:
+
+				CScript contractScript = CScript(vopretExtra);
+				std::vector<uint8_t> vcontractOpret;
+
+				GetOpReturnData(contractScript, vcontractOpret);
+				if (vcontractOpret.size() == 0) {
+					std::cerr << "IsTokensvout() empty contract opret" << std::endl;
+					return 0;
+				}
+
+				uint8_t evalCodeInOpret = vcontractOpret.begin()[0];
 
 				if (voutPubkeys.size() >= 1 && voutPubkeys.size() <= 2) {
 					CTxOut testVout;

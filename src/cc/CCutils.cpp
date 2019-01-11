@@ -94,8 +94,8 @@ CC *MakeTokensCCcond1(uint8_t evalcode, CPubKey pk)
 {
 	std::vector<CC*> pks;
 	pks.push_back(CCNewSecp256k1(pk));
-	CC *condEvalCC = CCNewEval(E_MARSHAL(ss << evalcode));
-	CC *condEvalTokensCC = CCNewEval(E_MARSHAL(ss << (uint8_t)EVAL_TOKENS));	// this is eval token cc
+	CC *condEvalCC = CCNewEval(E_MARSHAL(ss << evalcode));						// add eval cc
+	CC *condEvalTokensCC = CCNewEval(E_MARSHAL(ss << (uint8_t)EVAL_TOKENS));	// add also eval token cc
 	CC *Sig = CCNewThreshold(1, pks);
 	return CCNewThreshold(3, { condEvalCC, condEvalTokensCC, Sig });
 }
@@ -344,6 +344,27 @@ bool GetCCaddress(struct CCcontract_info *cp,char *destaddr,CPubKey pk)
         pk = GetUnspendable(cp,0);
     return(_GetCCaddress(destaddr,cp->evalcode,pk));
 }
+
+bool _GetTokensCCaddress(char *destaddr, uint8_t evalcode, CPubKey pk)
+{
+	CC *payoutCond;
+	destaddr[0] = 0;
+	if ((payoutCond = MakeTokensCCcond1(evalcode, pk)) != 0)
+	{
+		Getscriptaddress(destaddr, CCPubKey(payoutCond));
+		cc_free(payoutCond);
+	}
+	return(destaddr[0] != 0);
+}
+
+bool GetTokensCCaddress(struct CCcontract_info *cp, char *destaddr, CPubKey pk)
+{
+	destaddr[0] = 0;
+	if (pk.size() == 0)
+		pk = GetUnspendable(cp, 0);
+	return(_GetTokensCCaddress(destaddr, cp->evalcode, pk));
+}
+
 
 bool GetCCaddress1of2(struct CCcontract_info *cp,char *destaddr,CPubKey pk,CPubKey pk2)
 {

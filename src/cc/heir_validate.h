@@ -14,19 +14,21 @@
 CScript EncodeHeirCreateOpRet(uint8_t funcid, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t inactivityTimeSec, std::string heirName);
 CScript EncodeHeirOpRet(uint8_t funcid,  uint256 fundingtxid, uint8_t isHeirSpendingBegan);
 // makes token opret
-CScript EncodeHeirTokensCreateOpRet(uint8_t funcid, uint256 tokenid, std::vector<CPubKey> voutPubkeys, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t inactivityTimeSec, std::string hearName);
-CScript EncodeHeirTokensOpRet(uint8_t funcid, uint256 tokenid, std::vector<CPubKey> voutPubkeys, uint256 fundingtxid, uint8_t isHeirSpendingBegan);
+//CScript EncodeHeirTokensCreateOpRet(uint8_t funcid, uint256 tokenid, std::vector<CPubKey> voutPubkeys, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t inactivityTimeSec, std::string hearName);
+//CScript EncodeHeirTokensOpRet(uint8_t funcid, uint256 tokenid, std::vector<CPubKey> voutPubkeys, uint256 fundingtxid, uint8_t isHeirSpendingBegan);
 
 template <class Helper> uint256 FindLatestFundingTx(uint256 fundingtxid, uint256 &tokenid, CScript& opRetScript, uint8_t &isHeirSpendingBegan);
-template <class Helper> uint8_t DecodeHeirOpRet(CScript scriptPubKey, uint256 &tokenid, uint256& fundingtxid, uint8_t &isHeirSpendingBegan, bool noLogging = false);
-template <class Helper> uint8_t DecodeHeirOpRet(CScript scriptPubKey, uint256 &tokenid, CPubKey& ownerPubkey, CPubKey& heirPubkey, int64_t& inactivityTime, std::string& heirName,  bool noLogging = false);
+uint8_t DecodeHeirOpRet(CScript scriptPubKey, uint256& fundingtxid, uint8_t &isHeirSpendingBegan, bool noLogging = false);
+uint8_t DecodeHeirOpRet(CScript scriptPubKey, CPubKey& ownerPubkey, CPubKey& heirPubkey, int64_t& inactivityTime, std::string& heirName,  bool noLogging = false);
+
+inline static bool isMyFuncId(uint8_t funcid) { return IS_CHARINSTR(funcid, "FAC"); }
+inline static bool isSpendingTx(uint8_t funcid) { return (funcid == 'C'); }
+
 
 // helper class to allow polymorphic behaviour for HeirXXX() functions in case of coins
 class CoinHelper {
 public:
 
-	static bool isMyFuncId(uint8_t funcid) { return IS_CHARINSTR(funcid, "FAC"); }
-	static uint8_t getMyEval() { return EVAL_HEIR; }
 	static int64_t addOwnerInputs(struct CCcontract_info* cp, uint256 dummyid, CMutableTransaction& mtx, CPubKey ownerPubkey, int64_t total, int32_t maxinputs) {
 		return AddNormalinputs(mtx, ownerPubkey, total, maxinputs);
 	}
@@ -40,43 +42,58 @@ public:
 	static CScript makeClaimOpRet(uint256 dummyid, std::vector<CPubKey> dummyPubkeys, uint256 fundingtxid, uint8_t isHeirSpendingBegan) {
 		return EncodeHeirOpRet((uint8_t)'C', fundingtxid, isHeirSpendingBegan);
 	}
-
-	static bool isSpendingTx(uint8_t funcid) { return (funcid == 'C'); }
-
+	static CTxOut make1of2Vout(int64_t amount, CPubKey ownerPubkey, CPubKey heirPubkey) {
+		return MakeCC1of2vout(EVAL_HEIR, amount, ownerPubkey, heirPubkey);
+	}
 	static CTxOut makeUserVout(int64_t amount, CPubKey myPubkey) {
 		return CTxOut(amount, CScript() << ParseHex(HexStr(myPubkey)) << OP_CHECKSIG);
 	}
 	static CTxOut makeClaimerVout(int64_t amount, CPubKey myPubkey) {
 		return CTxOut(amount, CScript() << ParseHex(HexStr(myPubkey)) << OP_CHECKSIG);
+	}
+	static bool GetCoinsOrTokensCCaddress1of2(struct CCcontract_info* cp, char *coinaddr, CPubKey ownerPubkey, CPubKey heirPubkey) {
+		return GetCCaddress1of2(cp, coinaddr, ownerPubkey, heirPubkey);
+	}
+	static void CCaddrCoinsOrTokens1of2set(struct CCcontract_info* cp, CPubKey ownerPubkey, CPubKey heirPubkey, char *coinaddr) {
+		CCaddr1of2set(cp, ownerPubkey, heirPubkey, coinaddr);
 	}
 };
 
 // helper class to allow polymorphic behaviour for HeirXXX() functions in case of tokens
 class TokenHelper {
 public:
-	static bool isMyFuncId(uint8_t funcid) { return IS_CHARINSTR(funcid, "FAC"); }   
-	static uint8_t getMyEval() { return EVAL_TOKENS; }
 	static int64_t addOwnerInputs(struct CCcontract_info* cp, uint256 tokenid, CMutableTransaction& mtx, CPubKey ownerPubkey, int64_t total, int32_t maxinputs) {
 		return AddTokenCCInputs(cp, mtx, ownerPubkey, tokenid, total, maxinputs);
 	}
 
 	static CScript makeCreateOpRet(uint256 tokenid, std::vector<CPubKey> voutTokenPubkeys, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t inactivityTimeSec, std::string heirName) {
-		return EncodeHeirTokensCreateOpRet((uint8_t)'F', tokenid, voutTokenPubkeys, ownerPubkey, heirPubkey, inactivityTimeSec, heirName);
+		return EncodeTokenOpRet((uint8_t)'t', EVAL_TOKENS, tokenid, voutTokenPubkeys,
+			EncodeHeirCreateOpRet((uint8_t)'F', ownerPubkey, heirPubkey, inactivityTimeSec, heirName));
 	}
 	static CScript makeAddOpRet(uint256 tokenid, std::vector<CPubKey> voutTokenPubkeys, uint256 fundingtxid, uint8_t isHeirSpendingBegan) {
-		return EncodeHeirTokensOpRet((uint8_t)'A', tokenid, voutTokenPubkeys, fundingtxid, isHeirSpendingBegan);
+		return EncodeTokenOpRet((uint8_t)'t', EVAL_TOKENS, tokenid, voutTokenPubkeys,
+			EncodeHeirOpRet((uint8_t)'A', fundingtxid, isHeirSpendingBegan));
 	}
 	static CScript makeClaimOpRet(uint256 tokenid, std::vector<CPubKey> voutTokenPubkeys, uint256 fundingtxid, uint8_t isHeirSpendingBegan) {
-		return EncodeHeirTokensOpRet((uint8_t)'C', tokenid, voutTokenPubkeys, fundingtxid, isHeirSpendingBegan);
+		return EncodeTokenOpRet((uint8_t)'t', EVAL_TOKENS, tokenid, voutTokenPubkeys,
+			EncodeHeirOpRet((uint8_t)'C', fundingtxid, isHeirSpendingBegan));
 	}
 
-	static bool isSpendingTx(uint8_t funcid) { return (funcid == 'C'); }
-
+	static CTxOut make1of2Vout(int64_t amount, CPubKey ownerPubkey, CPubKey heirPubkey) {
+		return MakeTokensCC1of2vout(EVAL_HEIR, amount, ownerPubkey, heirPubkey);
+	}
 	static CTxOut makeUserVout(int64_t amount, CPubKey myPubkey) {
-		return MakeCC1vout(EVAL_TOKENS, amount, myPubkey);
+		return MakeTokensCC1vout(EVAL_HEIR, amount, myPubkey);
 	}
 	static CTxOut makeClaimerVout(int64_t amount, CPubKey myPubkey) {
-		return MakeCC1vout(EVAL_TOKENS, amount, myPubkey);
+		return MakeTokensCC1vout(EVAL_HEIR, amount, myPubkey);
+	}
+	static bool GetCoinsOrTokensCCaddress1of2(struct CCcontract_info* cp, char *coinaddr, CPubKey ownerPubkey, CPubKey heirPubkey) {
+		return GetTokensCCaddress1of2(cp, coinaddr, ownerPubkey, heirPubkey);
+	}
+
+	static void CCaddrCoinsOrTokens1of2set(struct CCcontract_info* cp, CPubKey ownerPubkey, CPubKey heirPubkey, char *coinaddr) {
+		CCaddrTokens1of2set(cp, ownerPubkey, heirPubkey, coinaddr);
 	}
 };
 
@@ -307,11 +324,8 @@ public:
 					return eval->Invalid(stream.str().c_str());				// ... if not, return 'invalid'
 				}
 			}
-
 			ival++;					// advance to the next vout
-
 		}
-
 		//std::cerr << "COutputValidationPlan::validate() returns with true" << std::endl;
 		return true;
 	}
@@ -350,13 +364,11 @@ private:
 		return true; // validation OK
 	}
 
-
 private:
 	//std::map<int32_t, ValidatorsRow> m_mapValidators;
 	std::vector< std::pair<int32_t, ValidatorsRow> > m_arrayValidators;
 
 };
-
 
 class CNormalInputIdentifier : CInputIdentifierBase  {
 public:
@@ -390,13 +402,28 @@ public:
 	virtual bool validateVout(CTxOut vout, std::string& message) const
 	{
 		//std::cerr << "CCC1of2AddressValidator::validateVout() entered" << std::endl;
-		uint8_t funcId;
 		CPubKey ownerPubkey, heirPubkey;
 		int64_t inactivityTime;
 		std::string heirName;
 		uint256 tokenid;
+		
+		uint8_t evalCodeTokens = 0;
+		std::vector<uint8_t> vopretExtra;
+		std::vector<CPubKey> dummyVoutPubkeys;
 
-		if ((funcId = DecodeHeirOpRet<Helper>(m_fundingOpretScript, tokenid, ownerPubkey, heirPubkey, inactivityTime, heirName)) == 0) {
+		CScript heirScript = m_fundingOpretScript;
+		if (typeid(Helper) == typeid(TokenHelper)) {
+			if (DecodeTokenOpRet(heirScript, evalCodeTokens, tokenid, dummyVoutPubkeys, vopretExtra) != 0) {
+				heirScript = CScript(vopretExtra);
+			}
+			else	{
+				message = m_customMessage + std::string(" invalid token opreturn format");
+				std::cerr << "CCC1of2AddressValidator::validateVout() exits with false: " << message << std::endl;
+				return false;
+			}
+		}
+		uint8_t funcId = DecodeHeirOpRet(heirScript, ownerPubkey, heirPubkey, inactivityTime, heirName, false);
+		if (funcId == 0) {
 			message = m_customMessage + std::string(" invalid opreturn format");
 			std::cerr << "CCC1of2AddressValidator::validateVout() exits with false: " << message << std::endl;
 			return false;
@@ -443,21 +470,35 @@ public:
 	{
 		//std::cerr << "CMyPubkeyVoutValidator::validateVout() entered" << std::endl;
 
-		uint8_t funcId;
 		CPubKey ownerPubkey, heirPubkey;
 		int64_t inactivityTime;
 		std::string heirName;
 		uint256 tokenid;
 
 		///std::cerr << "CMyPubkeyVoutValidator::validateVout() m_opRetScript=" << m_opRetScript.ToString() << std::endl;
+		
+		uint8_t evalCodeTokens = 0;
+		std::vector<uint8_t> vopretExtra;
+		std::vector<CPubKey> dummyVoutPubkeys;
+
+		CScript ownerScript;
+		CScript heirScript = m_fundingOpretScript;
+		if (typeid(Helper) == typeid(TokenHelper)) {
+			if (DecodeTokenOpRet(heirScript, evalCodeTokens, tokenid, dummyVoutPubkeys, vopretExtra) != 0) {
+				heirScript = CScript(vopretExtra);
+			}
+			else {
+				message = std::string("invalid token opreturn format");
+				return false;
+			}
+		}
 		// get both pubkeys:
-		if ((funcId = DecodeHeirOpRet<Helper>(m_fundingOpretScript, tokenid, ownerPubkey, heirPubkey, inactivityTime, heirName)) == 0) {
+		uint8_t funcId = DecodeHeirOpRet(heirScript, ownerPubkey, heirPubkey, inactivityTime, heirName, false);
+		if (funcId == 0) {
 			message = std::string("invalid opreturn format");
 			return false;
 		}
 
-		CScript ownerScript;
-		CScript heirScript;
 		if (m_checkNormals)  {
 			ownerScript = CoinHelper::makeUserVout(vout.nValue, ownerPubkey).scriptPubKey;
 			heirScript = CoinHelper::makeUserVout(vout.nValue, heirPubkey).scriptPubKey;
@@ -474,7 +515,6 @@ public:
 			// this is vout to owner or heir addr:
 			//std::cerr << "CMyPubkeyVoutValidator::validateVout() exits with true" << std::endl;
 			return true;
-
 		}
 
 		std::cerr << "CMyPubkeyVoutValidator::validateVout() exits with false (not the owner's or heir's addresses)" << std::endl;
@@ -503,15 +543,28 @@ public:
 	{
 		//std::cerr << "CHeirSpendValidator::validateVout() entered" << std::endl;
 
-		uint8_t funcId;
 		CPubKey ownerPubkey, heirPubkey;
 		int64_t inactivityTime;
 		std::string heirName;
 		uint256 tokenid;
 
+		uint8_t evalCodeTokens = 0;
+		std::vector<uint8_t> vopretExtra;
+		std::vector<CPubKey> dummyVoutPubkeys;
+
+		CScript heirScript = m_fundingOpretScript;
+		if (typeid(Helper) == typeid(TokenHelper)) {
+			if (DecodeTokenOpRet(heirScript, evalCodeTokens, tokenid, dummyVoutPubkeys, vopretExtra) != 0) {
+				heirScript = CScript(vopretExtra);
+			} else {
+				message = std::string("invalid token opreturn format");
+				return false;
+			}
+		}
 
 		// get heir pubkey:
-		if ((funcId = DecodeHeirOpRet<Helper>(m_fundingOpretScript, tokenid, ownerPubkey, heirPubkey, inactivityTime, heirName, false)) == 0) {
+		uint8_t funcId = DecodeHeirOpRet(heirScript, ownerPubkey, heirPubkey, inactivityTime, heirName, false);
+		if (funcId == 0) {
 			message = std::string("invalid opreturn format");
 			return false;
 		}
@@ -560,28 +613,54 @@ public:
 	{
 		//std::cerr << "COpRetValidator::validateVout() entered" << std::endl;
 
-		uint8_t funcId, initialFuncId;		// do not check heir name
-		uint256 fundingTxidInOpret = zeroid, dummyTxid, tokenid, initialTokenid;
+		uint256 fundingTxidInOpret = zeroid, dummyTxid, tokenid = zeroid, initialTokenid = zeroid;
 		uint8_t dummyIsHeirSpendingBegan;
 
-		if ((funcId = DecodeHeirOpRet<Helper>(vout.scriptPubKey, tokenid, fundingTxidInOpret, dummyIsHeirSpendingBegan)) == 0) {
+		uint8_t evalCodeTokens = 0;
+		std::vector<uint8_t> vopretExtra;
+		std::vector<CPubKey> dummyVoutPubkeys;
+
+		CScript heirScript = vout.scriptPubKey;
+		if (typeid(Helper) == typeid(TokenHelper)) {
+			if (DecodeTokenOpRet(heirScript, evalCodeTokens, tokenid, dummyVoutPubkeys, vopretExtra) != 0) {
+				heirScript = CScript(vopretExtra);
+			} else {
+				message = std::string("invalid token opreturn format");
+				return false;
+			}
+		}
+		uint8_t funcId = DecodeHeirOpRet(heirScript, fundingTxidInOpret, dummyIsHeirSpendingBegan);
+		if (funcId == 0) {
 			message = std::string("invalid opreturn format");
 			return false;
 		}
-		if ((initialFuncId = DecodeHeirOpRet<Helper>(m_fundingOpretScript, initialTokenid, dummyTxid, dummyIsHeirSpendingBegan)) == 0) {
+
+		heirScript = m_fundingOpretScript;
+		if (typeid(Helper) == typeid(TokenHelper)) {
+			if (DecodeTokenOpRet(heirScript, evalCodeTokens, initialTokenid, dummyVoutPubkeys, vopretExtra) != 0) {
+				heirScript = CScript(vopretExtra);
+			} else {
+				message = std::string("invalid initial token opreturn format");
+				return false;
+			}
+		}
+		uint8_t initialFuncId = DecodeHeirOpRet(heirScript, dummyTxid, dummyIsHeirSpendingBegan);
+		if (initialFuncId == 0) {
 			message = std::string("invalid initial tx opreturn format");
 			return false;
 		}
 
 		// validation rules:
-		if (!Helper::isMyFuncId(funcId)) {
+		if (!isMyFuncId(funcId)) {
 			message = std::string("invalid funcid in opret");
 			return false;
 		}
 
-		if(tokenid != initialTokenid ) {
-			message = std::string("invalid tokenid in opret");
-			return false;
+		if (typeid(Helper) == typeid(TokenHelper)) {
+			if (tokenid != initialTokenid) {
+				message = std::string("invalid tokenid in opret");
+				return false;
+			}
 		}
 		
 		std::cerr << "COpRetValidator::validateVout() exits with true" << std::endl;
