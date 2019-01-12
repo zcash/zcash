@@ -547,28 +547,6 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
             txNew.vout[1].nValue = 0;
             txNew.vout[1].scriptPubKey = MarmaraCoinbaseOpret('C',nHeight,pk);
         }
-        else if ((uint64_t)(txNew.vout[0].nValue) >= ASSETCHAINS_TIMELOCKGTE)
-        {
-            int32_t opretlen, p2shlen, scriptlen;
-            CScriptExt opretScript = CScriptExt();
-
-            txNew.vout.resize(2);
-
-            // prepend time lock to original script unless original script is P2SH, in which case, we will leave the coins
-            // protected only by the time lock rather than 100% inaccessible
-            opretScript.AddCheckLockTimeVerify(komodo_block_unlocktime(nHeight));
-            if (scriptPubKeyIn.IsPayToScriptHash() || scriptPubKeyIn.IsPayToCryptoCondition())
-            {
-                fprintf(stderr,"CreateNewBlock: attempt to add timelock to pay2sh or pay2cc\n");
-                return 0;
-            }
-
-            opretScript += scriptPubKeyIn;
-
-            txNew.vout[0].scriptPubKey = CScriptExt().PayToScriptHash(CScriptID(opretScript));
-            txNew.vout[1].scriptPubKey = CScriptExt().OpReturnScript(opretScript, OPRETTYPE_TIMELOCK);
-            txNew.vout[1].nValue = 0;
-        } // timelocks and commissions are currently incompatible due to validation complexity of the combination
         else if ( nHeight > 1 && ASSETCHAINS_SYMBOL[0] != 0 && (ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 || ASSETCHAINS_SCRIPTPUB.size() > 1) && ASSETCHAINS_COMMISSION != 0 && (commission= komodo_commission((CBlock*)&pblocktemplate->block,(int32_t)nHeight)) != 0 )
         {
             int32_t i; uint8_t *ptr;
@@ -598,6 +576,28 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
             }
             //printf("autocreate commision vout\n");
         }
+        else if ((uint64_t)(txNew.vout[0].nValue) >= ASSETCHAINS_TIMELOCKGTE)
+        {
+            int32_t opretlen, p2shlen, scriptlen;
+            CScriptExt opretScript = CScriptExt();
+            
+            txNew.vout.resize(2);
+            
+            // prepend time lock to original script unless original script is P2SH, in which case, we will leave the coins
+            // protected only by the time lock rather than 100% inaccessible
+            opretScript.AddCheckLockTimeVerify(komodo_block_unlocktime(nHeight));
+            if (scriptPubKeyIn.IsPayToScriptHash() || scriptPubKeyIn.IsPayToCryptoCondition())
+            {
+                fprintf(stderr,"CreateNewBlock: attempt to add timelock to pay2sh or pay2cc\n");
+                return 0;
+            }
+            
+            opretScript += scriptPubKeyIn;
+            
+            txNew.vout[0].scriptPubKey = CScriptExt().PayToScriptHash(CScriptID(opretScript));
+            txNew.vout[1].scriptPubKey = CScriptExt().OpReturnScript(opretScript, OPRETTYPE_TIMELOCK);
+            txNew.vout[1].nValue = 0;
+        } // timelocks and commissions are currently incompatible due to validation complexity of the combination
 
         pblock->vtx[0] = txNew;
         pblocktemplate->vTxFees[0] = -nFees;
