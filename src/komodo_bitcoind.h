@@ -1162,7 +1162,7 @@ uint64_t komodo_commission(const CBlock *pblock,int32_t height)
             n = pblock->vtx[i].vout.size();
             for (j=0; j<n; j++)
             {
-                //fprintf(stderr,"(%d %.8f).%d ",i,dstr(block.vtx[i].vout[j].nValue),j);
+                fprintf(stderr,"(%d %.8f).%d ",i,dstr(block.vtx[i].vout[j].nValue),j);
                 if ( i != 0 || j != 1 )
                     total += pblock->vtx[i].vout[j].nValue;
             }
@@ -1708,10 +1708,10 @@ int64_t komodo_checkcommission(CBlock *pblock,int32_t height)
         {
             script = (uint8_t *)&pblock->vtx[0].vout[1].scriptPubKey[0];
             scriptlen = (int32_t)pblock->vtx[0].vout[1].scriptPubKey.size();
-            int32_t i;
-            for (i=0; i<scriptlen; i++)
-                fprintf(stderr,"%02x",script[i]);
-            fprintf(stderr," vout[1] %.8f vs %.8f\n",(double)checktoshis/COIN,(double)pblock->vtx[0].vout[1].nValue/COIN);
+            //int32_t i;
+            //for (i=0; i<scriptlen; i++)
+            //    fprintf(stderr,"%02x",script[i]);
+            //fprintf(stderr," vout[1] %.8f vs %.8f\n",(double)checktoshis/COIN,(double)pblock->vtx[0].vout[1].nValue/COIN);
             if ( ASSETCHAINS_SCRIPTPUB.size() > 1 )
             {
                 if ( ASSETCHAINS_SCRIPTPUB.size()/2 == scriptlen && scriptlen < sizeof(scripthex) )

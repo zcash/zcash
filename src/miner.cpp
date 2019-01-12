@@ -576,7 +576,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
             }
             //printf("autocreate commision vout\n");
         }
-        else if ((uint64_t)(txNew.vout[0].nValue) >= ASSETCHAINS_TIMELOCKGTE)
+        else if ( (uint64_t)(txNew.vout[0].nValue) >= ASSETCHAINS_TIMELOCKGTE)
         {
             int32_t opretlen, p2shlen, scriptlen;
             CScriptExt opretScript = CScriptExt();
