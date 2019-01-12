@@ -693,7 +693,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
     {
         if ( MarmaraValidateCoinbase(height,block.vtx[0]) < 0 )
         {
-            fprintf(stderr,"MARMARA constrains odd height blocks to pay 100% to CC in vout0\n");
+            fprintf(stderr,"MARMARA constrains odd height blocks to pay 100%% to CC in vout0 with opreturn\n");
             return(-1);
         }
     }
