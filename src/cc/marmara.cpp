@@ -88,7 +88,7 @@ int32_t MarmaraUnlockht(int32_t height)
 
 CScript EncodeMarmaraCoinbaseOpRet(CPubKey pk,int32_t ht)
 {
-    CScript opret; int32_t unlockht; uint8_t evalcode = EVAL_ORACLES;
+    CScript opret; int32_t unlockht; uint8_t evalcode = EVAL_MARMARA;
     unlockht = MarmaraUnlockht(ht);
     opret << OP_RETURN << E_MARSHAL(ss << evalcode << 'C' << pk << ht << unlockht);
     return(opret);
@@ -107,8 +107,8 @@ uint8_t DecodeMaramaraCoinbaseOpRet(const CScript &scriptPubKey,CPubKey &pk,int3
             {
                 return(script[1]);
             } else fprintf(stderr,"DecodeMaramaraCoinbaseOpRet unmarshal error for C\n");
-        }
-    }
+        } else fprintf(stderr,"script[1] is %d != 'C' %d\n",script[1],'C');
+    } else fprintf(stderr,"vopret.size() is %d [0] is %d != %d\n",vopret.size(),script[0],EVAL_MARMARA);
     return(0);
 }
 
