@@ -1711,7 +1711,7 @@ int64_t komodo_checkcommission(CBlock *pblock,int32_t height)
             int32_t i;
             for (i=0; i<scriptlen; i++)
                 fprintf(stderr,"%02x",script[i]);
-            fprintf(stderr," vout[1] %.8f vs %.8f\n",(double)checktoshis/COIN,(double)pblock->vtx[0].vout[1].nValue/COIN));
+            fprintf(stderr," vout[1] %.8f vs %.8f\n",(double)checktoshis/COIN,(double)pblock->vtx[0].vout[1].nValue/COIN);
             if ( ASSETCHAINS_SCRIPTPUB.size() > 1 )
             {
                 if ( ASSETCHAINS_SCRIPTPUB.size()/2 == scriptlen && scriptlen < sizeof(scripthex) )
