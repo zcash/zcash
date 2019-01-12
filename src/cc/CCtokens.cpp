@@ -325,7 +325,7 @@ uint8_t ValidateTokenOpret(CTransaction tx, int32_t v, uint256 tokenid, std::vec
 // goDeeper is true: the func also validates amounts of the passed transaction: 
 // it should be either sum(cc vins) == sum(cc vouts) or the transaction is the 'tokenbase' ('c') tx
 // checkPubkeys is true: validates if the vout is token vout1 or token vout1of2. Should always be true!
-int64_t IsTokensvout(bool goDeeper, bool checkPubkeys, struct CCcontract_info *cp, Eval* eval, std::vector<uint8_t> &vopretExtra, const CTransaction& tx, int32_t v, uint256 reftokenid, std::vector<CPubKey> vinPubkeys)
+int64_t IsTokensvout(bool goDeeper, bool checkPubkeys, struct CCcontract_info *cp, Eval* eval, /*std::vector<uint8_t> &vopretExtra,*/ const CTransaction& tx, int32_t v, uint256 reftokenid, std::vector<CPubKey> vinPubkeys)
 {
 
 	// this is just for log messages indentation fur debugging recursive calls:
