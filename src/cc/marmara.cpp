@@ -370,7 +370,7 @@ UniValue MarmaraPoolPayout(uint64_t txfee,int32_t firstheight,double perc,char *
             result.push_back(Pair("totalshares",shares));
             result.push_back(Pair("poolfee",(double)(total - totalpayout)/COIN));
             result.push_back(Pair("perc",100. * (double)(total - totalpayout)/totalpayout));
-            result.push_back(Pair("payouts",a);
+            result.push_back(Pair("payouts",a));
         }
     }
     return(result);
