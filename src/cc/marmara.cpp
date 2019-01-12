@@ -124,6 +124,7 @@ uint8_t DecodeMaramaraCoinbaseOpRet(const CScript scriptPubKey,CPubKey &pk,int32
         {
             if ( E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> pk; ss >> height; ss >> unlockht) != 0 )
             {
+                fprintf(stderr,"return %c\n",script[1]);
                 return(script[1]);
             } else fprintf(stderr,"DecodeMaramaraCoinbaseOpRet unmarshal error for %c\n",script[1]);
         } else fprintf(stderr,"script[1] is %d != 'C' %d or 'P' %d\n",script[1],'C','P');
@@ -245,7 +246,7 @@ int64_t AddMarmaraCoinbases(struct CCcontract_info *cp,CMutableTransaction &mtx,
         fprintf(stderr,"txid.%s/v%d\n",txid.GetHex().c_str(),vout);
         if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
         {
-            if ( vintx.IsCoinBase() != 0 )
+            if ( vintx.IsCoinBase() != 0 && vintx.vout.size() == 2 && vintx.vout[1].nValue == 0 )
             {
                 if ( DecodeMaramaraCoinbaseOpRet(vintx.vout[1].scriptPubKey,pk,ht,unlockht) == 'C' && unlockht == unlocks && pk == poolpk )
                 {
@@ -259,7 +260,7 @@ int64_t AddMarmaraCoinbases(struct CCcontract_info *cp,CMutableTransaction &mtx,
                         if ( maxinputs > 0 && n >= maxinputs )
                             break;
                     } else fprintf(stderr,"nValue.%8f\n",(double)nValue/COIN);
-                } else fprintf(stderr,"decode error\n");
+                } else fprintf(stderr,"decode error unlockht.%d vs %d pk.%d\n",unlockht,unlocks,pk == poolpk);
             } else fprintf(stderr,"not coinbase\n");
         } else fprintf(stderr,"error getting tx\n");
     }
