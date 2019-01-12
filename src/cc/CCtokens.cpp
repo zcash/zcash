@@ -53,7 +53,7 @@ CScript EncodeTokenCreateOpRet(uint8_t funcid,std::vector<uint8_t> origpubkey,st
 //  this is for other contracts which use tokens and build customized extra payloads to token's opret:
 CScript EncodeTokenOpRet(uint8_t tokenFuncId, uint8_t evalCodeInOpret, uint256 tokenid, std::vector<CPubKey> voutPubkeys, CScript payload)
 {
-    CScript opret; 
+    CScript opret1, opret2; 
 	uint8_t ccType = 0;
 	if (voutPubkeys.size() >= 1 && voutPubkeys.size() <= 2)
 		ccType = voutPubkeys.size();
@@ -66,16 +66,16 @@ CScript EncodeTokenOpRet(uint8_t tokenFuncId, uint8_t evalCodeInOpret, uint256 t
 	GetOpReturnData(payload, vpayload);
 
     //opret << OP_RETURN << E_MARSHAL(ss << evalCodeInOpret << tokenFuncId << tokenid << payload);
-	opret << OP_RETURN << E_MARSHAL(ss << evalCodeInOpret << tokenFuncId << tokenid << ccType; \
+	opret1 << OP_RETURN << E_MARSHAL(ss << evalCodeInOpret << tokenFuncId << tokenid << ccType; \
 		if (ccType >= 1) ss << voutPubkeys[0]; \
 			if (ccType == 2) ss << voutPubkeys[1];);
 	
 	//add second opret:
-	opret << OP_RETURN << E_MARSHAL(ss << vpayload);
+	opret2 << OP_RETURN << E_MARSHAL(ss << vpayload);
 
 //	if (payload.size() > 0) 
 //		opret += payload;
-    return opret;
+    return opret1 + opret2;
 }  
 
 
