@@ -365,17 +365,17 @@ int64_t IsTokensvout(bool goDeeper, bool checkPubkeys, struct CCcontract_info *c
 
 		// moved opret checking to this new reusable func (dimxy):
 		std::vector<CPubKey> voutPubkeys;
-		const uint8_t funcId = ValidateTokenOpret(tx, v, reftokenid, voutPubkeys, vopretExtra);
+		std::vector<uint8_t> vcontractOpret;
+		const uint8_t funcId = ValidateTokenOpret(tx, v, reftokenid, voutPubkeys, vcontractOpret);
 		std::cerr << indentStr << "IsTokensvout() ValidateTokenOpret returned=" << (char)(funcId?funcId:' ') << " for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl;
 		if (funcId != 0) {
 			std::cerr << indentStr << "IsTokensvout() ValidateTokenOpret returned not-null"  << " for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl;
 
 			if (checkPubkeys && funcId != 'c') { // verify that the vout is token's (for 'c' there is no pubkeys!):
 
-				CScript contractScript = CScript(vopretExtra);
-				std::vector<uint8_t> vcontractOpret;
+				//CScript contractScript = CScript(vopretExtra);
+				//GetOpReturnData(contractScript, vcontractOpret);
 
-				GetOpReturnData(contractScript, vcontractOpret);
 				if (vcontractOpret.size() == 0) {
 					std::cerr << "IsTokensvout() empty contract opret" << std::endl;
 					return 0;
@@ -421,7 +421,11 @@ int64_t IsTokensvout(bool goDeeper, bool checkPubkeys, struct CCcontract_info *c
 // compares cc inputs vs cc outputs (to prevent feeding vouts from normal inputs)
 bool TokensExactAmounts(bool goDeeper, struct CCcontract_info *cpTokens, int64_t &inputs, int64_t &outputs, Eval* eval, const CTransaction &tx, uint256 tokenid)
 {
-	CTransaction vinTx; uint256 hashBlock, id, id2; int32_t flag; int64_t tokenoshis; std::vector<uint8_t> tmporigpubkey; int64_t tmpprice;
+	CTransaction vinTx; 
+	uint256 hashBlock; //, id, id2;
+	//int32_t flag; 
+	int64_t tokenoshis; 
+	// std::vector<uint8_t> tmporigpubkey; int64_t tmpprice;
 	std::vector<CPubKey> vinPubkeys, vinPubkeysEmpty;
 
 	int32_t numvins = tx.vin.size();
@@ -449,7 +453,7 @@ bool TokensExactAmounts(bool goDeeper, struct CCcontract_info *cpTokens, int64_t
 				tokenValIndentSize++;
 				// validate vouts of vintx  
 				//std::cerr << indentStr << "TokenExactAmounts() check vin i=" << i << " nValue=" << vinTx.vout[tx.vin[i].prevout.n].nValue << std::endl;
-				tokenoshis = IsTokensvout(goDeeper, true, cpTokens, eval, tmporigpubkey, vinTx, tx.vin[i].prevout.n, tokenid, vinPubkeys);
+				tokenoshis = IsTokensvout(goDeeper, true, cpTokens, eval, /*tmporigpubkey,*/ vinTx, tx.vin[i].prevout.n, tokenid, vinPubkeys);
 				tokenValIndentSize--;
 				if (tokenoshis != 0)
 				{
@@ -464,9 +468,9 @@ bool TokensExactAmounts(bool goDeeper, struct CCcontract_info *cpTokens, int64_t
 	for (int32_t i = 0; i<numvouts; i++)
 	{
 		tokenValIndentSize++;
-		// Note: we pass in here 'false' because we don't need to call TokenExactAmounts() recursively from IsTokenvout
+		// Note: we pass in here 'false' because we don't need to call TokenExactAmounts() recursively from IsTokensvout
 		// indeed, in this case we'll be checking this tx again
-		tokenoshis = IsTokensvout(false, true /*<--exclude non-tokens vouts*/, cpTokens, eval, tmporigpubkey, tx, i, tokenid, vinPubkeys);
+		tokenoshis = IsTokensvout(false, true /*<--exclude non-tokens vouts*/, cpTokens, eval,/* tmporigpubkey,*/ tx, i, tokenid, vinPubkeys);
 		tokenValIndentSize--;
 
 		if (tokenoshis != 0)
@@ -493,7 +497,7 @@ int64_t AddTokenCCInputs(struct CCcontract_info *cp, CMutableTransaction &mtx, C
 	char tokenaddr[64], destaddr[64]; 
 	int64_t threshold, nValue, price, totalinputs = 0; 
 	uint256 txid, hashBlock; 
-	std::vector<uint8_t> vopretExtra;
+	//std::vector<uint8_t> vopretExtra;
 	CTransaction vintx; 
 	int32_t j, vout, n = 0;
 	std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
@@ -524,7 +528,7 @@ int64_t AddTokenCCInputs(struct CCcontract_info *cp, CMutableTransaction &mtx, C
 
 			std::vector<CPubKey> vinPubkeys;
 			
-			if ((nValue = IsTokensvout(true, true/*<--add only checked uxtos */, cp, NULL, vopretExtra, vintx, vout, tokenid, vinPubkeys)) > 0 && myIsutxo_spentinmempool(txid, vout) == 0)
+			if ((nValue = IsTokensvout(true, true/*<--add only checked uxtos */, cp, NULL, /*vopretExtra,*/ vintx, vout, tokenid, vinPubkeys)) > 0 && myIsutxo_spentinmempool(txid, vout) == 0)
 			{
 				if (total != 0 && maxinputs != 0)
 					mtx.vin.push_back(CTxIn(txid, vout, CScript()));

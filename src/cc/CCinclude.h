@@ -155,7 +155,7 @@ uint256 OraclesBatontxid(uint256 oracletxid,CPubKey pk);
 
 //int64_t AddAssetInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,uint256 assetid,int64_t total,int32_t maxinputs);
 int64_t AddTokenCCInputs(struct CCcontract_info *cp, CMutableTransaction &mtx, CPubKey pk, uint256 tokenid, int64_t total, int32_t maxinputs);
-int64_t IsTokensvout(bool goDeeper, bool checkPubkeys, struct CCcontract_info *cp, Eval* eval, std::vector<uint8_t> &origpubkey, const CTransaction& tx, int32_t v, uint256 reftokenid, std::vector<CPubKey> vinPubkeys);
+int64_t IsTokensvout(bool goDeeper, bool checkPubkeys, struct CCcontract_info *cp, Eval* eval, /*std::vector<uint8_t> &origpubkey,*/ const CTransaction& tx, int32_t v, uint256 reftokenid, std::vector<CPubKey> vinPubkeys);
 
 bool DecodeHexTx(CTransaction& tx, const std::string& strHexTx);
 CScript EncodeAssetOpRet(uint8_t assetFuncId, uint256 tokenid, uint256 assetid2, int64_t price, std::vector<CPubKey> voutPubkeys, std::vector<uint8_t> origpubkey);
