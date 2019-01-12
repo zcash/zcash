@@ -332,10 +332,12 @@ UniValue MarmaraPoolPayout(uint64_t txfee,int32_t firstheight,double perc,char *
                         {
                             if ( (pkstr= jstr(jitem(item,0),0)) != 0 && strlen(pkstr) == 66 )
                             {
+                                UniValue x(UniValue::VOBJ);
                                 totalpayout += payout;
                                 decode_hex(buf,33,pkstr);
                                 mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA,payout,Marmarapk,buf2pk(buf)));
-                                a.push_back((double)payout/COIN);
+                                x.push_back(Pair(pkstr, (double)payout/COIN));
+                                a.push_back(item);
                             }
                         }
                     }
