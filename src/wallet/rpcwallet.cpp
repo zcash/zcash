@@ -6976,7 +6976,7 @@ UniValue tokenorders(const UniValue& params, bool fHelp)
 
 UniValue tokenbalance(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); char destaddr[64]; uint256 tokenid; uint64_t balance; std::vector<unsigned char> pubkey; struct CCcontract_info *cp,C;
+    UniValue result(UniValue::VOBJ); uint256 tokenid; uint64_t balance; std::vector<unsigned char> pubkey; struct CCcontract_info *cp,C;
 	CCerror.clear();
 
     cp = CCinit(&C,EVAL_ASSETS);
@@ -6992,13 +6992,17 @@ UniValue tokenbalance(const UniValue& params, bool fHelp)
         pubkey = ParseHex(params[1].get_str().c_str());
     else 
 		pubkey = Mypubkey();
-    result.push_back(Pair("result", "success"));
-    if (GetCCaddress(cp,destaddr,pubkey2pk(pubkey)) != 0)
-        result.push_back(Pair("CCaddress",destaddr));
 
     balance = GetTokenBalance(pubkey2pk(pubkey),tokenid);
 
 	if (CCerror.empty()) {
+		char destaddr[64];
+
+		result.push_back(Pair("result", "success"));
+
+		if (GetCCaddress(cp, destaddr, pubkey2pk(pubkey)) != 0)
+			result.push_back(Pair("CCaddress", destaddr));
+
 		result.push_back(Pair("tokenid", params[0].get_str()));
 		result.push_back(Pair("balance", (int64_t)balance));
 	}
