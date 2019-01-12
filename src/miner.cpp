@@ -589,8 +589,12 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                 ptr = (uint8_t *)&txNew.vout[1].scriptPubKey[0];
                 ptr[0] = 33;
                 for (i=0; i<33; i++)
+                {
                     ptr[i+1] = ASSETCHAINS_OVERRIDE_PUBKEY33[i];
+                    fprintf(stderr,"%02x",ptr[i+1]);
+                }
                 ptr[34] = OP_CHECKSIG;
+                fprintf(stderr," set ASSETCHAINS_OVERRIDE_PUBKEY33 into vout[1]\n");
             }
             //printf("autocreate commision vout\n");
         }

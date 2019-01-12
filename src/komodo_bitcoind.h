@@ -1704,7 +1704,8 @@ int64_t komodo_checkcommission(CBlock *pblock,int32_t height)
             return(-1);
         else*/ if ( checktoshis != 0 )
         {
-            script = (uint8_t *)&pblock->vtx[0].vout[1].scriptPubKey[0];
+            //script = (uint8_t *)&pblock->vtx[0].vout[1].scriptPubKey[0];
+            script = (uint8_t *)pblock->vtx[0].vout[1].scriptPubKey.data();
             scriptlen = (int32_t)pblock->vtx[0].vout[1].scriptPubKey.size();
             if ( ASSETCHAINS_SCRIPTPUB.size() > 1 )
             {
