@@ -24,7 +24,7 @@
 #define MARMARA_MINLOCK (1440 * 3 * 30)
 #define MARMARA_MAXLOCK (1440 * 24 * 30)
 uint64_t komodo_block_prg(uint32_t nHeight);
-UniValue MarmaraPoolPayout(uint64_t txfee,int32_t firstheight,double perc,CPubKey poolpk,char *jsonstr); // [[pk0, shares0], [pk1, shares1], ...]
+UniValue MarmaraPoolPayout(uint64_t txfee,int32_t firstheight,double perc,char *jsonstr); // [[pk0, shares0], [pk1, shares1], ...]
 
 bool MarmaraValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn);
 

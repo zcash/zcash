@@ -272,6 +272,7 @@ extern UniValue pricesstatus(const UniValue& params, bool fHelp);
 extern UniValue pricesfinish(const UniValue& params, bool fHelp);
 extern UniValue pegsaddress(const UniValue& params, bool fHelp);
 extern UniValue marmaraaddress(const UniValue& params, bool fHelp);
+extern UniValue marmara_poolpayout(const UniValue& params, bool fHelp);
 extern UniValue paymentsaddress(const UniValue& params, bool fHelp);
 extern UniValue gatewaysaddress(const UniValue& params, bool fHelp);
 extern UniValue gatewayslist(const UniValue& params, bool fHelp);

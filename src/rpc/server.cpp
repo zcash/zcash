@@ -443,6 +443,7 @@ static const CRPCCommand vRPCCommands[] =
 
     // Marmara
     { "marmara",       "Marmaraaddress",   &marmaraaddress,      true },
+    { "marmara",       "Marmarapoolpayout",   &marmara_poolpayout,      true },
 
     // Payments
     { "payments",       "paymentsaddress",   &paymentsaddress,      true },

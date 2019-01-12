@@ -5531,6 +5531,19 @@ UniValue tokenaddress(const UniValue& params, bool fHelp)
     return(CCaddress(cp,(char *)"Assets",pubkey));
 }
 
+UniValue marmara_poolpayout(const UniValue& params, bool fHelp)
+{
+    int32_t firstheight; double perc; char *jsonstr;
+    if ( fHelp || params.size() != 3 )
+        throw runtime_error("marmara_poolpayout perc firstheight \"[[pubkey:shares], ...]\"\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    perc = atof(params[0].get_str().c_str()) / 100.;
+    firstheight = atol(params[1].get_str().c_str());
+    jsonstr = (char *)params[2].get_str().c_str();
+    return(MarmaraPoolPayout(0,firstheight,perc,jsonstr)); // [[pk0, shares0], [pk1, shares1], ...]
+}
+
 UniValue channelslist(const UniValue& params, bool fHelp)
 {
     if ( fHelp || params.size() > 0 )

@@ -290,16 +290,11 @@ UniValue MarmaraInfo()
     return(result);
 }
 
-UniValue MarmaraPoolPayout(uint64_t txfee,int32_t firstheight,double perc,CPubKey poolpk,char *jsonstr) // [[pk0, shares0], [pk1, shares1], ...]
+UniValue MarmaraPoolPayout(uint64_t txfee,int32_t firstheight,double perc,char *jsonstr) // [[pk0, shares0], [pk1, shares1], ...]
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); cJSON *item,*array; std::string rawtx; int32_t i,n; uint8_t buf[33]; CPubKey Marmarapk,pk; int64_t payout,total,totalpayout=0; double poolshares,share,shares = 0.; char *pkstr,*errorstr=0; struct CCcontract_info *cp,C;
-    if ( pubkey2pk(Mypubkey()) != poolpk )
-    {
-        result.push_back(Pair("result","error"));
-        result.push_back(Pair("error","poolpk is not your pubkey"));
-        return(result);
-    }
+    UniValue result(UniValue::VOBJ); cJSON *item,*array; std::string rawtx; int32_t i,n; uint8_t buf[33]; CPubKey Marmarapk,pk,poolpk; int64_t payout,total,totalpayout=0; double poolshares,share,shares = 0.; char *pkstr,*errorstr=0; struct CCcontract_info *cp,C;
+    poolpk = pubkey2pk(Mypubkey());
     if ( txfee == 0 )
         txfee = 10000;
     cp = CCinit(&C,EVAL_MARMARA);
