@@ -71,8 +71,8 @@ CScript EncodeTokenOpRet(uint8_t tokenFuncId, uint8_t evalCodeInOpret, uint256 t
 			if (ccType == 2) ss << voutPubkeys[1];);
 		
 	if (payload.size() > 0) 
-		opret << payload;
-    return(opret);
+		opret += payload;
+    return opret;
 }  
 
 
