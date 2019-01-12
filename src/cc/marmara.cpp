@@ -120,7 +120,7 @@ int32_t MarmaraValidateCoinbase(int32_t height,CTransaction tx)
     for (ht=2; ht<1000000; ht+=MARMARA_GROUPSIZE)
     {
         memset(histo,0,sizeof(histo));
-        d = (MarmaraUnlockht(ht) - ht) / 1440
+        d = (MarmaraUnlockht(ht) - ht) / 1440;
         if ( d < 0 || d > sizeof(histo)/sizeof(*histo) )
             fprintf(stderr,"d error.%d at ht.%d\n",d,ht);
         else histo[d]++;
