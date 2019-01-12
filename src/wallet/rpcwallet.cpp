@@ -5535,7 +5535,10 @@ UniValue marmara_poolpayout(const UniValue& params, bool fHelp)
 {
     int32_t firstheight; double perc; char *jsonstr;
     if ( fHelp || params.size() != 3 )
-        throw runtime_error("marmara_poolpayout perc firstheight \"[[pubkey:shares], ...]\"\n");
+    {
+        fprintf(stderr,"params.size %d\n",(int32_t)params.size());
+        throw runtime_error("marmara_poolpayout perc firstheight \"[[\\\"pubkey\\\":shares], ...]\"\n");
+    }
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     perc = atof(params[0].get_str().c_str()) / 100.;
