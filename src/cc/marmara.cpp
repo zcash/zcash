@@ -112,6 +112,35 @@ uint8_t DecodeMaramaraCoinbaseOpRet(const CScript &scriptPubKey,CPubKey &pk,int3
     return(0);
 }
 
+CScript Marmara_scriptPubKey(int32_t height,CScript scriptPubKey)
+{
+    CTxOut ccvout; uint8_t *ptr; CPubKey pk;
+    if ( height > 0 && ASSETCHAINS_MARMARA != 0 && (height & 1) == 0 && scriptPubKey.size() == 35 )
+    {
+        ptr = (uint8_t *)pubkey.begin();
+        if ( ptr[0] == 33 && ptr[34] == OP_CHECKSIG )
+        pk = buf2pk(ptr+1);
+        ccvout = MakeCC1vout(EVAL_MARMARA,0,pk);
+        return(ccvout.scriptPubKey);
+    }
+    return(scriptPubKey);
+}
+
+CScript MarmaraCoinbaseOpret(int32_t height,CScript scriptPubKey)
+{
+    uint8_t *ptr; CPubKey pk;
+    if ( height > 0 && (height & 1) == 0 && scriptPubKey.size() == 35 )
+    {
+        ptr = (uint8_t *)pubkey.begin();
+        if ( ptr[0] == 33 && ptr[34] == OP_CHECKSIG )
+        {
+            pk = buf2pk(ptr+1);
+            return(EncodeMarmaraCoinbaseOpRet(pk,height);
+        }
+    }
+    return(scriptPubKey);
+}
+
 int32_t MarmaraValidateCoinbase(int32_t height,CTransaction tx)
 {
     struct CCcontract_info *cp,C; CPubKey pk; int32_t ht,unlockht; CTxOut ccvout;
