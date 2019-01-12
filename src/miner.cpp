@@ -158,19 +158,22 @@ int32_t decode_hex(uint8_t *bytes,int32_t n,char *hex);
 CScript Marmara_scriptPubKey(int32_t height,CPubKey pk);
 CScript MarmaraCoinbaseOpret(int32_t height,CPubKey pk);
 
-CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount, bool isStake)
+CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32_t gpucount, bool isStake)
 {
     CScript scriptPubKeyIn(_scriptPubKeyIn);
 
-    CPubKey pk = CPubKey();
-    std::vector<std::vector<unsigned char>> vAddrs;
-    txnouttype txT;
-    if ( scriptPubKeyIn.size() > 0 && Solver(scriptPubKeyIn, txT, vAddrs))
+    CPubKey pk;
+    if ( _pk.size() != 33 )
     {
-        fprintf(stderr,"txT.%d vs TX_PUBKEY.%d\n",txT,TX_PUBKEY);
-        if (txT == TX_PUBKEY)
-            pk = CPubKey(vAddrs[0]);
-    }
+        pk = CPubKey();
+        std::vector<std::vector<unsigned char>> vAddrs;
+        txnouttype txT;
+        if ( scriptPubKeyIn.size() > 0 && Solver(scriptPubKeyIn, txT, vAddrs))
+        {
+            if (txT == TX_PUBKEY)
+                pk = CPubKey(vAddrs[0]);
+        }
+    } else pk = _pk;
 
     uint64_t deposits; int32_t isrealtime,kmdheight; uint32_t blocktime; const CChainParams& chainparams = Params();
     //fprintf(stderr,"create new block\n");
@@ -790,7 +793,7 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey, int32_t nHeight, 
     }
     if ( ASSETCHAINS_MARMARA != 0 && nHeight > 0 && (nHeight & 1) == 0 )
         scriptPubKey = Marmara_scriptPubKey(nHeight,pubkey);
-    return CreateNewBlock(scriptPubKey, gpucount, isStake);
+    return CreateNewBlock(pubkey,scriptPubKey, gpucount, isStake);
 }
 
 void komodo_broadcast(CBlock *pblock,int32_t limit)
