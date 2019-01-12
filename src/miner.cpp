@@ -18,13 +18,13 @@
  *                                                                            *
  ******************************************************************************/
 
+#include "pubkey.h"
 #include "miner.h"
 #ifdef ENABLE_MINING
 #include "pow/tromp/equi_miner.h"
 #endif
 
 #include "amount.h"
-#include "pubkey.h"
 #include "chainparams.h"
 #include "importcoin.h"
 #include "consensus/consensus.h"
