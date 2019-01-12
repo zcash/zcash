@@ -157,7 +157,7 @@ int32_t verus_staked(CBlock *pBlock, CMutableTransaction &txNew, uint32_t &nBits
 int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33);
 int32_t decode_hex(uint8_t *bytes,int32_t n,char *hex);
 CScript Marmara_scriptPubKey(int32_t height,CPubKey pk);
-CScript MarmaraCoinbaseOpret(int32_t height,CPubKey pk);
+CScript MarmaraCoinbaseOpret(uint8_t funcid,int32_t height,CPubKey pk);
 
 CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32_t gpucount, bool isStake)
 {
@@ -545,7 +545,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
         {
             txNew.vout.resize(2);
             txNew.vout[1].nValue = 0;
-            txNew.vout[1].scriptPubKey = MarmaraCoinbaseOpret(nHeight,pk);
+            txNew.vout[1].scriptPubKey = MarmaraCoinbaseOpret('C',nHeight,pk);
         }
         else if ((uint64_t)(txNew.vout[0].nValue) >= ASSETCHAINS_TIMELOCKGTE)
         {
