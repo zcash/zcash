@@ -366,7 +366,7 @@ int64_t IsTokensvout(bool goDeeper, bool checkPubkeys, struct CCcontract_info *c
 		// moved opret checking to this new reusable func (dimxy):
 		std::vector<CPubKey> voutPubkeys;
 		const uint8_t funcId = ValidateTokenOpret(tx, v, reftokenid, voutPubkeys, vopretExtra);
-		std::cerr << indentStr << "IsTokensvout() ValidateTokenOpret returned=" << (funcId?funcId:' ') << " for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl;
+		std::cerr << indentStr << "IsTokensvout() ValidateTokenOpret returned=" << (char)(funcId?funcId:' ') << " for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl;
 		if (funcId != 0) {
 			std::cerr << indentStr << "IsTokensvout() ValidateTokenOpret returned not-null"  << " for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl;
 
