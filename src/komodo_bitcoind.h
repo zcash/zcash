@@ -1699,13 +1699,19 @@ int64_t komodo_checkcommission(CBlock *pblock,int32_t height)
     if ( ASSETCHAINS_COMMISSION != 0 )
     {
         checktoshis = komodo_commission(pblock,height);
-        //fprintf(stderr,"height.%d commission %.8f\n",height,(double)checktoshis/COIN);
-        /*if ( checktoshis > 10000 && pblock->vtx[0].vout.size() != 2 )  jl777: not sure why this was here
+        if ( checktoshis >= 10000 && pblock->vtx[0].vout.size() < 2 )
+        {
+            fprintf(stderr,"komodo_checkcommission vsize.%d height.%d commission %.8f\n",(int32_t)pblock->vtx[0].vout.size(),height,(double)checktoshis/COIN);
             return(-1);
-        else*/ if ( checktoshis != 0 )
+        }
+        else if ( checktoshis != 0 )
         {
             script = (uint8_t *)&pblock->vtx[0].vout[1].scriptPubKey[0];
             scriptlen = (int32_t)pblock->vtx[0].vout[1].scriptPubKey.size();
+            int32_t i;
+            for (i=0; i<scriptlen; i++)
+                fprintf(stderr,"%02x",script[i]);
+            fprintf(stderr," vout[1] %.8f vs %.8f\n",(double)checktoshis/COIN,(double)pblock->vtx[0].vout[1].nValue/COIN));
             if ( ASSETCHAINS_SCRIPTPUB.size() > 1 )
             {
                 if ( ASSETCHAINS_SCRIPTPUB.size()/2 == scriptlen && scriptlen < sizeof(scripthex) )
@@ -1721,9 +1727,6 @@ int64_t komodo_checkcommission(CBlock *pblock,int32_t height)
                 matched = 25;
             if ( matched == 0 )
             {
-                int32_t i;
-                for (i=0; i<scriptlen; i++)
-                    fprintf(stderr,"%02x",script[i]);
                 fprintf(stderr," payment to wrong pubkey scriptlen.%d, scriptpub[%d] checktoshis.%llu\n",scriptlen,(int32_t)ASSETCHAINS_SCRIPTPUB.size()/2,(long long)checktoshis);
                 return(-1);
 
@@ -1849,7 +1852,8 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
             else
             {
                 script = (uint8_t *)&pblock->vtx[0].vout[0].scriptPubKey[0];
-                if ( script[0] != 33 || script[34] != OP_CHECKSIG || memcmp(script+1,ASSETCHAINS_OVERRIDE_PUBKEY33,33) != 0 )
+                scriptlen = (int32_t)pblock->vtx[0].vout[0].scriptPubKey.size();
+                if ( scriptlen != 35 || script[0] != 33 || script[34] != OP_CHECKSIG || memcmp(script+1,ASSETCHAINS_OVERRIDE_PUBKEY33,33) != 0 )
                     return(-1);
             }
         }
