@@ -29,6 +29,7 @@ inline static bool isSpendingTx(uint8_t funcid) { return (funcid == 'C'); }
 class CoinHelper {
 public:
 
+	static uint8_t getMyEval() { return EVAL_HEIR; }
 	static int64_t addOwnerInputs(struct CCcontract_info* cp, uint256 dummyid, CMutableTransaction& mtx, CPubKey ownerPubkey, int64_t total, int32_t maxinputs) {
 		return AddNormalinputs(mtx, ownerPubkey, total, maxinputs);
 	}
@@ -62,6 +63,7 @@ public:
 // helper class to allow polymorphic behaviour for HeirXXX() functions in case of tokens
 class TokenHelper {
 public:
+	static uint8_t getMyEval() { return EVAL_TOKENS; }
 	static int64_t addOwnerInputs(struct CCcontract_info* cp, uint256 tokenid, CMutableTransaction& mtx, CPubKey ownerPubkey, int64_t total, int32_t maxinputs) {
 		return AddTokenCCInputs(cp, mtx, ownerPubkey, tokenid, total, maxinputs);
 	}

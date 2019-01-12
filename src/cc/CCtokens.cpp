@@ -108,7 +108,7 @@ uint8_t DecodeTokenOpRet(const CScript scriptPubKey, uint8_t &evalCode, uint256 
         funcId = script[1];
         //fprintf(stderr,"decode.[%c]\n",funcId);
 
-        switch ( funcId )
+        switch( funcId )
         {
             case 'c': 
 				return DecodeTokenCreateOpRet(scriptPubKey, dummyPubkey, dummyName, dummyDescription);
@@ -366,7 +366,7 @@ int64_t IsTokensvout(bool goDeeper, bool checkPubkeys, struct CCcontract_info *c
 		// moved opret checking to this new reusable func (dimxy):
 		std::vector<CPubKey> voutPubkeys;
 		const uint8_t funcId = ValidateTokenOpret(tx, v, reftokenid, voutPubkeys, vopretExtra);
-		std::cerr << indentStr << "IsTokensvout() ValidateTokenOpret returned=" << funcId << " for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl;
+		std::cerr << indentStr << "IsTokensvout() ValidateTokenOpret returned=" << (funcId?funcId:' ') << " for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl;
 		if (funcId != 0) {
 			std::cerr << indentStr << "IsTokensvout() ValidateTokenOpret returned not-null"  << " for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl;
 
@@ -490,7 +490,7 @@ bool TokensExactAmounts(bool goDeeper, struct CCcontract_info *cpTokens, int64_t
 // add inputs from token cc addr
 int64_t AddTokenCCInputs(struct CCcontract_info *cp, CMutableTransaction &mtx, CPubKey pk, uint256 tokenid, int64_t total, int32_t maxinputs)
 {
-	char coinaddr[64], destaddr[64]; 
+	char tokenaddr[64], destaddr[64]; 
 	int64_t threshold, nValue, price, totalinputs = 0; 
 	uint256 txid, hashBlock; 
 	std::vector<uint8_t> vopretExtra;
@@ -498,8 +498,8 @@ int64_t AddTokenCCInputs(struct CCcontract_info *cp, CMutableTransaction &mtx, C
 	int32_t j, vout, n = 0;
 	std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
 
-	GetCCaddress(cp, coinaddr, pk);
-	SetCCunspents(unspentOutputs, coinaddr);
+	GetTokensCCaddress(cp, tokenaddr, pk);
+	SetCCunspents(unspentOutputs, tokenaddr);
 
 	threshold = total / (maxinputs != 0 ? maxinputs : 64); // TODO: is maxinputs really could not be over 64? what if i want to calc total balance?
 

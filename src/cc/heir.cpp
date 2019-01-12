@@ -725,7 +725,7 @@ template <typename Helper> std::string HeirFund(uint64_t txfee, int64_t amount, 
 	CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
 	struct CCcontract_info *cp, C;
 
-    cp = CCinit(&C, EVAL_HEIR);
+    cp = CCinit(&C, Helper::getMyEval());
     if (txfee == 0)
         txfee = 10000;
 
