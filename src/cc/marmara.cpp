@@ -117,7 +117,7 @@ CScript Marmara_scriptPubKey(int32_t height,CScript scriptPubKey)
     CTxOut ccvout; uint8_t *ptr; CPubKey pk;
     if ( height > 0 && (height & 1) == 0 && scriptPubKey.size() == 35 )
     {
-        ptr = (uint8_t *)scriptPubKey.begin();
+        ptr = (uint8_t *)scriptPubKey.data();
         if ( ptr[0] == 33 && ptr[34] == OP_CHECKSIG )
         pk = buf2pk(ptr+1);
         ccvout = MakeCC1vout(EVAL_MARMARA,0,pk);
@@ -131,7 +131,7 @@ CScript MarmaraCoinbaseOpret(int32_t height,CScript scriptPubKey)
     uint8_t *ptr; CPubKey pk;
     if ( height > 0 && (height & 1) == 0 && scriptPubKey.size() == 35 )
     {
-        ptr = (uint8_t *)scriptPubKey.begin();
+        ptr = (uint8_t *)scriptPubKey.data();
         if ( ptr[0] == 33 && ptr[34] == OP_CHECKSIG )
         {
             pk = buf2pk(ptr+1);
