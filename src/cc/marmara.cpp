@@ -178,7 +178,7 @@ int32_t MarmaraValidateCoinbase(int32_t height,CTransaction tx)
         {
             if ( ht == height && MarmaraUnlockht(height) == unlockht )
             {
-                fprintf(stderr,"ht.%d -> unlock.%d\n",ht,unlockht);
+                //fprintf(stderr,"ht.%d -> unlock.%d\n",ht,unlockht);
                 ccvout = MakeCC1vout(EVAL_MARMARA,0,pk);
                 if ( ccvout.scriptPubKey == tx.vout[0].scriptPubKey )
                     return(0);

@@ -5534,7 +5534,7 @@ UniValue tokenaddress(const UniValue& params, bool fHelp)
 UniValue marmara_poolpayout(const UniValue& params, bool fHelp)
 {
     int32_t firstheight; double perc; char *jsonstr;
-    if ( fHelp || params.size() != 3 )
+    if ( fHelp || params.size() < 3 )
     {
         fprintf(stderr,"params.size %d\n",(int32_t)params.size());
         throw runtime_error("marmara_poolpayout perc firstheight \"[[\\\"pubkey\\\":shares], ...]\"\n");
@@ -5544,6 +5544,7 @@ UniValue marmara_poolpayout(const UniValue& params, bool fHelp)
     perc = atof(params[0].get_str().c_str()) / 100.;
     firstheight = atol(params[1].get_str().c_str());
     jsonstr = (char *)params[2].get_str().c_str();
+    fprintf(stderr,"perc %.2f ht.%d (%s)\n",perc,firstheight,jsonstr);
     return(MarmaraPoolPayout(0,firstheight,perc,jsonstr)); // [[pk0, shares0], [pk1, shares1], ...]
 }
 
