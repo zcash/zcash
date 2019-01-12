@@ -536,7 +536,7 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
 
         // check if coinbase transactions must be time locked at current subsidy and prepend the time lock
         // to transaction if so, cast for GTE operator
-        if ( ASSETCHAINS_MARMARA != 0 && height > 0 && (height & 1) == 0 )
+        if ( ASSETCHAINS_MARMARA != 0 && nHeight > 0 && (nHeight & 1) == 0 )
         {
             txNew.vout.resize(2);
             txNew.vout[1].nValue = 0;
@@ -753,7 +753,7 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey, int32_t nHeight, 
         if ( ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 )
         {
             pubkey = ParseHex(ASSETCHAINS_OVERRIDE_PUBKEY);
-            scriptPubKey = CScript() << pubkey << OP_CHECKSIG;
+            scriptPubKey = CScript() << ParseHex(HexStr(pubkey)) << OP_CHECKSIG;
         }
         else
         {
@@ -768,7 +768,7 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey, int32_t nHeight, 
     {
         //fprintf(stderr,"use notary pubkey\n");
         pubkey = ParseHex(NOTARY_PUBKEY);
-        scriptPubKey = CScript() << pubkey << OP_CHECKSIG;
+        scriptPubKey = CScript() << ParseHex(HexStr(pubkey)) << OP_CHECKSIG;
     }
     else
     {
@@ -787,8 +787,8 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey, int32_t nHeight, 
             //scriptPubKey = CScript() << ToByteVector(pubkey) << OP_CHECKSIG;
         }
     }
-    if ( ASSETCHAINS_MARMARA != 0 && height > 0 && (height & 1) == 0 )
-        scriptPubKey = Marmara_scriptPubKey(height,pubkey);
+    if ( ASSETCHAINS_MARMARA != 0 && nHeight > 0 && (nHeight & 1) == 0 )
+        scriptPubKey = Marmara_scriptPubKey(nHeight,pubkey);
     return CreateNewBlock(scriptPubKey, gpucount, isStake);
 }
 
