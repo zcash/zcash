@@ -119,6 +119,8 @@ int32_t MarmaraValidateCoinbase(int32_t height,CTransaction tx)
     for (ht=0; ht<10000; ht+=MARMARA_GROUPSIZE/3)
         fprintf(stderr,"%d ",MarmaraUnlockht(ht));
     fprintf(stderr,"<- unlock hts\n");
+    if ( (height & 1) != 0 )
+        return(0);
     if ( tx.vout.size() == 2 && tx.vout[1].nValue == 0 )
     {
         if ( DecodeMaramaraCoinbaseOpRet(tx.vout[1].scriptPubKey,pk,ht,unlockht) == 'C' )
