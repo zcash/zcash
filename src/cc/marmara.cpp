@@ -232,11 +232,11 @@ bool MarmaraValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
 
 int64_t AddMarmaraCoinbases(struct CCcontract_info *cp,CMutableTransaction &mtx,int32_t firstheight,CPubKey poolpk,int32_t maxinputs)
 {
-    char coinaddr[64]; int64_t nValue,totalinputs = 0; uint256 txid,hashBlock; CTransaction vintx; int32_t unlockht,ht,vout,unlocks,n = 0;
+    char coinaddr[64]; CPubKey pk; int64_t nValue,totalinputs = 0; uint256 txid,hashBlock; CTransaction vintx; int32_t unlockht,ht,vout,unlocks,n = 0;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     GetCCaddress(cp,coinaddr,poolpk);
     SetCCunspents(unspentOutputs,coinaddr);
-    unlocks = MarmaraUnlockHt(firstheight);
+    unlocks = MarmaraUnlockht(firstheight);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
@@ -334,7 +334,7 @@ UniValue MarmaraInfo()
 UniValue MarmaraPoolPayout(uint64_t txfee,int32_t firstheight,double perc,CPubKey poolpk,char *jsonstr) // [[pk0, shares0], [pk1, shares1], ...]
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); cJSON *item,*array; std::string res; int32_t i,n; uint8_t buf[33]; CPubKey Marmarapk,pk; int64_t payout,total,totalpayout=0; double poolshares,share,shares = 0.; char *pkstr,*errorstr=0; struct CCcontract_info *cp,C;
+    UniValue result(UniValue::VOBJ); cJSON *item,*array; std::string rawtx; int32_t i,n; uint8_t buf[33]; CPubKey Marmarapk,pk; int64_t payout,total,totalpayout=0; double poolshares,share,shares = 0.; char *pkstr,*errorstr=0; struct CCcontract_info *cp,C;
     if ( pubkey2pk(Mypubkey()) != poolpk )
     {
         result.push_back(Pair("result","error"));
@@ -354,7 +354,7 @@ UniValue MarmaraPoolPayout(uint64_t txfee,int32_t firstheight,double perc,CPubKe
                 shares += jdouble(jitem(item,1),0);
             else
             {
-                errorstr = "all items must be of the form [<pubke>, <shares>]";
+                errorstr = (char *)"all items must be of the form [<pubke>, <shares>]";
                 break;
             }
         }
@@ -386,13 +386,13 @@ UniValue MarmaraPoolPayout(uint64_t txfee,int32_t firstheight,double perc,CPubKe
                 }
                 rawtx = FinalizeCCTx(0,cp,mtx,poolpk,txfee,MarmaraCoinbaseOpret('P',height,poolpk)));
                 if ( rawtx.size() == 0 )
-                    errorstr = "couldnt finalize CCtx";
-            } else errorstr = "couldnt find any coinbases to payout";
+                    errorstr = (char *)"couldnt finalize CCtx";
+            } else errorstr = (char *)"couldnt find any coinbases to payout";
         }
         else if ( errorstr == 0 )
-            errorstr = "no valid shares submitted";
+            errorstr = (char *)"no valid shares submitted";
         free(array);
-    } else errorstr = "couldnt parse poolshares jsonstr";
+    } else errorstr = (char *)"couldnt parse poolshares jsonstr";
     if ( rawtx.size() == 0 || errorstr != 0 )
     {
         result.push_back(Pair("result","error"));
@@ -401,7 +401,7 @@ UniValue MarmaraPoolPayout(uint64_t txfee,int32_t firstheight,double perc,CPubKe
     }
     else
     {
-        result.push_back(Pair("result","success"));
+        result.push_back(Pair("result",(char *)"success"));
         result.push_back(Pair("rawtx",rawtx));
         if ( totalpayout > 0 && total > totalpayout-txfee )
         {

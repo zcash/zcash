@@ -18,6 +18,7 @@
 #define CC_TRIGGERS_H
 
 #include "CCinclude.h"
+#include "../cJSON.h"
 
 #define MARMARA_GROUPSIZE 60
 #define MARMARA_MINLOCK (1440 * 3 * 30)
