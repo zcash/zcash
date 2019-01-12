@@ -167,6 +167,7 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
     txnouttype txT;
     if ( scriptPubKeyIn.size() > 0 && Solver(scriptPubKeyIn, txT, vAddrs))
     {
+        fprintf(stderr,"txT.%d vs TX_PUBKEY.%d\n",txT,TX_PUBKEY);
         if (txT == TX_PUBKEY)
             pk = CPubKey(vAddrs[0]);
     }

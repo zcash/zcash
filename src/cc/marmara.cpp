@@ -139,6 +139,7 @@ CScript Marmara_scriptPubKey(int32_t height,CPubKey pk)
 CScript MarmaraCoinbaseOpret(int32_t height,CPubKey pk)
 {
     uint8_t *ptr;
+    fprintf(stderr,"height.%d pksize.%d\n",height,(int32_t)pk.size());
     if ( height > 0 && (height & 1) == 0 && pk.size() == 33 )
         return(EncodeMarmaraCoinbaseOpRet(pk,height));
     return(CScript());
