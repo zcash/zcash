@@ -62,16 +62,19 @@ CScript EncodeTokenOpRet(uint8_t tokenFuncId, uint8_t evalCodeInOpret, uint256 t
     tokenid = revuint256(tokenid);
 	//uint8_t tokenFuncId = (isTransferrable) ? (uint8_t)'t' : (uint8_t)'l';
 
-	//std::vector<uint8_t> vpayload;
-	//GetOpReturnData(payload, vpayload);
+	std::vector<uint8_t> vpayload;
+	GetOpReturnData(payload, vpayload);
 
     //opret << OP_RETURN << E_MARSHAL(ss << evalCodeInOpret << tokenFuncId << tokenid << payload);
 	opret << OP_RETURN << E_MARSHAL(ss << evalCodeInOpret << tokenFuncId << tokenid << ccType; \
 		if (ccType >= 1) ss << voutPubkeys[0]; \
 			if (ccType == 2) ss << voutPubkeys[1];);
-		
-	if (payload.size() > 0) 
-		opret += payload;
+	
+	//add second opret:
+	opret << OP_RETURN << E_MARSHAL(ss << vpayload);
+
+//	if (payload.size() > 0) 
+//		opret += payload;
     return opret;
 }  
 
