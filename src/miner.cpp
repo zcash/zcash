@@ -554,6 +554,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
             txNew.vout[1].nValue = commission;
             if ( ASSETCHAINS_SCRIPTPUB.size() > 1 )
             {
+                fprintf(stderr,"mine to -ac_script\n");
                 //txNew.vout[1].scriptPubKey = CScript() << ParseHex();
                 int32_t len = strlen(ASSETCHAINS_SCRIPTPUB.c_str());
                 len >>= 1;
