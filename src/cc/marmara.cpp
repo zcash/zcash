@@ -367,6 +367,8 @@ UniValue MarmaraPoolPayout(uint64_t txfee,int32_t firstheight,double perc,char *
         result.push_back(Pair("rawtx",rawtx));
         if ( totalpayout > 0 && total > totalpayout-txfee )
         {
+            result.push_back(Pair("firstheight",firstheight));
+            result.push_back(Pair("lastheight",((firstheight / MARMARA_GROUPSIZE)+1) * MARMARA_GROUPSIZE  - 1));
             result.push_back(Pair("total",(double)total/COIN));
             result.push_back(Pair("totalpayout",(double)totalpayout/COIN));
             result.push_back(Pair("totalshares",shares));
