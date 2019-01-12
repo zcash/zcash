@@ -155,8 +155,8 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
 int32_t verus_staked(CBlock *pBlock, CMutableTransaction &txNew, uint32_t &nBits, arith_uint256 &hashResult, uint8_t *utxosig, CPubKey &pk);
 int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33);
 int32_t decode_hex(uint8_t *bytes,int32_t n,char *hex);
-CScript Marmara_scriptPubKey(int32_t height,CScript scriptPubKey);
-CScript MarmaraCoinbaseOpret(int32_t height,CScript scriptPubKey);
+CScript Marmara_scriptPubKey(int32_t height,CPubKey pk);
+CScript MarmaraCoinbaseOpret(int32_t height,CPubKey pk);
 
 CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount, bool isStake)
 {
@@ -540,7 +540,7 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
         {
             txNew.vout.resize(2);
             txNew.vout[1].nValue = 0;
-            txNew.vout[1].scriptPubKey = MarmaraCoinbaseOpret(nHeight,scriptPubKeyIn);
+            txNew.vout[1].scriptPubKey = MarmaraCoinbaseOpret(nHeight,pk);
         }
         else if ((uint64_t)(txNew.vout[0].nValue) >= ASSETCHAINS_TIMELOCKGTE)
         {
@@ -751,7 +751,10 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey, int32_t nHeight, 
     if ( nHeight == 1 && ASSETCHAINS_COMMISSION != 0 )
     {
         if ( ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 )
-            scriptPubKey = CScript() << ParseHex(ASSETCHAINS_OVERRIDE_PUBKEY) << OP_CHECKSIG;
+        {
+            pubkey = ParseHex(ASSETCHAINS_OVERRIDE_PUBKEY);
+            scriptPubKey = CScript() << pubkey << OP_CHECKSIG;
+        }
         else
         {
             len = strlen(ASSETCHAINS_SCRIPTPUB.c_str());
@@ -764,7 +767,8 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey, int32_t nHeight, 
     else if ( USE_EXTERNAL_PUBKEY != 0 )
     {
         //fprintf(stderr,"use notary pubkey\n");
-        scriptPubKey = CScript() << ParseHex(NOTARY_PUBKEY) << OP_CHECKSIG;
+        pubkey = ParseHex(NOTARY_PUBKEY);
+        scriptPubKey = CScript() << pubkey << OP_CHECKSIG;
     }
     else
     {
@@ -783,8 +787,8 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey, int32_t nHeight, 
             //scriptPubKey = CScript() << ToByteVector(pubkey) << OP_CHECKSIG;
         }
     }
-    if ( ASSETCHAINS_MARMARA != 0 )
-        scriptPubKey = Marmara_scriptPubKey(height,scriptPubKey);
+    if ( ASSETCHAINS_MARMARA != 0 && height > 0 && (height & 1) == 0 )
+        scriptPubKey = Marmara_scriptPubKey(height,pubkey);
     return CreateNewBlock(scriptPubKey, gpucount, isStake);
 }
 
