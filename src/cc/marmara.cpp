@@ -108,7 +108,7 @@ uint8_t DecodeMaramaraCoinbaseOpRet(const CScript &scriptPubKey,CPubKey &pk,int3
                 return(script[1]);
             } else fprintf(stderr,"DecodeMaramaraCoinbaseOpRet unmarshal error for C\n");
         } else fprintf(stderr,"script[1] is %d != 'C' %d\n",script[1],'C');
-    } else fprintf(stderr,"vopret.size() is %d [0] is %d != %d\n",vopret.size(),script[0],EVAL_MARMARA);
+    } else fprintf(stderr,"vopret.size() is %d [0] is %d != %d\n",(int32_t)vopret.size(),script[0],EVAL_MARMARA);
     return(0);
 }
 
