@@ -62,14 +62,16 @@ CScript EncodeTokenOpRet(uint8_t tokenFuncId, uint8_t evalCodeInOpret, uint256 t
     tokenid = revuint256(tokenid);
 	//uint8_t tokenFuncId = (isTransferrable) ? (uint8_t)'t' : (uint8_t)'l';
 
-	std::vector<uint8_t> vpayload;
-	GetOpReturnData(payload, vpayload);
+	//std::vector<uint8_t> vpayload;
+	//GetOpReturnData(payload, vpayload);
 
     //opret << OP_RETURN << E_MARSHAL(ss << evalCodeInOpret << tokenFuncId << tokenid << payload);
 	opret << OP_RETURN << E_MARSHAL(ss << evalCodeInOpret << tokenFuncId << tokenid << ccType; \
-		if(ccType >= 1) ss << voutPubkeys[0]; \
-		if(ccType == 2) ss << voutPubkeys[1]; \
-		if(payload.size() > 0) ss << vpayload);
+		if (ccType >= 1) ss << voutPubkeys[0]; \
+			if (ccType == 2) ss << voutPubkeys[1];);
+		
+	if (payload.size() > 0) 
+		opret << payload;
     return(opret);
 }  
 
@@ -365,26 +367,26 @@ int64_t IsTokensvout(bool goDeeper, bool checkPubkeys, struct CCcontract_info *c
 
 		// moved opret checking to this new reusable func (dimxy):
 		std::vector<CPubKey> voutPubkeys;
-		std::vector<uint8_t> vcontractOpret, vcontractOpret2;
-		const uint8_t funcId = ValidateTokenOpret(tx, v, reftokenid, voutPubkeys, vcontractOpret);
+		std::vector<uint8_t> vopretExtra, vcontractOpret;
+		const uint8_t funcId = ValidateTokenOpret(tx, v, reftokenid, voutPubkeys, vopretExtra);
 		std::cerr << indentStr << "IsTokensvout() ValidateTokenOpret returned=" << (char)(funcId?funcId:' ') << " for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl;
 		if (funcId != 0) {
 			std::cerr << indentStr << "IsTokensvout() ValidateTokenOpret returned not-null"  << " for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl;
 
 			if (checkPubkeys && funcId != 'c') { // verify that the vout is token's (for 'c' there is no pubkeys!):
 
-				CScript contractScript = CScript(vcontractOpret);
-				GetOpReturnData(contractScript, vcontractOpret2);
+				CScript contractScript = CScript(vopretExtra);
+				GetOpReturnData(contractScript, vcontractOpret);
 
-				std::cerr << "IsTokensvout() vcontractOpret=" << HexStr( vcontractOpret );
-				std::cerr << "IsTokensvout() vcontractOpret2=" << HexStr(vcontractOpret2);
+				std::cerr << "IsTokensvout() vcontractOpret=" << HexStr(vopretExtra) << std::endl;
+				std::cerr << "IsTokensvout() vcontractOpret2=" << HexStr(vcontractOpret) << std::endl;;
 
-				if (vcontractOpret2.size() == 0) {
+				if (vcontractOpret.size() == 0) {
 					std::cerr << "IsTokensvout() empty contract opret" << std::endl;
 					return 0;
 				}
 
-				uint8_t evalCodeInOpret = vcontractOpret2.begin()[0];
+				uint8_t evalCodeInOpret = vcontractOpret.begin()[0];
 
 				if (voutPubkeys.size() >= 1 && voutPubkeys.size() <= 2) {
 					CTxOut testVout;
