@@ -261,47 +261,6 @@ int64_t AddMarmaraCoinbases(struct CCcontract_info *cp,CMutableTransaction &mtx,
     return(totalinputs);
 }
 
-std::string MarmaraGet(uint64_t txfee,int64_t nValue)
-{
-    CMutableTransaction tmpmtx,mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    CPubKey mypk,Marmarapk; int64_t inputs,CCchange=0; struct CCcontract_info *cp,C; std::string rawhex; uint32_t j; int32_t i,len; uint8_t buf[32768]; bits256 hash;
-    cp = CCinit(&C,EVAL_MARMARA);
-    if ( txfee == 0 )
-        txfee = 10000;
-    Marmarapk = GetUnspendable(cp,0);
-    mypk = pubkey2pk(Mypubkey());
-    if ( (inputs= AddMarmaraInputs(cp,mtx,Marmarapk,nValue+txfee,60)) > 0 )
-    {
-        if ( inputs > nValue )
-            CCchange = (inputs - nValue - txfee);
-        if ( CCchange != 0 )
-            mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA,CCchange,Marmarapk));
-        mtx.vout.push_back(CTxOut(nValue,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
-        fprintf(stderr,"start at %u\n",(uint32_t)time(NULL));
-        j = rand() & 0xfffffff;
-        for (i=0; i<1000000; i++,j++)
-        {
-            tmpmtx = mtx;
-            rawhex = FinalizeCCTx(-1LL,cp,tmpmtx,mypk,txfee,CScript() << OP_RETURN << E_MARSHAL(ss << (uint8_t)EVAL_MARMARA << (uint8_t)'G' << j));
-            if ( (len= (int32_t)rawhex.size()) > 0 && len < 65536 )
-            {
-                len >>= 1;
-                decode_hex(buf,len,(char *)rawhex.c_str());
-                hash = bits256_doublesha256(0,buf,len);
-                if ( (hash.bytes[0] & 0xff) == 0 && (hash.bytes[31] & 0xff) == 0 )
-                {
-                    fprintf(stderr,"found valid txid after %d iterations %u\n",i,(uint32_t)time(NULL));
-                    return(rawhex);
-                }
-                //fprintf(stderr,"%02x%02x ",hash.bytes[0],hash.bytes[31]);
-            }
-        }
-        fprintf(stderr,"couldnt generate valid txid %u\n",(uint32_t)time(NULL));
-        return("");
-    } else fprintf(stderr,"cant find Marmara inputs\n");
-    return("");
-}
-
 std::string MarmaraFund(uint64_t txfee,int64_t funds)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
