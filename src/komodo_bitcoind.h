@@ -1721,10 +1721,10 @@ int64_t komodo_checkcommission(CBlock *pblock,int32_t height)
                 matched = 25;
             if ( matched == 0 )
             {
-                //int32_t i;
-                //for (i=0; i<25; i++)
-                //    fprintf(stderr,"%02x",script[i]);
-                //fprintf(stderr," payment to wrong pubkey scriptlen.%d, scriptpub[%d]\n",scriptlen,(int32_t)ASSETCHAINS_SCRIPTPUB.size()/2);
+                int32_t i;
+                for (i=0; i<scriptlen; i++)
+                    fprintf(stderr,"%02x",script[i]);
+                fprintf(stderr," payment to wrong pubkey scriptlen.%d, scriptpub[%d] checktoshis.%llu\n",scriptlen,(int32_t)ASSETCHAINS_SCRIPTPUB.size()/2,(long long)checktoshis);
                 return(-1);
 
             }
