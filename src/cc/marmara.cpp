@@ -237,26 +237,31 @@ int64_t AddMarmaraCoinbases(struct CCcontract_info *cp,CMutableTransaction &mtx,
     GetCCaddress(cp,coinaddr,poolpk);
     SetCCunspents(unspentOutputs,coinaddr);
     unlocks = MarmaraUnlockht(firstheight);
+    fprintf(stderr,"check coinaddr.(%s)\n",coinaddr);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
         vout = (int32_t)it->first.index;
-        if ( GetTransaction(txid,vintx,hashBlock,false) != 0 && vintx.IsCoinBase() != 0 )
+        fprintf(stderr,"txid.%s/v%d\n",txid.GetHex().c_str(),vout);
+        if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
         {
-            if ( DecodeMaramaraCoinbaseOpRet(vintx.vout[1].scriptPubKey,pk,ht,unlockht) == 'C' && unlockht == unlocks && pk == poolpk )
+            if ( vintx.IsCoinBase() != 0 )
             {
-                if ( (nValue= IsMarmaravout(cp,vintx,vout)) > 0 && myIsutxo_spentinmempool(txid,vout) == 0 )
+                if ( DecodeMaramaraCoinbaseOpRet(vintx.vout[1].scriptPubKey,pk,ht,unlockht) == 'C' && unlockht == unlocks && pk == poolpk )
                 {
-                    if ( maxinputs != 0 )
-                        mtx.vin.push_back(CTxIn(txid,vout,CScript()));
-                    nValue = it->second.satoshis;
-                    totalinputs += nValue;
-                    n++;
-                    if ( maxinputs > 0 && n >= maxinputs )
-                        break;
-                }
-            }
-        }
+                    if ( (nValue= IsMarmaravout(cp,vintx,vout)) > 0 && myIsutxo_spentinmempool(txid,vout) == 0 )
+                    {
+                        if ( maxinputs != 0 )
+                            mtx.vin.push_back(CTxIn(txid,vout,CScript()));
+                        nValue = it->second.satoshis;
+                        totalinputs += nValue;
+                        n++;
+                        if ( maxinputs > 0 && n >= maxinputs )
+                            break;
+                    } else fprintf(stderr,"nValue.%8f\n",(double)nValue/COIN);
+                } else fprintf(stderr,"decode error\n");
+            } else fprintf(stderr,"not coinbase\n");
+        } else fprintf(stderr,"error getting tx\n");
     }
     return(totalinputs);
 }
