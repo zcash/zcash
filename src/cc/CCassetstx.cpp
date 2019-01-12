@@ -66,63 +66,6 @@ int64_t AddAssetInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubK
 }
 
 
-int64_t GetAssetBalance(CPubKey pk,uint256 tokenid)
-{
-    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    struct CCcontract_info *cp,C;
-    cp = CCinit(&C,EVAL_TOKENS);
-    return(AddTokenCCInputs(cp,mtx,pk,tokenid,0,0));
-}
-
-UniValue AssetInfo(uint256 assetid)
-{
-    UniValue result(UniValue::VOBJ); uint256 hashBlock; CTransaction vintx; std::vector<uint8_t> origpubkey; std::string name,description; char str[67],numstr[65];
-    if ( GetTransaction(assetid,vintx,hashBlock,false) == 0 )
-    {
-        fprintf(stderr,"cant find assetid\n");
-        result.push_back(Pair("result","error"));
-        result.push_back(Pair("error","cant find assetid"));
-        return(result);
-    }
-    if ( vintx.vout.size() > 0 && DecodeTokenCreateOpRet(vintx.vout[vintx.vout.size()-1].scriptPubKey,origpubkey,name,description) == 0 )
-    {
-        fprintf(stderr,"assetid isnt token creation txid\n");
-        result.push_back(Pair("result","error"));
-        result.push_back(Pair("error","assetid isnt token creation txid"));
-    }
-    result.push_back(Pair("result","success"));
-    result.push_back(Pair("tokenid",uint256_str(str,assetid)));
-    result.push_back(Pair("owner",pubkey33_str(str,origpubkey.data())));
-    result.push_back(Pair("name",name));
-    result.push_back(Pair("supply",vintx.vout[0].nValue));
-    result.push_back(Pair("description",description));
-    return(result);
-}
-
-UniValue AssetList()
-{
-    UniValue result(UniValue::VARR); 
-	std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex; 
-	struct CCcontract_info *cp,C; uint256 txid,hashBlock; 
-	CTransaction vintx; std::vector<uint8_t> origpubkey; 
-	std::string name,description; char str[65];
-
-    cp = CCinit(&C,EVAL_TOKENS);
-    SetCCtxids(addressIndex,cp->normaladdr);
-    for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=addressIndex.begin(); it!=addressIndex.end(); it++)
-    {
-        txid = it->first.txhash;
-        if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
-        {
-            if ( vintx.vout.size() > 0 && DecodeTokenCreateOpRet(vintx.vout[vintx.vout.size()-1].scriptPubKey,origpubkey,name,description) != 0 )
-            {
-                result.push_back(uint256_str(str,txid));
-            }
-        }
-    }
-    return(result);
-}
-
 UniValue AssetOrders(uint256 refassetid)
 {
     static uint256 zero;

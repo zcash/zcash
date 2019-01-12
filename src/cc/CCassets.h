@@ -47,12 +47,12 @@ int64_t AssetValidateSellvin(struct CCcontract_info *cp,Eval* eval,int64_t &tmpp
 bool AssetExactAmounts(struct CCcontract_info *cpAssets, int64_t &inputs, int64_t &outputs, Eval* eval, const CTransaction &tx, uint256 assetid);
 
 // CCassetstx
-int64_t GetAssetBalance(CPubKey pk,uint256 tokenid);
+//int64_t GetAssetBalance(CPubKey pk,uint256 tokenid); // --> GetTokenBalance()
 int64_t AddAssetInputs(struct CCcontract_info *cp, CMutableTransaction &mtx, CPubKey pk, uint256 assetid, int64_t total, int32_t maxinputs);
 
 UniValue AssetOrders(uint256 tokenid);
-UniValue AssetInfo(uint256 tokenid);
-UniValue AssetList();
+//UniValue AssetInfo(uint256 tokenid);
+//UniValue AssetList();
 //std::string CreateAsset(int64_t txfee,int64_t assetsupply,std::string name,std::string description);
 //std::string AssetTransfer(int64_t txfee,uint256 assetid,std::vector<uint8_t> destpubkey,int64_t total);
 //std::string AssetConvert(int64_t txfee,uint256 assetid,std::vector<uint8_t> destpubkey,int64_t total,int32_t evalcode);
