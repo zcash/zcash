@@ -343,7 +343,7 @@ UniValue MarmaraPoolPayout(uint64_t txfee,int32_t firstheight,double perc,CPubKe
                 {
                     mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA,total - totalpayout - txfee,Marmarapk,poolpk));
                 }
-                rawtx = FinalizeCCTx(0,cp,mtx,poolpk,txfee,MarmaraCoinbaseOpret('P',firstheight,poolpk)));
+                rawtx = FinalizeCCTx(0,cp,mtx,poolpk,txfee,MarmaraCoinbaseOpret('P',firstheight,poolpk));
                 if ( rawtx.size() == 0 )
                     errorstr = (char *)"couldnt finalize CCtx";
             } else errorstr = (char *)"couldnt find any coinbases to payout";
