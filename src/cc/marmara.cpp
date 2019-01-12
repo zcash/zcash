@@ -86,15 +86,15 @@ int32_t MarmaraUnlockht(int32_t height)
     return(height + MarmaraRandomize(ind));
 }
 
-CScript EncodeMarmaraCoinbaseOpRet(CPubKey pk,int32_t height)
+CScript EncodeMarmaraCoinbaseOpRet(CPubKey pk,int32_t ht)
 {
     CScript opret; int32_t unlockht; uint8_t evalcode = EVAL_ORACLES;
     unlockht = MarmaraUnlockht(ht);
-    opret << OP_RETURN << E_MARSHAL(ss << evalcode << 'C' << pk << height << unlockht);
+    opret << OP_RETURN << E_MARSHAL(ss << evalcode << 'C' << pk << ht << unlockht);
     return(opret);
 }
 
-uint8_t DecodeMaramaraCoinbaseOpRet(const CScript &scriptPubKey,CPubKey &pk,int32_t &height,int32_t &unlckht)
+uint8_t DecodeMaramaraCoinbaseOpRet(const CScript &scriptPubKey,CPubKey &pk,int32_t &height,int32_t &unlockht)
 {
     std::vector<uint8_t> vopret; uint8_t *script,e,f,funcid;
     GetOpReturnData(scriptPubKey,vopret);
@@ -130,7 +130,7 @@ int32_t MarmaraValidateCoinbase(int32_t height,CTransaction tx)
                     return(0);
                 fprintf(stderr,"ht.%d mismatched CCvout scriptPubKey\n",height);
             } else fprintf(stderr,"ht.%d %d vs %d unlock.%d\n",height,MarmaraUnlockht(height),ht,unlockht);
-        } else fprintf(stderr,"ht.%d error decoding coinbase opret\n");
+        } else fprintf(stderr,"ht.%d error decoding coinbase opret\n",height);
     }
     return(-1);
 }
