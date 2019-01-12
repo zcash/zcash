@@ -87,11 +87,11 @@ int32_t MarmaraUnlockht(int32_t height)
     return(height + MarmaraRandomize(ind));
 }
 
-CScript EncodeMarmaraCoinbaseOpRet(CPubKey pk,int32_t ht)
+CScript EncodeMarmaraCoinbaseOpRet(uint8_t funcid,CPubKey pk,int32_t ht)
 {
     CScript opret; int32_t unlockht; uint8_t evalcode = EVAL_MARMARA;
     unlockht = MarmaraUnlockht(ht);
-    opret << OP_RETURN << E_MARSHAL(ss << evalcode << 'C' << pk << ht << unlockht);
+    opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << pk << ht << unlockht);
     if ( 0 )
     {
         std::vector<uint8_t> vopret; uint8_t *script,i;
@@ -100,13 +100,13 @@ CScript EncodeMarmaraCoinbaseOpRet(CPubKey pk,int32_t ht)
         {
             for (i=0; i<vopret.size(); i++)
                 fprintf(stderr,"%02x",script[i]);
-            fprintf(stderr," <- gen opret\n");
+            fprintf(stderr," <- gen opret.%c\n",funcid);
         }
     }
     return(opret);
 }
 
-uint8_t DecodeMaramaraCoinbaseOpRet(const CScript &scriptPubKey,CPubKey &pk,int32_t &height,int32_t &unlockht)
+uint8_t DecodeMaramaraCoinbaseOpRet(const CScript scriptPubKey,CPubKey &pk,int32_t &height,int32_t &unlockht)
 {
     std::vector<uint8_t> vopret; uint8_t *script,e,f,funcid;
     GetOpReturnData(scriptPubKey,vopret);
@@ -120,13 +120,13 @@ uint8_t DecodeMaramaraCoinbaseOpRet(const CScript &scriptPubKey,CPubKey &pk,int3
     }
     if ( vopret.size() > 2 && script[0] == EVAL_MARMARA )
     {
-        if ( script[1] == 'C' )
+        if ( script[1] == 'C' || script[1] == 'P' )
         {
             if ( E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> pk; ss >> height; ss >> unlockht) != 0 )
             {
                 return(script[1]);
-            } else fprintf(stderr,"DecodeMaramaraCoinbaseOpRet unmarshal error for C\n");
-        } else fprintf(stderr,"script[1] is %d != 'C' %d\n",script[1],'C');
+            } else fprintf(stderr,"DecodeMaramaraCoinbaseOpRet unmarshal error for %c\n",script[1]);
+        } else fprintf(stderr,"script[1] is %d != 'C' %d or 'P' %d\n",script[1],'C','P');
     } else fprintf(stderr,"vopret.size() is %d\n",(int32_t)vopret.size());
     return(0);
 }
@@ -144,7 +144,7 @@ CScript MarmaraCoinbaseOpret(int32_t height,CPubKey pk)
     uint8_t *ptr;
     //fprintf(stderr,"height.%d pksize.%d\n",height,(int32_t)pk.size());
     if ( height > 0 && (height & 1) == 0 && pk.size() == 33 )
-        return(EncodeMarmaraCoinbaseOpRet(pk,height));
+        return(EncodeMarmaraCoinbaseOpRet('C',pk,height));
     return(CScript());
 }
 
@@ -230,29 +230,31 @@ bool MarmaraValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
 
 // helper functions for rpc calls in rpcwallet.cpp
 
-int64_t AddMarmaraInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,int64_t total,int32_t maxinputs)
+int64_t AddMarmaraCoinbases(struct CCcontract_info *cp,CMutableTransaction &mtx,int32_t firstheight,CPubKey poolpk,int32_t maxinputs)
 {
-    // add threshold check
-    char coinaddr[64]; int64_t nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t vout,n = 0;
+    char coinaddr[64]; int64_t nValue,totalinputs = 0; uint256 txid,hashBlock; CTransaction vintx; int32_t unlockht,ht,vout,unlocks,n = 0;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
-    GetCCaddress(cp,coinaddr,pk);
+    GetCCaddress(cp,coinaddr,poolpk);
     SetCCunspents(unspentOutputs,coinaddr);
+    unlocks = MarmaraUnlockHt(firstheight);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
         vout = (int32_t)it->first.index;
-        // no need to prevent dup
-        if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
+        if ( GetTransaction(txid,vintx,hashBlock,false) != 0 && vintx.IsCoinBase() != 0 )
         {
-            if ( (nValue= IsMarmaravout(cp,vintx,vout)) > 1000000 && myIsutxo_spentinmempool(txid,vout) == 0 )
+            if ( DecodeMaramaraCoinbaseOpRet(vintx.vout[1].scriptPubKey,pk,ht,unlockht) == 'C' && unlockht == unlocks && pk == poolpk )
             {
-                if ( total != 0 && maxinputs != 0 )
-                    mtx.vin.push_back(CTxIn(txid,vout,CScript()));
-                nValue = it->second.satoshis;
-                totalinputs += nValue;
-                n++;
-                if ( (total > 0 && totalinputs >= total) || (maxinputs > 0 && n >= maxinputs) )
-                    break;
+                if ( (nValue= IsMarmaravout(cp,vintx,vout)) > 0 && myIsutxo_spentinmempool(txid,vout) == 0 )
+                {
+                    if ( maxinputs != 0 )
+                        mtx.vin.push_back(CTxIn(txid,vout,CScript()));
+                    nValue = it->second.satoshis;
+                    totalinputs += nValue;
+                    n++;
+                    if ( maxinputs > 0 && n >= maxinputs )
+                        break;
+                }
             }
         }
     }
@@ -326,9 +328,89 @@ UniValue MarmaraInfo()
     result.push_back(Pair("name","Marmara"));
     cp = CCinit(&C,EVAL_MARMARA);
     Marmarapk = GetUnspendable(cp,0);
-    funding = AddMarmaraInputs(cp,mtx,Marmarapk,0,0);
-    sprintf(numstr,"%.8f",(double)funding/COIN);
-    result.push_back(Pair("funding",numstr));
+    return(result);
+}
+
+UniValue MarmaraPoolPayout(uint64_t txfee,int32_t firstheight,double perc,CPubKey poolpk,char *jsonstr) // [[pk0, shares0], [pk1, shares1], ...]
+{
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    UniValue result(UniValue::VOBJ); cJSON *item,*array; std::string res; int32_t i,n; uint8_t buf[33]; CPubKey Marmarapk,pk; int64_t payout,total,totalpayout=0; double poolshares,share,shares = 0.; char *pkstr,*errorstr=0; struct CCcontract_info *cp,C;
+    if ( pubkey2pk(Mypubkey()) != poolpk )
+    {
+        result.push_back(Pair("result","error"));
+        result.push_back(Pair("error","poolpk is not your pubkey"));
+        return(result);
+    }
+    if ( txfee == 0 )
+        txfee = 10000;
+    cp = CCinit(&C,EVAL_MARMARA);
+    Marmarapk = GetUnspendable(cp,0);
+    if ( (array= cJSON_Parse(jsonstr)) != 0 && (n= cJSON_GetArraySize(array)) > 0 )
+    {
+        for (i=0; i<n; i++)
+        {
+            item = jitem(array,i);
+            if ( (pkstr= jstr(jitem(item,0))) != 0 && strlen(pkstr) == 66 )
+                shares += jdouble(jitem(item,1),0);
+            else
+            {
+                errorstr = "all items must be of the form [<pubke>, <shares>]";
+                break;
+            }
+        }
+        if ( errorstr == 0 && shares > SMALLVAL )
+        {
+            shares += shares * perc;
+            if ( (total= AddMarmaraCoinbases(cp,mtx,firstheight,poolpk,60)) > 0 )
+            {
+                for (i=0; i<n; i++)
+                {
+                    item = jitem(array,i);
+                    if ( (share= jdouble(jitem(item,1),0)) > SMALLVAL )
+                    {
+                        payout = (share * (total - txfee)) / shares;
+                        if ( payout > 0 )
+                        {
+                            if ( (pkstr= jstr(jitem(item,0))) != 0 && strlen(pkstr) == 66 )
+                            {
+                                totalpayout += payout;
+                                decode_hex(buf,33,pkstr);
+                                mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA,payout,Marmarapk,buf2pk(buf)));
+                            }
+                        }
+                    }
+                }
+                if ( totalpayout > 0 && total > totalpayout-txfee )
+                {
+                    mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA,total - totalpayout - txfee,Marmarapk,poolpk));
+                }
+                rawtx = FinalizeCCTx(0,cp,mtx,poolpk,txfee,MarmaraCoinbaseOpret('P',height,poolpk)));
+                if ( rawtx.size() == 0 )
+                    errorstr = "couldnt finalize CCtx";
+            } else errorstr = "couldnt find any coinbases to payout";
+        }
+        else if ( errorstr == 0 )
+            errorstr = "no valid shares submitted";
+        free(array);
+    } else errorstr = "couldnt parse poolshares jsonstr";
+    if ( rawtx.size() == 0 || errorstr != 0 )
+    {
+        result.push_back(Pair("result","error"));
+        if ( errorstr != 0 )
+            result.push_back(Pair("error",errorstr));
+    }
+    else
+    {
+        result.push_back(Pair("result","success"));
+        result.push_back(Pair("rawtx",rawtx));
+        if ( totalpayout > 0 && total > totalpayout-txfee )
+        {
+            result.push_back(Pair("totalpayout",(double)totalpayout/COIN));
+            result.push_back(Pair("totalshares",shares));
+            result.push_back(Pair("poolfee",(double)(total - totalpayout)/COIN));
+            result.push_back(Pair("perc",100. * (double)(total - totalpayout)/totalpayout));
+        }
+    }
     return(result);
 }
 
