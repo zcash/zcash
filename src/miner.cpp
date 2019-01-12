@@ -24,6 +24,7 @@
 #endif
 
 #include "amount.h"
+#include "pubkey.h"
 #include "chainparams.h"
 #include "importcoin.h"
 #include "consensus/consensus.h"
