@@ -250,7 +250,7 @@ int64_t AddMarmaraCoinbases(struct CCcontract_info *cp,CMutableTransaction &mtx,
             {
                 if ( DecodeMaramaraCoinbaseOpRet(vintx.vout[1].scriptPubKey,pk,ht,unlockht) == 'C' && unlockht == unlocks && pk == poolpk )
                 {
-                    if ( (nValue= IsMarmaravout(cp,vintx,vout)) > 0 && myIsutxo_spentinmempool(txid,vout) == 0 )
+                    if ( (nValue= vintx.vout[vout].nValue) > 0 && myIsutxo_spentinmempool(txid,vout) == 0 )
                     {
                         if ( maxinputs != 0 )
                             mtx.vin.push_back(CTxIn(txid,vout,CScript()));
