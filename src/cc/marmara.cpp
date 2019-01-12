@@ -71,6 +71,70 @@ bool MarmaraExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransactio
     else return(true);
 }
 
+int32_t MarmaraRandomize(uint32_t ind)
+{
+    uint64_t val64; uint32_t val,range = (MARMARA_MAXLOCK - MARMARA_MINLOCK);
+    val64 = komodo_block_prg(ind);
+    val = (uint32_t)(val64 >> 32);
+    val ^= (uint32_t)val64;
+    return(val % range);
+}
+
+int32_t MarmaraUnlockht(int32_t height)
+{
+    uint32_t ind = height / MARMARA_GROUPSIZE;
+    return(height + MarmaraRandomize(ind));
+}
+
+CScript EncodeMarmaraCoinbaseOpRet(CPubKey pk,int32_t height)
+{
+    CScript opret; int32_t unlockht; uint8_t evalcode = EVAL_ORACLES;
+    unlockht = MarmaraUnlockht(ht);
+    opret << OP_RETURN << E_MARSHAL(ss << evalcode << 'C' << pk << height << unlockht);
+    return(opret);
+}
+
+uint8_t DecodeMaramaraCoinbaseOpRet(const CScript &scriptPubKey,CPubKey &pk,int32_t &height,int32_t &unlckht)
+{
+    std::vector<uint8_t> vopret; uint8_t *script,e,f,funcid;
+    GetOpReturnData(scriptPubKey,vopret);
+    script = (uint8_t *)vopret.data();
+    if ( vopret.size() > 2 && script[0] == EVAL_MARMARA )
+    {
+        if ( script[1] == 'C' )
+        {
+            if ( E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> pk; ss >> height; ss >> unlockht) != 0 )
+            {
+                return(script[1]);
+            } else fprintf(stderr,"DecodeMaramaraCoinbaseOpRet unmarshal error for C\n");
+        }
+    }
+    return(0);
+}
+
+int32_t MarmaraValidateCoinbase(int32_t height,CTransaction tx)
+{
+    struct CCcontract_info *cp,C; CPubKey pk; int32_t ht,unlockht; CTxOut ccvout;
+    cp = CCinit(&C,EVAL_MARMARA);
+    for (ht=0; ht<10000; ht+=MARMARA_GROUPSIZE/3)
+        fprintf(stderr,"%d ",MarmaraUnlockht(ht));
+    fprintf(stderr,"<- unlock hts\n");
+    if ( tx.vout.size() == 2 && tx.vout[1].nValue == 0 )
+    {
+        if ( DecodeMaramaraCoinbaseOpRet(tx.vout[1].scriptPubKey,pk,ht,unlockht) == 'C' )
+        {
+            if ( ht == height && MarmaraUnlockht(height) == unlockht )
+            {
+                ccvout = MakeCC1vout(EVAL_MARMARA,0,pk);
+                if ( ccvout.scriptPubKey == tx.vout[0].scriptPubKey )
+                    return(0);
+                fprintf(stderr,"ht.%d mismatched CCvout scriptPubKey\n",height);
+            } else fprintf(stderr,"ht.%d %d vs %d unlock.%d\n",height,MarmaraUnlockht(height),ht,unlockht);
+        } else fprintf(stderr,"ht.%d error decoding coinbase opret\n");
+    }
+    return(-1);
+}
+
 bool MarmaraValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
 {
     int32_t numvins,numvouts,preventCCvins,preventCCvouts,i,numblocks; bool retval; uint256 txid; uint8_t hash[32]; char str[65],destaddr[64];

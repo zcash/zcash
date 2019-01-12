@@ -19,6 +19,11 @@
 
 #include "CCinclude.h"
 
+#define MARMARA_GROUPSIZE 60
+#define MARMARA_MINLOCK (1440 * 3 * 30)
+#define MARMARA_MAXLOCK (1440 * 24 * 30)
+uint64_t komodo_block_prg(uint32_t nHeight);
+
 bool MarmaraValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn);
 
 // CCcustom
