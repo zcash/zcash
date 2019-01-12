@@ -237,12 +237,12 @@ int64_t AddMarmaraCoinbases(struct CCcontract_info *cp,CMutableTransaction &mtx,
     GetCCaddress(cp,coinaddr,poolpk);
     SetCCunspents(unspentOutputs,coinaddr);
     unlocks = MarmaraUnlockht(firstheight);
-    fprintf(stderr,"check coinaddr.(%s)\n",coinaddr);
+    //fprintf(stderr,"check coinaddr.(%s)\n",coinaddr);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
         vout = (int32_t)it->first.index;
-        fprintf(stderr,"txid.%s/v%d\n",txid.GetHex().c_str(),vout);
+        //fprintf(stderr,"txid.%s/v%d\n",txid.GetHex().c_str(),vout);
         if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
         {
             if ( vintx.IsCoinBase() != 0 && vintx.vout.size() == 2 && vintx.vout[1].nValue == 0 )
@@ -259,7 +259,7 @@ int64_t AddMarmaraCoinbases(struct CCcontract_info *cp,CMutableTransaction &mtx,
                         if ( maxinputs > 0 && n >= maxinputs )
                             break;
                     } else fprintf(stderr,"nValue.%8f\n",(double)nValue/COIN);
-                } else fprintf(stderr,"decode error unlockht.%d vs %d pk.%d\n",unlockht,unlocks,pk == poolpk);
+                } //else fprintf(stderr,"decode error unlockht.%d vs %d pk.%d\n",unlockht,unlocks,pk == poolpk);
             } else fprintf(stderr,"not coinbase\n");
         } else fprintf(stderr,"error getting tx\n");
     }
@@ -298,7 +298,7 @@ UniValue MarmaraInfo()
 UniValue MarmaraPoolPayout(uint64_t txfee,int32_t firstheight,double perc,char *jsonstr) // [[pk0, shares0], [pk1, shares1], ...]
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); cJSON *item,*array; std::string rawtx; int32_t i,n; uint8_t buf[33]; CPubKey Marmarapk,pk,poolpk; int64_t payout,total,totalpayout=0; double poolshares,share,shares = 0.; char *pkstr,*errorstr=0; struct CCcontract_info *cp,C;
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR); cJSON *item,*array; std::string rawtx; int32_t i,n; uint8_t buf[33]; CPubKey Marmarapk,pk,poolpk; int64_t payout,total,totalpayout=0; double poolshares,share,shares = 0.; char *pkstr,*errorstr=0; struct CCcontract_info *cp,C;
     poolpk = pubkey2pk(Mypubkey());
     if ( txfee == 0 )
         txfee = 10000;
@@ -335,6 +335,7 @@ UniValue MarmaraPoolPayout(uint64_t txfee,int32_t firstheight,double perc,char *
                                 totalpayout += payout;
                                 decode_hex(buf,33,pkstr);
                                 mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA,payout,Marmarapk,buf2pk(buf)));
+                                a.push_back(Pair(pkstr,(double)payout/COIN));
                             }
                         }
                     }
@@ -369,6 +370,7 @@ UniValue MarmaraPoolPayout(uint64_t txfee,int32_t firstheight,double perc,char *
             result.push_back(Pair("totalshares",shares));
             result.push_back(Pair("poolfee",(double)(total - totalpayout)/COIN));
             result.push_back(Pair("perc",100. * (double)(total - totalpayout)/totalpayout));
+            result.push_back(Pair("payouts",a);
         }
     }
     return(result);
