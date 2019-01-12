@@ -77,7 +77,7 @@ int32_t MarmaraRandomize(uint32_t ind)
     val64 = komodo_block_prg(ind);
     val = (uint32_t)(val64 >> 32);
     val ^= (uint32_t)val64;
-    return(val % range);
+    return((val % range) + MARMARA_MINLOCK);
 }
 
 int32_t MarmaraUnlockht(int32_t height)
@@ -116,7 +116,7 @@ int32_t MarmaraValidateCoinbase(int32_t height,CTransaction tx)
 {
     struct CCcontract_info *cp,C; CPubKey pk; int32_t ht,unlockht; CTxOut ccvout;
     cp = CCinit(&C,EVAL_MARMARA);
-    int32_t d,histo[365*2];
+    int32_t d,histo[365*2+30];
     memset(histo,0,sizeof(histo));
     for (ht=2; ht<1000000; ht+=MARMARA_GROUPSIZE)
     {
