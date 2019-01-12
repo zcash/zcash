@@ -309,7 +309,7 @@ UniValue MarmaraPoolPayout(uint64_t txfee,int32_t firstheight,double perc,CPubKe
         for (i=0; i<n; i++)
         {
             item = jitem(array,i);
-            if ( (pkstr= jstr(jitem(item,0))) != 0 && strlen(pkstr) == 66 )
+            if ( (pkstr= jstr(jitem(item,0),0)) != 0 && strlen(pkstr) == 66 )
                 shares += jdouble(jitem(item,1),0);
             else
             {
@@ -330,7 +330,7 @@ UniValue MarmaraPoolPayout(uint64_t txfee,int32_t firstheight,double perc,CPubKe
                         payout = (share * (total - txfee)) / shares;
                         if ( payout > 0 )
                         {
-                            if ( (pkstr= jstr(jitem(item,0))) != 0 && strlen(pkstr) == 66 )
+                            if ( (pkstr= jstr(jitem(item,0),0)) != 0 && strlen(pkstr) == 66 )
                             {
                                 totalpayout += payout;
                                 decode_hex(buf,33,pkstr);
@@ -343,7 +343,7 @@ UniValue MarmaraPoolPayout(uint64_t txfee,int32_t firstheight,double perc,CPubKe
                 {
                     mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA,total - totalpayout - txfee,Marmarapk,poolpk));
                 }
-                rawtx = FinalizeCCTx(0,cp,mtx,poolpk,txfee,MarmaraCoinbaseOpret('P',height,poolpk)));
+                rawtx = FinalizeCCTx(0,cp,mtx,poolpk,txfee,MarmaraCoinbaseOpret('P',firstheight,poolpk)));
                 if ( rawtx.size() == 0 )
                     errorstr = (char *)"couldnt finalize CCtx";
             } else errorstr = (char *)"couldnt find any coinbases to payout";
