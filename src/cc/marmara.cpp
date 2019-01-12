@@ -116,18 +116,21 @@ int32_t MarmaraValidateCoinbase(int32_t height,CTransaction tx)
 {
     struct CCcontract_info *cp,C; CPubKey pk; int32_t ht,unlockht; CTxOut ccvout;
     cp = CCinit(&C,EVAL_MARMARA);
-    int32_t d,histo[365*2+30];
-    memset(histo,0,sizeof(histo));
-    for (ht=2; ht<1000000; ht+=MARMARA_GROUPSIZE)
+    if ( 0 )
     {
-        d = (MarmaraUnlockht(ht) - ht) / 1440;
-        if ( d < 0 || d > sizeof(histo)/sizeof(*histo) )
-            fprintf(stderr,"d error.%d at ht.%d\n",d,ht);
-        else histo[d]++;
+        int32_t d,histo[365*2+30];
+        memset(histo,0,sizeof(histo));
+        for (ht=2; ht<1000000; ht+=MARMARA_GROUPSIZE)
+        {
+            d = (MarmaraUnlockht(ht) - ht) / 1440;
+            if ( d < 0 || d > sizeof(histo)/sizeof(*histo) )
+                fprintf(stderr,"d error.%d at ht.%d\n",d,ht);
+            else histo[d]++;
+        }
+        for (ht=0; ht<sizeof(histo)/sizeof(*histo); ht++)
+            fprintf(stderr,"%d ",histo[ht]);
+        fprintf(stderr,"<- unlock histogram[%d] by days locked\n",(int32_t)(sizeof(histo)/sizeof(*histo)));
     }
-    for (ht=0; ht<sizeof(histo)/sizeof(*histo); ht++)
-        fprintf(stderr,"%d ",histo[ht]);
-    fprintf(stderr,"<- unlock histogram[%d] by days locked\n",(int32_t)(sizeof(histo)/sizeof(*histo)));
     if ( (height & 1) != 0 )
         return(0);
     if ( tx.vout.size() == 2 && tx.vout[1].nValue == 0 )
