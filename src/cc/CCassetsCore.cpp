@@ -573,7 +573,9 @@ bool AssetExactAmounts(struct CCcontract_info *cpAssets, int64_t &inputs, int64_
 				//assetoshis = IsAssetvout(cpAssets, tmpprice, tmporigpubkey, vinTx, tx.vin[i].prevout.n, assetid);
 				std::vector<uint8_t> vopretExtra;
 				std::vector<CPubKey> vinPubkeysEmpty;
-				assetoshis = IsTokensvout(false, false, cpTokens, NULL, vopretExtra, vinTx, tx.vin[i].prevout.n, assetid, vinPubkeysEmpty);
+
+				// TODO: why is IsTokensVout here??
+				assetoshis = IsTokensvout(false, false, cpTokens, NULL, /* vopretExtra,*/ vinTx, tx.vin[i].prevout.n, assetid, vinPubkeysEmpty);
 				if (assetoshis != 0)
 				{
 					std::cerr << "AssetExactAmounts() vin i=" << i << " assetoshis=" << assetoshis << std::endl;
