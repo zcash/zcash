@@ -83,6 +83,7 @@ int32_t MarmaraRandomize(uint32_t ind)
 int32_t MarmaraUnlockht(int32_t height)
 {
     uint32_t ind = height / MARMARA_GROUPSIZE;
+    height = (height / MARMARA_GROUPSIZE) * MARMARA_GROUPSIZE;
     return(height + MarmaraRandomize(ind));
 }
 
@@ -91,6 +92,7 @@ CScript EncodeMarmaraCoinbaseOpRet(CPubKey pk,int32_t ht)
     CScript opret; int32_t unlockht; uint8_t evalcode = EVAL_MARMARA;
     unlockht = MarmaraUnlockht(ht);
     opret << OP_RETURN << E_MARSHAL(ss << evalcode << 'C' << pk << ht << unlockht);
+    if ( 0 )
     {
         std::vector<uint8_t> vopret; uint8_t *script,i;
         GetOpReturnData(opret,vopret);
@@ -109,6 +111,7 @@ uint8_t DecodeMaramaraCoinbaseOpRet(const CScript &scriptPubKey,CPubKey &pk,int3
     std::vector<uint8_t> vopret; uint8_t *script,e,f,funcid;
     GetOpReturnData(scriptPubKey,vopret);
     script = (uint8_t *)vopret.data();
+    if ( 0 )
     {
         int32_t i;
         for (i=0; i<vopret.size(); i++)
@@ -139,7 +142,7 @@ CScript Marmara_scriptPubKey(int32_t height,CPubKey pk)
 CScript MarmaraCoinbaseOpret(int32_t height,CPubKey pk)
 {
     uint8_t *ptr;
-    fprintf(stderr,"height.%d pksize.%d\n",height,(int32_t)pk.size());
+    //fprintf(stderr,"height.%d pksize.%d\n",height,(int32_t)pk.size());
     if ( height > 0 && (height & 1) == 0 && pk.size() == 33 )
         return(EncodeMarmaraCoinbaseOpRet(pk,height));
     return(CScript());
@@ -149,10 +152,13 @@ int32_t MarmaraValidateCoinbase(int32_t height,CTransaction tx)
 {
     struct CCcontract_info *cp,C; CPubKey pk; int32_t ht,unlockht; CTxOut ccvout;
     cp = CCinit(&C,EVAL_MARMARA);
-    if ( 0 )
+    if ( 1 )
     {
         int32_t d,histo[365*2+30];
         memset(histo,0,sizeof(histo));
+        for (ht=2; ht<100; ht++)
+            fprintf(stderr,"%d ",MarmaraUnlockht(ht));
+        fprintf(stderr," <- first 100 unlock heights\n");
         for (ht=2; ht<1000000; ht+=MARMARA_GROUPSIZE)
         {
             d = (MarmaraUnlockht(ht) - ht) / 1440;
