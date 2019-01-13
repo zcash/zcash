@@ -191,40 +191,39 @@ int32_t MarmaraValidateCoinbase(int32_t height,CTransaction tx)
 
 bool MarmaraValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
 {
-    int32_t numvins,numvouts,preventCCvins,preventCCvouts,i,numblocks; bool retval; uint256 txid; uint8_t hash[32]; char str[65],destaddr[64];
-    return eval->Invalid("no validation yet");
-    std::vector<std::pair<CAddressIndexKey, CAmount> > txids;
+    CTransaction vinTx; uint256 hashBlock;  int32_t numvins,numvouts,i,ht,unlockht,vht,vunlockht; uint8_t funcid; CPubKey pk,vpk;
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
     preventCCvins = preventCCvouts = -1;
     if ( numvouts < 1 )
         return eval->Invalid("no vouts");
-    else
+    else if ( tx.vout.size() >= 2 )
     {
-        for (i=0; i<numvins; i++)
+        funcid = DecodeMaramaraCoinbaseOpRet(tx.vout[1].scriptPubKey,pk,ht,unlockht);
+        if ( funcid == 'P' )
         {
-            if ( IsCCInput(tx.vin[0].scriptSig) == 0 )
+            for (i=0; i<numvins; i++)
             {
-                return eval->Invalid("illegal normal vini");
+                if ( (*cp->ismyvin)(tx.vin[i].scriptSig) != 0 )
+                {
+                    if ( eval->GetTxUnconfirmed(tx.vin[i].prevout.hash,vinTx,hashBlock) == 0 )
+                        return eval->Invalid("cant find vinTx");
+                    else
+                    {
+                        if ( vinTx.IsCoinbase() == 0 )
+                            return eval->Invalid("noncoinbase input");
+                        else if ( vinTx.size() != 2 )
+                            return eval->Invalid("coinbase doesnt have 2 vouts");
+                        vfuncid = DecodeMaramaraCoinbaseOpRet(vinTx.vout[1].scriptPubKey,vpk,vht,vunlockht);
+                        if ( vfuncid != 'C' || vpk != pk || vunlockht != unlockht )
+                            return eval->Invalid("mismatched opreturn");
+                    }
+                }
             }
-        }
-        //fprintf(stderr,"check amounts\n");
-        if ( MarmaraExactAmounts(cp,eval,tx,1,10000) == false )
-        {
-            fprintf(stderr,"Marmaraget invalid amount\n");
-            return false;
-        }
-        else
-        {
-            txid = tx.GetHash();
-            memcpy(hash,&txid,sizeof(hash));
-            retval = PreventCC(eval,tx,preventCCvins,numvins,preventCCvouts,numvouts);
-            if ( retval != 0 )
-                fprintf(stderr,"Marmaraget validated\n");
-            else fprintf(stderr,"Marmaraget invalid\n");
-            return(retval);
+            return(true);
         }
     }
+    return eval->Invalid("fall through error");
 }
 // end of consensus code
 
