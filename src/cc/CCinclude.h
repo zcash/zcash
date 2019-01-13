@@ -187,5 +187,6 @@ bits256 curve25519_basepoint9();
 bits256 curve25519(bits256 mysecret,bits256 basepoint);
 void vcalc_sha256(char deprecated[(256 >> 3) * 2 + 1],uint8_t hash[256 >> 3],uint8_t *src,int32_t len);
 bits256 bits256_doublesha256(char *deprecated,uint8_t *data,int32_t datalen);
+UniValue ValueFromAmount(const CAmount& amount);
 
 #endif
