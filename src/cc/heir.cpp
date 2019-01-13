@@ -322,22 +322,15 @@ CScript EncodeHeirOpRet(uint8_t funcid,  uint256 fundingtxid, uint8_t hasHeirSpe
 	return CScript() << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << fundingtxid << hasHeirSpendingBegun);
 }
 
-/**
-* decode opret vout for Heir contract
-*/
-uint8_t _DecodeHeirOpRet(CScript scriptPubKey, CPubKey& ownerPubkey, CPubKey& heirPubkey, int64_t& inactivityTime, std::string& heirName, uint256& fundingTxidInOpret, uint8_t &hasHeirSpendingBegun, bool noLogging)
+
+// decode opret vout for Heir contract
+uint8_t _DecodeHeirOpRet(std::vector<uint8_t> vopret, CPubKey& ownerPubkey, CPubKey& heirPubkey, int64_t& inactivityTime, std::string& heirName, uint256& fundingTxidInOpret, uint8_t &hasHeirSpendingBegun, bool noLogging)
 {
-	std::vector<uint8_t> vopret;
 	uint8_t evalCodeInOpret = 0;
 	uint8_t heirFuncId = 0;
 
 	fundingTxidInOpret = zeroid; //to init
 
-	GetOpReturnData(scriptPubKey, vopret);	
-	if (vopret.size() == 0) {
-		if (!noLogging) std::cerr << "_DecodeHeirOpRet() warning: empty opret" << std::endl;
-		return (uint8_t)0;
-	}
 	evalCodeInOpret = vopret.begin()[0];
 	
 	if (vopret.size() > 1 && evalCodeInOpret == EVAL_HEIR) {
@@ -387,8 +380,14 @@ uint8_t DecodeHeirOpRet(CScript scriptPubKey, CPubKey& ownerPubkey, CPubKey& hei
 {
 	uint256 dummytxid;
 	uint8_t dummyHasHeirSpendingBegun;
+	std::vector<uint8_t> vopret;
 
-	return _DecodeHeirOpRet(scriptPubKey, ownerPubkey, heirPubkey, inactivityTime, heirName, dummytxid, dummyHasHeirSpendingBegun, noLogging);
+	GetOpReturnData(scriptPubKey, vopret);
+	if (vopret.size() == 0) {
+		if (!noLogging) std::cerr << "DecodeHeirOpRet() warning: empty opret" << std::endl;
+		return (uint8_t)0;
+	}
+	return _DecodeHeirOpRet(vopret, ownerPubkey, heirPubkey, inactivityTime, heirName, dummytxid, dummyHasHeirSpendingBegun, noLogging);
 }
 
 /**
@@ -399,8 +398,15 @@ uint8_t DecodeHeirOpRet(CScript scriptPubKey, uint256& fundingtxidInOpret, uint8
 	CPubKey dummyOwnerPubkey, dummyHeirPubkey;
 	int64_t dummyInactivityTime;
 	std::string dummyHeirName;
+	std::vector<uint8_t> vopret;
 
-	return _DecodeHeirOpRet(scriptPubKey, dummyOwnerPubkey, dummyHeirPubkey, dummyInactivityTime, dummyHeirName, fundingtxidInOpret, hasHeirSpendingBegun, noLogging);
+	GetOpReturnData(scriptPubKey, vopret);
+	if (vopret.size() == 0) {
+		if (!noLogging) std::cerr << "DecodeHeirOpRet() warning: empty opret" << std::endl;
+		return (uint8_t)0;
+	}
+
+	return _DecodeHeirOpRet(vopret, dummyOwnerPubkey, dummyHeirPubkey, dummyInactivityTime, dummyHeirName, fundingtxidInOpret, hasHeirSpendingBegun, noLogging);
 }
 
 // decode combined opret:
@@ -417,20 +423,17 @@ uint8_t _DecodeHeirEitherOpret(CScript scriptPubKey, uint256 &tokenid, CPubKey& 
 			// restore the second opret:
 			heirScript = CScript();
 
-			E_UNMARSHAL(vopretExtra, { ss >> vopretStripped; });  // std::vector<uint8_t>(vopretExtra.begin()+1, vopretExtra.end()); //strip string size
-
-			heirScript << OP_RETURN;
-			uint32_t i = heirScript.size();
-			heirScript << E_MARSHAL(ss << vopretStripped);
-			for (uint32_t iStripped = 0; iStripped < vopretStripped.size(); iStripped++)
-				heirScript[i] = vopretStripped[iStripped];
-			heirScript.resize(heirScript.size()-1);
+			if (E_UNMARSHAL(vopretExtra, { ss >> vopretStripped; })) {  //strip string size
+				if (!noLogging) std::cerr << "_DecodeHeirEitherOpret() could not unmarshal vopretStripped" << std::endl;
+				return (uint8_t)0;
+			}
 		}
 		else {
+			if (!noLogging) std::cerr << "_DecodeHeirEitherOpret() empty vopretExtra" << std::endl;
 			return (uint8_t)0;
 		}
 	}
-	return DecodeHeirOpRet(heirScript, ownerPubkey, heirPubkey, inactivityTime, heirName, noLogging);
+	return _DecodeHeirOpRet(vopretStripped, ownerPubkey, heirPubkey, inactivityTime, heirName, fundingTxidInOpret, hasHeirSpendingBegun, noLogging);
 }
 
 // overload to decode opret in fundingtxid:
