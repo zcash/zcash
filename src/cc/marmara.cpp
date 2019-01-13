@@ -356,6 +356,51 @@ UniValue MarmaraReceive(uint64_t txfee,CPubKey senderpk,int64_t amount,std::stri
     return(result);
 }
 
+UniValue MarmaraIssue(uint64_t txfee,CPubKey receiverpk,int64_t amount,std::string currency,int32_t matures,uint256 createtxid)
+{
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    UniValue result(UniValue::VOBJ); CPubKey mypk; struct CCcontract_info *cp,C; std::string rawtx; char *errorstr=0;
+    cp = CCinit(&C,EVAL_MARMARA);
+    if ( txfee == 0 )
+        txfee = 10000;
+    mypk = pubkey2pk(Mypubkey());
+    if ( currency != "MARMARA" )
+        errorstr = (char *)"for now, only MARMARA loops are supported";
+    else if ( amount < txfee )
+        errorstr = (char *)"amount must be for more than txfee";
+    else if ( matures <= chainActive.LastTip()->GetHeight() )
+        errorstr = (char *)"it must mature in the future";
+    if ( errorstr == 0 )
+    {
+        if ( AddNormalinputs(mtx,mypk,2*txfee,1) > 0 )
+        {
+            errorstr = (char *)"couldnt finalize CCtx";
+            mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA,txfee,receiverpk));
+            rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,MarmaraLoopOpret('I',createtxid,receiverpk,amount,matures,currency));
+            if ( rawtx.size() > 0 )
+                errorstr = 0;
+        } else errorstr = (char *)"dont have enough normal inputs for 2*txfee";
+    }
+    if ( rawtx.size() == 0 || errorstr != 0 )
+    {
+        result.push_back(Pair("result","error"));
+        if ( errorstr != 0 )
+            result.push_back(Pair("error",errorstr));
+    }
+    else
+    {
+        result.push_back(Pair("result",(char *)"success"));
+        result.push_back(Pair("rawtx",rawtx));
+        result.push_back(Pair("funcid","R"));
+        result.push_back(Pair("createtxid",createtxid.GetHex()));
+        result.push_back(Pair("receiverpk",HexStr(receiverpk)));
+        result.push_back(Pair("amount",ValueFromAmount(amount)));
+        result.push_back(Pair("matures",matures));
+        result.push_back(Pair("currency",currency));
+    }
+    return(result);
+}
+
 std::string MarmaraFund(uint64_t txfee,int64_t funds)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
