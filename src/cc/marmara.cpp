@@ -332,6 +332,8 @@ UniValue MarmaraReceive(uint64_t txfee,CPubKey senderpk,int64_t amount,std::stri
             if ( needbaton != 0 )
                 mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA,txfee,senderpk));
             rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,MarmaraLoopOpret('R',createtxid,senderpk,amount,matures,currency));
+            if ( rawtx.size() > 0 )
+                errorstr = 0;
         } else errorstr = (char *)"dont have enough normal inputs for 2*txfee";
     }
     if ( rawtx.size() == 0 || errorstr != 0 )
