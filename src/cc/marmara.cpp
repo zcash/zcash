@@ -198,7 +198,7 @@ bool MarmaraValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
         return eval->Invalid("no vouts");
     else if ( tx.vout.size() >= 2 )
     {
-        funcid = DecodeMaramaraCoinbaseOpRet(tx.vout[1].scriptPubKey,pk,ht,unlockht);
+        funcid = DecodeMaramaraCoinbaseOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,pk,ht,unlockht);
         if ( funcid == 'P' )
         {
             for (i=0; i<numvins; i++)
