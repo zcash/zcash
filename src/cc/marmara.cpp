@@ -370,10 +370,10 @@ UniValue MarmaraPoolPayout(uint64_t txfee,int32_t firstheight,double perc,char *
         {
             result.push_back(Pair("firstheight",firstheight));
             result.push_back(Pair("lastheight",((firstheight / MARMARA_GROUPSIZE)+1) * MARMARA_GROUPSIZE  - 1));
-            result.push_back(Pair("total",ValueFromAmount(total));
-            result.push_back(Pair("totalpayout",ValueFromAmount(totalpayout));
+            result.push_back(Pair("total",ValueFromAmount(total)));
+            result.push_back(Pair("totalpayout",ValueFromAmount(totalpayout)));
             result.push_back(Pair("totalshares",shares));
-            result.push_back(Pair("poolfee",ValueFromAmount(poolfee));
+            result.push_back(Pair("poolfee",ValueFromAmount(poolfee)));
             result.push_back(Pair("perc",100. * (double)poolfee/totalpayout));
             result.push_back(Pair("payouts",a));
         }
