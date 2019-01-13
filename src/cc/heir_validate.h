@@ -20,6 +20,8 @@ CScript EncodeHeirOpRet(uint8_t funcid,  uint256 fundingtxid, uint8_t isHeirSpen
 template <class Helper> uint256 FindLatestFundingTx(uint256 fundingtxid, uint256 &tokenid, CScript& opRetScript, uint8_t &isHeirSpendingBegan);
 uint8_t DecodeHeirOpRet(CScript scriptPubKey, uint256& fundingtxid, uint8_t &isHeirSpendingBegan, bool noLogging = false);
 uint8_t DecodeHeirOpRet(CScript scriptPubKey, CPubKey& ownerPubkey, CPubKey& heirPubkey, int64_t& inactivityTime, std::string& heirName,  bool noLogging = false);
+uint8_t DecodeHeirEitherOpret(CScript scriptPubKey, uint256 &tokenid, CPubKey& ownerPubkey, CPubKey& heirPubkey, int64_t& inactivityTime, std::string& heirName, bool noLogging = false);
+uint8_t DecodeHeirEitherOpret(CScript scriptPubKey, uint256 &tokenid, uint256 &fundingTxidInOpret, uint8_t hasHeirSpendingBegun, bool noLogging = false);
 
 inline static bool isMyFuncId(uint8_t funcid) { return IS_CHARINSTR(funcid, "FAC"); }
 inline static bool isSpendingTx(uint8_t funcid) { return (funcid == 'C'); }

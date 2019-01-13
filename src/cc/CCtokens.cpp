@@ -71,14 +71,14 @@ CScript EncodeTokenOpRet(uint8_t tokenFuncId, uint8_t evalCodeInOpret, uint256 t
 
 	opret << OP_RETURN << E_MARSHAL(ss << evalCodeInOpret << tokenFuncId << tokenid << ccType; \
 		if (ccType >= 1) ss << voutPubkeys[0];				\
-			if (ccType == 2) ss << voutPubkeys[1];			\
-				if (vpayload.size() > 0) ss << vpayload;);
+			if (ccType == 2) ss << voutPubkeys[1];); //			\
+				//if (vpayload.size() > 0) ss << vpayload;);
 	
 
 //	if (payload.size() > 0) 
 //		opret += payload; --> "error 64: scriptpubkey"
-
-    return opret;
+	// TODO: check or serialization to vpayload!
+    return opret + payload;
 }  
 
 
