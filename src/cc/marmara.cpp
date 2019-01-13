@@ -391,7 +391,7 @@ UniValue MarmaraIssue(uint64_t txfee,CPubKey receiverpk,int64_t amount,std::stri
     {
         result.push_back(Pair("result",(char *)"success"));
         result.push_back(Pair("rawtx",rawtx));
-        result.push_back(Pair("funcid","R"));
+        result.push_back(Pair("funcid","I"));
         result.push_back(Pair("createtxid",createtxid.GetHex()));
         result.push_back(Pair("receiverpk",HexStr(receiverpk)));
         result.push_back(Pair("amount",ValueFromAmount(amount)));
