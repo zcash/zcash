@@ -1267,7 +1267,7 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
     }
     if ( value == 0 || txtime == 0 || blocktime == 0 || prevtime == 0 )
     {
-        fprintf(stderr,"komodo_stake null %.8f %u %u %u\n",dstr(value),txtime,blocktime,prevtime);
+        //fprintf(stderr,"komodo_stake null %.8f %u %u %u\n",dstr(value),txtime,blocktime,prevtime);
         return(0);
     }
     if ( value < SATOSHIDEN )
@@ -1304,7 +1304,7 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
             winner = 1;
             if ( validateflag == 0 )
             {
-                fprintf(stderr,"winner blocktime.%u iter.%d segid.%d\n",blocktime,iter,segid);
+                //fprintf(stderr,"winner blocktime.%u iter.%d segid.%d\n",blocktime,iter,segid);
                 blocktime += iter;
                 blocktime += segid * 2;
             }
@@ -2229,7 +2229,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
             for (i=0; i<siglen; i++)
                 utxosig[i] = ptr[i];//, fprintf(stderr,"%02x",ptr[i]);
             //fprintf(stderr," siglen.%d\n",siglen);
-fprintf(stderr,"best %u from %u, gap %d lag.%d\n",earliest,*blocktimep,(int32_t)(earliest - *blocktimep),(int32_t)(time(NULL) - *blocktimep));
+//fprintf(stderr,"best %u from %u, gap %d lag.%d\n",earliest,*blocktimep,(int32_t)(earliest - *blocktimep),(int32_t)(time(NULL) - *blocktimep));
             *blocktimep = earliest;
         }
     } //else fprintf(stderr,"no earliest utxo for staking\n");
