@@ -191,7 +191,7 @@ int32_t MarmaraValidateCoinbase(int32_t height,CTransaction tx)
 
 bool MarmaraValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
 {
-    CTransaction vinTx; uint256 hashBlock;  int32_t numvins,numvouts,i,ht,unlockht,vht,vunlockht; uint8_t funcid; CPubKey pk,vpk;
+    CTransaction vinTx; uint256 hashBlock;  int32_t numvins,numvouts,i,ht,unlockht,vht,vunlockht; uint8_t funcid,vfuncid; CPubKey pk,vpk;
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
     if ( numvouts < 1 )
@@ -209,9 +209,9 @@ bool MarmaraValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
                         return eval->Invalid("cant find vinTx");
                     else
                     {
-                        if ( vinTx.IsCoinbase() == 0 )
+                        if ( vinTx.IsCoinBase() == 0 )
                             return eval->Invalid("noncoinbase input");
-                        else if ( vinTx.size() != 2 )
+                        else if ( vinTx.vout.size() != 2 )
                             return eval->Invalid("coinbase doesnt have 2 vouts");
                         vfuncid = DecodeMaramaraCoinbaseOpRet(vinTx.vout[1].scriptPubKey,vpk,vht,vunlockht);
                         if ( vfuncid != 'C' || vpk != pk || vunlockht != unlockht )
