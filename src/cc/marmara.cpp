@@ -256,7 +256,7 @@ int64_t AddMarmaraCoinbases(struct CCcontract_info *cp,CMutableTransaction &mtx,
                         n++;
                         if ( maxinputs > 0 && n >= maxinputs )
                             break;
-                    } else fprintf(stderr,"nValue.%8f\n",(double)nValue/COIN);
+                    } //else fprintf(stderr,"nValue.%8f\n",(double)nValue/COIN);
                 } //else fprintf(stderr,"decode error unlockht.%d vs %d pk.%d\n",unlockht,unlocks,pk == poolpk);
             } else fprintf(stderr,"not coinbase\n");
         } else fprintf(stderr,"error getting tx\n");
