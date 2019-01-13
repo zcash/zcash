@@ -1907,12 +1907,12 @@ void static BitcoinMiner()
         for (int i = 0; i < nThreads; i++) {
 
 #ifdef ENABLE_WALLET
-            if (ASSETCHAINS_ALGO == ASSETCHAINS_EQUIHASH)
+            if (ASSETCHAINS_ALGO == ASSETCHAINS_EQUIHASH || (ASSETCHAINS_STAKED != 0 && KOMODO_MININGTHREADS == 0) )
                 minerThreads->create_thread(boost::bind(&BitcoinMiner, pwallet));
             else
                 minerThreads->create_thread(boost::bind(&BitcoinMiner_noeq, pwallet));
 #else
-            if (ASSETCHAINS_ALGO == ASSETCHAINS_EQUIHASH)
+            if (ASSETCHAINS_ALGO == ASSETCHAINS_EQUIHASH || (ASSETCHAINS_STAKED != 0 && KOMODO_MININGTHREADS == 0) )
                 minerThreads->create_thread(&BitcoinMiner);
             else
                 minerThreads->create_thread(&BitcoinMiner_noeq);
