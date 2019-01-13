@@ -5549,10 +5549,11 @@ UniValue marmara_poolpayout(const UniValue& params, bool fHelp)
 
 UniValue marmara_receive(const UniValue& params, bool fHelp)
 {
-    uint256 createtxid; std::vector<uint8_t> senderpub; int64_t amount; int32_t matures;
+    UniValue result(UniValue::VOBJ); uint256 createtxid; std::vector<uint8_t> senderpub; int64_t amount; int32_t matures; std::string currency;
     if ( fHelp || (params.size() != 5 && params.size() != 4) )
     {
-        // marmarareceive 039433dc3749aece1bd568f374a45da3b0bc6856990d7da3cd175399577940a775 7.5 MARMARA 1440
+        // 1st marmarareceive 039433dc3749aece1bd568f374a45da3b0bc6856990d7da3cd175399577940a775 7.5 MARMARA 1440
+        // after marmarareceive 039433dc3749aece1bd568f374a45da3b0bc6856990d7da3cd175399577940a775 7.5 MARMARA 1440 <txid of 1st>
         throw runtime_error("marmarareceive senderpk amount currency matures createtxid\n");
     }
     if ( ensure_CCrequirements() < 0 )
