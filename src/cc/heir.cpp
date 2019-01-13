@@ -446,7 +446,7 @@ uint8_t DecodeHeirEitherOpRet(CScript scriptPubKey, uint256 &tokenid, CPubKey& o
 }
 
 // overload to decode opret in A and C heir tx:
-uint8_t DecodeHeirEitherOpRet(CScript scriptPubKey, uint256 &tokenid, uint256 &fundingTxidInOpret, uint8_t hasHeirSpendingBegun, bool noLogging) {
+uint8_t DecodeHeirEitherOpRet(CScript scriptPubKey, uint256 &tokenid, uint256 &fundingTxidInOpret, uint8_t &hasHeirSpendingBegun, bool noLogging) {
 	CPubKey dummyOwnerPubkey, dummyHeirPubkey;
 	int64_t dummyInactivityTime;
 	std::string dummyHeirName;
@@ -1020,7 +1020,7 @@ UniValue HeirInfo(uint256 fundingtxid)
 
 
 		CScript opret = fundingtx.vout.size() > 0 ? fundingtx.vout[fundingtx.vout.size() - 1].scriptPubKey : CScript();
-		uint8_t funcId = DecodeHeirEitherOpret(opret, tokenid, ownerPubkey, heirPubkey, inactivityTimeSec, heirName, true);
+		uint8_t funcId = DecodeHeirEitherOpRet(opret, tokenid, ownerPubkey, heirPubkey, inactivityTimeSec, heirName, true);
 		if (funcId == 0) {
 			std::cerr << "HeirInfo() this fundingtx is incorrect" << std::endl;
 			result.push_back(Pair("result", "error"));
