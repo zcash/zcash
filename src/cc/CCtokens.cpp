@@ -78,7 +78,9 @@ CScript EncodeTokenOpRet(uint8_t tokenFuncId, uint8_t evalCodeInOpret, uint256 t
 //	if (payload.size() > 0) 
 //		opret += payload; --> "error 64: scriptpubkey"
 	// TODO: check or serialization to vpayload!
-    return opret + payload;
+	CScript opretPayloadNoOpcode(vpayload);
+
+    return opret + opretPayloadNoOpcode;
 }  
 
 
