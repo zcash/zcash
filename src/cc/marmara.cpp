@@ -319,7 +319,7 @@ UniValue MarmaraPoolPayout(uint64_t txfee,int32_t firstheight,double perc,char *
         }
         if ( errorstr == 0 && shares > SMALLVAL )
         {
-            shares += shares * perc;
+            shares += (shares / (1. - perc));
             if ( (total= AddMarmaraCoinbases(cp,mtx,firstheight,poolpk,60)) > 0 )
             {
                 for (i=0; i<n; i++)

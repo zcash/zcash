@@ -5536,7 +5536,7 @@ UniValue marmara_poolpayout(const UniValue& params, bool fHelp)
     int32_t firstheight; double perc; char *jsonstr;
     if ( fHelp || params.size() != 3 )
     {
-        // marmarapoolpayout "0.5" 2 '[["024131032ed90941e714db8e6dd176fe5a86c9d873d279edecf005c06f773da686",1000],["02ebc786cb83de8dc3922ab83c21f3f8a2f3216940c3bf9da43ce39e2a3a882c92",100]]';
+        // marmarapoolpayout 0.5 2 '[["024131032ed90941e714db8e6dd176fe5a86c9d873d279edecf005c06f773da686",1000],["02ebc786cb83de8dc3922ab83c21f3f8a2f3216940c3bf9da43ce39e2a3a882c92",100]]';
         throw runtime_error("marmara_poolpayout perc firstheight \"[[\\\"pubkey\\\":shares], ...]\"\n");
     }
     if ( ensure_CCrequirements() < 0 )
