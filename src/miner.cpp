@@ -482,6 +482,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
         int32_t stakeHeight = chainActive.Height() + 1;
 
         //LogPrintf("CreateNewBlock(): total size %u blocktime.%u nBits.%08x\n", nBlockSize,blocktime,pblock->nBits);
+        printf("isStake.%d\n",isStake);
         if ( ASSETCHAINS_SYMBOL[0] != 0 && isStake )
         {
             LEAVE_CRITICAL_SECTION(cs_main);
