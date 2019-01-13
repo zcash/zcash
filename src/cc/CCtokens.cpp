@@ -86,7 +86,7 @@ CScript EncodeTokenOpRet(uint8_t tokenFuncId, uint8_t evalCodeInOpret, uint256 t
 	// how to attach payload without re-serialization: 
 	opret.resize(opret.size() + vpayload.size());
 	CScript::iterator it = opret.begin() + opret.size();
-	for (int i = 0; i < vpayload.size(); i++)
+	for (int i = 0; i < vpayload.size(); i++, it++)
 		*it = vpayload[i];
 
 	return opret;
