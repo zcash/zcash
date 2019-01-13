@@ -317,11 +317,11 @@ UniValue MarmaraReceive(uint64_t txfee,CPubKey senderpk,int64_t amount,std::stri
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
     if ( currency != "MARMARA" )
-        errorstr = "for now, only MARMARA loops are supported";
+        errorstr = (char *)"for now, only MARMARA loops are supported";
     else if ( amount < txfee )
-        errorstr = "amount must be for more than txfee";
-    else if ( matures <= chainActive.LastTip->GetHeight() )
-        errorstr = "it must mature in the future";
+        errorstr = (char *)"amount must be for more than txfee";
+    else if ( matures <= chainActive.LastTip()->GetHeight() )
+        errorstr = (char *)"it must mature in the future";
     if ( errorstr == 0 )
     {
         if ( AddNormalinputs(mtx,mypk,2*txfee,1) > 0 )
