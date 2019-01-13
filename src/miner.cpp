@@ -1197,7 +1197,7 @@ void static BitcoinMiner_noeq()
             miningTimer.start();
 
 #ifdef ENABLE_WALLET
-            CBlockTemplate *ptr = CreateNewBlockWithKey(reservekey, Mining_height, 0);
+            CBlockTemplate *ptr = CreateNewBlockWithKey(reservekey, Mining_height, ASSETCHAINS_STAKED != 0 && GetArg("-genproclimit", -1) == 0);
 #else
             CBlockTemplate *ptr = CreateNewBlockWithKey();
 #endif
