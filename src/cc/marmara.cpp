@@ -311,7 +311,7 @@ int64_t AddMarmaraCoinbases(struct CCcontract_info *cp,CMutableTransaction &mtx,
 UniValue MarmaraReceive(uint64_t txfee,CPubKey senderpk,int64_t amount,std::string currency,int32_t matures,uint256 createtxid)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); CPubKey mypk; struct CCcontract_info *cp,C; std::string rawtx; char *errorstr=0;
+    UniValue result(UniValue::VOBJ); CPubKey mypk; struct CCcontract_info *cp,C; std::string rawtx; char *errorstr=0; int32_t needbaton = 0;
     cp = CCinit(&C,EVAL_MARMARA);
     if ( txfee == 0 )
         txfee = 10000;
@@ -324,10 +324,13 @@ UniValue MarmaraReceive(uint64_t txfee,CPubKey senderpk,int64_t amount,std::stri
         errorstr = (char *)"it must mature in the future";
     if ( errorstr == 0 )
     {
-        if ( AddNormalinputs(mtx,mypk,2*txfee,1) > 0 )
+        if ( createtxid == zeroid )
+            needbaton = 1;
+        if ( AddNormalinputs(mtx,mypk,(1+needbaton)*txfee,1) > 0 )
         {
             errorstr = (char *)"couldnt finalize CCtx";
-            mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA,txfee,senderpk));
+            if ( needbaton != 0 )
+                mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA,txfee,senderpk));
             rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,MarmaraLoopOpret('R',createtxid,senderpk,amount,matures,currency));
         } else errorstr = (char *)"dont have enough normal inputs for 2*txfee";
     }
