@@ -5537,7 +5537,7 @@ UniValue marmara_poolpayout(const UniValue& params, bool fHelp)
     if ( fHelp || params.size() != 3 )
     {
         // marmarapoolpayout 0.5 2 '[["024131032ed90941e714db8e6dd176fe5a86c9d873d279edecf005c06f773da686",1000],["02ebc786cb83de8dc3922ab83c21f3f8a2f3216940c3bf9da43ce39e2a3a882c92",100]]';
-        throw runtime_error("marmara_poolpayout perc firstheight \"[[\\\"pubkey\\\":shares], ...]\"\n");
+        throw runtime_error("marmarapoolpayout perc firstheight \"[[\\\"pubkey\\\":shares], ...]\"\n");
     }
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
@@ -5545,6 +5545,31 @@ UniValue marmara_poolpayout(const UniValue& params, bool fHelp)
     firstheight = atol(params[1].get_str().c_str());
     jsonstr = (char *)params[2].get_str().c_str();
     return(MarmaraPoolPayout(0,firstheight,perc,jsonstr)); // [[pk0, shares0], [pk1, shares1], ...]
+}
+
+UniValue marmara_receive(const UniValue& params, bool fHelp)
+{
+    uint256 createtxid; std::vector<uint8_t> senderpub; int64_t amount; int32_t matures;
+    if ( fHelp || (params.size() != 5 && params.size() != 4) )
+    {
+        // marmarareceive 039433dc3749aece1bd568f374a45da3b0bc6856990d7da3cd175399577940a775 7.5 MARMARA 1440
+        throw runtime_error("marmarareceive senderpk amount currency matures createtxid\n");
+    }
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    memset(&createtxid,0,sizeof(createtxid));
+    senderpub = ParseHex(params[0].get_str().c_str());
+    if (senderpub.size()!= 33)
+    {
+        ERR_RESULT("invalid sender pubkey");
+        return result;
+    }
+    amount = atof(params[1].get_str().c_str()) * COIN + 0.00000000499999;
+    currency = params[2].get_str();
+    matures = atol(params[3].get_str().c_str()) + chainActive.LastTip()->GetHeight() + 1;
+    if ( params.size() == 5 )
+        createtxid = Parseuint256((char *)params[4].get_str().c_str());
+    return(MarmaraReceive(0,pubkey2pk(senderpub),amount,currency,matures,createtxid));
 }
 
 UniValue channelslist(const UniValue& params, bool fHelp)
