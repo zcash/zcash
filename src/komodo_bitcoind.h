@@ -1166,7 +1166,10 @@ uint64_t komodo_commission(const CBlock *pblock,int32_t height)
                 if ( i != 0 || j != 1 )
                     total += pblock->vtx[i].vout[j].nValue;
                 if ( total > 1000000 * COIN )
+                {
                     total = 1000000 * COIN;
+                    break;
+                }
             }
         }
         //commission = ((total / 10000) * ASSETCHAINS_COMMISSION) / 10000;
