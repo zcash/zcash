@@ -482,7 +482,6 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
         int32_t stakeHeight = chainActive.Height() + 1;
 
         //LogPrintf("CreateNewBlock(): total size %u blocktime.%u nBits.%08x\n", nBlockSize,blocktime,pblock->nBits);
-        printf("isStake.%d\n",isStake);
         if ( ASSETCHAINS_SYMBOL[0] != 0 && isStake )
         {
             LEAVE_CRITICAL_SECTION(cs_main);
@@ -802,6 +801,8 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey, int32_t nHeight, 
     }
     if ( ASSETCHAINS_MARMARA != 0 && nHeight > 0 && (nHeight & 1) == 0 )
         scriptPubKey = Marmara_scriptPubKey(nHeight,pubkey);
+    if ( ASSETCHAINS_STAKED != 0 && KOMODO_MININGTHREADS == 0 )
+        isStake = true;
     return CreateNewBlock(pubkey,scriptPubKey, gpucount, isStake);
 }
 
@@ -1198,7 +1199,7 @@ void static BitcoinMiner_noeq()
             miningTimer.start();
 
 #ifdef ENABLE_WALLET
-            CBlockTemplate *ptr = CreateNewBlockWithKey(reservekey, Mining_height, ASSETCHAINS_STAKED != 0 && GetArg("-genproclimit", -1) == 0);
+            CBlockTemplate *ptr = CreateNewBlockWithKey(reservekey, Mining_height, 0);
 #else
             CBlockTemplate *ptr = CreateNewBlockWithKey();
 #endif
