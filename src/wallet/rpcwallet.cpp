@@ -5593,7 +5593,30 @@ UniValue marmara_issue(const UniValue& params, bool fHelp)
     currency = params[2].get_str();
     matures = atol(params[3].get_str().c_str());
     createtxid = Parseuint256((char *)params[4].get_str().c_str());
-    return(MarmaraIssue(0,pubkey2pk(receiverpub),amount,currency,matures,createtxid));
+    return(MarmaraIssue(0,'I',pubkey2pk(receiverpub),amount,currency,matures,createtxid));
+}
+
+UniValue marmara_transfer(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); uint256 createtxid; std::vector<uint8_t> receiverpub; int64_t amount; int32_t matures; std::string currency;
+    if ( fHelp || params.size() != 5 )
+    {
+        // marmaraissue 039433dc3749aece1bd568f374a45da3b0bc6856990d7da3cd175399577940a775 7.5 MARMARA 2693 e5b1ef8ec90e981d3011c8e024cef869b69af2d4dd6837d1ab1d394d3730b7cb
+        throw runtime_error("marmaratransfer receiverpk amount currency matures createtxid\n");
+    }
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    receiverpub = ParseHex(params[0].get_str().c_str());
+    if (receiverpub.size()!= 33)
+    {
+        ERR_RESULT("invalid receiverpub pubkey");
+        return result;
+    }
+    amount = atof(params[1].get_str().c_str()) * COIN + 0.00000000499999;
+    currency = params[2].get_str();
+    matures = atol(params[3].get_str().c_str());
+    createtxid = Parseuint256((char *)params[4].get_str().c_str());
+    return(MarmaraIssue(0,'T',pubkey2pk(receiverpub),amount,currency,matures,createtxid));
 }
 
 UniValue channelslist(const UniValue& params, bool fHelp)

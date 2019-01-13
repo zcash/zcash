@@ -356,7 +356,7 @@ UniValue MarmaraReceive(uint64_t txfee,CPubKey senderpk,int64_t amount,std::stri
     return(result);
 }
 
-UniValue MarmaraIssue(uint64_t txfee,CPubKey receiverpk,int64_t amount,std::string currency,int32_t matures,uint256 createtxid)
+UniValue MarmaraIssue(uint64_t txfee,uint8_t funcid,CPubKey receiverpk,int64_t amount,std::string currency,int32_t matures,uint256 createtxid)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     UniValue result(UniValue::VOBJ); CPubKey mypk; struct CCcontract_info *cp,C; std::string rawtx; char *errorstr=0;
@@ -391,7 +391,8 @@ UniValue MarmaraIssue(uint64_t txfee,CPubKey receiverpk,int64_t amount,std::stri
     {
         result.push_back(Pair("result",(char *)"success"));
         result.push_back(Pair("rawtx",rawtx));
-        result.push_back(Pair("funcid","I"));
+        char str[2]; str[0] = funcid, str[1] = 0;
+        result.push_back(Pair("funcid",str));
         result.push_back(Pair("createtxid",createtxid.GetHex()));
         result.push_back(Pair("receiverpk",HexStr(receiverpk)));
         result.push_back(Pair("amount",ValueFromAmount(amount)));
