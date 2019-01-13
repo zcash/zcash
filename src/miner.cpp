@@ -1199,14 +1199,14 @@ void static BitcoinMiner_noeq()
             miningTimer.start();
 
 #ifdef ENABLE_WALLET
-            CBlockTemplate *ptr = CreateNewBlockWithKey(reservekey, Mining_height, 0);
+            CBlockTemplate *ptr = CreateNewBlockWithKey(reservekey, Mining_height, ASSETCHAINS_STAKED != 0 && KOMODO_MININGTHREADS == 0);
 #else
             CBlockTemplate *ptr = CreateNewBlockWithKey();
 #endif
             if ( ptr == 0 )
             {
                 static uint32_t counter;
-                if ( counter++ < 100 )
+                if ( counter++ < 10 )
                     fprintf(stderr,"created illegal block, retry\n");
                 continue;
             }
@@ -1501,7 +1501,7 @@ void static BitcoinMiner()
             if ( ptr == 0 )
             {
                 static uint32_t counter;
-                if ( counter++ < 100 && ASSETCHAINS_STAKED == 0 )
+                if ( counter++ < 10 && ASSETCHAINS_STAKED == 0 )
                     fprintf(stderr,"created illegal blockB, retry\n");
                 sleep(1);
                 continue;
