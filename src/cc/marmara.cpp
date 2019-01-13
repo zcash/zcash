@@ -33,7 +33,7 @@ int64_t IsMarmaravout(struct CCcontract_info *cp,const CTransaction& tx,int32_t 
     return(0);
 }
 
-bool MarmaraExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx,int32_t minage,uint64_t txfee)
+/*bool MarmaraExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx,int32_t minage,uint64_t txfee)
 {
     static uint256 zerohash;
     CTransaction vinTx; uint256 hashBlock,activehash; int32_t i,numvins,numvouts; int64_t inputs=0,outputs=0,assetoshis;
@@ -69,7 +69,7 @@ bool MarmaraExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransactio
         return eval->Invalid("mismatched inputs != outputs + txfee");
     }
     else return(true);
-}
+}*/
 
 int32_t MarmaraRandomize(uint32_t ind)
 {
@@ -191,16 +191,21 @@ int32_t MarmaraValidateCoinbase(int32_t height,CTransaction tx)
 
 bool MarmaraValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
 {
-    CTransaction vinTx; uint256 hashBlock;  int32_t numvins,numvouts,i,ht,unlockht,vht,vunlockht; uint8_t funcid,vfuncid; CPubKey pk,vpk;
+    std::vector<uint8_t> vopret; CTransaction vinTx; uint256 hashBlock;  int32_t numvins,numvouts,i,ht,unlockht,vht,vunlockht; uint8_t funcid,vfuncid,*script; CPubKey pk,vpk;
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
     if ( numvouts < 1 )
         return eval->Invalid("no vouts");
     else if ( tx.vout.size() >= 2 )
     {
-        funcid = DecodeMaramaraCoinbaseOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,pk,ht,unlockht);
+        GetOpReturnData(tx.vout[tx.vout.size()-1].scriptPubKey,vopret);
+        script = (uint8_t *)vopret.data();
+        if ( vopret.size() < 2 || script[0] != EVAL_MARMARA )
+            return eval->Invalid("no opreturn");
+        funcid = script[1];
         if ( funcid == 'P' )
         {
+            funcid = DecodeMaramaraCoinbaseOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,pk,ht,unlockht);
             for (i=0; i<numvins; i++)
             {
                 if ( (*cp->ismyvin)(tx.vin[i].scriptSig) != 0 )
@@ -219,6 +224,38 @@ bool MarmaraValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
                     }
                 }
             }
+            return(true);
+        }
+        else if ( funcid == 'L' ) // lock -> lock funds with a unlockht
+        {
+            return(true);
+        }
+        else if ( funcid == 'R' ) // receive -> agree to receive 'I' from pk, amount, currency, dueht
+        {
+            return(true);
+        }
+        else if ( funcid == 'I' ) // issue -> issue currency to pk with due date height
+        {
+            return(true);
+        }
+        else if ( funcid == 'T' ) // transfer -> given 'R' transfer 'I' or 'T' to the pk of 'R'
+        {
+            return(true);
+        }
+        else if ( funcid == 'S' ) // collect -> automatically spend issuers locked funds, given 'I'
+        {
+            return(true);
+        }
+        else if ( funcid == 'A' ) // agree -> agree that 'I' is unable to be redeemed, remainder
+        {
+            return(true);
+        }
+        else if ( funcid == 'D' ) // dispute -> given 'I' submit for manual arbitration
+        {
+            return(true);
+        }
+        else if ( funcid == 'F' ) // foreclose -> given 'A' collect as much of remainder from credit loop
+        {
             return(true);
         }
     }
@@ -262,6 +299,34 @@ int64_t AddMarmaraCoinbases(struct CCcontract_info *cp,CMutableTransaction &mtx,
         } else fprintf(stderr,"error getting tx\n");
     }
     return(totalinputs);
+}
+
+UniValue MarmaraReceive(uint64_t txfee,CPubKey senderpk,int64_t amount,std::string currency,int32_t matures,uint256 issuetxid)
+{
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    UniValue result(UniValue::VOBJ); struct CCcontract_info *cp,C; std::string rawtx; char *errorstr=0;
+    cp = CCinit(&C,EVAL_MARMARA);
+    if ( txfee == 0 )
+        txfee = 10000;
+    mypk = pubkey2pk(Mypubkey());
+    errorstr = (char *)"couldnt finalize CCtx";
+    if ( AddNormalinputs(mtx,mypk,2*txfee,1) > 0 )
+    {
+        mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(senderpk)) << OP_CHECKSIG));
+        rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,MarmaraOpret('R',issuetxid,senderpk,amount,matures,currency));
+    } else errorstr = "dont have enough normal inputs for 2*txfee";
+    if ( rawtx.size() == 0 || errorstr != 0 )
+    {
+        result.push_back(Pair("result","error"));
+        if ( errorstr != 0 )
+            result.push_back(Pair("error",errorstr));
+    }
+    else
+    {
+        result.push_back(Pair("result",(char *)"success"));
+        result.push_back(Pair("rawtx",rawtx));
+    }
+    return(result);
 }
 
 std::string MarmaraFund(uint64_t txfee,int64_t funds)
