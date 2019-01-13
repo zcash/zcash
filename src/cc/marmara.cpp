@@ -87,25 +87,6 @@ int32_t MarmaraUnlockht(int32_t height)
     return(height + MarmaraRandomize(ind));
 }
 
-CScript EncodeMarmaraCoinbaseOpRet(uint8_t funcid,CPubKey pk,int32_t ht)
-{
-    CScript opret; int32_t unlockht; uint8_t evalcode = EVAL_MARMARA;
-    unlockht = MarmaraUnlockht(ht);
-    opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << pk << ht << unlockht);
-    if ( 0 )
-    {
-        std::vector<uint8_t> vopret; uint8_t *script,i;
-        GetOpReturnData(opret,vopret);
-        script = (uint8_t *)vopret.data();
-        {
-            for (i=0; i<vopret.size(); i++)
-                fprintf(stderr,"%02x",script[i]);
-            fprintf(stderr," <- gen opret.%c\n",funcid);
-        }
-    }
-    return(opret);
-}
-
 uint8_t DecodeMaramaraCoinbaseOpRet(const CScript scriptPubKey,CPubKey &pk,int32_t &height,int32_t &unlockht)
 {
     std::vector<uint8_t> vopret; uint8_t *script,e,f,funcid;
@@ -129,6 +110,32 @@ uint8_t DecodeMaramaraCoinbaseOpRet(const CScript scriptPubKey,CPubKey &pk,int32
         } else fprintf(stderr,"script[1] is %d != 'C' %d or 'P' %d\n",script[1],'C','P');
     } else fprintf(stderr,"vopret.size() is %d\n",(int32_t)vopret.size());
     return(0);
+}
+
+CScript EncodeMarmaraCoinbaseOpRet(uint8_t funcid,CPubKey pk,int32_t ht)
+{
+    CScript opret; int32_t unlockht; uint8_t evalcode = EVAL_MARMARA;
+    unlockht = MarmaraUnlockht(ht);
+    opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << pk << ht << unlockht);
+    if ( 0 )
+    {
+        std::vector<uint8_t> vopret; uint8_t *script,i;
+        GetOpReturnData(opret,vopret);
+        script = (uint8_t *)vopret.data();
+        {
+            for (i=0; i<vopret.size(); i++)
+                fprintf(stderr,"%02x",script[i]);
+            fprintf(stderr," <- gen opret.%c\n",funcid);
+        }
+    }
+    return(opret);
+}
+
+CScript MarmaraLoopOpret(uint8_t funcid,uint256 createtxid,CPubKey senderpk,int64_t amount,int32_t matures,std::string currency)
+{
+    CScript opret; uint8_t evalcode = EVAL_MARMARA;
+    opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << createtxid << senderpk << amount << matures << currency);
+    return(opret);
 }
 
 CScript Marmara_scriptPubKey(int32_t height,CPubKey pk)
@@ -301,20 +308,29 @@ int64_t AddMarmaraCoinbases(struct CCcontract_info *cp,CMutableTransaction &mtx,
     return(totalinputs);
 }
 
-UniValue MarmaraReceive(uint64_t txfee,CPubKey senderpk,int64_t amount,std::string currency,int32_t matures,uint256 issuetxid)
+UniValue MarmaraReceive(uint64_t txfee,CPubKey senderpk,int64_t amount,std::string currency,int32_t matures,uint256 createtxid)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); struct CCcontract_info *cp,C; std::string rawtx; char *errorstr=0;
+    UniValue result(UniValue::VOBJ); CPubKey mypk; struct CCcontract_info *cp,C; std::string rawtx; char *errorstr=0;
     cp = CCinit(&C,EVAL_MARMARA);
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
-    errorstr = (char *)"couldnt finalize CCtx";
-    if ( AddNormalinputs(mtx,mypk,2*txfee,1) > 0 )
+    if ( currency != "MARMARA" )
+        errorstr = "for now, only MARMARA loops are supported";
+    else if ( amount < txfee )
+        errorstr = "amount must be for more than txfee";
+    else if ( matures <= chainActive.LastTip->GetHeight() )
+        errorstr = "it must mature in the future";
+    if ( errorstr == 0 )
     {
-        mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(senderpk)) << OP_CHECKSIG));
-        rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,MarmaraOpret('R',issuetxid,senderpk,amount,matures,currency));
-    } else errorstr = "dont have enough normal inputs for 2*txfee";
+        if ( AddNormalinputs(mtx,mypk,2*txfee,1) > 0 )
+        {
+            errorstr = (char *)"couldnt finalize CCtx";
+            mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA,txfee,senderpk));
+            rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,MarmaraLoopOpret('R',createtxid,senderpk,amount,matures,currency));
+        } else errorstr = (char *)"dont have enough normal inputs for 2*txfee";
+    }
     if ( rawtx.size() == 0 || errorstr != 0 )
     {
         result.push_back(Pair("result","error"));
@@ -325,6 +341,11 @@ UniValue MarmaraReceive(uint64_t txfee,CPubKey senderpk,int64_t amount,std::stri
     {
         result.push_back(Pair("result",(char *)"success"));
         result.push_back(Pair("rawtx",rawtx));
+        result.push_back(Pair("createtxid",createtxid));
+        result.push_back(Pair("senderpk",senderpk));
+        result.push_back(Pair("amount",ValueFromAmount(amount)));
+        result.push_back(Pair("matures",matures));
+        result.push_back(Pair("currency",currency));
     }
     return(result);
 }
