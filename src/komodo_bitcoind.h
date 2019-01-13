@@ -1312,12 +1312,12 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
         }
         if ( validateflag != 0 )
         {
-            for (i=31; i>=24; i--)
+            /*for (i=31; i>=24; i--)
                 fprintf(stderr,"%02x",((uint8_t *)&hashval)[i]);
             fprintf(stderr," vs ");
             for (i=31; i>=24; i--)
                 fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[i]);
-            fprintf(stderr," segid.%d iter.%d winner.%d coinage.%llu %d ht.%d t.%u v%d diff.%d\n",segid,iter,winner,(long long)coinage,(int32_t)(blocktime - txtime),nHeight,blocktime,(int32_t)value,(int32_t)diff);
+            fprintf(stderr," segid.%d iter.%d winner.%d coinage.%llu %d ht.%d t.%u v%d diff.%d\n",segid,iter,winner,(long long)coinage,(int32_t)(blocktime - txtime),nHeight,blocktime,(int32_t)value,(int32_t)diff);*/
             break;
         }
     }
@@ -2039,8 +2039,11 @@ uint32_t komodo_eligible(arith_uint256 bnTarget,arith_uint256 ratio,struct komod
     kp->hashval = UintToArith256(hash);
     segid = ((nHeight + kp->segid32) & 0x3f);
     hashval = _komodo_eligible(kp,ratio,blocktime,maxiters,minage,segid,nHeight,prevtime);
-    for (int i=32; i>=0; i--)
+    for (int i=31; i>=16; i--)
         fprintf(stderr,"%02x",((uint8_t *)&hashval)[i]);
+    fprintf(stderr," vs ");
+    for (int i=31; i>=16; i--)
+        fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[i]);
     fprintf(stderr," b.%u minage.%d segid.%d ht.%d prev.%u\n",blocktime,minage,segid,nHeight,prevtime);
     if ( hashval <= bnTarget )
     {
