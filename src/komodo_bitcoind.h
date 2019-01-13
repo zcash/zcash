@@ -1172,8 +1172,8 @@ uint64_t komodo_commission(const CBlock *pblock,int32_t height)
                 }
             }
         }
-        //commission = ((total / 10000) * ASSETCHAINS_COMMISSION) / 10000;
-        commission = ((total * ASSETCHAINS_COMMISSION) / COIN);
+        commission = ((total / 10000) * ASSETCHAINS_COMMISSION) / 10000;
+        //commission = ((total * ASSETCHAINS_COMMISSION) / COIN);
     }
     if ( commission < 10000 )
         commission = 0;
