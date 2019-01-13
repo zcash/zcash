@@ -341,8 +341,8 @@ UniValue MarmaraReceive(uint64_t txfee,CPubKey senderpk,int64_t amount,std::stri
     {
         result.push_back(Pair("result",(char *)"success"));
         result.push_back(Pair("rawtx",rawtx));
-        result.push_back(Pair("createtxid",createtxid));
-        result.push_back(Pair("senderpk",senderpk));
+        result.push_back(Pair("createtxid",createtxid.GetHex()));
+        result.push_back(Pair("senderpk",HexStr(senderpk)));
         result.push_back(Pair("amount",ValueFromAmount(amount)));
         result.push_back(Pair("matures",matures));
         result.push_back(Pair("currency",currency));
