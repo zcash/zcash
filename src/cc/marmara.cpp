@@ -251,20 +251,9 @@ bool MarmaraValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
         }
         else if ( funcid == 'S' ) // collect -> automatically spend issuers locked funds, given 'I'
         {
-            return(true);
+            return(true); // iterate from issuer all remainder after maturity
         }
-        else if ( funcid == 'A' ) // agree -> agree that 'I' is unable to be redeemed, remainder
-        {
-            return(true);
-        }
-        else if ( funcid == 'D' ) // dispute -> given 'I' submit for manual arbitration
-        {
-            return(true);
-        }
-        else if ( funcid == 'F' ) // foreclose -> given 'A' collect as much of remainder from credit loop
-        {
-            return(true);
-        }
+        // staking only for locked utxo
     }
     return eval->Invalid("fall through error");
 }
@@ -315,6 +304,7 @@ UniValue MarmaraReceive(uint64_t txfee,CPubKey senderpk,int64_t amount,std::stri
     cp = CCinit(&C,EVAL_MARMARA);
     if ( txfee == 0 )
         txfee = 10000;
+    // check for batonownership by senderpk and parameters match createtxid
     mypk = pubkey2pk(Mypubkey());
     if ( currency != "MARMARA" )
         errorstr = (char *)"for now, only MARMARA loops are supported";
@@ -363,6 +353,7 @@ UniValue MarmaraIssue(uint64_t txfee,uint8_t funcid,CPubKey receiverpk,int64_t a
     cp = CCinit(&C,EVAL_MARMARA);
     if ( txfee == 0 )
         txfee = 10000;
+    // make sure if transfer that it is not too late
     mypk = pubkey2pk(Mypubkey());
     if ( currency != "MARMARA" )
         errorstr = (char *)"for now, only MARMARA loops are supported";
@@ -376,7 +367,7 @@ UniValue MarmaraIssue(uint64_t txfee,uint8_t funcid,CPubKey receiverpk,int64_t a
         {
             errorstr = (char *)"couldnt finalize CCtx";
             mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA,txfee,receiverpk));
-            rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,MarmaraLoopOpret('I',createtxid,receiverpk,amount,matures,currency));
+            rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,MarmaraLoopOpret(funcid,createtxid,receiverpk,amount,matures,currency));
             if ( rawtx.size() > 0 )
                 errorstr = 0;
         } else errorstr = (char *)"dont have enough normal inputs for 2*txfee";
