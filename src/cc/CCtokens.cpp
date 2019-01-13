@@ -71,8 +71,8 @@ CScript EncodeTokenOpRet(uint8_t tokenFuncId, uint8_t evalCodeInOpret, uint256 t
 
 	opret << OP_RETURN << E_MARSHAL(ss << evalCodeInOpret << tokenFuncId << tokenid << ccType; \
 		if (ccType >= 1) ss << voutPubkeys[0];				\
-			if (ccType == 2) ss << voutPubkeys[1]; );		//	\
-				// if (vpayload.size() > 0) ss << vpayload;);
+			if (ccType == 2) ss << voutPubkeys[1];			\
+				if (vpayload.size() > 0) ss << vpayload;);
 	
 
 	// "error 64: scriptpubkey":
@@ -84,10 +84,11 @@ CScript EncodeTokenOpRet(uint8_t tokenFuncId, uint8_t evalCodeInOpret, uint256 t
 	//    return opret + opretPayloadNoOpcode;
 
 	// how to attach payload without re-serialization: 
-	opret.resize(opret.size() + vpayload.size());
-	CScript::iterator it = opret.begin() + opret.size();
-	for (int i = 0; i < vpayload.size(); i++, it++)
-		*it = vpayload[i];
+	// sig_aborted:
+	// opret.resize(opret.size() + vpayload.size());
+	// CScript::iterator it = opret.begin() + opret.size();
+	// for (int i = 0; i < vpayload.size(); i++, it++)
+	// 	 *it = vpayload[i];
 
 	return opret;
 }  

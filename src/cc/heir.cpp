@@ -408,18 +408,23 @@ uint8_t _DecodeHeirEitherOpret(CScript scriptPubKey, uint256 &tokenid, CPubKey& 
 {
 	uint8_t evalCodeTokens = 0;
 	std::vector<CPubKey> voutPubkeys;
-	std::vector<uint8_t> vopretExtra;
+	std::vector<uint8_t> vopretExtra, vopretStripped;
 
 	CScript heirScript = scriptPubKey;
-	int32_t heirType = HEIR_COINS;
 
 	if (DecodeTokenOpRet(heirScript, evalCodeTokens, tokenid, voutPubkeys, vopretExtra) != 0) {
 		if (vopretExtra.size() > 1) {
 			// restore the second opret:
 			heirScript = CScript();
-			std::vector<uint8_t> vopretStripped = std::vector<uint8_t>(vopretExtra.begin()+1, vopretExtra.end()); //strip string size
-			heirScript << OP_RETURN << E_MARSHAL(ss << vopretStripped);
-			heirType = HEIR_TOKENS;
+
+			E_UNMARSHAL(vopretExtra, { ss >> vopretStripped; });  // std::vector<uint8_t>(vopretExtra.begin()+1, vopretExtra.end()); //strip string size
+
+			heirScript << OP_RETURN;
+			uint32_t i = heirScript.size();
+			heirScript << E_MARSHAL(ss << vopretStripped);
+			for (uint32_t iStripped = 0; iStripped < vopretStripped.size(); iStripped++)
+				heirScript[i] = vopretStripped[iStripped];
+			heirScript.resize(heirScript.size()-1);
 		}
 		else {
 			return (uint8_t)0;
