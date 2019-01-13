@@ -194,7 +194,6 @@ bool MarmaraValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
     CTransaction vinTx; uint256 hashBlock;  int32_t numvins,numvouts,i,ht,unlockht,vht,vunlockht; uint8_t funcid; CPubKey pk,vpk;
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
-    preventCCvins = preventCCvouts = -1;
     if ( numvouts < 1 )
         return eval->Invalid("no vouts");
     else if ( tx.vout.size() >= 2 )
