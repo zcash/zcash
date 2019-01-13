@@ -1061,7 +1061,7 @@ UniValue HeirInfo(uint256 fundingtxid)
 	// get initial funding tx and set it as initial lasttx:
 	if (myGetTransaction(fundingtxid, fundingtx, hashBlock) && fundingtx.vout.size()) {
 
-		const bool noLogging = true;
+		const bool noLogging = false;
 		uint8_t evalCodeTokens = 0;
 		std::vector<CPubKey> voutPubkeys;
 		std::vector<uint8_t>  vopretExtra;
