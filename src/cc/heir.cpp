@@ -423,7 +423,7 @@ uint8_t _DecodeHeirEitherOpret(CScript scriptPubKey, uint256 &tokenid, CPubKey& 
 			// restore the second opret:
 			heirScript = CScript();
 
-			if (E_UNMARSHAL(vopretExtra, { ss >> vopretStripped; })) {  //strip string size
+			if (!E_UNMARSHAL(vopretExtra, { ss >> vopretStripped; })) {  //strip string size
 				if (!noLogging) std::cerr << "_DecodeHeirEitherOpret() could not unmarshal vopretStripped" << std::endl;
 				return (uint8_t)0;
 			}
