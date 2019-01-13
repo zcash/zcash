@@ -590,22 +590,16 @@ template <class Helper> int64_t Add1of2AddressInputs(struct CCcontract_info* cp,
         if (GetTransaction(txid, heirtx, hashBlock, false) != 0) {
 			uint256 tokenid;
             uint256 fundingTxidInOpret;
-			uint8_t dummyHasHeirSpendingBegun;
-			uint8_t evalCodeTokens = 0;
-			std::vector<uint8_t>  vopretExtra;
-			std::vector<CPubKey> voutPubkeys;
+			uint8_t hasHeirSpendingBegunDummy;
+			std::vector<CPubKey> vinPubkeysEmpty;
 			
-			CScript heirScript = heirtx.vout[heirtx.vout.size() - 1].scriptPubKey;
-			uint8_t funcId = DecodeTokenOpRet(heirScript, evalCodeTokens, tokenid, voutPubkeys, vopretExtra);
-			if (funcId != 0) {
-				heirScript = CScript(vopretExtra);
-			}
-			funcId = DecodeHeirOpRet(heirScript, fundingTxidInOpret, dummyHasHeirSpendingBegun, true);
+			CScript heirScript = (heirtx.vout.size() > 0) ? heirtx.vout[heirtx.vout.size() - 1].scriptPubKey : CScript();
+			uint8_t funcId = DecodeHeirEitherOpRet(heirScript, tokenid, fundingTxidInOpret, hasHeirSpendingBegunDummy, false);
 
             if ((txid == fundingtxid || fundingTxidInOpret == fundingtxid) && 
 				funcId != 0 &&
 				isMyFuncId(funcId) &&     
-				// (typeid(Helper) == typeid(TokenHelper) && IsHeirvout(true, cp, nullptr, tokenid, vintx, voutIndex) > 0)  && // deep validation for tokens - not used anymore
+				(typeid(Helper) == typeid(TokenHelper) && IsTokensvout(true, true, cp, nullptr, heirtx, voutIndex, tokenid, vinPubkeysEmpty) > 0)  && // deep validation for tokens - not used anymore
                 (voutValue = IsHeirFundingVout<Helper>(cp, heirtx, voutIndex, ownerPubkey, heirPubkey)) > 0 &&
                 !myIsutxo_spentinmempool(txid, voutIndex)) 
 			{

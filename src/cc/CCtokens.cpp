@@ -262,14 +262,17 @@ bool TokensValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction &
 // helper funcs:
 
 // extract my vins pubkeys:
-bool ExtractVinPubkeys(struct CCcontract_info *cp, CTransaction tx, std::vector<CPubKey> &vinPubkeys) {
+bool ExtractTokensVinPubkeys(CTransaction tx, std::vector<CPubKey> &vinPubkeys) {
 
 	bool found = false;
 	CPubKey pubkey;
+	struct CCcontract_info *cpTokens, tokensC;
+
+	cpTokens = CCinit(&tokensC, EVAL_TOKENS);
 
 	for (int32_t i = 0; i < tx.vin.size(); i++)
 	{												  // check for additional contracts which may send tokens to the Tokens contract
-		if( (*cp->ismyvin)(tx.vin[i].scriptSig) )
+		if( (*cpTokens->ismyvin)(tx.vin[i].scriptSig) )
 		{
 
 			auto findEval = [](CC *cond, struct CCVisitor _) {
@@ -345,7 +348,7 @@ uint8_t ValidateTokenOpret(CTransaction tx, int32_t v, uint256 tokenid, std::vec
 // goDeeper is true: the func also validates amounts of the passed transaction: 
 // it should be either sum(cc vins) == sum(cc vouts) or the transaction is the 'tokenbase' ('c') tx
 // checkPubkeys is true: validates if the vout is token vout1 or token vout1of2. Should always be true!
-int64_t IsTokensvout(bool goDeeper, bool checkPubkeys, struct CCcontract_info *cp, Eval* eval, /*std::vector<uint8_t> &vopretExtra,*/ const CTransaction& tx, int32_t v, uint256 reftokenid, std::vector<CPubKey> vinPubkeys)
+int64_t IsTokensvout(bool goDeeper, bool checkPubkeys, struct CCcontract_info *cp, Eval* eval, /*std::vector<uint8_t> &vopretExtra,*/ const CTransaction& tx, int32_t v, uint256 reftokenid, std::vector<CPubKey> vinPubkeys000)
 {
 
 	// this is just for log messages indentation fur debugging recursive calls:
@@ -421,6 +424,9 @@ int64_t IsTokensvout(bool goDeeper, bool checkPubkeys, struct CCcontract_info *c
 				}
 
 				// maybe it is token change?
+				std::vector<CPubKey> vinPubkeys;
+				ExtractTokensVinPubkeys(tx, vinPubkeys);
+
 				for(std::vector<CPubKey>::iterator it = vinPubkeys.begin(); it != vinPubkeys.end(); it++) {
 					CTxOut testVout = MakeTokensCC1vout(evalCodeInOpret, tx.vout[v].nValue, *it);
 
@@ -450,7 +456,7 @@ bool TokensExactAmounts(bool goDeeper, struct CCcontract_info *cpTokens, int64_t
 	//int32_t flag; 
 	int64_t tokenoshis; 
 	// std::vector<uint8_t> tmporigpubkey; int64_t tmpprice;
-	std::vector<CPubKey> vinPubkeys, vinPubkeysEmpty;
+	std::vector<CPubKey> vinPubkeys;
 
 	int32_t numvins = tx.vin.size();
 	int32_t numvouts = tx.vout.size();
@@ -459,7 +465,7 @@ bool TokensExactAmounts(bool goDeeper, struct CCcontract_info *cpTokens, int64_t
 	// this is just for log messages indentation for debugging recursive calls:
 	std::string indentStr = std::string().append(tokenValIndentSize, '.');
 
-	ExtractVinPubkeys(cpTokens, tx, vinPubkeys);
+	ExtractTokensVinPubkeys(tx, vinPubkeys);
 
 	for (int32_t i = 0; i<numvins; i++)
 	{												  // check for additional contracts which may send tokens to the Tokens contract
