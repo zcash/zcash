@@ -1162,15 +1162,22 @@ uint64_t komodo_commission(const CBlock *pblock,int32_t height)
             n = pblock->vtx[i].vout.size();
             for (j=0; j<n; j++)
             {
-                //fprintf(stderr,"(%d %.8f).%d ",i,dstr(block.vtx[i].vout[j].nValue),j);
+                //fprintf(stderr,"(%d %.8f).%d ",i,dstr(pblock->vtx[i].vout[j].nValue),j);
                 if ( i != 0 || j != 1 )
                     total += pblock->vtx[i].vout[j].nValue;
+                if ( total > 1000000 * COIN )
+                {
+                    total = 1000000 * COIN;
+                    break;
+                }
             }
         }
-        commission = ((total * ASSETCHAINS_COMMISSION) / COIN);
+        commission = ((total / 10000) * ASSETCHAINS_COMMISSION) / 10000;
+        //commission = ((total * ASSETCHAINS_COMMISSION) / COIN);
     }
     if ( commission < 10000 )
         commission = 0;
+    //fprintf(stderr,"-> %.8f\n",(double)commission/COIN);
     return(commission);
 }
 
@@ -1699,11 +1706,19 @@ int64_t komodo_checkcommission(CBlock *pblock,int32_t height)
     if ( ASSETCHAINS_COMMISSION != 0 )
     {
         checktoshis = komodo_commission(pblock,height);
-        //fprintf(stderr,"height.%d commission %.8f\n",height,(double)checktoshis/COIN);
-        if ( checktoshis != 0 )
+        if ( checktoshis >= 10000 && pblock->vtx[0].vout.size() < 2 )
+        {
+            //fprintf(stderr,"komodo_checkcommission vsize.%d height.%d commission %.8f\n",(int32_t)pblock->vtx[0].vout.size(),height,(double)checktoshis/COIN);
+            return(-1);
+        }
+        else if ( checktoshis != 0 )
         {
             script = (uint8_t *)&pblock->vtx[0].vout[1].scriptPubKey[0];
             scriptlen = (int32_t)pblock->vtx[0].vout[1].scriptPubKey.size();
+            //int32_t i;
+            //for (i=0; i<scriptlen; i++)
+            //    fprintf(stderr,"%02x",script[i]);
+            //fprintf(stderr," vout[1] %.8f vs %.8f\n",(double)checktoshis/COIN,(double)pblock->vtx[0].vout[1].nValue/COIN);
             if ( ASSETCHAINS_SCRIPTPUB.size() > 1 )
             {
                 if ( ASSETCHAINS_SCRIPTPUB.size()/2 == scriptlen && scriptlen < sizeof(scripthex) )
@@ -1719,10 +1734,7 @@ int64_t komodo_checkcommission(CBlock *pblock,int32_t height)
                 matched = 25;
             if ( matched == 0 )
             {
-                //int32_t i;
-                //for (i=0; i<25; i++)
-                //    fprintf(stderr,"%02x",script[i]);
-                //fprintf(stderr," payment to wrong pubkey scriptlen.%d, scriptpub[%d]\n",scriptlen,(int32_t)ASSETCHAINS_SCRIPTPUB.size()/2);
+                fprintf(stderr," payment to wrong pubkey scriptlen.%d, scriptpub[%d] checktoshis.%llu\n",scriptlen,(int32_t)ASSETCHAINS_SCRIPTPUB.size()/2,(long long)checktoshis);
                 return(-1);
 
             }
@@ -1740,7 +1752,7 @@ bool KOMODO_TEST_ASSETCHAIN_SKIP_POW = 0;
 
 int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
 {
-    uint256 hash; arith_uint256 bnTarget,bhash; bool fNegative,fOverflow; uint8_t *script,pubkey33[33],pubkeys[64][33]; int32_t i,possible,PoSperc,is_PoSblock=0,n,failed = 0,notaryid = -1; int64_t checktoshis,value; CBlockIndex *pprev;
+    uint256 hash; arith_uint256 bnTarget,bhash; bool fNegative,fOverflow; uint8_t *script,pubkey33[33],pubkeys[64][33]; int32_t i,scriptlen,possible,PoSperc,is_PoSblock=0,n,failed = 0,notaryid = -1; int64_t checktoshis,value; CBlockIndex *pprev;
     if ( KOMODO_TEST_ASSETCHAIN_SKIP_POW == 0 && Params().NetworkIDString() == "regtest" )
         KOMODO_TEST_ASSETCHAIN_SKIP_POW = 1;
     if ( !CheckEquihashSolution(pblock, Params()) )
@@ -1858,7 +1870,8 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
             else
             {
                 script = (uint8_t *)&pblock->vtx[0].vout[0].scriptPubKey[0];
-                if ( script[0] != 33 || script[34] != OP_CHECKSIG || memcmp(script+1,ASSETCHAINS_OVERRIDE_PUBKEY33,33) != 0 )
+                scriptlen = (int32_t)pblock->vtx[0].vout[0].scriptPubKey.size();
+                if ( scriptlen != 35 || script[0] != 33 || script[34] != OP_CHECKSIG || memcmp(script+1,ASSETCHAINS_OVERRIDE_PUBKEY33,33) != 0 )
                     return(-1);
             }
         }
@@ -2037,9 +2050,12 @@ uint32_t komodo_eligible(arith_uint256 bnTarget,arith_uint256 ratio,struct komod
     kp->hashval = UintToArith256(hash);
     segid = ((nHeight + kp->segid32) & 0x3f);
     hashval = _komodo_eligible(kp,ratio,blocktime,maxiters,minage,segid,nHeight,prevtime);
-    //for (int i=32; i>=0; i--)
-    //    fprintf(stderr,"%02x",((uint8_t *)&hashval)[i]);
-    //fprintf(stderr," b.%u minage.%d segid.%d ht.%d prev.%u\n",blocktime,minage,segid,nHeight,prevtime);
+    /*for (int i=31; i>=16; i--)
+        fprintf(stderr,"%02x",((uint8_t *)&hashval)[i]);
+    fprintf(stderr," vs ");
+    for (int i=31; i>=16; i--)
+        fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[i]);
+    fprintf(stderr," b.%u minage.%d segid.%d ht.%d prev.%u\n",blocktime,minage,segid,nHeight,prevtime);*/
     if ( hashval <= bnTarget )
     {
         for (iter=0; iter<maxiters; iter++)
@@ -2082,7 +2098,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
     komodo_segids(hashbuf,nHeight-101,100);
     if ( *blocktimep < tipindex->nTime+60 )
         *blocktimep = tipindex->nTime+60;
-    //fprintf(stderr,"Start scan of utxo for staking %u ht.%d\n",(uint32_t)time(NULL),nHeight);
+//fprintf(stderr,"Start scan of utxo for staking %u ht.%d\n",(uint32_t)time(NULL),nHeight);
 
     bool resetstaker = false;
     if ( array != 0 )

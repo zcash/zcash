@@ -3085,7 +3085,7 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
             BlockMap::const_iterator it = mapBlockIndex.find(hashBlock);
             if (it != mapBlockIndex.end()) {
                 nHeight = it->second->GetHeight();
-                fprintf(stderr,"blockHash %s height %d\n",hashBlock.ToString().c_str(), nHeight);
+                //fprintf(stderr,"blockHash %s height %d\n",hashBlock.ToString().c_str(), nHeight);
             } else {
                 // TODO: should we throw JSONRPCError ?
                 fprintf(stderr,"block hash %s does not exist!\n", hashBlock.ToString().c_str() );
@@ -3119,7 +3119,7 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
             BlockMap::const_iterator it = mapBlockIndex.find(hashBlock);
             if (it != mapBlockIndex.end()) {
                 nHeight = it->second->GetHeight();
-                fprintf(stderr,"blockHash %s height %d\n",hashBlock.ToString().c_str(), nHeight);
+                //fprintf(stderr,"blockHash %s height %d\n",hashBlock.ToString().c_str(), nHeight);
             } else {
                 // TODO: should we throw JSONRPCError ?
                 fprintf(stderr,"block hash %s does not exist!\n", hashBlock.ToString().c_str() );
@@ -3910,7 +3910,7 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
                 BlockMap::const_iterator it = mapBlockIndex.find(hashBlock);
                 if (it != mapBlockIndex.end()) {
                     nHeight = it->second->GetHeight();
-                    fprintf(stderr,"blockHash %s height %d\n",hashBlock.ToString().c_str(), nHeight);
+                    //fprintf(stderr,"blockHash %s height %d\n",hashBlock.ToString().c_str(), nHeight);
                 } else {
                     fprintf(stderr,"block hash %s does not exist!\n", hashBlock.ToString().c_str() );
                 }
@@ -3942,7 +3942,7 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
                 BlockMap::const_iterator it = mapBlockIndex.find(hashBlock);
                 if (it != mapBlockIndex.end()) {
                     nHeight = it->second->GetHeight();
-                    fprintf(stderr,"blockHash %s height %d\n",hashBlock.ToString().c_str(), nHeight);
+                    //fprintf(stderr,"blockHash %s height %d\n",hashBlock.ToString().c_str(), nHeight);
                 } else {
                     fprintf(stderr,"block hash %s does not exist!\n", hashBlock.ToString().c_str() );
                 }
@@ -5664,6 +5664,95 @@ UniValue tokenaddress(const UniValue& params, bool fHelp)
     if ( params.size() == 1 )
         pubkey = ParseHex(params[0].get_str().c_str());
     return(CCaddress(cp,(char *)"Assets",pubkey));
+}
+
+UniValue marmara_poolpayout(const UniValue& params, bool fHelp)
+{
+    int32_t firstheight; double perc; char *jsonstr;
+    if ( fHelp || params.size() != 3 )
+    {
+        // marmarapoolpayout 0.5 2 '[["024131032ed90941e714db8e6dd176fe5a86c9d873d279edecf005c06f773da686",1000],["02ebc786cb83de8dc3922ab83c21f3f8a2f3216940c3bf9da43ce39e2a3a882c92",100]]';
+        marmarapoolpayout 0 2 '[["024131032ed90941e714db8e6dd176fe5a86c9d873d279edecf005c06f773da686",1000]]'
+        throw runtime_error("marmarapoolpayout perc firstheight \"[[\\\"pubkey\\\":shares], ...]\"\n");
+    }
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    perc = atof(params[0].get_str().c_str()) / 100.;
+    firstheight = atol(params[1].get_str().c_str());
+    jsonstr = (char *)params[2].get_str().c_str();
+    return(MarmaraPoolPayout(0,firstheight,perc,jsonstr)); // [[pk0, shares0], [pk1, shares1], ...]
+}
+
+UniValue marmara_receive(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); uint256 createtxid; std::vector<uint8_t> senderpub; int64_t amount; int32_t matures; std::string currency;
+    if ( fHelp || (params.size() != 5 && params.size() != 4) )
+    {
+        // 1st marmarareceive 039433dc3749aece1bd568f374a45da3b0bc6856990d7da3cd175399577940a775 7.5 MARMARA 1440
+        // after marmarareceive 039433dc3749aece1bd568f374a45da3b0bc6856990d7da3cd175399577940a775 7.5 MARMARA 1440 <txid of 1st>
+        throw runtime_error("marmarareceive senderpk amount currency matures createtxid\n");
+    }
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    memset(&createtxid,0,sizeof(createtxid));
+    senderpub = ParseHex(params[0].get_str().c_str());
+    if (senderpub.size()!= 33)
+    {
+        ERR_RESULT("invalid sender pubkey");
+        return result;
+    }
+    amount = atof(params[1].get_str().c_str()) * COIN + 0.00000000499999;
+    currency = params[2].get_str();
+    matures = atol(params[3].get_str().c_str()) + chainActive.LastTip()->GetHeight() + 1;
+    if ( params.size() == 5 )
+        createtxid = Parseuint256((char *)params[4].get_str().c_str());
+    return(MarmaraReceive(0,pubkey2pk(senderpub),amount,currency,matures,createtxid));
+}
+
+UniValue marmara_issue(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); uint256 createtxid; std::vector<uint8_t> receiverpub; int64_t amount; int32_t matures; std::string currency;
+    if ( fHelp || params.size() != 5 )
+    {
+        // marmaraissue 039433dc3749aece1bd568f374a45da3b0bc6856990d7da3cd175399577940a775 7.5 MARMARA 2693 e5b1ef8ec90e981d3011c8e024cef869b69af2d4dd6837d1ab1d394d3730b7cb
+        throw runtime_error("marmaraissue receiverpk amount currency matures createtxid\n");
+    }
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    receiverpub = ParseHex(params[0].get_str().c_str());
+    if (receiverpub.size()!= 33)
+    {
+        ERR_RESULT("invalid receiverpub pubkey");
+        return result;
+    }
+    amount = atof(params[1].get_str().c_str()) * COIN + 0.00000000499999;
+    currency = params[2].get_str();
+    matures = atol(params[3].get_str().c_str());
+    createtxid = Parseuint256((char *)params[4].get_str().c_str());
+    return(MarmaraIssue(0,'I',pubkey2pk(receiverpub),amount,currency,matures,createtxid));
+}
+
+UniValue marmara_transfer(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); uint256 createtxid; std::vector<uint8_t> receiverpub; int64_t amount; int32_t matures; std::string currency;
+    if ( fHelp || params.size() != 5 )
+    {
+        // marmaratransfer 039433dc3749aece1bd568f374a45da3b0bc6856990d7da3cd175399577940a775 7.5 MARMARA 2693 e5b1ef8ec90e981d3011c8e024cef869b69af2d4dd6837d1ab1d394d3730b7cb
+        throw runtime_error("marmaratransfer receiverpk amount currency matures createtxid\n");
+    }
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    receiverpub = ParseHex(params[0].get_str().c_str());
+    if (receiverpub.size()!= 33)
+    {
+        ERR_RESULT("invalid receiverpub pubkey");
+        return result;
+    }
+    amount = atof(params[1].get_str().c_str()) * COIN + 0.00000000499999;
+    currency = params[2].get_str();
+    matures = atol(params[3].get_str().c_str());
+    createtxid = Parseuint256((char *)params[4].get_str().c_str());
+    return(MarmaraIssue(0,'T',pubkey2pk(receiverpub),amount,currency,matures,createtxid));
 }
 
 UniValue channelslist(const UniValue& params, bool fHelp)
