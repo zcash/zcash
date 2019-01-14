@@ -2775,6 +2775,8 @@ UniValue resendwallettransactions(const UniValue& params, bool fHelp)
     return result;
 }
 
+extern uint32_t komodo_segid32(char *coinaddr);
+
 UniValue listunspent(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
@@ -2869,6 +2871,7 @@ UniValue listunspent(const UniValue& params, bool fHelp)
 
         if (fValidAddress) {
             entry.push_back(Pair("address", EncodeDestination(address)));
+            entry.push_back(Pair("segid", (int)komodo_segid32((char*)EncodeDestination(address).c_str()) & 0x3f ));
 
             if (pwalletMain->mapAddressBook.count(address))
                 entry.push_back(Pair("account", pwalletMain->mapAddressBook[address].name));
