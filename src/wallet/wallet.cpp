@@ -1180,7 +1180,7 @@ bool DecrementNoteWitnesses(NoteDataMap& noteDataMap, int indexHeight, int64_t n
             assert((nWitnessCacheSize - 1) >= nd->witnesses.size());
         }
     }
-    assert(KOMODO_REWIND != 0 || nWitnessCacheSize > 0);
+    assert(KOMODO_REWIND != 0 || nWitnessCacheSize > 0 || WITNESS_CACHE_SIZE != _COINBASE_MATURITY+10);
     return true;
 }
 
