@@ -49,7 +49,7 @@ class TestNode(NodeConnCB):
 class TxExpiryDoSTest(BitcoinTestFramework):
 
     def setup_chain(self):
-        print "Initializing test directory "+self.options.tmpdir
+        print "Initializing test directory " + self.options.tmpdir
         initialize_chain_clean(self.options.tmpdir, 1)
 
     def setup_network(self):
@@ -58,8 +58,8 @@ class TxExpiryDoSTest(BitcoinTestFramework):
 
     def create_transaction(self, node, coinbase, to_address, amount, txModifier=None):
         from_txid = node.getblock(coinbase)['tx'][0]
-        inputs = [{ "txid" : from_txid, "vout" : 0}]
-        outputs = { to_address : amount }
+        inputs = [{"txid": from_txid, "vout": 0}]
+        outputs = {to_address: amount}
         rawtx = node.createrawtransaction(inputs, outputs)
         tx = CTransaction()
 
@@ -129,7 +129,8 @@ class TxExpiryDoSTest(BitcoinTestFramework):
         assert_equal(1, versions.count(OVERWINTER_PROTO_VERSION))
         assert_equal(10, peerinfo[0]["banscore"])
 
-        [ c.disconnect_node() for c in connections ]
+        [c.disconnect_node() for c in connections]
+
 
 if __name__ == '__main__':
     TxExpiryDoSTest().main()

@@ -16,6 +16,7 @@ from test_framework.util import initialize_chain_clean, start_nodes, \
 import time, cStringIO
 from binascii import hexlify, unhexlify
 
+
 class TestNode(NodeConnCB):
     def __init__(self):
         NodeConnCB.__init__(self)
@@ -78,24 +79,23 @@ class TestNode(NodeConnCB):
         self.ping_counter += 1
         return received_pong
 
+
 class TxExpiringSoonTest(BitcoinTestFramework):
 
     def setup_chain(self):
-        print "Initializing test directory "+self.options.tmpdir
+        print "Initializing test directory " + self.options.tmpdir
         initialize_chain_clean(self.options.tmpdir, 3)
 
     def setup_network(self):
         self.nodes = start_nodes(3, self.options.tmpdir,
-            extra_args=[[
-                '-nuparams=5ba81b19:10',
-            ]] * 3)
-        connect_nodes_bi(self.nodes,0,1)
+                                 extra_args=[['-nuparams=5ba81b19:10']] * 3)
+        connect_nodes_bi(self.nodes, 0, 1)
         # We don't connect node 2
 
     def create_transaction(self, node, coinbase, to_address, amount, expiry_height):
         from_txid = node.getblock(coinbase)['tx'][0]
-        inputs = [{ "txid" : from_txid, "vout" : 0}]
-        outputs = { to_address : amount }
+        inputs = [{"txid": from_txid, "vout": 0}]
+        outputs = {to_address: amount}
         rawtx = node.createrawtransaction(inputs, outputs)
         tx = CTransaction()
 
@@ -163,11 +163,11 @@ class TxExpiringSoonTest(BitcoinTestFramework):
         sync_mempools(self.nodes[:2])
 
         # Verify contents of mempool
-        assert(tx1.hash not in self.nodes[0].getrawmempool()) # tx1 rejected as expiring soon
+        assert(tx1.hash not in self.nodes[0].getrawmempool())  # tx1 rejected as expiring soon
         assert(tx1.hash not in self.nodes[1].getrawmempool())
-        assert(tx2.hash in self.nodes[0].getrawmempool()) # tx2 accepted
+        assert(tx2.hash in self.nodes[0].getrawmempool())  # tx2 accepted
         assert(tx2.hash in self.nodes[1].getrawmempool())
-        assert_equal(len(self.nodes[2].getrawmempool()), 0) # node 2 is isolated and empty
+        assert_equal(len(self.nodes[2].getrawmempool()), 0)  # node 2 is isolated and empty
 
         # Send p2p message "mempool" to receive contents from zcashd node in "inv" message
         with mininode_lock:
@@ -185,7 +185,7 @@ class TxExpiringSoonTest(BitcoinTestFramework):
 
         # Send p2p message "getdata" to verify tx2 gets sent in "tx" message
         getdatamsg = msg_getdata()
-        getdatamsg.inv = [ CInv(1, tx2.sha256) ]
+        getdatamsg.inv = [CInv(1, tx2.sha256)]
         with mininode_lock:
             testnode0.last_tx = None
             testnode0.send_message(getdatamsg)
@@ -211,7 +211,7 @@ class TxExpiringSoonTest(BitcoinTestFramework):
         assert_equal(self.nodes[2].getblockcount(), 201)
 
         # Reconnect node 2 to the network
-        connect_nodes_bi(self.nodes,1,2)
+        connect_nodes_bi(self.nodes, 1, 2)
 
         # Set up test node for node 2
         testnode2 = TestNode()
@@ -246,7 +246,7 @@ class TxExpiringSoonTest(BitcoinTestFramework):
             testnode0.send_message(getdatamsg)
 
         # Sync up with node after p2p messages delivered
-        [ x.sync_with_ping() for x in [testnode0, testnode2] ]
+        [x.sync_with_ping() for x in [testnode0, testnode2]]
 
         # Verify node 0 does not reply to "getdata" by sending "tx" message, as tx2 is expiring soon
         with mininode_lock:
@@ -267,13 +267,13 @@ class TxExpiringSoonTest(BitcoinTestFramework):
         # Mininodes send tx3 to zcashd node
         testnode0.send_message(msg_tx(tx3))
         getdatamsg = msg_getdata()
-        getdatamsg.inv = [ CInv(1, tx3.sha256) ]
+        getdatamsg.inv = [CInv(1, tx3.sha256)]
         with mininode_lock:
             testnode0.last_tx = None
             testnode0.send_message(getdatamsg)
 
         # Sync up with node after p2p messages delivered
-        [ x.sync_with_ping() for x in [testnode0, testnode2] ]
+        [x.sync_with_ping() for x in [testnode0, testnode2]]
 
         # Verify we received a "tx" message for tx3
         with mininode_lock:
@@ -287,7 +287,7 @@ class TxExpiringSoonTest(BitcoinTestFramework):
             testnode0.send_message(msg_mempool())
 
         # Sync up with node after p2p messages delivered
-        [ x.sync_with_ping() for x in [testnode0, testnode2] ]
+        [x.sync_with_ping() for x in [testnode0, testnode2]]
 
         # Verify txid for tx3 is returned in "inv", but tx2 which is expiring soon is not returned
         with mininode_lock:
@@ -304,7 +304,8 @@ class TxExpiringSoonTest(BitcoinTestFramework):
         assert_equal(0, sum(peer["banscore"] for peer in self.nodes[0].getpeerinfo()))
         assert_equal(0, sum(peer["banscore"] for peer in self.nodes[2].getpeerinfo()))
 
-        [ c.disconnect_node() for c in connections ]
+        [c.disconnect_node() for c in connections]
+
 
 if __name__ == '__main__':
     TxExpiringSoonTest().main()
