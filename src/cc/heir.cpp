@@ -517,7 +517,7 @@ template <class Helper> int64_t Add1of2AddressInputs(struct CCcontract_info* cp,
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue>> unspentOutputs;
 
     char coinaddr[64];
-	Helper::GetCoinsOrTokensCCaddress1of2(cp, coinaddr, ownerPubkey, heirPubkey);   // get address of cryptocondition '1 of 2 pubkeys'
+	Helper::GetCoinsOrTokensCCaddress1of2(coinaddr, ownerPubkey, heirPubkey);   // get address of cryptocondition '1 of 2 pubkeys'
     SetCCunspents(unspentOutputs, coinaddr);
 
     //   char markeraddr[64];
@@ -571,7 +571,7 @@ template <class Helper> int64_t Add1of2AddressInputs(struct CCcontract_info* cp,
 template <class Helper> int64_t LifetimeHeirContractFunds(struct CCcontract_info* cp, uint256 fundingtxid, CPubKey ownerPubkey, CPubKey heirPubkey)
 {
     char coinaddr[64];
-    Helper::GetCoinsOrTokensCCaddress1of2(cp, coinaddr, ownerPubkey, heirPubkey); // get the address of cryptocondition '1 of 2 pubkeys'
+    Helper::GetCoinsOrTokensCCaddress1of2(coinaddr, ownerPubkey, heirPubkey); // get the address of cryptocondition '1 of 2 pubkeys'
 
     std::vector<std::pair<CAddressIndexKey, CAmount>> addressIndexes;
     SetCCtxids(addressIndexes, coinaddr);
@@ -639,7 +639,7 @@ template <typename Helper> std::string HeirFund(uint64_t txfee, int64_t amount, 
 	if (AddNormalinputs(mtx, myPubkey, txfee, 3) > 0) { // txfee for miners
 		int64_t inputs, change;
 
-		if ((inputs=Helper::addOwnerInputs(cp, tokenid, mtx, myPubkey, amount, (int32_t)64)) > 0) { // 2 x txfee: 1st for marker vout, 2nd to miners
+		if ((inputs=Helper::addOwnerInputs(tokenid, mtx, myPubkey, amount, (int32_t)64)) > 0) { // 2 x txfee: 1st for marker vout, 2nd to miners
 			//mtx.vout.push_back(MakeTokensCC1of2vout(/*Helper::getMyEval()*/EVAL_HEIR, amount, myPubkey, heirPubkey)); // add cryptocondition to spend amount for either pk
 			mtx.vout.push_back(Helper::make1of2Vout(amount, myPubkey, heirPubkey));
 
@@ -724,7 +724,7 @@ template <class Helper> UniValue HeirAdd(uint256 fundingtxid, uint64_t txfee, in
 
 			int64_t inputs, change;
 
-			if ((inputs = Helper::addOwnerInputs(cp, tokenid, mtx, myPubkey, amount, 64)) > 0) { // TODO: why 64 max inputs?
+			if ((inputs = Helper::addOwnerInputs(tokenid, mtx, myPubkey, amount, 64)) > 0) { // TODO: why 64 max inputs?
 
 				// we do not use markers anymore - storing data in opreturn is better
 					// add marker vout:
@@ -758,9 +758,9 @@ template <class Helper> UniValue HeirAdd(uint256 fundingtxid, uint64_t txfee, in
 				result.push_back(Pair("hextx", rawhextx));
 			}
 			else {
-				std::cerr << "HeirAdd cannot find owner inputs" << std::endl;
+				std::cerr << "HeirAdd cannot find owner cc inputs" << std::endl;
 				result.push_back(Pair("result", "error"));
-				result.push_back(Pair("error", "can't find owner inputs"));
+				result.push_back(Pair("error", "can't find owner cc inputs"));
 			}
 		}
 		else {
@@ -879,11 +879,11 @@ template <typename Helper>UniValue HeirClaim(uint256 fundingtxid, uint64_t txfee
                 uint8_t myprivkey[32];
                 char coinaddr[64];
                 // set priv key addresses in CC structure:
-                Helper::GetCoinsOrTokensCCaddress1of2(cp, coinaddr, ownerPubkey, heirPubkey);
+                Helper::GetCoinsOrTokensCCaddress1of2(coinaddr, ownerPubkey, heirPubkey);
                 Myprivkey(myprivkey);
 
 				// set pubkeys for finding 1of2 cc in FinalizeCCtx to sign it:
-				Helper::CCaddrCoinsOrTokens1of2set(cp, ownerPubkey, heirPubkey, coinaddr);
+				Helper::CCaddrCoinsOrTokens1of2set(ownerPubkey, heirPubkey, coinaddr);
 
 				// add 1of2 vout validation pubkeys (this is for tokens):
 				std::vector<CPubKey> voutTokenPubkeys;
@@ -1040,7 +1040,7 @@ UniValue HeirInfo(uint256 fundingtxid)
 			stream.clear();
 
 			if (tokenid != zeroid) {
-				int64_t ownerInputs = TokenHelper::addOwnerInputs(cp, tokenid, mtx, ownerPubkey, 0, (int32_t)64);
+				int64_t ownerInputs = TokenHelper::addOwnerInputs(tokenid, mtx, ownerPubkey, 0, (int32_t)64);
 				stream << ownerInputs;
 				msg = "owner funding available in tokens";
 				result.push_back(Pair(msg, stream.str().c_str()));

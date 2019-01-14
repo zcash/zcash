@@ -24,7 +24,7 @@ class CoinHelper {
 public:
 
 	static uint8_t getMyEval() { return EVAL_HEIR; }
-	static int64_t addOwnerInputs(struct CCcontract_info* cp, uint256 dummyid, CMutableTransaction& mtx, CPubKey ownerPubkey, int64_t total, int32_t maxinputs) {
+	static int64_t addOwnerInputs(uint256 dummyid, CMutableTransaction& mtx, CPubKey ownerPubkey, int64_t total, int32_t maxinputs) {
 		return AddNormalinputs(mtx, ownerPubkey, total, maxinputs);
 	}
 
@@ -46,11 +46,15 @@ public:
 	static CTxOut makeClaimerVout(int64_t amount, CPubKey myPubkey) {
 		return CTxOut(amount, CScript() << ParseHex(HexStr(myPubkey)) << OP_CHECKSIG);
 	}
-	static bool GetCoinsOrTokensCCaddress1of2(struct CCcontract_info* cp, char *coinaddr, CPubKey ownerPubkey, CPubKey heirPubkey) {
-		return GetCCaddress1of2(cp, coinaddr, ownerPubkey, heirPubkey);
+	static bool GetCoinsOrTokensCCaddress1of2(char *coinaddr, CPubKey ownerPubkey, CPubKey heirPubkey) {
+		struct CCcontract_info *cpHeir, heirC;
+		cpHeir = CCinit(&heirC, EVAL_HEIR);
+		return GetCCaddress1of2(cpHeir, coinaddr, ownerPubkey, heirPubkey);
 	}
-	static void CCaddrCoinsOrTokens1of2set(struct CCcontract_info* cp, CPubKey ownerPubkey, CPubKey heirPubkey, char *coinaddr) {
-		CCaddr1of2set(cp, ownerPubkey, heirPubkey, coinaddr);
+	static void CCaddrCoinsOrTokens1of2set(CPubKey ownerPubkey, CPubKey heirPubkey, char *coinaddr) {
+		struct CCcontract_info *cpHeir, heirC;
+		cpHeir = CCinit(&heirC, EVAL_HEIR);
+		CCaddr1of2set(cpHeir, ownerPubkey, heirPubkey, coinaddr);
 	}
 };
 
@@ -58,8 +62,10 @@ public:
 class TokenHelper {
 public:
 	static uint8_t getMyEval() { return EVAL_TOKENS; }
-	static int64_t addOwnerInputs(struct CCcontract_info* cp, uint256 tokenid, CMutableTransaction& mtx, CPubKey ownerPubkey, int64_t total, int32_t maxinputs) {
-		return AddTokenCCInputs(cp, mtx, ownerPubkey, tokenid, total, maxinputs);
+	static int64_t addOwnerInputs(uint256 tokenid, CMutableTransaction& mtx, CPubKey ownerPubkey, int64_t total, int32_t maxinputs) {
+		struct CCcontract_info *cpHeir, heirC;
+		cpHeir = CCinit(&heirC, EVAL_HEIR);
+		return AddTokenCCInputs(cpHeir, mtx, ownerPubkey, tokenid, total, maxinputs);
 	}
 
 	static CScript makeCreateOpRet(uint256 tokenid, std::vector<CPubKey> voutTokenPubkeys, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t inactivityTimeSec, std::string heirName) {
@@ -84,12 +90,16 @@ public:
 	static CTxOut makeClaimerVout(int64_t amount, CPubKey myPubkey) {
 		return MakeTokensCC1vout(EVAL_HEIR, amount, myPubkey);
 	}
-	static bool GetCoinsOrTokensCCaddress1of2(struct CCcontract_info* cp, char *coinaddr, CPubKey ownerPubkey, CPubKey heirPubkey) {
-		return GetTokensCCaddress1of2(cp, coinaddr, ownerPubkey, heirPubkey);
+	static bool GetCoinsOrTokensCCaddress1of2(char *coinaddr, CPubKey ownerPubkey, CPubKey heirPubkey) {
+		struct CCcontract_info *cpHeir, heirC;
+		cpHeir = CCinit(&heirC, EVAL_HEIR);
+		return GetTokensCCaddress1of2(cpHeir, coinaddr, ownerPubkey, heirPubkey);
 	}
 
-	static void CCaddrCoinsOrTokens1of2set(struct CCcontract_info* cp, CPubKey ownerPubkey, CPubKey heirPubkey, char *coinaddr) {
-		CCaddrTokens1of2set(cp, ownerPubkey, heirPubkey, coinaddr);
+	static void CCaddrCoinsOrTokens1of2set(CPubKey ownerPubkey, CPubKey heirPubkey, char *coinaddr) {
+		struct CCcontract_info *cpHeir, heirC;
+		cpHeir = CCinit(&heirC, EVAL_HEIR);
+		CCaddrTokens1of2set(cpHeir, ownerPubkey, heirPubkey, coinaddr);
 	}
 };
 
