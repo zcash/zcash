@@ -7,6 +7,7 @@
 #
 from test_framework.mininode import CTransaction, NodeConnCB, mininode_lock, msg_ping, \
     msg_pong
+from test_framework.util import assert_true
 
 import cStringIO
 import time
@@ -62,7 +63,7 @@ class TestNode(NodeConnCB):
     def on_pong(self, conn, message):
         self.last_pong = message
 
-    # The following function is copied from p2p-acceptblock.py
+    # The following function is mostly copied from p2p-acceptblock.py
     # Sync up with the node after delivery of a message
     def sync_with_ping(self, timeout=30):
         self.connection.send_message(msg_ping(nonce=self.ping_counter))
@@ -75,7 +76,7 @@ class TestNode(NodeConnCB):
                 if self.last_pong.nonce == self.ping_counter:
                     received_pong = True
         self.ping_counter += 1
-        return received_pong
+        assert_true(received_pong, "Should have received pong")
 
 
 def create_transaction(node, coinbase, to_address, amount, expiry_height):
