@@ -125,6 +125,9 @@ uint8_t DecodeTokenOpRet(const CScript scriptPubKey, uint8_t &evalCode, uint256 
 		bool isEof = true;
 
 		evalCode = script[0];
+		if (evalCode != EVAL_TOKENS)
+			return (uint8_t)0;
+
         funcId = script[1];
         //fprintf(stderr,"decode.[%c]\n",funcId);
 

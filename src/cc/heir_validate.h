@@ -4,28 +4,20 @@
 #include "CCinclude.h"
 #include "CCHeir.h"
 
-#define NOT_HEIR (-1)
-#define HEIR_COINS 1
-#define HEIR_TOKENS 2
 #define IS_CHARINSTR(c, str) (std::string(str).find((char)(c)) != std::string::npos)
-
 
 // makes coin initial tx opret
 CScript EncodeHeirCreateOpRet(uint8_t funcid, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t inactivityTimeSec, std::string heirName);
 CScript EncodeHeirOpRet(uint8_t funcid,  uint256 fundingtxid, uint8_t isHeirSpendingBegan);
-// makes token opret
-//CScript EncodeHeirTokensCreateOpRet(uint8_t funcid, uint256 tokenid, std::vector<CPubKey> voutPubkeys, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t inactivityTimeSec, std::string hearName);
-//CScript EncodeHeirTokensOpRet(uint8_t funcid, uint256 tokenid, std::vector<CPubKey> voutPubkeys, uint256 fundingtxid, uint8_t isHeirSpendingBegan);
 
 template <class Helper> uint256 FindLatestFundingTx(uint256 fundingtxid, uint256 &tokenid, CScript& opRetScript, uint8_t &isHeirSpendingBegan);
-uint8_t DecodeHeirOpRet(CScript scriptPubKey, uint256& fundingtxid, uint8_t &isHeirSpendingBegan, bool noLogging = false);
-uint8_t DecodeHeirOpRet(CScript scriptPubKey, CPubKey& ownerPubkey, CPubKey& heirPubkey, int64_t& inactivityTime, std::string& heirName,  bool noLogging = false);
-uint8_t DecodeHeirEitherOpret(CScript scriptPubKey, uint256 &tokenid, CPubKey& ownerPubkey, CPubKey& heirPubkey, int64_t& inactivityTime, std::string& heirName, bool noLogging = false);
-uint8_t DecodeHeirEitherOpret(CScript scriptPubKey, uint256 &tokenid, uint256 &fundingTxidInOpret, uint8_t hasHeirSpendingBegun, bool noLogging = false);
+//uint8_t DecodeHeirOpRet(CScript scriptPubKey, uint256& fundingtxid, uint8_t &isHeirSpendingBegan, bool noLogging = false);
+//uint8_t DecodeHeirOpRet(CScript scriptPubKey, CPubKey& ownerPubkey, CPubKey& heirPubkey, int64_t& inactivityTime, std::string& heirName,  bool noLogging = false);
+uint8_t DecodeHeirEitherOpRet(CScript scriptPubKey, uint256 &tokenid, CPubKey& ownerPubkey, CPubKey& heirPubkey, int64_t& inactivityTime, std::string& heirName, bool noLogging = false);
+uint8_t DecodeHeirEitherOpRet(CScript scriptPubKey, uint256 &tokenid, uint256 &fundingTxidInOpret, uint8_t &hasHeirSpendingBegun, bool noLogging = false);
 
 inline static bool isMyFuncId(uint8_t funcid) { return IS_CHARINSTR(funcid, "FAC"); }
 inline static bool isSpendingTx(uint8_t funcid) { return (funcid == 'C'); }
-
 
 // helper class to allow polymorphic behaviour for HeirXXX() functions in case of coins
 class CoinHelper {
@@ -411,22 +403,7 @@ public:
 		std::string heirName;
 		uint256 tokenid;
 		
-		uint8_t evalCodeTokens = 0;
-		std::vector<uint8_t> vopretExtra;
-		std::vector<CPubKey> dummyVoutPubkeys;
-
-		CScript heirScript = m_fundingOpretScript;
-		if (typeid(Helper) == typeid(TokenHelper)) {
-			if (DecodeTokenOpRet(heirScript, evalCodeTokens, tokenid, dummyVoutPubkeys, vopretExtra) != 0) {
-				heirScript = CScript(vopretExtra);
-			}
-			else	{
-				message = m_customMessage + std::string(" invalid token opreturn format");
-				std::cerr << "CCC1of2AddressValidator::validateVout() exits with false: " << message << std::endl;
-				return false;
-			}
-		}
-		uint8_t funcId = DecodeHeirOpRet(heirScript, ownerPubkey, heirPubkey, inactivityTime, heirName, false);
+		uint8_t funcId = DecodeHeirEitherOpRet(m_fundingOpretScript, tokenid, ownerPubkey, heirPubkey, inactivityTime, heirName, true);
 		if (funcId == 0) {
 			message = m_customMessage + std::string(" invalid opreturn format");
 			std::cerr << "CCC1of2AddressValidator::validateVout() exits with false: " << message << std::endl;
@@ -481,28 +458,15 @@ public:
 
 		///std::cerr << "CMyPubkeyVoutValidator::validateVout() m_opRetScript=" << m_opRetScript.ToString() << std::endl;
 		
-		uint8_t evalCodeTokens = 0;
-		std::vector<uint8_t> vopretExtra;
-		std::vector<CPubKey> dummyVoutPubkeys;
-
-		CScript ownerScript;
-		CScript heirScript = m_fundingOpretScript;
-		if (typeid(Helper) == typeid(TokenHelper)) {
-			if (DecodeTokenOpRet(heirScript, evalCodeTokens, tokenid, dummyVoutPubkeys, vopretExtra) != 0) {
-				heirScript = CScript(vopretExtra);
-			}
-			else {
-				message = std::string("invalid token opreturn format");
-				return false;
-			}
-		}
 		// get both pubkeys:
-		uint8_t funcId = DecodeHeirOpRet(heirScript, ownerPubkey, heirPubkey, inactivityTime, heirName, false);
+		uint8_t funcId = DecodeHeirEitherOpRet(m_fundingOpretScript, tokenid, ownerPubkey, heirPubkey, inactivityTime, heirName, true);
 		if (funcId == 0) {
 			message = std::string("invalid opreturn format");
 			return false;
 		}
 
+		CScript ownerScript;
+		CScript heirScript;
 		if (m_checkNormals)  {
 			ownerScript = CoinHelper::makeUserVout(vout.nValue, ownerPubkey).scriptPubKey;
 			heirScript = CoinHelper::makeUserVout(vout.nValue, heirPubkey).scriptPubKey;
@@ -552,22 +516,8 @@ public:
 		std::string heirName;
 		uint256 tokenid;
 
-		uint8_t evalCodeTokens = 0;
-		std::vector<uint8_t> vopretExtra;
-		std::vector<CPubKey> dummyVoutPubkeys;
-
-		CScript heirScript = m_fundingOpretScript;
-		if (typeid(Helper) == typeid(TokenHelper)) {
-			if (DecodeTokenOpRet(heirScript, evalCodeTokens, tokenid, dummyVoutPubkeys, vopretExtra) != 0) {
-				heirScript = CScript(vopretExtra);
-			} else {
-				message = std::string("invalid token opreturn format");
-				return false;
-			}
-		}
-
 		// get heir pubkey:
-		uint8_t funcId = DecodeHeirOpRet(heirScript, ownerPubkey, heirPubkey, inactivityTime, heirName, false);
+		uint8_t funcId = DecodeHeirEitherOpRet(m_fundingOpretScript, tokenid, ownerPubkey, heirPubkey, inactivityTime, heirName, true);
 		if (funcId == 0) {
 			message = std::string("invalid opreturn format");
 			return false;
@@ -620,35 +570,13 @@ public:
 		uint256 fundingTxidInOpret = zeroid, dummyTxid, tokenid = zeroid, initialTokenid = zeroid;
 		uint8_t dummyIsHeirSpendingBegan;
 
-		uint8_t evalCodeTokens = 0;
-		std::vector<uint8_t> vopretExtra;
-		std::vector<CPubKey> dummyVoutPubkeys;
-
-		CScript heirScript = vout.scriptPubKey;
-		if (typeid(Helper) == typeid(TokenHelper)) {
-			if (DecodeTokenOpRet(heirScript, evalCodeTokens, tokenid, dummyVoutPubkeys, vopretExtra) != 0) {
-				heirScript = CScript(vopretExtra);
-			} else {
-				message = std::string("invalid token opreturn format");
-				return false;
-			}
-		}
-		uint8_t funcId = DecodeHeirOpRet(heirScript, fundingTxidInOpret, dummyIsHeirSpendingBegan);
+		uint8_t funcId = DecodeHeirEitherOpRet(vout.scriptPubKey, tokenid, fundingTxidInOpret, dummyIsHeirSpendingBegan, true);
 		if (funcId == 0) {
 			message = std::string("invalid opreturn format");
 			return false;
 		}
 
-		heirScript = m_fundingOpretScript;
-		if (typeid(Helper) == typeid(TokenHelper)) {
-			if (DecodeTokenOpRet(heirScript, evalCodeTokens, initialTokenid, dummyVoutPubkeys, vopretExtra) != 0) {
-				heirScript = CScript(vopretExtra);
-			} else {
-				message = std::string("invalid initial token opreturn format");
-				return false;
-			}
-		}
-		uint8_t initialFuncId = DecodeHeirOpRet(heirScript, dummyTxid, dummyIsHeirSpendingBegan);
+		uint8_t initialFuncId = DecodeHeirEitherOpRet(m_fundingOpretScript, initialTokenid, dummyTxid, dummyIsHeirSpendingBegan, true);
 		if (initialFuncId == 0) {
 			message = std::string("invalid initial tx opreturn format");
 			return false;
