@@ -7,11 +7,11 @@ from mininode import CBlock, CBlockHeader, CBlockLocator, CTransaction, msg_bloc
 
 import sys
 import cStringIO
-import dbm
+import anydbm
 
 class BlockStore(object):
     def __init__(self, datadir):
-        self.blockDB = dbm.open(datadir + "/blocks", 'c')
+        self.blockDB = anydbm.open(datadir + "/blocks", 'c')
         self.currentBlock = 0L
 
     def close(self):
@@ -96,7 +96,7 @@ class BlockStore(object):
 
 class TxStore(object):
     def __init__(self, datadir):
-        self.txDB = dbm.open(datadir + "/transactions", 'c')
+        self.txDB = anydbm.open(datadir + "/transactions", 'c')
 
     def close(self):
         self.txDB.close()
