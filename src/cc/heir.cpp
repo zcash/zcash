@@ -640,12 +640,12 @@ template <typename Helper> std::string HeirFund(uint64_t txfee, int64_t amount, 
 		int64_t inputs, change;
 
 		if ((inputs=Helper::addOwnerInputs(cp, tokenid, mtx, myPubkey, amount, (int32_t)64)) > 0) { // 2 x txfee: 1st for marker vout, 2nd to miners
-			//mtx.vout.push_back(MakeCC1vout(EVAL_HEIR,amount,HeirCCpk));
-			mtx.vout.push_back(MakeTokensCC1of2vout(/*Helper::getMyEval()*/EVAL_HEIR, amount, myPubkey, heirPubkey)); // add cryptocondition to spend amount for either pk
+			//mtx.vout.push_back(MakeTokensCC1of2vout(/*Helper::getMyEval()*/EVAL_HEIR, amount, myPubkey, heirPubkey)); // add cryptocondition to spend amount for either pk
+			mtx.vout.push_back(Helper::make1of2Vout(amount, myPubkey, heirPubkey));
 
 			// add a marker for finding all plans in HeirList()
-			CPubKey HeirContractPubKey = GetUnspendable(cp, 0);
-			mtx.vout.push_back(CTxOut(txfee, CScript() << ParseHex(HexStr(HeirContractPubKey)) << OP_CHECKSIG));   // TODO: do we need this marker?
+			CPubKey heirUnspendablePubKey = GetUnspendable(cp, 0);
+			mtx.vout.push_back(CTxOut(txfee, CScript() << ParseHex(HexStr(heirUnspendablePubKey)) << OP_CHECKSIG));   // TODO: do we need this marker?
 
 		    // calc and add change vout:
 			if (inputs > amount)
@@ -703,7 +703,7 @@ template <class Helper> UniValue HeirAdd(uint256 fundingtxid, uint64_t txfee, in
     uint8_t funcId;
 	uint8_t hasHeirSpendingBegun = 0;
 
-    cp = CCinit(&C, EVAL_HEIR);
+	cp = CCinit(&C, Helper::getMyEval());  // for tokens shoud be EVAL_TOKENS to sign it correctly!
 
     if (txfee == 0)
         txfee = 10000;
@@ -734,7 +734,7 @@ template <class Helper> UniValue HeirAdd(uint256 fundingtxid, uint64_t txfee, in
 					std::cerr << "HeirAdd() adding markeraddr=" << markeraddr << '\n'; */
 
 				// add cryptocondition to spend this funded amount for either pk
-				mtx.vout.push_back(Helper::make1of2Vout(amount, ownerPubkey, heirPubkey)); // using always pubkeys from OP_RETURN in order to not mixing them up!
+				mtx.vout.push_back(Helper::make1of2Vout(amount, ownerPubkey, heirPubkey)); 
 
 				if (inputs > amount)
 					change = (inputs - amount); //  -txfee <-- txfee pays user
@@ -807,8 +807,8 @@ template <typename Helper>UniValue HeirClaim(uint256 fundingtxid, uint64_t txfee
     std::string heirName;
 	uint8_t hasHeirSpendingBegun = 0;
 
-	cp = CCinit(&C, EVAL_HEIR);
-    if (txfee == 0)
+	cp = CCinit(&C, Helper::getMyEval());
+	if (txfee == 0)
         txfee = 10000;
 
     if ((latesttxid = FindLatestFundingTx<Helper>(fundingtxid, funcId, tokenid, ownerPubkey, heirPubkey, inactivityTimeSec, heirName, hasHeirSpendingBegun)) != zeroid) {
@@ -882,11 +882,7 @@ template <typename Helper>UniValue HeirClaim(uint256 fundingtxid, uint64_t txfee
                 Helper::GetCoinsOrTokensCCaddress1of2(cp, coinaddr, ownerPubkey, heirPubkey);
                 Myprivkey(myprivkey);
 
-				////fprintf(stderr,"HeirClaim() before setting unspendable CC addr2= (%s) addr3= (%s)\n", cp->unspendableaddr2, cp->unspendableaddr3);
-				//CCaddr2set(cp, Helper::getMyEval(), ownerPubkey, myprivkey, coinaddr);
-				//CCaddr3set(cp, Helper::getMyEval(), heirPubkey, myprivkey, coinaddr);
-				////fprintf(stderr, "HeirClaim() after  setting unspendable CC addr2=(%s) addr3=(%s)\n", cp->unspendableaddr2, cp->unspendableaddr3);
-
+				// set pubkeys for finding 1of2 cc in FinalizeCCtx to sign it:
 				Helper::CCaddrCoinsOrTokens1of2set(cp, ownerPubkey, heirPubkey, coinaddr);
 
 				// add 1of2 vout validation pubkeys (this is for tokens):
