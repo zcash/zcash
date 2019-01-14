@@ -593,14 +593,14 @@ template <class Helper> int64_t Add1of2AddressInputs(struct CCcontract_info* cp,
 			uint8_t hasHeirSpendingBegunDummy;
 			std::vector<CPubKey> vinPubkeysEmpty;
 			
-			CScript heirScript = (heirtx.vout.size() > 0) ? heirtx.vout[heirtx.vout.size() - 1].scriptPubKey : CScript();
+			CScript heirScript = (heirtx.vout.size() > 0) ? heirtx.vout[heirtx.vout.size() - 1].scriptPubKey : CScript();   // check boundary
 			uint8_t funcId = DecodeHeirEitherOpRet(heirScript, tokenid, fundingTxidInOpret, hasHeirSpendingBegunDummy, false);
 
             if ((txid == fundingtxid || fundingTxidInOpret == fundingtxid) && 
 				funcId != 0 &&
 				isMyFuncId(funcId) &&     
-				(typeid(Helper) == typeid(TokenHelper) && IsTokensvout(true, true, cp, nullptr, heirtx, voutIndex, tokenid, vinPubkeysEmpty) > 0)  && // deep validation for tokens - not used anymore
-                (voutValue = IsHeirFundingVout<Helper>(cp, heirtx, voutIndex, ownerPubkey, heirPubkey)) > 0 &&
+				(typeid(Helper) != typeid(TokenHelper) || IsTokensvout(true, true, cp, nullptr, heirtx, voutIndex, tokenid, vinPubkeysEmpty) > 0) && // token validation logic 
+                //(voutValue = IsHeirFundingVout<Helper>(cp, heirtx, voutIndex, ownerPubkey, heirPubkey)) > 0 &&		// heir contract vout validation logic - not used since we moved to 2-eval vouts
                 !myIsutxo_spentinmempool(txid, voutIndex)) 
 			{
                 std::cerr << "Add1of2AddressInputs() voutValue=" << voutValue << " satoshis=" << it->second.satoshis << '\n';
@@ -633,28 +633,26 @@ template <class Helper> int64_t LifetimeHeirContractFunds(struct CCcontract_info
     for (std::vector<std::pair<CAddressIndexKey, CAmount>>::const_iterator it = addressIndexes.begin(); it != addressIndexes.end(); it++) {
         uint256 hashBlock;
         uint256 txid = it->first.txhash;
-        CTransaction tx;
+        CTransaction heirtx;
 
-        if (GetTransaction(txid, tx, hashBlock, false) && tx.vout.size() > 0) {
-            uint8_t evalCodeTokens = 0;
+		// TODO: check all funding tx should contain unspendable markers
+        if (GetTransaction(txid, heirtx, hashBlock, false) && heirtx.vout.size() > 0) {
 			uint256 tokenid;
             uint256 fundingTxidInOpret;
-			std::vector<uint8_t>  vopretExtra;
-			std::vector<CPubKey> voutPubkeys;
-			uint8_t dummyHasHeirSpendingBegun;
+			uint8_t hasHeirSpendingBegunDummy;
+			std::vector<CPubKey> vinPubkeysEmpty;
             const int32_t ivout = 0;
 			
-			CScript heirScript = tx.vout[tx.vout.size() - 1].scriptPubKey;
-			uint8_t funcId = DecodeTokenOpRet(heirScript, evalCodeTokens, tokenid, voutPubkeys, vopretExtra);
-			if (funcId != 0) {
-				heirScript = CScript(vopretExtra);
-			}
-			funcId = DecodeHeirOpRet(heirScript, fundingTxidInOpret, dummyHasHeirSpendingBegun, true);
+			CScript heirScript = (heirtx.vout.size() > 0) ? heirtx.vout[heirtx.vout.size() - 1].scriptPubKey : CScript();   // check boundary
+			uint8_t funcId = DecodeHeirEitherOpRet(heirScript, tokenid, fundingTxidInOpret, hasHeirSpendingBegunDummy, false);
 
             //std::cerr << "LifetimeHeirContractFunds() found tx=" << txid.GetHex() << " vout[0].nValue=" << subtx.vout[ccVoutIdx].nValue << " opreturn=" << (char)funcId << '\n';
 
-            if (funcId != 0 && (txid == fundingtxid || fundingTxidInOpret == fundingtxid) && isMyFuncId(funcId) && !isSpendingTx(funcId)
-                /* && !myIsutxo_spentinmempool(txid, ccVoutIdx) */) // include also tx in mempool
+            if (funcId != 0 && 
+				(txid == fundingtxid || fundingTxidInOpret == fundingtxid) && 
+				isMyFuncId(funcId) && !isSpendingTx(funcId) && 
+				(typeid(Helper) != typeid(TokenHelper) || IsTokensvout(true, true, cp, nullptr, heirtx, ivout, tokenid, vinPubkeysEmpty) > 0) &&
+				!myIsutxo_spentinmempool(txid, ivout)) // exclude tx in mempool
             {
 				total += it->second; // dont do this: tx.vout[ivout].nValue; // in vin[0] always is the pay to 1of2 addr (funding or change)
                 //std::cerr << "LifetimeHeirContractFunds() added tx=" << txid.GetHex() << " it->second=" << it->second << " vout[0].nValue=" << tx.vout[ivout].nValue << " opreturn=" << (char)funcId << '\n';
