@@ -355,7 +355,6 @@ int64_t IsTokensvout(bool goDeeper, bool checkPubkeys, struct CCcontract_info *c
 	std::string indentStr = std::string().append(tokenValIndentSize, '.');
 	std::cerr << indentStr << "IsTokensvout() entered for txid=" << tx.GetHash().GetHex() << " v=" << v << " for tokenid=" << reftokenid.GetHex() <<  std::endl;
 
-
 	//TODO: validate cc vouts are EVAL_TOKENS!
 	if (tx.vout[v].scriptPubKey.IsPayToCryptoCondition()) // maybe check address too? dimxy: possibly no, because there are too many cases with different addresses here
 	{
@@ -449,7 +448,7 @@ int64_t IsTokensvout(bool goDeeper, bool checkPubkeys, struct CCcontract_info *c
 }
 
 // compares cc inputs vs cc outputs (to prevent feeding vouts from normal inputs)
-bool TokensExactAmounts(bool goDeeper, struct CCcontract_info *cpTokens, int64_t &inputs, int64_t &outputs, Eval* eval, const CTransaction &tx, uint256 tokenid)
+bool TokensExactAmounts(bool goDeeper, struct CCcontract_info *cp, int64_t &inputs, int64_t &outputs, Eval* eval, const CTransaction &tx, uint256 tokenid)
 {
 	CTransaction vinTx; 
 	uint256 hashBlock; //, id, id2;
@@ -457,6 +456,9 @@ bool TokensExactAmounts(bool goDeeper, struct CCcontract_info *cpTokens, int64_t
 	int64_t tokenoshis; 
 	// std::vector<uint8_t> tmporigpubkey; int64_t tmpprice;
 	std::vector<CPubKey> vinPubkeys000;
+
+	struct CCcontract_info *cpTokens, tokensC;
+	cpTokens = CCinit(&tokensC, EVAL_TOKENS);
 
 	int32_t numvins = tx.vin.size();
 	int32_t numvouts = tx.vout.size();
@@ -477,7 +479,6 @@ bool TokensExactAmounts(bool goDeeper, struct CCcontract_info *cpTokens, int64_t
 			{
 				std::cerr << indentStr << "TokensExactAmounts() cannot read vintx for i." << i << " numvins." << numvins << std::endl;
 				return (!eval) ? false : eval->Invalid("always should find vin tx, but didnt");
-
 			}
 			else {
 				tokenValIndentSize++;
@@ -500,6 +501,7 @@ bool TokensExactAmounts(bool goDeeper, struct CCcontract_info *cpTokens, int64_t
 		tokenValIndentSize++;
 		// Note: we pass in here 'false' because we don't need to call TokenExactAmounts() recursively from IsTokensvout
 		// indeed, in this case we'll be checking this tx again
+		std::cerr << indentStr << "TokenExactAmounts() check vout i=" << i << " nValue=" << tx.vout[i].nValue << std::endl;
 		tokenoshis = IsTokensvout(false, true /*<--exclude non-tokens vouts*/, cpTokens, eval,/* tmporigpubkey,*/ tx, i, tokenid, vinPubkeys000);
 		tokenValIndentSize--;
 
