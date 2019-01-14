@@ -9,8 +9,8 @@ from test_framework.authproxy import JSONRPCException
 from test_framework.mininode import NodeConn, NetworkThread, CInv, \
     msg_mempool, msg_getdata, msg_tx, mininode_lock, OVERWINTER_PROTO_VERSION
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import initialize_chain_clean, start_nodes, \
-    p2p_port, assert_equal, sync_blocks, sync_mempools, connect_nodes_bi
+from test_framework.util import assert_equal, connect_nodes_bi, fail, \
+    initialize_chain_clean, p2p_port, start_nodes, sync_blocks, sync_mempools
 from tx_expiry_helper import TestNode, create_transaction
 
 from binascii import hexlify
@@ -82,11 +82,10 @@ class TxExpiringSoonTest(BitcoinTestFramework):
         sync_mempools(self.nodes[:2])
 
         # Verify contents of mempool
-        assert(tx1.hash not in self.nodes[0].getrawmempool())  # tx1 rejected as expiring soon
-        assert(tx1.hash not in self.nodes[1].getrawmempool())
-        assert(tx2.hash in self.nodes[0].getrawmempool())  # tx2 accepted
-        assert(tx2.hash in self.nodes[1].getrawmempool())
-        assert_equal(len(self.nodes[2].getrawmempool()), 0)  # node 2 is isolated and empty
+        # tx1 rejected as expiring soon, tx2 accepted, node 2 isolated
+        assert_equal([tx2.hash], self.nodes[0].getrawmempool())
+        assert_equal([tx2.hash], self.nodes[1].getrawmempool())
+        assert_equal([], self.nodes[2].getrawmempool())
 
         # Send p2p message "mempool" to receive contents from zcashd node in "inv" message
         with mininode_lock:
@@ -145,18 +144,20 @@ class TxExpiringSoonTest(BitcoinTestFramework):
         assert_equal(self.nodes[2].getblockcount(), 201)
 
         # Verify contents of mempool
-        assert(tx2.hash in self.nodes[0].getrawmempool())
-        assert(tx2.hash in self.nodes[1].getrawmempool())
-        assert(tx2.hash not in self.nodes[2].getrawmempool())
+        assert_equal([tx2.hash], self.nodes[0].getrawmempool())
+        assert_equal([tx2.hash], self.nodes[1].getrawmempool())
+        assert_equal([], self.nodes[2].getrawmempool())
 
         # Confirm tx2 cannot be submitted to a mempool because it is expiring soon.
         try:
             rawtx2 = hexlify(tx2.serialize())
             self.nodes[2].sendrawtransaction(rawtx2)
-            assert(False)
+            fail("Sending transaction should have failed")
         except JSONRPCException as e:
-            errorString = e.error['message']
-            assert("tx-expiring-soon" in errorString)
+            assert_equal(
+                "tx-expiring-soon: expiryheight is 204 but should be at least 205 to avoid transaction expiring soon",
+                e.error['message']
+            )
 
         # Ask node 0 for tx2...
         with mininode_lock:
