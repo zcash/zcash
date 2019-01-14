@@ -603,7 +603,7 @@ template <class Helper> int64_t Add1of2AddressInputs(struct CCcontract_info* cp,
                 //(voutValue = IsHeirFundingVout<Helper>(cp, heirtx, voutIndex, ownerPubkey, heirPubkey)) > 0 &&		// heir contract vout validation logic - not used since we moved to 2-eval vouts
                 !myIsutxo_spentinmempool(txid, voutIndex)) 
 			{
-                std::cerr << "Add1of2AddressInputs() voutValue=" << voutValue << " satoshis=" << it->second.satoshis << '\n';
+                std::cerr << "Add1of2AddressInputs() satoshis=" << it->second.satoshis << std::endl;
                 if (total != 0 && maxinputs != 0)
                     mtx.vin.push_back(CTxIn(txid, voutIndex, CScript()));
                 nValue = it->second.satoshis;
@@ -1062,7 +1062,7 @@ UniValue HeirInfo(uint256 fundingtxid)
 			stream.clear();
 
 			int64_t total;
-			if (tokenid != zeroid)
+			if (tokenid == zeroid)
 				total = LifetimeHeirContractFunds<CoinHelper>(cp, fundingtxid, ownerPubkey, heirPubkey);
 			else
 				total = LifetimeHeirContractFunds<TokenHelper>(cp, fundingtxid, ownerPubkey, heirPubkey);
