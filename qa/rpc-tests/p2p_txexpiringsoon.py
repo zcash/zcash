@@ -46,8 +46,8 @@ class TxExpiringSoonTest(BitcoinTestFramework):
         assert_equal(0, peerinfo[0]["banscore"])
 
         # Mine some blocks so we can spend
-        self.coinbase_blocks = self.nodes[0].generate(200)
-        self.nodeaddress = self.nodes[0].getnewaddress()
+        coinbase_blocks = self.nodes[0].generate(200)
+        node_address = self.nodes[0].getnewaddress()
 
         # Sync nodes 0 and 1
         sync_blocks(self.nodes[:2])
@@ -60,16 +60,16 @@ class TxExpiringSoonTest(BitcoinTestFramework):
 
         # Mininodes send expiring soon transaction in "tx" message to zcashd node
         tx1 = create_transaction(self.nodes[0],
-                                 self.coinbase_blocks[0],
-                                 self.nodeaddress,
+                                 coinbase_blocks[0],
+                                 node_address,
                                  10.0,
                                  203)
         testnode0.send_message(msg_tx(tx1))
 
         # Mininodes send transaction in "tx" message to zcashd node
         tx2 = create_transaction(self.nodes[0],
-                                 self.coinbase_blocks[1],
-                                 self.nodeaddress,
+                                 coinbase_blocks[1],
+                                 node_address,
                                  10.0,
                                  204)
         testnode0.send_message(msg_tx(tx2))
@@ -119,7 +119,7 @@ class TxExpiringSoonTest(BitcoinTestFramework):
             assert_equal(tx2.sha256, incoming_tx.sha256)
 
         # Sync and mine an empty block with node 2, leaving tx in the mempool of node0 and node1
-        for blkhash in self.coinbase_blocks:
+        for blkhash in coinbase_blocks:
             blk = self.nodes[0].getblock(blkhash, 0)
             self.nodes[2].submitblock(blk)
         self.nodes[2].generate(1)
@@ -179,8 +179,8 @@ class TxExpiringSoonTest(BitcoinTestFramework):
 
         # Create a transaction to verify that processing of "getdata" messages is functioning
         tx3 = create_transaction(self.nodes[0],
-                                 self.coinbase_blocks[2],
-                                 self.nodeaddress,
+                                 coinbase_blocks[2],
+                                 node_address,
                                  10.0,
                                  999)
 

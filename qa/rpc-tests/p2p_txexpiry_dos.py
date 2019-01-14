@@ -44,14 +44,14 @@ class TxExpiryDoSTest(BitcoinTestFramework):
         assert_equal(1, versions.count(OVERWINTER_PROTO_VERSION))
         assert_equal(0, peerinfo[0]["banscore"])
 
-        self.coinbase_blocks = self.nodes[0].generate(1)
+        coinbase_blocks = self.nodes[0].generate(1)
         self.nodes[0].generate(100)
-        self.nodeaddress = self.nodes[0].getnewaddress()
+        node_address = self.nodes[0].getnewaddress()
 
         # Mininodes send transaction to zcashd node.
         spendtx = create_transaction(self.nodes[0],
-                                     self.coinbase_blocks[0],
-                                     self.nodeaddress,
+                                     coinbase_blocks[0],
+                                     node_address,
                                      1.0,
                                      101)
         test_node.send_message(msg_tx(spendtx))
