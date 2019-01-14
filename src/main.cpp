@@ -2694,6 +2694,7 @@ bool ContextualCheckInputs(
 
     if (tx.IsCoinImport())
     {
+        LOCK(cs_main);
         ServerTransactionSignatureChecker checker(&tx, 0, 0, false, txdata);
         return VerifyCoinImport(tx.vin[0].scriptSig, checker, state);
     }
@@ -4114,7 +4115,7 @@ static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMo
             "- " + strprintf(_("Fork point:  %s %s, height %d"),
                              ASSETCHAINS_SYMBOL,pindexFork->phashBlock->GetHex(), pindexFork->GetHeight()) + "\n\n" +
             _("Please help, human!");
-            LogPrintf("*** %s\n", msg);
+            LogPrintf("*** %s\nif you launch with -maxreorg=%d it might be able to resolve this automatically", msg,reorgLength+10);
             uiInterface.ThreadSafeMessageBox(msg, "", CClientUIInterface::MSG_ERROR);
             StartShutdown();
             return false;
