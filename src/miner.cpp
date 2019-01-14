@@ -1303,9 +1303,8 @@ void static BitcoinMiner_noeq()
             {
                 int32_t percPoS,z;
                 hashTarget = komodo_PoWtarget(&percPoS,hashTarget,Mining_height,ASSETCHAINS_STAKED);
-                for (z=31; z>=0; z--)
-                    fprintf(stderr,"%02x",((uint8_t *)&hashTarget)[z]);
-                fprintf(stderr," PoW for staked coin PoS %d%% vs target %d%%\n",percPoS,(int32_t)ASSETCHAINS_STAKED);
+                if ( ASSETCHAINS_STAKED < 100 )
+                    LogPrintf("Block %d : PoS %d%% vs target %d%% \n",Mining_height,percPoS,(int32_t)ASSETCHAINS_STAKED);
             }
 
             while (true)
@@ -1630,18 +1629,16 @@ void static BitcoinMiner()
                     } //else fprintf(stderr,"duplicate at j.%d\n",j);
                 } else Mining_start = 0;
             } else Mining_start = 0;
+            
             if ( ASSETCHAINS_STAKED > 0 )
             {
                 int32_t percPoS,z; bool fNegative,fOverflow;
                 HASHTarget_POW = komodo_PoWtarget(&percPoS,HASHTarget,Mining_height,ASSETCHAINS_STAKED);
                 HASHTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
                 if ( ASSETCHAINS_STAKED < 100 )
-                {
-                    //for (z=31; z>=0; z--)
-                    //    fprintf(stderr,"%02x",((uint8_t *)&HASHTarget_POW)[z]);
                     LogPrintf("Block %d : PoS %d%% vs target %d%% \n",Mining_height,percPoS,(int32_t)ASSETCHAINS_STAKED);
-                }
             }
+            
             while (true)
             {
                 /*if ( KOMODO_INSYNC == 0 )
