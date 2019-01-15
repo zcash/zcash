@@ -195,6 +195,7 @@ int32_t MarmaraValidateCoinbase(int32_t height,CTransaction tx)
 {
     struct CCcontract_info *cp,C; CPubKey pk; int32_t ht,unlockht; CTxOut ccvout;
     cp = CCinit(&C,EVAL_MARMARA);
+    Marmarapk = GetUnspendable(cp,0);
     if ( 0 )
     {
         int32_t d,histo[365*2+30];
@@ -222,7 +223,7 @@ int32_t MarmaraValidateCoinbase(int32_t height,CTransaction tx)
             if ( ht == height && MarmaraUnlockht(height) == unlockht )
             {
                 //fprintf(stderr,"ht.%d -> unlock.%d\n",ht,unlockht);
-                ccvout = MakeCC1vout(EVAL_MARMARA,0,pk);
+                ccvout = MakeCC1of2vout(EVAL_MARMARA,0,Marmarapk,pk);
                 if ( ccvout.scriptPubKey == tx.vout[0].scriptPubKey )
                     return(0);
                 fprintf(stderr,"ht.%d mismatched CCvout scriptPubKey\n",height);
