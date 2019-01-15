@@ -510,7 +510,7 @@ UniValue MarmaraIssue(uint64_t txfee,uint8_t funcid,CPubKey receiverpk,int64_t a
 
 UniValue MarmaraCreditloop(uint256 txid)
 {
-    UniValue result(UniValue::VOBJ),a(UniValue::VARR); std::vector<uint256> creditloop; uint256 batontxid,createtxid,refcreatetxid,hashBlock; uint8_t funcid; int32_t numerrs=0,i,n,numvouts,matures,refmatures; int64_t amount,refamount; CPubKey senderpk,pk; std::string currency,refcurrency; CTransaction tx; char coinaddr[64],myCCaddr[64],str[2]; struct CCcontract_info *cp,C;
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR); std::vector<uint256> creditloop; uint256 batontxid,createtxid,refcreatetxid,hashBlock; uint8_t funcid; int32_t numerrs=0,i,n,numvouts,matures,refmatures; int64_t amount,refamount; CPubKey senderpk,pk; std::string currency,refcurrency; CTransaction tx; char coinaddr[64],myCCaddr[64],batonCCaddr[64],str[2]; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_MARMARA);
     if ( (n= MarmaraGetbatontxid(creditloop,batontxid,txid)) > 0 )
     {
@@ -539,10 +539,14 @@ UniValue MarmaraCreditloop(uint256 txid)
                 result.push_back(Pair("batonpk",HexStr(pk)));
                 Getscriptaddress(coinaddr,CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG);
                 result.push_back(Pair("batonaddr",coinaddr));
-                GetCCaddress(cp,coinaddr,pk);
-                result.push_back(Pair("batonCCaddr",coinaddr));
+                GetCCaddress(cp,batonCCaddr,pk);
+                result.push_back(Pair("batonCCaddr",batonCCaddr));
                 Getscriptaddress(coinaddr,tx.vout[0].scriptPubKey);
-                result.push_back(Pair("batonaddress",coinaddr));
+                if ( strcmp(coinaddr,batonCCaddr) != 0 )
+                {
+                    result.push_back(Pair("vout0address",coinaddr));
+                    numerrs++;
+                }
                 if ( strcmp(myCCaddr,coinaddr) == 0 )
                     result.push_back(Pair("ismine",1));
                 else result.push_back(Pair("ismine",0));
@@ -573,8 +577,12 @@ UniValue MarmaraCreditloop(uint256 txid)
                                 GetCCaddress(cp,coinaddr,pk);
                                 obj.push_back(Pair("receiverCCaddr",coinaddr));
                             }
-                            Getscriptaddress(coinaddr,tx.vout[0].scriptPubKey);
-                            obj.push_back(Pair("destCCaddress",coinaddr));
+                            Getscriptaddress(destaddr,tx.vout[0].scriptPubKey);
+                            if ( strcmp(destaddr,coinaddr) != 0 )
+                            {
+                                obj.push_back(Pair("vout0address",destaddr));
+                                numerrs++;
+                            }
                             if ( createtxid != refcreatetxid || amount != refamount || matures != refmatures || currency != refcurrency )
                             {
                                 numerrs++;
