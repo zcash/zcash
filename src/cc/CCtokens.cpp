@@ -442,16 +442,22 @@ int64_t IsTokensvout(bool goDeeper, bool checkPubkeys, struct CCcontract_info *c
 							return tx.vout[v].nValue;
 						}
 					}
-				}
+				
 
-				// maybe this is claim to single-eval token?
-				if (voutPubkeys.size() == 1) {
+					// maybe this is claim to single-eval token?
 					CTxOut testTokenVout1;
 					testTokenVout1 = MakeCC1vout(EVAL_TOKENS, tx.vout[v].nValue, voutPubkeys[0]);
-
 					if (tx.vout[v].scriptPubKey == testTokenVout1.scriptPubKey) {
-						std::cerr << indentStr << "IsTokensvout() this is single-eval token vout, returning nValue=" << tx.vout[v].nValue << " for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl;
+						std::cerr << indentStr << "IsTokensvout() this is single-eval token vout (i=0), returning nValue=" << tx.vout[v].nValue << " for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl;
 						return tx.vout[v].nValue;
+					}
+
+					if (voutPubkeys.size() == 2) {
+						testTokenVout1 = MakeCC1vout(EVAL_TOKENS, tx.vout[v].nValue, voutPubkeys[1]);
+						if (tx.vout[v].scriptPubKey == testTokenVout1.scriptPubKey) {
+							std::cerr << indentStr << "IsTokensvout() this is single-eval token vout (i=1), returning nValue=" << tx.vout[v].nValue << " for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl;
+							return tx.vout[v].nValue;
+						}
 					}
 				}
 
