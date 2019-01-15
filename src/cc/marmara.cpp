@@ -379,7 +379,7 @@ int32_t MarmaraGetCreditloops(int64_t &totalamount,std::vector<uint256> &issuanc
 UniValue MarmaraReceive(uint64_t txfee,CPubKey senderpk,int64_t amount,std::string currency,int32_t matures,uint256 batontxid)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); CPubKey mypk; struct CCcontract_info *cp,C; std::string rawtx; char *errorstr=0; uint256 createtxid; int32_t needbaton = 0;
+    UniValue result(UniValue::VOBJ); CPubKey mypk; struct CCcontract_info *cp,C; std::string rawtx; char *errorstr=0; uint256 createtxid; int64_t amount; int32_t needbaton = 0;
     cp = CCinit(&C,EVAL_MARMARA);
     if ( txfee == 0 )
         txfee = 10000;
@@ -396,13 +396,13 @@ UniValue MarmaraReceive(uint64_t txfee,CPubKey senderpk,int64_t amount,std::stri
         errorstr = (char *)"it must mature in the future";
     if ( errorstr == 0 )
     {
-        if ( createtxid == zeroid )
-            needbaton = 1;
-        if ( AddNormalinputs(mtx,mypk,(1+needbaton)*txfee,1) > 0 )
+        if ( batontxid != zeroid )
+            amount = txfee;
+        else amount = 2*txfee;
+        if ( AddNormalinputs(mtx,mypk,amount + txfee,1) > 0 )
         {
             errorstr = (char *)"couldnt finalize CCtx";
-            if ( needbaton != 0 )
-                mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA,txfee,senderpk));
+            mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA,amount,senderpk));
             rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,MarmaraLoopOpret('R',createtxid,senderpk,amount,matures,currency));
             if ( rawtx.size() > 0 )
                 errorstr = 0;
@@ -455,9 +455,9 @@ UniValue MarmaraIssue(uint64_t txfee,uint8_t funcid,CPubKey receiverpk,int64_t a
         if ( funcid == 'I' || AddNormalinputs(mtx,mypk,txfee,1) > 0 )
         {
             errorstr = (char *)"couldnt finalize CCtx";
-            mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA,txfee/2,receiverpk));
+            mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA,txfee,receiverpk));
             if ( funcid == 'I' )
-                mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA,txfee/2,Marmarapk));
+                mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA,txfee,Marmarapk));
             rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,MarmaraLoopOpret(funcid,createtxid,receiverpk,amount,matures,currency));
             if ( rawtx.size() > 0 )
                 errorstr = 0;
