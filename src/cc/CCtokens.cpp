@@ -51,14 +51,11 @@ CScript EncodeTokenCreateOpRet(uint8_t funcid,std::vector<uint8_t> origpubkey,st
 }
 
 //  this is for other contracts which use tokens and build customized extra payloads to token's opret:
-CScript EncodeTokenOpRet(uint8_t tokenFuncId, uint8_t evalCodeInOpret, uint256 tokenid, std::vector<CPubKey> voutPubkeys, CScript payload)
+CScript EncodeTokenOpRet(uint256 tokenid, std::vector<CPubKey> voutPubkeys, CScript payload)
 {
     CScript opret; 
-
-	if (evalCodeInOpret != EVAL_TOKENS) {
-		std::cerr << "EncodeTokenOpRet() evalCode should be EVAL_TOKENS!" << std::endl;
-		return opret;	// return empty
-	}
+	uint8_t tokenFuncId = 't';
+	uint8_t evalCodeInOpret = EVAL_TOKENS;
 
     tokenid = revuint256(tokenid);
 
@@ -93,6 +90,11 @@ CScript EncodeTokenOpRet(uint8_t tokenFuncId, uint8_t evalCodeInOpret, uint256 t
 	return opret;
 }  
 
+// overload for compatibility 
+CScript EncodeTokenOpRet(uint8_t tokenFuncId, uint8_t evalCodeInOpret, uint256 tokenid, std::vector<CPubKey> voutPubkeys, CScript payload)
+{
+	return EncodeTokenOpRet(tokenid, voutPubkeys, payload);
+}
 
 uint8_t DecodeTokenCreateOpRet(const CScript &scriptPubKey,std::vector<uint8_t> &origpubkey,std::string &name,std::string &description)
 {
@@ -405,35 +407,59 @@ int64_t IsTokensvout(bool goDeeper, bool checkPubkeys, struct CCcontract_info *c
 				std::cerr << "IsTokensvout() vopretExtra=" << HexStr(vopretExtra) << std::endl;
 				//std::cerr << "IsTokensvout() vcontractOpret=" << HexStr(vcontractOpret) << std::endl;;
 
-				if (vopretExtra.size() < 2 /*|| vopretExtra.size() != vopretExtra.begin()[0]*/) {
+				uint8_t evalCodeInOpret;
+				if (vopretExtra.size() >= 2 /*|| vopretExtra.size() != vopretExtra.begin()[0]  <-- shold we check this?*/) {
 					std::cerr << "IsTokensvout() empty or incorrect contract opret" << std::endl;
-					return 0;
+					evalCodeInOpret = vopretExtra.begin()[1];
+				}
+				else {
+					// if payload is empty maybe it is a claim to non-payload-one-token-eval vout?
+					evalCodeInOpret = EVAL_TOKENS;
 				}
 
-				uint8_t evalCodeInOpret = vopretExtra.begin()[1];
-
-				if (voutPubkeys.size() >= 1 && voutPubkeys.size() <= 2) {
-					CTxOut testVout;
+				// maybe this is dual-eval 1 pubkey or 1of2 pubkey vout?
+				if (voutPubkeys.size() >= 1 && voutPubkeys.size() <= 2) {					
+					CTxOut testDualVout;
 					if (voutPubkeys.size() == 1)
-						testVout = MakeTokensCC1vout(evalCodeInOpret, tx.vout[v].nValue, voutPubkeys[0]);
+						testDualVout = MakeTokensCC1vout(evalCodeInOpret, tx.vout[v].nValue, voutPubkeys[0]);
 					else // voutPubkeys.size() == 2
-						testVout = MakeTokensCC1of2vout(evalCodeInOpret, tx.vout[v].nValue, voutPubkeys[0], voutPubkeys[1]);
+						testDualVout = MakeTokensCC1of2vout(evalCodeInOpret, tx.vout[v].nValue, voutPubkeys[0], voutPubkeys[1]);
 
-					if (tx.vout[v].scriptPubKey == testVout.scriptPubKey) {
-						std::cerr << indentStr << "IsTokensvout() vout is EVAL_TOKENS, returning nValue=" << tx.vout[v].nValue << " for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl;
+					if (tx.vout[v].scriptPubKey == testDualVout.scriptPubKey) {
+						if(voutPubkeys.size() == 1)
+							std::cerr << indentStr << "IsTokensvout() this is dual-eval token vout, eval2=" << evalCodeInOpret << ", returning nValue=" << tx.vout[v].nValue << " for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl;
+						else
+							std::cerr << indentStr << "IsTokensvout() this is dual-eval token 1of2 vout or change, eval2=" << evalCodeInOpret << ", returning nValue=" << tx.vout[v].nValue << " for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl;
 						return tx.vout[v].nValue;
 					}
 				}
 
-				// maybe it is token change?
+				// maybe this is claim to single-eval token?
+				if (voutPubkeys.size() == 1) {
+					CTxOut testTokenVout1;
+					testTokenVout1 = MakeCC1vout(EVAL_TOKENS, tx.vout[v].nValue, voutPubkeys[0]);
+
+					if (tx.vout[v].scriptPubKey == testTokenVout1.scriptPubKey) {
+						std::cerr << indentStr << "IsTokensvout() this is single-eval token vout, returning nValue=" << tx.vout[v].nValue << " for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl;
+						return tx.vout[v].nValue;
+					}
+				}
+
+				// maybe it is single-eval or dual-eval token change?
 				std::vector<CPubKey> vinPubkeys;
 				ExtractTokensVinPubkeys(tx, vinPubkeys);
 
 				for(std::vector<CPubKey>::iterator it = vinPubkeys.begin(); it != vinPubkeys.end(); it++) {
-					CTxOut testVout = MakeTokensCC1vout(evalCodeInOpret, tx.vout[v].nValue, *it);
+					CTxOut testTokenVout1 = MakeCC1vout(EVAL_TOKENS, tx.vout[v].nValue, *it);
+					CTxOut testDualVout1 = MakeTokensCC1vout(evalCodeInOpret, tx.vout[v].nValue, *it);
 
-					if (tx.vout[v].scriptPubKey == testVout.scriptPubKey) {
-						std::cerr << indentStr << "IsTokensvout() vout is EVAL_TOKENS change, returning nValue=" << tx.vout[v].nValue << " for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl;
+					if (tx.vout[v].scriptPubKey == testTokenVout1.scriptPubKey) {
+						std::cerr << indentStr << "IsTokensvout() this is single-eval token change, returning nValue=" << tx.vout[v].nValue << " for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl;
+						return tx.vout[v].nValue;
+					}
+
+					if (tx.vout[v].scriptPubKey == testDualVout1.scriptPubKey) {
+						std::cerr << indentStr << "IsTokensvout() this is dual-eval token change, vout eval2=" << (int)evalCodeInOpret << ", returning nValue=" << tx.vout[v].nValue << " for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl;
 						return tx.vout[v].nValue;
 					}
 				}

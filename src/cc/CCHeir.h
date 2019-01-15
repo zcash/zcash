@@ -34,8 +34,8 @@ class TokenHelper;
 //template <class Helper> UniValue HeirAdd(uint256 fundingtxid, uint64_t txfee, int64_t amount);
 //template <class Helper> UniValue HeirClaim(uint256 fundingtxid, uint64_t txfee, int64_t nValue);
 
-std::string HeirFundCoinCaller(uint64_t txfee, int64_t funds, std::string heirName, CPubKey heirPubkey, int64_t inactivityTimeSec, uint256 assetid);
-std::string HeirFundTokenCaller(uint64_t txfee, int64_t funds, std::string heirName, CPubKey heirPubkey, int64_t inactivityTimeSec, uint256 assetid);
+UniValue HeirFundCoinCaller(uint64_t txfee, int64_t funds, std::string heirName, CPubKey heirPubkey, int64_t inactivityTimeSec, uint256 assetid);
+UniValue HeirFundTokenCaller(uint64_t txfee, int64_t funds, std::string heirName, CPubKey heirPubkey, int64_t inactivityTimeSec, uint256 assetid);
 UniValue HeirClaimCoinCaller(uint256 fundingtxid, uint64_t txfee, int64_t amount);
 UniValue HeirClaimTokenCaller(uint256 fundingtxid, uint64_t txfee, int64_t amount);
 UniValue HeirAddCoinCaller(uint256 fundingtxid, uint64_t txfee, int64_t amount);

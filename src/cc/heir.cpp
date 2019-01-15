@@ -619,8 +619,9 @@ template <class Helper> int64_t LifetimeHeirContractFunds(struct CCcontract_info
  * and also for setting spending plan for the funds' owner and heir
  * @return fundingtxid handle for subsequent references to this heir funding plan
  */
-template <typename Helper> std::string HeirFund(uint64_t txfee, int64_t amount, std::string heirName, CPubKey heirPubkey, int64_t inactivityTimeSec, uint256 tokenid)
+template <typename Helper> UniValue HeirFund(uint64_t txfee, int64_t amount, std::string heirName, CPubKey heirPubkey, int64_t inactivityTimeSec, uint256 tokenid)
 {
+	UniValue result(UniValue::VOBJ);
 	CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
 	struct CCcontract_info *cp, C;
 
@@ -664,24 +665,38 @@ template <typename Helper> std::string HeirFund(uint64_t txfee, int64_t amount, 
 			voutTokenPubkeys.push_back(heirPubkey);
 
 			// add change for txfee and opreturn vouts and sign tx:
-			return (FinalizeCCTx(0, cp, mtx, myPubkey, txfee,
-				Helper::makeCreateOpRet(tokenid, voutTokenPubkeys, myPubkey, heirPubkey, inactivityTimeSec, heirName)));
+			std::string rawhextx = FinalizeCCTx(0, cp, mtx, myPubkey, txfee,
+				Helper::makeCreateOpRet(tokenid, voutTokenPubkeys, myPubkey, heirPubkey, inactivityTimeSec, heirName));
+			if (!rawhextx.empty()) {
+				result.push_back(Pair("result", "success"));
+				result.push_back(Pair("hextx", rawhextx));
+			}
+			else {
+				std::cerr << "HeirAdd error in FinalizeCCtx" << std::endl;
+				result.push_back(Pair("result", "error"));
+				result.push_back(Pair("error", "sign error"));
+			}
 		}
-		else  // TODO: need result return unification with heiradd and claim
-			std::cerr << "HeirFund() could not find owner inputs" << std::endl;
-
+		else {  // TODO: need result return unification with heiradd and claim
+			std::cerr << "HeirFund() could not find owner cc inputs" << std::endl;
+			result.push_back(Pair("result", "error"));
+			result.push_back(Pair("error", "could not find owner cc inputs"));
+		}
 	}
-	else
+	else {
 		std::cerr << "HeirFund() could not find normal inputs" << std::endl;
-    return std::string("");
+		result.push_back(Pair("result", "error"));
+		result.push_back(Pair("error", "could not find normal inputs"));
+	}
+    return result;
 }
 
 // if no these callers - it could not link 
-std::string HeirFundCoinCaller(uint64_t txfee, int64_t funds, std::string heirName, CPubKey heirPubkey, int64_t inactivityTimeSec, uint256 tokenid){
+UniValue HeirFundCoinCaller(uint64_t txfee, int64_t funds, std::string heirName, CPubKey heirPubkey, int64_t inactivityTimeSec, uint256 tokenid){
 	return HeirFund<CoinHelper>(txfee, funds, heirName, heirPubkey, inactivityTimeSec,  tokenid);
 }
 
-std::string HeirFundTokenCaller(uint64_t txfee, int64_t funds, std::string heirName, CPubKey heirPubkey, int64_t inactivityTimeSec, uint256 tokenid) {
+UniValue HeirFundTokenCaller(uint64_t txfee, int64_t funds, std::string heirName, CPubKey heirPubkey, int64_t inactivityTimeSec, uint256 tokenid) {
 	return HeirFund<TokenHelper>(txfee, funds, heirName, heirPubkey, inactivityTimeSec, tokenid);
 }
 
@@ -735,8 +750,8 @@ template <class Helper> UniValue HeirAdd(uint256 fundingtxid, uint64_t txfee, in
 					mtx.vout.push_back(CTxOut(txfee, CScript() << ParseHex(HexStr(markerpubkey)) << OP_CHECKSIG)); // txfee 1, txfee 2 - for miners
 					std::cerr << "HeirAdd() adding markeraddr=" << markeraddr << '\n'; */
 
-				// add cryptocondition to spend this funded amount for either pk
-				mtx.vout.push_back(Helper::make1of2Vout(amount, ownerPubkey, heirPubkey)); 
+					// add cryptocondition to spend this funded amount for either pk
+				mtx.vout.push_back(Helper::make1of2Vout(amount, ownerPubkey, heirPubkey));
 
 				if (inputs > amount)
 					change = (inputs - amount); //  -txfee <-- txfee pays user
@@ -756,8 +771,16 @@ template <class Helper> UniValue HeirAdd(uint256 fundingtxid, uint64_t txfee, in
 				std::string rawhextx = (FinalizeCCTx(0, cp, mtx, myPubkey, txfee,
 					Helper::makeAddOpRet(tokenid, voutTokenPubkeys, fundingtxid, hasHeirSpendingBegun)));
 
-				result.push_back(Pair("result", "success"));
-				result.push_back(Pair("hextx", rawhextx));
+				if (!rawhextx.empty()) {
+					result.push_back(Pair("result", "success"));
+					result.push_back(Pair("hextx", rawhextx));
+				}
+				else	{
+					std::cerr << "HeirAdd error in FinalizeCCtx" << std::endl;
+					result.push_back(Pair("result", "error"));
+					result.push_back(Pair("error", "sign error"));
+				}
+				
 			}
 			else {
 				std::cerr << "HeirAdd cannot find owner cc inputs" << std::endl;
@@ -772,7 +795,7 @@ template <class Helper> UniValue HeirAdd(uint256 fundingtxid, uint64_t txfee, in
 		}
 
     } else {
-        fprintf(stderr, "HeirAdd() can't find any heir CC funding tx's\n");
+        fprintf(stderr, "HeirAdd can't find any heir CC funding tx's\n");
 
         result.push_back(Pair("result", "error"));
         result.push_back(Pair("error", "can't find any heir CC funding transactions"));
@@ -858,7 +881,7 @@ template <typename Helper>UniValue HeirClaim(uint256 fundingtxid, uint64_t txfee
 				}*/
 
 				// add vout with amount to claiming address
-				mtx.vout.push_back(Helper::makeClaimerVout(amount, myPubkey));  // vout[0]
+				mtx.vout.push_back(Helper::makeUserVout(amount, myPubkey));  // vout[0]
 
                 // calc and add change vout:
                 if (inputs > amount)

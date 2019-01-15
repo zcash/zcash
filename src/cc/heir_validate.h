@@ -43,9 +43,9 @@ public:
 	static CTxOut makeUserVout(int64_t amount, CPubKey myPubkey) {
 		return CTxOut(amount, CScript() << ParseHex(HexStr(myPubkey)) << OP_CHECKSIG);
 	}
-	static CTxOut makeClaimerVout(int64_t amount, CPubKey myPubkey) {
+/*	static CTxOut makeClaimerVout(int64_t amount, CPubKey myPubkey) {
 		return CTxOut(amount, CScript() << ParseHex(HexStr(myPubkey)) << OP_CHECKSIG);
-	}
+	} */
 	static bool GetCoinsOrTokensCCaddress1of2(char *coinaddr, CPubKey ownerPubkey, CPubKey heirPubkey) {
 		struct CCcontract_info *cpHeir, heirC;
 		cpHeir = CCinit(&heirC, EVAL_HEIR);
@@ -64,20 +64,20 @@ public:
 	static uint8_t getMyEval() { return EVAL_TOKENS; }
 	static int64_t addOwnerInputs(uint256 tokenid, CMutableTransaction& mtx, CPubKey ownerPubkey, int64_t total, int32_t maxinputs) {
 		struct CCcontract_info *cpHeir, heirC;
-		cpHeir = CCinit(&heirC, EVAL_HEIR);
+		cpHeir = CCinit(&heirC, EVAL_TOKENS);
 		return AddTokenCCInputs(cpHeir, mtx, ownerPubkey, tokenid, total, maxinputs);
 	}
 
 	static CScript makeCreateOpRet(uint256 tokenid, std::vector<CPubKey> voutTokenPubkeys, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t inactivityTimeSec, std::string heirName) {
-		return EncodeTokenOpRet((uint8_t)'t', EVAL_TOKENS, tokenid, voutTokenPubkeys,
+		return EncodeTokenOpRet(tokenid, voutTokenPubkeys,
 			EncodeHeirCreateOpRet((uint8_t)'F', ownerPubkey, heirPubkey, inactivityTimeSec, heirName));
 	}
 	static CScript makeAddOpRet(uint256 tokenid, std::vector<CPubKey> voutTokenPubkeys, uint256 fundingtxid, uint8_t isHeirSpendingBegan) {
-		return EncodeTokenOpRet((uint8_t)'t', EVAL_TOKENS, tokenid, voutTokenPubkeys,
+		return EncodeTokenOpRet(tokenid, voutTokenPubkeys,
 			EncodeHeirOpRet((uint8_t)'A', fundingtxid, isHeirSpendingBegan));
 	}
 	static CScript makeClaimOpRet(uint256 tokenid, std::vector<CPubKey> voutTokenPubkeys, uint256 fundingtxid, uint8_t isHeirSpendingBegan) {
-		return EncodeTokenOpRet((uint8_t)'t', EVAL_TOKENS, tokenid, voutTokenPubkeys,
+		return EncodeTokenOpRet(tokenid, voutTokenPubkeys,
 			EncodeHeirOpRet((uint8_t)'C', fundingtxid, isHeirSpendingBegan));
 	}
 
@@ -85,11 +85,11 @@ public:
 		return MakeTokensCC1of2vout(EVAL_HEIR, amount, ownerPubkey, heirPubkey);
 	}
 	static CTxOut makeUserVout(int64_t amount, CPubKey myPubkey) {
-		return MakeTokensCC1vout(EVAL_HEIR, amount, myPubkey);
+		return MakeCC1vout(EVAL_TOKENS, amount, myPubkey);  // yes EVAL_TOKENS
 	}
-	static CTxOut makeClaimerVout(int64_t amount, CPubKey myPubkey) {
-		return MakeTokensCC1vout(EVAL_HEIR, amount, myPubkey);
-	}
+/*	static CTxOut makeClaimerVout(int64_t amount, CPubKey myPubkey) {
+		return MakeCC1vout(EVAL_TOKENS, amount, myPubkey); // yes EVAL_TOKENS
+	} */
 	static bool GetCoinsOrTokensCCaddress1of2(char *coinaddr, CPubKey ownerPubkey, CPubKey heirPubkey) {
 		struct CCcontract_info *cpHeir, heirC;
 		cpHeir = CCinit(&heirC, EVAL_HEIR);
@@ -477,7 +477,7 @@ public:
 
 		CScript ownerScript;
 		CScript heirScript;
-		if (m_checkNormals)  {
+		if (m_checkNormals)  {  //not used, incorrect check, too strict
 			ownerScript = CoinHelper::makeUserVout(vout.nValue, ownerPubkey).scriptPubKey;
 			heirScript = CoinHelper::makeUserVout(vout.nValue, heirPubkey).scriptPubKey;
 			std::cerr << "CMyPubkeyVoutValidator::validateVout() vout.scriptPubKey=" << vout.scriptPubKey.ToString() << " makeUserVout(coin,owner)=" << CoinHelper::makeUserVout(vout.nValue, ownerPubkey).scriptPubKey.ToString() << " makeUserVout(coin,heir)=" << CoinHelper::makeUserVout(vout.nValue, heirPubkey).scriptPubKey.ToString() << std::endl;
@@ -537,7 +537,7 @@ public:
 		int64_t durationSec = CCduration(numblocks, m_latesttxid);
 
 		// recreate scriptPubKey for heir and compare it with that of the vout:
-		if (vout.scriptPubKey == Helper::makeClaimerVout(vout.nValue, heirPubkey).scriptPubKey) {
+		if (vout.scriptPubKey == Helper::makeUserVout(vout.nValue, heirPubkey).scriptPubKey) {
 			// this is the heir is trying to spend
 			if (!m_isHeirSpendingBegan && durationSec <= inactivityTime) {
 				message = "heir is not allowed yet to spend funds";

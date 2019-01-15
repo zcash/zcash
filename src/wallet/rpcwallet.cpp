@@ -7454,13 +7454,13 @@ UniValue heirfund(const UniValue& params, bool fHelp)
 	inactivitytime = atof((char*)params[4].get_str().c_str());
 
 
-	hex = HeirFundCoinCaller(txfee, amount, name, pubkey2pk(pubkey), inactivitytime, zeroid);
-	if (hex.size() > 0) {
+	result = HeirFundCoinCaller(txfee, amount, name, pubkey2pk(pubkey), inactivitytime, zeroid);
+/*	if (hex.size() > 0) {
 		result.push_back(Pair("result", "success"));
 		result.push_back(Pair("hex", hex));
 	}
 	else
-		ERR_RESULT("couldn't create heir fund");
+		ERR_RESULT("couldn't create heir fund");*/
 
 	return result;
 }
@@ -7573,13 +7573,13 @@ UniValue heirfundtokens(const UniValue& params, bool fHelp)
 	assetid = Parseuint256((char*)params[5].get_str().c_str());
 
 
-	hex = HeirFundTokenCaller(txfee, amount, name, pubkey2pk(pubkey), inactivitytime, assetid);
-	if (hex.size() > 0) {
+	result = HeirFundTokenCaller(txfee, amount, name, pubkey2pk(pubkey), inactivitytime, assetid);
+/*	if (hex.size() > 0) {
 		result.push_back(Pair("result", "success"));
 		result.push_back(Pair("hex", hex));
 	}
 	else
-		ERR_RESULT("couldn't create heir fund");
+		ERR_RESULT("couldn't create heir fund");*/
 
 
 	return result;
