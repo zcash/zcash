@@ -5679,7 +5679,7 @@ UniValue marmara_settlement(const UniValue& params, bool fHelp)
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     batontxid = Parseuint256((char *)params[0].get_str().c_str());
-    result = MarmaraSettlement(batontxid);
+    result = MarmaraSettlement(0,batontxid);
     return(result);
 }
 
