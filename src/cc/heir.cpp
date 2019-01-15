@@ -832,7 +832,8 @@ template <typename Helper>UniValue HeirClaim(uint256 fundingtxid, uint64_t txfee
     std::string heirName;
 	uint8_t hasHeirSpendingBegun = 0;
 
-	cp = CCinit(&C, Helper::getMyEval());
+	//cp = CCinit(&C, Helper::getMyEval());
+	cp = CCinit(&C, EVAL_HEIR);
 	if (txfee == 0)
         txfee = 10000;
 
@@ -919,8 +920,15 @@ template <typename Helper>UniValue HeirClaim(uint256 fundingtxid, uint64_t txfee
 				std::string rawhextx = FinalizeCCTx(0, cp, mtx, myPubkey, txfee,
 					Helper::makeClaimOpRet(tokenid, voutTokenPubkeys, fundingtxid, (myPubkey == heirPubkey) ? 1 : hasHeirSpendingBegun)); // forward isHeirSpending to the next latest tx
 
-                result.push_back(Pair("result", "success"));
-                result.push_back(Pair("hextx", rawhextx));
+				if (!rawhextx.empty()) {
+					result.push_back(Pair("result", "success"));
+					result.push_back(Pair("hextx", rawhextx));
+				}
+				else {
+					std::cerr << "HeirAdd error in FinalizeCCtx" << std::endl;
+					result.push_back(Pair("result", "error"));
+					result.push_back(Pair("error", "sign error"));
+				}
 
             } else {
                 fprintf(stderr, "HeirClaim() cant find Heir CC inputs\n");
