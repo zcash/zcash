@@ -569,7 +569,7 @@ UniValue MarmaraCreditloop(uint256 txid)
             }
         }
         result.push_back(Pair("result",(char *)"success"));
-        result.push_back(Pair("n",n);
+        result.push_back(Pair("n",n));
         result.push_back(Pair("creditloop",a));
     }
     
