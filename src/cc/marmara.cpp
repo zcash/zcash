@@ -188,21 +188,23 @@ int32_t MarmaraGetcreatetxid(uint256 &createtxid,uint256 txid)
 
 int32_t MarmaraGetbatontxid(std::vector<uint256> &creditloop,uint256 &batontxid,uint256 txid)
 {
-    uint256 createtxid,spenttxid; int64_t value; int32_t vini,height,vout = 0;
+    uint256 createtxid,spenttxid; int64_t value; int32_t vini,height,n=0,vout = 0;
     memset(&batontxid,0,sizeof(batontxid));
     if ( MarmaraGetcreatetxid(createtxid,txid) == 0 )
     {
         txid = createtxid;
+        fprintf(stderr,"txid.%s -> createtxid %s\n",txid.GetHex().c_str(),createtxid.GetHex().c_str());
         while ( CCgetspenttxid(spenttxid,vini,height,txid,vout) == 0 )
         {
+            creditloop.push_back(txid);
+            fprintf(stderr,"%d: %s\n",n,txid.GetHex().c_str());
+            n++;
             if ( (value= CCgettxout(spenttxid,vout,1)) > 0 )
             {
-                batontxid = txid;
+                batontxid = spenttxid;
                 fprintf(stderr,"got baton %s %.8f\n",batontxid.GetHex().c_str(),(double)value/COIN);
                 return(0);
             }
-            creditloop.push_back(spenttxid);
-            fprintf(stderr,"%s\n",spenttxid.GetHex());
             txid = spenttxid;
         }
     }
