@@ -485,7 +485,7 @@ UniValue MarmaraSettlement(uint64_t txfee,uint256 refbatontxid)
     if ( txfee == 0 )
         txfee = 10000;
     cp = CCinit(&C,EVAL_MARMARA);
-    if ( (n= MarmaraGetbatontxid(creditloop,batontxid,refbatontxid)) > 0 && batontxid == refbatontxid )
+    if ( (n= MarmaraGetbatontxid(creditloop,batontxid,refbatontxid)) > 0 )
     {
         if ( GetTransaction(batontxid,batontx,hashBlock,false) != 0 && (numvouts= batontx.vout.size()) > 1 )
         {
