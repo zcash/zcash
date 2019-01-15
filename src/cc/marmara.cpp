@@ -525,7 +525,7 @@ UniValue MarmaraCreditloop(uint256 txid)
                 result.push_back(Pair("amount",ValueFromAmount(amount)));
                 result.push_back(Pair("matures",matures));
                 result.push_back(Pair("currency",currency));
-                GetScriptaddress(coinaddr,tx.vout[0].scriptPubKey);
+                Getscriptaddress(coinaddr,tx.vout[0].scriptPubKey);
                 result.push_back(Pair("batonaddress",coinaddr));
                 for (i=0; i<n; i++)
                 {
@@ -539,7 +539,7 @@ UniValue MarmaraCreditloop(uint256 txid)
                             obj.push_back(Pair("senderpk",HexStr(senderpk)));
                             GetCCaddress(cp,coinaddr,senderpk);
                             obj.push_back(Pair("sender",coinaddr));
-                            GetScriptaddress(coinaddr,tx.vout[0].scriptPubKey);
+                            Getscriptaddress(coinaddr,tx.vout[0].scriptPubKey);
                             obj.push_back(Pair("nextaddress",coinaddr));
                             a.push_back(obj);
                         }
