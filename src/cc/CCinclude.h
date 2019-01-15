@@ -56,6 +56,8 @@ extern uint32_t ASSETCHAINS_CC;
 extern char ASSETCHAINS_SYMBOL[];
 extern std::string CCerror;
 
+#define CC_MAXVINS 1024
+
 #define SMALLVAL 0.000000000000001
 #ifndef _BITS256
 #define _BITS256
@@ -103,15 +105,18 @@ struct oracleprice_info
 #ifdef ENABLE_WALLET
 extern CWallet* pwalletMain;
 #endif
+//extern CCoinsViewCache *pcoinsTip;
 bool GetAddressUnspent(uint160 addressHash, int type,std::vector<std::pair<CAddressUnspentKey,CAddressUnspentValue> > &unspentOutputs);
 CBlockIndex *komodo_getblockindex(uint256 hash);
 int32_t komodo_nextheight();
+
+int32_t CCgetspenttxid(uint256 &spenttxid,int32_t &vini,int32_t &height,uint256 txid,int32_t vout);
 
 static const uint256 zeroid;
 bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock);
 int32_t is_hexstr(char *str,int32_t n);
 bool myAddtomempool(CTransaction &tx, CValidationState *pstate = NULL, bool fSkipExpiry = false);
-//uint64_t myGettxout(uint256 hash,int32_t n);
+int32_t CCgettxout(uint256 txid,int32_t vout,int32_t mempoolflag);
 bool myIsutxo_spentinmempool(uint256 txid,int32_t vout);
 bool mytxid_inmempool(uint256 txid);
 int32_t myIsutxo_spent(uint256 &spenttxid,uint256 txid,int32_t vout);

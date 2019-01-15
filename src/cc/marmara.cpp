@@ -18,6 +18,25 @@
 /*
  Marmara CC is for the MARMARA project
  
+ 'R': two forms for initial issuance and for accepting existing
+ vins normal
+ vout0 approval to senderpk (issuer or owner of baton)
+ 
+ 'I'
+ vin0 approval from 'R'
+ vins1+ normal
+ vout0 baton to 1st receiverpk
+ vout1 marker to Marmara so all issuances can be tracked (spent when loop is closed)
+ 
+ 'T'
+ vin0 approval from 'R'
+ vin1 baton from 'I'/'T'
+ vins2+ normal
+ vout0 baton to next receiverpk (following the unspent baton back to original is the credit loop)
+ 
+ 'S'
+ vins CC utxos from credit loop
+ 
 */
 
 // start of consensus code
@@ -32,44 +51,6 @@ int64_t IsMarmaravout(struct CCcontract_info *cp,const CTransaction& tx,int32_t 
     }
     return(0);
 }
-
-/*bool MarmaraExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx,int32_t minage,uint64_t txfee)
-{
-    static uint256 zerohash;
-    CTransaction vinTx; uint256 hashBlock,activehash; int32_t i,numvins,numvouts; int64_t inputs=0,outputs=0,assetoshis;
-    numvins = tx.vin.size();
-    numvouts = tx.vout.size();
-    for (i=0; i<numvins; i++)
-    {
-        //fprintf(stderr,"vini.%d\n",i);
-        if ( (*cp->ismyvin)(tx.vin[i].scriptSig) != 0 )
-        {
-            //fprintf(stderr,"vini.%d check mempool\n",i);
-            if ( eval->GetTxUnconfirmed(tx.vin[i].prevout.hash,vinTx,hashBlock) == 0 )
-                return eval->Invalid("cant find vinTx");
-            else
-            {
-                //fprintf(stderr,"vini.%d check hash and vout\n",i);
-                if ( hashBlock == zerohash )
-                    return eval->Invalid("cant Marmara from mempool");
-                if ( (assetoshis= IsMarmaravout(cp,vinTx,tx.vin[i].prevout.n)) != 0 )
-                    inputs += assetoshis;
-            }
-        }
-    }
-    for (i=0; i<numvouts; i++)
-    {
-        //fprintf(stderr,"i.%d of numvouts.%d\n",i,numvouts);
-        if ( (assetoshis= IsMarmaravout(cp,tx,i)) != 0 )
-            outputs += assetoshis;
-    }
-    if ( inputs != outputs+txfee )
-    {
-        fprintf(stderr,"inputs %llu vs outputs %llu\n",(long long)inputs,(long long)outputs);
-        return eval->Invalid("mismatched inputs != outputs + txfee");
-    }
-    else return(true);
-}*/
 
 int32_t MarmaraRandomize(uint32_t ind)
 {
@@ -136,6 +117,60 @@ CScript MarmaraLoopOpret(uint8_t funcid,uint256 createtxid,CPubKey senderpk,int6
     CScript opret; uint8_t evalcode = EVAL_MARMARA;
     opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << createtxid << senderpk << amount << matures << currency);
     return(opret);
+}
+
+uint8_t MarmaraDecodeLoopOpret(const CScript scriptPubKey,uint256 &createtxid,CPubKey &senderpk,int64_t &amount,int32_t &matures,std::string &currency)
+{
+    std::vector<uint8_t> vopret; uint8_t *script,e,f;
+    GetOpReturnData(scriptPubKey, vopret);
+    script = (uint8_t *)vopret.data();
+    if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> createtxid; ss >> senderpk; ss >> amount; ss >> matures; ss >> currency) != 0 )
+    {
+        return(f);
+    }
+    return(0);
+}
+
+int32_t MarmaraGetcreatetxid(uint256 &createtxid,uint256 txid)
+{
+    CTransaction tx; uint256 hashBlock; uint8_t funcid; int32_t numvouts,matures; std::string currency; CPubKey senderpk; int64_t amount;
+    if ( myGetTransaction(txid,tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 1 )
+    {
+        if ( (funcid= MarmaraDecodeLoopOpret(tx.vout[numvouts-1].scriptPubKey,createtxid,senderpk,amount,matures,currency)) == 'I' || funcid == 'T' )
+            return(0);
+        else if ( funcid == 'R' )
+        {
+            if ( createtxid == zeroid )
+                createtxid = txid;
+            return(0);
+        }
+    }
+    return(-1);
+}
+
+int32_t MarmaraGetbatontxid(std::vector<uint256> &creditloop,uint256 &batontxid,uint256 txid)
+{
+    uint256 createtxid,spenttxid; int64_t value; int32_t vini,height,n=0,vout = 0;
+    memset(&batontxid,0,sizeof(batontxid));
+    if ( MarmaraGetcreatetxid(createtxid,txid) == 0 )
+    {
+        txid = createtxid;
+        fprintf(stderr,"txid.%s -> createtxid %s\n",txid.GetHex().c_str(),createtxid.GetHex().c_str());
+        while ( CCgetspenttxid(spenttxid,vini,height,txid,vout) == 0 )
+        {
+            creditloop.push_back(txid);
+            fprintf(stderr,"%d: %s\n",n,txid.GetHex().c_str());
+            n++;
+            if ( (value= CCgettxout(spenttxid,vout,1)) > 0 )
+            {
+                batontxid = spenttxid;
+                fprintf(stderr,"got baton %s %.8f\n",batontxid.GetHex().c_str(),(double)value/COIN);
+                return(n);
+            }
+            txid = spenttxid;
+        }
+    }
+    return(-1);
 }
 
 CScript Marmara_scriptPubKey(int32_t height,CPubKey pk)
@@ -297,16 +332,51 @@ int64_t AddMarmaraCoinbases(struct CCcontract_info *cp,CMutableTransaction &mtx,
     return(totalinputs);
 }
 
-UniValue MarmaraReceive(uint64_t txfee,CPubKey senderpk,int64_t amount,std::string currency,int32_t matures,uint256 createtxid)
+int32_t MarmaraGetCreditloops(int64_t &totalamount,std::vector<uint256> &issuances,struct CCcontract_info *cp,int32_t firstheight,int32_t lastheight,int64_t minamount,int64_t maxamount,CPubKey refpk,std::string refcurrency)
+{
+    char coinaddr[64]; CPubKey Marmarapk,senderpk; int64_t amount; uint256 createtxid,txid,hashBlock; CTransaction tx; int32_t numvouts,vout,matures,n=0; std::string currency;
+    std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
+    Marmarapk = GetUnspendable(cp,0);
+    GetCCaddress(cp,coinaddr,Marmarapk);
+    SetCCunspents(unspentOutputs,coinaddr);
+    //fprintf(stderr,"check coinaddr.(%s)\n",coinaddr);
+    for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
+    {
+        txid = it->first.txhash;
+        vout = (int32_t)it->first.index;
+        //fprintf(stderr,"txid.%s/v%d\n",txid.GetHex().c_str(),vout);
+        if ( vout == 1 && GetTransaction(txid,tx,hashBlock,false) != 0 )
+        {
+            if ( tx.IsCoinBase() == 0 && (numvouts= tx.vout.size()) > 2 && tx.vout[numvouts - 1].nValue == 0 )
+            {
+                if ( MarmaraDecodeLoopOpret(tx.vout[numvouts-1].scriptPubKey,createtxid,senderpk,amount,matures,currency) == 'I' )
+                {
+                    n++;
+                    if ( currency == refcurrency && matures >= firstheight && matures <= lastheight && amount >= minamount && amount <= maxamount && (refpk.size() == 0 || senderpk == refpk) )
+                    {
+                        issuances.push_back(txid);
+                        totalamount += amount;
+                    }
+                }
+            }
+        } else fprintf(stderr,"error getting tx\n");
+    }
+    return(n);
+}
+
+UniValue MarmaraReceive(uint64_t txfee,CPubKey senderpk,int64_t amount,std::string currency,int32_t matures,uint256 batontxid)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); CPubKey mypk; struct CCcontract_info *cp,C; std::string rawtx; char *errorstr=0; int32_t needbaton = 0;
+    UniValue result(UniValue::VOBJ); CPubKey mypk; struct CCcontract_info *cp,C; std::string rawtx; char *errorstr=0; uint256 createtxid; int64_t batonamount; int32_t needbaton = 0;
     cp = CCinit(&C,EVAL_MARMARA);
     if ( txfee == 0 )
         txfee = 10000;
     // check for batonownership by senderpk and parameters match createtxid
     mypk = pubkey2pk(Mypubkey());
-    if ( currency != "MARMARA" )
+    memset(&createtxid,0,sizeof(createtxid));
+    if ( batontxid != zeroid && MarmaraGetcreatetxid(createtxid,batontxid) < 0 )
+        errorstr = (char *)"cant get createtxid from batontxid";
+    else if ( currency != "MARMARA" )
         errorstr = (char *)"for now, only MARMARA loops are supported";
     else if ( amount < txfee )
         errorstr = (char *)"amount must be for more than txfee";
@@ -314,13 +384,13 @@ UniValue MarmaraReceive(uint64_t txfee,CPubKey senderpk,int64_t amount,std::stri
         errorstr = (char *)"it must mature in the future";
     if ( errorstr == 0 )
     {
-        if ( createtxid == zeroid )
-            needbaton = 1;
-        if ( AddNormalinputs(mtx,mypk,(1+needbaton)*txfee,1) > 0 )
+        if ( batontxid != zeroid )
+            batonamount = txfee;
+        else batonamount = 2*txfee;
+        if ( AddNormalinputs(mtx,mypk,batonamount + txfee,1) > 0 )
         {
             errorstr = (char *)"couldnt finalize CCtx";
-            if ( needbaton != 0 )
-                mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA,txfee,senderpk));
+            mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA,batonamount,senderpk));
             rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,MarmaraLoopOpret('R',createtxid,senderpk,amount,matures,currency));
             if ( rawtx.size() > 0 )
                 errorstr = 0;
@@ -338,6 +408,8 @@ UniValue MarmaraReceive(uint64_t txfee,CPubKey senderpk,int64_t amount,std::stri
         result.push_back(Pair("rawtx",rawtx));
         result.push_back(Pair("funcid","R"));
         result.push_back(Pair("createtxid",createtxid.GetHex()));
+        if ( batontxid != zeroid )
+            result.push_back(Pair("batontxid",batontxid.GetHex()));
         result.push_back(Pair("senderpk",HexStr(senderpk)));
         result.push_back(Pair("amount",ValueFromAmount(amount)));
         result.push_back(Pair("matures",matures));
@@ -346,16 +418,22 @@ UniValue MarmaraReceive(uint64_t txfee,CPubKey senderpk,int64_t amount,std::stri
     return(result);
 }
 
-UniValue MarmaraIssue(uint64_t txfee,uint8_t funcid,CPubKey receiverpk,int64_t amount,std::string currency,int32_t matures,uint256 createtxid)
+UniValue MarmaraIssue(uint64_t txfee,uint8_t funcid,CPubKey receiverpk,int64_t amount,std::string currency,int32_t matures,uint256 approvaltxid,uint256 batontxid)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); CPubKey mypk; struct CCcontract_info *cp,C; std::string rawtx; char *errorstr=0;
+    UniValue result(UniValue::VOBJ); CPubKey mypk,Marmarapk; struct CCcontract_info *cp,C; std::string rawtx; uint256 createtxid; char *errorstr=0;
     cp = CCinit(&C,EVAL_MARMARA);
     if ( txfee == 0 )
         txfee = 10000;
-    // make sure if transfer that it is not too late
+    // make sure receiverpk is unique to creditloop
+    // make sure less than maxlength
+    Marmarapk = GetUnspendable(cp,0);
     mypk = pubkey2pk(Mypubkey());
-    if ( currency != "MARMARA" )
+    if ( MarmaraGetcreatetxid(createtxid,approvaltxid) < 0 )
+        errorstr = (char *)"cant get createtxid from approvaltxid";
+    else if ( batontxid == zeroid )
+        errorstr = (char *)"null batontxid";
+    else if ( currency != "MARMARA" )
         errorstr = (char *)"for now, only MARMARA loops are supported";
     else if ( amount < txfee )
         errorstr = (char *)"amount must be for more than txfee";
@@ -363,10 +441,15 @@ UniValue MarmaraIssue(uint64_t txfee,uint8_t funcid,CPubKey receiverpk,int64_t a
         errorstr = (char *)"it must mature in the future";
     if ( errorstr == 0 )
     {
-        if ( AddNormalinputs(mtx,mypk,2*txfee,1) > 0 )
+        mtx.vin.push_back(CTxIn(approvaltxid,0,CScript()));
+        if ( funcid == 'T' )
+            mtx.vin.push_back(CTxIn(batontxid,0,CScript()));
+        if ( funcid == 'I' || AddNormalinputs(mtx,mypk,txfee,1) > 0 )
         {
             errorstr = (char *)"couldnt finalize CCtx";
             mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA,txfee,receiverpk));
+            if ( funcid == 'I' )
+                mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA,txfee,Marmarapk));
             rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,MarmaraLoopOpret(funcid,createtxid,receiverpk,amount,matures,currency));
             if ( rawtx.size() > 0 )
                 errorstr = 0;
@@ -385,6 +468,9 @@ UniValue MarmaraIssue(uint64_t txfee,uint8_t funcid,CPubKey receiverpk,int64_t a
         char str[2]; str[0] = funcid, str[1] = 0;
         result.push_back(Pair("funcid",str));
         result.push_back(Pair("createtxid",createtxid.GetHex()));
+        result.push_back(Pair("approvaltxid",approvaltxid.GetHex()));
+        if ( funcid == 'T' )
+            result.push_back(Pair("batontxid",batontxid.GetHex()));
         result.push_back(Pair("receiverpk",HexStr(receiverpk)));
         result.push_back(Pair("amount",ValueFromAmount(amount)));
         result.push_back(Pair("matures",matures));
@@ -393,32 +479,215 @@ UniValue MarmaraIssue(uint64_t txfee,uint8_t funcid,CPubKey receiverpk,int64_t a
     return(result);
 }
 
-std::string MarmaraFund(uint64_t txfee,int64_t funds)
+UniValue MarmaraSettlement(uint64_t txfee,uint256 refbatontxid)
 {
-    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    CPubKey mypk,Marmarapk; CScript opret; struct CCcontract_info *cp,C;
-    cp = CCinit(&C,EVAL_MARMARA);
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR); std::vector<uint256> creditloop; uint256 batontxid,createtxid,refcreatetxid,hashBlock; uint8_t funcid; int32_t numerrs=0,i,n,numvouts,matures,refmatures; int64_t amount,refamount; CPubKey Marmarapk,pk; std::string currency,refcurrency; CTransaction tx,batontx; char coinaddr[64],myCCaddr[64],destaddr[64],batonCCaddr[64],str[2]; struct CCcontract_info *cp,C;
     if ( txfee == 0 )
         txfee = 10000;
-    mypk = pubkey2pk(Mypubkey());
-    Marmarapk = GetUnspendable(cp,0);
-    if ( AddNormalinputs(mtx,mypk,funds+txfee,64) > 0 )
-    {
-        mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA,funds,Marmarapk));
-        return(FinalizeCCTx(0,cp,mtx,mypk,txfee,opret));
-    }
-    return("");
-}
-
-UniValue MarmaraInfo()
-{
-    UniValue result(UniValue::VOBJ); char numstr[64];
-    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    CPubKey Marmarapk; struct CCcontract_info *cp,C; int64_t funding;
-    result.push_back(Pair("result","success"));
-    result.push_back(Pair("name","Marmara"));
     cp = CCinit(&C,EVAL_MARMARA);
     Marmarapk = GetUnspendable(cp,0);
+    if ( (n= MarmaraGetbatontxid(creditloop,batontxid,refbatontxid)) > 0 )
+    {
+        if ( GetTransaction(batontxid,batontx,hashBlock,false) != 0 && (numvouts= batontx.vout.size()) > 1 )
+        {
+            if ( (funcid= MarmaraDecodeLoopOpret(batontx.vout[numvouts-1].scriptPubKey,refcreatetxid,pk,refamount,refmatures,refcurrency)) != 0 )
+            {
+                if ( refcreatetxid != creditloop[0] )
+                {
+                    fprintf(stderr,"invalid refcreatetxid, setting to creditloop[0]\n");
+                    refcreatetxid = creditloop[0];
+                    numerrs++;
+                }
+                GetCCaddress(cp,myCCaddr,Mypubkey());
+                Getscriptaddress(batonCCaddr,batontx.vout[0].scriptPubKey);
+                if ( strcmp(myCCaddr,batonCCaddr) == 0 )
+                {
+                    for (i=0; i<n; i++)
+                    {
+                        if ( GetTransaction(creditloop[i],tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 1 )
+                        {
+                            if ( (funcid= MarmaraDecodeLoopOpret(tx.vout[numvouts-1].scriptPubKey,createtxid,pk,amount,matures,currency)) != 0 )
+                            {
+                                GetCCaddress1of2(cp,coinaddr,Marmarapk,pk);
+                                fprintf(stderr,"get locked funds of %s %.8f\n",coinaddr,(double)CCaddress_balance(coinaddr)/COIN);
+                            } else fprintf(stderr,"null funcid for creditloop[%d]\n",i);
+                        } else fprintf(stderr,"couldnt get creditloop[%d]\n",i);
+                    }
+                }
+                else
+                {
+                    result.push_back(Pair("result",(char *)"error"));
+                    result.push_back(Pair("error",(char *)"this node does not have the baton"));
+                    result.push_back(Pair("myCCaddr",myCCaddr));
+                    result.push_back(Pair("batonCCaddr",batonCCaddr));
+                }
+            }
+            else
+            {
+                result.push_back(Pair("result",(char *)"error"));
+                result.push_back(Pair("error",(char *)"couldnt get batontxid opret"));
+            }
+        }
+        else
+        {
+            result.push_back(Pair("result",(char *)"error"));
+            result.push_back(Pair("error",(char *)"couldnt find batontxid"));
+        }
+    }
+    else
+    {
+        result.push_back(Pair("result",(char *)"error"));
+        result.push_back(Pair("error",(char *)"couldnt get creditloop"));
+    }
+    return(result);
+}
+
+UniValue MarmaraCreditloop(uint256 txid)
+{
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR); std::vector<uint256> creditloop; uint256 batontxid,createtxid,refcreatetxid,hashBlock; uint8_t funcid; int32_t numerrs=0,i,n,numvouts,matures,refmatures; int64_t amount,refamount; CPubKey pk; std::string currency,refcurrency; CTransaction tx; char coinaddr[64],myCCaddr[64],destaddr[64],batonCCaddr[64],str[2]; struct CCcontract_info *cp,C;
+    cp = CCinit(&C,EVAL_MARMARA);
+    if ( (n= MarmaraGetbatontxid(creditloop,batontxid,txid)) > 0 )
+    {
+        if ( GetTransaction(batontxid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 1 )
+        {
+            result.push_back(Pair("result",(char *)"success"));
+            Getscriptaddress(coinaddr,CScript() << ParseHex(HexStr(Mypubkey())) << OP_CHECKSIG);
+            result.push_back(Pair("myaddress",coinaddr));
+            GetCCaddress(cp,myCCaddr,Mypubkey());
+            result.push_back(Pair("myCCaddress",myCCaddr));
+            result.push_back(Pair("batontxid",batontxid.GetHex()));
+            if ( (funcid= MarmaraDecodeLoopOpret(tx.vout[numvouts-1].scriptPubKey,refcreatetxid,pk,refamount,refmatures,refcurrency)) != 0 )
+            {
+                str[0] = funcid, str[1] = 0;
+                result.push_back(Pair("funcid",str));
+                if ( refcreatetxid != creditloop[0] )
+                {
+                    fprintf(stderr,"invalid refcreatetxid, setting to creditloop[0]\n");
+                    refcreatetxid = creditloop[0];
+                    numerrs++;
+                }
+                result.push_back(Pair("createtxid",refcreatetxid.GetHex()));
+                result.push_back(Pair("amount",ValueFromAmount(refamount)));
+                result.push_back(Pair("matures",refmatures));
+                result.push_back(Pair("currency",refcurrency));
+                result.push_back(Pair("batonpk",HexStr(pk)));
+                Getscriptaddress(coinaddr,CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG);
+                result.push_back(Pair("batonaddr",coinaddr));
+                GetCCaddress(cp,batonCCaddr,pk);
+                result.push_back(Pair("batonCCaddr",batonCCaddr));
+                Getscriptaddress(coinaddr,tx.vout[0].scriptPubKey);
+                if ( strcmp(coinaddr,batonCCaddr) != 0 )
+                {
+                    result.push_back(Pair("vout0address",coinaddr));
+                    numerrs++;
+                }
+                if ( strcmp(myCCaddr,coinaddr) == 0 )
+                    result.push_back(Pair("ismine",1));
+                else result.push_back(Pair("ismine",0));
+                for (i=0; i<n; i++)
+                {
+                    if ( GetTransaction(creditloop[i],tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 1 )
+                    {
+                        if ( (funcid= MarmaraDecodeLoopOpret(tx.vout[numvouts-1].scriptPubKey,createtxid,pk,amount,matures,currency)) != 0 )
+                        {
+                            UniValue obj(UniValue::VOBJ);
+                            obj.push_back(Pair("txid",creditloop[i].GetHex()));
+                            str[0] = funcid, str[1] = 0;
+                            obj.push_back(Pair("funcid",str));
+                            if ( funcid == 'R' && createtxid == zeroid )
+                            {
+                                createtxid = creditloop[i];
+                                obj.push_back(Pair("issuerpk",HexStr(pk)));
+                                Getscriptaddress(coinaddr,CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG);
+                                obj.push_back(Pair("issueraddr",coinaddr));
+                                GetCCaddress(cp,coinaddr,pk);
+                                obj.push_back(Pair("issuerCCaddr",coinaddr));
+                            }
+                            else
+                            {
+                                obj.push_back(Pair("receiverpk",HexStr(pk)));
+                                Getscriptaddress(coinaddr,CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG);
+                                obj.push_back(Pair("receiveraddr",coinaddr));
+                                GetCCaddress(cp,coinaddr,pk);
+                                obj.push_back(Pair("receiverCCaddr",coinaddr));
+                            }
+                            Getscriptaddress(destaddr,tx.vout[0].scriptPubKey);
+                            if ( strcmp(destaddr,coinaddr) != 0 )
+                            {
+                                obj.push_back(Pair("vout0address",destaddr));
+                                numerrs++;
+                            }
+                            if ( createtxid != refcreatetxid || amount != refamount || matures != refmatures || currency != refcurrency )
+                            {
+                                numerrs++;
+                                obj.push_back(Pair("objerror",(char *)"mismatched createtxid or amount or matures or currency"));
+                                obj.push_back(Pair("createtxid",createtxid.GetHex()));
+                                obj.push_back(Pair("amount",ValueFromAmount(amount)));
+                                obj.push_back(Pair("matures",matures));
+                                obj.push_back(Pair("currency",currency));
+                            }
+                            a.push_back(obj);
+                        }
+                    }
+                }
+                result.push_back(Pair("n",n));
+                result.push_back(Pair("numerrors",numerrs));
+                result.push_back(Pair("creditloop",a));
+            }
+            else
+            {
+                result.push_back(Pair("result",(char *)"error"));
+                result.push_back(Pair("error",(char *)"couldnt get batontxid opret"));
+            }
+        }
+        else
+        {
+            result.push_back(Pair("result",(char *)"error"));
+            result.push_back(Pair("error",(char *)"couldnt find batontxid"));
+        }
+    }
+    else
+    {
+        result.push_back(Pair("result",(char *)"error"));
+        result.push_back(Pair("error",(char *)"couldnt get creditloop"));
+    }
+    return(result);
+}
+    
+UniValue MarmaraInfo(CPubKey refpk,int32_t firstheight,int32_t lastheight,int64_t minamount,int64_t maxamount,std::string currency)
+{
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR); int32_t i,n,matches; int64_t totalamount=0; std::vector<uint256> issuances; char coinaddr[64];
+    CPubKey Marmarapk; struct CCcontract_info *cp,C;
+    result.push_back(Pair("result","success"));
+    Getscriptaddress(coinaddr,CScript() << ParseHex(HexStr(Mypubkey())) << OP_CHECKSIG);
+    result.push_back(Pair("myaddress",coinaddr));
+    GetCCaddress(cp,coinaddr,Mypubkey());
+    result.push_back(Pair("myCCaddress",coinaddr));
+    if ( refpk.size() == 33 )
+        result.push_back(Pair("issuer",HexStr(refpk)));
+    if ( currency.size() == 0 )
+        currency = (char *)"MARMARA";
+    if ( firstheight <= lastheight )
+        firstheight = 0, lastheight = (1 << 30);
+    if ( minamount <= maxamount )
+        minamount = 0, maxamount = (1LL << 60);
+    result.push_back(Pair("firstheight",firstheight));
+    result.push_back(Pair("lastheight",lastheight));
+    result.push_back(Pair("minamount",ValueFromAmount(minamount)));
+    result.push_back(Pair("maxamount",ValueFromAmount(maxamount)));
+    result.push_back(Pair("currency",currency));
+    cp = CCinit(&C,EVAL_MARMARA);
+    Marmarapk = GetUnspendable(cp,0);
+    if ( (n= MarmaraGetCreditloops(totalamount,issuances,cp,firstheight,lastheight,minamount,maxamount,refpk,currency)) > 0 )
+    {
+        result.push_back(Pair("n",n));
+        matches = (int32_t)issuances.size();
+        result.push_back(Pair("matches",matches));
+        for (i=0; i<matches; i++)
+            a.push_back(issuances[i].GetHex());
+        result.push_back(Pair("issuances",a));
+        result.push_back(Pair("totalamount",ValueFromAmount(totalamount)));
+    }
     return(result);
 }
 

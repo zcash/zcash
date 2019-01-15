@@ -42,7 +42,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
 {
     auto consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
     CTransaction vintx; std::string hex; uint256 hashBlock; uint64_t mask=0,nmask=0,vinimask=0;
-    int64_t utxovalues[64],change,normalinputs=0,totaloutputs=0,normaloutputs=0,totalinputs=0,normalvins=0,ccvins=0; 
+    int64_t utxovalues[CC_MAXVINS],change,normalinputs=0,totaloutputs=0,normaloutputs=0,totalinputs=0,normalvins=0,ccvins=0; 
     int32_t i,utxovout,n,err = 0; char myaddr[64],destaddr[64],unspendable[64];
     uint8_t *privkey,myprivkey[32],unspendablepriv[32],*msg32 = 0; CC *mycond=0,*othercond=0,*othercond2=0,*othercond3=0,*cond; CPubKey unspendablepk;
     n = mtx.vout.size();
@@ -52,7 +52,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
             normaloutputs += mtx.vout[i].nValue;
         totaloutputs += mtx.vout[i].nValue;
     }
-    if ( (n= mtx.vin.size()) > 64 )
+    if ( (n= mtx.vin.size()) > CC_MAXVINS )
     {
         fprintf(stderr,"FinalizeCCTx: %d is too many vins\n",n);
         return("0");
@@ -244,6 +244,40 @@ int64_t CCutxovalue(char *coinaddr,uint256 utxotxid,int32_t utxovout)
         if ( txid == utxotxid && utxovout == it->first.index )
             return(it->second.satoshis);
     }
+    return(0);
+}
+
+int32_t CCgettxout(uint256 txid,int32_t vout,int32_t mempoolflag)
+{
+    CCoins coins;
+    if ( mempoolflag != 0 )
+    {
+        LOCK(mempool.cs);
+        CCoinsViewMemPool view(pcoinsTip, mempool);
+        if (!view.GetCoins(txid, coins))
+            return(-1);
+        if ( myIsutxo_spentinmempool(txid,vout) != 0 )
+            return(-1);
+    }
+    else
+    {
+        if (!pcoinsTip->GetCoins(txid, coins))
+            return(-1);
+    }
+    if ( vout < coins.vout.size() )
+        return(coins.vout[vout].nValue);
+    else return(-1);
+}
+
+int32_t CCgetspenttxid(uint256 &spenttxid,int32_t &vini,int32_t &height,uint256 txid,int32_t vout)
+{
+    CSpentIndexKey key(txid, vout);
+    CSpentIndexValue value;
+    if ( !GetSpentIndex(key, value) )
+        return(-1);
+    spenttxid = value.txid;
+    vini = (int32_t)value.inputIndex;
+    height = value.blockHeight;
     return(0);
 }
 
