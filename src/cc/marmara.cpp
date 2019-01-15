@@ -178,12 +178,25 @@ int32_t MarmaraGetcreatetxid(uint256 &createtxid,uint256 txid)
             return(0);
         else if ( funcid == 'R' )
         {
-            createtxid = txid;
+            if ( createtxid == zeroid )
+                createtxid = txid;
             return(0);
         }
     }
     return(-1);
 }
+
+int32_t MarmaraGetbatontxid(uint256 &batontxid,uint256 txid)
+{
+    uint256 createtxid;
+    memset(&batontxid,0,sizeof(batontxid));
+    if ( MarmaraGetcreatetxid(createtxid,txid) == 0 )
+    {
+        return(0);
+    }
+    return(-1);
+}
+
 
 CScript Marmara_scriptPubKey(int32_t height,CPubKey pk)
 {
@@ -420,6 +433,8 @@ UniValue MarmaraReceive(uint64_t txfee,CPubKey senderpk,int64_t amount,std::stri
         result.push_back(Pair("rawtx",rawtx));
         result.push_back(Pair("funcid","R"));
         result.push_back(Pair("createtxid",createtxid.GetHex()));
+        if ( batontxid != zeroid )
+            result.push_back(Pair("batontxid",batontxid.GetHex()));
         result.push_back(Pair("senderpk",HexStr(senderpk)));
         result.push_back(Pair("amount",ValueFromAmount(amount)));
         result.push_back(Pair("matures",matures));
@@ -445,8 +460,8 @@ UniValue MarmaraIssue(uint64_t txfee,uint8_t funcid,CPubKey receiverpk,int64_t a
         errorstr = (char *)"for now, only MARMARA loops are supported";
     else if ( amount < txfee )
         errorstr = (char *)"amount must be for more than txfee";
-    else if ( matures <= chainActive.LastTip()->GetHeight() )
-        errorstr = (char *)"it must mature in the future";
+    //else if ( matures <= chainActive.LastTip()->GetHeight() )
+    //    errorstr = (char *)"it must mature in the future";
     if ( errorstr == 0 )
     {
         mtx.vin.push_back(CTxIn(approvaltxid,0,CScript()));
@@ -544,7 +559,7 @@ UniValue MarmaraInfo(CPubKey refpk,int32_t firstheight,int32_t lastheight,int64_
         for (i=0; i<matches; i++)
             a.push_back(issuances[i].GetHex());
         result.push_back(Pair("issuances",a));
-        result.push_back(Pair("totalamount",totalamount));
+        result.push_back(Pair("totalamount",ValueFromAmount(totalamount)));
     }
     return(result);
 }

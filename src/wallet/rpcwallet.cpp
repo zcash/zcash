@@ -5602,9 +5602,9 @@ UniValue marmara_issue(const UniValue& params, bool fHelp)
 UniValue marmara_transfer(const UniValue& params, bool fHelp)
 {
     UniValue result(UniValue::VOBJ); uint256 approvaltxid,batontxid; std::vector<uint8_t> receiverpub; int64_t amount; int32_t matures; std::string currency;
-    if ( fHelp || params.size() != 6 )
+    if ( fHelp || params.size() != 5 )
     {
-        // marmaratransfer 028076d42eb20efc10007fafb5ca66a2052523c0d2221e607adf958d1a332159f6 7.5 MARMARA 3903 748a4c80e6f6b725340fb0f52738f38a11c422d59b3034c8366b3d7b33c99a1e bf6b4d42aa3ce974c853d73b06c78597dd3b5fb493d5d0d944f72c2017f561ad
+        // marmaratransfer 028076d42eb20efc10007fafb5ca66a2052523c0d2221e607adf958d1a332159f6 7.5 MARMARA 3903 748a4c80e6f6b725340fb0f52738f38a11c422d59b3034c8366b3d7b33c99a1e
         throw runtime_error("marmaratransfer receiverpk amount currency matures approvaltxid\n");
     }
     if ( ensure_CCrequirements() < 0 )
@@ -5619,7 +5619,8 @@ UniValue marmara_transfer(const UniValue& params, bool fHelp)
     currency = params[2].get_str();
     matures = atol(params[3].get_str().c_str());
     approvaltxid = Parseuint256((char *)params[4].get_str().c_str());
-    batontxid = Parseuint256((char *)params[5].get_str().c_str());
+    if ( MarmaraGetbatontxid(batontxid,approvaltxid) < 0 )
+        throw runtime_error("couldnt find batontxid\n");
     return(MarmaraIssue(0,'T',pubkey2pk(receiverpub),amount,currency,matures,approvaltxid,batontxid));
 }
 
