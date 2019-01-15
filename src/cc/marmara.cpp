@@ -549,7 +549,7 @@ UniValue MarmaraCreditloop(uint256 txid)
                             obj.push_back(Pair("nextaddress",coinaddr));
                             if ( createtxid != refcreatetxid || amount != refamount || matures != refmatures || currency != refcurrency )
                             {
-                                obj.push_back(Pair("objerror",(char *)"mismatched createtxid or amount or matures or currency")));
+                                obj.push_back(Pair("objerror",(char *)"mismatched createtxid or amount or matures or currency"));
                                 obj.push_back(Pair("createtxid",createtxid.GetHex()));
                                 obj.push_back(Pair("amount",ValueFromAmount(amount)));
                                 obj.push_back(Pair("matures",matures));
