@@ -548,7 +548,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
         {
             char checkaddr[64];
             Getscriptaddress(checkaddr,txNew.vout[0].scriptPubKey);
-            fprintf(stderr,"set mining coinbase -> %s\n",checkaddr);
+            //`fprintf(stderr,"set mining coinbase -> %s\n",checkaddr);
             txNew.vout.resize(2);
             txNew.vout[1].nValue = 0;
             txNew.vout[1].scriptPubKey = MarmaraCoinbaseOpret('C',nHeight,pk);
