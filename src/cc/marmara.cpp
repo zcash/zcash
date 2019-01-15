@@ -452,12 +452,12 @@ UniValue MarmaraIssue(uint64_t txfee,uint8_t funcid,CPubKey receiverpk,int64_t a
         mtx.vin.push_back(CTxIn(approvaltxid,0,CScript()));
         if ( funcid == 'T' )
             mtx.vin.push_back(CTxIn(batontxid,0,CScript()));
-        if ( funcid == 'I' || AddNormalinputs(mtx,mypk,2*txfee,1) > 0 )
+        if ( funcid == 'I' || AddNormalinputs(mtx,mypk,txfee,1) > 0 )
         {
             errorstr = (char *)"couldnt finalize CCtx";
-            mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA,txfee,receiverpk));
+            mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA,txfee/2,receiverpk));
             if ( funcid == 'I' )
-                mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA,txfee,Marmarapk));
+                mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA,txfee/2,Marmarapk));
             rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,MarmaraLoopOpret(funcid,createtxid,receiverpk,amount,matures,currency));
             if ( rawtx.size() > 0 )
                 errorstr = 0;
