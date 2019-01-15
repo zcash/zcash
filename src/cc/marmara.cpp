@@ -52,44 +52,6 @@ int64_t IsMarmaravout(struct CCcontract_info *cp,const CTransaction& tx,int32_t 
     return(0);
 }
 
-/*bool MarmaraExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx,int32_t minage,uint64_t txfee)
-{
-    static uint256 zerohash;
-    CTransaction vinTx; uint256 hashBlock,activehash; int32_t i,numvins,numvouts; int64_t inputs=0,outputs=0,assetoshis;
-    numvins = tx.vin.size();
-    numvouts = tx.vout.size();
-    for (i=0; i<numvins; i++)
-    {
-        //fprintf(stderr,"vini.%d\n",i);
-        if ( (*cp->ismyvin)(tx.vin[i].scriptSig) != 0 )
-        {
-            //fprintf(stderr,"vini.%d check mempool\n",i);
-            if ( eval->GetTxUnconfirmed(tx.vin[i].prevout.hash,vinTx,hashBlock) == 0 )
-                return eval->Invalid("cant find vinTx");
-            else
-            {
-                //fprintf(stderr,"vini.%d check hash and vout\n",i);
-                if ( hashBlock == zerohash )
-                    return eval->Invalid("cant Marmara from mempool");
-                if ( (assetoshis= IsMarmaravout(cp,vinTx,tx.vin[i].prevout.n)) != 0 )
-                    inputs += assetoshis;
-            }
-        }
-    }
-    for (i=0; i<numvouts; i++)
-    {
-        //fprintf(stderr,"i.%d of numvouts.%d\n",i,numvouts);
-        if ( (assetoshis= IsMarmaravout(cp,tx,i)) != 0 )
-            outputs += assetoshis;
-    }
-    if ( inputs != outputs+txfee )
-    {
-        fprintf(stderr,"inputs %llu vs outputs %llu\n",(long long)inputs,(long long)outputs);
-        return eval->Invalid("mismatched inputs != outputs + txfee");
-    }
-    else return(true);
-}*/
-
 int32_t MarmaraRandomize(uint32_t ind)
 {
     uint64_t val64; uint32_t val,range = (MARMARA_MAXLOCK - MARMARA_MINLOCK);
@@ -548,7 +510,8 @@ UniValue MarmaraIssue(uint64_t txfee,uint8_t funcid,CPubKey receiverpk,int64_t a
 
 UniValue MarmaraCreditloop(uint256 txid)
 {
-    UniValue result(UniValue::VOBJ),a(UniValue::VARR); std::vector<uint256> creditloop; uint256 batontxid,createtxid,refcreatetxid,hashBlock; uint8_t funcid; int32_t i,n,numvouts,matures,refmatures; int64_t amount,refamount; CPubKey senderpk; std::string currency,refcurrency; CTransaction tx; char coinaddr[64];
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR); std::vector<uint256> creditloop; uint256 batontxid,createtxid,refcreatetxid,hashBlock; uint8_t funcid; int32_t i,n,numvouts,matures,refmatures; int64_t amount,refamount; CPubKey senderpk; std::string currency,refcurrency; CTransaction tx; char coinaddr[64]; struct CCcontract_info *cp,C;
+    cp = CCinit(&C,EVAL_MARMARA);
     if ( (n= MarmaraGetbatontxid(creditloop,batontxid,txid)) > 0 )
     {
         if ( GetTransaction(batontxid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 1 )
@@ -562,7 +525,7 @@ UniValue MarmaraCreditloop(uint256 txid)
                 result.push_back(Pair("amount",ValueFromAmount(amount)));
                 result.push_back(Pair("matures",matures));
                 result.push_back(Pair("currency",currency));
-                GetScriptaddr(coinaddr,tx.vout[0].scriptPubKey);
+                GetScriptaddress(coinaddr,tx.vout[0].scriptPubKey);
                 result.push_back(Pair("batonaddress",coinaddr));
                 for (i=0; i<n; i++)
                 {
@@ -576,7 +539,7 @@ UniValue MarmaraCreditloop(uint256 txid)
                             obj.push_back(Pair("senderpk",HexStr(senderpk)));
                             GetCCaddress(cp,coinaddr,senderpk);
                             obj.push_back(Pair("sender",coinaddr));
-                            GetScriptaddr(coinaddr,tx.vout[0].scriptPubKey);
+                            GetScriptaddress(coinaddr,tx.vout[0].scriptPubKey);
                             obj.push_back(Pair("nextaddress",coinaddr));
                             a.push_back(obj);
                         }
@@ -607,7 +570,6 @@ UniValue MarmaraCreditloop(uint256 txid)
     
 UniValue MarmaraInfo(CPubKey refpk,int32_t firstheight,int32_t lastheight,int64_t minamount,int64_t maxamount,std::string currency)
 {
-
     UniValue result(UniValue::VOBJ),a(UniValue::VARR); int32_t i,n,matches; int64_t totalamount=0; std::vector<uint256> issuances;
     CPubKey Marmarapk; struct CCcontract_info *cp,C;
     result.push_back(Pair("result","success"));
