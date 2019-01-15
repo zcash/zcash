@@ -909,7 +909,7 @@ template <typename Helper>UniValue HeirClaim(uint256 fundingtxid, uint64_t txfee
                 Myprivkey(myprivkey);
 
 				// set pubkeys for finding 1of2 cc in FinalizeCCtx to sign it:
-				Helper::CCaddrCoinsOrTokens1of2set(ownerPubkey, heirPubkey, coinaddr);
+				Helper::CCaddrCoinsOrTokens1of2set(cp, ownerPubkey, heirPubkey, coinaddr);
 
 				// add 1of2 vout validation pubkeys (this is for tokens):
 				std::vector<CPubKey> voutTokenPubkeys;

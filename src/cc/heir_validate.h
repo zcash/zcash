@@ -51,10 +51,8 @@ public:
 		cpHeir = CCinit(&heirC, EVAL_HEIR);
 		return GetCCaddress1of2(cpHeir, coinaddr, ownerPubkey, heirPubkey);
 	}
-	static void CCaddrCoinsOrTokens1of2set(CPubKey ownerPubkey, CPubKey heirPubkey, char *coinaddr) {
-		struct CCcontract_info *cpHeir, heirC;
-		cpHeir = CCinit(&heirC, EVAL_HEIR);
-		CCaddr1of2set(cpHeir, ownerPubkey, heirPubkey, coinaddr);
+	static void CCaddrCoinsOrTokens1of2set(struct CCcontract_info *cp, CPubKey ownerPubkey, CPubKey heirPubkey, char *coinaddr) {
+		CCaddr1of2set(cp, ownerPubkey, heirPubkey, coinaddr);
 	}
 };
 
@@ -96,10 +94,9 @@ public:
 		return GetTokensCCaddress1of2(cpHeir, coinaddr, ownerPubkey, heirPubkey);
 	}
 
-	static void CCaddrCoinsOrTokens1of2set(CPubKey ownerPubkey, CPubKey heirPubkey, char *coinaddr) {
-		struct CCcontract_info *cpHeir, heirC;
-		cpHeir = CCinit(&heirC, EVAL_HEIR);
-		CCaddrTokens1of2set(cpHeir, ownerPubkey, heirPubkey, coinaddr);
+	static void CCaddrCoinsOrTokens1of2set(struct CCcontract_info *cp, CPubKey ownerPubkey, CPubKey heirPubkey, char *coinaddr) {
+
+		CCaddrTokens1of2set(cp, ownerPubkey, heirPubkey, coinaddr);
 	}
 };
 
