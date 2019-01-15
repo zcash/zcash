@@ -5579,7 +5579,7 @@ UniValue marmara_issue(const UniValue& params, bool fHelp)
     UniValue result(UniValue::VOBJ); uint256 approvaltxid; std::vector<uint8_t> receiverpub; int64_t amount; int32_t matures; std::string currency;
     if ( fHelp || params.size() != 5 )
     {
-        // marmaraissue 039433dc3749aece1bd568f374a45da3b0bc6856990d7da3cd175399577940a775 7.5 MARMARA 3878 78d4bb8e70578ab28ddf60c0af93c6f459f525271864c9984ccbe14e25124dfc
+        // marmaraissue 039433dc3749aece1bd568f374a45da3b0bc6856990d7da3cd175399577940a775 7.5 MARMARA 3903 010ff7f9256cefe3b5dee3d72c0eeae9fc6f34884e6f32ffe5b60916df54a9be
         throw runtime_error("marmaraissue receiverpk amount currency matures approvaltxid\n");
     }
     if ( ensure_CCrequirements() < 0 )
@@ -5602,7 +5602,7 @@ UniValue marmara_transfer(const UniValue& params, bool fHelp)
     UniValue result(UniValue::VOBJ); uint256 createtxid,batontxid; std::vector<uint8_t> receiverpub; int64_t amount; int32_t matures; std::string currency;
     if ( fHelp || params.size() != 5 )
     {
-        // marmaratransfer 039433dc3749aece1bd568f374a45da3b0bc6856990d7da3cd175399577940a775 7.5 MARMARA 2693 e5b1ef8ec90e981d3011c8e024cef869b69af2d4dd6837d1ab1d394d3730b7cb
+        // marmaratransfer 028076d42eb20efc10007fafb5ca66a2052523c0d2221e607adf958d1a332159f6 7.5 MARMARA 3903 e5b1ef8ec90e981d3011c8e024cef869b69af2d4dd6837d1ab1d394d3730b7cb
         throw runtime_error("marmaratransfer receiverpk amount currency matures batontxid\n");
     }
     if ( ensure_CCrequirements() < 0 )

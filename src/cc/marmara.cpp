@@ -544,6 +544,7 @@ UniValue MarmaraInfo(CPubKey refpk,int32_t firstheight,int32_t lastheight,int64_
         for (i=0; i<matches; i++)
             a.push_back(issuances[i].GetHex());
         result.push_back(Pair("issuances",a));
+        result.push_back(Pair("totalamount",totalamount));
     }
     return(result);
 }
