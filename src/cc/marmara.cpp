@@ -174,7 +174,7 @@ int32_t MarmaraGetcreatetxid(uint256 &createtxid,uint256 txid)
     CTransaction tx; uint256 hashBlock; uint8_t funcid; int32_t numvouts,matures; std::string currency; CPubKey senderpk; int64_t amount;
     if ( myGetTransaction(txid,tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 1 )
     {
-        if ( (funcid= MarmaraDecodeLoopOpret(tx.vout[numvouts-1].scriptPubKey,createtxid,senderpk,amount,matures,currency)) == 'I' || funcid == 'T' )
+        if ( (funcid= MarmaraDecodeLoopOpret(tx.vout[numvouts-1].scriptPubKey,createtxid,senderpk,amount,matures,currency)) == 'I' || funcid == 'T' || funcid == 'R' )
             return(0);
     }
     return(-1);
