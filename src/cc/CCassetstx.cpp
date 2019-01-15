@@ -328,7 +328,7 @@ std::string CreateBuyOffer(int64_t txfee, int64_t bidamount, uint256 assetid, in
         mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS, txfee, mypk));
 		std::vector<CPubKey> voutTokenPubkeys;  // should be empty - no token vouts
 
-        return(FinalizeCCTx(0, cpAssets, mtx, mypk, txfee, EncodeAssetOpRet('b', assetid, zeroid, pricetotal, voutTokenPubkeys, Mypubkey())));
+        return(FinalizeCCTx(0, cpAssets, mtx, mypk, txfee, EncodeAssetOpRet('b', zeroid, pricetotal, voutTokenPubkeys, Mypubkey())));
     }
 	CCerror = strprintf("no coins found to make buy offer");
     return("");
@@ -380,7 +380,7 @@ std::string CreateSell(int64_t txfee,int64_t askamount,uint256 assetid,int64_t p
 			std::vector<CPubKey> voutTokenPubkeys;
 			voutTokenPubkeys.push_back(unspendablePubkey);   
 
-            opret = EncodeAssetOpRet('s',assetid, zeroid, pricetotal, voutTokenPubkeys, Mypubkey());
+            opret = EncodeAssetOpRet('s', zeroid, pricetotal, voutTokenPubkeys, Mypubkey());
             return(FinalizeCCTx(mask,cpTokens,mtx,mypk,txfee,opret));
 		}
 		else {
@@ -440,10 +440,10 @@ std::string CreateSwap(int64_t txfee,int64_t askamount,uint256 assetid,uint256 a
 			std::vector<CPubKey> voutTokenPubkeys;  // should be empty - no token vouts
 
 			if (assetid2 == zeroid) {
-				opret = EncodeAssetOpRet('s', assetid, zeroid, pricetotal, voutTokenPubkeys, Mypubkey());
+				opret = EncodeAssetOpRet('s', zeroid, pricetotal, voutTokenPubkeys, Mypubkey());
 			}
             else    {
-                opret = EncodeAssetOpRet('e', assetid, assetid2, pricetotal, voutTokenPubkeys, Mypubkey());
+                opret = EncodeAssetOpRet('e', assetid2, pricetotal, voutTokenPubkeys, Mypubkey());
             }
             return(FinalizeCCTx(mask,cp,mtx,mypk,txfee,opret));
         } 
@@ -495,7 +495,7 @@ std::string CancelBuyOffer(int64_t txfee,uint256 assetid,uint256 bidtxid)
 
 			std::vector<CPubKey> voutTokenPubkeys;  // should be empty, no tokens vout 
 													
-            return(FinalizeCCTx(mask, cpAssets, mtx, mypk, txfee, EncodeAssetOpRet('o', assetid, zeroid, 0, voutTokenPubkeys, Mypubkey())));
+            return(FinalizeCCTx(mask, cpAssets, mtx, mypk, txfee, EncodeAssetOpRet('o', zeroid, 0, voutTokenPubkeys, Mypubkey())));
         }
     }
     return("");
@@ -542,7 +542,7 @@ std::string CancelSell(int64_t txfee,uint256 assetid,uint256 asktxid)
             GetCCaddress(cpAssets, myCCaddr, mypk);
             CCaddr2set(cpTokens, EVAL_ASSETS, mypk, myPrivkey, myCCaddr);  //do we need this? Seems FinalizeCCTx can attach to any evalcode cc addr by calling Getscriptaddress 
 
-            return(FinalizeCCTx(mask, cpTokens, mtx, mypk, txfee, EncodeAssetOpRet('x', assetid, zeroid, 0, voutTokenPubkeys, Mypubkey())));
+            return(FinalizeCCTx(mask, cpTokens, mtx, mypk, txfee, EncodeAssetOpRet('x', zeroid, 0, voutTokenPubkeys, Mypubkey())));
         }
     }
     return("");
@@ -620,7 +620,7 @@ std::string FillBuyOffer(int64_t txfee,uint256 assetid,uint256 bidtxid,int64_t f
 				std::vector<CPubKey> voutTokenPubkeys;
 				voutTokenPubkeys.push_back(pubkey2pk(origpubkey));
 
-                return(FinalizeCCTx(mask,cpTokens,mtx,mypk,txfee, EncodeAssetOpRet('B', assetid, zeroid, remaining_required, voutTokenPubkeys, origpubkey)));
+                return(FinalizeCCTx(mask,cpTokens,mtx,mypk,txfee, EncodeAssetOpRet('B', zeroid, remaining_required, voutTokenPubkeys, origpubkey)));
             } else return("dont have any assets to fill bid");
         }
     }
@@ -722,7 +722,7 @@ std::string FillSell(int64_t txfee,uint256 assetid,uint256 assetid2,uint256 askt
 				std::vector<CPubKey> voutTokenPubkeys;
 				voutTokenPubkeys.push_back(mypk);
 
-                return(FinalizeCCTx(mask,cpTokens,mtx,mypk,txfee,EncodeAssetOpRet(assetid2 != zeroid ? 'E' : 'S', assetid, assetid2, remaining_nValue, voutTokenPubkeys, origpubkey)));
+                return(FinalizeCCTx(mask,cpTokens,mtx,mypk,txfee,EncodeAssetOpRet(assetid2 != zeroid ? 'E' : 'S', assetid2, remaining_nValue, voutTokenPubkeys, origpubkey)));
             } else {
                 CCerror = strprintf("filltx not enough utxos");
                 fprintf(stderr,"%s\n", CCerror.c_str());
