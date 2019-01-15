@@ -510,13 +510,17 @@ UniValue MarmaraIssue(uint64_t txfee,uint8_t funcid,CPubKey receiverpk,int64_t a
 
 UniValue MarmaraCreditloop(uint256 txid)
 {
-    UniValue result(UniValue::VOBJ),a(UniValue::VARR); std::vector<uint256> creditloop; uint256 batontxid,createtxid,refcreatetxid,hashBlock; uint8_t funcid; int32_t numerrs=0,i,n,numvouts,matures,refmatures; int64_t amount,refamount; CPubKey senderpk; std::string currency,refcurrency; CTransaction tx; char coinaddr[64],str[2]; struct CCcontract_info *cp,C;
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR); std::vector<uint256> creditloop; uint256 batontxid,createtxid,refcreatetxid,hashBlock; uint8_t funcid; int32_t numerrs=0,i,n,numvouts,matures,refmatures; int64_t amount,refamount; CPubKey senderpk; std::string currency,refcurrency; CTransaction tx; char coinaddr[64],myCCaddr[64],str[2]; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_MARMARA);
     if ( (n= MarmaraGetbatontxid(creditloop,batontxid,txid)) > 0 )
     {
         if ( GetTransaction(batontxid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 1 )
         {
             result.push_back(Pair("result",(char *)"success"));
+            Getscriptaddress(coinaddr,CScript() << ParseHex(HexStr(Mypubkey())) << OP_CHECKSIG);
+            result.push_back(Pair("myaddress",coinaddr));
+            GetCCaddress(cp,myCCaddr,Mypubkey());
+            result.push_back(Pair("myCCaddress",myCCaddr));
             result.push_back(Pair("batontxid",batontxid.GetHex()));
             if ( (funcid= MarmaraDecodeLoopOpret(tx.vout[numvouts-1].scriptPubKey,refcreatetxid,senderpk,refamount,refmatures,refcurrency)) != 0 )
             {
@@ -532,12 +536,15 @@ UniValue MarmaraCreditloop(uint256 txid)
                 result.push_back(Pair("amount",ValueFromAmount(refamount)));
                 result.push_back(Pair("matures",refmatures));
                 result.push_back(Pair("currency",refcurrency));
+                result.push_back(Pair("senderpk",HexStr(senderpk)));
+                Getscriptaddress(coinaddr,CScript() << ParseHex(HexStr(senderpk())) << OP_CHECKSIG);
+                obj.push_back(Pair("senderaddr",coinaddr));
+
                 Getscriptaddress(coinaddr,tx.vout[0].scriptPubKey);
                 result.push_back(Pair("batonaddress",coinaddr));
-                Getscriptaddress(coinaddr,CScript() << ParseHex(HexStr(Mypubkey())) << OP_CHECKSIG);
-                result.push_back(Pair("myaddress",coinaddr));
-                GetCCaddress(cp,coinaddr,Mypubkey());
-                result.push_back(Pair("myCCaddress",coinaddr));
+                if ( strcmp(myCCaddr,coinaddr) == 0 )
+                    result.push_back(Pair("ismine",1));
+                else result.push_back(Pair("ismine",0));
                 for (i=0; i<n; i++)
                 {
                     if ( GetTransaction(creditloop[i],tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 1 )
@@ -549,8 +556,8 @@ UniValue MarmaraCreditloop(uint256 txid)
                             str[0] = funcid, str[1] = 0;
                             obj.push_back(Pair("funcid",str));
                             obj.push_back(Pair("senderpk",HexStr(senderpk)));
-                            GetCCaddress(cp,coinaddr,senderpk);
-                            obj.push_back(Pair("receiver",coinaddr));
+                            Getscriptaddress(coinaddr,CScript() << ParseHex(HexStr(senderpk())) << OP_CHECKSIG);
+                            obj.push_back(Pair("senderaddr",coinaddr));
                             Getscriptaddress(coinaddr,tx.vout[0].scriptPubKey);
                             obj.push_back(Pair("nextaddress",coinaddr));
                             if ( funcid == 'R' && createtxid == zeroid )
