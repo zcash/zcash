@@ -1609,7 +1609,7 @@ void static BitcoinMiner()
                 int32_t percPoS,z; bool fNegative,fOverflow;
                 HASHTarget_POW = komodo_PoWtarget(&percPoS,HASHTarget,Mining_height,ASSETCHAINS_STAKED);
                 HASHTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
-                if ( ASSETCHAINS_STAKED < 100 )
+                if ( ASSETCHAINS_STAKED < 100 && KOMODO_MININGTHREADS == 0 )
                 {
                     for (z=31; z>=0; z--)
                         fprintf(stderr,"%02x",((uint8_t *)&HASHTarget_POW)[z]);
