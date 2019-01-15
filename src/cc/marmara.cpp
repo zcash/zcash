@@ -525,7 +525,7 @@ UniValue MarmaraCreditloop(uint256 txid)
                 if ( refcreatetxid != creditloop[0] )
                 {
                     fprintf(stderr,"invalid refcreatetxid, setting to creditloop[0]\n");
-                    refcreatetxid = creditloop[0]
+                    refcreatetxid = creditloop[0];
                     numerrs++;
                 }
                 result.push_back(Pair("createtxid",refcreatetxid.GetHex()));
