@@ -719,8 +719,8 @@ template <class Helper> UniValue HeirAdd(uint256 fundingtxid, uint64_t txfee, in
     uint8_t funcId;
 	uint8_t hasHeirSpendingBegun = 0;
 
-	//cp = CCinit(&C, Helper::getMyEval());  // for tokens shoud be EVAL_TOKENS to sign it correctly!
-	cp = CCinit(&C, EVAL_HEIR);  // for tokens shoud be EVAL_TOKENS to sign it correctly!
+	cp = CCinit(&C, Helper::getMyEval());  // for tokens shoud be EVAL_TOKENS to sign it correctly!
+	//cp = CCinit(&C, EVAL_HEIR);  // for tokens shoud be EVAL_TOKENS to sign it correctly!
 
     if (txfee == 0)
         txfee = 10000;
