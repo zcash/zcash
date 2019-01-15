@@ -420,17 +420,27 @@ int64_t IsTokensvout(bool goDeeper, bool checkPubkeys, struct CCcontract_info *c
 				// maybe this is dual-eval 1 pubkey or 1of2 pubkey vout?
 				if (voutPubkeys.size() >= 1 && voutPubkeys.size() <= 2) {					
 					CTxOut testDualVout;
-					if (voutPubkeys.size() == 1)
-						testDualVout = MakeTokensCC1vout(evalCodeInOpret, tx.vout[v].nValue, voutPubkeys[0]);
-					else // voutPubkeys.size() == 2
-						testDualVout = MakeTokensCC1of2vout(evalCodeInOpret, tx.vout[v].nValue, voutPubkeys[0], voutPubkeys[1]);
-
+					// check dual-eval 1 pubkey vout with the first pubkey
+					testDualVout = MakeTokensCC1vout(evalCodeInOpret, tx.vout[v].nValue, voutPubkeys[0]);
 					if (tx.vout[v].scriptPubKey == testDualVout.scriptPubKey) {
-						if(voutPubkeys.size() == 1)
-							std::cerr << indentStr << "IsTokensvout() this is dual-eval token vout, eval2=" << (int)evalCodeInOpret << ", returning nValue=" << tx.vout[v].nValue << " for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl;
-						else
-							std::cerr << indentStr << "IsTokensvout() this is dual-eval token 1of2 vout or change, eval2=" << (int)evalCodeInOpret << ", returning nValue=" << tx.vout[v].nValue << " for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl;
+						std::cerr << indentStr << "IsTokensvout() this is one-eval token vout (i=0), eval2=" << (int)evalCodeInOpret << ", returning nValue=" << tx.vout[v].nValue << " for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl;
 						return tx.vout[v].nValue;
+					}
+					
+					if(voutPubkeys.size() == 2)	{
+						// check dual eval 1of2 pubkeys vout
+						testDualVout = MakeTokensCC1of2vout(evalCodeInOpret, tx.vout[v].nValue, voutPubkeys[0], voutPubkeys[1]);
+						if (tx.vout[v].scriptPubKey == testDualVout.scriptPubKey) {
+							std::cerr << indentStr << "IsTokensvout() this is dual-eval token 1of2 vout, eval2=" << (int)evalCodeInOpret << ", returning nValue=" << tx.vout[v].nValue << " for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl;
+							return tx.vout[v].nValue;
+						}
+
+						// check dual eval 1 pubkey vout with the second pubkey
+						testDualVout = MakeTokensCC1vout(evalCodeInOpret, tx.vout[v].nValue, voutPubkeys[1]);
+						if (tx.vout[v].scriptPubKey == testDualVout.scriptPubKey) {
+							std::cerr << indentStr << "IsTokensvout() this is dual-eval token vout (i=1), eval2=" << (int)evalCodeInOpret << ", returning nValue=" << tx.vout[v].nValue << " for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl;
+							return tx.vout[v].nValue;
+						}
 					}
 				}
 
