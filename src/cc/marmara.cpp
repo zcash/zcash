@@ -528,7 +528,7 @@ UniValue MarmaraCreditloop(uint256 txid)
                 result.push_back(Pair("currency",refcurrency));
                 Getscriptaddress(coinaddr,tx.vout[0].scriptPubKey);
                 result.push_back(Pair("batonaddress",coinaddr));
-                Getscriptaddress(coinaddr,CScript() << ParseHex(HexStr(pubkeys[0])) << OP_CHECKSIG);
+                Getscriptaddress(coinaddr,CScript() << ParseHex(HexStr(Mypubkey())) << OP_CHECKSIG);
                 result.push_back(Pair("myaddress",coinaddr));
                 GetCCaddress(cp,coinaddr,Mypubkey());
                 result.push_back(Pair("myCCaddress",coinaddr));
