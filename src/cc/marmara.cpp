@@ -510,7 +510,7 @@ UniValue MarmaraIssue(uint64_t txfee,uint8_t funcid,CPubKey receiverpk,int64_t a
 
 UniValue MarmaraCreditloop(uint256 txid)
 {
-    UniValue result(UniValue::VOBJ),a(UniValue::VARR); std::vector<uint256> creditloop; uint256 batontxid,createtxid,refcreatetxid,hashBlock; uint8_t funcid; int32_t err=0,i,n,numvouts,matures,refmatures; int64_t amount,refamount; CPubKey senderpk; std::string currency,refcurrency; CTransaction tx; char coinaddr[64],str[2]; struct CCcontract_info *cp,C;
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR); std::vector<uint256> creditloop; uint256 batontxid,createtxid,refcreatetxid,hashBlock; uint8_t funcid; int32_t numerrs=0,i,n,numvouts,matures,refmatures; int64_t amount,refamount; CPubKey senderpk; std::string currency,refcurrency; CTransaction tx; char coinaddr[64],str[2]; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_MARMARA);
     if ( (n= MarmaraGetbatontxid(creditloop,batontxid,txid)) > 0 )
     {
@@ -526,7 +526,7 @@ UniValue MarmaraCreditloop(uint256 txid)
                 {
                     fprintf(stderr,"invalid refcreatetxid, setting to creditloop[0]\n");
                     refcreatetxid = creditloop[0]
-                    err++;
+                    numerrs++;
                 }
                 result.push_back(Pair("createtxid",refcreatetxid.GetHex()));
                 result.push_back(Pair("amount",ValueFromAmount(refamount)));
@@ -557,7 +557,7 @@ UniValue MarmaraCreditloop(uint256 txid)
                                 createtxid = creditloop[i];
                             if ( createtxid != refcreatetxid || amount != refamount || matures != refmatures || currency != refcurrency )
                             {
-                                err++;
+                                numerrs++;
                                 obj.push_back(Pair("objerror",(char *)"mismatched createtxid or amount or matures or currency"));
                                 obj.push_back(Pair("createtxid",createtxid.GetHex()));
                                 obj.push_back(Pair("amount",ValueFromAmount(amount)));
@@ -569,7 +569,7 @@ UniValue MarmaraCreditloop(uint256 txid)
                     }
                 }
                 result.push_back(Pair("n",n));
-                result.push_back(Pair("numerrors",errs));
+                result.push_back(Pair("numerrors",numerrs));
                 result.push_back(Pair("creditloop",a));
             }
             else
