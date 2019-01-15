@@ -402,7 +402,7 @@ UniValue MarmaraReceive(uint64_t txfee,CPubKey senderpk,int64_t amount,std::stri
         if ( AddNormalinputs(mtx,mypk,batonamount + txfee,1) > 0 )
         {
             errorstr = (char *)"couldnt finalize CCtx";
-            mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA,amount,senderpk));
+            mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA,batonamount,senderpk));
             rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,MarmaraLoopOpret('R',createtxid,senderpk,amount,matures,currency));
             if ( rawtx.size() > 0 )
                 errorstr = 0;
