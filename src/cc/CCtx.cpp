@@ -65,7 +65,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
     GetCCaddress(cp,myaddr,mypk);
     mycond = MakeCCcond1(cp->evalcode,mypk);
 	
-	GetTokensCCaddress(cp, myaddr, mypk);
+	GetTokensCCaddress(cp, mytokensaddr, mypk);
 	mytokenscond = MakeTokensCCcond1(cp->evalcode, mypk);
 
     unspendablepk = GetUnspendable(cp,unspendablepriv);

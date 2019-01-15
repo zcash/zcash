@@ -646,6 +646,7 @@ template <typename Helper> UniValue HeirFund(uint64_t txfee, int64_t amount, std
 			mtx.vout.push_back(Helper::make1of2Vout(amount, myPubkey, heirPubkey));
 
 			// add a marker for finding all plans in HeirList()
+			// TODO: change marker either to cc or normal txidaddr unspendable
 			CPubKey heirUnspendablePubKey = GetUnspendable(cp, 0);
 			mtx.vout.push_back(CTxOut(txfee, CScript() << ParseHex(HexStr(heirUnspendablePubKey)) << OP_CHECKSIG));   // TODO: do we need this marker?
 

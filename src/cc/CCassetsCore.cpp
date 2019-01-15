@@ -239,7 +239,7 @@ CScript EncodeAssetCreateOpRet(uint8_t funcid,std::vector<uint8_t> origpubkey,st
 }
 */
 
-CScript EncodeAssetOpRet(uint8_t assetFuncId, uint256 assetid2, int64_t price, std::vector<CPubKey> voutPubkeys, std::vector<uint8_t> origpubkey)
+CScript EncodeAssetOpRet(uint8_t assetFuncId, uint256 assetid2, int64_t price, std::vector<uint8_t> origpubkey)
 {
     CScript opret; 
 	uint8_t evalcode = EVAL_ASSETS;
