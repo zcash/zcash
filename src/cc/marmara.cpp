@@ -302,7 +302,7 @@ int64_t AddMarmaraCoinbases(struct CCcontract_info *cp,CMutableTransaction &mtx,
     char coinaddr[64]; CPubKey Marmarapk,pk; int64_t nValue,totalinputs = 0; uint256 txid,hashBlock; CTransaction vintx; int32_t unlockht,ht,vout,unlocks,n = 0;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     Marmarapk = GetUnspendable(cp,0);
-    MakeCC1of2vout(cp,coinaddr,Marmarapk,poolpk);
+    MakeCC1of2vout(EVAL_MARMARA,coinaddr,Marmarapk,poolpk);
     SetCCunspents(unspentOutputs,coinaddr);
     unlocks = MarmaraUnlockht(firstheight);
     //fprintf(stderr,"check coinaddr.(%s)\n",coinaddr);
