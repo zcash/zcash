@@ -247,6 +247,40 @@ int64_t CCutxovalue(char *coinaddr,uint256 utxotxid,int32_t utxovout)
     return(0);
 }
 
+int32_t CCgettxout(uint256 txid,int32_t vout,int32_t mempoolflag)
+{
+    CCoins coins;
+    if ( mempoolflag != 0 )
+    {
+        LOCK(mempool.cs);
+        CCoinsViewMemPool view(pcoinsTip, mempool);
+        if (!view.GetCoins(txid, coins))
+            return(-1);
+        if ( myIsutxo_spentinmempool(txid,vout) != 0 )
+            return(-1);
+    }
+    else
+    {
+        if (!pcoinsTip->GetCoins(hash, coins))
+            return(-1);
+    }
+    if ( vout < coins.vout.size() )
+        return(coins.vout[vout].nValue);
+    else return(-1);
+}
+
+int32_t CCgetspenttxid(uint256 &spenttxid,int32_t &vini,int32_t &height,uint256 txid,int32_t vout)
+{
+    CSpentIndexKey key(txid, vout);
+    CSpentIndexValue value;
+    if ( !GetSpentIndex(key, value) )
+        return(-1);
+    spenttxid = value.txid;
+    vini = (int32_t)value.inputIndex;
+    height = value.blockHeight;
+    return(0);
+}
+
 int64_t CCaddress_balance(char *coinaddr)
 {
     int64_t sum = 0; std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;

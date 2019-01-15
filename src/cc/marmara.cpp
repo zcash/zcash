@@ -186,13 +186,25 @@ int32_t MarmaraGetcreatetxid(uint256 &createtxid,uint256 txid)
     return(-1);
 }
 
-int32_t MarmaraGetbatontxid(uint256 &batontxid,uint256 txid)
+int32_t MarmaraGetbatontxid(std::vector<uint256> &creditloop,uint256 &batontxid,uint256 txid)
 {
-    uint256 createtxid;
+    uint256 createtxid,spenttxid; int64_t value; int32_t vini,height,vout = 0;
     memset(&batontxid,0,sizeof(batontxid));
     if ( MarmaraGetcreatetxid(createtxid,txid) == 0 )
     {
-        return(0);
+        txid = createtxid;
+        while ( CCgetspenttxid(spenttxid,vini,height,txid,vout) == 0 )
+        {
+            if ( (value= CCgettxout(spenttxid,vout,1)) > 0 )
+            {
+                batontxid = txid;
+                fprintf(stderr,"got baton %s %.8f\n",batontxid.GetHex(),(double)value/COIN);
+                return(0);
+            }
+            creditloop.push_back(spenttxid);
+            fprintf(stderr,"%s\n",spenttxid.GetHex());
+            txid = spenttxid;
+        }
     }
     return(-1);
 }
@@ -456,6 +468,8 @@ UniValue MarmaraIssue(uint64_t txfee,uint8_t funcid,CPubKey receiverpk,int64_t a
     mypk = pubkey2pk(Mypubkey());
     if ( MarmaraGetcreatetxid(createtxid,approvaltxid) < 0 )
         errorstr = (char *)"cant get createtxid from approvaltxid";
+    else if ( batontxid == zeroid )
+        errorstr = (char *)"null batontxid";
     else if ( currency != "MARMARA" )
         errorstr = (char *)"for now, only MARMARA loops are supported";
     else if ( amount < txfee )
