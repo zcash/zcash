@@ -559,6 +559,7 @@ UniValue MarmaraCreditloop(uint256 txid)
                 {
                     UniValue obj(UniValue::VOBJ);
                     obj.push_back(Pair("txid",txid.GetHex()));
+                    obj.push_back(Pair("funcid",funcid));
                     obj.push_back(Pair("createtxid",createtxid.GetHex()));
                     obj.push_back(Pair("senderpk",HexStr(senderpk)));
                     obj.push_back(Pair("amount",ValueFromAmount(amount)));

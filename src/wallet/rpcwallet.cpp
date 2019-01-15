@@ -5655,7 +5655,7 @@ UniValue marmara_info(const UniValue& params, bool fHelp)
 
 UniValue marmara_creditloop(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); uint256 createtxid; std::vector<uint8_t> receiverpub; int64_t amount; int32_t matures; std::string currency;
+    UniValue result(UniValue::VOBJ); uint256 txid;
     if ( fHelp || params.size() != 1 )
     {
         // marmaracreditloop 010ff7f9256cefe3b5dee3d72c0eeae9fc6f34884e6f32ffe5b60916df54a9be
