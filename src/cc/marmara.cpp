@@ -171,8 +171,8 @@ uint8_t MarmaraDecodeLoopOpret(const CScript scriptPubKey,uint256 &createtxid,CP
 
 int32_t MarmaraGetcreatetxid(uint256 &createtxid,uint256 txid)
 {
-    CTransaction tx; uint256 hashBlock; int32_t numvouts,matures; std::string currency; CPubKey senderpk; int64_t amount;
-    if ( myGetTransaction(batontxid,tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 1 )
+    CTransaction tx; uint256 hashBlock; uint8_t funcid; int32_t numvouts,matures; std::string currency; CPubKey senderpk; int64_t amount;
+    if ( myGetTransaction(txid,tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 1 )
     {
         if ( (funcid= MarmaraDecodeLoopOpret(tx.vout[numvouts-1].scriptPubKey,createtxid,senderpk,amount,matures,currency)) == 'I' || funcid == 'T' )
             return(0);
@@ -341,7 +341,7 @@ int64_t AddMarmaraCoinbases(struct CCcontract_info *cp,CMutableTransaction &mtx,
 
 int32_t MarmaraGetCreditloops(int64_t &totalamount,std::vector<uint256> &issuances,struct CCcontract_info *cp,int32_t firstheight,int32_t lastheight,int64_t minamount,int64_t maxamount,CPubKey refpk,std::string refcurrency)
 {
-    char coinaddr[64]; CPubKey Marmarapk,senderpk; int64_t amount; uint256 createtxid,txid,hashBlock; CTransaction tx; int32_t numvouts,unlockht,ht,vout,matures,n=0;
+    char coinaddr[64]; CPubKey Marmarapk,senderpk; int64_t amount; uint256 createtxid,txid,hashBlock; CTransaction tx; int32_t numvouts,vout,matures,n=0; std::string currency;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     Marmarapk = GetUnspendable(cp,0);
     GetCCaddress(cp,coinaddr,Marmarapk);
@@ -484,7 +484,7 @@ UniValue MarmaraIssue(uint64_t txfee,uint8_t funcid,CPubKey receiverpk,int64_t a
 
 // get creditloop pubkeys
 
-UniValue Marmara(uint64_t txfee,uint256 batontxid)
+/*UniValue Marmara(uint64_t txfee,uint256 batontxid)
 {
     UniValue result(UniValue::VOBJ); int64_t avail,amount,paid=0; int32_t i,n = 0; uint256 txid,*revcreditloop=0; CPubKey Marmarapk; struct CCcontract_info *cp,C;
     result.push_back(Pair("result","success"));
@@ -509,11 +509,11 @@ UniValue Marmara(uint64_t txfee,uint256 batontxid)
     }
     
     return(result);
-}
+}*/
 
 UniValue MarmaraInfo(CPubKey refpk,int32_t firstheight,int32_t lastheight,int64_t minamount,int64_t maxamount,std::string currency)
 {
-    UniValue result(UniValue::VOBJ),a(UniValue::VARR); int32_t i,n; int64_t totalamount=0; std::vector<uint256> issuances;
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR); int32_t i,n,matches; int64_t totalamount=0; std::vector<uint256> issuances;
     CPubKey Marmarapk; struct CCcontract_info *cp,C;
     result.push_back(Pair("result","success"));
     if ( refpk.size() == 33 )
