@@ -5550,16 +5550,16 @@ UniValue marmara_poolpayout(const UniValue& params, bool fHelp)
 
 UniValue marmara_receive(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); uint256 createtxid; std::vector<uint8_t> senderpub; int64_t amount; int32_t matures; std::string currency;
+    UniValue result(UniValue::VOBJ); uint256 batontxid; std::vector<uint8_t> senderpub; int64_t amount; int32_t matures; std::string currency;
     if ( fHelp || (params.size() != 5 && params.size() != 4) )
     {
         // 1st marmarareceive 039433dc3749aece1bd568f374a45da3b0bc6856990d7da3cd175399577940a775 7.5 MARMARA 1440
         // after marmarareceive 039433dc3749aece1bd568f374a45da3b0bc6856990d7da3cd175399577940a775 7.5 MARMARA 1440 <txid of 1st>
-        throw runtime_error("marmarareceive senderpk amount currency matures createtxid\n");
+        throw runtime_error("marmarareceive senderpk amount currency matures batontxid\n");
     }
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
-    memset(&createtxid,0,sizeof(createtxid));
+    memset(&batontxid,0,sizeof(batontxid));
     senderpub = ParseHex(params[0].get_str().c_str());
     if (senderpub.size()!= 33)
     {
@@ -5570,17 +5570,17 @@ UniValue marmara_receive(const UniValue& params, bool fHelp)
     currency = params[2].get_str();
     matures = atol(params[3].get_str().c_str()) + chainActive.LastTip()->GetHeight() + 1;
     if ( params.size() == 5 )
-        createtxid = Parseuint256((char *)params[4].get_str().c_str());
-    return(MarmaraReceive(0,pubkey2pk(senderpub),amount,currency,matures,createtxid));
+        batontxid = Parseuint256((char *)params[4].get_str().c_str());
+    return(MarmaraReceive(0,pubkey2pk(senderpub),amount,currency,matures,batontxid));
 }
 
 UniValue marmara_issue(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); uint256 createtxid; std::vector<uint8_t> receiverpub; int64_t amount; int32_t matures; std::string currency;
+    UniValue result(UniValue::VOBJ); uint256 approvaltxid; std::vector<uint8_t> receiverpub; int64_t amount; int32_t matures; std::string currency;
     if ( fHelp || params.size() != 5 )
     {
         // marmaraissue 039433dc3749aece1bd568f374a45da3b0bc6856990d7da3cd175399577940a775 7.5 MARMARA 2693 e5b1ef8ec90e981d3011c8e024cef869b69af2d4dd6837d1ab1d394d3730b7cb
-        throw runtime_error("marmaraissue receiverpk amount currency matures createtxid\n");
+        throw runtime_error("marmaraissue receiverpk amount currency matures approvaltxid\n");
     }
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
@@ -5593,8 +5593,8 @@ UniValue marmara_issue(const UniValue& params, bool fHelp)
     amount = atof(params[1].get_str().c_str()) * COIN + 0.00000000499999;
     currency = params[2].get_str();
     matures = atol(params[3].get_str().c_str());
-    createtxid = Parseuint256((char *)params[4].get_str().c_str());
-    return(MarmaraIssue(0,'I',pubkey2pk(receiverpub),amount,currency,matures,createtxid));
+    approvaltxid = Parseuint256((char *)params[4].get_str().c_str());
+    return(MarmaraIssue(0,'I',pubkey2pk(receiverpub),amount,currency,matures,approvaltxid,zeroid));
 }
 
 UniValue marmara_transfer(const UniValue& params, bool fHelp)
@@ -5603,7 +5603,7 @@ UniValue marmara_transfer(const UniValue& params, bool fHelp)
     if ( fHelp || params.size() != 5 )
     {
         // marmaratransfer 039433dc3749aece1bd568f374a45da3b0bc6856990d7da3cd175399577940a775 7.5 MARMARA 2693 e5b1ef8ec90e981d3011c8e024cef869b69af2d4dd6837d1ab1d394d3730b7cb
-        throw runtime_error("marmaratransfer receiverpk amount currency matures createtxid\n");
+        throw runtime_error("marmaratransfer receiverpk amount currency matures batontxid\n");
     }
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
@@ -5616,8 +5616,53 @@ UniValue marmara_transfer(const UniValue& params, bool fHelp)
     amount = atof(params[1].get_str().c_str()) * COIN + 0.00000000499999;
     currency = params[2].get_str();
     matures = atol(params[3].get_str().c_str());
-    createtxid = Parseuint256((char *)params[4].get_str().c_str());
-    return(MarmaraIssue(0,'T',pubkey2pk(receiverpub),amount,currency,matures,createtxid));
+    batontxid = Parseuint256((char *)params[4].get_str().c_str());
+    if ( MarmaraGetcreatetxid(createtxid,batontxid) < 0 )
+        throw runtime_error("invalid batontxid");
+    return(MarmaraIssue(0,'T',pubkey2pk(receiverpub),amount,currency,matures,createtxid,batontxid));
+}
+
+UniValue marmara_info(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); CPubKey issuerpk; std::vector<uint8_t> issuerpub; int64_t minamount,maxamount; int32_t firstheight,lastheight; std::string currency;
+    if ( fHelp || params.size() < 4 || params.size() > 6 )
+    {
+        throw runtime_error("marmarainfo firstheight lastheight minamount maxamount [currency issuerpk]\n");
+    }
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    firstheight = atol(params[0].get_str().c_str());
+    lastheight = atol(params[1].get_str().c_str());
+    minamount = atof(params[2].get_str().c_str()) * COIN + 0.00000000499999;
+    maxamount = atof(params[3].get_str().c_str()) * COIN + 0.00000000499999;
+    if ( params.size() >= 5 )
+        currency = params[4].get_str();
+    if ( params.size() == 6 )
+    {
+        issuerpub = ParseHex(params[5].get_str().c_str());
+        if ( issuerpub.size()!= 33 )
+        {
+            ERR_RESULT("invalid issuer pubkey");
+            return result;
+        }
+        issuerpk = pubkey2pk(issuerpub);
+    }
+    result = MarmaraInfo(issuerpk,firstheight,lastheight,minamount,maxamount,currency);
+    return(result);
+}
+
+UniValue marmara_creditloop(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); uint256 createtxid; std::vector<uint8_t> receiverpub; int64_t amount; int32_t matures; std::string currency;
+    if ( fHelp || params.size() != 5 )
+    {
+        // marmaratransfer 039433dc3749aece1bd568f374a45da3b0bc6856990d7da3cd175399577940a775 7.5 MARMARA 2693 e5b1ef8ec90e981d3011c8e024cef869b69af2d4dd6837d1ab1d394d3730b7cb
+        throw runtime_error("marmaratransfer receiverpk amount currency matures batontxid\n");
+    }
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    //UniValue MarmaraCrediloop(uint256 batontxid);
+    return(result);
 }
 
 UniValue channelslist(const UniValue& params, bool fHelp)

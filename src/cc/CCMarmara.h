@@ -23,10 +23,15 @@
 #define MARMARA_GROUPSIZE 60
 #define MARMARA_MINLOCK (1440 * 3 * 30)
 #define MARMARA_MAXLOCK (1440 * 24 * 30)
+
 uint64_t komodo_block_prg(uint32_t nHeight);
+int32_t MarmaraGetcreatetxid(uint256 &createtxid,uint256 txid);
+
 UniValue MarmaraPoolPayout(uint64_t txfee,int32_t firstheight,double perc,char *jsonstr); // [[pk0, shares0], [pk1, shares1], ...]
-UniValue MarmaraReceive(uint64_t txfee,CPubKey senderpk,int64_t amount,std::string currency,int32_t matures,uint256 createtxid);
-UniValue MarmaraIssue(uint64_t txfee,uint8_t funcid,CPubKey senderpk,int64_t amount,std::string currency,int32_t matures,uint256 createtxid);
+UniValue MarmaraReceive(uint64_t txfee,CPubKey senderpk,int64_t amount,std::string currency,int32_t matures,uint256 batontxid);
+UniValue MarmaraIssue(uint64_t txfee,uint8_t funcid,CPubKey receiverpk,int64_t amount,std::string currency,int32_t matures,uint256 approvaltxid,uint256 batontxid);
+UniValue MarmaraInfo(CPubKey refpk,int32_t firstheight,int32_t lastheight,int64_t minamount,int64_t maxamount,std::string currency);
+UniValue MarmaraCrediloop(uint256 batontxid);
 
 bool MarmaraValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn);
 

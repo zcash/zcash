@@ -56,6 +56,8 @@ extern uint32_t ASSETCHAINS_CC;
 extern char ASSETCHAINS_SYMBOL[];
 extern std::string CCerror;
 
+#define CC_MAXVINS 1024
+
 #define SMALLVAL 0.000000000000001
 #ifndef _BITS256
 #define _BITS256
