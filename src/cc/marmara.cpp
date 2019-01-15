@@ -179,7 +179,12 @@ CScript Marmara_scriptPubKey(int32_t height,CPubKey pk)
     cp = CCinit(&C,EVAL_MARMARA);
     Marmarapk = GetUnspendable(cp,0);
     if ( height > 0 && (height & 1) == 0 && pk.size() == 33 )
+    {
         ccvout = MakeCC1of2vout(EVAL_MARMARA,0,Marmarapk,pk);
+        char coinaddr[64];
+        Getscriptaddress(coinaddr,ccvout.scriptPubKey);
+        fprintf(stderr,"Marmara_scriptPubKey %s ht.%d -> %s\n",HexStr(pk),height,coinaddr);
+    }
     return(ccvout.scriptPubKey);
 }
 
@@ -230,7 +235,7 @@ int32_t MarmaraValidateCoinbase(int32_t height,CTransaction tx)
                 char addr0[64],addr1[64];
                 Getscriptaddress(addr0,ccvout.scriptPubKey);
                 Getscriptaddress(addr1,tx.vout[0].scriptPubKey);
-                fprintf(stderr,"ht.%d mismatched CCvout scriptPubKey %s vs %s\n",height,addr0,addr1);
+                fprintf(stderr,"ht.%d mismatched CCvout scriptPubKey %s vs %s pk %s\n",height,addr0,addr1,HexStr(pk));
             } else fprintf(stderr,"ht.%d %d vs %d unlock.%d\n",height,MarmaraUnlockht(height),ht,unlockht);
         } else fprintf(stderr,"ht.%d error decoding coinbase opret\n",height);
     }
