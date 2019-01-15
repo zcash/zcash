@@ -193,7 +193,7 @@ CScript MarmaraCoinbaseOpret(uint8_t funcid,int32_t height,CPubKey pk)
 
 int32_t MarmaraValidateCoinbase(int32_t height,CTransaction tx)
 {
-    struct CCcontract_info *cp,C; CPubKey pk; int32_t ht,unlockht; CTxOut ccvout;
+    struct CCcontract_info *cp,C; CPubKey Marmarapk,pk; int32_t ht,unlockht; CTxOut ccvout;
     cp = CCinit(&C,EVAL_MARMARA);
     Marmarapk = GetUnspendable(cp,0);
     if ( 0 )
