@@ -536,11 +536,11 @@ UniValue MarmaraCreditloop(uint256 txid)
                 result.push_back(Pair("amount",ValueFromAmount(refamount)));
                 result.push_back(Pair("matures",refmatures));
                 result.push_back(Pair("currency",refcurrency));
-                result.push_back(Pair("receiverpk",HexStr(pk)));
+                result.push_back(Pair("batonpk",HexStr(pk)));
                 Getscriptaddress(coinaddr,CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG);
-                result.push_back(Pair("receiveraddr",coinaddr));
+                result.push_back(Pair("batonaddr",coinaddr));
                 GetCCaddress(cp,coinaddr,pk);
-                result.push_back(Pair("receiverCCaddr",coinaddr));
+                result.push_back(Pair("batonCCaddr",coinaddr));
                 Getscriptaddress(coinaddr,tx.vout[0].scriptPubKey);
                 result.push_back(Pair("batonaddress",coinaddr));
                 if ( strcmp(myCCaddr,coinaddr) == 0 )
@@ -559,11 +559,11 @@ UniValue MarmaraCreditloop(uint256 txid)
                             if ( funcid == 'R' && createtxid == zeroid )
                             {
                                 createtxid = creditloop[i];
-                                obj.push_back(Pair("senderpk",HexStr(pk)));
+                                obj.push_back(Pair("issuerpk",HexStr(pk)));
                                 Getscriptaddress(coinaddr,CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG);
-                                obj.push_back(Pair("senderaddr",coinaddr));
+                                obj.push_back(Pair("issueraddr",coinaddr));
                                 GetCCaddress(cp,coinaddr,pk);
-                                obj.push_back(Pair("senderCCaddr",coinaddr));
+                                obj.push_back(Pair("issuerCCaddr",coinaddr));
                             }
                             else
                             {
@@ -574,7 +574,7 @@ UniValue MarmaraCreditloop(uint256 txid)
                                 obj.push_back(Pair("receiverCCaddr",coinaddr));
                             }
                             Getscriptaddress(coinaddr,tx.vout[0].scriptPubKey);
-                            obj.push_back(Pair("nextCCaddress",coinaddr));
+                            obj.push_back(Pair("destCCaddress",coinaddr));
                             if ( createtxid != refcreatetxid || amount != refamount || matures != refmatures || currency != refcurrency )
                             {
                                 numerrs++;
