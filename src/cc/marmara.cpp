@@ -608,7 +608,7 @@ UniValue MarmaraCreditloop(uint256 txid)
 UniValue MarmaraInfo(CPubKey refpk,int32_t firstheight,int32_t lastheight,int64_t minamount,int64_t maxamount,std::string currency)
 {
 
-            {    UniValue result(UniValue::VOBJ),a(UniValue::VARR); int32_t i,n,matches; int64_t totalamount=0; std::vector<uint256> issuances;
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR); int32_t i,n,matches; int64_t totalamount=0; std::vector<uint256> issuances;
     CPubKey Marmarapk; struct CCcontract_info *cp,C;
     result.push_back(Pair("result","success"));
     if ( refpk.size() == 33 )
