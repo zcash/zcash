@@ -509,8 +509,8 @@ UniValue MarmaraSettlement(uint64_t txfee,uint256 refbatontxid)
                             {
                                 GetCCaddress(cp,coinaddr,pk);
                                 fprintf(stderr,"get locked funds of %s %.8f\n",coinaddr,(double)CCaddress_balance(coinaddr)/COIN);
-                            }
-                        }
+                            } else fprintf(stderr,"null funcid for creditloop[%d]\n",i);
+                        } else fprintf(stderr,"couldnt get creditloop[%d]\n",i);
                     }
                 }
                 else

@@ -5673,7 +5673,7 @@ UniValue marmara_settlement(const UniValue& params, bool fHelp)
     UniValue result(UniValue::VOBJ); uint256 batontxid;
     if ( fHelp || params.size() != 1 )
     {
-        // marmaracreditloop cc23bf81733556dc06db2fd9c9f4178cad44bdc237d6e62101cf0cdafb5195f7
+        // marmarasettlement cc23bf81733556dc06db2fd9c9f4178cad44bdc237d6e62101cf0cdafb5195f7
         throw runtime_error("marmarasettlement batontxid\n");
     }
     if ( ensure_CCrequirements() < 0 )
