@@ -507,7 +507,7 @@ UniValue MarmaraSettlement(uint64_t txfee,uint256 refbatontxid)
                         {
                             if ( (funcid= MarmaraDecodeLoopOpret(tx.vout[numvouts-1].scriptPubKey,createtxid,pk,amount,matures,currency)) != 0 )
                             {
-                                GetCCaddress(cp,coinaddr,pk);
+                                GetCCaddress1of2(cp,coinaddr,Marmarapk,pk);
                                 fprintf(stderr,"get locked funds of %s %.8f\n",coinaddr,(double)CCaddress_balance(coinaddr)/COIN);
                             } else fprintf(stderr,"null funcid for creditloop[%d]\n",i);
                         } else fprintf(stderr,"couldnt get creditloop[%d]\n",i);
