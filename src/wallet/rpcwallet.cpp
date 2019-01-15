@@ -5554,7 +5554,7 @@ UniValue marmara_receive(const UniValue& params, bool fHelp)
     if ( fHelp || (params.size() != 5 && params.size() != 4) )
     {
         // 1st marmarareceive 028076d42eb20efc10007fafb5ca66a2052523c0d2221e607adf958d1a332159f6 7.5 MARMARA 1440
-        // after marmarareceive 028076d42eb20efc10007fafb5ca66a2052523c0d2221e607adf958d1a332159f6 7.5 MARMARA 1440 <txid of 1st>
+        // after marmarareceive 039433dc3749aece1bd568f374a45da3b0bc6856990d7da3cd175399577940a775 7.5 MARMARA 3903 bf6b4d42aa3ce974c853d73b06c78597dd3b5fb493d5d0d944f72c2017f561ad
         throw runtime_error("marmarareceive senderpk amount currency matures batontxid\n");
     }
     if ( ensure_CCrequirements() < 0 )
@@ -5568,9 +5568,11 @@ UniValue marmara_receive(const UniValue& params, bool fHelp)
     }
     amount = atof(params[1].get_str().c_str()) * COIN + 0.00000000499999;
     currency = params[2].get_str();
-    matures = atol(params[3].get_str().c_str()) + chainActive.LastTip()->GetHeight() + 1;
     if ( params.size() == 5 )
+    {
+        matures = atol(params[3].get_str().c_str());
         batontxid = Parseuint256((char *)params[4].get_str().c_str());
+    } else matures = atol(params[3].get_str().c_str()) + chainActive.LastTip()->GetHeight() + 1;
     return(MarmaraReceive(0,pubkey2pk(senderpub),amount,currency,matures,batontxid));
 }
 
@@ -5602,7 +5604,7 @@ UniValue marmara_transfer(const UniValue& params, bool fHelp)
     UniValue result(UniValue::VOBJ); uint256 createtxid,batontxid; std::vector<uint8_t> receiverpub; int64_t amount; int32_t matures; std::string currency;
     if ( fHelp || params.size() != 5 )
     {
-        // marmaratransfer 028076d42eb20efc10007fafb5ca66a2052523c0d2221e607adf958d1a332159f6 7.5 MARMARA 3903 e5b1ef8ec90e981d3011c8e024cef869b69af2d4dd6837d1ab1d394d3730b7cb
+        // marmaratransfer 028076d42eb20efc10007fafb5ca66a2052523c0d2221e607adf958d1a332159f6 7.5 MARMARA 3903 bf6b4d42aa3ce974c853d73b06c78597dd3b5fb493d5d0d944f72c2017f561ad
         throw runtime_error("marmaratransfer receiverpk amount currency matures batontxid\n");
     }
     if ( ensure_CCrequirements() < 0 )
