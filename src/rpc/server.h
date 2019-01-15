@@ -278,6 +278,7 @@ extern UniValue marmara_issue(const UniValue& params, bool fHelp);
 extern UniValue marmara_transfer(const UniValue& params, bool fHelp);
 extern UniValue marmara_info(const UniValue& params, bool fHelp);
 extern UniValue marmara_creditloop(const UniValue& params, bool fHelp);
+extern UniValue marmara_settlement(const UniValue& params, bool fHelp);
 extern UniValue paymentsaddress(const UniValue& params, bool fHelp);
 extern UniValue gatewaysaddress(const UniValue& params, bool fHelp);
 extern UniValue gatewayslist(const UniValue& params, bool fHelp);
