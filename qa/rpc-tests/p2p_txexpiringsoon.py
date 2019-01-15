@@ -46,6 +46,9 @@ class TxExpiringSoonTest(BitcoinTestFramework):
         return tx
 
     def verify_inv(self, testnode, tx):
+        # Make sure we are synced before sending the mempool message
+        testnode.sync_with_ping()
+
         # Send p2p message "mempool" to receive contents from zcashd node in "inv" message
         with mininode_lock:
             testnode.last_inv = None
@@ -142,7 +145,7 @@ class TxExpiringSoonTest(BitcoinTestFramework):
         assert_equal(self.nodes[2].getblockcount(), 201)
 
         # Reconnect node 2 to the network
-        connect_nodes_bi(self.nodes, 1, 2)
+        connect_nodes_bi(self.nodes, 0, 2)
 
         # Set up test node for node 2
         testnode2 = TestNode()
@@ -175,7 +178,7 @@ class TxExpiringSoonTest(BitcoinTestFramework):
         self.send_data_message(testnode0, tx2)
 
         # Sync up with node after p2p messages delivered
-        [x.sync_with_ping() for x in [testnode0, testnode2]]
+        testnode0.sync_with_ping()
 
         # Verify node 0 does not reply to "getdata" by sending "tx" message, as tx2 is expiring soon
         with mininode_lock:
@@ -194,6 +197,7 @@ class TxExpiringSoonTest(BitcoinTestFramework):
         self.verify_last_tx(testnode0, tx3)
         # Verify txid for tx3 is returned in "inv", but tx2 which is expiring soon is not returned
         self.verify_inv(testnode0, tx3)
+        self.verify_inv(testnode2, tx3)
 
         # Verify contents of mempool
         assert_equal({tx2.hash, tx3.hash}, set(self.nodes[0].getrawmempool()))

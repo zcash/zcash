@@ -7,7 +7,7 @@
 #
 from test_framework.mininode import CTransaction, NodeConnCB, mininode_lock, msg_ping, \
     msg_pong
-from test_framework.util import assert_true
+from test_framework.util import fail
 
 import cStringIO
 import time
@@ -67,16 +67,15 @@ class TestNode(NodeConnCB):
     # Sync up with the node after delivery of a message
     def sync_with_ping(self, timeout=30):
         self.connection.send_message(msg_ping(nonce=self.ping_counter))
-        received_pong = False
         sleep_time = 0.05
-        while not received_pong and timeout > 0:
-            time.sleep(sleep_time)
-            timeout -= sleep_time
+        while timeout > 0:
             with mininode_lock:
                 if self.last_pong.nonce == self.ping_counter:
-                    received_pong = True
-        self.ping_counter += 1
-        assert_true(received_pong, "Should have received pong")
+                    self.ping_counter += 1
+                    return
+            time.sleep(sleep_time)
+            timeout -= sleep_time
+        fail("Should have received pong")
 
 
 def create_transaction(node, coinbase, to_address, amount, expiry_height):
