@@ -183,7 +183,7 @@ CScript Marmara_scriptPubKey(int32_t height,CPubKey pk)
         ccvout = MakeCC1of2vout(EVAL_MARMARA,0,Marmarapk,pk);
         char coinaddr[64];
         Getscriptaddress(coinaddr,ccvout.scriptPubKey);
-        fprintf(stderr,"Marmara_scriptPubKey %s ht.%d -> %s\n",HexStr(pk),height,coinaddr);
+        fprintf(stderr,"Marmara_scriptPubKey %s ht.%d -> %s\n",HexStr(pk).c_str(),height,coinaddr);
     }
     return(ccvout.scriptPubKey);
 }
