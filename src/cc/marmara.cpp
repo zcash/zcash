@@ -574,7 +574,7 @@ UniValue MarmaraCreditloop(uint256 txid)
                                 obj.push_back(Pair("receiverCCaddr",coinaddr));
                             }
                             Getscriptaddress(coinaddr,tx.vout[0].scriptPubKey);
-                            obj.push_back(Pair("nextaddress",coinaddr));
+                            obj.push_back(Pair("nextCCaddress",coinaddr));
                             if ( createtxid != refcreatetxid || amount != refamount || matures != refmatures || currency != refcurrency )
                             {
                                 numerrs++;
