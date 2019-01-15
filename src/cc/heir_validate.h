@@ -419,7 +419,9 @@ public:
 
 		char shouldBeAddr[65], ccAddr[65];
 
-		GetCCaddress1of2(m_cp, shouldBeAddr, ownerPubkey, heirPubkey);
+		//GetCCaddress1of2(m_cp, shouldBeAddr, ownerPubkey, heirPubkey);
+		Helper::GetCoinsOrTokensCCaddress1of2(shouldBeAddr, ownerPubkey, heirPubkey);
+
 		if (vout.scriptPubKey.IsPayToCryptoCondition()) {
 			if (Getscriptaddress(ccAddr, vout.scriptPubKey) && strcmp(shouldBeAddr, ccAddr) == 0) {
 				//std::cerr << "CCC1of2AddressValidator::validateVout() exits with true" << std::endl;

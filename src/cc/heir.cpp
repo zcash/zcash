@@ -902,10 +902,12 @@ template <typename Helper>UniValue HeirClaim(uint256 fundingtxid, uint64_t txfee
 				mtx.vout.push_back(CTxOut(txfee, CScript() << ParseHex(HexStr(markerpubkey)) << OP_CHECKSIG)); // txfee 1, txfee 2 - for miners
 				std::cerr << "HeirClaim() adding markeraddr=" << markeraddr << '\n'; */
 
-                uint8_t myprivkey[32];
+				// get address of 1of2 cond
                 char coinaddr[64];
-                // set priv key addresses in CC structure:
                 Helper::GetCoinsOrTokensCCaddress1of2(coinaddr, ownerPubkey, heirPubkey);
+
+				// retrieve priv key addresses for FinalizeCCtx:
+				uint8_t myprivkey[32];
                 Myprivkey(myprivkey);
 
 				// set pubkeys for finding 1of2 cc in FinalizeCCtx to sign it:
