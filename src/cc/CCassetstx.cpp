@@ -93,7 +93,7 @@ UniValue AssetOrders(uint256 refassetid)
         {
 			// for logging: funcid = DecodeAssetOpRet(vintx.vout[vintx.vout.size() - 1].scriptPubKey, evalCode, assetid, assetid2, price, origpubkey);
 			//std::cerr << "addOrders() vintx.vout.size()=" << vintx.vout.size() << " funcid=" << (char)(funcid ? funcid : ' ') << " assetid=" << assetid.GetHex() << std::endl;
-            if (vintx.vout.size() > 0 && (funcid = DecodeAssetOpRet(vintx.vout[vintx.vout.size()-1].scriptPubKey, evalCode, assetid, assetid2, price, origpubkey)) != 0)
+            if (vintx.vout.size() > 0 && (funcid = DecodeAssetTokenOpRet(vintx.vout[vintx.vout.size()-1].scriptPubKey, evalCode, assetid, assetid2, price, origpubkey)) != 0)
             {
                 if (refassetid != zero && assetid != refassetid)
                 {
@@ -486,7 +486,7 @@ std::string CancelBuyOffer(int64_t txfee,uint256 assetid,uint256 bidtxid)
             bidamount = vintx.vout[0].nValue;
             mtx.vin.push_back(CTxIn(bidtxid, 0, CScript()));		// coins in Assets
 
-			if( DecodeAssetOpRet(vintx.vout[vintx.vout.size() - 1].scriptPubKey, dummyEvalCode, dummyAssetid, dummyAssetid2, dummyPrice, dummyOrigpubkey) == 'b')
+			if( DecodeAssetTokenOpRet(vintx.vout[vintx.vout.size() - 1].scriptPubKey, dummyEvalCode, dummyAssetid, dummyAssetid2, dummyPrice, dummyOrigpubkey) == 'b')
 				mtx.vin.push_back(CTxIn(bidtxid, 1, CScript()));		// spend marker if funcid='b' (not 'B') 
 				// TODO: spend it also in FillBuyOffer?
 
@@ -526,7 +526,7 @@ std::string CancelSell(int64_t txfee,uint256 assetid,uint256 asktxid)
             askamount = vintx.vout[0].nValue;
             mtx.vin.push_back(CTxIn(asktxid, 0, CScript()));
 
-			if (DecodeAssetOpRet(vintx.vout[vintx.vout.size() - 1].scriptPubKey, dummyEvalCode, dummyAssetid, dummyAssetid2, dummyPrice, dummyOrigpubkey) == 's')
+			if (DecodeAssetTokenOpRet(vintx.vout[vintx.vout.size() - 1].scriptPubKey, dummyEvalCode, dummyAssetid, dummyAssetid2, dummyPrice, dummyOrigpubkey) == 's')
 				mtx.vin.push_back(CTxIn(asktxid, 1, CScript()));		// marker if funcid='s' (not 'S') 
 				// TODO: spend it also in FillSell?
 
