@@ -203,14 +203,13 @@ int32_t MarmaraGetbatontxid(std::vector<uint256> &creditloop,uint256 &batontxid,
             {
                 batontxid = spenttxid;
                 fprintf(stderr,"got baton %s %.8f\n",batontxid.GetHex().c_str(),(double)value/COIN);
-                return(0);
+                return(n);
             }
             txid = spenttxid;
         }
     }
     return(-1);
 }
-
 
 CScript Marmara_scriptPubKey(int32_t height,CPubKey pk)
 {
@@ -476,8 +475,8 @@ UniValue MarmaraIssue(uint64_t txfee,uint8_t funcid,CPubKey receiverpk,int64_t a
         errorstr = (char *)"for now, only MARMARA loops are supported";
     else if ( amount < txfee )
         errorstr = (char *)"amount must be for more than txfee";
-    //else if ( matures <= chainActive.LastTip()->GetHeight() )
-    //    errorstr = (char *)"it must mature in the future";
+    else if ( matures <= chainActive.LastTip()->GetHeight() )
+        errorstr = (char *)"it must mature in the future";
     if ( errorstr == 0 )
     {
         mtx.vin.push_back(CTxIn(approvaltxid,0,CScript()));
@@ -547,6 +546,35 @@ UniValue MarmaraIssue(uint64_t txfee,uint8_t funcid,CPubKey receiverpk,int64_t a
     return(result);
 }*/
 
+UniValue MarmaraCreditloop(uint256 txid)
+{
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR); std::vector<uint256> creditloop; uint256 batontxid,createtxid; uint8_t funcid; int32_t numvouts,matures; int64_t amount; CPubKey senderpk; std::string currency;
+    if ( (n= MarmaraGetbatontxid(creditloop,batontxid,txid)) > 0 )
+    {
+        for (i=0; i<n; i++)
+        {
+            if ( GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 1 )
+            {
+                if ( (funcid= MarmaraDecodeLoopOpret(tx.vout[numvouts-1].scriptPubKey,createtxid,senderpk,amount,matures,currency)) != 0 )
+                {
+                    UniValue obj(UniValue::VOBJ);
+                    obj.push_back(Pair("txid",txid.GetHex()));
+                    obj.push_back(Pair("createtxid",createtxid.GetHex()));
+                    obj.push_back(Pair("senderpk",HexStr(senderpk)));
+                    obj.push_back(Pair("amount",ValueFromAmount(amount)));
+                    obj.push_back(Pair("matures",matures));
+                    obj.push_back(Pair("currency",currency));
+                    a.push_back(obj);
+                }
+            }
+        }
+        result.push_back(Pair("result",(char *)"success"));
+        result.push_back("creditloop",a);
+    }
+    
+    return(result);
+}
+    
 UniValue MarmaraInfo(CPubKey refpk,int32_t firstheight,int32_t lastheight,int64_t minamount,int64_t maxamount,std::string currency)
 {
     UniValue result(UniValue::VOBJ),a(UniValue::VARR); int32_t i,n,matches; int64_t totalamount=0; std::vector<uint256> issuances;
