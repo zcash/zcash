@@ -537,9 +537,8 @@ UniValue MarmaraCreditloop(uint256 txid)
                 result.push_back(Pair("matures",refmatures));
                 result.push_back(Pair("currency",refcurrency));
                 result.push_back(Pair("senderpk",HexStr(senderpk)));
-                Getscriptaddress(coinaddr,CScript() << ParseHex(HexStr(senderpk())) << OP_CHECKSIG);
-                obj.push_back(Pair("senderaddr",coinaddr));
-
+                Getscriptaddress(coinaddr,CScript() << ParseHex(HexStr(senderpk)) << OP_CHECKSIG);
+                result.push_back(Pair("senderaddr",coinaddr));
                 Getscriptaddress(coinaddr,tx.vout[0].scriptPubKey);
                 result.push_back(Pair("batonaddress",coinaddr));
                 if ( strcmp(myCCaddr,coinaddr) == 0 )
@@ -556,7 +555,7 @@ UniValue MarmaraCreditloop(uint256 txid)
                             str[0] = funcid, str[1] = 0;
                             obj.push_back(Pair("funcid",str));
                             obj.push_back(Pair("senderpk",HexStr(senderpk)));
-                            Getscriptaddress(coinaddr,CScript() << ParseHex(HexStr(senderpk())) << OP_CHECKSIG);
+                            Getscriptaddress(coinaddr,CScript() << ParseHex(HexStr(senderpk)) << OP_CHECKSIG);
                             obj.push_back(Pair("senderaddr",coinaddr));
                             Getscriptaddress(coinaddr,tx.vout[0].scriptPubKey);
                             obj.push_back(Pair("nextaddress",coinaddr));
