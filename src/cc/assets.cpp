@@ -150,7 +150,7 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
     outputs = inputs = 0;
     preventCCvins = preventCCvouts = -1;
 
-    if((funcid = DecodeAssetOpRet(tx.vout[numvouts-1].scriptPubKey, evalCodeInOpret, assetid, assetid2, remaining_price, origpubkey)) == 0 )
+    if((funcid = DecodeAssetTokenOpRet(tx.vout[numvouts-1].scriptPubKey, evalCodeInOpret, assetid, assetid2, remaining_price, origpubkey)) == 0 )
         return eval->Invalid("AssetValidate: invalid opreturn payload");
 
 	// find token user cc addr
