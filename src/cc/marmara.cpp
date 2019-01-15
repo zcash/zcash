@@ -548,7 +548,7 @@ UniValue MarmaraIssue(uint64_t txfee,uint8_t funcid,CPubKey receiverpk,int64_t a
 
 UniValue MarmaraCreditloop(uint256 txid)
 {
-    UniValue result(UniValue::VOBJ),a(UniValue::VARR); std::vector<uint256> creditloop; uint256 batontxid,createtxid; uint8_t funcid; int32_t numvouts,matures; int64_t amount; CPubKey senderpk; std::string currency;
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR); std::vector<uint256> creditloop; uint256 batontxid,createtxid,hashBlock; uint8_t funcid; int32_t numvouts,matures; int64_t amount; CPubKey senderpk; std::string currency; CTransaction tx;
     if ( (n= MarmaraGetbatontxid(creditloop,batontxid,txid)) > 0 )
     {
         for (i=0; i<n; i++)
