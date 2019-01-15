@@ -261,7 +261,7 @@ int32_t CCgettxout(uint256 txid,int32_t vout,int32_t mempoolflag)
     }
     else
     {
-        if (!pcoinsTip->GetCoins(hash, coins))
+        if (!pcoinsTip->GetCoins(txid, coins))
             return(-1);
     }
     if ( vout < coins.vout.size() )
