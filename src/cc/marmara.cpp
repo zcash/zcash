@@ -483,7 +483,7 @@ UniValue MarmaraSettlement(uint64_t txfee,uint256 batontxid)
 {
     UniValue result(UniValue::VOBJ),a(UniValue::VARR); std::vector<uint256> creditloop; uint256 batontxid,createtxid,refcreatetxid,hashBlock; uint8_t funcid; int32_t numerrs=0,i,n,numvouts,matures,refmatures; int64_t amount,refamount; CPubKey senderpk,pk; std::string currency,refcurrency; CTransaction tx,batontx; char coinaddr[64],myCCaddr[64],destaddr[64],batonCCaddr[64],str[2]; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_MARMARA);
-    if ( (n= MarmaraGetbatontxid(creditloop,batontxid,txid)) > 0 )
+    if ( (n= MarmaraGetbatontxid(creditloop,batontxid,batontxid)) > 0 )
     {
         if ( GetTransaction(batontxid,batontx,hashBlock,false) != 0 && (numvouts= batontx.vout.size()) > 1 )
         {
