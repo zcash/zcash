@@ -423,7 +423,7 @@ int64_t IsTokensvout(bool goDeeper, bool checkPubkeys, struct CCcontract_info *c
 					// check dual-eval 1 pubkey vout with the first pubkey
 					testDualVout = MakeTokensCC1vout(evalCodeInOpret, tx.vout[v].nValue, voutPubkeys[0]);
 					if (tx.vout[v].scriptPubKey == testDualVout.scriptPubKey) {
-						std::cerr << indentStr << "IsTokensvout() this is one-eval token vout (i=0), eval2=" << (int)evalCodeInOpret << ", returning nValue=" << tx.vout[v].nValue << " for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl;
+						std::cerr << indentStr << "IsTokensvout() this is dual-eval token vout (i=0), eval2=" << (int)evalCodeInOpret << ", returning nValue=" << tx.vout[v].nValue << " for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl;
 						return tx.vout[v].nValue;
 					}
 					
