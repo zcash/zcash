@@ -235,7 +235,7 @@ int32_t MarmaraValidateCoinbase(int32_t height,CTransaction tx)
                 char addr0[64],addr1[64];
                 Getscriptaddress(addr0,ccvout.scriptPubKey);
                 Getscriptaddress(addr1,tx.vout[0].scriptPubKey);
-                fprintf(stderr,"ht.%d mismatched CCvout scriptPubKey %s vs %s pk.%d %s\n",height,addr0,addr1,(int32_t)pk.size(),HexStr(pk));
+                fprintf(stderr,"ht.%d mismatched CCvout scriptPubKey %s vs %s pk.%d %s\n",height,addr0,addr1,(int32_t)pk.size(),HexStr(pk).c_str());
             } else fprintf(stderr,"ht.%d %d vs %d unlock.%d\n",height,MarmaraUnlockht(height),ht,unlockht);
         } else fprintf(stderr,"ht.%d error decoding coinbase opret\n",height);
     }
