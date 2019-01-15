@@ -198,7 +198,7 @@ int32_t MarmaraGetbatontxid(std::vector<uint256> &creditloop,uint256 &batontxid,
             if ( (value= CCgettxout(spenttxid,vout,1)) > 0 )
             {
                 batontxid = txid;
-                fprintf(stderr,"got baton %s %.8f\n",batontxid.GetHex(),(double)value/COIN);
+                fprintf(stderr,"got baton %s %.8f\n",batontxid.GetHex().c_str(),(double)value/COIN);
                 return(0);
             }
             creditloop.push_back(spenttxid);
