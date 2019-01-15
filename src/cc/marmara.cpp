@@ -175,9 +175,10 @@ int32_t MarmaraGetbatontxid(std::vector<uint256> &creditloop,uint256 &batontxid,
 
 CScript Marmara_scriptPubKey(int32_t height,CPubKey pk)
 {
-    CTxOut ccvout;
+    CTxOut ccvout; struct CCcontract_info *cp,C; CPubKey Marmarapk;
+    cp = CCinit(&C,EVAL_MARMARA);
     if ( height > 0 && (height & 1) == 0 && pk.size() == 33 )
-        ccvout = MakeCC1vout(EVAL_MARMARA,0,pk);
+        ccvout = MakeCC1of2vout(EVAL_MARMARA,0,Marmarapk,pk);
     return(ccvout.scriptPubKey);
 }
 
@@ -298,9 +299,10 @@ bool MarmaraValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
 
 int64_t AddMarmaraCoinbases(struct CCcontract_info *cp,CMutableTransaction &mtx,int32_t firstheight,CPubKey poolpk,int32_t maxinputs)
 {
-    char coinaddr[64]; CPubKey pk; int64_t nValue,totalinputs = 0; uint256 txid,hashBlock; CTransaction vintx; int32_t unlockht,ht,vout,unlocks,n = 0;
+    char coinaddr[64]; CPubKey Marmarapk,pk; int64_t nValue,totalinputs = 0; uint256 txid,hashBlock; CTransaction vintx; int32_t unlockht,ht,vout,unlocks,n = 0;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
-    GetCCaddress(cp,coinaddr,poolpk);
+    Marmarapk = GetUnspendable(cp,0);
+    MakeCC1of2vout(cp,coinaddr,Marmarapk,poolpk);
     SetCCunspents(unspentOutputs,coinaddr);
     unlocks = MarmaraUnlockht(firstheight);
     //fprintf(stderr,"check coinaddr.(%s)\n",coinaddr);
