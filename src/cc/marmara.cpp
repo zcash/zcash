@@ -177,6 +177,7 @@ CScript Marmara_scriptPubKey(int32_t height,CPubKey pk)
 {
     CTxOut ccvout; struct CCcontract_info *cp,C; CPubKey Marmarapk;
     cp = CCinit(&C,EVAL_MARMARA);
+    Marmarapk = GetUnspendable(cp,0);
     if ( height > 0 && (height & 1) == 0 && pk.size() == 33 )
         ccvout = MakeCC1of2vout(EVAL_MARMARA,0,Marmarapk,pk);
     return(ccvout.scriptPubKey);
