@@ -324,20 +324,20 @@ uint8_t DecodeAssetTokenOpRet(const CScript &scriptPubKey, uint8_t &evalCodeInOp
         switch( assetFuncId )
         {
 			case 'x': case 'o':
-                if (vopretExtra.size() == 2)   // no data after 'evalcode assetFuncId' allowed
+                if (vopretStripped.size() == 2)   // no data after 'evalcode assetFuncId' allowed
                 {
                     return(assetFuncId);
                 }
                 break;
             case 's': case 'b': case 'S': case 'B':
-				if (E_UNMARSHAL(vopretExtra, ss >> dummyEvalCode; ss >> dummyAssetFuncId; ss >> price; ss >> origpubkey) != 0)
+				if (E_UNMARSHAL(vopretStripped, ss >> dummyEvalCode; ss >> dummyAssetFuncId; ss >> price; ss >> origpubkey) != 0)
                 {
                     //fprintf(stderr,"DecodeAssetTokenOpRet got price %llu\n",(long long)price);
                     return(assetFuncId);
                 }
                 break;
             case 'E': case 'e':
-                if ( E_UNMARSHAL(vopretExtra, ss >> dummyEvalCode; ss >> dummyAssetFuncId; ss >> assetid2; ss >> price; ss >> origpubkey) != 0 )
+                if ( E_UNMARSHAL(vopretStripped, ss >> dummyEvalCode; ss >> dummyAssetFuncId; ss >> assetid2; ss >> price; ss >> origpubkey) != 0 )
                 {
                     //fprintf(stderr,"DecodeAssetTokenOpRet got price %llu\n",(long long)price);
                     assetid2 = revuint256(assetid2);
