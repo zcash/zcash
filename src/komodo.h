@@ -799,6 +799,11 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
     uint64_t signedmask,voutmask; char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; struct komodo_state *sp;
     uint8_t scriptbuf[10001],pubkeys[64][33],rmd160[20],scriptPubKey[35]; uint256 zero,btctxid,txhash;
     int32_t i,j,k,numnotaries,notarized,scriptlen,isratification,nid,numvalid,specialtx,notarizedheight,notaryid,len,numvouts,numvins,height,txn_count;
+    if ( pindex == 0 )
+    {
+        fprintf(stderr,"komodo_connectblock null pindex\n");
+        return;
+    }
     memset(&zero,0,sizeof(zero));
     komodo_init(pindex->GetHeight());
     KOMODO_INITDONE = (uint32_t)time(NULL);

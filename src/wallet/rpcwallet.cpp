@@ -5094,8 +5094,8 @@ int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33)
     if (!EnsureWalletIsAvailable(0))
         return 0;
 
-    const CKeyStore& keystore = *pwalletMain;
     assert(pwalletMain != NULL);
+    const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
     utxovalue = 0;
     memset(&utxotxid,0,sizeof(utxotxid));
