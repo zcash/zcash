@@ -261,12 +261,12 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
                     return eval->Invalid("locked value doesnt match vout0+1 fillbuy");
                 else if( tx.vout[3].scriptPubKey.IsPayToCryptoCondition() != 0 )
                 {
-                    if( ConstrainVout(tx.vout[2], 1, tokensCCaddr, 0) == 0 )			// tokens on user cc addr
+                    if( ConstrainVout(tx.vout[2], 1, assetsCCaddr, 0) == 0 )			// tokens on user cc addr
                         return eval->Invalid("vout2 doesnt go to origpubkey fillbuy");
                     else if ( inputs != tx.vout[2].nValue + tx.vout[3].nValue )
                         return eval->Invalid("asset inputs doesnt match vout2+3 fillbuy");
                 }
-                else if( ConstrainVout(tx.vout[2], 1, tokensCCaddr, inputs) == 0 )   // tokens on user cc addr
+                else if( ConstrainVout(tx.vout[2], 1, assetsCCaddr, inputs) == 0 )   // tokens on user cc addr
                     return eval->Invalid("vout2 doesnt match inputs fillbuy");
                 else if( ConstrainVout(tx.vout[1],0,0,0) == 0 )
                     return eval->Invalid("vout1 is CC for fillbuy");
@@ -390,6 +390,7 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
                 if( assetoshis != tx.vout[0].nValue + tx.vout[1].nValue )
                     return eval->Invalid("locked value doesnt match vout0+1 fillex");
                 else if( tx.vout[3].scriptPubKey.IsPayToCryptoCondition() != 0 )
+				////////// not implemented yet ////////////
                 {
                     if( ConstrainVout(tx.vout[2], 1, tokensCCaddr, 0) == 0 )
                         return eval->Invalid("vout2 doesnt go to origpubkey fillex");
@@ -399,6 +400,7 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
                         return eval->Invalid("asset inputs doesnt match vout2+3 fillex");
                     }
                 }
+				////////// not implemented yet ////////////
                 else if( ConstrainVout(tx.vout[2], 1, tokensCCaddr, inputs) == 0 )  
                     return eval->Invalid("vout2 doesnt match inputs fillex");
                 else if( ConstrainVout(tx.vout[1], 0, 0, 0) == 0 )
