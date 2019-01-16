@@ -334,8 +334,7 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
             //'S'.vout.2: vin.2 value to original pubkey [origpubkey]
             //vout.3: normal output for change (if any)
             //'S'.vout.n-1: opreturn [EVAL_ASSETS] ['S'] [assetid] [amount of coin still required] [origpubkey]
-			char dualEvalUnspendableAddr[64];
-			GetTokensCCaddress(cpAssets, dualEvalUnspendableAddr, GetUnspendable(cpAssets, NULL));
+			
 
             if( (assetoshis = AssetValidateSellvin(cpAssets, eval, totalunits, tmporigpubkey, tokensCCaddr, origaddr, tx, assetid)) == 0 )
                 return(false);
@@ -355,7 +354,10 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
                     return eval->Invalid("normal vout1 for fillask");
                 else if( remaining_price != 0 )
                 {
-                    if ( ConstrainVout(tx.vout[0], 1, dualEvalUnspendableAddr /*(char *)cpAssets->unspendableCCaddr*/, 0) == 0 )
+					char tokensUnspendableAddr[64];
+					GetTokensCCaddress(cpAssets, tokensUnspendableAddr, GetUnspendable(cpAssets, NULL));
+
+                    if ( ConstrainVout(tx.vout[0], 1, tokensUnspendableAddr /*(char *)cpAssets->unspendableCCaddr*/, 0) == 0 )
                         return eval->Invalid("mismatched vout0 assets dual unspendable CCaddr for fill sell");
                 }
             }
