@@ -45,9 +45,9 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
     int64_t utxovalues[CC_MAXVINS],change,normalinputs=0,totaloutputs=0,normaloutputs=0,totalinputs=0,normalvins=0,ccvins=0; 
     int32_t i,utxovout,n,err = 0; 
 	char myaddr[64], destaddr[64], unspendable[64], mytokensaddr[64], mysingletokensaddr[64], tokensunspendable[64];
-    uint8_t *privkey, myprivkey[32], unspendablepriv[32], *msg32 = 0; 
+    uint8_t *privkey, myprivkey[32], unspendablepriv[32], tokensunspendablepriv[32], *msg32 = 0;
 	CC *mycond=0, *othercond=0, *othercond2=0, *othercond3=0, *othercond1of2=NULL, *othercond1of2tokens = NULL, *cond, *mytokenscond = NULL, *mysingletokenscond = NULL, *othertokenscond = NULL;
-	CPubKey unspendablepk;
+	CPubKey unspendablepk, tokensunspendablepk;
 	struct CCcontract_info *cpTokens, tokensC;
 
     n = mtx.vout.size();
@@ -78,8 +78,9 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
     GetCCaddress(cp, unspendable, unspendablepk);
     othercond = MakeCCcond1(cp->evalcode, unspendablepk);  
 
-	GetTokensCCaddress(cp, tokensunspendable, unspendablepk);
-	othertokenscond = MakeTokensCCcond1(cp->evalcode, unspendablepk);
+	tokensunspendablepk = GetUnspendable(cpTokens, tokensunspendablepriv);
+	GetTokensCCaddress(cp, tokensunspendable, tokensunspendablepk);
+	othertokenscond = MakeTokensCCcond1(cp->evalcode, tokensunspendablepk);
 
     //Reorder vins so that for multiple normal vins all other except vin0 goes to the end
     //This is a must to avoid hardfork change of validation in every CC, because there could be maximum one normal vin at the begining with current validation.
