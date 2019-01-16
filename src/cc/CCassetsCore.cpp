@@ -379,8 +379,11 @@ bool GetAssetorigaddrs(struct CCcontract_info *cp, char *CCaddr, char *destaddr,
 	bool bGetCCaddr = false;
 	if (funcid == 's' || funcid == 'S')
 		bGetCCaddr = GetTokensCCaddress(cp, CCaddr, pubkey2pk(origpubkey));
-	else if (funcid == 'b' || funcid == 'B')
-		bGetCCaddr = GetCCaddress(cp, CCaddr, pubkey2pk(origpubkey));
+	else if (funcid == 'b' || funcid == 'B') {
+		struct CCcontract_info *cpTokens, tokensC;
+		cpTokens = CCinit(&tokensC, EVAL_TOKENS);
+		bGetCCaddr = GetCCaddress(cpTokens, CCaddr, pubkey2pk(origpubkey));
+	}
 	else  {
 		std::cerr << "GetAssetorigaddrs incorrect funcid=" << (char)(funcid?funcid:' ') << std::endl;
 		return false;

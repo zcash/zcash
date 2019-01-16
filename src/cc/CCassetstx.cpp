@@ -723,8 +723,8 @@ std::string FillSell(int64_t txfee, uint256 assetid, uint256 assetid2, uint256 a
                 if (assetid2 != zeroid && inputs > paid_nValue)
                     CCchange = (inputs - paid_nValue);
 
-                mtx.vout.push_back(MakeTokensCC1vout(EVAL_ASSETS, orig_assetoshis - received_assetoshis, GetUnspendable(cpAssets, NULL)));   // vout.0 tokens cc addr - ask remainder
-                mtx.vout.push_back(MakeTokensCC1vout(EVAL_ASSETS, received_assetoshis, mypk));					//vout.1 tokens to self
+                mtx.vout.push_back(MakeTokensCC1vout(EVAL_ASSETS, orig_assetoshis - received_assetoshis, GetUnspendable(cpAssets, NULL)));  // vout.0 tokens remainder to unspendable cc addr
+                mtx.vout.push_back(MakeTokensCC1vout(EVAL_ASSETS, received_assetoshis, mypk));					//vout.1 purchased tokens to self
                 
 				// NOTE: no marker here
 
@@ -735,7 +735,7 @@ std::string FillSell(int64_t txfee, uint256 assetid, uint256 assetid2, uint256 a
 				}
 				else {
 					std::cerr << "FillSell() paid_value=" << paid_nValue << " origpubkey=" << HexStr(pubkey2pk(origpubkey)) << std::endl;
-					mtx.vout.push_back(CTxOut(paid_nValue, CScript() << origpubkey << OP_CHECKSIG));		//vout.2 coins normal to whom who asked token
+					mtx.vout.push_back(CTxOut(paid_nValue, CScript() << origpubkey << OP_CHECKSIG));		//vout.2 coins to tokens seller's normal addr
 				}
                 
 				// not implemented
