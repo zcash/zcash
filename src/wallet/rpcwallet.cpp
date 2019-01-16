@@ -7346,7 +7346,7 @@ UniValue tokenfillask(const UniValue& params, bool fHelp)
             result.push_back(Pair("result", "success"));
             result.push_back(Pair("hex", hex));
         } else {
-            ERR_RESULT("couldnt fill bid");
+            ERR_RESULT("couldnt fill ask");
         }
     } else {
         ERR_RESULT("fillunits must be positive");
