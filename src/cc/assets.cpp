@@ -356,12 +356,13 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
                 else if( remaining_price != 0 )
                 {
                     if ( ConstrainVout(tx.vout[0], 1, dualEvalUnspendableAddr /*(char *)cpAssets->unspendableCCaddr*/, 0) == 0 )
-                        return eval->Invalid("mismatched vout0 assets unspendable CCaddr for fill sell");
+                        return eval->Invalid("mismatched vout0 assets dual unspendable CCaddr for fill sell");
                 }
             }
             fprintf(stderr,"fill validated\n");
             break;
         case 'E': // fillexchange	
+			////////// not implemented yet ////////////
             return eval->Invalid("unexpected assets fillexchange funcid");
             break; // disable asset swaps
             //vin.0: normal input
@@ -377,6 +378,7 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
 			//if ( AssetExactAmounts(false, cp,inputs,outputs,eval,tx,assetid2) == false )    
             //    eval->Invalid("asset2 inputs != outputs");
 
+			////////// not implemented yet ////////////
             if( (assetoshis= AssetValidateSellvin(cpTokens, eval, totalunits, tmporigpubkey, tokensCCaddr, origaddr, tx, assetid)) == 0 )
                 return(false);
             else if( numvouts < 3 )
@@ -412,6 +414,7 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
                         return eval->Invalid("mismatched vout0 AssetsCCaddr for fillex");
                 }
             }
+			////////// not implemented yet ////////////
             fprintf(stderr,"fill validated\n");
             break;
 

@@ -165,7 +165,10 @@ UniValue AssetOrders(uint256 refassetid)
 
 
 	SetCCunspents(unspentOutputsTokens, (char *)cpTokens->unspendableCCaddr);
-	SetCCunspents(unspentOutputsAssets, (char *)cpAssets->unspendableCCaddr);
+
+	char dualEvalUnspendableAddr[64];
+	GetTokensCCaddress(cpAssets, dualEvalUnspendableAddr, GetUnspendable(cpAssets, NULL));
+	SetCCunspents(unspentOutputsAssets, dualEvalUnspendableAddr /*(char *)cpAssets->unspendableCCaddr*/);
 
 	for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator itTokens = unspentOutputsTokens.begin();
 		itTokens != unspentOutputsTokens.end();
