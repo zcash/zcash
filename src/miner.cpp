@@ -531,6 +531,19 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                 //if ( blocktime > pindexPrev->GetMedianTimePast()+60 )
                 //    blocktime = pindexPrev->GetMedianTimePast() + 60;
                 siglen = komodo_staked(txStaked, pblock->nBits, &blocktime, &txtime, &utxotxid, &utxovout, &utxovalue, utxosig);
+                // if you skip this check it will create a block too far into the future and not pass ProcessBlock or AcceptBlock.
+                // This has been moved from the mining loop to save CPU, and to also make ac_staked work with the verus miner.
+                while ( blocktime-57 > GetAdjustedTime() )
+                {
+                    sleep(1);
+                    if ( (rand() % 100) < 1 )
+                        fprintf(stderr, "%u seconds until elegible, waiting.\n", blocktime-((uint32_t)GetAdjustedTime()+57));
+                    if ( chainActive.LastTip()->GetHeight() >= stakeHeight )
+                    {
+                        fprintf(stderr, "Block Arrived, reset staking loop.\n");
+                        return(0);
+                    }
+                }
             }
 
             if ( siglen > 0 )
@@ -546,7 +559,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                 pblock->nTime = blocktime;
                 //printf("staking PoS ht.%d t%u lag.%u\n",(int32_t)chainActive.LastTip()->GetHeight()+1,blocktime,(uint32_t)(GetAdjustedTime() - (blocktime-13)));
             } else return(0); //fprintf(stderr,"no utxos eligible for staking\n");
-            
+                 
         }
         // Create coinbase tx
         CMutableTransaction txNew = CreateNewContextualCMutableTransaction(consensusParams, nHeight);
@@ -838,7 +851,7 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey, int32_t nHeight, 
         scriptPubKey = Marmara_scriptPubKey(nHeight,pubkey);
     if ( ASSETCHAINS_STAKED != 0 && KOMODO_MININGTHREADS == 0 )
         isStake = true;
-    return CreateNewBlock(pubkey,scriptPubKey, gpucount, isStake);
+    return CreateNewBlock(pubkey, scriptPubKey, gpucount, isStake);
 }
 
 void komodo_broadcast(CBlock *pblock,int32_t limit)
@@ -1241,7 +1254,7 @@ void static BitcoinMiner_noeq()
             if ( ptr == 0 )
             {
                 static uint32_t counter;
-                if ( counter++ < 10 )
+                if ( ASSETCHAINS_STAKED == 0 && counter++ < 10 )
                     fprintf(stderr,"created illegal block, retry\n");
                 continue;
             }
@@ -1301,10 +1314,12 @@ void static BitcoinMiner_noeq()
 
             if ( ASSETCHAINS_STAKED != 0 )
             {
-                int32_t percPoS,z;
-                hashTarget = komodo_PoWtarget(&percPoS,hashTarget,Mining_height,ASSETCHAINS_STAKED);
+                int32_t percPoS,z; bool fNegative,fOverflow;
+                HASHTarget_POW = komodo_PoWtarget(&percPoS,hashTarget,Mining_height,ASSETCHAINS_STAKED);
+                // We use equihash min diff here to make the verus miner instantly finds a blockhash, this saves CPU when staking.
+                HASHTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
                 if ( ASSETCHAINS_STAKED < 100 )
-                    LogPrintf("Block %d : PoS %d%% vs target %d%% \n",Mining_height,percPoS,(int32_t)ASSETCHAINS_STAKED);
+                    LogPrintf("Block %d : PoS %d%% vs target %d%%\n", Mining_height, percPoS, (int32_t)ASSETCHAINS_STAKED);
             }
 
             while (true)
@@ -1319,6 +1334,9 @@ void static BitcoinMiner_noeq()
                 vh.ClearExtra();
                 int64_t i, count = ASSETCHAINS_NONCEMASK[ASSETCHAINS_ALGO] + 1;
                 int64_t hashesToGo = ASSETCHAINS_HASHESPERROUND[ASSETCHAINS_ALGO];
+                if ( KOMODO_MININGTHREADS > 0 && ASSETCHAINS_STAKED > 0 && ASSETCHAINS_STAKED < 100 )
+                    hashTarget = HASHTarget_POW;
+                else hashTarget = HASHTarget;
 
                 // for speed check NONCEMASK at a time
                 for (i = 0; i < count; i++)
@@ -1414,7 +1432,6 @@ void static BitcoinMiner_noeq()
                 printf("%lu mega hashes complete - working\n", (ASSETCHAINS_NONCEMASK[ASSETCHAINS_ALGO] + 1) / 1048576);
 #endif
                 break;
-
             }
         }
     }
@@ -1724,12 +1741,6 @@ void static BitcoinMiner()
                     }
                     else
                     {
-                        while ( B.nTime-57 > GetAdjustedTime() )
-                        {
-                            sleep(1);
-                            if ( chainActive.LastTip()->GetHeight() >= Mining_height )
-                                return(false);
-                        }
                         uint256 tmp = B.GetHash();
                         int32_t z; for (z=31; z>=0; z--)
                             fprintf(stderr,"%02x",((uint8_t *)&tmp)[z]);
@@ -1938,12 +1949,12 @@ void static BitcoinMiner()
         for (int i = 0; i < nThreads; i++) {
 
 #ifdef ENABLE_WALLET
-            if (ASSETCHAINS_ALGO == ASSETCHAINS_EQUIHASH || (ASSETCHAINS_STAKED != 0 && KOMODO_MININGTHREADS == 0) )
+            if ( ASSETCHAINS_ALGO == ASSETCHAINS_EQUIHASH )
                 minerThreads->create_thread(boost::bind(&BitcoinMiner, pwallet));
             else
                 minerThreads->create_thread(boost::bind(&BitcoinMiner_noeq, pwallet));
 #else
-            if (ASSETCHAINS_ALGO == ASSETCHAINS_EQUIHASH || (ASSETCHAINS_STAKED != 0 && KOMODO_MININGTHREADS == 0) )
+            if (ASSETCHAINS_ALGO == ASSETCHAINS_EQUIHASH )
                 minerThreads->create_thread(&BitcoinMiner);
             else
                 minerThreads->create_thread(&BitcoinMiner_noeq);

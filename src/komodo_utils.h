@@ -1684,13 +1684,13 @@ void komodo_args(char *argv0)
                     IS_KOMODO_NOTARY = 1;
                     KOMODO_MININGTHREADS = 1;
                     mapArgs ["-genproclimit"] = itostr(KOMODO_MININGTHREADS);
-										IS_STAKED_NOTARY = -1;
+					IS_STAKED_NOTARY = -1;
                     fprintf(stderr,"running as notary.%d %s\n",i,Notaries_elected1[i][0]);
                     break;
                 }
         }
     }
-		name = GetArg("-ac_name","");
+	name = GetArg("-ac_name","");
     if ( argv0 != 0 )
     {
         len = (int32_t)strlen(argv0);
@@ -1726,6 +1726,7 @@ void komodo_args(char *argv0)
             if (std::string(ASSETCHAINS_ALGORITHMS[i]) == selectedAlgo)
             {
                 ASSETCHAINS_ALGO = i;
+                STAKING_MIN_DIFF = ASSETCHAINS_MINDIFF[i];
                 // only worth mentioning if it's not equihash
                 if (ASSETCHAINS_ALGO != ASSETCHAINS_EQUIHASH)
                     printf("ASSETCHAINS_ALGO, algorithm set to %s\n", selectedAlgo.c_str());

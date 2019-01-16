@@ -1274,7 +1274,7 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
     if ( value < SATOSHIDEN )
         return(0);
     value /= SATOSHIDEN;
-    mindiff.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
+    mindiff.SetCompact(STAKING_MIN_DIFF,&fNegative,&fOverflow);
     ratio = (mindiff / bnTarget);
     if ( (minage= nHeight*3) > 6000 ) // about 100 blocks
         minage = 6000;
@@ -1342,11 +1342,12 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
     int32_t oldflag = 0,dispflag = 0;
     CBlockIndex *pindex; arith_uint256 easydiff,bnTarget,hashval,sum,ave; bool fNegative,fOverflow; int32_t i,n,m,ht,percPoS,diff,val;
     *percPoSp = percPoS = 0;
-    if ( height <= 10 || (ASSETCHAINS_STAKED == 100 && height <= 100) )
+    if ( height <= 10 || (ASSETCHAINS_STAKED == 100 && height <= 100) ) 
         return(target);
+        
     sum = arith_uint256(0);
     ave = sum;
-    easydiff.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
+    easydiff.SetCompact(STAKING_MIN_DIFF,&fNegative,&fOverflow);
     for (i=n=m=0; i<100; i++)
     {
         ht = height - 100 + i;
@@ -1372,8 +1373,10 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
         if ( dispflag != 0 && ASSETCHAINS_STAKED < 100 && (i % 10) == 9 )
             fprintf(stderr," %d, ",percPoS);
     }
+    // We now do actual PoS % at the start. Requires coin distribution in first 10 blocks! 
+    // This is not hard to do and stops the chain having its PoS/PoW in large chunks. 
     if ( m+n < 100 )
-        percPoS = ((percPoS * n) + (goalperc * (100-n))) / 100;
+        percPoS = (percPoS*100) / (m+n); 
     if ( dispflag != 0 && ASSETCHAINS_STAKED < 100 )
         fprintf(stderr," -> %d%% percPoS vs goalperc.%d ht.%d\n",percPoS,goalperc,height);
     *percPoSp = percPoS;
@@ -1432,7 +1435,8 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
             fprintf(stderr," ht.%d percPoS.%d vs goal.%d -> diff %d\n",height,percPoS,goalperc,goalperc - percPoS);
         }
     }
-    else bnTarget = ave; // recent ave is perfect
+    else  
+        bnTarget = ave; // recent ave is perfect
     return(bnTarget);
 }
 
@@ -1468,7 +1472,7 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
             {
                 if ( 0 && ASSETCHAINS_STAKED < 100 )
                     fprintf(stderr,"komodo_is_PoSblock PoS failure ht.%d eligible.%u vs blocktime.%u, lag.%d -> check to see if it is PoW block\n",height,eligible,(uint32_t)pblock->nTime,(int32_t)(eligible - pblock->nTime));
-                if ( slowflag != 0 && pindex != 0 && height > 100)
+                if ( slowflag != 0 && pindex != 0 )
                 {
                     pindex->segid = -1;
                     //fprintf(stderr,"PoW block detected set segid.%d <- %d\n",height,pindex->segid);
@@ -1477,7 +1481,7 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
             else
             {
                 isPoS = 2; // 2 means staking utxo validated
-                if ( slowflag != 0 && height > 100 )
+                if ( slowflag != 0 )
                 {
                     CTxDestination voutaddress; char voutaddr[64];
                     if ( ExtractDestination(pblock->vtx[txn_count-1].vout[0].scriptPubKey,voutaddress) )
@@ -1831,12 +1835,11 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
                     return(-1);
                 } else
                 {
-                    // I think this means the block is valid PoW. We need to set the pindex->segid here.
                     failed = 0; 
                     CBlockIndex *pindex; 
                     BlockMap::const_iterator it = mapBlockIndex.find(pblock->GetHash());
                     pindex = it != mapBlockIndex.end() ? it->second : NULL;
-                    if ( pindex != 0 && height > 100 && pindex->segid == -2  ) {
+                    if ( pindex != 0 && pindex->segid == -2 ) {
                         pindex->segid = -1;
                         //fprintf(stderr,"PoW block detected set segid.%d <- %d\n",height,pindex->segid);
                     }
@@ -2083,7 +2086,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
         return 0;
 
     bnTarget.SetCompact(nBits, &fNegative, &fOverflow);
-    mindiff.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
+    mindiff.SetCompact(STAKING_MIN_DIFF,&fNegative,&fOverflow);
     ratio = (mindiff / bnTarget);
     assert(pwalletMain != NULL);
     *utxovaluep = 0;
@@ -2096,7 +2099,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
     if ( (minage= nHeight*3) > 6000 ) // about 100 blocks
         minage = 6000;
     komodo_segids(hashbuf,nHeight-101,100);
-    if ( *blocktimep < tipindex->nTime+60 )
+    if ( *blocktimep < tipindex->nTime+60)
         *blocktimep = tipindex->nTime+60;
 //fprintf(stderr,"Start scan of utxo for staking %u ht.%d\n",(uint32_t)time(NULL),nHeight);
 
@@ -2155,7 +2158,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
 //fprintf(stderr,"finished kp data of utxo for staking %u ht.%d numkp.%d maxkp.%d\n",(uint32_t)time(NULL),nHeight,numkp,maxkp);
     }
 //fprintf(stderr,"numkp.%d blocktime.%u\n",numkp,*blocktimep);
-    block_from_future_rejecttime = (uint32_t)GetAdjustedTime() + 57;
+    block_from_future_rejecttime = (uint32_t)GetAdjustedTime() + 57;    
     for (i=winners=0; i<numkp; i++)
     {
         if (fRequestShutdown)
@@ -2169,7 +2172,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
         if ( (eligible2= komodo_eligible(bnTarget,ratio,kp,nHeight,*blocktimep,(uint32_t)tipindex->nTime+27,minage,hashbuf)) == 0 )
             continue;
         eligible = komodo_stake(0,bnTarget,nHeight,kp->txid,kp->vout,0,(uint32_t)tipindex->nTime+27,kp->address);
-//fprintf(stderr,"i.%d %u vs %u\n",i,eligible2,eligible);
+        //fprintf(stderr,"i.%d %u vs %u\n",i,eligible2,eligible);
         if ( eligible > 0 )
         {
             besttime = m = 0;
