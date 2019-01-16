@@ -742,14 +742,14 @@ std::string FillSell(int64_t txfee,uint256 assetid,uint256 assetid2,uint256 askt
 					//mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS, CCchange, mypk));							//vout.3 coins in Assets cc addr (swap not implemented)
 				}
 
-				uint8_t unspendableAssetsPrivkey[32];
+				/* uint8_t unspendableAssetsPrivkey[32];
 				char unspendableAssetsAddr[64];
 				// init 'unspenable' privkey and pubkey
 				CPubKey unspendableAssetsPk = GetUnspendable(cpAssets, unspendableAssetsPrivkey);
 				GetCCaddress(cpAssets, unspendableAssetsAddr, unspendableAssetsPk);
 
 				// add additional unspendable addr from Assets:
-				CCaddr2set(cpAssets, EVAL_ASSETS, unspendableAssetsPk, unspendableAssetsPrivkey, unspendableAssetsAddr);
+				CCaddr2set(cpAssets, EVAL_ASSETS, unspendableAssetsPk, unspendableAssetsPrivkey, unspendableAssetsAddr);*/
 
 				// vout verification pubkeys:
 				std::vector<CPubKey> voutTokenPubkeys;
