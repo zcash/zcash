@@ -79,7 +79,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
     othercond = MakeCCcond1(cp->evalcode, unspendablepk);  
 
 	tokensunspendablepk = GetUnspendable(cpTokens, tokensunspendablepriv);
-	GetTokensCCaddress(cp, tokensunspendable, tokensunspendablepk);
+	GetCCaddress(cpTokens, tokensunspendable, tokensunspendablepk);
 	othertokenscond = MakeTokensCCcond1(cp->evalcode, tokensunspendablepk);
 
     //Reorder vins so that for multiple normal vins all other except vin0 goes to the end
