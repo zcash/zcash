@@ -5554,7 +5554,7 @@ UniValue marmara_receive(const UniValue& params, bool fHelp)
     if ( fHelp || (params.size() != 5 && params.size() != 4) )
     {
         // 1st marmarareceive 028076d42eb20efc10007fafb5ca66a2052523c0d2221e607adf958d1a332159f6 7.5 MARMARA 1440
-        // after marmarareceive 039433dc3749aece1bd568f374a45da3b0bc6856990d7da3cd175399577940a775 7.5 MARMARA 3903 bf6b4d42aa3ce974c853d73b06c78597dd3b5fb493d5d0d944f72c2017f561ad
+        // after marmarareceive 039433dc3749aece1bd568f374a45da3b0bc6856990d7da3cd175399577940a775 7.5 MARMARA 1168 d72d87aa0d50436de695c93e2bf3d7273c63c92ef6307913aa01a6ee6a16548b
         throw runtime_error("marmarareceive senderpk amount currency matures batontxid\n");
     }
     if ( ensure_CCrequirements() < 0 )
@@ -5604,7 +5604,7 @@ UniValue marmara_transfer(const UniValue& params, bool fHelp)
     UniValue result(UniValue::VOBJ); uint256 approvaltxid,batontxid; std::vector<uint8_t> receiverpub; int64_t amount; int32_t matures; std::string currency; std::vector<uint256> creditloop;
     if ( fHelp || params.size() != 5 )
     {
-        // marmaratransfer 028076d42eb20efc10007fafb5ca66a2052523c0d2221e607adf958d1a332159f6 7.5 MARMARA 3903 748a4c80e6f6b725340fb0f52738f38a11c422d59b3034c8366b3d7b33c99a1e
+        // marmaratransfer 028076d42eb20efc10007fafb5ca66a2052523c0d2221e607adf958d1a332159f6 7.5 MARMARA 1168 1506c774e4b2804a6e25260920840f4cfca8d1fb400e69fe6b74b8e593dbedc5
         throw runtime_error("marmaratransfer receiverpk amount currency matures approvaltxid\n");
     }
     if ( ensure_CCrequirements() < 0 )
@@ -5674,7 +5674,7 @@ UniValue marmara_settlement(const UniValue& params, bool fHelp)
     if ( fHelp || params.size() != 1 )
     {
         // marmarasettlement 010ff7f9256cefe3b5dee3d72c0eeae9fc6f34884e6f32ffe5b60916df54a9be
-        // marmarasettlement cc23bf81733556dc06db2fd9c9f4178cad44bdc237d6e62101cf0cdafb5195f7
+        // marmarasettlement ff3e259869196f3da9b5ea3f9e088a76c4fc063cf36ab586b652e121d441a603
         throw runtime_error("marmarasettlement batontxid\n");
     }
     if ( ensure_CCrequirements() < 0 )

@@ -643,6 +643,10 @@ int32_t komodo_isPoS(CBlock *pblock)
         {
             txid = pblock->vtx[n-1].vin[0].prevout.hash;
             vout = pblock->vtx[n-1].vin[0].prevout.n;
+            if ( ASSETCHAINS_MARMARA != 0 )
+            {
+                // need to verify it was signed by the non-Marmarapk of the 1of2
+            }
             txtime = komodo_txtime(&value,txid,vout,destaddr);
             if ( ExtractDestination(pblock->vtx[n-1].vout[0].scriptPubKey,voutaddress) )
             {
@@ -2112,33 +2116,41 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
             maxkp = numkp = 0;
             lasttime = 0;
         }
-        BOOST_FOREACH(const COutput& out, vecOutputs)
+        if ( ASSETCHAINS_MARMARA == 0 || 1 )
         {
-            if ( (tipindex= chainActive.Tip()) == 0 || tipindex->GetHeight()+1 > nHeight )
+            BOOST_FOREACH(const COutput& out, vecOutputs)
             {
-                fprintf(stderr,"chain tip changed during staking loop t.%u counter.%d\n",(uint32_t)time(NULL),counter);
-                return(0);
-            }
-            counter++;
-            if ( out.nDepth < nMinDepth || out.nDepth > nMaxDepth )
-            {
-                fprintf(stderr,"komodo_staked invalid depth %d\n",(int32_t)out.nDepth);
-                continue;
-            }
-            CAmount nValue = out.tx->vout[out.i].nValue;
-            if ( nValue < COIN  || !out.fSpendable )
-                continue;
-            const CScript& pk = out.tx->vout[out.i].scriptPubKey;
-            if ( ExtractDestination(pk,address) != 0 )
-            {
-                if ( IsMine(*pwalletMain,address) == 0 )
-                    continue;
-                if ( GetTransaction(out.tx->GetHash(),tx,hashBlock,true) != 0 && (pindex= komodo_getblockindex(hashBlock)) != 0 )
+                if ( (tipindex= chainActive.Tip()) == 0 || tipindex->GetHeight()+1 > nHeight )
                 {
-                    array = komodo_addutxo(array,&numkp,&maxkp,(uint32_t)pindex->nTime,(uint64_t)nValue,out.tx->GetHash(),out.i,(char *)CBitcoinAddress(address).ToString().c_str(),hashbuf,(CScript)pk);
-                    //fprintf(stderr,"addutxo numkp.%d vs max.%d\n",numkp,maxkp);
+                    fprintf(stderr,"chain tip changed during staking loop t.%u counter.%d\n",(uint32_t)time(NULL),counter);
+                    return(0);
+                }
+                counter++;
+                if ( out.nDepth < nMinDepth || out.nDepth > nMaxDepth )
+                {
+                    fprintf(stderr,"komodo_staked invalid depth %d\n",(int32_t)out.nDepth);
+                    continue;
+                }
+                CAmount nValue = out.tx->vout[out.i].nValue;
+                if ( nValue < COIN  || !out.fSpendable )
+                    continue;
+                const CScript& pk = out.tx->vout[out.i].scriptPubKey;
+                if ( ExtractDestination(pk,address) != 0 )
+                {
+                    if ( IsMine(*pwalletMain,address) == 0 )
+                        continue;
+                    if ( GetTransaction(out.tx->GetHash(),tx,hashBlock,true) != 0 && (pindex= komodo_getblockindex(hashBlock)) != 0 )
+                    {
+                        array = komodo_addutxo(array,&numkp,&maxkp,(uint32_t)pindex->nTime,(uint64_t)nValue,out.tx->GetHash(),out.i,(char *)CBitcoinAddress(address).ToString().c_str(),hashbuf,(CScript)pk);
+                        //fprintf(stderr,"addutxo numkp.%d vs max.%d\n",numkp,maxkp);
+                    }
                 }
             }
+        }
+        else
+        {
+            // calc 1of2 address
+            // iterate all unspents not spent in mempool and komodo_addutxo
         }
         lasttime = (uint32_t)time(NULL);
 //fprintf(stderr,"finished kp data of utxo for staking %u ht.%d numkp.%d maxkp.%d\n",(uint32_t)time(NULL),nHeight,numkp,maxkp);
@@ -2218,7 +2230,14 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
         txNew.vout[0].nValue = *utxovaluep - txfee;
         txNew.nLockTime = earliest;
         CTransaction txNewConst(txNew);
-        signSuccess = ProduceSignature(TransactionSignatureCreator(&keystore, &txNewConst, 0, *utxovaluep, SIGHASH_ALL), best_scriptPubKey, sigdata, consensusBranchId);
+        if ( ASSETCHAINS_MARMARA == 0 || 1 )
+        {
+            signSuccess = ProduceSignature(TransactionSignatureCreator(&keystore, &txNewConst, 0, *utxovaluep, SIGHASH_ALL), best_scriptPubKey, sigdata, consensusBranchId);
+        }
+        else
+        {
+            // signSuccess = CCFinalizetx(...)
+        }
         if (!signSuccess)
             fprintf(stderr,"failed to create signature\n");
         else

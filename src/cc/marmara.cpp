@@ -245,6 +245,8 @@ int32_t MarmaraValidateCoinbase(int32_t height,CTransaction tx)
 bool MarmaraValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
 {
     std::vector<uint8_t> vopret; CTransaction vinTx; uint256 hashBlock;  int32_t numvins,numvouts,i,ht,unlockht,vht,vunlockht; uint8_t funcid,vfuncid,*script; CPubKey pk,vpk;
+    if ( ASSETCHAINS_MARMARA == 0 )
+        return eval->Invalid("-ac_marmara must be set for marmara CC");
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
     if ( numvouts < 1 )
@@ -342,6 +344,116 @@ int64_t AddMarmaraCoinbases(struct CCcontract_info *cp,CMutableTransaction &mtx,
         } else fprintf(stderr,"error getting tx\n");
     }
     return(totalinputs);
+}
+
+UniValue MarmaraSettlement(uint64_t txfee,uint256 refbatontxid)
+{
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR); std::vector<uint256> creditloop; uint256 batontxid,createtxid,refcreatetxid,hashBlock; uint8_t funcid; int32_t numerrs=0,i,n,numvouts,matures,refmatures; int64_t amount,refamount,remaining,change,avail; CPubKey Marmarapk,mypk,pk; std::string currency,refcurrency,rawtx; CTransaction tx,batontx; char coinaddr[64],myCCaddr[64],destaddr[64],batonCCaddr[64],str[2]; struct CCcontract_info *cp,C;
+    if ( txfee == 0 )
+        txfee = 10000;
+    cp = CCinit(&C,EVAL_MARMARA);
+    mypk = pubkey2pk(Mypubkey());
+    Marmarapk = GetUnspendable(cp,0);
+    remaining = change = 0;
+    if ( (n= MarmaraGetbatontxid(creditloop,batontxid,refbatontxid)) > 0 )
+    {
+        if ( GetTransaction(batontxid,batontx,hashBlock,false) != 0 && (numvouts= batontx.vout.size()) > 1 )
+        {
+            if ( (funcid= MarmaraDecodeLoopOpret(batontx.vout[numvouts-1].scriptPubKey,refcreatetxid,pk,refamount,refmatures,refcurrency)) != 0 )
+            {
+                if ( refcreatetxid != creditloop[0] )
+                {
+                    result.push_back(Pair("result",(char *)"error"));
+                    result.push_back(Pair("error",(char *)"invalid refcreatetxid, setting to creditloop[0]"));
+                    return(result);
+                }
+                if ( chainActive.LastTip()->GetHeight() < refmatures )
+                {
+                    fprintf(stderr,"doesnt mature for another %d blocks\n",refmatures - chainActive.LastTip()->GetHeight())'
+                    result.push_back(Pair("result",(char *)"error"));
+                    result.push_back(Pair("error",(char *)"cant settle immature creditloop"));
+                    return(result);
+                }
+                remaining = refamount;
+                GetCCaddress(cp,myCCaddr,Mypubkey());
+                Getscriptaddress(batonCCaddr,batontx.vout[0].scriptPubKey);
+                if ( strcmp(myCCaddr,batonCCaddr) == 0 )
+                {
+                    mtx.vin.push_back(CTxIn(batontxid,0,CScript()));
+                    for (i=0; i<n; i++)
+                    {
+                        if ( GetTransaction(creditloop[i],tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 1 )
+                        {
+                            if ( (funcid= MarmaraDecodeLoopOpret(tx.vout[numvouts-1].scriptPubKey,createtxid,pk,amount,matures,currency)) != 0 )
+                            {
+                                GetCCaddress1of2(cp,coinaddr,Marmarapk,pk);
+                                avail = CCaddress_balance(coinaddr);
+                                if ( avail > remaining )
+                                {
+                                    // add remaining
+                                    change = (avail - remaining);
+                                    mtx.vout.push_back(CTxOut(amount,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
+                                    if ( change > txfee )
+                                        mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA,change,Marmarapk,pk));
+                                    rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,MarmaraLoopOpret('S',createtxid,mypk,amount,matures,currency));
+                                    result.push_back(Pair("result",(char *)"success"));
+                                    result.push_back(Pair("rawtx",rawtx));
+                                    return(result);
+                                }
+                                else if ( avail > txfee )
+                                {
+                                    // add all utxos
+                                    remaining -= avail;
+                                }
+                                fprintf(stderr,"get locked funds of %s %.8f\n",coinaddr,(double)avail/COIN);
+                            } else fprintf(stderr,"null funcid for creditloop[%d]\n",i);
+                        } else fprintf(stderr,"couldnt get creditloop[%d]\n",i);
+                    }
+                    if ( amount - remaining > 2*txfee )
+                    {
+                        mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(CCtxidaddr(txidaddr,createtxid))) << OP_CHECKSIG)); // failure marker
+                        if ( amount-remaining > 3*txfee )
+                            mtx.vout.push_back(CTxOut(amount-remaining-2*txfee,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
+                        rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,MarmaraLoopOpret('S',createtxid,mypk,amount-remaining,-remaining,currency));
+                        result.push_back(Pair("result",(char *)"error"));
+                        result.push_back(Pair("error",(char *)"insufficient funds"));
+                        result.push_back(Pair("rawtx",rawtx));
+                        result.push_back(Pair("remaining",ValueFromAmount(remaining)));
+                    }
+                    else
+                    {
+                        // jl777: maybe fund a txfee to report no funds avail
+                        result.push_back(Pair("result",(char *)"error"));
+                        result.push_back(Pair("error",(char *)"no funds available at all"));
+                    }
+                }
+                else
+                {
+                    result.push_back(Pair("result",(char *)"error"));
+                    result.push_back(Pair("error",(char *)"this node does not have the baton"));
+                    result.push_back(Pair("myCCaddr",myCCaddr));
+                    result.push_back(Pair("batonCCaddr",batonCCaddr));
+                }
+            }
+            else
+            {
+                result.push_back(Pair("result",(char *)"error"));
+                result.push_back(Pair("error",(char *)"couldnt get batontxid opret"));
+            }
+        }
+        else
+        {
+            result.push_back(Pair("result",(char *)"error"));
+            result.push_back(Pair("error",(char *)"couldnt find batontxid"));
+        }
+    }
+    else
+    {
+        result.push_back(Pair("result",(char *)"error"));
+        result.push_back(Pair("error",(char *)"couldnt get creditloop"));
+    }
+    return(result);
 }
 
 int32_t MarmaraGetCreditloops(int64_t &totalamount,std::vector<uint256> &issuances,struct CCcontract_info *cp,int32_t firstheight,int32_t lastheight,int64_t minamount,int64_t maxamount,CPubKey refpk,std::string refcurrency)
@@ -485,70 +597,6 @@ UniValue MarmaraIssue(uint64_t txfee,uint8_t funcid,CPubKey receiverpk,int64_t a
         result.push_back(Pair("amount",ValueFromAmount(amount)));
         result.push_back(Pair("matures",matures));
         result.push_back(Pair("currency",currency));
-    }
-    return(result);
-}
-
-UniValue MarmaraSettlement(uint64_t txfee,uint256 refbatontxid)
-{
-    UniValue result(UniValue::VOBJ),a(UniValue::VARR); std::vector<uint256> creditloop; uint256 batontxid,createtxid,refcreatetxid,hashBlock; uint8_t funcid; int32_t numerrs=0,i,n,numvouts,matures,refmatures; int64_t amount,refamount; CPubKey Marmarapk,pk; std::string currency,refcurrency; CTransaction tx,batontx; char coinaddr[64],myCCaddr[64],destaddr[64],batonCCaddr[64],str[2]; struct CCcontract_info *cp,C;
-    if ( txfee == 0 )
-        txfee = 10000;
-    cp = CCinit(&C,EVAL_MARMARA);
-    Marmarapk = GetUnspendable(cp,0);
-    if ( (n= MarmaraGetbatontxid(creditloop,batontxid,refbatontxid)) > 0 )
-    {
-        if ( GetTransaction(batontxid,batontx,hashBlock,false) != 0 && (numvouts= batontx.vout.size()) > 1 )
-        {
-            if ( (funcid= MarmaraDecodeLoopOpret(batontx.vout[numvouts-1].scriptPubKey,refcreatetxid,pk,refamount,refmatures,refcurrency)) != 0 )
-            {
-                if ( refcreatetxid != creditloop[0] )
-                {
-                    fprintf(stderr,"invalid refcreatetxid, setting to creditloop[0]\n");
-                    refcreatetxid = creditloop[0];
-                    numerrs++;
-                }
-                GetCCaddress(cp,myCCaddr,Mypubkey());
-                Getscriptaddress(batonCCaddr,batontx.vout[0].scriptPubKey);
-                if ( strcmp(myCCaddr,batonCCaddr) == 0 )
-                {
-                    for (i=0; i<n; i++)
-                    {
-                        if ( GetTransaction(creditloop[i],tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 1 )
-                        {
-                            if ( (funcid= MarmaraDecodeLoopOpret(tx.vout[numvouts-1].scriptPubKey,createtxid,pk,amount,matures,currency)) != 0 )
-                            {
-                                GetCCaddress1of2(cp,coinaddr,Marmarapk,pk);
-                                //make tx here
-                                fprintf(stderr,"get locked funds of %s %.8f\n",coinaddr,(double)CCaddress_balance(coinaddr)/COIN);
-                            } else fprintf(stderr,"null funcid for creditloop[%d]\n",i);
-                        } else fprintf(stderr,"couldnt get creditloop[%d]\n",i);
-                    }
-                }
-                else
-                {
-                    result.push_back(Pair("result",(char *)"error"));
-                    result.push_back(Pair("error",(char *)"this node does not have the baton"));
-                    result.push_back(Pair("myCCaddr",myCCaddr));
-                    result.push_back(Pair("batonCCaddr",batonCCaddr));
-                }
-            }
-            else
-            {
-                result.push_back(Pair("result",(char *)"error"));
-                result.push_back(Pair("error",(char *)"couldnt get batontxid opret"));
-            }
-        }
-        else
-        {
-            result.push_back(Pair("result",(char *)"error"));
-            result.push_back(Pair("error",(char *)"couldnt find batontxid"));
-        }
-    }
-    else
-    {
-        result.push_back(Pair("result",(char *)"error"));
-        result.push_back(Pair("error",(char *)"couldnt get creditloop"));
     }
     return(result);
 }
