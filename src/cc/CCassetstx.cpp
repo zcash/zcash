@@ -621,12 +621,12 @@ std::string FillBuyOffer(int64_t txfee,uint256 assetid,uint256 bidtxid,int64_t f
                 
 				//CPubKey unspendableTokensPk = GetUnspendable(cpTokens, NULL);
 				uint8_t unspendableAssetsPrivkey[32];
-				cpTokens = CCinit(&assetsC, EVAL_ASSETS); //???
+				cpAssets = CCinit(&assetsC, EVAL_ASSETS); //???
 				CPubKey unspendableAssetsPk = GetUnspendable(cpAssets, unspendableAssetsPrivkey);
 
 				mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS, bidamount - paid_amount, unspendableAssetsPk));     // vout0 coins remainder
                 mtx.vout.push_back(CTxOut(paid_amount,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));		// vout1 coins to normal
-                mtx.vout.push_back(MakeCC1vout(EVAL_TOKENS, fillamount, pubkey2pk(origpubkey)));				// vout2 single-eval tokens paid
+                mtx.vout.push_back(MakeCC1vout(EVAL_TOKENS, fillamount, pubkey2pk(origpubkey)));				// vout2 single-eval tokens sent to the buyer
                 
 				if (CCchange != 0)
                     mtx.vout.push_back(MakeCC1vout(EVAL_TOKENS, CCchange, mypk));								// vout3 change in single-eval tokens
