@@ -47,7 +47,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
 	char myaddr[64], destaddr[64], unspendable[64], mytokensaddr[64], mysingletokensaddr[64], tokensunspendable[64];
     uint8_t *privkey, myprivkey[32], unspendablepriv[32], tokensunspendablepriv[32], *msg32 = 0;
 	CC *mycond=0, *othercond=0, *othercond2=0, *othercond3=0, *othercond1of2=NULL, *othercond1of2tokens = NULL, *cond, *mytokenscond = NULL, *mysingletokenscond = NULL, *othertokenscond = NULL;
-	CPubKey unspendablepk, tokensunspendablepk;
+	CPubKey unspendablepk /*, tokensunspendablepk*/;
 	struct CCcontract_info *cpTokens, tokensC;
 
     n = mtx.vout.size();
@@ -66,21 +66,27 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
 
     GetCCaddress(cp,myaddr,mypk);
     mycond = MakeCCcond1(cp->evalcode,mypk);
-	
+
+	// to spend from single-eval evalcode 'unspendable'
+	unspendablepk = GetUnspendable(cp, unspendablepriv);
+	GetCCaddress(cp, unspendable, unspendablepk);
+	othercond = MakeCCcond1(cp->evalcode, unspendablepk);
+
+	// tokens support:
+
+	// to spend from dual-eval mypk vout
 	GetTokensCCaddress(cp, mytokensaddr, mypk);
 	mytokenscond = MakeTokensCCcond1(cp->evalcode, mypk);
 
+	// to spend from single-eval EVAL_TOKENS mypk 
 	cpTokens = CCinit(&tokensC, EVAL_TOKENS);
 	GetCCaddress(cpTokens, mysingletokensaddr, mypk);
 	mysingletokenscond = MakeCCcond1(EVAL_TOKENS, mypk);
 
-    unspendablepk = GetUnspendable(cp, unspendablepriv);
-    GetCCaddress(cp, unspendable, unspendablepk);
-    othercond = MakeCCcond1(cp->evalcode, unspendablepk);  
-
-	tokensunspendablepk = GetUnspendable(cpTokens, tokensunspendablepriv);
-	GetCCaddress(cpTokens, tokensunspendable, tokensunspendablepk);
-	othertokenscond = MakeTokensCCcond1(cp->evalcode, tokensunspendablepk);
+	// to spend from dual-eval EVAL_TOKEN+evalcode 'unspendable' pk 
+	//tokensunspendablepk = GetUnspendable(cpTokens, tokensunspendablepriv);
+	GetTokensCCaddress(cp, tokensunspendable, unspendablepk);
+	othertokenscond = MakeTokensCCcond1(cp->evalcode, unspendablepk);
 
     //Reorder vins so that for multiple normal vins all other except vin0 goes to the end
     //This is a must to avoid hardfork change of validation in every CC, because there could be maximum one normal vin at the begining with current validation.
@@ -147,7 +153,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
             {
                 Getscriptaddress(destaddr,vintx.vout[utxovout].scriptPubKey);
                 //fprintf(stderr,"FinalizeCCTx() vin.%d is CC %.8f -> (%s)\n",i,(double)utxovalues[i]/COIN,destaddr);
-				std::cerr << "FinalizeCCtx() destaddr=" << destaddr << " myaddr=" << myaddr << std::endl;
+				std::cerr << "FinalizeCCtx() searching destaddr=" << destaddr << " myaddr=" << myaddr << std::endl;
                 if( strcmp(destaddr,myaddr) == 0 )
                 {
                     privkey = myprivkey;
