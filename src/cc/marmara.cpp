@@ -349,7 +349,7 @@ int64_t AddMarmaraCoinbases(struct CCcontract_info *cp,CMutableTransaction &mtx,
 UniValue MarmaraSettlement(uint64_t txfee,uint256 refbatontxid)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ),a(UniValue::VARR); std::vector<uint256> creditloop; uint256 batontxid,createtxid,refcreatetxid,hashBlock; uint8_t funcid; int32_t numerrs=0,i,n,numvouts,matures,refmatures; int64_t amount,refamount,remaining,change,avail; CPubKey Marmarapk,mypk,pk; std::string currency,refcurrency,rawtx; CTransaction tx,batontx; char coinaddr[64],myCCaddr[64],destaddr[64],batonCCaddr[64],str[2]; struct CCcontract_info *cp,C;
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR); std::vector<uint256> creditloop; uint256 batontxid,createtxid,refcreatetxid,hashBlock; uint8_t funcid; int32_t numerrs=0,i,n,numvouts,matures,refmatures; int64_t amount,refamount,remaining,change,avail; CPubKey Marmarapk,mypk,pk; std::string currency,refcurrency,rawtx; CTransaction tx,batontx; char coinaddr[64],myCCaddr[64],destaddr[64],batonCCaddr[64],str[2],txidaddr[64]; struct CCcontract_info *cp,C;
     if ( txfee == 0 )
         txfee = 10000;
     cp = CCinit(&C,EVAL_MARMARA);
@@ -370,7 +370,7 @@ UniValue MarmaraSettlement(uint64_t txfee,uint256 refbatontxid)
                 }
                 if ( chainActive.LastTip()->GetHeight() < refmatures )
                 {
-                    fprintf(stderr,"doesnt mature for another %d blocks\n",refmatures - chainActive.LastTip()->GetHeight())'
+                    fprintf(stderr,"doesnt mature for another %d blocks\n",refmatures - chainActive.LastTip()->GetHeight());
                     result.push_back(Pair("result",(char *)"error"));
                     result.push_back(Pair("error",(char *)"cant settle immature creditloop"));
                     return(result);
