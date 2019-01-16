@@ -669,6 +669,8 @@ UniValue MarmaraInfo(CPubKey refpk,int32_t firstheight,int32_t lastheight,int64_
 {
     UniValue result(UniValue::VOBJ),a(UniValue::VARR); int32_t i,n,matches; int64_t totalamount=0; std::vector<uint256> issuances; char coinaddr[64];
     CPubKey Marmarapk; struct CCcontract_info *cp,C;
+    cp = CCinit(&C,EVAL_MARMARA);
+    Marmarapk = GetUnspendable(cp,0);
     result.push_back(Pair("result","success"));
     Getscriptaddress(coinaddr,CScript() << ParseHex(HexStr(Mypubkey())) << OP_CHECKSIG);
     result.push_back(Pair("myaddress",coinaddr));
@@ -687,8 +689,6 @@ UniValue MarmaraInfo(CPubKey refpk,int32_t firstheight,int32_t lastheight,int64_
     result.push_back(Pair("minamount",ValueFromAmount(minamount)));
     result.push_back(Pair("maxamount",ValueFromAmount(maxamount)));
     result.push_back(Pair("currency",currency));
-    cp = CCinit(&C,EVAL_MARMARA);
-    Marmarapk = GetUnspendable(cp,0);
     if ( (n= MarmaraGetCreditloops(totalamount,issuances,cp,firstheight,lastheight,minamount,maxamount,refpk,currency)) > 0 )
     {
         result.push_back(Pair("n",n));
