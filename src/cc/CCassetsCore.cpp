@@ -381,8 +381,11 @@ bool GetAssetorigaddrs(struct CCcontract_info *cp,char *CCaddr,char *destaddr,co
 
 int64_t AssetValidateCCvin(struct CCcontract_info *cp,Eval* eval,char *CCaddr,char *origaddr,const CTransaction &tx,int32_t vini,CTransaction &vinTx)
 {
-    uint256 hashBlock; char destaddr[64];
+    uint256 hashBlock; 
+	char destaddr[64], dualEvalUnspendableAddr[64];
+
     origaddr[0] = destaddr[0] = CCaddr[0] = 0;
+
     if ( tx.vin.size() < 2 )
         return eval->Invalid("not enough for CC vins");
     else if ( tx.vin[vini].prevout.n != 0 )
@@ -396,7 +399,9 @@ int64_t AssetValidateCCvin(struct CCcontract_info *cp,Eval* eval,char *CCaddr,ch
 		std::cerr << "AssetValidateCCvin cannot load vintx for vin=" << vini << " vintx id=" << tx.vin[vini].prevout.hash.GetHex() << std::endl;
         return eval->Invalid("always should find CCvin, but didnt");
     }
-    else if ( Getscriptaddress(destaddr, vinTx.vout[tx.vin[vini].prevout.n].scriptPubKey) == 0 || strcmp(destaddr,(char *)cp->unspendableCCaddr) != 0 )
+    else if ( Getscriptaddress(destaddr, vinTx.vout[tx.vin[vini].prevout.n].scriptPubKey) == 0 || 
+		!GetTokensCCaddress(cp, dualEvalUnspendableAddr, GetUnspendable(cp, NULL)) || 
+		strcmp(destaddr, dualEvalUnspendableAddr) != 0 )
     {
         fprintf(stderr,"AssetValidateCCvin cc addr %s is not evalcode 0x%02x unspendable %s\n", destaddr, (int)cp->evalcode, (char *)cp->unspendableCCaddr);
         return eval->Invalid("invalid vin AssetsCCaddr");
@@ -441,9 +446,9 @@ int64_t AssetValidateSellvin(struct CCcontract_info *cp,Eval* eval,int64_t &tmpp
 {
     CTransaction vinTx; int64_t nValue,assetoshis;
     //fprintf(stderr,"AssetValidateSellvin\n");
-    if ( (nValue= AssetValidateCCvin(cp,eval,CCaddr,origaddr,tx,1,vinTx)) == 0 )
+    if ( (nValue = AssetValidateCCvin(cp, eval, CCaddr, origaddr, tx, 1, vinTx)) == 0 )
         return(0);
-    if ( (assetoshis= IsAssetvout(cp, tmpprice, tmporigpubkey,vinTx,0,assetid)) == 0 )
+    if ( (assetoshis= IsAssetvout(cp, tmpprice, tmporigpubkey, vinTx, 0, assetid)) == 0 )
         return eval->Invalid("invalid missing CC vout0 for sellvin");
     else 
 		return(assetoshis);
