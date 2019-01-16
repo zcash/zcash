@@ -5581,7 +5581,7 @@ UniValue marmara_issue(const UniValue& params, bool fHelp)
     UniValue result(UniValue::VOBJ); uint256 approvaltxid; std::vector<uint8_t> receiverpub; int64_t amount; int32_t matures; std::string currency;
     if ( fHelp || params.size() != 5 )
     {
-        // marmaraissue 039433dc3749aece1bd568f374a45da3b0bc6856990d7da3cd175399577940a775 7.5 MARMARA 3903 010ff7f9256cefe3b5dee3d72c0eeae9fc6f34884e6f32ffe5b60916df54a9be
+        // marmaraissue 039433dc3749aece1bd568f374a45da3b0bc6856990d7da3cd175399577940a775 7.5 MARMARA 1168 32da4cb3e886ee42de90b4a15042d71169077306badf909099c5c5c692df3f27
         throw runtime_error("marmaraissue receiverpk amount currency matures approvaltxid\n");
     }
     if ( ensure_CCrequirements() < 0 )

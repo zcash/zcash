@@ -443,8 +443,6 @@ UniValue MarmaraIssue(uint64_t txfee,uint8_t funcid,CPubKey receiverpk,int64_t a
     mypk = pubkey2pk(Mypubkey());
     if ( MarmaraGetcreatetxid(createtxid,approvaltxid) < 0 )
         errorstr = (char *)"cant get createtxid from approvaltxid";
-    else if ( batontxid == zeroid )
-        errorstr = (char *)"null batontxid";
     else if ( currency != "MARMARA" )
         errorstr = (char *)"for now, only MARMARA loops are supported";
     else if ( amount < txfee )
