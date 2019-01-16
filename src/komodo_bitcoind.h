@@ -1342,6 +1342,12 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
     int32_t oldflag = 0,dispflag = 0;
     CBlockIndex *pindex; arith_uint256 easydiff,bnTarget,hashval,sum,ave; bool fNegative,fOverflow; int32_t i,n,m,ht,percPoS,diff,val;
     *percPoSp = percPoS = 0;
+    static bool new_rules, didinit;
+    if ( !didinit ) {
+        new_rules = is_STAKED(ASSETCHAINS_SYMBOL) != 0 && is_STAKED(ASSETCHAINS_SYMBOL) != 3 ? true : false;
+        didinit = true;
+    }
+    
     if ( height <= 10 || (ASSETCHAINS_STAKED == 100 && height <= 100) ) 
         return(target);
         
@@ -1353,6 +1359,9 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
         ht = height - 100 + i;
         if ( ht <= 1 )
             continue;
+        // never count the first 10 blocks, they are always PoW! Cant do this for old chains, so limit to LABS and LAB for now.
+        if ( new_rules && ht < 10 ) 
+            continue; 
         if ( (pindex= komodo_chainactive(ht)) != 0 )
         {
             if ( komodo_segid(0,ht) >= 0 )
@@ -1376,7 +1385,12 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
     // We now do actual PoS % at the start. Requires coin distribution in first 10 blocks! 
     // This is not hard to do and stops the chain having its PoS/PoW in large chunks. 
     if ( m+n < 100 )
-        percPoS = (percPoS*100) / (m+n); 
+    {
+        if ( new_rules)
+            percPoS = (percPoS*100) / (m+n); 
+        else
+            percPoS = ((percPoS * n) + (goalperc * (100-n))) / 100;            
+    }
     if ( dispflag != 0 && ASSETCHAINS_STAKED < 100 )
         fprintf(stderr," -> %d%% percPoS vs goalperc.%d ht.%d\n",percPoS,goalperc,height);
     *percPoSp = percPoS;
