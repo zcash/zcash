@@ -618,7 +618,7 @@ std::string FillBuyOffer(int64_t txfee,uint256 assetid,uint256 bidtxid,int64_t f
                 
 				//CPubKey unspendableTokensPk = GetUnspendable(cpTokens, NULL);
 				uint8_t unspendableAssetsPrivkey[32];
-				cpTokens = CCinit(&assetsC, EVAL_ASSETS);
+				cpTokens = CCinit(&assetsC, EVAL_ASSETS); //???
 				CPubKey unspendableAssetsPk = GetUnspendable(cpAssets, unspendableAssetsPrivkey);
 
 				mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS, bidamount - paid_amount, unspendableAssetsPk));     // vout0 coins remainder
@@ -741,6 +741,15 @@ std::string FillSell(int64_t txfee,uint256 assetid,uint256 assetid2,uint256 askt
 					// TODO: change MakeCC1vout appropriately when implementing:
 					//mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS, CCchange, mypk));							//vout.3 coins in Assets cc addr (swap not implemented)
 				}
+
+				uint8_t unspendableAssetsPrivkey[32];
+				char unspendableAssetsAddr[64];
+				// init 'unspenable' privkey and pubkey
+				CPubKey unspendableAssetsPk = GetUnspendable(cpAssets, unspendableAssetsPrivkey);
+				GetCCaddress(cpAssets, unspendableAssetsAddr, unspendableAssetsPk);
+
+				// add additional unspendable addr from Assets:
+				CCaddr2set(cpAssets, EVAL_ASSETS, unspendableAssetsPk, unspendableAssetsPrivkey, unspendableAssetsAddr);
 
 				// vout verification pubkeys:
 				std::vector<CPubKey> voutTokenPubkeys;
