@@ -530,7 +530,7 @@ std::string CancelSell(int64_t txfee,uint256 assetid,uint256 asktxid)
 
 	uint8_t dummyEvalCode; uint256 dummyAssetid, dummyAssetid2; int64_t dummyPrice; std::vector<uint8_t> dummyOrigpubkey;
 
-    cpTokens = CCinit(&tokensC, EVAL_TOKENS);
+    cpAssets = CCinit(&assetsC, EVAL_ASSETS);
 
     if (txfee == 0)
         txfee = 10000;
@@ -555,16 +555,25 @@ std::string CancelSell(int64_t txfee,uint256 assetid,uint256 asktxid)
 			std::vector<CPubKey> voutTokenPubkeys;  
 			voutTokenPubkeys.push_back(mypk);
 
-            char myCCaddr[65];
+            /* char myCCaddr[65];
             uint8_t myPrivkey[32];
             Myprivkey(myPrivkey);
 			cpAssets = CCinit(&assetsC, EVAL_ASSETS);
-            GetCCaddress(cpAssets, myCCaddr, mypk);
+            GetCCaddress(cpAssets, myCCaddr, mypk); */
 
 			// this is only for unspendable addresses:
             //CCaddr2set(cpTokens, EVAL_ASSETS, mypk, myPrivkey, myCCaddr);  //do we need this? Seems FinalizeCCTx can attach to any evalcode cc addr by calling Getscriptaddress 
 
-            return(FinalizeCCTx(mask, cpTokens, mtx, mypk, txfee, 
+			uint8_t unspendableAssetsPrivkey[32];
+			char unspendableAssetsAddr[64];
+			// init assets 'unspendable' privkey and pubkey
+			CPubKey unspendableAssetsPk = GetUnspendable(cpAssets, unspendableAssetsPrivkey);
+			GetCCaddress(cpAssets, unspendableAssetsAddr, unspendableAssetsPk);
+
+			// add additional eval-tokens unspendable assets privkey:
+			CCaddr2set(cpAssets, EVAL_TOKENS, unspendableAssetsPk, unspendableAssetsPrivkey, unspendableAssetsAddr);
+
+            return(FinalizeCCTx(mask, cpAssets, mtx, mypk, txfee, 
 				EncodeTokenOpRet(assetid, voutTokenPubkeys,
 					EncodeAssetOpRet('x', zeroid, 0, Mypubkey()))));
         }
@@ -749,11 +758,11 @@ std::string FillSell(int64_t txfee, uint256 assetid, uint256 assetid2, uint256 a
 
 				uint8_t unspendableAssetsPrivkey[32];
 				char unspendableAssetsAddr[64];
-				// init 'unspenable' privkey and pubkey
+				// init assets 'unspendable' privkey and pubkey
 				CPubKey unspendableAssetsPk = GetUnspendable(cpAssets, unspendableAssetsPrivkey);
 				GetCCaddress(cpAssets, unspendableAssetsAddr, unspendableAssetsPk);
 
-				// add additional dual-eval (assets+tokens) unspendable assets address's privkey:
+				// add additional eval-tokens unspendable assets privkey:
 				CCaddr2set(cpAssets, EVAL_TOKENS, unspendableAssetsPk, unspendableAssetsPrivkey, unspendableAssetsAddr);
 
 				// vout verification pubkeys:
