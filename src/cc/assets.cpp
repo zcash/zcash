@@ -176,7 +176,7 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
         if( assetid == zero )
             return eval->Invalid("illegal assetid");
 
-		else if (!AssetExactAmounts(cpAssets, inputs, outputs, eval, tx, assetid)) { // Only set inputs and outputs. NOTE: we do not need to check cc inputs == cc outputs
+		else if (!AssetCalcAmounts(cpAssets, inputs, outputs, eval, tx, assetid)) { // Only set inputs and outputs. NOTE: we do not need to check cc inputs == cc outputs
 			return false;  // returns false if some problems with reading vintxes
 		}
     }
@@ -334,7 +334,7 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
             //'S'.vout.2: vin.2 value to original pubkey [origpubkey]
             //vout.3: normal output for change (if any)
             //'S'.vout.n-1: opreturn [EVAL_ASSETS] ['S'] [assetid] [amount of coin still required] [origpubkey]
-            if( (assetoshis = AssetValidateSellvin(cpTokens, eval, totalunits, tmporigpubkey, tokensCCaddr, origaddr, tx, assetid)) == 0 )
+            if( (assetoshis = AssetValidateSellvin(cpAssets, eval, totalunits, tmporigpubkey, tokensCCaddr, origaddr, tx, assetid)) == 0 )
                 return(false);
             else if( numvouts < 3 )
                 return eval->Invalid("not enough vouts for fillask");
@@ -352,8 +352,8 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
                     return eval->Invalid("normal vout1 for fillask");
                 else if( remaining_price != 0 )
                 {
-                    if ( ConstrainVout(tx.vout[0], 1, (char *)cpTokens->unspendableCCaddr,0) == 0 )
-                        return eval->Invalid("mismatched vout0 TokenCCaddr for fill");
+                    if ( ConstrainVout(tx.vout[0], 1, (char *)cpAssets->unspendableCCaddr, 0) == 0 )
+                        return eval->Invalid("mismatched vout0 assets unspendable CCaddr for fill sell");
                 }
             }
             fprintf(stderr,"fill validated\n");

@@ -389,13 +389,14 @@ int64_t AssetValidateCCvin(struct CCcontract_info *cp,Eval* eval,char *CCaddr,ch
         return eval->Invalid("vin1 needs to be buyvin.vout[0]");
     else if ( eval->GetTxUnconfirmed(tx.vin[vini].prevout.hash,vinTx,hashBlock) == 0 )
     {
-        int32_t z;
+        /* int32_t z;
         for (z=31; z>=0; z--)
             fprintf(stderr,"%02x",((uint8_t *)&tx.vin[vini].prevout.hash)[z]);
-        fprintf(stderr," vini.%d\n",vini);
+        fprintf(stderr," vini.%d\n",vini); */
+		std::cerr << "AssetValidateCCvin cannot load vintx for vin=" << vini << " vintx id=" << tx.vin[vini].prevout.hash.GetHex() << std::endl;
         return eval->Invalid("always should find CCvin, but didnt");
     }
-    else if ( Getscriptaddress(destaddr,vinTx.vout[tx.vin[vini].prevout.n].scriptPubKey) == 0 || strcmp(destaddr,(char *)cp->unspendableCCaddr) != 0 )
+    else if ( Getscriptaddress(destaddr, vinTx.vout[tx.vin[vini].prevout.n].scriptPubKey) == 0 || strcmp(destaddr,(char *)cp->unspendableCCaddr) != 0 )
     {
         fprintf(stderr,"AssetValidateCCvin cc addr %s is not evalcode 0x%02x unspendable %s\n", destaddr, (int)cp->evalcode, (char *)cp->unspendableCCaddr);
         return eval->Invalid("invalid vin AssetsCCaddr");
@@ -404,7 +405,7 @@ int64_t AssetValidateCCvin(struct CCcontract_info *cp,Eval* eval,char *CCaddr,ch
     //    return eval->Invalid("invalid dust for buyvin");
     else if ( GetAssetorigaddrs(cp,CCaddr,origaddr,vinTx) == 0 )
         return eval->Invalid("couldnt get origaddr for buyvin");
-    fprintf(stderr,"Got %.8f to origaddr.(%s)\n",(double)vinTx.vout[tx.vin[vini].prevout.n].nValue/COIN,origaddr);
+    fprintf(stderr,"AssetValidateCCvin got %.8f to origaddr.(%s)\n",(double)vinTx.vout[tx.vin[vini].prevout.n].nValue/COIN,origaddr);
     if ( vinTx.vout[0].nValue == 0 )
         return eval->Invalid("null value CCvin");
     return(vinTx.vout[0].nValue);
@@ -533,7 +534,7 @@ int64_t IsAssetvout(struct CCcontract_info *cp, int64_t &price, std::vector<uint
 } 
 
 // sets cc inputs vs cc outputs and ensures they are equal:
-bool AssetExactAmounts(struct CCcontract_info *cpAssets, int64_t &inputs, int64_t &outputs, Eval* eval, const CTransaction &tx, uint256 assetid)
+bool AssetCalcAmounts(struct CCcontract_info *cpAssets, int64_t &inputs, int64_t &outputs, Eval* eval, const CTransaction &tx, uint256 assetid)
 {
 	CTransaction vinTx; uint256 hashBlock, id, id2; int32_t flag; int64_t assetoshis; std::vector<uint8_t> tmporigpubkey; int64_t tmpprice;
 	int32_t numvins = tx.vin.size();
