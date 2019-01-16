@@ -21,7 +21,7 @@
 #define CHANNELS_MAXPAYMENTS 1000
 
 bool ChannelsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn);
-std::string ChannelOpen(uint64_t txfee,CPubKey destpub,int32_t numpayments,int64_t payment);
+std::string ChannelOpen(uint64_t txfee,CPubKey destpub,int32_t numpayments,int64_t payment,uint256 tokenid);
 std::string ChannelPayment(uint64_t txfee,uint256 opentxid,int64_t amount, uint256 secret);
 std::string ChannelClose(uint64_t txfee,uint256 opentxid);
 std::string ChannelRefund(uint64_t txfee,uint256 opentxid,uint256 closetxid);

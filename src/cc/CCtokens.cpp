@@ -714,10 +714,10 @@ int64_t GetTokenBalance(CPubKey pk, uint256 tokenid)
 	CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
 	CTransaction tokentx;
 
-	CCerror = strprintf("obsolete, cannot return correct value without eval");
-	return 0;
+	// CCerror = strprintf("obsolete, cannot return correct value without eval");
+	// return 0;
 
-/*	if (GetTransaction(tokenid, tokentx, hashBlock, false) == 0)
+	if (GetTransaction(tokenid, tokentx, hashBlock, false) == 0)
 	{
 		fprintf(stderr, "cant find tokenid\n");
 		CCerror = strprintf("cant find tokenid");
@@ -726,7 +726,7 @@ int64_t GetTokenBalance(CPubKey pk, uint256 tokenid)
 
 	struct CCcontract_info *cp, C;
 	cp = CCinit(&C, EVAL_TOKENS);
-	return(AddTokenCCInputs(cp, mtx, pk, tokenid, 0, 0)); */
+	return(AddTokenCCInputs(cp, mtx, pk, tokenid, 0, 0));
 }
 
 UniValue TokenInfo(uint256 tokenid)
