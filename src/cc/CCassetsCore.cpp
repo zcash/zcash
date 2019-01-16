@@ -281,7 +281,7 @@ bool DecodeAssetCreateOpRet(const CScript &scriptPubKey, std::vector<uint8_t> &o
 
 uint8_t DecodeAssetTokenOpRet(const CScript &scriptPubKey, uint8_t &evalCodeInOpret, uint256 &tokenid, uint256 &assetid2, int64_t &price, std::vector<uint8_t> &origpubkey)
 {
-    std::vector<uint8_t> vopretExtra; 
+    std::vector<uint8_t> vopretExtra, vopretStripped;
 	uint8_t *script, funcId = 0, assetFuncId = 0, dummyEvalCode, dummyAssetFuncId;
 	uint256 dummyTokenid;
 	std::vector<CPubKey> voutPubkeysDummy;
@@ -307,9 +307,14 @@ uint8_t DecodeAssetTokenOpRet(const CScript &scriptPubKey, uint8_t &evalCodeInOp
 		return (uint8_t)0;
 	}
 
+	if (!E_UNMARSHAL(vopretExtra, { ss >> vopretStripped; })) {  //strip string size
+		std::cerr << "DecodeAssetTokenOpRet() could not unmarshal vopretStripped" << std::endl;
+		return (uint8_t)0;
+	}
+
 	////tokenid = revuint256(tokenid); already done in DecodeToken!
-	evalCodeInOpret = vopretExtra.begin()[0];
-	assetFuncId = vopretExtra.begin()[1];
+	evalCodeInOpret = vopretStripped.begin()[0];
+	assetFuncId = vopretStripped.begin()[1];
 
 	//std::cerr << "DecodeAssetOpRet() evalCodeInOpret=" << (int)evalCodeInOpret <<  " funcId=" << (char)(funcId ? funcId : ' ') << " assetFuncId=" << (char)(assetFuncId ? assetFuncId : ' ') << std::endl;
 
@@ -319,7 +324,7 @@ uint8_t DecodeAssetTokenOpRet(const CScript &scriptPubKey, uint8_t &evalCodeInOp
         switch( assetFuncId )
         {
 			case 'x': case 'o':
-                if (vopretExtra.size() == 1)   // no data after 'assetFuncId' allowed
+                if (vopretExtra.size() == 2)   // no data after 'evalcode assetFuncId' allowed
                 {
                     return(assetFuncId);
                 }
@@ -327,20 +332,20 @@ uint8_t DecodeAssetTokenOpRet(const CScript &scriptPubKey, uint8_t &evalCodeInOp
             case 's': case 'b': case 'S': case 'B':
 				if (E_UNMARSHAL(vopretExtra, ss >> dummyEvalCode; ss >> dummyAssetFuncId; ss >> price; ss >> origpubkey) != 0)
                 {
-                    //fprintf(stderr,"got price %llu\n",(long long)price);
+                    //fprintf(stderr,"DecodeAssetTokenOpRet got price %llu\n",(long long)price);
                     return(assetFuncId);
                 }
                 break;
             case 'E': case 'e':
                 if ( E_UNMARSHAL(vopretExtra, ss >> dummyEvalCode; ss >> dummyAssetFuncId; ss >> assetid2; ss >> price; ss >> origpubkey) != 0 )
                 {
-                    //fprintf(stderr,"got price %llu\n",(long long)price);
+                    //fprintf(stderr,"DecodeAssetTokenOpRet got price %llu\n",(long long)price);
                     assetid2 = revuint256(assetid2);
                     return(assetFuncId);
                 }
                 break;
             default:
-                fprintf(stderr,"DecodeAssetOpRet: illegal assetFuncId.%02x\n", assetFuncId);
+                fprintf(stderr,"DecodeAssetTokenOpRet: illegal assetFuncId.%02x\n", assetFuncId);
                 //funcId = 0;
                 break;
         }
