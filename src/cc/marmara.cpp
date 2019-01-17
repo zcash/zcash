@@ -673,32 +673,41 @@ UniValue MarmaraCreditloop(uint256 txid)
             result.push_back(Pair("batontxid",batontxid.GetHex()));
             if ( (funcid= MarmaraDecodeLoopOpret(tx.vout[numvouts-1].scriptPubKey,refcreatetxid,pk,refamount,refmatures,refcurrency)) != 0 )
             {
-                str[0] = funcid, str[1] = 0;
-                result.push_back(Pair("funcid",str));
                 if ( refcreatetxid != creditloop[0] )
                 {
                     fprintf(stderr,"invalid refcreatetxid, setting to creditloop[0]\n");
                     refcreatetxid = creditloop[0];
                     numerrs++;
                 }
+                str[0] = funcid, str[1] = 0;
+                result.push_back(Pair("funcid",str));
                 result.push_back(Pair("createtxid",refcreatetxid.GetHex()));
                 result.push_back(Pair("amount",ValueFromAmount(refamount)));
                 result.push_back(Pair("matures",refmatures));
                 result.push_back(Pair("currency",refcurrency));
-                result.push_back(Pair("batonpk",HexStr(pk)));
-                Getscriptaddress(coinaddr,CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG);
-                result.push_back(Pair("batonaddr",coinaddr));
-                GetCCaddress(cp,batonCCaddr,pk);
-                result.push_back(Pair("batonCCaddr",batonCCaddr));
-                Getscriptaddress(coinaddr,tx.vout[0].scriptPubKey);
-                if ( strcmp(coinaddr,batonCCaddr) != 0 )
+                if ( funcid == 'S' )
                 {
-                    result.push_back(Pair("vout0address",coinaddr));
-                    numerrs++;
+                    result.push_back(Pair("settled",HexStr(pk)));
+                    Getscriptaddress(coinaddr,CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG);
+                    result.push_back(Pair("coinaddr",coinaddr));
                 }
-                if ( strcmp(myCCaddr,coinaddr) == 0 )
-                    result.push_back(Pair("ismine",1));
-                else result.push_back(Pair("ismine",0));
+                else
+                {
+                    result.push_back(Pair("batonpk",HexStr(pk)));
+                    Getscriptaddress(coinaddr,CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG);
+                    result.push_back(Pair("batonaddr",coinaddr));
+                    GetCCaddress(cp,batonCCaddr,pk);
+                    result.push_back(Pair("batonCCaddr",batonCCaddr));
+                    Getscriptaddress(coinaddr,tx.vout[0].scriptPubKey);
+                    if ( strcmp(coinaddr,batonCCaddr) != 0 )
+                    {
+                        result.push_back(Pair("vout0address",coinaddr));
+                        numerrs++;
+                    }
+                    if ( strcmp(myCCaddr,coinaddr) == 0 )
+                        result.push_back(Pair("ismine",1));
+                    else result.push_back(Pair("ismine",0));
+                }
                 for (i=0; i<n; i++)
                 {
                     if ( GetTransaction(creditloop[i],tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 1 )
