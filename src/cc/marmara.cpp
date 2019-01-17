@@ -39,6 +39,10 @@
  vin1 baton
  vins CC utxos from credit loop
  
+ 'D' default/partial payment
+ 
+ 'L' lockfunds
+ 
 */
 
 // start of consensus code
@@ -427,7 +431,7 @@ UniValue MarmaraSettlement(uint64_t txfee,uint256 refbatontxid)
                     result.push_back(Pair("error",(char *)"cant automatic settle even maturity heights"));
                     return(result);
                 }
-                else if ( n < 2 )
+                else if ( n < 1 )
                 {
                     result.push_back(Pair("result",(char *)"error"));
                     result.push_back(Pair("error",(char *)"creditloop too short"));
@@ -438,7 +442,7 @@ UniValue MarmaraSettlement(uint64_t txfee,uint256 refbatontxid)
                 Getscriptaddress(batonCCaddr,batontx.vout[0].scriptPubKey);
                 if ( strcmp(myCCaddr,batonCCaddr) == 0 )
                 {
-                    mtx.vin.push_back(CTxIn(creditloop[1],1,CScript())); // issuance marker
+                    mtx.vin.push_back(CTxIn(n == 1 ? batontxid : creditloop[1],1,CScript())); // issuance marker
                     pubkeys.push_back(Marmarapk);
                     mtx.vin.push_back(CTxIn(batontxid,0,CScript()));
                     pubkeys.push_back(mypk);
@@ -511,13 +515,14 @@ UniValue MarmaraSettlement(uint64_t txfee,uint256 refbatontxid)
     return(result);
 }
 
-int32_t MarmaraGetCreditloops(int64_t &totalamount,std::vector<uint256> &issuances,struct CCcontract_info *cp,int32_t firstheight,int32_t lastheight,int64_t minamount,int64_t maxamount,CPubKey refpk,std::string refcurrency)
+int32_t MarmaraGetCreditloops(int64_t &totalamount,std::vector<uint256> &issuances,int64_t &totalclosed,std::vector<uint256> &closed,struct CCcontract_info *cp,int32_t firstheight,int32_t lastheight,int64_t minamount,int64_t maxamount,CPubKey refpk,std::string refcurrency)
 {
     char coinaddr[64]; CPubKey Marmarapk,senderpk; int64_t amount; uint256 createtxid,txid,hashBlock; CTransaction tx; int32_t numvouts,vout,matures,n=0; std::string currency;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     Marmarapk = GetUnspendable(cp,0);
     GetCCaddress(cp,coinaddr,Marmarapk);
     SetCCunspents(unspentOutputs,coinaddr);
+    // do all txid, conditional on spent/unspent
     //fprintf(stderr,"check coinaddr.(%s)\n",coinaddr);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
@@ -810,43 +815,6 @@ UniValue MarmaraCreditloop(uint256 txid)
     }
     return(result);
 }
-    
-UniValue MarmaraInfo(CPubKey refpk,int32_t firstheight,int32_t lastheight,int64_t minamount,int64_t maxamount,std::string currency)
-{
-    UniValue result(UniValue::VOBJ),a(UniValue::VARR); int32_t i,n,matches; int64_t totalamount=0; std::vector<uint256> issuances; char coinaddr[64];
-    CPubKey Marmarapk; struct CCcontract_info *cp,C;
-    cp = CCinit(&C,EVAL_MARMARA);
-    Marmarapk = GetUnspendable(cp,0);
-    result.push_back(Pair("result","success"));
-    Getscriptaddress(coinaddr,CScript() << ParseHex(HexStr(Mypubkey())) << OP_CHECKSIG);
-    result.push_back(Pair("myaddress",coinaddr));
-    GetCCaddress(cp,coinaddr,Mypubkey());
-    result.push_back(Pair("myCCaddress",coinaddr));
-    if ( refpk.size() == 33 )
-        result.push_back(Pair("issuer",HexStr(refpk)));
-    if ( currency.size() == 0 )
-        currency = (char *)"MARMARA";
-    if ( firstheight <= lastheight )
-        firstheight = 0, lastheight = (1 << 30);
-    if ( minamount <= maxamount )
-        minamount = 0, maxamount = (1LL << 60);
-    result.push_back(Pair("firstheight",firstheight));
-    result.push_back(Pair("lastheight",lastheight));
-    result.push_back(Pair("minamount",ValueFromAmount(minamount)));
-    result.push_back(Pair("maxamount",ValueFromAmount(maxamount)));
-    result.push_back(Pair("currency",currency));
-    if ( (n= MarmaraGetCreditloops(totalamount,issuances,cp,firstheight,lastheight,minamount,maxamount,refpk,currency)) > 0 )
-    {
-        result.push_back(Pair("n",n));
-        matches = (int32_t)issuances.size();
-        result.push_back(Pair("matches",matches));
-        for (i=0; i<matches; i++)
-            a.push_back(issuances[i].GetHex());
-        result.push_back(Pair("issuances",a));
-        result.push_back(Pair("totalamount",ValueFromAmount(totalamount)));
-    }
-    return(result);
-}
 
 UniValue MarmaraPoolPayout(uint64_t txfee,int32_t firstheight,double perc,char *jsonstr) // [[pk0, shares0], [pk1, shares1], ...]
 {
@@ -937,3 +905,48 @@ UniValue MarmaraPoolPayout(uint64_t txfee,int32_t firstheight,double perc,char *
 // MarmaraLock(uint64_t txfee,int64_t amount,int32_t refunlockht)
 // scan all unlocked
 // total capped at amount, change -> unlocked, if no change then scan all locked 'C' and 'P' for unlockht < refunlockht
+
+// get all tx, constrain by vout, issuances[] and closed[]
+
+UniValue MarmaraInfo(CPubKey refpk,int32_t firstheight,int32_t lastheight,int64_t minamount,int64_t maxamount,std::string currency)
+{
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR),b(UniValue::VARR); int32_t i,n,matches; int64_t totalclosed=0,totalamount=0; std::vector<uint256> issuances,closed; char coinaddr[64];
+    CPubKey Marmarapk; struct CCcontract_info *cp,C;
+    cp = CCinit(&C,EVAL_MARMARA);
+    Marmarapk = GetUnspendable(cp,0);
+    result.push_back(Pair("result","success"));
+    Getscriptaddress(coinaddr,CScript() << ParseHex(HexStr(Mypubkey())) << OP_CHECKSIG);
+    result.push_back(Pair("myaddress",coinaddr));
+    GetCCaddress(cp,coinaddr,Mypubkey());
+    result.push_back(Pair("myCCaddress",coinaddr));
+    if ( refpk.size() == 33 )
+        result.push_back(Pair("issuer",HexStr(refpk)));
+    if ( currency.size() == 0 )
+        currency = (char *)"MARMARA";
+    if ( firstheight <= lastheight )
+        firstheight = 0, lastheight = (1 << 30);
+    if ( minamount <= maxamount )
+        minamount = 0, maxamount = (1LL << 60);
+    result.push_back(Pair("firstheight",firstheight));
+    result.push_back(Pair("lastheight",lastheight));
+    result.push_back(Pair("minamount",ValueFromAmount(minamount)));
+    result.push_back(Pair("maxamount",ValueFromAmount(maxamount)));
+    result.push_back(Pair("currency",currency));
+    if ( (n= MarmaraGetCreditloops(totalamount,issuances,totalclosed,closed,cp,firstheight,lastheight,minamount,maxamount,refpk,currency)) > 0 )
+    {
+        result.push_back(Pair("n",n));
+        matches = (int32_t)issuances.size();
+        result.push_back(Pair("pending",matches));
+        for (i=0; i<matches; i++)
+            a.push_back(issuances[i].GetHex());
+        result.push_back(Pair("issuances",a));
+        result.push_back(Pair("totalamount",ValueFromAmount(totalamount)));
+        matches = (int32_t)closed.size();
+        result.push_back(Pair("numclosed",matches));
+        for (i=0; i<matches; i++)
+            b.push_back(closed[i].GetHex());
+        result.push_back(Pair("closed",b));
+        result.push_back(Pair("totalclosed",ValueFromAmount(totalclosed)));
+    }
+    return(result);
+}
