@@ -163,19 +163,19 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
 				{
 					privkey = myprivkey;
 					cond = mytokenscond;
-					fprintf(stderr,"FinalizeCCTx() matched TokensCC1vout CC addr.(%s)\n",mytokensaddr);
+					fprintf(stderr,"FinalizeCCTx() matched dual-eval TokensCC1vout CC addr.(%s)\n",mytokensaddr);
 				}
 				else if (strcmp(destaddr, mysingletokensaddr) == 0)  // if this is TokensCC1vout
 				{
 					privkey = myprivkey;
 					cond = mysingletokenscond;
-					fprintf(stderr, "FinalizeCCTx() matched single-eval TokensCC1vout CC addr.(%s)\n", mytokensaddr);
+					fprintf(stderr, "FinalizeCCTx() matched single-eval token CC1vout CC addr.(%s)\n", mytokensaddr);
 				}
                 else if ( strcmp(destaddr,unspendable) == 0 )
                 {
                     privkey = unspendablepriv;
                     cond = othercond;
-                    //fprintf(stderr,"FinalizeCCTx() matched unspendable CC addr.(%s)\n",unspendable);
+                    fprintf(stderr,"FinalizeCCTx() matched unspendable CC addr.(%s)\n",unspendable);
                 }
 				else if (strcmp(destaddr, tokensunspendable) == 0)
 				{
@@ -186,7 +186,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
 				// check if this is the 2nd additional evalcode + 'unspendable' cc addr:
                 else if ( strcmp(destaddr,cp->unspendableaddr2) == 0)
                 {
-                    //fprintf(stderr,"FinalizeCCTx() matched %s unspendable2!\n",cp->unspendableaddr2);
+                    fprintf(stderr,"FinalizeCCTx() matched %s unspendable2!\n",cp->unspendableaddr2);
                     privkey = cp->unspendablepriv2;
                     if ( othercond2 == 0 ) 
                         othercond2 = MakeCCcond1(cp->evalcode2, cp->unspendablepk2);
@@ -195,7 +195,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
 				// check if this is 3rd additional evalcode + 'unspendable' cc addr:
                 else if ( strcmp(destaddr,cp->unspendableaddr3) == 0 )
                 {
-                    //fprintf(stderr,"FinalizeCCTx() matched %s unspendable3!\n",cp->unspendableaddr3);
+                    fprintf(stderr,"FinalizeCCTx() matched %s unspendable3!\n",cp->unspendableaddr3);
                     privkey = cp->unspendablepriv3;
                     if ( othercond3 == 0 )
                         othercond3 = MakeCCcond1(cp->evalcode3,cp->unspendablepk3);

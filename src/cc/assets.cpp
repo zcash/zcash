@@ -153,7 +153,11 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
     if((funcid = DecodeAssetTokenOpRet(tx.vout[numvouts-1].scriptPubKey, evalCodeInOpret, assetid, assetid2, remaining_price, origpubkey)) == 0 )
         return eval->Invalid("AssetValidate: invalid opreturn payload");
 
-	// find token user cc addr
+	// find dual-eval tokens unspendable addr:
+	char tokensUnspendableAddr[64];
+	GetTokensCCaddress(cpAssets, tokensUnspendableAddr, GetUnspendable(cpAssets, NULL));
+
+	// find token user cc addr:
 	GetCCaddress(cpTokens, tokensCCaddr, pubkey2pk(origpubkey));
 
     fprintf(stderr,"AssetValidate (%c)\n",funcid);
@@ -296,10 +300,10 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
                 return eval->Invalid("illegal null remaining_price for selloffer");
             if ( tx.vout[1].scriptPubKey.IsPayToCryptoCondition() == 0 )
                 return eval->Invalid("invalid normal vout1 for sellvin");
-            if( tx.vout[2].scriptPubKey.IsPayToCryptoCondition() != 0 )
+            if( tx.vout[2].scriptPubKey.IsPayToCryptoCondition() != 0 )							// cc change
             {
                 preventCCvouts++;
-                if( ConstrainVout(tx.vout[0], 1, (char *)cpTokens->unspendableCCaddr, 0) == 0 ) // check also vout[0]
+                if( ConstrainVout(tx.vout[0], 1, (char *)cpTokens->unspendableCCaddr, 0) == 0 ) // check also cc vout[0]
                     return eval->Invalid("mismatched vout0 TokensCCaddr for selloffer");
                 else if( tx.vout[0].nValue + tx.vout[2].nValue != inputs )
                     return eval->Invalid("mismatched vout0+vout2 total for selloffer");
@@ -317,7 +321,8 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
             //vout.1: vin.2 back to users pubkey
             //vout.2: normal output for change (if any)
             //vout.n-1: opreturn [EVAL_ASSETS] ['x'] [assetid]
-            if( (assetoshis= AssetValidateSellvin(cpTokens, eval, tmpprice, tmporigpubkey, tokensCCaddr, origaddr, tx, assetid)) == 0 )
+
+            if( (assetoshis= AssetValidateSellvin(cpAssets, eval, tmpprice, tmporigpubkey, tokensCCaddr, origaddr, tx, assetid)) == 0 )
                 return(false);
             else if( ConstrainVout(tx.vout[0], 1, tokensCCaddr, assetoshis) == 0 )  
                 return eval->Invalid("invalid vout for cancel");
@@ -335,7 +340,6 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
             //vout.3: normal output for change (if any)
             //'S'.vout.n-1: opreturn [EVAL_ASSETS] ['S'] [assetid] [amount of coin still required] [origpubkey]
 			
-
             if( (assetoshis = AssetValidateSellvin(cpAssets, eval, totalunits, tmporigpubkey, tokensCCaddr, origaddr, tx, assetid)) == 0 )
                 return(false);
             else if( numvouts < 3 )
@@ -354,9 +358,8 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
                     return eval->Invalid("normal vout1 for fillask");
                 else if( remaining_price != 0 )
                 {
-					char tokensUnspendableAddr[64];
-					GetTokensCCaddress(cpAssets, tokensUnspendableAddr, GetUnspendable(cpAssets, NULL));
-
+					//char tokensUnspendableAddr[64];
+					//GetTokensCCaddress(cpAssets, tokensUnspendableAddr, GetUnspendable(cpAssets, NULL));
                     if ( ConstrainVout(tx.vout[0], 1, tokensUnspendableAddr /*(char *)cpAssets->unspendableCCaddr*/, 0) == 0 )
                         return eval->Invalid("mismatched vout0 assets dual unspendable CCaddr for fill sell");
                 }
@@ -411,6 +414,7 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
                 if( ValidateSwapRemainder(remaining_price, tx.vout[0].nValue, assetoshis,tx.vout[1].nValue, tx.vout[2].nValue, totalunits) == false )
                     return eval->Invalid("mismatched remainder for fillex");
                 else if( ConstrainVout(tx.vout[1], 1, 0, 0) == 0 )
+				////////// not implemented yet ////////////
                     return eval->Invalid("normal vout1 for fillex");
                 else if( remaining_price != 0 )
                 {
