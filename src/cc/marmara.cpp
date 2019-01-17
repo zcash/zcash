@@ -404,13 +404,20 @@ UniValue MarmaraSettlement(uint64_t txfee,uint256 refbatontxid)
                     result.push_back(Pair("error",(char *)"invalid refcreatetxid, setting to creditloop[0]"));
                     return(result);
                 }
-                if ( chainActive.LastTip()->GetHeight() < refmatures )
+                else if ( chainActive.LastTip()->GetHeight() < refmatures )
                 {
                     fprintf(stderr,"doesnt mature for another %d blocks\n",refmatures - chainActive.LastTip()->GetHeight());
                     result.push_back(Pair("result",(char *)"error"));
                     result.push_back(Pair("error",(char *)"cant settle immature creditloop"));
                     return(result);
                 }
+                else if ( (refmatures & 1) == 0 )
+                {
+                    result.push_back(Pair("result",(char *)"error"));
+                    result.push_back(Pair("error",(char *)"cant automatic settle even maturity heights"));
+                    return(result);
+                }
+                fprintf(stderr,"refmatures.%d\n",refmatures);
                 remaining = refamount;
                 GetCCaddress(cp,myCCaddr,Mypubkey());
                 Getscriptaddress(batonCCaddr,batontx.vout[0].scriptPubKey);
