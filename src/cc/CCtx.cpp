@@ -168,6 +168,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
                     {
                         char coinaddr[64];
                         GetCCaddress1of2(cp,coinaddr,globalpk,pubkeys[i]);
+                        fprintf(stderr,"%s + %s -> %s vs %s\n",HexStr(globalpk).c_str(),HexStr(pubkeys[i]).c_str(),coinstr,destaddr);
                         if ( strcmp(destaddr,coinaddr) == 0 )
                         {
                             privkey = cp->CCpriv;
