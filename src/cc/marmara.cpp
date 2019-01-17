@@ -155,17 +155,22 @@ int32_t MarmaraGetbatontxid(std::vector<uint256> &creditloop,uint256 &batontxid,
     if ( MarmaraGetcreatetxid(createtxid,txid) == 0 )
     {
         txid = createtxid;
-        fprintf(stderr,"txid.%s -> createtxid %s\n",txid.GetHex().c_str(),createtxid.GetHex().c_str());
+        //fprintf(stderr,"txid.%s -> createtxid %s\n",txid.GetHex().c_str(),createtxid.GetHex().c_str());
         while ( CCgetspenttxid(spenttxid,vini,height,txid,vout) == 0 )
         {
             creditloop.push_back(txid);
-            fprintf(stderr,"%d: %s\n",n,txid.GetHex().c_str());
+            //fprintf(stderr,"%d: %s\n",n,txid.GetHex().c_str());
             n++;
-            if ( (value= CCgettxout(spenttxid,vout,1)) > 0 )
+            if ( (value= CCgettxout(spenttxid,vout,1)) == 10000 )
             {
                 batontxid = spenttxid;
-                fprintf(stderr,"got baton %s %.8f\n",batontxid.GetHex().c_str(),(double)value/COIN);
+                //fprintf(stderr,"got baton %s %.8f\n",batontxid.GetHex().c_str(),(double)value/COIN);
                 return(n);
+            }
+            else if ( value > 0 )
+            {
+                fprintf(stderr,"got false baton %s %.8f\n",batontxid.GetHex().c_str(),(double)value/COIN);
+                break;
             }
             txid = spenttxid;
         }
@@ -417,15 +422,21 @@ UniValue MarmaraSettlement(uint64_t txfee,uint256 refbatontxid)
                     result.push_back(Pair("error",(char *)"cant automatic settle even maturity heights"));
                     return(result);
                 }
-                fprintf(stderr,"refmatures.%d\n",refmatures);
+                else if ( n < 2 )
+                {
+                    result.push_back(Pair("result",(char *)"error"));
+                    result.push_back(Pair("error",(char *)"creditloop too short"));
+                    return(result);
+                }
                 remaining = refamount;
                 GetCCaddress(cp,myCCaddr,Mypubkey());
                 Getscriptaddress(batonCCaddr,batontx.vout[0].scriptPubKey);
                 if ( strcmp(myCCaddr,batonCCaddr) == 0 )
                 {
                     mtx.vin.push_back(CTxIn(batontxid,0,CScript()));
+                    mtx.vin.push_back(CTxIn(creditloop[1],1,CScript())); // issuance marker
                     pubkeys.push_back(mypk);
-                    for (i=0; i<n; i++)
+                    for (i=1; i<n; i++)
                     {
                         if ( GetTransaction(creditloop[i],tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 1 )
                         {
