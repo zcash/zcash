@@ -348,7 +348,7 @@ int64_t AddMarmaraCoinbases(struct CCcontract_info *cp,CMutableTransaction &mtx,
 
 int64_t AddMarmarainputs(CMutableTransaction &mtx,char *coinaddr,int64_t total,int32_t maxinputs)
 {
-    uint64_t threshold,nValue,totalinputs = 0; uint256 txid,hashBlock; CTransaction tx; int32_t numvouts,ht,vout,n = 0; uint8_t funcid; CPubKey pk;
+    uint64_t threshold,nValue,totalinputs = 0; uint256 txid,hashBlock; CTransaction tx; int32_t numvouts,ht,unlockht,vout,n = 0; uint8_t funcid; CPubKey pk;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     SetCCunspents(unspentOutputs,coinaddr);
     threshold = total/(maxinputs+1);
