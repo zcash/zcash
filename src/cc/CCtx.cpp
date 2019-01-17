@@ -164,12 +164,12 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
                 else
                 {
                     flag = 0;
-                    if ( pubkeys != 0 )
+                    if ( pubkeys != NULL_pubkeys )
                     {
                         GetCCaddress1of2(cp,coinaddr,globalpk,pubkeys[i]);
                         if ( strcmp(destaddr,coinaddr) == 0 )
                         {
-                            privkey = cp->unspendablepriv;
+                            privkey = cp->CCpriv;
                             if ( othercond4 != 0 )
                                 cc_free(othercond4);
                             othercond4 = MakeCCcond1of2(cp->evalcode,globalpk,pubkeys[i]);
