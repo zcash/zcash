@@ -35,6 +35,8 @@
  vout0 baton to next receiverpk (following the unspent baton back to original is the credit loop)
  
  'S'
+ vin0 'I' marker
+ vin1 baton
  vins CC utxos from credit loop
  
 */
@@ -169,9 +171,10 @@ int32_t MarmaraGetbatontxid(std::vector<uint256> &creditloop,uint256 &batontxid,
             }
             else if ( value > 0 )
             {
-                fprintf(stderr,"got false baton %s %.8f\n",batontxid.GetHex().c_str(),(double)value/COIN);
-                break;
+                fprintf(stderr,"got false baton %s/v%d %.8f\n",batontxid.GetHex().c_str(),vout,(double)value/COIN);
+                return(n);
             }
+            // get funcid
             txid = spenttxid;
         }
     }
@@ -302,13 +305,13 @@ bool MarmaraValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
         {
             return(true);
         }
-        else if ( funcid == 'S' ) // collect -> automatically spend issuers locked funds, given 'I'
+        else if ( funcid == 'S' ) // settlement -> automatically spend issuers locked funds, given 'I'
         {
-            return(true); // iterate from issuer all remainder after maturity
+            return(true);
         }
-        else if ( funcid == 'D' ) // collect -> automatically spend issuers locked funds, given 'I'
+        else if ( funcid == 'D' ) // insufficient settlement
         {
-            return(true); // iterate from issuer all remainder after maturity
+            return(true);
         }
         // staking only for locked utxo
     }
@@ -433,8 +436,9 @@ UniValue MarmaraSettlement(uint64_t txfee,uint256 refbatontxid)
                 Getscriptaddress(batonCCaddr,batontx.vout[0].scriptPubKey);
                 if ( strcmp(myCCaddr,batonCCaddr) == 0 )
                 {
-                    mtx.vin.push_back(CTxIn(batontxid,0,CScript()));
                     mtx.vin.push_back(CTxIn(creditloop[1],1,CScript())); // issuance marker
+                    pubkeys.push_back(Marmarapk);
+                    mtx.vin.push_back(CTxIn(batontxid,0,CScript()));
                     pubkeys.push_back(mypk);
                     for (i=1; i<n; i++)
                     {
@@ -554,7 +558,7 @@ UniValue MarmaraReceive(uint64_t txfee,CPubKey senderpk,int64_t amount,std::stri
         errorstr = (char *)"cant get createtxid from batontxid";
     else if ( currency != "MARMARA" )
         errorstr = (char *)"for now, only MARMARA loops are supported";
-    else if ( amount < txfee )
+    else if ( amount <= txfee )
         errorstr = (char *)"amount must be for more than txfee";
     else if ( matures <= chainActive.LastTip()->GetHeight() )
         errorstr = (char *)"it must mature in the future";
@@ -601,7 +605,6 @@ UniValue MarmaraIssue(uint64_t txfee,uint8_t funcid,CPubKey receiverpk,int64_t a
     cp = CCinit(&C,EVAL_MARMARA);
     if ( txfee == 0 )
         txfee = 10000;
-    // make sure receiverpk is unique to creditloop
     // make sure less than maxlength
     Marmarapk = GetUnspendable(cp,0);
     mypk = pubkey2pk(Mypubkey());
@@ -609,7 +612,7 @@ UniValue MarmaraIssue(uint64_t txfee,uint8_t funcid,CPubKey receiverpk,int64_t a
         errorstr = (char *)"cant get createtxid from approvaltxid";
     else if ( currency != "MARMARA" )
         errorstr = (char *)"for now, only MARMARA loops are supported";
-    else if ( amount < txfee )
+    else if ( amount <= txfee )
         errorstr = (char *)"amount must be for more than txfee";
     else if ( matures <= chainActive.LastTip()->GetHeight() )
         errorstr = (char *)"it must mature in the future";
@@ -888,3 +891,6 @@ UniValue MarmaraPoolPayout(uint64_t txfee,int32_t firstheight,double perc,char *
     return(result);
 }
 
+// MarmaraLock(uint64_t txfee,int64_t amount,int32_t refunlockht)
+// scan all unlocked
+// total capped at amount, change -> unlocked, if no change then scan all locked 'C' and 'P' for unlockht < refunlockht
