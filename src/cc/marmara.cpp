@@ -348,7 +348,7 @@ int64_t AddMarmaraCoinbases(struct CCcontract_info *cp,CMutableTransaction &mtx,
 
 int64_t AddMarmarainputs(CMutableTransaction &mtx,char *coinaddr,int64_t total,int32_t maxinputs)
 {
-    uint64_t threshold,nValue,totalinputs = 0; uint256 txid,hashBlock; CTransaction tx; int32_t numvouts,vout,n = 0; uint8_t funcid;
+    uint64_t threshold,nValue,totalinputs = 0; uint256 txid,hashBlock; CTransaction tx; int32_t numvouts,ht,vout,n = 0; uint8_t funcid; CPubKey pk;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     SetCCunspents(unspentOutputs,coinaddr);
     threshold = total/(maxinputs+1);
@@ -360,7 +360,7 @@ int64_t AddMarmarainputs(CMutableTransaction &mtx,char *coinaddr,int64_t total,i
             continue;
         if ( GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 0 && vout < numvouts && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 && myIsutxo_spentinmempool(txid,vout) == 0 )
         {
-            if ( (funcid= DecodeMaramaraCoinbaseOpRet(tx.vout[numvouts-1].scriptPubKey,pk,ht,unlockht) == 'C' || funcid == 'P' || funcid == 'L' )
+            if ( (funcid= DecodeMaramaraCoinbaseOpRet(tx.vout[numvouts-1].scriptPubKey,pk,ht,unlockht)) == 'C' || funcid == 'P' || funcid == 'L' )
             {
                 char str[64]; fprintf(stderr,"(%s) %s/v%d %.8f ht.%d unlockht.%d\n",coinaddr,uint256_str(str,txid),vout,(double)it->second.satoshis/COIN,ht,unlockht);
                 if ( total != 0 && maxinputs != 0 )
