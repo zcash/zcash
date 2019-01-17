@@ -7,6 +7,12 @@
 #
 #  Usage: python fetch-pyarams.py
 #
+#         Generate binary for a given platform using pyinstaller module:
+#
+#         pyinstaller --onefile fetch-pyarams.py
+#
+#         <binary will be located in /dist>
+#
 #  Notes:
 #  The Linux and Darwin blocks can likely be combined.
 # 
@@ -20,7 +26,6 @@ import requests
 import hashlib
 import os
 import logging
-from tendo import singleton
 from tqdm import tqdm
 
 logging.basicConfig(format='%(asctime)s - PID:%(process)d - %(levelname)s: %(message)s', level=logging.INFO)
@@ -199,7 +204,6 @@ def check_params(param_file_list):
             logging.warning("%s does not exists and will now be downloaded...", PARAMS_DIR + key )
             download_file( key, "HTTPS")
             
-
 def create_readme():
     try:
         os.mkdir(PARAMS_DIR)
@@ -227,7 +231,6 @@ def print_intro_info():
     print PARAMS_DIR + "README" + "\n"      
 
 def main():
-    lock_this = singleton.SingleInstance()
     print_intro()
 
     if os.path.exists(PARAMS_DIR) == False:
