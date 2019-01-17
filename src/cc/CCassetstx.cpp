@@ -735,7 +735,7 @@ std::string FillSell(int64_t txfee, uint256 assetid, uint256 assetid2, uint256 a
                     CCchange = (inputs - paid_nValue);
 
                 mtx.vout.push_back(MakeTokensCC1vout(EVAL_ASSETS, orig_assetoshis - received_assetoshis, GetUnspendable(cpAssets, NULL)));  // vout.0 tokens remainder to unspendable cc addr
-                mtx.vout.push_back(MakeTokensCC1vout(EVAL_ASSETS, received_assetoshis, mypk));					//vout.1 purchased tokens to self
+                mtx.vout.push_back(MakeCC1vout(EVAL_TOKENS, received_assetoshis, mypk));					//vout.1 purchased tokens to self single-eval addr
                 
 				// NOTE: no marker here
 

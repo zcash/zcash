@@ -133,7 +133,7 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
 	int32_t i,starti,numvins,numvouts,preventCCvins,preventCCvouts; 
 	int64_t remaining_price,nValue,assetoshis,outputs,inputs,tmpprice,totalunits,ignore; std::vector<uint8_t> origpubkey,tmporigpubkey,ignorepubkey; 
 	uint8_t funcid, evalCodeInOpret; 
-	char destaddr[64], origaddr[64], assetsCCaddr[64], userTokensCCaddr[64], signleEvalTokensCCaddr[64];
+	char destaddr[64], origaddr[64], assetsCCaddr[64], userTokensCCaddr[64]; //, signleEvalTokensCCaddr[64];
 
 	//return true;
 
@@ -161,7 +161,7 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
 	cpTokens = CCinit(&tokensC, EVAL_TOKENS);
 
 	// find single-eval token user cc addr:
-	GetCCaddress(cpTokens, signleEvalTokensCCaddr, pubkey2pk(origpubkey));
+	//GetCCaddress(cpTokens, signleEvalTokensCCaddr, pubkey2pk(origpubkey));
 
     fprintf(stderr,"AssetValidate (%c)\n",funcid);
 
