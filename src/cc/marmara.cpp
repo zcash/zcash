@@ -684,7 +684,7 @@ UniValue MarmaraCreditloop(uint256 txid)
                     result.push_back(Pair("settled",HexStr(pk)));
                     Getscriptaddress(coinaddr,CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG);
                     result.push_back(Pair("coinaddr",coinaddr));
-                    obj.push_back(Pair("collected",ValueFromAmount(tx.vout[0].nValue)));
+                    result.push_back(Pair("collected",ValueFromAmount(tx.vout[0].nValue)));
                     Getscriptaddress(destaddr,tx.vout[0].scriptPubKey);
                     if ( strcmp(coinaddr,destaddr) != 0 )
                     {
