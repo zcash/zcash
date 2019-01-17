@@ -673,12 +673,6 @@ UniValue MarmaraCreditloop(uint256 txid)
             result.push_back(Pair("batontxid",batontxid.GetHex()));
             if ( (funcid= MarmaraDecodeLoopOpret(tx.vout[numvouts-1].scriptPubKey,refcreatetxid,pk,refamount,refmatures,refcurrency)) != 0 )
             {
-                if ( refcreatetxid != creditloop[0] )
-                {
-                    fprintf(stderr,"invalid refcreatetxid, setting to creditloop[0]\n");
-                    refcreatetxid = creditloop[0];
-                    numerrs++;
-                }
                 str[0] = funcid, str[1] = 0;
                 result.push_back(Pair("funcid",str));
                 result.push_back(Pair("createtxid",refcreatetxid.GetHex()));
@@ -690,9 +684,22 @@ UniValue MarmaraCreditloop(uint256 txid)
                     result.push_back(Pair("settled",HexStr(pk)));
                     Getscriptaddress(coinaddr,CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG);
                     result.push_back(Pair("coinaddr",coinaddr));
+                    obj.push_back(Pair("collected",ValueFromAmount(tx.vout[0].nValue)));
+                    Getscriptaddress(destaddr,tx.vout[0].scriptPubKey);
+                    if ( strcmp(coinaddr,destaddr) != 0 )
+                    {
+                        result.push_back(Pair("destaddr",destaddr));
+                        numerrs++;
+                    }
                 }
                 else
                 {
+                    if ( refcreatetxid != creditloop[0] )
+                    {
+                        fprintf(stderr,"invalid refcreatetxid, setting to creditloop[0]\n");
+                        refcreatetxid = creditloop[0];
+                        numerrs++;
+                    }
                     result.push_back(Pair("batonpk",HexStr(pk)));
                     Getscriptaddress(coinaddr,CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG);
                     result.push_back(Pair("batonaddr",coinaddr));
