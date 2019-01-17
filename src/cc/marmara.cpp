@@ -679,7 +679,7 @@ UniValue MarmaraCreditloop(uint256 txid)
                 if ( funcid == 'S' )
                 {
                     refcreatetxid = creditloop[0];
-                    result.push_back(Pair("settletxid",batontxid.GetHex()));
+                    result.push_back(Pair("settlement",batontxid.GetHex()));
                     result.push_back(Pair("createtxid",refcreatetxid.GetHex()));
                     result.push_back(Pair("remainder",ValueFromAmount(refamount)));
                     result.push_back(Pair("settled",refmatures));
@@ -694,6 +694,18 @@ UniValue MarmaraCreditloop(uint256 txid)
                         numerrs++;
                     }
                     refamount = -1;
+                }
+                else if ( funcid == 'D' )
+                {
+                    refcreatetxid = creditloop[0];
+                    result.push_back(Pair("settlement",batontxid.GetHex()));
+                    result.push_back(Pair("createtxid",refcreatetxid.GetHex()));
+                    result.push_back(Pair("remainder",ValueFromAmount(refamount)));
+                    result.push_back(Pair("settled",refmatures));
+                    Getscriptaddress(destaddr,tx.vout[0].scriptPubKey);
+                    result.push_back(Pair("txidaddr",destaddr));
+                    if ( tx.vout.size() > 1 )
+                        result.push_back(Pair("collected",ValueFromAmount(tx.vout[1].nValue)));
                 }
                 else
                 {
@@ -759,6 +771,8 @@ UniValue MarmaraCreditloop(uint256 txid)
                             {
                                 refamount = amount;
                                 refmatures = matures;
+                                result.push_back(Pair("amount",ValueFromAmount(refamount)));
+                                result.push_back(Pair("matures",refmatures));
                             }
                             if ( createtxid != refcreatetxid || amount != refamount || matures != refmatures || currency != refcurrency )
                             {
