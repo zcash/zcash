@@ -469,11 +469,11 @@ UniValue MarmaraSettlement(uint64_t txfee,uint256 refbatontxid)
                             } else fprintf(stderr,"null funcid for creditloop[%d]\n",i);
                         } else fprintf(stderr,"couldnt get creditloop[%d]\n",i);
                     }
-                    if ( amount - remaining > 2*txfee )
+                    if ( refamount - remaining > 2*txfee )
                     {
                         mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(CCtxidaddr(txidaddr,createtxid))) << OP_CHECKSIG)); // failure marker
-                        if ( amount-remaining > 3*txfee )
-                            mtx.vout.push_back(CTxOut(amount-remaining-2*txfee,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
+                        if ( refamount-remaining > 3*txfee )
+                            mtx.vout.push_back(CTxOut(refamount-remaining-2*txfee,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
                         rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,MarmaraLoopOpret('D',createtxid,mypk,-remaining,height,currency),pubkeys);
                         result.push_back(Pair("result",(char *)"error"));
                         result.push_back(Pair("error",(char *)"insufficient funds"));
