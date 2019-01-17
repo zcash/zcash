@@ -38,13 +38,14 @@ bool SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const CScrip
     return(false);
 }
 
-std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey mypk,uint64_t txfee,CScript opret)
+std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey mypk,uint64_t txfee,CScript opret,std::vector<CPubKey> pubkeys)
 {
     auto consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
-    CTransaction vintx; std::string hex; uint256 hashBlock; uint64_t mask=0,nmask=0,vinimask=0;
+    CTransaction vintx; std::string hex; CPubKey globalpk; uint256 hashBlock; uint64_t mask=0,nmask=0,vinimask=0;
     int64_t utxovalues[CC_MAXVINS],change,normalinputs=0,totaloutputs=0,normaloutputs=0,totalinputs=0,normalvins=0,ccvins=0; 
-    int32_t i,utxovout,n,err = 0; char myaddr[64],destaddr[64],unspendable[64];
-    uint8_t *privkey,myprivkey[32],unspendablepriv[32],*msg32 = 0; CC *mycond=0,*othercond=0,*othercond2=0,*othercond3=0,*cond; CPubKey unspendablepk;
+    int32_t i,flag,utxovout,n,err = 0; char myaddr[64],destaddr[64],unspendable[64];
+    uint8_t *privkey,myprivkey[32],unspendablepriv[32],*msg32 = 0; CC *mycond=0,*othercond=0,*othercond2=0,*othercond3=0,*othercond4=0,*cond; CPubKey unspendablepk;
+    globalpk = GetUnspendable(cp,0);
     n = mtx.vout.size();
     for (i=0; i<n; i++)
     {
@@ -160,8 +161,25 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
                 }
                 else
                 {
-                    fprintf(stderr,"CC signing error: vini.%d has unknown CC address.(%s)\n",i,destaddr);
-                    continue;
+                    flag = 0;
+                    if ( pubkeys != 0 )
+                    {
+                        GetCCaddress1of2(cp,coinaddr,globalpk,pubkeys[i]);
+                        if ( strcmp(destaddr,coinaddr) == 0 )
+                        {
+                            privkey = cp->unspendablepriv;
+                            if ( othercond4 != 0 )
+                                cc_free(othercond4);
+                            othercond4 = MakeCCcond1of2(cp->evalcode,globalpk,pubkeys[i]);
+                            cond = othercond4;
+                            flag = 1;
+                        }
+                    }
+                    if ( flag == 0 )
+                    {
+                        fprintf(stderr,"CC signing error: vini.%d has unknown CC address.(%s)\n",i,destaddr);
+                        continue;
+                    }
                 }
                 uint256 sighash = SignatureHash(CCPubKey(cond), mtx, i, SIGHASH_ALL, utxovalues[i],consensusBranchId, &txdata);
                 if ( cc_signTreeSecp256k1Msg32(cond,privkey,sighash.begin()) != 0 )
@@ -190,6 +208,8 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
         cc_free(othercond2);
     if ( othercond3 != 0 )
         cc_free(othercond3);
+    if ( othercond4 != 0 )
+        cc_free(othercond4);
     std::string strHex = EncodeHexTx(mtx);
     if ( strHex.size() > 0 )
         return(strHex);
