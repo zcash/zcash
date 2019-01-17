@@ -5417,7 +5417,6 @@ UniValue gatewaysaddress(const UniValue& params, bool fHelp)
 
 UniValue heiraddress(const UniValue& params, bool fHelp)
 {
-	/*
 	struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
 	cp = CCinit(&C,EVAL_HEIR);
 	if ( fHelp || params.size() > 1 )
@@ -5427,131 +5426,6 @@ UniValue heiraddress(const UniValue& params, bool fHelp)
 	if ( params.size() == 1 )
 	pubkey = ParseHex(params[0].get_str().c_str());
 	return(CCaddress(cp,(char *)"Heir",pubkey));
-	*/
-
-
-	// make fake token tx: 
-	struct CCcontract_info *cp, C;
-
-	if (fHelp || (params.size() < 1))
-		throw runtime_error("heiraddress A|G|H|T|R assetid|destpubkey amountcoins [heirpubkey] [fundingtxid]\n");
-	if (ensure_CCrequirements() < 0)
-		throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
-
-	char badKind = ((char *)params[0].get_str().c_str())[0];
-
-	if (badKind == 'A') {
-		std::vector<unsigned char> destPubkey;
-		if (params.size() == 2) {
-			cp = CCinit(&C, EVAL_HEIR);
-			destPubkey = ParseHex(params[1].get_str().c_str());
-			return(CCaddress(cp, (char *)"Heir", destPubkey));
-		}
-		else
-			return std::string("bad params for A");
-	}
-
-	CPubKey myPubkey = pubkey2pk(Mypubkey());
-	CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());;
-
-	if (badKind != 'R') {
-
-		if (badKind == 'G' && params.size() != 3)
-			return std::string("incorrect params for G");
-		if (badKind == 'H' && params.size() != 5)
-			return std::string("incorrect params for H, = 5");
-		if (badKind == 'T' && params.size() != 3)
-			return std::string("incorrect params for T, = 3");
-
-
-		uint256 assetid = Parseuint256((char *)params[1].get_str().c_str());
-		int64_t amount = atof(params[2].get_str().c_str()) * COIN;
-
-		uint256 fundingtxid;
-		CPubKey heirPubkey;
-
-		if (badKind == 'H') {
-
-			std::vector<unsigned char> heirPubkeyStr = ParseHex(params[3].get_str().c_str());
-			heirPubkey = pubkey2pk(heirPubkeyStr);
-
-			fundingtxid = Parseuint256((char *)params[4].get_str().c_str());
-		}
-
-		
-
-		int64_t txfee = 10000;
-
-		uint8_t evalCodeInOpret = (badKind == 'H') ? EVAL_HEIR : EVAL_GATEWAYS;
-		cp = CCinit(&C, EVAL_ASSETS);
-
-		int64_t normalInputs = AddNormalinputs(mtx, myPubkey, txfee + amount, 60);
-		//	int64_t ccInputs = 0;
-
-
-		if (badKind == 'T') {
-			// just empty fake token
-			mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS, amount, myPubkey));  //note you need destPubkey for sending to gateways
-		}
-		else if (badKind == 'H') {
-			// heir add funding tx
-			mtx.vout.push_back(MakeCC1of2vout(EVAL_ASSETS, amount, myPubkey, heirPubkey)); // add cryptocondition to spend amount for either pk
-		}
-		else { // if (badKind == 'G') 
-			CPubKey gatewayContractPubKey = GetUnspendable(cp, 0);
-			mtx.vout.push_back(CTxOut(txfee, CScript() << ParseHex(HexStr(gatewayContractPubKey)) << OP_CHECKSIG));
-		}
-
-		int64_t change = (normalInputs - amount);
-		if (change != 0) {
-			mtx.vout.push_back(CTxOut(change, CScript() << ParseHex(HexStr(myPubkey)) << OP_CHECKSIG));
-		}
-		std::cerr << "make fake token for contract=" << badKind << " added normalInputs=" << normalInputs << " change=" << change << std::endl;
-
-		// note: it sets eval=EVAL_ASSETS in opreturn  both for tokens and gateways cc addr
-		//script = EncodeAssetOpRet('t', assetid, zeroid, 0, (badKind == 'A' ? Mypubkey() : destPubkey));  // dimxy: are we sure about destPubkey here? it may be just pubkey of the author... 
-		CScript opret;
-		assetid = revuint256(assetid);
-		fundingtxid = revuint256(fundingtxid);
-		if (badKind == 'T') 
-			opret << OP_RETURN << E_MARSHAL(ss << (uint8_t)evalCodeInOpret << (uint8_t)'t' << assetid );
-		else if (badKind == 'H') 
-			opret << OP_RETURN << E_MARSHAL(ss << (uint8_t)evalCodeInOpret << (uint8_t)'t' << assetid << (uint8_t)'A' << myPubkey << heirPubkey << (int64_t)120 << fundingtxid);
-		else 
-			opret << OP_RETURN << E_MARSHAL(ss << (uint8_t)evalCodeInOpret << (uint8_t)'t' << assetid); // EVAL_GATEWAYS
-	
-		return(FinalizeCCTx(0, cp, mtx, myPubkey, txfee, opret));  // normal change added here
-	}
-	else
-	{
-		// move vout from user cc addr to gateways unspendable
-		CTransaction srctx;
-
-		uint256 hashBlock;
-		const bool allowSlow = false;
-		uint256 srctxid = Parseuint256((char *)params[1].get_str().c_str());
-
-		struct CCcontract_info *cp, C;
-		cp = CCinit(&C, EVAL_GATEWAYS);
-
-		uint64_t txfee = 10000;
-		CPubKey gatewayspk = GetUnspendable(cp, 0);
-
-		if (myGetTransaction(srctxid, srctx, hashBlock) && srctx.vout.size() > 0) {
-
-			int64_t normalInputs = AddNormalinputs(mtx, myPubkey, 2 * txfee, 4);
-
-			mtx.vin.push_back(CTxIn(srctxid, 2, CScript())); // repaired src tx
-			mtx.vout.push_back(MakeCC1vout(EVAL_GATEWAYS, srctx.vout[2].nValue, gatewayspk));
-
-			CScript script = srctx.vout[srctx.vout.size() - 1].scriptPubKey;
-
-			//mtx.fOverwintered = true;
-
-			return(FinalizeCCTx(0, cp, mtx, myPubkey, txfee, script));  // normal change added here
-		}
-	}
-	return std::string("there has been some error");
 }
 
 
@@ -7432,53 +7306,12 @@ UniValue getbalance64(const UniValue& params, bool fHelp)
     return ret;
 }
 
-// heir contract functions for coins
+
+// heir contract functions for coins and tokens
 UniValue heirfund(const UniValue& params, bool fHelp)
 {
 	UniValue result(UniValue::VOBJ);
-	//uint256 txid;
-	int64_t txfee;
-	int64_t amount;
-	int64_t inactivitytime;
-	std::string hex;
-	std::vector<unsigned char> pubkey;
-	std::string name;
-
-	//TODO: do we need this?
-	if (!EnsureWalletIsAvailable(fHelp))
-	    return NullUniValue;
-
-	if (fHelp || params.size() != 5)
-		throw runtime_error("heirfund fee funds heirname heirpubkey inactivitytime\n");
-	if (ensure_CCrequirements() < 0)
-		throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
-
-	const CKeyStore& keystore = *pwalletMain;
-	LOCK2(cs_main, pwalletMain->cs_wallet);
-
-	txfee = atof((char*)params[0].get_str().c_str()) * COIN;
-	amount = atof((char*)params[1].get_str().c_str()) * COIN;
-	name = params[2].get_str();
-	pubkey = ParseHex(params[3].get_str().c_str());
-	inactivitytime = atof((char*)params[4].get_str().c_str());
-
-
-	result = HeirFundCoinCaller(txfee, amount, name, pubkey2pk(pubkey), inactivitytime, zeroid);
-/*	if (hex.size() > 0) {
-		result.push_back(Pair("result", "success"));
-		result.push_back(Pair("hex", hex));
-	}
-	else
-		ERR_RESULT("couldn't create heir fund");*/
-
-	return result;
-}
-
-
-UniValue heiradd(const UniValue& params, bool fHelp)
-{
-	UniValue result; // UniValue result(UniValue::VOBJ);
-	uint256 fundingtxid;
+	uint256 tokenid = zeroid;
 	uint64_t txfee;
 	int64_t amount;
 	int64_t inactivitytime;
@@ -7486,88 +7319,11 @@ UniValue heiradd(const UniValue& params, bool fHelp)
 	std::vector<unsigned char> pubkey;
 	std::string name;
 
-	// TODO: do we need this?
 	if (!EnsureWalletIsAvailable(fHelp))
 	    return NullUniValue;
 
-	if (fHelp || params.size() != 3)
-		throw runtime_error("heiradd fee funds fundingtxid\n");
-	if (ensure_CCrequirements() < 0)
-		throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
-
-	const CKeyStore& keystore = *pwalletMain;
-	LOCK2(cs_main, pwalletMain->cs_wallet);
-
-	txfee = atof((char*)params[0].get_str().c_str()) * COIN;
-	amount = atof((char*)params[1].get_str().c_str()) * COIN;
-	fundingtxid = Parseuint256((char*)params[2].get_str().c_str());
-
-	result = HeirAddCoinCaller(fundingtxid, txfee, amount);
-	/* if ( hex.size() > 0 )
-	{
-	result.push_back(Pair("result", "success"));
-	result.push_back(Pair("hex", hex));
-	} else ERR_RESULT("couldn't claim heir fund");	*/
-
-
-	return result;
-}
-
-UniValue heirclaim(const UniValue& params, bool fHelp)
-{
-	UniValue result; // result(UniValue::VOBJ);
-	uint256 fundingtxid;
-	uint64_t txfee;
-	int64_t amount;
-	int64_t inactivitytime;
-	std::string hex;
-	std::vector<unsigned char> pubkey;
-	std::string name;
-
-	// do we need this?
-	if (!EnsureWalletIsAvailable(fHelp))
-	    return NullUniValue;
-
-	if (fHelp || params.size() != 3)
-		throw runtime_error("heirclaim fee funds fundingtxid\n");
-	if (ensure_CCrequirements() < 0)
-		throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
-
-	const CKeyStore& keystore = *pwalletMain;
-	LOCK2(cs_main, pwalletMain->cs_wallet);
-
-	txfee = atof((char*)params[0].get_str().c_str()) * COIN;
-	amount = atof((char*)params[1].get_str().c_str()) * COIN;
-	fundingtxid = Parseuint256((char*)params[2].get_str().c_str());
-
-	result = HeirClaimCoinCaller(fundingtxid, txfee, amount);
-	/* if ( hex.size() > 0 )
-	{
-	result.push_back(Pair("result", "success"));
-	result.push_back(Pair("hex", hex));
-	} else ERR_RESULT("couldn't claim heir fund");	*/
-
-	return result;
-}
-
-// same heir contract functions for tokens
-UniValue heirfundtokens(const UniValue& params, bool fHelp)
-{
-	UniValue result(UniValue::VOBJ);
-	uint256 assetid;
-	uint64_t txfee;
-	int64_t amount;
-	int64_t inactivitytime;
-	std::string hex;
-	std::vector<unsigned char> pubkey;
-	std::string name;
-
-	//TODO: do we need this (dimxy)?
-	if (!EnsureWalletIsAvailable(fHelp))
-	    return NullUniValue;
-
-	if (fHelp || params.size() != 6)
-		throw runtime_error("heirfundtokens fee funds heirname heirpubkey inactivitytime assetid\n");
+	if (fHelp || params.size() != 5 && params.size() != 6)
+		throw runtime_error("heirfundtokens fee funds heirname heirpubkey inactivitytime [tokenid]\n");
 	if (ensure_CCrequirements() < 0)
 		throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
 
@@ -7578,26 +7334,27 @@ UniValue heirfundtokens(const UniValue& params, bool fHelp)
 	amount = atoll((char*)params[1].get_str().c_str());
 	name = params[2].get_str();
 	pubkey = ParseHex(params[3].get_str().c_str());
+	if( !pubkey2pk(pubkey).IsValid() )
+		throw runtime_error("incorrect pubkey\n");
+
 	inactivitytime = atof((char*)params[4].get_str().c_str());
-	assetid = Parseuint256((char*)params[5].get_str().c_str());
-
-
-	result = HeirFundTokenCaller(txfee, amount, name, pubkey2pk(pubkey), inactivitytime, assetid);
-/*	if (hex.size() > 0) {
-		result.push_back(Pair("result", "success"));
-		result.push_back(Pair("hex", hex));
+	if (params.size() == 6) {
+		tokenid = Parseuint256((char*)params[5].get_str().c_str());
+		if(tokenid == zeroid)
+			throw runtime_error("incorrect tokenid\n");
 	}
-	else
-		ERR_RESULT("couldn't create heir fund");*/
 
+	if( tokenid == zeroid )
+		result = HeirFundCoinCaller(txfee, amount, name, pubkey2pk(pubkey), inactivitytime, zeroid);
+	else
+		result = HeirFundTokenCaller(txfee, amount, name, pubkey2pk(pubkey), inactivitytime, tokenid);
 
 	return result;
 }
 
-
-UniValue heiraddtokens(const UniValue& params, bool fHelp)
+UniValue heiradd(const UniValue& params, bool fHelp)
 {
-	UniValue result; // UniValue result(UniValue::VOBJ);
+	UniValue result; 
 	uint256 fundingtxid;
 	uint64_t txfee;
 	int64_t amount;
@@ -7606,7 +7363,6 @@ UniValue heiraddtokens(const UniValue& params, bool fHelp)
 	std::vector<unsigned char> pubkey;
 	std::string name;
 
-	// TODO: do we need this?
 	if (!EnsureWalletIsAvailable(fHelp))
 	    return NullUniValue;
 
@@ -7622,18 +7378,11 @@ UniValue heiraddtokens(const UniValue& params, bool fHelp)
 	amount = atoll((char*)params[1].get_str().c_str());
 	fundingtxid = Parseuint256((char*)params[2].get_str().c_str());
 
-	result = HeirAddTokenCaller(fundingtxid, txfee, amount);
-	/* if ( hex.size() > 0 )
-	{
-	result.push_back(Pair("result", "success"));
-	result.push_back(Pair("hex", hex));
-	} else ERR_RESULT("couldn't claim heir fund");	*/
-
-
+	result = HeirAddCaller(fundingtxid, txfee, amount);
 	return result;
 }
 
-UniValue heirclaimtokens(const UniValue& params, bool fHelp)
+UniValue heirclaim(const UniValue& params, bool fHelp)
 {
 	UniValue result; // result(UniValue::VOBJ);
 	uint256 fundingtxid;
@@ -7660,13 +7409,7 @@ UniValue heirclaimtokens(const UniValue& params, bool fHelp)
 	amount = atoll((char*)params[1].get_str().c_str());
 	fundingtxid = Parseuint256((char*)params[2].get_str().c_str());
 
-	result = HeirClaimTokenCaller(fundingtxid, txfee, amount);
-	/* if ( hex.size() > 0 )
-	{
-	result.push_back(Pair("result", "success"));
-	result.push_back(Pair("hex", hex));
-	} else ERR_RESULT("couldn't claim heir fund");	*/
-
+	result = HeirClaimCaller(fundingtxid, txfee, amount);
 	return result;
 }
 
