@@ -604,7 +604,7 @@ public:
 			}
 		}
 		
-		std::cerr << "COpRetValidator::validateVout() exits with true" << std::endl;
+		//std::cerr << "COpRetValidator::validateVout() exits with true" << std::endl;
 		return true;
 	}
 	virtual bool validateVin(CTxIn vin, CTxOut prevVout, std::string& message) const { return true; }
