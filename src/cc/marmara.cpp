@@ -301,6 +301,10 @@ bool MarmaraValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
         {
             return(true); // iterate from issuer all remainder after maturity
         }
+        else if ( funcid == 'D' ) // collect -> automatically spend issuers locked funds, given 'I'
+        {
+            return(true); // iterate from issuer all remainder after maturity
+        }
         // staking only for locked utxo
     }
     return eval->Invalid("fall through error");
@@ -515,14 +519,17 @@ int32_t MarmaraGetCreditloops(int64_t &totalamount,std::vector<uint256> &issuanc
     return(n);
 }
 
-UniValue MarmaraReceive(uint64_t txfee,CPubKey senderpk,int64_t amount,std::string currency,int32_t matures,uint256 batontxid)
+UniValue MarmaraReceive(uint64_t txfee,CPubKey senderpk,int64_t amount,std::string currency,int32_t matures,uint256 batontxid,bool automaticflag)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     UniValue result(UniValue::VOBJ); CPubKey mypk; struct CCcontract_info *cp,C; std::string rawtx; char *errorstr=0; uint256 createtxid; int64_t batonamount; int32_t needbaton = 0;
     cp = CCinit(&C,EVAL_MARMARA);
     if ( txfee == 0 )
         txfee = 10000;
-    // check for batonownership by senderpk and parameters match createtxid
+    if ( automaticflag != 0 && (matures & 1) == 0 )
+        matures++;
+    else if ( automaticflag == 0 && (matures & 1) != 0 )
+        matures++;
     mypk = pubkey2pk(Mypubkey());
     memset(&createtxid,0,sizeof(createtxid));
     if ( batontxid != zeroid && MarmaraGetcreatetxid(createtxid,batontxid) < 0 )

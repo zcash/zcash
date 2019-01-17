@@ -5553,6 +5553,7 @@ UniValue marmara_receive(const UniValue& params, bool fHelp)
     UniValue result(UniValue::VOBJ); uint256 batontxid; std::vector<uint8_t> senderpub; int64_t amount; int32_t matures; std::string currency;
     if ( fHelp || (params.size() != 5 && params.size() != 4) )
     {
+        // automatic flag -> lsb of matures
         // 1st marmarareceive 028076d42eb20efc10007fafb5ca66a2052523c0d2221e607adf958d1a332159f6 7.5 MARMARA 1440
         // after marmarareceive 039433dc3749aece1bd568f374a45da3b0bc6856990d7da3cd175399577940a775 7.5 MARMARA 1168 d72d87aa0d50436de695c93e2bf3d7273c63c92ef6307913aa01a6ee6a16548b
         throw runtime_error("marmarareceive senderpk amount currency matures batontxid\n");
@@ -5573,7 +5574,7 @@ UniValue marmara_receive(const UniValue& params, bool fHelp)
         matures = atol(params[3].get_str().c_str());
         batontxid = Parseuint256((char *)params[4].get_str().c_str());
     } else matures = atol(params[3].get_str().c_str()) + chainActive.LastTip()->GetHeight() + 1;
-    return(MarmaraReceive(0,pubkey2pk(senderpub),amount,currency,matures,batontxid));
+    return(MarmaraReceive(0,pubkey2pk(senderpub),amount,currency,matures,batontxid,true));
 }
 
 UniValue marmara_issue(const UniValue& params, bool fHelp)
