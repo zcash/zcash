@@ -616,7 +616,7 @@ bool AssetCalcAmounts(struct CCcontract_info *cpAssets, int64_t &inputs, int64_t
 				std::vector<uint8_t> vopretExtra;
 				std::vector<CPubKey> vinPubkeysEmpty;
 
-				// TODO: why is IsTokensVout here??
+				// TODO: maybe we do not need call to IsTokensVout here, cause we've already selected token vins
 				assetoshis = IsTokensvout(false, false, cpTokens, NULL, /* vopretExtra,*/ vinTx, tx.vin[i].prevout.n, assetid, vinPubkeysEmpty);
 				if (assetoshis != 0)
 				{
@@ -627,15 +627,8 @@ bool AssetCalcAmounts(struct CCcontract_info *cpAssets, int64_t &inputs, int64_t
 		}
 	}
 
-	// we do not use this flag anymore
-	//if ( DecodeAssetOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,id,id2,tmpprice,tmporigpubkey) == 't' && id == assetid )
-	//flag = 1;
-	//else
-	//flag = 0;
-
-	for (int32_t i = 0; i<numvouts; i++)
+	for (int32_t i = 0; i < numvouts; i++)
 	{
-
 		// Note: we pass in here 'false' because we don't need to call AssetExactAmounts() recursively from IsAssetvout
 		// indeed, in this case we'll be checking this tx again
 		assetoshis = IsAssetvout(cpAssets, tmpprice, tmporigpubkey, tx, i, assetid);
@@ -647,7 +640,7 @@ bool AssetCalcAmounts(struct CCcontract_info *cpAssets, int64_t &inputs, int64_t
 		}
 	}
 
-	std::cerr << "AssetCalcAmounts() inputs=" << inputs << " outputs=" << outputs << " for txid=" << tx.GetHash().GetHex() << std::endl;
+	//std::cerr << "AssetCalcAmounts() inputs=" << inputs << " outputs=" << outputs << " for txid=" << tx.GetHash().GetHex() << std::endl;
 
 	/*	we do not verify inputs == outputs here, 
 		it's done in Tokens:
