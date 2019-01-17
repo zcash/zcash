@@ -427,7 +427,7 @@ UniValue MarmaraSettlement(uint64_t txfee,uint256 refbatontxid)
                                     mtx.vout.push_back(CTxOut(amount,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
                                     if ( change > txfee )
                                         mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA,change,Marmarapk,pk));
-                                    rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,MarmaraLoopOpret('S',createtxid,mypk,amount,matures,currency));
+                                    rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,MarmaraLoopOpret('S',createtxid,mypk,amount,matures,currency),pubkeys);
                                     result.push_back(Pair("result",(char *)"success"));
                                     result.push_back(Pair("rawtx",rawtx));
                                     return(result);
@@ -442,7 +442,7 @@ UniValue MarmaraSettlement(uint64_t txfee,uint256 refbatontxid)
                         mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(CCtxidaddr(txidaddr,createtxid))) << OP_CHECKSIG)); // failure marker
                         if ( amount-remaining > 3*txfee )
                             mtx.vout.push_back(CTxOut(amount-remaining-2*txfee,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
-                        rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,MarmaraLoopOpret('D',createtxid,mypk,amount-remaining,-remaining,currency));
+                        rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,MarmaraLoopOpret('D',createtxid,mypk,amount-remaining,-remaining,currency),pubkeys);
                         result.push_back(Pair("result",(char *)"error"));
                         result.push_back(Pair("error",(char *)"insufficient funds"));
                         result.push_back(Pair("rawtx",rawtx));
