@@ -171,7 +171,7 @@ int32_t MarmaraGetbatontxid(std::vector<uint256> &creditloop,uint256 &batontxid,
             }
             else if ( value > 0 )
             {
-                fprintf(stderr,"got false baton %s/v%d %.8f\n",batontxid.GetHex().c_str(),vout,(double)value/COIN);
+                fprintf(stderr,"n.%d got false baton %s/v%d %.8f\n",n,batontxid.GetHex().c_str(),vout,(double)value/COIN);
                 return(n);
             }
             // get funcid
