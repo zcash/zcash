@@ -16,6 +16,8 @@
 #include "CCinclude.h"
 #include "key_io.h"
 
+std::vector<CPubKey> NULL_pubkeys;
+
 /*
  FinalizeCCTx is a very useful function that will properly sign both CC and normal inputs, adds normal change and the opreturn.
 
