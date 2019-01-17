@@ -455,7 +455,7 @@ UniValue MarmaraSettlement(uint64_t txfee,uint256 refbatontxid)
                                     mtx.vout.push_back(CTxOut(amount,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
                                     if ( change > txfee )
                                         mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA,change,Marmarapk,pk));
-                                    rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,MarmaraLoopOpret('S',createtxid,mypk,amount,height,currency),pubkeys);
+                                    rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,MarmaraLoopOpret('S',createtxid,mypk,0,height,currency),pubkeys);
                                     result.push_back(Pair("result",(char *)"success"));
                                     result.push_back(Pair("rawtx",rawtx));
                                     return(result);
@@ -676,12 +676,13 @@ UniValue MarmaraCreditloop(uint256 txid)
             {
                 str[0] = funcid, str[1] = 0;
                 result.push_back(Pair("funcid",str));
-                result.push_back(Pair("createtxid",refcreatetxid.GetHex()));
-                result.push_back(Pair("amount",ValueFromAmount(refamount)));
-                result.push_back(Pair("matures",refmatures));
                 result.push_back(Pair("currency",refcurrency));
                 if ( funcid == 'S' )
                 {
+                    refcreatetxid = creditloop[0];
+                    result.push_back(Pair("createtxid",refcreatetxid.GetHex()));
+                    result.push_back(Pair("remainder",ValueFromAmount(refamount)));
+                    result.push_back(Pair("height",refmatures));
                     result.push_back(Pair("settled",HexStr(pk)));
                     Getscriptaddress(coinaddr,CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG);
                     result.push_back(Pair("coinaddr",coinaddr));
@@ -692,10 +693,13 @@ UniValue MarmaraCreditloop(uint256 txid)
                         result.push_back(Pair("destaddr",destaddr));
                         numerrs++;
                     }
-                    refcreatetxid = creditloop[0];
+                    refamount = -1;
                 }
                 else
                 {
+                    result.push_back(Pair("createtxid",refcreatetxid.GetHex()));
+                    result.push_back(Pair("amount",ValueFromAmount(refamount)));
+                    result.push_back(Pair("matures",refmatures));
                     if ( refcreatetxid != creditloop[0] )
                     {
                         fprintf(stderr,"invalid refcreatetxid, setting to creditloop[0]\n");
@@ -749,6 +753,11 @@ UniValue MarmaraCreditloop(uint256 txid)
                             {
                                 obj.push_back(Pair("vout0address",destaddr));
                                 numerrs++;
+                            }
+                            if ( i == 0 && refamount < 0 )
+                            {
+                                refamount = amount;
+                                refmatures = matures;
                             }
                             if ( createtxid != refcreatetxid || amount != refamount || matures != refmatures || currency != refcurrency )
                             {
