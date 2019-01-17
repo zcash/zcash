@@ -62,7 +62,7 @@ using namespace std;
 
 CCriticalSection cs_main;
 
-BlockMap mapBlockIndex;
+BlockMap mapBlockIndex GUARDED_BY(cs_main);
 CChain chainActive;
 
 /**
@@ -4577,7 +4577,7 @@ uint64_t CalculateCurrentUsage()
 }
 
 /* Prune a block file (modify associated database entries)*/
-void PruneOneBlockFile(const int fileNumber)
+void PruneOneBlockFile(const int fileNumber) EXCLUSIVE_LOCKS_REQUIRED(cs_main)
 {
     for (BlockMap::iterator it = mapBlockIndex.begin(); it != mapBlockIndex.end(); ++it) {
         CBlockIndex* pindex = it->second;
