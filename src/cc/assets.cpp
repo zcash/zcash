@@ -133,7 +133,7 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
 	int32_t i,starti,numvins,numvouts,preventCCvins,preventCCvouts; 
 	int64_t remaining_price,nValue,assetoshis,outputs,inputs,tmpprice,totalunits,ignore; std::vector<uint8_t> origpubkey,tmporigpubkey,ignorepubkey; 
 	uint8_t funcid, evalCodeInOpret; 
-	char destaddr[64], origaddr[64], assetsCCaddr[64], tokensCCaddr[64], signleEvalTokensCCaddr[64];
+	char destaddr[64], origaddr[64], assetsCCaddr[64], userTokensCCaddr[64], signleEvalTokensCCaddr[64];
 
 	//return true;
 
@@ -145,6 +145,9 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
     numvouts = tx.vout.size();
     outputs = inputs = 0;
     preventCCvins = preventCCvouts = -1;
+
+	if (numvouts == 0)
+		return eval->Invalid("AssetValidate: no vouts");
 
     if((funcid = DecodeAssetTokenOpRet(tx.vout[numvouts-1].scriptPubKey, evalCodeInOpret, assetid, assetid2, remaining_price, origpubkey)) == 0 )
         return eval->Invalid("AssetValidate: invalid opreturn payload");
@@ -322,9 +325,9 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
             //vout.2: normal output for change (if any)
             //vout.n-1: opreturn [EVAL_ASSETS] ['x'] [assetid]
 
-            if( (assetoshis = AssetValidateSellvin(cpAssets, eval, tmpprice, tmporigpubkey, tokensCCaddr, origaddr, tx, assetid)) == 0 )  // NOTE: 
+            if( (assetoshis = AssetValidateSellvin(cpAssets, eval, tmpprice, tmporigpubkey, userTokensCCaddr, origaddr, tx, assetid)) == 0 )  // NOTE: 
                 return(false);
-            else if( ConstrainVout(tx.vout[0], 1, signleEvalTokensCCaddr, assetoshis) == 0 )
+            else if( ConstrainVout(tx.vout[0], 1, userTokensCCaddr, assetoshis) == 0 )
                 return eval->Invalid("invalid vout for cancel");
             preventCCvins = 3;
             preventCCvouts = 1;
@@ -340,7 +343,7 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
             //vout.3: normal output for change (if any)
             //'S'.vout.n-1: opreturn [EVAL_ASSETS] ['S'] [assetid] [amount of coin still required] [origpubkey]
 			
-            if( (assetoshis = AssetValidateSellvin(cpAssets, eval, totalunits, tmporigpubkey, tokensCCaddr, origaddr, tx, assetid)) == 0 )
+            if( (assetoshis = AssetValidateSellvin(cpAssets, eval, totalunits, tmporigpubkey, userTokensCCaddr, origaddr, tx, assetid)) == 0 )
                 return(false);
             else if( numvouts < 3 )
                 return eval->Invalid("not enough vouts for fillask");
@@ -384,7 +387,7 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
             //    eval->Invalid("asset2 inputs != outputs");
 
 			////////// not implemented yet ////////////
-            if( (assetoshis= AssetValidateSellvin(cpTokens, eval, totalunits, tmporigpubkey, tokensCCaddr, origaddr, tx, assetid)) == 0 )
+            if( (assetoshis= AssetValidateSellvin(cpTokens, eval, totalunits, tmporigpubkey, userTokensCCaddr, origaddr, tx, assetid)) == 0 )
                 return(false);
             else if( numvouts < 3 )
                 return eval->Invalid("not enough vouts for fillex");
@@ -397,7 +400,7 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
                 else if( tx.vout[3].scriptPubKey.IsPayToCryptoCondition() != 0 )
 				////////// not implemented yet ////////////
                 {
-                    if( ConstrainVout(tx.vout[2], 1, tokensCCaddr, 0) == 0 )
+                    if( ConstrainVout(tx.vout[2], 1, userTokensCCaddr, 0) == 0 )
                         return eval->Invalid("vout2 doesnt go to origpubkey fillex");
                     else if( inputs != tx.vout[2].nValue + tx.vout[3].nValue )
                     {
@@ -406,7 +409,7 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
                     }
                 }
 				////////// not implemented yet ////////////
-                else if( ConstrainVout(tx.vout[2], 1, tokensCCaddr, inputs) == 0 )  
+                else if( ConstrainVout(tx.vout[2], 1, userTokensCCaddr, inputs) == 0 )  
                     return eval->Invalid("vout2 doesnt match inputs fillex");
                 else if( ConstrainVout(tx.vout[1], 0, 0, 0) == 0 )
                     return eval->Invalid("vout1 is CC for fillex");

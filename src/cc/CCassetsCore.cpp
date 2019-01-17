@@ -365,7 +365,7 @@ bool SetAssetOrigpubkey(std::vector<uint8_t> &origpubkey,int64_t &price,const CT
 }
 
 // Calculate sell/buy owner's source token/asset address from ask/bid tx
-bool GetAssetorigaddrs(struct CCcontract_info *cp, char *CCaddr, char *destaddr, const CTransaction& tx)
+bool GetAssetorigaddrs(struct CCcontract_info *cp, char *userCCaddr, char *destaddr, const CTransaction& tx)
 {
     uint256 assetid,assetid2; int64_t price,nValue=0; int32_t n; uint8_t funcid; 
 	std::vector<uint8_t> origpubkey; 
@@ -377,12 +377,16 @@ bool GetAssetorigaddrs(struct CCcontract_info *cp, char *CCaddr, char *destaddr,
         return(false);
 
 	bool bGetCCaddr = false;
-	if (funcid == 's' || funcid == 'S')
-		bGetCCaddr = GetTokensCCaddress(cp, CCaddr, pubkey2pk(origpubkey));
+	if (funcid == 's' || funcid == 'S') {
+		struct CCcontract_info *cpTokens, tokensC;
+		cpTokens = CCinit(&tokensC, EVAL_TOKENS);
+		bGetCCaddr = GetCCaddress(cpTokens, userCCaddr, pubkey2pk(origpubkey));
+		//bGetCCaddr = GetTokensCCaddress(cp, CCaddr, pubkey2pk(origpubkey));
+	}
 	else if (funcid == 'b' || funcid == 'B') {
 		struct CCcontract_info *cpTokens, tokensC;
 		cpTokens = CCinit(&tokensC, EVAL_TOKENS);
-		bGetCCaddr = GetCCaddress(cpTokens, CCaddr, pubkey2pk(origpubkey));
+		bGetCCaddr = GetCCaddress(cpTokens, userCCaddr, pubkey2pk(origpubkey));
 	}
 	else  {
 		std::cerr << "GetAssetorigaddrs incorrect funcid=" << (char)(funcid?funcid:' ') << std::endl;
