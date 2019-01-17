@@ -82,13 +82,13 @@ uint8_t DecodeMaramaraCoinbaseOpRet(const CScript scriptPubKey,CPubKey &pk,int32
     }
     if ( vopret.size() > 2 && script[0] == EVAL_MARMARA )
     {
-        if ( script[1] == 'C' || script[1] == 'P' )
+        if ( script[1] == 'C' || script[1] == 'P' || script[1] == 'L' )
         {
             if ( E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> pk; ss >> height; ss >> unlockht) != 0 )
             {
                 return(script[1]);
             } else fprintf(stderr,"DecodeMaramaraCoinbaseOpRet unmarshal error for %c\n",script[1]);
-        } else fprintf(stderr,"script[1] is %d != 'C' %d or 'P' %d\n",script[1],'C','P');
+        } else fprintf(stderr,"script[1] is %d != 'C' %d or 'P' %d or 'L' %d\n",script[1],'C','P','L');
     } else fprintf(stderr,"vopret.size() is %d\n",(int32_t)vopret.size());
     return(0);
 }
@@ -346,10 +346,39 @@ int64_t AddMarmaraCoinbases(struct CCcontract_info *cp,CMutableTransaction &mtx,
     return(totalinputs);
 }
 
+int64_t AddMarmarainputs(CMutableTransaction &mtx,char *coinaddr,int64_t total,int32_t maxinputs)
+{
+    uint64_t threshold,nValue,totalinputs = 0; uint256 txid,hashBlock; CTransaction tx; int32_t numvouts,vout,n = 0; uint8_t funcid;
+    std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
+    SetCCunspents(unspentOutputs,coinaddr);
+    threshold = total/(maxinputs+1);
+    for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
+    {
+        txid = it->first.txhash;
+        vout = (int32_t)it->first.index;
+        if ( it->second.satoshis < threshold )
+            continue;
+        if ( GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 0 && vout < numvouts && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 && myIsutxo_spentinmempool(txid,vout) == 0 )
+        {
+            if ( (funcid= DecodeMaramaraCoinbaseOpRet(tx.vout[numvouts-1].scriptPubKey,pk,ht,unlockht) == 'C' || funcid == 'P' || funcid == 'L' )
+            {
+                char str[64]; fprintf(stderr,"(%s) %s/v%d %.8f ht.%d unlockht.%d\n",coinaddr,uint256_str(str,txid),vout,(double)it->second.satoshis/COIN,ht,unlockht);
+                if ( total != 0 && maxinputs != 0 )
+                    mtx.vin.push_back(CTxIn(txid,vout,CScript()));
+                totalinputs += it->second.satoshis;
+                n++;
+                if ( (total > 0 && totalinputs >= total) || (maxinputs > 0 && n >= maxinputs) )
+                    break;
+            } else fprintf(stderr,"null funcid\n");
+        }
+    }
+    return(totalinputs);
+}
+
 UniValue MarmaraSettlement(uint64_t txfee,uint256 refbatontxid)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ),a(UniValue::VARR); std::vector<uint256> creditloop; uint256 batontxid,createtxid,refcreatetxid,hashBlock; uint8_t funcid; int32_t numerrs=0,i,n,numvouts,matures,refmatures; int64_t amount,refamount,remaining,change,avail; CPubKey Marmarapk,mypk,pk; std::string currency,refcurrency,rawtx; CTransaction tx,batontx; char coinaddr[64],myCCaddr[64],destaddr[64],batonCCaddr[64],str[2],txidaddr[64]; struct CCcontract_info *cp,C;
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR); std::vector<uint256> creditloop; uint256 batontxid,createtxid,refcreatetxid,hashBlock; uint8_t funcid; int32_t numerrs=0,i,n,numvouts,matures,refmatures; int64_t amount,refamount,remaining,inputsum,change; CPubKey Marmarapk,mypk,pk; std::string currency,refcurrency,rawtx; CTransaction tx,batontx; char coinaddr[64],myCCaddr[64],destaddr[64],batonCCaddr[64],str[2],txidaddr[64]; struct CCcontract_info *cp,C;
     if ( txfee == 0 )
         txfee = 10000;
     cp = CCinit(&C,EVAL_MARMARA);
@@ -388,25 +417,19 @@ UniValue MarmaraSettlement(uint64_t txfee,uint256 refbatontxid)
                             if ( (funcid= MarmaraDecodeLoopOpret(tx.vout[numvouts-1].scriptPubKey,createtxid,pk,amount,matures,currency)) != 0 )
                             {
                                 GetCCaddress1of2(cp,coinaddr,Marmarapk,pk);
-                                avail = CCaddress_balance(coinaddr);
-                                if ( avail > remaining )
+                                if ( (inputsum= AddMarmarainputs(mtx,coinaddr,remaining,MARMARA_VINS)) >= remaining )
                                 {
-                                    // add remaining
-                                    change = (avail - remaining);
+                                    change = (inputsum - remaining);
                                     mtx.vout.push_back(CTxOut(amount,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
                                     if ( change > txfee )
                                         mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA,change,Marmarapk,pk));
-                                    rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,MarmaraLoopOpret('S',createtxid,mypk,amount,matures,currency));
+                                    rawtx = FinalizeCCTx(0,cp,mtx,Marmarapk,txfee,MarmaraLoopOpret('S',createtxid,mypk,amount,matures,currency));
                                     result.push_back(Pair("result",(char *)"success"));
                                     result.push_back(Pair("rawtx",rawtx));
                                     return(result);
-                                }
-                                else if ( avail > txfee )
-                                {
-                                    // add all utxos
-                                    remaining -= avail;
-                                }
-                                fprintf(stderr,"get locked funds of %s %.8f\n",coinaddr,(double)avail/COIN);
+                                } else remaining -= inputsum;
+                                if ( mtx.vin.size() >= CC_MAXVINS - MARMARA_VINS )
+                                    break;
                             } else fprintf(stderr,"null funcid for creditloop[%d]\n",i);
                         } else fprintf(stderr,"couldnt get creditloop[%d]\n",i);
                     }
@@ -415,7 +438,7 @@ UniValue MarmaraSettlement(uint64_t txfee,uint256 refbatontxid)
                         mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(CCtxidaddr(txidaddr,createtxid))) << OP_CHECKSIG)); // failure marker
                         if ( amount-remaining > 3*txfee )
                             mtx.vout.push_back(CTxOut(amount-remaining-2*txfee,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
-                        rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,MarmaraLoopOpret('S',createtxid,mypk,amount-remaining,-remaining,currency));
+                        rawtx = FinalizeCCTx(0,cp,mtx,Marmarapk,txfee,MarmaraLoopOpret('S',createtxid,mypk,amount-remaining,-remaining,currency));
                         result.push_back(Pair("result",(char *)"error"));
                         result.push_back(Pair("error",(char *)"insufficient funds"));
                         result.push_back(Pair("rawtx",rawtx));

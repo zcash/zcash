@@ -23,6 +23,7 @@
 #define MARMARA_GROUPSIZE 60
 #define MARMARA_MINLOCK (1440 * 3 * 30)
 #define MARMARA_MAXLOCK (1440 * 24 * 30)
+#define MARMARA_VINS 16
 
 extern uint8_t ASSETCHAINS_MARMARA;
 uint64_t komodo_block_prg(uint32_t nHeight);
