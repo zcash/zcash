@@ -133,13 +133,9 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
 	int32_t i,starti,numvins,numvouts,preventCCvins,preventCCvouts; 
 	int64_t remaining_price,nValue,assetoshis,outputs,inputs,tmpprice,totalunits,ignore; std::vector<uint8_t> origpubkey,tmporigpubkey,ignorepubkey; 
 	uint8_t funcid, evalCodeInOpret; 
-	char destaddr[64], origaddr[64], assetsCCaddr[64], tokensCCaddr[64];
+	char destaddr[64], origaddr[64], assetsCCaddr[64], tokensCCaddr[64], signleEvalTokensCCaddr[64];
 
 	//return true;
-
-	// we need this for validating tokens' vins/vous:
-	struct CCcontract_info *cpTokens, tokensC;
-	cpTokens = CCinit(&tokensC, EVAL_TOKENS);
 
 	//CPubKey unspendableTokensPk = GetUnspendable(cpTokens, NULL);
 	//CPubKey unspendableAssetsPk = GetUnspendable(cpAssets, NULL);
@@ -157,8 +153,12 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
 	char tokensUnspendableAddr[64];
 	GetTokensCCaddress(cpAssets, tokensUnspendableAddr, GetUnspendable(cpAssets, NULL));
 
-	// find token user cc addr:
-	GetCCaddress(cpTokens, tokensCCaddr, pubkey2pk(origpubkey));
+	// we need this for validating single-eval tokens' vins/vous:
+	struct CCcontract_info *cpTokens, tokensC;
+	cpTokens = CCinit(&tokensC, EVAL_TOKENS);
+
+	// find single-eval token user cc addr:
+	GetCCaddress(cpTokens, signleEvalTokensCCaddr, pubkey2pk(origpubkey));
 
     fprintf(stderr,"AssetValidate (%c)\n",funcid);
 
@@ -322,9 +322,9 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
             //vout.2: normal output for change (if any)
             //vout.n-1: opreturn [EVAL_ASSETS] ['x'] [assetid]
 
-            if( (assetoshis= AssetValidateSellvin(cpAssets, eval, tmpprice, tmporigpubkey, tokensCCaddr, origaddr, tx, assetid)) == 0 )
+            if( (assetoshis = AssetValidateSellvin(cpAssets, eval, tmpprice, tmporigpubkey, tokensCCaddr, origaddr, tx, assetid)) == 0 )  // NOTE: 
                 return(false);
-            else if( ConstrainVout(tx.vout[0], 1, tokensCCaddr, assetoshis) == 0 )  
+            else if( ConstrainVout(tx.vout[0], 1, signleEvalTokensCCaddr, assetoshis) == 0 )
                 return eval->Invalid("invalid vout for cancel");
             preventCCvins = 3;
             preventCCvouts = 1;
