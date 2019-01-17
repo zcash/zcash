@@ -588,7 +588,6 @@ template <class Helper> int64_t LifetimeHeirContractFunds(struct CCcontract_info
 			uint256 tokenid;
             uint256 fundingTxidInOpret;
 			uint8_t hasHeirSpendingBegunDummy;
-			std::vector<CPubKey> vinPubkeysEmpty;
             const int32_t ivout = 0;
 			
 			CScript heirScript = (heirtx.vout.size() > 0) ? heirtx.vout[heirtx.vout.size() - 1].scriptPubKey : CScript();   // check boundary
@@ -599,7 +598,7 @@ template <class Helper> int64_t LifetimeHeirContractFunds(struct CCcontract_info
             if (funcId != 0 && 
 				(txid == fundingtxid || fundingTxidInOpret == fundingtxid) && 
 				isMyFuncId(funcId) && !isSpendingTx(funcId) && 
-				(typeid(Helper) != typeid(TokenHelper) || IsTokensvout(true, true, cp, nullptr, heirtx, ivout, tokenid, vinPubkeysEmpty) > 0) &&
+				(typeid(Helper) != typeid(TokenHelper) || IsTokensvout(true, true, cp, nullptr, heirtx, ivout, tokenid) > 0) &&
 				!myIsutxo_spentinmempool(txid, ivout)) // exclude tx in mempool
             {
 				total += it->second; // dont do this: tx.vout[ivout].nValue; // in vin[0] always is the pay to 1of2 addr (funding or change)
