@@ -166,6 +166,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
                     flag = 0;
                     if ( pubkeys != NULL_pubkeys )
                     {
+                        char coinaddr[64];
                         GetCCaddress1of2(cp,coinaddr,globalpk,pubkeys[i]);
                         if ( strcmp(destaddr,coinaddr) == 0 )
                         {
