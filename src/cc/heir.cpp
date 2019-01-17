@@ -540,7 +540,6 @@ template <class Helper> int64_t Add1of2AddressInputs(struct CCcontract_info* cp,
 			uint256 tokenid;
             uint256 fundingTxidInOpret;
 			uint8_t hasHeirSpendingBegunDummy;
-			std::vector<CPubKey> vinPubkeysEmpty;
 			
 			CScript heirScript = (heirtx.vout.size() > 0) ? heirtx.vout[heirtx.vout.size() - 1].scriptPubKey : CScript();   // check boundary
 			uint8_t funcId = DecodeHeirEitherOpRet(heirScript, tokenid, fundingTxidInOpret, hasHeirSpendingBegunDummy, false);
@@ -548,7 +547,7 @@ template <class Helper> int64_t Add1of2AddressInputs(struct CCcontract_info* cp,
             if ((txid == fundingtxid || fundingTxidInOpret == fundingtxid) && 
 				funcId != 0 &&
 				isMyFuncId(funcId) &&     
-				(typeid(Helper) != typeid(TokenHelper) || IsTokensvout(true, true, cp, nullptr, heirtx, voutIndex, tokenid, vinPubkeysEmpty) > 0) && // token validation logic 
+				(typeid(Helper) != typeid(TokenHelper) || IsTokensvout(true, true, cp, nullptr, heirtx, voutIndex, tokenid) > 0) && // token validation logic 
                 //(voutValue = IsHeirFundingVout<Helper>(cp, heirtx, voutIndex, ownerPubkey, heirPubkey)) > 0 &&		// heir contract vout validation logic - not used since we moved to 2-eval vouts
                 !myIsutxo_spentinmempool(txid, voutIndex)) 
 			{
