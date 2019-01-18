@@ -18,18 +18,29 @@ class CryptoconditionsTokenTest(CryptoconditionsTestFramework):
         rpc    = self.nodes[0]
         result = rpc.tokenaddress()
         assert_success(result)
-        for x in ['AssetsCCaddress', 'myCCaddress', 'Assetsmarker', 'myaddress']:
+        for x in ['TokensCCaddress', 'myCCaddress', 'Tokensmarker', 'myaddress']:
             assert_equal(result[x][0], 'R')
 
         result = rpc.tokenaddress(self.pubkey)
         assert_success(result)
+        for x in ['TokensCCaddress', 'myCCaddress', 'Tokensmarker', 'myaddress', 'CCaddress']:
+            assert_equal(result[x][0], 'R')
+
+        result = rpc.assetsaddress()
+        assert_success(result)
+        for x in ['AssetsCCaddress', 'myCCaddress', 'Assetsmarker', 'myaddress']:
+            assert_equal(result[x][0], 'R')
+
+        result = rpc.assetsaddress(self.pubkey)
+        assert_success(result)
         for x in ['AssetsCCaddress', 'myCCaddress', 'Assetsmarker', 'myaddress', 'CCaddress']:
             assert_equal(result[x][0], 'R')
+
         # there are no tokens created yet
         result = rpc.tokenlist()
         assert_equal(result, [])
 
-        # trying to create token with negaive supply
+        # trying to create token with negative supply
         result = rpc.tokencreate("NUKE", "-1987420", "no bueno supply")
         assert_error(result)
 
@@ -50,12 +61,9 @@ class CryptoconditionsTokenTest(CryptoconditionsTestFramework):
         result = rpc.tokenorders()
         assert_equal(result, [])
 
-        # getting token balance for pubkey
+        # getting token balance for non existing tokenid
         result = rpc.tokenbalance(self.pubkey)
-        assert_success(result)
-        assert_equal(result['balance'], 0)
-        assert_equal(result['CCaddress'], 'RCRsm3VBXz8kKTsYaXKpy7pSEzrtNNQGJC')
-        assert_equal(result['tokenid'], self.pubkey)
+        assert_error(result)
 
         # get token balance for token with pubkey
         result = rpc.tokenbalance(tokenid, self.pubkey)
