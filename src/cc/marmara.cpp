@@ -398,15 +398,18 @@ int64_t AddMarmarainputs(CMutableTransaction &mtx,std::vector<CPubKey> &pubkeys,
 UniValue MarmaraLock(uint64_t txfee,int64_t amount,int32_t height)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); struct CCcontract_info *cp,C; CPubKey Marmarapk,mypk; int64_t inputsum,change = 0; std::string rawtx,errorstr;
-    // scan all unlocked
-    // total capped at amount, change -> unlocked, if no change then scan all locked 'C' and 'P' for unlockht < refunlockht
+    UniValue result(UniValue::VOBJ); struct CCcontract_info *cp,C; CPubKey Marmarapk,mypk; int32_t unlockht; int64_t inputsum,change = 0; std::string rawtx,errorstr;
     if ( txfee == 0 )
         txfee = 10000;
     cp = CCinit(&C,EVAL_MARMARA);
     mypk = pubkey2pk(Mypubkey());
     Marmarapk = GetUnspendable(cp,0);
-    if ( (inputsum= AddNormalinputs(mtx,mypk,amount + txfee,1)) > 0 )
+    inputsum = AddNormalinputs(mtx,mypk,amount + txfee,1);
+    if ( inputsum < amount+txfee )
+    {
+        unlockht = MarmaraUnlockht(height);
+    }
+    if ( inputsum > 0 )
     {
         mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA,amount,Marmarapk,mypk));
         if ( inputsum > amount+txfee )
