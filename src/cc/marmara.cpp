@@ -365,7 +365,7 @@ int64_t AddMarmaraCoinbases(struct CCcontract_info *cp,CMutableTransaction &mtx,
 
 int64_t AddMarmarainputs(CMutableTransaction &mtx,std::vector<CPubKey> &pubkeys,char *coinaddr,int64_t total,int32_t maxinputs)
 {
-    uint64_t threshold,nValue,totalinputs = 0; uint256 txid,hashBlock; CTransaction tx; int32_t numvouts,ht,unlockht,vout,n = 0; uint8_t funcid; CPubKey pk;
+    uint64_t threshold,nValue,totalinputs = 0; uint256 txid,hashBlock; CTransaction tx; int32_t numvouts,ht,unlockht,vout,i,n = 0; uint8_t funcid; CPubKey pk; std::vector<int64_t> vals;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     SetCCunspents(unspentOutputs,coinaddr);
     threshold = total/(maxinputs+1);
@@ -373,7 +373,6 @@ int64_t AddMarmarainputs(CMutableTransaction &mtx,std::vector<CPubKey> &pubkeys,
     {
         txid = it->first.txhash;
         vout = (int32_t)it->first.index;
-        char str[64]; fprintf(stderr,"(%s) %s/v%d %.8f\n",coinaddr,uint256_str(str,txid),vout,(double)it->second.satoshis/COIN);
         if ( it->second.satoshis < threshold )
             continue;
         if ( GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 0 && vout < numvouts && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 && myIsutxo_spentinmempool(txid,vout) == 0 )
@@ -387,11 +386,19 @@ int64_t AddMarmarainputs(CMutableTransaction &mtx,std::vector<CPubKey> &pubkeys,
                     pubkeys.push_back(pk);
                 }
                 totalinputs += it->second.satoshis;
+                vals.push_back(it->second.satoshis);
                 n++;
                 if ( (total > 0 && totalinputs >= total) || (maxinputs > 0 && n >= maxinputs) )
                     break;
             } else fprintf(stderr,"null funcid\n");
         }
+    }
+    if ( maxinputs != 0 && total == 0 )
+    {
+        std::sort(vals.begin(), vals.end());
+        totalinputs = 0;
+        for (i=0; i<maxinputs && i<vals.size(); i++)
+            totalinputs += vals[i];
     }
     return(totalinputs);
 }
