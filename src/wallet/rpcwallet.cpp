@@ -5692,6 +5692,20 @@ UniValue marmara_settlement(const UniValue& params, bool fHelp)
     return(result);
 }
 
+UniValue marmara_lock(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); int64_t amount; int32_t height;
+    if ( fHelp || params.size() > 2 || params.size() == 0 )
+    {
+        throw runtime_error("marmaralock amount unlockht\n");
+    }
+    amount = atof(params[0].get_str().c_str()) * COIN + 0.00000000499999;
+    if ( params.size() == 2 )
+        height = atol(params[1].get_str().c_str());
+    else height = chainActive.LastTip()->GetHeight() + 1;
+    return(MarmaraLock(0,amount,height));
+}
+
 UniValue channelslist(const UniValue& params, bool fHelp)
 {
     if ( fHelp || params.size() > 0 )

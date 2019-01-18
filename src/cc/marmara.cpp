@@ -395,6 +395,41 @@ int64_t AddMarmarainputs(CMutableTransaction &mtx,std::vector<CPubKey> &pubkeys,
     return(totalinputs);
 }
 
+UniValue MarmaraLock(uint64_t txfee,int64_t amount,int32_t height)
+{
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    UniValue result(UniValue::VOBJ); struct CCcontract_info *cp,C; CPubKey Marmarapk,mypk; int64_t inputsum,change = 0; std::string rawtx,errorstr;
+    // scan all unlocked
+    // total capped at amount, change -> unlocked, if no change then scan all locked 'C' and 'P' for unlockht < refunlockht
+    if ( txfee == 0 )
+        txfee = 10000;
+    cp = CCinit(&C,EVAL_MARMARA);
+    mypk = pubkey2pk(Mypubkey());
+    Marmarapk = GetUnspendable(cp,0);
+    if ( (inputsum= AddNormalinputs(mtx,mypk,amount + txfee,1)) > 0 )
+    {
+        if ( inputsum > amount+txfee )
+        {
+            change = (inputsum - amount);
+            mtx.vout.push_back(CTxOut(change,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
+        }
+        rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,MarmaraCoinbaseOpret('L',height,mypk));
+        if ( rawtx.size() == 0 )
+            errorstr = (char *)"couldnt finalize CCtx";
+        else
+        {
+            result.push_back(Pair("result",(char *)"success"));
+            result.push_back(Pair("rawtx",rawtx));
+            return(result);
+        }
+    }
+    result.push_back(Pair("result",(char *)"error"));
+    result.push_back(Pair("error",errorstr));
+    return(result);
+}
+
+// decide on what unlockht settlement change should have
+
 UniValue MarmaraSettlement(uint64_t txfee,uint256 refbatontxid)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
@@ -459,7 +494,7 @@ UniValue MarmaraSettlement(uint64_t txfee,uint256 refbatontxid)
                                     mtx.vout.push_back(CTxOut(amount,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
                                     if ( change > txfee )
                                         mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA,change,Marmarapk,pk));
-                                    rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,MarmaraLoopOpret('S',createtxid,mypk,0,height,currency),pubkeys);
+                                    rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,MarmaraLoopOpret('S',createtxid,mypk,0,unlockht,currency),pubkeys);
                                     result.push_back(Pair("result",(char *)"success"));
                                     result.push_back(Pair("rawtx",rawtx));
                                     return(result);
@@ -474,7 +509,7 @@ UniValue MarmaraSettlement(uint64_t txfee,uint256 refbatontxid)
                         mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(CCtxidaddr(txidaddr,createtxid))) << OP_CHECKSIG)); // failure marker
                         if ( refamount-remaining > 3*txfee )
                             mtx.vout.push_back(CTxOut(refamount-remaining-2*txfee,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
-                        rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,MarmaraLoopOpret('D',createtxid,mypk,-remaining,height,currency),pubkeys);
+                        rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,MarmaraLoopOpret('D',createtxid,mypk,-remaining,unlockht,currency),pubkeys);
                         result.push_back(Pair("result",(char *)"error"));
                         result.push_back(Pair("error",(char *)"insufficient funds"));
                         result.push_back(Pair("rawtx",rawtx));
@@ -901,10 +936,6 @@ UniValue MarmaraPoolPayout(uint64_t txfee,int32_t firstheight,double perc,char *
     }
     return(result);
 }
-
-// MarmaraLock(uint64_t txfee,int64_t amount,int32_t refunlockht)
-// scan all unlocked
-// total capped at amount, change -> unlocked, if no change then scan all locked 'C' and 'P' for unlockht < refunlockht
 
 // get all tx, constrain by vout, issuances[] and closed[]
 
