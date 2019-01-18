@@ -917,8 +917,16 @@ UniValue MarmaraInfo(CPubKey refpk,int32_t firstheight,int32_t lastheight,int64_
     result.push_back(Pair("result","success"));
     Getscriptaddress(coinaddr,CScript() << ParseHex(HexStr(Mypubkey())) << OP_CHECKSIG);
     result.push_back(Pair("myaddress",coinaddr));
+    result.push_back(Pair("normal",ValueFromAmount(CCaddress_balance(coinaddr))));
+    
+    GetCCaddress1of2(cp,coinaddr,Marmarapk,Mypubkey());
+    result.push_back(Pair("myCCactivated",coinaddr));
+    result.push_back(Pair("activated",ValueFromAmount(CCaddress_balance(coinaddr))));
+    
     GetCCaddress(cp,coinaddr,Mypubkey());
     result.push_back(Pair("myCCaddress",coinaddr));
+    result.push_back(Pair("CCutxos",ValueFromAmount(CCaddress_balance(coinaddr))));
+
     if ( refpk.size() == 33 )
         result.push_back(Pair("issuer",HexStr(refpk)));
     if ( currency.size() == 0 )
