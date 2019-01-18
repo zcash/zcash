@@ -435,6 +435,7 @@ UniValue MarmaraLock(uint64_t txfee,int64_t amount,int32_t height)
         GetCCaddress1of2(cp,coinaddr,Marmarapk,mypk);
         SetCCunspents(unspentOutputs,coinaddr);
         threshold = remains / (MARMARA_VINS+1);
+        CCaddr2set(cp,EVAL_MARMARA,gatewayspk,cp->CCpriv,coinaddr);
         for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
         {
             txid = it->first.txhash;
@@ -448,12 +449,12 @@ UniValue MarmaraLock(uint64_t txfee,int64_t amount,int32_t height)
                     if ( unlockht < refunlockht )
                     {
                         mtx.vin.push_back(CTxIn(txid,vout,CScript()));
-                        fprintf(stderr,"merge CC vout %s/v%d %.8f unlockht.%d < ref.%d\n",txid.GetHex().c_str(),vout,(double)nValue/COIN,unlockht,refunlockht);
+                        //fprintf(stderr,"merge CC vout %s/v%d %.8f unlockht.%d < ref.%d\n",txid.GetHex().c_str(),vout,(double)nValue/COIN,unlockht,refunlockht);
                         inputsum += nValue;
                         remains -= nValue;
                         if ( inputsum >= amount + txfee )
                         {
-                            fprintf(stderr,"inputsum %.8f >= amount %.8f, update amount\n",(double)inputsum/COIN,(double)amount/COIN);
+                            //fprintf(stderr,"inputsum %.8f >= amount %.8f, update amount\n",(double)inputsum/COIN,(double)amount/COIN);
                             amount = inputsum - txfee;
                             break;
                         }
