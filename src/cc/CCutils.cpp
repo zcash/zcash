@@ -76,6 +76,54 @@ CTxOut MakeCC1of2vout(uint8_t evalcode,CAmount nValue,CPubKey pk1,CPubKey pk2)
     return(vout);
 }
 
+CC *MakeTokensCCcond1of2(uint8_t evalcode, CPubKey pk1, CPubKey pk2)
+{
+	// make 1of2 sigs cond 
+	std::vector<CC*> pks;
+	pks.push_back(CCNewSecp256k1(pk1));
+	pks.push_back(CCNewSecp256k1(pk2));
+
+	std::vector<CC*> thresholds;
+	thresholds.push_back( CCNewEval(E_MARSHAL(ss << evalcode)) );
+	if( evalcode != EVAL_TOKENS )	// if evalCode == EVAL_TOKENS, it is actually MakeCCcond1of2()!
+		thresholds.push_back(CCNewEval(E_MARSHAL(ss << (uint8_t)EVAL_TOKENS)));	// this is eval token cc
+	thresholds.push_back(CCNewThreshold(1, pks));		// this is 1 of 2 sigs cc
+
+	return CCNewThreshold(thresholds.size(), thresholds);
+}
+
+CC *MakeTokensCCcond1(uint8_t evalcode, CPubKey pk)
+{
+	std::vector<CC*> pks;
+	pks.push_back(CCNewSecp256k1(pk));
+
+	std::vector<CC*> thresholds;
+	thresholds.push_back(CCNewEval(E_MARSHAL(ss << evalcode)));
+	if (evalcode != EVAL_TOKENS)  // if evalCode == EVAL_TOKENS, it is actually MakeCCcond1()!
+		thresholds.push_back(CCNewEval(E_MARSHAL(ss << (uint8_t)EVAL_TOKENS)));	// this is eval token cc
+	thresholds.push_back(CCNewThreshold(1, pks));			// signature
+
+	return CCNewThreshold(thresholds.size(), thresholds);
+}
+
+CTxOut MakeTokensCC1of2vout(uint8_t evalcode, CAmount nValue, CPubKey pk1, CPubKey pk2)
+{
+	CTxOut vout;
+	CC *payoutCond = MakeTokensCCcond1of2(evalcode, pk1, pk2);
+	vout = CTxOut(nValue, CCPubKey(payoutCond));
+	cc_free(payoutCond);
+	return(vout);
+}
+
+CTxOut MakeTokensCC1vout(uint8_t evalcode, CAmount nValue, CPubKey pk)
+{
+	CTxOut vout;
+	CC *payoutCond = MakeTokensCCcond1(evalcode, pk);
+	vout = CTxOut(nValue, CCPubKey(payoutCond));
+	cc_free(payoutCond);
+	return(vout);
+}
+
 CC* GetCryptoCondition(CScript const& scriptSig)
 {
     auto pc = scriptSig.begin();
@@ -195,6 +243,22 @@ void CCaddr3set(struct CCcontract_info *cp,uint8_t evalcode,CPubKey pk,uint8_t *
     strcpy(cp->unspendableaddr3,coinaddr);
 }
 
+// set pubkeys, myprivkey and 1of2 cc addr for spending from 1of2 cryptocondition vout:
+void CCaddr1of2set(struct CCcontract_info *cp, CPubKey pk1, CPubKey pk2, char *coinaddr)
+{
+	cp->coins1of2pk[0] = pk1;
+	cp->coins1of2pk[1] = pk2;
+	strcpy(cp->coins1of2addr, coinaddr);
+}
+
+// set pubkeys, myprivkey and 1of2 cc addr for spending from 1of2 tokens cryptocondition vout:
+void CCaddrTokens1of2set(struct CCcontract_info *cp, CPubKey pk1, CPubKey pk2, char *coinaddr)
+{
+	cp->tokens1of2pk[0] = pk1;
+	cp->tokens1of2pk[1] = pk2;
+	strcpy(cp->tokens1of2addr, coinaddr);
+}
+
 bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey)
 {
     CTxDestination address; txnouttype whichType;
@@ -287,6 +351,27 @@ bool GetCCaddress(struct CCcontract_info *cp,char *destaddr,CPubKey pk)
     return(_GetCCaddress(destaddr,cp->evalcode,pk));
 }
 
+bool _GetTokensCCaddress(char *destaddr, uint8_t evalcode, CPubKey pk)
+{
+	CC *payoutCond;
+	destaddr[0] = 0;
+	if ((payoutCond = MakeTokensCCcond1(evalcode, pk)) != 0)
+	{
+		Getscriptaddress(destaddr, CCPubKey(payoutCond));
+		cc_free(payoutCond);
+	}
+	return(destaddr[0] != 0);
+}
+
+bool GetTokensCCaddress(struct CCcontract_info *cp, char *destaddr, CPubKey pk)
+{
+	destaddr[0] = 0;
+	if (pk.size() == 0)
+		pk = GetUnspendable(cp, 0);
+	return(_GetTokensCCaddress(destaddr, cp->evalcode, pk));
+}
+
+
 bool GetCCaddress1of2(struct CCcontract_info *cp,char *destaddr,CPubKey pk,CPubKey pk2)
 {
     CC *payoutCond;
@@ -299,17 +384,29 @@ bool GetCCaddress1of2(struct CCcontract_info *cp,char *destaddr,CPubKey pk,CPubK
     return(destaddr[0] != 0);
 }
 
-bool ConstrainVout(CTxOut vout,int32_t CCflag,char *cmpaddr,int64_t nValue)
+bool GetTokensCCaddress1of2(struct CCcontract_info *cp, char *destaddr, CPubKey pk, CPubKey pk2)
+{
+	CC *payoutCond;
+	destaddr[0] = 0;
+	if ((payoutCond = MakeTokensCCcond1of2(cp->evalcode, pk, pk2)) != 0)
+	{
+		Getscriptaddress(destaddr, CCPubKey(payoutCond));
+		cc_free(payoutCond);
+	}
+	return(destaddr[0] != 0);
+}
+
+bool ConstrainVout(CTxOut vout, int32_t CCflag, char *cmpaddr, int64_t nValue)
 {
     char destaddr[64];
     if ( vout.scriptPubKey.IsPayToCryptoCondition() != CCflag )
     {
-        fprintf(stderr,"constrain vout error isCC %d vs %d CCflag\n",vout.scriptPubKey.IsPayToCryptoCondition(),CCflag);
+        fprintf(stderr,"constrain vout error isCC %d vs %d CCflag\n", vout.scriptPubKey.IsPayToCryptoCondition(), CCflag);
         return(false);
     }
-    else if ( cmpaddr != 0 && (Getscriptaddress(destaddr,vout.scriptPubKey) == 0 || strcmp(destaddr,cmpaddr) != 0) )
+    else if ( cmpaddr != 0 && (Getscriptaddress(destaddr, vout.scriptPubKey) == 0 || strcmp(destaddr, cmpaddr) != 0) )
     {
-        fprintf(stderr,"constrain vout error addr %s vs %s\n",cmpaddr!=0?cmpaddr:"",destaddr!=0?destaddr:"");
+        fprintf(stderr,"constrain vout error: check addr %s vs script addr %s\n", cmpaddr!=0?cmpaddr:"", destaddr!=0?destaddr:"");
         return(false);
     }
     else if ( nValue != 0 && nValue != vout.nValue ) //(nValue == 0 && vout.nValue < 10000) || (
