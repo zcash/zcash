@@ -419,9 +419,10 @@ UniValue MarmaraLock(uint64_t txfee,int64_t amount,int32_t height)
     Getscriptaddress(coinaddr,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG);
     if ( (val= CCaddress_balance(coinaddr)) < amount )
         val = (amount - txfee) / 2;
+    else val = amount;
     if ( val > txfee )
         inputsum = AddNormalinputs2(mtx,val,MARMARA_VINS);
-    fprintf(stderr,"normal inputs %.8f val %.8f\n",(double)inputsum/COIN,(double)val/COIN);
+    //fprintf(stderr,"normal inputs %.8f val %.8f\n",(double)inputsum/COIN,(double)val/COIN);
     mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA,amount,Marmarapk,mypk));
     if ( inputsum < amount+txfee )
     {
