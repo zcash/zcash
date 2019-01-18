@@ -398,20 +398,51 @@ int64_t AddMarmarainputs(CMutableTransaction &mtx,std::vector<CPubKey> &pubkeys,
 UniValue MarmaraLock(uint64_t txfee,int64_t amount,int32_t height)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); struct CCcontract_info *cp,C; CPubKey Marmarapk,mypk; int32_t unlockht; int64_t inputsum,change = 0; std::string rawtx,errorstr;
+    UniValue result(UniValue::VOBJ); struct CCcontract_info *cp,C; CPubKey Marmarapk,mypk,pk; int32_t unlockht,refunlockht,ht,numvouts; int64_t nValue,inputsum,threshold,remains,change = 0; std::string rawtx,errorstr; char coinaddr[64]; uint256 txid,hashBlock; CTransaction tx; uint8_t funcid;
     if ( txfee == 0 )
         txfee = 10000;
     cp = CCinit(&C,EVAL_MARMARA);
     mypk = pubkey2pk(Mypubkey());
     Marmarapk = GetUnspendable(cp,0);
     inputsum = AddNormalinputs(mtx,mypk,amount + txfee,1);
+    mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA,amount,Marmarapk,mypk));
     if ( inputsum < amount+txfee )
     {
-        unlockht = MarmaraUnlockht(height);
+        remains = (amount + txfee) - inputsum;
+        std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
+        GetCCaddress1of2(cp,coinaddr,Marmarapk,mypk);
+        SetCCunspents(unspentOutputs,coinaddr);
+        threshold = remains / 16;
+        refunlockht = MarmaraUnlockht(height);
+        for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
+        {
+            txid = it->first.txhash;
+            vout = (int32_t)it->first.index;
+            if ( (nValue= it->second.satoshis) < threshold )
+                continue;
+            if ( GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 0 && vout < numvouts && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 && myIsutxo_spentinmempool(txid,vout) == 0 )
+            {
+                if ( (funcid= DecodeMaramaraCoinbaseOpRet(tx.vout[numvouts-1].scriptPubKey,pk,ht,unlockht)) == 'C' || funcid == 'P' || funcid == 'L' )
+                {
+                    if ( unlockht < refunlockht )
+                    {
+                        mtx.vin.push_back(CTxIn(txid,vout,CScript()));
+                        fprintf(stderr,"merge CC vout %s/v%d %.8f unlockht.%d < ref.%d\n",txid.GetHex().c_str(),vout,(double)nValue/COIN,unlockht,refunlockht);
+                        inputsum += nValue;
+                        remains -= nValue;
+                        if ( inputsum >= amount + txfee )
+                        {
+                            fprintf(stderr,"inputsum %.8f >= amount %.8f, update amount\n",(double)inputsum/COIN,(double)amount/COIN);
+                            amount = inputsum;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
     }
-    if ( inputsum > 0 )
+    if ( inputsum >= amount+txfee )
     {
-        mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA,amount,Marmarapk,mypk));
         if ( inputsum > amount+txfee )
         {
             change = (inputsum - amount);
@@ -426,13 +457,13 @@ UniValue MarmaraLock(uint64_t txfee,int64_t amount,int32_t height)
             result.push_back(Pair("rawtx",rawtx));
             return(result);
         }
-    }
+    } else errorstr = (char *)"insufficient funds";
     result.push_back(Pair("result",(char *)"error"));
     result.push_back(Pair("error",errorstr));
     return(result);
 }
 
-// decide on what unlockht settlement change should have
+// jl777: decide on what unlockht settlement change should have
 
 UniValue MarmaraSettlement(uint64_t txfee,uint256 refbatontxid)
 {
