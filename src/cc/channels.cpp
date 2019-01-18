@@ -222,7 +222,6 @@ bool ChannelsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
                         //vout.3: normal output of payment amount to receiver pubkey
                         //vout.n-2: normal change
                         //vout.n-1: opreturn - 'P' opentxid senderspubkey receiverspubkey depth numpayments secret
-                        check_signing_pubkey(tx.vin[1].scriptSig);
                         if (komodo_txnotarizedconfirmed(opentxid) == 0)
                             return eval->Invalid("channelOpen is not yet confirmed(notarised)!");
                         else if ( IsCCInput(tx.vin[0].scriptSig) != 0 )
