@@ -411,6 +411,8 @@ UniValue MarmaraLock(uint64_t txfee,int64_t amount,int32_t height)
     UniValue result(UniValue::VOBJ); struct CCcontract_info *cp,C; CPubKey Marmarapk,mypk,pk; int32_t unlockht,refunlockht,vout,ht,numvouts; int64_t nValue,inputsum,threshold,remains,change = 0; std::string rawtx,errorstr; char coinaddr[64]; uint256 txid,hashBlock; CTransaction tx; uint8_t funcid;
     if ( txfee == 0 )
         txfee = 10000;
+    if ( (height & 1) != 0 )
+        height++;
     cp = CCinit(&C,EVAL_MARMARA);
     mypk = pubkey2pk(Mypubkey());
     Marmarapk = GetUnspendable(cp,0);
@@ -418,12 +420,14 @@ UniValue MarmaraLock(uint64_t txfee,int64_t amount,int32_t height)
     mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA,amount,Marmarapk,mypk));
     if ( inputsum < amount+txfee )
     {
+        refunlockht = MarmaraUnlockht(height);
+        result.push_back(Pair("height",height));
+        result.push_back(Pair("unlockht",refunlockht));
         remains = (amount + txfee) - inputsum;
         std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
         GetCCaddress1of2(cp,coinaddr,Marmarapk,mypk);
         SetCCunspents(unspentOutputs,coinaddr);
-        threshold = remains / 16;
-        refunlockht = MarmaraUnlockht(height);
+        threshold = remains / (MARMARA_VINS+1);
         for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
         {
             txid = it->first.txhash;
@@ -443,7 +447,7 @@ UniValue MarmaraLock(uint64_t txfee,int64_t amount,int32_t height)
                         if ( inputsum >= amount + txfee )
                         {
                             fprintf(stderr,"inputsum %.8f >= amount %.8f, update amount\n",(double)inputsum/COIN,(double)amount/COIN);
-                            amount = inputsum;
+                            amount = inputsum - txfee;
                             break;
                         }
                     }
