@@ -416,9 +416,9 @@ UniValue MarmaraLock(uint64_t txfee,int64_t amount,int32_t height)
     cp = CCinit(&C,EVAL_MARMARA);
     mypk = pubkey2pk(Mypubkey());
     Marmarapk = GetUnspendable(cp,0);
-    val = AddNormalinputs(tmpmtx,mypk,0,0);
+    val = AddNormalinputs2(tmpmtx,mypk,0,0);
     fprintf(stderr,"normal inputs %.8f numvins.%d\n",(double)val/COIN,(int32_t)tmpmtx.vin.size());
-    inputsum = AddNormalinputs(mtx,mypk,val,tmpmtx.vin.size() < MARMARA_VINS ? tmpmtx.vin.size() : MARMARA_VINS);
+    inputsum = AddNormalinputs2(mtx,mypk,val,tmpmtx.vin.size() < MARMARA_VINS ? tmpmtx.vin.size() : MARMARA_VINS);
     mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA,amount,Marmarapk,mypk));
     if ( inputsum < amount+txfee )
     {
