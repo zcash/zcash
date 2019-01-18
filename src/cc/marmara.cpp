@@ -379,7 +379,7 @@ int64_t AddMarmarainputs(CMutableTransaction &mtx,std::vector<CPubKey> &pubkeys,
         {
             if ( (funcid= DecodeMaramaraCoinbaseOpRet(tx.vout[numvouts-1].scriptPubKey,pk,ht,unlockht)) == 'C' || funcid == 'P' || funcid == 'L' )
             {
-                char str[64]; fprintf(stderr,"(%s) %s/v%d %.8f ht.%d unlockht.%d\n",coinaddr,uint256_str(str,txid),vout,(double)it->second.satoshis/COIN,ht,unlockht);
+                //char str[64]; fprintf(stderr,"(%s) %s/v%d %.8f ht.%d unlockht.%d\n",coinaddr,uint256_str(str,txid),vout,(double)it->second.satoshis/COIN,ht,unlockht);
                 if ( total != 0 && maxinputs != 0 )
                 {
                     mtx.vin.push_back(CTxIn(txid,vout,CScript()));
@@ -388,6 +388,8 @@ int64_t AddMarmarainputs(CMutableTransaction &mtx,std::vector<CPubKey> &pubkeys,
                 totalinputs += it->second.satoshis;
                 vals.push_back(it->second.satoshis);
                 n++;
+                if ( maxinputs != 0 && total == 0 )
+                    continue;
                 if ( (total > 0 && totalinputs >= total) || (maxinputs > 0 && n >= maxinputs) )
                     break;
             } else fprintf(stderr,"null funcid\n");
@@ -395,7 +397,7 @@ int64_t AddMarmarainputs(CMutableTransaction &mtx,std::vector<CPubKey> &pubkeys,
     }
     if ( maxinputs != 0 && total == 0 )
     {
-        std::sort(vals.begin(), vals.end());
+        std::sort(vals.begin(),vals.end());
         totalinputs = 0;
         for (i=0; i<maxinputs && i<vals.size(); i++)
             totalinputs += vals[i];
@@ -997,7 +999,7 @@ UniValue MarmaraInfo(CPubKey refpk,int32_t firstheight,int32_t lastheight,int64_
     GetCCaddress1of2(cp,coinaddr,Marmarapk,Mypubkey());
     result.push_back(Pair("myCCactivated",coinaddr));
     result.push_back(Pair("activated",ValueFromAmount(CCaddress_balance(coinaddr))));
-    result.push_back(Pair("activated16",ValueFromAmount(AddMarmarainputs(mtx,pubkeys,coinaddr,0,16))));
+    result.push_back(Pair("activated16",ValueFromAmount(AddMarmarainputs(mtx,pubkeys,coinaddr,0,MARMARA_VINS))));
     
     GetCCaddress(cp,coinaddr,Mypubkey());
     result.push_back(Pair("myCCaddress",coinaddr));
