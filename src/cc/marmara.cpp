@@ -408,6 +408,7 @@ UniValue MarmaraLock(uint64_t txfee,int64_t amount,int32_t height)
     Marmarapk = GetUnspendable(cp,0);
     if ( (inputsum= AddNormalinputs(mtx,mypk,amount + txfee,1)) > 0 )
     {
+        mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA,amount,Marmarapk,mypk));
         if ( inputsum > amount+txfee )
         {
             change = (inputsum - amount);
