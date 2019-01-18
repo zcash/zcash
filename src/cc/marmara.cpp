@@ -373,6 +373,7 @@ int64_t AddMarmarainputs(CMutableTransaction &mtx,std::vector<CPubKey> &pubkeys,
     {
         txid = it->first.txhash;
         vout = (int32_t)it->first.index;
+        char str[64]; fprintf(stderr,"(%s) %s/v%d %.8f\n",coinaddr,uint256_str(str,txid),vout,(double)it->second.satoshis/COIN);
         if ( it->second.satoshis < threshold )
             continue;
         if ( GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 0 && vout < numvouts && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 && myIsutxo_spentinmempool(txid,vout) == 0 )
