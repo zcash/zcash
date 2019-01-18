@@ -398,7 +398,7 @@ int64_t AddMarmarainputs(CMutableTransaction &mtx,std::vector<CPubKey> &pubkeys,
 UniValue MarmaraLock(uint64_t txfee,int64_t amount,int32_t height)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); struct CCcontract_info *cp,C; CPubKey Marmarapk,mypk,pk; int32_t unlockht,refunlockht,ht,numvouts; int64_t nValue,inputsum,threshold,remains,change = 0; std::string rawtx,errorstr; char coinaddr[64]; uint256 txid,hashBlock; CTransaction tx; uint8_t funcid;
+    UniValue result(UniValue::VOBJ); struct CCcontract_info *cp,C; CPubKey Marmarapk,mypk,pk; int32_t unlockht,refunlockht,vout,ht,numvouts; int64_t nValue,inputsum,threshold,remains,change = 0; std::string rawtx,errorstr; char coinaddr[64]; uint256 txid,hashBlock; CTransaction tx; uint8_t funcid;
     if ( txfee == 0 )
         txfee = 10000;
     cp = CCinit(&C,EVAL_MARMARA);
@@ -976,6 +976,7 @@ UniValue MarmaraPoolPayout(uint64_t txfee,int32_t firstheight,double perc,char *
 
 UniValue MarmaraInfo(CPubKey refpk,int32_t firstheight,int32_t lastheight,int64_t minamount,int64_t maxamount,std::string currency)
 {
+    CMutableTransaction mtx; std::vector<CPubKey> pubkeys;
     UniValue result(UniValue::VOBJ),a(UniValue::VARR),b(UniValue::VARR); int32_t i,n,matches; int64_t totalclosed=0,totalamount=0; std::vector<uint256> issuances,closed; char coinaddr[64];
     CPubKey Marmarapk; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_MARMARA);
@@ -988,6 +989,7 @@ UniValue MarmaraInfo(CPubKey refpk,int32_t firstheight,int32_t lastheight,int64_
     GetCCaddress1of2(cp,coinaddr,Marmarapk,Mypubkey());
     result.push_back(Pair("myCCactivated",coinaddr));
     result.push_back(Pair("activated",ValueFromAmount(CCaddress_balance(coinaddr))));
+    result.push_back(Pair("activated16",ValueFromAmount(AddMarmarainputs(mtx,pubkeys,coinaddr,1LL << 60,16))));
     
     GetCCaddress(cp,coinaddr,Mypubkey());
     result.push_back(Pair("myCCaddress",coinaddr));
