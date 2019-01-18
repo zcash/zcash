@@ -14,9 +14,9 @@ int8_t is_STAKED(const char *chain_name) {
   static int8_t STAKED,doneinit;
   if (doneinit == 1 && ASSETCHAINS_SYMBOL[0] != 0)
     return(STAKED);
-  if ( (strcmp(chain_name, "LABS") == 0) || (strncmp(chain_name, "LABS", 4) == 0) )
+  if ( (strcmp(chain_name, "LABMAIN") == 0) || (strncmp(chain_name, "LABT1", 4) == 0) )
     STAKED = 1;
-  else if ( (strcmp(chain_name, "LAB") == 0) || (strncmp(chain_name, "LAB", 3) == 0) )
+  else if ( (strcmp(chain_name, "LABT2") == 0) || (strncmp(chain_name, "LABT2", 3) == 0) )
     STAKED = 2;
   else if ( (strcmp(chain_name, "CFEK") == 0) || (strncmp(chain_name, "CFEK", 4) == 0) )
     STAKED =  3;

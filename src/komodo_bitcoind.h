@@ -1296,6 +1296,11 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
         if ( iter > 0 )
             diff += segid*2;
         coinage = (value * diff);
+        if ( ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASH )
+        {
+            if ( blocktime+iter+segid*2 > prevtime+200 )
+                coinage *= ((blocktime+iter+segid*2) - (prevtime+120));
+        }
         if ( blocktime+iter+segid*2 > prevtime+480 )
             coinage *= ((blocktime+iter+segid*2) - (prevtime+400));
         coinage256 = arith_uint256(coinage+1);
@@ -1339,14 +1344,9 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
 
 arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t height,int32_t goalperc)
 {
-    int32_t oldflag = 0,dispflag = 0;
+    int32_t oldflag = 0,dispflag = 1;
     CBlockIndex *pindex; arith_uint256 easydiff,bnTarget,hashval,sum,ave; bool fNegative,fOverflow; int32_t i,n,m,ht,percPoS,diff,val;
     *percPoSp = percPoS = 0;
-    static bool new_rules, didinit;
-    if ( !didinit ) {
-        new_rules = is_STAKED(ASSETCHAINS_SYMBOL) != 0 && is_STAKED(ASSETCHAINS_SYMBOL) != 3 ? true : false;
-        didinit = true;
-    }
     
     if ( height <= 10 || (ASSETCHAINS_STAKED == 100 && height <= 100) ) 
         return(target);
@@ -1359,9 +1359,6 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
         ht = height - 100 + i;
         if ( ht <= 1 )
             continue;
-        // never count the first 10 blocks, they are always PoW! Cant do this for old chains, so limit to LABS and LAB for now.
-        if ( new_rules && ht < 10 ) 
-            continue; 
         if ( (pindex= komodo_chainactive(ht)) != 0 )
         {
             if ( komodo_segid(0,ht) >= 0 )
@@ -1385,12 +1382,7 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
     // We now do actual PoS % at the start. Requires coin distribution in first 10 blocks! 
     // This is not hard to do and stops the chain having its PoS/PoW in large chunks. 
     if ( m+n < 100 )
-    {
-        if ( new_rules)
-            percPoS = (percPoS*100) / (m+n); 
-        else
-            percPoS = ((percPoS * n) + (goalperc * (100-n))) / 100;            
-    }
+        percPoS = ((percPoS * n) + (goalperc * (100-n))) / 100;            
     if ( dispflag != 0 && ASSETCHAINS_STAKED < 100 )
         fprintf(stderr," -> %d%% percPoS vs goalperc.%d ht.%d\n",percPoS,goalperc,height);
     *percPoSp = percPoS;
@@ -1449,7 +1441,7 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
             fprintf(stderr," ht.%d percPoS.%d vs goal.%d -> diff %d\n",height,percPoS,goalperc,goalperc - percPoS);
         }
     }
-    else  
+    else
         bnTarget = ave; // recent ave is perfect
     return(bnTarget);
 }

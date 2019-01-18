@@ -1297,6 +1297,7 @@ void static BitcoinMiner_noeq()
             pblock->nSolution = solnPlaceholder;
             savebits = pblock->nBits;
             arith_uint256 hashTarget = arith_uint256().SetCompact(pblock->nBits);
+            HASHTarget = arith_uint256().SetCompact(savebits);
             arith_uint256 mask(ASSETCHAINS_NONCEMASK[ASSETCHAINS_ALGO]);
 
             Mining_start = 0;
@@ -1315,8 +1316,8 @@ void static BitcoinMiner_noeq()
             if ( ASSETCHAINS_STAKED != 0 )
             {
                 int32_t percPoS,z; bool fNegative,fOverflow;
-                HASHTarget_POW = komodo_PoWtarget(&percPoS,hashTarget,Mining_height,ASSETCHAINS_STAKED);
-                HASHTarget.SetCompact(STAKING_MIN_DIFF,&fNegative,&fOverflow);
+                HASHTarget_POW = komodo_PoWtarget(&percPoS,HASHTarget,Mining_height,ASSETCHAINS_STAKED);
+                HASHTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
                 LogPrintf("Block %d : PoS %d%% vs target %d%%\n", Mining_height, percPoS, (int32_t)ASSETCHAINS_STAKED);
             }
 
@@ -1332,10 +1333,12 @@ void static BitcoinMiner_noeq()
                 vh.ClearExtra();
                 int64_t i, count = ASSETCHAINS_NONCEMASK[ASSETCHAINS_ALGO] + 1;
                 int64_t hashesToGo = ASSETCHAINS_HASHESPERROUND[ASSETCHAINS_ALGO];
-                if ( KOMODO_MININGTHREADS > 0 && ASSETCHAINS_STAKED > 0 && ASSETCHAINS_STAKED < 100 && Mining_height > 10 )
-                    hashTarget = HASHTarget_POW;
-                else hashTarget = HASHTarget;
-
+                if ( ASSETCHAINS_STAKED != 0)
+                {    
+                    if ( KOMODO_MININGTHREADS > 0 && ASSETCHAINS_STAKED < 100 )
+                        hashTarget = HASHTarget_POW;
+                    else hashTarget = HASHTarget;
+                }
                 // for speed check NONCEMASK at a time
                 for (i = 0; i < count; i++)
                 {
@@ -1429,6 +1432,7 @@ void static BitcoinMiner_noeq()
 #else
                 printf("%lu mega hashes complete - working\n", (ASSETCHAINS_NONCEMASK[ASSETCHAINS_ALGO] + 1) / 1048576);
 #endif
+                pblock->nBits = savebits;
                 break;
             }
         }

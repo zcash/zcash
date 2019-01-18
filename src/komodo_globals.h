@@ -81,7 +81,9 @@ uint32_t ASSETCHAINS_NONCESHIFT[] = {32,16};
 uint32_t ASSETCHAINS_HASHESPERROUND[] = {1,4096};
 uint32_t ASSETCHAINS_ALGO = _ASSETCHAINS_EQUIHASH;
 // min diff returned from GetNextWorkRequired needs to be added here for each algo, so they can work with ac_staked.
-uint32_t ASSETCHAINS_MINDIFF[] = {537857807,504303375};
+uint32_t ASSETCHAINS_MINDIFF[] = {537857807,486648905};
+                                   // nBits.486704888 -- too low? 
+
 
 // Verus proof of stake controls
 int32_t ASSETCHAINS_LWMAPOS = 0;        // percentage of blocks should be PoS
