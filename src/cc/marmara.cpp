@@ -421,6 +421,7 @@ UniValue MarmaraLock(uint64_t txfee,int64_t amount,int32_t height)
     if ( inputsum < amount+txfee )
     {
         refunlockht = MarmaraUnlockht(height);
+        result.push_back(Pair("normalfunds",ValueFromAmount(inputsum)));
         result.push_back(Pair("height",height));
         result.push_back(Pair("unlockht",refunlockht));
         remains = (amount + txfee) - inputsum;
