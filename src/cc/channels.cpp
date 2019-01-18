@@ -422,8 +422,8 @@ int64_t AddChannelsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx, C
         if ( (int32_t)it->first.index==0 && GetTransaction(it->first.txhash,tx,hashBlock,false) != 0 && (numvouts=tx.vout.size()) > 0)
         {
             if (DecodeChannelsOpRet(tx.vout[numvouts-1].scriptPubKey,tokenid,tmp_txid,srcpub,destpub,param1,param2,param3)!=0 &&
-              (tmp_txid==openTx.GetHash() || tx.GetHash()==openTx.GetHash()) &&
-              (totalinputs=IsChannelsvout(cp,tx,srcpub,destpub,0)+IsChannelsMarkervout(cp,tx,srcpub,marker))>0)
+              (tmp_txid==openTx.GetHash() || tx.GetHash()==openTx.GetHash()) && IsChannelsMarkervout(cp,tx,marker==1?srcpub:destpub,marker)>0 &&
+              (totalinputs=IsChannelsvout(cp,tx,srcpub,destpub,0))>0)
             {
                 txid = it->first.txhash;
                 break;
@@ -443,7 +443,7 @@ int64_t AddChannelsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx, C
               tmp_txid==openTx.GetHash() && param1 < mindepth)
             {
                 txid=hash;
-                totalinputs=txmempool.vout[0].nValue+txmempool.vout[1].nValue;
+                totalinputs=txmempool.vout[0].nValue;
                 mindepth=param1;
             }
         }
@@ -543,7 +543,7 @@ std::string ChannelPayment(uint64_t txfee,uint256 opentxid,int64_t amount, uint2
     }
     if (AddNormalinputs(mtx,mypk,2*txfee,3) > 0)
     {
-        if ((funds=AddChannelsInputs(cp,mtx,channelOpenTx,prevtxid,mypk)) !=0 && (change=funds-amount-txfee)>=0)
+        if ((funds=AddChannelsInputs(cp,mtx,channelOpenTx,prevtxid,mypk)) !=0 && (change=funds-amount)>=0)
         {            
             numpayments=amount/payment;
             if (GetTransaction(prevtxid,prevTx,hashblock,false) != 0 && (numvouts=prevTx.vout.size()) > 0 &&
