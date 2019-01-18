@@ -407,7 +407,7 @@ int64_t AddMarmarainputs(CMutableTransaction &mtx,std::vector<CPubKey> &pubkeys,
 
 UniValue MarmaraLock(uint64_t txfee,int64_t amount,int32_t height)
 {
-    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    CMutableTransaction tmpmtx,mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     UniValue result(UniValue::VOBJ); struct CCcontract_info *cp,C; CPubKey Marmarapk,mypk,pk; int32_t unlockht,refunlockht,vout,ht,numvouts; int64_t nValue,val,inputsum,threshold,remains,change = 0; std::string rawtx,errorstr; char coinaddr[64]; uint256 txid,hashBlock; CTransaction tx; uint8_t funcid;
     if ( txfee == 0 )
         txfee = 10000;
@@ -416,8 +416,9 @@ UniValue MarmaraLock(uint64_t txfee,int64_t amount,int32_t height)
     cp = CCinit(&C,EVAL_MARMARA);
     mypk = pubkey2pk(Mypubkey());
     Marmarapk = GetUnspendable(cp,0);
-    val = AddNormalinputs(mtx,mypk,0,0);
-    inputsum = AddNormalinputs(mtx,mypk,val,MARMARA_VINS);
+    val = AddNormalinputs(tmpmtx,mypk,0,0);
+    fprintf(stderr,"normal inputs %.8f numvins.%d\n",(double)val/COIN,(int32_t)tmpmtx.vin.size());
+    inputsum = AddNormalinputs(mtx,mypk,val,tmpmtx.vin.size() < MARMARA_VINS ? tmpmtx.vin.size() : MARMARA_VINS);
     mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA,amount,Marmarapk,mypk));
     if ( inputsum < amount+txfee )
     {
