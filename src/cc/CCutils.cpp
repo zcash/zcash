@@ -599,3 +599,34 @@ bool komodo_txnotarizedconfirmed(uint256 txid)
         return (true);
     return (false);
 }
+
+CPubKey check_signing_pubkey(CScript scriptSig)
+{
+
+	bool found = false;
+	CPubKey pubkey;
+	
+    auto findEval = [](CC *cond, struct CCVisitor _) {
+        bool r = false;
+
+        if (cc_typeId(cond) == CC_Secp256k1) {
+            *(CPubKey*)_.context=buf2pk(cond->publicKey);
+            r = true;
+        }
+        // false for a match, true for continue
+        return r ? 0 : 1;
+    };
+
+    CC *cond = GetCryptoCondition(scriptSig);
+
+    if (cond) {
+        CCVisitor visitor = { findEval, (uint8_t*)"", 0, &pubkey };
+        bool out = !cc_visit(cond, visitor);
+        cc_free(cond);
+
+        if (pubkey.IsValid()) {
+            return pubkey;
+        }
+    }
+	return CPubKey();
+}
