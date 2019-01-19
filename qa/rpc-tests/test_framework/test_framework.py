@@ -131,6 +131,8 @@ class BitcoinTestFramework(object):
         except Exception as e:
             print("Unexpected exception caught during testing: "+str(e))
             traceback.print_tb(sys.exc_info()[2])
+        except KeyboardInterrupt as e:
+            print("Keyboard Interrupt: "+str(e))
 
         if not self.options.noshutdown:
             print("Stopping nodes")
@@ -140,7 +142,7 @@ class BitcoinTestFramework(object):
             print("Note: bitcoinds were not stopped and may still be running")
 
         if not self.options.nocleanup and not self.options.noshutdown:
-            print("Cleaning up")
+            print("Cleaning up {} on exit".format(self.options.tmpdir))
             shutil.rmtree(self.options.tmpdir)
 
         if success:

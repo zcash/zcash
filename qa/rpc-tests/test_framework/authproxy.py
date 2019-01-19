@@ -47,6 +47,8 @@ try:
 except ImportError:
     import urlparse
 
+import os
+
 USER_AGENT = "AuthServiceProxy/0.1"
 
 HTTP_TIMEOUT = 600
@@ -55,7 +57,11 @@ log = logging.getLogger("BitcoinRPC")
 
 class JSONRPCException(Exception):
     def __init__(self, rpc_error):
-        Exception.__init__(self)
+         try:
+            errmsg = '%(message)s (%(code)i)' % rpc_error
+        except (KeyError, TypeError):
+            errmsg = ''
+        Exception.__init__(self, errmsg)
         self.error = rpc_error
 
 
@@ -87,16 +93,22 @@ class AuthServiceProxy(object):
         authpair = user + b':' + passwd
         self.__auth_header = b'Basic ' + base64.b64encode(authpair)
 
+        self.timeout = timeout
+        self._set_conn(connection)
+
+    def _set_conn(self, connection=None):
+        port = 80 if self.__url.port is None else self.__url.port
         if connection:
             # Callables re-use the connection of the original proxy
             self.__conn = connection
+            self.timeout = connection.timeout
         elif self.__url.scheme == 'https':
             self.__conn = httplib.HTTPSConnection(self.__url.hostname, port,
                                                   None, None, False,
-                                                  timeout)
+                                                  self.timeout)
         else:
-            self.__conn = httplib.HTTPConnection(self.__url.hostname, port,
-                                                 False, timeout)
+             self.__conn = httplib.HTTPConnection(self.__url.hostname, port,
+                                                 False, self.timeout)
 
     def __getattr__(self, name):
         if name.startswith('__') and name.endswith('__'):
@@ -115,6 +127,10 @@ class AuthServiceProxy(object):
                    'User-Agent': USER_AGENT,
                    'Authorization': self.__auth_header,
                    'Content-type': 'application/json'}
+        if os.name == 'nt':
+            # Windows somehow does not like to re-use connections
+            # TODO: Find out why the connection would disconnect occasionally and make it reusable on Windows
+            self._set_conn()
         try:
             self.__conn.request(method, path, postdata, headers)
             return self._get_response()
@@ -139,8 +155,10 @@ class AuthServiceProxy(object):
         postdata = json.dumps({'version': '1.1',
                                'method': self.__service_name,
                                'params': args,
-                               'id': AuthServiceProxy.__id_count}, default=EncodeDecimal)
-        response = self._request('POST', self.__url.path, postdata)
+                               'id': AuthServiceProxy.__id_count}, 
+                               default=EncodeDecimal, 
+                               ensure_ascii=self.ensure_ascii)
+        response = self._request('POST', self.__url.path, postdata.encode('utf-8'))
         if response['error'] is not None:
             raise JSONRPCException(response['error'])
         elif 'result' not in response:
