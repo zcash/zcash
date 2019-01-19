@@ -48,7 +48,7 @@ class JoinSplitTest(BitcoinTestFramework):
         self.nodes[0].sendrawtransaction(joinsplit_result["rawtxn"])
         self.nodes[0].generate(1)
 
-        print "Done!"
+        print("Done!")
         receive_result = self.nodes[0].zcrawreceive(zcsecretkey, joinsplit_result["encryptednote1"])
         assert_equal(receive_result["exists"], True)
 

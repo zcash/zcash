@@ -131,12 +131,12 @@ class JoinSplitTest(BitcoinTestFramework):
 
         # Wait until node[1] receives AB before we attempt to double-spend
         # with BC.
-        print "Waiting for AB_txid...\n"
+        print("Waiting for AB_txid...\n")
         while True:
             if self.txid_in_mempool(self.nodes[1], AB_txid):
                 break
             time.sleep(0.2)
-        print "Done!\n"
+        print("Done!\n")
 
         self.expect_cannot_joinsplit(self.nodes[1], joinsplit_BC["rawtxn"])
 

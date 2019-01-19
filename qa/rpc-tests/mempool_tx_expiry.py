@@ -47,7 +47,7 @@ class MempoolTxExpiryTest(BitcoinTestFramework):
         self.nodes[0].generate(6)
         self.sync_all()
 
-        print "Splitting network..."
+        print("Splitting network...")
         self.split_network()
 
         # When Overwinter is activated, test dependent txs
@@ -56,7 +56,7 @@ class MempoolTxExpiryTest(BitcoinTestFramework):
         assert_equal(firstTxInfo["version"], 3)
         assert_equal(firstTxInfo["overwintered"], True)
         assert("expiryheight" in firstTxInfo)
-        print "First tx expiry height:", firstTxInfo['expiryheight']
+        print("First tx expiry height:", firstTxInfo['expiryheight'])
         # Mine first transaction
         self.nodes[0].generate(1)
         for outpoint in firstTxInfo['vout']:
@@ -70,19 +70,19 @@ class MempoolTxExpiryTest(BitcoinTestFramework):
         assert(rawTxSigned['complete'])
         secondTx = self.nodes[0].sendrawtransaction(rawTxSigned['hex'])
         secondTxInfo = self.nodes[0].getrawtransaction(secondTx, 1)
-        print "Second tx expiry height:", secondTxInfo['expiryheight']
+        print("Second tx expiry height:", secondTxInfo['expiryheight'])
         # Mine second, dependent transaction
         self.nodes[0].generate(1)
-        print "Mine %d competing blocks on Node 2..." % (2 + TX_EXPIRY_DELTA)
+        print("Mine %d competing blocks on Node 2..." % (2 + TX_EXPIRY_DELTA))
         blocks = self.nodes[2].generate(2 + TX_EXPIRY_DELTA)
-        print "Connect nodes to force a reorg"
+        print("Connect nodes to force a reorg")
         connect_nodes_bi(self.nodes,0,2)
         self.is_network_split = False
-        print "Syncing blocks"
+        print("Syncing blocks")
         sync_blocks(self.nodes)
-        print "Ensure that both txs are dropped from mempool of node 0"
-        print "Blockheight node 0:", self.nodes[0].getblockchaininfo()['blocks']
-        print "Blockheight node 2:", self.nodes[2].getblockchaininfo()['blocks']
+        print("Ensure that both txs are dropped from mempool of node 0")
+        print("Blockheight node 0:", self.nodes[0].getblockchaininfo()['blocks'])
+        print("Blockheight node 2:", self.nodes[2].getblockchaininfo()['blocks'])
         assert_equal(set(self.nodes[0].getrawmempool()), set())
         assert_equal(set(self.nodes[2].getrawmempool()), set())
 
@@ -100,10 +100,10 @@ class MempoolTxExpiryTest(BitcoinTestFramework):
 
         # Get balance on node 0
         bal = self.nodes[0].z_gettotalbalance()
-        print "Balance before zsend, after shielding 10: ", bal
+        print("Balance before zsend, after shielding 10: ", bal)
         assert_equal(Decimal(bal["private"]), Decimal("9.9999"))
 
-        print "Splitting network..."
+        print("Splitting network...")
         self.split_network()
 
         # Create transactions
@@ -119,8 +119,8 @@ class MempoolTxExpiryTest(BitcoinTestFramework):
         assert_equal(rawtx["version"], 4)
         assert_equal(rawtx["overwintered"], True)
         assert_equal(rawtx["expiryheight"], blockheight + 1 + TX_EXPIRY_DELTA)
-        print "Blockheight at persist_transparent & persist_shielded creation:", self.nodes[0].getblockchaininfo()['blocks']
-        print "Expiryheight of persist_transparent:", rawtx['expiryheight']
+        print("Blockheight at persist_transparent & persist_shielded creation:", self.nodes[0].getblockchaininfo()['blocks'])
+        print("Expiryheight of persist_transparent:", rawtx['expiryheight'])
         # Verify shielded transaction is version 4 intended for Sapling branch
         rawtx = self.nodes[0].getrawtransaction(persist_shielded, 1)
         print "Expiryheight of persist_shielded", rawtx['expiryheight']
@@ -128,84 +128,84 @@ class MempoolTxExpiryTest(BitcoinTestFramework):
         assert_equal(rawtx["overwintered"], True)
         assert_equal(rawtx["expiryheight"], blockheight + 1 + TX_EXPIRY_DELTA)
 
-        print "\n Blockheight advances to less than expiry block height. After reorg, txs should persist in mempool"
+        print("\n Blockheight advances to less than expiry block height. After reorg, txs should persist in mempool")
         assert(persist_transparent in self.nodes[0].getrawmempool())
         assert(persist_shielded in self.nodes[0].getrawmempool())
         assert_equal(set(self.nodes[2].getrawmempool()), set())
-        print "mempool node 0:", self.nodes[0].getrawmempool()
-        print "mempool node 2:", self.nodes[2].getrawmempool()
+        print("mempool node 0:", self.nodes[0].getrawmempool())
+        print("mempool node 2:", self.nodes[2].getrawmempool())
         bal = self.nodes[0].z_gettotalbalance()
-        print "Printing balance before persist_shielded & persist_transparent are initially mined from mempool", bal
+        print("Printing balance before persist_shielded & persist_transparent are initially mined from mempool", bal)
         # Txs are mined on node 0; will later be rolled back
         self.nodes[0].generate(1)
-        print "Node 0 generated 1 block"
-        print "Node 0 height:", self.nodes[0].getblockchaininfo()['blocks']
-        print "Node 2 height:", self.nodes[2].getblockchaininfo()['blocks']
+        print("Node 0 generated 1 block")
+        print("Node 0 height:", self.nodes[0].getblockchaininfo()['blocks'])
+        print("Node 2 height:", self.nodes[2].getblockchaininfo()['blocks'])
         bal = self.nodes[0].z_gettotalbalance()
-        print "Printing balance after persist_shielded & persist_transparent are mined:", bal
+        print("Printing balance after persist_shielded & persist_transparent are mined:", bal)
         assert_equal(set(self.nodes[0].getrawmempool()), set())
 
-        print "Mine 2 competing blocks on Node 2..."
+        print("Mine 2 competing blocks on Node 2...")
         blocks = self.nodes[2].generate(2)
         for block in blocks:
             blk = self.nodes[2].getblock(block)
-            print "Height: {0}, Mined block txs: {1}".format(blk["height"], blk["tx"])
-        print "Connect nodes to force a reorg"
+            print("Height: {0}, Mined block txs: {1}".format(blk["height"], blk["tx"]))
+        print("Connect nodes to force a reorg")
         connect_nodes_bi(self.nodes,0,2)
         self.is_network_split = False
 
-        print "Syncing blocks"
+        print("Syncing blocks")
         sync_blocks(self.nodes)
 
-        print "Ensure that txs are back in mempool of node 0"
-        print "Blockheight node 0:", self.nodes[0].getblockchaininfo()['blocks']
-        print "Blockheight node 2:", self.nodes[2].getblockchaininfo()['blocks']
-        print "mempool node 0: ", self.nodes[0].getrawmempool()
-        print "mempool node 2: ", self.nodes[2].getrawmempool()
+        print("Ensure that txs are back in mempool of node 0")
+        print("Blockheight node 0:", self.nodes[0].getblockchaininfo()['blocks'])
+        print("Blockheight node 2:", self.nodes[2].getblockchaininfo()['blocks'])
+        print("mempool node 0: ", self.nodes[0].getrawmempool())
+        print("mempool node 2: ", self.nodes[2].getrawmempool())
         assert(persist_transparent in self.nodes[0].getrawmempool())
         assert(persist_shielded in self.nodes[0].getrawmempool())
         bal = self.nodes[0].z_gettotalbalance()
         # Mine txs to get them out of the way of mempool sync in split_network()
-        print "Generating another block on node 0 to clear txs from mempool"
+        print("Generating another block on node 0 to clear txs from mempool")
         self.nodes[0].generate(1)
         assert_equal(set(self.nodes[0].getrawmempool()), set())
         sync_blocks(self.nodes)
 
-        print "Splitting network..."
+        print("Splitting network...")
         self.split_network()
 
-        print "\n Blockheight advances to equal expiry block height. After reorg, txs should persist in mempool"
+        print("\n Blockheight advances to equal expiry block height. After reorg, txs should persist in mempool")
         myopid = self.nodes[0].z_sendmany(z_alice, recipients)
         persist_shielded_2 = wait_and_assert_operationid_status(self.nodes[0], myopid)
         persist_transparent_2 = self.nodes[0].sendtoaddress(bob, 0.01)
         rawtx_trans = self.nodes[0].getrawtransaction(persist_transparent_2, 1)
         rawtx_shield = self.nodes[0].getrawtransaction(persist_shielded_2, 1)
-        print "Blockheight node 0 at persist_transparent_2 creation:", self.nodes[0].getblockchaininfo()['blocks']
-        print "Blockheight node 2 at persist_transparent_2 creation:", self.nodes[2].getblockchaininfo()['blocks']
-        print "Expiryheight of persist_transparent_2:", rawtx_trans['expiryheight']
-        print "Expiryheight of persist_shielded_2:", rawtx_shield['expiryheight']
+        print("Blockheight node 0 at persist_transparent_2 creation:", self.nodes[0].getblockchaininfo()['blocks'])
+        print("Blockheight node 2 at persist_transparent_2 creation:", self.nodes[2].getblockchaininfo()['blocks'])
+        print("Expiryheight of persist_transparent_2:", rawtx_trans['expiryheight'])
+        print("Expiryheight of persist_shielded_2:", rawtx_shield['expiryheight'])
         blocks = self.nodes[2].generate(4)
         for block in blocks:
             blk = self.nodes[2].getblock(block)
-            print "Height: {0}, Mined block txs: {1}".format(blk["height"], blk["tx"])
-        print "Connect nodes to force a reorg"
+            print("Height: {0}, Mined block txs: {1}".format(blk["height"], blk["tx"]))
+        print("Connect nodes to force a reorg")
         connect_nodes_bi(self.nodes, 0, 2)
         self.is_network_split = False
         sync_blocks(self.nodes)
-        print "Ensure that persist_transparent_2 & persist_shielded_2 are in mempool at expiry block height"
-        print "Blockheight node 0:", self.nodes[0].getblockchaininfo()['blocks']
-        print "Blockheight node 2:", self.nodes[2].getblockchaininfo()['blocks']
-        print "mempool node 0: ", self.nodes[0].getrawmempool()
-        print "mempool node 2: ", self.nodes[2].getrawmempool()
+        print("Ensure that persist_transparent_2 & persist_shielded_2 are in mempool at expiry block height")
+        print("Blockheight node 0:", self.nodes[0].getblockchaininfo()['blocks'])
+        print("Blockheight node 2:", self.nodes[2].getblockchaininfo()['blocks'])
+        print("mempool node 0: ", self.nodes[0].getrawmempool())
+        print("mempool node 2: ", self.nodes[2].getrawmempool())
         assert(persist_transparent_2 in self.nodes[0].getrawmempool())
         assert(persist_shielded_2 in self.nodes[0].getrawmempool())
         # Mine persist txs to get them out of the way of mempool sync in split_network()
         self.nodes[0].generate(1)
         assert_equal(set(self.nodes[0].getrawmempool()), set())
         sync_blocks(self.nodes)
-        print "Balance after persist_shielded_2 is mined to remove from mempool: ", self.nodes[0].z_gettotalbalance()
+        print("Balance after persist_shielded_2 is mined to remove from mempool: ", self.nodes[0].z_gettotalbalance())
 
-        print "Splitting network..."
+        print("Splitting network...")
         self.split_network()
 
         print "\n Blockheight advances to greater than expiry block height. After reorg, txs should expire from mempool"

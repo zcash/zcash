@@ -24,7 +24,7 @@ class ZapWalletTXesTest (BitcoinTestFramework):
         self.sync_all()
 
     def run_test (self):
-        print "Mining blocks..."
+        print("Mining blocks...")
         self.nodes[0].generate(4)
         self.sync_all()
         self.nodes[1].generate(101)
@@ -71,7 +71,7 @@ class ZapWalletTXesTest (BitcoinTestFramework):
         try:
             tx3 = self.nodes[0].gettransaction(txid3)
         except JSONRPCException,e:
-            print e
+            print(e)
             aException = True
 
         assert_equal(aException, True) # there must be a expection because the unconfirmed wallettx0 must be gone by now

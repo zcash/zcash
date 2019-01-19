@@ -25,7 +25,7 @@ class WalletAnchorForkTest (BitcoinTestFramework):
         self.sync_all()
 
     def run_test (self):
-        print "Mining blocks..."
+        print("Mining blocks...")
         self.nodes[0].generate(4)
 
         walletinfo = self.nodes[0].getwalletinfo()

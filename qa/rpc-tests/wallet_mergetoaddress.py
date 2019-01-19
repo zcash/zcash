@@ -31,7 +31,7 @@ class WalletMergeToAddressTest (BitcoinTestFramework):
         self.sync_all()
 
     def run_test (self):
-        print "Mining blocks..."
+        print("Mining blocks...")
 
         self.nodes[0].generate(1)
         do_not_shield_taddr = self.nodes[0].getnewaddress()

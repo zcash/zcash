@@ -28,7 +28,7 @@ class WalletTest (BitcoinTestFramework):
         self.sync_all()
 
     def run_test (self):
-        print "Mining blocks..."
+        print("Mining blocks...")
 
         self.nodes[0].generate(4)
 
@@ -448,7 +448,7 @@ class WalletTest (BitcoinTestFramework):
             assert(myopid)
         except JSONRPCException,e:
             errorString = e.error['message']
-            print errorString
+            print(errorString)
             assert(False)
 
         # This fee is larger than the default fee and since amount=0
@@ -475,7 +475,7 @@ class WalletTest (BitcoinTestFramework):
             assert(myopid)
         except JSONRPCException,e:
             errorString = e.error['message']
-            print errorString
+            print(errorString)
             assert(False)
 
         # Make sure amount=0, fee=0 transaction are valid to add to mempool
@@ -490,7 +490,7 @@ class WalletTest (BitcoinTestFramework):
             assert(myopid)
         except JSONRPCException,e:
             errorString = e.error['message']
-            print errorString
+            print(errorString)
             assert(False)
 
 

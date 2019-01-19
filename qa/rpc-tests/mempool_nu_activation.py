@@ -28,7 +28,7 @@ class MempoolUpgradeActivationTest(BitcoinTestFramework):
         self.sync_all
 
     def setup_chain(self):
-        print "Initializing test directory "+self.options.tmpdir
+        print("Initializing test directory "+self.options.tmpdir)
         initialize_chain_clean(self.options.tmpdir, 2)
 
     def run_test(self):
@@ -45,7 +45,7 @@ class MempoolUpgradeActivationTest(BitcoinTestFramework):
         node0_zaddr = self.nodes[0].z_getnewaddress('sprout')
         recipients = [{'address': node0_zaddr, 'amount': Decimal('10')}]
         myopid = self.nodes[1].z_sendmany(node1_taddr, recipients, 1, Decimal('0'))
-        print wait_and_assert_operationid_status(self.nodes[1], myopid)
+        print( wait_and_assert_operationid_status(self.nodes[1], myopid))
         self.sync_all()
 
         # Mempool checks for activation of upgrade Y at height H on base X

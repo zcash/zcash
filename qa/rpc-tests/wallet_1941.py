@@ -41,7 +41,7 @@ class Wallet1941RegressionTest (BitcoinTestFramework):
         self.sync_all()
 
     def run_test (self):
-        print "Mining blocks..."
+        print("Mining blocks...")
 
         self.nodes[0].setmocktime(starttime)
         self.nodes[0].generate(101)
