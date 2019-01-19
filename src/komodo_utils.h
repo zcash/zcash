@@ -1780,24 +1780,27 @@ void komodo_args(char *argv0)
         ASSETCHAINS_BEAMPORT = GetArg("-ac_beam",0);
         ASSETCHAINS_CODAPORT = GetArg("-ac_coda",0);
         ASSETCHAINS_MARMARA = GetArg("-ac_marmara",0);
-        Split(GetArg("-ac_ccenable",""),  ccenables, 0);
-        for (i=nonz=0; i<0x100; i++)
+        if ( ASSETCHAINS_CC != 0 )
         {
-            if ( ccenables[i] != 0 )
+            Split(GetArg("-ac_ccenable",""),  ccenables, 0);
+            for (i=nonz=0; i<0x100; i++)
             {
-                nonz++;
-                fprintf(stderr,"%d ",(uint8_t)(ccenables[i] & 0xff));
+                if ( ccenables[i] != 0 )
+                {
+                    nonz++;
+                    fprintf(stderr,"%d ",(uint8_t)(ccenables[i] & 0xff));
+                }
             }
-        }
-        fprintf(stderr,"nonz.%d ccenables[]\n",nonz);
-        if ( nonz > 0 )
-        {
-            for (i=0; i<256; i++)
-                ASSETCHAINS_CCDISABLES[i] = 1;
-            for (i=0; i<256; i++)
+            fprintf(stderr,"nonz.%d ccenables[]\n",nonz);
+            if ( nonz > 0 )
             {
-                SETBIT(disablebits,i);
-                ASSETCHAINS_CCDISABLES[ccenables[i] & 0xff] = 0;
+                for (i=0; i<256; i++)
+                    ASSETCHAINS_CCDISABLES[i] = 1;
+                for (i=0; i<256; i++)
+                {
+                    SETBIT(disablebits,i);
+                    ASSETCHAINS_CCDISABLES[ccenables[i] & 0xff] = 0;
+                }
             }
         }
         if ( ASSETCHAINS_BEAMPORT != 0 && ASSETCHAINS_CODAPORT != 0 )
