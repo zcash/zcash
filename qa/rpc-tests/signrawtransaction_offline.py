@@ -7,7 +7,7 @@ from test_framework.authproxy import JSONRPCException
 class SignOfflineTest (BitcoinTestFramework):
     # Setup Methods
     def setup_chain(self):
-        print "Initializing test directory " + self.options.tmpdir
+        print("Initializing test directory " + self.options.tmpdir)
         initialize_chain_clean(self.options.tmpdir, 2)
 
     def setup_network(self):
@@ -17,7 +17,7 @@ class SignOfflineTest (BitcoinTestFramework):
 
     # Tests
     def run_test(self):
-        print "Mining blocks..."
+        print("Mining blocks...")
         self.nodes[0].generate(101)
 
         offline_node = start_node(1, self.options.tmpdir, ["-maxconnections=0", "-nuparams=5ba81b19:10"])

@@ -123,7 +123,7 @@ class MempoolTxExpiryTest(BitcoinTestFramework):
         print("Expiryheight of persist_transparent:", rawtx['expiryheight'])
         # Verify shielded transaction is version 4 intended for Sapling branch
         rawtx = self.nodes[0].getrawtransaction(persist_shielded, 1)
-        print "Expiryheight of persist_shielded", rawtx['expiryheight']
+        print("Expiryheight of persist_shielded", rawtx['expiryheight'])
         assert_equal(rawtx["version"], 4)
         assert_equal(rawtx["overwintered"], True)
         assert_equal(rawtx["expiryheight"], blockheight + 1 + TX_EXPIRY_DELTA)
@@ -208,59 +208,59 @@ class MempoolTxExpiryTest(BitcoinTestFramework):
         print("Splitting network...")
         self.split_network()
 
-        print "\n Blockheight advances to greater than expiry block height. After reorg, txs should expire from mempool"
-        print "Balance before expire_shielded is sent: ", self.nodes[0].z_gettotalbalance()
+        print("\n Blockheight advances to greater than expiry block height. After reorg, txs should expire from mempool")
+        print("Balance before expire_shielded is sent: ", self.nodes[0].z_gettotalbalance())
         myopid = self.nodes[0].z_sendmany(z_alice, recipients)
         expire_shielded = wait_and_assert_operationid_status(self.nodes[0], myopid)
         expire_transparent = self.nodes[0].sendtoaddress(bob, 0.01)
-        print "Blockheight node 0 at expire_transparent creation:", self.nodes[0].getblockchaininfo()['blocks']
-        print "Blockheight node 2 at expire_shielded creation:", self.nodes[2].getblockchaininfo()['blocks']
-        print "Expiryheight of expire_transparent:", self.nodes[0].getrawtransaction(expire_transparent, 1)['expiryheight']
-        print "Expiryheight of expire_shielded:", self.nodes[0].getrawtransaction(expire_shielded, 1)['expiryheight']
+        print("Blockheight node 0 at expire_transparent creation:", self.nodes[0].getblockchaininfo()['blocks'])
+        print("Blockheight node 2 at expire_shielded creation:", self.nodes[2].getblockchaininfo()['blocks'])
+        print("Expiryheight of expire_transparent:", self.nodes[0].getrawtransaction(expire_transparent, 1)['expiryheight'])
+        print("Expiryheight of expire_shielded:", self.nodes[0].getrawtransaction(expire_shielded, 1)['expiryheight'])
         assert(expire_transparent in self.nodes[0].getrawmempool())
         assert(expire_shielded in self.nodes[0].getrawmempool())
         blocks = self.nodes[2].generate(1 + TX_EXPIRY_DELTA + 1)
         for block in blocks:
             blk = self.nodes[2].getblock(block)
-            print "Height: {0}, Mined block txs: {1}".format(blk["height"], blk["tx"])
-        print "Connect nodes to force a reorg"
+            print("Height: {0}, Mined block txs: {1}".format(blk["height"], blk["tx"]))
+        print("Connect nodes to force a reorg")
         connect_nodes_bi(self.nodes, 0, 2)
         self.is_network_split = False
         sync_blocks(self.nodes)
-        print "Ensure that expire_transparent & expire_shielded are not in mempool after expiry block height"
-        print "mempool node 0: ", self.nodes[0].getrawmempool()
-        print "mempool node 2: ", self.nodes[2].getrawmempool()
+        print("Ensure that expire_transparent & expire_shielded are not in mempool after expiry block height")
+        print("mempool node 0: ", self.nodes[0].getrawmempool())
+        print("mempool node 2: ", self.nodes[2].getrawmempool())
         assert_equal(set(self.nodes[0].getrawmempool()), set())
-        print "Ensure balance of node 0 is correct"
+        print("Ensure balance of node 0 is correct")
         bal = self.nodes[0].z_gettotalbalance()
-        print "Balance after expire_shielded has expired: ", bal
+        print("Balance after expire_shielded has expired: ", bal)
         assert_equal(Decimal(bal["private"]), Decimal("7.9999"))
 
-        print "Splitting network..."
+        print("Splitting network...")
         self.split_network()
 
-        print "\n Blockheight advances to just before expiring soon threshold.  Txs should be rejected from entering mempool."
-        print "Balance before expire_shielded is sent: ", self.nodes[0].z_gettotalbalance()
+        print("\n Blockheight advances to just before expiring soon threshold.  Txs should be rejected from entering mempool.")
+        print("Balance before expire_shielded is sent: ", self.nodes[0].z_gettotalbalance())
         myopid = self.nodes[0].z_sendmany(z_alice, recipients)
         expire_shielded = wait_and_assert_operationid_status(self.nodes[0], myopid)
         expire_transparent = self.nodes[0].sendtoaddress(bob, 0.01)
-        print "Blockheight node 0 at expire_transparent creation:", self.nodes[0].getblockchaininfo()['blocks']
-        print "Blockheight node 2 at expire_shielded creation:", self.nodes[2].getblockchaininfo()['blocks']
-        print "Expiryheight of expire_transparent:", self.nodes[0].getrawtransaction(expire_transparent, 1)['expiryheight']
-        print "Expiryheight of expire_shielded:", self.nodes[0].getrawtransaction(expire_shielded, 1)['expiryheight']
+        print("Blockheight node 0 at expire_transparent creation:", self.nodes[0].getblockchaininfo()['blocks'])
+        print("Blockheight node 2 at expire_shielded creation:", self.nodes[2].getblockchaininfo()['blocks'])
+        print("Expiryheight of expire_transparent:", self.nodes[0].getrawtransaction(expire_transparent, 1)['expiryheight'])
+        print("Expiryheight of expire_shielded:", self.nodes[0].getrawtransaction(expire_shielded, 1)['expiryheight'])
         assert(expire_transparent in self.nodes[0].getrawmempool())
         assert(expire_shielded in self.nodes[0].getrawmempool())
         blocks = self.nodes[2].generate(1 + TX_EXPIRY_DELTA - TX_EXPIRING_SOON_THRESHOLD - 1)
         for block in blocks:
             blk = self.nodes[2].getblock(block)
-            print "Height: {0}, Mined block txs: {1}".format(blk["height"], blk["tx"])
-        print "Connect nodes to force a reorg"
+            print("Height: {0}, Mined block txs: {1}".format(blk["height"], blk["tx"]))
+        print("Connect nodes to force a reorg")
         connect_nodes_bi(self.nodes, 0, 2)
         self.is_network_split = False
         sync_blocks(self.nodes)
-        print "Ensure that expire_transparent & expire_shielded are in node 0 mempool but not node 2 mempool"
-        print "mempool node 0: ", self.nodes[0].getrawmempool()
-        print "mempool node 2: ", self.nodes[2].getrawmempool()
+        print("Ensure that expire_transparent & expire_shielded are in node 0 mempool but not node 2 mempool")
+        print("mempool node 0: ", self.nodes[0].getrawmempool())
+        print("mempool node 2: ", self.nodes[2].getrawmempool())
         assert(expire_transparent in self.nodes[0].getrawmempool())
         assert(expire_shielded in self.nodes[0].getrawmempool())
         assert(expire_transparent not in self.nodes[2].getrawmempool())

@@ -81,7 +81,7 @@ def ParseScriptFlags(flag_string):
         if x in flag_map:
             flags |= flag_map[x]
         else:
-            print "Error: unrecognized script flag: ", x
+            print("Error: unrecognized script flag: ", x)
     return flags
 
 '''
@@ -116,7 +116,7 @@ def ParseScript(json_script):
             if tryopname in OPCODES_BY_NAME:
                 parsed_script += CScriptOp(OPCODES_BY_NAME["OP_" + x])
             else:
-                print "ParseScript: error parsing '%s'" % x
+                print("ParseScript: error parsing '%s'" % x)
                 return ""
     return parsed_script
             
@@ -241,7 +241,7 @@ class ScriptTest(ComparisonTestFramework):
             else:
                 self.block_time = 1333230000 + counter # Before the BIP16 switchover
 
-            print "Script test: [%s]" % script_test
+            print("Script test: [%s]" % script_test)
 
             yield self.generate_test_instance(scriptpubkey, scriptsig)
             counter += 1

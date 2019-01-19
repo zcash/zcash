@@ -73,7 +73,7 @@ class TestManager(NodeConnCB):
                             raise AssertionError("Error, test failed: block %064x requested more than once" % key)
                 if total_requests > MAX_REQUESTS:
                     raise AssertionError("Error, too many blocks (%d) requested" % total_requests)
-                print "Round %d: success (total requests: %d)" % (count, total_requests)
+                print("Round %d: success (total requests: %d)" % (count, total_requests))
         except AssertionError as e:
             print("TEST FAILED: ", e.args)
 

@@ -35,7 +35,7 @@ class Server(MessagingHandler):
         self.txidseq = -1
 
     def on_start(self, event):
-        print "Proton listening on:", self.url
+        print("Proton listening on:", self.url)
         self.container = event.container
         self.acceptor = event.container.listen(self.url)
 

@@ -29,7 +29,7 @@ class PrioritiseTransactionTest (BitcoinTestFramework):
     def run_test (self):
         # tx priority is calculated: priority = sum(input_value_in_base_units * input_age)/size_in_bytes
 
-        print "Mining 11kb blocks..."
+        print("Mining 11kb blocks...")
         self.nodes[0].generate(501)
 
         base_fee = self.nodes[0].getnetworkinfo()['relayfee']

@@ -62,7 +62,7 @@ class BlockStore(object):
         try:
             self.blockDB[repr(block.sha256)] = bytes(block.serialize())
         except TypeError as e:
-            print "Unexpected error: ", sys.exc_info()[0], e.args
+            print("Unexpected error: ", sys.exc_info()[0], e.args)
         self.currentBlock = block.sha256
 
     def get_blocks(self, inv):
@@ -118,7 +118,7 @@ class TxStore(object):
         try:
             self.txDB[repr(tx.sha256)] = bytes(tx.serialize())
         except TypeError as e:
-            print "Unexpected error: ", sys.exc_info()[0], e.args
+            print("Unexpected error: ", sys.exc_info()[0], e.args)
 
     def get_transactions(self, inv):
         responses = []
