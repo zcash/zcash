@@ -559,8 +559,6 @@ if ENABLE_WALLET
 komodod_LDADD += $(LIBBITCOIN_WALLET)
 endif
 
-cclib.so: cclib.cpp
-
 komodod_LDADD += \
   $(BOOST_LIBS) \
   $(BDB_LIBS) \

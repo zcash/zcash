@@ -1,2 +1,2 @@
 
-char *CClib_name() { return("stub"); }
+char *CClib_name() { return((char *)"stub"); }
