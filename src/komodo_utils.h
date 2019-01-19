@@ -1795,10 +1795,13 @@ void komodo_args(char *argv0)
             if ( nonz > 0 )
             {
                 for (i=0; i<256; i++)
+                {
                     ASSETCHAINS_CCDISABLES[i] = 1;
+                    SETBIT(disablebits,i);
+                }
                 for (i=0; i<256; i++)
                 {
-                    SETBIT(disablebits,(ccenables[i] & 0xff));
+                    CLEARBIT(disablebits,(ccenables[i] & 0xff));
                     ASSETCHAINS_CCDISABLES[ccenables[i] & 0xff] = 0;
                 }
             }
