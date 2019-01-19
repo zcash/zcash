@@ -54,7 +54,7 @@ one other technical note is that komodod has the insight-explorer extensions bui
 extern int32_t KOMODO_CONNECTING,KOMODO_CCACTIVATE,KOMODO_DEALERNODE;
 extern uint32_t ASSETCHAINS_CC;
 extern char ASSETCHAINS_SYMBOL[];
-extern std::string CCerror;
+extern std::string CCerror,ASSETCHAINS_CCLIB;
 extern uint8_t ASSETCHAINS_CCDISABLES[256];
 
 #define CC_MAXVINS 1024
