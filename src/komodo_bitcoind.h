@@ -2149,8 +2149,26 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
         }
         else
         {
-            // calc 1of2 address
-            // iterate all unspents not spent in mempool and komodo_addutxo
+            struct CCcontract_info *cp,C; uint256 txid; int32_t vout; CAmount nValue; char coinaddr[64]; CPubKey mypk,Marmarapk;
+            std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
+            cp = CCinit(&C,EVAL_MARMARA);
+            mypk = pubkey2pk(Mypubkey());
+            Marmarapk = GetUnspendable(cp,0);
+            GetCCaddress1of2(cp,coinaddr,Marmarapk,pk);
+            SetCCunspents(unspentOutputs,coinaddr);
+            for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
+            {
+                txid = it->first.txhash;
+                vout = (int32_t)it->first.index;
+                if ( (nValue= it->second.satoshis) < COIN )
+                    continue;
+                if ( GetTransaction(txid,tx,hashBlock,true) != 0 && (pindex= komodo_getblockindex(hashBlock)) != 0 && myIsutxo_spentinmempool(txid,vout) == 0 )
+                {
+                    const CScript &scriptPubKey = tx.vout[vout].scriptPubKey;
+                    array = komodo_addutxo(array,&numkp,&maxkp,(uint32_t)pindex->nTime,(uint64_t)nValue,txid,vout,coinaddr,hashbuf,(CScript)scriptPubKey);
+                    fprintf(stderr,"addutxo %.8f numkp.%d vs max.%d\n",(double)nValue/COIN,numkp,maxkp);
+                }
+            }
         }
         lasttime = (uint32_t)time(NULL);
 //fprintf(stderr,"finished kp data of utxo for staking %u ht.%d numkp.%d maxkp.%d\n",(uint32_t)time(NULL),nHeight,numkp,maxkp);
