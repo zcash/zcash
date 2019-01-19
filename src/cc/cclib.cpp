@@ -15,17 +15,17 @@
 
 #include <assert.h>
 //#include <cryptoconditions.h>
-#include "../cryptoconditions/include/cryptoconditions.h"
-#include "../primitives/block.h"
-#include "../primitives/transaction.h"
-#include "../script/cc.h"
-#include "eval.h"
-#include "utils.h"
-#include "CCinclude.h"
-#include "../main.h"
-#include "../chain.h"
-#include "../core_io.h"
-#include "../crosschain.h"
+#include "cryptoconditions/include/cryptoconditions.h"
+#include "primitives/block.h"
+#include "primitives/transaction.h"
+#include "script/cc.h"
+#include "cc/eval.h"
+#include "cc/utils.h"
+#include "cc/CCinclude.h"
+#include "main.h"
+#include "chain.h"
+#include "core_io.h"
+#include "crosschain.h"
 
 char *CClib_name() { return((char *)"stub"); }
 
