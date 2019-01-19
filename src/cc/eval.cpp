@@ -65,6 +65,11 @@ bool Eval::Dispatch(const CC *cond, const CTransaction &txTo, unsigned int nIn)
         return Invalid("empty-eval");
 
     uint8_t ecode = cond->code[0];
+    if ( ASSETCHAINS_CCDISABLES[ecode] != 0 )
+    {
+        fprintf(stderr,"%s evalcode.%d %02x\n",txTo.GetHash().GetHex().c_str(),ecode,ecode);
+        return Invalid("disabled-code, -ac_ccenables didnt include this ecode");
+    }
     cp = &CCinfos[(int32_t)ecode];
     if ( cp->didinit == 0 )
     {
