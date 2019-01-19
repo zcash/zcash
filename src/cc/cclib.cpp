@@ -14,8 +14,8 @@
  ******************************************************************************/
 
 #include <assert.h>
-//#include <cryptoconditions.h>
-#include "../cryptoconditions/include/cryptoconditions.h"
+#include <cryptoconditions.h>
+
 #include "primitives/block.h"
 #include "primitives/transaction.h"
 #include "script/cc.h"
