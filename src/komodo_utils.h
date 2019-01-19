@@ -1654,7 +1654,7 @@ extern int64_t MAX_MONEY;
 void komodo_args(char *argv0)
 {
     extern const char *Notaries_elected1[][2];
-    std::string name,addn; char *dirname,fname[512],arg0str[64],magicstr[9]; uint8_t magic[4],extrabuf[8192],*extraptr=0; FILE *fp; uint64_t val; uint16_t port; int32_t i,baseid,len,n,extralen = 0;
+    std::string name,addn; char *dirname,fname[512],arg0str[64],magicstr[9]; uint8_t magic[4],extrabuf[8192],*extraptr=0; FILE *fp; uint64_t val; uint16_t port; int32_t i,nonz,baseid,len,n,extralen = 0;
     IS_KOMODO_NOTARY = GetBoolArg("-notary", false);
 
     if ( GetBoolArg("-gen", false) != 0 )
@@ -1779,6 +1779,23 @@ void komodo_args(char *argv0)
         ASSETCHAINS_BEAMPORT = GetArg("-ac_beam",0);
         ASSETCHAINS_CODAPORT = GetArg("-ac_coda",0);
         ASSETCHAINS_MARMARA = GetArg("-ac_marmara",0);
+        Split(GetArg("-ac_ccenable",""),  ASSETCHAINS_CCENABLE, 0);
+        for (i=nonz=0; i<0x100; i++)
+        {
+            if ( ASSETCHAINS_CCENABLE[i] != 0 )
+            {
+                nonz++;
+                fprintf(stderr,"%d ",ASSETCHAINS_CCENABLE[i]);
+            }
+        }
+        fprintf(stderr,"nonz.%d CCENABLES[]\n");
+        if ( nonz > 0 )
+        {
+            for (i=0; i<256; i++)
+                ASSETCHAINS_CCDISABLES[i] = 1;
+            for (i=0; i<256; i++)
+                ASSETCHAINS_CCDISABLES[ASSETCHAINS_CCENABLE[i]] = 0;
+        }
         if ( ASSETCHAINS_BEAMPORT != 0 && ASSETCHAINS_CODAPORT != 0 )
         {
             fprintf(stderr,"can only have one of -ac_beam or -ac_coda\n");
