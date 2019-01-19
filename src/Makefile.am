@@ -560,7 +560,6 @@ komodod_LDADD += $(LIBBITCOIN_WALLET)
 endif
 
 cclib.so: cclib.cpp
-    gcc -o cclib.so -c cclib.cpp
 
 komodod_LDADD += \
   $(BOOST_LIBS) \
