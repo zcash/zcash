@@ -162,8 +162,8 @@ extern CAddrMan addrman;
 /** Maximum number of connections to simultaneously allow (aka connection slots) */
 extern int nMaxConnections;
 
-extern std::vector<CNode*> vNodes;
 extern CCriticalSection cs_vNodes;
+extern std::vector<CNode*> vNodes GUARDED_BY(cs_vNodes);
 extern std::map<CInv, CDataStream> mapRelay;
 extern std::deque<std::pair<int64_t, CInv> > vRelayExpiration;
 extern CCriticalSection cs_mapRelay;
