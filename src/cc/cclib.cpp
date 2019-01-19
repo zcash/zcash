@@ -36,7 +36,7 @@ bool CClib_Dispatch(const CC *cond,Eval *eval,std::vector<uint8_t> paramsNull,co
     uint8_t evalcode;
     if ( ASSETCHAINS_CCLIB != MYCCLIBNAME )
     {
-        fprintf(stderr,"-ac_cclib=%s vs myname %s\n",ASSETCHAINS_CCLIB,MYCCLIBNAME);
+        fprintf(stderr,"-ac_cclib=%s vs myname %s\n",ASSETCHAINS_CCLIB.c_str(),MYCCLIBNAME);
         return eval->Invalid("-ac_cclib name mismatches myname");
     }
     evalcode = cond->code[0];
