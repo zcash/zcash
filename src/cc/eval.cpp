@@ -27,6 +27,7 @@
 #include "core_io.h"
 #include "crosschain.h"
 
+bool CClib_Dispatch(const CC *cond,Eval *eval,std::vector<uint8_t> paramsNull,const CTransaction &txTo,unsigned int nIn);
 
 Eval* EVAL_TEST = 0;
 struct CCcontract_info CCinfos[0x100];
@@ -70,13 +71,17 @@ bool Eval::Dispatch(const CC *cond, const CTransaction &txTo, unsigned int nIn)
         fprintf(stderr,"%s evalcode.%d %02x\n",txTo.GetHash().GetHex().c_str(),ecode,ecode);
         return Invalid("disabled-code, -ac_ccenables didnt include this ecode");
     }
+    std::vector<uint8_t> vparams(cond->code+1, cond->code+cond->codeLength);
+    if ( ecode >= EVAL_FIRSTUSER && ecode <= EVAL_LASTUSER )
+    {
+       return CClib_Dispatch(cond,this,vparams,txTo,nIn);
+    }
     cp = &CCinfos[(int32_t)ecode];
     if ( cp->didinit == 0 )
     {
         CCinit(cp,ecode);
         cp->didinit = 1;
     }
-    std::vector<uint8_t> vparams(cond->code+1, cond->code+cond->codeLength);
     switch ( ecode )
     {
         case EVAL_IMPORTPAYOUT:
