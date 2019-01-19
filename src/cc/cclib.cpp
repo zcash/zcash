@@ -28,7 +28,6 @@
 #include "crosschain.h"
 
 #define MYCCLIBNAME ((char *)"stub")
-extern std::string ASSETCHAINS_CCLIB;
 
 char *CClib_name() { return(MYCCLIBNAME); }
 
