@@ -2154,7 +2154,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
             cp = CCinit(&C,EVAL_MARMARA);
             mypk = pubkey2pk(Mypubkey());
             Marmarapk = GetUnspendable(cp,0);
-            GetCCaddress1of2(cp,coinaddr,Marmarapk,pk);
+            GetCCaddress1of2(cp,coinaddr,Marmarapk,mypk);
             SetCCunspents(unspentOutputs,coinaddr);
             for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
             {
