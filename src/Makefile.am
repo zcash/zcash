@@ -574,7 +574,6 @@ komodod_LDADD += \
   $(LIBZCASH_LIBS) \
   cclib.so
 
-
 if ENABLE_PROTON
 komodod_LDADD += $(LIBBITCOIN_PROTON) $(PROTON_LIBS)
 endif
