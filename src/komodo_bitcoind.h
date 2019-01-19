@@ -2236,6 +2236,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
         }
         else
         {
+            // add opreturn
             // signSuccess = CCFinalizetx(...)
         }
         if (!signSuccess)
