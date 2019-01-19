@@ -74,7 +74,9 @@ bool Eval::Dispatch(const CC *cond, const CTransaction &txTo, unsigned int nIn)
     std::vector<uint8_t> vparams(cond->code+1, cond->code+cond->codeLength);
     if ( ecode >= EVAL_FIRSTUSER && ecode <= EVAL_LASTUSER )
     {
-       return CClib_Dispatch(cond,this,vparams,txTo,nIn);
+        if ( ASSETCHAINS_CCLIB.size() > 0 && ASSETCHAINS_CCLIB == CClib_name() )
+            return CClib_Dispatch(cond,this,vparams,txTo,nIn);
+        else return Invalid("mismatched -ac_cclib vs CClib_name");
     }
     cp = &CCinfos[(int32_t)ecode];
     if ( cp->didinit == 0 )

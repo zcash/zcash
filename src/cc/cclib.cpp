@@ -27,14 +27,23 @@
 #include "core_io.h"
 #include "crosschain.h"
 
-char *CClib_name() { return((char *)"stub"); }
+#define MYCCLIBNAME ((char *)"stub")
+extern std::string ASSETCHAINS_CCLIB;
+
+char *CClib_name() { return(MYCCLIBNAME); }
 
 bool CClib_Dispatch(const CC *cond,Eval *eval,std::vector<uint8_t> paramsNull,const CTransaction &txTo,unsigned int nIn)
 {
-    uint8_t evalcode = cond->code[0];
+    uint8_t evalcode;
+    if ( ASSETCHAINS_CCLIB != MYCCLIBNAME )
+    {
+        fprintf(stderr,"-ac_cclib=%s vs myname %s\n",ASSETCHAINS_CCLIB,MYCCLIBNAME);
+        return eval->Invalid("-ac_cclib name mismatches myname");
+    }
+    evalcode = cond->code[0];
     if ( evalcode >= EVAL_FIRSTUSER && evalcode <= EVAL_LASTUSER )
     {
-        
+        return(true);
     }
     return eval->Invalid("cclib CC must have evalcode between 16 and 127");
 }
