@@ -1798,7 +1798,7 @@ void komodo_args(char *argv0)
                     ASSETCHAINS_CCDISABLES[i] = 1;
                 for (i=0; i<256; i++)
                 {
-                    SETBIT(disablebits,i);
+                    SETBIT(disablebits,(ccenables[i] & 0xff));
                     ASSETCHAINS_CCDISABLES[ccenables[i] & 0xff] = 0;
                 }
             }
