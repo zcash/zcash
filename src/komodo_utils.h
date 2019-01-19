@@ -1786,7 +1786,7 @@ void komodo_args(char *argv0)
             if ( ccenables[i] != 0 )
             {
                 nonz++;
-                fprintf(stderr,"%d ",ccenables[i]);
+                fprintf(stderr,"%d ",(uint8_t)(ccenables[i] & 0xff));
             }
         }
         fprintf(stderr,"nonz.%d ccenables[]\n",nonz);
