@@ -636,6 +636,8 @@ bool ProcessCC(struct CC_info *cp,Eval* eval, std::vector<uint8_t> paramsNull,co
     return(false);
 }
 
+extern struct CC_info CCinfos[0x100];
+
 bool CClib_Dispatch(const CC *cond,Eval *eval,std::vector<uint8_t> paramsNull,const CTransaction &txTo,unsigned int nIn)
 {
     uint8_t evalcode; int32_t height,from_mempool; struct CC_info *cp;
@@ -657,17 +659,17 @@ bool CClib_Dispatch(const CC *cond,Eval *eval,std::vector<uint8_t> paramsNull,co
     evalcode = cond->code[0];
     if ( evalcode >= EVAL_FIRSTUSER && evalcode <= EVAL_LASTUSER )
     {
-        cp = &CCinfos[(int32_t)ecode];
+        cp = &CCinfos[(int32_t)evalcode];
         if ( cp->didinit == 0 )
         {
-            if ( CClib_initcp(cp,ecode) == 0 )
+            if ( CClib_initcp(cp,evalcode) == 0 )
                 cp->didinit = 1;
             else return eval->Invalid("unsupported CClib evalcode");
         }
         CCclearvars(cp);
         if ( paramsNull.size() != 0 ) // Don't expect params
             return eval->Invalid("Cannot have params");
-        else if ( CClib_validate(cp,eval,ctx,nIn) != 0 )
+        else if ( CClib_validate(cp,eval,txTo,nIn) != 0 )
             return(true);
         return eval->Invalid("error in CClib_validate");
     }
