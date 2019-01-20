@@ -2150,7 +2150,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
         }
         else
         {
-            struct CCcontract_info *cp,C; uint256 txid; int32_t vout; CAmount nValue; char coinaddr[64]; CPubKey mypk,Marmarapk;
+            struct CC_info *cp,C; uint256 txid; int32_t vout; CAmount nValue; char coinaddr[64]; CPubKey mypk,Marmarapk;
             std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
             cp = CCinit(&C,EVAL_MARMARA);
             mypk = pubkey2pk(Mypubkey());

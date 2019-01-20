@@ -5197,7 +5197,7 @@ int32_t ensure_CCrequirements()
 #include "../cc/CCHeir.h"
 #include "../cc/CCMarmara.h"
 
-UniValue CCaddress(struct CCcontract_info *cp,char *name,std::vector<unsigned char> &pubkey)
+UniValue CCaddress(struct CC_info *cp,char *name,std::vector<unsigned char> &pubkey)
 {
     UniValue result(UniValue::VOBJ); char destaddr[64],str[64]; CPubKey pk;
     pk = GetUnspendable(cp,0);
@@ -5302,7 +5302,7 @@ UniValue setpubkey(const UniValue& params, bool fHelp)
 
 UniValue channelsaddress(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); struct CCcontract_info *cp,C; std::vector<unsigned char> destpubkey; CPubKey pk,pk2; char destaddr[64];
+    UniValue result(UniValue::VOBJ); struct CC_info *cp,C; std::vector<unsigned char> destpubkey; CPubKey pk,pk2; char destaddr[64];
     cp = CCinit(&C,EVAL_CHANNELS);
     if ( fHelp || params.size() != 1 )
         throw runtime_error("channelsaddress destpubkey\n");
@@ -5327,9 +5327,46 @@ UniValue channelsaddress(const UniValue& params, bool fHelp)
     return(result);
 }
 
+UniValue cclibaddress(const UniValue& params, bool fHelp)
+{
+    struct CC_info *cp,C; std::vector<unsigned char> pubkey;
+    cp = CCinit(&C,EVAL_FIRSTUSER);
+    if ( fHelp || params.size() > 1 )
+        throw runtime_error("cclibaddress [pubkey]\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    if ( params.size() == 1 )
+        pubkey = ParseHex(params[0].get_str().c_str());
+    return(CCaddress(cp,(char *)"CClib",pubkey));
+}
+
+UniValue cclibinfo(const UniValue& params, bool fHelp)
+{
+    struct CC_info *cp,C;
+    cp = CCinit(&C,EVAL_FIRSTUSER);
+    if ( fHelp || params.size() > 0 )
+        throw runtime_error("cclibinfo\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    return(CClib_info(cp));
+}
+
+UniValue cclib(const UniValue& params, bool fHelp)
+{
+    struct CC_info *cp,C; char *method; cJSON *params;
+    cp = CCinit(&C,EVAL_FIRSTUSER);
+    if ( fHelp || params.size() > 2 )
+        throw runtime_error("cclib method [JSON params]\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    method = params[0].get_str().c_str();
+    params = cJSON_Parse(params[1].get_str().c_str());
+    return(CClib(cp,method,params));
+}
+
 UniValue oraclesaddress(const UniValue& params, bool fHelp)
 {
-    struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
+    struct CC_info *cp,C; std::vector<unsigned char> pubkey;
     cp = CCinit(&C,EVAL_ORACLES);
     if ( fHelp || params.size() > 1 )
         throw runtime_error("oraclesaddress [pubkey]\n");
@@ -5342,7 +5379,7 @@ UniValue oraclesaddress(const UniValue& params, bool fHelp)
 
 UniValue pricesaddress(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); struct CCcontract_info *cp,C,*assetscp,C2; std::vector<unsigned char> pubkey; CPubKey mypk,planpk,pricespk; char myaddr[64],houseaddr[64],exposureaddr[64];
+    UniValue result(UniValue::VOBJ); struct CC_info *cp,C,*assetscp,C2; std::vector<unsigned char> pubkey; CPubKey mypk,planpk,pricespk; char myaddr[64],houseaddr[64],exposureaddr[64];
     cp = CCinit(&C,EVAL_PRICES);
     assetscp = CCinit(&C2,EVAL_PRICES);
     if ( fHelp || params.size() > 1 )
@@ -5365,7 +5402,7 @@ UniValue pricesaddress(const UniValue& params, bool fHelp)
 
 UniValue pegsaddress(const UniValue& params, bool fHelp)
 {
-    struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
+    struct CC_info *cp,C; std::vector<unsigned char> pubkey;
     cp = CCinit(&C,EVAL_PEGS);
     if ( fHelp || params.size() > 1 )
         throw runtime_error("pegssaddress [pubkey]\n");
@@ -5378,7 +5415,7 @@ UniValue pegsaddress(const UniValue& params, bool fHelp)
 
 UniValue marmaraaddress(const UniValue& params, bool fHelp)
 {
-    struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
+    struct CC_info *cp,C; std::vector<unsigned char> pubkey;
     cp = CCinit(&C,EVAL_MARMARA);
     if ( fHelp || params.size() > 1 )
         throw runtime_error("Marmaraaddress [pubkey]\n");
@@ -5391,7 +5428,7 @@ UniValue marmaraaddress(const UniValue& params, bool fHelp)
 
 UniValue paymentsaddress(const UniValue& params, bool fHelp)
 {
-    struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
+    struct CC_info *cp,C; std::vector<unsigned char> pubkey;
     cp = CCinit(&C,EVAL_PAYMENTS);
     if ( fHelp || params.size() > 1 )
         throw runtime_error("paymentsaddress [pubkey]\n");
@@ -5404,7 +5441,7 @@ UniValue paymentsaddress(const UniValue& params, bool fHelp)
 
 UniValue gatewaysaddress(const UniValue& params, bool fHelp)
 {
-    struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
+    struct CC_info *cp,C; std::vector<unsigned char> pubkey;
     cp = CCinit(&C,EVAL_GATEWAYS);
     if ( fHelp || params.size() > 1 )
         throw runtime_error("gatewaysaddress [pubkey]\n");
@@ -5417,7 +5454,7 @@ UniValue gatewaysaddress(const UniValue& params, bool fHelp)
 
 UniValue heiraddress(const UniValue& params, bool fHelp)
 {
-	struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
+	struct CC_info *cp,C; std::vector<unsigned char> pubkey;
 	cp = CCinit(&C,EVAL_HEIR);
 	if ( fHelp || params.size() > 1 )
 	throw runtime_error("heiraddress [pubkey]\n");
@@ -5432,7 +5469,7 @@ UniValue heiraddress(const UniValue& params, bool fHelp)
 
 UniValue lottoaddress(const UniValue& params, bool fHelp)
 {
-    struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
+    struct CC_info *cp,C; std::vector<unsigned char> pubkey;
     cp = CCinit(&C,EVAL_LOTTO);
     if ( fHelp || params.size() > 1 )
         throw runtime_error("lottoaddress [pubkey]\n");
@@ -5445,7 +5482,7 @@ UniValue lottoaddress(const UniValue& params, bool fHelp)
 
 UniValue FSMaddress(const UniValue& params, bool fHelp)
 {
-    struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
+    struct CC_info *cp,C; std::vector<unsigned char> pubkey;
     cp = CCinit(&C,EVAL_FSM);
     if ( fHelp || params.size() > 1 )
         throw runtime_error("FSMaddress [pubkey]\n");
@@ -5458,7 +5495,7 @@ UniValue FSMaddress(const UniValue& params, bool fHelp)
 
 UniValue auctionaddress(const UniValue& params, bool fHelp)
 {
-    struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
+    struct CC_info *cp,C; std::vector<unsigned char> pubkey;
     cp = CCinit(&C,EVAL_AUCTION);
     if ( fHelp || params.size() > 1 )
         throw runtime_error("auctionaddress [pubkey]\n");
@@ -5471,7 +5508,7 @@ UniValue auctionaddress(const UniValue& params, bool fHelp)
 
 UniValue diceaddress(const UniValue& params, bool fHelp)
 {
-    struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
+    struct CC_info *cp,C; std::vector<unsigned char> pubkey;
     cp = CCinit(&C,EVAL_DICE);
     if ( fHelp || params.size() > 1 )
         throw runtime_error("diceaddress [pubkey]\n");
@@ -5484,7 +5521,7 @@ UniValue diceaddress(const UniValue& params, bool fHelp)
 
 UniValue faucetaddress(const UniValue& params, bool fHelp)
 {
-    struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
+    struct CC_info *cp,C; std::vector<unsigned char> pubkey;
     int errno;
     cp = CCinit(&C,EVAL_FAUCET);
     if ( fHelp || params.size() > 1 )
@@ -5499,7 +5536,7 @@ UniValue faucetaddress(const UniValue& params, bool fHelp)
 
 UniValue rewardsaddress(const UniValue& params, bool fHelp)
 {
-    struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
+    struct CC_info *cp,C; std::vector<unsigned char> pubkey;
     cp = CCinit(&C,EVAL_REWARDS);
     if ( fHelp || params.size() > 1 )
         throw runtime_error("rewardsaddress [pubkey]\n");
@@ -5512,7 +5549,7 @@ UniValue rewardsaddress(const UniValue& params, bool fHelp)
 
 UniValue assetsaddress(const UniValue& params, bool fHelp)
 {
-	struct CCcontract_info *cp, C; std::vector<unsigned char> pubkey;
+	struct CC_info *cp, C; std::vector<unsigned char> pubkey;
 	cp = CCinit(&C, EVAL_ASSETS);
 	if (fHelp || params.size() > 1)
 		throw runtime_error("assetsaddress [pubkey]\n");
@@ -5525,7 +5562,7 @@ UniValue assetsaddress(const UniValue& params, bool fHelp)
 
 UniValue tokenaddress(const UniValue& params, bool fHelp)
 {
-    struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
+    struct CC_info *cp,C; std::vector<unsigned char> pubkey;
     cp = CCinit(&C,EVAL_TOKENS);
     if ( fHelp || params.size() > 1 )
         throw runtime_error("tokenaddress [pubkey]\n");
@@ -5730,7 +5767,7 @@ UniValue channelsinfo(const UniValue& params, bool fHelp)
 
 UniValue channelsopen(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); int32_t numpayments; int64_t payment; std::vector<unsigned char> destpub; struct CCcontract_info *cp,C; std::string hex;
+    UniValue result(UniValue::VOBJ); int32_t numpayments; int64_t payment; std::vector<unsigned char> destpub; struct CC_info *cp,C; std::string hex;
     uint256 tokenid=zeroid;
 
     cp = CCinit(&C,EVAL_CHANNELS);
@@ -5773,7 +5810,7 @@ UniValue channelsopen(const UniValue& params, bool fHelp)
 
 UniValue channelspayment(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); struct CCcontract_info *cp,C; std::string hex; uint256 opentxid,secret=zeroid; int32_t n; int64_t amount;
+    UniValue result(UniValue::VOBJ); struct CC_info *cp,C; std::string hex; uint256 opentxid,secret=zeroid; int32_t n; int64_t amount;
     cp = CCinit(&C,EVAL_CHANNELS);
     if ( fHelp || params.size() < 2 ||  params.size() >3 )
         throw runtime_error("channelspayment opentxid amount [secret]\n");
@@ -5803,7 +5840,7 @@ UniValue channelspayment(const UniValue& params, bool fHelp)
 
 UniValue channelsclose(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); struct CCcontract_info *cp,C; std::string hex; uint256 opentxid;
+    UniValue result(UniValue::VOBJ); struct CC_info *cp,C; std::string hex; uint256 opentxid;
     cp = CCinit(&C,EVAL_CHANNELS);
     if ( fHelp || params.size() != 1 )
         throw runtime_error("channelsclose opentxid\n");
@@ -5823,7 +5860,7 @@ UniValue channelsclose(const UniValue& params, bool fHelp)
 
 UniValue channelsrefund(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); struct CCcontract_info *cp,C; std::string hex; uint256 opentxid,closetxid;
+    UniValue result(UniValue::VOBJ); struct CC_info *cp,C; std::string hex; uint256 opentxid,closetxid;
     cp = CCinit(&C,EVAL_CHANNELS);
     if ( fHelp || params.size() != 2 )
         throw runtime_error("channelsrefund opentxid closetxid\n");
@@ -6877,7 +6914,7 @@ UniValue tokenorders(const UniValue& params, bool fHelp)
 
 UniValue tokenbalance(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); uint256 tokenid; uint64_t balance; std::vector<unsigned char> pubkey; struct CCcontract_info *cp,C;
+    UniValue result(UniValue::VOBJ); uint256 tokenid; uint64_t balance; std::vector<unsigned char> pubkey; struct CC_info *cp,C;
 	CCerror.clear();
 
     if ( fHelp || params.size() > 2 )

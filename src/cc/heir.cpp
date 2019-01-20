@@ -34,7 +34,7 @@ class TokenHelper;
 
 // Plan validation runner, it may be called twice - for coins and tokens
 // (sadly we cannot have yet 'templatized' lambdas, if we could we could capture all these params inside HeirValidation()...)
-template <typename Helper> bool RunValidationPlans(uint8_t funcId, struct CCcontract_info* cp, Eval* eval, const CTransaction& tx, uint256 latestTxid, CScript fundingOpretScript, uint8_t hasHeirSpendingBegun)
+template <typename Helper> bool RunValidationPlans(uint8_t funcId, struct CC_info* cp, Eval* eval, const CTransaction& tx, uint256 latestTxid, CScript fundingOpretScript, uint8_t hasHeirSpendingBegun)
 {
 	int32_t numvins = tx.vin.size();
 	int32_t numvouts = tx.vout.size();
@@ -104,14 +104,14 @@ template <typename Helper> bool RunValidationPlans(uint8_t funcId, struct CCcont
 /**
  * Tx validation entry function
  */
-bool HeirValidate(struct CCcontract_info* cpHeir, Eval* eval, const CTransaction& tx, uint32_t nIn)
+bool HeirValidate(struct CC_info* cpHeir, Eval* eval, const CTransaction& tx, uint32_t nIn)
 {
     int32_t numvins = tx.vin.size();
     int32_t numvouts = tx.vout.size();
     //int32_t preventCCvins = -1;
     //int32_t preventCCvouts = -1;
 
-	struct CCcontract_info *cpTokens, tokensC;
+	struct CC_info *cpTokens, tokensC;
 	cpTokens = CCinit(&tokensC, EVAL_TOKENS);
 
     if (numvouts < 1)
@@ -237,7 +237,7 @@ bool HeirValidate(struct CCcontract_info* cpHeir, Eval* eval, const CTransaction
 * Checks if vout is to cryptocondition address
 * @return vout value in satoshis
 */
-template <class Helper> int64_t IsHeirFundingVout(struct CCcontract_info* cp, const CTransaction& tx, int32_t voutIndex, CPubKey ownerPubkey, CPubKey heirPubkey)
+template <class Helper> int64_t IsHeirFundingVout(struct CC_info* cp, const CTransaction& tx, int32_t voutIndex, CPubKey ownerPubkey, CPubKey heirPubkey)
 {
 	char destaddr[65], heirFundingAddr[65];
 
@@ -437,7 +437,7 @@ uint256 _FindLatestFundingTx(uint256 fundingtxid, uint8_t& funcId, uint256 &toke
 
 	// TODO: correct cc addr:
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue>> unspentOutputs;
-    struct CCcontract_info *cp, C;
+    struct CC_info *cp, C;
     cp = CCinit(&C, EVAL_HEIR);
     char coinaddr[64];
     GetCCaddress1of2(cp, coinaddr, ownerPubkey, heirPubkey); // get the address of cryptocondition '1 of 2 pubkeys'
@@ -507,7 +507,7 @@ uint256 FindLatestFundingTx(uint256 fundingtxid, uint8_t& funcId, uint256 &token
 }
 
 // add inputs of 1 of 2 cc address
-template <class Helper> int64_t Add1of2AddressInputs(struct CCcontract_info* cp, uint256 fundingtxid, CMutableTransaction& mtx, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t total, int32_t maxinputs)
+template <class Helper> int64_t Add1of2AddressInputs(struct CC_info* cp, uint256 fundingtxid, CMutableTransaction& mtx, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t total, int32_t maxinputs)
 {
     // TODO: add threshold check
     int64_t nValue, voutValue, totalinputs = 0;
@@ -566,7 +566,7 @@ template <class Helper> int64_t Add1of2AddressInputs(struct CCcontract_info* cp,
 /**
  * enumerate all tx's sending to CCHeir 1of2address and calc total lifetime funds 
  */
-template <class Helper> int64_t LifetimeHeirContractFunds(struct CCcontract_info* cp, uint256 fundingtxid, CPubKey ownerPubkey, CPubKey heirPubkey)
+template <class Helper> int64_t LifetimeHeirContractFunds(struct CC_info* cp, uint256 fundingtxid, CPubKey ownerPubkey, CPubKey heirPubkey)
 {
     char coinaddr[64];
     Helper::GetCoinsOrTokensCCaddress1of2(coinaddr, ownerPubkey, heirPubkey); // get the address of cryptocondition '1 of 2 pubkeys'
@@ -619,7 +619,7 @@ template <typename Helper> UniValue HeirFund(uint64_t txfee, int64_t amount, std
 {
 	UniValue result(UniValue::VOBJ);
 	CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-	struct CCcontract_info *cp, C;
+	struct CC_info *cp, C;
 
     cp = CCinit(&C, Helper::getMyEval());
     if (txfee == 0)
@@ -707,7 +707,7 @@ template <class Helper> UniValue _HeirAdd(uint256 fundingtxid, uint64_t txfee, i
     UniValue result(UniValue::VOBJ); 
 	CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     int64_t inputs, CCchange = 0;
-    struct CCcontract_info *cp, C;
+    struct CC_info *cp, C;
     std::string rawhex;
 
 	cp = CCinit(&C, Helper::getMyEval());  // for tokens shoud be EVAL_TOKENS to sign it correctly!
@@ -825,7 +825,7 @@ template <typename Helper>UniValue _HeirClaim(uint256 fundingtxid, uint64_t txfe
 	CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
 	CPubKey myPubkey;
     int64_t inputs, change = 0;
-    struct CCcontract_info *cp, C;
+    struct CC_info *cp, C;
 
 	cp = CCinit(&C, EVAL_HEIR);
 	if (txfee == 0)
@@ -1006,7 +1006,7 @@ UniValue HeirInfo(uint256 fundingtxid)
 			return result;
 		}*/
 
-		struct CCcontract_info *cp, C;
+		struct CC_info *cp, C;
 		cp = CCinit(&C, EVAL_HEIR);
 
 		uint8_t hasHeirSpendingBegun = 0;
@@ -1123,7 +1123,7 @@ UniValue HeirInfo(uint256 fundingtxid)
  * @return list of heir plan handles (fundingtxid)
  */
 
-template <typename Helper>void _HeirList(struct CCcontract_info *cp, UniValue &result)
+template <typename Helper>void _HeirList(struct CC_info *cp, UniValue &result)
 {
 	std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue>> unspentOutputs;
 	char coinaddr[64];
@@ -1174,7 +1174,7 @@ UniValue HeirList()
     UniValue result(UniValue::VOBJ);
     result.push_back(Pair("result", "success"));
 
-    struct CCcontract_info *cpHeir, *cpTokens, heirC, tokenC;  // NOTE we must use a separate 'C' structure for each CCinit!
+    struct CC_info *cpHeir, *cpTokens, heirC, tokenC;  // NOTE we must use a separate 'C' structure for each CCinit!
     
 	cpHeir = CCinit(&heirC, EVAL_HEIR);
 	cpTokens = CCinit(&tokenC, EVAL_TOKENS);

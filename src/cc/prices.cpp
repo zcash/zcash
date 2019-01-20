@@ -86,7 +86,7 @@ uint8_t DecodePricesFundingOpRet(CScript scriptPubKey,CPubKey &planpk,uint256 &o
     return(0);
 }
 
-bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
+bool PricesValidate(struct CC_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
 {
     int32_t numvins,numvouts,preventCCvins,preventCCvouts,i,numblocks; bool retval; uint256 txid; uint8_t hash[32]; char str[65],destaddr[64];
     return eval->Invalid("no validation yet");
@@ -127,7 +127,7 @@ bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
 
 // helper functions for rpc calls in rpcwallet.cpp
 
-int64_t AddTokensInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,char *destaddr,uint256 tolenid,int64_t total,int32_t maxinputs)
+int64_t AddTokensInputs(struct CC_info *cp,CMutableTransaction &mtx,char *destaddr,uint256 tolenid,int64_t total,int32_t maxinputs)
 {
     // add threshold check
     int64_t nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t vout,n = 0;
@@ -158,7 +158,7 @@ int64_t AddTokensInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,char
 
 UniValue PricesList()
 {
-    UniValue result(UniValue::VARR); std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex; struct CCcontract_info *cp,C; uint64_t mode; int32_t margin,maxleverage; std::vector<CPubKey>pubkeys; uint256 txid,hashBlock,oracletxid,longtoken,shorttoken,bettoken; CPubKey planpk,pricespk; char str[65]; CTransaction vintx;
+    UniValue result(UniValue::VARR); std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex; struct CC_info *cp,C; uint64_t mode; int32_t margin,maxleverage; std::vector<CPubKey>pubkeys; uint256 txid,hashBlock,oracletxid,longtoken,shorttoken,bettoken; CPubKey planpk,pricespk; char str[65]; CTransaction vintx;
     cp = CCinit(&C,EVAL_PRICES);
     pricespk = GetUnspendable(cp,0);
     SetCCtxids(addressIndex,cp->normaladdr);
@@ -183,7 +183,7 @@ UniValue PricesList()
 std::string PricesCreateFunding(uint64_t txfee,uint256 bettoken,uint256 oracletxid,uint64_t margin,uint64_t mode,uint256 longtoken,uint256 shorttoken,int32_t maxleverage,int64_t funding,std::vector<CPubKey> pubkeys)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    CTransaction oracletx; int64_t fullsupply,inputs,CCchange=0; uint256 hashBlock; char str[65],coinaddr[64],houseaddr[64]; CPubKey mypk,pricespk; int32_t i,N,numvouts; struct CCcontract_info *cp,C;
+    CTransaction oracletx; int64_t fullsupply,inputs,CCchange=0; uint256 hashBlock; char str[65],coinaddr[64],houseaddr[64]; CPubKey mypk,pricespk; int32_t i,N,numvouts; struct CC_info *cp,C;
     if ( funding < 100*COIN || maxleverage <= 0 || maxleverage > 10000 )
     {
         CCerror = "invalid parameter error";
@@ -246,7 +246,7 @@ std::string PricesCreateFunding(uint64_t txfee,uint256 bettoken,uint256 oracletx
 
 UniValue PricesInfo(uint256 fundingtxid)
 {
-    UniValue result(UniValue::VOBJ),a(UniValue::VARR); CPubKey pricespk,planpk; uint256 hashBlock,oracletxid,longtoken,shorttoken,bettoken; CTransaction vintx; int64_t balance,supply,exposure; uint64_t funding,mode; int32_t i,margin,maxleverage; char numstr[65],houseaddr[64],exposureaddr[64],str[65]; std::vector<CPubKey>pubkeys; struct CCcontract_info *cp,C;
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR); CPubKey pricespk,planpk; uint256 hashBlock,oracletxid,longtoken,shorttoken,bettoken; CTransaction vintx; int64_t balance,supply,exposure; uint64_t funding,mode; int32_t i,margin,maxleverage; char numstr[65],houseaddr[64],exposureaddr[64],str[65]; std::vector<CPubKey>pubkeys; struct CC_info *cp,C;
     cp = CCinit(&C,EVAL_PRICES);
     pricespk = GetUnspendable(cp,0);
     if ( GetTransaction(fundingtxid,vintx,hashBlock,false) == 0 )
@@ -295,7 +295,7 @@ UniValue PricesInfo(uint256 fundingtxid)
 std::string PricesAddFunding(uint64_t txfee,uint256 refbettoken,uint256 fundingtxid,int64_t amount)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    struct CCcontract_info *cp,C; CPubKey pricespk,planpk,mypk; uint256 hashBlock,oracletxid,longtoken,shorttoken,bettoken; CTransaction tx; int64_t balance,supply,exposure,inputs,CCchange = 0; uint64_t funding,mode; int32_t margin,maxleverage; char houseaddr[64],myaddr[64]; std::vector<CPubKey>pubkeys;
+    struct CC_info *cp,C; CPubKey pricespk,planpk,mypk; uint256 hashBlock,oracletxid,longtoken,shorttoken,bettoken; CTransaction tx; int64_t balance,supply,exposure,inputs,CCchange = 0; uint64_t funding,mode; int32_t margin,maxleverage; char houseaddr[64],myaddr[64]; std::vector<CPubKey>pubkeys;
     if ( amount < 10000 )
     {
         CCerror = "amount must be positive";
@@ -350,7 +350,7 @@ std::string PricesAddFunding(uint64_t txfee,uint256 refbettoken,uint256 fundingt
 std::string PricesBet(uint64_t txfee,uint256 refbettoken,uint256 fundingtxid,int64_t amount,int32_t leverage)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    struct CCcontract_info *cp,C; CPubKey pricespk,planpk,mypk; uint256 hashBlock,oracletxid,longtoken,shorttoken,tokenid,bettoken; CTransaction tx; int64_t balance,supply,exposure,inputs,inputs2,longexposure,netexposure,shortexposure,CCchange = 0,CCchange2 = 0; uint64_t funding,mode; int32_t dir,margin,maxleverage; char houseaddr[64],myaddr[64],exposureaddr[64]; std::vector<CPubKey>pubkeys;
+    struct CC_info *cp,C; CPubKey pricespk,planpk,mypk; uint256 hashBlock,oracletxid,longtoken,shorttoken,tokenid,bettoken; CTransaction tx; int64_t balance,supply,exposure,inputs,inputs2,longexposure,netexposure,shortexposure,CCchange = 0,CCchange2 = 0; uint64_t funding,mode; int32_t dir,margin,maxleverage; char houseaddr[64],myaddr[64],exposureaddr[64]; std::vector<CPubKey>pubkeys;
     if ( amount < 0 )
     {
         amount = -amount;

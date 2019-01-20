@@ -320,7 +320,7 @@ uint8_t DecodeGatewaysOpRet(const CScript &scriptPubKey)
     return(0);
 }
 
-int64_t IsGatewaysvout(struct CCcontract_info *cp,const CTransaction& tx,int32_t v)
+int64_t IsGatewaysvout(struct CC_info *cp,const CTransaction& tx,int32_t v)
 {
     char destaddr[64];
     if ( tx.vout[v].scriptPubKey.IsPayToCryptoCondition() != 0 )
@@ -331,7 +331,7 @@ int64_t IsGatewaysvout(struct CCcontract_info *cp,const CTransaction& tx,int32_t
     return(0);
 }
 
-bool GatewaysExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx,int32_t minage,uint64_t txfee)
+bool GatewaysExactAmounts(struct CC_info *cp,Eval* eval,const CTransaction &tx,int32_t minage,uint64_t txfee)
 {
     static uint256 zerohash;
     CTransaction vinTx; uint256 hashBlock,activehash; int32_t i,numvins,numvouts; int64_t inputs=0,outputs=0,assetoshis;
@@ -429,7 +429,7 @@ uint256 GatewaysReverseScan(uint256 &txid,int32_t height,uint256 reforacletxid,u
     return(zeroid);
 }
 
-int32_t GatewaysCointxidExists(struct CCcontract_info *cp,uint256 cointxid) // dont forget to check mempool!
+int32_t GatewaysCointxidExists(struct CC_info *cp,uint256 cointxid) // dont forget to check mempool!
 {
     char txidaddr[64]; std::string coin; int32_t numvouts; uint256 hashBlock;
     std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex;
@@ -515,7 +515,7 @@ int64_t GatewaysDepositval(CTransaction tx,CPubKey mypk)
     return(0);
 }
 
-bool GatewaysValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx, uint32_t nIn)
+bool GatewaysValidate(struct CC_info *cp,Eval *eval,const CTransaction &tx, uint32_t nIn)
 {
     int32_t numvins,numvouts,preventCCvins,preventCCvouts,i,numblocks,height,claimvout; bool retval; uint8_t funcid,hash[32],M,N,taddr,prefix,prefix2;
     char str[65],destaddr[64],depositaddr[65],validationError[512];
@@ -683,7 +683,7 @@ bool GatewaysValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &
 
 // helper functions for rpc calls in rpcwallet.cpp
 
-int64_t AddGatewaysInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,uint256 reftokenid,int64_t total,int32_t maxinputs)
+int64_t AddGatewaysInputs(struct CC_info *cp,CMutableTransaction &mtx,CPubKey pk,uint256 reftokenid,int64_t total,int32_t maxinputs)
 {
     char coinaddr[64],destaddr[64]; int64_t threshold,nValue,price,totalinputs = 0; uint256 tokenid,txid,hashBlock; std::vector<uint8_t> origpubkey; std::vector<uint8_t> vopret; CTransaction vintx; int32_t j,vout,n = 0; uint8_t evalcode,funcid;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
@@ -730,7 +730,7 @@ int64_t AddGatewaysInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CP
     return(totalinputs);
 }
 
-int32_t GatewaysBindExists(struct CCcontract_info *cp,CPubKey gatewayspk,uint256 reftokenid) // dont forget to check mempool!
+int32_t GatewaysBindExists(struct CC_info *cp,CPubKey gatewayspk,uint256 reftokenid) // dont forget to check mempool!
 {
     char markeraddr[64],depositaddr[64]; std::string coin; int32_t numvouts; int64_t totalsupply; uint256 tokenid,oracletxid,hashBlock; uint8_t M,N,taddr,prefix,prefix2; std::vector<CPubKey> pubkeys; CTransaction tx;
     std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex;
@@ -757,7 +757,7 @@ int32_t GatewaysBindExists(struct CCcontract_info *cp,CPubKey gatewayspk,uint256
 std::string GatewaysBind(uint64_t txfee,std::string coin,uint256 tokenid,int64_t totalsupply,uint256 oracletxid,uint8_t M,uint8_t N,std::vector<CPubKey> pubkeys)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    CTransaction oracletx; uint8_t taddr,prefix,prefix2; CPubKey mypk,gatewayspk; CScript opret; uint256 hashBlock; struct CCcontract_info *cp,C; std::string name,description,format; int32_t i,numvouts; int64_t fullsupply; char destaddr[64],coinaddr[64],str[65],*fstr;
+    CTransaction oracletx; uint8_t taddr,prefix,prefix2; CPubKey mypk,gatewayspk; CScript opret; uint256 hashBlock; struct CC_info *cp,C; std::string name,description,format; int32_t i,numvouts; int64_t fullsupply; char destaddr[64],coinaddr[64],str[65],*fstr;
     cp = CCinit(&C,EVAL_GATEWAYS);
     if ( strcmp((char *)"KMD",coin.c_str()) == 0 )
     {
@@ -844,7 +844,7 @@ std::string GatewaysDeposit(uint64_t txfee,uint256 bindtxid,int32_t height,std::
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     CTransaction bindtx; CPubKey mypk,gatewayspk; uint256 oracletxid,merkleroot,mhash,hashBlock,tokenid,txid;
-    int64_t totalsupply; int32_t i,m,n,numvouts; uint8_t M,N,taddr,prefix,prefix2; std::string coin; struct CCcontract_info *cp,C;
+    int64_t totalsupply; int32_t i,m,n,numvouts; uint8_t M,N,taddr,prefix,prefix2; std::string coin; struct CC_info *cp,C;
     std::vector<CPubKey> pubkeys,publishers; std::vector<uint256>txids; char str[67],depositaddr[64],txidaddr[64];
 
     cp = CCinit(&C,EVAL_GATEWAYS);
@@ -910,7 +910,7 @@ std::string GatewaysDeposit(uint64_t txfee,uint256 bindtxid,int32_t height,std::
 std::string GatewaysClaim(uint64_t txfee,uint256 bindtxid,std::string refcoin,uint256 deposittxid,CPubKey destpub,int64_t amount)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    CTransaction tx; CPubKey mypk,gatewayspk,tmpdestpub; struct CCcontract_info *cp,C; uint8_t M,N,taddr,prefix,prefix2;
+    CTransaction tx; CPubKey mypk,gatewayspk,tmpdestpub; struct CC_info *cp,C; uint8_t M,N,taddr,prefix,prefix2;
     std::string coin, deposithex; std::vector<CPubKey> msigpubkeys,publishers; int64_t totalsupply,depositamount,tmpamount,inputs,CCchange=0;
     int32_t numvouts,claimvout,height; std::vector<uint8_t> proof;
     uint256 hashBlock,tokenid,oracletxid,tmptxid,cointxid; char str[65],depositaddr[64],coinaddr[64],destaddr[64]; std::vector<uint256> txids;
@@ -985,8 +985,8 @@ std::string GatewaysWithdraw(uint64_t txfee,uint256 bindtxid,std::string refcoin
 	CPubKey mypk, gatewayspk; 
     uint256 tokenid,hashBlock,oracletxid; int32_t numvouts; int64_t totalsupply,inputs,CCchange=0; uint8_t M,N,taddr,prefix,prefix2; std::string coin;
     std::vector<CPubKey> msigpubkeys; char depositaddr[64],str[65],coinaddr[64];
-	struct CCcontract_info *cpGateways, gatewaysC;
-	struct CCcontract_info *cpTokens, tokensC;
+	struct CC_info *cpGateways, gatewaysC;
+	struct CC_info *cpTokens, tokensC;
 
     cpGateways = CCinit(&gatewaysC, EVAL_GATEWAYS);
 	cpTokens = CCinit(&tokensC, EVAL_TOKENS);
@@ -1049,7 +1049,7 @@ std::string GatewaysWithdraw(uint64_t txfee,uint256 bindtxid,std::string refcoin
 std::string GatewaysPartialSign(uint64_t txfee,uint256 txid,std::string refcoin, std::string hex)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    CPubKey mypk,txidaddrpk,signerpk; struct CCcontract_info *cp,C; CTransaction tx;
+    CPubKey mypk,txidaddrpk,signerpk; struct CC_info *cp,C; CTransaction tx;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs; char txidaddr[65];
     int32_t maxK,K=0; uint256 tmptxid,parttxid,hashBlock;
     cp = CCinit(&C,EVAL_GATEWAYS);
@@ -1089,7 +1089,7 @@ std::string GatewaysPartialSign(uint64_t txfee,uint256 txid,std::string refcoin,
 std::string GatewaysCompleteSigning(uint64_t txfee,uint256 withdrawtxid,std::string refcoin,std::string hex)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    CPubKey mypk,gatewayspk; struct CCcontract_info *cp,C; char txidaddr[65];
+    CPubKey mypk,gatewayspk; struct CC_info *cp,C; char txidaddr[65];
     cp = CCinit(&C,EVAL_GATEWAYS);
     mypk = pubkey2pk(Mypubkey());
     gatewayspk = GetUnspendable(cp,0);
@@ -1104,7 +1104,7 @@ std::string GatewaysCompleteSigning(uint64_t txfee,uint256 withdrawtxid,std::str
 std::string GatewaysMarkDone(uint64_t txfee,uint256 completetxid,std::string refcoin)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    CPubKey mypk,gatewayspk; struct CCcontract_info *cp,C; char txidaddr[65];
+    CPubKey mypk,gatewayspk; struct CC_info *cp,C; char txidaddr[65];
     cp = CCinit(&C,EVAL_GATEWAYS);
     mypk = pubkey2pk(Mypubkey());    
     if ( txfee == 0 )
@@ -1118,7 +1118,7 @@ UniValue GatewaysPendingWithdraws(uint256 bindtxid,std::string refcoin)
     UniValue result(UniValue::VOBJ),pending(UniValue::VARR); CTransaction tx; std::string tmprefcoin; CPubKey mypk,gatewayspk,withdrawpub; std::vector<CPubKey> msigpubkeys;
     uint256 hashBlock,tokenid,txid,oracletxid; uint8_t M,N,taddr,prefix,prefix2;
     char depositaddr[64],coinaddr[64],destaddr[64],str[65],withaddr[64],numstr[32],txidaddr[64],cctxidaddr[64],signeraddr[64];
-    int32_t i,n,numvouts,vout,queueflag; int64_t totalsupply,amount,nValue; struct CCcontract_info *cp,C;
+    int32_t i,n,numvouts,vout,queueflag; int64_t totalsupply,amount,nValue; struct CC_info *cp,C;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
 
     cp = CCinit(&C,EVAL_GATEWAYS);
@@ -1186,7 +1186,7 @@ UniValue GatewaysProcessedWithdraws(uint256 bindtxid,std::string refcoin)
     UniValue result(UniValue::VOBJ),processed(UniValue::VARR); CTransaction tx; std::string tmprefcoin,hex; CPubKey mypk,gatewayspk,withdrawpub; std::vector<CPubKey> msigpubkeys;
     uint256 withdrawtxid,hashBlock,txid,tokenid,oracletxid; uint8_t M,N,taddr,prefix,prefix2;
     char depositaddr[64],coinaddr[64],str[65],numstr[32],txidaddr[64],cctxidaddr[64],withaddr[64];
-    int32_t i,n,numvouts,vout,queueflag; int64_t totalsupply,nValue,amount; struct CCcontract_info *cp,C;
+    int32_t i,n,numvouts,vout,queueflag; int64_t totalsupply,nValue,amount; struct CC_info *cp,C;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
 
     cp = CCinit(&C,EVAL_GATEWAYS);
@@ -1278,7 +1278,7 @@ UniValue GatewaysMultisig(char *cctxidaddr)
 
 UniValue GatewaysList()
 {
-    UniValue result(UniValue::VARR); std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex; struct CCcontract_info *cp,C; uint256 txid,hashBlock,oracletxid,tokenid; CTransaction vintx; std::string coin; int64_t totalsupply; char str[65],depositaddr[64]; uint8_t M,N,taddr,prefix,prefix2; std::vector<CPubKey> pubkeys;
+    UniValue result(UniValue::VARR); std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex; struct CC_info *cp,C; uint256 txid,hashBlock,oracletxid,tokenid; CTransaction vintx; std::string coin; int64_t totalsupply; char str[65],depositaddr[64]; uint8_t M,N,taddr,prefix,prefix2; std::vector<CPubKey> pubkeys;
     cp = CCinit(&C,EVAL_GATEWAYS);
     SetCCtxids(addressIndex,cp->unspendableCCaddr);
     for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=addressIndex.begin(); it!=addressIndex.end(); it++)
@@ -1298,7 +1298,7 @@ UniValue GatewaysList()
 UniValue GatewaysInfo(uint256 bindtxid)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ),a(UniValue::VARR); std::string coin; char str[67],numstr[65],depositaddr[64],gatewaysassets[64]; uint8_t M,N; std::vector<CPubKey> pubkeys; uint8_t taddr,prefix,prefix2; uint256 tokenid,oracletxid,hashBlock; CTransaction tx; CPubKey Gatewayspk; struct CCcontract_info *cp,C; int32_t i; int64_t totalsupply,remaining;
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR); std::string coin; char str[67],numstr[65],depositaddr[64],gatewaysassets[64]; uint8_t M,N; std::vector<CPubKey> pubkeys; uint8_t taddr,prefix,prefix2; uint256 tokenid,oracletxid,hashBlock; CTransaction tx; CPubKey Gatewayspk; struct CC_info *cp,C; int32_t i; int64_t totalsupply,remaining;
     result.push_back(Pair("result","success"));
     result.push_back(Pair("name","Gateways"));
     cp = CCinit(&C,EVAL_GATEWAYS);

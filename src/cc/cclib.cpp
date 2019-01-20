@@ -27,54 +27,75 @@
 #include "core_io.h"
 #include "crosschain.h"
 
-#define FUNCNAME IsCClibInput
-#define EVALCODE EVAL_FIRSTUSER
-const char *CClibCCaddr = "RGLSRDnUqTB43bYtRtNVgmwSSd1sun2te8";
-const char *CClibNormaladdr = "RVVeUg43rNcq3mZFnvZ8yqagyzqFgUnq4u";
-char CClibCChexstr[67] = { "032447d97655da079729dc024c61088ea415b22f4c15d4810ddaf2069ac6468d2f" };
-uint8_t CClibCCpriv[32] = { 0x7c, 0x0b, 0x54, 0x9b, 0x65, 0xd4, 0x89, 0x57, 0xdf, 0x05, 0xfe, 0xa2, 0x62, 0x41, 0xa9, 0x09, 0x0f, 0x2a, 0x6b, 0x11, 0x2c, 0xbe, 0xbd, 0x06, 0x31, 0x8d, 0xc0, 0xb9, 0x96, 0x76, 0x3f, 0x24 };
-#include "CCcustom.inc"
-#undef FUNCNAME
-#undef EVALCODE
-
-
 struct CClib_rpcinfo
 {
     char *method,*help;
     int32_t numrequiredargs,maxargs; // frontloaded with required
-    uint8_t evalcode;
+    uint8_t funcid;
 }
-CClib_rpcs[] =
+CClib_methods[] =
 {
-    { "info", "<no args>", 0, 0, 0x10 },
+    { "faucet2_get", "<no args>", 0, 0, 'G' },
 };
 
 #define MYCCLIBNAME ((char *)"stub")
 
 char *CClib_name() { return(MYCCLIBNAME); }
 
-bool CClib_Dispatch(const CC *cond,Eval *eval,std::vector<uint8_t> paramsNull,const CTransaction &txTo,unsigned int nIn)
+std::string CClib_rawtxgen(struct CC_info *cp,uint8_t funcid,cJSON *params);
+
+UniValue CClib_info(struct CC_info *cp)
 {
-    uint8_t evalcode; int32_t height,from_mempool;
-    if ( ASSETCHAINS_CCLIB != MYCCLIBNAME )
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR); int32_t i; char str[2];
+    result.push_back(Pair("result","success"));
+    result.push_back(Pair("CClib",CClib_name()));
+    for (i=0; i<sizeof(CClib_methods)/sizeof(*CClib_methods); i++)
     {
-        fprintf(stderr,"-ac_cclib=%s vs myname %s\n",ASSETCHAINS_CCLIB.c_str(),MYCCLIBNAME);
-        return eval->Invalid("-ac_cclib name mismatches myname");
+        UniValue obj(UniValue::VOBJ);
+        if ( CClib_methods[i].funcid < ' ' || CClib_methods[i].funcid >= 128 )
+            obj.push_back(Pair("funcid",CClib_methods[i].funcid));
+        else
+        {
+            str[0] = CClib_methods[i].funcid;
+            str[1] = 0;
+            obj.push_back(Pair("funcid",str));
+        }
+        obj.push_back(Pair("name",CClib_methods[i].method));
+        obj.push_back(Pair("help",CClib_methods[i].help));
+        obj.push_back(Pair("params_required",CClib_methods[i].numrequiredargs));
+        obj.push_back(Pair("params_max",CClib_methods[i].maxargs));
+        a.push_back(obj));
     }
-    height = KOMODO_CONNECTING;
-    if ( KOMODO_CONNECTING < 0 ) // always comes back with > 0 for final confirmation
-        return(true);
-    if ( ASSETCHAINS_CC == 0 || (height & ~(1<<30)) < KOMODO_CCACTIVATE )
-        return eval->Invalid("CC are disabled or not active yet");
-    if ( (KOMODO_CONNECTING & (1<<30)) != 0 )
+    result.push_back(Pair("methods",a));
+    return(result);
+}
+
+UniValue CClib(struct CC_info *cp,char *method,cJSON *params)
+{
+    UniValue result(UniValue::VOBJ); int32_t i; std::string rawtx;
+    for (i=0; i<sizeof(CClib_methods)/sizeof(*CClib_methods); i++)
     {
-        from_mempool = 1;
-        height &= ((1<<30) - 1);
+        if ( strcmp(method,CClib_methods[i].method) == 0 )
+        {
+            result.push_back(Pair("result","success"));
+            result.push_back(Pair("method",CClib_methods[i].method));
+            rawtx = CClib_rawtxgen(cp,CClib_methods[i].funcid,params);
+            result.push_back(Pair("rawtx",rawtx));
+            return(result);
+        }
     }
-    evalcode = cond->code[0];
-    if ( evalcode >= EVAL_FIRSTUSER && evalcode <= EVAL_LASTUSER )
-    {
-        return(true);
-    }
-    return eval->Invalid("cclib CC must have evalcode between 16 and 127");
+    result.push_back(Pair("result","error"));
+    result.push_back(Pair("method",CClib_methods[i].method));
+    result.push_back(Pair("error","method not found"));
+    return(result);
+}
+
+bool CClib_validate(struct CC_info *cp,Eval *eval,const CTransaction &txTo,unsigned int nIn)
+{
+    return(true); // for now
+}
+
+std::string CClib_rawtxgen(struct CC_info *cp,uint8_t funcid,cJSON *params)
+{
+    return((char *)"deadbeef");
 }

@@ -22,7 +22,7 @@
 
 //#define EVAL_HEIR 0xea
 
-bool HeirValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn);
+bool HeirValidate(struct CC_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn);
 
 class CoinHelper;
 class TokenHelper;
@@ -36,6 +36,6 @@ UniValue HeirInfo(uint256 fundingtxid);
 UniValue HeirList();
 //std::string Heir_MakeBadTx(uint256 fundingtxid, uint8_t funcId, int64_t amount, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t inactivityTime, uint32_t errMask);
 
-//bool HeirExactTokenAmounts(bool compareTotals, struct CCcontract_info *cpHeir, Eval* eval, uint256 assetid, const CTransaction &tx);
+//bool HeirExactTokenAmounts(bool compareTotals, struct CC_info *cpHeir, Eval* eval, uint256 assetid, const CTransaction &tx);
 
 #endif

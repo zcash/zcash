@@ -21,7 +21,7 @@
 
 // start of consensus code
 
-int64_t IsAuctionvout(struct CCcontract_info *cp,const CTransaction& tx,int32_t v)
+int64_t IsAuctionvout(struct CC_info *cp,const CTransaction& tx,int32_t v)
 {
     char destaddr[64];
     if ( tx.vout[v].scriptPubKey.IsPayToCryptoCondition() != 0 )
@@ -32,7 +32,7 @@ int64_t IsAuctionvout(struct CCcontract_info *cp,const CTransaction& tx,int32_t 
     return(0);
 }
 
-bool AuctionExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx,int32_t minage,uint64_t txfee)
+bool AuctionExactAmounts(struct CC_info *cp,Eval* eval,const CTransaction &tx,int32_t minage,uint64_t txfee)
 {
     static uint256 zerohash;
     CTransaction vinTx; uint256 hashBlock,activehash; int32_t i,numvins,numvouts; int64_t inputs=0,outputs=0,assetoshis;
@@ -70,7 +70,7 @@ bool AuctionExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransactio
     else return(true);
 }
 
-bool AuctionValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
+bool AuctionValidate(struct CC_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
 {
     int32_t numvins,numvouts,preventCCvins,preventCCvouts,i; bool retval;
     return eval->Invalid("no validation yet");
@@ -118,7 +118,7 @@ bool AuctionValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
 
 // helper functions for rpc calls in rpcwallet.cpp
 
-int64_t AddAuctionInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,int64_t total,int32_t maxinputs)
+int64_t AddAuctionInputs(struct CC_info *cp,CMutableTransaction &mtx,CPubKey pk,int64_t total,int32_t maxinputs)
 {
     // add threshold check
     char coinaddr[64]; int64_t nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t n = 0;
@@ -151,7 +151,7 @@ int64_t AddAuctionInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPu
 std::string AuctionBid(uint64_t txfee,uint256 itemhash,int64_t amount)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    CPubKey mypk,Auctionpk; CScript opret; int64_t inputs,CCchange=0,nValue=COIN; struct CCcontract_info *cp,C;
+    CPubKey mypk,Auctionpk; CScript opret; int64_t inputs,CCchange=0,nValue=COIN; struct CC_info *cp,C;
     cp = CCinit(&C,EVAL_AUCTION);
     if ( txfee == 0 )
         txfee = 10000;
@@ -172,7 +172,7 @@ std::string AuctionBid(uint64_t txfee,uint256 itemhash,int64_t amount)
 std::string AuctionDeliver(uint64_t txfee,uint256 itemhash,uint256 bidtxid)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    CPubKey mypk,Auctionpk; CScript opret; int64_t inputs,CCchange=0,nValue=COIN; struct CCcontract_info *cp,C;
+    CPubKey mypk,Auctionpk; CScript opret; int64_t inputs,CCchange=0,nValue=COIN; struct CC_info *cp,C;
     cp = CCinit(&C,EVAL_AUCTION);
     if ( txfee == 0 )
         txfee = 10000;
@@ -193,7 +193,7 @@ std::string AuctionDeliver(uint64_t txfee,uint256 itemhash,uint256 bidtxid)
 std::string AuctionPost(uint64_t txfee,uint256 itemhash,int64_t minbid,char *title,char *description)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    CPubKey mypk,Auctionpk; int64_t funds = 0; CScript opret; struct CCcontract_info *cp,C;
+    CPubKey mypk,Auctionpk; int64_t funds = 0; CScript opret; struct CC_info *cp,C;
     cp = CCinit(&C,EVAL_AUCTION);
     if ( txfee == 0 )
         txfee = 10000;

@@ -23,7 +23,7 @@
 
 // start of consensus code
 
-int64_t IsFSMvout(struct CCcontract_info *cp,const CTransaction& tx,int32_t v)
+int64_t IsFSMvout(struct CC_info *cp,const CTransaction& tx,int32_t v)
 {
     char destaddr[64];
     if ( tx.vout[v].scriptPubKey.IsPayToCryptoCondition() != 0 )
@@ -34,7 +34,7 @@ int64_t IsFSMvout(struct CCcontract_info *cp,const CTransaction& tx,int32_t v)
     return(0);
 }
 
-bool FSMExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx,int32_t minage,uint64_t txfee)
+bool FSMExactAmounts(struct CC_info *cp,Eval* eval,const CTransaction &tx,int32_t minage,uint64_t txfee)
 {
     static uint256 zerohash;
     CTransaction vinTx; uint256 hashBlock,activehash; int32_t i,numvins,numvouts; int64_t inputs=0,outputs=0,assetoshis;
@@ -72,7 +72,7 @@ bool FSMExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
     else return(true);
 }
 
-bool FSMValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
+bool FSMValidate(struct CC_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
 {
     int32_t numvins,numvouts,preventCCvins,preventCCvouts,i; bool retval;
     return eval->Invalid("no validation yet");
@@ -120,7 +120,7 @@ bool FSMValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, u
 
 // helper functions for rpc calls in rpcwallet.cpp
 
-int64_t AddFSMInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,int64_t total,int32_t maxinputs)
+int64_t AddFSMInputs(struct CC_info *cp,CMutableTransaction &mtx,CPubKey pk,int64_t total,int32_t maxinputs)
 {
     // add threshold check
     char coinaddr[64]; int64_t nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t n = 0;
@@ -158,7 +158,7 @@ std::string FSMList()
 std::string FSMCreate(uint64_t txfee,std::string name,std::string states)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    CPubKey mypk,fsmpk; CScript opret; int64_t inputs,CCchange=0,nValue=COIN; struct CCcontract_info *cp,C;
+    CPubKey mypk,fsmpk; CScript opret; int64_t inputs,CCchange=0,nValue=COIN; struct CC_info *cp,C;
     cp = CCinit(&C,EVAL_FSM);
     if ( txfee == 0 )
         txfee = 10000;
@@ -179,7 +179,7 @@ std::string FSMCreate(uint64_t txfee,std::string name,std::string states)
 std::string FSMInfo(uint256 fsmtxid)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    CPubKey mypk,fsmpk; int64_t funds = 0; CScript opret; struct CCcontract_info *cp,C;
+    CPubKey mypk,fsmpk; int64_t funds = 0; CScript opret; struct CC_info *cp,C;
     cp = CCinit(&C,EVAL_FSM);
     mypk = pubkey2pk(Mypubkey());
     fsmpk = GetUnspendable(cp,0);

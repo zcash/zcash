@@ -17,7 +17,7 @@
 //#include "CCtokens.h"
 
 
-int64_t AddAssetInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,uint256 assetid,int64_t total,int32_t maxinputs)
+int64_t AddAssetInputs(struct CC_info *cp,CMutableTransaction &mtx,CPubKey pk,uint256 assetid,int64_t total,int32_t maxinputs)
 {
     char coinaddr[64],destaddr[64]; int64_t threshold,nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t j,vout,n = 0;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
@@ -72,13 +72,13 @@ UniValue AssetOrders(uint256 refassetid)
 	UniValue result(UniValue::VARR);  
 	std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputsTokens, unspentOutputsAssets;
 	
-	struct CCcontract_info *cpTokens, tokensC;
-	struct CCcontract_info *cpAssets, assetsC;
+	struct CC_info *cpTokens, tokensC;
+	struct CC_info *cpAssets, assetsC;
 
 	cpTokens = CCinit(&tokensC, EVAL_TOKENS);
 	cpAssets = CCinit(&assetsC, EVAL_ASSETS);
 
-	auto addOrders = [&](struct CCcontract_info *cp, std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it)
+	auto addOrders = [&](struct CC_info *cp, std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it)
 	{
 		uint256 txid, hashBlock, assetid, assetid2;
 		int64_t price;
@@ -189,7 +189,7 @@ UniValue AssetOrders(uint256 refassetid)
 /* std::string CreateAsset(int64_t txfee,int64_t assetsupply,std::string name,std::string description)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    CPubKey mypk; struct CCcontract_info *cp,C;
+    CPubKey mypk; struct CC_info *cp,C;
     if ( assetsupply < 0 )
     {
         fprintf(stderr,"negative assetsupply %lld\n",(long long)assetsupply);
@@ -217,7 +217,7 @@ UniValue AssetOrders(uint256 refassetid)
 /* std::string AssetTransfer(int64_t txfee,uint256 assetid,std::vector<uint8_t> destpubkey,int64_t total)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    CPubKey mypk; uint64_t mask; int64_t CCchange=0,inputs=0;  struct CCcontract_info *cp,C;
+    CPubKey mypk; uint64_t mask; int64_t CCchange=0,inputs=0;  struct CC_info *cp,C;
     if ( total < 0 )
     {
         fprintf(stderr,"negative total %lld\n",(long long)total);
@@ -259,7 +259,7 @@ UniValue AssetOrders(uint256 refassetid)
 /* std::string AssetConvert(int64_t txfee,uint256 assetid,std::vector<uint8_t> destpubkey,int64_t total,int32_t evalcode)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    CPubKey mypk; int64_t CCchange=0,inputs=0;  struct CCcontract_info *cp,C;
+    CPubKey mypk; int64_t CCchange=0,inputs=0;  struct CC_info *cp,C;
     if ( total < 0 )
     {
         fprintf(stderr,"negative total %lld\n",(long long)total);
@@ -288,7 +288,7 @@ std::string CreateBuyOffer(int64_t txfee, int64_t bidamount, uint256 assetid, in
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     CPubKey mypk; 
-	struct CCcontract_info *cpAssets, C; 
+	struct CC_info *cpAssets, C; 
 	uint256 hashBlock; 
 	CTransaction vintx; 
 	std::vector<uint8_t> origpubkey; 
@@ -349,8 +349,8 @@ std::string CreateSell(int64_t txfee,int64_t askamount,uint256 assetid,int64_t p
 	uint64_t mask; 
 	int64_t inputs, CCchange; 
 	CScript opret; 
-	struct CCcontract_info *cpAssets, assetsC;
-	struct CCcontract_info *cpTokens, tokensC;
+	struct CC_info *cpAssets, assetsC;
+	struct CC_info *cpTokens, tokensC;
 
 	//std::cerr << "CreateSell() askamount=" << askamount << " pricetotal=" << pricetotal << std::endl;
 
@@ -408,7 +408,7 @@ std::string CreateSell(int64_t txfee,int64_t askamount,uint256 assetid,int64_t p
 std::string CreateSwap(int64_t txfee,int64_t askamount,uint256 assetid,uint256 assetid2,int64_t pricetotal)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    CPubKey mypk; uint64_t mask; int64_t inputs,CCchange; CScript opret; struct CCcontract_info *cp,C;
+    CPubKey mypk; uint64_t mask; int64_t inputs,CCchange; CScript opret; struct CC_info *cp,C;
 
 	////////////////////////// NOT IMPLEMENTED YET/////////////////////////////////
     fprintf(stderr,"asset swaps disabled\n");
@@ -482,7 +482,7 @@ std::string CancelBuyOffer(int64_t txfee,uint256 assetid,uint256 bidtxid)
 	uint256 hashBlock; 
 	int64_t bidamount; 
 	CPubKey mypk; 
-	struct CCcontract_info *cpAssets, C;
+	struct CC_info *cpAssets, C;
 
 	uint8_t dummyEvalCode; uint256 dummyAssetid, dummyAssetid2; int64_t dummyPrice; std::vector<uint8_t> dummyOrigpubkey;
 
@@ -526,7 +526,7 @@ std::string CancelSell(int64_t txfee,uint256 assetid,uint256 asktxid)
 	uint256 hashBlock; 
 	int64_t askamount; 
 	CPubKey mypk; 
-    struct CCcontract_info *cpTokens, *cpAssets, tokensC, assetsC;
+    struct CC_info *cpTokens, *cpAssets, tokensC, assetsC;
 
 	uint8_t dummyEvalCode; uint256 dummyAssetid, dummyAssetid2; int64_t dummyPrice; std::vector<uint8_t> dummyOrigpubkey;
 
@@ -592,8 +592,8 @@ std::string FillBuyOffer(int64_t txfee,uint256 assetid,uint256 bidtxid,int64_t f
 	int32_t bidvout=0; 
 	uint64_t mask; 
 	int64_t origprice, bidamount, paid_amount, remaining_required, inputs, CCchange=0; 
-	struct CCcontract_info *cpTokens, tokensC;
-	struct CCcontract_info *cpAssets, assetsC;
+	struct CC_info *cpTokens, tokensC;
+	struct CC_info *cpAssets, assetsC;
 
     if (fillamount < 0)
     {
@@ -676,8 +676,8 @@ std::string FillSell(int64_t txfee, uint256 assetid, uint256 assetid2, uint256 a
 	uint64_t mask = 0; 
 	int32_t askvout = 0; 
 	int64_t received_assetoshis, total_nValue, orig_assetoshis, paid_nValue, remaining_nValue, inputs, CCchange=0; 
-	//struct CCcontract_info *cpTokens, tokensC;
-	struct CCcontract_info *cpAssets, assetsC;
+	//struct CC_info *cpTokens, tokensC;
+	struct CC_info *cpAssets, assetsC;
 
     if (fillunits < 0)
     {
