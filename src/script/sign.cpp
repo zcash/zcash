@@ -136,7 +136,7 @@ std::vector<CCcontract_info> &GetCryptoConditions()
     return vCC;
 }
 
-bool GetCCByUnspendableAddress(struct CCcontract_info *cp, char *addrstr)
+bool GetCCByUnspendableAddress(struct CC_info *cp, char *addrstr)
 {
     std::vector<CCcontract_info> &vCC = GetCryptoConditions();
     bool found = false;
