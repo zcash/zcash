@@ -15,7 +15,10 @@ from cryptoconditions import assert_success, assert_error, generate_random_strin
 class CryptoconditionsTokenTest(CryptoconditionsTestFramework):
 
     def run_token_tests(self):
-        rpc    = self.nodes[0]
+
+        rpc  = self.nodes[0]
+        rpc1 = self.nodes[1]
+
         result = rpc.tokenaddress()
         assert_success(result)
         for x in ['TokensCCaddress', 'myCCaddress', 'Tokensmarker', 'myaddress']:
@@ -139,10 +142,23 @@ class CryptoconditionsTokenTest(CryptoconditionsTestFramework):
         # checking ask cancellation
         testorder = rpc.tokenask("100", tokenid, "7.77")
         testorderid = self.send_and_mine(testorder['hex'], rpc)
+        # from other node
+        rpc.sendtoaddress(rpc1.getnewaddress(), 1)
+        rpc.sendtoaddress(rpc1.getnewaddress(), 1)
+        rpc.generate(2)
+        self.sync_all()
+        result = rpc1.getbalance()
+        assert_greater_than(result, 0.1)
+
+        result = rpc1.tokencancelask(tokenid, testorderid)
+        assert_error(result)
+
+        # from valid node
         cancel = rpc.tokencancelask(tokenid, testorderid)
         self.send_and_mine(cancel["hex"], rpc)
         result = rpc.tokenorders()
         assert_equal(result, [])
+
 
         # invalid numtokens bid
         result = rpc.tokenbid("-1", tokenid, "1")
@@ -192,6 +208,15 @@ class CryptoconditionsTokenTest(CryptoconditionsTestFramework):
         # checking bid cancellation
         testorder = rpc.tokenbid("100", tokenid, "7.77")
         testorderid = self.send_and_mine(testorder['hex'], rpc)
+
+        # from other node
+        result = rpc1.getbalance()
+        assert_greater_than(result, 0.1)
+
+        result = rpc1.tokencancelbid(tokenid, testorderid)
+        assert_error(result)
+
+        # from valid node
         cancel = rpc.tokencancelbid(tokenid, testorderid)
         self.send_and_mine(cancel["hex"], rpc)
         result = rpc.tokenorders()
