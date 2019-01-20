@@ -38,7 +38,7 @@ CClib_methods[] =
     { "faucet2_get", "<no args>", 0, 0, 'G' },
 };
 
-#define MYCCLIBNAME ((char *)"stub")
+std::string MYCCLIBNAME = (char *)"stub";
 
 char *CClib_name() { return(MYCCLIBNAME); }
 

@@ -645,7 +645,7 @@ bool CClib_Dispatch(const CC *cond,Eval *eval,std::vector<uint8_t> paramsNull,co
     uint8_t evalcode; int32_t height,from_mempool; struct CC_info *cp;
     if ( ASSETCHAINS_CCLIB != MYCCLIBNAME )
     {
-        fprintf(stderr,"-ac_cclib=%s vs myname %s\n",ASSETCHAINS_CCLIB.c_str(),MYCCLIBNAME);
+        fprintf(stderr,"-ac_cclib=%s vs myname %s\n",ASSETCHAINS_CCLIB.c_str(),MYCCLIBNAME.c_str());
         return eval->Invalid("-ac_cclib name mismatches myname");
     }
     height = KOMODO_CONNECTING;
