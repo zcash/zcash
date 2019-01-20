@@ -27,6 +27,28 @@
 #include "core_io.h"
 #include "crosschain.h"
 
+#define FUNCNAME IsCClibInput
+#define EVALCODE EVAL_FIRSTUSER
+const char *CClibCCaddr = "RGLSRDnUqTB43bYtRtNVgmwSSd1sun2te8";
+const char *CClibNormaladdr = "RVVeUg43rNcq3mZFnvZ8yqagyzqFgUnq4u";
+char CClibCChexstr[67] = { "032447d97655da079729dc024c61088ea415b22f4c15d4810ddaf2069ac6468d2f" };
+uint8_t CClibCCpriv[32] = { 0x7c, 0x0b, 0x54, 0x9b, 0x65, 0xd4, 0x89, 0x57, 0xdf, 0x05, 0xfe, 0xa2, 0x62, 0x41, 0xa9, 0x09, 0x0f, 0x2a, 0x6b, 0x11, 0x2c, 0xbe, 0xbd, 0x06, 0x31, 0x8d, 0xc0, 0xb9, 0x96, 0x76, 0x3f, 0x24 };
+#include "CCcustom.inc"
+#undef FUNCNAME
+#undef EVALCODE
+
+
+struct CClib_rpcinfo
+{
+    char *method,*help;
+    int32_t numrequiredargs,maxargs; // frontloaded with required
+    uint8_t evalcode;
+}
+CClib_rpcs[] =
+{
+    { "info", "<no args>", 0, 0, 0x10 },
+};
+
 #define MYCCLIBNAME ((char *)"stub")
 
 char *CClib_name() { return(MYCCLIBNAME); }
