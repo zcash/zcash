@@ -1151,7 +1151,12 @@ uint64_t komodo_commission(const CBlock *pblock,int32_t height)
         if ( ASSETCHAINS_FOUNDERS > 1 )
         {
             if ( (height % ASSETCHAINS_FOUNDERS) == 0 )
-                commission = commission * ASSETCHAINS_FOUNDERS;
+            {
+                if ( ASSETCHAINS_FOUNDERS_REWARD == 0 )
+                    commission = commission * ASSETCHAINS_FOUNDERS;
+                else
+                    commission = ASSETCHAINS_FOUNDERS_REWARD;
+            }
             else commission = 0;
         }
     }
@@ -1820,15 +1825,15 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
                 } else
                 {
                     // I think this means the block is valid PoW. We need to set the pindex->segid here.
-                    failed = 0; 
-                    CBlockIndex *pindex; 
+                    failed = 0;
+                    CBlockIndex *pindex;
                     BlockMap::const_iterator it = mapBlockIndex.find(pblock->GetHash());
                     pindex = it != mapBlockIndex.end() ? it->second : NULL;
                     if ( pindex != 0 && height > 100 && pindex->segid == -2  ) {
                         pindex->segid = -1;
                         //fprintf(stderr,"PoW block detected set segid.%d <- %d\n",height,pindex->segid);
                     }
-                } 
+                }
             }
         }
         else if ( is_PoSblock < 0 )
