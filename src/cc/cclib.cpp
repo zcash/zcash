@@ -37,13 +37,13 @@ struct CClib_rpcinfo
 }
 CClib_methods[] =
 {
-    { "faucet2_fund", "amount", 1, 1, 'F' },
-    { "faucet2_get", "<no args>", 0, 0, 'G' },
+    { (char *)"faucet2_fund", (char *)"amount", 1, 1, 'F' },
+    { (char *)"faucet2_get", (char *)"<no args>", 0, 0, 'G' },
 };
 
-std::string MYCCLIBNAME = (char *)"stub";
+std::string MYCCLIBNAME = (char *)"faucet2";
 
-char *CClib_name() { return(MYCCLIBNAME); }
+char *CClib_name() { return(MYCCLIBNAME.c_str()); }
 
 std::string CClib_rawtxgen(struct CCcontract_info *cp,uint8_t funcid,cJSON *params);
 
@@ -67,7 +67,7 @@ UniValue CClib_info(struct CCcontract_info *cp)
         obj.push_back(Pair("help",CClib_methods[i].help));
         obj.push_back(Pair("params_required",CClib_methods[i].numrequiredargs));
         obj.push_back(Pair("params_max",CClib_methods[i].maxargs));
-        a.push_back(obj));
+        a.push_back(obj);
     }
     result.push_back(Pair("methods",a));
     return(result);
@@ -134,7 +134,7 @@ bool CClibExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction 
         if ( (assetoshis= IsCClibvout(cp,tx,i)) != 0 )
             outputs += assetoshis;
     }
-    if ( inputs != outputs+FAUCETSIZE+txfee )
+    if ( inputs != outputs+FAUCET2SIZE+txfee )
     {
         fprintf(stderr,"inputs %llu vs outputs %llu\n",(long long)inputs,(long long)outputs);
         return eval->Invalid("mismatched inputs != outputs + FAUCET2SIZE + txfee");
@@ -142,7 +142,7 @@ bool CClibExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction 
     else return(true);
 }
 
-bool CClib_validate(struct CCcontract_info *cp,Eval *eval,const CTransaction &txTo,unsigned int nIn)
+bool CClib_validate(struct CCcontract_info *cp,Eval *eval,const CTransaction tx,unsigned int nIn)
 {
     int32_t numvins,numvouts,preventCCvins,preventCCvouts,i,numblocks; bool retval; uint256 txid; uint8_t hash[32]; char str[65],destaddr[64];
     std::vector<std::pair<CAddressIndexKey, CAmount> > txids;
@@ -276,7 +276,7 @@ std::string CClib_rawtxgen(struct CCcontract_info *cp,uint8_t funcid,cJSON *para
     {
         if ( cJSON_GetArraySize(params) > 0 )
         {
-            funds = (int64_t)jdouble(jarrayi(params,0))*COIN + 0.0000000049;
+            funds = (int64_t)jdouble(jitem(params,0))*COIN + 0.0000000049;
             return(Faucet2Fund(cp,0,funds));
         } else return("");
     }
