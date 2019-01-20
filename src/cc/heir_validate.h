@@ -123,13 +123,13 @@ public:
 class CValidatorBase
 {
 public:
-    CValidatorBase(CCcontract_info* cp) : m_cp(cp) {}
+    CValidatorBase(CC_info* cp) : m_cp(cp) {}
     virtual bool isVinValidator() const = 0;
     virtual bool validateVin(CTxIn vin, CTxOut prevVout, std::string& message) const = 0;
     virtual bool validateVout(CTxOut vout, std::string& message) const = 0;
     
 protected:
-    CCcontract_info * m_cp;
+    CC_info * m_cp;
 };
 
 /**
@@ -138,11 +138,11 @@ protected:
 class CInputIdentifierBase
 {
 public:
-    CInputIdentifierBase(CCcontract_info* cp) : m_cp(cp) {}
+    CInputIdentifierBase(CC_info* cp) : m_cp(cp) {}
     virtual std::string inputName() const = 0;
     virtual bool identifyInput(CTxIn vin) const = 0;
 protected:
-    CCcontract_info * m_cp;
+    CC_info * m_cp;
 };
 
 /**
@@ -375,7 +375,7 @@ private:
 
 class CNormalInputIdentifier : CInputIdentifierBase  {
 public:
-    CNormalInputIdentifier(CCcontract_info* cp) : CInputIdentifierBase(cp) {}
+    CNormalInputIdentifier(CC_info* cp) : CInputIdentifierBase(cp) {}
     virtual std::string inputName() const { return std::string("normal input"); }
     virtual bool identifyInput(CTxIn vin) const {
         return !IsCCInput(vin.scriptSig);
@@ -384,7 +384,7 @@ public:
 
 class CCCInputIdentifier : CInputIdentifierBase {
 public:
-    CCCInputIdentifier(CCcontract_info* cp) : CInputIdentifierBase(cp) {}
+    CCCInputIdentifier(CC_info* cp) : CInputIdentifierBase(cp) {}
     virtual std::string inputName() const { return std::string("CC input"); }
     virtual bool identifyInput(CTxIn vin) const {
         return IsCCInput(vin.scriptSig);
@@ -398,7 +398,7 @@ public:
 template <class Helper> class CCC1of2AddressValidator : CValidatorBase
 {
 public:
-    CCC1of2AddressValidator(CCcontract_info* cp, CScript opRetScript, std::string customMessage = "") :
+    CCC1of2AddressValidator(CC_info* cp, CScript opRetScript, std::string customMessage = "") :
     m_fundingOpretScript(opRetScript), m_customMessage(customMessage), CValidatorBase(cp) {}
     
     virtual bool isVinValidator() const { return false; }
@@ -452,7 +452,7 @@ private:
 template <class Helper> class CMyPubkeyVoutValidator : CValidatorBase
 {
 public:
-    CMyPubkeyVoutValidator(CCcontract_info* cp, CScript opRetScript, bool checkNormals)
+    CMyPubkeyVoutValidator(CC_info* cp, CScript opRetScript, bool checkNormals)
     : m_fundingOpretScript(opRetScript), m_checkNormals(checkNormals), CValidatorBase(cp) {	}
     
     virtual bool isVinValidator() const { return false; }
@@ -512,7 +512,7 @@ private:
 template <class Helper> class CHeirSpendValidator : CValidatorBase
 {
 public:
-    CHeirSpendValidator(CCcontract_info* cp, CScript opRetScript, uint256 latesttxid, uint8_t isHeirSpendingBegan)
+    CHeirSpendValidator(CC_info* cp, CScript opRetScript, uint256 latesttxid, uint8_t isHeirSpendingBegan)
     : m_fundingOpretScript(opRetScript), m_latesttxid(latesttxid), m_isHeirSpendingBegan(isHeirSpendingBegan), CValidatorBase(cp) {}
     
     virtual bool isVinValidator() const { return false; }
@@ -568,7 +568,7 @@ private:
 template <class Helper> class COpRetValidator : CValidatorBase
 {
 public:
-    COpRetValidator(CCcontract_info* cp, CScript opret)
+    COpRetValidator(CC_info* cp, CScript opret)
     : m_fundingOpretScript(opret), CValidatorBase(cp) {}
     
     virtual bool isVinValidator() const { return false; }
@@ -619,7 +619,7 @@ private:
 template <class Helper> class CNullValidator : CValidatorBase
 {
 public:
-    CNullValidator(CCcontract_info* cp)
+    CNullValidator(CC_info* cp)
     : CValidatorBase(cp) {	}
     
     virtual bool isVinValidator() const { return false; }
