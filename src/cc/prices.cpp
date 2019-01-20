@@ -89,7 +89,7 @@ uint8_t DecodePricesFundingOpRet(CScript scriptPubKey,CPubKey &planpk,uint256 &o
 bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
 {
     int32_t numvins,numvouts,preventCCvins,preventCCvouts,i,numblocks; bool retval; uint256 txid; uint8_t hash[32]; char str[65],destaddr[64];
-    return(false);
+    return eval->Invalid("no validation yet");
     std::vector<std::pair<CAddressIndexKey, CAmount> > txids;
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
@@ -326,7 +326,11 @@ std::string PricesAddFunding(uint64_t txfee,uint256 refbettoken,uint256 fundingt
                     CCchange = (inputs - amount);
                 mtx.vout.push_back(MakeCC1vout(cp->evalcode,CCchange,mypk));
                 // add addr2
-                return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeAssetOpRet('t',bettoken,zeroid,0,Mypubkey())));
+
+				std::vector<CPubKey> voutTokenPubkeysEmpty; //TODO: add token vout pubkeys
+                return(FinalizeCCTx(0,cp,mtx,mypk,txfee,
+					EncodeTokenOpRet(bettoken, voutTokenPubkeysEmpty,
+						EncodeAssetOpRet('t',/*bettoken,*/zeroid, 0, Mypubkey()))));
             }
             else
             {
