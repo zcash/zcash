@@ -21,7 +21,7 @@
 
 #define EVAL_LOTTO 0xe9
 
-bool LottoValidate(struct CC_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn);
+bool LottoValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn);
 
 UniValue LottoInfo(uint256 lottoid);
 UniValue LottoList();

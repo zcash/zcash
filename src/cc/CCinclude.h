@@ -88,7 +88,7 @@ struct CC_meta
     // followed by address destinations
 };
 
-struct CC_info
+struct CCcontract_info
 {
 	// this is for spending from 'unspendable' CC address
 	uint8_t evalcode;
@@ -111,13 +111,12 @@ struct CC_info
 	uint8_t unspendablepriv2[32], unspendablepriv3[32];
     CPubKey unspendablepk2,       unspendablepk3;
 
-    bool (*validate)(struct CC_info *cp, Eval* eval, const CTransaction &tx, uint32_t nIn);  // cc contract tx validation callback
+    bool (*validate)(struct CCcontract_info *cp, Eval* eval, const CTransaction &tx, uint32_t nIn);  // cc contract tx validation callback
     bool (*ismyvin)(CScript const& scriptSig);	// checks if evalcode is present in the scriptSig param
 
     uint8_t didinit;
 };
-typedef struct CC_info CCcontract_info;
-struct CC_info *CCinit(struct CC_info *cp,uint8_t evalcode);
+struct CCcontract_info *CCinit(struct CCcontract_info *cp,uint8_t evalcode);
 
 struct oracleprice_info
 {
@@ -135,7 +134,7 @@ CBlockIndex *komodo_getblockindex(uint256 hash);
 int32_t komodo_nextheight();
 
 int32_t CCgetspenttxid(uint256 &spenttxid,int32_t &vini,int32_t &height,uint256 txid,int32_t vout);
-void CCclearvars(struct CC_info *cp);
+void CCclearvars(struct CCcontract_info *cp);
 
 static const uint256 zeroid;
 bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock);
@@ -159,9 +158,9 @@ uint8_t DecodeOraclesCreateOpRet(const CScript &scriptPubKey,std::string &name,s
 uint256 OracleMerkle(int32_t height,uint256 reforacletxid,char *format,std::vector<struct oracle_merklepair>publishers);
 uint256 OraclesBatontxid(uint256 oracletxid,CPubKey pk);
 
-//int64_t AddAssetInputs(struct CC_info *cp,CMutableTransaction &mtx,CPubKey pk,uint256 assetid,int64_t total,int32_t maxinputs);
-int64_t AddTokenCCInputs(struct CC_info *cp, CMutableTransaction &mtx, CPubKey pk, uint256 tokenid, int64_t total, int32_t maxinputs);
-int64_t IsTokensvout(bool goDeeper, bool checkPubkeys, struct CC_info *cp, Eval* eval, const CTransaction& tx, int32_t v, uint256 reftokenid);
+//int64_t AddAssetInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,uint256 assetid,int64_t total,int32_t maxinputs);
+int64_t AddTokenCCInputs(struct CCcontract_info *cp, CMutableTransaction &mtx, CPubKey pk, uint256 tokenid, int64_t total, int32_t maxinputs);
+int64_t IsTokensvout(bool goDeeper, bool checkPubkeys, struct CCcontract_info *cp, Eval* eval, const CTransaction& tx, int32_t v, uint256 reftokenid);
 
 bool DecodeHexTx(CTransaction& tx, const std::string& strHexTx);
 CScript EncodeAssetOpRet(uint8_t assetFuncId, uint256 assetid2, int64_t price, std::vector<uint8_t> origpubkey);
@@ -179,7 +178,7 @@ int32_t oracle_format(uint256 *hashp,int64_t *valp,char *str,uint8_t fmt,uint8_t
 
 
 // CCcustom
-CPubKey GetUnspendable(struct CC_info *cp,uint8_t *unspendablepriv);
+CPubKey GetUnspendable(struct CCcontract_info *cp,uint8_t *unspendablepriv);
 
 // CCutils
 CPubKey buf2pk(uint8_t *buf33);
@@ -190,19 +189,19 @@ CTxOut MakeCC1of2vout(uint8_t evalcode,CAmount nValue,CPubKey pk,CPubKey pk2);
 CC *MakeCCcond1(uint8_t evalcode,CPubKey pk);
 CC *MakeCCcond1of2(uint8_t evalcode,CPubKey pk1,CPubKey pk2);
 CC* GetCryptoCondition(CScript const& scriptSig);
-void CCaddr2set(struct CC_info *cp,uint8_t evalcode,CPubKey pk,uint8_t *priv,char *coinaddr);
-void CCaddr3set(struct CC_info *cp,uint8_t evalcode,CPubKey pk,uint8_t *priv,char *coinaddr);
-void CCaddr1of2set(struct CC_info *cp, CPubKey pk1, CPubKey pk2, char *coinaddr);
+void CCaddr2set(struct CCcontract_info *cp,uint8_t evalcode,CPubKey pk,uint8_t *priv,char *coinaddr);
+void CCaddr3set(struct CCcontract_info *cp,uint8_t evalcode,CPubKey pk,uint8_t *priv,char *coinaddr);
+void CCaddr1of2set(struct CCcontract_info *cp, CPubKey pk1, CPubKey pk2, char *coinaddr);
 
 CTxOut MakeTokensCC1of2vout(uint8_t evalcode, CAmount nValue, CPubKey pk1, CPubKey pk2);
 CTxOut MakeTokensCC1vout(uint8_t evalcode, CAmount nValue, CPubKey pk);
 CC *MakeTokensCCcond1of2(uint8_t evalcode, CPubKey pk1, CPubKey pk2);
 CC *MakeTokensCCcond1(uint8_t evalcode, CPubKey pk);
 
-bool GetTokensCCaddress(struct CC_info *cp, char *destaddr, CPubKey pk);
-bool GetTokensCCaddress1of2(struct CC_info *cp, char *destaddr, CPubKey pk, CPubKey pk2);
-void CCaddrTokens1of2set(struct CC_info *cp, CPubKey pk1, CPubKey pk2, char *coinaddr);
-int32_t CClib_initcp(struct CC_info *cp,uint8_t evalcode);
+bool GetTokensCCaddress(struct CCcontract_info *cp, char *destaddr, CPubKey pk);
+bool GetTokensCCaddress1of2(struct CCcontract_info *cp, char *destaddr, CPubKey pk, CPubKey pk2);
+void CCaddrTokens1of2set(struct CCcontract_info *cp, CPubKey pk1, CPubKey pk2, char *coinaddr);
+int32_t CClib_initcp(struct CCcontract_info *cp,uint8_t evalcode);
 
 bool IsCCInput(CScript const& scriptSig);
 int32_t unstringbits(char *buf,uint64_t bits);
@@ -217,8 +216,8 @@ int64_t CCfullsupply(uint256 tokenid);
 int64_t CCtoken_balance(char *destaddr,uint256 tokenid);
 int64_t CCtoken_balance2(char *destaddr,uint256 tokenid);
 bool _GetCCaddress(char *destaddr,uint8_t evalcode,CPubKey pk);
-bool GetCCaddress(struct CC_info *cp,char *destaddr,CPubKey pk);
-bool GetCCaddress1of2(struct CC_info *cp,char *destaddr,CPubKey pk,CPubKey pk2);
+bool GetCCaddress(struct CCcontract_info *cp,char *destaddr,CPubKey pk);
+bool GetCCaddress1of2(struct CCcontract_info *cp,char *destaddr,CPubKey pk,CPubKey pk2);
 bool ConstrainVout(CTxOut vout,int32_t CCflag,char *cmpaddr,int64_t nValue);
 bool PreventCC(Eval* eval,const CTransaction &tx,int32_t preventCCvins,int32_t numvins,int32_t preventCCvouts,int32_t numvouts);
 bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey);
@@ -230,7 +229,7 @@ CPubKey check_signing_pubkey(CScript scriptSig);
 // CCtx
 bool SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const CScript scriptPubKey);
 extern std::vector<CPubKey> NULL_pubkeys;
-std::string FinalizeCCTx(uint64_t skipmask,struct CC_info *cp,CMutableTransaction &mtx,CPubKey mypk,uint64_t txfee,CScript opret,std::vector<CPubKey> pubkeys = NULL_pubkeys);
+std::string FinalizeCCTx(uint64_t skipmask,struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey mypk,uint64_t txfee,CScript opret,std::vector<CPubKey> pubkeys = NULL_pubkeys);
 void SetCCunspents(std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > &unspentOutputs,char *coinaddr);
 void SetCCtxids(std::vector<std::pair<CAddressIndexKey, CAmount> > &addressIndex,char *coinaddr);
 int64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int32_t maxinputs);

@@ -19,7 +19,7 @@
 
 #include "CCinclude.h"
 
-bool PricesValidate(struct CC_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn);
+bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn);
 
 // CCcustom
 UniValue PricesList();

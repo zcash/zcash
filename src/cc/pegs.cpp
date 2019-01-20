@@ -30,7 +30,7 @@
 
 // start of consensus code
 
-int64_t IsPegsvout(struct CC_info *cp,const CTransaction& tx,int32_t v)
+int64_t IsPegsvout(struct CCcontract_info *cp,const CTransaction& tx,int32_t v)
 {
     char destaddr[64];
     if ( tx.vout[v].scriptPubKey.IsPayToCryptoCondition() != 0 )
@@ -41,7 +41,7 @@ int64_t IsPegsvout(struct CC_info *cp,const CTransaction& tx,int32_t v)
     return(0);
 }
 
-bool PegsExactAmounts(struct CC_info *cp,Eval* eval,const CTransaction &tx,int32_t minage,uint64_t txfee)
+bool PegsExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx,int32_t minage,uint64_t txfee)
 {
     static uint256 zerohash;
     CTransaction vinTx; uint256 hashBlock,activehash; int32_t i,numvins,numvouts; int64_t inputs=0,outputs=0,assetoshis;
@@ -79,7 +79,7 @@ bool PegsExactAmounts(struct CC_info *cp,Eval* eval,const CTransaction &tx,int32
     else return(true);
 }
 
-bool PegsValidate(struct CC_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
+bool PegsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
 {
     int32_t numvins,numvouts,preventCCvins,preventCCvouts,i,numblocks; bool retval; uint256 txid; uint8_t hash[32]; char str[65],destaddr[64];
     return eval->Invalid("no validation yet");
@@ -120,7 +120,7 @@ bool PegsValidate(struct CC_info *cp,Eval* eval,const CTransaction &tx, uint32_t
 
 // helper functions for rpc calls in rpcwallet.cpp
 
-int64_t AddPegsInputs(struct CC_info *cp,CMutableTransaction &mtx,CPubKey pk,int64_t total,int32_t maxinputs)
+int64_t AddPegsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,int64_t total,int32_t maxinputs)
 {
     // add threshold check
     char coinaddr[64]; int64_t nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t vout,n = 0;
@@ -152,7 +152,7 @@ int64_t AddPegsInputs(struct CC_info *cp,CMutableTransaction &mtx,CPubKey pk,int
 std::string PegsGet(uint64_t txfee,int64_t nValue)
 {
     CMutableTransaction tmpmtx,mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    CPubKey mypk,Pegspk; int64_t inputs,CCchange=0; struct CC_info *cp,C; std::string rawhex; uint32_t j; int32_t i,len; uint8_t buf[32768]; bits256 hash;
+    CPubKey mypk,Pegspk; int64_t inputs,CCchange=0; struct CCcontract_info *cp,C; std::string rawhex; uint32_t j; int32_t i,len; uint8_t buf[32768]; bits256 hash;
     cp = CCinit(&C,EVAL_PEGS);
     if ( txfee == 0 )
         txfee = 10000;
@@ -193,7 +193,7 @@ std::string PegsGet(uint64_t txfee,int64_t nValue)
 std::string PegsFund(uint64_t txfee,int64_t funds)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    CPubKey mypk,Pegspk; CScript opret; struct CC_info *cp,C;
+    CPubKey mypk,Pegspk; CScript opret; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_PEGS);
     if ( txfee == 0 )
         txfee = 10000;
@@ -211,7 +211,7 @@ UniValue PegsInfo()
 {
     UniValue result(UniValue::VOBJ); char numstr[64];
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    CPubKey Pegspk; struct CC_info *cp,C; int64_t funding;
+    CPubKey Pegspk; struct CCcontract_info *cp,C; int64_t funding;
     result.push_back(Pair("result","success"));
     result.push_back(Pair("name","Pegs"));
     cp = CCinit(&C,EVAL_PEGS);

@@ -177,7 +177,7 @@ uint8_t DecodeTokenOpRet(const CScript scriptPubKey, uint8_t &evalCode, uint256 
 
 
 // tx validation
-bool TokensValidate(struct CC_info *cp, Eval* eval, const CTransaction &tx, uint32_t nIn)
+bool TokensValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction &tx, uint32_t nIn)
 {
 	static uint256 zero;
 	CTxDestination address; CTransaction vinTx, createTx; uint256 hashBlock, tokenid, tokenid2;
@@ -251,7 +251,7 @@ bool TokensValidate(struct CC_info *cp, Eval* eval, const CTransaction &tx, uint
 	// forward validation if evalcode in opret is not EVAL_TOKENS
 	// init for forwarding validation call
 	//if (evalCodeInOpret != EVAL_TOKENS) {		// TODO: should we check also only allowed for tokens evalcodes, like EVAL_ASSETS, EVAL_GATEWAYS?
-	//	struct CC_info *cpOther = NULL, C;
+	//	struct CCcontract_info *cpOther = NULL, C;
 
 	//	cpOther = CCinit(&C, evalCodeInOpret);
 	//	if (cpOther)
@@ -271,7 +271,7 @@ bool ExtractTokensVinPubkeys(CTransaction tx, std::vector<CPubKey> &vinPubkeys) 
 
 	bool found = false;
 	CPubKey pubkey;
-	struct CC_info *cpTokens, tokensC;
+	struct CCcontract_info *cpTokens, tokensC;
 
 	cpTokens = CCinit(&tokensC, EVAL_TOKENS);
 
@@ -353,7 +353,7 @@ uint8_t ValidateTokenOpret(CTransaction tx, int32_t v, uint256 tokenid, std::vec
 // goDeeper is true: the func also validates amounts of the passed transaction: 
 // it should be either sum(cc vins) == sum(cc vouts) or the transaction is the 'tokenbase' ('c') tx
 // checkPubkeys is true: validates if the vout is token vout1 or token vout1of2. Should always be true!
-int64_t IsTokensvout(bool goDeeper, bool checkPubkeys, struct CC_info *cp, Eval* eval, const CTransaction& tx, int32_t v, uint256 reftokenid)
+int64_t IsTokensvout(bool goDeeper, bool checkPubkeys, struct CCcontract_info *cp, Eval* eval, const CTransaction& tx, int32_t v, uint256 reftokenid)
 {
 
 	// this is just for log messages indentation fur debugging recursive calls:
@@ -488,13 +488,13 @@ int64_t IsTokensvout(bool goDeeper, bool checkPubkeys, struct CC_info *cp, Eval*
 }
 
 // compares cc inputs vs cc outputs (to prevent feeding vouts from normal inputs)
-bool TokensExactAmounts(bool goDeeper, struct CC_info *cp, int64_t &inputs, int64_t &outputs, Eval* eval, const CTransaction &tx, uint256 tokenid)
+bool TokensExactAmounts(bool goDeeper, struct CCcontract_info *cp, int64_t &inputs, int64_t &outputs, Eval* eval, const CTransaction &tx, uint256 tokenid)
 {
 	CTransaction vinTx; 
 	uint256 hashBlock; 
 	int64_t tokenoshis; 
 
-	struct CC_info *cpTokens, tokensC;
+	struct CCcontract_info *cpTokens, tokensC;
 	cpTokens = CCinit(&tokensC, EVAL_TOKENS);
 
 	int32_t numvins = tx.vin.size();
@@ -559,7 +559,7 @@ bool TokensExactAmounts(bool goDeeper, struct CC_info *cp, int64_t &inputs, int6
 }
 
 // add inputs from token cc addr
-int64_t AddTokenCCInputs(struct CC_info *cp, CMutableTransaction &mtx, CPubKey pk, uint256 tokenid, int64_t total, int32_t maxinputs)
+int64_t AddTokenCCInputs(struct CCcontract_info *cp, CMutableTransaction &mtx, CPubKey pk, uint256 tokenid, int64_t total, int32_t maxinputs)
 {
 	char tokenaddr[64], destaddr[64]; 
 	int64_t threshold, nValue, price, totalinputs = 0; 
@@ -617,7 +617,7 @@ int64_t AddTokenCCInputs(struct CC_info *cp, CMutableTransaction &mtx, CPubKey p
 std::string CreateToken(int64_t txfee, int64_t assetsupply, std::string name, std::string description)
 {
 	CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-	CPubKey mypk; struct CC_info *cp, C;
+	CPubKey mypk; struct CCcontract_info *cp, C;
 	if (assetsupply < 0)
 	{
 		fprintf(stderr, "negative assetsupply %lld\n", (long long)assetsupply);
@@ -647,7 +647,7 @@ std::string CreateToken(int64_t txfee, int64_t assetsupply, std::string name, st
 std::string TokenTransfer(int64_t txfee, uint256 assetid, std::vector<uint8_t> destpubkey, int64_t total)
 {
 	CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-	CPubKey mypk; uint64_t mask; int64_t CCchange = 0, inputs = 0;  struct CC_info *cp, C;
+	CPubKey mypk; uint64_t mask; int64_t CCchange = 0, inputs = 0;  struct CCcontract_info *cp, C;
 	std::vector<uint8_t> emptyExtraOpret;
 
 	if (total < 0)
@@ -714,7 +714,7 @@ int64_t GetTokenBalance(CPubKey pk, uint256 tokenid)
 		return 0;
 	}
 
-	struct CC_info *cp, C;
+	struct CCcontract_info *cp, C;
 	cp = CCinit(&C, EVAL_TOKENS);
 	return(AddTokenCCInputs(cp, mtx, pk, tokenid, 0, 0));
 }
@@ -748,7 +748,7 @@ UniValue TokenList()
 {
 	UniValue result(UniValue::VARR);
 	std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex;
-	struct CC_info *cp, C; uint256 txid, hashBlock;
+	struct CCcontract_info *cp, C; uint256 txid, hashBlock;
 	CTransaction vintx; std::vector<uint8_t> origpubkey;
 	std::string name, description; char str[65];
 

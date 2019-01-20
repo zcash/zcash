@@ -42,9 +42,9 @@ std::string MYCCLIBNAME = (char *)"stub";
 
 char *CClib_name() { return(MYCCLIBNAME); }
 
-std::string CClib_rawtxgen(struct CC_info *cp,uint8_t funcid,cJSON *params);
+std::string CClib_rawtxgen(struct CCcontract_info *cp,uint8_t funcid,cJSON *params);
 
-UniValue CClib_info(struct CC_info *cp)
+UniValue CClib_info(struct CCcontract_info *cp)
 {
     UniValue result(UniValue::VOBJ),a(UniValue::VARR); int32_t i; char str[2];
     result.push_back(Pair("result","success"));
@@ -70,7 +70,7 @@ UniValue CClib_info(struct CC_info *cp)
     return(result);
 }
 
-UniValue CClib(struct CC_info *cp,char *method,cJSON *params)
+UniValue CClib(struct CCcontract_info *cp,char *method,cJSON *params)
 {
     UniValue result(UniValue::VOBJ); int32_t i; std::string rawtx;
     for (i=0; i<sizeof(CClib_methods)/sizeof(*CClib_methods); i++)
@@ -90,12 +90,12 @@ UniValue CClib(struct CC_info *cp,char *method,cJSON *params)
     return(result);
 }
 
-bool CClib_validate(struct CC_info *cp,Eval *eval,const CTransaction &txTo,unsigned int nIn)
+bool CClib_validate(struct CCcontract_info *cp,Eval *eval,const CTransaction &txTo,unsigned int nIn)
 {
     return(true); // for now
 }
 
-std::string CClib_rawtxgen(struct CC_info *cp,uint8_t funcid,cJSON *params)
+std::string CClib_rawtxgen(struct CCcontract_info *cp,uint8_t funcid,cJSON *params)
 {
     return((char *)"deadbeef");
 }

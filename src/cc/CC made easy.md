@@ -206,13 +206,13 @@ The idea is that people send funds to the faucet by locking it in faucet's globa
 
 There are only 7 functions in faucet.cpp, a bit over 200 lines including comments. The first three are for validation, the last four for the rpc calls to use.
 
-int64_t IsFaucetvout(struct CC_info *cp,const CTransaction& tx,int32_t v)
+int64_t IsFaucetvout(struct CCcontract_info *cp,const CTransaction& tx,int32_t v)
 
-bool FaucetExactAmounts(struct CC_info *cp,Eval* eval,const CTransaction &tx,int32_t minage,uint64_t txfee)
+bool FaucetExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx,int32_t minage,uint64_t txfee)
 
-bool FaucetValidate(struct CC_info *cp,Eval* eval,const CTransaction &tx)
+bool FaucetValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
 
-int64_t AddFaucetInputs(struct CC_infoCC_info *cp,CMutableTransaction &mtx,CPubKey pk,int64_t total,int32_t maxinputs)
+int64_t AddFaucetInputs(struct CCcontract_infoCC_info *cp,CMutableTransaction &mtx,CPubKey pk,int64_t total,int32_t maxinputs)
 
 std::string FaucetGet(uint64_t txfee)
 

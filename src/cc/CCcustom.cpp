@@ -243,7 +243,7 @@ uint8_t CClibCCpriv[32] = { 0x57, 0xcf, 0x49, 0x71, 0x7d, 0xb4, 0x15, 0x1b, 0x4f
 #undef FUNCNAME
 #undef EVALCODE
 
-int32_t CClib_initcp(struct CC_info *cp,uint8_t evalcode)
+int32_t CClib_initcp(struct CCcontract_info *cp,uint8_t evalcode)
 {
     CPubKey pk; uint8_t pub33[33]; char CCaddr[64];
     if ( evalcode == EVAL_FIRSTUSER ) // eventually make a hashchain for each evalcode
@@ -263,7 +263,7 @@ int32_t CClib_initcp(struct CC_info *cp,uint8_t evalcode)
     return(-1);
 }
 
-struct CC_info *CCinit(struct CC_info *cp, uint8_t evalcode)
+struct CCcontract_info *CCinit(struct CCcontract_info *cp, uint8_t evalcode)
 {
     cp->evalcode = evalcode;
     switch ( evalcode )

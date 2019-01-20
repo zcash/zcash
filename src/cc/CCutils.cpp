@@ -227,7 +227,7 @@ CPubKey pubkey2pk(std::vector<uint8_t> pubkey)
     return(pk);
 }
 
-void CCaddr2set(struct CC_info *cp,uint8_t evalcode,CPubKey pk,uint8_t *priv,char *coinaddr)
+void CCaddr2set(struct CCcontract_info *cp,uint8_t evalcode,CPubKey pk,uint8_t *priv,char *coinaddr)
 {
     cp->evalcode2 = evalcode;
     cp->unspendablepk2 = pk;
@@ -235,7 +235,7 @@ void CCaddr2set(struct CC_info *cp,uint8_t evalcode,CPubKey pk,uint8_t *priv,cha
     strcpy(cp->unspendableaddr2,coinaddr);
 }
 
-void CCaddr3set(struct CC_info *cp,uint8_t evalcode,CPubKey pk,uint8_t *priv,char *coinaddr)
+void CCaddr3set(struct CCcontract_info *cp,uint8_t evalcode,CPubKey pk,uint8_t *priv,char *coinaddr)
 {
     cp->evalcode3 = evalcode;
     cp->unspendablepk3 = pk;
@@ -244,7 +244,7 @@ void CCaddr3set(struct CC_info *cp,uint8_t evalcode,CPubKey pk,uint8_t *priv,cha
 }
 
 // set pubkeys, myprivkey and 1of2 cc addr for spending from 1of2 cryptocondition vout:
-void CCaddr1of2set(struct CC_info *cp, CPubKey pk1, CPubKey pk2, char *coinaddr)
+void CCaddr1of2set(struct CCcontract_info *cp, CPubKey pk1, CPubKey pk2, char *coinaddr)
 {
 	cp->coins1of2pk[0] = pk1;
 	cp->coins1of2pk[1] = pk2;
@@ -252,7 +252,7 @@ void CCaddr1of2set(struct CC_info *cp, CPubKey pk1, CPubKey pk2, char *coinaddr)
 }
 
 // set pubkeys, myprivkey and 1of2 cc addr for spending from 1of2 tokens cryptocondition vout:
-void CCaddrTokens1of2set(struct CC_info *cp, CPubKey pk1, CPubKey pk2, char *coinaddr)
+void CCaddrTokens1of2set(struct CCcontract_info *cp, CPubKey pk1, CPubKey pk2, char *coinaddr)
 {
 	cp->tokens1of2pk[0] = pk1;
 	cp->tokens1of2pk[1] = pk2;
@@ -343,7 +343,7 @@ bool _GetCCaddress(char *destaddr,uint8_t evalcode,CPubKey pk)
     return(destaddr[0] != 0);
 }
 
-bool GetCCaddress(struct CC_info *cp,char *destaddr,CPubKey pk)
+bool GetCCaddress(struct CCcontract_info *cp,char *destaddr,CPubKey pk)
 {
     destaddr[0] = 0;
     if ( pk.size() == 0 )
@@ -363,7 +363,7 @@ bool _GetTokensCCaddress(char *destaddr, uint8_t evalcode, CPubKey pk)
 	return(destaddr[0] != 0);
 }
 
-bool GetTokensCCaddress(struct CC_info *cp, char *destaddr, CPubKey pk)
+bool GetTokensCCaddress(struct CCcontract_info *cp, char *destaddr, CPubKey pk)
 {
 	destaddr[0] = 0;
 	if (pk.size() == 0)
@@ -372,7 +372,7 @@ bool GetTokensCCaddress(struct CC_info *cp, char *destaddr, CPubKey pk)
 }
 
 
-bool GetCCaddress1of2(struct CC_info *cp,char *destaddr,CPubKey pk,CPubKey pk2)
+bool GetCCaddress1of2(struct CCcontract_info *cp,char *destaddr,CPubKey pk,CPubKey pk2)
 {
     CC *payoutCond;
     destaddr[0] = 0;
@@ -384,7 +384,7 @@ bool GetCCaddress1of2(struct CC_info *cp,char *destaddr,CPubKey pk,CPubKey pk2)
     return(destaddr[0] != 0);
 }
 
-bool GetTokensCCaddress1of2(struct CC_info *cp, char *destaddr, CPubKey pk, CPubKey pk2)
+bool GetTokensCCaddress1of2(struct CCcontract_info *cp, char *destaddr, CPubKey pk, CPubKey pk2)
 {
 	CC *payoutCond;
 	destaddr[0] = 0;
@@ -486,14 +486,14 @@ bool Myprivkey(uint8_t myprivkey[])
     return(false);
 }
 
-CPubKey GetUnspendable(struct CC_info *cp,uint8_t *unspendablepriv)
+CPubKey GetUnspendable(struct CCcontract_info *cp,uint8_t *unspendablepriv)
 {
     if ( unspendablepriv != 0 )
         memcpy(unspendablepriv,cp->CCpriv,32);
     return(pubkey2pk(ParseHex(cp->CChexstr)));
 }
 
-void CCclearvars(struct CC_info *cp)
+void CCclearvars(struct CCcontract_info *cp)
 {
     cp->evalcode2 = cp->evalcode3 = 0;
     cp->unspendableaddr2[0] = cp->unspendableaddr3[0] = 0;
@@ -602,7 +602,7 @@ CPubKey check_signing_pubkey(CScript scriptSig)
 	return CPubKey();
 }
 
-bool ProcessCC(struct CC_info *cp,Eval* eval, std::vector<uint8_t> paramsNull,const CTransaction &ctx, unsigned int nIn)
+bool ProcessCC(struct CCcontract_info *cp,Eval* eval, std::vector<uint8_t> paramsNull,const CTransaction &ctx, unsigned int nIn)
 {
     CTransaction createTx; uint256 assetid,assetid2,hashBlock; uint8_t funcid; int32_t height,i,n,from_mempool = 0; int64_t amount; std::vector<uint8_t> origpubkey;
     height = KOMODO_CONNECTING;
@@ -636,13 +636,13 @@ bool ProcessCC(struct CC_info *cp,Eval* eval, std::vector<uint8_t> paramsNull,co
     return(false);
 }
 
-extern struct CC_info CCinfos[0x100];
+extern struct CCcontract_info CCinfos[0x100];
 extern std::string MYCCLIBNAME;
-bool CClib_validate(struct CC_info *cp,Eval *eval,const CTransaction &txTo,unsigned int nIn);
+bool CClib_validate(struct CCcontract_info *cp,Eval *eval,const CTransaction &txTo,unsigned int nIn);
 
 bool CClib_Dispatch(const CC *cond,Eval *eval,std::vector<uint8_t> paramsNull,const CTransaction &txTo,unsigned int nIn)
 {
-    uint8_t evalcode; int32_t height,from_mempool; struct CC_info *cp;
+    uint8_t evalcode; int32_t height,from_mempool; struct CCcontract_info *cp;
     if ( ASSETCHAINS_CCLIB != MYCCLIBNAME )
     {
         fprintf(stderr,"-ac_cclib=%s vs myname %s\n",ASSETCHAINS_CCLIB.c_str(),MYCCLIBNAME.c_str());

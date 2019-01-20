@@ -126,7 +126,7 @@
 
 
 // tx validation
-bool AssetsValidate(struct CC_info *cpAssets,Eval* eval,const CTransaction &tx, uint32_t nIn)
+bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransaction &tx, uint32_t nIn)
 {
     static uint256 zero;
     CTxDestination address; CTransaction vinTx,createTx; uint256 hashBlock,assetid,assetid2; 
@@ -157,7 +157,7 @@ bool AssetsValidate(struct CC_info *cpAssets,Eval* eval,const CTransaction &tx, 
 	GetTokensCCaddress(cpAssets, tokensUnspendableAddr, GetUnspendable(cpAssets, NULL));
 
 	// we need this for validating single-eval tokens' vins/vous:
-	struct CC_info *cpTokens, tokensC;
+	struct CCcontract_info *cpTokens, tokensC;
 	cpTokens = CCinit(&tokensC, EVAL_TOKENS);
 
 	// find single-eval token user cc addr:

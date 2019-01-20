@@ -47,7 +47,7 @@
 
 // start of consensus code
 
-int64_t IsMarmaravout(struct CC_info *cp,const CTransaction& tx,int32_t v)
+int64_t IsMarmaravout(struct CCcontract_info *cp,const CTransaction& tx,int32_t v)
 {
     char destaddr[64];
     if ( tx.vout[v].scriptPubKey.IsPayToCryptoCondition() != 0 )
@@ -188,7 +188,7 @@ int32_t MarmaraGetbatontxid(std::vector<uint256> &creditloop,uint256 &batontxid,
 
 CScript Marmara_scriptPubKey(int32_t height,CPubKey pk)
 {
-    CTxOut ccvout; struct CC_info *cp,C; CPubKey Marmarapk;
+    CTxOut ccvout; struct CCcontract_info *cp,C; CPubKey Marmarapk;
     cp = CCinit(&C,EVAL_MARMARA);
     Marmarapk = GetUnspendable(cp,0);
     if ( height > 0 && (height & 1) == 0 && pk.size() == 33 )
@@ -212,7 +212,7 @@ CScript MarmaraCoinbaseOpret(uint8_t funcid,int32_t height,CPubKey pk)
 
 int32_t MarmaraValidateCoinbase(int32_t height,CTransaction tx)
 {
-    struct CC_info *cp,C; CPubKey Marmarapk,pk; int32_t ht,unlockht; CTxOut ccvout;
+    struct CCcontract_info *cp,C; CPubKey Marmarapk,pk; int32_t ht,unlockht; CTxOut ccvout;
     cp = CCinit(&C,EVAL_MARMARA);
     Marmarapk = GetUnspendable(cp,0);
     if ( 0 )
@@ -255,7 +255,7 @@ int32_t MarmaraValidateCoinbase(int32_t height,CTransaction tx)
     return(-1);
 }
 
-bool MarmaraValidate(struct CC_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
+bool MarmaraValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
 {
     std::vector<uint8_t> vopret; CTransaction vinTx; uint256 hashBlock;  int32_t numvins,numvouts,i,ht,unlockht,vht,vunlockht; uint8_t funcid,vfuncid,*script; CPubKey pk,vpk;
     if ( ASSETCHAINS_MARMARA == 0 )
@@ -326,7 +326,7 @@ bool MarmaraValidate(struct CC_info *cp,Eval* eval,const CTransaction &tx, uint3
 
 // helper functions for rpc calls in rpcwallet.cpp
 
-int64_t AddMarmaraCoinbases(struct CC_info *cp,CMutableTransaction &mtx,int32_t firstheight,CPubKey poolpk,int32_t maxinputs)
+int64_t AddMarmaraCoinbases(struct CCcontract_info *cp,CMutableTransaction &mtx,int32_t firstheight,CPubKey poolpk,int32_t maxinputs)
 {
     char coinaddr[64]; CPubKey Marmarapk,pk; int64_t nValue,totalinputs = 0; uint256 txid,hashBlock; CTransaction vintx; int32_t unlockht,ht,vout,unlocks,n = 0;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
@@ -408,7 +408,7 @@ int64_t AddMarmarainputs(CMutableTransaction &mtx,std::vector<CPubKey> &pubkeys,
 UniValue MarmaraLock(uint64_t txfee,int64_t amount,int32_t height)
 {
     CMutableTransaction tmpmtx,mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); struct CC_info *cp,C; CPubKey Marmarapk,mypk,pk; int32_t unlockht,refunlockht,vout,ht,numvouts; int64_t nValue,val,inputsum=0,threshold,remains,change = 0; std::string rawtx,errorstr; char coinaddr[64]; uint256 txid,hashBlock; CTransaction tx; uint8_t funcid;
+    UniValue result(UniValue::VOBJ); struct CCcontract_info *cp,C; CPubKey Marmarapk,mypk,pk; int32_t unlockht,refunlockht,vout,ht,numvouts; int64_t nValue,val,inputsum=0,threshold,remains,change = 0; std::string rawtx,errorstr; char coinaddr[64]; uint256 txid,hashBlock; CTransaction tx; uint8_t funcid;
     if ( txfee == 0 )
         txfee = 10000;
     if ( (height & 1) != 0 )
@@ -490,7 +490,7 @@ UniValue MarmaraLock(uint64_t txfee,int64_t amount,int32_t height)
 UniValue MarmaraSettlement(uint64_t txfee,uint256 refbatontxid)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ),a(UniValue::VARR); std::vector<uint256> creditloop; uint256 batontxid,createtxid,refcreatetxid,hashBlock; uint8_t funcid; int32_t numerrs=0,i,n,numvouts,matures,refmatures,height; int64_t amount,refamount,remaining,inputsum,change; CPubKey Marmarapk,mypk,pk; std::string currency,refcurrency,rawtx; CTransaction tx,batontx; char coinaddr[64],myCCaddr[64],destaddr[64],batonCCaddr[64],str[2],txidaddr[64]; std::vector<CPubKey> pubkeys; struct CC_info *cp,C;
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR); std::vector<uint256> creditloop; uint256 batontxid,createtxid,refcreatetxid,hashBlock; uint8_t funcid; int32_t numerrs=0,i,n,numvouts,matures,refmatures,height; int64_t amount,refamount,remaining,inputsum,change; CPubKey Marmarapk,mypk,pk; std::string currency,refcurrency,rawtx; CTransaction tx,batontx; char coinaddr[64],myCCaddr[64],destaddr[64],batonCCaddr[64],str[2],txidaddr[64]; std::vector<CPubKey> pubkeys; struct CCcontract_info *cp,C;
     if ( txfee == 0 )
         txfee = 10000;
     cp = CCinit(&C,EVAL_MARMARA);
@@ -607,7 +607,7 @@ UniValue MarmaraSettlement(uint64_t txfee,uint256 refbatontxid)
     return(result);
 }
 
-int32_t MarmaraGetCreditloops(int64_t &totalamount,std::vector<uint256> &issuances,int64_t &totalclosed,std::vector<uint256> &closed,struct CC_info *cp,int32_t firstheight,int32_t lastheight,int64_t minamount,int64_t maxamount,CPubKey refpk,std::string refcurrency)
+int32_t MarmaraGetCreditloops(int64_t &totalamount,std::vector<uint256> &issuances,int64_t &totalclosed,std::vector<uint256> &closed,struct CCcontract_info *cp,int32_t firstheight,int32_t lastheight,int64_t minamount,int64_t maxamount,CPubKey refpk,std::string refcurrency)
 {
     char coinaddr[64]; CPubKey Marmarapk,senderpk; int64_t amount; uint256 createtxid,txid,hashBlock; CTransaction tx; int32_t numvouts,vout,matures,n=0; std::string currency;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
@@ -643,7 +643,7 @@ int32_t MarmaraGetCreditloops(int64_t &totalamount,std::vector<uint256> &issuanc
 UniValue MarmaraReceive(uint64_t txfee,CPubKey senderpk,int64_t amount,std::string currency,int32_t matures,uint256 batontxid,bool automaticflag)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); CPubKey mypk; struct CC_info *cp,C; std::string rawtx; char *errorstr=0; uint256 createtxid; int64_t batonamount; int32_t needbaton = 0;
+    UniValue result(UniValue::VOBJ); CPubKey mypk; struct CCcontract_info *cp,C; std::string rawtx; char *errorstr=0; uint256 createtxid; int64_t batonamount; int32_t needbaton = 0;
     cp = CCinit(&C,EVAL_MARMARA);
     if ( txfee == 0 )
         txfee = 10000;
@@ -700,7 +700,7 @@ UniValue MarmaraReceive(uint64_t txfee,CPubKey senderpk,int64_t amount,std::stri
 UniValue MarmaraIssue(uint64_t txfee,uint8_t funcid,CPubKey receiverpk,int64_t amount,std::string currency,int32_t matures,uint256 approvaltxid,uint256 batontxid)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); CPubKey mypk,Marmarapk; struct CC_info *cp,C; std::string rawtx; uint256 createtxid; char *errorstr=0;
+    UniValue result(UniValue::VOBJ); CPubKey mypk,Marmarapk; struct CCcontract_info *cp,C; std::string rawtx; uint256 createtxid; char *errorstr=0;
     cp = CCinit(&C,EVAL_MARMARA);
     if ( txfee == 0 )
         txfee = 10000;
@@ -757,7 +757,7 @@ UniValue MarmaraIssue(uint64_t txfee,uint8_t funcid,CPubKey receiverpk,int64_t a
 
 UniValue MarmaraCreditloop(uint256 txid)
 {
-    UniValue result(UniValue::VOBJ),a(UniValue::VARR); std::vector<uint256> creditloop; uint256 batontxid,createtxid,refcreatetxid,hashBlock; uint8_t funcid; int32_t numerrs=0,i,n,numvouts,matures,refmatures; int64_t amount,refamount; CPubKey pk; std::string currency,refcurrency; CTransaction tx; char coinaddr[64],myCCaddr[64],destaddr[64],batonCCaddr[64],str[2]; struct CC_info *cp,C;
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR); std::vector<uint256> creditloop; uint256 batontxid,createtxid,refcreatetxid,hashBlock; uint8_t funcid; int32_t numerrs=0,i,n,numvouts,matures,refmatures; int64_t amount,refamount; CPubKey pk; std::string currency,refcurrency; CTransaction tx; char coinaddr[64],myCCaddr[64],destaddr[64],batonCCaddr[64],str[2]; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_MARMARA);
     if ( (n= MarmaraGetbatontxid(creditloop,batontxid,txid)) > 0 )
     {
@@ -911,7 +911,7 @@ UniValue MarmaraCreditloop(uint256 txid)
 UniValue MarmaraPoolPayout(uint64_t txfee,int32_t firstheight,double perc,char *jsonstr) // [[pk0, shares0], [pk1, shares1], ...]
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ),a(UniValue::VARR); cJSON *item,*array; std::string rawtx; int32_t i,n; uint8_t buf[33]; CPubKey Marmarapk,pk,poolpk; int64_t payout,poolfee=0,total,totalpayout=0; double poolshares,share,shares = 0.; char *pkstr,*errorstr=0; struct CC_info *cp,C;
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR); cJSON *item,*array; std::string rawtx; int32_t i,n; uint8_t buf[33]; CPubKey Marmarapk,pk,poolpk; int64_t payout,poolfee=0,total,totalpayout=0; double poolshares,share,shares = 0.; char *pkstr,*errorstr=0; struct CCcontract_info *cp,C;
     poolpk = pubkey2pk(Mypubkey());
     if ( txfee == 0 )
         txfee = 10000;
@@ -1000,7 +1000,7 @@ UniValue MarmaraInfo(CPubKey refpk,int32_t firstheight,int32_t lastheight,int64_
 {
     CMutableTransaction mtx; std::vector<CPubKey> pubkeys;
     UniValue result(UniValue::VOBJ),a(UniValue::VARR),b(UniValue::VARR); int32_t i,n,matches; int64_t totalclosed=0,totalamount=0; std::vector<uint256> issuances,closed; char coinaddr[64];
-    CPubKey Marmarapk; struct CC_info *cp,C;
+    CPubKey Marmarapk; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_MARMARA);
     Marmarapk = GetUnspendable(cp,0);
     result.push_back(Pair("result","success"));

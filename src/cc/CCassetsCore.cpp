@@ -365,7 +365,7 @@ bool SetAssetOrigpubkey(std::vector<uint8_t> &origpubkey,int64_t &price,const CT
 }
 
 // Calculate sell/buy owner's source token/asset address from ask/bid tx
-bool GetAssetorigaddrs(struct CC_info *cp, char *userCCaddr, char *destaddr, const CTransaction& tx)
+bool GetAssetorigaddrs(struct CCcontract_info *cp, char *userCCaddr, char *destaddr, const CTransaction& tx)
 {
     uint256 assetid,assetid2; int64_t price,nValue=0; int32_t n; uint8_t funcid; 
 	std::vector<uint8_t> origpubkey; 
@@ -378,13 +378,13 @@ bool GetAssetorigaddrs(struct CC_info *cp, char *userCCaddr, char *destaddr, con
 
 	bool bGetCCaddr = false;
 	if (funcid == 's' || funcid == 'S') {
-		struct CC_info *cpTokens, tokensC;
+		struct CCcontract_info *cpTokens, tokensC;
 		cpTokens = CCinit(&tokensC, EVAL_TOKENS);
 		bGetCCaddr = GetCCaddress(cpTokens, userCCaddr, pubkey2pk(origpubkey));
 		//bGetCCaddr = GetTokensCCaddress(cp, CCaddr, pubkey2pk(origpubkey));
 	}
 	else if (funcid == 'b' || funcid == 'B') {
-		struct CC_info *cpTokens, tokensC;
+		struct CCcontract_info *cpTokens, tokensC;
 		cpTokens = CCinit(&tokensC, EVAL_TOKENS);
 		bGetCCaddr = GetCCaddress(cpTokens, userCCaddr, pubkey2pk(origpubkey));
 	}
@@ -400,7 +400,7 @@ bool GetAssetorigaddrs(struct CC_info *cp, char *userCCaddr, char *destaddr, con
 }
 
 
-int64_t AssetValidateCCvin(struct CC_info *cp,Eval* eval,char *CCaddr,char *origaddr,const CTransaction &tx,int32_t vini,CTransaction &vinTx)
+int64_t AssetValidateCCvin(struct CCcontract_info *cp,Eval* eval,char *CCaddr,char *origaddr,const CTransaction &tx,int32_t vini,CTransaction &vinTx)
 {
 	uint256 hashBlock;
 	uint256 assetid, assetid2;
@@ -463,7 +463,7 @@ int64_t AssetValidateCCvin(struct CC_info *cp,Eval* eval,char *CCaddr,char *orig
     return(vinTx.vout[0].nValue);
 }
 
-int64_t AssetValidateBuyvin(struct CC_info *cp,Eval* eval,int64_t &tmpprice,std::vector<uint8_t> &tmporigpubkey,char *CCaddr,char *origaddr,const CTransaction &tx,uint256 refassetid)
+int64_t AssetValidateBuyvin(struct CCcontract_info *cp,Eval* eval,int64_t &tmpprice,std::vector<uint8_t> &tmporigpubkey,char *CCaddr,char *origaddr,const CTransaction &tx,uint256 refassetid)
 {
     CTransaction vinTx; int64_t nValue; uint256 assetid,assetid2; uint8_t funcid, evalCode;
     CCaddr[0] = origaddr[0] = 0;
@@ -490,7 +490,7 @@ int64_t AssetValidateBuyvin(struct CC_info *cp,Eval* eval,int64_t &tmpprice,std:
     return(nValue);
 }
 
-int64_t AssetValidateSellvin(struct CC_info *cp,Eval* eval,int64_t &tmpprice,std::vector<uint8_t> &tmporigpubkey,char *CCaddr,char *origaddr,const CTransaction &tx,uint256 assetid)
+int64_t AssetValidateSellvin(struct CCcontract_info *cp,Eval* eval,int64_t &tmpprice,std::vector<uint8_t> &tmporigpubkey,char *CCaddr,char *origaddr,const CTransaction &tx,uint256 assetid)
 {
     CTransaction vinTx; int64_t nValue,assetoshis;
     //fprintf(stderr,"AssetValidateSellvin\n");
@@ -558,7 +558,7 @@ bool ValidateAssetOpret(CTransaction tx, int32_t v, uint256 assetid, int64_t &pr
 // Checks if the vout is a really Asset CC vout
 // compareTotals == true, the func also validates the passed transaction itself: 
 // it should be either sum(cc vins) == sum(cc vouts) or the transaction is the 'tokenbase' ('c') tx
-int64_t IsAssetvout(struct CC_info *cp, int64_t &price, std::vector<uint8_t> &origpubkey, const CTransaction& tx, int32_t v, uint256 refassetid)
+int64_t IsAssetvout(struct CCcontract_info *cp, int64_t &price, std::vector<uint8_t> &origpubkey, const CTransaction& tx, int32_t v, uint256 refassetid)
 {
 
 	//std::cerr  << "IsAssetvout() entered for txid=" << tx.GetHash().GetHex() << " v=" << v << " for assetid=" << refassetid.GetHex() <<  std::endl;
@@ -587,14 +587,14 @@ int64_t IsAssetvout(struct CC_info *cp, int64_t &price, std::vector<uint8_t> &or
 } 
 
 // sets cc inputs vs cc outputs and ensures they are equal:
-bool AssetCalcAmounts(struct CC_info *cpAssets, int64_t &inputs, int64_t &outputs, Eval* eval, const CTransaction &tx, uint256 assetid)
+bool AssetCalcAmounts(struct CCcontract_info *cpAssets, int64_t &inputs, int64_t &outputs, Eval* eval, const CTransaction &tx, uint256 assetid)
 {
 	CTransaction vinTx; uint256 hashBlock, id, id2; int32_t flag; int64_t assetoshis; std::vector<uint8_t> tmporigpubkey; int64_t tmpprice;
 	int32_t numvins = tx.vin.size();
 	int32_t numvouts = tx.vout.size();
 	inputs = outputs = 0;
 
-	struct CC_info *cpTokens, C;
+	struct CCcontract_info *cpTokens, C;
 
 	cpTokens = CCinit(&C, EVAL_TOKENS);
 

@@ -62,7 +62,7 @@ Possible third iteration:
 
 // start of consensus code
 
-int64_t IsChannelsvout(struct CC_info *cp,const CTransaction& tx,CPubKey srcpub, CPubKey destpub,int32_t v)
+int64_t IsChannelsvout(struct CCcontract_info *cp,const CTransaction& tx,CPubKey srcpub, CPubKey destpub,int32_t v)
 {
     char destaddr[65],channeladdr[65],tokenschanneladdr[65];
 
@@ -76,7 +76,7 @@ int64_t IsChannelsvout(struct CC_info *cp,const CTransaction& tx,CPubKey srcpub,
     return(0); 
 }
 
-int64_t IsChannelsMarkervout(struct CC_info *cp,const CTransaction& tx,CPubKey pubkey,int32_t v)
+int64_t IsChannelsMarkervout(struct CCcontract_info *cp,const CTransaction& tx,CPubKey pubkey,int32_t v)
 {
     char destaddr[65],ccaddr[65];
 
@@ -128,7 +128,7 @@ uint8_t DecodeChannelsOpRet(const CScript &scriptPubKey, uint256 &tokenid, uint2
     return(0);
 }
 
-bool ChannelsExactAmounts(struct CC_info *cp,Eval* eval,const CTransaction &tx,int32_t minage,uint64_t txfee)
+bool ChannelsExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx,int32_t minage,uint64_t txfee)
 {
     uint256 txid,param3,tokenid;
     CPubKey srcpub,destpub;
@@ -176,7 +176,7 @@ bool ChannelsExactAmounts(struct CC_info *cp,Eval* eval,const CTransaction &tx,i
     return(false);
 }
 
-bool ChannelsValidate(struct CC_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
+bool ChannelsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
 {
     int32_t numvins,numvouts,preventCCvins,preventCCvouts,i,numpayments,p1,param1; bool retval;
     uint256 txid,hashblock,p3,param3,opentxid,tmp_txid,genhashchain,hashchain,tokenid;
@@ -397,7 +397,7 @@ bool ChannelsValidate(struct CC_info *cp,Eval* eval,const CTransaction &tx, uint
 
 // helper functions for rpc calls in rpcwallet.cpp
 
-int64_t AddChannelsInputs(struct CC_info *cp,CMutableTransaction &mtx, CTransaction openTx, uint256 &prevtxid, CPubKey mypk)
+int64_t AddChannelsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx, CTransaction openTx, uint256 &prevtxid, CPubKey mypk)
 {
     char coinaddr[65]; int64_t param2,totalinputs = 0,numvouts; uint256 txid=zeroid,tmp_txid,hashBlock,param3,tokenid; CTransaction tx; int32_t marker,param1;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
@@ -465,7 +465,7 @@ std::string ChannelOpen(uint64_t txfee,CPubKey destpub,int32_t numpayments,int64
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     uint8_t hash[32],hashdest[32]; uint64_t amount,tokens=0,funds; int32_t i; uint256 hashchain,entropy,hentropy;
-    CPubKey mypk; struct CC_info *cp,*cpTokens,C,CTokens;
+    CPubKey mypk; struct CCcontract_info *cp,*cpTokens,C,CTokens;
     
     if ( numpayments <= 0 || payment <= 0 || numpayments > CHANNELS_MAXPAYMENTS )
     {
@@ -509,7 +509,7 @@ std::string ChannelPayment(uint64_t txfee,uint256 opentxid,int64_t amount, uint2
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     CPubKey mypk,srcpub,destpub; uint256 txid,hashchain,gensecret,hashblock,entropy,hentropy,prevtxid,param3,tokenid;
-    struct CC_info *cp,C; int32_t i,funcid,prevdepth,numvouts,numpayments,totalnumpayments;
+    struct CCcontract_info *cp,C; int32_t i,funcid,prevdepth,numvouts,numpayments,totalnumpayments;
     int64_t payment,change,funds,param2;
     uint8_t hash[32],hashdest[32];
     CTransaction channelOpenTx,prevTx;
@@ -616,7 +616,7 @@ std::string ChannelPayment(uint64_t txfee,uint256 opentxid,int64_t amount, uint2
 std::string ChannelClose(uint64_t txfee,uint256 opentxid)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    CPubKey mypk,srcpub,destpub; struct CC_info *cp,C;
+    CPubKey mypk,srcpub,destpub; struct CCcontract_info *cp,C;
     CTransaction channelOpenTx;
     uint256 hashblock,tmp_txid,prevtxid,hashchain,tokenid;
     int32_t numvouts,numpayments;
@@ -665,7 +665,7 @@ std::string ChannelClose(uint64_t txfee,uint256 opentxid)
 std::string ChannelRefund(uint64_t txfee,uint256 opentxid,uint256 closetxid)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    CPubKey mypk; struct CC_info *cp,C; int64_t funds,payment,param2;
+    CPubKey mypk; struct CCcontract_info *cp,C; int64_t funds,payment,param2;
     int32_t i,numpayments,numvouts,param1;
     uint256 hashchain,hashblock,txid,prevtxid,param3,tokenid;
     CTransaction channelOpenTx,channelCloseTx,prevTx;
@@ -735,7 +735,7 @@ std::string ChannelRefund(uint64_t txfee,uint256 opentxid,uint256 closetxid)
 }
 UniValue ChannelsList()
 {
-    UniValue result(UniValue::VOBJ); std::vector<std::pair<CAddressIndexKey, CAmount> > txids; struct CC_info *cp,C; uint256 txid,hashBlock,tmp_txid,param3,tokenid;
+    UniValue result(UniValue::VOBJ); std::vector<std::pair<CAddressIndexKey, CAmount> > txids; struct CCcontract_info *cp,C; uint256 txid,hashBlock,tmp_txid,param3,tokenid;
     CTransaction tx; char myCCaddr[65],addr[65],str[256]; CPubKey mypk,srcpub,destpub; int32_t vout,numvouts,param1;
     int64_t nValue,param2;
 
@@ -766,7 +766,7 @@ UniValue ChannelsList()
 UniValue ChannelsInfo(uint256 channeltxid)
 {
     UniValue result(UniValue::VOBJ),array(UniValue::VARR); CTransaction tx,opentx; uint256 txid,tmp_txid,hashBlock,param3,opentxid,hashchain,prevtxid,tokenid;
-    struct CC_info *cp,C; char CCaddr[65],addr[65],str[512]; int32_t vout,numvouts,param1,numpayments;
+    struct CCcontract_info *cp,C; char CCaddr[65],addr[65],str[512]; int32_t vout,numvouts,param1,numpayments;
     int64_t param2,payment; CPubKey srcpub,destpub,mypk;
     std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex; std::vector<uint256> txids;
     

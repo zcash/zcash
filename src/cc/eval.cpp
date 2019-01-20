@@ -31,7 +31,7 @@ bool CClib_Dispatch(const CC *cond,Eval *eval,std::vector<uint8_t> paramsNull,co
 char *CClib_name();
 
 Eval* EVAL_TEST = 0;
-struct CC_info CCinfos[0x100];
+struct CCcontract_info CCinfos[0x100];
 extern pthread_mutex_t KOMODO_CC_mutex;
 
 bool RunCCEval(const CC *cond, const CTransaction &tx, unsigned int nIn)
@@ -62,7 +62,7 @@ bool RunCCEval(const CC *cond, const CTransaction &tx, unsigned int nIn)
  */
 bool Eval::Dispatch(const CC *cond, const CTransaction &txTo, unsigned int nIn)
 {
-    struct CC_info *cp;
+    struct CCcontract_info *cp;
     if (cond->codeLength == 0)
         return Invalid("empty-eval");
 
