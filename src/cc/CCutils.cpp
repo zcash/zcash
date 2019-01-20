@@ -673,7 +673,7 @@ bool CClib_Dispatch(const CC *cond,Eval *eval,std::vector<uint8_t> paramsNull,co
             return eval->Invalid("Cannot have params");
         else if ( CClib_validate(cp,eval,txTo,nIn) != 0 )
             return(true);
-        return eval->Invalid("error in CClib_validate");
+        return(false); //eval->Invalid("error in CClib_validate");
     }
     return eval->Invalid("cclib CC must have evalcode between 16 and 127");
 }
