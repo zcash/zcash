@@ -43,7 +43,7 @@ CClib_methods[] =
 
 std::string MYCCLIBNAME = (char *)"faucet2";
 
-char *CClib_name() { return(MYCCLIBNAME.c_str()); }
+char *CClib_name() { return((char *)MYCCLIBNAME.c_str()); }
 
 std::string CClib_rawtxgen(struct CCcontract_info *cp,uint8_t funcid,cJSON *params);
 
@@ -170,7 +170,7 @@ bool CClib_validate(struct CCcontract_info *cp,Eval *eval,const CTransaction tx,
         else
         {
             preventCCvouts = 1;
-            if ( IsFaucetvout(cp,tx,0) != 0 )
+            if ( IsCClibvout(cp,tx,0) != 0 )
             {
                 preventCCvouts++;
                 i = 1;
@@ -251,7 +251,7 @@ std::string Faucet2Fund(struct CCcontract_info *cp,uint64_t txfee,int64_t funds)
     return("");
 }
 
-UniValue FaucetInfo()
+/*UniValue FaucetInfo()
 {
     UniValue result(UniValue::VOBJ); char numstr[64];
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
@@ -264,12 +264,12 @@ UniValue FaucetInfo()
     sprintf(numstr,"%.8f",(double)funding/COIN);
     result.push_back(Pair("funding",numstr));
     return(result);
-}
+}*/
 
 std::string CClib_rawtxgen(struct CCcontract_info *cp,uint8_t funcid,cJSON *params)
 {
     CMutableTransaction tmpmtx,mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    CPubKey mypk,cclibpk; int64_t funds,txfee=0,inputs,CCchange=0,nValue=FAUCET2SIZE; struct CCcontract_info *cp,C; std::string rawhex; uint32_t j; int32_t i,len; uint8_t buf[32768]; bits256 hash;
+    CPubKey mypk,cclibpk; int64_t funds,txfee=0,inputs,CCchange=0,nValue=FAUCET2SIZE; std::string rawhex; uint32_t j; int32_t i,len; uint8_t buf[32768]; bits256 hash;
     if ( txfee == 0 )
         txfee = 10000;
     if ( funcid == 'F' )
