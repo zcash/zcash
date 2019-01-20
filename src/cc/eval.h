@@ -59,6 +59,10 @@
 		EVAL(EVAL_TOKENS, 0xf2)
 
 
+// evalcodes 0x10 to 0x7f are reserved for cclib dynamic CC
+#define EVAL_FIRSTUSER 0x10
+#define EVAL_LASTUSER 0x7f
+
 typedef uint8_t EvalCode;
 
 
