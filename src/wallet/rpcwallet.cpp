@@ -5353,15 +5353,15 @@ UniValue cclibinfo(const UniValue& params, bool fHelp)
 
 UniValue cclib(const UniValue& params, bool fHelp)
 {
-    struct CCcontract_info *cp,C; char *method; cJSON *params;
+    struct CCcontract_info *cp,C; char *method; cJSON *jsonparams;
     cp = CCinit(&C,EVAL_FIRSTUSER);
     if ( fHelp || params.size() > 2 )
         throw runtime_error("cclib method [JSON params]\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     method = params[0].get_str().c_str();
-    params = cJSON_Parse(params[1].get_str().c_str());
-    return(CClib(cp,method,params));
+    jsonparams = cJSON_Parse(params[1].get_str().c_str());
+    return(CClib(cp,method,jsonparams));
 }
 
 UniValue oraclesaddress(const UniValue& params, bool fHelp)
