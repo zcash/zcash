@@ -276,7 +276,7 @@ std::string CClib_rawtxgen(struct CCcontract_info *cp,uint8_t funcid,cJSON *para
     {
         if ( cJSON_GetArraySize(params) > 0 )
         {
-            funds = (int64_t)jdouble(jitem(params,0))*COIN + 0.0000000049;
+            funds = (int64_t)jdouble(jitem(params,0),0)*COIN + 0.0000000049;
             return(Faucet2Fund(cp,0,funds));
         } else return("");
     }

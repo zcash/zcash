@@ -50,7 +50,6 @@ one other technical note is that komodod has the insight-explorer extensions bui
 #include "../komodo_defs.h"
 #include "../utlist.h"
 #include "../uthash.h"
-#include "../komodo_cJSON.h"
 
 extern int32_t KOMODO_CONNECTING,KOMODO_CCACTIVATE,KOMODO_DEALERNODE;
 extern uint32_t ASSETCHAINS_CC;
@@ -70,6 +69,7 @@ extern uint8_t ASSETCHAINS_CCDISABLES[256];
     typedef union _bits256 bits256;
 #endif
 
+#include "../komodo_cJSON.h"
 
 struct CC_utxo
 {
