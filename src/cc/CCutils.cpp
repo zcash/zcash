@@ -638,7 +638,7 @@ bool ProcessCC(struct CC_info *cp,Eval* eval, std::vector<uint8_t> paramsNull,co
 
 bool CClib_Dispatch(const CC *cond,Eval *eval,std::vector<uint8_t> paramsNull,const CTransaction &txTo,unsigned int nIn)
 {
-    uint8_t evalcode; int32_t height,from_mempool; struct CCinfo *cp;
+    uint8_t evalcode; int32_t height,from_mempool; struct CC_info *cp;
     if ( ASSETCHAINS_CCLIB != MYCCLIBNAME )
     {
         fprintf(stderr,"-ac_cclib=%s vs myname %s\n",ASSETCHAINS_CCLIB.c_str(),MYCCLIBNAME);
