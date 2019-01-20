@@ -17,7 +17,7 @@ SOURCES = cclib.cpp
 all: $(TARGET)
 
 $(TARGET): $(SOURCES)
-	$(info Building cclib.so to src/)
+	$(info Building cclib to src/)
 ifeq ($(OS),Darwin)
 	$(CC) $(CFLAGS_DARWIN) $(DEBUGFLAGS) -o $(TARGET) $(SOURCES)
 else ifeq ($(OS),Linux)
@@ -25,7 +25,7 @@ else ifeq ($(OS),Linux)
 #else ifeq ($(WIN_HOST),True) - todo: pass ENV var from build.sh if WIN host
 else
 	$(info else)
-	#$(CC)_WIN $(CFLAGS_WIN) $(DEBUGFLAGS) -o $(TARGET_WIN) $(SOURCES)
+	#$(CC_WIN) $(CFLAGS_WIN) $(DEBUGFLAGS) -o $(TARGET_WIN) $(SOURCES)
 endif
 
 clean:
