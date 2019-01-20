@@ -5359,7 +5359,7 @@ UniValue cclib(const UniValue& params, bool fHelp)
         throw runtime_error("cclib method [JSON params]\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
-    method = params[0].get_str().c_str();
+    method = (char *)params[0].get_str().c_str();
     jsonparams = cJSON_Parse(params[1].get_str().c_str());
     return(CClib(cp,method,jsonparams));
 }
