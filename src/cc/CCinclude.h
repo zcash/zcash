@@ -116,6 +116,7 @@ struct CC_info
 
     uint8_t didinit;
 };
+typedef struct CC_info CCcontract_info;
 struct CC_info *CCinit(struct CC_info *cp,uint8_t evalcode);
 
 struct oracleprice_info
