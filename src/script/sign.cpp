@@ -153,7 +153,7 @@ bool GetCCByUnspendableAddress(struct CC_info *cp, char *addrstr)
     return found;
 }
 
-bool CCinitLite(struct CCcontract_info *cp, uint8_t evalcode)
+bool CCinitLite(struct CC_info *cp, uint8_t evalcode)
 {
     std::vector<CCcontract_info> &vCC = GetCryptoConditions();
     bool found = false;
