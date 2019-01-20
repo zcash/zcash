@@ -645,6 +645,7 @@ int32_t komodo_isPoS(CBlock *pblock)
             vout = pblock->vtx[n-1].vin[0].prevout.n;
             if ( ASSETCHAINS_MARMARA != 0 )
             {
+                fprintf(stderr,"validate proper signature and unlockht preservation\n");
                 // need to verify it was signed by the non-Marmarapk of the 1of2
             }
             txtime = komodo_txtime(&value,txid,vout,destaddr);
@@ -2116,7 +2117,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
             maxkp = numkp = 0;
             lasttime = 0;
         }
-        if ( ASSETCHAINS_MARMARA == 0 || 1 )
+        if ( ASSETCHAINS_MARMARA == 0 )
         {
             BOOST_FOREACH(const COutput& out, vecOutputs)
             {
@@ -2248,12 +2249,13 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
         txNew.vout[0].nValue = *utxovaluep - txfee;
         txNew.nLockTime = earliest;
         CTransaction txNewConst(txNew);
-        if ( ASSETCHAINS_MARMARA == 0 || 1 )
+        if ( ASSETCHAINS_MARMARA == 0 )
         {
             signSuccess = ProduceSignature(TransactionSignatureCreator(&keystore, &txNewConst, 0, *utxovaluep, SIGHASH_ALL), best_scriptPubKey, sigdata, consensusBranchId);
         }
         else
         {
+            fprintf(stderr,"add opreturn and CCFinalizetx\n");
             // add opreturn
             // signSuccess = CCFinalizetx(...)
         }
