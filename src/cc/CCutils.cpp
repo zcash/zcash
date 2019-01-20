@@ -637,6 +637,8 @@ bool ProcessCC(struct CC_info *cp,Eval* eval, std::vector<uint8_t> paramsNull,co
 }
 
 extern struct CC_info CCinfos[0x100];
+extern std::string MYCCLIBNAME;
+bool CClib_validate(struct CC_info *cp,Eval *eval,const CTransaction &txTo,unsigned int nIn);
 
 bool CClib_Dispatch(const CC *cond,Eval *eval,std::vector<uint8_t> paramsNull,const CTransaction &txTo,unsigned int nIn)
 {
