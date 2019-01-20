@@ -135,6 +135,8 @@ int32_t komodo_nextheight();
 
 int32_t CCgetspenttxid(uint256 &spenttxid,int32_t &vini,int32_t &height,uint256 txid,int32_t vout);
 void CCclearvars(struct CCcontract_info *cp);
+UniValue CClib(struct CCcontract_info *cp,char *method,cJSON *params);
+UniValue CClib_info(struct CCcontract_info *cp);
 
 static const uint256 zeroid;
 bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock);
