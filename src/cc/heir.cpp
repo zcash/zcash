@@ -400,6 +400,7 @@ uint8_t DecodeHeirEitherOpRet(CScript scriptPubKey, uint256 &tokenid, uint256 &f
     return _DecodeHeirEitherOpRet(scriptPubKey, tokenid, dummyOwnerPubkey, dummyHeirPubkey, dummyInactivityTime, dummyHeirName, fundingTxidInOpret, hasHeirSpendingBegun, noLogging);
 }
 
+
 /**
  * find the latest funding tx: it may be the first F tx or one of A or C tx's
  * Note: this function is also called from validation code (use non-locking calls)
@@ -471,10 +472,24 @@ uint256 _FindLatestFundingTx(uint256 fundingtxid, uint8_t& funcId, uint256 &toke
             if (tmpFuncId != 0 && fundingtxid == fundingTxidInOpret && (tokenid == zeroid || tokenid == tokenidInOpret)) {  // check tokenid also
                 
                 if (blockHeight > maxBlockHeight) {
-                    maxBlockHeight = blockHeight;
-                    latesttxid = txid;
-                    funcId = tmpFuncId;
-                    hasHeirSpendingBegun = hasHeirSpendingBegunInOpret;
+
+					// check owner pubkey in vins
+					bool hasVinOwner = false;
+					for (auto vin : regtx.vin) {
+						CPubKey vinPubkey = check_signing_pubkey(vin.scriptSig);
+						if (vinPubkey.IsValid() && vinPubkey == ownerPubkey) {
+							hasVinOwner = true;
+							break;
+						}
+					}
+
+					// we ignore 'donations' tx (non-owner fundings) for calculating if heir is allowed to spend:
+					if (hasVinOwner) {
+						hasHeirSpendingBegun = hasHeirSpendingBegunInOpret;
+						maxBlockHeight = blockHeight;
+						latesttxid = txid;
+						funcId = tmpFuncId;
+					}
                     
                     //std::cerr << "FindLatestFundingTx() txid=" << latesttxid.GetHex() << " at blockHeight=" << maxBlockHeight
                     //	<< " opreturn type=" << (char)(funcId ? funcId : ' ') << " hasHeirSpendingBegun=" << (int)hasHeirSpendingBegun << " - set as current lasttxid" << '\n';
@@ -615,7 +630,7 @@ template <class Helper> int64_t LifetimeHeirContractFunds(struct CCcontract_info
  * and also for setting spending plan for the funds' owner and heir
  * @return fundingtxid handle for subsequent references to this heir funding plan
  */
-template <typename Helper> UniValue HeirFund(int64_t txfee, int64_t amount, std::string heirName, CPubKey heirPubkey, int64_t inactivityTimeSec, uint256 tokenid)
+template <typename Helper> UniValue _HeirFund(int64_t txfee, int64_t amount, std::string heirName, CPubKey heirPubkey, int64_t inactivityTimeSec, uint256 tokenid)
 {
     UniValue result(UniValue::VOBJ);
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
@@ -656,6 +671,23 @@ template <typename Helper> UniValue HeirFund(int64_t txfee, int64_t amount, std:
             if (change != 0) {	// vout[1]
                 mtx.vout.push_back(Helper::makeUserVout(change, myPubkey));
             }
+
+			// check my pubkey in vins
+			bool notMypubkey = false;
+			for (auto vin : mtx.vin) {
+				CPubKey vinPubkey = check_signing_pubkey(vin.scriptSig);
+				if (vinPubkey.IsValid() && vinPubkey != myPubkey) {
+					notMypubkey = true;
+					break;
+				}
+			}
+			// do not allow to sign non-owner vin:
+			if (notMypubkey) {
+				result.push_back(Pair("result", "error"));
+				result.push_back(Pair("error", "not the owner's key in the wallet"));
+				return result;
+			}
+
             
             // add 1of2 vout validation pubkeys:
             std::vector<CPubKey> voutTokenPubkeys;
@@ -691,11 +723,11 @@ template <typename Helper> UniValue HeirFund(int64_t txfee, int64_t amount, std:
 
 // if no these callers - it could not link
 UniValue HeirFundCoinCaller(int64_t txfee, int64_t satoshis, std::string heirName, CPubKey heirPubkey, int64_t inactivityTimeSec, uint256 tokenid){
-    return HeirFund<CoinHelper>(txfee, satoshis, heirName, heirPubkey, inactivityTimeSec,  tokenid);
+    return _HeirFund<CoinHelper>(txfee, satoshis, heirName, heirPubkey, inactivityTimeSec,  tokenid);
 }
 
 UniValue HeirFundTokenCaller(int64_t txfee, int64_t satoshis, std::string heirName, CPubKey heirPubkey, int64_t inactivityTimeSec, uint256 tokenid) {
-    return HeirFund<TokenHelper>(txfee, satoshis, heirName, heirPubkey, inactivityTimeSec, tokenid);
+    return _HeirFund<TokenHelper>(txfee, satoshis, heirName, heirPubkey, inactivityTimeSec, tokenid);
 }
 
 /**
@@ -749,6 +781,22 @@ template <class Helper> UniValue _HeirAdd(uint256 fundingtxid, int64_t txfee, in
             if (change != 0) {																		// vout[1]
                 mtx.vout.push_back(Helper::makeUserVout(change, myPubkey));
             }
+
+			// check my pubkey in vins
+			bool notMypubkey = false;
+			for (auto vin : mtx.vin) {
+				CPubKey vinPubkey = check_signing_pubkey(vin.scriptSig);
+				if (vinPubkey.IsValid() && vinPubkey != myPubkey) {
+					notMypubkey = true;
+					break;
+				}
+			}
+			// do not allow to sign non-owner vin:
+			if (notMypubkey) {
+				result.push_back(Pair("result", "error"));
+				result.push_back(Pair("error", "not the owner's key in the wallet"));
+				return result;
+			}
             
             // add 1of2 vout validation pubkeys - needed only for tokens:
             std::vector<CPubKey> voutTokenPubkeys;
