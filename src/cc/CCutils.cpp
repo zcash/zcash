@@ -573,7 +573,6 @@ bool komodo_txnotarizedconfirmed(uint256 txid)
 
 CPubKey check_signing_pubkey(CScript scriptSig)
 {
-
 	bool found = false;
 	CPubKey pubkey;
 	
