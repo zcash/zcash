@@ -2275,7 +2275,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
         else
         {
             siglen = MarmaraSignature(utxosig,txNew);
-            if ( signlen > 0 )
+            if ( siglen > 0 )
                 signSuccess = true;
             else signSuccess = false;
         }
