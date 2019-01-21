@@ -258,7 +258,7 @@ int32_t MarmaraValidateCoinbase(int32_t height,CTransaction tx)
 bool MarmaraPoScheck(char *destaddr,CScript opret,CTransaction staketx)
 {
     CPubKey Marmarapk,pk; int32_t height,unlockht; uint8_t funcid; char coinaddr[64]; struct CCcontract_info *cp,C;
-    fprintf(stderr,"numvins.%d numvouts.%d\n",(int32_t)staketx.vin.size(),(int32_t)staketx.vout.size(),(double)staketx.vout[0].nValue/COIN);
+    fprintf(stderr,"numvins.%d numvouts.%d %.8f\n",(int32_t)staketx.vin.size(),(int32_t)staketx.vout.size(),(double)staketx.vout[0].nValue/COIN);
     if ( staketx.vout.size() == 2 && opret == staketx.vout[1].scriptPubKey )
     {
         cp = CCinit(&C,EVAL_MARMARA);
