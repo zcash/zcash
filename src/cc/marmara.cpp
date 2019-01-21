@@ -255,10 +255,13 @@ int32_t MarmaraValidateCoinbase(int32_t height,CTransaction tx)
     return(-1);
 }
 
-bool MarmaraPoScheck(char *destaddr,CScript opret,CScript scriptPubKey)
+bool MarmaraPoScheck(char *destaddr,CScript opret,CTransaction staketx)
 {
     CPubKey Marmarapk,pk; int32_t height,unlockht; uint8_t funcid; char coinaddr[64]; struct CCcontract_info *cp,C;
-    if ( opret == scriptPubKey )
+    UniValue result(UniValue::VOBJ);
+    TxToJSON(tx, uint256(), result);
+    fprintf(stderr,"%s\n",result.ToString());
+    if ( staketx.vout.size() == 2 && opret == staketx.vout[1].scriptPubKey )
     {
         cp = CCinit(&C,EVAL_MARMARA);
         funcid = DecodeMaramaraCoinbaseOpRet(opret,pk,height,unlockht);

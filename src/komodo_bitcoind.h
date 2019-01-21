@@ -636,7 +636,7 @@ int32_t komodo_WhoStaked(CBlock *pblock, CTxDestination &addressout)
     return(0);
 }
 
-bool MarmaraPoScheck(char *destaddr,CScript opret,CScript scriptPubKey);
+bool MarmaraPoScheck(char *destaddr,CScript opret,CTransaction staketx);
 
 int32_t komodo_isPoS(CBlock *pblock,int32_t height)
 {
@@ -653,17 +653,17 @@ int32_t komodo_isPoS(CBlock *pblock,int32_t height)
             if ( ExtractDestination(pblock->vtx[n-1].vout[0].scriptPubKey,voutaddress) )
             {
                 strcpy(voutaddr,CBitcoinAddress(voutaddress).ToString().c_str());
-                fprintf(stderr,"voutaddr.%s vs destaddr.%s\n",voutaddr,destaddr);
+                //fprintf(stderr,"voutaddr.%s vs destaddr.%s\n",voutaddr,destaddr);
                 if ( pblock->vtx[n-1].vout[0].nValue == value && strcmp(destaddr,voutaddr) == 0 )
                 {
                     if ( ASSETCHAINS_MARMARA == 0 )
                         return(1);
                     else
                     {
-                        if ( pblock->vtx[n-1].vout[0].scriptPubKey.IsPayToCryptoCondition() != 0 && (numvouts= pblock->vtx[n-1].vout.size()) > 1 )
+                        if ( pblock->vtx[n-1].vout[0].scriptPubKey.IsPayToCryptoCondition() != 0 && (numvouts= pblock->vtx[n-1].vout.size()) == 2 )
                         {
 //fprintf(stderr,"validate proper %s %s signature and unlockht preservation\n",voutaddr,destaddr);
-                            return(MarmaraPoScheck(destaddr,opret,pblock->vtx[n-1].vout[numvouts-1].scriptPubKey));
+                            return(MarmaraPoScheck(destaddr,opret,pblock->vtx[n-1]));
                         }
                         else
                         {
