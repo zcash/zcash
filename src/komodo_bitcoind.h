@@ -1470,6 +1470,7 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
         else return(1);
     }
     txn_count = pblock->vtx.size();
+    fprintf(stderr,"checkblock n.%d vins.%d vouts.%d\n",txn_count,pblock->vtx[txn_count-1].vin.size(),pblock->vtx[txn_count-1].vout.size());
     if ( txn_count > 1 && pblock->vtx[txn_count-1].vin.size() == 1 && pblock->vtx[txn_count-1].vout.size() == 1 + (ASSETCHAINS_MARMARA!=0) )
     {
         it = mapBlockIndex.find(pblock->hashPrevBlock);
