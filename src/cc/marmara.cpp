@@ -500,9 +500,9 @@ UniValue MarmaraLock(uint64_t txfee,int64_t amount,int32_t height)
     return(result);
 }
 
-int32_t MarmaraSignature(uint8_t *utxosig,CMutableTransaction &txNew)
+int32_t MarmaraSignature(uint8_t *utxosig,CMutableTransaction &mtx)
 {
-    uint256 txid,hashBlock; uint8_t *ptr; int32_t i,siglen,vout,numvouts; CTransaction tx; std::string rawtx; CPubKey mypk; std::vector<CPubKey> pubkeys; struct CCcontract_info *cp,C; uint64_t txfee
+    uint256 txid,hashBlock; uint8_t *ptr; int32_t i,siglen,vout,numvouts; CTransaction tx; std::string rawtx; CPubKey mypk; std::vector<CPubKey> pubkeys; struct CCcontract_info *cp,C; uint64_t txfee;
     txfee = 10000;
     vout = txNew.vin[0].prevout.n;
     if ( GetTransaction(txNew.vin[0].prevout.hash,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 1 && vout < numvouts )
