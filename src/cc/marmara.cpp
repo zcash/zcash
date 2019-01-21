@@ -94,7 +94,7 @@ uint8_t DecodeMaramaraCoinbaseOpRet(const CScript scriptPubKey,CPubKey &pk,int32
             {
                 return(script[1]);
             } else fprintf(stderr,"DecodeMaramaraCoinbaseOpRet unmarshal error for %c\n",script[1]);
-        } else fprintf(stderr,"script[1] is %d != 'C' %d or 'P' %d or 'L' %d\n",script[1],'C','P','L');
+        } //else fprintf(stderr,"script[1] is %d != 'C' %d or 'P' %d or 'L' %d\n",script[1],'C','P','L');
     } else fprintf(stderr,"vopret.size() is %d\n",(int32_t)vopret.size());
     return(0);
 }
@@ -255,6 +255,22 @@ int32_t MarmaraValidateCoinbase(int32_t height,CTransaction tx)
     return(-1);
 }
 
+bool MarmaraPoScheck(char *destaddr,CScript opret,CTransaction staketx)
+{
+    CPubKey Marmarapk,pk; int32_t height,unlockht; uint8_t funcid; char coinaddr[64]; struct CCcontract_info *cp,C;
+    //fprintf(stderr,"%s numvins.%d numvouts.%d %.8f opret[%d]\n",staketx.GetHash().ToString().c_str(),(int32_t)staketx.vin.size(),(int32_t)staketx.vout.size(),(double)staketx.vout[0].nValue/COIN,(int32_t)opret.size());
+    if ( staketx.vout.size() == 2 && opret == staketx.vout[1].scriptPubKey )
+    {
+        cp = CCinit(&C,EVAL_MARMARA);
+        funcid = DecodeMaramaraCoinbaseOpRet(opret,pk,height,unlockht);
+        Marmarapk = GetUnspendable(cp,0);
+        GetCCaddress1of2(cp,coinaddr,Marmarapk,pk);
+        //fprintf(stderr,"matched opret! funcid.%c ht.%d unlock.%d %s\n",funcid,height,unlockht,coinaddr);
+        return(strcmp(destaddr,coinaddr) == 0);
+    }
+    return(0);
+}
+
 bool MarmaraValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
 {
     std::vector<uint8_t> vopret; CTransaction vinTx; uint256 hashBlock;  int32_t numvins,numvouts,i,ht,unlockht,vht,vunlockht; uint8_t funcid,vfuncid,*script; CPubKey pk,vpk;
@@ -315,6 +331,10 @@ bool MarmaraValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
             return(true);
         }
         else if ( funcid == 'D' ) // insufficient settlement
+        {
+            return(true);
+        }
+        else if ( funcid == 'C' ) // coinbase
         {
             return(true);
         }
@@ -485,7 +505,34 @@ UniValue MarmaraLock(uint64_t txfee,int64_t amount,int32_t height)
     return(result);
 }
 
-// jl777: decide on what unlockht settlement change should have
+int32_t MarmaraSignature(uint8_t *utxosig,CMutableTransaction &mtx)
+{
+    uint256 txid,hashBlock; uint8_t *ptr; int32_t i,siglen,vout,numvouts; CTransaction tx; std::string rawtx; CPubKey mypk; std::vector<CPubKey> pubkeys; struct CCcontract_info *cp,C; uint64_t txfee;
+    txfee = 10000;
+    vout = mtx.vin[0].prevout.n;
+    if ( GetTransaction(mtx.vin[0].prevout.hash,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 1 && vout < numvouts )
+    {
+        cp = CCinit(&C,EVAL_MARMARA);
+        mypk = pubkey2pk(Mypubkey());
+        pubkeys.push_back(mypk);
+        rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,tx.vout[numvouts - 1].scriptPubKey,pubkeys);
+        if ( rawtx.size() > 0 )
+        {
+            siglen = mtx.vin[0].scriptSig.size();
+            ptr = &mtx.vin[0].scriptSig[0];
+            for (i=0; i<siglen; i++)
+            {
+                utxosig[i] = ptr[i];
+                //fprintf(stderr,"%02x",ptr[i]);
+            }
+            //fprintf(stderr," got signed rawtx.%s siglen.%d\n",rawtx.c_str(),siglen);
+            return(siglen);
+        }
+    }
+    return(0);
+}
+
+// jl777: decide on what unlockht settlement change should have -> from utxo making change
 
 UniValue MarmaraSettlement(uint64_t txfee,uint256 refbatontxid)
 {

@@ -637,7 +637,7 @@ bool ProcessCC(struct CCcontract_info *cp,Eval* eval, std::vector<uint8_t> param
 
 extern struct CCcontract_info CCinfos[0x100];
 extern std::string MYCCLIBNAME;
-bool CClib_validate(struct CCcontract_info *cp,Eval *eval,const CTransaction tx,unsigned int nIn);
+bool CClib_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx,unsigned int nIn);
 
 bool CClib_Dispatch(const CC *cond,Eval *eval,std::vector<uint8_t> paramsNull,const CTransaction &txTo,unsigned int nIn)
 {
@@ -670,9 +670,9 @@ bool CClib_Dispatch(const CC *cond,Eval *eval,std::vector<uint8_t> paramsNull,co
         CCclearvars(cp);
         if ( paramsNull.size() != 0 ) // Don't expect params
             return eval->Invalid("Cannot have params");
-        else if ( CClib_validate(cp,eval,txTo,nIn) != 0 )
+        else if ( CClib_validate(cp,height,eval,txTo,nIn) != 0 )
             return(true);
-        return eval->Invalid("error in CClib_validate");
+        return(false); //eval->Invalid("error in CClib_validate");
     }
     return eval->Invalid("cclib CC must have evalcode between 16 and 127");
 }

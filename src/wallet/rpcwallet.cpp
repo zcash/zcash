@@ -57,6 +57,7 @@
 
 #include <numeric>
 
+#include "komodo_defs.h"
 
 using namespace std;
 
@@ -67,8 +68,6 @@ const std::string ADDR_TYPE_SPROUT = "sprout";
 const std::string ADDR_TYPE_SAPLING = "sapling";
 
 extern UniValue TxJoinSplitToJSON(const CTransaction& tx);
-extern uint8_t ASSETCHAINS_PRIVATE;
-extern int32_t USE_EXTERNAL_PUBKEY;
 uint32_t komodo_segid32(char *coinaddr);
 int32_t komodo_dpowconfs(int32_t height,int32_t numconfs);
 int32_t komodo_isnotaryvout(char *coinaddr); // from ac_private chains only
@@ -5172,7 +5171,6 @@ int32_t verus_staked(CBlock *pBlock, CMutableTransaction &txNew, uint32_t &nBits
 
 int32_t ensure_CCrequirements()
 {
-    extern uint8_t NOTARY_PUBKEY33[];
     CCerror = "";
     if ( NOTARY_PUBKEY33[0] == 0 )
         return(-1);
@@ -5262,8 +5260,6 @@ UniValue setpubkey(const UniValue& params, bool fHelp)
 
     char Raddress[18];
     uint8_t pubkey33[33];
-    extern uint8_t NOTARY_PUBKEY33[];
-    extern std::string NOTARY_PUBKEY;
     if ( NOTARY_PUBKEY33[0] == 0 ) {
         if (strlen(params[0].get_str().c_str()) == 66) {
             decode_hex(pubkey33,33,(char *)params[0].get_str().c_str());
