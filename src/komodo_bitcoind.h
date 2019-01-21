@@ -557,9 +557,9 @@ uint64_t komodo_seed(int32_t height)
     return(seed);
 }
 
-uint32_t komodo_txtime(uint64_t *valuep,uint256 hash, int32_t n, char *destaddr)
+uint32_t komodo_txtime(CScript &opret,uint64_t *valuep,uint256 hash, int32_t n, char *destaddr)
 {
-    CTxDestination address; CTransaction tx; uint256 hashBlock;
+    CTxDestination address; CTransaction tx; uint256 hashBlock; int32_t numvouts;
     *valuep = 0;
     if (!GetTransaction(hash, tx,
 #ifndef KOMODO_ZCASH
@@ -570,10 +570,12 @@ uint32_t komodo_txtime(uint64_t *valuep,uint256 hash, int32_t n, char *destaddr)
         //fprintf(stderr,"ERROR: %s/v%d locktime.%u\n",hash.ToString().c_str(),n,(uint32_t)tx.nLockTime);
         return(0);
     }
+    numvouts = tx.vout.size();
     //fprintf(stderr,"%s/v%d locktime.%u\n",hash.ToString().c_str(),n,(uint32_t)tx.nLockTime);
-    if ( n < tx.vout.size() )
+    if ( n < numvouts )
     {
         *valuep = tx.vout[n].nValue;
+        opret = tx.vout[numvouts-1].scriptPubKey;
         if (ExtractDestination(tx.vout[n].scriptPubKey, address))
             strcpy(destaddr,CBitcoinAddress(address).ToString().c_str());
     }
@@ -614,12 +616,12 @@ uint32_t komodo_txtime2(uint64_t *valuep,uint256 hash,int32_t n,char *destaddr)
 
 int32_t komodo_WhoStaked(CBlock *pblock, CTxDestination &addressout)
 {
-    int32_t n,vout; uint32_t txtime; uint64_t value; char voutaddr[64],destaddr[64]; CTxDestination voutaddress; uint256 txid;
+    int32_t n,vout; uint32_t txtime; uint64_t value; char voutaddr[64],destaddr[64]; CTxDestination voutaddress; uint256 txid; CScript opret;
     if ( (n= pblock->vtx.size()) > 1 && pblock->vtx[n-1].vin.size() == 1 && pblock->vtx[n-1].vout.size() == 1 )
     {
         txid = pblock->vtx[n-1].vin[0].prevout.hash;
         vout = pblock->vtx[n-1].vin[0].prevout.n;
-        txtime = komodo_txtime(&value,txid,vout,destaddr);
+        txtime = komodo_txtime(opret,&value,txid,vout,destaddr);
         if ( ExtractDestination(pblock->vtx[n-1].vout[0].scriptPubKey,voutaddress) )
         {
             strcpy(voutaddr,CBitcoinAddress(voutaddress).ToString().c_str());
@@ -634,28 +636,33 @@ int32_t komodo_WhoStaked(CBlock *pblock, CTxDestination &addressout)
     return(0);
 }
 
-int32_t komodo_isPoS(CBlock *pblock)
+bool MarmaraPoScheck(char *destaddr,CScript opret,CScript scriptPubKey);
+
+int32_t komodo_isPoS(CBlock *pblock,int32_t height)
 {
-    int32_t n,vout; uint32_t txtime; uint64_t value; char voutaddr[64],destaddr[64]; CTxDestination voutaddress; uint256 txid;
+    int32_t n,vout,numvouts; uint32_t txtime; uint64_t value; char voutaddr[64],destaddr[64]; CTxDestination voutaddress; uint256 txid; CScript opret;
     if ( ASSETCHAINS_STAKED != 0 )
     {
         if ( (n= pblock->vtx.size()) > 1 && pblock->vtx[n-1].vin.size() == 1 && pblock->vtx[n-1].vout.size() == 1 )
         {
             txid = pblock->vtx[n-1].vin[0].prevout.hash;
             vout = pblock->vtx[n-1].vin[0].prevout.n;
-            txtime = komodo_txtime(&value,txid,vout,destaddr);
+            txtime = komodo_txtime(opret,&value,txid,vout,destaddr);
             if ( ExtractDestination(pblock->vtx[n-1].vout[0].scriptPubKey,voutaddress) )
             {
                 strcpy(voutaddr,CBitcoinAddress(voutaddress).ToString().c_str());
-                if ( ASSETCHAINS_MARMARA != 0 )
+                if ( pblock->vtx[n-1].vout[0].nValue == value && strcmp(destaddr,voutaddr) == 0 )
                 {
-                    fprintf(stderr,"validate proper %s %s signature and unlockht preservation\n",voutaddr,destaddr);
-                    // need to verify it was signed by the non-Marmarapk of the 1of2
-                }
-                if ( strcmp(destaddr,voutaddr) == 0 && pblock->vtx[n-1].vout[0].nValue == value )
-                {
-                    //fprintf(stderr,"is PoS block!\n");
-                    return(1);
+                    if ( ASSETCHAINS_MARMARA == 0 )
+                        return(1);
+                    else
+                    {
+                        if ( pblock->vtx[n-1].vout[0].scriptPubKey.IsPayToCryptoCondition() != 0 && (numvouts= pblock->vtx[n-1].vout.size()) > 1 )
+                        {
+fprintf(stderr,"validate proper %s %s signature and unlockht preservation\n",voutaddr,destaddr);
+                            return(MarmaraPoScheck(destaddr,opret,pblock->vtx[n-1].vout[numvouts-1].scriptPubKey));
+                        }
+                    }
                 }
             }
         }
@@ -1195,7 +1202,7 @@ uint32_t komodo_segid32(char *coinaddr)
 
 int8_t komodo_segid(int32_t nocache,int32_t height)
 {
-    CTxDestination voutaddress; CBlock block; CBlockIndex *pindex; uint64_t value; uint32_t txtime; char voutaddr[64],destaddr[64]; int32_t txn_count,vout; uint256 txid; int8_t segid = -1;
+    CTxDestination voutaddress; CBlock block; CBlockIndex *pindex; uint64_t value; uint32_t txtime; char voutaddr[64],destaddr[64]; int32_t txn_count,vout; uint256 txid; CScript opret; int8_t segid = -1;
     if ( height > 0 && (pindex= komodo_chainactive(height)) != 0 )
     {
         if ( nocache == 0 && pindex->segid >= -1 )
@@ -1207,7 +1214,7 @@ int8_t komodo_segid(int32_t nocache,int32_t height)
             {
                 txid = block.vtx[txn_count-1].vin[0].prevout.hash;
                 vout = block.vtx[txn_count-1].vin[0].prevout.n;
-                txtime = komodo_txtime(&value,txid,vout,destaddr);
+                txtime = komodo_txtime(opret,&value,txid,vout,destaddr);
                 if ( ExtractDestination(block.vtx[txn_count-1].vout[0].scriptPubKey,voutaddress) )
                 {
                     strcpy(voutaddr,CBitcoinAddress(voutaddress).ToString().c_str());
@@ -1464,7 +1471,7 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
         vout = pblock->vtx[txn_count-1].vin[0].prevout.n;
         if ( prevtime != 0 )
         {
-            if ( komodo_isPoS(pblock) != 0 )
+            if ( komodo_isPoS(pblock,height) != 0 )
             {
                 eligible = komodo_stake(1,bnTarget,height,txid,vout,pblock->nTime,prevtime+27,(char *)"");
             }
@@ -1500,7 +1507,7 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
         }
         if ( slowflag == 0 && isPoS == 0 ) // maybe previous block is not seen yet, do the best approx
         {
-            if ( komodo_isPoS(pblock) != 0 )
+            if ( komodo_isPoS(pblock,height) != 0 )
                 isPoS = 1;
         }
         if ( slowflag != 0 && isPoS != 0 )

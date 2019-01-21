@@ -255,6 +255,21 @@ int32_t MarmaraValidateCoinbase(int32_t height,CTransaction tx)
     return(-1);
 }
 
+bool MarmaraPoScheck(char *destaddr,CScript opret,CScript scriptPubKey)
+{
+    CPubKey pk; int32_t height,unlockht; uint8_t funcid; char coinaddr[64]; struct CCcontract_info *cp,C;
+    if ( opret == scriptPubKey )
+    {
+        cp = CCinit(&C,EVAL_MARMARA);
+        funcid = DecodeMaramaraCoinbaseOpRet(opret,pk,height,unlockht);
+        Marmarapk = GetUnspendable(cp,0);
+        GetCCaddress1of2(cp,coinaddr,Marmarapk,pk);
+        fprintf(stderr,"matched opret! funcid.%c ht.%d unlock.%d %s\n",funcid,height,unlockht,coinaddr);
+        return(strcmp(destaddr,coinaddr));
+    }
+    return(0);
+}
+
 bool MarmaraValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
 {
     std::vector<uint8_t> vopret; CTransaction vinTx; uint256 hashBlock;  int32_t numvins,numvouts,i,ht,unlockht,vht,vunlockht; uint8_t funcid,vfuncid,*script; CPubKey pk,vpk;
