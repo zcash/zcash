@@ -504,8 +504,8 @@ int32_t MarmaraSignature(uint8_t *utxosig,CMutableTransaction &mtx)
 {
     uint256 txid,hashBlock; uint8_t *ptr; int32_t i,siglen,vout,numvouts; CTransaction tx; std::string rawtx; CPubKey mypk; std::vector<CPubKey> pubkeys; struct CCcontract_info *cp,C; uint64_t txfee;
     txfee = 10000;
-    vout = txNew.vin[0].prevout.n;
-    if ( GetTransaction(txNew.vin[0].prevout.hash,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 1 && vout < numvouts )
+    vout = mtx.vin[0].prevout.n;
+    if ( GetTransaction(mtx.vin[0].prevout.hash,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 1 && vout < numvouts )
     {
         cp = CCinit(&C,EVAL_MARMARA);
         mypk = pubkey2pk(Mypubkey());
@@ -517,7 +517,7 @@ int32_t MarmaraSignature(uint8_t *utxosig,CMutableTransaction &mtx)
         if ( rawtx.size() > 0 )
         {
             siglen = mtx.vin[0].scriptSig.size();
-            ptr = mtx.vin[0].scriptSig.data();
+            ptr = mtx.vin[0].scriptSig.ptr();
             for (i=0; i<siglen; i++)
                 utxosig[i] = ptr[i];
             fprintf(stderr,"got signed rawtx.%s siglen.%d\n",rawtx.c_str(),siglen);
