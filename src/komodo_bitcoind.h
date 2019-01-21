@@ -644,7 +644,7 @@ int32_t komodo_isPoS(CBlock *pblock,int32_t height)
     if ( ASSETCHAINS_STAKED != 0 )
     {
         n = pblock->vtx.size();
-        fprintf(stderr,"ht.%d check for PoS numtx.%d numvins.%d numvouts.%d\n",height,n,(int32_t)pblock->vtx[n-1].vin.size(),(int32_t)pblock->vtx[n-1].vout.size());
+        //fprintf(stderr,"ht.%d check for PoS numtx.%d numvins.%d numvouts.%d\n",height,n,(int32_t)pblock->vtx[n-1].vin.size(),(int32_t)pblock->vtx[n-1].vout.size());
         if ( n > 1 && pblock->vtx[n-1].vin.size() == 1 && pblock->vtx[n-1].vout.size() == 1+(ASSETCHAINS_MARMARA!=0) )
         {
             txid = pblock->vtx[n-1].vin[0].prevout.hash;
@@ -662,7 +662,7 @@ int32_t komodo_isPoS(CBlock *pblock,int32_t height)
                     {
                         if ( pblock->vtx[n-1].vout[0].scriptPubKey.IsPayToCryptoCondition() != 0 && (numvouts= pblock->vtx[n-1].vout.size()) > 1 )
                         {
-fprintf(stderr,"validate proper %s %s signature and unlockht preservation\n",voutaddr,destaddr);
+//fprintf(stderr,"validate proper %s %s signature and unlockht preservation\n",voutaddr,destaddr);
                             return(MarmaraPoScheck(destaddr,opret,pblock->vtx[n-1].vout[numvouts-1].scriptPubKey));
                         }
                         else
@@ -1464,13 +1464,13 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
     pindex = it != mapBlockIndex.end() ? it->second : NULL;
     if ( pindex != 0 && pindex->segid >= -1 )
     {
-        fprintf(stderr,"isPoSblock segid.%d\n",pindex->segid);
+        //fprintf(stderr,"isPoSblock segid.%d\n",pindex->segid);
         if ( pindex->segid == -1 )
             return(0);
         else return(1);
     }
     txn_count = pblock->vtx.size();
-    fprintf(stderr,"checkblock n.%d vins.%d vouts.%d %.8f %.8f\n",txn_count,(int32_t)pblock->vtx[txn_count-1].vin.size(),(int32_t)pblock->vtx[txn_count-1].vout.size(),(double)pblock->vtx[txn_count-1].vout[0].nValue/COIN,(double)pblock->vtx[txn_count-1].vout[1].nValue/COIN);
+    //fprintf(stderr,"checkblock n.%d vins.%d vouts.%d %.8f %.8f\n",txn_count,(int32_t)pblock->vtx[txn_count-1].vin.size(),(int32_t)pblock->vtx[txn_count-1].vout.size(),(double)pblock->vtx[txn_count-1].vout[0].nValue/COIN,(double)pblock->vtx[txn_count-1].vout[1].nValue/COIN);
     if ( txn_count > 1 && pblock->vtx[txn_count-1].vin.size() == 1 && pblock->vtx[txn_count-1].vout.size() == 1 + (ASSETCHAINS_MARMARA!=0) )
     {
         it = mapBlockIndex.find(pblock->hashPrevBlock);
@@ -1786,7 +1786,6 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
     bnTarget.SetCompact(pblock->nBits,&fNegative,&fOverflow);
     bhash = UintToArith256(hash);
     possible = komodo_block2pubkey33(pubkey33,pblock);
-fprintf(stderr,"checkPoW ht.%d\n",height);
     if ( height == 0 )
     {
         if ( slowflag != 0 )
@@ -1831,7 +1830,7 @@ fprintf(stderr,"checkPoW ht.%d\n",height);
                 return(-1);
         }
     }
-    fprintf(stderr,"ASSETCHAINS_STAKED.%d ht.%d\n",(int32_t)ASSETCHAINS_STAKED,height);
+    //fprintf(stderr,"ASSETCHAINS_STAKED.%d ht.%d\n",(int32_t)ASSETCHAINS_STAKED,height);
     if ( ASSETCHAINS_STAKED != 0 && height >= 2 ) // must PoS or have at least 16x better PoW
     {
         if ( (is_PoSblock= komodo_is_PoSblock(slowflag,height,pblock,bnTarget,bhash)) == 0 )

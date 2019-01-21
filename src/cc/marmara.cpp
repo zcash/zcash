@@ -265,7 +265,7 @@ bool MarmaraPoScheck(char *destaddr,CScript opret,CScript scriptPubKey)
         Marmarapk = GetUnspendable(cp,0);
         GetCCaddress1of2(cp,coinaddr,Marmarapk,pk);
         fprintf(stderr,"matched opret! funcid.%c ht.%d unlock.%d %s\n",funcid,height,unlockht,coinaddr);
-        return(strcmp(destaddr,coinaddr));
+        return(strcmp(destaddr,coinaddr) == 0);
     }
     return(0);
 }
