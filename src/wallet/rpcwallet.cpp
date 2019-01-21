@@ -5260,8 +5260,6 @@ UniValue setpubkey(const UniValue& params, bool fHelp)
 
     char Raddress[18];
     uint8_t pubkey33[33];
-    extern uint8_t NOTARY_PUBKEY33[];
-    extern std::string NOTARY_PUBKEY;
     if ( NOTARY_PUBKEY33[0] == 0 ) {
         if (strlen(params[0].get_str().c_str()) == 66) {
             decode_hex(pubkey33,33,(char *)params[0].get_str().c_str());
