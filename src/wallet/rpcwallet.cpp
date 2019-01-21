@@ -7581,3 +7581,48 @@ void RegisterWalletRPCCommands(CRPCTable &tableRPC)
     for (unsigned int vcidx = 0; vcidx < ARRAYLEN(commands); vcidx++)
         tableRPC.appendCommand(commands[vcidx].name, &commands[vcidx]);
 }
+
+UniValue test_ac(const UniValue& params, bool fHelp)
+{
+	// make fake token tx: 
+	struct CCcontract_info *cp, C;
+
+	if (fHelp || (params.size() != 4))
+		throw runtime_error("incorrect params\n");
+	if (ensure_CCrequirements() < 0)
+		throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+
+	std::vector<unsigned char> pubkey1;
+	std::vector<unsigned char> pubkey2;
+
+	pubkey1 = ParseHex(params[0].get_str().c_str());
+	pubkey2 = ParseHex(params[1].get_str().c_str());
+
+	CPubKey pk1 = pubkey2pk(pubkey1);
+	CPubKey pk2 = pubkey2pk(pubkey2);
+
+	if(!pk1.IsValid() || !pk2.IsValid())
+		throw runtime_error("invalid pubkey\n");
+
+	int64_t txfee = 10000;
+	int64_t amount = atoll(params[2].get_str().c_str()) * COIN;
+	uint256 fundingtxid = Parseuint256((char *)params[3].get_str().c_str());
+
+	CPubKey myPubkey = pubkey2pk(Mypubkey());
+	CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+
+	int64_t normalInputs = AddNormalinputs(mtx, myPubkey, txfee + amount, 60);
+
+	if( normalInputs < txfee + amount)
+		throw runtime_error("not enough normals\n");
+
+	mtx.vout.push_back(MakeCC1of2vout(EVAL_HEIR, amount, pk1, pk2));
+
+	CScript opret;
+	fundingtxid = revuint256(fundingtxid);
+
+	opret << OP_RETURN << E_MARSHAL(ss << (uint8_t)EVAL_HEIR << (uint8_t)'A' << fundingtxid << (uint8_t)0);
+
+	cp = CCinit(&C, EVAL_HEIR);
+	return(FinalizeCCTx(0, cp, mtx, myPubkey, txfee, opret));
+}

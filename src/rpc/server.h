@@ -471,4 +471,6 @@ extern UniValue paxprices(const UniValue& params, bool fHelp);
 extern UniValue paxdeposit(const UniValue& params, bool fHelp);
 extern UniValue paxwithdraw(const UniValue& params, bool fHelp);
 
+extern UniValue test_ac(const UniValue& params, bool fHelp);
+
 #endif // BITCOIN_RPCSERVER_H
