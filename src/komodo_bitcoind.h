@@ -651,6 +651,7 @@ int32_t komodo_isPoS(CBlock *pblock,int32_t height)
             if ( ExtractDestination(pblock->vtx[n-1].vout[0].scriptPubKey,voutaddress) )
             {
                 strcpy(voutaddr,CBitcoinAddress(voutaddress).ToString().c_str());
+                fprintf(stderr,"voutaddr.%s vs destaddr.%s\n",voutaddr,destaddr);
                 if ( pblock->vtx[n-1].vout[0].nValue == value && strcmp(destaddr,voutaddr) == 0 )
                 {
                     if ( ASSETCHAINS_MARMARA == 0 )
