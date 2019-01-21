@@ -517,7 +517,7 @@ int32_t MarmaraSignature(uint8_t *utxosig,CMutableTransaction &mtx)
         if ( rawtx.size() > 0 )
         {
             siglen = mtx.vin[0].scriptSig.size();
-            ptr = &(uint8_t *)&mtx.vin[0].scriptSig;
+            ptr = mtx.vin[0].scriptSig.begin();
             for (i=0; i<siglen; i++)
             {
                 utxosig[i] = ptr[i];
