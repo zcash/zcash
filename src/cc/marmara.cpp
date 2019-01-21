@@ -521,9 +521,9 @@ int32_t MarmaraSignature(uint8_t *utxosig,CMutableTransaction &mtx)
             for (i=0; i<siglen; i++)
             {
                 utxosig[i] = ptr[i];
-                fprintf(stderr,"%02x",ptr[i]);
+                //fprintf(stderr,"%02x",ptr[i]);
             }
-            fprintf(stderr," got signed rawtx.%s siglen.%d\n",rawtx.c_str(),siglen);
+            //fprintf(stderr," got signed rawtx.%s siglen.%d\n",rawtx.c_str(),siglen);
             return(siglen);
         }
     }
