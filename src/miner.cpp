@@ -137,7 +137,7 @@ extern uint64_t ASSETCHAINS_COMMISSION, ASSETCHAINS_STAKED;
 extern bool VERUS_MINTBLOCKS;
 extern uint64_t ASSETCHAINS_REWARD[ASSETCHAINS_MAX_ERAS], ASSETCHAINS_TIMELOCKGTE, ASSETCHAINS_NONCEMASK[];
 extern const char *ASSETCHAINS_ALGORITHMS[];
-extern int32_t VERUS_MIN_STAKEAGE, ASSETCHAINS_ALGO, ASSETCHAINS_EQUIHASH, ASSETCHAINS_VERUSHASH, ASSETCHAINS_LASTERA, ASSETCHAINS_LWMAPOS, ASSETCHAINS_NONCESHIFT[], ASSETCHAINS_HASHESPERROUND[];
+extern int32_t VERUS_MIN_STAKEAGE, ASSETCHAINS_ALGO, ASSETCHAINS_EQUIHASH, ASSETCHAINS_VERUSHASH, ASSETCHAINS_VERUSHASHV2, ASSETCHAINS_LASTERA, ASSETCHAINS_LWMAPOS, ASSETCHAINS_NONCESHIFT[], ASSETCHAINS_HASHESPERROUND[];
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN],NOTARYADDRS[64][36];
 extern std::string NOTARY_PUBKEY,ASSETCHAINS_OVERRIDE_PUBKEY,ASSETCHAINS_SCRIPTPUB;
 void vcalc_sha256(char deprecated[(256 >> 3) * 2 + 1],uint8_t hash[256 >> 3],uint8_t *src,int32_t len);
@@ -1324,26 +1324,44 @@ void static BitcoinMiner_noeq()
             while (true)
             {
                 arith_uint256 arNonce = UintToArith256(pblock->nNonce);
-
+                int64_t *extraPtr;
+                
+                // This seems to be a really bad way to do this, but its better than copy pasting the entire miner function at this stage.
                 CVerusHashWriter ss = CVerusHashWriter(SER_GETHASH, PROTOCOL_VERSION);
                 ss << *((CBlockHeader *)pblock);
-                int64_t *extraPtr = ss.xI64p();
+                if ( ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASH )
+                    extraPtr = ss.xI64p();
                 CVerusHash &vh = ss.GetState();
                 uint256 hashResult = uint256();
                 vh.ClearExtra();
+                
+                CVerusHashV2Writer ss2 = CVerusHashV2Writer(SER_GETHASH, PROTOCOL_VERSION);
+                ss2 << *((CBlockHeader *)pblock);
+                if ( ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASHV2 )
+                    extraPtr = ss2.xI64p();
+                CVerusHashV2 &vh2 = ss2.GetState();
+                vh2.ClearExtra();
+                
                 int64_t i, count = ASSETCHAINS_NONCEMASK[ASSETCHAINS_ALGO] + 1;
                 int64_t hashesToGo = ASSETCHAINS_HASHESPERROUND[ASSETCHAINS_ALGO];
-                if ( ASSETCHAINS_STAKED != 0)
+                if ( ASSETCHAINS_STAKED > 0 && ASSETCHAINS_STAKED < 100 )
                 {    
-                    if ( KOMODO_MININGTHREADS > 0 && ASSETCHAINS_STAKED < 100 )
+                    if ( KOMODO_MININGTHREADS > 0 )
                         hashTarget = HASHTarget_POW;
-                    else hashTarget = HASHTarget;
+                    else 
+                        hashTarget = HASHTarget;
                 }
+                else if ( ASSETCHAINS_STAKED == 100 && Mining_height > 100 )
+                    hashTarget = HASHTarget;
+                
                 // for speed check NONCEMASK at a time
                 for (i = 0; i < count; i++)
                 {
                     *extraPtr = i;
-                    vh.ExtraHash((unsigned char *)&hashResult);
+                    if ( ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASH )
+                        vh.ExtraHash((unsigned char *)&hashResult);
+                    else if ( ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASHV2 )
+                        vh2.ExtraHash((unsigned char *)&hashResult);
 
                     if ( UintToArith256(hashResult) <= hashTarget )
                     {

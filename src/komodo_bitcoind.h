@@ -1296,11 +1296,11 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
         if ( iter > 0 )
             diff += segid*2;
         coinage = (value * diff);
-        if ( ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASH )
+        if ( ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASH || ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASHV2 )
         {
             if ( blocktime+iter+segid*2 > prevtime+200 )
                 coinage *= ((blocktime+iter+segid*2) - (prevtime+120));
-        }
+        } 
         if ( blocktime+iter+segid*2 > prevtime+480 )
             coinage *= ((blocktime+iter+segid*2) - (prevtime+400));
         coinage256 = arith_uint256(coinage+1);
@@ -1379,8 +1379,6 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
         if ( dispflag != 0 && ASSETCHAINS_STAKED < 100 && (i % 10) == 9 )
             fprintf(stderr," %d, ",percPoS);
     }
-    // We now do actual PoS % at the start. Requires coin distribution in first 10 blocks! 
-    // This is not hard to do and stops the chain having its PoS/PoW in large chunks. 
     if ( m+n < 100 )
         percPoS = ((percPoS * n) + (goalperc * (100-n))) / 100;            
     if ( dispflag != 0 && ASSETCHAINS_STAKED < 100 )
