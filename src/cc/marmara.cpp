@@ -509,9 +509,6 @@ int32_t MarmaraSignature(uint8_t *utxosig,CMutableTransaction &mtx)
     {
         cp = CCinit(&C,EVAL_MARMARA);
         mypk = pubkey2pk(Mypubkey());
-        mtx.vout.resize(2);
-        mtx.vout[1].scriptPubKey = tx.vout[numvouts - 1].scriptPubKey;
-        mtx.vout[1].nValue = 0;
         pubkeys.push_back(mypk);
         rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,tx.vout[numvouts - 1].scriptPubKey,pubkeys);
         if ( rawtx.size() > 0 )
