@@ -615,7 +615,7 @@ template <class Helper> int64_t LifetimeHeirContractFunds(struct CCcontract_info
  * and also for setting spending plan for the funds' owner and heir
  * @return fundingtxid handle for subsequent references to this heir funding plan
  */
-template <typename Helper> UniValue HeirFund(uint64_t txfee, int64_t amount, std::string heirName, CPubKey heirPubkey, int64_t inactivityTimeSec, uint256 tokenid)
+template <typename Helper> UniValue HeirFund(int64_t txfee, int64_t amount, std::string heirName, CPubKey heirPubkey, int64_t inactivityTimeSec, uint256 tokenid)
 {
     UniValue result(UniValue::VOBJ);
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
@@ -629,7 +629,8 @@ template <typename Helper> UniValue HeirFund(uint64_t txfee, int64_t amount, std
     
     if (!heirPubkey.IsValid()) {
         std::cerr << "HeirFund() heirPubkey is not valid!" << std::endl;
-        return std::string("");
+		result.push_back(Pair("result", "error"));
+		result.push_back(Pair("error", "invalid heir pubkey"));
     }
     
     CPubKey myPubkey = pubkey2pk(Mypubkey());
@@ -689,12 +690,12 @@ template <typename Helper> UniValue HeirFund(uint64_t txfee, int64_t amount, std
 }
 
 // if no these callers - it could not link
-UniValue HeirFundCoinCaller(uint64_t txfee, int64_t funds, std::string heirName, CPubKey heirPubkey, int64_t inactivityTimeSec, uint256 tokenid){
-    return HeirFund<CoinHelper>(txfee, funds, heirName, heirPubkey, inactivityTimeSec,  tokenid);
+UniValue HeirFundCoinCaller(int64_t txfee, int64_t satoshis, std::string heirName, CPubKey heirPubkey, int64_t inactivityTimeSec, uint256 tokenid){
+    return HeirFund<CoinHelper>(txfee, satoshis, heirName, heirPubkey, inactivityTimeSec,  tokenid);
 }
 
-UniValue HeirFundTokenCaller(uint64_t txfee, int64_t funds, std::string heirName, CPubKey heirPubkey, int64_t inactivityTimeSec, uint256 tokenid) {
-    return HeirFund<TokenHelper>(txfee, funds, heirName, heirPubkey, inactivityTimeSec, tokenid);
+UniValue HeirFundTokenCaller(int64_t txfee, int64_t satoshis, std::string heirName, CPubKey heirPubkey, int64_t inactivityTimeSec, uint256 tokenid) {
+    return HeirFund<TokenHelper>(txfee, satoshis, heirName, heirPubkey, inactivityTimeSec, tokenid);
 }
 
 /**
@@ -702,7 +703,7 @@ UniValue HeirFundTokenCaller(uint64_t txfee, int64_t funds, std::string heirName
  * creates tx to add more funds to cryptocondition address for spending by either funds' owner or heir
  * @return result object with raw tx or error text
  */
-template <class Helper> UniValue _HeirAdd(uint256 fundingtxid, uint64_t txfee, int64_t amount, uint256 latesttxid, uint8_t funcId, uint256 tokenid, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t inactivityTimeSec, std::string heirName, uint8_t hasHeirSpendingBegun)
+template <class Helper> UniValue _HeirAdd(uint256 fundingtxid, int64_t txfee, int64_t amount, uint256 latesttxid, uint8_t funcId, uint256 tokenid, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t inactivityTimeSec, std::string heirName, uint8_t hasHeirSpendingBegun)
 {
     UniValue result(UniValue::VOBJ);
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
@@ -781,13 +782,11 @@ template <class Helper> UniValue _HeirAdd(uint256 fundingtxid, uint64_t txfee, i
         result.push_back(Pair("error", "can't find normal inputs for tx fee"));
     }
     
-    
-    
     return result;
 }
 
 
-UniValue HeirAddCaller(uint256 fundingtxid, uint64_t txfee, int64_t amount) {
+UniValue HeirAddCaller(uint256 fundingtxid, int64_t txfee, std::string strAmount) {
     
     CPubKey ownerPubkey, heirPubkey;
     int64_t inactivityTimeSec;
@@ -798,10 +797,27 @@ UniValue HeirAddCaller(uint256 fundingtxid, uint64_t txfee, int64_t amount) {
     uint8_t hasHeirSpendingBegun = 0;
     
     if ((latesttxid = FindLatestFundingTx(fundingtxid, funcId, tokenid, ownerPubkey, heirPubkey, inactivityTimeSec, heirName, hasHeirSpendingBegun)) != zeroid) {
-        if (tokenid == zeroid)
-            return _HeirAdd<CoinHelper>(fundingtxid, txfee, amount, latesttxid, funcId, tokenid, ownerPubkey, heirPubkey, inactivityTimeSec, heirName, hasHeirSpendingBegun);
-        else
-            return _HeirAdd<TokenHelper>(fundingtxid, txfee, amount, latesttxid, funcId, tokenid, ownerPubkey, heirPubkey, inactivityTimeSec, heirName, hasHeirSpendingBegun);
+		if (tokenid == zeroid) {
+			int64_t amount = (int64_t)(atof(strAmount.c_str()) * COIN);
+			if (amount <= 0) {
+				UniValue result(UniValue::VOBJ);
+				result.push_back(Pair("result", "error"));
+				result.push_back(Pair("error", "invalid amount"));
+				return result;
+			}
+
+			return _HeirAdd<CoinHelper>(fundingtxid, txfee, amount, latesttxid, funcId, tokenid, ownerPubkey, heirPubkey, inactivityTimeSec, heirName, hasHeirSpendingBegun);
+		}
+		else {
+			int64_t amount = atoll(strAmount.c_str());
+			if (amount <= 0) {
+				UniValue result(UniValue::VOBJ);
+				result.push_back(Pair("result", "error"));
+				result.push_back(Pair("error", "invalid amount"));
+				return result;
+			}
+			return _HeirAdd<TokenHelper>(fundingtxid, txfee, amount, latesttxid, funcId, tokenid, ownerPubkey, heirPubkey, inactivityTimeSec, heirName, hasHeirSpendingBegun);
+		}
     }
     else {
         UniValue result(UniValue::VOBJ);
@@ -819,7 +835,7 @@ UniValue HeirAddCaller(uint256 fundingtxid, uint64_t txfee, int64_t amount) {
  * creates tx to spend funds from cryptocondition address by either funds' owner or heir
  * @return result object with raw tx or error text
  */
-template <typename Helper>UniValue _HeirClaim(uint256 fundingtxid, uint64_t txfee, int64_t amount, uint256 latesttxid, uint8_t funcId, uint256 tokenid, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t inactivityTimeSec, std::string heirName, uint8_t hasHeirSpendingBegun)
+template <typename Helper>UniValue _HeirClaim(uint256 fundingtxid, int64_t txfee, int64_t amount, uint256 latesttxid, uint8_t funcId, uint256 tokenid, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t inactivityTimeSec, std::string heirName, uint8_t hasHeirSpendingBegun)
 {
     UniValue result(UniValue::VOBJ);
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
@@ -940,7 +956,7 @@ template <typename Helper>UniValue _HeirClaim(uint256 fundingtxid, uint64_t txfe
     return result;
 }
 
-UniValue HeirClaimCaller(uint256 fundingtxid, uint64_t txfee, int64_t amount) {
+UniValue HeirClaimCaller(uint256 fundingtxid, int64_t txfee, std::string strAmount) {
     
     CPubKey ownerPubkey, heirPubkey;
     int64_t inactivityTimeSec;
@@ -951,10 +967,26 @@ UniValue HeirClaimCaller(uint256 fundingtxid, uint64_t txfee, int64_t amount) {
     uint8_t hasHeirSpendingBegun = 0;
     
     if ((latesttxid = FindLatestFundingTx(fundingtxid, funcId, tokenid, ownerPubkey, heirPubkey, inactivityTimeSec, heirName, hasHeirSpendingBegun)) != zeroid) {
-        if( tokenid == zeroid )
-            return _HeirClaim<CoinHelper>(fundingtxid, txfee, amount, latesttxid, funcId, tokenid, ownerPubkey, heirPubkey, inactivityTimeSec, heirName, hasHeirSpendingBegun);
-        else
-            return _HeirClaim<TokenHelper>(fundingtxid, txfee, amount, latesttxid, funcId, tokenid, ownerPubkey, heirPubkey, inactivityTimeSec, heirName, hasHeirSpendingBegun);
+		if (tokenid == zeroid) {
+			int64_t amount = (int64_t)(atof(strAmount.c_str()) * COIN);
+			if (amount < 0) {
+				UniValue result(UniValue::VOBJ);
+				result.push_back(Pair("result", "error"));
+				result.push_back(Pair("error", "invalid amount"));
+				return result;
+			}
+			return _HeirClaim<CoinHelper>(fundingtxid, txfee, amount, latesttxid, funcId, tokenid, ownerPubkey, heirPubkey, inactivityTimeSec, heirName, hasHeirSpendingBegun);
+		}
+		else {
+			int64_t amount = atoll(strAmount.c_str());
+			if (amount <= 0) {
+				UniValue result(UniValue::VOBJ);
+				result.push_back(Pair("result", "error"));
+				result.push_back(Pair("error", "invalid amount"));
+				return result;
+			}
+			return _HeirClaim<TokenHelper>(fundingtxid, txfee, amount, latesttxid, funcId, tokenid, ownerPubkey, heirPubkey, inactivityTimeSec, heirName, hasHeirSpendingBegun);
+		}
         
     }
     else {
