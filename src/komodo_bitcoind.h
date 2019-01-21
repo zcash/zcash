@@ -661,7 +661,7 @@ int32_t komodo_isPoS(CBlock *pblock,int32_t height)
                         {
 fprintf(stderr,"validate proper %s %s signature and unlockht preservation\n",voutaddr,destaddr);
                             return(MarmaraPoScheck(destaddr,opret,pblock->vtx[n-1].vout[numvouts-1].scriptPubKey));
-                        }
+                        } else fprintf(stderr,"reject ht.%d PoS block\n",height);
                     }
                 }
             }
