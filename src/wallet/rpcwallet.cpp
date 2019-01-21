@@ -5171,7 +5171,6 @@ int32_t verus_staked(CBlock *pBlock, CMutableTransaction &txNew, uint32_t &nBits
 
 int32_t ensure_CCrequirements()
 {
-    extern uint8_t NOTARY_PUBKEY33[];
     CCerror = "";
     if ( NOTARY_PUBKEY33[0] == 0 )
         return(-1);
