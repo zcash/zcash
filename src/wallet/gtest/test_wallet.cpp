@@ -1559,6 +1559,14 @@ TEST(WalletTests, WriteWitnessCache) {
     wallet.AddSproutSpendingKey(sk);
 
     auto wtx = GetValidReceive(sk, 10, true);
+    auto note = GetNote(sk, wtx, 0, 1);
+    auto nullifier = note.nullifier(sk);
+
+    mapSproutNoteData_t noteData;
+    JSOutPoint jsoutpt {wtx.GetHash(), 0, 1};
+    SproutNoteData nd {sk.address(), nullifier};
+    noteData[jsoutpt] = nd;
+    wtx.SetSproutNoteData(noteData);
     wallet.AddToWallet(wtx, true, NULL);
 
     // TxnBegin fails
@@ -1624,6 +1632,88 @@ TEST(WalletTests, WriteWitnessCache) {
         .WillRepeatedly(Return(true));
 
     // Everything succeeds
+    wallet.SetBestChain(walletdb, loc);
+}
+
+TEST(WalletTests, SetBestChainIgnoresTxsWithoutShieldedData) {
+    SelectParams(CBaseChainParams::REGTEST);
+
+    TestWallet wallet;
+    MockWalletDB walletdb;
+    CBlockLocator loc;
+
+    // Set up transparent address
+    CKey tsk = DecodeSecret(tSecretRegtest);
+    wallet.AddKey(tsk);
+    auto scriptPubKey = GetScriptForDestination(tsk.GetPubKey().GetID());
+
+    // Set up a Sprout address
+    auto sk = libzcash::SproutSpendingKey::random();
+    wallet.AddSproutSpendingKey(sk);
+
+    // Generate a transparent transaction that is ours
+    CMutableTransaction t;
+    t.vout.resize(1);
+    t.vout[0].nValue = 90*CENT;
+    t.vout[0].scriptPubKey = scriptPubKey;
+    CWalletTx wtxTransparent {nullptr, t};
+    wallet.AddToWallet(wtxTransparent, true, nullptr);
+
+    // Generate a Sprout transaction that is ours
+    auto wtxSprout = GetValidReceive(sk, 10, true);
+    auto noteMap = wallet.FindMySproutNotes(wtxSprout);
+    wtxSprout.SetSproutNoteData(noteMap);
+    wallet.AddToWallet(wtxSprout, true, nullptr);
+
+    // Generate a Sprout transaction that only involves our transparent address
+    auto sk2 = libzcash::SproutSpendingKey::random();
+    auto wtxInput = GetValidReceive(sk2, 10, true);
+    auto note = GetNote(sk2, wtxInput, 0, 0);
+    auto wtxTmp = GetValidSpend(sk2, note, 5);
+    CMutableTransaction mtx {wtxTmp};
+    mtx.vout[0].scriptPubKey = scriptPubKey;
+    CWalletTx wtxSproutTransparent {nullptr, mtx};
+    wallet.AddToWallet(wtxSproutTransparent, true, nullptr);
+
+    // Generate a fake Sapling transaction
+    CMutableTransaction mtxSapling;
+    mtxSapling.fOverwintered = true;
+    mtxSapling.nVersion = SAPLING_TX_VERSION;
+    mtxSapling.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
+    mtxSapling.vShieldedOutput.resize(1);
+    mtxSapling.vShieldedOutput[0].cv = libzcash::random_uint256();
+    CWalletTx wtxSapling {nullptr, mtxSapling};
+    SetSaplingNoteData(wtxSapling);
+    wallet.AddToWallet(wtxSapling, true, nullptr);
+
+    // Generate a fake Sapling transaction that would only involve our transparent addresses
+    CMutableTransaction mtxSaplingTransparent;
+    mtxSaplingTransparent.fOverwintered = true;
+    mtxSaplingTransparent.nVersion = SAPLING_TX_VERSION;
+    mtxSaplingTransparent.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
+    mtxSaplingTransparent.vShieldedOutput.resize(1);
+    mtxSaplingTransparent.vShieldedOutput[0].cv = libzcash::random_uint256();
+    CWalletTx wtxSaplingTransparent {nullptr, mtxSaplingTransparent};
+    wallet.AddToWallet(wtxSaplingTransparent, true, nullptr);
+
+    EXPECT_CALL(walletdb, TxnBegin())
+        .WillOnce(Return(true));
+    EXPECT_CALL(walletdb, WriteTx(wtxTransparent.GetHash(), wtxTransparent))
+        .Times(0);
+    EXPECT_CALL(walletdb, WriteTx(wtxSprout.GetHash(), wtxSprout))
+        .Times(1).WillOnce(Return(true));
+    EXPECT_CALL(walletdb, WriteTx(wtxSproutTransparent.GetHash(), wtxSproutTransparent))
+        .Times(0);
+    EXPECT_CALL(walletdb, WriteTx(wtxSapling.GetHash(), wtxSapling))
+        .Times(1).WillOnce(Return(true));
+    EXPECT_CALL(walletdb, WriteTx(wtxSaplingTransparent.GetHash(), wtxSaplingTransparent))
+        .Times(0);
+    EXPECT_CALL(walletdb, WriteWitnessCacheSize(0))
+        .WillOnce(Return(true));
+    EXPECT_CALL(walletdb, WriteBestBlock(loc))
+        .WillOnce(Return(true));
+    EXPECT_CALL(walletdb, TxnCommit())
+        .WillOnce(Return(true));
     wallet.SetBestChain(walletdb, loc);
 }
 
