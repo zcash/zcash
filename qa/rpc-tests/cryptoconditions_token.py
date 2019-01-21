@@ -142,7 +142,8 @@ class CryptoconditionsTokenTest(CryptoconditionsTestFramework):
         # checking ask cancellation
         testorder = rpc.tokenask("100", tokenid, "7.77")
         testorderid = self.send_and_mine(testorder['hex'], rpc)
-        # from other node
+        # from other node (ensuring that second node have enough balance to cover txfee
+        # to get the actual error - not "not enough balance" one
         rpc.sendtoaddress(rpc1.getnewaddress(), 1)
         rpc.sendtoaddress(rpc1.getnewaddress(), 1)
         rpc.generate(2)
@@ -252,6 +253,7 @@ class CryptoconditionsTokenTest(CryptoconditionsTestFramework):
         rpc.importprivkey(self.privkey)
         rpc1.importprivkey(self.privkey1)
         self.run_token_tests()
+
 
 if __name__ == '__main__':
     CryptoconditionsTokenTest().main()

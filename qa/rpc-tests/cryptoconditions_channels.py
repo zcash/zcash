@@ -4,6 +4,7 @@
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 
+import time
 from test_framework.test_framework import CryptoconditionsTestFramework
 from test_framework.authproxy import JSONRPCException
 from test_framework.util import assert_equal, assert_greater_than, \
@@ -71,6 +72,32 @@ class CryptoconditionsChannelsTest(CryptoconditionsTestFramework):
         result = rpc.channelsinfo(channel_txid)
         assert_equal(result["Transactions"][1]["Payment"], payment_tx_id)
 
+        # TODO: check if payment value really transferred
+        # TODO: check if information in channelinfo changed correct
+
+        # TODO: try to drain channel (10 payment by 100000 satoshies in total)
+
+        # have to check that second node have coins to cover txfee at least
+        rpc.sendtoaddress(rpc1.getnewaddress(), 1)
+        rpc.sendtoaddress(rpc1.getnewaddress(), 1)
+        rpc.generate(2)
+        self.sync_all()
+        result = rpc1.getbalance()
+        assert_greater_than(result, 0.1)
+
+        # trying to initiate channels payment from node B without any secret
+        # TODO: have to add RPC validation
+        payment_hex = rpc1.channelspayment(channel_txid, "100000")
+        try:
+            result = rpc1.sendrawtransaction(payment_hex["hex"])
+        except Exception as e:
+            pass
+
+        # trying to initiate channels payment from node B with secret from previous payment
+        result = rpc1.channelspayment(channel_txid, "100000", rpc1.channelsinfo(channel_txid)["Transactions"][1]["Secret"])
+        #result = rpc1.sendrawtransaction(payment_hex["hex"])
+        assert_error(result)
+
         # executing channel close
         result = rpc.channelsclose(channel_txid)
         assert_success(result)
@@ -89,6 +116,49 @@ class CryptoconditionsChannelsTest(CryptoconditionsTestFramework):
         assert_success(result)
         refund_txid = self.send_and_mine(result["hex"], rpc)
         assert refund_txid, "got txid"
+
+        # TODO: check if it really refunded
+
+        # creating new channel to test the case when node B initiate payment when node A revealed secret but
+        # secret revealing transaction not mined
+        # 10 payments, 100000 sat denomination channel opening with second node pubkey
+        new_channel_hex2 = rpc.channelsopen(self.pubkey1, "10", "100000")
+        assert_success(new_channel_hex)
+        channel2_txid = self.send_and_mine(new_channel_hex2["hex"], rpc)
+        assert channel2_txid, "got channel txid"
+
+        rpc.generate(2)
+        self.sync_all()
+
+        # disconnecting first node from network
+        rpc.setban("127.0.0.0/24","add")
+        assert_equal(rpc.getinfo()["connections"], 0)
+
+        # sending one payment to mempool to reveal the secret but not mine it
+        payment_hex = rpc.channelspayment(channel2_txid, "100000")
+        result = rpc.sendrawtransaction(payment_hex["hex"])
+        assert result, "got payment txid"
+
+        secret = rpc.channelsinfo(channel2_txid)["Transactions"][1]["Secret"]
+        assert secret, "Secret revealed"
+
+        # secret shouldn't be available for node B
+        secret_not_revealed = None
+        try:
+            rpc1.channelsinfo(channel2_txid)["Transactions"][1]["Secret"]
+        except Exception:
+            secret_not_revealed = True
+        assert_equal(secret_not_revealed, True)
+
+        # trying to initiate payment from second node with revealed secret
+        assert_equal(rpc1.getinfo()["connections"], 0)
+        dc_payment_hex = rpc1.channelspayment(channel2_txid, "100000", secret)
+        assert_success(dc_payment_hex)
+        result = rpc1.sendrawtransaction(dc_payment_hex["hex"])
+        assert result, "got channelspayment transaction id"
+
+
+        # TODO: have to connect nodes back to not corrupt other tests
 
     def run_test(self):
         print("Mining blocks...")
