@@ -257,7 +257,7 @@ int32_t MarmaraValidateCoinbase(int32_t height,CTransaction tx)
 
 bool MarmaraPoScheck(char *destaddr,CScript opret,CScript scriptPubKey)
 {
-    CPubKey pk; int32_t height,unlockht; uint8_t funcid; char coinaddr[64]; struct CCcontract_info *cp,C;
+    CPubKey Marmarapk,pk; int32_t height,unlockht; uint8_t funcid; char coinaddr[64]; struct CCcontract_info *cp,C;
     if ( opret == scriptPubKey )
     {
         cp = CCinit(&C,EVAL_MARMARA);
