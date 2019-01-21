@@ -2170,7 +2170,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
         }
         else
         {
-            struct CCcontract_info *cp,C; uint256 txid; int32_t vout; CAmount nValue; char coinaddr[64]; CPubKey mypk,Marmarapk;
+            struct CCcontract_info *cp,C; uint256 txid; int32_t vout,ht,unlockht; CAmount nValue; char coinaddr[64]; CPubKey mypk,Marmarapk,pk;
             std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
             cp = CCinit(&C,EVAL_MARMARA);
             mypk = pubkey2pk(Mypubkey());
@@ -2186,8 +2186,12 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
                 if ( GetTransaction(txid,tx,hashBlock,true) != 0 && (pindex= komodo_getblockindex(hashBlock)) != 0 && myIsutxo_spentinmempool(txid,vout) == 0 )
                 {
                     const CScript &scriptPubKey = tx.vout[vout].scriptPubKey;
-                    array = komodo_addutxo(array,&numkp,&maxkp,(uint32_t)pindex->nTime,(uint64_t)nValue,txid,vout,coinaddr,hashbuf,(CScript)scriptPubKey);
-                    //fprintf(stderr,"addutxo %.8f numkp.%d vs max.%d\n",(double)nValue/COIN,numkp,maxkp);
+                    if ( DecodeMaramaraCoinbaseOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,pk,ht,unlockht) != 0 && pk == mypk )
+                    {
+                        array = komodo_addutxo(array,&numkp,&maxkp,(uint32_t)pindex->nTime,(uint64_t)nValue,txid,vout,coinaddr,hashbuf,(CScript)scriptPubKey);
+                    }
+                    else
+                        fprintf(stderr,"SKIP addutxo %.8f numkp.%d vs max.%d\n",(double)nValue/COIN,numkp,maxkp);
                 }
             }
         }
