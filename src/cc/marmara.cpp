@@ -500,7 +500,34 @@ UniValue MarmaraLock(uint64_t txfee,int64_t amount,int32_t height)
     return(result);
 }
 
-// jl777: decide on what unlockht settlement change should have
+int32_t MarmaraSignature(uint8_t *utxosig,CMutableTransaction &txNew);
+{
+    uint256 txid,hashBlock; uint8_t *ptr; int32_t i,siglen,vout,numvouts; CTransaction tx; std::string rawtx; CPubKey mypk; std::vector<CPubKey> pubkeys; struct CCcontract_info *cp,C; uint64_t txfee
+    txfee = 10000;
+    vout = txNew.vin[0].prevout.n;
+    if ( GetTransaction(txNew.vin[0].prevout.hash,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 1 && vout < numvouts )
+    {
+        cp = CCinit(&C,EVAL_MARMARA);
+        mypk = pubkey2pk(Mypubkey());
+        mtx.vout.resize(2);
+        mtx.vout[1].scriptPubKey = tx.vout[numvouts - 1].scriptPubKey;
+        mtx.vout[1].nValue = 0;
+        pubkeys.push_back(mypk);
+        rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,tx.vout[numvouts - 1].scriptPubKey,pubkeys);
+        if ( rawtx.size() > 0 )
+        {
+            siglen = mtx.vin[0].scriptSig.size();
+            ptr = mtx.vin[0].scriptSig.data();
+            for (i=0; i<siglen; i++)
+                utxosig[i] = ptr[i];
+            fprintf(stderr,"got signed rawtx.%s siglen.%d\n",rawtx.c_str(),siglen);
+            return(siglen);
+        }
+    }
+    return(0);
+}
+
+// jl777: decide on what unlockht settlement change should have -> from utxo making change
 
 UniValue MarmaraSettlement(uint64_t txfee,uint256 refbatontxid)
 {

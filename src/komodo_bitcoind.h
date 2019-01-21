@@ -2081,6 +2081,8 @@ uint32_t komodo_eligible(arith_uint256 bnTarget,arith_uint256 ratio,struct komod
     return(0);
 }
 
+int32_t MarmaraSignature(uint8_t *utxosig,CMutableTransaction &txNew);
+
 int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blocktimep,uint32_t *txtimep,uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep,uint8_t *utxosig)
 {
     static struct komodo_staking *array; static int32_t numkp,maxkp; static uint32_t lasttime;
@@ -2264,22 +2266,21 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
         if ( ASSETCHAINS_MARMARA == 0 )
         {
             signSuccess = ProduceSignature(TransactionSignatureCreator(&keystore, &txNewConst, 0, *utxovaluep, SIGHASH_ALL), best_scriptPubKey, sigdata, consensusBranchId);
-        }
-        else
-        {
-            fprintf(stderr,"add opreturn and CCFinalizetx\n");
-            // add opreturn
-            // signSuccess = CCFinalizetx(...)
-        }
-        if (!signSuccess)
-            fprintf(stderr,"failed to create signature\n");
-        else
-        {
             UpdateTransaction(txNew,0,sigdata);
             ptr = (uint8_t *)&sigdata.scriptSig[0];
             siglen = sigdata.scriptSig.size();
             for (i=0; i<siglen; i++)
                 utxosig[i] = ptr[i];//, fprintf(stderr,"%02x",ptr[i]);
+        }
+        else
+        {
+            fprintf(stderr,"add opreturn and CCFinalizetx\n");
+            siglen = MarmaraSignature(utxosig,txNew);
+        }
+        if (!signSuccess)
+            fprintf(stderr,"failed to create signature\n");
+        else
+        {
             //fprintf(stderr," siglen.%d\n",siglen);
 //fprintf(stderr,"best %u from %u, gap %d lag.%d\n",earliest,*blocktimep,(int32_t)(earliest - *blocktimep),(int32_t)(time(NULL) - *blocktimep));
             *blocktimep = earliest;
