@@ -334,6 +334,10 @@ bool MarmaraValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
         {
             return(true);
         }
+        else if ( funcid == 'C' ) // coinbase
+        {
+            return(true);
+        }
         // staking only for locked utxo
     }
     return eval->Invalid("fall through error");
