@@ -661,7 +661,12 @@ int32_t komodo_isPoS(CBlock *pblock,int32_t height)
                         {
 fprintf(stderr,"validate proper %s %s signature and unlockht preservation\n",voutaddr,destaddr);
                             return(MarmaraPoScheck(destaddr,opret,pblock->vtx[n-1].vout[numvouts-1].scriptPubKey));
-                        } else fprintf(stderr,"reject ht.%d PoS block\n",height);
+                        }
+                        else
+                        {
+                            fprintf(stderr,"reject ht.%d PoS block\n",height);
+                            return(1); // allow until MTST3
+                        }
                     }
                 }
             }
@@ -2174,7 +2179,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
                 {
                     const CScript &scriptPubKey = tx.vout[vout].scriptPubKey;
                     array = komodo_addutxo(array,&numkp,&maxkp,(uint32_t)pindex->nTime,(uint64_t)nValue,txid,vout,coinaddr,hashbuf,(CScript)scriptPubKey);
-                    fprintf(stderr,"addutxo %.8f numkp.%d vs max.%d\n",(double)nValue/COIN,numkp,maxkp);
+                    //fprintf(stderr,"addutxo %.8f numkp.%d vs max.%d\n",(double)nValue/COIN,numkp,maxkp);
                 }
             }
         }
