@@ -477,14 +477,10 @@ std::string CreateSwap(int64_t txfee,int64_t askamount,uint256 assetid,uint256 a
 std::string CancelBuyOffer(int64_t txfee,uint256 assetid,uint256 bidtxid)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    CTransaction vintx; 
-	uint64_t mask; 
-	uint256 hashBlock; 
-	int64_t bidamount; 
-	CPubKey mypk; 
-	struct CCcontract_info *cpAssets, C;
-
-	uint8_t dummyEvalCode; uint256 dummyAssetid, dummyAssetid2; int64_t dummyPrice; std::vector<uint8_t> dummyOrigpubkey;
+    CTransaction vintx;	uint64_t mask;
+	uint256 hashBlock; int64_t bidamount; 
+	CPubKey mypk; struct CCcontract_info *cpAssets, C;
+	uint8_t funcid,dummyEvalCode; uint256 dummyAssetid, dummyAssetid2; int64_t dummyPrice; std::vector<uint8_t> dummyOrigpubkey;
 
     cpAssets = CCinit(&C, EVAL_ASSETS);
 
@@ -501,9 +497,12 @@ std::string CancelBuyOffer(int64_t txfee,uint256 assetid,uint256 bidtxid)
             bidamount = vintx.vout[0].nValue;
             mtx.vin.push_back(CTxIn(bidtxid, 0, CScript()));		// coins in Assets
 
-			if( DecodeAssetTokenOpRet(vintx.vout[vintx.vout.size() - 1].scriptPubKey, dummyEvalCode, dummyAssetid, dummyAssetid2, dummyPrice, dummyOrigpubkey) == 'b')
-				mtx.vin.push_back(CTxIn(bidtxid, 1, CScript()));		// spend marker if funcid='b' (not 'B') 
-				// TODO: spend it also in FillBuyOffer?
+			if((funcid=DecodeAssetTokenOpRet(vintx.vout[vintx.vout.size() - 1].scriptPubKey, dummyEvalCode, dummyAssetid, dummyAssetid2, dummyPrice, dummyOrigpubkey))!=0)
+            {
+        
+                if (funcid == 's') mtx.vin.push_back(CTxIn(bidtxid, 1, CScript()));		// spend marker if funcid='b'
+                else if (funcid=='S') mtx.vin.push_back(CTxIn(bidtxid, 3, CScript()));		// spend marker if funcid='B'
+            }   
 
             mtx.vout.push_back(CTxOut(bidamount,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
             mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
@@ -523,12 +522,9 @@ std::string CancelSell(int64_t txfee,uint256 assetid,uint256 asktxid)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     CTransaction vintx; uint64_t mask; 
-	uint256 hashBlock; 
-	int64_t askamount; 
-	CPubKey mypk; 
-    struct CCcontract_info *cpTokens, *cpAssets, tokensC, assetsC;
-
-	uint8_t dummyEvalCode; uint256 dummyAssetid, dummyAssetid2; int64_t dummyPrice; std::vector<uint8_t> dummyOrigpubkey;
+	uint256 hashBlock; 	int64_t askamount; 
+	CPubKey mypk; struct CCcontract_info *cpTokens, *cpAssets, tokensC, assetsC;
+	uint8_t funcid,dummyEvalCode; uint256 dummyAssetid, dummyAssetid2; int64_t dummyPrice; std::vector<uint8_t> dummyOrigpubkey;
 
     cpAssets = CCinit(&assetsC, EVAL_ASSETS);
 
@@ -545,9 +541,11 @@ std::string CancelSell(int64_t txfee,uint256 assetid,uint256 asktxid)
             askamount = vintx.vout[0].nValue;
             mtx.vin.push_back(CTxIn(asktxid, 0, CScript()));
 
-			if (DecodeAssetTokenOpRet(vintx.vout[vintx.vout.size() - 1].scriptPubKey, dummyEvalCode, dummyAssetid, dummyAssetid2, dummyPrice, dummyOrigpubkey) == 's')
-				mtx.vin.push_back(CTxIn(asktxid, 1, CScript()));		// marker if funcid='s' (not 'S') 
-				// TODO: spend it also in FillSell?
+			if ((funcid=DecodeAssetTokenOpRet(vintx.vout[vintx.vout.size() - 1].scriptPubKey, dummyEvalCode, dummyAssetid, dummyAssetid2, dummyPrice, dummyOrigpubkey))!=0)
+            {
+                if (funcid == 's') mtx.vin.push_back(CTxIn(asktxid, 1, CScript()));		// marker if funcid='s' 
+                else if (funcid=='S') mtx.vin.push_back(CTxIn(asktxid, 3, CScript()));		// marker if funcid='S' 
+            }
 
             mtx.vout.push_back(MakeCC1vout(EVAL_TOKENS, askamount, mypk));	// one-eval token vout
             mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
@@ -607,7 +605,7 @@ std::string FillBuyOffer(int64_t txfee,uint256 assetid,uint256 bidtxid,int64_t f
 
     mypk = pubkey2pk(Mypubkey());
 
-    if (AddNormalinputs(mtx, mypk, txfee, 3) > 0)
+    if (AddNormalinputs(mtx, mypk, 2*txfee, 3) > 0)
     {
         mask = ~((1LL << mtx.vin.size()) - 1);
         if (GetTransaction(bidtxid, vintx, hashBlock, false) != 0)
@@ -637,9 +635,10 @@ std::string FillBuyOffer(int64_t txfee,uint256 assetid,uint256 bidtxid,int64_t f
 				mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS, bidamount - paid_amount, unspendableAssetsPk));     // vout0 coins remainder
                 mtx.vout.push_back(CTxOut(paid_amount,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));		// vout1 coins to normal
                 mtx.vout.push_back(MakeCC1vout(EVAL_TOKENS, fillamount, pubkey2pk(origpubkey)));				// vout2 single-eval tokens sent to the buyer
+                mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,txfee,origpubkey));                                  // vout3 marker to origpubkey
                 
 				if (CCchange != 0)
-                    mtx.vout.push_back(MakeCC1vout(EVAL_TOKENS, CCchange, mypk));								// vout3 change in single-eval tokens
+                    mtx.vout.push_back(MakeCC1vout(EVAL_TOKENS, CCchange, mypk));								// vout4 change in single-eval tokens
 
                 fprintf(stderr,"FillBuyOffer remaining %llu -> origpubkey\n", (long long)remaining_required);
 
@@ -698,7 +697,7 @@ std::string FillSell(int64_t txfee, uint256 assetid, uint256 assetid2, uint256 a
         txfee = 10000;
 
     mypk = pubkey2pk(Mypubkey());
-    if (AddNormalinputs(mtx, mypk, txfee, 3) > 0)
+    if (AddNormalinputs(mtx, mypk, 2*txfee, 3) > 0)
     {
         mask = ~((1LL << mtx.vin.size()) - 1);
         if (GetTransaction(asktxid, vintx, hashBlock, false) != 0)
@@ -747,6 +746,7 @@ std::string FillSell(int64_t txfee, uint256 assetid, uint256 assetid2, uint256 a
 					//std::cerr << "FillSell() paid_value=" << paid_nValue << " origpubkey=" << HexStr(pubkey2pk(origpubkey)) << std::endl;
 					mtx.vout.push_back(CTxOut(paid_nValue, CScript() << origpubkey << OP_CHECKSIG));		//vout.2 coins to tokens seller's normal addr
 				}
+                mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,txfee,origpubkey));                              //vout.3 marker to origpubkey
                 
 				// not implemented
 				if (CCchange != 0) {
