@@ -643,15 +643,15 @@ int32_t komodo_isPoS(CBlock *pblock)
         {
             txid = pblock->vtx[n-1].vin[0].prevout.hash;
             vout = pblock->vtx[n-1].vin[0].prevout.n;
-            if ( ASSETCHAINS_MARMARA != 0 )
-            {
-                fprintf(stderr,"validate proper signature and unlockht preservation\n");
-                // need to verify it was signed by the non-Marmarapk of the 1of2
-            }
             txtime = komodo_txtime(&value,txid,vout,destaddr);
             if ( ExtractDestination(pblock->vtx[n-1].vout[0].scriptPubKey,voutaddress) )
             {
                 strcpy(voutaddr,CBitcoinAddress(voutaddress).ToString().c_str());
+                if ( ASSETCHAINS_MARMARA != 0 )
+                {
+                    fprintf(stderr,"validate proper %s %s signature and unlockht preservation\n",voutaddr,destaddr);
+                    // need to verify it was signed by the non-Marmarapk of the 1of2
+                }
                 if ( strcmp(destaddr,voutaddr) == 0 && pblock->vtx[n-1].vout[0].nValue == value )
                 {
                     //fprintf(stderr,"is PoS block!\n");
