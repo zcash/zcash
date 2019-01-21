@@ -94,7 +94,7 @@ uint8_t DecodeMaramaraCoinbaseOpRet(const CScript scriptPubKey,CPubKey &pk,int32
             {
                 return(script[1]);
             } else fprintf(stderr,"DecodeMaramaraCoinbaseOpRet unmarshal error for %c\n",script[1]);
-        } else fprintf(stderr,"script[1] is %d != 'C' %d or 'P' %d or 'L' %d\n",script[1],'C','P','L');
+        } //else fprintf(stderr,"script[1] is %d != 'C' %d or 'P' %d or 'L' %d\n",script[1],'C','P','L');
     } else fprintf(stderr,"vopret.size() is %d\n",(int32_t)vopret.size());
     return(0);
 }
@@ -258,14 +258,14 @@ int32_t MarmaraValidateCoinbase(int32_t height,CTransaction tx)
 bool MarmaraPoScheck(char *destaddr,CScript opret,CTransaction staketx)
 {
     CPubKey Marmarapk,pk; int32_t height,unlockht; uint8_t funcid; char coinaddr[64]; struct CCcontract_info *cp,C;
-    fprintf(stderr,"%s numvins.%d numvouts.%d %.8f opret[%d]\n",staketx.GetHash().ToString().c_str(),(int32_t)staketx.vin.size(),(int32_t)staketx.vout.size(),(double)staketx.vout[0].nValue/COIN,(int32_t)opret.size());
+    //fprintf(stderr,"%s numvins.%d numvouts.%d %.8f opret[%d]\n",staketx.GetHash().ToString().c_str(),(int32_t)staketx.vin.size(),(int32_t)staketx.vout.size(),(double)staketx.vout[0].nValue/COIN,(int32_t)opret.size());
     if ( staketx.vout.size() == 2 && opret == staketx.vout[1].scriptPubKey )
     {
         cp = CCinit(&C,EVAL_MARMARA);
         funcid = DecodeMaramaraCoinbaseOpRet(opret,pk,height,unlockht);
         Marmarapk = GetUnspendable(cp,0);
         GetCCaddress1of2(cp,coinaddr,Marmarapk,pk);
-        fprintf(stderr,"matched opret! funcid.%c ht.%d unlock.%d %s\n",funcid,height,unlockht,coinaddr);
+        //fprintf(stderr,"matched opret! funcid.%c ht.%d unlock.%d %s\n",funcid,height,unlockht,coinaddr);
         return(strcmp(destaddr,coinaddr) == 0);
     }
     return(0);
@@ -525,7 +525,7 @@ int32_t MarmaraSignature(uint8_t *utxosig,CMutableTransaction &mtx)
                 utxosig[i] = ptr[i];
                 //fprintf(stderr,"%02x",ptr[i]);
             }
-            fprintf(stderr," got signed rawtx.%s siglen.%d\n",rawtx.c_str(),siglen);
+            //fprintf(stderr," got signed rawtx.%s siglen.%d\n",rawtx.c_str(),siglen);
             return(siglen);
         }
     }
