@@ -643,7 +643,7 @@ int32_t komodo_isPoS(CBlock *pblock,int32_t height)
     int32_t n,vout,numvouts; uint32_t txtime; uint64_t value; char voutaddr[64],destaddr[64]; CTxDestination voutaddress; uint256 txid; CScript opret;
     if ( ASSETCHAINS_STAKED != 0 )
     {
-        if ( (n= pblock->vtx.size()) > 1 && pblock->vtx[n-1].vin.size() == 1 && pblock->vtx[n-1].vout.size() == 1 )
+        if ( (n= pblock->vtx.size()) > 1 && pblock->vtx[n-1].vin.size() == 1 && pblock->vtx[n-1].vout.size() == 1+(ASSETCHAINS_MARMARA!=0) )
         {
             txid = pblock->vtx[n-1].vin[0].prevout.hash;
             vout = pblock->vtx[n-1].vin[0].prevout.n;
