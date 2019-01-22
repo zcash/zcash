@@ -687,13 +687,13 @@ template <typename Helper> UniValue _HeirFund(int64_t txfee, int64_t amount, std
             }
 
 			// check owner pubkey in vins
-			bool isMypubkey = false;
-			bool isNotMypubkey = false;
+			bool hasMypubkey = false;
+			bool hasNotMypubkey = false;
 
-			CheckVinPubkey(mtx.vin, myPubkey, isMypubkey, isNotMypubkey);
+			CheckVinPubkey(mtx.vin, myPubkey, hasMypubkey, hasNotMypubkey);
 
 			// for initial funding do not allow to sign by non-owner key:
-			if (isNotMypubkey) {
+			if (hasNotMypubkey) {
 				result.push_back(Pair("result", "error"));
 				result.push_back(Pair("error", "using non-owner inputs not allowed"));
 				return result;
@@ -793,20 +793,20 @@ template <class Helper> UniValue _HeirAdd(uint256 fundingtxid, int64_t txfee, in
             }
 
 			// check owner pubkey in vins
-			bool isMypubkey = false;
-			bool isNotMypubkey = false;
+			bool hasMypubkey = false;
+			bool hasNotMypubkey = false;
 
-			CheckVinPubkey(mtx.vin, myPubkey, isMypubkey, isNotMypubkey);
+			CheckVinPubkey(mtx.vin, myPubkey, hasMypubkey, hasNotMypubkey);
 
 			// for additional funding do not allow to sign by both owner and non-owner keys (is this a donation or not?):
-			if (isMypubkey && isNotMypubkey) {
+			if (hasMypubkey && hasNotMypubkey) {
 				result.push_back(Pair("result", "error"));
 				result.push_back(Pair("error", "using both owner and non-owner inputs is not allowed"));
 				return result;
 			}
             
 			// warn the user he's making a donation if this is all non-owner keys:
-			if (isNotMypubkey) {
+			if (hasNotMypubkey) {
 				result.push_back(Pair("result", "warning"));
 				result.push_back(Pair("warning", "you are about to make a donation to heir fund"));
 			}
@@ -1118,7 +1118,7 @@ UniValue HeirInfo(uint256 fundingtxid)
             std::ostringstream stream;
             std::string msg;
             
-			sleep(10);
+			//sleep(10);
 
             result.push_back(Pair("fundingtxid", fundingtxid.GetHex()));
             result.push_back(Pair("name", heirName.c_str()));
