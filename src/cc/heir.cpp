@@ -60,10 +60,10 @@ template <typename Helper> bool RunValidationPlans(uint8_t funcId, struct CCcont
     CNullValidator<Helper>			nullValidator(cp);
     
     switch (funcId) {
-        case 'F': // fund tokens
+        case 'F': // fund tokens (only for tokens)
             // vin validation plan:
             vinPlan.pushValidators<CValidatorBase>((CInputIdentifierBase*)&normalInputIdentifier, &nullValidator);			// txfee vin
-            vinPlan.pushValidators<CValidatorBase>((CInputIdentifierBase*)&ccInputIdentifier, &ownerCCaddrValidator);		// check cc owner addr
+            vinPlan.pushValidators<CValidatorBase>((CInputIdentifierBase*)&ccInputIdentifier, &markerValidator, &ownerCCaddrValidator);		// check cc owner addr
             
             // vout validation plan:
             voutPlan.pushValidators<CValidatorBase>(0, &cc1of2ValidatorThis);												// check 1of2 addr funding
@@ -71,10 +71,10 @@ template <typename Helper> bool RunValidationPlans(uint8_t funcId, struct CCcont
             // no checking for opret yet
             break;
             
-        case 'A': // add tokens
+        case 'A': // add tokens (only for tokens)
             // vin validation plan:
             vinPlan.pushValidators<CValidatorBase>((CInputIdentifierBase*)&normalInputIdentifier, &nullValidator);		// txfee vin
-            vinPlan.pushValidators<CValidatorBase>((CInputIdentifierBase*)&ccInputIdentifier, &ownerCCaddrValidator);   // check cc owner addr
+            vinPlan.pushValidators<CValidatorBase>((CInputIdentifierBase*)&ccInputIdentifier, &markerValidator, &ownerCCaddrValidator);   // check cc owner addr
             
             // vout validation plan:
             voutPlan.pushValidators<CValidatorBase>(0, &cc1of2ValidatorThis);												// check 1of2 addr funding
@@ -82,10 +82,10 @@ template <typename Helper> bool RunValidationPlans(uint8_t funcId, struct CCcont
             voutPlan.pushValidators<CValidatorBase>(numvouts - 1, &opRetValidator);											// opreturn check, NOTE: only for C or A:
             break;
             
-        case 'C':
+        case 'C':  // spend coins or tokens
             // vin validation plan:
             vinPlan.pushValidators<CValidatorBase>((CInputIdentifierBase*)&normalInputIdentifier, &nullValidator);			// txfee vin
-            vinPlan.pushValidators<CValidatorBase>((CInputIdentifierBase*)&ccInputIdentifier, &cc1of2ValidatorThis);		// cc1of2 funding addr
+            vinPlan.pushValidators<CValidatorBase>((CInputIdentifierBase*)&ccInputIdentifier, &markerValidator, &cc1of2ValidatorThis);		// cc1of2 funding addr
             
             // vout validation plan:
             voutPlan.pushValidators<CValidatorBase>(0, &heirSpendValidator);													// check if heir is allowed to spend
