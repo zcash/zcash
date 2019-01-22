@@ -16,8 +16,6 @@
 #include "CCHeir.h"
 #include "heir_validate.h"
 
-#include <unistd.h>
-
 class CoinHelper;
 class TokenHelper;
 
@@ -653,6 +651,8 @@ template <typename Helper> UniValue _HeirFund(int64_t txfee, int64_t amount, std
     cp = CCinit(&C, Helper::getMyEval());
     if (txfee == 0)
         txfee = 10000;
+
+	int64_t markerfee = 10000;
     
     //std::cerr << "HeirFund() amount=" << amount << " txfee=" << txfee << " heirPubkey IsValid()=" << heirPubkey.IsValid() << " inactivityTime(sec)=" << inactivityTimeSec << " tokenid=" << tokenid.GetHex() << std::endl;
     
@@ -664,17 +664,18 @@ template <typename Helper> UniValue _HeirFund(int64_t txfee, int64_t amount, std
     
     CPubKey myPubkey = pubkey2pk(Mypubkey());
     
-    if (AddNormalinputs(mtx, myPubkey, txfee, 3) > 0) { // txfee for miners
+    if (AddNormalinputs(mtx, myPubkey, markerfee, 3) > 0) { 
         int64_t inputs, change;
         
-        if ((inputs=Helper::addOwnerInputs(tokenid, mtx, myPubkey, amount, (int32_t)64)) > 0) { // 2 x txfee: 1st for marker vout, 2nd to miners
-            //mtx.vout.push_back(MakeTokensCC1of2vout(/*Helper::getMyEval()*/EVAL_HEIR, amount, myPubkey, heirPubkey)); // add cryptocondition to spend amount for either pk
-            mtx.vout.push_back(Helper::make1of2Vout(amount, myPubkey, heirPubkey));
+        if ((inputs=Helper::addOwnerInputs(tokenid, mtx, myPubkey, amount, (int32_t)64)) > 0) { 
+
+			mtx.vout.push_back(Helper::make1of2Vout(amount, myPubkey, heirPubkey));
             
             // add a marker for finding all plans in HeirList()
             // TODO: change marker either to cc or normal txidaddr unspendable
             CPubKey heirUnspendablePubKey = GetUnspendable(cp, 0);
-            mtx.vout.push_back(CTxOut(txfee, CScript() << ParseHex(HexStr(heirUnspendablePubKey)) << OP_CHECKSIG));   // TODO: do we need this marker?
+            // mtx.vout.push_back(CTxOut(txfee, CScript() << ParseHex(HexStr(heirUnspendablePubKey)) << OP_CHECKSIG));  <-- bad marker cause it was spendable by anyone
+			MakeCC1vout(EVAL_HEIR, txfee, heirUnspendablePubKey);		// this marker spending is disabled in the validation code
             
             // calc and add change vout:
             if (inputs > amount)
@@ -782,7 +783,11 @@ template <class Helper> UniValue _HeirAdd(uint256 fundingtxid, int64_t txfee, in
             
             // add cryptocondition to spend this funded amount for either pk
             mtx.vout.push_back(Helper::make1of2Vout(amount, ownerPubkey, heirPubkey));
-            
+
+			char markeraddr[64];
+			CPubKey markerPubkey = CCtxidaddr(markeraddr, fundingtxid);
+			mtx.vout.push_back(CTxOut(txfee, CScript() << ParseHex(HexStr(markerPubkey)) << OP_CHECKSIG));		// marker to prevent archiving of the funds add vouts
+
             if (inputs > amount)
                 change = (inputs - amount); //  -txfee <-- txfee pays user
             
@@ -1232,10 +1237,10 @@ UniValue HeirInfo(uint256 fundingtxid)
 template <typename Helper>void _HeirList(struct CCcontract_info *cp, UniValue &result)
 {
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue>> unspentOutputs;
-    char coinaddr[64];
-    CPubKey ccPubKeyEmpty;
-    GetCCaddress(cp, coinaddr, ccPubKeyEmpty);
-    SetCCunspents(unspentOutputs, cp->normaladdr);
+    char markeraddr[64];
+
+	GetCCaddress(cp, markeraddr, GetUnspendable(cp, NULL));
+    SetCCunspents(unspentOutputs, markeraddr);
     
     //std::cerr << "HeirList() finding heir marker from Heir contract addr=" << cp->normaladdr << " unspentOutputs.size()=" << unspentOutputs.size() << '\n';
     
@@ -1283,10 +1288,10 @@ UniValue HeirList()
     struct CCcontract_info *cpHeir, *cpTokens, heirC, tokenC;  // NOTE we must use a separate 'C' structure for each CCinit!
     
     cpHeir = CCinit(&heirC, EVAL_HEIR);
-    cpTokens = CCinit(&tokenC, EVAL_TOKENS);
+    //cpTokens = CCinit(&tokenC, EVAL_TOKENS);
     
     _HeirList<CoinHelper>(cpHeir, result);
-    _HeirList<TokenHelper>(cpTokens, result);
+    //_HeirList<TokenHelper>(cpTokens, result); not used anymore
     
     return result;
 }
