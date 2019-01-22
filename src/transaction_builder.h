@@ -52,6 +52,20 @@ struct TransparentInputInfo {
         CAmount value) : scriptPubKey(scriptPubKey), value(value) {}
 };
 
+class TransactionBuilderResult {
+private:
+    boost::optional<CTransaction> maybeTx;
+    boost::optional<std::string> maybeError;
+public:
+    TransactionBuilderResult() = delete;
+    TransactionBuilderResult(const CTransaction& tx);
+    TransactionBuilderResult(const std::string& error);
+    bool IsTx();
+    bool IsError();
+    CTransaction GetTxOrThrow();
+    std::string GetError();
+};
+
 class TransactionBuilder
 {
 private:
@@ -74,9 +88,9 @@ public:
 
     void SetFee(CAmount fee);
 
-    // Returns false if the anchor does not match the anchor used by
+    // Throws if the anchor does not match the anchor used by
     // previously-added Sapling spends.
-    bool AddSaplingSpend(
+    void AddSaplingSpend(
         libzcash::SaplingExpandedSpendingKey expsk,
         libzcash::SaplingNote note,
         uint256 anchor,
@@ -91,13 +105,13 @@ public:
     // Assumes that the value correctly corresponds to the provided UTXO.
     void AddTransparentInput(COutPoint utxo, CScript scriptPubKey, CAmount value);
 
-    bool AddTransparentOutput(CTxDestination& to, CAmount value);
+    void AddTransparentOutput(CTxDestination& to, CAmount value);
 
     void SendChangeTo(libzcash::SaplingPaymentAddress changeAddr, uint256 ovk);
 
-    bool SendChangeTo(CTxDestination& changeAddr);
+    void SendChangeTo(CTxDestination& changeAddr);
 
-    boost::optional<CTransaction> Build();
+    TransactionBuilderResult Build();
 };
 
 #endif /* TRANSACTION_BUILDER_H */
