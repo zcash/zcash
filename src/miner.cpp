@@ -1707,6 +1707,7 @@ void static BitcoinMiner()
                         for (z=31; z>=0; z--)
                             fprintf(stderr,"%02x",((uint8_t *)&h)[z]);
                         fprintf(stderr," Invalid block mined, try again\n");
+                        break;
                         return(false);
                     }
                     KOMODO_CHOSEN_ONE = 1;
