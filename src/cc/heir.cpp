@@ -1184,13 +1184,13 @@ UniValue HeirInfo(uint256 fundingtxid)
             }
             
             stream << inactivityTimeSec;
-            result.push_back(Pair("inactivity time setting", stream.str().c_str()));
+            result.push_back(Pair("inactivity time setting, sec", stream.str().c_str()));
             stream.str("");
             stream.clear();
             
             if (!hasHeirSpendingBegun) { // we do not need find duration if the spending already has begun
                 durationSec = CCduration(numblocks, latestFundingTxid);
-                std::cerr << "HeirInfo() duration=" << durationSec << " inactivityTime=" << inactivityTimeSec << " numblocks=" << numblocks << '\n';
+                std::cerr << "HeirInfo() duration (sec)=" << durationSec << " inactivityTime (sec)=" << inactivityTimeSec << " numblocks=" << numblocks << '\n';
             }
             
             stream << std::boolalpha << (hasHeirSpendingBegun || durationSec > inactivityTimeSec);
@@ -1201,7 +1201,7 @@ UniValue HeirInfo(uint256 fundingtxid)
 			// adding owner current inactivity time:
 			if (!hasHeirSpendingBegun && durationSec <= inactivityTimeSec) {
 				stream << durationSec;
-				result.push_back(Pair("owner inactivity time", stream.str().c_str()));
+				result.push_back(Pair("owner inactivity time, sec", stream.str().c_str()));
 				stream.str("");
 				stream.clear();
 			}
