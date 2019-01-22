@@ -668,7 +668,7 @@ int32_t komodo_isPoS(CBlock *pblock,int32_t height)
                         else
                         {
                             fprintf(stderr,"reject ht.%d PoS block\n",height);
-                            return(1); // allow until MTST3
+                            return(strcmp(ASSETCHAINS_SYMBOL,"MTST2") == 0); // allow until MTST3
                         }
                     }
                 }
