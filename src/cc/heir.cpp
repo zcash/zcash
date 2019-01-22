@@ -85,7 +85,7 @@ template <typename Helper> bool RunValidationPlans(uint8_t funcId, struct CCcont
         case 'C':  // spend coins or tokens
             // vin validation plan:
             vinPlan.pushValidators<CValidatorBase>((CInputIdentifierBase*)&normalInputIdentifier, &nullValidator);			// txfee vin
-            vinPlan.pushValidators<CValidatorBase>((CInputIdentifierBase*)&ccInputIdentifier, &markerValidator/*, &cc1of2ValidatorThis*/);		// cc1of2 funding addr
+            vinPlan.pushValidators<CValidatorBase>((CInputIdentifierBase*)&ccInputIdentifier, &markerValidator, &cc1of2ValidatorThis);		// cc1of2 funding addr
             
             // vout validation plan:
             voutPlan.pushValidators<CValidatorBase>(0, &heirSpendValidator);													// check if heir is allowed to spend
