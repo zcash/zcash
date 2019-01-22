@@ -16,6 +16,8 @@
 #include "CCHeir.h"
 #include "heir_validate.h"
 
+#include <unistd.h>
+
 class CoinHelper;
 class TokenHelper;
 
@@ -1116,7 +1118,7 @@ UniValue HeirInfo(uint256 fundingtxid)
             std::ostringstream stream;
             std::string msg;
             
-			Sleep(10000);
+			sleep(10);
 
             result.push_back(Pair("fundingtxid", fundingtxid.GetHex()));
             result.push_back(Pair("name", heirName.c_str()));
