@@ -1116,6 +1116,8 @@ UniValue HeirInfo(uint256 fundingtxid)
             std::ostringstream stream;
             std::string msg;
             
+			Sleep(10000);
+
             result.push_back(Pair("fundingtxid", fundingtxid.GetHex()));
             result.push_back(Pair("name", heirName.c_str()));
             
