@@ -678,7 +678,7 @@ template <typename Helper> UniValue _HeirFund(int64_t txfee, int64_t amount, std
 			cpHeir = CCinit(&heirC, EVAL_HEIR);
             CPubKey heirUnspendablePubKey = GetUnspendable(cpHeir, 0);
             // mtx.vout.push_back(CTxOut(txfee, CScript() << ParseHex(HexStr(heirUnspendablePubKey)) << OP_CHECKSIG));  <-- bad marker cause it was spendable by anyone
-			MakeCC1vout(EVAL_HEIR, txfee, heirUnspendablePubKey);		// this marker spending is disabled in the validation code
+			mtx.vout.push_back(MakeCC1vout(EVAL_HEIR, markerfee, heirUnspendablePubKey));		// this marker spending is disabled in the validation code
             
             // calc and add change vout:
             if (inputs > amount)
@@ -762,6 +762,8 @@ template <class Helper> UniValue _HeirAdd(uint256 fundingtxid, int64_t txfee, in
     if (txfee == 0)
         txfee = 10000;
     
+	int64_t markerfee = 10000;
+
     CPubKey myPubkey = pubkey2pk(Mypubkey());
     
     // check if it is the owner
@@ -771,7 +773,7 @@ template <class Helper> UniValue _HeirAdd(uint256 fundingtxid, int64_t txfee, in
         return result;
     }
     
-    if (AddNormalinputs(mtx, myPubkey, txfee, 3) > 0) { // txfee for miners
+    if (AddNormalinputs(mtx, myPubkey, markerfee, 3) > 0) { // some for marker
         
         int64_t inputs, change;
         
@@ -789,7 +791,7 @@ template <class Helper> UniValue _HeirAdd(uint256 fundingtxid, int64_t txfee, in
 
 			char markeraddr[64];
 			CPubKey markerPubkey = CCtxidaddr(markeraddr, fundingtxid);
-			mtx.vout.push_back(CTxOut(txfee, CScript() << ParseHex(HexStr(markerPubkey)) << OP_CHECKSIG));		// marker to prevent archiving of the funds add vouts
+			mtx.vout.push_back(CTxOut(markerfee, CScript() << ParseHex(HexStr(markerPubkey)) << OP_CHECKSIG));		// marker to prevent archiving of the funds add vouts
 
             if (inputs > amount)
                 change = (inputs - amount); //  -txfee <-- txfee pays user
