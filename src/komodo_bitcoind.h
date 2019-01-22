@@ -2120,7 +2120,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
     {
         CBlockIndex* pblockindex = chainActive[tipindex->GetHeight()];
         CBlock block; CTxDestination addressout;
-        if( ReadBlockFromDisk(block, pblockindex, 1) && komodo_WhoStaked(&block, addressout) != 0 && IsMine(*pwalletMain,addressout) != 0 )
+        if( ASSETCHAINS_MARMARA != 0 || ReadBlockFromDisk(block, pblockindex, 1) && komodo_WhoStaked(&block, addressout) != 0 && IsMine(*pwalletMain,addressout) != 0 )
         {
               resetstaker = true;
               fprintf(stderr, "Reset ram staker after mining a block!\n");
