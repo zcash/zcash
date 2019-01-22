@@ -674,7 +674,9 @@ template <typename Helper> UniValue _HeirFund(int64_t txfee, int64_t amount, std
             
             // add a marker for finding all plans in HeirList()
             // TODO: change marker either to cc or normal txidaddr unspendable
-            CPubKey heirUnspendablePubKey = GetUnspendable(cp, 0);
+			struct CCcontract_info *cpHeir, heirC;  
+			cpHeir = CCinit(&heirC, EVAL_HEIR);
+            CPubKey heirUnspendablePubKey = GetUnspendable(cpHeir, 0);
             // mtx.vout.push_back(CTxOut(txfee, CScript() << ParseHex(HexStr(heirUnspendablePubKey)) << OP_CHECKSIG));  <-- bad marker cause it was spendable by anyone
 			MakeCC1vout(EVAL_HEIR, txfee, heirUnspendablePubKey);		// this marker spending is disabled in the validation code
             
@@ -1235,7 +1237,7 @@ UniValue HeirInfo(uint256 fundingtxid)
  * @return list of heir plan handles (fundingtxid)
  */
 
-template <typename Helper>void _HeirList(struct CCcontract_info *cp, UniValue &result)
+void _HeirList(struct CCcontract_info *cp, UniValue &result)
 {
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue>> unspentOutputs;
     char markeraddr[64];
@@ -1243,7 +1245,7 @@ template <typename Helper>void _HeirList(struct CCcontract_info *cp, UniValue &r
 	GetCCaddress(cp, markeraddr, GetUnspendable(cp, NULL));
     SetCCunspents(unspentOutputs, markeraddr);
     
-    //std::cerr << "HeirList() finding heir marker from Heir contract addr=" << cp->normaladdr << " unspentOutputs.size()=" << unspentOutputs.size() << '\n';
+    std::cerr << "HeirList() finding heir marker from unspendable addr=" << markeraddr << " unspentOutputs.size()=" << unspentOutputs.size() << '\n';
     
     // TODO: move marker to special cc addr to prevent checking all tokens
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue>>::const_iterator it = unspentOutputs.begin(); it != unspentOutputs.end(); it++) {
@@ -1252,7 +1254,7 @@ template <typename Helper>void _HeirList(struct CCcontract_info *cp, UniValue &r
         uint256 tokenid;
         int32_t vout = (int32_t)it->first.index;
         
-        //std::cerr << "HeirList() checking txid=" << txid.GetHex() << " vout=" << vout << '\n';
+        std::cerr << "HeirList() checking txid=" << txid.GetHex() << " vout=" << vout << '\n';
         
         CTransaction fundingtx;
         if (GetTransaction(txid, fundingtx, hashBlock, false)) {
@@ -1291,7 +1293,7 @@ UniValue HeirList()
     cpHeir = CCinit(&heirC, EVAL_HEIR);
     //cpTokens = CCinit(&tokenC, EVAL_TOKENS);
     
-    _HeirList<CoinHelper>(cpHeir, result);
+    _HeirList(cpHeir, result);
     //_HeirList<TokenHelper>(cpTokens, result); not used anymore
     
     return result;
