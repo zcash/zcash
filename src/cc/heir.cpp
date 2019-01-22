@@ -400,6 +400,22 @@ uint8_t DecodeHeirEitherOpRet(CScript scriptPubKey, uint256 &tokenid, uint256 &f
     return _DecodeHeirEitherOpRet(scriptPubKey, tokenid, dummyOwnerPubkey, dummyHeirPubkey, dummyInactivityTime, dummyHeirName, fundingTxidInOpret, hasHeirSpendingBegun, noLogging);
 }
 
+// check if pubkey is in vins
+void CheckVinPubkey(std::vector<CTxIn> vins, CPubKey pubkey, bool &hasPubkey, bool &hasOtherPubkey) {
+
+	hasPubkey = false;
+	hasOtherPubkey = false;
+
+	for (auto vin : vins) {
+		CPubKey vinPubkey = check_signing_pubkey(vin.scriptSig);
+		if (vinPubkey.IsValid())   {
+			if (vinPubkey == pubkey) 
+				hasPubkey = true;
+			if (vinPubkey != pubkey)
+				hasOtherPubkey = true;
+		}
+	}
+}
 
 /**
  * find the latest funding tx: it may be the first F tx or one of A or C tx's
@@ -474,17 +490,13 @@ uint256 _FindLatestFundingTx(uint256 fundingtxid, uint8_t& funcId, uint256 &toke
                 if (blockHeight > maxBlockHeight) {
 
 					// check owner pubkey in vins
-					bool hasVinOwner = false;
-					for (auto vin : regtx.vin) {
-						CPubKey vinPubkey = check_signing_pubkey(vin.scriptSig);
-						if (vinPubkey.IsValid() && vinPubkey == ownerPubkey) {
-							hasVinOwner = true;
-							break;
-						}
-					}
+					bool isOwner = false;
+					bool isNonOwner = false;
 
-					// we ignore 'donations' tx (non-owner fundings) for calculating if heir is allowed to spend:
-					if (hasVinOwner) {
+					CheckVinPubkey(regtx.vin, ownerPubkey, isOwner, isNonOwner);
+
+					// we ignore 'donations' tx (with non-owner inputs) for calculating if heir is allowed to spend:
+					if (isOwner && !isNonOwner) {
 						hasHeirSpendingBegun = hasHeirSpendingBegunInOpret;
 						maxBlockHeight = blockHeight;
 						latesttxid = txid;
@@ -672,23 +684,19 @@ template <typename Helper> UniValue _HeirFund(int64_t txfee, int64_t amount, std
                 mtx.vout.push_back(Helper::makeUserVout(change, myPubkey));
             }
 
-			// check my pubkey in vins
-			bool notMypubkey = false;
-			for (auto vin : mtx.vin) {
-				CPubKey vinPubkey = check_signing_pubkey(vin.scriptSig);
-				if (vinPubkey.IsValid() && vinPubkey != myPubkey) {
-					notMypubkey = true;
-					break;
-				}
-			}
-			// do not allow to sign non-owner vin:
-			if (notMypubkey) {
+			// check owner pubkey in vins
+			bool isMypubkey = false;
+			bool isNotMypubkey = false;
+
+			CheckVinPubkey(mtx.vin, myPubkey, isMypubkey, isNotMypubkey);
+
+			// for initial funding do not allow to sign by non-owner key:
+			if (isNotMypubkey) {
 				result.push_back(Pair("result", "error"));
-				result.push_back(Pair("error", "not the owner's key in the wallet"));
+				result.push_back(Pair("error", "using non-owner inputs not allowed"));
 				return result;
 			}
 
-            
             // add 1of2 vout validation pubkeys:
             std::vector<CPubKey> voutTokenPubkeys;
             voutTokenPubkeys.push_back(myPubkey);
@@ -782,22 +790,28 @@ template <class Helper> UniValue _HeirAdd(uint256 fundingtxid, int64_t txfee, in
                 mtx.vout.push_back(Helper::makeUserVout(change, myPubkey));
             }
 
-			// check my pubkey in vins
-			bool notMypubkey = false;
-			for (auto vin : mtx.vin) {
-				CPubKey vinPubkey = check_signing_pubkey(vin.scriptSig);
-				if (vinPubkey.IsValid() && vinPubkey != myPubkey) {
-					notMypubkey = true;
-					break;
-				}
-			}
-			// do not allow to sign non-owner vin:
-			if (notMypubkey) {
+			// check owner pubkey in vins
+			bool isMypubkey = false;
+			bool isNotMypubkey = false;
+
+			CheckVinPubkey(mtx.vin, myPubkey, isMypubkey, isNotMypubkey);
+
+			// for additional funding do not allow to sign by both owner and non-owner keys (is this a donation or not?):
+			if (isMypubkey && isNotMypubkey) {
 				result.push_back(Pair("result", "error"));
-				result.push_back(Pair("error", "not the owner's key in the wallet"));
+				result.push_back(Pair("error", "using both owner and non-owner inputs is not allowed"));
 				return result;
 			}
             
+			// warn the user he's making a donation if this is all non-owner keys:
+			if (isNotMypubkey) {
+				result.push_back(Pair("result", "warning"));
+				result.push_back(Pair("warning", "you are about to make a donation to heir fund"));
+			}
+			else	{
+				result.push_back(Pair("result", "success"));
+			}
+
             // add 1of2 vout validation pubkeys - needed only for tokens:
             std::vector<CPubKey> voutTokenPubkeys;
             voutTokenPubkeys.push_back(ownerPubkey);
@@ -808,11 +822,11 @@ template <class Helper> UniValue _HeirAdd(uint256 fundingtxid, int64_t txfee, in
                                                  Helper::makeAddOpRet(tokenid, voutTokenPubkeys, fundingtxid, hasHeirSpendingBegun)));
             
             if (!rawhextx.empty()) {
-                result.push_back(Pair("result", "success"));
                 result.push_back(Pair("hextx", rawhextx));
             }
             else	{
                 std::cerr << "HeirAdd error in FinalizeCCtx" << std::endl;
+				result.clear();
                 result.push_back(Pair("result", "error"));
                 result.push_back(Pair("error", "sign error"));
             }
