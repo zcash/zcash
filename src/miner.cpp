@@ -1604,16 +1604,12 @@ void static BitcoinMiner()
                     fprintf(stderr," PoW for staked coin PoS %d%% vs target %d%% ht.%d\n",percPoS,(int32_t)ASSETCHAINS_STAKED,Mining_height);
                 }
             }
+            int32_t gotinvalid = 0;
             while (true)
             {
-                /*if ( KOMODO_INSYNC == 0 )
-                {
-                    KOMODO_LONGESTCHAIN = komodo_longestchain();
-                    fprintf(stderr,"Mining when blockchain might not be in sync longest.%d vs %d\n",KOMODO_LONGESTCHAIN,Mining_height);
-                    if ( KOMODO_LONGESTCHAIN != 0 && Mining_height >= KOMODO_LONGESTCHAIN )
-                        KOMODO_INSYNC = Mining_height;
-                    sleep(3);
-                }*/
+                fprintf(stderr,"gotinvalid.%d\n",gotinvalid);
+                if ( gotinvalid != 0 )
+                    break;
                 komodo_longestchain();
                 // Hash state
                 KOMODO_CHOSEN_ONE = 0;
@@ -1707,7 +1703,7 @@ void static BitcoinMiner()
                         for (z=31; z>=0; z--)
                             fprintf(stderr,"%02x",((uint8_t *)&h)[z]);
                         fprintf(stderr," Invalid block mined, try again\n");
-                        break;
+                        gotinvalid = 1;
                         return(false);
                     }
                     KOMODO_CHOSEN_ONE = 1;
