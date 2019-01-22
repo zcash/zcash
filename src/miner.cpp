@@ -1396,6 +1396,8 @@ void static BitcoinMiner_noeq()
     miningTimer.stop();
 }
 
+int32_t gotinvalid;
+
 #ifdef ENABLE_WALLET
 void static BitcoinMiner(CWallet *pwallet)
 #else
@@ -1604,7 +1606,7 @@ void static BitcoinMiner()
                     fprintf(stderr," PoW for staked coin PoS %d%% vs target %d%% ht.%d\n",percPoS,(int32_t)ASSETCHAINS_STAKED,Mining_height);
                 }
             }
-            static int32_t gotinvalid = 0;
+            gotinvalid = 0;
             while (true)
             {
                 fprintf(stderr,"gotinvalid.%d\n",gotinvalid);
