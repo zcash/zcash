@@ -82,9 +82,8 @@ uint32_t ASSETCHAINS_NONCESHIFT[] = {32,16,16};
 uint32_t ASSETCHAINS_HASHESPERROUND[] = {1,4096,4096};
 uint32_t ASSETCHAINS_ALGO = _ASSETCHAINS_EQUIHASH;
 // min diff returned from GetNextWorkRequired needs to be added here for each algo, so they can work with ac_staked.
-// VerusHash v1 and 1.1 use a custom tuned number or PoW blocks all are 1s. 
-uint32_t ASSETCHAINS_MINDIFF[] = {537857807,486648905,486648905};
-
+uint32_t ASSETCHAINS_MINDIFF[] = {537857807,503381775,503381775};
+                                            // ^ wrong!
 // Verus proof of stake controls
 int32_t ASSETCHAINS_LWMAPOS = 0;        // percentage of blocks should be PoS
 int32_t VERUS_BLOCK_POSUNITS = 1024;    // one block is 1000 units

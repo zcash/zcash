@@ -134,6 +134,8 @@ unsigned int lwmaCalculateNextWorkRequired(const CBlockIndex* pindexLast, const 
         bnLimit = UintToArith256(params.powAlternate);
 
     unsigned int nProofOfWorkLimit = bnLimit.GetCompact();
+    
+    printf("PoWLimit: %u\n", nProofOfWorkLimit);
 
     // Find the first block in the averaging interval as we total the linearly weighted average
     const CBlockIndex* pindexFirst = pindexLast;
