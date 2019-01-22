@@ -631,15 +631,21 @@ public:
 		uint256 fundingTxidInOpret = zeroid, dummyTxid, tokenid = zeroid, initialTokenid = zeroid;
 		uint8_t dummyIsHeirSpendingBegan;
 
+		std::cerr << "CMarkerValidator::validateVin() prevVout.size()=" << prevVout.size() << " prevN=" << prevN << std::endl;
+
 		if (prevVout.size() > 0) {
 
 			// get funcId for prev tx:
 			uint8_t funcId = DecodeHeirEitherOpRet(prevVout[prevVout.size()-1].scriptPubKey, tokenid, fundingTxidInOpret, dummyIsHeirSpendingBegan, true);
+
+			std::cerr << "CMarkerValidator::validateVin() funcId=" << (funcId?funcId:' ') << std::endl;
+
 			if (funcId == 'F' && prevN == 1) { // do not allow to spend 'F' marker's vout
 				message = std::string("spending marker not allowed");
 				return false;
 			}
 		}
+		std::cerr << "CMarkerValidator::validateVin() exits with true" << std::endl;
 		return true; 
 	}
 };
