@@ -1247,7 +1247,7 @@ void _HeirList(struct CCcontract_info *cp, UniValue &result)
 	GetCCaddress(cp, markeraddr, GetUnspendable(cp, NULL));
     SetCCunspents(unspentOutputs, markeraddr);
     
-    std::cerr << "HeirList() finding heir marker from unspendable addr=" << markeraddr << " unspentOutputs.size()=" << unspentOutputs.size() << '\n';
+    //std::cerr << "HeirList() finding heir marker from unspendable addr=" << markeraddr << " unspentOutputs.size()=" << unspentOutputs.size() << '\n';
     
     // TODO: move marker to special cc addr to prevent checking all tokens
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue>>::const_iterator it = unspentOutputs.begin(); it != unspentOutputs.end(); it++) {
@@ -1256,7 +1256,7 @@ void _HeirList(struct CCcontract_info *cp, UniValue &result)
         uint256 tokenid;
         int32_t vout = (int32_t)it->first.index;
         
-        std::cerr << "HeirList() checking txid=" << txid.GetHex() << " vout=" << vout << '\n';
+        //std::cerr << "HeirList() checking txid=" << txid.GetHex() << " vout=" << vout << '\n';
         
         CTransaction fundingtx;
         if (GetTransaction(txid, fundingtx, hashBlock, false)) {
