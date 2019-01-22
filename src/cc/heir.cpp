@@ -1197,6 +1197,14 @@ UniValue HeirInfo(uint256 fundingtxid)
             result.push_back(Pair("spending allowed for the heir", stream.str().c_str()));
             stream.str("");
             stream.clear();
+
+			// adding owner current inactivity time:
+			if (!hasHeirSpendingBegun && durationSec <= inactivityTimeSec) {
+				stream << durationSec;
+				result.push_back(Pair("owner inactivity time", stream.str().c_str()));
+				stream.str("");
+				stream.clear();
+			}
             
             result.push_back(Pair("result", "success"));
         }
