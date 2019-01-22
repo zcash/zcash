@@ -1609,7 +1609,7 @@ void static BitcoinMiner()
             gotinvalid = 0;
             while (true)
             {
-                fprintf(stderr,"gotinvalid.%d\n",gotinvalid);
+                //fprintf(stderr,"gotinvalid.%d\n",gotinvalid);
                 if ( gotinvalid != 0 )
                     break;
                 komodo_longestchain();
