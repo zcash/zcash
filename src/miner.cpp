@@ -1604,7 +1604,7 @@ void static BitcoinMiner()
                     fprintf(stderr," PoW for staked coin PoS %d%% vs target %d%% ht.%d\n",percPoS,(int32_t)ASSETCHAINS_STAKED,Mining_height);
                 }
             }
-            int32_t gotinvalid = 0;
+            static int32_t gotinvalid = 0;
             while (true)
             {
                 fprintf(stderr,"gotinvalid.%d\n",gotinvalid);
