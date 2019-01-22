@@ -7648,15 +7648,19 @@ UniValue test_heirmarker(const UniValue& params, bool fHelp)
 	// make fake token tx: 
 	struct CCcontract_info *cp, C;
 
-	if (fHelp || (params.size() != 4))
+	if (fHelp || (params.size() != 1))
 		throw runtime_error("incorrect params\n");
 	if (ensure_CCrequirements() < 0)
 		throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
 
-	uint256 fundingtxid = Parseuint256((char *)params[3].get_str().c_str());
+	uint256 fundingtxid = Parseuint256((char *)params[0].get_str().c_str());
 
 	CPubKey myPubkey = pubkey2pk(Mypubkey());
 	CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+
+	int64_t normalInputs = AddNormalinputs(mtx, myPubkey, 10000, 60);
+	if (normalInputs < 10000)
+		throw runtime_error("not enough normals\n");
 
 	mtx.vin.push_back(CTxIn(fundingtxid, 1));
 	mtx.vout.push_back(MakeCC1vout(EVAL_HEIR, 10000, myPubkey));

@@ -635,10 +635,11 @@ public:
 
 			// get funcId for prev tx:
 			uint8_t funcId = DecodeHeirEitherOpRet(prevVout[prevVout.size()-1].scriptPubKey, tokenid, fundingTxidInOpret, dummyIsHeirSpendingBegan, true);
-			if (funcId == 'F' && prevN == 1)   // do not allow to spend 'F' marker's vout
+			if (funcId == 'F' && prevN == 1) { // do not allow to spend 'F' marker's vout
+				message = std::string("spending marker not allowed");
 				return false;
+			}
 		}
-
 		return true; 
 	}
 };
