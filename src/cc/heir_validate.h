@@ -624,7 +624,7 @@ public:
 	CMarkerValidator(CCcontract_info* cp)
 		: CValidatorBase(cp) {	}
 
-	virtual bool isVinValidator() const { return false; }  // this is vout validator
+	virtual bool isVinValidator() const { return true; }  // this is vin validator
 	virtual bool validateVout(CTxOut vout, int32_t vout_n, std::string& message) const { return true; }
 	virtual bool validateVin(CTxIn vin, std::vector<CTxOut> prevVout, int32_t prevN, std::string& message) const { 
 
