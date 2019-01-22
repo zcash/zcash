@@ -56,6 +56,7 @@ template <typename Helper> bool RunValidationPlans(uint8_t funcId, struct CCcont
     // only for tokens:
     CMyPubkeyVoutValidator<TokenHelper>	ownerCCaddrValidator(cp, fundingOpretScript, false);						// check if this correct owner's cc user addr corresponding to opret
     COpRetValidator<Helper>		    opRetValidator(cp, fundingOpretScript);											// compare opRets in this and last tx
+	CMarkerValidator<Helper>	    markerValidator(cp);															// initial tx marker spending protection
     CNullValidator<Helper>			nullValidator(cp);
     
     switch (funcId) {

@@ -125,7 +125,7 @@ class CValidatorBase
 public:
     CValidatorBase(CCcontract_info* cp) : m_cp(cp) {}
     virtual bool isVinValidator() const = 0;
-    virtual bool validateVin(CTxIn vin, CTxOut prevVout, int32_t vout_n, std::string& message) const = 0;
+    virtual bool validateVin(CTxIn vin, std::vector<CTxOut> prevVout, int32_t prevN, std::string& message) const = 0;
     virtual bool validateVout(CTxOut vout, int32_t vout_n, std::string& message) const = 0;
     
 protected:
@@ -258,7 +258,7 @@ private:
             
             if (v->isVinValidator())
                 // validate this vin and previous vout:
-                result = v->validateVin(pTx->vin[iv], pPrevTx->vout[pTx->vin[iv].prevout.n], pTx->vin[iv].prevout.n, refMessage);
+                result = v->validateVin(pTx->vin[iv], pPrevTx->vout, pTx->vin[iv].prevout.n, refMessage);
             else
                 // if it is vout validator pass the previous tx vout:
                 result = v->validateVout( pPrevTx->vout[pTx->vin[iv].prevout.n], pTx->vin[iv].prevout.n, refMessage);
@@ -438,7 +438,7 @@ public:
         std::cerr << "CCC1of2AddressValidator::validateVout() exits with false: " << message << std::endl;
         return false;
     }
-    virtual bool validateVin(CTxIn vin, CTxOut prevVout, int32_t vout_n, std::string& message) const { return false; }
+    virtual bool validateVin(CTxIn vin, std::vector<CTxOut> prevVout, int32_t prevN, std::string& message) const { return false; }
     
 private:
     CScript m_fundingOpretScript;
@@ -498,7 +498,7 @@ public:
         message = std::string("invalid pubkey");
         return false;
     }
-    virtual bool validateVin(CTxIn vin, CTxOut prevVout, int32_t vout_n, std::string& message) const { return true; }
+    virtual bool validateVin(CTxIn vin, std::vector<CTxOut> prevVout, int32_t prevN, std::string& message) const { return true; }
     
 private:
     CScript m_fundingOpretScript;
@@ -554,7 +554,7 @@ public:
         // this is not heir:
         return true;
     }
-    virtual bool validateVin(CTxIn vin, CTxOut prevVout, int32_t vout_n, std::string& message) const { return true; }
+    virtual bool validateVin(CTxIn vin, std::vector<CTxOut> prevVout, int32_t prevN, std::string& message) const { return true; }
     
 private:
     CScript m_fundingOpretScript;
@@ -607,17 +607,17 @@ public:
         //std::cerr << "COpRetValidator::validateVout() exits with true" << std::endl;
         return true;
     }
-    virtual bool validateVin(CTxIn vin, CTxOut prevVout, int32_t vout_n, std::string& message) const { return true; }
+    virtual bool validateVin(CTxIn vin, std::vector<CTxOut> prevVout, int32_t prevN, std::string& message) const { return true; }
     
 private:
     CScript m_fundingOpretScript;
 };
 
 
-/*
-** marker spending prevention validator, 
-** returns false if for tx with funcid=F vout.1 is being tried to spend 
-*/
+/**
+ * marker spending prevention validator, 
+ * returns false if for tx with funcid=F vout.1 is being tried to spend 
+ */
 template <class Helper> class CMarkerValidator : CValidatorBase
 {
 public:
@@ -625,22 +625,22 @@ public:
 		: CValidatorBase(cp) {	}
 
 	virtual bool isVinValidator() const { return false; }  // this is vout validator
-	virtual bool validateVout(CTxOut vout, int32_t vout_n, std::string& message) const {
+	virtual bool validateVout(CTxOut vout, int32_t vout_n, std::string& message) const { return true; }
+	virtual bool validateVin(CTxIn vin, std::vector<CTxOut> prevVout, int32_t prevN, std::string& message) const { 
 
 		uint256 fundingTxidInOpret = zeroid, dummyTxid, tokenid = zeroid, initialTokenid = zeroid;
 		uint8_t dummyIsHeirSpendingBegan;
 
-		uint8_t funcId = DecodeHeirEitherOpRet(m_opret, tokenid, fundingTxidInOpret, dummyIsHeirSpendingBegan, true);
+		if (prevVout.size() > 0) {
 
-		if( funcId == 'F' && vout_n == 1 )
-			return false;
-		
-		return true;
+			// get funcId for prev tx:
+			uint8_t funcId = DecodeHeirEitherOpRet(prevVout[prevVout.size()-1].scriptPubKey, tokenid, fundingTxidInOpret, dummyIsHeirSpendingBegan, true);
+			if (funcId == 'F' && prevN == 1)   // do not allow to spend 'F' marker's vout
+				return false;
+		}
+
+		return true; 
 	}
-	virtual bool validateVin(CTxIn vin, CTxOut prevVout, int32_t vout_n, std::string& message) const { return true; }
-
-private:
-	CScript m_fundingOpretScript;
 };
 
 /**
@@ -654,7 +654,7 @@ public:
     
     virtual bool isVinValidator() const { return false; }
     virtual bool validateVout(CTxOut vout, int32_t vout_n, std::string& message) const { return true; }
-    virtual bool validateVin(CTxIn vin, CTxOut prevVout, int32_t vout_n, std::string& message) const { return true; }
+    virtual bool validateVin(CTxIn vin, std::vector<CTxOut> prevVout, int32_t prevN, std::string& message) const { return true; }
 };
 
 
