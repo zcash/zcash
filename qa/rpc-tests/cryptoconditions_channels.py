@@ -72,10 +72,36 @@ class CryptoconditionsChannelsTest(CryptoconditionsTestFramework):
         result = rpc.channelsinfo(channel_txid)
         assert_equal(result["Transactions"][1]["Payment"], payment_tx_id)
 
-        # TODO: check if payment value really transferred
-        # TODO: check if information in channelinfo changed correct
+        # number of payments should be equal 1 (one denomination used)
+        result = rpc.channelsinfo(channel_txid)["Transactions"][1]["Number of payments"]
+        assert_equal(result, 1)
+        # payments left param should reduce 1 and be equal 9 now ( 10 - 1 = 9 )
+        result = rpc.channelsinfo(channel_txid)["Transactions"][1]["Payments left"]
+        assert_equal(result, 9)
 
-        # TODO: try to drain channel (10 payment by 100000 satoshies in total)
+        # lets try payment with x2 amount to ensure that counters works correct
+        result = rpc.channelspayment(channel_txid, "200000")
+        assert_success(result)
+        payment_tx_id = self.send_and_mine(result["hex"], rpc)
+        assert payment_tx_id, "got txid"
+
+        result = rpc.channelsinfo(channel_txid)
+        assert_equal(result["Transactions"][2]["Payment"], payment_tx_id)
+
+        result = rpc.channelsinfo(channel_txid)["Transactions"][2]["Number of payments"]
+        assert_equal(result, 2)
+
+        result = rpc.channelsinfo(channel_txid)["Transactions"][2]["Payments left"]
+        assert_equal(result, 7)
+
+        # check if payment value really transferred
+        raw_transaction = rpc.getrawtransaction(payment_tx_id, 1)
+
+        result = raw_transaction["vout"][3]["valueSat"]
+        assert_equal(result, 200000)
+
+        result = rpc1.validateaddress(raw_transaction["vout"][3]["scriptPubKey"]["addresses"][0])["ismine"]
+        assert_equal(result, True)
 
         # have to check that second node have coins to cover txfee at least
         rpc.sendtoaddress(rpc1.getnewaddress(), 1)
@@ -109,7 +135,7 @@ class CryptoconditionsChannelsTest(CryptoconditionsTestFramework):
 
         # now in channelinfo closed flag should appear
         result = rpc.channelsinfo(channel_txid)
-        assert_equal(result["Transactions"][2]["Close"], channel_close_txid)
+        assert_equal(result["Transactions"][3]["Close"], channel_close_txid)
 
         # executing channel refund
         result = rpc.channelsrefund(channel_txid, channel_close_txid)
@@ -117,10 +143,41 @@ class CryptoconditionsChannelsTest(CryptoconditionsTestFramework):
         refund_txid = self.send_and_mine(result["hex"], rpc)
         assert refund_txid, "got txid"
 
-        # TODO: check if it really refunded
+        # TODO: check if it refunded to opener address
+        raw_transaction = rpc.getrawtransaction(refund_txid, 1)
 
-        # creating new channel to test the case when node B initiate payment when node A revealed secret but
-        # secret revealing transaction not mined
+        result = raw_transaction["vout"][2]["valueSat"]
+        assert_equal(result, 700000)
+
+        result = rpc.validateaddress(raw_transaction["vout"][2]["scriptPubKey"]["addresses"][0])["ismine"]
+        assert_equal(result, True)
+
+
+        # creating and draining channel (10 payment by 100000 satoshies in total to fit full capacity)
+        new_channel_hex1 = rpc.channelsopen(self.pubkey1, "10", "100000")
+        assert_success(new_channel_hex1)
+        channel1_txid = self.send_and_mine(new_channel_hex1["hex"], rpc)
+        assert channel1_txid, "got channel txid"
+
+        # need to have 2+ confirmations in the test mode
+        rpc.generate(2)
+        self.sync_all()
+
+        for i in range(10):
+            result = rpc.channelspayment(channel1_txid, "100000")
+            assert_success(result)
+            payment_tx_id = self.send_and_mine(result["hex"], rpc)
+            assert payment_tx_id, "got txid"
+
+        # last payment should indicate that 0 payments left
+        result = rpc.channelsinfo(channel1_txid)["Transactions"][10]["Payments left"]
+        assert_equal(result, 0)
+
+        # no more payments possible
+        result = rpc.channelspayment(channel1_txid, "100000")
+        assert_error(result)
+
+        # creating new channel to test the case when node B initiate payment when node A revealed secret in offline
         # 10 payments, 100000 sat denomination channel opening with second node pubkey
         new_channel_hex2 = rpc.channelsopen(self.pubkey1, "10", "100000")
         assert_success(new_channel_hex)
@@ -133,6 +190,9 @@ class CryptoconditionsChannelsTest(CryptoconditionsTestFramework):
         # disconnecting first node from network
         rpc.setban("127.0.0.0/24","add")
         assert_equal(rpc.getinfo()["connections"], 0)
+        assert_equal(rpc1.getinfo()["connections"], 0)
+
+        rpc1.generate(1)
 
         # sending one payment to mempool to reveal the secret but not mine it
         payment_hex = rpc.channelspayment(channel2_txid, "100000")
@@ -157,8 +217,17 @@ class CryptoconditionsChannelsTest(CryptoconditionsTestFramework):
         result = rpc1.sendrawtransaction(dc_payment_hex["hex"])
         assert result, "got channelspayment transaction id"
 
-
-        # TODO: have to connect nodes back to not corrupt other tests
+        # TODO: it crash first node after block generating on mempools merging
+        # # restoring connection between nodes
+        # rpc.setban("127.0.0.0/24","remove")
+        # #rpc.generate(1)
+        # #rpc1.generate(1)
+        # sync_blocks(self.nodes)
+        # rpc.generate(1)
+        # sync_blocks(self.nodes)
+        # sync_mempools(self.nodes)
+        # assert_equal(rpc.getinfo()["connections"], 1)
+        # assert_equal(rpc1.getinfo()["connections"], 1)
 
     def run_test(self):
         print("Mining blocks...")
