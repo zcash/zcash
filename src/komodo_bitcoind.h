@@ -1454,8 +1454,16 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
         if ( iter > 0 )
             diff += segid*2;
         coinage = (value * diff);
-        if ( blocktime+iter+segid*2 > prevtime+128 )
-            coinage *= ((blocktime+iter+segid*2) - (prevtime+102));
+        if ( ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASH || ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASHV2 )
+        {
+            if ( blocktime+iter+segid*2 > prevtime+128 )
+                coinage *= ((blocktime+iter+segid*2) - (prevtime+102));
+        } 
+        else 
+        {
+            if ( blocktime+iter+segid*2 > prevtime+480 )
+                coinage *= ((blocktime+iter+segid*2) - (prevtime+400));
+        }
         coinage256 = arith_uint256(coinage+1);
         hashval = ratio * (UintToArith256(hash) / coinage256);
         if ( hashval <= bnTarget )
