@@ -66,6 +66,12 @@ fi
 
 set -x
 
+if [ "$(uname -m)" != "x86_64" ]; then
+    echo "Building zcashd is only supported on the x86_64 architecture."
+    echo "Known bugs may make builds of zcashd for 32-bit and big-endian systems unsafe: https://github.com/zcash/zcash/issues/3806"
+    exit 1
+fi
+
 # If --enable-lcov is the first argument, enable lcov coverage support:
 LCOV_ARG=''
 HARDENING_ARG='--enable-hardening'
