@@ -70,7 +70,11 @@ struct LockData {
     LockOrders lockorders;
     InvLockOrders invlockorders;
     boost::mutex dd_mutex;
-} static lockdata;
+};
+LockData& GetLockData() {
+    static LockData lockdata;
+    return lockdata;
+}
 
 boost::thread_specific_ptr<LockStack> lockstack;
 
@@ -129,6 +133,7 @@ static void push_lock(void* c, const CLockLocation& locklocation, bool fTry)
     if (lockstack.get() == NULL)
         lockstack.reset(new LockStack);
 
+    LockData& lockdata = GetLockData();
     boost::unique_lock<boost::mutex> lock(lockdata.dd_mutex);
 
     (*lockstack).push_back(std::make_pair(c, locklocation));
@@ -195,6 +200,7 @@ void AssertLockNotHeldInternal(const char* pszName, const char* pszFile, int nLi
 
 void DeleteLock(void* cs)
 {
+    LockData& lockdata = GetLockData();
     if (!lockdata.available) {
         // We're already shutting down.
         return;
