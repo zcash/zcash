@@ -1787,6 +1787,11 @@ void komodo_args(char *argv0)
         ASSETCHAINS_BEAMPORT = GetArg("-ac_beam",0);
         ASSETCHAINS_CODAPORT = GetArg("-ac_coda",0);
         ASSETCHAINS_MARMARA = GetArg("-ac_marmara",0);
+        if ( ASSETCHAINS_COMMISSION != 0 && ASSETCHAINS_FOUNDERS_REWARD != 0 )
+        {
+            fprintf(stderr,"cannot use founders reward and commission on the same chain.\n");
+            exit(0);
+        }
         if ( ASSETCHAINS_BEAMPORT != 0 && ASSETCHAINS_CODAPORT != 0 )
         {
             fprintf(stderr,"can only have one of -ac_beam or -ac_coda\n");
