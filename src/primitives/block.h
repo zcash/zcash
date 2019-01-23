@@ -106,6 +106,7 @@ public:
     uint256 GetVerusEntropyHash(int32_t nHeight) const;
 
     uint256 GetVerusV2Hash() const;
+    static void SetVerusHashV2();
 
     int64_t GetBlockTime() const
     {

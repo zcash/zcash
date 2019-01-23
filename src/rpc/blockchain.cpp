@@ -622,7 +622,7 @@ UniValue getblockhash(const UniValue& params, bool fHelp)
     return pblockindex->GetBlockHash().GetHex();
 }
 
-extern uint64_t ASSETCHAINS_STAKED;
+extern int32_t ASSETCHAINS_STAKED;
 
 UniValue getlastsegidstakes(const UniValue& params, bool fHelp)
 {

@@ -16,7 +16,7 @@ int8_t is_STAKED(const char *chain_name) {
     return(STAKED);
   if ( (strcmp(chain_name, "LABS") == 0) || (strncmp(chain_name, "LABS", 4) == 0) )
     STAKED = 1;
-  else if ( (strcmp(chain_name, "LAB") == 0) || (strncmp(chain_name, "LAB", 3) == 0) )
+  else if ( (strcmp(chain_name, "LABT2") == 0) || (strncmp(chain_name, "LABT2", 3) == 0) )
     STAKED = 2;
   else if ( (strcmp(chain_name, "CFEK") == 0) || (strncmp(chain_name, "CFEK", 4) == 0) )
     STAKED =  3;
