@@ -15,6 +15,7 @@
 
 #include "CCHeir.h"
 #include "heir_validate.h"
+#include <iomanip>
 
 class CoinHelper;
 class TokenHelper;
@@ -1178,7 +1179,7 @@ UniValue HeirInfo(uint256 fundingtxid)
             
             if (tokenid == zeroid) {
                 msg = "funding available in coins";
-                stream << (double)inputs / COIN;
+                stream << std::fixed << std::setprecision(8) << (double)inputs / COIN;
             }
             else	{
                 msg = "funding available in tokens";
