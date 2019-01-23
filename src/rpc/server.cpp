@@ -458,9 +458,14 @@ static const CRPCCommand vRPCCommands[] =
     { "marmara",       "marmarainfo",   &marmara_info,      true },
     { "marmara",       "marmaracreditloop",   &marmara_creditloop,      true },
     { "marmara",       "marmarasettlement",   &marmara_settlement,      true },
+    { "marmara",       "marmaralock",   &marmara_lock,      true },
 
     // Payments
     { "payments",       "paymentsaddress",   &paymentsaddress,      true },
+
+    { "CClib",       "cclibaddress",   &cclibaddress,      true },
+    { "CClib",       "cclibinfo",   &cclibinfo,      true },
+    { "CClib",       "cclib",   &cclib,      true },
 
     // Gateways
     { "gateways",       "gatewaysaddress",   &gatewaysaddress,      true },
@@ -532,6 +537,9 @@ static const CRPCCommand vRPCCommands[] =
     { "util",             "reconsiderblock",        &reconsiderblock,        true  },
     /* Not shown in help */
     { "hidden",             "setmocktime",            &setmocktime,            true  },
+	{ "hidden",             "test_ac",                &test_ac,            true },
+	{ "hidden",             "test_heirmarker",        &test_heirmarker,    true },
+
 #ifdef ENABLE_WALLET
     /* Wallet */
     { "wallet",             "resendwallettransactions", &resendwallettransactions, true},

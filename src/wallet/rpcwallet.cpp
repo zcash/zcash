@@ -57,6 +57,7 @@
 
 #include <numeric>
 
+#include "komodo_defs.h"
 
 using namespace std;
 
@@ -67,8 +68,6 @@ const std::string ADDR_TYPE_SPROUT = "sprout";
 const std::string ADDR_TYPE_SAPLING = "sapling";
 
 extern UniValue TxJoinSplitToJSON(const CTransaction& tx);
-extern uint8_t ASSETCHAINS_PRIVATE;
-extern int32_t USE_EXTERNAL_PUBKEY;
 uint32_t komodo_segid32(char *coinaddr);
 int32_t komodo_dpowconfs(int32_t height,int32_t numconfs);
 int32_t komodo_isnotaryvout(char *coinaddr); // from ac_private chains only
@@ -5094,8 +5093,8 @@ int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33)
     if (!EnsureWalletIsAvailable(0))
         return 0;
 
-    const CKeyStore& keystore = *pwalletMain;
     assert(pwalletMain != NULL);
+    const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
     utxovalue = 0;
     memset(&utxotxid,0,sizeof(utxotxid));
@@ -5172,7 +5171,6 @@ int32_t verus_staked(CBlock *pBlock, CMutableTransaction &txNew, uint32_t &nBits
 
 int32_t ensure_CCrequirements()
 {
-    extern uint8_t NOTARY_PUBKEY33[];
     CCerror = "";
     if ( NOTARY_PUBKEY33[0] == 0 )
         return(-1);
@@ -5262,8 +5260,6 @@ UniValue setpubkey(const UniValue& params, bool fHelp)
 
     char Raddress[18];
     uint8_t pubkey33[33];
-    extern uint8_t NOTARY_PUBKEY33[];
-    extern std::string NOTARY_PUBKEY;
     if ( NOTARY_PUBKEY33[0] == 0 ) {
         if (strlen(params[0].get_str().c_str()) == 66) {
             decode_hex(pubkey33,33,(char *)params[0].get_str().c_str());
@@ -5325,6 +5321,43 @@ UniValue channelsaddress(const UniValue& params, bool fHelp)
         }
     }
     return(result);
+}
+
+UniValue cclibaddress(const UniValue& params, bool fHelp)
+{
+    struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
+    cp = CCinit(&C,EVAL_FIRSTUSER);
+    if ( fHelp || params.size() > 1 )
+        throw runtime_error("cclibaddress [pubkey]\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    if ( params.size() == 1 )
+        pubkey = ParseHex(params[0].get_str().c_str());
+    return(CCaddress(cp,(char *)"CClib",pubkey));
+}
+
+UniValue cclibinfo(const UniValue& params, bool fHelp)
+{
+    struct CCcontract_info *cp,C;
+    cp = CCinit(&C,EVAL_FIRSTUSER);
+    if ( fHelp || params.size() > 0 )
+        throw runtime_error("cclibinfo\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    return(CClib_info(cp));
+}
+
+UniValue cclib(const UniValue& params, bool fHelp)
+{
+    struct CCcontract_info *cp,C; char *method; cJSON *jsonparams;
+    cp = CCinit(&C,EVAL_FIRSTUSER);
+    if ( fHelp || params.size() > 2 )
+        throw runtime_error("cclib method [JSON params]\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    method = (char *)params[0].get_str().c_str();
+    jsonparams = cJSON_Parse(params[1].get_str().c_str());
+    return(CClib(cp,method,jsonparams));
 }
 
 UniValue oraclesaddress(const UniValue& params, bool fHelp)
@@ -5558,8 +5591,9 @@ UniValue marmara_receive(const UniValue& params, bool fHelp)
     UniValue result(UniValue::VOBJ); uint256 batontxid; std::vector<uint8_t> senderpub; int64_t amount; int32_t matures; std::string currency;
     if ( fHelp || (params.size() != 5 && params.size() != 4) )
     {
+        // automatic flag -> lsb of matures
         // 1st marmarareceive 028076d42eb20efc10007fafb5ca66a2052523c0d2221e607adf958d1a332159f6 7.5 MARMARA 1440
-        // after marmarareceive 039433dc3749aece1bd568f374a45da3b0bc6856990d7da3cd175399577940a775 7.5 MARMARA 3903 bf6b4d42aa3ce974c853d73b06c78597dd3b5fb493d5d0d944f72c2017f561ad
+        // after marmarareceive 039433dc3749aece1bd568f374a45da3b0bc6856990d7da3cd175399577940a775 7.5 MARMARA 1168 d72d87aa0d50436de695c93e2bf3d7273c63c92ef6307913aa01a6ee6a16548b
         throw runtime_error("marmarareceive senderpk amount currency matures batontxid\n");
     }
     if ( ensure_CCrequirements() < 0 )
@@ -5578,7 +5612,7 @@ UniValue marmara_receive(const UniValue& params, bool fHelp)
         matures = atol(params[3].get_str().c_str());
         batontxid = Parseuint256((char *)params[4].get_str().c_str());
     } else matures = atol(params[3].get_str().c_str()) + chainActive.LastTip()->GetHeight() + 1;
-    return(MarmaraReceive(0,pubkey2pk(senderpub),amount,currency,matures,batontxid));
+    return(MarmaraReceive(0,pubkey2pk(senderpub),amount,currency,matures,batontxid,true));
 }
 
 UniValue marmara_issue(const UniValue& params, bool fHelp)
@@ -5586,7 +5620,9 @@ UniValue marmara_issue(const UniValue& params, bool fHelp)
     UniValue result(UniValue::VOBJ); uint256 approvaltxid; std::vector<uint8_t> receiverpub; int64_t amount; int32_t matures; std::string currency;
     if ( fHelp || params.size() != 5 )
     {
-        // marmaraissue 039433dc3749aece1bd568f374a45da3b0bc6856990d7da3cd175399577940a775 7.5 MARMARA 3903 010ff7f9256cefe3b5dee3d72c0eeae9fc6f34884e6f32ffe5b60916df54a9be
+        // marmaraissue 039433dc3749aece1bd568f374a45da3b0bc6856990d7da3cd175399577940a775 7.5 MARMARA 1168 32da4cb3e886ee42de90b4a15042d71169077306badf909099c5c5c692df3f27
+        // marmaraissue 039433dc3749aece1bd568f374a45da3b0bc6856990d7da3cd175399577940a775 700 MARMARA 2629 11fe8bf1de80c2ef69124d08907f259aef7f41e3a632ca2d48ad072a8c8f3078 -> 335df3a5dd6b92a3d020c9465d4d76e0d8242126106b83756dcecbad9813fdf3
+
         throw runtime_error("marmaraissue receiverpk amount currency matures approvaltxid\n");
     }
     if ( ensure_CCrequirements() < 0 )
@@ -5609,7 +5645,7 @@ UniValue marmara_transfer(const UniValue& params, bool fHelp)
     UniValue result(UniValue::VOBJ); uint256 approvaltxid,batontxid; std::vector<uint8_t> receiverpub; int64_t amount; int32_t matures; std::string currency; std::vector<uint256> creditloop;
     if ( fHelp || params.size() != 5 )
     {
-        // marmaratransfer 028076d42eb20efc10007fafb5ca66a2052523c0d2221e607adf958d1a332159f6 7.5 MARMARA 3903 748a4c80e6f6b725340fb0f52738f38a11c422d59b3034c8366b3d7b33c99a1e
+        // marmaratransfer 028076d42eb20efc10007fafb5ca66a2052523c0d2221e607adf958d1a332159f6 7.5 MARMARA 1168 1506c774e4b2804a6e25260920840f4cfca8d1fb400e69fe6b74b8e593dbedc5
         throw runtime_error("marmaratransfer receiverpk amount currency matures approvaltxid\n");
     }
     if ( ensure_CCrequirements() < 0 )
@@ -5679,7 +5715,7 @@ UniValue marmara_settlement(const UniValue& params, bool fHelp)
     if ( fHelp || params.size() != 1 )
     {
         // marmarasettlement 010ff7f9256cefe3b5dee3d72c0eeae9fc6f34884e6f32ffe5b60916df54a9be
-        // marmarasettlement cc23bf81733556dc06db2fd9c9f4178cad44bdc237d6e62101cf0cdafb5195f7
+        // marmarasettlement ff3e259869196f3da9b5ea3f9e088a76c4fc063cf36ab586b652e121d441a603
         throw runtime_error("marmarasettlement batontxid\n");
     }
     if ( ensure_CCrequirements() < 0 )
@@ -5687,6 +5723,20 @@ UniValue marmara_settlement(const UniValue& params, bool fHelp)
     batontxid = Parseuint256((char *)params[0].get_str().c_str());
     result = MarmaraSettlement(0,batontxid);
     return(result);
+}
+
+UniValue marmara_lock(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); int64_t amount; int32_t height;
+    if ( fHelp || params.size() > 2 || params.size() == 0 )
+    {
+        throw runtime_error("marmaralock amount unlockht\n");
+    }
+    amount = atof(params[0].get_str().c_str()) * COIN + 0.00000000499999;
+    if ( params.size() == 2 )
+        height = atol(params[1].get_str().c_str());
+    else height = chainActive.LastTip()->GetHeight() + 1;
+    return(MarmaraLock(0,amount,height));
 }
 
 UniValue channelslist(const UniValue& params, bool fHelp)
@@ -7312,7 +7362,7 @@ UniValue heirfund(const UniValue& params, bool fHelp)
 {
 	UniValue result(UniValue::VOBJ);
 	uint256 tokenid = zeroid;
-	uint64_t txfee;
+	int64_t txfee;
 	int64_t amount;
 	int64_t inactivitytime;
 	std::string hex;
@@ -7323,21 +7373,34 @@ UniValue heirfund(const UniValue& params, bool fHelp)
 	    return NullUniValue;
 
 	if (fHelp || params.size() != 5 && params.size() != 6)
-		throw runtime_error("heirfundtokens fee funds heirname heirpubkey inactivitytime [tokenid]\n");
+		throw runtime_error("heirfund txfee funds heirname heirpubkey inactivitytime [tokenid]\n");
 	if (ensure_CCrequirements() < 0)
 		throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
 
 	const CKeyStore& keystore = *pwalletMain;
 	LOCK2(cs_main, pwalletMain->cs_wallet);
 
-	txfee = atoll((char*)params[0].get_str().c_str());
-	amount = atoll((char*)params[1].get_str().c_str());
+	txfee = atoll(params[0].get_str().c_str());
+	if (txfee < 0)
+		throw runtime_error("incorrect txfee param\n");
+
+	if(params.size() == 6)	// tokens in satoshis:
+		amount = atoll(params[1].get_str().c_str());
+	else	// coins:
+		amount = atof(params[1].get_str().c_str()) * COIN;
+
+	if( amount <= 0 )
+		throw runtime_error("incorrect amount\n");
+
 	name = params[2].get_str();
 	pubkey = ParseHex(params[3].get_str().c_str());
 	if( !pubkey2pk(pubkey).IsValid() )
 		throw runtime_error("incorrect pubkey\n");
 
-	inactivitytime = atof((char*)params[4].get_str().c_str());
+	inactivitytime = atoll(params[4].get_str().c_str());
+	if (inactivitytime <= 0)
+		throw runtime_error("incorrect inactivity time param\n");
+
 	if (params.size() == 6) {
 		tokenid = Parseuint256((char*)params[5].get_str().c_str());
 		if(tokenid == zeroid)
@@ -7356,7 +7419,7 @@ UniValue heiradd(const UniValue& params, bool fHelp)
 {
 	UniValue result; 
 	uint256 fundingtxid;
-	uint64_t txfee;
+	int64_t txfee;
 	int64_t amount;
 	int64_t inactivitytime;
 	std::string hex;
@@ -7367,18 +7430,20 @@ UniValue heiradd(const UniValue& params, bool fHelp)
 	    return NullUniValue;
 
 	if (fHelp || params.size() != 3)
-		throw runtime_error("heiraddtokens fee funds fundingtxid\n");
+		throw runtime_error("heiradd txfee funds fundingtxid\n");
 	if (ensure_CCrequirements() < 0)
 		throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
 
 	const CKeyStore& keystore = *pwalletMain;
 	LOCK2(cs_main, pwalletMain->cs_wallet);
 
-	txfee = atoll((char*)params[0].get_str().c_str());
-	amount = atoll((char*)params[1].get_str().c_str());
+	txfee = atoll(params[0].get_str().c_str());
+	if (txfee < 0)
+		throw runtime_error("incorrect txfee param\n");
+
 	fundingtxid = Parseuint256((char*)params[2].get_str().c_str());
 
-	result = HeirAddCaller(fundingtxid, txfee, amount);
+	result = HeirAddCaller(fundingtxid, txfee, params[1].get_str());
 	return result;
 }
 
@@ -7387,7 +7452,6 @@ UniValue heirclaim(const UniValue& params, bool fHelp)
 	UniValue result; // result(UniValue::VOBJ);
 	uint256 fundingtxid;
 	int64_t txfee;
-	int64_t amount;
 	int64_t inactivitytime;
 	std::string hex;
 	std::vector<unsigned char> pubkey;
@@ -7398,18 +7462,20 @@ UniValue heirclaim(const UniValue& params, bool fHelp)
 	    return NullUniValue;
 
 	if (fHelp || params.size() != 3)
-		throw runtime_error("heirclaimtokens fee funds fundingtxid\n");
+		throw runtime_error("heirclaim txfee funds fundingtxid\n");
 	if (ensure_CCrequirements() < 0)
 		throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
 
 	const CKeyStore& keystore = *pwalletMain;
 	LOCK2(cs_main, pwalletMain->cs_wallet);
 
-	txfee = atoll((char*)params[0].get_str().c_str());
-	amount = atoll((char*)params[1].get_str().c_str());
+	txfee = atoll(params[0].get_str().c_str());
+	if (txfee < 0)
+		throw runtime_error("incorrect txfee param\n");
+
 	fundingtxid = Parseuint256((char*)params[2].get_str().c_str());
 
-	result = HeirClaimCaller(fundingtxid, txfee, amount);
+	result = HeirClaimCaller(fundingtxid, txfee, params[1].get_str());
 	return result;
 }
 
@@ -7530,4 +7596,80 @@ void RegisterWalletRPCCommands(CRPCTable &tableRPC)
 {
     for (unsigned int vcidx = 0; vcidx < ARRAYLEN(commands); vcidx++)
         tableRPC.appendCommand(commands[vcidx].name, &commands[vcidx]);
+}
+
+UniValue test_ac(const UniValue& params, bool fHelp)
+{
+	// make fake token tx: 
+	struct CCcontract_info *cp, C;
+
+	if (fHelp || (params.size() != 4))
+		throw runtime_error("incorrect params\n");
+	if (ensure_CCrequirements() < 0)
+		throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+
+	std::vector<unsigned char> pubkey1;
+	std::vector<unsigned char> pubkey2;
+
+	pubkey1 = ParseHex(params[0].get_str().c_str());
+	pubkey2 = ParseHex(params[1].get_str().c_str());
+
+	CPubKey pk1 = pubkey2pk(pubkey1);
+	CPubKey pk2 = pubkey2pk(pubkey2);
+
+	if(!pk1.IsValid() || !pk2.IsValid())
+		throw runtime_error("invalid pubkey\n");
+
+	int64_t txfee = 10000;
+	int64_t amount = atoll(params[2].get_str().c_str()) * COIN;
+	uint256 fundingtxid = Parseuint256((char *)params[3].get_str().c_str());
+
+	CPubKey myPubkey = pubkey2pk(Mypubkey());
+	CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+
+	int64_t normalInputs = AddNormalinputs(mtx, myPubkey, txfee + amount, 60);
+
+	if( normalInputs < txfee + amount)
+		throw runtime_error("not enough normals\n");
+
+	mtx.vout.push_back(MakeCC1of2vout(EVAL_HEIR, amount, pk1, pk2));
+
+	CScript opret;
+	fundingtxid = revuint256(fundingtxid);
+
+	opret << OP_RETURN << E_MARSHAL(ss << (uint8_t)EVAL_HEIR << (uint8_t)'A' << fundingtxid << (uint8_t)0);
+
+	cp = CCinit(&C, EVAL_HEIR);
+	return(FinalizeCCTx(0, cp, mtx, myPubkey, txfee, opret));
+}
+
+UniValue test_heirmarker(const UniValue& params, bool fHelp)
+{
+	// make fake token tx: 
+	struct CCcontract_info *cp, C;
+
+	if (fHelp || (params.size() != 1))
+		throw runtime_error("incorrect params\n");
+	if (ensure_CCrequirements() < 0)
+		throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+
+	uint256 fundingtxid = Parseuint256((char *)params[0].get_str().c_str());
+
+	CPubKey myPubkey = pubkey2pk(Mypubkey());
+	CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+
+	int64_t normalInputs = AddNormalinputs(mtx, myPubkey, 10000, 60);
+	if (normalInputs < 10000)
+		throw runtime_error("not enough normals\n");
+
+	mtx.vin.push_back(CTxIn(fundingtxid, 1));
+	mtx.vout.push_back(MakeCC1vout(EVAL_HEIR, 10000, myPubkey));
+
+	CScript opret;
+	fundingtxid = revuint256(fundingtxid);
+
+	opret << OP_RETURN << E_MARSHAL(ss << (uint8_t)EVAL_HEIR << (uint8_t)'C' << fundingtxid << (uint8_t)0);
+
+	cp = CCinit(&C, EVAL_HEIR);
+	return(FinalizeCCTx(0, cp, mtx, myPubkey, 10000, opret));
 }
