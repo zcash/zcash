@@ -404,7 +404,6 @@ int64_t IsTokensvout(bool goDeeper, bool checkPubkeys, struct CCcontract_info *c
 			
 				uint8_t evalCodeInOpret;
 				if (vopretExtra.size() >= 2 /*|| vopretExtra.size() != vopretExtra.begin()[0]  <-- shold we check this?*/) {
-					std::cerr << "IsTokensvout() empty or incorrect contract opret" << std::endl;
 					evalCodeInOpret = vopretExtra.begin()[1];
 				}
 				else {
