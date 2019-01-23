@@ -80,7 +80,8 @@ int8_t StakedNotaryID(std::string &notaryname, char *Raddress);
 extern uint16_t ASSETCHAINS_P2PPORT,ASSETCHAINS_RPCPORT;
 extern uint32_t ASSETCHAINS_CC;
 extern uint32_t ASSETCHAINS_MAGIC;
-extern uint64_t ASSETCHAINS_COMMISSION,ASSETCHAINS_STAKED,ASSETCHAINS_SUPPLY,ASSETCHAINS_LASTERA;
+extern uint64_t ASSETCHAINS_COMMISSION,ASSETCHAINS_STAKED,ASSETCHAINS_SUPPLY;
+extern uint32_t ASSETCHAINS_LASTERA;
 extern int32_t ASSETCHAINS_LWMAPOS,ASSETCHAINS_SAPLING;
 extern uint64_t ASSETCHAINS_ENDSUBSIDY[],ASSETCHAINS_REWARD[],ASSETCHAINS_HALVING[],ASSETCHAINS_DECAY[];
 extern std::string NOTARY_PUBKEY,NOTARY_ADDRESS; extern uint8_t NOTARY_PUBKEY33[];
@@ -306,7 +307,7 @@ UniValue getinfo(const UniValue& params, bool fHelp)
                 }
             }
             if (ASSETCHAINS_LASTERA > 0)
-                obj.push_back(Pair("eras", ASSETCHAINS_LASTERA + 1));
+                obj.push_back(Pair("eras", (int64_t)(ASSETCHAINS_LASTERA + 1)));
             obj.push_back(Pair("reward", acReward));
             obj.push_back(Pair("halving", acHalving));
             obj.push_back(Pair("decay", acDecay));

@@ -16,6 +16,8 @@
 // paxdeposit equivalent in reverse makes opreturn and KMD does the same in reverse
 #include "komodo_defs.h"
 
+int32_t MarmaraValidateCoinbase(int32_t height,CTransaction tx);
+
 int32_t pax_fiatstatus(uint64_t *available,uint64_t *deposited,uint64_t *issued,uint64_t *withdrawn,uint64_t *approved,uint64_t *redeemed,char *base)
 {
     int32_t baseid; struct komodo_state *sp; int64_t netliability,maxallowed,maxval;
@@ -685,6 +687,14 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
                     }
                 }
             }
+        }
+    }
+    if ( height > 0 && ASSETCHAINS_MARMARA != 0 && (height & 1) == 0 )
+    {
+        if ( MarmaraValidateCoinbase(height,block.vtx[0]) < 0 )
+        {
+            fprintf(stderr,"MARMARA error ht.%d constrains even height blocks to pay 100%% to CC in vout0 with opreturn\n",height);
+            return(-1);
         }
     }
     // we don't want these checks in VRSC, leave it at the Sapling upgrade
@@ -1378,7 +1388,7 @@ void komodo_passport_iteration()
 {
     static long lastpos[34]; static char userpass[33][1024]; static uint32_t lasttime,callcounter,lastinterest;
     int32_t maxseconds = 10;
-    FILE *fp; uint8_t *filedata; long fpos,datalen,lastfpos; int32_t baseid,limit,n,ht,isrealtime,expired,refid,blocks,longest; struct komodo_state *sp,*refsp; char *retstr,fname[512],*base,symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; uint32_t buf[3],starttime; cJSON *infoobj,*result; uint64_t RTmask = 0; //CBlockIndex *pindex;
+    FILE *fp; uint8_t *filedata; long fpos,datalen,lastfpos; int32_t baseid,limit,n,ht,isrealtime,expired,refid,blocks,longest; struct komodo_state *sp,*refsp; char *retstr,fname[512],*base,symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; uint32_t buf[3],starttime; uint64_t RTmask = 0; //CBlockIndex *pindex;
     expired = 0;
     while ( KOMODO_INITDONE == 0 )
     {

@@ -115,7 +115,7 @@ bool LottoExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction 
 bool LottoValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
 {
     int32_t numvins,numvouts,preventCCvins,preventCCvouts,i; bool retval;
-    return(false); // reject any lotto CC for now
+    return eval->Invalid("no validation yet");
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
     preventCCvins = preventCCvouts = -1;

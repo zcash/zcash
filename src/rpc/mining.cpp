@@ -48,10 +48,8 @@
 
 using namespace std;
 
-extern int32_t ASSETCHAINS_ALGO, ASSETCHAINS_EQUIHASH, ASSETCHAINS_LWMAPOS;
-extern uint64_t ASSETCHAINS_STAKED;
-extern int32_t KOMODO_MININGTHREADS;
-extern bool VERUS_MINTBLOCKS;
+#include "komodo_defs.h"
+
 arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t height,int32_t goalperc);
 
 /**
