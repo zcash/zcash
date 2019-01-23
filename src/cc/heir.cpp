@@ -1161,7 +1161,7 @@ UniValue HeirInfo(uint256 fundingtxid)
             
             if (tokenid == zeroid) {
                 msg = "funding total in coins";
-                stream << (double)total / COIN;
+                stream << std::fixed << std::setprecision(8) << (double)total / COIN;
             }
             else	{
                 msg = "funding total in tokens";
