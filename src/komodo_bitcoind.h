@@ -1739,7 +1739,7 @@ bool verusCheckPOSBlock(int32_t slowflag, CBlock *pblock, int32_t height)
 int64_t komodo_checkcommission(CBlock *pblock,int32_t height)
 {
     int64_t checktoshis=0; uint8_t *script,scripthex[8192]; int32_t scriptlen,matched = 0;
-    if ( ASSETCHAINS_COMMISSION != 0 )
+    if ( ASSETCHAINS_COMMISSION != 0 || ASSETCHAINS_FOUNDERS_REWARD != 0 )
     {
         checktoshis = komodo_commission(pblock,height);
         if ( checktoshis >= 10000 && pblock->vtx[0].vout.size() < 2 )

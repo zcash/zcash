@@ -1779,7 +1779,7 @@ void komodo_args(char *argv0)
         MAX_BLOCK_SIGOPS = 60000;
         ASSETCHAINS_TXPOW = GetArg("-ac_txpow",0) & 3;
         ASSETCHAINS_FOUNDERS = GetArg("-ac_founders",0);// & 1;
-				ASSETCHAINS_FOUNDERS_REWARD = GetArg("-ac_founders_reward",0);
+		ASSETCHAINS_FOUNDERS_REWARD = GetArg("-ac_founders_reward",0);
         ASSETCHAINS_SUPPLY = GetArg("-ac_supply",10);
         ASSETCHAINS_COMMISSION = GetArg("-ac_perc",0);
         ASSETCHAINS_OVERRIDE_PUBKEY = GetArg("-ac_pubkey","");
@@ -1846,10 +1846,10 @@ void komodo_args(char *argv0)
                     ASSETCHAINS_COMMISSION = 53846154; // maps to 35%
                     printf("ASSETCHAINS_COMMISSION defaulted to 35%% when founders reward active\n");
                 }
-								else
-								{
-										printf("ASSETCHAINS_FOUNDERS_REWARD set to %ld\n", ASSETCHAINS_FOUNDERS_REWARD);
-								}
+				else
+				{
+					printf("ASSETCHAINS_FOUNDERS_REWARD set to %ld\n", ASSETCHAINS_FOUNDERS_REWARD);
+				}
                 /*else if ( ASSETCHAINS_SELFIMPORT.size() == 0 )
                 {
                     //ASSETCHAINS_OVERRIDE_PUBKEY.clear();
