@@ -2,7 +2,6 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "assert.h"
 #include "docbuilder.h"
 #include "server.h"
 #include "tinyformat.h"
@@ -350,7 +349,9 @@ std::string PrimitiveArgument::ArgumentString(size_t spaces, size_t nameLength, 
 
 /* Array Argument */
 ArrayArgument& ArrayArgument::Of(const RpcArgument& innerArgument_) {
-    assert(!innerArgument);
+    if (innerArgument) {
+        delete innerArgument;
+    }
     innerArgument = innerArgument_.Clone();
     return *this;
 }
