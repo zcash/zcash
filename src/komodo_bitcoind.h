@@ -2054,63 +2054,11 @@ struct komodo_staking *komodo_addutxo(struct komodo_staking *array,int32_t *numk
     return(array);
 }
 
-// WHY IS THIS HERE! It does this in komodo_stake! WTF!
-/*arith_uint256 _komodo_eligible(struct komodo_staking *kp,arith_uint256 ratio,uint32_t blocktime,int32_t iter,int32_t minage,int32_t segid,int32_t nHeight,uint32_t prevtime)
-{
-    int32_t diff; uint64_t coinage; arith_uint256 coinage256,hashval;
-    diff = (iter + blocktime - kp->txtime - minage);
-    if ( diff < 0 )
-        diff = 60;
-    else if ( diff > 3600*24*30 )
-        diff = 3600*24*30;
-    if ( iter > 0 )
-        diff += segid*2;
-    coinage = ((uint64_t)kp->nValue * diff);
-    if ( blocktime+iter+segid*2 > prevtime+480 )
-        coinage *= ((blocktime+iter+segid*2) - (prevtime+400));
-    coinage256 = arith_uint256(coinage+1);
-    hashval = ratio * (kp->hashval / coinage256);
-    return(hashval);
-}
-
-uint32_t komodo_eligible(arith_uint256 bnTarget,arith_uint256 ratio,struct komodo_staking *kp,int32_t nHeight,uint32_t blocktime,uint32_t prevtime,int32_t minage,uint8_t *hashbuf)
-{
-    int32_t maxiters = 600; uint256 hash;
-    int32_t segid,iter,diff; uint64_t coinage; arith_uint256 hashval,coinage256;
-    komodo_stakehash(&hash,kp->address,hashbuf,kp->txid,kp->vout);
-    kp->hashval = UintToArith256(hash);
-    segid = ((nHeight + kp->segid32) & 0x3f);
-    hashval = _komodo_eligible(kp,ratio,blocktime,maxiters,minage,segid,nHeight,prevtime);
-    for (int i=31; i>=16; i--)
-        fprintf(stderr,"%02x",((uint8_t *)&hashval)[i]);
-    fprintf(stderr," vs ");
-    for (int i=31; i>=16; i--)
-        fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[i]);
-    fprintf(stderr," b.%u minage.%d segid.%d ht.%d prev.%u\n",blocktime,minage,segid,nHeight,prevtime);
-    if ( hashval <= bnTarget )
-    {
-        for (iter=0; iter<maxiters; iter++)
-        {
-            if ( blocktime+iter+segid*2 < kp->txtime+minage )
-                continue;
-            hashval = _komodo_eligible(kp,ratio,blocktime,iter,minage,segid,nHeight,prevtime);
-            if ( hashval <= bnTarget )
-            {
-                //fprintf(stderr,"winner %.8f blocktime.%u iter.%d segid.%d\n",(double)kp->nValue/COIN,blocktime,iter,segid);
-                blocktime += iter;
-                blocktime += segid * 2;
-                return(blocktime);
-            }
-        }
-    } //else fprintf(stderr,"maxiters is not good enough\n");
-    return(0);
-}*/
-
 int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blocktimep,uint32_t *txtimep,uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep,uint8_t *utxosig)
 {
     static struct komodo_staking *array; static int32_t numkp,maxkp; static uint32_t lasttime;
     int32_t PoSperc;
-    set<CBitcoinAddress> setAddress; struct komodo_staking *kp; int32_t winners,segid,minage,nHeight,counter=0,i,m,siglen=0,nMinDepth = 1,nMaxDepth = 99999999; vector<COutput> vecOutputs; uint32_t block_from_future_rejecttime,besttime,eligible,eligible2,earliest = 0; CScript best_scriptPubKey; arith_uint256 mindiff,ratio,bnTarget,tmpTarget; CBlockIndex *tipindex,*pindex; CTxDestination address; bool fNegative,fOverflow; uint8_t hashbuf[256]; CTransaction tx; uint256 hashBlock;
+    set<CBitcoinAddress> setAddress; struct komodo_staking *kp; int32_t winners,segid,minage,nHeight,counter=0,i,m,siglen=0,nMinDepth = 1,nMaxDepth = 99999999; vector<COutput> vecOutputs; uint32_t block_from_future_rejecttime,besttime,eligible,earliest = 0; CScript best_scriptPubKey; arith_uint256 mindiff,ratio,bnTarget,tmpTarget; CBlockIndex *tipindex,*pindex; CTxDestination address; bool fNegative,fOverflow; uint8_t hashbuf[256]; CTransaction tx; uint256 hashBlock;
     if (!EnsureWalletIsAvailable(0))
         return 0;
     
@@ -2198,9 +2146,6 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
             return(0);
         }
         kp = &array[i];
-        // WTF! was this here for! 
-        //if ( (eligible2= komodo_eligible(bnTarget,ratio,kp,nHeight,*blocktimep,(uint32_t)tipindex->nTime+27,minage,hashbuf)) == 0 )
-        //    continue;
         eligible = komodo_stake(0,bnTarget,nHeight,kp->txid,kp->vout,0,(uint32_t)tipindex->nTime+27,kp->address,PoSperc);
         //fprintf(stderr,"i.%d %u vs %u\n",i,eligible2,eligible);
         if ( eligible > 0 )
