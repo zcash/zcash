@@ -1867,14 +1867,8 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
                     return(-1);
                 } else
                 {
-<<<<<<< HEAD
-                    // I think this means the block is valid PoW. We need to set the pindex->segid here.
-                    failed = 0;
-                    CBlockIndex *pindex;
-=======
                     failed = 0; 
                     CBlockIndex *pindex; 
->>>>>>> new_staker
                     BlockMap::const_iterator it = mapBlockIndex.find(pblock->GetHash());
                     pindex = it != mapBlockIndex.end() ? it->second : NULL;
                     if ( pindex != 0 && pindex->segid == -2 ) {
