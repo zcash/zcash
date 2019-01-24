@@ -3269,7 +3269,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             return error("ConnectBlock(): FindBlockPos failed");
         pindex->nStatus &= (~BLOCK_IN_TMPFILE);
         pindex->nFile = blockPos.nFile;
-        pindex->nPos = blockPos.nPos;
+        pindex->nDataPos = blockPos.nPos;
         if (!ReceivedBlockTransactions(block, state, pindex, blockPos))
             return error("AcceptBlock(): ReceivedBlockTransactions failed");
         setDirtyFileInfo.insert(blockPos.nFile);
