@@ -4637,18 +4637,18 @@ bool FindBlockPos(int32_t tmpflag,CValidationState &state, CDiskBlockPos &pos, u
 
 bool FindUndoPos(CValidationState &state, int nFile, CDiskBlockPos &pos, unsigned int nAddSize)
 {
+    std::vector<CBlockFileInfo> *ptr; int *lastfilep;
+    LOCK(cs_LastBlockFile);
     if ( nFile >= TMPFILE_START )
     {
-        fprintf(stderr,"FindUndoPos unexpected tmpfile %d\n",nFile);
-        return(false);
-    }
+        nFile %= TMPFILE_START;
+        ptr = &tmpBlockFiles;
+    } else ptr = &vinfoBlockFile;
+
     pos.nFile = nFile;
-
-    LOCK(cs_LastBlockFile);
-
     unsigned int nNewSize;
-    pos.nPos = vinfoBlockFile[nFile].nUndoSize;
-    nNewSize = vinfoBlockFile[nFile].nUndoSize += nAddSize;
+    pos.nPos = (*ptr)[nFile].nUndoSize;
+    nNewSize = (*ptr)[nFile].nUndoSize += nAddSize;
     setDirtyFileInfo.insert(nFile);
 
     unsigned int nOldChunks = (pos.nPos + UNDOFILE_CHUNK_SIZE - 1) / UNDOFILE_CHUNK_SIZE;
