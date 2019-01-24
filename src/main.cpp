@@ -4640,13 +4640,13 @@ bool FindUndoPos(CValidationState &state, int nFile, CDiskBlockPos &pos, unsigne
 {
     std::vector<CBlockFileInfo> *ptr; int *lastfilep;
     LOCK(cs_LastBlockFile);
+    pos.nFile = nFile;
     if ( nFile >= TMPFILE_START )
     {
         nFile %= TMPFILE_START;
         ptr = &tmpBlockFiles;
     } else ptr = &vinfoBlockFile;
 
-    pos.nFile = nFile;
     unsigned int nNewSize;
     pos.nPos = (*ptr)[nFile].nUndoSize;
     nNewSize = (*ptr)[nFile].nUndoSize += nAddSize;
