@@ -3268,7 +3268,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         if (!WriteBlockToDisk(block, blockPos, chainparams.MessageStart()))
             return error("ConnectBlock(): FindBlockPos failed");
         pindex->nStatus &= (~BLOCK_IN_TMPFILE);
-        fprintf(stderr,"added ht.%d copy of tmpfile\n",pindex->GetHeight());
+        fprintf(stderr,"added ht.%d copy of tmpfile to %d.%d\n",pindex->GetHeight(),blockPos.nFile,blockPos.nPos);
     }
     // verify that the view's current state corresponds to the previous block
     uint256 hashPrevBlock = pindex->pprev == NULL ? uint256() : pindex->pprev->GetBlockHash();
