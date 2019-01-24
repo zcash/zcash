@@ -1979,6 +1979,72 @@ bool GetAddressUnspent(uint160 addressHash, int type,
     return true;
 }
 
+struct CompareBlocksByHeightMain
+{
+    bool operator()(const CBlockIndex* a, const CBlockIndex* b) const
+    {
+        /* Make sure that unequal blocks with the same height do not compare
+           equal. Use the pointers themselves to make a distinction. */
+
+        if (a->GetHeight() != b->GetHeight())
+          return (a->GetHeight() > b->GetHeight());
+
+        return a < b;
+    }
+};
+
+bool RemoveOrphanedBlocks(int32_t notarized_height)
+{
+    LOCK(cs_main);
+    std::vector<const CBlockIndex*> prunedblocks;
+    std::set<const CBlockIndex*, CompareBlocksByHeightMain> setTips;
+    int32_t n = 0;
+    // get notarised timestamp and use this as a backup incase the forked block has no height. 
+    // we -600 to make sure the time is within future block constraints. 
+    uint32_t notarized_timestamp = komodo_heightstamp(notarized_height)-600;
+    fprintf(stderr, "removing oprhans from before %d\n", notarized_height);
+    // Most of this code is a direct copy from GetChainTips RPC. Which gives a return of all 
+    // blocks that are not in the main chain.
+    BOOST_FOREACH(const PAIRTYPE(const uint256, CBlockIndex*)& item, mapBlockIndex)
+    {
+        n++;
+        setTips.insert(item.second);
+    }
+    n = 0;
+    BOOST_FOREACH(const PAIRTYPE(const uint256, CBlockIndex*)& item, mapBlockIndex)
+    {
+        const CBlockIndex* pprev=0;
+        n++;
+        if ( item.second != 0 )
+            pprev = item.second->pprev;
+        if (pprev)
+            setTips.erase(pprev);
+    }
+    const CBlockIndex *forked;
+    BOOST_FOREACH(const CBlockIndex* block, setTips)
+    {
+        // We skip anything over notarised height to avoid breaking normal consensus rules. 
+        if ( block->GetHeight() > notarized_height || block->nTime > notarized_timestamp )
+            continue;
+        // We can also check if the block is in the active chain as a backup test. 
+        forked = chainActive.FindFork(block);
+        // Here we save each forked block to a vector for removal later.
+        if ( forked != 0 )
+            prunedblocks.push_back(block); 
+    }
+    if (pblocktree->EraseBatchSync(prunedblocks))
+    {
+        // Blocks cleared from disk succesfully, using internal DB batch erase function. Which exists, but has never been used before.
+        // We need to try and clear the block index from mapBlockIndex now, otherwise node will need a restart. 
+        BOOST_FOREACH(const CBlockIndex* block, prunedblocks)
+        {
+            mapBlockIndex.erase(block->GetBlockHash());
+        }
+        return true;
+    }    
+    return false;
+}
+
 /*uint64_t myGettxout(uint256 hash,int32_t n)
 {
     CCoins coins;
