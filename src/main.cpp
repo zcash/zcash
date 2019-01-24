@@ -5206,20 +5206,22 @@ bool AcceptBlock(int32_t *futureblockp,CBlock& block, CValidationState& state, C
     }
 
     int nHeight = pindex->GetHeight();
+    int32_t usetmp = 0;
     // Write block to history file
     try {
         unsigned int nBlockSize = ::GetSerializeSize(block, SER_DISK, CLIENT_VERSION);
         CDiskBlockPos blockPos;
         if (dbp != NULL)
             blockPos = *dbp;
-        if (!FindBlockPos(0,state, blockPos, nBlockSize+8, nHeight, block.GetBlockTime(), dbp != NULL))
+        if (!FindBlockPos(usetmp,state, blockPos, nBlockSize+8, nHeight, block.GetBlockTime(), dbp != NULL))
             return error("AcceptBlock(): FindBlockPos failed");
         if (dbp == NULL)
             if (!WriteBlockToDisk(block, blockPos, chainparams.MessageStart()))
                 AbortNode(state, "Failed to write block");
         if (!ReceivedBlockTransactions(block, state, pindex, blockPos))
             return error("AcceptBlock(): ReceivedBlockTransactions failed");
-        //pindex->nStatus |= BLOCK_IN_TMPFILE;
+        if ( usetmp != 0 )
+            pindex->nStatus |= BLOCK_IN_TMPFILE;
     } catch (const std::runtime_error& e) {
         return AbortNode(state, std::string("System error: ") + e.what());
     }
