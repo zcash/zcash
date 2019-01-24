@@ -4658,7 +4658,7 @@ bool CheckBlockHeader(int32_t *futureblockp,int32_t height,CBlockIndex *pindex, 
     *futureblockp = 0;
     if (blockhdr.GetBlockTime() > GetAdjustedTime() + 60)
     {
-        CBlockIndex *tipindex;
+        /*CBlockIndex *tipindex;
         //fprintf(stderr,"ht.%d future block %u vs time.%u + 60\n",height,(uint32_t)blockhdr.GetBlockTime(),(uint32_t)GetAdjustedTime());
         if ( (tipindex= chainActive.Tip()) != 0 && tipindex->GetBlockHash() == blockhdr.hashPrevBlock && blockhdr.GetBlockTime() < GetAdjustedTime() + 60 + 5 )
         {
@@ -4667,9 +4667,9 @@ bool CheckBlockHeader(int32_t *futureblockp,int32_t height,CBlockIndex *pindex, 
                 sleep(1);
             //fprintf(stderr,"now its valid\n");
         }
-        else
+        else*/
         {
-            if (blockhdr.GetBlockTime() < GetAdjustedTime() + 600)
+            if (blockhdr.GetBlockTime() < GetAdjustedTime() + 300)
                 *futureblockp = 1;
             //LogPrintf("CheckBlockHeader block from future %d error",blockhdr.GetBlockTime() - GetAdjustedTime());
             return false; //state.Invalid(error("CheckBlockHeader(): block timestamp too far in the future"),REJECT_INVALID, "time-too-new");
