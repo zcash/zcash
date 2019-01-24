@@ -3226,6 +3226,7 @@ static int64_t nTimeConnect = 0;
 static int64_t nTimeIndex = 0;
 static int64_t nTimeCallbacks = 0;
 static int64_t nTimeTotal = 0;
+bool FindBlockPos(int32_t tmpflag,CValidationState &state, CDiskBlockPos &pos, unsigned int nAddSize, unsigned int nHeight, uint64_t nTime, bool fKnown = false);
 
 bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pindex, CCoinsViewCache& view, bool fJustCheck,bool fCheckPOW)
 {
@@ -3264,7 +3265,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         CDiskBlockPos blockPos;
         if (!FindBlockPos(1,state, blockPos, nBlockSize+8, pindex->GetHeight(), block.GetBlockTime(),false))
             return error("ConnectBlock(): FindBlockPos failed");
-        if (!WriteBlockToDisk(block, blockPos, chainparams.MessageStart()))
+        if (!WriteBlockToDisk((CBlock)block, blockPos, chainparams.MessageStart()))
             return error("ConnectBlock(): FindBlockPos failed");
         pindex->nStatus &= (~BLOCK_IN_TMPFILE);
         fprintf(stderr,"added ht.%d copy of tmpfile\n",pindex->GetHeight());
