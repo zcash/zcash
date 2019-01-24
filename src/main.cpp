@@ -1998,12 +1998,11 @@ bool RemoveOrphanedBlocks(int32_t notarized_height)
     LOCK(cs_main);
     std::vector<const CBlockIndex*> prunedblocks;
     std::set<const CBlockIndex*, CompareBlocksByHeightMain> setTips;
-    int32_t n = 0;
+    int32_t m=0,n = 0;
     // get notarised timestamp and use this as a backup incase the forked block has no height. 
     // we -600 to make sure the time is within future block constraints. 
     uint32_t notarized_timestamp = komodo_heightstamp(notarized_height)-600;
-    fprintf(stderr, "removing oprhans from before %d\n", notarized_height);
-    // Most of this code is a direct copy from GetChainTips RPC. Which gives a return of all 
+    // Most of this code is a direct copy from GetChainTips RPC. Which gives a return of all
     // blocks that are not in the main chain.
     BOOST_FOREACH(const PAIRTYPE(const uint256, CBlockIndex*)& item, mapBlockIndex)
     {
@@ -2038,8 +2037,10 @@ bool RemoveOrphanedBlocks(int32_t notarized_height)
         // We need to try and clear the block index from mapBlockIndex now, otherwise node will need a restart. 
         BOOST_FOREACH(const CBlockIndex* block, prunedblocks)
         {
+            m++;
             mapBlockIndex.erase(block->GetBlockHash());
         }
+        fprintf(stderr, "%s removed %d of %d orphans from before %d\n",ASSETCHAINS_SYMBOL,m,n, notarized_height);
         return true;
     }    
     return false;
