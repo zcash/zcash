@@ -5673,6 +5673,7 @@ bool static LoadBlockIndexDB()
     // Load block file info
     pblocktree->ReadLastBlockFile(nLastBlockFile);
     vinfoBlockFile.resize(nLastBlockFile + 1);
+    tmpBlockFiles.resize(nLastTmpFile + 1);
     LogPrintf("%s: last block file = %i\n", __func__, nLastBlockFile);
     for (int nFile = 0; nFile <= nLastBlockFile; nFile++) {
         pblocktree->ReadBlockFileInfo(nFile, vinfoBlockFile[nFile]);
