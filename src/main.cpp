@@ -4564,7 +4564,7 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
     return true;
 }
 
-bool FindBlockPos(int32_t tmpflag,CValidationState &state, CDiskBlockPos &pos, unsigned int nAddSize, unsigned int nHeight, uint64_t nTime, bool fKnown = false)
+bool FindBlockPos(int32_t tmpflag,CValidationState &state, CDiskBlockPos &pos, unsigned int nAddSize, unsigned int nHeight, uint64_t nTime, bool fKnown)
 {
     std::vector<CBlockFileInfo> *ptr; int *lastfilep;
     LOCK(cs_LastBlockFile);
