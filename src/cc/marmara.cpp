@@ -496,7 +496,7 @@ UniValue MarmaraLock(uint64_t txfee,int64_t amount,int32_t height)
         else
         {
             result.push_back(Pair("result",(char *)"success"));
-            result.push_back(Pair("rawtx",rawtx));
+            result.push_back(Pair("hex",rawtx));
             return(result);
         }
     } else errorstr = (char *)"insufficient funds";
@@ -600,7 +600,7 @@ UniValue MarmaraSettlement(uint64_t txfee,uint256 refbatontxid)
                                         mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA,change,Marmarapk,pk));
                                     rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,MarmaraLoopOpret('S',createtxid,mypk,0,refmatures,currency),pubkeys);
                                     result.push_back(Pair("result",(char *)"success"));
-                                    result.push_back(Pair("rawtx",rawtx));
+                                    result.push_back(Pair("hex",rawtx));
                                     return(result);
                                 } else remaining -= inputsum;
                                 if ( mtx.vin.size() >= CC_MAXVINS - MARMARA_VINS )
@@ -616,7 +616,7 @@ UniValue MarmaraSettlement(uint64_t txfee,uint256 refbatontxid)
                         rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,MarmaraLoopOpret('D',createtxid,mypk,-remaining,refmatures,currency),pubkeys);
                         result.push_back(Pair("result",(char *)"error"));
                         result.push_back(Pair("error",(char *)"insufficient funds"));
-                        result.push_back(Pair("rawtx",rawtx));
+                        result.push_back(Pair("hex",rawtx));
                         result.push_back(Pair("remaining",ValueFromAmount(remaining)));
                     }
                     else
@@ -731,7 +731,7 @@ UniValue MarmaraReceive(uint64_t txfee,CPubKey senderpk,int64_t amount,std::stri
     else
     {
         result.push_back(Pair("result",(char *)"success"));
-        result.push_back(Pair("rawtx",rawtx));
+        result.push_back(Pair("hex",rawtx));
         result.push_back(Pair("funcid","R"));
         result.push_back(Pair("createtxid",createtxid.GetHex()));
         if ( batontxid != zeroid )
@@ -787,7 +787,7 @@ UniValue MarmaraIssue(uint64_t txfee,uint8_t funcid,CPubKey receiverpk,int64_t a
     else
     {
         result.push_back(Pair("result",(char *)"success"));
-        result.push_back(Pair("rawtx",rawtx));
+        result.push_back(Pair("hex",rawtx));
         char str[2]; str[0] = funcid, str[1] = 0;
         result.push_back(Pair("funcid",str));
         result.push_back(Pair("createtxid",createtxid.GetHex()));
@@ -1025,7 +1025,7 @@ UniValue MarmaraPoolPayout(uint64_t txfee,int32_t firstheight,double perc,char *
     else
     {
         result.push_back(Pair("result",(char *)"success"));
-        result.push_back(Pair("rawtx",rawtx));
+        result.push_back(Pair("hex",rawtx));
         if ( totalpayout > 0 && total > totalpayout-txfee )
         {
             result.push_back(Pair("firstheight",firstheight));
