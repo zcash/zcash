@@ -5221,8 +5221,8 @@ bool AcceptBlock(int32_t *futureblockp,CBlock& block, CValidationState& state, C
         if (dbp == NULL)
             if (!WriteBlockToDisk(block, blockPos, chainparams.MessageStart()))
                 AbortNode(state, "Failed to write block");
-        //if (!ReceivedBlockTransactions(block, state, pindex, blockPos))
-        //    return error("AcceptBlock(): ReceivedBlockTransactions failed");
+        if (!ReceivedBlockTransactions(block, state, pindex, blockPos))
+            return error("AcceptBlock(): ReceivedBlockTransactions failed");
         pindex->nStatus |= BLOCK_IN_TMPFILE;
     } catch (const std::runtime_error& e) {
         return AbortNode(state, std::string("System error: ") + e.what());
