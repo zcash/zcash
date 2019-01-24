@@ -2195,7 +2195,7 @@ bool GetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock
 // CBlock and CBlockIndex
 //
 
-bool WriteBlockToDisk(CBlock& block, CDiskBlockPos& pos, const CMessageHeader::MessageStartChars& messageStart)
+bool WriteBlockToDisk(const CBlock& block, CDiskBlockPos& pos, const CMessageHeader::MessageStartChars& messageStart)
 {
     // Open history file to append
     CAutoFile fileout(OpenBlockFile(pos), SER_DISK, CLIENT_VERSION);
@@ -3265,7 +3265,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         CDiskBlockPos blockPos;
         if (!FindBlockPos(1,state, blockPos, nBlockSize+8, pindex->GetHeight(), block.GetBlockTime(),false))
             return error("ConnectBlock(): FindBlockPos failed");
-        if (!WriteBlockToDisk((CBlock)block, blockPos, chainparams.MessageStart()))
+        if (!WriteBlockToDisk(block, blockPos, chainparams.MessageStart()))
             return error("ConnectBlock(): FindBlockPos failed");
         pindex->nStatus &= (~BLOCK_IN_TMPFILE);
         fprintf(stderr,"added ht.%d copy of tmpfile\n",pindex->GetHeight());
