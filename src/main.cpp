@@ -4648,6 +4648,8 @@ bool FindUndoPos(CValidationState &state, int nFile, CDiskBlockPos &pos, unsigne
     pos.nFile = nFile;
     if ( nFile >= TMPFILE_START )
     {
+        fprintf(stderr,"skip tmp undo\n");
+        return(false);
         nFile %= TMPFILE_START;
         ptr = &tmpBlockFiles;
     } else ptr = &vinfoBlockFile;
