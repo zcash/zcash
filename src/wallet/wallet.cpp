@@ -3,6 +3,21 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 #include "wallet/wallet.h"
 
 #include "checkpoints.h"
@@ -44,13 +59,7 @@ bool fSendFreeTransactions = false;
 bool fPayAtLeastCustomFee = true;
 #include "komodo_defs.h"
 
-extern int32_t USE_EXTERNAL_PUBKEY;
-extern std::string NOTARY_PUBKEY;
-extern int32_t KOMODO_EXCHANGEWALLET;
-extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
-extern int32_t VERUS_MIN_STAKEAGE;
 CBlockIndex *komodo_chainactive(int32_t height);
-extern std::string DONATION_PUBKEY;
 
 /**
  * Fees smaller than this (in satoshi) are considered zero fee (for transaction creation)
@@ -1165,9 +1174,10 @@ bool DecrementNoteWitnesses(NoteDataMap& noteDataMap, int indexHeight, int64_t n
             assert((nWitnessCacheSize - 1) >= nd->witnesses.size());
         }
     }
-    assert(KOMODO_REWIND != 0 || nWitnessCacheSize > 0);
+    assert(KOMODO_REWIND != 0 || nWitnessCacheSize > 0 || WITNESS_CACHE_SIZE != _COINBASE_MATURITY+10);
     return true;
 }
+
 
 void CWallet::DecrementNoteWitnesses(const CBlockIndex* pindex)
 {
@@ -1178,10 +1188,17 @@ void CWallet::DecrementNoteWitnesses(const CBlockIndex* pindex)
         if (!::DecrementNoteWitnesses(wtxItem.second.mapSaplingNoteData, pindex->GetHeight(), nWitnessCacheSize))
             needsRescan = true;
     }
-    nWitnessCacheSize -= 1;
-    // TODO: If nWitnessCache is zero, we need to regenerate the caches (#1302)
-    assert(nWitnessCacheSize > 0);
-
+    if ( WITNESS_CACHE_SIZE == _COINBASE_MATURITY+10 )
+    {
+        nWitnessCacheSize -= 1;
+        // TODO: If nWitnessCache is zero, we need to regenerate the caches (#1302)
+        assert(nWitnessCacheSize > 0);
+    }
+    else
+    {
+        if ( nWitnessCacheSize > 0 )
+            nWitnessCacheSize--;
+    }
     // For performance reasons, we write out the witness cache in
     // CWallet::SetBestChain() (which also ensures that overall consistency
     // of the wallet.dat is maintained).

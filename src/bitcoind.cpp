@@ -3,6 +3,21 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 #include "clientversion.h"
 #include "rpc/server.h"
 #include "init.h"
@@ -79,7 +94,8 @@ void WaitForShutdown(boost::thread_group* threadGroup)
 //
 // Start
 //
-extern int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,ASSETCHAIN_INIT;
+extern int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY;
+extern uint32_t ASSETCHAIN_INIT;
 extern std::string NOTARY_PUBKEY;
 int32_t komodo_is_issuer();
 void komodo_passport_iteration();

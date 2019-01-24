@@ -3,6 +3,21 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 #include "wallet/walletdb.h"
 
 #include "consensus/validation.h"
@@ -24,6 +39,7 @@
 using namespace std;
 
 static uint64_t nAccountingEntryNumber = 0;
+static list<uint256> deadTxns; 
 
 //
 // CWalletDB
@@ -469,8 +485,11 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             CValidationState state;
             auto verifier = libzcash::ProofVerifier::Strict();
             if (!(CheckTransaction(0,wtx, state, verifier) && (wtx.GetHash() == hash) && state.IsValid()))
+            {
+                fprintf(stderr, "Removing corrupt tx from wallet.%s\n", hash.ToString().c_str());
+                deadTxns.push_back(hash);
                 return false;
-
+            } 
             // Undo serialize changes in 31600
             if (31404 <= wtx.fTimeReceivedIsTxTime && wtx.fTimeReceivedIsTxTime <= 31703)
             {
@@ -918,9 +937,6 @@ DBErrors CWalletDB::LoadWallet(CWallet* pwallet)
                 {
                     // Leave other errors alone, if we try to fix them we might make things worse.
                     fNoncriticalErrors = true; // ... but do warn the user there is something wrong.
-                    if (strType == "tx")
-                        // Rescan if there is a bad transaction record:
-                        SoftSetBoolArg("-rescan", true);
                 }
             }
             if (!strErr.empty())
@@ -935,6 +951,24 @@ DBErrors CWalletDB::LoadWallet(CWallet* pwallet)
         result = DB_CORRUPT;
     }
 
+    if (!deadTxns.empty())
+    {
+        int32_t reAdded = 0;
+        BOOST_FOREACH (uint256& hash, deadTxns) {
+            if (!EraseTx(hash))
+                fprintf(stderr, "could not delete tx.%s\n",hash.ToString().c_str());
+            uint256 blockhash; CTransaction tx;
+            if (GetTransaction(hash,tx,blockhash,true))
+            {
+                CWalletTx wtx(pwallet,tx);
+                pwallet->AddToWallet(wtx, true, NULL);
+                reAdded++;
+            }
+        }
+        fprintf(stderr, "Cleared %lu corrupted transactions from wallet. Readded %i known transactions.\n",deadTxns.size(),reAdded);
+        deadTxns.clear();
+    }
+    
     if (fNoncriticalErrors && result == DB_LOAD_OK)
         result = DB_NONCRITICAL_ERROR;
 

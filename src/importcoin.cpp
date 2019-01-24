@@ -1,3 +1,18 @@
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 #include "crosschain.h"
 #include "importcoin.h"
 #include "cc/utils.h"
@@ -5,12 +20,16 @@
 #include "hash.h"
 #include "script/cc.h"
 #include "primitives/transaction.h"
+#include "core_io.h"
+#include "script/sign.h"
+#include "wallet/wallet.h"
 
+int32_t komodo_nextheight();
 
 CTransaction MakeImportCoinTransaction(const TxProof proof, const CTransaction burnTx, const std::vector<CTxOut> payouts)
 {
     std::vector<uint8_t> payload = E_MARSHAL(ss << EVAL_IMPORTCOIN);
-    CMutableTransaction mtx;
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     mtx.vin.push_back(CTxIn(COutPoint(burnTx.GetHash(), 10e8), CScript() << payload));
     mtx.vout = payouts;
     auto importData = E_MARSHAL(ss << proof; ss << burnTx);
@@ -19,11 +38,13 @@ CTransaction MakeImportCoinTransaction(const TxProof proof, const CTransaction b
 }
 
 
-CTxOut MakeBurnOutput(CAmount value, uint32_t targetCCid, std::string targetSymbol, const std::vector<CTxOut> payouts)
+CTxOut MakeBurnOutput(CAmount value, uint32_t targetCCid, std::string targetSymbol, const std::vector<CTxOut> payouts,std::vector<uint8_t> rawproof)
 {
-    std::vector<uint8_t> opret = E_MARSHAL(ss << VARINT(targetCCid);
-                                           ss << targetSymbol;
-                                           ss << SerializeHash(payouts));
+    std::vector<uint8_t> opret;
+    opret = E_MARSHAL(ss << VARINT(targetCCid);
+                      ss << targetSymbol;
+                      ss << SerializeHash(payouts);
+                      ss << rawproof);
     return CTxOut(value, CScript() << OP_RETURN << opret);
 }
 
@@ -41,14 +62,25 @@ bool UnmarshalImportTx(const CTransaction &importTx, TxProof &proof, CTransactio
 }
 
 
-bool UnmarshalBurnTx(const CTransaction &burnTx, std::string &targetSymbol, uint32_t *targetCCid, uint256 &payoutsHash)
+bool UnmarshalBurnTx(const CTransaction &burnTx, std::string &targetSymbol, uint32_t *targetCCid, uint256 &payoutsHash,std::vector<uint8_t>&rawproof)
 {
-    std::vector<uint8_t> burnOpret;
+    std::vector<uint8_t> burnOpret; uint32_t ccid = 0;
     if (burnTx.vout.size() == 0) return false;
     GetOpReturnData(burnTx.vout.back().scriptPubKey, burnOpret);
-    return E_UNMARSHAL(burnOpret, ss >> VARINT(*targetCCid);
-                                  ss >> targetSymbol; 
-                                  ss >> payoutsHash);
+    E_UNMARSHAL(burnOpret, ss >> VARINT(ccid));
+    /*if ( ccid != 0xffffffff )
+    {
+        return E_UNMARSHAL(burnOpret, ss >> VARINT(*targetCCid);
+                                    ss >> targetSymbol;
+                                    ss >> payoutsHash);
+    }
+    else*/
+    {
+        return E_UNMARSHAL(burnOpret, ss >> VARINT(*targetCCid);
+                           ss >> targetSymbol;
+                           ss >> payoutsHash;
+                           ss >> rawproof);
+    }
 }
 
 
@@ -100,9 +132,10 @@ bool VerifyCoinImport(const CScript& scriptSig, TransactionSignatureChecker& che
 void AddImportTombstone(const CTransaction &importTx, CCoinsViewCache &inputs, int nHeight)
 {
     uint256 burnHash = importTx.vin[0].prevout.hash;
+    //fprintf(stderr,"add tombstone.(%s)\n",burnHash.GetHex().c_str());
     CCoinsModifier modifier = inputs.ModifyCoins(burnHash);
     modifier->nHeight = nHeight;
-    modifier->nVersion = 1;
+    modifier->nVersion = 4;//1;
     modifier->vout.push_back(CTxOut(0, CScript() << OP_0));
 }
 
@@ -110,6 +143,7 @@ void AddImportTombstone(const CTransaction &importTx, CCoinsViewCache &inputs, i
 void RemoveImportTombstone(const CTransaction &importTx, CCoinsViewCache &inputs)
 {
     uint256 burnHash = importTx.vin[0].prevout.hash;
+    //fprintf(stderr,"remove tombstone.(%s)\n",burnHash.GetHex().c_str());
     inputs.ModifyCoins(burnHash)->Clear();
 }
 
@@ -117,5 +151,6 @@ void RemoveImportTombstone(const CTransaction &importTx, CCoinsViewCache &inputs
 int ExistsImportTombstone(const CTransaction &importTx, const CCoinsViewCache &inputs)
 {
     uint256 burnHash = importTx.vin[0].prevout.hash;
+    //fprintf(stderr,"check tombstone.(%s) in %s\n",burnHash.GetHex().c_str(),importTx.GetHash().GetHex().c_str());
     return inputs.HaveCoins(burnHash);
 }

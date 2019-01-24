@@ -2,6 +2,21 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 #include "clientversion.h"
 #include "coins.h"
 #include "consensus/consensus.h"
@@ -175,6 +190,37 @@ static void RegisterLoad(const std::string& strInput)
 
     // evaluate as JSON buffer register
     RegisterSetJson(key, valStr);
+}
+
+
+int32_t komodo_nextheight()
+{
+    return(100000000);
+}
+
+
+// Set default values of new CMutableTransaction based on consensus rules at given height.
+CMutableTransaction CreateNewContextualCMutableTransaction(const Consensus::Params& consensusParams, int nHeight)
+{
+    CMutableTransaction mtx;
+    
+    bool isOverwintered = NetworkUpgradeActive(nHeight, consensusParams, Consensus::UPGRADE_OVERWINTER);
+    if (isOverwintered) {
+        mtx.fOverwintered = true;
+        mtx.nExpiryHeight = nHeight + 60;
+        
+        if (NetworkUpgradeActive(nHeight, consensusParams, Consensus::UPGRADE_SAPLING)) {
+            mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
+            mtx.nVersion = SAPLING_TX_VERSION;
+        } else {
+            mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
+            mtx.nVersion = OVERWINTER_TX_VERSION;
+            mtx.nExpiryHeight = std::min(
+                                         mtx.nExpiryHeight,
+                                         static_cast<uint32_t>(consensusParams.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight - 1));
+        }
+    }
+    return mtx;
 }
 
 static void MutateTxVersion(CMutableTransaction& tx, const std::string& cmdVal)
