@@ -115,6 +115,7 @@ enum BlockStatus: uint32_t {
     BLOCK_FAILED_MASK        =   BLOCK_FAILED_VALID | BLOCK_FAILED_CHILD,
 
     BLOCK_ACTIVATES_UPGRADE  =   128, //! block activates a network upgrade
+    BLOCK_IN_TMPFILE = 256
 };
 
 //! Short-hand for the highest consensus validity we implement.
