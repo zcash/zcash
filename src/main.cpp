@@ -3229,15 +3229,6 @@ static int64_t nTimeTotal = 0;
 bool FindBlockPos(int32_t tmpflag,CValidationState &state, CDiskBlockPos &pos, unsigned int nAddSize, unsigned int nHeight, uint64_t nTime, bool fKnown = false);
 bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBlockIndex *pindexNew, const CDiskBlockPos& pos);
 
-
-enum FlushStateMode {
-    FLUSH_STATE_NONE,
-    FLUSH_STATE_IF_NEEDED,
-    FLUSH_STATE_PERIODIC,
-    FLUSH_STATE_ALWAYS
-};
-bool static FlushStateToDisk(CValidationState &state, FlushStateMode mode);
-
 bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pindex, CCoinsViewCache& view, bool fJustCheck,bool fCheckPOW)
 {
     CDiskBlockPos blockPos;
@@ -3283,7 +3274,6 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         if (!ReceivedBlockTransactions(block, state, pindex, blockPos))
             return error("AcceptBlock(): ReceivedBlockTransactions failed");
         setDirtyFileInfo.insert(blockPos.nFile);
-        FlushStateToDisk(state, FLUSH_STATE_NONE); // we just allocated more disk space for block files
         fprintf(stderr,"added ht.%d copy of tmpfile to %d.%d\n",pindex->GetHeight(),blockPos.nFile,blockPos.nPos);
     }
     // verify that the view's current state corresponds to the previous block
@@ -3679,6 +3669,12 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     return true;
 }
 
+enum FlushStateMode {
+    FLUSH_STATE_NONE,
+    FLUSH_STATE_IF_NEEDED,
+    FLUSH_STATE_PERIODIC,
+    FLUSH_STATE_ALWAYS
+};
 
 /**
  * Update the on-disk chain state.
