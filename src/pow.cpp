@@ -37,9 +37,8 @@
 #endif // ENABLE_RUST
 uint32_t komodo_chainactive_timestamp();
 
-extern uint32_t ASSETCHAINS_ALGO, ASSETCHAINS_EQUIHASH, ASSETCHAINS_STAKED;
-extern char ASSETCHAINS_SYMBOL[65];
-extern int32_t ASSETCHAINS_LWMAPOS,VERUS_BLOCK_POSUNITS, VERUS_CONSECUTIVE_POS_THRESHOLD, VERUS_NOPOS_THRESHHOLD;
+#include "komodo_defs.h"
+
 unsigned int lwmaGetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params);
 unsigned int lwmaCalculateNextWorkRequired(const CBlockIndex* pindexLast, const Consensus::Params& params);
 
