@@ -3236,6 +3236,7 @@ enum FlushStateMode {
     FLUSH_STATE_PERIODIC,
     FLUSH_STATE_ALWAYS
 };
+bool static FlushStateToDisk(CValidationState &state, FlushStateMode mode);
 
 bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pindex, CCoinsViewCache& view, bool fJustCheck,bool fCheckPOW)
 {
