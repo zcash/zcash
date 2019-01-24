@@ -3230,6 +3230,7 @@ bool FindBlockPos(int32_t tmpflag,CValidationState &state, CDiskBlockPos &pos, u
 
 bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pindex, CCoinsViewCache& view, bool fJustCheck,bool fCheckPOW)
 {
+    CDiskBlockPos blockPos;
     const CChainParams& chainparams = Params();
     if ( KOMODO_STOPAT != 0 && pindex->GetHeight() > KOMODO_STOPAT )
         return(false);
@@ -3262,12 +3263,15 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     if ( (pindex->nStatus & BLOCK_IN_TMPFILE) != 0 )
     {
         unsigned int nBlockSize = ::GetSerializeSize(block, SER_DISK, CLIENT_VERSION);
-        CDiskBlockPos blockPos;
         if (!FindBlockPos(0,state, blockPos, nBlockSize+8, pindex->GetHeight(), block.GetBlockTime(),false))
             return error("ConnectBlock(): FindBlockPos failed");
         if (!WriteBlockToDisk(block, blockPos, chainparams.MessageStart()))
             return error("ConnectBlock(): FindBlockPos failed");
         pindex->nStatus &= (~BLOCK_IN_TMPFILE);
+        pindex->nFile = blockPos.nFile;
+        pindex->nPos = blockPos.nPos;
+        if (!ReceivedBlockTransactions(block, state, pindex, blockPos))
+            return error("AcceptBlock(): ReceivedBlockTransactions failed");
         setDirtyFileInfo.insert(blockPos.nFile);
         //fprintf(stderr,"added ht.%d copy of tmpfile to %d.%d\n",pindex->GetHeight(),blockPos.nFile,blockPos.nPos);
     }
