@@ -2031,7 +2031,7 @@ bool RemoveOrphanedBlocks(int32_t notarized_height)
         if ( forked != 0 )
             prunedblocks.push_back(block); 
     }
-    if (pblocktree->EraseBatchSync(prunedblocks))
+    if (prunedblocks.size() > 0 && pblocktree->EraseBatchSync(prunedblocks))
     {
         // Blocks cleared from disk succesfully, using internal DB batch erase function. Which exists, but has never been used before.
         // We need to try and clear the block index from mapBlockIndex now, otherwise node will need a restart. 
@@ -2040,7 +2040,7 @@ bool RemoveOrphanedBlocks(int32_t notarized_height)
             m++;
             mapBlockIndex.erase(block->GetBlockHash());
         }
-        fprintf(stderr, "%s removed %d of %d orphans from before %d\n",ASSETCHAINS_SYMBOL,m,n, notarized_height);
+        fprintf(stderr, "%s removed %d orphans from %d blocks before %d\n",ASSETCHAINS_SYMBOL,m,n, notarized_height);
         return true;
     }    
     return false;
