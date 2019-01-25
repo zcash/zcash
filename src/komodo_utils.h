@@ -1569,6 +1569,9 @@ int64_t komodo_max_money()
 
 uint64_t komodo_ac_block_subsidy(int nHeight)
 {
+    // LABS fungible chains, cannot have any block reward!
+    if ( is_STAKED(ASSETCHAINS_SYMBOL) == 2 )
+        return(0);
     // we have to find our era, start from beginning reward, and determine current subsidy
     int64_t numerator, denominator, subsidy = 0;
     int64_t subsidyDifference;
@@ -1655,7 +1658,7 @@ extern int64_t MAX_MONEY;
 void komodo_args(char *argv0)
 {
     extern const char *Notaries_elected1[][2];
-    std::string name,addn; char *dirname,fname[512],arg0str[64],magicstr[9]; uint8_t magic[4],extrabuf[8192],disablebits[32],*extraptr=0; FILE *fp; uint64_t val; uint16_t port; int32_t i,nonz,baseid,len,n,extralen = 0; uint64_t ccenables[256];
+    std::string name,addn; char *dirname,fname[512],arg0str[64],magicstr[9]; uint8_t magic[4],extrabuf[8192],disablebits[32],*extraptr=0; FILE *fp; uint64_t val; uint16_t port; int32_t i,nonz = 0,baseid,len,n,extralen = 0; uint64_t ccenables[256];
     IS_KOMODO_NOTARY = GetBoolArg("-notary", false);
     IS_STAKED_NOTARY = GetArg("-stakednotary", -1);
     if ( IS_STAKED_NOTARY != -1 && IS_KOMODO_NOTARY == true ) {

@@ -1165,6 +1165,10 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams);
 
 uint64_t komodo_commission(const CBlock *pblock,int32_t height)
 {
+    // LABS fungible chains, cannot have any block reward!
+    if ( is_STAKED(ASSETCHAINS_SYMBOL) == 2 )
+        return(0);
+
     int32_t i,j,n=0,txn_count; int64_t nSubsidy; uint64_t commission,total = 0;
     txn_count = pblock->vtx.size();
     if ( ASSETCHAINS_FOUNDERS != 0 )
