@@ -101,6 +101,8 @@ eval "$MAKE" --version
 as --version
 ld -v
 
+../src/cc/makecclib
+
 HOST="$HOST" BUILD="$BUILD" NO_PROTON="$PROTON_ARG" "$MAKE" "$@" -C ./depends/ V=1
 ./autogen.sh
 
