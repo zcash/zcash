@@ -1569,9 +1569,6 @@ int64_t komodo_max_money()
 
 uint64_t komodo_ac_block_subsidy(int nHeight)
 {
-    // LABS fungible chains, cannot have any block reward!
-    if ( is_STAKED(ASSETCHAINS_SYMBOL) == 2 )
-        return(0);
     // we have to find our era, start from beginning reward, and determine current subsidy
     int64_t numerator, denominator, subsidy = 0;
     int64_t subsidyDifference;
@@ -1650,6 +1647,9 @@ uint64_t komodo_ac_block_subsidy(int nHeight)
         else
             subsidy += ASSETCHAINS_SUPPLY * SATOSHIDEN + magicExtra;
     }
+    else if ( is_STAKED(ASSETCHAINS_SYMBOL) == 2 )
+        return(0);
+    // LABS fungible chains, cannot have any block reward!
     return(subsidy);
 }
 
