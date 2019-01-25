@@ -535,6 +535,8 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                         fprintf(stderr, "Block Arrived, reset staking loop.\n");
                         return(0);
                     }
+                    if( !GetBoolArg("-gen",false )
+                        return(0);
                 }
             }
 
@@ -1563,6 +1565,13 @@ void static BitcoinMiner()
 #endif
             if ( ptr == 0 )
             {
+                if ( !GetBoolArg("-gen",false))
+                {
+                    miningTimer.stop();
+                    c.disconnect();
+                    LogPrintf("KomodoMiner terminated\n");
+                    return;
+                }
                 static uint32_t counter;
                 if ( counter++ < 10 && ASSETCHAINS_STAKED == 0 )
                     fprintf(stderr,"created illegal blockB, retry\n");

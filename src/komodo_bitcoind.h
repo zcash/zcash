@@ -2211,8 +2211,8 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
     block_from_future_rejecttime = (uint32_t)GetAdjustedTime() + 57;    
     for (i=winners=0; i<numkp; i++)
     {
-        if (fRequestShutdown)
-            break;
+        if ( fRequestShutdown || !GetBoolArg("-gen",false) )
+            return(0);
         if ( (tipindex= chainActive.Tip()) == 0 || tipindex->GetHeight()+1 > nHeight )
         {
             fprintf(stderr,"chain tip changed during staking loop t.%u counter.%d\n",(uint32_t)time(NULL),counter);
