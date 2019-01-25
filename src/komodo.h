@@ -806,6 +806,11 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
     uint64_t signedmask,voutmask; char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; struct komodo_state *sp;
     uint8_t scriptbuf[10001],pubkeys[64][33],rmd160[20],scriptPubKey[35]; uint256 zero,btctxid,txhash;
     int32_t i,j,k,numnotaries,notarized,scriptlen,isratification,nid,numvalid,specialtx,notarizedheight,notaryid,len,numvouts,numvins,height,txn_count;
+    if ( pindex == 0 )
+    {
+        fprintf(stderr,"komodo_connectblock null pindex\n");
+        return;
+    }
     memset(&zero,0,sizeof(zero));
     komodo_init(pindex->GetHeight());
     KOMODO_INITDONE = (uint32_t)time(NULL);
@@ -975,12 +980,15 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                             }
                         }
                     }
-                    if ( ((signedmask & 1) != 0 && numvalid >= KOMODO_MINRATIFY) || bitweight(signedmask) > (numnotaries/3) )
+                    if ( ASSETCHAINS_SYMBOL[0] != 0 || height < 100000 )
                     {
-                        memset(&txhash,0,sizeof(txhash));
-                        komodo_stateupdate(height,pubkeys,numvalid,0,txhash,0,0,0,0,0,0,0,0,0,0,zero,0);
-                        printf("RATIFIED! >>>>>>>>>> new notaries.%d newheight.%d from height.%d\n",numvalid,(((height+KOMODO_ELECTION_GAP/2)/KOMODO_ELECTION_GAP)+1)*KOMODO_ELECTION_GAP,height);
-                    } else printf("signedmask.%llx numvalid.%d wt.%d numnotaries.%d\n",(long long)signedmask,numvalid,bitweight(signedmask),numnotaries);
+                        if ( ((signedmask & 1) != 0 && numvalid >= KOMODO_MINRATIFY) || bitweight(signedmask) > (numnotaries/3) )
+                        {
+                            memset(&txhash,0,sizeof(txhash));
+                            komodo_stateupdate(height,pubkeys,numvalid,0,txhash,0,0,0,0,0,0,0,0,0,0,zero,0);
+                            printf("RATIFIED! >>>>>>>>>> new notaries.%d newheight.%d from height.%d\n",numvalid,(((height+KOMODO_ELECTION_GAP/2)/KOMODO_ELECTION_GAP)+1)*KOMODO_ELECTION_GAP,height);
+                        } else printf("signedmask.%llx numvalid.%d wt.%d numnotaries.%d\n",(long long)signedmask,numvalid,bitweight(signedmask),numnotaries);
+                    }
                 }
             }
         }

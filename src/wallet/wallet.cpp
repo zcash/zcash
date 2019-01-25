@@ -59,13 +59,7 @@ bool fSendFreeTransactions = false;
 bool fPayAtLeastCustomFee = true;
 #include "komodo_defs.h"
 
-extern int32_t USE_EXTERNAL_PUBKEY;
-extern std::string NOTARY_PUBKEY;
-extern int32_t KOMODO_EXCHANGEWALLET;
-extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
-extern int32_t VERUS_MIN_STAKEAGE;
 CBlockIndex *komodo_chainactive(int32_t height);
-extern std::string DONATION_PUBKEY;
 
 /**
  * Fees smaller than this (in satoshi) are considered zero fee (for transaction creation)
@@ -1180,7 +1174,7 @@ bool DecrementNoteWitnesses(NoteDataMap& noteDataMap, int indexHeight, int64_t n
             assert((nWitnessCacheSize - 1) >= nd->witnesses.size());
         }
     }
-    assert(KOMODO_REWIND != 0 || nWitnessCacheSize > 0);
+    assert(KOMODO_REWIND != 0 || nWitnessCacheSize > 0 || WITNESS_CACHE_SIZE != _COINBASE_MATURITY+10);
     return true;
 }
 

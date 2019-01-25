@@ -24,8 +24,8 @@
 #include "tinyformat.h"
 #include "utilstrencodings.h"
 #include "crypto/common.h"
+#include "komodo_defs.h"
 
-extern uint32_t ASSETCHAINS_ALGO, ASSETCHAINS_VERUSHASH;
 
 // default hash algorithm for block
 uint256 (CBlockHeader::*CBlockHeader::hashFunction)() const = &CBlockHeader::GetSHA256DHash;
@@ -46,8 +46,11 @@ uint256 CBlockHeader::GetVerusHash() const
 
 uint256 CBlockHeader::GetVerusV2Hash() const
 {
-    // no check for genesis block and use the optimized hash
-    return SerializeVerusHashV2(*this);
+    if (hashPrevBlock.IsNull())
+        // always use SHA256D for genesis block
+        return SerializeHash(*this);
+    else
+        return SerializeVerusHashV2(*this);
 }
 
 void CBlockHeader::SetSHA256DHash()
@@ -58,6 +61,11 @@ void CBlockHeader::SetSHA256DHash()
 void CBlockHeader::SetVerusHash()
 {
     CBlockHeader::hashFunction = &CBlockHeader::GetVerusHash;
+}
+
+void CBlockHeader::SetVerusHashV2()
+{
+    CBlockHeader::hashFunction = &CBlockHeader::GetVerusV2Hash;
 }
 
 // returns false if unable to fast calculate the VerusPOSHash from the header. 

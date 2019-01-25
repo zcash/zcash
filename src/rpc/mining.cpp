@@ -48,10 +48,8 @@
 
 using namespace std;
 
-extern int32_t ASSETCHAINS_ALGO, ASSETCHAINS_EQUIHASH, ASSETCHAINS_LWMAPOS;
-extern uint64_t ASSETCHAINS_STAKED;
-extern int32_t KOMODO_MININGTHREADS;
-extern bool VERUS_MINTBLOCKS;
+#include "komodo_defs.h"
+
 arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t height,int32_t goalperc);
 
 /**
@@ -438,8 +436,11 @@ UniValue getmininginfo(const UniValue& params, bool fHelp)
     obj.push_back(Pair("testnet",          Params().TestnetToBeDeprecatedFieldRPC()));
     obj.push_back(Pair("chain",            Params().NetworkIDString()));
 #ifdef ENABLE_MINING
-    obj.push_back(Pair("staking",          VERUS_MINTBLOCKS));
-    obj.push_back(Pair("generate",         GetBoolArg("-gen", false)));
+    bool staking = VERUS_MINTBLOCKS;
+    if ( ASSETCHAINS_STAKED != 0 && GetBoolArg("-gen", false) && GetBoolArg("-genproclimit", -1) == 0 )
+        staking = true;
+    obj.push_back(Pair("staking",          staking));
+    obj.push_back(Pair("generate",         GetBoolArg("-gen", false) && GetBoolArg("-genproclimit", -1) != 0 ));
     obj.push_back(Pair("numthreads",       (int64_t)KOMODO_MININGTHREADS));
 #endif
     return obj;

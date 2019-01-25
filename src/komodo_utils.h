@@ -1655,15 +1655,17 @@ extern int64_t MAX_MONEY;
 void komodo_args(char *argv0)
 {
     extern const char *Notaries_elected1[][2];
-    std::string name,addn; char *dirname,fname[512],arg0str[64],magicstr[9]; uint8_t magic[4],extrabuf[8192],*extraptr=0; FILE *fp; uint64_t val; uint16_t port; int32_t i,baseid,len,n,extralen = 0;
-  	IS_KOMODO_NOTARY = GetBoolArg("-notary", false);
-		IS_STAKED_NOTARY = GetArg("-stakednotary", -1);
-		if ( IS_STAKED_NOTARY != -1 && IS_KOMODO_NOTARY == true ) {
-				fprintf(stderr, "Cannot be STAKED and KMD notary at the same time!\n");
-				exit(0);
-		}
-		MIN_RECV_SATS = GetArg("-mintxvalue",-1);
-		WHITELIST_ADDRESS = GetArg("-whitelistaddress","");
+    std::string name,addn; char *dirname,fname[512],arg0str[64],magicstr[9]; uint8_t magic[4],extrabuf[8192],disablebits[32],*extraptr=0; FILE *fp; uint64_t val; uint16_t port; int32_t i,nonz,baseid,len,n,extralen = 0; uint64_t ccenables[256];
+    IS_KOMODO_NOTARY = GetBoolArg("-notary", false);
+    IS_STAKED_NOTARY = GetArg("-stakednotary", -1);
+    if ( IS_STAKED_NOTARY != -1 && IS_KOMODO_NOTARY == true ) {
+        fprintf(stderr, "Cannot be STAKED and KMD notary at the same time!\n");
+        exit(0);
+    }
+    MIN_RECV_SATS = GetArg("-mintxvalue",-1);
+    WHITELIST_ADDRESS = GetArg("-whitelistaddress","");
+    memset(ccenables,0,sizeof(ccenables));
+    memset(disablebits,0,sizeof(disablebits));
     if ( GetBoolArg("-gen", false) != 0 )
     {
         KOMODO_MININGTHREADS = GetArg("-genproclimit",-1);
@@ -1684,13 +1686,13 @@ void komodo_args(char *argv0)
                     IS_KOMODO_NOTARY = 1;
                     KOMODO_MININGTHREADS = 1;
                     mapArgs ["-genproclimit"] = itostr(KOMODO_MININGTHREADS);
-										IS_STAKED_NOTARY = -1;
+					IS_STAKED_NOTARY = -1;
                     fprintf(stderr,"running as notary.%d %s\n",i,Notaries_elected1[i][0]);
                     break;
                 }
         }
     }
-		name = GetArg("-ac_name","");
+	name = GetArg("-ac_name","");
     if ( argv0 != 0 )
     {
         len = (int32_t)strlen(argv0);
@@ -1726,6 +1728,7 @@ void komodo_args(char *argv0)
             if (std::string(ASSETCHAINS_ALGORITHMS[i]) == selectedAlgo)
             {
                 ASSETCHAINS_ALGO = i;
+                STAKING_MIN_DIFF = ASSETCHAINS_MINDIFF[i];
                 // only worth mentioning if it's not equihash
                 if (ASSETCHAINS_ALGO != ASSETCHAINS_EQUIHASH)
                     printf("ASSETCHAINS_ALGO, algorithm set to %s\n", selectedAlgo.c_str());
@@ -1741,9 +1744,10 @@ void komodo_args(char *argv0)
         if ( ASSETCHAINS_LASTERA < 1 || ASSETCHAINS_LASTERA > ASSETCHAINS_MAX_ERAS )
         {
             ASSETCHAINS_LASTERA = 1;
-            printf("ASSETCHAINS_LASTERA, if specified, must be between 1 and %u. ASSETCHAINS_LASTERA set to %u\n", ASSETCHAINS_MAX_ERAS, ASSETCHAINS_LASTERA);
+            printf("ASSETCHAINS_LASTERA, if specified, must be between 1 and %u. ASSETCHAINS_LASTERA set to %lu\n", ASSETCHAINS_MAX_ERAS, ASSETCHAINS_LASTERA);
         }
         ASSETCHAINS_LASTERA -= 1;
+        printf("ASSETCHAINS_LASTERA = %lu\n", ASSETCHAINS_LASTERA);
 
         ASSETCHAINS_TIMELOCKGTE = (uint64_t)GetArg("-ac_timelockgte", _ASSETCHAINS_TIMELOCKOFF);
         ASSETCHAINS_TIMEUNLOCKFROM = GetArg("-ac_timeunlockfrom", 0);
@@ -1777,12 +1781,46 @@ void komodo_args(char *argv0)
         MAX_BLOCK_SIGOPS = 60000;
         ASSETCHAINS_TXPOW = GetArg("-ac_txpow",0) & 3;
         ASSETCHAINS_FOUNDERS = GetArg("-ac_founders",0);// & 1;
+		ASSETCHAINS_FOUNDERS_REWARD = GetArg("-ac_founders_reward",0);
         ASSETCHAINS_SUPPLY = GetArg("-ac_supply",10);
         ASSETCHAINS_COMMISSION = GetArg("-ac_perc",0);
         ASSETCHAINS_OVERRIDE_PUBKEY = GetArg("-ac_pubkey","");
         ASSETCHAINS_SCRIPTPUB = GetArg("-ac_script","");
         ASSETCHAINS_BEAMPORT = GetArg("-ac_beam",0);
         ASSETCHAINS_CODAPORT = GetArg("-ac_coda",0);
+        ASSETCHAINS_MARMARA = GetArg("-ac_marmara",0);
+        if ( ASSETCHAINS_COMMISSION != 0 && ASSETCHAINS_FOUNDERS_REWARD != 0 )
+        {
+            fprintf(stderr,"cannot use founders reward and commission on the same chain.\n");
+            exit(0);
+        }
+        if ( ASSETCHAINS_CC != 0 )
+        {
+            ASSETCHAINS_CCLIB = GetArg("-ac_cclib","");
+            Split(GetArg("-ac_ccenable",""),  ccenables, 0);
+            for (i=nonz=0; i<0x100; i++)
+            {
+                if ( ccenables[i] != 0 )
+                {
+                    nonz++;
+                    fprintf(stderr,"%d ",(uint8_t)(ccenables[i] & 0xff));
+                }
+            }
+            fprintf(stderr,"nonz.%d ccenables[]\n",nonz);
+            if ( nonz > 0 )
+            {
+                for (i=0; i<256; i++)
+                {
+                    ASSETCHAINS_CCDISABLES[i] = 1;
+                    SETBIT(disablebits,i);
+                }
+                for (i=0; i<256; i++)
+                {
+                    CLEARBIT(disablebits,(ccenables[i] & 0xff));
+                    ASSETCHAINS_CCDISABLES[ccenables[i] & 0xff] = 0;
+                }
+            }
+        }
         if ( ASSETCHAINS_BEAMPORT != 0 && ASSETCHAINS_CODAPORT != 0 )
         {
             fprintf(stderr,"can only have one of -ac_beam or -ac_coda\n");
@@ -1809,7 +1847,7 @@ void komodo_args(char *argv0)
         }
         // else it can be gateway coin
 
-        
+
         if ( (ASSETCHAINS_STAKED= GetArg("-ac_staked",0)) > 100 )
             ASSETCHAINS_STAKED = 100;
 
@@ -1835,13 +1873,17 @@ void komodo_args(char *argv0)
                 decode_hex(ASSETCHAINS_OVERRIDE_PUBKEY33,33,(char *)ASSETCHAINS_OVERRIDE_PUBKEY.c_str());
                 calc_rmd160_sha256(ASSETCHAINS_OVERRIDE_PUBKEYHASH,ASSETCHAINS_OVERRIDE_PUBKEY33,33);
             }
-            if ( ASSETCHAINS_COMMISSION == 0 )
+            if ( ASSETCHAINS_COMMISSION == 0 && ASSETCHAINS_FOUNDERS != 0 )
             {
-                if (ASSETCHAINS_FOUNDERS != 0 )
+                if ( ASSETCHAINS_FOUNDERS_REWARD == 0 )
                 {
                     ASSETCHAINS_COMMISSION = 53846154; // maps to 35%
                     printf("ASSETCHAINS_COMMISSION defaulted to 35%% when founders reward active\n");
                 }
+				else
+				{
+					printf("ASSETCHAINS_FOUNDERS_REWARD set to %ld\n", ASSETCHAINS_FOUNDERS_REWARD);
+				}
                 /*else if ( ASSETCHAINS_SELFIMPORT.size() == 0 )
                 {
                     //ASSETCHAINS_OVERRIDE_PUBKEY.clear();
@@ -1862,7 +1904,12 @@ void komodo_args(char *argv0)
                 printf("ASSETCHAINS_FOUNDERS needs an ASSETCHAINS_OVERRIDE_PUBKEY or ASSETCHAINS_SCRIPTPUB\n");
             }
         }
-        if ( ASSETCHAINS_ENDSUBSIDY[0] != 0 || ASSETCHAINS_REWARD[0] != 0 || ASSETCHAINS_HALVING[0] != 0 || ASSETCHAINS_DECAY[0] != 0 || ASSETCHAINS_COMMISSION != 0 || ASSETCHAINS_PUBLIC != 0 || ASSETCHAINS_PRIVATE != 0 || ASSETCHAINS_TXPOW != 0 || ASSETCHAINS_FOUNDERS != 0 || ASSETCHAINS_SCRIPTPUB.size() > 1 || ASSETCHAINS_SELFIMPORT.size() > 0 || ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 || ASSETCHAINS_TIMELOCKGTE != _ASSETCHAINS_TIMELOCKOFF|| ASSETCHAINS_ALGO != ASSETCHAINS_EQUIHASH || ASSETCHAINS_LWMAPOS != 0 || ASSETCHAINS_LASTERA > 0 || ASSETCHAINS_BEAMPORT != 0 || ASSETCHAINS_CODAPORT != 0 )
+        if ( ASSETCHAINS_SCRIPTPUB.size() > 1 && ASSETCHAINS_MARMARA != 0 )
+        {
+            fprintf(stderr,"-ac_script and -ac_marmara are mutually exclusive\n");
+            exit(0);
+        }
+        if ( ASSETCHAINS_ENDSUBSIDY[0] != 0 || ASSETCHAINS_REWARD[0] != 0 || ASSETCHAINS_HALVING[0] != 0 || ASSETCHAINS_DECAY[0] != 0 || ASSETCHAINS_COMMISSION != 0 || ASSETCHAINS_PUBLIC != 0 || ASSETCHAINS_PRIVATE != 0 || ASSETCHAINS_TXPOW != 0 || ASSETCHAINS_FOUNDERS != 0 || ASSETCHAINS_SCRIPTPUB.size() > 1 || ASSETCHAINS_SELFIMPORT.size() > 0 || ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 || ASSETCHAINS_TIMELOCKGTE != _ASSETCHAINS_TIMELOCKOFF|| ASSETCHAINS_ALGO != ASSETCHAINS_EQUIHASH || ASSETCHAINS_LWMAPOS != 0 || ASSETCHAINS_LASTERA > 0 || ASSETCHAINS_BEAMPORT != 0 || ASSETCHAINS_CODAPORT != 0 || ASSETCHAINS_MARMARA != 0 || nonz > 0 || ASSETCHAINS_CCLIB.size() > 0 || ASSETCHAINS_FOUNDERS_REWARD != 0 )
         {
             fprintf(stderr,"perc %.4f%% ac_pub=[%02x%02x%02x...] acsize.%d\n",dstr(ASSETCHAINS_COMMISSION)*100,ASSETCHAINS_OVERRIDE_PUBKEY33[0],ASSETCHAINS_OVERRIDE_PUBKEY33[1],ASSETCHAINS_OVERRIDE_PUBKEY33[2],(int32_t)ASSETCHAINS_SCRIPTPUB.size());
             extraptr = extrabuf;
@@ -1908,14 +1955,19 @@ void komodo_args(char *argv0)
                 extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_LWMAPOS),(void *)&ASSETCHAINS_LWMAPOS);
             }
 
-            val = ASSETCHAINS_COMMISSION | (((uint64_t)ASSETCHAINS_STAKED & 0xff) << 32) | (((uint64_t)ASSETCHAINS_CC & 0xffff) << 40) | ((ASSETCHAINS_PUBLIC != 0) << 7) | ((ASSETCHAINS_PRIVATE != 0) << 6) | ASSETCHAINS_TXPOW;
+            val = ASSETCHAINS_COMMISSION | (((int64_t)ASSETCHAINS_STAKED & 0xff) << 32) | (((uint64_t)ASSETCHAINS_CC & 0xffff) << 40) | ((ASSETCHAINS_PUBLIC != 0) << 7) | ((ASSETCHAINS_PRIVATE != 0) << 6) | ASSETCHAINS_TXPOW;
             extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(val),(void *)&val);
+            
             if ( ASSETCHAINS_FOUNDERS != 0 )
             {
                 uint8_t tmp = 1;
                 extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(tmp),(void *)&tmp);
                 if ( ASSETCHAINS_FOUNDERS > 1 )
                     extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_FOUNDERS),(void *)&ASSETCHAINS_FOUNDERS);
+                if ( ASSETCHAINS_FOUNDERS_REWARD != 0 )
+                {
+                    extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_FOUNDERS_REWARD),(void *)&ASSETCHAINS_FOUNDERS_REWARD);
+                }
             }
             if ( ASSETCHAINS_SCRIPTPUB.size() > 1 )
             {
@@ -1936,8 +1988,24 @@ void komodo_args(char *argv0)
                 extraptr[extralen++] = 'b';
             if ( ASSETCHAINS_CODAPORT != 0 )
                 extraptr[extralen++] = 'c';
+            if ( ASSETCHAINS_MARMARA != 0 )
+                extraptr[extralen++] = ASSETCHAINS_MARMARA;
+            if ( nonz > 0 )
+            {
+                memcpy(&extraptr[extralen],disablebits,sizeof(disablebits));
+                extralen += sizeof(disablebits);
+            }
+            if ( ASSETCHAINS_CCLIB.size() > 1 )
+            {
+                for (i=0; i<ASSETCHAINS_CCLIB.size(); i++)
+                {
+                    extraptr[extralen++] = ASSETCHAINS_CCLIB[i];
+                    fprintf(stderr,"%c",ASSETCHAINS_CCLIB[i]);
+                }
+                fprintf(stderr," <- CCLIB name\n");
+            }
         }
-
+        
         addn = GetArg("-seednode","");
         if ( strlen(addn.c_str()) > 0 )
             ASSETCHAINS_SEED = 1;
@@ -1987,7 +2055,7 @@ void komodo_args(char *argv0)
             if ( (port= komodo_userpass(ASSETCHAINS_USERPASS,ASSETCHAINS_SYMBOL)) != 0 )
                 ASSETCHAINS_RPCPORT = port;
             else komodo_configfile(ASSETCHAINS_SYMBOL,ASSETCHAINS_P2PPORT + 1);
-            if (ASSETCHAINS_LASTERA == 0)
+            if (ASSETCHAINS_LASTERA == 0 || is_STAKED(ASSETCHAINS_SYMBOL) != 0)
                 COINBASE_MATURITY = 1;
             //fprintf(stderr,"ASSETCHAINS_RPCPORT (%s) %u\n",ASSETCHAINS_SYMBOL,ASSETCHAINS_RPCPORT);
         }
@@ -2060,7 +2128,7 @@ void komodo_args(char *argv0)
         if ( strcmp("PIRATE",ASSETCHAINS_SYMBOL) == 0 && ASSETCHAINS_HALVING[0] == 77777 )
         {
             ASSETCHAINS_HALVING[0] *= 5;
-            fprintf(stderr,"PIRATE halving changed to %d %.1f days ASSETCHAINS_LASTERA.%d\n",(int32_t)ASSETCHAINS_HALVING[0],(double)ASSETCHAINS_HALVING[0]/1440,ASSETCHAINS_LASTERA);
+            fprintf(stderr,"PIRATE halving changed to %d %.1f days ASSETCHAINS_LASTERA.%lu\n",(int32_t)ASSETCHAINS_HALVING[0],(double)ASSETCHAINS_HALVING[0]/1440,ASSETCHAINS_LASTERA);
         }
         else if ( strcmp("VRSC",ASSETCHAINS_SYMBOL) == 0 )
             dpowconfs = 0;
