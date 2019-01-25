@@ -12,9 +12,11 @@ extern uint8_t NOTARY_PUBKEY33[33],NUM_NOTARIES;
 
 int8_t is_STAKED(const char *chain_name) {
   static int8_t STAKED,doneinit;
+  if ( chain_name[0] == 0 )
+    return(0);
   if (doneinit == 1 && ASSETCHAINS_SYMBOL[0] != 0)
     return(STAKED);
-  if ( (strcmp(chain_name, "LABS") == 0) || (strcmp(chain_name, "PAYME") == 0) )
+  if ( (strcmp(chain_name, "LABS") == 0) || (strcmp(chain_name, "PAYME") == 0) || (strcmp(chain_name, "LABST") == 0) )
     STAKED = 1;
   else if ( (strncmp(chain_name, "LABS", 4) == 0) )
     STAKED = 2;
