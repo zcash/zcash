@@ -14,15 +14,14 @@ int8_t is_STAKED(const char *chain_name) {
   static int8_t STAKED,doneinit;
   if (doneinit == 1 && ASSETCHAINS_SYMBOL[0] != 0)
     return(STAKED);
-  if ( (strcmp(chain_name, "LABS") == 0) || (strncmp(chain_name, "LABS", 4) == 0) )
+  if ( (strcmp(chain_name, "LABS") == 0) || (strcmp(chain_name, "PAYME") == 0) )
     STAKED = 1;
-  else if ( (strcmp(chain_name, "LABT2") == 0) || (strncmp(chain_name, "LABT2", 3) == 0) )
+  else if ( (strncmp(chain_name, "LABS", 4) == 0) )
     STAKED = 2;
   else if ( (strcmp(chain_name, "CFEK") == 0) || (strncmp(chain_name, "CFEK", 4) == 0) )
     STAKED =  3;
-  else 
-    STAKED = 0;
-  //fprintf(stderr, "This chain is: %s which is: %d\n", chain_name,STAKED);
+  else if ( (strcmp(chain_name, "THIS_CHAIN_IS_BANNED") == 0) )
+    STAKED = 255; // This means that all notarisations for chains that are in 255 group are invalid. 
   doneinit = 1;
   return(STAKED);
 };

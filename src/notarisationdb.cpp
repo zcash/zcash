@@ -44,6 +44,9 @@ NotarisationsInBlock ScanBlockNotarisations(const CBlock &block, int nHeight)
             if (staked_era == 0) {
               // this is an ERA GAP, so we will ignore this notarization
               continue;
+             if ( is_STAKED(data.symbol) == 255 )
+              // this chain is banned... we will discard its notarisation. 
+              continue;
             } else {
               // pass era slection off to notaries_staked.cpp file
               auth_STAKED = Choose_auth_STAKED(staked_era);
