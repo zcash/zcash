@@ -1654,9 +1654,10 @@ extern int64_t MAX_MONEY;
 void komodo_args(char *argv0)
 {
     extern const char *Notaries_elected1[][2];
-    std::string name,addn; char *dirname,fname[512],arg0str[64],magicstr[9]; uint8_t magic[4],extrabuf[8192],*extraptr=0; FILE *fp; uint64_t val; uint16_t port; int32_t i,baseid,len,n,extralen = 0;
+    std::string name,addn; char *dirname,fname[512],arg0str[64],magicstr[9]; uint8_t magic[4],extrabuf[8192],disablebits[32],*extraptr=0; FILE *fp; uint64_t val; uint16_t port; int32_t i,nonz=0,baseid,len,n,extralen = 0; uint64_t ccenables[256];
     IS_KOMODO_NOTARY = GetBoolArg("-notary", false);
-
+    memset(ccenables,0,sizeof(ccenables));
+    memset(disablebits,0,sizeof(disablebits));
     if ( GetBoolArg("-gen", false) != 0 )
     {
         KOMODO_MININGTHREADS = GetArg("-genproclimit",-1);
@@ -1778,6 +1779,34 @@ void komodo_args(char *argv0)
         ASSETCHAINS_SCRIPTPUB = GetArg("-ac_script","");
         ASSETCHAINS_BEAMPORT = GetArg("-ac_beam",0);
         ASSETCHAINS_CODAPORT = GetArg("-ac_coda",0);
+        ASSETCHAINS_MARMARA = GetArg("-ac_marmara",0);
+        if ( ASSETCHAINS_CC != 0 )
+        {
+            ASSETCHAINS_CCLIB = GetArg("-ac_cclib","");
+            Split(GetArg("-ac_ccenable",""),  ccenables, 0);
+            for (i=nonz=0; i<0x100; i++)
+            {
+                if ( ccenables[i] != 0 )
+                {
+                    nonz++;
+                    fprintf(stderr,"%d ",(uint8_t)(ccenables[i] & 0xff));
+                }
+            }
+            fprintf(stderr,"nonz.%d ccenables[]\n",nonz);
+            if ( nonz > 0 )
+            {
+                for (i=0; i<256; i++)
+                {
+                    ASSETCHAINS_CCDISABLES[i] = 1;
+                    SETBIT(disablebits,i);
+                }
+                for (i=0; i<256; i++)
+                {
+                    CLEARBIT(disablebits,(ccenables[i] & 0xff));
+                    ASSETCHAINS_CCDISABLES[ccenables[i] & 0xff] = 0;
+                }
+            }
+        }
         if ( ASSETCHAINS_BEAMPORT != 0 && ASSETCHAINS_CODAPORT != 0 )
         {
             fprintf(stderr,"can only have one of -ac_beam or -ac_coda\n");
@@ -1857,7 +1886,12 @@ void komodo_args(char *argv0)
                 printf("ASSETCHAINS_FOUNDERS needs an ASETCHAINS_OVERRIDE_PUBKEY\n");
             }
         }
-        if ( ASSETCHAINS_ENDSUBSIDY[0] != 0 || ASSETCHAINS_REWARD[0] != 0 || ASSETCHAINS_HALVING[0] != 0 || ASSETCHAINS_DECAY[0] != 0 || ASSETCHAINS_COMMISSION != 0 || ASSETCHAINS_PUBLIC != 0 || ASSETCHAINS_PRIVATE != 0 || ASSETCHAINS_TXPOW != 0 || ASSETCHAINS_FOUNDERS != 0 || ASSETCHAINS_SCRIPTPUB.size() > 1 || ASSETCHAINS_SELFIMPORT.size() > 0 || ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 || ASSETCHAINS_TIMELOCKGTE != _ASSETCHAINS_TIMELOCKOFF|| ASSETCHAINS_ALGO != ASSETCHAINS_EQUIHASH || ASSETCHAINS_LWMAPOS != 0 || ASSETCHAINS_LASTERA > 0 || ASSETCHAINS_BEAMPORT != 0 || ASSETCHAINS_CODAPORT != 0 )
+        if ( ASSETCHAINS_SCRIPTPUB.size() > 1 && ASSETCHAINS_MARMARA != 0 )
+        {
+            fprintf(stderr,"-ac_script and -ac_marmara are mutually exclusive\n");
+            exit(0);
+        }
+        if ( ASSETCHAINS_ENDSUBSIDY[0] != 0 || ASSETCHAINS_REWARD[0] != 0 || ASSETCHAINS_HALVING[0] != 0 || ASSETCHAINS_DECAY[0] != 0 || ASSETCHAINS_COMMISSION != 0 || ASSETCHAINS_PUBLIC != 0 || ASSETCHAINS_PRIVATE != 0 || ASSETCHAINS_TXPOW != 0 || ASSETCHAINS_FOUNDERS != 0 || ASSETCHAINS_SCRIPTPUB.size() > 1 || ASSETCHAINS_SELFIMPORT.size() > 0 || ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 || ASSETCHAINS_TIMELOCKGTE != _ASSETCHAINS_TIMELOCKOFF|| ASSETCHAINS_ALGO != ASSETCHAINS_EQUIHASH || ASSETCHAINS_LWMAPOS != 0 || ASSETCHAINS_LASTERA > 0 || ASSETCHAINS_BEAMPORT != 0 || ASSETCHAINS_CODAPORT != 0 || ASSETCHAINS_MARMARA != 0 || nonz > 0 || ASSETCHAINS_CCLIB.size() > 0 )
         {
             fprintf(stderr,"perc %.4f%% ac_pub=[%02x%02x%02x...] acsize.%d\n",dstr(ASSETCHAINS_COMMISSION)*100,ASSETCHAINS_OVERRIDE_PUBKEY33[0],ASSETCHAINS_OVERRIDE_PUBKEY33[1],ASSETCHAINS_OVERRIDE_PUBKEY33[2],(int32_t)ASSETCHAINS_SCRIPTPUB.size());
             extraptr = extrabuf;
@@ -1931,8 +1965,24 @@ void komodo_args(char *argv0)
                 extraptr[extralen++] = 'b';
             if ( ASSETCHAINS_CODAPORT != 0 )
                 extraptr[extralen++] = 'c';
+            if ( ASSETCHAINS_MARMARA != 0 )
+                extraptr[extralen++] = ASSETCHAINS_MARMARA;
+            if ( nonz > 0 )
+            {
+                memcpy(&extraptr[extralen],disablebits,sizeof(disablebits));
+                extralen += sizeof(disablebits);
+            }
+            if ( ASSETCHAINS_CCLIB.size() > 1 )
+            {
+                for (i=0; i<ASSETCHAINS_CCLIB.size(); i++)
+                {
+                    extraptr[extralen++] = ASSETCHAINS_CCLIB[i];
+                    fprintf(stderr,"%c",ASSETCHAINS_CCLIB[i]);
+                }
+                fprintf(stderr," <- CCLIB name\n");
+            }
         }
-
+        
         addn = GetArg("-seednode","");
         if ( strlen(addn.c_str()) > 0 )
             ASSETCHAINS_SEED = 1;

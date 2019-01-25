@@ -406,8 +406,16 @@ static const CRPCCommand vRPCCommands[] =
     { "faucet",       "faucetget",       &faucetget,          true },
     { "faucet",       "faucetaddress",   &faucetaddress,      true },
 
-    // Heir
-    { "heir",       "heiraddress",   &heiraddress,      true },
+		// Heir
+	{ "heir",       "heiraddress",   &heiraddress,      true },
+	{ "heir",       "heirfund",   &heirfund,      true },
+	{ "heir",       "heiradd",    &heiradd,        true },
+	{ "heir",       "heirclaim",  &heirclaim,     true },
+/*	{ "heir",       "heirfundtokens",   &heirfundtokens,      true },
+	{ "heir",       "heiraddtokens",    &heiraddtokens,        true },
+	{ "heir",       "heirclaimtokens",  &heirclaimtokens,     true },*/
+	{ "heir",       "heirinfo",   &heirinfo,      true },
+	{ "heir",       "heirlist",   &heirlist,      true },
 
     // Channels
     { "channels",       "channelsaddress",   &channelsaddress,   true },
@@ -442,10 +450,22 @@ static const CRPCCommand vRPCCommands[] =
     { "pegs",       "pegsaddress",   &pegsaddress,      true },
 
     // Marmara
-    { "marmara",       "Marmaraaddress",   &marmaraaddress,      true },
+    { "marmara",       "marmaraaddress",   &marmaraaddress,      true },
+    { "marmara",       "marmarapoolpayout",   &marmara_poolpayout,      true },
+    { "marmara",       "marmarareceive",   &marmara_receive,      true },
+    { "marmara",       "marmaraissue",   &marmara_issue,      true },
+    { "marmara",       "marmaratransfer",   &marmara_transfer,      true },
+    { "marmara",       "marmarainfo",   &marmara_info,      true },
+    { "marmara",       "marmaracreditloop",   &marmara_creditloop,      true },
+    { "marmara",       "marmarasettlement",   &marmara_settlement,      true },
+    { "marmara",       "marmaralock",   &marmara_lock,      true },
 
     // Payments
     { "payments",       "paymentsaddress",   &paymentsaddress,      true },
+
+    { "CClib",       "cclibaddress",   &cclibaddress,      true },
+    { "CClib",       "cclibinfo",   &cclibinfo,      true },
+    { "CClib",       "cclib",   &cclib,      true },
 
     // Gateways
     { "gateways",       "gatewaysaddress",   &gatewaysaddress,      true },
@@ -472,7 +492,8 @@ static const CRPCCommand vRPCCommands[] =
     { "dice",       "dicestatus",    &dicestatus,       true },
     { "dice",       "diceaddress",   &diceaddress,      true },
 
-    // tokens
+    // tokens & assets
+	{ "tokens",       "assetsaddress",     &assetsaddress,      true },
     { "tokens",       "tokeninfo",        &tokeninfo,         true },
     { "tokens",       "tokenlist",        &tokenlist,         true },
     { "tokens",       "tokenorders",      &tokenorders,       true },
@@ -516,6 +537,9 @@ static const CRPCCommand vRPCCommands[] =
     { "util",             "reconsiderblock",        &reconsiderblock,        true  },
     /* Not shown in help */
     { "hidden",             "setmocktime",            &setmocktime,            true  },
+	{ "hidden",             "test_ac",                &test_ac,            true },
+	{ "hidden",             "test_heirmarker",        &test_heirmarker,    true },
+
 #ifdef ENABLE_WALLET
     /* Wallet */
     { "wallet",             "resendwallettransactions", &resendwallettransactions, true},

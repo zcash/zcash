@@ -27,6 +27,8 @@
 #include "core_io.h"
 #include "crosschain.h"
 
+bool CClib_Dispatch(const CC *cond,Eval *eval,std::vector<uint8_t> paramsNull,const CTransaction &txTo,unsigned int nIn);
+char *CClib_name();
 
 Eval* EVAL_TEST = 0;
 struct CCcontract_info CCinfos[0x100];
@@ -38,8 +40,9 @@ bool RunCCEval(const CC *cond, const CTransaction &tx, unsigned int nIn)
     pthread_mutex_lock(&KOMODO_CC_mutex);
     bool out = eval->Dispatch(cond, tx, nIn);
     pthread_mutex_unlock(&KOMODO_CC_mutex);
-    //fprintf(stderr,"out %d vs %d isValid\n",(int32_t)out,(int32_t)eval->state.IsValid());
-    assert(eval->state.IsValid() == out);
+    if ( eval->state.IsValid() != out)
+        fprintf(stderr,"out %d vs %d isValid\n",(int32_t)out,(int32_t)eval->state.IsValid());
+    //assert(eval->state.IsValid() == out);
 
     if (eval->state.IsValid()) return true;
 
@@ -64,13 +67,24 @@ bool Eval::Dispatch(const CC *cond, const CTransaction &txTo, unsigned int nIn)
         return Invalid("empty-eval");
 
     uint8_t ecode = cond->code[0];
+    if ( ASSETCHAINS_CCDISABLES[ecode] != 0 )
+    {
+        fprintf(stderr,"%s evalcode.%d %02x\n",txTo.GetHash().GetHex().c_str(),ecode,ecode);
+        return Invalid("disabled-code, -ac_ccenables didnt include this ecode");
+    }
+    std::vector<uint8_t> vparams(cond->code+1, cond->code+cond->codeLength);
+    if ( ecode >= EVAL_FIRSTUSER && ecode <= EVAL_LASTUSER )
+    {
+        if ( ASSETCHAINS_CCLIB.size() > 0 && ASSETCHAINS_CCLIB == CClib_name() )
+            return CClib_Dispatch(cond,this,vparams,txTo,nIn);
+        else return Invalid("mismatched -ac_cclib vs CClib_name");
+    }
     cp = &CCinfos[(int32_t)ecode];
     if ( cp->didinit == 0 )
     {
         CCinit(cp,ecode);
         cp->didinit = 1;
     }
-    std::vector<uint8_t> vparams(cond->code+1, cond->code+cond->codeLength);
     switch ( ecode )
     {
         case EVAL_IMPORTPAYOUT:
