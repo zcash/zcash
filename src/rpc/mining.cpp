@@ -717,7 +717,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
         }
 #ifdef ENABLE_WALLET
         CReserveKey reservekey(pwalletMain);
-        pblocktemplate = CreateNewBlockWithKey(reservekey,chainActive.LastTip()->GetHeight()+1,KOMODO_MAXGPUCOUNT);
+        pblocktemplate = CreateNewBlockWithKey(reservekey,chainActive.LastTip()->GetHeight()+1,KOMODO_MAXGPUCOUNT,false);
 #else
         pblocktemplate = CreateNewBlockWithKey();
 #endif
