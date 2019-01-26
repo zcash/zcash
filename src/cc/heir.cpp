@@ -1282,7 +1282,7 @@ void _HeirList(struct CCcontract_info *cp, UniValue &result)
 
 UniValue HeirList()
 {
-    UniValue result(UniValue::VOBJ);
+    UniValue result(UniValue::VARR);
     result.push_back(Pair("result", "success"));
     
     struct CCcontract_info *cpHeir, *cpTokens, heirC, tokenC;  // NOTE we must use a separate 'C' structure for each CCinit!
