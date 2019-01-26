@@ -1283,8 +1283,8 @@ void _HeirList(struct CCcontract_info *cp, UniValue &result)
 UniValue HeirList()
 {
     UniValue result(UniValue::VARR);
-    result.push_back(Pair("result", "success"));
-	result.push_back(Pair("name", "Heir List"));
+    //result.push_back(Pair("result", "success"));
+	//result.push_back(Pair("name", "Heir List"));
     
     struct CCcontract_info *cpHeir, heirC; 
     
