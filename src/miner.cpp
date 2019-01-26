@@ -1462,6 +1462,8 @@ void static BitcoinMiner_noeq()
     miningTimer.stop();
 }
 
+int32_t gotinvalid;
+
 #ifdef ENABLE_WALLET
 void static BitcoinMiner(CWallet *pwallet)
 #else
@@ -1674,17 +1676,12 @@ void static BitcoinMiner()
                 if ( ASSETCHAINS_STAKED < 100 )
                     LogPrintf("Block %d : PoS %d%% vs target %d%% \n",Mining_height,percPoS,(int32_t)ASSETCHAINS_STAKED);
             }
-            
+            gotinvalid = 0;
             while (true)
             {
-                /*if ( KOMODO_INSYNC == 0 )
-                {
-                    KOMODO_LONGESTCHAIN = komodo_longestchain();
-                    fprintf(stderr,"Mining when blockchain might not be in sync longest.%d vs %d\n",KOMODO_LONGESTCHAIN,Mining_height);
-                    if ( KOMODO_LONGESTCHAIN != 0 && Mining_height >= KOMODO_LONGESTCHAIN )
-                        KOMODO_INSYNC = Mining_height;
-                    sleep(3);
-                }*/
+                //fprintf(stderr,"gotinvalid.%d\n",gotinvalid);
+                if ( gotinvalid != 0 )
+                    break;
                 komodo_longestchain();
                 // Hash state
                 KOMODO_CHOSEN_ONE = 0;
@@ -1772,6 +1769,7 @@ void static BitcoinMiner()
                         for (z=31; z>=0; z--)
                             fprintf(stderr,"%02x",((uint8_t *)&h)[z]);
                         fprintf(stderr," Invalid block mined, try again\n");
+                        gotinvalid = 1;
                         return(false);
                     }
                     KOMODO_CHOSEN_ONE = 1;
