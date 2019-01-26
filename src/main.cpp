@@ -5222,7 +5222,7 @@ bool AcceptBlock(int32_t *futureblockp,CBlock& block, CValidationState& state, C
                 AbortNode(state, "Failed to write block");
         if (!ReceivedBlockTransactions(block, state, pindex, blockPos))
             return error("AcceptBlock(): ReceivedBlockTransactions failed");
-        if ( usetmp != 0 )
+        if ( usetmp != 0 ) // not during initialdownload or if futureflag==0 and contextchecks ok
             pindex->nStatus |= BLOCK_IN_TMPFILE;
     } catch (const std::runtime_error& e) {
         return AbortNode(state, std::string("System error: ") + e.what());
