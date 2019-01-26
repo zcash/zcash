@@ -843,8 +843,6 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey, int32_t nHeight, 
     }
     if ( ASSETCHAINS_MARMARA != 0 && nHeight > 0 && (nHeight & 1) == 0 )
         scriptPubKey = Marmara_scriptPubKey(nHeight,pubkey);
-    if ( ASSETCHAINS_STAKED != 0 && KOMODO_MININGTHREADS == 0 )
-        isStake = true;
     return CreateNewBlock(pubkey, scriptPubKey, gpucount, isStake);
 }
 
