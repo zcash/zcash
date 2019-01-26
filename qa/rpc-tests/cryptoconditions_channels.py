@@ -26,7 +26,13 @@ class CryptoconditionsChannelsTest(CryptoconditionsTestFramework):
         rpc = self.nodes[0]
         rpc1 = self.nodes[1]
 
-        # TODO: check channelsaddress
+        # checking channelsaddress call
+        
+        result = rpc.channelsaddress(self.pubkey)
+        assert_success(result)
+        # test that additional CCaddress key is returned
+        for x in ['myCCaddress', 'ChannelsCCaddress', 'Channelsmarker', 'myaddress', 'CCaddress']:
+            assert_equal(result[x][0], 'R')
 
         # getting empty channels list
         result = rpc.channelslist()
