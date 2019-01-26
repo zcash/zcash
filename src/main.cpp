@@ -3839,7 +3839,8 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
 
 int32_t komodo_activate_sapling(CBlockIndex *pindex)
 {
-    uint32_t blocktime,prevtime; CBlockIndex *prev; int32_t i,transition=0,height,prevht,activation = 0;
+    uint32_t blocktime,prevtime; CBlockIndex *prev; int32_t i,transition=0,height,prevht;
+    int32_t activation = 0;
     if ( pindex == 0 )
     {
         fprintf(stderr,"komodo_activate_sapling null pindex\n");
@@ -3897,6 +3898,7 @@ int32_t komodo_activate_sapling(CBlockIndex *pindex)
         fprintf(stderr,"%s sapling activation at %d\n",ASSETCHAINS_SYMBOL,activation);
         ASSETCHAINS_SAPLING = activation;
     }
+    return activation;
 }
 
 static int64_t nTimeReadFromDisk = 0;
