@@ -98,7 +98,58 @@ class CryptoconditionsHeirTest(CryptoconditionsTestFramework):
         result = rpc.heirinfo(heir_fund_txid)
         assert_equal(result["funding available in coins"], "0.00000000")
 
-        # TODO: valid heirfund case with tokens
+        # creating tokens which we put to heir contract
+        token_hex = rpc.tokencreate("TEST", "1", "TESTING")
+        token_txid = self.send_and_mine(token_hex["hex"], rpc)
+        assert token_txid, "got token txid"
+
+        # checking possesion over the tokens and balance
+        result = rpc.tokenbalance(token_txid, self.pubkey)["balance"]
+        assert_equal(result, 100000000)
+
+        # valid heir case with tokens
+        token_heir_hex = rpc.heirfund("0", "100000000", "UNITHEIR", self.pubkey1, "10", token_txid)
+        token_heir_txid = self.send_and_mine(token_heir_hex["hextx"], rpc)
+        assert token_heir_txid, "got txid of heirfund with tokens"
+
+        self.sync_all()
+
+        # checking heirinfo
+        result = rpc.heirinfo(token_heir_txid)
+        assert_success(result)
+        assert_equal(result["fundingtxid"], token_heir_txid)
+        assert_equal(result["name"], "UNITHEIR")
+        assert_equal(result["owner"], self.pubkey)
+        assert_equal(result["heir"], self.pubkey1)
+        assert_equal(result["funding total in tokens"], "100000000")
+        assert_equal(result["funding available in tokens"], "100000000")
+        assert_equal(result["inactivity time setting, sec"], "10")
+        assert_equal(result["spending allowed for the heir"], "false")
+
+        # waiting for 11 seconds to be sure that needed time passed for heir claiming
+        time.sleep(11)
+        rpc.generate(1)
+        self.sync_all()
+        result = rpc.heirinfo(token_heir_txid)
+        assert_equal(result["funding available in tokens"], "100000000")
+        assert_equal(result["spending allowed for the heir"], "true")
+
+        # let's claim whole heir sum from second node
+        result = rpc1.heirclaim("0", "100000000", token_heir_txid)
+        assert_success(result)
+
+        heir_tokens_claim_txid = self.send_and_mine(result["hextx"], rpc1)
+        assert heir_tokens_claim_txid, "got claim txid"
+
+        # claiming node should have correct token balance now
+        result = rpc1.tokenbalance(token_txid, self.pubkey1)["balance"]
+        assert_equal(result, 100000000)
+
+        self.sync_all()
+
+        # no more funds should be available for claiming
+        result = rpc.heirinfo(token_heir_txid)
+        assert_equal(result["funding available in tokens"], "0")
 
     def run_test(self):
         print("Mining blocks...")
