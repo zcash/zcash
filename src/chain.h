@@ -351,7 +351,7 @@ public:
         nSolution      = block.nSolution;
     }
 
-    int32_t SetHeight(int32_t height)
+    void SetHeight(int32_t height)
     {
         this->chainPower.nHeight = height;
     }
