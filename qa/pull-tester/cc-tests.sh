@@ -18,7 +18,7 @@ testScripts=(
     'cryptoconditions_rewards.py'
     'cryptoconditions_token.py'
     #'cryptoconditions_gateways.py'
-    'cryptoconditions_hair.py'
+    'cryptoconditions_heir.py'
     # TODO: cant reconnect nodes back in channels test because of crash (seems regtest only specific)
     'cryptoconditions_channels.py'
 );
