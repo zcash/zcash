@@ -184,7 +184,7 @@ UniValue getgenerate(const UniValue& params, bool fHelp)
     if ( ASSETCHAINS_STAKED != 0 && GetBoolArg("-gen", false) && GetBoolArg("-genproclimit", -1) == 0 )
         staking = true;
     obj.push_back(Pair("staking",          staking));
-    obj.push_back(Pair("generate",         GetBoolArg("-gen", false)));
+    obj.push_back(Pair("generate",         GetBoolArg("-gen", false) && GetBoolArg("-genproclimit", -1) != 0 ));
     obj.push_back(Pair("numthreads",       (int64_t)KOMODO_MININGTHREADS));
     return obj;
 }
