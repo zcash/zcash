@@ -1,3 +1,18 @@
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 #include "amount.h"
 #include "chain.h"
 #include "chainparams.h"
@@ -30,6 +45,9 @@ int32_t komodo_MoM(int32_t *notarized_htp,uint256 *MoMp,uint256 *kmdtxidp,int32_
 int32_t komodo_MoMoMdata(char *hexstr,int32_t hexsize,struct komodo_ccdataMoMoM *mdata,char *symbol,int32_t kmdheight,int32_t notarized_height);
 struct komodo_ccdata_entry *komodo_allMoMs(int32_t *nump,uint256 *MoMoMp,int32_t kmdstarti,int32_t kmdendi);
 uint256 komodo_calcMoM(int32_t height,int32_t MoMdepth);
+extern std::string ASSETCHAINS_SELFIMPORT;
+uint256 Parseuint256(char *hexstr);
+int32_t GetSelfimportProof(std::string source,CMutableTransaction &mtx,CScript &scriptPubKey,TxProof &proof,uint64_t burnAmount,std::vector<uint8_t> rawtx,uint256 txid,std::vector<uint8_t> rawproof);
 
 
 UniValue assetchainproof(const UniValue& params, bool fHelp)
@@ -41,8 +59,8 @@ UniValue assetchainproof(const UniValue& params, bool fHelp)
         throw runtime_error("assetchainproof needs a txid");
 
     hash = uint256S(params[0].get_str());
-
-    auto proof = GetAssetchainProof(hash);
+    CTransaction tx;
+    auto proof = GetAssetchainProof(hash,tx);
     auto proofData = E_MARSHAL(ss << proof);
     return HexStr(proofData);
 }
@@ -145,6 +163,7 @@ UniValue calc_MoM(const UniValue& params, bool fHelp)
 
 UniValue migrate_converttoexport(const UniValue& params, bool fHelp)
 {
+    std::vector<uint8_t> rawproof; uint8_t *ptr; int32_t i; uint32_t ccid = ASSETCHAINS_CC;
     if (fHelp || params.size() != 3)
         throw runtime_error(
             "migrate_converttoexport rawTx dest_symbol export_amount\n"
@@ -180,8 +199,13 @@ UniValue migrate_converttoexport(const UniValue& params, bool fHelp)
         if (burnAmount < needed)
             throw runtime_error("export_amount too small");
     }
-
-    CTxOut burnOut = MakeBurnOutput(burnAmount, ASSETCHAINS_CC, targetSymbol, tx.vout);
+    //if ( ASSETCHAINS_SELFIMPORT.size() > 0 )
+    //    throw runtime_error("self-import chains cant be fungible");
+    rawproof.resize(strlen(ASSETCHAINS_SYMBOL));
+    ptr = rawproof.data();
+    for (i=0; i<rawproof.size(); i++)
+        ptr[i] = ASSETCHAINS_SYMBOL[i];
+    CTxOut burnOut = MakeBurnOutput(burnAmount, ccid, targetSymbol, tx.vout,rawproof);
     UniValue ret(UniValue::VOBJ);
     ret.push_back(Pair("payouts", HexStr(E_MARSHAL(ss << tx.vout))));
     tx.vout.clear();
@@ -229,7 +253,7 @@ UniValue migrate_createimporttransaction(const UniValue& params, bool fHelp)
         throw runtime_error("Couldn't parse payouts");
 
     uint256 txid = burnTx.GetHash();
-    TxProof proof = GetAssetchainProof(burnTx.GetHash());
+    TxProof proof = GetAssetchainProof(burnTx.GetHash(),burnTx);
 
     CTransaction importTx = MakeImportCoinTransaction(proof, burnTx, payouts);
     return HexStr(E_MARSHAL(ss << importTx));
@@ -255,6 +279,34 @@ UniValue migrate_completeimporttransaction(const UniValue& params, bool fHelp)
     return HexStr(E_MARSHAL(ss << importTx));
 }
 
+UniValue selfimport(const UniValue& params, bool fHelp)
+{
+    CMutableTransaction mtx;
+    std::string source; TxProof proof; CTransaction burnTx,tx; CTxOut burnOut; uint64_t burnAmount; uint256 txid,blockHash; std::vector<CTxOut> vouts; std::vector<uint8_t> rawtx,rawproof; CScript scriptPubKey;
+    if ( ASSETCHAINS_SELFIMPORT.size() == 0 )
+        throw runtime_error("selfimport only works on -ac_import chains");
+    if (fHelp || params.size() < 3 || params.size() > 5 )
+        throw runtime_error("selfimport rawtx txid burnamount [rawproof source]\n\n"
+                            "creates signed selfimport transaction");
+    rawtx = ParseHex(params[0].get_str().c_str());
+    txid = Parseuint256((char *)params[1].get_str().c_str()); // allow for txid != hash(rawtx)
+    burnAmount = atof(params[2].get_str().c_str()) * COIN + 0.00000000499999;
+    source = ASSETCHAINS_SELFIMPORT;
+    if ( params.size() >= 4 )
+    {
+        rawproof = ParseHex(params[3].get_str().c_str());
+        if ( params.size() == 5 )
+            source = params[4].get_str();
+    }
+    if ( GetSelfimportProof(source,mtx,scriptPubKey,proof,burnAmount,rawtx,txid,rawproof) < 0 )
+        throw std::runtime_error("Failed validating selfimport");
+    vouts = mtx.vout;
+    burnOut = MakeBurnOutput(burnAmount,0xffffffff,ASSETCHAINS_SELFIMPORT,vouts,rawproof);
+    mtx.vout.clear();
+    mtx.vout.push_back(burnOut);
+    burnTx = mtx;
+    return HexStr(E_MARSHAL(ss << MakeImportCoinTransaction(proof,burnTx,vouts)));
+}
 
 UniValue getNotarisationsForBlock(const UniValue& params, bool fHelp)
 {
