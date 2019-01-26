@@ -1284,14 +1284,12 @@ UniValue HeirList()
 {
     UniValue result(UniValue::VARR);
     result.push_back(Pair("result", "success"));
+	result.push_back(Pair("name", "Heir List"));
     
-    struct CCcontract_info *cpHeir, *cpTokens, heirC, tokenC;  // NOTE we must use a separate 'C' structure for each CCinit!
+    struct CCcontract_info *cpHeir, heirC; 
     
     cpHeir = CCinit(&heirC, EVAL_HEIR);
-    //cpTokens = CCinit(&tokenC, EVAL_TOKENS);
-    
     _HeirList(cpHeir, result);
-    //_HeirList<TokenHelper>(cpTokens, result); not used anymore
     
     return result;
 }
