@@ -657,13 +657,7 @@ template <typename Helper> UniValue _HeirFund(int64_t txfee, int64_t amount, std
 	int64_t markerfee = 10000;
     
     //std::cerr << "HeirFund() amount=" << amount << " txfee=" << txfee << " heirPubkey IsValid()=" << heirPubkey.IsValid() << " inactivityTime(sec)=" << inactivityTimeSec << " tokenid=" << tokenid.GetHex() << std::endl;
-    
-    if (!heirPubkey.IsValid()) {
-        std::cerr << "HeirFund() heirPubkey is not valid!" << std::endl;
-		result.push_back(Pair("result", "error"));
-		result.push_back(Pair("error", "invalid heir pubkey"));
-    }
-    
+        
     CPubKey myPubkey = pubkey2pk(Mypubkey());
     
     if (AddNormalinputs(mtx, myPubkey, markerfee, 3) > 0) { 
@@ -714,7 +708,7 @@ template <typename Helper> UniValue _HeirFund(int64_t txfee, int64_t amount, std
                                                 Helper::makeCreateOpRet(tokenid, voutTokenPubkeys, myPubkey, heirPubkey, inactivityTimeSec, heirName));
             if (!rawhextx.empty()) {
                 result.push_back(Pair("result", "success"));
-                result.push_back(Pair("hextx", rawhextx));
+                result.push_back(Pair("hex", rawhextx));
             }
             else {
                 std::cerr << "HeirAdd error in FinalizeCCtx" << std::endl;
@@ -835,7 +829,7 @@ template <class Helper> UniValue _HeirAdd(uint256 fundingtxid, int64_t txfee, in
                                                  Helper::makeAddOpRet(tokenid, voutTokenPubkeys, fundingtxid, hasHeirSpendingBegun)));
             
             if (!rawhextx.empty()) {
-                result.push_back(Pair("hextx", rawhextx));
+                result.push_back(Pair("hex", rawhextx));
             }
             else	{
                 std::cerr << "HeirAdd error in FinalizeCCtx" << std::endl;
@@ -1008,7 +1002,7 @@ template <typename Helper>UniValue _HeirClaim(uint256 fundingtxid, int64_t txfee
             
             if (!rawhextx.empty()) {
                 result.push_back(Pair("result", "success"));
-                result.push_back(Pair("hextx", rawhextx));
+                result.push_back(Pair("hex", rawhextx));
             }
             else {
                 std::cerr << "HeirAdd error in FinalizeCCtx" << std::endl;
@@ -1273,7 +1267,7 @@ void _HeirList(struct CCcontract_info *cp, UniValue &result)
             // note: if it is not Heir token funcId would be equal to 0
             if (funcId == 'F') {
                 //result.push_back(Pair("fundingtxid kind name", txid.GetHex() + std::string(" ") + (typeid(Helper) == typeid(TokenHelper) ? std::string("token") : std::string("coin")) + std::string(" ") + heirName));
-                result.push_back( Pair("fundingtxid", txid.GetHex()) );
+                result.push_back( txid.GetHex() );
             }
             else {
                 std::cerr << "HeirList() this is not the initial F transaction=" << txid.GetHex() << std::endl;
