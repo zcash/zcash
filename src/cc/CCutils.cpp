@@ -493,39 +493,10 @@ CPubKey GetUnspendable(struct CCcontract_info *cp,uint8_t *unspendablepriv)
     return(pubkey2pk(ParseHex(cp->CChexstr)));
 }
 
-bool ProcessCC(struct CCcontract_info *cp,Eval* eval, std::vector<uint8_t> paramsNull,const CTransaction &ctx, unsigned int nIn)
+void CCclearvars(struct CCcontract_info *cp)
 {
-    CTransaction createTx; uint256 assetid,assetid2,hashBlock; uint8_t funcid; int32_t height,i,n,from_mempool = 0; int64_t amount; std::vector<uint8_t> origpubkey;
-    height = KOMODO_CONNECTING;
-    if ( KOMODO_CONNECTING < 0 ) // always comes back with > 0 for final confirmation
-        return(true);
-    if ( ASSETCHAINS_CC == 0 || (height & ~(1<<30)) < KOMODO_CCACTIVATE )
-        return eval->Invalid("CC are disabled or not active yet");
-    if ( (KOMODO_CONNECTING & (1<<30)) != 0 )
-    {
-        from_mempool = 1;
-        height &= ((1<<30) - 1);
-    }
-    //fprintf(stderr,"KOMODO_CONNECTING.%d mempool.%d vs CCactive.%d\n",height,from_mempool,KOMODO_CCACTIVATE);
-    // there is a chance CC tx is valid in mempool, but invalid when in block, so we cant filter duplicate requests. if any of the vins are spent, for example
-    //txid = ctx.GetHash();
-    //if ( txid == cp->prevtxid )
-    //    return(true);
-    //fprintf(stderr,"process CC %02x\n",cp->evalcode);
     cp->evalcode2 = cp->evalcode3 = 0;
     cp->unspendableaddr2[0] = cp->unspendableaddr3[0] = 0;
-    if ( paramsNull.size() != 0 ) // Don't expect params
-        return eval->Invalid("Cannot have params");
-    //else if ( ctx.vout.size() == 0 )      // spend can go to z-addresses
-    //    return eval->Invalid("no-vouts");
-    else if ( (*cp->validate)(cp,eval,ctx,nIn) != 0 )
-    {
-        //fprintf(stderr,"done CC %02x\n",cp->evalcode);
-        //cp->prevtxid = txid;
-        return(true);
-    }
-    //fprintf(stderr,"invalid CC %02x\n",cp->evalcode);
-    return(false);
 }
 
 int64_t CCduration(int32_t &numblocks,uint256 txid)
@@ -602,7 +573,6 @@ bool komodo_txnotarizedconfirmed(uint256 txid)
 
 CPubKey check_signing_pubkey(CScript scriptSig)
 {
-
 	bool found = false;
 	CPubKey pubkey;
 	
@@ -629,4 +599,80 @@ CPubKey check_signing_pubkey(CScript scriptSig)
         }
     }
 	return CPubKey();
+}
+
+bool ProcessCC(struct CCcontract_info *cp,Eval* eval, std::vector<uint8_t> paramsNull,const CTransaction &ctx, unsigned int nIn)
+{
+    CTransaction createTx; uint256 assetid,assetid2,hashBlock; uint8_t funcid; int32_t height,i,n,from_mempool = 0; int64_t amount; std::vector<uint8_t> origpubkey;
+    height = KOMODO_CONNECTING;
+    if ( KOMODO_CONNECTING < 0 ) // always comes back with > 0 for final confirmation
+        return(true);
+    if ( ASSETCHAINS_CC == 0 || (height & ~(1<<30)) < KOMODO_CCACTIVATE )
+        return eval->Invalid("CC are disabled or not active yet");
+    if ( (KOMODO_CONNECTING & (1<<30)) != 0 )
+    {
+        from_mempool = 1;
+        height &= ((1<<30) - 1);
+    }
+    //fprintf(stderr,"KOMODO_CONNECTING.%d mempool.%d vs CCactive.%d\n",height,from_mempool,KOMODO_CCACTIVATE);
+    // there is a chance CC tx is valid in mempool, but invalid when in block, so we cant filter duplicate requests. if any of the vins are spent, for example
+    //txid = ctx.GetHash();
+    //if ( txid == cp->prevtxid )
+    //    return(true);
+    //fprintf(stderr,"process CC %02x\n",cp->evalcode);
+    CCclearvars(cp);
+    if ( paramsNull.size() != 0 ) // Don't expect params
+        return eval->Invalid("Cannot have params");
+    //else if ( ctx.vout.size() == 0 )      // spend can go to z-addresses
+    //    return eval->Invalid("no-vouts");
+    else if ( (*cp->validate)(cp,eval,ctx,nIn) != 0 )
+    {
+        //fprintf(stderr,"done CC %02x\n",cp->evalcode);
+        //cp->prevtxid = txid;
+        return(true);
+    }
+    //fprintf(stderr,"invalid CC %02x\n",cp->evalcode);
+    return(false);
+}
+
+extern struct CCcontract_info CCinfos[0x100];
+extern std::string MYCCLIBNAME;
+bool CClib_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx,unsigned int nIn);
+
+bool CClib_Dispatch(const CC *cond,Eval *eval,std::vector<uint8_t> paramsNull,const CTransaction &txTo,unsigned int nIn)
+{
+    uint8_t evalcode; int32_t height,from_mempool; struct CCcontract_info *cp;
+    if ( ASSETCHAINS_CCLIB != MYCCLIBNAME )
+    {
+        fprintf(stderr,"-ac_cclib=%s vs myname %s\n",ASSETCHAINS_CCLIB.c_str(),MYCCLIBNAME.c_str());
+        return eval->Invalid("-ac_cclib name mismatches myname");
+    }
+    height = KOMODO_CONNECTING;
+    if ( KOMODO_CONNECTING < 0 ) // always comes back with > 0 for final confirmation
+        return(true);
+    if ( ASSETCHAINS_CC == 0 || (height & ~(1<<30)) < KOMODO_CCACTIVATE )
+        return eval->Invalid("CC are disabled or not active yet");
+    if ( (KOMODO_CONNECTING & (1<<30)) != 0 )
+    {
+        from_mempool = 1;
+        height &= ((1<<30) - 1);
+    }
+    evalcode = cond->code[0];
+    if ( evalcode >= EVAL_FIRSTUSER && evalcode <= EVAL_LASTUSER )
+    {
+        cp = &CCinfos[(int32_t)evalcode];
+        if ( cp->didinit == 0 )
+        {
+            if ( CClib_initcp(cp,evalcode) == 0 )
+                cp->didinit = 1;
+            else return eval->Invalid("unsupported CClib evalcode");
+        }
+        CCclearvars(cp);
+        if ( paramsNull.size() != 0 ) // Don't expect params
+            return eval->Invalid("Cannot have params");
+        else if ( CClib_validate(cp,height,eval,txTo,nIn) != 0 )
+            return(true);
+        return(false); //eval->Invalid("error in CClib_validate");
+    }
+    return eval->Invalid("cclib CC must have evalcode between 16 and 127");
 }

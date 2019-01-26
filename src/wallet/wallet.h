@@ -77,7 +77,6 @@ static const unsigned int MAX_FREE_TRANSACTION_CREATE_SIZE = 1000;
 //  unless there is some exceptional network disruption.
 extern unsigned int WITNESS_CACHE_SIZE;
 
-
 //! Size of HD seed in bytes
 static const size_t HD_WALLET_SEED_LENGTH = 32;
 

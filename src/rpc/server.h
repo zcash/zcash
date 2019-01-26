@@ -287,6 +287,9 @@ extern UniValue marmara_creditloop(const UniValue& params, bool fHelp);
 extern UniValue marmara_settlement(const UniValue& params, bool fHelp);
 extern UniValue marmara_lock(const UniValue& params, bool fHelp);
 extern UniValue paymentsaddress(const UniValue& params, bool fHelp);
+extern UniValue cclibaddress(const UniValue& params, bool fHelp);
+extern UniValue cclibinfo(const UniValue& params, bool fHelp);
+extern UniValue cclib(const UniValue& params, bool fHelp);
 extern UniValue gatewaysaddress(const UniValue& params, bool fHelp);
 extern UniValue gatewayslist(const UniValue& params, bool fHelp);
 extern UniValue gatewaysinfo(const UniValue& params, bool fHelp);
@@ -467,5 +470,9 @@ extern UniValue paxpending(const UniValue& params, bool fHelp);
 extern UniValue paxprices(const UniValue& params, bool fHelp);
 extern UniValue paxdeposit(const UniValue& params, bool fHelp);
 extern UniValue paxwithdraw(const UniValue& params, bool fHelp);
+
+// test rpc:
+extern UniValue test_ac(const UniValue& params, bool fHelp);
+extern UniValue test_heirmarker(const UniValue& params, bool fHelp);
 
 #endif // BITCOIN_RPCSERVER_H

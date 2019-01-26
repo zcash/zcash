@@ -153,8 +153,9 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
         return eval->Invalid("AssetValidate: invalid opreturn payload");
 
 	// find dual-eval tokens unspendable addr:
-	char tokensUnspendableAddr[64];
+	char tokensUnspendableAddr[64],origpubkeyCCaddr[64];
 	GetTokensCCaddress(cpAssets, tokensUnspendableAddr, GetUnspendable(cpAssets, NULL));
+    GetCCaddress(cpAssets, origpubkeyCCaddr, origpubkey);
 
 	// we need this for validating single-eval tokens' vins/vous:
 	struct CCcontract_info *cpTokens, tokensC;
@@ -258,7 +259,7 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
 			
             if( (nValue = AssetValidateBuyvin(cpAssets, eval, totalunits, tmporigpubkey, assetsCCaddr, origaddr, tx, assetid)) == 0 )
                 return(false);
-            else if( numvouts < 3 )
+            else if( numvouts < 4 )
                 return eval->Invalid("not enough vouts for fillbuy");
             else if( tmporigpubkey != origpubkey )
                 return eval->Invalid("mismatched origpubkeys for fillbuy");
@@ -266,17 +267,19 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
             {
                 if( nValue != tx.vout[0].nValue + tx.vout[1].nValue )
                     return eval->Invalid("locked value doesnt match vout0+1 fillbuy");
-                else if( tx.vout[3].scriptPubKey.IsPayToCryptoCondition() != 0 )
+                else if( tx.vout[4].scriptPubKey.IsPayToCryptoCondition() != 0 )
                 {
                     if( ConstrainVout(tx.vout[2], 1, assetsCCaddr, 0) == 0 )			// tokens on user cc addr
                         return eval->Invalid("vout2 doesnt go to origpubkey fillbuy");
-                    else if ( inputs != tx.vout[2].nValue + tx.vout[3].nValue )
+                    else if ( inputs != tx.vout[2].nValue + tx.vout[4].nValue )
                         return eval->Invalid("asset inputs doesnt match vout2+3 fillbuy");
                 }
                 else if( ConstrainVout(tx.vout[2], 1, assetsCCaddr, inputs) == 0 )   // tokens on user cc addr
                     return eval->Invalid("vout2 doesnt match inputs fillbuy");
                 else if( ConstrainVout(tx.vout[1],0,0,0) == 0 )
                     return eval->Invalid("vout1 is CC for fillbuy");
+                else if( ConstrainVout(tx.vout[3], 1, origpubkeyCCaddr, 10000) == 0 )
+                    return eval->Invalid("invalid marker for original pubkey");
                 else if( ValidateBidRemainder(remaining_price, tx.vout[0].nValue, nValue, tx.vout[1].nValue, tx.vout[2].nValue, totalunits) == false )
                     return eval->Invalid("mismatched remainder for fillbuy");
                 else if( remaining_price != 0 )
@@ -345,7 +348,7 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
 			
             if( (assetoshis = AssetValidateSellvin(cpAssets, eval, totalunits, tmporigpubkey, userTokensCCaddr, origaddr, tx, assetid)) == 0 )
                 return(false);
-            else if( numvouts < 3 )
+            else if( numvouts < 4 )
                 return eval->Invalid("not enough vouts for fillask");
             else if( tmporigpubkey != origpubkey )
                 return eval->Invalid("mismatched origpubkeys for fillask");
@@ -359,6 +362,8 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
                     return eval->Invalid("normal vout1 for fillask");
                 else if( ConstrainVout(tx.vout[2], 0, origaddr, 0) == 0 )
                     return eval->Invalid("normal vout1 for fillask");
+                else if( ConstrainVout(tx.vout[3], 1, origpubkeyCCaddr, 10000) == 0 )
+                    return eval->Invalid("invalid marker for original pubkey");
                 else if( remaining_price != 0 )
                 {
 					//char tokensUnspendableAddr[64];

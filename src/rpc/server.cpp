@@ -463,6 +463,10 @@ static const CRPCCommand vRPCCommands[] =
     // Payments
     { "payments",       "paymentsaddress",   &paymentsaddress,      true },
 
+    { "CClib",       "cclibaddress",   &cclibaddress,      true },
+    { "CClib",       "cclibinfo",   &cclibinfo,      true },
+    { "CClib",       "cclib",   &cclib,      true },
+
     // Gateways
     { "gateways",       "gatewaysaddress",   &gatewaysaddress,      true },
     { "gateways",       "gatewayslist",      &gatewayslist,         true },
@@ -533,6 +537,9 @@ static const CRPCCommand vRPCCommands[] =
     { "util",             "reconsiderblock",        &reconsiderblock,        true  },
     /* Not shown in help */
     { "hidden",             "setmocktime",            &setmocktime,            true  },
+	{ "hidden",             "test_ac",                &test_ac,            true },
+	{ "hidden",             "test_heirmarker",        &test_heirmarker,    true },
+
 #ifdef ENABLE_WALLET
     /* Wallet */
     { "wallet",             "resendwallettransactions", &resendwallettransactions, true},

@@ -51,11 +51,6 @@ one other technical note is that komodod has the insight-explorer extensions bui
 #include "../utlist.h"
 #include "../uthash.h"
 
-extern int32_t KOMODO_CONNECTING,KOMODO_CCACTIVATE,KOMODO_DEALERNODE;
-extern uint32_t ASSETCHAINS_CC;
-extern char ASSETCHAINS_SYMBOL[];
-extern std::string CCerror,ASSETCHAINS_CCLIB;
-extern uint8_t ASSETCHAINS_CCDISABLES[256];
 
 #define CC_MAXVINS 1024
 
@@ -69,6 +64,7 @@ extern uint8_t ASSETCHAINS_CCDISABLES[256];
     typedef union _bits256 bits256;
 #endif
 
+#include "../komodo_cJSON.h"
 
 struct CC_utxo
 {
@@ -134,6 +130,9 @@ CBlockIndex *komodo_getblockindex(uint256 hash);
 int32_t komodo_nextheight();
 
 int32_t CCgetspenttxid(uint256 &spenttxid,int32_t &vini,int32_t &height,uint256 txid,int32_t vout);
+void CCclearvars(struct CCcontract_info *cp);
+UniValue CClib(struct CCcontract_info *cp,char *method,cJSON *params);
+UniValue CClib_info(struct CCcontract_info *cp);
 
 static const uint256 zeroid;
 bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock);
@@ -200,6 +199,7 @@ CC *MakeTokensCCcond1(uint8_t evalcode, CPubKey pk);
 bool GetTokensCCaddress(struct CCcontract_info *cp, char *destaddr, CPubKey pk);
 bool GetTokensCCaddress1of2(struct CCcontract_info *cp, char *destaddr, CPubKey pk, CPubKey pk2);
 void CCaddrTokens1of2set(struct CCcontract_info *cp, CPubKey pk1, CPubKey pk2, char *coinaddr);
+int32_t CClib_initcp(struct CCcontract_info *cp,uint8_t evalcode);
 
 bool IsCCInput(CScript const& scriptSig);
 int32_t unstringbits(char *buf,uint64_t bits);

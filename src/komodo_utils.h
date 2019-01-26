@@ -1654,7 +1654,7 @@ extern int64_t MAX_MONEY;
 void komodo_args(char *argv0)
 {
     extern const char *Notaries_elected1[][2];
-    std::string name,addn; char *dirname,fname[512],arg0str[64],magicstr[9]; uint8_t magic[4],extrabuf[8192],disablebits[32],*extraptr=0; FILE *fp; uint64_t val; uint16_t port; int32_t i,nonz,baseid,len,n,extralen = 0; uint64_t ccenables[256];
+    std::string name,addn; char *dirname,fname[512],arg0str[64],magicstr[9]; uint8_t magic[4],extrabuf[8192],disablebits[32],*extraptr=0; FILE *fp; uint64_t val; uint16_t port; int32_t i,nonz=0,baseid,len,n,extralen = 0; uint64_t ccenables[256];
     IS_KOMODO_NOTARY = GetBoolArg("-notary", false);
     memset(ccenables,0,sizeof(ccenables));
     memset(disablebits,0,sizeof(disablebits));
@@ -1704,7 +1704,6 @@ void komodo_args(char *argv0)
     KOMODO_STOPAT = GetArg("-stopat",0);
     MAX_REORG_LENGTH = GetArg("-maxreorg",MAX_REORG_LENGTH);
     WITNESS_CACHE_SIZE = MAX_REORG_LENGTH+10;
-
     ASSETCHAINS_CC = GetArg("-ac_cc",0);
     KOMODO_CCACTIVATE = GetArg("-ac_ccactivate",0);
     ASSETCHAINS_PUBLIC = GetArg("-ac_public",0);
