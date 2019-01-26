@@ -689,15 +689,7 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
                 pindexNew->nTx            = diskindex.nTx;
                 pindexNew->nSproutValue   = diskindex.nSproutValue;
                 pindexNew->nSaplingValue  = diskindex.nSaplingValue;
-<<<<<<< HEAD
-                pindexNew->segid          = diskindex.segid;
-                pindexNew->newcoins       = diskindex.newcoins;
-                pindexNew->zfunds         = diskindex.zfunds;
-                pindexNew->sproutfunds    = diskindex.sproutfunds;
-                
-=======
 //fprintf(stderr,"loadguts ht.%d\n",pindexNew->GetHeight());
->>>>>>> b778dbef8e85f3f95e36223beb41d4d51eb6072e
                 // Consistency checks
                 auto header = pindexNew->GetBlockHeader();
                 if (header.GetHash() != pindexNew->GetBlockHash())
