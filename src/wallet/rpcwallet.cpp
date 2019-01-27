@@ -7388,7 +7388,7 @@ UniValue heirfund(const UniValue& params, bool fHelp)
 		return result;	
 	}
 
-	if(params.size() == 6)	// tokens in satoshis:
+	if(params.size() == 7)	// tokens in satoshis:
 		amount = atoll(params[1].get_str().c_str());
 	else	// coins:
 		amount = atof(params[1].get_str().c_str()) * COIN;
