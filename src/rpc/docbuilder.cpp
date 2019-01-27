@@ -47,6 +47,18 @@ std::string FormattedArgumentString(
     return argumentString;
 }
 
+bool IsOuter(const ParentArgumentType& parentType) {
+    return parentType == ParentArgumentType::NONE;
+}
+
+bool IsObject(const ParentArgumentType& parentType) {
+    return parentType == ParentArgumentType::OBJECT || parentType == ParentArgumentType::MAPPING;
+}
+
+ParentArgumentType MappingParentType(const ParentArgumentType& parentType) {
+    return parentType == ParentArgumentType::MAPPING ? parentType : ParentArgumentType::NONE;
+}
+
 /* Factory methods for aguments */
 // Primitives
 PrimitiveArgument RpcArgument::Boolean(const std::string& name, const std::string& description) {
@@ -243,8 +255,20 @@ ObjectArgument RpcArgument::OptionalObject(const std::string description) {
     return ObjectArgument("", false, description);
 }
 
+MappingArgument RpcArgument::Mapping(const std::string name, const std::string description) {
+    return MappingArgument(name, true, description);
+}
+
+MappingArgument RpcArgument::Mapping(const std::string description) {
+    return MappingArgument("", true, description);
+}
+
+MappingArgument RpcArgument::Mapping() {
+    return MappingArgument("", true, "");
+}
+
 /* Primitive Argument */
-std::string PrimitiveArgument::TypeString(bool pluralize) const {
+std::string PrimitiveArgument::TypeString(const ParentArgumentType& parentType) const {
     std::string typeName;
     switch(type) {
     case PrimitiveType::BOOLEAN:
@@ -264,10 +288,14 @@ std::string PrimitiveArgument::TypeString(bool pluralize) const {
         typeName = "string";
         break;
     }
-    if (pluralize) {
-        typeName += "s";
+    switch(parentType) {
+        case ParentArgumentType::ARRAY:
+            return typeName + "s";
+        case ParentArgumentType::MAPPING:
+           return "string to " + typeName + " mapping";
+        default:
+            return typeName;
     }
-    return typeName;
 }
 
 std::string FormatAsType(const std::string& value, const PrimitiveType& type) {
@@ -318,11 +346,11 @@ PrimitiveArgument& PrimitiveArgument::AddDescription(const std::string& descript
     return *this;
 }
 
-size_t PrimitiveArgument::ArgumentNameLength(bool argument, bool outer, bool comma, bool object) const {
+size_t PrimitiveArgument::ArgumentNameLength(bool argument, const ParentArgumentType& parentType, bool comma) const {
     // + 2 for '""' + 2 for ': '
-    size_t length = object ? name.length() + 2 + ExampleValue(type).length() + 2
+    size_t length = IsObject(parentType) ? name.length() + 2 + ExampleValue(type).length() + 2
         : argument || name.length() > 0 ? FormatAsType(name, type).length() : ExampleValue(type).length();
-    if (argument && outer) {
+    if (argument && IsOuter(parentType)) {
         // + 3 for 'n. '
         length += 3;
     }
@@ -332,19 +360,19 @@ size_t PrimitiveArgument::ArgumentNameLength(bool argument, bool outer, bool com
     return length;
 }
 
-std::string PrimitiveArgument::CliHeaderString(bool object) const {
-    std::string headerString = object ? "\"" + name + "\": " + ExampleValue(type) : FormatAsType(name, type);
+std::string PrimitiveArgument::CliHeaderString(const ParentArgumentType& parentType) const {
+    std::string headerString = IsObject(parentType) ? "\"" + name + "\": " + ExampleValue(type) : FormatAsType(name, type);
     return isRequired ? headerString : "(" + headerString + ")";
 }
 
-std::string PrimitiveArgument::ArgumentString(size_t spaces, size_t nameLength, bool argument, bool outer, bool comma, bool object) const {
-    std::string formattedName = object ? "\"" + name + "\": " + ExampleValue(type)
+std::string PrimitiveArgument::ArgumentString(size_t spaces, size_t nameLength, bool argument, const ParentArgumentType& parentType, bool comma) const {
+    std::string formattedName = IsObject(parentType) ? "\"" + name + "\": " + ExampleValue(type)
         : argument || name.length() > 0 ? FormatAsType(name, type) : ExampleValue(type);
     if (comma) {
         formattedName += ",";
     }
-    std::string formattedType = AgrumentTypeString(TypeString(), isRequired, FormatAsType(defaultValue, type), argument);
-    return FormattedArgumentString(spaces, nameLength, argument && outer ? 3 : 0, formattedName, formattedType, description, additionalDescriptions);
+    std::string formattedType = AgrumentTypeString(TypeString(MappingParentType(parentType)), isRequired, FormatAsType(defaultValue, type), argument);
+    return FormattedArgumentString(spaces, nameLength, argument && IsOuter(parentType) ? 3 : 0, formattedName, formattedType, description, additionalDescriptions);
 }
 
 /* Array Argument */
@@ -361,13 +389,13 @@ ArrayArgument& ArrayArgument::AddDescription(const std::string& description_) {
     return *this;
 }
 
-size_t ArrayArgument::ArgumentNameLength(bool argument, bool outer, bool comma, bool object) const {
+size_t ArrayArgument::ArgumentNameLength(bool argument, const ParentArgumentType& parentType, bool comma) const {
     // name for outer; '[' for inner
     // or '"name": [' for object
-    size_t nameLength = object ? name.length() + 5 : outer ? name.length() : 1;
+    size_t nameLength = IsObject(parentType) ? name.length() + 5 : IsOuter(parentType) ? name.length() : 1;
     // min of 5 for '  ...'
-    size_t innerArgumentLength = std::max((size_t) 5, innerArgument->ArgumentNameLength(argument, false, true) + 2);
-    if (argument && outer) {
+    size_t innerArgumentLength = std::max((size_t) 5, innerArgument->ArgumentNameLength(argument, ParentArgumentType::ARRAY, true) + 2);
+    if (argument && IsOuter(parentType)) {
         // outer += 3 for 'n. '; inner += 5 for extra indentation
         nameLength += 3;
         innerArgumentLength += 5;
@@ -375,34 +403,38 @@ size_t ArrayArgument::ArgumentNameLength(bool argument, bool outer, bool comma, 
     return std::max(nameLength, innerArgumentLength);
 }
 
-std::string ArrayArgument::TypeString(bool pluralize) const {
-    std::string typeName = "json array";
-    if (pluralize) {
-        typeName += "s";
+std::string ArrayArgument::TypeString(const ParentArgumentType& parentType) const {
+    std::string innerArgumentTypeString = innerArgument->TypeString(ParentArgumentType::ARRAY);
+    switch(parentType) {
+    case ParentArgumentType::ARRAY:
+        return "json arrays of " + innerArgumentTypeString;
+    case ParentArgumentType::MAPPING:
+        return "string to json array of " + innerArgumentTypeString + " mapping";
+    default:
+        return "json array of " + innerArgumentTypeString;
     }
-    return typeName + " of " + innerArgument->TypeString(true);
 }
 
-std::string ArrayArgument::CliHeaderString(bool object) const {
-    std::string headerString = "[" + innerArgument->CliHeaderString(false) + ", ...]";
-    if (object) {
+std::string ArrayArgument::CliHeaderString(const ParentArgumentType& parentType) const {
+    std::string headerString = "[" + innerArgument->CliHeaderString(ParentArgumentType::ARRAY) + ", ...]";
+    if (IsObject(parentType)) {
         headerString = "\"" + name + "\"" + ": " + headerString;
     }
     return isRequired ? headerString : "(" + headerString + ")";
 }
 
-std::string ArrayArgument::ArgumentString(size_t spaces, size_t nameLength, bool argument, bool outer, bool comma, bool object) const {
+std::string ArrayArgument::ArgumentString(size_t spaces, size_t nameLength, bool argument, const ParentArgumentType& parentType, bool comma) const {
     std::string argumentStr;
-    std::string formattedType = AgrumentTypeString(TypeString(), isRequired, defaultValue, argument);
-    if (argument && outer) {
+    std::string formattedType = AgrumentTypeString(TypeString(MappingParentType(parentType)), isRequired, defaultValue, argument);
+    if (argument && IsOuter(parentType)) {
         argumentStr += FormattedArgumentString(spaces, nameLength, 3, name, formattedType, description, additionalDescriptions) + "\n";
         spaces += 5;
         argumentStr += PrependSpaces("[", spaces) + "\n";
     } else {
-        std::string formattedName = object ? "\"" + name + "\": [" : "[";
+        std::string formattedName = IsObject(parentType) ? "\"" + name + "\": [" : "[";
         argumentStr += FormattedArgumentString(spaces, nameLength, 0, formattedName, formattedType, description, additionalDescriptions) + "\n";
     }
-    argumentStr += innerArgument->ArgumentString(spaces + 2, nameLength, argument, false, true) + "\n"
+    argumentStr += innerArgument->ArgumentString(spaces + 2, nameLength, argument, ParentArgumentType::ARRAY, true) + "\n"
         + PrependSpaces("...", spaces + 2) + "\n"
         + PrependSpaces("]", spaces);
     if (comma) {
@@ -435,16 +467,16 @@ ObjectArgument& ObjectArgument::AddDescription(const std::string& description_) 
     return *this;
 }
 
-size_t ObjectArgument::ArgumentNameLength(bool argument, bool outer, bool comma, bool object) const {
+size_t ObjectArgument::ArgumentNameLength(bool argument, const ParentArgumentType& parentType, bool comma) const {
     // name for outer; '{' for inner
     // or '"name": {' for object
-    size_t nameLength = object ? name.length() + 5 : outer ? name.length() : 1;
+    size_t nameLength = IsObject(parentType) ? name.length() + 5 : IsOuter(parentType) ? name.length() : 1;
     size_t maxInnerLength = 0;
     for (size_t i = 0; i < innerArguments.size(); ++i) {
         bool innerComma = i != innerArguments.size() - 1;
-        maxInnerLength = std::max(maxInnerLength, innerArguments[i]->ArgumentNameLength(argument, false, innerComma, true) + 2);
+        maxInnerLength = std::max(maxInnerLength, innerArguments[i]->ArgumentNameLength(argument, ParentArgumentType::OBJECT, innerComma) + 2);
     }
-    if (argument && outer) {
+    if (argument && IsOuter(parentType)) {
         // outer += 3 for 'n. '; inner += 5 for extra indentation
         nameLength += 3;
         maxInnerLength += 5;
@@ -452,45 +484,115 @@ size_t ObjectArgument::ArgumentNameLength(bool argument, bool outer, bool comma,
     return std::max(nameLength, maxInnerLength);
 }
 
-std::string ObjectArgument::TypeString(bool pluralize) const {
-    std::string typeName = "json object";
-    if (pluralize) {
-        typeName += "s";
+std::string ObjectArgument::TypeString(const ParentArgumentType& parentType) const {
+    switch(parentType) {
+    case ParentArgumentType::ARRAY:
+        return "json objects";
+    case ParentArgumentType::MAPPING:
+        return "string to json object mapping";
+    default:
+        return "json object";
     }
-    return typeName;
 }
 
-std::string ObjectArgument::CliHeaderString(bool object) const {
+std::string ObjectArgument::CliHeaderString(const ParentArgumentType& parentType) const {
     std::string headerString = "{";
     for (size_t i = 0; i < innerArguments.size() - 1; ++i) {
-        headerString += innerArguments[i]->CliHeaderString(true) + ", ";
+        headerString += innerArguments[i]->CliHeaderString(ParentArgumentType::OBJECT) + ", ";
     }
     if (innerArguments.size() > 0) {
-        headerString += innerArguments[innerArguments.size() - 1]->CliHeaderString(true);
+        headerString += innerArguments[innerArguments.size() - 1]->CliHeaderString(ParentArgumentType::OBJECT);
     }
     headerString += "}";
-    if (object) {
+    if (IsObject(parentType)) {
         headerString = "\"" + name + "\": " + headerString;
     }
     return isRequired ? headerString : "(" + headerString + ")";
 }
 
-std::string ObjectArgument::ArgumentString(size_t spaces, size_t nameLength, bool argument, bool outer, bool comma, bool object) const {
+std::string ObjectArgument::ArgumentString(size_t spaces, size_t nameLength, bool argument, const ParentArgumentType& parentType, bool comma) const {
     std::string argumentStr;
-    std::string formattedType = AgrumentTypeString(TypeString(), isRequired, defaultValue, argument);
-    if (argument && outer) {
+    std::string formattedType = AgrumentTypeString(TypeString(MappingParentType(parentType)), isRequired, defaultValue, argument);
+    if (argument && IsOuter(parentType)) {
         argumentStr += FormattedArgumentString(spaces, nameLength, 3, name, formattedType, description, additionalDescriptions) + "\n";
         spaces += 5;
         argumentStr += PrependSpaces("{", spaces) + "\n";
     } else {
-        std::string formattedName = object ? "\"" + name + "\": {" : "{";
+        std::string formattedName = IsObject(parentType) ? "\"" + name + "\": {" : "{";
         argumentStr += FormattedArgumentString(spaces, nameLength, 0, formattedName, formattedType, description, additionalDescriptions) + "\n";
     }
     for (size_t i = 0; i < innerArguments.size(); ++i) {
         bool innerComma = i != innerArguments.size() - 1;
-        argumentStr += innerArguments[i]->ArgumentString(spaces + 2, nameLength, argument, false, innerComma, true) + "\n";
+        argumentStr += innerArguments[i]->ArgumentString(spaces + 2, nameLength, argument, ParentArgumentType::OBJECT, innerComma) + "\n";
     }
     argumentStr += PrependSpaces("}", spaces);
+    if (comma) {
+        argumentStr += ",";
+    }
+    return argumentStr;
+}
+
+/* Mapping Argument */
+MappingArgument& MappingArgument::Of(const RpcArgument& valueArgument_) {
+    if (valueArgument) {
+        delete valueArgument;
+    }
+    valueArgument = valueArgument_.Clone();
+    return *this;
+}
+
+MappingArgument& MappingArgument::AddDescription(const std::string& description_) {
+    additionalDescriptions.push_back(description_);
+    return *this;
+}
+
+size_t MappingArgument::ArgumentNameLength(bool argument, const ParentArgumentType& parentType, bool comma) const {
+    // name for outer; '{' for inner
+    // or '"name": {' for object
+    size_t nameLength = IsObject(parentType) ? name.length() + 5 : IsOuter(parentType) ? name.length() : 1;
+    // min of 5 for '  ...'
+    size_t valueArgumentLength = std::max((size_t) 5, valueArgument->ArgumentNameLength(argument, ParentArgumentType::MAPPING, true) + 2);
+    if (argument && IsOuter(parentType)) {
+        // outer += 3 for 'n. '; inner += 5 for extra indentation
+        nameLength += 3;
+        valueArgumentLength += 5;
+    }
+    return std::max(nameLength, valueArgumentLength);
+}
+
+std::string MappingArgument::TypeString(const ParentArgumentType& parentType) const {
+    switch(parentType) {
+    case ParentArgumentType::ARRAY:
+        return "json objects";
+    case ParentArgumentType::MAPPING:
+        return "string to json object mapping";
+    default:
+        return "json object";
+    }
+}
+
+std::string MappingArgument::CliHeaderString(const ParentArgumentType& parentType) const {
+    std::string headerString = "{" + valueArgument->CliHeaderString(ParentArgumentType::MAPPING) + ", ...}";
+    if (IsObject(parentType)) {
+        headerString = "\"" + name + "\"" + ": " + headerString;
+    }
+    return isRequired ? headerString : "(" + headerString + ")";
+}
+
+std::string MappingArgument::ArgumentString(size_t spaces, size_t nameLength, bool argument, const ParentArgumentType& parentType, bool comma) const {
+    std::string argumentStr;
+    std::string formattedType = AgrumentTypeString(TypeString(MappingParentType(parentType)), isRequired, defaultValue, argument);
+    if (argument && IsOuter(parentType)) {
+        argumentStr += FormattedArgumentString(spaces, nameLength, 3, name, formattedType, description, additionalDescriptions) + "\n";
+        spaces += 5;
+        argumentStr += PrependSpaces("{", spaces) + "\n";
+    } else {
+        std::string formattedName = IsObject(parentType) ? "\"" + name + "\": {" : "{";
+        argumentStr += FormattedArgumentString(spaces, nameLength, 0, formattedName, formattedType, description, additionalDescriptions) + "\n";
+    }
+    argumentStr += valueArgument->ArgumentString(spaces + 2, nameLength, argument, ParentArgumentType::MAPPING, true) + "\n"
+        + PrependSpaces("...", spaces + 2) + "\n"
+        + PrependSpaces("}", spaces);
     if (comma) {
         argumentStr += ",";
     }
