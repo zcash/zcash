@@ -7368,13 +7368,13 @@ UniValue heirfund(const UniValue& params, bool fHelp)
 	int64_t inactivitytime;
 	std::string hex;
 	std::vector<unsigned char> pubkey;
-	std::string name;
+	std::string name, memo;
 
 	if (!EnsureWalletIsAvailable(fHelp))
 	    return NullUniValue;
 
-	if (fHelp || params.size() != 5 && params.size() != 6)
-		throw runtime_error("heirfund txfee funds heirname heirpubkey inactivitytime [tokenid]\n");
+	if (fHelp || params.size() != 6 && params.size() != 7)
+		throw runtime_error("heirfund txfee funds heirname heirpubkey inactivitytime memo [tokenid]\n");
 	if (ensure_CCrequirements() < 0)
 		throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
 
@@ -7392,7 +7392,6 @@ UniValue heirfund(const UniValue& params, bool fHelp)
 		amount = atoll(params[1].get_str().c_str());
 	else	// coins:
 		amount = atof(params[1].get_str().c_str()) * COIN;
-
 	if (amount <= 0) {
 		result.push_back(Pair("result", "error"));
 		result.push_back(Pair("error", "incorrect amount"));
@@ -7400,6 +7399,7 @@ UniValue heirfund(const UniValue& params, bool fHelp)
 	}
 
 	name = params[2].get_str();
+
 	pubkey = ParseHex(params[3].get_str().c_str());
 	if (!pubkey2pk(pubkey).IsValid()) {
 		result.push_back(Pair("result", "error"));
@@ -7414,8 +7414,10 @@ UniValue heirfund(const UniValue& params, bool fHelp)
 		return result;
 	}
 
-	if (params.size() == 6) {
-		tokenid = Parseuint256((char*)params[5].get_str().c_str());
+	memo = params[5].get_str();
+
+	if (params.size() == 7) {
+		tokenid = Parseuint256((char*)params[6].get_str().c_str());
 		if (tokenid == zeroid) {
 			result.push_back(Pair("result", "error"));
 			result.push_back(Pair("error", "incorrect tokenid"));
@@ -7424,9 +7426,9 @@ UniValue heirfund(const UniValue& params, bool fHelp)
 	}
 
 	if( tokenid == zeroid )
-		result = HeirFundCoinCaller(txfee, amount, name, pubkey2pk(pubkey), inactivitytime, zeroid);
+		result = HeirFundCoinCaller(txfee, amount, name, pubkey2pk(pubkey), inactivitytime, memo);
 	else
-		result = HeirFundTokenCaller(txfee, amount, name, pubkey2pk(pubkey), inactivitytime, tokenid);
+		result = HeirFundTokenCaller(txfee, amount, name, pubkey2pk(pubkey), inactivitytime, memo, tokenid);
 
 	return result;
 }
