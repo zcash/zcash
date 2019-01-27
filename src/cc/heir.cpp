@@ -696,8 +696,8 @@ template <typename Helper> UniValue _HeirFund(int64_t txfee, int64_t amount, std
 }
 
 // if no these callers - it could not link
-UniValue HeirFundCoinCaller(int64_t txfee, int64_t satoshis, std::string heirName, CPubKey heirPubkey, int64_t inactivityTimeSec, std::string memo){
-    return _HeirFund<CoinHelper>(txfee, satoshis, heirName, heirPubkey, inactivityTimeSec,  memo, zeroid);
+UniValue HeirFundCoinCaller(int64_t txfee, int64_t coins, std::string heirName, CPubKey heirPubkey, int64_t inactivityTimeSec, std::string memo){
+    return _HeirFund<CoinHelper>(txfee, coins, heirName, heirPubkey, inactivityTimeSec,  memo, zeroid);
 }
 
 UniValue HeirFundTokenCaller(int64_t txfee, int64_t satoshis, std::string heirName, CPubKey heirPubkey, int64_t inactivityTimeSec, std::string memo, uint256 tokenid) {
