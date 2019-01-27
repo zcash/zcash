@@ -699,7 +699,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
     }
     // we don't want these checks in VRSC, leave it at the Sapling upgrade
     if ( ASSETCHAINS_SYMBOL[0] == 0 ||
-         (ASSETCHAINS_COMMISSION != 0 && height > 1) ||
+         ((ASSETCHAINS_COMMISSION != 0 || ASSETCHAINS_FOUNDERS_REWARD) && height > 1) ||
          NetworkUpgradeActive(height, Params().GetConsensus(), Consensus::UPGRADE_SAPLING) )
     {
         n = block.vtx[0].vout.size();
@@ -761,7 +761,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
         else
         {
             checktoshis = 0;
-            if ( ASSETCHAINS_COMMISSION != 0 && height > 1 )
+            if ( (ASSETCHAINS_COMMISSION != 0 || ASSETCHAINS_FOUNDERS_REWARD) && height > 1 )
             {
                 if ( (checktoshis= komodo_checkcommission((CBlock *)&block,height)) < 0 )
                 {
