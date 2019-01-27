@@ -423,3 +423,84 @@ std::string testDoc = RpcDocBuilder("testrpc")
         "\"xxx\"  (string) This is a result.\n";
     EXPECT_EQ(expectedDoc, testDoc);
 }
+
+TEST(DocBuilderTests, MappingArgument) {
+    std::string testDoc = RpcDocBuilder("testrpc")
+        .SetDescription("This is a description.")
+        .AddArgument(RpcArgument::Mapping("amounts", "Mapping description.")
+            .Of(RpcArgument::Amount("account", "Mapping from account to amount.")))
+        .ToString();
+    std::string expectedDoc = "testrpc {\"account\": x.xxxxxxxx, ...}\n"
+        "\n"
+        "This is a description.\n"
+        "\n"
+        "Arguments:\n"
+        "1. amounts                     (json object, required) Mapping description.\n"
+        "     {\n"
+        "       \"account\": x.xxxxxxxx,  (string to numeric mapping, required) Mapping from account to amount.\n"
+        "       ...\n"
+        "     }\n";
+    EXPECT_EQ(expectedDoc, testDoc);
+}
+
+TEST(DocBuilderTests, MappingToObjectResult) {
+    std::string testDoc = RpcDocBuilder("testrpc")
+        .SetDescription("This is a description.")
+        .AddResult(RpcArgument::Mapping("Mapping description.")
+            .Of(RpcArgument::Object("txid", "Mapping from txid to tx info.")
+                .With(RpcArgument::Integer("height", "Block height."))
+                .With(RpcArgument::Amount("amount", "Amount."))))
+        .ToString();
+    std::string expectedDoc = "testrpc\n"
+        "\n"
+        "This is a description.\n"
+        "\n"
+        "Result:\n"
+        "{                         (json object) Mapping description.\n"
+        "  \"txid\": {               (string to json object mapping) Mapping from txid to tx info.\n"
+        "    \"height\": n,          (numeric) Block height.\n"
+        "    \"amount\": x.xxxxxxxx  (numeric) Amount.\n"
+        "  },\n"
+        "  ...\n"
+        "}\n";
+    EXPECT_EQ(expectedDoc, testDoc);
+}
+
+TEST(DocBuilderTests, ObjectWithMappingArgument) {
+    ObjectArgument objectArgument = RpcArgument::Object("objectArg", "Object description.")
+        .With(RpcArgument::Boolean("boolean1", "Boolean 1 description."))
+        .With(RpcArgument::Mapping("mapping", "Mapping description.")
+            .Of(RpcArgument::Integer("key", "Integer description.")))
+        .With(RpcArgument::Boolean("boolean2", "Boolean 2 description."));
+    std::string argumentString = "1. " + objectArgument.ArgumentString(0, objectArgument.ArgumentNameLength(true), true);
+    std::string expectedArgumentString =
+        "1. objectArg                    (json object, required) Object description.\n"
+        "     {\n"
+        "       \"boolean1\": true|false,  (boolean, required) Boolean 1 description.\n"
+        "       \"mapping\": {             (json object, required) Mapping description.\n"
+        "         \"key\": n,              (string to numeric mapping, required) Integer description.\n"
+        "         ...\n"
+        "       },\n"
+        "       \"boolean2\": true|false   (boolean, required) Boolean 2 description.\n"
+        "     }";
+    EXPECT_EQ(expectedArgumentString, argumentString);
+}
+
+TEST(DocBuilderTests, TypeStringNestedTypes) {
+    EXPECT_EQ("boolean", RpcArgument::Boolean("").TypeString());
+    EXPECT_EQ("numeric", RpcArgument::Integer("").TypeString());
+    EXPECT_EQ("numeric", RpcArgument::Decimal("").TypeString());
+    EXPECT_EQ("string", RpcArgument::String("").TypeString());
+    EXPECT_EQ("string", RpcArgument::HexString("").TypeString());
+    EXPECT_EQ("numeric", RpcArgument::Amount("").TypeString());
+    EXPECT_EQ("numeric", RpcArgument::Timestamp("").TypeString());
+    EXPECT_EQ("string", RpcArgument::Asm("").TypeString());
+    EXPECT_EQ("string", RpcArgument::IPAddress("").TypeString());
+    EXPECT_EQ("string", RpcArgument::SocketAddress("").TypeString());
+    EXPECT_EQ("json array of strings", RpcArgument::Array().Of(RpcArgument::String("")).TypeString());
+    EXPECT_EQ("json array of json arrays of strings", RpcArgument::Array().Of(RpcArgument::Array().Of(RpcArgument::String(""))).TypeString());
+    EXPECT_EQ("json array of json objects", RpcArgument::Array().Of(RpcArgument::Object()).TypeString());
+    EXPECT_EQ("json array of json objects", RpcArgument::Array().Of(RpcArgument::Mapping()).TypeString());
+    EXPECT_EQ("json object", RpcArgument::Object().TypeString());
+    EXPECT_EQ("json object", RpcArgument::Mapping().TypeString());
+}

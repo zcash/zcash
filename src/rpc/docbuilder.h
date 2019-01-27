@@ -11,6 +11,14 @@
 class PrimitiveArgument;
 class ArrayArgument;
 class ObjectArgument;
+class MappingArgument;
+
+enum class ParentArgumentType {
+    NONE,
+    ARRAY,
+    OBJECT,
+    MAPPING
+};
 
 class RpcArgument
 {
@@ -33,10 +41,10 @@ public:
     virtual RpcArgument* Clone() const = 0;
     
     virtual RpcArgument& AddDescription(const std::string& description_) = 0;
-    virtual size_t ArgumentNameLength(bool argument, bool outer=true, bool comma=false, bool object=false) const = 0;
-    virtual std::string TypeString(bool pluralize=false) const = 0;
-    virtual std::string CliHeaderString(bool object=false) const = 0;
-    virtual std::string ArgumentString(size_t spaces, size_t nameLength, bool argument, bool outer=true, bool comma=false, bool object=false) const = 0;
+    virtual size_t ArgumentNameLength(bool argument, const ParentArgumentType& parentType=ParentArgumentType::NONE, bool comma=false) const = 0;
+    virtual std::string TypeString(const ParentArgumentType& parentType=ParentArgumentType::NONE) const = 0;
+    virtual std::string CliHeaderString(const ParentArgumentType& parentType=ParentArgumentType::NONE) const = 0;
+    virtual std::string ArgumentString(size_t spaces, size_t nameLength, bool argument, const ParentArgumentType& parentType=ParentArgumentType::NONE, bool comma=false) const = 0;
 
     /* Factory methods for derived classes */
     static PrimitiveArgument Boolean(const std::string& name, const std::string& description);
@@ -90,6 +98,10 @@ public:
     static ObjectArgument Object();
     static ObjectArgument OptionalObject(const std::string name, const std::string description);
     static ObjectArgument OptionalObject(const std::string description);
+
+    static MappingArgument Mapping(const std::string name, const std::string description);
+    static MappingArgument Mapping(const std::string description);
+    static MappingArgument Mapping();
 };
 
 enum class PrimitiveType {
@@ -119,10 +131,10 @@ public:
     PrimitiveArgument* Clone() const { return new PrimitiveArgument(*this); }
 
     PrimitiveArgument& AddDescription(const std::string& description_);
-    size_t ArgumentNameLength(bool argument, bool outer=true, bool comma=false, bool object=false) const;
-    std::string TypeString(bool pluralize=false) const;
-    std::string CliHeaderString(bool object=false) const;
-    std::string ArgumentString(size_t spaces, size_t nameLength, bool argument, bool outer=true, bool comma=false, bool object=false) const;
+    size_t ArgumentNameLength(bool argument, const ParentArgumentType& parentType=ParentArgumentType::NONE, bool comma=false) const;
+    std::string TypeString(const ParentArgumentType& parentType=ParentArgumentType::NONE) const;
+    std::string CliHeaderString(const ParentArgumentType& parentType=ParentArgumentType::NONE) const;
+    std::string ArgumentString(size_t spaces, size_t nameLength, bool argument, const ParentArgumentType& parentType=ParentArgumentType::NONE, bool comma=false) const;
 };
 
 class ArrayArgument : public RpcArgument {
@@ -134,19 +146,17 @@ public:
     ArrayArgument(const ArrayArgument& other)
         : RpcArgument(other.name, other.isRequired, other.defaultValue, other.description, other.additionalDescriptions),
         innerArgument(other.innerArgument ? other.innerArgument->Clone() : nullptr) {}
-    ~ArrayArgument() {
-        delete innerArgument;
-    }
+    ~ArrayArgument() { delete innerArgument; }
 
     ArrayArgument& Of(const RpcArgument& innerArgument_);
 
     ArrayArgument* Clone() const { return new ArrayArgument(*this); }
 
     ArrayArgument& AddDescription(const std::string& description_);
-    size_t ArgumentNameLength(bool argument, bool outer=true, bool comma=false, bool object=false) const;
-    std::string TypeString(bool pluralize=false) const;
-    std::string CliHeaderString(bool object=false) const;
-    std::string ArgumentString(size_t spaces, size_t nameLength, bool argument, bool outer=true, bool comma=false, bool object=false) const;
+    size_t ArgumentNameLength(bool argument, const ParentArgumentType& parentType=ParentArgumentType::NONE, bool comma=false) const;
+    std::string TypeString(const ParentArgumentType& parentType=ParentArgumentType::NONE) const;
+    std::string CliHeaderString(const ParentArgumentType& parentType=ParentArgumentType::NONE) const;
+    std::string ArgumentString(size_t spaces, size_t nameLength, bool argument, const ParentArgumentType& parentType=ParentArgumentType::NONE, bool comma=false) const;
 };
 
 class ObjectArgument : public RpcArgument {
@@ -163,10 +173,32 @@ public:
     ObjectArgument* Clone() const { return new ObjectArgument(*this); }
 
     ObjectArgument& AddDescription(const std::string& description_);
-    size_t ArgumentNameLength(bool argument, bool outer=true, bool comma=false, bool object=false) const;
-    std::string TypeString(bool pluralize=false) const;
-    std::string CliHeaderString(bool object=false) const;
-    std::string ArgumentString(size_t spaces, size_t nameLength, bool argument, bool outer=true, bool comma=false, bool object=false) const;
+    size_t ArgumentNameLength(bool argument, const ParentArgumentType& parentType=ParentArgumentType::NONE, bool comma=false) const;
+    std::string TypeString(const ParentArgumentType& parentType=ParentArgumentType::NONE) const;
+    std::string CliHeaderString(const ParentArgumentType& parentType=ParentArgumentType::NONE) const;
+    std::string ArgumentString(size_t spaces, size_t nameLength, bool argument, const ParentArgumentType& parentType=ParentArgumentType::NONE, bool comma=false) const;
+};
+
+class MappingArgument : public RpcArgument {
+private:
+    RpcArgument* valueArgument;
+public:
+    MappingArgument(const std::string& name_, const bool& isRequired, const std::string description_)
+        : RpcArgument(name_, isRequired, "", description_, std::vector<std::string>()), valueArgument(nullptr)  {}
+    MappingArgument(const MappingArgument& other)
+        : RpcArgument(other.name, other.isRequired, other.defaultValue, other.description, other.additionalDescriptions),
+        valueArgument(other.valueArgument ? other.valueArgument->Clone() : nullptr) {}
+    ~MappingArgument() { delete valueArgument; }
+
+    MappingArgument& Of(const RpcArgument& valueArgument_);
+
+    MappingArgument* Clone() const { return new MappingArgument(*this); }
+
+    MappingArgument& AddDescription(const std::string& description_);
+    size_t ArgumentNameLength(bool argument, const ParentArgumentType& parentType=ParentArgumentType::NONE, bool comma=false) const;
+    std::string TypeString(const ParentArgumentType& parentType=ParentArgumentType::NONE) const;
+    std::string CliHeaderString(const ParentArgumentType& parentType=ParentArgumentType::NONE) const;
+    std::string ArgumentString(size_t spaces, size_t nameLength, bool argument, const ParentArgumentType& parentType=ParentArgumentType::NONE, bool comma=false) const;
 };
 
 class RpcDocBuilder
