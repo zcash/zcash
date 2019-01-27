@@ -7368,13 +7368,13 @@ UniValue heirfund(const UniValue& params, bool fHelp)
 	int64_t inactivitytime;
 	std::string hex;
 	std::vector<unsigned char> pubkey;
-	std::string name;
+	std::string name, memo;
 
 	if (!EnsureWalletIsAvailable(fHelp))
 	    return NullUniValue;
 
-	if (fHelp || params.size() != 5 && params.size() != 6)
-		throw runtime_error("heirfund txfee funds heirname heirpubkey inactivitytime [tokenid]\n");
+	if (fHelp || params.size() != 6 && params.size() != 7)
+		throw runtime_error("heirfund txfee funds heirname heirpubkey inactivitytime memo [tokenid]\n");
 	if (ensure_CCrequirements() < 0)
 		throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
 
@@ -7382,36 +7382,53 @@ UniValue heirfund(const UniValue& params, bool fHelp)
 	LOCK2(cs_main, pwalletMain->cs_wallet);
 
 	txfee = atoll(params[0].get_str().c_str());
-	if (txfee < 0)
-		throw runtime_error("incorrect txfee param\n");
+	if (txfee < 0) {
+		result.push_back(Pair("result", "error"));
+		result.push_back(Pair("error", "incorrect txfee"));
+		return result;	
+	}
 
-	if(params.size() == 6)	// tokens in satoshis:
+	if(params.size() == 7)	// tokens in satoshis:
 		amount = atoll(params[1].get_str().c_str());
 	else	// coins:
 		amount = atof(params[1].get_str().c_str()) * COIN;
-
-	if( amount <= 0 )
-		throw runtime_error("incorrect amount\n");
+	if (amount <= 0) {
+		result.push_back(Pair("result", "error"));
+		result.push_back(Pair("error", "incorrect amount"));
+		return result;
+	}
 
 	name = params[2].get_str();
+
 	pubkey = ParseHex(params[3].get_str().c_str());
-	if( !pubkey2pk(pubkey).IsValid() )
-		throw runtime_error("incorrect pubkey\n");
+	if (!pubkey2pk(pubkey).IsValid()) {
+		result.push_back(Pair("result", "error"));
+		result.push_back(Pair("error", "incorrect pubkey"));
+		return result;
+	}
 
 	inactivitytime = atoll(params[4].get_str().c_str());
-	if (inactivitytime <= 0)
-		throw runtime_error("incorrect inactivity time param\n");
+	if (inactivitytime <= 0) {
+		result.push_back(Pair("result", "error"));
+		result.push_back(Pair("error", "incorrect inactivity time"));
+		return result;
+	}
 
-	if (params.size() == 6) {
-		tokenid = Parseuint256((char*)params[5].get_str().c_str());
-		if(tokenid == zeroid)
-			throw runtime_error("incorrect tokenid\n");
+	memo = params[5].get_str();
+
+	if (params.size() == 7) {
+		tokenid = Parseuint256((char*)params[6].get_str().c_str());
+		if (tokenid == zeroid) {
+			result.push_back(Pair("result", "error"));
+			result.push_back(Pair("error", "incorrect tokenid"));
+			return result;
+		}
 	}
 
 	if( tokenid == zeroid )
-		result = HeirFundCoinCaller(txfee, amount, name, pubkey2pk(pubkey), inactivitytime, zeroid);
+		result = HeirFundCoinCaller(txfee, amount, name, pubkey2pk(pubkey), inactivitytime, memo);
 	else
-		result = HeirFundTokenCaller(txfee, amount, name, pubkey2pk(pubkey), inactivitytime, tokenid);
+		result = HeirFundTokenCaller(txfee, amount, name, pubkey2pk(pubkey), inactivitytime, memo, tokenid);
 
 	return result;
 }
@@ -7439,8 +7456,11 @@ UniValue heiradd(const UniValue& params, bool fHelp)
 	LOCK2(cs_main, pwalletMain->cs_wallet);
 
 	txfee = atoll(params[0].get_str().c_str());
-	if (txfee < 0)
-		throw runtime_error("incorrect txfee param\n");
+	if (txfee < 0) {
+		result.push_back(Pair("result", "error"));
+		result.push_back(Pair("error", "incorrect txfee"));
+		return result;
+	}
 
 	fundingtxid = Parseuint256((char*)params[2].get_str().c_str());
 
@@ -7450,7 +7470,7 @@ UniValue heiradd(const UniValue& params, bool fHelp)
 
 UniValue heirclaim(const UniValue& params, bool fHelp)
 {
-	UniValue result; // result(UniValue::VOBJ);
+	UniValue result;
 	uint256 fundingtxid;
 	int64_t txfee;
 	int64_t inactivitytime;
@@ -7458,7 +7478,6 @@ UniValue heirclaim(const UniValue& params, bool fHelp)
 	std::vector<unsigned char> pubkey;
 	std::string name;
 
-	// do we need this?
 	if (!EnsureWalletIsAvailable(fHelp))
 	    return NullUniValue;
 
@@ -7471,8 +7490,11 @@ UniValue heirclaim(const UniValue& params, bool fHelp)
 	LOCK2(cs_main, pwalletMain->cs_wallet);
 
 	txfee = atoll(params[0].get_str().c_str());
-	if (txfee < 0)
-		throw runtime_error("incorrect txfee param\n");
+	if (txfee < 0) {
+		result.push_back(Pair("result", "error"));
+		result.push_back(Pair("error", "incorrect txfee"));
+		return result;
+	}
 
 	fundingtxid = Parseuint256((char*)params[2].get_str().c_str());
 
@@ -7483,8 +7505,9 @@ UniValue heirclaim(const UniValue& params, bool fHelp)
 UniValue heirinfo(const UniValue& params, bool fHelp)
 {
 	uint256 fundingtxid;
-	if (fHelp || params.size() != 1) // or 0?
+	if (fHelp || params.size() != 1) 
 		throw runtime_error("heirinfo fundingtxid\n");
+
 	//    if ( ensure_CCrequirements() < 0 )
 	//        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
 
@@ -7494,7 +7517,7 @@ UniValue heirinfo(const UniValue& params, bool fHelp)
 
 UniValue heirlist(const UniValue& params, bool fHelp)
 {
-	if (fHelp || params.size() != 0) // or 0?
+	if (fHelp || params.size() != 0) 
 		throw runtime_error("heirlist\n");
 
 	//    if ( ensure_CCrequirements() < 0 )

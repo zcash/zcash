@@ -7,13 +7,13 @@
 #define IS_CHARINSTR(c, str) (std::string(str).find((char)(c)) != std::string::npos)
 
 // makes coin initial tx opret
-CScript EncodeHeirCreateOpRet(uint8_t funcid, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t inactivityTimeSec, std::string heirName);
+CScript EncodeHeirCreateOpRet(uint8_t funcid, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t inactivityTimeSec, std::string heirName, std::string memo);
 CScript EncodeHeirOpRet(uint8_t funcid,  uint256 fundingtxid, uint8_t isHeirSpendingBegan);
 
 uint256 FindLatestFundingTx(uint256 fundingtxid, uint256 &tokenid, CScript& opRetScript, uint8_t &isHeirSpendingBegan);
 //uint8_t DecodeHeirOpRet(CScript scriptPubKey, uint256& fundingtxid, uint8_t &isHeirSpendingBegan, bool noLogging = false);
 //uint8_t DecodeHeirOpRet(CScript scriptPubKey, CPubKey& ownerPubkey, CPubKey& heirPubkey, int64_t& inactivityTime, std::string& heirName,  bool noLogging = false);
-uint8_t DecodeHeirEitherOpRet(CScript scriptPubKey, uint256 &tokenid, CPubKey& ownerPubkey, CPubKey& heirPubkey, int64_t& inactivityTime, std::string& heirName, bool noLogging = false);
+uint8_t DecodeHeirEitherOpRet(CScript scriptPubKey, uint256 &tokenid, CPubKey& ownerPubkey, CPubKey& heirPubkey, int64_t& inactivityTime, std::string& heirName, std::string& memo, bool noLogging = false);
 uint8_t DecodeHeirEitherOpRet(CScript scriptPubKey, uint256 &tokenid, uint256 &fundingTxidInOpret, uint8_t &hasHeirSpendingBegun, bool noLogging = false);
 
 inline static bool isMyFuncId(uint8_t funcid) { return IS_CHARINSTR(funcid, "FAC"); }
@@ -28,8 +28,8 @@ public:
         return AddNormalinputs(mtx, ownerPubkey, total, maxinputs);
     }
     
-    static CScript makeCreateOpRet(uint256 dummyid, std::vector<CPubKey> dummyPubkeys, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t inactivityTimeSec, std::string heirName) {
-        return EncodeHeirCreateOpRet((uint8_t)'F', ownerPubkey, heirPubkey, inactivityTimeSec, heirName);
+    static CScript makeCreateOpRet(uint256 dummyid, std::vector<CPubKey> dummyPubkeys, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t inactivityTimeSec, std::string heirName, std::string memo) {
+        return EncodeHeirCreateOpRet((uint8_t)'F', ownerPubkey, heirPubkey, inactivityTimeSec, heirName, memo);
     }
     static CScript makeAddOpRet(uint256 dummyid, std::vector<CPubKey> dummyPubkeys, uint256 fundingtxid, uint8_t isHeirSpendingBegan) {
         return EncodeHeirOpRet((uint8_t)'A', fundingtxid, isHeirSpendingBegan);
@@ -66,9 +66,9 @@ public:
         return AddTokenCCInputs(cpHeir, mtx, ownerPubkey, tokenid, total, maxinputs);
     }
     
-    static CScript makeCreateOpRet(uint256 tokenid, std::vector<CPubKey> voutTokenPubkeys, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t inactivityTimeSec, std::string heirName) {
+    static CScript makeCreateOpRet(uint256 tokenid, std::vector<CPubKey> voutTokenPubkeys, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t inactivityTimeSec, std::string heirName, std::string memo) {
         return EncodeTokenOpRet(tokenid, voutTokenPubkeys,
-                                EncodeHeirCreateOpRet((uint8_t)'F', ownerPubkey, heirPubkey, inactivityTimeSec, heirName));
+                                EncodeHeirCreateOpRet((uint8_t)'F', ownerPubkey, heirPubkey, inactivityTimeSec, heirName, memo));
     }
     static CScript makeAddOpRet(uint256 tokenid, std::vector<CPubKey> voutTokenPubkeys, uint256 fundingtxid, uint8_t isHeirSpendingBegan) {
         return EncodeTokenOpRet(tokenid, voutTokenPubkeys,
@@ -407,10 +407,10 @@ public:
         //std::cerr << "CCC1of2AddressValidator::validateVout() entered" << std::endl;
         CPubKey ownerPubkey, heirPubkey;
         int64_t inactivityTime;
-        std::string heirName;
+        std::string heirName, memo;
         uint256 tokenid;
         
-        uint8_t funcId = DecodeHeirEitherOpRet(m_fundingOpretScript, tokenid, ownerPubkey, heirPubkey, inactivityTime, heirName, true);
+        uint8_t funcId = DecodeHeirEitherOpRet(m_fundingOpretScript, tokenid, ownerPubkey, heirPubkey, inactivityTime, heirName, memo, true);
         if (funcId == 0) {
             message = m_customMessage + std::string(" invalid opreturn format");
             std::cerr << "CCC1of2AddressValidator::validateVout() exits with false: " << message << std::endl;
@@ -462,13 +462,13 @@ public:
         
         CPubKey ownerPubkey, heirPubkey;
         int64_t inactivityTime;
-        std::string heirName;
+        std::string heirName, memo;
         uint256 tokenid;
         
         ///std::cerr << "CMyPubkeyVoutValidator::validateVout() m_opRetScript=" << m_opRetScript.ToString() << std::endl;
         
         // get both pubkeys:
-        uint8_t funcId = DecodeHeirEitherOpRet(m_fundingOpretScript, tokenid, ownerPubkey, heirPubkey, inactivityTime, heirName, true);
+        uint8_t funcId = DecodeHeirEitherOpRet(m_fundingOpretScript, tokenid, ownerPubkey, heirPubkey, inactivityTime, heirName, memo, true);
         if (funcId == 0) {
             message = std::string("invalid opreturn format");
             return false;
@@ -522,11 +522,11 @@ public:
         
         CPubKey ownerPubkey, heirPubkey;
         int64_t inactivityTime;
-        std::string heirName;
+        std::string heirName, memo;
         uint256 tokenid;
         
         // get heir pubkey:
-        uint8_t funcId = DecodeHeirEitherOpRet(m_fundingOpretScript, tokenid, ownerPubkey, heirPubkey, inactivityTime, heirName, true);
+        uint8_t funcId = DecodeHeirEitherOpRet(m_fundingOpretScript, tokenid, ownerPubkey, heirPubkey, inactivityTime, heirName, memo, true);
         if (funcId == 0) {
             message = std::string("invalid opreturn format");
             return false;
