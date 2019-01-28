@@ -5497,7 +5497,7 @@ uint64_t CalculateCurrentUsage()
 /* Prune a block file (modify associated database entries)*/
 void PruneOneBlockFile(bool tempfile, const int fileNumber)
 {
-    fprintf(stderr, "pruneblockfile.%i\n",fileNumber); sleep(15);
+    //fprintf(stderr, "pruneblockfile.%i\n",fileNumber); sleep(15);
     for (BlockMap::iterator it = mapBlockIndex.begin(); it != mapBlockIndex.end(); ++it) {
         CBlockIndex* pindex = it->second;
         if (pindex && pindex->nFile == fileNumber) {
