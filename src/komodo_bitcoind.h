@@ -1319,7 +1319,7 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
                 sum += UintToArith256(pindex->GetBlockHash());
                 m++;
             }
-        }
+        } //else fprintf(stderr, "pindex returned null ht.%i\n",ht);
         if ( dispflag != 0 && ASSETCHAINS_STAKED < 100 && (i % 10) == 9 )
             fprintf(stderr," %d, ",percPoS);
     }
@@ -1521,8 +1521,9 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
             return(0);
         else return(1);
     }
-    // Get PoSperc and POW Target. for later.
-    POWTarget = komodo_PoWtarget(&PoSperc,bnTarget,height,ASSETCHAINS_STAKED);
+    // Get PoSperc and POW Target. slowflag only here, calling it when blocks out of order causes problems.
+    if ( slowflag != 0 )
+        POWTarget = komodo_PoWtarget(&PoSperc,bnTarget,height,ASSETCHAINS_STAKED);
     txn_count = pblock->vtx.size();
     //fprintf(stderr,"checkblock n.%d vins.%d vouts.%d %.8f %.8f\n",txn_count,(int32_t)pblock->vtx[txn_count-1].vin.size(),(int32_t)pblock->vtx[txn_count-1].vout.size(),(double)pblock->vtx[txn_count-1].vout[0].nValue/COIN,(double)pblock->vtx[txn_count-1].vout[1].nValue/COIN);
     if ( txn_count > 1 && pblock->vtx[txn_count-1].vin.size() == 1 && pblock->vtx[txn_count-1].vout.size() == 1 + (ASSETCHAINS_MARMARA!=0) )
@@ -1533,7 +1534,7 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
 
         txid = pblock->vtx[txn_count-1].vin[0].prevout.hash;
         vout = pblock->vtx[txn_count-1].vin[0].prevout.n;
-        if ( prevtime != 0 )
+        if ( slowflag != 0 && prevtime != 0 )
         {
             if ( komodo_isPoS(pblock,height) != 0 )
             {
@@ -1543,7 +1544,7 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
             {
                 if ( 0 && ASSETCHAINS_STAKED < 100 )
                     fprintf(stderr,"komodo_is_PoSblock PoS failure ht.%d eligible.%u vs blocktime.%u, lag.%d -> check to see if it is PoW block\n",height,eligible,(uint32_t)pblock->nTime,(int32_t)(eligible - pblock->nTime));
-                if ( slowflag != 0 && pindex != 0 )
+                if ( pindex != 0 )
                 {
                     pindex->segid = -1;
                     //fprintf(stderr,"PoW block detected set segid.%d <- %d\n",height,pindex->segid);
@@ -1552,23 +1553,20 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
             else
             {
                 isPoS = 2; // 2 means staking utxo validated
-                if ( slowflag != 0 )
+                CTxDestination voutaddress; char voutaddr[64];
+                if ( ExtractDestination(pblock->vtx[txn_count-1].vout[0].scriptPubKey,voutaddress) )
                 {
-                    CTxDestination voutaddress; char voutaddr[64];
-                    if ( ExtractDestination(pblock->vtx[txn_count-1].vout[0].scriptPubKey,voutaddress) )
-                    {
-                        strcpy(voutaddr,CBitcoinAddress(voutaddress).ToString().c_str());
-                        segid = komodo_segid32(voutaddr) & 0x3f;
-                    }
-                    if ( pindex != 0 && segid >= 0 )
-                    {
-                        pindex->segid = segid;
-                        //fprintf(stderr,"PoS block set segid.%d <- %d\n",height,pindex->segid);
-                    } //else fprintf(stderr,"unexpected null pindex for slowflag set ht.%d segid.%d:%d\n",height,pindex!=0?pindex->segid:-3,segid);
+                    strcpy(voutaddr,CBitcoinAddress(voutaddress).ToString().c_str());
+                    segid = komodo_segid32(voutaddr) & 0x3f;
                 }
+                if ( pindex != 0 && segid >= 0 )
+                {
+                    pindex->segid = segid;
+                    //fprintf(stderr,"PoS block set segid.%d <- %d\n",height,pindex->segid);
+                } //else fprintf(stderr,"unexpected null pindex for slowflag set ht.%d segid.%d:%d\n",height,pindex!=0?pindex->segid:-3,segid);
             }
-        }
-        if ( slowflag == 0 && isPoS == 0 ) // maybe previous block is not seen yet, do the best approx
+        } 
+        else if ( slowflag == 0 ) // previous blocks are not seen yet, do the best approx
         {
             if ( komodo_isPoS(pblock,height) != 0 )
                 isPoS = 1;
@@ -1893,8 +1891,7 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
                 return(-1);
             else
             {
-                if ( slowflag != 0 )
-                    bnTarget = komodo_PoWtarget(&PoSperc,bnTarget,height,ASSETCHAINS_STAKED);
+                bnTarget = komodo_PoWtarget(&PoSperc,bnTarget,height,ASSETCHAINS_STAKED);
                 if ( bhash > bnTarget )
                 {
                     for (i=31; i>=16; i--)
