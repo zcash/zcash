@@ -5198,7 +5198,7 @@ int32_t ensure_CCrequirements()
 
 UniValue CCaddress(struct CCcontract_info *cp,char *name,std::vector<unsigned char> &pubkey)
 {
-    UniValue result(UniValue::VOBJ); char destaddr[64],str[64]; CPubKey pk;
+    UniValue result(UniValue::VOBJ); char destaddr[64],str[64]; CPubKey mypk,pk;
     pk = GetUnspendable(cp,0);
     GetCCaddress(cp,destaddr,pk);
     if ( strcmp(destaddr,cp->unspendableCCaddr) != 0 )
@@ -5209,25 +5209,46 @@ UniValue CCaddress(struct CCcontract_info *cp,char *name,std::vector<unsigned ch
         strcpy(cp->unspendableCCaddr,destaddr);
     }
     result.push_back(Pair("result", "success"));
-    sprintf(str,"%sCCaddress",name);
+    sprintf(str,"%sCCAddress",name);
     result.push_back(Pair(str,cp->unspendableCCaddr));
-    sprintf(str,"%smarker",name);
+    sprintf(str,"%sNormalAddress",name);
     result.push_back(Pair(str,cp->normaladdr));
-    result.push_back(Pair("GatewaysPubkey","03ea9c062b9652d8eff34879b504eda0717895d27597aaeb60347d65eed96ccb40"));
-    if ( _GetCCaddress(destaddr,EVAL_ASSETS,pubkey2pk(pubkey)) > 0 )
+    if (strcmp(name,"Gateways")==0) result.push_back(Pair("GatewaysPubkey","03ea9c062b9652d8eff34879b504eda0717895d27597aaeb60347d65eed96ccb40"));
+    if ((strcmp(name,"Channels")==0 || strcmp(name,"Heir")==0) && pubkey.size() == 33)
     {
-        sprintf(str,"%sCCassets",name);
+        sprintf(str,"%sCC1of2Address",name);
+        mypk = pubkey2pk(Mypubkey());
+        GetCCaddress1of2(cp,destaddr,mypk,pubkey2pk(pubkey));
         result.push_back(Pair(str,destaddr));
+        if (GetTokensCCaddress1of2(cp,destaddr,mypk,pubkey2pk(pubkey))>0)
+        {
+            sprintf(str,"%sCC1of2TokensAddress",name);
+            result.push_back(Pair(str,destaddr));
+        }
     }
+    else if (strcmp(name,"Tokens")!=0)
+    {
+        if (GetTokensCCaddress(cp,destaddr,pk)>0)
+        {
+            sprintf(str,"%sCCTokensAddress",name);
+            result.push_back(Pair(str,destaddr));
+        }
+    }
+    if ( Getscriptaddress(destaddr,(CScript() << Mypubkey() << OP_CHECKSIG)) != 0 )
+        result.push_back(Pair("myAddress",destaddr));
+    if ( GetCCaddress(cp,destaddr,pubkey2pk(Mypubkey())) != 0 )
+    {
+        sprintf(str,"myCCAddress(%s)",name);
+        result.push_back(Pair(str,destaddr));
+    }    
     if ( pubkey.size() == 33 )
     {
         if ( GetCCaddress(cp,destaddr,pubkey2pk(pubkey)) != 0 )
-            result.push_back(Pair("CCaddress",destaddr));
+        {
+            sprintf(str,"PubkeyCCaddress(%s)",name);
+            result.push_back(Pair(str,destaddr));
+        }
     }
-    if ( GetCCaddress(cp,destaddr,pubkey2pk(Mypubkey())) != 0 )
-        result.push_back(Pair("myCCaddress",destaddr));
-    if ( Getscriptaddress(destaddr,(CScript() << Mypubkey() << OP_CHECKSIG)) != 0 )
-        result.push_back(Pair("myaddress",destaddr));
     return(result);
 }
 
@@ -5299,29 +5320,15 @@ UniValue setpubkey(const UniValue& params, bool fHelp)
 
 UniValue channelsaddress(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); struct CCcontract_info *cp,C; std::vector<unsigned char> destpubkey; CPubKey pk,pk2; char destaddr[64];
+    UniValue result(UniValue::VOBJ); struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
+
     cp = CCinit(&C,EVAL_CHANNELS);
     if ( fHelp || params.size() != 1 )
-        throw runtime_error("channelsaddress destpubkey\n");
+        throw runtime_error("channelsaddress pubkey\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
-    destpubkey = ParseHex(params[0].get_str().c_str());
-    pk = pubkey2pk(Mypubkey());
-    pk2 = pubkey2pk(destpubkey);
-    result = CCaddress(cp,(char *)"Channels",destpubkey);
-    result.push_back(Pair("otherpubkey", params[0].get_str()));
-    GetCCaddress1of2(cp,destaddr,pk,pk2);
-    result.push_back(Pair("channeladdress",destaddr));
-    if ( 0 )
-    {
-        int32_t i;
-        for (i=0; i<100; i++)
-        {
-            GetCCaddress1of2(cp,destaddr,pk,pk2);
-            fprintf(stderr,"i.%d %s\n",i,destaddr);
-        }
-    }
-    return(result);
+    pubkey = ParseHex(params[0].get_str().c_str());
+    return(CCaddress(cp,(char *)"Channels",pubkey));
 }
 
 UniValue cclibaddress(const UniValue& params, bool fHelp)
@@ -5453,16 +5460,13 @@ UniValue heiraddress(const UniValue& params, bool fHelp)
 {
 	struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
 	cp = CCinit(&C,EVAL_HEIR);
-	if ( fHelp || params.size() > 1 )
-	throw runtime_error("heiraddress [pubkey]\n");
-	if ( ensure_CCrequirements() < 0 )
-	throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
-	if ( params.size() == 1 )
-	pubkey = ParseHex(params[0].get_str().c_str());
+    if ( fHelp || params.size() > 1 )
+        throw runtime_error("heiraddress pubkey\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    pubkey = ParseHex(params[0].get_str().c_str());
 	return(CCaddress(cp,(char *)"Heir",pubkey));
 }
-
-
 
 UniValue lottoaddress(const UniValue& params, bool fHelp)
 {
@@ -5519,13 +5523,13 @@ UniValue diceaddress(const UniValue& params, bool fHelp)
 UniValue faucetaddress(const UniValue& params, bool fHelp)
 {
     struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
-    int errno;
+    int error;
     cp = CCinit(&C,EVAL_FAUCET);
     if ( fHelp || params.size() > 1 )
         throw runtime_error("faucetaddress [pubkey]\n");
-    errno = ensure_CCrequirements();
-    if ( errno < 0 )
-        throw runtime_error(strprintf("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet. ERR=%d\n", errno));
+    error = ensure_CCrequirements();
+    if ( error < 0 )
+        throw runtime_error(strprintf("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet. ERR=%d\n", error));
     if ( params.size() == 1 )
         pubkey = ParseHex(params[0].get_str().c_str());
     return(CCaddress(cp,(char *)"Faucet",pubkey));
