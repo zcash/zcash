@@ -44,7 +44,7 @@ class MempoolUpgradeActivationTest(BitcoinTestFramework):
         self.sync_all()
 
         # Shield some ZEC
-        node1_taddr = get_coinbase_address(self.nodes[1], 97)
+        node1_taddr = get_coinbase_address(self.nodes[1])
         node0_zaddr = self.nodes[0].z_getnewaddress('sprout')
         recipients = [{'address': node0_zaddr, 'amount': Decimal('10')}]
         myopid = self.nodes[1].z_sendmany(node1_taddr, recipients, 1, Decimal('0'))

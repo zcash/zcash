@@ -76,7 +76,7 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
         assert_equal("Coinbase funds can only be sent to a zaddr" in errorString, True)
 
         # Prepare to send taddr->zaddr
-        mytaddr = get_coinbase_address(self.nodes[0], 4)
+        mytaddr = get_coinbase_address(self.nodes[0])
         myzaddr = self.nodes[0].z_getnewaddress('sprout')
 
         # Node 3 will test that watch only address utxos are not selected

@@ -36,7 +36,7 @@ class WalletTreeStateTest (BitcoinTestFramework):
         self.nodes[1].generate(101)
         self.sync_all()
 
-        mytaddr = get_coinbase_address(self.nodes[0], 100)
+        mytaddr = get_coinbase_address(self.nodes[0])
         myzaddr = self.nodes[0].z_getnewaddress('sprout')
 
         # Spend coinbase utxos to create three notes of 9.99990000 each

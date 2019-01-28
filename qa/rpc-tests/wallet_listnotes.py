@@ -43,7 +43,7 @@ class WalletListNotes(BitcoinTestFramework):
         # Shield coinbase funds (must be a multiple of 10, no change allowed pre-sapling)
         receive_amount_10 = Decimal('10.0') - Decimal('0.0001')
         recipients = [{"address":sproutzaddr, "amount":receive_amount_10}]
-        myopid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0], 1), recipients)
+        myopid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients)
         txid_1 = wait_and_assert_operationid_status(self.nodes[0], myopid)
         self.sync_all()
         
@@ -122,7 +122,7 @@ class WalletListNotes(BitcoinTestFramework):
         # so send from coin base)
         receive_amount_2 = Decimal('2.0') - Decimal('0.0001')
         recipients = [{"address": saplingzaddr, "amount":receive_amount_2}]
-        myopid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0], 1), recipients)
+        myopid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients)
         txid_3 = wait_and_assert_operationid_status(self.nodes[0], myopid)
         self.sync_all()
         unspent_tx = self.nodes[0].z_listunspent(0)

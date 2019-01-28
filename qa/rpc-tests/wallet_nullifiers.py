@@ -24,7 +24,7 @@ class WalletNullifiersTest (BitcoinTestFramework):
 
         # send node 0 taddr to zaddr to get out of coinbase
         # Tests using the default cached chain have one address per coinbase output
-        mytaddr = get_coinbase_address(self.nodes[0], 1)
+        mytaddr = get_coinbase_address(self.nodes[0])
         recipients = []
         recipients.append({"address":myzaddr0, "amount":Decimal('10.0')-Decimal('0.0001')}) # utxo amount less fee
         

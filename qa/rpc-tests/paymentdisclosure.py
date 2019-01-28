@@ -49,7 +49,7 @@ class PaymentDisclosureTest (BitcoinTestFramework):
         assert_equal(self.nodes[1].getbalance(), 10)
         assert_equal(self.nodes[2].getbalance(), 30)
 
-        mytaddr = get_coinbase_address(self.nodes[0], 4)
+        mytaddr = get_coinbase_address(self.nodes[0])
         myzaddr = self.nodes[0].z_getnewaddress('sprout')
 
         # Check that Node 2 has payment disclosure disabled.

@@ -59,7 +59,7 @@ class WalletPersistenceTest (BitcoinTestFramework):
         self.sync_all()
 
         # Node 0 shields funds to Sapling address
-        taddr0 = get_coinbase_address(self.nodes[0], 101)
+        taddr0 = get_coinbase_address(self.nodes[0])
         recipients = []
         recipients.append({"address": sapling_addr, "amount": Decimal('20')})
         myopid = self.nodes[0].z_sendmany(taddr0, recipients, 1, 0)

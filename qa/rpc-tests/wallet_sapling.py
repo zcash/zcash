@@ -35,7 +35,7 @@ class WalletSaplingTest(BitcoinTestFramework):
         self.sync_all()
 
         # Verify RPCs disallow Sapling value transfer if Sapling is not active
-        tmp_taddr = get_coinbase_address(self.nodes[3], 1)
+        tmp_taddr = get_coinbase_address(self.nodes[3])
         tmp_zaddr = self.nodes[3].z_getnewaddress('sapling')
         try:
             recipients = []
@@ -95,7 +95,7 @@ class WalletSaplingTest(BitcoinTestFramework):
         # taddr -> Sapling
         recipients = []
         recipients.append({"address": saplingAddr0, "amount": Decimal('10')})
-        myopid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0], 1), recipients, 1, 0)
+        myopid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, 0)
         mytxid = wait_and_assert_operationid_status(self.nodes[0], myopid)
 
         self.sync_all()
@@ -105,7 +105,7 @@ class WalletSaplingTest(BitcoinTestFramework):
         assert(Decimal(mempool[mytxid]['startingpriority']) == Decimal('1E+16'))
 
         # Shield another coinbase UTXO
-        myopid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0], 1), recipients, 1, 0)
+        myopid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, 0)
         mytxid = wait_and_assert_operationid_status(self.nodes[0], myopid)
 
         self.sync_all()

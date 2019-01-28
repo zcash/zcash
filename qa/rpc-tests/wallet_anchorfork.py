@@ -45,7 +45,7 @@ class WalletAnchorForkTest (BitcoinTestFramework):
         # At this point in time, commitment tree is the empty root
 
         # Node 0 creates a joinsplit transaction
-        mytaddr0 = get_coinbase_address(self.nodes[0], 4)
+        mytaddr0 = get_coinbase_address(self.nodes[0])
         myzaddr0 = self.nodes[0].z_getnewaddress('sprout')
         recipients = []
         recipients.append({"address":myzaddr0, "amount": Decimal('10.0') - Decimal('0.0001')})

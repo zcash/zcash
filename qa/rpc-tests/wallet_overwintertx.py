@@ -35,7 +35,7 @@ class WalletOverwinterTxTest (BitcoinTestFramework):
         self.sync_all()
         # Node 0 has reward from blocks 1 to 98 which are spendable.
 
-        taddr0 = get_coinbase_address(self.nodes[0], 98)
+        taddr0 = get_coinbase_address(self.nodes[0])
         taddr1 = self.nodes[1].getnewaddress()
         taddr2 = self.nodes[2].getnewaddress()
         zaddr2 = self.nodes[2].z_getnewaddress('sprout')

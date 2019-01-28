@@ -49,7 +49,7 @@ class Wallet1941RegressionTest (BitcoinTestFramework):
         self.nodes[0].setmocktime(starttime)
         self.nodes[0].generate(101)
 
-        mytaddr = get_coinbase_address(self.nodes[0], 1)
+        mytaddr = get_coinbase_address(self.nodes[0])
         myzaddr = self.nodes[0].z_getnewaddress('sprout')
 
         # Send 10 coins to our zaddr.
