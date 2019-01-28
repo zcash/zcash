@@ -4639,20 +4639,20 @@ bool FindBlockPos(int32_t tmpflag,CValidationState &state, CDiskBlockPos &pos, u
             LogPrintf("Leaving block file %i: %s\n", nFile, (*ptr)[nFile].ToString());
         }
         FlushBlockFile(!fKnown);
-        fprintf(stderr, "nFile = %i size.%li\n",nFile,tmpBlockFiles.size());
+        //fprintf(stderr, "nFile = %i size.%li\n",nFile,tmpBlockFiles.size());
         if ( tmpflag != 0 && tmpBlockFiles.size() >= 4 )
         {
             if ( nFile == 1 )
             {
                 PruneOneBlockFile(true,TMPFILE_START+2);
                 tmpBlockFiles[2].SetNull();
-                LogPrintf("Reset tempfile 2\n"); sleep(15);
+                LogPrintf("Reset tempfile 2\n");
             }
             else if ( nFile == 2 )
             {
                 PruneOneBlockFile(true,TMPFILE_START+3);
                 tmpBlockFiles[3].SetNull();
-                LogPrintf("Reset tempfile 3\n"); sleep(15);
+                LogPrintf("Reset tempfile 3\n");
             }
         }
         if ( tmpflag != 0 && nFile == 3 )
@@ -4662,10 +4662,10 @@ bool FindBlockPos(int32_t tmpflag,CValidationState &state, CDiskBlockPos &pos, u
             PruneOneBlockFile(true,TMPFILE_START+1);
             tmpBlockFiles[1].SetNull();
             nFile = 0;
-            LogPrintf("Reset tempfile 0\n"); sleep(15);
+            LogPrintf("Reset tempfile 0 and 1\n");
         }
         *lastfilep = nFile;
-        fprintf(stderr, "*lastfilep = %i\n",*lastfilep);sleep(15);
+        //fprintf(stderr, "*lastfilep = %i\n",*lastfilep);
     }
 
     (*ptr)[nFile].AddBlock(nHeight, nTime);
