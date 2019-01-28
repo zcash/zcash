@@ -114,6 +114,7 @@ LIBZCASH_H = \
 .PHONY: FORCE collate-libsnark check-symbols check-security
 # bitcoin core #
 BITCOIN_CORE_H = \
+  addressindex.h \
   addrman.h \
   alert.h \
   amount.h \
@@ -190,6 +191,7 @@ BITCOIN_CORE_H = \
   script/sign.h \
   script/standard.h \
   serialize.h \
+  spentindex.h \
   streams.h \
   support/allocators/secure.h \
   support/allocators/zeroafterfree.h \
