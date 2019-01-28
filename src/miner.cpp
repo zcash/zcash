@@ -407,6 +407,11 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 
 class MinerAddressScript : public CReserveScript
 {
+    // CReserveScript requires implementing this function, so that if an
+    // internal (not-visible) wallet address is used, the wallet can mark it as
+    // important when a block is mined (so it then appears to the user).
+    // If -mineraddress is set, the user already knows about and is managing the
+    // address, so we don't need to do anything here.
     void KeepScript() {}
 };
 
