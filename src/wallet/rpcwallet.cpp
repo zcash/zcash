@@ -6263,11 +6263,23 @@ UniValue gatewaysmarkdone(const UniValue& params, bool fHelp)
     return(result);
 }
 
-UniValue gatewayspending(const UniValue& params, bool fHelp)
+UniValue gatewayspendingdeposits(const UniValue& params, bool fHelp)
 {
     uint256 bindtxid; std::string coin;
     if ( fHelp || params.size() != 2 )
-        throw runtime_error("gatewayspending bindtxid coin\n");
+        throw runtime_error("gatewayspendingdeposits bindtxid coin\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    bindtxid = Parseuint256((char *)params[0].get_str().c_str());
+    coin = params[1].get_str();
+    return(GatewaysPendingDeposits(bindtxid,coin));
+}
+
+UniValue gatewayspendingwithdraws(const UniValue& params, bool fHelp)
+{
+    uint256 bindtxid; std::string coin;
+    if ( fHelp || params.size() != 2 )
+        throw runtime_error("gatewayspendingwithdraws bindtxid coin\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     bindtxid = Parseuint256((char *)params[0].get_str().c_str());
@@ -6285,19 +6297,6 @@ UniValue gatewaysprocessed(const UniValue& params, bool fHelp)
     bindtxid = Parseuint256((char *)params[0].get_str().c_str());
     coin = params[1].get_str();
     return(GatewaysProcessedWithdraws(bindtxid,coin));
-}
-
-UniValue gatewaysmultisig(const UniValue& params, bool fHelp)
-{
-    UniValue result(UniValue::VOBJ); std::string hex; char *txidaddr;
-    if ( fHelp || params.size() != 1 )
-        throw runtime_error("gatewaysmultisig txidaddr\n");
-    if ( ensure_CCrequirements() < 0 )
-        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
-    const CKeyStore& keystore = *pwalletMain;
-    LOCK2(cs_main, pwalletMain->cs_wallet);
-    txidaddr = (char *)params[0].get_str().c_str();
-    return(GatewaysMultisig(txidaddr));
 }
 
 UniValue oracleslist(const UniValue& params, bool fHelp)
