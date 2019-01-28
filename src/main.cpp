@@ -3291,7 +3291,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         if (!ReceivedBlockTransactions(block, state, pindex, blockPos))
             return error("AcceptBlock(): ReceivedBlockTransactions failed");
         setDirtyFileInfo.insert(blockPos.nFile);
-        fprintf(stderr,"added ht.%d copy of tmpfile to %d.%d\n",pindex->GetHeight(),blockPos.nFile,blockPos.nPos);
+        //fprintf(stderr,"added ht.%d copy of tmpfile to %d.%d\n",pindex->GetHeight(),blockPos.nFile,blockPos.nPos);
     }
     // verify that the view's current state corresponds to the previous block
     uint256 hashPrevBlock = pindex->pprev == NULL ? uint256() : pindex->pprev->GetBlockHash();
@@ -3754,7 +3754,8 @@ bool static FlushStateToDisk(CValidationState &state, FlushStateMode mode) {
                 std::vector<std::pair<int, const CBlockFileInfo*> > vFiles;
                 vFiles.reserve(setDirtyFileInfo.size());
                 for (set<int>::iterator it = setDirtyFileInfo.begin(); it != setDirtyFileInfo.end(); ) {
-                    vFiles.push_back(make_pair(*it, &vinfoBlockFile[*it]));
+                    if ( *it < TMPFILE_START )
+                        vFiles.push_back(make_pair(*it, &vinfoBlockFile[*it]));
                     setDirtyFileInfo.erase(it++);
                 }
                 std::vector<const CBlockIndex*> vBlocks;
@@ -4601,11 +4602,15 @@ bool FindBlockPos(int32_t tmpflag,CValidationState &state, CDiskBlockPos &pos, u
     LOCK(cs_LastBlockFile);
 
     unsigned int nFile;
+    
     if ( tmpflag != 0 )
     {
         ptr = &tmpBlockFiles;
         nFile = nLastTmpFile;
         lastfilep = &nLastTmpFile;
+        if (tmpBlockFiles.size() <= nFile) {
+            tmpBlockFiles.resize(nFile + 1);
+        }
     }
     else
     {
@@ -4617,7 +4622,7 @@ bool FindBlockPos(int32_t tmpflag,CValidationState &state, CDiskBlockPos &pos, u
         }
     }
     if (!fKnown) {
-        while ((*ptr)[nFile].nSize + nAddSize >= MAX_BLOCKFILE_SIZE) {
+        while ( (*ptr)[nFile].nSize + nAddSize >= ((tmpflag != 0) ? MAX_TEMPFILE_SIZE : MAX_BLOCKFILE_SIZE) ) {
             nFile++;
             if ((*ptr).size() <= nFile) {
                 (*ptr).resize(nFile + 1);
@@ -4628,13 +4633,39 @@ bool FindBlockPos(int32_t tmpflag,CValidationState &state, CDiskBlockPos &pos, u
         if ( 0 && tmpflag != 0 )
             fprintf(stderr,"pos.nFile %d nPos %u\n",pos.nFile,pos.nPos);
     }
-
+    
     if (nFile != *lastfilep) {
         if (!fKnown) {
             LogPrintf("Leaving block file %i: %s\n", nFile, (*ptr)[nFile].ToString());
         }
         FlushBlockFile(!fKnown);
+        fprintf(stderr, "nFile = %i size.%li\n",nFile,tmpBlockFiles.size());
+        if ( tmpflag != 0 && tmpBlockFiles.size() >= 4 )
+        {
+            if ( nFile == 1 )
+            {
+                PruneOneBlockFile(true,TMPFILE_START+2);
+                tmpBlockFiles[2].SetNull();
+                LogPrintf("Reset tempfile 2\n"); sleep(15);
+            }
+            else if ( nFile == 2 )
+            {
+                PruneOneBlockFile(true,TMPFILE_START+3);
+                tmpBlockFiles[3].SetNull();
+                LogPrintf("Reset tempfile 3\n"); sleep(15);
+            }
+        }
+        if ( tmpflag != 0 && nFile == 3 )
+        {
+            PruneOneBlockFile(true,TMPFILE_START);
+            tmpBlockFiles[0].SetNull();
+            PruneOneBlockFile(true,TMPFILE_START+1);
+            tmpBlockFiles[1].SetNull();
+            nFile = 0;
+            LogPrintf("Reset tempfile 0\n"); sleep(15);
+        }
         *lastfilep = nFile;
+        fprintf(stderr, "*lastfilep = %i\n",*lastfilep);sleep(15);
     }
 
     (*ptr)[nFile].AddBlock(nHeight, nTime);
@@ -5232,7 +5263,8 @@ bool AcceptBlock(int32_t *futureblockp,CBlock& block, CValidationState& state, C
     }
 
     int nHeight = pindex->GetHeight();
-    int32_t usetmp = 0;
+    int32_t usetmp = 1;
+
     // Write block to history file
     try {
         unsigned int nBlockSize = ::GetSerializeSize(block, SER_DISK, CLIENT_VERSION);
@@ -5463,8 +5495,9 @@ uint64_t CalculateCurrentUsage()
 }
 
 /* Prune a block file (modify associated database entries)*/
-void PruneOneBlockFile(const int fileNumber)
+void PruneOneBlockFile(bool tempfile, const int fileNumber)
 {
+    fprintf(stderr, "pruneblockfile.%i\n",fileNumber); sleep(15);
     for (BlockMap::iterator it = mapBlockIndex.begin(); it != mapBlockIndex.end(); ++it) {
         CBlockIndex* pindex = it->second;
         if (pindex && pindex->nFile == fileNumber) {
@@ -5474,7 +5507,11 @@ void PruneOneBlockFile(const int fileNumber)
             pindex->nDataPos = 0;
             pindex->nUndoPos = 0;
             setDirtyBlockIndex.insert(pindex);
-
+            if (pindex->nStatus & BLOCK_IN_TMPFILE != 0 )
+            {    
+                // We should be able to clear these blocks from the index as they are not in the main chains block files.
+                fprintf(stderr, "Block still in tempfile.%i\n",fileNumber);
+            }
             // Prune from mapBlocksUnlinked -- any block we prune would have
             // to be downloaded again in order to consider its chain, at which
             // point it would be considered as a candidate for
@@ -5489,8 +5526,8 @@ void PruneOneBlockFile(const int fileNumber)
             }
         }
     }
-
-    vinfoBlockFile[fileNumber].SetNull();
+    if (!tempfile)
+        vinfoBlockFile[fileNumber].SetNull();
     setDirtyFileInfo.insert(fileNumber);
 }
 
@@ -5538,7 +5575,7 @@ void FindFilesToPrune(std::set<int>& setFilesToPrune)
             if (vinfoBlockFile[fileNumber].nHeightLast > nLastBlockWeCanPrune)
                 continue;
 
-            PruneOneBlockFile(fileNumber);
+            PruneOneBlockFile(false, fileNumber);
             // Queue up the files for removal
             setFilesToPrune.insert(fileNumber);
             nCurrentUsage -= nBytesToPrune;
