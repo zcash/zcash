@@ -28,7 +28,7 @@
 #include "crosschain.h"
 
 #define FAUCET2SIZE COIN
-#defein EVAL_FAUCET2 EVAL_FIRSTUSER
+#define EVAL_FAUCET2 EVAL_FIRSTUSER
 #define EVAL_SUDOKU 17
 
 std::string MYCCLIBNAME = (char *)"sudoku";
