@@ -799,13 +799,13 @@ UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
                     result.push_back(Pair("sudokuaddr",CCaddr));
                     balance = CCaddress_balance(CCaddr);
                     result.push_back(Pair("amount",ValueFromAmount(balance)));
-                    if ( sudoku_captcha(timestamps) < 0 )
+                    if ( 0 && sudoku_captcha(timestamps) < 0 )
                     {
                         result.push_back(Pair("result","error"));
                         result.push_back(Pair("error","captcha failure"));
-                        //return(result);
+                        return(result);
                     }
-                    //else
+                    else
                     {
                         if ( (txidstr= jstri(params,0)) != 0 )
                         {
