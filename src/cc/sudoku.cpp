@@ -534,10 +534,13 @@ UniValue sudoku_txidinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
     UniValue result(UniValue::VOBJ);
     if ( params != 0 )
     {
-        char str[65]; bits256 _txid; uint256 txid;
-        _txid = jbits256(params,(char *)"txid");
-        memcpy(&txid,&_txid,sizeof(txid));
-        printf("txid.(%s)\n",txid.GetHex().c_str());
+        char str[65],*txidstr; uint256 txid;
+        printf("params -> (%s)\n",jprint(params,0));
+        if ( (txidstr= jstr(params,(char *)"txid")) != 0 )
+        {
+            decode_hex((uint8_t *)&txid,32,txidstr);
+            printf("txid.(%s) <- %s\n",txid.GetHex().c_str(),txidstr);
+        }
     }
     result.push_back(Pair("result","success"));
     result.push_back(Pair("name","sudoku"));
