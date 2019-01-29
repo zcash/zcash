@@ -5327,13 +5327,20 @@ UniValue channelsaddress(const UniValue& params, bool fHelp)
 UniValue cclibaddress(const UniValue& params, bool fHelp)
 {
     struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
-    cp = CCinit(&C,EVAL_FIRSTUSER);
-    if ( fHelp || params.size() > 1 )
-        throw runtime_error("cclibaddress [pubkey]\n");
+    if ( fHelp || params.size() > 2 )
+        throw runtime_error("cclibaddress [evalcode] [pubkey]\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
-    if ( params.size() == 1 )
-        pubkey = ParseHex(params[0].get_str().c_str());
+    cp = CCinit(&C,EVAL_FIRSTUSER);
+    if ( params.size() >= 1 )
+    {
+        evalcode = atoi(params[0].get_str().c_str());
+        if ( evalcode < EVAL_FIRSTUSER || evalcode > EVAL_LASTUSER )
+            throw runtime_error("evalcode not between EVAL_FIRSTUSER and EVAL_LASTUSER\n");
+        cp = CCinit(&C,evalcode);
+        if ( params.size() == 2 )
+            pubkey = ParseHex(params[1].get_str().c_str());
+    }
     return(CCaddress(cp,(char *)"CClib",pubkey));
 }
 
