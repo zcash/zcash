@@ -490,8 +490,11 @@ UniValue sudoku_txidinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
 
 CScript sudoku_genopret(uint8_t unsolved[9][9])
 {
-    CScript opret; uint8_t evalcode = EVAL_SUDOKU;
-    opret << OP_RETURN << E_MARSHAL(ss << evalcode << 'G' << unsolved);
+    CScript opret; uint8_t evalcode = EVAL_SUDOKU; std::vector<uint8_t> data;
+    for (i=0; i<9; i++)
+        for (j=0; j<9; j++)
+            data.push_back(unsolved[i][j]);
+    opret << OP_RETURN << E_MARSHAL(ss << evalcode << 'G' << data);
     return(opret);
 }
 
