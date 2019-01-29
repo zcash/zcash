@@ -532,7 +532,7 @@ int32_t sudoku_captcha(uint32_t timestamps[81])
         solvetime = (list[0] - list[n-1]);
         if ( list[0] < list[n-1] )
         {
-            printf("list[0] %u vs list[%d-1] %u\n",list[0],list[n-1]);
+            printf("list[0] %u vs list[%d-1] %u\n",list[0],n,list[n-1]);
             return(-1);
         }
         else if ( list[0] > chainActive.LastTip()->nTime+200 )
