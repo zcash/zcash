@@ -496,6 +496,7 @@ UniValue sudoku_generate(struct CCcontract_info *cp,cJSON *params)
     result.push_back(Pair("result","success"));
     result.push_back(Pair("name","sudoku"));
     result.push_back(Pair("method","gen"));
+    result.push_back(Pair("hex","deadbeef"));
     return(result);
 }
 
