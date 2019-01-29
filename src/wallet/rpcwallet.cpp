@@ -5361,20 +5361,13 @@ UniValue cclibinfo(const UniValue& params, bool fHelp)
         throw runtime_error("cclibinfo\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
-    if ( params.size() >= 1 )
-    {
-        evalcode = atoi(params[0].get_str().c_str());
-        if ( evalcode < EVAL_FIRSTUSER || evalcode > EVAL_LASTUSER )
-            throw runtime_error("evalcode not between EVAL_FIRSTUSER and EVAL_LASTUSER\n");
-    }
     cp = CCinit(&C,evalcode);
     return(CClib_info(cp));
 }
 
 UniValue cclib(const UniValue& params, bool fHelp)
 {
-    struct CCcontract_info *cp,C; char *method; cJSON *jsonparams=0; uint8_t evalcode;
-    cp = CCinit(&C,EVAL_FIRSTUSER);
+    struct CCcontract_info *cp,C; char *method; cJSON *jsonparams=0; uint8_t evalcode = EVAL_FIRSTUSER;
     if ( fHelp || params.size() > 3 )
         throw runtime_error("cclib method [evalcode] [JSON params]\n");
     if ( ensure_CCrequirements() < 0 )
@@ -5391,6 +5384,7 @@ UniValue cclib(const UniValue& params, bool fHelp)
         if ( params.size() == 2 )
             jsonparams = cJSON_Parse(params[2].get_str().c_str());
     }
+    printf("evalcode.%d\n",evalcode);
     cp = CCinit(&C,evalcode);
     return(CClib(cp,method,jsonparams));
 }
