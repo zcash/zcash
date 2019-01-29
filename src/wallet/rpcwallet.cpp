@@ -5391,9 +5391,6 @@ UniValue cclib(const UniValue& params, bool fHelp)
         if ( params.size() == 3 )
         {
             jsonparams = cJSON_Parse(params[2].get_str().c_str());
-            if ( jsonparams != 0 )
-                printf("%p params.(%s)\n",jsonparams,jprint(jsonparams,0));
-            //printf("Parse.(%s) -> %p\n",params[2].get_str().c_str(),jsonparams);
         }
     }
     cp = CCinit(&C,evalcode);
