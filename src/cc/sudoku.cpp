@@ -492,6 +492,23 @@ CScript sudoku_genopret(uint8_t unsolved[9][9])
     return(opret);
 }
 
+uint8_t sudoku_genopreturndecode(char *unsolved,CScript scriptPubKey)
+{
+    std::vector<uint8_t> vopret; uint8_t *script,e,f; std::vector<uint8_t> data; int32_t i;
+    GetOpReturnData(scriptPubKey,vopret);
+    script = (uint8_t *)vopret.data();
+    if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> data) != 0 && e == EVAL_SUDOKU && f == 'G' )
+    {
+        if ( data.size() == 81 )
+        {
+            for (i=0; i<81; i++)
+                unsolved[i] = data[i] == 0 ? '-' : '0' + data[i];
+            unsolved[i] = 0;
+            return(f);
+        }
+    }
+    return(0);}
+
 UniValue sudoku_generate(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
@@ -531,10 +548,10 @@ UniValue sudoku_generate(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
 
 UniValue sudoku_txidinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ);
+    UniValue result(UniValue::VOBJ); int32_t numvouts; char str[65],*txidstr; uint256 txid,hashBlock; CTransaction tx; char unsolved[82];
     if ( params != 0 )
     {
-        char str[65],*txidstr; uint256 txid;
+        result.push_back(Pair("result","success"));
         if ( (txidstr= jprint(params,0)) != 0 )
         {
             if ( txidstr[0] == '"' && txidstr[strlen(txidstr)-1] == '"' )
@@ -545,10 +562,33 @@ UniValue sudoku_txidinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
             //printf("params -> (%s)\n",txidstr);
             decode_hex((uint8_t *)&txid,32,txidstr);
             txid = revuint256(txid);
-            printf("txid.(%s) <- %s\n",txid.GetHex().c_str(),txidstr);
+            result.push_back(Pair("txid",txid.GetHex()));
+            if ( GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 1 )
+            {
+                if ( sudoku_genopreturndecode(unsolved,tx.vout[numvouts-1].scriptPubKey) == 'G' )
+                {
+                    result.push_back(Pair("result","success"));
+                    result.push_back(Pair("amount",ValueFromAmount(tx.vout[1].nValue)));
+                    result.push_back(Pair("unsolved",unsolved));
+                }
+                else
+                {
+                    result.push_back(Pair("result","error"));
+                    result.push_back(Pair("error","couldnt extract sudoku_generate opreturn"));
+                }
+            }
+            else
+            {
+                result.push_back(Pair("result","error"));
+                result.push_back(Pair("error","couldnt find txid"));
+            }
         }
     }
-    result.push_back(Pair("result","success"));
+    else
+    {
+        result.push_back(Pair("result","error"));
+        result.push_back(Pair("error","missing txid in params"));
+    }
     result.push_back(Pair("name","sudoku"));
     result.push_back(Pair("method","txidinfo"));
     return(result);
