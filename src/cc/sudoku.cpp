@@ -517,7 +517,7 @@ void sudoku_gen(uint8_t key32[32],uint8_t unsolved[9][9],uint32_t srandi)
 
 int32_t sudoku_captcha(uint32_t timestamps[81])
 {
-    int32_t i,solvetime,avetime,n = 0; uint64_t variance = 0; std::vector<uint32_t> list;
+    int32_t i,solvetime,diff,avetime,n = 0; uint64_t variance = 0; std::vector<uint32_t> list;
     for (i=0; i<81; i++)
     {
         if ( timestamps[i] != 0 )
