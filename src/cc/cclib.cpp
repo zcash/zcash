@@ -257,9 +257,9 @@ int64_t AddCClibInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubK
     {
         txid = it->first.txhash;
         vout = (int32_t)it->first.index;
+        char str[65]; fprintf(stderr,"check %s/v%d %.8f`\n",uint256_str(str,txid),vout,(double)it->second.satoshis/COIN);
         if ( it->second.satoshis < threshold )
             continue;
-        //char str[65]; fprintf(stderr,"check %s/v%d %.8f`\n",uint256_str(str,txid),vout,(double)it->second.satoshis/COIN);
         // no need to prevent dup
         if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
         {
