@@ -478,10 +478,12 @@ void sudoku_gen(uint8_t key32[32],uint8_t unsolved[9][9],uint32_t srandi)
 
 //////////////////////// start of CClib interface
 // ./komodod -ac_name=SUDOKU -ac_supply=1000000 -pubkey=<yourpubkey> -addnode=5.9.102.210 -gen -genproclimit=1 -ac_cclib=sudoku -ac_perc=10000000 -ac_reward=100000000 -ac_cc=60000 -ac_script=2ea22c80203d1579313abe7d8ea85f48c65ea66fc512c878c0d0e6f6d54036669de940febf8103120c008203000401cc &
-// cclib "gen" 17 "1"
-// 5d13c1ad80daf37215c74809a36720c2ada90bacadb2e10bf0866092ce558432
-// cclib "txidinfo" 17 \"5d13c1ad80daf37215c74809a36720c2ada90bacadb2e10bf0866092ce558432\"
-/*{
+/* cclib "gen" 17 "1"
+ 5d13c1ad80daf37215c74809a36720c2ada90bacadb2e10bf0866092ce558432
+*/
+
+/* cclib "txidinfo" 17 \"5d13c1ad80daf37215c74809a36720c2ada90bacadb2e10bf0866092ce558432\"
+{
     "result": "success",
     "txid": "5d13c1ad80daf37215c74809a36720c2ada90bacadb2e10bf0866092ce558432",
     "result": "success",
@@ -489,6 +491,16 @@ void sudoku_gen(uint8_t key32[32],uint8_t unsolved[9][9],uint32_t srandi)
     "unsolved": "46-8---15-75-61-3----4----8-1--75-----3--24----2-----6-4----------73----------36-",
     "name": "sudoku",
     "method": "txidinfo"
+}*/
+
+/* cclib "pending" 17
+{
+    "result": "success",
+    "name": "sudoku",
+    "method": "pending",
+    "pending": [
+                "5d13c1ad80daf37215c74809a36720c2ada90bacadb2e10bf0866092ce558432"
+                ]
 }*/
 
 CScript sudoku_genopret(uint8_t unsolved[9][9])
@@ -516,7 +528,8 @@ uint8_t sudoku_genopreturndecode(char *unsolved,CScript scriptPubKey)
             return(f);
         }
     }
-    return(0);}
+    return(0);
+}
 
 UniValue sudoku_generate(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
@@ -548,7 +561,6 @@ UniValue sudoku_generate(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
             change = (inputsum - amount - 2*txfee);
         if ( change > txfee )
             mtx.vout.push_back(MakeCC1vout(cp->evalcode,change,sudokupk));
-        CCaddr2set(cp,cp->evalcode,sudokupk,cp->CCpriv,cp->unspendableCCaddr);
         rawtx = FinalizeCCTx(0,cp,mtx,pubkey2pk(Mypubkey()),txfee,sudoku_genopret(unsolved));
         result.push_back(Pair("hex",rawtx));
     } else result.push_back(Pair("error","not enough SUDOKU funds"));
@@ -603,17 +615,6 @@ UniValue sudoku_txidinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
     return(result);
 }
 
-UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
-{
-    UniValue result(UniValue::VOBJ);
-    if ( params != 0 )
-        printf("params.(%s)\n",jprint(params,0));
-    result.push_back(Pair("result","success"));
-    result.push_back(Pair("name","sudoku"));
-    result.push_back(Pair("method","solution"));
-    return(result);
-}
-
 UniValue sudoku_pending(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     UniValue result(UniValue::VOBJ),a(UniValue::VARR);
@@ -645,6 +646,30 @@ UniValue sudoku_pending(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     return(result);
 }
 
+UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
+{
+    UniValue result(UniValue::VOBJ); char *jsonstr;
+    if ( params != 0 )
+    {
+        if ( (jsonstr= jprint(params,0)) != 0 )
+        {
+            if ( jsonstr[0] == '"' && jsonstr[strlen(jsonstr)-1] == '"' )
+            {
+                jsonstr[strlen(jsonstr)-1] = 0;
+                jsonstr++;
+            }
+            params = cJSON_Parse(jsonstr);
+            free(jsonstr);
+        }
+        if ( params != 0 )
+            printf("params.(%s)\n",jprint(params,0));
+    }
+    CCaddr2set(cp,cp->evalcode,pk,priv32,coinaddr);
+    result.push_back(Pair("result","success"));
+    result.push_back(Pair("name","sudoku"));
+    result.push_back(Pair("method","solution"));
+    return(result);
+}
 
 bool sudoku_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx)
 {
