@@ -474,3 +474,55 @@ void sudoku_gen(uint8_t key32[32],uint8_t unsolved[9][9],uint32_t srandi)
     sudoku_privkey(key32,vals9);
     sudoku_privkeydisp(key32);
 }
+
+//////////////////////// start of CClib interface
+#include <assert.h>
+#include <cryptoconditions.h>
+
+#include "primitives/block.h"
+#include "primitives/transaction.h"
+#include "script/cc.h"
+#include "cc/eval.h"
+#include "cc/utils.h"
+#include "cc/CCinclude.h"
+#include "main.h"
+#include "chain.h"
+#include "core_io.h"
+#include "crosschain.h"
+
+UniValue sudoku_txidinfo(struct CCcontract_info *cp,cJSON *params)
+{
+    UniValue result(UniValue::VOBJ);
+    if ( params != 0 )
+        printf("params.(%s)\n",jprint(params,0));
+    result.push_back(Pair("result","success"));
+    return(result);
+}
+
+UniValue sudoku_generate(struct CCcontract_info *cp,cJSON *params)
+{
+    UniValue result(UniValue::VOBJ);
+    if ( params != 0 )
+        printf("params.(%s)\n",jprint(params,0));
+    result.push_back(Pair("result","success"));
+    return(result);
+}
+
+UniValue sudoku_solution(struct CCcontract_info *cp,cJSON *params)
+{
+    UniValue result(UniValue::VOBJ);
+    if ( params != 0 )
+        printf("params.(%s)\n",jprint(params,0));
+    result.push_back(Pair("result","success"));
+    return(result);
+}
+
+UniValue sudoku_pending(struct CCcontract_info *cp,cJSON *params)
+{
+    UniValue result(UniValue::VOBJ);
+    if ( params != 0 )
+        printf("params.(%s)\n",jprint(params,0));
+    result.push_back(Pair("result","success"));
+    return(result);
+}
+

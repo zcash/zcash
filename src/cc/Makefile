@@ -13,7 +13,7 @@ $(info $(OS))
 TARGET  = ../libcc.so
 TARGET_DARWIN = ../libcc.dylib
 TARGET_WIN = ../libcc.dll
-SOURCES = cclib.cpp
+SOURCES = cclib.cpp sudoku.cpp
 #HEADERS = $(shell echo ../cryptoconditions/include/*.h)
 
 all: $(TARGET)

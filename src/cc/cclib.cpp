@@ -28,24 +28,63 @@
 #include "crosschain.h"
 
 #define FAUCET2SIZE COIN
+#defein EVAL_FAUCET2 EVAL_FIRSTUSER
+#define EVAL_SUDOKU 17
+
+std::string MYCCLIBNAME = (char *)"sudoku";
+char *CClib_name() { return((char *)MYCCLIBNAME.c_str()); }
 
 struct CClib_rpcinfo
 {
-    char *method,*help;
+    char *CCname,*method,*help;
     int32_t numrequiredargs,maxargs; // frontloaded with required
-    uint8_t funcid;
+    uint8_t funcid,evalcode;
 }
 CClib_methods[] =
 {
-    { (char *)"faucet2_fund", (char *)"amount", 1, 1, 'F' },
-    { (char *)"faucet2_get", (char *)"<no args>", 0, 0, 'G' },
+    { (char *)"faucet2", (char *)"fund", (char *)"amount", 1, 1, 'F', EVAL_FAUCET2 },
+    { (char *)"faucet2", (char *)"get", (char *)"<no args>", 0, 0, 'G', EVAL_FAUCET2 },
+    { (char *)"sudoku", (char *)"gen", (char *)"amount", 1, 1, 'G', EVAL_SUDOKU },
+    { (char *)"sudoku", (char *)"txidinfo", (char *)"txid", 1, 1, 'T', EVAL_SUDOKU },
+    { (char *)"sudoku", (char *)"pending", (char *)"<no args>", 0, 0, 'U', EVAL_SUDOKU },
+    { (char *)"sudoku", (char *)"solution", (char *)"solution timestamps[]", 2, 2, 'S', EVAL_SUDOKU },
 };
 
-std::string MYCCLIBNAME = (char *)"faucet2";
-
-char *CClib_name() { return((char *)MYCCLIBNAME.c_str()); }
-
 std::string CClib_rawtxgen(struct CCcontract_info *cp,uint8_t funcid,cJSON *params);
+UniValue sudoku_txidinfo(struct CCcontract_info *cp,cJSON *params);
+UniValue sudoku_generate(struct CCcontract_info *cp,cJSON *params);
+UniValue sudoku_solution(struct CCcontract_info *cp,cJSON *params);
+UniValue sudoku_pending(struct CCcontract_info *cp,cJSON *params);
+
+UniValue CClib_method(struct CCcontract_info *cp,char *method,cJSON *params)
+{
+    UniValue result(UniValue::VOBJ);
+    if ( cp->evalcode == EVAL_SUDOKU )
+    {
+        if ( strcmp(method,"txidinfo") == 0 )
+            return(sudoku_txidinfo(cp,params));
+        else if ( strcmp(method,"gen") == 0 )
+            return(sudoku_generate(cp,params));
+        else if ( strcmp(method,"solution") == 0 )
+            return(sudoku_solution(cp,params));
+        else if ( strcmp(method,"pending") == 0 )
+            return(sudoku_pending(cp,params));
+        else
+        {
+            result.push_back(Pair("result","error"));
+            result.push_back(Pair("error","invalid sudoku method"));
+            result.push_back(Pair("method",method));
+            return(result);
+        }
+    }
+    else
+    {
+        result.push_back(Pair("result","error"));
+        result.push_back(Pair("error","only sudoku supported for now"));
+        result.push_back(Pair("evalcode",(int)cp->evalcode));
+        return(result);
+    }
+}
 
 UniValue CClib_info(struct CCcontract_info *cp)
 {
@@ -55,6 +94,7 @@ UniValue CClib_info(struct CCcontract_info *cp)
     for (i=0; i<sizeof(CClib_methods)/sizeof(*CClib_methods); i++)
     {
         UniValue obj(UniValue::VOBJ);
+        obj.push_back(Pair("evalcode",CClib_methods[i].evalcode));
         if ( CClib_methods[i].funcid < ' ' || CClib_methods[i].funcid >= 128 )
             obj.push_back(Pair("funcid",CClib_methods[i].funcid));
         else
@@ -63,7 +103,8 @@ UniValue CClib_info(struct CCcontract_info *cp)
             str[1] = 0;
             obj.push_back(Pair("funcid",str));
         }
-        obj.push_back(Pair("name",CClib_methods[i].method));
+        obj.push_back(Pair("name",CClib_methods[i].CCname));
+        obj.push_back(Pair("method",CClib_methods[i].method));
         obj.push_back(Pair("help",CClib_methods[i].help));
         obj.push_back(Pair("params_required",CClib_methods[i].numrequiredargs));
         obj.push_back(Pair("params_max",CClib_methods[i].maxargs));
@@ -78,13 +119,16 @@ UniValue CClib(struct CCcontract_info *cp,char *method,cJSON *params)
     UniValue result(UniValue::VOBJ); int32_t i; std::string rawtx;
     for (i=0; i<sizeof(CClib_methods)/sizeof(*CClib_methods); i++)
     {
-        if ( strcmp(method,CClib_methods[i].method) == 0 )
+        if ( cp->evalcode == CClib_methods[i].evalcode && strcmp(method,CClib_methods[i].method) == 0 )
         {
-            result.push_back(Pair("result","success"));
-            result.push_back(Pair("method",CClib_methods[i].method));
-            rawtx = CClib_rawtxgen(cp,CClib_methods[i].funcid,params);
-            result.push_back(Pair("rawtx",rawtx));
-            return(result);
+            if ( cp->evalcode == EVAL_FAUCET2 )
+            {
+                result.push_back(Pair("result","success"));
+                result.push_back(Pair("method",CClib_methods[i].method));
+                rawtx = CClib_rawtxgen(cp,CClib_methods[i].funcid,params);
+                result.push_back(Pair("rawtx",rawtx));
+                return(result);
+            } else return(CClib_method(cp,method,params));
         }
     }
     result.push_back(Pair("result","error"));
@@ -234,7 +278,6 @@ int64_t AddCClibInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubK
     return(totalinputs);
 }
 
-
 std::string Faucet2Fund(struct CCcontract_info *cp,uint64_t txfee,int64_t funds)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
@@ -289,14 +332,14 @@ std::string CClib_rawtxgen(struct CCcontract_info *cp,uint8_t funcid,cJSON *para
         if ( inputs > nValue )
             CCchange = (inputs - nValue - txfee);
         if ( CCchange != 0 )
-            mtx.vout.push_back(MakeCC1vout(EVAL_FIRSTUSER,CCchange,cclibpk));
+            mtx.vout.push_back(MakeCC1vout(EVAL_FAUCET2,CCchange,cclibpk));
         mtx.vout.push_back(CTxOut(nValue,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
         fprintf(stderr,"start at %u\n",(uint32_t)time(NULL));
         j = rand() & 0xfffffff;
         for (i=0; i<1000000; i++,j++)
         {
             tmpmtx = mtx;
-            rawhex = FinalizeCCTx(-1LL,cp,tmpmtx,mypk,txfee,CScript() << OP_RETURN << E_MARSHAL(ss << (uint8_t)EVAL_FIRSTUSER << (uint8_t)'G' << j));
+            rawhex = FinalizeCCTx(-1LL,cp,tmpmtx,mypk,txfee,CScript() << OP_RETURN << E_MARSHAL(ss << (uint8_t)EVAL_FAUCET2 << (uint8_t)'G' << j));
             if ( (len= (int32_t)rawhex.size()) > 0 && len < 65536 )
             {
                 len >>= 1;
