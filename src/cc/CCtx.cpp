@@ -73,7 +73,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
 	unspendablepk = GetUnspendable(cp, unspendablepriv);
 	GetCCaddress(cp, unspendable, unspendablepk);
 	othercond = MakeCCcond1(cp->evalcode, unspendablepk);
-
+printf("evalcode.%d (%s)\n",cp->evalcode,unspendable);
 	// tokens support:
 
 	// to spend from dual-eval mypk vout
