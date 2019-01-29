@@ -478,7 +478,7 @@ void sudoku_gen(uint8_t key32[32],uint8_t unsolved[9][9],uint32_t srandi)
 
 //////////////////////// start of CClib interface
 // ./komodod -ac_name=SUDOKU -ac_supply=1000000 -pubkey=<yourpubkey> -addnode=5.9.102.210 -gen -genproclimit=1 -ac_cclib=sudoku -ac_perc=10000000 -ac_reward=100000000 -ac_cc=60000 -ac_script=2ea22c80203d1579313abe7d8ea85f48c65ea66fc512c878c0d0e6f6d54036669de940febf8103120c008203000401cc &
-/* cclib "gen" 17 "1"
+/* cclib "gen" 17 \"1\"
  5d13c1ad80daf37215c74809a36720c2ada90bacadb2e10bf0866092ce558432
 */
 
@@ -505,6 +505,14 @@ void sudoku_gen(uint8_t key32[32],uint8_t unsolved[9][9],uint32_t srandi)
 
 /*
  cclib "solution" 17 \"[%22469823715875961234231457698914675823653182479782394156346219587528736941197548362%22,1548777525,1548777526,...]\"
+ {
+ "name": "sudoku",
+ "method": "solution",
+ "sudokuaddr": "RSeoPJvMUSLfUHM1BomB97geW9zPznwHXk",
+ "amount": 1.00000000,
+ "result": "success",
+ "hex": "0400008085202f8901328455ce926086f00be1b2adac0ba9adc22067a30948c71572f3da80adc1135d010000007b4c79a276a072a26ba067a565802102c57d40c1ddc92a5246a937bd7338823f1e8c916b137f2092d38cf250d74cb5ab8140f92d54f611aa3cb3d187eaadd56b06f3a8c0f5fba23956b26fdefc6038d9b6282de38525f72ebd8945a7994cef63ebca711ecf8fe6baeefcc218cf58efb59dc2a100af03800111a10001ffffffff02f0b9f505000000002321039433dc3749aece1bd568f374a45da3b0bc6856990d7da3cd175399577940a775ac0000000000000000fd9f016a4d9b01115351343639383233373135383735393631323334323331343537363938393134363735383233363533313832343739373832333934313536333436323139353837353238373336393431313937353438333632fd4401000000005c5078355c50783600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000"
+ }
  */
 
 CScript sudoku_genopret(uint8_t unsolved[9][9])
@@ -552,12 +560,20 @@ uint8_t sudoku_genopreturndecode(char *unsolved,CScript scriptPubKey)
 UniValue sudoku_generate(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); CPubKey sudokupk,pk; uint8_t privkey[32],unsolved[9][9],pub33[33]; uint32_t srandi; uint256 hash; char coinaddr[64]; uint64_t inputsum,amount,change=0; std::string rawtx;
+    UniValue result(UniValue::VOBJ); CPubKey sudokupk,pk; uint8_t privkey[32],unsolved[9][9],pub33[33]; uint32_t srandi; uint256 hash; char coinaddr[64],*jsonstr; uint64_t inputsum,amount,change=0; std::string rawtx;
+    amount = COIN;
     if ( params != 0 )
     {
-        printf("%p params.(%s)\n",params,jprint(params,0));
-        amount = jdouble(jitem(params,0),0) * COIN + 0.0000000049;
-    } else amount = COIN;
+        if ( (jsonstr= jprint(params,0)) != 0 )
+        {
+            if ( jsonstr[0] == '"' && jsonstr[strlen(jsonstr)-1] == '"' )
+            {
+                jsonstr[strlen(jsonstr)-1] = 0;
+                jsonstr++;
+            }
+            amount = atof(jsonstr) * COIN + 0.0000000049;
+        }
+    }
     result.push_back(Pair("result","success"));
     result.push_back(Pair("name","sudoku"));
     result.push_back(Pair("method","gen"));
@@ -581,8 +597,16 @@ UniValue sudoku_generate(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
             mtx.vout.push_back(MakeCC1vout(cp->evalcode,change,sudokupk));
         rawtx = FinalizeCCTx(0,cp,mtx,pubkey2pk(Mypubkey()),txfee,sudoku_genopret(unsolved));
         if ( rawtx.size() > 0 )
+        {
+            CTransaction tx;
             result.push_back(Pair("hex",rawtx));
-        else result.push_back(Pair("error","couldnt finalize CCtx"));
+            if ( DecodeHexTx(tx,rawtx) != 0 )
+            {
+                LOCK(cs_main);
+                if ( myAddtomempool(tx) != 0 )
+                    RelayTransaction(tx);
+            }
+        } else result.push_back(Pair("error","couldnt finalize CCtx"));
     } else result.push_back(Pair("error","not enough SUDOKU funds"));
     return(result);
 }
