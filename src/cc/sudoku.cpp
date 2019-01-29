@@ -648,7 +648,7 @@ UniValue sudoku_pending(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 
 UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ); char *jsonstr,coinaddr[64]; CPubKey pk; uint8_t priv32[32];
+    UniValue result(UniValue::VOBJ); int32_t i,j; char *jsonstr,*newstr,coinaddr[64]; CPubKey pk; uint8_t priv32[32];
     if ( params != 0 )
     {
         if ( (jsonstr= jprint(params,0)) != 0 )
@@ -658,7 +658,17 @@ UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
                 jsonstr[strlen(jsonstr)-1] = 0;
                 jsonstr++;
             }
-            params = cJSON_Parse(jsonstr);
+            newstr = malloc(strlen(jsonstr)+1);
+            for (i=j=0; jsonstr[i]!=0; i++)
+            {
+                if ( jsonstr[i] == '%' && jsonstr[i+1] == '2' && jsonstr[i+2] == '2' )
+                {
+                    newstr[j++] = '"';
+                    i += 2;
+                } else newstr[j++] = jsonstr[i];
+            }
+            newstr[j] = 0;
+            params = cJSON_Parse(newstr);
         }
         if ( params != 0 )
             printf("params.(%s)\n",jprint(params,0));
