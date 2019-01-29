@@ -544,6 +544,7 @@ UniValue sudoku_txidinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
             }
             //printf("params -> (%s)\n",txidstr);
             decode_hex((uint8_t *)&txid,32,txidstr);
+            txid = revuint256(txid);
             printf("txid.(%s) <- %s\n",txid.GetHex().c_str(),txidstr);
         }
     }
