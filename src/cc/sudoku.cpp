@@ -659,7 +659,6 @@ UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
                 jsonstr++;
             }
             params = cJSON_Parse(jsonstr);
-            free(jsonstr);
         }
         if ( params != 0 )
             printf("params.(%s)\n",jprint(params,0));
