@@ -141,12 +141,12 @@ UniValue CClib(struct CCcontract_info *cp,char *method,cJSON *params)
     return(result);
 }
 
-int64_t IsCClibvout(struct CCcontract_info *cp,const CTransaction& tx,int32_t v)
+int64_t IsCClibvout(struct CCcontract_info *cp,const CTransaction& tx,int32_t v,char *cmpaddr)
 {
     char destaddr[64];
     if ( tx.vout[v].scriptPubKey.IsPayToCryptoCondition() != 0 )
     {
-        if ( Getscriptaddress(destaddr,tx.vout[v].scriptPubKey) > 0 && strcmp(destaddr,cp->unspendableCCaddr) == 0 )
+        if ( Getscriptaddress(destaddr,tx.vout[v].scriptPubKey) > 0 && strcmp(destaddr,cmpaddr) == 0 )
             return(tx.vout[v].nValue);
     }
     return(0);
@@ -171,7 +171,7 @@ bool CClibExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction 
                 //fprintf(stderr,"vini.%d check hash and vout\n",i);
                 if ( hashBlock == zerohash )
                     return eval->Invalid("cant faucet2 from mempool");
-                if ( (assetoshis= IsCClibvout(cp,vinTx,tx.vin[i].prevout.n)) != 0 )
+                if ( (assetoshis= IsCClibvout(cp,vinTx,tx.vin[i].prevout.n,cp->unspendableCCaddr)) != 0 )
                     inputs += assetoshis;
             }
         }
@@ -179,7 +179,7 @@ bool CClibExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction 
     for (i=0; i<numvouts; i++)
     {
         //fprintf(stderr,"i.%d of numvouts.%d\n",i,numvouts);
-        if ( (assetoshis= IsCClibvout(cp,tx,i)) != 0 )
+        if ( (assetoshis= IsCClibvout(cp,tx,i,cp->unspendableCCaddr)) != 0 )
             outputs += assetoshis;
     }
     if ( inputs != outputs+FAUCET2SIZE+txfee )
@@ -220,7 +220,7 @@ bool CClib_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
         else
         {
             preventCCvouts = 1;
-            if ( IsCClibvout(cp,tx,0) != 0 )
+            if ( IsCClibvout(cp,tx,0,cp->unspendableCCaddr) != 0 )
             {
                 preventCCvouts++;
                 i = 1;
@@ -269,7 +269,7 @@ int64_t AddCClibInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubK
         // no need to prevent dup
         if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
         {
-            if ( (nValue= IsCClibvout(cp,vintx,vout)) > 1000000 && myIsutxo_spentinmempool(txid,vout) == 0 )
+            if ( (nValue= IsCClibvout(cp,vintx,vout,cp->unspendableCCaddr)) > 1000000 && myIsutxo_spentinmempool(txid,vout) == 0 )
             {
                 if ( total != 0 && maxinputs != 0 )
                     mtx.vin.push_back(CTxIn(txid,vout,CScript()));
