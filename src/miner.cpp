@@ -55,6 +55,8 @@
 
 #include "sodium.h"
 
+#include "notaries_staked.h"
+
 #include <boost/thread.hpp>
 #include <boost/tuple/tuple.hpp>
 #ifdef ENABLE_MINING
@@ -151,6 +153,7 @@ int32_t komodo_is_notarytx(const CTransaction& tx);
 CScript Marmara_scriptPubKey(int32_t height,CPubKey pk);
 CScript MarmaraCoinbaseOpret(uint8_t funcid,int32_t height,CPubKey pk);
 int32_t komodo_is_notarytx(const CTransaction& tx);
+uint64_t komodo_notarypay(CMutableTransaction &txNew, std::vector<int8_t> &NotarisationNotaries, uint32_t timestamp);
 
 CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32_t gpucount, bool isStake)
 {
@@ -170,6 +173,8 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
     } else pk = _pk;
 
     uint64_t deposits; int32_t isrealtime,kmdheight; uint32_t blocktime; const CChainParams& chainparams = Params();
+    bool fNotarisationBlock = false; std::vector<int8_t> NotarisationNotaries;
+    
     //fprintf(stderr,"create new block\n");
     // Create new block
     if ( gpucount < 0 )
@@ -239,6 +244,11 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
             }
         }
         pblock->nTime = GetAdjustedTime();
+        // Now we have the block time, we can get the active notaries.
+        int32_t staked_era; int8_t numSN;
+        uint8_t staked_pubkeys[64][33];
+        staked_era = STAKED_era(pblock->nTime);
+        numSN = numStakedNotaries(staked_pubkeys,staked_era);
 
         CCoinsViewCache view(pcoinsTip);
         uint32_t expired; uint64_t commission;
@@ -249,13 +259,14 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
         // Priority order to process transactions
         list<COrphan> vOrphan; // list memory doesn't move
         map<uint256, vector<COrphan*> > mapDependers;
-        bool fPrintPriority = GetBoolArg("-printpriority", false);
+        bool fPrintPriority = GetBoolArg("-printpriority", true);
 
         // This vector will be sorted into a priority queue:
         vector<TxPriority> vecPriority;
         vecPriority.reserve(mempool.mapTx.size() + 1);
 
         // now add transactions from the mem pool
+        int32_t Notarisations = 0;
         for (CTxMemPool::indexed_transaction_set::iterator mi = mempool.mapTx.begin();
              mi != mempool.mapTx.end(); ++mi)
         {
@@ -329,22 +340,33 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                     nTotalIn += nValueIn;
 
                     int nConf = nHeight - coins->nHeight;
-
-                    // This is to test is a tx is a notarisation and assign it max priotity.
-                    if ( fToCryptoAddress && NOTARYADDRS[0][0] != 0 && NUM_NOTARIES != 0 )
+                    
+                    uint8_t *script; int32_t scriptlen; uint256 hash; CTransaction tx1;
+                    // loop over notaries array and extract index of signers.
+                    if ( fToCryptoAddress && staked_pubkeys[0][0] != 0 && GetTransaction(txin.prevout.hash,tx1,hash,false) )
                     {
-                        uint256 hash; CTransaction tx1; CTxDestination address;
-                        if ( GetTransaction(txin.prevout.hash,tx1,hash,false) && (ExtractDestination(tx1.vout[txin.prevout.n].scriptPubKey, address)) )
+                        for (int8_t i = 0; i < numSN; i++) 
                         {
-                            for (int i = 0; i < NUM_NOTARIES; i++)
-                                if ( strcmp(NOTARYADDRS[i],CBitcoinAddress(address).ToString().c_str()) == 0 )
-                                    numNotaryVins++;
+                            script = (uint8_t *)&tx1.vout[txin.prevout.n].scriptPubKey[0];
+                            scriptlen = (int32_t)tx1.vout[txin.prevout.n].scriptPubKey.size();
+                            if ( scriptlen == 35 && script[0] == 33 && script[34] == OP_CHECKSIG && memcmp(script+1,staked_pubkeys[i],33) == 0 )
+                            {
+                                numNotaryVins++;
+                                if ( Notarisations == 0 )
+                                {
+                                    // Until we get a valid notarization this will always be 0.
+                                    // We can add the index of each notary to vector, and clear it if this notarisation is not valid later on.
+                                    NotarisationNotaries.push_back(i);
+                                }                            
+                            }
                         }
                     }
                     dPriority += (double)nValueIn * nConf;
                 }
-                if ( NUM_NOTARIES != 0 && numNotaryVins >= NUM_NOTARIES / 5 )
+                if ( numSN != 0 && numNotaryVins >= numSN / 5 )
                     fNotarisation = true;
+                else 
+                    NotarisationNotaries.clear();
 
                 nTotalIn += tx.GetShieldedValueIn();
             }
@@ -360,16 +382,27 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
 
             CFeeRate feeRate(nTotalIn-tx.GetValueOut(), nTxSize);
 
-            if (fNotarisation) {
+            if (fNotarisation) 
+            {
                 dPriority = 1e16;
-                //fprintf(stderr, "Notarisation.%s set to maximum priority.\n",hash.ToString().c_str());
+                Notarisations++;
+                fNotarisationBlock = true;
+                fprintf(stderr, "Notarisation[%i] %s set to maximum priority\n",Notarisations,hash.ToString().c_str());
+            }
+            else if ( dPriority == 1e16 )
+            {
+                dPriority -= 10;
+                // make sure notarisation is tx[1] in block. 
+                // Need to check this? Tried sapling tx and it was not set to max priotity, maybe missing something.
             }
             if (porphan)
             {
                 porphan->dPriority = dPriority;
                 porphan->feeRate = feeRate;
             }
-            else
+            else if ( fNotarisation && Notarisations != 1 && is_STAKED(ASSETCHAINS_SYMBOL) != 0)
+                continue; // If we have added a notarisation already skip the next one. There can only be one per block. 
+            else 
                 vecPriority.push_back(TxPriority(dPriority, feeRate, &(mi->GetTx())));
         }
 
@@ -637,7 +670,17 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
             txNew.vout[0].scriptPubKey = CScriptExt().PayToScriptHash(CScriptID(opretScript));
             txNew.vout[1].scriptPubKey = CScriptExt().OpReturnScript(opretScript, OPRETTYPE_TIMELOCK);
             txNew.vout[1].nValue = 0;
-        } // timelocks and commissions are currently incompatible due to validation complexity of the combination
+            // timelocks and commissions are currently incompatible due to validation complexity of the combination
+        } 
+        else if ( fNotarisationBlock && ASSETCHAINS_NOTARY_PAY != 0 )
+        {
+            // This block contains a valid notarisation as best as we can know. We cant check this 100% until we try to connect block.
+            // This assumes notaries are not going to collude to create invalid notarisations. 
+            // If they did this, then the block would be invalid, and all kinds of werid things will happen.
+            // We can test this, and see what happens, if its unreliable, we will need to create a CC contract.
+            uint64_t totalsats = komodo_notarypay(txNew, NotarisationNotaries, pblock->nTime);
+            fprintf(stderr, "Created notary payment coinbase totalsat.%lu\n",totalsats);
+        }
 
         pblock->vtx[0] = txNew;
         pblocktemplate->vTxFees[0] = -nFees;

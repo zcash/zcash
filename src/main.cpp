@@ -3572,6 +3572,17 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                 fprintf(stderr,"checktoshis %.8f vs %.8f numvouts %d\n",dstr(checktoshis),dstr(block.vtx[0].vout[1].nValue),(int32_t)block.vtx[0].vout.size());
         }
     }
+    if ( ASSETCHAINS_NOTARY_PAY != 0 && block.vtx[0].vout.size() > 1 )
+    {
+        uint64_t notarypaycheque = komodo_checknotarypay((CBlock *)&block,(int32_t)pindex->GetHeight());
+        if ( notarypaycheque > 0 )
+            blockReward += notarypaycheque;
+        else if ( is_STAKED(ASSETCHAINS_SYMBOL) == 4 && IS_STAKED_NOTARY > 0 )
+            blockReward += 999999999999999; // Notaries can validate any block for now.
+        else    
+            return state.DoS(100, error("ConnectBlock(): Notary Pay exceeds coinbase (actual=%d vs correct=%d)", block.vtx[0].GetValueOut(), blockReward),
+                            REJECT_INVALID, "bad-cb-amount");
+    }
     if (ASSETCHAINS_SYMBOL[0] != 0 && pindex->GetHeight() == 1 && block.vtx[0].GetValueOut() != blockReward)
     {
         return state.DoS(100, error("ConnectBlock(): coinbase for block 1 pays wrong amount (actual=%d vs correct=%d)", block.vtx[0].GetValueOut(), blockReward),
@@ -3684,7 +3695,11 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     LogPrint("bench", "    - Callbacks: %.2fms [%.2fs]\n", 0.001 * (nTime4 - nTime3), nTimeCallbacks * 0.000001);
 
     //FlushStateToDisk();
-    komodo_connectblock(pindex,*(CBlock *)&block);
+    int tmp = komodo_connectblock(pindex,*(CBlock *)&block);  // != block-nVersion-7000000; 
+    if ( tmp > 0 )
+    {    
+        printf("VALID NOTARISATION connect block.%i tx.%i\n NOT VALIDATING HERE YET!",pindex->GetHeight(),tmp);
+    }    
     return true;
 }
 

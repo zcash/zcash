@@ -37,7 +37,7 @@
 
 int32_t gettxout_scriptPubKey(uint8_t *scriptPubkey,int32_t maxsize,uint256 txid,int32_t n);
 void komodo_event_rewind(struct komodo_state *sp,char *symbol,int32_t height);
-void komodo_connectblock(CBlockIndex *pindex,CBlock& block);
+int32_t komodo_connectblock(CBlockIndex *pindex,CBlock& block);
 
 #include "komodo_structs.h"
 #include "komodo_globals.h"
@@ -695,6 +695,11 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                 }
                 else if ( ASSETCHAINS_SYMBOL[0] == 0 && matched != 0 && notarized != 0 && validated != 0 )
                     komodo_rwccdata((char *)"KMD",1,&ccdata,0);
+                else
+                {
+                    fprintf(stderr, "NOT matched NOTARISATION\n");
+                    return (-2);
+                }
                 if ( matched != 0 && *notarizedheightp > sp->NOTARIZED_HEIGHT && *notarizedheightp < height )
                 {
                     sp->NOTARIZED_HEIGHT = *notarizedheightp;
@@ -708,10 +713,7 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                     komodo_stateupdate(height,0,0,0,zero,0,0,0,0,0,0,0,0,0,0,sp->MoM,sp->MoMdepth);
                     if ( ASSETCHAINS_SYMBOL[0] != 0 )
                         printf("[%s] ht.%d NOTARIZED.%d %s.%s %sTXID.%s lens.(%d %d) MoM.%s %d\n",ASSETCHAINS_SYMBOL,height,*notarizedheightp,ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,srchash.ToString().c_str(),ASSETCHAINS_SYMBOL[0]==0?"BTC":"KMD",desttxid.ToString().c_str(),opretlen,len,sp->MoM.ToString().c_str(),sp->MoMdepth);
-                    if ( 0 && RemoveOrphanedBlocks(*notarizedheightp))
-                    {
-                        //fprintf(stderr, "Sucessfully removed all known orphaned blocks before height %d\n",*notarizedheightp);
-                    }
+                                        
                     if ( ASSETCHAINS_SYMBOL[0] == 0 )
                     {
                         if ( signedfp == 0 )
@@ -798,7 +800,8 @@ int32_t komodo_notarycmp(uint8_t *scriptPubKey,int32_t scriptlen,uint8_t pubkeys
     return(-1);
 }
 
-void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
+// int32_t ! 
+int32_t komodo_connectblock(CBlockIndex *pindex,CBlock& block)
 {
     static int32_t hwmheight;
     int32_t staked_era; static int32_t lastStakedEra;
@@ -809,7 +812,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
     if ( pindex == 0 )
     {
         fprintf(stderr,"komodo_connectblock null pindex\n");
-        return;
+        return -1;
     }
     memset(&zero,0,sizeof(zero));
     komodo_init(pindex->GetHeight());
@@ -817,7 +820,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
     if ( (sp= komodo_stateptr(symbol,dest)) == 0 )
     {
         fprintf(stderr,"unexpected null komodostateptr.[%s]\n",ASSETCHAINS_SYMBOL);
-        return;
+        return -1;
     }
     //fprintf(stderr,"%s connect.%d\n",ASSETCHAINS_SYMBOL,pindex->nHeight);
     if ( is_STAKED(ASSETCHAINS_SYMBOL) != 0 || IS_STAKED_NOTARY > -1 )
@@ -858,6 +861,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
         komodo_stateupdate(pindex->GetHeight(),0,0,0,zero,0,0,0,0,-pindex->GetHeight(),pindex->nTime,0,0,0,0,zero,0);
     }
     komodo_currentheight_set(chainActive.LastTip()->GetHeight());
+    int transaction = 0;
     if ( pindex != 0 )
     {
         height = pindex->GetHeight();
@@ -913,6 +917,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                         fwrite(&signedmask,1,sizeof(signedmask),signedfp);
                         fflush(signedfp);
                     }
+                    transaction = i;
                      printf("[%s] ht.%d txi.%d signedmask.%llx numvins.%d numvouts.%d <<<<<<<<<<<  notarized\n",ASSETCHAINS_SYMBOL,height,i,(long long)signedmask,numvins,numvouts);
                 }
                 notarized = 1;
@@ -938,10 +943,13 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                 if ( IS_KOMODO_NOTARY != 0 && ASSETCHAINS_SYMBOL[0] == 0 )
                     printf("%.8f ",dstr(block.vtx[i].vout[j].nValue));
                 len = block.vtx[i].vout[j].scriptPubKey.size();
+                
                 if ( len >= sizeof(uint32_t) && len <= sizeof(scriptbuf) )
                 {
                     memcpy(scriptbuf,(uint8_t *)&block.vtx[i].vout[j].scriptPubKey[0],len);
                     notaryid = komodo_voutupdate(&isratification,notaryid,scriptbuf,len,height,txhash,i,j,&voutmask,&specialtx,&notarizedheight,(uint64_t)block.vtx[i].vout[j].nValue,notarized,signedmask,(uint32_t)chainActive.LastTip()->GetBlockTime());
+                    if ( notaryid == -2 )
+                        return(-1);
                     if ( 0 && i > 0 )
                     {
                         for (k=0; k<len; k++)
@@ -999,6 +1007,10 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
     } else fprintf(stderr,"komodo_connectblock: unexpected null pindex\n");
     //KOMODO_INITDONE = (uint32_t)time(NULL);
     //fprintf(stderr,"%s end connect.%d\n",ASSETCHAINS_SYMBOL,pindex->GetHeight());
+    if (notarized = 1)
+        return(transaction);
+    else 
+        return(-1);
 }
 
 

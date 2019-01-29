@@ -1772,6 +1772,96 @@ bool verusCheckPOSBlock(int32_t slowflag, CBlock *pblock, int32_t height)
     return(isPOS);
 }
 
+uint64_t komodo_notarypay(CMutableTransaction &txNew, std::vector<int8_t> &NotarisationNotaries, uint32_t timestamp)
+{
+    // fetch notary pubkey array.
+    uint64_t total = 0;
+    int32_t staked_era; int8_t numSN;
+    uint8_t staked_pubkeys[64][33];
+    staked_era = STAKED_era(timestamp);
+    numSN = numStakedNotaries(staked_pubkeys,staked_era);
+    // resize coinbase vouts to number of notary nodes +1 for coinbase itself.
+    txNew.vout.resize(NotarisationNotaries.size()+1);
+    // loop over notarisation vins and add transaction to coinbase.
+    for (int8_t n = 0; n < NotarisationNotaries.size(); n++) 
+    {
+        uint8_t *ptr;
+        txNew.vout[n+1].scriptPubKey.resize(35);
+        ptr = (uint8_t *)&txNew.vout[n+1].scriptPubKey[0];
+        ptr[0] = 33;
+        for (int8_t i=0; i<33; i++)
+        {
+            ptr[i+1] = staked_pubkeys[NotarisationNotaries[n]][i];
+            //fprintf(stderr,"%02x",ptr[i+1]);
+        }
+        ptr[34] = OP_CHECKSIG;
+        //fprintf(stderr," set notary %i PUBKEY33 into vout[%i]\n",NotarisationNotaries[n],n+1);
+        txNew.vout[n+1].nValue = ASSETCHAINS_NOTARY_PAY; // ASSETCHAINS_NOTARY_PAY
+        total += txNew.vout[n+1].nValue;
+    }
+    return(total);
+}
+
+uint64_t komodo_checknotarypay(CBlock *pblock,int32_t height)
+{
+    std::vector<int8_t> NotarisationNotaries;
+    uint32_t timestamp = pblock->nTime;
+    int32_t staked_era; int8_t numSN;
+    uint8_t staked_pubkeys[64][33];
+    staked_era = STAKED_era(timestamp);
+    numSN = numStakedNotaries(staked_pubkeys,staked_era);
+    
+    uint8_t *script; int32_t scriptlen;
+    // loop over notaries array and extract index of signers.
+    
+    BOOST_FOREACH(const CTxIn& txin, pblock->vtx[1].vin)
+    {
+        uint256 hash; CTransaction tx1;
+        if ( GetTransaction(txin.prevout.hash,tx1,hash,false) )
+        {
+            for (int8_t i = 0; i < numSN; i++) 
+            {
+                //tx1.vout[txin.prevout.n].scriptPubKey
+                script = (uint8_t *)&tx1.vout[txin.prevout.n].scriptPubKey[0];
+                scriptlen = (int32_t)tx1.vout[txin.prevout.n].scriptPubKey.size();
+                if ( scriptlen == 35 && script[0] == 33 && script[34] == OP_CHECKSIG && memcmp(script+1,staked_pubkeys[i],33) == 0 )
+                    NotarisationNotaries.push_back(i);
+            }
+        }
+    }
+    const CChainParams& chainparams = Params();
+    const Consensus::Params &consensusParams = chainparams.GetConsensus();
+    CMutableTransaction txNew = CreateNewContextualCMutableTransaction(consensusParams, height);
+    uint64_t totalsats = komodo_notarypay(txNew, NotarisationNotaries, pblock->nTime);
+    int8_t n = 0, i = 0, matches = 0;
+    uint64_t total = 0;
+    //fprintf(stderr, "txNew.vout size = %li\n",txNew.vout.size());
+    BOOST_FOREACH(const CTxOut& txout, txNew.vout)
+    {
+        if ( n == 0 )
+        {
+            n++;
+            continue;
+        }
+        script = (uint8_t *)&txout.scriptPubKey[0];
+        scriptlen = (int32_t)txout.scriptPubKey.size();
+        // ASSETCHAINS_NOTARY_PAY = nValue!
+        if ( txout.nValue == ASSETCHAINS_NOTARY_PAY && scriptlen == 35 && script[0] == 33 && script[34] == OP_CHECKSIG && memcmp(script+1,staked_pubkeys[NotarisationNotaries[n-1]],33) == 0 )
+        {
+            matches++;
+            total += txout.nValue;
+            fprintf(stderr, "matched.%i\n", NotarisationNotaries[n-1]);
+        }
+        n++; 
+    }
+    if ( matches = n && matches != 0 && total == totalsats )
+    {
+        fprintf(stderr, "VALIDATED.\n" );
+        return(totalsats);
+    }
+    return(-1);
+}
+
 int64_t komodo_checkcommission(CBlock *pblock,int32_t height)
 {
     int64_t checktoshis=0; uint8_t *script,scripthex[8192]; int32_t scriptlen,matched = 0;
@@ -1952,6 +2042,30 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
                 return(-1);
         }
     }
+    if( failed == 0 && ASSETCHAINS_NOTARY_PAY != 0 && pblock->vtx[0].vout.size() != 1 )
+    {
+        if ( slowflag != 0 && komodo_checknotarypay(pblock,height) < 0 )
+        {   
+            fprintf(stderr, "Komodo notary pay validation failed.%i\n",height);
+            return(0);
+        }
+        else 
+        {
+            // Check the notarisation tx is to the crypto address and meets min sigs.
+            if ( !komodo_is_notarytx(pblock->vtx[1]) == 1 )
+            {
+                fprintf(stderr, "notarisation is not to crypto address.%i\n",height);
+                return(0);
+            }
+            // Check min sigs.
+            if ( pblock->vtx[1].vin.size() < num_notaries_STAKED[STAKED_era(pblock->nTime)] )
+            {
+                fprintf(stderr, "block does not meet minsigs .%i\n",height);
+                return(0);
+            }
+        }
+    }
+                
 //fprintf(stderr,"komodo_checkPOW possible.%d slowflag.%d ht.%d notaryid.%d failed.%d\n",possible,slowflag,height,notaryid,failed);
     if ( failed != 0 && possible == 0 && notaryid < 0 )
         return(-1);
