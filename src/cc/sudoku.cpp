@@ -716,7 +716,7 @@ UniValue sudoku_txidinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
 UniValue sudoku_pending(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     UniValue result(UniValue::VOBJ),a(UniValue::VARR);
-    char coinaddr[64],unsolved[82]; int64_t nValue; uint256 txid,hashBlock; CTransaction tx; int32_t vout,numvouts; CPubKey sudokupk;
+    char coinaddr[64],unsolved[82]; int64_t nValue,total=0; uint256 txid,hashBlock; CTransaction tx; int32_t vout,numvouts; CPubKey sudokupk;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     sudokupk = GetUnspendable(cp,0);
     GetCCaddress(cp,coinaddr,sudokupk);
@@ -733,7 +733,10 @@ UniValue sudoku_pending(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             if ( (nValue= IsCClibvout(cp,tx,vout,coinaddr)) == txfee && myIsutxo_spentinmempool(txid,vout) == 0 )
             {
                 if ( sudoku_genopreturndecode(unsolved,tx.vout[numvouts-1].scriptPubKey) == 'G' )
+                {
                     a.push_back(txid.GetHex());
+                    total += tx.vout[1].nValue;
+                }
             }
         }
     }
@@ -742,6 +745,7 @@ UniValue sudoku_pending(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     result.push_back(Pair("method","pending"));
     result.push_back(Pair("pending",a));
     result.push_back(Pair("numpending",a.size()));
+    result.push_back(Pair("total",ValueFromAmount(total)));
     return(result);
 }
 
