@@ -42,6 +42,7 @@ one other technical note is that komodod has the insight-explorer extensions bui
 #include <cryptoconditions.h>
 #include "../script/standard.h"
 #include "../base58.h"
+#include "../key.h"
 #include "../core_io.h"
 #include "../script/sign.h"
 #include "../wallet/wallet.h"
@@ -179,6 +180,7 @@ int32_t oracle_format(uint256 *hashp,int64_t *valp,char *str,uint8_t fmt,uint8_t
 CPubKey GetUnspendable(struct CCcontract_info *cp,uint8_t *unspendablepriv);
 
 // CCutils
+bool priv2addr(char *coinaddr,uint8_t buf33[33],uint8_t priv32[32]);
 CPubKey buf2pk(uint8_t *buf33);
 void endiancpy(uint8_t *dest,uint8_t *src,int32_t len);
 uint256 DiceHashEntropy(uint256 &entropy,uint256 _txidpriv,int32_t entropyvout,int32_t usevout);

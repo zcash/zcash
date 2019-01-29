@@ -442,6 +442,20 @@ bool PreventCC(Eval* eval,const CTransaction &tx,int32_t preventCCvins,int32_t n
     return(true);
 }
 
+bool priv2addr(char *coinaddr,uint8_t *buf33,uint8_t priv32[32])
+{
+    CKey priv; CPubKey pk; int32_t i; uint8_t *src;
+    priv.SetKey32(priv32);
+    pk = priv.GetPubKey();
+    if ( buf33 != 0 )
+    {
+        src = (uint8_t *)pk.begin();
+        for (i=0; i<33; i++)
+            buf33[i] = src[i];
+    }
+    return(Getscriptaddress(coinaddr, CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG));
+}
+
 std::vector<uint8_t> Mypubkey()
 {
     extern uint8_t NOTARY_PUBKEY33[33];
@@ -456,7 +470,7 @@ std::vector<uint8_t> Mypubkey()
 
 bool Myprivkey(uint8_t myprivkey[])
 {
-    char coinaddr[64]; std::string strAddress; char *dest; int32_t i,n; CBitcoinAddress address; CKeyID keyID; CKey vchSecret;
+    char coinaddr[64],checkaddr[64]; std::string strAddress; char *dest; int32_t i,n; CBitcoinAddress address; CKeyID keyID; CKey vchSecret; uint8_t buf33[33];
     if ( Getscriptaddress(coinaddr,CScript() << Mypubkey() << OP_CHECKSIG) != 0 )
     {
         n = (int32_t)strlen(coinaddr);
@@ -477,7 +491,13 @@ bool Myprivkey(uint8_t myprivkey[])
                         fprintf(stderr,"0x%02x, ",myprivkey[i]);
                     fprintf(stderr," found privkey for %s!\n",dest);
                 }
-                return(true);
+                if ( priv2addr(checkaddr,buf33,myprivkey) != 0 )
+                {
+                    if ( buf2pk(buf33) == Mypubkey() && strcmp(checkaddr,coinaddr) == 0 )
+                        return(true);
+                    else printf("mismatched privkey -> addr %s vs %s\n",checkaddr,coinaddr);
+                }
+                return(false);
             }
 #endif
         }
