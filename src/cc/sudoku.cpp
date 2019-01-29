@@ -529,7 +529,7 @@ UniValue sudoku_generate(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
             change = (inputsum - amount - 2*txfee);
         if ( change > txfee )
             mtx.vout.push_back(MakeCC1vout(cp->evalcode,change,sudokupk));
-        CCaddr2set(cp,cp->evalcode,sudokupk,cp->CCpriv,cp->CCaddr);
+        CCaddr2set(cp,cp->evalcode,sudokupk,cp->CCpriv,cp->unspendableCCaddr);
         rawtx = FinalizeCCTx(0,cp,mtx,sudokupk,txfee,sudoku_genopret(unsolved));
         result.push_back(Pair("hex",rawtx));
     } else result.push_back(Pair("error","not enough SUDOKU funds"));
