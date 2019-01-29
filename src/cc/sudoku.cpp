@@ -529,13 +529,13 @@ int32_t sudoku_captcha(uint32_t timestamps[81])
     //if ( n > 81/2 )
     {
         std::sort(list.begin(),list.end());
-        solvetime = (list[0] - list[n-1]);
-        if ( list[0] < list[n-1] )
+        solvetime = (list[n-1] - list[0]);
+        if ( list[0] >= list[n-1] )
         {
             printf("list[0] %u vs list[%d-1] %u\n",list[0],n,list[n-1]);
             return(-1);
         }
-        else if ( list[0] > chainActive.LastTip()->nTime+200 )
+        else if ( list[n-1] > chainActive.LastTip()->nTime+200 )
             return(-1);
         else if ( solvetime >= 777 )
             return(0);
