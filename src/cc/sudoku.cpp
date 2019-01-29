@@ -498,7 +498,7 @@ CScript sudoku_genopret(uint8_t unsolved[9][9])
 UniValue sudoku_generate(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); CPubKey sudokupk,pk; uint8_t privkey[32],unsolved[9][9],pub33[33]; uint32_t srandi; uint256 hash; char coinaddr[64]; uint64_t inputsum,amount; std::string hex;
+    UniValue result(UniValue::VOBJ); CPubKey sudokupk,pk; uint8_t privkey[32],unsolved[9][9],pub33[33]; uint32_t srandi; uint256 hash; char coinaddr[64]; uint64_t inputsum,amount; std::string rawtx;
     if ( params != 0 )
     {
         printf("params.(%s)\n",jprint(params,0));
@@ -508,7 +508,7 @@ UniValue sudoku_generate(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
     result.push_back(Pair("name","sudoku"));
     result.push_back(Pair("method","gen"));
     hash = chainActive.LastTip()->GetHash();
-    memcpy(&srandi,&hash,sizeof(srandi))
+    memcpy(&srandi,&hash,sizeof(srandi));
     srandi ^= (uint32_t)time(NULL);
     sudoku_gen(privkey,unsolved,srandi);
     priv2addr(coinaddr,pub33,privkey);
@@ -518,7 +518,7 @@ UniValue sudoku_generate(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
     mtx.vout.push_back(MakeCC1vout(cp->evalcode,txfee,sudokupk));
     mtx.vout.push_back(MakeCC1vout(cp->evalcode,inputsum - 2*txfee,pk));
     rawtx = FinalizeCCTx(0,cp,mtx,sudokupk,txfee,sudoku_genopret(unsolved));
-    result.push_back(Pair("srand",srandi));
+    result.push_back(Pair("srand",(int)srandi));
     result.push_back(Pair("amount",ValueFromAmount(amount)));
     result.push_back(Pair("hex",rawtx));
     return(result);
