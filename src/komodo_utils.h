@@ -1671,6 +1671,7 @@ void komodo_args(char *argv0)
     KOMODO_DEALERNODE = GetArg("-dealer",0);
     if ( strlen(NOTARY_PUBKEY.c_str()) == 66 )
     {
+        decode_hex(NOTARY_PUBKEY33,33,NOTARY_PUBKEY.c_str());
         USE_EXTERNAL_PUBKEY = 1;
         if ( IS_KOMODO_NOTARY == 0 )
         {
