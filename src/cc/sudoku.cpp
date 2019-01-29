@@ -537,7 +537,9 @@ UniValue sudoku_txidinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
         char str[65],*txidstr; uint256 txid;
         if ( (txidstr= jprint(params,0)) != 0 )
         {
-            printf("params -> (%s)\n",txidstr);
+            if ( txidstr[0] == '"' )
+                txidstr++;
+            //printf("params -> (%s)\n",txidstr);
             decode_hex((uint8_t *)&txid,32,txidstr);
             printf("txid.(%s) <- %s\n",txid.GetHex().c_str(),txidstr);
         }
