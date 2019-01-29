@@ -263,7 +263,7 @@ int64_t AddCClibInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubK
     {
         txid = it->first.txhash;
         vout = (int32_t)it->first.index;
-        //char str[65]; fprintf(stderr,"%s check %s/v%d %.8f\n",coinaddr,uint256_str(str,txid),vout,(double)it->second.satoshis/COIN);
+        char str[65]; fprintf(stderr,"%s check %s/v%d %.8f vs %.8f\n",coinaddr,uint256_str(str,txid),vout,(double)it->second.satoshis/COIN,(double)threshold/COIN);
         if ( it->second.satoshis < threshold )
             continue;
         // no need to prevent dup
@@ -278,7 +278,7 @@ int64_t AddCClibInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubK
                 n++;
                 if ( (total > 0 && totalinputs >= total) || (maxinputs > 0 && n >= maxinputs) )
                     break;
-            } else fprintf(stderr,"nValue too small or already spent in mempool\n");
+            } else fprintf(stderr,"nValue %.8f too small or already spent in mempool\n",(double)nValue/COIN);
         } else fprintf(stderr,"couldnt get tx\n");
     }
     return(totalinputs);

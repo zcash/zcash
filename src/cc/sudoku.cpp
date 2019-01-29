@@ -710,10 +710,6 @@ UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
                         for (j=0; j<9; j++)
                             vals9[i][j] = solution[ind++] - '0';
                     sudoku_privkey(priv32,vals9);
-                    // 0a760244c109bb5c9ef989126205f6585b9d4167afa0a2733fbab7fe74967049 privkey
-                    for (i=0; i<32; i++)
-                        printf("%02x",priv32[i]);
-                    printf(" priv32\n");
                     priv2addr(coinaddr,pub33,priv32);
                     pk = buf2pk(pub33);
                     GetCCaddress(cp,CCaddr,pk);
