@@ -782,13 +782,6 @@ UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
         {
             if ( (n= cJSON_GetArraySize(params)) > 2 && n < (sizeof(timestamps)/sizeof(*timestamps))+2 )
             {
-                if ( (txidstr= jstri(params,0)) != 0 )
-                {
-                    decode_hex((uint8_t *)&txid,32,txidstr);
-                    txid = revuint256(txid);
-                    result.push_back(Pair("txid",txid.GetHex()));
-                    // get tx and validate solution is for that txid
-                }
                 for (i=2; i<n; i++)
                 {
                     timestamps[i-2] = juinti(params,i);
@@ -814,6 +807,13 @@ UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
                     }
                     else
                     {
+                        if ( (txidstr= jstri(params,0)) != 0 )
+                        {
+                            decode_hex((uint8_t *)&txid,32,txidstr);
+                            txid = revuint256(txid);
+                            result.push_back(Pair("txid",txid.GetHex()));
+                            // get tx and validate solution is for that txid
+                        }
                         mtx.vin.push_back(CTxIn(txid,0,CScript()));
                         if ( (inputsum= AddCClibInputs(cp,mtx,pk,balance,16,CCaddr)) >= balance )
                         {
