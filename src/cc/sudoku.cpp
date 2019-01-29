@@ -752,7 +752,7 @@ UniValue sudoku_pending(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); int32_t i,j,good,ind,n,numvouts; uint256 txid; char *jsonstr,*newstr,*txidstr,coinaddr[64],CCaddr[64],*solution=0; CPubKey pk,mypk; uint8_t vals9[9][9],priv32[32],pub33[33],unsolved[81]; uint32_t timestamps[81]; uint64_t balance,inputsum; std::string rawtx; CTransaction tx; uint256 hashBlock;
+    UniValue result(UniValue::VOBJ); int32_t i,j,good,ind,n,numvouts; uint256 txid; char *jsonstr,*newstr,*txidstr,coinaddr[64],CCaddr[64],*solution=0,unsolved[82]; CPubKey pk,mypk; uint8_t vals9[9][9],priv32[32],pub33[33]; uint32_t timestamps[81]; uint64_t balance,inputsum; std::string rawtx; CTransaction tx; uint256 hashBlock;
     mypk = pubkey2pk(Mypubkey());
     memset(timestamps,0,sizeof(timestamps));
     result.push_back(Pair("name","sudoku"));
@@ -823,9 +823,9 @@ UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
                                     {
                                         if ( unsolved[i] == 0 )
                                             continue;
-                                        else if ( unsolved[i] != solution[i]-'0' )
+                                        else if ( unsolved[i] != solution[i] )
                                         {
-                                            printf("i.%d %d != %d\n",i,unsolved[i],solution[i]-'0');
+                                            printf("i.%d [%c] != [%c]\n",i,unsolved[i],solution[i]);
                                             result.push_back(Pair("error","wrong sudoku solved"));
                                             break;
                                         }
