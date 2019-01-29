@@ -51,6 +51,8 @@ CClib_methods[] =
 };
 
 std::string CClib_rawtxgen(struct CCcontract_info *cp,uint8_t funcid,cJSON *params);
+
+bool sudoku_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx);
 UniValue sudoku_txidinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue sudoku_generate(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
@@ -190,6 +192,8 @@ bool CClib_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
 {
     int32_t numvins,numvouts,preventCCvins,preventCCvouts,i,numblocks; bool retval; uint256 txid; uint8_t hash[32]; char str[65],destaddr[64];
     std::vector<std::pair<CAddressIndexKey, CAmount> > txids;
+    if ( cp->evalcode != EVAL_FAUCET2 )
+        return(sudoku_validate(cp,height,eval,tx));
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
     preventCCvins = preventCCvouts = -1;
