@@ -5380,6 +5380,7 @@ UniValue cclib(const UniValue& params, bool fHelp)
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     method = (char *)params[0].get_str().c_str();
+    printf("params.size() %d (%s)\n",(int32_t)params.size(),params[2].get_str().c_str());
     if ( params.size() >= 1 )
     {
         evalcode = atoi(params[1].get_str().c_str());
