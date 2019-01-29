@@ -634,7 +634,7 @@ UniValue sudoku_pending(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             if ( (nValue= IsCClibvout(cp,tx,vout)) == txfee && myIsutxo_spentinmempool(txid,vout) == 0 )
             {
                 if ( sudoku_genopreturndecode(unsolved,tx.vout[numvouts-1].scriptPubKey) == 'G' )
-                    a.push_back(txid);
+                    a.push_back(txid.GetHex());
             }
         }
     }
