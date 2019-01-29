@@ -245,7 +245,7 @@ uint8_t CClibCCpriv[32] = { 0x57, 0xcf, 0x49, 0x71, 0x7d, 0xb4, 0x15, 0x1b, 0x4f
 
 int32_t CClib_initcp(struct CCcontract_info *cp,uint8_t evalcode)
 {
-    CPubKey pk; uint8_t pub33[33]; char CCaddr[64];
+    CPubKey pk; uint8_t pub33[33],check33[33]; char CCaddr[64],checkaddr[64],str[67];
     if ( evalcode == EVAL_FIRSTUSER ) // eventually make a hashchain for each evalcode
     {
         cp->evalcode = evalcode;
@@ -258,7 +258,14 @@ int32_t CClib_initcp(struct CCcontract_info *cp,uint8_t evalcode)
         if ( strcmp(cp->normaladdr,CClibNormaladdr) != 0 )
             fprintf(stderr,"CClib_initcp addr mismatch %s vs %s\n",cp->normaladdr,CClibNormaladdr);
         GetCCaddress(cp,cp->unspendableCCaddr,pk);
-        return(0);
+        if ( priv2addr(checkaddr,check33,myprivkey) != 0 )
+        {
+            if ( buf2pk(check33) == pk && strcmp(checkaddr,cp->normaladdr) == 0 )
+            {
+                fprinf(stderr,"verified evalcode.%d %s %s\n",cp->evalcode,checkaddr,pubkey33_str(str,pub33));
+                return(0);
+            } else fprintf(stderr,"CClib_initcp mismatched privkey -> addr %s vs %s\n",checkaddr,cp->normaladdr);
+        }
     }
     return(-1);
 }
