@@ -5380,8 +5380,7 @@ UniValue cclib(const UniValue& params, bool fHelp)
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     method = (char *)params[0].get_str().c_str();
-    printf("params.size() %d (%s)\n",(int32_t)params.size(),params[2].get_str().c_str());
-    if ( params.size() >= 1 )
+    if ( params.size() >= 2 )
     {
         evalcode = atoi(params[1].get_str().c_str());
         if ( evalcode < EVAL_FIRSTUSER || evalcode > EVAL_LASTUSER )
@@ -5389,7 +5388,7 @@ UniValue cclib(const UniValue& params, bool fHelp)
             printf("evalcode.%d vs (%d, %d)\n",evalcode,EVAL_FIRSTUSER,EVAL_LASTUSER);
             throw runtime_error("evalcode not between EVAL_FIRSTUSER and EVAL_LASTUSER\n");
         }
-        if ( params.size() == 2 )
+        if ( params.size() == 3 )
         {
             jsonparams = cJSON_Parse(params[2].get_str().c_str());
             printf("Parse.(%s) -> %p\n",params[2].get_str().c_str(),jsonparams);
