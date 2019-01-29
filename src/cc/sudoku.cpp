@@ -522,6 +522,7 @@ UniValue sudoku_generate(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
     result.push_back(Pair("amount",ValueFromAmount(amount)));
     if ( (inputsum= AddCClibInputs(cp,mtx,sudokupk,amount+2*txfee,16)) >= amount+2*txfee )
     {
+        printf("inputsum %.8f\n",(double)inputsum/COIN);
         mtx.vout.push_back(MakeCC1vout(cp->evalcode,txfee,sudokupk));
         mtx.vout.push_back(MakeCC1vout(cp->evalcode,amount,pk));
         if ( inputsum > amount + 2*txfee )
