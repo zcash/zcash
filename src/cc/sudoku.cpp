@@ -662,7 +662,7 @@ UniValue sudoku_pending(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); int32_t i,j,ind,n; char *jsonstr,*newstr,coinaddr[64],CCaddr[64],*solution=0; CPubKey pk,mypk; uint8_t vals9[9][9],priv32[32],pubk33[33]; uint32_t timestamps[81]; uint64_t balance,inputsum; std::string rawhex;
+    UniValue result(UniValue::VOBJ); int32_t i,j,ind,n; char *jsonstr,*newstr,coinaddr[64],CCaddr[64],*solution=0; CPubKey pk,mypk; uint8_t vals9[9][9],priv32[32],pub33[33]; uint32_t timestamps[81]; uint64_t balance,inputsum; std::string rawtx;
     mypk = pubkey2pk(Mypubkey());
     memset(timestamps,0,sizeof(timestamps));
     result.push_back(Pair("name","sudoku"));
@@ -711,7 +711,7 @@ UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
                     result.push_back(Pair("amount",ValueFromAmount(balance)));
                     if ( (inputsum= AddCClibInputs(cp,mtx,pk,balance,16)) >= balance )
                     {
-                        mtx.vout.push_back(CTxOut(balance-txfee,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));                        
+                        mtx.vout.push_back(CTxOut(balance-txfee,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
                         CCaddr2set(cp,cp->evalcode,pk,priv32,CCaddr);
                         rawtx = FinalizeCCTx(0,cp,mtx,pubkey2pk(Mypubkey()),txfee,sudoku_solutionopret(solution,timestamps));
                     }
