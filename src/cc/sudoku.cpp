@@ -648,7 +648,7 @@ UniValue sudoku_pending(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 
 UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ); char *jsonstr;
+    UniValue result(UniValue::VOBJ); char *jsonstr,coinaddr[64]; CPubKey pk; uint8_t priv32[32];
     if ( params != 0 )
     {
         if ( (jsonstr= jprint(params,0)) != 0 )
