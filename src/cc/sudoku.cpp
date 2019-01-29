@@ -503,6 +503,10 @@ void sudoku_gen(uint8_t key32[32],uint8_t unsolved[9][9],uint32_t srandi)
                 ]
 }*/
 
+/*
+ cclib "solution" 17 \"[%22469823715875961234231457698914675823653182479782394156346219587528736941197548362%22,1548777525,1548777526,...]\"
+ */
+
 CScript sudoku_genopret(uint8_t unsolved[9][9])
 {
     CScript opret; uint8_t evalcode = EVAL_SUDOKU; std::vector<uint8_t> data; int32_t i,j;
@@ -510,6 +514,13 @@ CScript sudoku_genopret(uint8_t unsolved[9][9])
         for (j=0; j<9; j++)
             data.push_back(unsolved[i][j]);
     opret << OP_RETURN << E_MARSHAL(ss << evalcode << 'G' << data);
+    return(opret);
+}
+
+CScript sudoku_solutionopret(char *solution,uint32_t timestamps[81])
+{
+    CScript opret; uint8_t evalcode = EVAL_SUDOKU;
+    opret << OP_RETURN << E_MARSHAL(ss << evalcode << 'S' << solution << timestamps);
     return(opret);
 }
 
@@ -562,7 +573,9 @@ UniValue sudoku_generate(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
         if ( change > txfee )
             mtx.vout.push_back(MakeCC1vout(cp->evalcode,change,sudokupk));
         rawtx = FinalizeCCTx(0,cp,mtx,pubkey2pk(Mypubkey()),txfee,sudoku_genopret(unsolved));
-        result.push_back(Pair("hex",rawtx));
+        if ( rawtx.size() > 0 )
+            result.push_back(Pair("hex",rawtx));
+        else result.push_back(Pair("error","couldnt finalize CCtx"));
     } else result.push_back(Pair("error","not enough SUDOKU funds"));
     return(result);
 }
@@ -648,7 +661,12 @@ UniValue sudoku_pending(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 
 UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ); int32_t i,j; char *jsonstr,*newstr,coinaddr[64]; CPubKey pk; uint8_t priv32[32];
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    UniValue result(UniValue::VOBJ); int32_t i,j,ind,n; char *jsonstr,*newstr,coinaddr[64],CCaddr[64],*solution=0; CPubKey pk,mypk; uint8_t vals9[9][9],priv32[32],pubk33[33]; uint32_t timestamps[81]; uint64_t balance,inputsum; std::string rawhex;
+    mypk = pubkey2pk(Mypubkey());
+    memset(timestamps,0,sizeof(timestamps));
+    result.push_back(Pair("name","sudoku"));
+    result.push_back(Pair("method","solution"));
     if ( params != 0 )
     {
         if ( (jsonstr= jprint(params,0)) != 0 )
@@ -669,15 +687,53 @@ UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
             }
             newstr[j] = 0;
             params = cJSON_Parse(newstr);
-        }
+        } else params = 0;
         if ( params != 0 )
+        {
+            if ( (n= cJSON_GetArraySize(params)) > 2 && n < (sizeof(timestamps)/sizeof(*timestamps))+1 )
+            {
+                for (i=1; i<n; i++)
+                {
+                    timestamps[i] = juinti(params,i);
+                    printf("%u ",timestamps[i]);
+                }
+                if ( (solution= jstri(params,0)) != 0 && strlen(solution) == 81 )
+                {
+                    for (i=ind=0; i<9; i++)
+                        for (j=0; j<9; j++)
+                            vals9[i][j] = solution[ind++];
+                    sudoku_privkey(priv32,vals9);
+                    priv2addr(coinaddr,pub33,priv32);
+                    pk = buf2pk(pub33);
+                    GetCCaddress(cp,CCaddr,pk);
+                    result.push_back(Pair("sudokuaddr",CCaddr));
+                    balance = CCaddress_balance(CCaddr);
+                    result.push_back(Pair("amount",ValueFromAmount(balance)));
+                    if ( (inputsum= AddCClibInputs(cp,mtx,pk,balance,16)) >= balance )
+                    {
+                        mtx.vout.push_back(CTxOut(balance-txfee,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));                        
+                        CCaddr2set(cp,cp->evalcode,pk,priv32,CCaddr);
+                        rawtx = FinalizeCCTx(0,cp,mtx,pubkey2pk(Mypubkey()),txfee,sudoku_solutionopret(solution,timestamps));
+                    }
+                }
+            }
+            result.push_back(Pair("result","success"));
+            if ( rawtx.size() > 0 )
+                result.push_back(Pair("hex",rawtx));
+            else result.push_back(Pair("error","couldnt finalize CCtx"));
             printf("params.(%s)\n",jprint(params,0));
-        else printf("couldnt parse.(%s)\n",jsonstr);
+            return(result);
+        }
+        else
+        {
+            result.push_back(Pair("result","error"));
+            result.push_back(Pair("error","couldnt parse parameters"));
+            result.push_back(Pair("parameters",newstr));
+            return(result);
+        }
     }
-    CCaddr2set(cp,cp->evalcode,pk,priv32,coinaddr);
-    result.push_back(Pair("result","success"));
-    result.push_back(Pair("name","sudoku"));
-    result.push_back(Pair("method","solution"));
+    result.push_back(Pair("result","error"));
+    result.push_back(Pair("error","missing parameters"));
     return(result);
 }
 
