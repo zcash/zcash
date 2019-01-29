@@ -690,6 +690,7 @@ UniValue sudoku_pending(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     result.push_back(Pair("name","sudoku"));
     result.push_back(Pair("method","pending"));
     result.push_back(Pair("pending",a));
+    result.push_back(Pair("numpending",a.size()));
     return(result);
 }
 
