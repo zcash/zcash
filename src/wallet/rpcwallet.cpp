@@ -5392,7 +5392,7 @@ UniValue cclib(const UniValue& params, bool fHelp)
         {
             jsonparams = cJSON_Parse(params[2].get_str().c_str());
             if ( jsonparams != 0 )
-                printf("%p params.(%s) is array.%d\n",jsonparams,jprint(jsonparams,0),is_cJSON_Array(params));
+                printf("%p params.(%s)\n",jsonparams,jprint(jsonparams,0));
             //printf("Parse.(%s) -> %p\n",params[2].get_str().c_str(),jsonparams);
         }
     }
