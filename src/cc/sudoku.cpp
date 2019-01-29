@@ -526,7 +526,7 @@ int32_t sudoku_captcha(uint32_t timestamps[81])
             n++;
         }
     }
-    if ( n > 81/2 )
+    //if ( n > 81/2 )
     {
         std::sort(list.begin(),list.end());
         solvetime = (list[0] - list[n-1]);
@@ -557,7 +557,7 @@ int32_t sudoku_captcha(uint32_t timestamps[81])
                 return(-1 * 0);
             else return(0);
         }
-    } else return(-1);
+    } //else return(-1);
 }
 
 CScript sudoku_genopret(uint8_t unsolved[9][9])
