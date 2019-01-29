@@ -616,10 +616,11 @@ UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
 
 UniValue sudoku_pending(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ),a(UniValue::VARRAY);
-    char coinaddr[64],unsolved[82]; int64_t nValue; uint256 txid,hashBlock; CTransaction tx; int32_t vout,numvouts;
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR);
+    char coinaddr[64],unsolved[82]; int64_t nValue; uint256 txid,hashBlock; CTransaction tx; int32_t vout,numvouts; CPubKey sudokupk;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
-    GetCCaddress(cp,coinaddr,pk);
+    sudokupk = GetUnspendable(cp,0);
+    GetCCaddress(cp,coinaddr,sudokupk);
     SetCCunspents(unspentOutputs,coinaddr);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
