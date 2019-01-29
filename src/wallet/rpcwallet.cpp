@@ -5384,7 +5384,10 @@ UniValue cclib(const UniValue& params, bool fHelp)
     {
         evalcode = atoi(params[1].get_str().c_str());
         if ( evalcode < EVAL_FIRSTUSER || evalcode > EVAL_LASTUSER )
+        {
+            printf("evalcode.%d vs (%d, %d)\n",evalcode,EVAL_FIRSTUSER,EVAL_LASTUSER);
             throw runtime_error("evalcode not between EVAL_FIRSTUSER and EVAL_LASTUSER\n");
+        }
         if ( params.size() == 2 )
             jsonparams = cJSON_Parse(params[2].get_str().c_str());
     }
