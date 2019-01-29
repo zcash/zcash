@@ -358,3 +358,6 @@ std::string CClib_rawtxgen(struct CCcontract_info *cp,uint8_t funcid,cJSON *para
     } else fprintf(stderr,"cant find faucet inputs\n");
     return("");
 }
+
+#include "sudoku.cpp"
+

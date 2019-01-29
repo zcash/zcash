@@ -476,19 +476,6 @@ void sudoku_gen(uint8_t key32[32],uint8_t unsolved[9][9],uint32_t srandi)
 }
 
 //////////////////////// start of CClib interface
-#include <assert.h>
-#include <cryptoconditions.h>
-
-#include "primitives/block.h"
-#include "primitives/transaction.h"
-#include "script/cc.h"
-#include "cc/eval.h"
-#include "cc/utils.h"
-#include "cc/CCinclude.h"
-#include "main.h"
-#include "chain.h"
-#include "core_io.h"
-#include "crosschain.h"
 
 UniValue sudoku_txidinfo(struct CCcontract_info *cp,cJSON *params)
 {
