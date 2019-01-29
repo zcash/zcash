@@ -507,7 +507,7 @@ UniValue sudoku_generate(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
     result.push_back(Pair("result","success"));
     result.push_back(Pair("name","sudoku"));
     result.push_back(Pair("method","gen"));
-    hash = chainActive.LastTip()->GetHash();
+    hash = chainActive.LastTip()->GetBlockHash();
     memcpy(&srandi,&hash,sizeof(srandi));
     srandi ^= (uint32_t)time(NULL);
     sudoku_gen(privkey,unsolved,srandi);
