@@ -662,6 +662,7 @@ UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
         }
         if ( params != 0 )
             printf("params.(%s)\n",jprint(params,0));
+        else printf("couldnt parse.(%s)\n",jsonstr);
     }
     CCaddr2set(cp,cp->evalcode,pk,priv32,coinaddr);
     result.push_back(Pair("result","success"));
