@@ -395,6 +395,7 @@ int sudoku(uint8_t solved9[LINE][LINE],uint8_t unsolved9[LINE][LINE],uint32_t sr
  *                                                                            *
  ******************************************************************************/
 
+#include "cJSON.h"
 #define SUDOKU_NINETH 387420489
 
 void sudoku_rowdisp(uint32_t x)
