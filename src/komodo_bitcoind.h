@@ -2047,7 +2047,7 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
         if ( slowflag != 0 && komodo_checknotarypay(pblock,height) < 0 )
         {   
             fprintf(stderr, "Komodo notary pay validation failed.%i\n",height);
-            return(0);
+            return(0); // skip validation
         }
         else 
         {
@@ -2055,13 +2055,13 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
             if ( !komodo_is_notarytx(pblock->vtx[1]) == 1 )
             {
                 fprintf(stderr, "notarisation is not to crypto address.%i\n",height);
-                return(0);
+                return(0); // skip validatiuon
             }
             // Check min sigs.
-            if ( pblock->vtx[1].vin.size() < num_notaries_STAKED[STAKED_era(pblock->nTime)] )
+            if ( pblock->vtx[1].vin.size() < (num_notaries_STAKED[STAKED_era(pblock->nTime)]/5) )
             {
                 fprintf(stderr, "block does not meet minsigs .%i\n",height);
-                return(0);
+                return(0); // skip validation 
             }
         }
     }
