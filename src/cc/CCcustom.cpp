@@ -258,11 +258,11 @@ int32_t CClib_initcp(struct CCcontract_info *cp,uint8_t evalcode)
         if ( strcmp(cp->normaladdr,CClibNormaladdr) != 0 )
             fprintf(stderr,"CClib_initcp addr mismatch %s vs %s\n",cp->normaladdr,CClibNormaladdr);
         GetCCaddress(cp,cp->unspendableCCaddr,pk);
-        if ( priv2addr(checkaddr,check33,myprivkey) != 0 )
+        if ( priv2addr(checkaddr,check33,cp->CCpriv) != 0 )
         {
             if ( buf2pk(check33) == pk && strcmp(checkaddr,cp->normaladdr) == 0 )
             {
-                fprinf(stderr,"verified evalcode.%d %s %s\n",cp->evalcode,checkaddr,pubkey33_str(str,pub33));
+                fprintf(stderr,"verified evalcode.%d %s %s\n",cp->evalcode,checkaddr,pubkey33_str(str,pub33));
                 return(0);
             } else fprintf(stderr,"CClib_initcp mismatched privkey -> addr %s vs %s\n",checkaddr,cp->normaladdr);
         }
