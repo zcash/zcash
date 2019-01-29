@@ -570,7 +570,7 @@ UniValue sudoku_generate(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
     sudokupk = GetUnspendable(cp,0);
     result.push_back(Pair("srand",(int)srandi));
     result.push_back(Pair("amount",ValueFromAmount(amount)));
-    if ( (inputsum= AddCClibInputs(cp,mtx,sudokupk,amount+2*txfee,16)) >= amount+2*txfee )
+    if ( (inputsum= AddCClibInputs(cp,mtx,sudokupk,amount+2*txfee,16,cp->unspendableCCaddr)) >= amount+2*txfee )
     {
         //printf("inputsum %.8f\n",(double)inputsum/COIN);
         mtx.vout.push_back(MakeCC1vout(cp->evalcode,txfee,sudokupk));
@@ -716,7 +716,7 @@ UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
                     result.push_back(Pair("sudokuaddr",CCaddr));
                     balance = CCaddress_balance(CCaddr);
                     result.push_back(Pair("amount",ValueFromAmount(balance)));
-                    if ( (inputsum= AddCClibInputs(cp,mtx,pk,balance,16)) >= balance )
+                    if ( (inputsum= AddCClibInputs(cp,mtx,pk,balance,16,CCaddr)) >= balance )
                     {
                         mtx.vout.push_back(CTxOut(balance-txfee,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
                         CCaddr2set(cp,cp->evalcode,pk,priv32,CCaddr);
