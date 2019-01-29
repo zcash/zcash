@@ -476,6 +476,7 @@ void sudoku_gen(uint8_t key32[32],uint8_t unsolved[9][9],uint32_t srandi)
 }
 
 //////////////////////// start of CClib interface
+// ./komodod -ac_name=SUDOKU -ac_supply=1000000 -pubkey=<yourpubkey> -addnode=5.9.102.210 -gen -genproclimit=1 -ac_cclib=sudoku -ac_perc=10000000 -ac_reward=100000000 -ac_cc=60000 -ac_script=2ea22c80203d1579313abe7d8ea85f48c65ea66fc512c878c0d0e6f6d54036669de940febf8103120c008203000401cc &
 
 UniValue sudoku_txidinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
@@ -517,13 +518,15 @@ UniValue sudoku_generate(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
     priv2addr(coinaddr,pub33,privkey);
     pk = buf2pk(pub33);
     sudokupk = GetUnspendable(cp,0);
-    inputsum = amount + 2*txfee;
-    mtx.vout.push_back(MakeCC1vout(cp->evalcode,txfee,sudokupk));
-    mtx.vout.push_back(MakeCC1vout(cp->evalcode,inputsum - 2*txfee,pk));
-    rawtx = FinalizeCCTx(0,cp,mtx,sudokupk,txfee,sudoku_genopret(unsolved));
     result.push_back(Pair("srand",(int)srandi));
     result.push_back(Pair("amount",ValueFromAmount(amount)));
-    result.push_back(Pair("hex",rawtx));
+    if ( (inputsum= AddCClibInputs(cp,mtx,sudokupk,amount+2*txfee,16)) >= amount+2*txfee )
+    {
+        mtx.vout.push_back(MakeCC1vout(cp->evalcode,txfee,sudokupk));
+        mtx.vout.push_back(MakeCC1vout(cp->evalcode,inputsum - 2*txfee,pk));
+        rawtx = FinalizeCCTx(0,cp,mtx,sudokupk,txfee,sudoku_genopret(unsolved));
+        result.push_back(Pair("hex",rawtx));
+    } else result.push_back(Pair("error","not enough SUDOKU funds"));
     return(result);
 }
 
