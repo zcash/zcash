@@ -504,7 +504,7 @@ void sudoku_gen(uint8_t key32[32],uint8_t unsolved[9][9],uint32_t srandi)
 }*/
 
 /*
- cclib "solution" 17 \"[%22469823715875961234231457698914675823653182479782394156346219587528736941197548362%22,1548777525,1548777526,...]\"
+ cclib "solution" 17 \"[%22fdc9409741f2ede29307da1a06438da0ea6f8d885d2d5c3199c4ef541ec1b5fd%22,%22469823715875961234231457698914675823653182479782394156346219587528736941197548362%22,1548777525,1548777526,...]\"
  {
  "name": "sudoku",
  "method": "solution",
@@ -752,7 +752,7 @@ UniValue sudoku_pending(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); int32_t i,j,ind,n; char *jsonstr,*newstr,coinaddr[64],CCaddr[64],*solution=0; CPubKey pk,mypk; uint8_t vals9[9][9],priv32[32],pub33[33]; uint32_t timestamps[81]; uint64_t balance,inputsum; std::string rawtx;
+    UniValue result(UniValue::VOBJ); int32_t i,j,ind,n; uint256 txid; char *jsonstr,*newstr,*txidstr,coinaddr[64],CCaddr[64],*solution=0; CPubKey pk,mypk; uint8_t vals9[9][9],priv32[32],pub33[33]; uint32_t timestamps[81]; uint64_t balance,inputsum; std::string rawtx; CTransaction tx;
     mypk = pubkey2pk(Mypubkey());
     memset(timestamps,0,sizeof(timestamps));
     result.push_back(Pair("name","sudoku"));
@@ -780,14 +780,21 @@ UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
         } else params = 0;
         if ( params != 0 )
         {
-            if ( (n= cJSON_GetArraySize(params)) > 2 && n < (sizeof(timestamps)/sizeof(*timestamps))+1 )
+            if ( (n= cJSON_GetArraySize(params)) > 2 && n < (sizeof(timestamps)/sizeof(*timestamps))+2 )
             {
-                for (i=1; i<n; i++)
+                if ( (txidstr= jstri(params,0)) != 0 )
                 {
-                    timestamps[i] = juinti(params,i);
+                    decode_hex((uint8_t *)&txid,32,txidstr);
+                    txid = revuint256(txid);
+                    result.push_back(Pair("txid",txid.GetHex()));
+                    // get tx and validate solution is for that txid
+                }
+                for (i=2; i<n; i++)
+                {
+                    timestamps[i-2] = juinti(params,i);
                     //printf("%u ",timestamps[i]);
                 }
-                if ( (solution= jstri(params,0)) != 0 && strlen(solution) == 81 )
+                if ( (solution= jstri(params,1)) != 0 && strlen(solution) == 81 )
                 {
                     for (i=ind=0; i<9; i++)
                         for (j=0; j<9; j++)
@@ -807,16 +814,17 @@ UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
                     }
                     else
                     {
+                        mtx.vin.push_back(CTxIn(txid,0,CScript()));
                         if ( (inputsum= AddCClibInputs(cp,mtx,pk,balance,16,CCaddr)) >= balance )
                         {
-                            mtx.vout.push_back(CTxOut(balance-txfee,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
+                            mtx.vout.push_back(CTxOut(balance,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
                             CCaddr2set(cp,cp->evalcode,pk,priv32,CCaddr);
                             rawtx = FinalizeCCTx(0,cp,mtx,pubkey2pk(Mypubkey()),txfee,sudoku_solutionopret(solution,timestamps));
                         }
                     }
                 }
-            }
-            result.push_back(Pair("result","success"));
+                result.push_back(Pair("result","success"));
+            } else result.push_back(Pair("error","couldnt get all params"));
             if ( rawtx.size() > 0 )
                 result.push_back(Pair("hex",rawtx));
             else result.push_back(Pair("error","couldnt finalize CCtx"));
