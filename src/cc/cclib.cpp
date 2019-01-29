@@ -51,24 +51,24 @@ CClib_methods[] =
 };
 
 std::string CClib_rawtxgen(struct CCcontract_info *cp,uint8_t funcid,cJSON *params);
-UniValue sudoku_txidinfo(struct CCcontract_info *cp,cJSON *params);
-UniValue sudoku_generate(struct CCcontract_info *cp,cJSON *params);
-UniValue sudoku_solution(struct CCcontract_info *cp,cJSON *params);
-UniValue sudoku_pending(struct CCcontract_info *cp,cJSON *params);
+UniValue sudoku_txidinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+UniValue sudoku_generate(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+UniValue sudoku_pending(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 
 UniValue CClib_method(struct CCcontract_info *cp,char *method,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ);
+    UniValue result(UniValue::VOBJ); uint64_t txfee = 10000;
     if ( cp->evalcode == EVAL_SUDOKU )
     {
         if ( strcmp(method,"txidinfo") == 0 )
-            return(sudoku_txidinfo(cp,params));
+            return(sudoku_txidinfo(txfee,cp,params));
         else if ( strcmp(method,"gen") == 0 )
-            return(sudoku_generate(cp,params));
+            return(sudoku_generate(txfee,cp,params));
         else if ( strcmp(method,"solution") == 0 )
-            return(sudoku_solution(cp,params));
+            return(sudoku_solution(txfee,cp,params));
         else if ( strcmp(method,"pending") == 0 )
-            return(sudoku_pending(cp,params));
+            return(sudoku_pending(txfee,cp,params));
         else
         {
             result.push_back(Pair("result","error"));

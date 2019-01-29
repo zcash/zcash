@@ -477,7 +477,7 @@ void sudoku_gen(uint8_t key32[32],uint8_t unsolved[9][9],uint32_t srandi)
 
 //////////////////////// start of CClib interface
 
-UniValue sudoku_txidinfo(struct CCcontract_info *cp,cJSON *params)
+UniValue sudoku_txidinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     UniValue result(UniValue::VOBJ);
     if ( params != 0 )
@@ -488,19 +488,43 @@ UniValue sudoku_txidinfo(struct CCcontract_info *cp,cJSON *params)
     return(result);
 }
 
-UniValue sudoku_generate(struct CCcontract_info *cp,cJSON *params)
+CScript sudoku_genopret(uint8_t unsolved[9][9])
 {
-    UniValue result(UniValue::VOBJ);
+    CScript opret; uint8_t evalcode = EVAL_SUDOKU;
+    opret << OP_RETURN << E_MARSHAL(ss << evalcode << 'G' << unsolved);
+    return(opret);
+}
+
+UniValue sudoku_generate(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
+{
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    UniValue result(UniValue::VOBJ); CPubKey sudokupk,pk; uint8_t privkey[32],unsolved[9][9],pub33[33]; uint32_t srandi; uint256 hash; char coinaddr[64]; uint64_t inputsum,amount; std::string hex;
     if ( params != 0 )
+    {
         printf("params.(%s)\n",jprint(params,0));
+        amount = jdouble(jitem(params,0),0) * COIN + 0.0000000049;
+    } else amount = COIN;
     result.push_back(Pair("result","success"));
     result.push_back(Pair("name","sudoku"));
     result.push_back(Pair("method","gen"));
-    result.push_back(Pair("hex","deadbeef"));
+    hash = chainActive.LastTip()->GetHash();
+    memcpy(&srandi,&hash,sizeof(srandi))
+    srandi ^= (uint32_t)time(NULL);
+    sudoku_gen(privkey,unsolved,srandi);
+    priv2addr(coinaddr,pub33,privkey);
+    pk = buf2pk(pub33);
+    sudokupk = GetUnspendable(cp,0);
+    inputsum = amount + 2*txfee;
+    mtx.vout.push_back(MakeCC1vout(cp->evalcode,txfee,sudokupk));
+    mtx.vout.push_back(MakeCC1vout(cp->evalcode,inputsum - 2*txfee,pk));
+    rawtx = FinalizeCCTx(0,cp,mtx,sudokupk,txfee,sudoku_genopret(unsolved));
+    result.push_back(Pair("srand",srandi));
+    result.push_back(Pair("amount",ValueFromAmount(amount)));
+    result.push_back(Pair("hex",rawtx));
     return(result);
 }
 
-UniValue sudoku_solution(struct CCcontract_info *cp,cJSON *params)
+UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     UniValue result(UniValue::VOBJ);
     if ( params != 0 )
@@ -511,7 +535,7 @@ UniValue sudoku_solution(struct CCcontract_info *cp,cJSON *params)
     return(result);
 }
 
-UniValue sudoku_pending(struct CCcontract_info *cp,cJSON *params)
+UniValue sudoku_pending(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     UniValue result(UniValue::VOBJ);
     if ( params != 0 )
