@@ -519,7 +519,7 @@ CScript sudoku_genopret(uint8_t unsolved[9][9])
 
 CScript sudoku_solutionopret(char *solution,uint32_t timestamps[81])
 {
-    CScript opret; uint8_t evalcode = EVAL_SUDOKU; std::vector<uint8_t> data; int32_t i;
+    CScript opret; uint8_t evalcode = EVAL_SUDOKU; std::string str(solution); std::vector<uint8_t> data; int32_t i;
     for (i=0; i<81; i++)
     {
         data.push_back((timestamps[i] >> 24) & 0xff);
@@ -527,7 +527,7 @@ CScript sudoku_solutionopret(char *solution,uint32_t timestamps[81])
         data.push_back((timestamps[i] >> 8) & 0xff);
         data.push_back(timestamps[i] & 0xff);
     }
-    opret << OP_RETURN << E_MARSHAL(ss << evalcode << 'S' << solution << data);
+    opret << OP_RETURN << E_MARSHAL(ss << evalcode << 'S' << str << data);
     return(opret);
 }
 
