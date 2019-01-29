@@ -5174,11 +5174,20 @@ int32_t ensure_CCrequirements()
 {
     CCerror = "";
     if ( NOTARY_PUBKEY33[0] == 0 )
+    {
+        fprintf(stderr,"no -pubkey set\n");
         return(-1);
+    }
     else if ( GetBoolArg("-addressindex", DEFAULT_ADDRESSINDEX) == 0 )
+    {
+        fprintf(stderr,"no -addressindex\n");
         return(-1);
+    }
     else if ( GetBoolArg("-spentindex", DEFAULT_SPENTINDEX) == 0 )
+    {
+        fprintf(stderr,"no -spentindex\n");
         return(-1);
+    }
     else return(0);
 }
 
@@ -5333,38 +5342,56 @@ UniValue channelsaddress(const UniValue& params, bool fHelp)
 
 UniValue cclibaddress(const UniValue& params, bool fHelp)
 {
-    struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
-    cp = CCinit(&C,EVAL_FIRSTUSER);
-    if ( fHelp || params.size() > 1 )
-        throw runtime_error("cclibaddress [pubkey]\n");
+    struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey; uint8_t evalcode = EVAL_FIRSTUSER;
+    if ( fHelp || params.size() > 2 )
+        throw runtime_error("cclibaddress [evalcode] [pubkey]\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
-    if ( params.size() == 1 )
-        pubkey = ParseHex(params[0].get_str().c_str());
+    if ( params.size() >= 1 )
+    {
+        evalcode = atoi(params[0].get_str().c_str());
+        if ( evalcode < EVAL_FIRSTUSER || evalcode > EVAL_LASTUSER )
+            throw runtime_error("evalcode not between EVAL_FIRSTUSER and EVAL_LASTUSER\n");
+        if ( params.size() == 2 )
+            pubkey = ParseHex(params[1].get_str().c_str());
+    }
+    cp = CCinit(&C,evalcode);
+    if ( cp == 0 )
+        throw runtime_error("error creating *cp\n");
     return(CCaddress(cp,(char *)"CClib",pubkey));
 }
 
 UniValue cclibinfo(const UniValue& params, bool fHelp)
 {
-    struct CCcontract_info *cp,C;
-    cp = CCinit(&C,EVAL_FIRSTUSER);
+    struct CCcontract_info *cp,C; uint8_t evalcode = EVAL_FIRSTUSER;
     if ( fHelp || params.size() > 0 )
         throw runtime_error("cclibinfo\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    cp = CCinit(&C,evalcode);
     return(CClib_info(cp));
 }
 
 UniValue cclib(const UniValue& params, bool fHelp)
 {
-    struct CCcontract_info *cp,C; char *method; cJSON *jsonparams;
-    cp = CCinit(&C,EVAL_FIRSTUSER);
-    if ( fHelp || params.size() > 2 )
-        throw runtime_error("cclib method [JSON params]\n");
+    struct CCcontract_info *cp,C; char *method; cJSON *jsonparams=0; uint8_t evalcode = EVAL_FIRSTUSER;
+    if ( fHelp || params.size() > 3 )
+        throw runtime_error("cclib method [evalcode] [JSON params]\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     method = (char *)params[0].get_str().c_str();
-    jsonparams = cJSON_Parse(params[1].get_str().c_str());
+    if ( params.size() >= 1 )
+    {
+        evalcode = atoi(params[1].get_str().c_str());
+        if ( evalcode < EVAL_FIRSTUSER || evalcode > EVAL_LASTUSER )
+        {
+            printf("evalcode.%d vs (%d, %d)\n",evalcode,EVAL_FIRSTUSER,EVAL_LASTUSER);
+            throw runtime_error("evalcode not between EVAL_FIRSTUSER and EVAL_LASTUSER\n");
+        }
+        if ( params.size() == 2 )
+            jsonparams = cJSON_Parse(params[2].get_str().c_str());
+    }
+    cp = CCinit(&C,evalcode);
     return(CClib(cp,method,jsonparams));
 }
 
