@@ -3684,7 +3684,11 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     LogPrint("bench", "    - Callbacks: %.2fms [%.2fs]\n", 0.001 * (nTime4 - nTime3), nTimeCallbacks * 0.000001);
 
     //FlushStateToDisk();
-    komodo_connectblock(pindex,*(CBlock *)&block);
+    int tmp = komodo_connectblock(pindex,*(CBlock *)&block);  // != block-nVersion-7000000; 
+    if ( tmp > 0 )
+    {    
+        printf("VALID NOTARISATION connect block.%i tx.%i\n",pindex->GetHeight(),tmp);
+    }    
     return true;
 }
 
