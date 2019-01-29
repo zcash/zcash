@@ -534,6 +534,7 @@ UniValue sudoku_txidinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
     UniValue result(UniValue::VOBJ);
     if ( params != 0 )
     {
+        printf("%p params.(%s)\n",params,jprint(params,0));
         cJSON *item; int32_t i,n = cJSON_GetArraySize(params);
         for (i=0; i<n; i++)
         {
