@@ -639,7 +639,13 @@ UniValue sudoku_generate(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
         if ( inputsum > amount + 2*txfee )
             change = (inputsum - amount - 2*txfee);
         if ( change > txfee )
-            mtx.vout.push_back(MakeCC1vout(cp->evalcode,change,sudokupk));
+        {
+            if ( change > 10000*COIN )
+            {
+                mtx.vout.push_back(MakeCC1vout(cp->evalcode,change/2,sudokupk));
+                mtx.vout.push_back(MakeCC1vout(cp->evalcode,change/2,sudokupk));
+            } else mtx.vout.push_back(MakeCC1vout(cp->evalcode,change,sudokupk));
+        }
         rawtx = FinalizeCCTx(0,cp,mtx,pubkey2pk(Mypubkey()),txfee,sudoku_genopret(unsolved));
         if ( rawtx.size() > 0 )
         {
