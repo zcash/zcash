@@ -658,7 +658,7 @@ UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
                 jsonstr[strlen(jsonstr)-1] = 0;
                 jsonstr++;
             }
-            newstr = malloc(strlen(jsonstr)+1);
+            newstr = (char *)malloc(strlen(jsonstr)+1);
             for (i=j=0; jsonstr[i]!=0; i++)
             {
                 if ( jsonstr[i] == '%' && jsonstr[i+1] == '2' && jsonstr[i+2] == '2' )
