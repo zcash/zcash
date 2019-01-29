@@ -63,6 +63,7 @@ UniValue CClib_method(struct CCcontract_info *cp,char *method,cJSON *params)
     UniValue result(UniValue::VOBJ); uint64_t txfee = 10000;
     if ( cp->evalcode == EVAL_SUDOKU )
     {
+        printf("CClib_method params.%p\n",params);
         if ( strcmp(method,"txidinfo") == 0 )
             return(sudoku_txidinfo(txfee,cp,params));
         else if ( strcmp(method,"gen") == 0 )
@@ -119,6 +120,7 @@ UniValue CClib_info(struct CCcontract_info *cp)
 UniValue CClib(struct CCcontract_info *cp,char *method,cJSON *params)
 {
     UniValue result(UniValue::VOBJ); int32_t i; std::string rawtx;
+    printf("CClib params.%p\n",params);
     for (i=0; i<sizeof(CClib_methods)/sizeof(*CClib_methods); i++)
     {
         if ( cp->evalcode == CClib_methods[i].evalcode && strcmp(method,CClib_methods[i].method) == 0 )

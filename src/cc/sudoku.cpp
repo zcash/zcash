@@ -498,7 +498,7 @@ UniValue sudoku_generate(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
     UniValue result(UniValue::VOBJ); CPubKey sudokupk,pk; uint8_t privkey[32],unsolved[9][9],pub33[33]; uint32_t srandi; uint256 hash; char coinaddr[64]; uint64_t inputsum,amount,change=0; std::string rawtx;
     if ( params != 0 )
     {
-        printf("params.(%s)\n",jprint(params,0));
+        printf("%p params.(%s)\n",params,jprint(params,0));
         amount = jdouble(jitem(params,0),0) * COIN + 0.0000000049;
     } else amount = COIN;
     result.push_back(Pair("result","success"));
