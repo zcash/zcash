@@ -515,6 +515,46 @@ void sudoku_gen(uint8_t key32[32],uint8_t unsolved[9][9],uint32_t srandi)
  }
  */
 
+int32_t sudoku_captcha(uint32_t timestamps[81])
+{
+    int32_t i,solvetime,avetime,n = 0; uint64_t variance = 0; std::vector<uint32_t> list;
+    for (i=0; i<81; i++)
+    {
+        if ( timestamps[i] != 0 )
+        {
+            list.push_back(timestamps[i]);
+            n++;
+        }
+    }
+    if ( n > 81/2 )
+    {
+        std::sort(list.begin(),list.end());
+        solvetime = (list[0] - list[n-1]);
+        if ( list[0] < list[n-1] )
+            return(-1);
+        else if ( list[0] > chainActive.LastTip()->nTime+200 )
+            return(-1);
+        else if ( solvetime >= 777 )
+            return(0);
+        else
+        {
+            avetime = (solvetime / (n-1));
+            if ( avetime == 0 )
+                return(-1);
+            for (i=0; i<n-1; i++)
+            {
+                diff = (list[i+1] - list[i]) - avetime;
+                variance += (diff * diff);
+            }
+            variance /= (n - 1);
+            printf("solvetime.%d n.%d avetime.%d variance.%llu vs ave2 %d\n",solvetime,n,avetime,(long long)variance,avetime*avetime);
+            if ( variance < avetime*avetime )
+                return(-1 * 0);
+            else return(0);
+        }
+    } else return(-1);
+}
+
 CScript sudoku_genopret(uint8_t unsolved[9][9])
 {
     CScript opret; uint8_t evalcode = EVAL_SUDOKU; std::vector<uint8_t> data; int32_t i,j;
@@ -730,7 +770,7 @@ UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
                 for (i=1; i<n; i++)
                 {
                     timestamps[i] = juinti(params,i);
-                    printf("%u ",timestamps[i]);
+                    //printf("%u ",timestamps[i]);
                 }
                 if ( (solution= jstri(params,0)) != 0 && strlen(solution) == 81 )
                 {
@@ -744,11 +784,20 @@ UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
                     result.push_back(Pair("sudokuaddr",CCaddr));
                     balance = CCaddress_balance(CCaddr);
                     result.push_back(Pair("amount",ValueFromAmount(balance)));
-                    if ( (inputsum= AddCClibInputs(cp,mtx,pk,balance,16,CCaddr)) >= balance )
+                    if ( sudoku_captcha(timestamps) < 0 )
                     {
-                        mtx.vout.push_back(CTxOut(balance-txfee,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
-                        CCaddr2set(cp,cp->evalcode,pk,priv32,CCaddr);
-                        rawtx = FinalizeCCTx(0,cp,mtx,pubkey2pk(Mypubkey()),txfee,sudoku_solutionopret(solution,timestamps));
+                        result.push_back(Pair("result","error"));
+                        result.push_back(Pair("error","captcha failure"));
+                        return(result);
+                    }
+                    else
+                    {
+                        if ( (inputsum= AddCClibInputs(cp,mtx,pk,balance,16,CCaddr)) >= balance )
+                        {
+                            mtx.vout.push_back(CTxOut(balance-txfee,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
+                            CCaddr2set(cp,cp->evalcode,pk,priv32,CCaddr);
+                            rawtx = FinalizeCCTx(0,cp,mtx,pubkey2pk(Mypubkey()),txfee,sudoku_solutionopret(solution,timestamps));
+                        }
                     }
                 }
             }
@@ -756,7 +805,7 @@ UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
             if ( rawtx.size() > 0 )
                 result.push_back(Pair("hex",rawtx));
             else result.push_back(Pair("error","couldnt finalize CCtx"));
-            printf("params.(%s)\n",jprint(params,0));
+            //printf("params.(%s)\n",jprint(params,0));
             return(result);
         }
         else
