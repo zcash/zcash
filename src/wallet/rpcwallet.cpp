@@ -5389,7 +5389,10 @@ UniValue cclib(const UniValue& params, bool fHelp)
             throw runtime_error("evalcode not between EVAL_FIRSTUSER and EVAL_LASTUSER\n");
         }
         if ( params.size() == 2 )
+        {
             jsonparams = cJSON_Parse(params[2].get_str().c_str());
+            printf("Parse.(%s) -> %p\n",params[2].get_str().c_str(),jsonparams);
+        }
     }
     cp = CCinit(&C,evalcode);
     return(CClib(cp,method,jsonparams));

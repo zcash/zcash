@@ -477,6 +477,8 @@ void sudoku_gen(uint8_t key32[32],uint8_t unsolved[9][9],uint32_t srandi)
 
 //////////////////////// start of CClib interface
 // ./komodod -ac_name=SUDOKU -ac_supply=1000000 -pubkey=<yourpubkey> -addnode=5.9.102.210 -gen -genproclimit=1 -ac_cclib=sudoku -ac_perc=10000000 -ac_reward=100000000 -ac_cc=60000 -ac_script=2ea22c80203d1579313abe7d8ea85f48c65ea66fc512c878c0d0e6f6d54036669de940febf8103120c008203000401cc &
+// cclib "gen" 17 "1"
+// 5d13c1ad80daf37215c74809a36720c2ada90bacadb2e10bf0866092ce558432
 
 UniValue sudoku_txidinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
