@@ -177,7 +177,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
                 {
                     privkey = unspendablepriv;
                     cond = othercond;
-                    //fprintf(stderr,"FinalizeCCTx() matched unspendable CC addr.(%s)\n",unspendable);
+                    fprintf(stderr,"FinalizeCCTx(%d) matched unspendable CC addr.(%s)\n",cp->evalcode,unspendable);
                 }
 				else if (strcmp(destaddr, tokensunspendable) == 0)
 				{
