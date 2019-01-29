@@ -483,6 +483,7 @@ UniValue sudoku_txidinfo(struct CCcontract_info *cp,cJSON *params)
     if ( params != 0 )
         printf("params.(%s)\n",jprint(params,0));
     result.push_back(Pair("result","success"));
+    result.push_back(Pair("name","sudoku"));
     result.push_back(Pair("method","txidinfo"));
     return(result);
 }
@@ -493,6 +494,7 @@ UniValue sudoku_generate(struct CCcontract_info *cp,cJSON *params)
     if ( params != 0 )
         printf("params.(%s)\n",jprint(params,0));
     result.push_back(Pair("result","success"));
+    result.push_back(Pair("name","sudoku"));
     result.push_back(Pair("method","gen"));
     return(result);
 }
@@ -503,6 +505,7 @@ UniValue sudoku_solution(struct CCcontract_info *cp,cJSON *params)
     if ( params != 0 )
         printf("params.(%s)\n",jprint(params,0));
     result.push_back(Pair("result","success"));
+    result.push_back(Pair("name","sudoku"));
     result.push_back(Pair("method","solution"));
     return(result);
 }
@@ -513,6 +516,7 @@ UniValue sudoku_pending(struct CCcontract_info *cp,cJSON *params)
     if ( params != 0 )
         printf("params.(%s)\n",jprint(params,0));
     result.push_back(Pair("result","success"));
+    result.push_back(Pair("name","sudoku"));
     result.push_back(Pair("method","pending"));
     return(result);
 }
