@@ -482,26 +482,6 @@ void sudoku_gen(uint8_t key32[32],uint8_t unsolved[9][9],uint32_t srandi)
 // 5d13c1ad80daf37215c74809a36720c2ada90bacadb2e10bf0866092ce558432
 // cclib "txidinfo" 17 \"[5d13c1ad80daf37215c74809a36720c2ada90bacadb2e10bf0866092ce558432]\"
 
-UniValue sudoku_txidinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
-{
-    UniValue result(UniValue::VOBJ);
-    if ( params != 0 )
-    {
-        printf("%p params.(%s) is array.%d\n",params,jprint(params,0),is_cJSON_Array(params));
-        cJSON *item; int32_t i,n = cJSON_GetArraySize(params);
-        for (i=0; i<n; i++)
-        {
-            item = jitem(params,i);
-            jprint(item,0);
-        }
-        printf("n.%d\n",n);
-    }
-    result.push_back(Pair("result","success"));
-    result.push_back(Pair("name","sudoku"));
-    result.push_back(Pair("method","txidinfo"));
-    return(result);
-}
-
 CScript sudoku_genopret(uint8_t unsolved[9][9])
 {
     CScript opret; uint8_t evalcode = EVAL_SUDOKU; std::vector<uint8_t> data; int32_t i,j;
@@ -546,6 +526,25 @@ UniValue sudoku_generate(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
         rawtx = FinalizeCCTx(0,cp,mtx,pubkey2pk(Mypubkey()),txfee,sudoku_genopret(unsolved));
         result.push_back(Pair("hex",rawtx));
     } else result.push_back(Pair("error","not enough SUDOKU funds"));
+    return(result);
+}
+
+UniValue sudoku_txidinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
+{
+    UniValue result(UniValue::VOBJ);
+    if ( params != 0 )
+    {
+        cJSON *item; int32_t i,n = cJSON_GetArraySize(params);
+        for (i=0; i<n; i++)
+        {
+            item = jitem(params,i);
+            jprint(item,0);
+        }
+        printf("n.%d\n",n);
+    }
+    result.push_back(Pair("result","success"));
+    result.push_back(Pair("name","sudoku"));
+    result.push_back(Pair("method","txidinfo"));
     return(result);
 }
 
