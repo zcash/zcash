@@ -752,11 +752,12 @@ UniValue sudoku_pending(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); int32_t i,j,ind,n; uint256 txid; char *jsonstr,*newstr,*txidstr,coinaddr[64],CCaddr[64],*solution=0; CPubKey pk,mypk; uint8_t vals9[9][9],priv32[32],pub33[33]; uint32_t timestamps[81]; uint64_t balance,inputsum; std::string rawtx; CTransaction tx;
+    UniValue result(UniValue::VOBJ); int32_t i,j,good,ind,n,numvouts; uint256 txid; char *jsonstr,*newstr,*txidstr,coinaddr[64],CCaddr[64],*solution=0; CPubKey pk,mypk; uint8_t vals9[9][9],priv32[32],pub33[33],unsolved[81]; uint32_t timestamps[81]; uint64_t balance,inputsum; std::string rawtx; CTransaction tx; uint256 hashBlock;
     mypk = pubkey2pk(Mypubkey());
     memset(timestamps,0,sizeof(timestamps));
     result.push_back(Pair("name","sudoku"));
     result.push_back(Pair("method","solution"));
+    good = 0;
     if ( params != 0 )
     {
         if ( (jsonstr= jprint(params,0)) != 0 )
@@ -812,21 +813,46 @@ UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
                             decode_hex((uint8_t *)&txid,32,txidstr);
                             txid = revuint256(txid);
                             result.push_back(Pair("txid",txid.GetHex()));
-                            // get tx and validate solution is for that txid
+                            if ( CCgettxout(txid,0,1) < 0 )
+                                result.push_back(Pair("error","already solved"));
+                            else if ( GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 1 )
+                            {
+                                if ( sudoku_genopreturndecode(unsolved,tx.vout[numvouts-1].scriptPubKey) == 'G' )
+                                {
+                                    for (i=0; i<81; i++)
+                                    {
+                                        if ( unsolved[i] == 0 )
+                                            continue;
+                                        else if ( unsolved[i] != solution[i]-'0' )
+                                        {
+                                            printf("i.%d %d != %d\n",i,unsolved[i],solution[i]-'0');
+                                            result.push_back(Pair("error","wrong sudoku solved"));
+                                            break;
+                                        }
+                                    }
+                                    if ( i == 81 )
+                                        good = 1;
+                                } else result.push_back(Pair("error","cant decode sudoku"));
+                            } else result.push_back(Pair("error","couldnt find sudoku"));
                         }
-                        mtx.vin.push_back(CTxIn(txid,0,CScript()));
-                        if ( (inputsum= AddCClibInputs(cp,mtx,pk,balance,16,CCaddr)) >= balance )
+                        if ( good != 0 )
                         {
-                            mtx.vout.push_back(CTxOut(balance,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
-                            CCaddr2set(cp,cp->evalcode,pk,priv32,CCaddr);
-                            rawtx = FinalizeCCTx(0,cp,mtx,pubkey2pk(Mypubkey()),txfee,sudoku_solutionopret(solution,timestamps));
-                        } else result.push_back(Pair("error","couldnt find funds in solution address"));
+                            mtx.vin.push_back(CTxIn(txid,0,CScript()));
+                            if ( (inputsum= AddCClibInputs(cp,mtx,pk,balance,16,CCaddr)) >= balance )
+                            {
+                                mtx.vout.push_back(CTxOut(balance,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
+                                CCaddr2set(cp,cp->evalcode,pk,priv32,CCaddr);
+                                rawtx = FinalizeCCTx(0,cp,mtx,pubkey2pk(Mypubkey()),txfee,sudoku_solutionopret(solution,timestamps));
+                            } else result.push_back(Pair("error","couldnt find funds in solution address"));
+                        }
                     }
                 }
-                result.push_back(Pair("result","success"));
             } else result.push_back(Pair("error","couldnt get all params"));
             if ( rawtx.size() > 0 )
+            {
+                result.push_back(Pair("result","success"));
                 result.push_back(Pair("hex",rawtx));
+            }
             else result.push_back(Pair("error","couldnt finalize CCtx"));
             //printf("params.(%s)\n",jprint(params,0));
             return(result);
