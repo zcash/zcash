@@ -820,7 +820,7 @@ UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
                             mtx.vout.push_back(CTxOut(balance,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
                             CCaddr2set(cp,cp->evalcode,pk,priv32,CCaddr);
                             rawtx = FinalizeCCTx(0,cp,mtx,pubkey2pk(Mypubkey()),txfee,sudoku_solutionopret(solution,timestamps));
-                        }
+                        } else result.push_back(Pair("error","couldnt find funds in solution address"));
                     }
                 }
                 result.push_back(Pair("result","success"));
