@@ -536,7 +536,7 @@ UniValue sudoku_txidinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
     {
         char str[65]; bits256 _txid; uint256 txid;
         _txid = jbits256(params,(char *)"txid");
-        memcpy(&txid,*_txid,sizeof(txid));
+        memcpy(&txid,&_txid,sizeof(txid));
         printf("txid.(%s)\n",txid.GetHex().c_str());
     }
     result.push_back(Pair("result","success"));
