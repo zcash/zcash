@@ -481,6 +481,15 @@ void sudoku_gen(uint8_t key32[32],uint8_t unsolved[9][9],uint32_t srandi)
 // cclib "gen" 17 "1"
 // 5d13c1ad80daf37215c74809a36720c2ada90bacadb2e10bf0866092ce558432
 // cclib "txidinfo" 17 \"5d13c1ad80daf37215c74809a36720c2ada90bacadb2e10bf0866092ce558432\"
+/*{
+    "result": "success",
+    "txid": "5d13c1ad80daf37215c74809a36720c2ada90bacadb2e10bf0866092ce558432",
+    "result": "success",
+    "amount": 1.00000000,
+    "unsolved": "46-8---15-75-61-3----4----8-1--75-----3--24----2-----6-4----------73----------36-",
+    "name": "sudoku",
+    "method": "txidinfo"
+}*/
 
 CScript sudoku_genopret(uint8_t unsolved[9][9])
 {
@@ -607,12 +616,31 @@ UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
 
 UniValue sudoku_pending(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ);
-    if ( params != 0 )
-        printf("params.(%s)\n",jprint(params,0));
+    UniValue result(UniValue::VOBJ),a(UniValue::VARRAY);
+    char coinaddr[64],unsolved[82]; int64_t nValue; uint256 txid,hashBlock; CTransaction tx; int32_t vout,numvouts;
+    std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
+    GetCCaddress(cp,coinaddr,pk);
+    SetCCunspents(unspentOutputs,coinaddr);
+    for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
+    {
+        txid = it->first.txhash;
+        vout = (int32_t)it->first.index;
+        //char str[65]; fprintf(stderr,"%s check %s/v%d %.8f\n",coinaddr,uint256_str(str,txid),vout,(double)it->second.satoshis/COIN);
+        if ( it->second.satoshis != txfee || vout != 0 )
+            continue;
+        if ( GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 1 )
+        {
+            if ( (nValue= IsCClibvout(cp,tx,vout)) == txfee && myIsutxo_spentinmempool(txid,vout) == 0 )
+            {
+                if ( sudoku_genopreturndecode(unsolved,tx.vout[numvouts-1].scriptPubKey) == 'G' )
+                    a.push_back(txid);
+            }
+        }
+    }
     result.push_back(Pair("result","success"));
     result.push_back(Pair("name","sudoku"));
     result.push_back(Pair("method","pending"));
+    result.push_back(Pair("pending",a));
     return(result);
 }
 
