@@ -5240,7 +5240,10 @@ UniValue CCaddress(struct CCcontract_info *cp,char *name,std::vector<unsigned ch
         result.push_back(Pair("myCCbalance",ValueFromAmount(CCaddress_balance(destaddr))));
     }
     if ( Getscriptaddress(destaddr,(CScript() << Mypubkey() << OP_CHECKSIG)) != 0 )
+    {
         result.push_back(Pair("myaddress",destaddr));
+        result.push_back(Pair("mybalance",ValueFromAmount(CCaddress_balance(destaddr))));
+    }
     return(result);
 }
 
