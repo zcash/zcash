@@ -667,7 +667,7 @@ UniValue sudoku_generate(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
 
 UniValue sudoku_txidinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ); int32_t numvouts; char str[65],*txidstr; uint256 txid,hashBlock; CTransaction tx; char unsolved[82]; CBlockIndex *pindex;
+    UniValue result(UniValue::VOBJ); int32_t numvouts; char CCaddr[64],str[65],*txidstr; uint256 txid,hashBlock; CTransaction tx; char unsolved[82]; CBlockIndex *pindex;
     if ( params != 0 )
     {
         result.push_back(Pair("result","success"));
@@ -689,6 +689,8 @@ UniValue sudoku_txidinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
                     result.push_back(Pair("result","success"));
                     if ( (pindex= komodo_blockindex(hashBlock)) != 0 )
                         result.push_back(Pair("height",pindex->GetHeight()));
+                    Getscriptaddress(CCaddr,tx.vout[1].scriptPubKey);
+                    result.push_back(Pair("sudokuaddr",CCaddr));
                     result.push_back(Pair("amount",ValueFromAmount(tx.vout[1].nValue)));
                     result.push_back(Pair("unsolved",unsolved));
                 }
@@ -759,7 +761,7 @@ UniValue sudoku_pending(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); int32_t i,j,good,ind,n,numvouts; uint256 txid; char *jsonstr,*newstr,*txidstr,coinaddr[64],CCaddr[64],*solution=0,unsolved[82]; CPubKey pk,mypk; uint8_t vals9[9][9],priv32[32],pub33[33]; uint32_t timestamps[81]; uint64_t balance,inputsum; std::string rawtx; CTransaction tx; uint256 hashBlock;
+    UniValue result(UniValue::VOBJ); int32_t i,j,good,ind,n,numvouts; uint256 txid; char *jsonstr,*newstr,*txidstr,coinaddr[64],checkaddr[64],CCaddr[64],*solution=0,unsolved[82]; CPubKey pk,mypk; uint8_t vals9[9][9],priv32[32],pub33[33]; uint32_t timestamps[81]; uint64_t balance,inputsum; std::string rawtx; CTransaction tx; uint256 hashBlock;
     mypk = pubkey2pk(Mypubkey());
     memset(timestamps,0,sizeof(timestamps));
     result.push_back(Pair("name","sudoku"));
@@ -804,6 +806,15 @@ UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
                     priv2addr(coinaddr,pub33,priv32);
                     pk = buf2pk(pub33);
                     GetCCaddress(cp,CCaddr,pk);
+                    Getscriptaddress(checkaddr,tx.vout[1].scriptPubKey);
+                    if ( strcmp(checkaddr,CCaddr) != 0 )
+                    {
+                        result.push_back(Pair("result","error"));
+                        result.push_back(Pair("error","wrong solution"));
+                        result.push_back(Pair("yours",CCaddr));
+                        result.push_back(Pair("sudokuaddr",checkaddr));
+                        return(result);
+                    }
                     result.push_back(Pair("sudokuaddr",CCaddr));
                     balance = CCaddress_balance(CCaddr);
                     result.push_back(Pair("amount",ValueFromAmount(balance)));
