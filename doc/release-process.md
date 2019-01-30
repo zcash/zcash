@@ -2,7 +2,7 @@ Release Process
 ====================
 Meta: There should always be a single release engineer to disambiguate responsibility.
 
-If this is a hotfix release, please see `./hotfix-process.md` before proceeding.
+If this is a hotfix release, please see the [Hotfix Release Process](https://github.com/zcash/zcash/blob/master/doc/hotfix-process.md) documentation before proceeding.
 
 ## Pre-release
 
