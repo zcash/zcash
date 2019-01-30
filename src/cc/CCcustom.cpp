@@ -281,7 +281,7 @@ int32_t CClib_initcp(struct CCcontract_info *cp,uint8_t evalcode)
                 sprintf(&cp->CChexstr[i*2],"%02x",pub33[i]);
             cp->CChexstr[i*2] = 0;
             GetCCaddress(cp,cp->unspendableCCaddr,pk);
-            printf("evalcode.%d initialized\n",evalcode);
+            //printf("evalcode.%d initialized\n",evalcode);
             return(0);
         }
     }

@@ -37,20 +37,22 @@ char *CClib_name() { return((char *)MYCCLIBNAME.c_str()); }
 struct CClib_rpcinfo
 {
     char *CCname,*method,*help;
-    int32_t numrequiredargs,maxargs; // frontloaded with required
+    int32_t numrequiredargs,maxargs;
     uint8_t funcid,evalcode;
 }
 CClib_methods[] =
 {
     { (char *)"faucet2", (char *)"fund", (char *)"amount", 1, 1, 'F', EVAL_FAUCET2 },
     { (char *)"faucet2", (char *)"get", (char *)"<no args>", 0, 0, 'G', EVAL_FAUCET2 },
-    { (char *)"sudoku", (char *)"gen", (char *)"amount", 1, 1, 'G', EVAL_SUDOKU },
+    { (char *)"sudoku", (char *)"gen", (char *)"<no args>", 0, 0, 'G', EVAL_SUDOKU },
     { (char *)"sudoku", (char *)"txidinfo", (char *)"txid", 1, 1, 'T', EVAL_SUDOKU },
     { (char *)"sudoku", (char *)"pending", (char *)"<no args>", 0, 0, 'U', EVAL_SUDOKU },
-    { (char *)"sudoku", (char *)"solution", (char *)"solution timestamps[]", 2, 2, 'S', EVAL_SUDOKU },
+    { (char *)"sudoku", (char *)"solution", (char *)"txid solution timestamps[81]", 83, 83, 'S', EVAL_SUDOKU },
 };
 
 std::string CClib_rawtxgen(struct CCcontract_info *cp,uint8_t funcid,cJSON *params);
+
+bool sudoku_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx);
 UniValue sudoku_txidinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue sudoku_generate(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
@@ -61,6 +63,7 @@ UniValue CClib_method(struct CCcontract_info *cp,char *method,cJSON *params)
     UniValue result(UniValue::VOBJ); uint64_t txfee = 10000;
     if ( cp->evalcode == EVAL_SUDOKU )
     {
+        //printf("CClib_method params.%p\n",params);
         if ( strcmp(method,"txidinfo") == 0 )
             return(sudoku_txidinfo(txfee,cp,params));
         else if ( strcmp(method,"gen") == 0 )
@@ -117,6 +120,7 @@ UniValue CClib_info(struct CCcontract_info *cp)
 UniValue CClib(struct CCcontract_info *cp,char *method,cJSON *params)
 {
     UniValue result(UniValue::VOBJ); int32_t i; std::string rawtx;
+    //printf("CClib params.%p\n",params);
     for (i=0; i<sizeof(CClib_methods)/sizeof(*CClib_methods); i++)
     {
         if ( cp->evalcode == CClib_methods[i].evalcode && strcmp(method,CClib_methods[i].method) == 0 )
@@ -137,12 +141,12 @@ UniValue CClib(struct CCcontract_info *cp,char *method,cJSON *params)
     return(result);
 }
 
-int64_t IsCClibvout(struct CCcontract_info *cp,const CTransaction& tx,int32_t v)
+int64_t IsCClibvout(struct CCcontract_info *cp,const CTransaction& tx,int32_t v,char *cmpaddr)
 {
     char destaddr[64];
     if ( tx.vout[v].scriptPubKey.IsPayToCryptoCondition() != 0 )
     {
-        if ( Getscriptaddress(destaddr,tx.vout[v].scriptPubKey) > 0 && strcmp(destaddr,cp->unspendableCCaddr) == 0 )
+        if ( Getscriptaddress(destaddr,tx.vout[v].scriptPubKey) > 0 && strcmp(destaddr,cmpaddr) == 0 )
             return(tx.vout[v].nValue);
     }
     return(0);
@@ -167,7 +171,7 @@ bool CClibExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction 
                 //fprintf(stderr,"vini.%d check hash and vout\n",i);
                 if ( hashBlock == zerohash )
                     return eval->Invalid("cant faucet2 from mempool");
-                if ( (assetoshis= IsCClibvout(cp,vinTx,tx.vin[i].prevout.n)) != 0 )
+                if ( (assetoshis= IsCClibvout(cp,vinTx,tx.vin[i].prevout.n,cp->unspendableCCaddr)) != 0 )
                     inputs += assetoshis;
             }
         }
@@ -175,7 +179,7 @@ bool CClibExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction 
     for (i=0; i<numvouts; i++)
     {
         //fprintf(stderr,"i.%d of numvouts.%d\n",i,numvouts);
-        if ( (assetoshis= IsCClibvout(cp,tx,i)) != 0 )
+        if ( (assetoshis= IsCClibvout(cp,tx,i,cp->unspendableCCaddr)) != 0 )
             outputs += assetoshis;
     }
     if ( inputs != outputs+FAUCET2SIZE+txfee )
@@ -190,6 +194,8 @@ bool CClib_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
 {
     int32_t numvins,numvouts,preventCCvins,preventCCvouts,i,numblocks; bool retval; uint256 txid; uint8_t hash[32]; char str[65],destaddr[64];
     std::vector<std::pair<CAddressIndexKey, CAmount> > txids;
+    if ( cp->evalcode != EVAL_FAUCET2 )
+        return(sudoku_validate(cp,height,eval,tx));
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
     preventCCvins = preventCCvouts = -1;
@@ -214,7 +220,7 @@ bool CClib_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
         else
         {
             preventCCvouts = 1;
-            if ( IsCClibvout(cp,tx,0) != 0 )
+            if ( IsCClibvout(cp,tx,0,cp->unspendableCCaddr) != 0 )
             {
                 preventCCvouts++;
                 i = 1;
@@ -246,7 +252,7 @@ bool CClib_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
     }
 }
 
-int64_t AddCClibInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,int64_t total,int32_t maxinputs)
+int64_t AddCClibInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,int64_t total,int32_t maxinputs,char *cmpaddr)
 {
     char coinaddr[64]; int64_t threshold,nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t vout,n = 0;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
@@ -257,13 +263,13 @@ int64_t AddCClibInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubK
     {
         txid = it->first.txhash;
         vout = (int32_t)it->first.index;
+        //char str[65]; fprintf(stderr,"%s check %s/v%d %.8f vs %.8f\n",coinaddr,uint256_str(str,txid),vout,(double)it->second.satoshis/COIN,(double)threshold/COIN);
         if ( it->second.satoshis < threshold )
             continue;
-        //char str[65]; fprintf(stderr,"check %s/v%d %.8f`\n",uint256_str(str,txid),vout,(double)it->second.satoshis/COIN);
         // no need to prevent dup
         if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
         {
-            if ( (nValue= IsCClibvout(cp,vintx,vout)) > 1000000 && myIsutxo_spentinmempool(txid,vout) == 0 )
+            if ( (nValue= IsCClibvout(cp,vintx,vout,cmpaddr)) > 1000000 && myIsutxo_spentinmempool(txid,vout) == 0 )
             {
                 if ( total != 0 && maxinputs != 0 )
                     mtx.vin.push_back(CTxIn(txid,vout,CScript()));
@@ -272,7 +278,7 @@ int64_t AddCClibInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubK
                 n++;
                 if ( (total > 0 && totalinputs >= total) || (maxinputs > 0 && n >= maxinputs) )
                     break;
-            } else fprintf(stderr,"nValue too small or already spent in mempool\n");
+            } //else fprintf(stderr,"nValue %.8f too small or already spent in mempool\n",(double)nValue/COIN);
         } else fprintf(stderr,"couldnt get tx\n");
     }
     return(totalinputs);
@@ -327,7 +333,7 @@ std::string CClib_rawtxgen(struct CCcontract_info *cp,uint8_t funcid,cJSON *para
         return("");
     cclibpk = GetUnspendable(cp,0);
     mypk = pubkey2pk(Mypubkey());
-    if ( (inputs= AddCClibInputs(cp,mtx,cclibpk,nValue+txfee,60)) > 0 )
+    if ( (inputs= AddCClibInputs(cp,mtx,cclibpk,nValue+txfee,60,cp->unspendableCCaddr)) > 0 )
     {
         if ( inputs > nValue )
             CCchange = (inputs - nValue - txfee);

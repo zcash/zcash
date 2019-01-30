@@ -1047,7 +1047,7 @@ uint64_t komodo_block_prg(uint32_t nHeight)
     {
         int i;
         uint8_t hashSrc[8];
-        uint64_t result, hashSrc64 = (uint64_t)ASSETCHAINS_MAGIC << 32 + nHeight;
+        uint64_t result=0, hashSrc64 = (uint64_t)ASSETCHAINS_MAGIC << 32 + nHeight;
         bits256 hashResult;
 
         for ( i = 0; i < sizeof(hashSrc); i++ )

@@ -5220,6 +5220,7 @@ UniValue CCaddress(struct CCcontract_info *cp,char *name,std::vector<unsigned ch
     result.push_back(Pair("result", "success"));
     sprintf(str,"%sCCAddress",name);
     result.push_back(Pair(str,cp->unspendableCCaddr));
+    result.push_back(Pair("CCbalance",ValueFromAmount(CCaddress_balance(cp->unspendableCCaddr))));
     sprintf(str,"%sNormalAddress",name);
     result.push_back(Pair(str,cp->normaladdr));
     if (strcmp(name,"Gateways")==0) result.push_back(Pair("GatewaysPubkey","03ea9c062b9652d8eff34879b504eda0717895d27597aaeb60347d65eed96ccb40"));
@@ -5257,6 +5258,16 @@ UniValue CCaddress(struct CCcontract_info *cp,char *name,std::vector<unsigned ch
             sprintf(str,"PubkeyCCaddress(%s)",name);
             result.push_back(Pair(str,destaddr));
         }
+    }
+    if ( GetCCaddress(cp,destaddr,pubkey2pk(Mypubkey())) != 0 )
+    {
+        result.push_back(Pair("myCCaddress",destaddr));
+        result.push_back(Pair("myCCbalance",ValueFromAmount(CCaddress_balance(destaddr))));
+    }
+    if ( Getscriptaddress(destaddr,(CScript() << Mypubkey() << OP_CHECKSIG)) != 0 )
+    {
+        result.push_back(Pair("myaddress",destaddr));
+        result.push_back(Pair("mybalance",ValueFromAmount(CCaddress_balance(destaddr))));
     }
     return(result);
 }
@@ -5380,16 +5391,18 @@ UniValue cclib(const UniValue& params, bool fHelp)
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     method = (char *)params[0].get_str().c_str();
-    if ( params.size() >= 1 )
+    if ( params.size() >= 2 )
     {
         evalcode = atoi(params[1].get_str().c_str());
         if ( evalcode < EVAL_FIRSTUSER || evalcode > EVAL_LASTUSER )
         {
-            printf("evalcode.%d vs (%d, %d)\n",evalcode,EVAL_FIRSTUSER,EVAL_LASTUSER);
+            //printf("evalcode.%d vs (%d, %d)\n",evalcode,EVAL_FIRSTUSER,EVAL_LASTUSER);
             throw runtime_error("evalcode not between EVAL_FIRSTUSER and EVAL_LASTUSER\n");
         }
-        if ( params.size() == 2 )
+        if ( params.size() == 3 )
+        {
             jsonparams = cJSON_Parse(params[2].get_str().c_str());
+        }
     }
     cp = CCinit(&C,evalcode);
     return(CClib(cp,method,jsonparams));

@@ -173,7 +173,7 @@ int64_t komodo_current_supply(uint32_t nHeight)
                     else if ( decay == SATOSHIDEN )
                     {
                         int64_t lowestSubsidy, subsidyDifference, stepDifference, stepTriangle;
-                        int64_t denominator, modulo;
+                        int64_t denominator, modulo=1;
                         int32_t sign = 1;
 
                         if ( j == ASSETCHAINS_LASTERA )

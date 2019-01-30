@@ -35,8 +35,8 @@
  *                                                                            *
  ******************************************************************************/
 
-#ifndef cJSON__h
-#define cJSON__h
+#ifndef cJSON__ccih
+#define cJSON__ccih
 
 #include <stdio.h>
 #include <stdlib.h>
