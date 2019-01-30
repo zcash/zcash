@@ -2507,6 +2507,8 @@ void sudoku_gen(uint8_t key32[32],uint8_t unsolved[9][9],uint32_t srandi)
  "result": "success",
  "hex": "0400008085202f8901328455ce926086f00be1b2adac0ba9adc22067a30948c71572f3da80adc1135d010000007b4c79a276a072a26ba067a565802102c57d40c1ddc92a5246a937bd7338823f1e8c916b137f2092d38cf250d74cb5ab8140f92d54f611aa3cb3d187eaadd56b06f3a8c0f5fba23956b26fdefc6038d9b6282de38525f72ebd8945a7994cef63ebca711ecf8fe6baeefcc218cf58efb59dc2a100af03800111a10001ffffffff02f0b9f505000000002321039433dc3749aece1bd568f374a45da3b0bc6856990d7da3cd175399577940a775ac0000000000000000fd9f016a4d9b01115351343639383233373135383735393631323334323331343537363938393134363735383233363533313832343739373832333934313536333436323139353837353238373336393431313937353438333632fd4401000000005c5078355c50783600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000"
  }
+ 
+ cclib solution 17 \"[%224d50336780d5a300a1f01b12fe36f46a82f3b9935bb115e01e0113dc4f337aae%22,%22234791685716258943589643712865934127341827596927516438492375861178462359653189274%22,0,0,1548859143,1548859146,0,1548859146,0,1548859148,1548859149,0,1548859151,1548859152,0,1548859154,1548859155,1548859158,1548859159,0,0,0,1548859161,1548859163,0,1548859164,1548859168,0,1548859168,1548859170,1548859172,1548859172,1548859175,0,0,1548859176,0,0,1548859178,1548859178,0,0,1548859180,1548859181,1548859183,1548859184,1548859185,1548859186,1548859188,1548859190,1548859191,1548859192,1548859192,0,0,1548859195,1548859196,1548859197,1548859198,0,0,1548859199,1548859202,1548859202,0,1548859204,1548859205,1548859206,1548859209,1548859210,1548859211,1548859212,0,1548859214,1548859216,0,1548859217,1548859218,1548859219,1548859220,0,1548859222,1548859222]\"
  */
 
 int32_t sudoku_captcha(uint32_t timestamps[81])
@@ -2820,15 +2822,6 @@ UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
                     priv2addr(coinaddr,pub33,priv32);
                     pk = buf2pk(pub33);
                     GetCCaddress(cp,CCaddr,pk);
-                    Getscriptaddress(checkaddr,tx.vout[1].scriptPubKey);
-                    if ( strcmp(checkaddr,CCaddr) != 0 )
-                    {
-                        result.push_back(Pair("result","error"));
-                        result.push_back(Pair("error","wrong solution"));
-                        result.push_back(Pair("yours",CCaddr));
-                        result.push_back(Pair("sudokuaddr",checkaddr));
-                        return(result);
-                    }
                     result.push_back(Pair("sudokuaddr",CCaddr));
                     balance = CCaddress_balance(CCaddr);
                     result.push_back(Pair("amount",ValueFromAmount(balance)));
@@ -2849,6 +2842,14 @@ UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
                                 result.push_back(Pair("error","already solved"));
                             else if ( GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 1 )
                             {
+                                Getscriptaddress(checkaddr,tx.vout[1].scriptPubKey);
+                                if ( strcmp(checkaddr,CCaddr) != 0 )
+                                {
+                                    result.push_back(Pair("result","error"));
+                                    result.push_back(Pair("error","wrong solution"));
+                                    result.push_back(Pair("yours",CCaddr));
+                                    return(result);
+                                }
                                 if ( sudoku_genopreturndecode(unsolved,tx.vout[numvouts-1].scriptPubKey) == 'G' )
                                 {
                                     for (i=0; i<81; i++)
