@@ -688,7 +688,7 @@ UniValue sudoku_txidinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
                 {
                     result.push_back(Pair("result","success"));
                     if ( (pindex= komodo_blockindex(hashBlock)) != 0 )
-                        result.push_back(Pair("height",pindex->nHeight));
+                        result.push_back(Pair("height",pindex->GetHeight()));
                     result.push_back(Pair("amount",ValueFromAmount(tx.vout[1].nValue)));
                     result.push_back(Pair("unsolved",unsolved));
                 }
@@ -738,7 +738,7 @@ UniValue sudoku_pending(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                 {
                     UniValue obj(UniValue::VOBJ);
                     if ( (pindex= komodo_blockindex(hashBlock)) != 0 )
-                        obj.push_back(Pair("height",pindex->nHeight));
+                        obj.push_back(Pair("height",pindex->GetHeight()));
                     obj.push_back(Pair("amount",ValueFromAmount(tx.vout[1].nValue)));
                     obj.push_back(Pair("txid",txid.GetHex()));
                     a.push_back(obj);
