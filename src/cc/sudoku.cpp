@@ -1160,17 +1160,17 @@ static int eliminate_singles(grid *g)
     
     /* Do rows */
     for (i = 0; i < PUZZLE_DIM; i++) {
-        found |= find_singletons(g, row[i], "row");
+        found |= find_singletons(g, row[i], (char *)"row");
     }
     
     /* Do columns */
     for (i = 0; i < PUZZLE_DIM; i++) {
-        found |= find_singletons(g, col[i], "column");
+        found |= find_singletons(g, col[i], (char *)"column");
     }
     
     /* Do regions */
     for (i = 0; i < PUZZLE_DIM; i++) {
-        found |= find_singletons(g, region[i], "region");
+        found |= find_singletons(g, region[i], (char *)"region");
     }
     
     return found;
@@ -1489,17 +1489,17 @@ static int mult_elimination(grid *g)
     
     /* Eliminate subsets from rows */
     for (i = 0; i < PUZZLE_DIM; i++) {
-        rc |= elim_matches(g, row[i], "row", i);
+        rc |= elim_matches(g, row[i], (char *)"row", i);
     }
     
     /* Eliminate subsets from columns */
     for (i = 0; i < PUZZLE_DIM; i++) {
-        rc |= elim_matches(g, col[i], "column", i);
+        rc |= elim_matches(g, col[i], (char *)"column", i);
     }
     
     /* Eliminate subsets from regions */
     for (i = 0; i < PUZZLE_DIM; i++) {
-        rc |= elim_matches(g, region[i], "region", i);
+        rc |= elim_matches(g, region[i], (char *)"region", i);
     }
     
     return rc;
@@ -1633,7 +1633,7 @@ static int add_soln(grid *g)
 {
     grid *tmp;
     
-    if ((tmp = malloc(sizeof(grid))) == NULL) {
+    if ((tmp = (grid *)malloc(sizeof(grid))) == NULL) {
         fprintf(stderr, "Out of memory.\n");
         exit(1);
     }
@@ -2623,7 +2623,7 @@ UniValue sudoku_generate(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
     {
         sudoku_gen(privkey,unsolved,srandi);
         for (i=0; i<TOTAL; i++)
-            str[i] = '0' + uniq9[i/9][i%9];
+            str[i] = '0' + unsolved[i/9][i%9];
         str[i] = 0;
         printf("solve: %s\n",str);
         if ( dupree_solver(&score,str) == 1 )
