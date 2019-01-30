@@ -3700,7 +3700,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     {    
         printf("VALID NOTARISATION connect block.%i tx.%i\n NOT VALIDATING HERE YET!\n",pindex->GetHeight(),tmp);
         if ( tmp != 1 )
-            printf("INVALID NOTARISATION notarisation tx is not in vtx[1].\n";
+            printf("INVALID NOTARISATION notarisation tx is not in vtx[1].\n");
     }    
     return true;
 }
