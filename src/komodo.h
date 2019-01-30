@@ -695,11 +695,11 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                 }
                 else if ( ASSETCHAINS_SYMBOL[0] == 0 && matched != 0 && notarized != 0 && validated != 0 )
                     komodo_rwccdata((char *)"KMD",1,&ccdata,0);
-                else if ( ASSETCHAINS_NOTARY_PAY != 0 )
+                /*else
                 {
                     fprintf(stderr, "NOT VALID NOTARISATION\n");
                     return (-2);
-                }
+                } */
                 if ( matched != 0 && *notarizedheightp > sp->NOTARIZED_HEIGHT && *notarizedheightp < height )
                 {
                     sp->NOTARIZED_HEIGHT = *notarizedheightp;
