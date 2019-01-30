@@ -37,17 +37,17 @@ char *CClib_name() { return((char *)MYCCLIBNAME.c_str()); }
 struct CClib_rpcinfo
 {
     char *CCname,*method,*help;
-    int32_t numrequiredargs,maxargs; // frontloaded with required
+    int32_t numrequiredargs,maxargs;
     uint8_t funcid,evalcode;
 }
 CClib_methods[] =
 {
     { (char *)"faucet2", (char *)"fund", (char *)"amount", 1, 1, 'F', EVAL_FAUCET2 },
     { (char *)"faucet2", (char *)"get", (char *)"<no args>", 0, 0, 'G', EVAL_FAUCET2 },
-    { (char *)"sudoku", (char *)"gen", (char *)"<no args>", 1, 1, 'G', EVAL_SUDOKU },
+    { (char *)"sudoku", (char *)"gen", (char *)"<no args>", 0, 0, 'G', EVAL_SUDOKU },
     { (char *)"sudoku", (char *)"txidinfo", (char *)"txid", 1, 1, 'T', EVAL_SUDOKU },
     { (char *)"sudoku", (char *)"pending", (char *)"<no args>", 0, 0, 'U', EVAL_SUDOKU },
-    { (char *)"sudoku", (char *)"solution", (char *)"txid solution timestamps[]", 2, 2, 'S', EVAL_SUDOKU },
+    { (char *)"sudoku", (char *)"solution", (char *)"txid solution timestamps[81]", 83, 83, 'S', EVAL_SUDOKU },
 };
 
 std::string CClib_rawtxgen(struct CCcontract_info *cp,uint8_t funcid,cJSON *params);

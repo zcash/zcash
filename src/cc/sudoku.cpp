@@ -2807,7 +2807,15 @@ UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
                 {
                     for (i=ind=0; i<9; i++)
                         for (j=0; j<9; j++)
+                        {
+                            if ( solution[ind] < '1' || solution[ind] > '9' )
+                            {
+                                result.push_back(Pair("result","error"));
+                                result.push_back(Pair("error","illegal solution"));
+                                return(result);
+                            }
                             vals9[i][j] = solution[ind++] - '0';
+                        }
                     sudoku_privkey(priv32,vals9);
                     priv2addr(coinaddr,pub33,priv32);
                     pk = buf2pk(pub33);
