@@ -281,7 +281,7 @@ double benchmark_large_tx(size_t nInputs)
 }
 
 // The two benchmarks, try_decrypt_sprout_notes and try_decrypt_sapling_notes,
-// are checking a worst-case scenarios. In both we add n keys to a wallet, 
+// are checking worst-case scenarios. In both we add n keys to a wallet, 
 // create a transaction using a key not in our original list of n, and then
 // check that the transaction is not associated with any of the keys in our 
 // wallet. We call assert(...) to ensure that this is true.
@@ -309,17 +309,17 @@ double benchmark_try_decrypt_sapling_notes(size_t nKeys)
     // Set params
     auto consensusParams = Params().GetConsensus();
 
-    auto masterKey = GetMasterSaplingSpendingKey();
+    auto masterKey = GetTestMasterSaplingSpendingKey();
 
     CWallet wallet;
 
-    int i;
-    for (i = 0; i < nKeys; i++) {
+    for (int i = 0; i < nKeys; i++) {
         auto sk = masterKey.Derive(i);
         wallet.AddSaplingSpendingKey(sk, sk.DefaultAddress());
     }
 
-    auto sk = masterKey.Derive(i);
+    // Generate a key that has not been added to the wallet
+    auto sk = masterKey.Derive(nKeys);
     auto tx = GetValidSaplingReceive(consensusParams, wallet, sk, 10);
 
     struct timeval tv_start;
@@ -344,7 +344,7 @@ CWalletTx CreateSproutTxWithNoteData(const libzcash::SproutSpendingKey& sk) {
     return wtx;
 }
 
-double benchmark_increment_note_witnesses_sprout(size_t nTxs)
+double benchmark_increment_sprout_note_witnesses(size_t nTxs)
 {
     auto consensusParams = Params().GetConsensus();
 
@@ -406,7 +406,7 @@ CWalletTx CreateSaplingTxWithNoteData(const Consensus::Params& consensusParams,
     return wtx;
 }
 
-double benchmark_increment_note_witnesses_sapling(size_t nTxs)
+double benchmark_increment_sapling_note_witnesses(size_t nTxs)
 {
     auto consensusParams = Params().GetConsensus();
 
@@ -414,7 +414,7 @@ double benchmark_increment_note_witnesses_sapling(size_t nTxs)
     SproutMerkleTree sproutTree;
     SaplingMerkleTree saplingTree;
 
-    auto saplingSpendingKey = GetMasterSaplingSpendingKey();
+    auto saplingSpendingKey = GetTestMasterSaplingSpendingKey();
     wallet.AddSaplingSpendingKey(saplingSpendingKey, saplingSpendingKey.DefaultAddress());
 
     // First block

@@ -76,7 +76,7 @@ protected:
 
     virtual void TearDown() {
         // Revert to test default. No-op on mainnet params.
-        DeactivateSapling();
+        RegtestDeactivateSapling();
     }
 
     // Returns a valid but empty mutable transaction at block height 1.

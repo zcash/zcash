@@ -2784,10 +2784,10 @@ UniValue zc_benchmark(const UniValue& params, bool fHelp)
             sample_times.push_back(benchmark_try_decrypt_sapling_notes(nKeys));
         } else if (benchmarktype == "incnotewitnesses") {
             int nTxs = params[2].get_int();
-            sample_times.push_back(benchmark_increment_note_witnesses_sprout(nTxs));
-        } else if (benchmarktype == "incnotewitnessessapling") {
+            sample_times.push_back(benchmark_increment_sprout_note_witnesses(nTxs));
+        } else if (benchmarktype == "incsaplingnotewitnesses") {
             int nTxs = params[2].get_int();
-            sample_times.push_back(benchmark_increment_note_witnesses_sapling(nTxs));
+            sample_times.push_back(benchmark_increment_sapling_note_witnesses(nTxs));
         } else if (benchmarktype == "connectblockslow") {
             if (Params().NetworkIDString() != "regtest") {
                 throw JSONRPCError(RPC_TYPE_ERROR, "Benchmark must be run in regtest mode");

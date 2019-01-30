@@ -354,11 +354,11 @@ TEST(WalletTests, SetSproutNoteAddrsInCWalletTx) {
 }
 
 TEST(WalletTests, SetSaplingNoteAddrsInCWalletTx) {
-    auto consensusParams = ActivateSapling();
+    auto consensusParams = RegtestActivateSapling();
 
     TestWallet wallet;
 
-    auto sk = GetMasterSaplingSpendingKey();
+    auto sk = GetTestMasterSaplingSpendingKey();
     auto expsk = sk.expsk;
     auto fvk = expsk.full_viewing_key();
     auto ivk = fvk.in_viewing_key();
@@ -404,7 +404,7 @@ TEST(WalletTests, SetSaplingNoteAddrsInCWalletTx) {
     EXPECT_TRUE(witness == wtx.mapSaplingNoteData[op].witnesses.front());
 
     // Revert to default
-    DeactivateSapling();
+    RegtestDeactivateSapling();
 }
 
 TEST(WalletTests, SetSproutInvalidNoteAddrsInCWalletTx) {
@@ -468,12 +468,12 @@ TEST(WalletTests, GetSproutNoteNullifier) {
 }
 
 TEST(WalletTests, FindMySaplingNotes) {
-    auto consensusParams = ActivateSapling();
+    auto consensusParams = RegtestActivateSapling();
 
     TestWallet wallet;
 
     // Generate dummy Sapling address
-    auto sk = GetMasterSaplingSpendingKey();
+    auto sk = GetTestMasterSaplingSpendingKey();
     auto expsk = sk.expsk;
     auto fvk = expsk.full_viewing_key();
     auto pa = sk.DefaultAddress();
@@ -499,7 +499,7 @@ TEST(WalletTests, FindMySaplingNotes) {
     EXPECT_EQ(2, noteMap.size());
 
     // Revert to default
-    DeactivateSapling();
+    RegtestDeactivateSapling();
 }
 
 TEST(WalletTests, FindMySproutNotes) {
@@ -590,12 +590,12 @@ TEST(WalletTests, GetConflictedSproutNotes) {
 
 // Generate note A and spend to create note B, from which we spend to create two conflicting transactions
 TEST(WalletTests, GetConflictedSaplingNotes) {
-    auto consensusParams = ActivateSapling();
+    auto consensusParams = RegtestActivateSapling();
 
     TestWallet wallet;
 
     // Generate Sapling address
-    auto sk = GetMasterSaplingSpendingKey();
+    auto sk = GetTestMasterSaplingSpendingKey();
     auto expsk = sk.expsk;
     auto fvk = expsk.full_viewing_key();
     auto ivk = fvk.in_viewing_key();
@@ -703,7 +703,7 @@ TEST(WalletTests, GetConflictedSaplingNotes) {
     mapBlockIndex.erase(blockHash);
 
     // Revert to default
-    DeactivateSapling();
+    RegtestDeactivateSapling();
 }
 
 TEST(WalletTests, SproutNullifierIsSpent) {
@@ -747,12 +747,12 @@ TEST(WalletTests, SproutNullifierIsSpent) {
 }
 
 TEST(WalletTests, SaplingNullifierIsSpent) {
-    auto consensusParams = ActivateSapling();
+    auto consensusParams = RegtestActivateSapling();
 
     TestWallet wallet;
 
     // Generate dummy Sapling address
-    auto sk = GetMasterSaplingSpendingKey();
+    auto sk = GetTestMasterSaplingSpendingKey();
     auto expsk = sk.expsk;
     auto fvk = expsk.full_viewing_key();
     auto pa = sk.DefaultAddress();
@@ -800,7 +800,7 @@ TEST(WalletTests, SaplingNullifierIsSpent) {
     mapBlockIndex.erase(blockHash);
 
     // Revert to default
-    DeactivateSapling();
+    RegtestDeactivateSapling();
 }
 
 TEST(WalletTests, NavigateFromSproutNullifierToNote) {
@@ -830,12 +830,12 @@ TEST(WalletTests, NavigateFromSproutNullifierToNote) {
 }
 
 TEST(WalletTests, NavigateFromSaplingNullifierToNote) {
-    auto consensusParams = ActivateSapling();
+    auto consensusParams = RegtestActivateSapling();
 
     TestWallet wallet;
 
     // Generate dummy Sapling address
-    auto sk = GetMasterSaplingSpendingKey();
+    auto sk = GetTestMasterSaplingSpendingKey();
     auto expsk = sk.expsk;
     auto fvk = expsk.full_viewing_key();
     auto pa = sk.DefaultAddress();
@@ -918,7 +918,7 @@ TEST(WalletTests, NavigateFromSaplingNullifierToNote) {
     mapBlockIndex.erase(blockHash);
 
     // Revert to default
-    DeactivateSapling();
+    RegtestDeactivateSapling();
 }
 
 TEST(WalletTests, SpentSproutNoteIsFromMe) {
@@ -951,12 +951,12 @@ TEST(WalletTests, SpentSproutNoteIsFromMe) {
 
 // Create note A, spend A to create note B, spend and verify note B is from me.
 TEST(WalletTests, SpentSaplingNoteIsFromMe) {
-    auto consensusParams = ActivateSapling();
+    auto consensusParams = RegtestActivateSapling();
 
     TestWallet wallet;
 
     // Generate Sapling address
-    auto sk = GetMasterSaplingSpendingKey();
+    auto sk = GetTestMasterSaplingSpendingKey();
     auto expsk = sk.expsk;
     auto fvk = expsk.full_viewing_key();
     auto ivk = fvk.in_viewing_key();
@@ -1087,7 +1087,7 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
     mapBlockIndex.erase(blockHash2);
 
     // Revert to default
-    DeactivateSapling();
+    RegtestDeactivateSapling();
 }
 
 TEST(WalletTests, CachedWitnessesEmptyChain) {
@@ -1569,7 +1569,7 @@ TEST(WalletTests, SetBestChainIgnoresTxsWithoutShieldedData) {
     CBlockLocator loc;
 
     // Set up transparent address
-    CKey tsk = AddCKeyToKeyStore(wallet);
+    CKey tsk = AddTestCKeyToKeyStore(wallet);
     auto scriptPubKey = GetScriptForDestination(tsk.GetPubKey().GetID());
 
     // Set up a Sprout address
@@ -1725,11 +1725,11 @@ TEST(WalletTests, UpdatedSproutNoteData) {
 }
 
 TEST(WalletTests, UpdatedSaplingNoteData) {
-    auto consensusParams = ActivateSapling();
+    auto consensusParams = RegtestActivateSapling();
 
     TestWallet wallet;
 
-    auto m = GetMasterSaplingSpendingKey();
+    auto m = GetTestMasterSaplingSpendingKey();
 
     // Generate dummy Sapling address
     auto sk = m.Derive(0);
@@ -1831,7 +1831,7 @@ TEST(WalletTests, UpdatedSaplingNoteData) {
     mapBlockIndex.erase(blockHash);
 
     // Revert to default
-    DeactivateSapling();
+    RegtestDeactivateSapling();
 }
 
 TEST(WalletTests, MarkAffectedSproutTransactionsDirty) {
@@ -1866,12 +1866,12 @@ TEST(WalletTests, MarkAffectedSproutTransactionsDirty) {
 }
 
 TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
-    auto consensusParams = ActivateSapling();
+    auto consensusParams = RegtestActivateSapling();
 
     TestWallet wallet;
 
     // Generate Sapling address
-    auto sk = GetMasterSaplingSpendingKey();
+    auto sk = GetTestMasterSaplingSpendingKey();
     auto expsk = sk.expsk;
     auto fvk = expsk.full_viewing_key();
     auto ivk = fvk.in_viewing_key();
@@ -1882,7 +1882,7 @@ TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
 
     // Set up transparent address
     CBasicKeyStore keystore;
-    CKey tsk = AddCKeyToKeyStore(keystore);
+    CKey tsk = AddTestCKeyToKeyStore(keystore);
     auto scriptPubKey = GetScriptForDestination(tsk.GetPubKey().GetID());
 
     // Generate shielding tx from transparent to Sapling
@@ -1973,7 +1973,7 @@ TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
     mapBlockIndex.erase(blockHash);
 
     // Revert to default
-    DeactivateSapling();
+    RegtestDeactivateSapling();
 }
 
 TEST(WalletTests, SproutNoteLocking) {

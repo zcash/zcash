@@ -11,7 +11,7 @@ TEST(Keys, EncodeAndDecodeSapling)
 {
     SelectParams(CBaseChainParams::MAIN);
 
-    auto m = GetMasterSaplingSpendingKey();
+    auto m = GetTestMasterSaplingSpendingKey();
 
     for (uint32_t i = 0; i < 1000; i++) {
         auto sk = m.Derive(i);

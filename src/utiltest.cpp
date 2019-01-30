@@ -160,25 +160,25 @@ CWalletTx GetValidSproutSpend(ZCJoinSplit& params,
 }
 
 // Sapling
-const Consensus::Params& ActivateSapling() {
+const Consensus::Params& RegtestActivateSapling() {
     SelectParams(CBaseChainParams::REGTEST);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
     return Params().GetConsensus();
 }
 
-void DeactivateSapling() {
+void RegtestDeactivateSapling() {
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
 }
 
-libzcash::SaplingExtendedSpendingKey GetMasterSaplingSpendingKey() {
+libzcash::SaplingExtendedSpendingKey GetTestMasterSaplingSpendingKey() {
     std::vector<unsigned char, secure_allocator<unsigned char>> rawSeed(32);
     HDSeed seed(rawSeed);
     return libzcash::SaplingExtendedSpendingKey::Master(seed);
 }
 
-CKey AddCKeyToKeyStore(CBasicKeyStore& keyStore) {
+CKey AddTestCKeyToKeyStore(CBasicKeyStore& keyStore) {
     CKey tsk = DecodeSecret(T_SECRET_REGTEST);
     keyStore.AddKey(tsk);
     return tsk;
@@ -198,7 +198,7 @@ CWalletTx GetValidSaplingReceive(const Consensus::Params& consensusParams,
                                  const libzcash::SaplingExtendedSpendingKey &sk,
                                  CAmount value) {
     // From taddr
-    CKey tsk = AddCKeyToKeyStore(keyStore);
+    CKey tsk = AddTestCKeyToKeyStore(keyStore);
     auto scriptPubKey = GetScriptForDestination(tsk.GetPubKey().GetID());
     // To zaddr
     auto fvk = sk.expsk.full_viewing_key();

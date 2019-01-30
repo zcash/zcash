@@ -563,7 +563,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
     pwalletMain->GetSaplingPaymentAddresses(saplingAddrs);
     BOOST_CHECK(saplingAddrs.empty());
 
-    auto m = GetMasterSaplingSpendingKey();
+    auto m = GetTestMasterSaplingSpendingKey();
 
     // verify import and export key
     for (int i = 0; i < n1; i++) {
@@ -1249,7 +1249,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
 
 BOOST_AUTO_TEST_CASE(rpc_z_sendmany_taddr_to_sapling)
 {
-    ActivateSapling();
+    RegtestActivateSapling();
 
     LOCK(pwalletMain->cs_wallet);
 
@@ -1342,7 +1342,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_taddr_to_sapling)
     mapArgs.erase("-experimentalfeatures");
 
     // Revert to default
-    DeactivateSapling();
+    RegtestDeactivateSapling();
 }
 
 

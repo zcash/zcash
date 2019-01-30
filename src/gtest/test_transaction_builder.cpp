@@ -14,10 +14,10 @@
 
 TEST(TransactionBuilder, Invoke)
 {
-    auto consensusParams = ActivateSapling();
+    auto consensusParams = RegtestActivateSapling();
 
     CBasicKeyStore keystore;
-    CKey tsk = AddCKeyToKeyStore(keystore);
+    CKey tsk = AddTestCKeyToKeyStore(keystore);
     auto scriptPubKey = GetScriptForDestination(tsk.GetPubKey().GetID());
 
     auto sk_from = libzcash::SaplingSpendingKey::random();
@@ -82,7 +82,7 @@ TEST(TransactionBuilder, Invoke)
     EXPECT_EQ(state.GetRejectReason(), "");
 
     // Revert to default
-    DeactivateSapling();
+    RegtestDeactivateSapling();
 }
 
 TEST(TransactionBuilder, ThrowsOnTransparentInputWithoutKeyStore)
@@ -118,7 +118,7 @@ TEST(TransactionBuilder, RejectsInvalidTransparentChangeAddress)
 
 TEST(TransactionBuilder, FailsWithNegativeChange)
 {
-    auto consensusParams = ActivateSapling();
+    auto consensusParams = RegtestActivateSapling();
 
     // Generate dummy Sapling address
     auto sk = libzcash::SaplingSpendingKey::random();
@@ -128,7 +128,7 @@ TEST(TransactionBuilder, FailsWithNegativeChange)
 
     // Set up dummy transparent address
     CBasicKeyStore keystore;
-    CKey tsk = AddCKeyToKeyStore(keystore);
+    CKey tsk = AddTestCKeyToKeyStore(keystore);
     auto tkeyid = tsk.GetPubKey().GetID();
     auto scriptPubKey = GetScriptForDestination(tkeyid);
     CTxDestination taddr = tkeyid;
@@ -157,12 +157,12 @@ TEST(TransactionBuilder, FailsWithNegativeChange)
     EXPECT_TRUE(builder.Build().IsTx());
 
     // Revert to default
-    DeactivateSapling();
+    RegtestDeactivateSapling();
 }
 
 TEST(TransactionBuilder, ChangeOutput)
 {
-    auto consensusParams = ActivateSapling();
+    auto consensusParams = RegtestActivateSapling();
 
     // Generate dummy Sapling address
     auto sk = libzcash::SaplingSpendingKey::random();
@@ -178,7 +178,7 @@ TEST(TransactionBuilder, ChangeOutput)
 
     // Set up dummy transparent address
     CBasicKeyStore keystore;
-    CKey tsk = AddCKeyToKeyStore(keystore);
+    CKey tsk = AddTestCKeyToKeyStore(keystore);
     auto tkeyid = tsk.GetPubKey().GetID();
     auto scriptPubKey = GetScriptForDestination(tkeyid);
     CTxDestination taddr = tkeyid;
@@ -237,12 +237,12 @@ TEST(TransactionBuilder, ChangeOutput)
     }
 
     // Revert to default
-    DeactivateSapling();
+    RegtestDeactivateSapling();
 }
 
 TEST(TransactionBuilder, SetFee)
 {
-    auto consensusParams = ActivateSapling();
+    auto consensusParams = RegtestActivateSapling();
 
     // Generate dummy Sapling address
     auto sk = libzcash::SaplingSpendingKey::random();
@@ -284,7 +284,7 @@ TEST(TransactionBuilder, SetFee)
     }
 
     // Revert to default
-    DeactivateSapling();
+    RegtestDeactivateSapling();
 }
 
 TEST(TransactionBuilder, CheckSaplingTxVersion)
