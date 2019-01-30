@@ -1033,6 +1033,14 @@ int32_t komodo_MoM(int32_t *notarized_heightp,uint256 *MoMp,uint256 *kmdtxidp,in
     return(depth);
 }
 
+CBlockIndex *komodo_blockindex(uint256 hash)
+{
+    BlockMap::const_iterator it; CBlockIndex *pindex = 0;
+    if ( (it = mapBlockIndex.find(hash)) != mapBlockIndex.end() )
+        pindex = it->second;
+    return(pindex);
+}
+
 int32_t komodo_checkpoint(int32_t *notarized_heightp,int32_t nHeight,uint256 hash)
 {
     int32_t notarized_height,MoMdepth; uint256 MoM,notarized_hash,notarized_desttxid; CBlockIndex *notary,*pindex;

@@ -667,7 +667,7 @@ UniValue sudoku_generate(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
 
 UniValue sudoku_txidinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ); int32_t numvouts; char str[65],*txidstr; uint256 txid,hashBlock; CTransaction tx; char unsolved[82];
+    UniValue result(UniValue::VOBJ); int32_t numvouts; char str[65],*txidstr; uint256 txid,hashBlock; CTransaction tx; char unsolved[82]; CBlockIndex *pindex;
     if ( params != 0 )
     {
         result.push_back(Pair("result","success"));
@@ -687,6 +687,8 @@ UniValue sudoku_txidinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
                 if ( sudoku_genopreturndecode(unsolved,tx.vout[numvouts-1].scriptPubKey) == 'G' )
                 {
                     result.push_back(Pair("result","success"));
+                    if ( (pindex= komodo_blockindex(hashBlock)) != 0 )
+                        result.push_back(Pair("height",pindex->nHeight));
                     result.push_back(Pair("amount",ValueFromAmount(tx.vout[1].nValue)));
                     result.push_back(Pair("unsolved",unsolved));
                 }
@@ -716,7 +718,7 @@ UniValue sudoku_txidinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
 UniValue sudoku_pending(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     UniValue result(UniValue::VOBJ),a(UniValue::VARR);
-    char coinaddr[64],unsolved[82]; int64_t nValue,total=0; uint256 txid,hashBlock; CTransaction tx; int32_t vout,numvouts; CPubKey sudokupk;
+    char coinaddr[64],unsolved[82]; int64_t nValue,total=0; uint256 txid,hashBlock; CTransaction tx; int32_t vout,numvouts; CPubKey sudokupk; CBlockIndex *pindex;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     sudokupk = GetUnspendable(cp,0);
     GetCCaddress(cp,coinaddr,sudokupk);
@@ -734,7 +736,12 @@ UniValue sudoku_pending(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             {
                 if ( sudoku_genopreturndecode(unsolved,tx.vout[numvouts-1].scriptPubKey) == 'G' )
                 {
-                    a.push_back(txid.GetHex());
+                    UniValue obj(UniValue::VOBJ);
+                    if ( (pindex= komodo_blockindex(hashBlock)) != 0 )
+                        obj.push_back(Pair("height",pindex->nHeight));
+                    obj.push_back(Pair("amount",ValueFromAmount(tx.vout[1].nValue)));
+                    obj.push_back(Pair("txid",txid.GetHex()));
+                    a.push_back(obj);
                     total += tx.vout[1].nValue;
                 }
             }
