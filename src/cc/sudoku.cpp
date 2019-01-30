@@ -788,7 +788,7 @@ UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
         } else params = 0;
         if ( params != 0 )
         {
-            if ( (n= cJSON_GetArraySize(params)) > 2 && n < (sizeof(timestamps)/sizeof(*timestamps))+2 )
+            if ( (n= cJSON_GetArraySize(params)) > 2 && n <= (sizeof(timestamps)/sizeof(*timestamps))+2 )
             {
                 for (i=2; i<n; i++)
                 {
