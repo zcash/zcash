@@ -3696,9 +3696,11 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
     //FlushStateToDisk();
     int tmp = komodo_connectblock(pindex,*(CBlock *)&block);  // != block-nVersion-7000000; 
-    if ( tmp > 0 )
+    if ( ASSETCHAINS_NOTARY_PAY != 0 && tmp > 0 )
     {    
-        printf("VALID NOTARISATION connect block.%i tx.%i\n NOT VALIDATING HERE YET!",pindex->GetHeight(),tmp);
+        printf("VALID NOTARISATION connect block.%i tx.%i\n NOT VALIDATING HERE YET!\n",pindex->GetHeight(),tmp);
+        if ( tmp != 1 )
+            printf("INVALID NOTARISATION notarisation tx is not in vtx[1].\n";
     }    
     return true;
 }
