@@ -821,7 +821,7 @@ UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
                                 {
                                     for (i=0; i<81; i++)
                                     {
-                                        if ( unsolved[i] == 0 )
+                                        if ( unsolved[i] < '1' || unsolved[i] > '9')
                                             continue;
                                         else if ( unsolved[i] != solution[i] )
                                         {
