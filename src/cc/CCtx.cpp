@@ -471,7 +471,7 @@ int32_t CC_vinselect(int32_t *aboveip,int64_t *abovep,int32_t *belowip,int64_t *
 
 int64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int32_t maxinputs)
 {
-    int32_t abovei,belowi,ind,vout,i,n = 0,maxutxos=64; int64_t sum,threshold,above,below; int64_t remains,nValue,totalinputs = 0; uint256 txid,hashBlock; std::vector<COutput> vecOutputs; CTransaction tx; struct CC_utxo *utxos,*up;
+    int32_t abovei,belowi,ind,vout,i,n = 0,maxutxos=CC_MAXVINS; int64_t sum,threshold,above,below; int64_t remains,nValue,totalinputs = 0; uint256 txid,hashBlock; std::vector<COutput> vecOutputs; CTransaction tx; struct CC_utxo *utxos,*up;
 #ifdef ENABLE_WALLET
     assert(pwalletMain != NULL);
     const CKeyStore& keystore = *pwalletMain;
@@ -564,7 +564,7 @@ int64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int3
 
 int64_t AddNormalinputs2(CMutableTransaction &mtx,int64_t total,int32_t maxinputs)
 {
-    int32_t abovei,belowi,ind,vout,i,n = 0,maxutxos=64; int64_t sum,threshold,above,below; int64_t remains,nValue,totalinputs = 0; char coinaddr[64]; uint256 txid,hashBlock; CTransaction tx; struct CC_utxo *utxos,*up;
+    int32_t abovei,belowi,ind,vout,i,n = 0,maxutxos=CC_MAXVINS; int64_t sum,threshold,above,below; int64_t remains,nValue,totalinputs = 0; char coinaddr[64]; uint256 txid,hashBlock; CTransaction tx; struct CC_utxo *utxos,*up;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     utxos = (struct CC_utxo *)calloc(maxutxos,sizeof(*utxos));
     threshold = total/(maxinputs+1);
