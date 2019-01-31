@@ -2943,7 +2943,7 @@ UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
 bool sudoku_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx)
 {
     static char laststr[512];
-    CScript scriptPubKey; std::vector<uint8_t> vopret; uint8_t *script,e,f,funcid; int32_t i,score,numvouts; char unsolved[82],solution[82],str[512]; uint32_t timestamps[81];
+    CScript scriptPubKey; std::vector<uint8_t> vopret; uint8_t *script,e,f,funcid; int32_t i,dispflag,score,numvouts; char unsolved[82],solution[82],str[512]; uint32_t timestamps[81];
     if ( (numvouts= tx.vout.size()) > 1 )
     {
         scriptPubKey = tx.vout[numvouts-1].scriptPubKey;
@@ -2980,18 +2980,20 @@ bool sudoku_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const 
                         {
                             strcpy(laststr,str);
                             fprintf(stderr,"%s\n",str);
-                        }
+                            dispflag = 1;
+                        } else dispflag = 0;
                         if ( sudoku_solutionopreturndecode(solution,timestamps,scriptPubKey) == 'S' )
                         {
-                            for (i=0; i<81; i++)
-                                fprintf(stderr,"%u ",timestamps[i]);
-                            fprintf(stderr,"%s\n",solution);
+                            if ( dispflag != 0 )
+                            {
+                                for (i=0; i<81; i++)
+                                    fprintf(stderr,"%u ",timestamps[i]);
+                                fprintf(stderr,"%s\n",solution);
+                            }
                             return(true);
                         }
                         fprintf(stderr,"solution ht.%d %s bad opret\n",height,tx.GetHash().ToString().c_str());
-                        if ( (height == 236 || height == 1220) && strcmp(ASSETCHAINS_SYMBOL,"SUDOKU") == 0 )
-                            return(true);
-                        return true; //eval->Invalid("invalid solution opreturn");
+                        return eval->Invalid("invalid solution opreturn");
                     default: return eval->Invalid("invalid funcid");
                 }
             } else return eval->Invalid("invalid evalcode");
