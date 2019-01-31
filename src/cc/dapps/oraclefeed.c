@@ -320,13 +320,13 @@ cJSON *get_komodocli(char *refcoin,char **retstrp,char *acname,char *method,char
     {
         if ( refcoin[0] != 0 && strcmp(refcoin,"KMD") != 0 )
             printf("unexpected: refcoin.(%s) acname.(%s)\n",refcoin,acname);
-        sprintf(cmdstr,"./komodo-cli -ac_name=%s %s %s %s %s %s > %s\n",acname,method,arg0,arg1,arg2,arg3,fname);
+        sprintf(cmdstr,"./komodo-cli -ac_name=%s %s %s %s %s %s > %s 2>/tmp/oraclefeed.error\n",acname,method,arg0,arg1,arg2,arg3,fname);
     }
     else if ( strcmp(refcoin,"KMD") == 0 )
-        sprintf(cmdstr,"./komodo-cli %s %s %s %s %s > %s\n",method,arg0,arg1,arg2,arg3,fname);
+        sprintf(cmdstr,"./komodo-cli %s %s %s %s %s > %s 2>/tmp/oraclefeed.error\n",method,arg0,arg1,arg2,arg3,fname);
     else if ( REFCOIN_CLI != 0 && REFCOIN_CLI[0] != 0 )
     {
-        sprintf(cmdstr,"%s %s %s %s %s %s > %s\n",REFCOIN_CLI,method,arg0,arg1,arg2,arg3,fname);
+        sprintf(cmdstr,"%s %s %s %s %s %s > %s 2>/tmp/oraclefeed.error\n",REFCOIN_CLI,method,arg0,arg1,arg2,arg3,fname);
         printf("ref.(%s) REFCOIN_CLI (%s)\n",refcoin,cmdstr);
     }   
 #ifdef TESTMODE    
@@ -590,7 +590,7 @@ void importaddress(char *refcoin,char *acname,char *depositaddr, char *label,int
 
 void addmultisigaddress(char *refcoin,char *acname,int32_t M, char *pubkeys)
 {
-    cJSON *retjson; char *retstr,Mstr[10],tmp[128];
+    cJSON *retjson; char *retstr,Mstr[10],addr[64];
     
     sprintf(Mstr,"%d",M);
     if ( (retjson= get_komodocli(refcoin,&retstr,acname,"addmultisigaddress",Mstr,pubkeys,"","")) != 0 )
@@ -600,6 +600,8 @@ void addmultisigaddress(char *refcoin,char *acname,int32_t M, char *pubkeys)
     }
     else if ( retstr != 0 )
     {
+        sprintf(addr,"\"%s\"",retstr);
+        get_komodocli(refcoin,&retstr,acname,"importaddress",addr,"\"\"","false","");
         printf("addmultisigaddress.(%s)\n",retstr);
         free_json(retjson);
     }
@@ -678,7 +680,7 @@ char *createrawtx(char *refcoin,char *acname,char *depositaddr,char *withdrawadd
                 free(argB);
             }
             else printf("not enough funds to create withdraw tx\n");
-        }
+        }    
         free_json(retjson);
     }
     else if ( retstr != 0 )
@@ -697,7 +699,7 @@ cJSON *addsignature(char *refcoin,char *acname,char *rawtx)
     {
         if ( is_cJSON_True(jobj(retjson,"complete")) != 0 )
             return(retjson);
-        else if ( (hexstr= jstr(retjson,"hex")) != 0 && strlen(hexstr) > strlen(rawtx) + 2 )
+        else if ((hexstr=jstr(retjson,"hex"))!= 0 && strlen(hexstr) > strlen(rawtx) + 2 )
         {
             jaddnum(retjson,"partialtx",1);
             return(retjson);
@@ -923,7 +925,7 @@ void update_gatewayspending(char *refcoin,char *acname,char *bindtxidstr,int32_t
                                 }
                                 else rawtx=jstr(item,"hex");                                            
                                 K=jint(item,"number_of_signs");                   
-                                if ( (clijson= addsignature(refcoin,"",rawtx)) != 0 )
+                                if ( rawtx!=0 && (clijson= addsignature(refcoin,"",rawtx)) != 0 )
                                 {
                                     if ( is_cJSON_True(jobj(clijson,"complete")) != 0 )
                                     {   
