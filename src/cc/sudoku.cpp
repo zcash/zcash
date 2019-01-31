@@ -3015,7 +3015,10 @@ bool sudoku_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const 
                                         return eval->Invalid("failed captcha");
                                     return(true);
                                 } else return eval->Invalid("invalid solution opret");
-                            } else return eval->Invalid("invalid solution vin");
+                            }
+                            else if ( strcmp(ASSETCHAINS_SYMBOL,"SUDOKU") == 0 && height == 236 )
+                                return(true);
+                            else return eval->Invalid("invalid solution vin");
                         }
                         fprintf(stderr,"solution ht.%d %s bad opret\n",height,tx.GetHash().ToString().c_str());
                         return eval->Invalid("invalid solution opreturn");
