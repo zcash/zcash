@@ -441,7 +441,7 @@ UniValue MarmaraLock(uint64_t txfee,int64_t amount,int32_t height)
         val -= txfee;
     else val = amount;
     if ( val > txfee )
-        inputsum = AddNormalinputs(mtx,mypk,val,CC_MAXVINS/2);
+        inputsum = AddNormalinputs2(mtx,val,CC_MAXVINS/2);
     //fprintf(stderr,"normal inputs %.8f val %.8f\n",(double)inputsum/COIN,(double)val/COIN);
     mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA,amount,Marmarapk,mypk));
     if ( inputsum < amount+txfee )
