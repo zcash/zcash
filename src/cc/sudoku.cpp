@@ -2926,12 +2926,12 @@ bool sudoku_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const 
                         {
                             if ( dupree_solver(&score,unsolved) != 1 || score*COIN != tx.vout[1].nValue )
                             {
-                                fprintf(stderr,"ht.%d score.%d vs %.8f %s\n",height,score,(double)tx.vout[1].nValue/COIN,tx.GetHash().ToString());
+                                fprintf(stderr,"ht.%d score.%d vs %.8f %s\n",height,score,(double)tx.vout[1].nValue/COIN,tx.GetHash().ToString().c_str());
                             }
                         }
                         return(true);
                     case 'S':
-                        fprintf(stderr,"SOLVED ht.%d %.8f %s\n",height,score,(double)tx.vout[0].nValue/COIN,tx.GetHash().ToString());
+                        fprintf(stderr,"SOLVED ht.%d %.8f %s\n",height,(double)tx.vout[0].nValue/COIN,tx.GetHash().ToString().c_str());
                         return(true);
                     default: return eval->Invalid("invalid funcid");
                 }
