@@ -3003,7 +3003,7 @@ bool sudoku_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const 
                                     if ( errflag != 0 )
                                     {
                                         if ( dispflag != 0 )
-                                            fprintf(stderr,"errflag.%d %s\n",height,errflag,unsolved);
+                                            fprintf(stderr,"ht.%d errflag.%d %s\n",height,errflag,unsolved);
                                         if ( (height != 1220 && height != 1383) || strcmp(ASSETCHAINS_SYMBOL,"SUDOKU") != 0  )
                                             return eval->Invalid("invalid timestamp vs unsolved");
                                     }
