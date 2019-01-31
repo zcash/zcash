@@ -2934,7 +2934,7 @@ bool sudoku_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const 
                             if ( dupree_solver(0,&score,unsolved) != 1 || score*COIN != tx.vout[1].nValue )
                             {
                                 fprintf(stderr,"ht.%d score.%d vs %.8f %s\n",height,score,(double)tx.vout[1].nValue/COIN,tx.GetHash().ToString().c_str());
-                                if ( ht > 2000 )
+                                if ( height > 2000 )
                                     return eval->Invalid("mismatched sudoku value vs score");
                             }
                         }
