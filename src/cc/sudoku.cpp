@@ -2945,6 +2945,15 @@ UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
     return(result);
 }
 
+sudoku_minval(uint32_t timestamps[81])
+{
+    int32_t i,ind = -1; uint32_t mintimestamp = 0xffffffff;
+    for (i=0; i<81; i++)
+        if ( timestamps[i] != 0 && timestamps[i] < mintimestamp )
+            mintimestamp = timestamps[i], ind = i;
+    return(ind);
+}
+
 bool sudoku_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx)
 {
     static char laststr[512];
