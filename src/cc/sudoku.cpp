@@ -2593,7 +2593,7 @@ uint8_t sudoku_solutionopreturndecode(char solution[82],uint32_t timestamps[81],
     script = (uint8_t *)vopret.data();
     if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> str; ss >> data) != 0 && e == EVAL_SUDOKU && f == 'S' )
     {
-        if ( data.size() == 81*sizeof(uint32_t) && strlen(solution) == 81 )
+        if ( data.size() == 81*sizeof(uint32_t) && str.size() == 81 )
         {
             for (i=ind=0; i<81; i++)
             {
@@ -2610,7 +2610,7 @@ uint8_t sudoku_solutionopreturndecode(char solution[82],uint32_t timestamps[81],
                 strcpy(solution,str.c_str());
                 return(f);
             }
-        }
+        } else fprintf(stderr,"datasize %d sol[%d]\n",(int32_t)data.size(),(int32_t)str.size());
     }
     return(0);
 }
@@ -2982,7 +2982,7 @@ bool sudoku_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const 
                         fprintf(stderr,"solution ht.%d %s bad opret\n",height,tx.GetHash().ToString().c_str());
                         if ( (height == 236 || height == 1220) && strcmp(ASSETCHAINS_SYMBOL,"SUDOKU") == 0 )
                             return(true);
-                        return eval->Invalid("invalid solution opreturn");
+                        return true; //eval->Invalid("invalid solution opreturn");
                     default: return eval->Invalid("invalid funcid");
                 }
             } else return eval->Invalid("invalid evalcode");
