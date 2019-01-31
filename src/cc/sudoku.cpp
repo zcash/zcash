@@ -2952,9 +2952,9 @@ int32_t sudoku_minval(uint32_t timestamps[81])
         if ( timestamps[i] != 0 && timestamps[i] < mintimestamp )
         {
             mintimestamp = timestamps[i], ind = i;
-            fprintf(stderr,"%d ",i);
+            //fprintf(stderr,"%d ",i);
         }
-    fprintf(stderr,"mintimestamp.%u\n",mintimestamp);
+    //fprintf(stderr,"mintimestamp.%u\n",mintimestamp);
     return(ind);
 }
 
@@ -3035,11 +3035,11 @@ bool sudoku_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const 
                                         if ( (ind= sudoku_minval(timestamps)) >= 0 )
                                         {
                                             unsolved[ind] = solution[ind];
+                                            timestamps[ind] = 0;
                                             if ( dupree_solver(0,&score,unsolved) != 1 )
                                                 fprintf(stderr,"i.%d ind.%d non-unique\n",i,ind);
                                             if ( dispflag != 0 )
                                                 fprintf(stderr,"%d ",score);
-                                            timestamps[ind] = 0;
                                         } else break;
                                     }
                                     if ( dispflag != 0 )
