@@ -1773,7 +1773,7 @@ static char *cvt_to_mask(char *mbuf, char *sbuf)
 /* Mainline logic. */
 /*******************/
 
-int dupree_solver(int32_t *scorep,char *puzzle)
+int dupree_solver(int32_t dispflag,int32_t *scorep,char *puzzle)
 {
     int argc; char *argv[4];
     int i, rc, bog, count, solved, unsolved, solncount=0, flag, prt_count, prt_num, prt_score, prt_answer, prt_depth, prt_grid, prt_mask, prt_givens, prt, len;
@@ -1781,12 +1781,13 @@ int dupree_solver(int32_t *scorep,char *puzzle)
     grid g, *s=0;
     FILE *h=0;
     soln_list = NULL;
-    /* Get our command name from invoking command line */
+    myname = (char *)"internal";
+    /* Get our command name from invoking command line
     if ((myname = strrchr(argv[0], '/')) == NULL)
         myname = argv[0];
     else
         myname++;
-    /*argc = 3;
+    argc = 3;
      argv[1] = "-p";
      argv[2] = puzzle;
      argv[3] = 0;*/
@@ -1872,15 +1873,6 @@ int dupree_solver(int32_t *scorep,char *puzzle)
                 exit(1);
         }
     }
-#endif
-    prt_answer = 1;		/* print solution */
-    //prt_count = 1;		/* number solutions */
-    prt_score = 1;
-    prt_givens = 1;
-    prt_num = 1;
-    /* Set prt flag if we're printing anything at all */
-    prt = prt_mask | prt_grid | prt_score | prt_depth | prt_answer | prt_num | prt_givens;
-    
     /* Anthing else on the command line is bogus */
     if (argc > optind) {
         fprintf(stderr, "Extraneous args: ");
@@ -1911,6 +1903,15 @@ int dupree_solver(int32_t *scorep,char *puzzle)
      exit(1);
      }
      if (h) fgets(inbuf, 128, h);*/
+#endif
+    prt_answer = dispflag;		/* print solution */
+    //prt_count = dispflag;		/* number solutions */
+    prt_score = dispflag;
+    prt_givens = dispflag;
+    prt_num = dispflag;
+    /* Set prt flag if we're printing anything at all */
+    prt = prt_mask | prt_grid | prt_score | prt_depth | prt_answer | prt_num | prt_givens;
+    
     strcpy(inbuf,puzzle);
     count = solved = unsolved = 0;
     //printf("inbuf.(%s)\n",inbuf);
@@ -1926,7 +1927,7 @@ int dupree_solver(int32_t *scorep,char *puzzle)
             fprintf(rejects, "%d: %s bogus puzzle format\n", count, inbuf); fflush(rejects);
             *inbuf = 0;
             bog += 1;
-            if (h) fgets(inbuf, 128, h);
+            //if (h) fgets(inbuf, 128, h);
             continue;
         }
         
@@ -1935,7 +1936,7 @@ int dupree_solver(int32_t *scorep,char *puzzle)
             fprintf(rejects, "%d: %*.*s bogus puzzle has less than 17 givens\n", count, PUZZLE_CELLS, PUZZLE_CELLS, inbuf); fflush(rejects);
             *inbuf = 0;
             bog += 1;
-            if (h) fgets(inbuf, 128, h);
+            //if (h) fgets(inbuf, 128, h);
             continue;
         }
         
@@ -1972,6 +1973,11 @@ int dupree_solver(int32_t *scorep,char *puzzle)
             if (solncount > 1 && enumerate_all) {
                 rc |= 1;
             }
+            for (s = soln_list; s;) {
+                s = soln_list->next;
+                free(soln_list);
+                soln_list = s;
+            }
         }
         else {
             unsolved++;
@@ -1984,7 +1990,7 @@ int dupree_solver(int32_t *scorep,char *puzzle)
         }
         
         *inbuf = 0;
-        if (h) fgets(inbuf, 128, h);
+        //if (h) fgets(inbuf, 128, h);
     }
     
     //if (prt) fprintf(solnfile, "\nPuzzles: %d, Solved: %d, Unsolved: %d, Bogus: %d\n", count, solved, unsolved, bog);
@@ -2511,9 +2517,9 @@ void sudoku_gen(uint8_t key32[32],uint8_t unsolved[9][9],uint32_t srandi)
  cclib solution 17 \"[%224d50336780d5a300a1f01b12fe36f46a82f3b9935bb115e01e0113dc4f337aae%22,%22234791685716258943589643712865934127341827596927516438492375861178462359653189274%22,0,0,1548859143,1548859146,0,1548859146,0,1548859148,1548859149,0,1548859151,1548859152,0,1548859154,1548859155,1548859158,1548859159,0,0,0,1548859161,1548859163,0,1548859164,1548859168,0,1548859168,1548859170,1548859172,1548859172,1548859175,0,0,1548859176,0,0,1548859178,1548859178,0,0,1548859180,1548859181,1548859183,1548859184,1548859185,1548859186,1548859188,1548859190,1548859191,1548859192,1548859192,0,0,1548859195,1548859196,1548859197,1548859198,0,0,1548859199,1548859202,1548859202,0,1548859204,1548859205,1548859206,1548859209,1548859210,1548859211,1548859212,0,1548859214,1548859216,0,1548859217,1548859218,1548859219,1548859220,0,1548859222,1548859222]\"
  */
 
-int32_t sudoku_captcha(uint32_t timestamps[81])
+int32_t sudoku_captcha(int32_t dispflag,uint32_t timestamps[81],int32_t height)
 {
-    int32_t i,solvetime,diff,avetime,n = 0; uint64_t variance = 0; std::vector<uint32_t> list;
+    int32_t i,solvetime,diff,avetime,n = 0,retval = 0; uint64_t variance = 0; std::vector<uint32_t> list;
     for (i=0; i<81; i++)
     {
         if ( timestamps[i] != 0 )
@@ -2529,31 +2535,38 @@ int32_t sudoku_captcha(uint32_t timestamps[81])
         if ( list[0] >= list[n-1] )
         {
             printf("list[0] %u vs list[%d-1] %u\n",list[0],n,list[n-1]);
-            return(-1);
+            retval = -1;
         }
         else if ( list[n-1] > chainActive.LastTip()->nTime+200 )
-            return(-1);
+            retval = -2;
         else if ( solvetime >= 777 )
-            return(0);
+            retval = 0;
         else
         {
             avetime = (solvetime / (n-1));
             if ( avetime == 0 )
-                return(-1);
+                retval = -3;
             for (i=0; i<n-1; i++)
             {
                 diff = (list[i+1] - list[i]);
-                printf("%d ",diff);
+                if ( dispflag != 0 )
+                    printf("%d ",diff);
                 diff -= avetime;
                 variance += (diff * diff);
             }
             variance /= (n - 1);
-            printf("solvetime.%d n.%d avetime.%d variance.%llu vs ave2 %d\n",solvetime,n,avetime,(long long)variance,avetime*avetime);
-            if ( variance < avetime*avetime )
-                return(-1 * 0);
+            if ( dispflag != 0 )
+                printf("solvetime.%d n.%d avetime.%d variance.%llu vs ave2 %d\n",solvetime,n,avetime,(long long)variance,avetime*avetime);
+            if ( variance < avetime )
+                retval = -5;
             else return(0);
         }
-    } else return(-1);
+    } else retval = -6;
+    if ( dispflag != 0 && retval != 0 )
+        fprintf(stderr,"ERR >>>>>>>>>>>>>>> ht.%d retval.%d\n",height,retval);
+    if ( height <= 2036 )
+        return(0);
+    else return(retval);
 }
 
 CScript sudoku_genopret(uint8_t unsolved[9][9])
@@ -2578,6 +2591,33 @@ CScript sudoku_solutionopret(char *solution,uint32_t timestamps[81])
     }
     opret << OP_RETURN << E_MARSHAL(ss << evalcode << 'S' << str << data);
     return(opret);
+}
+
+uint8_t sudoku_solutionopreturndecode(char solution[82],uint32_t timestamps[81],CScript scriptPubKey)
+{
+    std::vector<uint8_t> vopret; uint8_t *script,e,f; std::string str; std::vector<uint8_t> data; int32_t i,ind; uint32_t x;
+    GetOpReturnData(scriptPubKey,vopret);
+    script = (uint8_t *)vopret.data();
+    if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> str; ss >> data) != 0 && e == EVAL_SUDOKU && f == 'S' )
+    {
+        if ( data.size() == 81*sizeof(uint32_t) && str.size() == 81 )
+        {
+            strcpy(solution,str.c_str());
+            for (i=ind=0; i<81; i++)
+            {
+                if ( solution[i] < '1' || solution[i] > '9' )
+                    break;
+                x = data[ind++];
+                x <<= 8, x |= (data[ind++] & 0xff);
+                x <<= 8, x |= (data[ind++] & 0xff);
+                x <<= 8, x |= (data[ind++] & 0xff);
+                timestamps[i] = x;
+            }
+            if ( i == 81 )
+                return(f);
+        } else fprintf(stderr,"datasize %d sol[%d]\n",(int32_t)data.size(),(int32_t)str.size());
+    }
+    return(0);
 }
 
 uint8_t sudoku_genopreturndecode(char *unsolved,CScript scriptPubKey)
@@ -2628,7 +2668,7 @@ UniValue sudoku_generate(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
             str[i] = '0' + unsolved[i/9][i%9];
         str[i] = 0;
         printf("solve: %s\n",str);
-        if ( dupree_solver(&score,str) == 1 )
+        if ( dupree_solver(1,&score,str) == 1 )
         {
             amount = score * COIN;
             break;
@@ -2825,7 +2865,7 @@ UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
                     result.push_back(Pair("sudokuaddr",CCaddr));
                     balance = CCaddress_balance(CCaddr);
                     result.push_back(Pair("amount",ValueFromAmount(balance)));
-                    if ( sudoku_captcha(timestamps) < 0 )
+                    if ( sudoku_captcha(1,timestamps,komodo_nextheight()) < 0 )
                     {
                         result.push_back(Pair("result","error"));
                         result.push_back(Pair("error","captcha failure"));
@@ -2907,7 +2947,124 @@ UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
     return(result);
 }
 
+int32_t sudoku_minval(uint32_t timestamps[81])
+{
+    int32_t i,ind = -1; uint32_t mintimestamp = 0xffffffff;
+    for (i=0; i<81; i++)
+        if ( timestamps[i] != 0 && timestamps[i] < mintimestamp )
+        {
+            mintimestamp = timestamps[i], ind = i;
+            //fprintf(stderr,"%d ",i);
+        }
+    //fprintf(stderr,"mintimestamp.%u\n",mintimestamp);
+    return(ind);
+}
+
 bool sudoku_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx)
 {
-    return(true);
+    static char laststr[512];
+    CScript scriptPubKey; std::vector<uint8_t> vopret; uint8_t *script,e,f,funcid; int32_t i,ind,errflag,dispflag,score,numvouts; char unsolved[82],solution[82],str[512]; uint32_t timestamps[81]; CTransaction vintx; uint256 hashBlock;
+    if ( (numvouts= tx.vout.size()) > 1 )
+    {
+        scriptPubKey = tx.vout[numvouts-1].scriptPubKey;
+        GetOpReturnData(scriptPubKey,vopret);
+        if ( vopret.size() > 2 )
+        {
+            script = (uint8_t *)vopret.data();
+            if ( script[0] == EVAL_SUDOKU )
+            {
+                switch ( script[1] )
+                {
+                    case 'G':
+                        if ( sudoku_genopreturndecode(unsolved,scriptPubKey) == 'G' )
+                        {
+                            //fprintf(stderr,"unsolved.(%s)\n",unsolved);
+                            if ( dupree_solver(0,&score,unsolved) != 1 || score*COIN != tx.vout[1].nValue )
+                            {
+                                sprintf(str,"ht.%d score.%d vs %.8f %s",height,score,(double)tx.vout[1].nValue/COIN,tx.GetHash().ToString().c_str());
+                                if ( strcmp(str,laststr) != 0 )
+                                {
+                                    strcpy(laststr,str);
+                                    fprintf(stderr,"%s\n",str);
+                                }
+                                if ( strcmp(ASSETCHAINS_SYMBOL,"SUDOKU") != 0 || height > 2000 )
+                                    return eval->Invalid("mismatched sudoku value vs score");
+                                else return(true);
+                            } else return(true);
+                        }
+                        fprintf(stderr,"height.%d txid.%s\n",height,tx.GetHash().ToString().c_str());
+                        return eval->Invalid("invalid generate opreturn");
+                    case 'S':
+                        sprintf(str,"SOLVED ht.%d %.8f %s",height,(double)tx.vout[0].nValue/COIN,tx.GetHash().ToString().c_str());
+                        if ( strcmp(str,laststr) != 0 )
+                        {
+                            strcpy(laststr,str);
+                            fprintf(stderr,"%s\n",str);
+                            dispflag = 1;
+                        } else dispflag = 0;
+                        if ( sudoku_solutionopreturndecode(solution,timestamps,scriptPubKey) == 'S' )
+                        {
+                            if ( tx.vin.size() > 1 && tx.vin[0].prevout.hash == tx.vin[1].prevout.hash && tx.vin[0].prevout.n == 0 && tx.vin[1].prevout.n == 1 && myGetTransaction(tx.vin[0].prevout.hash,vintx,hashBlock) != 0 )
+                            {
+                                if ( vintx.vout.size() > 1 && sudoku_genopreturndecode(unsolved,vintx.vout[vintx.vout.size()-1].scriptPubKey) == 'G' )
+                                {
+                                    for (i=errflag=0; i<81; i++)
+                                    {
+                                        if ( 0 && dispflag != 0 )
+                                            fprintf(stderr,"%u ",timestamps[i]);
+                                        if ( (timestamps[i] != 0 && unsolved[i] >= '1' && unsolved[i] <= '9') || (timestamps[i] == 0 && (unsolved[i] < '1' || unsolved[i] > '9')) )
+                                            errflag++;
+                                    }
+                                    if ( errflag != 0 )
+                                    {
+                                        if ( dispflag != 0 )
+                                            fprintf(stderr,"ht.%d errflag.%d %s\n",height,errflag,unsolved);
+                                        if ( (height != 1220 && height != 1383) || strcmp(ASSETCHAINS_SYMBOL,"SUDOKU") != 0  )
+                                            return eval->Invalid("invalid timestamp vs unsolved");
+                                    }
+                                    if ( dupree_solver(0,&score,unsolved) != 1 )
+                                    {
+                                        if ( dispflag != 0 )
+                                            fprintf(stderr,"non-unique sudoku at ht.%d\n",height);
+                                        if ( strcmp(ASSETCHAINS_SYMBOL,"SUDOKU") != 0 )
+                                            return eval->Invalid("invalid sudoku with multiple solutions");
+                                    }
+                                    if ( dispflag != 0 )
+                                        fprintf(stderr,"%s score.%d %s\n",solution,score,unsolved);
+                                    if ( sudoku_captcha(dispflag,timestamps,height) < 0 )
+                                        return eval->Invalid("failed captcha");
+                                    /*for (i=lasttime=0; i<81; i++)
+                                    {
+                                        if ( (ind= sudoku_minval(timestamps)) >= 0 )
+                                        {
+                                            unsolved[ind] = solution[ind];
+                                            if ( lasttime == 0 )
+                                                lasttime = timestamps[ind];
+                                            if ( dupree_solver(0,&score,unsolved) != 1 )
+                                                fprintf(stderr,"i.%d ind.%d non-unique\n",i,ind);
+                                            if ( dispflag != 0 )
+                                                fprintf(stderr,"%d.%d ",score,timestamps[ind]-lasttime);
+                                            lasttime = timestamps[ind];
+                                            timestamps[ind] = 0;
+                                        } else break;
+                                    }
+                                    if ( dispflag != 0 )
+                                        fprintf(stderr,"scores convergence\n");*/
+                                    return(true);
+                                } else return eval->Invalid("invalid solution opret");
+                            }
+                            else if ( strcmp(ASSETCHAINS_SYMBOL,"SUDOKU") == 0 && height == 236 )
+                                return(true);
+                            else return eval->Invalid("invalid solution vin");
+                        }
+                        fprintf(stderr,"solution ht.%d %s bad opret\n",height,tx.GetHash().ToString().c_str());
+                        return eval->Invalid("invalid solution opreturn");
+                    default: return eval->Invalid("invalid funcid");
+                }
+            } else return eval->Invalid("invalid evalcode");
+            
+        }
+    }
+    return eval->Invalid("not enough vouts");
 }
+
