@@ -2948,7 +2948,7 @@ UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
 bool sudoku_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx)
 {
     static char laststr[512];
-    CScript scriptPubKey; std::vector<uint8_t> vopret; uint8_t *script,e,f,funcid; int32_t i,dispflag,score,numvouts; char unsolved[82],solution[82],str[512]; uint32_t timestamps[81]; CTransaction vintx; uint256 hashBlock;
+    CScript scriptPubKey; std::vector<uint8_t> vopret; uint8_t *script,e,f,funcid; int32_t i,errflag,dispflag,score,numvouts; char unsolved[82],solution[82],str[512]; uint32_t timestamps[81]; CTransaction vintx; uint256 hashBlock;
     if ( (numvouts= tx.vout.size()) > 1 )
     {
         scriptPubKey = tx.vout[numvouts-1].scriptPubKey;
@@ -2993,25 +2993,28 @@ bool sudoku_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const 
                             {
                                 if ( vintx.vout.size() > 1 && sudoku_genopreturndecode(unsolved,vintx.vout[vintx.vout.size()-1].scriptPubKey) == 'G' )
                                 {
-                                    if ( dispflag != 0 )
+                                    for (i=errflag=0; i<81; i++)
                                     {
-                                        for (i=0; i<81; i++)
-                                        {
+                                        if ( dispflag != 0 )
                                             fprintf(stderr,"%u ",timestamps[i]);
-                                            if ( (timestamps[i] == 0 && unsolved[i] >= '1' && unsolved[i] <= '9') || (timestamps[i] != 0 && (unsolved[i] < '1' || unsolved[i] > '9')) )
-                                            {
-                                               if ( strcmp(ASSETCHAINS_SYMBOL,"SUDOKU") != 0 || (height != 1220 && height != 1383) )
-                                                   return eval->Invalid("invalid timestamp vs unsolved");
-                                               else fprintf(stderr,"i.%d invalid timestamp vs unsolved.[%c] %s\n",i,unsolved[i],unsolved);
-                                            }
-                                        }
-                                        if ( dupree_solver(0,&score,unsolved) != 1 )
-                                        {
-                                            fprintf(stderr,"non-unique sudoku at ht.%d\n",height);
-                                            return eval->Invalid("invalid sudoku with multiple solutions");
-                                        }
-                                        fprintf(stderr,"%s score.%d\n",solution,score);
+                                        if ( (timestamps[i] == 0 && unsolved[i] >= '1' && unsolved[i] <= '9') || (timestamps[i] != 0 && (unsolved[i] < '1' || unsolved[i] > '9')) )
+                                            errflag++;
                                     }
+                                    if ( errflag != 0 )
+                                    {
+                                        if ( dispflag != 0 )
+                                            fprintf(stderr,"errflag.%d %s\n",height,errflag,unsolved);
+                                        if ( (height != 1220 && height != 1383) || strcmp(ASSETCHAINS_SYMBOL,"SUDOKU") != 0  )
+                                            return eval->Invalid("invalid timestamp vs unsolved");
+                                    }
+                                    if ( dupree_solver(0,&score,unsolved) != 1 )
+                                    {
+                                        if ( dispflag != 0 )
+                                            fprintf(stderr,"non-unique sudoku at ht.%d\n",height);
+                                        return eval->Invalid("invalid sudoku with multiple solutions");
+                                    }
+                                    if ( dispflag != 0 )
+                                        fprintf(stderr,"%s score.%d\n",solution,score);
                                     if ( sudoku_captcha(timestamps,height) < 0 )
                                         return eval->Invalid("failed captcha");
                                     return(true);
