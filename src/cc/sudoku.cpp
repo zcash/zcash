@@ -2997,7 +2997,7 @@ bool sudoku_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const 
                                     {
                                         if ( dispflag != 0 )
                                             fprintf(stderr,"%u ",timestamps[i]);
-                                        if ( (timestamps[i] == 0 && unsolved[i] >= '1' && unsolved[i] <= '9') || (timestamps[i] != 0 && (unsolved[i] < '1' || unsolved[i] > '9')) )
+                                        if ( (timestamps[i] != 0 && unsolved[i] >= '1' && unsolved[i] <= '9') || (timestamps[i] == 0 && (unsolved[i] < '1' || unsolved[i] > '9')) )
                                             errflag++;
                                     }
                                     if ( errflag != 0 )
@@ -3014,7 +3014,7 @@ bool sudoku_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const 
                                         return eval->Invalid("invalid sudoku with multiple solutions");
                                     }
                                     if ( dispflag != 0 )
-                                        fprintf(stderr,"%s score.%d\n",solution,score);
+                                        fprintf(stderr,"%s score.%d %s\n",solution,score,unsolved);
                                     if ( sudoku_captcha(timestamps,height) < 0 )
                                         return eval->Invalid("failed captcha");
                                     return(true);
