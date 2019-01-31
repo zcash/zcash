@@ -1781,12 +1781,13 @@ int dupree_solver(int32_t *scorep,char *puzzle)
     grid g, *s=0;
     FILE *h=0;
     soln_list = NULL;
-    /* Get our command name from invoking command line */
+    myname = "internal";
+    /* Get our command name from invoking command line
     if ((myname = strrchr(argv[0], '/')) == NULL)
         myname = argv[0];
     else
         myname++;
-    /*argc = 3;
+    argc = 3;
      argv[1] = "-p";
      argv[2] = puzzle;
      argv[3] = 0;*/
@@ -2924,6 +2925,7 @@ bool sudoku_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const 
                     case 'G':
                         if ( sudoku_genopreturndecode(unsolved,scriptPubKey) == 'G' )
                         {
+                            fprintf(stderr,"unsolved.(%s)\n",unsolved);
                             if ( dupree_solver(&score,unsolved) != 1 || score*COIN != tx.vout[1].nValue )
                             {
                                 fprintf(stderr,"ht.%d score.%d vs %.8f %s\n",height,score,(double)tx.vout[1].nValue/COIN,tx.GetHash().ToString().c_str());
