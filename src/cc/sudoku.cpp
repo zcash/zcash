@@ -3000,9 +3000,9 @@ bool sudoku_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const 
                                             fprintf(stderr,"%u ",timestamps[i]);
                                             if ( (timestamps[i] == 0 && unsolved[i] >= '1' && unsolved[i] <= '9') || (timestamps[i] != 0 && (unsolved[i] < '1' || unsolved[i] > '9')) )
                                             {
-                                                fprintf(stderr,"i.%d invalid timestamp vs unsolved.[%c] %s\n",i,unsolved[i],unsolved);
-                                               if ( strcmp(ASSETCHAINS_SYMBOL,"SUDOKU") != 0 || height != 1220 )
+                                               if ( strcmp(ASSETCHAINS_SYMBOL,"SUDOKU") != 0 || (height != 1220 && height != 1383) )
                                                    return eval->Invalid("invalid timestamp vs unsolved");
+                                               else fprintf(stderr,"i.%d invalid timestamp vs unsolved.[%c] %s\n",i,unsolved[i],unsolved);
                                             }
                                         }
                                         if ( dupree_solver(0,&score,unsolved) != 1 )
