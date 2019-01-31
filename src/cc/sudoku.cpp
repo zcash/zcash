@@ -2969,6 +2969,7 @@ bool sudoku_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const 
                         }
                         else if ( height == 123 ) // early version invalid gen
                             return(true);
+                        fprintf(stderr,"height.%d txid.%s\n",height,tx.GetHash().ToString().c_str());
                         return eval->Invalid("invalid generate opreturn");
                     case 'S':
                         fprintf(stderr,"SOLVED ht.%d %.8f %s\n",height,(double)tx.vout[0].nValue/COIN,tx.GetHash().ToString().c_str());
