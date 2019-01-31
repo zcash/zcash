@@ -187,6 +187,8 @@ namespace {
     std::vector<CBlockFileInfo> vinfoBlockFile,tmpBlockFiles;
     int nLastBlockFile = 0;
     int nLastTmpFile = 0;
+    unsigned int maxTempFileSize0 = MAX_TEMPFILE_SIZE;
+    unsigned int maxTempFileSize1 = MAX_TEMPFILE_SIZE;
     /** Global flag to indicate we should check to see if there are
      *  block/undo files that should be deleted.  Set on startup
      *  or if we allocate more file space when we're in prune mode
@@ -3639,7 +3641,15 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         setDirtyBlockIndex.insert(pindex);
     }
 
-    ConnectNotarisations(block, pindex->GetHeight());
+    ConnectNotarisations(block, pindex->GetHeight()); // MoMoM notarisation DB.
+
+    int notarisationTx = komodo_connectblock(pindex,*(CBlock *)&block);  // dPoW state update.
+    if ( ASSETCHAINS_NOTARY_PAY != 0 && notarisationTx > 0 )
+    {    
+        printf("VALID NOTARISATION connect block.%i tx.%i\n",pindex->GetHeight(),notarisationTx);
+        if ( notarisationTx != 1 )
+            printf("INVALID: notarisation tx is not in vtx[1].\n");
+    }
 
     if (fTxIndex)
         if (!pblocktree->WriteTxIndex(vPos))
@@ -3695,13 +3705,6 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     LogPrint("bench", "    - Callbacks: %.2fms [%.2fs]\n", 0.001 * (nTime4 - nTime3), nTimeCallbacks * 0.000001);
 
     //FlushStateToDisk();
-    int tmp = komodo_connectblock(pindex,*(CBlock *)&block);  // != block-nVersion-7000000; 
-    if ( ASSETCHAINS_NOTARY_PAY != 0 && tmp > 0 )
-    {    
-        printf("VALID NOTARISATION connect block.%i tx.%i\n NOT VALIDATING HERE YET!\n",pindex->GetHeight(),tmp);
-        if ( tmp != 1 )
-            printf("INVALID NOTARISATION notarisation tx is not in vtx[1].\n");
-    }    
     return true;
 }
 
@@ -4618,7 +4621,7 @@ bool FindBlockPos(int32_t tmpflag,CValidationState &state, CDiskBlockPos &pos, u
     std::vector<CBlockFileInfo> *ptr; int *lastfilep;
     LOCK(cs_LastBlockFile);
 
-    unsigned int nFile;
+    unsigned int nFile,maxTempFileSize;
     
     if ( tmpflag != 0 )
     {
@@ -4628,6 +4631,10 @@ bool FindBlockPos(int32_t tmpflag,CValidationState &state, CDiskBlockPos &pos, u
         if (tmpBlockFiles.size() <= nFile) {
             tmpBlockFiles.resize(nFile + 1);
         }
+        if ( nFile == 0 )
+            maxTempFileSize = maxTempFileSize0;
+        else if ( nFile == 1 )
+            maxTempFileSize = maxTempFileSize1;
     }
     else
     {
@@ -4638,49 +4645,86 @@ bool FindBlockPos(int32_t tmpflag,CValidationState &state, CDiskBlockPos &pos, u
             vinfoBlockFile.resize(nFile + 1);
         }
     }
+    
     if (!fKnown) {
-        while ( (*ptr)[nFile].nSize + nAddSize >= ((tmpflag != 0) ? MAX_TEMPFILE_SIZE : MAX_BLOCKFILE_SIZE) ) {
+        bool tmpfileflag = false;
+        while ( (*ptr)[nFile].nSize + nAddSize >= ((tmpflag != 0) ? maxTempFileSize : MAX_BLOCKFILE_SIZE) ) {
+            if ( tmpflag != 0 && tmpfileflag )
+                break;
             nFile++;
             if ((*ptr).size() <= nFile) {
                 (*ptr).resize(nFile + 1);
             }
+            tmpfileflag = true;
         }
         pos.nFile = nFile + tmpflag*TMPFILE_START;
         pos.nPos = (*ptr)[nFile].nSize;
-        if ( 0 && tmpflag != 0 )
-            fprintf(stderr,"pos.nFile %d nPos %u\n",pos.nFile,pos.nPos);
     }
-    
     if (nFile != *lastfilep) {
         if (!fKnown) {
             LogPrintf("Leaving block file %i: %s\n", nFile, (*ptr)[nFile].ToString());
         }
         FlushBlockFile(!fKnown);
-        //fprintf(stderr, "nFile = %i size.%li\n",nFile,tmpBlockFiles.size());
-        if ( tmpflag != 0 && tmpBlockFiles.size() >= 4 )
+        //fprintf(stderr, "nFile = %i size.%li maxTempFileSize0.%u maxTempFileSize1.%u\n",nFile,tmpBlockFiles.size(),maxTempFileSize0,maxTempFileSize1);
+        if ( tmpflag != 0 && tmpBlockFiles.size() >= 3 )
         {
-            if ( nFile == 1 )
+            if ( nFile == 1 ) // Trying to get to second temp file.
             {
-                PruneOneBlockFile(true,TMPFILE_START+2);
-                tmpBlockFiles[2].SetNull();
-                LogPrintf("Reset tempfile 2\n");
+                if (!PruneOneBlockFile(true,TMPFILE_START+1)) 
+                {
+                    // file 1 is not ready to be used yet increase file 0's size.
+                    fprintf(stderr, "Cant clear file 1!\n");
+                    // We will reset the position to the end of the first file, even if its over max size.
+                    nFile = 0;
+                    pos.nFile = TMPFILE_START;
+                    pos.nPos = (*ptr)[0].nSize;
+                    // Increase temp file one's max size by a chunk, so we wait a reasonable time to recheck the other file.
+                    maxTempFileSize0 += BLOCKFILE_CHUNK_SIZE;
+                }
+                else 
+                {
+                    // The file 1 is able to be used now. Reset max size, and set nfile to use file 1.
+                    fprintf(stderr, "CLEARED file 1!\n");
+                    maxTempFileSize0 = MAX_TEMPFILE_SIZE;
+                    nFile = 1;
+                    tmpBlockFiles[1].SetNull();
+                    pos.nFile = TMPFILE_START+1;
+                    pos.nPos = (*ptr)[1].nSize;
+                    boost::filesystem::remove(GetBlockPosFilename(pos, "blk"));
+                    LogPrintf("Prune: deleted temp blk (%05u)\n",nFile);    
+                }
+                if ( 0 && tmpflag != 0 )
+                    fprintf(stderr,"pos.nFile %d nPos %u\n",pos.nFile,pos.nPos);
             }
-            else if ( nFile == 2 )
+            else if ( nFile == 2 ) // Trying to get to third temp file.
             {
-                PruneOneBlockFile(true,TMPFILE_START+3);
-                tmpBlockFiles[3].SetNull();
-                LogPrintf("Reset tempfile 3\n");
+                if (!PruneOneBlockFile(true,TMPFILE_START)) 
+                {
+                    fprintf(stderr, "Cant clear file 0!\n");
+                    // We will reset the position to the end of the second block file, even if its over max size.
+                    nFile = 1;
+                    pos.nFile = TMPFILE_START+1;
+                    pos.nPos = (*ptr)[1].nSize;
+                    // Increase temp file one's max size by a chunk, so we wait a reasonable time to recheck the other file.
+                    maxTempFileSize1 += BLOCKFILE_CHUNK_SIZE;
+                }
+                else 
+                {
+                    // The file 0 is able to be used now. Reset max size, and set nfile to use file 0.
+                    fprintf(stderr, "CLEARED file 0!\n");
+                    maxTempFileSize1 = MAX_TEMPFILE_SIZE;
+                    nFile = 0;
+                    tmpBlockFiles[0].SetNull();
+                    pos.nFile = TMPFILE_START;
+                    pos.nPos = (*ptr)[0].nSize;
+                    boost::filesystem::remove(GetBlockPosFilename(pos, "blk"));
+                    LogPrintf("Prune: deleted temp blk (%05u)\n",nFile);  
+                }
+                if ( 0 && tmpflag != 0 )
+                    fprintf(stderr,"pos.nFile %d nPos %u\n",pos.nFile,pos.nPos);
             }
         }
-        if ( tmpflag != 0 && nFile == 3 )
-        {
-            PruneOneBlockFile(true,TMPFILE_START);
-            tmpBlockFiles[0].SetNull();
-            PruneOneBlockFile(true,TMPFILE_START+1);
-            tmpBlockFiles[1].SetNull();
-            nFile = 0;
-            LogPrintf("Reset tempfile 0 and 1\n");
-        }
+        //fprintf(stderr, "nFile = %i size.%li maxTempFileSize0.%u maxTempFileSize1.%u\n",nFile,tmpBlockFiles.size(),maxTempFileSize0,maxTempFileSize1); sleep(30);
         *lastfilep = nFile;
         //fprintf(stderr, "*lastfilep = %i\n",*lastfilep);
     }
@@ -5512,32 +5556,53 @@ uint64_t CalculateCurrentUsage()
 }
 
 /* Prune a block file (modify associated database entries)*/
-void PruneOneBlockFile(bool tempfile, const int fileNumber)
+bool PruneOneBlockFile(bool tempfile, const int fileNumber)
 {
+    uint256 notarized_hash,notarized_desttxid; int32_t prevMoMheight,notarized_height;
+    notarized_height = komodo_notarized_height(&prevMoMheight,&notarized_hash,&notarized_desttxid);
     //fprintf(stderr, "pruneblockfile.%i\n",fileNumber); sleep(15);
-    for (BlockMap::iterator it = mapBlockIndex.begin(); it != mapBlockIndex.end(); ++it) {
+    for (BlockMap::iterator it = mapBlockIndex.begin(); it != mapBlockIndex.end(); ++it) 
+    {
         CBlockIndex* pindex = it->second;
-        if (pindex && pindex->nFile == fileNumber) {
+        if (pindex && pindex->nFile == fileNumber) 
+        {
+            if ( tempfile && (pindex->nStatus & BLOCK_IN_TMPFILE != 0) )
+            {    
+                if ( chainActive.Contains(pindex) )
+                {
+                    // Block is in main chain so we cant clear this file!
+                    return(false);
+                }
+                if ( pindex->GetHeight() > notarized_height ) // Need to check this, does an invalid block have a height?
+                {
+                    // This blocks height is not older than last notarization so it can be reorged into the main chain.
+                    // We cant clear this file!
+                    return(false);
+                }
+                else 
+                {
+                    // Block is not in main chain and is older than last notarised block so its safe for removal.
+                    fprintf(stderr, "Block [%i] in tempfile.%i We can clear this block!\n",pindex->GetHeight(),fileNumber);
+                    // Add index to list and remove after loop? 
+                }            
+            }
             pindex->nStatus &= ~BLOCK_HAVE_DATA;
             pindex->nStatus &= ~BLOCK_HAVE_UNDO;
             pindex->nFile = 0;
             pindex->nDataPos = 0;
             pindex->nUndoPos = 0;
             setDirtyBlockIndex.insert(pindex);
-            if (pindex->nStatus & BLOCK_IN_TMPFILE != 0 )
-            {    
-                // We should be able to clear these blocks from the index as they are not in the main chains block files.
-                fprintf(stderr, "Block still in tempfile.%i\n",fileNumber);
-            }
             // Prune from mapBlocksUnlinked -- any block we prune would have
             // to be downloaded again in order to consider its chain, at which
             // point it would be considered as a candidate for
             // mapBlocksUnlinked or setBlockIndexCandidates.
             std::pair<std::multimap<CBlockIndex*, CBlockIndex*>::iterator, std::multimap<CBlockIndex*, CBlockIndex*>::iterator> range = mapBlocksUnlinked.equal_range(pindex->pprev);
-            while (range.first != range.second) {
+            while (range.first != range.second) 
+            {
                 std::multimap<CBlockIndex *, CBlockIndex *>::iterator it = range.first;
                 range.first++;
-                if (it->second == pindex) {
+                if (it->second == pindex) 
+                {
                     mapBlocksUnlinked.erase(it);
                 }
             }
@@ -5546,6 +5611,7 @@ void PruneOneBlockFile(bool tempfile, const int fileNumber)
     if (!tempfile)
         vinfoBlockFile[fileNumber].SetNull();
     setDirtyFileInfo.insert(fileNumber);
+    return(true);
 }
 
 
