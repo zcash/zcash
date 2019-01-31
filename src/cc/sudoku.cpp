@@ -3017,6 +3017,20 @@ bool sudoku_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const 
                                         fprintf(stderr,"%s score.%d %s\n",solution,score,unsolved);
                                     if ( sudoku_captcha(timestamps,height) < 0 )
                                         return eval->Invalid("failed captcha");
+                                    for (i=0; i<81; i++)
+                                    {
+                                        if ( (ind= sudoku_minval(timestamps)) >= 0 )
+                                        {
+                                            unsolved[ind] = solution[ind];
+                                            if ( dupree_solver(0,&score,unsolved) != 1 )
+                                                fprintf(stderr,"i.%d ind.%d non-unique\n",i,ind);
+                                            if ( dispflag != 0 )
+                                                fprintf(stderr,"%d ",score);
+                                            timestamps[ind] = 0;
+                                        } else break;
+                                    }
+                                    if ( dispflag != 0 )
+                                        fprintf(stderr,"scores convergence\n");
                                     return(true);
                                 } else return eval->Invalid("invalid solution opret");
                             }
