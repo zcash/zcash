@@ -2980,7 +2980,7 @@ bool sudoku_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const 
                             return(true);
                         }
                         fprintf(stderr,"solution ht.%d %s bad opret\n",height,tx.GetHash().ToString().c_str());
-                        if ( height == 236 && strcmp(ASSETCHAINS_SYMBOL,"SUDOKU") == 0 )
+                        if ( (height == 236 || height == 1220) && strcmp(ASSETCHAINS_SYMBOL,"SUDOKU") == 0 )
                             return(true);
                         return eval->Invalid("invalid solution opreturn");
                     default: return eval->Invalid("invalid funcid");
