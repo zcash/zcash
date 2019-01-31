@@ -2519,7 +2519,7 @@ void sudoku_gen(uint8_t key32[32],uint8_t unsolved[9][9],uint32_t srandi)
 
 int32_t sudoku_captcha(uint32_t timestamps[81],int32_t height)
 {
-    int32_t i,solvetime,diff,avetime,n = 0; uint64_t variance = 0; std::vector<uint32_t> list;
+    int32_t i,solvetime,diff,avetime,n = 0,retval = 0; uint64_t variance = 0; std::vector<uint32_t> list;
     for (i=0; i<81; i++)
     {
         if ( timestamps[i] != 0 )
@@ -2535,17 +2535,17 @@ int32_t sudoku_captcha(uint32_t timestamps[81],int32_t height)
         if ( list[0] >= list[n-1] )
         {
             printf("list[0] %u vs list[%d-1] %u\n",list[0],n,list[n-1]);
-            return(-1);
+            retval = -1;
         }
         else if ( list[n-1] > chainActive.LastTip()->nTime+200 )
-            return(-1);
+            retval = -2;
         else if ( solvetime >= 777 )
-            return(0);
+            retval = 0;
         else
         {
             avetime = (solvetime / (n-1));
             if ( avetime == 0 )
-                return(-1);
+                retval = -3;
             for (i=0; i<n-1; i++)
             {
                 diff = (list[i+1] - list[i]);
@@ -2559,7 +2559,12 @@ int32_t sudoku_captcha(uint32_t timestamps[81],int32_t height)
                 return(-1 * 0);
             else return(0);
         }
-    } else return(-1);
+    } else retval = -5;
+    if ( retval != 0 )
+        fprintf(stderr,"retval.%d\n",retval);
+    if ( height < 2000 )
+        return(0);
+    else return(retval);
 }
 
 CScript sudoku_genopret(uint8_t unsolved[9][9])
