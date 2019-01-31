@@ -2942,7 +2942,8 @@ UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
 
 bool sudoku_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx)
 {
-    CScript scriptPubKey; std::vector<uint8_t> vopret; uint8_t *script,e,f,funcid; int32_t i,score,numvouts; char unsolved[82],solution[82]; uint32_t timestamps[81];
+    static char laststr[512];
+    CScript scriptPubKey; std::vector<uint8_t> vopret; uint8_t *script,e,f,funcid; int32_t i,score,numvouts; char unsolved[82],solution[82],str[512]; uint32_t timestamps[81];
     if ( (numvouts= tx.vout.size()) > 1 )
     {
         scriptPubKey = tx.vout[numvouts-1].scriptPubKey;
@@ -2960,7 +2961,12 @@ bool sudoku_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const 
                             //fprintf(stderr,"unsolved.(%s)\n",unsolved);
                             if ( dupree_solver(0,&score,unsolved) != 1 || score*COIN != tx.vout[1].nValue )
                             {
-                                fprintf(stderr,"ht.%d score.%d vs %.8f %s\n",height,score,(double)tx.vout[1].nValue/COIN,tx.GetHash().ToString().c_str());
+                                sprintf(str,"ht.%d score.%d vs %.8f %s",height,score,(double)tx.vout[1].nValue/COIN,tx.GetHash().ToString().c_str());
+                                if ( strcmp(str,laststr) != 0 )
+                                {
+                                    strcpy(laststr,str);
+                                    fprintf(stderr,"%s\n",str);
+                                }
                                 if ( strcmp(ASSETCHAINS_SYMBOL,"SUDOKU") != 0 || height > 2000 )
                                     return eval->Invalid("mismatched sudoku value vs score");
                                 else return(true);
@@ -2969,7 +2975,12 @@ bool sudoku_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const 
                         fprintf(stderr,"height.%d txid.%s\n",height,tx.GetHash().ToString().c_str());
                         return eval->Invalid("invalid generate opreturn");
                     case 'S':
-                        fprintf(stderr,"SOLVED ht.%d %.8f %s\n",height,(double)tx.vout[0].nValue/COIN,tx.GetHash().ToString().c_str());
+                        sprintf(str,"SOLVED ht.%d %.8f %s\n",height,(double)tx.vout[0].nValue/COIN,tx.GetHash().ToString().c_str());
+                        if ( strcmp(str,laststr) != 0 )
+                        {
+                            strcpy(laststr,str);
+                            fprintf(stderr,"%s\n",str);
+                        }
                         if ( sudoku_solutionopreturndecode(solution,timestamps,scriptPubKey) == 'S' )
                         {
                             for (i=0; i<81; i++)
