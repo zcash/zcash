@@ -2961,7 +2961,7 @@ int32_t sudoku_minval(uint32_t timestamps[81])
 bool sudoku_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx)
 {
     static char laststr[512];
-    CScript scriptPubKey; std::vector<uint8_t> vopret; uint8_t *script,e,f,funcid; int32_t i,ind,errflag,dispflag,score,numvouts; char unsolved[82],solution[82],str[512]; uint32_t timestamps[81]; CTransaction vintx; uint256 hashBlock;
+    CScript scriptPubKey; std::vector<uint8_t> vopret; uint8_t *script,e,f,funcid; int32_t i,ind,errflag,dispflag,score,numvouts; char unsolved[82],solution[82],str[512]; uint32_t lasttime,timestamps[81]; CTransaction vintx; uint256 hashBlock;
     if ( (numvouts= tx.vout.size()) > 1 )
     {
         scriptPubKey = tx.vout[numvouts-1].scriptPubKey;
@@ -3030,16 +3030,19 @@ bool sudoku_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const 
                                         fprintf(stderr,"%s score.%d %s\n",solution,score,unsolved);
                                     if ( sudoku_captcha(timestamps,height) < 0 )
                                         return eval->Invalid("failed captcha");
-                                    for (i=0; i<81; i++)
+                                    for (i=lasttime=0; i<81; i++)
                                     {
                                         if ( (ind= sudoku_minval(timestamps)) >= 0 )
                                         {
                                             unsolved[ind] = solution[ind];
-                                            timestamps[ind] = 0;
+                                            if ( lasttime == 0 )
+                                                lasttime = timestamps[ind];
                                             if ( dupree_solver(0,&score,unsolved) != 1 )
                                                 fprintf(stderr,"i.%d ind.%d non-unique\n",i,ind);
                                             if ( dispflag != 0 )
-                                                fprintf(stderr,"%d ",score);
+                                                fprintf(stderr,"%d.%d ",score,timestamps[ind]-lasttime);
+                                            lasttime = timestamps[ind];
+                                            timestamps[ind] = 0;
                                         } else break;
                                     }
                                     if ( dispflag != 0 )
