@@ -380,7 +380,7 @@ int64_t CCaddress_balance(char *coinaddr)
 int64_t CCfullsupply(uint256 tokenid)
 {
     uint256 hashBlock; int32_t numvouts; CTransaction tx; std::vector<uint8_t> origpubkey; std::string name,description;
-    if ( GetTransaction(tokenid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 0 )
+    if ( myGetTransaction(tokenid,tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 0 )
     {
         if (DecodeTokenCreateOpRet(tx.vout[numvouts-1].scriptPubKey,origpubkey,name,description))
         {
@@ -401,7 +401,7 @@ int64_t CCtoken_balance(char *coinaddr,uint256 reftokenid)
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
-        if ( GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts=tx.vout.size()) > 0 )
+        if ( myGetTransaction(txid,tx,hashBlock) != 0 && (numvouts=tx.vout.size()) > 0 )
         {
             char str[65];
 			std::vector<CPubKey> voutTokenPubkeys;
