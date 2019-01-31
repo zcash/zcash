@@ -2595,6 +2595,7 @@ uint8_t sudoku_solutionopreturndecode(char solution[82],uint32_t timestamps[81],
     {
         if ( data.size() == 81*sizeof(uint32_t) && str.size() == 81 )
         {
+            strcpy(solution,str.c_str());
             for (i=ind=0; i<81; i++)
             {
                 if ( solution[i] < '1' || solution[i] > '9' )
@@ -2606,10 +2607,7 @@ uint8_t sudoku_solutionopreturndecode(char solution[82],uint32_t timestamps[81],
                 timestamps[i] = x;
             }
             if ( i == 81 )
-            {
-                strcpy(solution,str.c_str());
                 return(f);
-            }
         } else fprintf(stderr,"datasize %d sol[%d]\n",(int32_t)data.size(),(int32_t)str.size());
     }
     return(0);
