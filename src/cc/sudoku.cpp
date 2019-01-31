@@ -1773,7 +1773,7 @@ static char *cvt_to_mask(char *mbuf, char *sbuf)
 /* Mainline logic. */
 /*******************/
 
-int dupree_solver(int32_t *scorep,char *puzzle)
+int dupree_solver(int32_t dispflag,int32_t *scorep,char *puzzle)
 {
     int argc; char *argv[4];
     int i, rc, bog, count, solved, unsolved, solncount=0, flag, prt_count, prt_num, prt_score, prt_answer, prt_depth, prt_grid, prt_mask, prt_givens, prt, len;
@@ -1781,7 +1781,7 @@ int dupree_solver(int32_t *scorep,char *puzzle)
     grid g, *s=0;
     FILE *h=0;
     soln_list = NULL;
-    myname = "internal";
+    myname = (char *)"internal";
     /* Get our command name from invoking command line
     if ((myname = strrchr(argv[0], '/')) == NULL)
         myname = argv[0];
@@ -1873,15 +1873,6 @@ int dupree_solver(int32_t *scorep,char *puzzle)
                 exit(1);
         }
     }
-#endif
-    prt_answer = 1;		/* print solution */
-    //prt_count = 1;		/* number solutions */
-    prt_score = 1;
-    prt_givens = 1;
-    prt_num = 1;
-    /* Set prt flag if we're printing anything at all */
-    prt = prt_mask | prt_grid | prt_score | prt_depth | prt_answer | prt_num | prt_givens;
-    
     /* Anthing else on the command line is bogus */
     if (argc > optind) {
         fprintf(stderr, "Extraneous args: ");
@@ -1912,6 +1903,15 @@ int dupree_solver(int32_t *scorep,char *puzzle)
      exit(1);
      }
      if (h) fgets(inbuf, 128, h);*/
+#endif
+    prt_answer = dispflag;		/* print solution */
+    //prt_count = dispflag;		/* number solutions */
+    prt_score = dispflag;
+    prt_givens = dispflag;
+    prt_num = dispflag;
+    /* Set prt flag if we're printing anything at all */
+    prt = prt_mask | prt_grid | prt_score | prt_depth | prt_answer | prt_num | prt_givens;
+    
     strcpy(inbuf,puzzle);
     count = solved = unsolved = 0;
     //printf("inbuf.(%s)\n",inbuf);
@@ -1927,7 +1927,7 @@ int dupree_solver(int32_t *scorep,char *puzzle)
             fprintf(rejects, "%d: %s bogus puzzle format\n", count, inbuf); fflush(rejects);
             *inbuf = 0;
             bog += 1;
-            if (h) fgets(inbuf, 128, h);
+            //if (h) fgets(inbuf, 128, h);
             continue;
         }
         
@@ -1936,7 +1936,7 @@ int dupree_solver(int32_t *scorep,char *puzzle)
             fprintf(rejects, "%d: %*.*s bogus puzzle has less than 17 givens\n", count, PUZZLE_CELLS, PUZZLE_CELLS, inbuf); fflush(rejects);
             *inbuf = 0;
             bog += 1;
-            if (h) fgets(inbuf, 128, h);
+            //if (h) fgets(inbuf, 128, h);
             continue;
         }
         
@@ -1973,6 +1973,11 @@ int dupree_solver(int32_t *scorep,char *puzzle)
             if (solncount > 1 && enumerate_all) {
                 rc |= 1;
             }
+            for (s = soln_list; s;) {
+                s = soln_list->next;
+                free(soln_list);
+                soln_list = s;
+            }
         }
         else {
             unsolved++;
@@ -1985,7 +1990,7 @@ int dupree_solver(int32_t *scorep,char *puzzle)
         }
         
         *inbuf = 0;
-        if (h) fgets(inbuf, 128, h);
+        //if (h) fgets(inbuf, 128, h);
     }
     
     //if (prt) fprintf(solnfile, "\nPuzzles: %d, Solved: %d, Unsolved: %d, Bogus: %d\n", count, solved, unsolved, bog);
@@ -2629,7 +2634,7 @@ UniValue sudoku_generate(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
             str[i] = '0' + unsolved[i/9][i%9];
         str[i] = 0;
         printf("solve: %s\n",str);
-        if ( dupree_solver(&score,str) == 1 )
+        if ( dupree_solver(1,&score,str) == 1 )
         {
             amount = score * COIN;
             break;
@@ -2926,7 +2931,7 @@ bool sudoku_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const 
                         if ( sudoku_genopreturndecode(unsolved,scriptPubKey) == 'G' )
                         {
                             fprintf(stderr,"unsolved.(%s)\n",unsolved);
-                            if ( dupree_solver(&score,unsolved) != 1 || score*COIN != tx.vout[1].nValue )
+                            if ( dupree_solver(0,&score,unsolved) != 1 || score*COIN != tx.vout[1].nValue )
                             {
                                 fprintf(stderr,"ht.%d score.%d vs %.8f %s\n",height,score,(double)tx.vout[1].nValue/COIN,tx.GetHash().ToString().c_str());
                             }
