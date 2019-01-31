@@ -2909,5 +2909,36 @@ UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
 
 bool sudoku_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx)
 {
-    return(true);
+    CScript scriptPubKey; std::vector<uint8_t> vopret; uint8_t *script,e,f,funcid; int32_t score,numvouts; char unsolved[82];
+    if ( (numvouts= tx.vout.size()) > 1 )
+    {
+        scriptPubKey = tx.vout[numvouts-1].scriptPubKey;
+        GetOpReturnData(scriptPubKey,vopret);
+        if ( vopret.size() > 2 )
+        {
+            script = (uint8_t *)vopret.data();
+            if ( script[0] == EVAL_SUDOKU )
+            {
+                switch ( script[1] )
+                {
+                    case 'G':
+                        if ( sudoku_genopreturndecode(unsolved,scriptPubKey) == 'G' )
+                        {
+                            if ( dupree_solver(&score,unsolved) != 1 || score*COIN != tx.vout[1].nValue )
+                            {
+                                fprintf(stderr,"ht.%d score.%d vs %.8f %s\n",height,score,(double)tx.vout[1].nValue/COIN,tx.GetHash().ToString());
+                            }
+                        }
+                        return(true);
+                    case 'S':
+                        fprintf(stderr,"SOLVED ht.%d %.8f %s\n",height,score,(double)tx.vout[0].nValue/COIN,tx.GetHash().ToString());
+                        return(true);
+                    default: return eval->Invalid("invalid funcid");
+                }
+            } else return eval->Invalid("invalid evalcode");
+            
+        }
+    }
+    return eval->Invalid("not enough vouts");
 }
+
