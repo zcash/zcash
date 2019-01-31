@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright © 2014-2018 The SuperNET Developers.                             *
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
  *                                                                            *
  * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
  * the top-level directory of this distribution for the individual copyright  *
@@ -629,7 +629,7 @@ uint64_t jumblr_increment(uint8_t r,int32_t height,uint64_t total,uint64_t bigge
 void jumblr_iteration()
 {
     static int32_t lastheight; static uint32_t lasttime;
-    char *zaddr,*addr,*retstr,secretaddr[64]; cJSON *array; int32_t i,iter,height,acpublic,counter,chosen_one,n; uint64_t smallest,medium,biggest,amount=0,total=0; double fee; struct jumblr_item *ptr,*tmp; uint16_t r,s;
+    char *zaddr,*addr,*retstr=0,secretaddr[64]; cJSON *array; int32_t i,iter,height,acpublic,counter,chosen_one,n; uint64_t smallest,medium,biggest,amount=0,total=0; double fee; struct jumblr_item *ptr,*tmp; uint16_t r,s;
     acpublic = ASSETCHAINS_PUBLIC;
     if ( ASSETCHAINS_SYMBOL[0] == 0 && GetTime() >= KOMODO_SAPLING_DEADLINE )
         acpublic = 1;
@@ -648,7 +648,7 @@ void jumblr_iteration()
                 }
                 free_json(array);
             }
-            free(retstr);
+            free(retstr), retstr = 0;
         }
     }
     height = (int32_t)chainActive.LastTip()->GetHeight();
@@ -691,7 +691,7 @@ void jumblr_iteration()
                     if ( amount > 0 && (retstr= jumblr_sendt_to_z(Jumblr_deposit,addr,dstr(amount))) != 0 )
                     {
                         printf("sendt_to_z.(%s)\n",retstr);
-                        free(retstr);
+                        free(retstr), retstr = 0;
                     }
                     free(zaddr);
                 } else printf("no zaddr from jumblr_zgetnewaddress\n");
@@ -723,7 +723,7 @@ void jumblr_iteration()
                                     if ( (retstr= jumblr_sendz_to_z(ptr->dest,addr,dstr(total))) != 0 )
                                     {
                                         printf("n.%d counter.%d chosen_one.%d send z_to_z.(%s)\n",n,counter,chosen_one,retstr);
-                                        free(retstr);
+                                        free(retstr), retstr = 0;
                                     }
                                     ptr->spent = (uint32_t)time(NULL);
                                     free(zaddr);
@@ -768,7 +768,7 @@ void jumblr_iteration()
                                     if ( (retstr= jumblr_sendz_to_t(ptr->dest,secretaddr,dstr(total))) != 0 )
                                     {
                                         printf("%s send z_to_t.(%s)\n",secretaddr,retstr);
-                                        free(retstr);
+                                        free(retstr), retstr = 0;
                                     } else printf("null return from jumblr_sendz_to_t\n");
                                     ptr->spent = (uint32_t)time(NULL);
                                     break;

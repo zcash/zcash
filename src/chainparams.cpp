@@ -3,6 +3,21 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 #include "key_io.h"
 #include "main.h"
 #include "crypto/equihash.h"
@@ -77,11 +92,6 @@ static CBlock CreateGenesisBlock(uint32_t nTime, const uint256& nNonce, const st
 void *chainparams_commandline(void *ptr);
 #include "komodo_defs.h"
 
-extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
-extern uint16_t ASSETCHAINS_P2PPORT,ASSETCHAINS_RPCPORT;
-extern uint32_t ASSETCHAIN_INIT, ASSETCHAINS_MAGIC;
-extern int32_t VERUS_BLOCK_POSUNITS, ASSETCHAINS_LWMAPOS, ASSETCHAINS_SAPLING, ASSETCHAINS_OVERWINTER;
-extern uint64_t ASSETCHAINS_SUPPLY, ASSETCHAINS_ALGO, ASSETCHAINS_EQUIHASH, ASSETCHAINS_VERUSHASH;
 
 const arith_uint256 maxUint = UintToArith256(uint256S("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
 
@@ -92,7 +102,7 @@ public:
 
         strNetworkID = "main";
         strCurrencyUnits = "KMD";
-        bip44CoinType = 133; // As registered in https://github.com/satoshilabs/slips/blob/master/slip-0044.md (ZCASH, should be VRSC)
+        bip44CoinType = 141; // As registered in https://github.com/satoshilabs/slips/blob/master/slip-0044.md 
         consensus.fCoinbaseMustBeProtected = false; // true this is only true wuth Verus and enforced after block 12800
         consensus.nSubsidySlowStartInterval = 20000;
         consensus.nSubsidyHalvingInterval = 840000;
@@ -215,11 +225,32 @@ void CChainParams::SetCheckpointData(CChainParams::CCheckpointData checkpointDat
     CChainParams::checkpointData = checkpointData;
 }
 
+/*
+ To change the max block size, all that needs to be updated is the #define _MAX_BLOCK_SIZE in utils.h
+ 
+ However, doing that without any other changes will allow forking non-updated nodes by creating a larger block. So, make sure to height activate the new blocksize properly.
+ 
+ Assuming it is 8MB, then:
+ #define _OLD_MAX_BLOCK_SIZE (4096 * 1024)
+ #define _MAX_BLOCK_SIZE (2 * 4096 * 1024)
+ 
+ change the body of if:
+ {
+    if ( height < saplinght+1000000 ) // activates 8MB blocks 1 million blocks after saplinght
+        return(_OLD_MAX_BLOCK_SIZE);
+    else return(_MAX_BLOCK_SIZE);
+ }
+
+*/
+
 int32_t MAX_BLOCK_SIZE(int32_t height)
 {
+    int32_t saplinght = mainParams.consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight;
     //fprintf(stderr,"MAX_BLOCK_SIZE %d vs. %d\n",height,mainParams.consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight);
-    if ( height <= 0 || (mainParams.consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight > 0 && height >= mainParams.consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight) )
-        return(4096 * 1024);
+    if ( height <= 0 || (saplinght > 0 && height >= saplinght) )
+    {
+        return(_MAX_BLOCK_SIZE);
+    }
     else return(2000000);
 }
 
