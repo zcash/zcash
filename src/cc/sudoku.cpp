@@ -2555,13 +2555,13 @@ int32_t sudoku_captcha(uint32_t timestamps[81],int32_t height)
             }
             variance /= (n - 1);
             printf("solvetime.%d n.%d avetime.%d variance.%llu vs ave2 %d\n",solvetime,n,avetime,(long long)variance,avetime*avetime);
-            if ( variance < avetime*avetime )
-                return(-1 * 0);
+            if ( variance < avetime )
+                retval = -5;
             else return(0);
         }
-    } else retval = -5;
+    } else retval = -6;
     if ( retval != 0 )
-        fprintf(stderr,"retval.%d\n",retval);
+        fprintf(stderr,"ERR >>>>>>>>>>>>>>> ht.%d retval.%d\n",height,retval);
     if ( height < 2000 )
         return(0);
     else return(retval);
@@ -2961,7 +2961,7 @@ int32_t sudoku_minval(uint32_t timestamps[81])
 bool sudoku_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx)
 {
     static char laststr[512];
-    CScript scriptPubKey; std::vector<uint8_t> vopret; uint8_t *script,e,f,funcid; int32_t i,ind,errflag,dispflag,score,numvouts; char unsolved[82],solution[82],str[512]; uint32_t lasttime,timestamps[81]; CTransaction vintx; uint256 hashBlock;
+    CScript scriptPubKey; std::vector<uint8_t> vopret; uint8_t *script,e,f,funcid; int32_t i,ind,errflag,dispflag,score,numvouts; char unsolved[82],solution[82],str[512]; uint32_t timestamps[81]; CTransaction vintx; uint256 hashBlock;
     if ( (numvouts= tx.vout.size()) > 1 )
     {
         scriptPubKey = tx.vout[numvouts-1].scriptPubKey;
@@ -2997,7 +2997,7 @@ bool sudoku_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const 
                         if ( strcmp(str,laststr) != 0 )
                         {
                             strcpy(laststr,str);
-                            fprintf(stderr,"\n%s\n",str);
+                            fprintf(stderr,"%s\n",str);
                             dispflag = 1;
                         } else dispflag = 0;
                         if ( sudoku_solutionopreturndecode(solution,timestamps,scriptPubKey) == 'S' )
@@ -3008,7 +3008,7 @@ bool sudoku_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const 
                                 {
                                     for (i=errflag=0; i<81; i++)
                                     {
-                                        if ( dispflag != 0 )
+                                        if ( 0 && dispflag != 0 )
                                             fprintf(stderr,"%u ",timestamps[i]);
                                         if ( (timestamps[i] != 0 && unsolved[i] >= '1' && unsolved[i] <= '9') || (timestamps[i] == 0 && (unsolved[i] < '1' || unsolved[i] > '9')) )
                                             errflag++;
@@ -3030,7 +3030,7 @@ bool sudoku_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const 
                                         fprintf(stderr,"%s score.%d %s\n",solution,score,unsolved);
                                     if ( sudoku_captcha(timestamps,height) < 0 )
                                         return eval->Invalid("failed captcha");
-                                    for (i=lasttime=0; i<81; i++)
+                                    /*for (i=lasttime=0; i<81; i++)
                                     {
                                         if ( (ind= sudoku_minval(timestamps)) >= 0 )
                                         {
@@ -3046,7 +3046,7 @@ bool sudoku_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const 
                                         } else break;
                                     }
                                     if ( dispflag != 0 )
-                                        fprintf(stderr,"scores convergence\n");
+                                        fprintf(stderr,"scores convergence\n");*/
                                     return(true);
                                 } else return eval->Invalid("invalid solution opret");
                             }
