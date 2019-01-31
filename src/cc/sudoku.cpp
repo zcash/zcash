@@ -2586,6 +2586,35 @@ CScript sudoku_solutionopret(char *solution,uint32_t timestamps[81])
     return(opret);
 }
 
+uint8_t sudoku_solutionopreturndecode(char solution[82],uint32_t timestamps[81],CScript scriptPubKey)
+{
+    std::vector<uint8_t> vopret; uint8_t *script,e,f; std::string str; std::vector<uint8_t> data; int32_t i,ind; uint32_t x;
+    GetOpReturnData(scriptPubKey,vopret);
+    script = (uint8_t *)vopret.data();
+    if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> str; ss >> data) != 0 && e == EVAL_SUDOKU && f == 'S' )
+    {
+        if ( data.size() == 81*sizeof(uint32_t) && strlen(solution) == 81 )
+        {
+            for (i=ind=0; i<81; i++)
+            {
+                if ( solution[i] < '1' || solution[i] > '9' )
+                    break;
+                x = data[ind++];
+                x <<= 8, x |= (data[ind++] & 0xff);
+                x <<= 8, x |= (data[ind++] & 0xff);
+                x <<= 8, x |= (data[ind++] & 0xff);
+                timestamps[i] = x;
+            }
+            if ( i == 81 )
+            {
+                strcpy(solution,str.c_str());
+                return(f);
+            }
+        }
+    }
+    return(0);
+}
+
 uint8_t sudoku_genopreturndecode(char *unsolved,CScript scriptPubKey)
 {
     std::vector<uint8_t> vopret; uint8_t *script,e,f; std::vector<uint8_t> data; int32_t i;
@@ -2915,7 +2944,7 @@ UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
 
 bool sudoku_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx)
 {
-    CScript scriptPubKey; std::vector<uint8_t> vopret; uint8_t *script,e,f,funcid; int32_t score,numvouts; char unsolved[82];
+    CScript scriptPubKey; std::vector<uint8_t> vopret; uint8_t *script,e,f,funcid; int32_t score,numvouts; char unsolved[82],solution[82]; uint32_t timestamps[81];
     if ( (numvouts= tx.vout.size()) > 1 )
     {
         scriptPubKey = tx.vout[numvouts-1].scriptPubKey;
@@ -2936,12 +2965,19 @@ bool sudoku_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const 
                                 fprintf(stderr,"ht.%d score.%d vs %.8f %s\n",height,score,(double)tx.vout[1].nValue/COIN,tx.GetHash().ToString().c_str());
                                 if ( height > 2000 )
                                     return eval->Invalid("mismatched sudoku value vs score");
-                            }
+                            } else return(true);
                         }
-                        return(true);
+                        return eval->Invalid("invalid generate opreturn");
                     case 'S':
                         fprintf(stderr,"SOLVED ht.%d %.8f %s\n",height,(double)tx.vout[0].nValue/COIN,tx.GetHash().ToString().c_str());
-                        return(true);
+                        if ( sudoku_solutionopreturndecode(solution,timestamps,scriptPubKey) == 'S' )
+                        {
+                            for (i=0; i<81; i++)
+                                fprintf(stderr,"%u ",timestamps[i]);
+                            fprintf(stderr,"%s\n",solution);
+                            return(true);
+                        }
+                        return eval->Invalid("invalid solution opreturn");
                     default: return eval->Invalid("invalid funcid");
                 }
             } else return eval->Invalid("invalid evalcode");
