@@ -2517,7 +2517,7 @@ void sudoku_gen(uint8_t key32[32],uint8_t unsolved[9][9],uint32_t srandi)
  cclib solution 17 \"[%224d50336780d5a300a1f01b12fe36f46a82f3b9935bb115e01e0113dc4f337aae%22,%22234791685716258943589643712865934127341827596927516438492375861178462359653189274%22,0,0,1548859143,1548859146,0,1548859146,0,1548859148,1548859149,0,1548859151,1548859152,0,1548859154,1548859155,1548859158,1548859159,0,0,0,1548859161,1548859163,0,1548859164,1548859168,0,1548859168,1548859170,1548859172,1548859172,1548859175,0,0,1548859176,0,0,1548859178,1548859178,0,0,1548859180,1548859181,1548859183,1548859184,1548859185,1548859186,1548859188,1548859190,1548859191,1548859192,1548859192,0,0,1548859195,1548859196,1548859197,1548859198,0,0,1548859199,1548859202,1548859202,0,1548859204,1548859205,1548859206,1548859209,1548859210,1548859211,1548859212,0,1548859214,1548859216,0,1548859217,1548859218,1548859219,1548859220,0,1548859222,1548859222]\"
  */
 
-int32_t sudoku_captcha(uint32_t timestamps[81])
+int32_t sudoku_captcha(uint32_t timestamps[81],int32_t height)
 {
     int32_t i,solvetime,diff,avetime,n = 0; uint64_t variance = 0; std::vector<uint32_t> list;
     for (i=0; i<81; i++)
@@ -2858,7 +2858,7 @@ UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
                     result.push_back(Pair("sudokuaddr",CCaddr));
                     balance = CCaddress_balance(CCaddr);
                     result.push_back(Pair("amount",ValueFromAmount(balance)));
-                    if ( sudoku_captcha(timestamps) < 0 )
+                    if ( sudoku_captcha(timestamps,komodo_nextheight()) < 0 )
                     {
                         result.push_back(Pair("result","error"));
                         result.push_back(Pair("error","captcha failure"));
@@ -2975,11 +2975,11 @@ bool sudoku_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const 
                         fprintf(stderr,"height.%d txid.%s\n",height,tx.GetHash().ToString().c_str());
                         return eval->Invalid("invalid generate opreturn");
                     case 'S':
-                        sprintf(str,"SOLVED ht.%d %.8f %s\n",height,(double)tx.vout[0].nValue/COIN,tx.GetHash().ToString().c_str());
+                        sprintf(str,"SOLVED ht.%d %.8f %s",height,(double)tx.vout[0].nValue/COIN,tx.GetHash().ToString().c_str());
                         if ( strcmp(str,laststr) != 0 )
                         {
                             strcpy(laststr,str);
-                            fprintf(stderr,"%s\n",str);
+                            fprintf(stderr,"\n%s\n",str);
                             dispflag = 1;
                         } else dispflag = 0;
                         if ( sudoku_solutionopreturndecode(solution,timestamps,scriptPubKey) == 'S' )
@@ -2989,6 +2989,8 @@ bool sudoku_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const 
                                 for (i=0; i<81; i++)
                                     fprintf(stderr,"%u ",timestamps[i]);
                                 fprintf(stderr,"%s\n",solution);
+                                if ( sudoku_captcha(timestamps,height) < 0 )
+                                    return eval->Invalid("failed captcha");
                             }
                             return(true);
                         }
