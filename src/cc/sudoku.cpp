@@ -2945,12 +2945,16 @@ UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
     return(result);
 }
 
-sudoku_minval(uint32_t timestamps[81])
+int32_t sudoku_minval(uint32_t timestamps[81])
 {
     int32_t i,ind = -1; uint32_t mintimestamp = 0xffffffff;
     for (i=0; i<81; i++)
         if ( timestamps[i] != 0 && timestamps[i] < mintimestamp )
+        {
             mintimestamp = timestamps[i], ind = i;
+            fprintf(stderr,"%d ",i);
+        }
+    fprintf(stderr,"mintimestamp.%u\n",mintimestamp);
     return(ind);
 }
 
