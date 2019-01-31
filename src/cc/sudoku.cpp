@@ -2967,6 +2967,8 @@ bool sudoku_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const 
                                     return eval->Invalid("mismatched sudoku value vs score");
                             } else return(true);
                         }
+                        else if ( height == 123 ) // early version invalid gen
+                            return(true);
                         return eval->Invalid("invalid generate opreturn");
                     case 'S':
                         fprintf(stderr,"SOLVED ht.%d %.8f %s\n",height,(double)tx.vout[0].nValue/COIN,tx.GetHash().ToString().c_str());
