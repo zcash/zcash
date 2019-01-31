@@ -2948,7 +2948,7 @@ UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
 bool sudoku_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx)
 {
     static char laststr[512];
-    CScript scriptPubKey; std::vector<uint8_t> vopret; uint8_t *script,e,f,funcid; int32_t i,dispflag,score,numvouts; char unsolved[82],solution[82],str[512]; uint32_t timestamps[81];
+    CScript scriptPubKey; std::vector<uint8_t> vopret; uint8_t *script,e,f,funcid; int32_t i,dispflag,score,numvouts; char unsolved[82],solution[82],str[512]; uint32_t timestamps[81]; CTransaction vintx; uint256 hashBlock;
     if ( (numvouts= tx.vout.size()) > 1 )
     {
         scriptPubKey = tx.vout[numvouts-1].scriptPubKey;
@@ -2989,15 +2989,33 @@ bool sudoku_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const 
                         } else dispflag = 0;
                         if ( sudoku_solutionopreturndecode(solution,timestamps,scriptPubKey) == 'S' )
                         {
-                            if ( dispflag != 0 )
+                            if ( tx.vin.size() > 1 && tx.vin[0].prevout.hash == tx.vin[1].prevout.hash && tx.vin[0].prevout.n == 0 && tx.vin[1].prevout.n == 1 && myGetTransaction(tx.vin[0].prevout.hash,vintx,hashBlock) != 0 )
                             {
-                                for (i=0; i<81; i++)
-                                    fprintf(stderr,"%u ",timestamps[i]);
-                                fprintf(stderr,"%s\n",solution);
-                                if ( sudoku_captcha(timestamps,height) < 0 )
-                                    return eval->Invalid("failed captcha");
-                            }
-                            return(true);
+                                if ( vintx.vout.size() > 1 && sudoku_genopreturndecode(unsolved,vintx.vout[vintx.vout.size()-1].scriptPubKey) == 'G' )
+                                {
+                                    if ( dispflag != 0 )
+                                    {
+                                        for (i=0; i<81; i++)
+                                        {
+                                            fprintf(stderr,"%u ",timestamps[i]);
+                                            if ( (timestamps[i] == 0 && unsolved[i] >= '1' && unsolved[i] <= '9') || (timestamps[i] != 0 && (unsolved[i] < '1' || unsolved[i] > '9')) )
+                                            {
+                                                fprintf(stderr,"i.%d invalid timestamp vs unsolved.[%c]\n",i,unsolved[i]);
+                                                return eval->Invalid("invalid timestamp vs unsolved");
+                                            }
+                                        }
+                                        if ( dupree_solver(0,&score,unsolved) != 1 )
+                                        {
+                                            fprintf(stderr,"non-unique sudoku at ht.%d\n",height);
+                                            return eval->Invalid("invalid sudoku with multiple solutions");
+                                        }
+                                        fprintf(stderr,"%s score.%d\n",solution,score);
+                                    }
+                                    if ( sudoku_captcha(timestamps,height) < 0 )
+                                        return eval->Invalid("failed captcha");
+                                    return(true);
+                                } else return eval->Invalid("invalid solution opret");
+                            } else return eval->Invalid("invalid solution vin");
                         }
                         fprintf(stderr,"solution ht.%d %s bad opret\n",height,tx.GetHash().ToString().c_str());
                         return eval->Invalid("invalid solution opreturn");
