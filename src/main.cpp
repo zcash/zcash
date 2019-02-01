@@ -3579,10 +3579,8 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         uint64_t notarypaycheque = komodo_checknotarypay((CBlock *)&block,(int32_t)pindex->GetHeight());
         if ( notarypaycheque > 0 )
             blockReward += notarypaycheque;
-        else if ( is_STAKED(ASSETCHAINS_SYMBOL) == 4 && IS_STAKED_NOTARY > 0 )
-            blockReward += 999999999999999; // Notaries can validate any block for now.
         else    
-            return state.DoS(100, error("ConnectBlock(): Notary Pay exceeds coinbase (actual=%d vs correct=%d)", block.vtx[0].GetValueOut(), blockReward),
+            return state.DoS(100, error("ConnectBlock(): Notary Pay exceeds the amount allowed! (actual=%d vs correct=%d)", block.vtx[0].GetValueOut(), blockReward),
                             REJECT_INVALID, "bad-cb-amount");
     }
     if (ASSETCHAINS_SYMBOL[0] != 0 && pindex->GetHeight() == 1 && block.vtx[0].GetValueOut() != blockReward)
@@ -3648,7 +3646,8 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     {    
         printf("VALID NOTARISATION connect block.%i tx.%i\n",pindex->GetHeight(),notarisationTx);
         if ( notarisationTx != 1 )
-            printf("INVALID: notarisation tx is not in vtx[1].\n");
+            return state.DoS(100, error("ConnectBlock(): Notarisation is not in TX position 1! Invalid Block!"),
+                        REJECT_INVALID, "bad-notarization-position");
     }
 
     if (fTxIndex)

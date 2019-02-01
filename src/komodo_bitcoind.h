@@ -1775,6 +1775,7 @@ bool verusCheckPOSBlock(int32_t slowflag, CBlock *pblock, int32_t height)
 uint64_t komodo_notarypay(CMutableTransaction &txNew, std::vector<int8_t> &NotarisationNotaries, uint32_t timestamp)
 {
     // fetch notary pubkey array.
+    // Need a better/safer way for notaries era, should really be height based rather than timestamp? 
     uint64_t total = 0;
     int32_t staked_era; int8_t numSN;
     uint8_t staked_pubkeys[64][33];
@@ -1783,6 +1784,7 @@ uint64_t komodo_notarypay(CMutableTransaction &txNew, std::vector<int8_t> &Notar
     // resize coinbase vouts to number of notary nodes +1 for coinbase itself.
     txNew.vout.resize(NotarisationNotaries.size()+1);
     // loop over notarisation vins and add transaction to coinbase.
+    // Commented prints here can be used to verify manually the pubkeys match.
     for (int8_t n = 0; n < NotarisationNotaries.size(); n++) 
     {
         uint8_t *ptr;
@@ -1796,7 +1798,7 @@ uint64_t komodo_notarypay(CMutableTransaction &txNew, std::vector<int8_t> &Notar
         }
         ptr[34] = OP_CHECKSIG;
         //fprintf(stderr," set notary %i PUBKEY33 into vout[%i]\n",NotarisationNotaries[n],n+1);
-        txNew.vout[n+1].nValue = ASSETCHAINS_NOTARY_PAY; // ASSETCHAINS_NOTARY_PAY
+        txNew.vout[n+1].nValue = ASSETCHAINS_NOTARY_PAY;
         total += txNew.vout[n+1].nValue;
     }
     return(total);
@@ -1812,8 +1814,7 @@ uint64_t komodo_checknotarypay(CBlock *pblock,int32_t height)
     numSN = numStakedNotaries(staked_pubkeys,staked_era);
     
     uint8_t *script; int32_t scriptlen;
-    // loop over notaries array and extract index of signers.
-    
+    // Loop notarisation, and create the coinbase tx, with the same function the miner uses.    
     BOOST_FOREACH(const CTxIn& txin, pblock->vtx[1].vin)
     {
         uint256 hash; CTransaction tx1;
@@ -1836,6 +1837,7 @@ uint64_t komodo_checknotarypay(CBlock *pblock,int32_t height)
     int8_t n = 0, i = 0, matches = 0;
     uint64_t total = 0;
     //fprintf(stderr, "txNew.vout size = %li\n",txNew.vout.size());
+    // Check the created coinbase is equal to the coinbase the miner submitted in the block.
     BOOST_FOREACH(const CTxOut& txout, txNew.vout)
     {
         if ( n == 0 )
@@ -1845,7 +1847,6 @@ uint64_t komodo_checknotarypay(CBlock *pblock,int32_t height)
         }
         script = (uint8_t *)&txout.scriptPubKey[0];
         scriptlen = (int32_t)txout.scriptPubKey.size();
-        // ASSETCHAINS_NOTARY_PAY = nValue!
         if ( txout.nValue == ASSETCHAINS_NOTARY_PAY && scriptlen == 35 && script[0] == 33 && script[34] == OP_CHECKSIG && memcmp(script+1,staked_pubkeys[NotarisationNotaries[n-1]],33) == 0 )
         {
             matches++;
@@ -2047,25 +2048,25 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
         if ( slowflag != 0 && komodo_checknotarypay(pblock,height) < 0 )
         {   
             fprintf(stderr, "Komodo notary pay validation failed.%i\n",height);
-            return(0); // skip validation
+            return(-1);
         }
         else 
         {
-            // Check the notarisation tx is to the crypto address and meets min sigs.
+            // Check the notarisation tx is to the crypto address.
             if ( !komodo_is_notarytx(pblock->vtx[1]) == 1 )
             {
                 fprintf(stderr, "notarisation is not to crypto address.%i\n",height);
-                return(0); // skip validatiuon
+                return(-1); 
             }
             // Check min sigs.
             if ( pblock->vtx[1].vin.size() < (num_notaries_STAKED[STAKED_era(pblock->nTime)]/5) )
             {
-                fprintf(stderr, "block does not meet minsigs .%i\n",height);
-                return(0); // skip validation 
+                fprintf(stderr, "block notarization does not meet minsigs .%i\n",height);
+                return(-1);
             }
         }
     }
-                
+
 //fprintf(stderr,"komodo_checkPOW possible.%d slowflag.%d ht.%d notaryid.%d failed.%d\n",possible,slowflag,height,notaryid,failed);
     if ( failed != 0 && possible == 0 && notaryid < 0 )
         return(-1);
