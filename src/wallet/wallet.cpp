@@ -189,6 +189,7 @@ bool CWallet::AddSaplingIncomingViewingKey(
         return false;
     }
 
+    nTimeFirstKey = 1; // No birthday information for viewing keys.
     if (!fFileBacked) {
         return true;
     }
@@ -1453,26 +1454,29 @@ void CWallet::UpdateSaplingNullifierNoteMapWithTx(CWalletTx& wtx) {
         }
         else {
             uint64_t position = nd.witnesses.front().position();
-            SaplingFullViewingKey fvk = mapSaplingFullViewingKeys.at(nd.ivk);
-            OutputDescription output = wtx.vShieldedOutput[op.n];
-            auto optPlaintext = SaplingNotePlaintext::decrypt(output.encCiphertext, nd.ivk, output.ephemeralKey, output.cm);
-            if (!optPlaintext) {
-                // An item in mapSaplingNoteData must have already been successfully decrypted,
-                // otherwise the item would not exist in the first place.
-                assert(false);
+            // Skip if we only have incoming viewing key
+            if (mapSaplingFullViewingKeys.count(nd.ivk) != 0) {
+                SaplingFullViewingKey fvk = mapSaplingFullViewingKeys.at(nd.ivk);
+                OutputDescription output = wtx.vShieldedOutput[op.n];
+                auto optPlaintext = SaplingNotePlaintext::decrypt(output.encCiphertext, nd.ivk, output.ephemeralKey, output.cm);
+                if (!optPlaintext) {
+                    // An item in mapSaplingNoteData must have already been successfully decrypted,
+                    // otherwise the item would not exist in the first place.
+                    assert(false);
+                }
+                auto optNote = optPlaintext.get().note(nd.ivk);
+                if (!optNote) {
+                    assert(false);
+                }
+                auto optNullifier = optNote.get().nullifier(fvk, position);
+                if (!optNullifier) {
+                    // This should not happen.  If it does, maybe the position has been corrupted or miscalculated?
+                    assert(false);
+                }
+                uint256 nullifier = optNullifier.get();
+                mapSaplingNullifiersToNotes[nullifier] = op;
+                item.second.nullifier = nullifier;
             }
-            auto optNote = optPlaintext.get().note(nd.ivk);
-            if (!optNote) {
-                assert(false);
-            }
-            auto optNullifier = optNote.get().nullifier(fvk, position);
-            if (!optNullifier) {
-                // This should not happen.  If it does, maybe the position has been corrupted or miscalculated?
-                assert(false);
-            }
-            uint256 nullifier = optNullifier.get();
-            mapSaplingNullifiersToNotes[nullifier] = op;
-            item.second.nullifier = nullifier;
         }
     }
 }
@@ -1852,23 +1856,40 @@ std::pair<mapSaplingNoteData_t, SaplingIncomingViewingKeyMap> CWallet::FindMySap
     // Protocol Spec: 4.19 Block Chain Scanning (Sapling)
     for (uint32_t i = 0; i < tx.vShieldedOutput.size(); ++i) {
         const OutputDescription output = tx.vShieldedOutput[i];
+        bool found = false;
         for (auto it = mapSaplingFullViewingKeys.begin(); it != mapSaplingFullViewingKeys.end(); ++it) {
             SaplingIncomingViewingKey ivk = it->first;
             auto result = SaplingNotePlaintext::decrypt(output.encCiphertext, ivk, output.ephemeralKey, output.cm);
-            if (!result) {
-                continue;
+            if (result) {
+                auto address = ivk.address(result.get().d);
+                if (address && mapSaplingIncomingViewingKeys.count(address.get()) == 0) {
+                    viewingKeysToAdd[address.get()] = ivk;
+                }
+                // We don't cache the nullifier here as computing it requires knowledge of the note position
+                // in the commitment tree, which can only be determined when the transaction has been mined.
+                SaplingOutPoint op {hash, i};
+                SaplingNoteData nd;
+                nd.ivk = ivk;
+                noteData.insert(std::make_pair(op, nd));
+                found = true;
+                break;
             }
-            auto address = ivk.address(result.get().d);
-            if (address && mapSaplingIncomingViewingKeys.count(address.get()) == 0) {
-                viewingKeysToAdd[address.get()] = ivk;
+        }
+        if (!found) {
+            for (auto it = mapSaplingIncomingViewingKeys.begin(); it != mapSaplingIncomingViewingKeys.end(); ++it) {
+                SaplingIncomingViewingKey ivk = it-> second;
+                auto result = SaplingNotePlaintext::decrypt(output.encCiphertext, ivk, output.ephemeralKey, output.cm);
+                if (!result) {
+                    continue;
+                }
+                // We don't cache the nullifier here as computing it requires knowledge of the note position
+                // in the commitment tree, which can only be determined when the transaction has been mined.
+                SaplingOutPoint op {hash, i};
+                SaplingNoteData nd;
+                nd.ivk = ivk;
+                noteData.insert(std::make_pair(op, nd));
+                break;
             }
-            // We don't cache the nullifier here as computing it requires knowledge of the note position
-            // in the commitment tree, which can only be determined when the transaction has been mined.
-            SaplingOutPoint op {hash, i};
-            SaplingNoteData nd;
-            nd.ivk = ivk;
-            noteData.insert(std::make_pair(op, nd));
-            break;
         }
     }
 
@@ -4641,6 +4662,22 @@ void CWallet::GetFilteredNotes(
 //
 // Shielded key and address generalizations
 //
+
+bool IncomingViewingKeyBelongsToWallet::operator()(const libzcash::SproutPaymentAddress &zaddr) const
+{
+    return m_wallet->HaveSproutViewingKey(zaddr);
+}
+
+bool IncomingViewingKeyBelongsToWallet::operator()(const libzcash::SaplingPaymentAddress &zaddr) const
+{
+    libzcash::SaplingIncomingViewingKey ivk;
+    return m_wallet->GetSaplingIncomingViewingKey(zaddr, ivk);
+}
+
+bool IncomingViewingKeyBelongsToWallet::operator()(const libzcash::InvalidEncoding& no) const
+{
+    return false;
+}
 
 bool PaymentAddressBelongsToWallet::operator()(const libzcash::SproutPaymentAddress &zaddr) const
 {

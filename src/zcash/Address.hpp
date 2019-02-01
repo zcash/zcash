@@ -219,7 +219,7 @@ public:
 };
 
 typedef boost::variant<InvalidEncoding, SproutPaymentAddress, SaplingPaymentAddress> PaymentAddress;
-typedef boost::variant<InvalidEncoding, SproutViewingKey> ViewingKey;
+typedef boost::variant<InvalidEncoding, SproutViewingKey, SaplingIncomingViewingKey> ViewingKey;
 
 }
 

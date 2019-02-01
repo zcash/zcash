@@ -66,6 +66,7 @@ testScripts=(
     'disablewallet.py'
     'zcjoinsplit.py'
     'zcjoinsplitdoublespend.py'
+    'ivk_import_export.py'
     'zkey_import_export.py'
     'reorg_limit.py'
     'getblocktemplate.py'
