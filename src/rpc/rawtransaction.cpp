@@ -1060,6 +1060,75 @@ UniValue sendrawtransaction(const UniValue& params, bool fHelp)
     return hashTx.GetHex();
 }
 
+UniValue z_readstring(const UniValue& params, bool fHelp)
+{
+    if (fHelp || params.size() != 1)
+        throw runtime_error(
+            "z_readstring \"txid\"\n"
+            "\nNOTE: By default this function only works sometimes. This is when the tx is in the mempool\n"
+            "or there is an unspent output in the utxo for this transaction. To make it always work,\n"
+            "you need to maintain a transaction index, using the -txindex command line option.\n"
+            "\nReturn the string embedded into the transaction with z_embedstring (as a json object).\n"
+
+            "\nArguments:\n"
+            "1. \"txid\"      (string, required) The transaction id\n"
+
+
+            "\nResult:\n"
+            "\"embedded-string\"                  (string) The embedded string.\n"
+
+            "\nExamples:\n"
+            + HelpExampleCli("z_readstring", "\"mytxid\"")
+        );
+
+    LOCK(cs_main);
+
+    uint256 hash = ParseHashV(params[0], "parameter 1");
+
+    CTransaction tx;
+    uint256 hashBlock;
+    if (!GetTransaction(hash, tx, hashBlock, true))
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "No information available about transaction");
+
+    UniValue bad_txn = JSONRPCError(RPC_INVALID_PARAMETER, "It doesn't look like this transaction was created with z_embedstring.");
+
+    if (tx.vout.size() < 1 || tx.vjoinsplit.size() > 0) {
+        throw bad_txn;
+    }
+
+    // Find the first script beginning with OP_RETURN.
+    for (size_t i = 0; i < tx.vout.size(); i++) {
+        CScript script = tx.vout[i].scriptPubKey;
+        opcodetype opcode;
+        std::vector<unsigned char> vch;
+        CScript::const_iterator pc = script.begin();
+
+        if (!script.GetOp(pc, opcode, vch)) {
+            throw bad_txn;
+        }
+        if (opcode == OP_RETURN) {
+            // Next should come the embedded string.
+            if (!script.GetOp(pc, opcode, vch)) {
+                throw bad_txn;
+            }
+            if (opcode < 0 || opcode > OP_PUSHDATA4) {
+                throw bad_txn;
+            }
+
+            // Make sure there there's nothing else after the embedded string.
+            if (pc < script.end()) {
+                throw bad_txn;
+            }
+            return std::string(vch.begin(), vch.end());
+        }
+    }
+
+    // Didn't find an OP_RETURN.
+    throw bad_txn;
+}
+
+
+
 static const CRPCCommand commands[] =
 { //  category              name                      actor (function)         okSafeMode
   //  --------------------- ------------------------  -----------------------  ----------
@@ -1068,6 +1137,7 @@ static const CRPCCommand commands[] =
     { "rawtransactions",    "decoderawtransaction",   &decoderawtransaction,   true  },
     { "rawtransactions",    "decodescript",           &decodescript,           true  },
     { "rawtransactions",    "sendrawtransaction",     &sendrawtransaction,     false },
+    { "rawtransactions",    "z_readstring",           &z_readstring,           false },
     { "rawtransactions",    "signrawtransaction",     &signrawtransaction,     false }, /* uses wallet if enabled */
 
     { "blockchain",         "gettxoutproof",          &gettxoutproof,          true  },
