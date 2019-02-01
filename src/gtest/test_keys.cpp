@@ -44,5 +44,19 @@ TEST(Keys, EncodeAndDecodeSapling)
             auto addr2 = boost::get<libzcash::SaplingPaymentAddress>(paymentaddr2);
             EXPECT_EQ(addr, addr2);
         }
+        {
+            auto ivk = sk.ToXFVK().fvk.in_viewing_key();
+            std::string ivk_string = EncodeViewingKey(ivk);
+            EXPECT_EQ(
+                ivk_string.substr(0, 5),
+                Params().Bech32HRP(CChainParams::SAPLING_INCOMING_VIEWING_KEY));
+
+            auto viewing_key = DecodeViewingKey(ivk_string);
+            EXPECT_TRUE(IsValidViewingKey(viewing_key));
+
+            auto ivk2 = boost::get<libzcash::SaplingIncomingViewingKey>(&viewing_key);
+            ASSERT_TRUE(ivk2 != nullptr);
+            EXPECT_EQ(*ivk2, ivk);
+        }
     }
 }
