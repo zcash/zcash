@@ -29,9 +29,16 @@
 
 #define FAUCET2SIZE COIN
 #define EVAL_FAUCET2 EVAL_FIRSTUSER
-#define EVAL_SUDOKU 17
 
+#ifdef BUILD_ROGUE
+#define EVAL_ROGUE 17
+std::string MYCCLIBNAME = (char *)"rogue";
+#else
+
+#define EVAL_SUDOKU 17
 std::string MYCCLIBNAME = (char *)"sudoku";
+#endif
+
 char *CClib_name() { return((char *)MYCCLIBNAME.c_str()); }
 
 struct CClib_rpcinfo
@@ -44,23 +51,34 @@ CClib_methods[] =
 {
     { (char *)"faucet2", (char *)"fund", (char *)"amount", 1, 1, 'F', EVAL_FAUCET2 },
     { (char *)"faucet2", (char *)"get", (char *)"<no args>", 0, 0, 'G', EVAL_FAUCET2 },
+#ifdef BUILD_ROGUE
+#else
     { (char *)"sudoku", (char *)"gen", (char *)"<no args>", 0, 0, 'G', EVAL_SUDOKU },
     { (char *)"sudoku", (char *)"txidinfo", (char *)"txid", 1, 1, 'T', EVAL_SUDOKU },
     { (char *)"sudoku", (char *)"pending", (char *)"<no args>", 0, 0, 'U', EVAL_SUDOKU },
     { (char *)"sudoku", (char *)"solution", (char *)"txid solution timestamps[81]", 83, 83, 'S', EVAL_SUDOKU },
+#endif
 };
 
 std::string CClib_rawtxgen(struct CCcontract_info *cp,uint8_t funcid,cJSON *params);
 
+#ifdef BUILD_ROGUE
+#else
 bool sudoku_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx);
 UniValue sudoku_txidinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue sudoku_generate(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue sudoku_pending(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+#endif
 
 UniValue CClib_method(struct CCcontract_info *cp,char *method,cJSON *params)
 {
     UniValue result(UniValue::VOBJ); uint64_t txfee = 10000;
+#ifdef BUILD_ROGUE
+    if ( cp->evalcode == EVAL_ROGUE )
+    {
+    }
+#else
     if ( cp->evalcode == EVAL_SUDOKU )
     {
         //printf("CClib_method params.%p\n",params);
@@ -80,6 +98,7 @@ UniValue CClib_method(struct CCcontract_info *cp,char *method,cJSON *params)
             return(result);
         }
     }
+#endif
     else
     {
         result.push_back(Pair("result","error"));
@@ -195,7 +214,14 @@ bool CClib_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
     int32_t numvins,numvouts,preventCCvins,preventCCvouts,i,numblocks; bool retval; uint256 txid; uint8_t hash[32]; char str[65],destaddr[64];
     std::vector<std::pair<CAddressIndexKey, CAmount> > txids;
     if ( cp->evalcode != EVAL_FAUCET2 )
+    {
+#ifdef BUILD_ROGUE
+        //return(rogue_validate(cp,height,eval,tx));
+        return(false);
+#else
         return(sudoku_validate(cp,height,eval,tx));
+#endif
+    }
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
     preventCCvins = preventCCvouts = -1;
@@ -365,5 +391,8 @@ std::string CClib_rawtxgen(struct CCcontract_info *cp,uint8_t funcid,cJSON *para
     return("");
 }
 
+#ifdef BUILD_ROGUE
+#else
 #include "sudoku.cpp"
+#endif
 
