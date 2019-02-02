@@ -412,6 +412,7 @@ std::string CClib_rawtxgen(struct CCcontract_info *cp,uint8_t funcid,cJSON *para
 #include "rogue/daemons.c"
 #include "rogue/fight.c"
 #include "rogue/init.c"
+xx
 #include "rogue/io.c"
 #include "rogue/list.c"
 #include "rogue/mach_dep.c"
