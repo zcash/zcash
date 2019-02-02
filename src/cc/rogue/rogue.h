@@ -319,7 +319,7 @@ struct rogue_state
     char *keystrokes;
     uint32_t needflush,replaydone;
     int32_t numkeys,ind,num,guiflag,counter;
-    char buffered[8192];
+    char buffered[512];
 };
 
 int rogue(int argc, char **argv, char **envp);
