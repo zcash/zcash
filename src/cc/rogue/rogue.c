@@ -410,9 +410,9 @@ playit(struct rogue_state *rs)
                 if ( flushkeystrokes(rs) == 0 )
                     rs->needflush = 0;
             }
-            if ( rs->didquit != 0 )
-                my_exit(0);
         }
+        if ( rs->didquit != 0 )
+            my_exit(0);
     }
     endit(0);
 }
@@ -445,7 +445,9 @@ quit(int sig)
         move(LINES - 1, 0);
         refresh();
         score(purse, 1, 0);
-        rs->didquit = (uint32_t)time(NULL);
+        flushkeystrokes(rs);
+        //rs->didquit = (uint32_t)time(NULL);
+        my_exit(0);
     }
     else
     {
