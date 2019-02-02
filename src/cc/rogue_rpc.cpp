@@ -148,7 +148,7 @@ UniValue rogue_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 
 UniValue rogue_txidinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ); int32_t numvouts; char CCaddr[64],str[65],*txidstr; uint256 txid,hashBlock; CTransaction tx; uint64_t buyin; CBlockIndex *pindex;
+    UniValue result(UniValue::VOBJ); int32_t numvouts; char CCaddr[64],str[65],*txidstr; uint256 txid,hashBlock; CTransaction tx; int64_t buyin; CBlockIndex *pindex;
     if ( params != 0 )
     {
         result.push_back(Pair("result","success"));
