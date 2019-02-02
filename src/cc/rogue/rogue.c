@@ -110,6 +110,8 @@ long get_filesize(FILE *fp)
 int32_t rogue_replay(uint64_t seed)
 {
     FILE *fp; char fname[1024]; char *keystrokes = 0; long num=0,fsize; int32_t i,counter = 0; struct rogue_state *rs;
+    if ( seed == 0 )
+        seed = 777;
     while ( 1 )
     {
         roguefname(fname,seed,counter);
