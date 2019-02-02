@@ -317,7 +317,7 @@ struct rogue_state
 {
     uint64_t seed;
     char *keystrokes;
-    uint32_t needflush,replaydone,didquit;
+    uint32_t needflush,replaydone;
     int32_t numkeys,ind,num,guiflag,counter;
     char buffered[512];
 };
