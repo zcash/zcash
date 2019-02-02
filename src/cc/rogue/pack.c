@@ -275,11 +275,9 @@ inventory(struct rogue_state *rs,THING *list, int type)
     if (n_objs == 0)
     {
 	if (terse)
-	    msg(rs,type == 0 ? "empty handed" :
-			    "nothing appropriate");
+	    msg(rs,type == 0 ? (char *)"empty handed" : (char *)"nothing appropriate");
 	else
-	    msg(rs,type == 0 ? "you are empty handed" :
-			    "you don't have anything appropriate");
+	    msg(rs,type == 0 ? (char *)"you are empty handed" : (char *)"you don't have anything appropriate");
 	return FALSE;
     }
     end_line(rs);

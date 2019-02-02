@@ -16,7 +16,7 @@
 #include <ctype.h>
 #include "rogue.h"
 
-#define	EQSTR(a, b)	(strcmp(a, b) == 0)
+//#define	EQSTR(a, b)	(strcmp(a, b) == 0)
 
 char *h_names[] = {		/* strings for hitting */
 	" scored an excellent hit on ",
