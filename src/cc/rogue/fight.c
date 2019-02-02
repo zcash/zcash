@@ -353,7 +353,7 @@ set_mname(THING *tp)
     static char tbuf[MAXSTR] = { 't', 'h', 'e', ' ' };
 
     if (!see_monst(tp) && !on(player, SEEMONST))
-	return (terse ? "it" : "something");
+	return (terse ? (char *)"it" : (char *)"something");
     else if (on(player, ISHALU))
     {
 	move(tp->t_pos.y, tp->t_pos.x);

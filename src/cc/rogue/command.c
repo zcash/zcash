@@ -355,9 +355,9 @@ over:
 		when ']': current(rs,cur_armor, "wearing", NULL);
 		when '=':
 		    current(rs,cur_ring[LEFT], "wearing",
-					    terse ? "(L)" : "on left hand");
+					    terse ? (char *)"(L)" : (char *)"on left hand");
 		    current(rs,cur_ring[RIGHT], "wearing",
-					    terse ? "(R)" : "on right hand");
+					    terse ? (char *)"(R)" : (char *)"on right hand");
 		when '@':
 		    stat_msg = TRUE;
 		    status(rs);
@@ -784,7 +784,7 @@ norm:
     {
 	if (*guess != NULL)
 	    free(*guess);
-	*guess = malloc((unsigned int) strlen(prbuf) + 1);
+	*guess = (char *)malloc((unsigned int) strlen(prbuf) + 1);
 	strcpy(*guess, prbuf);
     }
 }

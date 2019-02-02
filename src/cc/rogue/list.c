@@ -100,7 +100,7 @@ new_item(void)
     THING *item;
 
 #ifdef MASTER
-    if ((item = calloc(1, sizeof *item)) == NULL)
+    if ((item = (THING *)calloc(1, sizeof *item)) == NULL)
 	msg(rs,"ran out of memory after %d items", total);
     else
 	total++;
