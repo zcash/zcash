@@ -348,7 +348,8 @@ check_level(struct rogue_state *rs)
 void
 chg_str(int amt)
 {
-    auto str_t comp = 0;
+    //auto
+    str_t comp;
 
     if (amt == 0)
         return;
