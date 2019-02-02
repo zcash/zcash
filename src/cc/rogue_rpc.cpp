@@ -148,7 +148,7 @@ UniValue rogue_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 
 UniValue rogue_txidinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ); int32_t numvouts; char CCaddr[64],str[65],*txidstr; uint256 txid,hashBlock; CTransaction tx; int64_t buyin; CBlockIndex *pindex;
+    UniValue result(UniValue::VOBJ); int32_t ht,numvouts; char CCaddr[64],str[65],*txidstr; uint256 txid,hashBlock; CTransaction tx; uint64_t seed; int64_t buyin; CBlockIndex *pindex;
     if ( params != 0 )
     {
         result.push_back(Pair("result","success"));
@@ -169,7 +169,22 @@ UniValue rogue_txidinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                 {
                     result.push_back(Pair("result","success"));
                     if ( (pindex= komodo_blockindex(hashBlock)) != 0 )
-                        result.push_back(Pair("height",pindex->GetHeight()));
+                    {
+                        ht = pindex->GetHeight();
+                        obj.push_back(Pair("height",ht));
+                        obj.push_back(Pair("start",ht+10));
+                        if ( komodo_nextheight() > ht+10 )
+                        {
+                            if ( (pindex= komodo_chainactive(ht+10)) != 0 )
+                            {
+                                hashBlock = pindex->GetBlockHash();
+                                obj.push_back(Pair("starthash",hashBlock.ToString().c_str()));
+                                memcpy(&seed,&hashBlock,sizeof(seed));
+                                seed &= (1LL << 62) - 1;
+                                obj.push_back(Pair("seed",(int64_t)seed));
+                            }
+                        }
+                    }
                     Getscriptaddress(CCaddr,tx.vout[1].scriptPubKey);
                     result.push_back(Pair("rogueaddr",CCaddr));
                     result.push_back(Pair("buyin",ValueFromAmount(buyin)));
