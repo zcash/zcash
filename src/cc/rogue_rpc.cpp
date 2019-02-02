@@ -16,12 +16,15 @@
 
 #include "cJSON.h"
 
+#define ROGUE_REGISTRATION 5
 
 //////////////////////// start of CClib interface
+//./komodod -ac_name=ROGUE -ac_supply=1000000 -pubkey=<yourpubkey> -addnode=5.9.102.210  -ac_cclib=rogue -ac_perc=10000000 -ac_reward=100000000 -ac_cc=60001 -ac_script=2ea22c80203d1579313abe7d8ea85f48c65ea66fc512c878c0d0e6f6d54036669de940febf8103120c008203000401cc &
+
 // cclib newgame 17
 // cclib pending 17
 // cclib txidinfo 17 \"35e99df53c981a937bfa2ce7bfb303cea0249dba34831592c140d1cb729cb19f\"
-
+// ./rogue <seed> gui -> creates keystroke files
 
 CScript rogue_newgameopret(int64_t buyin)
 {
@@ -127,6 +130,7 @@ UniValue rogue_newgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 
 UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     UniValue result(UniValue::VOBJ);
     return(result);
 }
@@ -174,10 +178,10 @@ UniValue rogue_txidinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                     {
                         ht = pindex->GetHeight();
                         result.push_back(Pair("height",ht));
-                        result.push_back(Pair("start",ht+10));
-                        if ( komodo_nextheight() > ht+10 )
+                        result.push_back(Pair("start",ht+ROGUE_REGISTRATION));
+                        if ( komodo_nextheight() > ht+ROGUE_REGISTRATION )
                         {
-                            if ( (pindex= komodo_chainactive(ht+10)) != 0 )
+                            if ( (pindex= komodo_chainactive(ht+ROGUE_REGISTRATION)) != 0 )
                             {
                                 hashBlock = pindex->GetBlockHash();
                                 result.push_back(Pair("starthash",hashBlock.ToString().c_str()));
@@ -240,10 +244,10 @@ UniValue rogue_pending(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                     {
                         ht = pindex->GetHeight();
                         obj.push_back(Pair("height",ht));
-                        obj.push_back(Pair("start",ht+10));
-                        if ( komodo_nextheight() > ht+10 )
+                        obj.push_back(Pair("start",ht+ROGUE_REGISTRATION));
+                        if ( komodo_nextheight() > ht+ROGUE_REGISTRATION )
                         {
-                            if ( (pindex= komodo_chainactive(ht+10)) != 0 )
+                            if ( (pindex= komodo_chainactive(ht+ROGUE_REGISTRATION)) != 0 )
                             {
                                 hashBlock = pindex->GetBlockHash();
                                 obj.push_back(Pair("starthash",hashBlock.ToString().c_str()));
