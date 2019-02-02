@@ -3574,14 +3574,32 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                 fprintf(stderr,"checktoshis %.8f vs %.8f numvouts %d\n",dstr(checktoshis),dstr(block.vtx[0].vout[1].nValue),(int32_t)block.vtx[0].vout.size());
         }
     }
-    if ( ASSETCHAINS_NOTARY_PAY != 0 && block.vtx[0].vout.size() > 1 )
+    bool sleepflag = false;
+    if ( ASSETCHAINS_NOTARY_PAY != 0 )
     {
-        uint64_t notarypaycheque = komodo_checknotarypay((CBlock *)&block,(int32_t)pindex->GetHeight());
-        if ( notarypaycheque > 0 )
-            blockReward += notarypaycheque;
-        else    
-            return state.DoS(100, error("ConnectBlock(): Notary Pay exceeds the amount allowed! (actual=%d vs correct=%d)", block.vtx[0].GetValueOut(), blockReward),
-                            REJECT_INVALID, "bad-cb-amount");
+        // do a full block scan to get notarisation position and to enforce 1 notarisation is in block only.
+        // if notarisation in the block, must be position 1 and the coinbase must pay notaries.
+        int notarisationTx = komodo_connectblock(true,pindex,*(CBlock *)&block);  
+        // -1 means that more than 1 notarisation is in a block, or the notarisation is not in order.
+        if ( notarisationTx == -1 )
+            return state.DoS(100, error("ConnectBlock(): Notarisation is not in TX position 1! Invalid Block!"),
+                        REJECT_INVALID, "bad-notarization-position");
+        // 1 means this block contains a valid notarisation
+        if ( notarisationTx == 1 )
+        {
+            // Check if the notaries have been paid.
+            if ( block.vtx[0].vout.size() == 1 )
+                return state.DoS(100, error("ConnectBlock(): Notary has not been paid!"),
+                                REJECT_INVALID, "bad-cb-amount");
+            // calculate the notaries compensation and validate the amounts and pubkeys are correct.
+            uint64_t notarypaycheque = komodo_checknotarypay((CBlock *)&block,(int32_t)pindex->GetHeight());
+            fprintf(stderr, "notarypaycheque.%lu\n", notarypaycheque);
+            if ( notarypaycheque > 0 )
+                blockReward += notarypaycheque;
+            else
+                return state.DoS(100, error("ConnectBlock(): Notary pay Validation Failed!"),
+                                REJECT_INVALID, "bad-cb-amount");
+        }
     }
     if (ASSETCHAINS_SYMBOL[0] != 0 && pindex->GetHeight() == 1 && block.vtx[0].GetValueOut() != blockReward)
     {
@@ -3592,6 +3610,8 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     {
         if ( ASSETCHAINS_SYMBOL[0] != 0 || pindex->GetHeight() >= KOMODO_NOTARIES_HEIGHT1 || block.vtx[0].vout[0].nValue > blockReward )
         {
+            //fprintf(stderr, "coinbase pays too much\n");
+            //sleepflag = true;
             return state.DoS(100,
                              error("ConnectBlock(): coinbase pays too much (actual=%d vs limit=%d)",
                                    block.vtx[0].GetValueOut(), blockReward),
@@ -3640,15 +3660,6 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     }
 
     ConnectNotarisations(block, pindex->GetHeight()); // MoMoM notarisation DB.
-
-    int notarisationTx = komodo_connectblock(pindex,*(CBlock *)&block);  // dPoW state update.
-    if ( ASSETCHAINS_NOTARY_PAY != 0 && notarisationTx > 0 )
-    {    
-        printf("VALID NOTARISATION connect block.%i tx.%i\n",pindex->GetHeight(),notarisationTx);
-        if ( notarisationTx != 1 )
-            return state.DoS(100, error("ConnectBlock(): Notarisation is not in TX position 1! Invalid Block!"),
-                        REJECT_INVALID, "bad-notarization-position");
-    }
 
     if (fTxIndex)
         if (!pblocktree->WriteTxIndex(vPos))
@@ -3704,6 +3715,9 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     LogPrint("bench", "    - Callbacks: %.2fms [%.2fs]\n", 0.001 * (nTime4 - nTime3), nTimeCallbacks * 0.000001);
 
     //FlushStateToDisk();
+    komodo_connectblock(false,pindex,*(CBlock *)&block);  // dPoW state update.
+    if (sleepflag)
+        sleep(30);
     return true;
 }
 

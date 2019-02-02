@@ -153,7 +153,7 @@ int32_t komodo_is_notarytx(const CTransaction& tx);
 CScript Marmara_scriptPubKey(int32_t height,CPubKey pk);
 CScript MarmaraCoinbaseOpret(uint8_t funcid,int32_t height,CPubKey pk);
 int32_t komodo_is_notarytx(const CTransaction& tx);
-uint64_t komodo_notarypay(CMutableTransaction &txNew, std::vector<int8_t> &NotarisationNotaries, uint32_t timestamp);
+uint64_t komodo_notarypay(CMutableTransaction &txNew, std::vector<int8_t> &NotarisationNotaries, uint32_t timestamp, int32_t height, uint8_t *script, int32_t len);
 
 CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32_t gpucount, bool isStake)
 {
@@ -672,14 +672,16 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
             txNew.vout[1].nValue = 0;
             // timelocks and commissions are currently incompatible due to validation complexity of the combination
         } 
-        else if ( fNotarisationBlock && ASSETCHAINS_NOTARY_PAY != 0 )
+        else if ( fNotarisationBlock && ASSETCHAINS_NOTARY_PAY != 0 && pblock->vtx[1].vout.size() == 2 && pblock->vtx[1].vout[1].nValue == 0 )
         {
-            // This block contains a valid notarisation as best as we can know. We cant check this 100% until we try to connect block.
-            // This assumes notaries are not going to collude to create invalid notarisations. 
-            // If they did this, then the block would be invalid, and all kinds of werid things will happen.
-            // We can test this, and see what happens, if its unreliable, we will need to create a CC contract.
-            uint64_t totalsats = komodo_notarypay(txNew, NotarisationNotaries, pblock->nTime);
-            fprintf(stderr, "Created notary payment coinbase totalsat.%lu\n",totalsats);
+            // Get the OP_RETURN for the notarisation
+            uint8_t *script = (uint8_t *)&pblock->vtx[1].vout[1].scriptPubKey[0];
+            int32_t scriptlen = (int32_t)pblock->vtx[1].vout[1].scriptPubKey.size();
+            if ( script[0] == OP_RETURN )
+            {
+                uint64_t totalsats = komodo_notarypay(txNew, NotarisationNotaries, pblock->nTime, nHeight, script, scriptlen);
+                fprintf(stderr, "Created notary payment coinbase totalsat.%lu\n",totalsats);
+            } else fprintf(stderr, "vout 2 of notarisation is not OP_RETURN scriptlen.%i\n", scriptlen);
         }
 
         pblock->vtx[0] = txNew;
