@@ -139,7 +139,7 @@ int32_t rogue_replay(uint64_t seed)
     }
     if ( num > 0 )
     {
-        rs = calloc(1,sizeof(*rs));
+        rs = (struct rogue_state *)calloc(1,sizeof(*rs));
         rs->seed = seed;
         rs->keystrokes = keystrokes;
         rs->numkeys = num;

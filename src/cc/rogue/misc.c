@@ -348,10 +348,10 @@ check_level(struct rogue_state *rs)
 void
 chg_str(int amt)
 {
-    auto str_t comp;
+    auto str_t comp = 0;
 
     if (amt == 0)
-	return;
+        return;
     add_str(&pstats.s_str, amt);
     comp = pstats.s_str;
     if (ISRING(LEFT, R_ADDSTR))
@@ -555,12 +555,12 @@ call_it(struct rogue_state *rs,struct obj_info *info)
     }
     else if (!info->oi_guess)
     {
-	msg(rs,terse ? "call it: " : "what do you want to call it? ");
+	msg(rs,terse ? (char *)"call it: " : (char *)"what do you want to call it? ");
 	if (get_str(rs,prbuf, stdscr) == NORM)
 	{
 	    if (info->oi_guess != NULL)
 		free(info->oi_guess);
-	    info->oi_guess = malloc((unsigned int) strlen(prbuf) + 1);
+	    info->oi_guess = (char *)malloc((unsigned int) strlen(prbuf) + 1);
 	    strcpy(info->oi_guess, prbuf);
 	}
     }
