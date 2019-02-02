@@ -146,6 +146,9 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
     outputs = inputs = 0;
     preventCCvins = preventCCvouts = -1;
 
+    if (strcmp(ASSETCHAINS_SYMBOL, "SEC") == 0 && chainActive.Height() < 144073)
+        return true;
+
 	if (numvouts == 0)
 		return eval->Invalid("AssetValidate: no vouts");
 
