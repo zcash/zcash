@@ -79,6 +79,8 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
     return(true);
 }
 UniValue rogue_newgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+UniValue rogue_pending(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+UniValue rogue_txidinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue rogue_progress(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue rogue_claimwin(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
