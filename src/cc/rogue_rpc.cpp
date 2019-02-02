@@ -83,7 +83,7 @@ uint8_t rogue_newgameopreturndecode(int64_t &buyin,CScript scriptPubKey)
 UniValue rogue_newgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    CPubKey roguepk,mypk; char *jsonstr; uint64_t inputsum,amount = 0;
+    UniValue result(UniValue::VOBJ); std::string rawtx; CPubKey roguepk,mypk; char *jsonstr; uint64_t inputsum,amount = 0;
     if ( params != 0 )
     {
         if ( (jsonstr= jprint(params,0)) != 0 )
