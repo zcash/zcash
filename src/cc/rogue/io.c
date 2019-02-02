@@ -173,7 +173,7 @@ readchar(struct rogue_state *rs)
         }
         if ( rs != 0 && rs->guiflag != 0 )
         {
-            if (rs->num < sizeof(rs->buffered) )
+            if ( rs->num < sizeof(rs->buffered) )
             {
                 rs->buffered[rs->num++] = ch;
                 if ( rs->num > (sizeof(rs->buffered)*9)/10 && rs->needflush == 0 )
