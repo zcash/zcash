@@ -358,7 +358,7 @@ picky_inven(struct rogue_state *rs)
 	msg(rs,"a) %s", inv_name(pack, FALSE));
     else
     {
-	msg(rs,terse ? "item: " : "which item do you wish to inventory: ");
+	msg(rs,terse ? (char *)"item: " : (char *)"which item do you wish to inventory: ");
 	mpos = 0;
 	if ((mch = readchar(rs)) == ESCAPE)
 	{

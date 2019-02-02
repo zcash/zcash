@@ -431,14 +431,14 @@ std::string CClib_rawtxgen(struct CCcontract_info *cp,uint8_t funcid,cJSON *para
 #include "rogue/rings.c"
 #include "rogue/rip.c"
 #include "rogue/rooms.c" 
-/*#include "rogue/save.c"
+#include "rogue/save.c"
 #include "rogue/scrolls.c"
 #include "rogue/state.c"
 #include "rogue/sticks.c"
 #include "rogue/things.c"
 #include "rogue/weapons.c"
 #include "rogue/wizard.c"
-#include "rogue/xcrypt.c"*/
+#include "rogue/xcrypt.c"
 
 #else
 #include "sudoku.cpp"
