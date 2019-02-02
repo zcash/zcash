@@ -1904,7 +1904,7 @@ uint64_t komodo_checknotarypay(CBlock *pblock,int32_t height)
     if ( totalsats == 0 )
     {
         fprintf(stderr, "notary pay RETURNED 0!\n");
-        return(-1);
+        return(0);
     }
     
     int8_t n = 0, i = 0, matches = 0;
