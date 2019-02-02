@@ -403,7 +403,7 @@ std::string CClib_rawtxgen(struct CCcontract_info *cp,uint8_t funcid,cJSON *para
 }
 
 #ifdef BUILD_ROGUE
-#include "rogue/vers.c"
+/*#include "rogue/vers.c"
 #include "rogue/extern.c"
 #include "rogue/armor.c"
 #include "rogue/chase.c"
@@ -435,7 +435,7 @@ std::string CClib_rawtxgen(struct CCcontract_info *cp,uint8_t funcid,cJSON *para
 #include "rogue/things.c"
 #include "rogue/weapons.c"
 #include "rogue/wizard.c"
-#include "rogue/xcrypt.c"
+#include "rogue/xcrypt.c"*/
 
 #else
 #include "sudoku.cpp"

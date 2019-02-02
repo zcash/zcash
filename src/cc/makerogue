@@ -1,7 +1,7 @@
 cd rogue;
-./configure # only need this first time
+#./configure # only need this first time
 make; cd ..
 gcc -DBUILD_ROGUE -std=c++11 -I../univalue/include -I../cryptoconditions/include -I../cryptoconditions/src -I../cryptoconditions/src/asn -I.. -I. -fPIC -shared -o librogue.so -c cclib.cpp
-#gcc -std=c++11 -fPIC -shared -o librogue.so cclib.o rogue/rogue.so
+gcc -std=c++11 -fPIC -shared -o librogue.so cclib.o rogue/rogue.o
 cp librogue.so ../libcc.so
 
