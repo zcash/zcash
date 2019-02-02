@@ -105,7 +105,7 @@ new_item(void)
     else
 	total++;
 #else
-    item = calloc(1, sizeof *item);
+    item = (THING *)calloc(1, sizeof *item);
 #endif
     item->l_next = NULL;
     item->l_prev = NULL;
