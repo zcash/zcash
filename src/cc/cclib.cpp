@@ -55,6 +55,8 @@ CClib_methods[] =
     { (char *)"faucet2", (char *)"get", (char *)"<no args>", 0, 0, 'G', EVAL_FAUCET2 },
 #ifdef BUILD_ROGUE
     { (char *)"rogue", (char *)"newgame", (char *)"buyin", 0, 1, 'N', EVAL_ROGUE },
+    { (char *)"rogue", (char *)"txidinfo", (char *)"txid", 1, 1, 'T', EVAL_ROGUE },
+    { (char *)"rogue", (char *)"pending", (char *)"<no args>", 0, 0, 'U', EVAL_ROGUE },
     { (char *)"rogue", (char *)"register", (char *)"txid [inventory]", 1, 2, 'R', EVAL_ROGUE },
     { (char *)"rogue", (char *)"progress", (char *)"txid fname", 2, 2, 'P', EVAL_ROGUE },
     { (char *)"rogue", (char *)"claimwin", (char *)"txid", 1, 1, 'W', EVAL_ROGUE },
@@ -76,6 +78,11 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
 {
     return(true);
 }
+UniValue rogue_newgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+UniValue rogue_progress(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+UniValue rogue_claimwin(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+UniValue rogue_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 
 #else
 bool sudoku_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx);
@@ -92,6 +99,23 @@ UniValue CClib_method(struct CCcontract_info *cp,char *method,cJSON *params)
     if ( cp->evalcode == EVAL_ROGUE )
     {
         rogue_replay(777);
+        if ( strcmp(method,"newgame") == 0 )
+            return(rogue_newgame(txfee,cp,params));
+        else if ( strcmp(method,"register") == 0 )
+            return(rogue_register(txfee,cp,params));
+        else if ( strcmp(method,"progress") == 0 )
+            return(rogue_progress(txfee,cp,params));
+        else if ( strcmp(method,"claimwin") == 0 )
+            return(rogue_claimwin(txfee,cp,params));
+        else if ( strcmp(method,"extract") == 0 )
+            return(rogue_extract(txfee,cp,params));
+        else
+        {
+            result.push_back(Pair("result","error"));
+            result.push_back(Pair("error","invalid rogue method"));
+            result.push_back(Pair("method",method));
+            return(result);
+        }
     }
 #else
     if ( cp->evalcode == EVAL_SUDOKU )
@@ -406,6 +430,7 @@ std::string CClib_rawtxgen(struct CCcontract_info *cp,uint8_t funcid,cJSON *para
 }
 
 #ifdef BUILD_ROGUE
+#include "rogue_rpc.cpp"
 #include "rogue/vers.c"
 #include "rogue/extern.c"
 #include "rogue/armor.c"
