@@ -70,6 +70,8 @@ CClib_methods[] =
 std::string CClib_rawtxgen(struct CCcontract_info *cp,uint8_t funcid,cJSON *params);
 
 #ifdef BUILD_ROGUE
+extern "C" int32_t rogue_replay(uint64_t seed);
+
 bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx)
 {
     return(true);
@@ -89,6 +91,7 @@ UniValue CClib_method(struct CCcontract_info *cp,char *method,cJSON *params)
 #ifdef BUILD_ROGUE
     if ( cp->evalcode == EVAL_ROGUE )
     {
+        rogue_replay(777);
     }
 #else
     if ( cp->evalcode == EVAL_SUDOKU )
