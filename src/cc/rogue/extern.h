@@ -18,7 +18,7 @@
 #undef HAVE_MEMORY_H
 #undef HAVE_STRING_H
 #endif
-#include "<stdint.h>"
+#include <stdint.h>
 #include "config.h"
 #elif defined(__DJGPP__)
 #define HAVE_SYS_TYPES_H 1
