@@ -226,7 +226,7 @@ UniValue rogue_pending(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                         obj.push_back(Pair("start",ht+10));
                         if ( komodo_nextheight() > ht+10 )
                         {
-                            if ( pindex= komodo_chainactive(ht+10)) != 0 )
+                            if ( (pindex= komodo_chainactive(ht+10)) != 0 )
                             {
                                 hashBlock = pindex->GetBlockHash();
                                 obj.push_back(Pair("starthash",hashBlock.ToString().c_str()));
