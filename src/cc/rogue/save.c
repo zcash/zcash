@@ -168,7 +168,7 @@ bool
 restore(struct rogue_state *rs,char *file, char **envp)
 {
     FILE *inf;
-    int syml,lines, cols;
+    int syml,l, cols;
     extern char **environ;
     //auto
     char buf[MAXSTR];
@@ -196,15 +196,15 @@ restore(struct rogue_state *rs,char *file, char **envp)
 	return FALSE;
     }
     encread(buf,80,inf);
-    sscanf(buf,"%d x %d\n", &lines, &cols);
+    sscanf(buf,"%d x %d\n", &l, &cols);
 
     initscr();                          /* Start up cursor package */
     keypad(stdscr, 1);
 
-    if (lines > LINES)
+    if (l > LINES)
     {
         endwin();
-        printf("Sorry, original game was played on a screen with %d lines.\n",lines);
+        printf("Sorry, original game was played on a screen with %d lines.\n",l);
         printf("Current screen only has %d lines. Unable to restore game\n",LINES);
         return(FALSE);
     }
