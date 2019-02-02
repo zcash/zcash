@@ -171,17 +171,17 @@ UniValue rogue_txidinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                     if ( (pindex= komodo_blockindex(hashBlock)) != 0 )
                     {
                         ht = pindex->GetHeight();
-                        obj.push_back(Pair("height",ht));
-                        obj.push_back(Pair("start",ht+10));
+                        result.push_back(Pair("height",ht));
+                        result.push_back(Pair("start",ht+10));
                         if ( komodo_nextheight() > ht+10 )
                         {
                             if ( (pindex= komodo_chainactive(ht+10)) != 0 )
                             {
                                 hashBlock = pindex->GetBlockHash();
-                                obj.push_back(Pair("starthash",hashBlock.ToString().c_str()));
+                                result.push_back(Pair("starthash",hashBlock.ToString().c_str()));
                                 memcpy(&seed,&hashBlock,sizeof(seed));
                                 seed &= (1LL << 62) - 1;
-                                obj.push_back(Pair("seed",(int64_t)seed));
+                                result.push_back(Pair("seed",(int64_t)seed));
                             }
                         }
                     }
