@@ -54,11 +54,11 @@ CClib_methods[] =
     { (char *)"faucet2", (char *)"fund", (char *)"amount", 1, 1, 'F', EVAL_FAUCET2 },
     { (char *)"faucet2", (char *)"get", (char *)"<no args>", 0, 0, 'G', EVAL_FAUCET2 },
 #ifdef BUILD_ROGUE
-    { (char *)"rogue", (char *)"newgame", (char *)"buyin", 0, 1, 'N', EVAL_ROGUE },
-    { (char *)"rogue", (char *)"txidinfo", (char *)"txid", 1, 1, 'T', EVAL_ROGUE },
-    { (char *)"rogue", (char *)"pending", (char *)"<no args>", 0, 0, 'U', EVAL_ROGUE },
+    { (char *)"rogue", (char *)"newgame", (char *)"buyin", 0, 1, 'G', EVAL_ROGUE },
+    { (char *)"rogue", (char *)"txidinfo", (char *)"txid", 1, 1, 'I', EVAL_ROGUE },
+    { (char *)"rogue", (char *)"pending", (char *)"<no args>", 0, 0, 'P', EVAL_ROGUE },
     { (char *)"rogue", (char *)"register", (char *)"txid [inventory]", 1, 2, 'R', EVAL_ROGUE },
-    { (char *)"rogue", (char *)"progress", (char *)"txid fname", 2, 2, 'P', EVAL_ROGUE },
+    { (char *)"rogue", (char *)"progress", (char *)"txid fname", 2, 2, 'K', EVAL_ROGUE },
     { (char *)"rogue", (char *)"claimwin", (char *)"txid", 1, 1, 'W', EVAL_ROGUE },
     { (char *)"rogue", (char *)"extract", (char *)"txid item", 2, 2, 'X', EVAL_ROGUE },
 #else
@@ -101,6 +101,10 @@ UniValue CClib_method(struct CCcontract_info *cp,char *method,cJSON *params)
         rogue_replay(777);
         if ( strcmp(method,"newgame") == 0 )
             return(rogue_newgame(txfee,cp,params));
+        else if ( strcmp(method,"pending") == 0 )
+            return(rogue_pending(txfee,cp,params));
+        else if ( strcmp(method,"txidinfo") == 0 )
+            return(rogue_txidinfo(txfee,cp,params));
         else if ( strcmp(method,"register") == 0 )
             return(rogue_register(txfee,cp,params));
         else if ( strcmp(method,"progress") == 0 )
