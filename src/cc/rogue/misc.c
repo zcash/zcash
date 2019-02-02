@@ -348,7 +348,7 @@ check_level(struct rogue_state *rs)
 void
 chg_str(int amt)
 {
-    //auto
+    //auto jl777: strange compiler error
     str_t comp;
 
     if (amt == 0)
