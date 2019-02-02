@@ -410,6 +410,8 @@ playit(struct rogue_state *rs)
                 if ( flushkeystrokes(rs) == 0 )
                     rs->needflush = 0;
             }
+            if ( rs->didquit != 0 )
+                my_exit(0);
         }
     }
     endit(0);
@@ -425,36 +427,36 @@ quit(int sig)
 {
     struct rogue_state *rs = &globalR;
     int oy, ox;
-
+    
     NOOP(sig);
-
+    
     /*
      * Reset the signal in case we got here via an interrupt
      */
     if (!q_comm)
-	mpos = 0;
+        mpos = 0;
     getyx(curscr, oy, ox);
     msg(rs,"really quit?");
     if (readchar(rs) == 'y')
     {
-	signal(SIGINT, leave);
-	clear();
-	mvprintw(LINES - 2, 0, "You quit with %d gold pieces", purse);
-	move(LINES - 1, 0);
-	refresh();
-	score(purse, 1, 0);
-	my_exit(0);
+        signal(SIGINT, leave);
+        clear();
+        mvprintw(LINES - 2, 0, "You quit with %d gold pieces", purse);
+        move(LINES - 1, 0);
+        refresh();
+        score(purse, 1, 0);
+        rs->didquit = (uint32_t)time(NULL);
     }
     else
     {
-	move(0, 0);
-	clrtoeol();
-	status(rs);
-	move(oy, ox);
-	refresh();
-	mpos = 0;
-	count = 0;
-	to_death = FALSE;
+        move(0, 0);
+        clrtoeol();
+        status(rs);
+        move(oy, ox);
+        refresh();
+        mpos = 0;
+        count = 0;
+        to_death = FALSE;
     }
 }
 

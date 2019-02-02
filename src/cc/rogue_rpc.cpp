@@ -147,6 +147,12 @@ UniValue rogue_claimwin(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     return(result);
 }
 
+UniValue rogue_saveandquit(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
+{
+    UniValue result(UniValue::VOBJ);
+    return(result);
+}
+
 UniValue rogue_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     UniValue result(UniValue::VOBJ);

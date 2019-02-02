@@ -260,6 +260,8 @@ over:
 		    after = FALSE;
 		    q_comm = TRUE;
 		    quit(0);
+            if ( rs->needflush == 0 )
+                rs->needflush = (uint32_t)time(NULL);
 		    q_comm = FALSE;
 		when 'i': after = FALSE; inventory(rs,pack, 0);
 		when 'I': after = FALSE; picky_inven(rs);

@@ -58,9 +58,10 @@ CClib_methods[] =
     { (char *)"rogue", (char *)"txidinfo", (char *)"txid", 1, 1, 'I', EVAL_ROGUE },
     { (char *)"rogue", (char *)"pending", (char *)"<no args>", 0, 0, 'P', EVAL_ROGUE },
     { (char *)"rogue", (char *)"register", (char *)"txid [inventory]", 1, 2, 'R', EVAL_ROGUE },
-    { (char *)"rogue", (char *)"progress", (char *)"txid fname", 2, 2, 'K', EVAL_ROGUE },
-    { (char *)"rogue", (char *)"claimwin", (char *)"txid", 1, 1, 'W', EVAL_ROGUE },
-    { (char *)"rogue", (char *)"extract", (char *)"txid item", 2, 2, 'X', EVAL_ROGUE },
+    { (char *)"rogue", (char *)"progress", (char *)"regtxid fname", 2, 2, 'K', EVAL_ROGUE },
+    { (char *)"rogue", (char *)"saveandquit", (char *)"ptxid", 1, 1, 'Q', EVAL_ROGUE },
+    { (char *)"rogue", (char *)"claimwin", (char *)"ptxid", 1, 1, 'W', EVAL_ROGUE },
+    { (char *)"rogue", (char *)"extract", (char *)"wtxid item", 2, 2, 'X', EVAL_ROGUE },
 #else
     { (char *)"sudoku", (char *)"gen", (char *)"<no args>", 0, 0, 'G', EVAL_SUDOKU },
     { (char *)"sudoku", (char *)"txidinfo", (char *)"txid", 1, 1, 'T', EVAL_SUDOKU },
@@ -83,6 +84,7 @@ UniValue rogue_pending(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue rogue_txidinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue rogue_progress(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+UniValue rogue_saveandquit(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue rogue_claimwin(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue rogue_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 
@@ -111,6 +113,8 @@ UniValue CClib_method(struct CCcontract_info *cp,char *method,cJSON *params)
             return(rogue_register(txfee,cp,params));
         else if ( strcmp(method,"progress") == 0 )
             return(rogue_progress(txfee,cp,params));
+        else if ( strcmp(method,"saveandquit") == 0 )
+            return(rogue_saveandquit(txfee,cp,params));
         else if ( strcmp(method,"claimwin") == 0 )
             return(rogue_claimwin(txfee,cp,params));
         else if ( strcmp(method,"extract") == 0 )
