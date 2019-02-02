@@ -47,11 +47,18 @@ struct CClib_rpcinfo
     int32_t numrequiredargs,maxargs;
     uint8_t funcid,evalcode;
 }
+// creategame, register (inventory + baton + buyin), progress (events + statehash + [compr state]?), claimwin
+
 CClib_methods[] =
 {
     { (char *)"faucet2", (char *)"fund", (char *)"amount", 1, 1, 'F', EVAL_FAUCET2 },
     { (char *)"faucet2", (char *)"get", (char *)"<no args>", 0, 0, 'G', EVAL_FAUCET2 },
 #ifdef BUILD_ROGUE
+    { (char *)"rogue", (char *)"newgame", (char *)"buyin", 0, 1, 'N', EVAL_ROGUE },
+    { (char *)"rogue", (char *)"register", (char *)"txid [inventory]", 1, 2, 'R', EVAL_ROGUE },
+    { (char *)"rogue", (char *)"progress", (char *)"txid fname", 2, 2, 'P', EVAL_ROGUE },
+    { (char *)"rogue", (char *)"claimwin", (char *)"txid", 1, 1, 'W', EVAL_ROGUE },
+    { (char *)"rogue", (char *)"extract", (char *)"txid item", 2, 2, 'X', EVAL_ROGUE },
 #else
     { (char *)"sudoku", (char *)"gen", (char *)"<no args>", 0, 0, 'G', EVAL_SUDOKU },
     { (char *)"sudoku", (char *)"txidinfo", (char *)"txid", 1, 1, 'T', EVAL_SUDOKU },
@@ -63,6 +70,11 @@ CClib_methods[] =
 std::string CClib_rawtxgen(struct CCcontract_info *cp,uint8_t funcid,cJSON *params);
 
 #ifdef BUILD_ROGUE
+bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx)
+{
+    return(true);
+}
+
 #else
 bool sudoku_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx);
 UniValue sudoku_txidinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
@@ -216,8 +228,7 @@ bool CClib_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
     if ( cp->evalcode != EVAL_FAUCET2 )
     {
 #ifdef BUILD_ROGUE
-        //return(rogue_validate(cp,height,eval,tx));
-        return(false);
+        return(rogue_validate(cp,height,eval,tx));
 #else
         return(sudoku_validate(cp,height,eval,tx));
 #endif
