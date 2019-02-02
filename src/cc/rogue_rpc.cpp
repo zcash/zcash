@@ -18,6 +18,9 @@
 
 
 //////////////////////// start of CClib interface
+// cclib newgame 17
+// cclib pending 17
+// cclib txidinfo 17 \"35e99df53c981a937bfa2ce7bfb303cea0249dba34831592c140d1cb729cb19f\"
 
 
 CScript rogue_newgameopret(int64_t buyin)
@@ -151,7 +154,6 @@ UniValue rogue_txidinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     UniValue result(UniValue::VOBJ); int32_t ht,numvouts; char CCaddr[64],str[65],*txidstr; uint256 txid,hashBlock; CTransaction tx; uint64_t seed; int64_t buyin; CBlockIndex *pindex;
     if ( params != 0 )
     {
-        result.push_back(Pair("result","success"));
         if ( (txidstr= jprint(params,0)) != 0 )
         {
             if ( txidstr[0] == '"' && txidstr[strlen(txidstr)-1] == '"' )
