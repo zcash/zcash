@@ -10,6 +10,9 @@
  * See the file LICENSE.TXT for full copyright and licensing information.
  */
 
+#ifndef H_ROGUE_H
+#define H_ROGUE_H
+
 #include "extern.h"
 
 #undef lines 
@@ -783,3 +786,5 @@ extern char     *wood[];
 extern int      cNWOOD;
 extern char     *metal[];
 extern int      cNMETAL;
+#endif
+

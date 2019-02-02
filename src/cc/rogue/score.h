@@ -9,6 +9,8 @@
  *
  * See the file LICENSE.TXT for full copyright and licensing information.
  */
+#ifndef H_SCORE_H
+#define H_SCORE_H
 
 struct sc_ent {
     unsigned int sc_uid;
@@ -24,3 +26,4 @@ typedef struct sc_ent SCORE;
 
 void	rd_score(SCORE *top_ten);
 void	wr_score(SCORE *top_ten);
+#endif
