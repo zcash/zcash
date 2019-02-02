@@ -147,7 +147,6 @@ int32_t rogue_replay(uint64_t seed)
         if ( (fp= fopen("checkfile","wb")) != 0 )
         {
             save_file(fp,0);
-            fclose(fp);
             if ( 0 && (fp= fopen("checkfile","rb")) != 0 )
             {
                 for (i=0; i<0x150; i++)
