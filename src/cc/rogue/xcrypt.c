@@ -590,7 +590,7 @@ des_cipher(const char *in, char *out, int salt, int count)
 	memcpy(out, x, sizeof x);
 	return(retval);
 }
-
+xxxx
 char *
 xcrypt(const char *key, const char *setting)
 {
