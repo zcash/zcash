@@ -126,3 +126,9 @@ src/komodo-tx.exe
 
 
 src/cryptoconditions/compile
+
+src/cc/rogue/rogue
+
+src/cc/rogue/rogue.so
+
+src/cc/rogue/test.zip
