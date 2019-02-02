@@ -168,13 +168,12 @@ bool
 restore(struct rogue_state *rs,char *file, char **envp)
 {
     FILE *inf;
-    int syml;
+    int syml,lines, cols;
     extern char **environ;
     //auto
     char buf[MAXSTR];
     //auto
     STAT sbuf2;
-    int lines, cols;
 
     if (strcmp(file, "-r") == 0)
 	file = file_name;
