@@ -36,7 +36,8 @@ save_game(struct rogue_state *rs)
 {
     FILE *savef;
     int c;
-    auto char buf[MAXSTR];
+    //auto
+    char buf[MAXSTR];
 
     /*
      * get file name
@@ -169,8 +170,10 @@ restore(struct rogue_state *rs,char *file, char **envp)
     FILE *inf;
     int syml;
     extern char **environ;
-    auto char buf[MAXSTR];
-    auto STAT sbuf2;
+    //auto
+    char buf[MAXSTR];
+    //auto
+    STAT sbuf2;
     int lines, cols;
 
     if (strcmp(file, "-r") == 0)
