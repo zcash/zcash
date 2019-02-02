@@ -26,7 +26,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-int32_t rogue_replay(uint64_t seed);
+int32_t rogue_replay(uint64_t seed,int32_t sleeptime);
 int rogue(int argc, char **argv, char **envp);
 
 int main(int argc, char **argv, char **envp)
@@ -36,7 +36,7 @@ int main(int argc, char **argv, char **envp)
     {
         seed = atol(argv[1]);
         fprintf(stderr,"replay %llu\n",(long long)seed);
-        return(rogue_replay(seed));
+        return(rogue_replay(seed,50000));
     }
     else
     {

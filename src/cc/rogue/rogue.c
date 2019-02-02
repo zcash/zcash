@@ -107,7 +107,7 @@ long get_filesize(FILE *fp)
     return(fsize);
 }
 
-int32_t rogue_replay(uint64_t seed)
+int32_t rogue_replay(uint64_t seed,int32_t sleeptime)
 {
     FILE *fp; char fname[1024]; char *keystrokes = 0; long num=0,fsize; int32_t i,counter = 0; struct rogue_state *rs;
     if ( seed == 0 )
@@ -145,6 +145,7 @@ int32_t rogue_replay(uint64_t seed)
         rs->seed = seed;
         rs->keystrokes = keystrokes;
         rs->numkeys = num;
+        rs->sleeptime = sleeptime;
         rogueiterate(rs);
         if ( (fp= fopen("checkfile","wb")) != 0 )
         {
@@ -403,7 +404,8 @@ playit(struct rogue_state *rs)
                 //fprintf(stderr,"replaydone\n"); sleep(3);
                 return;
             }
-            usleep(50000);
+            if ( rs->sleeptime != 0 )
+                usleep(rs->sleeptime);
         }
         else
         {
