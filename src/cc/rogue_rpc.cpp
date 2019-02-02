@@ -148,7 +148,7 @@ UniValue rogue_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 
 UniValue rogue_txidinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ); int32_t numvouts; char CCaddr[64],str[65],*txidstr; uint256 txid,hashBlock; CTransaction tx; uint64_t amount; CBlockIndex *pindex;
+    UniValue result(UniValue::VOBJ); int32_t numvouts; char CCaddr[64],str[65],*txidstr; uint256 txid,hashBlock; CTransaction tx; uint64_t buyin; CBlockIndex *pindex;
     if ( params != 0 )
     {
         result.push_back(Pair("result","success"));
@@ -230,8 +230,8 @@ UniValue rogue_pending(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                             {
                                 hashBlock = pindex->GetBlockHash();
                                 obj.push_back(Pair("starthash",hashBlock.ToString().c_str()));
-                                memset(&seed,&hashBlock,sizeof(seed));
-                                seed &= (1LL << 63) - 1;
+                                memcpy(&seed,&hashBlock,sizeof(seed));
+                                seed &= (1LL << 62) - 1;
                                 obj.push_back(Pair("seed",(int64_t)seed));
                             }
                         }
