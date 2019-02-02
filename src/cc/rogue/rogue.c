@@ -399,7 +399,7 @@ playit(struct rogue_state *rs)
                 //fprintf(stderr,"replaydone\n"); sleep(3);
                 return;
             }
-            //usleep(100000);
+            usleep(50000);
         }
         else
         {
