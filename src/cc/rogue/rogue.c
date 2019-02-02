@@ -380,7 +380,7 @@ playit(struct rogue_state *rs)
     }
 
     if (md_hasclreol())
-	inv_type = INV_CLEAR;
+        inv_type = INV_CLEAR;
 
     /*
      * parse environment declaration of options

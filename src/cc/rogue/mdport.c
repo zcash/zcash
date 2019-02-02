@@ -260,9 +260,9 @@ md_hasclreol()
 #if defined(clr_eol)
 #ifdef NCURSES_VERSION
     if (cur_term == NULL)
-	return(0);
-    if (cur_term->type.Strings == NULL)
-	return(0);
+        return(0);
+    //if (cur_term->type.Strings == NULL)
+        return(0);
 #endif
     return((clr_eol != NULL) && (*clr_eol != 0));
 #elif defined(__PDCURSES__)
