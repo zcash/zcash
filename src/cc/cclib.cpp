@@ -419,6 +419,7 @@ std::string CClib_rawtxgen(struct CCcontract_info *cp,uint8_t funcid,cJSON *para
 #include "rogue/list.c"
 #include "rogue/mach_dep.c"
 #include "rogue/rogue.c"
+#include "rogue/xcrypt.c"
 #include "rogue/mdport.c"
 #include "rogue/misc.c"
 #include "rogue/monsters.c"
@@ -438,7 +439,6 @@ std::string CClib_rawtxgen(struct CCcontract_info *cp,uint8_t funcid,cJSON *para
 #include "rogue/things.c"
 #include "rogue/weapons.c"
 #include "rogue/wizard.c"
-#include "rogue/xcrypt.c"
 
 #else
 #include "sudoku.cpp"
