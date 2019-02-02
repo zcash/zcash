@@ -70,7 +70,7 @@ CClib_methods[] =
 std::string CClib_rawtxgen(struct CCcontract_info *cp,uint8_t funcid,cJSON *params);
 
 #ifdef BUILD_ROGUE
-extern "C" int32_t rogue_replay(uint64_t seed);
+int32_t rogue_replay(uint64_t seed);
 
 bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx)
 {
@@ -406,10 +406,10 @@ std::string CClib_rawtxgen(struct CCcontract_info *cp,uint8_t funcid,cJSON *para
 }
 
 #ifdef BUILD_ROGUE
-/*#include "rogue/vers.c"
+#include "rogue/vers.c"
 #include "rogue/extern.c"
 #include "rogue/armor.c"
-#include "rogue/chase.c"
+/*#include "rogue/chase.c"
 #include "rogue/command.c"
 #include "rogue/daemon.c"
 #include "rogue/daemons.c"
