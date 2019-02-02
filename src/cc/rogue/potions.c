@@ -293,8 +293,8 @@ turn_see(bool turn_off)
 		addch(rnd(26) + 'A');
 	    if (!can_see)
 	    {
-		standend();
-		add_new++;
+            standend();
+            add_new ^= 1;//add_new++;
 	    }
 	}
     }
