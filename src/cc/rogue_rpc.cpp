@@ -200,7 +200,7 @@ UniValue rogue_txidinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 UniValue rogue_pending(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     UniValue result(UniValue::VOBJ),a(UniValue::VARR);
-    char coinaddr[64]; uint64_t seed; int64_t nValue,total=0; uint256 txid,hashBlock; CTransaction tx; int32_t ht,vout,numvouts; CPubKey roguepk; CBlockIndex *pindex;
+    char coinaddr[64]; uint64_t seed; int64_t amount,nValue,total=0; uint256 txid,hashBlock; CTransaction tx; int32_t ht,vout,numvouts; CPubKey roguepk; CBlockIndex *pindex;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     roguepk = GetUnspendable(cp,0);
     GetCCaddress(cp,coinaddr,roguepk);

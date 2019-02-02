@@ -135,6 +135,7 @@ void CCclearvars(struct CCcontract_info *cp);
 UniValue CClib(struct CCcontract_info *cp,char *method,cJSON *params);
 UniValue CClib_info(struct CCcontract_info *cp);
 CBlockIndex *komodo_blockindex(uint256 hash);
+CBlockIndex *komodo_chainactive(int32_t height);
 
 static const uint256 zeroid;
 bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock);
