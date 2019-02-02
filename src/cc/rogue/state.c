@@ -78,7 +78,7 @@ rs_write(FILE *savef, void *ptr, size_t size)
     if (write_error)
         return(WRITESTAT);
 
-    if (encwrite(ptr, size, savef) != size)
+    if (encwrite((char *)ptr, size, savef) != size)
         write_error = 1;
 
     return(WRITESTAT);
@@ -90,7 +90,7 @@ rs_read(FILE *inf, void *ptr, size_t size)
     if (read_error || format_error)
         return(READSTAT);
 
-    if (encread(ptr, size, inf) != size)
+    if (encread((char *)ptr, size, inf) != size)
         read_error = 1;
        
     return(READSTAT);
@@ -554,7 +554,7 @@ rs_read_new_string(FILE *inf, char **s)
         buf = NULL;
     else
     { 
-        buf = malloc(len);
+        buf = (char *)malloc(len);
 
         if (buf == NULL)            
             read_error = TRUE;
@@ -1468,7 +1468,7 @@ rs_read_object_reference(FILE *inf, THING *list, THING **item)
 
     rs_read_int(inf, &i);
 
-    *item = get_list_item(list,i);
+    *item = (THING *)get_list_item(list,i);
             
     return(READSTAT);
 }
@@ -1670,7 +1670,7 @@ rs_read_thing(FILE *inf, THING *t)
     {
         THING *obj;
 
-        item = get_list_item(lvl_obj, index);
+        item = (THING *)get_list_item(lvl_obj, index);
 
         if (item != NULL)
         {
@@ -1702,7 +1702,7 @@ rs_fix_thing(THING *t)
     if (t->t_reserved < 0)
         return;
 
-    item = get_list_item(mlist,t->t_reserved);
+    item = (THING *)get_list_item(mlist,t->t_reserved);
 
     if (item != NULL)
     {
@@ -1816,7 +1816,7 @@ rs_read_thing_reference(FILE *inf, THING *list, THING **item)
     if (i == -1)
         *item = NULL;
     else
-        *item = get_list_item(list,i);
+        *item = (THING *)get_list_item(list,i);
 
     return(READSTAT);
 }
