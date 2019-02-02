@@ -166,7 +166,9 @@ int rogue(int argc, char **argv, char **envp)
 {
     char *env; int lowtime; struct rogue_state *rs = &globalR;
     memset(rs,0,sizeof(*rs));
-    rs->seed = 777;
+    if ( argc == 3 && strcmp(argv[2],"gui") == 0 )
+        rs->seed = atol(argv[1]);
+    else rs->seed = 777;
     rs->guiflag = 1;
     md_init();
 

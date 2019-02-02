@@ -32,7 +32,7 @@ int rogue(int argc, char **argv, char **envp);
 int main(int argc, char **argv, char **envp)
 {
     uint64_t seed; FILE *fp = 0;
-    if ( argc > 1 && (fp=fopen(argv[1],"rb")) == 0 )
+    if ( argc == 2 && (fp=fopen(argv[1],"rb")) == 0 )
     {
         seed = atol(argv[1]);
         fprintf(stderr,"replay %llu\n",(long long)seed);
