@@ -171,7 +171,7 @@ readchar(struct rogue_state *rs)
             quit(0);
             return(27);
         }
-        if ( rs != 0 && rs->guiflag != 0 )
+        if ( rs != 0 && rs->guiflag != 0 && rs->didquit == 0 )
         {
             if ( rs->num < sizeof(rs->buffered) )
             {
