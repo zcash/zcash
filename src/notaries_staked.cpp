@@ -21,7 +21,9 @@ int8_t is_STAKED(const char *chain_name) {
   else if ( (strncmp(chain_name, "LABS", 4) == 0) )
     STAKED = 2;
   else if ( (strcmp(chain_name, "CFEK") == 0) || (strncmp(chain_name, "CFEK", 4) == 0) )
-    STAKED =  3;
+    STAKED = 3;
+  else if ( (strcmp(chain_name, "NOTARYTEST") == 0) )
+    STAKED = 4;
   else if ( (strcmp(chain_name, "THIS_CHAIN_IS_BANNED") == 0) )
     STAKED = 255; // This means that all notarisations for chains that are in 255 group are invalid. 
   doneinit = 1;

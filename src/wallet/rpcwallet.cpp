@@ -4777,7 +4777,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
             + strprintf("%d", MERGE_TO_ADDRESS_DEFAULT_TRANSPARENT_LIMIT) + ") Limit on the maximum number of UTXOs to merge.  Set to 0 to use node option -mempooltxinputlimit (before Overwinter), or as many as will fit in the transaction (after Overwinter).\n"
             "4. shielded_limit        (numeric, optional, default="
             + strprintf("%d Sprout or %d Sapling Notes", MERGE_TO_ADDRESS_DEFAULT_SPROUT_LIMIT, MERGE_TO_ADDRESS_DEFAULT_SAPLING_LIMIT) + ") Limit on the maximum number of notes to merge.  Set to 0 to merge as many as will fit in the transaction.\n"
-            "5. maximum_utxo_size       (numeric, optional) eg, 0.0001 anything under 10000 satoshies will be merged, ignores p2pk utxo!\n"
+            "5. maximum_utxo_size       (numeric, optional) eg, 0.0001 anything under 10000 satoshies will be merged, ignores 10,000 sat p2pk utxo that iguana uses, and merges coinbase utxo.\n"
             "6. \"memo\"                (string, optional) Encoded as hex. When toaddress is a z-addr, this will be stored in the memo field of the new note.\n"
 
             "\nResult:\n"
@@ -4960,7 +4960,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     if (useAnyUTXO || taddrs.size() > 0) {
         // Get available utxos
         vector<COutput> vecOutputs;
-        pwalletMain->AvailableCoins(vecOutputs, true, NULL, false, false);
+        pwalletMain->AvailableCoins(vecOutputs, true, NULL, false, maximum_utxo_size != 0 ? true : false);
 
         // Find unspent utxos and update estimated size
         for (const COutput& out : vecOutputs) {
@@ -4981,14 +4981,13 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
 
             CAmount nValue = out.tx->vout[out.i].nValue;
 
-            if (maximum_utxo_size != 0) {
-              if (nValue > maximum_utxo_size) {
-                continue;
-              } else {
-                if (out.tx->vout[out.i].scriptPubKey.size() == 35 && nValue == 10000) {
-                  continue;
-                }
-              }
+            if (maximum_utxo_size != 0) 
+            {
+                //fprintf(stderr, "utxo txid.%s vout.%i nValue.%li scriptpubkeylength.%i\n",out.tx->GetHash().ToString().c_str(),out.i,nValue,out.tx->vout[out.i].scriptPubKey.size());
+                if (nValue > maximum_utxo_size) 
+                    continue;
+                if (nValue == 10000 && out.tx->vout[out.i].scriptPubKey.size() == 35)
+                    continue;
             }
 
             utxoCounter++;
@@ -5093,10 +5092,11 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     size_t numUtxos = utxoInputs.size();
     size_t numNotes = sproutNoteInputs.size() + saplingNoteInputs.size();
 
+    fprintf(stderr, "num utxos.%li\n", numUtxos);
     if (numUtxos < 2 && numNotes == 0) {
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Could not find any funds to merge.");
     }
-
+    
     // Sanity check: Don't do anything if:
     // - We only have one from address
     // - It's equal to toaddress
