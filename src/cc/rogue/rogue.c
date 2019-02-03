@@ -158,7 +158,10 @@ int32_t rogue_replay(uint64_t seed,int32_t sleeptime)
                 fclose(fp);
             }
         }
-        fatal("finished replay\n");
+        free(rs);
+        mvaddstr(LINES - 2, 0, s);
+        refresh();
+        endwin();
     }
     if ( keystrokes != 0 )
         free(keystrokes);
