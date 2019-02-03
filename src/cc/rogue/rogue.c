@@ -159,7 +159,7 @@ int32_t rogue_replay(uint64_t seed,int32_t sleeptime)
             }
         }
         free(rs);
-        mvaddstr(LINES - 2, 0, s);
+        mvaddstr(LINES - 2, 0, (char *)"replay completed");
         refresh();
         endwin();
     }
