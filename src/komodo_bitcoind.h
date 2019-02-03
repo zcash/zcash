@@ -1807,6 +1807,9 @@ uint64_t komodo_notarypay(CMutableTransaction &txNew, std::vector<int8_t> &Notar
     int32_t staked_era; int8_t numSN;
     uint8_t staked_pubkeys[64][33];
     staked_era = STAKED_era(timestamp);
+    // No point going further, no notaries can be paid.
+    if ( staked_era == 0 )
+        return(0);
     numSN = numStakedNotaries(staked_pubkeys,staked_era);
     // resize coinbase vouts to number of notary nodes +1 for coinbase itself.
     txNew.vout.resize(NotarisationNotaries.size()+1);
@@ -1821,11 +1824,11 @@ uint64_t komodo_notarypay(CMutableTransaction &txNew, std::vector<int8_t> &Notar
         memcpy(scriptbuf,script,len);
         if ( komodo_voutupdate(true,&isratification,0,scriptbuf,len,height,uint256(),1,1,&voutmask,&specialtx,&notarizedheight,0,1,0,timestamp) == -2 )
         {
-            fprintf(stderr, "VALID NOTARIZATION ht.%i\n",notarizedheight);
+            fprintf(stderr, "notarypay found VALID NOTARIZATION ht.%i\n",notarizedheight);
         }
         else
         {
-            fprintf(stderr, "INVALID NOTARIZATION ht.%i\n",notarizedheight);
+            fprintf(stderr, "notarypay found INVALID NOTARIZATION ht.%i\n",notarizedheight);
             return(0);
         }
     } else return(0);
@@ -1861,10 +1864,13 @@ uint64_t komodo_checknotarypay(CBlock *pblock,int32_t height)
     int32_t staked_era; int8_t numSN;
     uint8_t staked_pubkeys[64][33];
     staked_era = STAKED_era(timestamp);
+    // No point going further, no notaries can be paid.
+    if ( staked_era == 0 )
+        return(0);
     numSN = numStakedNotaries(staked_pubkeys,staked_era);
     
     uint8_t *script; int32_t scriptlen;
-    // Loop notarisation, and create the coinbase tx, with the same function the miner uses.    
+    // Loop over the notarisation and extract the position of the participating notaries in the array of pukeys for this era.
     BOOST_FOREACH(const CTxIn& txin, pblock->vtx[1].vin)
     {
         uint256 hash; CTransaction tx1;
@@ -1872,7 +1878,6 @@ uint64_t komodo_checknotarypay(CBlock *pblock,int32_t height)
         {
             for (int8_t i = 0; i < numSN; i++) 
             {
-                //tx1.vout[txin.prevout.n].scriptPubKey
                 script = (uint8_t *)&tx1.vout[txin.prevout.n].scriptPubKey[0];
                 scriptlen = (int32_t)tx1.vout[txin.prevout.n].scriptPubKey.size();
                 if ( scriptlen == 35 && script[0] == 33 && script[34] == OP_CHECKSIG && memcmp(script+1,staked_pubkeys[i],33) == 0 )
@@ -1891,19 +1896,22 @@ uint64_t komodo_checknotarypay(CBlock *pblock,int32_t height)
         int32_t scriptlen = (int32_t)pblock->vtx[1].vout[1].scriptPubKey.size();
         if ( script[0] == OP_RETURN )
         {
+            // Create the coinbase tx again, using the extracted data, this is the same function the miner uses, with the same data. 
+            // This allows us to know exactly that the coinbase is correct.
             totalsats = komodo_notarypay(txNew, NotarisationNotaries, pblock->nTime, height, script, scriptlen);
         } 
         else 
         {
             fprintf(stderr, "vout 2 of notarisation is not OP_RETURN scriptlen.%i\n", scriptlen);
-            return(-1);
+            return(0);
         }
     }
     
     // if notarypay fails, because the notarisation is not valid, exit now as txNew was not created.
+    // This should never happen, as the notarisation is checked before this function is called.
     if ( totalsats == 0 )
     {
-        fprintf(stderr, "notary pay RETURNED 0!\n");
+        fprintf(stderr, "notary pay returned 0!\n");
         return(0);
     }
     
@@ -1913,11 +1921,10 @@ uint64_t komodo_checknotarypay(CBlock *pblock,int32_t height)
     // get the pay amount from the created tx.
     AmountToPay = txNew.vout[1].nValue;
     
-    //fprintf(stderr, "txNew.vout size = %li\n",txNew.vout.size());
     // Check the created coinbase pays the correct notaries.
     BOOST_FOREACH(const CTxOut& txout, pblock->vtx[0].vout)
     {
-        // skip the coinbase
+        // skip the coinbase paid to the miner.
         if ( n == 0 ) 
         {
             n++;
@@ -1933,7 +1940,7 @@ uint64_t komodo_checknotarypay(CBlock *pblock,int32_t height)
             {
                 matches++;
                 total += txout.nValue;
-                fprintf(stderr, "matched.%i\n", NotarisationNotaries[n-1]);
+                fprintf(stderr, "MATCHED AmountPaid.%lu notaryid.%i\n",AmountToPay,NotarisationNotaries[n-1]);
             }
             else fprintf(stderr, "NOT MATCHED AmountPaid.%lu AmountToPay.%lu notaryid.%i\n", pblock->vtx[0].vout[n].nValue, AmountToPay, NotarisationNotaries[n-1]);
         }
@@ -1941,7 +1948,7 @@ uint64_t komodo_checknotarypay(CBlock *pblock,int32_t height)
     }
     if ( matches != 0 && matches == NotarisationNotaries.size() && totalsats == total )
     {
-        fprintf(stderr, "VALIDATED.\n" );
+        fprintf(stderr, "Validated coinbase matches notarisation in tx position 1.\n" );
         return(totalsats);
     }
     return(0);
@@ -2127,6 +2134,10 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
                 return(-1);
         }
     }
+    // Consensus rule to force miners to mine the notary coinbase payment happens in ConnectBlock 
+    // the default daemon miner, checks the actual vins so the only way this will fail, is if someone changes the miner, 
+    // and then creates txs to the crypto address meeting min sigs and puts it in tx position 1.
+    // If they go through this effort, the block will still fail at connect block, and will be auto purged by the temp file fix.   
     if ( failed == 0 && ASSETCHAINS_NOTARY_PAY != 0 && pblock->vtx[0].vout.size() > 1 )
     {
         // We check the full validation in ConnectBlock directly to get the amount for coinbase. So just approx here.
@@ -2135,13 +2146,13 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
             // Check the notarisation tx is to the crypto address.
             if ( !komodo_is_notarytx(pblock->vtx[1]) == 1 )
             {
-                fprintf(stderr, "notarisation is not to crypto address.%i\n",height);
+                fprintf(stderr, "notarisation is not to crypto address ht.%i\n",height);
                 return(-1); 
             }
             // Check min sigs.
             if ( pblock->vtx[1].vin.size() < (num_notaries_STAKED[STAKED_era(pblock->nTime)]/5) )
             {
-                fprintf(stderr, "block notarization does not meet minsigs .%i\n",height);
+                fprintf(stderr, "ht.%i does not meet minsigs.%i sigs.%li\n",height,(num_notaries_STAKED[STAKED_era(pblock->nTime)]/5),pblock->vtx[1].vin.size());
                 return(-1);
             }
         }

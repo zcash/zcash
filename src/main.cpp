@@ -3267,6 +3267,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     auto verifier = libzcash::ProofVerifier::Strict();
     auto disabledVerifier = libzcash::ProofVerifier::Disabled();
     int32_t futureblock;
+    CAmount blockReward = 0;
     // Check it again to verify JoinSplit proofs, and in case a previous version let a bad block in
     if (!CheckBlock(&futureblock,pindex->GetHeight(),pindex,block, state, fExpensiveChecks ? verifier : disabledVerifier, fCheckPOW, !fJustCheck) || futureblock != 0 )
     {
@@ -3280,6 +3281,34 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             return false;
         fprintf(stderr,"grandfathered exception, until jan 15th 2019\n");
     }
+    // Do this here before the block is moved to the main block files.
+    if ( ASSETCHAINS_NOTARY_PAY != 0 && pindex->GetHeight() != 0 )
+    {
+        // do a full block scan to get notarisation position and to enforce 1 notarisation is in block only.
+        // if notarisation in the block, must be position 1 and the coinbase must pay notaries.
+        int notarisationTx = komodo_connectblock(true,pindex,*(CBlock *)&block);  
+        // -1 means that more than 1 notarisation is in a block, or the notarisation is not in order.
+        if ( notarisationTx == -1 )
+            return state.DoS(100, error("ConnectBlock(): Notarisation is not in TX position 1! Invalid Block!"),
+                        REJECT_INVALID, "bad-notarization-position");
+        // 1 means this block contains a valid notarisation
+        if ( notarisationTx == 1 )
+        {
+            // Check if the notaries have been paid.
+            if ( block.vtx[0].vout.size() == 1 )
+                return state.DoS(100, error("ConnectBlock(): Notaries have not been paid!"),
+                                REJECT_INVALID, "bad-cb-amount");
+            // calculate the notaries compensation and validate the amounts and pubkeys are correct.
+            uint64_t notarypaycheque = komodo_checknotarypay((CBlock *)&block,(int32_t)pindex->GetHeight());
+            fprintf(stderr, "notarypaycheque.%lu\n", notarypaycheque);
+            if ( notarypaycheque > 0 )
+                blockReward += notarypaycheque;
+            else
+                return state.DoS(100, error("ConnectBlock(): Notary pay validation failed!"),
+                                REJECT_INVALID, "bad-cb-amount");
+        }
+    }
+    // Move the block to the main block file, we need this to create the TxIndex in the following loop.
     if ( (pindex->nStatus & BLOCK_IN_TMPFILE) != 0 )
     {
         unsigned int nBlockSize = ::GetSerializeSize(block, SER_DISK, CLIENT_VERSION);
@@ -3562,7 +3591,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     int64_t nTime1 = GetTimeMicros(); nTimeConnect += nTime1 - nTimeStart;
     LogPrint("bench", "      - Connect %u transactions: %.2fms (%.3fms/tx, %.3fms/txin) [%.2fs]\n", (unsigned)block.vtx.size(), 0.001 * (nTime1 - nTimeStart), 0.001 * (nTime1 - nTimeStart) / block.vtx.size(), nInputs <= 1 ? 0 : 0.001 * (nTime1 - nTimeStart) / (nInputs-1), nTimeConnect * 0.000001);
 
-    CAmount blockReward = nFees + GetBlockSubsidy(pindex->GetHeight(), chainparams.GetConsensus()) + sum;
+    blockReward += nFees + GetBlockSubsidy(pindex->GetHeight(), chainparams.GetConsensus()) + sum;
     if ( ASSETCHAINS_COMMISSION != 0 || ASSETCHAINS_FOUNDERS_REWARD != 0 ) //ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 &&
     {
         uint64_t checktoshis;
@@ -3572,33 +3601,6 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                 blockReward += checktoshis;
             else if ( pindex->GetHeight() > 1 )
                 fprintf(stderr,"checktoshis %.8f vs %.8f numvouts %d\n",dstr(checktoshis),dstr(block.vtx[0].vout[1].nValue),(int32_t)block.vtx[0].vout.size());
-        }
-    }
-    bool sleepflag = false;
-    if ( ASSETCHAINS_NOTARY_PAY != 0 )
-    {
-        // do a full block scan to get notarisation position and to enforce 1 notarisation is in block only.
-        // if notarisation in the block, must be position 1 and the coinbase must pay notaries.
-        int notarisationTx = komodo_connectblock(true,pindex,*(CBlock *)&block);  
-        // -1 means that more than 1 notarisation is in a block, or the notarisation is not in order.
-        if ( notarisationTx == -1 )
-            return state.DoS(100, error("ConnectBlock(): Notarisation is not in TX position 1! Invalid Block!"),
-                        REJECT_INVALID, "bad-notarization-position");
-        // 1 means this block contains a valid notarisation
-        if ( notarisationTx == 1 )
-        {
-            // Check if the notaries have been paid.
-            if ( block.vtx[0].vout.size() == 1 )
-                return state.DoS(100, error("ConnectBlock(): Notary has not been paid!"),
-                                REJECT_INVALID, "bad-cb-amount");
-            // calculate the notaries compensation and validate the amounts and pubkeys are correct.
-            uint64_t notarypaycheque = komodo_checknotarypay((CBlock *)&block,(int32_t)pindex->GetHeight());
-            fprintf(stderr, "notarypaycheque.%lu\n", notarypaycheque);
-            if ( notarypaycheque > 0 )
-                blockReward += notarypaycheque;
-            else
-                return state.DoS(100, error("ConnectBlock(): Notary pay Validation Failed!"),
-                                REJECT_INVALID, "bad-cb-amount");
         }
     }
     if (ASSETCHAINS_SYMBOL[0] != 0 && pindex->GetHeight() == 1 && block.vtx[0].GetValueOut() != blockReward)
@@ -3716,8 +3718,6 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
     //FlushStateToDisk();
     komodo_connectblock(false,pindex,*(CBlock *)&block);  // dPoW state update.
-    if (sleepflag)
-        sleep(30);
     return true;
 }
 
