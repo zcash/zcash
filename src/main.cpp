@@ -4736,6 +4736,7 @@ bool FindBlockPos(int32_t tmpflag,CValidationState &state, CDiskBlockPos &pos, u
                 if ( 0 && tmpflag != 0 )
                     fprintf(stderr,"pos.nFile %d nPos %u\n",pos.nFile,pos.nPos);
             }
+            //sleep(30);
         }
         //fprintf(stderr, "nFile = %i size.%li maxTempFileSize0.%u maxTempFileSize1.%u\n",nFile,tmpBlockFiles.size(),maxTempFileSize0,maxTempFileSize1); sleep(30);
         *lastfilep = nFile;
@@ -5338,6 +5339,8 @@ bool AcceptBlock(int32_t *futureblockp,CBlock& block, CValidationState& state, C
 
     int nHeight = pindex->GetHeight();
     int32_t usetmp = 1;
+    if ( IsInitialBlockDownload() )
+        usetmp = 0;
 
     // Write block to history file
     try {
@@ -5586,6 +5589,7 @@ bool PruneOneBlockFile(bool tempfile, const int fileNumber)
                     // Block is in main chain so we cant clear this file!
                     return(false);
                 }
+                fprintf(stderr, "pindex height.%i notarized height.%i \n", pindex->GetHeight(), notarized_height);
                 if ( pindex->GetHeight() > notarized_height ) // Need to check this, does an invalid block have a height?
                 {
                     // This blocks height is not older than last notarization so it can be reorged into the main chain.

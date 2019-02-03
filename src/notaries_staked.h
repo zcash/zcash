@@ -23,7 +23,7 @@ static const char *iguanaSeeds[8][1] =
 static const int STAKED_ERA_GAP = 777;
 
 static const int NUM_STAKED_ERAS = 4;
-static const int STAKED_NOTARIES_TIMESTAMP[NUM_STAKED_ERAS] = {1542964044, 1549184400, 1604233333, 1604244444};
+static const int STAKED_NOTARIES_TIMESTAMP[NUM_STAKED_ERAS] = {1542964044, 1549188000, 1604233333, 1604244444};
 
 // Era array of pubkeys.
 static const char *notaries_STAKED[NUM_STAKED_ERAS][64][2] =
