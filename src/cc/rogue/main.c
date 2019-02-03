@@ -14,14 +14,6 @@
  ******************************************************************************/
 
 
-
-// creategame, register (inventory + baton + buyin), progress (events + statehash + [compr state]?), claimwin
-// create game buyin, newbie flag, 10 blocks registration seed is starting blockhash!
-// inheritance of items across games!
-// binding tokens to specific items to allow for built in market
-// pubkey token inventory creates items can be used for a specific campaign
-// player wins buyins + ingame gold -> ROGUE + ingame items -> tokens via 1 vout per item to be spent into a token opreturn
-
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>

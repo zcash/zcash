@@ -15,6 +15,12 @@
  ******************************************************************************/
 
 #include "cJSON.h"
+// creategame, register (inventory + baton + buyin), progress (seed + firsthash + statehash + events), claimwin
+// create game buyin, newbie flag, 10 blocks registration seed is starting blockhash!
+// inheritance of items across games!
+// binding tokens to specific items to allow for built in market
+// pubkey token inventory creates items can be used for a specific campaign
+// player wins buyins + ingame gold -> ROGUE + ingame items -> tokens via 1 vout per item to be spent into a token opreturn
 
 #define ROGUE_REGISTRATION 5
 
@@ -25,6 +31,8 @@
 // cclib pending 17
 // cclib txidinfo 17 \"35e99df53c981a937bfa2ce7bfb303cea0249dba34831592c140d1cb729cb19f\"
 // ./rogue <seed> gui -> creates keystroke files
+// cclib register 17 \"35e99df53c981a937bfa2ce7bfb303cea0249dba34831592c140d1cb729cb19f\" [items]
+// cclib pending 17 \"<txid>\" starthash endhash keystrokes
 
 CScript rogue_newgameopret(int64_t buyin)
 {
@@ -89,7 +97,7 @@ uint8_t rogue_newgameopreturndecode(int64_t &buyin,CScript scriptPubKey)
 UniValue rogue_newgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); std::string rawtx; CPubKey roguepk,mypk; char *jsonstr; uint64_t inputsum,amount = 0;
+    UniValue result(UniValue::VOBJ); std::string rawtx; CPubKey roguepk,mypk; char *jsonstr; uint64_t inputsum,change,amount = 0;
     if ( params != 0 )
     {
         if ( (jsonstr= jprint(params,0)) != 0 )
@@ -116,6 +124,8 @@ UniValue rogue_newgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     {
         mtx.vout.push_back(MakeCC1vout(cp->evalcode,txfee,roguepk));
         mtx.vout.push_back(MakeCC1vout(cp->evalcode,txfee,mypk));
+        if ( (change= inputsum-3*txfee) >= txfee )
+            mtx.vout.push_back(MakeCC1vout(cp->evalcode,change,roguepk));
         rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,rogue_newgameopret(amount));
         if ( rawtx.size() > 0 )
         {
