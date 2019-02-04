@@ -10,7 +10,8 @@ extern int32_t STAKED_ERA,IS_STAKED_NOTARY,IS_KOMODO_NOTARY;
 extern pthread_mutex_t staked_mutex;
 extern uint8_t NOTARY_PUBKEY33[33],NUM_NOTARIES;
 
-int8_t is_STAKED(const char *chain_name) {
+int8_t is_STAKED(const char *chain_name) 
+{
   static int8_t STAKED,doneinit;
   if ( chain_name[0] == 0 )
     return(0);
@@ -22,7 +23,7 @@ int8_t is_STAKED(const char *chain_name) {
     STAKED = 2;
   else if ( (strcmp(chain_name, "CFEK") == 0) || (strncmp(chain_name, "CFEK", 4) == 0) )
     STAKED = 3;
-  else if ( (strcmp(chain_name, "NOTARYTEST") == 0) )
+  else if ( (strcmp(chain_name, "TEST") == 0) || (strncmp(chain_name, "TEST", 4) == 0) )
     STAKED = 4;
   else if ( (strcmp(chain_name, "THIS_CHAIN_IS_BANNED") == 0) )
     STAKED = 255; // This means that all notarisations for chains that are in 255 group are invalid. 

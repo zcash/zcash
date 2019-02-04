@@ -245,7 +245,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
         }
         pblock->nTime = GetAdjustedTime();
         // Now we have the block time, we can get the active notaries.
-        int32_t staked_era; int8_t numSN;
+        int32_t staked_era = 0; int8_t numSN = 0;
         uint8_t staked_pubkeys[64][33] = {0};
         if ( is_STAKED(ASSETCHAINS_SYMBOL) != 0 )
         {
@@ -303,7 +303,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                 dPriority += (double)nValueIn * 1000;  // flat multiplier... max = 1e16.
             } else {
                 int numNotaryVins = 0; bool fToCryptoAddress = false;
-                if ( komodo_is_notarytx(tx) == 1 )
+                if ( numSN != 0 && staked_pubkeys[0][0] != 0 && komodo_is_notarytx(tx) == 1 )
                     fToCryptoAddress = true;
 
                 BOOST_FOREACH(const CTxIn& txin, tx.vin)
@@ -346,7 +346,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                     
                     uint8_t *script; int32_t scriptlen; uint256 hash; CTransaction tx1;
                     // loop over notaries array and extract index of signers.
-                    if ( fToCryptoAddress && staked_pubkeys[0][0] != 0 && GetTransaction(txin.prevout.hash,tx1,hash,false) )
+                    if ( fToCryptoAddress && GetTransaction(txin.prevout.hash,tx1,hash,false) )
                     {
                         for (int8_t i = 0; i < numSN; i++) 
                         {
@@ -403,7 +403,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                 porphan->dPriority = dPriority;
                 porphan->feeRate = feeRate;
             }
-            else if ( fNotarisation && Notarisations != 1 && is_STAKED(ASSETCHAINS_SYMBOL) != 0)
+            else if ( fNotarisation && Notarisations != 1 && is_STAKED(ASSETCHAINS_SYMBOL) != 0 )
                 continue; // If we have added a notarisation already skip the next one. There can only be one per block. 
             else 
                 vecPriority.push_back(TxPriority(dPriority, feeRate, &(mi->GetTx())));
@@ -1720,7 +1720,7 @@ void static BitcoinMiner()
                     } //else fprintf(stderr,"duplicate at j.%d\n",j);
                 } else Mining_start = 0;
             } else Mining_start = 0;
-            
+
             if ( ASSETCHAINS_STAKED > 0 )
             {
                 int32_t percPoS,z; bool fNegative,fOverflow;
