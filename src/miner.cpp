@@ -246,9 +246,12 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
         pblock->nTime = GetAdjustedTime();
         // Now we have the block time, we can get the active notaries.
         int32_t staked_era; int8_t numSN;
-        uint8_t staked_pubkeys[64][33];
-        staked_era = STAKED_era(pblock->nTime);
-        numSN = numStakedNotaries(staked_pubkeys,staked_era);
+        uint8_t staked_pubkeys[64][33] = {0};
+        if ( is_STAKED(ASSETCHAINS_SYMBOL) != 0 )
+        {
+            staked_era = STAKED_era(pblock->nTime);
+            numSN = numStakedNotaries(staked_pubkeys,staked_era);
+        }
 
         CCoinsViewCache view(pcoinsTip);
         uint32_t expired; uint64_t commission;
