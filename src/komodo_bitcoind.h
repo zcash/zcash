@@ -1811,8 +1811,6 @@ uint64_t komodo_notarypay(CMutableTransaction &txNew, std::vector<int8_t> &Notar
     if ( staked_era == 0 )
         return(0);
     numSN = numStakedNotaries(staked_pubkeys,staked_era);
-    // resize coinbase vouts to number of notary nodes +1 for coinbase itself.
-    txNew.vout.resize(NotarisationNotaries.size()+1);
     
     // Check the notarisation is valid, and extract notarised height. 
     uint64_t voutmask;
@@ -1832,6 +1830,9 @@ uint64_t komodo_notarypay(CMutableTransaction &txNew, std::vector<int8_t> &Notar
             return(0);
         }
     } else return(0);
+    
+    // resize coinbase vouts to number of notary nodes +1 for coinbase itself.
+    txNew.vout.resize(NotarisationNotaries.size()+1);
     
     // Calcualte the amount to pay. 
     AmountToPay = komodo_notarypayamount(notarizedheight,NotarisationNotaries.size());

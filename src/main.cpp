@@ -282,6 +282,9 @@ namespace {
         bool fCurrentlyConnected;
         //! Accumulated misbehaviour score for this peer.
         int nMisbehavior;
+        // count blocks seen.
+        //int8_t nBlocksinARow;
+        //int8_t nBlocksinARow2;
         //! Whether this peer should be disconnected and banned (unless whitelisted).
         bool fShouldBan;
         //! String name of this peer (debugging/logging purposes).
@@ -5469,6 +5472,20 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
     bool checked; uint256 hash; int32_t futureblock=0;
     auto verifier = libzcash::ProofVerifier::Disabled();
     hash = pblock->GetHash();
+    /*pfrom->nBlocksinARow += 1;
+    if ( pfrom->nBlocksinARow >= 6 )
+    {
+        pfrom->nBlocksinARow2 += 1;
+        if ( pfrom->nBlocksinARow2 > 3 )
+        {
+            pfrom->nBlocksinARow = 0;
+            pfrom->nBlocksinARow2 = 0;
+        }
+        else 
+        {
+            return(false);
+        }
+    }*/
     //fprintf(stderr,"ProcessBlock %d\n",(int32_t)chainActive.LastTip()->GetHeight());
     {
         LOCK(cs_main);
