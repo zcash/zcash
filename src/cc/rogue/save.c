@@ -22,7 +22,7 @@
 
 typedef struct stat STAT;
 
-extern char version[], encstr[];
+extern char *version, *encstr;
 
 static STAT sbuf;
 

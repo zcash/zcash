@@ -120,12 +120,12 @@
 
 // cclib newgame 17 \"[3,10]\"
 // cclib pending 17
-// cclib gameinfo 17 \"[%224fd6f5cad0fac455e5989ca6eef111b00292845447075a802e9335879146ad5a%22]\"
-// cclib register 17 \"[%224fd6f5cad0fac455e5989ca6eef111b00292845447075a802e9335879146ad5a%22]\"
+// cclib gameinfo 17 \"[%22e7d75f0b2bf0716ad0df87ee331bf52b41e0823e126654c7ec8bac5a15f6d869%22]\"
+// cclib register 17 \"[%22e7d75f0b2bf0716ad0df87ee331bf52b41e0823e126654c7ec8bac5a15f6d869%22]\"
 // ./rogue <seed> gui -> creates keystroke files
-// cclib register 17 \"[%224fd6f5cad0fac455e5989ca6eef111b00292845447075a802e9335879146ad5a%22,%22<playertxid>%22]\"
-// cclib keystrokes 17 \"[%224fd6f5cad0fac455e5989ca6eef111b00292845447075a802e9335879146ad5a%22,%22deadbeef%22]\"
-// cclib bailout 17 \"[%224fd6f5cad0fac455e5989ca6eef111b00292845447075a802e9335879146ad5a%22]\"
+// cclib register 17 \"[%22e7d75f0b2bf0716ad0df87ee331bf52b41e0823e126654c7ec8bac5a15f6d869%22,%22<playertxid>%22]\"
+// cclib keystrokes 17 \"[%22e7d75f0b2bf0716ad0df87ee331bf52b41e0823e126654c7ec8bac5a15f6d869%22,%22deadbeef%22]\"
+// cclib bailout 17 \"[%22e7d75f0b2bf0716ad0df87ee331bf52b41e0823e126654c7ec8bac5a15f6d869%22]\"
 /*
  gold.218 hp.20 strength.16 level.3 exp.22 2
 object (Some food) x.0 y.0 type.58 pack.(a:97)
