@@ -220,6 +220,7 @@ new_thing(struct rogue_state *rs)
     int r;
 
     cur = new_item();
+    // 7th new_thing orphaned fprintf(stderr,"new_thing.%p\n",cur);
     cur->o_hplus = 0;
     cur->o_dplus = 0;
     strncpy(cur->o_damage, "0x0", sizeof(cur->o_damage));
@@ -499,7 +500,8 @@ add_line(struct rogue_state *rs,char *fmt, char *arg)
 	    if (inv_type == INV_OVER && fmt == NULL && !newpage)
 	    {
 		msg(rs,"");
-		refresh();
+            if ( rs->sleeptime != 0 )
+                refresh();
 		tw = newwin(line_cnt + 1, maxlen + 2, 0, COLS - maxlen - 3);
 		sw = subwin(tw, line_cnt + 1, maxlen + 1, 0, COLS - maxlen - 2);
                 for (y = 0; y <= line_cnt; y++) 
@@ -615,7 +617,7 @@ nothing(char type)
  */
 
 void
-nameit(THING *obj, char *type, char *which, struct obj_info *op,
+nameit(THING *obj, const char *type,const char *which, struct obj_info *op,
     char *(*prfunc)(THING *))
 {
     char *pb;
@@ -633,7 +635,7 @@ nameit(THING *obj, char *type, char *which, struct obj_info *op,
 	    sprintf(pb, "called %s%s(%s)", op->oi_guess, (*prfunc)(obj), which);
     }
     else if (obj->o_count == 1)
-	sprintf(prbuf, "A%s %s %s", vowelstr(which), which, type);
+	sprintf(prbuf, "A%s %s %s", vowelstr((char *)which), which, type);
     else
 	sprintf(prbuf, "%d %s %ss", obj->o_count, which, type);
 }

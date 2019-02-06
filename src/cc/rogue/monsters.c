@@ -218,7 +218,10 @@ void
 give_pack(struct rogue_state *rs,THING *tp)
 {
     if (level >= max_level && rnd(100) < monsters[tp->t_type-'A'].m_carry)
-	attach(tp->t_pack, new_thing(rs));
+    {
+        //fprintf(stderr,"give_pack\n");
+        attach(tp->t_pack, new_thing(rs));
+    }
 }
 
 /*

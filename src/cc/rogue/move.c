@@ -230,7 +230,8 @@ turnref()
 	if (jump)
 	{
 	    leaveok(stdscr, TRUE);
-	    refresh();
+        if ( globalR.sleeptime != 0 )
+            refresh();
 	    leaveok(stdscr, FALSE);
 	}
 	pp->p_flags |= F_SEEN;

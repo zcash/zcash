@@ -28,9 +28,9 @@ command(struct rogue_state *rs)
     char *fp;
     THING *mp;
     static char countch, direction, newcount = FALSE;
-
+    
     if (on(player, ISHASTE))
-	ntimes++;
+        ntimes++;
     /*
      * Let the daemons start up
      */
@@ -38,82 +38,85 @@ command(struct rogue_state *rs)
     do_fuses(rs,BEFORE);
     while (ntimes--)
     {
-	again = FALSE;
-	if (has_hit)
-	{
-	    endmsg(rs);
-	    has_hit = FALSE;
-	}
-	/*
-	 * these are illegal things for the player to be, so if any are
-	 * set, someone's been poking in memeory
-	 */
-	if (on(player, ISSLOW|ISGREED|ISINVIS|ISREGEN|ISTARGET))
-	    exit(1);
-
-	look(rs,TRUE);
-	if (!running)
-	    door_stop = FALSE;
-	status(rs);
-	lastscore = purse;
-	move(hero.y, hero.x);
-	if (!((running || count) && jump))
-	    refresh();			/* Draw screen */
-	take = 0;
-	after = TRUE;
-	/*
-	 * Read command or continue run
-	 */
+        again = FALSE;
+        if (has_hit)
+        {
+            endmsg(rs);
+            has_hit = FALSE;
+        }
+        /*
+         * these are illegal things for the player to be, so if any are
+         * set, someone's been poking in memeory
+         */
+        if (on(player, ISSLOW|ISGREED|ISINVIS|ISREGEN|ISTARGET))
+            exit(1);
+        
+        look(rs,TRUE);
+        if (!running)
+            door_stop = FALSE;
+        status(rs);
+        lastscore = purse;
+        move(hero.y, hero.x);
+        if ( rs->sleeptime != 0 )
+        {
+            if (!((running || count) && jump))
+                refresh();			/* Draw screen */
+        }
+        take = 0;
+        after = TRUE;
+        /*
+         * Read command or continue run
+         */
 #ifdef MASTER
-	if (wizard)
-	    noscore = TRUE;
+        if (wizard)
+            noscore = TRUE;
 #endif
-	if (!no_command)
-	{
-	    if (running || to_death)
-		ch = runch;
-	    else if (count)
-		ch = countch;
-	    else
-	    {
-		ch = readchar(rs);
-		move_on = FALSE;
-		if (mpos != 0)		/* Erase message if its there */
-		    msg(rs,"");
-	    }
-	}
-	else
-	    ch = '.';
-	if (no_command)
-	{
-	    if (--no_command == 0)
-	    {
-		player.t_flags |= ISRUN;
-		msg(rs,"you can move again");
-	    }
-	}
-	else
-	{
-	    /*
-	     * check for prefixes
-	     */
-	    newcount = FALSE;
-	    if (isdigit(ch))
-	    {
-		count = 0;
-		newcount = TRUE;
-		while (isdigit(ch))
-		{
-		    count = count * 10 + (ch - '0');
-		    if (count > 255)
-			count = 255;
-		    ch = readchar(rs);
-		}
-		countch = ch;
-		/*
-		 * turn off count for commands which don't make sense
-		 * to repeat
-		 */
+        if (!no_command)
+        {
+            if (running || to_death)
+                ch = runch;
+            else if (count)
+                ch = countch;
+            else
+            {
+                ch = readchar(rs);
+                move_on = FALSE;
+                if (mpos != 0)		/* Erase message if its there */
+                    msg(rs,"");
+            }
+        }
+        else
+            ch = '.';
+        if (no_command)
+        {
+            if (--no_command == 0)
+            {
+                player.t_flags |= ISRUN;
+                msg(rs,"you can move again");
+            }
+        }
+        else
+        {
+            /*
+             * check for prefixes
+             */
+            newcount = FALSE;
+            if (isdigit(ch))
+            {
+                count = 0;
+                newcount = TRUE;
+                while (isdigit(ch))
+                {
+                    count = count * 10 + (ch - '0');
+                    if (count > 255)
+                        count = 255;
+                    ch = readchar(rs);
+                }
+                countch = ch;
+                /*
+                 * turn off count for commands which don't make sense
+                 * to repeat
+                 */
 		switch (ch)
 		{
 		    case CTRL('B'): case CTRL('H'): case CTRL('J'):
@@ -317,9 +320,9 @@ over:
 			if (chat(delta.y, delta.x) != TRAP)
 			    msg(rs,"no trap there");
 			else if (on(player, ISHALU))
-			    msg(rs,tr_name[rnd(NTRAPS)]);
+			    msg(rs,(char *)tr_name[rnd(NTRAPS)]);
 			else {
-			    msg(rs,tr_name[*fp & F_TMASK]);
+			    msg(rs,(char *)tr_name[*fp & F_TMASK]);
 			    *fp |= F_SEEN;
 			}
 		    }
@@ -521,9 +524,9 @@ foundone:
 			if (!terse)
 			    addmsg(rs,"you found ");
 			if (on(player, ISHALU))
-			    msg(rs,tr_name[rnd(NTRAPS)]);
+			    msg(rs,(char *)tr_name[rnd(NTRAPS)]);
 			else {
-			    msg(rs,tr_name[*fp & F_TMASK]);
+			    msg(rs,(char *)tr_name[*fp & F_TMASK]);
 			    *fp |= F_SEEN;
 			}
 			goto foundone;
@@ -546,7 +549,7 @@ foundone:
 void
 help(struct rogue_state *rs)
 {
-    register struct h_list *strp;
+    register const struct h_list *strp;
     register char helpch;
     register int numprint, cnt;
     msg(rs,"character you want help for (* for all): ");
@@ -617,9 +620,9 @@ void
 identify(struct rogue_state *rs)
 {
     register int ch;
-    register struct h_list *hp;
+    register const struct h_list *hp;
     register char *str;
-    static struct h_list ident_list[] = {
+    static const struct h_list ident_list[] = {
 	{'|',		"wall of a room",		FALSE},
 	{'-',		"wall of a room",		FALSE},
 	{GOLD,		"gold",				FALSE},
@@ -729,9 +732,9 @@ void
 call(struct rogue_state *rs)
 {
     register THING *obj;
-    register struct obj_info *op = NULL;
-    register char **guess, *elsewise = NULL;
-    register bool *know;
+    register const struct obj_info *op = NULL;
+    register char **guess; const char *elsewise = NULL;
+    register const bool *know;
 
     obj = get_item(rs,"call", CALLABLE);
     /*
@@ -758,7 +761,7 @@ call(struct rogue_state *rs)
 	    elsewise = ws_made[obj->o_which];
 norm:
 	    know = &op->oi_know;
-	    guess = &op->oi_guess;
+	    guess = (char **)&op->oi_guess;
 	    if (*guess != NULL)
 		elsewise = *guess;
 	when FOOD:

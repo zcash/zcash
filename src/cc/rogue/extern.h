@@ -129,6 +129,7 @@ extern FILE	*scoreboard;
 /*
  * Function types
  */
+void externs_clear();
 
 void    auto_save(int);
 void    endit(int sig);

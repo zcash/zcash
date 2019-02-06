@@ -105,7 +105,8 @@ do_motion(struct rogue_state *rs,THING *obj, int ydelta, int xdelta)
 	    if (cansee(rs,unc(obj->o_pos)) && !terse)
 	    {
 		mvaddch(obj->o_pos.y, obj->o_pos.x, obj->o_type);
-		refresh();
+            if ( rs->sleeptime != 0 )
+                refresh();
 	    }
 	    continue;
 	}
@@ -161,7 +162,6 @@ void
 init_weapon(THING *weap, int which)
 {
     struct init_weaps *iwp;
-
     weap->o_type = WEAPON;
     weap->o_which = which;
     iwp = &init_dam[which];

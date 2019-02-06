@@ -97,7 +97,7 @@ rs_read(FILE *inf, void *ptr, size_t size)
 }
 
 int
-rs_write_int(FILE *savef, int c)
+rs_write_int(FILE *savef, int32_t c)
 {
     unsigned char bytes[4];
     unsigned char *buf = (unsigned char *) &c;
@@ -120,7 +120,7 @@ rs_write_int(FILE *savef, int c)
 }
 
 int
-rs_read_int(FILE *inf, int *i)
+rs_read_int(FILE *inf, int32_t *i)
 {
     unsigned char bytes[4];
     int input = 0;
@@ -198,7 +198,7 @@ rs_read_chars(FILE *inf, char *i, int count)
 }
 
 int
-rs_write_ints(FILE *savef, int *c, int count)
+rs_write_ints(FILE *savef, int32_t *c, int count)
 {
     int n = 0;
 
@@ -215,7 +215,7 @@ rs_write_ints(FILE *savef, int *c, int count)
 }
 
 int
-rs_read_ints(FILE *inf, int *i, int count)
+rs_read_ints(FILE *inf, int32_t *i, int count)
 {
     int n, value;
     
@@ -300,7 +300,7 @@ rs_read_booleans(FILE *inf, bool *i, int count)
 }
 
 int
-rs_write_short(FILE *savef, short c)
+rs_write_short(FILE *savef, int16_t c)
 {
     unsigned char bytes[2];
     unsigned char *buf = (unsigned char *) &c;
@@ -321,7 +321,7 @@ rs_write_short(FILE *savef, short c)
 }
 
 int
-rs_read_short(FILE *inf, short *i)
+rs_read_short(FILE *inf, int16_t *i)
 {
     unsigned char bytes[2];
     short  input;
@@ -345,7 +345,7 @@ rs_read_short(FILE *inf, short *i)
 } 
 
 int
-rs_write_shorts(FILE *savef, short *c, int count)
+rs_write_shorts(FILE *savef, int16_t *c, int count)
 {
     int n = 0;
 
@@ -362,7 +362,7 @@ rs_write_shorts(FILE *savef, short *c, int count)
 }
 
 int
-rs_read_shorts(FILE *inf, short *i, int count)
+rs_read_shorts(FILE *inf, int16_t *i, int count)
 {
     int n = 0, value = 0;
 
@@ -382,7 +382,7 @@ rs_read_shorts(FILE *inf, short *i, int count)
 }
 
 int
-rs_write_ushort(FILE *savef, unsigned short c)
+rs_write_ushort(FILE *savef, uint16_t c)
 {
     unsigned char bytes[2];
     unsigned char *buf = (unsigned char *) &c;
@@ -403,7 +403,7 @@ rs_write_ushort(FILE *savef, unsigned short c)
 }
 
 int
-rs_read_ushort(FILE *inf, unsigned short *i)
+rs_read_ushort(FILE *inf, uint16_t *i)
 {
     unsigned char bytes[2];
     unsigned short  input;
@@ -427,7 +427,7 @@ rs_read_ushort(FILE *inf, unsigned short *i)
 } 
 
 int
-rs_write_uint(FILE *savef, unsigned int c)
+rs_write_uint(FILE *savef, uint32_t c)
 {
     unsigned char bytes[4];
     unsigned char *buf = (unsigned char *) &c;
@@ -450,7 +450,7 @@ rs_write_uint(FILE *savef, unsigned int c)
 }
 
 int
-rs_read_uint(FILE *inf, unsigned int *i)
+rs_read_uint(FILE *inf, uint32_t *i)
 {
     unsigned char bytes[4];
     int  input;
@@ -476,7 +476,7 @@ rs_read_uint(FILE *inf, unsigned int *i)
 }
 
 int
-rs_write_marker(FILE *savef, int id)
+rs_write_marker(FILE *savef, int32_t id)
 {
     if (write_error)
         return(WRITESTAT);
@@ -487,7 +487,7 @@ rs_write_marker(FILE *savef, int id)
 }
 
 int 
-rs_read_marker(FILE *inf, int id)
+rs_read_marker(FILE *inf, int32_t id)
 {
     int nid;
 
@@ -891,7 +891,7 @@ rs_write_scrolls(FILE *savef)
         return(WRITESTAT);
 
     for(i = 0; i < MAXSCROLLS; i++)
-        rs_write_string(savef, s_names[i]);
+        rs_write_string(savef, (char *)s_names[i]);
 
     return(READSTAT);
 }
@@ -905,7 +905,7 @@ rs_read_scrolls(FILE *inf)
         return(READSTAT);
 
     for(i = 0; i < MAXSCROLLS; i++)
-        rs_read_new_string(inf, &s_names[i]);
+        rs_read_new_string(inf, (char **)&s_names[i]);
 
     return(READSTAT);
 }
@@ -919,7 +919,7 @@ rs_write_potions(FILE *savef)
         return(WRITESTAT);
 
     for(i = 0; i < MAXPOTIONS; i++)
-        rs_write_string_index(savef, rainbow, cNCOLORS, p_colors[i]);
+        rs_write_string_index(savef, (char **)rainbow, cNCOLORS, (char *)p_colors[i]);
 
     return(WRITESTAT);
 }
@@ -933,7 +933,7 @@ rs_read_potions(FILE *inf)
         return(READSTAT);
 
     for(i = 0; i < MAXPOTIONS; i++)
-        rs_read_string_index(inf, rainbow, cNCOLORS, &p_colors[i]);
+        rs_read_string_index(inf, (char **)rainbow, cNCOLORS, (char **)&p_colors[i]);
 
     return(READSTAT);
 }
@@ -947,7 +947,7 @@ rs_write_rings(FILE *savef)
         return(WRITESTAT);
 
     for(i = 0; i < MAXRINGS; i++)
-        rs_write_stone_index(savef, stones, cNSTONES, r_stones[i]);
+        rs_write_stone_index(savef, (STONE *)stones, cNSTONES, (char *)r_stones[i]);
 
     return(WRITESTAT);
 }
@@ -961,7 +961,7 @@ rs_read_rings(FILE *inf)
         return(READSTAT);
 
     for(i = 0; i < MAXRINGS; i++)
-        rs_read_stone_index(inf, stones, cNSTONES, &r_stones[i]);
+        rs_read_stone_index(inf, (STONE *)stones, cNSTONES, (char **)&r_stones[i]);
 
     return(READSTAT);
 }
@@ -979,12 +979,12 @@ rs_write_sticks(FILE *savef)
         if (strcmp(ws_type[i],"staff") == 0)
         {
             rs_write_int(savef,0);
-            rs_write_string_index(savef, wood, cNWOOD, ws_made[i]);
+            rs_write_string_index(savef, (char **)wood, cNWOOD, (char *)ws_made[i]);
         }
         else
         {
             rs_write_int(savef,1);
-            rs_write_string_index(savef, metal, cNMETAL, ws_made[i]);
+            rs_write_string_index(savef, (char **)metal, cNMETAL, (char *)ws_made[i]);
         }
     }
  
@@ -1005,12 +1005,12 @@ rs_read_sticks(FILE *inf)
 
         if (list == 0)
         {
-            rs_read_string_index(inf, wood, cNWOOD, &ws_made[i]);
+            rs_read_string_index(inf, (char **)wood, cNWOOD, (char **)&ws_made[i]);
             ws_type[i] = "staff";
         }
         else 
         {
-            rs_read_string_index(inf, metal, cNMETAL, &ws_made[i]);
+            rs_read_string_index(inf, (char **)metal, cNMETAL, (char **)&ws_made[i]);
             ws_type[i] = "wand";
         }
     }
@@ -1336,13 +1336,65 @@ rs_read_monsters(FILE *inf, struct monster *m, int count)
     return(READSTAT);
 }
 
-int
-rs_write_object(FILE *savef, THING *o)
+void rogue_restoreobject(THING *o,struct rogue_packitem *item)
 {
+    o->_o._o_type = item->type;
+    o->_o._o_launch = item->launch;
+    memcpy(o->_o._o_damage,item->damage,sizeof(item->damage));
+    memcpy(o->_o._o_hurldmg,item->hurldmg,sizeof(item->hurldmg));
+    o->_o._o_count = item->count;
+    o->_o._o_which = item->which;
+    o->_o._o_hplus = item->hplus;
+    o->_o._o_dplus = item->dplus;
+    o->_o._o_arm = item->arm;
+    o->_o._o_flags = item->flags;
+    o->_o._o_group = item->group;
+}
+
+int32_t packsave(struct rogue_packitem *item,int32_t type,int32_t launch,char *damage,int32_t damagesize,char *hurldmg,int32_t hurlsize,int32_t count,int32_t which,int32_t hplus,int32_t dplus,int32_t arm,int32_t flags,int32_t group)
+{
+    if ( damagesize != 8 || hurlsize != 8 )
+    {
+        fprintf(stderr,"unexpected damagesize.%d or hurlsize.%d != 8\n",damagesize,hurlsize);
+        return(-1);
+    }
+    item->type = type;
+    item->launch = launch;
+    memcpy(item->damage,damage,damagesize);
+    memcpy(item->hurldmg,hurldmg,hurlsize);
+    item->count = count;
+    item->which = which;
+    item->hplus = hplus;
+    item->dplus = dplus;
+    item->arm = arm;
+    item->flags = flags;
+    item->group = group;
+    return(0);
+}
+
+int
+rs_write_object(struct rogue_state *rs,FILE *savef, THING *o)
+{
+    struct rogue_packitem *item;
     if (write_error)
         return(WRITESTAT);
-    //fprintf(stderr,"object %ld -> ",ftell(savef));
-
+    if ( o->_o._o_packch != 0 )
+    {
+        item = &rs->P.roguepack[rs->P.packsize];
+        if ( rs->P.packsize++ == 0 )
+        {
+            rs->P.gold = purse;
+            rs->P.hitpoints = max_hp;
+            rs->P.strength = max_stats.s_str;
+            rs->P.level = pstats.s_lvl;
+            rs->P.experience = pstats.s_exp;
+            fprintf(stderr,"%ld gold.%d hp.%d strength.%d level.%d exp.%d\n",ftell(savef),purse,max_hp,max_stats.s_str,pstats.s_lvl,pstats.s_exp);
+        };
+        fprintf(stderr,"object (%s) x.%d y.%d type.%d pack.(%c:%d)\n",inv_name(o,FALSE),o->_o._o_pos.x,o->_o._o_pos.y,o->_o._o_type,o->_o._o_packch,o->_o._o_packch);
+        if ( rs->P.packsize < MAXPACK )
+            packsave(item,o->_o._o_type,o->_o._o_launch,o->_o._o_damage,sizeof(o->_o._o_damage),o->_o._o_hurldmg,sizeof(o->_o._o_hurldmg),o->_o._o_count,o->_o._o_which,o->_o._o_hplus,o->_o._o_dplus,o->_o._o_arm,o->_o._o_flags,o->_o._o_group);
+    }
+    
     rs_write_marker(savef, RSID_OBJECT);
     rs_write_int(savef, o->_o._o_type); 
     rs_write_coord(savef, o->_o._o_pos); 
@@ -1358,7 +1410,6 @@ rs_write_object(FILE *savef, THING *o)
     rs_write_int(savef, o->_o._o_flags);
     rs_write_int(savef, o->_o._o_group);
     rs_write_string(savef, o->_o._o_label);
-    //fprintf(stderr,"%ld\n",ftell(savef));
     return(WRITESTAT);
 }
 
@@ -1388,7 +1439,7 @@ rs_read_object(FILE *inf, THING *o)
 }
 
 int
-rs_write_object_list(FILE *savef, THING *l)
+rs_write_object_list(struct rogue_state *rs,FILE *savef, THING *l)
 {
     if (write_error)
         return(WRITESTAT);
@@ -1398,7 +1449,7 @@ rs_write_object_list(FILE *savef, THING *l)
     rs_write_int(savef, list_size(l));
 
     for( ;l != NULL; l = l->l_next)
-        rs_write_object(savef, l);
+        rs_write_object(rs,savef, l);
     //fprintf(stderr,"%ld\n",ftell(savef));
 
     return(WRITESTAT);
@@ -1526,7 +1577,7 @@ find_object_coord(THING *objlist, coord *c)
 }
 
 int
-rs_write_thing(FILE *savef, THING *t)
+rs_write_thing(struct rogue_state *rs,FILE *savef, THING *t)
 {
     int i = -1;
     
@@ -1610,7 +1661,7 @@ rs_write_thing(FILE *savef, THING *t)
     rs_write_short(savef, t->_t._t_flags);
     rs_write_stats(savef, &t->_t._t_stats);
     rs_write_room_reference(savef, t->_t._t_room);
-    rs_write_object_list(savef, t->_t._t_pack);
+    rs_write_object_list(rs,savef, t->_t._t_pack);
     //fprintf(stderr,"%ld\n",ftell(savef));
 
     return(WRITESTAT);
@@ -1712,7 +1763,7 @@ rs_fix_thing(THING *t)
 }
 
 int
-rs_write_thing_list(FILE *savef, THING *l)
+rs_write_thing_list(struct rogue_state *rs,FILE *savef, THING *l)
 {
     int cnt = 0;
     
@@ -1729,7 +1780,7 @@ rs_write_thing_list(FILE *savef, THING *l)
         return(WRITESTAT);
 
     while (l != NULL) {
-        rs_write_thing(savef, l);
+        rs_write_thing(rs,savef, l);
         l = l->l_next;
     }
     
@@ -1888,7 +1939,7 @@ rs_read_places(FILE *inf, PLACE *places, int count)
 }
 
 int
-rs_save_file(FILE *savef)
+rs_save_file(struct rogue_state *rs,FILE *savef)
 {
     if (write_error)
         return(WRITESTAT);
@@ -1941,12 +1992,12 @@ rs_save_file(FILE *savef)
     rs_write_int(savef,orig_dsusp);
     rs_write_chars(savef, fruit, MAXSTR);
     //rs_write_chars(savef, home, MAXSTR);
-    rs_write_strings(savef,inv_t_name,3);
+    rs_write_strings(savef,(char **)inv_t_name,3);
     rs_write_char(savef,l_last_comm);
     rs_write_char(savef,l_last_dir);
     rs_write_char(savef,last_comm);
     rs_write_char(savef,last_dir);
-    rs_write_strings(savef,tr_name,8);
+    rs_write_strings(savef,(char **)tr_name,8);
     rs_write_int(savef,n_objs);
     rs_write_int(savef, ntraps);
     rs_write_int(savef, hungry_state);
@@ -1956,7 +2007,7 @@ rs_save_file(FILE *savef)
     rs_write_int(savef, max_level);
     rs_write_int(savef, mpos);
     rs_write_int(savef, no_food);
-    rs_write_ints(savef,a_class,MAXARMORS);
+    rs_write_ints(savef,(int32_t *)a_class,MAXARMORS);
     rs_write_int(savef, count);
     rs_write_int(savef, food_left);
     rs_write_int(savef, lastscore);
@@ -1968,11 +2019,11 @@ rs_save_file(FILE *savef)
     //rs_write_int(savef, dnum);
     rs_write_int(savef, (int32_t)(seed&0xffffffff));
     rs_write_int(savef, (int32_t)((seed>>32)&0xffffffff));
-    rs_write_ints(savef, e_levels, 21);
+    rs_write_ints(savef, (int32_t *)e_levels, 21);
     rs_write_coord(savef, delta);
     rs_write_coord(savef, oldpos);
     rs_write_coord(savef, stairs);
-    rs_write_thing(savef, &player);
+    rs_write_thing(rs,savef, &player);
     rs_write_object_reference(savef, player.t_pack, cur_armor);
     rs_write_object_reference(savef, player.t_pack, cur_ring[0]);
     rs_write_object_reference(savef, player.t_pack, cur_ring[1]); 
@@ -1980,8 +2031,8 @@ rs_save_file(FILE *savef)
     rs_write_object_reference(savef, player.t_pack, l_last_pick); 
     rs_write_object_reference(savef, player.t_pack, last_pick); 
 
-    rs_write_object_list(savef, lvl_obj);
-    rs_write_thing_list(savef, mlist);                
+    rs_write_object_list(rs,savef, lvl_obj);
+    rs_write_thing_list(rs,savef, mlist);
 
     rs_write_places(savef,places,MAXLINES*MAXCOLS);
     
@@ -2073,12 +2124,12 @@ rs_restore_file(FILE *inf)
     rs_read_int(inf,&orig_dsusp);
     rs_read_chars(inf, fruit, MAXSTR);
     //rs_read_chars(inf, home, MAXSTR);
-    rs_read_new_strings(inf,inv_t_name,3);
+    rs_read_new_strings(inf,(char **)inv_t_name,3);
     rs_read_char(inf, &l_last_comm);
     rs_read_char(inf, &l_last_dir);
     rs_read_char(inf, &last_comm);
     rs_read_char(inf, &last_dir);
-    rs_read_new_strings(inf,tr_name,8);
+    rs_read_new_strings(inf,(char **)tr_name,8);
     rs_read_int(inf, &n_objs);
     rs_read_int(inf, &ntraps);
     rs_read_int(inf, &hungry_state);
@@ -2088,7 +2139,7 @@ rs_restore_file(FILE *inf)
     rs_read_int(inf, &max_level);
     rs_read_int(inf, &mpos);
     rs_read_int(inf, &no_food);
-    rs_read_ints(inf,a_class,MAXARMORS);
+    rs_read_ints(inf,(int32_t *)a_class,MAXARMORS);
     rs_read_int(inf, &count);
     rs_read_int(inf, &food_left);
     rs_read_int(inf, &lastscore);
@@ -2102,7 +2153,7 @@ rs_restore_file(FILE *inf)
     rs_read_int(inf, &lownum);
     rs_read_int(inf, &highnum);
     seed = ((uint64_t)highnum<<32) | (lownum&0xffffffff);
-    rs_read_ints(inf,e_levels,21);
+    rs_read_ints(inf,(int32_t *)e_levels,21);
     rs_read_coord(inf, &delta);
     rs_read_coord(inf, &oldpos);
     rs_read_coord(inf, &stairs);

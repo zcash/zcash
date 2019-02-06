@@ -218,6 +218,7 @@ score(int amount, int flags, char monst)
 	    signal(SIGINT, fp);
 	}
     }
+    free(top_ten);
 }
 
 /*

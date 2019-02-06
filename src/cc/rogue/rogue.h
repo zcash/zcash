@@ -313,19 +313,35 @@
 /*
  * Now we define the structures and types
  */
+struct rogue_packitem
+{
+    int32_t type,launch,count,which,hplus,dplus,arm,flags,group;
+    char damage[8],hurldmg[8];
+};
+
+struct rogue_player
+{
+    int32_t gold,hitpoints,strength,level,experience,packsize;
+    struct rogue_packitem roguepack[MAXPACK];
+};
+
 struct rogue_state
 {
     uint64_t seed;
     char *keystrokes;
     uint32_t needflush,replaydone;
     int32_t numkeys,ind,num,guiflag,counter,sleeptime;
+    struct rogue_player P;
     char buffered[512];
 };
+extern struct rogue_state globalR;
+
 
 int rogue(int argc, char **argv, char **envp);
 void rogueiterate(struct rogue_state *rs);
 int32_t roguefname(char *fname,uint64_t seed,int32_t counter);
 int32_t flushkeystrokes(struct rogue_state *rs);
+int32_t rogue_restorepack(struct rogue_state *rs);
 
 /*
  * Help list
@@ -476,6 +492,18 @@ struct monster {
 /*
  * External variables
  */
+extern const char *tr_name[],*inv_t_name[];
+extern const int32_t a_class[], e_levels[];
+extern const struct h_list	helpstr[];
+extern const char *h_names[],*m_names[];
+
+
+extern const struct monster	origmonsters[26];
+extern const struct room origpassages[MAXPASS];
+extern const struct obj_info origthings[NUMTHINGS],origring_info[MAXRINGS],origpot_info[MAXPOTIONS],origarm_info[MAXARMORS],origscr_info[MAXSCROLLS],origws_info[MAXSTICKS],origweap_info[MAXWEAPONS + 1];
+extern struct monster monsters[26];
+extern struct room passages[MAXPASS];
+extern struct obj_info things[NUMTHINGS],ring_info[MAXRINGS],pot_info[MAXPOTIONS],arm_info[MAXARMORS],scr_info[MAXSCROLLS],weap_info[MAXWEAPONS + 1],ws_info[MAXSTICKS];
 
 extern bool	after, again, allscore, amulet, door_stop, fight_flush,
 		firstmove, has_hit, inv_describe, jump, kamikaze,
@@ -483,19 +511,18 @@ extern bool	after, again, allscore, amulet, door_stop, fight_flush,
 		passgo, playing, q_comm, running, save_msg, see_floor,
 		seenstairs, stat_msg, terse, to_death, tombstone;
 
-extern char	dir_ch, file_name[], home[], huh[], *inv_t_name[],
+extern char	dir_ch, file_name[], home[], huh[],
 		l_last_comm, l_last_dir, last_comm, last_dir, *Numname,
-		outbuf[], *p_colors[], *r_stones[], *release, runch,
-		*s_names[], take, *tr_name[], *ws_made[], *ws_type[];
+		outbuf[],  *release, *s_names[], runch, take;
+extern const char *ws_made[], *r_stones[], *p_colors[], *ws_type[];
 
-extern int	a_class[], count, food_left, hungry_state, inpack,
+extern int	count, food_left, hungry_state, inpack,
 		inv_type, lastscore, level, max_hit, max_level, mpos,
 		n_objs, no_command, no_food, no_move, noscore, ntraps, purse,
 		quiet, vf_hit;
 
 extern unsigned int	numscores;
 
-extern int	dnum, e_levels[];
 extern uint64_t seed;
 
 extern WINDOW	*hw;
@@ -507,16 +534,11 @@ extern PLACE	places[];
 extern THING	*cur_armor, *cur_ring[], *cur_weapon, *l_last_pick,
 		*last_pick, *lvl_obj, *mlist, player;
 
-extern struct h_list	helpstr[];
 
-extern struct room	*oldrp, passages[], rooms[];
+extern struct room	*oldrp, rooms[];
 
 extern struct stats	max_stats;
 
-extern struct monster	monsters[];
-
-extern struct obj_info	arm_info[], pot_info[], ring_info[],
-			scr_info[], things[], ws_info[], weap_info[];
 
 /*
  * Function types
@@ -617,7 +639,7 @@ void	money(struct rogue_state *rs,int value);
 int	move_monst(struct rogue_state *rs,THING *tp);
 void	move_msg(struct rogue_state *rs,THING *obj);
 int	msg(struct rogue_state *rs,char *fmt, ...);
-void	nameit(THING *obj, char *type, char *which, struct obj_info *op, char *(*prfunc)(THING *));
+void	nameit(THING *obj, const char *type, const char *which, struct obj_info *op, char *(*prfunc)(THING *));
 void	new_level(struct rogue_state *rs);
 void	new_monster(struct rogue_state *rs,THING *tp, char type, coord *cp);
 void	numpass(int y, int x);
@@ -651,12 +673,12 @@ void	ring_off(struct rogue_state *rs);
 int	rnd(int range);
 int	rnd_room(void);
 int	roll(int number, int sides);
-int	rs_save_file(FILE *savef);
+int	rs_save_file(struct rogue_state *rs,FILE *savef);
 int	rs_restore_file(FILE *inf);
 void	runto(struct rogue_state *rs,coord *runner);
 void	rust_armor(struct rogue_state *rs,THING *arm);
 int	save(int which);
-void	save_file(FILE *savef,int32_t guiflag);
+void	save_file(struct rogue_state *rs,FILE *savef,int32_t guiflag);
 void	save_game(struct rogue_state *rs);
 int	save_throw(int which, THING *tp);
 void	score(int amount, int flags, char monst);
@@ -778,13 +800,13 @@ extern int      total;
 extern int      between;
 extern int      group;
 extern coord    nh;
-extern char     *rainbow[];
+extern const char     *rainbow[];
 extern int      cNCOLORS;
-extern STONE    stones[];
+extern const STONE    stones[];
 extern int      cNSTONES;
-extern char     *wood[];
+extern const char     *wood[];
 extern int      cNWOOD;
-extern char     *metal[];
+extern const char     *metal[];
 extern int      cNMETAL;
 #endif
 

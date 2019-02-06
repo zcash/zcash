@@ -444,6 +444,13 @@ UniValue cclib_error(UniValue &result,const char *errorstr)
     return(result);
 }
 
+uint256 juint256(cJSON *obj)
+{
+    uint256 tmp; bits256 t = jbits256(obj,0);
+    memcpy(&tmp,&t,sizeof(tmp));
+    return(revuint256(tmp));
+}
+
 cJSON *cclib_reparse(int32_t *nump,cJSON *origparams) // assumes origparams will be freed by caller
 {
     cJSON *params; char *jsonstr,*newstr; int32_t i,j;

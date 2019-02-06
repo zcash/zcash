@@ -13,6 +13,8 @@
 #include <curses.h>
 #include "rogue.h"
 
+
+
 bool after;				/* True if we want after daemons */
 bool again;				/* Repeating the last command */
 int  noscore;				/* Was a wizard sometime */
@@ -50,41 +52,21 @@ bool pack_used[26] = {			/* Is the character used in the pack? */
 };
 
 char dir_ch;				/* Direction from last get_dir() call */
+char runch;				/* Direction player is running */
+char take;				/* Thing she is taking */
+
+int  orig_dsusp;			/* Original dsusp char */
 char file_name[MAXSTR];			/* Save file name */
 char huh[MAXSTR];			/* The last message printed */
-char *p_colors[MAXPOTIONS];		/* Colors of the potions */
 char prbuf[2*MAXSTR];			/* buffer for sprintfs */
-char *r_stones[MAXRINGS];		/* Stone settings of the rings */
-char runch;				/* Direction player is running */
-char *s_names[MAXSCROLLS];		/* Names of the scrolls */
-char take;				/* Thing she is taking */
 char whoami[MAXSTR];			/* Name of player */
-char *ws_made[MAXSTICKS];		/* What sticks are made of */
-char *ws_type[MAXSTICKS];		/* Is it a wand or a staff */
-int  orig_dsusp;			/* Original dsusp char */
 char fruit[MAXSTR] =			/* Favorite fruit */
 		{ 's', 'l', 'i', 'm', 'e', '-', 'm', 'o', 'l', 'd', '\0' };
 char home[MAXSTR] = { '\0' };		/* User's home directory */
-char *inv_t_name[] = {
-	"Overwrite",
-	"Slow",
-	"Clear"
-};
 char l_last_comm = '\0';		/* Last last_comm */
 char l_last_dir = '\0';			/* Last last_dir */
 char last_comm = '\0';			/* Last command typed */
 char last_dir = '\0';			/* Last direction given */
-char *tr_name[] = {			/* Names of the traps */
-	"a trapdoor",
-	"an arrow trap",
-	"a sleeping gas trap",
-	"a beartrap",
-	"a teleport trap",
-	"a poison dart trap",
-	"a rust trap",
-        "a mysterious trap"
-};
-
 
 int n_objs;				/* # items listed in inventory() call */
 int ntraps;				/* Number of traps on this level */
@@ -96,19 +78,8 @@ int max_hit;				/* Max damage done to her in to_death */
 int max_level;				/* Deepest player has gone */
 int mpos = 0;				/* Where cursor is on top line */
 int no_food = 0;			/* Number of levels without food */
-int a_class[MAXARMORS] = {		/* Armor class for each armor type */
-	8,	/* LEATHER */
-	7,	/* RING_MAIL */
-	7,	/* STUDDED_LEATHER */
-	6,	/* SCALE_MAIL */
-	5,	/* CHAIN_MAIL */
-	4,	/* SPLINT_MAIL */
-	4,	/* BANDED_MAIL */
-	3,	/* PLATE_MAIL */
-};
 
 int count = 0;				/* Number of times to repeat command */
-FILE *scoreboard = NULL;	/* File descriptor for score file */
 int food_left;				/* Amount of food in hero's stomach */
 int lastscore = -1;			/* Score before this turn */
 int no_command = 0;			/* Number of turns asleep */
@@ -117,37 +88,20 @@ int purse = 0;				/* How much gold he has */
 int quiet = 0;				/* Number of quiet turns */
 int vf_hit = 0;				/* Number of time flytrap has hit */
 
-int dnum;				/* Dungeon number */
+
+//int dnum;				/* Dungeon number */
 uint64_t seed;				/* Random number seed */
-int e_levels[] = {
-        10L,
-	20L,
-	40L,
-	80L,
-       160L,
-       320L,
-       640L,
-      1300L,
-      2600L,
-      5200L,
-     13000L,
-     26000L,
-     50000L,
-    100000L,
-    200000L,
-    400000L,
-    800000L,
-   2000000L,
-   4000000L,
-   8000000L,
-	 0L
-};
 
 coord delta;				/* Change indicated to get_dir() */
 coord oldpos;				/* Position before last look() call */
 coord stairs;				/* Location of staircase */
 
 PLACE places[MAXLINES*MAXCOLS];		/* level map */
+
+const char *p_colors[MAXPOTIONS];		/* Colors of the potions */
+const char *r_stones[MAXRINGS];		/* Stone settings of the rings */
+const char *ws_made[MAXSTICKS];		/* What sticks are made of */
+const char *ws_type[MAXSTICKS];		/* Is it a wand or a staff */
 
 THING *cur_armor;			/* What he is wearing */
 THING *cur_ring[2];			/* Which rings are being worn */
@@ -156,18 +110,36 @@ THING *l_last_pick = NULL;		/* Last last_pick */
 THING *last_pick = NULL;		/* Last object picked in get_item() */
 THING *lvl_obj = NULL;			/* List of objects on this level */
 THING *mlist = NULL;			/* List of monsters on the level */
+struct room *oldrp;			/* Roomin(&oldpos) */
 THING player;				/* His stats */
-					/* restart of game */
-
 WINDOW *hw = NULL;			/* used as a scratch window */
+char *s_names[MAXSCROLLS];		/* Names of the scrolls */
+FILE *scoreboard = NULL;	/* File descriptor for score file */
 
 #define INIT_STATS { 16, 0, 1, 10, 12, "1x4", 12 }
 
 struct stats max_stats = INIT_STATS;	/* The maximum for the player */
+struct stats orig_max_stats = INIT_STATS;
 
-struct room *oldrp;			/* Roomin(&oldpos) */
-struct room rooms[MAXROOMS];		/* One for each room -- A level */
-struct room passages[MAXPASS] =		/* One for each passage */
+struct monster monsters[26];
+struct room passages[MAXPASS],rooms[MAXROOMS];		/* One for each room -- A level */
+struct obj_info things[NUMTHINGS],ring_info[MAXRINGS],pot_info[MAXPOTIONS],arm_info[MAXARMORS],scr_info[MAXSCROLLS],weap_info[MAXWEAPONS + 1],ws_info[MAXSTICKS];
+
+////////////// constants
+#define ___ 1
+#define XX 10
+
+const struct obj_info origthings[NUMTHINGS] = {
+    { 0,			26 },	/* potion */
+    { 0,			36 },	/* scroll */
+    { 0,			16 },	/* food */
+    { 0,			 7 },	/* weapon */
+    { 0,			 7 },	/* armor */
+    { 0,			 4 },	/* ring */
+    { 0,			 4 },	/* stick */
+};
+
+const struct room origpassages[MAXPASS] =		/* One for each passage */
 {
     { {0, 0}, {0, 0}, {0, 0}, 0, ISGONE|ISDARK, 0, {{0,0}} },
     { {0, 0}, {0, 0}, {0, 0}, 0, ISGONE|ISDARK, 0, {{0,0}} },
@@ -182,10 +154,7 @@ struct room passages[MAXPASS] =		/* One for each passage */
     { {0, 0}, {0, 0}, {0, 0}, 0, ISGONE|ISDARK, 0, {{0,0}} },
     { {0, 0}, {0, 0}, {0, 0}, 0, ISGONE|ISDARK, 0, {{0,0}} }
 };
-
-#define ___ 1
-#define XX 10
-struct monster monsters[26] =
+const struct monster origmonsters[26] =
     {
 /* Name		 CARRY	FLAG    str, exp, lvl, amr, hpt, dmg */
 { "aquator",	   0,	ISMEAN,	{ XX, 20,   5,   2, ___, "0x0/0x0" } },
@@ -220,17 +189,7 @@ struct monster monsters[26] =
 #undef ___
 #undef XX
 
-struct obj_info things[NUMTHINGS] = {
-    { 0,			26 },	/* potion */
-    { 0,			36 },	/* scroll */
-    { 0,			16 },	/* food */
-    { 0,			 7 },	/* weapon */
-    { 0,			 7 },	/* armor */
-    { 0,			 4 },	/* ring */
-    { 0,			 4 },	/* stick */
-};
-
-struct obj_info arm_info[MAXARMORS] = {
+const struct obj_info origarm_info[MAXARMORS] = {
     { "leather armor",		 20,	 20, NULL, FALSE },
     { "ring mail",		 15,	 25, NULL, FALSE },
     { "studded leather armor",	 15,	 20, NULL, FALSE },
@@ -240,7 +199,7 @@ struct obj_info arm_info[MAXARMORS] = {
     { "banded mail",		 10,	 90, NULL, FALSE },
     { "plate mail",		  5,	150, NULL, FALSE },
 };
-struct obj_info pot_info[MAXPOTIONS] = {
+const struct obj_info origpot_info[MAXPOTIONS] = {
     { "confusion",		 7,   5, NULL, FALSE },
     { "hallucination",		 8,   5, NULL, FALSE },
     { "poison",			 8,   5, NULL, FALSE },
@@ -256,7 +215,7 @@ struct obj_info pot_info[MAXPOTIONS] = {
     { "blindness",		 5,   5, NULL, FALSE },
     { "levitation",		 6,  75, NULL, FALSE },
 };
-struct obj_info ring_info[MAXRINGS] = {
+const struct obj_info origring_info[MAXRINGS] = {
     { "protection",		 9, 400, NULL, FALSE },
     { "add strength",		 9, 400, NULL, FALSE },
     { "sustain strength",	 5, 280, NULL, FALSE },
@@ -272,7 +231,7 @@ struct obj_info ring_info[MAXRINGS] = {
     { "stealth",		 7, 470, NULL, FALSE },
     { "maintain armor",		 5, 380, NULL, FALSE },
 };
-struct obj_info scr_info[MAXSCROLLS] = {
+const struct obj_info origscr_info[MAXSCROLLS] = {
     { "monster confusion",		 7, 140, NULL, FALSE },
     { "magic mapping",			 4, 150, NULL, FALSE },
     { "hold monster",			 2, 180, NULL, FALSE },
@@ -292,7 +251,7 @@ struct obj_info scr_info[MAXSCROLLS] = {
     { "aggravate monsters",		 3,  20, NULL, FALSE },
     { "protect armor",			 2, 250, NULL, FALSE },
 };
-struct obj_info weap_info[MAXWEAPONS + 1] = {
+const struct obj_info origweap_info[MAXWEAPONS + 1] = {
     { "mace",				11,   8, NULL, FALSE },
     { "long sword",			11,  15, NULL, FALSE },
     { "short bow",			12,  15, NULL, FALSE },
@@ -304,7 +263,7 @@ struct obj_info weap_info[MAXWEAPONS + 1] = {
     { "spear",				12,   5, NULL, FALSE },
     { NULL, 0 },	/* DO NOT REMOVE: fake entry for dragon's breath */
 };
-struct obj_info ws_info[MAXSTICKS] = {
+const struct obj_info origws_info[MAXSTICKS] = {
     { "light",			12, 250, NULL, FALSE },
     { "invisibility",		 6,   5, NULL, FALSE },
     { "lightning",		 3, 330, NULL, FALSE },
@@ -321,7 +280,7 @@ struct obj_info ws_info[MAXSTICKS] = {
     { "cancellation",		 5, 280, NULL, FALSE },
 };
 
-struct h_list helpstr[] = {
+const struct h_list helpstr[] = {
     {'?',	"	prints help",				TRUE},
     {'/',	"	identify object",			TRUE},
     {'h',	"	left",					TRUE},
@@ -389,3 +348,169 @@ struct h_list helpstr[] = {
     {'v',	"	print version number",			TRUE},
     {0,		NULL }
 };
+
+const char *inv_t_name[] = {
+    "Overwrite",
+    "Slow",
+    "Clear"
+};
+
+const char *tr_name[] = {			/* Names of the traps */
+    "a trapdoor",
+    "an arrow trap",
+    "a sleeping gas trap",
+    "a beartrap",
+    "a teleport trap",
+    "a poison dart trap",
+    "a rust trap",
+    "a mysterious trap"
+};
+
+const int32_t a_class[MAXARMORS] = {		/* Armor class for each armor type */
+    8,	/* LEATHER */
+    7,	/* RING_MAIL */
+    7,	/* STUDDED_LEATHER */
+    6,	/* SCALE_MAIL */
+    5,	/* CHAIN_MAIL */
+    4,	/* SPLINT_MAIL */
+    4,	/* BANDED_MAIL */
+    3,	/* PLATE_MAIL */
+};
+
+const int32_t e_levels[] = {
+    10L,
+    20L,
+    40L,
+    80L,
+    160L,
+    320L,
+    640L,
+    1300L,
+    2600L,
+    5200L,
+    13000L,
+    26000L,
+    50000L,
+    100000L,
+    200000L,
+    400000L,
+    800000L,
+    2000000L,
+    4000000L,
+    8000000L,
+    0L
+};
+
+#include <memory.h>
+extern int      between;
+extern int      group;
+extern coord    nh;
+
+void externs_clear()
+{
+    int i;
+    after = 0;				/* True if we want after daemons */
+    again = 0;				/* Repeating the last command */
+    noscore = 0;				/* Was a wizard sometime */
+    seenstairs = 0;			/* Have seen the stairs (for lsd) */
+    amulet = FALSE;			/* He found the amulet */
+    door_stop = FALSE;			/* Stop running when we pass a door */
+    fight_flush = FALSE;		/* True if toilet input */
+    firstmove = FALSE;			/* First move after setting door_stop */
+    got_ltc = FALSE;			/* We have gotten the local tty chars */
+    has_hit = FALSE;			/* Has a "hit" message pending in msg */
+    in_shell = FALSE;			/* True if executing a shell */
+    inv_describe = TRUE;		/* Say which way items are being used */
+    jump = FALSE;			/* Show running as series of jumps */
+    kamikaze = FALSE;			/* to_death really to DEATH */
+    lower_msg = FALSE;			/* Messages should start w/lower case */
+    move_on = FALSE;			/* Next move shouldn't pick up items */
+    msg_esc = FALSE;			/* Check for ESC from msg's --More-- */
+    passgo = FALSE;			/* Follow passages */
+    playing = TRUE;			/* True until he quits */
+    q_comm = FALSE;			/* Are we executing a 'Q' command? */
+    running = FALSE;			/* True if player is running */
+    save_msg = TRUE;			/* Remember last msg */
+    see_floor = TRUE;			/* Show the lamp illuminated floor */
+    stat_msg = FALSE;			/* Should status() print as a msg() */
+    terse = FALSE;			/* True if we should be short */
+    to_death = FALSE;			/* Fighting is to the death! */
+    tombstone = TRUE;			/* Print out tombstone at end */
+#ifdef MASTER
+    int wizard = FALSE;			/* True if allows wizard commands */
+#endif
+    for (i=0; i<26; i++)
+        pack_used[i] = FALSE;
+    for (i=0; i<MAXSCROLLS; i++)
+        if ( s_names[i] != 0 )
+            free(s_names[i]);
+    memset(s_names,0,sizeof(s_names));
+
+    dir_ch = 0;				/* Direction from last get_dir() call */
+    memset(file_name,0,sizeof(file_name));
+    memset(huh,0,sizeof(huh));
+    memset(p_colors,0,sizeof(p_colors));
+    memset(prbuf,0,sizeof(prbuf));
+    memset(r_stones,0,sizeof(r_stones));
+    memset(whoami,0,sizeof(whoami));
+    memset(ws_made,0,sizeof(ws_made));
+    memset(ws_type,0,sizeof(ws_type));
+    runch = 0;				/* Direction player is running */
+    take = 0;				/* Thing she is taking */
+    orig_dsusp = 0;			/* Original dsusp char */
+    memset(home,0,sizeof(home));
+    l_last_comm = '\0';		/* Last last_comm */
+    l_last_dir = '\0';			/* Last last_dir */
+    last_comm = '\0';			/* Last command typed */
+    last_dir = '\0';			/* Last direction given */
+
+    n_objs = 0;				/* # items listed in inventory() call */
+    ntraps = 0;				/* Number of traps on this level */
+    hungry_state = 0;			/* How hungry is he */
+    inpack = 0;				/* Number of things in pack */
+    inv_type = 0;			/* Type of inventory to use */
+    level = 1;				/* What level she is on */
+    max_hit= 0;				/* Max damage done to her in to_death */
+    max_level = 0;				/* Deepest player has gone */
+    mpos = 0;				/* Where cursor is on top line */
+    no_food = 0;			/* Number of levels without food */
+    
+    count = 0;				/* Number of times to repeat command */
+    if ( scoreboard != NULL )
+    {
+        fclose(scoreboard);
+        scoreboard = NULL;	/* File descriptor for score file */
+    }
+    food_left = 0;				/* Amount of food in hero's stomach */
+    lastscore = -1;			/* Score before this turn */
+    no_command = 0;			/* Number of turns asleep */
+    no_move = 0;			/* Number of turns held in place */
+    purse = 0;				/* How much gold he has */
+    quiet = 0;				/* Number of quiet turns */
+    vf_hit = 0;				/* Number of time flytrap has hit */
+    
+    
+    memset(&delta,0,sizeof(delta));
+    memset(&oldpos,0,sizeof(oldpos));
+    memset(&stairs,0,sizeof(stairs));
+
+    memset(places,0,sizeof(places));
+    cur_armor =  NULL;			/* What he is wearing */
+    cur_ring[0] = cur_ring[1] = NULL;			/* Which rings are being worn */
+    cur_weapon = NULL;			/* Which weapon he is weilding */
+    l_last_pick = NULL;		/* Last last_pick */
+    last_pick = NULL;		/* Last object picked in get_item() */
+    lvl_obj = NULL;			/* List of objects on this level */
+    mlist = NULL;			/* List of monsters on the level */
+    memset(&player,0,sizeof(player));				/* His stats */
+    /* restart of game */
+    
+    max_stats = orig_max_stats;	/* The maximum for the player */
+    
+    oldrp = 0;			/* Roomin(&oldpos) */
+    memset(rooms,0,sizeof(rooms));		/* One for each room -- A level */
+    
+    between = 0;
+    group = 0;
+    memset(&nh,0,sizeof(nh));
+}

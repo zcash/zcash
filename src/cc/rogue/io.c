@@ -24,16 +24,16 @@ int
 msg(struct rogue_state *rs,char *fmt, ...)
 {
     va_list args;
-
+    
     /*
      * if the string is "", just clear the line
      */
     if (*fmt == '\0')
     {
-	move(0, 0);
-	clrtoeol();
-	mpos = 0;
-	return ~ESCAPE;
+        move(0, 0);
+        clrtoeol();
+        mpos = 0;
+        return ~ESCAPE;
     }
     /*
      * otherwise add to the message and flush it out
@@ -70,39 +70,41 @@ endmsg(struct rogue_state *rs)
     char ch;
 
     if (save_msg)
-	strcpy(huh, msgbuf);
+        strcpy(huh, msgbuf);
     if (mpos)
     {
-	look(rs,FALSE);
-	mvaddstr(0, mpos, "--More--");
-	refresh();
-	if (!msg_esc)
-	    wait_for(rs,' ');
-	else
-	{
-	    while ((ch = readchar(rs)) != ' ')
-		if (ch == ESCAPE)
-		{
-		    msgbuf[0] = '\0';
-		    mpos = 0;
-		    newpos = 0;
-		    msgbuf[0] = '\0';
-		    return ESCAPE;
-		}
-	}
+        look(rs,FALSE);
+        mvaddstr(0, mpos, "--More--");
+        if ( rs->sleeptime != 0 )
+            refresh();
+        if (!msg_esc)
+            wait_for(rs,' ');
+        else
+        {
+            while ((ch = readchar(rs)) != ' ')
+                if (ch == ESCAPE)
+                {
+                    msgbuf[0] = '\0';
+                    mpos = 0;
+                    newpos = 0;
+                    msgbuf[0] = '\0';
+                    return ESCAPE;
+                }
+        }
     }
     /*
      * All messages should start with uppercase, except ones that
      * start with a pack addressing character
      */
     if (islower(msgbuf[0]) && !lower_msg && msgbuf[1] != ')')
-	msgbuf[0] = (char) toupper(msgbuf[0]);
+        msgbuf[0] = (char) toupper(msgbuf[0]);
     mvaddstr(0, 0, msgbuf);
     clrtoeol();
     mpos = newpos;
     newpos = 0;
     msgbuf[0] = '\0';
-    refresh();
+    if ( rs->sleeptime != 0 )
+        refresh();
     return ~ESCAPE;
 }
 
@@ -187,35 +189,6 @@ readchar(struct rogue_state *rs)
     } else fprintf(stderr,"readchar rs.%p non-gui error?\n",rs);
     return(ch);
 }
-
-/*char readchar()
-{
-    static FILE *keystrokefp; int c;
-    
-    if ( keystrokefp == 0 )
-        keystrokefp = fopen("keystrokes","rb");
-    if ( keystrokefp != 0 )
-    {
-        if ( (c= fgetc(keystrokefp)) == EOF )
-            eofflag = 1;
-        else return(c);
-    } else eofflag = 1;
-    ch = (char) md_readchar();
-    
-    if (ch == 3)
-    {
-        quit(0);
-        return(27);
-    }
-    {
-        static FILE *replayfp;
-        if ( replayfp == 0 )
-            replayfp = fopen("replay","wb");
-        if ( replayfp != 0 )
-            fputc(ch,replayfp), fflush(replayfp);
-    }
-    return(ch);
-}*/
 
 /*
  * status:

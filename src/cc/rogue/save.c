@@ -64,7 +64,8 @@ over:
 	if (c == 'y' || c == 'Y')
 	{
 	    addstr("Yes\n");
-	    refresh();
+        if ( rs->sleeptime != 0 )
+            refresh();
 	    strcpy(buf, file_name);
 	    goto gotfile;
 	}
@@ -109,7 +110,7 @@ gotfile:
 	    msg(rs,strerror(errno));
     } while (savef == NULL);
 
-    save_file(savef,1);
+    save_file(rs,savef,1);
     /* NOTREACHED */
 }
 
@@ -128,7 +129,7 @@ auto_save(int sig)
     md_ignoreallsignals();
     if (file_name[0] != '\0' && ((savef = fopen(file_name, "w")) != NULL ||
 	(md_unlink_open_file(file_name, savef) >= 0 && (savef = fopen(file_name, "w")) != NULL)))
-	    save_file(savef,1);
+	    save_file(&globalR,savef,1);
     exit(0);
 }
 
@@ -137,10 +138,17 @@ auto_save(int sig)
  *	Write the saved game on the file
  */
 
-void
-save_file(FILE *savef,int32_t guiflag)
+char *rogue_packfname(struct rogue_state *rs,char *fname)
 {
-    char buf[80];
+    sprintf(fname,"rogue.%llu.pack",(long long)rs->seed);
+    return(fname);
+}
+
+void
+save_file(struct rogue_state *rs,FILE *savef,int32_t guiflag)
+{
+    char buf[80],fname[512]; int32_t i,n,nonz,histo[0x100]; FILE *fp;
+    memset(&rs->P,0,sizeof(rs->P));
     mvcur(0, COLS - 1, LINES - 1, 0); 
     putchar('\n');
     endwin();
@@ -152,11 +160,51 @@ save_file(FILE *savef,int32_t guiflag)
         sprintf(buf,"%d x %d\n", LINES, COLS);
         encwrite(buf,80,savef);
     }
-    rs_save_file(savef);
+    rs_save_file(rs,savef);
+    n = sizeof(rs->P) - sizeof(rs->P.roguepack) + sizeof(rs->P.roguepack[0])*rs->P.packsize;
+    memset(histo,0,sizeof(histo));
+    for (i=0; i<n; i++)
+    {
+        fprintf(stderr,"%02x",((uint8_t *)&rs->P)[i]);
+        histo[((uint8_t *)&rs->P)[i]]++;
+    }
+    fprintf(stderr," packsize.%d n.%d\n",rs->P.packsize,n);
+    if ( (fp= fopen(rogue_packfname(rs,fname),"wb")) != 0 )
+    {
+        fwrite(&rs->P,1,n,fp);
+        fclose(fp);
+    }
+    for (i=nonz=0; i<0x100; i++)
+        if ( histo[i] != 0 )
+            fprintf(stderr,"(%d %d) ",i,histo[i]), nonz++;
+    fprintf(stderr,"nonz.%d\n",nonz);
     fflush(savef);
     fclose(savef);
     if ( guiflag != 0 )
         exit(0);
+}
+
+int32_t rogue_restorepack(struct rogue_state *rs)
+{
+    FILE *fp; char fname[512]; int32_t retflag = -1;
+    memset(&rs->P,0,sizeof(rs->P));
+    if ( (fp= fopen(rogue_packfname(rs,fname),"rb")) != 0 )
+    {
+        if ( fread(&rs->P,1,sizeof(rs->P) - sizeof(rs->P.roguepack),fp) == sizeof(rs->P) - sizeof(rs->P.roguepack) )
+        {
+            if ( rs->P.packsize > 0 && rs->P.packsize <= MAXPACK )
+            {
+                if ( fread(&rs->P.roguepack,1,rs->P.packsize*sizeof(rs->P.roguepack[0]),fp) == rs->P.packsize*sizeof(rs->P.roguepack[0]) )
+                {
+                    fprintf(stderr,"roguepack[%d] restored\n",rs->P.packsize);
+                    retflag = 0;
+                }
+            }
+        }
+    }
+    if ( retflag < 0 )
+        memset(&rs->P,0,sizeof(rs->P));
+    return(retflag);
 }
 
 /*

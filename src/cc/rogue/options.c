@@ -403,7 +403,7 @@ parse_opts(char *str)
     char *sp;
     OPTION *op;
     int len;
-    char **i;
+    const char **i;
     char *start;
 
     while (*str)

@@ -71,9 +71,9 @@
 //////////////////////// start of CClib interface
 //./komodod -ac_name=ROGUE -ac_supply=1000000 -pubkey=<yourpubkey> -addnode=5.9.102.210  -ac_cclib=rogue -ac_perc=10000000 -ac_reward=100000000 -ac_cc=60001 -ac_script=2ea22c80203d1579313abe7d8ea85f48c65ea66fc512c878c0d0e6f6d54036669de940febf8103120c008203000401cc &
 
-// cclib newgame 17 \"[maxplayers,buyin]\"
+// cclib newgame 17 \"[3,100]\"
 // cclib pending 17
-// cclib txidinfo 17 \"[%2235e99df53c981a937bfa2ce7bfb303cea0249dba34831592c140d1cb729cb19f%22]\"
+// cclib gameinfo 17 \"[%22783369750c2c7003d3dcee327b830025c560b594f65648c0abbac733a661ea39%22]\"
 // ./rogue <seed> gui -> creates keystroke files
 // cclib register 17 \"[%2235e99df53c981a937bfa2ce7bfb303cea0249dba34831592c140d1cb729cb19f%22,%22<playertxid>%22]\"
 // cclib keystrokes 17 \"[]\"
@@ -452,8 +452,7 @@ UniValue rogue_playerinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
         if ( n > 0 )
         {
             UniValue pobj(UniValue::VOBJ);
-            t = jbits256(jitem(params,0),0);
-            memcpy(&playertxid,&t,sizeof(playertxid));;
+            playertxid = juint256(jitem(params,0));
             if ( rogue_playerdata(cp,origplayergame,pk,playerdata,playertxid) < 0 )
                 return(cclib_error(result,"invalid playerdata"));
             result.push_back(Pair("rogue",rogue_playerobj(pobj,playerdata)));
@@ -481,14 +480,12 @@ UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     {
         if ( n > 0 )
         {
-            t = jbits256(jitem(params,0),0);
-            memcpy(&gametxid,&t,sizeof(gametxid));
+            gametxid = juint256(jitem(params,0));
             if ( rogue_isvalidgame(cp,tx,buyin,maxplayers,gametxid) == 0 )
             {
                 if ( n > 1 && maxplayers > 1 )
                 {
-                    t = jbits256(jitem(params,0),0);
-                    memcpy(&playertxid,&t,sizeof(playertxid));
+                    playertxid = juint256(jitem(params,1));
                     if ( rogue_playerdata(cp,origplayergame,pk,playerdata,playertxid) < 0 )
                         return(cclib_error(result,"couldnt extract valid playerdata"));
                 }
@@ -522,8 +519,7 @@ UniValue rogue_keystrokes(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
     rogue_univalue(result,"keystrokes",-1,-1);
     if ( (params= cclib_reparse(&n,params)) != 0 && n == 2 && (keystrokestr= jstr(jitem(params,1),0)) != 0 )
     {
-        t = jbits256(jitem(params,0),0);
-        memcpy(&gametxid,&t,sizeof(gametxid));
+        gametxid = juint256(jitem(params,0));
         keystrokes = ParseHex(keystrokestr);
         mypk = pubkey2pk(Mypubkey());
         roguepk = GetUnspendable(cp,0);
@@ -588,8 +584,7 @@ UniValue rogue_gameinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     {
         if ( n > 0 )
         {
-            t = jbits256(jitem(params,0),0);
-            memcpy(&txid,&t,sizeof(txid));
+            txid = juint256(jitem(params,0));
             result.push_back(Pair("txid",txid.GetHex()));
             if ( rogue_isvalidgame(cp,tx,buyin,maxplayers,txid) == 0 )
             {

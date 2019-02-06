@@ -405,7 +405,8 @@ def:
 			msg(rs,"the %s whizzes by you", name);
 		}
 		mvaddch(pos.y, pos.x, dirch);
-		refresh();
+            if ( rs->sleeptime != 0 )
+                refresh();
 	}
     }
     for (c2 = spotpos; c2 < c1; c2++)

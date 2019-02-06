@@ -18,7 +18,7 @@
 
 //#define	EQSTR(a, b)	(strcmp(a, b) == 0)
 
-char *h_names[] = {		/* strings for hitting */
+const char *h_names[] = {		/* strings for hitting */
 	" scored an excellent hit on ",
 	" hit ",
 	" have injured ",
@@ -29,7 +29,7 @@ char *h_names[] = {		/* strings for hitting */
 	" swings and hits "
 };
 
-char *m_names[] = {		/* strings for missing */
+const char *m_names[] = {		/* strings for missing */
 	" miss",
 	" swing and miss",
 	" barely miss",
@@ -43,7 +43,7 @@ char *m_names[] = {		/* strings for missing */
 /*
  * adjustments to hit probabilities due to strength
  */
-static int str_plus[] = {
+static const int str_plus[] = {
     -7, -6, -5, -4, -3, -2, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1,
     1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3,
 };
@@ -51,7 +51,7 @@ static int str_plus[] = {
 /*
  * adjustments to damage done due to strength
  */
-static int add_dam[] = {
+static const int add_dam[] = {
     -7, -6, -5, -4, -3, -2, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 3,
     3, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 6
 };
@@ -522,9 +522,7 @@ thunk(struct rogue_state *rs,THING *weap, char *mname, bool noend)
 void
 hit(struct rogue_state *rs,char *er, char *ee, bool noend)
 {
-    int i;
-    char *s;
-    extern char *h_names[];
+    int32_t i; const char *s;
 
     if (to_death)
 	return;
@@ -538,7 +536,7 @@ hit(struct rogue_state *rs,char *er, char *ee, bool noend)
 	    i += 4;
 	s = h_names[i];
     }
-    addmsg(rs,s);
+    addmsg(rs,(char *)s);
     if (!terse)
 	addmsg(rs,prname(ee, FALSE));
     if (!noend)
@@ -553,7 +551,6 @@ void
 miss(struct rogue_state *rs,char *er, char *ee, bool noend)
 {
     int i;
-    extern char *m_names[];
 
     if (to_death)
 	return;
@@ -564,7 +561,7 @@ miss(struct rogue_state *rs,char *er, char *ee, bool noend)
 	i = rnd(4);
     if (er != NULL)
 	i += 4;
-    addmsg(rs,m_names[i]);
+    addmsg(rs,(char *)m_names[i]);
     if (!terse)
 	addmsg(rs," %s", prname(ee, FALSE));
     if (!noend)

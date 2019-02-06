@@ -26,25 +26,25 @@ new_level(struct rogue_state *rs)
     PLACE *pp;
     char *sp;
     int i;
-
+    
     player.t_flags &= ~ISHELD;	/* unhold when you go down just in case */
     if (level > max_level)
-	max_level = level;
+        max_level = level;
     /*
      * Clean things off from last level
      */
     for (pp = places; pp < &places[MAXCOLS*MAXLINES]; pp++)
     {
-	pp->p_ch = ' ';
-	pp->p_flags = F_REAL;
-	pp->p_monst = NULL;
+        pp->p_ch = ' ';
+        pp->p_flags = F_REAL;
+        pp->p_monst = NULL;
     }
     clear();
     /*
      * Free up the monsters on the last level
      */
     for (tp = mlist; tp != NULL; tp = next(tp))
-	free_list(tp->t_pack);
+        free_list(tp->t_pack);
     free_list(mlist);
     /*
      * Throw away stuff left on the previous level (if anything)
@@ -53,32 +53,33 @@ new_level(struct rogue_state *rs)
     do_rooms(rs);				/* Draw rooms */
     do_passages(rs);			/* Draw passages */
     no_food++;
+    //fprintf(stderr,"new_level.%d\n",level);
     put_things(rs);			/* Place objects (if any) */
     /*
      * Place the traps
      */
     if (rnd(10) < level)
     {
-	ntraps = rnd(level / 4) + 1;
-	if (ntraps > MAXTRAPS)
-	    ntraps = MAXTRAPS;
-	i = ntraps;
-	while (i--)
-	{
-	    /*
-	     * not only wouldn't it be NICE to have traps in mazes
-	     * (not that we care about being nice), since the trap
-	     * number is stored where the passage number is, we
-	     * can't actually do it.
-	     */
-	    do
-	    {
-		find_floor((struct room *) NULL, &stairs, FALSE, FALSE);
-	    } while (chat(stairs.y, stairs.x) != FLOOR);
-	    sp = &flat(stairs.y, stairs.x);
-	    *sp &= ~F_REAL;
-	    *sp |= rnd(NTRAPS);
-	}
+        ntraps = rnd(level / 4) + 1;
+        if (ntraps > MAXTRAPS)
+            ntraps = MAXTRAPS;
+        i = ntraps;
+        while (i--)
+        {
+            /*
+             * not only wouldn't it be NICE to have traps in mazes
+             * (not that we care about being nice), since the trap
+             * number is stored where the passage number is, we
+             * can't actually do it.
+             */
+            do
+            {
+                find_floor((struct room *) NULL, &stairs, FALSE, FALSE);
+            } while (chat(stairs.y, stairs.x) != FLOOR);
+            sp = &flat(stairs.y, stairs.x);
+            *sp &= ~F_REAL;
+            *sp |= rnd(NTRAPS);
+        }
     }
     /*
      * Place the staircase down.
@@ -86,17 +87,17 @@ new_level(struct rogue_state *rs)
     find_floor((struct room *) NULL, &stairs, FALSE, FALSE);
     chat(stairs.y, stairs.x) = STAIRS;
     seenstairs = FALSE;
-
+    
     for (tp = mlist; tp != NULL; tp = next(tp))
-	tp->t_room = roomin(rs,&tp->t_pos);
-
+        tp->t_room = roomin(rs,&tp->t_pos);
+    
     find_floor((struct room *) NULL, &hero, FALSE, TRUE);
     enter_room(rs,&hero);
     mvaddch(hero.y, hero.x, PLAYER);
     if (on(player, SEEMONST))
-	turn_see(FALSE);
+        turn_see(FALSE);
     if (on(player, ISHALU))
-	visuals(rs,0);
+        visuals(rs,0);
 }
 
 /*
@@ -147,7 +148,8 @@ put_things(struct rogue_state *rs)
 	     * Pick a new object and link it in the list
 	     */
 	    obj = new_thing(rs);
-	    attach(lvl_obj, obj);
+        //fprintf(stderr,"put_things i.%d obj.%p\n",i,obj);
+        attach(lvl_obj, obj);
 	    /*
 	     * Put it somewhere
 	     */
@@ -200,6 +202,7 @@ treas_room(struct rogue_state *rs)
     while (nm--)
     {
 	find_floor(rp, &mp, 2 * MAXTRIES, FALSE);
+        //fprintf(stderr,"treas_room\n");
 	tp = new_thing(rs);
 	tp->o_pos = mp;
 	attach(lvl_obj, tp);

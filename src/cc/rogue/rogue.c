@@ -21,10 +21,48 @@
  *	The main program, of course
  */
 struct rogue_state globalR;
+void garbage_collect();
+
+void purge_obj_guess(struct obj_info *array,int32_t n)
+{
+    int32_t i;
+    for (i=0; i<n; i++)
+        if ( array[i].oi_guess != 0 )
+            free(array[i].oi_guess), array[i].oi_guess = 0;
+}
 
 void rogueiterate(struct rogue_state *rs)
 {
+    THING *tp;
     seed = rs->seed;
+    //clear();
+    purge_obj_guess(things,NUMTHINGS);
+    purge_obj_guess(ring_info,MAXRINGS);
+    purge_obj_guess(pot_info,MAXPOTIONS);
+    purge_obj_guess(arm_info,MAXARMORS);
+    purge_obj_guess(scr_info,MAXSCROLLS);
+    purge_obj_guess(weap_info,MAXWEAPONS + 1);
+    purge_obj_guess(ws_info,MAXSTICKS);
+    free_list(player._t._t_pack);
+    for (tp = mlist; tp != NULL; tp = next(tp))
+        free_list(tp->t_pack);
+    free_list(mlist);
+    free_list(lvl_obj);
+    garbage_collect();
+
+    externs_clear();
+    memset(d_list,0,sizeof(d_list));
+
+    memcpy(passages,origpassages,sizeof(passages));
+    memcpy(monsters,origmonsters,sizeof(monsters));
+    memcpy(things,origthings,sizeof(things));
+    
+    memcpy(ring_info,origring_info,sizeof(ring_info));
+    memcpy(pot_info,origpot_info,sizeof(pot_info));
+    memcpy(arm_info,origarm_info,sizeof(arm_info));
+    memcpy(scr_info,origscr_info,sizeof(scr_info));
+    memcpy(weap_info,origweap_info,sizeof(weap_info));
+    memcpy(ws_info,origws_info,sizeof(ws_info));
 
     initscr();				/* Start up cursor package */
     init_probs();			/* Set up prob tables for objects */
@@ -45,7 +83,8 @@ void rogueiterate(struct rogue_state *rs)
         my_exit(1);
     }
     // Set up windows
-    hw = newwin(LINES, COLS, 0, 0);
+    if ( hw == NULL )
+        hw = newwin(LINES, COLS, 0, 0);
     idlok(stdscr, TRUE);
     idlok(hw, TRUE);
 #ifdef MASTER
@@ -80,7 +119,7 @@ int32_t flushkeystrokes(struct rogue_state *rs)
             fclose(fp);
             if ( (fp= fopen("savefile","wb")) != 0 )
             {
-                save_file(fp,0);
+                save_file(rs,fp,0);
                 if ( 0 && (fp= fopen("savefile","rb")) != 0 )
                 {
                     for (i=0; i<0x150; i++)
@@ -145,11 +184,27 @@ int32_t rogue_replay(uint64_t seed,int32_t sleeptime)
         rs->seed = seed;
         rs->keystrokes = keystrokes;
         rs->numkeys = num;
-        rs->sleeptime = sleeptime;
+        rs->sleeptime = 1;
+        uint32_t starttime = (uint32_t)time(NULL);
         rogueiterate(rs);
+        fprintf(stderr,"elapsed %d seconds\n",(uint32_t)time(NULL) - starttime);
+        sleep(2);
+        
+        starttime = (uint32_t)time(NULL);
+        for (i=0; i<2000; i++)
+        {
+            memset(rs,0,sizeof(*rs));
+            rs->seed = seed;
+            rs->keystrokes = keystrokes;
+            rs->numkeys = num;
+            rs->sleeptime = 0;
+            rogueiterate(rs);
+        }
+        fprintf(stderr,"elapsed %d seconds\n",(uint32_t)time(NULL)-starttime);
+        sleep(1);
         if ( (fp= fopen("checkfile","wb")) != 0 )
         {
-            save_file(fp,0);
+            save_file(rs,fp,0);
             if ( 0 && (fp= fopen("checkfile","rb")) != 0 )
             {
                 for (i=0; i<0x150; i++)
@@ -160,7 +215,6 @@ int32_t rogue_replay(uint64_t seed,int32_t sleeptime)
         }
         free(rs);
         mvaddstr(LINES - 2, 0, (char *)"replay completed");
-        refresh();
         endwin();
     }
     if ( keystrokes != 0 )
@@ -176,6 +230,7 @@ int rogue(int argc, char **argv, char **envp)
         rs->seed = atol(argv[1]);
     else rs->seed = 777;
     rs->guiflag = 1;
+    rs->sleeptime = 1; // non-zero to allow refresh()
     md_init();
 
 #ifdef MASTER
@@ -209,14 +264,14 @@ int rogue(int argc, char **argv, char **envp)
     lowtime = (int) time(NULL);
 #ifdef MASTER
     if (wizard && getenv("SEED") != NULL)
-        dnum = atoi(getenv("SEED"));
+        rs->seed = atoi(getenv("SEED"));
     else
 #endif
-	dnum = lowtime + md_getpid();
+	//dnum = lowtime + md_getpid();
     if ( rs != 0 )
         seed = rs->seed;
     else seed = 777;
-    dnum = (int)seed;
+    //dnum = (int)seed;
     
     open_score();
 
@@ -242,8 +297,8 @@ int rogue(int argc, char **argv, char **envp)
         }
         else if (strcmp(argv[1], "-d") == 0)
         {
-            dnum = rnd(100);	/* throw away some rnd()s to break patterns */
-            while (--dnum)
+            rs->seed = rnd(100);	/* throw away some rnd()s to break patterns */
+            while (--rs->seed)
                 rnd(100);
             purse = rnd(100) + 1;
             level = rnd(100) + 1;
@@ -448,7 +503,8 @@ quit(int sig)
         clear();
         mvprintw(LINES - 2, 0, "You quit with %d gold pieces", purse);
         move(LINES - 1, 0);
-        refresh();
+        if ( rs->sleeptime != 0 )
+            refresh();
         score(purse, 1, 0);
         flushkeystrokes(rs);
         my_exit(0);
@@ -459,7 +515,8 @@ quit(int sig)
         clrtoeol();
         status(rs);
         move(oy, ox);
-        refresh();
+        if ( rs->sleeptime != 0 )
+            refresh();
         mpos = 0;
         count = 0;
         to_death = FALSE;

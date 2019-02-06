@@ -252,25 +252,25 @@ inventory(struct rogue_state *rs,THING *list, int type)
     n_objs = 0;
     for (; list != NULL; list = next(list))
     {
-	if (type && type != list->o_type && !(type == CALLABLE &&
-	    list->o_type != FOOD && list->o_type != AMULET) &&
-	    !(type == R_OR_S && (list->o_type == RING || list->o_type == STICK)))
-		continue;
-	n_objs++;
+        if (type && type != list->o_type && !(type == CALLABLE &&
+                                              list->o_type != FOOD && list->o_type != AMULET) &&
+            !(type == R_OR_S && (list->o_type == RING || list->o_type == STICK)))
+            continue;
+        n_objs++;
 #ifdef MASTER
-	if (!list->o_packch)
-	    strcpy(inv_temp, "%s");
-	else
+        if (!list->o_packch)
+            strcpy(inv_temp, "%s");
+        else
 #endif
-	    sprintf(inv_temp, "%c) %%s", list->o_packch);
-	msg_esc = TRUE;
-	if (add_line(rs,inv_temp, inv_name(list, FALSE)) == ESCAPE)
-	{
-	    msg_esc = FALSE;
-	    msg(rs,"");
-	    return TRUE;
-	}
-	msg_esc = FALSE;
+            sprintf(inv_temp, "%c) %%s", list->o_packch);
+        msg_esc = TRUE;
+        if (add_line(rs,inv_temp, inv_name(list, FALSE)) == ESCAPE)
+        {
+            msg_esc = FALSE;
+            msg(rs,"");
+            return TRUE;
+        }
+        msg_esc = FALSE;
     }
     if (n_objs == 0)
     {

@@ -350,17 +350,17 @@ chg_str(int amt)
 {
     //auto jl777: strange compiler error
     str_t comp;
-
+    
     if (amt == 0)
         return;
     add_str(&pstats.s_str, amt);
     comp = pstats.s_str;
     if (ISRING(LEFT, R_ADDSTR))
-	add_str(&comp, -cur_ring[LEFT]->o_arm);
+        add_str(&comp, -cur_ring[LEFT]->o_arm);
     if (ISRING(RIGHT, R_ADDSTR))
-	add_str(&comp, -cur_ring[RIGHT]->o_arm);
+        add_str(&comp, -cur_ring[RIGHT]->o_arm);
     if (comp > max_stats.s_str)
-	max_stats.s_str = comp;
+        max_stats.s_str = comp;
 }
 
 /*
