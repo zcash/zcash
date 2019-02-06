@@ -679,7 +679,7 @@ UniValue rogue_bailout(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                             newdata[i] = player[i];
                             ((uint8_t *)&P)[i] = player[i];
                         }
-                        fprintf(stderr,"gold.%d hp.%d strength.%d level.%d exp.%d dl.%d\n",P.gold,P.hitpoints,P.strength,P.level,P.experience,P.dungeonlevel);
+                        fprintf(stderr,"\n$$$gold.%d hp.%d strength.%d level.%d exp.%d dl.%d\n",P.gold,P.hitpoints,P.strength,P.level,P.experience,P.dungeonlevel);
                         mtx.vout.push_back(CTxOut(P.gold*1000000,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
                         //for (i=0; i<P.packsize; i++)
                         //    fprintf(stderr,"object (%s) type.%d pack.(%c:%d)\n",inv_name(o,FALSE),o->_o._o_type,o->_o._o_packch,o->_o._o_packch);
@@ -687,6 +687,7 @@ UniValue rogue_bailout(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                     Myprivkey(mypriv);
                     CCaddr1of2set(cp,roguepk,mypk,mypriv,destaddr);
                     rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,rogue_highlanderopret(gametxid,mypk,newdata));
+                    fprintf(stderr,"bailout.(%s)\n",rawtx.c_str());
                     return(rogue_rawtxresult(result,rawtx,0));
                 }
                 result.push_back(Pair("result","success"));

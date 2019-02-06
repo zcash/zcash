@@ -169,7 +169,7 @@ int32_t rogue_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t nu
     rs->seed = seed;
     rs->keystrokes = keystrokes;
     rs->numkeys = num;
-    rs->sleeptime = 50000;
+    rs->sleeptime = 0;
     if ( player != 0 )
         rs->P = *player;
     uint32_t starttime = (uint32_t)time(NULL);
