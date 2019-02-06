@@ -372,7 +372,7 @@ void rogue_gameplayerinfo(struct CCcontract_info *cp,UniValue &obj,uint256 gamet
     if ( myIsutxo_spent(spenttxid,gametxid,vout) >= 0 )
     {
         if ( GetTransaction(spenttxid,spenttx,hashBlock,false) != 0 && spenttx.vout.size() > 0 )
-            Getscriptaddress(ccaddr,spenttx.vout[0].scriptPubKey);
+            Getscriptaddress(destaddr,spenttx.vout[0].scriptPubKey);
     }
     obj.push_back(Pair("slot",(int64_t)vout-2));
     if ( (retval= rogue_findbaton(cp,playerdata,batontxid,batonvout,batonvalue,batonht,gametxid,gametx,maxplayers,destaddr)) == 0 )
