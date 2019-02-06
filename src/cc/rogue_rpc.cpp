@@ -320,7 +320,7 @@ int32_t rogue_playerdataspend(CMutableTransaction &mtx,uint256 playertxid,uint25
 
 int32_t rogue_findbaton(struct CCcontract_info *cp,char **keystrokesp,int32_t &numkeys,std::vector<uint8_t> &playerdata,uint256 &batontxid,int32_t &batonvout,int64_t &batonvalue,int32_t &batonht,uint256 gametxid,CTransaction gametx,int32_t maxplayers,char *destaddr)
 {
-    int32_t i,numvouts,spentvini,matches = 0; CPubKey pk; uint256 spenttxid,hashBlock,txid,playertxid,origplayergame; CTransaction spenttx,matchtx,batontx; std::vector<uint8_t> checkdata; CBlockIndex *pindex; char ccaddr[64];
+    int32_t i,numvouts,spentvini,matches = 0; CPubKey pk; uint256 spenttxid,hashBlock,txid,playertxid,origplayergame; CTransaction spenttx,matchtx,batontx; std::vector<uint8_t> checkdata; CBlockIndex *pindex; char ccaddr[64],*keystrokes=0;
     numkeys = 0;
     for (i=0; i<maxplayers; i++)
     {
@@ -623,7 +623,7 @@ UniValue rogue_bailout(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     // vout0 -> 1% ingame gold
     // get any playerdata, get all keystrokes, replay game and compare final state
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); CTransaction gametx; int64_t batonvalue; int32_t n,numkeys,maxplayers,batonht,batonvout; char myrogueaddr[64],*keystrokes = 0; std::vector<uint8_t> playerdata; uint256 batontxid,gametxid; CPubKey mypk,roguepk;
+    UniValue result(UniValue::VOBJ); CTransaction gametx; int64_t buyin,batonvalue; int32_t n,numkeys,maxplayers,batonht,batonvout; char myrogueaddr[64],*keystrokes = 0; std::vector<uint8_t> playerdata; uint256 batontxid,gametxid; CPubKey mypk,roguepk;
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
@@ -636,8 +636,8 @@ UniValue rogue_bailout(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
         if ( n > 0 )
         {
             gametxid = juint256(jitem(params,0));
-            result.push_back(Pair("gametxid",txid.GetHex()));
-            if ( rogue_isvalidgame(cp,tx,buyin,maxplayers,txid) == 0 )
+            result.push_back(Pair("gametxid",gametxid.GetHex()));
+            if ( rogue_isvalidgame(cp,gametx,buyin,maxplayers,gametxid) == 0 )
             {
                 if ( rogue_findbaton(cp,&keystrokes,numkeys,playerdata,batontxid,batonvout,batonvalue,batonht,gametxid,gametx,maxplayers,myrogueaddr) == 0 )
                 {
