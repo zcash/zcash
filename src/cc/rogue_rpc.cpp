@@ -198,7 +198,7 @@ void rogue_gamefields(UniValue &obj,int64_t maxplayers,int64_t buyin,uint256 gam
                 obj.push_back(Pair("seed",(int64_t)seed));
                 if ( rogue_iamregistered(tx) > 0 )
                     sprintf(cmd,"./rogue %llu gui",(long long)seed);
-                else sprintf(cmd,"./komodo-cli -ac_name=%s cclib register %d \"[%%22%s%%22]\"",ASSETCHAINS_SYMBOL,gametxid.ToString().c_str(),EVAL_ROGUE);
+                else sprintf(cmd,"./komodo-cli -ac_name=%s cclib register %d \"[%%22%s%%22]\"",ASSETCHAINS_SYMBOL,EVAL_ROGUE,gametxid.ToString().c_str());
                 obj.push_back(Pair("run",cmd));
             }
         }
