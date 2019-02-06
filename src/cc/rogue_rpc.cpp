@@ -74,6 +74,7 @@
 // cclib newgame 17 \"[3,100]\"
 // cclib pending 17
 // cclib gameinfo 17 \"[%22783369750c2c7003d3dcee327b830025c560b594f65648c0abbac733a661ea39%22]\"
+// cclib register 17 \"[%22783369750c2c7003d3dcee327b830025c560b594f65648c0abbac733a661ea39%22]\"
 // ./rogue <seed> gui -> creates keystroke files
 // cclib register 17 \"[%2235e99df53c981a937bfa2ce7bfb303cea0249dba34831592c140d1cb729cb19f%22,%22<playertxid>%22]\"
 // cclib keystrokes 17 \"[]\"
@@ -172,10 +173,10 @@ void rogue_univalue(UniValue &result,const char *method,int64_t maxplayers,int64
     }
 }
 
-void rogue_gamefields(UniValue &obj,int64_t maxplayers,int64_t buyin)
+void rogue_gamefields(UniValue &obj,int64_t maxplayers,int64_t buyin,uint256 txid)
 {
     CBlockIndex *pindex; int32_t ht; uint256 hashBlock; uint64_t seed; char cmd[512];
-    if ( (pindex= komodo_blockindex(hashBlock)) != 0 )
+    if ( (pindex= komodo_blockindex(txid)) != 0 )
     {
         ht = pindex->GetHeight();
         obj.push_back(Pair("height",ht));
@@ -409,7 +410,7 @@ UniValue rogue_rawtxresult(UniValue &result,std::string rawtx,int32_t broadcastf
 UniValue rogue_newgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); std::string rawtx; CPubKey roguepk,mypk; char *jsonstr; uint64_t inputsum,change,required,buyin=0,amount = 0; int32_t i,n,maxplayers = 1;
+    UniValue result(UniValue::VOBJ); std::string rawtx; CPubKey roguepk,mypk; char *jsonstr; uint64_t inputsum,change,required,buyin=0; int32_t i,n,maxplayers = 1;
     if ( txfee == 0 )
         txfee = 10000;
     if ( (params= cclib_reparse(&n,params)) != 0 )
@@ -435,7 +436,7 @@ UniValue rogue_newgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             mtx.vout.push_back(MakeCC1of2vout(cp->evalcode,ROGUE_REGISTRATIONSIZE,roguepk,roguepk));
         if ( (change= inputsum - required) >= txfee )
             mtx.vout.push_back(MakeCC1vout(cp->evalcode,change,roguepk));
-        rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,rogue_newgameopret(amount,maxplayers));
+        rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,rogue_newgameopret(buyin,maxplayers));
         return(rogue_rawtxresult(result,rawtx,0));
     }
     else return(cclib_error(result,"illegal maxplayers"));
@@ -589,7 +590,7 @@ UniValue rogue_gameinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             if ( rogue_isvalidgame(cp,tx,buyin,maxplayers,txid) == 0 )
             {
                 result.push_back(Pair("result","success"));
-                rogue_gamefields(result,maxplayers,buyin);
+                rogue_gamefields(result,maxplayers,buyin,txid);
                 for (i=0; i<maxplayers; i++)
                 {
                     if ( CCgettxout(txid,i+2,1) == 0 )
