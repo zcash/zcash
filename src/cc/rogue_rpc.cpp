@@ -328,8 +328,8 @@ int32_t rogue_findbaton(struct CCcontract_info *cp,std::vector<uint8_t> &playerd
         {
             if ( playertxid == zeroid || rogue_playerdata(cp,origplayergame,pk,playerdata,playertxid) == 0 )
             {
-                txid = spenttxid;
-                fprintf(stderr,"scan forward playertxid.%s spenttxid.%s\n",playertxid.GetHex().c_str(),spenttxid.GetHex().c_str());
+                txid = matchtx.GetHash();
+                fprintf(stderr,"scan forward playertxid.%s spenttxid.%s\n",playertxid.GetHex().c_str(),txid.GetHex().c_str());
                 while ( CCgettxout(txid,0,1) < 0 )
                 {
                     spenttxid = zeroid;
