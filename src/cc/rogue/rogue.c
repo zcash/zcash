@@ -167,7 +167,7 @@ int32_t rogue_replay2(uint64_t seed,char *keystrokes,int32_t num)
     rs->seed = seed;
     rs->keystrokes = keystrokes;
     rs->numkeys = num;
-    rs->sleeptime = 0;
+    rs->sleeptime = 50000;
     uint32_t starttime = (uint32_t)time(NULL);
     rogueiterate(rs);
     /*fprintf(stderr,"elapsed %d seconds\n",(uint32_t)time(NULL) - starttime);
