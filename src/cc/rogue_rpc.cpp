@@ -366,9 +366,10 @@ int32_t rogue_findbaton(struct CCcontract_info *cp,char **keystrokesp,int32_t &n
                         uint256 g,b; CPubKey p; std::vector<uint8_t> k;
                         if ( rogue_keystrokesopretdecode(g,b,p,k,spenttx.vout[1].scriptPubKey) == 'K' )
                         {
-                            keystrokes = (char *)realloc(keystrokes,numkeys + (int32_t)k.size()/2);
-                            decode_hex((uint8_t *)&keystrokes[numkeys],(int32_t)k.size()/2,(char *)&k[0]);
-                            numkeys += (int32_t)k.size()/2;
+                            keystrokes = (char *)realloc(keystrokes,numkeys + (int32_t)k.size());
+                            for (i=0; i<k.size(); i++)
+                                keystrokes[numkeys+i] = (char)k[i];
+                            numkeys += (int32_t)k.size();
                             (*keystrokesp) = keystrokes;
                         }
                     }
