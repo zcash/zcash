@@ -225,7 +225,7 @@ int32_t rogue_isvalidgame(struct CCcontract_info *cp,CTransaction &tx,int64_t &b
 
 UniValue rogue_playerobj(UniValue &obj,std::vector<uint8_t> playerdata)
 {
-    obj.push_back("raw",playerdata.GetHex().ToString());
+    obj.push_back("raw","<playerdata>");
     // convert to scrolls, etc.
     return(obj);
 }
@@ -293,14 +293,14 @@ int32_t rogue_playerdataspend(CMutableTransaction &mtx,uint256 playertxid,uint25
     } else return(-1);
 }
 
-int32_t rogue_findbaton(std::vector<uint8_t> &playerdata,uint256 &batontxid,int32_t &batonvout,int64_t &batonvalue,int32_t &batonht,uint256 gametxid,CTransaction gametx,int32_t maxplayers,CScript scriptPubKey)
+int32_t rogue_findbaton(struct CCcontract_info *cp,std::vector<uint8_t> &playerdata,uint256 &batontxid,int32_t &batonvout,int64_t &batonvalue,int32_t &batonht,uint256 gametxid,CTransaction gametx,int32_t maxplayers,CScript scriptPubKey)
 {
     int32_t i,numvouts,spentvini,matches = 0; uint256 spenttxid,hashBlock,txid,playertxid,origplayergame; CTransaction spenttx,matchtx,batontx; std::vector<uint8_t> checkdata; CBlockIndex *pindex;
     for (i=0; i<maxplayers; i++)
     {
         if ( myIsutxo_spent(spenttxid,gametxid,i+2) >= 0 )
         {
-            if ( GetTransaction(spenttxid,spenttx,hashBlock,false) != 0 && tx.vout.size() > 0 )
+            if ( GetTransaction(spenttxid,spenttx,hashBlock,false) != 0 && spenttx.vout.size() > 0 )
             {
                 if ( spenttx.vout[0].scriptPubKey == scriptPubKey )
                 {
@@ -321,10 +321,10 @@ int32_t rogue_findbaton(std::vector<uint8_t> &playerdata,uint256 &batontxid,int3
                 while ( CCgettxout(txid,0,1) > 0 )
                 {
                     spenttxid = zeroid;
-                    spentvinit = -1;
+                    spentvini = -1;
                     if ( (spentvini= myIsutxo_spent(spenttxid,txid,0)) >= 0 )
                         txid = spenttxid;
-                    else if ( myIsutxo_spentinmempool(spenttxid,spentvin,txid,0) == 0 || spenttxid == zeroid )
+                    else if ( myIsutxo_spentinmempool(spenttxid,spentvini,txid,0) == 0 || spenttxid == zeroid )
                     {
                         fprintf(stderr,"mempool tracking error %s/v0\n",txid.ToString().c_str());
                         return(-2);
@@ -342,7 +342,7 @@ int32_t rogue_findbaton(std::vector<uint8_t> &playerdata,uint256 &batontxid,int3
                         batonht = komodo_nextheight();
                     else if ( (pindex= komodo_blockindex(hashBlock)) == 0 )
                         return(-4);
-                    else batonht = pindex->nHeight;
+                    else batonht = pindex->GetHeight();
                     return(0);
                 }
             }
@@ -351,12 +351,12 @@ int32_t rogue_findbaton(std::vector<uint8_t> &playerdata,uint256 &batontxid,int3
     return(-1);
 }
 
-void rogue_gameplayerinfo(UniValue &obj,uint256 gametxid,CTransaction gametx,int32_t vout,int32_t maxplayers)
+void rogue_gameplayerinfo(struct CCcontract_info *cp,UniValue &obj,uint256 gametxid,CTransaction gametx,int32_t vout,int32_t maxplayers)
 {
     // identify if bailout or quit or timed out
     uint256 batontxid; int32_t batonvout,batonht; int64_t batonvalue; std::vector<uint8_t> playerdata;
     obj.push_back(Pair("slot",(int64_t)vout-2));
-    if ( rogue_findbaton(playerdata,batontxid,batonvout,batonvalue,batonht,gametxid,gametx,maxplayers,gametx.vout[vout].scriptPubKey) == 0 )
+    if ( rogue_findbaton(cp,playerdata,batontxid,batonvout,batonvalue,batonht,gametxid,gametx,maxplayers,gametx.vout[vout].scriptPubKey) == 0 )
     {
         obj.push_back(Pair("baton",batontxid.ToString()));
         obj.push_back(Pair("batonvout",(int64_t)batonvout));
@@ -364,7 +364,7 @@ void rogue_gameplayerinfo(UniValue &obj,uint256 gametxid,CTransaction gametx,int
         obj.push_back(Pair("batonht",(int64_t)batonht));
         if ( playerdata.size() > 0 )
         {
-            UniValue pobj(UniValue:VOBJ);
+            UniValue pobj(UniValue::VOBJ);
             obj.push_back(Pair("rogue",rogue_playerobj(pobj,playerdata)));
         }
     }
@@ -373,7 +373,7 @@ void rogue_gameplayerinfo(UniValue &obj,uint256 gametxid,CTransaction gametx,int
 int64_t rogue_registrationbaton(CMutableTransaction &mtx,uint256 gametxid,CTransaction gametx,int32_t maxplayers)
 {
     int32_t vout,j,r; int64_t nValue;
-    if ( tx.vout.size() > maxplayers+2 )
+    if ( gametx.vout.size() > maxplayers+2 )
     {
         r = rand() % maxplayers;
         for (j=0; j<maxplayers; j++)
@@ -451,7 +451,7 @@ UniValue rogue_playerinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
     {
         if ( n > 0 )
         {
-            UniValue pobj(UniValue:VOBJ);
+            UniValue pobj(UniValue::VOBJ);
             playertxid = jbits256(jitem(params,0),0);
             if ( rogue_playerdata(cp,origplayergame,playerdata,playertxid) < 0 )
                 return(cclib_error(result,"invalid playerdata"));
@@ -469,7 +469,7 @@ UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     // vin3+ -> buyin
     // vout0 -> keystrokes/completion baton
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); uint256 gametxid,playertxid,hashBlock; int32_t maxplayers,n,numvouts; int64_t inputsum,CCchange=0; CPubKey pk,mypk,roguepk; CTransaction tx; std::vector<uint8_t> playerdata;
+    UniValue result(UniValue::VOBJ); uint256 gametxid,playertxid,hashBlock; int32_t maxplayers,n,numvouts; int64_t inputsum,buyin,CCchange=0; CPubKey pk,mypk,roguepk; CTransaction tx; std::vector<uint8_t> playerdata;
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
@@ -526,7 +526,7 @@ UniValue rogue_keystrokes(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
         txout = MakeCC1of2vout(cp->evalcode,0,roguepk,mypk);
         if ( rogue_isvalidgame(cp,tx,buyin,maxplayers,gametxid) == 0 )
         {
-            if ( rogue_findbaton(playerdata,batontxid,batonvout,batonvalue,batonht,gametxid,tx,maxplayers,txout.scriptPubKey) == 0 )
+            if ( rogue_findbaton(cp,playerdata,batontxid,batonvout,batonvalue,batonht,gametxid,tx,maxplayers,txout.scriptPubKey) == 0 )
             {
                 if ( maxplayers == 1 || nextheight <= batonht+ROGUE_MAXKEYSTROKESGAP )
                 {
@@ -595,7 +595,7 @@ UniValue rogue_gameinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                     if ( CCgettxout(txid,i+2,1) == 0 )
                     {
                         UniValue obj(UniValue::VOBJ);
-                        rogue_gameplayerinfo(obj,txid,tx,i+2,maxplayers);
+                        rogue_gameplayerinfo(cp,obj,txid,tx,i+2,maxplayers);
                         a.push_back(obj);
                     }
                 }
