@@ -128,8 +128,8 @@ UniValue getiguanajson(const UniValue& params, bool fHelp)
 
     json.push_back(Pair("port",iguanaPort));
     json.push_back(Pair("BTCminsigs",BTCminsigs));
-    json.push_back(Pair("minsigs",2));
-    json.push_back(Pair("seeds", seeds));
+    json.push_back(Pair("minsigs",minsigs));
+    json.push_back(Pair("seeds",seeds));
     json.push_back(Pair("notaries",notaries));
     return json;
 }

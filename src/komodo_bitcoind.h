@@ -1886,6 +1886,12 @@ uint64_t komodo_checknotarypay(CBlock *pblock,int32_t height)
             }
         }
     }
+    // check a notary didnt sign twice (this would be an invalid notarisation later on and cause problems)
+    std::set<int> checkdupes( NotarisationNotaries.begin(), NotarisationNotaries.end() );
+    if ( checkdupes.size() != NotarisationNotaries.size() ) {
+        fprintf(stderr, "Possible notarisation is signed multiple times by same notary. It is invalid.\n");
+        return(0);
+    }
     const CChainParams& chainparams = Params();
     const Consensus::Params &consensusParams = chainparams.GetConsensus();
     uint64_t totalsats = 0;

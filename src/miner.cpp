@@ -367,7 +367,14 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                     dPriority += (double)nValueIn * nConf;
                 }
                 if ( numSN != 0 && numNotaryVins >= numSN / 5 )
-                    fNotarisation = true;
+                {
+                    // check a notary didnt sign twice (this would be an invalid notarisation later on and cause problems)
+                    std::set<int> checkdupes( NotarisationNotaries.begin(), NotarisationNotaries.end() );
+                    if ( checkdupes.size() != NotarisationNotaries.size() ) {
+                        NotarisationNotaries.clear();
+                        fprintf(stderr, "possible notarisation is signed multiple times by same notary, passed as normal transaction.\n");
+                    } else fNotarisation = true;
+                }
                 else 
                     NotarisationNotaries.clear();
 
