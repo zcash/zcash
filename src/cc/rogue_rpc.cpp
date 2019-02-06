@@ -282,7 +282,7 @@ int32_t rogue_iterateplayer(uint256 firsttxid,uint256 lasttxid)     // retrace p
 
 int32_t rogue_playerdata(struct CCcontract_info *cp,uint256 &origplayergame,CPubKey &pk,std::vector<uint8_t> &playerdata,uint256 playertxid)
 {
-    uint256 origplayertxid,hashBlock,highlander,registertxid; CTransaction gametx,playertx,highlandertx; std::vector<uint8_t> vopret; uint8_t *script,e,f; int32_t i,numvouts,maxplayers; int64_t buyin;
+    uint256 origplayertxid,hashBlock,highlander; CTransaction gametx,playertx,highlandertx; std::vector<uint8_t> vopret; uint8_t *script,e,f; int32_t i,numvouts,maxplayers; int64_t buyin;
     if ( GetTransaction(playertxid,playertx,hashBlock,false) != 0 && (numvouts= playertx.vout.size()) > 0 )
     {
         GetOpReturnData(playertx.vout[numvouts-1].scriptPubKey,vopret);
@@ -296,7 +296,7 @@ int32_t rogue_playerdata(struct CCcontract_info *cp,uint256 &origplayergame,CPub
             {
                 if ( GetTransaction(highlander,highlandertx,hashBlock,false) != 0 && (numvouts= highlandertx.vout.size()) > 0 )
                 {
-                    if ( (f= rogue_highlanderopretdecode(origplayergame,registertxid,pk,playerdata,highlandertx.vout[numvouts-1].scriptPubKey)) == 'H' || f == 'Q' )
+                    if ( (f= rogue_highlanderopretdecode(origplayergame,pk,playerdata,highlandertx.vout[numvouts-1].scriptPubKey)) == 'H' || f == 'Q' )
                     {
                         if ( highlandertx.vin[0].prevout.hash == origplayergame && highlandertx.vin[0].prevout.n == 0 && rogue_isvalidgame(cp,gametx,buyin,maxplayers,origplayergame) == 0 && maxplayers > 1 )
                             return(0);
@@ -639,7 +639,7 @@ UniValue rogue_bailout(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     // vout0 -> 1% ingame gold
     // get any playerdata, get all keystrokes, replay game and compare final state
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); std::string rawtx; CTransaction gametx; int64_t buyin,batonvalue; int32_t i,n,num,numkeys,maxplayers,batonht,batonvout; char myrogueaddr[64],*keystrokes = 0; std::vector<uint8_t> playerdata,newdata; uint256 batontxid,gametxid; CPubKey mypk,roguepk; uint8_t player[10000],mypriv[32];
+    UniValue result(UniValue::VOBJ); std::string rawtx; CTransaction gametx; uint64_t seed; int64_t buyin,batonvalue; int32_t i,n,num,numkeys,maxplayers,batonht,batonvout; char destaddr[64],myrogueaddr[64],*keystrokes = 0; std::vector<uint8_t> playerdata,newdata; uint256 batontxid,gametxid; CPubKey mypk,roguepk; uint8_t player[10000],mypriv[32];
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
@@ -678,7 +678,7 @@ UniValue rogue_bailout(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                             newdata[i] = player[i];
                             ((uint8_t *)&P)[i] = player[i];
                         }
-                        fprintf(stderr,"gold.%d hp.%d strength.%d level.%d exp.%d %d dl.%d\n",P.gold,P.hitpoints,P.strength,P.level,P.experience,P.dungeonlevel);
+                        fprintf(stderr,"gold.%d hp.%d strength.%d level.%d exp.%d dl.%d\n",P.gold,P.hitpoints,P.strength,P.level,P.experience,P.dungeonlevel);
                         mtx.vout.push_back(CTxOut(P.gold*1000000,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
                         //for (i=0; i<P.packsize; i++)
                         //    fprintf(stderr,"object (%s) type.%d pack.(%c:%d)\n",inv_name(o,FALSE),o->_o._o_type,o->_o._o_packch,o->_o._o_packch);
