@@ -173,8 +173,23 @@ void rogue_univalue(UniValue &result,const char *method,int64_t maxplayers,int64
     }
 }
 
-int32_t rogue_iamregistered(CTransaction tx,char *myrogueaddr)
+int32_t rogue_iamregistered(int32_t maxplayers,uint256 gametxid,CTransaction tx,char *myrogueaddr)
 {
+    int32_t i,vout; uint256 spenttxid,hashBlock; CTransaction spenttx; char destaddr[64];
+    for (i=0; i<maxplayers; i++)
+    {
+        destaddr[0] = 0;
+        vout = i+2;
+        if ( myIsutxo_spent(spenttxid,gametxid,vout) >= 0 )
+        {
+            if ( GetTransaction(spenttxid,spenttx,hashBlock,false) != 0 && spenttx.vout.size() > 0 )
+            {
+                Getscriptaddress(destaddr,spenttx.vout[0].scriptPubKey);
+                if ( strcmp(myrogueaddr,destaddr) == 0 )
+                    return(1);
+            }
+        }
+    }
     return(0);
 }
 
@@ -196,7 +211,7 @@ void rogue_gamefields(UniValue &obj,int64_t maxplayers,int64_t buyin,uint256 gam
                 memcpy(&seed,&hashBlock,sizeof(seed));
                 seed &= (1LL << 62) - 1;
                 obj.push_back(Pair("seed",(int64_t)seed));
-                if ( rogue_iamregistered(tx,myrogueaddr) > 0 )
+                if ( rogue_iamregistered(maxplayers,gametxid,tx,myrogueaddr) > 0 )
                     sprintf(cmd,"./rogue %llu gui",(long long)seed);
                 else sprintf(cmd,"./komodo-cli -ac_name=%s cclib register %d \"[%%22%s%%22]\"",ASSETCHAINS_SYMBOL,EVAL_ROGUE,gametxid.ToString().c_str());
                 obj.push_back(Pair("run",cmd));
@@ -356,6 +371,7 @@ int32_t rogue_findbaton(struct CCcontract_info *cp,std::vector<uint8_t> &playerd
                     else if ( (pindex= komodo_blockindex(hashBlock)) == 0 )
                         return(-4);
                     else batonht = pindex->GetHeight();
+                    batonvalue = batontx.vout[0].nValue;
                     return(0);
                 }
             }
@@ -378,6 +394,7 @@ void rogue_gameplayerinfo(struct CCcontract_info *cp,UniValue &obj,uint256 gamet
     if ( (retval= rogue_findbaton(cp,playerdata,batontxid,batonvout,batonvalue,batonht,gametxid,gametx,maxplayers,destaddr)) == 0 )
     {
         obj.push_back(Pair("baton",batontxid.ToString()));
+        obj.push_back(Pair("batonaddr",destaddr));
         obj.push_back(Pair("batonvout",(int64_t)batonvout));
         obj.push_back(Pair("batonvalue",ValueFromAmount(batonvalue)));
         obj.push_back(Pair("batonht",(int64_t)batonht));
@@ -511,7 +528,7 @@ UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                 rogue_univalue(result,0,maxplayers,buyin);
                 GetCCaddress1of2(cp,coinaddr,roguepk,mypk);
                 fprintf(stderr,"check %s\n",coinaddr);
-                if ( rogue_iamregistered(tx,coinaddr) > 1 )
+                if ( rogue_iamregistered(maxplayers,gametxid,tx,coinaddr) > 1 )
                     return(cclib_error(result,"already registered"));
                 if ( (inputsum= rogue_registrationbaton(mtx,gametxid,tx,maxplayers)) != ROGUE_REGISTRATIONSIZE )
                     return(cclib_error(result,"couldnt find available registration baton"));
