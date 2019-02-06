@@ -174,6 +174,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
 
     uint64_t deposits; int32_t isrealtime,kmdheight; uint32_t blocktime; const CChainParams& chainparams = Params();
     bool fNotarisationBlock = false; std::vector<int8_t> NotarisationNotaries;
+    static std::string invalidnotarisation;
     
     //fprintf(stderr,"create new block\n");
     // Create new block
@@ -370,10 +371,18 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                 {
                     // check a notary didnt sign twice (this would be an invalid notarisation later on and cause problems)
                     std::set<int> checkdupes( NotarisationNotaries.begin(), NotarisationNotaries.end() );
-                    if ( checkdupes.size() != NotarisationNotaries.size() ) {
+                    if ( tx.GetHash().ToString() == invalidnotarisation )
+                    {
+                        NotarisationNotaries.clear();
+                        fprintf(stderr, "notarisation %s is invalid leave it as a normal tx.\n", invalidnotarisation.c_str());
+                    }
+                    else if ( checkdupes.size() != NotarisationNotaries.size() ) 
+                    {
                         NotarisationNotaries.clear();
                         fprintf(stderr, "possible notarisation is signed multiple times by same notary, passed as normal transaction.\n");
-                    } else fNotarisation = true;
+                    } 
+                    else 
+                        fNotarisation = true;
                 }
                 else 
                     NotarisationNotaries.clear();
@@ -693,6 +702,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                 if ( totalsats == 0 )
                 {
                     fprintf(stderr, "Could not create notary payment, trying again.\n");
+                    invalidnotarisation = pblock->vtx[1].GetHash().ToString();
                     LEAVE_CRITICAL_SECTION(cs_main);
                     LEAVE_CRITICAL_SECTION(mempool.cs); 
                     return(0);
