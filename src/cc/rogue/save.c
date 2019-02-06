@@ -333,7 +333,7 @@ encwrite(char *start, size_t size, FILE *outf)
 {
     char *e1, *e2, fb;
     int temp;
-    extern char statlist[];
+    extern char *statlist;
     size_t o_size = size;
     e1 = encstr;
     e2 = statlist;
@@ -371,7 +371,7 @@ encread(char *start, size_t size, FILE *inf)
     char *e1, *e2, fb;
     int temp;
     size_t read_size;
-    extern char statlist[];
+    extern char *statlist;
 
     fb = 0;
 
