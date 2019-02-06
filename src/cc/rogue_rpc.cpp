@@ -69,7 +69,7 @@
 
 
 //////////////////////// start of CClib interface
-//./komodod -ac_name=ROGUE -ac_supply=1000000 -pubkey=<yourpubkey> -addnode=5.9.102.210  -ac_cclib=rogue -ac_perc=10000000 -ac_reward=100000000 -ac_cc=60001 -ac_script=2ea22c80203d1579313abe7d8ea85f48c65ea66fc512c878c0d0e6f6d54036669de940febf8103120c008203000401cc &
+//./komodod -ac_name=ROGUE -ac_supply=1000000 -pubkey=<yourpubkey> -addnode=5.9.102.210  -ac_cclib=rogue -ac_perc=10000000 -ac_reward=100000000 -ac_cc=60001 -ac_script=2ea22c80203d1579313abe7d8ea85f48c65ea66fc512c878c0d0e6f6d54036669de940febf8103120c008203000401cc > /dev/null &
 
 // cclib newgame 17 \"[3,10]\"
 // cclib pending 17
@@ -619,7 +619,7 @@ UniValue rogue_highlander(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
     return(result);
 }
 
-int32_t rogue_replay2(uint8_t *player,uint64_t seed,char *keystrokes,int32_t num);
+#include "rogue/rogue.h"
 
 UniValue rogue_bailout(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
@@ -646,17 +646,32 @@ UniValue rogue_bailout(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             {
                 if ( rogue_findbaton(cp,&keystrokes,numkeys,playerdata,batontxid,batonvout,batonvalue,batonht,gametxid,gametx,maxplayers,myrogueaddr) == 0 && keystrokes != 0 )
                 {
-                    UniValue obj;
+                    UniValue obj; struct rogue_player P;
                     seed = uint64_t rogue_gamefields(obj,maxplayers,buyin,gametxid,myrogueaddr);
                     fprintf(stderr,"found baton %s numkeys.%d seed.%llu\n",batontxid.ToString().c_str(),numkeys,(long long)seed);
-                    num = rogue_replay2(player,seed,keystrokes,numkeys); //4419709268196762041
+                    if ( playerdata.size() > 0 )
+                    {
+                        for (i=0; i<playerdata.size(); i++)
+                            ((uint8_t *)&P)[i] = playerdata[i];
+                    }
+                    num = rogue_replay2(player,seed,keystrokes,numkeys,playerdata.size()==0?0:&P); //4419709268196762041
                     free(keystrokes);
-                    newdata.resize(num);
-                    for (i=0; i<num; i++)
-                        newdata[i] = player[i];
                     mtx.vin.push_back(CTxIn(batontxid,batonvout,CScript()));
                     // also need a vin from gametx
                     mtx.vout.push_back(MakeCC1vout(cp->evalcode,batonvalue-txfee,roguepk));
+                    if ( num == sizeof(P) )
+                    {
+                        newdata.resize(num);
+                        for (i=0; i<num; i++)
+                        {
+                            newdata[i] = player[i];
+                            ((uint8_t *)&P)[i] = player[i];
+                        }
+                        fprintf(stderr,"gold.%d hp.%d strength.%d level.%d exp.%d %d dl.%d\n",P.gold,P.hitpoints,P.strength,P.level,P.experience,P.dungeonlevel);
+                        mtx.vout.push_back(CTxOut(P.gold*1000000,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
+                        //for (i=0; i<P.packsize; i++)
+                        //    fprintf(stderr,"object (%s) type.%d pack.(%c:%d)\n",inv_name(o,FALSE),o->_o._o_type,o->_o._o_packch,o->_o._o_packch);
+                    }
                     Myprivkey(mypriv);
                     CCaddr1of2set(cp,roguepk,mypk,mypriv,destaddr);
                     rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,rogue_highlanderopret(gametxid,mypk,newdata));

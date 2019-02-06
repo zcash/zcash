@@ -97,6 +97,8 @@ void rogueiterate(struct rogue_state *rs)
     start_daemon(doctor, 0, AFTER);
     fuse(swander, 0, WANDERTIME, AFTER);
     start_daemon(stomach, 0, AFTER);
+    if ( rs->restoring != 0 )
+        restore_player(rs);
     playit(rs);
 }
 
@@ -160,7 +162,7 @@ int32_t flushkeystrokes(struct rogue_state *rs)
     return(0);
 }
 
-int32_t rogue_replay2(uint8_t *player,uint64_t seed,char *keystrokes,int32_t num)
+int32_t rogue_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t num,struct rogue_player *player)
 {
     struct rogue_state *rs; FILE *fp; int32_t i;
     rs = (struct rogue_state *)calloc(1,sizeof(*rs));
@@ -168,6 +170,8 @@ int32_t rogue_replay2(uint8_t *player,uint64_t seed,char *keystrokes,int32_t num
     rs->keystrokes = keystrokes;
     rs->numkeys = num;
     rs->sleeptime = 50000;
+    if ( player != 0 )
+        rs->P = *player;
     uint32_t starttime = (uint32_t)time(NULL);
     rogueiterate(rs);
     /*fprintf(stderr,"elapsed %d seconds\n",(uint32_t)time(NULL) - starttime);
@@ -188,8 +192,8 @@ int32_t rogue_replay2(uint8_t *player,uint64_t seed,char *keystrokes,int32_t num
     if ( (fp= fopen("checkfile","wb")) != 0 )
     {
         save_file(rs,fp,0);
-        if ( rs->playersize > 0 )
-            memcpy(player,rs->playerdata,rs->playersize);
+        if ( newdata != 0 && rs->playersize > 0 )
+            memcpy(newdata,rs->playerdata,rs->playersize);
     }
     free(rs);
     return(rs->playersize);
@@ -239,7 +243,7 @@ int32_t rogue_replay(uint64_t seed,int32_t sleeptime)
     }
     if ( num > 0 )
     {
-        rogue_replay2(seed,keystrokes,num);
+        rogue_replay2(0,seed,keystrokes,num,0);
         mvaddstr(LINES - 2, 0, (char *)"replay completed");
         endwin();
     }

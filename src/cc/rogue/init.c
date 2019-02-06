@@ -22,26 +22,30 @@
  */
 void rogue_restoreobject(THING *o,struct rogue_packitem *item);
 
-void
-init_player(struct rogue_state *rs)
+void restore_player(struct rogue_state *rs)
+{
+    int32_t i;
+    //rs->P.gold = purse;
+    max_hp = rs->P.hitpoints;
+    max_stats.s_str = rs->P.strength;
+    pstats.s_lvl = rs->P.level;
+    pstats.s_exp = rs->P.experience;
+    for (i=0; i<rs->P.packsize; i++)
+    {
+        obj = new_item();
+        rogue_restoreobject(obj,&rs->P.roguepack[i]);
+        add_pack(rs,obj,TRUE);
+    }
+}
+
+void init_player(struct rogue_state *rs)
 {
     register THING *obj; int32_t i;
     pstats = max_stats;
     food_left = HUNGERTIME;
 
-    if ( 0 && rogue_restorepack(rs) == 0 )
+    if ( rs->restoring != 0 )
     {
-        //rs->P.gold = purse;
-        max_hp = rs->P.hitpoints;
-        max_stats.s_str = rs->P.strength;
-        pstats.s_lvl = rs->P.level;
-        pstats.s_exp = rs->P.experience;
-        for (i=0; i<rs->P.packsize; i++)
-        {
-            obj = new_item();
-            rogue_restoreobject(obj,&rs->P.roguepack[i]);
-            add_pack(rs,obj,TRUE);
-        }
         // duplicate rng usage of normal case
         obj = new_item();
         init_weapon(obj, MACE);
