@@ -21,8 +21,6 @@
 #define ROGUE_MAXPLAYERS 64 // need to send unused fees back to globalCC address to prevent leeching
 #define ROGUE_MAXKEYSTROKESGAP 60
 
-uint256 Gametxid;
-
 /*
  the idea is that you creategame and get a txid, you specify the maxplayers and buyin for the game. the tx will have maxplayers of vouts. You must have a non-zero buyin to be able to use a preexisting character.
  
@@ -218,7 +216,7 @@ void rogue_gamefields(UniValue &obj,int64_t maxplayers,int64_t buyin,uint256 gam
                 seed &= (1LL << 62) - 1;
                 obj.push_back(Pair("seed",(int64_t)seed));
                 if ( rogue_iamregistered(maxplayers,gametxid,tx,myrogueaddr) > 0 )
-                    sprintf(cmd,"./rogue %llu gui",(long long)seed);
+                    sprintf(cmd,"./rogue %llu %s",(long long)seed,gametxid.ToString().c_str());
                 else sprintf(cmd,"./komodo-cli -ac_name=%s cclib register %d \"[%%22%s%%22]\"",ASSETCHAINS_SYMBOL,EVAL_ROGUE,gametxid.ToString().c_str());
                 obj.push_back(Pair("run",cmd));
             }
@@ -588,17 +586,6 @@ UniValue rogue_keystrokes(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
             } else return(cclib_error(result,"couldnt find batontxid"));
         } else return(cclib_error(result,"invalid gametxid"));
     } else return(cclib_error(result,"couldnt reparse params"));
-}
-
-void rogue_progress(uint64_t seed,char *keystrokes,int32_t num)
-{
-    char cmd[32768],hexstr[32768]; int32_t i;
-    for (i=0; i<num; i++)
-        sprintf(&hexstr[i<<1],"%02x",keystrokes[i]);
-    hexstr[i<<1] = 0;
-    sprintf(cmd,"./komodo-cli -ac_name=%s cclib keystrokes %d \"[%%22%s%22,%22%s%22]\"",ASSETCHAINS_SYMBOL,EVAL_ROGUE,Gametxid.GetHex().c_str(),hexstr);
-    if ( system(cmd) != 0 )
-        fprintf(stderr,"error issuing (%s)\n",cmd);
 }
 
 UniValue rogue_highlander(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)

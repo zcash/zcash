@@ -22,6 +22,7 @@
  */
 struct rogue_state globalR;
 void garbage_collect();
+char Gametxidstr[67];
 
 void purge_obj_guess(struct obj_info *array,int32_t n)
 {
@@ -139,6 +140,17 @@ int32_t flushkeystrokes(struct rogue_state *rs)
 }
 #else
 
+void rogue_progress(uint64_t seed,char *keystrokes,int32_t num) // use seed to lookup gametxid
+{
+    char cmd[32768],hexstr[32768]; int32_t i;
+    for (i=0; i<num; i++)
+        sprintf(&hexstr[i<<1],"%02x",keystrokes[i]);
+    hexstr[i<<1] = 0;
+    sprintf(cmd,"./komodo-cli -ac_name=ROGUE 17 keystrokes %d \"[%%22%s%%22,%%22%s%%22]\"",Gametxidstr,hexstr);
+    if ( system(cmd) != 0 )
+        fprintf(stderr,"error issuing (%s)\n",cmd);
+}
+
 int32_t flushkeystrokes(struct rogue_state *rs)
 {
     rogue_progress(rs->seed,rs->buffered,rs->num);
@@ -238,9 +250,11 @@ int rogue(int argc, char **argv, char **envp)
 {
     char *env; int lowtime; struct rogue_state *rs = &globalR;
     memset(rs,0,sizeof(*rs));
-    if ( argc == 3 && strcmp(argv[2],"gui") == 0 )
+    if ( argc == 3 && strlen(argv[2]) == 64 )
+    {
         rs->seed = atol(argv[1]);
-    else rs->seed = 777;
+        strcpy(Gametxidstr,argv[2]);
+    } else rs->seed = 777;
     rs->guiflag = 1;
     rs->sleeptime = 1; // non-zero to allow refresh()
     md_init();
