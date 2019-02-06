@@ -371,21 +371,22 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                 {
                     // check a notary didnt sign twice (this would be an invalid notarisation later on and cause problems)
                     std::set<int> checkdupes( NotarisationNotaries.begin(), NotarisationNotaries.end() );
-                    if ( tx.GetHash().ToString() == invalidnotarisation )
-                    {
-                        NotarisationNotaries.clear();
-                        fprintf(stderr, "notarisation %s is invalid leave it as a normal tx.\n", invalidnotarisation.c_str());
-                    }
-                    else if ( checkdupes.size() != NotarisationNotaries.size() ) 
+                    if ( checkdupes.size() != NotarisationNotaries.size() ) 
                     {
                         NotarisationNotaries.clear();
                         fprintf(stderr, "possible notarisation is signed multiple times by same notary, passed as normal transaction.\n");
-                    } 
+                    }
+                    else if ( tx.GetHash().ToString() == invalidnotarisation )
+                    {
+                        // check if the last notarisation we tried was flagged as invalid.
+                        // then clear it, in case next time it is seen as valid.
+                        NotarisationNotaries.clear();
+                        invalidnotarisation = "";
+                        fprintf(stderr, "notarisation %s is invalid leave it as a normal tx.\n", invalidnotarisation.c_str());
+                    }
                     else 
                         fNotarisation = true;
-                }
-                else 
-                    NotarisationNotaries.clear();
+                } else NotarisationNotaries.clear();
 
                 nTotalIn += tx.GetShieldedValueIn();
             }
