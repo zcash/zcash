@@ -317,20 +317,20 @@ int32_t rogue_findbaton(struct CCcontract_info *cp,std::vector<uint8_t> &playerd
                     matches++;
                     matchtx = spenttx;
                 } else fprintf(stderr,"%d+2 doesnt match %s vs %s\n",i,ccaddr,destaddr);
-            } else fprintf(stderr,"%d+2 couldnt find spenttx.%s\n",i,spenttxid.GetHex().c_str());
-        } else fprintf(stderr,"%d+2 unspent\n",i);
+            } //else fprintf(stderr,"%d+2 couldnt find spenttx.%s\n",i,spenttxid.GetHex().c_str());
+        } //else fprintf(stderr,"%d+2 unspent\n",i);
     }
     if ( matches == 1 )
     {
         numvouts = matchtx.vout.size();
-        fprintf(stderr,"matches.%d numvouts.%d\n",matches,numvouts);
+        //fprintf(stderr,"matches.%d numvouts.%d\n",matches,numvouts);
         if ( rogue_registeropretdecode(txid,playertxid,matchtx.vout[numvouts-1].scriptPubKey) == 'R' && txid == gametxid )
         {
             if ( playertxid == zeroid || rogue_playerdata(cp,origplayergame,pk,playerdata,playertxid) == 0 )
             {
                 txid = spenttxid;
-                fprintf(stderr,"scan forward\n");
-                while ( CCgettxout(txid,0,1) > 0 )
+                fprintf(stderr,"scan forward playertxid.%s spenttxid.%s\n",playertxid.GetHex().c_str(),spenttxid.GetHex().c_str());
+                while ( CCgettxout(txid,0,1) < 0 )
                 {
                     spenttxid = zeroid;
                     spentvini = -1;
