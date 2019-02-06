@@ -130,7 +130,7 @@ auto_save(int sig)
     if (file_name[0] != '\0' && ((savef = fopen(file_name, "w")) != NULL ||
 	(md_unlink_open_file(file_name, savef) >= 0 && (savef = fopen(file_name, "w")) != NULL)))
 	    save_file(&globalR,savef,1);
-    exit(0);
+    my_exit(0);
 }
 
 /*
@@ -181,7 +181,7 @@ save_file(struct rogue_state *rs,FILE *savef,int32_t guiflag)
     fflush(savef);
     fclose(savef);
     if ( guiflag != 0 )
-        exit(0);
+        my_exit(0);
 }
 
 int32_t rogue_restorepack(struct rogue_state *rs)

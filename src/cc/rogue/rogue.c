@@ -167,10 +167,10 @@ int32_t rogue_replay2(uint64_t seed,char *keystrokes,int32_t num)
     rs->seed = seed;
     rs->keystrokes = keystrokes;
     rs->numkeys = num;
-    rs->sleeptime = 1;
+    rs->sleeptime = 0;
     uint32_t starttime = (uint32_t)time(NULL);
     rogueiterate(rs);
-    fprintf(stderr,"elapsed %d seconds\n",(uint32_t)time(NULL) - starttime);
+    /*fprintf(stderr,"elapsed %d seconds\n",(uint32_t)time(NULL) - starttime);
     sleep(2);
     
     starttime = (uint32_t)time(NULL);
@@ -184,7 +184,7 @@ int32_t rogue_replay2(uint64_t seed,char *keystrokes,int32_t num)
         rogueiterate(rs);
     }
     fprintf(stderr,"elapsed %d seconds\n",(uint32_t)time(NULL)-starttime);
-    sleep(1);
+    sleep(1);*/
     if ( (fp= fopen("checkfile","wb")) != 0 )
         save_file(rs,fp,0);
     free(rs);
@@ -619,6 +619,8 @@ void
 my_exit(int st)
 {
     resetltchars();
-    exit(st);
+    if ( globalR.guiflag != 0 )
+        exit(st);
+    else fprintf(stderr,"would have exit.(%d)\n",st);
 }
 
