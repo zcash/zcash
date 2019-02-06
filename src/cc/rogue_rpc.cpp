@@ -639,7 +639,7 @@ UniValue rogue_bailout(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     // vout0 -> 1% ingame gold
     // get any playerdata, get all keystrokes, replay game and compare final state
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); std::string rawtx; CTransaction gametx; int64_t buyin,batonvalue; int32_t n,num,numkeys,maxplayers,batonht,batonvout; char myrogueaddr[64],*keystrokes = 0; std::vector<uint8_t> playerdata,newdata; uint256 batontxid,gametxid; CPubKey mypk,roguepk; uint8_t player[10000],mypriv[32];
+    UniValue result(UniValue::VOBJ); std::string rawtx; CTransaction gametx; int64_t buyin,batonvalue; int32_t i,n,num,numkeys,maxplayers,batonht,batonvout; char myrogueaddr[64],*keystrokes = 0; std::vector<uint8_t> playerdata,newdata; uint256 batontxid,gametxid; CPubKey mypk,roguepk; uint8_t player[10000],mypriv[32];
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
