@@ -73,8 +73,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
 	unspendablepk = GetUnspendable(cp, unspendablepriv);
 	GetCCaddress(cp, unspendable, unspendablepk);
 	othercond = MakeCCcond1(cp->evalcode, unspendablepk);
-    
-    CCaddr1of2set(cp,unspendablepk,unspendablepk,unspendablepriv,CC1of2CCaddr);
+    GetCCaddress1of2(cp,CC1of2CCaddr,unspendablepk,unspendablepk);
 
     //printf("evalcode.%d (%s)\n",cp->evalcode,unspendable);
 	// tokens support:
