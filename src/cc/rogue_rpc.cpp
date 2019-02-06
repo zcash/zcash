@@ -500,7 +500,7 @@ void rogue_gameplayerinfo(struct CCcontract_info *cp,UniValue &obj,uint256 gamet
     obj.push_back(Pair("slot",(int64_t)vout-2));
     if ( (retval= rogue_findbaton(cp,0,numkeys,regslot,playerdata,batontxid,batonvout,batonvalue,batonht,gametxid,gametx,maxplayers,destaddr,numplayers)) == 0 )
     {
-        if ( CCgettxout(gametxid,2+maxplayers+i,1) == txfee )
+        if ( CCgettxout(gametxid,maxplayers+vout,1) == txfee )
             obj.push_back(Pair("status","alive"));
         else obj.push_back(Pair("status","finished"));
         obj.push_back(Pair("baton",batontxid.ToString()));
