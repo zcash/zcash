@@ -692,7 +692,7 @@ UniValue rogue_bailout(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                     num = rogue_replay2(player,seed,keystrokes,numkeys,playerdata.size()==0?0:&P); //4419709268196762041
                     free(keystrokes);
                     mtx.vin.push_back(CTxIn(batontxid,batonvout,CScript()));
-                    mtx.vin.push_back(CTxIn(gametxid,2+maxplayers+slot,CScript()));
+                    mtx.vin.push_back(CTxIn(gametxid,2+maxplayers+regslot,CScript()));
                     mtx.vout.push_back(MakeCC1vout(cp->evalcode,txfee,mypk));
                     if ( num > 0 )
                     {
