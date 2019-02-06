@@ -472,7 +472,7 @@ cJSON *cclib_reparse(int32_t *nump,cJSON *origparams) // assumes origparams will
         }
         newstr[j] = 0;
         params = cJSON_Parse(newstr);
-        if ( params != 0 )
+        if ( 0 && params != 0 )
             printf("new.(%s) -> %s\n",newstr,jprint(params,0));
         free(newstr);
         *nump = cJSON_GetArraySize(params);
