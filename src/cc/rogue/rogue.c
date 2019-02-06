@@ -146,7 +146,7 @@ void rogue_progress(uint64_t seed,char *keystrokes,int32_t num) // use seed to l
     for (i=0; i<num; i++)
         sprintf(&hexstr[i<<1],"%02x",keystrokes[i]);
     hexstr[i<<1] = 0;
-    sprintf(cmd,"./komodo-cli -ac_name=ROGUE 17 keystrokes %d \"[%%22%s%%22,%%22%s%%22]\"",Gametxidstr,hexstr);
+    sprintf(cmd,"./komodo-cli -ac_name=ROGUE keystrokes 17 \"[%%22%s%%22,%%22%s%%22]\"",Gametxidstr,hexstr);
     if ( system(cmd) != 0 )
         fprintf(stderr,"error issuing (%s)\n",cmd);
 }
