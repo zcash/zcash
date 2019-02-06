@@ -725,6 +725,7 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
     GetCCaddress1of2(cp,myrogueaddr,roguepk,mypk);
     result.push_back(Pair("name","rogue"));
     result.push_back(Pair("method",method));
+    result.push_back(Pair("myrogueaddr",myrogueaddr));
     if ( strcmp(method,"bailout") == 0 )
     {
         funcid = 'Q';
