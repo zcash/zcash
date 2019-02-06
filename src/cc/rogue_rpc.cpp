@@ -187,8 +187,9 @@ int32_t rogue_iamregistered(int32_t maxplayers,uint256 gametxid,CTransaction tx,
                 Getscriptaddress(destaddr,spenttx.vout[0].scriptPubKey);
                 if ( strcmp(myrogueaddr,destaddr) == 0 )
                     return(1);
-            }
-        }
+                else fprintf(stderr,"myaddr.%s vs %s\n",myrogueaddr,destaddr);
+            } else fprintf(stderr,"cant find spenttxid.%s\n",spenttxid.GetHex().c_str());
+        } else fprintf(stderr,"vout %d is unspent\n",vout);
     }
     return(0);
 }
@@ -528,7 +529,7 @@ UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                 rogue_univalue(result,0,maxplayers,buyin);
                 GetCCaddress1of2(cp,coinaddr,roguepk,mypk);
                 fprintf(stderr,"check %s\n",coinaddr);
-                if ( rogue_iamregistered(maxplayers,gametxid,tx,coinaddr) > 1 )
+                if ( rogue_iamregistered(maxplayers,gametxid,tx,coinaddr) > 0 )
                     return(cclib_error(result,"already registered"));
                 if ( (inputsum= rogue_registrationbaton(mtx,gametxid,tx,maxplayers)) != ROGUE_REGISTRATIONSIZE )
                     return(cclib_error(result,"couldnt find available registration baton"));
