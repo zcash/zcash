@@ -225,7 +225,7 @@ int32_t rogue_isvalidgame(struct CCcontract_info *cp,CTransaction &tx,int64_t &b
 
 UniValue rogue_playerobj(UniValue &obj,std::vector<uint8_t> playerdata)
 {
-    obj.push_back("raw",playerdata.ToString());
+    obj.push_back("raw",playerdata.GetHex().ToString());
     // convert to scrolls, etc.
     return(obj);
 }
@@ -255,7 +255,7 @@ int32_t rogue_iterateplayer(uint256 firsttxid,uint256 lasttxid)     // retrace p
 
 int32_t rogue_playerdata(struct CCcontract_info *cp,uint256 &origplayergame,CPubKey &pk,std::vector<uint8_t> &playerdata,uint256 playertxid)
 {
-    uint256 origplayertxid,hashBlock,highlander,registertxid; CTransaction gametx,playertx,highlandertx; std::vector<uint8_t> vopret; uint8_t *script,e,f; int32_t i,maxplayers; int64_t buyin;
+    uint256 origplayertxid,hashBlock,highlander,registertxid; CTransaction gametx,playertx,highlandertx; std::vector<uint8_t> vopret; uint8_t *script,e,f; int32_t i,numvouts,maxplayers; int64_t buyin;
     if ( GetTransaction(playertxid,playertx,hashBlock,false) != 0 && (numvouts= playertx.vout.size()) > 0 )
     {
         GetOpReturnData(playertx.vout[numvouts-1].scriptPubKey,vopret);
@@ -271,7 +271,7 @@ int32_t rogue_playerdata(struct CCcontract_info *cp,uint256 &origplayergame,CPub
                 {
                     if ( rogue_highlanderopretdecode(origplayergame,registertxid,pk,playerdata,highlandertx.vout[numvouts-1].scriptPubKey) == 'H' )
                     {
-                        if ( highlandertx.vin[0].prevout.hash == prigplayergame && highlandertx.vin[0].prevout.n == 0 && rogue_isvalidgame(cp,gametx,buyin,maxplayers,origplayergame) == 0 && maxplayers > 1 )
+                        if ( highlandertx.vin[0].prevout.hash == origplayergame && highlandertx.vin[0].prevout.n == 0 && rogue_isvalidgame(cp,gametx,buyin,maxplayers,origplayergame) == 0 && maxplayers > 1 )
                             return(0);
                         else return(-3);
                     }
@@ -287,8 +287,8 @@ int32_t rogue_playerdataspend(CMutableTransaction &mtx,uint256 playertxid,uint25
     int64_t txfee = 10000;
     if ( CCgettxout(playertxid,0,1) == txfee && CCgettxout(origplayergame,1,1) == txfee )
     {
-        mtx.vin.push_back(playertxid,0,CScript());
-        mtx.vin.push_back(origplayergame,1,CScript());
+        mtx.vin.push_back(CTxIn(playertxid,0,CScript()));
+        mtx.vin.push_back(CTxIn(origplayergame,1,CScript()));
         return(0);
     } else return(-1);
 }
@@ -381,7 +381,7 @@ int64_t rogue_registrationbaton(CMutableTransaction &mtx,uint256 gametxid,CTrans
             vout = (r + j) % maxplayers;
             if ( CCgettxout(gametxid,vout,1) == ROGUE_REGISTRATIONSIZE )
             {
-                mtx.vin.push_back(gametxid,vout,CScript());
+                mtx.vin.push_back(CTxIn(gametxid,vout,CScript()));
                 return(ROGUE_REGISTRATIONSIZE);
             }
         }
@@ -530,7 +530,7 @@ UniValue rogue_keystrokes(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
             {
                 if ( maxplayers == 1 || nextheight <= batonht+ROGUE_MAXKEYSTROKESGAP )
                 {
-                    mtx.vin.push_back(batontxid,batonvout,CScript());
+                    mtx.vin.push_back(CTxIn(batontxid,batonvout,CScript()));
                     mtx.vout.push_back(MakeCC1of2vout(cp->evalcode,batonvalue-txfee,roguepk,mypk));
                     rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,rogue_keystrokesopret(gametxid,batontxid,mypk,keystrokes));
                     return(rogue_rawtxresult(result,rawtx,1));
