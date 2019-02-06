@@ -387,7 +387,7 @@ int64_t rogue_registrationbaton(CMutableTransaction &mtx,uint256 gametxid,CTrans
         r = rand() % maxplayers;
         for (j=0; j<maxplayers; j++)
         {
-            vout = (r + j) % maxplayers;
+            vout = ((r + j) % maxplayers) + 2;
             if ( CCgettxout(gametxid,vout,1) == ROGUE_REGISTRATIONSIZE )
             {
                 mtx.vin.push_back(CTxIn(gametxid,vout,CScript()));
