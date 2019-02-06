@@ -79,6 +79,19 @@
 // cclib register 17 \"[%224fd6f5cad0fac455e5989ca6eef111b00292845447075a802e9335879146ad5a%22,%22<playertxid>%22]\"
 // cclib keystrokes 17 \"[%224fd6f5cad0fac455e5989ca6eef111b00292845447075a802e9335879146ad5a%22,%22deadbeef%22]\"
 // cclib bailout 17 \"[%224fd6f5cad0fac455e5989ca6eef111b00292845447075a802e9335879146ad5a%22]\"
+/*
+ gold.218 hp.20 strength.16 level.3 exp.22 2
+object (Some food) x.0 y.0 type.58 pack.(a:97)
+object (+1 ring mail [protection 4] (being worn)) x.0 y.0 type.93 pack.(b:98)
+object (A +1,+1 mace (weapon in hand)) x.0 y.0 type.41 pack.(c:99)
+object (A +1,+0 short bow) x.0 y.0 type.41 pack.(d:100)
+object (28 +0,+0 arrows) x.0 y.0 type.41 pack.(e:101)
+object (A scroll titled 'eeptanelg eep agitwhon wunayot') x.9 y.13 type.63 pack.(f:102)
+object (A scroll titled 'aks snodo') x.13 y.3 type.63 pack.(g:103)
+object (A scroll titled 'itenejbot lechlech') x.35 y.13 type.63 pack.(h:104)
+da000000140000001000000003000000160000000800000002000000000000003a0000000000000001000000000000000000000000000000000000001000000000000000000000000000000000000000000000005d00000000000000010000000100000000000000000000000600000012000000000000000000000000000000000000000000000029000000ffffffff010000000000000001000000010000000000000012000000000000003278340000000000317833000000000029000000ffffffff010000000200000001000000000000000000000012000000000000003178310000000000317831000000000029000000020000001c000000030000000000000000000000000000001e00000000000000317831000000000032783300000000003f00000000000000010000000c00000000000000000000000b0000001000000000000000307830000000000030783000000000003f00000000000000010000000300000000000000000000000b0000001000000000000000307830000000000030783000000000003f00000000000000010000000000000000000000000000000b000000100000000000000030783000000000003078300000000000 packsize.8 n.448
+
+$$$gold.218 hp.20 strength.16 level.3 exp.22 dl.2 n.1 size.1228*/
 
 CScript rogue_newgameopret(int64_t buyin,int32_t maxplayers)
 {
@@ -678,9 +691,9 @@ UniValue rogue_bailout(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                             newdata[i] = player[i];
                             ((uint8_t *)&P)[i] = player[i];
                         }
-                        if ( (inputsum= AddCClibInputs(cp,mtx,roguepk,(uint64_t)P.gold*1000000,16,cp->unspendableCCaddr)) >= (uint64_t)P.gold*1000000+txfee )
-                            CCchange = (inputsum - (uint64_t)P.gold*1000000 - txfee);
-                        fprintf(stderr,"\n$$$gold.%d hp.%d strength.%d level.%d exp.%d dl.%d n.%d size.%d\n",P.gold,P.hitpoints,P.strength,P.level,P.experience,P.dungeonlevel,n,(int32_t)sizeof(P));
+                        if ( (inputsum= AddCClibInputs(cp,mtx,roguepk,(uint64_t)P.gold*1000000,16,cp->unspendableCCaddr)) > (uint64_t)P.gold*1000000 )
+                            CCchange = (inputsum - (uint64_t)P.gold*1000000);
+                        fprintf(stderr,"\nextracted $$$gold.%d hp.%d strength.%d level.%d exp.%d dl.%d n.%d size.%d\n",P.gold,P.hitpoints,P.strength,P.level,P.experience,P.dungeonlevel,n,(int32_t)sizeof(P));
                         mtx.vout.push_back(CTxOut(P.gold*1000000,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
                         //for (i=0; i<P.packsize; i++)
                         //    fprintf(stderr,"object (%s) type.%d pack.(%c:%d)\n",inv_name(o,FALSE),o->_o._o_type,o->_o._o_packch,o->_o._o_packch);
