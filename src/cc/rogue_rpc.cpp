@@ -175,8 +175,8 @@ void rogue_univalue(UniValue &result,const char *method,int64_t maxplayers,int64
 
 void rogue_gamefields(UniValue &obj,int64_t maxplayers,int64_t buyin,uint256 txid)
 {
-    CBlockIndex *pindex; int32_t ht; uint256 hashBlock; uint64_t seed; char cmd[512];
-    if ( (pindex= komodo_blockindex(txid)) != 0 )
+    CBlockIndex *pindex; int32_t ht; uint256 hashBlock; uint64_t seed; char cmd[512]; CTransaction tx;
+    if ( GetTransaction(txid,tx,hashBlock,false) != 0 && (pindex= komodo_blockindex(hashBlock)) != 0 )
     {
         ht = pindex->GetHeight();
         obj.push_back(Pair("height",ht));
