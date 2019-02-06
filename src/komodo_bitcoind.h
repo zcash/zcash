@@ -1777,14 +1777,20 @@ int32_t komodo_notarized_height(int32_t *prevMoMheightp,uint256 *hashp,uint256 *
 uint64_t komodo_notarypayamount(int32_t height, int64_t numnotaries)
 {
     if ( numnotaries == 0 )
+    {
+        fprintf(stderr, "komodo_notarypayamount failed num notaries is 0!\n");
         return(0);
+    }
     // fetch notarised height 
     int32_t notarizedht,prevMoMheight; uint256 notarizedhash,txid;
     uint64_t AmountToPay=0,ret=0;
     notarizedht = komodo_notarized_height(&prevMoMheight,&notarizedhash,&txid);
     // dont think this can happen, just sanity check.
     if ( height == notarizedht )
+    {
+        fprintf(stderr, "komodo_notarypayamount failed notarized height = height\n");
         return(0);
+    }
     // how many block since last notarisation.
     int32_t n = height - notarizedht;
     fprintf(stderr, "blocks since last notarisation: %i\n",n);
@@ -1851,7 +1857,7 @@ uint64_t komodo_notarypay(CMutableTransaction &txNew, std::vector<int8_t> &Notar
             //fprintf(stderr,"%02x",ptr[i+1]);
         }
         ptr[34] = OP_CHECKSIG;
-        //fprintf(stderr," set notary %i PUBKEY33 into vout[%i]\n",NotarisationNotaries[n],n+1);
+        //fprintf(stderr," set notary %i PUBKEY33 into vout[%i] amount.%lu\n",NotarisationNotaries[n],n+1,AmountToPay);
         txNew.vout[n+1].nValue = AmountToPay;
         total += txNew.vout[n+1].nValue;
     }

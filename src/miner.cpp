@@ -303,7 +303,8 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                 nTotalIn += nValueIn;
                 dPriority += (double)nValueIn * 1000;  // flat multiplier... max = 1e16.
             } else {
-                int numNotaryVins = 0; bool fToCryptoAddress = false;
+                //int numNotaryVins = 0; 
+                bool fToCryptoAddress = false;
                 if ( numSN != 0 && staked_pubkeys[0][0] != 0 && komodo_is_notarytx(tx) == 1 )
                     fToCryptoAddress = true;
 
@@ -355,19 +356,19 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                             scriptlen = (int32_t)tx1.vout[txin.prevout.n].scriptPubKey.size();
                             if ( scriptlen == 35 && script[0] == 33 && script[34] == OP_CHECKSIG && memcmp(script+1,staked_pubkeys[i],33) == 0 )
                             {
-                                numNotaryVins++;
+                                //numNotaryVins++;
                                 if ( Notarisations == 0 )
                                 {
                                     // Until we get a valid notarization this will always be 0.
                                     // We can add the index of each notary to vector, and clear it if this notarisation is not valid later on.
                                     NotarisationNotaries.push_back(i);
-                                }                            
+                                }                           
                             }
                         }
                     }
                     dPriority += (double)nValueIn * nConf;
                 }
-                if ( numSN != 0 && numNotaryVins >= numSN / 5 )
+                if ( numSN != 0 && NotarisationNotaries.size() >= numSN / 5 )
                 {
                     // check a notary didnt sign twice (this would be an invalid notarisation later on and cause problems)
                     std::set<int> checkdupes( NotarisationNotaries.begin(), NotarisationNotaries.end() );
@@ -704,8 +705,11 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                 {
                     fprintf(stderr, "Could not create notary payment, trying again.\n");
                     invalidnotarisation = pblock->vtx[1].GetHash().ToString();
-                    LEAVE_CRITICAL_SECTION(cs_main);
-                    LEAVE_CRITICAL_SECTION(mempool.cs); 
+                    if ( ASSETCHAINS_SYMBOL[0] == 0 ||  (ASSETCHAINS_SYMBOL[0] != 0 && !isStake) )
+                    {
+                        LEAVE_CRITICAL_SECTION(cs_main);
+                        LEAVE_CRITICAL_SECTION(mempool.cs);
+                    }
                     return(0);
                 }
                 fprintf(stderr, "Created notary payment coinbase totalsat.%lu\n",totalsats);    
