@@ -46,9 +46,9 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
     CTransaction vintx; std::string hex; CPubKey globalpk; uint256 hashBlock; uint64_t mask=0,nmask=0,vinimask=0;
     int64_t utxovalues[CC_MAXVINS],change,normalinputs=0,totaloutputs=0,normaloutputs=0,totalinputs=0,normalvins=0,ccvins=0; 
     int32_t i,flag,utxovout,n,err = 0;
-	char myaddr[64], destaddr[64], unspendable[64], mytokensaddr[64], mysingletokensaddr[64], tokensunspendable[64];
+	char myaddr[64], destaddr[64], unspendable[64], mytokensaddr[64], mysingletokensaddr[64], tokensunspendable[64],CC1of2CCaddr[64];
     uint8_t *privkey, myprivkey[32], unspendablepriv[32], tokensunspendablepriv[32], *msg32 = 0;
-	CC *mycond=0, *othercond=0, *othercond2=0,*othercond4=0, *othercond3=0, *othercond1of2=NULL, *othercond1of2tokens = NULL, *cond, *mytokenscond = NULL, *mysingletokenscond = NULL, *othertokenscond = NULL;
+	CC *mycond=0, *othercond=0, *othercond2=0,*othercond4=0, *othercond3=0, *othercond1of2=NULL, *othercond1of2tokens = NULL, *cond, *condCC2=0,*mytokenscond = NULL, *mysingletokenscond = NULL, *othertokenscond = NULL;
 	CPubKey unspendablepk /*, tokensunspendablepk*/;
 	struct CCcontract_info *cpTokens, tokensC;
     globalpk = GetUnspendable(cp,0);
@@ -73,6 +73,9 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
 	unspendablepk = GetUnspendable(cp, unspendablepriv);
 	GetCCaddress(cp, unspendable, unspendablepk);
 	othercond = MakeCCcond1(cp->evalcode, unspendablepk);
+    
+    CCaddr1of2set(cp,unspendablepk,unspendablepk,unspendablepriv,CC1of2CCaddr);
+
     //printf("evalcode.%d (%s)\n",cp->evalcode,unspendable);
 	// tokens support:
 
@@ -212,6 +215,13 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
 						othercond1of2 = MakeCCcond1of2(cp->evalcode, cp->coins1of2pk[0], cp->coins1of2pk[1]);
 					cond = othercond1of2;
 				}
+                else if ( strcmp(CC1of2CCaddr,destaddr) == 0 )
+                {
+                    privkey = unspendablepriv;
+                    if (condCC2 == 0)
+                        condCC2 = MakeCCcond1of2(cp->evalcode,unspendablepk,unspendablepk);
+                    cond = condCC2;
+                }
 				// check if this is spending from 1of2 cc tokens addr:
 				else if (strcmp(cp->tokens1of2addr, destaddr) == 0)
 				{
@@ -267,6 +277,8 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
     }     
     if ( mycond != 0 )
         cc_free(mycond);
+    if ( condCC2 != 0 )
+        cc_free(condCC2);
     if ( othercond != 0 )
         cc_free(othercond);
     if ( othercond2 != 0 )
