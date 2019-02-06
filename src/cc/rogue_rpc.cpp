@@ -114,6 +114,9 @@
  once you have a non-fungible token, ownership of it can be transferred or traded or spent in a game
  */
 
+// todo:
+// verify playerdata is usable
+// verify keystrokes tx is confirmed
 
 //////////////////////// start of CClib interface
 //./komodod -ac_name=ROGUE -ac_supply=1000000 -pubkey=<yourpubkey> -addnode=5.9.102.210  -ac_cclib=rogue -ac_perc=10000000 -ac_reward=100000000 -ac_cc=60001 -ac_script=2ea22c80203d1579313abe7d8ea85f48c65ea66fc512c878c0d0e6f6d54036669de940febf8103120c008203000401cc > /dev/null &
@@ -126,19 +129,20 @@
 // cclib register 17 \"[%22e7d75f0b2bf0716ad0df87ee331bf52b41e0823e126654c7ec8bac5a15f6d869%22,%22<playertxid>%22]\"
 // cclib keystrokes 17 \"[%22e7d75f0b2bf0716ad0df87ee331bf52b41e0823e126654c7ec8bac5a15f6d869%22,%22deadbeef%22]\"
 // cclib bailout 17 \"[%22e7d75f0b2bf0716ad0df87ee331bf52b41e0823e126654c7ec8bac5a15f6d869%22]\"
+// eef1d0091a88d85bdac1ede9d31db8504bc466a6695fdf259dac623fce09e0dd
 /*
- gold.218 hp.20 strength.16 level.3 exp.22 2
-object (Some food) x.0 y.0 type.58 pack.(a:97)
-object (+1 ring mail [protection 4] (being worn)) x.0 y.0 type.93 pack.(b:98)
-object (A +1,+1 mace (weapon in hand)) x.0 y.0 type.41 pack.(c:99)
-object (A +1,+0 short bow) x.0 y.0 type.41 pack.(d:100)
-object (28 +0,+0 arrows) x.0 y.0 type.41 pack.(e:101)
-object (A scroll titled 'eeptanelg eep agitwhon wunayot') x.9 y.13 type.63 pack.(f:102)
-object (A scroll titled 'aks snodo') x.13 y.3 type.63 pack.(g:103)
-object (A scroll titled 'itenejbot lechlech') x.35 y.13 type.63 pack.(h:104)
-da000000140000001000000003000000160000000800000002000000000000003a0000000000000001000000000000000000000000000000000000001000000000000000000000000000000000000000000000005d00000000000000010000000100000000000000000000000600000012000000000000000000000000000000000000000000000029000000ffffffff010000000000000001000000010000000000000012000000000000003278340000000000317833000000000029000000ffffffff010000000200000001000000000000000000000012000000000000003178310000000000317831000000000029000000020000001c000000030000000000000000000000000000001e00000000000000317831000000000032783300000000003f00000000000000010000000c00000000000000000000000b0000001000000000000000307830000000000030783000000000003f00000000000000010000000300000000000000000000000b0000001000000000000000307830000000000030783000000000003f00000000000000010000000000000000000000000000000b000000100000000000000030783000000000003078300000000000 packsize.8 n.448
-
-$$$gold.218 hp.20 strength.16 level.3 exp.22 dl.2 n.1 size.1228
+ 2409 gold.209 hp.17 strength.16 level.3 exp.22 3
+ object (2 rations of food) x.0 y.0 type.58 pack.(a:97)
+ object (+1 ring mail [protection 4] (being worn)) x.0 y.0 type.93 pack.(b:98)
+ object (A +1,+1 mace (weapon in hand)) x.0 y.0 type.41 pack.(c:99)
+ object (A +1,+0 short bow) x.0 y.0 type.41 pack.(d:100)
+ object (25 +0,+0 arrows) x.0 y.0 type.41 pack.(e:101)
+ object (A scroll titled 'zokkli ta grebot sristael') x.61 y.12 type.63 pack.(f:102)
+ object (A scroll titled 'val riip') x.42 y.18 type.63 pack.(g:103)
+ d1000000110000001000000003000000160000000700000003000000000000003a0000000000000002000000000000000000000000000000000000001000000000000000000000000000000000000000000000005d00000000000000010000000100000000000000000000000600000012000000000000000000000000000000000000000000000029000000ffffffff010000000000000001000000010000000000000012000000000000003278340000000000317833000000000029000000ffffffff0100000002000000010000000000000000000000120000000000000031783100000000003178310000000000290000000200000019000000030000000000000000000000000000001e00000000000000317831000000000032783300000000003f00000000000000010000000000000000000000000000000b0000001000000000000000307830000000000030783000000000003f00000000000000010000000800000000000000000000000b000000100000000000000030783000000000003078300000000000 packsize.7 n.396
+ (0 319) (1 9) (2 3) (3 3) (6 1) (7 1) (8 1) (11 2) (16 4) (17 1) (18 3) (22 1) (25 1) (30 1) (41 3) (48 8) (49 7) (50 2) (51 2) (52 1) (58 1) (63 2) (93 1) (120 10) (209 1) (255 8) nonz.26
+ 
+ extracted $$$gold.209 hp.17 strength.16 level.3 exp.22 dl.3 n.1 size.1228
  ca995aa934b5365e9b86d3db97919e3c26ea03ee6e3045bfc9b05a079ab8b130
  */
 
@@ -771,9 +775,9 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
                         }
                         fprintf(stderr,"\nextracted $$$gold.%d hp.%d strength.%d level.%d exp.%d dl.%d n.%d size.%d\n",P.gold,P.hitpoints,P.strength,P.level,P.experience,P.dungeonlevel,n,(int32_t)sizeof(P));
                         cashout = (uint64_t)P.gold * mult;
-                        if ( funcid == 'H' )
+                        if ( funcid == 'H' && maxplayers > 1 )
                         {
-                            if ( (numplayers - rogue_playersalive(tmp,gametxid,maxplayers)) > 1 && (P.dungeonlevel > 1 || P.gold < 10000 || P.level < 20) )
+                            if ( numplayers != maxplayers || (numplayers - rogue_playersalive(tmp,gametxid,maxplayers)) > 1 && (P.dungeonlevel > 1 || P.gold < 10000 || P.level < 20) )
                                 return(cclib_error(result,"highlander must be a winner or last one standing"));
                             cashout += numplayers * buyin;
                         }
