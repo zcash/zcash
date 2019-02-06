@@ -453,7 +453,7 @@ UniValue rogue_playerinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
         {
             UniValue pobj(UniValue::VOBJ);
             t = jbits256(jitem(params,0),0);
-            memcpy(&playertxid,t,sizeof(playertxid));;
+            memcpy(&playertxid,&t,sizeof(playertxid));;
             if ( rogue_playerdata(cp,origplayergame,pk,playerdata,playertxid) < 0 )
                 return(cclib_error(result,"invalid playerdata"));
             result.push_back(Pair("rogue",rogue_playerobj(pobj,playerdata)));
@@ -482,13 +482,13 @@ UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
         if ( n > 0 )
         {
             t = jbits256(jitem(params,0),0);
-            memcpy(&gametxid,t,sizeof(gametxid));
+            memcpy(&gametxid,&t,sizeof(gametxid));
             if ( rogue_isvalidgame(cp,tx,buyin,maxplayers,gametxid) == 0 )
             {
                 if ( n > 1 && maxplayers > 1 )
                 {
                     t = jbits256(jitem(params,0),0);
-                    memcpy(&playertxid,t,sizeof(playertxid));
+                    memcpy(&playertxid,&t,sizeof(playertxid));
                     if ( rogue_playerdata(cp,origplayergame,pk,playerdata,playertxid) < 0 )
                         return(cclib_error(result,"couldnt extract valid playerdata"));
                 }
@@ -497,7 +497,7 @@ UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                     return(cclib_error(result,"couldnt find available registration baton"));
                 else if ( playertxid != zeroid && rogue_playerdataspend(mtx,playertxid,origplayergame) < 0 )
                     return(cclib_error(result,"couldnt find playerdata to spend"));
-                else if ( buyin > 0 && AddNormalInputs(mtx,mypk,buyin,64) < buyin )
+                else if ( buyin > 0 && AddNormalinputs(mtx,mypk,buyin,64) < buyin )
                     return(cclib_error(result,"couldnt find enough normal funds for buyin"));
                 mtx.vout.push_back(MakeCC1of2vout(cp->evalcode,inputsum-txfee,roguepk,mypk));
                 rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,rogue_registeropret(gametxid,playertxid));
@@ -523,7 +523,7 @@ UniValue rogue_keystrokes(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
     if ( (params= cclib_reparse(&n,params)) != 0 && n == 2 && (keystrokestr= jstr(jitem(params,1),0)) != 0 )
     {
         t = jbits256(jitem(params,0),0);
-        memcpy(&gametxid,t,sizeof(gametxid));
+        memcpy(&gametxid,&t,sizeof(gametxid));
         keystrokes = ParseHex(keystrokestr);
         mypk = pubkey2pk(Mypubkey());
         roguepk = GetUnspendable(cp,0);
@@ -589,7 +589,7 @@ UniValue rogue_gameinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
         if ( n > 0 )
         {
             t = jbits256(jitem(params,0),0);
-            memcpy(&txid,t,sizeof(txid));
+            memcpy(&txid,&t,sizeof(txid));
             result.push_back(Pair("txid",txid.GetHex()));
             if ( rogue_isvalidgame(cp,tx,buyin,maxplayers,txid) == 0 )
             {
