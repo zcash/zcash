@@ -692,7 +692,9 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                 uint64_t totalsats = komodo_notarypay(txNew, NotarisationNotaries, pblock->nTime, nHeight, script, scriptlen);
                 if ( totalsats == 0 )
                 {
-                    fprintf(stderr, "Could not create notary payment, trying again.\n");  
+                    fprintf(stderr, "Could not create notary payment, trying again.\n");
+                    LEAVE_CRITICAL_SECTION(cs_main);
+                    LEAVE_CRITICAL_SECTION(mempool.cs); 
                     return(0);
                 }
                 fprintf(stderr, "Created notary payment coinbase totalsat.%lu\n",totalsats);    
