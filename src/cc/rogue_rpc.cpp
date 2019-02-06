@@ -671,7 +671,7 @@ UniValue rogue_bailout(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                     mtx.vin.push_back(CTxIn(batontxid,batonvout,CScript()));
                     // also need a vin from gametx
                     mtx.vout.push_back(MakeCC1vout(cp->evalcode,batonvalue-txfee,roguepk));
-                    if ( num == sizeof(P) )
+                    if ( num > 0 )
                     {
                         newdata.resize(num);
                         for (i=0; i<num; i++)
@@ -679,7 +679,7 @@ UniValue rogue_bailout(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                             newdata[i] = player[i];
                             ((uint8_t *)&P)[i] = player[i];
                         }
-                        fprintf(stderr,"\n$$$gold.%d hp.%d strength.%d level.%d exp.%d dl.%d\n",P.gold,P.hitpoints,P.strength,P.level,P.experience,P.dungeonlevel);
+                        fprintf(stderr,"\n$$$gold.%d hp.%d strength.%d level.%d exp.%d dl.%d n.%d size.%d\n",P.gold,P.hitpoints,P.strength,P.level,P.experience,P.dungeonlevel,n,(int32_t)sizeof(P));
                         mtx.vout.push_back(CTxOut(P.gold*1000000,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
                         //for (i=0; i<P.packsize; i++)
                         //    fprintf(stderr,"object (%s) type.%d pack.(%c:%d)\n",inv_name(o,FALSE),o->_o._o_type,o->_o._o_packch,o->_o._o_packch);
