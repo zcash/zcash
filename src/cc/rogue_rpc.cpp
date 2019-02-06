@@ -257,6 +257,22 @@ int32_t rogue_iamregistered(int32_t maxplayers,uint256 gametxid,CTransaction tx,
     return(0);
 }
 
+int32_t rogue_playersalive(int32_t &numplayers,uint256 gametxid,int32_t maxplayers)
+{
+    int32_t i,alive = 0; uint64_t txfee = 10000;
+    numplayers = 0;
+    for (i=0; i<maxplayers; i++)
+    {
+        if ( CCgettxout(gametxid,2+i,1) < 0 )
+        {
+            numplayers++;
+            if (CCgettxout(gametxid,2+maxplayers+i,1) == txfee )
+                alive++;
+        }
+    }
+    return(alive);
+}
+
 uint64_t rogue_gamefields(UniValue &obj,int64_t maxplayers,int64_t buyin,uint256 gametxid,char *myrogueaddr)
 {
     CBlockIndex *pindex; int32_t ht,delay,numplayers; uint256 hashBlock; uint64_t seed=0; char cmd[512]; CTransaction tx;
@@ -376,23 +392,6 @@ int32_t rogue_playerdata(struct CCcontract_info *cp,uint256 &origplayergame,CPub
     }
     return(-1);
 }
-
-int32_t rogue_playersalive(int32_t &numplayers,uint256 gametxid,int32_t maxplayers)
-{
-    int32_t i,alive = 0; uint64_t txfee = 10000;
-    numplayers = 0;
-    for (i=0; i<maxplayers; i++)
-    {
-        if ( CCgettxout(gametxid,2+i,1) < 0 )
-        {
-            numplayers++;
-            if (CCgettxout(gametxid,2+maxplayers+i,1) == txfee )
-                alive++;
-        }
-    }
-    return(alive);
-}
-
 
 int32_t rogue_playerdataspend(CMutableTransaction &mtx,uint256 playertxid,uint256 origplayergame)
 {
