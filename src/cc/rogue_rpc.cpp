@@ -173,10 +173,15 @@ void rogue_univalue(UniValue &result,const char *method,int64_t maxplayers,int64
     }
 }
 
-void rogue_gamefields(UniValue &obj,int64_t maxplayers,int64_t buyin,uint256 txid)
+int32_t rogue_iamregistered(CTransaction tx)
+{
+    return(0);
+}
+
+void rogue_gamefields(UniValue &obj,int64_t maxplayers,int64_t buyin,uint256 gametxid)
 {
     CBlockIndex *pindex; int32_t ht; uint256 hashBlock; uint64_t seed; char cmd[512]; CTransaction tx;
-    if ( GetTransaction(txid,tx,hashBlock,false) != 0 && (pindex= komodo_blockindex(hashBlock)) != 0 )
+    if ( GetTransaction(gametxid,tx,hashBlock,false) != 0 && (pindex= komodo_blockindex(hashBlock)) != 0 )
     {
         ht = pindex->GetHeight();
         obj.push_back(Pair("height",ht));
@@ -190,7 +195,9 @@ void rogue_gamefields(UniValue &obj,int64_t maxplayers,int64_t buyin,uint256 txi
                 memcpy(&seed,&hashBlock,sizeof(seed));
                 seed &= (1LL << 62) - 1;
                 obj.push_back(Pair("seed",(int64_t)seed));
-                sprintf(cmd,"./rogue %llu gui",(long long)seed);
+                if ( rogue_iamregistered(tx) > 0 )
+                    sprintf(cmd,"./rogue %llu gui",(long long)seed);
+                else sprintf(cmd,"./komodo-cli -ac_name=%s cclib register \\\"[%22%s%22]\\\" %d",ASSETCHAINS_SYMBOL,gametxid.ToString().c_str(),EVAL_ROGUE);
                 obj.push_back(Pair("run",cmd));
             }
         }
@@ -470,7 +477,7 @@ UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     // vin3+ -> buyin
     // vout0 -> keystrokes/completion baton
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); uint256 gametxid,origplayergame,playertxid,hashBlock; int32_t maxplayers,n,numvouts; int64_t inputsum,buyin,CCchange=0; CPubKey pk,mypk,roguepk; CTransaction tx; std::vector<uint8_t> playerdata; std::string rawtx; bits256 t;
+    UniValue result(UniValue::VOBJ); char destaddr[64]; uint256 gametxid,origplayergame,playertxid,hashBlock; int32_t maxplayers,n,numvouts; int64_t inputsum,buyin,CCchange=0; CPubKey pk,mypk,roguepk; CTransaction tx; std::vector<uint8_t> playerdata; std::string rawtx; bits256 t;
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
@@ -498,6 +505,8 @@ UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                 else if ( buyin > 0 && AddNormalinputs(mtx,mypk,buyin,64) < buyin )
                     return(cclib_error(result,"couldnt find enough normal funds for buyin"));
                 mtx.vout.push_back(MakeCC1of2vout(cp->evalcode,inputsum-txfee,roguepk,mypk));
+                GetCCaddress1of2(cp,destaddr,roguepk,roguepk);
+                CCaddr1of2set(cp,roguepk,roguepk,cp->CCpriv,destaddr);
                 rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,rogue_registeropret(gametxid,playertxid));
                 return(rogue_rawtxresult(result,rawtx,0));
             } else return(cclib_error(result,"invalid gametxid"));

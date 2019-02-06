@@ -51,8 +51,11 @@ public:
         cpHeir = CCinit(&heirC, EVAL_HEIR);
         return GetCCaddress1of2(cpHeir, coinaddr, ownerPubkey, heirPubkey);
     }
-    static void CCaddrCoinsOrTokens1of2set(struct CCcontract_info *cp, CPubKey ownerPubkey, CPubKey heirPubkey, char *coinaddr) {
-        CCaddr1of2set(cp, ownerPubkey, heirPubkey, coinaddr);
+    static void CCaddrCoinsOrTokens1of2set(struct CCcontract_info *cp, CPubKey ownerPubkey, CPubKey heirPubkey, char *coinaddr)
+    {
+        uint8_t mypriv[32];
+        Myprivkey(mypriv);
+        CCaddr1of2set(cp, ownerPubkey, heirPubkey,mypriv, coinaddr);
     }
 };
 

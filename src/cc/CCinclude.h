@@ -95,7 +95,7 @@ struct CCcontract_info
 	// this for 1of2 keys coins cryptocondition (for this evalcode)
 	// NOTE: only one evalcode is allowed at this time
 	char coins1of2addr[64];
-	CPubKey coins1of2pk[2];
+    CPubKey coins1of2pk[2]; uint8_t coins1of2priv[32];
 
 	// the same for tokens 1of2 keys cc 
 	char tokens1of2addr[64];
@@ -195,7 +195,7 @@ CC *MakeCCcond1of2(uint8_t evalcode,CPubKey pk1,CPubKey pk2);
 CC* GetCryptoCondition(CScript const& scriptSig);
 void CCaddr2set(struct CCcontract_info *cp,uint8_t evalcode,CPubKey pk,uint8_t *priv,char *coinaddr);
 void CCaddr3set(struct CCcontract_info *cp,uint8_t evalcode,CPubKey pk,uint8_t *priv,char *coinaddr);
-void CCaddr1of2set(struct CCcontract_info *cp, CPubKey pk1, CPubKey pk2, char *coinaddr);
+void CCaddr1of2set(struct CCcontract_info *cp, CPubKey pk1, CPubKey pk2,uint8_t *priv,char *coinaddr);
 
 CTxOut MakeTokensCC1of2vout(uint8_t evalcode, CAmount nValue, CPubKey pk1, CPubKey pk2);
 CTxOut MakeTokensCC1vout(uint8_t evalcode, CAmount nValue, CPubKey pk);

@@ -455,7 +455,9 @@ UniValue MarmaraLock(uint64_t txfee,int64_t amount,int32_t height)
         GetCCaddress1of2(cp,coinaddr,Marmarapk,mypk);
         SetCCunspents(unspentOutputs,coinaddr);
         threshold = remains / (MARMARA_VINS+1);
-        CCaddr1of2set(cp,Marmarapk,mypk,coinaddr);
+        uint8_t mypriv[32];
+        Myprivkey(mypriv);
+        CCaddr1of2set(cp,Marmarapk,mypk,mypriv,coinaddr);
         for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
         {
             txid = it->first.txhash;

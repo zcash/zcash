@@ -455,7 +455,7 @@ int64_t AddChannelsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx, C
         mtx.vin.push_back(CTxIn(txid,marker,CScript()));
         Myprivkey(myprivkey);        
         if (tokenid!=zeroid) CCaddrTokens1of2set(cp,srcpub,destpub,coinaddr);
-        else CCaddr1of2set(cp,srcpub,destpub,coinaddr);
+        else CCaddr1of2set(cp,srcpub,destpub,myprivkey,coinaddr);
         return totalinputs;
     }
     else return 0;
