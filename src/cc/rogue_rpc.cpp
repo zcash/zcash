@@ -640,7 +640,7 @@ UniValue rogue_bailout(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     // vout0 -> 1% ingame gold
     // get any playerdata, get all keystrokes, replay game and compare final state
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); std::string rawtx; CTransaction gametx; uint64_t seed; int64_t buyin,batonvalue; int32_t i,n,num,numkeys,maxplayers,batonht,batonvout; char destaddr[64],myrogueaddr[64],*keystrokes = 0; std::vector<uint8_t> playerdata,newdata; uint256 batontxid,gametxid; CPubKey mypk,roguepk; uint8_t player[10000],mypriv[32];
+    UniValue result(UniValue::VOBJ); std::string rawtx; CTransaction gametx; uint64_t seed; int64_t buyin,batonvalue; int32_t i,n,num,numkeys,maxplayers,batonht,batonvout; char myrogueaddr[64],*keystrokes = 0; std::vector<uint8_t> playerdata,newdata; uint256 batontxid,gametxid; CPubKey mypk,roguepk; uint8_t player[10000],mypriv[32];
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
@@ -680,12 +680,12 @@ UniValue rogue_bailout(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                             ((uint8_t *)&P)[i] = player[i];
                         }
                         fprintf(stderr,"\n$$$gold.%d hp.%d strength.%d level.%d exp.%d dl.%d\n",P.gold,P.hitpoints,P.strength,P.level,P.experience,P.dungeonlevel);
-                        //mtx.vout.push_back(CTxOut(P.gold*1000000,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
+                        mtx.vout.push_back(CTxOut(P.gold*1000000,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
                         //for (i=0; i<P.packsize; i++)
                         //    fprintf(stderr,"object (%s) type.%d pack.(%c:%d)\n",inv_name(o,FALSE),o->_o._o_type,o->_o._o_packch,o->_o._o_packch);
                     }
                     Myprivkey(mypriv);
-                    CCaddr1of2set(cp,roguepk,mypk,mypriv,destaddr);
+                    CCaddr1of2set(cp,roguepk,mypk,mypriv,myrogueaddr);
                     rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,rogue_highlanderopret(gametxid,mypk,newdata));
                     fprintf(stderr,"bailout.(%s)\n",rawtx.c_str());
                     return(rogue_rawtxresult(result,rawtx,0));
