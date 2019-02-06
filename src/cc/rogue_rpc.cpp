@@ -186,10 +186,7 @@ int32_t rogue_iamregistered(int32_t maxplayers,uint256 gametxid,CTransaction tx,
             {
                 Getscriptaddress(destaddr,spenttx.vout[0].scriptPubKey);
                 if ( strcmp(myrogueaddr,destaddr) == 0 )
-                {
-                    Gametxid = gametxid;
                     return(1);
-                }
                 //else fprintf(stderr,"myaddr.%s vs %s\n",myrogueaddr,destaddr);
             } //else fprintf(stderr,"cant find spenttxid.%s\n",spenttxid.GetHex().c_str());
         } //else fprintf(stderr,"vout %d is unspent\n",vout);
