@@ -565,7 +565,7 @@ UniValue rogue_newgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     mypk = pubkey2pk(Mypubkey());
     roguepk = GetUnspendable(cp,0);
     rogue_univalue(result,"newgame",maxplayers,buyin);
-    required = (3*txfee + maxplayers*ROGUE_REGISTRATIONSIZE);
+    required = (3*txfee + maxplayers*(ROGUE_REGISTRATIONSIZE+txfee));
     if ( (inputsum= AddCClibInputs(cp,mtx,roguepk,required,16,cp->unspendableCCaddr)) >= required )
     {
         mtx.vout.push_back(MakeCC1vout(cp->evalcode,txfee,roguepk)); // for highlander TCBOO creation
