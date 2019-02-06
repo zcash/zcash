@@ -24,6 +24,7 @@ static const int STAKED_ERA_GAP = 777;
 
 static const int NUM_STAKED_ERAS = 4;
 static const int STAKED_NOTARIES_TIMESTAMP[NUM_STAKED_ERAS] = {1542964044, 1549188000, 1604233333, 1604244444};
+static const int32_t num_notaries_STAKED[NUM_STAKED_ERAS] = { 17, 25, 19, 17 };
 
 // Era array of pubkeys.
 static const char *notaries_STAKED[NUM_STAKED_ERAS][64][2] =
@@ -115,8 +116,6 @@ static const char *notaries_STAKED[NUM_STAKED_ERAS][64][2] =
         {"alrighttest1", "03527c7ecd6a8c5db6d685a64e6e18c1edb49e2f057a434f56c3f1253a26e9c6a2" }, // RBw2jNU3dnGk86ZLqPMadJwRwg3NU8eC6s
     }
 };
-
-static const int32_t num_notaries_STAKED[NUM_STAKED_ERAS] = { 17, 25, 19, 17 };
 
 int8_t is_STAKED(const char *chain_name);
 int32_t STAKED_era(int timestamp);

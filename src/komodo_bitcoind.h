@@ -1437,7 +1437,7 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
             {
                 // Under PoS % target and we need to increase diff.
                 //fprintf(stderr, "PoS too low diff.%i changed to.",diff);
-                diff = diff * ( (ASSETCHAINS_STAKED - PoSperc + 1) * (ASSETCHAINS_STAKED - PoSperc + 1) );
+                diff = diff * ( (ASSETCHAINS_STAKED - PoSperc + 1) * (ASSETCHAINS_STAKED - PoSperc + 1) * ( nHeight < 50 ? 1000 : 1));
                 //fprintf(stderr, "%i \n",diff);
             }
             else if ( PoSperc > ASSETCHAINS_STAKED )

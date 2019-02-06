@@ -17,16 +17,16 @@ int8_t is_STAKED(const char *chain_name)
     return(0);
   if (doneinit == 1 && ASSETCHAINS_SYMBOL[0] != 0)
     return(STAKED);
-  if ( (strcmp(chain_name, "LABS") == 0) || (strcmp(chain_name, "PAYME") == 0) || (strcmp(chain_name, "LABST") == 0) )
-    STAKED = 1;
-  else if ( (strncmp(chain_name, "LABS", 4) == 0) )
-    STAKED = 2;
+  if ( (strcmp(chain_name, "LABS") == 0) || (strcmp(chain_name, "LABST2") == 0) ) 
+    STAKED = 1; // These chains are allowed coin emissions.
+  else if ( (strncmp(chain_name, "LABS", 4) == 0) ) 
+    STAKED = 2; // These chains have no coin emission, block subsidy is always 0, and comission is 0. Notary pay is allowed.
   else if ( (strcmp(chain_name, "CFEK") == 0) || (strncmp(chain_name, "CFEK", 4) == 0) )
-    STAKED = 3;
+    STAKED = 3; // These chains have no speical rules at all.
   else if ( (strcmp(chain_name, "TEST") == 0) || (strncmp(chain_name, "TEST", 4) == 0) )
-    STAKED = 4;
+    STAKED = 4; // These chains are for testing consensus to create a chain etc. Not meant ot be actually used for anything important.
   else if ( (strcmp(chain_name, "THIS_CHAIN_IS_BANNED") == 0) )
-    STAKED = 255; // This means that all notarisations for chains that are in 255 group are invalid. 
+    STAKED = 255; // Any chain added to this group is banned, no notarisations are valid, as a consensus rule. Can be used to remove a chain from cluster if needed.
   doneinit = 1;
   return(STAKED);
 };
