@@ -163,10 +163,10 @@ CScript rogue_keystrokesopret(uint256 gametxid,uint256 batontxid,CPubKey pk,std:
     return(opret);
 }
 
-CScript rogue_highlanderopret(uint256 gametxid,CPubKey pk,std::vector<uint8_t>playerdata)
+CScript rogue_highlanderopret(uint8_t funcid,uint256 gametxid,CPubKey pk,std::vector<uint8_t>playerdata)
 {
     CScript opret; uint8_t evalcode = EVAL_ROGUE;
-    opret << OP_RETURN << E_MARSHAL(ss << evalcode << 'K' << gametxid << pk << playerdata);
+    opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << gametxid << pk << playerdata);
     return(opret);
 }
 
@@ -259,7 +259,7 @@ int32_t rogue_iamregistered(int32_t maxplayers,uint256 gametxid,CTransaction tx,
 
 uint64_t rogue_gamefields(UniValue &obj,int64_t maxplayers,int64_t buyin,uint256 gametxid,char *myrogueaddr)
 {
-    CBlockIndex *pindex; int32_t ht,delay; uint256 hashBlock; uint64_t seed=0; char cmd[512]; CTransaction tx;
+    CBlockIndex *pindex; int32_t ht,delay,numplayers; uint256 hashBlock; uint64_t seed=0; char cmd[512]; CTransaction tx;
     if ( GetTransaction(gametxid,tx,hashBlock,false) != 0 && (pindex= komodo_blockindex(hashBlock)) != 0 )
     {
         ht = pindex->GetHeight();
@@ -379,7 +379,7 @@ int32_t rogue_playerdata(struct CCcontract_info *cp,uint256 &origplayergame,CPub
 
 int32_t rogue_playersalive(int32_t &numplayers,uint256 gametxid,int32_t maxplayers)
 {
-    int32_t i,alive = 0;
+    int32_t i,alive = 0; uint64_t txfee = 10000;
     numplayers = 0;
     for (i=0; i<maxplayers; i++)
     {
