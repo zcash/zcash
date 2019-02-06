@@ -5173,7 +5173,7 @@ int32_t verus_staked(CBlock *pBlock, CMutableTransaction &txNew, uint32_t &nBits
 int32_t ensure_CCrequirements(uint8_t evalcode)
 {
     CCerror = "";
-    if ( ASSETCHAINS_CCDISABLES[evalcode] != 0 || evalcode == EVAL_MARMARA && ASSETCHAINS_MARMARA == 0 )
+    if ( ASSETCHAINS_CCDISABLES[evalcode] != 0 || (evalcode == EVAL_MARMARA && ASSETCHAINS_MARMARA == 0) )
     {
         fprintf(stderr,"evalcode %d disabled\n",evalcode);
         return(-1);
