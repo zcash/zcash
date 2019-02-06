@@ -19,7 +19,7 @@
 #define ROGUE_REGISTRATION 5
 #define ROGUE_REGISTRATIONSIZE (100 * 10000)
 #define ROGUE_MAXPLAYERS 64 // need to send unused fees back to globalCC address to prevent leeching
-#define ROGUE_MAXKEYSTROKESGAP 60
+#define ROGUE_MAXKEYSTROKESGAP 777
 
 /*
  the idea is that you creategame and get a txid, you specify the maxplayers and buyin for the game. the tx will have maxplayers of vouts. You must have a non-zero buyin to be able to use a preexisting character.
