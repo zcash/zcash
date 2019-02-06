@@ -7,7 +7,7 @@
 
 static const int32_t iguanaPort = 9997;
 static const int8_t BTCminsigs = 13;
-static const int8_t overrideMinSigs = 0;
+static const int8_t overrideMinSigs = 2;
 static const char *iguanaSeeds[8][1] =
 {
   {"80.240.17.222"},
