@@ -619,7 +619,18 @@ UniValue rogue_highlander(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
     return(result);
 }
 
-#include "rogue/rogue.h"
+#define MAXPACK 23
+struct rogue_packitem
+{
+    int32_t type,launch,count,which,hplus,dplus,arm,flags,group;
+    char damage[8],hurldmg[8];
+};
+struct rogue_player
+{
+    int32_t gold,hitpoints,strength,level,experience,packsize,dungeonlevel,pad;
+    struct rogue_packitem roguepack[MAXPACK];
+};
+int32_t rogue_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t num,struct rogue_player *player);
 
 UniValue rogue_bailout(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
@@ -647,7 +658,7 @@ UniValue rogue_bailout(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                 if ( rogue_findbaton(cp,&keystrokes,numkeys,playerdata,batontxid,batonvout,batonvalue,batonht,gametxid,gametx,maxplayers,myrogueaddr) == 0 && keystrokes != 0 )
                 {
                     UniValue obj; struct rogue_player P;
-                    seed = uint64_t rogue_gamefields(obj,maxplayers,buyin,gametxid,myrogueaddr);
+                    seed = rogue_gamefields(obj,maxplayers,buyin,gametxid,myrogueaddr);
                     fprintf(stderr,"found baton %s numkeys.%d seed.%llu\n",batontxid.ToString().c_str(),numkeys,(long long)seed);
                     if ( playerdata.size() > 0 )
                     {

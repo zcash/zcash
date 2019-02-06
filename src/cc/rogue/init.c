@@ -24,7 +24,7 @@ void rogue_restoreobject(THING *o,struct rogue_packitem *item);
 
 void restore_player(struct rogue_state *rs)
 {
-    int32_t i;
+    int32_t i; THING *obj;
     //rs->P.gold = purse;
     max_hp = rs->P.hitpoints;
     max_stats.s_str = rs->P.strength;
