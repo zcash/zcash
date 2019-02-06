@@ -19,7 +19,7 @@
 #define ROGUE_REGISTRATION 5
 #define ROGUE_REGISTRATIONSIZE (100 * 10000)
 #define ROGUE_MAXPLAYERS 64 // need to send unused fees back to globalCC address to prevent leeching
-#defein ROGUE_MAXKEYSTROKESGAP 60
+#define ROGUE_MAXKEYSTROKESGAP 60
 
 /*
  the idea is that you creategame and get a txid, you specify the maxplayers and buyin for the game. the tx will have maxplayers of vouts. You must have a non-zero buyin to be able to use a preexisting character.
@@ -106,7 +106,7 @@ CScript rogue_highlanderopret(uint256 gametxid,uint256 registertxid,CPubKey pk,s
     return(opret);
 }
 
-uint8_t rogue_highlanderopretdecode(uint256 &gametxid,uint256 &registertxid,CPubKey &pk,std::vector<uint8_t> &playerdata,CSript scriptPubKey)
+uint8_t rogue_highlanderopretdecode(uint256 &gametxid,uint256 &registertxid,CPubKey &pk,std::vector<uint8_t> &playerdata,CScript scriptPubKey)
 {
     std::vector<uint8_t> vopret; uint8_t *script,e,f;
     GetOpReturnData(scriptPubKey,vopret);
@@ -147,7 +147,7 @@ uint8_t rogue_newgameopreturndecode(int64_t &buyin,int32_t &maxplayers,CScript s
     std::vector<uint8_t> vopret; uint8_t *script,e,f;
     GetOpReturnData(scriptPubKey,vopret);
     script = (uint8_t *)vopret.data();
-    if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> buyin; ss >> mayplayers) != 0 && e == EVAL_ROGUE && f == 'G' )
+    if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> buyin; ss >> maxplayers) != 0 && e == EVAL_ROGUE && f == 'G' )
     {
         return(f);
     }
@@ -174,7 +174,7 @@ void rogue_univalue(UniValue &result,const char *method,int64_t maxplayers,int64
 
 void rogue_gamefields(UniValue &obj,int64_t maxplayers,int64_t buyin)
 {
-    CBlockIndex *pindex; int32_t ht; uint64_t seed; char cmd[512];
+    CBlockIndex *pindex; int32_t ht; uint256 hashBlock; uint64_t seed; char cmd[512];
     if ( (pindex= komodo_blockindex(hashBlock)) != 0 )
     {
         ht = pindex->GetHeight();
@@ -200,7 +200,7 @@ void rogue_gamefields(UniValue &obj,int64_t maxplayers,int64_t buyin)
 
 int32_t rogue_isvalidgame(struct CCcontract_info *cp,CTransaction &tx,int64_t &buyin,int32_t &maxplayers,uint256 txid)
 {
-    uint256 hashBlock; int32_t i,numvouts; char coinaddr[64]; CPubKey roguepk;
+    uint256 hashBlock; int32_t i,numvouts; char coinaddr[64]; CPubKey roguepk; uint64_t txfee = 10000;
     buyin = maxplayers = 0;
     if ( GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 1 )
     {
@@ -241,7 +241,7 @@ int32_t rogue_iterateplayer(uint256 firsttxid,uint256 lasttxid)     // retrace p
         return(0);
     else
     {
-        fprintf(stderr,"firsttxid.%s -> %s != last.%s\n",firsttxid.ToString(),txid.ToString(),lasttxid.ToString());
+        fprintf(stderr,"firsttxid.%s -> %s != last.%s\n",firsttxid.ToString().c_str(),txid.ToString().c_str(),lasttxid.ToString().c_str());
         return(-1);
     }
 }
@@ -253,12 +253,12 @@ int32_t rogue_iterateplayer(uint256 firsttxid,uint256 lasttxid)     // retrace p
  'S' is for sell, but will need to change to accomodate assets
  */
 
-int32_t rogue_playerdata(uint256 &origplayergame,CPubKey &pk,std::vector<uint8_t> &playerdata,uint256 playertxid)
+int32_t rogue_playerdata(struct CCcontract_info *cp,uint256 &origplayergame,CPubKey &pk,std::vector<uint8_t> &playerdata,uint256 playertxid)
 {
     uint256 origplayertxid,hashBlock,highlander,registertxid; CTransaction gametx,playertx,highlandertx; std::vector<uint8_t> vopret; uint8_t *script,e,f; int32_t i,maxplayers; int64_t buyin;
     if ( GetTransaction(playertxid,playertx,hashBlock,false) != 0 && (numvouts= playertx.vout.size()) > 0 )
     {
-        GetOpReturnData(scriptPubKey,vopret);
+        GetOpReturnData(playertx.vout[numvouts-1].scriptPubKey,vopret);
         script = (uint8_t *)vopret.data();
         if ( vopret.size() > 34 && script[0] == EVAL_ROGUE && (script[1] == 'H' || script[1] == 'S') )
         {
@@ -271,7 +271,7 @@ int32_t rogue_playerdata(uint256 &origplayergame,CPubKey &pk,std::vector<uint8_t
                 {
                     if ( rogue_highlanderopretdecode(origplayergame,registertxid,pk,playerdata,highlandertx.vout[numvouts-1].scriptPubKey) == 'H' )
                     {
-                        if ( highlandertx.vin[0].prev.hash == prigplayergame && highlandertx.vin[0].prev.n == 0 && rogue_isvalidgame(cp,gametx,buyin,maxplayers,origplayergame) == 0 && maxplayers > 1 )
+                        if ( highlandertx.vin[0].prevout.hash == prigplayergame && highlandertx.vin[0].prevout.n == 0 && rogue_isvalidgame(cp,gametx,buyin,maxplayers,origplayergame) == 0 && maxplayers > 1 )
                             return(0);
                         else return(-3);
                     }
@@ -315,7 +315,7 @@ int32_t rogue_findbaton(std::vector<uint8_t> &playerdata,uint256 &batontxid,int3
         numvouts = matchtx.vout.size();
         if ( rogue_registeropretdecode(txid,playertxid,matchtx.vout[numvouts-1].scriptPubKey) == 'R' && txid == gametxid )
         {
-            if ( playertxid == zeroid || rogue_playerdata(origplayergame,playerdata,playertxid) == 0 )
+            if ( playertxid == zeroid || rogue_playerdata(cp,origplayergame,playerdata,playertxid) == 0 )
             {
                 txid = spenttxid;
                 while ( CCgettxout(txid,0,1) > 0 )
@@ -453,7 +453,7 @@ UniValue rogue_playerinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
         {
             UniValue pobj(UniValue:VOBJ);
             playertxid = jbits256(jitem(params,0),0);
-            if ( rogue_playerdata(origplayergame,playerdata,playertxid) < 0 )
+            if ( rogue_playerdata(cp,origplayergame,playerdata,playertxid) < 0 )
                 return(cclib_error(result,"invalid playerdata"));
             result.push_back(Pair("rogue",rogue_playerobj(pobj,playerdata)));
         } else return(cclib_error(result,"no playertxid"));
@@ -486,7 +486,7 @@ UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                 if ( n > 1 && maxplayers > 1 )
                 {
                     playertxid = jbits256(jitem(params,0),0);
-                    if ( rogue_playerdata(origplayergame,playerdata,playertxid) < 0 )
+                    if ( rogue_playerdata(cp,origplayergame,playerdata,playertxid) < 0 )
                         return(cclib_error(result,"couldnt extract valid playerdata"));
                 }
                 rogue_univalue(result,0,maxplayers,buyin);
