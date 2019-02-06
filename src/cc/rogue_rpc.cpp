@@ -367,8 +367,13 @@ int32_t rogue_findbaton(struct CCcontract_info *cp,std::vector<uint8_t> &playerd
 void rogue_gameplayerinfo(struct CCcontract_info *cp,UniValue &obj,uint256 gametxid,CTransaction gametx,int32_t vout,int32_t maxplayers)
 {
     // identify if bailout or quit or timed out
-    uint256 batontxid; int32_t batonvout,batonht,retval; int64_t batonvalue; std::vector<uint8_t> playerdata; char destaddr[64];
-    Getscriptaddress(destaddr,gametx.vout[vout].scriptPubKey);
+    uint256 batontxid,spenttxid,hashBlock; CTransaction spenttx; int32_t batonvout,batonht,retval; int64_t batonvalue; std::vector<uint8_t> playerdata; char destaddr[64];
+    destaddr[0] = 0;
+    if ( myIsutxo_spent(spenttxid,gametxid,vout) >= 0 )
+    {
+        if ( GetTransaction(spenttxid,spenttx,hashBlock,false) != 0 && spenttx.vout.size() > 0 )
+            Getscriptaddress(ccaddr,spenttx.vout[0].scriptPubKey);
+    }
     obj.push_back(Pair("slot",(int64_t)vout-2));
     if ( (retval= rogue_findbaton(cp,playerdata,batontxid,batonvout,batonvalue,batonht,gametxid,gametx,maxplayers,destaddr)) == 0 )
     {
