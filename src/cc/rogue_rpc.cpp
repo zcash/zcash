@@ -143,7 +143,7 @@
  (0 319) (1 9) (2 3) (3 3) (6 1) (7 1) (8 1) (11 2) (16 4) (17 1) (18 3) (22 1) (25 1) (30 1) (41 3) (48 8) (49 7) (50 2) (51 2) (52 1) (58 1) (63 2) (93 1) (120 10) (209 1) (255 8) nonz.26
  
  extracted $$$gold.209 hp.17 strength.16 level.3 exp.22 dl.3 n.1 size.1228
- ca995aa934b5365e9b86d3db97919e3c26ea03ee6e3045bfc9b05a079ab8b130
+ 
  */
 
 CScript rogue_newgameopret(int64_t buyin,int32_t maxplayers)
@@ -500,6 +500,9 @@ void rogue_gameplayerinfo(struct CCcontract_info *cp,UniValue &obj,uint256 gamet
     obj.push_back(Pair("slot",(int64_t)vout-2));
     if ( (retval= rogue_findbaton(cp,0,numkeys,regslot,playerdata,batontxid,batonvout,batonvalue,batonht,gametxid,gametx,maxplayers,destaddr,numplayers)) == 0 )
     {
+        if ( CCgettxout(gametxid,2+maxplayers+i,1) == txfee )
+            obj.push_back(Pair("status","alive"));
+        else obj.push_back(Pair("status","finished"));
         obj.push_back(Pair("baton",batontxid.ToString()));
         obj.push_back(Pair("batonaddr",destaddr));
         obj.push_back(Pair("batonvout",(int64_t)batonvout));
