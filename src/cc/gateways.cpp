@@ -1499,7 +1499,7 @@ UniValue GatewaysPendingDeposits(uint256 bindtxid,std::string refcoin)
         nValue = (int64_t)it->second.satoshis;
         if ( vout == 0 && nValue == 10000 && GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts=tx.vout.size())>0 && 
             DecodeGatewaysDepositOpRet(tx.vout[numvouts-1].scriptPubKey,tmpbindtxid,coin,publishers,txids,height,cointxid,claimvout,hex,proof,destpub,amount) == 'D'
-            && tmpbindtxid==bindtxid && refcoin == coin && myIsutxo_spentinmempool(txid,vout) == 0)
+            && tmpbindtxid==bindtxid && refcoin == coin && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0)
         {   
             UniValue obj(UniValue::VOBJ);
             obj.push_back(Pair("cointxid",uint256_str(str,cointxid)));
@@ -1561,7 +1561,7 @@ UniValue GatewaysPendingWithdraws(uint256 bindtxid,std::string refcoin)
         nValue = (int64_t)it->second.satoshis;
         K=0;
         if ( vout == 0 && nValue == 10000 && GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size())>0 && 
-            (funcid=DecodeGatewaysOpRet(tx.vout[numvouts-1].scriptPubKey))!=0 && (funcid=='W' || funcid=='P') && myIsutxo_spentinmempool(txid,vout) == 0)
+            (funcid=DecodeGatewaysOpRet(tx.vout[numvouts-1].scriptPubKey))!=0 && (funcid=='W' || funcid=='P') && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0)
         {
             if (funcid=='W')
             {
@@ -1648,7 +1648,7 @@ UniValue GatewaysProcessedWithdraws(uint256 bindtxid,std::string refcoin)
         vout = (int32_t)it->first.index;
         nValue = (int64_t)it->second.satoshis;
         if ( vout == 0 && nValue == 10000 && GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size())>0 && 
-            DecodeGatewaysCompleteSigningOpRet(tx.vout[numvouts-1].scriptPubKey,withdrawtxid,coin,K,hex) == 'S' && refcoin == coin && myIsutxo_spentinmempool(txid,vout) == 0)
+            DecodeGatewaysCompleteSigningOpRet(tx.vout[numvouts-1].scriptPubKey,withdrawtxid,coin,K,hex) == 'S' && refcoin == coin && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0)
         {   
             if (GetTransaction(withdrawtxid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size())>0
                 && DecodeGatewaysWithdrawOpRet(tx.vout[numvouts-1].scriptPubKey,tmptokenid,bindtxid,coin,withdrawpub,amount) == 'W' || refcoin!=coin || tmptokenid!=tokenid)          

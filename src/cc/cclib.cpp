@@ -47,21 +47,20 @@ struct CClib_rpcinfo
     int32_t numrequiredargs,maxargs;
     uint8_t funcid,evalcode;
 }
-// creategame, register (inventory + baton + buyin), progress (events + statehash + [compr state]?), claimwin
 
 CClib_methods[] =
 {
     { (char *)"faucet2", (char *)"fund", (char *)"amount", 1, 1, 'F', EVAL_FAUCET2 },
     { (char *)"faucet2", (char *)"get", (char *)"<no args>", 0, 0, 'G', EVAL_FAUCET2 },
 #ifdef BUILD_ROGUE
-    { (char *)"rogue", (char *)"newgame", (char *)"buyin", 0, 1, 'G', EVAL_ROGUE },
-    { (char *)"rogue", (char *)"txidinfo", (char *)"txid", 1, 1, 'I', EVAL_ROGUE },
+    { (char *)"rogue", (char *)"newgame", (char *)"maxplayers buyin", 0, 2, 'G', EVAL_ROGUE },
+    { (char *)"rogue", (char *)"gameinfo", (char *)"gametxid", 1, 1, 'T', EVAL_ROGUE },
     { (char *)"rogue", (char *)"pending", (char *)"<no args>", 0, 0, 'P', EVAL_ROGUE },
-    { (char *)"rogue", (char *)"register", (char *)"txid [inventory]", 1, 2, 'R', EVAL_ROGUE },
-    { (char *)"rogue", (char *)"progress", (char *)"regtxid fname", 2, 2, 'K', EVAL_ROGUE },
-    { (char *)"rogue", (char *)"saveandquit", (char *)"ptxid", 1, 1, 'Q', EVAL_ROGUE },
-    { (char *)"rogue", (char *)"claimwin", (char *)"ptxid", 1, 1, 'W', EVAL_ROGUE },
-    { (char *)"rogue", (char *)"extract", (char *)"wtxid item", 2, 2, 'X', EVAL_ROGUE },
+    { (char *)"rogue", (char *)"register", (char *)"gametxid [playertxid]", 1, 2, 'R', EVAL_ROGUE },
+    { (char *)"rogue", (char *)"keystrokes", (char *)"gametxid keystrokes", 2, 2, 'K', EVAL_ROGUE },
+    { (char *)"rogue", (char *)"bailout", (char *)"baton finalhash", 2, 2, 'Q', EVAL_ROGUE },
+    { (char *)"rogue", (char *)"highlander", (char *)"baton finalhash", 2, 2, 'H', EVAL_ROGUE },
+    { (char *)"rogue", (char *)"playerinfo", (char *)"playertxid", 1, 1, 'I', EVAL_ROGUE },
 #else
     { (char *)"sudoku", (char *)"gen", (char *)"<no args>", 0, 0, 'G', EVAL_SUDOKU },
     { (char *)"sudoku", (char *)"txidinfo", (char *)"txid", 1, 1, 'T', EVAL_SUDOKU },
@@ -81,12 +80,12 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
 }
 UniValue rogue_newgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue rogue_pending(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
-UniValue rogue_txidinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+UniValue rogue_gameinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
-UniValue rogue_progress(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
-UniValue rogue_saveandquit(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
-UniValue rogue_claimwin(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
-UniValue rogue_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+UniValue rogue_keystrokes(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+UniValue rogue_bailout(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+UniValue rogue_highlander(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+UniValue rogue_playerinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 
 #else
 bool sudoku_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx);
@@ -102,23 +101,22 @@ UniValue CClib_method(struct CCcontract_info *cp,char *method,cJSON *params)
 #ifdef BUILD_ROGUE
     if ( cp->evalcode == EVAL_ROGUE )
     {
-        rogue_replay(777,0);
         if ( strcmp(method,"newgame") == 0 )
             return(rogue_newgame(txfee,cp,params));
         else if ( strcmp(method,"pending") == 0 )
             return(rogue_pending(txfee,cp,params));
-        else if ( strcmp(method,"txidinfo") == 0 )
-            return(rogue_txidinfo(txfee,cp,params));
+        else if ( strcmp(method,"gameinfo") == 0 )
+            return(rogue_gameinfo(txfee,cp,params));
         else if ( strcmp(method,"register") == 0 )
             return(rogue_register(txfee,cp,params));
-        else if ( strcmp(method,"progress") == 0 )
-            return(rogue_progress(txfee,cp,params));
-        else if ( strcmp(method,"saveandquit") == 0 )
+        else if ( strcmp(method,"keystrokes") == 0 )
+            return(rogue_keystrokes(txfee,cp,params));
+        else if ( strcmp(method,"bailout") == 0 )
             return(rogue_saveandquit(txfee,cp,params));
-        else if ( strcmp(method,"claimwin") == 0 )
+        else if ( strcmp(method,"highlander") == 0 )
             return(rogue_claimwin(txfee,cp,params));
-        else if ( strcmp(method,"extract") == 0 )
-            return(rogue_extract(txfee,cp,params));
+        else if ( strcmp(method,"playerinfo") == 0 )
+            return(rogue_claimwin(txfee,cp,params));
         else
         {
             result.push_back(Pair("result","error"));
@@ -328,7 +326,7 @@ bool CClib_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
 
 int64_t AddCClibInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,int64_t total,int32_t maxinputs,char *cmpaddr)
 {
-    char coinaddr[64]; int64_t threshold,nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t vout,n = 0;
+    char coinaddr[64]; int64_t threshold,nValue,price,totalinputs = 0,txfee = 10000; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t vout,n = 0;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     GetCCaddress(cp,coinaddr,pk);
     SetCCunspents(unspentOutputs,coinaddr);
@@ -338,12 +336,12 @@ int64_t AddCClibInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubK
         txid = it->first.txhash;
         vout = (int32_t)it->first.index;
         //char str[65]; fprintf(stderr,"%s check %s/v%d %.8f vs %.8f\n",coinaddr,uint256_str(str,txid),vout,(double)it->second.satoshis/COIN,(double)threshold/COIN);
-        if ( it->second.satoshis < threshold )
+        if ( it->second.satoshis < threshold || it->second.satoshis == txfee )
             continue;
         // no need to prevent dup
         if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
         {
-            if ( (nValue= IsCClibvout(cp,vintx,vout,cmpaddr)) > 1000000 && myIsutxo_spentinmempool(txid,vout) == 0 )
+            if ( (nValue= IsCClibvout(cp,vintx,vout,cmpaddr)) >= 1000000 && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0 )
             {
                 if ( total != 0 && maxinputs != 0 )
                     mtx.vin.push_back(CTxIn(txid,vout,CScript()));
@@ -437,6 +435,41 @@ std::string CClib_rawtxgen(struct CCcontract_info *cp,uint8_t funcid,cJSON *para
         return("");
     } else fprintf(stderr,"cant find faucet inputs\n");
     return("");
+}
+
+UniValue cclib_error(UniValue &result,const char *errorstr)
+{
+    result.push_back(Pair("status","error"));
+    result.push_back(Pair("error",errorstr));
+    return(result);
+}
+
+cJSON *cclib_reparse(int32_t *nump,cJSON *origparams) // assumes origparams will be freed by caller
+{
+    cJSON *params; char *jsonstr,*newstr; int32_t i,j;
+    if ( (jsonstr= jprint(origparams,0)) != 0 )
+    {
+        if ( jsonstr[0] == '"' && jsonstr[strlen(jsonstr)-1] == '"' )
+        {
+            jsonstr[strlen(jsonstr)-1] = 0;
+            jsonstr++;
+        }
+        newstr = (char *)malloc(strlen(jsonstr)+1);
+        for (i=j=0; jsonstr[i]!=0; i++)
+        {
+            if ( jsonstr[i] == '%' && jsonstr[i+1] == '2' && jsonstr[i+2] == '2' )
+            {
+                newstr[j++] = '"';
+                i += 2;
+            } else newstr[j++] = jsonstr[i];
+        }
+        newstr[j] = 0;
+        params = cJSON_Parse(newstr);
+        free(newstr);
+        *nump = cJSON_GetArraySize(params);
+        //free(origparams);
+    } else params = 0;
+    return(params);
 }
 
 #ifdef BUILD_ROGUE

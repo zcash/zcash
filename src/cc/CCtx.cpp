@@ -341,7 +341,7 @@ int32_t CCgettxout(uint256 txid,int32_t vout,int32_t mempoolflag)
         CCoinsViewMemPool view(pcoinsTip, mempool);
         if (!view.GetCoins(txid, coins))
             return(-1);
-        if ( myIsutxo_spentinmempool(txid,vout) != 0 )
+        if ( myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) != 0 )
             return(-1);
     }
     else
@@ -507,7 +507,7 @@ int64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int3
                     if ( i != n )
                         continue;
                 }
-                if ( myIsutxo_spentinmempool(txid,vout) == 0 )
+                if ( myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0 )
                 {
                     up = &utxos[n++];
                     up->txid = txid;
@@ -598,7 +598,7 @@ int64_t AddNormalinputs2(CMutableTransaction &mtx,int64_t total,int32_t maxinput
                 if ( i != n )
                     continue;
             }
-            if ( myIsutxo_spentinmempool(txid,vout) == 0 )
+            if ( myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0 )
             {
                 up = &utxos[n++];
                 up->txid = txid;

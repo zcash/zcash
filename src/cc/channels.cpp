@@ -430,7 +430,7 @@ int64_t AddChannelsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx, C
             }
         }
     }
-    if (txid!=zeroid && myIsutxo_spentinmempool(txid,0) != 0)
+    if (txid!=zeroid && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,0) != 0)
     {
         txid=zeroid;
         int32_t mindepth=CHANNELS_MAXPAYMENTS;

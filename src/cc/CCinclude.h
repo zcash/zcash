@@ -138,11 +138,13 @@ CBlockIndex *komodo_blockindex(uint256 hash);
 CBlockIndex *komodo_chainactive(int32_t height);
 
 static const uint256 zeroid;
+static uint256 ignoretxid;
+static int32_t ignorevin;
 bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock);
 int32_t is_hexstr(char *str,int32_t n);
 bool myAddtomempool(CTransaction &tx, CValidationState *pstate = NULL, bool fSkipExpiry = false);
 int32_t CCgettxout(uint256 txid,int32_t vout,int32_t mempoolflag);
-bool myIsutxo_spentinmempool(uint256 txid,int32_t vout);
+bool myIsutxo_spentinmempool(uint256 &spenttxid,int32_t &spentvini,uint256 txid,int32_t vout);
 bool mytxid_inmempool(uint256 txid);
 int32_t myIsutxo_spent(uint256 &spenttxid,uint256 txid,int32_t vout);
 int32_t decode_hex(uint8_t *bytes,int32_t n,char *hex);

@@ -594,7 +594,7 @@ int64_t AddTokenCCInputs(struct CCcontract_info *cp, CMutableTransaction &mtx, C
 
 			std::vector<CPubKey> vinPubkeys;
 			
-			if ((nValue = IsTokensvout(true, true/*<--add only checked token uxtos */, cp, NULL, vintx, vout, tokenid)) > 0 && myIsutxo_spentinmempool(txid, vout) == 0)
+			if ((nValue = IsTokensvout(true, true/*<--add only checked token uxtos */, cp, NULL, vintx, vout, tokenid)) > 0 && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid, vout) == 0)
 			{
 				if (total != 0 && maxinputs != 0)
 					mtx.vin.push_back(CTxIn(txid, vout, CScript()));
