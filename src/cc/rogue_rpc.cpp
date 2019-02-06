@@ -617,6 +617,8 @@ UniValue rogue_highlander(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
     return(result);
 }
 
+int32_t rogue_replay2(uint64_t seed,char *keystrokes,int32_t num);
+
 UniValue rogue_bailout(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     // detect if last to bailout
@@ -640,9 +642,11 @@ UniValue rogue_bailout(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             result.push_back(Pair("gametxid",gametxid.GetHex()));
             if ( rogue_isvalidgame(cp,gametx,buyin,maxplayers,gametxid) == 0 )
             {
-                if ( rogue_findbaton(cp,&keystrokes,numkeys,playerdata,batontxid,batonvout,batonvalue,batonht,gametxid,gametx,maxplayers,myrogueaddr) == 0 )
+                if ( rogue_findbaton(cp,&keystrokes,numkeys,playerdata,batontxid,batonvout,batonvalue,batonht,gametxid,gametx,maxplayers,myrogueaddr) == 0 && keystrokes != 0 )
                 {
                     fprintf(stderr,"found baton %s numkeys.%d\n",batontxid.ToString().c_str(),numkeys);
+                    rogue_replay2(4419709268196762041,keystrokes,numkeys);
+                    free(keystrokes);
                 }
                 result.push_back(Pair("result","success"));
             }

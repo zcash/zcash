@@ -159,6 +159,37 @@ int32_t flushkeystrokes(struct rogue_state *rs)
     rs->num = 0;
     return(0);
 }
+
+int32_t rogue_replay2(uint64_t seed,char *keystrokes,int32_t num)
+{
+    struct rogue_state *rs; FILE *fp; int32_t i;
+    rs = (struct rogue_state *)calloc(1,sizeof(*rs));
+    rs->seed = seed;
+    rs->keystrokes = keystrokes;
+    rs->numkeys = num;
+    rs->sleeptime = 1;
+    uint32_t starttime = (uint32_t)time(NULL);
+    rogueiterate(rs);
+    fprintf(stderr,"elapsed %d seconds\n",(uint32_t)time(NULL) - starttime);
+    sleep(2);
+    
+    starttime = (uint32_t)time(NULL);
+    for (i=0; i<100; i++)
+    {
+        memset(rs,0,sizeof(*rs));
+        rs->seed = seed;
+        rs->keystrokes = keystrokes;
+        rs->numkeys = num;
+        rs->sleeptime = 0;
+        rogueiterate(rs);
+    }
+    fprintf(stderr,"elapsed %d seconds\n",(uint32_t)time(NULL)-starttime);
+    sleep(1);
+    if ( (fp= fopen("checkfile","wb")) != 0 )
+        save_file(rs,fp,0);
+    free(rs);
+    return(0);
+}
 #endif
 
 long get_filesize(FILE *fp)
@@ -204,40 +235,7 @@ int32_t rogue_replay(uint64_t seed,int32_t sleeptime)
     }
     if ( num > 0 )
     {
-        rs = (struct rogue_state *)calloc(1,sizeof(*rs));
-        rs->seed = seed;
-        rs->keystrokes = keystrokes;
-        rs->numkeys = num;
-        rs->sleeptime = 1;
-        uint32_t starttime = (uint32_t)time(NULL);
-        rogueiterate(rs);
-        fprintf(stderr,"elapsed %d seconds\n",(uint32_t)time(NULL) - starttime);
-        sleep(2);
-        
-        starttime = (uint32_t)time(NULL);
-        for (i=0; i<2000; i++)
-        {
-            memset(rs,0,sizeof(*rs));
-            rs->seed = seed;
-            rs->keystrokes = keystrokes;
-            rs->numkeys = num;
-            rs->sleeptime = 0;
-            rogueiterate(rs);
-        }
-        fprintf(stderr,"elapsed %d seconds\n",(uint32_t)time(NULL)-starttime);
-        sleep(1);
-        if ( (fp= fopen("checkfile","wb")) != 0 )
-        {
-            save_file(rs,fp,0);
-            if ( 0 && (fp= fopen("checkfile","rb")) != 0 )
-            {
-                for (i=0; i<0x150; i++)
-                    fprintf(stderr,"%02x",fgetc(fp));
-                fprintf(stderr," first part rnd.%d\n",rnd(1000));
-                fclose(fp);
-            }
-        }
-        free(rs);
+        rogue_replay2(seed,keystrokes,num);
         mvaddstr(LINES - 2, 0, (char *)"replay completed");
         endwin();
     }
