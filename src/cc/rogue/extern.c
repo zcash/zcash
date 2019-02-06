@@ -11,7 +11,7 @@
  */
 
 #include <curses.h>
-//#include "rogue.h"
+#include "rogue.h"
 
 
 

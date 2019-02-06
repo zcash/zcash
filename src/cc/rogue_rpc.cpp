@@ -631,6 +631,7 @@ struct rogue_player
     struct rogue_packitem roguepack[MAXPACK];
 };
 int32_t rogue_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t num,struct rogue_player *player);
+#define ROGUE_DECLARED_PACK
 
 UniValue rogue_bailout(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {

@@ -313,7 +313,7 @@
 /*
  * Now we define the structures and types
  */
-#ifdef BUILD_ROGUE
+#ifndef ROGUE_DECLARED_PACK
 struct rogue_packitem
 {
     int32_t type,launch,count,which,hplus,dplus,arm,flags,group;
@@ -324,6 +324,7 @@ struct rogue_player
     int32_t gold,hitpoints,strength,level,experience,packsize,dungeonlevel,pad;
     struct rogue_packitem roguepack[MAXPACK];
 };
+#define ROGUE_DECLARED_PACK
 #endif
 
 struct rogue_state
