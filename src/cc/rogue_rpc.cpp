@@ -92,14 +92,14 @@ CScript rogue_registeropret(uint256 gametxid,uint256 playertxid)
     return(opret);
 }
 
-CScript rogue_keystrokesopret(uint256 gametxid,uint256 batontxid,CPubKey pk,std::vector<uint_t>keystrokes)
+CScript rogue_keystrokesopret(uint256 gametxid,uint256 batontxid,CPubKey pk,std::vector<uint8_t>keystrokes)
 {
     CScript opret; uint8_t evalcode = EVAL_ROGUE;
     opret << OP_RETURN << E_MARSHAL(ss << evalcode << 'K' << gametxid << batontxid << pk << keystrokes);
     return(opret);
 }
 
-CScript rogue_highlanderopret(uint256 gametxid,uint256 registertxid,CPubKey pk,std::vector<uint_t>playerdata)
+CScript rogue_highlanderopret(uint256 gametxid,uint256 registertxid,CPubKey pk,std::vector<uint8_t>playerdata)
 {
     CScript opret; uint8_t evalcode = EVAL_ROGUE;
     opret << OP_RETURN << E_MARSHAL(ss << evalcode << 'K' << gametxid << registertxid << pk << playerdata);

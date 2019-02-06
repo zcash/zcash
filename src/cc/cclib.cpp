@@ -112,11 +112,11 @@ UniValue CClib_method(struct CCcontract_info *cp,char *method,cJSON *params)
         else if ( strcmp(method,"keystrokes") == 0 )
             return(rogue_keystrokes(txfee,cp,params));
         else if ( strcmp(method,"bailout") == 0 )
-            return(rogue_saveandquit(txfee,cp,params));
+            return(rogue_bailout(txfee,cp,params));
         else if ( strcmp(method,"highlander") == 0 )
-            return(rogue_claimwin(txfee,cp,params));
+            return(rogue_highlander(txfee,cp,params));
         else if ( strcmp(method,"playerinfo") == 0 )
-            return(rogue_claimwin(txfee,cp,params));
+            return(rogue_playerinfo(txfee,cp,params));
         else
         {
             result.push_back(Pair("result","error"));
