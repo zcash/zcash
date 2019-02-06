@@ -160,7 +160,7 @@ int32_t flushkeystrokes(struct rogue_state *rs)
     return(0);
 }
 
-int32_t rogue_replay2(uint64_t seed,char *keystrokes,int32_t num)
+int32_t rogue_replay2(uint8_t *player,uint64_t seed,char *keystrokes,int32_t num)
 {
     struct rogue_state *rs; FILE *fp; int32_t i;
     rs = (struct rogue_state *)calloc(1,sizeof(*rs));
@@ -186,9 +186,13 @@ int32_t rogue_replay2(uint64_t seed,char *keystrokes,int32_t num)
     fprintf(stderr,"elapsed %d seconds\n",(uint32_t)time(NULL)-starttime);
     sleep(1);*/
     if ( (fp= fopen("checkfile","wb")) != 0 )
+    {
         save_file(rs,fp,0);
+        if ( rs->playersize > 0 )
+            memcpy(player,rs->playerdata,rs->playersize);
+    }
     free(rs);
-    return(0);
+    return(rs->playersize);
 }
 #endif
 

@@ -167,7 +167,9 @@ save_file(struct rogue_state *rs,FILE *savef,int32_t guiflag)
     {
         fprintf(stderr,"%02x",((uint8_t *)&rs->P)[i]);
         histo[((uint8_t *)&rs->P)[i]]++;
+        rs->playerdata[i] = ((uint8_t *)&rs->P)[i];
     }
+    rs->playersize = n;
     fprintf(stderr," packsize.%d n.%d\n",rs->P.packsize,n);
     if ( (fp= fopen(rogue_packfname(rs,fname),"wb")) != 0 )
     {

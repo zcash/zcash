@@ -321,7 +321,7 @@ struct rogue_packitem
 
 struct rogue_player
 {
-    int32_t gold,hitpoints,strength,level,experience,packsize;
+    int32_t gold,hitpoints,strength,level,experience,packsize,dungeonlevel,pad;
     struct rogue_packitem roguepack[MAXPACK];
 };
 
@@ -330,9 +330,10 @@ struct rogue_state
     uint64_t seed;
     char *keystrokes;
     uint32_t needflush,replaydone;
-    int32_t numkeys,ind,num,guiflag,counter,sleeptime;
+    int32_t numkeys,ind,num,guiflag,counter,sleeptime,playersize;
     struct rogue_player P;
     char buffered[8192];
+    uint8_t playerdata[10000];
 };
 extern struct rogue_state globalR;
 

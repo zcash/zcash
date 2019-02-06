@@ -101,19 +101,19 @@ CScript rogue_keystrokesopret(uint256 gametxid,uint256 batontxid,CPubKey pk,std:
     return(opret);
 }
 
-CScript rogue_highlanderopret(uint256 gametxid,uint256 registertxid,CPubKey pk,std::vector<uint8_t>playerdata)
+CScript rogue_highlanderopret(uint256 gametxid,CPubKey pk,std::vector<uint8_t>playerdata)
 {
     CScript opret; uint8_t evalcode = EVAL_ROGUE;
-    opret << OP_RETURN << E_MARSHAL(ss << evalcode << 'K' << gametxid << registertxid << pk << playerdata);
+    opret << OP_RETURN << E_MARSHAL(ss << evalcode << 'K' << gametxid << pk << playerdata);
     return(opret);
 }
 
-uint8_t rogue_highlanderopretdecode(uint256 &gametxid,uint256 &registertxid,CPubKey &pk,std::vector<uint8_t> &playerdata,CScript scriptPubKey)
+uint8_t rogue_highlanderopretdecode(uint256 &gametxid,CPubKey &pk,std::vector<uint8_t> &playerdata,CScript scriptPubKey)
 {
     std::vector<uint8_t> vopret; uint8_t *script,e,f;
     GetOpReturnData(scriptPubKey,vopret);
     script = (uint8_t *)vopret.data();
-    if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> gametxid; ss >> registertxid; ss >> pk; ss >> playerdata) != 0 && e == EVAL_ROGUE && f == 'H' )
+    if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> gametxid; ss >> pk; ss >> playerdata) != 0 && e == EVAL_ROGUE && (f == 'H' || f == 'Q') )
     {
         return(f);
     }
@@ -195,9 +195,9 @@ int32_t rogue_iamregistered(int32_t maxplayers,uint256 gametxid,CTransaction tx,
     return(0);
 }
 
-void rogue_gamefields(UniValue &obj,int64_t maxplayers,int64_t buyin,uint256 gametxid,char *myrogueaddr)
+uint64_t rogue_gamefields(UniValue &obj,int64_t maxplayers,int64_t buyin,uint256 gametxid,char *myrogueaddr)
 {
-    CBlockIndex *pindex; int32_t ht,delay; uint256 hashBlock; uint64_t seed; char cmd[512]; CTransaction tx;
+    CBlockIndex *pindex; int32_t ht,delay; uint256 hashBlock; uint64_t seed=0; char cmd[512]; CTransaction tx;
     if ( GetTransaction(gametxid,tx,hashBlock,false) != 0 && (pindex= komodo_blockindex(hashBlock)) != 0 )
     {
         ht = pindex->GetHeight();
@@ -222,6 +222,7 @@ void rogue_gamefields(UniValue &obj,int64_t maxplayers,int64_t buyin,uint256 gam
     }
     obj.push_back(Pair("maxplayers",maxplayers));
     obj.push_back(Pair("buyin",ValueFromAmount(buyin)));
+    return(seed);
 }
 
 int32_t rogue_isvalidgame(struct CCcontract_info *cp,CTransaction &tx,int64_t &buyin,int32_t &maxplayers,uint256 txid)
@@ -286,7 +287,7 @@ int32_t rogue_playerdata(struct CCcontract_info *cp,uint256 &origplayergame,CPub
     {
         GetOpReturnData(playertx.vout[numvouts-1].scriptPubKey,vopret);
         script = (uint8_t *)vopret.data();
-        if ( vopret.size() > 34 && script[0] == EVAL_ROGUE && (script[1] == 'H' || script[1] == 'S') )
+        if ( vopret.size() > 34 && script[0] == EVAL_ROGUE && (script[1] == 'H' || script[1] == 'Q' || script[1] == 'S') )
         {
             memcpy(&highlander,script+2,sizeof(highlander));
             highlander = revuint256(highlander);
@@ -295,7 +296,7 @@ int32_t rogue_playerdata(struct CCcontract_info *cp,uint256 &origplayergame,CPub
             {
                 if ( GetTransaction(highlander,highlandertx,hashBlock,false) != 0 && (numvouts= highlandertx.vout.size()) > 0 )
                 {
-                    if ( rogue_highlanderopretdecode(origplayergame,registertxid,pk,playerdata,highlandertx.vout[numvouts-1].scriptPubKey) == 'H' )
+                    if ( (f= rogue_highlanderopretdecode(origplayergame,registertxid,pk,playerdata,highlandertx.vout[numvouts-1].scriptPubKey)) == 'H' || f == 'Q' )
                     {
                         if ( highlandertx.vin[0].prevout.hash == origplayergame && highlandertx.vin[0].prevout.n == 0 && rogue_isvalidgame(cp,gametx,buyin,maxplayers,origplayergame) == 0 && maxplayers > 1 )
                             return(0);
@@ -592,8 +593,8 @@ UniValue rogue_keystrokes(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
                     Myprivkey(mypriv);
                     CCaddr1of2set(cp,roguepk,mypk,mypriv,destaddr);
                     rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,rogue_keystrokesopret(gametxid,batontxid,mypk,keystrokes));
-                    fprintf(stderr,"KEYSTROKES.(%s)\n",rawtx.c_str());
-                    return(rogue_rawtxresult(result,rawtx,0));
+                    //fprintf(stderr,"KEYSTROKES.(%s)\n",rawtx.c_str());
+                    return(rogue_rawtxresult(result,rawtx,1));
                 } else return(cclib_error(result,"keystrokes tx was too late"));
             } else return(cclib_error(result,"couldnt find batontxid"));
         } else return(cclib_error(result,"invalid gametxid"));
@@ -618,7 +619,7 @@ UniValue rogue_highlander(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
     return(result);
 }
 
-int32_t rogue_replay2(uint64_t seed,char *keystrokes,int32_t num);
+int32_t rogue_replay2(uint8_t *player,uint64_t seed,char *keystrokes,int32_t num);
 
 UniValue rogue_bailout(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
@@ -627,7 +628,7 @@ UniValue rogue_bailout(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     // vout0 -> 1% ingame gold
     // get any playerdata, get all keystrokes, replay game and compare final state
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); CTransaction gametx; int64_t buyin,batonvalue; int32_t n,numkeys,maxplayers,batonht,batonvout; char myrogueaddr[64],*keystrokes = 0; std::vector<uint8_t> playerdata; uint256 batontxid,gametxid; CPubKey mypk,roguepk;
+    UniValue result(UniValue::VOBJ); std::string rawtx; CTransaction gametx; int64_t buyin,batonvalue; int32_t n,num,numkeys,maxplayers,batonht,batonvout; char myrogueaddr[64],*keystrokes = 0; std::vector<uint8_t> playerdata,newdata; uint256 batontxid,gametxid; CPubKey mypk,roguepk; uint8_t player[10000],mypriv[32];
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
@@ -645,9 +646,21 @@ UniValue rogue_bailout(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             {
                 if ( rogue_findbaton(cp,&keystrokes,numkeys,playerdata,batontxid,batonvout,batonvalue,batonht,gametxid,gametx,maxplayers,myrogueaddr) == 0 && keystrokes != 0 )
                 {
-                    fprintf(stderr,"found baton %s numkeys.%d\n",batontxid.ToString().c_str(),numkeys);
-                    rogue_replay2(4419709268196762041,keystrokes,numkeys);
+                    UniValue obj;
+                    seed = uint64_t rogue_gamefields(obj,maxplayers,buyin,gametxid,myrogueaddr);
+                    fprintf(stderr,"found baton %s numkeys.%d seed.%llu\n",batontxid.ToString().c_str(),numkeys,(long long)seed);
+                    num = rogue_replay2(player,seed,keystrokes,numkeys); //4419709268196762041
                     free(keystrokes);
+                    newdata.resize(num);
+                    for (i=0; i<num; i++)
+                        newdata[i] = player[i];
+                    mtx.vin.push_back(CTxIn(batontxid,batonvout,CScript()));
+                    // also need a vin from gametx
+                    mtx.vout.push_back(MakeCC1vout(cp->evalcode,batonvalue-txfee,roguepk));
+                    Myprivkey(mypriv);
+                    CCaddr1of2set(cp,roguepk,mypk,mypriv,destaddr);
+                    rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,rogue_highlanderopret(gametxid,mypk,newdata));
+                    return(rogue_rawtxresult(result,rawtx,0));
                 }
                 result.push_back(Pair("result","success"));
             }
