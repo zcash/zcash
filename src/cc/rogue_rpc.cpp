@@ -180,15 +180,16 @@ int32_t rogue_iamregistered(CTransaction tx)
 
 void rogue_gamefields(UniValue &obj,int64_t maxplayers,int64_t buyin,uint256 gametxid)
 {
-    CBlockIndex *pindex; int32_t ht; uint256 hashBlock; uint64_t seed; char cmd[512]; CTransaction tx;
+    CBlockIndex *pindex; int32_t ht,delay; uint256 hashBlock; uint64_t seed; char cmd[512]; CTransaction tx;
     if ( GetTransaction(gametxid,tx,hashBlock,false) != 0 && (pindex= komodo_blockindex(hashBlock)) != 0 )
     {
         ht = pindex->GetHeight();
+        delay = ROGUE_REGISTRATION * (maxplayers > 1);
         obj.push_back(Pair("height",ht));
-        obj.push_back(Pair("start",ht+ROGUE_REGISTRATION));
-        if ( komodo_nextheight() > ht+ROGUE_REGISTRATION )
+        obj.push_back(Pair("start",ht+delay));
+        if ( komodo_nextheight() > ht+delay )
         {
-            if ( (pindex= komodo_chainactive(ht+ROGUE_REGISTRATION)) != 0 )
+            if ( (pindex= komodo_chainactive(ht+delay)) != 0 )
             {
                 hashBlock = pindex->GetBlockHash();
                 obj.push_back(Pair("starthash",hashBlock.ToString()));
@@ -197,7 +198,7 @@ void rogue_gamefields(UniValue &obj,int64_t maxplayers,int64_t buyin,uint256 gam
                 obj.push_back(Pair("seed",(int64_t)seed));
                 if ( rogue_iamregistered(tx) > 0 )
                     sprintf(cmd,"./rogue %llu gui",(long long)seed);
-                else sprintf(cmd,"./komodo-cli -ac_name=%s cclib register \\\"[%%22%s%%22]\\\" %d",ASSETCHAINS_SYMBOL,gametxid.ToString().c_str(),EVAL_ROGUE);
+                else sprintf(cmd,"./komodo-cli -ac_name=%s cclib register %d \"[%%22%s%%22]\"",ASSETCHAINS_SYMBOL,gametxid.ToString().c_str(),EVAL_ROGUE);
                 obj.push_back(Pair("run",cmd));
             }
         }
@@ -602,7 +603,7 @@ UniValue rogue_gameinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                 rogue_gamefields(result,maxplayers,buyin,txid);
                 for (i=0; i<maxplayers; i++)
                 {
-                    if ( CCgettxout(txid,i+2,1) == 0 )
+                    if ( CCgettxout(txid,i+2,1) < 0 )
                     {
                         UniValue obj(UniValue::VOBJ);
                         rogue_gameplayerinfo(cp,obj,txid,tx,i+2,maxplayers);
