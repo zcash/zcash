@@ -78,6 +78,7 @@
 // ./rogue <seed> gui -> creates keystroke files
 // cclib register 17 \"[%224fd6f5cad0fac455e5989ca6eef111b00292845447075a802e9335879146ad5a%22,%22<playertxid>%22]\"
 // cclib keystrokes 17 \"[%224fd6f5cad0fac455e5989ca6eef111b00292845447075a802e9335879146ad5a%22,%22deadbeef%22]\"
+// cclib bailout 17 \"[%224fd6f5cad0fac455e5989ca6eef111b00292845447075a802e9335879146ad5a%22]\"
 
 CScript rogue_newgameopret(int64_t buyin,int32_t maxplayers)
 {
@@ -366,7 +367,7 @@ int32_t rogue_findbaton(struct CCcontract_info *cp,char **keystrokesp,int32_t &n
                         if ( rogue_keystrokesopretdecode(g,b,p,k,spenttx.vout[1].scriptPubKey) == 'K' )
                         {
                             keystrokes = (char *)realloc(keystrokes,numkeys + (int32_t)k.size()/2);
-                            decode_hex((uint8_t *)&keystrokes[numkeys],(int32_t)k.size()/2,&k[0]);
+                            decode_hex((uint8_t *)&keystrokes[numkeys],(int32_t)k.size()/2,(char *)&k[0]);
                             numkeys += (int32_t)k.size()/2;
                             (*keystrokesp) = keystrokes;
                         }
@@ -641,7 +642,7 @@ UniValue rogue_bailout(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             {
                 if ( rogue_findbaton(cp,&keystrokes,numkeys,playerdata,batontxid,batonvout,batonvalue,batonht,gametxid,gametx,maxplayers,myrogueaddr) == 0 )
                 {
-                    
+                    fprintf(stderr,"found baton %s numkeys.%d\n",batontxid.ToString().c_str(),numkeys);
                 }
                 result.push_back(Pair("result","success"));
             }
