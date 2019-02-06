@@ -105,6 +105,7 @@ int32_t roguefname(char *fname,uint64_t seed,int32_t counter)
     return(0);
 }
 
+#ifdef test
 int32_t flushkeystrokes(struct rogue_state *rs)
 {
     char fname[1024]; FILE *fp; int32_t i,retflag = -1;
@@ -136,6 +137,17 @@ int32_t flushkeystrokes(struct rogue_state *rs)
     } else fprintf(stderr,"error creating (%s)\n",fname);
     return(retflag);
 }
+#else
+
+int32_t flushkeystrokes(struct rogue_state *rs)
+{
+    rogue_progress(rs->seed,rs->buffered,rs->num);
+    memset(rs->buffered,0,sizeof(rs->buffered));
+    rs->counter++;
+    rs->num = 0;
+    return(0);
+}
+#endif
 
 long get_filesize(FILE *fp)
 {
