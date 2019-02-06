@@ -5170,6 +5170,21 @@ int32_t verus_staked(CBlock *pBlock, CMutableTransaction &txNew, uint32_t &nBits
     return pwalletMain->VerusStakeTransaction(pBlock, txNew, nBits, hashResult, utxosig, pk);
 }
 
+
+#include "../cc/CCfaucet.h"
+#include "../cc/CCassets.h"
+#include "../cc/CCrewards.h"
+#include "../cc/CCdice.h"
+#include "../cc/CCfsm.h"
+#include "../cc/CCauction.h"
+#include "../cc/CClotto.h"
+#include "../cc/CCchannels.h"
+#include "../cc/CCOracles.h"
+#include "../cc/CCGateways.h"
+#include "../cc/CCPrices.h"
+#include "../cc/CCHeir.h"
+#include "../cc/CCMarmara.h"
+
 int32_t ensure_CCrequirements(uint8_t evalcode)
 {
     CCerror = "";
@@ -5195,20 +5210,6 @@ int32_t ensure_CCrequirements(uint8_t evalcode)
     }
     else return(0);
 }
-
-#include "../cc/CCfaucet.h"
-#include "../cc/CCassets.h"
-#include "../cc/CCrewards.h"
-#include "../cc/CCdice.h"
-#include "../cc/CCfsm.h"
-#include "../cc/CCauction.h"
-#include "../cc/CClotto.h"
-#include "../cc/CCchannels.h"
-#include "../cc/CCOracles.h"
-#include "../cc/CCGateways.h"
-#include "../cc/CCPrices.h"
-#include "../cc/CCHeir.h"
-#include "../cc/CCMarmara.h"
 
 UniValue CCaddress(struct CCcontract_info *cp,char *name,std::vector<unsigned char> &pubkey)
 {
