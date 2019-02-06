@@ -6968,7 +6968,7 @@ UniValue tokenlist(const UniValue& params, bool fHelp)
     uint256 tokenid;
     if ( fHelp || params.size() > 0 )
         throw runtime_error("tokenlist\n");
-    if ( ensure_CCrequirements(EVAL_ASSETS) < 0 )
+    if ( ensure_CCrequirements(EVAL_TOKENS) < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     return(TokenList());
 }
@@ -6978,7 +6978,7 @@ UniValue tokeninfo(const UniValue& params, bool fHelp)
     uint256 tokenid;
     if ( fHelp || params.size() != 1 )
         throw runtime_error("tokeninfo tokenid\n");
-    if ( ensure_CCrequirements(EVAL_ASSETS) < 0 )
+    if ( ensure_CCrequirements(EVAL_TOKENS) < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -7012,7 +7012,7 @@ UniValue tokenbalance(const UniValue& params, bool fHelp)
 
     if ( fHelp || params.size() > 2 )
         throw runtime_error("tokenbalance tokenid [pubkey]\n");
-    if ( ensure_CCrequirements(EVAL_ASSETS) < 0 )
+    if ( ensure_CCrequirements(EVAL_TOKENS) < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     
 	LOCK(cs_main);
@@ -7048,7 +7048,7 @@ UniValue tokencreate(const UniValue& params, bool fHelp)
     UniValue result(UniValue::VOBJ); std::string name,description,hex; uint64_t supply;
     if ( fHelp || params.size() > 3 || params.size() < 2 )
         throw runtime_error("tokencreate name supply description\n");
-    if ( ensure_CCrequirements(EVAL_ASSETS) < 0 )
+    if ( ensure_CCrequirements(EVAL_TOKENS) < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -7087,7 +7087,7 @@ UniValue tokentransfer(const UniValue& params, bool fHelp)
     UniValue result(UniValue::VOBJ); std::string hex; int64_t amount; uint256 tokenid;
     if ( fHelp || params.size() != 3 )
         throw runtime_error("tokentransfer tokenid destpubkey amount\n");
-    if ( ensure_CCrequirements(EVAL_ASSETS) < 0 )
+    if ( ensure_CCrequirements(EVAL_TOKENS) < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);

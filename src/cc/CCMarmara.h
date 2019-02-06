@@ -14,8 +14,8 @@
  ******************************************************************************/
 
 
-#ifndef CC_TRIGGERS_H
-#define CC_TRIGGERS_H
+#ifndef CC_MARMARA_H
+#define CC_MARMARA_H
 
 #include "CCinclude.h"
 #include "../komodo_cJSON.h"
