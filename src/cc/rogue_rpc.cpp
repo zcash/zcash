@@ -91,7 +91,9 @@ object (A scroll titled 'aks snodo') x.13 y.3 type.63 pack.(g:103)
 object (A scroll titled 'itenejbot lechlech') x.35 y.13 type.63 pack.(h:104)
 da000000140000001000000003000000160000000800000002000000000000003a0000000000000001000000000000000000000000000000000000001000000000000000000000000000000000000000000000005d00000000000000010000000100000000000000000000000600000012000000000000000000000000000000000000000000000029000000ffffffff010000000000000001000000010000000000000012000000000000003278340000000000317833000000000029000000ffffffff010000000200000001000000000000000000000012000000000000003178310000000000317831000000000029000000020000001c000000030000000000000000000000000000001e00000000000000317831000000000032783300000000003f00000000000000010000000c00000000000000000000000b0000001000000000000000307830000000000030783000000000003f00000000000000010000000300000000000000000000000b0000001000000000000000307830000000000030783000000000003f00000000000000010000000000000000000000000000000b000000100000000000000030783000000000003078300000000000 packsize.8 n.448
 
-$$$gold.218 hp.20 strength.16 level.3 exp.22 dl.2 n.1 size.1228*/
+$$$gold.218 hp.20 strength.16 level.3 exp.22 dl.2 n.1 size.1228
+ ca995aa934b5365e9b86d3db97919e3c26ea03ee6e3045bfc9b05a079ab8b130
+ */
 
 CScript rogue_newgameopret(int64_t buyin,int32_t maxplayers)
 {
@@ -251,8 +253,12 @@ int32_t rogue_isvalidgame(struct CCcontract_info *cp,CTransaction &tx,int64_t &b
                 if ( numvouts > maxplayers+2 )
                 {
                     for (i=0; i<maxplayers; i++)
+                    {
                         if ( tx.vout[i+2].nValue != ROGUE_REGISTRATIONSIZE )
                             break;
+                        if ( tx.vout[maxplayers+i+2].nValue != txfee )
+                            break;
+                    }
                     if ( i == maxplayers )
                         return(0);
                     else return(-5);
@@ -333,7 +339,7 @@ int32_t rogue_playerdataspend(CMutableTransaction &mtx,uint256 playertxid,uint25
     } else return(-1);
 }
 
-int32_t rogue_findbaton(struct CCcontract_info *cp,char **keystrokesp,int32_t &numkeys,std::vector<uint8_t> &playerdata,uint256 &batontxid,int32_t &batonvout,int64_t &batonvalue,int32_t &batonht,uint256 gametxid,CTransaction gametx,int32_t maxplayers,char *destaddr)
+int32_t rogue_findbaton(struct CCcontract_info *cp,char **keystrokesp,int32_t &numkeys,int32_t &regslot,std::vector<uint8_t> &playerdata,uint256 &batontxid,int32_t &batonvout,int64_t &batonvalue,int32_t &batonht,uint256 gametxid,CTransaction gametx,int32_t maxplayers,char *destaddr)
 {
     int32_t i,numvouts,spentvini,matches = 0; CPubKey pk; uint256 spenttxid,hashBlock,txid,playertxid,origplayergame; CTransaction spenttx,matchtx,batontx; std::vector<uint8_t> checkdata; CBlockIndex *pindex; char ccaddr[64],*keystrokes=0;
     numkeys = 0;
@@ -347,6 +353,7 @@ int32_t rogue_findbaton(struct CCcontract_info *cp,char **keystrokesp,int32_t &n
                 if ( strcmp(destaddr,ccaddr) == 0 )
                 {
                     matches++;
+                    regslot = i;
                     matchtx = spenttx;
                 } else fprintf(stderr,"%d+2 doesnt match %s vs %s\n",i,ccaddr,destaddr);
             } //else fprintf(stderr,"%d+2 couldnt find spenttx.%s\n",i,spenttxid.GetHex().c_str());
@@ -413,7 +420,7 @@ int32_t rogue_findbaton(struct CCcontract_info *cp,char **keystrokesp,int32_t &n
 void rogue_gameplayerinfo(struct CCcontract_info *cp,UniValue &obj,uint256 gametxid,CTransaction gametx,int32_t vout,int32_t maxplayers)
 {
     // identify if bailout or quit or timed out
-    uint256 batontxid,spenttxid,hashBlock; CTransaction spenttx; int32_t numkeys,batonvout,batonht,retval; int64_t batonvalue; std::vector<uint8_t> playerdata; char destaddr[64];
+    uint256 batontxid,spenttxid,hashBlock; CTransaction spenttx; int32_t regslot,numkeys,batonvout,batonht,retval; int64_t batonvalue; std::vector<uint8_t> playerdata; char destaddr[64];
     destaddr[0] = 0;
     if ( myIsutxo_spent(spenttxid,gametxid,vout) >= 0 )
     {
@@ -421,7 +428,7 @@ void rogue_gameplayerinfo(struct CCcontract_info *cp,UniValue &obj,uint256 gamet
             Getscriptaddress(destaddr,spenttx.vout[0].scriptPubKey);
     }
     obj.push_back(Pair("slot",(int64_t)vout-2));
-    if ( (retval= rogue_findbaton(cp,0,numkeys,playerdata,batontxid,batonvout,batonvalue,batonht,gametxid,gametx,maxplayers,destaddr)) == 0 )
+    if ( (retval= rogue_findbaton(cp,0,numkeys,regslot,playerdata,batontxid,batonvout,batonvalue,batonht,gametxid,gametx,maxplayers,destaddr)) == 0 )
     {
         obj.push_back(Pair("baton",batontxid.ToString()));
         obj.push_back(Pair("batonaddr",destaddr));
@@ -499,6 +506,8 @@ UniValue rogue_newgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
         mtx.vout.push_back(MakeCC1vout(cp->evalcode,txfee,roguepk)); // for highlander TCBOO used
         for (i=0; i<maxplayers; i++)
             mtx.vout.push_back(MakeCC1of2vout(cp->evalcode,ROGUE_REGISTRATIONSIZE,roguepk,roguepk));
+        for (i=0; i<maxplayers; i++)
+            mtx.vout.push_back(MakeCC1of2vout(cp->evalcode,txfee,roguepk,roguepk));
         if ( (change= inputsum - required) >= txfee )
             mtx.vout.push_back(MakeCC1vout(cp->evalcode,change,roguepk));
         rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,rogue_newgameopret(buyin,maxplayers));
@@ -584,7 +593,7 @@ UniValue rogue_keystrokes(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
     // respawn to be prevented by including timestamps
     int32_t nextheight = komodo_nextheight();
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(),nextheight);
-    UniValue result(UniValue::VOBJ); CPubKey roguepk,mypk; uint256 gametxid,batontxid; int64_t batonvalue,buyin; std::vector<uint8_t> keystrokes,playerdata; int32_t numkeys,batonht,batonvout,n,elapsed,maxplayers; CTransaction tx; CTxOut txout; char *keystrokestr,destaddr[64]; std::string rawtx; bits256 t; uint8_t mypriv[32];
+    UniValue result(UniValue::VOBJ); CPubKey roguepk,mypk; uint256 gametxid,batontxid; int64_t batonvalue,buyin; std::vector<uint8_t> keystrokes,playerdata; int32_t regslot,numkeys,batonht,batonvout,n,elapsed,maxplayers; CTransaction tx; CTxOut txout; char *keystrokestr,destaddr[64]; std::string rawtx; bits256 t; uint8_t mypriv[32];
     if ( txfee == 0 )
         txfee = 10000;
     rogue_univalue(result,"keystrokes",-1,-1);
@@ -597,7 +606,7 @@ UniValue rogue_keystrokes(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
         GetCCaddress1of2(cp,destaddr,roguepk,mypk);
         if ( rogue_isvalidgame(cp,tx,buyin,maxplayers,gametxid) == 0 )
         {
-            if ( rogue_findbaton(cp,0,numkeys,playerdata,batontxid,batonvout,batonvalue,batonht,gametxid,tx,maxplayers,destaddr) == 0 )
+            if ( rogue_findbaton(cp,0,numkeys,regslot,playerdata,batontxid,batonvout,batonvalue,batonht,gametxid,tx,maxplayers,destaddr) == 0 )
             {
                 if ( maxplayers == 1 || nextheight <= batonht+ROGUE_MAXKEYSTROKESGAP )
                 {
@@ -650,10 +659,11 @@ UniValue rogue_bailout(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     // detect if last to bailout
     // vin0 -> kestrokes baton of completed game with Q
+    // vout0 -> playerdata marker
     // vout0 -> 1% ingame gold
     // get any playerdata, get all keystrokes, replay game and compare final state
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); std::string rawtx; CTransaction gametx; uint64_t seed; int64_t buyin,batonvalue,inputsum,CCchange=0; int32_t i,n,num,numkeys,maxplayers,batonht,batonvout; char myrogueaddr[64],*keystrokes = 0; std::vector<uint8_t> playerdata,newdata; uint256 batontxid,gametxid; CPubKey mypk,roguepk; uint8_t player[10000],mypriv[32];
+    UniValue result(UniValue::VOBJ); std::string rawtx; CTransaction gametx; uint64_t seed; int64_t buyin,batonvalue,inputsum,CCchange=0; int32_t i,regslot,n,num,numkeys,maxplayers,batonht,batonvout; char myrogueaddr[64],*keystrokes = 0; std::vector<uint8_t> playerdata,newdata; uint256 batontxid,gametxid; CPubKey mypk,roguepk; uint8_t player[10000],mypriv[32];
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
@@ -669,7 +679,7 @@ UniValue rogue_bailout(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             result.push_back(Pair("gametxid",gametxid.GetHex()));
             if ( rogue_isvalidgame(cp,gametx,buyin,maxplayers,gametxid) == 0 )
             {
-                if ( rogue_findbaton(cp,&keystrokes,numkeys,playerdata,batontxid,batonvout,batonvalue,batonht,gametxid,gametx,maxplayers,myrogueaddr) == 0 && keystrokes != 0 )
+                if ( rogue_findbaton(cp,&keystrokes,numkeys,regslot,playerdata,batontxid,batonvout,batonvalue,batonht,gametxid,gametx,maxplayers,myrogueaddr) == 0 && keystrokes != 0 )
                 {
                     UniValue obj; struct rogue_player P;
                     seed = rogue_gamefields(obj,maxplayers,buyin,gametxid,myrogueaddr);
@@ -682,7 +692,8 @@ UniValue rogue_bailout(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                     num = rogue_replay2(player,seed,keystrokes,numkeys,playerdata.size()==0?0:&P); //4419709268196762041
                     free(keystrokes);
                     mtx.vin.push_back(CTxIn(batontxid,batonvout,CScript()));
-                    // also need a vin from gametx
+                    mtx.vin.push_back(CTxIn(gametxid,2+maxplayers+slot,CScript()));
+                    mtx.vout.push_back(MakeCC1vout(cp->evalcode,txfee,mypk));
                     if ( num > 0 )
                     {
                         newdata.resize(num);
@@ -698,7 +709,7 @@ UniValue rogue_bailout(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                         //for (i=0; i<P.packsize; i++)
                         //    fprintf(stderr,"object (%s) type.%d pack.(%c:%d)\n",inv_name(o,FALSE),o->_o._o_type,o->_o._o_packch,o->_o._o_packch);
                     }
-                    mtx.vout.push_back(MakeCC1vout(cp->evalcode,CCchange + (batonvalue-txfee),roguepk));
+                    mtx.vout.push_back(MakeCC1vout(cp->evalcode,CCchange + (batonvalue-2*txfee),roguepk));
                     Myprivkey(mypriv);
                     CCaddr1of2set(cp,roguepk,mypk,mypriv,myrogueaddr);
                     rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,rogue_highlanderopret(gametxid,mypk,newdata));
