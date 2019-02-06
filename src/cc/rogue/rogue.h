@@ -313,7 +313,7 @@
 /*
  * Now we define the structures and types
  */
-#ifndef ROGUE
+#ifdef BUILD_ROGUE
 struct rogue_packitem
 {
     int32_t type,launch,count,which,hplus,dplus,arm,flags,group;
