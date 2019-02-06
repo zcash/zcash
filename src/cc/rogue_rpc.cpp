@@ -414,10 +414,10 @@ UniValue rogue_newgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
         txfee = 10000;
     if ( (params= cclib_reparse(&n,params)) != 0 )
     {
-        if ( n > 1 )
+        if ( n > 0 )
         {
             maxplayers = juint(jitem(params,0),0);
-            if ( n > 2 )
+            if ( n > 1 )
                 buyin = jdouble(jitem(params,1),0) * COIN + 0.0000000049;
         }
     }
