@@ -116,10 +116,15 @@
 
 // todo:
 // verify playerdata is usable
-// verify keystrokes tx is confirmed
+// verify keystrokes tx is in mempool and confirmed
+// check that bailout is legal, ie. proper gametxid vin
+// verify amulet possession in pack
+// display playerdata (user comments?, or fully decode)
+// verify playerdata can be used and has same initial level
+// prevent running gui mode when keystrokes txid already there
 
 //////////////////////// start of CClib interface
-//./komodod -ac_name=ROGUE -ac_supply=1000000 -pubkey=<yourpubkey> -addnode=5.9.102.210  -ac_cclib=rogue -ac_perc=10000000 -ac_reward=100000000 -ac_cc=60001 -ac_script=2ea22c80203d1579313abe7d8ea85f48c65ea66fc512c878c0d0e6f6d54036669de940febf8103120c008203000401cc > /dev/null &
+//./komodod -ac_name=ROGUE -ac_supply=1000000 -pubkey=03951a6f7967ad784453116bc55cd30c54f91ea8a5b1e9b04d6b29cfd6b395ba6c -addnode=5.9.102.210  -ac_cclib=rogue -ac_perc=10000000 -ac_reward=100000000 -ac_cc=60001 -ac_script=2ea22c80203d1579313abe7d8ea85f48c65ea66fc512c878c0d0e6f6d54036669de940febf8103120c008203000401cc > /dev/null &
 
 // cclib newgame 17 \"[3,10]\"
 // cclib pending 17

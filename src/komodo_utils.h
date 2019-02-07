@@ -1782,6 +1782,7 @@ void komodo_args(char *argv0)
         ASSETCHAINS_MARMARA = GetArg("-ac_marmara",0);
         if ( ASSETCHAINS_CC != 0 )
         {
+            ASSETCHAINS_CCLIB = GetArg("-ac_cclib","");
             Split(GetArg("-ac_ccenable",""),  ccenables, 0);
             for (i=nonz=0; i<0x100; i++)
             {
@@ -1805,7 +1806,6 @@ void komodo_args(char *argv0)
                     ASSETCHAINS_CCDISABLES[ccenables[i] & 0xff] = 0;
                 }
             }
-            ASSETCHAINS_CCLIB = GetArg("-ac_cclib","");
             /*if ( ASSETCHAINS_CCLIB.size() > 0 )
             {
                 for (i=first; i<=last; i++)
