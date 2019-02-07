@@ -4020,7 +4020,7 @@ bool CWallet::SetAddressBook(const CTxDestination& address, const string& strNam
 {
     bool fUpdated = false;
     {
-        LOCK(cs_wallet); // mapAddressBook
+        LOCK(cs_wallet);
         std::map<CTxDestination, CAddressBookData>::iterator mi = mapAddressBook.find(address);
         fUpdated = mi != mapAddressBook.end();
         mapAddressBook[address].name = strName;
@@ -4041,7 +4041,7 @@ bool CWallet::DelAddressBook(const CTxDestination& address)
 {
     KeyIO keyIO(Params());
     {
-        LOCK(cs_wallet); // mapAddressBook
+        LOCK(cs_wallet);
 
         if(fFileBacked)
         {
