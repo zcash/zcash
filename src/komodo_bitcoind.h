@@ -1433,14 +1433,15 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
         diff = (iter + blocktime - txtime - minage);
         if ( ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASH || ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASHV2 )
         {
-            if ( PoSperc < ASSETCHAINS_STAKED )
+            /*if ( PoSperc < ASSETCHAINS_STAKED )
             {
                 // Under PoS % target and we need to increase diff.
                 //fprintf(stderr, "PoS too low diff.%i changed to.",diff);
                 diff = diff * ( (ASSETCHAINS_STAKED - PoSperc + 1) * (ASSETCHAINS_STAKED - PoSperc + 1) * ( nHeight < 50 ? 1000 : 1));
                 //fprintf(stderr, "%i \n",diff);
             }
-            else if ( PoSperc > ASSETCHAINS_STAKED )
+            else */ 
+            if ( PoSperc > ASSETCHAINS_STAKED )
             {
                 // Over PoS target need to lower diff.
                 //fprintf(stderr, "PoS too high diff.%i changed to.",diff);
@@ -1460,14 +1461,17 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
         coinage = (value * diff);
         if ( ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASH || ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASHV2 )
         {
-            if ( blocktime+iter+segid*2 > prevtime+128 )
-                coinage *= ((blocktime+iter+segid*2) - (prevtime+102));
-        } 
-        else 
-        {
-            if ( blocktime+iter+segid*2 > prevtime+480 )
-                coinage *= ((blocktime+iter+segid*2) - (prevtime+400));
+            if ( PoSperc < ASSETCHAINS_STAKED )
+            {
+                // Under PoS % target and we need to increase diff.
+                //fprintf(stderr, "PoS too low diff.%i changed to.",diff);
+                if ( blocktime+iter+segid*2 > prevtime+128 )
+                    coinage *= ((blocktime+iter+segid*2) - (prevtime+102));
+                //fprintf(stderr, "%i \n",diff);
+            }   
         }
+        if ( blocktime+iter+segid*2 > prevtime+480 )
+            coinage *= ((blocktime+iter+segid*2) - (prevtime+400));
         coinage256 = arith_uint256(coinage+1);
         hashval = ratio * (UintToArith256(hash) / coinage256);
         if ( hashval <= bnTarget )
@@ -1774,9 +1778,9 @@ bool verusCheckPOSBlock(int32_t slowflag, CBlock *pblock, int32_t height)
 
 int32_t komodo_notarized_height(int32_t *prevMoMheightp,uint256 *hashp,uint256 *txidp);
 
-uint64_t komodo_notarypayamount(int32_t height, int64_t numnotaries)
+uint64_t komodo_notarypayamount(int32_t height, int64_t notarycount)
 {
-    if ( numnotaries == 0 )
+    if ( notarycount == 0 )
     {
         fprintf(stderr, "komodo_notarypayamount failed num notaries is 0!\n");
         return(0);
@@ -1793,17 +1797,40 @@ uint64_t komodo_notarypayamount(int32_t height, int64_t numnotaries)
     }
     // how many block since last notarisation.
     int32_t n = height - notarizedht;
-    fprintf(stderr, "blocks since last notarisation: %i\n",n);
+    fprintf(stderr, "blocks since last notarization: %i\n",n);
     // multiply the amount possible to be used for each block by the amount of blocks passed 
     // to get the total posible to be paid for this notarisation.
     AmountToPay = ASSETCHAINS_NOTARY_PAY*n;
     //fprintf(stderr, "AmountToPay.%lu\n",AmountToPay);
-    ret = AmountToPay / numnotaries;
+    ret = AmountToPay / notarycount;
     fprintf(stderr, "payment per notary.%lu\n",ret);
     return(ret);
 }
 
 int32_t komodo_voutupdate(bool fJustCheck,int32_t *isratificationp,int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,int32_t height,uint256 txhash,int32_t i,int32_t j,uint64_t *voutmaskp,int32_t *specialtxp,int32_t *notarizedheightp,uint64_t value,int32_t notarized,uint64_t signedmask,uint32_t timestamp);
+
+int32_t komodo_getnotarizedheight(uint32_t timestamp,int32_t height, uint8_t *script, int32_t len)
+{
+    // Check the notarisation is valid, and extract notarised height. 
+    uint64_t voutmask;
+    uint8_t scriptbuf[10001]; 
+    int32_t isratification,specialtx,notarizedheight;
+
+    if ( len >= sizeof(uint32_t) && len <= sizeof(scriptbuf) )
+    {
+        memcpy(scriptbuf,script,len);
+        if ( komodo_voutupdate(true,&isratification,0,scriptbuf,len,height,uint256(),1,1,&voutmask,&specialtx,&notarizedheight,0,1,0,timestamp) == -2 )
+        {
+            fprintf(stderr, ">>>>>>VALID NOTARIZATION ht.%i\n",notarizedheight);
+        }
+        else
+        {
+            fprintf(stderr, "<<<<<<INVALID NOTARIZATION ht.%i\n",notarizedheight);
+            return(0);
+        }
+    } else return(0);
+    return(notarizedheight);
+}
 
 uint64_t komodo_notarypay(CMutableTransaction &txNew, std::vector<int8_t> &NotarisationNotaries, uint32_t timestamp, int32_t height, uint8_t *script, int32_t len)
 {
@@ -1818,25 +1845,11 @@ uint64_t komodo_notarypay(CMutableTransaction &txNew, std::vector<int8_t> &Notar
         return(0);
     numSN = numStakedNotaries(staked_pubkeys,staked_era);
     
-    // Check the notarisation is valid, and extract notarised height. 
-    uint64_t voutmask;
-    uint8_t scriptbuf[10001]; 
-    int32_t isratification,specialtx,notarizedheight;
-    
-    if ( len >= sizeof(uint32_t) && len <= sizeof(scriptbuf) )
-    {
-        memcpy(scriptbuf,script,len);
-        if ( komodo_voutupdate(true,&isratification,0,scriptbuf,len,height,uint256(),1,1,&voutmask,&specialtx,&notarizedheight,0,1,0,timestamp) == -2 )
-        {
-            fprintf(stderr, "notarypay found VALID NOTARIZATION ht.%i\n",notarizedheight);
-        }
-        else
-        {
-            fprintf(stderr, "notarypay found INVALID NOTARIZATION ht.%i\n",notarizedheight);
-            return(0);
-        }
-    } else return(0);
-    
+    // Check the notarisation is valid and get the notarized height to calcualte the payment.
+    int32_t notarizedheight = komodo_getnotarizedheight(timestamp, height, script, len);
+    if ( notarizedheight == 0 )
+        return(0);
+
     // resize coinbase vouts to number of notary nodes +1 for coinbase itself.
     txNew.vout.resize(NotarisationNotaries.size()+1);
     
