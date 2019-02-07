@@ -483,7 +483,7 @@ int32_t rogue_findbaton(struct CCcontract_info *cp,char **keystrokesp,int32_t &n
                         return(-4);
                     else batonht = pindex->GetHeight();
                     batonvalue = batontx.vout[0].nValue;
-                    printf("keystrokes[%d]\n",numkeys);
+                    //printf("keystrokes[%d]\n",numkeys);
                     return(0);
                 }
             }
