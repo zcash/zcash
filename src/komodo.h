@@ -701,7 +701,7 @@ int32_t komodo_voutupdate(bool fJustCheck,int32_t *isratificationp,int32_t notar
                 if ( fJustCheck && matched != 0 && *notarizedheightp == sp->NOTARIZED_HEIGHT && sp->NOTARIZED_DESTTXID == desttxid && sp->NOTARIZED_HASH == srchash)
                     return(-2);
                 
-                if ( matched != 0 && *notarizedheightp > sp->NOTARIZED_HEIGHT && *notarizedheightp < height )
+                if ( matched != 0 && *notarizedheightp >= sp->NOTARIZED_HEIGHT && *notarizedheightp < height )
                 {
                     if ( fJustCheck )
                         return(-2);
