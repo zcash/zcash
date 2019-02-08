@@ -399,7 +399,7 @@ int32_t rogue_playerdata(struct CCcontract_info *cp,uint256 &origplayergame,CPub
                         else return(-3);
                     }
                 }
-            } else return(-2);
+            } //else return(-2);
         }
     }
     return(-1);
