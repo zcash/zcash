@@ -1776,7 +1776,7 @@ bool verusCheckPOSBlock(int32_t slowflag, CBlock *pblock, int32_t height)
     return(isPOS);
 }
 
-int32_t komodo_notarized_height(int32_t *prevMoMheightp,uint256 *hashp,uint256 *txidp);
+int32_t komodo_notarized_height(int32_t *prevMoMheightp,uint256 *hashp,uint256 *txidp,int32_t *prevNotarizedHt);
 
 uint64_t komodo_notarypayamount(int32_t height, int64_t notarycount)
 {
@@ -1786,14 +1786,15 @@ uint64_t komodo_notarypayamount(int32_t height, int64_t notarycount)
         return(0);
     }
     // fetch notarised height 
-    int32_t notarizedht,prevMoMheight; uint256 notarizedhash,txid;
+    int32_t notarizedht,prevMoMheight,prevnotarizedht; uint256 notarizedhash,txid;
     uint64_t AmountToPay=0,ret=0;
-    notarizedht = komodo_notarized_height(&prevMoMheight,&notarizedhash,&txid);
-    // dont think this can happen, just sanity check.
+    notarizedht = komodo_notarized_height(&prevMoMheight,&notarizedhash,&txid,&prevnotarizedht);
+    // if this is the current checkpoint we will use the previous height.
+    // incase of reorgs, we still need to create the notary payment.
     if ( height == notarizedht )
     {
-        fprintf(stderr, "komodo_notarypayamount failed notarized height = height\n");
-        return(0);
+        notarizedht = prevnotarizedht;
+        fprintf(stderr, "using the current checkpoint, calculating based on previous notarized height!\n");
     }
     // how many block since last notarisation.
     int32_t n = height - notarizedht;

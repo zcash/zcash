@@ -416,7 +416,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                             else if ( notarizedheight > last_notarizedheight )
                                 continue; // leave this notarisation for the next block, it will be valid!
                             else if ( notarizedheight == last_notarizedheight )
-                                continue; // this shouldnt happen :S
+                                continue; // this shouldnt happen, it would mean there are 2 notarisations for the same block!
                             else
                             {
                                 // we need to remove the last seen notarzation from block 

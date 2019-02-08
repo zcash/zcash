@@ -3909,8 +3909,8 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
         return AbortNode(state, "Failed to read block");
     //if ( ASSETCHAINS_SYMBOL[0] != 0 || pindexDelete->GetHeight() > 1400000 )
     {
-        int32_t prevMoMheight; uint256 notarizedhash,txid;
-        komodo_notarized_height(&prevMoMheight,&notarizedhash,&txid);
+        int32_t prevMoMheight,prevnotarizedht; uint256 notarizedhash,txid;
+        komodo_notarized_height(&prevMoMheight,&notarizedhash,&txid,&prevnotarizedht);
         if ( block.GetHash() == notarizedhash )
         {
             fprintf(stderr,"DisconnectTip trying to disconnect notarized block at ht.%d\n",(int32_t)pindexDelete->GetHeight());
@@ -4244,8 +4244,8 @@ static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMo
     assert(MAX_REORG_LENGTH > 0);//, "We must be able to reorg some distance");
     if (reorgLength > MAX_REORG_LENGTH)
     {
-        int32_t notarizedht,prevMoMheight; uint256 notarizedhash,txid;
-        notarizedht = komodo_notarized_height(&prevMoMheight,&notarizedhash,&txid);
+        int32_t notarizedht,prevnotarizedht,prevMoMheight; uint256 notarizedhash,txid;
+        notarizedht = komodo_notarized_height(&prevMoMheight,&notarizedhash,&txid,&prevnotarizedht);
         if ( pindexFork->GetHeight() < notarizedht )
         {
             fprintf(stderr,"pindexFork->GetHeight().%d is < notarizedht %d, so ignore it\n",(int32_t)pindexFork->GetHeight(),notarizedht);
@@ -5591,8 +5591,8 @@ uint64_t CalculateCurrentUsage()
 /* Prune a block file (modify associated database entries)*/
 bool PruneOneBlockFile(bool tempfile, const int fileNumber)
 {
-    uint256 notarized_hash,notarized_desttxid; int32_t prevMoMheight,notarized_height;
-    notarized_height = komodo_notarized_height(&prevMoMheight,&notarized_hash,&notarized_desttxid);
+    uint256 notarized_hash,notarized_desttxid; int32_t prevMoMheight,notarized_height,prevnotarized_height;
+    notarized_height = komodo_notarized_height(&prevMoMheight,&notarized_hash,&notarized_desttxid,&prevnotarized_height);
     //fprintf(stderr, "pruneblockfile.%i\n",fileNumber); sleep(15);
     for (BlockMap::iterator it = mapBlockIndex.begin(); it != mapBlockIndex.end(); ++it) 
     {

@@ -695,15 +695,17 @@ int32_t komodo_voutupdate(bool fJustCheck,int32_t *isratificationp,int32_t notar
                 }
                 else if ( ASSETCHAINS_SYMBOL[0] == 0 && matched != 0 && notarized != 0 && validated != 0 )
                     komodo_rwccdata((char *)"KMD",1,&ccdata,0);
-                /*else
-                {
-                    fprintf(stderr, "NOT VALID NOTARISATION\n");
-                    return (-2);
-                } */
+                
+                // If we are checking a reorged notarisation tx we need to return true. So the coinbase can be recreated, otherwise notaries are not paid,
+                // if a notarisation TX is reorged before the next notarization happens!    
+                if ( fJustCheck && matched != 0 && *notarizedheightp == sp->NOTARIZED_HEIGHT && sp->NOTARIZED_DESTTXID == desttxid && sp->NOTARIZED_HASH == srchash)
+                    return(-2);
+                
                 if ( matched != 0 && *notarizedheightp > sp->NOTARIZED_HEIGHT && *notarizedheightp < height )
                 {
                     if ( fJustCheck )
                         return(-2);
+                    sp->prevNOTARIZED_HEIGHT = sp->NOTARIZED_HEIGHT;
                     sp->NOTARIZED_HEIGHT = *notarizedheightp;
                     sp->NOTARIZED_HASH = srchash;
                     sp->NOTARIZED_DESTTXID = desttxid;
