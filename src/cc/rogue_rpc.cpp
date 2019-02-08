@@ -132,7 +132,7 @@
 // cclib gameinfo 17 \"[%220a4ecb345ca3090f4acad63f889c3668e46e245cb00ca4b8b57c4677b1ee95b2%22]\"
 // cclib register 17 \"[%220a4ecb345ca3090f4acad63f889c3668e46e245cb00ca4b8b57c4677b1ee95b2%22]\"
 // ./rogue <seed> gui -> creates keystroke files
-// cclib register 17 \"[%22e7d75f0b2bf0716ad0df87ee331bf52b41e0823e126654c7ec8bac5a15f6d869%22,%22eef1d0091a88d85bdac1ede9d31db8504bc466a6695fdf259dac623fce09e0dd%22]\"
+// cclib register 17 \"[%220a4ecb345ca3090f4acad63f889c3668e46e245cb00ca4b8b57c4677b1ee95b2%22,%22eef1d0091a88d85bdac1ede9d31db8504bc466a6695fdf259dac623fce09e0dd%22]\"
 // cclib keystrokes 17 \"[%220a4ecb345ca3090f4acad63f889c3668e46e245cb00ca4b8b57c4677b1ee95b2%22,%22deadbeef%22]\"
 // cclib bailout 17 \"[%220a4ecb345ca3090f4acad63f889c3668e46e245cb00ca4b8b57c4677b1ee95b2%22]\"
 // eef1d0091a88d85bdac1ede9d31db8504bc466a6695fdf259dac623fce09e0dd
@@ -639,7 +639,7 @@ UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             gametxid = juint256(jitem(params,0));
             if ( rogue_isvalidgame(cp,tx,buyin,maxplayers,gametxid) == 0 )
             {
-                if ( n > 1 && maxplayers > 1 )
+                if ( n > 1 )
                 {
                     playertxid = juint256(jitem(params,1));
                     if ( rogue_playerdata(cp,origplayergame,pk,playerdata,playertxid) < 0 )
