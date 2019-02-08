@@ -116,6 +116,7 @@
 
 // todo:
 // verify playerdata is usable
+// detect playerdeath/quit to prevent illegal keystrokes vector
 // verify keystrokes tx is in mempool and confirmed
 // check that bailout is legal, ie. proper gametxid vin
 // verify amulet possession in pack
