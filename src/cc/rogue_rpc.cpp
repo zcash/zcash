@@ -390,13 +390,13 @@ int32_t rogue_playerdata(struct CCcontract_info *cp,uint256 &origplayergame,CPub
             //if ( rogue_iterateplayer(highlander,playertx.vin[1].prevout.n,playertxid) == 0 )
             //if ( playertx.vin[1].prevout.hash == highlander )
             {
-                if ( GetTransaction(highlander,highlandertx,hashBlock,false) != 0 && (numvouts= highlandertx.vout.size()) > 0 )
+                //if ( GetTransaction(highlander,highlandertx,hashBlock,false) != 0 && (numvouts= highlandertx.vout.size()) > 0 )
                 {
-                    if ( (f= rogue_highlanderopretdecode(origplayergame,pk,playerdata,highlandertx.vout[numvouts-1].scriptPubKey)) == 'H' || f == 'Q' )
+                    if ( (f= rogue_highlanderopretdecode(origplayergame,pk,playerdata,playertx.vout[numvouts-1].scriptPubKey)) == 'H' || f == 'Q' )
                     {
-                        if ( highlandertx.vin[0].prevout.hash == origplayergame && highlandertx.vin[0].prevout.n == 0 && rogue_isvalidgame(cp,gametx,buyin,maxplayers,origplayergame) == 0 && maxplayers > 1 )
+                        //if ( highlandertx.vin[0].prevout.hash == origplayergame && highlandertx.vin[0].prevout.n == 0 && rogue_isvalidgame(cp,gametx,buyin,maxplayers,origplayergame) == 0 && maxplayers > 1 )
                             return(0);
-                        else return(-3);
+                        //else return(-3);
                     }
                 }
             } //else return(-2);
