@@ -381,7 +381,6 @@ int32_t rogue_playerdata(struct CCcontract_info *cp,uint256 &origplayergame,CPub
     {
         GetOpReturnData(playertx.vout[numvouts-1].scriptPubKey,vopret);
         script = (uint8_t *)vopret.data();
-        fprintf(stderr,"player data [%d] [%c]\n",script[0],script[1]);
         if ( vopret.size() > 34 && script[0] == EVAL_ROGUE && (script[1] == 'H' || script[1] == 'Q' || script[1] == 'S') )
         {
             memcpy(&highlander,script+2,sizeof(highlander));
@@ -389,7 +388,7 @@ int32_t rogue_playerdata(struct CCcontract_info *cp,uint256 &origplayergame,CPub
             fprintf(stderr,"got vin.%s \n",playertx.vin[1].prevout.hash.ToString().c_str());
             // verify highlander is a valid gametxid, verify playertxid is linked to it
             //if ( rogue_iterateplayer(highlander,playertx.vin[1].prevout.n,playertxid) == 0 )
-            if ( playertx.vin[1].prevout.hash == highlander )
+            //if ( playertx.vin[1].prevout.hash == highlander )
             {
                 if ( GetTransaction(highlander,highlandertx,hashBlock,false) != 0 && (numvouts= highlandertx.vout.size()) > 0 )
                 {
