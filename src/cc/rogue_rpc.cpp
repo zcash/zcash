@@ -386,8 +386,10 @@ int32_t rogue_playerdata(struct CCcontract_info *cp,uint256 &origplayergame,CPub
         {
             memcpy(&highlander,script+2,sizeof(highlander));
             //highlander = revuint256(highlander);
-            fprintf(stderr,"got highlander.%s\n",highlander.ToString().c_str());
-            if ( rogue_iterateplayer(highlander,playertxid) == 0 )
+            fprintf(stderr,"got vin.%s \n",playertx.vin[1].prevout.hash.ToString().c_str());
+            // verify highlander is a valid gametxid, verify playertxid is linked to it
+            //if ( rogue_iterateplayer(highlander,playertx.vin[1].prevout.n,playertxid) == 0 )
+            if ( playertx.vin[1].prevout.hash == highlander )
             {
                 if ( GetTransaction(highlander,highlandertx,hashBlock,false) != 0 && (numvouts= highlandertx.vout.size()) > 0 )
                 {
