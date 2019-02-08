@@ -385,7 +385,7 @@ int32_t rogue_playerdata(struct CCcontract_info *cp,uint256 &origplayergame,CPub
         if ( vopret.size() > 34 && script[0] == EVAL_ROGUE && (script[1] == 'H' || script[1] == 'Q' || script[1] == 'S') )
         {
             memcpy(&highlander,script+2,sizeof(highlander));
-            highlander = revuint256(highlander);
+            //highlander = revuint256(highlander);
             fprintf(stderr,"got highlander.%s\n",highlander.ToString().c_str());
             if ( rogue_iterateplayer(highlander,playertxid) == 0 )
             {
