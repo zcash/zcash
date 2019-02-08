@@ -129,12 +129,12 @@
 
 // cclib newgame 17 \"[3,10]\"
 // cclib pending 17
-// cclib gameinfo 17 \"[%22e7d75f0b2bf0716ad0df87ee331bf52b41e0823e126654c7ec8bac5a15f6d869%22]\"
-// cclib register 17 \"[%22e7d75f0b2bf0716ad0df87ee331bf52b41e0823e126654c7ec8bac5a15f6d869%22]\"
+// cclib gameinfo 17 \"[%220a4ecb345ca3090f4acad63f889c3668e46e245cb00ca4b8b57c4677b1ee95b2%22]\"
+// cclib register 17 \"[%220a4ecb345ca3090f4acad63f889c3668e46e245cb00ca4b8b57c4677b1ee95b2%22]\"
 // ./rogue <seed> gui -> creates keystroke files
-// cclib register 17 \"[%22e7d75f0b2bf0716ad0df87ee331bf52b41e0823e126654c7ec8bac5a15f6d869%22,%22<playertxid>%22]\"
-// cclib keystrokes 17 \"[%22e7d75f0b2bf0716ad0df87ee331bf52b41e0823e126654c7ec8bac5a15f6d869%22,%22deadbeef%22]\"
-// cclib bailout 17 \"[%22e7d75f0b2bf0716ad0df87ee331bf52b41e0823e126654c7ec8bac5a15f6d869%22]\"
+// cclib register 17 \"[%22e7d75f0b2bf0716ad0df87ee331bf52b41e0823e126654c7ec8bac5a15f6d869%22,%22eef1d0091a88d85bdac1ede9d31db8504bc466a6695fdf259dac623fce09e0dd%22]\"
+// cclib keystrokes 17 \"[%220a4ecb345ca3090f4acad63f889c3668e46e245cb00ca4b8b57c4677b1ee95b2%22,%22deadbeef%22]\"
+// cclib bailout 17 \"[%220a4ecb345ca3090f4acad63f889c3668e46e245cb00ca4b8b57c4677b1ee95b2%22]\"
 // eef1d0091a88d85bdac1ede9d31db8504bc466a6695fdf259dac623fce09e0dd
 /*
  2409 gold.209 hp.17 strength.16 level.3 exp.22 3
@@ -381,6 +381,7 @@ int32_t rogue_playerdata(struct CCcontract_info *cp,uint256 &origplayergame,CPub
     {
         GetOpReturnData(playertx.vout[numvouts-1].scriptPubKey,vopret);
         script = (uint8_t *)vopret.data();
+        fprintf(stderr,"player data [%d] [%c]\n",script[0],script[1]);
         if ( vopret.size() > 34 && script[0] == EVAL_ROGUE && (script[1] == 'H' || script[1] == 'Q' || script[1] == 'S') )
         {
             memcpy(&highlander,script+2,sizeof(highlander));
