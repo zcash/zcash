@@ -415,12 +415,16 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                             }
                             else if ( notarizedheight > last_notarizedheight )
                                 continue; // leave this notarisation for the next block, it will be valid!
-                            else 
+                            else if ( notarizedheight == last_notarizedheight )
+                                continue; // this shouldnt happen :S
+                            else
                             {
                                 // we need to remove the last seen notarzation from block 
-                                double dPriority = vecPriority.front().get<0>();
-                                CFeeRate feeRate = vecPriority.front().get<1>();
                                 const CTransaction& Tx = *(vecPriority.front().get<2>());
+                                TxPriorityCompare comparer(0);
+                                std::make_heap(vecPriority.begin(), vecPriority.end(), comparer);
+                                std::pop_heap(vecPriority.begin(), vecPriority.end(), comparer);
+                                vecPriority.pop_back();
                                 // add this one as its valid before the other one.
                                 NotarisationNotaries = TMP_NotarisationNotaries;
                                 dPriority = 1e16;
