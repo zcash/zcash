@@ -276,6 +276,11 @@ void *chainparams_commandline(void *ptr)
     //fprintf(stderr,">>>>>>>> port.%u\n",ASSETCHAINS_P2PPORT);
     if ( ASSETCHAINS_SYMBOL[0] != 0 )
     {
+        if ( ASSETCHAINS_BLOCKTIME != 60 )
+        {
+            consensus.nMaxFutureBlockTime = 7 * ASSETCHAINS_BLOCKTIME; // 7 blocks
+            consensus.nPowTargetSpacing = ASSETCHAINS_BLOCKTIME;
+        }
         mainParams.SetDefaultPort(ASSETCHAINS_P2PPORT);
         if ( ASSETCHAINS_RPCPORT == 0 )
             ASSETCHAINS_RPCPORT = ASSETCHAINS_P2PPORT + 1;
