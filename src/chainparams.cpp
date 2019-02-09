@@ -278,8 +278,8 @@ void *chainparams_commandline(void *ptr)
     {
         if ( ASSETCHAINS_BLOCKTIME != 60 )
         {
-            mainParams.nMaxFutureBlockTime = 7 * ASSETCHAINS_BLOCKTIME; // 7 blocks
-            mainParams.nPowTargetSpacing = ASSETCHAINS_BLOCKTIME;
+            mainParams.consensus.nMaxFutureBlockTime = 7 * ASSETCHAINS_BLOCKTIME; // 7 blocks
+            mainParams.consensus.nPowTargetSpacing = ASSETCHAINS_BLOCKTIME;
         }
         mainParams.SetDefaultPort(ASSETCHAINS_P2PPORT);
         if ( ASSETCHAINS_RPCPORT == 0 )
