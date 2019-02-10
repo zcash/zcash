@@ -710,7 +710,13 @@ UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                 mtx.vout.push_back(MakeCC1of2vout(cp->evalcode,buyin + inputsum - txfee,roguepk,mypk));
                 GetCCaddress1of2(cp,destaddr,roguepk,roguepk);
                 CCaddr1of2set(cp,roguepk,roguepk,cp->CCpriv,destaddr);
-                rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,rogue_registeropret(gametxid,playertxid));
+
+                std::vector<uint8_t> vopretFinish, vopret2; uint8_t e, f; uint256 tokenid; std::vector<CPubKey> voutPubkeys, voutPubkeysEmpty;
+                DecodeTokenOpRet(playertx.vout.back().scriptPubKey, e, tokenid, voutPubkeys, vopretFinish, vopret2);
+                
+                CScript opretRegister = rogue_registeropret(gametxid, playertxid);
+                rawtx = FinalizeCCTx(0,cp,mtx,CPubKey()/*=null pubkey*/,txfee,
+                    EncodeTokenOpRet(tokenid, voutPubkeysEmpty, vopretFinish /*=non-fungible*/,  opretRegister));
                 return(rogue_rawtxresult(result,rawtx,1));
             } else return(cclib_error(result,"invalid gametxid"));
         } else return(cclib_error(result,"no gametxid"));
