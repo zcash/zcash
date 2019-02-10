@@ -159,12 +159,14 @@ readchar(struct rogue_state *rs)
         {
             //if ( rs->ind == rs->numkeys-1 )
             //    rs->replaydone = (uint32_t)time(NULL);
-            fprintf(stderr,"(%c) ",rs->keystrokes[rs->ind]);
+            //fprintf(stderr,"(%c) ",rs->keystrokes[rs->ind]);
             return(rs->keystrokes[rs->ind++]);
         }
         fprintf(stderr,"replay finished but readchar called\n");
         rs->replaydone = (uint32_t)time(NULL);
-        return('y');
+        if ( (rand() & 1) == 0 )
+            return(ESCAPE);
+        else return('y');
     }
     if ( rs == 0 || rs->guiflag != 0 )
     {

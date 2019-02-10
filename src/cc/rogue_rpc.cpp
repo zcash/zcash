@@ -839,9 +839,12 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
                                 return(cclib_error(result,"highlander must be a winner or last one standing"));
                             cashout += numplayers * buyin;
                         }
-                        if ( (inputsum= AddCClibInputs(cp,mtx,roguepk,cashout,16,cp->unspendableCCaddr)) > (uint64_t)P.gold*mult )
-                            CCchange = (inputsum - cashout);
-                        mtx.vout.push_back(CTxOut(cashout,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
+                        if ( cashout >= txfee )
+                        {
+                            if ( (inputsum= AddCClibInputs(cp,mtx,roguepk,cashout,16,cp->unspendableCCaddr)) > (uint64_t)P.gold*mult )
+                                CCchange = (inputsum - cashout);
+                            mtx.vout.push_back(CTxOut(cashout,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
+                        }
                         //for (i=0; i<P.packsize; i++)
                         //    fprintf(stderr,"object (%s) type.%d pack.(%c:%d)\n",inv_name(o,FALSE),o->_o._o_type,o->_o._o_packch,o->_o._o_packch);
                     }
@@ -849,7 +852,7 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
                     Myprivkey(mypriv);
                     CCaddr1of2set(cp,roguepk,mypk,mypriv,myrogueaddr);
                     rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,rogue_highlanderopret(funcid,gametxid,mypk,newdata));
-                    return(rogue_rawtxresult(result,rawtx,1));
+                    return(rogue_rawtxresult(result,rawtx,0));
                 }
                 result.push_back(Pair("result","success"));
             }
