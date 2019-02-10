@@ -129,8 +129,8 @@
 
 // cclib newgame 17 \"[3,10]\"
 // cclib pending 17
-// cclib gameinfo 17 \"[%220a4ecb345ca3090f4acad63f889c3668e46e245cb00ca4b8b57c4677b1ee95b2%22]\"
-// cclib register 17 \"[%220a4ecb345ca3090f4acad63f889c3668e46e245cb00ca4b8b57c4677b1ee95b2%22]\"
+// cclib gameinfo 17 \"[%22d8bc6445bfec15ea761c8e91e26d162f47856dba1fc8c8ec508cac83b95d7433%22]\"
+// cclib register 17 \"[%22d8bc6445bfec15ea761c8e91e26d162f47856dba1fc8c8ec508cac83b95d7433%22]\"
 // ./rogue <seed> gui -> creates keystroke files
 // cclib register 17 \"[%220a4ecb345ca3090f4acad63f889c3668e46e245cb00ca4b8b57c4677b1ee95b2%22,%22eef1d0091a88d85bdac1ede9d31db8504bc466a6695fdf259dac623fce09e0dd%22]\"
 // cclib keystrokes 17 \"[%220a4ecb345ca3090f4acad63f889c3668e46e245cb00ca4b8b57c4677b1ee95b2%22,%22deadbeef%22]\"
@@ -331,12 +331,13 @@ uint64_t rogue_gamefields(UniValue &obj,int64_t maxplayers,int64_t buyin,uint256
     return(seed);
 }
 
-int32_t rogue_isvalidgame(struct CCcontract_info *cp,CTransaction &tx,int64_t &buyin,int32_t &maxplayers,uint256 txid)
+int32_t rogue_isvalidgame(struct CCcontract_info *cp,int32_t &gameheight,CTransaction &tx,int64_t &buyin,int32_t &maxplayers,uint256 txid)
 {
     uint256 hashBlock; int32_t i,numvouts; char coinaddr[64]; CPubKey roguepk; uint64_t txfee = 10000;
     buyin = maxplayers = 0;
     if ( GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 1 )
     {
+        gameheight = komodo_blockheight(hashBlock);
         if ( IsCClibvout(cp,tx,0,cp->unspendableCCaddr) == txfee && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,0) == 0 )
         {
             if ( rogue_newgameopreturndecode(buyin,maxplayers,tx.vout[numvouts-1].scriptPubKey) == 'G' )
@@ -635,7 +636,7 @@ UniValue rogue_newgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
         if ( (change= inputsum - required) >= txfee )
             mtx.vout.push_back(MakeCC1vout(cp->evalcode,change,roguepk));
         rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,rogue_newgameopret(buyin,maxplayers));
-        return(rogue_rawtxresult(result,rawtx,0));
+        return(rogue_rawtxresult(result,rawtx,1));
     }
     else return(cclib_error(result,"illegal maxplayers"));
     return(result);
@@ -668,7 +669,7 @@ UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     // vin3+ -> buyin
     // vout0 -> keystrokes/completion baton
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); char destaddr[64],coinaddr[64]; uint256 gametxid,origplayergame,playertxid,hashBlock; int32_t maxplayers,n,numvouts; int64_t inputsum,buyin,CCchange=0; CPubKey pk,mypk,roguepk; CTransaction tx; std::vector<uint8_t> playerdata; std::string rawtx; bits256 t;
+    UniValue result(UniValue::VOBJ); char destaddr[64],coinaddr[64]; uint256 gametxid,origplayergame,playertxid,hashBlock; int32_t maxplayers,gameheight,n,numvouts; int64_t inputsum,buyin,CCchange=0; CPubKey pk,mypk,roguepk; CTransaction tx; std::vector<uint8_t> playerdata; std::string rawtx; bits256 t;
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
@@ -680,7 +681,7 @@ UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
         if ( n > 0 )
         {
             gametxid = juint256(jitem(params,0));
-            if ( rogue_isvalidgame(cp,tx,buyin,maxplayers,gametxid) == 0 )
+            if ( rogue_isvalidgame(cp,gameheight,tx,buyin,maxplayers,gametxid) == 0 )
             {
                 if ( n > 1 )
                 {
@@ -702,7 +703,7 @@ UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                 GetCCaddress1of2(cp,destaddr,roguepk,roguepk);
                 CCaddr1of2set(cp,roguepk,roguepk,cp->CCpriv,destaddr);
                 rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,rogue_registeropret(gametxid,playertxid));
-                return(rogue_rawtxresult(result,rawtx,0));
+                return(rogue_rawtxresult(result,rawtx,1));
             } else return(cclib_error(result,"invalid gametxid"));
         } else return(cclib_error(result,"no gametxid"));
     } else return(cclib_error(result,"couldnt reparse params"));
@@ -717,7 +718,7 @@ UniValue rogue_keystrokes(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
     // respawn to be prevented by including timestamps
     int32_t nextheight = komodo_nextheight();
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(),nextheight);
-    UniValue result(UniValue::VOBJ); CPubKey roguepk,mypk; uint256 gametxid,batontxid; int64_t batonvalue,buyin; std::vector<uint8_t> keystrokes,playerdata; int32_t numplayers,regslot,numkeys,batonht,batonvout,n,elapsed,maxplayers; CTransaction tx; CTxOut txout; char *keystrokestr,destaddr[64]; std::string rawtx; bits256 t; uint8_t mypriv[32];
+    UniValue result(UniValue::VOBJ); CPubKey roguepk,mypk; uint256 gametxid,batontxid; int64_t batonvalue,buyin; std::vector<uint8_t> keystrokes,playerdata; int32_t numplayers,regslot,numkeys,batonht,batonvout,n,elapsed,gameheight,maxplayers; CTransaction tx; CTxOut txout; char *keystrokestr,destaddr[64]; std::string rawtx; bits256 t; uint8_t mypriv[32];
     if ( txfee == 0 )
         txfee = 10000;
     rogue_univalue(result,"keystrokes",-1,-1);
@@ -728,7 +729,7 @@ UniValue rogue_keystrokes(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
         mypk = pubkey2pk(Mypubkey());
         roguepk = GetUnspendable(cp,0);
         GetCCaddress1of2(cp,destaddr,roguepk,mypk);
-        if ( rogue_isvalidgame(cp,tx,buyin,maxplayers,gametxid) == 0 )
+        if ( rogue_isvalidgame(cp,gameheight,tx,buyin,maxplayers,gametxid) == 0 )
         {
             if ( rogue_findbaton(cp,0,numkeys,regslot,playerdata,batontxid,batonvout,batonvalue,batonht,gametxid,tx,maxplayers,destaddr,numplayers) == 0 )
             {
@@ -761,7 +762,7 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
     // vout0 -> 1% ingame gold
     // get any playerdata, get all keystrokes, replay game and compare final state
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); std::string rawtx; CTransaction gametx; uint64_t seed,mult; int64_t buyin,batonvalue,inputsum,cashout,CCchange=0; int32_t i,tmp,numplayers,regslot,n,num,numkeys,maxplayers,batonht,batonvout; char myrogueaddr[64],*keystrokes = 0; std::vector<uint8_t> playerdata,newdata; uint256 batontxid,gametxid; CPubKey mypk,roguepk; uint8_t player[10000],mypriv[32],funcid;
+    UniValue result(UniValue::VOBJ); std::string rawtx; CTransaction gametx; uint64_t seed,mult; int64_t buyin,batonvalue,inputsum,cashout,CCchange=0; int32_t i,gameheight,tmp,numplayers,regslot,n,num,numkeys,maxplayers,batonht,batonvout; char myrogueaddr[64],*keystrokes = 0; std::vector<uint8_t> playerdata,newdata; uint256 batontxid,gametxid; CPubKey mypk,roguepk; uint8_t player[10000],mypriv[32],funcid;
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
@@ -786,7 +787,7 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
         {
             gametxid = juint256(jitem(params,0));
             result.push_back(Pair("gametxid",gametxid.GetHex()));
-            if ( rogue_isvalidgame(cp,gametx,buyin,maxplayers,gametxid) == 0 )
+            if ( rogue_isvalidgame(cp,gameheight,gametx,buyin,maxplayers,gametxid) == 0 )
             {
                 if ( maxplayers == 1 )
                     mult /= 2;
@@ -834,7 +835,7 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
                     Myprivkey(mypriv);
                     CCaddr1of2set(cp,roguepk,mypk,mypriv,myrogueaddr);
                     rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,rogue_highlanderopret(funcid,gametxid,mypk,newdata));
-                    return(rogue_rawtxresult(result,rawtx,0));
+                    return(rogue_rawtxresult(result,rawtx,1));
                 }
                 result.push_back(Pair("result","success"));
             }
@@ -855,7 +856,7 @@ UniValue rogue_highlander(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
 
 UniValue rogue_gameinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ),a(UniValue::VARR); int32_t i,n,maxplayers,numvouts; uint256 txid; CTransaction tx; int64_t buyin; bits256 t; char myrogueaddr[64]; CPubKey mypk,roguepk;
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR); int32_t i,n,gameheight,maxplayers,numvouts; uint256 txid; CTransaction tx; int64_t buyin; bits256 t; char myrogueaddr[64]; CPubKey mypk,roguepk;
     result.push_back(Pair("name","rogue"));
     result.push_back(Pair("method","gameinfo"));
     if ( (params= cclib_reparse(&n,params)) != 0 )
@@ -864,9 +865,10 @@ UniValue rogue_gameinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
         {
             txid = juint256(jitem(params,0));
             result.push_back(Pair("gametxid",txid.GetHex()));
-            if ( rogue_isvalidgame(cp,tx,buyin,maxplayers,txid) == 0 )
+            if ( rogue_isvalidgame(cp,gameheight,tx,buyin,maxplayers,txid) == 0 )
             {
                 result.push_back(Pair("result","success"));
+                result.push_back(Pair("gameheight",(int64_t)gameheight));
                 mypk = pubkey2pk(Mypubkey());
                 roguepk = GetUnspendable(cp,0);
                 GetCCaddress1of2(cp,myrogueaddr,roguepk,mypk);
@@ -890,11 +892,12 @@ UniValue rogue_gameinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 
 UniValue rogue_pending(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ),a(UniValue::VARR); int64_t buyin; uint256 txid,hashBlock; CTransaction tx; int32_t maxplayers,vout,numvouts; CPubKey roguepk; char coinaddr[64];
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR); int64_t buyin; uint256 txid,hashBlock; CTransaction tx; int32_t maxplayers,gameheight,nextheight,vout,numvouts; CPubKey roguepk; char coinaddr[64];
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     roguepk = GetUnspendable(cp,0);
     GetCCaddress(cp,coinaddr,roguepk);
     SetCCunspents(unspentOutputs,coinaddr);
+    nextheight = komodo_nextheight();
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
@@ -902,7 +905,7 @@ UniValue rogue_pending(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
         //char str[65]; fprintf(stderr,"%s check %s/v%d %.8f\n",coinaddr,uint256_str(str,txid),vout,(double)it->second.satoshis/COIN);
         if ( it->second.satoshis != txfee || vout != 0 ) // reject any that are not highlander markers
             continue;
-        if ( rogue_isvalidgame(cp,tx,buyin,maxplayers,txid) == 0 )
+        if ( rogue_isvalidgame(cp,gameheight,tx,buyin,maxplayers,txid) == 0 && gameheight > nextheight-777 )
             a.push_back(txid.GetHex());
     }
     result.push_back(Pair("result","success"));
@@ -934,7 +937,7 @@ UniValue rogue_players(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     }
     result.push_back(Pair("result","success"));
     rogue_univalue(result,"players",-1,-1);
-    result.push_back(Pair("players",a));
-    result.push_back(Pair("numpending",a.size()));
+    result.push_back(Pair("playerdata",a));
+    result.push_back(Pair("numplayerdata",a.size()));
     return(result);
 }

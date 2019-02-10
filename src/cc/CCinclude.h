@@ -136,6 +136,7 @@ UniValue CClib(struct CCcontract_info *cp,char *method,cJSON *params);
 UniValue CClib_info(struct CCcontract_info *cp);
 CBlockIndex *komodo_blockindex(uint256 hash);
 CBlockIndex *komodo_chainactive(int32_t height);
+int32_t komodo_blockheight(uint256 hash);
 
 static const uint256 zeroid;
 static uint256 ignoretxid;
