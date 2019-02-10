@@ -214,7 +214,7 @@ uint8_t rogue_registeropretdecode(uint256 &gametxid,uint256 &tokenid,uint256 &pl
     else if ( (f= DecodeTokenOpRet(scriptPubKey,e,tokenid,voutPubkeys,vopret,vopret2)) == 'c' || f == 't' )
     {
         //fprintf(stderr,"got valid token opret %s e.%d vs %d\n",tokenid.GetHex().c_str(),e,EVAL_TOKENS);
-        if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> gametxid; ss >> playertxid) != 0 && e == EVAL_ROGUE && f == 'R' )
+        if ( vopret2.size() > 2 && E_UNMARSHAL(vopret2,ss >> e; ss >> f; ss >> gametxid; ss >> playertxid) != 0 && e == EVAL_ROGUE && f == 'R' )
         {
             return(f);
         }
