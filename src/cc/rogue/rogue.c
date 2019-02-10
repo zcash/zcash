@@ -571,7 +571,7 @@ quit(int sig)
 {
     struct rogue_state *rs = &globalR;
     int oy, ox;
-    fprintf(stder,"inside quit(%d)\n",sig);
+    fprintf(stderr,"inside quit(%d)\n",sig);
     if ( rs->guiflag != 0 )
     {
         NOOP(sig);
