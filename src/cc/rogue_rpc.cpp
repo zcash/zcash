@@ -384,7 +384,6 @@ int32_t rogue_playerdata(struct CCcontract_info *cp,uint256 &origplayergame,CPub
         if ( vopret.size() > 34 && script[0] == EVAL_ROGUE && (script[1] == 'H' || script[1] == 'Q' || script[1] == 'S') )
         {
             memcpy(&highlander,script+2,sizeof(highlander));
-            //highlander = revuint256(highlander);
             fprintf(stderr,"got vin.%s \n",playertx.vin[1].prevout.hash.ToString().c_str());
             // verify highlander is a valid gametxid, verify playertxid is linked to it
             //if ( rogue_iterateplayer(highlander,playertx.vin[1].prevout.n,playertxid) == 0 )
@@ -392,7 +391,7 @@ int32_t rogue_playerdata(struct CCcontract_info *cp,uint256 &origplayergame,CPub
             {
                 //if ( GetTransaction(highlander,highlandertx,hashBlock,false) != 0 && (numvouts= highlandertx.vout.size()) > 0 )
                 {
-                    if ( (f= rogue_highlanderopretdecode(origplayergame,pk,playerdata,playertx.vout[numvouts-1].scriptPubKey)) == 'H' || f == 'Q' )
+                    if ( (f= rogue_highlanderopretdecode(origplayergame,pk,playerdata,playertx.vout[numvouts-1].scriptPubKey)) == 'H' || f == 'Q' || f == 'S' )
                     {
                         //if ( highlandertx.vin[0].prevout.hash == origplayergame && highlandertx.vin[0].prevout.n == 0 && rogue_isvalidgame(cp,gametx,buyin,maxplayers,origplayergame) == 0 && maxplayers > 1 )
                             return(0);
@@ -439,58 +438,67 @@ int32_t rogue_findbaton(struct CCcontract_info *cp,char **keystrokesp,int32_t &n
     }
     if ( matches == 1 )
     {
-        numvouts = matchtx.vout.size();
-        //fprintf(stderr,"matches.%d numvouts.%d\n",matches,numvouts);
-        if ( rogue_registeropretdecode(txid,playertxid,matchtx.vout[numvouts-1].scriptPubKey) == 'R' && txid == gametxid )
+        if ( myIsutxo_spent(spenttxid,gametxid,maxplayers+i+2) < 0 )
         {
-            if ( playertxid == zeroid || rogue_playerdata(cp,origplayergame,pk,playerdata,playertxid) == 0 )
+            numvouts = matchtx.vout.size();
+            //fprintf(stderr,"matches.%d numvouts.%d\n",matches,numvouts);
+            if ( rogue_registeropretdecode(txid,playertxid,matchtx.vout[numvouts-1].scriptPubKey) == 'R' && txid == gametxid )
             {
-                txid = matchtx.GetHash();
-                //fprintf(stderr,"scan forward playertxid.%s spenttxid.%s\n",playertxid.GetHex().c_str(),txid.GetHex().c_str());
-                while ( CCgettxout(txid,0,1) < 0 )
+                fprintf(stderr,"playertxid.%s\n",playertxid.ToString().c_str());
+                if ( playertxid == zeroid || rogue_playerdata(cp,origplayergame,pk,playerdata,playertxid) == 0 )
                 {
-                    spenttxid = zeroid;
-                    spentvini = -1;
-                    if ( (spentvini= myIsutxo_spent(spenttxid,txid,0)) >= 0 )
-                        txid = spenttxid;
-                    else if ( myIsutxo_spentinmempool(spenttxid,spentvini,txid,0) == 0 || spenttxid == zeroid )
+                    txid = matchtx.GetHash();
+                    //fprintf(stderr,"scan forward playertxid.%s spenttxid.%s\n",playertxid.GetHex().c_str(),txid.GetHex().c_str());
+                    while ( CCgettxout(txid,0,1) < 0 )
                     {
-                        fprintf(stderr,"mempool tracking error %s/v0\n",txid.ToString().c_str());
-                        return(-2);
-                    }
-                    if ( spentvini != 0 )
-                        return(-3);
-                    if ( keystrokesp != 0 && GetTransaction(spenttxid,spenttx,hashBlock,false) != 0 && spenttx.vout.size() == 2 )
-                    {
-                        uint256 g,b; CPubKey p; std::vector<uint8_t> k;
-                        if ( rogue_keystrokesopretdecode(g,b,p,k,spenttx.vout[1].scriptPubKey) == 'K' )
+                        spenttxid = zeroid;
+                        spentvini = -1;
+                        if ( (spentvini= myIsutxo_spent(spenttxid,txid,0)) >= 0 )
+                            txid = spenttxid;
+                        else if ( myIsutxo_spentinmempool(spenttxid,spentvini,txid,0) == 0 || spenttxid == zeroid )
                         {
-                            keystrokes = (char *)realloc(keystrokes,numkeys + (int32_t)k.size());
-                            for (i=0; i<k.size(); i++)
-                                keystrokes[numkeys+i] = (char)k[i];
-                            numkeys += (int32_t)k.size();
-                            (*keystrokesp) = keystrokes;
+                            fprintf(stderr,"mempool tracking error %s/v0\n",txid.ToString().c_str());
+                            return(-2);
+                        }
+                        if ( spentvini != 0 )
+                            return(-3);
+                        if ( keystrokesp != 0 && GetTransaction(spenttxid,spenttx,hashBlock,false) != 0 && spenttx.vout.size() == 2 )
+                        {
+                            uint256 g,b; CPubKey p; std::vector<uint8_t> k;
+                            if ( rogue_keystrokesopretdecode(g,b,p,k,spenttx.vout[1].scriptPubKey) == 'K' )
+                            {
+                                keystrokes = (char *)realloc(keystrokes,numkeys + (int32_t)k.size());
+                                for (i=0; i<k.size(); i++)
+                                    keystrokes[numkeys+i] = (char)k[i];
+                                numkeys += (int32_t)k.size();
+                                (*keystrokesp) = keystrokes;
+                            }
                         }
                     }
+                    //fprintf(stderr,"set baton %s\n",txid.GetHex().c_str());
+                    batontxid = txid;
+                    batonvout = 0; // not vini
+                    // how to detect timeout, bailedout, highlander
+                    hashBlock = zeroid;
+                    if ( GetTransaction(batontxid,batontx,hashBlock,false) != 0 && batontx.vout.size() > 0 )
+                    {
+                        if ( hashBlock == zeroid )
+                            batonht = komodo_nextheight();
+                        else if ( (pindex= komodo_blockindex(hashBlock)) == 0 )
+                            return(-4);
+                        else batonht = pindex->GetHeight();
+                        batonvalue = batontx.vout[0].nValue;
+                        //printf("keystrokes[%d]\n",numkeys);
+                        return(0);
+                    }
                 }
-                //fprintf(stderr,"set baton %s\n",txid.GetHex().c_str());
-                batontxid = txid;
-                batonvout = 0; // not vini
-                // how to detect timeout, bailedout, highlander
-                hashBlock = zeroid;
-                if ( GetTransaction(batontxid,batontx,hashBlock,false) != 0 && batontx.vout.size() > 0 )
-                {
-                    if ( hashBlock == zeroid )
-                        batonht = komodo_nextheight();
-                    else if ( (pindex= komodo_blockindex(hashBlock)) == 0 )
-                        return(-4);
-                    else batonht = pindex->GetHeight();
-                    batonvalue = batontx.vout[0].nValue;
-                    //printf("keystrokes[%d]\n",numkeys);
-                    return(0);
-                }
-            }
-        } else fprintf(stderr,"findbaton opret error\n");
+            } else fprintf(stderr,"findbaton opret error\n");
+        }
+        else
+        {
+            fprintf(stderr,"already played\n");
+            return(-5);
+        }
     }
     return(-1);
 }
@@ -775,6 +783,7 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
                     free(keystrokes);
                     mtx.vin.push_back(CTxIn(batontxid,batonvout,CScript()));
                     mtx.vin.push_back(CTxIn(gametxid,2+maxplayers+regslot,CScript()));
+                    mtx.vout.push_back(MakeCC1vout(cp->evalcode,1,mypk));
                     mtx.vout.push_back(MakeCC1vout(cp->evalcode,txfee,mypk));
                     if ( num > 0 )
                     {
