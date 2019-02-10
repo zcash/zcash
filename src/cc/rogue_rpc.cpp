@@ -203,7 +203,7 @@ uint8_t rogue_keystrokesopretdecode(uint256 &gametxid,uint256 &batontxid,CPubKey
 
 uint8_t rogue_registeropretdecode(uint256 &gametxid,uint256 &tokenid,uint256 &playertxid,CScript scriptPubKey)
 {
-    std::vector<uint8_t> vopret; uint8_t e,f;
+    std::vector<uint8_t> vopret,vopret2; uint8_t e,f; std::vector<CPubKey> voutPubkeys;
     GetOpReturnData(scriptPubKey,vopret);
     tokenid = zeroid;
     if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> gametxid; ss >> playertxid) != 0 && e == EVAL_ROGUE && f == 'R' )
