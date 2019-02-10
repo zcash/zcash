@@ -363,7 +363,7 @@ int32_t rogue_isvalidgame(struct CCcontract_info *cp,int32_t &gameheight,CTransa
 
 UniValue rogue_playerobj(std::vector<uint8_t> playerdata)
 {
-    int32_t i; struct rogue_player P; char packitemstr[512]; UniValue obj(UniValue:VOBJ),a(UniValue::VARR);
+    int32_t i; struct rogue_player P; char packitemstr[512]; UniValue obj(UniValue::VOBJ),a(UniValue::VARR);
     memset(&P,0,sizeof(P));
     if ( playerdata.size() > 0 )
     {
