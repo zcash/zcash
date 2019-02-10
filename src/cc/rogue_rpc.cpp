@@ -916,6 +916,7 @@ UniValue rogue_players(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     mypk = pubkey2pk(Mypubkey());
     GetCCaddress(cp,coinaddr,mypk);
     SetCCunspents(unspentOutputs,coinaddr);
+    rogue_univalue(result,"players",-1,-1);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
@@ -924,10 +925,11 @@ UniValue rogue_players(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
         if ( it->second.satoshis != 1 || vout != 0 )
             continue;
         if ( rogue_playerdata(cp,gametxid,pk,playerdata,txid) == 0 && pk == mypk )
+        {
             a.push_back(Pair("player",rogue_playerobj(playerdata)));
+            result.push_back(Pair("playerdata",rogue_playerobj(playerdata)));
+        }
     }
-    result.push_back(Pair("result","success"));
-    rogue_univalue(result,"players",-1,-1);
     result.push_back(Pair("playerdata",a));
     result.push_back(Pair("numplayerdata",a.size()));
     return(result);
