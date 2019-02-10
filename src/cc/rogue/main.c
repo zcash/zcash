@@ -18,6 +18,16 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#define SMALLVAL 0.000000000000001
+#define SATOSHIDEN ((uint64_t)100000000L)
+#define dstr(x) ((double)(x) / SATOSHIDEN)
+
+#ifndef _BITS256
+#define _BITS256
+union _bits256 { uint8_t bytes[32]; uint16_t ushorts[16]; uint32_t uints[8]; uint64_t ulongs[4]; uint64_t txid; };
+typedef union _bits256 bits256;
+#endif
+
 #define true 1
 #define false 0
 #include "../../komodo_cJSON.c"
