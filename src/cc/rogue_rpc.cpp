@@ -809,9 +809,9 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
                             newdata[i] = player[i];
                             ((uint8_t *)&P)[i] = player[i];
                         }
-                        if ( P.gold < 0 || P.hitpoints < 0 || P.strength < 0 || P.level < 0 || P.experience < 0 || P.dungeonlevel < 0 )
+                        if ( P.gold <= 0 || P.hitpoints <= 0 || P.strength <= 0 || P.level <= 0 || P.experience <= 0 || P.dungeonlevel <= 0 )
                         {
-                            fprintf(stderr,"was killed -> no playerdata\n");
+                            fprintf(stderr,"zero value character was killed -> no playerdata\n");
                             newdata.resize(0);
                         }
                         else
