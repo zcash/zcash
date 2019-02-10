@@ -808,7 +808,7 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
                 {
                     UniValue obj; struct rogue_player P;
                     seed = rogue_gamefields(obj,maxplayers,buyin,gametxid,myrogueaddr);
-                    fprintf(stderr,"found baton %s numkeys.%d seed.%llu\n",batontxid.ToString().c_str(),numkeys,(long long)seed);
+                    fprintf(stderr,"found baton %s numkeys.%d seed.%llu playerdata.%d\n",batontxid.ToString().c_str(),numkeys,(long long)seed,(int32_t)playerdata.size());
                     memset(&P,0,sizeof(P));
                     if ( playerdata.size() > 0 )
                     {
@@ -840,9 +840,12 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
                                 return(cclib_error(result,"highlander must be a winner or last one standing"));
                             cashout += numplayers * buyin;
                         }
-                        if ( (inputsum= AddCClibInputs(cp,mtx,roguepk,cashout,16,cp->unspendableCCaddr)) > (uint64_t)P.gold*mult )
-                            CCchange = (inputsum - cashout);
-                        mtx.vout.push_back(CTxOut(cashout,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
+                        if ( cashout >= txfee )
+                        {
+                            if ( (inputsum= AddCClibInputs(cp,mtx,roguepk,cashout,16,cp->unspendableCCaddr)) > (uint64_t)P.gold*mult )
+                                CCchange = (inputsum - cashout);
+                            mtx.vout.push_back(CTxOut(cashout,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
+                        }
                         //for (i=0; i<P.packsize; i++)
                         //    fprintf(stderr,"object (%s) type.%d pack.(%c:%d)\n",inv_name(o,FALSE),o->_o._o_type,o->_o._o_packch,o->_o._o_packch);
                     }

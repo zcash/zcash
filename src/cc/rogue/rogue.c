@@ -146,9 +146,9 @@ int32_t flushkeystrokes(struct rogue_state *rs)
 uint8_t *OS_fileptr(long *allocsizep,char *fname);
 #define is_cJSON_True(json) ((json) != 0 && ((json)->type & 0xff) == cJSON_True)
 
-void rogue_setplayerdata(struct rogue_state *rs,char *gametxidstr)
+int32_t rogue_setplayerdata(struct rogue_state *rs,char *gametxidstr)
 {
-    char cmd[32768]; int32_t i,n; char *filestr,*datastr,fname[128]; long allocsize; cJSON *retjson,*array,*item;
+    char cmd[32768]; int32_t i,n,retval=-1; char *filestr,*statusstr,*datastr,fname[128]; long allocsize; cJSON *retjson,*array,*item;
     sprintf(fname,"%s.gameinfo",gametxidstr);
     sprintf(cmd,"./komodo-cli -ac_name=ROGUE cclib gameinfo 17 \\\"[%%22%s%%22]\\\" > %s",gametxidstr,fname);
     if ( system(cmd) != 0 )
@@ -163,16 +163,17 @@ void rogue_setplayerdata(struct rogue_state *rs,char *gametxidstr)
                 for (i=0; i<n; i++)
                 {
                     item = jitem(array,i);
-                    if ( is_cJSON_True(jobj(item,"ismine")) != 0 )
+                    if ( is_cJSON_True(jobj(item,"ismine")) != 0 && (statusstr= jstr(item,"status")) != 0 )
                     {
-                        fprintf(stderr,"found ismine:true\n");
-                        sleep(2);
-                        if ( (item= jobj(item,"player")) != 0 && (datastr= jstr(item,"data")) != 0 )
+                        if ( strcmp(statusstr,"registered") == 0 )
                         {
-                            decode_hex((uint8_t *)&rs->P,(int32_t)strlen(datastr)/2,datastr);
-                            fprintf(stderr,"set datastr[%d]\n",(int32_t)strlen(datastr));
-                            rs->restoring = 1;
-                            sleep(5);
+                            retval = 0;
+                            if ( (item= jobj(item,"player")) != 0 && (datastr= jstr(item,"data")) != 0 )
+                            {
+                                decode_hex((uint8_t *)&rs->P,(int32_t)strlen(datastr)/2,datastr);
+                                //fprintf(stderr,"set datastr[%d]\n",(int32_t)strlen(datastr));
+                                rs->restoring = 1;
+                            }
                         }
                     }
                 }
@@ -181,6 +182,7 @@ void rogue_setplayerdata(struct rogue_state *rs,char *gametxidstr)
         }
         free(filestr);
     }
+    return(retval);
 }
 
 void rogue_progress(uint64_t seed,char *keystrokes,int32_t num) // use seed to lookup gametxid
@@ -212,7 +214,11 @@ int32_t rogue_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t nu
     rs->numkeys = num;
     rs->sleeptime = 0;
     if ( player != 0 )
+    {
         rs->P = *player;
+        rs->restoring = 1;
+        fprintf(stderr,"restore player packsize.%d\n",rs->P.packsize);
+    }
     uint32_t starttime = (uint32_t)time(NULL);
     rogueiterate(rs);
     /*fprintf(stderr,"elapsed %d seconds\n",(uint32_t)time(NULL) - starttime);
@@ -301,7 +307,11 @@ int rogue(int argc, char **argv, char **envp)
     {
         rs->seed = atol(argv[1]);
         strcpy(Gametxidstr,argv[2]);
-        rogue_setplayerdata(rs,Gametxidstr);
+        if ( rogue_setplayerdata(rs,Gametxidstr) < 0 )
+        {
+            fprintf(stderr,"invalid gametxid, or already started\n");
+            return(-1);
+        }
     } else rs->seed = 777;
     rs->guiflag = 1;
     rs->sleeptime = 1; // non-zero to allow refresh()
@@ -533,7 +543,7 @@ playit(struct rogue_state *rs)
         {
             if ( rs->replaydone != 0 )
             {
-                //fprintf(stderr,"replaydone\n"); sleep(3);
+                fprintf(stderr,"replaydone\n"); sleep(3);
                 return;
             }
             if ( rs->sleeptime != 0 )
@@ -561,27 +571,38 @@ quit(int sig)
 {
     struct rogue_state *rs = &globalR;
     int oy, ox;
-    
-    NOOP(sig);
-    
-    /*
-     * Reset the signal in case we got here via an interrupt
-     */
-    if (!q_comm)
-        mpos = 0;
-    getyx(curscr, oy, ox);
-    msg(rs,"really quit?");
+    fprintf(stderr,"inside quit(%d)\n",sig);
+    if ( rs->guiflag != 0 )
+    {
+        NOOP(sig);
+        
+        /*
+         * Reset the signal in case we got here via an interrupt
+         */
+        if (!q_comm)
+            mpos = 0;
+        getyx(curscr, oy, ox);
+        msg(rs,"really quit?");
+    }
     if (readchar(rs) == 'y')
     {
-        signal(SIGINT, leave);
-        clear();
-        mvprintw(LINES - 2, 0, "You quit with %d gold pieces", purse);
-        move(LINES - 1, 0);
-        if ( rs->sleeptime != 0 )
-            refresh();
-        score(purse, 1, 0);
-        flushkeystrokes(rs);
-        my_exit(0);
+        if ( rs->guiflag != 0 )
+        {
+            signal(SIGINT, leave);
+            clear();
+            mvprintw(LINES - 2, 0, "You quit with %d gold pieces", purse);
+            move(LINES - 1, 0);
+            if ( rs->sleeptime != 0 )
+                refresh();
+            score(purse, 1, 0);
+            flushkeystrokes(rs);
+            my_exit(0);
+        }
+        else
+        {
+            fprintf(stderr,"done!\n");
+            score(purse, 1, 0);
+        }
     }
     else
     {
@@ -668,9 +689,14 @@ shell(struct rogue_state *rs)
 void
 my_exit(int st)
 {
+    uint32_t counter;
     resetltchars();
     if ( globalR.guiflag != 0 )
         exit(st);
-    else fprintf(stderr,"would have exit.(%d)\n",st);
+    else if ( counter++ < 10 )
+    {
+        fprintf(stderr,"would have exit.(%d)\n",st);
+        globalR.replaydone = 1;
+    }
 }
 

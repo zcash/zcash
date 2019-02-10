@@ -157,12 +157,16 @@ readchar(struct rogue_state *rs)
     {
         if ( rs->ind < rs->numkeys )
         {
-            if ( rs->ind == rs->numkeys-1 )
-                rs->replaydone = (uint32_t)time(NULL);
+            //if ( rs->ind == rs->numkeys-1 )
+            //    rs->replaydone = (uint32_t)time(NULL);
+            //fprintf(stderr,"(%c) ",rs->keystrokes[rs->ind]);
             return(rs->keystrokes[rs->ind++]);
         }
-        fatal("replay finished but readchar called\n");
-        return(' ');
+        fprintf(stderr,"replay finished but readchar called\n");
+        rs->replaydone = (uint32_t)time(NULL);
+        if ( (rand() & 1) == 0 )
+            return(ESCAPE);
+        else return('y');
     }
     if ( rs == 0 || rs->guiflag != 0 )
     {
@@ -277,10 +281,18 @@ wait_for(struct rogue_state *rs,int ch)
 
     if (ch == '\n')
         while ((c = readchar(rs)) != '\n' && c != '\r')
-	    continue;
+        {
+            if ( rs->replaydone != 0 )
+                return;
+            continue;
+        }
     else
         while (readchar(rs) != ch)
-	    continue;
+        {
+            if ( rs->replaydone != 0 )
+                return;
+            continue;
+        }
 }
 
 /*
