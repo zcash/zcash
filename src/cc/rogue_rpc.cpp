@@ -72,9 +72,8 @@
  Transaction details
  creategame
  vout0 -> txfee highlander vout TCBOO creation
- vout1 -> txfee highlander vout TCBOO playerdata used (deprecated)
- vout2 to vout.maxplayers+2 -> 1of2 registration ROGUE_REGISTRATIONSIZE batons
- vout2+maxplayers to vout.2*maxplayers+2 -> 1of2 registration txfee batons for game completion
+ vout1 to vout.maxplayers+1 -> 1of2 registration ROGUE_REGISTRATIONSIZE batons
+ vout2+maxplayers to vout.2*maxplayers+1 -> 1of2 registration txfee batons for game completion
  
  register
  vin0 -> ROGUE_REGISTRATIONSIZE 1of2 registration baton from creategame
@@ -268,7 +267,7 @@ int32_t rogue_iamregistered(int32_t maxplayers,uint256 gametxid,CTransaction tx,
     for (i=0; i<maxplayers; i++)
     {
         destaddr[0] = 0;
-        vout = i+2;
+        vout = i+1;
         if ( myIsutxo_spent(spenttxid,gametxid,vout) >= 0 )
         {
             if ( GetTransaction(spenttxid,spenttx,hashBlock,false) != 0 && spenttx.vout.size() > 0 )
@@ -289,10 +288,10 @@ int32_t rogue_playersalive(int32_t &numplayers,uint256 gametxid,int32_t maxplaye
     numplayers = 0;
     for (i=0; i<maxplayers; i++)
     {
-        if ( CCgettxout(gametxid,2+i,1) < 0 )
+        if ( CCgettxout(gametxid,1+i,1) < 0 )
         {
             numplayers++;
-            if (CCgettxout(gametxid,2+maxplayers+i,1) == txfee )
+            if (CCgettxout(gametxid,1+maxplayers+i,1) == txfee )
                 alive++;
         }
     }
@@ -342,13 +341,13 @@ int32_t rogue_isvalidgame(struct CCcontract_info *cp,int32_t &gameheight,CTransa
         {
             if ( rogue_newgameopreturndecode(buyin,maxplayers,tx.vout[numvouts-1].scriptPubKey) == 'G' )
             {
-                if ( numvouts > maxplayers+2 )
+                if ( numvouts > maxplayers+1 )
                 {
                     for (i=0; i<maxplayers; i++)
                     {
-                        if ( tx.vout[i+2].nValue != ROGUE_REGISTRATIONSIZE )
+                        if ( tx.vout[i+1].nValue != ROGUE_REGISTRATIONSIZE )
                             break;
-                        if ( tx.vout[maxplayers+i+2].nValue != txfee )
+                        if ( tx.vout[maxplayers+i+1].nValue != txfee )
                             break;
                     }
                     if ( i == maxplayers )
@@ -456,7 +455,7 @@ int32_t rogue_findbaton(struct CCcontract_info *cp,uint256 &playertxid,char **ke
     playertxid = zeroid;
     for (i=0; i<maxplayers; i++)
     {
-        if ( myIsutxo_spent(spenttxid,gametxid,i+2) >= 0 )
+        if ( myIsutxo_spent(spenttxid,gametxid,i+1) >= 0 )
         {
             if ( GetTransaction(spenttxid,spenttx,hashBlock,false) != 0 && spenttx.vout.size() > 0 )
             {
@@ -467,13 +466,13 @@ int32_t rogue_findbaton(struct CCcontract_info *cp,uint256 &playertxid,char **ke
                     matches++;
                     regslot = i;
                     matchtx = spenttx;
-                } //else fprintf(stderr,"%d+2 doesnt match %s vs %s\n",i,ccaddr,destaddr);
-            } //else fprintf(stderr,"%d+2 couldnt find spenttx.%s\n",i,spenttxid.GetHex().c_str());
-        } //else fprintf(stderr,"%d+2 unspent\n",i);
+                } //else fprintf(stderr,"%d+1 doesnt match %s vs %s\n",i,ccaddr,destaddr);
+            } //else fprintf(stderr,"%d+1 couldnt find spenttx.%s\n",i,spenttxid.GetHex().c_str());
+        } //else fprintf(stderr,"%d+1 unspent\n",i);
     }
     if ( matches == 1 )
     {
-        if ( myIsutxo_spent(spenttxid,gametxid,maxplayers+i+2) < 0 )
+        if ( myIsutxo_spent(spenttxid,gametxid,maxplayers+i+1) < 0 )
         {
             numvouts = matchtx.vout.size();
             //fprintf(stderr,"matches.%d numvouts.%d\n",matches,numvouts);
@@ -547,7 +546,7 @@ void rogue_gameplayerinfo(struct CCcontract_info *cp,UniValue &obj,uint256 gamet
         if ( GetTransaction(spenttxid,spenttx,hashBlock,false) != 0 && spenttx.vout.size() > 0 )
             Getscriptaddress(destaddr,spenttx.vout[0].scriptPubKey);
     }
-    obj.push_back(Pair("slot",(int64_t)vout-2));
+    obj.push_back(Pair("slot",(int64_t)vout-1));
     if ( (retval= rogue_findbaton(cp,playertxid,0,numkeys,regslot,playerdata,batontxid,batonvout,batonvalue,batonht,gametxid,gametx,maxplayers,destaddr,numplayers)) == 0 )
     {
         if ( CCgettxout(gametxid,maxplayers+vout,1) == 10000 )
@@ -566,12 +565,12 @@ void rogue_gameplayerinfo(struct CCcontract_info *cp,UniValue &obj,uint256 gamet
 int64_t rogue_registrationbaton(CMutableTransaction &mtx,uint256 gametxid,CTransaction gametx,int32_t maxplayers)
 {
     int32_t vout,j,r; int64_t nValue;
-    if ( gametx.vout.size() > maxplayers+2 )
+    if ( gametx.vout.size() > maxplayers+1 )
     {
         r = rand() % maxplayers;
         for (j=0; j<maxplayers; j++)
         {
-            vout = ((r + j) % maxplayers) + 2;
+            vout = ((r + j) % maxplayers) + 1;
             if ( CCgettxout(gametxid,vout,1) == ROGUE_REGISTRATIONSIZE )
             {
                 mtx.vin.push_back(CTxIn(gametxid,vout,CScript()));
@@ -623,7 +622,6 @@ UniValue rogue_newgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     if ( (inputsum= AddCClibInputs(cp,mtx,roguepk,required,16,cp->unspendableCCaddr)) >= required )
     {
         mtx.vout.push_back(MakeCC1vout(cp->evalcode,txfee,roguepk)); // for highlander TCBOO creation
-        mtx.vout.push_back(MakeCC1vout(cp->evalcode,txfee,roguepk)); // for highlander TCBOO used
         for (i=0; i<maxplayers; i++)
             mtx.vout.push_back(MakeCC1of2vout(cp->evalcode,ROGUE_REGISTRATIONSIZE,roguepk,roguepk));
         for (i=0; i<maxplayers; i++)
@@ -800,9 +798,8 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
                     if ( keystrokes != 0 )
                         free(keystrokes);
                     mtx.vin.push_back(CTxIn(batontxid,batonvout,CScript()));
-                    mtx.vin.push_back(CTxIn(gametxid,2+maxplayers+regslot,CScript()));
+                    mtx.vin.push_back(CTxIn(gametxid,1+maxplayers+regslot,CScript()));
                     mtx.vout.push_back(MakeCC1vout(cp->evalcode,1,mypk));
-                    mtx.vout.push_back(MakeCC1vout(cp->evalcode,txfee,mypk));
                     if ( num > 0 )
                     {
                         newdata.resize(num);
@@ -870,10 +867,10 @@ UniValue rogue_gameinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                 rogue_gamefields(result,maxplayers,buyin,txid,myrogueaddr);
                 for (i=0; i<maxplayers; i++)
                 {
-                    if ( CCgettxout(txid,i+2,1) < 0 )
+                    if ( CCgettxout(txid,i+1,1) < 0 )
                     {
                         UniValue obj(UniValue::VOBJ);
-                        rogue_gameplayerinfo(cp,obj,txid,tx,i+2,maxplayers);
+                        rogue_gameplayerinfo(cp,obj,txid,tx,i+1,maxplayers);
                         a.push_back(obj);
                     }
                 }
