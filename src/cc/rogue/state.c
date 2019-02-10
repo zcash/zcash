@@ -1354,6 +1354,15 @@ void rogue_restoreobject(THING *o,struct rogue_packitem *item)
 
 void rogue_packitemstr(char *packitemstr,struct rogue_packitem *item)
 {
+    static int32_t didinit;
+    if ( didinit == 0 )
+    {
+        init_names();			/* Set up names of scrolls */
+        init_colors();			/* Set up colors of potions */
+        init_stones();			/* Set up stone settings of rings */
+        init_materials();		/* Set up materials of wands */
+        didinit = 1;
+    }
     THING *obj = new_item();
     rogue_restoreobject(obj,item);
     strcpy(packitemstr,inv_name(obj,FALSE));

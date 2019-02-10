@@ -412,15 +412,15 @@ int32_t rogue_iterateplayer(uint256 firsttxid,uint256 lasttxid)     // retrace p
 
 int32_t rogue_playerdata(struct CCcontract_info *cp,uint256 &origplayergame,CPubKey &pk,std::vector<uint8_t> &playerdata,uint256 playertxid)
 {
-    uint256 origplayertxid,hashBlock,highlander; CTransaction gametx,playertx,highlandertx; std::vector<uint8_t> vopret; uint8_t *script,e,f; int32_t i,numvouts,maxplayers; int64_t buyin;
+    uint256 origplayertxid,hashBlock,gametxid; CTransaction gametx,playertx,highlandertx; std::vector<uint8_t> vopret; uint8_t *script,e,f; int32_t i,numvouts,maxplayers; int64_t buyin;
     if ( GetTransaction(playertxid,playertx,hashBlock,false) != 0 && (numvouts= playertx.vout.size()) > 0 )
     {
         GetOpReturnData(playertx.vout[numvouts-1].scriptPubKey,vopret);
         script = (uint8_t *)vopret.data();
         if ( vopret.size() > 34 && script[0] == EVAL_ROGUE && (script[1] == 'H' || script[1] == 'Q' || script[1] == 'S') )
         {
-            memcpy(&highlander,script+2,sizeof(highlander));
-            fprintf(stderr,"got vin.%s \n",playertx.vin[1].prevout.hash.ToString().c_str());
+            memcpy(&gametxid,script+2,sizeof(gametxid));
+            fprintf(stderr,"got vin.%s gametxid.%s\n",playertx.vin[1].prevout.hash.ToString().c_str(),gametxid.ToString().c_str());
             // verify highlander is a valid gametxid, verify playertxid is linked to it
             //if ( rogue_iterateplayer(highlander,playertx.vin[1].prevout.n,playertxid) == 0 )
             //if ( playertx.vin[1].prevout.hash == highlander )
@@ -922,7 +922,6 @@ UniValue rogue_players(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     roguepk = GetUnspendable(cp,0);
     mypk = pubkey2pk(Mypubkey());
     GetCCaddress(cp,coinaddr,mypk);
-    fprintf(stderr,"search (%s)\n",coinaddr);
     SetCCunspents(unspentOutputs,coinaddr);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
