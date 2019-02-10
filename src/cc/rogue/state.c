@@ -1370,6 +1370,9 @@ void rogue_restoreobject(THING *o,struct rogue_packitem *item)
                 ws_info[item->which].oi_know = TRUE;
             break;
     }
+    char packitemstr[256];
+    strcpy(packitemstr,inv_name(obj,FALSE));
+    fprintf(stderr,"packitem.(%s)\n",packitemstr);
 }
 
 void rogue_packitemstr(char *packitemstr,struct rogue_packitem *item)

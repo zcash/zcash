@@ -99,7 +99,11 @@ void rogueiterate(struct rogue_state *rs)
     fuse(swander, 0, WANDERTIME, AFTER);
     start_daemon(stomach, 0, AFTER);
     if ( rs->restoring != 0 )
+    {
+        fprintf(stderr,"restore player\n");
         restore_player(rs);
+        sleep(3);
+    }
     playit(rs);
 }
 
