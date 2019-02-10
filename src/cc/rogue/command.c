@@ -265,7 +265,7 @@ over:
 		    after = FALSE;
 		    q_comm = TRUE;
 		    quit(0);
-            if ( rs->needflush == 0 )
+            if ( rs->guiflag != 0 && rs->needflush == 0 )
                 rs->needflush = (uint32_t)time(NULL);
 		    q_comm = FALSE;
 		when 'i': after = FALSE; inventory(rs,pack, 0);
@@ -282,11 +282,11 @@ over:
 		when 'c': call(rs); after = FALSE;
                 
         when '>': after = FALSE; d_level(rs);
-                  if ( rs->needflush == 0 )
+                if ( rs->guiflag != 0 && rs->needflush == 0 )
                     rs->needflush = (uint32_t)time(NULL);
                 
 		when '<': after = FALSE; u_level(rs);
-                if ( rs->needflush == 0 )
+                if ( rs->guiflag != 0 && rs->needflush == 0 )
                     rs->needflush = (uint32_t)time(NULL);
                
 		when '?': after = FALSE; help(rs);

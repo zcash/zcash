@@ -600,6 +600,7 @@ quit(int sig)
         }
         else
         {
+            fprintf(stderr,"done!\n");
             score(purse, 1, 0);
         }
     }
