@@ -1357,10 +1357,9 @@ void rogue_packitemstr(char *packitemstr,struct rogue_packitem *item)
     static int32_t didinit;
     if ( didinit == 0 )
     {
-        init_names();			/* Set up names of scrolls */
-        init_colors();			/* Set up colors of potions */
-        init_stones();			/* Set up stone settings of rings */
-        init_materials();		/* Set up materials of wands */
+        struct rogue_state R;
+        memset(&R,0,sizeof(R));
+        rogueiterate(&R);
         didinit = 1;
     }
     THING *obj = new_item();
