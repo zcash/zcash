@@ -428,22 +428,19 @@ int32_t rogue_playerdata(struct CCcontract_info *cp,uint256 &origplayergame,CPub
     uint256 origplayertxid,hashBlock,gametxid,registertxid; CTransaction gametx,playertx,highlandertx; std::vector<uint8_t> vopret; uint8_t *script,e,f; int32_t i,gameheight,numvouts,maxplayers; int64_t buyin;
     if ( GetTransaction(playertxid,playertx,hashBlock,false) != 0 && (numvouts= playertx.vout.size()) > 0 )
     {
-        GetOpReturnData(playertx.vout[numvouts-1].scriptPubKey,vopret);
-        script = (uint8_t *)vopret.data();
-        if ( vopret.size() > 34 && script[0] == EVAL_ROGUE && (script[1] == 'H' || script[1] == 'Q') )
+        //GetOpReturnData(playertx.vout[numvouts-1].scriptPubKey,vopret);
+        //script = (uint8_t *)vopret.data();
+        if ( (f= rogue_highlanderopretdecode(gametxid,pk,playerdata,playertx.vout[numvouts-1].scriptPubKey)) == 'H' || f == 'Q' )
         {
-            memcpy(&gametxid,script+2,sizeof(gametxid));
+            fprintf(stderr,"gametxid.%s\n",gametxid.GetHex().c_str());
+            //memcpy(&gametxid,script+2,sizeof(gametxid));
             if ( rogue_isvalidgame(cp,gameheight,gametx,buyin,maxplayers,gametxid) == 0 )
             {
                 fprintf(stderr,"playertxid.%s got vin.%s/v%d gametxid.%s iterate.%d\n",playertxid.ToString().c_str(),playertx.vin[1].prevout.hash.ToString().c_str(),(int32_t)playertx.vin[1].prevout.n-maxplayers,gametxid.ToString().c_str(),rogue_iterateplayer(registertxid,gametxid,playertx.vin[1].prevout.n-maxplayers,playertxid));
                 if ( playertx.vin[1].prevout.hash == gametxid && rogue_iterateplayer(registertxid,gametxid,playertx.vin[1].prevout.n-maxplayers,playertxid) == 0 )
                 {
-                    if ( (f= rogue_highlanderopretdecode(origplayergame,pk,playerdata,playertx.vout[numvouts-1].scriptPubKey)) == 'H' || f == 'Q' )
-                    {
-                        // if registertxid has vin from pk, it can be used
-                        return(0);
-                    }
-                    else fprintf(stderr,"f is %c/%d\n",f,f);
+                    // if registertxid has vin from pk, it can be used
+                    return(0);
                 } else fprintf(stderr,"hash mismatch or illegal gametxid\n");
             }
         }
@@ -958,7 +955,7 @@ UniValue rogue_players(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     {
         txid = it->first.txhash;
         vout = (int32_t)it->first.index;
-        //char str[65]; fprintf(stderr,"%s check %s/v%d %.8f\n",coinaddr,uint256_str(str,txid),vout,(double)it->second.satoshis/COIN);
+        char str[65]; fprintf(stderr,"%s check %s/v%d %.8f\n",coinaddr,uint256_str(str,txid),vout,(double)it->second.satoshis/COIN);
         if ( it->second.satoshis != 1 || vout != 0 )
             continue;
         if ( rogue_playerdata(cp,gametxid,pk,playerdata,txid) == 0 && pk == mypk )
