@@ -1371,7 +1371,7 @@ void rogue_restoreobject(THING *o,struct rogue_packitem *item)
             break;
     }
     char packitemstr[256];
-    strcpy(packitemstr,inv_name(obj,FALSE));
+    strcpy(packitemstr,inv_name(o,FALSE));
     fprintf(stderr,"packitem.(%s)\n",packitemstr);
 }
 
