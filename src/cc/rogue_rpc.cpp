@@ -539,7 +539,7 @@ int32_t rogue_findbaton(struct CCcontract_info *cp,uint256 &playertxid,char **ke
 void rogue_gameplayerinfo(struct CCcontract_info *cp,UniValue &obj,uint256 gametxid,CTransaction gametx,int32_t vout,int32_t maxplayers)
 {
     // identify if bailout or quit or timed out
-    uint256 batontxid,spenttxid,hashBlock,playertxid; CTransaction spenttx; int32_t numplayers,regslot,numkeys,batonvout,batonht,retval; int64_t batonvalue; std::vector<uint8_t> playerdata; char destaddr[64];
+    uint256 batontxid,spenttxid,gtxid,ptxid,hashBlock,playertxid; CTransaction spenttx,batontx; int32_t numplayers,regslot,numkeys,batonvout,batonht,retval; int64_t batonvalue; std::vector<uint8_t> playerdata; char destaddr[64];
     destaddr[0] = 0;
     if ( myIsutxo_spent(spenttxid,gametxid,vout) >= 0 )
     {
@@ -550,8 +550,14 @@ void rogue_gameplayerinfo(struct CCcontract_info *cp,UniValue &obj,uint256 gamet
     if ( (retval= rogue_findbaton(cp,playertxid,0,numkeys,regslot,playerdata,batontxid,batonvout,batonvalue,batonht,gametxid,gametx,maxplayers,destaddr,numplayers)) == 0 )
     {
         if ( CCgettxout(gametxid,maxplayers+vout,1) == 10000 )
-            obj.push_back(Pair("status","alive"));
-        else obj.push_back(Pair("status","finished"));
+        {
+            if ( GetTransaction(batontxid,batontx,hashBlock,false) != 0 && batontx.size() > 1 )
+            {
+                if ( rogue_registeropretdecode(gtxid,ptxid,batontx.vout[batontx.size()-1].scriptPubKey) == 'R' && gtxid == gametxid && ptxid == playertxid )
+                    obj.push_back(Pair("status","registered"));
+                else obj.push_back(Pair("status","alive"));
+            } else obj.push_back(Pair("status","error"));
+        } else obj.push_back(Pair("status","finished"));
         obj.push_back(Pair("baton",batontxid.ToString()));
         obj.push_back(Pair("batonaddr",destaddr));
         obj.push_back(Pair("batonvout",(int64_t)batonvout));
