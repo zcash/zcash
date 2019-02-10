@@ -362,12 +362,17 @@ int32_t rogue_isvalidgame(struct CCcontract_info *cp,int32_t &gameheight,CTransa
 
 UniValue rogue_playerobj(std::vector<uint8_t> playerdata,uint256 playertxid)
 {
-    int32_t i; struct rogue_player P; char packitemstr[512]; UniValue obj(UniValue::VOBJ),a(UniValue::VARR);
+    int32_t i; struct rogue_player P; char packitemstr[512],*datastr; UniValue obj(UniValue::VOBJ),a(UniValue::VARR);
     memset(&P,0,sizeof(P));
     if ( playerdata.size() > 0 )
     {
+        datastr = (char *)malloc(playerdata.size()*2+1);
         for (i=0; i<playerdata.size(); i++)
+        {
             ((uint8_t *)&P)[i] = playerdata[i];
+            sprintf(&datastr[i<<1],"%02x",playerdata[i]);
+        }
+        datastr[i<<1] = 0;
     }
     int32_t gold,hitpoints,strength,level,experience,packsize,dungeonlevel,pad;
     for (i=0; i<P.packsize&&i<MAXPACK; i++)
@@ -376,6 +381,8 @@ UniValue rogue_playerobj(std::vector<uint8_t> playerdata,uint256 playertxid)
         a.push_back(packitemstr);
     }
     obj.push_back(Pair("playertxid",playertxid.GetHex()));
+    obj.push_back(Pair("data",datastr));
+    free(datastr);
     obj.push_back(Pair("pack",a));
     obj.push_back(Pair("packsize",(int64_t)P.packsize));
     obj.push_back(Pair("hitpoints",(int64_t)P.hitpoints));
@@ -541,7 +548,7 @@ int32_t rogue_findbaton(struct CCcontract_info *cp,uint256 &playertxid,char **ke
     return(-1);
 }
 
-void rogue_gameplayerinfo(struct CCcontract_info *cp,UniValue &obj,uint256 gametxid,CTransaction gametx,int32_t vout,int32_t maxplayers)
+void rogue_gameplayerinfo(struct CCcontract_info *cp,UniValue &obj,uint256 gametxid,CTransaction gametx,int32_t vout,int32_t maxplayers,char *myrogueaddr)
 {
     // identify if bailout or quit or timed out
     uint256 batontxid,spenttxid,gtxid,ptxid,hashBlock,playertxid; CTransaction spenttx,batontx; int32_t numplayers,regslot,numkeys,batonvout,batonht,retval; int64_t batonvalue; std::vector<uint8_t> playerdata; char destaddr[64];
@@ -565,6 +572,7 @@ void rogue_gameplayerinfo(struct CCcontract_info *cp,UniValue &obj,uint256 gamet
         } else obj.push_back(Pair("status","finished"));
         obj.push_back(Pair("baton",batontxid.ToString()));
         obj.push_back(Pair("batonaddr",destaddr));
+        obj.push_back(Pair("ismine",strcmp(myrogueaddr,destaddr)==0));
         obj.push_back(Pair("batonvout",(int64_t)batonvout));
         obj.push_back(Pair("batonvalue",ValueFromAmount(batonvalue)));
         obj.push_back(Pair("batonht",(int64_t)batonht));
@@ -885,7 +893,7 @@ UniValue rogue_gameinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                     if ( CCgettxout(txid,i+1,1) < 0 )
                     {
                         UniValue obj(UniValue::VOBJ);
-                        rogue_gameplayerinfo(cp,obj,txid,tx,i+1,maxplayers);
+                        rogue_gameplayerinfo(cp,obj,txid,tx,i+1,maxplayers,myrogueaddr);
                         a.push_back(obj);
                     }
                 }
