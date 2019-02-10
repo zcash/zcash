@@ -822,7 +822,8 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
                     mtx.vin.push_back(CTxIn(gametxid,1+maxplayers+regslot,CScript()));
                     if ( funcid == 'H' )
                         mtx.vin.push_back(CTxIn(gametxid,0,CScript()));
-                    mtx.vout.push_back(MakeCC1vout(cp->evalcode,1,mypk));
+                    //mtx.vout.push_back(MakeCC1vout(cp->evalcode,1,mypk));
+                    mtx.vout.push_back(MakeTokensCC1vout(cp->evalcode, 1, mypk));
                     if ( num > 0 )
                     {
                         newdata.resize(num);
@@ -851,8 +852,15 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
                     mtx.vout.push_back(MakeCC1vout(cp->evalcode,CCchange + (batonvalue-2*txfee),roguepk));
                     Myprivkey(mypriv);
                     CCaddr1of2set(cp,roguepk,mypk,mypriv,myrogueaddr);
-                    rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,rogue_highlanderopret(funcid,gametxid,mypk,newdata));
-                    return(rogue_rawtxresult(result,rawtx,0));
+                    //rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,rogue_highlanderopret(funcid,gametxid,mypk,newdata));
+
+                    CScript opret = rogue_highlanderopret(funcid, gametxid, mypk, newdata);
+
+                    std::vector<uint8_t> vopretNonfungible;
+                    GetOpReturnData(opret, vopretNonfungible);
+                    rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, EncodeTokenCreateOpRet('c', Mypubkey(), std::string("???"), std::string("??????"), vopretNonfungible));
+
+                    return(rogue_rawtxresult(result,rawtx,1));
                 }
                 result.push_back(Pair("result","success"));
             }
