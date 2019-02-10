@@ -1357,8 +1357,13 @@ void rogue_packitemstr(char *packitemstr,struct rogue_packitem *item)
     static int32_t didinit;
     if ( didinit == 0 )
     {
-        struct rogue_state R;
+        struct rogue_state R; char keystrokes[3];
         memset(&R,0,sizeof(R));
+        keystrokes[0] = 'Q';
+        keystrokes[1] = 'y';
+        keystrokes[2] = 0;
+        R.keystrokes = keystrokes;
+        R.numkeys = 2;
         rogueiterate(&R);
         didinit = 1;
     }
