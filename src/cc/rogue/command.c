@@ -117,6 +117,8 @@ command(struct rogue_state *rs)
                  * turn off count for commands which don't make sense
                  * to repeat
                  */
+                if ( rs->guiflag == 0 && rs->replaydone != 0 )
+                    ch = 'Q';
 		switch (ch)
 		{
 		    case CTRL('B'): case CTRL('H'): case CTRL('J'):

@@ -571,27 +571,37 @@ quit(int sig)
 {
     struct rogue_state *rs = &globalR;
     int oy, ox;
-    
-    NOOP(sig);
-    
-    /*
-     * Reset the signal in case we got here via an interrupt
-     */
-    if (!q_comm)
-        mpos = 0;
-    getyx(curscr, oy, ox);
-    msg(rs,"really quit?");
+    fprintf(stder,"inside quit(%d)\n",sig);
+    if ( rs->guiflag != 0 )
+    {
+        NOOP(sig);
+        
+        /*
+         * Reset the signal in case we got here via an interrupt
+         */
+        if (!q_comm)
+            mpos = 0;
+        getyx(curscr, oy, ox);
+        msg(rs,"really quit?");
+    }
     if (readchar(rs) == 'y')
     {
-        signal(SIGINT, leave);
-        clear();
-        mvprintw(LINES - 2, 0, "You quit with %d gold pieces", purse);
-        move(LINES - 1, 0);
-        if ( rs->sleeptime != 0 )
-            refresh();
-        score(purse, 1, 0);
-        flushkeystrokes(rs);
-        my_exit(0);
+        if ( rs->guiflag != 0 )
+        {
+            signal(SIGINT, leave);
+            clear();
+            mvprintw(LINES - 2, 0, "You quit with %d gold pieces", purse);
+            move(LINES - 1, 0);
+            if ( rs->sleeptime != 0 )
+                refresh();
+            score(purse, 1, 0);
+            flushkeystrokes(rs);
+            my_exit(0);
+        }
+        else
+        {
+            score(purse, 1, 0);
+        }
     }
     else
     {
