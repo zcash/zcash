@@ -1356,7 +1356,7 @@ void rogue_packitemstr(char *packitemstr,struct rogue_packitem *item)
 {
     THING *obj = new_item();
     rogue_restoreobject(obj,item);
-    strcpy(packitemstr,inv_name(o,FALSE));
+    strcpy(packitemstr,inv_name(obj,FALSE));
     free(obj);
 }
 
