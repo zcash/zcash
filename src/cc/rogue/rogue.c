@@ -144,6 +144,7 @@ int32_t flushkeystrokes(struct rogue_state *rs)
 #else
 
 uint8_t *OS_fileptr(long *allocsizep,char *fname);
+#define is_cJSON_True(json) ((json) != 0 && ((json)->type & 0xff) == cJSON_True)
 
 void rogue_setplayerdata(struct rogue_state *rs,char *gametxidstr)
 {
@@ -167,7 +168,7 @@ void rogue_setplayerdata(struct rogue_state *rs,char *gametxidstr)
                         fprintf(stderr,"found ismine:true\n");
                         if ( (item= jobj(item,"player")) != 0 && (datastr= jstr(item,"data")) != 0 )
                         {
-                            decode_hex(&rs->P,(int32_t)strlen(datastr)/2,datastr);
+                            decode_hex((uint8_t *)&rs->P,(int32_t)strlen(datastr)/2,datastr);
                             fprintf(stderr,"set datastr[%d]\n",(int32_t)strlen(datastr));
                             rs->restoring = 1;
                         }
