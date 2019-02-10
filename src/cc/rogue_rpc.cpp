@@ -711,6 +711,7 @@ UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                 CScript opretRegister = rogue_registeropret(gametxid, playertxid);
                 if ( playertxid != zeroid )
                 {
+                    fprintf(stderr,"playertxid.%s\n",playertxid.GetHex().c_str());
                     voutPubkeysEmpty.push_back(burnpk);
                     if ( GetTransaction(playertxid,playertx,hashBlock,false) != 0 )
                     {
@@ -727,7 +728,7 @@ UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                 if ( didtx == 0 )
                     rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, opretRegister);
 
-                return(rogue_rawtxresult(result,rawtx,1));
+                return(rogue_rawtxresult(result,rawtx,0));
             } else return(cclib_error(result,"invalid gametxid"));
         } else return(cclib_error(result,"no gametxid"));
     } else return(cclib_error(result,"couldnt reparse params"));
