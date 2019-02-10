@@ -201,13 +201,21 @@ uint8_t rogue_keystrokesopretdecode(uint256 &gametxid,uint256 &batontxid,CPubKey
     return(0);
 }
 
-uint8_t rogue_registeropretdecode(uint256 &gametxid,uint256 &playertxid,CScript scriptPubKey)
+uint8_t rogue_registeropretdecode(uint256 &gametxid,uint256 &tokenid,uint256 &playertxid,CScript scriptPubKey)
 {
     std::vector<uint8_t> vopret; uint8_t e,f;
     GetOpReturnData(scriptPubKey,vopret);
+    tokenid = zeroid;
     if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> gametxid; ss >> playertxid) != 0 && e == EVAL_ROGUE && f == 'R' )
     {
         return(f);
+    }
+    else if ( (f= DecodeTokenOpRet(scriptPubKey,e,tokenid,voutPubkeys,vopret,vopret2)) == 'c' || f == 't' )
+    {
+        if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> gametxid; ss >> playertxid) != 0 && e == EVAL_ROGUE && f == 'R') )
+        {
+            return(f);
+        }
     }
     return(0);
 }
@@ -438,7 +446,7 @@ int32_t rogue_playerdataspend(CMutableTransaction &mtx,uint256 playertxid,uint25
 
 int32_t rogue_findbaton(struct CCcontract_info *cp,uint256 &playertxid,char **keystrokesp,int32_t &numkeys,int32_t &regslot,std::vector<uint8_t> &playerdata,uint256 &batontxid,int32_t &batonvout,int64_t &batonvalue,int32_t &batonht,uint256 gametxid,CTransaction gametx,int32_t maxplayers,char *destaddr,int32_t &numplayers)
 {
-    int32_t i,numvouts,spentvini,matches = 0; CPubKey pk; uint256 spenttxid,hashBlock,txid,origplayergame; CTransaction spenttx,matchtx,batontx; std::vector<uint8_t> checkdata; CBlockIndex *pindex; char ccaddr[64],*keystrokes=0;
+    int32_t i,numvouts,spentvini,matches = 0; CPubKey pk; uint256 spenttxid,tokenid,hashBlock,txid,origplayergame; CTransaction spenttx,matchtx,batontx; std::vector<uint8_t> checkdata; CBlockIndex *pindex; char ccaddr[64],*keystrokes=0;
     numkeys = numplayers = 0;
     playertxid = zeroid;
     for (i=0; i<maxplayers; i++)
@@ -464,8 +472,10 @@ int32_t rogue_findbaton(struct CCcontract_info *cp,uint256 &playertxid,char **ke
         {
             numvouts = matchtx.vout.size();
             //fprintf(stderr,"matches.%d numvouts.%d\n",matches,numvouts);
-            if ( rogue_registeropretdecode(txid,playertxid,matchtx.vout[numvouts-1].scriptPubKey) == 'R' && txid == gametxid )
+            if ( rogue_registeropretdecode(txid,tokenid,playertxid,matchtx.vout[numvouts-1].scriptPubKey) == 'R' && txid == gametxid )
             {
+                if ( tokenid != zeroid )
+                    playertxid = tokenid;
                 if ( playertxid == zeroid || rogue_playerdata(cp,origplayergame,pk,playerdata,playertxid) == 0 )
                 {
                     txid = matchtx.GetHash();
@@ -527,7 +537,7 @@ int32_t rogue_findbaton(struct CCcontract_info *cp,uint256 &playertxid,char **ke
 void rogue_gameplayerinfo(struct CCcontract_info *cp,UniValue &obj,uint256 gametxid,CTransaction gametx,int32_t vout,int32_t maxplayers,char *myrogueaddr)
 {
     // identify if bailout or quit or timed out
-    uint256 batontxid,spenttxid,gtxid,ptxid,hashBlock,playertxid; CTransaction spenttx,batontx; int32_t numplayers,regslot,numkeys,batonvout,batonht,retval; int64_t batonvalue; std::vector<uint8_t> playerdata; char destaddr[64];
+    uint256 batontxid,spenttxid,gtxid,ptxid,tokenid,hashBlock,playertxid; CTransaction spenttx,batontx; int32_t numplayers,regslot,numkeys,batonvout,batonht,retval; int64_t batonvalue; std::vector<uint8_t> playerdata; char destaddr[64];
     destaddr[0] = 0;
     if ( myIsutxo_spent(spenttxid,gametxid,vout) >= 0 )
     {
@@ -541,12 +551,13 @@ void rogue_gameplayerinfo(struct CCcontract_info *cp,UniValue &obj,uint256 gamet
         {
             if ( GetTransaction(batontxid,batontx,hashBlock,false) != 0 && batontx.vout.size() > 1 )
             {
-                if ( rogue_registeropretdecode(gtxid,ptxid,batontx.vout[batontx.vout.size()-1].scriptPubKey) == 'R' && gtxid == gametxid && ptxid == playertxid )
+                if ( rogue_registeropretdecode(gtxid,tokenid,ptxid,batontx.vout[batontx.vout.size()-1].scriptPubKey) == 'R' && gtxid == gametxid && ptxid == playertxid )
                     obj.push_back(Pair("status","registered"));
                 else obj.push_back(Pair("status","alive"));
             } else obj.push_back(Pair("status","error"));
         } else obj.push_back(Pair("status","finished"));
         obj.push_back(Pair("baton",batontxid.ToString()));
+        obj.push_back(Pair("tokenid",tokenid.ToString()));
         obj.push_back(Pair("batonaddr",destaddr));
         obj.push_back(Pair("ismine",strcmp(myrogueaddr,destaddr)==0));
         obj.push_back(Pair("batonvout",(int64_t)batonvout));
