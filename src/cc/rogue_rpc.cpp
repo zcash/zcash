@@ -872,8 +872,8 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
                     return(rogue_rawtxresult(result,rawtx,0));
                 }
                 result.push_back(Pair("result","success"));
-            } else printf(stderr,"illegal game\n");
-        } else printf(stderr,"n.%d\n",n);
+            } else fprintf(stderr,"illegal game\n");
+        } else fprintf(stderr,"n.%d\n",n);
     }
     return(result);
 }
