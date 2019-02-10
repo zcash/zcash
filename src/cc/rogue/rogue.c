@@ -99,11 +99,7 @@ void rogueiterate(struct rogue_state *rs)
     fuse(swander, 0, WANDERTIME, AFTER);
     start_daemon(stomach, 0, AFTER);
     if ( rs->restoring != 0 )
-    {
-        fprintf(stderr,"restore player\n");
         restore_player(rs);
-        sleep(3);
-    }
     playit(rs);
 }
 
@@ -169,14 +165,11 @@ void rogue_setplayerdata(struct rogue_state *rs,char *gametxidstr)
                     item = jitem(array,i);
                     if ( is_cJSON_True(jobj(item,"ismine")) != 0 )
                     {
-                        fprintf(stderr,"found ismine:true\n");
-                        sleep(2);
                         if ( (item= jobj(item,"player")) != 0 && (datastr= jstr(item,"data")) != 0 )
                         {
                             decode_hex((uint8_t *)&rs->P,(int32_t)strlen(datastr)/2,datastr);
-                            fprintf(stderr,"set datastr[%d]\n",(int32_t)strlen(datastr));
+                            //fprintf(stderr,"set datastr[%d]\n",(int32_t)strlen(datastr));
                             rs->restoring = 1;
-                            sleep(5);
                         }
                     }
                 }
