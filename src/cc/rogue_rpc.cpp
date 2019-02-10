@@ -948,8 +948,8 @@ UniValue rogue_players(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     roguepk = GetUnspendable(cp,0);
     mypk = pubkey2pk(Mypubkey());
-    GetCCaddress(cp,coinaddr,mypk);
-    SetCCunspents(unspentOutputs,"RLxgD7gu5XEbzPkFWVLDV38CrfXwqfz73z");//coinaddr);
+    GetTokensCCaddress(cp,coinaddr,mypk);
+    SetCCunspents(unspentOutputs,coinaddr);
     rogue_univalue(result,"players",-1,-1);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
