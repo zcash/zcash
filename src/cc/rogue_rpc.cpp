@@ -134,7 +134,7 @@
 // ./rogue <seed> gui -> creates keystroke files
 // cclib register 17 \"[%220a4ecb345ca3090f4acad63f889c3668e46e245cb00ca4b8b57c4677b1ee95b2%22,%22eef1d0091a88d85bdac1ede9d31db8504bc466a6695fdf259dac623fce09e0dd%22]\"
 // cclib keystrokes 17 \"[%220a4ecb345ca3090f4acad63f889c3668e46e245cb00ca4b8b57c4677b1ee95b2%22,%22deadbeef%22]\"
-// cclib bailout 17 \"[%220a4ecb345ca3090f4acad63f889c3668e46e245cb00ca4b8b57c4677b1ee95b2%22]\"
+// cclib bailout 17 \"[%22d8bc6445bfec15ea761c8e91e26d162f47856dba1fc8c8ec508cac83b95d7433%22]\"
 // eef1d0091a88d85bdac1ede9d31db8504bc466a6695fdf259dac623fce09e0dd
 /*
  2409 gold.209 hp.17 strength.16 level.3 exp.22 3
@@ -921,6 +921,7 @@ UniValue rogue_players(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     roguepk = GetUnspendable(cp,0);
     GetCCaddress(cp,coinaddr,mypk);
+    fprintf(stderr,"search (%s)\n",coinaddr);
     SetCCunspents(unspentOutputs,coinaddr);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
