@@ -282,9 +282,6 @@ namespace {
         bool fCurrentlyConnected;
         //! Accumulated misbehaviour score for this peer.
         int nMisbehavior;
-        // count blocks seen.
-        //int8_t nBlocksinARow;
-        //int8_t nBlocksinARow2;
         //! Whether this peer should be disconnected and banned (unless whitelisted).
         bool fShouldBan;
         //! String name of this peer (debugging/logging purposes).
@@ -5472,20 +5469,6 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
     bool checked; uint256 hash; int32_t futureblock=0;
     auto verifier = libzcash::ProofVerifier::Disabled();
     hash = pblock->GetHash();
-    /*pfrom->nBlocksinARow += 1;
-    if ( pfrom->nBlocksinARow >= 6 )
-    {
-        pfrom->nBlocksinARow2 += 1;
-        if ( pfrom->nBlocksinARow2 > 3 )
-        {
-            pfrom->nBlocksinARow = 0;
-            pfrom->nBlocksinARow2 = 0;
-        }
-        else 
-        {
-            return(false);
-        }
-    }*/
     //fprintf(stderr,"ProcessBlock %d\n",(int32_t)chainActive.LastTip()->GetHeight());
     {
         LOCK(cs_main);
@@ -5493,6 +5476,25 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
             komodo_currentheight_set(chainActive.LastTip()->GetHeight());
         checked = CheckBlock(&futureblock,height!=0?height:komodo_block2height(pblock),0,*pblock, state, verifier,0);
         bool fRequested = MarkBlockAsReceived(hash);
+        if ( pfrom && !fRequested && vNodes.size() > 1 )
+        {
+            pfrom->nBlocksinARow += 1;
+            if ( pfrom->nBlocksinARow >= 10 )
+            {
+                pfrom->nBlocksinARow2 += 1;
+                if ( pfrom->nBlocksinARow2 > 5 )
+                {
+                    pfrom->nBlocksinARow = 0;
+                    pfrom->nBlocksinARow2 = 0;
+                    //fprintf(stderr, "reset node.%i\n",(int32_t)pfrom->GetId());
+                }
+                else 
+                {
+                    //fprintf(stderr, "Requesting new peer node.%i blocksinrow.%i blocsinrow2.%i\n",(int32_t)pfrom->GetId(),pfrom->nBlocksinARow,pfrom->nBlocksinARow2);
+                    return(false);
+                }
+            }
+        }
         fRequested |= fForceProcessing;
         if ( checked != 0 && komodo_checkPOW(0,pblock,height) < 0 ) //from_miner && ASSETCHAINS_STAKED == 0
         {
