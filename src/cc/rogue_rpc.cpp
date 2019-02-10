@@ -386,15 +386,18 @@ UniValue rogue_playerobj(std::vector<uint8_t> playerdata,uint256 playertxid)
     return(obj);
 }
 
-int32_t rogue_iterateplayer(uint256 firsttxid,int32_t firstvout,uint256 lasttxid)     // retrace playertxid vins to reach highlander <- this verifies player is valid and rogue_playerdataspend makes sure it can only be used once
+int32_t rogue_iterateplayer(uint256 &registertxid,uint256 firsttxid,int32_t firstvout,uint256 lasttxid)     // retrace playertxid vins to reach highlander <- this verifies player is valid and rogue_playerdataspend makes sure it can only be used once
 {
     uint256 spenttxid,txid = firsttxid; int32_t spentvini,vout = firstvout;
+    registertxid = zeroid;
     if ( vout < 0 )
         return(-1);
     while ( (spentvini= myIsutxo_spent(spenttxid,txid,vout)) == 0 )
     {
         txid = spenttxid;
         vout = spentvini;
+        if ( registertxid == zeroid )
+            registertxid = txid;
     }
     if ( txid == lasttxid )
         return(0);
@@ -414,7 +417,7 @@ int32_t rogue_iterateplayer(uint256 firsttxid,int32_t firstvout,uint256 lasttxid
 
 int32_t rogue_playerdata(struct CCcontract_info *cp,uint256 &origplayergame,CPubKey &pk,std::vector<uint8_t> &playerdata,uint256 playertxid)
 {
-    uint256 origplayertxid,hashBlock,gametxid; CTransaction gametx,playertx,highlandertx; std::vector<uint8_t> vopret; uint8_t *script,e,f; int32_t i,gameheight,numvouts,maxplayers; int64_t buyin;
+    uint256 origplayertxid,hashBlock,gametxid,registertxid; CTransaction gametx,playertx,highlandertx; std::vector<uint8_t> vopret; uint8_t *script,e,f; int32_t i,gameheight,numvouts,maxplayers; int64_t buyin;
     if ( GetTransaction(playertxid,playertx,hashBlock,false) != 0 && (numvouts= playertx.vout.size()) > 0 )
     {
         GetOpReturnData(playertx.vout[numvouts-1].scriptPubKey,vopret);
@@ -425,10 +428,13 @@ int32_t rogue_playerdata(struct CCcontract_info *cp,uint256 &origplayergame,CPub
             if ( rogue_isvalidgame(cp,gameheight,gametx,buyin,maxplayers,gametxid) == 0 )
             {
                 fprintf(stderr,"playertxid.%s got vin.%s/v%d gametxid.%s iterate.%d\n",playertxid.ToString().c_str(),playertx.vin[1].prevout.hash.ToString().c_str(),(int32_t)playertx.vin[1].prevout.n-maxplayers,gametxid.ToString().c_str(),rogue_iterateplayer(gametxid,playertx.vin[1].prevout.n-maxplayers,playertxid));
-                if ( playertx.vin[1].prevout.hash == gametxid && rogue_iterateplayer(gametxid,playertx.vin[1].prevout.n-maxplayers,playertxid) == 0 )
+                if ( playertx.vin[1].prevout.hash == gametxid && rogue_iterateplayer(registertxid,gametxid,playertx.vin[1].prevout.n-maxplayers,playertxid) == 0 )
                 {
                     if ( (f= rogue_highlanderopretdecode(origplayergame,pk,playerdata,playertx.vout[numvouts-1].scriptPubKey)) == 'H' || f == 'Q' || f == 'S' )
+                    {
+                        // if registertxid has vin from pk, it can be used
                         return(0);
+                    }
                     else fprintf(stderr,"f is %c/%d\n",f,f);
                 } else fprintf(stderr,"hash mismatch or illegal gametxid\n");
             }
