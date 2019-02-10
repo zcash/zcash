@@ -691,7 +691,7 @@ UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                 mtx.vout.push_back(MakeCC1of2vout(cp->evalcode,buyin + inputsum - txfee,roguepk,mypk));
                 GetCCaddress1of2(cp,destaddr,roguepk,roguepk);
                 CCaddr1of2set(cp,roguepk,roguepk,cp->CCpriv,destaddr);
-                mtx.vout.push_back(MakeTokensCC1vout(cp->evalcode, 1, CPubKey() /*nullpk*/));
+                mtx.vout.push_back(MakeTokensCC1vout(cp->evalcode, 1, mypk));//CPubKey() /*nullpk*/));
 
                 std::vector<uint8_t> vopretFinish, vopret2; uint8_t e, f; uint256 tokenid; std::vector<CPubKey> voutPubkeys, voutPubkeysEmpty; int32_t didtx = 0;
                 CScript opretRegister = rogue_registeropret(gametxid, playertxid);
