@@ -128,12 +128,12 @@
 
 // cclib newgame 17 \"[3,10]\"
 // cclib pending 17
-// cclib gameinfo 17 \"[%2250ad0155ea102f94949d51cc911e1d41ac03d24caf1a79cf5e0a4d9cc05ed836%22]\"
-// cclib register 17 \"[%2250ad0155ea102f94949d51cc911e1d41ac03d24caf1a79cf5e0a4d9cc05ed836%22]\"
+// cclib gameinfo 17 \"[%22f60167a973fc4a5ff08b378bff78bfbfa2f7fae04d603e8deb9acdb1551e0d10%22]\"
+// cclib register 17 \"[%22f60167a973fc4a5ff08b378bff78bfbfa2f7fae04d603e8deb9acdb1551e0d10%22]\"
 // ./rogue <seed> gui -> creates keystroke files
-// cclib register 17 \"[%2250ad0155ea102f94949d51cc911e1d41ac03d24caf1a79cf5e0a4d9cc05ed836%22,%2233d52f92980ceaa81556093171ee224e085fd384690d83460d6fbbad96fe0e7e%22]\"
+// cclib register 17 \"[%22f60167a973fc4a5ff08b378bff78bfbfa2f7fae04d603e8deb9acdb1551e0d10%22,%2233d52f92980ceaa81556093171ee224e085fd384690d83460d6fbbad96fe0e7e%22]\"
 // cclib keystrokes 17 \"[%220a4ecb345ca3090f4acad63f889c3668e46e245cb00ca4b8b57c4677b1ee95b2%22,%22deadbeef%22]\"
-// cclib bailout 17 \"[%2250ad0155ea102f94949d51cc911e1d41ac03d24caf1a79cf5e0a4d9cc05ed836%22]\"
+// cclib bailout 17 \"[%22f60167a973fc4a5ff08b378bff78bfbfa2f7fae04d603e8deb9acdb1551e0d10%22]\"
 // eef1d0091a88d85bdac1ede9d31db8504bc466a6695fdf259dac623fce09e0dd
 /*
  2409 gold.209 hp.17 strength.16 level.3 exp.22 3
@@ -952,7 +952,7 @@ UniValue rogue_players(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     roguepk = GetUnspendable(cp,0);
     mypk = pubkey2pk(Mypubkey());
     GetCCaddress(cp,coinaddr,mypk);
-    SetCCunspents(unspentOutputs,coinaddr);
+    SetCCunspents(unspentOutputs,"RLxgD7gu5XEbzPkFWVLDV38CrfXwqfz73z");//coinaddr);
     rogue_univalue(result,"players",-1,-1);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
