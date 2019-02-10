@@ -702,7 +702,8 @@ UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                         if ( DecodeTokenOpRet(playertx.vout.back().scriptPubKey, e, tokenid, voutPubkeys, vopretFinish, vopret2) != 0)
                         {  // if token in the opret
                             didtx = 1;
-                            tokenid = playertxid;
+                            if ( tokenid == zeroid )
+                                tokenid = playertxid;
                             rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee,
                                                  EncodeTokenOpRet(tokenid, voutPubkeysEmpty /*=never spent*/, vopretFinish /*=non-fungible*/, opretRegister));
                         }
