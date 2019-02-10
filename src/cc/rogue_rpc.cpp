@@ -926,8 +926,8 @@ UniValue rogue_players(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             continue;
         if ( rogue_playerdata(cp,gametxid,pk,playerdata,txid) == 0 && pk == mypk )
         {
-            a.push_back(Pair("player",rogue_playerobj(playerdata)));
-            result.push_back(Pair("playerdata",rogue_playerobj(playerdata)));
+            a.push_back(rogue_playerobj(playerdata));
+            //result.push_back(Pair("playerdata",rogue_playerobj(playerdata)));
         }
     }
     result.push_back(Pair("playerdata",a));
