@@ -218,7 +218,18 @@ UniValue generate(const UniValue& params, bool fHelp)
 #endif
     }
     if (!Params().MineBlocksOnDemand())
-        throw JSONRPCError(RPC_METHOD_NOT_FOUND, "This method can only be used on regtest");
+    {
+        if ( params[0].get_int() == 1 )
+        {
+            mapArgs["disablemining"] = "1";
+            throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Mining Disabled");
+        }
+        else 
+        {
+            mapArgs["disablemining"] = "0";
+            throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Mining Enabled");
+        }
+    }
 
     int nHeightStart = 0;
     int nHeightEnd = 0;
@@ -576,6 +587,9 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_METHOD_NOT_FOUND, "komodod compiled without wallet and -mineraddress not set");
 #endif
     }
+    
+    if ( GetArg("disablemining",false) )
+        throw JSONRPCError(RPC_TYPE_ERROR, "Mining is Disabled");
 
     UniValue lpval = NullUniValue;
     // TODO: Re-enable coinbasevalue once a specification has been written

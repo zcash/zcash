@@ -119,7 +119,7 @@ UniValue getiguanajson(const UniValue& params, bool fHelp)
         notaries.push_back(notary);
     }
 
-    // get the min sigs .. this always rounds UP so mine sigs in iguana is +1 min sigs in komodod, due to some rounding error.
+    // get the min sigs .. this always rounds UP so min sigs in iguana is +1 min sigs in komodod, due to some rounding error.
     int minsigs;
     if ( num_notaries_STAKED[era]/5 > overrideMinSigs )
         minsigs = (num_notaries_STAKED[era] / 5) + 1;
