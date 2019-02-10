@@ -295,7 +295,7 @@ uint8_t DecodeAssetTokenOpRet(const CScript &scriptPubKey, uint8_t &assetsEvalCo
 
 	// First - decode token opret:
 	funcId = DecodeTokenOpRet(scriptPubKey, dummyEvalCode, tokenid, voutPubkeysDummy, vopret1, vopret2);
-    std::cerr << "DecodeAssetTokenOpRet() from DecodeTokenOpRet returned funcId=" << (int)funcId << std::endl;
+    LOGSTREAM("ccassets", CCLOG_DEBUG2, stream << "DecodeAssetTokenOpRet() from DecodeTokenOpRet returned funcId=" << (int)funcId << std::endl);
 
     if (!vopret2.empty()) {
         // if there are both oprets then order is like this:
@@ -319,7 +319,7 @@ uint8_t DecodeAssetTokenOpRet(const CScript &scriptPubKey, uint8_t &assetsEvalCo
 	//bool result = E_UNMARSHAL(vopret, ss >> evalCodeInOpret; ss >> funcId; ss >> tokenid; ss >> assetFuncId; isEof = ss.eof());
 
 	if (funcId == 0 || vopretAssets.size() < 2) {
-		std::cerr << "DecodeAssetTokenOpRet() incorrect opret or no asset's payload" << " funcId=" << (int)funcId << " vopretAssets.size()=" << vopretAssets.size() << std::endl;
+        LOGSTREAM("ccassets", CCLOG_INFO, stream << "DecodeAssetTokenOpRet() incorrect opret or no asset's payload" << " funcId=" << (int)funcId << " vopretAssets.size()=" << vopretAssets.size() << std::endl);
 		return (uint8_t)0;
 	}
 
@@ -334,7 +334,7 @@ uint8_t DecodeAssetTokenOpRet(const CScript &scriptPubKey, uint8_t &assetsEvalCo
         assetsEvalCode = vopretAssets.begin()[0];
         assetsFuncId = vopretAssets.begin()[1];
 
-        //std::cerr << "DecodeAssetTokenOpRet() evalCodeInOpret=" << (int)evalCodeInOpret <<  " funcId=" << (char)(funcId ? funcId : ' ') << " assetFuncId=" << (char)(assetFuncId ? assetFuncId : ' ') << std::endl;
+        LOGSTREAM("ccassets", CCLOG_DEBUG2, stream << "DecodeAssetTokenOpRet() assetsEvalCode=" << (int)assetsEvalCode <<  " funcId=" << (char)(funcId ? funcId : ' ') << " assetsFuncId=" << (char)(assetsFuncId ? assetsFuncId : ' ') << std::endl);
 
         if (assetsEvalCode == EVAL_ASSETS)
         {
@@ -363,14 +363,13 @@ uint8_t DecodeAssetTokenOpRet(const CScript &scriptPubKey, uint8_t &assetsEvalCo
                 }
                 break;
             default:
-                fprintf(stderr, "DecodeAssetTokenOpRet() illegal assetFuncId.%02x\n", assetsFuncId);
-                //funcId = 0;
+                LOGSTREAM("ccassets", CCLOG_INFO, stream << "DecodeAssetTokenOpRet() illegal assetFuncId=" << (int)funcId << std::endl);
                 break;
             }
         }
     }
 
-    std::cerr << "DecodeAssetTokenOpRet() no asset's payload or incorrect assets evalcode" << " funcId=" << (int)funcId << " vopretAssets.size()=" << vopretAssets.size() << " assetsEvalCode=" << assetsEvalCode << " assetsFuncId=" << assetsFuncId << std::endl;
+    LOGSTREAM("ccassets", CCLOG_INFO, stream << "DecodeAssetTokenOpRet() no asset's payload or incorrect assets evalcode" << " funcId=" << (int)funcId << " vopretAssets.size()=" << vopretAssets.size() << " assetsEvalCode=" << assetsEvalCode << " assetsFuncId=" << assetsFuncId << std::endl);
     return (uint8_t)0;
 }
 

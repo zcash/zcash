@@ -73,7 +73,7 @@ CScript EncodeTokenOpRet(uint256 tokenid, std::vector<CPubKey> voutPubkeys, std:
 	if (voutPubkeys.size() >= 0 && voutPubkeys.size() <= 2)
 		ccType = voutPubkeys.size();
     else {
-        LOGSTREAM("tokens", CCLOG_INFO, stream << "EncodeTokenOpRet voutPubkeys.size()=" << voutPubkeys.size() << " not supported" << std::endl);
+        LOGSTREAM("cctokens", CCLOG_INFO, stream << "EncodeTokenOpRet voutPubkeys.size()=" << voutPubkeys.size() << " not supported" << std::endl);
     }
 
 	std::vector<uint8_t> vpayload;
@@ -173,7 +173,7 @@ uint8_t DecodeTokenOpRet(const CScript scriptPubKey, uint8_t &evalCodeTokens, ui
 			return (uint8_t)0;
 
         funcId = script[1];
-        LOGSTREAM("tokens", CCLOG_DEBUG1, stream << "DecodeTokenOpRet decoded funcId=" << (char)(funcId?funcId:' '));
+        LOGSTREAM("cctokens", CCLOG_DEBUG1, stream << "DecodeTokenOpRet decoded funcId=" << (char)(funcId?funcId:' '));
 
         switch( funcId )
         {
@@ -195,7 +195,7 @@ uint8_t DecodeTokenOpRet(const CScript scriptPubKey, uint8_t &evalCodeTokens, ui
 				{
 
 					if (!(ccType >= 0 && ccType <= 2)) { //incorrect ccType
-                        LOGSTREAM("tokens", CCLOG_INFO, stream << "DecodeTokenOpRet() incorrect ccType=" << (int)ccType << " tokenid=" << revuint256(tokenid).GetHex() << std::endl);
+                        LOGSTREAM("cctokens", CCLOG_INFO, stream << "DecodeTokenOpRet() incorrect ccType=" << (int)ccType << " tokenid=" << revuint256(tokenid).GetHex() << std::endl);
 						return (uint8_t)0;
 					}
 
@@ -209,16 +209,16 @@ uint8_t DecodeTokenOpRet(const CScript scriptPubKey, uint8_t &evalCodeTokens, ui
 					tokenid = revuint256(tokenid);
 					return(funcId);
 				}
-                LOGSTREAM("tokens", CCLOG_INFO, stream << "DecodeTokenOpRet() bad opret format, isEof=" << isEof << " ccType=" << ccType << " tokenid=" << revuint256(tokenid).GetHex() << std::endl);
+                LOGSTREAM("cctokens", CCLOG_INFO, stream << "DecodeTokenOpRet() bad opret format, isEof=" << isEof << " ccType=" << ccType << " tokenid=" << revuint256(tokenid).GetHex() << std::endl);
 				return (uint8_t)0;
 
             default:
-                LOGSTREAM("tokens", CCLOG_INFO, stream << "DecodeTokenOpRet() illegal funcid=" << (int)funcId << std::endl);
+                LOGSTREAM("cctokens", CCLOG_INFO, stream << "DecodeTokenOpRet() illegal funcid=" << (int)funcId << std::endl);
 				return (uint8_t)0;
         }
     }
 	else	{
-        LOGSTREAM("tokens", CCLOG_INFO, stream << "DecodeTokenOpRet() empty opret, could not parse" << std::endl);
+        LOGSTREAM("cctokens", CCLOG_INFO, stream << "DecodeTokenOpRet() empty opret, could not parse" << std::endl);
 	}
 	return (uint8_t)0;
 }
@@ -245,7 +245,7 @@ bool TokensValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction &
 	if ((funcid = DecodeTokenOpRet(tx.vout[numvouts - 1].scriptPubKey, evalCodeInOpret, tokenid, voutTokenPubkeys, vopret1, vopret2)) == 0)
 		return eval->Invalid("TokenValidate: invalid opreturn payload");
 
-    LOGSTREAM("tokens", CCLOG_INFO, stream << "TokensValidate funcId=" << (char)(funcid?funcid:' ') << " evalcode=" << cp->evalcode);
+    LOGSTREAM("cctokens", CCLOG_INFO, stream << "TokensValidate funcId=" << (char)(funcid?funcid:' ') << " evalcode=" << cp->evalcode << std::endl);
 
 	if (eval->GetTxUnconfirmed(tokenid, createTx, hashBlock) == 0)
 		return eval->Invalid("cant find token create txid");
@@ -293,11 +293,11 @@ bool TokensValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction &
 		if (inputs == 0)
 			return eval->Invalid("no token inputs for transfer");
 
-        LOGSTREAM("tokens", CCLOG_INFO, stream << "token transfer preliminarily validated inputs=" << inputs << "->outputs=" << outputs << " preventCCvins=" << preventCCvins<< " preventCCvouts=" << preventCCvouts << std::endl);
+        LOGSTREAM("cctokens", CCLOG_INFO, stream << "token transfer preliminarily validated inputs=" << inputs << "->outputs=" << outputs << " preventCCvins=" << preventCCvins<< " preventCCvouts=" << preventCCvouts << std::endl);
 		break;  // breaking to other contract validation...
 
 	default:
-        LOGSTREAM("tokens", CCLOG_INFO, stream << "illegal tokens funcid=" << (char)(funcid?funcid:' ') << std::endl);
+        LOGSTREAM("cctokens", CCLOG_INFO, stream << "illegal tokens funcid=" << (char)(funcid?funcid:' ') << std::endl);
 		return eval->Invalid("unexpected token funcid");
 	}
 
@@ -383,32 +383,32 @@ uint8_t ValidateTokenOpret(CTransaction tx, uint256 tokenid) {
 
 	if ((funcid = DecodeTokenOpRet(tx.vout.back().scriptPubKey, dummyEvalCode, tokenidOpret, voutPubkeysDummy, vopretExtraDummy)) == 0)
 	{
-        LOGSTREAM("tokens", CCLOG_INFO, stream << indentStr << "ValidateTokenOpret() DecodeTokenOpret could not parse opret for txid=" << tx.GetHash().GetHex() << std::endl);
+        LOGSTREAM("cctokens", CCLOG_INFO, stream << indentStr << "ValidateTokenOpret() DecodeTokenOpret could not parse opret for txid=" << tx.GetHash().GetHex() << std::endl);
 		return (uint8_t)0;
 	}
 	else if (funcid == 'c')
 	{
 		if (tokenid != zeroid && tokenid == tx.GetHash()) {
-            LOGSTREAM("tokens", CCLOG_DEBUG1, stream << indentStr << "ValidateTokenOpret() this is the tokenbase 'c' tx, txid=" << tx.GetHash().GetHex() << " returning true" << std::endl);
+            LOGSTREAM("cctokens", CCLOG_DEBUG1, stream << indentStr << "ValidateTokenOpret() this is the tokenbase 'c' tx, txid=" << tx.GetHash().GetHex() << " returning true" << std::endl);
 			return funcid;
 		}
         else {
-            LOGSTREAM("tokens", CCLOG_DEBUG1, stream << indentStr << "ValidateTokenOpret() not my tokenbase txid=" << tx.GetHash().GetHex() << std::endl);
+            LOGSTREAM("cctokens", CCLOG_DEBUG1, stream << indentStr << "ValidateTokenOpret() not my tokenbase txid=" << tx.GetHash().GetHex() << std::endl);
         }
 	}
 	else if (funcid == 't')  
 	{
 		//std::cerr << indentStr << "ValidateTokenOpret() tokenid=" << tokenid.GetHex() << " tokenIdOpret=" << tokenidOpret.GetHex() << " txid=" << tx.GetHash().GetHex() << std::endl;
 		if (tokenid != zeroid && tokenid == tokenidOpret) {
-            LOGSTREAM("tokens", CCLOG_DEBUG1, stream << indentStr << "ValidateTokenOpret() this is a transfer 't' tx, txid=" << tx.GetHash().GetHex() << " returning true" << std::endl);
+            LOGSTREAM("cctokens", CCLOG_DEBUG1, stream << indentStr << "ValidateTokenOpret() this is a transfer 't' tx, txid=" << tx.GetHash().GetHex() << " returning true" << std::endl);
 			return funcid;
 		}
         else {
-            LOGSTREAM("tokens", CCLOG_DEBUG1, stream << indentStr << "ValidateTokenOpret() not my tokenid=" << tokenidOpret.GetHex() << std::endl);
+            LOGSTREAM("cctokens", CCLOG_DEBUG1, stream << indentStr << "ValidateTokenOpret() not my tokenid=" << tokenidOpret.GetHex() << std::endl);
         }
 	}
     else {
-        LOGSTREAM("tokens", CCLOG_DEBUG1, stream << indentStr << "ValidateTokenOpret() not supported funcid=" << (char)funcid << " tokenIdOpret=" << tokenidOpret.GetHex() << " txid=" << tx.GetHash().GetHex() << std::endl);
+        LOGSTREAM("cctokens", CCLOG_DEBUG1, stream << indentStr << "ValidateTokenOpret() not supported funcid=" << (char)funcid << " tokenIdOpret=" << tokenidOpret.GetHex() << " txid=" << tx.GetHash().GetHex() << std::endl);
     }
 	return (uint8_t)0;
 }
@@ -424,12 +424,12 @@ int64_t IsTokensvout(bool goDeeper, bool checkPubkeys, struct CCcontract_info *c
 	// this is just for log messages indentation fur debugging recursive calls:
 	std::string indentStr = std::string().append(tokenValIndentSize, '.');
 	
-    LOGSTREAM("tokens", CCLOG_DEBUG2, stream << indentStr << "IsTokensvout() entered for txid=" << tx.GetHash().GetHex() << " v=" << v << " for tokenid=" << reftokenid.GetHex() <<  std::endl);
+    LOGSTREAM("cctokens", CCLOG_DEBUG2, stream << indentStr << "IsTokensvout() entered for txid=" << tx.GetHash().GetHex() << " v=" << v << " for tokenid=" << reftokenid.GetHex() <<  std::endl);
 
     int32_t n = tx.vout.size();
     // just check boundaries:
     if (n == 0 || v < 0 || v >= n-1) {  
-        LOGSTREAM("tokens", CCLOG_INFO, stream << indentStr << "isTokensvout() incorrect params: (n == 0 or v < 0 or v >= n-1)" << " v=" << v << " n=" << n << " returning 0" << std::endl);
+        LOGSTREAM("cctokens", CCLOG_INFO, stream << indentStr << "isTokensvout() incorrect params: (n == 0 or v < 0 or v >= n-1)" << " v=" << v << " n=" << n << " returning 0" << std::endl);
         return(0);
     }
 
@@ -449,7 +449,7 @@ int64_t IsTokensvout(bool goDeeper, bool checkPubkeys, struct CCcontract_info *c
 				// if ccInputs != ccOutputs and it is not the tokenbase tx 
 				// this means it is possibly a fake tx (dimxy):
 				if (reftokenid != tx.GetHash()) {	// checking that this is the true tokenbase tx, by verifying that funcid=c, is done further in this function (dimxy)
-                    LOGSTREAM("tokens", CCLOG_INFO, stream << indentStr << "IsTokensvout() warning: for the verified tx detected a bad vintx=" << tx.GetHash().GetHex() << ": cc inputs != cc outputs and not the 'tokenbase' tx, skipping the verified tx" << std::endl);
+                    LOGSTREAM("cctokens", CCLOG_INFO, stream << indentStr << "IsTokensvout() warning: for the verified tx detected a bad vintx=" << tx.GetHash().GetHex() << ": cc inputs != cc outputs and not the 'tokenbase' tx, skipping the verified tx" << std::endl);
 					return 0;
 				}
 			}
@@ -459,7 +459,7 @@ int64_t IsTokensvout(bool goDeeper, bool checkPubkeys, struct CCcontract_info *c
 		const uint8_t funcId = ValidateTokenOpret(tx, reftokenid);
 		//std::cerr << indentStr << "IsTokensvout() ValidateTokenOpret returned=" << (char)(funcId?funcId:' ') << " for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl;
 		if (funcId != 0) {
-            LOGSTREAM("tokens", CCLOG_DEBUG1, stream << indentStr << "IsTokensvout() ValidateTokenOpret returned not-null funcId=" << (char)(funcId?funcId:' ') << " for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl);
+            LOGSTREAM("cctokens", CCLOG_DEBUG1, stream << indentStr << "IsTokensvout() ValidateTokenOpret returned not-null funcId=" << (char)(funcId?funcId:' ') << " for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl);
 
             uint8_t dummyEvalCode;
             uint256 tokenIdOpret;
@@ -471,8 +471,8 @@ int64_t IsTokensvout(bool goDeeper, bool checkPubkeys, struct CCcontract_info *c
 			if (checkPubkeys && funcId != 'c') { // for 'c' there is no pubkeys
                 // verify that the vout is token by constructing vouts with the pubkeys in the opret:
 
-                LOGSTREAM("tokens", CCLOG_DEBUG2, stream << "IsTokensvout() vopret1=" << HexStr(vopret1) << std::endl);
-                LOGSTREAM("tokens", CCLOG_DEBUG2, stream << "IsTokensvout() vopret2=" << HexStr(vopret2) << std::endl);
+                LOGSTREAM("cctokens", CCLOG_DEBUG2, stream << "IsTokensvout() vopret1=" << HexStr(vopret1) << std::endl);
+                LOGSTREAM("cctokens", CCLOG_DEBUG2, stream << "IsTokensvout() vopret2=" << HexStr(vopret2) << std::endl);
 
 				uint8_t evalCode = EVAL_TOKENS;     // if both payloads are empty maybe it is a transfer to non-payload-one-eval-token vout like GatewaysClaim
                 uint8_t evalCode2 = 0;              // will be checked if zero or not
@@ -544,14 +544,14 @@ int64_t IsTokensvout(bool goDeeper, bool checkPubkeys, struct CCcontract_info *c
                 // try all test vouts:
                 for (auto t : testVouts) {
                     if (t.first == tx.vout[v]) {
-                        LOGSTREAM("tokens", CCLOG_INFO, stream << indentStr << "IsTokensvout() valid amount=" << tx.vout[v].nValue << " msg=" << t.second << " evalCode=" << (int)evalCode << " evalCode2=" << (int)evalCode2 << " txid=" << tx.GetHash().GetHex() << " tokenid=" << reftokenid.GetHex() << std::endl);
+                        LOGSTREAM("cctokens", CCLOG_INFO, stream << indentStr << "IsTokensvout() valid amount=" << tx.vout[v].nValue << " msg=" << t.second << " evalCode=" << (int)evalCode << " evalCode2=" << (int)evalCode2 << " txid=" << tx.GetHash().GetHex() << " tokenid=" << reftokenid.GetHex() << std::endl);
                         return tx.vout[v].nValue;
                     }
                 }
-                LOGSTREAM("tokens", CCLOG_DEBUG1, stream << indentStr << "IsTokensvout() no valid vouts evalCode=" << (int)evalCode << " evalCode2=" << (int)evalCode2 << " for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl);
+                LOGSTREAM("cctokens", CCLOG_DEBUG1, stream << indentStr << "IsTokensvout() no valid vouts evalCode=" << (int)evalCode << " evalCode2=" << (int)evalCode2 << " for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl);
 			}
 			else	{
-                LOGSTREAM("tokens", CCLOG_INFO, stream << indentStr << "IsTokensvout() returns without pubkey check value=" << tx.vout[v].nValue << " for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl);
+                LOGSTREAM("cctokens", CCLOG_INFO, stream << indentStr << "IsTokensvout() returns without pubkey check value=" << tx.vout[v].nValue << " for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl);
 				return tx.vout[v].nValue;
 			}
 		}
@@ -579,7 +579,7 @@ bool TokensExactAmounts(bool goDeeper, struct CCcontract_info *cp, int64_t &inpu
 	// this is just for log messages indentation for debugging recursive calls:
 	std::string indentStr = std::string().append(tokenValIndentSize, '.');
 
-    LOGSTREAM("tokens", CCLOG_DEBUG2, stream << indentStr << "TokensExactAmounts() entered for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl);
+    LOGSTREAM("cctokens", CCLOG_DEBUG2, stream << indentStr << "TokensExactAmounts() entered for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl);
 
 	for (int32_t i = 0; i<numvins; i++)
 	{												  // check for additional contracts which may send tokens to the Tokens contract
@@ -589,11 +589,11 @@ bool TokensExactAmounts(bool goDeeper, struct CCcontract_info *cp, int64_t &inpu
 			// we are not inside the validation code -- dimxy
 			if ((eval && eval->GetTxUnconfirmed(tx.vin[i].prevout.hash, vinTx, hashBlock) == 0) || (!eval && !myGetTransaction(tx.vin[i].prevout.hash, vinTx, hashBlock)))
 			{
-                LOGSTREAM("tokens", CCLOG_INFO, stream << indentStr << "TokensExactAmounts() cannot read vintx for i." << i << " numvins." << numvins << std::endl);
+                LOGSTREAM("cctokens", CCLOG_INFO, stream << indentStr << "TokensExactAmounts() cannot read vintx for i." << i << " numvins." << numvins << std::endl);
 				return (!eval) ? false : eval->Invalid("always should find vin tx, but didnt");
 			}
 			else {
-                LOGSTREAM("tokens", CCLOG_DEBUG2, stream << indentStr << "TokenExactAmounts() checking vintx.vout for tx.vin[" << i << "] nValue=" << vinTx.vout[tx.vin[i].prevout.n].nValue << std::endl);
+                LOGSTREAM("cctokens", CCLOG_DEBUG2, stream << indentStr << "TokenExactAmounts() checking vintx.vout for tx.vin[" << i << "] nValue=" << vinTx.vout[tx.vin[i].prevout.n].nValue << std::endl);
 
                 // validate vouts of vintx  
                 tokenValIndentSize++;
@@ -601,7 +601,7 @@ bool TokensExactAmounts(bool goDeeper, struct CCcontract_info *cp, int64_t &inpu
 				tokenValIndentSize--;
 				if (tokenoshis != 0)
 				{
-                    LOGSTREAM("tokens", CCLOG_DEBUG1, stream << indentStr << "TokensExactAmounts() adding vintx.vout for tx.vin[" << i << "] tokenoshis=" << tokenoshis << std::endl);
+                    LOGSTREAM("cctokens", CCLOG_DEBUG1, stream << indentStr << "TokensExactAmounts() adding vintx.vout for tx.vin[" << i << "] tokenoshis=" << tokenoshis << std::endl);
 					inputs += tokenoshis;
 				}
 			}
@@ -610,7 +610,7 @@ bool TokensExactAmounts(bool goDeeper, struct CCcontract_info *cp, int64_t &inpu
 
 	for (int32_t i = 0; i < numvouts-1; i ++)  // 'numvouts-1' <-- do not check opret
 	{
-        LOGSTREAM("tokens", CCLOG_DEBUG2, stream << indentStr << "TokenExactAmounts() recursively checking tx.vout[" << i << "] nValue=" << tx.vout[i].nValue << std::endl);
+        LOGSTREAM("cctokens", CCLOG_DEBUG2, stream << indentStr << "TokenExactAmounts() recursively checking tx.vout[" << i << "] nValue=" << tx.vout[i].nValue << std::endl);
 
         // Note: we pass in here IsTokenvout(false,...) because we don't need to call TokenExactAmounts() recursively from IsTokensvout here
         // indeed, if we pass 'true' we'll be checking this tx vout again
@@ -620,7 +620,7 @@ bool TokensExactAmounts(bool goDeeper, struct CCcontract_info *cp, int64_t &inpu
 
 		if (tokenoshis != 0)
 		{
-            LOGSTREAM("tokens", CCLOG_DEBUG1, stream << indentStr << "TokensExactAmounts() adding tx.vout[" << i << "] tokenoshis=" << tokenoshis << std::endl);
+            LOGSTREAM("cctokens", CCLOG_DEBUG1, stream << indentStr << "TokensExactAmounts() adding tx.vout[" << i << "] tokenoshis=" << tokenoshis << std::endl);
 			outputs += tokenoshis;
 		}
 	}
@@ -629,7 +629,7 @@ bool TokensExactAmounts(bool goDeeper, struct CCcontract_info *cp, int64_t &inpu
 
 	if (inputs != outputs) {
 		if (tx.GetHash() != reftokenid)
-            LOGSTREAM("tokens", CCLOG_DEBUG1, stream << indentStr << "TokenExactAmounts() found unequal token cc inputs=" << inputs << " vs cc outputs=" << outputs << " for txid=" << tx.GetHash().GetHex() << " and this is not the create tx" << std::endl);
+            LOGSTREAM("cctokens", CCLOG_DEBUG1, stream << indentStr << "TokenExactAmounts() found unequal token cc inputs=" << inputs << " vs cc outputs=" << outputs << " for txid=" << tx.GetHash().GetHex() << " and this is not the create tx" << std::endl);
 		return false;  // do not call eval->Invalid() here!
 	}
 	else
@@ -643,7 +643,7 @@ void GetNonfungibleData(uint256 tokenid, std::vector<uint8_t> &vopretNonfungible
     uint256 hashBlock;
 
     if (!myGetTransaction(tokenid, tokenbasetx, hashBlock)) {
-        LOGSTREAM("tokens", CCLOG_INFO, stream << "SetNonfungibleEvalCode() cound not load token creation tx=" << tokenid.GetHex() << std::endl);
+        LOGSTREAM("cctokens", CCLOG_INFO, stream << "SetNonfungibleEvalCode() cound not load token creation tx=" << tokenid.GetHex() << std::endl);
         return;
     }
 
@@ -682,7 +682,7 @@ int64_t AddTokenCCInputs(struct CCcontract_info *cp, CMutableTransaction &mtx, C
 	SetCCunspents(unspentOutputs, tokenaddr);
 
     if (unspentOutputs.empty()) {
-        LOGSTREAM("tokens", CCLOG_INFO, stream << "AddTokenCCInputs() no utxos for token dual/three eval addr=" << tokenaddr << " evalcode=" << (int)cp->evalcode << " additionalTokensEvalcode2=" << (int)cp->additionalTokensEvalcode2 << std::endl);
+        LOGSTREAM("cctokens", CCLOG_INFO, stream << "AddTokenCCInputs() no utxos for token dual/three eval addr=" << tokenaddr << " evalcode=" << (int)cp->evalcode << " additionalTokensEvalcode2=" << (int)cp->additionalTokensEvalcode2 << std::endl);
     }
 
 	threshold = total / (maxinputs != 0 ? maxinputs : 64); // TODO: maxinputs really could not be over 64? what if i want to calc total balance for all available uxtos?
@@ -713,7 +713,7 @@ int64_t AddTokenCCInputs(struct CCcontract_info *cp, CMutableTransaction &mtx, C
                 strcmp(destaddr, cp->unspendableaddr2) != 0)      // or the logic is to allow to spend all available tokens (what about unspendableaddr3)?
 				continue;
 			
-            LOGSTREAM("tokens", CCLOG_DEBUG1, stream << "AddTokenCCInputs() check vintx vout destaddress=" << destaddr << " amount=" << vintx.vout[vout].nValue << std::endl);
+            LOGSTREAM("cctokens", CCLOG_DEBUG1, stream << "AddTokenCCInputs() check vintx vout destaddress=" << destaddr << " amount=" << vintx.vout[vout].nValue << std::endl);
 
 			if ((nValue = IsTokensvout(true, true/*<--add only valid token uxtos */, cp, NULL, vintx, vout, tokenid)) > 0 && myIsutxo_spentinmempool(vintxid, vout) == 0)
 			{
@@ -724,7 +724,7 @@ int64_t AddTokenCCInputs(struct CCcontract_info *cp, CMutableTransaction &mtx, C
                     // check if it is non-fungible token:
                     GetNonfungibleData(tokenid, vopret);
                     if (vopret != vopretNonfungible) {
-                        LOGSTREAM("tokens", CCLOG_INFO, stream << "AddTokenCCInputs() found incorrect non-fungible opret payload for vintxid=" << vintxid.GetHex() << std::endl);
+                        LOGSTREAM("cctokens", CCLOG_INFO, stream << "AddTokenCCInputs() found incorrect non-fungible opret payload for vintxid=" << vintxid.GetHex() << std::endl);
                         continue;
                     }
 
@@ -737,7 +737,7 @@ int64_t AddTokenCCInputs(struct CCcontract_info *cp, CMutableTransaction &mtx, C
 
 				nValue = it->second.satoshis;
 				totalinputs += nValue;
-                LOGSTREAM("tokens", CCLOG_DEBUG1, stream << "AddTokenCCInputs() adding input nValue=" << nValue  << std::endl);
+                LOGSTREAM("cctokens", CCLOG_DEBUG1, stream << "AddTokenCCInputs() adding input nValue=" << nValue  << std::endl);
 				n++;
 
 				if ((total > 0 && totalinputs >= total) || (maxinputs > 0 && n >= maxinputs))
@@ -757,11 +757,11 @@ std::string CreateToken(int64_t txfee, int64_t tokensupply, std::string name, st
 	CPubKey mypk; struct CCcontract_info *cp, C;
 	if (tokensupply < 0)
 	{
-        LOGSTREAM("tokens", CCLOG_INFO, stream << "CreateToken() negative tokensupply=" << tokensupply << std::endl);
+        LOGSTREAM("cctokens", CCLOG_INFO, stream << "CreateToken() negative tokensupply=" << tokensupply << std::endl);
 		return std::string("");
 	}
     if (!nonfungibleData.empty() && tokensupply != 1) {
-        LOGSTREAM("tokens", CCLOG_INFO, stream << "CreateToken() for non-fungible tokens tokensupply should be equal to 1" << std::endl);
+        LOGSTREAM("cctokens", CCLOG_INFO, stream << "CreateToken() for non-fungible tokens tokensupply should be equal to 1" << std::endl);
         CCerror = "for non-fungible tokens tokensupply should be equal to 1";
         return std::string("");
     }
@@ -770,7 +770,7 @@ std::string CreateToken(int64_t txfee, int64_t tokensupply, std::string name, st
 	cp = CCinit(&C, EVAL_TOKENS);
 	if (name.size() > 32 || description.size() > 4096)  // this is also checked on rpc level
 	{
-        LOGSTREAM("tokens", CCLOG_INFO, stream << "name of=" << name.size() << " or description of=" << description.size() << " is too big" << std::endl);
+        LOGSTREAM("cctokens", CCLOG_INFO, stream << "name of=" << name.size() << " or description of=" << description.size() << " is too big" << std::endl);
         CCerror = "name should be < 32, description should be < 4096";
 		return("");
 	}
@@ -789,7 +789,7 @@ std::string CreateToken(int64_t txfee, int64_t tokensupply, std::string name, st
 		return(FinalizeCCTx(0, cp, mtx, mypk, txfee, EncodeTokenCreateOpRet('c', Mypubkey(), name, description, nonfungibleData)));
 	}
 
-    LOGSTREAM("tokens", CCLOG_INFO, stream << "cant find normal inputs" << std::endl);
+    LOGSTREAM("cctokens", CCLOG_INFO, stream << "cant find normal inputs" << std::endl);
     CCerror = "cant find normal inputs";
     return std::string("");
 }
@@ -803,7 +803,7 @@ std::string TokenTransfer(int64_t txfee, uint256 tokenid, std::vector<uint8_t> d
 	std::vector<uint8_t> vopretNonfungible;
 
 	if (total < 0)	{
-        LOGSTREAM("tokens", CCLOG_INFO, stream << "negative total=" << total << std::endl);
+        LOGSTREAM("cctokens", CCLOG_INFO, stream << "negative total=" << total << std::endl);
 		return("");
 	}
 
@@ -819,7 +819,7 @@ std::string TokenTransfer(int64_t txfee, uint256 tokenid, std::vector<uint8_t> d
 		if ((inputs = AddTokenCCInputs(cp, mtx, mypk, tokenid, total, 60, vopretNonfungible)) > 0)  // NOTE: AddTokenCCInputs might set cp->additionalEvalCode which is used in FinalizeCCtx!
 		{
 			if (inputs < total) {   //added dimxy
-                LOGSTREAM("tokens", CCLOG_INFO, stream << "TokenTransfer(): insufficient token funds" << std::endl);
+                LOGSTREAM("cctokens", CCLOG_INFO, stream << "TokenTransfer(): insufficient token funds" << std::endl);
                 CCerror = strprintf("insufficient token inputs");
 				return std::string("");
 			}
@@ -840,13 +840,13 @@ std::string TokenTransfer(int64_t txfee, uint256 tokenid, std::vector<uint8_t> d
 			return(FinalizeCCTx(mask, cp, mtx, mypk, txfee, EncodeTokenOpRet(tokenid, voutTokenPubkeys, vopretNonfungible, CScript()))); 
 		}
 		else {
-            LOGSTREAM("tokens", CCLOG_INFO, stream << "not enough CC token inputs for amount=" << total << std::endl);
+            LOGSTREAM("cctokens", CCLOG_INFO, stream << "not enough CC token inputs for amount=" << total << std::endl);
             CCerror = strprintf("no token inputs");
 		}
 		//} else fprintf(stderr,"numoutputs.%d != numamounts.%d\n",n,(int32_t)amounts.size());
 	}
 	else {
-        LOGSTREAM("tokens", CCLOG_INFO, stream << "not enough normal inputs for txfee" << std::endl);
+        LOGSTREAM("cctokens", CCLOG_INFO, stream << "not enough normal inputs for txfee" << std::endl);
         CCerror = strprintf("insufficient normal inputs");
 	}
 	return("");
@@ -864,7 +864,7 @@ int64_t GetTokenBalance(CPubKey pk, uint256 tokenid)
 
 	if (GetTransaction(tokenid, tokentx, hashBlock, false) == 0)
 	{
-        LOGSTREAM("tokens", CCLOG_INFO, stream << "cant find tokenid" << std::endl);
+        LOGSTREAM("cctokens", CCLOG_INFO, stream << "cant find tokenid" << std::endl);
 		CCerror = strprintf("cant find tokenid");
 		return 0;
 	}
@@ -892,7 +892,7 @@ UniValue TokenInfo(uint256 tokenid)
 	}
 	if (vintx.vout.size() > 0 && DecodeTokenCreateOpRet(vintx.vout[vintx.vout.size() - 1].scriptPubKey, origpubkey, name, description, vopretNonfungible) == 0)
 	{
-        LOGSTREAM("tokens", CCLOG_INFO, stream << "TokenInfo() passed tokenid isnt token creation txid" << std::endl);
+        LOGSTREAM("cctokens", CCLOG_INFO, stream << "TokenInfo() passed tokenid isnt token creation txid" << std::endl);
 		result.push_back(Pair("result", "error"));
 		result.push_back(Pair("error", "tokenid isnt token creation txid"));
 	}
