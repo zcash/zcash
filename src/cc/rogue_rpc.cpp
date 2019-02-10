@@ -810,7 +810,6 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
                     seed = rogue_gamefields(obj,maxplayers,buyin,gametxid,myrogueaddr);
                     fprintf(stderr,"found baton %s numkeys.%d seed.%llu playerdata.%d\n",batontxid.ToString().c_str(),numkeys,(long long)seed,(int32_t)playerdata.size());
                     memset(&P,0,sizeof(P));
-                    sleep(60);
                     if ( playerdata.size() > 0 )
                     {
                         for (i=0; i<playerdata.size(); i++)
