@@ -197,7 +197,7 @@ CScript rogue_highlanderopret(uint8_t funcid,uint256 gametxid,CPubKey pk,std::ve
 
 uint8_t rogue_highlanderopretdecode(uint256 &gametxid,CPubKey &pk,std::vector<uint8_t> &playerdata,CScript scriptPubKey)
 {
-    std::vector<uint8_t> vopret,vpopret2; uint8_t *script,e,f; uint256 tokenid; std::vector<CPubKey> voutPubkeys
+    std::vector<uint8_t> vopret,vpopret2; uint8_t *script,e,f; uint256 tokenid; std::vector<CPubKey> voutPubkeys;
     if ( (f= DecodeTokenOpRet(scriptPubKey,e,tokenid,voutPubkeys,vopret,vopret2)) == 'c' || f == 't' )
     {
         script = (uint8_t *)vopret.data();
