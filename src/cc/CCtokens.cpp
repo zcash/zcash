@@ -249,8 +249,8 @@ bool TokensValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction &
 
     if (eval->GetTxUnconfirmed(tokenid, createTx, hashBlock) == 0)
 		return eval->Invalid("cant find token create txid");
-	else if (IsCCInput(tx.vin[0].scriptSig) != 0)
-		return eval->Invalid("illegal token vin0");
+	//else if (IsCCInput(tx.vin[0].scriptSig) != 0)
+	//	return eval->Invalid("illegal token vin0");
 	else if (numvouts < 1)
 		return eval->Invalid("no vouts");
 	else if (funcid != 'c')
