@@ -129,7 +129,7 @@
 // ./rogue <seed> gui -> creates keystroke files
 // cclib register 17 \"[%22a49f90d6b5a226132a8615c9b55b254629611565c69246ea58f7a02059b847bf%22,%22f3a4a61cfa0dd43733b06d1368c199594258e0f3db983dc1b9b10768a5671909%22]\"
 // cclib keystrokes 17 \"[%220a4ecb345ca3090f4acad63f889c3668e46e245cb00ca4b8b57c4677b1ee95b2%22,%22deadbeef%22]\"
-// cclib bailout 17 \"[%22a49f90d6b5a226132a8615c9b55b254629611565c69246ea58f7a02059b847bf%22]\"
+// ./c cclib bailout 17 \"[%226de8a1650bf696aaa515e38a858bd0f40eab8c02bcb75169b2cfe99b8a2ce1f0%22]\"
 
 
 #define MAXPACK 23
@@ -455,22 +455,22 @@ int32_t rogue_findbaton(struct CCcontract_info *cp,uint256 &playertxid,char **ke
                     matches++;
                     regslot = i;
                     matchtx = spenttx;
-                } //else fprintf(stderr,"%d+1 doesnt match %s vs %s\n",i,ccaddr,destaddr);
-            } //else fprintf(stderr,"%d+1 couldnt find spenttx.%s\n",i,spenttxid.GetHex().c_str());
-        } //else fprintf(stderr,"%d+1 unspent\n",i);
+                } else fprintf(stderr,"%d+1 doesnt match %s vs %s\n",i,ccaddr,destaddr);
+            } else fprintf(stderr,"%d+1 couldnt find spenttx.%s\n",i,spenttxid.GetHex().c_str());
+        } else fprintf(stderr,"%d+1 unspent\n",i);
     }
     if ( matches == 1 )
     {
         if ( myIsutxo_spent(spenttxid,gametxid,maxplayers+i+1) < 0 )
         {
             numvouts = matchtx.vout.size();
-            //fprintf(stderr,"matches.%d numvouts.%d\n",matches,numvouts);
+            fprintf(stderr,"matches.%d numvouts.%d\n",matches,numvouts);
             if ( rogue_registeropretdecode(txid,playertxid,matchtx.vout[numvouts-1].scriptPubKey) == 'R' && txid == gametxid )
             {
                 if ( playertxid == zeroid || rogue_playerdata(cp,origplayergame,pk,playerdata,playertxid) == 0 )
                 {
                     txid = matchtx.GetHash();
-                    //fprintf(stderr,"scan forward playertxid.%s spenttxid.%s\n",playertxid.GetHex().c_str(),txid.GetHex().c_str());
+                    fprintf(stderr,"scan forward playertxid.%s spenttxid.%s\n",playertxid.GetHex().c_str(),txid.GetHex().c_str());
                     while ( CCgettxout(txid,0,1) < 0 )
                     {
                         spenttxid = zeroid;
@@ -497,7 +497,7 @@ int32_t rogue_findbaton(struct CCcontract_info *cp,uint256 &playertxid,char **ke
                             }
                         }
                     }
-                    //fprintf(stderr,"set baton %s\n",txid.GetHex().c_str());
+                    fprintf(stderr,"set baton %s\n",txid.GetHex().c_str());
                     batontxid = txid;
                     batonvout = 0; // not vini
                     // how to detect timeout, bailedout, highlander
@@ -791,6 +791,7 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
             result.push_back(Pair("gametxid",gametxid.GetHex()));
             if ( rogue_isvalidgame(cp,gameheight,gametx,buyin,maxplayers,gametxid) == 0 )
             {
+                fprintf(stderr,"validgame\n");
                 if ( maxplayers == 1 )
                     mult /= 2;
                 if ( rogue_findbaton(cp,playertxid,&keystrokes,numkeys,regslot,playerdata,batontxid,batonvout,batonvalue,batonht,gametxid,gametx,maxplayers,myrogueaddr,numplayers) == 0 )
