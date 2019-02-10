@@ -129,7 +129,7 @@
 // ./rogue <seed> gui -> creates keystroke files
 // cclib register 17 \"[%22a49f90d6b5a226132a8615c9b55b254629611565c69246ea58f7a02059b847bf%22,%22f3a4a61cfa0dd43733b06d1368c199594258e0f3db983dc1b9b10768a5671909%22]\"
 // cclib keystrokes 17 \"[%220a4ecb345ca3090f4acad63f889c3668e46e245cb00ca4b8b57c4677b1ee95b2%22,%22deadbeef%22]\"
-// ./c cclib bailout 17 \"[%226de8a1650bf696aaa515e38a858bd0f40eab8c02bcb75169b2cfe99b8a2ce1f0%22]\"
+// ./c cclib bailout 17 \"[%228fd5b29b77ef90d7b7747c779530a8b005f7c236ea0ddb1fe68a392ea3b6cdf1%22]\"
 
 
 #define MAXPACK 23
@@ -318,7 +318,7 @@ int32_t rogue_isvalidgame(struct CCcontract_info *cp,int32_t &gameheight,CTransa
     if ( GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 1 )
     {
         gameheight = komodo_blockheight(hashBlock);
-        if ( IsCClibvout(cp,tx,0,cp->unspendableCCaddr) == txfee && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,0) == 0 )
+        if ( IsCClibvout(cp,tx,0,cp->unspendableCCaddr) >= txfee && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,0) == 0 )
         {
             if ( rogue_newgameopreturndecode(buyin,maxplayers,tx.vout[numvouts-1].scriptPubKey) == 'G' )
             {
