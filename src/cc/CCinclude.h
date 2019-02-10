@@ -186,6 +186,7 @@ int32_t oracle_format(uint256 *hashp,int64_t *valp,char *str,uint8_t fmt,uint8_t
 
 // CCcustom
 CPubKey GetUnspendable(struct CCcontract_info *cp,uint8_t *unspendablepriv);
+uint8_t DecodeTokenOpRet(const CScript scriptPubKey, uint8_t &evalCodeTokens, uint256 &tokenid, std::vector<CPubKey> &voutPubkeys, std::vector<uint8_t>  &vopret1, std::vector<uint8_t>  &vopret2);
 
 // CCutils
 bool priv2addr(char *coinaddr,uint8_t buf33[33],uint8_t priv32[32]);

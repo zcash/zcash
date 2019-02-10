@@ -197,12 +197,14 @@ CScript rogue_highlanderopret(uint8_t funcid,uint256 gametxid,CPubKey pk,std::ve
 
 uint8_t rogue_highlanderopretdecode(uint256 &gametxid,CPubKey &pk,std::vector<uint8_t> &playerdata,CScript scriptPubKey)
 {
-    std::vector<uint8_t> vopret; uint8_t *script,e,f;
-    GetOpReturnData(scriptPubKey,vopret);
-    script = (uint8_t *)vopret.data();
-    if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> gametxid; ss >> pk; ss >> playerdata) != 0 && e == EVAL_ROGUE && (f == 'H' || f == 'Q' || f == 'S') )
+    std::vector<uint8_t> vopret,vpopret2; uint8_t *script,e,f; uint256 tokenid; std::vector<CPubKey> voutPubkeys
+    if ( (f= DecodeTokenOpRet(scriptPubKey,e,tokenid,voutPubkeys,vopret,vopret2)) == 'c' || f == 't' )
     {
-        return(f);
+        script = (uint8_t *)vopret.data();
+        if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> gametxid; ss >> pk; ss >> playerdata) != 0 && e == EVAL_ROGUE && (f == 'H' || f == 'Q') )
+        {
+            return(f);
+        }
     }
     return(0);
 }
@@ -419,7 +421,6 @@ int32_t rogue_iterateplayer(uint256 &registertxid,uint256 firsttxid,int32_t firs
  playertxid is whoever owns the nonfungible satoshi and it might have been bought and sold many times.
  highlander is the game winning tx with the player data and is the only place where the unique player data exists
  origplayergame is the gametxid that ends up being won by the highlander and they are linked directly as the highlander tx spends gametxid.vout0
- 'S' is for sell, but will need to change to accomodate assets
  */
 
 int32_t rogue_playerdata(struct CCcontract_info *cp,uint256 &origplayergame,CPubKey &pk,std::vector<uint8_t> &playerdata,uint256 playertxid)
@@ -429,7 +430,7 @@ int32_t rogue_playerdata(struct CCcontract_info *cp,uint256 &origplayergame,CPub
     {
         GetOpReturnData(playertx.vout[numvouts-1].scriptPubKey,vopret);
         script = (uint8_t *)vopret.data();
-        if ( vopret.size() > 34 && script[0] == EVAL_ROGUE && (script[1] == 'H' || script[1] == 'Q' || script[1] == 'S') )
+        if ( vopret.size() > 34 && script[0] == EVAL_ROGUE && (script[1] == 'H' || script[1] == 'Q') )
         {
             memcpy(&gametxid,script+2,sizeof(gametxid));
             if ( rogue_isvalidgame(cp,gameheight,gametx,buyin,maxplayers,gametxid) == 0 )
@@ -437,7 +438,7 @@ int32_t rogue_playerdata(struct CCcontract_info *cp,uint256 &origplayergame,CPub
                 fprintf(stderr,"playertxid.%s got vin.%s/v%d gametxid.%s iterate.%d\n",playertxid.ToString().c_str(),playertx.vin[1].prevout.hash.ToString().c_str(),(int32_t)playertx.vin[1].prevout.n-maxplayers,gametxid.ToString().c_str(),rogue_iterateplayer(registertxid,gametxid,playertx.vin[1].prevout.n-maxplayers,playertxid));
                 if ( playertx.vin[1].prevout.hash == gametxid && rogue_iterateplayer(registertxid,gametxid,playertx.vin[1].prevout.n-maxplayers,playertxid) == 0 )
                 {
-                    if ( (f= rogue_highlanderopretdecode(origplayergame,pk,playerdata,playertx.vout[numvouts-1].scriptPubKey)) == 'H' || f == 'Q' || f == 'S' )
+                    if ( (f= rogue_highlanderopretdecode(origplayergame,pk,playerdata,playertx.vout[numvouts-1].scriptPubKey)) == 'H' || f == 'Q' )
                     {
                         // if registertxid has vin from pk, it can be used
                         return(0);
@@ -860,7 +861,7 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
                     GetOpReturnData(opret, vopretNonfungible);
                     rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, EncodeTokenCreateOpRet('c', Mypubkey(), std::string("???"), std::string("??????"), vopretNonfungible));
 
-                    return(rogue_rawtxresult(result,rawtx,1));
+                    return(rogue_rawtxresult(result,rawtx,0));
                 }
                 result.push_back(Pair("result","success"));
             }
