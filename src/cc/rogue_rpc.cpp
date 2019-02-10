@@ -124,11 +124,11 @@
 
 // cclib newgame 17 \"[3,10]\"
 // cclib pending 17
-// ./c cclib gameinfo 17 \"[%22aa81321d8889f881fe3d7c68c905b7447d9143832b0abbef6c2cab49dff8b0cc%22]\"
+// ./c cclib gameinfo 17 \"[%226d3243c6e5ab383898b28a87e01f6c00b5bdd9687020f17f5caacc8a61febd19%22]\"
 // cclib register 17 \"[%22aa81321d8889f881fe3d7c68c905b7447d9143832b0abbef6c2cab49dff8b0cc%22]\"
 // ./rogue <seed> gui -> creates keystroke files
-// ./c cclib register 17 \"[%22aa81321d8889f881fe3d7c68c905b7447d9143832b0abbef6c2cab49dff8b0cc%22,%226c88eb35f1f9eadabb0fb00c5b25b44cc60e99013ec9ce6871acd8ed7541de93%22]\"
-// ./c cclib bailout 17 \"[%228fd5b29b77ef90d7b7747c779530a8b005f7c236ea0ddb1fe68a392ea3b6cdf1%22]\"
+// ./c cclib register 17 \"[%226d3243c6e5ab383898b28a87e01f6c00b5bdd9687020f17f5caacc8a61febd19%22,%222475182f9d5169d8a3249d17640e4eccd90f4ee43ab04791129b0fa3f177b14a%22]\"
+// ./c cclib bailout 17 \"[%22aa81321d8889f881fe3d7c68c905b7447d9143832b0abbef6c2cab49dff8b0cc%22]\"
 
 
 #define MAXPACK 23
@@ -213,14 +213,14 @@ uint8_t rogue_registeropretdecode(uint256 &gametxid,uint256 &tokenid,uint256 &pl
     }
     else if ( (f= DecodeTokenOpRet(scriptPubKey,e,tokenid,voutPubkeys,vopret,vopret2)) == 'c' || f == 't' )
     {
-        fprintf(stderr,"got valid token opret %s e.%d vs %d\n",tokenid.GetHex().c_str(),e,EVAL_TOKENS);
+        //fprintf(stderr,"got valid token opret %s e.%d vs %d\n",tokenid.GetHex().c_str(),e,EVAL_TOKENS);
         if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> gametxid; ss >> playertxid) != 0 && e == EVAL_ROGUE && f == 'R' )
         {
             return(f);
         }
         playertxid = tokenid;
         fprintf(stderr,"e.%d vs %d, f %c, gametxid.%s player.%s\n",e,EVAL_ROGUE,f,gametxid.GetHex().c_str(),playertxid.GetHex().c_str());
-        return('R');
+        return(0);
     }
     return(0);
 }
@@ -423,11 +423,10 @@ int32_t rogue_playerdata(struct CCcontract_info *cp,uint256 &origplayergame,CPub
         //script = (uint8_t *)vopret.data();
         if ( (f= rogue_highlanderopretdecode(gametxid,regslot,pk,playerdata,playertx.vout[numvouts-1].scriptPubKey)) == 'H' || f == 'Q' )
         {
-            fprintf(stderr,"gametxid.%s\n",gametxid.GetHex().c_str());
             //memcpy(&gametxid,script+2,sizeof(gametxid));
             if ( rogue_isvalidgame(cp,gameheight,gametx,buyin,maxplayers,gametxid) == 0 )
             {
-                fprintf(stderr,"playertxid.%s got vin.%s/v%d gametxid.%s iterate.%d\n",playertxid.ToString().c_str(),playertx.vin[1].prevout.hash.ToString().c_str(),(int32_t)playertx.vin[1].prevout.n-maxplayers,gametxid.ToString().c_str(),rogue_iterateplayer(registertxid,gametxid,playertx.vin[1].prevout.n-maxplayers,playertxid));
+                //fprintf(stderr,"playertxid.%s got vin.%s/v%d gametxid.%s iterate.%d\n",playertxid.ToString().c_str(),playertx.vin[1].prevout.hash.ToString().c_str(),(int32_t)playertx.vin[1].prevout.n-maxplayers,gametxid.ToString().c_str(),rogue_iterateplayer(registertxid,gametxid,playertx.vin[1].prevout.n-maxplayers,playertxid));
                 if ( playertx.vin[1].prevout.hash == gametxid && rogue_iterateplayer(registertxid,gametxid,playertx.vin[1].prevout.n-maxplayers,playertxid) == 0 )
                 {
                     // if registertxid has vin from pk, it can be used
@@ -477,7 +476,7 @@ int32_t rogue_findbaton(struct CCcontract_info *cp,uint256 &playertxid,char **ke
         {
             numvouts = matchtx.vout.size();
             //fprintf(stderr,"matchtxid.%s matches.%d numvouts.%d\n",matchtx.GetHash().GetHex().c_str(),matches,numvouts);
-            if ( rogue_registeropretdecode(txid,tokenid,playertxid,matchtx.vout[numvouts-1].scriptPubKey) == 'R' )//&& txid == gametxid )
+            if ( rogue_registeropretdecode(txid,tokenid,playertxid,matchtx.vout[numvouts-1].scriptPubKey) == 'R' && txid == gametxid )
             {
                 if ( tokenid != zeroid )
                     playertxid = tokenid;
@@ -556,7 +555,7 @@ void rogue_gameplayerinfo(struct CCcontract_info *cp,UniValue &obj,uint256 gamet
         {
             if ( GetTransaction(batontxid,batontx,hashBlock,false) != 0 && batontx.vout.size() > 1 )
             {
-                if ( rogue_registeropretdecode(gtxid,tokenid,ptxid,batontx.vout[batontx.vout.size()-1].scriptPubKey) == 'R' && ptxid == playertxid )//&& gtxid == gametxid )
+                if ( rogue_registeropretdecode(gtxid,tokenid,ptxid,batontx.vout[batontx.vout.size()-1].scriptPubKey) == 'R' && ptxid == playertxid && gtxid == gametxid )
                     obj.push_back(Pair("status","registered"));
                 else obj.push_back(Pair("status","alive"));
             } else obj.push_back(Pair("status","error"));
@@ -714,7 +713,7 @@ UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                 CScript opretRegister = rogue_registeropret(gametxid, playertxid);
                 if ( playertxid != zeroid )
                 {
-                    fprintf(stderr,"playertxid.%s\n",playertxid.GetHex().c_str());
+                    //fprintf(stderr,"playertxid.%s\n",playertxid.GetHex().c_str());
                     voutPubkeysEmpty.push_back(burnpk);
                     if ( GetTransaction(playertxid,playertx,hashBlock,false) != 0 )
                     {
@@ -723,7 +722,6 @@ UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                             didtx = 1;
                             if ( funcid == 'c' )
                                 tokenid = playertxid;
-                            vopretFinish.resize(0);
                             rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee,
                                                  EncodeTokenOpRet(tokenid, voutPubkeysEmpty /*=never spent*/, vopretFinish /*=non-fungible*/, opretRegister));
                         }
