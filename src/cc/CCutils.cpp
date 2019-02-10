@@ -76,7 +76,8 @@ CTxOut MakeCC1of2vout(uint8_t evalcode,CAmount nValue,CPubKey pk1,CPubKey pk2)
     return(vout);
 }
 
-CC *MakeTokensCCcond1of2(uint8_t evalcode, CPubKey pk1, CPubKey pk2)
+// make three-eval (token+evalcode+evalcode2) 1of2 cryptocondition:
+CC *MakeTokensCCcond1of2(uint8_t evalcode, uint8_t evalcode2, CPubKey pk1, CPubKey pk2)
 {
 	// make 1of2 sigs cond 
 	std::vector<CC*> pks;
@@ -85,44 +86,68 @@ CC *MakeTokensCCcond1of2(uint8_t evalcode, CPubKey pk1, CPubKey pk2)
 
 	std::vector<CC*> thresholds;
 	thresholds.push_back( CCNewEval(E_MARSHAL(ss << evalcode)) );
-	if( evalcode != EVAL_TOKENS )	// if evalCode == EVAL_TOKENS, it is actually MakeCCcond1of2()!
-		thresholds.push_back(CCNewEval(E_MARSHAL(ss << (uint8_t)EVAL_TOKENS)));	// this is eval token cc
-	thresholds.push_back(CCNewThreshold(1, pks));		// this is 1 of 2 sigs cc
+	if( evalcode != EVAL_TOKENS )	                                                // if evalCode == EVAL_TOKENS, it is actually MakeCCcond1of2()!
+		thresholds.push_back(CCNewEval(E_MARSHAL(ss << (uint8_t)EVAL_TOKENS)));	    // this is eval token cc
+    if( evalcode2 != 0 )
+        thresholds.push_back(CCNewEval(E_MARSHAL(ss << evalcode2)));                // add optional additional evalcode
+	thresholds.push_back(CCNewThreshold(1, pks));		                            // this is 1 of 2 sigs cc
 
 	return CCNewThreshold(thresholds.size(), thresholds);
 }
+// overload to make two-eval (token+evalcode) 1of2 cryptocondition:
+CC *MakeTokensCCcond1of2(uint8_t evalcode, CPubKey pk1, CPubKey pk2) {
+    return MakeTokensCCcond1of2(evalcode, 0, pk1, pk2);
+}
 
-CC *MakeTokensCCcond1(uint8_t evalcode, CPubKey pk)
+// make three-eval (token+evalcode+evalcode2) cryptocondition:
+CC *MakeTokensCCcond1(uint8_t evalcode, uint8_t evalcode2, CPubKey pk)
 {
 	std::vector<CC*> pks;
 	pks.push_back(CCNewSecp256k1(pk));
 
 	std::vector<CC*> thresholds;
 	thresholds.push_back(CCNewEval(E_MARSHAL(ss << evalcode)));
-	if (evalcode != EVAL_TOKENS)  // if evalCode == EVAL_TOKENS, it is actually MakeCCcond1()!
-		thresholds.push_back(CCNewEval(E_MARSHAL(ss << (uint8_t)EVAL_TOKENS)));	// this is eval token cc
-	thresholds.push_back(CCNewThreshold(1, pks));			// signature
+	if (evalcode != EVAL_TOKENS)                                                    // if evalCode == EVAL_TOKENS, it is actually MakeCCcond1()!
+		thresholds.push_back(CCNewEval(E_MARSHAL(ss << (uint8_t)EVAL_TOKENS)));	    // this is eval token cc
+    if (evalcode2 != 0)
+        thresholds.push_back(CCNewEval(E_MARSHAL(ss << evalcode2)));                // add optional additional evalcode
+	thresholds.push_back(CCNewThreshold(1, pks));			                        // signature
 
 	return CCNewThreshold(thresholds.size(), thresholds);
 }
+// overload to make two-eval (token+evalcode) cryptocondition:
+CC *MakeTokensCCcond1(uint8_t evalcode, CPubKey pk) {
+    return MakeTokensCCcond1(evalcode, 0, pk);
+}
 
-CTxOut MakeTokensCC1of2vout(uint8_t evalcode, CAmount nValue, CPubKey pk1, CPubKey pk2)
+// make three-eval (token+evalcode+evalcode2) 1of2 cc vout:
+CTxOut MakeTokensCC1of2vout(uint8_t evalcode, uint8_t evalcode2, CAmount nValue, CPubKey pk1, CPubKey pk2)
 {
 	CTxOut vout;
-	CC *payoutCond = MakeTokensCCcond1of2(evalcode, pk1, pk2);
+	CC *payoutCond = MakeTokensCCcond1of2(evalcode, evalcode2, pk1, pk2);
 	vout = CTxOut(nValue, CCPubKey(payoutCond));
 	cc_free(payoutCond);
 	return(vout);
 }
+// overload to make two-eval (token+evalcode) 1of2 cc vout:
+CTxOut MakeTokensCC1of2vout(uint8_t evalcode, CAmount nValue, CPubKey pk1, CPubKey pk2) {
+    return MakeTokensCC1of2vout(evalcode, 0, nValue, pk1, pk2);
+}
 
-CTxOut MakeTokensCC1vout(uint8_t evalcode, CAmount nValue, CPubKey pk)
+// make three-eval (token+evalcode+evalcode2) cc vout:
+CTxOut MakeTokensCC1vout(uint8_t evalcode, uint8_t evalcode2, CAmount nValue, CPubKey pk)
 {
 	CTxOut vout;
-	CC *payoutCond = MakeTokensCCcond1(evalcode, pk);
+	CC *payoutCond = MakeTokensCCcond1(evalcode, evalcode2, pk);
 	vout = CTxOut(nValue, CCPubKey(payoutCond));
 	cc_free(payoutCond);
 	return(vout);
 }
+// overload to make two-eval (token+evalcode) cc vout:
+CTxOut MakeTokensCC1vout(uint8_t evalcode, CAmount nValue, CPubKey pk) {
+    return MakeTokensCC1vout(evalcode, 0, nValue, pk);
+}
+
 
 CC* GetCryptoCondition(CScript const& scriptSig)
 {
@@ -227,17 +252,19 @@ CPubKey pubkey2pk(std::vector<uint8_t> pubkey)
     return(pk);
 }
 
+// set additional 'unspendable' addr
 void CCaddr2set(struct CCcontract_info *cp,uint8_t evalcode,CPubKey pk,uint8_t *priv,char *coinaddr)
 {
-    cp->evalcode2 = evalcode;
+    cp->unspendableEvalcode2 = evalcode;
     cp->unspendablepk2 = pk;
     memcpy(cp->unspendablepriv2,priv,32);
     strcpy(cp->unspendableaddr2,coinaddr);
 }
 
+// set yet another additional 'unspendable' addr
 void CCaddr3set(struct CCcontract_info *cp,uint8_t evalcode,CPubKey pk,uint8_t *priv,char *coinaddr)
 {
-    cp->evalcode3 = evalcode;
+    cp->unspendableEvalcode3 = evalcode;
     cp->unspendablepk3 = pk;
     memcpy(cp->unspendablepriv3,priv,32);
     strcpy(cp->unspendableaddr3,coinaddr);
@@ -252,12 +279,13 @@ void CCaddr1of2set(struct CCcontract_info *cp, CPubKey pk1, CPubKey pk2,uint8_t 
     strcpy(cp->coins1of2addr,coinaddr);
 }
 
-// set pubkeys, myprivkey and 1of2 cc addr for spending from 1of2 tokens cryptocondition vout:
-void CCaddrTokens1of2set(struct CCcontract_info *cp, CPubKey pk1, CPubKey pk2, char *coinaddr)
+// set pubkeys, myprivkey and 1of2 cc addr for spending from 1of2 token cryptocondition vout
+// to get tokenaddr use GetTokensCCaddress()
+void CCaddrTokens1of2set(struct CCcontract_info *cp, CPubKey pk1, CPubKey pk2, char *tokenaddr)
 {
 	cp->tokens1of2pk[0] = pk1;
 	cp->tokens1of2pk[1] = pk2;
-	strcpy(cp->tokens1of2addr, coinaddr);
+	strcpy(cp->tokens1of2addr, tokenaddr);
 }
 
 bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey)
@@ -352,11 +380,11 @@ bool GetCCaddress(struct CCcontract_info *cp,char *destaddr,CPubKey pk)
     return(_GetCCaddress(destaddr,cp->evalcode,pk));
 }
 
-bool _GetTokensCCaddress(char *destaddr, uint8_t evalcode, CPubKey pk)
+bool _GetTokensCCaddress(char *destaddr, uint8_t evalcode, uint8_t evalcode2, CPubKey pk)
 {
 	CC *payoutCond;
 	destaddr[0] = 0;
-	if ((payoutCond = MakeTokensCCcond1(evalcode, pk)) != 0)
+	if ((payoutCond = MakeTokensCCcond1(evalcode, evalcode2, pk)) != 0)
 	{
 		Getscriptaddress(destaddr, CCPubKey(payoutCond));
 		cc_free(payoutCond);
@@ -364,12 +392,13 @@ bool _GetTokensCCaddress(char *destaddr, uint8_t evalcode, CPubKey pk)
 	return(destaddr[0] != 0);
 }
 
+// get scriptPubKey adddress for three/dual eval token cc vout
 bool GetTokensCCaddress(struct CCcontract_info *cp, char *destaddr, CPubKey pk)
 {
 	destaddr[0] = 0;
 	if (pk.size() == 0)
 		pk = GetUnspendable(cp, 0);
-	return(_GetTokensCCaddress(destaddr, cp->evalcode, pk));
+	return(_GetTokensCCaddress(destaddr, cp->evalcode, cp->additionalTokensEvalcode2, pk));
 }
 
 
@@ -385,11 +414,12 @@ bool GetCCaddress1of2(struct CCcontract_info *cp,char *destaddr,CPubKey pk,CPubK
     return(destaddr[0] != 0);
 }
 
+// get scriptPubKey adddress for three/dual eval token 1of2 cc vout
 bool GetTokensCCaddress1of2(struct CCcontract_info *cp, char *destaddr, CPubKey pk, CPubKey pk2)
 {
 	CC *payoutCond;
 	destaddr[0] = 0;
-	if ((payoutCond = MakeTokensCCcond1of2(cp->evalcode, pk, pk2)) != 0)
+	if ((payoutCond = MakeTokensCCcond1of2(cp->evalcode, cp->additionalTokensEvalcode2, pk, pk2)) != 0)  //  if additionalTokensEvalcode2 not set then it is dual-eval cc else three-eval cc
 	{
 		Getscriptaddress(destaddr, CCPubKey(payoutCond));
 		cc_free(payoutCond);
@@ -516,7 +546,7 @@ CPubKey GetUnspendable(struct CCcontract_info *cp,uint8_t *unspendablepriv)
 
 void CCclearvars(struct CCcontract_info *cp)
 {
-    cp->evalcode2 = cp->evalcode3 = 0;
+    cp->unspendableEvalcode2 = cp->unspendableEvalcode3 = 0;
     cp->unspendableaddr2[0] = cp->unspendableaddr3[0] = 0;
 }
 

@@ -171,7 +171,7 @@ CPubKey OracleBatonPk(char *batonaddr,struct CCcontract_info *cp)
     if ( ctx == 0 )
         ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN);
     Myprivkey(priv);
-    cp->evalcode2 = EVAL_ORACLES;
+    cp->unspendableEvalcode2 = EVAL_ORACLES;
     for (i=0; i<32; i++)
         cp->unspendablepriv2[i] = (priv[i] ^ cp->CCpriv[i]);
     while ( secp256k1_ec_seckey_verify(ctx,cp->unspendablepriv2) == 0 )

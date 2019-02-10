@@ -89,6 +89,7 @@ struct CCcontract_info
 {
 	// this is for spending from 'unspendable' CC address
 	uint8_t evalcode;
+    uint8_t additionalTokensEvalcode2;  // this is for making three-eval-token vouts (EVAL_TOKENS + evalcode + additionalEvalcode2)
 	char unspendableCCaddr[64], CChexstr[72], normaladdr[64];
 	uint8_t CCpriv[32];
 
@@ -103,7 +104,7 @@ struct CCcontract_info
 
 	// this is for spending from two additional 'unspendable' CC addresses of other eval codes 
 	// (that is, for spending from several cc contract 'unspendable' addresses):
-	uint8_t evalcode2, evalcode3;
+	uint8_t unspendableEvalcode2, unspendableEvalcode3;  // changed evalcodeN to unspendableEvalcodeN for not mixing up with additionalEvalcodeN
 	char    unspendableaddr2[64], unspendableaddr3[64];
 	uint8_t unspendablepriv2[32], unspendablepriv3[32];
     CPubKey unspendablepk2,       unspendablepk3;
@@ -164,17 +165,19 @@ uint256 OraclesBatontxid(uint256 oracletxid,CPubKey pk);
 
 //int64_t AddAssetInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,uint256 assetid,int64_t total,int32_t maxinputs);
 int64_t AddTokenCCInputs(struct CCcontract_info *cp, CMutableTransaction &mtx, CPubKey pk, uint256 tokenid, int64_t total, int32_t maxinputs);
+int64_t AddTokenCCInputs(struct CCcontract_info *cp, CMutableTransaction &mtx, CPubKey pk, uint256 tokenid, int64_t total, int32_t maxinputs, std::vector<uint8_t> &vopretNonfungible);
 int64_t IsTokensvout(bool goDeeper, bool checkPubkeys, struct CCcontract_info *cp, Eval* eval, const CTransaction& tx, int32_t v, uint256 reftokenid);
 
 bool DecodeHexTx(CTransaction& tx, const std::string& strHexTx);
-CScript EncodeAssetOpRet(uint8_t assetFuncId, uint256 assetid2, int64_t price, std::vector<uint8_t> origpubkey);
-//bool DecodeAssetCreateOpRet(const CScript &scriptPubKey, std::vector<uint8_t> &origpubkey, std::string &name, std::string &description);
-uint8_t DecodeAssetTokenOpRet(const CScript &scriptPubKey, uint8_t &evalCodeInOpret, uint256 &tokenid, uint256 &assetid2, int64_t &price, std::vector<uint8_t> &origpubkey);
 
+CScript EncodeTokenCreateOpRet(uint8_t funcid, std::vector<uint8_t> origpubkey, std::string name, std::string description, std::vector<uint8_t> vopretNonfungible);
+CScript EncodeTokenOpRet(uint8_t tokenFuncId, uint8_t evalCodeInOpret, uint256 tokenid, std::vector<CPubKey> voutPubkeys, CScript payload); //old version
 CScript EncodeTokenOpRet(uint256 tokenid, std::vector<CPubKey> voutPubkeys, CScript payload);
-CScript EncodeTokenOpRet(uint8_t tokenFuncId, uint8_t evalCodeInOpret, uint256 tokenid, std::vector<CPubKey> voutPubkeys, CScript payload);
+CScript EncodeTokenOpRet(uint256 tokenid, std::vector<CPubKey> voutPubkeys, std::vector<uint8_t> vpayloadNonfungible, CScript payload);
 uint8_t DecodeTokenCreateOpRet(const CScript &scriptPubKey, std::vector<uint8_t> &origpubkey, std::string &name, std::string &description);
+uint8_t DecodeTokenCreateOpRet(const CScript &scriptPubKey, std::vector<uint8_t> &origpubkey, std::string &name, std::string &description, std::vector<uint8_t>  &vopretNonfungible);
 uint8_t DecodeTokenOpRet(const CScript scriptPubKey, uint8_t &evalCode, uint256 &tokenid, std::vector<CPubKey> &voutPubkeys, std::vector<uint8_t>  &vopretExtra);
+uint8_t DecodeTokenOpRet(const CScript scriptPubKey, uint8_t &evalCode, uint256 &tokenid, std::vector<CPubKey> &voutPubkeys, std::vector<uint8_t>  &vopret1, std::vector<uint8_t>  &vopret2);
 
 uint8_t DecodeOraclesData(const CScript &scriptPubKey,uint256 &oracletxid,uint256 &batontxid,CPubKey &pk,std::vector <uint8_t>&data);
 int32_t oracle_format(uint256 *hashp,int64_t *valp,char *str,uint8_t fmt,uint8_t *data,int32_t offset,int32_t datalen);
@@ -196,13 +199,20 @@ CC *MakeCCcond1of2(uint8_t evalcode,CPubKey pk1,CPubKey pk2);
 CC* GetCryptoCondition(CScript const& scriptSig);
 void CCaddr2set(struct CCcontract_info *cp,uint8_t evalcode,CPubKey pk,uint8_t *priv,char *coinaddr);
 void CCaddr3set(struct CCcontract_info *cp,uint8_t evalcode,CPubKey pk,uint8_t *priv,char *coinaddr);
+<<<<<<< HEAD
 void CCaddr1of2set(struct CCcontract_info *cp, CPubKey pk1, CPubKey pk2,uint8_t *priv,char *coinaddr);
 
+=======
+void CCaddr1of2set(struct CCcontract_info *cp, CPubKey pk1, CPubKey pk2, char *coinaddr);
+>>>>>>> FSM
 CTxOut MakeTokensCC1of2vout(uint8_t evalcode, CAmount nValue, CPubKey pk1, CPubKey pk2);
+CTxOut MakeTokensCC1of2vout(uint8_t evalcode, uint8_t evalcode2, CAmount nValue, CPubKey pk1, CPubKey pk2);
 CTxOut MakeTokensCC1vout(uint8_t evalcode, CAmount nValue, CPubKey pk);
+CTxOut MakeTokensCC1vout(uint8_t evalcode, uint8_t evalcode2, CAmount nValue, CPubKey pk);
+CC *MakeTokensCCcond1of2(uint8_t evalcode, uint8_t evalcode2, CPubKey pk1, CPubKey pk2);
 CC *MakeTokensCCcond1of2(uint8_t evalcode, CPubKey pk1, CPubKey pk2);
 CC *MakeTokensCCcond1(uint8_t evalcode, CPubKey pk);
-
+CC *MakeTokensCCcond1(uint8_t evalcode, uint8_t evalcode2, CPubKey pk);
 bool GetTokensCCaddress(struct CCcontract_info *cp, char *destaddr, CPubKey pk);
 bool GetTokensCCaddress1of2(struct CCcontract_info *cp, char *destaddr, CPubKey pk, CPubKey pk2);
 void CCaddrTokens1of2set(struct CCcontract_info *cp, CPubKey pk1, CPubKey pk2, char *coinaddr);
@@ -248,5 +258,30 @@ bits256 curve25519(bits256 mysecret,bits256 basepoint);
 void vcalc_sha256(char deprecated[(256 >> 3) * 2 + 1],uint8_t hash[256 >> 3],uint8_t *src,int32_t len);
 bits256 bits256_doublesha256(char *deprecated,uint8_t *data,int32_t datalen);
 UniValue ValueFromAmount(const CAmount& amount);
+
+
+// bitcoin LogPrintStr with category "-debug" cmdarg support for C++ ostringstream:
+#define CCLOG_INFO   0
+#define CCLOG_DEBUG1 1
+#define CCLOG_DEBUG2 2
+#define CCLOG_DEBUG3 3
+template <class T>
+inline void CCLogPrintStream(char *category, int level, T print_to_stream)
+{
+    std::ostringstream stream; 
+    print_to_stream(stream);
+    if (level < 0) 
+        level = 0; 
+    if (level > 3) 
+        level = 3; 
+    for (int i = 0; i < level; i++) 
+        if (LogAcceptCategory((std::string(category) + (level > 0 ? std::string("-") + std::to_string(level) : std::string(""))).c_str()))   {
+            LogPrintStr(stream.str());
+            break;
+        }
+}
+
+#define LOGSTREAM(category, level, logoperator) CCLogPrintStream( category, level, [=](std::ostringstream &stream) {logoperator;} )
+
 
 #endif

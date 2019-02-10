@@ -7046,75 +7046,105 @@ UniValue tokenbalance(const UniValue& params, bool fHelp)
 
 UniValue tokencreate(const UniValue& params, bool fHelp)
 {
+<<<<<<< HEAD
     UniValue result(UniValue::VOBJ); std::string name,description,hex; uint64_t supply;
     if ( fHelp || params.size() > 3 || params.size() < 2 )
         throw runtime_error("tokencreate name supply description\n");
     if ( ensure_CCrequirements(EVAL_TOKENS) < 0 )
+=======
+    UniValue result(UniValue::VOBJ); 
+    std::string name, description, hextx; 
+    std::vector<uint8_t> nonfungibleData;
+    int64_t supply; // changed from uin64_t to int64_t for this 'if ( supply <= 0 )' to work as expected
+
+    CCerror.clear();
+
+    if ( fHelp || params.size() > 4 || params.size() < 2 )
+        throw runtime_error("tokencreate name supply [description][data]\n");
+    if ( ensure_CCrequirements() < 0 )
+>>>>>>> FSM
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
+
     name = params[0].get_str();
-    supply = atof(params[1].get_str().c_str()) * COIN + 0.00000000499999;   // what for is this '+0.00000000499999'? it will be lost while converting double to int64_t (dimxy)
-    if ( name.size() == 0 || name.size() > 32)
-    {
+    if (name.size() == 0 || name.size() > 32)   {
         ERR_RESULT("Token name must not be empty and up to 32 characters");
         return(result);
     }
-    if ( supply <= 0 )
-    {
+
+    supply = atof(params[1].get_str().c_str()) * COIN + 0.00000000499999;   // what for is this '+0.00000000499999'? it will be lost while converting double to int64_t (dimxy)
+    if (supply <= 0)    {
         ERR_RESULT("Token supply must be positive");
         return(result);
     }
-    if ( params.size() == 3 )
-    {
+    
+    if (params.size() >= 3)     {
         description = params[2].get_str();
-        if ( description.size() > 4096 )
-        {
+        if (description.size() > 4096)   {
             ERR_RESULT("Token description must be <= 4096 characters");
             return(result);
         }
     }
-    hex = CreateToken(0,supply,name,description);
-    if ( hex.size() > 0 )
-    {
+    
+    if (params.size() == 4)    {
+        nonfungibleData = ParseHex(params[3].get_str());
+        if (nonfungibleData.size() > 10000) // opret limit
+        {
+            ERR_RESULT("Non-fungible data must be <= 10000");
+            return(result);
+        }
+    }
+
+    hextx = CreateToken(0, supply, name, description, nonfungibleData);
+    if( hextx.size() > 0 )     {
         result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    } else ERR_RESULT("couldnt create transaction");
+        result.push_back(Pair("hex", hextx));
+    } 
+    else 
+        ERR_RESULT(CCerror);
     return(result);
 }
 
 UniValue tokentransfer(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); std::string hex; int64_t amount; uint256 tokenid;
-    if ( fHelp || params.size() != 3 )
+    UniValue result(UniValue::VOBJ); 
+    std::string hex; 
+    int64_t amount; 
+    uint256 tokenid;
+    
+    CCerror.clear();
+
+    if ( fHelp || params.size() != 3)
         throw runtime_error("tokentransfer tokenid destpubkey amount\n");
     if ( ensure_CCrequirements(EVAL_TOKENS) < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
+    
     tokenid = Parseuint256((char *)params[0].get_str().c_str());
     std::vector<unsigned char> pubkey(ParseHex(params[1].get_str().c_str()));
     //amount = atol(params[2].get_str().c_str());
 	amount = atoll(params[2].get_str().c_str()); // dimxy changed to prevent loss of significance
-    if ( tokenid == zeroid )
-    {
+    if( tokenid == zeroid )    {
         ERR_RESULT("invalid tokenid");
         return(result);
     }
-    if ( amount <= 0 )
-    {
+    if( amount <= 0 )    {
         ERR_RESULT("amount must be positive");
         return(result);
     }
-    hex = TokenTransfer(0,tokenid,pubkey,amount);
-    if (amount > 0) {
-        if ( hex.size() > 0 )
-        {
-            result.push_back(Pair("result", "success"));
-            result.push_back(Pair("hex", hex));
-        } else ERR_RESULT("couldnt transfer assets");
-    } else {
-        ERR_RESULT("amount must be positive");
+
+    hex = TokenTransfer(0, tokenid, pubkey, amount);
+
+    if( !CCerror.empty() )   {
+        ERR_RESULT(CCerror);
+    }
+    else {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
     }
     return(result);
 }
@@ -7794,3 +7824,4 @@ UniValue test_heirmarker(const UniValue& params, bool fHelp)
 	cp = CCinit(&C, EVAL_HEIR);
 	return(FinalizeCCTx(0, cp, mtx, myPubkey, 10000, opret));
 }
+
