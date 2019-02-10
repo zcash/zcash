@@ -15,6 +15,7 @@
 #include <time.h>
 #include <curses.h>
 #include "rogue.h"
+#include "../../komodo_cJSON.h"
 
 /*
  * main:
@@ -146,7 +147,7 @@ uint8_t *OS_fileptr(long *allocsizep,char *fname);
 
 void rogue_setplayerdata(struct rogue_state *rs,char *gametxidstr)
 {
-    char cmd[32768]; int32_t i,n; char *filestr,*datastr,fname[128]; long allocsize; //cJSON *retjson,*array,*item;
+    char cmd[32768]; int32_t i,n; char *filestr,*datastr,fname[128]; long allocsize; cJSON *retjson,*array,*item;
     sprintf(fname,"%s.gameinfo",gametxidstr);
     sprintf(cmd,"./komodo-cli -ac_name=ROGUE cclib gameinfo 17 \\\"[%%22%s%%22]\\\" > %s",gametxidstr,fname);
     if ( system(cmd) != 0 )
@@ -154,7 +155,7 @@ void rogue_setplayerdata(struct rogue_state *rs,char *gametxidstr)
     else
     {
         filestr = (char *)OS_fileptr(&allocsize,fname);
-        /*if ( (retjson= cJSON_Parse(filestr)) != 0 )
+        if ( (retjson= cJSON_Parse(filestr)) != 0 )
         {
             if ( (array= jarray(&n,retjson,"players")) != 0 )
             {
@@ -174,7 +175,7 @@ void rogue_setplayerdata(struct rogue_state *rs,char *gametxidstr)
                 }
             }
             free_json(retjson);
-        }*/
+        }
         free(filestr);
     }
 }
