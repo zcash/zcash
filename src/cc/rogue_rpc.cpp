@@ -214,12 +214,13 @@ uint8_t rogue_registeropretdecode(uint256 &gametxid,uint256 &tokenid,uint256 &pl
     else if ( (f= DecodeTokenOpRet(scriptPubKey,e,tokenid,voutPubkeys,vopret,vopret2)) == 'c' || f == 't' )
     {
         fprintf(stderr,"got valid token opret %s e.%d vs %d\n",tokenid.GetHex().c_str(),e,EVAL_TOKENS);
-        playertxid = tokenid;
-        if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> gametxid; ss >> playertxid) != 0 && e == EVAL_ROGUE && (f == 'Q' || f == 'R') )
+        if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> gametxid; ss >> playertxid) != 0 && e == EVAL_ROGUE && f == 'R' )
         {
             return(f);
         }
+        playertxid = tokenid;
         fprintf(stderr,"e.%d vs %d, f %c, gametxid.%s player.%s\n",e,EVAL_ROGUE,f,gametxid.GetHex().c_str(),playertxid.GetHex().c_str());
+        return('R');
     }
     return(0);
 }
@@ -466,16 +467,16 @@ int32_t rogue_findbaton(struct CCcontract_info *cp,uint256 &playertxid,char **ke
                     matches++;
                     regslot = i;
                     matchtx = spenttx;
-                } else fprintf(stderr,"%d+1 doesnt match %s vs %s\n",i,ccaddr,destaddr);
-            } else fprintf(stderr,"%d+1 couldnt find spenttx.%s\n",i,spenttxid.GetHex().c_str());
-        } else fprintf(stderr,"%d+1 unspent\n",i);
+                } //else fprintf(stderr,"%d+1 doesnt match %s vs %s\n",i,ccaddr,destaddr);
+            } //else fprintf(stderr,"%d+1 couldnt find spenttx.%s\n",i,spenttxid.GetHex().c_str());
+        } //else fprintf(stderr,"%d+1 unspent\n",i);
     }
     if ( matches == 1 )
     {
         if ( myIsutxo_spent(spenttxid,gametxid,maxplayers+i+1) < 0 )
         {
             numvouts = matchtx.vout.size();
-            fprintf(stderr,"matchtxid.%s matches.%d numvouts.%d\n",matchtx.GetHash().GetHex().c_str(),matches,numvouts);
+            //fprintf(stderr,"matchtxid.%s matches.%d numvouts.%d\n",matchtx.GetHash().GetHex().c_str(),matches,numvouts);
             if ( rogue_registeropretdecode(txid,tokenid,playertxid,matchtx.vout[numvouts-1].scriptPubKey) == 'R' && txid == gametxid )
             {
                 if ( tokenid != zeroid )
