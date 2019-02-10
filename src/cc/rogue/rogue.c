@@ -187,10 +187,7 @@ int32_t rogue_setplayerdata(struct rogue_state *rs,char *gametxidstr)
 
 void rogue_bailout()
 {
-    char cmd[32768],hexstr[32768]; int32_t i;
-    for (i=0; i<num; i++)
-        sprintf(&hexstr[i<<1],"%02x",keystrokes[i]);
-    hexstr[i<<1] = 0;
+    char cmd[512];
     sprintf(cmd,"./komodo-cli -ac_name=ROGUE cclib bailout 17 \\\"[%%22%s%%22]\\\" >> keystrokes.log",Gametxidstr);
     if ( system(cmd) != 0 )
         fprintf(stderr,"error issuing (%s)\n",cmd);
