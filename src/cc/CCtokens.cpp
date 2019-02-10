@@ -630,6 +630,7 @@ bool TokensExactAmounts(bool goDeeper, struct CCcontract_info *cp, int64_t &inpu
 	if (inputs != outputs) {
 		if (tx.GetHash() != reftokenid)
             LOGSTREAM((char *)"cctokens", CCLOG_DEBUG1, stream << indentStr << "TokenExactAmounts() found unequal token cc inputs=" << inputs << " vs cc outputs=" << outputs << " for txid=" << tx.GetHash().GetHex() << " and this is not the create tx" << std::endl);
+        fprintf(stderr,"inputs %.8f vs outputs %.8f\n",(long long)inputs,(long long)outputs);
 		return false;  // do not call eval->Invalid() here!
 	}
 	else
