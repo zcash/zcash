@@ -7046,13 +7046,7 @@ UniValue tokenbalance(const UniValue& params, bool fHelp)
 
 UniValue tokencreate(const UniValue& params, bool fHelp)
 {
-<<<<<<< HEAD
-    UniValue result(UniValue::VOBJ); std::string name,description,hex; uint64_t supply;
-    if ( fHelp || params.size() > 3 || params.size() < 2 )
-        throw runtime_error("tokencreate name supply description\n");
-    if ( ensure_CCrequirements(EVAL_TOKENS) < 0 )
-=======
-    UniValue result(UniValue::VOBJ); 
+    UniValue result(UniValue::VOBJ);
     std::string name, description, hextx; 
     std::vector<uint8_t> nonfungibleData;
     int64_t supply; // changed from uin64_t to int64_t for this 'if ( supply <= 0 )' to work as expected
@@ -7061,8 +7055,7 @@ UniValue tokencreate(const UniValue& params, bool fHelp)
 
     if ( fHelp || params.size() > 4 || params.size() < 2 )
         throw runtime_error("tokencreate name supply [description][data]\n");
-    if ( ensure_CCrequirements() < 0 )
->>>>>>> FSM
+    if ( ensure_CCrequirements(EVAL_TOKENS) < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     
     const CKeyStore& keystore = *pwalletMain;
