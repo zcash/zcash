@@ -167,7 +167,7 @@ put_things(struct rogue_state *rs)
 	obj->o_hplus = 0;
 	obj->o_dplus = 0;
 	strncpy(obj->o_damage,"0x0",sizeof(obj->o_damage));
-        strncpy(obj->o_hurldmg,"0x0",sizeof(obj->o_hurldmg));
+    strncpy(obj->o_hurldmg,"0x0",sizeof(obj->o_hurldmg));
 	obj->o_arm = 11;
 	obj->o_type = AMULET;
 	/*

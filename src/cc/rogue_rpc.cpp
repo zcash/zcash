@@ -128,12 +128,12 @@
 
 // cclib newgame 17 \"[3,10]\"
 // cclib pending 17
-// cclib gameinfo 17 \"[%2284d3c1b598c9e2b3891a6b33468ec526cfaa9c7024c578025cdaff24b5ea3d20%22]\"
-// cclib register 17 \"[%2284d3c1b598c9e2b3891a6b33468ec526cfaa9c7024c578025cdaff24b5ea3d20%22]\"
+// cclib gameinfo 17 \"[%2250ad0155ea102f94949d51cc911e1d41ac03d24caf1a79cf5e0a4d9cc05ed836%22]\"
+// cclib register 17 \"[%2250ad0155ea102f94949d51cc911e1d41ac03d24caf1a79cf5e0a4d9cc05ed836%22]\"
 // ./rogue <seed> gui -> creates keystroke files
-// cclib register 17 \"[%220a4ecb345ca3090f4acad63f889c3668e46e245cb00ca4b8b57c4677b1ee95b2%22,%22eef1d0091a88d85bdac1ede9d31db8504bc466a6695fdf259dac623fce09e0dd%22]\"
+// cclib register 17 \"[%2250ad0155ea102f94949d51cc911e1d41ac03d24caf1a79cf5e0a4d9cc05ed836%22,%2233d52f92980ceaa81556093171ee224e085fd384690d83460d6fbbad96fe0e7e%22]\"
 // cclib keystrokes 17 \"[%220a4ecb345ca3090f4acad63f889c3668e46e245cb00ca4b8b57c4677b1ee95b2%22,%22deadbeef%22]\"
-// cclib bailout 17 \"[%2284d3c1b598c9e2b3891a6b33468ec526cfaa9c7024c578025cdaff24b5ea3d20%22]\"
+// cclib bailout 17 \"[%2250ad0155ea102f94949d51cc911e1d41ac03d24caf1a79cf5e0a4d9cc05ed836%22]\"
 // eef1d0091a88d85bdac1ede9d31db8504bc466a6695fdf259dac623fce09e0dd
 /*
  2409 gold.209 hp.17 strength.16 level.3 exp.22 3
@@ -446,10 +446,9 @@ int32_t rogue_playerdata(struct CCcontract_info *cp,uint256 &origplayergame,CPub
 int32_t rogue_playerdataspend(CMutableTransaction &mtx,uint256 playertxid,uint256 origplayergame)
 {
     int64_t txfee = 10000;
-    if ( CCgettxout(playertxid,0,1) == txfee && CCgettxout(origplayergame,1,1) == txfee ) // not sure if this is enough validation
+    if ( CCgettxout(playertxid,0,1) == 1 ) // not sure if this is enough validation
     {
         mtx.vin.push_back(CTxIn(playertxid,0,CScript()));
-        mtx.vin.push_back(CTxIn(origplayergame,1,CScript()));
         return(0);
     } else return(-1);
 }
