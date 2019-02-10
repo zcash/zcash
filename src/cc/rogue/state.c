@@ -1339,41 +1339,44 @@ rs_read_monsters(FILE *inf, struct monster *m, int count)
 void rogue_restoreobject(THING *o,struct rogue_packitem *item)
 {
     int32_t i;
-    o->_o._o_type = item->type;
-    o->_o._o_launch = item->launch;
-    memcpy(o->_o._o_damage,item->damage,sizeof(item->damage));
-    memcpy(o->_o._o_hurldmg,item->hurldmg,sizeof(item->hurldmg));
-    o->_o._o_count = item->count;
-    o->_o._o_which = item->which;
-    o->_o._o_hplus = item->hplus;
-    o->_o._o_dplus = item->dplus;
-    o->_o._o_arm = item->arm;
-    o->_o._o_flags = item->flags;
-    o->_o._o_group = item->group;
-    o->o_flags |= ISKNOW;
-    o->o_flags &= ~ISFOUND;
-    switch ( item->type )
+    if ( item->type != AMULET )
     {
-        case SCROLL:
-            if ( item->which < MAXSCROLLS )
-                scr_info[item->which].oi_know = TRUE;
-            break;
-        case POTION:
-            if ( item->which < MAXPOTIONS )
-                pot_info[item->which].oi_know = TRUE;
-            break;
-        case RING:
-            if ( item->which < MAXRINGS )
-                ring_info[item->which].oi_know = TRUE;
-            break;
-        case STICK:
-            if ( item->which < MAXSTICKS )
-                ws_info[item->which].oi_know = TRUE;
-            break;
+        o->_o._o_type = item->type;
+        o->_o._o_launch = item->launch;
+        memcpy(o->_o._o_damage,item->damage,sizeof(item->damage));
+        memcpy(o->_o._o_hurldmg,item->hurldmg,sizeof(item->hurldmg));
+        o->_o._o_count = item->count;
+        o->_o._o_which = item->which;
+        o->_o._o_hplus = item->hplus;
+        o->_o._o_dplus = item->dplus;
+        o->_o._o_arm = item->arm;
+        o->_o._o_flags = item->flags;
+        o->_o._o_group = item->group;
+        o->o_flags |= ISKNOW;
+        o->o_flags &= ~ISFOUND;
+        switch ( item->type )
+        {
+            case SCROLL:
+                if ( item->which < MAXSCROLLS )
+                    scr_info[item->which].oi_know = TRUE;
+                break;
+            case POTION:
+                if ( item->which < MAXPOTIONS )
+                    pot_info[item->which].oi_know = TRUE;
+                break;
+            case RING:
+                if ( item->which < MAXRINGS )
+                    ring_info[item->which].oi_know = TRUE;
+                break;
+            case STICK:
+                if ( item->which < MAXSTICKS )
+                    ws_info[item->which].oi_know = TRUE;
+                break;
+        }
+        char packitemstr[256];
+        strcpy(packitemstr,inv_name(o,FALSE));
+        fprintf(stderr,"packitem.(%s)\n",packitemstr);
     }
-    char packitemstr[256];
-    strcpy(packitemstr,inv_name(o,FALSE));
-    fprintf(stderr,"packitem.(%s)\n",packitemstr);
 }
 
 void rogue_packitemstr(char *packitemstr,struct rogue_packitem *item)
@@ -1440,7 +1443,7 @@ rs_write_object(struct rogue_state *rs,FILE *savef, THING *o)
         }
         else
         {
-            if ( rs->P.packsize++ == 0 )
+            if ( rs->P.packsize == 0 )
             {
                 rs->P.gold = purse;
                 rs->P.hitpoints = max_hp;
@@ -1451,8 +1454,11 @@ rs_write_object(struct rogue_state *rs,FILE *savef, THING *o)
                 fprintf(stderr,"%ld gold.%d hp.%d strength.%d level.%d exp.%d %d\n",ftell(savef),purse,max_hp,max_stats.s_str,pstats.s_lvl,pstats.s_exp,level);
             }
             fprintf(stderr,"object (%s) x.%d y.%d type.%d pack.(%c:%d)\n",inv_name(o,FALSE),o->_o._o_pos.x,o->_o._o_pos.y,o->_o._o_type,o->_o._o_packch,o->_o._o_packch);
-            if ( rs->P.packsize < MAXPACK )
+            if ( rs->P.packsize < MAXPACK && o->o_type != AMULET )
+            {
                 packsave(item,o->_o._o_type,o->_o._o_launch,o->_o._o_damage,sizeof(o->_o._o_damage),o->_o._o_hurldmg,sizeof(o->_o._o_hurldmg),o->_o._o_count,o->_o._o_which,o->_o._o_hplus,o->_o._o_dplus,o->_o._o_arm,o->_o._o_flags,o->_o._o_group);
+                rs->P.packsize++;
+            }
         }
     }
     rs_write_marker(savef, RSID_OBJECT);

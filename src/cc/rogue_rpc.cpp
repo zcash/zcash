@@ -114,11 +114,10 @@
  */
 
 // todo:
-// -detect playerdeath/quit to prevent illegal keystrokes vector
+// make register a token burn
+// convert playertxid to the original playertxid
 // verify keystrokes tx is in mempool and confirmed
-// check that bailout is legal, ie. proper gametxid vin
 // verify amulet possession in pack
-// -verify playerdata can be used and has same initial level
 
 //////////////////////// start of CClib interface
 //./komodod -ac_name=ROGUE -ac_supply=1000000 -pubkey=03951a6f7967ad784453116bc55cd30c54f91ea8a5b1e9b04d6b29cfd6b395ba6c -addnode=5.9.102.210  -ac_cclib=rogue -ac_perc=10000000 -ac_reward=100000000 -ac_cc=60001 -ac_script=2ea22c80203d1579313abe7d8ea85f48c65ea66fc512c878c0d0e6f6d54036669de940febf8103120c008203000401cc > /dev/null &
