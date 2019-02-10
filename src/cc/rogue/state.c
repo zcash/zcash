@@ -1352,7 +1352,7 @@ void rogue_restoreobject(THING *o,struct rogue_packitem *item)
     o->o_flags |= ISKNOW;
 }
 
-void rogue_packitemstr(*packitemstr,struct rogue_packitem *item);
+void rogue_packitemstr(char *packitemstr,struct rogue_packitem *item);
 {
     THING *obj = new_item();
     rogue_restoreobject(obj,item);

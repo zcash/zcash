@@ -166,7 +166,7 @@ struct rogue_player
 };
 int32_t rogue_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t num,struct rogue_player *player);
 #define ROGUE_DECLARED_PACK
-void rogue_packitemstr(*packitemstr,struct rogue_packitem *item);
+void rogue_packitemstr(char *packitemstr,struct rogue_packitem *item);
 
 CScript rogue_newgameopret(int64_t buyin,int32_t maxplayers)
 {
