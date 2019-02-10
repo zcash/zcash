@@ -162,7 +162,7 @@ void rogue_setplayerdata(struct rogue_state *rs,char *gametxidstr)
                 for (i=0; i<n; i++)
                 {
                     item = jitem(array,i);
-                    if ( Is_cJSON_True(jobj(item,"ismine")) != 0 )
+                    if ( is_cJSON_True(jobj(item,"ismine")) != 0 )
                     {
                         fprintf(stderr,"found ismine:true\n");
                         if ( (item= jobj(item,"player")) != 0 && (datastr= jstr(item,"data")) != 0 )
