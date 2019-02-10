@@ -142,6 +142,43 @@ int32_t flushkeystrokes(struct rogue_state *rs)
 }
 #else
 
+uint8_t *OS_fileptr(long *allocsizep,char *fname);
+
+void rogue_setplayerdata(struct rogue_state *rs,char *gametxidstr)
+{
+    char cmd[32768]; int32_t i,n; char *filestr,*datastr,fname[128]; long allocsize; cJSON *retjson,*array,*item;
+    sprintf(fname,"%s.gameinfo",gametxidstr);
+    sprintf(cmd,"./komodo-cli -ac_name=ROGUE cclib gameinfo 17 \\\"[%%22%s%%22]\\\" > %s",gametxidstr,fname);
+    if ( system(cmd) != 0 )
+        fprintf(stderr,"error issuing (%s)\n",cmd);
+    else
+    {
+        filestr = (char *)OS_fileptr(&allocsize,fname);
+        if ( (retjson= cJSON_Parse(filestr)) != 0 )
+        {
+            if ( (array= jarray(&n,retjson,"players")) != 0 )
+            {
+                for (i=0; i<n; i++)
+                {
+                    item = jitem(array,i);
+                    if ( Is_cJSON_True(jobj(item,"ismine")) != 0 )
+                    {
+                        fprintf(stderr,"found ismine:true\n");
+                        if ( (item= jobj(item,"player")) != 0 && (datastr= jstr(item,"data")) != 0 )
+                        {
+                            decode_hex(&rs->P,(int32_t)strlen(datastr)/2,datastr);
+                            fprintf(stderr,"set datastr[%d]\n",(int32_t)strlen(datastr));
+                            rs->restoring = 1;
+                        }
+                    }
+                }
+            }
+            free_json(retjson);
+        }
+        free(filestr);
+    }
+}
+
 void rogue_progress(uint64_t seed,char *keystrokes,int32_t num) // use seed to lookup gametxid
 {
     char cmd[32768],hexstr[32768]; int32_t i;
@@ -260,6 +297,7 @@ int rogue(int argc, char **argv, char **envp)
     {
         rs->seed = atol(argv[1]);
         strcpy(Gametxidstr,argv[2]);
+        rogue_setplayerdata(rs,Gametxidstr);
     } else rs->seed = 777;
     rs->guiflag = 1;
     rs->sleeptime = 1; // non-zero to allow refresh()
