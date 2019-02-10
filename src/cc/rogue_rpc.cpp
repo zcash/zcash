@@ -551,9 +551,9 @@ void rogue_gameplayerinfo(struct CCcontract_info *cp,UniValue &obj,uint256 gamet
     {
         if ( CCgettxout(gametxid,maxplayers+vout,1) == 10000 )
         {
-            if ( GetTransaction(batontxid,batontx,hashBlock,false) != 0 && batontx.size() > 1 )
+            if ( GetTransaction(batontxid,batontx,hashBlock,false) != 0 && batontx.vout.size() > 1 )
             {
-                if ( rogue_registeropretdecode(gtxid,ptxid,batontx.vout[batontx.size()-1].scriptPubKey) == 'R' && gtxid == gametxid && ptxid == playertxid )
+                if ( rogue_registeropretdecode(gtxid,ptxid,batontx.vout[batontx.vout.size()-1].scriptPubKey) == 'R' && gtxid == gametxid && ptxid == playertxid )
                     obj.push_back(Pair("status","registered"));
                 else obj.push_back(Pair("status","alive"));
             } else obj.push_back(Pair("status","error"));
