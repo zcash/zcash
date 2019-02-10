@@ -61,6 +61,7 @@ CClib_methods[] =
     { (char *)"rogue", (char *)"bailout", (char *)"baton finalhash", 2, 2, 'Q', EVAL_ROGUE },
     { (char *)"rogue", (char *)"highlander", (char *)"baton finalhash", 2, 2, 'H', EVAL_ROGUE },
     { (char *)"rogue", (char *)"playerinfo", (char *)"playertxid", 1, 1, 'I', EVAL_ROGUE },
+    { (char *)"rogue", (char *)"players", (char *)"playertxid", 1, 1, 'D', EVAL_ROGUE },
 #else
     { (char *)"sudoku", (char *)"gen", (char *)"<no args>", 0, 0, 'G', EVAL_SUDOKU },
     { (char *)"sudoku", (char *)"txidinfo", (char *)"txid", 1, 1, 'T', EVAL_SUDOKU },
@@ -86,6 +87,7 @@ UniValue rogue_keystrokes(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
 UniValue rogue_bailout(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue rogue_highlander(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue rogue_playerinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+UniValue rogue_players(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 
 #else
 bool sudoku_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx);
@@ -117,6 +119,8 @@ UniValue CClib_method(struct CCcontract_info *cp,char *method,cJSON *params)
             return(rogue_highlander(txfee,cp,params));
         else if ( strcmp(method,"playerinfo") == 0 )
             return(rogue_playerinfo(txfee,cp,params));
+        else if ( strcmp(method,"players") == 0 )
+            return(rogue_players(txfee,cp,params));
         else
         {
             result.push_back(Pair("result","error"));

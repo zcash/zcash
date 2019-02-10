@@ -152,6 +152,22 @@
  
  */
 
+
+#define MAXPACK 23
+struct rogue_packitem
+{
+    int32_t type,launch,count,which,hplus,dplus,arm,flags,group;
+    char damage[8],hurldmg[8];
+};
+struct rogue_player
+{
+    int32_t gold,hitpoints,strength,level,experience,packsize,dungeonlevel,pad;
+    struct rogue_packitem roguepack[MAXPACK];
+};
+int32_t rogue_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t num,struct rogue_player *player);
+#define ROGUE_DECLARED_PACK
+void rogue_packitemstr(*packitemstr,struct rogue_packitem *item);
+
 CScript rogue_newgameopret(int64_t buyin,int32_t maxplayers)
 {
     CScript opret; uint8_t evalcode = EVAL_ROGUE;
@@ -185,7 +201,7 @@ uint8_t rogue_highlanderopretdecode(uint256 &gametxid,CPubKey &pk,std::vector<ui
     std::vector<uint8_t> vopret; uint8_t *script,e,f;
     GetOpReturnData(scriptPubKey,vopret);
     script = (uint8_t *)vopret.data();
-    if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> gametxid; ss >> pk; ss >> playerdata) != 0 && e == EVAL_ROGUE && (f == 'H' || f == 'Q') )
+    if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> gametxid; ss >> pk; ss >> playerdata) != 0 && e == EVAL_ROGUE && (f == 'H' || f == 'Q' || f == 'S') )
     {
         return(f);
     }
@@ -346,7 +362,26 @@ int32_t rogue_isvalidgame(struct CCcontract_info *cp,CTransaction &tx,int64_t &b
 
 UniValue rogue_playerobj(UniValue &obj,std::vector<uint8_t> playerdata)
 {
-    obj.push_back(Pair("raw","<playerdata>"));
+    int32_t i; struct rogue_player P; char packitemstr[512]; UniValue a(UniValue::VARR);
+    memset(&P,0,sizeof(P));
+    if ( playerdata.size() > 0 )
+    {
+        for (i=0; i<playerdata.size(); i++)
+            ((uint8_t *)&P)[i] = playerdata[i];
+    }
+    int32_t gold,hitpoints,strength,level,experience,packsize,dungeonlevel,pad;
+    for (i=0; i<P.packsize&&i<MAXPACK; i++)
+    {
+        rogue_packitemstr(packitemstr,&P.roguepack[i]);
+        a.push_back(packitemstr);
+    }
+    obj.push_back(Pair("pack",a));
+    obj.push_back(Pair("packsize",(int64_t)P.packsize));
+    obj.push_back(Pair("hitpoints",(int64_t)P.hitpoints));
+    obj.push_back(Pair("strength",(int64_t)P.strength));
+    obj.push_back(Pair("level",(int64_t)P.level));
+    obj.push_back(Pair("experience",(int64_t)P.experience));
+    obj.push_back(Pair("dungeonlevel",(int64_t)P.dungeonlevel));
     // convert to scrolls, etc.
     return(obj);
 }
@@ -527,7 +562,7 @@ void rogue_gameplayerinfo(struct CCcontract_info *cp,UniValue &obj,uint256 gamet
         if ( playerdata.size() > 0 )
         {
             UniValue pobj(UniValue::VOBJ);
-            obj.push_back(Pair("rogue",rogue_playerobj(pobj,playerdata)));
+            obj.push_back(Pair("player",rogue_playerobj(pobj,playerdata)));
         }
     } else fprintf(stderr,"findbaton err.%d\n",retval);
 }
@@ -619,7 +654,7 @@ UniValue rogue_playerinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
             playertxid = juint256(jitem(params,0));
             if ( rogue_playerdata(cp,origplayergame,pk,playerdata,playertxid) < 0 )
                 return(cclib_error(result,"invalid playerdata"));
-            result.push_back(Pair("rogue",rogue_playerobj(pobj,playerdata)));
+            result.push_back(Pair("player",rogue_playerobj(pobj,playerdata)));
         } else return(cclib_error(result,"no playertxid"));
         return(result);
     } else return(cclib_error(result,"couldnt reparse params"));
@@ -712,20 +747,6 @@ UniValue rogue_keystrokes(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
     } else return(cclib_error(result,"couldnt reparse params"));
 }
 
-#define MAXPACK 23
-struct rogue_packitem
-{
-    int32_t type,launch,count,which,hplus,dplus,arm,flags,group;
-    char damage[8],hurldmg[8];
-};
-struct rogue_player
-{
-    int32_t gold,hitpoints,strength,level,experience,packsize,dungeonlevel,pad;
-    struct rogue_packitem roguepack[MAXPACK];
-};
-int32_t rogue_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t num,struct rogue_player *player);
-#define ROGUE_DECLARED_PACK
-
 UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *params,char *method)
 {
     //vin0 -> highlander vout from creategame TCBOO
@@ -774,13 +795,15 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
                     UniValue obj; struct rogue_player P;
                     seed = rogue_gamefields(obj,maxplayers,buyin,gametxid,myrogueaddr);
                     fprintf(stderr,"found baton %s numkeys.%d seed.%llu\n",batontxid.ToString().c_str(),numkeys,(long long)seed);
+                    memset(&P,0,sizeof(P));
                     if ( playerdata.size() > 0 )
                     {
                         for (i=0; i<playerdata.size(); i++)
                             ((uint8_t *)&P)[i] = playerdata[i];
                     }
                     num = rogue_replay2(player,seed,keystrokes,numkeys,playerdata.size()==0?0:&P);
-                    free(keystrokes);
+                    if ( keystrokes != 0 )
+                        free(keystrokes);
                     mtx.vin.push_back(CTxIn(batontxid,batonvout,CScript()));
                     mtx.vin.push_back(CTxIn(gametxid,2+maxplayers+regslot,CScript()));
                     mtx.vout.push_back(MakeCC1vout(cp->evalcode,1,mypk));
@@ -885,6 +908,30 @@ UniValue rogue_pending(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     result.push_back(Pair("result","success"));
     rogue_univalue(result,"pending",-1,-1);
     result.push_back(Pair("pending",a));
+    result.push_back(Pair("numpending",a.size()));
+    return(result);
+}
+
+UniValue rogue_players(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
+{
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR); int64_t buyin; uint256 gametxid,txid,hashBlock; CTransaction playertx,tx; int32_t maxplayers,vout,numvouts; std::vector<uint8_t> playerdata; CPubKey roguepk,mypk,pk; char coinaddr[64];
+    std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
+    roguepk = GetUnspendable(cp,0);
+    GetCCaddress(cp,coinaddr,mypk);
+    SetCCunspents(unspentOutputs,coinaddr);
+    for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
+    {
+        txid = it->first.txhash;
+        vout = (int32_t)it->first.index;
+        //char str[65]; fprintf(stderr,"%s check %s/v%d %.8f\n",coinaddr,uint256_str(str,txid),vout,(double)it->second.satoshis/COIN);
+        if ( it->second.satoshis != 1 || vout != 0 )
+            continue;
+        if ( rogue_playerdata(cp,gametxid,pk,playerdata,playertxid) == 0 && pk == mypk )
+            a.push_back(Pair("player",rogue_playerobj(pobj,playerdata)));
+    }
+    result.push_back(Pair("result","success"));
+    rogue_univalue(result,"players",-1,-1);
+    result.push_back(Pair("players",a));
     result.push_back(Pair("numpending",a.size()));
     return(result);
 }

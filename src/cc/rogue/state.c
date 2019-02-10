@@ -1349,6 +1349,15 @@ void rogue_restoreobject(THING *o,struct rogue_packitem *item)
     o->_o._o_arm = item->arm;
     o->_o._o_flags = item->flags;
     o->_o._o_group = item->group;
+    o->o_flags |= ISKNOW;
+}
+
+void rogue_packitemstr(*packitemstr,struct rogue_packitem *item);
+{
+    THING *obj = new_item();
+    rogue_restoreobject(obj,item);
+    strcpy(packitemstr,inv_name(o,FALSE));
+    free(obj);
 }
 
 int32_t packsave(struct rogue_packitem *item,int32_t type,int32_t launch,char *damage,int32_t damagesize,char *hurldmg,int32_t hurlsize,int32_t count,int32_t which,int32_t hplus,int32_t dplus,int32_t arm,int32_t flags,int32_t group)
