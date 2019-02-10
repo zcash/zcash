@@ -250,7 +250,9 @@ bool TokensValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction &
     if (eval->GetTxUnconfirmed(tokenid, createTx, hashBlock) == 0)
     //if (myGetTransaction(tokenid, createTx, hashBlock) == 0)
     {
-        fprintf(stderr,"tokenid.%s\n",tokenid.GetHex());
+        fprintf(stderr,"tokenid.%s\n",tokenid.GetHex().c_str());
+        fprintf(stderr,"tokenid.%s\n",tokenid.GetHex().c_str());
+        fprintf(stderr,"tokenid.%s\n",tokenid.GetHex().c_str());
 		return eval->Invalid("cant find token create txid");
     }
 	else if (IsCCInput(tx.vin[0].scriptSig) != 0)
