@@ -28,13 +28,14 @@
 // CCcustom
 bool TokensValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn);
 bool TokensExactAmounts(bool goDeeper, struct CCcontract_info *cpTokens, int64_t &inputs, int64_t &outputs, Eval* eval, const CTransaction &tx, uint256 tokenid);
-//int64_t IsTokensvout(bool goDeeper, bool checkPubkeys, struct CCcontract_info *cp, Eval* eval, std::vector<uint8_t> &origpubkey, const CTransaction& tx, int32_t v, uint256 reftokenid, std::vector<CPubKey> vinPubkeys);
-std::string CreateToken(int64_t txfee, int64_t assetsupply, std::string name, std::string description);
+std::string CreateToken(int64_t txfee, int64_t assetsupply, std::string name, std::string description, std::vector<uint8_t> nonfungibleData);
 std::string TokenTransfer(int64_t txfee, uint256 assetid, std::vector<uint8_t> destpubkey, int64_t total);
 
 int64_t GetTokenBalance(CPubKey pk, uint256 tokenid);
 UniValue TokenInfo(uint256 tokenid);
 UniValue TokenList();
+
+void GetNonfungibleData(uint256 tokenid, std::vector<uint8_t> &vopretNonfungible);
 
 //this is in CCinclude.h int64_t AddTokenCCInputs(struct CCcontract_info *cp, CMutableTransaction &mtx, CPubKey pk, uint256 tokenid, int64_t total, int32_t maxinputs);
 
