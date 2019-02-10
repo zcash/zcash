@@ -164,9 +164,10 @@ readchar(struct rogue_state *rs)
         }
         fprintf(stderr,"replay finished but readchar called\n");
         rs->replaydone = (uint32_t)time(NULL);
-        if ( (rand() & 1) == 0 )
-            return(ESCAPE);
-        else return('y');
+        //if ( (rand() & 1) == 0 )
+        //    return(ESCAPE);
+        //else
+        return('y');
     }
     if ( rs == 0 || rs->guiflag != 0 )
     {
