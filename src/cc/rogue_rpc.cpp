@@ -194,10 +194,12 @@ CScript rogue_highlanderopret(uint8_t funcid,uint256 gametxid,CPubKey pk,std::ve
 
 uint8_t rogue_highlanderopretdecode(uint256 &gametxid,CPubKey &pk,std::vector<uint8_t> &playerdata,CScript scriptPubKey)
 {
-    std::vector<uint8_t> vopret,vopret2; uint8_t *script,e,f; uint256 tokenid; std::vector<CPubKey> voutPubkeys;
-    if ( (f= DecodeTokenOpRet(scriptPubKey,e,tokenid,voutPubkeys,vopret,vopret2)) == 'c' || f == 't' )
+    std::vector<uint8_t> vopret,vopret2; uint8_t e,f; uint256 tokenid; std::vector<CPubKey> voutPubkeys;
+    GetOpReturnData(scriptPubKey,vopret);
+    if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> gametxid; ss >> pk; ss >> playerdata) != 0 && e == EVAL_ROGUE && (f == 'H' || f == 'Q') )
+        return(f);
+    else if ( (f= DecodeTokenOpRet(scriptPubKey,e,tokenid,voutPubkeys,vopret,vopret2)) == 'c' || f == 't' )
     {
-        script = (uint8_t *)vopret.data();
         if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> gametxid; ss >> pk; ss >> playerdata) != 0 && e == EVAL_ROGUE && (f == 'H' || f == 'Q') )
         {
             return(f);
@@ -208,9 +210,8 @@ uint8_t rogue_highlanderopretdecode(uint256 &gametxid,CPubKey &pk,std::vector<ui
 
 uint8_t rogue_keystrokesopretdecode(uint256 &gametxid,uint256 &batontxid,CPubKey &pk,std::vector<uint8_t> &keystrokes,CScript scriptPubKey)
 {
-    std::vector<uint8_t> vopret; uint8_t *script,e,f;
+    std::vector<uint8_t> vopret; uint8_t e,f;
     GetOpReturnData(scriptPubKey,vopret);
-    script = (uint8_t *)vopret.data();
     if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> gametxid; ss >> batontxid; ss >> pk; ss >> keystrokes) != 0 && e == EVAL_ROGUE && f == 'K' )
     {
         return(f);
@@ -220,9 +221,8 @@ uint8_t rogue_keystrokesopretdecode(uint256 &gametxid,uint256 &batontxid,CPubKey
 
 uint8_t rogue_registeropretdecode(uint256 &gametxid,uint256 &playertxid,CScript scriptPubKey)
 {
-    std::vector<uint8_t> vopret; uint8_t *script,e,f;
+    std::vector<uint8_t> vopret; uint8_t e,f;
     GetOpReturnData(scriptPubKey,vopret);
-    script = (uint8_t *)vopret.data();
     if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> gametxid; ss >> playertxid) != 0 && e == EVAL_ROGUE && f == 'R' )
     {
         return(f);
@@ -232,9 +232,8 @@ uint8_t rogue_registeropretdecode(uint256 &gametxid,uint256 &playertxid,CScript 
 
 uint8_t rogue_newgameopreturndecode(int64_t &buyin,int32_t &maxplayers,CScript scriptPubKey)
 {
-    std::vector<uint8_t> vopret; uint8_t *script,e,f;
+    std::vector<uint8_t> vopret; uint8_t e,f;
     GetOpReturnData(scriptPubKey,vopret);
-    script = (uint8_t *)vopret.data();
     if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> buyin; ss >> maxplayers) != 0 && e == EVAL_ROGUE && f == 'G' )
     {
         return(f);
@@ -817,7 +816,6 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
                     mtx.vin.push_back(CTxIn(gametxid,1+maxplayers+regslot,CScript()));
                     if ( funcid == 'H' )
                         mtx.vin.push_back(CTxIn(gametxid,0,CScript()));
-                    //mtx.vout.push_back(MakeCC1vout(cp->evalcode,1,mypk));
                     mtx.vout.push_back(MakeTokensCC1vout(cp->evalcode, 1, mypk));
                     if ( num > 0 )
                     {
@@ -827,19 +825,27 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
                             newdata[i] = player[i];
                             ((uint8_t *)&P)[i] = player[i];
                         }
-                        fprintf(stderr,"\nextracted $$$gold.%d hp.%d strength.%d level.%d exp.%d dl.%d n.%d size.%d\n",P.gold,P.hitpoints,P.strength,P.level,P.experience,P.dungeonlevel,n,(int32_t)sizeof(P));
-                        cashout = (uint64_t)P.gold * mult;
-                        if ( funcid == 'H' && maxplayers > 1 )
+                        if ( P.gold < 0 || P.hitpoints < 0 || P.strength < 0 || P.level < 0 || P.experience < 0 || P.dungeonlevel < 0 )
                         {
-                            if ( numplayers != maxplayers || (numplayers - rogue_playersalive(tmp,gametxid,maxplayers)) > 1 && (P.dungeonlevel > 1 || P.gold < 10000 || P.level < 20) )
-                                return(cclib_error(result,"highlander must be a winner or last one standing"));
-                            cashout += numplayers * buyin;
+                            fprintf(stderr,"was killed -> no playerdata\n");
+                            newdata.resize(0);
                         }
-                        if ( cashout >= txfee )
+                        else
                         {
-                            if ( (inputsum= AddCClibInputs(cp,mtx,roguepk,cashout,16,cp->unspendableCCaddr)) > (uint64_t)P.gold*mult )
-                                CCchange = (inputsum - cashout);
-                            mtx.vout.push_back(CTxOut(cashout,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
+                            fprintf(stderr,"\nextracted $$$gold.%d hp.%d strength.%d level.%d exp.%d dl.%d n.%d size.%d\n",P.gold,P.hitpoints,P.strength,P.level,P.experience,P.dungeonlevel,n,(int32_t)sizeof(P));
+                            cashout = (uint64_t)P.gold * mult;
+                            if ( funcid == 'H' && maxplayers > 1 )
+                            {
+                                if ( numplayers != maxplayers || (numplayers - rogue_playersalive(tmp,gametxid,maxplayers)) > 1 && (P.dungeonlevel > 1 || P.gold < 10000 || P.level < 20) )
+                                    return(cclib_error(result,"highlander must be a winner or last one standing"));
+                                cashout += numplayers * buyin;
+                            }
+                            if ( cashout >= txfee )
+                            {
+                                if ( (inputsum= AddCClibInputs(cp,mtx,roguepk,cashout,16,cp->unspendableCCaddr)) > (uint64_t)P.gold*mult )
+                                    CCchange = (inputsum - cashout);
+                                mtx.vout.push_back(CTxOut(cashout,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
+                            }
                         }
                         //for (i=0; i<P.packsize; i++)
                         //    fprintf(stderr,"object (%s) type.%d pack.(%c:%d)\n",inv_name(o,FALSE),o->_o._o_type,o->_o._o_packch,o->_o._o_packch);
@@ -847,14 +853,17 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
                     mtx.vout.push_back(MakeCC1vout(cp->evalcode,CCchange + (batonvalue-2*txfee),roguepk));
                     Myprivkey(mypriv);
                     CCaddr1of2set(cp,roguepk,mypk,mypriv,myrogueaddr);
-                    //rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,rogue_highlanderopret(funcid,gametxid,mypk,newdata));
-
                     CScript opret = rogue_highlanderopret(funcid, gametxid, mypk, newdata);
-
-                    std::vector<uint8_t> vopretNonfungible;
-                    GetOpReturnData(opret, vopretNonfungible);
-                    rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, EncodeTokenCreateOpRet('c', Mypubkey(), std::string("???"), std::string("??????"), vopretNonfungible));
-
+                    if ( newdata.size() == 0 )
+                        rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,opret);
+                    else
+                    {
+                        char seedstr[32];
+                        sprintf(seedstr,"%llu",(long long)seed);
+                        std::vector<uint8_t> vopretNonfungible;
+                        GetOpReturnData(opret, vopretNonfungible);
+                        rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, EncodeTokenCreateOpRet('c', Mypubkey(), std::string(seedstr), gametxid.GetHex(), vopretNonfungible));
+                    }
                     return(rogue_rawtxresult(result,rawtx,0));
                 }
                 result.push_back(Pair("result","success"));
