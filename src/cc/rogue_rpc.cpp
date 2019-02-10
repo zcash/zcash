@@ -217,6 +217,7 @@ uint8_t rogue_registeropretdecode(uint256 &gametxid,uint256 &tokenid,uint256 &pl
         {
             return(f);
         }
+        fprintf(stderr,"e.%d vs %d, f %c, gametxid.%s player.%s\n",e,EVAL_ROGUE,f,gametxid.GetHex().c_str(),playertxid.GetHex().c_str());
     }
     return(0);
 }
