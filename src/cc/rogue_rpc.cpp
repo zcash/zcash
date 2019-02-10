@@ -387,12 +387,13 @@ UniValue rogue_playerobj(UniValue &obj,std::vector<uint8_t> playerdata)
     return(obj);
 }
 
-int32_t rogue_iterateplayer(uint256 firsttxid,uint256 lasttxid)     // retrace playertxid vins to reach highlander <- this verifies player is valid and rogue_playerdataspend makes sure it can only be used once
+int32_t rogue_iterateplayer(uint256 firsttxid,int32_t firstvout,uint256 lasttxid)     // retrace playertxid vins to reach highlander <- this verifies player is valid and rogue_playerdataspend makes sure it can only be used once
 {
-    uint256 spenttxid,txid = firsttxid; int32_t spentvini,vout = 0;
+    uint256 spenttxid,txid = firsttxid; int32_t spentvini,vout = firstvout;
     while ( (spentvini= myIsutxo_spent(spenttxid,txid,vout)) == 0 )
     {
         txid = spenttxid;
+        vout = spentvini;
     }
     if ( txid == lasttxid )
         return(0);
@@ -412,7 +413,7 @@ int32_t rogue_iterateplayer(uint256 firsttxid,uint256 lasttxid)     // retrace p
 
 int32_t rogue_playerdata(struct CCcontract_info *cp,uint256 &origplayergame,CPubKey &pk,std::vector<uint8_t> &playerdata,uint256 playertxid)
 {
-    uint256 origplayertxid,hashBlock,gametxid; CTransaction gametx,playertx,highlandertx; std::vector<uint8_t> vopret; uint8_t *script,e,f; int32_t i,numvouts,maxplayers; int64_t buyin;
+    uint256 origplayertxid,hashBlock,gametxid; CTransaction gametx,playertx,highlandertx; std::vector<uint8_t> vopret; uint8_t *script,e,f; int32_t i,gameheight,numvouts,maxplayers; int64_t buyin;
     if ( GetTransaction(playertxid,playertx,hashBlock,false) != 0 && (numvouts= playertx.vout.size()) > 0 )
     {
         GetOpReturnData(playertx.vout[numvouts-1].scriptPubKey,vopret);
@@ -420,7 +421,7 @@ int32_t rogue_playerdata(struct CCcontract_info *cp,uint256 &origplayergame,CPub
         if ( vopret.size() > 34 && script[0] == EVAL_ROGUE && (script[1] == 'H' || script[1] == 'Q' || script[1] == 'S') )
         {
             memcpy(&gametxid,script+2,sizeof(gametxid));
-            fprintf(stderr,"got vin.%s gametxid.%s iterate.%d valid.%d\n",playertx.vin[1].prevout.hash.ToString().c_str(),gametxid.ToString().c_str(),rogue_iterateplayer(gametxid,playertx.vin[1].prevout.n,playertxid),rogue_isvalidgame(cp,gametx,buyin,maxplayers,gametxid));
+            fprintf(stderr,"got vin.%s gametxid.%s iterate.%d valid.%d\n",playertx.vin[1].prevout.hash.ToString().c_str(),gametxid.ToString().c_str(),rogue_iterateplayer(gametxid,playertx.vin[1].prevout.n,playertxid),rogue_isvalidgame(cp,gameheight,gametx,buyin,maxplayers,gametxid));
             // verify highlander is a valid gametxid, verify playertxid is linked to it
             //if ( rogue_iterateplayer(highlander,playertx.vin[1].prevout.n,playertxid) == 0 )
             if ( playertx.vin[1].prevout.hash == gametxid )
