@@ -17,9 +17,56 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include "../../cJSON.c"
 
 int32_t rogue_replay(uint64_t seed,int32_t sleeptime);
 int rogue(int argc, char **argv, char **envp);
+
+void *OS_loadfile(char *fname,uint8_t **bufp,long *lenp,long *allocsizep)
+{
+    FILE *fp;
+    long  filesize,buflen = *allocsizep;
+    uint8_t *buf = *bufp;
+    *lenp = 0;
+    if ( (fp= fopen(fname,"rb")) != 0 )
+    {
+        fseek(fp,0,SEEK_END);
+        filesize = ftell(fp);
+        if ( filesize == 0 )
+        {
+            fclose(fp);
+            *lenp = 0;
+            printf("OS_loadfile null size.(%s)\n",fname);
+            return(0);
+        }
+        if ( filesize > buflen )
+        {
+            *allocsizep = filesize;
+            *bufp = buf = (uint8_t *)realloc(buf,(long)*allocsizep+64);
+        }
+        rewind(fp);
+        if ( buf == 0 )
+            printf("Null buf ???\n");
+        else
+        {
+            if ( fread(buf,1,(long)filesize,fp) != (unsigned long)filesize )
+                printf("error reading filesize.%ld\n",(long)filesize);
+            buf[filesize] = 0;
+        }
+        fclose(fp);
+        *lenp = filesize;
+        //printf("loaded.(%s)\n",buf);
+    } //else printf("OS_loadfile couldnt load.(%s)\n",fname);
+    return(buf);
+}
+
+uint8_t *OS_fileptr(long *allocsizep,char *fname)
+{
+    long filesize = 0; uint8_t *buf = 0; void *retptr;
+    *allocsizep = 0;
+    retptr = OS_loadfile(fname,&buf,&filesize,allocsizep);
+    return((uint8_t *)retptr);
+}
 
 int main(int argc, char **argv, char **envp)
 {
