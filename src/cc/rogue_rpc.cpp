@@ -114,10 +114,8 @@
  */
 
 // todo:
-// make register a token burn
 // convert playertxid to the original playertxid
 // verify keystrokes tx is in mempool and confirmed
-// verify amulet possession in pack
 
 //////////////////////// start of CClib interface
 //./komodod -ac_name=ROGUE -ac_supply=1000000 -pubkey=03951a6f7967ad784453116bc55cd30c54f91ea8a5b1e9b04d6b29cfd6b395ba6c -addnode=5.9.102.210  -ac_cclib=rogue -ac_perc=10000000 -ac_reward=100000000 -ac_cc=60001 -ac_script=2ea22c80203d1579313abe7d8ea85f48c65ea66fc512c878c0d0e6f6d54036669de940febf8103120c008203000401cc > /dev/null &
@@ -730,7 +728,7 @@ UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                 if ( didtx == 0 )
                     rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, opretRegister);
 
-                return(rogue_rawtxresult(result,rawtx,0));
+                return(rogue_rawtxresult(result,rawtx,1));
             } else return(cclib_error(result,"invalid gametxid"));
         } else return(cclib_error(result,"no gametxid"));
     } else return(cclib_error(result,"couldnt reparse params"));
@@ -887,7 +885,7 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
                         GetOpReturnData(opret, vopretNonfungible);
                         rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, EncodeTokenCreateOpRet('c', Mypubkey(), std::string(seedstr), gametxid.GetHex(), vopretNonfungible));
                     }
-                    return(rogue_rawtxresult(result,rawtx,0));
+                    return(rogue_rawtxresult(result,rawtx,1));
                 }
                 result.push_back(Pair("result","success"));
             } else fprintf(stderr,"illegal game err.%d\n",err);
