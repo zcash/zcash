@@ -685,7 +685,7 @@ my_exit(int st)
     else if ( counter++ < 10 )
     {
         fprintf(stderr,"would have exit.(%d)\n",st);
-        rs->replaydone = 1;
+        globalR.replaydone = 1;
     }
 }
 
