@@ -99,10 +99,7 @@ void rogueiterate(struct rogue_state *rs)
     fuse(swander, 0, WANDERTIME, AFTER);
     start_daemon(stomach, 0, AFTER);
     if ( rs->restoring != 0 )
-    {
         restore_player(rs);
-        sleep(3);
-    }
     playit(rs);
 }
 
@@ -221,7 +218,6 @@ int32_t rogue_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t nu
         rs->P = *player;
         rs->restoring = 1;
         fprintf(stderr,"restore player packsize.%d\n",rs->P.packsize);
-        sleep(3);
     }
     uint32_t starttime = (uint32_t)time(NULL);
     rogueiterate(rs);
@@ -682,9 +678,14 @@ shell(struct rogue_state *rs)
 void
 my_exit(int st)
 {
+    uint32_t counter;
     resetltchars();
     if ( globalR.guiflag != 0 )
         exit(st);
-    else fprintf(stderr,"would have exit.(%d)\n",st);
+    else if ( counter++ < 10 )
+    {
+        fprintf(stderr,"would have exit.(%d)\n",st);
+        rs->replaydone = 1;
+    }
 }
 
