@@ -697,6 +697,7 @@ UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                 CScript opretRegister = rogue_registeropret(gametxid, playertxid);
                 if ( playertxid != zeroid )
                 {
+                    voutPubkeysEmpty.push_back(mypk);
                     if ( GetTransaction(playertxid,playertx,hashBlock,false) != 0 )
                     {
                         if ( DecodeTokenOpRet(playertx.vout.back().scriptPubKey, e, tokenid, voutPubkeys, vopretFinish, vopret2) != 0)
