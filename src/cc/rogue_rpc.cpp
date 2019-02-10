@@ -156,7 +156,7 @@ CScript rogue_newgameopret(int64_t buyin,int32_t maxplayers)
 CScript rogue_registeropret(uint256 gametxid,uint256 playertxid)
 {
     CScript opret; uint8_t evalcode = EVAL_ROGUE;
-    fprintf(stderr,"opret.(%s %s).R\n",gametxid.GetHex().c_str(),playertxid.GetHex().c_str());
+    //fprintf(stderr,"opret.(%s %s).R\n",gametxid.GetHex().c_str(),playertxid.GetHex().c_str());
     opret << OP_RETURN << E_MARSHAL(ss << evalcode << 'R' << gametxid << playertxid);
     return(opret);
 }
@@ -214,7 +214,8 @@ uint8_t rogue_registeropretdecode(uint256 &gametxid,uint256 &tokenid,uint256 &pl
     else if ( (f= DecodeTokenOpRet(scriptPubKey,e,tokenid,voutPubkeys,vopret,vopret2)) == 'c' || f == 't' )
     {
         fprintf(stderr,"got valid token opret %s e.%d vs %d\n",tokenid.GetHex().c_str(),e,EVAL_TOKENS);
-        if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> gametxid; ss >> playertxid) != 0 && e == EVAL_ROGUE && f == 'R' )
+        playertxid = tokenid;
+        if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> gametxid; ss >> playertxid) != 0 && e == EVAL_ROGUE && (f == 'Q' || f == 'R') )
         {
             return(f);
         }
@@ -693,7 +694,6 @@ UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                 }
                 rogue_univalue(result,0,maxplayers,buyin);
                 GetCCaddress1of2(cp,coinaddr,roguepk,mypk);
-                CScript opretRegister = rogue_registeropret(gametxid, playertxid);
                 if ( rogue_iamregistered(maxplayers,gametxid,tx,coinaddr) > 0 )
                     return(cclib_error(result,"already registered"));
                 if ( (inputsum= rogue_registrationbaton(mtx,gametxid,tx,maxplayers)) != ROGUE_REGISTRATIONSIZE )
@@ -710,6 +710,7 @@ UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                 mtx.vout.push_back(MakeTokensCC1vout(cp->evalcode, 1, burnpk));
 
                 std::vector<uint8_t> vopretFinish, vopret2; uint8_t e, f; uint256 tokenid; std::vector<CPubKey> voutPubkeys, voutPubkeysEmpty; int32_t didtx = 0;
+                CScript opretRegister = rogue_registeropret(gametxid, playertxid);
                 if ( playertxid != zeroid )
                 {
                     fprintf(stderr,"playertxid.%s\n",playertxid.GetHex().c_str());
@@ -721,6 +722,7 @@ UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                             didtx = 1;
                             if ( tokenid == zeroid )
                                 tokenid = playertxid;
+                            vopretFinish.resize(0);
                             rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee,
                                                  EncodeTokenOpRet(tokenid, voutPubkeysEmpty /*=never spent*/, vopretFinish /*=non-fungible*/, opretRegister));
                         }
