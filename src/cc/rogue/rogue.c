@@ -217,7 +217,7 @@ int32_t rogue_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t nu
     {
         rs->P = *player;
         rs->restoring = 1;
-        fprintf(stderr,"restore player packsize.%d\n",rp->P.packsize);
+        fprintf(stderr,"restore player packsize.%d\n",rs->P.packsize);
     }
     uint32_t starttime = (uint32_t)time(NULL);
     rogueiterate(rs);
