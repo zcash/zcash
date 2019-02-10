@@ -38,6 +38,8 @@ command(struct rogue_state *rs)
     do_fuses(rs,BEFORE);
     while (ntimes--)
     {
+        if ( rs->replaydone != 0 )
+            return;
         again = FALSE;
         if (has_hit)
         {
@@ -268,6 +270,7 @@ over:
             if ( rs->guiflag != 0 && rs->needflush == 0 )
                 rs->needflush = (uint32_t)time(NULL);
 		    q_comm = FALSE;
+            return;
 		when 'i': after = FALSE; inventory(rs,pack, 0);
 		when 'I': after = FALSE; picky_inven(rs);
 		when 'd': drop(rs);
@@ -448,23 +451,23 @@ over:
 	/*
 	 * If he ran into something to take, let him pick it up.
 	 */
-	if (take != 0)
-	    pick_up(rs,take);
-	if (!running)
-	    door_stop = FALSE;
-	if (!after)
-	    ntimes++;
+        if (take != 0)
+            pick_up(rs,take);
+        if (!running)
+            door_stop = FALSE;
+        if (!after)
+            ntimes++;
     }
     do_daemons(rs,AFTER);
     do_fuses(rs,AFTER);
     if (ISRING(LEFT, R_SEARCH))
-	search(rs);
+        search(rs);
     else if (ISRING(LEFT, R_TELEPORT) && rnd(50) == 0)
-	teleport(rs);
+        teleport(rs);
     if (ISRING(RIGHT, R_SEARCH))
-	search(rs);
+        search(rs);
     else if (ISRING(RIGHT, R_TELEPORT) && rnd(50) == 0)
-	teleport(rs);
+        teleport(rs);
 }
 
 /*
