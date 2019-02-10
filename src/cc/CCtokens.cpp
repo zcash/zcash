@@ -247,7 +247,8 @@ bool TokensValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction &
 
     LOGSTREAM((char *)"cctokens", CCLOG_INFO, stream << "TokensValidate funcId=" << (char)(funcid?funcid:' ') << " evalcode=" << cp->evalcode << std::endl);
 
-	if (eval->GetTxUnconfirmed(tokenid, createTx, hashBlock) == 0)
+    //if (eval->GetTxUnconfirmed(tokenid, createTx, hashBlock) == 0)
+    if (myGetTransacton(tokenid, createTx, hashBlock) == 0)
 		return eval->Invalid("cant find token create txid");
 	else if (IsCCInput(tx.vin[0].scriptSig) != 0)
 		return eval->Invalid("illegal token vin0");

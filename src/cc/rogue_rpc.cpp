@@ -124,11 +124,12 @@
 
 // cclib newgame 17 \"[3,10]\"
 // cclib pending 17
-// cclib gameinfo 17 \"[%22a49f90d6b5a226132a8615c9b55b254629611565c69246ea58f7a02059b847bf%22]\"
-// cclib register 17 \"[%22a49f90d6b5a226132a8615c9b55b254629611565c69246ea58f7a02059b847bf%22]\"
+// ./c cclib gameinfo 17 \"[%22aa81321d8889f881fe3d7c68c905b7447d9143832b0abbef6c2cab49dff8b0cc%22]\"
+// cclib register 17 \"[%22aa81321d8889f881fe3d7c68c905b7447d9143832b0abbef6c2cab49dff8b0cc%22]\"
 // ./rogue <seed> gui -> creates keystroke files
-// cclib register 17 \"[%22a49f90d6b5a226132a8615c9b55b254629611565c69246ea58f7a02059b847bf%22,%22f3a4a61cfa0dd43733b06d1368c199594258e0f3db983dc1b9b10768a5671909%22]\"
-// cclib keystrokes 17 \"[%220a4ecb345ca3090f4acad63f889c3668e46e245cb00ca4b8b57c4677b1ee95b2%22,%22deadbeef%22]\"
+// ./c cclib register 17 \"[%22aa81321d8889f881fe3d7c68c905b7447d9143832b0abbef6c2cab49dff8b0cc%22,%226c88eb35f1f9eadabb0fb00c5b25b44cc60e99013ec9ce6871acd8ed7541de93%22]\"
+// cclib keystrokes 17 \"[%22./c cclib gameinfo 17 \"[%22aa81321d8889f881fe3d7c68c905b7447d9143832b0abbef6c2cab49dff8b0cc%22]\"
+%22,%22deadbeef%22]\"
 // ./c cclib bailout 17 \"[%228fd5b29b77ef90d7b7747c779530a8b005f7c236ea0ddb1fe68a392ea3b6cdf1%22]\"
 
 
