@@ -361,9 +361,9 @@ int32_t rogue_isvalidgame(struct CCcontract_info *cp,int32_t &gameheight,CTransa
     } else return(-1);
 }
 
-UniValue rogue_playerobj(UniValue &obj,std::vector<uint8_t> playerdata)
+UniValue rogue_playerobj(std::vector<uint8_t> playerdata)
 {
-    int32_t i; struct rogue_player P; char packitemstr[512]; UniValue a(UniValue::VARR);
+    int32_t i; struct rogue_player P; char packitemstr[512]; UniValue obj(UniValue:VOBJ),a(UniValue::VARR);
     memset(&P,0,sizeof(P));
     if ( playerdata.size() > 0 )
     {
@@ -383,7 +383,6 @@ UniValue rogue_playerobj(UniValue &obj,std::vector<uint8_t> playerdata)
     obj.push_back(Pair("level",(int64_t)P.level));
     obj.push_back(Pair("experience",(int64_t)P.experience));
     obj.push_back(Pair("dungeonlevel",(int64_t)P.dungeonlevel));
-    // convert to scrolls, etc.
     return(obj);
 }
 
@@ -425,13 +424,13 @@ int32_t rogue_playerdata(struct CCcontract_info *cp,uint256 &origplayergame,CPub
             memcpy(&gametxid,script+2,sizeof(gametxid));
             if ( rogue_isvalidgame(cp,gameheight,gametx,buyin,maxplayers,gametxid) == 0 )
             {
-                fprintf(stderr,"playertxid.%s got vin.%s/v%d gametxid.%s iterate.%d valid.%d\n",playertxid.ToString().c_str(),playertx.vin[1].prevout.hash.ToString().c_str(),(int32_t)playertx.vin[1].prevout.n-maxplayers,gametxid.ToString().c_str(),rogue_iterateplayer(gametxid,playertx.vin[1].prevout.n-maxplayers,playertxid));
-                if ( playertx.vin[1].prevout.hash == gametxid )
+                fprintf(stderr,"playertxid.%s got vin.%s/v%d gametxid.%s iterate.%d\n",playertxid.ToString().c_str(),playertx.vin[1].prevout.hash.ToString().c_str(),(int32_t)playertx.vin[1].prevout.n-maxplayers,gametxid.ToString().c_str(),rogue_iterateplayer(gametxid,playertx.vin[1].prevout.n-maxplayers,playertxid));
+                if ( playertx.vin[1].prevout.hash == gametxid && rogue_iterateplayer(gametxid,playertx.vin[1].prevout.n-maxplayers,playertxid) == 0 )
                 {
                     if ( (f= rogue_highlanderopretdecode(origplayergame,pk,playerdata,playertx.vout[numvouts-1].scriptPubKey)) == 'H' || f == 'Q' || f == 'S' )
                         return(0);
                     else fprintf(stderr,"f is %c/%d\n",f,f);
-                } else fprintf(stderr,"hash mismatch or illegale gametxid\n");
+                } else fprintf(stderr,"hash mismatch or illegal gametxid\n");
             }
         }
     }
@@ -559,10 +558,7 @@ void rogue_gameplayerinfo(struct CCcontract_info *cp,UniValue &obj,uint256 gamet
         obj.push_back(Pair("batonvalue",ValueFromAmount(batonvalue)));
         obj.push_back(Pair("batonht",(int64_t)batonht));
         if ( playerdata.size() > 0 )
-        {
-            UniValue pobj(UniValue::VOBJ);
-            obj.push_back(Pair("player",rogue_playerobj(pobj,playerdata)));
-        }
+            obj.push_back(Pair("player",rogue_playerobj(playerdata)));
     } else fprintf(stderr,"findbaton err.%d\n",retval);
 }
 
@@ -649,11 +645,10 @@ UniValue rogue_playerinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
     {
         if ( n > 0 )
         {
-            UniValue pobj(UniValue::VOBJ);
             playertxid = juint256(jitem(params,0));
             if ( rogue_playerdata(cp,origplayergame,pk,playerdata,playertxid) < 0 )
                 return(cclib_error(result,"invalid playerdata"));
-            result.push_back(Pair("player",rogue_playerobj(pobj,playerdata)));
+            result.push_back(Pair("player",rogue_playerobj(playerdata)));
         } else return(cclib_error(result,"no playertxid"));
         return(result);
     } else return(cclib_error(result,"couldnt reparse params"));
@@ -929,10 +924,7 @@ UniValue rogue_players(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
         if ( it->second.satoshis != 1 || vout != 0 )
             continue;
         if ( rogue_playerdata(cp,gametxid,pk,playerdata,txid) == 0 && pk == mypk )
-        {
-            UniValue obj(UniValue::VOBJ);
-            a.push_back(Pair("player",rogue_playerobj(obj,playerdata)));
-        }
+            a.push_back(Pair("player",rogue_playerobj(playerdata)));
     }
     result.push_back(Pair("result","success"));
     rogue_univalue(result,"players",-1,-1);

@@ -432,15 +432,15 @@ print_disc(struct rogue_state *rs,char type)
     obj.o_flags = 0;
     num_found = 0;
     for (i = 0; i < maxnum; i++)
-	if (info[order[i]].oi_know || info[order[i]].oi_guess)
-	{
-	    obj.o_type = type;
-	    obj.o_which = order[i];
-	    add_line(rs,"%s", inv_name(&obj, FALSE));
-	    num_found++;
-	}
+        if (info[order[i]].oi_know || info[order[i]].oi_guess)
+        {
+            obj.o_type = type;
+            obj.o_which = order[i];
+            add_line(rs,"%s", inv_name(&obj, FALSE));
+            num_found++;
+        }
     if (num_found == 0)
-	add_line(rs,nothing(type), NULL);
+        add_line(rs,nothing(type), NULL);
 }
 
 /*
@@ -452,16 +452,16 @@ void
 set_order(int *order, int numthings)
 {
     int i, r, t;
-
+    
     for (i = 0; i< numthings; i++)
-	order[i] = i;
-
+        order[i] = i;
+    
     for (i = numthings; i > 0; i--)
     {
-	r = rnd(i);
-	t = order[i - 1];
-	order[i - 1] = order[r];
-	order[r] = t;
+        r = rnd(i);
+        t = order[i - 1];
+        order[i - 1] = order[r];
+        order[r] = t;
     }
 }
 
@@ -624,20 +624,20 @@ nameit(THING *obj, const char *type,const char *which, struct obj_info *op,
 
     if (op->oi_know || op->oi_guess)
     {
-	if (obj->o_count == 1)
-	    sprintf(prbuf, "A %s ", type);
-	else
-	    sprintf(prbuf, "%d %ss ", obj->o_count, type);
-	pb = &prbuf[strlen(prbuf)];
-	if (op->oi_know)
-	    sprintf(pb, "of %s%s(%s)", op->oi_name, (*prfunc)(obj), which);
-	else if (op->oi_guess)
-	    sprintf(pb, "called %s%s(%s)", op->oi_guess, (*prfunc)(obj), which);
+        if (obj->o_count == 1)
+            sprintf(prbuf, "A %s ", type);
+        else
+            sprintf(prbuf, "%d %ss ", obj->o_count, type);
+        pb = &prbuf[strlen(prbuf)];
+        if (op->oi_know)
+            sprintf(pb, "of %s%s(%s)", op->oi_name, (*prfunc)(obj), which);
+        else if (op->oi_guess)
+            sprintf(pb, "called %s%s(%s)", op->oi_guess, (*prfunc)(obj), which);
     }
     else if (obj->o_count == 1)
-	sprintf(prbuf, "A%s %s %s", vowelstr((char *)which), which, type);
+        sprintf(prbuf, "A%s %s %s", vowelstr((char *)which), which, type);
     else
-	sprintf(prbuf, "%d %s %ss", obj->o_count, which, type);
+        sprintf(prbuf, "%d %s %ss", obj->o_count, which, type);
 }
 
 /*

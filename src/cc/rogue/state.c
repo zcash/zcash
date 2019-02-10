@@ -1338,6 +1338,7 @@ rs_read_monsters(FILE *inf, struct monster *m, int count)
 
 void rogue_restoreobject(THING *o,struct rogue_packitem *item)
 {
+    int32_t i;
     o->_o._o_type = item->type;
     o->_o._o_launch = item->launch;
     memcpy(o->_o._o_damage,item->damage,sizeof(item->damage));
@@ -1350,6 +1351,25 @@ void rogue_restoreobject(THING *o,struct rogue_packitem *item)
     o->_o._o_flags = item->flags;
     o->_o._o_group = item->group;
     o->o_flags |= ISKNOW;
+    switch ( item->type )
+    {
+        case SCROLL:
+            if ( item->which < MAXSCROLLS )
+                scr_info[item->which].oi_know = TRUE;
+            break;
+        case POTION:
+            if ( item->which < MAXPOTIONS )
+                pot_info[item->which].oi_know = TRUE;
+            break;
+        case RING:
+            if ( item->which < MAXRINGS )
+                ring_info[item->which].oi_know = TRUE;
+            break;
+        case STICK:
+            if ( item->which < MAXSTICKS )
+                ws_info[item->which].oi_know = TRUE;
+            break;
+    }
 }
 
 void rogue_packitemstr(char *packitemstr,struct rogue_packitem *item)
