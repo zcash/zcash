@@ -154,7 +154,7 @@ void rogue_setplayerdata(struct rogue_state *rs,char *gametxidstr)
     else
     {
         filestr = (char *)OS_fileptr(&allocsize,fname);
-        if ( (retjson= cJSON_Parse(filestr)) != 0 )
+        /*if ( (retjson= cJSON_Parse(filestr)) != 0 )
         {
             if ( (array= jarray(&n,retjson,"players")) != 0 )
             {
@@ -174,7 +174,7 @@ void rogue_setplayerdata(struct rogue_state *rs,char *gametxidstr)
                 }
             }
             free_json(retjson);
-        }
+        }*/
         free(filestr);
     }
 }
