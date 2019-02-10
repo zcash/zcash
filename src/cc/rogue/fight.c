@@ -175,7 +175,7 @@ attack(struct rogue_state *rs,THING *mp)
 		endmsg(rs);
 	has_hit = FALSE;
 	if (pstats.s_hpt <= 0)
-	    death(mp->t_type);	/* Bye bye life ... */
+	    death(rs,mp->t_type);	/* Bye bye life ... */
 	else if (!kamikaze)
 	{
 	    oldhp -= pstats.s_hpt;
@@ -206,7 +206,7 @@ attack(struct rogue_state *rs,THING *mp)
 		    }
 		    no_command += rnd(2) + 2;
 		    if (no_command > BORE_LEVEL)
-			death('h');
+			death(rs,'h');
 		when 'R':
 		    /*
 		     * Rattlesnakes have poisonous bites
@@ -242,7 +242,7 @@ attack(struct rogue_state *rs,THING *mp)
 			if (mp->t_type == 'W')
 			{
 			    if (pstats.s_exp == 0)
-				death('W');		/* All levels gone */
+				death(rs,'W');		/* All levels gone */
 			    if (--pstats.s_lvl == 0)
 			    {
 				pstats.s_exp = 0;
@@ -259,7 +259,7 @@ attack(struct rogue_state *rs,THING *mp)
 			if (pstats.s_hpt <= 0)
 			    pstats.s_hpt = 1;
 			if (max_hp <= 0)
-			    death(mp->t_type);
+			    death(rs,mp->t_type);
 			msg(rs,"you suddenly feel weaker");
 		    }
 		when 'F':
@@ -269,7 +269,7 @@ attack(struct rogue_state *rs,THING *mp)
 		    player.t_flags |= ISHELD;
 		    sprintf(monsters['F'-'A'].m_stats.s_dmg,"%dx1", ++vf_hit);
 		    if (--pstats.s_hpt <= 0)
-			death('F');
+			death(rs,'F');
 		when 'L':
 		{
 		    /*
@@ -327,7 +327,7 @@ attack(struct rogue_state *rs,THING *mp)
 	{
 	    pstats.s_hpt -= vf_hit;
 	    if (pstats.s_hpt <= 0)
-		death(mp->t_type);	/* Bye bye life ... */
+		death(rs,mp->t_type);	/* Bye bye life ... */
 	}
 	miss(rs,mname, (char *) NULL, FALSE);
     }

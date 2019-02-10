@@ -143,7 +143,7 @@ stomach(struct rogue_state *rs,int arg)
     if (food_left <= 0)
     {
 	if (food_left-- < -STARVETIME)
-	    death('s');
+	    death(rs,'s');
 	/*
 	 * the hero is fainting
 	 */

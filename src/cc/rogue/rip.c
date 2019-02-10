@@ -227,13 +227,18 @@ score(int amount, int flags, char monst)
  */
 
 void
-death(char monst)
+death(struct rogue_state *rs,char monst)
 {
     char **dp, *killer;
     struct tm *lt;
     static time_t date;
     //struct tm *localtime(const time_t *);
-
+    if ( rs->guiflag == 0 )
+    {
+        fprintf(stderr,"death during replay\n");
+        rs->replaydone = (uint32_t)time(NULL);
+        return;
+    }
     signal(SIGINT, SIG_IGN);
     purse -= purse / 10;
     signal(SIGINT, leave);

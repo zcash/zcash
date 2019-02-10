@@ -58,10 +58,10 @@ CClib_methods[] =
     { (char *)"rogue", (char *)"pending", (char *)"<no args>", 0, 0, 'P', EVAL_ROGUE },
     { (char *)"rogue", (char *)"register", (char *)"gametxid [playertxid]", 1, 2, 'R', EVAL_ROGUE },
     { (char *)"rogue", (char *)"keystrokes", (char *)"gametxid keystrokes", 2, 2, 'K', EVAL_ROGUE },
-    { (char *)"rogue", (char *)"bailout", (char *)"baton finalhash", 2, 2, 'Q', EVAL_ROGUE },
-    { (char *)"rogue", (char *)"highlander", (char *)"baton finalhash", 2, 2, 'H', EVAL_ROGUE },
+    { (char *)"rogue", (char *)"bailout", (char *)"gametxid", 1, 1, 'Q', EVAL_ROGUE },
+    { (char *)"rogue", (char *)"highlander", (char *)"gametxid", 1, 1, 'H', EVAL_ROGUE },
     { (char *)"rogue", (char *)"playerinfo", (char *)"playertxid", 1, 1, 'I', EVAL_ROGUE },
-    { (char *)"rogue", (char *)"players", (char *)"playertxid", 1, 1, 'D', EVAL_ROGUE },
+    { (char *)"rogue", (char *)"players", (char *)"<no args>", 0, 0, 'D', EVAL_ROGUE },
 #else
     { (char *)"sudoku", (char *)"gen", (char *)"<no args>", 0, 0, 'G', EVAL_SUDOKU },
     { (char *)"sudoku", (char *)"txidinfo", (char *)"txid", 1, 1, 'T', EVAL_SUDOKU },

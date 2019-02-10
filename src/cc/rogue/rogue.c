@@ -388,7 +388,7 @@ int rogue(int argc, char **argv, char **envp)
             level = rnd(100) + 1;
             initscr();
             getltchars();
-            death(death_monst());
+            death(rs,death_monst());
             exit(0);
         }
     }

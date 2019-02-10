@@ -586,7 +586,7 @@ void	create_obj(struct rogue_state *rs);
 
 void	current(struct rogue_state *rs,THING *cur, char *how, char *where);
 void	d_level(struct rogue_state *rs);
-void	death(char monst);
+void	death(struct rogue_state *rs,char monst);
 char	death_monst(void);
 void	dig(int y, int x);
 void	discard(THING *item);

@@ -391,9 +391,9 @@ def:
 			if ((pstats.s_hpt -= roll(6, 6)) <= 0)
 			{
 			    if (start == &hero)
-				death('b');
+				death(rs,'b');
 			    else
-				death(moat(start->y, start->x)->t_type);
+				death(rs,moat(start->y, start->x)->t_type);
 			}
 			used = TRUE;
 			if (terse)

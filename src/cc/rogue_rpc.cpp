@@ -114,26 +114,23 @@
  */
 
 // todo:
-// verify playerdata is usable
-// detect playerdeath/quit to prevent illegal keystrokes vector
+// -detect playerdeath/quit to prevent illegal keystrokes vector
 // verify keystrokes tx is in mempool and confirmed
 // check that bailout is legal, ie. proper gametxid vin
 // verify amulet possession in pack
-// display playerdata (user comments?, or fully decode)
-// verify playerdata can be used and has same initial level
-// prevent running gui mode when keystrokes txid already there
+// -verify playerdata can be used and has same initial level
 
 //////////////////////// start of CClib interface
 //./komodod -ac_name=ROGUE -ac_supply=1000000 -pubkey=03951a6f7967ad784453116bc55cd30c54f91ea8a5b1e9b04d6b29cfd6b395ba6c -addnode=5.9.102.210  -ac_cclib=rogue -ac_perc=10000000 -ac_reward=100000000 -ac_cc=60001 -ac_script=2ea22c80203d1579313abe7d8ea85f48c65ea66fc512c878c0d0e6f6d54036669de940febf8103120c008203000401cc > /dev/null &
 
 // cclib newgame 17 \"[3,10]\"
 // cclib pending 17
-// cclib gameinfo 17 \"[%22f60167a973fc4a5ff08b378bff78bfbfa2f7fae04d603e8deb9acdb1551e0d10%22]\"
-// cclib register 17 \"[%22f60167a973fc4a5ff08b378bff78bfbfa2f7fae04d603e8deb9acdb1551e0d10%22]\"
+// cclib gameinfo 17 \"[%22a49f90d6b5a226132a8615c9b55b254629611565c69246ea58f7a02059b847bf%22]\"
+// cclib register 17 \"[%22a49f90d6b5a226132a8615c9b55b254629611565c69246ea58f7a02059b847bf%22]\"
 // ./rogue <seed> gui -> creates keystroke files
-// cclib register 17 \"[%22f60167a973fc4a5ff08b378bff78bfbfa2f7fae04d603e8deb9acdb1551e0d10%22,%2233d52f92980ceaa81556093171ee224e085fd384690d83460d6fbbad96fe0e7e%22]\"
+// cclib register 17 \"[%22a49f90d6b5a226132a8615c9b55b254629611565c69246ea58f7a02059b847bf%22,%22f3a4a61cfa0dd43733b06d1368c199594258e0f3db983dc1b9b10768a5671909%22]\"
 // cclib keystrokes 17 \"[%220a4ecb345ca3090f4acad63f889c3668e46e245cb00ca4b8b57c4677b1ee95b2%22,%22deadbeef%22]\"
-// cclib bailout 17 \"[%22f60167a973fc4a5ff08b378bff78bfbfa2f7fae04d603e8deb9acdb1551e0d10%22]\"
+// cclib bailout 17 \"[%22a49f90d6b5a226132a8615c9b55b254629611565c69246ea58f7a02059b847bf%22]\"
 // eef1d0091a88d85bdac1ede9d31db8504bc466a6695fdf259dac623fce09e0dd
 /*
  2409 gold.209 hp.17 strength.16 level.3 exp.22 3

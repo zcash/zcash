@@ -310,7 +310,7 @@ be_trapped(struct rogue_state *rs,coord *tc)
 		if (pstats.s_hpt <= 0)
 		{
 		    msg(rs,"an arrow killed you");
-		    death('a');
+		    death(rs,'a');
 		}
 		else
 		    msg(rs,"oh no! An arrow shot you");
@@ -340,7 +340,7 @@ be_trapped(struct rogue_state *rs,coord *tc)
 		if (pstats.s_hpt <= 0)
 		{
 		    msg(rs,"a poisoned dart killed you");
-		    death('d');
+		    death(rs,'d');
 		}
 		if (!ISWEARING(R_SUSTSTR) && !save(VS_POISON))
 		    chg_str(-1);
