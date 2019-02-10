@@ -698,7 +698,7 @@ int	save(int which);
 void	save_file(struct rogue_state *rs,FILE *savef,int32_t guiflag);
 void	save_game(struct rogue_state *rs);
 int	save_throw(int which, THING *tp);
-void	score(int amount, int flags, char monst);
+void	score(struct rogue_state *rs,int amount, int flags, char monst);
 void	search(struct rogue_state *rs);
 void	set_know(THING *obj, struct obj_info *info);
 void	set_oldch(THING *tp, coord *cp);

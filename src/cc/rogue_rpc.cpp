@@ -464,13 +464,13 @@ int32_t rogue_findbaton(struct CCcontract_info *cp,uint256 &playertxid,char **ke
         if ( myIsutxo_spent(spenttxid,gametxid,maxplayers+i+1) < 0 )
         {
             numvouts = matchtx.vout.size();
-            fprintf(stderr,"matches.%d numvouts.%d\n",matches,numvouts);
+            //fprintf(stderr,"matches.%d numvouts.%d\n",matches,numvouts);
             if ( rogue_registeropretdecode(txid,playertxid,matchtx.vout[numvouts-1].scriptPubKey) == 'R' && txid == gametxid )
             {
                 if ( playertxid == zeroid || rogue_playerdata(cp,origplayergame,pk,playerdata,playertxid) == 0 )
                 {
                     txid = matchtx.GetHash();
-                    fprintf(stderr,"scan forward playertxid.%s spenttxid.%s\n",playertxid.GetHex().c_str(),txid.GetHex().c_str());
+                    //fprintf(stderr,"scan forward playertxid.%s spenttxid.%s\n",playertxid.GetHex().c_str(),txid.GetHex().c_str());
                     while ( CCgettxout(txid,0,1) < 0 )
                     {
                         spenttxid = zeroid;
@@ -497,7 +497,7 @@ int32_t rogue_findbaton(struct CCcontract_info *cp,uint256 &playertxid,char **ke
                             }
                         }
                     }
-                    fprintf(stderr,"set baton %s\n",txid.GetHex().c_str());
+                    //fprintf(stderr,"set baton %s\n",txid.GetHex().c_str());
                     batontxid = txid;
                     batonvout = 0; // not vini
                     // how to detect timeout, bailedout, highlander
@@ -797,7 +797,6 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
             result.push_back(Pair("gametxid",gametxid.GetHex()));
             if ( (err= rogue_isvalidgame(cp,gameheight,gametx,buyin,maxplayers,gametxid)) == 0 )
             {
-                fprintf(stderr,"validgame\n");
                 if ( maxplayers == 1 )
                     mult /= 2;
                 if ( rogue_findbaton(cp,playertxid,&keystrokes,numkeys,regslot,playerdata,batontxid,batonvout,batonvalue,batonht,gametxid,gametx,maxplayers,myrogueaddr,numplayers) == 0 )

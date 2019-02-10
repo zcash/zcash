@@ -384,7 +384,7 @@ int rogue(int argc, char **argv, char **envp)
         if (strcmp(argv[1], "-s") == 0)
         {
             noscore = TRUE;
-            score(0, -1, 0);
+            score(rs,0, -1, 0);
             exit(0);
         }
         else if (strcmp(argv[1], "-d") == 0)
@@ -602,14 +602,14 @@ quit(int sig)
             move(LINES - 1, 0);
             if ( rs->sleeptime != 0 )
                 refresh();
-            score(purse, 1, 0);
+            score(rs,purse, 1, 0);
             flushkeystrokes(rs);
             my_exit(0);
         }
         else
         {
             fprintf(stderr,"done!\n");
-            score(purse, 1, 0);
+            score(rs,purse, 1, 0);
         }
     }
     else
