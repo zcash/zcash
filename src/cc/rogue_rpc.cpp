@@ -657,7 +657,7 @@ UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     // vin3+ -> buyin
     // vout0 -> keystrokes/completion baton
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); char destaddr[64],coinaddr[64]; uint256 gametxid,origplayergame,playertxid,hashBlock; int32_t maxplayers,gameheight,n,numvouts; int64_t inputsum,buyin,CCchange=0; CPubKey pk,mypk,roguepk; CTransaction tx; std::vector<uint8_t> playerdata; std::string rawtx; bits256 t;
+    UniValue result(UniValue::VOBJ); char destaddr[64],coinaddr[64]; uint256 gametxid,origplayergame,playertxid,hashBlock; int32_t maxplayers,gameheight,n,numvouts; int64_t inputsum,buyin,CCchange=0; CPubKey pk,mypk,roguepk; CTransaction tx,playertx; std::vector<uint8_t> playerdata; std::string rawtx; bits256 t;
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
@@ -692,18 +692,24 @@ UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                 mtx.vout.push_back(MakeCC1of2vout(cp->evalcode,buyin + inputsum - txfee,roguepk,mypk));
                 GetCCaddress1of2(cp,destaddr,roguepk,roguepk);
                 CCaddr1of2set(cp,roguepk,roguepk,cp->CCpriv,destaddr);
-
                 mtx.vout.push_back(MakeTokensCC1vout(cp->evalcode, 1, CPubKey() /*nullpk*/));
 
-                std::vector<uint8_t> vopretFinish, vopret2; uint8_t e, f; uint256 tokenid; std::vector<CPubKey> voutPubkeys, voutPubkeysEmpty;
+                std::vector<uint8_t> vopretFinish, vopret2; uint8_t e, f; uint256 tokenid; std::vector<CPubKey> voutPubkeys, voutPubkeysEmpty; int32_t didtx = 0;
                 CScript opretRegister = rogue_registeropret(gametxid, playertxid);
-                if (DecodeTokenOpRet(playertx.vout.back().scriptPubKey, e, tokenid, voutPubkeys, vopretFinish, vopret2) != 0) {  // if token in the opret
-                    rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee,
-                        EncodeTokenOpRet(tokenid, voutPubkeysEmpty /*=never spent*/, vopretFinish /*=non-fungible*/, opretRegister));
+                if ( playertxid != zeroid )
+                {
+                    if ( GetTransaction(playertxid,playertx,hashBlock,false) != 0 )
+                    {
+                        if ( DecodeTokenOpRet(playertx.vout.back().scriptPubKey, e, tokenid, voutPubkeys, vopretFinish, vopret2) != 0)
+                        {  // if token in the opret
+                            didtx = 1;
+                            rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee,
+                                                 EncodeTokenOpRet(tokenid, voutPubkeysEmpty /*=never spent*/, vopretFinish /*=non-fungible*/, opretRegister));
+                        }
+                    }
                 }
-                else     {
+                if ( didtx == 0 )
                     rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, opretRegister);
-                }
 
                 return(rogue_rawtxresult(result,rawtx,1));
             } else return(cclib_error(result,"invalid gametxid"));
