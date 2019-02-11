@@ -188,7 +188,7 @@ uint8_t rogue_highlanderopretdecode(uint256 &gametxid, uint256 &tokenid, int32_t
     }
     else if ( script[1] != 'H' && script[1] != 'Q' && (f= DecodeTokenOpRet(scriptPubKey, e, tokenid, voutPubkeys, vopretDummy)) != 0 )
     {
-        fprintf(stderr,"decode opret %c\n",script[1]);
+        fprintf(stderr,"decode opret %c tokenid.%s\n",script[1],tokenid.GetHex().c_str());
         GetNonfungibleData(tokenid, vopretNonfungible);  //load nonfungible data from the 'tokenbase' tx
         vopret = vopretNonfungible;
     }
