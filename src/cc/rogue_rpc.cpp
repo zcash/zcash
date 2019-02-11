@@ -187,12 +187,14 @@ uint8_t rogue_highlanderopretdecode(uint256 &gametxid, int32_t &regslot, CPubKey
         return(f);
     else if ( (f= DecodeTokenOpRet(scriptPubKey, e, tokenid, voutPubkeys, vopretDummy)) != 0)
     {
+        fprintf(stderr,"f %c %d\n",f,f);
         if (f != 'c')
             GetNonfungibleData(tokenid, vopretNonfungible);  //load nonfungible data from the 'tokenbase' tx
         if (vopretNonfungible.size() > 2 && E_UNMARSHAL(vopretNonfungible, ss >> e; ss >> f; ss >> gametxid; ss >> regslot; ss >> pk; ss >> playerdata) != 0 && e == EVAL_ROGUE && (f == 'H' || f == 'Q'))
         {
             return(f);
         }
+        fprintf(stderr,"e.%d f.%c game.%s slot.%dВыходи и жди ,ок\n",e,f,gametxid.GetHex().c_str(),regslot);
     }
   
     return(0);
