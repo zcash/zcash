@@ -279,9 +279,8 @@ bool DecodeAssetCreateOpRet(const CScript &scriptPubKey, std::vector<uint8_t> &o
     return(0);
 } */
 
-uint8_t DecodeAssetTokenOpRet(const CScript &scriptPubKey, uint8_t &assetsEvalCode, uint256 &tokenid, uint256 &assetid2, int64_t &price, std::vector<uint8_t> &origpubkey, std::vector<uint8_t> &vopretNonfungible)
+uint8_t DecodeAssetTokenOpRet(const CScript &scriptPubKey, uint8_t &assetsEvalCode, uint256 &tokenid, uint256 &assetid2, int64_t &price, std::vector<uint8_t> &origpubkey)
 {
-    std::vector<uint8_t> vopret1, vopret2;
     std::vector<uint8_t> vopretAssets; //, vopretAssetsStripped;
 	uint8_t *script, funcId = 0, assetsFuncId = 0, dummyEvalCode, dummyAssetFuncId;
 	uint256 dummyTokenid;
@@ -294,29 +293,8 @@ uint8_t DecodeAssetTokenOpRet(const CScript &scriptPubKey, uint8_t &assetsEvalCo
     assetsFuncId = 0;
 
 	// First - decode token opret:
-	funcId = DecodeTokenOpRet(scriptPubKey, dummyEvalCode, tokenid, voutPubkeysDummy, vopret1, vopret2);
+	funcId = DecodeTokenOpRet(scriptPubKey, dummyEvalCode, tokenid, voutPubkeysDummy, vopretAssets);
     LOGSTREAM((char *)"ccassets", CCLOG_DEBUG2, stream << "DecodeAssetTokenOpRet() from DecodeTokenOpRet returned funcId=" << (int)funcId << std::endl);
-
-    if (!vopret2.empty()) {
-        // if there are both oprets then order is like this:
-        vopretNonfungible = vopret1;
-        vopretAssets = vopret2;
-    }
-    else {
-        // if only one opret - it is assets opret:
-        vopretNonfungible.clear();
-        vopretAssets = vopret1;
-    }
-
-
-	/*GetOpReturnData(scriptPubKey, vopret);
-    script = (uint8_t *)vopret.data();
-	if (script == 0) {
-		std::cerr << "DecodeAssetOpRet() script is empty" << std::endl;
-		return (uint8_t)0;
-	}*/
-	//bool isEof = true;  // NOTE: if parse error occures, parse might not be able to set error. It is safer to treat that it was eof if it is not set!
-	//bool result = E_UNMARSHAL(vopret, ss >> evalCodeInOpret; ss >> funcId; ss >> tokenid; ss >> assetFuncId; isEof = ss.eof());
 
 	if (funcId == 0 || vopretAssets.size() < 2) {
         LOGSTREAM((char *)"ccassets", CCLOG_INFO, stream << "DecodeAssetTokenOpRet() incorrect opret or no asset's payload" << " funcId=" << (int)funcId << " vopretAssets.size()=" << vopretAssets.size() << std::endl);
@@ -363,13 +341,12 @@ uint8_t DecodeAssetTokenOpRet(const CScript &scriptPubKey, uint8_t &assetsEvalCo
                 }
                 break;
             default:
-                LOGSTREAM((char *)"ccassets", CCLOG_INFO, stream << "DecodeAssetTokenOpRet() illegal assetFuncId=" << (int)funcId << std::endl);
                 break;
             }
         }
     }
 
-    LOGSTREAM((char *)"ccassets", CCLOG_INFO, stream << "DecodeAssetTokenOpRet() no asset's payload or incorrect assets evalcode" << " funcId=" << (int)funcId << " vopretAssets.size()=" << vopretAssets.size() << " assetsEvalCode=" << assetsEvalCode << " assetsFuncId=" << assetsFuncId << std::endl);
+    LOGSTREAM((char *)"ccassets", CCLOG_INFO, stream << "DecodeAssetTokenOpRet() no asset's payload or incorrect assets funcId or evalcode" << " funcId=" << (int)funcId << " vopretAssets.size()=" << vopretAssets.size() << " assetsEvalCode=" << assetsEvalCode << " assetsFuncId=" << assetsFuncId << std::endl);
     return (uint8_t)0;
 }
 
@@ -378,9 +355,8 @@ bool SetAssetOrigpubkey(std::vector<uint8_t> &origpubkey,int64_t &price,const CT
 {
     uint256 assetid,assetid2;
 	uint8_t evalCode;
-    std::vector<uint8_t> vopretNonfungibleDummy;
 
-    if ( tx.vout.size() > 0 && DecodeAssetTokenOpRet(tx.vout[tx.vout.size()-1].scriptPubKey, evalCode, assetid, assetid2, price, origpubkey, vopretNonfungibleDummy) != 0 )
+    if ( tx.vout.size() > 0 && DecodeAssetTokenOpRet(tx.vout[tx.vout.size()-1].scriptPubKey, evalCode, assetid, assetid2, price, origpubkey) != 0 )
         return(true);
     else 
 		return(false);
@@ -396,10 +372,9 @@ bool GetAssetorigaddrs(struct CCcontract_info *cp, char *origCCaddr, char *origN
 	std::vector<uint8_t> origpubkey; 
 	CScript script;
 	uint8_t evalCode;
-    std::vector<uint8_t> vopretNonfungibleDummy;
 
     n = vintx.vout.size();
-    if( n == 0 || (vintxFuncId = DecodeAssetTokenOpRet(vintx.vout[n-1].scriptPubKey, evalCode, assetid, assetid2, price, origpubkey, vopretNonfungibleDummy)) == 0 )
+    if( n == 0 || (vintxFuncId = DecodeAssetTokenOpRet(vintx.vout[n-1].scriptPubKey, evalCode, assetid, assetid2, price, origpubkey)) == 0 )
         return(false);
 
 	bool bGetCCaddr = false;
@@ -444,9 +419,8 @@ int64_t AssetValidateCCvin(struct CCcontract_info *cp,Eval* eval,char *origCCadd
 		int64_t tmpprice;
 		std::vector<uint8_t> tmporigpubkey;
 		uint8_t evalCode;
-        std::vector<uint8_t> vopretNonfungibleDummy;
 
-		funcid = DecodeAssetTokenOpRet(tx.vout[tx.vout.size() - 1].scriptPubKey, evalCode, assetid, assetid2, tmpprice, tmporigpubkey, vopretNonfungibleDummy);
+		funcid = DecodeAssetTokenOpRet(tx.vout[tx.vout.size() - 1].scriptPubKey, evalCode, assetid, assetid2, tmpprice, tmporigpubkey);
 	}
 
     if( tx.vin.size() < 2 )
@@ -495,7 +469,6 @@ int64_t AssetValidateCCvin(struct CCcontract_info *cp,Eval* eval,char *origCCadd
 int64_t AssetValidateBuyvin(struct CCcontract_info *cp,Eval* eval,int64_t &tmpprice,std::vector<uint8_t> &tmporigpubkey,char *CCaddr,char *origaddr,const CTransaction &tx,uint256 refassetid)
 {
     CTransaction vinTx; int64_t nValue; uint256 assetid,assetid2; uint8_t funcid, evalCode;
-    std::vector<uint8_t> vopretNonfungibleDummy;
 
     CCaddr[0] = origaddr[0] = 0;
 
@@ -504,7 +477,7 @@ int64_t AssetValidateBuyvin(struct CCcontract_info *cp,Eval* eval,int64_t &tmppr
         return(0);  
     else if ( vinTx.vout[0].scriptPubKey.IsPayToCryptoCondition() == 0 )
         return eval->Invalid("invalid normal vout0 for buyvin");
-    else if ((funcid = DecodeAssetTokenOpRet(vinTx.vout[vinTx.vout.size() - 1].scriptPubKey, evalCode, assetid, assetid2, tmpprice, tmporigpubkey, vopretNonfungibleDummy)) == 'b' &&
+    else if ((funcid = DecodeAssetTokenOpRet(vinTx.vout[vinTx.vout.size() - 1].scriptPubKey, evalCode, assetid, assetid2, tmpprice, tmporigpubkey)) == 'b' &&
 		vinTx.vout[1].scriptPubKey.IsPayToCryptoCondition() == 0 )  // marker is only in 'b'?
         return eval->Invalid("invalid normal vout1 for buyvin");
     else
@@ -539,12 +512,11 @@ bool ValidateAssetOpret(CTransaction tx, int32_t v, uint256 assetid, int64_t &pr
 
 	uint256 assetidOpret, assetidOpret2;
 	uint8_t funcid, evalCode;
-    std::vector<uint8_t> vopretNonfungibleDummy;
 
 	// this is just for log messages indentation fur debugging recursive calls:
 	int32_t n = tx.vout.size();
 
-	if ((funcid = DecodeAssetTokenOpRet(tx.vout[n - 1].scriptPubKey, evalCode, assetidOpret, assetidOpret2, price, origpubkey, vopretNonfungibleDummy)) == 0)
+	if ((funcid = DecodeAssetTokenOpRet(tx.vout[n - 1].scriptPubKey, evalCode, assetidOpret, assetidOpret2, price, origpubkey)) == 0)
 	{
 		std::cerr << "ValidateAssetOpret() DecodeAssetTokenOpRet returned funcId=0 for opret from txid=" << tx.GetHash().GetHex() << std::endl;
 		return(false);

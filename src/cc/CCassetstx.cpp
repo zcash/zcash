@@ -76,18 +76,17 @@ UniValue AssetOrders(uint256 refassetid)
 		uint256 txid, hashBlock, assetid, assetid2;
 		int64_t price;
 		std::vector<uint8_t> origpubkey;
-        std::vector<uint8_t> vopretNonfungible;
 		CTransaction vintx;
 		uint8_t funcid, evalCode;
 		char numstr[32], funcidstr[16], origaddr[64], assetidstr[65];
 
         txid = it->first.txhash;
 		//std::cerr << "addOrders() txid=" << txid.GetHex() << std::endl;
-        if ( GetTransaction(txid,vintx,hashBlock,false) != 0 ) 
+        if ( GetTransaction(txid, vintx, hashBlock, false) != 0 ) 
         {
 			// for logging: funcid = DecodeAssetOpRet(vintx.vout[vintx.vout.size() - 1].scriptPubKey, evalCode, assetid, assetid2, price, origpubkey);
 			//std::cerr << "addOrders() vintx.vout.size()=" << vintx.vout.size() << " funcid=" << (char)(funcid ? funcid : ' ') << " assetid=" << assetid.GetHex() << std::endl;
-            if (vintx.vout.size() > 0 && (funcid = DecodeAssetTokenOpRet(vintx.vout[vintx.vout.size()-1].scriptPubKey, evalCode, assetid, assetid2, price, origpubkey, vopretNonfungible)) != 0)
+            if (vintx.vout.size() > 0 && (funcid = DecodeAssetTokenOpRet(vintx.vout[vintx.vout.size()-1].scriptPubKey, evalCode, assetid, assetid2, price, origpubkey)) != 0)
             {
                 if (refassetid != zero && assetid != refassetid)
                 {
@@ -402,7 +401,7 @@ std::string CreateSell(int64_t txfee,int64_t askamount,uint256 assetid,int64_t p
 			voutTokenPubkeys.push_back(unspendableAssetsPubkey);   
 
             return FinalizeCCTx(mask, cpTokens, mtx, mypk, txfee, 
-                EncodeTokenOpRet(assetid, voutTokenPubkeys, vopretNonfungible,
+                EncodeTokenOpRet(assetid, voutTokenPubkeys, 
                     EncodeAssetOpRet('s', zeroid, pricetotal, Mypubkey())));
 		}
 		else {
@@ -506,11 +505,12 @@ std::string CancelBuyOffer(int64_t txfee,uint256 assetid,uint256 bidtxid)
         if (GetTransaction(bidtxid, vintx, hashBlock, false) != 0)
         {
             std::vector<uint8_t> vopretNonfungible;
+            GetNonfungibleData(assetid, vopretNonfungible);
 
             bidamount = vintx.vout[0].nValue;
             mtx.vin.push_back(CTxIn(bidtxid, 0, CScript()));		// coins in Assets
 
-			if((funcid=DecodeAssetTokenOpRet(vintx.vout[vintx.vout.size() - 1].scriptPubKey, dummyEvalCode, dummyAssetid, dummyAssetid2, dummyPrice, dummyOrigpubkey, vopretNonfungible))!=0)
+			if((funcid=DecodeAssetTokenOpRet(vintx.vout[vintx.vout.size() - 1].scriptPubKey, dummyEvalCode, dummyAssetid, dummyAssetid2, dummyPrice, dummyOrigpubkey))!=0)
             {
                 if (funcid == 's') mtx.vin.push_back(CTxIn(bidtxid, 1, CScript()));		// spend marker if funcid='b'
                 else if (funcid=='S') mtx.vin.push_back(CTxIn(bidtxid, 3, CScript()));		// spend marker if funcid='B'
@@ -522,8 +522,8 @@ std::string CancelBuyOffer(int64_t txfee,uint256 assetid,uint256 bidtxid)
 			std::vector<CPubKey> voutTokenPubkeys;  // should be empty, no token vouts 
 													
             return(FinalizeCCTx(mask, cpAssets, mtx, mypk, txfee, 
-				EncodeTokenOpRet(assetid, voutTokenPubkeys, vopretNonfungible,
-					EncodeAssetOpRet('o', zeroid, 0, Mypubkey()))));
+				EncodeTokenOpRet(assetid, voutTokenPubkeys, 
+                    EncodeAssetOpRet('o', zeroid, 0, Mypubkey()))));
         }
     }
     return("");
@@ -555,10 +555,12 @@ std::string CancelSell(int64_t txfee,uint256 assetid,uint256 asktxid)
         if (GetTransaction(asktxid, vintx, hashBlock, false) != 0)
         {
             std::vector<uint8_t> vopretNonfungible;
+            GetNonfungibleData(assetid, vopretNonfungible);
+
             askamount = vintx.vout[0].nValue;
             mtx.vin.push_back(CTxIn(asktxid, 0, CScript()));
 
-			if ((funcid=DecodeAssetTokenOpRet(vintx.vout[vintx.vout.size() - 1].scriptPubKey, dummyEvalCode, dummyAssetid, dummyAssetid2, dummyPrice, dummyOrigpubkey, vopretNonfungible))!=0)
+			if ((funcid=DecodeAssetTokenOpRet(vintx.vout[vintx.vout.size() - 1].scriptPubKey, dummyEvalCode, dummyAssetid, dummyAssetid2, dummyPrice, dummyOrigpubkey))!=0)
             {
                 if (funcid == 's') 
                     mtx.vin.push_back(CTxIn(asktxid, 1, CScript()));		// marker if funcid='s' 
@@ -588,7 +590,7 @@ std::string CancelSell(int64_t txfee,uint256 assetid,uint256 asktxid)
 			CCaddr2set(cpAssets, EVAL_TOKENS, unspendableAssetsPk, unspendableAssetsPrivkey, unspendableAssetsAddr);
 
             return(FinalizeCCTx(mask, cpAssets, mtx, mypk, txfee, 
-				EncodeTokenOpRet(assetid, voutTokenPubkeys, vopretNonfungible, 
+				EncodeTokenOpRet(assetid, voutTokenPubkeys,  
 					EncodeAssetOpRet('x', zeroid, 0, Mypubkey()))));
         }
     }
@@ -675,7 +677,7 @@ std::string FillBuyOffer(int64_t txfee,uint256 assetid,uint256 bidtxid,int64_t f
 				voutTokenPubkeys.push_back(pubkey2pk(origpubkey));
 
                 return(FinalizeCCTx(mask, cpTokens, mtx, mypk, txfee, 
-					EncodeTokenOpRet(assetid, voutTokenPubkeys, vopretNonfungible,
+					EncodeTokenOpRet(assetid, voutTokenPubkeys, 
 						EncodeAssetOpRet('B', zeroid, remaining_required, origpubkey))));
             } else return("dont have any assets to fill bid");
         }
@@ -800,7 +802,7 @@ std::string FillSell(int64_t txfee, uint256 assetid, uint256 assetid2, uint256 a
                 cpAssets->additionalTokensEvalcode2 = additionalTokensEvalcode2;
 
                 return(FinalizeCCTx(mask, cpAssets, mtx, mypk, txfee,
-					EncodeTokenOpRet(assetid, voutTokenPubkeys, vopretNonfungible,
+					EncodeTokenOpRet(assetid, voutTokenPubkeys, 
 						EncodeAssetOpRet(assetid2 != zeroid ? 'E' : 'S', assetid2, remaining_nValue, origpubkey))));
             } else {
                 CCerror = strprintf("filltx not enough utxos");
