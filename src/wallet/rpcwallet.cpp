@@ -7846,5 +7846,11 @@ UniValue test_burntx(const UniValue& params, bool fHelp)
     voutPubkeys.push_back(burnpk);
     
     cp = CCinit(&C, EVAL_TOKENS);
+
+    uint8_t tokenpriv[33];
+    char unspendableTokenAddr[64];
+    CPubKey unspPk = GetUnspendable(cp, tokenpriv);
+    GetCCaddress(cp, unspendableTokenAddr, unspPk);
+    CCaddr2set(cp, EVAL_TOKENS, unspPk, tokenpriv, unspendableTokenAddr);
     return(FinalizeCCTx(0, cp, mtx, myPubkey, 10000, EncodeTokenOpRet(tokenid, voutPubkeys, CScript())));
 }
