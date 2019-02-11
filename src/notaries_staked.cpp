@@ -70,8 +70,7 @@ int8_t StakedNotaryID(std::string &notaryname, char *Raddress) {
 
 int8_t numStakedNotaries(uint8_t pubkeys[64][33],int8_t era) {
     int i; int8_t retval = 0;
-    static uint8_t staked_pubkeys1[64][33],staked_pubkeys2[64][33],didstaked1,didstaked2;
-    static uint8_t staked_pubkeys3[64][33],staked_pubkeys4[64][33],didstaked3,didstaked4;
+    static uint8_t staked_pubkeys[NUM_STAKED_ERAS][64][33],didinit[NUM_STAKED_ERAS];
     static char ChainName[65];
 
     if ( ChainName[0] == 0 )
@@ -82,64 +81,25 @@ int8_t numStakedNotaries(uint8_t pubkeys[64][33],int8_t era) {
             strcpy(ChainName,ASSETCHAINS_SYMBOL);
     }
 
-    if ( era != 0 ) {
-      switch (era) {
-        case 1:
-          if ( didstaked1 == 0 )
-          {
-              for (i=0; i<num_notaries_STAKED[0]; i++) {
-                  decode_hex(staked_pubkeys1[i],33,(char *)notaries_STAKED[0][i][1]);
-              }
-              didstaked1 = 1;
-              printf("%s is a STAKED chain in era 1 \n",ChainName);
-          }
-          memcpy(pubkeys,staked_pubkeys1,num_notaries_STAKED[0] * 33);
-          retval = num_notaries_STAKED[0];
-          break;
-        case 2:
-          if ( didstaked2 == 0 )
-          {
-              for (i=0; i<num_notaries_STAKED[1]; i++) {
-                  decode_hex(staked_pubkeys2[i],33,(char *)notaries_STAKED[1][i][1]);
-              }
-              didstaked2 = 1;
-              printf("%s is a STAKED chain in era 2 \n",ChainName);
-          }
-          memcpy(pubkeys,staked_pubkeys2,num_notaries_STAKED[1] * 33);
-          retval = num_notaries_STAKED[1];
-          break;
-        case 3:
-          if ( didstaked3 == 0 )
-          {
-              for (i=0; i<num_notaries_STAKED[2]; i++) {
-                  decode_hex(staked_pubkeys3[i],33,(char *)notaries_STAKED[2][i][1]);
-              }
-              didstaked3 = 1;
-              printf("%s is a STAKED chain in era 3 \n",ChainName);
-          }
-          memcpy(pubkeys,staked_pubkeys3,num_notaries_STAKED[2] * 33);
-          retval = num_notaries_STAKED[2];
-          break;
-        case 4:
-          if ( didstaked4 == 0 )
-          {
-              for (i=0; i<num_notaries_STAKED[3]; i++) {
-                  decode_hex(staked_pubkeys4[i],33,(char *)notaries_STAKED[3][i][1]);
-              }
-              didstaked4 = 1;
-              printf("%s is a STAKED chain in era 4 \n",ChainName);
-          }
-          memcpy(pubkeys,staked_pubkeys4,num_notaries_STAKED[3] * 33);
-          retval = num_notaries_STAKED[3];
-          break;
-      }
-    }
-    else
+    if ( era == 0 )
     {
         // era is zero so we need to null out the pubkeys.
         memset(pubkeys,0,64 * 33);
-        printf("%s is a STAKED chain and is in an ERA GAP.\n",ASSETCHAINS_SYMBOL);
+        printf("%s is a STAKED chain and is in an ERA GAP.\n",ChainName);
         return(64);
+    }
+    else
+    {
+        if ( didinit[era-1] == 0 )
+        {
+            for (i=0; i<num_notaries_STAKED[era-1]; i++) {
+                decode_hex(staked_pubkeys[era-1][i],33,(char *)notaries_STAKED[era-1][i][1]);
+            }
+            didinit[era-1] = 1;
+            printf("%s is a STAKED chain in era %i \n",ChainName,era);
+        }
+        memcpy(pubkeys,staked_pubkeys[era-1],num_notaries_STAKED[era-1] * 33);
+        retval = num_notaries_STAKED[era-1];
     }
     return(retval);
 }
