@@ -218,7 +218,7 @@ uint8_t rogue_registeropretdecode(uint256 &gametxid,uint256 &tokenid,uint256 &pl
     {
         return(f);
     }
-    else if ( (f= DecodeTokenOpRet(scriptPubKey,e,tokenid,voutPubkeys,vopret,vopret2)) == 'c' || f == 't' )
+    else if ( (f= DecodeTokenOpRet(scriptPubKey,e,tokenid,voutPubkeys,vopret)) == 'c' || f == 't' )
     {
         //fprintf(stderr,"got valid token opret %s e.%d vs %d\n",tokenid.GetHex().c_str(),e,EVAL_TOKENS);
         if ( vopret2.size() > 2 && E_UNMARSHAL(vopret2,ss >> e; ss >> f; ss >> gametxid; ss >> playertxid) != 0 && e == EVAL_ROGUE && f == 'R' )
@@ -731,7 +731,7 @@ UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                             if ( funcid == 'c' )
                                 tokenid = playertxid;
                             rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee,
-                                                 EncodeTokenOpRet(tokenid, voutPubkeysEmpty /*=never spent*/, opretRegister));
+                                EncodeTokenOpRet(tokenid, voutPubkeysEmpty /*=never spent*/, opretRegister));
                         }
                     }
                 }
@@ -881,7 +881,7 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
                             }
                         }
                     }
-                    mtx.vout.push_back(MakeCC1vout(cp->evalcode,CCchange + (batonvalue-2*txfee),roguepk));
+                    mtx.vout.push_back(MakeCC1vout(cp->evalcode,CCchange + (batonvalue-3*txfee),roguepk));
                     cpTokens = CCinit(&tokensC, EVAL_TOKENS);
                     mtx.vout.push_back(MakeCC1vout(EVAL_TOKENS, txfee, GetUnspendable(cpTokens, NULL)));            // marker to token cc addr, burnable and validated
 
