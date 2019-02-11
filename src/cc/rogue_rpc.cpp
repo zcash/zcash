@@ -115,8 +115,8 @@
  */
 
 // todo:
-// convert playertxid to the original playertxid
 // verify keystrokes tx is in mempool and confirmed
+// chaining when mempool tx sometimes infinite loops
 
 //////////////////////// start of CClib interface
 //./komodod -ac_name=ROGUE -ac_supply=1000000 -pubkey=03951a6f7967ad784453116bc55cd30c54f91ea8a5b1e9b04d6b29cfd6b395ba6c -addnode=5.9.102.210  -ac_cclib=rogue -ac_perc=10000000 -ac_reward=100000000 -ac_cc=60001 -ac_script=2ea22c80203d1579313abe7d8ea85f48c65ea66fc512c878c0d0e6f6d54036669de940febf8103120c008203000401cc > /dev/null &
@@ -128,7 +128,7 @@
 // ./rogue <seed> gui -> creates keystroke files
 // ./c cclib register 17 \"[%226d3243c6e5ab383898b28a87e01f6c00b5bdd9687020f17f5caacc8a61febd19%22,%222475182f9d5169d8a3249d17640e4eccd90f4ee43ab04791129b0fa3f177b14a%22]\"
 // ./c cclib bailout 17 \"[%226d3243c6e5ab383898b28a87e01f6c00b5bdd9687020f17f5caacc8a61febd19%22]\"
-
+// ./komodo-cli -ac_name=ROGUE cclib register 17 \"[%22a898f4ceef7647ba113b9f3c24ef045f5d134935a3b09bdd1a997b9d474f4c1b%22,%22f11d0cb4e2e4c21f029a1146f8e5926f11456885b7ab7d665096f5efedec8ea0%22]\"
 
 #define MAXPACK 23
 struct rogue_packitem
@@ -455,12 +455,12 @@ int32_t rogue_playerdata(struct CCcontract_info *cp,uint256 &origplayergame,uint
     return(-1);
 }
 
-int32_t rogue_playerdataspend(CMutableTransaction &mtx,uint256 playertxid,uint256 origplayergame)
+int32_t rogue_playerdataspend(CMutableTransaction &mtx,uint256 playertxid,int32_t vout,uint256 origplayergame)
 {
     int64_t txfee = 10000;
-    if ( CCgettxout(playertxid,0,1) == 1 ) // not sure if this is enough validation
+    if ( CCgettxout(playertxid,vout,1) == 1 ) // not sure if this is enough validation
     {
-        mtx.vin.push_back(CTxIn(playertxid,0,CScript()));
+        mtx.vin.push_back(CTxIn(playertxid,vout,CScript()));
         return(0);
     } else return(-1);
 }
@@ -688,7 +688,7 @@ UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     // vin3+ -> buyin
     // vout0 -> keystrokes/completion baton
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); char destaddr[64],coinaddr[64]; uint256 tokenid,gametxid,origplayergame,playertxid,hashBlock; int32_t err,maxplayers,gameheight,n,numvouts; int64_t inputsum,buyin,CCchange=0; CPubKey pk,mypk,roguepk,burnpk; CTransaction tx,playertx; std::vector<uint8_t> playerdata; std::string rawtx; bits256 t;
+    UniValue result(UniValue::VOBJ); char destaddr[64],coinaddr[64]; uint256 tokenid,gametxid,origplayergame,playertxid,hashBlock; int32_t err,maxplayers,gameheight,n,numvouts,vout=0; int64_t inputsum,buyin,CCchange=0; CPubKey pk,mypk,roguepk,burnpk; CTransaction tx,playertx; std::vector<uint8_t> playerdata; std::string rawtx; bits256 t;
 
     if ( txfee == 0 )
         txfee = 10000;
@@ -696,7 +696,7 @@ UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     burnpk = pubkey2pk(ParseHex(CC_BURNPUBKEY));
     roguepk = GetUnspendable(cp,0);
     rogue_univalue(result,"register",-1,-1);
-    playertxid = zeroid;
+    playertxid = tokenid = zeroid;
     if ( (params= cclib_reparse(&n,params)) != 0 )
     {
         if ( n > 0 )
@@ -709,6 +709,8 @@ UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                     playertxid = juint256(jitem(params,1));
                     if ( rogue_playerdata(cp,origplayergame,tokenid,pk,playerdata,playertxid) < 0 )
                         return(cclib_error(result,"couldnt extract valid playerdata"));
+                    if ( tokenid != zeroid )
+                        vout = 1;
                 }
                 rogue_univalue(result,0,maxplayers,buyin);
                 GetCCaddress1of2(cp,coinaddr,roguepk,mypk);
@@ -716,7 +718,7 @@ UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                     return(cclib_error(result,"already registered"));
                 if ( (inputsum= rogue_registrationbaton(mtx,gametxid,tx,maxplayers)) != ROGUE_REGISTRATIONSIZE )
                     return(cclib_error(result,"couldnt find available registration baton"));
-                else if ( playertxid != zeroid && rogue_playerdataspend(mtx,playertxid,origplayergame) < 0 )
+                else if ( playertxid != zeroid && rogue_playerdataspend(mtx,playertxid,vout,origplayergame) < 0 )
                     return(cclib_error(result,"couldnt find playerdata to spend"));
                 else if ( buyin > 0 && AddNormalinputs(mtx,mypk,buyin,64) < buyin )
                     return(cclib_error(result,"couldnt find enough normal funds for buyin"));
@@ -727,21 +729,21 @@ UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                 CCaddr1of2set(cp,roguepk,roguepk,cp->CCpriv,destaddr);
                 mtx.vout.push_back(MakeTokensCC1vout(cp->evalcode, 1, burnpk));
 
-                std::vector<uint8_t> vopretExtra; uint8_t e, funcid; uint256 tokenid; std::vector<CPubKey> voutPubkeys, voutPubkeysEmpty; int32_t didtx = 0;
+                std::vector<uint8_t> vopretExtra; uint8_t e, funcid; uint256 tid; std::vector<CPubKey> voutPubkeys, voutPubkeysEmpty; int32_t didtx = 0;
                 CScript opretRegister = rogue_registeropret(gametxid, playertxid);
                 if ( playertxid != zeroid )
                 {
                     //fprintf(stderr,"playertxid.%s\n",playertxid.GetHex().c_str());
                     voutPubkeysEmpty.push_back(burnpk);
-                    if ( GetTransaction(playertxid,playertx,hashBlock,false) != 0 )
+                    if ( GetTransaction(tokenid == zeroid ? playertxid : tokenid,playertx,hashBlock,false) != 0 )
                     {
-                        if ( (funcid= DecodeTokenOpRet(playertx.vout.back().scriptPubKey, e, tokenid, voutPubkeys, vopretExtra)) != 0)
+                        if ( (funcid= DecodeTokenOpRet(playertx.vout.back().scriptPubKey, e, tid, voutPubkeys, vopretExtra)) != 0)
                         {  // if token in the opret
                             didtx = 1;
                             if ( funcid == 'c' )
-                                tokenid = playertxid;
+                                tid = tokenid == zeroid ? playertxid : tokenid;
                             rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee,
-                                EncodeTokenOpRet(tokenid, voutPubkeysEmpty /*=never spent*/, opretRegister));
+                                EncodeTokenOpRet(tid, voutPubkeysEmpty /*=never spent*/, opretRegister));
                         }
                     }
                 }
