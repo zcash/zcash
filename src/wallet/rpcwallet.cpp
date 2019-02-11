@@ -7848,6 +7848,11 @@ UniValue test_burntx(const UniValue& params, bool fHelp)
     
     cp = CCinit(&C, EVAL_TOKENS);
 
+    std::vector<uint8_t> vopret;
+    GetNonfungibleData(tokenid, vopret);
+    if (vopret.size() > 0)
+        cp->additionalTokensEvalcode2 = vopret.begin()[0];
+
     uint8_t tokenpriv[33];
     char unspendableTokenAddr[64];
     CPubKey unspPk = GetUnspendable(cp, tokenpriv);
