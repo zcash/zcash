@@ -174,20 +174,21 @@ CScript rogue_highlanderopret(uint8_t funcid,uint256 gametxid,int32_t regslot,CP
     return(opret);
 }
 
-uint8_t rogue_highlanderopretdecode(uint256 &gametxid, int32_t &regslot, CPubKey &pk, std::vector<uint8_t> &playerdata, CScript scriptPubKey)
+uint8_t rogue_highlanderopretdecode(uint256 &gametxid, uint256 &tokenid, int32_t &regslot, CPubKey &pk, std::vector<uint8_t> &playerdata, CScript scriptPubKey)
 {
     std::string name, description; std::vector<uint8_t> vorigPubkey;
     std::vector<uint8_t> vopretNonfungible, vopret, vopretDummy,origpubkey;
-    uint8_t e, f,*script; uint256 tokenid; std::vector<CPubKey> voutPubkeys;
-
+    uint8_t e, f,*script; std::vector<CPubKey> voutPubkeys;
+    tokenid = zeroid;
     GetOpReturnData(scriptPubKey, vopret);
     script = (uint8_t *)vopret.data();
     if ( script[1] == 'c' && (f= DecodeTokenCreateOpRet(scriptPubKey,origpubkey,name,description,vopretNonfungible)) == 'c' )
     {
         vopret = vopretNonfungible;
     }
-    else if ( script[1] == 't' && (f= DecodeTokenOpRet(scriptPubKey, e, tokenid, voutPubkeys, vopretDummy)) != 0 )
+    else if ( script[1] != 'H' && script[1] != 'Q' && (f= DecodeTokenOpRet(scriptPubKey, e, tokenid, voutPubkeys, vopretDummy)) != 0 )
     {
+        fprintf(stderr,"decode opret %c\n",script[1]);
         GetNonfungibleData(tokenid, vopretNonfungible);  //load nonfungible data from the 'tokenbase' tx
         vopret = vopretNonfungible;
     }
@@ -424,14 +425,11 @@ int32_t rogue_iterateplayer(uint256 &registertxid,uint256 firsttxid,int32_t firs
 
 int32_t rogue_playerdata(struct CCcontract_info *cp,uint256 &origplayergame,CPubKey &pk,std::vector<uint8_t> &playerdata,uint256 playertxid)
 {
-    uint256 origplayertxid,hashBlock,gametxid,registertxid; CTransaction gametx,playertx,highlandertx; std::vector<uint8_t> vopret; uint8_t *script,e,f; int32_t i,regslot,gameheight,numvouts,maxplayers; int64_t buyin;
+    uint256 origplayertxid,tokenid,hashBlock,gametxid,registertxid; CTransaction gametx,playertx,highlandertx; std::vector<uint8_t> vopret; uint8_t *script,e,f; int32_t i,regslot,gameheight,numvouts,maxplayers; int64_t buyin;
     if ( GetTransaction(playertxid,playertx,hashBlock,false) != 0 && (numvouts= playertx.vout.size()) > 0 )
     {
-        //GetOpReturnData(playertx.vout[numvouts-1].scriptPubKey,vopret);
-        //script = (uint8_t *)vopret.data();
-        if ( (f= rogue_highlanderopretdecode(gametxid,regslot,pk,playerdata,playertx.vout[numvouts-1].scriptPubKey)) == 'H' || f == 'Q' )
+        if ( (f= rogue_highlanderopretdecode(gametxid,tokenid,regslot,pk,playerdata,playertx.vout[numvouts-1].scriptPubKey)) == 'H' || f == 'Q' )
         {
-            //memcpy(&gametxid,script+2,sizeof(gametxid));
             if ( rogue_isvalidgame(cp,gameheight,gametx,buyin,maxplayers,gametxid) == 0 )
             {
                 fprintf(stderr,"playertxid.%s got vin.%s/v%d gametxid.%s iterate.%d\n",playertxid.ToString().c_str(),playertx.vin[1].prevout.hash.ToString().c_str(),(int32_t)playertx.vin[1].prevout.n-maxplayers,gametxid.ToString().c_str(),rogue_iterateplayer(registertxid,gametxid,playertx.vin[1].prevout.n-maxplayers,playertxid));
@@ -442,7 +440,7 @@ int32_t rogue_playerdata(struct CCcontract_info *cp,uint256 &origplayergame,CPub
                 } else fprintf(stderr,"hash mismatch or illegal gametxid\n");
             } else fprintf(stderr,"invalid game %s\n",gametxid.GetHex().c_str());
         }
-    }
+    } else fprintf(stderr,"couldnt get playertxid.%s\n",playertxid.GetHex().c_str());
     return(-1);
 }
 
