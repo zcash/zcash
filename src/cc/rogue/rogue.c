@@ -213,6 +213,7 @@ void rogue_bailout(struct rogue_state *rs)
     char cmd[512];
     //flushkeystrokes(rs);
     //sleep(5);
+    return;
     fprintf(stderr,"bailing out\n");
     sprintf(cmd,"./komodo-cli -ac_name=ROGUE cclib bailout 17 \\\"[%%22%s%%22]\\\" >> bailout.log",Gametxidstr);
     if ( system(cmd) != 0 )
