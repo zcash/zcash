@@ -178,7 +178,7 @@ uint8_t DecodeTokenOpRet(const CScript scriptPubKey, uint8_t &evalCodeTokens, ui
 			return (uint8_t)0;
 
         funcId = script[1];
-        LOGSTREAM((char *)"cctokens", CCLOG_DEBUG2, stream << "DecodeTokenOpRet decoded funcId=" << (char)(funcId?funcId:' '));
+        LOGSTREAM((char *)"cctokens", CCLOG_DEBUG2, stream << "DecodeTokenOpRet decoded funcId=" << (char)(funcId?funcId:' ') << std::endl);
 
         switch( funcId )
         {
