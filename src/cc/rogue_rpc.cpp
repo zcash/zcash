@@ -712,6 +712,7 @@ UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                     return(cclib_error(result,"couldnt find enough normal funds for buyin"));
                 if ( playertxid != zeroid )
                     AddNormalinputs2(mtx,txfee,10);
+                mtx.vin.push_back(CTxIn(playertxid, 1)); // spending cc marker as token is being burned
                 mtx.vout.push_back(MakeCC1of2vout(cp->evalcode,buyin + inputsum - txfee,roguepk,mypk));
                 GetCCaddress1of2(cp,destaddr,roguepk,roguepk);
                 CCaddr1of2set(cp,roguepk,roguepk,cp->CCpriv,destaddr);
