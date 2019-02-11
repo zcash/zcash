@@ -67,6 +67,12 @@ one other technical note is that komodod has the insight-explorer extensions bui
 
 #include "../komodo_cJSON.h"
 
+// opret data block ids:
+ enum {
+    OPRETID_NONFUNGIBLEDATA = 0x11
+    // TODO: OPRETID_ASSETSDATA = 0x12
+};
+
 struct CC_utxo
 {
     uint256 txid;
@@ -173,11 +179,10 @@ bool DecodeHexTx(CTransaction& tx, const std::string& strHexTx);
 CScript EncodeTokenCreateOpRet(uint8_t funcid, std::vector<uint8_t> origpubkey, std::string name, std::string description, std::vector<uint8_t> vopretNonfungible);
 CScript EncodeTokenOpRet(uint8_t tokenFuncId, uint8_t evalCodeInOpret, uint256 tokenid, std::vector<CPubKey> voutPubkeys, CScript payload); //old version
 CScript EncodeTokenOpRet(uint256 tokenid, std::vector<CPubKey> voutPubkeys, CScript payload);
-CScript EncodeTokenOpRet(uint256 tokenid, std::vector<CPubKey> voutPubkeys, std::vector<uint8_t> vpayloadNonfungible, CScript payload);
 uint8_t DecodeTokenCreateOpRet(const CScript &scriptPubKey, std::vector<uint8_t> &origpubkey, std::string &name, std::string &description);
-uint8_t DecodeTokenCreateOpRet(const CScript &scriptPubKey, std::vector<uint8_t> &origpubkey, std::string &name, std::string &description, std::vector<uint8_t>  &vopretNonfungible);
-uint8_t DecodeTokenOpRet(const CScript scriptPubKey, uint8_t &evalCode, uint256 &tokenid, std::vector<CPubKey> &voutPubkeys, std::vector<uint8_t>  &vopretExtra);
-uint8_t DecodeTokenOpRet(const CScript scriptPubKey, uint8_t &evalCode, uint256 &tokenid, std::vector<CPubKey> &voutPubkeys, std::vector<uint8_t>  &vopret1, std::vector<uint8_t>  &vopret2);
+uint8_t DecodeTokenCreateOpRet(const CScript &scriptPubKey, std::vector<uint8_t> &origpubkey, std::string &name, std::string &description, std::vector<uint8_t> &vopretNonfungible);
+uint8_t DecodeTokenOpRet(const CScript scriptPubKey, uint8_t &evalCodeTokens, uint256 &tokenid, std::vector<CPubKey> &voutPubkeys, std::vector<uint8_t> &vopretExtra);
+void GetNonfungibleData(uint256 tokenid, std::vector<uint8_t> &vopretNonfungible);
 
 uint8_t DecodeOraclesData(const CScript &scriptPubKey,uint256 &oracletxid,uint256 &batontxid,CPubKey &pk,std::vector <uint8_t>&data);
 int32_t oracle_format(uint256 *hashp,int64_t *valp,char *str,uint8_t fmt,uint8_t *data,int32_t offset,int32_t datalen);
@@ -186,7 +191,7 @@ int32_t oracle_format(uint256 *hashp,int64_t *valp,char *str,uint8_t fmt,uint8_t
 
 // CCcustom
 CPubKey GetUnspendable(struct CCcontract_info *cp,uint8_t *unspendablepriv);
-uint8_t DecodeTokenOpRet(const CScript scriptPubKey, uint8_t &evalCodeTokens, uint256 &tokenid, std::vector<CPubKey> &voutPubkeys, std::vector<uint8_t>  &vopret1, std::vector<uint8_t>  &vopret2);
+//uint8_t DecodeTokenOpRet(const CScript scriptPubKey, uint8_t &evalCodeTokens, uint256 &tokenid, std::vector<CPubKey> &voutPubkeys, std::vector<uint8_t>  &vopret1, std::vector<uint8_t>  &vopret2);
 
 // CCutils
 bool priv2addr(char *coinaddr,uint8_t buf33[33],uint8_t priv32[32]);
@@ -262,7 +267,7 @@ UniValue ValueFromAmount(const CAmount& amount);
 #define CCLOG_DEBUG2 2
 #define CCLOG_DEBUG3 3
 template <class T>
-inline void CCLogPrintStream(char *category, int level, T print_to_stream)
+inline void CCLogPrintStream(const char *category, int level, T print_to_stream)
 {
     std::ostringstream stream; 
     print_to_stream(stream);

@@ -15,6 +15,7 @@
  ******************************************************************************/
 
 #include "cJSON.h"
+#include "CCinclude.h"
 
 #define ROGUE_REGISTRATION 5
 #define ROGUE_REGISTRATIONSIZE (100 * 10000)
@@ -173,19 +174,27 @@ CScript rogue_highlanderopret(uint8_t funcid,uint256 gametxid,int32_t regslot,CP
     return(opret);
 }
 
-uint8_t rogue_highlanderopretdecode(uint256 &gametxid,int32_t &regslot,CPubKey &pk,std::vector<uint8_t> &playerdata,CScript scriptPubKey)
+uint8_t rogue_highlanderopretdecode(uint256 &gametxid, int32_t &regslot, CPubKey &pk, std::vector<uint8_t> &playerdata, CScript scriptPubKey)
 {
-    std::vector<uint8_t> vopret,vopret2; uint8_t e,f; uint256 tokenid; std::vector<CPubKey> voutPubkeys;
-    GetOpReturnData(scriptPubKey,vopret);
-    if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> gametxid; ss >> regslot; ss >> pk; ss >> playerdata) != 0 && e == EVAL_ROGUE && (f == 'H' || f == 'Q') )
+    std::string name, description;
+    std::vector<uint8_t> vorigPubkey;
+    std::vector<uint8_t> vopretNonfungible, vopret, vopretDummy; 
+    uint8_t e, f; uint256 tokenid; std::vector<CPubKey> voutPubkeys;
+
+    GetOpReturnData(scriptPubKey, vopret);
+    // try no tokens case:
+    if (vopret.size() > 2 && E_UNMARSHAL(vopret, ss >> e; ss >> f; ss >> gametxid; ss >> regslot; ss >> pk; ss >> playerdata) != 0 && e == EVAL_ROGUE && (f == 'H' || f == 'Q'))  
         return(f);
-    else if ( (f= DecodeTokenOpRet(scriptPubKey,e,tokenid,voutPubkeys,vopret,vopret2)) == 'c' || f == 't' )
-    {
-        if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> gametxid; ss >> regslot; ss >> pk; ss >> playerdata) != 0 && e == EVAL_ROGUE && (f == 'H' || f == 'Q') )
+    else if (f = DecodeTokenOpRet(scriptPubKey, e, tokenid, voutPubkeys, vopretDummy) != 0) {  // it is tokens
+        if (f != 'c')
+            GetNonfungibleData(tokenid, vopretNonfungible);  //load nonfungible data from the 'tokenbase' tx
+            
+        if (vopretNonfungible.size() > 2 && E_UNMARSHAL(vopretNonfungible, ss >> e; ss >> f; ss >> gametxid; ss >> regslot; ss >> pk; ss >> playerdata) != 0 && e == EVAL_ROGUE && (f == 'H' || f == 'Q'))
         {
             return(f);
         }
     }
+  
     return(0);
 }
 
@@ -209,7 +218,7 @@ uint8_t rogue_registeropretdecode(uint256 &gametxid,uint256 &tokenid,uint256 &pl
     {
         return(f);
     }
-    else if ( (f= DecodeTokenOpRet(scriptPubKey,e,tokenid,voutPubkeys,vopret,vopret2)) == 'c' || f == 't' )
+    else if ( (f= DecodeTokenOpRet(scriptPubKey,e,tokenid,voutPubkeys,vopret)) == 'c' || f == 't' )
     {
         //fprintf(stderr,"got valid token opret %s e.%d vs %d\n",tokenid.GetHex().c_str(),e,EVAL_TOKENS);
         if ( vopret2.size() > 2 && E_UNMARSHAL(vopret2,ss >> e; ss >> f; ss >> gametxid; ss >> playertxid) != 0 && e == EVAL_ROGUE && f == 'R' )
@@ -670,6 +679,7 @@ UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     // vout0 -> keystrokes/completion baton
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     UniValue result(UniValue::VOBJ); char destaddr[64],coinaddr[64]; uint256 gametxid,origplayergame,playertxid,hashBlock; int32_t err,maxplayers,gameheight,n,numvouts; int64_t inputsum,buyin,CCchange=0; CPubKey pk,mypk,roguepk,burnpk; CTransaction tx,playertx; std::vector<uint8_t> playerdata; std::string rawtx; bits256 t;
+
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
@@ -707,7 +717,7 @@ UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                 CCaddr1of2set(cp,roguepk,roguepk,cp->CCpriv,destaddr);
                 mtx.vout.push_back(MakeTokensCC1vout(cp->evalcode, 1, burnpk));
 
-                std::vector<uint8_t> vopretFinish, vopret2; uint8_t e, funcid; uint256 tokenid; std::vector<CPubKey> voutPubkeys, voutPubkeysEmpty; int32_t didtx = 0;
+                std::vector<uint8_t> vopretExtra; uint8_t e, funcid; uint256 tokenid; std::vector<CPubKey> voutPubkeys, voutPubkeysEmpty; int32_t didtx = 0;
                 CScript opretRegister = rogue_registeropret(gametxid, playertxid);
                 if ( playertxid != zeroid )
                 {
@@ -715,13 +725,13 @@ UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                     voutPubkeysEmpty.push_back(burnpk);
                     if ( GetTransaction(playertxid,playertx,hashBlock,false) != 0 )
                     {
-                        if ( (funcid= DecodeTokenOpRet(playertx.vout.back().scriptPubKey, e, tokenid, voutPubkeys, vopretFinish, vopret2)) != 0)
+                        if ( (funcid= DecodeTokenOpRet(playertx.vout.back().scriptPubKey, e, tokenid, voutPubkeys, vopretExtra)) != 0)
                         {  // if token in the opret
                             didtx = 1;
                             if ( funcid == 'c' )
                                 tokenid = playertxid;
                             rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee,
-                                                 EncodeTokenOpRet(tokenid, voutPubkeysEmpty /*=never spent*/, vopretFinish /*=non-fungible*/, opretRegister));
+                                EncodeTokenOpRet(tokenid, voutPubkeysEmpty /*=never spent*/, opretRegister));
                         }
                     }
                 }
@@ -788,6 +798,8 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
     // get any playerdata, get all keystrokes, replay game and compare final state
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     UniValue result(UniValue::VOBJ); std::string rawtx; CTransaction gametx; uint64_t seed,mult; int64_t buyin,batonvalue,inputsum,cashout,CCchange=0; int32_t i,err,gameheight,tmp,numplayers,regslot,n,num,numkeys,maxplayers,batonht,batonvout; char myrogueaddr[64],*keystrokes = 0; std::vector<uint8_t> playerdata,newdata; uint256 batontxid,playertxid,gametxid; CPubKey mypk,roguepk; uint8_t player[10000],mypriv[32],funcid;
+    struct CCcontract_info *cpTokens, tokensC;
+
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
@@ -869,7 +881,10 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
                             }
                         }
                     }
-                    mtx.vout.push_back(MakeCC1vout(cp->evalcode,CCchange + (batonvalue-2*txfee),roguepk));
+                    mtx.vout.push_back(MakeCC1vout(cp->evalcode,CCchange + (batonvalue-3*txfee),roguepk));
+                    cpTokens = CCinit(&tokensC, EVAL_TOKENS);
+                    mtx.vout.push_back(MakeCC1vout(EVAL_TOKENS, txfee, GetUnspendable(cpTokens, NULL)));            // marker to token cc addr, burnable and validated
+
                     Myprivkey(mypriv);
                     CCaddr1of2set(cp,roguepk,mypk,mypriv,myrogueaddr);
                     CScript opret = rogue_highlanderopret(funcid, gametxid, regslot,mypk, newdata);
