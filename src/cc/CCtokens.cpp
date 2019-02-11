@@ -238,7 +238,8 @@ bool TokensValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction &
 	char destaddr[64], origaddr[64], CCaddr[64];
 	std::vector<CPubKey> voutTokenPubkeys;
 
-	//return true;
+    if (strcmp(ASSETCHAINS_SYMBOL, "ROGUE") == 0 && chainActive.Height() <= 12500)
+        return true;
 
 	numvins = tx.vin.size();
 	numvouts = tx.vout.size();
