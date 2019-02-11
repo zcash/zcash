@@ -71,8 +71,8 @@ public:
     }
 };
 
-uint64_t nLastBlockTx = 0;
-uint64_t nLastBlockSize = 0;
+std::optional<uint64_t> last_block_num_txs;
+std::optional<uint64_t> last_block_size;
 
 // We want to sort transactions by priority and fee rate, so:
 typedef boost::tuple<double, CFeeRate, const CTransaction*> TxPriority;
@@ -610,8 +610,8 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const MinerAddre
             }
         }
 
-        nLastBlockTx = nBlockTx;
-        nLastBlockSize = nBlockSize;
+        last_block_num_txs = nBlockTx;
+        last_block_size = nBlockSize;
         LogPrintf("CreateNewBlock(): total size %u\n", nBlockSize);
 
         // Create coinbase tx
