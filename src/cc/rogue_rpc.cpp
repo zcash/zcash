@@ -176,27 +176,25 @@ CScript rogue_highlanderopret(uint8_t funcid,uint256 gametxid,int32_t regslot,CP
 
 uint8_t rogue_highlanderopretdecode(uint256 &gametxid, int32_t &regslot, CPubKey &pk, std::vector<uint8_t> &playerdata, CScript scriptPubKey)
 {
-    std::string name, description;
-    std::vector<uint8_t> vorigPubkey;
-    std::vector<uint8_t> vopretNonfungible, vopret, vopretDummy; 
-    uint8_t e, f; uint256 tokenid; std::vector<CPubKey> voutPubkeys;
+    std::string name, description; std::vector<uint8_t> vorigPubkey;
+    std::vector<uint8_t> vopretNonfungible, vopret, vopretDummy,origpubkey;
+    uint8_t e, f,*script; uint256 tokenid; std::vector<CPubKey> voutPubkeys;
 
     GetOpReturnData(scriptPubKey, vopret);
-    // try no tokens case:
-    if (vopret.size() > 2 && E_UNMARSHAL(vopret, ss >> e; ss >> f; ss >> gametxid; ss >> regslot; ss >> pk; ss >> playerdata) != 0 && e == EVAL_ROGUE && (f == 'H' || f == 'Q'))  
-        return(f);
-    else if ( (f= DecodeTokenOpRet(scriptPubKey, e, tokenid, voutPubkeys, vopretDummy)) != 0)
+    script = (uint8_t *)vopret.data();
+    if ( script[1] == 'c' && (f= DecodeTokenCreateOpRet(scriptPubKey,origpubkey,name,description,vopretNonfungible)) == 'c' )
     {
-        fprintf(stderr,"f %c %d\n",f,f);
-        if (f != 'c')
-            GetNonfungibleData(tokenid, vopretNonfungible);  //load nonfungible data from the 'tokenbase' tx
-        if (vopretNonfungible.size() > 2 && E_UNMARSHAL(vopretNonfungible, ss >> e; ss >> f; ss >> gametxid; ss >> regslot; ss >> pk; ss >> playerdata) != 0 && e == EVAL_ROGUE && (f == 'H' || f == 'Q'))
-        {
-            return(f);
-        }
-        fprintf(stderr,"e.%d f.%c game.%s slot.%dВыходи и жди ,ок\n",e,f,gametxid.GetHex().c_str(),regslot);
+        vopret = vopretNonfungible;
     }
-  
+    else if ( script[1] == 't' && (f= DecodeTokenOpRet(scriptPubKey, e, tokenid, voutPubkeys, vopretDummy)) != 0 )
+    {
+        GetNonfungibleData(tokenid, vopretNonfungible);  //load nonfungible data from the 'tokenbase' tx
+    }
+    if ( vopret.size() > 2 && E_UNMARSHAL(vopret, ss >> e; ss >> f; ss >> gametxid; ss >> regslot; ss >> pk; ss >> playerdata) != 0 && e == EVAL_ROGUE && (f == 'H' || f == 'Q') )
+    {
+        return(f);
+    }
+    fprintf(stderr,"e.%d f.%c game.%s regslot.%d psize.%d\n",e,f,gametxid.GetHex().c_str(),regslot,(int32_t)playerdata.size());
     return(0);
 }
 
@@ -889,7 +887,7 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
 
                     Myprivkey(mypriv);
                     CCaddr1of2set(cp,roguepk,mypk,mypriv,myrogueaddr);
-                    CScript opret = rogue_highlanderopret(funcid, gametxid, regslot,mypk, newdata);
+                    CScript opret = rogue_highlanderopret(funcid, gametxid, regslot, mypk, newdata);
                     if ( newdata.size() == 0 )
                         rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,opret);
                     else
