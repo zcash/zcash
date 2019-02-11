@@ -187,7 +187,7 @@ int32_t rogue_setplayerdata(struct rogue_state *rs,char *gametxidstr)
 
 void rogue_progress(uint64_t seed,char *keystrokes,int32_t num)
 {
-    char cmd[32768],hexstr[32768]; int32_t i;
+    char cmd[16384],hexstr[16384]; int32_t i;
     for (i=0; i<num; i++)
         sprintf(&hexstr[i<<1],"%02x",keystrokes[i]);
     hexstr[i<<1] = 0;
@@ -211,7 +211,7 @@ int32_t flushkeystrokes(struct rogue_state *rs)
 void rogue_bailout(struct rogue_state *rs)
 {
     char cmd[512];
-    //flushkeystrokes(rs);
+    flushkeystrokes(rs);
     //sleep(5);
     return;
     fprintf(stderr,"bailing out\n");
@@ -566,7 +566,7 @@ playit(struct rogue_state *rs)
         }
         else
         {
-            if ( rs->needflush != 0 )
+            if ( rs->needflush != 0 && rs->num > 4096 )
             {
                 if ( flushkeystrokes(rs) == 0 )
                     rs->needflush = 0;
