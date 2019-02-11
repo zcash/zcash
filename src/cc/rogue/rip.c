@@ -277,7 +277,7 @@ death(struct rogue_state *rs,char monst)
     move(LINES - 1, 0);
     refresh();
     score(rs,purse, amulet ? 3 : 0, monst);
-    rogue_bailout();
+    rogue_bailout(rs);
     printf("[Press return to continue]");
     fflush(stdout);
     if ( fgets(prbuf,10,stdin) != 0 )

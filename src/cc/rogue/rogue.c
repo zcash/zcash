@@ -185,14 +185,6 @@ int32_t rogue_setplayerdata(struct rogue_state *rs,char *gametxidstr)
     return(retval);
 }
 
-void rogue_bailout()
-{
-    char cmd[512];
-    sprintf(cmd,"./komodo-cli -ac_name=ROGUE cclib bailout 17 \\\"[%%22%s%%22]\\\" >> bailout.log",Gametxidstr);
-    if ( system(cmd) != 0 )
-        fprintf(stderr,"error issuing (%s)\n",cmd);
-}
-
 void rogue_progress(uint64_t seed,char *keystrokes,int32_t num)
 {
     char cmd[32768],hexstr[32768]; int32_t i;
@@ -206,11 +198,25 @@ void rogue_progress(uint64_t seed,char *keystrokes,int32_t num)
 
 int32_t flushkeystrokes(struct rogue_state *rs)
 {
-    rogue_progress(rs->seed,rs->buffered,rs->num);
-    memset(rs->buffered,0,sizeof(rs->buffered));
-    rs->counter++;
-    rs->num = 0;
+    if ( rs->num > 0 )
+    {
+        rogue_progress(rs->seed,rs->buffered,rs->num);
+        memset(rs->buffered,0,sizeof(rs->buffered));
+        rs->counter++;
+        rs->num = 0;
+    }
     return(0);
+}
+
+void rogue_bailout(struct rogue_state *rs)
+{
+    char cmd[512];
+    flushkeystrokes(rs);
+    sleep(5);
+    fprintf(stderr,"bailing out\n");
+    sprintf(cmd,"./komodo-cli -ac_name=ROGUE cclib bailout 17 \\\"[%%22%s%%22]\\\" >> bailout.log",Gametxidstr);
+    if ( system(cmd) != 0 )
+        fprintf(stderr,"error issuing (%s)\n",cmd);
 }
 
 int32_t rogue_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t num,struct rogue_player *player)

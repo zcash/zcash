@@ -126,7 +126,7 @@
 // cclib register 17 \"[%22aa81321d8889f881fe3d7c68c905b7447d9143832b0abbef6c2cab49dff8b0cc%22]\"
 // ./rogue <seed> gui -> creates keystroke files
 // ./c cclib register 17 \"[%226d3243c6e5ab383898b28a87e01f6c00b5bdd9687020f17f5caacc8a61febd19%22,%222475182f9d5169d8a3249d17640e4eccd90f4ee43ab04791129b0fa3f177b14a%22]\"
-// ./c cclib bailout 17 \"[%22aa81321d8889f881fe3d7c68c905b7447d9143832b0abbef6c2cab49dff8b0cc%22]\"
+// ./c cclib bailout 17 \"[%226d3243c6e5ab383898b28a87e01f6c00b5bdd9687020f17f5caacc8a61febd19%22]\"
 
 
 #define MAXPACK 23
@@ -868,8 +868,6 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
                                 mtx.vout.push_back(CTxOut(cashout,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
                             }
                         }
-                        //for (i=0; i<P.packsize; i++)
-                        //    fprintf(stderr,"object (%s) type.%d pack.(%c:%d)\n",inv_name(o,FALSE),o->_o._o_type,o->_o._o_packch,o->_o._o_packch);
                     }
                     mtx.vout.push_back(MakeCC1vout(cp->evalcode,CCchange + (batonvalue-2*txfee),roguepk));
                     Myprivkey(mypriv);
@@ -995,3 +993,9 @@ UniValue rogue_players(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     result.push_back(Pair("numplayerdata",a.size()));
     return(result);
 }
+
+bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx)
+{
+    return(true);
+}
+
