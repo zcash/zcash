@@ -7839,6 +7839,7 @@ UniValue test_burntx(const UniValue& params, bool fHelp)
 
     CPubKey burnpk = pubkey2pk(ParseHex(CC_BURNPUBKEY));
 
+    mtx.vin.push_back(CTxIn(tokenid, 0));
     mtx.vin.push_back(CTxIn(tokenid, 1));
     mtx.vout.push_back(MakeTokensCC1vout(EVAL_TOKENS, 1, burnpk));
 
