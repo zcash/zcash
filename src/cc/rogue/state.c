@@ -1381,7 +1381,7 @@ void rogue_restoreobject(THING *o,struct rogue_packitem *item)
 
 void rogue_packitemstr(char *packitemstr,struct rogue_packitem *item)
 {
-    static int32_t didinit;
+    static int32_t didinit; int32_t i;
     if ( didinit == 0 )
     {
         struct rogue_state R; char keystrokes[3];
@@ -1397,6 +1397,9 @@ void rogue_packitemstr(char *packitemstr,struct rogue_packitem *item)
     THING *obj = new_item();
     rogue_restoreobject(obj,item);
     strcpy(packitemstr,inv_name(obj,FALSE));
+    for (i=0; packitemstr[i]!=0; i++)
+        if ( packitemstr[i] < ' ' || (uint8_t)packitemstr[i] >= 0x80 )
+            packitemstr[i] = ' ';
     //fprintf(stderr,"packitem.(%s)\n",packitemstr);
     free(obj);
 }
