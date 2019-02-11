@@ -185,10 +185,10 @@ uint8_t rogue_highlanderopretdecode(uint256 &gametxid, int32_t &regslot, CPubKey
     // try no tokens case:
     if (vopret.size() > 2 && E_UNMARSHAL(vopret, ss >> e; ss >> f; ss >> gametxid; ss >> regslot; ss >> pk; ss >> playerdata) != 0 && e == EVAL_ROGUE && (f == 'H' || f == 'Q'))  
         return(f);
-    else if (f = DecodeTokenOpRet(scriptPubKey, e, tokenid, voutPubkeys, vopretDummy) != 0) {  // it is tokens
+    else if ( (f= DecodeTokenOpRet(scriptPubKey, e, tokenid, voutPubkeys, vopretDummy)) != 0)
+    {
         if (f != 'c')
             GetNonfungibleData(tokenid, vopretNonfungible);  //load nonfungible data from the 'tokenbase' tx
-            
         if (vopretNonfungible.size() > 2 && E_UNMARSHAL(vopretNonfungible, ss >> e; ss >> f; ss >> gametxid; ss >> regslot; ss >> pk; ss >> playerdata) != 0 && e == EVAL_ROGUE && (f == 'H' || f == 'Q'))
         {
             return(f);
