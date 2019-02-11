@@ -372,29 +372,6 @@ bits256 broadcasttx(char *refcoin,char *acname,cJSON *hexjson)
     return(txid);
 }
 
-bits256 sendtoaddress(char *refcoin,char *acname,char *destaddr,int64_t satoshis)
-{
-    char numstr[32],*retstr,str[65]; cJSON *retjson; bits256 txid;
-    memset(txid.bytes,0,sizeof(txid));
-    sprintf(numstr,"%.8f",(double)satoshis/SATOSHIDEN);
-    if ( (retjson= get_cli(refcoin,&retstr,acname,"sendtoaddress",destaddr,numstr,"","")) != 0 )
-    {
-        fprintf(stderr,"unexpected sendtoaddress json.(%s)\n",jprint(retjson,0));
-        free_json(retjson);
-    }
-    else if ( retstr != 0 )
-    {
-        if ( strlen(retstr) >= 64 )
-        {
-            retstr[64] = 0;
-            decode_hex(txid.bytes,32,retstr);
-        }
-        fprintf(stderr,"sendtoaddress %s %.8f txid.(%s)\n",destaddr,(double)satoshis/SATOSHIDEN,bits256_str(str,txid));
-        free(retstr);
-    }
-    return(txid);
-}
-
 int32_t get_coinheight(char *refcoin,char *acname)
 {
     cJSON *retjson; char *retstr; int32_t height=0;
@@ -643,7 +620,7 @@ char *createrawtx(char *refcoin,char *acname,char *depositaddr,char *withdrawadd
     else txfee = 10000;
     if ( satoshis < txfee )
     {
-        printf("createrawtx satoshis %.8f < txfee %.8f\n",(double)satoshis/SATOSHIDEN,(double)txfee/SATOSHIDEN);
+        printf("createrawtx: satoshis %.8f < txfee %.8f\n",(double)satoshis/SATOSHIDEN,(double)txfee/SATOSHIDEN);
         return(0);
     }
     sprintf(array,"\'[\"%s\"]\'",depositaddr);
@@ -912,8 +889,8 @@ void update_gatewayspending(char *refcoin,char *acname,char *bindtxidstr,int32_t
                                     if ( (clijson=addsignature(refcoin,"",rawtx,M)) != 0 && is_cJSON_True(jobj(clijson,"complete")) != 0)
                                     {                                        
                                         txid=gatewayscompletesigning(refcoin,acname,withdrawtxid,jstr(clijson,"hex"));                                        
-                                        if (txid.txid!=zeroid.txid) fprintf(stderr,"#WITHDRAW (%s) complete signing tx sent - %s\n",bits256_str(str,withdrawtxid),bits256_str(str1,txid));                                    
-                                        else fprintf(stderr,"error broadcasting tx on %s",acname);
+                                        if (txid.txid!=zeroid.txid) fprintf(stderr,"### SIGNING withdraw %s 1of1\n",bits256_str(str,withdrawtxid));                                    
+                                        else fprintf(stderr,"### SIGNING error broadcasting tx on %s",acname);
                                         free_json(clijson);
                                         processed++;
                                     }                                    
@@ -978,7 +955,8 @@ void update_gatewayspending(char *refcoin,char *acname,char *bindtxidstr,int32_t
                             withdrawaddr = jstr(item,"withdrawaddr");   
                             fprintf(stderr,"### WITHDRAW %.8f %s sent to %s\n",amount,refcoin,withdrawaddr);                                                     
                             txid=gatewaysmarkdone(refcoin,acname,completetxid);
-                            if (txid.txid!=zeroid.txid) fprintf(stderr,"### MARKDONE withdraw %s\n",bits256_str(str,withdrawtxid));   
+                            if (txid.txid!=zeroid.txid) fprintf(stderr,"### MARKDONE withdraw %s\n",bits256_str(str,withdrawtxid));
+                            else fprintf(stderr,"### MARKDONE error broadcasting tx on %s\n",refcoin);
                         }
                         else fprintf(stderr,"### WITHDRAW error broadcasting tx on %s\n",refcoin);
                     }
