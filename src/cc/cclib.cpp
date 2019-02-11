@@ -74,6 +74,7 @@ std::string CClib_rawtxgen(struct CCcontract_info *cp,uint8_t funcid,cJSON *para
 
 #ifdef BUILD_ROGUE
 int32_t rogue_replay(uint64_t seed,int32_t sleeptime);
+bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx);
 
 UniValue rogue_newgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue rogue_pending(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
