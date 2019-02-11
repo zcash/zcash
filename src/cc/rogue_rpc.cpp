@@ -362,7 +362,7 @@ int32_t rogue_isvalidgame(struct CCcontract_info *cp,int32_t &gameheight,CTransa
     } else return(-1);
 }
 
-UniValue rogue_playerobj(std::vector<uint8_t> playerdata,uint256 playertxid)
+UniValue rogue_playerobj(std::vector<uint8_t> playerdata,uint256 playertxid,uint256 tokenid)
 {
     int32_t i; struct rogue_player P; char packitemstr[512],*datastr; UniValue obj(UniValue::VOBJ),a(UniValue::VARR);
     memset(&P,0,sizeof(P));
@@ -383,6 +383,8 @@ UniValue rogue_playerobj(std::vector<uint8_t> playerdata,uint256 playertxid)
         a.push_back(packitemstr);
     }
     obj.push_back(Pair("playertxid",playertxid.GetHex()));
+    if ( tokenid != zeroid )
+        obj.push_back(Pair("tokenid",tokenid.GetHex()));
     obj.push_back(Pair("data",datastr));
     free(datastr);
     obj.push_back(Pair("pack",a));
@@ -423,9 +425,9 @@ int32_t rogue_iterateplayer(uint256 &registertxid,uint256 firsttxid,int32_t firs
  origplayergame is the gametxid that ends up being won by the highlander and they are linked directly as the highlander tx spends gametxid.vout0
  */
 
-int32_t rogue_playerdata(struct CCcontract_info *cp,uint256 &origplayergame,CPubKey &pk,std::vector<uint8_t> &playerdata,uint256 playertxid)
+int32_t rogue_playerdata(struct CCcontract_info *cp,uint256 &origplayergame,uint256 &tokenid,CPubKey &pk,std::vector<uint8_t> &playerdata,uint256 playertxid)
 {
-    uint256 origplayertxid,tokenid,hashBlock,gametxid,registertxid; CTransaction gametx,playertx,highlandertx; std::vector<uint8_t> vopret; uint8_t *script,e,f; int32_t i,regslot,gameheight,numvouts,maxplayers; int64_t buyin;
+    uint256 origplayertxid,hashBlock,gametxid,registertxid; CTransaction gametx,playertx,highlandertx; std::vector<uint8_t> vopret; uint8_t *script,e,f; int32_t i,regslot,gameheight,numvouts,maxplayers; int64_t buyin;
     if ( GetTransaction(playertxid,playertx,hashBlock,false) != 0 && (numvouts= playertx.vout.size()) > 0 )
     {
         if ( (f= rogue_highlanderopretdecode(gametxid,tokenid,regslot,pk,playerdata,playertx.vout[numvouts-1].scriptPubKey)) == 'H' || f == 'Q' )
@@ -465,7 +467,7 @@ int32_t rogue_playerdataspend(CMutableTransaction &mtx,uint256 playertxid,uint25
 
 int32_t rogue_findbaton(struct CCcontract_info *cp,uint256 &playertxid,char **keystrokesp,int32_t &numkeys,int32_t &regslot,std::vector<uint8_t> &playerdata,uint256 &batontxid,int32_t &batonvout,int64_t &batonvalue,int32_t &batonht,uint256 gametxid,CTransaction gametx,int32_t maxplayers,char *destaddr,int32_t &numplayers)
 {
-    int32_t i,numvouts,spentvini,matches = 0; CPubKey pk; uint256 spenttxid,tokenid,hashBlock,txid,origplayergame; CTransaction spenttx,matchtx,batontx; std::vector<uint8_t> checkdata; CBlockIndex *pindex; char ccaddr[64],*keystrokes=0;
+    int32_t i,numvouts,spentvini,matches = 0; CPubKey pk; uint256 tid,spenttxid,tokenid,hashBlock,txid,origplayergame; CTransaction spenttx,matchtx,batontx; std::vector<uint8_t> checkdata; CBlockIndex *pindex; char ccaddr[64],*keystrokes=0;
     numkeys = numplayers = 0;
     playertxid = zeroid;
     for (i=0; i<maxplayers; i++)
@@ -495,7 +497,7 @@ int32_t rogue_findbaton(struct CCcontract_info *cp,uint256 &playertxid,char **ke
             {
                 if ( tokenid != zeroid )
                     playertxid = tokenid;
-                if ( playertxid == zeroid || rogue_playerdata(cp,origplayergame,pk,playerdata,playertxid) == 0 )
+                if ( playertxid == zeroid || rogue_playerdata(cp,origplayergame,tid,pk,playerdata,playertxid) == 0 )
                 {
                     txid = matchtx.GetHash();
                     //fprintf(stderr,"scan forward playertxid.%s spenttxid.%s\n",playertxid.GetHex().c_str(),txid.GetHex().c_str());
@@ -583,7 +585,7 @@ void rogue_gameplayerinfo(struct CCcontract_info *cp,UniValue &obj,uint256 gamet
         obj.push_back(Pair("batonvalue",ValueFromAmount(batonvalue)));
         obj.push_back(Pair("batonht",(int64_t)batonht));
         if ( playerdata.size() > 0 )
-            obj.push_back(Pair("player",rogue_playerobj(playerdata,playertxid)));
+            obj.push_back(Pair("player",rogue_playerobj(playerdata,playertxid,tokenid)));
     } else fprintf(stderr,"findbaton err.%d\n",retval);
 }
 
@@ -662,7 +664,7 @@ UniValue rogue_newgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 
 UniValue rogue_playerinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ); std::vector<uint8_t> playerdata; uint256 playertxid,origplayergame;int32_t n; CPubKey pk; bits256 t;
+    UniValue result(UniValue::VOBJ); std::vector<uint8_t> playerdata; uint256 playertxid,tokenid,origplayergame;int32_t n; CPubKey pk; bits256 t;
     result.push_back(Pair("result","success"));
     rogue_univalue(result,"playerinfo",-1,-1);
     if ( (params= cclib_reparse(&n,params)) != 0 )
@@ -670,9 +672,9 @@ UniValue rogue_playerinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
         if ( n > 0 )
         {
             playertxid = juint256(jitem(params,0));
-            if ( rogue_playerdata(cp,origplayergame,pk,playerdata,playertxid) < 0 )
+            if ( rogue_playerdata(cp,origplayergame,tokenid,pk,playerdata,playertxid) < 0 )
                 return(cclib_error(result,"invalid playerdata"));
-            result.push_back(Pair("player",rogue_playerobj(playerdata,playertxid)));
+            result.push_back(Pair("player",rogue_playerobj(playerdata,playertxid,tokenid)));
         } else return(cclib_error(result,"no playertxid"));
         return(result);
     } else return(cclib_error(result,"couldnt reparse params"));
@@ -686,7 +688,7 @@ UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     // vin3+ -> buyin
     // vout0 -> keystrokes/completion baton
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); char destaddr[64],coinaddr[64]; uint256 gametxid,origplayergame,playertxid,hashBlock; int32_t err,maxplayers,gameheight,n,numvouts; int64_t inputsum,buyin,CCchange=0; CPubKey pk,mypk,roguepk,burnpk; CTransaction tx,playertx; std::vector<uint8_t> playerdata; std::string rawtx; bits256 t;
+    UniValue result(UniValue::VOBJ); char destaddr[64],coinaddr[64]; uint256 tokenid,gametxid,origplayergame,playertxid,hashBlock; int32_t err,maxplayers,gameheight,n,numvouts; int64_t inputsum,buyin,CCchange=0; CPubKey pk,mypk,roguepk,burnpk; CTransaction tx,playertx; std::vector<uint8_t> playerdata; std::string rawtx; bits256 t;
 
     if ( txfee == 0 )
         txfee = 10000;
@@ -705,7 +707,7 @@ UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                 if ( n > 1 )
                 {
                     playertxid = juint256(jitem(params,1));
-                    if ( rogue_playerdata(cp,origplayergame,pk,playerdata,playertxid) < 0 )
+                    if ( rogue_playerdata(cp,origplayergame,tokenid,pk,playerdata,playertxid) < 0 )
                         return(cclib_error(result,"couldnt extract valid playerdata"));
                 }
                 rogue_univalue(result,0,maxplayers,buyin);
@@ -992,7 +994,7 @@ UniValue rogue_pending(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 
 UniValue rogue_players(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ),a(UniValue::VARR); int64_t buyin; uint256 gametxid,txid,hashBlock; CTransaction playertx,tx; int32_t maxplayers,vout,numvouts; std::vector<uint8_t> playerdata; CPubKey roguepk,mypk,pk; char coinaddr[64];
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR); int64_t buyin; uint256 tokenid,gametxid,txid,hashBlock; CTransaction playertx,tx; int32_t maxplayers,vout,numvouts; std::vector<uint8_t> playerdata; CPubKey roguepk,mypk,pk; char coinaddr[64];
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     roguepk = GetUnspendable(cp,0);
     mypk = pubkey2pk(Mypubkey());
@@ -1006,9 +1008,9 @@ UniValue rogue_players(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
         //char str[65]; fprintf(stderr,"%s check %s/v%d %.8f\n",coinaddr,uint256_str(str,txid),vout,(double)it->second.satoshis/COIN);
         if ( it->second.satoshis != 1 || vout > 1 )
             continue;
-        if ( rogue_playerdata(cp,gametxid,pk,playerdata,txid) == 0 )//&& pk == mypk )
+        if ( rogue_playerdata(cp,gametxid,tokenid,pk,playerdata,txid) == 0 )//&& pk == mypk )
         {
-            a.push_back(rogue_playerobj(playerdata,txid));
+            a.push_back(rogue_playerobj(playerdata,txid,tokenid));
             //result.push_back(Pair("playerdata",rogue_playerobj(playerdata)));
         }
     }
