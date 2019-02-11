@@ -430,6 +430,15 @@ int32_t rogue_playerdata(struct CCcontract_info *cp,uint256 &origplayergame,CPub
     {
         if ( (f= rogue_highlanderopretdecode(gametxid,tokenid,regslot,pk,playerdata,playertx.vout[numvouts-1].scriptPubKey)) == 'H' || f == 'Q' )
         {
+            if ( tokenid != zeroid )
+            {
+                playertxid = tokenid;
+                if ( GetTransaction(playertxid,playertx,hashBlock,false) == 0 || (numvouts= playertx.vout.size()) <= 0 )
+                {
+                    fprintf(stderr,"couldnt get tokenid.%s\n",playertxid.GetHex().c_str());
+                    return(-2);
+                }
+            }
             if ( rogue_isvalidgame(cp,gameheight,gametx,buyin,maxplayers,gametxid) == 0 )
             {
                 fprintf(stderr,"playertxid.%s got vin.%s/v%d gametxid.%s iterate.%d\n",playertxid.ToString().c_str(),playertx.vin[1].prevout.hash.ToString().c_str(),(int32_t)playertx.vin[1].prevout.n-maxplayers,gametxid.ToString().c_str(),rogue_iterateplayer(registertxid,gametxid,playertx.vin[1].prevout.n-maxplayers,playertxid));
