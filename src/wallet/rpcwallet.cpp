@@ -5092,8 +5092,8 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     size_t numUtxos = utxoInputs.size();
     size_t numNotes = sproutNoteInputs.size() + saplingNoteInputs.size();
 
-    fprintf(stderr, "num utxos.%li\n", numUtxos);
-    if (numUtxos < 2 && numNotes == 0) {
+    //fprintf(stderr, "num utxos.%li\n", numUtxos);
+    if (numUtxos < 1 && numNotes == 0) {
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Could not find any funds to merge.");
     }
     
