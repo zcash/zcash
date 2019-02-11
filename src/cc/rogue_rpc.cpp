@@ -995,10 +995,10 @@ UniValue rogue_players(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     {
         txid = it->first.txhash;
         vout = (int32_t)it->first.index;
-        char str[65]; fprintf(stderr,"%s check %s/v%d %.8f\n",coinaddr,uint256_str(str,txid),vout,(double)it->second.satoshis/COIN);
+        //char str[65]; fprintf(stderr,"%s check %s/v%d %.8f\n",coinaddr,uint256_str(str,txid),vout,(double)it->second.satoshis/COIN);
         if ( it->second.satoshis != 1 || vout != 0 )
             continue;
-        if ( rogue_playerdata(cp,gametxid,pk,playerdata,txid) == 0 && pk == mypk )
+        if ( rogue_playerdata(cp,gametxid,pk,playerdata,txid) == 0 )//&& pk == mypk )
         {
             a.push_back(rogue_playerobj(playerdata,txid));
             //result.push_back(Pair("playerdata",rogue_playerobj(playerdata)));
