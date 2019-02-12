@@ -747,8 +747,13 @@ UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                     return(cclib_error(result,"couldnt find enough normal funds for buyin"));
                 if ( playertxid != zeroid )
                 {
-                    //    AddNormalinputs2(mtx,txfee,10);
-                    mtx.vin.push_back(CTxIn(playertxid,0)); // spending cc marker as token is being burned
+                    mtx.vin.push_back(CTxIn(playertxid,0)); // spending cc marker as token is burned
+                    char unspendableTokenAddr[64]; uint8_t tokenpriv[32]; struct CCcontract_info *cpTokens, tokensC;
+                    cpTokens = CCinit(&tokensC, EVAL_TOKENS);
+                    CPubKey unspPk = GetUnspendable(cpTokens, tokenpriv);
+                    GetCCaddress(cpTokens, unspendableTokenAddr, unspPk);
+                    CCaddr2set(cpTokens, EVAL_TOKENS, unspPk, tokenpriv, unspendableTokenAddr);
+                    fprintf(stderr,"destaddr.(%s)\n",destaddr);
                 }
                 mtx.vout.push_back(MakeCC1of2vout(cp->evalcode,buyin + inputsum - txfee,roguepk,mypk));
                 GetCCaddress1of2(cp,destaddr,roguepk,roguepk);
@@ -903,7 +908,7 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
                         else
                         {
                             cpTokens = CCinit(&tokensC, EVAL_TOKENS);
-                            mtx.vout.push_back(MakeCC1vout(EVAL_TOKENS, txfee, GetUnspendable(cpTokens, NULL)));            // marker to token cc addr, burnable and validated
+                            mtx.vout.push_back(MakeCC1vout(EVAL_TOKENS, txfee, GetUnspendable(cpTokens,NULL)));            // marker to token cc addr, burnable and validated
                             mtx.vout.push_back(MakeTokensCC1vout(cp->evalcode,1,mypk));
                             fprintf(stderr,"\nextracted $$$gold.%d hp.%d strength.%d level.%d exp.%d dl.%d n.%d size.%d\n",P.gold,P.hitpoints,P.strength,P.level,P.experience,P.dungeonlevel,n,(int32_t)sizeof(P));
                             cashout = (uint64_t)P.gold * mult;
