@@ -145,7 +145,7 @@ int64_t AddTokensInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,char
         if ( GetTransaction(txid,vintx,hashBlock,false) != 0 && vout < vintx.vout.size() )
         {
             // need to verify assetid
-            if ( (nValue= vintx.vout[vout].nValue) >= 10000 && myIsutxo_spentinmempool(txid,vout) == 0 )
+            if ( (nValue= vintx.vout[vout].nValue) >= 10000 && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0 )
             {
                 if ( total != 0 && maxinputs != 0 )
                     mtx.vin.push_back(CTxIn(txid,vout,CScript()));

@@ -2782,7 +2782,7 @@ UniValue sudoku_pending(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             continue;
         if ( GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 1 )
         {
-            if ( (nValue= IsCClibvout(cp,tx,vout,coinaddr)) == txfee && myIsutxo_spentinmempool(txid,vout) == 0 )
+            if ( (nValue= IsCClibvout(cp,tx,vout,coinaddr)) == txfee && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0 )
             {
                 if ( sudoku_genopreturndecode(unsolved,tx.vout[numvouts-1].scriptPubKey) == 'G' )
                 {
@@ -2801,7 +2801,7 @@ UniValue sudoku_pending(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     result.push_back(Pair("name","sudoku"));
     result.push_back(Pair("method","pending"));
     result.push_back(Pair("pending",a));
-    result.push_back(Pair("numpending",a.size()));
+    result.push_back(Pair("numpending",(int64_t)a.size()));
     result.push_back(Pair("total",ValueFromAmount(total)));
     return(result);
 }
@@ -2817,28 +2817,9 @@ UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
     good = 0;
     if ( params != 0 )
     {
-        if ( (jsonstr= jprint(params,0)) != 0 )
+        if ( (params= cclib_reparse(&n,params)) != 0 )
         {
-            if ( jsonstr[0] == '"' && jsonstr[strlen(jsonstr)-1] == '"' )
-            {
-                jsonstr[strlen(jsonstr)-1] = 0;
-                jsonstr++;
-            }
-            newstr = (char *)malloc(strlen(jsonstr)+1);
-            for (i=j=0; jsonstr[i]!=0; i++)
-            {
-                if ( jsonstr[i] == '%' && jsonstr[i+1] == '2' && jsonstr[i+2] == '2' )
-                {
-                    newstr[j++] = '"';
-                    i += 2;
-                } else newstr[j++] = jsonstr[i];
-            }
-            newstr[j] = 0;
-            params = cJSON_Parse(newstr);
-        } else params = 0;
-        if ( params != 0 )
-        {
-            if ( (n= cJSON_GetArraySize(params)) > 2 && n <= (sizeof(timestamps)/sizeof(*timestamps))+2 )
+            if ( n > 2 && n <= (sizeof(timestamps)/sizeof(*timestamps))+2 )
             {
                 for (i=2; i<n; i++)
                 {

@@ -294,7 +294,7 @@ uint256 OracleBatonUtxo(uint64_t txfee,struct CCcontract_info *cp,uint256 refora
             }
         }
     }
-    while ( myIsutxo_spentinmempool(batontxid,1) != 0 )
+    while ( myIsutxo_spentinmempool(ignoretxid,ignorevin,batontxid,1) != 0 )
         batontxid = myIs_baton_spentinmempool(batontxid,1);
     return(batontxid);
 }
@@ -724,7 +724,7 @@ int64_t AddOracleInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,uint
                 else if (tmporacletxid==oracletxid)
                 {  
                     // get valid CC payments
-                    if ( (nValue= IsOraclesvout(cp,vintx,vout)) >= 10000 && myIsutxo_spentinmempool(txid,vout) == 0 )
+                    if ( (nValue= IsOraclesvout(cp,vintx,vout)) >= 10000 && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0 )
                     {
                         if ( total != 0 && maxinputs != 0 )
                             mtx.vin.push_back(CTxIn(txid,vout,CScript()));
