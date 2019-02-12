@@ -7818,3 +7818,45 @@ UniValue test_heirmarker(const UniValue& params, bool fHelp)
 	return(FinalizeCCTx(0, cp, mtx, myPubkey, 10000, opret));
 }
 
+UniValue test_burntx(const UniValue& params, bool fHelp)
+{
+    // make fake token tx: 
+    struct CCcontract_info *cp, C;
+
+    if (fHelp || (params.size() != 1))
+        throw runtime_error("incorrect params\n");
+    if (ensure_CCrequirements(EVAL_TOKENS) < 0)
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+
+    uint256 tokenid = Parseuint256((char *)params[0].get_str().c_str());
+
+    CPubKey myPubkey = pubkey2pk(Mypubkey());
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+
+    int64_t normalInputs = AddNormalinputs(mtx, myPubkey, 10000, 60);
+    if (normalInputs < 10000)
+        throw runtime_error("not enough normals\n");
+
+    CPubKey burnpk = pubkey2pk(ParseHex(CC_BURNPUBKEY));
+
+    mtx.vin.push_back(CTxIn(tokenid, 0));
+    mtx.vin.push_back(CTxIn(tokenid, 1));
+    mtx.vout.push_back(MakeTokensCC1vout(EVAL_TOKENS, 1, burnpk));
+
+    std::vector<CPubKey> voutPubkeys;
+    voutPubkeys.push_back(burnpk);
+    
+    cp = CCinit(&C, EVAL_TOKENS);
+
+    std::vector<uint8_t> vopret;
+    GetNonfungibleData(tokenid, vopret);
+    if (vopret.size() > 0)
+        cp->additionalTokensEvalcode2 = vopret.begin()[0];
+
+    uint8_t tokenpriv[33];
+    char unspendableTokenAddr[64];
+    CPubKey unspPk = GetUnspendable(cp, tokenpriv);
+    GetCCaddress(cp, unspendableTokenAddr, unspPk);
+    CCaddr2set(cp, EVAL_TOKENS, unspPk, tokenpriv, unspendableTokenAddr);
+    return(FinalizeCCTx(0, cp, mtx, myPubkey, 10000, EncodeTokenOpRet(tokenid, voutPubkeys, CScript())));
+}

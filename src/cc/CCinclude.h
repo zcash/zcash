@@ -266,6 +266,7 @@ UniValue ValueFromAmount(const CAmount& amount);
 #define CCLOG_DEBUG1 1
 #define CCLOG_DEBUG2 2
 #define CCLOG_DEBUG3 3
+#define CCLOG_MAXLEVEL 3
 template <class T>
 inline void CCLogPrintStream(const char *category, int level, T print_to_stream)
 {
@@ -273,10 +274,10 @@ inline void CCLogPrintStream(const char *category, int level, T print_to_stream)
     print_to_stream(stream);
     if (level < 0) 
         level = 0; 
-    if (level > 3) 
-        level = 3; 
-    for (int i = 0; i < level; i++) 
-        if (LogAcceptCategory((std::string(category) + (level > 0 ? std::string("-") + std::to_string(level) : std::string(""))).c_str()))   {
+    if (level > CCLOG_MAXLEVEL)
+        level = CCLOG_MAXLEVEL;
+    for (int i = level; i <= CCLOG_MAXLEVEL; i++)
+        if (LogAcceptCategory((std::string(category) + (i > 0 ? std::string("-") + std::to_string(i) : std::string(""))).c_str()))   {
             LogPrintStr(stream.str());
             break;
         }
