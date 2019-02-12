@@ -1064,6 +1064,7 @@ UniValue rogue_games(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     }
     result.push_back(Pair("games",a));
     result.push_back(Pair("numgames",a.size()));
+    return(result);
 }
 
 bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx)
