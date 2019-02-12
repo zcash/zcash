@@ -541,7 +541,7 @@ int32_t rogue_findbaton(struct CCcontract_info *cp,uint256 &playertxid,char **ke
                         if ( ++n >= ROGUE_MAXITERATIONS )
                         {
                             fprintf(stderr,"rogue_findbaton n.%d, seems something is wrong\n",n);
-                            retyrn(-5);
+                            return(-5);
                         }
                     }
                     //fprintf(stderr,"set baton %s\n",txid.GetHex().c_str());
