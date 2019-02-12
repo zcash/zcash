@@ -504,7 +504,7 @@ int32_t rogue_findbaton(struct CCcontract_info *cp,uint256 &playertxid,char **ke
             //fprintf(stderr,"matchtxid.%s matches.%d numvouts.%d\n",matchtx.GetHash().GetHex().c_str(),matches,numvouts);
             if ( rogue_registeropretdecode(txid,tokenid,playertxid,matchtx.vout[numvouts-1].scriptPubKey) == 'R' )//&& txid == gametxid )
             {
-                fprintf(stderr,"tokenid.%s txid.%s vs gametxid.%s player.%s\n",tokenid.GetHex().c_str(),txid.GetHex().c_str(),gametxid.GetHex().c_str(),playertxid.GetHex().c_str());
+                //fprintf(stderr,"tokenid.%s txid.%s vs gametxid.%s player.%s\n",tokenid.GetHex().c_str(),txid.GetHex().c_str(),gametxid.GetHex().c_str(),playertxid.GetHex().c_str());
                 if ( tokenid != zeroid )
                     active = tokenid;
                 else active = playertxid;
@@ -928,7 +928,7 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
                     {
                         opret = rogue_highlanderopret(funcid, gametxid, regslot, mypk, nodata);
                         rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,opret);
-                        fprintf(stderr,"nodata finalizetx.(%s)\n",rawtx);
+                        fprintf(stderr,"nodata finalizetx.(%s)\n",rawtx.c_str());
                     }
                     else
                     {
@@ -1053,11 +1053,13 @@ UniValue rogue_players(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 UniValue rogue_games(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     UniValue result(UniValue::VOBJ),a(UniValue::VARR); uint256 txid,hashBlock,gametxid,tokenid,playertxid; int32_t vout,numvouts; CPubKey roguepk,mypk; char coinaddr[64]; CTransaction tx;
-    std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
+    std::vector<std::pair<CAddressIndexKey, CAmount> > &addressIndex;
+    //std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     roguepk = GetUnspendable(cp,0);
     mypk = pubkey2pk(Mypubkey());
     GetCCaddress1of2(cp,coinaddr,roguepk,mypk);
-    SetCCunspents(unspentOutputs,coinaddr);
+    //SetCCunspents(unspentOutputs,coinaddr);
+    SetCCtxids(addressIndex,coinaddr);
     rogue_univalue(result,"games",-1,-1);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
