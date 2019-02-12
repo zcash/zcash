@@ -416,7 +416,7 @@ int32_t rogue_iterateplayer(uint256 &registertxid,uint256 firsttxid,int32_t firs
         if ( ++n >= ROGUE_MAXITERATIONS )
         {
             fprintf(stderr,"rogue_iterateplayer n.%d, seems something is wrong\n",n);
-            break;
+            return(-2);
         }
     }
     if ( txid == lasttxid )
@@ -541,7 +541,7 @@ int32_t rogue_findbaton(struct CCcontract_info *cp,uint256 &playertxid,char **ke
                         if ( ++n >= ROGUE_MAXITERATIONS )
                         {
                             fprintf(stderr,"rogue_findbaton n.%d, seems something is wrong\n",n);
-                            break;
+                            retyrn(-5);
                         }
                     }
                     //fprintf(stderr,"set baton %s\n",txid.GetHex().c_str());
