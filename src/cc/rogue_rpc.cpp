@@ -476,7 +476,7 @@ int32_t rogue_playerdataspend(CMutableTransaction &mtx,uint256 playertxid,int32_
 
 int32_t rogue_findbaton(struct CCcontract_info *cp,uint256 &playertxid,char **keystrokesp,int32_t &numkeys,int32_t &regslot,std::vector<uint8_t> &playerdata,uint256 &batontxid,int32_t &batonvout,int64_t &batonvalue,int32_t &batonht,uint256 gametxid,CTransaction gametx,int32_t maxplayers,char *destaddr,int32_t &numplayers)
 {
-    int32_t i,numvouts,spentvini,n,matches = 0; CPubKey pk; uint256 tid,spenttxid,tokenid,hashBlock,txid,origplayergame; CTransaction spenttx,matchtx,batontx; std::vector<uint8_t> checkdata; CBlockIndex *pindex; char ccaddr[64],*keystrokes=0;
+    int32_t i,numvouts,spentvini,n,matches = 0; CPubKey pk; uint256 tid,active,spenttxid,tokenid,hashBlock,txid,origplayergame; CTransaction spenttx,matchtx,batontx; std::vector<uint8_t> checkdata; CBlockIndex *pindex; char ccaddr[64],*keystrokes=0;
     numkeys = numplayers = 0;
     playertxid = zeroid;
     for (i=0; i<maxplayers; i++)
@@ -504,13 +504,14 @@ int32_t rogue_findbaton(struct CCcontract_info *cp,uint256 &playertxid,char **ke
             //fprintf(stderr,"matchtxid.%s matches.%d numvouts.%d\n",matchtx.GetHash().GetHex().c_str(),matches,numvouts);
             if ( rogue_registeropretdecode(txid,tokenid,playertxid,matchtx.vout[numvouts-1].scriptPubKey) == 'R' )//&& txid == gametxid )
             {
-                fprintf(stderr,"tokenid.%s txid.%s vs gametxid.%s\n",tokenid.GetHex().c_str(),txid.GetHex().c_str(),gametxid.GetHex().c_str());
+                fprintf(stderr,"tokenid.%s txid.%s vs gametxid.%s player.%s\n",tokenid.GetHex().c_str(),txid.GetHex().c_str(),gametxid.GetHex().c_str(),playertxid.GetHex().c_str());
                 if ( tokenid != zeroid )
-                    playertxid = tokenid;
-                if ( playertxid == zeroid || rogue_playerdata(cp,origplayergame,tid,pk,playerdata,playertxid) == 0 )
+                    active = tokenid;
+                else active = playertxid;
+                if ( active == zeroid || rogue_playerdata(cp,origplayergame,tid,pk,playerdata,active) == 0 )
                 {
                     txid = matchtx.GetHash();
-                    //fprintf(stderr,"scan forward playertxid.%s spenttxid.%s\n",playertxid.GetHex().c_str(),txid.GetHex().c_str());
+                    //fprintf(stderr,"scan forward active.%s spenttxid.%s\n",active.GetHex().c_str(),txid.GetHex().c_str());
                     n = 0;
                     while ( CCgettxout(txid,0,1) < 0 )
                     {
@@ -832,7 +833,7 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
     // vout0 -> 1% ingame gold
     // get any playerdata, get all keystrokes, replay game and compare final state
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); std::string rawtx; CTransaction gametx; uint64_t seed,mult; int64_t buyin,batonvalue,inputsum,cashout,CCchange=0; int32_t i,err,gameheight,tmp,numplayers,regslot,n,num,numkeys,maxplayers,batonht,batonvout; char myrogueaddr[64],*keystrokes = 0; std::vector<uint8_t> playerdata,newdata; uint256 batontxid,playertxid,gametxid; CPubKey mypk,roguepk; uint8_t player[10000],mypriv[32],funcid;
+    UniValue result(UniValue::VOBJ); std::string rawtx; CTransaction gametx; uint64_t seed,mult; int64_t buyin,batonvalue,inputsum,cashout,CCchange=0; int32_t i,err,gameheight,tmp,numplayers,regslot,n,num,numkeys,maxplayers,batonht,batonvout; char myrogueaddr[64],*keystrokes = 0; std::vector<uint8_t> playerdata,newdata,nodata; uint256 batontxid,playertxid,gametxid; CPubKey mypk,roguepk; uint8_t player[10000],mypriv[32],funcid;
     struct CCcontract_info *cpTokens, tokensC;
 
     if ( txfee == 0 )
@@ -922,11 +923,16 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
 
                     Myprivkey(mypriv);
                     CCaddr1of2set(cp,roguepk,mypk,mypriv,myrogueaddr);
-                    CScript opret = rogue_highlanderopret(funcid, gametxid, regslot, mypk, newdata);
+                    CScript opret;
                     if ( newdata.size() == 0 )
+                    {
+                        opret = rogue_highlanderopret(funcid, gametxid, regslot, mypk, nodata);
                         rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,opret);
+                        fprintf(stderr,"nodata finalizetx.(%s)\n",rawtx);
+                    }
                     else
                     {
+                        opret = rogue_highlanderopret(funcid, gametxid, regslot, mypk, newdata);
                         char seedstr[32];
                         sprintf(seedstr,"%llu",(long long)seed);
                         std::vector<uint8_t> vopretNonfungible;
