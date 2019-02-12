@@ -6154,7 +6154,7 @@ UniValue gatewaysexternaladdress(const UniValue& params, bool fHelp)
 
     if ( fHelp || params.size() != 2)
         throw runtime_error("gatewaysexternaladdress bindtxid pubkey\n");
-    if ( ensure_CCrequirements() < 0 )
+    if ( ensure_CCrequirements(EVAL_GATEWAYS) < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -6169,7 +6169,7 @@ UniValue gatewaysdumpprivkey(const UniValue& params, bool fHelp)
 
     if ( fHelp || params.size() != 2)
         throw runtime_error("gatewaysexternaladdress bindtxid address\n");
-    if ( ensure_CCrequirements() < 0 )
+    if ( ensure_CCrequirements(EVAL_GATEWAYS) < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     LOCK2(cs_main, pwalletMain->cs_wallet);
     bindtxid = Parseuint256((char *)params[0].get_str().c_str());
