@@ -752,8 +752,7 @@ UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                     cpTokens = CCinit(&tokensC, EVAL_TOKENS);
                     CPubKey unspPk = GetUnspendable(cpTokens, tokenpriv);
                     GetCCaddress(cpTokens, unspendableTokenAddr, unspPk);
-                    CCaddr2set(cpTokens, EVAL_TOKENS, unspPk, tokenpriv, unspendableTokenAddr);
-                    fprintf(stderr,"destaddr.(%s)\n",unspendableTokenAddr);
+                    CCaddr2set(cp, EVAL_TOKENS, unspPk, tokenpriv, unspendableTokenAddr);
                 }
                 mtx.vout.push_back(MakeCC1of2vout(cp->evalcode,buyin + inputsum - txfee,roguepk,mypk));
                 GetCCaddress1of2(cp,destaddr,roguepk,roguepk);
