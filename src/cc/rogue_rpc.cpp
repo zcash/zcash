@@ -215,7 +215,7 @@ uint8_t rogue_registeropretdecode(uint256 &gametxid,uint256 &tokenid,uint256 &pl
 {
     std::string name, description; std::vector<uint8_t> vorigPubkey;
     std::vector<uint8_t> vopretNonfungible, vopret, vopretDummy,origpubkey;
-    uint8_t e, f,*script; std::vector<CPubKey> voutPubkeys;
+    uint8_t e, f,*script,flag = 0; std::vector<CPubKey> voutPubkeys;
     tokenid = zeroid;
     GetOpReturnData(scriptPubKey, vopret);
     script = (uint8_t *)vopret.data();
@@ -228,8 +228,9 @@ uint8_t rogue_registeropretdecode(uint256 &gametxid,uint256 &tokenid,uint256 &pl
         fprintf(stderr,"decode opret %c tokenid.%s\n",script[1],tokenid.GetHex().c_str());
         GetNonfungibleData(tokenid, vopretNonfungible);  //load nonfungible data from the 'tokenbase' tx
         vopret = vopretNonfungible;
+        flag = 1;
     }
-    if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> gametxid; ss >> playertxid) != 0 && e == EVAL_ROGUE && f == 'R' )
+    if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> gametxid; ss >> playertxid) != 0 && e == EVAL_ROGUE && (flag != 0 || f == 'R') )
     {
         return(f);
     }
