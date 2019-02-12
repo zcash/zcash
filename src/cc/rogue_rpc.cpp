@@ -1046,7 +1046,7 @@ UniValue rogue_players(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 
 UniValue rogue_games(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ),a(UniValue::VARR); uint256 txid; int32_t vout; CPubKey roguepk,mypk; char coinaddr[64];
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR); uint256 txid,gametxid,tokenid,playertxid; int32_t vout; CPubKey roguepk,mypk; char coinaddr[64]; CTransaction tx;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     roguepk = GetUnspendable(cp,0);
     mypk = pubkey2pk(Mypubkey());
@@ -1057,10 +1057,16 @@ UniValue rogue_games(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     {
         txid = it->first.txhash;
         vout = (int32_t)it->first.index;
-        char str[65]; fprintf(stderr,"%s check %s/v%d %.8f\n",coinaddr,uint256_str(str,txid),vout,(double)it->second.satoshis/COIN);
+        //char str[65]; fprintf(stderr,"%s check %s/v%d %.8f\n",coinaddr,uint256_str(str,txid),vout,(double)it->second.satoshis/COIN);
         if ( vout == 0 )
         {
-            a.push_back(txid.GetHex());
+            if ( GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 1 )
+            {
+                if ( rogue_registeropretdecode(gametxid,tokenid,playertxid,tx.vout[numvouts-1].scriptPubKey) == 'R' )
+                {
+                    a.push_back(gametxid.GetHex());
+                }
+            }
         }
     }
     result.push_back(Pair("games",a));
