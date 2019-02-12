@@ -757,7 +757,6 @@ UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                 CScript opretRegister = rogue_registeropret(gametxid, playertxid);
                 if ( playertxid != zeroid )
                 {
-                    //fprintf(stderr,"gametxid.%s playertxid.%s opR.%d\n",gametxid.GetHex().c_str(),playertxid.GetHex().c_str(),(int32_t)opretRegister.size());
                     voutPubkeysEmpty.push_back(burnpk);
                     if ( GetTransaction(playertxid,playertx,hashBlock,false) != 0 )
                     {
@@ -1043,6 +1042,28 @@ UniValue rogue_players(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     result.push_back(Pair("playerdata",a));
     result.push_back(Pair("numplayerdata",a.size()));
     return(result);
+}
+
+UniValue rogue_games(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
+{
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR); int64_t buyin; uint256 tokenid,gametxid,txid,hashBlock; CTransaction playertx,tx; int32_t maxplayers,vout,numvouts; std::vector<uint8_t> playerdata; CPubKey roguepk,mypk,pk; char coinaddr[64];
+    roguepk = GetUnspendable(cp,0);
+    mypk = pubkey2pk(Mypubkey());
+    GetCCaddress1of2(cp,coinaddr,roguepk,mypk);
+    SetCCunspents(unspentOutputs,coinaddr);
+    rogue_univalue(result,"games",-1,-1);
+    for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
+    {
+        txid = it->first.txhash;
+        vout = (int32_t)it->first.index;
+        //char str[65]; fprintf(stderr,"%s check %s/v%d %.8f\n",coinaddr,uint256_str(str,txid),vout,(double)it->second.satoshis/COIN);
+        if ( vout == 0 )
+        {
+            a.push_back(txid.GetHex());
+        }
+    }
+    result.push_back(Pair("games",a));
+    result.push_back(Pair("numgames",a.size()));
 }
 
 bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx)
