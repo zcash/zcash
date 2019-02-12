@@ -196,7 +196,7 @@ uint8_t rogue_highlanderopretdecode(uint256 &gametxid, uint256 &tokenid, int32_t
     {
         return(f);
     }
-    fprintf(stderr,"e.%d f.%c game.%s regslot.%d psize.%d\n",e,f,gametxid.GetHex().c_str(),regslot,(int32_t)playerdata.size());
+    fprintf(stderr,"SKIP obsolete: e.%d f.%c game.%s regslot.%d psize.%d\n",e,f,gametxid.GetHex().c_str(),regslot,(int32_t)playerdata.size());
     return(0);
 }
 
