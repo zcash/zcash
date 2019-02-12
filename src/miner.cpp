@@ -432,6 +432,12 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                                 fprintf(stderr, "Notarisation %s set to maximum priority replacing notarization %s\n",hash.ToString().c_str(), Tx.GetHash().ToString().c_str());
                             }
                         }
+                        else if ( fNotarisationBlock == true ) 
+                        {
+                            // Any attempted notarization needs to be in its own block!
+                            // If we find a valid one and place it in position 1, an invalid one must wait until the next block to be mined.
+                            continue;
+                        }
                     }
                 }
             }
@@ -723,12 +729,10 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
             int32_t scriptlen = (int32_t)pblock->vtx[1].vout[1].scriptPubKey.size();
             if ( script[0] == OP_RETURN )
             {
-                fprintf(stderr, ">>>>>MINER NotarisationNotaries.%li\n",NotarisationNotaries.size());
                 uint64_t totalsats = komodo_notarypay(txNew, NotarisationNotaries, pblock->nTime, nHeight, script, scriptlen);
                 if ( totalsats == 0 )
                 {
                     fprintf(stderr, "Could not create notary payment, trying again.\n");
-                    // invalidnotarisation = pblock->vtx[1].GetHash().ToString();
                     if ( ASSETCHAINS_SYMBOL[0] == 0 ||  (ASSETCHAINS_SYMBOL[0] != 0 && !isStake) )
                     {
                         LEAVE_CRITICAL_SECTION(cs_main);

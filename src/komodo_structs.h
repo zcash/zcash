@@ -119,7 +119,7 @@ struct komodo_ccdata
 struct komodo_state
 {
     uint256 NOTARIZED_HASH,NOTARIZED_DESTTXID,MoM;
-    int32_t SAVEDHEIGHT,CURRENT_HEIGHT,NOTARIZED_HEIGHT,prevNOTARIZED_HEIGHT,MoMdepth;
+    int32_t SAVEDHEIGHT,CURRENT_HEIGHT,NOTARIZED_HEIGHT,PNOTARIZED_HEIGHT,PPNOTARIZED_HEIGHT,MoMdepth;
     uint32_t SAVEDTIMESTAMP;
     uint64_t deposited,issued,withdrawn,approved,redeemed,shorted;
     struct notarized_checkpoint *NPOINTS; int32_t NUM_NPOINTS,last_NPOINTSi;

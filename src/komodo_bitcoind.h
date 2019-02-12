@@ -1776,35 +1776,39 @@ bool verusCheckPOSBlock(int32_t slowflag, CBlock *pblock, int32_t height)
     return(isPOS);
 }
 
-int32_t komodo_notarized_height(int32_t *prevMoMheightp,uint256 *hashp,uint256 *txidp,int32_t *prevNotarizedHt);
+int32_t komodo_notarized_height(int32_t *prevMoMheightp,uint256 *hashp,uint256 *txidp,int32_t *prevNotarizedHt,int32_t *ppNotarizedHt);
 
-uint64_t komodo_notarypayamount(int32_t height, int64_t notarycount)
+uint64_t komodo_notarypayamount(int64_t notarycount)
 {
     if ( notarycount == 0 )
     {
         fprintf(stderr, "komodo_notarypayamount failed num notaries is 0!\n");
         return(0);
     }
-    // fetch notarised height 
-    int32_t notarizedht,prevMoMheight,prevnotarizedht; uint256 notarizedhash,txid;
+    // fetch notarised height, the previous, and the one before that.
+    int32_t notarizedht,prevMoMheight,prevnotarizedht,pprevnotarizedht; uint256 notarizedhash,txid;
     uint64_t AmountToPay=0,ret=0;
-    notarizedht = komodo_notarized_height(&prevMoMheight,&notarizedhash,&txid,&prevnotarizedht);
-    // if this is the current checkpoint we will use the previous height.
-    // incase of reorgs, we still need to create the notary payment.
-    if ( height == notarizedht )
+    notarizedht = komodo_notarized_height(&prevMoMheight,&notarizedhash,&txid,&prevnotarizedht,&pprevnotarizedht);
+    //fprintf(stderr, "notarizedht.%d prevnotarizedht.%d pprevnotarizedht.%d \n",notarizedht,prevnotarizedht,pprevnotarizedht);
+    
+    // We cannot pay out if 3 notarisation's have not yet happened!
+    if ( pprevnotarizedht == 0 )
     {
-        notarizedht = prevnotarizedht;
-        fprintf(stderr, "using the current checkpoint, calculating based on previous notarized height!\n");
+        fprintf(stderr, "need 3 notarizations to happen before notaries can be paid.\n");
+        return(0);
     }
-    // how many block since last notarisation.
-    int32_t n = height - notarizedht;
+    if ( prevnotarizedht == pprevnotarizedht )
+        return(0); // cant happen, sanity check. 
+    
+    // use the previous height and the height before that to guarentee that the notarzations used to calculate these values, 
+    // are them selves actually notarised and cannot be reorged. 
+    int32_t n = prevnotarizedht - pprevnotarizedht;
+    
     fprintf(stderr, "blocks since last notarization: %i\n",n);
     // multiply the amount possible to be used for each block by the amount of blocks passed 
     // to get the total posible to be paid for this notarisation.
     AmountToPay = ASSETCHAINS_NOTARY_PAY*n;
-    //fprintf(stderr, "AmountToPay.%lu\n",AmountToPay);
     ret = AmountToPay / notarycount;
-    fprintf(stderr, "payment per notary.%lu\n",ret);
     return(ret);
 }
 
@@ -1846,7 +1850,7 @@ uint64_t komodo_notarypay(CMutableTransaction &txNew, std::vector<int8_t> &Notar
         return(0);
     numSN = numStakedNotaries(staked_pubkeys,staked_era);
     
-    // Check the notarisation is valid and get the notarized height to calcualte the payment.
+    // Check the notarisation is valid.
     int32_t notarizedheight = komodo_getnotarizedheight(timestamp, height, script, len);
     if ( notarizedheight == 0 )
         return(0);
@@ -1854,8 +1858,10 @@ uint64_t komodo_notarypay(CMutableTransaction &txNew, std::vector<int8_t> &Notar
     // resize coinbase vouts to number of notary nodes +1 for coinbase itself.
     txNew.vout.resize(NotarisationNotaries.size()+1);
     
-    // Calcualte the amount to pay. 
-    AmountToPay = komodo_notarypayamount(notarizedheight,NotarisationNotaries.size());
+    // Calcualte the amount to pay. If 0, means not enough notarizations to calcuate amount. 
+    AmountToPay = komodo_notarypayamount(NotarisationNotaries.size());
+    if ( AmountToPay == 0 )
+        return(0);
     
     // loop over notarisation vins and add transaction to coinbase.
     // Commented prints here can be used to verify manually the pubkeys match.
@@ -1932,7 +1938,7 @@ uint64_t komodo_checknotarypay(CBlock *pblock,int32_t height)
             fprintf(stderr, "vout 2 of notarisation is not OP_RETURN scriptlen.%i\n", scriptlen);
             return(0);
         }
-    }
+    } else return(0);
     
     // if notarypay fails, because the notarisation is not valid, exit now as txNew was not created.
     // This should never happen, as the notarisation is checked before this function is called.

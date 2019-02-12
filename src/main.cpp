@@ -3284,14 +3284,16 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     // Do this here before the block is moved to the main block files.
     if ( ASSETCHAINS_NOTARY_PAY != 0 && pindex->GetHeight() > 10 )
     {
-        // do a full block scan to get notarisation position and to enforce 1 notarisation is in block only.
+        // do a full block scan to get notarisation position and to enforce a valid notarization is in position 1.
         // if notarisation in the block, must be position 1 and the coinbase must pay notaries.
         int notarisationTx = komodo_connectblock(true,pindex,*(CBlock *)&block);  
-        // -1 means that more than 1 notarisation is in a block, or the notarisation is not in order.
+        // -1 means that the valid notarization isnt in position 1.
         if ( notarisationTx == -1 )
             return state.DoS(100, error("ConnectBlock(): Notarisation is not in TX position 1! Invalid Block!"),
                         REJECT_INVALID, "bad-notarization-position");
-        // 1 means this block contains a valid notarisation
+        // 1 means this block contains a valid notarisation and its in position 1.
+        // its no longer possible for any attempted notarization to be in a block with a valid one!
+        // if notaries create a notarisation even if its not in this chain it will need to be mined inside its own block! 
         if ( notarisationTx == 1 )
         {
             // Check if the notaries have been paid.
@@ -3906,8 +3908,8 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
         return AbortNode(state, "Failed to read block");
     //if ( ASSETCHAINS_SYMBOL[0] != 0 || pindexDelete->GetHeight() > 1400000 )
     {
-        int32_t prevMoMheight,prevnotarizedht; uint256 notarizedhash,txid;
-        komodo_notarized_height(&prevMoMheight,&notarizedhash,&txid,&prevnotarizedht);
+        int32_t prevMoMheight,prevnotarizedht,prevNotarizedHt; uint256 notarizedhash,txid;
+        komodo_notarized_height(&prevMoMheight,&notarizedhash,&txid,&prevnotarizedht,&prevNotarizedHt);
         if ( block.GetHash() == notarizedhash )
         {
             fprintf(stderr,"DisconnectTip trying to disconnect notarized block at ht.%d\n",(int32_t)pindexDelete->GetHeight());
@@ -4241,8 +4243,8 @@ static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMo
     assert(MAX_REORG_LENGTH > 0);//, "We must be able to reorg some distance");
     if (reorgLength > MAX_REORG_LENGTH)
     {
-        int32_t notarizedht,prevnotarizedht,prevMoMheight; uint256 notarizedhash,txid;
-        notarizedht = komodo_notarized_height(&prevMoMheight,&notarizedhash,&txid,&prevnotarizedht);
+        int32_t notarizedht,prevnotarizedht,prevNotarizedHt,prevMoMheight; uint256 notarizedhash,txid;
+        notarizedht = komodo_notarized_height(&prevMoMheight,&notarizedhash,&txid,&prevnotarizedht,&prevNotarizedHt);
         if ( pindexFork->GetHeight() < notarizedht )
         {
             fprintf(stderr,"pindexFork->GetHeight().%d is < notarizedht %d, so ignore it\n",(int32_t)pindexFork->GetHeight(),notarizedht);
@@ -5593,8 +5595,8 @@ uint64_t CalculateCurrentUsage()
 /* Prune a block file (modify associated database entries)*/
 bool PruneOneBlockFile(bool tempfile, const int fileNumber)
 {
-    uint256 notarized_hash,notarized_desttxid; int32_t prevMoMheight,notarized_height,prevnotarized_height;
-    notarized_height = komodo_notarized_height(&prevMoMheight,&notarized_hash,&notarized_desttxid,&prevnotarized_height);
+    uint256 notarized_hash,notarized_desttxid; int32_t prevMoMheight,notarized_height,prevnotarized_height,prevNotarizedHt;
+    notarized_height = komodo_notarized_height(&prevMoMheight,&notarized_hash,&notarized_desttxid,&prevnotarized_height,&prevNotarizedHt);
     //fprintf(stderr, "pruneblockfile.%i\n",fileNumber); sleep(15);
     for (BlockMap::iterator it = mapBlockIndex.begin(); it != mapBlockIndex.end(); ++it) 
     {
