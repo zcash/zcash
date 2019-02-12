@@ -85,6 +85,7 @@ bool Eval::Dispatch(const CC *cond, const CTransaction &txTo, unsigned int nIn)
         CCinit(cp,ecode);
         cp->didinit = 1;
     }
+
     switch ( ecode )
     {
         case EVAL_IMPORTPAYOUT:
