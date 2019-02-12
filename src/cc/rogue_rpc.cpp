@@ -232,7 +232,7 @@ uint8_t rogue_registeropretdecode(uint256 &gametxid,uint256 &tokenid,uint256 &pl
     {
         return(f);
     }
-    fprintf(stderr,"e.%d f.%c game.%s playertxid.%s\n",e,f,gametxid.GetHex().c_str(),playertxid.GetHex().c_str());
+    //fprintf(stderr,"e.%d f.%c game.%s playertxid.%s\n",e,f,gametxid.GetHex().c_str(),playertxid.GetHex().c_str());
     return(0);
 }
 
@@ -1052,7 +1052,7 @@ UniValue rogue_players(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 
 UniValue rogue_games(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ),a(UniValue::VARR); uint256 txid,hashBlock,gametxid,tokenid,playertxid; int32_t vout,numvouts; CPubKey roguepk,mypk; char coinaddr[64]; CTransaction tx;
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR),b(UniValue::VARR); uint256 txid,hashBlock,gametxid,tokenid,playertxid; int32_t vout,numvouts; CPubKey roguepk,mypk; char coinaddr[64]; CTransaction tx;
     std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex;
     //std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     roguepk = GetUnspendable(cp,0);
@@ -1073,13 +1073,16 @@ UniValue rogue_games(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             {
                 if ( rogue_registeropretdecode(gametxid,tokenid,playertxid,tx.vout[numvouts-1].scriptPubKey) == 'R' )
                 {
-                    a.push_back(gametxid.GetHex());
+                    if ( CCgettxout(txid,vout,1) < 0 )
+                        b.push_back(gametxid.GetHex());
+                    else a.push_back(gametxid.GetHex());
                 }
             }
         }
     }
+    result.push_back(Pair("pastgames",b));
     result.push_back(Pair("games",a));
-    result.push_back(Pair("numgames",a.size()));
+    result.push_back(Pair("numgames",a.size()+b.size()));
     return(result);
 }
 
