@@ -6204,19 +6204,12 @@ UniValue gatewaysinfo(const UniValue& params, bool fHelp)
 
 UniValue gatewaysbind(const UniValue& params, bool fHelp)
 {
-<<<<<<< HEAD
-    UniValue result(UniValue::VOBJ); uint256 tokenid,oracletxid; int32_t i; int64_t totalsupply; std::vector<CPubKey> pubkeys; uint8_t M,N; std::string hex,coin; std::vector<unsigned char> pubkey;
-    if ( fHelp || params.size() < 6 )
-        throw runtime_error("gatewaysbind tokenid oracletxid coin tokensupply M N pubkey(s)\n");
-    if ( ensure_CCrequirements(EVAL_GATEWAYS) < 0 )
-=======
     UniValue result(UniValue::VOBJ); uint256 tokenid,oracletxid; int32_t i; int64_t totalsupply; std::vector<CPubKey> pubkeys;
     uint8_t M,N,p1,p2,p3,p4=0; std::string hex,coin; std::vector<unsigned char> pubkey;
 
     if ( fHelp || params.size() < 9 )
         throw runtime_error("gatewaysbind tokenid oracletxid coin tokensupply M N pubkey(s) pubtype p2shtype wiftype [taddr]\n");
-    if ( ensure_CCrequirements() < 0 )
->>>>>>> FSM
+    if ( ensure_CCrequirements(EVAL_GATEWAYS) < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
