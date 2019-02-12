@@ -191,7 +191,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
 				// check if this is the 2nd additional evalcode + 'unspendable' cc addr:
                 else if ( strcmp(destaddr, cp->unspendableaddr2) == 0)
                 {
-                    //fprintf(stderr,"FinalizeCCTx() matched %s unspendable2!\n",cp->unspendableaddr2);
+                    fprintf(stderr,"FinalizeCCTx() matched %s unspendable2!\n",cp->unspendableaddr2);
                     privkey = cp->unspendablepriv2;
                     if( othercond2 == 0 ) 
                         othercond2 = MakeCCcond1(cp->unspendableEvalcode2, cp->unspendablepk2);
