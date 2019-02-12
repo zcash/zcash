@@ -687,6 +687,9 @@ bool ProcessCC(struct CCcontract_info *cp,Eval* eval, std::vector<uint8_t> param
         from_mempool = 1;
         height &= ((1<<30) - 1);
     }
+    if (cp->validate == NULL)
+        return eval->Invalid("validation not supported for eval code");
+
     //fprintf(stderr,"KOMODO_CONNECTING.%d mempool.%d vs CCactive.%d\n",height,from_mempool,KOMODO_CCACTIVATE);
     // there is a chance CC tx is valid in mempool, but invalid when in block, so we cant filter duplicate requests. if any of the vins are spent, for example
     //txid = ctx.GetHash();

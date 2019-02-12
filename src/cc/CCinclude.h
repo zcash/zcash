@@ -270,21 +270,22 @@ UniValue ValueFromAmount(const CAmount& amount);
 #define CCLOG_DEBUG3 3
 #define CCLOG_MAXLEVEL 3
 template <class T>
-inline void CCLogPrintStream(const char *category, int level, T print_to_stream)
+void CCLogPrintStream(const char *category, int level, T print_to_stream)
 {
-    std::ostringstream stream; 
+    std::ostringstream stream;
     print_to_stream(stream);
-    if (level < 0) 
-        level = 0; 
+    if (level < 0)
+        level = 0;
     if (level > CCLOG_MAXLEVEL)
         level = CCLOG_MAXLEVEL;
     for (int i = level; i <= CCLOG_MAXLEVEL; i++)
-        if (LogAcceptCategory((std::string(category) + (i > 0 ? std::string("-") + std::to_string(i) : std::string(""))).c_str()))   {
+        if( LogAcceptCategory((std::string(category) + std::string("-") + std::to_string(i)).c_str())  ||     // '-debug=cctokens-0', '-debug=cctokens-1',...
+            i == 0 && LogAcceptCategory(std::string(category).c_str()) )  {                                  // also supporting '-debug=cctokens' for CCLOG_INFO
             LogPrintStr(stream.str());
             break;
         }
 }
-
+// use: LOGSTREAM("yourcategory", your-debug-level, stream << "some log data" << data2 << data3 << ... << std::endl);
 #define LOGSTREAM(category, level, logoperator) CCLogPrintStream( category, level, [=](std::ostringstream &stream) {logoperator;} )
 
 
