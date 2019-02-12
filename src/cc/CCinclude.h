@@ -161,6 +161,7 @@ int32_t iguana_rwbignum(int32_t rwflag,uint8_t *serialized,int32_t len,uint8_t *
 CScript GetScriptForMultisig(int nRequired, const std::vector<CPubKey>& keys);
 int64_t CCaddress_balance(char *coinaddr);
 CPubKey CCtxidaddr(char *txidaddr,uint256 txid);
+CPubKey CCCustomtxidaddr(char *txidaddr,uint256 txid,uint8_t taddr,uint8_t prefix,uint8_t prefix2);
 bool GetCCParams(Eval* eval, const CTransaction &tx, uint32_t nIn,
                  CTransaction &txOut, std::vector<std::vector<unsigned char>> &preConditions, std::vector<std::vector<unsigned char>> &params);
 
@@ -237,6 +238,7 @@ bool GetCCaddress1of2(struct CCcontract_info *cp,char *destaddr,CPubKey pk,CPubK
 bool ConstrainVout(CTxOut vout,int32_t CCflag,char *cmpaddr,int64_t nValue);
 bool PreventCC(Eval* eval,const CTransaction &tx,int32_t preventCCvins,int32_t numvins,int32_t preventCCvouts,int32_t numvouts);
 bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey);
+bool GetCustomscriptaddress(char *destaddr,const CScript &scriptPubKey,uint8_t taddr,uint8_t prefix,uint8_t prefix2);
 std::vector<uint8_t> Mypubkey();
 bool Myprivkey(uint8_t myprivkey[]);
 int64_t CCduration(int32_t &numblocks,uint256 txid);

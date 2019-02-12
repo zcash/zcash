@@ -6148,6 +6148,47 @@ UniValue gatewayslist(const UniValue& params, bool fHelp)
     return(GatewaysList());
 }
 
+UniValue gatewaysexternaladdress(const UniValue& params, bool fHelp)
+{
+    uint256 bindtxid; CPubKey pubkey;
+
+    if ( fHelp || params.size() != 2)
+        throw runtime_error("gatewaysexternaladdress bindtxid pubkey\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    const CKeyStore& keystore = *pwalletMain;
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+    bindtxid = Parseuint256((char *)params[0].get_str().c_str());
+    pubkey = ParseHex(params[1].get_str().c_str());
+    return(GatewaysExternalAddress(bindtxid,pubkey));
+}
+
+UniValue gatewaysdumpprivkey(const UniValue& params, bool fHelp)
+{
+    uint256 bindtxid;
+
+    if ( fHelp || params.size() != 2)
+        throw runtime_error("gatewaysexternaladdress bindtxid address\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+    bindtxid = Parseuint256((char *)params[0].get_str().c_str());
+    std::string strAddress = params[1].get_str();
+    CTxDestination dest = DecodeDestination(strAddress);
+    if (!IsValidDestination(dest)) {
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid transparent address");
+    }
+    const CKeyID *keyID = boost::get<CKeyID>(&dest);
+    if (!keyID) {
+        throw JSONRPCError(RPC_TYPE_ERROR, "Address does not refer to a key");
+    }
+    CKey vchSecret;
+    if (!pwalletMain->GetKey(*keyID, vchSecret)) {
+        throw JSONRPCError(RPC_WALLET_ERROR, "Private key for address " + strAddress + " is not known");
+    }
+    return(GatewaysDumpPrivKey(bindtxid,vchSecret));
+}
+
 UniValue gatewaysinfo(const UniValue& params, bool fHelp)
 {
     uint256 txid;
@@ -6163,10 +6204,19 @@ UniValue gatewaysinfo(const UniValue& params, bool fHelp)
 
 UniValue gatewaysbind(const UniValue& params, bool fHelp)
 {
+<<<<<<< HEAD
     UniValue result(UniValue::VOBJ); uint256 tokenid,oracletxid; int32_t i; int64_t totalsupply; std::vector<CPubKey> pubkeys; uint8_t M,N; std::string hex,coin; std::vector<unsigned char> pubkey;
     if ( fHelp || params.size() < 6 )
         throw runtime_error("gatewaysbind tokenid oracletxid coin tokensupply M N pubkey(s)\n");
     if ( ensure_CCrequirements(EVAL_GATEWAYS) < 0 )
+=======
+    UniValue result(UniValue::VOBJ); uint256 tokenid,oracletxid; int32_t i; int64_t totalsupply; std::vector<CPubKey> pubkeys;
+    uint8_t M,N,p1,p2,p3,p4=0; std::string hex,coin; std::vector<unsigned char> pubkey;
+
+    if ( fHelp || params.size() < 9 )
+        throw runtime_error("gatewaysbind tokenid oracletxid coin tokensupply M N pubkey(s) pubtype p2shtype wiftype [taddr]\n");
+    if ( ensure_CCrequirements() < 0 )
+>>>>>>> FSM
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -6187,7 +6237,11 @@ UniValue gatewaysbind(const UniValue& params, bool fHelp)
             throw runtime_error("invalid destination pubkey");
         pubkeys.push_back(pubkey2pk(pubkey));
     }
-    hex = GatewaysBind(0,coin,tokenid,totalsupply,oracletxid,M,N,pubkeys);
+    p1 = atoi((char *)params[6+N].get_str().c_str());
+    p2 = atoi((char *)params[6+N+1].get_str().c_str());
+    p3 = atoi((char *)params[6+N+2].get_str().c_str());
+    if (params.size() == 9+N) p4 = atoi((char *)params[6+N+3].get_str().c_str());
+    hex = GatewaysBind(0,coin,tokenid,totalsupply,oracletxid,M,N,pubkeys,p1,p2,p3,p4);
     RETURN_IF_ERROR(CCerror);
     if ( hex.size() > 0 )
     {

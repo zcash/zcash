@@ -206,6 +206,19 @@ std::string EncodeSecret(const CKey& key)
     return ret;
 }
 
+std::string EncodeCustomSecret(const CKey& key,uint8_t secret_key)
+{
+    assert(key.IsValid());
+    std::vector<unsigned char> data = std::vector<unsigned char>(1,secret_key);;
+    data.insert(data.end(), key.begin(), key.end());
+    if (key.IsCompressed()) {
+        data.push_back(1);
+    }
+    std::string ret = EncodeBase58Check(data);
+    memory_cleanse(data.data(), data.size());
+    return ret;
+}
+
 CExtPubKey DecodeExtPubKey(const std::string& str)
 {
     CExtPubKey key;

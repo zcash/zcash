@@ -300,6 +300,18 @@ bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey)
     return(false);
 }
 
+bool GetCustomscriptaddress(char *destaddr,const CScript &scriptPubKey,uint8_t taddr,uint8_t prefix, uint8_t prefix2)
+{
+    CTxDestination address; txnouttype whichType;
+    if ( ExtractDestination(scriptPubKey,address) != 0 )
+    {
+        strcpy(destaddr,(char *)CCustomBitcoinAddress(address,taddr,prefix,prefix2).ToString().c_str());
+        return(true);
+    }
+    //fprintf(stderr,"ExtractDestination failed\n");
+    return(false);
+}
+
 bool GetCCParams(Eval* eval, const CTransaction &tx, uint32_t nIn,
                  CTransaction &txOut, std::vector<std::vector<unsigned char>> &preConditions, std::vector<std::vector<unsigned char>> &params)
 {
@@ -357,6 +369,16 @@ CPubKey CCtxidaddr(char *txidaddr,uint256 txid)
     endiancpy(&buf33[1],(uint8_t *)&txid,32);
     pk = buf2pk(buf33);
     Getscriptaddress(txidaddr,CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG);
+    return(pk);
+}
+
+CPubKey CCCustomtxidaddr(char *txidaddr,uint256 txid,uint8_t taddr,uint8_t prefix,uint8_t prefix2)
+{
+    uint8_t buf33[33]; CPubKey pk;
+    buf33[0] = 0x02;
+    endiancpy(&buf33[1],(uint8_t *)&txid,32);
+    pk = buf2pk(buf33);
+    GetCustomscriptaddress(txidaddr,CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG,taddr,prefix,prefix2);
     return(pk);
 }
 

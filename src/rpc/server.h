@@ -293,6 +293,8 @@ extern UniValue cclib(const UniValue& params, bool fHelp);
 extern UniValue gatewaysaddress(const UniValue& params, bool fHelp);
 extern UniValue gatewayslist(const UniValue& params, bool fHelp);
 extern UniValue gatewaysinfo(const UniValue& params, bool fHelp);
+extern UniValue gatewaysdumpprivkey(const UniValue& params, bool fHelp);
+extern UniValue gatewaysexternaladdress(const UniValue& params, bool fHelp);
 extern UniValue gatewaysbind(const UniValue& params, bool fHelp);
 extern UniValue gatewaysdeposit(const UniValue& params, bool fHelp);
 extern UniValue gatewaysclaim(const UniValue& params, bool fHelp);
