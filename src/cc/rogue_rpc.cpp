@@ -21,6 +21,7 @@
 #define ROGUE_REGISTRATIONSIZE (100 * 10000)
 #define ROGUE_MAXPLAYERS 64 // need to send unused fees back to globalCC address to prevent leeching
 #define ROGUE_MAXKEYSTROKESGAP 60
+#define ROGUE_MAXLEN 777
 
 /*
  Roguelander - using highlander competition between rogue players
@@ -401,16 +402,22 @@ UniValue rogue_playerobj(std::vector<uint8_t> playerdata,uint256 playertxid,uint
 
 int32_t rogue_iterateplayer(uint256 &registertxid,uint256 firsttxid,int32_t firstvout,uint256 lasttxid)     // retrace playertxid vins to reach highlander <- this verifies player is valid and rogue_playerdataspend makes sure it can only be used once
 {
-    uint256 spenttxid,txid = firsttxid; int32_t spentvini,vout = firstvout;
+    uint256 spenttxid,txid = firsttxid; int32_t spentvini,n,vout = firstvout;
     registertxid = zeroid;
     if ( vout < 0 )
         return(-1);
+    n = 0;
     while ( (spentvini= myIsutxo_spent(spenttxid,txid,vout)) == 0 )
     {
         txid = spenttxid;
         vout = spentvini;
         if ( registertxid == zeroid )
             registertxid = txid;
+        if ( ++n >= ROGUE_MAXLENGTH )
+        {
+            fprintf(stderr,"rogue_iterateplayer n.%d, seems something is wrong\n",n);
+            break;
+        }
     }
     if ( txid == lasttxid )
         return(0);
@@ -469,7 +476,7 @@ int32_t rogue_playerdataspend(CMutableTransaction &mtx,uint256 playertxid,int32_
 
 int32_t rogue_findbaton(struct CCcontract_info *cp,uint256 &playertxid,char **keystrokesp,int32_t &numkeys,int32_t &regslot,std::vector<uint8_t> &playerdata,uint256 &batontxid,int32_t &batonvout,int64_t &batonvalue,int32_t &batonht,uint256 gametxid,CTransaction gametx,int32_t maxplayers,char *destaddr,int32_t &numplayers)
 {
-    int32_t i,numvouts,spentvini,matches = 0; CPubKey pk; uint256 tid,spenttxid,tokenid,hashBlock,txid,origplayergame; CTransaction spenttx,matchtx,batontx; std::vector<uint8_t> checkdata; CBlockIndex *pindex; char ccaddr[64],*keystrokes=0;
+    int32_t i,numvouts,spentvini,n,matches = 0; CPubKey pk; uint256 tid,spenttxid,tokenid,hashBlock,txid,origplayergame; CTransaction spenttx,matchtx,batontx; std::vector<uint8_t> checkdata; CBlockIndex *pindex; char ccaddr[64],*keystrokes=0;
     numkeys = numplayers = 0;
     playertxid = zeroid;
     for (i=0; i<maxplayers; i++)
@@ -504,6 +511,7 @@ int32_t rogue_findbaton(struct CCcontract_info *cp,uint256 &playertxid,char **ke
                 {
                     txid = matchtx.GetHash();
                     //fprintf(stderr,"scan forward playertxid.%s spenttxid.%s\n",playertxid.GetHex().c_str(),txid.GetHex().c_str());
+                    n = 0;
                     while ( CCgettxout(txid,0,1) < 0 )
                     {
                         spenttxid = zeroid;
@@ -515,12 +523,13 @@ int32_t rogue_findbaton(struct CCcontract_info *cp,uint256 &playertxid,char **ke
                             fprintf(stderr,"mempool tracking error %s/v0\n",txid.ToString().c_str());
                             return(-2);
                         }
+                        txid = spenttxid;
                         if ( spentvini != 0 )
                             return(-3);
-                        if ( keystrokesp != 0 && GetTransaction(spenttxid,spenttx,hashBlock,false) != 0 && spenttx.vout.size() == 2 )
+                        if ( keystrokesp != 0 && GetTransaction(spenttxid,spenttx,hashBlock,false) != 0 && spenttx.vout.size() >= 2 )
                         {
                             uint256 g,b; CPubKey p; std::vector<uint8_t> k;
-                            if ( rogue_keystrokesopretdecode(g,b,p,k,spenttx.vout[1].scriptPubKey) == 'K' )
+                            if ( rogue_keystrokesopretdecode(g,b,p,k,spenttx.vout[spenttx.vout.size()-1].scriptPubKey) == 'K' )
                             {
                                 keystrokes = (char *)realloc(keystrokes,numkeys + (int32_t)k.size());
                                 for (i=0; i<k.size(); i++)
@@ -528,6 +537,11 @@ int32_t rogue_findbaton(struct CCcontract_info *cp,uint256 &playertxid,char **ke
                                 numkeys += (int32_t)k.size();
                                 (*keystrokesp) = keystrokes;
                             }
+                        }
+                        if ( ++n >= ROGUE_MAXLENGTH )
+                        {
+                            fprintf(stderr,"rogue_findbaton n.%d, seems something is wrong\n",n);
+                            break;
                         }
                     }
                     //fprintf(stderr,"set baton %s\n",txid.GetHex().c_str());
