@@ -1046,7 +1046,7 @@ UniValue rogue_players(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 
 UniValue rogue_games(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ),a(UniValue::VARR); uint256 txid,gametxid,tokenid,playertxid; int32_t vout; CPubKey roguepk,mypk; char coinaddr[64]; CTransaction tx;
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR); uint256 txid,hashBlock,gametxid,tokenid,playertxid; int32_t vout,numvouts; CPubKey roguepk,mypk; char coinaddr[64]; CTransaction tx;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     roguepk = GetUnspendable(cp,0);
     mypk = pubkey2pk(Mypubkey());
