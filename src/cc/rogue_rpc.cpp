@@ -21,7 +21,7 @@
 #define ROGUE_REGISTRATIONSIZE (100 * 10000)
 #define ROGUE_MAXPLAYERS 64 // need to send unused fees back to globalCC address to prevent leeching
 #define ROGUE_MAXKEYSTROKESGAP 60
-#define ROGUE_MAXLEN 777
+#define ROGUE_MAXITERATIONS 777
 
 /*
  Roguelander - using highlander competition between rogue players
@@ -413,7 +413,7 @@ int32_t rogue_iterateplayer(uint256 &registertxid,uint256 firsttxid,int32_t firs
         vout = spentvini;
         if ( registertxid == zeroid )
             registertxid = txid;
-        if ( ++n >= ROGUE_MAXLENGTH )
+        if ( ++n >= ROGUE_MAXITERATIONS )
         {
             fprintf(stderr,"rogue_iterateplayer n.%d, seems something is wrong\n",n);
             break;
@@ -538,7 +538,7 @@ int32_t rogue_findbaton(struct CCcontract_info *cp,uint256 &playertxid,char **ke
                                 (*keystrokesp) = keystrokes;
                             }
                         }
-                        if ( ++n >= ROGUE_MAXLENGTH )
+                        if ( ++n >= ROGUE_MAXITERATIONS )
                         {
                             fprintf(stderr,"rogue_findbaton n.%d, seems something is wrong\n",n);
                             break;
