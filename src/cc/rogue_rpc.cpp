@@ -1052,7 +1052,7 @@ UniValue rogue_players(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 
 UniValue rogue_games(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ),a(UniValue::VARR),b(UniValue::VARR); uint256 txid,hashBlock,gametxid,tokenid,playertxid; int32_t vout,numvouts; CPubKey roguepk,mypk; char coinaddr[64]; CTransaction tx;
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR),b(UniValue::VARR); uint256 txid,hashBlock,gametxid,tokenid,playertxid; int32_t vout,maxplayers,gameheight,numvouts; CPubKey roguepk,mypk; char coinaddr[64]; CTransaction tx,gametx; int64_t buyin;
     std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex;
     //std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     roguepk = GetUnspendable(cp,0);
@@ -1073,9 +1073,12 @@ UniValue rogue_games(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             {
                 if ( rogue_registeropretdecode(gametxid,tokenid,playertxid,tx.vout[numvouts-1].scriptPubKey) == 'R' )
                 {
-                    if ( CCgettxout(txid,vout,1) < 0 )
-                        b.push_back(gametxid.GetHex());
-                    else a.push_back(gametxid.GetHex());
+                    if ( rogue_isvalidgame(cp,gameheight,gametx,buyin,maxplayers,gametxid) == 0 )
+                    {
+                        if ( CCgettxout(txid,vout,1) < 0 )
+                            b.push_back(gametxid.GetHex());
+                        else a.push_back(gametxid.GetHex());
+                    }
                 }
             }
         }
