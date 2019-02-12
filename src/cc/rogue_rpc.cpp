@@ -739,9 +739,9 @@ UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                     return(cclib_error(result,"couldnt find playerdata to spend"));
                 else if ( buyin > 0 && AddNormalinputs(mtx,mypk,buyin,64) < buyin )
                     return(cclib_error(result,"couldnt find enough normal funds for buyin"));
-                if ( playertxid != zeroid )
+                if ( tokenid != zeroid )
                 {
-                    mtx.vin.push_back(CTxIn(playertxid,0)); // spending cc marker as token is burned
+                    mtx.vin.push_back(CTxIn(tokenid,0)); // spending cc marker as token is burned
                     char unspendableTokenAddr[64]; uint8_t tokenpriv[32]; struct CCcontract_info *cpTokens, tokensC;
                     cpTokens = CCinit(&tokensC, EVAL_TOKENS);
                     CPubKey unspPk = GetUnspendable(cpTokens, tokenpriv);
