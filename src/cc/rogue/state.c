@@ -1372,6 +1372,7 @@ void rogue_restoreobject(THING *o,struct rogue_packitem *item)
                 if ( item->which < MAXSTICKS )
                     ws_info[item->which].oi_know = TRUE;
                 break;
+            // cur_armor and cur_weapon should be set
         }
         char packitemstr[256];
         strcpy(packitemstr,inv_name(o,FALSE));

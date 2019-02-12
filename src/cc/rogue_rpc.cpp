@@ -225,8 +225,6 @@ uint8_t rogue_registeropretdecode(uint256 &gametxid,uint256 &tokenid,uint256 &pl
     }
     else if ( script[1] != 'R' && (f= DecodeTokenOpRet(scriptPubKey, e, tokenid, voutPubkeys, vopretDummy)) != 0 )
     {
-        fprintf(stderr,"decode opret %c tokenid.%s\n",script[1],tokenid.GetHex().c_str());
-        //GetNonfungibleData(tokenid, vopretNonfungible);  //load nonfungible data from the 'tokenbase' tx
         vopret = vopretDummy;
     }
     if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> gametxid; ss >> playertxid) != 0 && e == EVAL_ROGUE && f == 'R' )
@@ -234,25 +232,6 @@ uint8_t rogue_registeropretdecode(uint256 &gametxid,uint256 &tokenid,uint256 &pl
         return(f);
     }
     fprintf(stderr,"e.%d f.%c game.%s playertxid.%s\n",e,f,gametxid.GetHex().c_str(),playertxid.GetHex().c_str());
-
-    /*std::vector<uint8_t> vopret,vopret2; uint8_t e,f; std::vector<CPubKey> voutPubkeys;
-    GetOpReturnData(scriptPubKey,vopret);
-    tokenid = zeroid;
-    if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> gametxid; ss >> playertxid) != 0 && e == EVAL_ROGUE && f == 'R' )
-    {
-        return(f);
-    }
-    else if ( (f= DecodeTokenOpRet(scriptPubKey,e,tokenid,voutPubkeys,vopret)) == 'c' || f == 't' )
-    {
-        //fprintf(stderr,"got valid token opret %s e.%d vs %d\n",tokenid.GetHex().c_str(),e,EVAL_TOKENS);
-        if ( vopret2.size() > 2 && E_UNMARSHAL(vopret2,ss >> e; ss >> f; ss >> gametxid; ss >> playertxid) != 0 && e == EVAL_ROGUE && f == 'R' )
-        {
-            return(f);
-        }
-        playertxid = tokenid;
-        fprintf(stderr,"e.%d vs %d, f %c, gametxid.%s player.%s\n",e,EVAL_ROGUE,f,gametxid.GetHex().c_str(),playertxid.GetHex().c_str());
-        return(0);
-    }*/
     return(0);
 }
 
@@ -763,7 +742,7 @@ UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                 CScript opretRegister = rogue_registeropret(gametxid, playertxid);
                 if ( playertxid != zeroid )
                 {
-                    fprintf(stderr,"gametxid.%s playertxid.%s opR.%d\n",gametxid.GetHex().c_str(),playertxid.GetHex().c_str(),(int32_t)opretRegister.size());
+                    //fprintf(stderr,"gametxid.%s playertxid.%s opR.%d\n",gametxid.GetHex().c_str(),playertxid.GetHex().c_str(),(int32_t)opretRegister.size());
                     voutPubkeysEmpty.push_back(burnpk);
                     if ( GetTransaction(playertxid,playertx,hashBlock,false) != 0 )
                     {
