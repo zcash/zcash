@@ -1052,11 +1052,12 @@ UniValue rogue_games(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     GetCCaddress1of2(cp,coinaddr,roguepk,mypk);
     SetCCunspents(unspentOutputs,coinaddr);
     rogue_univalue(result,"games",-1,-1);
+    fprintf(stderr,"rogue_games\n");
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
         vout = (int32_t)it->first.index;
-        //char str[65]; fprintf(stderr,"%s check %s/v%d %.8f\n",coinaddr,uint256_str(str,txid),vout,(double)it->second.satoshis/COIN);
+        char str[65]; fprintf(stderr,"%s check %s/v%d %.8f\n",coinaddr,uint256_str(str,txid),vout,(double)it->second.satoshis/COIN);
         if ( vout == 0 )
         {
             a.push_back(txid.GetHex());
