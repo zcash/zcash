@@ -386,6 +386,7 @@ UniValue rogue_playerobj(std::vector<uint8_t> playerdata,uint256 playertxid,uint
     obj.push_back(Pair("playertxid",playertxid.GetHex()));
     if ( tokenid != zeroid )
         obj.push_back(Pair("tokenid",tokenid.GetHex()));
+    else obj.push_back(Pair("tokenid",playertxid.GetHex()));
     obj.push_back(Pair("data",datastr));
     free(datastr);
     obj.push_back(Pair("pack",a));
