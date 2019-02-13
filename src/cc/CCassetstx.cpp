@@ -66,100 +66,102 @@ int64_t AddAssetInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubK
 }
 */
 
-UniValue AssetOrders(uint256 refassetid)
+UniValue AssetOrders(uint256 refassetid, CPubKey pk)
 {
     static uint256 zero;
 	UniValue result(UniValue::VARR);  
+
+    struct CCcontract_info *cpAssets, assetsC;
+    struct CCcontract_info *cpTokens, tokensC;
+
+    cpAssets = CCinit(&assetsC, EVAL_ASSETS);
+    cpTokens = CCinit(&tokensC, EVAL_TOKENS);
 
 	auto addOrders = [&](struct CCcontract_info *cp, std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it)
 	{
 		uint256 txid, hashBlock, assetid, assetid2;
 		int64_t price;
 		std::vector<uint8_t> origpubkey;
-		CTransaction vintx;
+		CTransaction ordertx;
 		uint8_t funcid, evalCode;
-		char numstr[32], funcidstr[16], origaddr[64], assetidstr[65];
+		char numstr[32], funcidstr[16], origaddr[64], origtokenaddr[64], assetidstr[65];
 
         txid = it->first.txhash;
-		//std::cerr << "addOrders() txid=" << txid.GetHex() << std::endl;
-        if ( GetTransaction(txid, vintx, hashBlock, false) != 0 ) 
+        LOGSTREAM("ccassets", CCLOG_DEBUG2, stream << "addOrders() checking txid=" << txid.GetHex() << std::endl);
+        if ( GetTransaction(txid, ordertx, hashBlock, false) != 0 ) 
         {
 			// for logging: funcid = DecodeAssetOpRet(vintx.vout[vintx.vout.size() - 1].scriptPubKey, evalCode, assetid, assetid2, price, origpubkey);
-			//std::cerr << "addOrders() vintx.vout.size()=" << vintx.vout.size() << " funcid=" << (char)(funcid ? funcid : ' ') << " assetid=" << assetid.GetHex() << std::endl;
-            if (vintx.vout.size() > 0 && (funcid = DecodeAssetTokenOpRet(vintx.vout[vintx.vout.size()-1].scriptPubKey, evalCode, assetid, assetid2, price, origpubkey)) != 0)
+            if (ordertx.vout.size() > 0 && (funcid = DecodeAssetTokenOpRet(ordertx.vout[ordertx.vout.size()-1].scriptPubKey, evalCode, assetid, assetid2, price, origpubkey)) != 0)
             {
-                if (refassetid != zero && assetid != refassetid)
-                {
-                    //int32_t z;
-                    //for (z=31; z>=0; z--) fprintf(stderr,"%02x",((uint8_t *)&txid)[z]);
-                    //fprintf(stderr," txid\n");
-                    //for (z=31; z>=0; z--) fprintf(stderr,"%02x",((uint8_t *)&assetid)[z]);
-                    //fprintf(stderr," assetid\n");
-                    //for (z=31; z>=0; z--) fprintf(stderr,"%02x",((uint8_t *)&refassetid)[z]);
-                    //fprintf(stderr," refassetid\n");
-                    return;
-                }
+                LOGSTREAM("ccassets", CCLOG_DEBUG2, stream << "addOrders() checking ordertx.vout.size()=" << ordertx.vout.size() << " funcid=" << (char)(funcid ? funcid : ' ') << " assetid=" << assetid.GetHex() << std::endl);
 
-				//std::cerr << "addOrders() it->first.index=" << it->first.index << " vintx.vout[it->first.index].nValue=" << vintx.vout[it->first.index].nValue << std::endl;
-                if (vintx.vout[it->first.index].nValue == 0)
-                    return;
+                if (refassetid != zero && assetid == refassetid ||
+                    pk != CPubKey() && pk == pubkey2pk(origpubkey) && (funcid == 'S' || funcid == 's'))
+                {
 
-                UniValue item(UniValue::VOBJ);
+                    LOGSTREAM("ccassets", CCLOG_DEBUG2, stream << "addOrders() it->first.index=" << it->first.index << " ordertx.vout[it->first.index].nValue=" << ordertx.vout[it->first.index].nValue << std::endl);
+                    if (ordertx.vout[it->first.index].nValue == 0) {
+                        LOGSTREAM("ccassets", CCLOG_DEBUG2, stream << "addOrders() order with value=0 skipped" << std::endl);
+                        return;
+                    }
 
-                funcidstr[0] = funcid;
-                funcidstr[1] = 0;
-                item.push_back(Pair("funcid", funcidstr));
-                item.push_back(Pair("txid", uint256_str(assetidstr,txid)));
-                item.push_back(Pair("vout", (int64_t)it->first.index));
-                if ( funcid == 'b' || funcid == 'B' )
-                {
-                    sprintf(numstr,"%.8f",(double)vintx.vout[it->first.index].nValue/COIN);
-                    item.push_back(Pair("amount",numstr));
-                    sprintf(numstr,"%.8f",(double)vintx.vout[0].nValue/COIN);
-                    item.push_back(Pair("bidamount",numstr));
-                }
-                else
-                {
-                    sprintf(numstr,"%llu",(long long)vintx.vout[it->first.index].nValue);
-                    item.push_back(Pair("amount",numstr));
-                    sprintf(numstr,"%llu",(long long)vintx.vout[0].nValue);
-                    item.push_back(Pair("askamount",numstr));
-                }
-                if ( origpubkey.size() == 33 )
-                {
-                    GetCCaddress(cp, origaddr, pubkey2pk(origpubkey));  // TODO: what is this? is it asset or token??
-                    item.push_back(Pair("origaddress", origaddr));
-                }
-                if ( assetid != zeroid )
-                    item.push_back(Pair("tokenid",uint256_str(assetidstr,assetid)));
-                if ( assetid2 != zeroid )
-                    item.push_back(Pair("otherid",uint256_str(assetidstr,assetid2)));
-                if ( price > 0 )
-                {
-                    if ( funcid == 's' || funcid == 'S' || funcid == 'e' || funcid == 'e' )
+                    UniValue item(UniValue::VOBJ);
+
+                    funcidstr[0] = funcid;
+                    funcidstr[1] = 0;
+                    item.push_back(Pair("funcid", funcidstr));
+                    item.push_back(Pair("txid", uint256_str(assetidstr, txid)));
+                    item.push_back(Pair("vout", (int64_t)it->first.index));
+                    if (funcid == 'b' || funcid == 'B')
                     {
-                        sprintf(numstr,"%.8f",(double)price / COIN);
-                        item.push_back(Pair("totalrequired", numstr));
-                        sprintf(numstr,"%.8f",(double)price / (COIN * vintx.vout[0].nValue));
-                        item.push_back(Pair("price", numstr));
+                        sprintf(numstr, "%.8f", (double)ordertx.vout[it->first.index].nValue / COIN);
+                        item.push_back(Pair("amount", numstr));
+                        sprintf(numstr, "%.8f", (double)ordertx.vout[0].nValue / COIN);
+                        item.push_back(Pair("bidamount", numstr));
                     }
                     else
                     {
-                        item.push_back(Pair("totalrequired", (int64_t)price));
-                        sprintf(numstr,"%.8f",(double)vintx.vout[0].nValue / (price * COIN));
-                        item.push_back(Pair("price",numstr));
+                        sprintf(numstr, "%llu", (long long)ordertx.vout[it->first.index].nValue);
+                        item.push_back(Pair("amount", numstr));
+                        sprintf(numstr, "%llu", (long long)ordertx.vout[0].nValue);
+                        item.push_back(Pair("askamount", numstr));
                     }
+                    if (origpubkey.size() == 33)
+                    {
+                        GetCCaddress(cp, origaddr, pubkey2pk(origpubkey));  
+                        item.push_back(Pair("origaddress", origaddr));
+                        GetTokensCCaddress(cpTokens, origtokenaddr, pubkey2pk(origpubkey));
+                        item.push_back(Pair("origtokenaddress", origtokenaddr));
+
+                    }
+                    if (assetid != zeroid)
+                        item.push_back(Pair("tokenid", uint256_str(assetidstr, assetid)));
+                    if (assetid2 != zeroid)
+                        item.push_back(Pair("otherid", uint256_str(assetidstr, assetid2)));
+                    if (price > 0)
+                    {
+                        if (funcid == 's' || funcid == 'S' || funcid == 'e' || funcid == 'e')
+                        {
+                            sprintf(numstr, "%.8f", (double)price / COIN);
+                            item.push_back(Pair("totalrequired", numstr));
+                            sprintf(numstr, "%.8f", (double)price / (COIN * ordertx.vout[0].nValue));
+                            item.push_back(Pair("price", numstr));
+                        }
+                        else
+                        {
+                            item.push_back(Pair("totalrequired", (int64_t)price));
+                            sprintf(numstr, "%.8f", (double)ordertx.vout[0].nValue / (price * COIN));
+                            item.push_back(Pair("price", numstr));
+                        }
+                    }
+                    result.push_back(item);
+                    LOGSTREAM("ccassets", CCLOG_DEBUG1, stream << "addOrders() added order funcId=" << (char)(funcid ? funcid : ' ') << " it->first.index=" << it->first.index << " ordertx.vout[it->first.index].nValue=" << ordertx.vout[it->first.index].nValue << " tokenid=" << assetid.GetHex() << std::endl);
                 }
-                result.push_back(item);
-                //fprintf(stderr,"addOrders() func.(%c) %s/v%d %.8f\n",funcid,uint256_str(assetidstr,txid),(int32_t)it->first.index,(double)vintx.vout[it->first.index].nValue/COIN);
             }
         }
 	};
 
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputsTokens, unspentOutputsCoins;
-    struct CCcontract_info *cpAssets, assetsC;
-
-    cpAssets = CCinit(&assetsC, EVAL_ASSETS);
 
 	char assetsUnspendableAddr[64];
 	GetCCaddress(cpAssets, assetsUnspendableAddr, GetUnspendable(cpAssets, NULL));
@@ -167,9 +169,11 @@ UniValue AssetOrders(uint256 refassetid)
 
 	char assetsTokensUnspendableAddr[64];
     std::vector<uint8_t> vopretNonfungible;
-    GetNonfungibleData(refassetid, vopretNonfungible);
-    if (vopretNonfungible.size() > 0)
-        cpAssets->additionalTokensEvalcode2 = vopretNonfungible.begin()[0];
+    if (refassetid != zeroid) {
+        GetNonfungibleData(refassetid, vopretNonfungible);
+        if (vopretNonfungible.size() > 0)
+            cpAssets->additionalTokensEvalcode2 = vopretNonfungible.begin()[0];
+    }
 	GetTokensCCaddress(cpAssets, assetsTokensUnspendableAddr, GetUnspendable(cpAssets, NULL));
 	SetCCunspents(unspentOutputsTokens, assetsTokensUnspendableAddr);
 
