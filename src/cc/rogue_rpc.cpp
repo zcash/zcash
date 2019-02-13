@@ -171,8 +171,8 @@ CScript rogue_keystrokesopret(uint256 gametxid,uint256 batontxid,CPubKey pk,std:
 
 CScript rogue_highlanderopret(uint8_t funcid,uint256 gametxid,int32_t regslot,CPubKey pk,std::vector<uint8_t>playerdata)
 {
-    CScript opret; uint8_t evalcode = EVAL_ROGUE;
-    opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << gametxid << regslot << pk << playerdata << ASSETCHAINS_SYMBOL);
+    CScript opret; uint8_t evalcode = EVAL_ROGUE; std::string symbol(ASSETCHAINS_SYMBOL);
+    opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << gametxid << regslot << pk << playerdata << symbol);
     return(opret);
 }
 
