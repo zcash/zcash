@@ -17,6 +17,16 @@
 
 #undef lines 
 
+#ifdef LINES
+#undef LINES
+#endif
+#ifdef COLS
+#undef COLS
+#endif
+
+#define	LINES	24
+#define	COLS	80
+
 #define NOOP(x) (x += 0)
 #define CCHAR(x) ( (char) (x & A_CHARTEXT) )
 /*

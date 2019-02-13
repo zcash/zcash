@@ -22,6 +22,23 @@
 #define ROGUE_MAXPLAYERS 64 // need to send unused fees back to globalCC address to prevent leeching
 #define ROGUE_MAXKEYSTROKESGAP 60
 #define ROGUE_MAXITERATIONS 777
+
+#define MAXPACK 23
+struct rogue_packitem
+{
+    int32_t type,launch,count,which,hplus,dplus,arm,flags,group;
+    char damage[8],hurldmg[8];
+};
+struct rogue_player
+{
+    int32_t gold,hitpoints,strength,level,experience,packsize,dungeonlevel,pad;
+    struct rogue_packitem roguepack[MAXPACK];
+};
+int32_t rogue_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t num,struct rogue_player *player);
+#define ROGUE_DECLARED_PACK
+void rogue_packitemstr(char *packitemstr,struct rogue_packitem *item);
+
+
 std::string Rogue_pname = "fred";
 
 /*
@@ -133,20 +150,6 @@ std::string Rogue_pname = "fred";
 // ./c cclib bailout 17 \"[%226d3243c6e5ab383898b28a87e01f6c00b5bdd9687020f17f5caacc8a61febd19%22]\"
 // ./komodo-cli -ac_name=ROGUE cclib register 17 \"[%22a898f4ceef7647ba113b9f3c24ef045f5d134935a3b09bdd1a997b9d474f4c1b%22,%22f11d0cb4e2e4c21f029a1146f8e5926f11456885b7ab7d665096f5efedec8ea0%22]\"
 
-#define MAXPACK 23
-struct rogue_packitem
-{
-    int32_t type,launch,count,which,hplus,dplus,arm,flags,group;
-    char damage[8],hurldmg[8];
-};
-struct rogue_player
-{
-    int32_t gold,hitpoints,strength,level,experience,packsize,dungeonlevel,pad;
-    struct rogue_packitem roguepack[MAXPACK];
-};
-int32_t rogue_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t num,struct rogue_player *player);
-#define ROGUE_DECLARED_PACK
-void rogue_packitemstr(char *packitemstr,struct rogue_packitem *item);
 
 CScript rogue_newgameopret(int64_t buyin,int32_t maxplayers)
 {

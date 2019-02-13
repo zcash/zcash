@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <memory.h>
 #include <string.h>
+#include <unistd.h>
 
 #define SMALLVAL 0.000000000000001
 #define SATOSHIDEN ((uint64_t)100000000L)

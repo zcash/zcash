@@ -312,9 +312,12 @@ over:
 		    after = FALSE;
 		    msg(rs,"version %s. (mctesq was here)", release);
 		when 'S': 
-            msg(rs,"Saving is disabled, use bailout rpc");
             after = FALSE;
-		    //save_game(rs);
+#ifdef STANDALONE
+            save_game(rs);
+#else
+            msg(rs,"Saving is disabled, use bailout rpc");
+#endif
 		when '.': ;			/* Rest command */
 		when ' ': after = FALSE;	/* "Legal" illegal command */
 		when '^':
