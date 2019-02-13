@@ -149,6 +149,8 @@ uint8_t *OS_fileptr(long *allocsizep,char *fname);
 int32_t rogue_setplayerdata(struct rogue_state *rs,char *gametxidstr)
 {
     char cmd[32768]; int32_t i,n,retval=-1; char *filestr,*statusstr,*datastr,fname[128]; long allocsize; cJSON *retjson,*array,*item;
+    if ( gametxidstr == 0 || *gametxidstr == 0 )
+        return(retval);
     sprintf(fname,"%s.gameinfo",gametxidstr);
     sprintf(cmd,"./komodo-cli -ac_name=ROGUE cclib gameinfo 17 \\\"[%%22%s%%22]\\\" > %s",gametxidstr,fname);
     if ( system(cmd) != 0 )
@@ -188,12 +190,15 @@ int32_t rogue_setplayerdata(struct rogue_state *rs,char *gametxidstr)
 void rogue_progress(uint64_t seed,char *keystrokes,int32_t num)
 {
     char cmd[16384],hexstr[16384]; int32_t i;
-    for (i=0; i<num; i++)
-        sprintf(&hexstr[i<<1],"%02x",keystrokes[i]);
-    hexstr[i<<1] = 0;
-    sprintf(cmd,"./komodo-cli -ac_name=ROGUE cclib keystrokes 17 \\\"[%%22%s%%22,%%22%s%%22]\\\" >> keystrokes.log",Gametxidstr,hexstr);
-    if ( system(cmd) != 0 )
-        fprintf(stderr,"error issuing (%s)\n",cmd);
+    if ( Gametxidstr[0] != 0 )
+    {
+        for (i=0; i<num; i++)
+            sprintf(&hexstr[i<<1],"%02x",keystrokes[i]);
+        hexstr[i<<1] = 0;
+        sprintf(cmd,"./komodo-cli -ac_name=ROGUE cclib keystrokes 17 \\\"[%%22%s%%22,%%22%s%%22]\\\" >> keystrokes.log",Gametxidstr,hexstr);
+        if ( system(cmd) != 0 )
+            fprintf(stderr,"error issuing (%s)\n",cmd);
+    }
 }
 
 int32_t flushkeystrokes(struct rogue_state *rs)

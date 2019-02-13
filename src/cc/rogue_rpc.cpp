@@ -117,7 +117,8 @@
 
 // todo:
 // verify keystrokes tx is in mempool and confirmed
-// chaining when mempool tx sometimes infinite loops
+// chaining when mempool tx sometimes infinite loops?
+// bailout stealing, is it possible?
 
 //////////////////////// start of CClib interface
 //./komodod -ac_name=ROGUE -ac_supply=1000000 -pubkey=03951a6f7967ad784453116bc55cd30c54f91ea8a5b1e9b04d6b29cfd6b395ba6c -addnode=5.9.102.210  -ac_cclib=rogue -ac_perc=10000000 -ac_reward=100000000 -ac_cc=60001 -ac_script=2ea22c80203d1579313abe7d8ea85f48c65ea66fc512c878c0d0e6f6d54036669de940febf8103120c008203000401cc > /dev/null &
@@ -1041,8 +1042,8 @@ UniValue rogue_players(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             continue;
         if ( rogue_playerdata(cp,gametxid,tokenid,pk,playerdata,txid) == 0 )//&& pk == mypk )
         {
-            a.push_back(rogue_playerobj(playerdata,txid,tokenid));
-            //result.push_back(Pair("playerdata",rogue_playerobj(playerdata)));
+            a.push_back(txid.GetHex());
+            //a.push_back(Pair("playerdata",rogue_playerobj(playerdata)));
         }
     }
     result.push_back(Pair("playerdata",a));
