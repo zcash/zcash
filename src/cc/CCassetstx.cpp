@@ -87,7 +87,7 @@ UniValue AssetOrders(uint256 refassetid, CPubKey pk)
 		char numstr[32], funcidstr[16], origaddr[64], origtokenaddr[64], assetidstr[65];
 
         txid = it->first.txhash;
-		//std::cerr << "addOrders() txid=" << txid.GetHex() << std::endl;
+        LOGSTREAM("ccassets", CCLOG_DEBUG2, stream << "addOrders() checking txid=" << txid.GetHex() << std::endl);
         if ( GetTransaction(txid, ordertx, hashBlock, false) != 0 ) 
         {
 			// for logging: funcid = DecodeAssetOpRet(vintx.vout[vintx.vout.size() - 1].scriptPubKey, evalCode, assetid, assetid2, price, origpubkey);
@@ -95,8 +95,8 @@ UniValue AssetOrders(uint256 refassetid, CPubKey pk)
             {
                 LOGSTREAM("ccassets", CCLOG_DEBUG2, stream << "addOrders() checking ordertx.vout.size()=" << ordertx.vout.size() << " funcid=" << (char)(funcid ? funcid : ' ') << " assetid=" << assetid.GetHex() << std::endl);
 
-                if (refassetid != zero && assetid != refassetid ||
-                    pk.IsValid() && pk == pubkey2pk(origpubkey) && (funcid == 'S' || funcid == 's'))
+                if (refassetid != zero && assetid == refassetid ||
+                    pk != CPubKey() && pk == pubkey2pk(origpubkey) && (funcid == 'S' || funcid == 's'))
                 {
 
                     LOGSTREAM("ccassets", CCLOG_DEBUG2, stream << "addOrders() it->first.index=" << it->first.index << " ordertx.vout[it->first.index].nValue=" << ordertx.vout[it->first.index].nValue << std::endl);
