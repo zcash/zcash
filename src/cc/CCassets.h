@@ -47,7 +47,7 @@ bool AssetCalcAmounts(struct CCcontract_info *cpAssets, int64_t &inputs, int64_t
 //int64_t GetAssetBalance(CPubKey pk,uint256 tokenid); // --> GetTokenBalance()
 int64_t AddAssetInputs(struct CCcontract_info *cp, CMutableTransaction &mtx, CPubKey pk, uint256 assetid, int64_t total, int32_t maxinputs);
 
-UniValue AssetOrders(uint256 tokenid, CPubKey pubkey);
+UniValue AssetOrders(uint256 tokenid, CPubKey pubkey, uint8_t additionalEvalCode);
 //UniValue AssetInfo(uint256 tokenid);
 //UniValue AssetList();
 //std::string CreateAsset(int64_t txfee,int64_t assetsupply,std::string name,std::string description);
