@@ -172,11 +172,11 @@ CScript rogue_keystrokesopret(uint256 gametxid,uint256 batontxid,CPubKey pk,std:
 CScript rogue_highlanderopret(uint8_t funcid,uint256 gametxid,int32_t regslot,CPubKey pk,std::vector<uint8_t>playerdata)
 {
     CScript opret; uint8_t evalcode = EVAL_ROGUE;
-    opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << gametxid << regslot << pk << playerdata);
+    opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << gametxid << regslot << pk << playerdata << ASSETCHAINS_SYMBOL);
     return(opret);
 }
 
-uint8_t rogue_highlanderopretdecode(uint256 &gametxid, uint256 &tokenid, int32_t &regslot, CPubKey &pk, std::vector<uint8_t> &playerdata, CScript scriptPubKey)
+uint8_t rogue_highlanderopretdecode(uint256 &gametxid, uint256 &tokenid, int32_t &regslot, CPubKey &pk, std::vector<uint8_t> &playerdata, std::string &symbol,CScript scriptPubKey)
 {
     std::string name, description; std::vector<uint8_t> vorigPubkey;
     std::vector<uint8_t> vopretNonfungible, vopret, vopretDummy,origpubkey;
@@ -194,7 +194,7 @@ uint8_t rogue_highlanderopretdecode(uint256 &gametxid, uint256 &tokenid, int32_t
         GetNonfungibleData(tokenid, vopretNonfungible);  //load nonfungible data from the 'tokenbase' tx
         vopret = vopretNonfungible;
     }
-    if ( vopret.size() > 2 && E_UNMARSHAL(vopret, ss >> e; ss >> f; ss >> gametxid; ss >> regslot; ss >> pk; ss >> playerdata) != 0 && e == EVAL_ROGUE && (f == 'H' || f == 'Q') )
+    if ( vopret.size() > 2 && E_UNMARSHAL(vopret, ss >> e; ss >> f; ss >> gametxid; ss >> regslot; ss >> pk; ss >> playerdata; ss >> symbol) != 0 && e == EVAL_ROGUE && (f == 'H' || f == 'Q') )
     {
         return(f);
     }
@@ -437,10 +437,10 @@ int32_t rogue_iterateplayer(uint256 &registertxid,uint256 firsttxid,int32_t firs
 
 int32_t rogue_playerdata(struct CCcontract_info *cp,uint256 &origplayergame,uint256 &tokenid,CPubKey &pk,std::vector<uint8_t> &playerdata,uint256 playertxid)
 {
-    uint256 origplayertxid,hashBlock,gametxid,registertxid; CTransaction gametx,playertx,highlandertx; std::vector<uint8_t> vopret; uint8_t *script,e,f; int32_t i,regslot,gameheight,numvouts,maxplayers; int64_t buyin;
+    uint256 origplayertxid,hashBlock,gametxid,registertxid; CTransaction gametx,playertx,highlandertx; std::vector<uint8_t> vopret; uint8_t *script,e,f; int32_t i,regslot,gameheight,numvouts,maxplayers; int64_t buyin; std::string symbol;
     if ( GetTransaction(playertxid,playertx,hashBlock,false) != 0 && (numvouts= playertx.vout.size()) > 0 )
     {
-        if ( (f= rogue_highlanderopretdecode(gametxid,tokenid,regslot,pk,playerdata,playertx.vout[numvouts-1].scriptPubKey)) == 'H' || f == 'Q' )
+        if ( (f= rogue_highlanderopretdecode(gametxid,tokenid,regslot,pk,playerdata,symbol,playertx.vout[numvouts-1].scriptPubKey)) == 'H' || f == 'Q' )
         {
             if ( tokenid != zeroid )
             {
