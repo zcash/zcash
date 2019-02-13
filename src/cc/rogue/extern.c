@@ -452,7 +452,7 @@ void externs_clear()
     memset(p_colors,0,sizeof(p_colors));
     memset(prbuf,0,sizeof(prbuf));
     memset(r_stones,0,sizeof(r_stones));
-    memset(whoami,0,sizeof(whoami));
+    //memset(whoami,0,sizeof(whoami));
     memset(ws_made,0,sizeof(ws_made));
     memset(ws_type,0,sizeof(ws_type));
     runch = 0;				/* Direction player is running */
