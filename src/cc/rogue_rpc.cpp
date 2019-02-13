@@ -462,7 +462,7 @@ int32_t rogue_playerdata(struct CCcontract_info *cp,uint256 &origplayergame,uint
                     return(0);
                 } else fprintf(stderr,"hash mismatch or illegal gametxid\n");
             } else fprintf(stderr,"invalid game %s\n",gametxid.GetHex().c_str());
-        } else fprintf(stderr,"invalid player funcid.%c\n",f);
+        } //else fprintf(stderr,"invalid player funcid.%c\n",f);
     } else fprintf(stderr,"couldnt get playertxid.%s\n",playertxid.GetHex().c_str());
     return(-1);
 }
@@ -933,7 +933,7 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
                     {
                         opret = rogue_highlanderopret(funcid, gametxid, regslot, mypk, nodata,pname);
                         rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,opret);
-                        fprintf(stderr,"nodata finalizetx.(%s)\n",rawtx.c_str());
+                        //fprintf(stderr,"nodata finalizetx.(%s)\n",rawtx.c_str());
                     }
                     else
                     {

@@ -170,10 +170,10 @@ int32_t rogue_setplayerdata(struct rogue_state *rs,char *gametxidstr)
                         if ( strcmp(statusstr,"registered") == 0 )
                         {
                             retval = 0;
-                            if ( (pname= jstr(item,"pname")) != 0 && strlen(pname) < MAXSTR-1 )
-                                strcpy(whoami,pname);
                             if ( (item= jobj(item,"player")) != 0 && (datastr= jstr(item,"data")) != 0 )
                             {
+                                if ( (pname= jstr(item,"pname")) != 0 && strlen(pname) < MAXSTR-1 )
+                                    strcpy(whoami,pname);
                                 decode_hex((uint8_t *)&rs->P,(int32_t)strlen(datastr)/2,datastr);
                                 //fprintf(stderr,"set datastr[%d]\n",(int32_t)strlen(datastr));
                                 rs->restoring = 1;
