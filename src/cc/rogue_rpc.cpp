@@ -22,6 +22,7 @@
 #define ROGUE_MAXPLAYERS 64 // need to send unused fees back to globalCC address to prevent leeching
 #define ROGUE_MAXKEYSTROKESGAP 60
 #define ROGUE_MAXITERATIONS 777
+std::string Rogue_pname = "fred";
 
 /*
  Roguelander - using highlander competition between rogue players
@@ -871,9 +872,9 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
                 {
                     UniValue obj; struct rogue_player P;
                     if ( pname.size() == 0 )
-                        pname = "fred";
+                        pname = Rogue_pname;
                     seed = rogue_gamefields(obj,maxplayers,buyin,gametxid,myrogueaddr);
-                    fprintf(stderr,"found baton %s numkeys.%d seed.%llu playerdata.%d\n",batontxid.ToString().c_str(),numkeys,(long long)seed,(int32_t)playerdata.size());
+                    fprintf(stderr,"(%s) found baton %s numkeys.%d seed.%llu playerdata.%d\n",pname,batontxid.ToString().c_str(),numkeys,(long long)seed,(int32_t)playerdata.size());
                     memset(&P,0,sizeof(P));
                     if ( playerdata.size() > 0 )
                     {
