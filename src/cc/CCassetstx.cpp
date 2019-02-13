@@ -75,7 +75,7 @@ UniValue AssetOrders(uint256 refassetid, CPubKey pk)
     struct CCcontract_info *cpTokens, tokensC;
 
     cpAssets = CCinit(&assetsC, EVAL_ASSETS);
-    cpTokens = CCinit(&assetsC, EVAL_TOKENS);
+    cpTokens = CCinit(&tokensC, EVAL_TOKENS);
 
 	auto addOrders = [&](struct CCcontract_info *cp, std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it)
 	{
@@ -169,9 +169,11 @@ UniValue AssetOrders(uint256 refassetid, CPubKey pk)
 
 	char assetsTokensUnspendableAddr[64];
     std::vector<uint8_t> vopretNonfungible;
-    GetNonfungibleData(refassetid, vopretNonfungible);
-    if (vopretNonfungible.size() > 0)
-        cpAssets->additionalTokensEvalcode2 = vopretNonfungible.begin()[0];
+    if (refassetid != zeroid) {
+        GetNonfungibleData(refassetid, vopretNonfungible);
+        if (vopretNonfungible.size() > 0)
+            cpAssets->additionalTokensEvalcode2 = vopretNonfungible.begin()[0];
+    }
 	GetTokensCCaddress(cpAssets, assetsTokensUnspendableAddr, GetUnspendable(cpAssets, NULL));
 	SetCCunspents(unspentOutputsTokens, assetsTokensUnspendableAddr);
 
