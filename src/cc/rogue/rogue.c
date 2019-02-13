@@ -15,7 +15,11 @@
 #include <time.h>
 #include <curses.h>
 #include "rogue.h"
+#ifdef STANDALONE
+#include "../komodo/src/komodo_cJSON.h"
+#else
 #include "../../komodo_cJSON.h"
+#endif
 
 /*
  * main:
@@ -175,7 +179,7 @@ int32_t rogue_setplayerdata(struct rogue_state *rs,char *gametxidstr)
                                 if ( (pname= jstr(item,"pname")) != 0 && strlen(pname) < MAXSTR-1 )
                                     strcpy(whoami,pname);
                                 decode_hex((uint8_t *)&rs->P,(int32_t)strlen(datastr)/2,datastr);
-                                //fprintf(stderr,"set datastr[%d]\n",(int32_t)strlen(datastr));
+                                fprintf(stderr,"set pname[%s] %s\n",pname==0?"":pname,jprint(item,0));
                                 rs->restoring = 1;
                             }
                         }
