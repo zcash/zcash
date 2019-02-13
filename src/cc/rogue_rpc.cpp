@@ -1094,6 +1094,27 @@ UniValue rogue_games(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     return(result);
 }
 
+UniValue rogue_setname(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
+{
+    UniValue result(UniValue::VOBJ); char *namestr = 0;
+    rogue_univalue(result,"setname",-1,-1);
+    if ( (params= cclib_reparse(&n,params)) != 0 )
+    {
+        if ( n > 0 )
+        {
+            if ( (namestr= jstri(params,0)) != 0 )
+            {
+                result.push_back(Pair("result","success"));
+                result.push_back(Pair("name",namestr));
+                return(result);
+            }
+        }
+    }
+    result.push_back(Pair("result","error"));
+    result.push_back(Pair("error","couldnt get name"));
+    return(result);
+}
+
 bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx)
 {
     return(true);

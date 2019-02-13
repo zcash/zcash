@@ -63,6 +63,7 @@ CClib_methods[] =
     { (char *)"rogue", (char *)"playerinfo", (char *)"playertxid", 1, 1, 'I', EVAL_ROGUE },
     { (char *)"rogue", (char *)"players", (char *)"<no args>", 0, 0, 'D', EVAL_ROGUE },
     { (char *)"rogue", (char *)"games", (char *)"<no args>", 0, 0, 'F', EVAL_ROGUE },
+    { (char *)"rogue", (char *)"setname", (char *)"pname", 1, 1, 'N', EVAL_ROGUE },
 #else
     { (char *)"sudoku", (char *)"gen", (char *)"<no args>", 0, 0, 'G', EVAL_SUDOKU },
     { (char *)"sudoku", (char *)"txidinfo", (char *)"txid", 1, 1, 'T', EVAL_SUDOKU },
@@ -87,6 +88,7 @@ UniValue rogue_highlander(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
 UniValue rogue_playerinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue rogue_players(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue rogue_games(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+UniValue rogue_setname(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 
 #else
 bool sudoku_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx);
@@ -122,6 +124,8 @@ UniValue CClib_method(struct CCcontract_info *cp,char *method,cJSON *params)
             return(rogue_players(txfee,cp,params));
         else if ( strcmp(method,"games") == 0 )
             return(rogue_games(txfee,cp,params));
+        else if ( strcmp(method,"setname") == 0 )
+            return(rogue_setname(txfee,cp,params));
         else
         {
             result.push_back(Pair("result","error"));
