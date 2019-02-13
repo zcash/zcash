@@ -7038,8 +7038,8 @@ UniValue tokenorders(const UniValue& params, bool fHelp)
 {
     uint256 tokenid;
     if ( fHelp || params.size() > 1 )
-        throw runtime_error("tokenorders [tokenid]\n");
-    if ( ensure_CCrequirements(EVAL_ASSETS) < 0 )
+        throw runtime_error("tokenorders tokenid\n");
+    if (ensure_CCrequirements(EVAL_ASSETS) < 0 || ensure_CCrequirements(EVAL_TOKENS) < 0)
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -7048,9 +7048,25 @@ UniValue tokenorders(const UniValue& params, bool fHelp)
 		if (tokenid == zeroid) 
 			throw runtime_error("incorrect tokenid\n");
 	}
-    else 
-		memset(&tokenid,0,sizeof(tokenid));
-    return(AssetOrders(tokenid));
+    else {
+        // memset(&tokenid, 0, sizeof(tokenid));
+        throw runtime_error("no tokenid\n");
+    }
+    return(AssetOrders(tokenid, CPubKey()));
+}
+
+
+UniValue mytokenorders(const UniValue& params, bool fHelp)
+{
+    uint256 tokenid;
+    if (fHelp || params.size() > 1)
+        throw runtime_error("mytokenorders\n");
+    if (ensure_CCrequirements(EVAL_ASSETS) < 0 || ensure_CCrequirements(EVAL_TOKENS) < 0)
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    const CKeyStore& keystore = *pwalletMain;
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
+    return(AssetOrders(zeroid, Mypubkey()));
 }
 
 UniValue tokenbalance(const UniValue& params, bool fHelp)
@@ -7235,7 +7251,7 @@ UniValue tokenbid(const UniValue& params, bool fHelp)
     UniValue result(UniValue::VOBJ); int64_t bidamount,numtokens; std::string hex; double price; uint256 tokenid;
     if ( fHelp || params.size() != 3 )
         throw runtime_error("tokenbid numtokens tokenid price\n");
-    if ( ensure_CCrequirements(EVAL_ASSETS) < 0 )
+    if (ensure_CCrequirements(EVAL_ASSETS) < 0 || ensure_CCrequirements(EVAL_TOKENS) < 0)
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -7277,7 +7293,7 @@ UniValue tokencancelbid(const UniValue& params, bool fHelp)
     UniValue result(UniValue::VOBJ); std::string hex; int32_t i; uint256 tokenid,bidtxid;
     if ( fHelp || params.size() != 2 )
         throw runtime_error("tokencancelbid tokenid bidtxid\n");
-    if ( ensure_CCrequirements(EVAL_ASSETS) < 0 )
+    if (ensure_CCrequirements(EVAL_ASSETS) < 0 || ensure_CCrequirements(EVAL_TOKENS) < 0)
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -7302,7 +7318,7 @@ UniValue tokenfillbid(const UniValue& params, bool fHelp)
     UniValue result(UniValue::VOBJ); int64_t fillamount; std::string hex; uint256 tokenid,bidtxid;
     if ( fHelp || params.size() != 3 )
         throw runtime_error("tokenfillbid tokenid bidtxid fillamount\n");
-    if ( ensure_CCrequirements(EVAL_ASSETS) < 0 )
+    if (ensure_CCrequirements(EVAL_ASSETS) < 0 || ensure_CCrequirements(EVAL_TOKENS) < 0)
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -7334,7 +7350,7 @@ UniValue tokenask(const UniValue& params, bool fHelp)
     UniValue result(UniValue::VOBJ); int64_t askamount,numtokens; std::string hex; double price; uint256 tokenid;
     if ( fHelp || params.size() != 3 )
         throw runtime_error("tokenask numtokens tokenid price\n");
-    if ( ensure_CCrequirements(EVAL_ASSETS) < 0 )
+    if (ensure_CCrequirements(EVAL_ASSETS) < 0 || ensure_CCrequirements(EVAL_TOKENS) < 0)
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -7396,7 +7412,7 @@ UniValue tokencancelask(const UniValue& params, bool fHelp)
     UniValue result(UniValue::VOBJ); std::string hex; int32_t i; uint256 tokenid,asktxid;
     if ( fHelp || params.size() != 2 )
         throw runtime_error("tokencancelask tokenid asktxid\n");
-    if ( ensure_CCrequirements(EVAL_ASSETS) < 0 )
+    if (ensure_CCrequirements(EVAL_ASSETS) < 0 || ensure_CCrequirements(EVAL_TOKENS) < 0)
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -7421,7 +7437,7 @@ UniValue tokenfillask(const UniValue& params, bool fHelp)
     UniValue result(UniValue::VOBJ); int64_t fillunits; std::string hex; uint256 tokenid,asktxid;
     if ( fHelp || params.size() != 3 )
         throw runtime_error("tokenfillask tokenid asktxid fillunits\n");
-    if ( ensure_CCrequirements(EVAL_ASSETS) < 0 )
+    if (ensure_CCrequirements(EVAL_ASSETS) < 0 || ensure_CCrequirements(EVAL_TOKENS) < 0)
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
