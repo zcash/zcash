@@ -874,7 +874,7 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
                     if ( pname.size() == 0 )
                         pname = Rogue_pname;
                     seed = rogue_gamefields(obj,maxplayers,buyin,gametxid,myrogueaddr);
-                    fprintf(stderr,"(%s) found baton %s numkeys.%d seed.%llu playerdata.%d\n",pname,batontxid.ToString().c_str(),numkeys,(long long)seed,(int32_t)playerdata.size());
+                    fprintf(stderr,"(%s) found baton %s numkeys.%d seed.%llu playerdata.%d\n",pname.c_str(),batontxid.ToString().c_str(),numkeys,(long long)seed,(int32_t)playerdata.size());
                     memset(&P,0,sizeof(P));
                     if ( playerdata.size() > 0 )
                     {
@@ -1097,7 +1097,7 @@ UniValue rogue_games(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 
 UniValue rogue_setname(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ); char *namestr = 0;
+    UniValue result(UniValue::VOBJ); int32_t n; char *namestr = 0;
     rogue_univalue(result,"setname",-1,-1);
     if ( (params= cclib_reparse(&n,params)) != 0 )
     {
@@ -1107,6 +1107,7 @@ UniValue rogue_setname(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             {
                 result.push_back(Pair("result","success"));
                 result.push_back(Pair("name",namestr));
+                Rogue_pname = namestr;
                 return(result);
             }
         }
