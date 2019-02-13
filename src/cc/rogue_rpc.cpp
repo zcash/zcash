@@ -172,11 +172,11 @@ CScript rogue_keystrokesopret(uint256 gametxid,uint256 batontxid,CPubKey pk,std:
 CScript rogue_highlanderopret(uint8_t funcid,uint256 gametxid,int32_t regslot,CPubKey pk,std::vector<uint8_t>playerdata,std::string pname)
 {
     CScript opret; uint8_t evalcode = EVAL_ROGUE; std::string symbol(ASSETCHAINS_SYMBOL);
-    opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << gametxid << regslot << pk << playerdata << symbol << pname);
+    opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << gametxid << symbol << pname << regslot << pk << playerdata );
     return(opret);
 }
 
-uint8_t rogue_highlanderopretdecode(uint256 &gametxid, uint256 &tokenid, int32_t &regslot, CPubKey &pk, std::vector<uint8_t> &playerdata, std::string &symbol,std::string &pname,CScript scriptPubKey)
+uint8_t rogue_highlanderopretdecode(uint256 &gametxid, uint256 &tokenid, int32_t &regslot, CPubKey &pk, std::vector<uint8_t> &playerdata, std::string &symbol, std::string &pname,CScript scriptPubKey)
 {
     std::string name, description; std::vector<uint8_t> vorigPubkey;
     std::vector<uint8_t> vopretNonfungible, vopret, vopretDummy,origpubkey;
@@ -194,11 +194,11 @@ uint8_t rogue_highlanderopretdecode(uint256 &gametxid, uint256 &tokenid, int32_t
         GetNonfungibleData(tokenid, vopretNonfungible);  //load nonfungible data from the 'tokenbase' tx
         vopret = vopretNonfungible;
     }
-    if ( vopret.size() > 2 && E_UNMARSHAL(vopret, ss >> e; ss >> f; ss >> gametxid; ss >> regslot; ss >> pk; ss >> playerdata; ss >> symbol; ss >> pname) != 0 && e == EVAL_ROGUE && (f == 'H' || f == 'Q') )
+    if ( vopret.size() > 2 && E_UNMARSHAL(vopret, ss >> e; ss >> f; ss >> gametxid;  ss >> symbol; ss >> pname; ss >> regslot; ss >> pk; ss >> playerdata) != 0 && e == EVAL_ROGUE && (f == 'H' || f == 'Q') )
     {
         return(f);
     }
-    fprintf(stderr,"SKIP obsolete: e.%d f.%c game.%s regslot.%d psize.%d (%s) (%s)\n",e,f,gametxid.GetHex().c_str(),regslot,(int32_t)playerdata.size(),symbol.c_str(),pname.c_str());
+    fprintf(stderr,"SKIP obsolete: e.%d f.%c game.%s regslot.%d psize.%d\n",e,f,gametxid.GetHex().c_str(),regslot,(int32_t)playerdata.size());
     return(0);
 }
 
