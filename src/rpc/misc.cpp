@@ -29,6 +29,7 @@
 #include "txmempool.h"
 #include "util.h"
 #include "cc/eval.h"
+#include "cc/CCinclude.h"
 #ifdef ENABLE_WALLET
 #include "wallet/wallet.h"
 #include "wallet/walletdb.h"
@@ -77,7 +78,8 @@ int32_t notarizedtxid_height(char *dest,char *txidstr,int32_t *kmdnotarized_heig
 extern uint16_t ASSETCHAINS_P2PPORT,ASSETCHAINS_RPCPORT;
 extern uint32_t ASSETCHAINS_CC;
 extern uint32_t ASSETCHAINS_MAGIC;
-extern uint64_t ASSETCHAINS_COMMISSION,ASSETCHAINS_STAKED,ASSETCHAINS_SUPPLY,ASSETCHAINS_LASTERA;
+extern uint64_t ASSETCHAINS_COMMISSION,ASSETCHAINS_STAKED,ASSETCHAINS_SUPPLY;
+extern uint32_t ASSETCHAINS_LASTERA;
 extern int32_t ASSETCHAINS_LWMAPOS,ASSETCHAINS_SAPLING;
 extern uint64_t ASSETCHAINS_ENDSUBSIDY[],ASSETCHAINS_REWARD[],ASSETCHAINS_HALVING[],ASSETCHAINS_DECAY[];
 extern std::string NOTARY_PUBKEY; extern uint8_t NOTARY_PUBKEY33[];
@@ -224,7 +226,7 @@ UniValue getinfo(const UniValue& params, bool fHelp)
                 }
             }
             if (ASSETCHAINS_LASTERA > 0)
-                obj.push_back(Pair("eras", ASSETCHAINS_LASTERA + 1));
+                obj.push_back(Pair("eras", (int64_t)(ASSETCHAINS_LASTERA + 1)));
             obj.push_back(Pair("reward", acReward));
             obj.push_back(Pair("halving", acHalving));
             obj.push_back(Pair("decay", acDecay));
@@ -1342,17 +1344,17 @@ UniValue txnotarizedconfirmed(const UniValue& params, bool fHelp)
 
 UniValue decodeccopret(const UniValue& params, bool fHelp)
 {
-    CTransaction tx; uint256 txid,hashBlock;
-    std::vector<uint8_t> vopret; uint8_t *script;
-    UniValue result(UniValue::VOBJ);
+    CTransaction tx; uint256 tokenid,txid,hashblock;
+    std::vector<uint8_t> vopret,vOpretExtra; uint8_t *script,tokenevalcode;
+    UniValue result(UniValue::VOBJ),array(UniValue::VARR); std::vector<CPubKey> pubkeys;
 
     if (fHelp || params.size() < 1 || params.size() > 1)
     {
-        string msg = "decodeccopret hex\n"
+        string msg = "decodeccopret scriptPubKey\n"
             "\nReturns eval code and function id for CC OP RETURN data.\n"           
 
             "\nArguments:\n"
-            "1. txid      (string, required) Transaction id.\n"          
+            "1. scriptPubKey      (string, required) Hex of scriptPubKey with OP_RETURN data.\n"          
 
             "\nResult:\n"
             "{\n"
@@ -1362,21 +1364,38 @@ UniValue decodeccopret(const UniValue& params, bool fHelp)
         ;
         throw runtime_error(msg);
     }
-    txid = uint256S((char *)params[0].get_str().c_str());
+    std::vector<unsigned char> hex(ParseHex(params[0].get_str()));
+    CScript scripthex(hex.begin(),hex.end());
+    if (DecodeTokenOpRet(scripthex,tokenevalcode,tokenid,pubkeys,vOpretExtra)!=0 && tokenevalcode==EVAL_TOKENS && vOpretExtra.size()>0)
     {
-        LOCK(cs_main);
-            if (!GetTransaction(txid, tx, hashBlock, true))
-                throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "No information available about transaction");
+        UniValue obj(UniValue::VOBJ);
+        GetOpReturnData(scripthex,vopret);
+        script = (uint8_t *)vopret.data();
+        if ( vopret.size() > 1)
+        {        
+            char func[5];
+            sprintf(func,"%c",script[1]);
+            obj.push_back(Pair("eval_code", EvalToStr(script[0])));
+            obj.push_back(Pair("function", func));
+        }
+        else
+        {
+            obj.push_back(Pair("error", "invalid or no CC opret data for Token OP_RETURN"));
+        }
+        array.push_back(obj);
+        if (!E_UNMARSHAL(vOpretExtra, { ss >> vopret; })) return (0);
     }
-    GetOpReturnData(tx.vout[tx.vout.size()-1].scriptPubKey,vopret);
+    else GetOpReturnData(scripthex,vopret);
     script = (uint8_t *)vopret.data();
     if ( vopret.size() > 1)
     {        
-        char func[5];
-        sprintf(func,"%c",script[1]);
+        char func[5]; UniValue obj(UniValue::VOBJ);
         result.push_back(Pair("result", "success"));
-        result.push_back(Pair("eval_code", EvalToStr(script[0])));
-        result.push_back(Pair("function", func));
+        sprintf(func,"%c",script[1]);        
+        obj.push_back(Pair("eval_code", EvalToStr(script[0])));
+        obj.push_back(Pair("function", func));
+        array.push_back(obj);
+        result.push_back(Pair("OpRets",array));
     }
     else
     {

@@ -234,9 +234,65 @@ uint8_t TokensCCpriv[32] = { 0x1d, 0x0d, 0x0d, 0xce, 0x2d, 0xd2, 0xe1, 0x9d, 0xf
 #undef FUNCNAME
 #undef EVALCODE
 
+#define FUNCNAME IsCClibInput
+#define EVALCODE EVAL_FIRSTUSER
+const char *CClibNormaladdr = "RVVeUg43rNcq3mZFnvZ8yqagyzqFgUnq4u";
+char CClibCChexstr[67] = { "032447d97655da079729dc024c61088ea415b22f4c15d4810ddaf2069ac6468d2f" };
+uint8_t CClibCCpriv[32] = { 0x57, 0xcf, 0x49, 0x71, 0x7d, 0xb4, 0x15, 0x1b, 0x4f, 0x98, 0xc5, 0x45, 0x8d, 0x26, 0x52, 0x4b, 0x7b, 0xe9, 0xbd, 0x55, 0xd8, 0x20, 0xd6, 0xc4, 0x82, 0x0f, 0xf5, 0xec, 0x6c, 0x1c, 0xa0, 0xc0 };
+#include "CCcustom.inc"
+#undef FUNCNAME
+#undef EVALCODE
+
+int32_t CClib_initcp(struct CCcontract_info *cp,uint8_t evalcode)
+{
+    CPubKey pk; int32_t i; uint8_t pub33[33],check33[33],hash[32]; char CCaddr[64],checkaddr[64],str[67];
+    cp->evalcode = evalcode;
+    cp->ismyvin = IsCClibInput;
+    memcpy(cp->CCpriv,CClibCCpriv,32);
+    if ( evalcode == EVAL_FIRSTUSER ) // eventually make a hashchain for each evalcode
+    {
+        strcpy(cp->CChexstr,CClibCChexstr);
+        decode_hex(pub33,33,cp->CChexstr);
+        pk = buf2pk(pub33);
+        Getscriptaddress(cp->normaladdr,CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG);
+        if ( strcmp(cp->normaladdr,CClibNormaladdr) != 0 )
+            fprintf(stderr,"CClib_initcp addr mismatch %s vs %s\n",cp->normaladdr,CClibNormaladdr);
+        GetCCaddress(cp,cp->unspendableCCaddr,pk);
+        if ( priv2addr(checkaddr,check33,cp->CCpriv) != 0 )
+        {
+            if ( buf2pk(check33) == pk && strcmp(checkaddr,cp->normaladdr) == 0 )
+            {
+                //fprintf(stderr,"verified evalcode.%d %s %s\n",cp->evalcode,checkaddr,pubkey33_str(str,pub33));
+                return(0);
+            } else fprintf(stderr,"CClib_initcp mismatched privkey -> addr %s vs %s\n",checkaddr,cp->normaladdr);
+        }
+    }
+    else
+    {
+        for (i=EVAL_FIRSTUSER; i<evalcode; i++)
+        {
+            vcalc_sha256(0,hash,cp->CCpriv,32);
+            memcpy(cp->CCpriv,hash,32);
+        }
+        if ( priv2addr(cp->normaladdr,pub33,cp->CCpriv) != 0 )
+        {
+            pk = buf2pk(pub33);
+            for (i=0; i<33; i++)
+                sprintf(&cp->CChexstr[i*2],"%02x",pub33[i]);
+            cp->CChexstr[i*2] = 0;
+            GetCCaddress(cp,cp->unspendableCCaddr,pk);
+            //printf("evalcode.%d initialized\n",evalcode);
+            return(0);
+        }
+    }
+    return(-1);
+}
 
 struct CCcontract_info *CCinit(struct CCcontract_info *cp, uint8_t evalcode)
 {
+    // important to clear because not all members are always initialized!
+    memset(cp, '\0', sizeof(*cp));
+
     cp->evalcode = evalcode;
     switch ( evalcode )
     {
@@ -369,6 +425,10 @@ struct CCcontract_info *CCinit(struct CCcontract_info *cp, uint8_t evalcode)
 			cp->validate = TokensValidate;
 			cp->ismyvin = IsTokensInput;
 			break;
+        default:
+            if ( CClib_initcp(cp,evalcode) < 0 )
+                return(0);
+            break;
     }
     return(cp);
 }

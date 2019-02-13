@@ -27,15 +27,11 @@ bool HeirValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, 
 class CoinHelper;
 class TokenHelper;
 
-UniValue HeirFundCoinCaller(uint64_t txfee, int64_t funds, std::string heirName, CPubKey heirPubkey, int64_t inactivityTimeSec, uint256 tokenid);
-UniValue HeirFundTokenCaller(uint64_t txfee, int64_t funds, std::string heirName, CPubKey heirPubkey, int64_t inactivityTimeSec, uint256 tokenid);
-UniValue HeirClaimCaller(uint256 fundingtxid, uint64_t txfee, int64_t amount);
-UniValue HeirAddCaller(uint256 fundingtxid, uint64_t txfee, int64_t amount);
-
+UniValue HeirFundCoinCaller(int64_t txfee, int64_t coins, std::string heirName, CPubKey heirPubkey, int64_t inactivityTimeSec, std::string memo);
+UniValue HeirFundTokenCaller(int64_t txfee, int64_t satoshis, std::string heirName, CPubKey heirPubkey, int64_t inactivityTimeSec, std::string memo, uint256 tokenid);
+UniValue HeirClaimCaller(uint256 fundingtxid, int64_t txfee, std::string amount);
+UniValue HeirAddCaller(uint256 fundingtxid, int64_t txfee, std::string amount);
 UniValue HeirInfo(uint256 fundingtxid);
 UniValue HeirList();
-//std::string Heir_MakeBadTx(uint256 fundingtxid, uint8_t funcId, int64_t amount, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t inactivityTime, uint32_t errMask);
-
-//bool HeirExactTokenAmounts(bool compareTotals, struct CCcontract_info *cpHeir, Eval* eval, uint256 assetid, const CTransaction &tx);
 
 #endif
