@@ -7068,7 +7068,7 @@ UniValue mytokenorders(const UniValue& params, bool fHelp)
 
     uint8_t additionalEvalCode = 0;
     if (params.size() == 1)
-        additionalEvalCode = atoi(params[0].get_str().c_str());
+        additionalEvalCode = strtol(params[0].get_str().c_str(), NULL, 0);  // supports also 0xEE-like values
 
     return AssetOrders(zeroid, Mypubkey(), additionalEvalCode);
 }
