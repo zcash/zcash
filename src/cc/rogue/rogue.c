@@ -148,7 +148,7 @@ uint8_t *OS_fileptr(long *allocsizep,char *fname);
 
 int32_t rogue_setplayerdata(struct rogue_state *rs,char *gametxidstr)
 {
-    char cmd[32768]; int32_t i,n,retval=-1; char *filestr,*statusstr,*datastr,fname[128]; long allocsize; cJSON *retjson,*array,*item;
+    char cmd[32768]; int32_t i,n,retval=-1; char *filestr,*pname,*statusstr,*datastr,fname[128]; long allocsize; cJSON *retjson,*array,*item;
     if ( gametxidstr == 0 || *gametxidstr == 0 )
         return(retval);
     sprintf(fname,"%s.gameinfo",gametxidstr);
@@ -170,6 +170,8 @@ int32_t rogue_setplayerdata(struct rogue_state *rs,char *gametxidstr)
                         if ( strcmp(statusstr,"registered") == 0 )
                         {
                             retval = 0;
+                            if ( (pname= jstr(item,"pname")) != 0 && strlen(pname) < MAXSTR-1 )
+                                strcpy(whoami,pname);
                             if ( (item= jobj(item,"player")) != 0 && (datastr= jstr(item,"data")) != 0 )
                             {
                                 decode_hex((uint8_t *)&rs->P,(int32_t)strlen(datastr)/2,datastr);

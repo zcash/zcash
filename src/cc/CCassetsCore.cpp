@@ -458,7 +458,7 @@ int64_t AssetValidateCCvin(struct CCcontract_info *cp,Eval* eval,char *origCCadd
     else if( GetAssetorigaddrs(cp, origCCaddr, origaddr, vinTx) == 0 )  
         return eval->Invalid("couldnt get origaddr for buyvin");
 
-    fprintf(stderr,"AssetValidateCCvin() got %.8f to origaddr.(%s)\n", (double)vinTx.vout[tx.vin[vini].prevout.n].nValue/COIN,origaddr);
+    //fprintf(stderr,"AssetValidateCCvin() got %.8f to origaddr.(%s)\n", (double)vinTx.vout[tx.vin[vini].prevout.n].nValue/COIN,origaddr);
     
     if ( vinTx.vout[0].nValue == 0 )
         return eval->Invalid("null value CCvin");
@@ -622,7 +622,7 @@ bool AssetCalcAmounts(struct CCcontract_info *cpAssets, int64_t &inputs, int64_t
 				assetoshis = IsTokensvout(false, false, cpTokens, NULL, vinTx, tx.vin[i].prevout.n, assetid);
 				if (assetoshis != 0)
 				{
-					std::cerr << "AssetCalcAmounts() vin i=" << i << " assetoshis=" << assetoshis << std::endl;
+					//std::cerr << "AssetCalcAmounts() vin i=" << i << " assetoshis=" << assetoshis << std::endl;
 					inputs += assetoshis;
 				}
 			}
@@ -634,7 +634,7 @@ bool AssetCalcAmounts(struct CCcontract_info *cpAssets, int64_t &inputs, int64_t
 		assetoshis = IsAssetvout(cpAssets, tmpprice, tmporigpubkey, tx, i, assetid);
 		if (assetoshis != 0)
 		{
-			std::cerr << "AssetCalcAmounts() vout i=" << i << " assetoshis=" << assetoshis << std::endl;
+			//std::cerr << "AssetCalcAmounts() vout i=" << i << " assetoshis=" << assetoshis << std::endl;
 			outputs += assetoshis;
 		}
 	}

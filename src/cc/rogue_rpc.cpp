@@ -198,7 +198,7 @@ uint8_t rogue_highlanderopretdecode(uint256 &gametxid, uint256 &tokenid, int32_t
     {
         return(f);
     }
-    fprintf(stderr,"SKIP obsolete: e.%d f.%c game.%s regslot.%d psize.%d\n",e,f,gametxid.GetHex().c_str(),regslot,(int32_t)playerdata.size());
+    fprintf(stderr,"SKIP obsolete: e.%d f.%c game.%s regslot.%d psize.%d (%s) (%s)\n",e,f,gametxid.GetHex().c_str(),regslot,(int32_t)playerdata.size(),symbol,pname);
     return(0);
 }
 
@@ -462,7 +462,7 @@ int32_t rogue_playerdata(struct CCcontract_info *cp,uint256 &origplayergame,uint
                     return(0);
                 } else fprintf(stderr,"hash mismatch or illegal gametxid\n");
             } else fprintf(stderr,"invalid game %s\n",gametxid.GetHex().c_str());
-        }
+        } else fprintf(stderr,"invalid player funcid.%c\n",funcid);
     } else fprintf(stderr,"couldnt get playertxid.%s\n",playertxid.GetHex().c_str());
     return(-1);
 }
