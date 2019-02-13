@@ -7052,21 +7052,25 @@ UniValue tokenorders(const UniValue& params, bool fHelp)
         // memset(&tokenid, 0, sizeof(tokenid));
         throw runtime_error("no tokenid\n");
     }
-    return(AssetOrders(tokenid, CPubKey()));
+    return AssetOrders(tokenid, CPubKey(), 0);
 }
 
 
 UniValue mytokenorders(const UniValue& params, bool fHelp)
 {
     uint256 tokenid;
-    if (fHelp || params.size() > 1)
-        throw runtime_error("mytokenorders\n");
+    if (fHelp || params.size() > 2)
+        throw runtime_error("mytokenorders [evalcode]\n");
     if (ensure_CCrequirements(EVAL_ASSETS) < 0 || ensure_CCrequirements(EVAL_TOKENS) < 0)
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
-    return(AssetOrders(zeroid, Mypubkey()));
+    uint8_t additionalEvalCode = 0;
+    if (params.size() == 1)
+        additionalEvalCode = strtol(params[0].get_str().c_str(), NULL, 0);  // supports also 0xEE-like values
+
+    return AssetOrders(zeroid, Mypubkey(), additionalEvalCode);
 }
 
 UniValue tokenbalance(const UniValue& params, bool fHelp)

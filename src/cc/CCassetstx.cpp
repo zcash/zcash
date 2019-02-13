@@ -66,7 +66,7 @@ int64_t AddAssetInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubK
 }
 */
 
-UniValue AssetOrders(uint256 refassetid, CPubKey pk)
+UniValue AssetOrders(uint256 refassetid, CPubKey pk, uint8_t additionalEvalCode)
 {
     static uint256 zero;
 	UniValue result(UniValue::VARR);  
@@ -161,7 +161,7 @@ UniValue AssetOrders(uint256 refassetid, CPubKey pk)
         }
 	};
 
-    std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputsTokens, unspentOutputsCoins;
+    std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputsTokens, unspentOutputsDualEvalTokens, unspentOutputsCoins;
 
 	char assetsUnspendableAddr[64];
 	GetCCaddress(cpAssets, assetsUnspendableAddr, GetUnspendable(cpAssets, NULL));
@@ -177,18 +177,31 @@ UniValue AssetOrders(uint256 refassetid, CPubKey pk)
 	GetTokensCCaddress(cpAssets, assetsTokensUnspendableAddr, GetUnspendable(cpAssets, NULL));
 	SetCCunspents(unspentOutputsTokens, assetsTokensUnspendableAddr);
 
-    // tokenasks:
+    // tokenbids:
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator itCoins = unspentOutputsCoins.begin();
         itCoins != unspentOutputsCoins.end();
         itCoins++)
         addOrders(cpAssets, itCoins);
     
-    // tokenbids:
+    // tokenasks:
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator itTokens = unspentOutputsTokens.begin();
 		itTokens != unspentOutputsTokens.end();
 		itTokens++)
 		addOrders(cpAssets, itTokens);
-	
+
+    if (additionalEvalCode != 0) {  //this would be mytokenorders
+        char assetsDualEvalTokensUnspendableAddr[64];
+
+        // try also dual eval tokenasks (and we do not need bids):
+        cpAssets->additionalTokensEvalcode2 = additionalEvalCode;
+        GetTokensCCaddress(cpAssets, assetsDualEvalTokensUnspendableAddr, GetUnspendable(cpAssets, NULL));
+        SetCCunspents(unspentOutputsDualEvalTokens, assetsDualEvalTokensUnspendableAddr);
+
+        for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator itDualEvalTokens = unspentOutputsDualEvalTokens.begin();
+            itDualEvalTokens != unspentOutputsDualEvalTokens.end();
+            itDualEvalTokens++)
+            addOrders(cpAssets, itDualEvalTokens);
+    }
     return(result);
 }
 
