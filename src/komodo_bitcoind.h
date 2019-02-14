@@ -1776,7 +1776,7 @@ bool verusCheckPOSBlock(int32_t slowflag, CBlock *pblock, int32_t height)
     return(isPOS);
 }
 
-int32_t komodo_notarized_height(int32_t *prevMoMheightp,uint256 *hashp,uint256 *txidp,int32_t *prevNotarizedHt,int32_t *ppNotarizedHt);
+int32_t komodo_notarized_height(int32_t *prevMoMheightp,uint256 *hashp,uint256 *txidp,int32_t *prevNotarizedHt,int32_t *ppNotarizedHt,int32_t *pppNotarizedHt);
 
 uint64_t komodo_notarypayamount(int32_t nHeight, int64_t notarycount)
 {
@@ -1799,24 +1799,32 @@ uint64_t komodo_notarypayamount(int32_t nHeight, int64_t notarycount)
         return(0);
     }
     // fetch notarised height, the previous, and the one before that.
-    int32_t notarizedht,prevMoMheight,prevnotarizedht,pprevnotarizedht; uint256 notarizedhash,txid;
+    int32_t notarizedht=0,prevMoMheight,prevnotarizedht=0,pprevnotarizedht=0,ppprevnotarizedht=0,n=0; uint256 notarizedhash,txid;
     uint64_t AmountToPay=0,ret=0;
-    notarizedht = komodo_notarized_height(&prevMoMheight,&notarizedhash,&txid,&prevnotarizedht,&pprevnotarizedht);
-    //fprintf(stderr, "notarizedht.%d prevnotarizedht.%d pprevnotarizedht.%d \n",notarizedht,prevnotarizedht,pprevnotarizedht);
+    notarizedht = komodo_notarized_height(&prevMoMheight,&notarizedhash,&txid,&prevnotarizedht,&pprevnotarizedht,&ppprevnotarizedht);
+    fprintf(stderr, "notarizedht.%d prevnotarizedht.%d pprevnotarizedht.%d ppprevnotarizedht.%d\n",notarizedht,prevnotarizedht,pprevnotarizedht,ppprevnotarizedht);
     
-    // We cannot pay out if 3 notarisation's have not yet happened!
+    // We cannot pay out if 4 notarisation's have not yet happened!
     // redundant now... should never happen.
-    if ( pprevnotarizedht == 0 )
+    if ( ppprevnotarizedht == 0 )
     {
-        fprintf(stderr, "need 3 notarizations to happen before notaries can be paid.\n");
+        fprintf(stderr, "need 4 notarizations to happen before notaries can be paid.\n");
         return(0);
     }
     if ( prevnotarizedht == pprevnotarizedht )
         return(0); // cant happen, sanity check.
-    
-    // use the previous height and the height before that to guarentee that the notarzations used to calculate these values, 
-    // are them selves actually notarised and cannot be reorged.
-    int32_t n = prevnotarizedht - pprevnotarizedht;
+        
+    if ( notarizedht == nHeight )
+    {
+        // we need to use the previous previous previous notarized heights, to make sure the payment is the same, if trying to use a reorged nota.
+        n = ppprevnotarizedht - pprevnotarizedht;
+    }
+    else 
+    {
+        // use the previous height and the height before that to guarentee that the notarzations used to calculate these values, 
+        // are them selves actually notarised and cannot be reorged.
+        n = prevnotarizedht - pprevnotarizedht;
+    }
     
     // multiply the amount possible to be used for each block by the amount of blocks passed 
     // to get the total posible to be paid for this notarisation.

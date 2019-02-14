@@ -63,7 +63,7 @@ int32_t Jumblr_depositaddradd(char *depositaddr);
 int32_t Jumblr_secretaddradd(char *secretaddr);
 uint64_t komodo_interestsum();
 int32_t komodo_longestchain();
-int32_t komodo_notarized_height(int32_t *prevMoMheightp,uint256 *hashp,uint256 *txidp,int32_t *prevNotarizedHt,int32_t *ppNotarizedHt);
+int32_t komodo_notarized_height(int32_t *prevMoMheightp,uint256 *hashp,uint256 *txidp,int32_t *prevNotarizedHt,int32_t *ppNotarizedHt,int32_t *pppNotarizedHt);
 bool komodo_txnotarizedconfirmed(uint256 txid);
 uint32_t komodo_chainactive_timestamp();
 int32_t komodo_whoami(char *pubkeystr,int32_t height,uint32_t timestamp);
@@ -164,7 +164,7 @@ UniValue getnotarysendmany(const UniValue& params, bool fHelp)
 
 UniValue getinfo(const UniValue& params, bool fHelp)
 {
-    uint256 notarized_hash,notarized_desttxid; int32_t prevMoMheight,notarized_height,prevnotarized_height,prevNotarizedHt,longestchain,kmdnotarized_height,txid_height;
+    uint256 notarized_hash,notarized_desttxid; int32_t prevMoMheight,notarized_height,prevnotarized_height,prevNotarizedHt,pprevNotarizedHt,longestchain,kmdnotarized_height,txid_height;
     if (fHelp || params.size() != 0)
         throw runtime_error(
             "getinfo\n"
@@ -200,7 +200,7 @@ UniValue getinfo(const UniValue& params, bool fHelp)
 
     proxyType proxy;
     GetProxy(NET_IPV4, proxy);
-    notarized_height = komodo_notarized_height(&prevMoMheight,&notarized_hash,&notarized_desttxid,&prevnotarized_height,&prevNotarizedHt);
+    notarized_height = komodo_notarized_height(&prevMoMheight,&notarized_hash,&notarized_desttxid,&prevnotarized_height,&prevNotarizedHt,&pprevNotarizedHt);
     //fprintf(stderr,"after notarized_height %u\n",(uint32_t)time(NULL));
 
     UniValue obj(UniValue::VOBJ);

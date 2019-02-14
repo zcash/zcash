@@ -452,7 +452,7 @@ int32_t komodo_prevMoMheight()
     return(0);
 }
 
-int32_t komodo_notarized_height(int32_t *prevMoMheightp,uint256 *hashp,uint256 *txidp,int32_t *prevNotarizedHt,int32_t *ppNotarizedHt)
+int32_t komodo_notarized_height(int32_t *prevMoMheightp,uint256 *hashp,uint256 *txidp,int32_t *prevNotarizedHt,int32_t *ppNotarizedHt,int32_t *pppNotarizedHt)
 {
     char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; struct komodo_state *sp;
     if ( (sp= komodo_stateptr(symbol,dest)) != 0 )
@@ -461,6 +461,7 @@ int32_t komodo_notarized_height(int32_t *prevMoMheightp,uint256 *hashp,uint256 *
         *txidp = sp->NOTARIZED_DESTTXID;
         *prevNotarizedHt = sp->PNOTARIZED_HEIGHT;
         *ppNotarizedHt = sp->PPNOTARIZED_HEIGHT;
+        *pppNotarizedHt = sp->PPPNOTARIZED_HEIGHT;
         *prevMoMheightp = komodo_prevMoMheight();
         return(sp->NOTARIZED_HEIGHT);
     }

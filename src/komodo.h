@@ -267,10 +267,11 @@ int32_t komodo_parsestatefiledata(struct komodo_state *sp,uint8_t *filedata,long
                 memset(&MoM,0,sizeof(MoM));
                 MoMdepth = 0;
             }
+            sp->PPPNOTARIZED_HEIGHT = sp->PPNOTARIZED_HEIGHT;
             sp->PPNOTARIZED_HEIGHT = sp->PNOTARIZED_HEIGHT;
             sp->PNOTARIZED_HEIGHT = sp->NOTARIZED_HEIGHT;
             komodo_eventadd_notarized(sp,symbol,ht,dest,notarized_hash,notarized_desttxid,notarized_height,MoM,MoMdepth);
-            printf("komodo_parsestatefiledata: [%s] NOTARIZED.%d PNOTARIZED_HEIGHT.%d PPNOTARIZED_HEIGHT.%d\n",ASSETCHAINS_SYMBOL,sp->NOTARIZED_HEIGHT,sp->PNOTARIZED_HEIGHT,sp->PPNOTARIZED_HEIGHT);
+            printf("komodo_parsestatefiledata: [%s] NOTARIZED.%d PNOTARIZED_HEIGHT.%d PPNOTARIZED_HEIGHT.%d PPPNOTARIZED_HEIGHT.%d\n",ASSETCHAINS_SYMBOL,sp->NOTARIZED_HEIGHT,sp->PNOTARIZED_HEIGHT,sp->PPNOTARIZED_HEIGHT,sp->PPPNOTARIZED_HEIGHT);
         }
         else if ( func == 'U' ) // deprecated
         {
@@ -711,8 +712,9 @@ int32_t komodo_voutupdate(bool fJustCheck,int32_t *isratificationp,int32_t notar
                         return(-2);
                     // On the first notarization initilise previous previous to 0.
                     if ( sp->NUM_NPOINTS == 1 )
-                        sp->PPNOTARIZED_HEIGHT = 0;
-                        
+                        sp->PPPNOTARIZED_HEIGHT = 0;
+                    
+                    sp->PPPNOTARIZED_HEIGHT = sp->PPNOTARIZED_HEIGHT;
                     sp->PPNOTARIZED_HEIGHT = sp->PNOTARIZED_HEIGHT;
                     sp->PNOTARIZED_HEIGHT = sp->NOTARIZED_HEIGHT;
                     sp->NOTARIZED_HEIGHT = *notarizedheightp;

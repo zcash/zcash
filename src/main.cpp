@@ -3253,10 +3253,9 @@ bool check_pprevnotarizedht()
     static bool init;
     if ( init )
         return(true);
-    int32_t notarizedht,prevMoMheight,prevnotarizedht,pprevnotarizedht; uint256 notarizedhash,txid;
-    uint64_t AmountToPay=0,ret=0;
-    notarizedht = komodo_notarized_height(&prevMoMheight,&notarizedhash,&txid,&prevnotarizedht,&pprevnotarizedht);
-    if ( pprevnotarizedht > 0 )
+    int32_t notarizedht,prevMoMheight,prevnotarizedht,pprevnotarizedht,ppprevnotarizedht; uint256 notarizedhash,txid;
+    notarizedht = komodo_notarized_height(&prevMoMheight,&notarizedhash,&txid,&prevnotarizedht,&pprevnotarizedht,&ppprevnotarizedht);
+    if ( ppprevnotarizedht > 0 )
     {
         init = true;
         return(true);
@@ -3926,8 +3925,8 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
         return AbortNode(state, "Failed to read block");
     //if ( ASSETCHAINS_SYMBOL[0] != 0 || pindexDelete->GetHeight() > 1400000 )
     {
-        int32_t prevMoMheight,prevnotarizedht,prevNotarizedHt; uint256 notarizedhash,txid;
-        komodo_notarized_height(&prevMoMheight,&notarizedhash,&txid,&prevnotarizedht,&prevNotarizedHt);
+        int32_t notarizedht,prevMoMheight,prevnotarizedht,pprevnotarizedht,ppprevnotarizedht; uint256 notarizedhash,txid;
+        notarizedht = komodo_notarized_height(&prevMoMheight,&notarizedhash,&txid,&prevnotarizedht,&pprevnotarizedht,&ppprevnotarizedht);
         if ( block.GetHash() == notarizedhash )
         {
             fprintf(stderr,"DisconnectTip trying to disconnect notarized block at ht.%d\n",(int32_t)pindexDelete->GetHeight());
@@ -4261,8 +4260,8 @@ static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMo
     assert(MAX_REORG_LENGTH > 0);//, "We must be able to reorg some distance");
     if (reorgLength > MAX_REORG_LENGTH)
     {
-        int32_t notarizedht,prevnotarizedht,prevNotarizedHt,prevMoMheight; uint256 notarizedhash,txid;
-        notarizedht = komodo_notarized_height(&prevMoMheight,&notarizedhash,&txid,&prevnotarizedht,&prevNotarizedHt);
+        int32_t notarizedht,prevMoMheight,prevnotarizedht,pprevnotarizedht,ppprevnotarizedht; uint256 notarizedhash,txid;
+        notarizedht = komodo_notarized_height(&prevMoMheight,&notarizedhash,&txid,&prevnotarizedht,&pprevnotarizedht,&ppprevnotarizedht);
         if ( pindexFork->GetHeight() < notarizedht )
         {
             fprintf(stderr,"pindexFork->GetHeight().%d is < notarizedht %d, so ignore it\n",(int32_t)pindexFork->GetHeight(),notarizedht);
@@ -5613,8 +5612,8 @@ uint64_t CalculateCurrentUsage()
 /* Prune a block file (modify associated database entries)*/
 bool PruneOneBlockFile(bool tempfile, const int fileNumber)
 {
-    uint256 notarized_hash,notarized_desttxid; int32_t prevMoMheight,notarized_height,prevnotarized_height,prevNotarizedHt;
-    notarized_height = komodo_notarized_height(&prevMoMheight,&notarized_hash,&notarized_desttxid,&prevnotarized_height,&prevNotarizedHt);
+    uint256 notarized_hash,notarized_desttxid; int32_t prevMoMheight,notarized_height,prevnotarized_height,prevNotarizedHt,pprevNotarizedHt;
+    notarized_height = komodo_notarized_height(&prevMoMheight,&notarized_hash,&notarized_desttxid,&prevnotarized_height,&prevNotarizedHt,&pprevNotarizedHt);
     //fprintf(stderr, "pruneblockfile.%i\n",fileNumber); sleep(15);
     for (BlockMap::iterator it = mapBlockIndex.begin(); it != mapBlockIndex.end(); ++it) 
     {
