@@ -1805,6 +1805,7 @@ uint64_t komodo_notarypayamount(int32_t nHeight, int64_t notarycount)
     //fprintf(stderr, "notarizedht.%d prevnotarizedht.%d pprevnotarizedht.%d \n",notarizedht,prevnotarizedht,pprevnotarizedht);
     
     // We cannot pay out if 3 notarisation's have not yet happened!
+    // redundant now... should never happen.
     if ( pprevnotarizedht == 0 )
     {
         fprintf(stderr, "need 3 notarizations to happen before notaries can be paid.\n");
