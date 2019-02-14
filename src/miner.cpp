@@ -418,7 +418,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                                 continue; // leave this notarisation for the next block, it will be valid!
                             else if ( notarizedheight == last_notarizedheight )
                                 continue; // this shouldnt happen, it would mean there are 2 notarisations for the same block!
-                            else
+                            else  if ( notarizedheight < last_notarizedheight )
                             {
                                 // we need to remove the last seen notarzation from block 
                                 const CTransaction& Tx = *(vecPriority.front().get<2>());
@@ -433,12 +433,13 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                                 fprintf(stderr, "Notarisation %s set to maximum priority replacing notarization %s\n",hash.ToString().c_str(), Tx.GetHash().ToString().c_str());
                             }
                         }
-                        else if ( fNotarisationBlock == true ) 
+                        else if ( Notarisations > 1 ) 
                         {
                             // Any attempted notarization needs to be in its own block!
                             // If we find a valid one and place it in position 1, an invalid one must wait until the next block to be mined.
                             continue;
                         }
+                        Notarisations++;
                     }
                 }
             }
