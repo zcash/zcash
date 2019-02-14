@@ -709,6 +709,10 @@ int32_t komodo_voutupdate(bool fJustCheck,int32_t *isratificationp,int32_t notar
                 {
                     if ( fJustCheck )
                         return(-2);
+                    // On the first notarization initilise previous previous to 0.
+                    if ( sp->NUM_NPOINTS == 1 )
+                        sp->PPNOTARIZED_HEIGHT = 0;
+                        
                     sp->PPNOTARIZED_HEIGHT = sp->PNOTARIZED_HEIGHT;
                     sp->PNOTARIZED_HEIGHT = sp->NOTARIZED_HEIGHT;
                     sp->NOTARIZED_HEIGHT = *notarizedheightp;
