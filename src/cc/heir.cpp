@@ -330,16 +330,16 @@ uint8_t _DecodeHeirEitherOpRet(CScript scriptPubKey, uint256 &tokenid, CPubKey& 
 	std::vector<uint8_t> vopretExtra /*, vopretStripped*/;
 
 	if (DecodeTokenOpRet(scriptPubKey, evalCodeTokens, tokenid, voutPubkeysDummy, vopretExtra) != 0) {
-		if (vopretExtra.size() > 1) {
-			// restore the second opret:
+        /* if (vopretExtra.size() > 1) {
+            // restore the second opret:
 
-			/* unmarshalled in DecodeTokenOpRet:
+            /* unmarshalled in DecodeTokenOpRet:
             if (!E_UNMARSHAL(vopretExtra, { ss >> vopretStripped; })) {  //strip string size
-				if (!noLogging) std::cerr << "_DecodeHeirEitherOpret() could not unmarshal vopretStripped" << std::endl;
-				return (uint8_t)0;
-			}*/
-		}
-		else {
+                if (!noLogging) std::cerr << "_DecodeHeirEitherOpret() could not unmarshal vopretStripped" << std::endl;
+                return (uint8_t)0;
+            }
+        } */
+        if (vopretExtra.size() < 1) {
 			if (!noLogging) std::cerr << "_DecodeHeirEitherOpret() empty vopretExtra" << std::endl;
 			return (uint8_t)0;
 		}
