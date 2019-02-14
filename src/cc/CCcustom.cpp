@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright © 2014-2018 The SuperNET Developers.                             *
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
  *                                                                            *
  * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
  * the top-level directory of this distribution for the individual copyright  *
@@ -13,6 +13,7 @@
  *                                                                            *
  ******************************************************************************/
 
+#include "key_io.h"
 #include "CCinclude.h"
 #include "CCassets.h"
 #include "CCfaucet.h"
@@ -21,6 +22,15 @@
 #include "CCauction.h"
 #include "CClotto.h"
 #include "CCfsm.h"
+#include "CCHeir.h"
+#include "CCchannels.h"
+#include "CCOracles.h"
+#include "CCPrices.h"
+#include "CCPegs.h"
+#include "CCMarmara.h"
+#include "CCPayments.h"
+#include "CCGateways.h"
+#include "CCtokens.h"
 
 /*
  CCcustom has most of the functions that need to be extended to create a new CC contract.
@@ -44,10 +54,7 @@
  Make sure both the CC coins and normal coins are preserved and follow the rules that make sense. It is a good idea to define specific roles for specific vins and vouts to reduce the complexity of validation.
  */
 
-//BTCD Address: RAssetsAtGnvwgK9gVHBbAU4sVTah1hAm5
-//BTCD Privkey: UvtvQVgVScXEYm4J3r4nE4nbFuGXSVM5pKec8VWXwgG9dmpWBuDh
-//BTCD Address: RSavingsEYcivt2DFsxsKeCjqArV6oVtVZ
-//BTCD Privkey: Ux6XQekTxokko6gZHz24B7PUsmUQtWFzG2W9nUA8jba7UoVbPBF4
+// to create a new CCaddr, add to rpcwallet the CCaddress and start with -pubkey= with the pubkey of the new address, with its wif already imported. set normaladdr and CChexstr. run CCaddress and it will print the privkey along with autocorrect the CCaddress. which should then update the CCaddr here
 
 // Assets, aka Tokens
 #define FUNCNAME IsAssetsInput
@@ -128,7 +135,135 @@ uint8_t AuctionCCpriv[32] = { 0x8c, 0x1b, 0xb7, 0x8c, 0x02, 0xa3, 0x9d, 0x21, 0x
 #undef FUNCNAME
 #undef EVALCODE
 
-struct CCcontract_info *CCinit(struct CCcontract_info *cp,uint8_t evalcode)
+// Heir
+#define FUNCNAME IsHeirInput
+#define EVALCODE EVAL_HEIR
+const char *HeirCCaddr = "RDVHcSekmXgeYBqRupNTmqo3Rn8QRXNduy";
+const char *HeirNormaladdr = "RTPwUjKYECcGn6Y4KYChLhgaht1RSU4jwf";
+char HeirCChexstr[67] = { "03c91bef3d7cc59c3a89286833a3446b29e52a5e773f738a1ad2b09785e5f4179e" };
+uint8_t HeirCCpriv[32] = { 0x9d, 0xa1, 0xf8, 0xf7, 0xba, 0x0a, 0x91, 0x36, 0x89, 0x9a, 0x86, 0x30, 0x63, 0x20, 0xd7, 0xdf, 0xaa, 0x35, 0xe3, 0x99, 0x32, 0x2b, 0x63, 0xc0, 0x66, 0x9c, 0x93, 0xc4, 0x5e, 0x9d, 0xb9, 0xce };
+#include "CCcustom.inc"
+#undef FUNCNAME
+#undef EVALCODE
+
+// Channels
+#define FUNCNAME IsChannelsInput
+#define EVALCODE EVAL_CHANNELS
+const char *ChannelsCCaddr = "RQy3rwX8sP9oDm3c39vGKA6H315cgtPLfr";
+const char *ChannelsNormaladdr = "RQUuT8zmkvDfXqECH4m3VD3SsHZAfnoh1v";
+char ChannelsCChexstr[67] = { "035debdb19b1c98c615259339500511d6216a3ffbeb28ff5655a7ef5790a12ab0b" };
+uint8_t ChannelsCCpriv[32] = { 0xec, 0x91, 0x36, 0x15, 0x2d, 0xd4, 0x48, 0x73, 0x22, 0x36, 0x4f, 0x6a, 0x34, 0x5c, 0x61, 0x0f, 0x01, 0xb4, 0x79, 0xe8, 0x1c, 0x2f, 0xa1, 0x1d, 0x4a, 0x0a, 0x21, 0x16, 0xea, 0x82, 0x84, 0x60 };
+#include "CCcustom.inc"
+#undef FUNCNAME
+#undef EVALCODE
+
+// Oracles
+#define FUNCNAME IsOraclesInput
+#define EVALCODE EVAL_ORACLES
+const char *OraclesCCaddr = "REt2C4ZMnX8YYX1DRpffNA4hECZTFm39e3";
+const char *OraclesNormaladdr = "RHkFKzn1csxA3fWzAsxsLWohoCgBbirXb5";
+char OraclesCChexstr[67] = { "038c1d42db6a45a57eccb8981b078fb7857b9b496293fe299d2b8d120ac5b5691a" };
+uint8_t OraclesCCpriv[32] = { 0xf7, 0x4b, 0x5b, 0xa2, 0x7a, 0x5e, 0x9c, 0xda, 0x89, 0xb1, 0xcb, 0xb9, 0xe6, 0x9c, 0x2c, 0x70, 0x85, 0x37, 0xdd, 0x00, 0x7a, 0x67, 0xff, 0x7c, 0x62, 0x1b, 0xe2, 0xfb, 0x04, 0x8f, 0x85, 0xbf };
+#include "CCcustom.inc"
+#undef FUNCNAME
+#undef EVALCODE
+
+// Prices
+#define FUNCNAME IsPricesInput
+#define EVALCODE EVAL_PRICES
+const char *PricesCCaddr = "RAL5Vh8NXmFqEKJRKrk1KjKaUckK7mM1iS";
+const char *PricesNormaladdr = "RBunXCsMHk5NPd6q8SQfmpgre3x133rSwZ";
+char PricesCChexstr[67] = { "039894cb054c0032e99e65e715b03799607aa91212a16648d391b6fa2cc52ed0cf" };
+uint8_t PricesCCpriv[32] = { 0x0a, 0x3b, 0xe7, 0x5d, 0xce, 0x06, 0xed, 0xb7, 0xc0, 0xb1, 0xbe, 0xe8, 0x7b, 0x5a, 0xd4, 0x99, 0xb8, 0x8d, 0xde, 0xac, 0xb2, 0x7e, 0x7a, 0x52, 0x96, 0x15, 0xd2, 0xa0, 0xc6, 0xb9, 0x89, 0x61 };
+#include "CCcustom.inc"
+#undef FUNCNAME
+#undef EVALCODE
+
+// Pegs
+#define FUNCNAME IsPegsInput
+#define EVALCODE EVAL_PEGS
+const char *PegsCCaddr = "RHnkVb7vHuHnjEjhkCF1bS6xxLLNZPv5fd";
+const char *PegsNormaladdr = "RMcCZtX6dHf1fz3gpLQhUEMQ8cVZ6Rzaro";
+char PegsCChexstr[67] = { "03c75c1de29a35e41606363b430c08be1c2dd93cf7a468229a082cc79c7b77eece" };
+uint8_t PegsCCpriv[32] = { 0x52, 0x56, 0x4c, 0x78, 0x87, 0xf7, 0xa2, 0x39, 0xb0, 0x90, 0xb7, 0xb8, 0x62, 0x80, 0x0f, 0x83, 0x18, 0x9d, 0xf4, 0xf4, 0xbd, 0x28, 0x09, 0xa9, 0x9b, 0x85, 0x54, 0x16, 0x0f, 0x3f, 0xfb, 0x65 };
+#include "CCcustom.inc"
+#undef FUNCNAME
+#undef EVALCODE
+
+// Marmara
+#define FUNCNAME IsMarmaraInput
+#define EVALCODE EVAL_MARMARA
+const char *MarmaraCCaddr = "RGLSRDnUqTB43bYtRtNVgmwSSd1sun2te8";
+const char *MarmaraNormaladdr = "RMN25Tn8NNzcyQDiQNuMp8UmwLMFd9thYc";
+char MarmaraCChexstr[67] = { "03afc5be570d0ff419425cfcc580cc762ab82baad88c148f5b028d7db7bfeee61d" };
+uint8_t MarmaraCCpriv[32] = { 0x7c, 0x0b, 0x54, 0x9b, 0x65, 0xd4, 0x89, 0x57, 0xdf, 0x05, 0xfe, 0xa2, 0x62, 0x41, 0xa9, 0x09, 0x0f, 0x2a, 0x6b, 0x11, 0x2c, 0xbe, 0xbd, 0x06, 0x31, 0x8d, 0xc0, 0xb9, 0x96, 0x76, 0x3f, 0x24 };
+#include "CCcustom.inc"
+#undef FUNCNAME
+#undef EVALCODE
+
+// Payments
+#define FUNCNAME IsPaymentsInput
+#define EVALCODE EVAL_PAYMENTS
+const char *PaymentsCCaddr = "REpyKi7avsVduqZ3eimncK4uKqSArLTGGK";
+const char *PaymentsNormaladdr = "RHRX8RTMAh2STWe9DHqsvJbzS7ty6aZy3d";
+char PaymentsCChexstr[67] = { "0358f1764f82c63abc7c7455555fd1d3184905e30e819e97667e247e5792b46856" };
+uint8_t PaymentsCCpriv[32] = { 0x03, 0xc9, 0x73, 0xc2, 0xb8, 0x30, 0x3d, 0xbd, 0xc8, 0xd9, 0xbf, 0x02, 0x49, 0xd9, 0x65, 0x61, 0x45, 0xed, 0x9e, 0x93, 0x51, 0xab, 0x8b, 0x2e, 0xe7, 0xc7, 0x40, 0xf1, 0xc4, 0xd2, 0xc0, 0x5b };
+#include "CCcustom.inc"
+#undef FUNCNAME
+#undef EVALCODE
+
+// Gateways
+#define FUNCNAME IsGatewaysInput
+#define EVALCODE EVAL_GATEWAYS
+const char *GatewaysCCaddr = "RKWpoK6vTRtq5b9qrRBodLkCzeURHeEk33";
+const char *GatewaysNormaladdr = "RGJKV97ZN1wBfunuMt1tebiiHENNEq73Yh"; // wif UxJFYqEvLAjWPPRvn8NN1fRWscBxQZXZB5BBgc3HiapKVQBYNcmo
+char GatewaysCChexstr[67] = { "03ea9c062b9652d8eff34879b504eda0717895d27597aaeb60347d65eed96ccb40" };
+uint8_t GatewaysCCpriv[32] = { 0xf7, 0x4b, 0x5b, 0xa2, 0x7a, 0x5e, 0x9c, 0xda, 0x89, 0xb1, 0xcb, 0xb9, 0xe6, 0x9c, 0x2c, 0x70, 0x85, 0x37, 0xdd, 0x00, 0x7a, 0x67, 0xff, 0x7c, 0x62, 0x1b, 0xe2, 0xfb, 0x04, 0x8f, 0x85, 0xbf };
+#include "CCcustom.inc"
+#undef FUNCNAME
+#undef EVALCODE
+
+// Tokens
+#define FUNCNAME IsTokensInput
+#define EVALCODE EVAL_TOKENS
+const char *TokensCCaddr = "RAMvUfoyURBRxAdVeTMHxn3giJZCFWeha2";
+const char *TokensNormaladdr = "RCNgAngYAdrfzujYyPgfbjCGNVQZzCgTad"; 
+char TokensCChexstr[67] = { "03e6191c70c9c9a28f9fd87089b9488d0e6c02fb629df64979c9cdb6b2b4a68d95" };
+uint8_t TokensCCpriv[32] = { 0x1d, 0x0d, 0x0d, 0xce, 0x2d, 0xd2, 0xe1, 0x9d, 0xf5, 0xb6, 0x26, 0xd5, 0xad, 0xa0, 0xf0, 0x0a, 0xdd, 0x7a, 0x72, 0x7d, 0x17, 0x35, 0xb5, 0xe3, 0x2c, 0x6c, 0xa9, 0xa2, 0x03, 0x16, 0x4b, 0xcf };
+#include "CCcustom.inc"
+#undef FUNCNAME
+#undef EVALCODE
+
+#define FUNCNAME IsCClibInput
+#define EVALCODE EVAL_FIRSTUSER
+const char *CClibNormaladdr = "RVVeUg43rNcq3mZFnvZ8yqagyzqFgUnq4u";
+char CClibCChexstr[67] = { "032447d97655da079729dc024c61088ea415b22f4c15d4810ddaf2069ac6468d2f" };
+uint8_t CClibCCpriv[32] = { 0x57, 0xcf, 0x49, 0x71, 0x7d, 0xb4, 0x15, 0x1b, 0x4f, 0x98, 0xc5, 0x45, 0x8d, 0x26, 0x52, 0x4b, 0x7b, 0xe9, 0xbd, 0x55, 0xd8, 0x20, 0xd6, 0xc4, 0x82, 0x0f, 0xf5, 0xec, 0x6c, 0x1c, 0xa0, 0xc0 };
+#include "CCcustom.inc"
+#undef FUNCNAME
+#undef EVALCODE
+
+int32_t CClib_initcp(struct CCcontract_info *cp,uint8_t evalcode)
+{
+    CPubKey pk; uint8_t pub33[33]; char CCaddr[64];
+    if ( evalcode == EVAL_FIRSTUSER ) // eventually make a hashchain for each evalcode
+    {
+        cp->evalcode = evalcode;
+        cp->ismyvin = IsCClibInput;
+        strcpy(cp->CChexstr,CClibCChexstr);
+        memcpy(cp->CCpriv,CClibCCpriv,32);
+        decode_hex(pub33,33,cp->CChexstr);
+        pk = buf2pk(pub33);
+        Getscriptaddress(cp->normaladdr,CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG);
+        if ( strcmp(cp->normaladdr,CClibNormaladdr) != 0 )
+            fprintf(stderr,"CClib_initcp addr mismatch %s vs %s\n",cp->normaladdr,CClibNormaladdr);
+        GetCCaddress(cp,cp->unspendableCCaddr,pk);
+        return(0);
+    }
+    return(-1);
+}
+
+struct CCcontract_info *CCinit(struct CCcontract_info *cp, uint8_t evalcode)
 {
     cp->evalcode = evalcode;
     switch ( evalcode )
@@ -188,6 +323,83 @@ struct CCcontract_info *CCinit(struct CCcontract_info *cp,uint8_t evalcode)
             memcpy(cp->CCpriv,AuctionCCpriv,32);
             cp->validate = AuctionValidate;
             cp->ismyvin = IsAuctionInput;
+            break;
+        case EVAL_HEIR:
+            strcpy(cp->unspendableCCaddr,HeirCCaddr);
+            strcpy(cp->normaladdr,HeirNormaladdr);
+            strcpy(cp->CChexstr,HeirCChexstr);
+            memcpy(cp->CCpriv,HeirCCpriv,32);
+            cp->validate = HeirValidate;
+            cp->ismyvin = IsHeirInput;
+            break;
+        case EVAL_CHANNELS:
+            strcpy(cp->unspendableCCaddr,ChannelsCCaddr);
+            strcpy(cp->normaladdr,ChannelsNormaladdr);
+            strcpy(cp->CChexstr,ChannelsCChexstr);
+            memcpy(cp->CCpriv,ChannelsCCpriv,32);
+            cp->validate = ChannelsValidate;
+            cp->ismyvin = IsChannelsInput;
+            break;
+        case EVAL_ORACLES:
+            strcpy(cp->unspendableCCaddr,OraclesCCaddr);
+            strcpy(cp->normaladdr,OraclesNormaladdr);
+            strcpy(cp->CChexstr,OraclesCChexstr);
+            memcpy(cp->CCpriv,OraclesCCpriv,32);
+            cp->validate = OraclesValidate;
+            cp->ismyvin = IsOraclesInput;
+            break;
+        case EVAL_PRICES:
+            strcpy(cp->unspendableCCaddr,PricesCCaddr);
+            strcpy(cp->normaladdr,PricesNormaladdr);
+            strcpy(cp->CChexstr,PricesCChexstr);
+            memcpy(cp->CCpriv,PricesCCpriv,32);
+            cp->validate = PricesValidate;
+            cp->ismyvin = IsPricesInput;
+            break;
+        case EVAL_PEGS:
+            strcpy(cp->unspendableCCaddr,PegsCCaddr);
+            strcpy(cp->normaladdr,PegsNormaladdr);
+            strcpy(cp->CChexstr,PegsCChexstr);
+            memcpy(cp->CCpriv,PegsCCpriv,32);
+            cp->validate = PegsValidate;
+            cp->ismyvin = IsPegsInput;
+            break;
+        case EVAL_MARMARA:
+            strcpy(cp->unspendableCCaddr,MarmaraCCaddr);
+            strcpy(cp->normaladdr,MarmaraNormaladdr);
+            strcpy(cp->CChexstr,MarmaraCChexstr);
+            memcpy(cp->CCpriv,MarmaraCCpriv,32);
+            cp->validate = MarmaraValidate;
+            cp->ismyvin = IsMarmaraInput;
+            break;
+        case EVAL_PAYMENTS:
+            strcpy(cp->unspendableCCaddr,PaymentsCCaddr);
+            strcpy(cp->normaladdr,PaymentsNormaladdr);
+            strcpy(cp->CChexstr,PaymentsCChexstr);
+            memcpy(cp->CCpriv,PaymentsCCpriv,32);
+            cp->validate = PaymentsValidate;
+            cp->ismyvin = IsPaymentsInput;
+            break;
+        case EVAL_GATEWAYS:
+            strcpy(cp->unspendableCCaddr,GatewaysCCaddr);
+            strcpy(cp->normaladdr,GatewaysNormaladdr);
+            strcpy(cp->CChexstr,GatewaysCChexstr);
+            memcpy(cp->CCpriv,GatewaysCCpriv,32);
+            cp->validate = GatewaysValidate;
+            cp->ismyvin = IsGatewaysInput;
+            break;
+
+		case EVAL_TOKENS:
+			strcpy(cp->unspendableCCaddr, TokensCCaddr);
+			strcpy(cp->normaladdr, TokensNormaladdr);
+			strcpy(cp->CChexstr, TokensCChexstr);
+			memcpy(cp->CCpriv, TokensCCpriv, 32);
+			cp->validate = TokensValidate;
+			cp->ismyvin = IsTokensInput;
+			break;
+        default:
+            if ( CClib_initcp(cp,evalcode) < 0 )
+                return(0);
             break;
     }
     return(cp);

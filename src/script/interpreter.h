@@ -3,6 +3,21 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 #ifndef BITCOIN_SCRIPT_INTERPRETER_H
 #define BITCOIN_SCRIPT_INTERPRETER_H
 
@@ -89,9 +104,11 @@ enum
     SCRIPT_VERIFY_CHECKLOCKTIMEVERIFY = (1U << 9),
 };
 
+bool CheckSignatureEncoding(const std::vector<unsigned char> &vchSig, unsigned int flags, ScriptError* serror);
+
 struct PrecomputedTransactionData
 {
-    uint256 hashPrevouts, hashSequence, hashOutputs, hashJoinSplits;
+    uint256 hashPrevouts, hashSequence, hashOutputs, hashJoinSplits, hashShieldedSpends, hashShieldedOutputs;
 
     PrecomputedTransactionData(const CTransaction& tx);
 };
@@ -100,6 +117,7 @@ enum SigVersion
 {
     SIGVERSION_SPROUT = 0,
     SIGVERSION_OVERWINTER = 1,
+    SIGVERSION_SAPLING = 2,
 };
 
 uint256 SignatureHash(

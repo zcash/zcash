@@ -3,6 +3,21 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 #ifndef BITCOIN_UINT256_H
 #define BITCOIN_UINT256_H
 
@@ -75,22 +90,26 @@ public:
         return sizeof(data);
     }
 
-    unsigned int GetSerializeSize(int nType, int nVersion) const
-    {
-        return sizeof(data);
-    }
-
     template<typename Stream>
-    void Serialize(Stream& s, int nType, int nVersion) const
+    void Serialize(Stream& s) const
     {
         s.write((char*)data, sizeof(data));
     }
 
     template<typename Stream>
-    void Unserialize(Stream& s, int nType, int nVersion)
+    void Unserialize(Stream& s)
     {
         s.read((char*)data, sizeof(data));
     }
+};
+
+/** 88-bit opaque blob.
+ */
+class blob88 : public base_blob<88> {
+public:
+    blob88() {}
+    blob88(const base_blob<88>& b) : base_blob<88>(b) {}
+    explicit blob88(const std::vector<unsigned char>& vch) : base_blob<88>(vch) {}
 };
 
 /** 160-bit opaque blob.

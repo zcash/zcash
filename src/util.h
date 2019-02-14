@@ -3,6 +3,21 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 /**
  * Server/client environment: argument handling, config file parsing,
  * logging, thread wrappers
@@ -29,6 +44,8 @@
 #include <boost/signals2/signal.hpp>
 #include <boost/thread/exceptions.hpp>
 
+#define _MAX_BLOCK_SIZE (4096 * 1024) // changing just _MAX_BLOCK_SIZE will hardfork to that size
+
 static const bool DEFAULT_LOGTIMEMICROS = false;
 static const bool DEFAULT_LOGIPS        = false;
 static const bool DEFAULT_LOGTIMESTAMPS = true;
@@ -52,6 +69,8 @@ extern bool fLogTimestamps;
 extern bool fLogIPs;
 extern std::atomic<bool> fReopenDebugLog;
 extern CTranslationInterface translationInterface;
+
+[[noreturn]] extern void new_handler_terminate();
 
 /**
  * Translation function: Call Translate signal on UI interface, which returns a boost::optional result.
@@ -156,6 +175,17 @@ inline bool IsSwitchChar(char c)
     return c == '-';
 #endif
 }
+
+/**
+ * Return string argument or default value
+ *
+ * @param strVal string to split
+ * @param outVals array of numbers from string or default
+ *      if the string is null, nDefault is used for all array entries
+ *      else if the string has fewer than _MAX_ERAS entries, then the last 
+ *      entry fills remaining entries
+ */
+void Split(const std::string& strVal, uint64_t *outVals, uint64_t nDefault);
 
 /**
  * Return string argument or default value

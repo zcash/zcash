@@ -3,11 +3,26 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 #include "primitives/block.h"
 #include "primitives/transaction.h"
 #include "main.h"
 #include "httpserver.h"
-#include "rpcserver.h"
+#include "rpc/server.h"
 #include "streams.h"
 #include "sync.h"
 #include "txmempool.h"
@@ -48,7 +63,7 @@ struct CCoin {
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion)
+    inline void SerializationOp(Stream& s, Operation ser_action)
     {
         READWRITE(nTxVer);
         READWRITE(nHeight);
@@ -262,6 +277,9 @@ static bool rest_block_notxdetails(HTTPRequest* req, const std::string& strURIPa
 {
     return rest_block(req, strURIPart, false);
 }
+
+// A bit of a hack - dependency on a function defined in rpc/blockchain.cpp
+UniValue getblockchaininfo(const UniValue& params, bool fHelp);
 
 static bool rest_chaininfo(HTTPRequest* req, const std::string& strURIPart)
 {

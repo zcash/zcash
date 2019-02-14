@@ -7,6 +7,7 @@ buildbot_deps:
 
 # Dependencies required to download files
 fetch_deps:
+  - curl # For depends/
   - git
   - wget # For zcutil/fetch-params.sh
 
@@ -15,9 +16,11 @@ conf_deps:
   - autoconf
   - automake
   - m4
+  - pkg-config
 
 # Dependencies required to compile Zcash
 build_deps:
+  - cmake
   - g++
   - gcc
   - make
@@ -34,6 +37,10 @@ grind_deps:
   - lcov
   - valgrind
 
+# Python modules required on the system
+system_modules:
+  - virtualenv
+
 # Python modules required for a Zcash Buildbot worker
 buildbot_modules:
   - pip # Needs to be updated first so Buildbot installs
@@ -44,6 +51,3 @@ buildbot_modules:
 rpc_test_modules:
   - pyblake2
   - pyzmq
-
-# Environment variables
-pip_bin_dir: /usr/local/bin

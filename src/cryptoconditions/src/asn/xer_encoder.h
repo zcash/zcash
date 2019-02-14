@@ -5,7 +5,7 @@
 #ifndef	_XER_ENCODER_H_
 #define	_XER_ENCODER_H_
 
-#include <asn_application.h>
+#include "asn_application.h"
 
 #ifdef __cplusplus
 extern "C" {

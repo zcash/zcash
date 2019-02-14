@@ -1,3 +1,18 @@
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 #include <cryptoconditions.h>
 
 #include "hash.h"
@@ -46,7 +61,7 @@ bool Eval::DisputePayout(AppVM &vm, std::vector<uint8_t> params, const CTransact
         if (!GetTxConfirmed(disputeTx.vin[0].prevout.hash, sessionTx, sessionBlock))
             return Error("couldnt-get-parent");
 
-        if (GetCurrentHeight() < sessionBlock.nHeight + waitBlocks)
+        if (GetCurrentHeight() < sessionBlock.GetHeight() + waitBlocks)
             return Invalid("dispute-too-soon");  // Not yet
     }
 

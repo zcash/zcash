@@ -3,10 +3,26 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 #ifndef BITCOIN_SCRIPT_SCRIPT_H
 #define BITCOIN_SCRIPT_SCRIPT_H
 
 #include "crypto/common.h"
+#include "prevector.h"
 
 #include <assert.h>
 #include <climits>
@@ -16,6 +32,10 @@
 #include <string.h>
 #include <string>
 #include <vector>
+
+#define OPRETTYPE_TIMELOCK 1
+#define OPRETTYPE_STAKEPARAMS 2
+#define OPRETTYPE_STAKECHEAT 3
 
 static const unsigned int MAX_SCRIPT_ELEMENT_SIZE = 520; // bytes
 
@@ -356,8 +376,10 @@ private:
     int64_t m_value;
 };
 
+typedef prevector<28, unsigned char> CScriptBase;
+
 /** Serialized script, used inside transaction inputs and outputs */
-class CScript : public std::vector<unsigned char>
+class CScript : public CScriptBase
 {
 protected:
     CScript& push_int64(int64_t n)
@@ -376,11 +398,13 @@ protected:
         }
         return *this;
     }
+    bool GetBalancedData(const_iterator& pc, std::vector<std::vector<unsigned char>>& vSolutions) const;
 public:
     CScript() { }
-    CScript(const CScript& b) : std::vector<unsigned char>(b.begin(), b.end()) { }
-    CScript(const_iterator pbegin, const_iterator pend) : std::vector<unsigned char>(pbegin, pend) { }
-    CScript(const unsigned char* pbegin, const unsigned char* pend) : std::vector<unsigned char>(pbegin, pend) { }
+    CScript(const CScript& b) : CScriptBase(b.begin(), b.end()) { }
+    CScript(const_iterator pbegin, const_iterator pend) : CScriptBase(pbegin, pend) { }
+    CScript(std::vector<unsigned char>::const_iterator pbegin, std::vector<unsigned char>::const_iterator pend) : CScriptBase(pbegin, pend) { }
+    CScript(const unsigned char* pbegin, const unsigned char* pend) : CScriptBase(pbegin, pend) { }
 
     CScript& operator+=(const CScript& b)
     {
@@ -396,11 +420,9 @@ public:
     }
 
     CScript(int64_t b)        { operator<<(b); }
-
     explicit CScript(opcodetype b)     { operator<<(b); }
     explicit CScript(const CScriptNum& b) { operator<<(b); }
     explicit CScript(const std::vector<unsigned char>& b) { operator<<(b); }
-
 
     CScript& operator<<(int64_t b) { return push_int64(b); }
 
@@ -570,12 +592,25 @@ public:
     bool IsPayToPublicKey() const;
 
     bool IsPayToScriptHash() const;
+    bool GetPushedData(CScript::const_iterator pc, std::vector<std::vector<unsigned char>>& vData) const;
+    bool IsOpReturn() const { return size() > 0 && (*this)[0] == OP_RETURN; }
+    bool GetOpretData(std::vector<std::vector<unsigned char>>& vData) const;
+
+    bool IsPayToCryptoCondition(CScript *ccSubScript, std::vector<std::vector<unsigned char>>& vSolutions) const;
+    bool IsPayToCryptoCondition(CScript *ccSubScript) const;
     bool IsPayToCryptoCondition() const;
     bool IsCoinImport() const;
     bool MayAcceptCryptoCondition() const;
 
     /** Called by IsStandardTx and P2SH/BIP62 VerifyScript (which makes it consensus-critical). */
     bool IsPushOnly() const;
+
+    /** if the front of the script has check lock time verify. this is a fairly simple check.
+     * accepts NULL as parameter if unlockTime is not needed.
+     */
+    bool IsCheckLockTimeVerify(int64_t *unlockTime) const;
+
+    bool IsCheckLockTimeVerify() const;
 
     /**
      * Returns whether the script is guaranteed to fail at execution,
@@ -588,10 +623,11 @@ public:
     }
 
     std::string ToString() const;
+
     void clear()
     {
         // The default std::vector::clear() does not release memory.
-        std::vector<unsigned char>().swap(*this);
+        CScriptBase().swap(*this);
     }
 };
 

@@ -2,6 +2,21 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 #ifndef BITCOIN_WALLET_CRYPTER_H
 #define BITCOIN_WALLET_CRYPTER_H
 
@@ -10,6 +25,7 @@
 #include "streams.h"
 #include "support/allocators/secure.h"
 #include "zcash/Address.hpp"
+#include "zcash/zip32.h"
 
 class uint256;
 
@@ -48,7 +64,7 @@ public:
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+    inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITE(vchCryptedKey);
         READWRITE(vchSalt);
         READWRITE(nDerivationMethod);
@@ -127,12 +143,14 @@ public:
 class CCryptoKeyStore : public CBasicKeyStore
 {
 private:
+    std::pair<uint256, std::vector<unsigned char>> cryptedHDSeed;
     CryptedKeyMap mapCryptedKeys;
-    CryptedSpendingKeyMap mapCryptedSpendingKeys;
+    CryptedSproutSpendingKeyMap mapCryptedSproutSpendingKeys;
+    CryptedSaplingSpendingKeyMap mapCryptedSaplingSpendingKeys;
 
     CKeyingMaterial vMasterKey;
 
-    //! if fUseCrypto is true, mapKeys and mapSpendingKeys must be empty
+    //! if fUseCrypto is true, mapKeys, mapSproutSpendingKeys, and mapSaplingSpendingKeys must be empty
     //! if fUseCrypto is false, vMasterKey must be empty
     bool fUseCrypto;
 
@@ -171,6 +189,11 @@ public:
 
     bool Lock();
 
+    virtual bool SetCryptedHDSeed(const uint256& seedFp, const std::vector<unsigned char> &vchCryptedSecret);
+    bool SetHDSeed(const HDSeed& seed);
+    bool HaveHDSeed() const;
+    bool GetHDSeed(HDSeed& seedOut) const;
+
     virtual bool AddCryptedKey(const CPubKey &vchPubKey, const std::vector<unsigned char> &vchCryptedSecret);
     bool AddKeyPubKey(const CKey& key, const CPubKey &pubkey);
     bool HaveKey(const CKeyID &address) const
@@ -200,36 +223,61 @@ public:
             mi++;
         }
     }
-    virtual bool AddCryptedSpendingKey(const libzcash::PaymentAddress &address,
-                                       const libzcash::ReceivingKey &rk,
-                                       const std::vector<unsigned char> &vchCryptedSecret);
-    bool AddSpendingKey(const libzcash::SpendingKey &sk);
-    bool HaveSpendingKey(const libzcash::PaymentAddress &address) const
+    virtual bool AddCryptedSproutSpendingKey(
+        const libzcash::SproutPaymentAddress &address,
+        const libzcash::ReceivingKey &rk,
+        const std::vector<unsigned char> &vchCryptedSecret);
+    bool AddSproutSpendingKey(const libzcash::SproutSpendingKey &sk);
+    bool HaveSproutSpendingKey(const libzcash::SproutPaymentAddress &address) const
     {
         {
             LOCK(cs_SpendingKeyStore);
             if (!IsCrypted())
-                return CBasicKeyStore::HaveSpendingKey(address);
-            return mapCryptedSpendingKeys.count(address) > 0;
+                return CBasicKeyStore::HaveSproutSpendingKey(address);
+            return mapCryptedSproutSpendingKeys.count(address) > 0;
         }
         return false;
     }
-    bool GetSpendingKey(const libzcash::PaymentAddress &address, libzcash::SpendingKey &skOut) const;
-    void GetPaymentAddresses(std::set<libzcash::PaymentAddress> &setAddress) const
+    bool GetSproutSpendingKey(const libzcash::SproutPaymentAddress &address, libzcash::SproutSpendingKey &skOut) const;
+    void GetSproutPaymentAddresses(std::set<libzcash::SproutPaymentAddress> &setAddress) const
     {
         if (!IsCrypted())
         {
-            CBasicKeyStore::GetPaymentAddresses(setAddress);
+            CBasicKeyStore::GetSproutPaymentAddresses(setAddress);
             return;
         }
         setAddress.clear();
-        CryptedSpendingKeyMap::const_iterator mi = mapCryptedSpendingKeys.begin();
-        while (mi != mapCryptedSpendingKeys.end())
+        CryptedSproutSpendingKeyMap::const_iterator mi = mapCryptedSproutSpendingKeys.begin();
+        while (mi != mapCryptedSproutSpendingKeys.end())
         {
             setAddress.insert((*mi).first);
             mi++;
         }
     }
+    //! Sapling 
+    virtual bool AddCryptedSaplingSpendingKey(
+        const libzcash::SaplingExtendedFullViewingKey &extfvk,
+        const std::vector<unsigned char> &vchCryptedSecret,
+        const libzcash::SaplingPaymentAddress &defaultAddr);
+    bool AddSaplingSpendingKey(
+        const libzcash::SaplingExtendedSpendingKey &sk,
+        const libzcash::SaplingPaymentAddress &defaultAddr);
+    bool HaveSaplingSpendingKey(const libzcash::SaplingFullViewingKey &fvk) const
+    {
+        {
+            LOCK(cs_SpendingKeyStore);
+            if (!IsCrypted())
+                return CBasicKeyStore::HaveSaplingSpendingKey(fvk);
+            for (auto entry : mapCryptedSaplingSpendingKeys) {
+                if (entry.first.fvk == fvk) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    bool GetSaplingSpendingKey(const libzcash::SaplingFullViewingKey &fvk, libzcash::SaplingExtendedSpendingKey &skOut) const;
+
 
     /**
      * Wallet status (encrypted, locked) changed.

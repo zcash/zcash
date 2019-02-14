@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright © 2014-2018 The SuperNET Developers.                             *
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
  *                                                                            *
  * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
  * the top-level directory of this distribution for the individual copyright  *
@@ -27,6 +27,8 @@
 #include "core_io.h"
 #include "crosschain.h"
 
+bool CClib_Dispatch(const CC *cond,Eval *eval,std::vector<uint8_t> paramsNull,const CTransaction &txTo,unsigned int nIn);
+char *CClib_name();
 
 Eval* EVAL_TEST = 0;
 struct CCcontract_info CCinfos[0x100];
@@ -38,8 +40,9 @@ bool RunCCEval(const CC *cond, const CTransaction &tx, unsigned int nIn)
     pthread_mutex_lock(&KOMODO_CC_mutex);
     bool out = eval->Dispatch(cond, tx, nIn);
     pthread_mutex_unlock(&KOMODO_CC_mutex);
-    //fprintf(stderr,"out %d vs %d isValid\n",(int32_t)out,(int32_t)eval->state.IsValid());
-    assert(eval->state.IsValid() == out);
+    if ( eval->state.IsValid() != out)
+        fprintf(stderr,"out %d vs %d isValid\n",(int32_t)out,(int32_t)eval->state.IsValid());
+    //assert(eval->state.IsValid() == out);
 
     if (eval->state.IsValid()) return true;
 
@@ -64,23 +67,34 @@ bool Eval::Dispatch(const CC *cond, const CTransaction &txTo, unsigned int nIn)
         return Invalid("empty-eval");
 
     uint8_t ecode = cond->code[0];
+    if ( ASSETCHAINS_CCDISABLES[ecode] != 0 )
+    {
+        fprintf(stderr,"%s evalcode.%d %02x\n",txTo.GetHash().GetHex().c_str(),ecode,ecode);
+        return Invalid("disabled-code, -ac_ccenables didnt include this ecode");
+    }
+    std::vector<uint8_t> vparams(cond->code+1, cond->code+cond->codeLength);
+    if ( ecode >= EVAL_FIRSTUSER && ecode <= EVAL_LASTUSER )
+    {
+        if ( ASSETCHAINS_CCLIB.size() > 0 && ASSETCHAINS_CCLIB == CClib_name() )
+            return CClib_Dispatch(cond,this,vparams,txTo,nIn);
+        else return Invalid("mismatched -ac_cclib vs CClib_name");
+    }
     cp = &CCinfos[(int32_t)ecode];
     if ( cp->didinit == 0 )
     {
         CCinit(cp,ecode);
         cp->didinit = 1;
     }
-    std::vector<uint8_t> vparams(cond->code+1, cond->code+cond->codeLength);
     switch ( ecode )
     {
         case EVAL_IMPORTPAYOUT:
             return ImportPayout(vparams, txTo, nIn);
             break;
-            
+
         case EVAL_IMPORTCOIN:
             return ImportCoin(vparams, txTo, nIn);
             break;
-            
+
         default:
             return(ProcessCC(cp,this, vparams, txTo, nIn));
             break;
@@ -98,10 +112,10 @@ bool Eval::GetSpendsConfirmed(uint256 hash, std::vector<CTransaction> &spends) c
 
 bool Eval::GetTxUnconfirmed(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock) const
 {
-    // there is a LOCK(cs_main) in the normal GetTransaction(), which leads to deadlocks
-    //bool fAllowSlow = false; // Don't allow slow
-    //return GetTransaction(hash, txOut, hashBlock, fAllowSlow);
-    return myGetTransaction(hash, txOut,hashBlock);
+    return(myGetTransaction(hash, txOut,hashBlock));
+    /*if (!myGetTransaction(hash, txOut,hashBlock)) {
+        return(GetTransaction(hash, txOut,hashBlock));
+    } else return(true);*/
 }
 
 
@@ -114,7 +128,6 @@ bool Eval::GetTxConfirmed(const uint256 &hash, CTransaction &txOut, CBlockIndex 
         return false;
     return true;
 }
-
 
 unsigned int Eval::GetCurrentHeight() const
 {
@@ -158,7 +171,8 @@ bool Eval::CheckNotaryInputs(const CTransaction &tx, uint32_t height, uint32_t t
         if (tx.vout.size() < txIn.prevout.n) return false;
         CScript spk = tx.vout[txIn.prevout.n].scriptPubKey;
         if (spk.size() != 35) return false;
-        const unsigned char *pk = spk.data();
+        std::vector<unsigned char> scriptVec = std::vector<unsigned char>(spk.begin(),spk.end());
+        const unsigned char *pk = scriptVec.data();
         if (pk++[0] != 33) return false;
         if (pk[33] != OP_CHECKSIG) return false;
 
@@ -187,19 +201,8 @@ bool Eval::GetNotarisationData(const uint256 notaryHash, NotarisationData &data)
     CTransaction notarisationTx;
     CBlockIndex block;
     if (!GetTxConfirmed(notaryHash, notarisationTx, block)) return false;
-    if (!CheckNotaryInputs(notarisationTx, block.nHeight, block.nTime)) return false;
+    if (!CheckNotaryInputs(notarisationTx, block.GetHeight(), block.nTime)) return false;
     if (!ParseNotarisationOpReturn(notarisationTx, data)) return false;
-    return true;
-}
-
-/*
- * Get MoMoM corresponding to a notarisation tx hash (on assetchain)
- */
-bool Eval::GetProofRoot(uint256 kmdNotarisationHash, uint256 &momom) const
-{
-    std::pair<uint256,NotarisationData> out;
-    if (!GetNextBacknotarisation(kmdNotarisationHash, out)) return false;
-    momom = out.second.MoMoM;
     return true;
 }
 

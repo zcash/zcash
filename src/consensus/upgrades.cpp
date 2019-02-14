@@ -2,6 +2,21 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 #include "consensus/upgrades.h"
 
 /**
@@ -23,6 +38,11 @@ const struct NUInfo NetworkUpgradeInfo[Consensus::MAX_NETWORK_UPGRADES] = {
         /*.nBranchId =*/ 0x5ba81b19,
         /*.strName =*/ "Overwinter",
         /*.strInfo =*/ "See https://z.cash/upgrade/overwinter.html for details.",
+    },
+    {
+        /*.nBranchId =*/ 0x76b809bb,
+        /*.strName =*/ "Sapling",
+        /*.strInfo =*/ "See https://z.cash/upgrade/sapling.html for details.",
     }
 };
 
@@ -33,6 +53,10 @@ UpgradeState NetworkUpgradeState(
     const Consensus::Params& params,
     Consensus::UpgradeIndex idx)
 {
+    if (nHeight < 0)
+    {
+        printf("height: %d", nHeight);
+    }
     assert(nHeight >= 0);
     assert(idx >= Consensus::BASE_SPROUT && idx < Consensus::MAX_NETWORK_UPGRADES);
     auto nActivationHeight = params.vUpgrades[idx].nActivationHeight;
@@ -69,10 +93,21 @@ int CurrentEpoch(int nHeight, const Consensus::Params& params) {
             return idxInt;
         }
     }
+    // Base case
+    return Consensus::BASE_SPROUT;
 }
 
 uint32_t CurrentEpochBranchId(int nHeight, const Consensus::Params& params) {
     return NetworkUpgradeInfo[CurrentEpoch(nHeight, params)].nBranchId;
+}
+
+bool IsConsensusBranchId(int branchId) {
+    for (int idx = Consensus::BASE_SPROUT; idx < Consensus::MAX_NETWORK_UPGRADES; idx++) {
+        if (branchId == NetworkUpgradeInfo[idx].nBranchId) {
+            return true;
+        }
+    }
+    return false;
 }
 
 bool IsActivationHeight(
@@ -107,20 +142,28 @@ bool IsActivationHeightForAnyUpgrade(
     return false;
 }
 
-boost::optional<int> NextActivationHeight(
-    int nHeight,
-    const Consensus::Params& params)
-{
+boost::optional<int> NextEpoch(int nHeight, const Consensus::Params& params) {
     if (nHeight < 0) {
         return boost::none;
     }
 
-    // Don't count Sprout as an activation height
+    // Sprout is never pending
     for (auto idx = Consensus::BASE_SPROUT + 1; idx < Consensus::MAX_NETWORK_UPGRADES; idx++) {
         if (NetworkUpgradeState(nHeight, params, Consensus::UpgradeIndex(idx)) == UPGRADE_PENDING) {
-            return params.vUpgrades[idx].nActivationHeight;
+            return idx;
         }
     }
 
+    return boost::none;
+}
+
+boost::optional<int> NextActivationHeight(
+    int nHeight,
+    const Consensus::Params& params)
+{
+    auto idx = NextEpoch(nHeight, params);
+    if (idx) {
+        return params.vUpgrades[idx.get()].nActivationHeight;
+    }
     return boost::none;
 }

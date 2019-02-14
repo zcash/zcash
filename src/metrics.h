@@ -2,11 +2,28 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 #include "uint256.h"
 
 #include <atomic>
 #include <mutex>
 #include <string>
+
+extern int64_t nHashCount;
 
 struct AtomicCounter {
     std::atomic<uint64_t> value;
@@ -21,7 +38,7 @@ struct AtomicCounter {
         --value;
     }
 
-    int get() const {
+    uint64_t get() const {
         return value.load();
     }
 };
@@ -52,6 +69,8 @@ public:
     uint64_t threadCount();
 
     double rate(const AtomicCounter& count);
+    double rate(const int64_t count);
+
 };
 
 extern AtomicCounter transactionsValidated;

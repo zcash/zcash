@@ -2,7 +2,7 @@
  * Copyright (c) 2004, 2005 Lev Walkin <vlm@lionet.info>. All rights reserved.
  * Redistribution and modifications are permitted subject to BSD license.
  */
-#include <asn_application.h>
+#include "asn_application.h"
 #include <asn_internal.h>
 #include <xer_support.h>		/* XER/XML parsing support */
 

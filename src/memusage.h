@@ -2,6 +2,21 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 #ifndef BITCOIN_MEMUSAGE_H
 #define BITCOIN_MEMUSAGE_H
 
@@ -46,7 +61,9 @@ template<typename X> static inline size_t DynamicUsage(const X * const &v) { ret
 static inline size_t MallocUsage(size_t alloc)
 {
     // Measured on libc6 2.19 on Linux.
-    if (sizeof(void*) == 8) {
+    if (alloc == 0) {
+        return 0;
+    } else if (sizeof(void*) == 8) {
         return ((alloc + 31) >> 4) << 4;
     } else if (sizeof(void*) == 4) {
         return ((alloc + 15) >> 3) << 3;
@@ -72,6 +89,12 @@ template<typename X>
 static inline size_t DynamicUsage(const std::vector<X>& v)
 {
     return MallocUsage(v.capacity() * sizeof(X));
+}
+
+template<unsigned int N, typename X, typename S, typename D>
+static inline size_t DynamicUsage(const prevector<N, X, S, D>& v)
+{
+    return MallocUsage(v.allocated_memory());
 }
 
 template<typename X>

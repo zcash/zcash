@@ -3,8 +3,23 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 #include "clientversion.h"
-#include "rpcserver.h"
+#include "rpc/server.h"
 #include "init.h"
 #include "main.h"
 #include "noui.h"
@@ -12,7 +27,6 @@
 #include "util.h"
 #include "httpserver.h"
 #include "httprpc.h"
-#include "rpcserver.h"
 
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/filesystem.hpp>
@@ -42,6 +56,7 @@
  */
 
 static bool fDaemon;
+#include "komodo_defs.h"
 #define KOMODO_ASSETCHAIN_MAXLEN 65
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 void komodo_passport_iteration();
@@ -62,8 +77,8 @@ void WaitForShutdown(boost::thread_group* threadGroup)
         }
         else
         {
-            komodo_interestsum();
-            komodo_longestchain();
+            //komodo_interestsum();
+            //komodo_longestchain();
             MilliSleep(20000);
         }
         fShutdown = ShutdownRequested();
@@ -79,7 +94,8 @@ void WaitForShutdown(boost::thread_group* threadGroup)
 //
 // Start
 //
-extern int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,ASSETCHAIN_INIT;
+extern int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY;
+extern uint32_t ASSETCHAIN_INIT;
 extern std::string NOTARY_PUBKEY;
 int32_t komodo_is_issuer();
 void komodo_passport_iteration();
@@ -115,7 +131,7 @@ bool AppInit(int argc, char* argv[])
         }
 
         fprintf(stdout, "%s", strUsage.c_str());
-        return false;
+        return true;
     }
 
     try
@@ -179,7 +195,7 @@ bool AppInit(int argc, char* argv[])
         if (fCommandLine)
         {
             fprintf(stderr, "Error: There is no RPC client functionality in komodod. Use the komodo-cli utility instead.\n");
-            exit(1);
+            exit(EXIT_FAILURE);
         }
 
 #ifndef _WIN32
@@ -236,5 +252,5 @@ int main(int argc, char* argv[])
     // Connect bitcoind signal handlers
     noui_connect();
 
-    return (AppInit(argc, argv) ? 0 : 1);
+    return (AppInit(argc, argv) ? EXIT_SUCCESS : EXIT_FAILURE);
 }
