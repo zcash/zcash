@@ -38,6 +38,7 @@
 int32_t gettxout_scriptPubKey(uint8_t *scriptPubkey,int32_t maxsize,uint256 txid,int32_t n);
 void komodo_event_rewind(struct komodo_state *sp,char *symbol,int32_t height);
 int32_t komodo_connectblock(bool fJustCheck, CBlockIndex *pindex,CBlock& block);
+bool check_pprevnotarizedht();
 
 #include "komodo_structs.h"
 #include "komodo_globals.h"
@@ -885,7 +886,8 @@ int32_t komodo_connectblock(bool fJustCheck, CBlockIndex *pindex,CBlock& block)
                 break;
             }
             // Notary pay chains need notarisation in position 1, ignore the rest on validation. Check notarisation is 1 on check.
-            if ( !fJustCheck && i > 1 && ASSETCHAINS_NOTARY_PAY[0] != 0 )
+            // make sure for first 3 notarizations, that we check all tx in block!
+            if ( !fJustCheck && i > 1 && ASSETCHAINS_NOTARY_PAY[0] != 0 && check_pprevnotarizedht() )
                 break;
             txhash = block.vtx[i].GetHash();
             numvouts = block.vtx[i].vout.size();
