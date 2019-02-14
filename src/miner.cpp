@@ -393,6 +393,9 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
 
             if (fNotarisation) 
             {
+                // Can't make payment until 3 notarizations have happened.
+                if ( !check_pprevnotarizedht() )
+                    fNotarisation = false;
                 // check if the notarization found is actually valid. 
                 if ( tx.vout.size() == 2 && tx.vout[1].nValue == 0 )
                 {

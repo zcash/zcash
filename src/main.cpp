@@ -3248,6 +3248,24 @@ static int64_t nTimeTotal = 0;
 bool FindBlockPos(int32_t tmpflag,CValidationState &state, CDiskBlockPos &pos, unsigned int nAddSize, unsigned int nHeight, uint64_t nTime, bool fKnown = false);
 bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBlockIndex *pindexNew, const CDiskBlockPos& pos);
 
+bool check_pprevnotarizedht()
+{
+    static bool init;
+    if ( init )
+        return(true);
+    int32_t notarizedht,prevMoMheight,prevnotarizedht,pprevnotarizedht; uint256 notarizedhash,txid;
+    uint64_t AmountToPay=0,ret=0;
+    notarizedht = komodo_notarized_height(&prevMoMheight,&notarizedhash,&txid,&prevnotarizedht,&pprevnotarizedht);
+    if ( pprevnotarizedht > 0 )
+    {
+        init = true;
+        return(true);
+    }
+    else 
+        return(false);
+}
+
+
 bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pindex, CCoinsViewCache& view, bool fJustCheck,bool fCheckPOW)
 {
     CDiskBlockPos blockPos;
@@ -3282,7 +3300,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         fprintf(stderr,"grandfathered exception, until jan 15th 2019\n");
     }
     // Do this here before the block is moved to the main block files.
-    if ( ASSETCHAINS_NOTARY_PAY[0] != 0 && pindex->GetHeight() > 10 )
+    if ( ASSETCHAINS_NOTARY_PAY[0] != 0 && pindex->GetHeight() > 10 && check_pprevnotarizedht() )
     {
         // do a full block scan to get notarisation position and to enforce a valid notarization is in position 1.
         // if notarisation in the block, must be position 1 and the coinbase must pay notaries.
