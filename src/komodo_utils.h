@@ -1764,6 +1764,7 @@ void komodo_args(char *argv0)
         Split(GetArg("-ac_reward",""),  ASSETCHAINS_REWARD, 0);
         Split(GetArg("-ac_halving",""),  ASSETCHAINS_HALVING, 0);
         Split(GetArg("-ac_decay",""),  ASSETCHAINS_DECAY, 0);
+        Split(GetArg("-ac_notarypay",""),  ASSETCHAINS_NOTARY_PAY, 0);
 
         for ( int i = 0; i < ASSETCHAINS_MAX_ERAS; i++ )
         {
@@ -1776,6 +1777,11 @@ void komodo_args(char *argv0)
             {
                 ASSETCHAINS_DECAY[i] = 0;
                 printf("ERA%u: ASSETCHAINS_DECAY cant be more than 100000000\n", i);
+            }
+            if ( ASSETCHAINS_NOTARY_PAY[i]  < 64 )
+            {
+                ASSETCHAINS_NOTARY_PAY[i] = 64;
+                printf("ERA%u: ASSETCHAINS_NOTARY_PAY cant be less than 64. Set to 64.\n", i);
             }
         }
 
@@ -1869,6 +1875,11 @@ void komodo_args(char *argv0)
         }
         if ( strlen(ASSETCHAINS_OVERRIDE_PUBKEY.c_str()) == 66 || ASSETCHAINS_SCRIPTPUB.size() > 1 )
         {
+            if ( ASSETCHAINS_NOTARY_PAY[0] != 0 )
+            {
+                printf("Assetchains NOTARY PAY cannot be used with ac_pubkey or ac_script.\n");
+                exit(0);
+            }
             if ( strlen(ASSETCHAINS_OVERRIDE_PUBKEY.c_str()) == 66 )
             {
                 decode_hex(ASSETCHAINS_OVERRIDE_PUBKEY33,33,(char *)ASSETCHAINS_OVERRIDE_PUBKEY.c_str());
@@ -1894,9 +1905,6 @@ void komodo_args(char *argv0)
         }
         else
         {
-            ASSETCHAINS_NOTARY_PAY = GetArg("-ac_notarypay",0);
-            if ( ASSETCHAINS_NOTARY_PAY != 0 )
-                printf("Assetchains NOTARY PAY set to %lu sats per notarisation per notary. Cannot work with ac_script or ac_pubkey!\n",ASSETCHAINS_NOTARY_PAY);
             if ( ASSETCHAINS_COMMISSION != 0 )
             {
                 ASSETCHAINS_COMMISSION = 0;
@@ -1913,7 +1921,7 @@ void komodo_args(char *argv0)
             fprintf(stderr,"-ac_script and -ac_marmara are mutually exclusive\n");
             exit(0);
         }
-        if ( ASSETCHAINS_ENDSUBSIDY[0] != 0 || ASSETCHAINS_REWARD[0] != 0 || ASSETCHAINS_HALVING[0] != 0 || ASSETCHAINS_DECAY[0] != 0 || ASSETCHAINS_COMMISSION != 0 || ASSETCHAINS_PUBLIC != 0 || ASSETCHAINS_PRIVATE != 0 || ASSETCHAINS_TXPOW != 0 || ASSETCHAINS_FOUNDERS != 0 || ASSETCHAINS_SCRIPTPUB.size() > 1 || ASSETCHAINS_SELFIMPORT.size() > 0 || ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 || ASSETCHAINS_TIMELOCKGTE != _ASSETCHAINS_TIMELOCKOFF|| ASSETCHAINS_ALGO != ASSETCHAINS_EQUIHASH || ASSETCHAINS_LWMAPOS != 0 || ASSETCHAINS_LASTERA > 0 || ASSETCHAINS_BEAMPORT != 0 || ASSETCHAINS_CODAPORT != 0 || ASSETCHAINS_MARMARA != 0 || nonz > 0 || ASSETCHAINS_CCLIB.size() > 0 || ASSETCHAINS_FOUNDERS_REWARD != 0 || ASSETCHAINS_NOTARY_PAY != 0 )
+        if ( ASSETCHAINS_ENDSUBSIDY[0] != 0 || ASSETCHAINS_REWARD[0] != 0 || ASSETCHAINS_HALVING[0] != 0 || ASSETCHAINS_DECAY[0] != 0 || ASSETCHAINS_COMMISSION != 0 || ASSETCHAINS_PUBLIC != 0 || ASSETCHAINS_PRIVATE != 0 || ASSETCHAINS_TXPOW != 0 || ASSETCHAINS_FOUNDERS != 0 || ASSETCHAINS_SCRIPTPUB.size() > 1 || ASSETCHAINS_SELFIMPORT.size() > 0 || ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 || ASSETCHAINS_TIMELOCKGTE != _ASSETCHAINS_TIMELOCKOFF|| ASSETCHAINS_ALGO != ASSETCHAINS_EQUIHASH || ASSETCHAINS_LWMAPOS != 0 || ASSETCHAINS_LASTERA > 0 || ASSETCHAINS_BEAMPORT != 0 || ASSETCHAINS_CODAPORT != 0 || ASSETCHAINS_MARMARA != 0 || nonz > 0 || ASSETCHAINS_CCLIB.size() > 0 || ASSETCHAINS_FOUNDERS_REWARD != 0 || ASSETCHAINS_NOTARY_PAY[0] != 0 )
         {
             fprintf(stderr,"perc %.4f%% ac_pub=[%02x%02x%02x...] acsize.%d\n",dstr(ASSETCHAINS_COMMISSION)*100,ASSETCHAINS_OVERRIDE_PUBKEY33[0],ASSETCHAINS_OVERRIDE_PUBKEY33[1],ASSETCHAINS_OVERRIDE_PUBKEY33[2],(int32_t)ASSETCHAINS_SCRIPTPUB.size());
             extraptr = extrabuf;
@@ -1922,17 +1930,19 @@ void komodo_args(char *argv0)
             // if we have one era, this should create the same data structure as it used to, same if we increase _MAX_ERAS
             for ( int i = 0; i <= ASSETCHAINS_LASTERA; i++ )
             {
-                printf("ERA%u: end.%llu reward.%llu halving.%llu decay.%llu\n", i,
+                printf("ERA%u: end.%llu reward.%llu halving.%llu decay.%llu notarypay.%llu\n", i,
                        (long long)ASSETCHAINS_ENDSUBSIDY[i],
                        (long long)ASSETCHAINS_REWARD[i],
                        (long long)ASSETCHAINS_HALVING[i],
-                       (long long)ASSETCHAINS_DECAY[i]);
+                       (long long)ASSETCHAINS_DECAY[i],
+                       (long long)ASSETCHAINS_NOTARY_PAY[i]);
 
                 // TODO: Verify that we don't overrun extrabuf here, which is a 256 byte buffer
                 extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_ENDSUBSIDY[i]),(void *)&ASSETCHAINS_ENDSUBSIDY[i]);
                 extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_REWARD[i]),(void *)&ASSETCHAINS_REWARD[i]);
                 extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_HALVING[i]),(void *)&ASSETCHAINS_HALVING[i]);
                 extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_DECAY[i]),(void *)&ASSETCHAINS_DECAY[i]);
+                extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_NOTARY_PAY[i]),(void *)&ASSETCHAINS_NOTARY_PAY[i]);
             }
 
             if (ASSETCHAINS_LASTERA > 0)
@@ -2008,8 +2018,6 @@ void komodo_args(char *argv0)
                 }
                 fprintf(stderr," <- CCLIB name\n");
             }
-            if ( ASSETCHAINS_NOTARY_PAY != 0 )
-                extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_NOTARY_PAY),(void *)&ASSETCHAINS_NOTARY_PAY);
         }
         
         addn = GetArg("-seednode","");

@@ -1778,8 +1778,21 @@ bool verusCheckPOSBlock(int32_t slowflag, CBlock *pblock, int32_t height)
 
 int32_t komodo_notarized_height(int32_t *prevMoMheightp,uint256 *hashp,uint256 *txidp,int32_t *prevNotarizedHt,int32_t *ppNotarizedHt);
 
-uint64_t komodo_notarypayamount(int64_t notarycount)
+uint64_t komodo_notarypayamount(int32_t nHeight, int64_t notarycount)
 {
+    int8_t curEra = 0;
+    // if we have an end block in the first era, find our current era
+    if ( ASSETCHAINS_ENDSUBSIDY[0] > 1 )
+    {
+        for ( curEra = 0; curEra <= ASSETCHAINS_LASTERA; curEra++ )
+        {
+            if ( ASSETCHAINS_ENDSUBSIDY[curEra] > nHeight || ASSETCHAINS_ENDSUBSIDY[curEra] == 0 )
+                break;
+        }
+    }
+    if ( curEra > ASSETCHAINS_LASTERA )
+        return(0);
+    
     if ( notarycount == 0 )
     {
         fprintf(stderr, "komodo_notarypayamount failed num notaries is 0!\n");
@@ -1798,16 +1811,16 @@ uint64_t komodo_notarypayamount(int64_t notarycount)
         return(0);
     }
     if ( prevnotarizedht == pprevnotarizedht )
-        return(0); // cant happen, sanity check. 
+        return(0); // cant happen, sanity check.
     
     // use the previous height and the height before that to guarentee that the notarzations used to calculate these values, 
-    // are them selves actually notarised and cannot be reorged. 
+    // are them selves actually notarised and cannot be reorged.
     int32_t n = prevnotarizedht - pprevnotarizedht;
     
-    fprintf(stderr, "blocks since last notarization: %i\n",n);
     // multiply the amount possible to be used for each block by the amount of blocks passed 
     // to get the total posible to be paid for this notarisation.
-    AmountToPay = ASSETCHAINS_NOTARY_PAY*n;
+    AmountToPay = ASSETCHAINS_NOTARY_PAY[curEra]*n;
+    fprintf(stderr, "era.%i paying total of %lu for %i blocks\n",curEra,AmountToPay,n);
     ret = AmountToPay / notarycount;
     return(ret);
 }
@@ -1859,7 +1872,7 @@ uint64_t komodo_notarypay(CMutableTransaction &txNew, std::vector<int8_t> &Notar
     txNew.vout.resize(NotarisationNotaries.size()+1);
     
     // Calcualte the amount to pay. If 0, means not enough notarizations to calcuate amount. 
-    AmountToPay = komodo_notarypayamount(NotarisationNotaries.size());
+    AmountToPay = komodo_notarypayamount(height,NotarisationNotaries.size());
     if ( AmountToPay == 0 )
         return(0);
     
@@ -1973,7 +1986,7 @@ uint64_t komodo_checknotarypay(CBlock *pblock,int32_t height)
             {
                 matches++;
                 total += txout.nValue;
-                fprintf(stderr, "MATCHED AmountPaid.%lu notaryid.%i\n",AmountToPay,NotarisationNotaries[n-1]);
+                //fprintf(stderr, "MATCHED AmountPaid.%lu notaryid.%i\n",AmountToPay,NotarisationNotaries[n-1]);
             }
             else fprintf(stderr, "NOT MATCHED AmountPaid.%lu AmountToPay.%lu notaryid.%i\n", pblock->vtx[0].vout[n].nValue, AmountToPay, NotarisationNotaries[n-1]);
         }
@@ -2171,7 +2184,7 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
     // the default daemon miner, checks the actual vins so the only way this will fail, is if someone changes the miner, 
     // and then creates txs to the crypto address meeting min sigs and puts it in tx position 1.
     // If they go through this effort, the block will still fail at connect block, and will be auto purged by the temp file fix.   
-    if ( failed == 0 && ASSETCHAINS_NOTARY_PAY != 0 && pblock->vtx[0].vout.size() > 1 )
+    if ( failed == 0 && ASSETCHAINS_NOTARY_PAY[0] != 0 && pblock->vtx[0].vout.size() > 1 )
     {
         // We check the full validation in ConnectBlock directly to get the amount for coinbase. So just approx here.
         if ( slowflag == 0 )

@@ -722,7 +722,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
             txNew.vout[1].nValue = 0;
             // timelocks and commissions are currently incompatible due to validation complexity of the combination
         } 
-        else if ( fNotarisationBlock && ASSETCHAINS_NOTARY_PAY != 0 && pblock->vtx[1].vout.size() == 2 && pblock->vtx[1].vout[1].nValue == 0 )
+        else if ( fNotarisationBlock && ASSETCHAINS_NOTARY_PAY[0] != 0 && pblock->vtx[1].vout.size() == 2 && pblock->vtx[1].vout[1].nValue == 0 )
         {
             // Get the OP_RETURN for the notarisation
             uint8_t *script = (uint8_t *)&pblock->vtx[1].vout[1].scriptPubKey[0];

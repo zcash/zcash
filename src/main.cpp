@@ -3282,7 +3282,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         fprintf(stderr,"grandfathered exception, until jan 15th 2019\n");
     }
     // Do this here before the block is moved to the main block files.
-    if ( ASSETCHAINS_NOTARY_PAY != 0 && pindex->GetHeight() > 10 )
+    if ( ASSETCHAINS_NOTARY_PAY[0] != 0 && pindex->GetHeight() > 10 )
     {
         // do a full block scan to get notarisation position and to enforce a valid notarization is in position 1.
         // if notarisation in the block, must be position 1 and the coinbase must pay notaries.
