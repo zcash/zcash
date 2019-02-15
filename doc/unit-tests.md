@@ -1,17 +1,6 @@
 Compiling/running automated tests
 ---------------------------------
 
-Automated tests will be automatically compiled if dependencies were met in configure
-and tests weren't explicitly disabled.
+This document has been relocated to https://zcash.readthedocs.io/en/latest/rtd_pages/development_guidelines.html#testing
 
-There are two scripts for running tests:
-
-* ``qa/zcash/full_test_suite.py``, to run the main test suite
-* ``qa/pull-tester/rpc-tests.sh``, to run the RPC tests.
-
-The main test suite uses two different testing frameworks. Tests using the Boost
-framework are under ``src/test/``; tests using the Google Test/Google Mock
-framework are under ``src/gtest/`` and ``src/wallet/gtest/``. The latter framework
-is preferred for new Zcash unit tests.
-
-RPC tests are implemented in Python under the ``qa/rpc-tests/`` directory.
+The source for this document is available at https://gitlab.com/zcash-docs/zcash-docs/blob/master/source/rtd_pages/development_guidelines.rst

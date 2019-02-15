@@ -183,9 +183,9 @@ TransactionBuilderResult TransactionBuilder::Build()
         auto cm = spend.note.cm();
         auto nf = spend.note.nullifier(
             spend.expsk.full_viewing_key(), spend.witness.position());
-        if (!(cm && nf)) {
+        if (!cm || !nf) {
             librustzcash_sapling_proving_ctx_free(ctx);
-            return TransactionBuilderResult("Missing spend commitment or nullifier");
+            return TransactionBuilderResult("Spend is invalid");
         }
 
         CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
@@ -220,7 +220,7 @@ TransactionBuilderResult TransactionBuilder::Build()
         auto cm = output.note.cm();
         if (!cm) {
             librustzcash_sapling_proving_ctx_free(ctx);
-            return TransactionBuilderResult("Missing output commitment");
+            return TransactionBuilderResult("Output is invalid");
         }
 
         libzcash::SaplingNotePlaintext notePlaintext(output.note, output.memo);
@@ -273,7 +273,7 @@ TransactionBuilderResult TransactionBuilder::Build()
         dataToBeSigned = SignatureHash(scriptCode, mtx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId);
     } catch (std::logic_error ex) {
         librustzcash_sapling_proving_ctx_free(ctx);
-        return TransactionBuilderResult("Could not construct signature hash");
+        return TransactionBuilderResult("Could not construct signature hash: " + std::string(ex.what()));
     }
 
     // Create Sapling spendAuth and binding signatures
