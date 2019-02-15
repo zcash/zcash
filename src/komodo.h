@@ -1025,7 +1025,7 @@ int32_t komodo_connectblock(bool fJustCheck, CBlockIndex *pindex,CBlock& block)
             return(0);
         if ( notarisations.size() == 1 && notarisations[0] == 1 )
             return(1);
-        if ( notarisations.size() > 1 )
+        if ( notarisations.size() > 1 || (notarisations.size() == 1 && notarisations[0] != 1) )
             return(-1);
     }
     else return(0);

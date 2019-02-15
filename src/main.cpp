@@ -3248,7 +3248,6 @@ static int64_t nTimeTotal = 0;
 bool FindBlockPos(int32_t tmpflag,CValidationState &state, CDiskBlockPos &pos, unsigned int nAddSize, unsigned int nHeight, uint64_t nTime, bool fKnown = false);
 bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBlockIndex *pindexNew, const CDiskBlockPos& pos);
 
-
 bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pindex, CCoinsViewCache& view, bool fJustCheck,bool fCheckPOW)
 {
     CDiskBlockPos blockPos;
@@ -3288,9 +3287,9 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         // do a full block scan to get notarisation position and to enforce a valid notarization is in position 1.
         // if notarisation in the block, must be position 1 and the coinbase must pay notaries.
         int notarisationTx = komodo_connectblock(true,pindex,*(CBlock *)&block);  
-        // -1 means that the valid notarization isnt in position 1.
+        // -1 means that the valid notarization isnt in position 1 or there are too many notarizations in this block.
         if ( notarisationTx == -1 )
-            return state.DoS(100, error("ConnectBlock(): Notarisation is not in TX position 1! Invalid Block!"),
+            return state.DoS(100, error("ConnectBlock(): Notarization is not in TX position 1 or block contains more than 1 notarization! Invalid Block!"),
                         REJECT_INVALID, "bad-notarization-position");
         // 1 means this block contains a valid notarisation and its in position 1.
         // its no longer possible for any attempted notarization to be in a block with a valid one!
