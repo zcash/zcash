@@ -572,7 +572,7 @@ komodod_LDADD += \
   $(LIBVERUS_CRYPTO) \
   $(LIBVERUS_PORTABLE_CRYPTO) \
   $(LIBZCASH_LIBS) \
-  libcc.so -lncurses
+  libcc.dylib -lncurses
 
 if ENABLE_PROTON
 komodod_LDADD += $(LIBBITCOIN_PROTON) $(PROTON_LIBS)
