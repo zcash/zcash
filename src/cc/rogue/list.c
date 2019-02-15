@@ -10,9 +10,9 @@
  * See the file LICENSE.TXT for full copyright and licensing information.
  */
 
-#include <stdlib.h>
-#include <curses.h>
-#include <memory.h>
+//#include <stdlib.h>
+//#include <curses.h>
+//#include <memory.h>
 #include "rogue.h"
 
 #ifdef MASTER

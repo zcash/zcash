@@ -10,9 +10,9 @@
  * See the file LICENSE.TXT for full copyright and licensing information.
  */
 
-#include <string.h>
-#include <curses.h>
-#include <ctype.h>
+//#include <string.h>
+//#include <curses.h>
+//#include <ctype.h>
 #include "rogue.h"
 
 /*

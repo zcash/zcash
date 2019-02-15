@@ -8,12 +8,11 @@
  * @(#)main.c	4.22 (Berkeley) 02/05/99
  */
 
-#include <stdlib.h>
-#include <string.h>
+//#include <stdlib.h>
+//#include <string.h>
 #include <signal.h>
-#include <unistd.h>
-#include <time.h>
-#include <curses.h>
+//#include <unistd.h>
+//#include <curses.h>
 #include "rogue.h"
 #ifdef STANDALONE
 #include "../komodo/src/komodo_cJSON.h"
@@ -88,6 +87,8 @@ void rogueiterate(struct rogue_state *rs)
         endwin();
         my_exit(1);
     }
+    //fprintf(stderr,"LINES %d, COLS %d\n",LINES,COLS);
+    
     // Set up windows
     if ( hw == NULL )
         hw = newwin(LINES, COLS, 0, 0);
@@ -247,21 +248,24 @@ int32_t rogue_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t nu
     }
     uint32_t starttime = (uint32_t)time(NULL);
     rogueiterate(rs);
-    /*fprintf(stderr,"elapsed %d seconds\n",(uint32_t)time(NULL) - starttime);
-    sleep(2);
-    
-    starttime = (uint32_t)time(NULL);
-    for (i=0; i<100; i++)
+    if ( 0 )
     {
-        memset(rs,0,sizeof(*rs));
-        rs->seed = seed;
-        rs->keystrokes = keystrokes;
-        rs->numkeys = num;
-        rs->sleeptime = 0;
-        rogueiterate(rs);
+        fprintf(stderr,"elapsed %d seconds\n",(uint32_t)time(NULL) - starttime);
+        sleep(2);
+        
+        starttime = (uint32_t)time(NULL);
+        for (i=0; i<10000; i++)
+        {
+            memset(rs,0,sizeof(*rs));
+            rs->seed = seed;
+            rs->keystrokes = keystrokes;
+            rs->numkeys = num;
+            rs->sleeptime = 0;
+            rogueiterate(rs);
+        }
+        fprintf(stderr,"elapsed %d seconds\n",(uint32_t)time(NULL)-starttime);
+        sleep(3);
     }
-    fprintf(stderr,"elapsed %d seconds\n",(uint32_t)time(NULL)-starttime);
-    sleep(1);*/
     if ( (fp= fopen("checkfile","wb")) != 0 )
     {
         save_file(rs,fp,0);

@@ -29,9 +29,9 @@
     SUCH DAMAGE.
 */
 
-#include <stdlib.h>
-#include <string.h>
-#include <curses.h>
+//#include <stdlib.h>
+//#include <string.h>
+//#include <curses.h>
 #include "rogue.h"
 
 /************************************************************************/
