@@ -1109,7 +1109,7 @@ UniValue rogue_setname(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             if ( (namestr= jstri(params,0)) != 0 )
             {
                 result.push_back(Pair("result","success"));
-                result.push_back(Pair("name",namestr));
+                result.push_back(Pair("pname",namestr));
                 Rogue_pname = namestr;
                 return(result);
             }
