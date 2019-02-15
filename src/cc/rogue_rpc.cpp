@@ -39,7 +39,7 @@ int32_t rogue_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t nu
 void rogue_packitemstr(char *packitemstr,struct rogue_packitem *item);
 
 
-std::string Rogue_pname = "fred";
+std::string Rogue_pname = "";
 
 /*
  Roguelander - using highlander competition between rogue players
@@ -403,7 +403,7 @@ UniValue rogue_playerobj(std::vector<uint8_t> playerdata,uint256 playertxid,uint
     obj.push_back(Pair("experience",(int64_t)P.experience));
     obj.push_back(Pair("dungeonlevel",(int64_t)P.dungeonlevel));
     obj.push_back(Pair("chain",symbol));
-    obj.push_back(Pair("name",pname));
+    obj.push_back(Pair("pname",pname));
     return(obj);
 }
 
