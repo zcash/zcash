@@ -1,3 +1,4 @@
+#!/bin/sh
 cd rogue;
 ./configure # only need this first time
 make; cd ..

@@ -1028,7 +1028,7 @@ UniValue rogue_pending(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     result.push_back(Pair("result","success"));
     rogue_univalue(result,"pending",-1,-1);
     result.push_back(Pair("pending",a));
-    result.push_back(Pair("numpending",a.size()));
+    result.push_back(Pair("numpending",(int64_t)a.size()));
     return(result);
 }
 
@@ -1055,7 +1055,7 @@ UniValue rogue_players(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
         }
     }
     result.push_back(Pair("playerdata",a));
-    result.push_back(Pair("numplayerdata",a.size()));
+    result.push_back(Pair("numplayerdata",(int64_t)a.size()));
     return(result);
 }
 
@@ -1094,7 +1094,7 @@ UniValue rogue_games(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     }
     result.push_back(Pair("pastgames",b));
     result.push_back(Pair("games",a));
-    result.push_back(Pair("numgames",a.size()+b.size()));
+    result.push_back(Pair("numgames",(int64_t)(a.size()+b.size())));
     return(result);
 }
 
