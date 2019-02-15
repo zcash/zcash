@@ -392,7 +392,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
 
             CFeeRate feeRate(nTotalIn-tx.GetValueOut(), nTxSize);
 
-            if ( fNotarisation && check_pprevnotarizedht() ) 
+            if ( fNotarisation ) 
             {
                 // check if the notarization found is actually valid. 
                 if ( tx.vout.size() == 2 && tx.vout[1].nValue == 0 )
@@ -402,6 +402,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                     int32_t scriptlen = (int32_t)tx.vout[1].scriptPubKey.size();
                     if ( script[0] == OP_RETURN )
                     {
+                        Notarisations++;
                         int32_t notarizedheight = komodo_getnotarizedheight(pblock->nTime, nHeight, script, scriptlen);
                         if ( notarizedheight != 0 )
                         {
@@ -435,11 +436,11 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                         }
                         else if ( Notarisations > 1 ) 
                         {
+                            fprintf(stderr, "skipping notarizations.%d\n",Notarisations);
                             // Any attempted notarization needs to be in its own block!
                             // If we find a valid one and place it in position 1, an invalid one must wait until the next block to be mined.
                             continue;
                         }
-                        Notarisations++;
                     }
                 }
             }

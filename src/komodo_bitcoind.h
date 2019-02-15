@@ -1776,11 +1776,9 @@ bool verusCheckPOSBlock(int32_t slowflag, CBlock *pblock, int32_t height)
     return(isPOS);
 }
 
-int32_t komodo_notarized_height(int32_t *prevMoMheightp,uint256 *hashp,uint256 *txidp,int32_t *prevNotarizedHt,int32_t *ppNotarizedHt,int32_t *pppNotarizedHt);
-
 uint64_t komodo_notarypayamount(int32_t nHeight, int64_t notarycount)
 {
-    int8_t curEra = 0;
+    int8_t curEra = 0; int64_t ret = 0;
     // if we have an end block in the first era, find our current era
     if ( ASSETCHAINS_ENDSUBSIDY[0] > 1 )
     {
@@ -1798,39 +1796,11 @@ uint64_t komodo_notarypayamount(int32_t nHeight, int64_t notarycount)
         fprintf(stderr, "komodo_notarypayamount failed num notaries is 0!\n");
         return(0);
     }
-    // fetch notarised height, the previous, and the one before that.
-    int32_t notarizedht=0,prevMoMheight,prevnotarizedht=0,pprevnotarizedht=0,ppprevnotarizedht=0,n=0; uint256 notarizedhash,txid;
-    uint64_t AmountToPay=0,ret=0;
-    notarizedht = komodo_notarized_height(&prevMoMheight,&notarizedhash,&txid,&prevnotarizedht,&pprevnotarizedht,&ppprevnotarizedht);
-    fprintf(stderr, "notarizedht.%d prevnotarizedht.%d pprevnotarizedht.%d ppprevnotarizedht.%d\n",notarizedht,prevnotarizedht,pprevnotarizedht,ppprevnotarizedht);
-    
-    // We cannot pay out if 4 notarisation's have not yet happened!
-    // redundant now... should never happen.
-    if ( ppprevnotarizedht == 0 )
-    {
-        fprintf(stderr, "need 4 notarizations to happen before notaries can be paid.\n");
-        return(0);
-    }
-    if ( prevnotarizedht == pprevnotarizedht )
-        return(0); // cant happen, sanity check.
-        
-    if ( notarizedht == nHeight )
-    {
-        // we need to use the previous previous previous notarized heights, to make sure the payment is the same, if trying to use a reorged nota.
-        n = ppprevnotarizedht - pprevnotarizedht;
-    }
-    else 
-    {
-        // use the previous height and the height before that to guarentee that the notarzations used to calculate these values, 
-        // are them selves actually notarised and cannot be reorged.
-        n = prevnotarizedht - pprevnotarizedht;
-    }
-    
-    // multiply the amount possible to be used for each block by the amount of blocks passed 
-    // to get the total posible to be paid for this notarisation.
-    AmountToPay = ASSETCHAINS_NOTARY_PAY[curEra]*n;
-    fprintf(stderr, "era.%i paying total of %lu for %i blocks\n",curEra,AmountToPay,n);
-    ret = AmountToPay / notarycount;
+    // Because of reorgs we cannot use the notarized height value. 
+    // We need to basically guess here and just pay some static amount.
+    // Has the unwanted effect of varying coin emission, but cannot be helped.
+    fprintf(stderr, "era.%i paying total of %lu\n",curEra, ASSETCHAINS_NOTARY_PAY[curEra]);
+    ret = ASSETCHAINS_NOTARY_PAY[curEra] / notarycount;
     return(ret);
 }
 
@@ -1852,6 +1822,7 @@ int32_t komodo_getnotarizedheight(uint32_t timestamp,int32_t height, uint8_t *sc
         }
         else
         {
+            // This should no longer happen. Unless notaries are making actual invalid notarizations.
             fprintf(stderr, "<<<<<<INVALID NOTARIZATION ht.%i\n",notarizedheight);
             return(0);
         }
@@ -1862,7 +1833,6 @@ int32_t komodo_getnotarizedheight(uint32_t timestamp,int32_t height, uint8_t *sc
 uint64_t komodo_notarypay(CMutableTransaction &txNew, std::vector<int8_t> &NotarisationNotaries, uint32_t timestamp, int32_t height, uint8_t *script, int32_t len)
 {
     // fetch notary pubkey array.
-    // Need a better/safer way for notaries era, should really be height based rather than timestamp? 
     uint64_t total = 0, AmountToPay = 0;
     int32_t staked_era; int8_t numSN;
     uint8_t staked_pubkeys[64][33];
@@ -1880,7 +1850,7 @@ uint64_t komodo_notarypay(CMutableTransaction &txNew, std::vector<int8_t> &Notar
     // resize coinbase vouts to number of notary nodes +1 for coinbase itself.
     txNew.vout.resize(NotarisationNotaries.size()+1);
     
-    // Calcualte the amount to pay. If 0, means not enough notarizations to calcuate amount. 
+    // Calcualte the amount to pay according to the current era.
     AmountToPay = komodo_notarypayamount(height,NotarisationNotaries.size());
     if ( AmountToPay == 0 )
         return(0);

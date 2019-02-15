@@ -3248,22 +3248,6 @@ static int64_t nTimeTotal = 0;
 bool FindBlockPos(int32_t tmpflag,CValidationState &state, CDiskBlockPos &pos, unsigned int nAddSize, unsigned int nHeight, uint64_t nTime, bool fKnown = false);
 bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBlockIndex *pindexNew, const CDiskBlockPos& pos);
 
-bool check_pprevnotarizedht()
-{
-    static bool init;
-    if ( init )
-        return(true);
-    int32_t notarizedht,prevMoMheight,prevnotarizedht,pprevnotarizedht,ppprevnotarizedht; uint256 notarizedhash,txid;
-    notarizedht = komodo_notarized_height(&prevMoMheight,&notarizedhash,&txid,&prevnotarizedht,&pprevnotarizedht,&ppprevnotarizedht);
-    if ( ppprevnotarizedht > 0 )
-    {
-        init = true;
-        return(true);
-    }
-    else 
-        return(false);
-}
-
 
 bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pindex, CCoinsViewCache& view, bool fJustCheck,bool fCheckPOW)
 {
@@ -3299,7 +3283,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         fprintf(stderr,"grandfathered exception, until jan 15th 2019\n");
     }
     // Do this here before the block is moved to the main block files.
-    if ( ASSETCHAINS_NOTARY_PAY[0] != 0 && pindex->GetHeight() > 10 && check_pprevnotarizedht() )
+    if ( ASSETCHAINS_NOTARY_PAY[0] != 0 && pindex->GetHeight() > 10 )
     {
         // do a full block scan to get notarisation position and to enforce a valid notarization is in position 1.
         // if notarisation in the block, must be position 1 and the coinbase must pay notaries.
@@ -3925,8 +3909,8 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
         return AbortNode(state, "Failed to read block");
     //if ( ASSETCHAINS_SYMBOL[0] != 0 || pindexDelete->GetHeight() > 1400000 )
     {
-        int32_t notarizedht,prevMoMheight,prevnotarizedht,pprevnotarizedht,ppprevnotarizedht; uint256 notarizedhash,txid;
-        notarizedht = komodo_notarized_height(&prevMoMheight,&notarizedhash,&txid,&prevnotarizedht,&pprevnotarizedht,&ppprevnotarizedht);
+        int32_t notarizedht,prevMoMheight; uint256 notarizedhash,txid;
+        notarizedht = komodo_notarized_height(&prevMoMheight,&notarizedhash,&txid);
         if ( block.GetHash() == notarizedhash )
         {
             fprintf(stderr,"DisconnectTip trying to disconnect notarized block at ht.%d\n",(int32_t)pindexDelete->GetHeight());
@@ -4260,8 +4244,8 @@ static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMo
     assert(MAX_REORG_LENGTH > 0);//, "We must be able to reorg some distance");
     if (reorgLength > MAX_REORG_LENGTH)
     {
-        int32_t notarizedht,prevMoMheight,prevnotarizedht,pprevnotarizedht,ppprevnotarizedht; uint256 notarizedhash,txid;
-        notarizedht = komodo_notarized_height(&prevMoMheight,&notarizedhash,&txid,&prevnotarizedht,&pprevnotarizedht,&ppprevnotarizedht);
+        int32_t notarizedht,prevMoMheight; uint256 notarizedhash,txid;
+        notarizedht = komodo_notarized_height(&prevMoMheight,&notarizedhash,&txid);
         if ( pindexFork->GetHeight() < notarizedht )
         {
             fprintf(stderr,"pindexFork->GetHeight().%d is < notarizedht %d, so ignore it\n",(int32_t)pindexFork->GetHeight(),notarizedht);
@@ -5612,8 +5596,8 @@ uint64_t CalculateCurrentUsage()
 /* Prune a block file (modify associated database entries)*/
 bool PruneOneBlockFile(bool tempfile, const int fileNumber)
 {
-    uint256 notarized_hash,notarized_desttxid; int32_t prevMoMheight,notarized_height,prevnotarized_height,prevNotarizedHt,pprevNotarizedHt;
-    notarized_height = komodo_notarized_height(&prevMoMheight,&notarized_hash,&notarized_desttxid,&prevnotarized_height,&prevNotarizedHt,&pprevNotarizedHt);
+    uint256 notarized_hash,notarized_desttxid; int32_t prevMoMheight,notarized_height;
+    notarized_height = komodo_notarized_height(&prevMoMheight,&notarized_hash,&notarized_desttxid);
     //fprintf(stderr, "pruneblockfile.%i\n",fileNumber); sleep(15);
     for (BlockMap::iterator it = mapBlockIndex.begin(); it != mapBlockIndex.end(); ++it) 
     {
