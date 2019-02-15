@@ -5488,11 +5488,11 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
                 {
                     pfrom->nBlocksinARow = 0;
                     pfrom->nBlocksinARow2 = 0;
-                    //fprintf(stderr, "reset node.%i\n",(int32_t)pfrom->GetId());
+                    fprintf(stderr, "reset node.%i\n",(int32_t)pfrom->GetId());
                 }
                 else 
                 {
-                    //fprintf(stderr, "Requesting new peer node.%i blocksinrow.%i blocsinrow2.%i\n",(int32_t)pfrom->GetId(),pfrom->nBlocksinARow,pfrom->nBlocksinARow2);
+                    fprintf(stderr, "Requesting new peer node.%i blocksinrow.%i blocsinrow2.%i\n",(int32_t)pfrom->GetId(),pfrom->nBlocksinARow,pfrom->nBlocksinARow2);
                     return(false);
                 }
             }
