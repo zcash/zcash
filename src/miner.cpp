@@ -406,13 +406,13 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                         int32_t notarizedheight = komodo_getnotarizedheight(pblock->nTime, nHeight, script, scriptlen);
                         if ( notarizedheight != 0 )
                         {
+                            //fprintf(stderr, "notarizations.%d notarizedheight.%d last_notarizedheight.%d\n",Notarisations,notarizedheight,last_notarizedheight);
                             if ( last_notarizedheight == 0 )
                             {
                                 // this is the first one we see, add it to the block as TX1 
                                 NotarisationNotaries = TMP_NotarisationNotaries;
                                 dPriority = 1e16;
                                 fNotarisationBlock = true;
-                                last_notarizedheight = notarizedheight;
                                 fprintf(stderr, "Notarisation %s set to maximum priority\n",hash.ToString().c_str());
                             }
                             else if ( notarizedheight > last_notarizedheight )
@@ -433,6 +433,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                                 fNotarisationBlock = true;
                                 fprintf(stderr, "Notarisation %s set to maximum priority replacing notarization %s\n",hash.ToString().c_str(), Tx.GetHash().ToString().c_str());
                             }
+                            last_notarizedheight = notarizedheight;
                         }
                         else if ( Notarisations > 1 ) 
                         {
@@ -441,6 +442,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                             // If we find a valid one and place it in position 1, an invalid one must wait until the next block to be mined.
                             continue;
                         }
+                        //fprintf(stderr, "BOTTOM: notarizations.%d notarizedheight.%d last_notarizedheight.%d\n",Notarisations,notarizedheight,last_notarizedheight);
                     }
                 }
             }
