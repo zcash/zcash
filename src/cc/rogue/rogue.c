@@ -294,11 +294,13 @@ int32_t rogue_replay(uint64_t seed,int32_t sleeptime)
     while ( 1 )
     {
         roguefname(fname,seed,counter);
+        printf("check (%s)\n",fname);
         if ( (fp= fopen(fname,"rb")) == 0 )
             break;
         if ( (fsize= get_filesize(fp)) <= 0 )
         {
             fclose(fp);
+            printf("fsize.%ld\n",fsize);
             break;
         }
         if ( (keystrokes= (char *)realloc(keystrokes,num+fsize)) == 0 )
