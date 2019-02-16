@@ -36,18 +36,13 @@
 #include <sys/stat.h>
 #include <errno.h>
 
+#ifdef notyet
+
 struct cursesd_info
 {
     uint8_t screen[LINES][COLS];
 } *stdscr;
 typedef struct cursesd_info WINDOW;
-
-#ifndef TRUE
-#define TRUE 1
-#endif
-#ifndef FALSE
-#define FALSE 0
-#endif
 
 WINDOW *initscr(void);
 int endwin(void);
@@ -71,6 +66,16 @@ int clrtobot(void);
 int wclrtobot(WINDOW *win);
 int clrtoeol(void);
 int wclrtoeol(WINDOW *win);
+
+#endif
+
+#ifndef TRUE
+#define TRUE 1
+#endif
+#ifndef FALSE
+#define FALSE 0
+#endif
+
 
 #define standout()
 #define standend()
