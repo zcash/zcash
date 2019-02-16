@@ -252,7 +252,7 @@ int main(int argc, char **argv, char **envp)
     if ( argc == 2 && (fp=fopen(argv[1],"rb")) == 0 )
     {
         seed = atol(argv[1]);
-        fprintf(stderr,"replay %llu\n",(long long)seed);
+        //fprintf(stderr,"replay %llu\n",(long long)seed);
         return(rogue_replay(seed,50000));
     }
     else

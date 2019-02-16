@@ -246,7 +246,7 @@ int32_t rogue_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t nu
     {
         rs->P = *player;
         rs->restoring = 1;
-        fprintf(stderr,"restore player packsize.%d HP.%d\n",rs->P.packsize,rs->P.hitpoints);
+        //fprintf(stderr,"restore player packsize.%d HP.%d\n",rs->P.packsize,rs->P.hitpoints);
     }
     uint32_t starttime = (uint32_t)time(NULL);
     rogueiterate(rs);
@@ -296,7 +296,7 @@ int32_t rogue_replay(uint64_t seed,int32_t sleeptime)
     while ( 1 )
     {
         roguefname(fname,seed,counter);
-        printf("check (%s)\n",fname);
+        //printf("check (%s)\n",fname);
         if ( (fp= fopen(fname,"rb")) == 0 )
             break;
         if ( (fsize= get_filesize(fp)) <= 0 )
@@ -329,13 +329,14 @@ int32_t rogue_replay(uint64_t seed,int32_t sleeptime)
         {
             if ( fread(&P,1,sizeof(P),fp) > 0 )
             {
-                printf("max size player\n");
+                //printf("max size player\n");
                 player = &P;
             }
             fclose(fp);
         }
         rogue_replay2(0,seed,keystrokes,num,player,50);
         mvaddstr(LINES - 2, 0, (char *)"replay completed");
+        sleep(4);
         endwin();
     }
     if ( keystrokes != 0 )
