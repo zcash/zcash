@@ -19,7 +19,22 @@
 #define	LINES	24
 #define	COLS	80
 
+#include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
+#include <memory.h>
+#include <string.h>
+#include <unistd.h>
+#include <stdarg.h>	/* we need va_list */
+#include <stddef.h>	/* we want wchar_t */
+#include <stdbool.h>
+#include <ctype.h>
+
+#include <time.h>
+#include <sys/types.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <errno.h>
 
 struct cursesd_info
 {
