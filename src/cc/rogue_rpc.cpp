@@ -828,28 +828,35 @@ UniValue rogue_keystrokes(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
 
 UniValue rogue_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result; CPubKey mypk,roguepk; int32_t i,n,num,maxplayers,gameheight,batonht,batonvout,numplayers,regslot,numkeys,err; std::string symbol,pname; CTransaction gametx; uint64_t seed,mult; int64_t buyin,batonvalue; char myrogueaddr[64],fname[64],*keystrokes = 0; std::vector<uint8_t> playerdata; uint256 batontxid,playertxid,gametxid; FILE *fp; uint8_t player[10000];
-    mypk = pubkey2pk(Mypubkey());
+    UniValue result; CPubKey mypk,roguepk; int32_t i,n,num,maxplayers,gameheight,batonht,batonvout,numplayers,regslot,numkeys,err; std::string symbol,pname; CTransaction gametx; uint64_t seed,mult; int64_t buyin,batonvalue; char rogueaddr[64],fname[64],*pubstr,*keystrokes = 0; std::vector<uint8_t> playerdata; uint256 batontxid,playertxid,gametxid; FILE *fp; uint8_t player[10000],pub33[33];
+    pk = pubkey2pk(Mypubkey());
     roguepk = GetUnspendable(cp,0);
-    GetCCaddress1of2(cp,myrogueaddr,roguepk,mypk);
     result.push_back(Pair("status","success"));
     result.push_back(Pair("name","rogue"));
     result.push_back(Pair("method","extract"));
-    result.push_back(Pair("myrogueaddr",myrogueaddr));
-    fprintf(stderr,"extract\n");
     if ( (params= cclib_reparse(&n,params)) != 0 )
     {
         if ( n > 0 )
         {
             gametxid = juint256(jitem(params,0));
             result.push_back(Pair("gametxid",gametxid.GetHex()));
-            fprintf(stderr,"gametxid.%s\n",gametxid.GetHex().c_str());
+            if ( n == 2 )
+            {
+                if ( (pubstr= jstr(jitem(params,1),0)) != 0 && strlen(pubstr) == 66 )
+                {
+                    decode_hex(pub33,33,pubstr);
+                    pk = buf2pk(pub33);
+                }
+                fprintf(stderr,"gametxid.%s %s\n",gametxid.GetHex().c_str(),pubstr);
+            }
+            GetCCaddress1of2(cp,myrogueaddr,roguepk,pk);
+            result.push_back(Pair("rogueaddr",rogueaddr));
             if ( (err= rogue_isvalidgame(cp,gameheight,gametx,buyin,maxplayers,gametxid)) == 0 )
             {
-                if ( rogue_findbaton(cp,playertxid,&keystrokes,numkeys,regslot,playerdata,batontxid,batonvout,batonvalue,batonht,gametxid,gametx,maxplayers,myrogueaddr,numplayers,symbol,pname) == 0 )
+                if ( rogue_findbaton(cp,playertxid,&keystrokes,numkeys,regslot,playerdata,batontxid,batonvout,batonvalue,batonht,gametxid,gametx,maxplayers,rogueaddr,numplayers,symbol,pname) == 0 )
                 {
                     UniValue obj; struct rogue_player P;
-                    seed = rogue_gamefields(obj,maxplayers,buyin,gametxid,myrogueaddr);
+                    seed = rogue_gamefields(obj,maxplayers,buyin,gametxid,rogueaddr);
                     fprintf(stderr,"(%s) found baton %s numkeys.%d seed.%llu playerdata.%d\n",pname.size()!=0?pname.c_str():Rogue_pname.c_str(),batontxid.ToString().c_str(),numkeys,(long long)seed,(int32_t)playerdata.size());
                     memset(&P,0,sizeof(P));
                     if ( playerdata.size() > 0 )

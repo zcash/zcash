@@ -64,7 +64,7 @@ CClib_methods[] =
     { (char *)"rogue", (char *)"players", (char *)"<no args>", 0, 0, 'D', EVAL_ROGUE },
     { (char *)"rogue", (char *)"games", (char *)"<no args>", 0, 0, 'F', EVAL_ROGUE },
     { (char *)"rogue", (char *)"setname", (char *)"pname", 1, 1, 'N', EVAL_ROGUE },
-    { (char *)"rogue", (char *)"extract", (char *)"gametxid", 1, 1, 'X', EVAL_ROGUE },
+    { (char *)"rogue", (char *)"extract", (char *)"gametxid [pubkey]", 1, 2, 'X', EVAL_ROGUE },
 #else
     { (char *)"sudoku", (char *)"gen", (char *)"<no args>", 0, 0, 'G', EVAL_SUDOKU },
     { (char *)"sudoku", (char *)"txidinfo", (char *)"txid", 1, 1, 'T', EVAL_SUDOKU },
