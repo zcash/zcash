@@ -290,7 +290,7 @@ long get_filesize(FILE *fp)
 
 int32_t rogue_replay(uint64_t seed,int32_t sleeptime)
 {
-    FILE *fp; char fname[1024]; char *keystrokes = 0; long num=0,fsize; int32_t i,counter = 0; struct rogue_state *rs;
+    FILE *fp; char fname[1024]; char *keystrokes = 0; long num=0,fsize; int32_t i,counter = 0; struct rogue_state *rs; struct rogue_player P,*player = 0;
     if ( seed == 0 )
         seed = 777;
     while ( 1 )
@@ -324,7 +324,17 @@ int32_t rogue_replay(uint64_t seed,int32_t sleeptime)
     }
     if ( num > 0 )
     {
-        rogue_replay2(0,seed,keystrokes,num,0,50);
+        sprintf(fname,"rogue.%llu.player",(long long)seed);
+        if ( (fp=fopen(fname,"rb")) != 0 )
+        {
+            if ( fread(&P,1,sizeof(P),fp) > 0 )
+            {
+                printf("max size player\n");
+                player = &P;
+            }
+            fclose(fp);
+        }
+        rogue_replay2(0,seed,keystrokes,num,player,50);
         mvaddstr(LINES - 2, 0, (char *)"replay completed");
         endwin();
     }
