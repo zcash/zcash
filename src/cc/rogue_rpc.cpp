@@ -876,7 +876,7 @@ UniValue rogue_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                         sprintf(fname,"rogue.%llu.player",(long long)seed);
                         if ( (fp= fopen(fname,"wb")) != 0 )
                         {
-                            if ( fwrite(playerdata,1,(int32_t)playerdata.size(),fp) != playerdata.size() )
+                            if ( fwrite(&playerdata[0],1,(int32_t)playerdata.size(),fp) != playerdata.size() )
                                 fprintf(stderr,"error writing %s\n",fname);
                             fclose(fp);
                         }
