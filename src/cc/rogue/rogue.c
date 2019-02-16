@@ -646,8 +646,8 @@ quit(int sig)
         }
         else
         {
-            score(rs,purse, 1, 0);
-            fprintf(stderr,"done!\n");
+            //score(rs,purse, 1, 0);
+            //fprintf(stderr,"done!\n");
         }
     }
     else
