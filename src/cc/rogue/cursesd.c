@@ -13,10 +13,11 @@
  *                                                                            *
  ******************************************************************************/
 
-/*#include "cursesd.h"
+#include "cursesd.h"
 
 WINDOW *initscr()
 {
     if ( stdscr == 0 )
-        stdscr = (WINDOW)calloc(1,sizeof(*stdscr));
-}*/
+        stdscr = (WINDOW *)calloc(1,sizeof(*stdscr));
+    return(stdscr);
+}
