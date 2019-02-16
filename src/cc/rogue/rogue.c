@@ -232,14 +232,14 @@ void rogue_bailout(struct rogue_state *rs)
         fprintf(stderr,"error issuing (%s)\n",cmd);
 }
 
-int32_t rogue_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t num,struct rogue_player *player)
+int32_t rogue_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t num,struct rogue_player *player,int32_t sleepmillis)
 {
     struct rogue_state *rs; FILE *fp; int32_t i;
     rs = (struct rogue_state *)calloc(1,sizeof(*rs));
     rs->seed = seed;
     rs->keystrokes = keystrokes;
     rs->numkeys = num;
-    rs->sleeptime = 0*50000;
+    rs->sleeptime = sleepmillis * 1000;
     if ( player != 0 )
     {
         rs->P = *player;
@@ -320,7 +320,7 @@ int32_t rogue_replay(uint64_t seed,int32_t sleeptime)
     }
     if ( num > 0 )
     {
-        rogue_replay2(0,seed,keystrokes,num,0);
+        rogue_replay2(0,seed,keystrokes,num,0,0);
         mvaddstr(LINES - 2, 0, (char *)"replay completed");
         endwin();
     }
