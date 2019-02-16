@@ -836,6 +836,7 @@ UniValue rogue_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     result.push_back(Pair("name","rogue"));
     result.push_back(Pair("method","extract"));
     result.push_back(Pair("myrogueaddr",myrogueaddr));
+    fprintf(stderr,"extract\n");
     if ( (params= cclib_reparse(&n,params)) != 0 )
     {
         if ( n > 0 )
