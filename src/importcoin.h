@@ -26,7 +26,7 @@
 CAmount GetCoinImportValue(const CTransaction &tx);
 
 CTransaction MakeImportCoinTransaction(const TxProof proof,
-        const CTransaction burnTx, const std::vector<CTxOut> payouts);
+        const CTransaction burnTx, const std::vector<CTxOut> payouts, uint32_t nExpiryHeightOverride = 0);
 
 CTxOut MakeBurnOutput(CAmount value, uint32_t targetCCid, std::string targetSymbol, const std::vector<CTxOut> payouts,std::vector<uint8_t> rawproof);
 
