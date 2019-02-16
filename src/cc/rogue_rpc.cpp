@@ -832,6 +832,7 @@ UniValue rogue_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     mypk = pubkey2pk(Mypubkey());
     roguepk = GetUnspendable(cp,0);
     GetCCaddress1of2(cp,myrogueaddr,roguepk,mypk);
+    result.push_back(Pair("status","success"));
     result.push_back(Pair("name","rogue"));
     result.push_back(Pair("method","extract"));
     result.push_back(Pair("myrogueaddr",myrogueaddr));
@@ -841,6 +842,7 @@ UniValue rogue_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
         {
             gametxid = juint256(jitem(params,0));
             result.push_back(Pair("gametxid",gametxid.GetHex()));
+            fprintf(stderr,"gametxid.%s\n",gametxid.GetHex().c_str());
             if ( (err= rogue_isvalidgame(cp,gameheight,gametx,buyin,maxplayers,gametxid)) == 0 )
             {
                 if ( rogue_findbaton(cp,playertxid,&keystrokes,numkeys,regslot,playerdata,batontxid,batonvout,batonvalue,batonht,gametxid,gametx,maxplayers,myrogueaddr,numplayers,symbol,pname) == 0 )
