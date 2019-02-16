@@ -19,6 +19,8 @@
 #define	LINES	24
 #define	COLS	80
 
+#include <stdint.h>
+
 struct cursesd_info
 {
     uint8_t screen[LINES][COLS];
