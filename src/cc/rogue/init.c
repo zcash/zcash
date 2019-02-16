@@ -49,7 +49,11 @@ void init_player(struct rogue_state *rs)
         // duplicate rng usage of normal case
         obj = new_item();
         init_weapon(obj, MACE);
+        free(obj);
+        obj = new_item();
         init_weapon(obj, BOW);
+        free(obj);
+        obj = new_item();
         init_weapon(obj, ARROW);
         obj->o_count = rnd(15) + 25;
         free(obj);

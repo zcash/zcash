@@ -873,6 +873,13 @@ UniValue rogue_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                                 fprintf(stderr,"error writing %s\n",fname);
                             fclose(fp);
                         }
+                        sprintf(fname,"rogue.%llu.player",(long long)seed);
+                        if ( (fp= fopen(fname,"wb")) != 0 )
+                        {
+                            if ( fwrite(playerdata,1,(int32_t)playerdata.size(),fp) != playerdata.size() )
+                                fprintf(stderr,"error writing %s\n",fname);
+                            fclose(fp);
+                        }
                         num = rogue_replay2(player,seed,keystrokes,numkeys,playerdata.size()==0?0:&P,50);
                         if ( keystrokes != 0 )
                             free(keystrokes);
