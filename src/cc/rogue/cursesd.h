@@ -49,6 +49,28 @@ typedef struct cursesd_info WINDOW;
 #define FALSE 0
 #endif
 
+WINDOW *initscr(void);
+int endwin(void);
+int isendwin(void);
+//SCREEN *newterm(const char *type, FILE *outfd, FILE *infd);
+//SCREEN *set_term(SCREEN *new);
+//void delscreen(SCREEN* sp);
+
+int refresh(void);
+int wrefresh(WINDOW *win);
+//int wnoutrefresh(WINDOW *win);
+//int doupdate(void);
+int redrawwin(WINDOW *win);
+int wredrawln(WINDOW *win, int beg_line, int num_lines);
+
+int erase(void);
+int werase(WINDOW *win);
+int clear(void);
+int wclear(WINDOW *win);
+int clrtobot(void);
+int wclrtobot(WINDOW *win);
+int clrtoeol(void);
+int wclrtoeol(WINDOW *win);
 
 #define standout()
 #define standend()

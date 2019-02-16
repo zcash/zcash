@@ -101,7 +101,7 @@ HDRS     = rogue.h extern.h score.h
 OBJS1    = vers.$(O) extern.$(O) armor.$(O) chase.$(O) command.$(O) \
            daemon.$(O) daemons.$(O) fight.$(O) init.$(O) io.$(O) list.$(O) \
            mach_dep.$(O) rogue.$(O) mdport.$(O) misc.$(O) monsters.$(O) \
-           move.$(O) new_level.$(O) cursesd.$(O)
+           move.$(O) new_level.$(O) 
 OBJS2    = options.$(O) pack.$(O) passages.$(O) potions.$(O) rings.$(O) \
            rip.$(O) rooms.$(O) save.$(O) scrolls.$(O) state.$(O) sticks.$(O) \
            things.$(O) weapons.$(O) wizard.$(O) xcrypt.$(O)
