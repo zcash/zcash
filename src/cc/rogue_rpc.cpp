@@ -892,7 +892,7 @@ UniValue rogue_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                             fprintf(stderr,"zero value character was killed -> no playerdata\n");
                             newdata.resize(0);
                         }
-                        else fprintf(stderr,"\nextracted $$$gold.%d hp.%d strength.%d level.%d exp.%d dl.%d n.%d size.%d\n",P.gold,P.hitpoints,P.strength,P.level,P.experience,P.dungeonlevel,n,(int32_t)sizeof(P));
+                        fprintf(stderr,"\nextracted $$$gold.%d hp.%d strength.%d level.%d exp.%d dl.%d n.%d size.%d\n",P.gold,P.hitpoints,P.strength,P.level,P.experience,P.dungeonlevel,n,(int32_t)sizeof(P));
                         if ( keystrokes != 0 )
                             free(keystrokes);
                     } else num = 0;
