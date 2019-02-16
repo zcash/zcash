@@ -588,7 +588,8 @@ playit(struct rogue_state *rs)
         {
             if ( rs->replaydone != 0 )
             {
-                fprintf(stderr,"replaydone\n"); sleep(3);
+                if ( rs->sleeptime != 0 )
+                    sleep(3);
                 return;
             }
             if ( rs->sleeptime != 0 )
