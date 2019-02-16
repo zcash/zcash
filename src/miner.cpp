@@ -155,7 +155,6 @@ CScript MarmaraCoinbaseOpret(uint8_t funcid,int32_t height,CPubKey pk);
 int32_t komodo_is_notarytx(const CTransaction& tx);
 uint64_t komodo_notarypay(CMutableTransaction &txNew, std::vector<int8_t> &NotarisationNotaries, uint32_t timestamp, int32_t height, uint8_t *script, int32_t len);
 int32_t komodo_getnotarizedheight(uint32_t timestamp,int32_t height, uint8_t *script, int32_t len);
-bool check_pprevnotarizedht();
 
 CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32_t gpucount, bool isStake)
 {
