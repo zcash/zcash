@@ -273,8 +273,8 @@ inventory(struct rogue_state *rs,THING *list, int type)
         }
         msg_esc = FALSE;
     }
-    //if ( n_objs != numpack )
-        fprintf(stderr,"n_objs.%d vs numpack.%d\n",n_objs,numpack), sleep(2);
+    //if ( n_objs != inpack )
+        fprintf(stderr,"n_objs.%d vs inpack.%d\n",n_objs,inpack), sleep(2);
     if (n_objs == 0)
     {
 	if (terse)
