@@ -371,6 +371,12 @@ int32_t CheckPUBKEYimport(TxProof proof,std::vector<uint8_t> rawproof,CTransacti
         return -1;
     }
 
+    // might be malleable:
+    if (burnTx.nExpiryHeight != sourcetx.nExpiryHeight) {
+        LOGSTREAM("importcoin", CCLOG_INFO, stream << "burntx nExpiryHeight incorrect for source txid=" << sourcetxid.GetHex() << std::endl);
+        return -1;
+    }
+
     //ac_pubkey check:
     if (CheckVin0PubKey(sourcetx) < 0) {
         return -1;
