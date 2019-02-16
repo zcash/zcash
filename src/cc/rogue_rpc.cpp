@@ -859,7 +859,7 @@ UniValue rogue_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                     }
                     if ( keystrokes != 0 )
                     {
-                        sprintf(fname,"%llu.0",(long long)seed);
+                        sprintf(fname,"rogue.%llu.0",(long long)seed);
                         if ( (fp= fopen(fname,"wb")) != 0 )
                         {
                             if ( fwrite(keystrokes,1,numkeys,fp) != numkeys )
