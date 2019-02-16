@@ -7883,7 +7883,10 @@ UniValue test_heirmarker(const UniValue& params, bool fHelp)
 
 	cp = CCinit(&C, EVAL_HEIR);
 	return(FinalizeCCTx(0, cp, mtx, myPubkey, 10000, opret));
+
+
 }
+
 
 UniValue test_burntx(const UniValue& params, bool fHelp)
 {
@@ -7926,4 +7929,53 @@ UniValue test_burntx(const UniValue& params, bool fHelp)
     GetCCaddress(cp, unspendableTokenAddr, unspPk);
     CCaddr2set(cp, EVAL_TOKENS, unspPk, tokenpriv, unspendableTokenAddr);
     return(FinalizeCCTx(0, cp, mtx, myPubkey, 10000, EncodeTokenOpRet(tokenid, voutPubkeys, CScript())));
+}
+
+UniValue test_proof(const UniValue& params, bool fHelp)
+{
+	UniValue result(UniValue::VOBJ);
+	std::vector<uint8_t>proof;
+
+	if (fHelp || (params.size() != 2))
+		throw runtime_error("incorrect params\n");
+	
+
+	proof = ParseHex(params[0].get_str());
+	uint256 cointxid = Parseuint256((char *)params[1].get_str().c_str());
+
+	std::vector<uint256> txids;
+
+	CMerkleBlock merkleBlock;
+	if (!E_UNMARSHAL(proof, ss >> merkleBlock)) {
+		result.push_back(Pair("error", "could not unmarshal proof"));
+		return result;
+	}
+	uint256 merkleRoot = merkleBlock.txn.ExtractMatches(txids);
+
+	result.push_back(Pair("source_root", merkleRoot.GetHex()));
+
+	for (int i = 0; i < txids.size(); i++)
+		std::cerr << "merkle block txid=" << txids[0].GetHex() << std::endl;
+
+
+	std::vector<bool> vMatches(txids.size());
+	for (auto v : vMatches) v = true;
+	CPartialMerkleTree verifTree(txids, vMatches);
+
+	result.push_back(Pair("verif_root", verifTree.ExtractMatches(txids).GetHex()));
+
+	if (std::find(txids.begin(), txids.end(), cointxid) == txids.end()) {
+		fprintf(stderr, "invalid proof for this cointxid\n");
+	}
+
+    std::vector<uint256> vMerkleTree;
+    bool f;
+    ::BuildMerkleTree(&f, txids, vMerkleTree);
+
+    std::vector<uint256> vMerkleBranch = ::GetMerkleBranch(0, txids.size(), vMerkleTree);
+
+    uint256 ourResult = SafeCheckMerkleBranch(zeroid, vMerkleBranch, 0);
+    result.push_back(Pair("SafeCheckMerkleBranch", ourResult.GetHex()));
+
+	return result;
 }
