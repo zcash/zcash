@@ -178,7 +178,8 @@ pack_room(struct rogue_state *rs,bool from_floor, THING *obj)
 	inpack = MAXPACK;
 	return FALSE;
     }
-
+    fprintf(stderr,"inpack.%d vs MAX.%d\n",inpack,MAXPACK), sleep(2);
+    
     if (from_floor)
     {
 	detach(lvl_obj, obj);
