@@ -178,7 +178,7 @@ pack_room(struct rogue_state *rs,bool from_floor, THING *obj)
 	inpack = MAXPACK;
 	return FALSE;
     }
-    fprintf(stderr,"inpack.%d vs MAX.%d\n",inpack,MAXPACK), sleep(2);
+    //fprintf(stderr,"inpack.%d vs MAX.%d\n",inpack,MAXPACK), sleep(2);
     
     if (from_floor)
     {
@@ -273,6 +273,8 @@ inventory(struct rogue_state *rs,THING *list, int type)
         }
         msg_esc = FALSE;
     }
+    //if ( n_objs != numpack )
+        fprintf(stderr,"n_objs.%d vs numpack.%d\n",n_objs,numpack), sleep(2);
     if (n_objs == 0)
     {
 	if (terse)
