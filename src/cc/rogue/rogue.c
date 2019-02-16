@@ -335,7 +335,6 @@ int32_t rogue_replay(uint64_t seed,int32_t sleeptime)
             fclose(fp);
         }
         rogue_replay2(0,seed,keystrokes,num,player,150);
-        sleep(4);
 
         //mvaddstr(LINES - 2, 0, (char *)"replay completed");
         endwin();
@@ -589,7 +588,7 @@ playit(struct rogue_state *rs)
         {
             if ( rs->replaydone != 0 )
             {
-                //fprintf(stderr,"replaydone\n"); sleep(3);
+                fprintf(stderr,"replaydone\n"); sleep(3);
                 return;
             }
             if ( rs->sleeptime != 0 )
