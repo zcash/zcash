@@ -1,16 +1,29 @@
-/*
- * Score file structure
- *
- * @(#)score.h	4.6 (Berkeley) 02/05/99
- *
- * Rogue: Exploring the Dungeons of Doom
- * Copyright (C) 1980-1983, 1985, 1999 Michael Toy, Ken Arnold and Glenn Wichman
- * All rights reserved.
- *
- * See the file LICENSE.TXT for full copyright and licensing information.
- */
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 #ifndef H_CURSESD_H
 #define H_CURSESD_H
+
+#define	LINES	24
+#define	COLS	80
+
+struct cursesd_info
+{
+    uint8_t screen[LINES][COLS];
+} *stdscr;
+typedef struct cursesd_info WINDOW;
 
 #ifndef TRUE
 #define TRUE 1
@@ -19,8 +32,6 @@
 #define FALSE 0
 #endif
 
-typedef void *WINDOW;
-WINDOW stdscr;
 
 #define standout()
 #define standend()
@@ -28,7 +39,6 @@ WINDOW stdscr;
 #define raw()
 #define noecho()
 #define flushinp()
-#define initscr()
 #define clear()
 #define clrtoeol()
 

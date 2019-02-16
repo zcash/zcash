@@ -816,6 +816,7 @@ THING	*leave_pack(struct rogue_state *rs,THING *obj, bool newobj, bool all);
 THING	*new_item(void);
 THING	*new_thing(struct rogue_state *rs);
 void	end_line(struct rogue_state *rs);
+int32_t num_packitems();
 
 void	runners(struct rogue_state *rs,int);
 void	land(struct rogue_state *rs,int);

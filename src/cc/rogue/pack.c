@@ -165,6 +165,7 @@ out:
 bool
 pack_room(struct rogue_state *rs,bool from_floor, THING *obj)
 {
+    inpack = num_packitems();
     if (++inpack > MAXPACK)
     {
 	if (!terse)
@@ -245,6 +246,16 @@ pack_char()
  *	List what is in the pack.  Return TRUE if there is something of
  *	the given type.
  */
+
+int32_t num_packitems()
+{
+    THING *list = pack;
+    int32_t type = 0,n = 0;
+    for (; list != NULL; list = next(list))
+        n++;
+    return(n);
+}
+
 bool
 inventory(struct rogue_state *rs,THING *list, int type)
 {
