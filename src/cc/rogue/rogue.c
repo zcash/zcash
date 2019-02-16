@@ -322,7 +322,7 @@ int32_t rogue_replay(uint64_t seed,int32_t sleeptime)
     }
     if ( num > 0 )
     {
-        rogue_replay2(0,seed,keystrokes,num,0,0);
+        rogue_replay2(0,seed,keystrokes,num,0,50);
         mvaddstr(LINES - 2, 0, (char *)"replay completed");
         endwin();
     }
