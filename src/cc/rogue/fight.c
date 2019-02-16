@@ -10,10 +10,10 @@
  * See the file LICENSE.TXT for full copyright and licensing information.
  */
 
-#include <stdlib.h>
-#include <curses.h>
-#include <string.h>
-#include <ctype.h>
+//#include <stdlib.h>
+//#include <curses.h>
+//#include <string.h>
+//#include <ctype.h>
 #include "rogue.h"
 
 //#define	EQSTR(a, b)	(strcmp(a, b) == 0)

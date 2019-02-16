@@ -11,9 +11,9 @@
  * See the file LICENSE.TXT for full copyright and licensing information.
  */
 
-#include <curses.h>
-#include <string.h>
-#include <ctype.h>
+//#include <curses.h>
+//#include <string.h>
+//#include <ctype.h>
 #include "rogue.h"
 
 /*
@@ -498,55 +498,55 @@ add_line(struct rogue_state *rs,char *fmt, char *arg)
 	if (line_cnt >= LINES - 1 || fmt == NULL)
 	{
 	    if (inv_type == INV_OVER && fmt == NULL && !newpage)
-	    {
-		msg(rs,"");
+        {
+            msg(rs,"");
             if ( rs->sleeptime != 0 )
                 refresh();
-		tw = newwin(line_cnt + 1, maxlen + 2, 0, COLS - maxlen - 3);
-		sw = subwin(tw, line_cnt + 1, maxlen + 1, 0, COLS - maxlen - 2);
-                for (y = 0; y <= line_cnt; y++) 
-                { 
-                    wmove(sw, y, 0); 
-                    for (x = 0; x <= maxlen; x++) 
-                        waddch(sw, mvwinch(hw, y, x)); 
-                } 
-		wmove(tw, line_cnt, 1);
-		waddstr(tw, prompt);
-		/*
-		 * if there are lines below, use 'em
-		 */
-		if (LINES > NUMLINES)
-		{
-		    if (NUMLINES + line_cnt > LINES)
-			mvwin(tw, LINES - (line_cnt + 1), COLS - maxlen - 3);
-		    else
-			mvwin(tw, NUMLINES, 0);
-		}
-		touchwin(tw);
-		wrefresh(tw);
-		wait_for(rs,' ');
-                if (md_hasclreol())
-		{
-		    werase(tw);
-		    leaveok(tw, TRUE);
-		    wrefresh(tw);
-		}
-		delwin(tw);
-		touchwin(stdscr);
+            tw = newwin(line_cnt + 1, maxlen + 2, 0, COLS - maxlen - 3);
+            sw = subwin(tw, line_cnt + 1, maxlen + 1, 0, COLS - maxlen - 2);
+            for (y = 0; y <= line_cnt; y++)
+            {
+                wmove(sw, y, 0);
+                for (x = 0; x <= maxlen; x++)
+                    waddch(sw, mvwinch(hw, y, x));
+            }
+            wmove(tw, line_cnt, 1);
+            waddstr(tw, prompt);
+            /*
+             * if there are lines below, use 'em
+             */
+            if (LINES > NUMLINES)
+            {
+                if (NUMLINES + line_cnt > LINES)
+                    mvwin(tw, LINES - (line_cnt + 1), COLS - maxlen - 3);
+                else
+                    mvwin(tw, NUMLINES, 0);
+            }
+            touchwin(tw);
+            wrefresh(tw);
+            wait_for(rs,' ');
+            if (md_hasclreol())
+            {
+                werase(tw);
+                leaveok(tw, TRUE);
+                wrefresh(tw);
+            }
+            delwin(tw);
+            touchwin(stdscr);
 	    }
 	    else
 	    {
-		wmove(hw, LINES - 1, 0);
-		waddstr(hw, prompt);
-		wrefresh(hw);
-		wait_for(rs,' ');
-		clearok(curscr, TRUE);
-		wclear(hw);
-		touchwin(stdscr);
-	    }
-	    newpage = TRUE;
-	    line_cnt = 0;
-	    maxlen = (int) strlen(prompt);
+            wmove(hw, LINES - 1, 0);
+            waddstr(hw, prompt);
+            wrefresh(hw);
+            wait_for(rs,' ');
+            clearok(curscr, TRUE);
+            wclear(hw);
+            touchwin(stdscr);
+        }
+        newpage = TRUE;
+        line_cnt = 0;
+        maxlen = (int) strlen(prompt);
 	}
 	if (fmt != NULL && !(line_cnt == 0 && *fmt == '\0'))
 	{

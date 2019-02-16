@@ -10,10 +10,7 @@
  * See the file LICENSE.TXT for full copyright and licensing information.
  */
 
-#include <stdlib.h>
-#include <string.h>
-#include <curses.h>
-#include <ctype.h>
+//#include <curses.h>
 #include "rogue.h"
 
 /*
@@ -312,8 +309,12 @@ over:
 		    after = FALSE;
 		    msg(rs,"version %s. (mctesq was here)", release);
 		when 'S': 
-		    after = FALSE;
-		    save_game(rs);
+            after = FALSE;
+#ifdef STANDALONE
+            save_game(rs);
+#else
+            msg(rs,"Saving is disabled, use bailout rpc");
+#endif
 		when '.': ;			/* Rest command */
 		when ' ': after = FALSE;	/* "Legal" illegal command */
 		when '^':

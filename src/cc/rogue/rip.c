@@ -11,14 +11,14 @@
  * See the file LICENSE.TXT for full copyright and licensing information.
  */
 
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
+//#include <stdlib.h>
+//#include <string.h>
+//#include <time.h>
 #include <signal.h>
-#include <sys/types.h>
-#include <ctype.h>
-#include <fcntl.h>
-#include <curses.h>
+//#include <sys/types.h>
+//#include <ctype.h>
+//#include <fcntl.h>
+//#include <curses.h>
 #include "rogue.h"
 #include "score.h"
 

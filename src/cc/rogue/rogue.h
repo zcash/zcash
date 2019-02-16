@@ -12,8 +12,42 @@
 
 #ifndef H_ROGUE_H
 #define H_ROGUE_H
+#include <stdio.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <memory.h>
+#include <string.h>
+#include <unistd.h>
+#include <stdarg.h>	/* we need va_list */
+#include <stddef.h>	/* we want wchar_t */
+#include <stdbool.h>
+#include <ctype.h>
+
+#include <time.h>
+#include <sys/types.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <errno.h>
+
+#ifndef DONTUSEGUI
+#include <curses.h>
+#else
+
+#include "cursesd.h"
+#endif
+
+#ifdef LINES
+#undef LINES
+#endif
+#ifdef COLS
+#undef COLS
+#endif
+
+#define	LINES	24
+#define	COLS	80
 
 #include "extern.h"
+
 
 #undef lines 
 
@@ -782,6 +816,7 @@ THING	*leave_pack(struct rogue_state *rs,THING *obj, bool newobj, bool all);
 THING	*new_item(void);
 THING	*new_thing(struct rogue_state *rs);
 void	end_line(struct rogue_state *rs);
+int32_t num_packitems();
 
 void	runners(struct rogue_state *rs,int);
 void	land(struct rogue_state *rs,int);

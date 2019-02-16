@@ -8,14 +8,17 @@
  * @(#)main.c	4.22 (Berkeley) 02/05/99
  */
 
-#include <stdlib.h>
-#include <string.h>
+//#include <stdlib.h>
+//#include <string.h>
 #include <signal.h>
-#include <unistd.h>
-#include <time.h>
-#include <curses.h>
+//#include <unistd.h>
+//#include <curses.h>
 #include "rogue.h"
+#ifdef STANDALONE
+#include "../komodo/src/komodo_cJSON.h"
+#else
 #include "../../komodo_cJSON.h"
+#endif
 
 /*
  * main:
@@ -84,6 +87,8 @@ void rogueiterate(struct rogue_state *rs)
         endwin();
         my_exit(1);
     }
+    //fprintf(stderr,"LINES %d, COLS %d\n",LINES,COLS);
+    
     // Set up windows
     if ( hw == NULL )
         hw = newwin(LINES, COLS, 0, 0);
@@ -148,7 +153,9 @@ uint8_t *OS_fileptr(long *allocsizep,char *fname);
 
 int32_t rogue_setplayerdata(struct rogue_state *rs,char *gametxidstr)
 {
-    char cmd[32768]; int32_t i,n,retval=-1; char *filestr,*statusstr,*datastr,fname[128]; long allocsize; cJSON *retjson,*array,*item;
+    char cmd[32768]; int32_t i,n,retval=-1; char *filestr,*pname,*statusstr,*datastr,fname[128]; long allocsize; cJSON *retjson,*array,*item;
+    if ( gametxidstr == 0 || *gametxidstr == 0 )
+        return(retval);
     sprintf(fname,"%s.gameinfo",gametxidstr);
     sprintf(cmd,"./komodo-cli -ac_name=ROGUE cclib gameinfo 17 \\\"[%%22%s%%22]\\\" > %s",gametxidstr,fname);
     if ( system(cmd) != 0 )
@@ -170,8 +177,10 @@ int32_t rogue_setplayerdata(struct rogue_state *rs,char *gametxidstr)
                             retval = 0;
                             if ( (item= jobj(item,"player")) != 0 && (datastr= jstr(item,"data")) != 0 )
                             {
+                                if ( (pname= jstr(item,"pname")) != 0 && strlen(pname) < MAXSTR-1 )
+                                    strcpy(whoami,pname);
                                 decode_hex((uint8_t *)&rs->P,(int32_t)strlen(datastr)/2,datastr);
-                                //fprintf(stderr,"set datastr[%d]\n",(int32_t)strlen(datastr));
+                                fprintf(stderr,"set pname[%s] %s\n",pname==0?"":pname,jprint(item,0));
                                 rs->restoring = 1;
                             }
                         }
@@ -188,12 +197,15 @@ int32_t rogue_setplayerdata(struct rogue_state *rs,char *gametxidstr)
 void rogue_progress(uint64_t seed,char *keystrokes,int32_t num)
 {
     char cmd[16384],hexstr[16384]; int32_t i;
-    for (i=0; i<num; i++)
-        sprintf(&hexstr[i<<1],"%02x",keystrokes[i]);
-    hexstr[i<<1] = 0;
-    sprintf(cmd,"./komodo-cli -ac_name=ROGUE cclib keystrokes 17 \\\"[%%22%s%%22,%%22%s%%22]\\\" >> keystrokes.log",Gametxidstr,hexstr);
-    if ( system(cmd) != 0 )
-        fprintf(stderr,"error issuing (%s)\n",cmd);
+    if ( Gametxidstr[0] != 0 )
+    {
+        for (i=0; i<num; i++)
+            sprintf(&hexstr[i<<1],"%02x",keystrokes[i]);
+        hexstr[i<<1] = 0;
+        sprintf(cmd,"./komodo-cli -ac_name=ROGUE cclib keystrokes 17 \\\"[%%22%s%%22,%%22%s%%22]\\\" >> keystrokes.log",Gametxidstr,hexstr);
+        if ( system(cmd) != 0 )
+            fprintf(stderr,"error issuing (%s)\n",cmd);
+    }
 }
 
 int32_t flushkeystrokes(struct rogue_state *rs)
@@ -236,21 +248,24 @@ int32_t rogue_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t nu
     }
     uint32_t starttime = (uint32_t)time(NULL);
     rogueiterate(rs);
-    /*fprintf(stderr,"elapsed %d seconds\n",(uint32_t)time(NULL) - starttime);
-    sleep(2);
-    
-    starttime = (uint32_t)time(NULL);
-    for (i=0; i<100; i++)
+    if ( 0 )
     {
-        memset(rs,0,sizeof(*rs));
-        rs->seed = seed;
-        rs->keystrokes = keystrokes;
-        rs->numkeys = num;
-        rs->sleeptime = 0;
-        rogueiterate(rs);
+        fprintf(stderr,"elapsed %d seconds\n",(uint32_t)time(NULL) - starttime);
+        sleep(2);
+        
+        starttime = (uint32_t)time(NULL);
+        for (i=0; i<10000; i++)
+        {
+            memset(rs,0,sizeof(*rs));
+            rs->seed = seed;
+            rs->keystrokes = keystrokes;
+            rs->numkeys = num;
+            rs->sleeptime = 0;
+            rogueiterate(rs);
+        }
+        fprintf(stderr,"elapsed %d seconds\n",(uint32_t)time(NULL)-starttime);
+        sleep(3);
     }
-    fprintf(stderr,"elapsed %d seconds\n",(uint32_t)time(NULL)-starttime);
-    sleep(1);*/
     if ( (fp= fopen("checkfile","wb")) != 0 )
     {
         save_file(rs,fp,0);
@@ -358,8 +373,8 @@ int rogue(int argc, char **argv, char **envp)
 
     if ((env = getenv("ROGUEOPTS")) != NULL)
         parse_opts(env);
-    if (env == NULL || whoami[0] == '\0')
-        strucpy(whoami, md_getusername(), (int) strlen(md_getusername()));
+    //if (env == NULL || whoami[0] == '\0')
+    //    strucpy(whoami, md_getusername(), (int) strlen(md_getusername()));
     lowtime = (int) time(NULL);
 #ifdef MASTER
     if (wizard && getenv("SEED") != NULL)

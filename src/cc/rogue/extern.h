@@ -13,6 +13,9 @@
 #ifndef H_EXTERN_ROGUE_H
 #define H_EXTERN_ROGUE_H
 
+#include <stdio.h>
+#include <stdbool.h>
+
 #ifdef HAVE_CONFIG_H
 #ifdef PDCURSES
 #undef HAVE_UNISTD_H

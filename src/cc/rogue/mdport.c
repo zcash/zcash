@@ -44,7 +44,7 @@
 #undef MOUSE_MOVED
 #endif
 
-#include <curses.h>
+//#include <curses.h>
 #include "extern.h"
 
 #if defined(HAVE_SYS_TYPES)

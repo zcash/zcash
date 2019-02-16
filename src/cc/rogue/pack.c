@@ -10,9 +10,9 @@
  * See the file LICENSE.TXT for full copyright and licensing information.
  */
 
-#include <string.h>
-#include <curses.h>
-#include <ctype.h>
+//#include <string.h>
+//#include <curses.h>
+//#include <ctype.h>
 #include "rogue.h"
 
 /*
@@ -165,6 +165,7 @@ out:
 bool
 pack_room(struct rogue_state *rs,bool from_floor, THING *obj)
 {
+    inpack = num_packitems();
     if (++inpack > MAXPACK)
     {
 	if (!terse)
@@ -178,7 +179,8 @@ pack_room(struct rogue_state *rs,bool from_floor, THING *obj)
 	inpack = MAXPACK;
 	return FALSE;
     }
-
+    //fprintf(stderr,"inpack.%d vs MAX.%d\n",inpack,MAXPACK), sleep(2);
+    
     if (from_floor)
     {
 	detach(lvl_obj, obj);
@@ -244,6 +246,16 @@ pack_char()
  *	List what is in the pack.  Return TRUE if there is something of
  *	the given type.
  */
+
+int32_t num_packitems()
+{
+    THING *list = pack;
+    int32_t type = 0,n = 0;
+    for (; list != NULL; list = next(list))
+        n++;
+    return(n);
+}
+
 bool
 inventory(struct rogue_state *rs,THING *list, int type)
 {
@@ -272,6 +284,8 @@ inventory(struct rogue_state *rs,THING *list, int type)
         }
         msg_esc = FALSE;
     }
+    //if ( n_objs != inpack )
+    //    fprintf(stderr,"n_objs.%d vs inpack.%d\n",n_objs,inpack), sleep(2);
     if (n_objs == 0)
     {
 	if (terse)

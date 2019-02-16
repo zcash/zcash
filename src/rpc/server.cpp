@@ -499,6 +499,7 @@ static const CRPCCommand vRPCCommands[] =
     { "tokens",       "tokeninfo",        &tokeninfo,         true },
     { "tokens",       "tokenlist",        &tokenlist,         true },
     { "tokens",       "tokenorders",      &tokenorders,       true },
+    { "tokens",       "mytokenorders",    &mytokenorders,     true },
     { "tokens",       "tokenaddress",     &tokenaddress,      true },
     { "tokens",       "tokenbalance",     &tokenbalance,      true },
     { "tokens",       "tokencreate",      &tokencreate,       true },

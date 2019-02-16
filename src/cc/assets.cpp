@@ -392,7 +392,7 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
                         return eval->Invalid("mismatched vout0 assets dual unspendable CCaddr for fill sell");
                 }
             }
-            fprintf(stderr,"fill validated\n");
+            //fprintf(stderr,"fill validated\n");
             break;
         case 'E': // fillexchange	
 			////////// not implemented yet ////////////
@@ -451,7 +451,7 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
                 }
             }
 			////////// not implemented yet ////////////
-            fprintf(stderr,"fill validated\n");
+            //fprintf(stderr,"fill validated\n");
             break;
 
         default:
@@ -462,7 +462,7 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
 
     // what does this do?
 	bool bPrevent = PreventCC(eval, tx, preventCCvins, numvins, preventCCvouts, numvouts);
-	std::cerr << "AssetsValidate() PreventCC returned=" << bPrevent << std::endl;
+	//std::cerr << "AssetsValidate() PreventCC returned=" << bPrevent << std::endl;
 	return (bPrevent);
 }
 

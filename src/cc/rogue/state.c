@@ -29,9 +29,9 @@
     SUCH DAMAGE.
 */
 
-#include <stdlib.h>
-#include <string.h>
-#include <curses.h>
+//#include <stdlib.h>
+//#include <string.h>
+//#include <curses.h>
 #include "rogue.h"
 
 /************************************************************************/
@@ -1374,9 +1374,9 @@ void rogue_restoreobject(THING *o,struct rogue_packitem *item)
                 break;
             // cur_armor and cur_weapon should be set
         }
-        char packitemstr[256];
-        strcpy(packitemstr,inv_name(o,FALSE));
-        fprintf(stderr,"packitem.(%s)\n",packitemstr);
+        //char packitemstr[256];
+        //strcpy(packitemstr,inv_name(o,FALSE));
+        //fprintf(stderr,"packitem.(%s)\n",packitemstr);
     }
 }
 

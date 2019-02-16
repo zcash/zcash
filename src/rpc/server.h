@@ -241,6 +241,7 @@ extern UniValue coinsupply(const UniValue& params, bool fHelp);
 extern UniValue tokeninfo(const UniValue& params, bool fHelp);
 extern UniValue tokenlist(const UniValue& params, bool fHelp);
 extern UniValue tokenorders(const UniValue& params, bool fHelp);
+extern UniValue mytokenorders(const UniValue& params, bool fHelp);
 extern UniValue tokenbalance(const UniValue& params, bool fHelp);
 extern UniValue assetsaddress(const UniValue& params, bool fHelp);
 extern UniValue tokenaddress(const UniValue& params, bool fHelp);
