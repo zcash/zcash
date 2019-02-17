@@ -53,27 +53,27 @@ int32_t move(int32_t y, int32_t x)
     return(wmove(stdscr,y,x));
 }
 
-int werase(WINDOW *win)
+int32_t werase(WINDOW *win)
 {
     memset(win->screen,' ',sizeof(win->screen));
     return(0);
 }
 
-int wclear(WINDOW *win)
+int32_t wclear(WINDOW *win)
 {
     werase(win);
     clearok(win,TRUE);
     return(0);
 }
 
-int wclrtoeol(WINDOW *win)
+int32_t wclrtoeol(WINDOW *win)
 {
     if ( win->x < COLS-1 )
         memset(&win->screen[win->y][win->x],' ',COLS - win->x);
     return(0);
 }
 
-int wclrtobot(WINDOW *win)
+int32_t wclrtobot(WINDOW *win)
 {
     wclrtoeol(win);
     if ( win->y < LINES-1 )
@@ -81,22 +81,22 @@ int wclrtobot(WINDOW *win)
     return(0);
 }
 
-int erase(void)
+int32_t erase(void)
 {
     return(werase(stdscr));
 }
 
-int clear(void)
+int32_t clear(void)
 {
     return(wclear(stdscr));
 }
 
-int clrtobot(void)
+int32_t clrtobot(void)
 {
     return(wclrtobot(stdscr));
 }
 
-int clrtoeol(void)
+int32_t clrtoeol(void)
 {
     return(wclrtoeol(stdscr));
 }
@@ -282,47 +282,48 @@ int32_t mvcur(int32_t oldrow, int32_t oldcol, int32_t newrow, int32_t newcol)
     return(0);
 }
 
-void endwin(void)
+int32_t endwin(void)
 {
     if ( stdscr != 0 )
         free(stdscr), stdscr = 0;
     endwinflag = 1;
+    return(0);
 }
 
-int isendwin(void)
+int32_t isendwin(void)
 {
     return(endwinflag);
 }
 
-int refresh(void)
+int32_t refresh(void)
 {
     endwinflag = 0;
     return(wrefresh(stdscr));
 }
 
-int redrawwin(WINDOW *win)
+int32_t redrawwin(WINDOW *win)
 {
     return(wrefresh(win));
 }
 
-int wredrawln(WINDOW *win, int beg_line, int num_lines)
+int32_t wredrawln(WINDOW *win, int32_t beg_line, int32_t num_lines)
 {
     return(wrefresh(win));
 }
 
 // functions with no data side effect
 #ifdef they_are_macros
-int wrefresh(WINDOW *win)
+int32_t wrefresh(WINDOW *win)
 {
     return(0);
 }
 
-int wnoutrefresh(WINDOW *win)
+int32_t wnoutrefresh(WINDOW *win)
 {
     return(0);
 }
 
-int doupdate(void)
+int32_t doupdate(void)
 {
     return(0);
 }
@@ -332,17 +333,17 @@ int32_t touchwin(WINDOW *win)
     return(0);
 }
 
-int standout(void)
+int32_t standout(void)
 {
     return(0);
 }
 
-int standend(void)
+int32_t standend(void)
 {
     return(0);
 }
 
-int raw(void)
+int32_t raw(void)
 {
     return(0);
 }
@@ -352,27 +353,27 @@ int32_t keypad(WINDOW *win, bool bf)
     return(0);
 }
 
-int noecho(void)
+int32_t noecho(void)
 {
     return(0);
 }
 
-int flushinp(void)
+int32_t flushinp(void)
 {
     return(0);
 }
 
-int clearok(WINDOW *win, bool bf)
+int32_t clearok(WINDOW *win, bool bf)
 {
     return(0);
 }
 
-int idlok(WINDOW *win, bool bf)
+int32_t idlok(WINDOW *win, bool bf)
 {
     return(0);
 }
 
-int leaveok(WINDOW *win, bool bf)
+int32_t leaveok(WINDOW *win, bool bf)
 {
     return(0);
 }
@@ -384,7 +385,7 @@ int32_t mvwin(WINDOW *win, int32_t y, int32_t x) // stub
     return(0);
 }
 
-WINDOW *subwin(WINDOW *orig, int nlines, int ncols, int begin_y, int begin_x)
+WINDOW *subwin(WINDOW *orig, int32_t nlines, int32_t ncols, int32_t begin_y, int32_t begin_x)
 {
     fprintf(stderr,"unexpected and unsupported call to subwin\n");
     return(0);
