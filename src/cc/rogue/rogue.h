@@ -29,7 +29,7 @@
 #include <sys/stat.h>
 #include <errno.h>
 
-#ifndef DONTUSEGUI
+#ifndef BUILD_ROGUE
 #include <curses.h>
 #else
 

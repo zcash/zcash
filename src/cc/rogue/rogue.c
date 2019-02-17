@@ -91,7 +91,9 @@ void rogueiterate(struct rogue_state *rs)
     
     // Set up windows
     if ( hw == NULL )
+    {
         hw = newwin(LINES, COLS, 0, 0);
+    }
     idlok(stdscr, TRUE);
     idlok(hw, TRUE);
 #ifdef MASTER

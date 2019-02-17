@@ -87,6 +87,7 @@ score(struct rogue_state *rs,int amount, int flags, char monst)
 	delwin(curscr);
 	if (hw != NULL)
 	    delwin(hw);
+        hw = NULL;
     }
 
     top_ten = (SCORE *) malloc(numscores * sizeof (SCORE));

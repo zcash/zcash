@@ -227,7 +227,9 @@ restore(struct rogue_state *rs,char *file, char **envp)
     char buf[MAXSTR];
     //auto
     STAT sbuf2;
-
+    if ( rs->guiflag == 0 )
+        return(0);
+    
     if (strcmp(file, "-r") == 0)
 	file = file_name;
 
