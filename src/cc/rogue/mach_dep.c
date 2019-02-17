@@ -46,7 +46,8 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <time.h>
-#include <curses.h>
+//#include <curses.h>
+#include "rogue.h"
 #include "extern.h"
 
 #define NOOP(x) (x += 0)

@@ -44,7 +44,7 @@
 #undef MOUSE_MOVED
 #endif
 
-#include <curses.h>
+//#include <curses.h>
 #include "extern.h"
 
 #if defined(HAVE_SYS_TYPES)
@@ -81,7 +81,12 @@
 #endif
 #endif
 
+#ifndef BUILD_ROGUE
 #include <curses.h> /* AIX requires curses.h be included before term.h */
+#else
+#include "cursesd.h"
+#endif
+
 
 #if defined(HAVE_TERM_H)
 #include <term.h>
@@ -1076,6 +1081,7 @@ md_setsuspchar(int c)
 #define M_KEYPAD 2
 #define M_TRAIL  3
 
+#ifndef BUILD_ROGUE
 int
 md_readchar()
 {
@@ -1315,7 +1321,8 @@ md_readchar()
 
     return(ch & 0x7F);
 }
-
+#endif
+        
 #if defined(LOADAV) && defined(HAVE_NLIST_H) && defined(HAVE_NLIST)
 /*
  * loadav:

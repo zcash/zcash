@@ -11,14 +11,14 @@
  * See the file LICENSE.TXT for full copyright and licensing information.
  */
 
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
+//#include <stdlib.h>
+//#include <string.h>
+//#include <time.h>
 #include <signal.h>
-#include <sys/types.h>
-#include <ctype.h>
-#include <fcntl.h>
-#include <curses.h>
+//#include <sys/types.h>
+//#include <ctype.h>
+//#include <fcntl.h>
+//#include <curses.h>
 #include "rogue.h"
 #include "score.h"
 
@@ -87,6 +87,7 @@ score(struct rogue_state *rs,int amount, int flags, char monst)
 	delwin(curscr);
 	if (hw != NULL)
 	    delwin(hw);
+        hw = NULL;
     }
 
     top_ten = (SCORE *) malloc(numscores * sizeof (SCORE));

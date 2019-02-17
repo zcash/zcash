@@ -10,13 +10,13 @@
  * See the file LICENSE.TXT for full copyright and licensing information.
  */
 
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <errno.h>
-#include <signal.h>
-#include <string.h>
-#include <curses.h>
+//#include <stdlib.h>
+//#include <sys/types.h>
+//#include <sys/stat.h>
+//#include <errno.h>
+//#include <signal.h>
+//#include <string.h>
+//#include <curses.h>
 #include "rogue.h"
 #include "score.h"
 
@@ -165,21 +165,24 @@ save_file(struct rogue_state *rs,FILE *savef,int32_t guiflag)
     memset(histo,0,sizeof(histo));
     for (i=0; i<n; i++)
     {
-        fprintf(stderr,"%02x",((uint8_t *)&rs->P)[i]);
+        //fprintf(stderr,"%02x",((uint8_t *)&rs->P)[i]);
         histo[((uint8_t *)&rs->P)[i]]++;
         rs->playerdata[i] = ((uint8_t *)&rs->P)[i];
     }
     rs->playersize = n;
-    fprintf(stderr," packsize.%d n.%d\n",rs->P.packsize,n);
+    //fprintf(stderr," packsize.%d n.%d\n",rs->P.packsize,n);
     if ( (fp= fopen(rogue_packfname(rs,fname),"wb")) != 0 )
     {
         fwrite(&rs->P,1,n,fp);
         fclose(fp);
     }
-    for (i=nonz=0; i<0x100; i++)
-        if ( histo[i] != 0 )
-            fprintf(stderr,"(%d %d) ",i,histo[i]), nonz++;
-    fprintf(stderr,"nonz.%d\n",nonz);
+    if ( 0 )
+    {
+        for (i=nonz=0; i<0x100; i++)
+            if ( histo[i] != 0 )
+                fprintf(stderr,"(%d %d) ",i,histo[i]), nonz++;
+        fprintf(stderr,"nonz.%d\n",nonz);
+    }
     fflush(savef);
     fclose(savef);
     if ( guiflag != 0 )
@@ -224,7 +227,9 @@ restore(struct rogue_state *rs,char *file, char **envp)
     char buf[MAXSTR];
     //auto
     STAT sbuf2;
-
+    if ( rs->guiflag == 0 )
+        return(0);
+    
     if (strcmp(file, "-r") == 0)
 	file = file_name;
 

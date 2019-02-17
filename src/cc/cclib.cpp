@@ -64,6 +64,7 @@ CClib_methods[] =
     { (char *)"rogue", (char *)"players", (char *)"<no args>", 0, 0, 'D', EVAL_ROGUE },
     { (char *)"rogue", (char *)"games", (char *)"<no args>", 0, 0, 'F', EVAL_ROGUE },
     { (char *)"rogue", (char *)"setname", (char *)"pname", 1, 1, 'N', EVAL_ROGUE },
+    { (char *)"rogue", (char *)"extract", (char *)"gametxid [pubkey]", 1, 2, 'X', EVAL_ROGUE },
 #else
     { (char *)"sudoku", (char *)"gen", (char *)"<no args>", 0, 0, 'G', EVAL_SUDOKU },
     { (char *)"sudoku", (char *)"txidinfo", (char *)"txid", 1, 1, 'T', EVAL_SUDOKU },
@@ -89,6 +90,7 @@ UniValue rogue_playerinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
 UniValue rogue_players(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue rogue_games(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue rogue_setname(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+UniValue rogue_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 
 #else
 bool sudoku_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx);
@@ -118,6 +120,8 @@ UniValue CClib_method(struct CCcontract_info *cp,char *method,cJSON *params)
             return(rogue_bailout(txfee,cp,params));
         else if ( strcmp(method,"highlander") == 0 )
             return(rogue_highlander(txfee,cp,params));
+        else if ( strcmp(method,"extract") == 0 )
+            return(rogue_extract(txfee,cp,params));
         else if ( strcmp(method,"playerinfo") == 0 )
             return(rogue_playerinfo(txfee,cp,params));
         else if ( strcmp(method,"players") == 0 )
@@ -492,6 +496,7 @@ cJSON *cclib_reparse(int32_t *nump,cJSON *origparams) // assumes origparams will
 
 #ifdef BUILD_ROGUE
 #include "rogue_rpc.cpp"
+#include "rogue/cursesd.c"
 #include "rogue/vers.c"
 #include "rogue/extern.c"
 #include "rogue/armor.c"

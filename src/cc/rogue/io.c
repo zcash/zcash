@@ -4,10 +4,11 @@
  * @(#)io.c	4.32 (Berkeley) 02/05/99
  */
 
-#include <stdarg.h>
-#include <curses.h>
-#include <ctype.h>
-#include <string.h>
+//#include <stdarg.h>
+//#include <curses.h>
+//#include <ctype.h>
+//#include <string.h>
+
 #include "rogue.h"
 
 /*
@@ -155,6 +156,7 @@ readchar(struct rogue_state *rs)
     char ch = -1;
     if ( rs != 0 && rs->guiflag == 0 )
     {
+        static uint32_t counter;
         if ( rs->ind < rs->numkeys )
         {
             //if ( rs->ind == rs->numkeys-1 )
@@ -162,12 +164,15 @@ readchar(struct rogue_state *rs)
             //fprintf(stderr,"(%c) ",rs->keystrokes[rs->ind]);
             return(rs->keystrokes[rs->ind++]);
         }
-        fprintf(stderr,"replay finished but readchar called\n");
+        if ( rs->replaydone != 0 && counter++ < 3 )
+            fprintf(stderr,"replay finished but readchar called\n");
         rs->replaydone = (uint32_t)time(NULL);
         //if ( (rand() & 1) == 0 )
         //    return(ESCAPE);
         //else
-        return('y');
+        if ( counter < 3 || (counter & 1) == 0 )
+            return('y');
+        else return(ESCAPE);
     }
     if ( rs == 0 || rs->guiflag != 0 )
     {

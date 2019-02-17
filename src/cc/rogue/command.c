@@ -10,10 +10,7 @@
  * See the file LICENSE.TXT for full copyright and licensing information.
  */
 
-#include <stdlib.h>
-#include <string.h>
-#include <curses.h>
-#include <ctype.h>
+//#include <curses.h>
 #include "rogue.h"
 
 /*
@@ -272,6 +269,7 @@ over:
 		    q_comm = FALSE;
             if ( rs->guiflag != 0 )
                 rogue_bailout(rs);
+            else rs->replaydone = (uint32_t)time(NULL);
             return;
 		when 'i': after = FALSE; inventory(rs,pack, 0);
 		when 'I': after = FALSE; picky_inven(rs);
@@ -312,9 +310,12 @@ over:
 		    after = FALSE;
 		    msg(rs,"version %s. (mctesq was here)", release);
 		when 'S': 
-            msg(rs,"Saving is disabled, use bailout rpc");
             after = FALSE;
-		    //save_game(rs);
+#ifdef STANDALONE
+            save_game(rs);
+#else
+            msg(rs,"Saving is disabled, use bailout rpc");
+#endif
 		when '.': ;			/* Rest command */
 		when ' ': after = FALSE;	/* "Legal" illegal command */
 		when '^':

@@ -12,10 +12,10 @@
  * See the file LICENSE.TXT for full copyright and licensing information.
  */
 
-#include <stdlib.h>
-#include <curses.h>
-#include <ctype.h>
-#include <string.h>
+//#include <stdlib.h>
+//#include <curses.h>
+//#include <ctype.h>
+//#include <string.h>
 #include "rogue.h"
 
 #define	EQSTR(a, b, c)	(strncmp(a, b, c) == 0)
@@ -266,7 +266,7 @@ get_str(struct rogue_state *rs,void *vopt, WINDOW *win)
     {
 	if (c == -1)
 	    continue;
-	else if (c == erasechar())	/* process erase character */
+	/*else if (c == erasechar())	// process erase character
 	{
 	    if (sp > buf)
 	    {
@@ -276,12 +276,12 @@ get_str(struct rogue_state *rs,void *vopt, WINDOW *win)
 	    }
 	    continue;
 	}
-	else if (c == killchar())	/* process kill character */
+	else if (c == killchar())	// process kill character
 	{
 	    sp = buf;
 	    wmove(win, oy, ox);
 	    continue;
-	}
+	}*/
 	else if (sp == buf)
 	{
 	    if (c == '-' && win != stdscr)
