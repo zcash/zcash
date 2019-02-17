@@ -120,9 +120,9 @@ std::string Rogue_pname = "";
  */
 
 // todo:
-// verify keystrokes tx is in mempool and confirmed
-// chaining when mempool tx sometimes infinite loops?
-// bailout stealing, is it possible?
+// add some more conditions to multiplayer
+// change rogue_extract to subfunction without JSON to be used by other functions
+// how does it work with playertxid instead of pubkey
 
 //////////////////////// start of CClib interface
 //./komodod -ac_name=ROGUE -ac_supply=1000000 -pubkey=03951a6f7967ad784453116bc55cd30c54f91ea8a5b1e9b04d6b29cfd6b395ba6c -addnode=5.9.102.210  -ac_cclib=rogue -ac_perc=10000000 -ac_reward=100000000 -ac_cc=60001 -ac_script=2ea22c80203d1579313abe7d8ea85f48c65ea66fc512c878c0d0e6f6d54036669de940febf8103120c008203000401cc > /dev/null &
@@ -811,8 +811,6 @@ UniValue rogue_keystrokes(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
         } else return(cclib_error(result,"invalid gametxid"));
     } else return(cclib_error(result,"couldnt reparse params"));
 }
-
-// change to subfunction without JSON to be used by other functions
 
 UniValue rogue_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
