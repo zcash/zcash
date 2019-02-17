@@ -122,7 +122,7 @@ int32_t mvwprintw(WINDOW *win,int32_t y,int32_t x,char *fmt,...);
 #define unctrl(a) "^x"
 #define getmaxx(a) COLS
 #define getmaxy(a) LINES
-#define getyx(win,y,x) y = win->y, x = win->x
+#define getyx(win,_argfory,_argforx) _argfory = win->y, _argforx = win->x
 
 // functions with only visible effects
 #define wrefresh(win) 0
