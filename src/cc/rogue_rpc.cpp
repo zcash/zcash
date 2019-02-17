@@ -798,8 +798,11 @@ UniValue rogue_keystrokes(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
         GetCCaddress1of2(cp,destaddr,roguepk,mypk);
         if ( rogue_isvalidgame(cp,gameheight,tx,buyin,maxplayers,gametxid) == 0 )
         {
+            result.push_back(Pair("gametxid",gametxid.GetHex()));
             if ( rogue_findbaton(cp,playertxid,0,numkeys,regslot,playerdata,batontxid,batonvout,batonvalue,batonht,gametxid,tx,maxplayers,destaddr,numplayers,symbol,pname) == 0 )
             {
+                result.push_back(Pair("batontxid",batontxid.GetHex()));
+                result.push_back(Pair("playertxid",playertxid.GetHex()));
                 if ( maxplayers == 1 || nextheight <= batonht+ROGUE_MAXKEYSTROKESGAP )
                 {
                     mtx.vin.push_back(CTxIn(batontxid,batonvout,CScript()));
