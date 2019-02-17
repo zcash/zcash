@@ -357,7 +357,7 @@ int32_t rogue_isvalidgame(struct CCcontract_info *cp,int32_t &gameheight,CTransa
 
 UniValue rogue_playerobj(std::vector<uint8_t> playerdata,uint256 playertxid,uint256 tokenid,std::string symbol,std::string pname)
 {
-    int32_t i; struct rogue_player P; char packitemstr[512],*datastr; UniValue obj(UniValue::VOBJ),a(UniValue::VARR);
+    int32_t i; struct rogue_player P; char packitemstr[512],*datastr=0; UniValue obj(UniValue::VOBJ),a(UniValue::VARR);
     memset(&P,0,sizeof(P));
     if ( playerdata.size() > 0 )
     {
@@ -379,8 +379,11 @@ UniValue rogue_playerobj(std::vector<uint8_t> playerdata,uint256 playertxid,uint
     if ( tokenid != zeroid )
         obj.push_back(Pair("tokenid",tokenid.GetHex()));
     else obj.push_back(Pair("tokenid",playertxid.GetHex()));
-    obj.push_back(Pair("data",datastr));
-    free(datastr);
+    if ( datastr != 0 )
+    {
+        obj.push_back(Pair("data",datastr));
+        free(datastr);
+    }
     obj.push_back(Pair("pack",a));
     obj.push_back(Pair("packsize",(int64_t)P.packsize));
     obj.push_back(Pair("hitpoints",(int64_t)P.hitpoints));
@@ -388,10 +391,8 @@ UniValue rogue_playerobj(std::vector<uint8_t> playerdata,uint256 playertxid,uint
     obj.push_back(Pair("level",(int64_t)P.level));
     obj.push_back(Pair("experience",(int64_t)P.experience));
     obj.push_back(Pair("dungeonlevel",(int64_t)P.dungeonlevel));
-    if ( symbol.c_str() != 0 )
-        obj.push_back(Pair("chain",symbol.c_str()));
-    if ( pname.c_str() != 0 )
-        obj.push_back(Pair("pname",pname.c_str()));
+    obj.push_back(Pair("chain",symbol));
+    obj.push_back(Pair("pname",pname));
     return(obj);
 }
 
