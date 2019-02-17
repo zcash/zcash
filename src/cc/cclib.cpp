@@ -496,6 +496,7 @@ cJSON *cclib_reparse(int32_t *nump,cJSON *origparams) // assumes origparams will
 
 #ifdef BUILD_ROGUE
 #include "rogue_rpc.cpp"
+#include "rogue/cursesd.c"
 #include "rogue/vers.c"
 #include "rogue/extern.c"
 #include "rogue/armor.c"
