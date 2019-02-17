@@ -23,22 +23,7 @@
 #define ROGUE_MAXKEYSTROKESGAP 60
 #define ROGUE_MAXITERATIONS 777
 
-
-#define MAXPACK 23
-struct rogue_packitem
-{
-    int32_t type,launch,count,which,hplus,dplus,arm,flags,group;
-    char damage[8],hurldmg[8];
-};
-struct rogue_player
-{
-    int32_t gold,hitpoints,strength,level,experience,packsize,dungeonlevel,pad;
-    struct rogue_packitem roguepack[MAXPACK];
-};
-int32_t rogue_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t num,struct rogue_player *player,int32_t sleepmillis);
-#define ROGUE_DECLARED_PACK
-void rogue_packitemstr(char *packitemstr,struct rogue_packitem *item);
-
+#include "rogue/rogueplayer.h"
 
 std::string Rogue_pname = "";
 
