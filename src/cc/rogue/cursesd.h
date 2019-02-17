@@ -41,7 +41,7 @@ struct cursesd_info
     uint8_t screen[LINES][COLS];
     int32_t x,y;
 };
-extern WINDOW *stdscr;
+extern WINDOW *stdscr,*curscr;
 typedef struct cursesd_info WINDOW;
 typedef char chtype;
 
@@ -111,7 +111,7 @@ int32_t mvaddnstr(int32_t y, int32_t x, const char *str, int32_t n);
 int32_t mvwaddstr(WINDOW *win, int32_t y, int32_t x, const char *str);
 int32_t mvwaddnstr(WINDOW *win, int32_t y, int32_t x, const char *str, int32_t n);
 
-int32_t mvgetnstr(int32_t y, int32_t x, char *str, int32_t n); // stub
+int32_t wgetnstr(WINDOW *win, char *str, int32_t n); // stub
 int32_t printw(char *fmt,...);
 int32_t wprintw(WINDOW *win,char *fmt,...);
 int32_t mvprintw(int32_t y,int32_t x,char *fmt,...);
@@ -122,7 +122,7 @@ int32_t mvwprintw(WINDOW *win,int32_t y,int32_t x,char *fmt,...);
 #define unctrl(a) "^x"
 #define getmaxx(a) COLS
 #define getmaxy(a) LINES
-#define getxy(win,y,x) y = win->y, x = win->x
+#define getyx(win,y,x) y = win->y, x = win->x
 
 // functions with only visible effects
 #define wrefresh(win) 0

@@ -23,6 +23,7 @@ WINDOW *newwin(int32_t nlines,int32_t ncols,int32_t begin_y,int32_t begin_x)
     WINDOW *scr = 0;
     if ( nlines == LINES && ncols == COLS && begin_y == 0 && begin_x == 0 )
         scr = (WINDOW *)calloc(1,sizeof(*stdscr));
+    curscr = scr;
     return(scr);
 }
 
@@ -400,7 +401,7 @@ char killchar(void)
     return(3);
 }
 
-int32_t mvgetnstr(int32_t y, int32_t x, char *str, int32_t n) // stub
+int32_t wgetnstr(WINDOW *win, char *str, int32_t n) // stub
 {
     fprintf(stderr,"unexpected and unsupported call to mvgetnstr\n");
     return(0);
