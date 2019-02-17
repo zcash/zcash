@@ -391,7 +391,7 @@ UniValue rogue_playerobj(std::vector<uint8_t> playerdata,uint256 playertxid,uint
     if ( symbol.c_str() != 0 )
         obj.push_back(Pair("chain",symbol.c_str()));
     if ( pname.c_str() != 0 )
-        obj.push_back(Pair("pname",pname._cstr()));
+        obj.push_back(Pair("pname",pname.c_str()));
     return(obj);
 }
 
