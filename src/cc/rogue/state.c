@@ -1448,7 +1448,7 @@ rs_write_object(struct rogue_state *rs,FILE *savef, THING *o)
             {
                 rs->P.gold = purse;
                 rs->P.hitpoints = max_hp;
-                rs->P.strength = max_stats.s_str;
+                rs->P.strength = pstats.s_str; //max_stats.s_str;
                 rs->P.level = pstats.s_lvl;
                 rs->P.experience = pstats.s_exp;
                 rs->P.dungeonlevel = level;
