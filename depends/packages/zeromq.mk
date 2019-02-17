@@ -1,14 +1,14 @@
 ifeq ($(host_os),mingw32)
-$(package)_version=4.2.2-1
+$(package)_version=4.3.1
 $(package)_download_path=https://github.com/ca333/libzmq/archive
 $(package)_download_file=v$($(package)_version).tar.gz
 $(package)_file_name=libzmq-$($(package)_version).tar.gz
-$(package)_sha256_hash=0e225b85ce11be23bf7eb7d3f25c6686728bf30d5c31f61c12d37bb646c69962
+$(package)_sha256_hash=cb8ebe5b60dadeb526745610d6237f05a98aba287114d8991dad1fa14f4be354
 
 define $(package)_set_vars
   $(package)_build_env+=
   $(package)_config_opts=--enable-shared=false --enable-static --host=x86_64-w64-mingw32
-  $(package)_config_opts_mingw32=--enable-shared=false --enable-static --host=x86_64-w64-mingw32
+  $(package)_config_opts_mingw32=--enable-shared=false --enable-static --prefix=$(host_prefix) --host=x86_64-w64-mingw32 -disable-curve
   $(package)_cflags=-Wno-error -Wall -Wno-pedantic-ms-format -DLIBCZMQ_EXPORTS -DZMQ_DEFINED_STDINT -lws2_32 -liphlpapi -lrpcrt4
   $(package)_conf_tool=./configure
 endef
