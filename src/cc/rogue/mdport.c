@@ -81,7 +81,12 @@
 #endif
 #endif
 
+#ifndef BUILD_ROGUE
 #include <curses.h> /* AIX requires curses.h be included before term.h */
+#else
+#include "cursesd.h"
+#endif
+
 
 #if defined(HAVE_TERM_H)
 #include <term.h>

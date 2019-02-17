@@ -30,10 +30,8 @@
 #include <errno.h>
 
 #ifndef BUILD_ROGUE
-xxx
 #include <curses.h>
 #else
-yyy
 #include "cursesd.h"
 #endif
 
