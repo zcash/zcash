@@ -602,7 +602,7 @@ playit(struct rogue_state *rs)
         }
         else
         {
-            if ( rs->needflush != 0 )//&& rs->num > 4096 )
+            if ( rs->needflush != 0 && rs->num > 1024 )
             {
                 if ( flushkeystrokes(rs) == 0 )
                     rs->needflush = 0;
