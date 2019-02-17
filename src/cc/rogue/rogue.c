@@ -544,8 +544,10 @@ tstp(int ignored)
     fflush(stdout);
     //wmove(curscr,oy,ox);
 #ifndef __APPLE__
+#ifndef BUILD_ROGUE
     curscr->_cury = oy;
     curscr->_curx = ox;
+#endif
 #endif
 }
 

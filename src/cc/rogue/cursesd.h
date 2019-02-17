@@ -41,9 +41,11 @@ struct cursesd_info
     uint8_t screen[LINES][COLS];
     int32_t x,y;
 };
-extern WINDOW *stdscr,*curscr;
 typedef struct cursesd_info WINDOW;
+extern WINDOW *stdscr,*curscr;
 typedef char chtype;
+
+int32_t getch(void); // stub
 
 WINDOW *initscr(void);
 int32_t endwin(void);
@@ -138,6 +140,8 @@ int32_t mvwprintw(WINDOW *win,int32_t y,int32_t x,char *fmt,...);
 #define clearok(win,bf) 0
 #define idlok(win,bf) 0
 #define leaveok(win,bf) 0
+#define halfdelay(x) 0
+#define nocbreak() 0
 
 #ifndef TRUE
 #define TRUE 1
