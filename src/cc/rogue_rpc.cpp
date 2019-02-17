@@ -23,6 +23,7 @@
 #define ROGUE_MAXKEYSTROKESGAP 60
 #define ROGUE_MAXITERATIONS 777
 
+
 #define MAXPACK 23
 struct rogue_packitem
 {

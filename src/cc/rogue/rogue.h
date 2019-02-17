@@ -358,7 +358,7 @@ typedef union _bits256 bits256;
 #endif
 
 
-#ifndef ROGUE_DECLARED_PACK
+/*#ifndef ROGUE_DECLARED_PACK
 struct rogue_packitem
 {
     int32_t type,launch,count,which,hplus,dplus,arm,flags,group;
@@ -369,7 +369,7 @@ struct rogue_player
     int32_t gold,hitpoints,strength,level,experience,packsize,dungeonlevel,pad;
     struct rogue_packitem roguepack[MAXPACK];
 };
-#define ROGUE_DECLARED_PACK
+#define ROGUE_DECLARED_PACK*/
 #endif
 
 struct rogue_state

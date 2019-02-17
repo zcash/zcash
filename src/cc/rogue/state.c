@@ -1452,7 +1452,7 @@ rs_write_object(struct rogue_state *rs,FILE *savef, THING *o)
                 rs->P.level = pstats.s_lvl;
                 rs->P.experience = pstats.s_exp;
                 rs->P.dungeonlevel = level;
-                fprintf(stderr,"%ld gold.%d hp.%d strength.%d level.%d exp.%d %d\n",ftell(savef),purse,max_hp,max_stats.s_str,pstats.s_lvl,pstats.s_exp,level);
+                fprintf(stderr,"%ld gold.%d hp.%d strength.%d level.%d exp.%d %d\n",ftell(savef),purse,max_hp,pstats.s_str,pstats.s_lvl,pstats.s_exp,level);
             }
             fprintf(stderr,"object (%s) x.%d y.%d type.%d pack.(%c:%d)\n",inv_name(o,FALSE),o->_o._o_pos.x,o->_o._o_pos.y,o->_o._o_type,o->_o._o_packch,o->_o._o_packch);
             if ( rs->P.packsize < MAXPACK && o->o_type != AMULET )
@@ -1460,6 +1460,7 @@ rs_write_object(struct rogue_state *rs,FILE *savef, THING *o)
                 packsave(item,o->_o._o_type,o->_o._o_launch,o->_o._o_damage,sizeof(o->_o._o_damage),o->_o._o_hurldmg,sizeof(o->_o._o_hurldmg),o->_o._o_count,o->_o._o_which,o->_o._o_hplus,o->_o._o_dplus,o->_o._o_arm,o->_o._o_flags,o->_o._o_group);
                 rs->P.packsize++;
             }
+            fprintf(stderr,"%ld gold.%d hp.%d strength.%d level.%d exp.%d %d\n",ftell(savef),purse,max_hp,pstats.s_str,pstats.s_lvl,pstats.s_exp,level);
         }
     }
     rs_write_marker(savef, RSID_OBJECT);
