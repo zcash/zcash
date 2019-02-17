@@ -17,6 +17,7 @@
 
 static int32_t endwinflag;
 WINDOW *stdscr;
+int32_t ESCDELAY;
 
 WINDOW *newwin(int32_t nlines,int32_t ncols,int32_t begin_y,int32_t begin_x)
 {
@@ -410,6 +411,12 @@ int32_t wgetnstr(WINDOW *win, char *str, int32_t n) // stub
 int32_t getch(void)
 {
     fprintf(stderr,"unexpected and unsupported call to getch\n");
+    return(0);
+}
+
+int32_t md_readchar(void)
+{
+    fprintf(stderr,"unexpected and unsupported call to md_readchar\n");
     return(0);
 }
 

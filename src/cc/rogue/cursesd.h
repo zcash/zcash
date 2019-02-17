@@ -36,6 +36,8 @@
 #include <sys/stat.h>
 #include <errno.h>
 
+#define ERR (-1)
+
 struct cursesd_info
 {
     uint8_t screen[LINES][COLS];
@@ -43,9 +45,11 @@ struct cursesd_info
 };
 typedef struct cursesd_info WINDOW;
 extern WINDOW *stdscr,*curscr;
+extern int32_t ESCDELAY;
 typedef char chtype;
 
 int32_t getch(void); // stub
+int32_t md_readchar(void); // stub
 
 WINDOW *initscr(void);
 int32_t endwin(void);

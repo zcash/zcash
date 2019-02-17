@@ -1081,6 +1081,7 @@ md_setsuspchar(int c)
 #define M_KEYPAD 2
 #define M_TRAIL  3
 
+#ifndef BUILD_ROGUE
 int
 md_readchar()
 {
@@ -1320,7 +1321,8 @@ md_readchar()
 
     return(ch & 0x7F);
 }
-
+#endif
+        
 #if defined(LOADAV) && defined(HAVE_NLIST_H) && defined(HAVE_NLIST)
 /*
  * loadav:
