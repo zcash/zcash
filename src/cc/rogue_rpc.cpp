@@ -388,8 +388,10 @@ UniValue rogue_playerobj(std::vector<uint8_t> playerdata,uint256 playertxid,uint
     obj.push_back(Pair("level",(int64_t)P.level));
     obj.push_back(Pair("experience",(int64_t)P.experience));
     obj.push_back(Pair("dungeonlevel",(int64_t)P.dungeonlevel));
-    obj.push_back(Pair("chain",symbol));
-    obj.push_back(Pair("pname",pname.size() > 0 ? pname : "noname"));
+    if ( symbol.c_str() != 0 )
+        obj.push_back(Pair("chain",symbol.c_str()));
+    if ( pname.c_str() != 0 )
+        obj.push_back(Pair("pname",pname._cstr()));
     return(obj);
 }
 
