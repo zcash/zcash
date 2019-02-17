@@ -1,9 +1,9 @@
 ifeq ($(host_os),mingw32)
-$(package)_version=4.2.2-1
+$(package)_version=4.3.1
 $(package)_download_path=https://github.com/ca333/libzmq/archive
 $(package)_download_file=v$($(package)_version).tar.gz
 $(package)_file_name=libzmq-$($(package)_version).tar.gz
-$(package)_sha256_hash=0e225b85ce11be23bf7eb7d3f25c6686728bf30d5c31f61c12d37bb646c69962
+$(package)_sha256_hash=cb8ebe5b60dadeb526745610d6237f05a98aba287114d8991dad1fa14f4be354
 
 define $(package)_set_vars
   $(package)_build_env+=
