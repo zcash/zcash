@@ -165,21 +165,24 @@ save_file(struct rogue_state *rs,FILE *savef,int32_t guiflag)
     memset(histo,0,sizeof(histo));
     for (i=0; i<n; i++)
     {
-        fprintf(stderr,"%02x",((uint8_t *)&rs->P)[i]);
+        //fprintf(stderr,"%02x",((uint8_t *)&rs->P)[i]);
         histo[((uint8_t *)&rs->P)[i]]++;
         rs->playerdata[i] = ((uint8_t *)&rs->P)[i];
     }
     rs->playersize = n;
-    fprintf(stderr," packsize.%d n.%d\n",rs->P.packsize,n);
+    //fprintf(stderr," packsize.%d n.%d\n",rs->P.packsize,n);
     if ( (fp= fopen(rogue_packfname(rs,fname),"wb")) != 0 )
     {
         fwrite(&rs->P,1,n,fp);
         fclose(fp);
     }
-    for (i=nonz=0; i<0x100; i++)
-        if ( histo[i] != 0 )
-            fprintf(stderr,"(%d %d) ",i,histo[i]), nonz++;
-    fprintf(stderr,"nonz.%d\n",nonz);
+    if ( 0 )
+    {
+        for (i=nonz=0; i<0x100; i++)
+            if ( histo[i] != 0 )
+                fprintf(stderr,"(%d %d) ",i,histo[i]), nonz++;
+        fprintf(stderr,"nonz.%d\n",nonz);
+    }
     fflush(savef);
     fclose(savef);
     if ( guiflag != 0 )

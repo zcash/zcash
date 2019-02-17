@@ -34,7 +34,7 @@ struct rogue_player
     int32_t gold,hitpoints,strength,level,experience,packsize,dungeonlevel,pad;
     struct rogue_packitem roguepack[MAXPACK];
 };
-int32_t rogue_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t num,struct rogue_player *player);
+int32_t rogue_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t num,struct rogue_player *player,int32_t sleepmillis);
 #define ROGUE_DECLARED_PACK
 void rogue_packitemstr(char *packitemstr,struct rogue_packitem *item);
 
@@ -826,6 +826,83 @@ UniValue rogue_keystrokes(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
     } else return(cclib_error(result,"couldnt reparse params"));
 }
 
+UniValue rogue_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
+{
+    UniValue result; CPubKey pk,roguepk; int32_t i,n,num,maxplayers,gameheight,batonht,batonvout,numplayers,regslot,numkeys,err; std::string symbol,pname; CTransaction gametx; uint64_t seed,mult; int64_t buyin,batonvalue; char rogueaddr[64],fname[64],*pubstr,*keystrokes = 0; std::vector<uint8_t> playerdata,newdata; uint256 batontxid,playertxid,gametxid; FILE *fp; uint8_t player[10000],pub33[33];
+    pk = pubkey2pk(Mypubkey());
+    roguepk = GetUnspendable(cp,0);
+    result.push_back(Pair("status","success"));
+    result.push_back(Pair("name","rogue"));
+    result.push_back(Pair("method","extract"));
+    if ( (params= cclib_reparse(&n,params)) != 0 )
+    {
+        if ( n > 0 )
+        {
+            gametxid = juint256(jitem(params,0));
+            result.push_back(Pair("gametxid",gametxid.GetHex()));
+            if ( n == 2 )
+            {
+                if ( (pubstr= jstr(jitem(params,1),0)) != 0 && strlen(pubstr) == 66 )
+                {
+                    decode_hex(pub33,33,pubstr);
+                    pk = buf2pk(pub33);
+                }
+                fprintf(stderr,"gametxid.%s %s\n",gametxid.GetHex().c_str(),pubstr);
+            }
+            GetCCaddress1of2(cp,rogueaddr,roguepk,pk);
+            result.push_back(Pair("rogueaddr",rogueaddr));
+            if ( (err= rogue_isvalidgame(cp,gameheight,gametx,buyin,maxplayers,gametxid)) == 0 )
+            {
+                if ( rogue_findbaton(cp,playertxid,&keystrokes,numkeys,regslot,playerdata,batontxid,batonvout,batonvalue,batonht,gametxid,gametx,maxplayers,rogueaddr,numplayers,symbol,pname) == 0 )
+                {
+                    UniValue obj; struct rogue_player P;
+                    seed = rogue_gamefields(obj,maxplayers,buyin,gametxid,rogueaddr);
+                    fprintf(stderr,"(%s) found baton %s numkeys.%d seed.%llu playerdata.%d\n",pname.size()!=0?pname.c_str():Rogue_pname.c_str(),batontxid.ToString().c_str(),numkeys,(long long)seed,(int32_t)playerdata.size());
+                    memset(&P,0,sizeof(P));
+                    if ( playerdata.size() > 0 )
+                    {
+                        for (i=0; i<playerdata.size(); i++)
+                            ((uint8_t *)&P)[i] = playerdata[i];
+                    }
+                    if ( keystrokes != 0 )
+                    {
+                        sprintf(fname,"rogue.%llu.0",(long long)seed);
+                        if ( (fp= fopen(fname,"wb")) != 0 )
+                        {
+                            if ( fwrite(keystrokes,1,numkeys,fp) != numkeys )
+                                fprintf(stderr,"error writing %s\n",fname);
+                            fclose(fp);
+                        }
+                        sprintf(fname,"rogue.%llu.player",(long long)seed);
+                        if ( (fp= fopen(fname,"wb")) != 0 )
+                        {
+                            if ( fwrite(&playerdata[0],1,(int32_t)playerdata.size(),fp) != playerdata.size() )
+                                fprintf(stderr,"error writing %s\n",fname);
+                            fclose(fp);
+                        }
+                        num = rogue_replay2(player,seed,keystrokes,numkeys,playerdata.size()==0?0:&P,50);
+                        newdata.resize(num);
+                        for (i=0; i<num; i++)
+                        {
+                            newdata[i] = player[i];
+                            ((uint8_t *)&P)[i] = player[i];
+                        }
+                        if ( P.gold <= 0 || P.hitpoints <= 0 || P.strength <= 0 || P.level <= 0 || P.experience <= 0 || P.dungeonlevel <= 0 )
+                        {
+                            fprintf(stderr,"zero value character was killed -> no playerdata\n");
+                            newdata.resize(0);
+                        }
+                        fprintf(stderr,"\nextracted $$$gold.%d hp.%d strength.%d level.%d exp.%d dl.%d n.%d size.%d\n",P.gold,P.hitpoints,P.strength,P.level,P.experience,P.dungeonlevel,n,(int32_t)sizeof(P));
+                        if ( keystrokes != 0 )
+                            free(keystrokes);
+                    } else num = 0;
+                }
+            }
+        }
+    }
+    return(result);
+}
+
 UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *params,char *method)
 {
     //vin0 -> highlander vout from creategame TCBOO
@@ -869,15 +946,11 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
             result.push_back(Pair("gametxid",gametxid.GetHex()));
             if ( (err= rogue_isvalidgame(cp,gameheight,gametx,buyin,maxplayers,gametxid)) == 0 )
             {
-                if ( maxplayers == 1 )
-                    mult /= 2;
                 if ( rogue_findbaton(cp,playertxid,&keystrokes,numkeys,regslot,playerdata,batontxid,batonvout,batonvalue,batonht,gametxid,gametx,maxplayers,myrogueaddr,numplayers,symbol,pname) == 0 )
                 {
                     UniValue obj; struct rogue_player P;
-                    if ( pname.size() == 0 )
-                        pname = Rogue_pname;
                     seed = rogue_gamefields(obj,maxplayers,buyin,gametxid,myrogueaddr);
-                    fprintf(stderr,"(%s) found baton %s numkeys.%d seed.%llu playerdata.%d\n",pname.c_str(),batontxid.ToString().c_str(),numkeys,(long long)seed,(int32_t)playerdata.size());
+                    fprintf(stderr,"(%s) found baton %s numkeys.%d seed.%llu playerdata.%d\n",pname.size()!=0?pname.c_str():Rogue_pname.c_str(),batontxid.ToString().c_str(),numkeys,(long long)seed,(int32_t)playerdata.size());
                     memset(&P,0,sizeof(P));
                     if ( playerdata.size() > 0 )
                     {
@@ -886,7 +959,7 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
                     }
                     if ( keystrokes != 0 )
                     {
-                        num = rogue_replay2(player,seed,keystrokes,numkeys,playerdata.size()==0?0:&P);
+                        num = rogue_replay2(player,seed,keystrokes,numkeys,playerdata.size()==0?0:&P,0);
                         if ( keystrokes != 0 )
                             free(keystrokes);
                     } else num = 0;
@@ -909,6 +982,8 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
                         }
                         else
                         {
+                            if ( maxplayers == 1 )
+                                mult /= 2;
                             cpTokens = CCinit(&tokensC, EVAL_TOKENS);
                             mtx.vout.push_back(MakeCC1vout(EVAL_TOKENS, txfee, GetUnspendable(cpTokens,NULL)));            // marker to token cc addr, burnable and validated
                             mtx.vout.push_back(MakeTokensCC1vout(cp->evalcode,1,mypk));
@@ -933,6 +1008,8 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
                     Myprivkey(mypriv);
                     CCaddr1of2set(cp,roguepk,mypk,mypriv,myrogueaddr);
                     CScript opret;
+                    if ( pname.size() == 0 )
+                        pname = Rogue_pname;
                     if ( newdata.size() == 0 )
                     {
                         opret = rogue_highlanderopret(funcid, gametxid, regslot, mypk, nodata,pname);

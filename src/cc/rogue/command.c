@@ -269,6 +269,7 @@ over:
 		    q_comm = FALSE;
             if ( rs->guiflag != 0 )
                 rogue_bailout(rs);
+            else rs->replaydone = (uint32_t)time(NULL);
             return;
 		when 'i': after = FALSE; inventory(rs,pack, 0);
 		when 'I': after = FALSE; picky_inven(rs);

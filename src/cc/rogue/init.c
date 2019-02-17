@@ -27,7 +27,7 @@ void restore_player(struct rogue_state *rs)
     int32_t i; THING *obj;
     //rs->P.gold = purse;
     max_hp = rs->P.hitpoints;
-    max_stats.s_str = rs->P.strength;
+    pstats.s_str = max_stats.s_str = rs->P.strength;
     pstats.s_lvl = rs->P.level;
     pstats.s_exp = rs->P.experience;
     for (i=0; i<rs->P.packsize; i++)
@@ -49,7 +49,11 @@ void init_player(struct rogue_state *rs)
         // duplicate rng usage of normal case
         obj = new_item();
         init_weapon(obj, MACE);
+        free(obj);
+        obj = new_item();
         init_weapon(obj, BOW);
+        free(obj);
+        obj = new_item();
         init_weapon(obj, ARROW);
         obj->o_count = rnd(15) + 25;
         free(obj);
