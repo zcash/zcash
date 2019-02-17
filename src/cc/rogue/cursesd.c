@@ -16,6 +16,7 @@
 #include "cursesd.h"
 
 static int32_t endwinflag;
+WINDOW *stdscr;
 
 WINDOW *newwin(int32_t nlines,int32_t ncols,int32_t begin_y,int32_t begin_x)
 {

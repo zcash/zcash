@@ -8,11 +8,6 @@
 //#include <curses.h>
 //#include <ctype.h>
 //#include <string.h>
-#ifndef BUILD_ROGUE
-#include <curses.h>
-#else
-#include "cursesd.h"
-#endif
 
 #include "rogue.h"
 

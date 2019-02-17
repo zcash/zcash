@@ -40,7 +40,8 @@ struct cursesd_info
 {
     uint8_t screen[LINES][COLS];
     int32_t x,y;
-} *stdscr;
+};
+extern WINDOW *stdscr;
 typedef struct cursesd_info WINDOW;
 typedef char chtype;
 
