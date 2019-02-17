@@ -148,7 +148,9 @@ void
 save_file(struct rogue_state *rs,FILE *savef,int32_t guiflag)
 {
     char buf[80],fname[512]; int32_t i,n,nonz,histo[0x100]; FILE *fp;
-    memset(&rs->P,0,sizeof(rs->P));
+    if ( rs->guiflag == 0 )
+        return;
+    //memset(&rs->P,0,sizeof(rs->P));
     mvcur(0, COLS - 1, LINES - 1, 0); 
     putchar('\n');
     endwin();
