@@ -336,7 +336,7 @@ int32_t rogue_replay(uint64_t seed,int32_t sleeptime)
             }
             fclose(fp);
         }
-        rogue_replay2(0,seed,keystrokes,num,player,150);
+        rogue_replay2(0,seed,keystrokes,num,player,30);
 
         //mvaddstr(LINES - 2, 0, (char *)"replay completed");
         endwin();
@@ -601,7 +601,7 @@ playit(struct rogue_state *rs)
         }
         else
         {
-            if ( rs->needflush != 0 && rs->num > 4096 )
+            if ( rs->needflush != 0 )//&& rs->num > 4096 )
             {
                 if ( flushkeystrokes(rs) == 0 )
                     rs->needflush = 0;
