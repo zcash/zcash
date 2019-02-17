@@ -720,7 +720,7 @@ UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                     playertxid = juint256(jitem(params,1));
                     if ( rogue_playerdata(cp,origplayergame,tokenid,pk,playerdata,symbol,pname,playertxid) < 0 )
                         return(cclib_error(result,"couldnt extract valid playerdata"));
-                    if ( tokenid != zeroid )
+                    if ( tokenid != zeroid ) // if it is tokentransfer this will be 0
                         vout = 1;
                 }
                 rogue_univalue(result,0,maxplayers,buyin);
@@ -814,7 +814,7 @@ UniValue rogue_keystrokes(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
 
 UniValue rogue_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result; CPubKey pk,roguepk; int32_t i,n,num,maxplayers,gameheight,batonht,batonvout,numplayers,regslot,numkeys,err; std::string symbol,pname; CTransaction gametx; uint64_t seed,mult; int64_t buyin,batonvalue; char rogueaddr[64],fname[64],*pubstr,*keystrokes = 0; std::vector<uint8_t> playerdata,newdata; uint256 batontxid,playertxid,gametxid; FILE *fp; uint8_t player[10000],pub33[33];
+    UniValue result; CPubKey pk,roguepk; int32_t i,n,num,maxplayers,gameheight,batonht,batonvout,numplayers,regslot,numkeys,err; std::string symbol,pname; CTransaction gametx; uint64_t seed,mult; int64_t buyin,batonvalue; char rogueaddr[64],fname[64],str[512],*pubstr,*keystrokes = 0; std::vector<uint8_t> playerdata,newdata; uint256 batontxid,playertxid,gametxid; FILE *fp; uint8_t player[10000],pub33[33];
     pk = pubkey2pk(Mypubkey());
     roguepk = GetUnspendable(cp,0);
     result.push_back(Pair("status","success"));
@@ -878,7 +878,8 @@ UniValue rogue_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                             fprintf(stderr,"zero value character was killed -> no playerdata\n");
                             newdata.resize(0);
                         }
-                        fprintf(stderr,"\nextracted $$$gold.%d hp.%d strength.%d level.%d exp.%d dl.%d n.%d size.%d\n",P.gold,P.hitpoints,P.strength,P.level,P.experience,P.dungeonlevel,n,(int32_t)sizeof(P));
+                        sprintf(str,"\nextracted $$$gold.%d hp.%d strength.%d level.%d exp.%d dl.%d n.%d size.%d\n",P.gold,P.hitpoints,P.strength,P.level,P.experience,P.dungeonlevel,n,(int32_t)sizeof(P));
+                        result.push_back(Pair("extracted",str));
                         if ( keystrokes != 0 )
                             free(keystrokes);
                     } else num = 0;
