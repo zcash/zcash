@@ -459,7 +459,7 @@ int32_t rogue_playerdata(struct CCcontract_info *cp,uint256 &origplayergame,uint
             }
             if ( rogue_isvalidgame(cp,gameheight,gametx,buyin,maxplayers,gametxid) == 0 )
             {
-                fprintf(stderr,"playertxid.%s got vin.%s/v%d gametxid.%s iterate.%d\n",playertxid.ToString().c_str(),playertx.vin[1].prevout.hash.ToString().c_str(),(int32_t)playertx.vin[1].prevout.n-maxplayers,gametxid.ToString().c_str(),rogue_iterateplayer(registertxid,gametxid,playertx.vin[1].prevout.n-maxplayers,playertxid));
+                //fprintf(stderr,"playertxid.%s got vin.%s/v%d gametxid.%s iterate.%d\n",playertxid.ToString().c_str(),playertx.vin[1].prevout.hash.ToString().c_str(),(int32_t)playertx.vin[1].prevout.n-maxplayers,gametxid.ToString().c_str(),rogue_iterateplayer(registertxid,gametxid,playertx.vin[1].prevout.n-maxplayers,playertxid));
                 if ( (tokenid != zeroid || playertx.vin[1].prevout.hash == gametxid) && rogue_iterateplayer(registertxid,gametxid,playertx.vin[1].prevout.n-maxplayers,playertxid) == 0 )
                 {
                     // if registertxid has vin from pk, it can be used
@@ -880,7 +880,7 @@ UniValue rogue_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                                 fprintf(stderr,"error writing %s\n",fname);
                             fclose(fp);
                         }
-                        num = rogue_replay2(player,seed,keystrokes,numkeys,playerdata.size()==0?0:&P,50);
+                        num = rogue_replay2(player,seed,keystrokes,numkeys,playerdata.size()==0?0:&P,0);
                         newdata.resize(num);
                         for (i=0; i<num; i++)
                         {
