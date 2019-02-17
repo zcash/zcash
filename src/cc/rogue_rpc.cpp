@@ -812,6 +812,8 @@ UniValue rogue_keystrokes(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
     } else return(cclib_error(result,"couldnt reparse params"));
 }
 
+// change to subfunction without JSON to be used by other functions
+
 UniValue rogue_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     UniValue result; CPubKey pk,roguepk; int32_t i,n,num,maxplayers,gameheight,batonht,batonvout,numplayers,regslot,numkeys,err; std::string symbol,pname; CTransaction gametx; uint64_t seed,mult; int64_t buyin,batonvalue; char rogueaddr[64],fname[64],str[512],*pubstr,*keystrokes = 0; std::vector<uint8_t> playerdata,newdata; uint256 batontxid,playertxid,gametxid; FILE *fp; uint8_t player[10000],pub33[33];
@@ -878,8 +880,9 @@ UniValue rogue_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                             fprintf(stderr,"zero value character was killed -> no playerdata\n");
                             newdata.resize(0);
                         }
-                        sprintf(str,"\nextracted $$$gold.%d hp.%d strength.%d level.%d exp.%d dl.%d n.%d size.%d\n",P.gold,P.hitpoints,P.strength,P.level,P.experience,P.dungeonlevel,n,(int32_t)sizeof(P));
+                        sprintf(str,"extracted $$$gold.%d hp.%d strength.%d level.%d exp.%d dl.%d n.%d size.%d\n",P.gold,P.hitpoints,P.strength,P.level,P.experience,P.dungeonlevel,n,(int32_t)sizeof(P));
                         result.push_back(Pair("extracted",str));
+                        fprintf(stderr,"%s\n",str);
                         if ( keystrokes != 0 )
                             free(keystrokes);
                     } else num = 0;
