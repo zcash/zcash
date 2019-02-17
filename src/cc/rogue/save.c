@@ -148,19 +148,20 @@ void
 save_file(struct rogue_state *rs,FILE *savef,int32_t guiflag)
 {
     char buf[80],fname[512]; int32_t i,n,nonz,histo[0x100]; FILE *fp;
-    if ( rs->guiflag == 0 )
-        return;
-    //memset(&rs->P,0,sizeof(rs->P));
-    mvcur(0, COLS - 1, LINES - 1, 0); 
-    putchar('\n');
-    endwin();
-    resetltchars();
-    md_chmod(file_name, 0400);
-    if ( guiflag != 0 )
+    if ( rs->guiflag != 0 )
     {
-        encwrite(version, strlen(version)+1, savef);
-        sprintf(buf,"%d x %d\n", LINES, COLS);
-        encwrite(buf,80,savef);
+        //memset(&rs->P,0,sizeof(rs->P));
+        mvcur(0, COLS - 1, LINES - 1, 0);
+        putchar('\n');
+        endwin();
+        resetltchars();
+        md_chmod(file_name, 0400);
+        if ( guiflag != 0 )
+        {
+            encwrite(version, strlen(version)+1, savef);
+            sprintf(buf,"%d x %d\n", LINES, COLS);
+            encwrite(buf,80,savef);
+        }
     }
     rs_save_file(rs,savef);
     n = sizeof(rs->P) - sizeof(rs->P.roguepack) + sizeof(rs->P.roguepack[0])*rs->P.packsize;
