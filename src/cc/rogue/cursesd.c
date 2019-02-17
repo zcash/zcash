@@ -282,7 +282,7 @@ int32_t mvcur(int32_t oldrow, int32_t oldcol, int32_t newrow, int32_t newcol)
     return(0);
 }
 
-void endwin()
+void endwin(void)
 {
     if ( stdscr != 0 )
         free(stdscr), stdscr = 0;
