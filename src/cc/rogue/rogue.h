@@ -860,5 +860,8 @@ extern const char     *wood[];
 extern int      cNWOOD;
 extern const char     *metal[];
 extern int      cNMETAL;
+
+extern WINDOW *stdscr,*curscr;
+
 #endif
 
