@@ -12,6 +12,7 @@ static const char *MSG_HASHBLOCK = "hashblock";
 static const char *MSG_HASHTX    = "hashtx";
 static const char *MSG_RAWBLOCK  = "rawblock";
 static const char *MSG_RAWTX     = "rawtx";
+static const char *MSG_CHECKEDBLOCK = "checkedblock";
 
 // Internal function to send multipart message
 static int zmq_send_multipart(void *sock, const void* data, size_t size, ...)
@@ -177,6 +178,19 @@ bool CZMQPublishRawBlockNotifier::NotifyBlock(const CBlockIndex *pindex)
     }
 
     return SendMessage(MSG_RAWBLOCK, &(*ss.begin()), ss.size());
+}
+
+bool CZMQPublishCheckedBlockNotifier::NotifyBlock(const CBlock& block)
+{
+    LogPrint("zmq", "zmq: Publish checkedblock %s\n", block.GetHash().GetHex());
+
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    {
+        LOCK(cs_main);
+        ss << block;
+    }
+
+    return SendMessage(MSG_CHECKEDBLOCK, &(*ss.begin()), ss.size());
 }
 
 bool CZMQPublishRawTransactionNotifier::NotifyTransaction(const CTransaction &transaction)

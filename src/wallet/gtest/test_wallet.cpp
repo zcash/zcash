@@ -383,12 +383,10 @@ TEST(WalletTests, SetSaplingNoteAddrsInCWalletTx) {
     uint256 nullifier = nf.get();
 
     auto builder = TransactionBuilder(consensusParams, 1);
-    ASSERT_TRUE(builder.AddSaplingSpend(expsk, note, anchor, witness));
+    builder.AddSaplingSpend(expsk, note, anchor, witness);
     builder.AddSaplingOutput(fvk.ovk, pk, 50000, {});
     builder.SetFee(0);
-    auto maybe_tx = builder.Build();
-    ASSERT_EQ(static_cast<bool>(maybe_tx), true);
-    auto tx = maybe_tx.get();
+    auto tx = builder.Build().GetTxOrThrow();
 
     CWalletTx wtx {&wallet, tx};
 
@@ -503,11 +501,9 @@ TEST(WalletTests, FindMySaplingNotes) {
 
     // Generate transaction
     auto builder = TransactionBuilder(consensusParams, 1);
-    ASSERT_TRUE(builder.AddSaplingSpend(expsk, note, anchor, witness));
+    builder.AddSaplingSpend(expsk, note, anchor, witness);
     builder.AddSaplingOutput(fvk.ovk, pk, 25000, {});
-    auto maybe_tx = builder.Build();
-    ASSERT_EQ(static_cast<bool>(maybe_tx), true);
-    auto tx = maybe_tx.get();
+    auto tx = builder.Build().GetTxOrThrow();
 
     // No Sapling notes can be found in tx which does not belong to the wallet
     CWalletTx wtx {&wallet, tx};
@@ -643,11 +639,9 @@ TEST(WalletTests, GetConflictedSaplingNotes) {
 
     // Generate tx to create output note B
     auto builder = TransactionBuilder(consensusParams, 1);
-    ASSERT_TRUE(builder.AddSaplingSpend(expsk, note, anchor, witness));
+    builder.AddSaplingSpend(expsk, note, anchor, witness);
     builder.AddSaplingOutput(fvk.ovk, pk, 35000, {});
-    auto maybe_tx = builder.Build();
-    ASSERT_EQ(static_cast<bool>(maybe_tx), true);
-    auto tx = maybe_tx.get();
+    auto tx = builder.Build().GetTxOrThrow();
     CWalletTx wtx {&wallet, tx};
 
     // Fake-mine the transaction
@@ -699,19 +693,15 @@ TEST(WalletTests, GetConflictedSaplingNotes) {
 
     // Create transaction to spend note B
     auto builder2 = TransactionBuilder(consensusParams, 2);
-    ASSERT_TRUE(builder2.AddSaplingSpend(expsk, note2, anchor, spend_note_witness));
+    builder2.AddSaplingSpend(expsk, note2, anchor, spend_note_witness);
     builder2.AddSaplingOutput(fvk.ovk, pk, 20000, {});
-    auto maybe_tx2 = builder2.Build();
-    ASSERT_EQ(static_cast<bool>(maybe_tx2), true);
-    auto tx2 = maybe_tx2.get();
+    auto tx2 = builder2.Build().GetTxOrThrow();
 
     // Create conflicting transaction which also spends note B
     auto builder3 = TransactionBuilder(consensusParams, 2);
-    ASSERT_TRUE(builder3.AddSaplingSpend(expsk, note2, anchor, spend_note_witness));
+    builder3.AddSaplingSpend(expsk, note2, anchor, spend_note_witness);
     builder3.AddSaplingOutput(fvk.ovk, pk, 19999, {});
-    auto maybe_tx3 = builder3.Build();
-    ASSERT_EQ(static_cast<bool>(maybe_tx3), true);
-    auto tx3 = maybe_tx3.get();
+    auto tx3 = builder3.Build().GetTxOrThrow();
 
     CWalletTx wtx2 {&wallet, tx2};
     CWalletTx wtx3 {&wallet, tx3};
@@ -808,11 +798,9 @@ TEST(WalletTests, SaplingNullifierIsSpent) {
 
     // Generate transaction
     auto builder = TransactionBuilder(consensusParams, 1);
-    ASSERT_TRUE(builder.AddSaplingSpend(expsk, note, anchor, witness));
+    builder.AddSaplingSpend(expsk, note, anchor, witness);
     builder.AddSaplingOutput(fvk.ovk, pk, 25000, {});
-    auto maybe_tx = builder.Build();
-    ASSERT_EQ(static_cast<bool>(maybe_tx), true);
-    auto tx = maybe_tx.get();
+    auto tx = builder.Build().GetTxOrThrow();
 
     CWalletTx wtx {&wallet, tx};
     ASSERT_TRUE(wallet.AddSaplingZKey(sk, pk));
@@ -905,11 +893,9 @@ TEST(WalletTests, NavigateFromSaplingNullifierToNote) {
 
     // Generate transaction
     auto builder = TransactionBuilder(consensusParams, 1);
-    ASSERT_TRUE(builder.AddSaplingSpend(expsk, note, anchor, witness));
+    builder.AddSaplingSpend(expsk, note, anchor, witness);
     builder.AddSaplingOutput(fvk.ovk, pk, 25000, {});
-    auto maybe_tx = builder.Build();
-    ASSERT_EQ(static_cast<bool>(maybe_tx), true);
-    auto tx = maybe_tx.get();
+    auto tx = builder.Build().GetTxOrThrow();
 
     CWalletTx wtx {&wallet, tx};
     ASSERT_TRUE(wallet.AddSaplingZKey(sk, pk));
@@ -1041,11 +1027,9 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
 
     // Generate transaction, which sends funds to note B
     auto builder = TransactionBuilder(consensusParams, 1);
-    ASSERT_TRUE(builder.AddSaplingSpend(expsk, note, anchor, witness));
+    builder.AddSaplingSpend(expsk, note, anchor, witness);
     builder.AddSaplingOutput(fvk.ovk, pk, 25000, {});
-    auto maybe_tx = builder.Build();
-    ASSERT_EQ(static_cast<bool>(maybe_tx), true);
-    auto tx = maybe_tx.get();
+    auto tx = builder.Build().GetTxOrThrow();
 
     CWalletTx wtx {&wallet, tx};
     ASSERT_TRUE(wallet.AddSaplingZKey(sk, pk));
@@ -1113,11 +1097,9 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
 
     // Create transaction to spend note B
     auto builder2 = TransactionBuilder(consensusParams, 2);
-    ASSERT_TRUE(builder2.AddSaplingSpend(expsk, note2, anchor, spend_note_witness));
+    builder2.AddSaplingSpend(expsk, note2, anchor, spend_note_witness);
     builder2.AddSaplingOutput(fvk.ovk, pk, 12500, {});
-    auto maybe_tx2 = builder2.Build();
-    ASSERT_EQ(static_cast<bool>(maybe_tx2), true);
-    auto tx2 = maybe_tx2.get();
+    auto tx2 = builder2.Build().GetTxOrThrow();
     EXPECT_EQ(tx2.vin.size(), 0);
     EXPECT_EQ(tx2.vout.size(), 0);
     EXPECT_EQ(tx2.vjoinsplit.size(), 0);
@@ -1559,6 +1541,14 @@ TEST(WalletTests, WriteWitnessCache) {
     wallet.AddSproutSpendingKey(sk);
 
     auto wtx = GetValidReceive(sk, 10, true);
+    auto note = GetNote(sk, wtx, 0, 1);
+    auto nullifier = note.nullifier(sk);
+
+    mapSproutNoteData_t noteData;
+    JSOutPoint jsoutpt {wtx.GetHash(), 0, 1};
+    SproutNoteData nd {sk.address(), nullifier};
+    noteData[jsoutpt] = nd;
+    wtx.SetSproutNoteData(noteData);
     wallet.AddToWallet(wtx, true, NULL);
 
     // TxnBegin fails
@@ -1624,6 +1614,88 @@ TEST(WalletTests, WriteWitnessCache) {
         .WillRepeatedly(Return(true));
 
     // Everything succeeds
+    wallet.SetBestChain(walletdb, loc);
+}
+
+TEST(WalletTests, SetBestChainIgnoresTxsWithoutShieldedData) {
+    SelectParams(CBaseChainParams::REGTEST);
+
+    TestWallet wallet;
+    MockWalletDB walletdb;
+    CBlockLocator loc;
+
+    // Set up transparent address
+    CKey tsk = DecodeSecret(tSecretRegtest);
+    wallet.AddKey(tsk);
+    auto scriptPubKey = GetScriptForDestination(tsk.GetPubKey().GetID());
+
+    // Set up a Sprout address
+    auto sk = libzcash::SproutSpendingKey::random();
+    wallet.AddSproutSpendingKey(sk);
+
+    // Generate a transparent transaction that is ours
+    CMutableTransaction t;
+    t.vout.resize(1);
+    t.vout[0].nValue = 90*CENT;
+    t.vout[0].scriptPubKey = scriptPubKey;
+    CWalletTx wtxTransparent {nullptr, t};
+    wallet.AddToWallet(wtxTransparent, true, nullptr);
+
+    // Generate a Sprout transaction that is ours
+    auto wtxSprout = GetValidReceive(sk, 10, true);
+    auto noteMap = wallet.FindMySproutNotes(wtxSprout);
+    wtxSprout.SetSproutNoteData(noteMap);
+    wallet.AddToWallet(wtxSprout, true, nullptr);
+
+    // Generate a Sprout transaction that only involves our transparent address
+    auto sk2 = libzcash::SproutSpendingKey::random();
+    auto wtxInput = GetValidReceive(sk2, 10, true);
+    auto note = GetNote(sk2, wtxInput, 0, 0);
+    auto wtxTmp = GetValidSpend(sk2, note, 5);
+    CMutableTransaction mtx {wtxTmp};
+    mtx.vout[0].scriptPubKey = scriptPubKey;
+    CWalletTx wtxSproutTransparent {nullptr, mtx};
+    wallet.AddToWallet(wtxSproutTransparent, true, nullptr);
+
+    // Generate a fake Sapling transaction
+    CMutableTransaction mtxSapling;
+    mtxSapling.fOverwintered = true;
+    mtxSapling.nVersion = SAPLING_TX_VERSION;
+    mtxSapling.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
+    mtxSapling.vShieldedOutput.resize(1);
+    mtxSapling.vShieldedOutput[0].cv = libzcash::random_uint256();
+    CWalletTx wtxSapling {nullptr, mtxSapling};
+    SetSaplingNoteData(wtxSapling);
+    wallet.AddToWallet(wtxSapling, true, nullptr);
+
+    // Generate a fake Sapling transaction that would only involve our transparent addresses
+    CMutableTransaction mtxSaplingTransparent;
+    mtxSaplingTransparent.fOverwintered = true;
+    mtxSaplingTransparent.nVersion = SAPLING_TX_VERSION;
+    mtxSaplingTransparent.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
+    mtxSaplingTransparent.vShieldedOutput.resize(1);
+    mtxSaplingTransparent.vShieldedOutput[0].cv = libzcash::random_uint256();
+    CWalletTx wtxSaplingTransparent {nullptr, mtxSaplingTransparent};
+    wallet.AddToWallet(wtxSaplingTransparent, true, nullptr);
+
+    EXPECT_CALL(walletdb, TxnBegin())
+        .WillOnce(Return(true));
+    EXPECT_CALL(walletdb, WriteTx(wtxTransparent.GetHash(), wtxTransparent))
+        .Times(0);
+    EXPECT_CALL(walletdb, WriteTx(wtxSprout.GetHash(), wtxSprout))
+        .Times(1).WillOnce(Return(true));
+    EXPECT_CALL(walletdb, WriteTx(wtxSproutTransparent.GetHash(), wtxSproutTransparent))
+        .Times(0);
+    EXPECT_CALL(walletdb, WriteTx(wtxSapling.GetHash(), wtxSapling))
+        .Times(1).WillOnce(Return(true));
+    EXPECT_CALL(walletdb, WriteTx(wtxSaplingTransparent.GetHash(), wtxSaplingTransparent))
+        .Times(0);
+    EXPECT_CALL(walletdb, WriteWitnessCacheSize(0))
+        .WillOnce(Return(true));
+    EXPECT_CALL(walletdb, WriteBestBlock(loc))
+        .WillOnce(Return(true));
+    EXPECT_CALL(walletdb, TxnCommit())
+        .WillOnce(Return(true));
     wallet.SetBestChain(walletdb, loc);
 }
 
@@ -1743,11 +1815,9 @@ TEST(WalletTests, UpdatedSaplingNoteData) {
 
     // Generate transaction
     auto builder = TransactionBuilder(consensusParams, 1);
-    ASSERT_TRUE(builder.AddSaplingSpend(expsk, note, anchor, witness));
+    builder.AddSaplingSpend(expsk, note, anchor, witness);
     builder.AddSaplingOutput(fvk.ovk, pk2, 25000, {});
-    auto maybe_tx = builder.Build();
-    ASSERT_EQ(static_cast<bool>(maybe_tx), true);
-    auto tx = maybe_tx.get();
+    auto tx = builder.Build().GetTxOrThrow();
 
     // Wallet contains fvk1 but not fvk2
     CWalletTx wtx {&wallet, tx};
@@ -1895,9 +1965,7 @@ TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
     auto builder = TransactionBuilder(consensusParams, 1, &keystore);
     builder.AddTransparentInput(COutPoint(), scriptPubKey, 50000);
     builder.AddSaplingOutput(fvk.ovk, pk, 40000, {});
-    auto maybe_tx = builder.Build();
-    ASSERT_EQ(static_cast<bool>(maybe_tx), true);
-    auto tx1 = maybe_tx.get();
+    auto tx1 = builder.Build().GetTxOrThrow();
 
     EXPECT_EQ(tx1.vin.size(), 1);
     EXPECT_EQ(tx1.vout.size(), 0);
@@ -1950,11 +2018,9 @@ TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
     // Create a Sapling-only transaction
     // 0.0004 z-ZEC in, 0.00025 z-ZEC out, 0.0001 t-ZEC fee, 0.00005 z-ZEC change
     auto builder2 = TransactionBuilder(consensusParams, 2);
-    ASSERT_TRUE(builder2.AddSaplingSpend(expsk, note, anchor, witness));
+    builder2.AddSaplingSpend(expsk, note, anchor, witness);
     builder2.AddSaplingOutput(fvk.ovk, pk, 25000, {});
-    auto maybe_tx2 = builder2.Build();
-    ASSERT_EQ(static_cast<bool>(maybe_tx2), true);
-    auto tx2 = maybe_tx2.get();
+    auto tx2 = builder2.Build().GetTxOrThrow();
 
     EXPECT_EQ(tx2.vin.size(), 0);
     EXPECT_EQ(tx2.vout.size(), 0);

@@ -338,13 +338,11 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
             if (!witnesses[i]) {
                 throw JSONRPCError(RPC_WALLET_ERROR, "Missing witness for Sapling note");
             }
-            assert(builder_.AddSaplingSpend(expsks[i], saplingNotes[i], anchor, witnesses[i].get()));
+            builder_.AddSaplingSpend(expsks[i], saplingNotes[i], anchor, witnesses[i].get());
         }
 
         if (isToTaddr_) {
-            if (!builder_.AddTransparentOutput(toTaddr_, sendAmount)) {
-                throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid output address, not a valid taddr.");
-            }
+            builder_.AddTransparentOutput(toTaddr_, sendAmount);
         } else {
             std::string zaddr = std::get<0>(recipient_);
             std::string memo = std::get<1>(recipient_);
@@ -375,11 +373,7 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
 
 
         // Build the transaction
-        auto maybe_tx = builder_.Build();
-        if (!maybe_tx) {
-            throw JSONRPCError(RPC_WALLET_ERROR, "Failed to build transaction.");
-        }
-        tx_ = maybe_tx.get();
+        tx_ = builder_.Build().GetTxOrThrow();
 
         // Send the transaction
         // TODO: Use CWallet::CommitTransaction instead of sendrawtransaction
