@@ -145,4 +145,5 @@ int32_t mvwprintw(WINDOW *win,int32_t y,int32_t x,char *fmt,...);
 #define FALSE 0
 #endif
 
+#endif
 
