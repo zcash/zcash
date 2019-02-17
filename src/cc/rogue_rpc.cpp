@@ -23,7 +23,7 @@
 #define ROGUE_MAXKEYSTROKESGAP 60
 #define ROGUE_MAXITERATIONS 777
 
-#include "rogue/rogueplayer.h"
+#include "rogue/rogue_player.h"
 
 std::string Rogue_pname = "";
 
