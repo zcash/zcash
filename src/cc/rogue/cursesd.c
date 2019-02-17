@@ -103,7 +103,7 @@ int clrtoeol(void)
 
 int32_t waddch(WINDOW *win, chtype ch)
 {
-    int32_t t;
+    int32_t i;
     if ( ch == '\t' )
     {
         for (i=0; i<8; i++)
@@ -139,7 +139,7 @@ int32_t waddch(WINDOW *win, chtype ch)
                 win->y = 0;
         }
     }
-    reurn(0);
+    return(0);
 }
 
 int32_t mvwaddch(WINDOW *win, int32_t y, int32_t x, chtype ch)
@@ -186,7 +186,7 @@ int32_t mvwaddnstr(WINDOW *win, int32_t y, int32_t x, const char *str, int32_t n
 {
     win->y = y;
     win->x = x;
-    return(waddnstr(win,str));
+    return(waddnstr(win,str,n));
 }
 
 int32_t addstr(const char *str)
@@ -378,7 +378,7 @@ int leaveok(WINDOW *win, bool bf)
 }
 #endif
 
-int32_t mvwin(WINDOW *win, int32_t y, int32_t x); // stub
+int32_t mvwin(WINDOW *win, int32_t y, int32_t x) // stub
 {
     fprintf(stderr,"unexpected call to mvwin\n");
     return(0);
