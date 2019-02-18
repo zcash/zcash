@@ -422,3 +422,9 @@ int32_t md_readchar(void)
     return(0);
 }
 
+char *unctrl(char c)
+{
+    static char ctrlstr[5];
+    sprintf(ctrlstr,"^%%%02x",c);
+    return(ctrlstr);
+}

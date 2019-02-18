@@ -169,7 +169,7 @@ int32_t num_packitems(struct rogue_state *rs)
             total += list->o_count;
         }
     }
-    if ( 0 )
+    if ( rs->guiflag != 0 ) 
     {
         char str[MAXSTR];
         sprintf(str,"strength*3 %d vs total.%d vs %d inventory letters\n",pstats.s_str*3,total,n);
@@ -410,59 +410,63 @@ get_item(struct rogue_state *rs,char *purpose, int type)
 {
     THING *obj;
     char ch;
-
+    
     if (pack == NULL)
-	msg(rs,"you aren't carrying anything");
+        msg(rs,"you aren't carrying anything");
     else if (again)
-	if (last_pick)
-	    return last_pick;
-	else
-	    msg(rs,"you ran out");
-    else
-    {
-	for (;;)
-	{
-	    if (!terse)
-		addmsg(rs,"which object do you want to ");
-	    addmsg(rs,purpose);
-	    if (terse)
-		addmsg(rs," what");
-	    msg(rs,"? (* for list): ");
-	    ch = readchar(rs);
-	    mpos = 0;
-	    /*
-	     * Give the poor player a chance to abort the command
-	     */
-	    if (ch == ESCAPE)
-	    {
-		reset_last();
-		after = FALSE;
-		msg(rs,"");
-		return NULL;
-	    }
-	    n_objs = 1;		/* normal case: person types one char */
-	    if (ch == '*')
-	    {
-		mpos = 0;
-		if (inventory(rs,pack, type) == 0)
-		{
-		    after = FALSE;
-		    return NULL;
-		}
-		continue;
-	    }
-	    for (obj = pack; obj != NULL; obj = next(obj))
-		if (obj->o_packch == ch)
-		    break;
-	    if (obj == NULL)
-	    {
-		msg(rs,"'%s' is not a valid item",unctrl(ch));
-		continue;
-	    }
-	    else 
-		return obj;
-	}
-    }
+        if (last_pick)
+            return last_pick;
+        else
+            msg(rs,"you ran out");
+        else
+        {
+            for (;;)
+            {
+                if (!terse)
+                    addmsg(rs,"which object do you want to ");
+                addmsg(rs,purpose);
+                if (terse)
+                    addmsg(rs," what");
+                msg(rs,"? (* for list): ");
+                ch = readchar(rs);
+                mpos = 0;
+                /*
+                 * Give the poor player a chance to abort the command
+                 */
+                if (ch == ESCAPE)
+                {
+                    reset_last();
+                    after = FALSE;
+                    msg(rs,"");
+                    return NULL;
+                }
+                n_objs = 1;		/* normal case: person types one char */
+                if (ch == '*')
+                {
+                    mpos = 0;
+                    if (inventory(rs,pack, type) == 0)
+                    {
+                        after = FALSE;
+                        return NULL;
+                    }
+                    continue;
+                }
+                for (obj = pack; obj != NULL; obj = next(obj))
+                    if (obj->o_packch == ch)
+                        break;
+                if (obj == NULL)
+                {
+                    //msg(rs,"'%s' is not a valid item",unctrl(ch));
+                    //continue;
+                    reset_last();
+                    after = FALSE;
+                    msg(rs,"'%s' is not a valid item",unctrl(ch));
+                    return NULL;
+                }
+                else
+                    return obj;
+            }
+        }
     return NULL;
 }
 
