@@ -169,14 +169,14 @@ int32_t num_packitems(struct rogue_state *rs)
             total += list->o_count;
         }
     }
-    if ( 0 ) // crashes playerinfo
+    if ( rs->guiflag != 0 ) 
     {
         char str[MAXSTR];
         sprintf(str,"strength*3 %d vs total.%d vs %d inventory letters\n",pstats.s_str*3,total,n);
         add_line(rs,"%s",str);
-        if ( total > pstats.s_str*3 )
-            return(MAXPACK);
     }
+    if ( total > pstats.s_str*3 )
+        return(MAXPACK);
     return(n);
 }
 
