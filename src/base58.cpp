@@ -336,6 +336,84 @@ bool CBitcoinAddress::IsScript() const
     return IsValid() && vchVersion == Params().Base58Prefix(CChainParams::SCRIPT_ADDRESS);
 }
 
+bool CCustomBitcoinAddress::Set(const CKeyID& id)
+{
+    SetData(base58Prefixes[0], &id, 20);
+    return true;
+}
+
+bool CCustomBitcoinAddress::Set(const CPubKey& key)
+{
+    CKeyID id = key.GetID();
+    SetData(base58Prefixes[0], &id, 20);
+    return true;
+}
+
+bool CCustomBitcoinAddress::Set(const CScriptID& id)
+{
+    SetData(base58Prefixes[1], &id, 20);
+    return true;
+}
+
+bool CCustomBitcoinAddress::Set(const CTxDestination& dest)
+{
+    return boost::apply_visitor(CBitcoinAddressVisitor(this), dest);
+}
+
+bool CCustomBitcoinAddress::IsValid() const
+{
+    bool fCorrectSize = vchData.size() == 20;
+    bool fKnownVersion = vchVersion == base58Prefixes[0] ||
+                         vchVersion == base58Prefixes[1];
+    return fCorrectSize && fKnownVersion;
+}
+
+bool CCustomBitcoinAddress::GetKeyID(CKeyID& keyID) const
+{
+    if (!IsValid() || vchVersion != base58Prefixes[0])
+        return false;
+    uint160 id;
+    memcpy(&id, &vchData[0], 20);
+    keyID = CKeyID(id);
+    return true;
+}
+
+CTxDestination CCustomBitcoinAddress::Get() const
+{
+    if (!IsValid())
+        return CNoDestination();
+    uint160 id;
+    memcpy(&id, &vchData[0], 20);
+    if (vchVersion == base58Prefixes[0])
+        return CKeyID(id);
+    else if (vchVersion == base58Prefixes[1])
+        return CScriptID(id);
+    else
+        return CNoDestination();
+}
+
+bool CCustomBitcoinAddress::GetIndexKey(uint160& hashBytes, int& type) const
+{
+    if (!IsValid()) {
+        return false;
+    } else if (vchVersion == base58Prefixes[0]) {
+        memcpy(&hashBytes, &vchData[0], 20);
+        type = 1;
+        return true;
+    } else if (vchVersion == base58Prefixes[1]) {
+        memcpy(&hashBytes, &vchData[0], 20);
+        type = 2;
+        return true;
+    }
+
+    return false;
+}
+
+bool CCustomBitcoinAddress::IsScript() const
+{
+    return IsValid() && vchVersion == base58Prefixes[1];
+}
+
 void CBitcoinSecret::SetKey(const CKey& vchSecret)
 {
     assert(vchSecret.IsValid());
