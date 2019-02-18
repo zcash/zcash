@@ -29,10 +29,9 @@
 #include <sys/stat.h>
 #include <errno.h>
 
-#ifndef DONTUSEGUI
+#ifndef BUILD_ROGUE
 #include <curses.h>
 #else
-
 #include "cursesd.h"
 #endif
 
@@ -358,20 +357,7 @@ union _bits256 { uint8_t bytes[32]; uint16_t ushorts[16]; uint32_t uints[8]; uin
 typedef union _bits256 bits256;
 #endif
 
-
-#ifndef ROGUE_DECLARED_PACK
-struct rogue_packitem
-{
-    int32_t type,launch,count,which,hplus,dplus,arm,flags,group;
-    char damage[8],hurldmg[8];
-};
-struct rogue_player
-{
-    int32_t gold,hitpoints,strength,level,experience,packsize,dungeonlevel,pad;
-    struct rogue_packitem roguepack[MAXPACK];
-};
-#define ROGUE_DECLARED_PACK
-#endif
+#include "rogue_player.h" // interface to rpc
 
 struct rogue_state
 {
@@ -861,5 +847,8 @@ extern const char     *wood[];
 extern int      cNWOOD;
 extern const char     *metal[];
 extern int      cNMETAL;
+
+//extern WINDOW *stdscr,*curscr;
+
 #endif
 

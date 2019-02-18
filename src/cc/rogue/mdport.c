@@ -81,7 +81,12 @@
 #endif
 #endif
 
+#ifndef BUILD_ROGUE
 #include <curses.h> /* AIX requires curses.h be included before term.h */
+#else
+#include "cursesd.h"
+#endif
+
 
 #if defined(HAVE_TERM_H)
 #include <term.h>
@@ -257,7 +262,7 @@ md_onsignal_autosave()
 int
 md_hasclreol()
 {
-#if defined(clr_eol)
+/*#if defined(clr_eol)
 #ifdef NCURSES_VERSION
     if (cur_term == NULL)
         return(0);
@@ -269,7 +274,8 @@ md_hasclreol()
     return(TRUE);
 #else
     return((CE != NULL) && (*CE != 0));
-#endif
+#endif*/
+    return(0);
 }
 
 void
@@ -1076,6 +1082,7 @@ md_setsuspchar(int c)
 #define M_KEYPAD 2
 #define M_TRAIL  3
 
+#ifndef BUILD_ROGUE
 int
 md_readchar()
 {
@@ -1315,7 +1322,8 @@ md_readchar()
 
     return(ch & 0x7F);
 }
-
+#endif
+        
 #if defined(LOADAV) && defined(HAVE_NLIST_H) && defined(HAVE_NLIST)
 /*
  * loadav:

@@ -36,38 +36,116 @@
 #include <sys/stat.h>
 #include <errno.h>
 
-#ifdef notyet
+#define ERR (-1)
 
 struct cursesd_info
 {
     uint8_t screen[LINES][COLS];
-} *stdscr;
+    int32_t x,y;
+};
 typedef struct cursesd_info WINDOW;
+extern WINDOW *stdscr,*curscr;
+extern int32_t ESCDELAY;
+typedef char chtype;
+
+int32_t getch(void); // stub
+int32_t md_readchar(void); // stub
 
 WINDOW *initscr(void);
-int endwin(void);
-int isendwin(void);
+int32_t endwin(void);
+int32_t isendwin(void);
 //SCREEN *newterm(const char *type, FILE *outfd, FILE *infd);
 //SCREEN *set_term(SCREEN *new);
 //void delscreen(SCREEN* sp);
 
-int refresh(void);
-int wrefresh(WINDOW *win);
-//int wnoutrefresh(WINDOW *win);
-//int doupdate(void);
-int redrawwin(WINDOW *win);
-int wredrawln(WINDOW *win, int beg_line, int num_lines);
+int32_t refresh(void);
+int32_t wrefresh(WINDOW *win);
+//int32_t wnoutrefresh(WINDOW *win);
+//int32_t doupdate(void);
+int32_t redrawwin(WINDOW *win);
+int32_t wredrawln(WINDOW *win, int32_t beg_line, int32_t num_lines);
 
-int erase(void);
-int werase(WINDOW *win);
-int clear(void);
-int wclear(WINDOW *win);
-int clrtobot(void);
-int wclrtobot(WINDOW *win);
-int clrtoeol(void);
-int wclrtoeol(WINDOW *win);
+int32_t erase(void);
+int32_t werase(WINDOW *win);
+int32_t clear(void);
+int32_t wclear(WINDOW *win);
+int32_t clrtobot(void);
+int32_t wclrtobot(WINDOW *win);
+int32_t clrtoeol(void);
+int32_t wclrtoeol(WINDOW *win);
 
-#endif
+int32_t standout(void);
+int32_t standend(void);
+int32_t raw(void);
+int32_t noecho(void);
+int32_t flushinp(void);
+int32_t keypad(WINDOW *win, bool bf);
+
+int32_t clearok(WINDOW *win, bool bf);
+int32_t idlok(WINDOW *win, bool bf);
+int32_t leaveok(WINDOW *win, bool bf);
+
+WINDOW *newwin(int32_t nlines,int32_t ncols,int32_t begin_y,int32_t begin_x); // only LINES,COLS,0,0
+int32_t delwin(WINDOW *win);
+int32_t touchwin(WINDOW *win); // stub
+WINDOW *subwin(WINDOW *orig, int32_t nlines, int32_t ncols, int32_t begin_y, int32_t begin_x); // stub
+int32_t mvwin(WINDOW *win, int32_t y, int32_t x); // stub
+int32_t mvcur(int32_t oldrow, int32_t oldcol, int32_t newrow, int32_t newcol);
+
+char erasechar(void); // stub
+char killchar(void); // stub
+
+int32_t move(int32_t y, int32_t x);
+int32_t wmove(WINDOW *win, int32_t y, int32_t x);
+
+chtype inch(void);
+chtype winch(WINDOW *win);
+chtype mvinch(int32_t y, int32_t x);
+chtype mvwinch(WINDOW *win, int32_t y, int32_t x);
+
+int32_t addch(chtype ch);
+int32_t waddch(WINDOW *win, chtype ch);
+int32_t mvaddch(int32_t y, int32_t x, chtype ch);
+int32_t mvwaddch(WINDOW *win, int32_t y, int32_t x, chtype ch);
+
+int32_t addstr(const char *str);
+int32_t addnstr(const char *str, int32_t n);
+int32_t waddstr(WINDOW *win, const char *str);
+int32_t waddnstr(WINDOW *win, const char *str, int32_t n);
+int32_t mvaddstr(int32_t y, int32_t x, const char *str);
+int32_t mvaddnstr(int32_t y, int32_t x, const char *str, int32_t n);
+int32_t mvwaddstr(WINDOW *win, int32_t y, int32_t x, const char *str);
+int32_t mvwaddnstr(WINDOW *win, int32_t y, int32_t x, const char *str, int32_t n);
+
+int32_t wgetnstr(WINDOW *win, char *str, int32_t n); // stub
+int32_t printw(char *fmt,...);
+int32_t wprintw(WINDOW *win,char *fmt,...);
+int32_t mvprintw(int32_t y,int32_t x,char *fmt,...);
+int32_t mvwprintw(WINDOW *win,int32_t y,int32_t x,char *fmt,...);
+
+#define A_CHARTEXT 0xff
+#define baudrate() 9600
+#define unctrl(a) "^x"
+#define getmaxx(a) COLS
+#define getmaxy(a) LINES
+#define getyx(win,_argfory,_argforx) _argfory = win->y, _argforx = win->x
+
+// functions with only visible effects
+#define wrefresh(win) 0
+#define wnoutrefresh(win) 0
+#define doupdate() 0
+#define touchwin(win) 0
+#define standout() 0
+#define standend() 0
+#define raw() 0
+#define keypad(win,bf) 0
+#define noecho() 0
+#define flushinp() 0
+#define clearok(win,bf) 0
+#define idlok(win,bf) 0
+#define leaveok(win,bf) 0
+#define halfdelay(x) 0
+#define nocbreak() 0
 
 #ifndef TRUE
 #define TRUE 1
@@ -76,58 +154,5 @@ int wclrtoeol(WINDOW *win);
 #define FALSE 0
 #endif
 
-
-#define standout()
-#define standend()
-#define refresh()
-#define raw()
-#define noecho()
-#define flushinp()
-#define clear()
-#define clrtoeol()
-
-#define addch(a)
-#define werase(a)
-#define wclear(a)
-#define delwin(a)
-#define addstr(a)
-#define touchwin(a)
-#define idlok(a,b)
-#define clearok(a,b)
-#define keypad(a,b)
-#define leaveok(a,b)
-#define waddch(a,b)
-#define waddstr(a,b)
-#define move(a,b)
-#define mvwin(a,b,c)
-#define wmove(a,b,c)
-#define mvaddch(a,b,c)
-#define mvaddstr(a,b,c)
-#define wgetnstr(a,b,c)
-#define getyx(a,b,c)
-#define mvcur(a,b,c,d)
-#define mvwaddch(a,b,c,d)
-#define mvprintw(...)
-#define printw(...)
-#define wprintw(...)
-#define mvwprintw(...)
-
-
-#define A_CHARTEXT 0xff
-#define inch() 0
-#define endwin() 1
-#define isendwin() 0
-#define baudrate() 9600
-#define killchar() 3
-#define erasechar() 8
-#define wclrtoeol(a) 0
-#define wrefresh(a) 0
-#define unctrl(a) "^x"
-#define getmaxx(a) COLS
-#define getmaxy(a) LINES
-#define mvinch(a,b) '.'
-#define mvwinch(a,b,c) 0
-#define newwin(a,b,c,d) 0
-#define subwin(a,b,c,d,e) 0
-
 #endif
+

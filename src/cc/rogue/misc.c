@@ -349,17 +349,36 @@ void
 chg_str(int amt)
 {
     //auto jl777: strange compiler error
-    str_t comp;
+    uint32_t comp;
     
     if (amt == 0)
         return;
-    add_str(&pstats.s_str, amt);
+    //add_str(&pstats.s_str, amt);
+    pstats.s_str += amt;
+    if ( pstats.s_str < 3 )
+        pstats.s_str = 3;
+    else if ( pstats.s_str > 31 )
+        pstats.s_str = 31;
     comp = pstats.s_str;
     if (ISRING(LEFT, R_ADDSTR))
-        add_str(&comp, -cur_ring[LEFT]->o_arm);
+    {
+        // add_str(&comp, -cur_ring[LEFT]->o_arm);
+        comp += -cur_ring[LEFT]->o_arm;
+        if ( comp < 3 )
+            comp = 3;
+        else if ( comp > 31 )
+            comp = 31;
+    }
     if (ISRING(RIGHT, R_ADDSTR))
-        add_str(&comp, -cur_ring[RIGHT]->o_arm);
-    if (comp > max_stats.s_str)
+    {
+        //add_str(&comp, -cur_ring[RIGHT]->o_arm);
+        comp += -cur_ring[RIGHT]->o_arm;
+        if ( comp < 3 )
+            comp = 3;
+        else if ( comp > 31 )
+            comp = 31;
+    }
+    if ( comp > max_stats.s_str )
         max_stats.s_str = comp;
 }
 

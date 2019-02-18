@@ -8,6 +8,7 @@
 //#include <curses.h>
 //#include <ctype.h>
 //#include <string.h>
+
 #include "rogue.h"
 
 /*
@@ -152,23 +153,26 @@ step_ok(int ch)
 char
 readchar(struct rogue_state *rs)
 {
-    char ch = -1;
+    char c,ch = -1;
     if ( rs != 0 && rs->guiflag == 0 )
     {
         static uint32_t counter;
         if ( rs->ind < rs->numkeys )
         {
-            //if ( rs->ind == rs->numkeys-1 )
-            //    rs->replaydone = (uint32_t)time(NULL);
-            //fprintf(stderr,"(%c) ",rs->keystrokes[rs->ind]);
-            return(rs->keystrokes[rs->ind++]);
+            c = rs->keystrokes[rs->ind++];
+            while ( c == 'Q' && rs->ind < rs->numkeys )
+            {
+                //fprintf(stderr,"Got 'Q' next (%c)\n",rs->keystrokes[rs->ind]); sleep(2);
+                if ( rs->keystrokes[rs->ind] == 'y' )
+                    return(c);
+                rs->ind++;
+                c = rs->keystrokes[rs->ind++];
+            }
+            return(c);
         }
         if ( rs->replaydone != 0 && counter++ < 3 )
             fprintf(stderr,"replay finished but readchar called\n");
         rs->replaydone = (uint32_t)time(NULL);
-        //if ( (rand() & 1) == 0 )
-        //    return(ESCAPE);
-        //else
         if ( counter < 3 || (counter & 1) == 0 )
             return('y');
         else return(ESCAPE);
@@ -179,7 +183,7 @@ readchar(struct rogue_state *rs)
         
         if (ch == 3)
         {
-            quit(0);
+            _quit();
             return(27);
         }
         if ( rs != 0 && rs->guiflag != 0 )
