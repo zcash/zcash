@@ -165,7 +165,7 @@ out:
 bool
 pack_room(struct rogue_state *rs,bool from_floor, THING *obj)
 {
-    inpack = num_packitems();
+    inpack = num_packitems(rs);
     if (++inpack > MAXPACK)
     {
 	if (!terse)
@@ -247,7 +247,7 @@ pack_char()
  *	the given type.
  */
 
-int32_t num_packitems()
+int32_t num_packitems(struct rogue_state *rs)
 {
     THING *list = pack;
     int32_t type = 0,n = 0,total = 0;
