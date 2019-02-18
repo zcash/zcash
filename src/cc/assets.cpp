@@ -305,7 +305,7 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
                         return eval->Invalid("mismatched vout0 AssetsCCaddr for fillbuy");
                 }
             }
-            fprintf(stderr,"fillbuy validated\n");
+            //fprintf(stderr,"fillbuy validated\n");
             break;
         //case 'e': // selloffer
         //    break; // disable swaps
