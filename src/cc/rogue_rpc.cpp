@@ -1230,7 +1230,7 @@ int32_t rogue_playerdata_validate(struct CCcontract_info *cp,std::vector<uint8_t
         //fprintf(stderr,"extracted.(%s)\n",str);
         if ( newdata == playerdata )
             return(0);
-        else fprintf(stderr,"newdata[%d] != playerdata[%d], numkeys.%d %s pub.%s\n",(int32_t)newdata.size(),(int32_t)playerdata.size(),numkeys,rogueaddr,pubkey33_str(str2,(uint8_t *)pk.data()));
+        else fprintf(stderr,"newdata[%d] != playerdata[%d], numkeys.%d %s pub.%s\n",(int32_t)newdata.size(),(int32_t)playerdata.size(),numkeys,rogueaddr,pubkey33_str(str2,(uint8_t *)pk.ptr()));
     }
     return(-1);
 }
