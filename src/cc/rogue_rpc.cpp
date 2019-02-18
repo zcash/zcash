@@ -877,13 +877,52 @@ char *rogue_extractgame(char *str,int32_t *numkeysp,std::vector<uint8_t> &newdat
 
 UniValue rogue_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR),b(UniValue::VARR); uint256 txid,hashBlock,gametxid,tokenid,playertxid; int32_t vout,maxplayers,gameheight,numvouts; CPubKey roguepk,mypk; char coinaddr[64]; CTransaction tx,gametx; int64_t buyin;
+    std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex;
+    //std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
+    roguepk = GetUnspendable(cp,0);
+    mypk = pubkey2pk(Mypubkey());
+    GetCCaddress1of2(cp,coinaddr,roguepk,mypk);
+    //SetCCunspents(unspentOutputs,coinaddr);
+    SetCCtxids(addressIndex,coinaddr);
+    rogue_univalue(result,"extract",-1,-1);
+    for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=addressIndex.begin(); it!=addressIndex.end(); it++)
+        //for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
+    {
+        txid = it->first.txhash;
+        vout = (int32_t)it->first.index;
+        //char str[65]; fprintf(stderr,"%s check %s/v%d %.8f\n",coinaddr,uint256_str(str,txid),vout,(double)it->second.satoshis/COIN);
+        if ( vout == 0 )
+        {
+            if ( GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 1 )
+            {
+                if ( rogue_registeropretdecode(gametxid,tokenid,playertxid,tx.vout[numvouts-1].scriptPubKey) == 'R' )
+                {
+                    if ( rogue_isvalidgame(cp,gameheight,gametx,buyin,maxplayers,gametxid) == 0 )
+                    {
+                        if ( CCgettxout(txid,vout,1) < 0 )
+                            b.push_back(gametxid.GetHex());
+                        else a.push_back(gametxid.GetHex());
+                    }
+                }
+            }
+        }
+    }
+    result.push_back(Pair("pastgames",b));
+    result.push_back(Pair("games",a));
+    result.push_back(Pair("numgames",(int64_t)(a.size()+b.size())));
+    return(result);
+}
+
+UniValue realrogue_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
+{
     UniValue result; CPubKey pk,roguepk; int32_t i,n,numkeys,flag = 0; uint64_t seed; char str[512],rogueaddr[64],*pubstr,*keystrokes = 0; std::vector<uint8_t> newdata; uint256 gametxid; FILE *fp; uint8_t pub33[33];
     pk = pubkey2pk(Mypubkey());
     roguepk = GetUnspendable(cp,0);
     result.push_back(Pair("name","rogue"));
     result.push_back(Pair("method","extract"));
     fprintf(stderr,"inside rogue extract\n");
-   /* if ( 0 && (params= cclib_reparse(&n,params)) != 0 )
+    if ( (params= cclib_reparse(&n,params)) != 0 )
     {
         if ( n > 0 )
         {
@@ -900,7 +939,7 @@ UniValue rogue_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             }
             GetCCaddress1of2(cp,rogueaddr,roguepk,pk);
             result.push_back(Pair("rogueaddr",rogueaddr));
-            if ( 0 && (keystrokes= rogue_extractgame(str,&numkeys,newdata,seed,cp,gametxid,rogueaddr)) != 0 )
+            if ( (keystrokes= rogue_extractgame(str,&numkeys,newdata,seed,cp,gametxid,rogueaddr)) != 0 )
             {
                 result.push_back(Pair("status","success"));
                 flag = 1;
@@ -910,7 +949,7 @@ UniValue rogue_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                 free(keystrokes);
             }
         }
-    }*/
+    }
     if ( flag == 0 )
         result.push_back(Pair("status","error"));
     return(result);
