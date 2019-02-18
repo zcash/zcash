@@ -726,6 +726,8 @@ UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                     if ( tokenid != zeroid ) // if it is tokentransfer this will be 0
                         vout = 1;
                 }
+                if ( komodo_nextheight() > gameheight + ROGUE_MAXKEYSTROKESGAP )
+                    return(cclib_error(result,"didnt register in time, ROGUE_MAXKEYSTROKESGAP"));
                 rogue_univalue(result,0,maxplayers,buyin);
                 GetCCaddress1of2(cp,coinaddr,roguepk,mypk);
                 if ( rogue_iamregistered(maxplayers,gametxid,tx,coinaddr) > 0 )
