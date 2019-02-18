@@ -424,8 +424,7 @@ int32_t md_readchar(void)
 
 char *unctrl(char c)
 {
-    static char ctrlstr[3];
-    ctrlstr[0] = '^';
-    ctrlstr[1] = 'a' + c;
+    static char ctrlstr[5];
+    sprintf(ctrlstr,"^%%%02x",c);
     return(ctrlstr);
 }
