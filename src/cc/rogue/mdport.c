@@ -34,7 +34,7 @@
 
 #if defined(_WIN32)
 #include <windows.h>
-#include <Lmcons.h>
+#include <lmcons.h>
 #include <io.h>
 #include <conio.h>
 #pragma warning( disable: 4201 ) 
