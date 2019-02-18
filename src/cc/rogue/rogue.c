@@ -280,7 +280,7 @@ int32_t rogue_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t nu
         if ( newdata != 0 && rs->playersize > 0 )
             memcpy(newdata,rs->playerdata,rs->playersize);
     }
-    n = rs->playsize;
+    n = rs->playersize;
     free(rs);
     return(n);
 }
