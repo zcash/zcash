@@ -502,7 +502,7 @@ int32_t rogue_findbaton(struct CCcontract_info *cp,uint256 &playertxid,char **ke
             //fprintf(stderr,"matchtxid.%s matches.%d numvouts.%d\n",matchtx.GetHash().GetHex().c_str(),matches,numvouts);
             if ( rogue_registeropretdecode(txid,tokenid,playertxid,matchtx.vout[numvouts-1].scriptPubKey) == 'R' )//&& txid == gametxid )
             {
-                //fprintf(stderr,"tokenid.%s txid.%s vs gametxid.%s player.%s\n",tokenid.GetHex().c_str(),txid.GetHex().c_str(),gametxid.GetHex().c_str(),playertxid.GetHex().c_str());
+                fprintf(stderr,"tokenid.%s txid.%s vs gametxid.%s player.%s\n",tokenid.GetHex().c_str(),txid.GetHex().c_str(),gametxid.GetHex().c_str(),playertxid.GetHex().c_str());
                 if ( tokenid != zeroid )
                     active = tokenid;
                 else active = playertxid;
@@ -1220,7 +1220,7 @@ UniValue rogue_setname(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 
 int32_t rogue_playerdata_validate(struct CCcontract_info *cp,std::vector<uint8_t> playerdata,uint256 gametxid,CPubKey pk)
 {
-    char str[512],*keystrokes,rogueaddr[64]; int32_t numkeys; std::vector<uint8_t> newdata; uint64_t seed; uint256 playertxid; CPubKey roguepk;
+    char str[512],*keystrokes,rogueaddr[64],str2[67]; int32_t numkeys; std::vector<uint8_t> newdata; uint64_t seed; uint256 playertxid; CPubKey roguepk;
     roguepk = GetUnspendable(cp,0);
     GetCCaddress1of2(cp,rogueaddr,roguepk,pk);
     //fprintf(stderr,"call extractgame\n");
@@ -1230,7 +1230,7 @@ int32_t rogue_playerdata_validate(struct CCcontract_info *cp,std::vector<uint8_t
         //fprintf(stderr,"extracted.(%s)\n",str);
         if ( newdata == playerdata )
             return(0);
-        else fprintf(stderr,"newdata[%d] != playerdata[%d], numkeys.%d\n",(int32_t)newdata.size(),(int32_t)playerdata.size(),numkeys);
+        else fprintf(stderr,"newdata[%d] != playerdata[%d], numkeys.%d %s pub.%s\n",(int32_t)newdata.size(),(int32_t)playerdata.size(),numkeys,rogueaddr,pubkey33_str(str2,(uint8_t *)pk.data()));
     }
     return(-1);
 }
