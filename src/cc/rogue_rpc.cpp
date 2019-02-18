@@ -1258,7 +1258,7 @@ int32_t rogue_playerdata_validate(uint256 &playertxid,struct CCcontract_info *cp
 bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx)
 {
     CScript scriptPubKey; std::vector<uint8_t> vopret; uint8_t *script,e,f,funcid; int32_t i,maxplayers,decoded=0,regslot,ind,errflag,dispflag,score,numvouts; CTransaction vintx; CPubKey pk; uint256 hashBlock,gametxid,tokenid,batontxid,playertxid,ptxid; int64_t buyin; std::vector<uint8_t> playerdata,keystrokes; std::string symbol,pname;
-    if ( strcmp(ASSETCHAINS_SYMBOL,"ROGUE") == 0 && height < 20000 )
+    if ( strcmp(ASSETCHAINS_SYMBOL,"ROGUE") == 0 && height < 21274 )
         return(true);
     if ( (numvouts= tx.vout.size()) > 1 )
     {
