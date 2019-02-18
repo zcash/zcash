@@ -251,8 +251,10 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
         // Now we have the block time, we can get the active notaries.
         int32_t staked_era = 0; int8_t numSN = 0;
         uint8_t staked_pubkeys[64][33] = {0};
-        if ( is_STAKED(ASSETCHAINS_SYMBOL) != 0 )
+        if ( is_STAKED(ASSETCHAINS_SYMBOL) < 3 )
         {
+            // Only use speical miner for LABS chains in the actual cluster that use notarypay!
+            // It wouldnt hurt to use it on other chains, but serves little purpose. 
             staked_era = STAKED_era(pblock->nTime);
             numSN = numStakedNotaries(staked_pubkeys,staked_era);
         }
@@ -393,7 +395,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
 
             if ( fNotarisation ) 
             {
-                // check if the notarization found is actually valid. 
+                // Special miner for notary pay chains.
                 if ( tx.vout.size() == 2 && tx.vout[1].nValue == 0 )
                 {
                     // Get the OP_RETURN for the notarisation

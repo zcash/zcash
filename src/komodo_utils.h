@@ -1778,11 +1778,6 @@ void komodo_args(char *argv0)
                 ASSETCHAINS_DECAY[i] = 0;
                 printf("ERA%u: ASSETCHAINS_DECAY cant be more than 100000000\n", i);
             }
-            if ( ASSETCHAINS_NOTARY_PAY[i]  < 64 )
-            {
-                ASSETCHAINS_NOTARY_PAY[i] = 64;
-                printf("ERA%u: ASSETCHAINS_NOTARY_PAY cant be less than 64. Set to 64.\n", i);
-            }
         }
 
         MAX_BLOCK_SIGOPS = 60000;
@@ -1942,7 +1937,8 @@ void komodo_args(char *argv0)
                 extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_REWARD[i]),(void *)&ASSETCHAINS_REWARD[i]);
                 extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_HALVING[i]),(void *)&ASSETCHAINS_HALVING[i]);
                 extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_DECAY[i]),(void *)&ASSETCHAINS_DECAY[i]);
-                extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_NOTARY_PAY[i]),(void *)&ASSETCHAINS_NOTARY_PAY[i]);
+                if ( ASSETCHAINS_NOTARY_PAY[0] != 0 )
+                    extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_NOTARY_PAY[i]),(void *)&ASSETCHAINS_NOTARY_PAY[i]);
             }
 
             if (ASSETCHAINS_LASTERA > 0)
