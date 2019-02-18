@@ -1220,7 +1220,7 @@ UniValue rogue_setname(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 
 int32_t rogue_playerdata_validate(struct CCcontract_info *cp,std::vector<uint8_t> playerdata,uint256 gametxid,CPubKey pk)
 {
-    char str[512],*keystrokes,rogueaddr[64],str2[67]; int32_t numkeys; std::vector<uint8_t> newdata; uint64_t seed; uint256 playertxid; CPubKey roguepk; struct rogue_player P;
+    char str[512],*keystrokes,rogueaddr[64],str2[67]; int32_t i,numkeys; std::vector<uint8_t> newdata; uint64_t seed; uint256 playertxid; CPubKey roguepk; struct rogue_player P;
     roguepk = GetUnspendable(cp,0);
     GetCCaddress1of2(cp,rogueaddr,roguepk,pk);
     //fprintf(stderr,"call extractgame\n");
