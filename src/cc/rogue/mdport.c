@@ -33,7 +33,7 @@
 #include <string.h>
 
 #if defined(_WIN32)
-#include <Windows.h>
+#include <windows.h>
 #include <Lmcons.h>
 #include <io.h>
 #include <conio.h>
