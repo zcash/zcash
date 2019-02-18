@@ -121,7 +121,6 @@ std::string Rogue_pname = "";
 
 // todo:
 // add some more conditions to multiplayer
-// change rogue_extract to subfunction without JSON to be used by other functions
 // how does it work with playertxid instead of pubkey
 // keystrokes retry
 
@@ -820,12 +819,67 @@ UniValue rogue_keystrokes(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
     } else return(cclib_error(result,"couldnt reparse params"));
 }
 
+char *rogue_extractgame(char *str,int32_t *numkeysp,struct rogue_player &P,std::vector<uint8_t> &newdata,struct rogue_player &endP,int64_t &seed,struct CCcontract_info *cp,uint256 gametxid,char *rogueaddr)
+{
+    CPubKey roguepk; int32_t i,num,maxplayers,gameheight,batonht,batonvout,numplayers,regslot,numkeys,err; std::string symbol,pname; CTransaction gametx; int64_t buyin,batonvalue; char fname[64],*keystrokes = 0; std::vector<uint8_t> playerdata; uint256 batontxid,playertxid; FILE *fp; uint8_t newplayer[10000];
+    roguepk = GetUnspendable(cp,0);
+    *numkeysp = 0;
+    seed = 0;
+    if ( (err= rogue_isvalidgame(cp,gameheight,gametx,buyin,maxplayers,gametxid)) == 0 )
+    {
+        if ( rogue_findbaton(cp,playertxid,&keystrokes,numkeys,regslot,playerdata,batontxid,batonvout,batonvalue,batonht,gametxid,gametx,maxplayers,rogueaddr,numplayers,symbol,pname) == 0 )
+        {
+            UniValue obj;
+            seed = rogue_gamefields(obj,maxplayers,buyin,gametxid,rogueaddr);
+            fprintf(stderr,"(%s) found baton %s numkeys.%d seed.%llu playerdata.%d\n",pname.size()!=0?pname.c_str():Rogue_pname.c_str(),batontxid.ToString().c_str(),numkeys,(long long)seed,(int32_t)playerdata.size());
+            memset(&P,0,sizeof(P));
+            if ( playerdata.size() > 0 )
+            {
+                for (i=0; i<playerdata.size(); i++)
+                    ((uint8_t *)&P)[i] = playerdata[i];
+            }
+            if ( keystrokes != 0 )
+            {
+                sprintf(fname,"rogue.%llu.0",(long long)seed);
+                if ( (fp= fopen(fname,"wb")) != 0 )
+                {
+                    if ( fwrite(keystrokes,1,numkeys,fp) != numkeys )
+                        fprintf(stderr,"error writing %s\n",fname);
+                    fclose(fp);
+                }
+                sprintf(fname,"rogue.%llu.player",(long long)seed);
+                if ( (fp= fopen(fname,"wb")) != 0 )
+                {
+                    if ( fwrite(&playerdata[0],1,(int32_t)playerdata.size(),fp) != playerdata.size() )
+                        fprintf(stderr,"error writing %s\n",fname);
+                    fclose(fp);
+                }
+                num = rogue_replay2(newplayer,seed,keystrokes,numkeys,playerdata.size()==0?0:&P,0);
+                newdata.resize(num);
+                for (i=0; i<num; i++)
+                {
+                    newdata[i] = newplayer[i];
+                    ((uint8_t *)&endP)[i] = newplayer[i];
+                }
+                if ( endP.gold <= 0 || endP.hitpoints <= 0 || endP.strength <= 0 || endP.level <= 0 || endP.experience <= 0 || endP.dungeonlevel <= 0 )
+                {
+                    fprintf(stderr,"zero value character was killed -> no playerdata\n");
+                    newdata.resize(0);
+                }
+                sprintf(str,"extracted $$$gold.%d hp.%d strength.%d level.%d exp.%d dl.%d n.%d size.%d\n",endP.gold,endP.hitpoints,endP.strength,endP.level,endP.experience,endP.dungeonlevel,n,(int32_t)sizeof(endP));
+                fprintf(stderr,"%s\n",str);
+            } else num = 0;
+        }
+    }
+    *numkeysp = numkeys;
+    return(keystrokes);
+}
+
 UniValue rogue_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result; CPubKey pk,roguepk; int32_t i,n,num,maxplayers,gameheight,batonht,batonvout,numplayers,regslot,numkeys,err; std::string symbol,pname; CTransaction gametx; uint64_t seed,mult; int64_t buyin,batonvalue; char rogueaddr[64],fname[64],str[512],*pubstr,*keystrokes = 0; std::vector<uint8_t> playerdata,newdata; uint256 batontxid,playertxid,gametxid; FILE *fp; uint8_t player[10000],pub33[33];
+    UniValue result; CPubKey pk,roguepk; int32_t i,n,numkeys,flag = 0; uint64_t seed; char str[512],rogueaddr[64],*pubstr,*keystrokes = 0; std::vector<uint8_t> newdata; uint256 gametxid; FILE *fp; uint8_t player[10000],pub33[33];
     pk = pubkey2pk(Mypubkey());
     roguepk = GetUnspendable(cp,0);
-    result.push_back(Pair("status","success"));
     result.push_back(Pair("name","rogue"));
     result.push_back(Pair("method","extract"));
     if ( (params= cclib_reparse(&n,params)) != 0 )
@@ -845,57 +899,19 @@ UniValue rogue_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             }
             GetCCaddress1of2(cp,rogueaddr,roguepk,pk);
             result.push_back(Pair("rogueaddr",rogueaddr));
-            if ( (err= rogue_isvalidgame(cp,gameheight,gametx,buyin,maxplayers,gametxid)) == 0 )
+            if ( (keystrokes= rogue_extractgame(str,&numkeys,P,newdata,endP,seed,cp,gametxid,rogueaddr)) != 0 )
             {
-                if ( rogue_findbaton(cp,playertxid,&keystrokes,numkeys,regslot,playerdata,batontxid,batonvout,batonvalue,batonht,gametxid,gametx,maxplayers,rogueaddr,numplayers,symbol,pname) == 0 )
-                {
-                    UniValue obj; struct rogue_player P;
-                    seed = rogue_gamefields(obj,maxplayers,buyin,gametxid,rogueaddr);
-                    fprintf(stderr,"(%s) found baton %s numkeys.%d seed.%llu playerdata.%d\n",pname.size()!=0?pname.c_str():Rogue_pname.c_str(),batontxid.ToString().c_str(),numkeys,(long long)seed,(int32_t)playerdata.size());
-                    memset(&P,0,sizeof(P));
-                    if ( playerdata.size() > 0 )
-                    {
-                        for (i=0; i<playerdata.size(); i++)
-                            ((uint8_t *)&P)[i] = playerdata[i];
-                    }
-                    if ( keystrokes != 0 )
-                    {
-                        sprintf(fname,"rogue.%llu.0",(long long)seed);
-                        if ( (fp= fopen(fname,"wb")) != 0 )
-                        {
-                            if ( fwrite(keystrokes,1,numkeys,fp) != numkeys )
-                                fprintf(stderr,"error writing %s\n",fname);
-                            fclose(fp);
-                        }
-                        sprintf(fname,"rogue.%llu.player",(long long)seed);
-                        if ( (fp= fopen(fname,"wb")) != 0 )
-                        {
-                            if ( fwrite(&playerdata[0],1,(int32_t)playerdata.size(),fp) != playerdata.size() )
-                                fprintf(stderr,"error writing %s\n",fname);
-                            fclose(fp);
-                        }
-                        num = rogue_replay2(player,seed,keystrokes,numkeys,playerdata.size()==0?0:&P,0);
-                        newdata.resize(num);
-                        for (i=0; i<num; i++)
-                        {
-                            newdata[i] = player[i];
-                            ((uint8_t *)&P)[i] = player[i];
-                        }
-                        if ( P.gold <= 0 || P.hitpoints <= 0 || P.strength <= 0 || P.level <= 0 || P.experience <= 0 || P.dungeonlevel <= 0 )
-                        {
-                            fprintf(stderr,"zero value character was killed -> no playerdata\n");
-                            newdata.resize(0);
-                        }
-                        sprintf(str,"extracted $$$gold.%d hp.%d strength.%d level.%d exp.%d dl.%d n.%d size.%d\n",P.gold,P.hitpoints,P.strength,P.level,P.experience,P.dungeonlevel,n,(int32_t)sizeof(P));
-                        result.push_back(Pair("extracted",str));
-                        fprintf(stderr,"%s\n",str);
-                        if ( keystrokes != 0 )
-                            free(keystrokes);
-                    } else num = 0;
-                }
+                result.push_back(Pair("status","success"));
+                flag = 1;
+                result.push_back(Pair("extracted",str));
+                result.push_back(Pair("numkeys",(int64_t)numkeys));
+                result.push_back(Pair("seed",(int64_t)seed));
+                free(keystrokes);
             }
         }
     }
+    if ( flag == 0 )
+        result.push_back(Pair("status","error"));
     return(result);
 }
 
