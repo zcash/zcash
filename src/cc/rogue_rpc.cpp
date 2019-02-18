@@ -1240,6 +1240,7 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
             }
             if ( e == EVAL_ROGUE )
             {
+                fprintf(stderr,"ht.%d rogue.(%c)\n",height,script[1]);
                 if ( decoded == 0 )
                 {
                     switch ( funcid )
@@ -1261,7 +1262,11 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
                             break;
                         case 'K':
                             if ( (funcid= rogue_keystrokesopretdecode(gametxid,batontxid,pk,keystrokes,scriptPubKey)) != 'K' )
-                                return eval->Invalid("couldnt decode keystrokes opret");
+                            {
+                                fprintf(stderr,"height.%d couldnt decode keystrokes opret\n",height);
+                                if ( height > 20000 )
+                                    return eval->Invalid("couldnt decode keystrokes opret");
+                            }
                             // validate keystrokes are from the correct pk. might need to add vin
                             return(true);
                             break;
@@ -1286,7 +1291,6 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
                         return(true);
                         break;
                     default:
-                        //fprintf(stderr,"ht.%d rogue.(%c)\n",height,script[1]);
                         return eval->Invalid("illegal rogue funcid");
                         break;
                 }
