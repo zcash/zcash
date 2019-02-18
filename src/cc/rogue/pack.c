@@ -250,12 +250,16 @@ pack_char()
 int32_t num_packitems()
 {
     THING *list = pack;
-    int32_t type = 0,n = 0;
+    int32_t type = 0,n = 0,total = 0;
     for (; list != NULL; list = next(list))
     {
-        if (!list->o_packch)
+        if ( list->o_packch != 0 )
+        {
             n++;
+            total += list->o_count;
+        }
     }
+    fprintf(stderr,"total.%d vs %d inventory letters\n",total,n);
     return(n);
 }
 
