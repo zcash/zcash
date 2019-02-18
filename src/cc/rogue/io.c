@@ -158,7 +158,9 @@ readchar(struct rogue_state *rs)
     {
         static uint32_t counter;
         if ( rs->ind < rs->numkeys )
+        {
             return(rs->keystrokes[rs->ind++]);
+        }
         if ( rs->replaydone != 0 && counter++ < 3 )
             fprintf(stderr,"replay finished but readchar called\n");
         rs->replaydone = (uint32_t)time(NULL);

@@ -621,7 +621,7 @@ playit(struct rogue_state *rs)
 int32_t quit(int sig)
 {
     struct rogue_state *rs = &globalR;
-    int oy, ox;
+    int oy, ox, c;
     //fprintf(stderr,"inside quit(%d)\n",sig);
     if ( rs->guiflag != 0 )
     {
@@ -635,7 +635,8 @@ int32_t quit(int sig)
     }
     getyx(curscr, oy, ox);
     msg(rs,"really quit?");
-    if (readchar(rs) == 'y')
+    sleep(1);
+    if ( (c= readchar(rs)) == 'y')
     {
         if ( rs->guiflag != 0 )
         {
@@ -652,12 +653,13 @@ int32_t quit(int sig)
         else
         {
             //score(rs,purse, 1, 0);
-            //fprintf(stderr,"done!\n");
+            fprintf(stderr,"done!\n");
         }
         return(1);
     }
     else
     {
+        fprintf(stderr,"'Q' answer (%c)\n",c);
         move(0, 0);
         clrtoeol();
         status(rs);
