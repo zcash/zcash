@@ -260,9 +260,9 @@ int32_t num_packitems(struct rogue_state *rs)
         }
     }
 
-    char inv_temp[MAXSTR],str[MAXSTR];
+    char str[MAXSTR];
     sprintf(str,"total.%d vs %d inventory letters\n",total,n);
-    add_line(rs,inv_temp,str);
+    add_line(rs,"%s",str);
     return(n);
 }
 
