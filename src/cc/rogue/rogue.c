@@ -618,8 +618,7 @@ playit(struct rogue_state *rs)
  *	Have player make certain, then exit.
  */
 
-void
-quit(int sig)
+int32_t quit(int sig)
 {
     struct rogue_state *rs = &globalR;
     int oy, ox;
@@ -653,8 +652,9 @@ quit(int sig)
         else
         {
             //score(rs,purse, 1, 0);
-            fprintf(stderr,"done!\n");
+            //fprintf(stderr,"done!\n");
         }
+        return(1);
     }
     else
     {
@@ -667,6 +667,7 @@ quit(int sig)
         mpos = 0;
         count = 0;
         to_death = FALSE;
+        return(0);
     }
 }
 
