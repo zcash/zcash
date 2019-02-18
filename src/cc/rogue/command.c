@@ -262,15 +262,18 @@ over:
 		case 'q': quaff(rs);
                 break;
 		when 'Q':
-		    after = FALSE;
-		    q_comm = TRUE;
-		    quit(0);
-            if ( rs->guiflag != 0 && rs->needflush == 0 )
-                rs->needflush = (uint32_t)time(NULL);
-		    q_comm = FALSE;
-            if ( rs->guiflag != 0 )
-                rogue_bailout(rs);
-            else rs->replaydone = (uint32_t)time(NULL);
+                if ( rs->sleeptime == 1 )
+                {
+                    after = FALSE;
+                    q_comm = TRUE;
+                    quit(0);
+                    if ( rs->guiflag != 0 && rs->needflush == 0 )
+                        rs->needflush = (uint32_t)time(NULL);
+                    q_comm = FALSE;
+                    if ( rs->guiflag != 0 )
+                        rogue_bailout(rs);
+                    else rs->replaydone = (uint32_t)time(NULL);
+                }
             return;
 		when 'i': after = FALSE; inventory(rs,pack, 0);
 		when 'I': after = FALSE; picky_inven(rs);
