@@ -819,7 +819,7 @@ UniValue rogue_keystrokes(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
     } else return(cclib_error(result,"couldnt reparse params"));
 }
 
-char *rogue_extractgame(char *str,int32_t *numkeysp,struct rogue_player &P,std::vector<uint8_t> &newdata,struct rogue_player &endP,int64_t &seed,struct CCcontract_info *cp,uint256 gametxid,char *rogueaddr)
+char *rogue_extractgame(char *str,int32_t *numkeysp,struct rogue_player &P,std::vector<uint8_t> &newdata,struct rogue_player &endP,uint64_t &seed,struct CCcontract_info *cp,uint256 gametxid,char *rogueaddr)
 {
     CPubKey roguepk; int32_t i,num,maxplayers,gameheight,batonht,batonvout,numplayers,regslot,numkeys,err; std::string symbol,pname; CTransaction gametx; int64_t buyin,batonvalue; char fname[64],*keystrokes = 0; std::vector<uint8_t> playerdata; uint256 batontxid,playertxid; FILE *fp; uint8_t newplayer[10000];
     roguepk = GetUnspendable(cp,0);
