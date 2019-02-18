@@ -162,7 +162,7 @@ int32_t mvaddch(int32_t y, int32_t x, chtype ch)
 int32_t waddstr(WINDOW *win, const char *str)
 {
     int32_t i;
-    fprintf(stderr,"%s\n",str);
+    //fprintf(stderr,"%s\n",str);
     for (i=0; str[i]!=0; i++)
         waddch(win,str[i]);
     return(0);
