@@ -52,9 +52,9 @@ add_pack(struct rogue_state *rs,THING *obj, bool silent)
 
     if (pack == NULL)
     {
-	pack = obj;
-	obj->o_packch = pack_char();
-	inpack++;
+        pack = obj;
+        obj->o_packch = pack_char();
+        inpack++;
     }
     else
     {
@@ -250,9 +250,16 @@ pack_char()
 int32_t num_packitems()
 {
     THING *list = pack;
-    int32_t type = 0,n = 0;
+    int32_t type = 0,n = 0,total = 0;
     for (; list != NULL; list = next(list))
-        n++;
+    {
+        if ( list->o_packch != 0 )
+        {
+            n++;
+            total += list->o_count;
+        }
+    }
+    fprintf(stderr,"total.%d vs %d inventory letters\n",total,n); sleep(1);
     return(n);
 }
 
@@ -288,11 +295,11 @@ inventory(struct rogue_state *rs,THING *list, int type)
     //    fprintf(stderr,"n_objs.%d vs inpack.%d\n",n_objs,inpack), sleep(2);
     if (n_objs == 0)
     {
-	if (terse)
-	    msg(rs,type == 0 ? (char *)"empty handed" : (char *)"nothing appropriate");
-	else
-	    msg(rs,type == 0 ? (char *)"you are empty handed" : (char *)"you don't have anything appropriate");
-	return FALSE;
+        if (terse)
+            msg(rs,type == 0 ? (char *)"empty handed" : (char *)"nothing appropriate");
+        else
+            msg(rs,type == 0 ? (char *)"you are empty handed" : (char *)"you don't have anything appropriate");
+        return FALSE;
     }
     end_line(rs);
     return TRUE;

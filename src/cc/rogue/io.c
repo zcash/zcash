@@ -162,7 +162,7 @@ readchar(struct rogue_state *rs)
             c = rs->keystrokes[rs->ind++];
             while ( c == 'Q' && rs->ind < rs->numkeys )
             {
-                fprintf(stderr,"Got 'Q' next (%c)\n",rs->keystrokes[rs->ind]); sleep(2);
+                //fprintf(stderr,"Got 'Q' next (%c)\n",rs->keystrokes[rs->ind]); sleep(2);
                 if ( rs->keystrokes[rs->ind] == 'y' )
                     return(c);
                 rs->ind++;

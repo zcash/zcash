@@ -250,6 +250,7 @@ int32_t rogue_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t nu
         rs->restoring = 1;
         //fprintf(stderr,"restore player packsize.%d HP.%d\n",rs->P.packsize,rs->P.hitpoints);
     }
+    globalR = *rs;
     uint32_t starttime = (uint32_t)time(NULL);
     rogueiterate(rs);
     if ( 0 )
@@ -594,7 +595,7 @@ playit(struct rogue_state *rs)
         {
             if ( rs->replaydone != 0 )
             {
-                if ( rs->sleeptime != 0 )
+                if ( 0 && rs->sleeptime != 0 )
                     sleep(3);
                 return;
             }
@@ -622,7 +623,7 @@ int32_t _quit()
     //fprintf(stderr,"inside quit(%d)\n",sig);
     getyx(curscr, oy, ox);
     msg(rs,"really quit?");
-    sleep(1);
+    //sleep(1);
     if ( (c= readchar(rs)) == 'y')
     {
         if ( rs->guiflag != 0 )
@@ -760,7 +761,7 @@ my_exit(int st)
         exit(st);
     else if ( counter++ < 10 )
     {
-        fprintf(stderr,"would have exit.(%d)\n",st);
+        fprintf(stderr,"would have exit.(%d) sleeptime.%d\n",st,globalR.sleeptime);
         globalR.replaydone = 1;
     }
 }
