@@ -1220,8 +1220,11 @@ UniValue rogue_setname(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 
 int32_t rogue_playerdata_validate(uint256 &playertxid,struct CCcontract_info *cp,std::vector<uint8_t> playerdata,uint256 gametxid,CPubKey pk)
 {
-    static uint32_t good,bad;
+    static uint32_t good,bad; static uint256 prevgame;
     char str[512],*keystrokes,rogueaddr[64],str2[67]; int32_t i,numkeys; std::vector<uint8_t> newdata; uint64_t seed; CPubKey roguepk; struct rogue_player P;
+    if ( gametxid == prevgame )
+        return(0);
+    prevgame = gametxid;
     roguepk = GetUnspendable(cp,0);
     GetCCaddress1of2(cp,rogueaddr,roguepk,pk);
     //fprintf(stderr,"call extractgame\n");
@@ -1249,7 +1252,7 @@ int32_t rogue_playerdata_validate(uint256 &playertxid,struct CCcontract_info *cp
         {
             fprintf(stderr,"zero value character was killed -> no playerdata\n");
         }
-        fprintf(stderr,"playerdata: gold.%d hp.%d strength.%d/%d level.%d exp.%d dl.%d\n",P.gold,P.hitpoints,P.strength&0xffff,P.strength>>16,P.level,P.experience,P.dungeonlevel);
+        fprintf(stderr,"%s playerdata: gold.%d hp.%d strength.%d/%d level.%d exp.%d dl.%d\n",gametxid.GetHex().c_str(),P.gold,P.hitpoints,P.strength&0xffff,P.strength>>16,P.level,P.experience,P.dungeonlevel);
         fprintf(stderr,"newdata[%d] != playerdata[%d], numkeys.%d %s pub.%s playertxid.%s good.%d bad.%d\n",(int32_t)newdata.size(),(int32_t)playerdata.size(),numkeys,rogueaddr,pubkey33_str(str2,(uint8_t *)&pk),playertxid.GetHex().c_str(),good,bad);
     }
     return(-1);
