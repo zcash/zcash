@@ -252,7 +252,10 @@ int32_t num_packitems()
     THING *list = pack;
     int32_t type = 0,n = 0;
     for (; list != NULL; list = next(list))
-        n++;
+    {
+        if (!list->o_packch)
+            n++;
+    }
     return(n);
 }
 
