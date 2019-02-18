@@ -905,8 +905,8 @@ UniValue rogue_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                 result.push_back(Pair("status","success"));
                 flag = 1;
                 result.push_back(Pair("extracted",str));
-                //result.push_back(Pair("numkeys",(int64_t)numkeys));
-                //result.push_back(Pair("seed",(int64_t)seed));
+                result.push_back(Pair("numkeys",(int64_t)numkeys));
+                result.push_back(Pair("seed",(int64_t)seed));
                 free(keystrokes);
             }
         }
