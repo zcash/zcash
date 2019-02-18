@@ -743,7 +743,7 @@ my_exit(int st)
 {
     uint32_t counter;
     resetltchars();
-    if ( globalR.guiflag != 0 )
+    if ( globalR.guiflag != 0 || globalR.sleeptime != 0 )
         exit(st);
     else if ( counter++ < 10 )
     {
