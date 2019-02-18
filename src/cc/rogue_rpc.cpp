@@ -836,7 +836,7 @@ char *rogue_extractgame(char *str,int32_t *numkeysp,std::vector<uint8_t> &newdat
         {
             UniValue obj;
             seed = rogue_gamefields(obj,maxplayers,buyin,gametxid,rogueaddr);
-            //fprintf(stderr,"(%s) found baton %s numkeys.%d seed.%llu playerdata.%d\n",pname.size()!=0?pname.c_str():Rogue_pname.c_str(),batontxid.ToString().c_str(),numkeys,(long long)seed,(int32_t)playerdata.size());
+            fprintf(stderr,"(%s) found baton %s numkeys.%d seed.%llu playerdata.%d playertxid.%s\n",pname.size()!=0?pname.c_str():Rogue_pname.c_str(),batontxid.ToString().c_str(),numkeys,(long long)seed,(int32_t)playerdata.size(),playertxid.GetHex().c_str());
             memset(&P,0,sizeof(P));
             if ( playerdata.size() > 0 )
             {
@@ -1220,7 +1220,7 @@ UniValue rogue_setname(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 
 int32_t rogue_playerdata_validate(struct CCcontract_info *cp,std::vector<uint8_t> playerdata,uint256 gametxid,CPubKey pk)
 {
-    char str[512],*keystrokes,rogueaddr[64],str2[67]; int32_t numkeys; std::vector<uint8_t> newdata; uint64_t seed; uint256 playertxid; CPubKey roguepk;
+    char str[512],*keystrokes,rogueaddr[64],str2[67]; int32_t numkeys; std::vector<uint8_t> newdata; uint64_t seed; uint256 playertxid; CPubKey roguepk; struct rogue_player P;
     roguepk = GetUnspendable(cp,0);
     GetCCaddress1of2(cp,rogueaddr,roguepk,pk);
     //fprintf(stderr,"call extractgame\n");
@@ -1230,7 +1230,14 @@ int32_t rogue_playerdata_validate(struct CCcontract_info *cp,std::vector<uint8_t
         //fprintf(stderr,"extracted.(%s)\n",str);
         if ( newdata == playerdata )
             return(0);
-        else fprintf(stderr,"newdata[%d] != playerdata[%d], numkeys.%d %s pub.%s\n",(int32_t)newdata.size(),(int32_t)playerdata.size(),numkeys,rogueaddr,pubkey33_str(str2,(uint8_t *)&pk));
+        for (i=0; i<num; i++)
+            ((uint8_t *)&P)[i] = playerdata[i];
+        if ( P.gold <= 0 || P.hitpoints <= 0 || (P.strength&0xffff) <= 0 || P.level <= 0 || P.experience <= 0 || P.dungeonlevel <= 0 )
+        {
+            fprintf(stderr,"zero value character was killed -> no playerdata\n");
+        }
+        fprintf(stderr,"playerdata: gold.%d hp.%d strength.%d/%d level.%d exp.%d dl.%d\n",P.gold,P.hitpoints,P.strength&0xffff,P.strength>>16,P.level,P.experience,P.dungeonlevel);
+        fprintf(stderr,"newdata[%d] != playerdata[%d], numkeys.%d %s pub.%s playertxid.%s\n",(int32_t)newdata.size(),(int32_t)playerdata.size(),numkeys,rogueaddr,pubkey33_str(str2,(uint8_t *)&pk),playertxid.GetHex().c_str());
     }
     return(-1);
 }
