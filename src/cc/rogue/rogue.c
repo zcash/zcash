@@ -633,9 +633,9 @@ quit(int sig)
          */
         if (!q_comm)
             mpos = 0;
-        getyx(curscr, oy, ox);
-        msg(rs,"really quit?");
     }
+    getyx(curscr, oy, ox);
+    msg(rs,"really quit?");
     if (readchar(rs) == 'y')
     {
         if ( rs->guiflag != 0 )
@@ -653,7 +653,7 @@ quit(int sig)
         else
         {
             //score(rs,purse, 1, 0);
-            //fprintf(stderr,"done!\n");
+            fprintf(stderr,"done!\n");
         }
     }
     else
