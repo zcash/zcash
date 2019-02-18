@@ -1246,11 +1246,11 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
             {
                 if ( script[1] == 'c' )
                 {
-                    
+                    return(true);
                 }
                 else
                 {
-                    
+                    return(true);
                 }
             } else return eval->Invalid("illegal evalcode");
         } else return eval->Invalid("opret too small");
