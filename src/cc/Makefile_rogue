@@ -23,14 +23,15 @@ $(TARGET): $(SOURCES)
 ifeq ($(OS),Darwin)
 	$(CC_DARWIN) $(CFLAGS_DARWIN) $(DEBUGFLAGS) -o $(TARGET_DARWIN) -c $(SOURCES) -lncurses
 	cp $(TARGET_DARWIN) ../libcc.dylib
-else ifeq ($(OS),Linux)
-	$(CC) $(CFLAGS) $(DEBUGFLAGS) -o $(TARGET) -c $(SOURCES) -lncurses
-	cp $(TARGET) ../libcc.so
-#else ifeq ($(WIN_HOST),True) - todo: pass ENV var from build.sh if WIN host
-else
+else ifeq ($(HOST),x86_64-w64-mingw32)
 	$(info WINDOWS)
 	$(CC_WIN) $(CFLAGS_WIN) $(DEBUGFLAGS) -o $(TARGET_WIN) -c $(SOURCES) -lncurses
-		cp $(TARGET_WIN) ../libcc.dll
+	cp $(TARGET_WIN) ../libcc.dll
+#else ifeq ($(WIN_HOST),True) - todo: pass ENV var from build.sh if WIN host
+else
+	$(info LINUX)
+	$(CC) $(CFLAGS) $(DEBUGFLAGS) -o $(TARGET) -c $(SOURCES) -lncurses
+	cp $(TARGET) ../libcc.so
 endif
 
 clean:
