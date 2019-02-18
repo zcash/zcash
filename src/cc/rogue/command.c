@@ -264,7 +264,7 @@ over:
 		when 'Q':
                 after = FALSE;
                 q_comm = TRUE;
-                if ( quit(0) > 0 )
+                if ( _quit() > 0 )
                 {
                     if ( rs->guiflag != 0 )
                     {

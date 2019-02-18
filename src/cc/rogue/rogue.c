@@ -613,26 +613,13 @@ playit(struct rogue_state *rs)
     endit(0);
 }
 
-/*
- * quit:
- *	Have player make certain, then exit.
- */
 
-int32_t quit(int sig)
+
+int32_t _quit()
 {
     struct rogue_state *rs = &globalR;
     int oy, ox, c;
     //fprintf(stderr,"inside quit(%d)\n",sig);
-    if ( rs->guiflag != 0 )
-    {
-        NOOP(sig);
-        
-        /*
-         * Reset the signal in case we got here via an interrupt
-         */
-        if (!q_comm)
-            mpos = 0;
-    }
     getyx(curscr, oy, ox);
     msg(rs,"really quit?");
     sleep(1);
@@ -671,6 +658,29 @@ int32_t quit(int sig)
         to_death = FALSE;
         return(0);
     }
+}
+
+/*
+ * quit:
+ *	Have player make certain, then exit.
+ */
+
+void quit(int sig)
+{
+    struct rogue_state *rs = &globalR;
+    int oy, ox, c;
+    //fprintf(stderr,"inside quit(%d)\n",sig);
+    if ( rs->guiflag != 0 )
+    {
+        NOOP(sig);
+        
+        /*
+         * Reset the signal in case we got here via an interrupt
+         */
+        if (!q_comm)
+            mpos = 0;
+    }
+    _quit();
 }
 
 /*

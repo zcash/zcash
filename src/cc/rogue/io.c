@@ -174,7 +174,7 @@ readchar(struct rogue_state *rs)
         
         if (ch == 3)
         {
-            quit(0);
+            _quit();
             return(27);
         }
         if ( rs != 0 && rs->guiflag != 0 )
