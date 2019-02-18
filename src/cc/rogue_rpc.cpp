@@ -1272,21 +1272,12 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
                 }
                 switch ( funcid )
                 {
-                    case 'R':
-                        // validate register: within 60 blocks, not duplicate, etc.
-                        return(true);
-                        break;
-                    case 'H': // fall through
-                    case 'Q':
-                        // make sure any playerdata is reproduced via replay
-                        if ( funcid == 'Q' )
-                        {
-                            // validate bailout constraints
-                        }
-                        else // 'H'
-                        {
-                            // validate winner constraints
-                        }
+                    case 'G': // newgame
+                    case 'R': // register
+                    case 'K': // keystrokes
+                    case 'H': // win
+                    case 'Q': // bailout
+                        //fprintf(stderr,"ht.%d rogue.(%c)\n",height,script[1]);
                         return(true);
                         break;
                     default:
