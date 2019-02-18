@@ -1247,7 +1247,7 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
             {
                 if ( (funcid= rogue_highlanderopretdecode(gametxid,tokenid,regslot,pk,playerdata,symbol,pname,scriptPubKey)) == 0 )
                 {
-                    if ( (f= rogue_registeropretdecode(gametxid,tokenid,playertxid,scriptPubKey)) == 0 )
+                    if ( (funcid= rogue_registeropretdecode(gametxid,tokenid,playertxid,scriptPubKey)) == 0 )
                     {
                         fprintf(stderr,"ht.%d couldnt decode tokens opret (%c)\n",height,script[1]);
                     } else e = EVAL_ROGUE, decoded = 1;
