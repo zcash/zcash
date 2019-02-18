@@ -1230,7 +1230,7 @@ int32_t rogue_playerdata_validate(struct CCcontract_info *cp,std::vector<uint8_t
         //fprintf(stderr,"extracted.(%s)\n",str);
         if ( newdata == playerdata )
             return(0);
-        for (i=0; i<num; i++)
+        for (i=0; i<playerdata.size(); i++)
             ((uint8_t *)&P)[i] = playerdata[i];
         if ( P.gold <= 0 || P.hitpoints <= 0 || (P.strength&0xffff) <= 0 || P.level <= 0 || P.experience <= 0 || P.dungeonlevel <= 0 )
         {
