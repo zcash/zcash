@@ -899,14 +899,14 @@ UniValue rogue_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             }
             GetCCaddress1of2(cp,rogueaddr,roguepk,pk);
             result.push_back(Pair("rogueaddr",rogueaddr));
-            return(result);
+            str[0] = 0;
             if ( (keystrokes= rogue_extractgame(str,&numkeys,newdata,seed,cp,gametxid,rogueaddr)) != 0 )
             {
                 result.push_back(Pair("status","success"));
                 flag = 1;
                 result.push_back(Pair("extracted",str));
-                result.push_back(Pair("numkeys",(int64_t)numkeys));
-                result.push_back(Pair("seed",(int64_t)seed));
+                //result.push_back(Pair("numkeys",(int64_t)numkeys));
+                //result.push_back(Pair("seed",(int64_t)seed));
                 free(keystrokes);
             }
         }
