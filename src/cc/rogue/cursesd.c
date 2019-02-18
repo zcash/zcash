@@ -422,3 +422,10 @@ int32_t md_readchar(void)
     return(0);
 }
 
+char *unctrl(char c)
+{
+    static char ctrlstr[3];
+    ctrlstr[0] = '^';
+    ctrlstr[1] = 'a' + c;
+    return(ctrlstr);
+}
