@@ -1235,6 +1235,7 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
                     case 'K': // keystrokes
                     case 'H': // win
                     case 'Q': // bailout
+                        fprintf(stderr,"ht.%d rogue.(%c)\n",height,script[1]);
                         return(true);
                         break;
                     default:
@@ -1244,6 +1245,7 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
             }
             else if ( script[0] == EVAL_TOKENS )
             {
+                fprintf(stderr,"ht.%d tokens.(%c)\n",height,script[1]);
                 if ( script[1] == 'c' )
                 {
                     return(true);
