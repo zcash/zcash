@@ -650,7 +650,7 @@ int32_t _quit()
     }
     else
     {
-        fprintf(stderr,"'Q' answer (%c)\n",c);
+        //fprintf(stderr,"'Q' answer (%c)\n",c);
         move(0, 0);
         clrtoeol();
         status(rs);

@@ -499,10 +499,10 @@ int32_t rogue_findbaton(struct CCcontract_info *cp,uint256 &playertxid,char **ke
         if ( myIsutxo_spent(spenttxid,gametxid,maxplayers+i+1) < 0 )
         {
             numvouts = matchtx.vout.size();
-            fprintf(stderr,"matchtxid.%s matches.%d numvouts.%d\n",matchtx.GetHash().GetHex().c_str(),matches,numvouts);
+            //fprintf(stderr,"matchtxid.%s matches.%d numvouts.%d\n",matchtx.GetHash().GetHex().c_str(),matches,numvouts);
             if ( rogue_registeropretdecode(txid,tokenid,playertxid,matchtx.vout[numvouts-1].scriptPubKey) == 'R' )//&& txid == gametxid )
             {
-                fprintf(stderr,"tokenid.%s txid.%s vs gametxid.%s player.%s\n",tokenid.GetHex().c_str(),txid.GetHex().c_str(),gametxid.GetHex().c_str(),playertxid.GetHex().c_str());
+                //fprintf(stderr,"tokenid.%s txid.%s vs gametxid.%s player.%s\n",tokenid.GetHex().c_str(),txid.GetHex().c_str(),gametxid.GetHex().c_str(),playertxid.GetHex().c_str());
                 if ( tokenid != zeroid )
                     active = tokenid;
                 else active = playertxid;
@@ -836,7 +836,7 @@ char *rogue_extractgame(char *str,int32_t *numkeysp,std::vector<uint8_t> &newdat
         {
             UniValue obj;
             seed = rogue_gamefields(obj,maxplayers,buyin,gametxid,rogueaddr);
-            fprintf(stderr,"(%s) found baton %s numkeys.%d seed.%llu playerdata.%d playertxid.%s\n",pname.size()!=0?pname.c_str():Rogue_pname.c_str(),batontxid.ToString().c_str(),numkeys,(long long)seed,(int32_t)playerdata.size(),playertxid.GetHex().c_str());
+            //fprintf(stderr,"(%s) found baton %s numkeys.%d seed.%llu playerdata.%d playertxid.%s\n",pname.size()!=0?pname.c_str():Rogue_pname.c_str(),batontxid.ToString().c_str(),numkeys,(long long)seed,(int32_t)playerdata.size(),playertxid.GetHex().c_str());
             memset(&P,0,sizeof(P));
             if ( playerdata.size() > 0 )
             {
@@ -1339,8 +1339,8 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
                         {
                             if ( rogue_playerdata_validate(ptxid,cp,playerdata,gametxid,pk) < 0 )
                             {
-                                fprintf(stderr,"ht.%d gametxid.%s player.%s invalid playerdata[%d]\n",height,gametxid.GetHex().c_str(),ptxid.GetHex().c_str(),(int32_t)playerdata.size());
-                            } else fprintf(stderr,"ht.%d playertxid.%s validated\n",height,ptxid.GetHex().c_str());
+                                //fprintf(stderr,"ht.%d gametxid.%s player.%s invalid playerdata[%d]\n",height,gametxid.GetHex().c_str(),ptxid.GetHex().c_str(),(int32_t)playerdata.size());
+                            } //else fprintf(stderr,"ht.%d playertxid.%s validated\n",height,ptxid.GetHex().c_str());
                         }
                         if ( funcid == 'Q' )
                         {
