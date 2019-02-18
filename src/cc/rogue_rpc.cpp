@@ -1249,7 +1249,7 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
                     case 'K': // keystrokes
                     case 'H': // win
                     case 'Q': // bailout
-                        fprintf(stderr,"ht.%d rogue.(%c)\n",height,script[1]);
+                        //fprintf(stderr,"ht.%d rogue.(%c)\n",height,script[1]);
                         return(true);
                         break;
                     default:
