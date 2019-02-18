@@ -251,8 +251,10 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
         // Now we have the block time, we can get the active notaries.
         int32_t staked_era = 0; int8_t numSN = 0;
         uint8_t staked_pubkeys[64][33] = {0};
-        if ( is_STAKED(ASSETCHAINS_SYMBOL) != 0 )
+        if ( is_STAKED(ASSETCHAINS_SYMBOL) < 3 )
         {
+            // Only use speical miner for LABS chains in the actual cluster that use notarypay!
+            // It wouldnt hurt to use it on other chains, but serves little purpose. 
             staked_era = STAKED_era(pblock->nTime);
             numSN = numStakedNotaries(staked_pubkeys,staked_era);
         }
@@ -391,9 +393,9 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
 
             CFeeRate feeRate(nTotalIn-tx.GetValueOut(), nTxSize);
 
-            if (fNotarisation) 
+            if ( fNotarisation ) 
             {
-                // check if the notarization found is actually valid. 
+                // Special miner for notary pay chains.
                 if ( tx.vout.size() == 2 && tx.vout[1].nValue == 0 )
                 {
                     // Get the OP_RETURN for the notarisation
@@ -401,23 +403,24 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                     int32_t scriptlen = (int32_t)tx.vout[1].scriptPubKey.size();
                     if ( script[0] == OP_RETURN )
                     {
+                        Notarisations++;
                         int32_t notarizedheight = komodo_getnotarizedheight(pblock->nTime, nHeight, script, scriptlen);
                         if ( notarizedheight != 0 )
                         {
+                            //fprintf(stderr, "notarizations.%d notarizedheight.%d last_notarizedheight.%d\n",Notarisations,notarizedheight,last_notarizedheight);
                             if ( last_notarizedheight == 0 )
                             {
                                 // this is the first one we see, add it to the block as TX1 
                                 NotarisationNotaries = TMP_NotarisationNotaries;
                                 dPriority = 1e16;
                                 fNotarisationBlock = true;
-                                last_notarizedheight = notarizedheight;
                                 fprintf(stderr, "Notarisation %s set to maximum priority\n",hash.ToString().c_str());
                             }
                             else if ( notarizedheight > last_notarizedheight )
                                 continue; // leave this notarisation for the next block, it will be valid!
                             else if ( notarizedheight == last_notarizedheight )
                                 continue; // this shouldnt happen, it would mean there are 2 notarisations for the same block!
-                            else
+                            else  if ( notarizedheight < last_notarizedheight )
                             {
                                 // we need to remove the last seen notarzation from block 
                                 const CTransaction& Tx = *(vecPriority.front().get<2>());
@@ -431,7 +434,16 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                                 fNotarisationBlock = true;
                                 fprintf(stderr, "Notarisation %s set to maximum priority replacing notarization %s\n",hash.ToString().c_str(), Tx.GetHash().ToString().c_str());
                             }
+                            last_notarizedheight = notarizedheight;
                         }
+                        else if ( Notarisations > 1 ) 
+                        {
+                            fprintf(stderr, "skipping notarizations.%d\n",Notarisations);
+                            // Any attempted notarization needs to be in its own block!
+                            // If we find a valid one and place it in position 1, an invalid one must wait until the next block to be mined.
+                            continue;
+                        }
+                        //fprintf(stderr, "BOTTOM: notarizations.%d notarizedheight.%d last_notarizedheight.%d\n",Notarisations,notarizedheight,last_notarizedheight);
                     }
                 }
             }
@@ -716,19 +728,17 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
             txNew.vout[1].nValue = 0;
             // timelocks and commissions are currently incompatible due to validation complexity of the combination
         } 
-        else if ( fNotarisationBlock && ASSETCHAINS_NOTARY_PAY != 0 && pblock->vtx[1].vout.size() == 2 && pblock->vtx[1].vout[1].nValue == 0 )
+        else if ( fNotarisationBlock && ASSETCHAINS_NOTARY_PAY[0] != 0 && pblock->vtx[1].vout.size() == 2 && pblock->vtx[1].vout[1].nValue == 0 )
         {
             // Get the OP_RETURN for the notarisation
             uint8_t *script = (uint8_t *)&pblock->vtx[1].vout[1].scriptPubKey[0];
             int32_t scriptlen = (int32_t)pblock->vtx[1].vout[1].scriptPubKey.size();
             if ( script[0] == OP_RETURN )
             {
-                fprintf(stderr, ">>>>>MINER NotarisationNotaries.%li\n",NotarisationNotaries.size());
                 uint64_t totalsats = komodo_notarypay(txNew, NotarisationNotaries, pblock->nTime, nHeight, script, scriptlen);
                 if ( totalsats == 0 )
                 {
                     fprintf(stderr, "Could not create notary payment, trying again.\n");
-                    // invalidnotarisation = pblock->vtx[1].GetHash().ToString();
                     if ( ASSETCHAINS_SYMBOL[0] == 0 ||  (ASSETCHAINS_SYMBOL[0] != 0 && !isStake) )
                     {
                         LEAVE_CRITICAL_SECTION(cs_main);

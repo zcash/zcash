@@ -17,14 +17,14 @@ int8_t is_STAKED(const char *chain_name)
     return(0);
   if (doneinit == 1 && ASSETCHAINS_SYMBOL[0] != 0)
     return(STAKED);
-  if ( (strcmp(chain_name, "LABS") == 0) || (strcmp(chain_name, "ORKL") == 0) ) 
+  if ( (strcmp(chain_name, "LABS") == 0) || (strcmp(chain_name, "LABSTH") == 0) ) 
     STAKED = 1; // These chains are allowed coin emissions.
   else if ( (strncmp(chain_name, "LABS", 4) == 0) ) 
     STAKED = 2; // These chains have no coin emission, block subsidy is always 0, and comission is 0. Notary pay is allowed.
   else if ( (strcmp(chain_name, "CFEK") == 0) || (strncmp(chain_name, "CFEK", 4) == 0) )
     STAKED = 3; // These chains have no speical rules at all.
   else if ( (strcmp(chain_name, "TEST") == 0) || (strncmp(chain_name, "TEST", 4) == 0) )
-    STAKED = 4; // These chains are for testing consensus to create a chain etc. Not meant ot be actually used for anything important.
+    STAKED = 4; // These chains are for testing consensus to create a chain etc. Not meant to be actually used for anything important.
   else if ( (strcmp(chain_name, "THIS_CHAIN_IS_BANNED") == 0) )
     STAKED = 255; // Any chain added to this group is banned, no notarisations are valid, as a consensus rule. Can be used to remove a chain from cluster if needed.
   doneinit = 1;

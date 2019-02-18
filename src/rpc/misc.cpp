@@ -64,7 +64,7 @@ int32_t Jumblr_depositaddradd(char *depositaddr);
 int32_t Jumblr_secretaddradd(char *secretaddr);
 uint64_t komodo_interestsum();
 int32_t komodo_longestchain();
-int32_t komodo_notarized_height(int32_t *prevMoMheightp,uint256 *hashp,uint256 *txidp,int32_t *prevNotarizedHt);
+int32_t komodo_notarized_height(int32_t *prevMoMheightp,uint256 *hashp,uint256 *txidp);
 bool komodo_txnotarizedconfirmed(uint256 txid);
 uint32_t komodo_chainactive_timestamp();
 int32_t komodo_whoami(char *pubkeystr,int32_t height,uint32_t timestamp);
@@ -83,7 +83,7 @@ extern uint32_t ASSETCHAINS_CC;
 extern uint32_t ASSETCHAINS_MAGIC,ASSETCHAINS_ALGO;
 extern uint64_t ASSETCHAINS_COMMISSION,ASSETCHAINS_SUPPLY;
 extern int32_t ASSETCHAINS_LWMAPOS,ASSETCHAINS_SAPLING,ASSETCHAINS_STAKED;
-extern uint64_t ASSETCHAINS_ENDSUBSIDY[],ASSETCHAINS_REWARD[],ASSETCHAINS_HALVING[],ASSETCHAINS_DECAY[];
+extern uint64_t ASSETCHAINS_ENDSUBSIDY[],ASSETCHAINS_REWARD[],ASSETCHAINS_HALVING[],ASSETCHAINS_DECAY[],ASSETCHAINS_NOTARY_PAY[];
 extern std::string NOTARY_PUBKEY,NOTARY_ADDRESS; extern uint8_t NOTARY_PUBKEY33[];
 
 int32_t getera(int now)
@@ -165,7 +165,7 @@ UniValue getnotarysendmany(const UniValue& params, bool fHelp)
 
 UniValue getinfo(const UniValue& params, bool fHelp)
 {
-    uint256 notarized_hash,notarized_desttxid; int32_t prevMoMheight,notarized_height,prevnotarized_height,longestchain,kmdnotarized_height,txid_height;
+    uint256 notarized_hash,notarized_desttxid; int32_t prevMoMheight,notarized_height,longestchain,kmdnotarized_height,txid_height;
     if (fHelp || params.size() != 0)
         throw runtime_error(
             "getinfo\n"
@@ -201,7 +201,7 @@ UniValue getinfo(const UniValue& params, bool fHelp)
 
     proxyType proxy;
     GetProxy(NET_IPV4, proxy);
-    notarized_height = komodo_notarized_height(&prevMoMheight,&notarized_hash,&notarized_desttxid,&prevnotarized_height);
+    notarized_height = komodo_notarized_height(&prevMoMheight,&notarized_hash,&notarized_desttxid);
     //fprintf(stderr,"after notarized_height %u\n",(uint32_t)time(NULL));
 
     UniValue obj(UniValue::VOBJ);
@@ -288,7 +288,7 @@ UniValue getinfo(const UniValue& params, bool fHelp)
 
         if ( ASSETCHAINS_REWARD[0] != 0 || ASSETCHAINS_LASTERA > 0 )
         {
-            std::string acReward = "", acHalving = "", acDecay = "", acEndSubsidy = "";
+            std::string acReward = "", acHalving = "", acDecay = "", acEndSubsidy = "", acNotaryPay = "";
             for (int i = 0; i <= ASSETCHAINS_LASTERA; i++)
             {
                 if (i == 0)
@@ -297,6 +297,7 @@ UniValue getinfo(const UniValue& params, bool fHelp)
                     acHalving = std::to_string(ASSETCHAINS_HALVING[i]);
                     acDecay = std::to_string(ASSETCHAINS_DECAY[i]);
                     acEndSubsidy = std::to_string(ASSETCHAINS_ENDSUBSIDY[i]);
+                    acNotaryPay = std::to_string(ASSETCHAINS_NOTARY_PAY[i]);
                 }
                 else
                 {
@@ -304,6 +305,7 @@ UniValue getinfo(const UniValue& params, bool fHelp)
                     acHalving += "," + std::to_string(ASSETCHAINS_HALVING[i]);
                     acDecay += "," + std::to_string(ASSETCHAINS_DECAY[i]);
                     acEndSubsidy += "," + std::to_string(ASSETCHAINS_ENDSUBSIDY[i]);
+                    acNotaryPay += "," + std::to_string(ASSETCHAINS_NOTARY_PAY[i]);
                 }
             }
             if (ASSETCHAINS_LASTERA > 0)
@@ -312,6 +314,7 @@ UniValue getinfo(const UniValue& params, bool fHelp)
             obj.push_back(Pair("halving", acHalving));
             obj.push_back(Pair("decay", acDecay));
             obj.push_back(Pair("endsubsidy", acEndSubsidy));
+            obj.push_back(Pair("notarypay", acNotaryPay));
         }
 
         if ( ASSETCHAINS_COMMISSION != 0 )

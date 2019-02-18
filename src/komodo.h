@@ -38,6 +38,7 @@
 int32_t gettxout_scriptPubKey(uint8_t *scriptPubkey,int32_t maxsize,uint256 txid,int32_t n);
 void komodo_event_rewind(struct komodo_state *sp,char *symbol,int32_t height);
 int32_t komodo_connectblock(bool fJustCheck, CBlockIndex *pindex,CBlock& block);
+bool check_pprevnotarizedht();
 
 #include "komodo_structs.h"
 #include "komodo_globals.h"
@@ -696,16 +697,12 @@ int32_t komodo_voutupdate(bool fJustCheck,int32_t *isratificationp,int32_t notar
                 else if ( ASSETCHAINS_SYMBOL[0] == 0 && matched != 0 && notarized != 0 && validated != 0 )
                     komodo_rwccdata((char *)"KMD",1,&ccdata,0);
                 
-                // If we are checking a reorged notarisation tx we need to return true. So the coinbase can be recreated, otherwise notaries are not paid,
-                // if a notarisation TX is reorged before the next notarization happens!    
-                if ( fJustCheck && matched != 0 && *notarizedheightp == sp->NOTARIZED_HEIGHT && sp->NOTARIZED_DESTTXID == desttxid && sp->NOTARIZED_HASH == srchash)
+                // Because of reorgs its not possible to use notarizations that are in order. If its validated pay the notaries!
+                if ( fJustCheck )
                     return(-2);
                 
                 if ( matched != 0 && *notarizedheightp > sp->NOTARIZED_HEIGHT && *notarizedheightp < height )
                 {
-                    if ( fJustCheck )
-                        return(-2);
-                    sp->prevNOTARIZED_HEIGHT = sp->NOTARIZED_HEIGHT;
                     sp->NOTARIZED_HEIGHT = *notarizedheightp;
                     sp->NOTARIZED_HASH = srchash;
                     sp->NOTARIZED_DESTTXID = desttxid;
@@ -716,7 +713,7 @@ int32_t komodo_voutupdate(bool fJustCheck,int32_t *isratificationp,int32_t notar
                     }
                     komodo_stateupdate(height,0,0,0,zero,0,0,0,0,0,0,0,0,0,0,sp->MoM,sp->MoMdepth);
                     if ( ASSETCHAINS_SYMBOL[0] != 0 )
-                        printf("[%s] ht.%d NOTARIZED.%d %s.%s %sTXID.%s lens.(%d %d) MoM.%s %d\n",ASSETCHAINS_SYMBOL,height,*notarizedheightp,ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,srchash.ToString().c_str(),ASSETCHAINS_SYMBOL[0]==0?"BTC":"KMD",desttxid.ToString().c_str(),opretlen,len,sp->MoM.ToString().c_str(),sp->MoMdepth);
+                        printf("[%s] ht.%d NOTARIZED.%d %s.%s %sTXID.%s lens.(%d %d) MoM.%s %d\n",ASSETCHAINS_SYMBOL,height,sp->NOTARIZED_HEIGHT,ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,srchash.ToString().c_str(),ASSETCHAINS_SYMBOL[0]==0?"BTC":"KMD",desttxid.ToString().c_str(),opretlen,len,sp->MoM.ToString().c_str(),sp->MoMdepth);
                                         
                     if ( ASSETCHAINS_SYMBOL[0] == 0 )
                     {
@@ -742,7 +739,8 @@ int32_t komodo_voutupdate(bool fJustCheck,int32_t *isratificationp,int32_t notar
                             komodo_stateupdate(height,0,0,0,txhash,0,0,0,0,0,0,value,&scriptbuf[len],opretlen-len+4+3+(scriptbuf[1] == 0x4d),j,zero,0);
                         }
                     }
-                }
+                } //else if ( fJustCheck )
+                //    return (-3); // if the notarisation is only invalid because its out of order it cannot be mined in a block with a valid one!
             } else if ( opretlen != 149 && height > 600000 && matched != 0 )
                 printf("%s validated.%d notarized.%d %llx reject ht.%d NOTARIZED.%d prev.%d %s.%s DESTTXID.%s len.%d opretlen.%d\n",ccdata.symbol,validated,notarized,(long long)signedmask,height,*notarizedheightp,sp->NOTARIZED_HEIGHT,ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,srchash.ToString().c_str(),desttxid.ToString().c_str(),len,opretlen);
         }
@@ -880,7 +878,8 @@ int32_t komodo_connectblock(bool fJustCheck, CBlockIndex *pindex,CBlock& block)
                 break;
             }
             // Notary pay chains need notarisation in position 1, ignore the rest on validation. Check notarisation is 1 on check.
-            if ( !fJustCheck && ASSETCHAINS_NOTARY_PAY != 0 && i > 1)
+            // make sure for first 3 notarizations, that we check all tx in block!
+            if ( !fJustCheck && i > 1 && ASSETCHAINS_NOTARY_PAY[0] != 0 )
                 break;
             txhash = block.vtx[i].GetHash();
             numvouts = block.vtx[i].vout.size();
@@ -960,10 +959,9 @@ int32_t komodo_connectblock(bool fJustCheck, CBlockIndex *pindex,CBlock& block)
                     notaryid = komodo_voutupdate(fJustCheck,&isratification,notaryid,scriptbuf,len,height,txhash,i,j,&voutmask,&specialtx,&notarizedheight,(uint64_t)block.vtx[i].vout[j].nValue,notarized,signedmask,(uint32_t)chainActive.LastTip()->GetBlockTime());
                     if ( fJustCheck && notaryid == -2 )
                     {
-                        // We see a valid notarisation here, save its location. 
+                        // We see a valid notarisation here, save its location.
                         notarisations.push_back(i);
                     }
-                    //fprintf(stderr, "notaryid.%i\n",notaryid);
                     if ( 0 && i > 0 )
                     {
                         for (k=0; k<len; k++)
@@ -1023,15 +1021,14 @@ int32_t komodo_connectblock(bool fJustCheck, CBlockIndex *pindex,CBlock& block)
     //fprintf(stderr,"%s end connect.%d\n",ASSETCHAINS_SYMBOL,pindex->GetHeight());
     if (fJustCheck)
     {
-        if (notarisations.size() == 0)
+        if ( notarisations.size() == 0 )
             return(0);
         if ( notarisations.size() == 1 && notarisations[0] == 1 )
             return(1);
-        else 
+        if ( notarisations.size() > 1 || (notarisations.size() == 1 && notarisations[0] != 1) )
             return(-1);
     }
     else return(0);
 }
-
 
 #endif
