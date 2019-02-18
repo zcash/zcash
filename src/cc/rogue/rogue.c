@@ -640,7 +640,7 @@ int32_t _quit()
         else
         {
             //score(rs,purse, 1, 0);
-            fprintf(stderr,"done!\n");
+            fprintf(stderr,"done! (%c)\n",c);
         }
         return(1);
     }
