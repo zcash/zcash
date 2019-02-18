@@ -1113,7 +1113,7 @@ UniValue rogue_pending(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
         //char str[65]; fprintf(stderr,"%s check %s/v%d %.8f\n",coinaddr,uint256_str(str,txid),vout,(double)it->second.satoshis/COIN);
         if ( it->second.satoshis != txfee || vout != 0 ) // reject any that are not highlander markers
             continue;
-        if ( rogue_isvalidgame(cp,gameheight,tx,buyin,maxplayers,txid) == 0 && gameheight > nextheight-777 )
+        if ( rogue_isvalidgame(cp,gameheight,tx,buyin,maxplayers,txid) == 0 && nextheight <= gameheight+ROGUE_MAXKEYSTROKESGAP )
         {
             rogue_playersalive(numplayers,txid,maxplayers);
             if ( numplayers < maxplayers )
