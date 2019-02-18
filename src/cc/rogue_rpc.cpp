@@ -1246,7 +1246,11 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
                     {
                         case 'G':
                             if ( (funcid= rogue_newgameopreturndecode(buyin,maxplayers,scriptPubKey)) != 'G' )
-                                return eval->Invalid("couldnt decode newgame opret");
+                            {
+                                fprintf(stderr,"height.%d couldnt decode newgame opret\n",height);
+                                if ( height > 20000 )
+                                    return eval->Invalid("couldnt decode newgame opret");
+                            }
                             // validate newgame tx
                             return(true);
                             break;
