@@ -24,7 +24,7 @@ void rogue_restoreobject(THING *o,struct rogue_packitem *item);
 
 void restore_player(struct rogue_state *rs)
 {
-    int32_t i; THING *obj;
+    int32_t i,total = 0; THING *obj;
     //rs->P.gold = purse;
     max_hp = rs->P.hitpoints;
     pstats.s_str = rs->P.strength & 0xffff;
@@ -34,10 +34,13 @@ void restore_player(struct rogue_state *rs)
         pstats.s_str = max_stats.s_str;
     pstats.s_lvl = rs->P.level;
     pstats.s_exp = rs->P.experience;
-    for (i=0; i<rs->P.packsize; i++)
+    for (i=0; i<rs->P.packsize&&i<MAXPACK; i++)
     {
         obj = new_item();
         rogue_restoreobject(obj,&rs->P.roguepack[i]);
+        total += obj->o_count;
+        if ( total > pstats.s_str*3 )
+            break;
         add_pack(rs,obj,TRUE);
     }
 }
