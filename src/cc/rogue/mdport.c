@@ -40,7 +40,7 @@
 #pragma warning( disable: 4201 ) 
 #include <shlobj.h>
 #pragma warning( default: 4201 ) 
-#include <Shlwapi.h>
+#include <shlwapi.h>
 #undef MOUSE_MOVED
 #endif
 
