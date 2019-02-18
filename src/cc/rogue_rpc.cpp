@@ -1216,6 +1216,20 @@ UniValue rogue_setname(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     return(result);
 }
 
+int32_t rogue_playerdata_validate(struct CCcontract_info *cp,std::vector<uint8_t> playerdata,uint256 gametxid,CPubKey pk)
+{
+    char str[512],*keystrokes,rogueaddr[64]; int32_t numkeys; std::vector<uint8_t> newdata; uint64_t seed; uint256 platertxid; CPubKey roguepk;
+    roguepk = GetUnspendable(cp,0);
+    GetCCaddress1of2(cp,rogueaddr,roguepk,pk);
+    if ( (keystrokes= rogue_extractgame(str,&numkeys,newdata,seed,playertxid,cp,gametxid,rogueaddr)) != 0 )
+    {
+        if ( newdata == playerdata )
+            return(0);
+        else fprintf(stderr,"newdata[%d] != playerdata[%d]\n",(int32_t)newdata.size(),(int32_t)playerdata.size());
+    }
+    return(-1);
+}
+
 bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx)
 {
     CScript scriptPubKey; std::vector<uint8_t> vopret; uint8_t *script,e,f,funcid; int32_t i,maxplayers,decoded=0,regslot,ind,errflag,dispflag,score,numvouts; CTransaction vintx; CPubKey pk; uint256 hashBlock,gametxid,tokenid,batontxid,playertxid; int64_t buyin; std::vector<uint8_t> playerdata,keystrokes; std::string symbol,pname;
@@ -1295,15 +1309,22 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
                         return(true);
                     case 'H': // win
                     case 'Q': // bailout
+                        // verify pk belongs to this tx
+                        if ( playerdata.size() > 0 )
+                        {
+                            if ( rogue_playerdata_validate(cp,playerdata,gametxid,pk) < 0 )
+                            {
+                                fprintf(stderr,"ht.%d gametxid.%s player.%x invalid playerdata[%d]\n",height,gametxid.GetHex().c_str(),playertxid.GetHex().c_str(),(int32_t)playerdata.size());
+                            } else fprintf(stderr,"ht.%d playertxid.%s validated\n",height,playertxid.GetHex().c_str());
+                        }
                         if ( funcid == 'Q' )
                         {
-                            
+                            // verify vin/vout
                         }
-                        else
+                        else // 'H'
                         {
-                            
+                            // verify vin/vout
                         }
-                        //fprintf(stderr,"ht.%d rogue.(%c)\n",height,script[1]);
                         return(true);
                         break;
                     default:
