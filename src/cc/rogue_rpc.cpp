@@ -1218,7 +1218,7 @@ UniValue rogue_setname(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 
 bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx)
 {
-    CScript scriptPubKey; std::vector<uint8_t> vopret; uint8_t *script,e,f,funcid; int32_t i,maxplayers,decoded=0,regslot,ind,errflag,dispflag,score,numvouts; CTransaction vintx; CPubKey pk; uint256 hashBlock,gametxid,tokenid,batontxid; int64_t buyin; std::vector<uint8_t> playerdata,keystrokes; std::string symbol,pname;
+    CScript scriptPubKey; std::vector<uint8_t> vopret; uint8_t *script,e,f,funcid; int32_t i,maxplayers,decoded=0,regslot,ind,errflag,dispflag,score,numvouts; CTransaction vintx; CPubKey pk; uint256 hashBlock,gametxid,tokenid,batontxid,playertxid; int64_t buyin; std::vector<uint8_t> playerdata,keystrokes; std::string symbol,pname;
     if ( (numvouts= tx.vout.size()) > 1 )
     {
         scriptPubKey = tx.vout[numvouts-1].scriptPubKey;
