@@ -259,7 +259,7 @@ int32_t num_packitems()
             total += list->o_count;
         }
     }
-    fprintf(stderr,"total.%d vs %d inventory letters\n",total,n); sleep(1);
+    fprintf(stderr,"total.%d vs %d inventory letters\n",total,n); 
     return(n);
 }
 
