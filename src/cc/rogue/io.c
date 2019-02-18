@@ -161,7 +161,7 @@ readchar(struct rogue_state *rs)
         {
             //if ( rs->ind == rs->numkeys-1 )
             //    rs->replaydone = (uint32_t)time(NULL);
-            //fprintf(stderr,"(%c) ",rs->keystrokes[rs->ind]);
+            fprintf(stderr,"(%c) ",rs->keystrokes[rs->ind]);
             return(rs->keystrokes[rs->ind++]);
         }
         if ( rs->replaydone != 0 && counter++ < 3 )
