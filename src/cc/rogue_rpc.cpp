@@ -557,9 +557,9 @@ int32_t rogue_findbaton(struct CCcontract_info *cp,uint256 &playertxid,char **ke
                             return(-4);
                         else batonht = pindex->GetHeight();
                         batonvalue = batontx.vout[0].nValue;
-                        printf("keystrokes[%d]\n",numkeys);
+                        printf("batonht.%d keystrokes[%d]\n",batonht,numkeys);
                         return(0);
-                    }
+                    } else fprintf(stderr,"couldnt find baton\n");
                 }
             } else fprintf(stderr,"findbaton opret error\n");
         }
@@ -837,6 +837,7 @@ char *rogue_extractgame(char *str,int32_t *numkeysp,std::vector<uint8_t> &newdat
         if ( rogue_findbaton(cp,playertxid,&keystrokes,numkeys,regslot,playerdata,batontxid,batonvout,batonvalue,batonht,gametxid,gametx,maxplayers,rogueaddr,numplayers,symbol,pname) == 0 )
         {
             UniValue obj;
+            fprintf(stderr,"calling gamefields\n");
             seed = rogue_gamefields(obj,maxplayers,buyin,gametxid,rogueaddr);
             fprintf(stderr,"(%s) found baton %s numkeys.%d seed.%llu playerdata.%d\n",pname.size()!=0?pname.c_str():Rogue_pname.c_str(),batontxid.ToString().c_str(),numkeys,(long long)seed,(int32_t)playerdata.size());
             memset(&P,0,sizeof(P));
