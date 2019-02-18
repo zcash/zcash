@@ -5306,7 +5306,7 @@ UniValue setpubkey(const UniValue& params, bool fHelp)
     LOCK(cs_main);
 #endif
 
-    char Raddress[18];
+    char Raddress[64];
     uint8_t pubkey33[33];
     if ( NOTARY_PUBKEY33[0] == 0 ) {
         if (strlen(params[0].get_str().c_str()) == 66) {
