@@ -595,7 +595,7 @@ playit(struct rogue_state *rs)
         {
             if ( rs->replaydone != 0 )
             {
-                if ( rs->sleeptime != 0 )
+                if ( 0 && rs->sleeptime != 0 )
                     sleep(3);
                 return;
             }
@@ -623,7 +623,7 @@ int32_t _quit()
     //fprintf(stderr,"inside quit(%d)\n",sig);
     getyx(curscr, oy, ox);
     msg(rs,"really quit?");
-    sleep(1);
+    //sleep(1);
     if ( (c= readchar(rs)) == 'y')
     {
         if ( rs->guiflag != 0 )
