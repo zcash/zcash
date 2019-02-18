@@ -1,5 +1,5 @@
 #!/bin/bash
-HOST=x86_64-w64-mingw32
+export HOST=x86_64-w64-mingw32
 CXX=x86_64-w64-mingw32-g++-posix
 CC=x86_64-w64-mingw32-gcc-posix
 PREFIX="$(pwd)/depends/$HOST"
