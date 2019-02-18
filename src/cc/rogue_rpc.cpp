@@ -1234,7 +1234,9 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
                     if ( (funcid= rogue_registeropretdecode(gametxid,tokenid,playertxid,scriptPubKey)) == 0 )
                     {
                         funcid = 'Q';
-                        fprintf(stderr,"ht.%d couldnt decode tokens opret\n",height);
+                        fprintf(stderr,"ht.%d couldnt decode tokens opret (%c)\n",height,script[1]);
+                        if ( height < 20000 )
+                            e = EVAL_ROGUE;
                     } else e = EVAL_ROGUE, decoded = 1;
                 } else e = EVAL_ROGUE, decoded = 1;
             }
