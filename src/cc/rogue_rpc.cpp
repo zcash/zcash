@@ -1257,7 +1257,11 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
                             break;
                         case 'R':
                             if ( (funcid= rogue_registeropretdecode(gametxid,tokenid,playertxid,scriptPubKey)) != 'R' )
-                                return eval->Invalid("couldnt decode register opret");
+                            {
+                                fprintf(stderr,"height.%d couldnt decode register opret\n",height);
+                                if ( height > 20000 )
+                                    return eval->Invalid("couldnt decode register opret");
+                            }
                             // validation is done below
                             break;
                         case 'K':
@@ -1272,7 +1276,11 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
                             break;
                         case 'H': case 'Q':
                             if ( (f= rogue_highlanderopretdecode(gametxid,tokenid,regslot,pk,playerdata,symbol,pname,scriptPubKey)) != funcid )
-                                return eval->Invalid("couldnt decode H/Q opret");
+                            {
+                                fprintf(stderr,"height.%d couldnt decode H/Q opret\n",height);
+                                if ( height > 20000 )
+                                    return eval->Invalid("couldnt decode H/Q opret");
+                            }
                             // validation is done below
                             break;
                         default:
