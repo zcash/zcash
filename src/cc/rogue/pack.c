@@ -259,14 +259,17 @@ int32_t num_packitems()
             total += list->o_count;
         }
     }
-    fprintf(stderr,"total.%d vs %d inventory letters\n",total,n); 
+
+    char inv_temp[MAXSTR],str[MAXSTR];
+    sprintf(str,"total.%d vs %d inventory letters\n",total,n);
+    add_line(rs,inv_temp,str);
     return(n);
 }
 
 bool
 inventory(struct rogue_state *rs,THING *list, int type)
 {
-    static char inv_temp[MAXSTR];
+    char inv_temp[MAXSTR];
 
     n_objs = 0;
     for (; list != NULL; list = next(list))
