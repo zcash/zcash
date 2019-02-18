@@ -1232,14 +1232,14 @@ int32_t rogue_playerdata_validate(uint256 &playertxid,struct CCcontract_info *cp
         if ( newdata == playerdata )
         {
             good++;
-            fprintf(stderr,"good.%d bad.%d\n",good,bad);
+            fprintf(stderr,"%s good.%d bad.%d\n",gametxid.GetHex().c_str(),good,bad);
             return(0);
         }
         newdata[10] = newdata[11] = playerdata[10] = playerdata[11] = 0;
         if ( newdata == playerdata )
         {
             good++;
-            fprintf(stderr,"matched after clearing maxstrength good.%d bad.%d\n",good,bad);
+            fprintf(stderr,"%s matched after clearing maxstrength good.%d bad.%d\n",gametxid.GetHex().c_str(),good,bad);
             return(0);
         }
         bad++;
