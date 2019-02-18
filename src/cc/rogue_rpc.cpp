@@ -828,13 +828,15 @@ char *rogue_extractgame(char *str,int32_t *numkeysp,std::vector<uint8_t> &newdat
     roguepk = GetUnspendable(cp,0);
     *numkeysp = 0;
     seed = 0;
+    fprintf(stderr,"calling validgame\n");
     if ( (err= rogue_isvalidgame(cp,gameheight,gametx,buyin,maxplayers,gametxid)) == 0 )
     {
+        fprintf(stderr,"calling baton\n");
         if ( rogue_findbaton(cp,playertxid,&keystrokes,numkeys,regslot,playerdata,batontxid,batonvout,batonvalue,batonht,gametxid,gametx,maxplayers,rogueaddr,numplayers,symbol,pname) == 0 )
         {
             UniValue obj;
             seed = rogue_gamefields(obj,maxplayers,buyin,gametxid,rogueaddr);
-            //fprintf(stderr,"(%s) found baton %s numkeys.%d seed.%llu playerdata.%d\n",pname.size()!=0?pname.c_str():Rogue_pname.c_str(),batontxid.ToString().c_str(),numkeys,(long long)seed,(int32_t)playerdata.size());
+            fprintf(stderr,"(%s) found baton %s numkeys.%d seed.%llu playerdata.%d\n",pname.size()!=0?pname.c_str():Rogue_pname.c_str(),batontxid.ToString().c_str(),numkeys,(long long)seed,(int32_t)playerdata.size());
             memset(&P,0,sizeof(P));
             if ( playerdata.size() > 0 )
             {
@@ -872,8 +874,8 @@ char *rogue_extractgame(char *str,int32_t *numkeysp,std::vector<uint8_t> &newdat
                 sprintf(str,"extracted $$$gold.%d hp.%d strength.%d/%d level.%d exp.%d dl.%d\n",endP.gold,endP.hitpoints,endP.strength&0xffff,endP.strength>>16,endP.level,endP.experience,endP.dungeonlevel);
                 fprintf(stderr,"%s\n",str);
             } else num = 0;
-        }
-    }
+        } else fprintf(stderr,"extractgame: couldnt find baton\n");
+    } else fprintf(stderr,"extractgame: invalid game\n");
     *numkeysp = numkeys;
     return(keystrokes);
 }
@@ -1221,8 +1223,11 @@ int32_t rogue_playerdata_validate(struct CCcontract_info *cp,std::vector<uint8_t
     char str[512],*keystrokes,rogueaddr[64]; int32_t numkeys; std::vector<uint8_t> newdata; uint64_t seed; uint256 playertxid; CPubKey roguepk;
     roguepk = GetUnspendable(cp,0);
     GetCCaddress1of2(cp,rogueaddr,roguepk,pk);
+    fprintf(stderr,"call extractgame\n");
     if ( (keystrokes= rogue_extractgame(str,&numkeys,newdata,seed,playertxid,cp,gametxid,rogueaddr)) != 0 )
     {
+        free(keystrokes);
+        fprintf(stderr,"extracted.(%s)\n",str);
         if ( newdata == playerdata )
             return(0);
         else fprintf(stderr,"newdata[%d] != playerdata[%d]\n",(int32_t)newdata.size(),(int32_t)playerdata.size());
