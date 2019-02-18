@@ -52,9 +52,9 @@ add_pack(struct rogue_state *rs,THING *obj, bool silent)
 
     if (pack == NULL)
     {
-	pack = obj;
-	obj->o_packch = pack_char();
-	inpack++;
+        pack = obj;
+        obj->o_packch = pack_char();
+        inpack++;
     }
     else
     {
@@ -291,11 +291,11 @@ inventory(struct rogue_state *rs,THING *list, int type)
     //    fprintf(stderr,"n_objs.%d vs inpack.%d\n",n_objs,inpack), sleep(2);
     if (n_objs == 0)
     {
-	if (terse)
-	    msg(rs,type == 0 ? (char *)"empty handed" : (char *)"nothing appropriate");
-	else
-	    msg(rs,type == 0 ? (char *)"you are empty handed" : (char *)"you don't have anything appropriate");
-	return FALSE;
+        if (terse)
+            msg(rs,type == 0 ? (char *)"empty handed" : (char *)"nothing appropriate");
+        else
+            msg(rs,type == 0 ? (char *)"you are empty handed" : (char *)"you don't have anything appropriate");
+        return FALSE;
     }
     end_line(rs);
     return TRUE;

@@ -1226,16 +1226,21 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
         if ( vopret.size() > 2 )
         {
             script = (uint8_t *)vopret.data();
-            if ( script[0] == EVAL_TOKENS )
+            funcid = script[1];
+            if ( (e= script[0]) == EVAL_TOKENS )
             {
                 if ( script[1] == 'c' )
                 {
+                    e = EVAL_ROGUE;
+                    funcid = 'Q';
                 }
                 else if ( script[1] == 't' )
                 {
+                    e = EVAL_ROGUE;
+                    funcid = 'Q';
                 } else return eval->Invalid("illegal tokens funcid");
             }
-            if ( script[0] == EVAL_ROGUE )
+            if ( e == EVAL_ROGUE )
             {
                 switch ( funcid )
                 {
