@@ -833,7 +833,7 @@ char *rogue_extractgame(char *str,int32_t *numkeysp,std::vector<uint8_t> &newdat
         {
             UniValue obj;
             seed = rogue_gamefields(obj,maxplayers,buyin,gametxid,rogueaddr);
-            fprintf(stderr,"(%s) found baton %s numkeys.%d seed.%llu playerdata.%d\n",pname.size()!=0?pname.c_str():Rogue_pname.c_str(),batontxid.ToString().c_str(),numkeys,(long long)seed,(int32_t)playerdata.size());
+            //fprintf(stderr,"(%s) found baton %s numkeys.%d seed.%llu playerdata.%d\n",pname.size()!=0?pname.c_str():Rogue_pname.c_str(),batontxid.ToString().c_str(),numkeys,(long long)seed,(int32_t)playerdata.size());
             memset(&P,0,sizeof(P));
             if ( playerdata.size() > 0 )
             {
@@ -897,7 +897,7 @@ UniValue rogue_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                     decode_hex(pub33,33,pubstr);
                     pk = buf2pk(pub33);
                 }
-                fprintf(stderr,"gametxid.%s %s\n",gametxid.GetHex().c_str(),pubstr);
+                //fprintf(stderr,"gametxid.%s %s\n",gametxid.GetHex().c_str(),pubstr);
             }
             GetCCaddress1of2(cp,rogueaddr,roguepk,pk);
             result.push_back(Pair("rogueaddr",rogueaddr));
@@ -1047,7 +1047,7 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
                 }
                 result.push_back(Pair("result","success"));
             } else fprintf(stderr,"illegal game err.%d\n",err);
-        } else fprintf(stderr,"n.%d\n",n);
+        } else fprintf(stderr,"parameters only n.%d\n",n);
     }
     return(result);
 }
@@ -1217,6 +1217,43 @@ UniValue rogue_setname(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 
 bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx)
 {
+    CScript scriptPubKey; std::vector<uint8_t> vopret; uint8_t *script,e,f,funcid; int32_t i,ind,errflag,dispflag,score,numvouts; CTransaction vintx; uint256 hashBlock;
+    if ( (numvouts= tx.vout.size()) > 1 )
+    {
+        scriptPubKey = tx.vout[numvouts-1].scriptPubKey;
+        GetOpReturnData(scriptPubKey,vopret);
+        if ( vopret.size() > 2 )
+        {
+            script = (uint8_t *)vopret.data();
+            if ( script[0] == EVAL_ROGUE )
+            {
+                switch ( script[1] )
+                {
+                    case 'G': // newgame
+                    case 'R': // register
+                    case 'K': // keystrokes
+                    case 'H': // win
+                    case 'Q': // bailout
+                        return(true);
+                        break;
+                    default:
+                        return eval->Invalid("illegal rogue funcid");
+                        break;
+                }
+            }
+            else if ( script[0] == EVAL_TOKENS )
+            {
+                if ( script[1] == 'c' )
+                {
+                    
+                }
+                else
+                {
+                    
+                }
+            } else return eval->Invalid("illegal evalcode");
+        } else return eval->Invalid("opret too small");
+    } else return eval->Invalid("not enough vouts");
     return(true);
 }
 

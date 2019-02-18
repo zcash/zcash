@@ -339,8 +339,9 @@ int32_t rogue_replay(uint64_t seed,int32_t sleeptime)
         }
         rogue_replay2(0,seed,keystrokes,num,player,sleeptime);
 
-        //mvaddstr(LINES - 2, 0, (char *)"replay completed");
+        mvaddstr(LINES - 2, 0, (char *)"replay completed");
         endwin();
+        my_exit(0);
     }
     if ( keystrokes != 0 )
         free(keystrokes);
