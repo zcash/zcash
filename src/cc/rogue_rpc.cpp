@@ -1219,6 +1219,8 @@ UniValue rogue_setname(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx)
 {
     CScript scriptPubKey; std::vector<uint8_t> vopret; uint8_t *script,e,f,funcid; int32_t i,maxplayers,decoded=0,regslot,ind,errflag,dispflag,score,numvouts; CTransaction vintx; CPubKey pk; uint256 hashBlock,gametxid,tokenid,batontxid,playertxid; int64_t buyin; std::vector<uint8_t> playerdata,keystrokes; std::string symbol,pname;
+    if ( strcmp(ASSETCHAINS_SYMBOL,"ROGUE") == 0 && height < 20000 )
+        return(true);
     if ( (numvouts= tx.vout.size()) > 1 )
     {
         scriptPubKey = tx.vout[numvouts-1].scriptPubKey;
@@ -1231,12 +1233,9 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
             {
                 if ( (funcid= rogue_highlanderopretdecode(gametxid,tokenid,regslot,pk,playerdata,symbol,pname,scriptPubKey)) == 0 )
                 {
-                    if ( (funcid= rogue_registeropretdecode(gametxid,tokenid,playertxid,scriptPubKey)) == 0 )
+                    if ( (f= rogue_registeropretdecode(gametxid,tokenid,playertxid,scriptPubKey)) == 0 )
                     {
-                        funcid = 'Q';
                         fprintf(stderr,"ht.%d couldnt decode tokens opret (%c)\n",height,script[1]);
-                        if ( height < 20000 )
-                            e = EVAL_ROGUE;
                     } else e = EVAL_ROGUE, decoded = 1;
                 } else e = EVAL_ROGUE, decoded = 1;
             }
@@ -1250,8 +1249,8 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
                         case 'G':
                             if ( (funcid= rogue_newgameopreturndecode(buyin,maxplayers,scriptPubKey)) != 'G' )
                             {
-                                fprintf(stderr,"height.%d couldnt decode newgame opret\n",height);
-                                if ( height > 20000 )
+                                //fprintf(stderr,"height.%d couldnt decode newgame opret\n",height);
+                                //if ( height > 20000 )
                                     return eval->Invalid("couldnt decode newgame opret");
                             }
                             // validate newgame tx
@@ -1260,8 +1259,8 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
                         case 'R':
                             if ( (funcid= rogue_registeropretdecode(gametxid,tokenid,playertxid,scriptPubKey)) != 'R' )
                             {
-                                fprintf(stderr,"height.%d couldnt decode register opret\n",height);
-                                if ( height > 20000 )
+                                //fprintf(stderr,"height.%d couldnt decode register opret\n",height);
+                                //if ( height > 20000 )
                                     return eval->Invalid("couldnt decode register opret");
                             }
                             // validation is done below
@@ -1269,8 +1268,8 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
                         case 'K':
                             if ( (funcid= rogue_keystrokesopretdecode(gametxid,batontxid,pk,keystrokes,scriptPubKey)) != 'K' )
                             {
-                                fprintf(stderr,"height.%d couldnt decode keystrokes opret\n",height);
-                                if ( height > 20000 )
+                                //fprintf(stderr,"height.%d couldnt decode keystrokes opret\n",height);
+                                //if ( height > 20000 )
                                     return eval->Invalid("couldnt decode keystrokes opret");
                             }
                             // validate keystrokes are from the correct pk. might need to add vin
@@ -1279,8 +1278,8 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
                         case 'H': case 'Q':
                             if ( (f= rogue_highlanderopretdecode(gametxid,tokenid,regslot,pk,playerdata,symbol,pname,scriptPubKey)) != funcid )
                             {
-                                fprintf(stderr,"height.%d couldnt decode H/Q opret\n",height);
-                                if ( height > 20000 )
+                                //fprintf(stderr,"height.%d couldnt decode H/Q opret\n",height);
+                                //if ( height > 20000 )
                                     return eval->Invalid("couldnt decode H/Q opret");
                             }
                             // validation is done below
@@ -1292,11 +1291,18 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
                 }
                 switch ( funcid )
                 {
-                    case 'G': // newgame
                     case 'R': // register
-                    case 'K': // keystrokes
+                        return(true);
                     case 'H': // win
                     case 'Q': // bailout
+                        if ( funcid == 'Q' )
+                        {
+                            
+                        }
+                        else
+                        {
+                            
+                        }
                         //fprintf(stderr,"ht.%d rogue.(%c)\n",height,script[1]);
                         return(true);
                         break;
