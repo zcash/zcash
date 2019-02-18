@@ -34,12 +34,16 @@
 #include "script/sign.h"
 #include "script/standard.h"
 
+#include "key_io.h"
+
 #include <stdint.h>
 #include <univalue.h>
 #include <regex>
 
-
 using namespace std;
+
+extern std::string ASSETCHAINS_SELFIMPORT;
+extern uint16_t ASSETCHAINS_CODAPORT, ASSETCHAINS_BEAMPORT;
 
 int32_t komodo_MoM(int32_t *notarized_htp,uint256 *MoMp,uint256 *kmdtxidp,int32_t nHeight,uint256 *MoMoMp,int32_t *MoMoMoffsetp,int32_t *MoMoMdepthp,int32_t *kmdstartip,int32_t *kmdendip);
 int32_t komodo_MoMoMdata(char *hexstr,int32_t hexsize,struct komodo_ccdataMoMoM *mdata,char *symbol,int32_t kmdheight,int32_t notarized_height);
@@ -47,8 +51,10 @@ struct komodo_ccdata_entry *komodo_allMoMs(int32_t *nump,uint256 *MoMoMp,int32_t
 uint256 komodo_calcMoM(int32_t height,int32_t MoMdepth);
 extern std::string ASSETCHAINS_SELFIMPORT;
 uint256 Parseuint256(char *hexstr);
-int32_t GetSelfimportProof(std::string source,CMutableTransaction &mtx,CScript &scriptPubKey,TxProof &proof,uint64_t burnAmount,std::vector<uint8_t> rawtx,uint256 txid,std::vector<uint8_t> rawproof);
 
+std::string MakeSelfImportSourceTx(CTxDestination &dest, int64_t amount, CMutableTransaction &mtx);
+int32_t GetSelfimportProof(std::string source, CMutableTransaction &mtx, CScript &scriptPubKey, TxProof &proof, std::string rawsourcetx, int32_t &ivout, uint256 sourcetxid, uint64_t burnAmount);
+std::string MakeGatewaysImportTx(uint64_t txfee, uint256 bindtxid, int32_t height, std::string refcoin, std::vector<uint8_t>proof, std::string rawburntx, int32_t ivout, uint256 burntxid);
 
 UniValue assetchainproof(const UniValue& params, bool fHelp)
 {
@@ -256,6 +262,7 @@ UniValue migrate_createimporttransaction(const UniValue& params, bool fHelp)
     TxProof proof = GetAssetchainProof(burnTx.GetHash(),burnTx);
 
     CTransaction importTx = MakeImportCoinTransaction(proof, burnTx, payouts);
+
     return HexStr(E_MARSHAL(ss << importTx));
 }
 
@@ -281,31 +288,122 @@ UniValue migrate_completeimporttransaction(const UniValue& params, bool fHelp)
 
 UniValue selfimport(const UniValue& params, bool fHelp)
 {
-    CMutableTransaction mtx;
-    std::string source; TxProof proof; CTransaction burnTx,tx; CTxOut burnOut; uint64_t burnAmount; uint256 txid,blockHash; std::vector<CTxOut> vouts; std::vector<uint8_t> rawtx,rawproof; CScript scriptPubKey;
+    UniValue result(UniValue::VOBJ);
+    CMutableTransaction sourceMtx, templateMtx;
+    std::string destaddr;
+    std::string source; 
+    std::string rawsourcetx;
+    CTransaction burnTx; 
+    CTxOut burnOut; 
+    uint64_t burnAmount; 
+    uint256 sourcetxid, blockHash; 
+	std::vector<CTxOut> vouts; 
+	std::vector<uint8_t> rawproof, rawproofEmpty;
+    int32_t ivout = 0;
+    CScript scriptPubKey;
+    TxProof proof;
+
     if ( ASSETCHAINS_SELFIMPORT.size() == 0 )
         throw runtime_error("selfimport only works on -ac_import chains");
-    if (fHelp || params.size() < 3 || params.size() > 5 )
-        throw runtime_error("selfimport rawtx txid burnamount [rawproof source]\n\n"
-                            "creates signed selfimport transaction");
-    rawtx = ParseHex(params[0].get_str().c_str());
-    txid = Parseuint256((char *)params[1].get_str().c_str()); // allow for txid != hash(rawtx)
-    burnAmount = atof(params[2].get_str().c_str()) * COIN + 0.00000000499999;
-    source = ASSETCHAINS_SELFIMPORT;
-    if ( params.size() >= 4 )
+
+    if (fHelp || params.size() != 2)
+        throw runtime_error("selfimport destaddr amount\n"
+                  //old:    "selfimport rawsourcetx sourcetxid {nvout|\"find\"} amount \n"
+                  //TODO:   "or selfimport rawburntx burntxid {nvout|\"find\"} rawproof source bindtxid height} \n"
+                            "\ncreates self import coin transaction");
+
+/* OLD selfimport schema:
+    rawsourcetx = params[0].get_str();
+    sourcetxid = Parseuint256((char *)params[1].get_str().c_str()); // allow for txid != hash(rawtx)
+
+	int32_t ivout = -1;
+	if( params[2].get_str() != "find" ) {
+		if( !std::all_of(params[2].get_str().begin(), params[2].get_str().end(), ::isdigit) )  // check if not all chars are digit
+			throw std::runtime_error("incorrect nvout param");
+
+		ivout = atoi(params[2].get_str().c_str());
+	}
+
+    burnAmount = atof(params[3].get_str().c_str()) * COIN + 0.00000000499999;  */
+
+    destaddr = params[0].get_str();
+    burnAmount = atof(params[1].get_str().c_str()) * COIN + 0.00000000499999;
+
+    source = ASSETCHAINS_SELFIMPORT;   //defaults to -ac_import=... param
+    /* TODO for gateways:
+    if ( params.size() >= 5 )
     {
-        rawproof = ParseHex(params[3].get_str().c_str());
-        if ( params.size() == 5 )
-            source = params[4].get_str();
+        rawproof = ParseHex(params[4].get_str().c_str());
+        if ( params.size() == 6 )
+            source = params[5].get_str();
+    }  */
+
+
+    if (source == "BEAM")
+    {
+        if (ASSETCHAINS_BEAMPORT == 0)
+            return(-1);
+        // confirm via ASSETCHAINS_BEAMPORT that burnTx/hash is a valid BEAM burn
+        // return(0);
+        return -1;
     }
-    if ( GetSelfimportProof(source,mtx,scriptPubKey,proof,burnAmount,rawtx,txid,rawproof) < 0 )
-        throw std::runtime_error("Failed validating selfimport");
-    vouts = mtx.vout;
-    burnOut = MakeBurnOutput(burnAmount,0xffffffff,ASSETCHAINS_SELFIMPORT,vouts,rawproof);
-    mtx.vout.clear();
-    mtx.vout.push_back(burnOut);
-    burnTx = mtx;
-    return HexStr(E_MARSHAL(ss << MakeImportCoinTransaction(proof,burnTx,vouts)));
+    else if (source == "CODA")
+    {
+        if (ASSETCHAINS_CODAPORT == 0)
+            return(-1);
+        // confirm via ASSETCHAINS_CODAPORT that burnTx/hash is a valid CODA burn
+        // return(0);
+        return -1;
+    }
+    else if (source == "PUBKEY")
+    {
+
+        CTxDestination dest = DecodeDestination(destaddr.c_str());
+        rawsourcetx = MakeSelfImportSourceTx(dest, burnAmount, sourceMtx);
+        sourcetxid = sourceMtx.GetHash();
+
+        // prepare self-import 'quasi-burn' tx and also create vout for import tx (in mtx.vout):
+        if (GetSelfimportProof(source, templateMtx, scriptPubKey, proof, rawsourcetx, ivout, sourcetxid, burnAmount) < 0)
+            throw std::runtime_error("Failed validating selfimport");
+
+        vouts = templateMtx.vout;
+        burnOut = MakeBurnOutput(burnAmount, 0xffffffff, ASSETCHAINS_SELFIMPORT, vouts, rawproofEmpty);
+        templateMtx.vout.clear();
+        templateMtx.vout.push_back(burnOut);	// burn tx has only opret with vouts and optional proof
+
+        burnTx = templateMtx;					// complete the creation of 'quasi-burn' tx
+
+        std::string hextx = HexStr(E_MARSHAL(ss << MakeImportCoinTransaction(proof, burnTx, vouts)));
+
+        CTxDestination address;
+        bool fValidAddress = ExtractDestination(scriptPubKey, address);
+       
+        result.push_back(Pair("sourceTxHex", rawsourcetx));
+        result.push_back(Pair("importTxHex", hextx));
+        result.push_back(Pair("UsedRawtxVout", ivout));   // notify user about the used vout of rawtx
+        result.push_back(Pair("DestinationAddress", EncodeDestination(address)));  // notify user about the address where the funds will be sent
+
+        return result;
+    }
+    else if (source == ASSETCHAINS_SELFIMPORT)
+    {
+        throw std::runtime_error("not implemented yet\n");
+
+        if (params.size() != 8) 
+            throw runtime_error("use \'selfimport rawburntx burntxid nvout rawproof source bindtxid height\' to import from a coin chain\n");
+       
+        uint256 bindtxid = Parseuint256((char *)params[6].get_str().c_str()); 
+        int32_t height = atoi((char *)params[7].get_str().c_str());
+
+
+        // source is external coin is the assetchains symbol in the burnTx OP_RETURN
+        // burnAmount, rawtx and rawproof should be enough for gatewaysdeposit equivalent
+        std::string hextx = MakeGatewaysImportTx(0, bindtxid, height, source, rawproof, rawsourcetx, ivout, sourcetxid);
+
+        result.push_back(Pair("hex", hextx));
+        result.push_back(Pair("UsedRawtxVout", ivout));   // notify user about the used vout of rawtx
+    }
+    return result;
 }
 
 UniValue getNotarisationsForBlock(const UniValue& params, bool fHelp)

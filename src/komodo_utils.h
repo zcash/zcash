@@ -1047,7 +1047,7 @@ uint64_t komodo_block_prg(uint32_t nHeight)
     {
         int i;
         uint8_t hashSrc[8];
-        uint64_t result, hashSrc64 = (uint64_t)ASSETCHAINS_MAGIC << 32 + nHeight;
+        uint64_t result=0, hashSrc64 = (uint64_t)ASSETCHAINS_MAGIC << 32 + nHeight;
         bits256 hashResult;
 
         for ( i = 0; i < sizeof(hashSrc); i++ )
@@ -1680,6 +1680,7 @@ void komodo_args(char *argv0)
     KOMODO_DEALERNODE = GetArg("-dealer",0);
     if ( strlen(NOTARY_PUBKEY.c_str()) == 66 )
     {
+        decode_hex(NOTARY_PUBKEY33,33,(char *)NOTARY_PUBKEY.c_str());
         USE_EXTERNAL_PUBKEY = 1;
         if ( IS_KOMODO_NOTARY == 0 )
         {
@@ -1715,6 +1716,7 @@ void komodo_args(char *argv0)
     WITNESS_CACHE_SIZE = MAX_REORG_LENGTH+10;
     ASSETCHAINS_CC = GetArg("-ac_cc",0);
     KOMODO_CCACTIVATE = GetArg("-ac_ccactivate",0);
+    ASSETCHAINS_BLOCKTIME = GetArg("-ac_blocktime",60);
     ASSETCHAINS_PUBLIC = GetArg("-ac_public",0);
     ASSETCHAINS_PRIVATE = GetArg("-ac_private",0);
     if ( (KOMODO_REWIND= GetArg("-rewind",0)) != 0 )
@@ -1821,6 +1823,14 @@ void komodo_args(char *argv0)
                     ASSETCHAINS_CCDISABLES[ccenables[i] & 0xff] = 0;
                 }
             }
+            /*if ( ASSETCHAINS_CCLIB.size() > 0 )
+            {
+                for (i=first; i<=last; i++)
+                {
+                    CLEARBIT(disablebits,i);
+                    ASSETCHAINS_CCDISABLES[i] = 0;
+                }
+            }*/
         }
         if ( ASSETCHAINS_BEAMPORT != 0 && ASSETCHAINS_CODAPORT != 0 )
         {
@@ -1913,7 +1923,7 @@ void komodo_args(char *argv0)
             fprintf(stderr,"-ac_script and -ac_marmara are mutually exclusive\n");
             exit(0);
         }
-        if ( ASSETCHAINS_ENDSUBSIDY[0] != 0 || ASSETCHAINS_REWARD[0] != 0 || ASSETCHAINS_HALVING[0] != 0 || ASSETCHAINS_DECAY[0] != 0 || ASSETCHAINS_COMMISSION != 0 || ASSETCHAINS_PUBLIC != 0 || ASSETCHAINS_PRIVATE != 0 || ASSETCHAINS_TXPOW != 0 || ASSETCHAINS_FOUNDERS != 0 || ASSETCHAINS_SCRIPTPUB.size() > 1 || ASSETCHAINS_SELFIMPORT.size() > 0 || ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 || ASSETCHAINS_TIMELOCKGTE != _ASSETCHAINS_TIMELOCKOFF|| ASSETCHAINS_ALGO != ASSETCHAINS_EQUIHASH || ASSETCHAINS_LWMAPOS != 0 || ASSETCHAINS_LASTERA > 0 || ASSETCHAINS_BEAMPORT != 0 || ASSETCHAINS_CODAPORT != 0 || ASSETCHAINS_MARMARA != 0 || nonz > 0 || ASSETCHAINS_CCLIB.size() > 0 || ASSETCHAINS_FOUNDERS_REWARD != 0 || ASSETCHAINS_NOTARY_PAY != 0 )
+        if ( ASSETCHAINS_ENDSUBSIDY[0] != 0 || ASSETCHAINS_REWARD[0] != 0 || ASSETCHAINS_HALVING[0] != 0 || ASSETCHAINS_DECAY[0] != 0 || ASSETCHAINS_COMMISSION != 0 || ASSETCHAINS_PUBLIC != 0 || ASSETCHAINS_PRIVATE != 0 || ASSETCHAINS_TXPOW != 0 || ASSETCHAINS_FOUNDERS != 0 || ASSETCHAINS_SCRIPTPUB.size() > 1 || ASSETCHAINS_SELFIMPORT.size() > 0 || ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 || ASSETCHAINS_TIMELOCKGTE != _ASSETCHAINS_TIMELOCKOFF|| ASSETCHAINS_ALGO != ASSETCHAINS_EQUIHASH || ASSETCHAINS_LWMAPOS != 0 || ASSETCHAINS_LASTERA > 0 || ASSETCHAINS_BEAMPORT != 0 || ASSETCHAINS_CODAPORT != 0 || ASSETCHAINS_MARMARA != 0 || nonz > 0 || ASSETCHAINS_CCLIB.size() > 0 || ASSETCHAINS_FOUNDERS_REWARD != 0 || ASSETCHAINS_NOTARY_PAY != 0 || ASSETCHAINS_BLOCKTIME != 60 )
         {
             fprintf(stderr,"perc %.4f%% ac_pub=[%02x%02x%02x...] acsize.%d\n",dstr(ASSETCHAINS_COMMISSION)*100,ASSETCHAINS_OVERRIDE_PUBKEY33[0],ASSETCHAINS_OVERRIDE_PUBKEY33[1],ASSETCHAINS_OVERRIDE_PUBKEY33[2],(int32_t)ASSETCHAINS_SCRIPTPUB.size());
             extraptr = extrabuf;
@@ -2010,6 +2020,8 @@ void komodo_args(char *argv0)
             }
             if ( ASSETCHAINS_NOTARY_PAY != 0 )
                 extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_NOTARY_PAY),(void *)&ASSETCHAINS_NOTARY_PAY);
+            if ( ASSETCHAINS_BLOCKTIME != 60 )
+                extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_BLOCKTIME),(void *)&ASSETCHAINS_BLOCKTIME);
         }
         
         addn = GetArg("-seednode","");
