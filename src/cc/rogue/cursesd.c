@@ -16,7 +16,7 @@
 #include "cursesd.h"
 
 static int32_t endwinflag;
-WINDOW *stdscr;
+WINDOW *stdscr,*curscr;
 int32_t ESCDELAY;
 
 WINDOW *newwin(int32_t nlines,int32_t ncols,int32_t begin_y,int32_t begin_x)
@@ -162,6 +162,7 @@ int32_t mvaddch(int32_t y, int32_t x, chtype ch)
 int32_t waddstr(WINDOW *win, const char *str)
 {
     int32_t i;
+    //fprintf(stderr,"%s\n",str);
     for (i=0; str[i]!=0; i++)
         waddch(win,str[i]);
     return(0);

@@ -273,6 +273,7 @@ int32_t rogue_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t nu
     if ( (fp= fopen("checkfile","wb")) != 0 )
     {
         save_file(rs,fp,0);
+        fprintf(stderr,"gold.%d hp.%d strength.%d/%d level.%d exp.%d dungeon.%d data[%d]\n",rs->P.gold,rs->P.hitpoints,rs->P.strength&0xffff,rs->P.strength>>16,rs->P.level,rs->P.experience,rs->P.dungeonlevel,rs->playersize);
         if ( newdata != 0 && rs->playersize > 0 )
             memcpy(newdata,rs->playerdata,rs->playersize);
     }
@@ -336,10 +337,11 @@ int32_t rogue_replay(uint64_t seed,int32_t sleeptime)
             }
             fclose(fp);
         }
-        rogue_replay2(0,seed,keystrokes,num,player,150);
+        rogue_replay2(0,seed,keystrokes,num,player,sleeptime);
 
-        //mvaddstr(LINES - 2, 0, (char *)"replay completed");
+        mvaddstr(LINES - 2, 0, (char *)"replay completed");
         endwin();
+        my_exit(0);
     }
     if ( keystrokes != 0 )
         free(keystrokes);
@@ -601,7 +603,7 @@ playit(struct rogue_state *rs)
         }
         else
         {
-            if ( rs->needflush != 0 && rs->num > 4096 )
+            if ( rs->needflush != 0 && rs->num > 1024 )
             {
                 if ( flushkeystrokes(rs) == 0 )
                     rs->needflush = 0;
@@ -741,7 +743,7 @@ my_exit(int st)
 {
     uint32_t counter;
     resetltchars();
-    if ( globalR.guiflag != 0 )
+    if ( globalR.guiflag != 0 || globalR.sleeptime != 0 )
         exit(st);
     else if ( counter++ < 10 )
     {

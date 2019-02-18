@@ -262,7 +262,7 @@ md_onsignal_autosave()
 int
 md_hasclreol()
 {
-#if defined(clr_eol)
+/*#if defined(clr_eol)
 #ifdef NCURSES_VERSION
     if (cur_term == NULL)
         return(0);
@@ -274,7 +274,8 @@ md_hasclreol()
     return(TRUE);
 #else
     return((CE != NULL) && (*CE != 0));
-#endif
+#endif*/
+    return(0);
 }
 
 void

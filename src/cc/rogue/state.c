@@ -1437,7 +1437,7 @@ rs_write_object(struct rogue_state *rs,FILE *savef, THING *o)
             //fprintf(stderr,"KILLED\n");
             rs->P.gold = -1;
             rs->P.hitpoints = -1;
-            rs->P.strength = -1;
+            rs->P.strength = 0;
             rs->P.level = -1;
             rs->P.experience = -1;
             rs->P.dungeonlevel = -1;
@@ -1448,11 +1448,11 @@ rs_write_object(struct rogue_state *rs,FILE *savef, THING *o)
             {
                 rs->P.gold = purse;
                 rs->P.hitpoints = max_hp;
-                rs->P.strength = pstats.s_str; //max_stats.s_str;
+                rs->P.strength = (pstats.s_str & 0xffff) | (max_stats.s_str << 16);
                 rs->P.level = pstats.s_lvl;
                 rs->P.experience = pstats.s_exp;
                 rs->P.dungeonlevel = level;
-                //fprintf(stderr,"%ld gold.%d hp.%d strength.%d level.%d exp.%d %d\n",ftell(savef),purse,max_hp,max_stats.s_str,pstats.s_lvl,pstats.s_exp,level);
+                //fprintf(stderr,"%ld gold.%d hp.%d strength.%d/%d level.%d exp.%d %d\n",ftell(savef),purse,max_hp,pstats.s_str,max_stats.s_str,pstats.s_lvl,pstats.s_exp,level);
             }
             //fprintf(stderr,"object (%s) x.%d y.%d type.%d pack.(%c:%d)\n",inv_name(o,FALSE),o->_o._o_pos.x,o->_o._o_pos.y,o->_o._o_type,o->_o._o_packch,o->_o._o_packch);
             if ( rs->P.packsize < MAXPACK && o->o_type != AMULET )
@@ -2009,7 +2009,10 @@ int
 rs_save_file(struct rogue_state *rs,FILE *savef)
 {
     if (write_error)
+    {
+        fprintf(stderr,"write error\n");
         return(WRITESTAT);
+    }
 
     rs_write_boolean(savef, after);                 /* 1  */    /* extern.c */
     rs_write_boolean(savef, again);                 /* 2  */
