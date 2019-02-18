@@ -1223,14 +1223,14 @@ int32_t rogue_playerdata_validate(struct CCcontract_info *cp,std::vector<uint8_t
     char str[512],*keystrokes,rogueaddr[64]; int32_t numkeys; std::vector<uint8_t> newdata; uint64_t seed; uint256 playertxid; CPubKey roguepk;
     roguepk = GetUnspendable(cp,0);
     GetCCaddress1of2(cp,rogueaddr,roguepk,pk);
-    fprintf(stderr,"call extractgame\n");
+    //fprintf(stderr,"call extractgame\n");
     if ( (keystrokes= rogue_extractgame(str,&numkeys,newdata,seed,playertxid,cp,gametxid,rogueaddr)) != 0 )
     {
         free(keystrokes);
-        fprintf(stderr,"extracted.(%s)\n",str);
+        //fprintf(stderr,"extracted.(%s)\n",str);
         if ( newdata == playerdata )
             return(0);
-        else fprintf(stderr,"newdata[%d] != playerdata[%d]\n",(int32_t)newdata.size(),(int32_t)playerdata.size());
+        else fprintf(stderr,"newdata[%d] != playerdata[%d], numkeys.%d\n",(int32_t)newdata.size(),(int32_t)playerdata.size(),numkeys);
     }
     return(-1);
 }
