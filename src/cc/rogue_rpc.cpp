@@ -866,7 +866,7 @@ char *rogue_extractgame(char *str,int32_t *numkeysp,struct rogue_player &P,std::
                     fprintf(stderr,"zero value character was killed -> no playerdata\n");
                     newdata.resize(0);
                 }
-                sprintf(str,"extracted $$$gold.%d hp.%d strength.%d level.%d exp.%d dl.%d n.%d size.%d\n",endP.gold,endP.hitpoints,endP.strength,endP.level,endP.experience,endP.dungeonlevel,n,(int32_t)sizeof(endP));
+                sprintf(str,"extracted $$$gold.%d hp.%d strength.%d level.%d exp.%d dl.%d\n",endP.gold,endP.hitpoints,endP.strength,endP.level,endP.experience,endP.dungeonlevel);
                 fprintf(stderr,"%s\n",str);
             } else num = 0;
         }
@@ -877,7 +877,7 @@ char *rogue_extractgame(char *str,int32_t *numkeysp,struct rogue_player &P,std::
 
 UniValue rogue_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result; CPubKey pk,roguepk; int32_t i,n,numkeys,flag = 0; uint64_t seed; char str[512],rogueaddr[64],*pubstr,*keystrokes = 0; std::vector<uint8_t> newdata; uint256 gametxid; FILE *fp; uint8_t player[10000],pub33[33];
+    UniValue result; CPubKey pk,roguepk; int32_t i,n,numkeys,flag = 0; uint64_t seed; char str[512],rogueaddr[64],*pubstr,*keystrokes = 0; std::vector<uint8_t> newdata; uint256 gametxid; FILE *fp; uint8_t player[10000],pub33[33]; struct rogue_player P,endP;
     pk = pubkey2pk(Mypubkey());
     roguepk = GetUnspendable(cp,0);
     result.push_back(Pair("name","rogue"));
