@@ -238,7 +238,7 @@ void rogue_bailout(struct rogue_state *rs)
 
 int32_t rogue_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t num,struct rogue_player *player,int32_t sleepmillis)
 {
-    struct rogue_state *rs; FILE *fp; int32_t i;
+    struct rogue_state *rs; FILE *fp; int32_t i,n;
     rs = (struct rogue_state *)calloc(1,sizeof(*rs));
     rs->seed = seed;
     rs->keystrokes = keystrokes;
@@ -248,7 +248,9 @@ int32_t rogue_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t nu
     {
         rs->P = *player;
         rs->restoring = 1;
-        //fprintf(stderr,"restore player packsize.%d HP.%d\n",rs->P.packsize,rs->P.hitpoints);
+        fprintf(stderr,"restore player packsize.%d HP.%d\n",rs->P.packsize,rs->P.hitpoints);
+        if ( rs->P.packsize > MAXPACK )
+            rs->P.packsize = MAXPACK;
     }
     globalR = *rs;
     uint32_t starttime = (uint32_t)time(NULL);
@@ -278,8 +280,9 @@ int32_t rogue_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t nu
         if ( newdata != 0 && rs->playersize > 0 )
             memcpy(newdata,rs->playerdata,rs->playersize);
     }
+    n = rs->playsize;
     free(rs);
-    return(rs->playersize);
+    return(n);
 }
 #endif
 
