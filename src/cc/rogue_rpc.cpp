@@ -877,12 +877,12 @@ char *rogue_extractgame(char *str,int32_t *numkeysp,struct rogue_player &P,std::
 
 UniValue rogue_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result; CPubKey pk,roguepk; int32_t i,n,numkeys,flag = 0; uint64_t seed; char str[512],rogueaddr[64],*pubstr,*keystrokes = 0; std::vector<uint8_t> newdata; uint256 gametxid; FILE *fp; uint8_t player[10000],pub33[33]; struct rogue_player P,endP;
+    UniValue result; CPubKey pk,roguepk; int32_t i,n,numkeys,flag = 0; uint64_t seed; char str[512],rogueaddr[64],*pubstr,*keystrokes = 0; std::vector<uint8_t> newdata; uint256 gametxid; FILE *fp; uint8_t pub33[33]; struct rogue_player P,endP;
     pk = pubkey2pk(Mypubkey());
     roguepk = GetUnspendable(cp,0);
     result.push_back(Pair("name","rogue"));
     result.push_back(Pair("method","extract"));
-    if ( (params= cclib_reparse(&n,params)) != 0 )
+    if ( 0 && (params= cclib_reparse(&n,params)) != 0 )
     {
         if ( n > 0 )
         {
