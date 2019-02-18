@@ -1218,7 +1218,7 @@ UniValue rogue_setname(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 
 bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx)
 {
-    CScript scriptPubKey; std::vector<uint8_t> vopret; uint8_t *script,e,f,funcid; int32_t i,ind,errflag,dispflag,score,numvouts; CTransaction vintx; uint256 hashBlock;
+    CScript scriptPubKey; std::vector<uint8_t> vopret; uint8_t *script,e,f,funcid; int32_t i,maxplayers,decoded=0,regslot,ind,errflag,dispflag,score,numvouts; CTransaction vintx; CPubKey pk; uint256 hashBlock,gametxid,tokenid,batontxid; int64_t buyin; std::vector<uint8_t> playerdata,keystrokes; std::string symbol,pname;
     if ( (numvouts= tx.vout.size()) > 1 )
     {
         scriptPubKey = tx.vout[numvouts-1].scriptPubKey;
@@ -1229,30 +1229,67 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
             funcid = script[1];
             if ( (e= script[0]) == EVAL_TOKENS )
             {
-                if ( script[1] == 'c' )
+                if ( (funcid= rogue_highlanderopretdecode(gametxid,tokenid,regslot,pk,playerdata,symbol,pname,scriptPubKey)) == 0 )
                 {
-                    e = EVAL_ROGUE;
-                    funcid = 'Q';
-                }
-                else if ( script[1] == 't' )
-                {
-                    e = EVAL_ROGUE;
-                    funcid = 'Q';
-                } else return eval->Invalid("illegal tokens funcid");
+                    if ( (funcid= rogue_registeropretdecode(gametxid,tokenid,playertxid,scriptPubKey)) == 0 )
+                    {
+                        funcid = 'Q';
+                        fprintf(stderr,"ht.%d couldnt decode tokens opret\n",height);
+                    } else e = EVAL_ROGUE, decoded = 1;
+                } else e = EVAL_ROGUE, decoded = 1;
             }
             if ( e == EVAL_ROGUE )
             {
+                if ( decoded == 0 )
+                {
+                    switch ( funcid )
+                    {
+                        case 'G':
+                            if ( (funcid= rogue_newgameopreturndecode(buyin,maxplayers,scriptPubKey)) != 'G' )
+                                return eval->Invalid("couldnt decode newgame opret");
+                            // validate newgame tx
+                            return(true);
+                            break;
+                        case 'R':
+                            if ( (funcid= rogue_registeropretdecode(gametxid,tokenid,playertxid,scriptPubKey)) != 'R' )
+                                return eval->Invalid("couldnt decode register opret");
+                            break;
+                        case 'K':
+                            if ( (funcid= rogue_keystrokesopretdecode(gametxid,batontxid,pk,keystrokes,scriptPubKey)) != 'K' )
+                                return eval->Invalid("couldnt decode keystrokes opret");
+                            // validate keystrokes are from the correct pk. might need to add vin
+                            return(true);
+                            break;
+                        case 'H': case 'Q':
+                            if ( (f= rogue_highlanderopretdecode(gametxid,tokenid,regslot,pk,playerdata,symbol,pname,scriptPubKey)) != funcid )
+                                return eval->Invalid("couldnt decode H/Q opret");
+                            break;
+                        default:
+                            return eval->Invalid("illegal rogue non-decoded funcid");
+                            break;
+                    }
+                }
                 switch ( funcid )
                 {
-                    case 'G': // newgame
-                    case 'R': // register
-                    case 'K': // keystrokes
-                    case 'H': // win
-                    case 'Q': // bailout
-                        fprintf(stderr,"ht.%d rogue.(%c)\n",height,script[1]);
+                    case 'R':
+                        // validate register: within 60 blocks, not duplicate, etc.
+                        return(true);
+                        break;
+                    case 'H': // fall through
+                    case 'Q':
+                        // make sure any playerdata is reproduced via replay
+                        if ( funcid == 'Q' )
+                        {
+                            // validate bailout constraints
+                        }
+                        else // 'H'
+                        {
+                            // validate winner constraints
+                        }
                         return(true);
                         break;
                     default:
+                        fprintf(stderr,"ht.%d rogue.(%c)\n",height,script[1]);
                         return eval->Invalid("illegal rogue funcid");
                         break;
                 }
