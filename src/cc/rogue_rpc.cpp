@@ -883,7 +883,7 @@ UniValue rogue_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     result.push_back(Pair("name","rogue"));
     result.push_back(Pair("method","extract"));
     fprintf(stderr,"inside rogue extract\n");
-    if ( 0 && (params= cclib_reparse(&n,params)) != 0 )
+   /* if ( 0 && (params= cclib_reparse(&n,params)) != 0 )
     {
         if ( n > 0 )
         {
@@ -910,7 +910,7 @@ UniValue rogue_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                 free(keystrokes);
             }
         }
-    }
+    }*/
     if ( flag == 0 )
         result.push_back(Pair("status","error"));
     return(result);
