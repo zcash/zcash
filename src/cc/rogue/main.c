@@ -253,7 +253,7 @@ int main(int argc, char **argv, char **envp)
     {
         seed = atol(argv[1]);
         //fprintf(stderr,"replay %llu\n",(long long)seed);
-        return(rogue_replay(seed,50000));
+        return(rogue_replay(seed,10));
     }
     else
     {
