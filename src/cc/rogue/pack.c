@@ -157,37 +157,55 @@ out:
     }
 }
 
+int32_t num_packitems(struct rogue_state *rs)
+{
+    THING *list = pack;
+    int32_t type = 0,n = 0,total = 0;
+    for (; list != NULL; list = next(list))
+    {
+        if ( list->o_packch != 0 )
+        {
+            n++;
+            total += list->o_count;
+        }
+    }
+    
+    char str[MAXSTR];
+    sprintf(str,"strength*3 %d vs total.%d vs %d inventory letters\n",pstats.s_str*3,total,n);
+    add_line(rs,"%s",str);
+    if ( total > pstats.s_str*3 )
+        return(MAXPACK);
+    return(n);
+}
+
 /*
  * pack_room:
  *	See if there's room in the pack.  If not, print out an
  *	appropriate message
  */
-bool
-pack_room(struct rogue_state *rs,bool from_floor, THING *obj)
+bool pack_room(struct rogue_state *rs,bool from_floor, THING *obj)
 {
-    inpack = num_packitems();
-    if (++inpack > MAXPACK)
+    inpack = num_packitems(rs);
+    if ( ++inpack > MAXPACK )
     {
-	if (!terse)
-	    addmsg(rs,"there's ");
-	addmsg(rs,"no room");
-	if (!terse)
-	    addmsg(rs," in your pack");
-	endmsg(rs);
-	if (from_floor)
-	    move_msg(rs,obj);
-	inpack = MAXPACK;
-	return FALSE;
+        if (!terse)
+            addmsg(rs,"there's ");
+        addmsg(rs,"no room");
+        if (!terse)
+            addmsg(rs," in your pack");
+        endmsg(rs);
+        if (from_floor)
+            move_msg(rs,obj);
+        inpack = MAXPACK;
+        return FALSE;
     }
     //fprintf(stderr,"inpack.%d vs MAX.%d\n",inpack,MAXPACK), sleep(2);
-    
-    if (from_floor)
+    if ( from_floor != 0 )
     {
-	detach(lvl_obj, obj);
-	mvaddch(hero.y, hero.x, floor_ch());
-	chat(hero.y, hero.x) = (proom->r_flags & ISGONE) ? PASSAGE : FLOOR;
+        detach(lvl_obj, obj);
+        mvaddch(hero.y, hero.x, floor_ch());
+        chat(hero.y, hero.x) = (proom->r_flags & ISGONE) ? PASSAGE : FLOOR;
     }
-
     return TRUE;
 }
 
@@ -247,22 +265,11 @@ pack_char()
  *	the given type.
  */
 
-int32_t num_packitems()
-{
-    THING *list = pack;
-    int32_t type = 0,n = 0;
-    for (; list != NULL; list = next(list))
-    {
-        if (!list->o_packch)
-            n++;
-    }
-    return(n);
-}
 
 bool
 inventory(struct rogue_state *rs,THING *list, int type)
 {
-    static char inv_temp[MAXSTR];
+    char inv_temp[MAXSTR];
 
     n_objs = 0;
     for (; list != NULL; list = next(list))
