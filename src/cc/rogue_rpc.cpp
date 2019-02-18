@@ -819,9 +819,9 @@ UniValue rogue_keystrokes(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
     } else return(cclib_error(result,"couldnt reparse params"));
 }
 
-char *rogue_extractgame(char *str,int32_t *numkeysp,struct rogue_player &P,std::vector<uint8_t> &newdata,struct rogue_player &endP,uint64_t &seed,struct CCcontract_info *cp,uint256 gametxid,char *rogueaddr)
+char *rogue_extractgame(char *str,int32_t *numkeysp,std::vector<uint8_t> &newdata,uint64_t &seed,struct CCcontract_info *cp,uint256 gametxid,char *rogueaddr)
 {
-    CPubKey roguepk; int32_t i,num,maxplayers,gameheight,batonht,batonvout,numplayers,regslot,numkeys,err; std::string symbol,pname; CTransaction gametx; int64_t buyin,batonvalue; char fname[64],*keystrokes = 0; std::vector<uint8_t> playerdata; uint256 batontxid,playertxid; FILE *fp; uint8_t newplayer[10000];
+    CPubKey roguepk; int32_t i,num,maxplayers,gameheight,batonht,batonvout,numplayers,regslot,numkeys,err; std::string symbol,pname; CTransaction gametx; int64_t buyin,batonvalue; char fname[64],*keystrokes = 0; std::vector<uint8_t> playerdata; uint256 batontxid,playertxid; FILE *fp; uint8_t newplayer[10000]; struct rogue_player P,endP;
     roguepk = GetUnspendable(cp,0);
     *numkeysp = 0;
     seed = 0;
@@ -877,11 +877,12 @@ char *rogue_extractgame(char *str,int32_t *numkeysp,struct rogue_player &P,std::
 
 UniValue rogue_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result; CPubKey pk,roguepk; int32_t i,n,numkeys,flag = 0; uint64_t seed; char str[512],rogueaddr[64],*pubstr,*keystrokes = 0; std::vector<uint8_t> newdata; uint256 gametxid; FILE *fp; uint8_t pub33[33]; struct rogue_player P,endP;
+    UniValue result; CPubKey pk,roguepk; int32_t i,n,numkeys,flag = 0; uint64_t seed; char str[512],rogueaddr[64],*pubstr,*keystrokes = 0; std::vector<uint8_t> newdata; uint256 gametxid; FILE *fp; uint8_t pub33[33];
     pk = pubkey2pk(Mypubkey());
     roguepk = GetUnspendable(cp,0);
     result.push_back(Pair("name","rogue"));
     result.push_back(Pair("method","extract"));
+    fprintf(stderr,"inside rogue extract\n");
     if ( 0 && (params= cclib_reparse(&n,params)) != 0 )
     {
         if ( n > 0 )
@@ -899,7 +900,7 @@ UniValue rogue_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             }
             GetCCaddress1of2(cp,rogueaddr,roguepk,pk);
             result.push_back(Pair("rogueaddr",rogueaddr));
-            if ( 0 && (keystrokes= rogue_extractgame(str,&numkeys,P,newdata,endP,seed,cp,gametxid,rogueaddr)) != 0 )
+            if ( 0 && (keystrokes= rogue_extractgame(str,&numkeys,newdata,seed,cp,gametxid,rogueaddr)) != 0 )
             {
                 result.push_back(Pair("status","success"));
                 flag = 1;
