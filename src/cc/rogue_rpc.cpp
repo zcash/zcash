@@ -1220,6 +1220,7 @@ UniValue rogue_setname(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 
 int32_t rogue_playerdata_validate(struct CCcontract_info *cp,std::vector<uint8_t> playerdata,uint256 gametxid,CPubKey pk)
 {
+    static uint32_t good,bad;
     char str[512],*keystrokes,rogueaddr[64],str2[67]; int32_t i,numkeys; std::vector<uint8_t> newdata; uint64_t seed; uint256 playertxid; CPubKey roguepk; struct rogue_player P;
     roguepk = GetUnspendable(cp,0);
     GetCCaddress1of2(cp,rogueaddr,roguepk,pk);
@@ -1229,7 +1230,18 @@ int32_t rogue_playerdata_validate(struct CCcontract_info *cp,std::vector<uint8_t
         free(keystrokes);
         //fprintf(stderr,"extracted.(%s)\n",str);
         if ( newdata == playerdata )
+        {
+            good++;
             return(0);
+        }
+        newdata[10] = newdata[11] = playerdata[10] = playerdata[11] = 0;
+        if ( newdata == playerdata )
+        {
+            good++;
+            fprintf(stderr,"matched after clearing maxstrength\n");
+            return(0);
+        }
+        bad++;
         for (i=0; i<playerdata.size(); i++)
             ((uint8_t *)&P)[i] = playerdata[i];
         if ( P.gold <= 0 || P.hitpoints <= 0 || (P.strength&0xffff) <= 0 || P.level <= 0 || P.experience <= 0 || P.dungeonlevel <= 0 )
@@ -1237,7 +1249,7 @@ int32_t rogue_playerdata_validate(struct CCcontract_info *cp,std::vector<uint8_t
             fprintf(stderr,"zero value character was killed -> no playerdata\n");
         }
         fprintf(stderr,"playerdata: gold.%d hp.%d strength.%d/%d level.%d exp.%d dl.%d\n",P.gold,P.hitpoints,P.strength&0xffff,P.strength>>16,P.level,P.experience,P.dungeonlevel);
-        fprintf(stderr,"newdata[%d] != playerdata[%d], numkeys.%d %s pub.%s playertxid.%s\n",(int32_t)newdata.size(),(int32_t)playerdata.size(),numkeys,rogueaddr,pubkey33_str(str2,(uint8_t *)&pk),playertxid.GetHex().c_str());
+        fprintf(stderr,"newdata[%d] != playerdata[%d], numkeys.%d %s pub.%s playertxid.%s good.%d bad.%d\n",(int32_t)newdata.size(),(int32_t)playerdata.size(),numkeys,rogueaddr,pubkey33_str(str2,(uint8_t *)&pk),playertxid.GetHex().c_str());
     }
     return(-1);
 }
