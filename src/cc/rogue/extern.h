@@ -142,6 +142,7 @@ void    leave(int);
 void	my_exit(int st);
 void    playltchars(void);
 void    quit(int);
+int32_t    _quit();
 void    resetltchars(void);
 void	set_order(int *order, int numthings);
 void	tstp(int ignored);

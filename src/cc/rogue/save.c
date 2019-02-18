@@ -148,19 +148,24 @@ void
 save_file(struct rogue_state *rs,FILE *savef,int32_t guiflag)
 {
     char buf[80],fname[512]; int32_t i,n,nonz,histo[0x100]; FILE *fp;
-    memset(&rs->P,0,sizeof(rs->P));
-    mvcur(0, COLS - 1, LINES - 1, 0); 
-    putchar('\n');
-    endwin();
-    resetltchars();
-    md_chmod(file_name, 0400);
-    if ( guiflag != 0 )
+    if ( rs->guiflag != 0 )
     {
-        encwrite(version, strlen(version)+1, savef);
-        sprintf(buf,"%d x %d\n", LINES, COLS);
-        encwrite(buf,80,savef);
+        mvcur(0, COLS - 1, LINES - 1, 0);
+        putchar('\n');
+        endwin();
+        resetltchars();
+        md_chmod(file_name, 0400);
+        if ( guiflag != 0 )
+        {
+            encwrite(version, strlen(version)+1, savef);
+            sprintf(buf,"%d x %d\n", LINES, COLS);
+            encwrite(buf,80,savef);
+        }
     }
-    rs_save_file(rs,savef);
+    memset(&rs->P,0,sizeof(rs->P));
+    rs_save_file(rs,savef); // sets rs->P
+    //fprintf(stderr,"gold.%d hp.%d strength.%d level.%d exp.%d %d\n",rs->P.gold,rs->P.hitpoints,rs->P.strength,rs->P.level,rs->P.experience,rs->P.dungeonlevel);
+
     n = sizeof(rs->P) - sizeof(rs->P.roguepack) + sizeof(rs->P.roguepack[0])*rs->P.packsize;
     memset(histo,0,sizeof(histo));
     for (i=0; i<n; i++)
@@ -170,7 +175,7 @@ save_file(struct rogue_state *rs,FILE *savef,int32_t guiflag)
         rs->playerdata[i] = ((uint8_t *)&rs->P)[i];
     }
     rs->playersize = n;
-    //fprintf(stderr," packsize.%d n.%d\n",rs->P.packsize,n);
+    //fprintf(stderr," packsize.%d playersize.%d\n",rs->P.packsize,n);
     if ( (fp= fopen(rogue_packfname(rs,fname),"wb")) != 0 )
     {
         fwrite(&rs->P,1,n,fp);
@@ -227,7 +232,9 @@ restore(struct rogue_state *rs,char *file, char **envp)
     char buf[MAXSTR];
     //auto
     STAT sbuf2;
-
+    if ( rs->guiflag == 0 )
+        return(0);
+    
     if (strcmp(file, "-r") == 0)
 	file = file_name;
 

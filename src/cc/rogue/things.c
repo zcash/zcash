@@ -502,37 +502,44 @@ add_line(struct rogue_state *rs,char *fmt, char *arg)
             msg(rs,"");
             if ( rs->sleeptime != 0 )
                 refresh();
-            tw = newwin(line_cnt + 1, maxlen + 2, 0, COLS - maxlen - 3);
-            sw = subwin(tw, line_cnt + 1, maxlen + 1, 0, COLS - maxlen - 2);
-            for (y = 0; y <= line_cnt; y++)
+            if ( rs->guiflag != 0 )
             {
-                wmove(sw, y, 0);
-                for (x = 0; x <= maxlen; x++)
-                    waddch(sw, mvwinch(hw, y, x));
-            }
-            wmove(tw, line_cnt, 1);
-            waddstr(tw, prompt);
-            /*
-             * if there are lines below, use 'em
-             */
-            if (LINES > NUMLINES)
-            {
-                if (NUMLINES + line_cnt > LINES)
-                    mvwin(tw, LINES - (line_cnt + 1), COLS - maxlen - 3);
-                else
-                    mvwin(tw, NUMLINES, 0);
-            }
-            touchwin(tw);
-            wrefresh(tw);
-            wait_for(rs,' ');
-            if (md_hasclreol())
-            {
-                werase(tw);
-                leaveok(tw, TRUE);
+                tw = newwin(line_cnt + 1, maxlen + 2, 0, COLS - maxlen - 3);
+                sw = subwin(tw, line_cnt + 1, maxlen + 1, 0, COLS - maxlen - 2);
+                for (y = 0; y <= line_cnt; y++)
+                {
+                    wmove(sw, y, 0);
+                    for (x = 0; x <= maxlen; x++)
+                        waddch(sw, mvwinch(hw, y, x));
+                }
+                wmove(tw, line_cnt, 1);
+                waddstr(tw, prompt);
+                /*
+                 * if there are lines below, use 'em
+                 */
+                if (LINES > NUMLINES)
+                {
+                    if (NUMLINES + line_cnt > LINES)
+                        mvwin(tw, LINES - (line_cnt + 1), COLS - maxlen - 3);
+                    else
+                        mvwin(tw, NUMLINES, 0);
+                }
+                touchwin(tw);
                 wrefresh(tw);
+                wait_for(rs,' ');
+                if (md_hasclreol())
+                {
+                    werase(tw);
+                    leaveok(tw, TRUE);
+                    wrefresh(tw);
+                }
+                delwin(tw);
+                touchwin(stdscr);
             }
-            delwin(tw);
-            touchwin(stdscr);
+            else
+            {
+                wait_for(rs,' ');
+            }
 	    }
 	    else
 	    {

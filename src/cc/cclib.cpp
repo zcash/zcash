@@ -76,7 +76,7 @@ CClib_methods[] =
 std::string CClib_rawtxgen(struct CCcontract_info *cp,uint8_t funcid,cJSON *params);
 
 #ifdef BUILD_ROGUE
-int32_t rogue_replay(uint64_t seed,int32_t sleeptime);
+int32_t rogue_replay(uint64_t seed,int32_t sleepmillis);
 bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx);
 
 UniValue rogue_newgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
@@ -496,6 +496,7 @@ cJSON *cclib_reparse(int32_t *nump,cJSON *origparams) // assumes origparams will
 
 #ifdef BUILD_ROGUE
 #include "rogue_rpc.cpp"
+#include "rogue/cursesd.c"
 #include "rogue/vers.c"
 #include "rogue/extern.c"
 #include "rogue/armor.c"
