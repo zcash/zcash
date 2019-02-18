@@ -387,7 +387,8 @@ UniValue rogue_playerobj(std::vector<uint8_t> playerdata,uint256 playertxid,uint
     obj.push_back(Pair("pack",a));
     obj.push_back(Pair("packsize",(int64_t)P.packsize));
     obj.push_back(Pair("hitpoints",(int64_t)P.hitpoints));
-    obj.push_back(Pair("strength",(int64_t)P.strength));
+    obj.push_back(Pair("strength",(int64_t)(P.strength&0xffff)));
+    obj.push_back(Pair("maxstrength",(int64_t)(P.strength>>16)));
     obj.push_back(Pair("level",(int64_t)P.level));
     obj.push_back(Pair("experience",(int64_t)P.experience));
     obj.push_back(Pair("dungeonlevel",(int64_t)P.dungeonlevel));
@@ -863,12 +864,12 @@ char *rogue_extractgame(char *str,int32_t *numkeysp,std::vector<uint8_t> &newdat
                     newdata[i] = newplayer[i];
                     ((uint8_t *)&endP)[i] = newplayer[i];
                 }
-                if ( endP.gold <= 0 || endP.hitpoints <= 0 || endP.strength <= 0 || endP.level <= 0 || endP.experience <= 0 || endP.dungeonlevel <= 0 )
+                if ( endP.gold <= 0 || endP.hitpoints <= 0 || (endP.strength&0xffff) <= 0 || endP.level <= 0 || endP.experience <= 0 || endP.dungeonlevel <= 0 )
                 {
                     fprintf(stderr,"zero value character was killed -> no playerdata\n");
                     newdata.resize(0);
                 }
-                sprintf(str,"extracted $$$gold.%d hp.%d strength.%d level.%d exp.%d dl.%d\n",endP.gold,endP.hitpoints,endP.strength,endP.level,endP.experience,endP.dungeonlevel);
+                sprintf(str,"extracted $$$gold.%d hp.%d strength.%d/%d level.%d exp.%d dl.%d\n",endP.gold,endP.hitpoints,endP.strength&0xffff,endP.strength>>16,endP.level,endP.experience,endP.dungeonlevel);
                 fprintf(stderr,"%s\n",str);
             } else num = 0;
         }
@@ -993,7 +994,7 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
                             newdata[i] = player[i];
                             ((uint8_t *)&P)[i] = player[i];
                         }
-                        if ( P.gold <= 0 || P.hitpoints <= 0 || P.strength <= 0 || P.level <= 0 || P.experience <= 0 || P.dungeonlevel <= 0 )
+                        if ( P.gold <= 0 || P.hitpoints <= 0 || (P.strength&0xffff) <= 0 || P.level <= 0 || P.experience <= 0 || P.dungeonlevel <= 0 )
                         {
                             fprintf(stderr,"zero value character was killed -> no playerdata\n");
                             newdata.resize(0);
@@ -1005,7 +1006,7 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
                             cpTokens = CCinit(&tokensC, EVAL_TOKENS);
                             mtx.vout.push_back(MakeCC1vout(EVAL_TOKENS, txfee, GetUnspendable(cpTokens,NULL)));            // marker to token cc addr, burnable and validated
                             mtx.vout.push_back(MakeTokensCC1vout(cp->evalcode,1,mypk));
-                            fprintf(stderr,"\nextracted $$$gold.%d hp.%d strength.%d level.%d exp.%d dl.%d n.%d size.%d\n",P.gold,P.hitpoints,P.strength,P.level,P.experience,P.dungeonlevel,n,(int32_t)sizeof(P));
+                            fprintf(stderr,"\nextracted $$$gold.%d hp.%d strength.%d/%d level.%d exp.%d dl.%d n.%d size.%d\n",P.gold,P.hitpoints,P.strength&0xffff,P.strength>>16,P.level,P.experience,P.dungeonlevel,n,(int32_t)sizeof(P));
                             cashout = (uint64_t)P.gold * mult;
                             if ( funcid == 'H' && maxplayers > 1 )
                             {
