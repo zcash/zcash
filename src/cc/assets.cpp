@@ -177,7 +177,7 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
 	// find single-eval token user cc addr:
 	//GetCCaddress(cpTokens, signleEvalTokensCCaddr, pubkey2pk(origpubkey));
 
-    fprintf(stderr,"AssetValidate (%c)\n",funcid);
+    //fprintf(stderr,"AssetValidate (%c)\n",funcid);
 
     if( funcid != 'o' && funcid != 'x' && eval->GetTxUnconfirmed(assetid, createTx, hashBlock) == 0 )
         return eval->Invalid("cant find asset create txid");

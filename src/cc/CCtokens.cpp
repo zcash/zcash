@@ -907,10 +907,12 @@ std::string CreateToken(int64_t txfee, int64_t tokensupply, std::string name, st
         if( nonfungibleData.size() > 0 )
             destEvalCode = nonfungibleData.begin()[0];
 
+        // NOTE: we should prevent spending fake-tokens from this marker in IsTokenvout():
+        mtx.vout.push_back(MakeCC1vout(EVAL_TOKENS, txfee, GetUnspendable(cp, NULL)));            // new marker to token cc addr, burnable and validated, vout pos now changed to 0 (from 1)
 		mtx.vout.push_back(MakeTokensCC1vout(destEvalCode, tokensupply, mypk));
 		//mtx.vout.push_back(CTxOut(txfee, CScript() << ParseHex(cp->CChexstr) << OP_CHECKSIG));  // old marker (non-burnable because spending could not be validated)
-        // NOTE: we should prevent spending fake-tokens from this marker in IsTokenvout():
-        mtx.vout.push_back(MakeCC1vout(EVAL_TOKENS, txfee, GetUnspendable(cp, NULL)));            // new marker to token cc addr, burnable and validated, this vout must be=1
+        //mtx.vout.push_back(MakeCC1vout(EVAL_TOKENS, txfee, GetUnspendable(cp, NULL)));          // ...moved to vout=0 for matching with rogue-game token
+
 		return(FinalizeCCTx(0, cp, mtx, mypk, txfee, EncodeTokenCreateOpRet('c', Mypubkey(), name, description, nonfungibleData)));
 	}
 
@@ -1007,8 +1009,11 @@ UniValue TokenInfo(uint256 tokenid)
     std::vector<uint8_t> origpubkey; 
     std::vector<uint8_t> vopretNonfungible;
     std::string name, description; 
+    struct CCcontract_info *cpTokens, tokensCCinfo;
 
-	if (GetTransaction(tokenid, vintx, hashBlock, false) == 0)
+    cpTokens = CCinit(&tokensCCinfo, EVAL_TOKENS);
+
+	if( !GetTransaction(tokenid, vintx, hashBlock, false) )
 	{
 		fprintf(stderr, "TokenInfo() cant find tokenid\n");
 		result.push_back(Pair("result", "error"));
@@ -1020,17 +1025,23 @@ UniValue TokenInfo(uint256 tokenid)
         LOGSTREAM((char *)"cctokens", CCLOG_INFO, stream << "TokenInfo() passed tokenid isnt token creation txid" << std::endl);
 		result.push_back(Pair("result", "error"));
 		result.push_back(Pair("error", "tokenid isnt token creation txid"));
+        return result;
 	}
 	result.push_back(Pair("result", "success"));
 	result.push_back(Pair("tokenid", tokenid.GetHex()));
 	result.push_back(Pair("owner", HexStr(origpubkey)));
 	result.push_back(Pair("name", name));
-	result.push_back(Pair("supply", vintx.vout[0].nValue));
+
+    int64_t supply = 0, output;
+    for (int v = 0; v < vintx.vout.size() - 1; v++)
+        if ((output = IsTokensvout(false, true, cpTokens, NULL, vintx, v, tokenid)) > 0)
+            supply += output;
+	result.push_back(Pair("supply", supply));
 	result.push_back(Pair("description", description));
     if( !vopretNonfungible.empty() )    
         result.push_back(Pair("data", HexStr(vopretNonfungible)));
 
-	return(result);
+	return result;
 }
 
 UniValue TokenList()

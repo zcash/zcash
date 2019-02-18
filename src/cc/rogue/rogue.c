@@ -91,7 +91,9 @@ void rogueiterate(struct rogue_state *rs)
     
     // Set up windows
     if ( hw == NULL )
+    {
         hw = newwin(LINES, COLS, 0, 0);
+    }
     idlok(stdscr, TRUE);
     idlok(hw, TRUE);
 #ifdef MASTER
@@ -248,6 +250,7 @@ int32_t rogue_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t nu
         rs->restoring = 1;
         //fprintf(stderr,"restore player packsize.%d HP.%d\n",rs->P.packsize,rs->P.hitpoints);
     }
+    globalR = *rs;
     uint32_t starttime = (uint32_t)time(NULL);
     rogueiterate(rs);
     if ( 0 )
@@ -271,6 +274,7 @@ int32_t rogue_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t nu
     if ( (fp= fopen("checkfile","wb")) != 0 )
     {
         save_file(rs,fp,0);
+        fprintf(stderr,"gold.%d hp.%d strength.%d/%d level.%d exp.%d dungeon.%d data[%d]\n",rs->P.gold,rs->P.hitpoints,rs->P.strength&0xffff,rs->P.strength>>16,rs->P.level,rs->P.experience,rs->P.dungeonlevel,rs->playersize);
         if ( newdata != 0 && rs->playersize > 0 )
             memcpy(newdata,rs->playerdata,rs->playersize);
     }
@@ -334,10 +338,11 @@ int32_t rogue_replay(uint64_t seed,int32_t sleeptime)
             }
             fclose(fp);
         }
-        rogue_replay2(0,seed,keystrokes,num,player,150);
+        rogue_replay2(0,seed,keystrokes,num,player,sleeptime);
 
-        //mvaddstr(LINES - 2, 0, (char *)"replay completed");
+        mvaddstr(LINES - 2, 0, (char *)"replay completed");
         endwin();
+        my_exit(0);
     }
     if ( keystrokes != 0 )
         free(keystrokes);
@@ -542,8 +547,10 @@ tstp(int ignored)
     fflush(stdout);
     //wmove(curscr,oy,ox);
 #ifndef __APPLE__
+#ifndef BUILD_ROGUE
     curscr->_cury = oy;
     curscr->_curx = ox;
+#endif
 #endif
 }
 
@@ -588,7 +595,7 @@ playit(struct rogue_state *rs)
         {
             if ( rs->replaydone != 0 )
             {
-                if ( rs->sleeptime != 0 )
+                if ( 0 && rs->sleeptime != 0 )
                     sleep(3);
                 return;
             }
@@ -597,7 +604,7 @@ playit(struct rogue_state *rs)
         }
         else
         {
-            if ( rs->needflush != 0 && rs->num > 4096 )
+            if ( rs->needflush != 0 && rs->num > 1024 )
             {
                 if ( flushkeystrokes(rs) == 0 )
                     rs->needflush = 0;
@@ -607,30 +614,17 @@ playit(struct rogue_state *rs)
     endit(0);
 }
 
-/*
- * quit:
- *	Have player make certain, then exit.
- */
 
-void
-quit(int sig)
+
+int32_t _quit()
 {
     struct rogue_state *rs = &globalR;
-    int oy, ox;
+    int oy, ox, c;
     //fprintf(stderr,"inside quit(%d)\n",sig);
-    if ( rs->guiflag != 0 )
-    {
-        NOOP(sig);
-        
-        /*
-         * Reset the signal in case we got here via an interrupt
-         */
-        if (!q_comm)
-            mpos = 0;
-        getyx(curscr, oy, ox);
-        msg(rs,"really quit?");
-    }
-    if (readchar(rs) == 'y')
+    getyx(curscr, oy, ox);
+    msg(rs,"really quit?");
+    //sleep(1);
+    if ( (c= readchar(rs)) == 'y')
     {
         if ( rs->guiflag != 0 )
         {
@@ -647,11 +641,13 @@ quit(int sig)
         else
         {
             //score(rs,purse, 1, 0);
-            //fprintf(stderr,"done!\n");
+            fprintf(stderr,"done! (%c)\n",c);
         }
+        return(1);
     }
     else
     {
+        fprintf(stderr,"'Q' answer (%c)\n",c);
         move(0, 0);
         clrtoeol();
         status(rs);
@@ -661,7 +657,31 @@ quit(int sig)
         mpos = 0;
         count = 0;
         to_death = FALSE;
+        return(0);
     }
+}
+
+/*
+ * quit:
+ *	Have player make certain, then exit.
+ */
+
+void quit(int sig)
+{
+    struct rogue_state *rs = &globalR;
+    int oy, ox, c;
+    //fprintf(stderr,"inside quit(%d)\n",sig);
+    if ( rs->guiflag != 0 )
+    {
+        NOOP(sig);
+        
+        /*
+         * Reset the signal in case we got here via an interrupt
+         */
+        if (!q_comm)
+            mpos = 0;
+    }
+    _quit();
 }
 
 /*
@@ -737,11 +757,11 @@ my_exit(int st)
 {
     uint32_t counter;
     resetltchars();
-    if ( globalR.guiflag != 0 )
+    if ( globalR.guiflag != 0 || globalR.sleeptime != 0 )
         exit(st);
     else if ( counter++ < 10 )
     {
-        fprintf(stderr,"would have exit.(%d)\n",st);
+        fprintf(stderr,"would have exit.(%d) sleeptime.%d\n",st,globalR.sleeptime);
         globalR.replaydone = 1;
     }
 }
