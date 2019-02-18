@@ -1226,9 +1226,18 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
         if ( vopret.size() > 2 )
         {
             script = (uint8_t *)vopret.data();
+            if ( script[0] == EVAL_TOKENS )
+            {
+                if ( script[1] == 'c' )
+                {
+                }
+                else if ( script[1] == 't' )
+                {
+                } else return eval->Invalid("illegal tokens funcid");
+            }
             if ( script[0] == EVAL_ROGUE )
             {
-                switch ( script[1] )
+                switch ( funcid )
                 {
                     case 'G': // newgame
                     case 'R': // register
@@ -1241,18 +1250,6 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
                     default:
                         return eval->Invalid("illegal rogue funcid");
                         break;
-                }
-            }
-            else if ( script[0] == EVAL_TOKENS )
-            {
-                fprintf(stderr,"ht.%d tokens.(%c)\n",height,script[1]);
-                if ( script[1] == 'c' )
-                {
-                    return(true);
-                }
-                else
-                {
-                    return(true);
                 }
             } else return eval->Invalid("illegal evalcode");
         } else return eval->Invalid("opret too small");
