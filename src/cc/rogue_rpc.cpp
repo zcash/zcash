@@ -1218,7 +1218,7 @@ UniValue rogue_setname(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 
 int32_t rogue_playerdata_validate(struct CCcontract_info *cp,std::vector<uint8_t> playerdata,uint256 gametxid,CPubKey pk)
 {
-    char str[512],*keystrokes,rogueaddr[64]; int32_t numkeys; std::vector<uint8_t> newdata; uint64_t seed; uint256 platertxid; CPubKey roguepk;
+    char str[512],*keystrokes,rogueaddr[64]; int32_t numkeys; std::vector<uint8_t> newdata; uint64_t seed; uint256 playertxid; CPubKey roguepk;
     roguepk = GetUnspendable(cp,0);
     GetCCaddress1of2(cp,rogueaddr,roguepk,pk);
     if ( (keystrokes= rogue_extractgame(str,&numkeys,newdata,seed,playertxid,cp,gametxid,rogueaddr)) != 0 )
@@ -1314,7 +1314,7 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
                         {
                             if ( rogue_playerdata_validate(cp,playerdata,gametxid,pk) < 0 )
                             {
-                                fprintf(stderr,"ht.%d gametxid.%s player.%x invalid playerdata[%d]\n",height,gametxid.GetHex().c_str(),playertxid.GetHex().c_str(),(int32_t)playerdata.size());
+                                fprintf(stderr,"ht.%d gametxid.%s player.%s invalid playerdata[%d]\n",height,gametxid.GetHex().c_str(),playertxid.GetHex().c_str(),(int32_t)playerdata.size());
                             } else fprintf(stderr,"ht.%d playertxid.%s validated\n",height,playertxid.GetHex().c_str());
                         }
                         if ( funcid == 'Q' )
