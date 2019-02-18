@@ -259,7 +259,8 @@ over:
 			again = TRUE;
 			goto over;
 		    }
-		when 'q': quaff(rs);
+		case 'q': quaff(rs);
+                break;
 		when 'Q':
 		    after = FALSE;
 		    q_comm = TRUE;
