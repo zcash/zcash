@@ -329,9 +329,15 @@ int32_t rogue_isvalidgame(struct CCcontract_info *cp,int32_t &gameheight,CTransa
 {
     uint256 hashBlock; int32_t i,numvouts; char coinaddr[64]; CPubKey roguepk; uint64_t txfee = 10000;
     buyin = maxplayers = 0;
-    if ( myGetTransaction(txid,tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 1 )
+    if ( (txid == zeroid || myGetTransaction(txid,tx,hashBlock) != 0) && (numvouts= tx.vout.size()) > 1 )
     {
-        gameheight = komodo_blockheight(hashBlock);
+        if ( txid != zeroid )
+            gameheight = komodo_blockheight(hashBlock);
+        else
+        {
+            txid = tx.GetHash();
+            //fprintf(stderr,"set txid %s %llu\n",txid.GetHex().c_str(),(long long)CCgettxout(txid,0,1));
+        }
         if ( IsCClibvout(cp,tx,0,cp->unspendableCCaddr) == txfee && (unspentv0 == 0 || CCgettxout(txid,0,1) == txfee) )
         {
             if ( rogue_newgameopreturndecode(buyin,maxplayers,tx.vout[numvouts-1].scriptPubKey) == 'G' )
@@ -1294,8 +1300,10 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
                     switch ( funcid )
                     {
                         case 'G': // seems just need to make sure no vout abuse is left to do
+                            gametx = tx;
                             gametxid = tx.GetHash();
-                            if ( (err= rogue_isvalidgame(cp,gameheight,gametx,buyin,maxplayers,gametxid,0)) != 0 )
+                            gameheight = height;
+                            if ( (err= rogue_isvalidgame(cp,gameheight,gametx,buyin,maxplayers,zeroid,0)) != 0 )
                             {
                                 fprintf(stderr,"height.%d %s rogue_isvalidgame error.%d\n",height,gametxid.GetHex().c_str(),err);
                                 return eval->Invalid("invalid gametxid");
