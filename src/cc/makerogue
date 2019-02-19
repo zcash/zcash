@@ -1,8 +1,11 @@
 #!/bin/sh
 cd rogue;
-./configure # only need this first time
-echo "you can ignore ./makerogue: shell: not found"
+./configure
 make; cd ..
-gcc -Wno-write-strings -DBUILD_ROGUE -std=c++11 -I../../depends/$(shell echo `../..//depends/config.guess`/include) -I../univalue/include -I../cryptoconditions/include -I../cryptoconditions/src -I../cryptoconditions/src/asn -I.. -I. -fPIC -shared -o librogue.so -c cclib.cpp 
-cp librogue.so ../libcc.so
 
+if make -f Makefile_rogue "$@"; then
+  echo ROGUE BUILD SUCCESSFUL
+else
+  echo ROGUE BUILD FAILED
+  exit 1
+fi
