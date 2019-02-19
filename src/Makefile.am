@@ -572,13 +572,15 @@ komodod_LDADD += \
   $(LIBVERUS_CRYPTO) \
   $(LIBVERUS_PORTABLE_CRYPTO) \
   $(LIBZCASH_LIBS)
-
+  
 if TARGET_DARWIN
 komodod_LDADD += libcc.dylib
-else
-komodod_LDADD += libcc.so 
 endif
-
+if TARGET_WINDOWS
+komodod_LDADD += libcc.dll
+else
+komodod_LDADD += libcc.so
+endif
 
 if ENABLE_PROTON
 komodod_LDADD += $(LIBBITCOIN_PROTON) $(PROTON_LIBS)
