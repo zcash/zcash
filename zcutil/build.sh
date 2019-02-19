@@ -103,20 +103,12 @@ ld -v
 
 
 HOST="$HOST" BUILD="$BUILD" NO_PROTON="$PROTON_ARG" "$MAKE" "$@" -C ./depends/ V=1
-
 #BUILD CCLIB
 
 WD=$PWD
 cd src/cc
 echo $PWD
-
-if make "$@"; then
-  echo CCLIB BUILD SUCCESSFUL
-else
-  echo CCLIB BUILD FAILED
-  exit 1
-fi
-
+./makerogue
 cd $WD
 
 ./autogen.sh
