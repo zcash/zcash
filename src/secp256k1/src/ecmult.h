@@ -1,4 +1,4 @@
-#ifdef ENABLE_MODULE_MUSIG
+#ifndef ENABLE_MODULE_MUSIG
 
 /**********************************************************************
  * Copyright (c) 2013, 2014 Pieter Wuille                             *
