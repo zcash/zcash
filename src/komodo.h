@@ -878,7 +878,6 @@ int32_t komodo_connectblock(bool fJustCheck, CBlockIndex *pindex,CBlock& block)
                 break;
             }
             // Notary pay chains need notarisation in position 1, ignore the rest on validation. Check notarisation is 1 on check.
-            // make sure for first 3 notarizations, that we check all tx in block!
             if ( !fJustCheck && i > 1 && ASSETCHAINS_NOTARY_PAY[0] != 0 )
                 break;
             txhash = block.vtx[i].GetHash();

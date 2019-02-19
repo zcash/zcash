@@ -5430,50 +5430,54 @@ UniValue setpubkey(const UniValue& params, bool fHelp)
 
     LOCK2(cs_main, pwalletMain ? &pwalletMain->cs_wallet : NULL);
 
-    char Raddress[18];
+    char Raddress[64];
     uint8_t pubkey33[33];
-    if ( NOTARY_PUBKEY33[0] == 0 ) {
-        if (strlen(params[0].get_str().c_str()) == 66) {
+    if ( NOTARY_PUBKEY33[0] == 0 ) 
+    {
+        if (strlen(params[0].get_str().c_str()) == 66) 
+        {
             decode_hex(pubkey33,33,(char *)params[0].get_str().c_str());
             pubkey2addr((char *)Raddress,(uint8_t *)pubkey33);
-            if (strcmp("RRmWExvapDM9YbLT9X9xAyzDgxomYf63ng",Raddress) == 0) {
-                result.push_back(Pair("error", "pubkey entered is invalid."));
-            } else {
-                CBitcoinAddress address(Raddress);
-                bool isValid = address.IsValid();
-                if (isValid)
+            CBitcoinAddress address(Raddress);
+            bool isValid = address.IsValid();
+            if (isValid)
+            {
+                CTxDestination dest = address.Get();
+                isminetype mine = pwalletMain ? IsMine(*pwalletMain, dest) : ISMINE_NO;
+                if ( mine == ISMINE_NO ) 
+                    result.push_back(Pair("WARNING", "privkey for this pubkey is not imported to wallet!"));
+                else 
                 {
-                    CTxDestination dest = address.Get();
-                    isminetype mine = pwalletMain ? IsMine(*pwalletMain, dest) : ISMINE_NO;
-                    if ( mine == ISMINE_NO ) {
-                        result.push_back(Pair("WARNING", "privkey for this pubkey is not imported to wallet!"));
-                    } else {
-                        result.push_back(Pair("ismine", "true"));
-                        std::string notaryname;
-                        if ( (IS_STAKED_NOTARY= StakedNotaryID(notaryname, Raddress)) > -1 ) {
-                            result.push_back(Pair("IsNotary", notaryname));
-                            IS_KOMODO_NOTARY = 0;
-                        }
+                    result.push_back(Pair("ismine", "true"));
+                    std::string notaryname;
+                    if ( (IS_STAKED_NOTARY= StakedNotaryID(notaryname, Raddress)) > -1 ) 
+                    {
+                        result.push_back(Pair("IsNotary", notaryname));
+                        IS_KOMODO_NOTARY = 0;
                     }
-                    NOTARY_PUBKEY = params[0].get_str();
-                    decode_hex(NOTARY_PUBKEY33,33,(char *)NOTARY_PUBKEY.c_str());
-                    USE_EXTERNAL_PUBKEY = 1;
-                    NOTARY_ADDRESS = address.ToString();
-                  } else {
-                    result.push_back(Pair("error", "pubkey entered is invalid."));
                 }
+                NOTARY_PUBKEY = params[0].get_str();
+                decode_hex(NOTARY_PUBKEY33,33,(char *)NOTARY_PUBKEY.c_str());
+                USE_EXTERNAL_PUBKEY = 1;
+                NOTARY_ADDRESS = address.ToString();
             }
-        } else {
-            result.push_back(Pair("error", "pubkey is wrong length, must be 66 char hex string."));
+            else
+                result.push_back(Pair("error", "pubkey entered is invalid."));
         }
-    } else {
-        if ( NOTARY_ADDRESS.empty() ) {
+        else
+            result.push_back(Pair("error", "pubkey is wrong length, must be 66 char hex string."));
+    } 
+    else 
+    {
+        if ( NOTARY_ADDRESS.empty() ) 
+        {
           pubkey2addr((char *)Raddress,(uint8_t *)NOTARY_PUBKEY33);
           NOTARY_ADDRESS.assign(Raddress);
         }
         result.push_back(Pair("error", "Can only set pubkey once, to change it you need to restart your daemon."));
     }
-    if ( NOTARY_PUBKEY33[0] != 0 && !NOTARY_ADDRESS.empty() ) {
+    if ( NOTARY_PUBKEY33[0] != 0 && !NOTARY_ADDRESS.empty() ) 
+    {
         result.push_back(Pair("address", NOTARY_ADDRESS));
         result.push_back(Pair("pubkey", NOTARY_PUBKEY));
     }
