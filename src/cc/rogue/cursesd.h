@@ -48,7 +48,10 @@ extern WINDOW *stdscr,*curscr;
 extern int32_t ESCDELAY;
 typedef char chtype;
 
+#ifndef __MINGW32__
 int32_t getch(void); // stub
+#endif
+
 int32_t md_readchar(void); // stub
 
 WINDOW *initscr(void);
