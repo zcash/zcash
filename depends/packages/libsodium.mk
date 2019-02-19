@@ -6,6 +6,13 @@ $(package)_sha256_hash=fb6a9e879a2f674592e4328c5d9f79f082405ee4bb05cb6e679b90afe
 $(package)_dependencies=
 $(package)_config_opts=
 
+ifeq ($(build_os),darwin)
+define $(package)_set_vars
+  $(package)_build_env=MACOSX_DEPLOYMENT_TARGET="10.11"
+  $(package)_cc=clang
+  $(package)_cxx=clang++
+endef
+endif
 
 define $(package)_preprocess_cmds
   cd $($(package)_build_subdir); ./autogen.sh
