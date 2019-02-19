@@ -1298,8 +1298,7 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
                             if ( (err= rogue_isvalidgame(cp,gameheight,gametx,buyin,maxplayers,gametxid,0)) != 0 )
                             {
                                 fprintf(stderr,"height.%d %s rogue_isvalidgame error.%d\n",height,gametxid.GetHex().c_str(),err);
-                                if ( height > 30000 )
-                                    return eval->Invalid("invalid gametxid");
+                                return eval->Invalid("invalid gametxid");
                             }
                             //fprintf(stderr,"height.%d %s rogue_isvalidgame\n",height,gametxid.GetHex().c_str());
                             return(true);
