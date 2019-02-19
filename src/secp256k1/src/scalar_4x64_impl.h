@@ -2001,5 +2001,6 @@ static void secp256k1_scalar_chacha20(secp256k1_scalar *r1, secp256k1_scalar *r2
 #undef LE32
 
 #endif /* SECP256K1_SCALAR_REPR_IMPL_H */
+xxx
 #endif
 
