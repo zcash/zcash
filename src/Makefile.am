@@ -574,9 +574,9 @@ komodod_LDADD += \
   $(LIBZCASH_LIBS)
 
 if TARGET_DARWIN
-komodod_LDADD += libcc.dylib # -lncurses
+komodod_LDADD += libcc.dylib
 else
-komodod_LDADD += libcc.so # -lncurses
+komodod_LDADD += libcc.so 
 endif
 
 
