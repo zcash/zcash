@@ -248,7 +248,7 @@ int32_t rogue_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t nu
     {
         rs->P = *player;
         rs->restoring = 1;
-        fprintf(stderr,"restore player packsize.%d HP.%d\n",rs->P.packsize,rs->P.hitpoints);
+        //fprintf(stderr,"restore player packsize.%d HP.%d\n",rs->P.packsize,rs->P.hitpoints);
         if ( rs->P.packsize > MAXPACK )
             rs->P.packsize = MAXPACK;
     }
@@ -650,7 +650,7 @@ int32_t _quit()
     }
     else
     {
-        fprintf(stderr,"'Q' answer (%c)\n",c);
+        //fprintf(stderr,"'Q' answer (%c)\n",c);
         move(0, 0);
         clrtoeol();
         status(rs);
