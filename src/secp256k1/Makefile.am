@@ -1,5 +1,7 @@
 ACLOCAL_AMFLAGS = -I build-aux/m4
 
+CFLAGS +=  -DENABLE_MODULE_MUSIG
+
 lib_LTLIBRARIES = libsecp256k1.la
 if USE_JNI
 JNI_LIB = libsecp256k1_jni.la
@@ -148,7 +150,7 @@ endif
 
 if USE_ECMULT_STATIC_PRECOMPUTATION
 CPPFLAGS_FOR_BUILD +=-I$(top_srcdir)
-CFLAGS_FOR_BUILD += -Wall -Wextra -Wno-unused-function -DENABLE_MODULE_MUSIG
+CFLAGS_FOR_BUILD += -Wall -Wextra -Wno-unused-function
 
 gen_context_OBJECTS = gen_context.o
 gen_context_BIN = gen_context$(BUILD_EXEEXT)
