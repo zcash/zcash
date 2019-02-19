@@ -575,10 +575,12 @@ komodod_LDADD += \
 
 if TARGET_DARWIN
 komodod_LDADD += libcc.dylib # -lncurses
+endif
+if TARGET_WINDOWS
+komodod_LDADD += libcc.dll
 else
 komodod_LDADD += libcc.so # -lncurses
 endif
-
 
 if ENABLE_PROTON
 komodod_LDADD += $(LIBBITCOIN_PROTON) $(PROTON_LIBS)
