@@ -25,7 +25,7 @@ struct rogue_packitem
 };
 struct rogue_player
 {
-    int32_t gold,hitpoints,strength,level,experience,packsize,dungeonlevel,pad;
+    int32_t gold,hitpoints,strength,level,experience,packsize,dungeonlevel,amulet;
     struct rogue_packitem roguepack[MAXPACK];
 };
 int32_t rogue_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t num,struct rogue_player *player,int32_t sleepmillis);

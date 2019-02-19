@@ -22,6 +22,13 @@
  */
 void rogue_restoreobject(THING *o,struct rogue_packitem *item);
 
+int32_t rogue_total(THING *o)
+{
+    if ( (o->o_flags & ISMANY) != 0 )
+        return(1);
+    else return(o->o_count);
+}
+
 void restore_player(struct rogue_state *rs)
 {
     int32_t i,total = 0; THING *obj;
@@ -38,8 +45,8 @@ void restore_player(struct rogue_state *rs)
     {
         obj = new_item();
         rogue_restoreobject(obj,&rs->P.roguepack[i]);
-        total += obj->o_count;
-        if ( total > pstats.s_str*3 )
+        total += rogue_total(obj);
+        if ( total > ROGUE_MAXTOTAL )
             break;
         add_pack(rs,obj,TRUE);
     }
