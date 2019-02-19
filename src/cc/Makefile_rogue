@@ -27,8 +27,8 @@ ifeq ($(OS),Darwin)
 else ifeq ($(HOST),x86_64-w64-mingw32)
 	$(info WINDOWS)
 	wget -O ../../depends/x86_64-w64-mingw32/mingw64.zip https://invisible-island.net/datafiles/release/mingw32.zip
-    	cd ../../depends/x86_64-w64-mingw32 && unzip mingw32.zip
-    	cd $(DIR)
+	cd ../../depends/x86_64-w64-mingw32 && unzip mingw32.zip
+	cd $(DIR)
 	$(CC_WIN) $(CFLAGS_WIN) $(DEBUGFLAGS) -o $(TARGET_WIN) -c $(SOURCES) -lncurses
 	cp $(TARGET_WIN) ../libcc.dll
 #else ifeq ($(WIN_HOST),True) - todo: pass ENV var from build.sh if WIN host
