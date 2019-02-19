@@ -960,7 +960,7 @@ PKGCONFIG_LIBDIR_TEMP="$PKG_CONFIG_LIBDIR"
 unset PKG_CONFIG_LIBDIR
 PKG_CONFIG_LIBDIR="$PKGCONFIG_LIBDIR_TEMP"
 
-ac_configure_args="${ac_configure_args} --disable-shared --with-pic --with-bignum=no --enable-module-recovery"
+ac_configure_args="${ac_configure_args} -DENABLE_MODULE_MUSIG --disable-shared --with-pic --with-bignum=no --enable-module-recovery"
 AC_CONFIG_SUBDIRS([src/secp256k1 src/snark src/univalue src/cryptoconditions])
 
 AC_OUTPUT
