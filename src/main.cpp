@@ -1111,7 +1111,8 @@ bool ContextualCheckTransaction(
         if (IsExpiredTx(tx, nHeight)) {
             // Don't increase banscore if the transaction only just expired
             int expiredDosLevel = IsExpiredTx(tx, nHeight - 1) ? (dosLevel > 10 ? dosLevel : 10) : 0;
-            return state.DoS(expiredDosLevel, error("ContextualCheckTransaction(): transaction is expired"), REJECT_INVALID, "tx-overwinter-expired");
+            
+            return state.DoS(expiredDosLevel, error("ContextualCheckTransaction(): transaction %s is expired, expiry block %i vs current block %i",tx.GetHash().ToString(),tx.nExpiryHeight,nHeight), REJECT_INVALID, "tx-overwinter-expired");
         }
     }
 
