@@ -1288,7 +1288,7 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
             }
             if ( e == EVAL_ROGUE )
             {
-                fprintf(stderr,"ht.%d rogue.(%c)\n",height,script[1]);
+                //fprintf(stderr,"ht.%d rogue.(%c)\n",height,script[1]);
                 if ( decoded == 0 )
                 {
                     switch ( funcid )
