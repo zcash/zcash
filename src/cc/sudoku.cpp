@@ -3049,3 +3049,8 @@ bool sudoku_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const 
     return eval->Invalid("not enough vouts");
 }
 
+#include <secp256k1.h>
+#include <secp256k1_schnorrsig.h>
+#include <secp256k1_musig.h>
+
+
