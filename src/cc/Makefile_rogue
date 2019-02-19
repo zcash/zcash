@@ -4,12 +4,11 @@ CC_DARWIN	= g++-6
 CC_WIN		= x86_64-w64-mingw32-gcc-posix
 CFLAGS_DARWIN	= -DBUILD_ROGUE -std=c++11 -arch x86_64 -I../../depends/$(shell echo `../..//depends/config.guess`/include) -I../univalue/include -I../cryptoconditions/include -I../cryptoconditions/src -I../cryptoconditions/src/asn -I.. -I. -fPIC -Wl,-undefined -Wl,dynamic_lookup -Wno-write-strings -shared -dynamiclib
 CFLAGS		= -Wno-write-strings -DBUILD_ROGUE -std=c++11 -I../../depends/$(shell echo `../..//depends/config.guess`/include) -I../univalue/include -I../cryptoconditions/include -I../cryptoconditions/src -I../cryptoconditions/src/asn -I.. -I. -fPIC -shared
-CFLAGS_WIN	= -Wno-write-strings -DBUILD_ROGUE -std=c++11 -I../../depends/x86_64-w64-mingw32/include -I../../depends/x86_64-w64-mingw32/include/ncursesw -I../univalue/include -I../cryptoconditions/include -I../cryptoconditions/src -I../cryptoconditions/src/asn -I.. -I. -fPIC -shared
+CFLAGS_WIN	= -Wno-write-strings -DBUILD_ROGUE -std=c++11 -I../../depends/x86_64-w64-mingw32/include -I../univalue/include -I../cryptoconditions/include -I../cryptoconditions/src -I../cryptoconditions/src/asn -I.. -I. -fPIC -shared
 DEBUGFLAGS	= -O0 -D _DEBUG
 RELEASEFLAGS	= -O2 -D NDEBUG -combine -fwhole-program
 $(info $(OS))
 OS := $(shell uname -s)
-DIR := ${CURDIR}
 $(info $(OS))
 TARGET  = librogue.so
 TARGET_DARWIN = librogue.dylib
@@ -22,19 +21,16 @@ all: $(TARGET)
 $(TARGET): $(SOURCES)
 	$(info Building cclib to src/)
 ifeq ($(OS),Darwin)
-	$(CC_DARWIN) $(CFLAGS_DARWIN) $(DEBUGFLAGS) -o $(TARGET_DARWIN) -c $(SOURCES) -lncurses
+	$(CC_DARWIN) $(CFLAGS_DARWIN) $(DEBUGFLAGS) -o $(TARGET_DARWIN) -c $(SOURCES)
 	cp $(TARGET_DARWIN) ../libcc.dylib
 else ifeq ($(HOST),x86_64-w64-mingw32)
 	$(info WINDOWS)
-	wget -O ../../depends/x86_64-w64-mingw32/mingw32.zip https://invisible-island.net/datafiles/release/mingw32.zip
-	cd ../../depends/x86_64-w64-mingw32 && unzip mingw32.zip
-	cd $(DIR)
-	$(CC_WIN) $(CFLAGS_WIN) $(DEBUGFLAGS) -o $(TARGET_WIN) -c $(SOURCES) -lncurses
+	$(CC_WIN) $(CFLAGS_WIN) $(DEBUGFLAGS) -o $(TARGET_WIN) -c $(SOURCES)
 	cp $(TARGET_WIN) ../libcc.dll
 #else ifeq ($(WIN_HOST),True) - todo: pass ENV var from build.sh if WIN host
 else
 	$(info LINUX)
-	$(CC) $(CFLAGS) $(DEBUGFLAGS) -o $(TARGET) -c $(SOURCES) -lncurses
+	$(CC) $(CFLAGS) $(DEBUGFLAGS) -o $(TARGET) -c $(SOURCES)
 	cp $(TARGET) ../libcc.so
 endif
 
