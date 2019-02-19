@@ -1297,7 +1297,7 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
                         case 'G': // seems just need to make sure no vout abuse is left to do
                             gametxid = tx.GetHash();
                             gameheight = height;
-                            if ( (err= rogue_isvalidgame(cp,gameheight,tx,buyin,maxplayers,zerotxid,0)) != 0 )
+                            if ( (err= rogue_isvalidgame(cp,gameheight,tx,buyin,maxplayers,zeroid,0)) != 0 )
                             {
                                 fprintf(stderr,"height.%d %s rogue_isvalidgame error.%d\n",height,gametxid.GetHex().c_str(),err);
                                 return eval->Invalid("invalid gametxid");
