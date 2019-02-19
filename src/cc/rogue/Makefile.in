@@ -111,7 +111,7 @@ CFILES   = vers.c extern.c armor.c chase.c command.c daemon.c \
            main.c  mdport.c misc.c monsters.c move.c new_level.c \
            options.c pack.c passages.c potions.c rings.c rip.c \
            rooms.c save.c scrolls.c state.c sticks.c things.c \
-           weapons.c wizard.c xcrypt.c cursesd.c
+           weapons.c wizard.c xcrypt.c
 MISC_C   = findpw.c scedit.c scmisc.c
 DOCSRC   = rogue.me.in rogue.6.in rogue.doc.in rogue.html.in rogue.cat.in
 DOCS     = $(PROGRAM).doc $(PROGRAM).html $(PROGRAM).cat $(PROGRAM).me \
@@ -128,9 +128,11 @@ MISC     = Makefile.std LICENSE.TXT rogue54.sln rogue54.vcproj rogue.spec \
     
 .c.o:
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c $*.c
-    
+
+#$(RM) rogue.so ; $(CC) -shared -o rogue.so cursesd.c $(OBJS1) $(OBJS2); $(CC) $(CFLAGS) $(LDFLAGS) $(OBJS) $(LIBS) -o $@
+
 $(PROGRAM): $(HDRS) $(OBJS)
-	$(RM) rogue.so ; $(CC) -shared -o rogue.so cursesd.c $(OBJS1) $(OBJS2); $(CC) $(CFLAGS) $(LDFLAGS) $(OBJS) $(LIBS) -o $@
+	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS) $(LIBS) -o $@
 
 clean:
 	$(RM) $(OBJS1); $(RM) main.$(O) ; $(RM) rogue.so
