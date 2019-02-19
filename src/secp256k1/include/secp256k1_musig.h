@@ -278,7 +278,7 @@ SECP256K1_API int secp256k1_musig_session_combine_nonces(
     size_t n_signers,
     int *nonce_is_negated,
     const secp256k1_pubkey *adaptor
-) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(4);
+) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(3);
 
 /** Sets the message of a session if previously unset
  *
