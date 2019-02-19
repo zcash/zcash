@@ -166,16 +166,16 @@ int32_t num_packitems(struct rogue_state *rs)
         if ( list->o_packch != 0 )
         {
             n++;
-            total += list->o_count;
+            total += rogue_total(list);
         }
     }
     if ( rs->guiflag != 0 ) 
     {
         char str[MAXSTR];
-        sprintf(str,"strength*3 %d vs total.%d vs %d inventory letters\n",pstats.s_str*3,total,n);
+        sprintf(str,"strength*2 %d vs total.%d vs %d inventory letters\n",ROGUE_MAXTOTAL,total,n);
         add_line(rs,"%s",str);
     }
-    if ( total > pstats.s_str*3 )
+    if ( total > ROGUE_MAXTOTAL )
         return(MAXPACK);
     return(n);
 }

@@ -381,6 +381,9 @@ void restore_player(struct rogue_state *rs);
 int32_t rogue_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t num,struct rogue_player *player,int32_t sleepmillis);
 void rogue_bailout(struct rogue_state *rs);
 
+#define ROGUE_MAXTOTAL (pstats.s_str*2)
+int32_t rogue_total(THING *o);
+
 /*
  * Help list
  */
