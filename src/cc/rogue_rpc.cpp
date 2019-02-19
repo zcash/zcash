@@ -325,18 +325,20 @@ uint64_t rogue_gamefields(UniValue &obj,int64_t maxplayers,int64_t buyin,uint256
     return(seed);
 }
 
-int32_t rogue_isvalidgame(struct CCcontract_info *cp,int32_t &gameheight,CTransaction &tx,int64_t &buyin,int32_t &maxplayers,uint256 txid)
+int32_t rogue_isvalidgame(struct CCcontract_info *cp,int32_t &gameheight,CTransaction &tx,int64_t &buyin,int32_t &maxplayers,uint256 txid,int32_t unspentv0)
 {
     uint256 hashBlock; int32_t i,numvouts; char coinaddr[64]; CPubKey roguepk; uint64_t txfee = 10000;
     buyin = maxplayers = 0;
     if ( myGetTransaction(txid,tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 1 )
     {
         gameheight = komodo_blockheight(hashBlock);
-        if ( IsCClibvout(cp,tx,0,cp->unspendableCCaddr) >= txfee && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,0) == 0 )
+        if ( IsCClibvout(cp,tx,0,cp->unspendableCCaddr) == txfee && (unspentv0 == 0 || CCgettxout(playertxid,0,1) == txfee) )
         {
             if ( rogue_newgameopreturndecode(buyin,maxplayers,tx.vout[numvouts-1].scriptPubKey) == 'G' )
             {
-                if ( numvouts > maxplayers+1 )
+                if ( maxplayers < 1 || maxplayers > ROGUE_MAXPLAYERS || buyin < 0 )
+                    return(-6);
+                if ( numvouts > 2*maxplayers+1 )
                 {
                     for (i=0; i<maxplayers; i++)
                     {
@@ -346,10 +348,11 @@ int32_t rogue_isvalidgame(struct CCcontract_info *cp,int32_t &gameheight,CTransa
                             break;
                     }
                     if ( i == maxplayers )
+                    {
+                        // dimxy: make sure no vouts to any address other than main CC and 0.0001 faucet
                         return(0);
-                    else return(-5);
-                }
-                else return(-4);
+                    } else return(-5);
+                } else return(-4);
             } else return(-3);
         } else return(-2);
     } else return(-1);
@@ -447,7 +450,7 @@ int32_t rogue_playerdata(struct CCcontract_info *cp,uint256 &origplayergame,uint
                     return(-2);
                 }
             }
-            if ( rogue_isvalidgame(cp,gameheight,gametx,buyin,maxplayers,gametxid) == 0 )
+            if ( rogue_isvalidgame(cp,gameheight,gametx,buyin,maxplayers,gametxid,0) == 0 )
             {
                 //fprintf(stderr,"playertxid.%s got vin.%s/v%d gametxid.%s iterate.%d\n",playertxid.ToString().c_str(),playertx.vin[1].prevout.hash.ToString().c_str(),(int32_t)playertx.vin[1].prevout.n-maxplayers,gametxid.ToString().c_str(),rogue_iterateplayer(registertxid,gametxid,playertx.vin[1].prevout.n-maxplayers,playertxid));
                 if ( (tokenid != zeroid || playertx.vin[1].prevout.hash == gametxid) && rogue_iterateplayer(registertxid,gametxid,playertx.vin[1].prevout.n-maxplayers,playertxid) == 0 )
@@ -719,7 +722,7 @@ UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
         if ( n > 0 )
         {
             gametxid = juint256(jitem(params,0));
-            if ( (err= rogue_isvalidgame(cp,gameheight,tx,buyin,maxplayers,gametxid)) == 0 )
+            if ( (err= rogue_isvalidgame(cp,gameheight,tx,buyin,maxplayers,gametxid,1)) == 0 )
             {
                 if ( n > 1 )
                 {
@@ -803,7 +806,7 @@ UniValue rogue_keystrokes(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
         mypk = pubkey2pk(Mypubkey());
         roguepk = GetUnspendable(cp,0);
         GetCCaddress1of2(cp,destaddr,roguepk,mypk);
-        if ( rogue_isvalidgame(cp,gameheight,tx,buyin,maxplayers,gametxid) == 0 )
+        if ( rogue_isvalidgame(cp,gameheight,tx,buyin,maxplayers,gametxid,1) == 0 )
         {
             if ( rogue_findbaton(cp,playertxid,0,numkeys,regslot,playerdata,batontxid,batonvout,batonvalue,batonht,gametxid,tx,maxplayers,destaddr,numplayers,symbol,pname) == 0 )
             {
@@ -811,7 +814,7 @@ UniValue rogue_keystrokes(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
                 result.push_back(Pair("playertxid",playertxid.GetHex()));
                 if ( maxplayers == 1 || nextheight <= batonht+ROGUE_MAXKEYSTROKESGAP )
                 {
-                    mtx.vin.push_back(CTxIn(batontxid,batonvout,CScript()));
+                    mtx.vin.push_back(CTxIn(batontxid,batonvout,CScript())); // this validates user
                     mtx.vout.push_back(MakeCC1of2vout(cp->evalcode,batonvalue-txfee,roguepk,mypk));
                     Myprivkey(mypriv);
                     CCaddr1of2set(cp,roguepk,mypk,mypriv,destaddr);
@@ -830,7 +833,7 @@ char *rogue_extractgame(char *str,int32_t *numkeysp,std::vector<uint8_t> &newdat
     roguepk = GetUnspendable(cp,0);
     *numkeysp = 0;
     seed = 0;
-    if ( (err= rogue_isvalidgame(cp,gameheight,gametx,buyin,maxplayers,gametxid)) == 0 )
+    if ( (err= rogue_isvalidgame(cp,gameheight,gametx,buyin,maxplayers,gametxid,0)) == 0 )
     {
         if ( rogue_findbaton(cp,playertxid,&keystrokes,numkeys,regslot,playerdata,batontxid,batonvout,batonvalue,batonht,gametxid,gametx,maxplayers,rogueaddr,numplayers,symbol,pname) == 0 )
         {
@@ -965,7 +968,7 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
         {
             gametxid = juint256(jitem(params,0));
             result.push_back(Pair("gametxid",gametxid.GetHex()));
-            if ( (err= rogue_isvalidgame(cp,gameheight,gametx,buyin,maxplayers,gametxid)) == 0 )
+            if ( (err= rogue_isvalidgame(cp,gameheight,gametx,buyin,maxplayers,gametxid,1)) == 0 )
             {
                 if ( rogue_findbaton(cp,playertxid,&keystrokes,numkeys,regslot,playerdata,batontxid,batonvout,batonvalue,batonht,gametxid,gametx,maxplayers,myrogueaddr,numplayers,symbol,pname) == 0 )
                 {
@@ -1078,7 +1081,7 @@ UniValue rogue_gameinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
         {
             txid = juint256(jitem(params,0));
             result.push_back(Pair("gametxid",txid.GetHex()));
-            if ( rogue_isvalidgame(cp,gameheight,tx,buyin,maxplayers,txid) == 0 )
+            if ( rogue_isvalidgame(cp,gameheight,tx,buyin,maxplayers,txid,0) == 0 )
             {
                 result.push_back(Pair("result","success"));
                 result.push_back(Pair("gameheight",(int64_t)gameheight));
@@ -1118,7 +1121,7 @@ UniValue rogue_pending(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
         //char str[65]; fprintf(stderr,"%s check %s/v%d %.8f\n",coinaddr,uint256_str(str,txid),vout,(double)it->second.satoshis/COIN);
         if ( it->second.satoshis != txfee || vout != 0 ) // reject any that are not highlander markers
             continue;
-        if ( rogue_isvalidgame(cp,gameheight,tx,buyin,maxplayers,txid) == 0 && nextheight <= gameheight+ROGUE_MAXKEYSTROKESGAP )
+        if ( rogue_isvalidgame(cp,gameheight,tx,buyin,maxplayers,txid,1) == 0 && nextheight <= gameheight+ROGUE_MAXKEYSTROKESGAP )
         {
             rogue_playersalive(numplayers,txid,maxplayers);
             if ( numplayers < maxplayers )
@@ -1182,7 +1185,7 @@ UniValue rogue_games(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             {
                 if ( rogue_registeropretdecode(gametxid,tokenid,playertxid,tx.vout[numvouts-1].scriptPubKey) == 'R' )
                 {
-                    if ( rogue_isvalidgame(cp,gameheight,gametx,buyin,maxplayers,gametxid) == 0 )
+                    if ( rogue_isvalidgame(cp,gameheight,gametx,buyin,maxplayers,gametxid,0) == 0 )
                     {
                         if ( CCgettxout(txid,vout,1) < 0 )
                             b.push_back(gametxid.GetHex());
@@ -1262,7 +1265,7 @@ int32_t rogue_playerdata_validate(uint256 &playertxid,struct CCcontract_info *cp
 
 bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx)
 {
-    CScript scriptPubKey; std::vector<uint8_t> vopret; uint8_t *script,e,f,funcid; int32_t i,maxplayers,decoded=0,regslot,ind,errflag,dispflag,score,numvouts; CTransaction vintx; CPubKey pk; uint256 hashBlock,gametxid,tokenid,batontxid,playertxid,ptxid; int64_t buyin; std::vector<uint8_t> playerdata,keystrokes; std::string symbol,pname;
+    CScript scriptPubKey; std::vector<uint8_t> vopret; uint8_t *script,e,f,funcid; int32_t i,maxplayers,decoded=0,regslot,ind,errs,dispflag,gameheight,score,numvouts; CTransaction vintx,gametx; CPubKey pk; uint256 hashBlock,gametxid,tokenid,batontxid,playertxid,ptxid; int64_t buyin; std::vector<uint8_t> playerdata,keystrokes; std::string symbol,pname;
     if ( strcmp(ASSETCHAINS_SYMBOL,"ROGUE") == 0 && height < 21274 )
         return(true);
     if ( (numvouts= tx.vout.size()) > 1 )
@@ -1291,13 +1294,12 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
                     switch ( funcid )
                     {
                         case 'G':
-                            if ( (funcid= rogue_newgameopreturndecode(buyin,maxplayers,scriptPubKey)) != 'G' )
+                            if ( (err= rogue_isvalidgame(cp,gameheight,gametx,buyin,maxplayers,gametxid,0)) != 0 )
                             {
-                                //fprintf(stderr,"height.%d couldnt decode newgame opret\n",height);
+                                fprintf(stderr,"height.%d rogue_isvalidgame error.%d\n",height,err);
                                 //if ( height > 20000 )
-                                    return eval->Invalid("couldnt decode newgame opret");
+                                    return eval->Invalid("invalid gametxid");
                             }
-                            // validate newgame tx
                             return(true);
                             break;
                         case 'R':
@@ -1307,6 +1309,7 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
                                 //if ( height > 20000 )
                                     return eval->Invalid("couldnt decode register opret");
                             }
+                            // baton is created
                             // validation is done below
                             break;
                         case 'K':
@@ -1316,7 +1319,7 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
                                 //if ( height > 20000 )
                                     return eval->Invalid("couldnt decode keystrokes opret");
                             }
-                            // validate keystrokes are from the correct pk. might need to add vin
+                            // spending the baton proves it is the user if the pk is the signer
                             return(true);
                             break;
                         case 'H': case 'Q':
@@ -1326,7 +1329,8 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
                                 //if ( height > 20000 )
                                     return eval->Invalid("couldnt decode H/Q opret");
                             }
-                            // validation is done below
+                            // spending the baton proves it is the user if the pk is the signer
+                            // rest of validation is done below
                             break;
                         default:
                             return eval->Invalid("illegal rogue non-decoded funcid");
@@ -1353,7 +1357,7 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
                         }
                         else // 'H'
                         {
-                            // verify vin/vout
+                            // verify vin/vout and proper payouts
                         }
                         return(true);
                         break;

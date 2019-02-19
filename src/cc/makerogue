@@ -1,4 +1,5 @@
 #!/bin/sh
+echo "you can ignore ./makerogue: shell: not found"
 cd rogue;
 ./configure # only need this first time
 make; cd ..
