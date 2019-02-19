@@ -21,16 +21,16 @@ all: $(TARGET)
 $(TARGET): $(SOURCES)
 	$(info Building cclib to src/)
 ifeq ($(OS),Darwin)
-	$(CC_DARWIN) $(CFLAGS_DARWIN) $(DEBUGFLAGS) -o $(TARGET_DARWIN) -c $(SOURCES) -lncurses
+	$(CC_DARWIN) $(CFLAGS_DARWIN) $(DEBUGFLAGS) -o $(TARGET_DARWIN) -c $(SOURCES)
 	cp $(TARGET_DARWIN) ../libcc.dylib
 else ifeq ($(HOST),x86_64-w64-mingw32)
 	$(info WINDOWS)
-	$(CC_WIN) $(CFLAGS_WIN) $(DEBUGFLAGS) -o $(TARGET_WIN) -c $(SOURCES) -lncurses
+	$(CC_WIN) $(CFLAGS_WIN) $(DEBUGFLAGS) -o $(TARGET_WIN) -c $(SOURCES)
 	cp $(TARGET_WIN) ../libcc.dll
 #else ifeq ($(WIN_HOST),True) - todo: pass ENV var from build.sh if WIN host
 else
 	$(info LINUX)
-	$(CC) $(CFLAGS) $(DEBUGFLAGS) -o $(TARGET) -c $(SOURCES) -lncurses
+	$(CC) $(CFLAGS) $(DEBUGFLAGS) -o $(TARGET) -c $(SOURCES)
 	cp $(TARGET) ../libcc.so
 endif
 
