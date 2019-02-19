@@ -814,7 +814,7 @@ UniValue rogue_keystrokes(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
                 result.push_back(Pair("playertxid",playertxid.GetHex()));
                 if ( maxplayers == 1 || nextheight <= batonht+ROGUE_MAXKEYSTROKESGAP )
                 {
-                    mtx.vin.push_back(CTxIn(batontxid,batonvout,CScript())); // this validates user
+                    mtx.vin.push_back(CTxIn(batontxid,batonvout,CScript())); //this validates user if pk
                     mtx.vout.push_back(MakeCC1of2vout(cp->evalcode,batonvalue-txfee,roguepk,mypk));
                     Myprivkey(mypriv);
                     CCaddr1of2set(cp,roguepk,mypk,mypriv,destaddr);
@@ -1293,7 +1293,7 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
                 {
                     switch ( funcid )
                     {
-                        case 'G':
+                        case 'G': // seems just need to make sure no vout abuse is left to do
                             gametxid = tx.GetHash();
                             if ( (err= rogue_isvalidgame(cp,gameheight,gametx,buyin,maxplayers,gametxid,0)) != 0 )
                             {
@@ -1301,7 +1301,7 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
                                 if ( height > 30000 )
                                     return eval->Invalid("invalid gametxid");
                             }
-                            fprintf(stderr,"height.%d %s rogue_isvalidgame\n",height,gametxid.GetHex().c_str());
+                            //fprintf(stderr,"height.%d %s rogue_isvalidgame\n",height,gametxid.GetHex().c_str());
                             return(true);
                             break;
                         case 'R':
@@ -1342,6 +1342,7 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
                 switch ( funcid )
                 {
                     case 'R': // register
+                        // verify vout amounts are as they should be and no vins that shouldnt be
                         return(true);
                     case 'H': // win
                     case 'Q': // bailout
