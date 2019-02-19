@@ -5466,7 +5466,7 @@ UniValue setpubkey(const UniValue& params, bool fHelp)
         }
         else
             result.push_back(Pair("error", "pubkey is wrong length, must be 66 char hex string."));
-    } 
+    }
     else 
     {
         if ( NOTARY_ADDRESS.empty() ) 
