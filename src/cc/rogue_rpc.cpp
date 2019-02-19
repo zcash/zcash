@@ -957,7 +957,7 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
     else
     {
         funcid = 'H';
-        mult = 1000000;
+        mult = 200000;
     }
     if ( (params= cclib_reparse(&n,params)) != 0 )
     {
@@ -1008,11 +1008,13 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
                             cpTokens = CCinit(&tokensC, EVAL_TOKENS);
                             mtx.vout.push_back(MakeCC1vout(EVAL_TOKENS, txfee, GetUnspendable(cpTokens,NULL)));            // marker to token cc addr, burnable and validated
                             mtx.vout.push_back(MakeTokensCC1vout(cp->evalcode,1,mypk));
-                            fprintf(stderr,"\nextracted $$$gold.%d hp.%d strength.%d/%d level.%d exp.%d dl.%d n.%d size.%d\n",P.gold,P.hitpoints,P.strength&0xffff,P.strength>>16,P.level,P.experience,P.dungeonlevel,n,(int32_t)sizeof(P));
+                            fprintf(stderr,"\nextracted $$$gold.%d hp.%d strength.%d/%d level.%d exp.%d dl.%d n.%d amulet.%d\n",P.gold,P.hitpoints,P.strength&0xffff,P.strength>>16,P.level,P.experience,P.dungeonlevel,n,P.amulet);
+                            if ( P.amulet != 0 )
+                                mult *= 5;
                             cashout = (uint64_t)P.gold * mult;
                             if ( funcid == 'H' && maxplayers > 1 )
                             {
-                                if ( numplayers != maxplayers || (numplayers - rogue_playersalive(tmp,gametxid,maxplayers)) > 1 && (P.dungeonlevel > 1 || P.gold < 10000 || P.level < 20) )
+                                if ( (numplayers != maxplayers || (numplayers - rogue_playersalive(tmp,gametxid,maxplayers)) > 1) && P.amulet == 0 )
                                     return(cclib_error(result,"highlander must be a winner or last one standing"));
                                 cashout += numplayers * buyin;
                             }
