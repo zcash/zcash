@@ -579,6 +579,7 @@ cJSON *cclib_reparse(int32_t *nump,cJSON *origparams) // assumes origparams will
 
 #else
 #include "sudoku.cpp"
+#include "../secp256k1/src/secp256k1.c"
 #include "musig.cpp"
 #endif
 
