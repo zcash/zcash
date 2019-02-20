@@ -21,63 +21,65 @@
 #define MUSIG_PREVN 0   // for now, just use vout0 for the musig output
 #define MUSIG_TXFEE 10000
 
-CScript musig_sendopret(uint8_t funcid,secp256k1_pubkey combined_pk)
+CScript musig_sendopret(uint8_t funcid,CPubKey pk)
 {
     CScript opret; uint8_t evalcode = EVAL_MUSIG;
-    opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << combined_pk);
+    opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << pk);
     return(opret);
 }
 
-uint8_t musig_sendopretdecode(secp256k1_pubkey &combined_pk,CScript scriptPubKey)
+uint8_t musig_sendopretdecode(CPubKey &pk,CScript scriptPubKey)
 {
     std::vector<uint8_t> vopret; uint8_t e,f;
     GetOpReturnData(scriptPubKey,vopret);
-    if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> combined_pk) != 0 && e == EVAL_MUSIG && f == 'x' )
+    if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> pk) != 0 && e == EVAL_MUSIG && f == 'x' )
     {
         return(f);
     }
     return(0);
 }
 
-CScript musig_spendopret(uint8_t funcid,secp256k1_pubkey combined_pk,secp256k1_schnorrsig musig)
+CScript musig_spendopret(uint8_t funcid,CPubKey pk,secp256k1_schnorrsig musig)
 {
     CScript opret; uint8_t evalcode = EVAL_MUSIG;
-    opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << combined_pk << musig);
+    opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << pk << musig);
     return(opret);
 }
 
-uint8_t musig_spendopretdecode(secp256k1_pubkey &combined_pk,secp256k1_schnorrsig &musig,CScript scriptPubKey)
+uint8_t musig_spendopretdecode(CPubKey &pk,secp256k1_schnorrsig &musig,CScript scriptPubKey)
 {
     std::vector<uint8_t> vopret; uint8_t e,f;
     GetOpReturnData(scriptPubKey,vopret);
-    if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> combined_pk; ss >> musig) != 0 && e == EVAL_MUSIG && f == 'y' )
+    if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> pk; ss >> musig) != 0 && e == EVAL_MUSIG && f == 'y' )
     {
         return(f);
     }
     return(0);
 }
 
-void musig_msghash(uint8_t *msg,uint256 prevhash,int32_t prevn,CTxOut vout,secp256k1_pubkey combined_pk)
+int32_t musig_msghash(uint8_t *msg,uint256 prevhash,int32_t prevn,CTxOut vout,CPubKey pk)
 {
     CScript data; uint256 hash; int32_t len = 0;
-    data << E_MARSHAL(ss << prevhash << prevn << vout << combined_pk);
+    data << E_MARSHAL(ss << prevhash << prevn << vout << pk);
 fprintf(stderr,"data size %d\n",(int32_t)data.size());
-    vcalc_sha256(0,msg,data.data(),data.size());
+    vcalc_sha256(0,msg,data.begin(),data.size());
+    return(0);
 }
 
 int32_t musig_prevoutmsg(uint8_t *msg,uint256 sendtxid,CScript scriptPubKey)
 {
-    CTransaction vintx; uint256 hashBlock; int32_t numvouts; CTxOut vout; secp256k1_pubkey combined_pk;
+    CTransaction vintx; uint256 hashBlock; int32_t numvouts; CTxOut vout; CPubKey pk;
+    memset(msg,0,32);
     if ( myGetTransaction(sendtxid,vintx,hashBlock) != 0 && (numvouts= vintx.vout.size()) > 1 )
     {
-        if ( musig_sendopretdecode(combined_pk,vintx.vout[numvouts-1].scriptPubKey) == 'x' )
+        if ( musig_sendopretdecode(pk,vintx.vout[numvouts-1].scriptPubKey) == 'x' )
         {
             vout.nValue = vintx.vout[MUSIG_PREVN].nValue - MUSIG_TXFEE;
             vout.scriptPubKey = scriptPubKey;
-            return(musig_msghash(msg,sendtxid,MUSIG_PREVN,vout,combined_pk));
+            return(musig_msghash(msg,sendtxid,MUSIG_PREVN,vout,pk));
         }
     }
-    return(zeroid);
+    return(-1);
 }
 
 UniValue musig_calcmsg(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
@@ -184,15 +186,15 @@ UniValue musig_send(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     {
         if ( n == 2 && (hexstr= jstr(jitem(params,0),0)) != 0 && is_hexstr(hexstr,0) == 66 )
         {
-            secp256k1_pubkey combined_pk(ParseHex(hexstr));
+            CPubKey pk(ParseHex(hexstr));
             amount = jdouble(jitem(params,1),0) * COIN + 0.0000000049;
             if ( amount >= 3*txfee && AddNormalinputs(mtx,mypk,amount+2*txfee,64) >= amount+2*txfee )
             {
                 mtx.vout.push_back(MakeCC1vout(cp->evalcode,amount+txfee,musigpk));
-                rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,musig_sendopret('x',combined_pk));
+                rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,musig_sendopret('x',pk));
                 return(musig_rawtxresult(result,rawtx));
             } else return(cclib_error(result,"couldnt find funds or less than 0.0003"));
-        } else return(cclib_error(result,"must have 2 params: combined_pk, amount"));
+        } else return(cclib_error(result,"must have 2 params: pk, amount"));
     } else return(cclib_error(result,"not enough parameters"));
 }
 
@@ -200,7 +202,7 @@ UniValue musig_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     static secp256k1_context *ctx;
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); std::string rawtx; CPubKey mypk; secp256k1_pubkey combined_pk; char *scriptstr,*musigstr; uint8_t msg[32]; CTransaction vintx; uint256 prevhash,hashBlock; int32_t n,numvouts; CTxOut vout;
+    UniValue result(UniValue::VOBJ); std::string rawtx; CPubKey mypk,pk; secp256k1_pubkey combined_pk; char *scriptstr,*musigstr; uint8_t msg[32]; CTransaction vintx; uint256 prevhash,hashBlock; int32_t n,numvouts; CTxOut vout;
     if ( ctx == 0 )
         ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
     if ( (params= cclib_reparse(&n,params)) != 0 )
@@ -221,15 +223,18 @@ UniValue musig_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                 {
                     vout.nValue = vintx.vout[0].nValue - txfee;
                     vout.scriptPubKey = scriptPubKey;
-                    if ( musig_sendopretdecode(combined_pk,vintx.vout[numvouts-1].scriptPubKey) == 'x' )
+                    if ( musig_sendopretdecode(pk,vintx.vout[numvouts-1].scriptPubKey) == 'x' )
                     {
-                        musig_prevoutmsg(msg,prevhash,vout.scriptPubKey);
-                        if ( !secp256k1_schnorrsig_verify(ctx,&musig,msg,&combined_pk) )
-                            return(cclib_error(result,"musig didnt validate"));
-                        mtx.vin.push_back(CTxIn(prevhash,MUSIG_PREVN));
-                        mtx.vout.push_back(vout);
-                        rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,musig_spendopret('y',combined_pk,musig));
-                        return(musig_rawtxresult(result,rawtx));
+                        if ( secp256k1_ec_pubkey_parse(ctx,&combined_pk,pk.begin(),33) > 0 )
+                        {
+                            musig_prevoutmsg(msg,prevhash,vout.scriptPubKey);
+                            if ( !secp256k1_schnorrsig_verify(ctx,&musig,msg,&combined_pk) )
+                                return(cclib_error(result,"musig didnt validate"));
+                            mtx.vin.push_back(CTxIn(prevhash,MUSIG_PREVN));
+                            mtx.vout.push_back(vout);
+                            rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,musig_spendopret('y',pk,musig));
+                            return(musig_rawtxresult(result,rawtx));
+                        } else return(cclib_error(result,"couldnt parse pk"));
                     } else return(cclib_error(result,"couldnt decode send opret"));
                 } else return(cclib_error(result,"couldnt find vin0"));
             } else return(cclib_error(result,"script or musig is not hex"));
@@ -240,7 +245,7 @@ UniValue musig_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 bool musig_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx)
 {
     static secp256k1_context *ctx;
-    secp256k1_pubkey combined_pk,checkpk; secp256k1_schnorrsig musig; uint256 hashBlock; CTransaction vintx; int32_t numvouts; uint8_t msg[32];
+    secp256k1_pubkey combined_pk; CPubKey pk,checkpk; secp256k1_schnorrsig musig; uint256 hashBlock; CTransaction vintx; int32_t numvouts; uint8_t msg[32];
     if ( ctx == 0 )
         ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
     if ( tx.vout.size() != 2 )
@@ -251,16 +256,19 @@ bool musig_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
         return eval->Invalid("illegal normal vin0");
     else if ( myGetTransaction(tx.vin[0].prevout.hash,vintx,hashBlock) != 0 && (numvouts= vintx.vout.size()) > 1 )
     {
-        if ( musig_sendopretdecode(combined_pk,vintx.vout[numvouts-1].scriptPubKey) == 'x' )
+        if ( musig_sendopretdecode(pk,vintx.vout[numvouts-1].scriptPubKey) == 'x' )
         {
             if ( musig_spendopretdecode(checkpk,musig,tx.vout[tx.vout.size()-1].scriptPubKey) == 'y' )
             {
-                if ( combined_pk == checkpk )
+                if ( pk == checkpk )
                 {
-                    musig_prevoutmsg(msg,tx.vin[0].prevout.hash,tx.vout[0].scriptPubKey);
-                    if ( !secp256k1_schnorrsig_verify(ctx,&musig,msg,&combined_pk) )
-                        return eval->Invalid("failed schnorrsig_verify");
-                    else return(true);
+                    if ( secp256k1_ec_pubkey_parse(ctx,&combined_pk,pk.begin(),33) > 0 )
+                    {
+                        musig_prevoutmsg(msg,tx.vin[0].prevout.hash,tx.vout[0].scriptPubKey);
+                        if ( !secp256k1_schnorrsig_verify(ctx,&musig,msg,&combined_pk) )
+                            return eval->Invalid("failed schnorrsig_verify");
+                        else return(true);
+                    } else return eval->Invalid("couldnt parse pk");
                 } else return eval->Invalid("combined_pk didnt match send opret");
             } else return eval->Invalid("failed decode musig spendopret");
         } else return eval->Invalid("couldnt decode send opret");
