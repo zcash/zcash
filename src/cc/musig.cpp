@@ -226,11 +226,11 @@ UniValue musig_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                     vout.scriptPubKey = scriptPubKey;
                     if ( musig_sendopretdecode(pk,vintx.vout[numvouts-1].scriptPubKey) == 'x' )
                     {
-                        if ( secp256k1_schnorrsig_parse(ctx,&musig,&musig64[0]) > 0 &&
+                        if ( secp256k1_schnorrsig_parse((const secp256k1_context *)ctx,&musig,(const uint8_t *)&musig64[0]) > 0 &&
                             secp256k1_ec_pubkey_parse(ctx,&combined_pk,pk.begin(),33) > 0 )
                         {
                             musig_prevoutmsg(msg,prevhash,vout.scriptPubKey);
-                            if ( !secp256k1_schnorrsig_verify(ctx,&musig,msg,&combined_pk) )
+                            if ( !secp256k1_schnorrsig_verify((const secp256k1_context *)ctx,&musig,(const uint8_t *)msg,(const secp256k1_pubkey *)&combined_pk) )
                                 return(cclib_error(result,"musig didnt validate"));
                             mtx.vin.push_back(CTxIn(prevhash,MUSIG_PREVN));
                             mtx.vout.push_back(vout);
@@ -264,11 +264,11 @@ bool musig_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
             {
                 if ( pk == checkpk )
                 {
-                    if ( secp256k1_schnorrsig_parse(ctx,&musig,&musig64[0]) > 0 &&
+                    if ( secp256k1_schnorrsig_parse((const secp256k1_context *)ctx,&musig,(const uint8_t *)&musig64[0]) > 0 &&
                         secp256k1_ec_pubkey_parse(ctx,&combined_pk,pk.begin(),33) > 0 )
                     {
                         musig_prevoutmsg(msg,tx.vin[0].prevout.hash,tx.vout[0].scriptPubKey);
-                        if ( !secp256k1_schnorrsig_verify(ctx,&musig,msg,&combined_pk) )
+                        if ( !secp256k1_schnorrsig_verify((const secp256k1_context *)ctx,&musig,(const uint8_t *)msg,(const secp256k1_pubkey *)&combined_pk) )
                             return eval->Invalid("failed schnorrsig_verify");
                         else return(true);
                     } else return eval->Invalid("couldnt parse pk or musig");
