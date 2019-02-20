@@ -22,6 +22,7 @@
 
 uint256 musig_msghash(uint256 prevhash,int32_t prevn,CTxOut vout,secp256k1_pubkey combined_pk)
 {
+    CScript data;
     std::vector<uint8_t> data; uint256 hash; int32_t len = 0;
     data << E_MARSHAL(ss << prevhash << prevn << vout << combined_pk);
 fprintf(stderr,"data size %d\n",(int32_t)data.size());

@@ -525,7 +525,7 @@ cJSON *cclib_reparse(int32_t *nump,cJSON *origparams) // assumes origparams will
                 newstr[j++] = '"';
                 i += 2;
             }
-            else if ( jsonstr[i] == ''' )
+            else if ( jsonstr[i] == '\'' )
                 newstr[j++] = '"';
             else newstr[j++] = jsonstr[i];
         }
