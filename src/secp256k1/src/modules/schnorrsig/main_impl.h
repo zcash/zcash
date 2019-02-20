@@ -25,7 +25,6 @@ int secp256k1_schnorrsig_serialize(const secp256k1_context* ctx, unsigned char *
 }
 
 int secp256k1_schnorrsig_parse(const secp256k1_context* ctx, secp256k1_schnorrsig* sig, const unsigned char *in64) {
-    parse is here
     (void) ctx;
     VERIFY_CHECK(ctx != NULL);
     ARG_CHECK(sig != NULL);
