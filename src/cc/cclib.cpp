@@ -582,6 +582,6 @@ cJSON *cclib_reparse(int32_t *nump,cJSON *origparams) // assumes origparams will
 //#define USE_BASIC_CONFIG
 //#include "../secp256k1/src/basic-config.h"
 //#include "../secp256k1/src/secp256k1.c"
-//#include "musig.cpp"
+#include "musig.cpp"
 #endif
 
