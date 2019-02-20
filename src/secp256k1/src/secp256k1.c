@@ -4,7 +4,7 @@
  * file COPYING or http://www.opensource.org/licenses/mit-license.php.*
  **********************************************************************/
 
-#include "include/secp256k1.h"
+#include "../include/secp256k1.h"
 
 #include "util.h"
 #include "num_impl.h"
