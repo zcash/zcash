@@ -57,16 +57,15 @@ uint8_t musig_spendopretdecode(secp256k1_pubkey &combined_pk,secp256k1_schnorrsi
     return(0);
 }
 
-uint256 musig_msghash(uint256 prevhash,int32_t prevn,CTxOut vout,secp256k1_pubkey combined_pk)
+void musig_msghash(uint8_t *msg,uint256 prevhash,int32_t prevn,CTxOut vout,secp256k1_pubkey combined_pk)
 {
     CScript data; uint256 hash; int32_t len = 0;
     data << E_MARSHAL(ss << prevhash << prevn << vout << combined_pk);
 fprintf(stderr,"data size %d\n",(int32_t)data.size());
-    vcalc_sha256(0,(uint8_t *)&hash,data.data(),data.size());
-    return(hash);
+    vcalc_sha256(0,msg,data.data(),data.size());
 }
 
-uint256 musig_prevoutmsg(uint256 sendtxid,CScript scriptPubKey)
+int32_t musig_prevoutmsg(uint8_t *msg,uint256 sendtxid,CScript scriptPubKey)
 {
     CTransaction vintx; uint256 hashBlock; int32_t numvouts; CTxOut vout; secp256k1_pubkey combined_pk;
     if ( myGetTransaction(sendtxid,vintx,hashBlock) != 0 && (numvouts= vintx.vout.size()) > 1 )
@@ -75,7 +74,7 @@ uint256 musig_prevoutmsg(uint256 sendtxid,CScript scriptPubKey)
         {
             vout.nValue = vintx.vout[MUSIG_PREVN].nValue - MUSIG_TXFEE;
             vout.scriptPubKey = scriptPubKey;
-            return(musig_msghash(sendtxid,MUSIG_PREVN,vout,combined_pk));
+            return(musig_msghash(msg,sendtxid,MUSIG_PREVN,vout,combined_pk));
         }
     }
     return(zeroid);
@@ -83,7 +82,7 @@ uint256 musig_prevoutmsg(uint256 sendtxid,CScript scriptPubKey)
 
 UniValue musig_calcmsg(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ); uint256 sendtxid,msg; char *scriptstr; int32_t n;
+    UniValue result(UniValue::VOBJ); uint256 sendtxid; int32_t i; uint8_t msg[32]; char *scriptstr,str[65]; int32_t n;
     if ( (params= cclib_reparse(&n,params)) != 0 )
     {
         if ( n == 2 )
@@ -93,9 +92,12 @@ UniValue musig_calcmsg(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             if ( is_hexstr(scriptstr,0) != 0 )
             {
                 CScript scriptPubKey(ParseHex(scriptstr));
-                msg = musig_prevoutmsg(sendtxid,scriptPubKey);
+                musig_prevoutmsg(msg,sendtxid,scriptPubKey);
                 result.push_back(Pair("result","success"));
-                result.push_back(Pair("msg",msg.GetHex()));
+                for (i=0; i<32; i++)
+                    sprintf(&str[i<<1],"%02x",msg[i]);
+                str[64] = 0;
+                result.push_back(Pair("msg",str));
                 return(result);
             } else return(cclib_error(result,"script is not hex"));
         } else return(cclib_error(result,"need exactly 2 parameters: sendtxid, scriptPubKey"));
@@ -198,7 +200,7 @@ UniValue musig_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     static secp256k1_context *ctx;
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); std::string rawtx; CPubKey mypk; secp256k1_pubkey combined_pk; char *scriptstr,*musigstr; uint256 msg,prevhash,hashBlock; int32_t n,numvouts; CTxOut vout;
+    UniValue result(UniValue::VOBJ); std::string rawtx; CPubKey mypk; secp256k1_pubkey combined_pk; char *scriptstr,*musigstr; uint8_t msg[32]; CTransaction vintx; uint256 prevhash,hashBlock; int32_t n,numvouts; CTxOut vout;
     if ( ctx == 0 )
         ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
     if ( (params= cclib_reparse(&n,params)) != 0 )
@@ -219,9 +221,9 @@ UniValue musig_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                 {
                     vout.nValue = vintx.vout[0].nValue - txfee;
                     vout.scriptPubKey = scriptPubKey;
-                    if ( musig_sendopretdecode(combined_pk,vintx.vouts[numvouts-1].scriptPubKey) == 'x' )
+                    if ( musig_sendopretdecode(combined_pk,vintx.vout[numvouts-1].scriptPubKey) == 'x' )
                     {
-                        msg = musig_prevoutmsg(prevhash,vout.scriptPubKey);
+                        musig_prevoutmsg(msg,prevhash,vout.scriptPubKey);
                         if ( !secp256k1_schnorrsig_verify(ctx,&musig,msg,&combined_pk) )
                             return(cclib_error(result,"musig didnt validate"));
                         mtx.vin.push_back(CTxIn(prevhash,MUSIG_PREVN));
@@ -238,7 +240,7 @@ UniValue musig_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 bool musig_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx)
 {
     static secp256k1_context *ctx;
-    secp256k1_pubkey combined_pk,checkpk; secp256k1_schnorrsig musig; uint256 msg,hashBlock; CTransaction vintx; int32_t numvouts;
+    secp256k1_pubkey combined_pk,checkpk; secp256k1_schnorrsig musig; uint256 hashBlock; CTransaction vintx; int32_t numvouts; uint8_t msg[32];
     if ( ctx == 0 )
         ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
     if ( tx.vout.size() != 2 )
@@ -249,13 +251,13 @@ bool musig_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
         return eval->Invalid("illegal normal vin0");
     else if ( myGetTransaction(tx.vin[0].prevout.hash,vintx,hashBlock) != 0 && (numvouts= vintx.vout.size()) > 1 )
     {
-        if ( musig_sendopretdecode(combined_pk,vintx.vouts[numvouts-1].scriptPubKey) == 'x' )
+        if ( musig_sendopretdecode(combined_pk,vintx.vout[numvouts-1].scriptPubKey) == 'x' )
         {
-            if ( musig_spendopretdecode(check_pk,musig,tx.vout[tx.vout.size()-1].scriptPubKey) == 'y' )
+            if ( musig_spendopretdecode(checkpk,musig,tx.vout[tx.vout.size()-1].scriptPubKey) == 'y' )
             {
-                if ( combined_pk == check_pk )
+                if ( combined_pk == checkpk )
                 {
-                    msg = musig_prevoutmsg(tx.vin[0].prevout.hash,tx.vout[0].scriptPubKey);
+                    musig_prevoutmsg(msg,tx.vin[0].prevout.hash,tx.vout[0].scriptPubKey);
                     if ( !secp256k1_schnorrsig_verify(ctx,&musig,msg,&combined_pk) )
                         return eval->Invalid("failed schnorrsig_verify");
                     else return(true);
