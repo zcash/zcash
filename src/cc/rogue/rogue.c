@@ -548,13 +548,13 @@ tstp(int ignored)
     getyx(curscr, y, x);
     mvcur(y, x, oy, ox);
     fflush(stdout);
-    //wmove(curscr,oy,ox);
-#ifndef __APPLE__
+    wmove(curscr,oy,ox);
+/*#ifndef __APPLE__
 #ifndef BUILD_ROGUE
     curscr->_cury = oy;
     curscr->_curx = ox;
 #endif
-#endif
+#endif*/
 }
 
 /*
