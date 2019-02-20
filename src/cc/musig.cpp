@@ -62,7 +62,8 @@ int32_t musig_msghash(uint8_t *msg,uint256 prevhash,int32_t prevn,CTxOut vout,CP
     CScript data; uint256 hash; int32_t len = 0;
     data << E_MARSHAL(ss << prevhash << prevn << vout << pk);
 fprintf(stderr,"data size %d\n",(int32_t)data.size());
-    vcalc_sha256(0,msg,data.begin(),(int32_t)data.size());
+    hash = Hash(data.begin(),data.end());
+    memcpy(msg,&hash,sizeof(hash));
     return(0);
 }
 
@@ -202,7 +203,7 @@ UniValue musig_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     static secp256k1_context *ctx;
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); std::string rawtx; CPubKey mypk,pk; secp256k1_pubkey combined_pk; char *scriptstr,*musigstr; uint8_t msg[32]; CTransaction vintx; uint256 prevhash,hashBlock; int32_t n,numvouts; CTxOut vout;
+    UniValue result(UniValue::VOBJ); std::string rawtx; CPubKey mypk,pk; secp256k1_pubkey combined_pk; char *scriptstr,*musigstr; uint8_t msg[32]; CTransaction vintx; uint256 prevhash,hashBlock; int32_t n,numvouts; CTxOut vout; secp256k1_schnorrsig musig;
     if ( ctx == 0 )
         ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
     if ( (params= cclib_reparse(&n,params)) != 0 )
