@@ -36,6 +36,7 @@ std::string MYCCLIBNAME = (char *)"rogue";
 #else
 
 #define EVAL_SUDOKU 17
+#define EVAL_MUSIG 18
 std::string MYCCLIBNAME = (char *)"sudoku";
 #endif
 
@@ -70,6 +71,16 @@ CClib_methods[] =
     { (char *)"sudoku", (char *)"txidinfo", (char *)"txid", 1, 1, 'T', EVAL_SUDOKU },
     { (char *)"sudoku", (char *)"pending", (char *)"<no args>", 0, 0, 'U', EVAL_SUDOKU },
     { (char *)"sudoku", (char *)"solution", (char *)"txid solution timestamps[81]", 83, 83, 'S', EVAL_SUDOKU },
+    { (char *)"musig", (char *)"calcmsg", (char *)"sendtxid scriptPubKey", 2, 2, 'C', EVAL_MUSIG },
+    { (char *)"musig", (char *)"combine", (char *)"pubkeys ...", 2, 256, 'P', EVAL_MUSIG },
+    { (char *)"musig", (char *)"session", (char *)"msg pkhash", 2, 2, 'R', EVAL_MUSIG },
+    { (char *)"musig", (char *)"commit", (char *)"pubkeys ...", 2, 256, 'H', EVAL_MUSIG },
+    { (char *)"musig", (char *)"nonce", (char *)"pubkeys ...", 2, 256, 'N', EVAL_MUSIG },
+    { (char *)"musig", (char *)"partialsign", (char *)"pubkeys ...", 2, 256, 'S', EVAL_MUSIG },
+    { (char *)"musig", (char *)"sigcombine", (char *)"pubkeys ...", 2, 256, 'M', EVAL_MUSIG },
+    { (char *)"musig", (char *)"verify", (char *)"msg sig pubkey", 3, 3, 'V', EVAL_MUSIG },
+    { (char *)"musig", (char *)"send", (char *)"combined_pk amount", 2, 2, 'x', EVAL_MUSIG },
+    { (char *)"musig", (char *)"spend", (char *)"sendtxid sig destpubkey", 3, 3, 'y', EVAL_MUSIG },
 #endif
 };
 
@@ -98,6 +109,18 @@ UniValue sudoku_txidinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
 UniValue sudoku_generate(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue sudoku_pending(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+
+bool musig_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx);
+UniValue musig_calcmsg(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+UniValue musig_combine(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+UniValue musig_session(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+UniValue musig_commit(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+UniValue musig_nonce(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+UniValue musig_partialsign(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+UniValue musig_sigcombine(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+UniValue musig_verify(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+UniValue musig_send(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+UniValue musig_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 #endif
 
 UniValue CClib_method(struct CCcontract_info *cp,char *method,cJSON *params)
@@ -154,6 +177,37 @@ UniValue CClib_method(struct CCcontract_info *cp,char *method,cJSON *params)
         {
             result.push_back(Pair("result","error"));
             result.push_back(Pair("error","invalid sudoku method"));
+            result.push_back(Pair("method",method));
+            return(result);
+        }
+    }
+    else if ( cp->evalcode == EVAL_MUSIG )
+    {
+        //printf("CClib_method params.%p\n",params);
+        if ( strcmp(method,"combine") == 0 )
+            return(musig_combine(txfee,cp,params));
+        else if ( strcmp(method,"calcmsg") == 0 )
+            return(musig_calcmsg(txfee,cp,params));
+        else if ( strcmp(method,"session") == 0 )
+            return(musig_session(txfee,cp,params));
+        else if ( strcmp(method,"commit") == 0 )
+            return(musig_commit(txfee,cp,params));
+        else if ( strcmp(method,"nonce") == 0 ) // returns combined nonce if ready
+            return(musig_nonce(txfee,cp,params));
+        else if ( strcmp(method,"partialsign") == 0 )
+            return(musig_partialsign(txfee,cp,params));
+        else if ( strcmp(method,"sigcombine") == 0 )
+            return(musig_sigcombine(txfee,cp,params));
+        else if ( strcmp(method,"verify") == 0 )
+            return(musig_verify(txfee,cp,params));
+        else if ( strcmp(method,"send") == 0 )
+            return(musig_send(txfee,cp,params));
+        else if ( strcmp(method,"spend") == 0 )
+            return(musig_spend(txfee,cp,params));
+        else
+        {
+            result.push_back(Pair("result","error"));
+            result.push_back(Pair("error","invalid musig method"));
             result.push_back(Pair("method",method));
             return(result);
         }
@@ -278,7 +332,11 @@ bool CClib_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
 #ifdef BUILD_ROGUE
         return(rogue_validate(cp,height,eval,tx));
 #else
-        return(sudoku_validate(cp,height,eval,tx));
+        if ( cp->evalcode == EVAL_SUDOKU )
+            return(sudoku_validate(cp,height,eval,tx));
+        else if ( cp->evalcode == EVAL_MUSIG )
+            return(musig_validate(cp,height,eval,tx));
+        else return eval->Invalid("invalid evalcode");
 #endif
     }
     numvins = tx.vin.size();
@@ -385,21 +443,6 @@ std::string Faucet2Fund(struct CCcontract_info *cp,uint64_t txfee,int64_t funds)
     return("");
 }
 
-/*UniValue FaucetInfo()
-{
-    UniValue result(UniValue::VOBJ); char numstr[64];
-    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    CPubKey faucetpk; struct CCcontract_info *cp,C; int64_t funding;
-    result.push_back(Pair("result","success"));
-    result.push_back(Pair("name","Faucet"));
-    cp = CCinit(&C,EVAL_FAUCET);
-    faucetpk = GetUnspendable(cp,0);
-    funding = AddFaucetInputs(cp,mtx,faucetpk,0,0);
-    sprintf(numstr,"%.8f",(double)funding/COIN);
-    result.push_back(Pair("funding",numstr));
-    return(result);
-}*/
-
 std::string CClib_rawtxgen(struct CCcontract_info *cp,uint8_t funcid,cJSON *params)
 {
     CMutableTransaction tmpmtx,mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
@@ -481,7 +524,10 @@ cJSON *cclib_reparse(int32_t *nump,cJSON *origparams) // assumes origparams will
             {
                 newstr[j++] = '"';
                 i += 2;
-            } else newstr[j++] = jsonstr[i];
+            }
+            else if ( jsonstr[i] == ''' )
+                newstr[j++] = '"';
+            else newstr[j++] = jsonstr[i];
         }
         newstr[j] = 0;
         params = cJSON_Parse(newstr);
@@ -533,5 +579,6 @@ cJSON *cclib_reparse(int32_t *nump,cJSON *origparams) // assumes origparams will
 
 #else
 #include "sudoku.cpp"
+#include "musig.cpp"
 #endif
 

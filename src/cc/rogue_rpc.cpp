@@ -1078,7 +1078,7 @@ UniValue rogue_highlander(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
 
 UniValue rogue_gameinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ),a(UniValue::VARR); int32_t i,n,gameheight,maxplayers,numvouts; uint256 txid; CTransaction tx; int64_t buyin; bits256 t; char myrogueaddr[64]; CPubKey mypk,roguepk;
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR); int32_t i,n,gameheight,maxplayers,numvouts; uint256 txid; CTransaction tx; int64_t buyin; uint64_t seed; bits256 t; char myrogueaddr[64]; CPubKey mypk,roguepk;
     result.push_back(Pair("name","rogue"));
     result.push_back(Pair("method","gameinfo"));
     if ( (params= cclib_reparse(&n,params)) != 0 )
@@ -1095,7 +1095,8 @@ UniValue rogue_gameinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                 roguepk = GetUnspendable(cp,0);
                 GetCCaddress1of2(cp,myrogueaddr,roguepk,mypk);
                 //fprintf(stderr,"myrogueaddr.%s\n",myrogueaddr);
-                rogue_gamefields(result,maxplayers,buyin,txid,myrogueaddr);
+                seed = rogue_gamefields(result,maxplayers,buyin,txid,myrogueaddr);
+                result.push_back(Pair("seed",(int64_t)seed));
                 for (i=0; i<maxplayers; i++)
                 {
                     if ( CCgettxout(txid,i+1,1) < 0 )
