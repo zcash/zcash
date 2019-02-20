@@ -30,6 +30,10 @@ define $(package)_build_cmds
   cargo build --package librustzcash $($(package)_build_opts)
 endef
 
+define $(package)_test_cmds
+  cargo test $($(package)_build_opts)
+endef
+
 define $(package)_stage_cmds
   mkdir $($(package)_staging_dir)$(host_prefix)/lib/ && \
   mkdir $($(package)_staging_dir)$(host_prefix)/include/ && \
