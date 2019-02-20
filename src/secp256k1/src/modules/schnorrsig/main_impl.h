@@ -10,7 +10,7 @@
 #include "include/secp256k1.h"
 #include "include/secp256k1_schnorrsig.h"
 #include "hash.h"
-hello
+
 int secp256k1_schnorrsig_serialize(const secp256k1_context* ctx, unsigned char *out64, const secp256k1_schnorrsig* sig) {
     (void) ctx;
     VERIFY_CHECK(ctx != NULL);
