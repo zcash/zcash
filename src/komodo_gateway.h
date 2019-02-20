@@ -20,7 +20,7 @@
 #include "secp256k1/include/secp256k1_schnorrsig.h"
 #include "secp256k1/include/secp256k1_musig.h"
 
-void dummy_linker_tricker()
+int32_t dummy_linker_tricker()
 {
     secp256k1_context *ctx = 0; std::vector<uint8_t> musig64; CPubKey pk; secp256k1_schnorrsig musig; secp256k1_pubkey combined_pk;
     if ( secp256k1_schnorrsig_parse((const secp256k1_context *)ctx,&musig,(const uint8_t *)&musig64[0]) > 0 && secp256k1_ec_pubkey_parse(ctx,&combined_pk,pk.begin(),33) > 0 )
