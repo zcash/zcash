@@ -1,3 +1,5 @@
+TESTED?=
+
 define int_vars
 #Set defaults for vars which may be overridden per-package
 $(1)_cc=$($($(1)_type)_CC)
@@ -84,6 +86,7 @@ $(1)_extracted=$$($(1)_extract_dir)/.stamp_extracted
 $(1)_preprocessed=$$($(1)_extract_dir)/.stamp_preprocessed
 $(1)_cleaned=$$($(1)_extract_dir)/.stamp_cleaned
 $(1)_built=$$($(1)_build_dir)/.stamp_built
+$(1)_built_tested=$$($(1)_build_dir)/.stamp_built_tested
 $(1)_configured=$$($(1)_build_dir)/.stamp_configured
 $(1)_staged=$$($(1)_staging_dir)/.stamp_staged
 $(1)_postprocessed=$$($(1)_staging_prefix_dir)/.stamp_postprocessed
@@ -95,6 +98,7 @@ $(1)_fetch_cmds ?= $(call fetch_file,$(1),$(subst \:,:,$$($(1)_download_path_fix
 $(1)_extract_cmds ?= mkdir -p $$($(1)_extract_dir) && echo "$$($(1)_sha256_hash)  $$($(1)_source)" > $$($(1)_extract_dir)/.$$($(1)_file_name).hash &&  $(build_SHA256SUM) -c $$($(1)_extract_dir)/.$$($(1)_file_name).hash && tar --strip-components=1 -xf $$($(1)_source)
 $(1)_preprocess_cmds ?=
 $(1)_build_cmds ?=
+$(1)_test_cmds ?=
 $(1)_config_cmds ?=
 $(1)_stage_cmds ?=
 $(1)_set_vars ?=
@@ -202,7 +206,12 @@ $($(1)_built): | $($(1)_configured)
 	$(AT)mkdir -p $$(@D)
 	$(AT)+cd $$(@D); $($(1)_build_env) $(call $(1)_build_cmds, $(1))
 	$(AT)touch $$@
-$($(1)_staged): | $($(1)_built)
+$($(1)_built_tested): | $($(1)_built)
+	$(AT)echo Testing $(1)...
+	$(AT)mkdir -p $$(@D)
+	$(AT)+cd $$(@D); $($(1)_build_env) $(call $(1)_test_cmds, $(1))
+	$(AT)touch $$@
+$($(1)_staged): | $($(1)_built$(TESTED))
 	$(AT)echo Staging $(1)...
 	$(AT)mkdir -p $($(1)_staging_dir)/$(host_prefix)
 	$(AT)cd $($(1)_build_dir); $($(1)_stage_env) $(call $(1)_stage_cmds, $(1))
@@ -224,7 +233,7 @@ $($(1)_cached_checksum): $($(1)_cached)
 
 .PHONY: $(1)
 $(1): | $($(1)_cached_checksum)
-.SECONDARY: $($(1)_cached) $($(1)_postprocessed) $($(1)_staged) $($(1)_built) $($(1)_configured) $($(1)_preprocessed) $($(1)_extracted) $($(1)_fetched)
+.SECONDARY: $($(1)_cached) $($(1)_postprocessed) $($(1)_staged) $($(1)_built) $($(1)_configured) $($(1)_preprocessed) $($(1)_extracted) $($(1)_fetched) $($(1)_built_tested)
 
 endef
 
