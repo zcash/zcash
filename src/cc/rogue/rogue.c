@@ -554,7 +554,7 @@ tstp(int ignored)
     curscr->_cury = oy;
     curscr->_curx = ox;
 #endif
-#endif*/x
+#endif*/
 }
 
 /*
