@@ -19,120 +19,7 @@
 #include <secp256k1_musig.h>
 
 #define MUSIG_PREVN 0   // for now, just use vout0 for the musig output
-
-uint256 musig_msghash(uint256 prevhash,int32_t prevn,CTxOut vout,secp256k1_pubkey combined_pk)
-{
-    CScript data;
-    std::vector<uint8_t> data; uint256 hash; int32_t len = 0;
-    data << E_MARSHAL(ss << prevhash << prevn << vout << combined_pk);
-fprintf(stderr,"data size %d\n",(int32_t)data.size());
-    vcalc_sha256(0,(uint8_t *)&hash,data.ptr(),data.size());
-    return(hash);
-}
-
-uint256 musig_prevoutmsg(uint256 sendtxid,CScript scriptPubKey)
-{
-    CTransaction vintx; uint256 hashBlock; int32_t numvouts; CTxOut vout; secp256k1_pubkey combined_pk;
-    if ( myGetTransaction(prevhash,vintx,hashBlock) != 0 && (numvouts= vintx.vout.size()) > 1 )
-    {
-        if ( musig_sendopretdecode(combined_pk,vintx.vouts[numvouts-1].scriptPubKey) == 'x' )
-        {
-            vout.nValue = vintx.vout[MUSIG_PREVN].nValue - txfee;
-            vout.scriptPubKey = scriptPubKey;
-            return(musig_msghash(prevhash,MUSIG_PREVN,vout,combined_pk));
-        }
-    }
-    return(zeroid);
-}
-
-UniValue musig_calcmsg(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
-{
-    UniValue result(UniValue::VOBJ); uint256 sendtxid,msg; char *scriptstr; int32_t n;
-    if ( (params= cclib_reparse(&n,params)) != 0 )
-    {
-        if ( n == 2 )
-        {
-            sendtxid = juint256(jitem(params,0));
-            scriptstr = jstr(jitem(params,1),0);
-            if ( is_hexstr(scriptstr,0) != 0 )
-            {
-                CScript scriptPubKey(ParseHex(scriptstr));
-                msg = musig_prevoutmsg(sendtxid,scriptPubKey);
-                result.push_back("result","success");
-                result.push_back("msg",msg.GetHex());
-                return(result);
-            } else return(cclib_error(result,"script is not hex"));
-        } else return(cclib_error(result,"need exactly 2 parameters: sendtxid, scriptPubKey"));
-    } else return(cclib_error(result,"couldnt parse params"));
-}
-
-UniValue musig_combine(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
-{
-    UniValue result(UniValue::VOBJ);
-    result.push_back("result","success");
-    return(result);
-}
-
-UniValue musig_session(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
-{
-    UniValue result(UniValue::VOBJ);
-    result.push_back("result","success");
-    return(result);
-}
-
-UniValue musig_commit(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
-{
-    UniValue result(UniValue::VOBJ);
-    result.push_back("result","success");
-    return(result);
-}
-
-UniValue musig_nonce(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
-{
-    UniValue result(UniValue::VOBJ);
-    result.push_back("result","success");
-    return(result);
-}
-
-UniValue musig_partialsign(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
-{
-    UniValue result(UniValue::VOBJ);
-    result.push_back("result","success");
-    return(result);
-}
-
-UniValue musig_sigcombine(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
-{
-    UniValue result(UniValue::VOBJ);
-    result.push_back("result","success");
-    return(result);
-}
-
-UniValue musig_verify(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
-{
-    UniValue result(UniValue::VOBJ);
-    result.push_back("result","success");
-    return(result);
-}
-
-// helpers for rpc calls that generate/validate onchain tx
-
-UniValue musig_rawtxresult(UniValue &result,std::string rawtx)
-{
-    CTransaction tx;
-    if ( rawtx.size() > 0 )
-    {
-        result.push_back(Pair("hex",rawtx));
-        if ( DecodeHexTx(tx,rawtx) != 0 )
-        {
-            //if ( broadcastflag != 0 && myAddtomempool(tx) != 0 )
-            //    RelayTransaction(tx);
-            result.push_back(Pair("txid",tx.GetHash().ToString()));
-            result.push_back(Pair("result","success"));
-        } else result.push_back(Pair("error","decode hex"));
-    } else result.push_back(Pair("error","couldnt finalize CCtx"));
-    return(result);
-}
+#define MUSIG_TXFEE 10000
 
 CScript musig_sendopret(uint8_t funcid,secp256k1_pubkey combined_pk)
 {
@@ -170,12 +57,125 @@ uint8_t musig_spendopretdecode(secp256k1_pubkey &combined_pk,secp256k1_schnorrsi
     return(0);
 }
 
+uint256 musig_msghash(uint256 prevhash,int32_t prevn,CTxOut vout,secp256k1_pubkey combined_pk)
+{
+    CScript data; uint256 hash; int32_t len = 0;
+    data << E_MARSHAL(ss << prevhash << prevn << vout << combined_pk);
+fprintf(stderr,"data size %d\n",(int32_t)data.size());
+    vcalc_sha256(0,(uint8_t *)&hash,data.data(),data.size());
+    return(hash);
+}
+
+uint256 musig_prevoutmsg(uint256 sendtxid,CScript scriptPubKey)
+{
+    CTransaction vintx; uint256 hashBlock; int32_t numvouts; CTxOut vout; secp256k1_pubkey combined_pk;
+    if ( myGetTransaction(sendtxid,vintx,hashBlock) != 0 && (numvouts= vintx.vout.size()) > 1 )
+    {
+        if ( musig_sendopretdecode(combined_pk,vintx.vout[numvouts-1].scriptPubKey) == 'x' )
+        {
+            vout.nValue = vintx.vout[MUSIG_PREVN].nValue - MUSIG_TXFEE;
+            vout.scriptPubKey = scriptPubKey;
+            return(musig_msghash(sendtxid,MUSIG_PREVN,vout,combined_pk));
+        }
+    }
+    return(zeroid);
+}
+
+UniValue musig_calcmsg(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
+{
+    UniValue result(UniValue::VOBJ); uint256 sendtxid,msg; char *scriptstr; int32_t n;
+    if ( (params= cclib_reparse(&n,params)) != 0 )
+    {
+        if ( n == 2 )
+        {
+            sendtxid = juint256(jitem(params,0));
+            scriptstr = jstr(jitem(params,1),0);
+            if ( is_hexstr(scriptstr,0) != 0 )
+            {
+                CScript scriptPubKey(ParseHex(scriptstr));
+                msg = musig_prevoutmsg(sendtxid,scriptPubKey);
+                result.push_back(Pair("result","success"));
+                result.push_back(Pair("msg",msg.GetHex()));
+                return(result);
+            } else return(cclib_error(result,"script is not hex"));
+        } else return(cclib_error(result,"need exactly 2 parameters: sendtxid, scriptPubKey"));
+    } else return(cclib_error(result,"couldnt parse params"));
+}
+
+UniValue musig_combine(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
+{
+    UniValue result(UniValue::VOBJ);
+    result.push_back(Pair("result","success"));
+    return(result);
+}
+
+UniValue musig_session(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
+{
+    UniValue result(UniValue::VOBJ);
+    result.push_back(Pair("result","success"));
+    return(result);
+}
+
+UniValue musig_commit(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
+{
+    UniValue result(UniValue::VOBJ);
+    result.push_back(Pair("result","success"));
+    return(result);
+}
+
+UniValue musig_nonce(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
+{
+    UniValue result(UniValue::VOBJ);
+    result.push_back(Pair("result","success"));
+    return(result);
+}
+
+UniValue musig_partialsign(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
+{
+    UniValue result(UniValue::VOBJ);
+    result.push_back(Pair("result","success"));
+    return(result);
+}
+
+UniValue musig_sigcombine(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
+{
+    UniValue result(UniValue::VOBJ);
+    result.push_back(Pair("result","success"));
+    return(result);
+}
+
+UniValue musig_verify(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
+{
+    UniValue result(UniValue::VOBJ);
+    result.push_back(Pair("result","success"));
+    return(result);
+}
+
+// helpers for rpc calls that generate/validate onchain tx
+
+UniValue musig_rawtxresult(UniValue &result,std::string rawtx)
+{
+    CTransaction tx;
+    if ( rawtx.size() > 0 )
+    {
+        result.push_back(Pair("hex",rawtx));
+        if ( DecodeHexTx(tx,rawtx) != 0 )
+        {
+            //if ( broadcastflag != 0 && myAddtomempool(tx) != 0 )
+            //    RelayTransaction(tx);
+            result.push_back(Pair("txid",tx.GetHash().ToString()));
+            result.push_back(Pair("result","success"));
+        } else result.push_back(Pair("error","decode hex"));
+    } else result.push_back(Pair("error","couldnt finalize CCtx"));
+    return(result);
+}
+
 UniValue musig_send(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     UniValue result(UniValue::VOBJ); int32_t n; char *hexstr; std::string rawtx; int64_t amount; CPubKey musigpk,mypk;
     if ( txfee == 0 )
-        txfee = 10000;
+        txfee = MUSIG_TXFEE;
     mypk = pubkey2pk(Mypubkey());
     musigpk = GetUnspendable(cp,0);
     if ( (params= cclib_reparse(&n,params)) != 0 )
@@ -211,7 +211,7 @@ UniValue musig_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             if ( is_hexstr(scriptstr,0) != 0 && is_hexstr(musigstr,0) != 0 )
             {
                 if ( txfee == 0 )
-                    txfee = 10000;
+                    txfee = MUSIG_TXFEE;
                 mypk = pubkey2pk(Mypubkey());
                 secp256k1_schnorrsig musig(ParseHex(musigstr));
                 CScript scriptPubKey(ParseHex(scriptstr));
