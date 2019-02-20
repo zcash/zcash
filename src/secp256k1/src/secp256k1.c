@@ -4,7 +4,6 @@
  * file COPYING or http://www.opensource.org/licenses/mit-license.php.*
  **********************************************************************/
 
-#define ENABLE_MODULE_MUSIG
 #include "include/secp256k1.h"
 
 #include "util.h"
@@ -602,10 +601,10 @@ int secp256k1_ec_pubkey_combine(const secp256k1_context* ctx, secp256k1_pubkey *
 # include "modules/ecdh/main_impl.h"
 #endif
 
-#ifdef ENABLE_MODULE_MUSIG
+//#ifdef ENABLE_MODULE_MUSIG
 #include "modules/schnorrsig/main_impl.h"
 #include "modules/musig/main_impl.h"
-#endif
+//#endif
 
 
 #ifdef ENABLE_MODULE_RECOVERY
