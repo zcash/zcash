@@ -584,12 +584,12 @@ uint256 juint256(cJSON *obj)
 
 #else
 #include "sudoku.cpp"
-#define USE_BASIC_CONFIG
+/*#define USE_BASIC_CONFIG
 #define ENABLE_MODULE_MUSIG
 #include "../secp256k1/src/basic-config.h"
 #include "../secp256k1/include/secp256k1.h"
 
-/*#include "../secp256k1/src/util.h"
+#include "../secp256k1/src/util.h"
 #include "../secp256k1/src/num_impl.h"
 #include "../secp256k1/src/field_impl.h"
 #include "../secp256k1/src/scalar_impl.h"
@@ -607,7 +607,7 @@ struct secp256k1_context_struct {
     secp256k1_ecmult_gen_context ecmult_gen_ctx;
     secp256k1_callback illegal_callback;
     secp256k1_callback error_callback;
-};*/
+};
 
 typedef int (secp256k1_ecmult_multi_callback)(secp256k1_scalar *sc, secp256k1_ge *pt, size_t idx, void *data);
 extern "C" void secp256k1_pubkey_save(secp256k1_pubkey* pubkey, secp256k1_ge* ge);
@@ -621,7 +621,7 @@ if (EXPECT(!(cond), 0)) { \
 secp256k1_callback_call(&ctx->illegal_callback, #cond); \
 return 0; \
 } \
-} while(0)
+} while(0)*/
 
 //#include "../secp256k1/src/secp256k1.c"
 
