@@ -135,6 +135,7 @@ UniValue musig_combine(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     UniValue result(UniValue::VOBJ); CPubKey pk; int32_t i,n; uint8_t pkhash[32]; char *hexstr,str[67]; secp256k1_pubkey combined_pk,spk; std::vector<secp256k1_pubkey> pubkeys;
     if ( ctx == 0 )
         ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
+    fprintf(stderr,"args.(%s)\n",jprint(params,0));
     if ( params != 0 && (n= cJSON_GetArraySize(params)) > 0 )
     {
         for (i=0; i<n; i++)
