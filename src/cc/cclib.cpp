@@ -588,6 +588,7 @@ uint256 juint256(cJSON *obj)
 #define ENABLE_MODULE_MUSIG
 #include "../secp256k1/src/basic-config.h"
 #include "../secp256k1/include/secp256k1.h"
+#include "../secp256k1/include/ecmult.h"
 
 /*
 #include "../secp256k1/src/util.h"
