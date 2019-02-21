@@ -1,4 +1,4 @@
-#ifdef always_do_ENABLE_MODULE_MUSIG
+#ifdef ENABLE_MODULE_MUSIG
 
 
 /**********************************************************************

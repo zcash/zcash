@@ -45,7 +45,6 @@ static void secp256k1_ecmult(const secp256k1_ecmult_context *ctx, secp256k1_gej 
 #include "num.h"
 #include "group.h"
 #include "scalar.h"
-#include "scratch.h"
 
 typedef struct {
     /* For accelerating the computation of a*P + b*G: */
