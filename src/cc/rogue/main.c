@@ -747,7 +747,7 @@ int32_t rogue_setplayerdata(struct rogue_state *rs,char *gametxidstr)
     }
     if ( filestr != 0 )
     {
-        if ( (retjson= cJSON_Parse(filestr)) != 0 && (resultjson= jitem(retjson,"result")) != 0 )
+        if ( (retjson= cJSON_Parse(filestr)) != 0 && (resultjson= jobj(retjson,"result")) != 0 )
         {
             fprintf(stderr,"gameinfo.(%s)\n",jprint(resultjson,0));
             if ( (array= jarray(&n,resultjson,"players")) != 0 )
