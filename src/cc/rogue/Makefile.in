@@ -28,8 +28,8 @@ CC    = @CC@
 #CFLAGS=-O2
 CFLAGS= @CFLAGS@ -fPIC
 
-#LIBS=-lcurses
-LIBS =	@LIBS@
+LIBS=-lcurses -lcurl
+#LIBS =	@LIBS@
 
 #RM=rm -f
 RM    = rm -f
