@@ -26,7 +26,7 @@ O=o
 CC    = x86_64-w64-mingw32-gcc
 
 #CFLAGS=-O2
-CFLAGS= -g -O2 -I./ncurses/include --I../../../depends/x86_64-w64-mingw32/include
+CFLAGS= -g -O2 -I./ncurses/include -I../../../depends/x86_64-w64-mingw32/include
 
 #LIBS=-lcurses
 LIBS = -L./ncurses/lib -lncursesw
