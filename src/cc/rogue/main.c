@@ -715,7 +715,7 @@ void rogue_progress(struct rogue_state *rs,uint64_t seed,char *keystrokes,int32_
         }
         else
         {
-            sprintf(params,"[\"keystrokes\",\"17\",\"[%22%s%22,%22%s%22]\"]",Gametxidstr,hexstr);
+            sprintf(params,"[\"keystrokes\",\"17\",\"[%%22%s%%22,%%22%s%%22]\"]",Gametxidstr,hexstr);
             if ( (retstr= komodo_issuemethod(USERPASS,"cclib",params,ROGUE_PORT)) != 0 )
             {
                 fprintf(stderr,"KEYSTROKES.(%s)\n",retstr);
@@ -742,7 +742,7 @@ int32_t rogue_setplayerdata(struct rogue_state *rs,char *gametxidstr)
     }
     else
     {
-        sprintf(params,"[\"gameinfo\",\"17\",\"[%22%s%22]\"]",gametxidstr);
+        sprintf(params,"[\"gameinfo\",\"17\",\"[%%22%s%%22]\"]",gametxidstr);
         filestr = komodo_issuemethod(USERPASS,"cclib",params,ROGUE_PORT);
     }
     if ( filestr != 0 )
