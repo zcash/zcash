@@ -15,11 +15,19 @@
 #include "ecmult_impl.h"
 
 #ifdef USE_ENDOMORPHISM
+#define WNAF_BITS 128
+#else
+#define WNAF_BITS 256
+#endif
+#define WNAF_SIZE_BITS(bits, w) (((bits) + (w) - 1) / (w))
+#define WNAF_SIZE(w) WNAF_SIZE_BITS(WNAF_BITS, w)
+
+#ifdef USE_ENDOMORPHISM
     #define WNAF_BITS 128
 #else
     #define WNAF_BITS 256
 #endif
-#define WNAF_SIZE(w) ((WNAF_BITS + (w) - 1) / (w))
+//#define WNAF_SIZE(w) ((WNAF_BITS + (w) - 1) / (w))
 
 /* This is like `ECMULT_TABLE_GET_GE` but is constant time */
 #define ECMULT_CONST_TABLE_GET_GE(r,pre,n,w) do { \
