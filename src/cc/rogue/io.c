@@ -160,6 +160,18 @@ readchar(struct rogue_state *rs)
         if ( rs->ind < rs->numkeys )
         {
             c = rs->keystrokes[rs->ind++];
+            if ( 0 )
+            {
+                static FILE *fp; static int32_t counter;
+                if ( fp == 0 )
+                    fp = fopen("log","wb");
+                if ( fp != 0 )
+                {
+                    fprintf(fp,"%d: (%c) hp.%d\n",counter,c,pstats.s_hpt);
+                    fflush(fp);
+                    counter++;
+                }
+            }
             while ( c == 'Q' && rs->ind < rs->numkeys )
             {
                 //fprintf(stderr,"Got 'Q' next (%c)\n",rs->keystrokes[rs->ind]); sleep(2);

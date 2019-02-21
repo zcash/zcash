@@ -8,8 +8,8 @@
 #ifndef _SECP256K1_MODULE_MUSIG_MAIN_
 #define _SECP256K1_MODULE_MUSIG_MAIN_
 
-#include "include/secp256k1.h"
-#include "include/secp256k1_musig.h"
+#include "../../../include/secp256k1.h"
+#include "../../../include/secp256k1_musig.h"
 #include "hash.h"
 
 /* Computes ell = SHA256(pk[0], ..., pk[np-1]) */

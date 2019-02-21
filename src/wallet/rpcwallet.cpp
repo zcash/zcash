@@ -5396,7 +5396,7 @@ UniValue cclibinfo(const UniValue& params, bool fHelp)
 
 UniValue cclib(const UniValue& params, bool fHelp)
 {
-    struct CCcontract_info *cp,C; char *method; cJSON *jsonparams=0; uint8_t evalcode = EVAL_FIRSTUSER;
+    struct CCcontract_info *cp,C; char *method,*jsonstr=0; uint8_t evalcode = EVAL_FIRSTUSER;
     if ( fHelp || params.size() > 3 )
         throw runtime_error("cclib method [evalcode] [JSON params]\n");
     if ( ASSETCHAINS_CCLIB.size() == 0 )
@@ -5416,11 +5416,12 @@ UniValue cclib(const UniValue& params, bool fHelp)
         }
         if ( params.size() == 3 )
         {
-            jsonparams = cJSON_Parse(params[2].get_str().c_str());
+            jsonstr = (char *)params[2].get_str().c_str();
+            //fprintf(stderr,"params.(%s %s %s)\n",params[0].get_str().c_str(),params[1].get_str().c_str(),jsonstr);
         }
     }
     cp = CCinit(&C,evalcode);
-    return(CClib(cp,method,jsonparams));
+    return(CClib(cp,method,jsonstr));
 }
 
 UniValue oraclesaddress(const UniValue& params, bool fHelp)

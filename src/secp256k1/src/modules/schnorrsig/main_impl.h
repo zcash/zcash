@@ -7,8 +7,8 @@
 #ifndef _SECP256K1_MODULE_SCHNORRSIG_MAIN_
 #define _SECP256K1_MODULE_SCHNORRSIG_MAIN_
 
-#include "include/secp256k1.h"
-#include "include/secp256k1_schnorrsig.h"
+#include "../../../include/secp256k1.h"
+#include "../../../include/secp256k1_schnorrsig.h"
 #include "hash.h"
 
 int secp256k1_schnorrsig_serialize(const secp256k1_context* ctx, unsigned char *out64, const secp256k1_schnorrsig* sig) {

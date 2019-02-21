@@ -574,9 +574,9 @@ komodod_LDADD += \
   $(LIBZCASH_LIBS)
 
 if TARGET_DARWIN
-komodod_LDADD += libcc.dylib
+komodod_LDADD += libcc.dylib $(LIBSECP256K1)
 else
-komodod_LDADD += libcc.so 
+komodod_LDADD += libcc.so $(LIBSECP256K1)
 endif
 
 
