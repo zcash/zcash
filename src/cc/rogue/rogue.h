@@ -370,7 +370,6 @@ struct rogue_state
     uint8_t playerdata[10000];
 };
 extern struct rogue_state globalR;
-extern char Gametxidstr[67];
 
 int rogue(int argc, char **argv, char **envp);
 void rogueiterate(struct rogue_state *rs);

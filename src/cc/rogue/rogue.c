@@ -25,6 +25,7 @@
  *	The main program, of course
  */
 struct rogue_state globalR;
+char Gametxidstr[67];
 void garbage_collect();
 
 void purge_obj_guess(struct obj_info *array,int32_t n)
@@ -150,6 +151,18 @@ int32_t flushkeystrokes(struct rogue_state *rs)
     return(retflag);
 }
 #else
+
+#ifdef BUILD_ROGUE
+// stubs for inside daemon
+void rogue_progress(struct rogue_state *rs,uint64_t seed,char *keystrokes,int32_t num)
+{
+}
+
+int32_t rogue_setplayerdata(struct rogue_state *rs,char *gametxidstr)
+{
+    return(-1);
+}
+#endif
 
 int32_t flushkeystrokes(struct rogue_state *rs)
 {

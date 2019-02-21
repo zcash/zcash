@@ -24,7 +24,7 @@
 #include <curl/easy.h>
 
 char USERPASS[8192]; uint16_t ROGUE_PORT;
-char Gametxidstr[67];
+extern char Gametxidstr[67];
 
 #define SMALLVAL 0.000000000000001
 #define SATOSHIDEN ((uint64_t)100000000L)
