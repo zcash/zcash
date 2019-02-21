@@ -1157,7 +1157,7 @@ static int secp256k1_wnaf_fixed(int *wnaf, const secp256k1_scalar *s, int w) {
 #endif /* SECP256K1_ECMULT_IMPL_H */
 #endif
 
-#include "../scratch.h"
+#include "scratch.h"
 
 /* The number of objects allocated on the scratch space for ecmult_multi algorithms */
 #define PIPPENGER_SCRATCH_OBJECTS 6
