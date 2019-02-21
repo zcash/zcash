@@ -727,7 +727,7 @@ void rogue_progress(struct rogue_state *rs,uint64_t seed,char *keystrokes,int32_
 
 int32_t rogue_setplayerdata(struct rogue_state *rs,char *gametxidstr)
 {
-    char cmd[32768]; int32_t i,n,retval=-1; char params[1024],*filestr=0,*pname,*statusstr,*datastr,fname[128]; long allocsize; cJSON *retjson,*array,*item;
+    char cmd[32768]; int32_t i,n,retval=-1; char params[1024],*filestr=0,*pname,*statusstr,*datastr,fname[128]; long allocsize; cJSON *retjson,*array,*item,*resultjson;
     if ( rs->guiflag == 0 )
         return(-1);
     if ( gametxidstr == 0 || *gametxidstr == 0 )
@@ -747,10 +747,10 @@ int32_t rogue_setplayerdata(struct rogue_state *rs,char *gametxidstr)
     }
     if ( filestr != 0 )
     {
-        fprintf(stderr,"gameinfo.(%s)\n",filestr);
-        if ( (retjson= cJSON_Parse(filestr)) != 0 )
+        if ( (retjson= cJSON_Parse(filestr)) != 0 && (resultjson= jitem(retjson,"result")) != 0 )
         {
-            if ( (array= jarray(&n,retjson,"players")) != 0 )
+            fprintf(stderr,"gameinfo.(%s)\n",jprint(resultjson,0));
+            if ( (array= jarray(&n,resultjson,"players")) != 0 )
             {
                 for (i=0; i<n; i++)
                 {

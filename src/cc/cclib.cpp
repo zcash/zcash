@@ -148,7 +148,7 @@ cJSON *cclib_reparse(int32_t *nump,char *jsonstr) // assumes origparams will be 
         }
         newstr[j] = 0;
         params = cJSON_Parse(newstr);
-        if ( 1 && params != 0 )
+        if ( 0 && params != 0 )
             printf("new.(%s) -> %s\n",newstr,jprint(params,0));
         free(newstr);
         *nump = cJSON_GetArraySize(params);
