@@ -657,7 +657,7 @@ UniValue rogue_newgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     UniValue result(UniValue::VOBJ); std::string rawtx; CPubKey roguepk,mypk; char *jsonstr; uint64_t inputsum,change,required,buyin=0; int32_t i,n,maxplayers = 1;
     if ( txfee == 0 )
         txfee = 10000;
-    if ( (params= cclib_reparse(&n,params)) != 0 )
+    if ( params != 0 && (n= cJSON_GetArraySize(params)) > 0 )
     {
         if ( n > 0 )
         {
@@ -693,7 +693,7 @@ UniValue rogue_playerinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
     UniValue result(UniValue::VOBJ); std::vector<uint8_t> playerdata; uint256 playertxid,tokenid,origplayergame;int32_t n; CPubKey pk; bits256 t; std::string symbol,pname;
     result.push_back(Pair("result","success"));
     rogue_univalue(result,"playerinfo",-1,-1);
-    if ( (params= cclib_reparse(&n,params)) != 0 )
+    if ( params != 0 && (n= cJSON_GetArraySize(params)) > 0 )
     {
         if ( n > 0 )
         {
@@ -723,7 +723,7 @@ UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     roguepk = GetUnspendable(cp,0);
     rogue_univalue(result,"register",-1,-1);
     playertxid = tokenid = zeroid;
-    if ( (params= cclib_reparse(&n,params)) != 0 )
+    if ( params != 0 && (n= cJSON_GetArraySize(params)) > 0 )
     {
         if ( n > 0 )
         {
@@ -803,7 +803,7 @@ UniValue rogue_keystrokes(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
     if ( txfee == 0 )
         txfee = 10000;
     rogue_univalue(result,"keystrokes",-1,-1);
-    if ( (params= cclib_reparse(&n,params)) != 0 && n == 2 && (keystrokestr= jstr(jitem(params,1),0)) != 0 )
+    if ( params != 0 && (n= cJSON_GetArraySize(params)) == 2 && (keystrokestr= jstr(jitem(params,1),0)) != 0 )
     {
         gametxid = juint256(jitem(params,0));
         result.push_back(Pair("gametxid",gametxid.GetHex()));
@@ -896,7 +896,7 @@ UniValue rogue_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     roguepk = GetUnspendable(cp,0);
     result.push_back(Pair("name","rogue"));
     result.push_back(Pair("method","extract"));
-    if ( (params= cclib_reparse(&n,params)) != 0 )
+    if ( params != 0 && (n= cJSON_GetArraySize(params)) > 0 )
     {
         if ( n > 0 )
         {
@@ -968,7 +968,7 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
         funcid = 'H';
         mult = 200000;
     }
-    if ( (params= cclib_reparse(&n,params)) != 0 )
+    if ( params != 0 && (n= cJSON_GetArraySize(params)) > 0 )
     {
         if ( n > 0 )
         {
@@ -1005,7 +1005,7 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
                             newdata[i] = player[i];
                             ((uint8_t *)&P)[i] = player[i];
                         }
-                        if ( P.gold <= 0 || P.hitpoints <= 0 || (P.strength&0xffff) <= 0 || P.level <= 0 || P.experience <= 0 || P.dungeonlevel <= 0 )
+                        if ( 0 && (P.gold <= 0 || P.hitpoints <= 0 || (P.strength&0xffff) <= 0 || P.level <= 0 || P.experience <= 0 || P.dungeonlevel <= 0) )
                         {
                             fprintf(stderr,"zero value character was killed -> no playerdata\n");
                             newdata.resize(0);
@@ -1081,7 +1081,7 @@ UniValue rogue_gameinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     UniValue result(UniValue::VOBJ),a(UniValue::VARR); int32_t i,n,gameheight,maxplayers,numvouts; uint256 txid; CTransaction tx; int64_t buyin; uint64_t seed; bits256 t; char myrogueaddr[64]; CPubKey mypk,roguepk;
     result.push_back(Pair("name","rogue"));
     result.push_back(Pair("method","gameinfo"));
-    if ( (params= cclib_reparse(&n,params)) != 0 )
+    if ( params != 0 && (n= cJSON_GetArraySize(params)) > 0 )
     {
         if ( n > 0 )
         {
@@ -1212,7 +1212,7 @@ UniValue rogue_setname(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     UniValue result(UniValue::VOBJ); int32_t n; char *namestr = 0;
     rogue_univalue(result,"setname",-1,-1);
-    if ( (params= cclib_reparse(&n,params)) != 0 )
+    if ( params != 0 && (n= cJSON_GetArraySize(params)) > 0 )
     {
         if ( n > 0 )
         {

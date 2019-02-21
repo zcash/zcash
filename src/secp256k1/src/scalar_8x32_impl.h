@@ -1471,7 +1471,7 @@ c += d; b = ROTL32(b ^ c, 7);
 #define LE32(p) (p)
 #endif
 
-static void secp256k1_scalar_chacha20(secp256k1_scalar *r1, secp256k1_scalar *r2, const unsigned char *seed, uint64_t idx) {
+void secp256k1_scalar_chacha20(secp256k1_scalar *r1, secp256k1_scalar *r2, const unsigned char *seed, uint64_t idx) {
     size_t n;
     size_t over_count = 0;
     uint32_t seed32[8];

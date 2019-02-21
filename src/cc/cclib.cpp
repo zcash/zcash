@@ -123,9 +123,44 @@ UniValue musig_send(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue musig_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 #endif
 
-UniValue CClib_method(struct CCcontract_info *cp,char *method,cJSON *params)
+cJSON *cclib_reparse(int32_t *nump,char *jsonstr) // assumes origparams will be freed by caller
 {
-    UniValue result(UniValue::VOBJ); uint64_t txfee = 10000;
+    cJSON *params; char *newstr; int32_t i,j;
+    *nump = 0;
+    if ( jsonstr != 0 )
+    {
+        if ( jsonstr[0] == '"' && jsonstr[strlen(jsonstr)-1] == '"' )
+        {
+            jsonstr[strlen(jsonstr)-1] = 0;
+            jsonstr++;
+        }
+        newstr = (char *)malloc(strlen(jsonstr)+1);
+        for (i=j=0; jsonstr[i]!=0; i++)
+        {
+            if ( jsonstr[i] == '%' && jsonstr[i+1] == '2' && jsonstr[i+2] == '2' )
+            {
+                newstr[j++] = '"';
+                i += 2;
+            }
+            else if ( jsonstr[i] == '\'' )
+                newstr[j++] = '"';
+            else newstr[j++] = jsonstr[i];
+        }
+        newstr[j] = 0;
+        params = cJSON_Parse(newstr);
+        if ( 0 && params != 0 )
+            printf("new.(%s) -> %s\n",newstr,jprint(params,0));
+        free(newstr);
+        *nump = cJSON_GetArraySize(params);
+        //free(origparams);
+    } else params = 0;
+    return(params);
+}
+
+UniValue CClib_method(struct CCcontract_info *cp,char *method,char *jsonstr)
+{
+    UniValue result(UniValue::VOBJ); uint64_t txfee = 10000; int32_t m; cJSON *params = cclib_reparse(&m,jsonstr);
+    //fprintf(stderr,"method.(%s) -> (%s)\n",jsonstr!=0?jsonstr:"",params!=0?jprint(params,0):"");
 #ifdef BUILD_ROGUE
     if ( cp->evalcode == EVAL_ROGUE )
     {
@@ -250,10 +285,10 @@ UniValue CClib_info(struct CCcontract_info *cp)
     return(result);
 }
 
-UniValue CClib(struct CCcontract_info *cp,char *method,cJSON *params)
+UniValue CClib(struct CCcontract_info *cp,char *method,char *jsonstr)
 {
-    UniValue result(UniValue::VOBJ); int32_t i; std::string rawtx;
-    //printf("CClib params.%p\n",params);
+    UniValue result(UniValue::VOBJ); int32_t i; std::string rawtx; cJSON *params;
+    //printf("CClib params.(%s)\n",jsonstr!=0?jsonstr:"");
     for (i=0; i<sizeof(CClib_methods)/sizeof(*CClib_methods); i++)
     {
         if ( cp->evalcode == CClib_methods[i].evalcode && strcmp(method,CClib_methods[i].method) == 0 )
@@ -262,10 +297,12 @@ UniValue CClib(struct CCcontract_info *cp,char *method,cJSON *params)
             {
                 result.push_back(Pair("result","success"));
                 result.push_back(Pair("method",CClib_methods[i].method));
+                params = cJSON_Parse(jsonstr);
                 rawtx = CClib_rawtxgen(cp,CClib_methods[i].funcid,params);
+                free_json(params);
                 result.push_back(Pair("rawtx",rawtx));
                 return(result);
-            } else return(CClib_method(cp,method,params));
+            } else return(CClib_method(cp,method,jsonstr));
         }
     }
     result.push_back(Pair("result","error"));
@@ -507,38 +544,6 @@ uint256 juint256(cJSON *obj)
     return(revuint256(tmp));
 }
 
-cJSON *cclib_reparse(int32_t *nump,cJSON *origparams) // assumes origparams will be freed by caller
-{
-    cJSON *params; char *jsonstr,*newstr; int32_t i,j;
-    if ( (jsonstr= jprint(origparams,0)) != 0 )
-    {
-        if ( jsonstr[0] == '"' && jsonstr[strlen(jsonstr)-1] == '"' )
-        {
-            jsonstr[strlen(jsonstr)-1] = 0;
-            jsonstr++;
-        }
-        newstr = (char *)malloc(strlen(jsonstr)+1);
-        for (i=j=0; jsonstr[i]!=0; i++)
-        {
-            if ( jsonstr[i] == '%' && jsonstr[i+1] == '2' && jsonstr[i+2] == '2' )
-            {
-                newstr[j++] = '"';
-                i += 2;
-            }
-            else if ( jsonstr[i] == '\'' )
-                newstr[j++] = '"';
-            else newstr[j++] = jsonstr[i];
-        }
-        newstr[j] = 0;
-        params = cJSON_Parse(newstr);
-        if ( 0 && params != 0 )
-            printf("new.(%s) -> %s\n",newstr,jprint(params,0));
-        free(newstr);
-        *nump = cJSON_GetArraySize(params);
-        //free(origparams);
-    } else params = 0;
-    return(params);
-}
 
 #ifdef BUILD_ROGUE
 #include "rogue_rpc.cpp"
@@ -579,9 +584,56 @@ cJSON *cclib_reparse(int32_t *nump,cJSON *origparams) // assumes origparams will
 
 #else
 #include "sudoku.cpp"
-//#define USE_BASIC_CONFIG
-//#include "../secp256k1/src/basic-config.h"
+#define USE_BASIC_CONFIG
+#define ENABLE_MODULE_MUSIG
+#include "../secp256k1/src/basic-config.h"
+#include "../secp256k1/include/secp256k1.h"
+#include "../secp256k1/src/ecmult.h"
+#include "../secp256k1/src/ecmult_gen.h"
+
+typedef struct { unsigned char data[64]; } secp256k1_schnorrsig;
+
+/*
+#include "../secp256k1/src/util.h"
+#include "../secp256k1/src/num_impl.h"
+#include "../secp256k1/src/field_impl.h"
+#include "../secp256k1/src/scalar_impl.h"
+#include "../secp256k1/src/group_impl.h"
+#include "../secp256k1/src/scratch_impl.h"
+#include "../secp256k1/src/ecmult_impl.h"
+#include "../secp256k1/src/ecmult_const_impl.h"
+#include "../secp256k1/src/ecmult_gen_impl.h"
+#include "../secp256k1/src/ecdsa_impl.h"
+#include "../secp256k1/src/eckey_impl.h"
+#include "../secp256k1/src/hash_impl.h"
+
+
+
+typedef int (secp256k1_ecmult_multi_callback)(secp256k1_scalar *sc, secp256k1_ge *pt, size_t idx, void *data);
+extern "C" void secp256k1_pubkey_save(secp256k1_pubkey* pubkey, secp256k1_ge* ge);
+extern "C" int secp256k1_nonce_function_bipschnorr(unsigned char *nonce32, const unsigned char *msg32, const unsigned char *key32, const unsigned char *algo16, void *data, unsigned int counter);
+extern "C" int secp256k1_pubkey_load(const secp256k1_context* ctx, secp256k1_ge* ge, const secp256k1_pubkey* pubkey);
+extern "C" void secp256k1_scalar_chacha20(secp256k1_scalar *r1, secp256k1_scalar *r2, const unsigned char *seed, uint64_t idx);
+
+#define ARG_CHECK(cond) do { \
+if (EXPECT(!(cond), 0)) { \
+secp256k1_callback_call(&ctx->illegal_callback, #cond); \
+return 0; \
+} \
+} while(0)*/
+
 //#include "../secp256k1/src/secp256k1.c"
+struct secp256k1_context_struct {
+    secp256k1_ecmult_context ecmult_ctx;
+    secp256k1_ecmult_gen_context ecmult_gen_ctx;
+    secp256k1_callback illegal_callback;
+    secp256k1_callback error_callback;
+};
+
+extern "C" int secp256k1_ecmult_multi_var(const secp256k1_ecmult_context *ctx, secp256k1_scratch *scratch, secp256k1_gej *r, const secp256k1_scalar *inp_g_sc, secp256k1_ecmult_multi_callback cb, void *cbdata, size_t n);
+extern "C" int secp256k1_schnorrsig_verify(const secp256k1_context* ctx, const secp256k1_schnorrsig *sig, const unsigned char *msg32, const secp256k1_pubkey *pk);
+extern "C" int secp256k1_schnorrsig_parse(const secp256k1_context* ctx, secp256k1_schnorrsig* sig, const unsigned char *in64);
+
 #include "musig.cpp"
 #endif
 

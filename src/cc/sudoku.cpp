@@ -2817,7 +2817,7 @@ UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
     good = 0;
     if ( params != 0 )
     {
-        if ( (params= cclib_reparse(&n,params)) != 0 )
+        if ( params != 0 && (n= cJSON_GetArraySize(params)) > 0 )
         {
             if ( n > 2 && n <= (sizeof(timestamps)/sizeof(*timestamps))+2 )
             {
