@@ -601,6 +601,13 @@ uint256 juint256(cJSON *obj)
 #include "../secp256k1/src/hash_impl.h"
 #include "../secp256k1/src/scratch_impl.h"
 
+#define ARG_CHECK(cond) do { \
+if (EXPECT(!(cond), 0)) { \
+secp256k1_callback_call(&ctx->illegal_callback, #cond); \
+return 0; \
+} \
+} while(0)
+
 //#include "../secp256k1/src/secp256k1.c"
 #include "../secp256k1/src/modules/schnorrsig/main_impl.h"
 #include "../secp256k1/src/modules/musig/main_impl.h"
