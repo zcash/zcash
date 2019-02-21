@@ -160,7 +160,7 @@ cJSON *cclib_reparse(int32_t *nump,char *jsonstr) // assumes origparams will be 
 UniValue CClib_method(struct CCcontract_info *cp,char *method,char *jsonstr)
 {
     UniValue result(UniValue::VOBJ); uint64_t txfee = 10000; int32_t m; cJSON *params = cclib_reparse(&m,jsonstr);
-    fprintf(stderr,"method.(%s) -> (%s)\n",jsonstr!=0?jsonstr:"",params!=0?jprint(params,0):"");
+    //fprintf(stderr,"method.(%s) -> (%s)\n",jsonstr!=0?jsonstr:"",params!=0?jprint(params,0):"");
 #ifdef BUILD_ROGUE
     if ( cp->evalcode == EVAL_ROGUE )
     {
@@ -288,7 +288,7 @@ UniValue CClib_info(struct CCcontract_info *cp)
 UniValue CClib(struct CCcontract_info *cp,char *method,char *jsonstr)
 {
     UniValue result(UniValue::VOBJ); int32_t i; std::string rawtx; cJSON *params;
-    printf("CClib params.(%s)\n",jsonstr!=0?jsonstr:"");
+    //printf("CClib params.(%s)\n",jsonstr!=0?jsonstr:"");
     for (i=0; i<sizeof(CClib_methods)/sizeof(*CClib_methods); i++)
     {
         if ( cp->evalcode == CClib_methods[i].evalcode && strcmp(method,CClib_methods[i].method) == 0 )
