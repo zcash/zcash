@@ -5,7 +5,7 @@ if [ "$HOST" = "x86_64-w64-mingw32" ]; then
   echo building rogue.exe...
   mkdir ncurses && cd ncurses
   wget https://invisible-island.net/datafiles/release/mingw32.zip
-  unzip mingw32.zip && delete mingw32.zip
+  unzip mingw32.zip && rm mingw32.zip
   cd ..
   if make -f Makefile_win "$@"; then
     echo rogue.exe build SUCCESSFUL
