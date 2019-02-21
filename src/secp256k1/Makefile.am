@@ -73,7 +73,7 @@ endif
 endif
 
 libsecp256k1_la_SOURCES = src/secp256k1.c
-libsecp256k1_la_CPPFLAGS = -DENABLE_MODULE_MUSIG -DSECP256K1_BUILD -I$(top_srcdir)/include -I$(top_srcdir)/src $(SECP_INCLUDES)
+libsecp256k1_la_CPPFLAGS = -DSECP256K1_BUILD -DENABLE_MODULE_MUSIG -I$(top_srcdir)/include -I$(top_srcdir)/src $(SECP_INCLUDES)
 libsecp256k1_la_LIBADD = $(JNI_LIB) $(SECP_LIBS) $(COMMON_LIB)
 
 libsecp256k1_jni_la_SOURCES  = src/java/org_bitcoin_NativeSecp256k1.c src/java/org_bitcoin_Secp256k1Context.c
@@ -173,11 +173,6 @@ EXTRA_DIST = autogen.sh src/gen_context.c src/basic-config.h $(JAVA_FILES)
 if ENABLE_MODULE_ECDH
 include src/modules/ecdh/Makefile.am.include
 endif
-
-#if ENABLE_MODULE_MUSIG
-include src/modules/schnorrsig/Makefile.am.include
-include src/modules/musig/Makefile.am.include
-#endif
 
 if ENABLE_MODULE_RECOVERY
 include src/modules/recovery/Makefile.am.include

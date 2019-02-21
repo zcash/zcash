@@ -25,8 +25,8 @@
  *	The main program, of course
  */
 struct rogue_state globalR;
-void garbage_collect();
 char Gametxidstr[67];
+void garbage_collect();
 
 void purge_obj_guess(struct obj_info *array,int32_t n)
 {
@@ -152,71 +152,24 @@ int32_t flushkeystrokes(struct rogue_state *rs)
 }
 #else
 
-uint8_t *OS_fileptr(long *allocsizep,char *fname);
-#define is_cJSON_True(json) ((json) != 0 && ((json)->type & 0xff) == cJSON_True)
+#ifdef BUILD_ROGUE
+// stubs for inside daemon
+
+void rogue_progress(struct rogue_state *rs,uint64_t seed,char *keystrokes,int32_t num)
+{
+}
 
 int32_t rogue_setplayerdata(struct rogue_state *rs,char *gametxidstr)
 {
-    char cmd[32768]; int32_t i,n,retval=-1; char *filestr,*pname,*statusstr,*datastr,fname[128]; long allocsize; cJSON *retjson,*array,*item;
-    if ( gametxidstr == 0 || *gametxidstr == 0 )
-        return(retval);
-    sprintf(fname,"%s.gameinfo",gametxidstr);
-    sprintf(cmd,"./komodo-cli -ac_name=ROGUE cclib gameinfo 17 \\\"[%%22%s%%22]\\\" > %s",gametxidstr,fname);
-    if ( system(cmd) != 0 )
-        fprintf(stderr,"error issuing (%s)\n",cmd);
-    else
-    {
-        filestr = (char *)OS_fileptr(&allocsize,fname);
-        if ( (retjson= cJSON_Parse(filestr)) != 0 )
-        {
-            if ( (array= jarray(&n,retjson,"players")) != 0 )
-            {
-                for (i=0; i<n; i++)
-                {
-                    item = jitem(array,i);
-                    if ( is_cJSON_True(jobj(item,"ismine")) != 0 && (statusstr= jstr(item,"status")) != 0 )
-                    {
-                        if ( strcmp(statusstr,"registered") == 0 )
-                        {
-                            retval = 0;
-                            if ( (item= jobj(item,"player")) != 0 && (datastr= jstr(item,"data")) != 0 )
-                            {
-                                if ( (pname= jstr(item,"pname")) != 0 && strlen(pname) < MAXSTR-1 )
-                                    strcpy(whoami,pname);
-                                decode_hex((uint8_t *)&rs->P,(int32_t)strlen(datastr)/2,datastr);
-                                fprintf(stderr,"set pname[%s] %s\n",pname==0?"":pname,jprint(item,0));
-                                rs->restoring = 1;
-                            }
-                        }
-                    }
-                }
-            }
-            free_json(retjson);
-        }
-        free(filestr);
-    }
-    return(retval);
+    return(-1);
 }
-
-void rogue_progress(uint64_t seed,char *keystrokes,int32_t num)
-{
-    char cmd[16384],hexstr[16384]; int32_t i;
-    if ( Gametxidstr[0] != 0 )
-    {
-        for (i=0; i<num; i++)
-            sprintf(&hexstr[i<<1],"%02x",keystrokes[i]);
-        hexstr[i<<1] = 0;
-        sprintf(cmd,"./komodo-cli -ac_name=ROGUE cclib keystrokes 17 \\\"[%%22%s%%22,%%22%s%%22]\\\" >> keystrokes.log",Gametxidstr,hexstr);
-        if ( system(cmd) != 0 )
-            fprintf(stderr,"error issuing (%s)\n",cmd);
-    }
-}
+#endif
 
 int32_t flushkeystrokes(struct rogue_state *rs)
 {
     if ( rs->num > 0 )
     {
-        rogue_progress(rs->seed,rs->buffered,rs->num);
+        rogue_progress(rs,rs->seed,rs->buffered,rs->num);
         memset(rs->buffered,0,sizeof(rs->buffered));
         rs->counter++;
         rs->num = 0;
@@ -230,10 +183,10 @@ void rogue_bailout(struct rogue_state *rs)
     flushkeystrokes(rs);
     //sleep(5);
     return;
-    fprintf(stderr,"bailing out\n");
+    /*fprintf(stderr,"bailing out\n");
     sprintf(cmd,"./komodo-cli -ac_name=ROGUE cclib bailout 17 \\\"[%%22%s%%22]\\\" >> bailout.log",Gametxidstr);
     if ( system(cmd) != 0 )
-        fprintf(stderr,"error issuing (%s)\n",cmd);
+        fprintf(stderr,"error issuing (%s)\n",cmd);*/
 }
 
 int32_t rogue_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t num,struct rogue_player *player,int32_t sleepmillis)
@@ -356,6 +309,8 @@ int rogue(int argc, char **argv, char **envp)
 {
     char *env; int lowtime; struct rogue_state *rs = &globalR;
     memset(rs,0,sizeof(*rs));
+    rs->guiflag = 1;
+    rs->sleeptime = 1; // non-zero to allow refresh()
     if ( argc == 3 && strlen(argv[2]) == 64 )
     {
         rs->seed = atol(argv[1]);
@@ -366,8 +321,6 @@ int rogue(int argc, char **argv, char **envp)
             return(-1);
         }
     } else rs->seed = 777;
-    rs->guiflag = 1;
-    rs->sleeptime = 1; // non-zero to allow refresh()
     md_init();
 
 #ifdef MASTER
@@ -607,7 +560,7 @@ playit(struct rogue_state *rs)
         }
         else
         {
-            if ( rs->needflush != 0 && rs->num > 1024 )
+            if ( rs->needflush != 0 && rs->num > 8000 )
             {
                 if ( flushkeystrokes(rs) == 0 )
                     rs->needflush = 0;

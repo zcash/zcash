@@ -34,6 +34,7 @@ void restore_player(struct rogue_state *rs)
     int32_t i,total = 0; THING *obj;
     //rs->P.gold = purse;
     max_hp = rs->P.hitpoints;
+    //pstats.s_hpt = max_hp;
     pstats.s_str = rs->P.strength & 0xffff;
     if ( (max_stats.s_str= (rs->P.strength >> 16) & 0xffff) == 0 )
         max_stats.s_str = 16;
