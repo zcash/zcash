@@ -600,14 +600,14 @@ uint256 juint256(cJSON *obj)
 #include "../secp256k1/src/ecmult_gen_impl.h"
 #include "../secp256k1/src/ecdsa_impl.h"
 #include "../secp256k1/src/eckey_impl.h"
-#include "../secp256k1/src/hash_impl.h"*/
+#include "../secp256k1/src/hash_impl.h"
 
 struct secp256k1_context_struct {
     secp256k1_ecmult_context ecmult_ctx;
     secp256k1_ecmult_gen_context ecmult_gen_ctx;
     secp256k1_callback illegal_callback;
     secp256k1_callback error_callback;
-};
+};*/
 
 typedef int (secp256k1_ecmult_multi_callback)(secp256k1_scalar *sc, secp256k1_ge *pt, size_t idx, void *data);
 extern "C" void secp256k1_pubkey_save(secp256k1_pubkey* pubkey, secp256k1_ge* ge);
@@ -624,8 +624,6 @@ return 0; \
 } while(0)
 
 //#include "../secp256k1/src/secp256k1.c"
-#include "../secp256k1/src/modules/schnorrsig/main_impl.h"
-#include "../secp256k1/src/modules/musig/main_impl.h"
 
 #include "musig.cpp"
 #endif
