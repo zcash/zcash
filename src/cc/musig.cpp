@@ -86,7 +86,7 @@ int32_t musig_prevoutmsg(uint8_t *msg,uint256 sendtxid,CScript scriptPubKey)
 UniValue musig_calcmsg(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     UniValue result(UniValue::VOBJ); uint256 sendtxid; int32_t i; uint8_t msg[32]; char *scriptstr,str[65]; int32_t n;
-    if ( params != 0 && (n= cJSON_GetArraySize()) > 0 )
+    if ( params != 0 && (n= cJSON_GetArraySize(params)) > 0 )
     {
         if ( n == 2 )
         {
@@ -183,7 +183,7 @@ UniValue musig_send(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
         txfee = MUSIG_TXFEE;
     mypk = pubkey2pk(Mypubkey());
     musigpk = GetUnspendable(cp,0);
-    if ( params != 0 && (n= cJSON_GetArraySize()) > 0 )
+    if ( params != 0 && (n= cJSON_GetArraySize(params)) > 0 )
     {
         if ( n == 2 && (hexstr= jstr(jitem(params,0),0)) != 0 && is_hexstr(hexstr,0) == 66 )
         {
@@ -206,7 +206,7 @@ UniValue musig_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     UniValue result(UniValue::VOBJ); std::string rawtx; CPubKey mypk,pk; secp256k1_pubkey combined_pk; char *scriptstr,*musigstr; uint8_t msg[32]; CTransaction vintx; uint256 prevhash,hashBlock; int32_t n,numvouts; CTxOut vout; secp256k1_schnorrsig musig;
     if ( ctx == 0 )
         ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
-    if ( params != 0 && (n= cJSON_GetArraySize()) > 0 )
+    if ( params != 0 && (n= cJSON_GetArraySize(params)) > 0 )
     {
         if ( n == 3 )
         {
