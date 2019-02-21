@@ -450,7 +450,7 @@ try_again:
             
             databuf = (char *)malloc(256 + strlen(command) + strlen(params));
             sprintf(databuf,"{\"id\":\"jl777\",\"method\":\"%s\",\"params\":%s%s%s}",command,bracket0,params,bracket1);
-            //printf("url.(%s) userpass.(%s) databuf.(%s)\n",url,userpass,databuf);
+            printf("url.(%s) userpass.(%s) databuf.(%s)\n",url,userpass,databuf);
             //
         } //else if ( specialcase != 0 ) fprintf(stderr,"databuf.(%s)\n",params);
         curl_easy_setopt(curl_handle,CURLOPT_POST,1L);
@@ -742,7 +742,7 @@ int32_t rogue_setplayerdata(struct rogue_state *rs,char *gametxidstr)
     }
     else
     {
-        sprintf(params,"[\"gameinfo\",\"17\",\\\"[%%22%s%%22]\\\"]",gametxidstr);
+        sprintf(params,"[\"gameinfo\",\"17\",\"[%%22%s%%22]\"]",gametxidstr);
         filestr = komodo_issuemethod(USERPASS,"cclib",params,ROGUE_PORT);
     }
     if ( filestr != 0 )
