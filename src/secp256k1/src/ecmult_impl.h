@@ -1,4 +1,4 @@
-#ifdef ENABLE_MODULE_MUSIG
+#ifndef ENABLE_MODULE_MUSIG
 
 
 /**********************************************************************
@@ -1525,7 +1525,6 @@ typedef int (*secp256k1_ecmult_multi_func)(const secp256k1_ecmult_context*, secp
 
 int secp256k1_ecmult_multi_var(const secp256k1_ecmult_context *ctx, secp256k1_scratch *scratch, secp256k1_gej *r, const secp256k1_scalar *inp_g_sc, secp256k1_ecmult_multi_callback cb, void *cbdata, size_t n) {
     size_t i;
-    xxx
     int (*f)(const secp256k1_ecmult_context*, secp256k1_scratch*, secp256k1_gej*, const secp256k1_scalar*, secp256k1_ecmult_multi_callback cb, void*, size_t, size_t);
     size_t max_points;
     size_t n_batches;
