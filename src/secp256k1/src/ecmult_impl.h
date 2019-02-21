@@ -1157,6 +1157,20 @@ static int secp256k1_wnaf_fixed(int *wnaf, const secp256k1_scalar *s, int w) {
 #endif /* SECP256K1_ECMULT_IMPL_H */
 #endif
 
+#include "../scratch.h"
+
+/* The number of objects allocated on the scratch space for ecmult_multi algorithms */
+#define PIPPENGER_SCRATCH_OBJECTS 6
+#define STRAUSS_SCRATCH_OBJECTS 6
+
+#define PIPPENGER_MAX_BUCKET_WINDOW 12
+
+/* Minimum number of points for which pippenger_wnaf is faster than strauss wnaf */
+#ifdef USE_ENDOMORPHISM
+#define ECMULT_PIPPENGER_THRESHOLD 88
+#else
+#define ECMULT_PIPPENGER_THRESHOLD 160
+#endif
 
 struct secp256k1_pippenger_point_state {
     int skew_na;
