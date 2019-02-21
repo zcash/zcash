@@ -601,6 +601,13 @@ uint256 juint256(cJSON *obj)
 #include "../secp256k1/src/hash_impl.h"
 #include "../secp256k1/src/scratch_impl.h"
 
+struct secp256k1_context_struct {
+    secp256k1_ecmult_context ecmult_ctx;
+    secp256k1_ecmult_gen_context ecmult_gen_ctx;
+    secp256k1_callback illegal_callback;
+    secp256k1_callback error_callback;
+};
+
 #define ARG_CHECK(cond) do { \
 if (EXPECT(!(cond), 0)) { \
 secp256k1_callback_call(&ctx->illegal_callback, #cond); \
