@@ -1,7 +1,26 @@
 #!/bin/sh
 cd rogue;
-./configure
-make; cd ..
+
+if [ "$HOST" = "x86_64-w64-mingw32" ]; then
+  echo building rogue.exe...
+  if make -f Makefile_win "$@"; then
+    echo rogue.exe build SUCCESSFUL
+    cd ..
+  else
+    echo rogue.exe build FAILED
+  exit 1
+  fi
+else
+  echo building rogue...
+  ./configure
+  if make "$@"; then
+    echo rogue build SUCCESSFUL
+    cd ..
+  else
+    echo rogue build FAILED
+    exit 1
+  fi
+fi
 
 if make -f Makefile_rogue "$@"; then
   echo ROGUE BUILD SUCCESSFUL
