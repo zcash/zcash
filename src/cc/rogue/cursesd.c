@@ -410,11 +410,13 @@ int32_t wgetnstr(WINDOW *win, char *str, int32_t n) // stub
     return(0);
 }
 
+#ifndef __MINGW32__
 int32_t getch(void)
 {
     fprintf(stderr,"unexpected and unsupported call to getch\n");
     return(0);
 }
+#endif
 
 int32_t md_readchar(void)
 {

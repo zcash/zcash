@@ -575,10 +575,12 @@ komodod_LDADD += \
 
 if TARGET_DARWIN
 komodod_LDADD += libcc.dylib $(LIBSECP256K1)
+endif
+if TARGET_WINDOWS
+komodod_LDADD += libcc.dll $(LIBSECP256K1)
 else
 komodod_LDADD += libcc.so $(LIBSECP256K1)
 endif
-
 
 if ENABLE_PROTON
 komodod_LDADD += $(LIBBITCOIN_PROTON) $(PROTON_LIBS)

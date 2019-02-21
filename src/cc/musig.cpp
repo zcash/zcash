@@ -13,8 +13,74 @@
  *                                                                            *
  ******************************************************************************/
 
+/* first make a combined pk:
+./c cclib combine 18 \"[%2202aff51dad774a1c612dc82e63f85f07b992b665836b0f0efbcb26ee679f4f4848%22,%22039433dc3749aece1bd568f374a45da3b0bc6856990d7da3cd175399577940a775%22]\"
+{
+    "pkhash": "5be117f3c5ce87e7dc6882c24b8231e0652ee82054bf7b9f94aef1f45e055cba",
+    "combined_pk": "032ddac56613cd0667b589bd7f32b665e2d2ce0247e337a5a0bca6c72e3d9d057b",
+    "result": "success"
+}
+*/
 
+/* second, send 0.777 coins to the combined_pk
+ ./c cclib send 18 \"[%22032ddac56613cd0667b589bd7f32b665e2d2ce0247e337a5a0bca6c72e3d9d057b%22,0.777]\"
+ {
+ "hex": "0400008085202f8901bf7afcbbab7a5e1ba20c8010325e199305afa7d15b4bc86a589a512201d39924000000004847304402203e0cff8aaa831dd990afd979bbc0a648316f77407cb5e02780d18e0670f5172a0220283d5c52d0406b10c508cc2b19dd6dbe2420e7c5cf431a1d41072d0eec28edb901ffffffff03b0c2a10400000000302ea22c8020c71ddb3aac7f9b9e4bdacf032aaa8b8e4433c4ff9f8a43cebb9c1f5da96928a48103120c008203000401cca91e223700000000232102aff51dad774a1c612dc82e63f85f07b992b665836b0f0efbcb26ee679f4f4848ac0000000000000000266a24127821032ddac56613cd0667b589bd7f32b665e2d2ce0247e337a5a0bca6c72e3d9d057b00000000900000000000000000000000000000",
+ "txid": "cb5309ed249da95e2b5696eb763a8736e2fff1d14922ada737b931494ca3d2be",
+ "result": "success"
+ }
+ 
+ {
+ "value": 0.77710000,
+ "valueZat": 77710000,
+ "n": 0,
+ "scriptPubKey": {
+ "asm": "a22c8020c71ddb3aac7f9b9e4bdacf032aaa8b8e4433c4ff9f8a43cebb9c1f5da96928a48103120c008203000401 OP_CHECKCRYPTOCONDITION",
+ "hex": "2ea22c8020c71ddb3aac7f9b9e4bdacf032aaa8b8e4433c4ff9f8a43cebb9c1f5da96928a48103120c008203000401cc",
+ "reqSigs": 1,
+ "type": "cryptocondition",
+ "addresses": [
+ "RKWS7jxyjPX9iaJttk8iMKf1AumanKypez"
+ ]
+ }
+ change script: 2102aff51dad774a1c612dc82e63f85f07b992b665836b0f0efbcb26ee679f4f4848ac
+ 
+ sendtxid: cb5309ed249da95e2b5696eb763a8736e2fff1d14922ada737b931494ca3d2be
+ 
+ broadcast sendtxid and wait for it to be confirmed. then get the msg we need to sign:
+ 
+ ./c cclib calcmsg 18 \"[%22cb5309ed249da95e2b5696eb763a8736e2fff1d14922ada737b931494ca3d2be%22,%222102aff51dad774a1c612dc82e63f85f07b992b665836b0f0efbcb26ee679f4f4848ac%22]\"
+ 
+ {
+ "result": "success",
+ "msg": "63b799913d4c9487f321b32d6ae8614f653f38e0b50d4df4bc1d36339ea18485"
+ }
+
+*/
+
+
+#define USE_BASIC_CONFIG
+#define ENABLE_MODULE_MUSIG
+#include "../secp256k1/src/basic-config.h"
 #include "../secp256k1/include/secp256k1.h"
+#include "../secp256k1/src/ecmult.h"
+#include "../secp256k1/src/ecmult_gen.h"
+
+typedef struct { unsigned char data[64]; } secp256k1_schnorrsig;
+struct secp256k1_context_struct {
+    secp256k1_ecmult_context ecmult_ctx;
+    secp256k1_ecmult_gen_context ecmult_gen_ctx;
+    secp256k1_callback illegal_callback;
+    secp256k1_callback error_callback;
+};
+
+extern "C" int secp256k1_ecmult_multi_var(const secp256k1_ecmult_context *ctx, secp256k1_scratch *scratch, secp256k1_gej *r, const secp256k1_scalar *inp_g_sc, secp256k1_ecmult_multi_callback cb, void *cbdata, size_t n);
+extern "C" int secp256k1_schnorrsig_verify(const secp256k1_context* ctx, const secp256k1_schnorrsig *sig, const unsigned char *msg32, const secp256k1_pubkey *pk);
+extern "C" int secp256k1_schnorrsig_parse(const secp256k1_context* ctx, secp256k1_schnorrsig* sig, const unsigned char *in64);
+extern "C" int secp256k1_musig_pubkey_combine(const secp256k1_context* ctx, secp256k1_scratch_space *scratch, secp256k1_pubkey *combined_pk, unsigned char *pk_hash32, const secp256k1_pubkey *pubkeys, size_t n_pubkeys);
+
+
+//#include "../secp256k1/include/secp256k1.h"
 //#include "../secp256k1/include/secp256k1_schnorrsig.h"
 #include "../secp256k1/include/secp256k1_musig.h"
 
@@ -62,7 +128,6 @@ int32_t musig_msghash(uint8_t *msg,uint256 prevhash,int32_t prevn,CTxOut vout,CP
 {
     CScript data; uint256 hash; int32_t len = 0;
     data << E_MARSHAL(ss << prevhash << prevn << vout << pk);
-fprintf(stderr,"data size %d\n",(int32_t)data.size());
     hash = Hash(data.begin(),data.end());
     memcpy(msg,&hash,sizeof(hash));
     return(0);
@@ -110,9 +175,42 @@ UniValue musig_calcmsg(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 
 UniValue musig_combine(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ);
-    result.push_back(Pair("result","success"));
-    return(result);
+    static secp256k1_context *ctx;
+    size_t clen = CPubKey::PUBLIC_KEY_SIZE;
+    UniValue result(UniValue::VOBJ); CPubKey pk; int32_t i,n; uint8_t pkhash[32]; char *hexstr,str[67]; secp256k1_pubkey combined_pk,spk; std::vector<secp256k1_pubkey> pubkeys;
+    if ( ctx == 0 )
+        ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
+    if ( params != 0 && (n= cJSON_GetArraySize(params)) > 0 )
+    {
+        //fprintf(stderr,"n.%d args.(%s)\n",n,jprint(params,0));
+        for (i=0; i<n; i++)
+        {
+            if ( (hexstr= jstr(jitem(params,i),0)) != 0 && is_hexstr(hexstr,0) == 66 )
+            {
+                CPubKey pk(ParseHex(hexstr));
+                if ( secp256k1_ec_pubkey_parse(ctx,&spk,pk.begin(),33) > 0 )
+                    pubkeys.push_back(spk);
+                else return(cclib_error(result,"error parsing pk"));
+            } else return(cclib_error(result,"all pubkeys must be 33 bytes hexdata"));
+        }
+        if ( secp256k1_musig_pubkey_combine(ctx,NULL,&combined_pk,pkhash,&pubkeys[0],n) > 0 )
+        {
+            if ( secp256k1_ec_pubkey_serialize(ctx,(uint8_t *)pk.begin(),&clen,&combined_pk,SECP256K1_EC_COMPRESSED) > 0 && clen == 33 )
+            {
+                for (i=0; i<32; i++)
+                    sprintf(&str[i<<1],"%02x",pkhash[i]);
+                str[64] = 0;
+                result.push_back(Pair("pkhash",str));
+                
+                for (i=0; i<33; i++)
+                    sprintf(&str[i<<1],"%02x",((uint8_t *)pk.begin())[i]);
+                str[66] = 0;
+                result.push_back(Pair("combined_pk",str));
+                result.push_back(Pair("result","success"));
+                return(result);
+            } else return(cclib_error(result,"error serializeing combined_pk"));
+        } else return(cclib_error(result,"error combining pukbeys"));
+    } else return(cclib_error(result,"need pubkeys params"));
 }
 
 UniValue musig_session(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
