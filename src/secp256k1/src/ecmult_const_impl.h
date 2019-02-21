@@ -14,6 +14,7 @@
 #include "ecmult_const.h"
 #include "ecmult_impl.h"
 
+
 #ifdef USE_ENDOMORPHISM
     #define WNAF_BITS 128
 #else
@@ -255,6 +256,14 @@ static void secp256k1_ecmult_const(secp256k1_gej *r, const secp256k1_ge *a, cons
 #include "group.h"
 #include "ecmult_const.h"
 #include "ecmult_impl.h"
+
+#ifdef USE_ENDOMORPHISM
+#define WNAF_BITS 128
+#else
+#define WNAF_BITS 256
+#endif
+#define WNAF_SIZE_BITS(bits, w) (((bits) + (w) - 1) / (w))
+#define WNAF_SIZE(w) WNAF_SIZE_BITS(WNAF_BITS, w)
 
 /* This is like `ECMULT_TABLE_GET_GE` but is constant time */
 #define ECMULT_CONST_TABLE_GET_GE(r,pre,n,w) do { \

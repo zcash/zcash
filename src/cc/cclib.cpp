@@ -584,9 +584,56 @@ uint256 juint256(cJSON *obj)
 
 #else
 #include "sudoku.cpp"
-//#define USE_BASIC_CONFIG
-//#include "../secp256k1/src/basic-config.h"
+#define USE_BASIC_CONFIG
+#define ENABLE_MODULE_MUSIG
+#include "../secp256k1/src/basic-config.h"
+#include "../secp256k1/include/secp256k1.h"
+#include "../secp256k1/src/ecmult.h"
+#include "../secp256k1/src/ecmult_gen.h"
+
+typedef struct { unsigned char data[64]; } secp256k1_schnorrsig;
+
+/*
+#include "../secp256k1/src/util.h"
+#include "../secp256k1/src/num_impl.h"
+#include "../secp256k1/src/field_impl.h"
+#include "../secp256k1/src/scalar_impl.h"
+#include "../secp256k1/src/group_impl.h"
+#include "../secp256k1/src/scratch_impl.h"
+#include "../secp256k1/src/ecmult_impl.h"
+#include "../secp256k1/src/ecmult_const_impl.h"
+#include "../secp256k1/src/ecmult_gen_impl.h"
+#include "../secp256k1/src/ecdsa_impl.h"
+#include "../secp256k1/src/eckey_impl.h"
+#include "../secp256k1/src/hash_impl.h"
+
+
+
+typedef int (secp256k1_ecmult_multi_callback)(secp256k1_scalar *sc, secp256k1_ge *pt, size_t idx, void *data);
+extern "C" void secp256k1_pubkey_save(secp256k1_pubkey* pubkey, secp256k1_ge* ge);
+extern "C" int secp256k1_nonce_function_bipschnorr(unsigned char *nonce32, const unsigned char *msg32, const unsigned char *key32, const unsigned char *algo16, void *data, unsigned int counter);
+extern "C" int secp256k1_pubkey_load(const secp256k1_context* ctx, secp256k1_ge* ge, const secp256k1_pubkey* pubkey);
+extern "C" void secp256k1_scalar_chacha20(secp256k1_scalar *r1, secp256k1_scalar *r2, const unsigned char *seed, uint64_t idx);
+
+#define ARG_CHECK(cond) do { \
+if (EXPECT(!(cond), 0)) { \
+secp256k1_callback_call(&ctx->illegal_callback, #cond); \
+return 0; \
+} \
+} while(0)*/
+
 //#include "../secp256k1/src/secp256k1.c"
+struct secp256k1_context_struct {
+    secp256k1_ecmult_context ecmult_ctx;
+    secp256k1_ecmult_gen_context ecmult_gen_ctx;
+    secp256k1_callback illegal_callback;
+    secp256k1_callback error_callback;
+};
+
+extern "C" int secp256k1_ecmult_multi_var(const secp256k1_ecmult_context *ctx, secp256k1_scratch *scratch, secp256k1_gej *r, const secp256k1_scalar *inp_g_sc, secp256k1_ecmult_multi_callback cb, void *cbdata, size_t n);
+extern "C" int secp256k1_schnorrsig_verify(const secp256k1_context* ctx, const secp256k1_schnorrsig *sig, const unsigned char *msg32, const secp256k1_pubkey *pk);
+extern "C" int secp256k1_schnorrsig_parse(const secp256k1_context* ctx, secp256k1_schnorrsig* sig, const unsigned char *in64);
+
 #include "musig.cpp"
 #endif
 
