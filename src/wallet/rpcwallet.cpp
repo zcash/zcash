@@ -5416,7 +5416,7 @@ UniValue cclib(const UniValue& params, bool fHelp)
         }
         if ( params.size() == 3 )
         {
-            fprintf(stderr,"params.(%s %s %s)\n",params[0].get_str().c_str(),params[1].get_str().c_str(),params[2].get_str().c_str());
+            //fprintf(stderr,"params.(%s %s %s)\n",params[0].get_str().c_str(),params[1].get_str().c_str(),params[2].get_str().c_str());
             jsonparams = cJSON_Parse(params[2].get_str().c_str());
         }
     }
