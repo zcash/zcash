@@ -742,7 +742,7 @@ int32_t rogue_setplayerdata(struct rogue_state *rs,char *gametxidstr)
     }
     else
     {
-        sprintf(params,"[\"gameinfo\",17,[\"%s\"]]",gametxidstr);
+        sprintf(params,"[\"gameinfo\",\"17\",\"[\'%s\']\"]",gametxidstr);
         filestr = komodo_issuemethod(USERPASS,"cclib",params,ROGUE_PORT);
     }
     if ( filestr != 0 )
