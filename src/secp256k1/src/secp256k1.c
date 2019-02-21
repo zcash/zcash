@@ -17,7 +17,6 @@
 #include "ecdsa_impl.h"
 #include "eckey_impl.h"
 #include "hash_impl.h"
-#include "scratch_impl.h"
 
 #define ARG_CHECK(cond) do { \
     if (EXPECT(!(cond), 0)) { \
@@ -600,9 +599,6 @@ int secp256k1_ec_pubkey_combine(const secp256k1_context* ctx, secp256k1_pubkey *
 #ifdef ENABLE_MODULE_ECDH
 # include "modules/ecdh/main_impl.h"
 #endif
-
-//#include "modules/schnorrsig/main_impl.h"
-//#include "modules/musig/main_impl.h"
 
 
 #ifdef ENABLE_MODULE_RECOVERY
