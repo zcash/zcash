@@ -601,8 +601,8 @@ int secp256k1_ec_pubkey_combine(const secp256k1_context* ctx, secp256k1_pubkey *
 # include "modules/ecdh/main_impl.h"
 #endif
 
-#include "modules/schnorrsig/main_impl.h"
-#include "modules/musig/main_impl.h"
+//#include "modules/schnorrsig/main_impl.h"
+//#include "modules/musig/main_impl.h"
 
 
 #ifdef ENABLE_MODULE_RECOVERY
