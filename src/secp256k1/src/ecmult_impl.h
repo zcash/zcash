@@ -1155,6 +1155,8 @@ static int secp256k1_wnaf_fixed(int *wnaf, const secp256k1_scalar *s, int w) {
 }
 
 #endif /* SECP256K1_ECMULT_IMPL_H */
+#endif
+
 
 struct secp256k1_pippenger_point_state {
     int skew_na;
@@ -1579,5 +1581,4 @@ int secp256k1_ecmult_multi_var(const secp256k1_ecmult_context *ctx, secp256k1_sc
     return 1;
 }
 
-#endif
 
