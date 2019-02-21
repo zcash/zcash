@@ -600,6 +600,7 @@ uint256 juint256(cJSON *obj)
 #include "../secp256k1/src/eckey_impl.h"
 #include "../secp256k1/src/hash_impl.h"
 #include "../secp256k1/src/scratch_impl.h"
+#include "../secp256k1/src/scratch.h"
 
 struct secp256k1_context_struct {
     secp256k1_ecmult_context ecmult_ctx;
