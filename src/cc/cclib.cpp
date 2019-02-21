@@ -593,14 +593,13 @@ uint256 juint256(cJSON *obj)
 #include "../secp256k1/src/field_impl.h"
 #include "../secp256k1/src/scalar_impl.h"
 #include "../secp256k1/src/group_impl.h"
+#include "../secp256k1/src/scratch_impl.h"
 #include "../secp256k1/src/ecmult_impl.h"
 #include "../secp256k1/src/ecmult_const_impl.h"
 #include "../secp256k1/src/ecmult_gen_impl.h"
 #include "../secp256k1/src/ecdsa_impl.h"
 #include "../secp256k1/src/eckey_impl.h"
 #include "../secp256k1/src/hash_impl.h"
-#include "../secp256k1/src/scratch_impl.h"
-#include "../secp256k1/src/scratch.h"
 
 struct secp256k1_context_struct {
     secp256k1_ecmult_context ecmult_ctx;
