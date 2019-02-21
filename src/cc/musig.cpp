@@ -137,7 +137,7 @@ UniValue musig_combine(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
         ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
     if ( params != 0 && (n= cJSON_GetArraySize(params)) > 0 )
     {
-        fprintf(stderr,"n.%d args.(%s)\n",jprint(params,0));
+        fprintf(stderr,"n.%d args.(%s)\n",n,jprint(params,0));
         for (i=0; i<n; i++)
         {
             if ( (hexstr= jstr(jitem(params,i),0)) != 0 && is_hexstr(hexstr,0) == 66 )
