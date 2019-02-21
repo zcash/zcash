@@ -15,8 +15,10 @@
 
 
 #include "../secp256k1/include/secp256k1.h"
-#include "../secp256k1/include/secp256k1_schnorrsig.h"
+//#include "../secp256k1/include/secp256k1_schnorrsig.h"
 #include "../secp256k1/include/secp256k1_musig.h"
+
+typedef struct { unsigned char data[64]; } secp256k1_schnorrsig;
 
 #define MUSIG_PREVN 0   // for now, just use vout0 for the musig output
 #define MUSIG_TXFEE 10000
