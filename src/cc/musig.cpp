@@ -110,9 +110,40 @@ UniValue musig_calcmsg(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 
 UniValue musig_combine(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ);
-    result.push_back(Pair("result","success"));
-    return(result);
+    static secp256k1_context *ctx; secp256k1_scratch_space scratch;
+    size_t clen = CPubKey::PUBLIC_KEY_SIZE;
+    UniValue result(UniValue::VOBJ); int32_t i,n; uint8_t pkhash[32]; char *hexstr,str[67]; secp256k1_pubkey combined_pk,spk; std::vector<secp256k1_pubkey> pubkeys;
+    if ( ctx == 0 )
+        ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
+    if ( params != 0 && (n= cJSON_GetArraySize(params)) > 0 )
+    {
+        for (i=0; i<n; i++)
+        {
+            if ( (hexstr= jstr(jitem(params,i),0)) != 0 && is_hexstr(hexstr,0) == 66 )
+            {
+                CPubKey pk(ParseHex(hexstr));
+                if ( secp256k1_ec_pubkey_parse(ctx,&spk,pk.begin(),33) > 0 )
+                    pubkeys.push_back(spk);
+                else return(cclib_error(result,"error parsing pk"));
+            } else return(cclib_error(result,"all pubkeys must be 33 bytes hexdata"));
+        }
+        if ( secp256k1_musig_pubkey_combine(ctx,&scratch,&combined_pk,pkhash,&pubkeys[0],n) > 0 )
+        {
+            if ( secp256k1_ec_pubkey_serialize(ctx,(uint8_t *)pk.begin(),&clen,&combined_pk,SECP256K1_EC_COMPRESSED) > 0 && clen == 33 )
+            {
+                for (i=0; i<32; i++)
+                    sprintf(&str[i<<1],"%02x",pkhash[i]);
+                str[64] = 0;
+                result.push_back(Pair("pkhash",str));
+                
+                for (i=0; i<33; i++)
+                    sprintf(&str[i<<1],"%02x",((uint8_t *)pk.begin())[i]);
+                str[66] = 0;
+                result.push_back(Pair("combined_pk",str));
+                result.push_back(Pair("result","success"));
+            } else return(cclib_error(result,"error serializeing combined_pk"));
+        } else return(cclib_error(result,"error combining pukbeys"));
+    } else return(cclib_error(result,"need pubkeys params"));
 }
 
 UniValue musig_session(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
