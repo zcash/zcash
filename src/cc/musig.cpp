@@ -162,6 +162,7 @@ UniValue musig_combine(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                 str[66] = 0;
                 result.push_back(Pair("combined_pk",str));
                 result.push_back(Pair("result","success"));
+                return(result);
             } else return(cclib_error(result,"error serializeing combined_pk"));
         } else return(cclib_error(result,"error combining pukbeys"));
     } else return(cclib_error(result,"need pubkeys params"));
