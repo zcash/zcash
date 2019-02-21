@@ -584,9 +584,12 @@ uint256 juint256(cJSON *obj)
 
 #else
 #include "sudoku.cpp"
-//#define USE_BASIC_CONFIG
-//#include "../secp256k1/src/basic-config.h"
+#define USE_BASIC_CONFIG
+#include "../secp256k1/src/basic-config.h"
 //#include "../secp256k1/src/secp256k1.c"
+#include "../secp256k1/src/modules/schnorrsig/main_impl.h"
+#include "../secp256k1/src/modules/musig/main_impl.h"
+
 #include "musig.cpp"
 #endif
 
