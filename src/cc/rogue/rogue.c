@@ -154,6 +154,7 @@ int32_t flushkeystrokes(struct rogue_state *rs)
 
 #ifdef BUILD_ROGUE
 // stubs for inside daemon
+xxx
 void rogue_progress(struct rogue_state *rs,uint64_t seed,char *keystrokes,int32_t num)
 {
 }
