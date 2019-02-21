@@ -123,9 +123,43 @@ UniValue musig_send(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue musig_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 #endif
 
-UniValue CClib_method(struct CCcontract_info *cp,char *method,cJSON *params)
+cJSON *cclib_reparse(int32_t *nump,char *jsonstr) // assumes origparams will be freed by caller
 {
-    UniValue result(UniValue::VOBJ); uint64_t txfee = 10000;
+    cJSON *params; char *jsonstr,*newstr; int32_t i,j;
+    *nump = 0;
+    if ( jsonstr != 0 )
+    {
+        if ( jsonstr[0] == '"' && jsonstr[strlen(jsonstr)-1] == '"' )
+        {
+            jsonstr[strlen(jsonstr)-1] = 0;
+            jsonstr++;
+        }
+        newstr = (char *)malloc(strlen(jsonstr)+1);
+        for (i=j=0; jsonstr[i]!=0; i++)
+        {
+            if ( jsonstr[i] == '%' && jsonstr[i+1] == '2' && jsonstr[i+2] == '2' )
+            {
+                newstr[j++] = '"';
+                i += 2;
+            }
+            else if ( jsonstr[i] == '\'' )
+                newstr[j++] = '"';
+            else newstr[j++] = jsonstr[i];
+        }
+        newstr[j] = 0;
+        params = cJSON_Parse(newstr);
+        if ( 1 && params != 0 )
+            printf("new.(%s) -> %s\n",newstr,jprint(params,0));
+        free(newstr);
+        *nump = cJSON_GetArraySize(params);
+        //free(origparams);
+    } else params = 0;
+    return(params);
+}
+
+UniValue CClib_method(struct CCcontract_info *cp,char *method,char *jsonstr)
+{
+    UniValue result(UniValue::VOBJ); uint64_t txfee = 10000; int32_t m; cJSON *params = cclib_reparse(&m,jsonstr);
 #ifdef BUILD_ROGUE
     if ( cp->evalcode == EVAL_ROGUE )
     {
@@ -250,10 +284,10 @@ UniValue CClib_info(struct CCcontract_info *cp)
     return(result);
 }
 
-UniValue CClib(struct CCcontract_info *cp,char *method,cJSON *params)
+UniValue CClib(struct CCcontract_info *cp,char *method,char *jsonstr)
 {
     UniValue result(UniValue::VOBJ); int32_t i; std::string rawtx;
-    printf("CClib params.%p (%s)\n",params,params!=0?jprint(params,0):"");
+    printf("CClib params.(%s)\n",jsonstr!=0?jsonstr:"");
     for (i=0; i<sizeof(CClib_methods)/sizeof(*CClib_methods); i++)
     {
         if ( cp->evalcode == CClib_methods[i].evalcode && strcmp(method,CClib_methods[i].method) == 0 )
@@ -265,7 +299,7 @@ UniValue CClib(struct CCcontract_info *cp,char *method,cJSON *params)
                 rawtx = CClib_rawtxgen(cp,CClib_methods[i].funcid,params);
                 result.push_back(Pair("rawtx",rawtx));
                 return(result);
-            } else return(CClib_method(cp,method,params));
+            } else return(CClib_method(cp,method,jsonstr));
         }
     }
     result.push_back(Pair("result","error"));
@@ -507,38 +541,6 @@ uint256 juint256(cJSON *obj)
     return(revuint256(tmp));
 }
 
-cJSON *cclib_reparse(int32_t *nump,cJSON *origparams) // assumes origparams will be freed by caller
-{
-    cJSON *params; char *jsonstr,*newstr; int32_t i,j;
-    if ( (jsonstr= jprint(origparams,0)) != 0 )
-    {
-        if ( jsonstr[0] == '"' && jsonstr[strlen(jsonstr)-1] == '"' )
-        {
-            jsonstr[strlen(jsonstr)-1] = 0;
-            jsonstr++;
-        }
-        newstr = (char *)malloc(strlen(jsonstr)+1);
-        for (i=j=0; jsonstr[i]!=0; i++)
-        {
-            if ( jsonstr[i] == '%' && jsonstr[i+1] == '2' && jsonstr[i+2] == '2' )
-            {
-                newstr[j++] = '"';
-                i += 2;
-            }
-            else if ( jsonstr[i] == '\'' )
-                newstr[j++] = '"';
-            else newstr[j++] = jsonstr[i];
-        }
-        newstr[j] = 0;
-        params = cJSON_Parse(newstr);
-        if ( 1 && params != 0 )
-            printf("new.(%s) -> %s\n",newstr,jprint(params,0));
-        free(newstr);
-        *nump = cJSON_GetArraySize(params);
-        //free(origparams);
-    } else params = 0;
-    return(params);
-}
 
 #ifdef BUILD_ROGUE
 #include "rogue_rpc.cpp"
