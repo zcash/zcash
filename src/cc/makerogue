@@ -3,6 +3,7 @@ cd rogue;
 
 if [ "$HOST" = "x86_64-w64-mingw32" ]; then
   echo building rogue.exe...
+  ./configure --host=x86_64-w64-mingw32
   mkdir ncurses && cd ncurses
   echo $PWD
   wget https://invisible-island.net/datafiles/release/mingw32.zip
