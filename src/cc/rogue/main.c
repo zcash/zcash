@@ -450,7 +450,7 @@ try_again:
             
             databuf = (char *)malloc(256 + strlen(command) + strlen(params));
             sprintf(databuf,"{\"id\":\"jl777\",\"method\":\"%s\",\"params\":%s%s%s}",command,bracket0,params,bracket1);
-            //printf("url.(%s) userpass.(%s) databuf.(%s)\n",url,userpass,databuf);
+            printf("url.(%s) userpass.(%s) databuf.(%s)\n",url,userpass,databuf);
             //
         } //else if ( specialcase != 0 ) fprintf(stderr,"databuf.(%s)\n",params);
         curl_easy_setopt(curl_handle,CURLOPT_POST,1L);
@@ -690,7 +690,7 @@ char *komodo_issuemethod(char *userpass,char *method,char *params,uint16_t port)
     {
         sprintf(url,(char *)"http://127.0.0.1:%u",port);
         sprintf(postdata,"{\"method\":\"%s\",\"params\":%s}",method,params);
-        printf("[%s] (%s) postdata.(%s) params.(%s) USERPASS.(%s)\n",ASSETCHAINS_SYMBOL,url,postdata,params,USERPASS);
+        //printf("[%s] (%s) postdata.(%s) params.(%s) USERPASS.(%s)\n",ASSETCHAINS_SYMBOL,url,postdata,params,USERPASS);
         retstr2 = bitcoind_RPC(&retstr,(char *)"debug",url,userpass,method,params);
         //retstr = curl_post(&cHandle,url,USERPASS,postdata,0,0,0,0);
     }
