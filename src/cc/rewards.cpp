@@ -203,7 +203,7 @@ bool RewardsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
     else
     {
         txid = tx.GetHash();
-        if ( (funcid=  DecodeRewardsOpRet(txid,tx.vout[numvouts-1].scriptPubKey,sbits,fundingtxid)) != 0 )
+        if ( (funcid= DecodeRewardsOpRet(txid,tx.vout[numvouts-1].scriptPubKey,sbits,fundingtxid)) != 0 )
         {
             if ( eval->GetTxUnconfirmed(fundingtxid,fundingTx,hashBlock) == 0 )
                 return eval->Invalid("cant find fundingtxid");
@@ -310,7 +310,7 @@ static uint64_t myIs_unlockedtx_inmempool(uint256 &txid,int32_t &vout,uint64_t r
         if ( tx.vout.size() > 0 && tx.vout[0].nValue >= needed )
         {
             const uint256 &hash = tx.GetHash();
-            if ( tx.vout[0].scriptPubKey.IsPayToCryptoCondition() != 0 && myIsutxo_spentinmempool(hash,0) == 0 )
+            if ( tx.vout[0].scriptPubKey.IsPayToCryptoCondition() != 0 && myIsutxo_spentinmempool(ignoretxid,ignorevin,hash,0) == 0 )
             {
                 if ( (funcid= DecodeRewardsOpRet(hash,tx.vout[tx.vout.size()-1].scriptPubKey,sbits,fundingtxid)) == 'U' && sbits == refsbits && fundingtxid == reffundingtxid )
                 {
@@ -346,7 +346,7 @@ int64_t AddRewardsInputs(CScript &scriptPubKey,uint64_t maxseconds,struct CCcont
                 break;
         if ( j != mtx.vin.size() )
             continue;
-        if ( GetTransaction(txid,tx,hashBlock,false) != 0 && tx.vout.size() > 0 && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 && myIsutxo_spentinmempool(txid,vout) == 0 )
+        if ( GetTransaction(txid,tx,hashBlock,false) != 0 && tx.vout.size() > 0 && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0 )
         {
             if ( (funcid= DecodeRewardsOpRet(txid,tx.vout[tx.vout.size()-1].scriptPubKey,sbits,fundingtxid)) != 0 )
             {

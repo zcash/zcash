@@ -1,0 +1,11 @@
+#!/bin/sh
+cd rogue;
+./configure
+make; cd ..
+
+if make -f Makefile_rogue "$@"; then
+  echo ROGUE BUILD SUCCESSFUL
+else
+  echo ROGUE BUILD FAILED
+  exit 1
+fi

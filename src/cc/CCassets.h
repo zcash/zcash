@@ -29,11 +29,8 @@
 bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn);
 
 // CCassetsCore
-//CTxOut MakeAssetsVout(CAmount nValue,CPubKey pk);
-//CScript EncodeAssetCreateOpRet(uint8_t funcid,std::vector<uint8_t> origpubkey,std::string name,std::string description);
-//CScript EncodeAssetOpRet(uint8_t assetFuncId, uint256 tokenid, uint256 assetid2, int64_t price, std::vector<uint8_t> origpubkey);
-//bool DecodeAssetCreateOpRet(const CScript &scriptPubKey,std::vector<uint8_t> &origpubkey,std::string &name,std::string &description);
-//uint8_t DecodeAssetOpRet(const CScript &scriptPubKey, uint8_t &evalCode, uint256 &assetid, uint256 &assetid2, int64_t &price, std::vector<uint8_t> &origpubkey);
+CScript EncodeAssetOpRet(uint8_t assetFuncId, uint256 assetid2, int64_t price, std::vector<uint8_t> origpubkey);
+uint8_t DecodeAssetTokenOpRet(const CScript &scriptPubKey, uint8_t &assetsEvalCode, uint256 &tokenid, uint256 &assetid2, int64_t &price, std::vector<uint8_t> &origpubkey);
 bool SetAssetOrigpubkey(std::vector<uint8_t> &origpubkey,int64_t &price,const CTransaction &tx);
 int64_t IsAssetvout(struct CCcontract_info *cp, int64_t &price, std::vector<uint8_t> &origpubkey, const CTransaction& tx, int32_t v, uint256 refassetid);
 bool ValidateBidRemainder(int64_t remaining_price,int64_t remaining_nValue,int64_t orig_nValue,int64_t received_nValue,int64_t paidprice,int64_t totalprice);
@@ -50,7 +47,7 @@ bool AssetCalcAmounts(struct CCcontract_info *cpAssets, int64_t &inputs, int64_t
 //int64_t GetAssetBalance(CPubKey pk,uint256 tokenid); // --> GetTokenBalance()
 int64_t AddAssetInputs(struct CCcontract_info *cp, CMutableTransaction &mtx, CPubKey pk, uint256 assetid, int64_t total, int32_t maxinputs);
 
-UniValue AssetOrders(uint256 tokenid);
+UniValue AssetOrders(uint256 tokenid, CPubKey pubkey, uint8_t additionalEvalCode);
 //UniValue AssetInfo(uint256 tokenid);
 //UniValue AssetList();
 //std::string CreateAsset(int64_t txfee,int64_t assetsupply,std::string name,std::string description);

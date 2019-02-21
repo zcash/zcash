@@ -3254,6 +3254,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         //fprintf(stderr,"checkblock failure in connectblock futureblock.%d\n",futureblock);
         return false;
     }
+    // check pindex->CONTEXT_VALIDATED flag
     if ( fCheckPOW != 0 && !ContextualCheckBlock(block, state, pindex->pprev) ) // Activate Jan 15th, 2019
     {
         fprintf(stderr,"ContextualCheckBlock failed ht.%d\n",(int32_t)pindex->GetHeight());
@@ -3940,7 +3941,8 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
 
 int32_t komodo_activate_sapling(CBlockIndex *pindex)
 {
-    uint32_t blocktime,prevtime; CBlockIndex *prev; int32_t i,transition=0,height,prevht,activation = 0;
+    uint32_t blocktime,prevtime; CBlockIndex *prev; int32_t i,transition=0,height,prevht;
+    int32_t activation = 0;
     if ( pindex == 0 )
     {
         fprintf(stderr,"komodo_activate_sapling null pindex\n");
@@ -3998,6 +4000,7 @@ int32_t komodo_activate_sapling(CBlockIndex *pindex)
         fprintf(stderr,"%s sapling activation at %d\n",ASSETCHAINS_SYMBOL,activation);
         ASSETCHAINS_SAPLING = activation;
     }
+    return activation;
 }
 
 static int64_t nTimeReadFromDisk = 0;
@@ -5220,7 +5223,7 @@ bool AcceptBlock(int32_t *futureblockp,CBlock& block, CValidationState& state, C
                 AbortNode(state, "Failed to write block");
         if (!ReceivedBlockTransactions(block, state, pindex, blockPos))
             return error("AcceptBlock(): ReceivedBlockTransactions failed");
-        if ( usetmp != 0 )
+        if ( usetmp != 0 ) // not during initialdownload or if futureflag==0 and contextchecks ok
             pindex->nStatus |= BLOCK_IN_TMPFILE;
     } catch (const std::runtime_error& e) {
         return AbortNode(state, std::string("System error: ") + e.what());
