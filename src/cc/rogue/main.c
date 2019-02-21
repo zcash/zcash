@@ -30,7 +30,7 @@ extern char Gametxidstr[67];
 #define SATOSHIDEN ((uint64_t)100000000L)
 #define dstr(x) ((double)(x) / SATOSHIDEN)
 #define KOMODO_ASSETCHAIN_MAXLEN 65
-char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
+char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN],IPADDRESS[100];
 
 #ifndef _BITS256
 #define _BITS256
@@ -583,7 +583,7 @@ char *curl_post(CURL **cHandlep,char *url,char *userpass,char *postfields,char *
     return(chunk.memory);
 }
 
-uint16_t _komodo_userpass(char *username,char *password,FILE *fp)
+uint16_t _komodo_userpass(char *username, char *password, char *ipaddress, FILE *fp)
 {
     char *rpcuser,*rpcpassword,*str,line[8192]; uint16_t port = 0;
     rpcuser = rpcpassword = 0;
@@ -601,6 +601,10 @@ uint16_t _komodo_userpass(char *username,char *password,FILE *fp)
         {
             port = atoi(parse_conf_line(str,(char *)"rpcport"));
             //fprintf(stderr,"rpcport.%u in file\n",port);
+        }
+        else if ( (str= strstr(line,(char *)"ipaddress")) != 0 )
+        {
+            ipaddress = parse_conf_line(str,(char *)"ipaddress");
         }
     }
     if ( rpcuser != 0 && rpcpassword != 0 )
@@ -653,7 +657,7 @@ uint16_t _komodo_userpass(char *username,char *password,FILE *fp)
     //printf("test.(%s) -> [%s] statename.(%s) %s\n",test,ASSETCHAINS_SYMBOL,symbol,fname);
 }*/
 
-uint16_t komodo_userpass(char *userpass,char *symbol)
+uint16_t komodo_userpass(char *userpass,char *symbol,char *ipaddress)
 {
     FILE *fp; uint16_t port = 0; char fname[512],username[512],password[512],confname[KOMODO_ASSETCHAIN_MAXLEN];
     userpass[0] = 0;
@@ -669,7 +673,7 @@ uint16_t komodo_userpass(char *userpass,char *symbol)
     //komodo_statefname(fname,symbol,confname);
     if ( (fp= fopen(confname,"rb")) != 0 )
     {
-        port = _komodo_userpass(username,password,fp);
+        port = _komodo_userpass(username,password,ipaddress,fp);
         sprintf(userpass,"%s:%s",username,password);
         if ( strcmp(symbol,ASSETCHAINS_SYMBOL) == 0 )
             strcpy(USERPASS,userpass);
@@ -688,7 +692,7 @@ char *komodo_issuemethod(char *userpass,char *method,char *params,uint16_t port)
         params = (char *)"[]";
     if ( strlen(params) < sizeof(postdata)-128 )
     {
-        sprintf(url,(char *)"http://127.0.0.1:%u",port);
+        sprintf(url,(char *)"http://%s:%u",IPADDRESS,port);
         sprintf(postdata,"{\"method\":\"%s\",\"params\":%s}",method,params);
         //printf("[%s] (%s) postdata.(%s) params.(%s) USERPASS.(%s)\n",ASSETCHAINS_SYMBOL,url,postdata,params,USERPASS);
         retstr2 = bitcoind_RPC(&retstr,(char *)"debug",url,userpass,method,params);
@@ -793,7 +797,7 @@ int main(int argc, char **argv, char **envp)
         ASSETCHAINS_SYMBOL[j++] = toupper(c);
     }
     ASSETCHAINS_SYMBOL[j++] = 0;
-    ROGUE_PORT = komodo_userpass(userpass,ASSETCHAINS_SYMBOL);
+    ROGUE_PORT = komodo_userpass(userpass,ASSETCHAINS_SYMBOL,IPADDRESS);
     printf("ASSETCHAINS_SYMBOL.(%s) port.%u (%s)\n",ASSETCHAINS_SYMBOL,ROGUE_PORT,USERPASS); sleep(1);
     if ( argc == 2 && (fp=fopen(argv[1],"rb")) == 0 )
     {
@@ -813,5 +817,3 @@ int main(int argc, char **argv, char **envp)
         return(rogue(argc,argv,envp));
     }
 }
-
-
