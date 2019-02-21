@@ -125,7 +125,7 @@ UniValue musig_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 
 cJSON *cclib_reparse(int32_t *nump,char *jsonstr) // assumes origparams will be freed by caller
 {
-    cJSON *params; char *jsonstr,*newstr; int32_t i,j;
+    cJSON *params; char *newstr; int32_t i,j;
     *nump = 0;
     if ( jsonstr != 0 )
     {
@@ -286,7 +286,7 @@ UniValue CClib_info(struct CCcontract_info *cp)
 
 UniValue CClib(struct CCcontract_info *cp,char *method,char *jsonstr)
 {
-    UniValue result(UniValue::VOBJ); int32_t i; std::string rawtx;
+    UniValue result(UniValue::VOBJ); int32_t i; std::string rawtx; cJSON *params;
     printf("CClib params.(%s)\n",jsonstr!=0?jsonstr:"");
     for (i=0; i<sizeof(CClib_methods)/sizeof(*CClib_methods); i++)
     {
@@ -296,7 +296,9 @@ UniValue CClib(struct CCcontract_info *cp,char *method,char *jsonstr)
             {
                 result.push_back(Pair("result","success"));
                 result.push_back(Pair("method",CClib_methods[i].method));
+                params = cJSON_Parse(jsonstr);
                 rawtx = CClib_rawtxgen(cp,CClib_methods[i].funcid,params);
+                free_json(params);
                 result.push_back(Pair("rawtx",rawtx));
                 return(result);
             } else return(CClib_method(cp,method,jsonstr));
