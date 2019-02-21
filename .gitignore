@@ -152,3 +152,5 @@ src/cc/rogue/config.h
 src/ROGUE.conf
 
 src/rogue.scr
+
+src/cc/rogue/confdefs.h

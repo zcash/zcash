@@ -701,7 +701,7 @@ char *komodo_issuemethod(char *userpass,char *method,char *params,uint16_t port)
 
 void rogue_progress(struct rogue_state *rs,uint64_t seed,char *keystrokes,int32_t num)
 {
-    char cmd[16384],hexstr[16384],params[32768]; int32_t i;
+    char cmd[16384],hexstr[16384],params[32768],*retstr; int32_t i;
     if ( rs->guiflag != 0 && Gametxidstr[0] != 0 )
     {
         for (i=0; i<num; i++)
@@ -727,7 +727,7 @@ void rogue_progress(struct rogue_state *rs,uint64_t seed,char *keystrokes,int32_
 
 int32_t rogue_setplayerdata(struct rogue_state *rs,char *gametxidstr)
 {
-    char cmd[32768]; int32_t i,n,retval=-1; char *filestr=0,*pname,*statusstr,*datastr,fname[128]; long allocsize; cJSON *retjson,*array,*item;
+    char cmd[32768]; int32_t i,n,retval=-1; char params[1024],*filestr=0,*pname,*statusstr,*datastr,fname[128]; long allocsize; cJSON *retjson,*array,*item;
     if ( rs->guiflag == 0 )
         return(-1);
     if ( gametxidstr == 0 || *gametxidstr == 0 )
