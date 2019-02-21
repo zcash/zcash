@@ -13,8 +13,28 @@
  *                                                                            *
  ******************************************************************************/
 
-
+#define USE_BASIC_CONFIG
+#define ENABLE_MODULE_MUSIG
+#include "../secp256k1/src/basic-config.h"
 #include "../secp256k1/include/secp256k1.h"
+#include "../secp256k1/src/ecmult.h"
+#include "../secp256k1/src/ecmult_gen.h"
+
+typedef struct { unsigned char data[64]; } secp256k1_schnorrsig;
+struct secp256k1_context_struct {
+    secp256k1_ecmult_context ecmult_ctx;
+    secp256k1_ecmult_gen_context ecmult_gen_ctx;
+    secp256k1_callback illegal_callback;
+    secp256k1_callback error_callback;
+};
+
+extern "C" int secp256k1_ecmult_multi_var(const secp256k1_ecmult_context *ctx, secp256k1_scratch *scratch, secp256k1_gej *r, const secp256k1_scalar *inp_g_sc, secp256k1_ecmult_multi_callback cb, void *cbdata, size_t n);
+extern "C" int secp256k1_schnorrsig_verify(const secp256k1_context* ctx, const secp256k1_schnorrsig *sig, const unsigned char *msg32, const secp256k1_pubkey *pk);
+extern "C" int secp256k1_schnorrsig_parse(const secp256k1_context* ctx, secp256k1_schnorrsig* sig, const unsigned char *in64);
+extern "C" int secp256k1_musig_pubkey_combine(const secp256k1_context* ctx, secp256k1_scratch_space *scratch, secp256k1_pubkey *combined_pk, unsigned char *pk_hash32, const secp256k1_pubkey *pubkeys, size_t n_pubkeys);
+
+
+//#include "../secp256k1/include/secp256k1.h"
 //#include "../secp256k1/include/secp256k1_schnorrsig.h"
 #include "../secp256k1/include/secp256k1_musig.h"
 
