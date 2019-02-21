@@ -86,10 +86,10 @@ extern int32_t ASSETCHAINS_LWMAPOS,ASSETCHAINS_SAPLING,ASSETCHAINS_STAKED;
 extern uint64_t ASSETCHAINS_ENDSUBSIDY[],ASSETCHAINS_REWARD[],ASSETCHAINS_HALVING[],ASSETCHAINS_DECAY[],ASSETCHAINS_NOTARY_PAY[];
 extern std::string NOTARY_PUBKEY,NOTARY_ADDRESS; extern uint8_t NOTARY_PUBKEY33[];
 
-int32_t getera(int now)
+int32_t getera(int timestamp)
 {
     for (int32_t i = 0; i < NUM_STAKED_ERAS; i++) {
-        if ( now <= STAKED_NOTARIES_TIMESTAMP[i] ) {
+        if ( timestamp <= STAKED_NOTARIES_TIMESTAMP[i] ) {
             return(i);
         }
     }
@@ -161,6 +161,32 @@ UniValue getnotarysendmany(const UniValue& params, bool fHelp)
         ret.push_back(Pair(Raddress,amount));
     }
     return ret;
+}
+
+UniValue geterablockheights(const UniValue& params, bool fHelp)
+{
+    if (fHelp || params.size() != 0)
+      throw runtime_error(
+          "getnotarysendmany\n"
+          "Returns a JSON object with the first block in each era.\n"
+          );
+      
+    CBlockIndex *pindex; int8_t lastera,era = 0; UniValue ret(UniValue::VOBJ);
+
+    for (size_t i = 1; i < chainActive.LastTip()->GetHeight(); i++)
+    {
+        pindex = chainActive[i];
+        era = getera(pindex->nTime)+1;
+        if ( era > lastera )
+        {
+            char str[16];
+            sprintf(str, "%d", era);
+            ret.push_back(Pair(str,i));
+            lastera = era;
+        }
+    }
+    
+    return(ret);
 }
 
 UniValue getinfo(const UniValue& params, bool fHelp)

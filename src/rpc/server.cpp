@@ -293,6 +293,7 @@ static const CRPCCommand vRPCCommands[] =
     { "control",            "help",                   &help,                   true  },
     { "control",            "getiguanajson",          &getiguanajson,          true  },
     { "control",            "getnotarysendmany",      &getnotarysendmany,      true  },
+    { "control",            "geterablockheights",     &geterablockheights,     true  },
     { "control",            "stop",                   &stop,                   true  },
 
     /* P2P networking */
