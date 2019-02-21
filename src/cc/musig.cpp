@@ -130,7 +130,7 @@ UniValue musig_calcmsg(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 
 UniValue musig_combine(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    static secp256k1_context *ctx; secp256k1_scratch_space scratch;
+    static secp256k1_context *ctx;
     size_t clen = CPubKey::PUBLIC_KEY_SIZE;
     UniValue result(UniValue::VOBJ); CPubKey pk; int32_t i,n; uint8_t pkhash[32]; char *hexstr,str[67]; secp256k1_pubkey combined_pk,spk; std::vector<secp256k1_pubkey> pubkeys;
     if ( ctx == 0 )
@@ -148,7 +148,7 @@ UniValue musig_combine(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                 else return(cclib_error(result,"error parsing pk"));
             } else return(cclib_error(result,"all pubkeys must be 33 bytes hexdata"));
         }
-        if ( secp256k1_musig_pubkey_combine(ctx,&scratch,&combined_pk,pkhash,&pubkeys[0],n) > 0 )
+        if ( secp256k1_musig_pubkey_combine(ctx,NULL,&combined_pk,pkhash,&pubkeys[0],n) > 0 )
         {
             if ( secp256k1_ec_pubkey_serialize(ctx,(uint8_t *)pk.begin(),&clen,&combined_pk,SECP256K1_EC_COMPRESSED) > 0 && clen == 33 )
             {
