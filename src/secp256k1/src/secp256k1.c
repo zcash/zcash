@@ -6,13 +6,13 @@
 
 #include "../include/secp256k1.h"
 
+#include "ecmult_impl.h"
+#include "ecmult_const_impl.h"
+#include "util.h"
 #include "num_impl.h"
 #include "field_impl.h"
 #include "scalar_impl.h"
 #include "group_impl.h"
-#include "ecmult_impl.h"
-#include "ecmult_const_impl.h"
-#include "util.h"
 #include "ecmult_gen_impl.h"
 #include "ecdsa_impl.h"
 #include "eckey_impl.h"
