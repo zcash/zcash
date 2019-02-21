@@ -10,6 +10,7 @@ bench_bench_bitcoin_SOURCES = \
   bench/checkqueue.cpp \
   bench/Examples.cpp \
   bench/rollingbloom.cpp \
+  bench/verification.cpp \
   bench/crypto_hash.cpp \
   bench/base58.cpp \
   bench/perf.cpp \
@@ -26,7 +27,9 @@ bench_bench_bitcoin_LDADD = \
   $(LIBBITCOIN_CRYPTO) \
   $(LIBLEVELDB) \
   $(LIBMEMENV) \
-  $(LIBSECP256K1)
+  $(LIBSECP256K1) \
+  $(LIBZCASH) \
+  $(LIBSNARK)
 
 if ENABLE_ZMQ
 bench_bench_bitcoin_LDADD += $(LIBBITCOIN_ZMQ) $(ZMQ_LIBS)
