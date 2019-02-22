@@ -580,37 +580,7 @@ uint256 juint256(cJSON *obj)
 
 #else
 #include "sudoku.cpp"
-
-/*
-#include "../secp256k1/src/util.h"
-#include "../secp256k1/src/num_impl.h"
-#include "../secp256k1/src/field_impl.h"
-#include "../secp256k1/src/scalar_impl.h"
-#include "../secp256k1/src/group_impl.h"
-#include "../secp256k1/src/scratch_impl.h"
-#include "../secp256k1/src/ecmult_impl.h"
-#include "../secp256k1/src/ecmult_const_impl.h"
-#include "../secp256k1/src/ecmult_gen_impl.h"
-#include "../secp256k1/src/ecdsa_impl.h"
-#include "../secp256k1/src/eckey_impl.h"
-#include "../secp256k1/src/hash_impl.h"
-
-
-
-typedef int (secp256k1_ecmult_multi_callback)(secp256k1_scalar *sc, secp256k1_ge *pt, size_t idx, void *data);
-extern "C" void secp256k1_pubkey_save(secp256k1_pubkey* pubkey, secp256k1_ge* ge);
-extern "C" int secp256k1_nonce_function_bipschnorr(unsigned char *nonce32, const unsigned char *msg32, const unsigned char *key32, const unsigned char *algo16, void *data, unsigned int counter);
-extern "C" int secp256k1_pubkey_load(const secp256k1_context* ctx, secp256k1_ge* ge, const secp256k1_pubkey* pubkey);
-extern "C" void secp256k1_scalar_chacha20(secp256k1_scalar *r1, secp256k1_scalar *r2, const unsigned char *seed, uint64_t idx);
-
-#define ARG_CHECK(cond) do { \
-if (EXPECT(!(cond), 0)) { \
-secp256k1_callback_call(&ctx->illegal_callback, #cond); \
-return 0; \
-} \
-} while(0)*/
-
-//#include "../secp256k1/src/secp256k1.c"
 #include "musig.cpp"
+#include "../secp256k1/modules/musig/check.c"
 #endif
 

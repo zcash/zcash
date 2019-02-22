@@ -9,11 +9,11 @@
  * Additionally, see the documentation in include/secp256k1_musig.h.
  */
 
-#include <stdio.h>
+/*#include <stdio.h>
 #include <assert.h>
 #include <secp256k1.h>
 #include <secp256k1_schnorrsig.h>
-#include <secp256k1_musig.h>
+#include <secp256k1_musig.h>*/
 
  /* Number of public keys involved in creating the aggregate signature */
 #define N_SIGNERS 3
@@ -122,7 +122,7 @@ int sign(const secp256k1_context* ctx, unsigned char seckeys[][32], const secp25
     return secp256k1_musig_partial_sig_combine(ctx, &musig_session[0], sig, partial_sig, N_SIGNERS);
 }
 
- int main(void) {
+ int testmain(void) {
     secp256k1_context* ctx;
     int i;
     unsigned char seckeys[N_SIGNERS][32];
