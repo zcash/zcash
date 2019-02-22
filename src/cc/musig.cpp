@@ -388,6 +388,7 @@ UniValue musig_session(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 UniValue musig_commit(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     static secp256k1_context *ctx;
+    size_t clen = CPubKey::PUBLIC_KEY_SIZE;
     UniValue result(UniValue::VOBJ); int32_t i,n,ind; uint8_t pkhash[32]; CPubKey pk; char str[67];
     if ( ctx == 0 )
         ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
@@ -399,7 +400,7 @@ UniValue musig_commit(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             return(cclib_error(result,"pkhash doesnt match session pkhash"));
         else if ( (ind= juint(jitem(params,1),0)) < 0 || ind >= MUSIG->num )
             return(cclib_error(result,"illegal ind for session"));
-        else if ( musig_parsehash32(&MUSIG->commitment[ind*32],jitem(params,2)) < 0 )
+        else if ( musig_parsehash32(&MUSIG->nonce_commitments[ind*32],jitem(params,2)) < 0 )
             return(cclib_error(result,"error parsing commitment"));
         /** Gets the signer's public nonce given a list of all signers' data with commitments
          *
@@ -417,7 +418,7 @@ UniValue musig_commit(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
          *                    number of signers participating in the MuSig.
          */
         result.push_back(Pair("added_index",ind));
-        if ( secp256k1_musig_session_get_public_nonce(ctx,&MUSIG->session,MUSIG->signer_data,&MUSIG->nonces[MUSIG->myind],MUSIG->nonce_commitments,MUSIG->num) > 0 )
+        if ( secp256k1_musig_session_get_public_nonce(ctx,&MUSIG->session,MUSIG->signer_data,&MUSIG->nonces[MUSIG->myind],MUSIG->commitment_ptrs,MUSIG->num) > 0 )
         {
             if ( secp256k1_ec_pubkey_serialize(ctx,(uint8_t *)pk.begin(),&clen,&MUSIG->nonces[MUSIG->myind],SECP256K1_EC_COMPRESSED) > 0 && clen == 33 )
             {
@@ -452,7 +453,7 @@ UniValue musig_nonce(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             return(cclib_error(result,"pkhash doesnt match session pkhash"));
         else if ( (ind= juint(jitem(params,1),0)) < 0 || ind >= MUSIG->num )
             return(cclib_error(result,"illegal ind for session"));
-        else if ( musig_parsepubkey(ctx,&MUSIG->nonces[ind],jitem(params,2)) < 0 )
+        else if ( musig_parsepubkey(ctx,MUSIG->nonces[ind],jitem(params,2)) < 0 )
             return(cclib_error(result,"error parsing nonce"));
         result.push_back(Pair("added_index",ind));
         /** Checks a signer's public nonce against a commitment to said nonce, and update
@@ -523,7 +524,9 @@ UniValue musig_partialsig(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
             return(cclib_error(result,"pkhash doesnt match session pkhash"));
         else if ( (ind= juint(jitem(params,1),0)) < 0 || ind >= MUSIG->num )
             return(cclib_error(result,"illegal ind for session"));
-        else if ( musig_parsepartial(ctx,&MUSIG->partial_sig[ind],jitem(params,2)) < 0 )
+        else if ( musig_parsehash32(ctx,psig,jitem(params,2)) < 0 )
+            return(cclib_error(result,"error parsing psig"));
+        else if ( secp256k1_musig_partial_signature_parse(ctx,&MUSIG->partial_sig[ind],psig) == 0 )
             return(cclib_error(result,"error parsing partialsig"));
         result.push_back(Pair("added_index",ind));
         if (secp256k1_musig_partial_sig_combine(ctx,&MUSIG->session,&sig,MUSIG->partial_sig,MUSIG->num) > 0 )
