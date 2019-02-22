@@ -116,24 +116,25 @@ void musig_infofree(struct musig_info *mp)
 {
     if ( mp->partial_sig != 0 )
     {
-        GetRandBytes((uint8_t *)mp->partial_sig,mp->num*sizeof(*mp->partial_sig))
+        GetRandBytes((uint8_t *)mp->partial_sig,mp->num*sizeof(*mp->partial_sig));
         free(mp->partial_sig);
     }
     if ( mp->nonce != 0 )
     {
-        GetRandBytes((uint8_t *)mp->nonce,mp->num*sizeof(*mp->nonce))
+        GetRandBytes((uint8_t *)mp->nonce,mp->num*sizeof(*mp->nonce));
         free(mp->nonce);
     }
     if ( mp->signer_data != 0 )
     {
-        GetRandBytes((uint8_t *)mp->signer_data,mp->num*sizeof(*mp->signer_data))
+        GetRandBytes((uint8_t *)mp->signer_data,mp->num*sizeof(*mp->signer_data));
         free(mp->signer_data);
     }
     if ( mp->nonce_commitments != 0 )
     {
-        GetRandBytes((uint8_t *)mp->nonce_commitments,mp->num*32)
+        GetRandBytes((uint8_t *)mp->nonce_commitments,mp->num*32);
         free(mp->nonce_commitments);
     }
+    GetRandBytes((uint8_t *)mp,sizeof(*mp));
     free(mp);
 }
 
