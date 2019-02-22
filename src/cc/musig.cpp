@@ -223,6 +223,27 @@ UniValue musig_calcmsg(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     } else return(cclib_error(result,"couldnt parse params"));
 }
 
+int32_t musig_parsepubkey(secp256k1_context *ctx,secp256k1_pubkey &spk,cJSON *item)
+{
+    char *hexstr;
+    if ( (hexstr= jstr(item,0)) != 0 && is_hexstr(hexstr,0) == 66 )
+    {
+        CPubKey pk(ParseHex(hexstr));
+        if ( secp256k1_ec_pubkey_parse(ctx,&spk,pk.begin(),33) > 0 )
+            return(1);
+    } else return(-1);
+}
+
+int32_t musig_parsehash32(uint8_t *hash32,cJSON *item)
+{
+    char *hexstr;
+    if ( (hexstr= jstr(item,0)) != 0 && is_hexstr(hexstr,0) == 64 )
+    {
+        decode_hex(hash32,32,hexstr);
+        return(0);
+    } else return(-1);
+}
+
 UniValue musig_combine(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     static secp256k1_context *ctx;
@@ -235,13 +256,9 @@ UniValue musig_combine(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
         //fprintf(stderr,"n.%d args.(%s)\n",n,jprint(params,0));
         for (i=0; i<n; i++)
         {
-            if ( (hexstr= jstr(jitem(params,i),0)) != 0 && is_hexstr(hexstr,0) == 66 )
-            {
-                CPubKey pk(ParseHex(hexstr));
-                if ( secp256k1_ec_pubkey_parse(ctx,&spk,pk.begin(),33) > 0 )
-                    pubkeys.push_back(spk);
-                else return(cclib_error(result,"error parsing pk"));
-            } else return(cclib_error(result,"all pubkeys must be 33 bytes hexdata"));
+            if ( musig_parsepubkey(ctx,spk,jitem(params,i)) < 0 )
+                return(cclib_error(result,"error parsing pk"));
+            pubkeys.push_back(spk);
         }
         if ( secp256k1_musig_pubkey_combine(ctx,NULL,&combined_pk,pkhash,&pubkeys[0],n) > 0 )
         {
@@ -271,21 +288,26 @@ UniValue musig_session(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
         ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
     if ( params != 0 && (n= cJSON_GetArraySize(params)) == 5 )
     {
-        // set the 5 args: myind, num, pub33, pkhash32, msg32
+        myind = juint(jitem(params,0),0);
+        num = juint(jitem(params,1),0);
+        if ( myind < 0 || myind >= num || num <= 0 )
+            return(cclib_error(result,"illegal myindex and numsigners"));
         if ( MUSIG != 0 )
             musig_infofree(MUSIG), MUSIG = 0;
         MUSIG = musig_infocreate(myind,num);
-        pk = buf2pk(pub33);
-        GetRandBytes(session,32);
-        for (i=0; i<32; i++)
-            sprintf(&str[i<<1],"%02x",session[i]);
-        str[64] = 0;
-        fprintf(stderr,"session %s\n",str);
-        if ( secp256k1_ec_pubkey_parse(ctx,&MUSIG->combined_pk,pk.begin(),33) > 0 )
+        if ( musig_parsepubkey(ctx,MUSIG->combined_pk,jitem(params,2)) < 0 )
+            return(cclib_error(result,"error parsing combined_pubkey"));
         {
-            memcpy(MUSIG->pkhash,pkhash,sizeof(pkhash));
-            memcpy(MUSIG->msg,msg,sizeof(msg));
+            if ( musig_parsehash32(MUSIG->pkhash,jitem(params,3)) < 0 )
+                return(cclib_error(result,"error parsing pkhash"));
+            if ( musig_parsehash32(MUSIG->msg,jitem(params,4)) < 0 )
+                return(cclib_error(result,"error parsing msg"));
             Myprivkey(privkey);
+            GetRandBytes(session,32);
+            for (i=0; i<32; i++)
+                sprintf(&str[i<<1],"%02x",session[i]);
+            str[64] = 0;
+            fprintf(stderr,"session %s\n",str);
             /** Initializes a signing session for a signer
              *
              *  Returns: 1: session is successfully initialized
@@ -314,6 +336,7 @@ UniValue musig_session(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
              */
             if ( secp256k1_musig_session_initialize(ctx,&MUSIG->musig_session,MUSIG->signer_data, &MUSIG->nonce_commitments[MUSIG->myind * 32],session,MUSIG->msg,&MUSIG->combined_pk,MUSIG->pkhash,MUSIG->num,MUSIG->myind,privkey) > 0 )
             {
+                memset(session,0,sizeof(session));
                 result.push_back(Pair("myind",(int64_t)myind));
                 result.push_back(Pair("numsigners",(int64_t)num));
                 for (i=0; i<32; i++)
@@ -322,7 +345,12 @@ UniValue musig_session(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                 result.push_back(Pair("commitment",str));
                 result.push_back(Pair("result","success"));
                 return(result);
-            } else return(cclib_error(result,"couldnt initialize session"));
+            }
+            else
+            {
+                memset(session,0,sizeof(session));
+                return(cclib_error(result,"couldnt initialize session"));
+            }
         } else return(cclib_error(result,"couldnt parse combined pubkey"));
     } else return(cclib_error(result,"wrong number of params, need 5: myindex, numsigners, combined_pk, pkhash, msg32"));
 }
