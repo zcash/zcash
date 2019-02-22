@@ -167,7 +167,12 @@ SECP256K1_API int secp256k1_musig_pubkey_combine(
  *           my_index: index of this signer in the signers array
  *             seckey: the signer's 32-byte secret key (cannot be NULL)
  */
-SECP256K1_API int secp256k1_musig_session_initialize(
+#ifdef __cplusplus
+extern "C"
+#else
+SECP256K1_API
+#endif
+ int secp256k1_musig_session_initialize(
     const secp256k1_context* ctx,
     secp256k1_musig_session *session,
     secp256k1_musig_session_signer_data *signers,
