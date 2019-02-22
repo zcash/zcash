@@ -696,8 +696,7 @@ UniValue musig_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             prevhash = juint256(jitem(params,0));
             scriptstr = jstr(jitem(params,1),0);
             musigstr = jstr(jitem(params,2),0);
-            printf("script.(%s) %d musig.(%s) %d\n",scriptstr,is_hexstr(scriptstr,0),musigstr,is_hexstr(musigstr,0));
-            if ( is_hexstr(scriptstr,0) != 0 && is_hexstr(musigstr,0) != 128 )
+            if ( is_hexstr(scriptstr,0) != 0 && is_hexstr(musigstr,0) == 128 )
             {
                 if ( txfee == 0 )
                     txfee = MUSIG_TXFEE;
