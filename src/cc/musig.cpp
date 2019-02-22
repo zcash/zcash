@@ -139,9 +139,9 @@ the "msg" is what needs to be signed to create a valid spend
  xxxx
  
  
- and finally the spend:
+ and finally the spend: sendtxid, scriptPubKey, musig
  
- 
+./c cclib spend 18 \"[%22cb5309ed249da95e2b5696eb763a8736e2fff1d14922ada737b931494ca3d2be%22,%222102aff51dad774a1c612dc82e63f85f07b992b665836b0f0efbcb26ee679f4f4848ac%22,%22bc0062cd3233433e098fbf4f3c333946779c3dccfaefc423243e3f90edfdf9a6dbfabf42d26f3c668fe6e10f1ed367a46dfddbafaee82b3eb79722ae49f45320%22]\"
 */
 
 
@@ -696,6 +696,7 @@ UniValue musig_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             prevhash = juint256(jitem(params,0));
             scriptstr = jstr(jitem(params,1),0);
             musigstr = jstr(jitem(params,2),0);
+            printf("script.(%s) musig.(%s) %d\n",scriptstr,musigstr,(int32_t)strlen(musigstr));
             if ( is_hexstr(scriptstr,0) != 0 && is_hexstr(musigstr,0) != 128 )
             {
                 if ( txfee == 0 )
@@ -723,7 +724,7 @@ UniValue musig_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                     } else return(cclib_error(result,"couldnt decode send opret"));
                 } else return(cclib_error(result,"couldnt find vin0"));
             } else return(cclib_error(result,"script or musig is not hex"));
-        } else return(cclib_error(result,"need to have exactly 3 params prevhash, scriptPubKey, musig"));
+        } else return(cclib_error(result,"need to have exactly 3 params sendtxid, scriptPubKey, musig"));
     } else return(cclib_error(result,"params parse error"));
 }
 
