@@ -123,7 +123,7 @@ struct musig_info
     secp256k1_pubkey combined_pk;
     uint8_t *nonce_commitments,**commitment_ptrs; // 32*N_SIGNERS
     secp256k1_musig_session_signer_data *signer_data; //[N_SIGNERS];
-    secp256k1_pubkey *nonce; //[N_SIGNERS];
+    secp256k1_pubkey *nonces; //[N_SIGNERS];
     secp256k1_musig_partial_signature *partial_sig; //[N_SIGNERS];
     int32_t myind,num;
     uint8_t msg[32],pkhash[32],combpk[33];
@@ -138,7 +138,7 @@ struct musig_info *musig_infocreate(int32_t myind,int32_t num)
     for (i=0; i<num; i++)
         mp->commitment_ptrs[i] = &mp->nonce_commitments[i*32];
     mp->signer_data = (secp256k1_musig_session_signer_data *)calloc(num,sizeof(*mp->signer_data));
-    mp->nonce = (secp256k1_pubkey *)calloc(num,sizeof(*mp->nonce));
+    mp->nonces = (secp256k1_pubkey *)calloc(num,sizeof(*mp->nonces));
     mp->partial_sig = (secp256k1_musig_partial_signature *)calloc(num,sizeof(*mp->partial_sig));
     return(mp);
 }
@@ -150,10 +150,10 @@ void musig_infofree(struct musig_info *mp)
         GetRandBytes((uint8_t *)mp->partial_sig,mp->num*sizeof(*mp->partial_sig));
         free(mp->partial_sig);
     }
-    if ( mp->nonce != 0 )
+    if ( mp->nonces != 0 )
     {
-        GetRandBytes((uint8_t *)mp->nonce,mp->num*sizeof(*mp->nonce));
-        free(mp->nonce);
+        GetRandBytes((uint8_t *)mp->nonces,mp->num*sizeof(*mp->nonces));
+        free(mp->nonces);
     }
     if ( mp->signer_data != 0 )
     {
@@ -388,14 +388,14 @@ UniValue musig_session(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 UniValue musig_commit(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     static secp256k1_context *ctx;
-    UniValue result(UniValue::VOBJ); int32_t n,ind; uint8_t pkhash[32]; CPubKey pk; char str[67];
+    UniValue result(UniValue::VOBJ); int32_t i,n,ind; uint8_t pkhash[32]; CPubKey pk; char str[67];
     if ( ctx == 0 )
         ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
     if ( params != 0 && (n= cJSON_GetArraySize(params)) == 3 )
     {
         if ( musig_parsehash32(pkhash,jitem(params,0)) < 0 )
             return(cclib_error(result,"error parsing pkhash"));
-        else if ( memcmp(MUSING->pkhash,pkhash,32) != 0 )
+        else if ( memcmp(MUSIG->pkhash,pkhash,32) != 0 )
             return(cclib_error(result,"pkhash doesnt match session pkhash"));
         else if ( (ind= juint(jitem(params,1),0)) < 0 || ind >= MUSIG->num )
             return(cclib_error(result,"illegal ind for session"));
@@ -424,6 +424,7 @@ UniValue musig_commit(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                 for (i=0; i<33; i++)
                     sprintf(&str[i<<1],"%02x",((uint8_t *)pk.begin())[i]);
                 str[66] = 0;
+                result.push_back(Pair("myind",MUSIG->myind));
                 result.push_back(Pair("nonce",str));
                 result.push_back(Pair("result","success"));
             } else return(cclib_error(result,"error serializing nonce (pubkey)"));
@@ -447,7 +448,7 @@ UniValue musig_nonce(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     {
         if ( musig_parsehash32(pkhash,jitem(params,0)) < 0 )
             return(cclib_error(result,"error parsing pkhash"));
-        else if ( memcmp(MUSING->pkhash,pkhash,32) != 0 )
+        else if ( memcmp(MUSIG->pkhash,pkhash,32) != 0 )
             return(cclib_error(result,"pkhash doesnt match session pkhash"));
         else if ( (ind= juint(jitem(params,1),0)) < 0 || ind >= MUSIG->num )
             return(cclib_error(result,"illegal ind for session"));
@@ -498,6 +499,7 @@ UniValue musig_nonce(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                     for (i=0; i<32; i++)
                         sprintf(&str[i<<1],"%02x",psig[i]);
                     str[64] = 0;
+                    result.push_back(Pair("myind",MUSIG->myind));
                     result.push_back(Pair("partialsig",str));
                     result.push_back(Pair("result","success"));
                     return(result);
@@ -510,14 +512,14 @@ UniValue musig_nonce(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 UniValue musig_partialsig(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     static secp256k1_context *ctx;
-    UniValue result(UniValue::VOBJ); int32_t ind,n; uint8_t pkhash[32],psig[32],out64[64]; char str[129]; secp256k1_schnorrsig sig;
+    UniValue result(UniValue::VOBJ); int32_t i,ind,n; uint8_t pkhash[32],psig[32],out64[64]; char str[129]; secp256k1_schnorrsig sig;
     if ( ctx == 0 )
         ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
     if ( params != 0 && (n= cJSON_GetArraySize(params)) == 3 )
     {
         if ( musig_parsehash32(pkhash,jitem(params,0)) < 0 )
             return(cclib_error(result,"error parsing pkhash"));
-        else if ( memcmp(MUSING->pkhash,pkhash,32) != 0 )
+        else if ( memcmp(MUSIG->pkhash,pkhash,32) != 0 )
             return(cclib_error(result,"pkhash doesnt match session pkhash"));
         else if ( (ind= juint(jitem(params,1),0)) < 0 || ind >= MUSIG->num )
             return(cclib_error(result,"illegal ind for session"));
