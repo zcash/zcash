@@ -276,15 +276,15 @@ UniValue musig_session(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             musig_infofree(MUSIG), MUSIG = 0;
         MUSIG = musig_infocreate(myind,num);
         pk = buf2pk(pub33);
+        GetRandBytes(session,32);
+        for (i=0; i<32; i++)
+            sprintf(&str[i<<1],"%02x",session[i]);
+        str[64] = 0;
+        fprintf(stderr,"session %s\n",str);
         if ( secp256k1_ec_pubkey_parse(ctx,&MUSIG->combined_pk,pk.begin(),33) > 0 )
         {
             memcpy(MUSIG->pkhash,pkhash,sizeof(pkhash));
             memcpy(MUSIG->msg,msg,sizeof(msg));
-            GetRandBytes(session,32);
-            for (i=0; i<32; i++)
-                sprintf(&str[i<<1],"%02x",session[i]);
-            str[64] = 0;
-            fprintf(stderr,"session %s\n",str);
             Myprivkey(privkey);
             /** Initializes a signing session for a signer
              *
