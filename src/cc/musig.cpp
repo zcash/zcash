@@ -87,6 +87,7 @@ extern "C" int secp256k1_musig_pubkey_combine(const secp256k1_context* ctx, secp
 
 #define MUSIG_PREVN 0   // for now, just use vout0 for the musig output
 #define MUSIG_TXFEE 10000
+#define random_buf(a,b) 
 
 struct musig_info
 {
@@ -105,9 +106,9 @@ struct musig_info *musig_infocreate(int32_t myind,int32_t num)
     struct musig_info *mp = (struct musig_info *)calloc(1,sizeof(*mp));
     mp->myind = myind, mp->num = num;
     mp->nonce_commitments = (uint8_t *)calloc(num,32);
-    mp->signer_data = (uint8_t *)calloc(num,sizeof(*mp->signer_data));
-    mp->nonce = (uint8_t *)calloc(num,sizeof(*mp->nonce));
-    mp->partial_sig = (uint8_t *)calloc(num,sizeof(*mp->partial_sig));
+    mp->signer_data = (secp256k1_musig_session_signer_data *)calloc(num,sizeof(*mp->signer_data));
+    mp->nonce = (secp256k1_pubkey *)calloc(num,sizeof(*mp->nonce));
+    mp->partial_sig = (secp256k1_musig_partial_signature *)calloc(num,sizeof(*mp->partial_sig));
     return(mp);
 }
 
@@ -115,7 +116,7 @@ void musig_infofree(struct musig_info *mp)
 {
     if ( mp->partial_sig != 0 )
     {
-        random_buf(mp->partial_sig,mp->num*sizeof(*np->partial_sig))
+        random_buf(mp->partial_sig,mp->num*sizeof(*mp->partial_sig))
         free(mp->partial_sig);
     }
     if ( mp->nonce != 0 )
