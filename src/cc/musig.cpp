@@ -66,7 +66,7 @@ the "msg" is what needs to be signed to create a valid spend
  {
  "myind": 0,
  "numsigners": 2,
- "commitment": "053a97ba56b1b8adf174a0a28dc16b1bb4e91a33ca0b52a579ce9ba4af299973",
+ "commitment": "89af8f6db69fc3d4b95480a914dceba9933039e9823151a82677c3ca4e961fcc",
  "result": "success"
  }
  
@@ -75,15 +75,73 @@ the "msg" is what needs to be signed to create a valid spend
  {
  "myind": 1,
  "numsigners": 2,
- "commitment": "8c8dc6717aaa1994d4a51d1094c0c5cbfaf033c11642dbeeab32a32de4cfbc86",
+ "commitment": "a43da5ef8322abb43b9fddadef7b6479baf7853e860f915e01521e3060e5342b",
  "result": "success"
  }
  
  now we need to get the commitment from each node to the other one. the session already put the commitment for each node into the global struct. Keep in mind there is a single global struct with session unique to each cclib session call. that means no restarting any deamon in the middle of the process on any of the nodes and only call cclib session a single time. this is an artificial restriction just to simplify the initial implementation of musig
  
- ./c cclib commitment 18 \"[1,%228c8dc6717aaa1994d4a51d1094c0c5cbfaf033c11642dbeeab32a32de4cfbc86%22]\"
- ./c cclib commitment 18 \"[0,%22053a97ba56b1b8adf174a0a28dc16b1bb4e91a33ca0b52a579ce9ba4af299973%22]\"
+ ./c cclib commit 18 \"[%225be117f3c5ce87e7dc6882c24b8231e0652ee82054bf7b9f94aef1f45e055cba%22,1,%22a43da5ef8322abb43b9fddadef7b6479baf7853e860f915e01521e3060e5342b%22]\"
+ {
+ "added_index": 1,
+ "myind": 0,
+ "nonce": "03bf28874f5e5dccf55170406d58ded84ac6ca713011d718c6048400d700cb879a",
+ "result": "success"
+ }
+ 
+ ./c cclib commit 18 \"[%225be117f3c5ce87e7dc6882c24b8231e0652ee82054bf7b9f94aef1f45e055cba%22,0,%2289af8f6db69fc3d4b95480a914dceba9933039e9823151a82677c3ca4e961fcc%22]\"
+ {
+ "added_index": 0,
+ "myind": 1,
+ "nonce": "039ae1f542e8f0f6d03d734dc2295651973e1b7fa99508e2f36dad5d21f09889f6",
+ "result": "success"
+ }
+ 
+ Now exchange the revealed nonces to each node:
+ 
+ ./c cclib nonce 18 \"[%225be117f3c5ce87e7dc6882c24b8231e0652ee82054bf7b9f94aef1f45e055cba%22,1,%22039ae1f542e8f0f6d03d734dc2295651973e1b7fa99508e2f36dad5d21f09889f6%22]\"
 
+ {
+ "added_index": 1,
+ "myind": 0,
+ "partialsig": "5da4c1ec828cd1563bc6554aa74c90c29fcd38b2aea26f7fa92e0d007aa9463f",
+ "result": "success"
+ }
+ 
+ ./c cclib nonce 18 \"[%225be117f3c5ce87e7dc6882c24b8231e0652ee82054bf7b9f94aef1f45e055cba%22,0,%2203bf28874f5e5dccf55170406d58ded84ac6ca713011d718c6048400d700cb879a%22]\"
+ {
+ "added_index": 0,
+ "myind": 1,
+ "partialsig": "7e55fd564fe26b1054208bc47786d6e1ce30a2fd0045bbbf0e6915adcf4b0ce1",
+ "result": "success"
+ }
+ 
+ Almost there! final step is to exchange the partial sigs between signers
+ ./c cclib partialsig 18 \"[%225be117f3c5ce87e7dc6882c24b8231e0652ee82054bf7b9f94aef1f45e055cba%22,1,%227e55fd564fe26b1054208bc47786d6e1ce30a2fd0045bbbf0e6915adcf4b0ce1%22]\"
+ {
+ "added_index": 1,
+ "result": "success",
+ "combinedsig": "bc0062cd3233433e098fbf4f3c333946779c3dccfaefc423243e3f90edfdf9a6dbfabf42d26f3c668fe6e10f1ed367a46dfddbafaee82b3eb79722ae49f45320"
+ }
+ 
+ ./c cclib partialsig 18 \"[%225be117f3c5ce87e7dc6882c24b8231e0652ee82054bf7b9f94aef1f45e055cba%22,0,%225da4c1ec828cd1563bc6554aa74c90c29fcd38b2aea26f7fa92e0d007aa9463f%22]\"
+
+ {
+ "added_index": 0,
+ "result": "success",
+ "combinedsig": "bc0062cd3233433e098fbf4f3c333946779c3dccfaefc423243e3f90edfdf9a6dbfabf42d26f3c668fe6e10f1ed367a46dfddbafaee82b3eb79722ae49f45320"
+ }
+ 
+ Notice both nodes generated the same combined signature!
+ 
+ Now for a sanity test, we can use the verify call to make sure this sig will work with the msg needed for the spend:
+ 
+ xxxx
+ 
+ 
+ and finally the spend:
+ 
+ 
 */
 
 
@@ -497,7 +555,6 @@ UniValue musig_nonce(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             {
                 if ( secp256k1_musig_partial_signature_serialize(ctx,psig,&MUSIG->partial_sig[MUSIG->myind]) > 0 )
                 {
-                    result.push_back(Pair("myind",ind));
                     for (i=0; i<32; i++)
                         sprintf(&str[i<<1],"%02x",psig[i]);
                     str[64] = 0;
