@@ -705,7 +705,9 @@ md_erasechar()
 #elif defined(VERASE)
     return(_tty.c_cc[VERASE]); /* process erase character */
 #else
+    #ifndef __MINGW32__
     return(_tty.sg_erase); /* process erase character */
+    #endif
 #endif
 }
 
@@ -717,7 +719,9 @@ md_killchar()
 #elif defined(VKILL)
     return(_tty.c_cc[VKILL]);
 #else
+    #ifndef __MINGW32__
     return(_tty.sg_kill);
+    #endif
 #endif
 }
 

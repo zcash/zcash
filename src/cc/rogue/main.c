@@ -41,7 +41,11 @@ typedef union _bits256 bits256;
 double OS_milliseconds()
 {
     struct timeval tv; double millis;
+    #ifdef __MINGW32__
+    mingw_gettimeofday(&tv,NULL);
+    #else
     gettimeofday(&tv,NULL);
+    #endif
     millis = ((double)tv.tv_sec * 1000. + (double)tv.tv_usec / 1000.);
     //printf("tv_sec.%ld usec.%d %f\n",tv.tv_sec,tv.tv_usec,millis);
     return(millis);
