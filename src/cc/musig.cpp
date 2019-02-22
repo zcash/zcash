@@ -88,6 +88,54 @@ extern "C" int secp256k1_musig_pubkey_combine(const secp256k1_context* ctx, secp
 #define MUSIG_PREVN 0   // for now, just use vout0 for the musig output
 #define MUSIG_TXFEE 10000
 
+struct musig_info
+{
+    secp256k1_musig_session musig_session;
+    secp256k1_pubkey combined_pk;
+    uint8_t *nonce_commitments; // 32*N_SIGNERS
+    secp256k1_musig_session_signer_data *signer_data; //[N_SIGNERS];
+    secp256k1_pubkey *nonce; //[N_SIGNERS];
+    secp256k1_musig_partial_signature *partial_sig; //[N_SIGNERS];
+    int32_t myind,num;
+    uint8_t msg[32],pkhash[32],combpk[33];
+} *MUSIG;
+
+struct musig_info *musig_infocreate(int32_t myind,int32_t num)
+{
+    struct musig_info *mp = (struct musig_info *)calloc(1,sizeof(*mp));
+    mp->myind = myind, mp->num = num;
+    mp->nonce_commitments = (uint8_t *)calloc(num,32);
+    mp->signer_data = (uint8_t *)calloc(num,sizeof(*np->signer_data));
+    mp->nonce = (uint8_t *)calloc(num,sizeof(*np->nonce));
+    mp->partial_sig = (uint8_t *)calloc(num,sizeof(*np->partial_sig));
+    return(mp);
+}
+
+void musig_infofree(struct musig_info *mp)
+{
+    if ( mp->partial_sig != 0 )
+    {
+        random_buf(mp->partial_sig,num*sizeof(*np->partial_sig))
+        free(mp->partial_sig);
+    }
+    if ( mp->nonce != 0 )
+    {
+        random_buf(mp->nonce,num*sizeof(*np->nonce))
+        free(mp->nonce);
+    }
+    if ( mp->signer_data != 0 )
+    {
+        random_buf(mp->signer_data,num*sizeof(*np->signer_data))
+        free(mp->signer_data);
+    }
+    if ( mp->nonce_commitments != 0 )
+    {
+        random_buf(mp->nonce_commitments,num*32)
+        free(mp->nonce_commitments);
+    }
+    free(mp);
+}
+
 CScript musig_sendopret(uint8_t funcid,CPubKey pk)
 {
     CScript opret; uint8_t evalcode = EVAL_MUSIG;
@@ -215,111 +263,158 @@ UniValue musig_combine(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 
 UniValue musig_session(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ);
-    result.push_back(Pair("result","success"));
-    /** Initializes a signing session for a signer
-     *
-     *  Returns: 1: session is successfully initialized
-     *           0: session could not be initialized: secret key or secret nonce overflow
-     *  Args:         ctx: pointer to a context object, initialized for signing (cannot
-     *                     be NULL)
-     *  Out:      session: the session structure to initialize (cannot be NULL)
-     *            signers: an array of signers' data to be initialized. Array length must
-     *                     equal to `n_signers` (cannot be NULL)
-     * nonce_commitment32: filled with a 32-byte commitment to the generated nonce
-     *                     (cannot be NULL)
-     *  In:  session_id32: a *unique* 32-byte ID to assign to this session (cannot be
-     *                     NULL). If a non-unique session_id32 was given then a partial
-     *                     signature will LEAK THE SECRET KEY.
-     *              msg32: the 32-byte message to be signed. Shouldn't be NULL unless you
-     *                     require sharing public nonces before the message is known
-     *                     because it reduces nonce misuse resistance. If NULL, must be
-     *                     set with `musig_session_set_msg` before signing and verifying.
-     *        combined_pk: the combined public key of all signers (cannot be NULL)
-     *          pk_hash32: the 32-byte hash of the signers' individual keys (cannot be
-     *                     NULL)
-     *          n_signers: length of signers array. Number of signers participating in
-     *                     the MuSig. Must be greater than 0 and at most 2^32 - 1.
-     *           my_index: index of this signer in the signers array
-     *             seckey: the signer's 32-byte secret key (cannot be NULL)
-     */
-    //if (!secp256k1_musig_session_initialize(ctx, &musig_session[i], signer_data[i], nonce_commitment[i], session_id32, msg32, &combined_pk, pk_hash, N_SIGNERS, i, seckeys[i]))
-        //return 0;
-    // randombytes_buf(buf, num);
-
-    //nonce_commitment_ptr[i] = &nonce_commitment[i][0];
-    return(result);
+    static secp256k1_context *ctx;
+    UniValue result(UniValue::VOBJ); int32_t i,n,myind,num; char *pkstr,*pkhashstr,*msgstr; uint8_t session[32],msg[32],pkhash[32],privkey[32],pub33[33]; CPubKey pk; char str[67];
+    if ( ctx == 0 )
+        ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
+    if ( params != 0 && (n= cJSON_GetArraySize(params)) == 5 )
+    {
+        // set the 5 args: myind, num, pub33, pkhash32, msg32
+        if ( MUSIG != 0 )
+            musig_infofree(MUSIG), MUSIG = 0;
+        MUSIG = musig_infocreate(myind,num);
+        pk = buf2pk(pub33);
+        if ( secp256k1_ec_pubkey_parse(ctx,&MUSIG->combined_pk,pk.begin(),33) > 0 )
+        {
+            memcpy(MUSIG->pkhash,pkhash,sizeof(pkhash));
+            memcpy(MUSIG->msg,msg,sizeof(msg));
+            random_buf(session,32);
+            Myprivkey(privkey);
+            /** Initializes a signing session for a signer
+             *
+             *  Returns: 1: session is successfully initialized
+             *           0: session could not be initialized: secret key or secret nonce overflow
+             *  Args:         ctx: pointer to a context object, initialized for signing (cannot
+             *                     be NULL)
+             *  Out:      session: the session structure to initialize (cannot be NULL)
+             *            signers: an array of signers' data to be initialized. Array length must
+             *                     equal to `n_signers` (cannot be NULL)
+             * nonce_commitment32: filled with a 32-byte commitment to the generated nonce
+             *                     (cannot be NULL)
+             *  In:  session_id32: a *unique* 32-byte ID to assign to this session (cannot be
+             *                     NULL). If a non-unique session_id32 was given then a partial
+             *                     signature will LEAK THE SECRET KEY.
+             *              msg32: the 32-byte message to be signed. Shouldn't be NULL unless you
+             *                     require sharing public nonces before the message is known
+             *                     because it reduces nonce misuse resistance. If NULL, must be
+             *                     set with `musig_session_set_msg` before signing and verifying.
+             *        combined_pk: the combined public key of all signers (cannot be NULL)
+             *          pk_hash32: the 32-byte hash of the signers' individual keys (cannot be
+             *                     NULL)
+             *          n_signers: length of signers array. Number of signers participating in
+             *                     the MuSig. Must be greater than 0 and at most 2^32 - 1.
+             *           my_index: index of this signer in the signers array
+             *             seckey: the signer's 32-byte secret key (cannot be NULL)
+             */
+            if ( secp256k1_musig_session_initialize(ctx,&MUSIG->musig_session,MUSIG->signer_data, &MUSIG->nonce_commitment[MUSIG->myind * 32],session,MUSIG->msg,&MUSIG->combined_pk,MUSIG->pkhash,MUSIG->num,MUSIG->myind,privkey) > 0 )
+            {
+                result.push_back(Pair("myind",(int64_t)myind));
+                result.push_back(Pair("numsigners",(int64_t)num));
+                for (i=0; i<32; i++)
+                    sprintf(&str[i<<1],"%02x",MUSIG->nonce_commitment[MUSIG->myind*32 + i]);
+                str[64] = 0;
+                result.push_back(Pair("commitment",str));
+                result.push_back(Pair("result","success"));
+                return(result)
+            } else return(cclib_error(result,"couldnt initialize session"));
+        } else return(cclib_error(result,"couldnt parse combined pubkey"));
+    } else return(cclib_error(result,"wrong number of params, need 5: myindex, numsigners, combined_pk, pkhash, msg32"));
 }
 
 UniValue musig_commit(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ);
-    result.push_back(Pair("result","success"));
-    /** Gets the signer's public nonce given a list of all signers' data with commitments
-     *
-     *  Returns: 1: public nonce is written in nonce
-     *           0: signer data is missing commitments or session isn't initialized
-     *              for signing
-     *  Args:        ctx: pointer to a context object (cannot be NULL)
-     *           session: the signing session to get the nonce from (cannot be NULL)
-     *           signers: an array of signers' data initialized with
-     *                    `musig_session_initialize`. Array length must equal to
-     *                    `n_commitments` (cannot be NULL)
-     *  Out:       nonce: the nonce (cannot be NULL)
-     *  In:  commitments: array of 32-byte nonce commitments (cannot be NULL)
-     *     n_commitments: the length of commitments and signers array. Must be the total
-     *                    number of signers participating in the MuSig.
-     */
-    // Set nonce commitments in the signer data and get the own public nonce
-    //if (!secp256k1_musig_session_get_public_nonce(ctx, &musig_session[i], signer_data[i], &nonce[i], nonce_commitment_ptr, N_SIGNERS))
-       // return 0;
-    
-    return(result);
+    static secp256k1_context *ctx;
+    UniValue result(UniValue::VOBJ); int32_t n;
+    if ( ctx == 0 )
+        ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
+    if ( params != 0 && (n= cJSON_GetArraySize(params)) == 3 )
+    {
+        // pkhash, ind, commitment
+        // if all commitments, emit nonce, else just update MUSIG->
+
+        /** Gets the signer's public nonce given a list of all signers' data with commitments
+         *
+         *  Returns: 1: public nonce is written in nonce
+         *           0: signer data is missing commitments or session isn't initialized
+         *              for signing
+         *  Args:        ctx: pointer to a context object (cannot be NULL)
+         *           session: the signing session to get the nonce from (cannot be NULL)
+         *           signers: an array of signers' data initialized with
+         *                    `musig_session_initialize`. Array length must equal to
+         *                    `n_commitments` (cannot be NULL)
+         *  Out:       nonce: the nonce (cannot be NULL)
+         *  In:  commitments: array of 32-byte nonce commitments (cannot be NULL)
+         *     n_commitments: the length of commitments and signers array. Must be the total
+         *                    number of signers participating in the MuSig.
+         */
+        // Set nonce commitments in the signer data and get the own public nonce
+        //if (secp256k1_musig_session_get_public_nonce(ctx, &musig_session[i], signer_data[i], &nonce[i], nonce_commitment_ptr, N_SIGNERS) > 0 )
+        {
+            // publish nonce
+            result.push_back(Pair("result","success"));
+        }
+        // return 0;
+    } else return(cclib_error(result,"wrong number of params, need 3: pkhash, ind, commitment"));
 }
 
 UniValue musig_nonce(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ);
-    result.push_back(Pair("result","success"));
-    /** Checks a signer's public nonce against a commitment to said nonce, and update
-     *  data structure if they match
-     *
-     *  Returns: 1: commitment was valid, data structure updated
-     *           0: commitment was invalid, nothing happened
-     *  Args:      ctx: pointer to a context object (cannot be NULL)
-     *          signer: pointer to the signer data to update (cannot be NULL). Must have
-     *                  been used with `musig_session_get_public_nonce` or initialized
-     *                  with `musig_session_initialize_verifier`.
-     *  In:     nonce: signer's alleged public nonce (cannot be NULL)
-     */
-    //if (!secp256k1_musig_set_nonce(ctx, &signer_data[i][j], &nonce[j])) {
-   
-    
-    /** Updates a session with the combined public nonce of all signers. The combined
-     * public nonce is the sum of every signer's public nonce.
-     *
-     *  Returns: 1: nonces are successfully combined
-     *           0: a signer's nonce is missing
-     *  Args:        ctx: pointer to a context object (cannot be NULL)
-     *           session: session to update with the combined public nonce (cannot be
-     *                    NULL)
-     *           signers: an array of signers' data, which must have had public nonces
-     *                    set with `musig_set_nonce`. Array length must equal to `n_signers`
-     *                    (cannot be NULL)
-     *         n_signers: the length of the signers array. Must be the total number of
-     *                    signers participating in the MuSig.
-     *  Out: nonce_is_negated: a pointer to an integer that indicates if the combined
-     *                    public nonce had to be negated.
-     *           adaptor: point to add to the combined public nonce. If NULL, nothing is
-     *                    added to the combined nonce.
-     */
-    // after all nonces: if (!secp256k1_musig_session_combine_nonces(ctx, &musig_session[i], signer_data[i], N_SIGNERS, NULL, NULL)) {
+    static secp256k1_context *ctx;
+    UniValue result(UniValue::VOBJ); int32_t n;
+    if ( ctx == 0 )
+        ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
+    if ( params != 0 && (n= cJSON_GetArraySize(params)) > 0 )
+    {
+        // pkhash, ind, nonce
+        // if all nonces, combine nonce, else just update MUSIG->
+        result.push_back(Pair("result","success"));
+        /** Checks a signer's public nonce against a commitment to said nonce, and update
+         *  data structure if they match
+         *
+         *  Returns: 1: commitment was valid, data structure updated
+         *           0: commitment was invalid, nothing happened
+         *  Args:      ctx: pointer to a context object (cannot be NULL)
+         *          signer: pointer to the signer data to update (cannot be NULL). Must have
+         *                  been used with `musig_session_get_public_nonce` or initialized
+         *                  with `musig_session_initialize_verifier`.
+         *  In:     nonce: signer's alleged public nonce (cannot be NULL)
+         */
+        //if (!secp256k1_musig_set_nonce(ctx, &signer_data[i][j], &nonce[j])) {
+        
+        
+        /** Updates a session with the combined public nonce of all signers. The combined
+         * public nonce is the sum of every signer's public nonce.
+         *
+         *  Returns: 1: nonces are successfully combined
+         *           0: a signer's nonce is missing
+         *  Args:        ctx: pointer to a context object (cannot be NULL)
+         *           session: session to update with the combined public nonce (cannot be
+         *                    NULL)
+         *           signers: an array of signers' data, which must have had public nonces
+         *                    set with `musig_set_nonce`. Array length must equal to `n_signers`
+         *                    (cannot be NULL)
+         *         n_signers: the length of the signers array. Must be the total number of
+         *                    signers participating in the MuSig.
+         *  Out: nonce_is_negated: a pointer to an integer that indicates if the combined
+         *                    public nonce had to be negated.
+         *           adaptor: point to add to the combined public nonce. If NULL, nothing is
+         *                    added to the combined nonce.
+         */
+        // after all nonces: if (!secp256k1_musig_session_combine_nonces(ctx, &musig_session[i], signer_data[i], N_SIGNERS, NULL, NULL)) {
         return(result);
+    } else return(cclib_error(result,"wrong number of params, need 3: pkhash, ind, nonce"));
 }
 
 UniValue musig_partialsign(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ);
+    static secp256k1_context *ctx;
+    UniValue result(UniValue::VOBJ); int32_t n;
+    if ( ctx == 0 )
+        ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
+    if ( params != 0 && (n= cJSON_GetArraySize(params)) > 0 )
+    {
+        // similar to commit/nonce
+    }
     result.push_back(Pair("result","success"));
     /** Produces a partial signature
      *
@@ -349,7 +444,14 @@ UniValue musig_partialsign(uint64_t txfee,struct CCcontract_info *cp,cJSON *para
 
 UniValue musig_sigcombine(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ);
+    static secp256k1_context *ctx;
+    UniValue result(UniValue::VOBJ); int32_t n;
+    if ( ctx == 0 )
+        ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
+    if ( params != 0 && (n= cJSON_GetArraySize(params)) > 0 )
+    {
+        // finally!
+    }
     result.push_back(Pair("result","success"));
     /** Checks that an individual partial signature verifies
      *
@@ -387,7 +489,14 @@ UniValue musig_sigcombine(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
 
 UniValue musig_verify(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ);
+    static secp256k1_context *ctx;
+    UniValue result(UniValue::VOBJ); int32_t n;
+    if ( ctx == 0 )
+        ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
+    if ( params != 0 && (n= cJSON_GetArraySize(params)) > 0 )
+    {
+        // can code this out of order
+    }
     result.push_back(Pair("result","success"));
     /** Verify a Schnorr signature.
      *
