@@ -32,9 +32,9 @@ build:ubuntu:
   variables:
     DOCKER_DRIVER: overlay2
   cache:
-    key: "${CI_JOB_NAME}${CI_COMMIT_REF_NAME}"
+    key: ${CI_COMMIT_REF_SLUG}
     paths:
-    - depends/built
+    - depends/
   script:
   - zcutil/build.sh -j$(nproc)
   - mkdir ${PACKAGE_DIR_LINUX}
