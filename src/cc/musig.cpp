@@ -281,6 +281,10 @@ UniValue musig_session(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             memcpy(MUSIG->pkhash,pkhash,sizeof(pkhash));
             memcpy(MUSIG->msg,msg,sizeof(msg));
             GetRandBytes(session,32);
+            for (i=0; i<32; i++)
+                sprintf(&str[i<<1],"%02x",session[i]);
+            str[64] = 0;
+            fprintf(stderr,"session %s\n",str);
             Myprivkey(privkey);
             /** Initializes a signing session for a signer
              *
