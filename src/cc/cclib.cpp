@@ -72,12 +72,11 @@ CClib_methods[] =
     { (char *)"sudoku", (char *)"pending", (char *)"<no args>", 0, 0, 'U', EVAL_SUDOKU },
     { (char *)"sudoku", (char *)"solution", (char *)"txid solution timestamps[81]", 83, 83, 'S', EVAL_SUDOKU },
     { (char *)"musig", (char *)"calcmsg", (char *)"sendtxid scriptPubKey", 2, 2, 'C', EVAL_MUSIG },
-    { (char *)"musig", (char *)"combine", (char *)"pubkeys ...", 2, 256, 'P', EVAL_MUSIG },
-    { (char *)"musig", (char *)"session", (char *)"msg pkhash", 2, 2, 'R', EVAL_MUSIG },
-    { (char *)"musig", (char *)"commit", (char *)"pubkeys ...", 2, 256, 'H', EVAL_MUSIG },
-    { (char *)"musig", (char *)"nonce", (char *)"pubkeys ...", 2, 256, 'N', EVAL_MUSIG },
-    { (char *)"musig", (char *)"partialsign", (char *)"pubkeys ...", 2, 256, 'S', EVAL_MUSIG },
-    { (char *)"musig", (char *)"sigcombine", (char *)"pubkeys ...", 2, 256, 'M', EVAL_MUSIG },
+    { (char *)"musig", (char *)"combine", (char *)"pubkeys ...", 2, 999999999, 'P', EVAL_MUSIG },
+    { (char *)"musig", (char *)"session", (char *)"myindex,numsigners,combined_pk,pkhash,msg32", 5, 5, 'R', EVAL_MUSIG },
+    { (char *)"musig", (char *)"commit", (char *)"pkhash,ind,commitment", 3, 3, 'H', EVAL_MUSIG },
+    { (char *)"musig", (char *)"nonce", (char *)"pkhash,ind,nonce", 3, 3, 'N', EVAL_MUSIG },
+    { (char *)"musig", (char *)"partialsig", (char *)"pkhash,ind,partialsig", 3, 3, 'S', EVAL_MUSIG },
     { (char *)"musig", (char *)"verify", (char *)"msg sig pubkey", 3, 3, 'V', EVAL_MUSIG },
     { (char *)"musig", (char *)"send", (char *)"combined_pk amount", 2, 2, 'x', EVAL_MUSIG },
     { (char *)"musig", (char *)"spend", (char *)"sendtxid sig destpubkey", 3, 3, 'y', EVAL_MUSIG },
@@ -116,8 +115,7 @@ UniValue musig_combine(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue musig_session(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue musig_commit(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue musig_nonce(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
-UniValue musig_partialsign(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
-UniValue musig_sigcombine(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+UniValue musig_partialsig(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue musig_verify(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue musig_send(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue musig_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
@@ -229,10 +227,8 @@ UniValue CClib_method(struct CCcontract_info *cp,char *method,char *jsonstr)
             return(musig_commit(txfee,cp,params));
         else if ( strcmp(method,"nonce") == 0 ) // returns combined nonce if ready
             return(musig_nonce(txfee,cp,params));
-        else if ( strcmp(method,"partialsign") == 0 )
-            return(musig_partialsign(txfee,cp,params));
-        else if ( strcmp(method,"sigcombine") == 0 )
-            return(musig_sigcombine(txfee,cp,params));
+        else if ( strcmp(method,"partialsig") == 0 )
+            return(musig_partialsig(txfee,cp,params));
         else if ( strcmp(method,"verify") == 0 )
             return(musig_verify(txfee,cp,params));
         else if ( strcmp(method,"send") == 0 )
