@@ -132,7 +132,12 @@ typedef struct {
  *                    key (cannot be NULL)
  *         n_pubkeys: length of pubkeys array
  */
-SECP256K1_API int secp256k1_musig_pubkey_combine(
+#ifdef __cplusplus
+extern "C"
+#else
+SECP256K1_API
+#endif
+ int secp256k1_musig_pubkey_combine(
     const secp256k1_context* ctx,
     secp256k1_scratch_space *scratch,
     secp256k1_pubkey *combined_pk,
