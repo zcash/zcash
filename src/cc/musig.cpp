@@ -721,7 +721,7 @@ UniValue musig_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                                 str[64] = 0;
                                 result.push_back(Pair("msg",str));
                                 for (i=0; i<33; i++)
-                                    sprintf(&str[i*2],"%02x",((uint8_t *)pk.begin)[i]);
+                                    sprintf(&str[i*2],"%02x",((uint8_t *)pk.begin())[i]);
                                 str[66] = 0;
                                 result.push_back(Pair("combined_pk",str));
                                 for (i=0; i<64; i++)
