@@ -88,7 +88,6 @@ extern "C" int secp256k1_musig_session_initialize(const secp256k1_context* ctx, 
 
 #define MUSIG_PREVN 0   // for now, just use vout0 for the musig output
 #define MUSIG_TXFEE 10000
-#define random_buf(a,b) 
 
 struct musig_info
 {
@@ -117,22 +116,22 @@ void musig_infofree(struct musig_info *mp)
 {
     if ( mp->partial_sig != 0 )
     {
-        random_buf(mp->partial_sig,mp->num*sizeof(*mp->partial_sig))
+        GetRandBytes((uint8_t *)mp->partial_sig,mp->num*sizeof(*mp->partial_sig))
         free(mp->partial_sig);
     }
     if ( mp->nonce != 0 )
     {
-        random_buf(mp->nonce,mp->num*sizeof(*mp->nonce))
+        GetRandBytes((uint8_t *)mp->nonce,mp->num*sizeof(*mp->nonce))
         free(mp->nonce);
     }
     if ( mp->signer_data != 0 )
     {
-        random_buf(mp->signer_data,mp->num*sizeof(*mp->signer_data))
+        GetRandBytes((uint8_t *)mp->signer_data,mp->num*sizeof(*mp->signer_data))
         free(mp->signer_data);
     }
     if ( mp->nonce_commitments != 0 )
     {
-        random_buf(mp->nonce_commitments,mp->num*32)
+        GetRandBytes((uint8_t *)mp->nonce_commitments,mp->num*32)
         free(mp->nonce_commitments);
     }
     free(mp);
@@ -280,7 +279,7 @@ UniValue musig_session(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
         {
             memcpy(MUSIG->pkhash,pkhash,sizeof(pkhash));
             memcpy(MUSIG->msg,msg,sizeof(msg));
-            random_buf(session,32);
+            GetRandBytes(session,32);
             Myprivkey(privkey);
             /** Initializes a signing session for a signer
              *
