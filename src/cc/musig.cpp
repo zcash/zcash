@@ -138,7 +138,7 @@ the "msg" is what needs to be signed to create a valid spend
  
  Now for a sanity test, we can use the verify call to make sure this sig will work with the msg needed for the spend:
  
- xxxx
+ ./c cclib verify 18 \"[%22caa64ba398ddfe5c33d8c70a61e556caa0e69b19d93110c5a458a1b37ad44cb0%22,%22032ddac56613cd0667b589bd7f32b665e2d2ce0247e337a5a0bca6c72e3d9d057b%22,%225e64dc5dda93b2d3f25fe44b2aaca69b8f15d21f70e2bc1c2c53e17262d941bbeea0b0a3ccdfeb96ec83ac2a6a9492db9afe5d47adb6810621c1acfd56439146%22]\"
  
  
  and finally the spend: sendtxid, scriptPubKey, musig
@@ -623,7 +623,7 @@ UniValue musig_verify(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     UniValue result(UniValue::VOBJ); int32_t i,n; uint8_t msg[32],musig64[64]; secp256k1_pubkey combined_pk; secp256k1_schnorrsig musig; char str[129];
     if ( ctx == 0 )
         ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
-    if ( params != 0 && (n= cJSON_GetArraySize(params)) != 3 )
+    if ( params != 0 && (n= cJSON_GetArraySize(params)) == 3 )
     {
         if ( musig_parsehash(msg,jitem(params,0),32) < 0 )
             return(cclib_error(result,"error parsing pkhash"));
