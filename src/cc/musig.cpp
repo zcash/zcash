@@ -297,17 +297,12 @@ UniValue musig_session(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
         MUSIG = musig_infocreate(myind,num);
         if ( musig_parsepubkey(ctx,MUSIG->combined_pk,jitem(params,2)) < 0 )
             return(cclib_error(result,"error parsing combined_pubkey"));
-        {
-            if ( musig_parsehash32(MUSIG->pkhash,jitem(params,3)) < 0 )
-                return(cclib_error(result,"error parsing pkhash"));
-            if ( musig_parsehash32(MUSIG->msg,jitem(params,4)) < 0 )
-                return(cclib_error(result,"error parsing msg"));
-            Myprivkey(privkey);
-            GetRandBytes(session,32);
-            for (i=0; i<32; i++)
-                sprintf(&str[i<<1],"%02x",session[i]);
-            str[64] = 0;
-            fprintf(stderr,"session %s\n",str);
+        else if ( musig_parsehash32(MUSIG->pkhash,jitem(params,3)) < 0 )
+            return(cclib_error(result,"error parsing pkhash"));
+        else if ( musig_parsehash32(MUSIG->msg,jitem(params,4)) < 0 )
+            return(cclib_error(result,"error parsing msg"));
+        Myprivkey(privkey);
+        GetRandBytes(session,32);
             /** Initializes a signing session for a signer
              *
              *  Returns: 1: session is successfully initialized
@@ -334,24 +329,23 @@ UniValue musig_session(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
              *           my_index: index of this signer in the signers array
              *             seckey: the signer's 32-byte secret key (cannot be NULL)
              */
-            if ( secp256k1_musig_session_initialize(ctx,&MUSIG->musig_session,MUSIG->signer_data, &MUSIG->nonce_commitments[MUSIG->myind * 32],session,MUSIG->msg,&MUSIG->combined_pk,MUSIG->pkhash,MUSIG->num,MUSIG->myind,privkey) > 0 )
-            {
-                memset(session,0,sizeof(session));
-                result.push_back(Pair("myind",(int64_t)myind));
-                result.push_back(Pair("numsigners",(int64_t)num));
-                for (i=0; i<32; i++)
-                    sprintf(&str[i<<1],"%02x",MUSIG->nonce_commitments[MUSIG->myind*32 + i]);
-                str[64] = 0;
-                result.push_back(Pair("commitment",str));
-                result.push_back(Pair("result","success"));
-                return(result);
-            }
-            else
-            {
-                memset(session,0,sizeof(session));
-                return(cclib_error(result,"couldnt initialize session"));
-            }
-        } else return(cclib_error(result,"couldnt parse combined pubkey"));
+        if ( secp256k1_musig_session_initialize(ctx,&MUSIG->musig_session,MUSIG->signer_data, &MUSIG->nonce_commitments[MUSIG->myind * 32],session,MUSIG->msg,&MUSIG->combined_pk,MUSIG->pkhash,MUSIG->num,MUSIG->myind,privkey) > 0 )
+        {
+            memset(session,0,sizeof(session));
+            result.push_back(Pair("myind",(int64_t)myind));
+            result.push_back(Pair("numsigners",(int64_t)num));
+            for (i=0; i<32; i++)
+                sprintf(&str[i<<1],"%02x",MUSIG->nonce_commitments[MUSIG->myind*32 + i]);
+            str[64] = 0;
+            result.push_back(Pair("commitment",str));
+            result.push_back(Pair("result","success"));
+            return(result);
+        }
+        else
+        {
+            memset(session,0,sizeof(session));
+            return(cclib_error(result,"couldnt initialize session"));
+        }
     } else return(cclib_error(result,"wrong number of params, need 5: myindex, numsigners, combined_pk, pkhash, msg32"));
 }
 
