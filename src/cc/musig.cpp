@@ -617,10 +617,12 @@ UniValue musig_partialsig(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
     } else return(cclib_error(result,"wrong number of params, need 3: pkhash, ind, partialsig"));
 }
 
+int testmain(void);
 UniValue musig_verify(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     static secp256k1_context *ctx;
     UniValue result(UniValue::VOBJ); int32_t i,n; uint8_t msg[32],musig64[64]; secp256k1_pubkey combined_pk; secp256k1_schnorrsig musig; char str[129];
+    testmain();
     if ( ctx == 0 )
         ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
     if ( params != 0 && (n= cJSON_GetArraySize(params)) == 3 )

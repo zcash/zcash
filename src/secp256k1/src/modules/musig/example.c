@@ -128,37 +128,37 @@ int sign(const secp256k1_context* ctx, unsigned char seckeys[][32], const secp25
     unsigned char seckeys[N_SIGNERS][32];
     secp256k1_pubkey pubkeys[N_SIGNERS];
     secp256k1_pubkey combined_pk;
-    unsigned char msg[32] = "this_could_be_the_hash_of_a_msg!";
+    unsigned char msg[32] = "this_could_be_the_hash_of_a_msg";
     secp256k1_schnorrsig sig;
 
     /* Create a context for signing and verification */
     ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
-    printf("Creating key pairs......");
+    fprintf(stderr,"Creating key pairs......");
     for (i = 0; i < N_SIGNERS; i++) {
         if (!create_key(ctx, seckeys[i], &pubkeys[i])) {
-            printf("FAILED\n");
+            fprintf(stderr,"FAILED\n");
             return 1;
         }
     }
-    printf("ok\n");
-    printf("Combining public keys...");
+    fprintf(stderr,"ok\n");
+    fprintf(stderr,"Combining public keys...");
     if (!secp256k1_musig_pubkey_combine(ctx, NULL, &combined_pk, NULL, pubkeys, N_SIGNERS)) {
-        printf("FAILED\n");
+        fprintf(stderr,"FAILED\n");
         return 1;
     }
-    printf("ok\n");
-    printf("Signing message.........");
+    fprintf(stderr,"ok\n");
+    fprintf(stderr,"Signing message.........");
     if (!sign(ctx, seckeys, pubkeys, msg, &sig)) {
-        printf("FAILED\n");
+        fprintf(stderr,"FAILED\n");
         return 1;
     }
-    printf("ok\n");
-    printf("Verifying signature.....");
+    fprintf(stderr,"ok\n");
+    fprintf(stderr,"Verifying signature.....");
     if (!secp256k1_schnorrsig_verify(ctx, &sig, msg, &combined_pk)) {
-        printf("FAILED\n");
+        fprintf(stderr,"FAILED\n");
         return 1;
     }
-    printf("ok\n");
+    fprintf(stderr,"ok\n");
     secp256k1_context_destroy(ctx);
     return 0;
 }
