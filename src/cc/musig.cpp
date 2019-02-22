@@ -704,7 +704,9 @@ UniValue musig_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                     txfee = MUSIG_TXFEE;
                 mypk = pubkey2pk(Mypubkey());
                 std::vector<uint8_t> musig64(ParseHex(musigstr));
-                CScript scriptPubKey(ParseHex(scriptstr));
+                CScript scriptPubKey;
+                scriptPubKey.resize(strlen(scriptstr)/2);
+                decode_hex((uint8_t *)scriptPubKey.data(),strlen(scriptstr)/2,scriptstr);
                 if ( myGetTransaction(prevhash,vintx,hashBlock) != 0 && (numvouts= vintx.vout.size()) > 1 )
                 {
                     vout.nValue = vintx.vout[0].nValue - txfee;
