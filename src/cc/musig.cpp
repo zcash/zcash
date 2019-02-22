@@ -730,7 +730,9 @@ UniValue musig_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                                 result.push_back(Pair("combinedsig",str));
                             }
                             if ( !secp256k1_schnorrsig_verify((const secp256k1_context *)ctx,&musig,(const uint8_t *)msg,(const secp256k1_pubkey *)&combined_pk) )
-                                return(cclib_error(result,"musig didnt validate"));
+                            {
+                                //return(cclib_error(result,"musig didnt validate"));
+                            }
                             mtx.vin.push_back(CTxIn(prevhash,MUSIG_PREVN));
                             mtx.vout.push_back(vout);
                             rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,musig_spendopret('y',pk,musig64));
