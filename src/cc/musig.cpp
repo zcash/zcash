@@ -620,25 +620,35 @@ UniValue musig_partialsig(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
 UniValue musig_verify(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     static secp256k1_context *ctx;
-    UniValue result(UniValue::VOBJ); int32_t n;
+    UniValue result(UniValue::VOBJ); int32_t i,n; uint8_t msg[32],musig64[64]; secp256k1_pubkey combined_pk; secp256k1_schnorrsig musig; char str[129];
     if ( ctx == 0 )
         ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
-    if ( params != 0 && (n= cJSON_GetArraySize(params)) > 0 )
+    if ( params != 0 && (n= cJSON_GetArraySize(params)) != 3 )
     {
-        // can code this out of order
-    }
-    result.push_back(Pair("result","success"));
-    /** Verify a Schnorr signature.
-     *
-     *  Returns: 1: correct signature
-     *           0: incorrect or unparseable signature
-     *  Args:    ctx: a secp256k1 context object, initialized for verification.
-     *  In:      sig: the signature being verified (cannot be NULL)
-     *         msg32: the 32-byte message hash being verified (cannot be NULL)
-     *        pubkey: pointer to a public key to verify with (cannot be NULL)
-     */
-    // if (!secp256k1_schnorrsig_verify(ctx, &sig, msg, &combined_pk)) {
-    return(result);
+        if ( musig_parsehash32(msg,jitem(params,0)) < 0 )
+            return(cclib_error(result,"error parsing pkhash"));
+        else if ( musig_parsepubkey(ctx,combined_pk,jitem(params,1)) < 0 )
+            return(cclib_error(result,"error parsing combined_pk"));
+        else if ( musig_parsehash64(musig64,jitem(params,2)) < 0 )
+            return(cclib_error(result,"error parsing musig64"));
+        for (i=0; i<32; i++)
+            sprintf(&str[i*2],"%02x",msg[i]);
+        str[64] = 0;
+        result.push_back(Pair("msg",str));
+        result.push_back(Pair("combined_pk",jstr(jitem(params,1),0)));
+        for (i=0; i<64; i++)
+            sprintf(&str[i*2],"%02x",musig64[i]);
+        str[128] = 0;
+        result.push_back(Pair("combinedsig",str));
+        if ( secp256k1_schnorrsig_parse(ctx,&musig,&musig64[0]) > 0 )
+        {
+            if ( secp256k1_schnorrsig_verify(ctx,&musig,msg,&combined_pk) > 0 )
+            {
+                result.push_back(Pair("result","success"));
+                return(result);
+            } else return(cclib_error(result,"musig didnt verify"));
+        } else return(cclib_error(result,"couldnt parse musig64"));
+    } else return(cclib_error(result,"wrong number of params, need 3: msg, combined_pk, combinedsig"));
 }
 
 // helpers for rpc calls that generate/validate onchain tx
@@ -733,7 +743,7 @@ UniValue musig_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                             }
                             if ( !secp256k1_schnorrsig_verify((const secp256k1_context *)ctx,&musig,(const uint8_t *)msg,(const secp256k1_pubkey *)&combined_pk) )
                             {
-                                //return(cclib_error(result,"musig didnt validate"));
+                                return(cclib_error(result,"musig didnt validate"));
                             }
                             mtx.vin.push_back(CTxIn(prevhash,MUSIG_PREVN));
                             mtx.vout.push_back(vout);
