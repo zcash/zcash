@@ -26,8 +26,8 @@
 /* second, send 0.777 coins to the combined_pk
  ./c cclib send 18 \"[%22032ddac56613cd0667b589bd7f32b665e2d2ce0247e337a5a0bca6c72e3d9d057b%22,0.777]\"
  {
- "hex": "0400008085202f8901bf7afcbbab7a5e1ba20c8010325e199305afa7d15b4bc86a589a512201d39924000000004847304402203e0cff8aaa831dd990afd979bbc0a648316f77407cb5e02780d18e0670f5172a0220283d5c52d0406b10c508cc2b19dd6dbe2420e7c5cf431a1d41072d0eec28edb901ffffffff03b0c2a10400000000302ea22c8020c71ddb3aac7f9b9e4bdacf032aaa8b8e4433c4ff9f8a43cebb9c1f5da96928a48103120c008203000401cca91e223700000000232102aff51dad774a1c612dc82e63f85f07b992b665836b0f0efbcb26ee679f4f4848ac0000000000000000266a24127821032ddac56613cd0667b589bd7f32b665e2d2ce0247e337a5a0bca6c72e3d9d057b00000000900000000000000000000000000000",
- "txid": "cb5309ed249da95e2b5696eb763a8736e2fff1d14922ada737b931494ca3d2be",
+ "hex": "0400008085202f8908018bbc4a0acf0f896680b84cc1000ec5530042fa3cf7471ab5c11cde56f6d0e60000000048473044022041a900fa57e54f939b797d09f0cee81ab9a79d978cd473ef3fc9f09c7678ad6b02206386bd15ee7ee8224a984fdd1d2a094738d082aec06028a5846d7bc61ddf16ca01ffffffff0b969f0e1ea787f0cc4e81d128353bd1cb670ab89bd1db4b47fbb7e872cd39fb00000000494830450221008c5de4b196e57b0dd94aa415950adf274e3e6859b82cf218729af84c1f15e76c022024aeab7eda63e6a652ef488bf26a8dc4ef8d2d4aa5746726085bfe5f169a5db701ffffffff0b36b70b43457fab377f28fb22da5a3e9d8186a37daae18cf0f710a221ab26250000000048473044022004ec20ae7490e7adabf9a3f78e4a58df84a3245485bfdd40f421cafe61d19c340220456d2b6f3c6e88632027c02606a0af1c21208d05f2de0826fbf4dfe7391ec83901ffffffff0aaff3cfe4ca22b97b6179a6f7cfac91945e5440e9438b89d1ec09500167176a0000000048473044022074dcad30c8ab9ed79a3ac69169611fc9e5f4b76a561b183461d968249316997f022063b25decaa285f494d277b9c8c2bcf6445b7929a304542e89c0645828d30a1a901ffffffff090e1bb92e9bf404a0d6455701b21af3dbf6765e61a1dc28b7c0f608ec4f12da000000004847304402202f9182c532c66138a6bdfcbb85a06cf1bf1532f2bf8f63170ef20843e4a81d0202207612a4353eb9606e84621c444ec7db1b683ff29c56127bda2d5e9c0eb13dbbc001ffffffff08a57005c7a40a923b1a510820b07f7318d760fe2a233b077d918cce357ad3af00000000484730440220643d60c68634fb2e0f6656389fc70c9f84c7086fc6e35b0fa26297e844f6c5fc02201d79669e073efe738d47de0130fdcba875e284e18fd478c0e6834d46632d8b8101ffffffff068cfd0ea6c0f5d401c67ec38f92425a9e59b0d5ade55bb2971ea955675a17bd00000000484730440220747139724248da4bcc1e5e3828e0ea811756e1fad0ebc40aeb006fd8079d46e402200d8f1c229c79494b5617e4373a3e083966dcd74571323f9d334be901d53871fa01ffffffff0200382fb6984b6128bb75115346242809c6555274e0cacef822825a2b4d231700000000484730440220454fcac398f6913fb4d8ed330f110f9cf62eec6c8cdb67d5df1effd2cf8222d5022017f6323630669777573e342e870c88727a917cc06c33611ebbd9d1fccc1dcd3701ffffffff03b0c2a10400000000302ea22c8020c71ddb3aac7f9b9e4bdacf032aaa8b8e4433c4ff9f8a43cebb9c1f5da96928a48103120c008203000401cc40ca220000000000232102aff51dad774a1c612dc82e63f85f07b992b665836b0f0efbcb26ee679f4f4848ac0000000000000000266a24127821032ddac56613cd0667b589bd7f32b665e2d2ce0247e337a5a0bca6c72e3d9d057b00000000460100000000000000000000000000",
+ "txid": "2c4159bb19212dcaa412ae37de7d72398f063194053e04a65b0facf767ebcc68",
  "result": "success"
  }
  
@@ -46,92 +46,94 @@
  }
  change script: 2102aff51dad774a1c612dc82e63f85f07b992b665836b0f0efbcb26ee679f4f4848ac
  
- sendtxid: cb5309ed249da95e2b5696eb763a8736e2fff1d14922ada737b931494ca3d2be
+ sendtxid: 2c4159bb19212dcaa412ae37de7d72398f063194053e04a65b0facf767ebcc68
  
  broadcast sendtxid and wait for it to be confirmed. then get the msg we need to sign:
  
- ./c cclib calcmsg 18 \"[%22cb5309ed249da95e2b5696eb763a8736e2fff1d14922ada737b931494ca3d2be%22,%222102aff51dad774a1c612dc82e63f85f07b992b665836b0f0efbcb26ee679f4f4848ac%22]\"
+ ./c cclib calcmsg 18 \"[%222c4159bb19212dcaa412ae37de7d72398f063194053e04a65b0facf767ebcc68%22,%222102aff51dad774a1c612dc82e63f85f07b992b665836b0f0efbcb26ee679f4f4848ac%22]\"
  
  {
  "result": "success",
- "msg": "63b799913d4c9487f321b32d6ae8614f653f38e0b50d4df4bc1d36339ea18485"
+ "msg": "caa64ba398ddfe5c33d8c70a61e556caa0e69b19d93110c5a458a1b37ad44cb0"
  }
+ 
 the "msg" is what needs to be signed to create a valid spend
  
  now on each signing node, a session needs to be created:
  5 args: ind, numsigners, combined_pk, pkhash, message to be signed
  
  on node with pubkey: 02aff51dad774a1c612dc82e63f85f07b992b665836b0f0efbcb26ee679f4f4848
- ./c cclib session 18 \"[0,2,%22032ddac56613cd0667b589bd7f32b665e2d2ce0247e337a5a0bca6c72e3d9d057b%22,%225be117f3c5ce87e7dc6882c24b8231e0652ee82054bf7b9f94aef1f45e055cba%22,%2263b799913d4c9487f321b32d6ae8614f653f38e0b50d4df4bc1d36339ea18485%22]\"
+ ./c cclib session 18 \"[0,2,%22032ddac56613cd0667b589bd7f32b665e2d2ce0247e337a5a0bca6c72e3d9d057b%22,%225be117f3c5ce87e7dc6882c24b8231e0652ee82054bf7b9f94aef1f45e055cba%22,%22caa64ba398ddfe5c33d8c70a61e556caa0e69b19d93110c5a458a1b37ad44cb0%22]\"
  {
  "myind": 0,
  "numsigners": 2,
- "commitment": "89af8f6db69fc3d4b95480a914dceba9933039e9823151a82677c3ca4e961fcc",
+ "commitment": "e82228c10d0e100477630349150dea744d3b2790dcd347511a1a98199840cda4",
  "result": "success"
  }
  
  on node with pubkey: 039433dc3749aece1bd568f374a45da3b0bc6856990d7da3cd175399577940a775
- ./c cclib session 18 \"[1,2,%22032ddac56613cd0667b589bd7f32b665e2d2ce0247e337a5a0bca6c72e3d9d057b%22,%225be117f3c5ce87e7dc6882c24b8231e0652ee82054bf7b9f94aef1f45e055cba%22,%2263b799913d4c9487f321b32d6ae8614f653f38e0b50d4df4bc1d36339ea18485%22]\"
+ ./c cclib session 18 \"[1,2,%22032ddac56613cd0667b589bd7f32b665e2d2ce0247e337a5a0bca6c72e3d9d057b%22,%225be117f3c5ce87e7dc6882c24b8231e0652ee82054bf7b9f94aef1f45e055cba%22,%22caa64ba398ddfe5c33d8c70a61e556caa0e69b19d93110c5a458a1b37ad44cb0%22]\"
  {
  "myind": 1,
  "numsigners": 2,
- "commitment": "a43da5ef8322abb43b9fddadef7b6479baf7853e860f915e01521e3060e5342b",
+ "commitment": "6e426e850ddc45e7742cfb6321781c00ee69a995ab12fa1f9ded7fe43658babf",
  "result": "success"
  }
  
  now we need to get the commitment from each node to the other one. the session already put the commitment for each node into the global struct. Keep in mind there is a single global struct with session unique to each cclib session call. that means no restarting any deamon in the middle of the process on any of the nodes and only call cclib session a single time. this is an artificial restriction just to simplify the initial implementation of musig
  
- ./c cclib commit 18 \"[%225be117f3c5ce87e7dc6882c24b8231e0652ee82054bf7b9f94aef1f45e055cba%22,1,%22a43da5ef8322abb43b9fddadef7b6479baf7853e860f915e01521e3060e5342b%22]\"
+ ./c cclib commit 18 \"[%225be117f3c5ce87e7dc6882c24b8231e0652ee82054bf7b9f94aef1f45e055cba%22,1,%226e426e850ddc45e7742cfb6321781c00ee69a995ab12fa1f9ded7fe43658babf%22]\"
  {
  "added_index": 1,
  "myind": 0,
- "nonce": "03bf28874f5e5dccf55170406d58ded84ac6ca713011d718c6048400d700cb879a",
+ "nonce": "0261671b0a6de416938cf035c98f8af37c6ca88bbbd1bcce693d709d4919b010e1",
  "result": "success"
  }
  
- ./c cclib commit 18 \"[%225be117f3c5ce87e7dc6882c24b8231e0652ee82054bf7b9f94aef1f45e055cba%22,0,%2289af8f6db69fc3d4b95480a914dceba9933039e9823151a82677c3ca4e961fcc%22]\"
+ ./c cclib commit 18 \"[%225be117f3c5ce87e7dc6882c24b8231e0652ee82054bf7b9f94aef1f45e055cba%22,0,%22e82228c10d0e100477630349150dea744d3b2790dcd347511a1a98199840cda4%22]\"
  {
  "added_index": 0,
  "myind": 1,
- "nonce": "039ae1f542e8f0f6d03d734dc2295651973e1b7fa99508e2f36dad5d21f09889f6",
+ "nonce": "02570f62a625ceb19a754a053152b162810c3e403df63f3d443e85bdacc74bfdfe",
  "result": "success"
  }
  
  Now exchange the revealed nonces to each node:
  
- ./c cclib nonce 18 \"[%225be117f3c5ce87e7dc6882c24b8231e0652ee82054bf7b9f94aef1f45e055cba%22,1,%22039ae1f542e8f0f6d03d734dc2295651973e1b7fa99508e2f36dad5d21f09889f6%22]\"
+ ./c cclib nonce 18 \"[%225be117f3c5ce87e7dc6882c24b8231e0652ee82054bf7b9f94aef1f45e055cba%22,1,%2202570f62a625ceb19a754a053152b162810c3e403df63f3d443e85bdacc74bfdfe%22]\"
 
  {
  "added_index": 1,
  "myind": 0,
- "partialsig": "5da4c1ec828cd1563bc6554aa74c90c29fcd38b2aea26f7fa92e0d007aa9463f",
+ "partialsig": "3f21885e6d2d020e1473435ccd148a61cdcb1d1105867fed45913185dc0acf59",
  "result": "success"
  }
  
- ./c cclib nonce 18 \"[%225be117f3c5ce87e7dc6882c24b8231e0652ee82054bf7b9f94aef1f45e055cba%22,0,%2203bf28874f5e5dccf55170406d58ded84ac6ca713011d718c6048400d700cb879a%22]\"
+ ./c cclib nonce 18 \"[%225be117f3c5ce87e7dc6882c24b8231e0652ee82054bf7b9f94aef1f45e055cba%22,0,%220261671b0a6de416938cf035c98f8af37c6ca88bbbd1bcce693d709d4919b010e1%22]\"
  {
  "added_index": 0,
+ "myind": 0,
  "myind": 1,
- "partialsig": "7e55fd564fe26b1054208bc47786d6e1ce30a2fd0045bbbf0e6915adcf4b0ce1",
+ "partialsig": "af7f28455fb2e988d81068cd9d800879cd334036a8300118dc307b777a38c1ed",
  "result": "success"
  }
  
  Almost there! final step is to exchange the partial sigs between signers
- ./c cclib partialsig 18 \"[%225be117f3c5ce87e7dc6882c24b8231e0652ee82054bf7b9f94aef1f45e055cba%22,1,%227e55fd564fe26b1054208bc47786d6e1ce30a2fd0045bbbf0e6915adcf4b0ce1%22]\"
+ ./c cclib partialsig 18 \"[%225be117f3c5ce87e7dc6882c24b8231e0652ee82054bf7b9f94aef1f45e055cba%22,1,%22af7f28455fb2e988d81068cd9d800879cd334036a8300118dc307b777a38c1ed%22]\"
  {
  "added_index": 1,
  "result": "success",
- "combinedsig": "bc0062cd3233433e098fbf4f3c333946779c3dccfaefc423243e3f90edfdf9a6dbfabf42d26f3c668fe6e10f1ed367a46dfddbafaee82b3eb79722ae49f45320"
+ "combinedsig": "5e64dc5dda93b2d3f25fe44b2aaca69b8f15d21f70e2bc1c2c53e17262d941bbeea0b0a3ccdfeb96ec83ac2a6a9492db9afe5d47adb6810621c1acfd56439146"
  }
+
  
- ./c cclib partialsig 18 \"[%225be117f3c5ce87e7dc6882c24b8231e0652ee82054bf7b9f94aef1f45e055cba%22,0,%225da4c1ec828cd1563bc6554aa74c90c29fcd38b2aea26f7fa92e0d007aa9463f%22]\"
+ ./c cclib partialsig 18 \"[%225be117f3c5ce87e7dc6882c24b8231e0652ee82054bf7b9f94aef1f45e055cba%22,0,%223f21885e6d2d020e1473435ccd148a61cdcb1d1105867fed45913185dc0acf59%22]\"
 
  {
  "added_index": 0,
  "result": "success",
- "combinedsig": "bc0062cd3233433e098fbf4f3c333946779c3dccfaefc423243e3f90edfdf9a6dbfabf42d26f3c668fe6e10f1ed367a46dfddbafaee82b3eb79722ae49f45320"
+ "combinedsig": "5e64dc5dda93b2d3f25fe44b2aaca69b8f15d21f70e2bc1c2c53e17262d941bbeea0b0a3ccdfeb96ec83ac2a6a9492db9afe5d47adb6810621c1acfd56439146"
  }
- 
  Notice both nodes generated the same combined signature!
  
  Now for a sanity test, we can use the verify call to make sure this sig will work with the msg needed for the spend:
@@ -141,7 +143,7 @@ the "msg" is what needs to be signed to create a valid spend
  
  and finally the spend: sendtxid, scriptPubKey, musig
  
-./c cclib spend 18 \"[%22cb5309ed249da95e2b5696eb763a8736e2fff1d14922ada737b931494ca3d2be%22,%222102aff51dad774a1c612dc82e63f85f07b992b665836b0f0efbcb26ee679f4f4848ac%22,%22bc0062cd3233433e098fbf4f3c333946779c3dccfaefc423243e3f90edfdf9a6dbfabf42d26f3c668fe6e10f1ed367a46dfddbafaee82b3eb79722ae49f45320%22]\"
+./c cclib spend 18 \"[%222c4159bb19212dcaa412ae37de7d72398f063194053e04a65b0facf767ebcc68%22,%222102aff51dad774a1c612dc82e63f85f07b992b665836b0f0efbcb26ee679f4f4848ac%22,%225e64dc5dda93b2d3f25fe44b2aaca69b8f15d21f70e2bc1c2c53e17262d941bbeea0b0a3ccdfeb96ec83ac2a6a9492db9afe5d47adb6810621c1acfd56439146%22]\"
 */
 
 
@@ -686,7 +688,7 @@ UniValue musig_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     static secp256k1_context *ctx;
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); std::string rawtx; CPubKey mypk,pk; secp256k1_pubkey combined_pk; char *scriptstr,*musigstr; uint8_t msg[32]; CTransaction vintx; uint256 prevhash,hashBlock; int32_t n,numvouts; CTxOut vout; secp256k1_schnorrsig musig;
+    UniValue result(UniValue::VOBJ); std::string rawtx; CPubKey mypk,pk; secp256k1_pubkey combined_pk; char *scriptstr,*musigstr; uint8_t msg[32]; CTransaction vintx; uint256 prevhash,hashBlock; int32_t i,n,numvouts; char str[129]; CTxOut vout; secp256k1_schnorrsig musig;
     if ( ctx == 0 )
         ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
     if ( params != 0 && (n= cJSON_GetArraySize(params)) > 0 )
@@ -713,6 +715,20 @@ UniValue musig_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                             secp256k1_ec_pubkey_parse(ctx,&combined_pk,pk.begin(),33) > 0 )
                         {
                             musig_prevoutmsg(msg,prevhash,vout.scriptPubKey);
+                            {
+                                for (i=0; i<32; i++)
+                                    sprintf(&str[i*2],"%02x",msg[i]);
+                                str[64] = 0;
+                                result.push_back(Pair("msg",str));
+                                for (i=0; i<33; i++)
+                                    sprintf(&str[i*2],"%02x",((uint8_t *)pk.begin)[i]);
+                                str[66] = 0;
+                                result.push_back(Pair("combined_pk",str));
+                                for (i=0; i<64; i++)
+                                    sprintf(&str[i*2],"%02x",musig64[i]);
+                                str[128] = 0;
+                                result.push_back(Pair("combinedsig",str));
+                            }
                             if ( !secp256k1_schnorrsig_verify((const secp256k1_context *)ctx,&musig,(const uint8_t *)msg,(const secp256k1_pubkey *)&combined_pk) )
                                 return(cclib_error(result,"musig didnt validate"));
                             mtx.vin.push_back(CTxIn(prevhash,MUSIG_PREVN));
