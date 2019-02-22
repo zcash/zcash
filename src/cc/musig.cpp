@@ -105,9 +105,9 @@ struct musig_info *musig_infocreate(int32_t myind,int32_t num)
     struct musig_info *mp = (struct musig_info *)calloc(1,sizeof(*mp));
     mp->myind = myind, mp->num = num;
     mp->nonce_commitments = (uint8_t *)calloc(num,32);
-    mp->signer_data = (uint8_t *)calloc(num,sizeof(*np->signer_data));
-    mp->nonce = (uint8_t *)calloc(num,sizeof(*np->nonce));
-    mp->partial_sig = (uint8_t *)calloc(num,sizeof(*np->partial_sig));
+    mp->signer_data = (uint8_t *)calloc(num,sizeof(*mp->signer_data));
+    mp->nonce = (uint8_t *)calloc(num,sizeof(*mp->nonce));
+    mp->partial_sig = (uint8_t *)calloc(num,sizeof(*mp->partial_sig));
     return(mp);
 }
 
@@ -115,22 +115,22 @@ void musig_infofree(struct musig_info *mp)
 {
     if ( mp->partial_sig != 0 )
     {
-        random_buf(mp->partial_sig,num*sizeof(*np->partial_sig))
+        random_buf(mp->partial_sig,mp->num*sizeof(*np->partial_sig))
         free(mp->partial_sig);
     }
     if ( mp->nonce != 0 )
     {
-        random_buf(mp->nonce,num*sizeof(*np->nonce))
+        random_buf(mp->nonce,mp->num*sizeof(*mp->nonce))
         free(mp->nonce);
     }
     if ( mp->signer_data != 0 )
     {
-        random_buf(mp->signer_data,num*sizeof(*np->signer_data))
+        random_buf(mp->signer_data,mp->num*sizeof(*mp->signer_data))
         free(mp->signer_data);
     }
     if ( mp->nonce_commitments != 0 )
     {
-        random_buf(mp->nonce_commitments,num*32)
+        random_buf(mp->nonce_commitments,mp->num*32)
         free(mp->nonce_commitments);
     }
     free(mp);
