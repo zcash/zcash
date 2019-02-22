@@ -113,6 +113,7 @@ extern "C" int secp256k1_schnorrsig_verify(const secp256k1_context* ctx, const s
 extern "C" int secp256k1_schnorrsig_parse(const secp256k1_context* ctx, secp256k1_schnorrsig* sig, const unsigned char *in64);
 extern "C" int secp256k1_musig_pubkey_combine(const secp256k1_context* ctx, secp256k1_scratch_space *scratch, secp256k1_pubkey *combined_pk, unsigned char *pk_hash32, const secp256k1_pubkey *pubkeys, size_t n_pubkeys);
 extern "C" int secp256k1_musig_session_initialize(const secp256k1_context* ctx, secp256k1_musig_session *session, secp256k1_musig_session_signer_data *signers, unsigned char *nonce_commitment32, const unsigned char *session_id32, const unsigned char *msg32, const secp256k1_pubkey *combined_pk, const unsigned char *pk_hash32, size_t n_signers, size_t my_index, const unsigned char *seckey);
+extern "C" int secp256k1_schnorrsig_serialize(const secp256k1_context* ctx, unsigned char *out64, const secp256k1_schnorrsig* sig);
 
 #define MUSIG_PREVN 0   // for now, just use vout0 for the musig output
 #define MUSIG_TXFEE 10000
@@ -524,12 +525,12 @@ UniValue musig_partialsig(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
             return(cclib_error(result,"pkhash doesnt match session pkhash"));
         else if ( (ind= juint(jitem(params,1),0)) < 0 || ind >= MUSIG->num )
             return(cclib_error(result,"illegal ind for session"));
-        else if ( musig_parsehash32(ctx,psig,jitem(params,2)) < 0 )
+        else if ( musig_parsehash32(psig,jitem(params,2)) < 0 )
             return(cclib_error(result,"error parsing psig"));
         else if ( secp256k1_musig_partial_signature_parse(ctx,&MUSIG->partial_sig[ind],psig) == 0 )
             return(cclib_error(result,"error parsing partialsig"));
         result.push_back(Pair("added_index",ind));
-        if (secp256k1_musig_partial_sig_combine(ctx,&MUSIG->session,&sig,MUSIG->partial_sig,MUSIG->num) > 0 )
+        if ( secp256k1_musig_partial_sig_combine(ctx,&MUSIG->session,&sig,MUSIG->partial_sig,MUSIG->num) > 0 )
         {
             if ( secp256k1_schnorrsig_serialize(ctx,out64,&sig) > 0 )
             {
