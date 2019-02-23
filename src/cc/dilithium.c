@@ -8,7 +8,7 @@
 #include <stdint.h>
 
 #define DBENCH_START()
-#define DBENCH_STOP()
+#define DBENCH_STOP(arg)
 
 #include "dilithium.h"
 
