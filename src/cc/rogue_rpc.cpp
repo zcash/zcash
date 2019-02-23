@@ -833,7 +833,7 @@ UniValue rogue_keystrokes(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
     } else return(cclib_error(result,"couldnt reparse params"));
 }
 
-char *rogue_extractgame(char *str,int32_t *numkeysp,std::vector<uint8_t> &newdata,uint64_t &seed,uint256 &playertxid,struct CCcontract_info *cp,uint256 gametxid,char *rogueaddr)
+char *rogue_extractgame(int32_t makefiles,char *str,int32_t *numkeysp,std::vector<uint8_t> &newdata,uint64_t &seed,uint256 &playertxid,struct CCcontract_info *cp,uint256 gametxid,char *rogueaddr)
 {
     CPubKey roguepk; int32_t i,num,maxplayers,gameheight,batonht,batonvout,numplayers,regslot,numkeys,err; std::string symbol,pname; CTransaction gametx; int64_t buyin,batonvalue; char fname[64],*keystrokes = 0; std::vector<uint8_t> playerdata; uint256 batontxid; FILE *fp; uint8_t newplayer[10000]; struct rogue_player P,endP;
     roguepk = GetUnspendable(cp,0);
@@ -854,19 +854,22 @@ char *rogue_extractgame(char *str,int32_t *numkeysp,std::vector<uint8_t> &newdat
             }
             if ( keystrokes != 0 )
             {
-                sprintf(fname,"rogue.%llu.0",(long long)seed);
-                if ( (fp= fopen(fname,"wb")) != 0 )
+                if ( makefiles != 0 )
                 {
-                    if ( fwrite(keystrokes,1,numkeys,fp) != numkeys )
-                        fprintf(stderr,"error writing %s\n",fname);
-                    fclose(fp);
-                }
-                sprintf(fname,"rogue.%llu.player",(long long)seed);
-                if ( (fp= fopen(fname,"wb")) != 0 )
-                {
-                    if ( fwrite(&playerdata[0],1,(int32_t)playerdata.size(),fp) != playerdata.size() )
-                        fprintf(stderr,"error writing %s\n",fname);
-                    fclose(fp);
+                    sprintf(fname,"rogue.%llu.0",(long long)seed);
+                    if ( (fp= fopen(fname,"wb")) != 0 )
+                    {
+                        if ( fwrite(keystrokes,1,numkeys,fp) != numkeys )
+                            fprintf(stderr,"error writing %s\n",fname);
+                        fclose(fp);
+                    }
+                    sprintf(fname,"rogue.%llu.player",(long long)seed);
+                    if ( (fp= fopen(fname,"wb")) != 0 )
+                    {
+                        if ( fwrite(&playerdata[0],1,(int32_t)playerdata.size(),fp) != playerdata.size() )
+                            fprintf(stderr,"error writing %s\n",fname);
+                        fclose(fp);
+                    }
                 }
                 num = rogue_replay2(newplayer,seed,keystrokes,numkeys,playerdata.size()==0?0:&P,0);
                 newdata.resize(num);
@@ -914,7 +917,7 @@ UniValue rogue_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             GetCCaddress1of2(cp,rogueaddr,roguepk,pk);
             result.push_back(Pair("rogueaddr",rogueaddr));
             str[0] = 0;
-            if ( (keystrokes= rogue_extractgame(str,&numkeys,newdata,seed,playertxid,cp,gametxid,rogueaddr)) != 0 )
+            if ( (keystrokes= rogue_extractgame(1,str,&numkeys,newdata,seed,playertxid,cp,gametxid,rogueaddr)) != 0 )
             {
                 result.push_back(Pair("status","success"));
                 flag = 1;
@@ -1240,7 +1243,7 @@ int32_t rogue_playerdata_validate(uint256 &playertxid,struct CCcontract_info *cp
     roguepk = GetUnspendable(cp,0);
     GetCCaddress1of2(cp,rogueaddr,roguepk,pk);
     //fprintf(stderr,"call extractgame\n");
-    if ( (keystrokes= rogue_extractgame(str,&numkeys,newdata,seed,playertxid,cp,gametxid,rogueaddr)) != 0 )
+    if ( (keystrokes= rogue_extractgame(0,str,&numkeys,newdata,seed,playertxid,cp,gametxid,rogueaddr)) != 0 )
     {
         free(keystrokes);
         //fprintf(stderr,"extracted.(%s)\n",str);

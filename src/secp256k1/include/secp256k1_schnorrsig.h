@@ -28,7 +28,12 @@ typedef struct {
  *
  *  See secp256k1_schnorrsig_parse for details about the encoding.
  */
-SECP256K1_API int secp256k1_schnorrsig_serialize(
+#ifdef __cplusplus
+extern "C"
+#else
+SECP256K1_API
+#endif
+int secp256k1_schnorrsig_serialize(
     const secp256k1_context* ctx,
     unsigned char *out64,
     const secp256k1_schnorrsig* sig
@@ -50,7 +55,12 @@ SECP256K1_API int secp256k1_schnorrsig_serialize(
  * encoded numbers are out of range, signature validation with it is
  * guaranteed to fail for every message and public key.
  */
-SECP256K1_API int secp256k1_schnorrsig_parse(
+#ifdef __cplusplus
+extern "C"
+#else
+SECP256K1_API
+#endif
+int secp256k1_schnorrsig_parse(
     const secp256k1_context* ctx,
     secp256k1_schnorrsig* sig,
     const unsigned char *in64

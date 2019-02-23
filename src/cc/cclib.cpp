@@ -72,12 +72,11 @@ CClib_methods[] =
     { (char *)"sudoku", (char *)"pending", (char *)"<no args>", 0, 0, 'U', EVAL_SUDOKU },
     { (char *)"sudoku", (char *)"solution", (char *)"txid solution timestamps[81]", 83, 83, 'S', EVAL_SUDOKU },
     { (char *)"musig", (char *)"calcmsg", (char *)"sendtxid scriptPubKey", 2, 2, 'C', EVAL_MUSIG },
-    { (char *)"musig", (char *)"combine", (char *)"pubkeys ...", 2, 256, 'P', EVAL_MUSIG },
-    { (char *)"musig", (char *)"session", (char *)"msg pkhash", 2, 2, 'R', EVAL_MUSIG },
-    { (char *)"musig", (char *)"commit", (char *)"pubkeys ...", 2, 256, 'H', EVAL_MUSIG },
-    { (char *)"musig", (char *)"nonce", (char *)"pubkeys ...", 2, 256, 'N', EVAL_MUSIG },
-    { (char *)"musig", (char *)"partialsign", (char *)"pubkeys ...", 2, 256, 'S', EVAL_MUSIG },
-    { (char *)"musig", (char *)"sigcombine", (char *)"pubkeys ...", 2, 256, 'M', EVAL_MUSIG },
+    { (char *)"musig", (char *)"combine", (char *)"pubkeys ...", 2, 999999999, 'P', EVAL_MUSIG },
+    { (char *)"musig", (char *)"session", (char *)"myindex,numsigners,combined_pk,pkhash,msg32", 5, 5, 'R', EVAL_MUSIG },
+    { (char *)"musig", (char *)"commit", (char *)"pkhash,ind,commitment", 3, 3, 'H', EVAL_MUSIG },
+    { (char *)"musig", (char *)"nonce", (char *)"pkhash,ind,nonce", 3, 3, 'N', EVAL_MUSIG },
+    { (char *)"musig", (char *)"partialsig", (char *)"pkhash,ind,partialsig", 3, 3, 'S', EVAL_MUSIG },
     { (char *)"musig", (char *)"verify", (char *)"msg sig pubkey", 3, 3, 'V', EVAL_MUSIG },
     { (char *)"musig", (char *)"send", (char *)"combined_pk amount", 2, 2, 'x', EVAL_MUSIG },
     { (char *)"musig", (char *)"spend", (char *)"sendtxid sig destpubkey", 3, 3, 'y', EVAL_MUSIG },
@@ -116,8 +115,7 @@ UniValue musig_combine(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue musig_session(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue musig_commit(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue musig_nonce(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
-UniValue musig_partialsign(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
-UniValue musig_sigcombine(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+UniValue musig_partialsig(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue musig_verify(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue musig_send(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue musig_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
@@ -229,10 +227,8 @@ UniValue CClib_method(struct CCcontract_info *cp,char *method,char *jsonstr)
             return(musig_commit(txfee,cp,params));
         else if ( strcmp(method,"nonce") == 0 ) // returns combined nonce if ready
             return(musig_nonce(txfee,cp,params));
-        else if ( strcmp(method,"partialsign") == 0 )
-            return(musig_partialsign(txfee,cp,params));
-        else if ( strcmp(method,"sigcombine") == 0 )
-            return(musig_sigcombine(txfee,cp,params));
+        else if ( strcmp(method,"partialsig") == 0 )
+            return(musig_partialsig(txfee,cp,params));
         else if ( strcmp(method,"verify") == 0 )
             return(musig_verify(txfee,cp,params));
         else if ( strcmp(method,"send") == 0 )
@@ -584,37 +580,7 @@ uint256 juint256(cJSON *obj)
 
 #else
 #include "sudoku.cpp"
-
-/*
-#include "../secp256k1/src/util.h"
-#include "../secp256k1/src/num_impl.h"
-#include "../secp256k1/src/field_impl.h"
-#include "../secp256k1/src/scalar_impl.h"
-#include "../secp256k1/src/group_impl.h"
-#include "../secp256k1/src/scratch_impl.h"
-#include "../secp256k1/src/ecmult_impl.h"
-#include "../secp256k1/src/ecmult_const_impl.h"
-#include "../secp256k1/src/ecmult_gen_impl.h"
-#include "../secp256k1/src/ecdsa_impl.h"
-#include "../secp256k1/src/eckey_impl.h"
-#include "../secp256k1/src/hash_impl.h"
-
-
-
-typedef int (secp256k1_ecmult_multi_callback)(secp256k1_scalar *sc, secp256k1_ge *pt, size_t idx, void *data);
-extern "C" void secp256k1_pubkey_save(secp256k1_pubkey* pubkey, secp256k1_ge* ge);
-extern "C" int secp256k1_nonce_function_bipschnorr(unsigned char *nonce32, const unsigned char *msg32, const unsigned char *key32, const unsigned char *algo16, void *data, unsigned int counter);
-extern "C" int secp256k1_pubkey_load(const secp256k1_context* ctx, secp256k1_ge* ge, const secp256k1_pubkey* pubkey);
-extern "C" void secp256k1_scalar_chacha20(secp256k1_scalar *r1, secp256k1_scalar *r2, const unsigned char *seed, uint64_t idx);
-
-#define ARG_CHECK(cond) do { \
-if (EXPECT(!(cond), 0)) { \
-secp256k1_callback_call(&ctx->illegal_callback, #cond); \
-return 0; \
-} \
-} while(0)*/
-
-//#include "../secp256k1/src/secp256k1.c"
 #include "musig.cpp"
+#include "../secp256k1/src/modules/musig/example.c"
 #endif
 
