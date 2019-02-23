@@ -839,6 +839,8 @@ char *rogue_extractgame(int32_t makefiles,char *str,int32_t *numkeysp,std::vecto
     roguepk = GetUnspendable(cp,0);
     *numkeysp = 0;
     seed = 0;
+    num = numkeys = 0;
+    playertxid = zeroid;
     if ( (err= rogue_isvalidgame(cp,gameheight,gametx,buyin,maxplayers,gametxid,0)) == 0 )
     {
         if ( rogue_findbaton(cp,playertxid,&keystrokes,numkeys,regslot,playerdata,batontxid,batonvout,batonvalue,batonht,gametxid,gametx,maxplayers,rogueaddr,numplayers,symbol,pname) == 0 )
@@ -852,7 +854,7 @@ char *rogue_extractgame(int32_t makefiles,char *str,int32_t *numkeysp,std::vecto
                 for (i=0; i<playerdata.size(); i++)
                     ((uint8_t *)&P)[i] = playerdata[i];
             }
-            if ( keystrokes != 0 )
+            if ( keystrokes != 0 && numkeys != 0 )
             {
                 if ( makefiles != 0 )
                 {
@@ -885,11 +887,12 @@ char *rogue_extractgame(int32_t makefiles,char *str,int32_t *numkeysp,std::vecto
                 }
                 sprintf(str,"extracted $$$gold.%d hp.%d strength.%d/%d level.%d exp.%d dl.%d\n",endP.gold,endP.hitpoints,endP.strength&0xffff,endP.strength>>16,endP.level,endP.experience,endP.dungeonlevel);
                 fprintf(stderr,"%s\n",str);
+                *numkeysp = numkeys;
+                return(keystrokes);
             } else num = 0;
         } else fprintf(stderr,"extractgame: couldnt find baton\n");
     } else fprintf(stderr,"extractgame: invalid game\n");
-    *numkeysp = numkeys;
-    return(keystrokes);
+    return(0);
 }
 
 UniValue rogue_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)

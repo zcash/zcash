@@ -2426,7 +2426,7 @@ void challenge(poly *c,
 }
 
 /*************************************************
-* Name:        dilithium_keypair
+* Name:        _dilithium_keypair
 *
 * Description: Generates public and private key.
 *
@@ -2437,7 +2437,7 @@ void challenge(poly *c,
 *
 * Returns 0 (success)
 **************************************************/
-int dilithium_keypair(uint8_t *pk, uint8_t *sk) {
+int _dilithium_keypair(uint8_t *pk, uint8_t *sk) {
   uint32_t i;
   uint8_t seedbuf[3*SEEDBYTES];
   uint8_t tr[CRHBYTES];
@@ -2488,7 +2488,7 @@ int dilithium_keypair(uint8_t *pk, uint8_t *sk) {
 }
 
 /*************************************************
-* Name:        dilithium_sign
+* Name:        _dilithium_sign
 *
 * Description: Compute signed message.
 *
@@ -2503,7 +2503,7 @@ int dilithium_keypair(uint8_t *pk, uint8_t *sk) {
 *
 * Returns 0 (success)
 **************************************************/
-int dilithium_sign(uint8_t *sm,
+int _dilithium_sign(uint8_t *sm,
                 int32_t *smlen,
                 const uint8_t *m,
                 int32_t mlen,
@@ -2613,7 +2613,7 @@ int dilithium_sign(uint8_t *sm,
 }
 
 /*************************************************
-* Name:        dilithium_verify
+* Name:        _dilithium_verify
 *
 * Description: Verify signed message.
 *
@@ -2626,7 +2626,7 @@ int dilithium_sign(uint8_t *sm,
 *
 * Returns 0 if signed message could be verified correctly and -1 otherwise
 **************************************************/
-int dilithium_verify(uint8_t *m,
+int _dilithium_verify(uint8_t *m,
                      int32_t *mlen,
                      const uint8_t *sm,
                      int32_t smlen,
@@ -2785,7 +2785,7 @@ int32_t main(void)
         tkeygen[i] = cpucycles_start();
 #endif
         
-        dilithium_keypair(pk, sk); // 1.3
+        _dilithium_keypair(pk, sk); // 1.3
 #ifdef DBENCH
         tkeygen[i] = cpucycles_stop() - tkeygen[i] - timing_overhead;
         // tred = tadd = tmul = tround = tsample = tpack = tshake = &dummy;
@@ -2793,13 +2793,13 @@ int32_t main(void)
 #endif
         randombytes(m, MLEN); // 1.27
 
-        dilithium_sign(sm, &smlen, m, MLEN, sk); // 7.2
+        _dilithium_sign(sm, &smlen, m, MLEN, sk); // 7.2
 #ifdef DBENCH
         tsign[i] = cpucycles_stop() - tsign[i] - timing_overhead;
         
         tverify[i] = cpucycles_start();
 #endif
-        ret = dilithium_verify(m2, &mlen, sm, smlen, pk);
+        ret = _dilithium_verify(m2, &mlen, sm, smlen, pk);
 #ifdef DBENCH
         tverify[i] = cpucycles_stop() - tverify[i] - timing_overhead;
 #endif
@@ -2842,7 +2842,7 @@ int32_t main(void)
 UniValue dilithium_keypair(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     UniValue result(UniValue::VOBJ); uint8_t pk[CRYPTO_PUBLICKEYBYTES],sk[CRYPTO_SECRETKEYBYTES]; char str[CRYPTO_SECRETKEYBYTES*2+1]; int32_t i;
-    dilithium_keypair(pk,sk);
+    _dilithium_keypair(pk,sk);
     for (i=0; i<sizeof(pk); i++)
         sprintf(&str[i<<1],"%02x",pk[i]);
     str[i<<1] = 0;
@@ -2858,6 +2858,8 @@ UniValue dilithium_keypair(uint64_t txfee,struct CCcontract_info *cp,cJSON *para
 UniValue dilithium_sign(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     UniValue result(UniValue::VOBJ);
+    _dilithium_sign(sm, &smlen, m, MLEN, sk); // 7.2
+
     return(result);
 }
 
