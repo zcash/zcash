@@ -803,7 +803,7 @@ int main(int argc, char **argv, char **envp)
     ASSETCHAINS_SYMBOL[j++] = 0;
     ROGUE_PORT = komodo_userpass(userpass,ASSETCHAINS_SYMBOL,IPADDRESS);
     if ( IPADDRESS[0] == 0 )
-        strcpy("127.0.0.1",IPADDRESS);
+        strcpy(IPADDRESS,"127.0.0.1");
     printf("ASSETCHAINS_SYMBOL.(%s) port.%u (%s)\n",ASSETCHAINS_SYMBOL,ROGUE_PORT,USERPASS); sleep(1);
     if ( argc == 2 && (fp=fopen(argv[1],"rb")) == 0 )
     {
