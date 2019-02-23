@@ -898,7 +898,7 @@ char *rogue_extractgame(int32_t makefiles,char *str,int32_t *numkeysp,std::vecto
                 free(keystrokes), keystrokes = 0;
         }
     } else fprintf(stderr,"extractgame: invalid game\n");
-    fprintf(stderr,"extract %s\n",gametxid.GetHex().c_str());
+    //fprintf(stderr,"extract %s\n",gametxid.GetHex().c_str());
     return(0);
 }
 
@@ -1255,7 +1255,7 @@ int32_t rogue_playerdata_validate(uint256 &playertxid,struct CCcontract_info *cp
     //fprintf(stderr,"call extractgame\n");
     if ( (keystrokes= rogue_extractgame(0,str,&numkeys,newdata,seed,playertxid,cp,gametxid,rogueaddr)) != 0 )
     {
-        fprintf(stderr,"numkeys.%d rogue_extractgame %s\n",numkeys,gametxid.GetHex().c_str());
+        //fprintf(stderr,"numkeys.%d rogue_extractgame %s\n",numkeys,gametxid.GetHex().c_str());
         free(keystrokes);
         //fprintf(stderr,"extracted.(%s)\n",str);
         if ( newdata == playerdata )
@@ -1281,7 +1281,7 @@ int32_t rogue_playerdata_validate(uint256 &playertxid,struct CCcontract_info *cp
         fprintf(stderr,"%s playerdata: gold.%d hp.%d strength.%d/%d level.%d exp.%d dl.%d\n",gametxid.GetHex().c_str(),P.gold,P.hitpoints,P.strength&0xffff,P.strength>>16,P.level,P.experience,P.dungeonlevel);
         fprintf(stderr,"newdata[%d] != playerdata[%d], numkeys.%d %s pub.%s playertxid.%s good.%d bad.%d\n",(int32_t)newdata.size(),(int32_t)playerdata.size(),numkeys,rogueaddr,pubkey33_str(str2,(uint8_t *)&pk),playertxid.GetHex().c_str(),good,bad);
     }
-    fprintf(stderr,"no keys rogue_extractgame %s\n",gametxid.GetHex().c_str());
+    //fprintf(stderr,"no keys rogue_extractgame %s\n",gametxid.GetHex().c_str());
     return(-1);
 }
 
