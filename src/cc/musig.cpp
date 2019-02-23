@@ -14,47 +14,67 @@
  ******************************************************************************/
 
 /* first make a combined pk:
-./c cclib combine 18 \"[%2202aff51dad774a1c612dc82e63f85f07b992b665836b0f0efbcb26ee679f4f4848%22,%22039433dc3749aece1bd568f374a45da3b0bc6856990d7da3cd175399577940a775%22]\"
-{
-    "pkhash": "5be117f3c5ce87e7dc6882c24b8231e0652ee82054bf7b9f94aef1f45e055cba",
-    "combined_pk": "032ddac56613cd0667b589bd7f32b665e2d2ce0247e337a5a0bca6c72e3d9d057b",
-    "result": "success"
-}
- the combined_pk and pkhash will be needed for various other rpc calls
-*/
 
-/* second, send 0.777 coins to the combined_pk
- ./c cclib send 18 \"[%22032ddac56613cd0667b589bd7f32b665e2d2ce0247e337a5a0bca6c72e3d9d057b%22,0.777]\"
+./komodo-cli -ac_name=MUSIG cclib combine 18 '["02fb6aa0b96cad24d46b5da93eba3864c45ce07a73bba12da530ae841e140fcf28","0255c46dbce584e3751081b39d7fc054fc807100557e73fc444481618b5706afb4"]'
+{
+  "pkhash": "5cb5a225064ca6ffc1438cb2a6ac2ac65fe2d5055dc7f6c7ebffb9a231f8912b",
+  "combined_pk": "03f016c348437c7422eed92d865aa9789614f75327cada463eefc566126b54785b",
+  "result": "success"
+}
+
+ the combined_pk and pkhash will be needed for various other rpc calls
+
+ second, send 1 coin to the combined_pk
+ ./komodo-cli -ac_name=MUSIG  cclib send 18 '["03f016c348437c7422eed92d865aa9789614f75327cada463eefc566126b54785b",1]'
  {
- "hex": "0400008085202f8908018bbc4a0acf0f896680b84cc1000ec5530042fa3cf7471ab5c11cde56f6d0e60000000048473044022041a900fa57e54f939b797d09f0cee81ab9a79d978cd473ef3fc9f09c7678ad6b02206386bd15ee7ee8224a984fdd1d2a094738d082aec06028a5846d7bc61ddf16ca01ffffffff0b969f0e1ea787f0cc4e81d128353bd1cb670ab89bd1db4b47fbb7e872cd39fb00000000494830450221008c5de4b196e57b0dd94aa415950adf274e3e6859b82cf218729af84c1f15e76c022024aeab7eda63e6a652ef488bf26a8dc4ef8d2d4aa5746726085bfe5f169a5db701ffffffff0b36b70b43457fab377f28fb22da5a3e9d8186a37daae18cf0f710a221ab26250000000048473044022004ec20ae7490e7adabf9a3f78e4a58df84a3245485bfdd40f421cafe61d19c340220456d2b6f3c6e88632027c02606a0af1c21208d05f2de0826fbf4dfe7391ec83901ffffffff0aaff3cfe4ca22b97b6179a6f7cfac91945e5440e9438b89d1ec09500167176a0000000048473044022074dcad30c8ab9ed79a3ac69169611fc9e5f4b76a561b183461d968249316997f022063b25decaa285f494d277b9c8c2bcf6445b7929a304542e89c0645828d30a1a901ffffffff090e1bb92e9bf404a0d6455701b21af3dbf6765e61a1dc28b7c0f608ec4f12da000000004847304402202f9182c532c66138a6bdfcbb85a06cf1bf1532f2bf8f63170ef20843e4a81d0202207612a4353eb9606e84621c444ec7db1b683ff29c56127bda2d5e9c0eb13dbbc001ffffffff08a57005c7a40a923b1a510820b07f7318d760fe2a233b077d918cce357ad3af00000000484730440220643d60c68634fb2e0f6656389fc70c9f84c7086fc6e35b0fa26297e844f6c5fc02201d79669e073efe738d47de0130fdcba875e284e18fd478c0e6834d46632d8b8101ffffffff068cfd0ea6c0f5d401c67ec38f92425a9e59b0d5ade55bb2971ea955675a17bd00000000484730440220747139724248da4bcc1e5e3828e0ea811756e1fad0ebc40aeb006fd8079d46e402200d8f1c229c79494b5617e4373a3e083966dcd74571323f9d334be901d53871fa01ffffffff0200382fb6984b6128bb75115346242809c6555274e0cacef822825a2b4d231700000000484730440220454fcac398f6913fb4d8ed330f110f9cf62eec6c8cdb67d5df1effd2cf8222d5022017f6323630669777573e342e870c88727a917cc06c33611ebbd9d1fccc1dcd3701ffffffff03b0c2a10400000000302ea22c8020c71ddb3aac7f9b9e4bdacf032aaa8b8e4433c4ff9f8a43cebb9c1f5da96928a48103120c008203000401cc40ca220000000000232102aff51dad774a1c612dc82e63f85f07b992b665836b0f0efbcb26ee679f4f4848ac0000000000000000266a24127821032ddac56613cd0667b589bd7f32b665e2d2ce0247e337a5a0bca6c72e3d9d057b00000000460100000000000000000000000000",
- "txid": "2c4159bb19212dcaa412ae37de7d72398f063194053e04a65b0facf767ebcc68",
- "result": "success"
+   "hex": "0400008085202f8901a980664dffc810725a79ffb89ac48be4c7b6bade9b789732fcf871acf8e81a2e010000006a47304402207e52763661ecd2c34a65d6623950be11794825db71576dc11894c606ddc317800220028fef46dc20630d0fdf22647b5d4ff0f1c47cf75f48702d0a91d5589eff99d001210255c46dbce584e3751081b39d7fc054fc807100557e73fc444481618b5706afb4ffffffff031008f60500000000302ea22c8020c71ddb3aac7f9b9e4bdacf032aaa8b8e4433c4ff9f8a43cebb9c1f5da96928a48103120c008203000401cce09aa4350000000023210255c46dbce584e3751081b39d7fc054fc807100557e73fc444481618b5706afb4ac0000000000000000266a2412782103f016c348437c7422eed92d865aa9789614f75327cada463eefc566126b54785b00000000920500000000000000000000000000",
+   "txid": "5ce74037a153ee210413b48d4e88638b99825a2de1a1f1aa0d36ebf93019824c",
+   "result": "success"
  }
  
+ sendrawtransaction of the above hex.
+ 
+ ./komodo-cli -ac_name=MUSIG getrawtransaction 5ce74037a153ee210413b48d4e88638b99825a2de1a1f1aa0d36ebf93019824c 1
+ "vout": [
+    {
+      "value": 1.00010000,
+      "valueSat": 100010000,
+      "n": 0,
+      "scriptPubKey": {
+        "asm": "a22c8020c71ddb3aac7f9b9e4bdacf032aaa8b8e4433c4ff9f8a43cebb9c1f5da96928a48103120c008203000401 OP_CHECKCRYPTOCONDITION",
+        "hex": "2ea22c8020c71ddb3aac7f9b9e4bdacf032aaa8b8e4433c4ff9f8a43cebb9c1f5da96928a48103120c008203000401cc",
+        "reqSigs": 1,
+        "type": "cryptocondition",
+        "addresses": [
+          "RKWS7jxyjPX9iaJttk8iMKf1AumanKypez"
+        ]
+      }
+    },
+    {
+      "value": 8.99980000,
+      "valueSat": 899980000,
+      "n": 1,
+      "scriptPubKey": {
+        "asm": "0255c46dbce584e3751081b39d7fc054fc807100557e73fc444481618b5706afb4 OP_CHECKSIG",
+        "hex": "210255c46dbce584e3751081b39d7fc054fc807100557e73fc444481618b5706afb4ac",
+        "reqSigs": 1,
+        "type": "pubkey",
+        "addresses": [
+          "RVQjvGdRbYLJ49bfH4SAFseipvwE3UdoDw"
+        ]
+      }
+ 
+ script: 210255c46dbce584e3751081b39d7fc054fc807100557e73fc444481618b5706afb4ac
+ 
+ sendtxid: 5ce74037a153ee210413b48d4e88638b99825a2de1a1f1aa0d36ebf93019824c
+ 
+  get the msg we need to sign:
+  
+ ./komodo-cli -ac_name=MUSIG  cclib calcmsg 18 '["5ce74037a153ee210413b48d4e88638b99825a2de1a1f1aa0d36ebf93019824c","210255c46dbce584e3751081b39d7fc054fc807100557e73fc444481618b5706afb4ac"]'
+ 
  {
- "value": 0.77710000,
- "valueZat": 77710000,
- "n": 0,
- "scriptPubKey": {
- "asm": "a22c8020c71ddb3aac7f9b9e4bdacf032aaa8b8e4433c4ff9f8a43cebb9c1f5da96928a48103120c008203000401 OP_CHECKCRYPTOCONDITION",
- "hex": "2ea22c8020c71ddb3aac7f9b9e4bdacf032aaa8b8e4433c4ff9f8a43cebb9c1f5da96928a48103120c008203000401cc",
- "reqSigs": 1,
- "type": "cryptocondition",
- "addresses": [
- "RKWS7jxyjPX9iaJttk8iMKf1AumanKypez"
- ]
- }
- change script: 2102aff51dad774a1c612dc82e63f85f07b992b665836b0f0efbcb26ee679f4f4848ac
- 
- sendtxid: 2c4159bb19212dcaa412ae37de7d72398f063194053e04a65b0facf767ebcc68
- 
- broadcast sendtxid and wait for it to be confirmed. then get the msg we need to sign:
- 
- ./c cclib calcmsg 18 \"[%222c4159bb19212dcaa412ae37de7d72398f063194053e04a65b0facf767ebcc68%22,%222102aff51dad774a1c612dc82e63f85f07b992b665836b0f0efbcb26ee679f4f4848ac%22]\"
- 
- {
- "result": "success",
- "msg": "caa64ba398ddfe5c33d8c70a61e556caa0e69b19d93110c5a458a1b37ad44cb0"
+  "msg": "f7fb85d1412814e3c2f98b990802af6ee33dad368c6ba05c2050e9e5506fcd75",
+  "result": "success"
  }
  
 the "msg" is what needs to be signed to create a valid spend
@@ -62,88 +82,101 @@ the "msg" is what needs to be signed to create a valid spend
  now on each signing node, a session needs to be created:
  5 args: ind, numsigners, combined_pk, pkhash, message to be signed
  
- on node with pubkey: 02aff51dad774a1c612dc82e63f85f07b992b665836b0f0efbcb26ee679f4f4848
- ./c cclib session 18 \"[0,2,%22032ddac56613cd0667b589bd7f32b665e2d2ce0247e337a5a0bca6c72e3d9d057b%22,%225be117f3c5ce87e7dc6882c24b8231e0652ee82054bf7b9f94aef1f45e055cba%22,%22caa64ba398ddfe5c33d8c70a61e556caa0e69b19d93110c5a458a1b37ad44cb0%22]\"
+ on node with pubkey: 02fb6aa0b96cad24d46b5da93eba3864c45ce07a73bba12da530ae841e140fcf28
+ ./komodo-cli -ac_name=MUSIG cclib session 18 '[0,2,"03f016c348437c7422eed92d865aa9789614f75327cada463eefc566126b54785b","c1b34139744f3b54b652dc741ebd0f9d5b53ad28795cc6614dd8ad3aaabf15ae","f5d91999b23b85630a4cbd0baea3736529411b052cf5f1f4345c5d181af12825"]'
  {
- "myind": 0,
- "numsigners": 2,
- "commitment": "e82228c10d0e100477630349150dea744d3b2790dcd347511a1a98199840cda4",
- "result": "success"
+  "myind": 0,
+  "numsigners": 2,
+  "commitment": "bbea1f2562eca01b9a1393c5dc188bdd44551aebf684f4459930f59dde01f7ae",
+  "result": "success"
  }
- 
- on node with pubkey: 039433dc3749aece1bd568f374a45da3b0bc6856990d7da3cd175399577940a775
- ./c cclib session 18 \"[1,2,%22032ddac56613cd0667b589bd7f32b665e2d2ce0247e337a5a0bca6c72e3d9d057b%22,%225be117f3c5ce87e7dc6882c24b8231e0652ee82054bf7b9f94aef1f45e055cba%22,%22caa64ba398ddfe5c33d8c70a61e556caa0e69b19d93110c5a458a1b37ad44cb0%22]\"
- {
- "myind": 1,
- "numsigners": 2,
- "commitment": "6e426e850ddc45e7742cfb6321781c00ee69a995ab12fa1f9ded7fe43658babf",
- "result": "success"
- }
- 
- now we need to get the commitment from each node to the other one. the session already put the commitment for each node into the global struct. Keep in mind there is a single global struct with session unique to each cclib session call. that means no restarting any deamon in the middle of the process on any of the nodes and only call cclib session a single time. this is an artificial restriction just to simplify the initial implementation of musig
- 
- ./c cclib commit 18 \"[%225be117f3c5ce87e7dc6882c24b8231e0652ee82054bf7b9f94aef1f45e055cba%22,1,%226e426e850ddc45e7742cfb6321781c00ee69a995ab12fa1f9ded7fe43658babf%22]\"
- {
- "added_index": 1,
- "myind": 0,
- "nonce": "0261671b0a6de416938cf035c98f8af37c6ca88bbbd1bcce693d709d4919b010e1",
- "result": "success"
- }
- 
- ./c cclib commit 18 \"[%225be117f3c5ce87e7dc6882c24b8231e0652ee82054bf7b9f94aef1f45e055cba%22,0,%22e82228c10d0e100477630349150dea744d3b2790dcd347511a1a98199840cda4%22]\"
- {
- "added_index": 0,
- "myind": 1,
- "nonce": "02570f62a625ceb19a754a053152b162810c3e403df63f3d443e85bdacc74bfdfe",
- "result": "success"
- }
- 
- Now exchange the revealed nonces to each node:
- 
- ./c cclib nonce 18 \"[%225be117f3c5ce87e7dc6882c24b8231e0652ee82054bf7b9f94aef1f45e055cba%22,1,%2202570f62a625ceb19a754a053152b162810c3e403df63f3d443e85bdacc74bfdfe%22]\"
 
+ on node with pubkey: 0255c46dbce584e3751081b39d7fc054fc807100557e73fc444481618b5706afb4
+ ./komodo-cli -ac_name=MUSIG cclib session 18 '[1,2,"03f016c348437c7422eed92d865aa9789614f75327cada463eefc566126b54785b","5cb5a225064ca6ffc1438cb2a6ac2ac65fe2d5055dc7f6c7ebffb9a231f8912b","f7fb85d1412814e3c2f98b990802af6ee33dad368c6ba05c2050e9e5506fcd75"]'
  {
- "added_index": 1,
- "myind": 0,
- "partialsig": "3f21885e6d2d020e1473435ccd148a61cdcb1d1105867fed45913185dc0acf59",
- "result": "success"
+   "myind": 1,
+   "numsigners": 2,
+   "commitment": "c2291acb747a75b1a40014d8eb0cc90a1360f74d413f65f78e20a7de45eda851",
+   "result": "success"
+ }
+  
+ now we need to get the commitment from each node to the other one. the session already put the commitment for each node into the global struct. Keep in mind there is a single global struct with session unique to each cclib session call. that means no restarting any deamon in the middle of the process on any of the nodes and only call cclib session a single time. this is an artificial restriction just to simplify the initial implementation of musig
+ ./komodo-cli -ac_name=MUSIG cclib commit 18 '["5cb5a225064ca6ffc1438cb2a6ac2ac65fe2d5055dc7f6c7ebffb9a231f8912b","1","c2291acb747a75b1a40014d8eb0cc90a1360f74d413f65f78e20a7de45eda851"]'
+ {
+  "added_index": 1,
+  "myind": 0,
+  "nonce": "02fec7a9310c959a0a97b86bc3f8c30d392d1fb51793915898c568f73f1f70476b",
+  "result": "success"
  }
  
- ./c cclib nonce 18 \"[%225be117f3c5ce87e7dc6882c24b8231e0652ee82054bf7b9f94aef1f45e055cba%22,0,%220261671b0a6de416938cf035c98f8af37c6ca88bbbd1bcce693d709d4919b010e1%22]\"
+ ./komodo-cli -ac_name=MUSIG  cclib commit 18 '["5cb5a225064ca6ffc1438cb2a6ac2ac65fe2d5055dc7f6c7ebffb9a231f8912b",0,"d242cff13fa8c9b83248e4219fda459ada146b885f2171481f1b0f66c66d94ad"]'
  {
- "added_index": 0,
- "myind": 0,
- "myind": 1,
- "partialsig": "af7f28455fb2e988d81068cd9d800879cd334036a8300118dc307b777a38c1ed",
- "result": "success"
+   "added_index": 0,
+   "myind": 1,
+   "nonce": "039365deaaaea089d509ba4c9f846de2baf4aa04cf6b26fa2c1cd818553e47f80c",
+   "result": "success"
  }
+
+ Now exchange the revealed nonces to each node:
+ ./komodo-cli -ac_name=MUSIG cclib nonce 18 '["5cb5a225064ca6ffc1438cb2a6ac2ac65fe2d5055dc7f6c7ebffb9a231f8912b","1","039365deaaaea089d509ba4c9f846de2baf4aa04cf6b26fa2c1cd818553e47f80c"]'
+{
+  "added_index": 1,
+  "myind": 0,
+  "partialsig": "1d65c09cd9bffe4f0604227e66cd7cd221480bbb08262fe885563a9df7cf8f5b",
+  "result": "success"
+}
+
+./komodo-cli -ac_name=MUSIG  cclib nonce 18 '["5cb5a225064ca6ffc1438cb2a6ac2ac65fe2d5055dc7f6c7ebffb9a231f8912b",0,"02fec7a9310c959a0a97b86bc3f8c30d392d1fb51793915898c568f73f1f70476b"]'
+{
+  "added_index": 0,
+  "myind": 1,
+  "partialsig": "4a3795e6801b355102c617390cf5a462061e082e35dc2ed8f8b1fab54cc0769e",
+  "result": "success"
+}
  
  Almost there! final step is to exchange the partial sigs between signers
- ./c cclib partialsig 18 \"[%225be117f3c5ce87e7dc6882c24b8231e0652ee82054bf7b9f94aef1f45e055cba%22,1,%22af7f28455fb2e988d81068cd9d800879cd334036a8300118dc307b777a38c1ed%22]\"
+ ./komodo-cli -ac_name=MUSIG cclib partialsig 18 '["5cb5a225064ca6ffc1438cb2a6ac2ac65fe2d5055dc7f6c7ebffb9a231f8912b","1","4a3795e6801b355102c617390cf5a462061e082e35dc2ed8f8b1fab54cc0769e"]'
  {
- "added_index": 1,
- "result": "success",
- "combinedsig": "5e64dc5dda93b2d3f25fe44b2aaca69b8f15d21f70e2bc1c2c53e17262d941bbeea0b0a3ccdfeb96ec83ac2a6a9492db9afe5d47adb6810621c1acfd56439146"
+   "added_index": 1,
+   "result": "success",
+   "combinedsig": "a76f2790747ed2436a281f2660bdbee21bad9ee130b9cab6e542fa618fba1512679d568359db33a008ca39b773c32134276613e93e025ec17e083553449005f9"
  }
-
  
- ./c cclib partialsig 18 \"[%225be117f3c5ce87e7dc6882c24b8231e0652ee82054bf7b9f94aef1f45e055cba%22,0,%223f21885e6d2d020e1473435ccd148a61cdcb1d1105867fed45913185dc0acf59%22]\"
-
+ ./komodo-cli -ac_name=MUSIG  cclib partialsig 18 '["5cb5a225064ca6ffc1438cb2a6ac2ac65fe2d5055dc7f6c7ebffb9a231f8912b",0,"1d65c09cd9bffe4f0604227e66cd7cd221480bbb08262fe885563a9df7cf8f5b"]'
  {
- "added_index": 0,
- "result": "success",
- "combinedsig": "5e64dc5dda93b2d3f25fe44b2aaca69b8f15d21f70e2bc1c2c53e17262d941bbeea0b0a3ccdfeb96ec83ac2a6a9492db9afe5d47adb6810621c1acfd56439146"
+   "added_index": 0,
+   "result": "success",
+   "combinedsig": "a76f2790747ed2436a281f2660bdbee21bad9ee130b9cab6e542fa618fba1512679d568359db33a008ca39b773c32134276613e93e025ec17e083553449005f9"
  }
+
  Notice both nodes generated the same combined signature!
  
  Now for a sanity test, we can use the verify call to make sure this sig will work with the msg needed for the spend:
  
- ./c cclib verify 18 \"[%22caa64ba398ddfe5c33d8c70a61e556caa0e69b19d93110c5a458a1b37ad44cb0%22,%22032ddac56613cd0667b589bd7f32b665e2d2ce0247e337a5a0bca6c72e3d9d057b%22,%225e64dc5dda93b2d3f25fe44b2aaca69b8f15d21f70e2bc1c2c53e17262d941bbeea0b0a3ccdfeb96ec83ac2a6a9492db9afe5d47adb6810621c1acfd56439146%22]\"
- 
+ ./komodo-cli -ac_name=MUSIG cclib verify 18 '["f7fb85d1412814e3c2f98b990802af6ee33dad368c6ba05c2050e9e5506fcd75","03f016c348437c7422eed92d865aa9789614f75327cada463eefc566126b54785b","a76f2790747ed2436a281f2660bdbee21bad9ee130b9cab6e542fa618fba1512679d568359db33a008ca39b773c32134276613e93e025ec17e083553449005f9"]'
+ {
+   "msg": "f7fb85d1412814e3c2f98b990802af6ee33dad368c6ba05c2050e9e5506fcd75",
+   "combined_pk": "03f016c348437c7422eed92d865aa9789614f75327cada463eefc566126b54785b",
+   "combinedsig": "a76f2790747ed2436a281f2660bdbee21bad9ee130b9cab6e542fa618fba1512679d568359db33a008ca39b773c32134276613e93e025ec17e083553449005f9",
+   "result": "success"
+ }
  
  and finally the spend: sendtxid, scriptPubKey, musig
  
-./c cclib spend 18 \"[%222c4159bb19212dcaa412ae37de7d72398f063194053e04a65b0facf767ebcc68%22,%222102aff51dad774a1c612dc82e63f85f07b992b665836b0f0efbcb26ee679f4f4848ac%22,%225e64dc5dda93b2d3f25fe44b2aaca69b8f15d21f70e2bc1c2c53e17262d941bbeea0b0a3ccdfeb96ec83ac2a6a9492db9afe5d47adb6810621c1acfd56439146%22]\"
+ ./komodo-cli -ac_name=MUSIG cclib spend 18 '["5ce74037a153ee210413b48d4e88638b99825a2de1a1f1aa0d36ebf93019824c","210255c46dbce584e3751081b39d7fc054fc807100557e73fc444481618b5706afb4ac","a76f2790747ed2436a281f2660bdbee21bad9ee130b9cab6e542fa618fba1512679d568359db33a008ca39b773c32134276613e93e025ec17e083553449005f9"]'
+{
+  "scriptpubkey": "210255c46dbce584e3751081b39d7fc054fc807100557e73fc444481618b5706afb4ac",
+  "msg": "f7fb85d1412814e3c2f98b990802af6ee33dad368c6ba05c2050e9e5506fcd75",
+  "combined_pk": "03f016c348437c7422eed92d865aa9789614f75327cada463eefc566126b54785b",
+  "combinedsig": "a76f2790747ed2436a281f2660bdbee21bad9ee130b9cab6e542fa618fba1512679d568359db33a008ca39b773c32134276613e93e025ec17e083553449005f9",
+  "hex": "0400008085202f89014c821930f9eb360daaf1a1e12d5a82998b63884e8db4130421ee53a13740e75c000000007b4c79a276a072a26ba067a5658021032d29d6545a2aafad795d9cf50912ecade549137
+163934dfb2895ebc0e211ce8a81409671a60db89b3bc58966f3acc80194479b1a43d868e95a11ebc5609646d18710341a8ff92a7817571980307f5d660cc00a2735ac6333e0a7191243f1263f1959a100af03800112
+a10001ffffffff0200e1f5050000000023210255c46dbce584e3751081b39d7fc054fc807100557e73fc444481618b5706afb4ac0000000000000000686a4c6512792103f016c348437c7422eed92d865aa9789614f
+75327cada463eefc566126b54785b40a76f2790747ed2436a281f2660bdbee21bad9ee130b9cab6e542fa618fba1512679d568359db33a008ca39b773c32134276613e93e025ec17e083553449005f900000000a805
+00000000000000000000000000",
+  "txid": "910635bf69a047fc90567a83ff12e47b753f470658b6d0855ec96e07e7349a8a",
+  "result": "success"
+} 
 */
 
 
@@ -298,7 +331,7 @@ int32_t musig_prevoutmsg(uint8_t *msg,uint256 sendtxid,CScript scriptPubKey)
 
 UniValue musig_calcmsg(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ); uint256 sendtxid; int32_t i; uint8_t msg[32]; char *scriptstr,str[65]; int32_t n;
+    UniValue result(UniValue::VOBJ); uint256 sendtxid; int32_t i,zeros=0; uint8_t msg[32]; char *scriptstr,str[65]; int32_t n;
     if ( params != 0 && (n= cJSON_GetArraySize(params)) > 0 )
     {
         if ( n == 2 )
@@ -307,14 +340,23 @@ UniValue musig_calcmsg(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             scriptstr = jstr(jitem(params,1),0);
             if ( is_hexstr(scriptstr,0) != 0 )
             {
-                CScript scriptPubKey(ParseHex(scriptstr));
+                CScript scriptPubKey;
+                scriptPubKey.resize(strlen(scriptstr)/2);
+                decode_hex(&scriptPubKey[0],strlen(scriptstr)/2,scriptstr);
                 musig_prevoutmsg(msg,sendtxid,scriptPubKey);
-                result.push_back(Pair("result","success"));
                 for (i=0; i<32; i++)
+                {
                     sprintf(&str[i<<1],"%02x",msg[i]);
+                    if ( msg[i] == 0 )
+                        zeros++;
+                }
                 str[64] = 0;
-                result.push_back(Pair("msg",str));
-                return(result);
+                if ( zeros != 32 )
+                {    
+                    result.push_back(Pair("msg",str));
+                    result.push_back(Pair("result","success"));
+                    return(result);
+                } else return(cclib_error(result,"null result, make sure params are sendtxid, scriptPubKey"));
             } else return(cclib_error(result,"script is not hex"));
         } else return(cclib_error(result,"need exactly 2 parameters: sendtxid, scriptPubKey"));
     } else return(cclib_error(result,"couldnt parse params"));
