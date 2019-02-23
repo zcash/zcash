@@ -81,7 +81,7 @@ CClib_methods[] =
     { (char *)"musig", (char *)"verify", (char *)"msg sig pubkey", 3, 3, 'V', EVAL_MUSIG },
     { (char *)"musig", (char *)"send", (char *)"combined_pk amount", 2, 2, 'x', EVAL_MUSIG },
     { (char *)"musig", (char *)"spend", (char *)"sendtxid sig destpubkey", 3, 3, 'y', EVAL_MUSIG },
-    { (char *)"dilithium", (char *)"keypair", (char *)"<no args>", 0, 0, 'K', EVAL_DILITHIUM },
+    { (char *)"dilithium", (char *)"keypair", (char *)"[hexseed]", 0, 1, 'K', EVAL_DILITHIUM },
     { (char *)"dilithium", (char *)"sign", (char *)"msg privkey", 2, 2, 'S', EVAL_DILITHIUM },
     { (char *)"dilithium", (char *)"verify", (char *)"msg sig pubtxid", 3, 3, 'V', EVAL_DILITHIUM },
     { (char *)"dilithium", (char *)"send", (char *)"pubtxid amount", 2, 2, 'x', EVAL_DILITHIUM },

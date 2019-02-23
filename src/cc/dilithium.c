@@ -2437,7 +2437,8 @@ void challenge(poly *c,
 *
 * Returns 0 (success)
 **************************************************/
-int _dilithium_keypair(uint8_t *pk, uint8_t *sk) {
+int _dilithium_keypair(uint8_t *pk, uint8_t *sk,uint8_t *privkey)
+{
   uint32_t i;
   uint8_t seedbuf[3*SEEDBYTES];
   uint8_t tr[CRHBYTES];
@@ -2448,7 +2449,8 @@ int _dilithium_keypair(uint8_t *pk, uint8_t *sk) {
   polyveck s2, t, t1, t0;
 
   /* Expand 32 bytes of randomness into rho, rhoprime and key */
-  randombytes(seedbuf, SEEDBYTES);
+  //randombytes(seedbuf, SEEDBYTES);
+    memcpy(seedbuf,privkey,SEEDBYTES);
   shake256(seedbuf, 3*SEEDBYTES, seedbuf, SEEDBYTES);
   rho = seedbuf;
   rhoprime = rho + SEEDBYTES;
@@ -2841,8 +2843,16 @@ int32_t main(void)
 
 UniValue dilithium_keypair(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ); uint8_t pk[CRYPTO_PUBLICKEYBYTES],sk[CRYPTO_SECRETKEYBYTES]; char str[CRYPTO_SECRETKEYBYTES*2+1]; int32_t i;
-    _dilithium_keypair(pk,sk);
+    UniValue result(UniValue::VOBJ); uint8_t seed[SEEDBYTES],pk[CRYPTO_PUBLICKEYBYTES],sk[CRYPTO_SECRETKEYBYTES]; char str[CRYPTO_SECRETKEYBYTES*2+1]; int32_t i,n,externalflag=0;
+    //randombytes(seed,SEEDBYTES);
+    Myprivkey(seed);
+    if ( params != 0 && (n= cJSON_GetArraySize(params)) == 1 )
+    {
+        if ( musig_parsehash(seed,jitem(params,0),32) < 0 )
+            return(cclib_error(result,"error parsing seed"));
+        else externalflag = 1;
+    }
+    _dilithium_keypair(pk,sk,seed);
     for (i=0; i<sizeof(pk); i++)
         sprintf(&str[i<<1],"%02x",pk[i]);
     str[i<<1] = 0;
@@ -2851,6 +2861,12 @@ UniValue dilithium_keypair(uint64_t txfee,struct CCcontract_info *cp,cJSON *para
         sprintf(&str[i<<1],"%02x",sk[i]);
     str[i<<1] = 0;
     result.push_back(Pair("privkey",str));
+    for (i=0; i<SEEDBYTES; i++)
+        sprintf(&str[i<<1],"%02x",seed[i]);
+    str[i<<1] = 0;
+    result.push_back(Pair("seed",str));
+    if ( externalflag == 0 )
+        result.push_back(Pair("warning","test mode using privkey for -pubkey, only for testing. there is no point using quantum secure signing if you are using a privkey with a known secp256k1 pubkey!!"));
     result.push_back(Pair("result","success"));
     return(result);
 }
@@ -2858,7 +2874,7 @@ UniValue dilithium_keypair(uint64_t txfee,struct CCcontract_info *cp,cJSON *para
 UniValue dilithium_sign(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     UniValue result(UniValue::VOBJ);
-    _dilithium_sign(sm, &smlen, m, MLEN, sk); // 7.2
+    //_dilithium_sign(sm, &smlen, m, MLEN, sk); // 7.2
 
     return(result);
 }
