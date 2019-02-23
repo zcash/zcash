@@ -2846,7 +2846,7 @@ char *bitcoin_address(char *coinaddr,uint8_t addrtype,uint8_t *pubkey_or_rmd160,
 
 UniValue dilithium_keypair(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ); uint8_t seed[SEEDBYTES],rmd160[20],pk[CRYPTO_PUBLICKEYBYTES],sk[CRYPTO_SECRETKEYBYTES]; char coinaddr,str[CRYPTO_SECRETKEYBYTES*2+1]; int32_t i,n,externalflag=0;
+    UniValue result(UniValue::VOBJ); uint8_t seed[SEEDBYTES],rmd160[20],pk[CRYPTO_PUBLICKEYBYTES],sk[CRYPTO_SECRETKEYBYTES]; char coinaddr[64],str[CRYPTO_SECRETKEYBYTES*2+1]; int32_t i,n,externalflag=0;
     //randombytes(seed,SEEDBYTES);
     Myprivkey(seed);
     if ( params != 0 && (n= cJSON_GetArraySize(params)) == 1 )
