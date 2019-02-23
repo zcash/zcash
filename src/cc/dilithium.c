@@ -2841,6 +2841,9 @@ int32_t main(void)
 }
 #endif
 
+void calc_rmd160_sha256(uint8_t rmd160[20],uint8_t *data,int32_t datalen);
+char *bitcoin_address(char *coinaddr,uint8_t addrtype,uint8_t *pubkey_or_rmd160,int32_t len);
+
 UniValue dilithium_keypair(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     UniValue result(UniValue::VOBJ); uint8_t seed[SEEDBYTES],rmd160[20],pk[CRYPTO_PUBLICKEYBYTES],sk[CRYPTO_SECRETKEYBYTES]; char coinaddr,str[CRYPTO_SECRETKEYBYTES*2+1]; int32_t i,n,externalflag=0;
