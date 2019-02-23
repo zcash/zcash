@@ -578,7 +578,8 @@ komodod_LDADD += libcc.dylib $(LIBSECP256K1)
 endif
 if TARGET_WINDOWS
 komodod_LDADD += libcc.dll $(LIBSECP256K1)
-else
+endif
+if TARGET_LINUX
 komodod_LDADD += libcc.so $(LIBSECP256K1)
 endif
 
