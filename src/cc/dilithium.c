@@ -2869,10 +2869,10 @@ UniValue dilithium_keypair(uint64_t txfee,struct CCcontract_info *cp,cJSON *para
     str[i<<1] = 0;
     result.push_back(Pair("seed",str));
     calc_rmd160_sha256(rmd160,pk,CRYPTO_PUBLICKEYBYTES);
-    bitcoin_address(coinaddr,38,rmd160,20);
+    bitcoin_address(coinaddr,55,rmd160,20);
     result.push_back(Pair("pkaddr",coinaddr));
     calc_rmd160_sha256(rmd160,sk,CRYPTO_SECRETKEYBYTES);
-    bitcoin_address(coinaddr,188,rmd160,20);
+    bitcoin_address(coinaddr,63,rmd160,20);
     result.push_back(Pair("skaddr",coinaddr));
     if ( externalflag == 0 )
         result.push_back(Pair("warning","test mode using privkey for -pubkey, only for testing. there is no point using quantum secure signing if you are using a privkey with a known secp256k1 pubkey!!"));
