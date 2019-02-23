@@ -6,6 +6,10 @@
  * by Gilles Van Assche, Daniel J. Bernstein, and Peter Schwabe */
 
 #include <stdint.h>
+
+#define DBENCH_START()
+#define DBENCH_STOP()
+
 #include "dilithium.h"
 
 
