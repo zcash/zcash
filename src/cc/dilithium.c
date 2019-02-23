@@ -2843,7 +2843,7 @@ int32_t main(void)
 
 UniValue dilithium_keypair(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ); uint8_t seed[SEEDBYTES],pk[CRYPTO_PUBLICKEYBYTES],sk[CRYPTO_SECRETKEYBYTES]; char str[CRYPTO_SECRETKEYBYTES*2+1]; int32_t i,n,externalflag=0;
+    UniValue result(UniValue::VOBJ); uint8_t seed[SEEDBYTES],rmd160[20],pk[CRYPTO_PUBLICKEYBYTES],sk[CRYPTO_SECRETKEYBYTES]; char coinaddr,str[CRYPTO_SECRETKEYBYTES*2+1]; int32_t i,n,externalflag=0;
     //randombytes(seed,SEEDBYTES);
     Myprivkey(seed);
     if ( params != 0 && (n= cJSON_GetArraySize(params)) == 1 )
@@ -2865,6 +2865,12 @@ UniValue dilithium_keypair(uint64_t txfee,struct CCcontract_info *cp,cJSON *para
         sprintf(&str[i<<1],"%02x",seed[i]);
     str[i<<1] = 0;
     result.push_back(Pair("seed",str));
+    calc_rmd160_sha256(rmd160,pk,CRYPTO_PUBLICKEYBYTES);
+    bitcoin_address(coinaddr,38,rmd160,20);
+    result.push_back(Pair("pkaddr",coinaddr));
+    calc_rmd160_sha256(rmd160,sk,CRYPTO_SECRETKEYBYTES);
+    bitcoin_address(coinaddr,188,rmd160,20);
+    result.push_back(Pair("skaddr",coinaddr));
     if ( externalflag == 0 )
         result.push_back(Pair("warning","test mode using privkey for -pubkey, only for testing. there is no point using quantum secure signing if you are using a privkey with a known secp256k1 pubkey!!"));
     result.push_back(Pair("result","success"));
