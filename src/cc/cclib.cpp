@@ -581,7 +581,7 @@ uint256 juint256(cJSON *obj)
 #else
 #include "sudoku.cpp"
 #include "musig.cpp"
-#inclide "dilithium.c"
+#include "dilithium.c"
 //#include "../secp256k1/src/modules/musig/example.c"
 #endif
 
