@@ -121,7 +121,7 @@ for pubkey in pubkeys:
     commitments.append(rpc.cclib("session", "18", tmp)['commitment'])
     i = i + 1
 
-print(commitments)
+#print(commitments)
 
 i = 0
 nonces = []
@@ -129,17 +129,16 @@ for pubkey in pubkeys:
     ret = rpc.setpubkey(pubkey)
     n = 0
     for commitment in commitments:
-        if n == i:
-            n = n + 1
-            continue;
         tmp = str([i, pkhash, n, commitment])
         ret = rpc.cclib("commit", "18", tmp)
-        if len(ret) == 4:
+        try:
             nonces.append(ret['nonce'])
+        except:
+            x = 1
         n = n + 1
     i = i + 1
 
-print(nonces)
+#print(nonces)
 
 i = 0
 partialsigs = []
@@ -147,18 +146,17 @@ for pubkey in pubkeys:
     ret = rpc.setpubkey(pubkey)
     n = 0
     for nonce in nonces:
-        #if n == i:
-        #    n = n + 1
-        #    continue;
         tmp = str([i, pkhash, n, nonce])
         ret = rpc.cclib("nonce", "18", tmp)
         print(ret)
-        if len(ret) == 4:
+        try:
             partialsigs.append(ret['partialsig'])
+        except:
+            x = 1
         n = n + 1
     i = i + 1
 
-print(partialsigs)
+#print(partialsigs)
 
 i = 0
 combinedsigs = []
@@ -166,24 +164,28 @@ for pubkey in pubkeys:
     ret = rpc.setpubkey(pubkey)
     n = 0
     for partialsig in partialsigs:
-        if n == i:
-            n = n + 1
-            continue;
         tmp = str([i, pkhash, n, partialsig])
         ret = rpc.cclib("partialsig", "18", tmp)
-        if len(ret) == 4:
+        print(ret)
+        try:
             combinedsigs.append(ret['combinedsig'])
+        except:
+            x = 1
         n = n + 1
     i = i + 1
 
-print(combinedsigs)
+#print(combinedsigs)
 
 tmp = str([msg, combinedpk, combinedsigs[0]])
 ret = rpc.cclib("verify", "18", tmp)
 
+#print(ret)
+
+tmp = str([senttxid, scriptPubKey, combinedsigs[0]])
+ret = rpc.cclib("spend", "18", tmp)
+
 print(ret)
 
-tmp = str([sendtxid, scriptPubKey, combinedsigs[0]])
-ret = rpc.cclib("spend", "18", tmp)
+ret = rpc.sendrawtransaction(ret['hex'])
 
 print(ret)

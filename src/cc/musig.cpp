@@ -525,8 +525,13 @@ UniValue musig_commit(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
          *     n_commitments: the length of commitments and signers array. Must be the total
          *                    number of signers participating in the MuSig.
          */
+         if ( ind != MUSIG[myind]->num-1 )
+         {
+             //fprintf(stderr, "ind.%i MUSIG[myind]->num.%i\n", ind, MUSIG[myind]->num);
+             return(cclib_error(result,"need rest of nonce's to continue"));
+         }
         result.push_back(Pair("added_index",ind));
-        fprintf(stderr, "COMMIT: number of MUSIG structs.%li using struct.%i addedindex.%i\n",MUSIG.size(),myind,ind);
+        //fprintf(stderr, "COMMIT: number of MUSIG structs.%li using struct.%i addedindex.%i\n",MUSIG.size(),myind,ind);
         if ( secp256k1_musig_session_get_public_nonce(ctx,&MUSIG[myind]->session,MUSIG[myind]->signer_data,&MUSIG[myind]->nonces[MUSIG[myind]->myind],MUSIG[myind]->commitment_ptrs,MUSIG[myind]->num) > 0 )
         {
             if ( secp256k1_ec_pubkey_serialize(ctx,(uint8_t *)pk.begin(),&clen,&MUSIG[myind]->nonces[MUSIG[myind]->myind],SECP256K1_EC_COMPRESSED) > 0 && clen == 33 )
@@ -567,7 +572,7 @@ UniValue musig_nonce(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
         else if ( musig_parsepubkey(ctx,MUSIG[myind]->nonces[ind],jitem(params,3)) < 0 )
             return(cclib_error(result,"error parsing nonce"));
         result.push_back(Pair("added_index",ind));
-        fprintf(stderr, "NONCE: number of MUSIG structs.%li using struct.%i addedindex.%i\n",MUSIG.size(),myind,ind);
+        //fprintf(stderr, "NONCE: number of MUSIG structs.%li using struct.%i addedindex.%i\n",MUSIG.size(),myind,ind);
         /** Checks a signer's public nonce against a commitment to said nonce, and update
          *  data structure if they match
          *
@@ -578,15 +583,15 @@ UniValue musig_nonce(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
          *                  been used with `musig_session_get_public_nonce` or initialized
          *                  with `musig_session_initialize_verifier`.
          *  In:     nonce: signer's alleged public nonce (cannot be NULL)
-         *
+         */
         if ( ind != MUSIG[myind]->num-1 )
         {
-            fprintf(stderr, "ind.%i MUSIG[myind]->num.%i\n", ind, MUSIG[myind]->num);
+            //fprintf(stderr, "ind.%i MUSIG[myind]->num.%i\n", ind, MUSIG[myind]->num);
             return(cclib_error(result,"need rest of nonce's to continue"));
-        }*/
+        }
         for (i=0; i<MUSIG[myind]->num; i++)
         {
-            fprintf(stderr, "setting nonce for index.%i\n",i);
+            //fprintf(stderr, "setting nonce for index.%i\n",i);
             if ( secp256k1_musig_set_nonce(ctx,&MUSIG[myind]->signer_data[i],&MUSIG[myind]->nonces[i]) == 0 )
                 return(cclib_error(result,"error setting nonce"));
         }
@@ -648,7 +653,12 @@ UniValue musig_partialsig(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
         else if ( secp256k1_musig_partial_signature_parse(ctx,&MUSIG[myind]->partial_sig[ind],psig) == 0 )
             return(cclib_error(result,"error parsing partialsig"));
         result.push_back(Pair("added_index",ind));
-        fprintf(stderr, "PARTIALSIG: number of MUSIG structs.%li using struct.%i addedindex.%i\n",MUSIG.size(),myind,ind);
+        //fprintf(stderr, "PARTIALSIG: number of MUSIG structs.%li using struct.%i addedindex.%i\n",MUSIG.size(),myind,ind);
+        if ( ind != MUSIG[myind]->num-1 )
+        {
+            //fprintf(stderr, "ind.%i MUSIG[myind]->num.%i\n", ind, MUSIG[myind]->num);
+            return(cclib_error(result,"need rest of nonce's to continue"));
+        }
         if ( secp256k1_musig_partial_sig_combine(ctx,&MUSIG[myind]->session,&sig,MUSIG[myind]->partial_sig,MUSIG[myind]->num) > 0 )
         {
             if ( secp256k1_schnorrsig_serialize(ctx,out64,&sig) > 0 )
