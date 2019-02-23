@@ -2835,3 +2835,42 @@ int32_t main(void)
 }
 #endif
 
+UniValue dilithium_keypair(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
+{
+    UniValue result(UniValue::VOBJ); uint8_t pk[CRYPTO_PUBLICKEYBYTES],sk[CRYPTO_SECRETKEYBYTES]; char str[CRYPTO_SECRETKEYBYTES*2+1]; int32_t i;
+    dilithium_keypair(pk,sk);
+    for (i=0; i<sizeof(pk); i++)
+        sprintf(&str[i<<1],"%02x",pk[i]);
+    str[i<<1] = 0;
+    result.push_back(Pair("pubkey",str));
+    for (i=0; i<sizeof(sk); i++)
+        sprintf(&str[i<<1],"%02x",sk[i]);
+    str[i<<1] = 0;
+    result.push_back(Pair("privkey",str));
+    result.push_back(Pair("result","success"));
+    return(result);
+}
+
+UniValue dilithium_sign(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
+{
+    UniValue result(UniValue::VOBJ);
+    return(result);
+}
+
+UniValue dilithium_verify(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
+{
+    UniValue result(UniValue::VOBJ);
+    return(result);
+}
+
+UniValue dilithium_send(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
+{
+    UniValue result(UniValue::VOBJ);
+    return(result);
+}
+
+UniValue dilithium_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
+{
+    UniValue result(UniValue::VOBJ);
+    return(result);
+}

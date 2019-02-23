@@ -1,5 +1,6 @@
 #include <stdint.h>
 
+/*
 #ifndef CPUCYCLES_H
 #define CPUCYCLES_H
 
@@ -11,7 +12,7 @@
 #define DBENCH_STOP(t)
 #endif
 
-#ifdef USE_RDPMC  /* Needs echo 2 > /sys/devices/cpu/rdpmc */
+#ifdef USE_RDPMC  // Needs echo 2 > /sys/devices/cpu/rdpmc
 #ifdef SERIALIZE_RDC
 
 static inline uint64_t cpucycles_start(void) {
@@ -103,7 +104,7 @@ static inline uint64_t cpucycles_stop(void) {
 
 int64_t cpucycles_overhead(void);
 
-#endif
+#endif*/
 
 #ifndef FIPS202_H
 #define FIPS202_H
@@ -144,7 +145,7 @@ void shake256(uint8_t *output,
 #define PARAMS_H
 
 #ifndef MODE
-#define MODE 2
+#define MODE 3
 #endif
 
 #define SEEDBYTES 32U
@@ -410,7 +411,7 @@ int crypto_sign_open(uint8_t *m, int32_t *mlen,
 #define API_H
 
 #ifndef MODE
-#define MODE 2
+#define MODE 3
 #endif
 
 #if MODE == 0

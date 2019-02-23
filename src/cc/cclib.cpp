@@ -37,6 +37,7 @@ std::string MYCCLIBNAME = (char *)"rogue";
 
 #define EVAL_SUDOKU 17
 #define EVAL_MUSIG 18
+#define EVAL_DILITHIUM 19
 std::string MYCCLIBNAME = (char *)"sudoku";
 #endif
 
@@ -80,6 +81,11 @@ CClib_methods[] =
     { (char *)"musig", (char *)"verify", (char *)"msg sig pubkey", 3, 3, 'V', EVAL_MUSIG },
     { (char *)"musig", (char *)"send", (char *)"combined_pk amount", 2, 2, 'x', EVAL_MUSIG },
     { (char *)"musig", (char *)"spend", (char *)"sendtxid sig destpubkey", 3, 3, 'y', EVAL_MUSIG },
+    { (char *)"dilithium", (char *)"keypair", (char *)"<no args>", 0, 0, 'K', EVAL_DILITHIUM },
+    { (char *)"dilithium", (char *)"sign", (char *)"msg privkey", 2, 2, 'S', EVAL_DILITHIUM },
+    { (char *)"dilithium", (char *)"verify", (char *)"msg sig pubtxid", 3, 3, 'V', EVAL_DILITHIUM },
+    { (char *)"dilithium", (char *)"send", (char *)"pubtxid amount", 2, 2, 'x', EVAL_DILITHIUM },
+    { (char *)"dilithium", (char *)"spend", (char *)"sendtxid sig destpubkey", 3, 3, 'y', EVAL_DILITHIUM },
 #endif
 };
 
@@ -119,6 +125,13 @@ UniValue musig_partialsig(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
 UniValue musig_verify(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue musig_send(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue musig_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+
+UniValue dilithium_send(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+UniValue dilithium_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+UniValue dilithium_keypair(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+UniValue dilithium_sign(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+UniValue dilithium_verify(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+
 #endif
 
 cJSON *cclib_reparse(int32_t *nump,char *jsonstr) // assumes origparams will be freed by caller
@@ -239,6 +252,26 @@ UniValue CClib_method(struct CCcontract_info *cp,char *method,char *jsonstr)
         {
             result.push_back(Pair("result","error"));
             result.push_back(Pair("error","invalid musig method"));
+            result.push_back(Pair("method",method));
+            return(result);
+        }
+    }
+    else if ( cp->evalcode == EVAL_DILITHIUM )
+    {
+        if ( strcmp(method,"send") == 0 )
+            return(dilithium_send(txfee,cp,params));
+        else if ( strcmp(method,"spend") == 0 )
+            return(dilithium_spend(txfee,cp,params));
+        else if ( strcmp(method,"keypair") == 0 )
+            return(dilithium_keypair(txfee,cp,params));
+        else if ( strcmp(method,"sign") == 0 )
+            return(dilithium_sign(txfee,cp,params));
+        else if ( strcmp(method,"verify") == 0 )
+            return(dilithium_verify(txfee,cp,params));
+        else
+        {
+            result.push_back(Pair("result","error"));
+            result.push_back(Pair("error","invalid dilithium method"));
             result.push_back(Pair("method",method));
             return(result);
         }
