@@ -36,7 +36,8 @@ LIBBITCOIN_SERVER=libbitcoin_server.a -lcurl
 endif
 if TARGET_DARWIN
 LIBBITCOIN_SERVER=libbitcoin_server.a -lcurl
-else
+endif
+if TARGET_LINUX
 LIBBITCOIN_SERVER=libbitcoin_server.a -lcurl
 endif
 
