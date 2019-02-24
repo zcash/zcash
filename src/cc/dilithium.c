@@ -2841,6 +2841,28 @@ int32_t main(void)
 }
 #endif
 
+//////////////////////////////////////////////////////
+/* First register a pubkey,ie. bind handle, pub33 and bigpub together and then can be referred by pubtxid in other calls
+ 
+ cclib register 19 \"[%22jl777%22]\"
+ {
+ "handle": "jl777",
+ "warning": "test mode using privkey for -pubkey, only for testing. there is no point using quantum secure signing if you are using a privkey with a known secp256k1 pubkey!!",
+ "pkaddr": "PNoTcVH8G5TBTQigyVZTsaMMNYYRvywUNu",
+ "skaddr": "SejsccjwGrZKaziD1kpfgQhXA32xvzP75i",
+ "hex": "0400008085202f89010184fa95fce1a13d441e6c87631f7d0ca5f22ad8b28ae4321e02177b125b5f2400000000494830450221009fb8ff0ea4e810f34e54f0a872952f364e6eb697bb4ab34ea571fd213299b685022017c0b09fc71ec2d2abf49e435a72d32ecc874d14aac39be7b9753704fad7d06c01ffffffff041027000000000000302ea22c8020979f9b424db4e028cdba433622c6cd17b9193763e68b4572cd7f3727dcd335978....00000000000",
+ "txid": "9d856b2be6e54c8f04ae3f86aef722b0535180b3e9eb926c53740e481a1715f9",
+ "result": "success"
+ }
+ 
+ sendrawtransaction <hex> from above -> pubtxid 9d856b2be6e54c8f04ae3f86aef722b0535180b3e9eb926c53740e481a1715f9
+ 
+ now test signing some random 32 byte message
+ 
+ cclib sign 19 \"[%22aff51dad774a1c612dc82e63f85f07b992b665836b0f0efbcb26ee679f4f4848%22]\"
+ 
+ */
+
 #define DILITHIUM_TXFEE 10000
 
 void calc_rmd160_sha256(uint8_t rmd160[20],uint8_t *data,int32_t datalen);
@@ -2931,13 +2953,13 @@ UniValue dilithium_keypair(uint64_t txfee,struct CCcontract_info *cp,cJSON *para
         {
             randombytes(seed,SEEDBYTES);
             result.push_back(Pair("status","using random high entropy seed"));
+            result.push_back(Pair("seed",dilithium_hexstr(str,seed,SEEDBYTES)));
         }
         externalflag = 1;
     }
     _dilithium_keypair(pk,sk,seed);
     result.push_back(Pair("pubkey",dilithium_hexstr(str,pk,CRYPTO_PUBLICKEYBYTES)));
     result.push_back(Pair("privkey",dilithium_hexstr(str,sk,CRYPTO_SECRETKEYBYTES)));
-    result.push_back(Pair("seed",dilithium_hexstr(str,seed,SEEDBYTES)));
     result.push_back(Pair("pkaddr",dilithium_addr(coinaddr,pk,CRYPTO_PUBLICKEYBYTES)));
     result.push_back(Pair("skaddr",dilithium_addr(coinaddr,sk,CRYPTO_SECRETKEYBYTES)));
     if ( externalflag == 0 )
@@ -2958,13 +2980,12 @@ UniValue dilithium_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *par
     {
         std::string handle(jstr(jitem(params,0),0));
         result.push_back(Pair("handle",handle));
-        if ( n == 2 || cclib_parsehash(seed,jitem(params,1),32) < 0 )
+        if ( n == 1 || cclib_parsehash(seed,jitem(params,1),32) < 0 )
         {
             Myprivkey(seed);
             result.push_back(Pair("warning","test mode using privkey for -pubkey, only for testing. there is no point using quantum secure signing if you are using a privkey with a known secp256k1 pubkey!!"));
         }
         _dilithium_keypair(pk,sk,seed);
-        result.push_back(Pair("seed",dilithium_hexstr(str,seed,SEEDBYTES)));
         result.push_back(Pair("pkaddr",dilithium_addr(coinaddr,pk,CRYPTO_PUBLICKEYBYTES)));
         result.push_back(Pair("skaddr",dilithium_addr(coinaddr,sk,CRYPTO_SECRETKEYBYTES)));
         for (i=0; i<CRYPTO_PUBLICKEYBYTES; i++)
@@ -2986,14 +3007,13 @@ UniValue dilithium_sign(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     {
         if ( cclib_parsehash(msg,jitem(params,0),32) < 0 )
             return(cclib_error(result,"couldnt parse message to sign"));
-        else if ( n == 2 || cclib_parsehash(seed,jitem(params,1),32) < 0 )
+        else if ( n == 1 || cclib_parsehash(seed,jitem(params,1),32) < 0 )
         {
             Myprivkey(seed);
             result.push_back(Pair("warning","test mode using privkey for -pubkey, only for testing. there is no point using quantum secure signing if you are using a privkey with a known secp256k1 pubkey!!"));
         }
         _dilithium_keypair(pk,sk,seed);
         result.push_back(Pair("msg32",dilithium_hexstr(str,msg,32)));
-        result.push_back(Pair("seed",dilithium_hexstr(str,seed,SEEDBYTES)));
         result.push_back(Pair("pkaddr",dilithium_addr(coinaddr,pk,CRYPTO_PUBLICKEYBYTES)));
         result.push_back(Pair("skaddr",dilithium_addr(coinaddr,sk,CRYPTO_SECRETKEYBYTES)));
         _dilithium_sign(sm,&smlen,msg,32,sk);
