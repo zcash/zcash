@@ -2909,6 +2909,24 @@ uint8_t dilithium_registeropretdecode(std::string &handle,CPubKey &pk,std::vecto
     return(0);
 }
 
+CScript dilithium_sendopret(uint256 destpubtxid)
+{
+    CScript opret; uint8_t evalcode = EVAL_DILITHIUM;
+    opret << OP_RETURN << E_MARSHAL(ss << evalcode << 'x' << destpubtxid);
+    return(opret);
+}
+
+uint8_t dilithium_sendopretdecode(uint256 &destpubtxid,CScript scriptPubKey)
+{
+    std::vector<uint8_t> vopret; uint8_t e,f;
+    GetOpReturnData(scriptPubKey,vopret);
+    if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> handle; ss >> destpubtxid) != 0 && e == EVAL_DILITHIUM && f == 'x' )
+    {
+        return(f);
+    }
+    return(0);
+}
+
 UniValue dilithium_rawtxresult(UniValue &result,std::string rawtx)
 {
     CTransaction tx;
