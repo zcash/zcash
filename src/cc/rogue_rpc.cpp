@@ -1020,7 +1020,7 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
     // vout0 -> 1% ingame gold
     // get any playerdata, get all keystrokes, replay game and compare final state
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); std::string rawtx,symbol,pname; CTransaction gametx; uint64_t seed,mult; int64_t buyin,batonvalue,inputsum,cashout,CCchange=0; int32_t i,err,gameheight,tmp,numplayers,regslot,n,num,numkeys,maxplayers,batonht,batonvout; char myrogueaddr[64],*keystrokes = 0; std::vector<uint8_t> playerdata,newdata,nodata; uint256 batontxid,playertxid,gametxid; CPubKey mypk,roguepk; uint8_t player[10000],mypriv[32],funcid;
+    UniValue result(UniValue::VOBJ); std::string rawtx,symbol,pname; CTransaction gametx; uint64_t seed,mult; int64_t buyin,batonvalue,inputsum,cashout,CCchange=0; int32_t i,err,gameheight,tmp,numplayers,regslot,n,num,dungeonlevel,numkeys,maxplayers,batonht,batonvout; char myrogueaddr[64],*keystrokes = 0; std::vector<uint8_t> playerdata,newdata,nodata; uint256 batontxid,playertxid,gametxid; CPubKey mypk,roguepk; uint8_t player[10000],mypriv[32],funcid;
     struct CCcontract_info *cpTokens, tokensC;
 
     if ( txfee == 0 )
@@ -1034,12 +1034,12 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
     if ( strcmp(method,"bailout") == 0 )
     {
         funcid = 'Q';
-        mult = 100; //100000;
+        mult = 10; //100000;
     }
     else
     {
         funcid = 'H';
-        mult = 200; //200000;
+        mult = 20; //200000;
     }
     if ( params != 0 && (n= cJSON_GetArraySize(params)) > 0 )
     {
@@ -1093,7 +1093,10 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
                             mtx.vout.push_back(MakeTokensCC1vout(cp->evalcode,1,mypk));
                             if ( P.amulet != 0 )
                                 mult *= 5;
-                            cashout = (uint64_t)P.gold * P.gold * mult;
+                            dungeonlevel = P.dungeonlevel;
+                            if ( P.amulet != 0 && dungeonlevel < 21 )
+                                dungeonlevel = 21;
+                            cashout = (uint64_t)P.gold * P.gold * mult * dungeonlevel;
                             fprintf(stderr,"\nextracted $$$gold.%d -> %.8f ROGUE hp.%d strength.%d/%d level.%d exp.%d dl.%d n.%d amulet.%d\n",P.gold,(double)cashout/COIN,P.hitpoints,P.strength&0xffff,P.strength>>16,P.level,P.experience,P.dungeonlevel,n,P.amulet);
                             if ( funcid == 'H' && maxplayers > 1 )
                             {
