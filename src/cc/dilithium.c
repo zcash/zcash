@@ -2842,7 +2842,18 @@ int32_t main(void)
 #endif
 
 //////////////////////////////////////////////////////
-/* First register a pubkey,ie. bind handle, pub33 and bigpub together and then can be referred by pubtxid in other calls
+
+/*
+ dilithium has very big pubkeys and privkeys, so some practical things are done to make them more manageable. luckily the big privkey can be generated from a normal 256bit seed in about 100 microseconds. Of course, if you use a normal privkey that is also having its pubkey known, it defeats the purpose of using quantum secure protocol. however it is convenient for testing. just make sure to use externally generated seeds that never get used for secp256k1 if you want to keep it quantum secure.
+ 
+ there are some useful "addresses" starting with 'P' and 'S' that are the base58 encoded dilithium pubkey and privkey. this is just so you can make sure the right one was used in an operation as the ~3kb of hex is very hard to compare visually.
+ 
+ Now comes the cool part. Instead of having to specify these giant pubkeys in each spend and maybe even send, we send to a pubtxid instead. the pubtxid is the txid of a registration tx where a handle, secp256k1 pubkey and the dilithium pubkey are bound together. So by referring to the txid, you refer to all three. Again, for convenience it is possible to use the same secp256k1 pubkey that is derived from the 256bit seed that the dilithium pubkey is generated, but that offers no additonal quantum protection. To gain the quantum protection, use an externally provided seed to generate the dilithium pubkey. there should be no algorithmic linkage between the pubtxid secp256k1 pubkey and the dilithium pubkey. They are linked simply by being in the same register transaction.
+ 
+ Once you have registered the pubkey(s), then you can do a send to it. Both pubkeys are used so that to spend you need to have a proper CC signature and a dilithium signature. The spend will necessarily need to have the almost 4kb signature in the opreturn, but at least the big pubkey is only referenced via the pubtxid
+ 
+ 
+ First register a pubkey,ie. bind handle, pub33 and bigpub together and then can be referred by pubtxid in other calls
  
  cclib register 19 \"[%22jl777%22]\"
  {
@@ -2883,6 +2894,15 @@ int32_t main(void)
  the basics are working, now it is time to send and spend
  
  cclib send 19 \"[%22jl777%22,%229d856b2be6e54c8f04ae3f86aef722b0535180b3e9eb926c53740e481a1715f9%22,7.77]\"
+ {
+ "handle": "jl777",
+ "hex": "0400008085202f8901ff470ca3fb4f935a32dd312db801dcabce0e8b49c7774bb4f1d39a45b3a68bab0100000049483045022100d1c29d5f870dd18aa865e12632fa0cc8df9a8a770a23360e9c443d39cb141c5f0220304c7c77a6d711888d4bcb836530b6509eabe158496029b0bf57b5716f24beb101ffffffff034014502e00000000302ea22c8020b09ee47b12b5b9a2edcf0e7c4fb2a517b879eb88ac98b16185dfef476506b1dd8103120c008203000401cc3cd0ff7646070000232102aff51dad774a1c612dc82e63f85f07b992b665836b0f0efbcb26ee679f4f4848ac0000000000000000246a221378f915171a480e74536c92ebe9b3805153b022f7ae863fae048f4ce5e62b6b859d00000000120c00000000000000000000000000",
+ "txid": "4aac73ebe82c12665d1d005a0ae1a1493cb1e2c714680ef9d016f48a7c77b4a2",
+ "result": "success"
+ }
+ dont forget to broadcast it: 4aac73ebe82c12665d1d005a0ae1a1493cb1e2c714680ef9d016f48a7c77b4a2
+ notice how small the tx is! 289 bytes as it is sent to the destpubtxid, which in turn contains the handle, pub33 and bigpub. the handle is used for error check, pub33 is used to make the destination CC address, so the normal CC signing needs to be passed in addition to the spend restrictions for dilithium.
+ 
  
  */
 
