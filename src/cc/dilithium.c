@@ -3237,23 +3237,18 @@ bool dilithium_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,con
         return eval->Invalid("illegal normal vin0");
     else if ( myGetTransaction(tx.vin[0].prevout.hash,vintx,hashBlock) != 0 && (numvouts= vintx.vout.size()) > 1 )
     {
-        fprintf(stderr,"inside\n");
         if ( dilithium_sendopretdecode(destpubtxid,vintx.vout[numvouts-1].scriptPubKey) == 'x' )
         {
-            fprintf(stderr,"about to spendopret\n");
             if ( dilithium_spendopretdecode(checktxid,sig,tx.vout[tx.vout.size()-1].scriptPubKey) == 'y' )
             {
-                fprintf(stderr,"checktxid.%s vs %s\n",destpubtxid.GetHex().c_str(),checktxid.GetHex().c_str());
                 if ( destpubtxid == checktxid && sig.size() == smlen )
                 {
-                    fprintf(stderr,"call prevoutmsg\n");
                     musig_prevoutmsg(msg,tx.vin[0].prevout.hash,tx.vout[0].scriptPubKey);
-                    fprintf(stderr,"call dilithium_bigpubget\n");
                     if ( dilithium_bigpubget(handle,destpub33,pk,destpubtxid) < 0 )
                         return eval->Invalid("couldnt get bigpub");
                     else
                     {
-                        fprintf(stderr,"call _dilithium_verify\n");
+                        sig[777] ^= 0xaa;
                         if ( _dilithium_verify(msg2,&mlen,&sig[0],smlen,pk) < 0 )
                             return eval->Invalid("failed dilithium verify");
                         else if ( mlen != 32 || memcmp(msg,msg2,32) != 0 )
