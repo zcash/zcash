@@ -407,7 +407,7 @@ bool CClib_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
             return(sudoku_validate(cp,height,eval,tx));
         else if ( cp->evalcode == EVAL_MUSIG )
             return(musig_validate(cp,height,eval,tx));
-        else if ( cp->evalcode == DILITHIUM_MUSIG )
+        else if ( cp->evalcode == EVAL_DILITHIUM )
             return(dilithium_validate(cp,height,eval,tx));
         else return eval->Invalid("invalid evalcode");
 #endif

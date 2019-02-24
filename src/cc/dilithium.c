@@ -3245,7 +3245,7 @@ bool dilithium_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,con
                 {
                     musig_prevoutmsg(msg,tx.vin[0].prevout.hash,tx.vout[0].scriptPubKey);
                     if ( dilithium_bigpubget(handle,destpub33,pk,destpubtxid) < 0 )
-                        return eval->Invalid(result,"couldnt get bigpub");
+                        return eval->Invalid("couldnt get bigpub");
                     else if ( _dilithium_verify(msg2,&mlen,&sig[0],(int32_t)sig.size(),pk) < 0 )
                         return eval->Invalid("failed dilithium verify");
                     else if ( mlen != 32 || memcmp(msg,msg2,32) != 0 )
