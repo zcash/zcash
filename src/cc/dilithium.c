@@ -2905,6 +2905,9 @@ int32_t main(void)
  
  cclib spend 19 \"[%224aac73ebe82c12665d1d005a0ae1a1493cb1e2c714680ef9d016f48a7c77b4a2%22,%22210255c46dbce584e3751081b39d7fc054fc807100557e73fc444481618b5706afb4ac%22]\"
  
+ this generates a really big hex, broadcast it and if all went well it will get confirmed.
+ a dilithium spend!
+ 
  */
 
 #define DILITHIUM_TXFEE 10000
@@ -3248,12 +3251,11 @@ bool dilithium_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,con
                         return eval->Invalid("couldnt get bigpub");
                     else
                     {
-                        sig[777] ^= 0xaa;
                         if ( _dilithium_verify(msg2,&mlen,&sig[0],smlen,pk) < 0 )
                             return eval->Invalid("failed dilithium verify");
                         else if ( mlen != 32 || memcmp(msg,msg2,32) != 0 )
                             return eval->Invalid("failed dilithium msg verify");
-                        else return eval->Invalid("this is actually success!");
+                        else return(true);
                     }
                 } else return eval->Invalid("destpubtxid or sig size didnt match send opret");
             } else return eval->Invalid("failed decode dilithium spendopret");
