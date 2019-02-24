@@ -85,7 +85,7 @@ CClib_methods[] =
     { (char *)"dilithium", (char *)"register", (char *)"handle, [hexseed]", 1, 2, 'R', EVAL_DILITHIUM },
     { (char *)"dilithium", (char *)"sign", (char *)"msg [hexseed]", 1, 2, 'S', EVAL_DILITHIUM },
     { (char *)"dilithium", (char *)"verify", (char *)"pubtxid msg sig", 3, 3, 'V', EVAL_DILITHIUM },
-    { (char *)"dilithium", (char *)"send", (char *)"pubtxid amount", 2, 2, 'x', EVAL_DILITHIUM },
+    { (char *)"dilithium", (char *)"send", (char *)"handle pubtxid amount", 3, 3, 'x', EVAL_DILITHIUM },
     { (char *)"dilithium", (char *)"spend", (char *)"sendtxid sig destpubkey", 3, 3, 'y', EVAL_DILITHIUM },
 #endif
 };
