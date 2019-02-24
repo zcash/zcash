@@ -3050,19 +3050,22 @@ UniValue dilithium_verify(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
             return(cclib_error(result,"couldnt parse message to sign"));
         else if ( cclib_parsehash(sm,jitem(params,2),smlen) < 0 )
             return(cclib_error(result,"couldnt parse sig"));
-        else if ( _dilithium_verify(msg2,&mlen,sm,smlen,pk) < 0 )
-            return(cclib_error(result,"dilithium verify error"));
-        else if ( mlen != 32 )
-            return(cclib_error(result,"message len mismatch"));
-        else if ( memcmp(msg2,msg,32) != 0 )
-            return(cclib_error(result,"message content mismatch"));
-        result.push_back(Pair("msg32",dilithium_hexstr(str,msg,32)));
-        result.push_back(Pair("handle",handle));
-        result.push_back(Pair("pkaddr",dilithium_addr(coinaddr,pk,CRYPTO_PUBLICKEYBYTES)));
-        calc_rmd160_sha256(rmd160,sm,smlen);
-        result.push_back(Pair("sighash",dilithium_hexstr(str,rmd160,20)));
-        result.push_back(Pair("result","success"));
-        return(result);
+        else
+        {
+            calc_rmd160_sha256(rmd160,sm,smlen);
+            result.push_back(Pair("sighash",dilithium_hexstr(str,rmd160,20)));
+            if ( _dilithium_verify(msg2,&mlen,sm,smlen,pk) < 0 )
+                return(cclib_error(result,"dilithium verify error"));
+            else if ( mlen != 32 )
+                return(cclib_error(result,"message len mismatch"));
+            else if ( memcmp(msg2,msg,32) != 0 )
+                return(cclib_error(result,"message content mismatch"));
+            result.push_back(Pair("msg32",dilithium_hexstr(str,msg,32)));
+            result.push_back(Pair("handle",handle));
+            result.push_back(Pair("pkaddr",dilithium_addr(coinaddr,pk,CRYPTO_PUBLICKEYBYTES)));
+            result.push_back(Pair("result","success"));
+            return(result);
+        }
     } else return(cclib_error(result,"not enough parameters"));
 }
 
