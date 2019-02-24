@@ -2877,6 +2877,7 @@ UniValue dilithium_keypair(uint64_t txfee,struct CCcontract_info *cp,cJSON *para
     if ( externalflag == 0 )
         result.push_back(Pair("warning","test mode using privkey for -pubkey, only for testing. there is no point using quantum secure signing if you are using a privkey with a known secp256k1 pubkey!!"));
     result.push_back(Pair("result","success"));
+    // make a tx that has pubkey in opreturn
     return(result);
 }
 
@@ -2897,11 +2898,13 @@ UniValue dilithium_verify(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
 UniValue dilithium_send(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     UniValue result(UniValue::VOBJ);
+    // copy musig method
     return(result);
 }
 
 UniValue dilithium_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     UniValue result(UniValue::VOBJ);
+    // copy musig method
     return(result);
 }

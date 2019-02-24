@@ -882,8 +882,9 @@ char *rogue_extractgame(int32_t makefiles,char *str,int32_t *numkeysp,std::vecto
                 }
                 if ( endP.gold <= 0 || endP.hitpoints <= 0 || (endP.strength&0xffff) <= 0 || endP.level <= 0 || endP.experience <= 0 || endP.dungeonlevel <= 0 )
                 {
-                    fprintf(stderr,"zero value character was killed -> no playerdata\n");
-                    newdata.resize(0);
+                    //fprintf(stderr,"zero value character was killed -> no playerdata\n");
+                    //newdata.resize(0);
+                    P.gold = (P.gold * 8) / 10;
                 }
                 sprintf(str,"extracted $$$gold.%d hp.%d strength.%d/%d level.%d exp.%d dl.%d\n",endP.gold,endP.hitpoints,endP.strength&0xffff,endP.strength>>16,endP.level,endP.experience,endP.dungeonlevel);
                 fprintf(stderr,"%s\n",str);
@@ -1018,22 +1019,23 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
                             newdata[i] = player[i];
                             ((uint8_t *)&P)[i] = player[i];
                         }
-                        if ( 0 && (P.gold <= 0 || P.hitpoints <= 0 || (P.strength&0xffff) <= 0 || P.level <= 0 || P.experience <= 0 || P.dungeonlevel <= 0) )
+                        if ( (P.gold <= 0 || P.hitpoints <= 0 || (P.strength&0xffff) <= 0 || P.level <= 0 || P.experience <= 0 || P.dungeonlevel <= 0) )
                         {
-                            fprintf(stderr,"zero value character was killed -> no playerdata\n");
-                            newdata.resize(0);
+                            //fprintf(stderr,"zero value character was killed -> no playerdata\n");
+                            //newdata.resize(0);
+                            P.gold = (P.gold * 8) / 10;
                         }
-                        else
+                        //else
                         {
-                            if ( maxplayers == 1 )
-                                mult /= 2;
+                            //if ( maxplayers == 1 )
+                            //    mult /= 2;
                             cpTokens = CCinit(&tokensC, EVAL_TOKENS);
                             mtx.vout.push_back(MakeCC1vout(EVAL_TOKENS, txfee, GetUnspendable(cpTokens,NULL)));            // marker to token cc addr, burnable and validated
                             mtx.vout.push_back(MakeTokensCC1vout(cp->evalcode,1,mypk));
-                            fprintf(stderr,"\nextracted $$$gold.%d hp.%d strength.%d/%d level.%d exp.%d dl.%d n.%d amulet.%d\n",P.gold,P.hitpoints,P.strength&0xffff,P.strength>>16,P.level,P.experience,P.dungeonlevel,n,P.amulet);
                             if ( P.amulet != 0 )
                                 mult *= 5;
                             cashout = (uint64_t)P.gold * mult;
+                            fprintf(stderr,"\nextracted $$$gold.%d -> %.8f ROGUE hp.%d strength.%d/%d level.%d exp.%d dl.%d n.%d amulet.%d\n",P.gold,(double)cashout/COIN,P.hitpoints,P.strength&0xffff,P.strength>>16,P.level,P.experience,P.dungeonlevel,n,P.amulet);
                             if ( funcid == 'H' && maxplayers > 1 )
                             {
                                 if ( (numplayers != maxplayers || (numplayers - rogue_playersalive(tmp,gametxid,maxplayers)) > 1) && P.amulet == 0 )
@@ -1271,13 +1273,18 @@ int32_t rogue_playerdata_validate(uint256 &playertxid,struct CCcontract_info *cp
             fprintf(stderr,"%s matched after clearing maxstrength good.%d bad.%d\n",gametxid.GetHex().c_str(),good,bad);
             return(0);
         }
-        bad++;
         for (i=0; i<playerdata.size(); i++)
             ((uint8_t *)&P)[i] = playerdata[i];
         if ( P.gold <= 0 || P.hitpoints <= 0 || (P.strength&0xffff) <= 0 || P.level <= 0 || P.experience <= 0 || P.dungeonlevel <= 0 )
         {
-            fprintf(stderr,"zero value character was killed -> no playerdata\n");
+            fprintf(stderr,"zero value character was killed -> no playerdata, good.%d bad.%d\n",good,bad);
+            if ( newdata.size() == 0 )
+            {
+                good++;
+                return(0);
+            }
         }
+        bad++;
         fprintf(stderr,"%s playerdata: gold.%d hp.%d strength.%d/%d level.%d exp.%d dl.%d\n",gametxid.GetHex().c_str(),P.gold,P.hitpoints,P.strength&0xffff,P.strength>>16,P.level,P.experience,P.dungeonlevel);
         fprintf(stderr,"newdata[%d] != playerdata[%d], numkeys.%d %s pub.%s playertxid.%s good.%d bad.%d\n",(int32_t)newdata.size(),(int32_t)playerdata.size(),numkeys,rogueaddr,pubkey33_str(str2,(uint8_t *)&pk),playertxid.GetHex().c_str(),good,bad);
     }
