@@ -2958,7 +2958,7 @@ uint8_t dilithium_spendopretdecode(uint256 &destpubtxid,std::vector<uint8_t> &si
 {
     std::vector<uint8_t> vopret; uint8_t e,f;
     GetOpReturnData(scriptPubKey,vopret);
-    if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> destpubtxid; ss > sig) != 0 && e == EVAL_DILITHIUM && f == 'y' )
+    if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> destpubtxid; ss >> sig) != 0 && e == EVAL_DILITHIUM && f == 'y' )
     {
         return(f);
     }
