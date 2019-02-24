@@ -148,7 +148,6 @@ for pubkey in pubkeys:
     for nonce in nonces:
         tmp = str([i, pkhash, n, nonce])
         ret = rpc.cclib("nonce", "18", tmp)
-        print(ret)
         try:
             partialsigs.append(ret['partialsig'])
         except:
@@ -166,7 +165,6 @@ for pubkey in pubkeys:
     for partialsig in partialsigs:
         tmp = str([i, pkhash, n, partialsig])
         ret = rpc.cclib("partialsig", "18", tmp)
-        print(ret)
         try:
             combinedsigs.append(ret['combinedsig'])
         except:
