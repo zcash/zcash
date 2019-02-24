@@ -3113,7 +3113,7 @@ UniValue dilithium_send(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
         std::string handle(jstr(jitem(params,0),0));
         result.push_back(Pair("handle",handle));
         destpubtxid = juint256(jitem(params,1));
-        if ( dilithium_bigpubget(checkhandle,destpub33,pk,pubtxid) < 0 )
+        if ( dilithium_bigpubget(checkhandle,destpub33,pk,destpubtxid) < 0 )
             return(cclib_error(result,"couldnt parse message to sign"));
         else if ( handle == checkhandle )
         {
