@@ -2890,7 +2890,7 @@ char *dilithium_addr(char *coinaddr,uint8_t *buf,int32_t len)
         addrtype = 63;
     else
     {
-        strcpy(coinaddr,"unexpected len.%d",len);
+        sprintf(coinaddr,"unexpected len.%d",len);
         return(coinaddr);
     }
     calc_rmd160_sha256(rmd160,buf,len);
@@ -2968,12 +2968,12 @@ UniValue dilithium_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *par
         result.push_back(Pair("pkaddr",dilithium_addr(coinaddr,pk,CRYPTO_PUBLICKEYBYTES)));
         result.push_back(Pair("skaddr",dilithium_addr(coinaddr,sk,CRYPTO_SECRETKEYBYTES)));
         for (i=0; i<CRYPTO_PUBLICKEYBYTES; i++)
-            bigpub.push_pack(pk[i]);
+            bigpub.push_back(pk[i]);
         if ( AddNormalinputs(mtx,mypk,3*txfee,64) >= 3*txfee )
         {
             mtx.vout.push_back(MakeCC1vout(cp->evalcode,txfee,dilithiumpk));
             mtx.vout.push_back(MakeCC1vout(cp->evalcode,txfee,mypk));
-            rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,dilithium_registeropret('R',handle,mypk,bigpub));
+            rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,dilithium_registeropret(handle,mypk,bigpub));
             return(musig_rawtxresult(result,rawtx));
         } else return(cclib_error(result,"couldnt find enough funds"));
     } else return(cclib_error(result,"not enough parameters"));
