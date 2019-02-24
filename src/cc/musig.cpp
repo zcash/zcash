@@ -219,7 +219,7 @@ struct musig_info
     secp256k1_musig_session_signer_data *signer_data; //[N_SIGNERS];
     secp256k1_pubkey *nonces; //[N_SIGNERS];
     secp256k1_musig_partial_signature *partial_sig; //[N_SIGNERS];
-    int32_t myind,num;
+    int32_t myind,num,numcommits,numnonces,numpartials;
     uint8_t msg[32],pkhash[32],combpk[33];
 } *MUSIG;
 
@@ -511,7 +511,8 @@ UniValue musig_commit(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
          *                    number of signers participating in the MuSig.
          */
         result.push_back(Pair("added_index",ind));
-        if ( secp256k1_musig_session_get_public_nonce(ctx,&MUSIG->session,MUSIG->signer_data,&MUSIG->nonces[MUSIG->myind],MUSIG->commitment_ptrs,MUSIG->num) > 0 )
+        MUSIG->numcommits++;
+        if ( MUSIG->numcommits >= MUSIG->num && secp256k1_musig_session_get_public_nonce(ctx,&MUSIG->session,MUSIG->signer_data,&MUSIG->nonces[MUSIG->myind],MUSIG->commitment_ptrs,MUSIG->num) > 0 )
         {
             if ( secp256k1_ec_pubkey_serialize(ctx,(uint8_t *)pk.begin(),&clen,&MUSIG->nonces[MUSIG->myind],SECP256K1_EC_COMPRESSED) > 0 && clen == 33 )
             {
@@ -583,7 +584,8 @@ UniValue musig_nonce(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
          *           adaptor: point to add to the combined public nonce. If NULL, nothing is
          *                    added to the combined nonce.
          */
-        if ( secp256k1_musig_session_combine_nonces(ctx,&MUSIG->session,MUSIG->signer_data,MUSIG->num,NULL,NULL) > 0 )
+        MUSIG->numnonces++;
+        if ( MUSIG->numnonces >= MUSIG->num && secp256k1_musig_session_combine_nonces(ctx,&MUSIG->session,MUSIG->signer_data,MUSIG->num,NULL,NULL) > 0 )
         {
             if ( secp256k1_musig_partial_sign(ctx,&MUSIG->session,&MUSIG->partial_sig[MUSIG->myind]) > 0 )
             {
@@ -621,7 +623,8 @@ UniValue musig_partialsig(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
         else if ( secp256k1_musig_partial_signature_parse(ctx,&MUSIG->partial_sig[ind],psig) == 0 )
             return(cclib_error(result,"error parsing partialsig"));
         result.push_back(Pair("added_index",ind));
-        if ( secp256k1_musig_partial_sig_combine(ctx,&MUSIG->session,&sig,MUSIG->partial_sig,MUSIG->num) > 0 )
+        MUSIG->numpartials++;
+        if ( MUSIG->numpartials >= MUSIG->num && secp256k1_musig_partial_sig_combine(ctx,&MUSIG->session,&sig,MUSIG->partial_sig,MUSIG->num) > 0 )
         {
             if ( secp256k1_schnorrsig_serialize(ctx,out64,&sig) > 0 )
             {
