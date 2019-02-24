@@ -883,13 +883,22 @@ char *rogue_extractgame(int32_t makefiles,char *str,int32_t *numkeysp,std::vecto
                 if ( endP.gold <= 0 || endP.hitpoints <= 0 || (endP.strength&0xffff) <= 0 || endP.level <= 0 || endP.experience <= 0 || endP.dungeonlevel <= 0 )
                 {
                     //fprintf(stderr,"zero value character was killed -> no playerdata\n");
-                    //newdata.resize(0);
-                    P.gold = (P.gold * 8) / 10;
+                    newdata.resize(0);
+                    //P.gold = (P.gold * 8) / 10;
+                    if ( keystrokes != 0 )
+                    {
+                        free(keystrokes);
+                        keystrokes = 0;
+                        *numkeysp = 0;
+                    }
                 }
-                sprintf(str,"extracted $$$gold.%d hp.%d strength.%d/%d level.%d exp.%d dl.%d\n",endP.gold,endP.hitpoints,endP.strength&0xffff,endP.strength>>16,endP.level,endP.experience,endP.dungeonlevel);
-                fprintf(stderr,"%s\n",str);
-                *numkeysp = numkeys;
-                return(keystrokes);
+                else
+                {
+                    sprintf(str,"extracted $$$gold.%d hp.%d strength.%d/%d level.%d exp.%d dl.%d\n",endP.gold,endP.hitpoints,endP.strength&0xffff,endP.strength>>16,endP.level,endP.experience,endP.dungeonlevel);
+                    fprintf(stderr,"%s\n",str);
+                    *numkeysp = numkeys;
+                    return(keystrokes);
+                }
             } else num = 0;
         }
         else
@@ -979,9 +988,9 @@ int32_t rogue_playerdata_validate(uint256 &playertxid,struct CCcontract_info *cp
             ((uint8_t *)&P)[i] = playerdata[i];
         if ( P.gold <= 0 || P.hitpoints <= 0 || (P.strength&0xffff) <= 0 || P.level <= 0 || P.experience <= 0 || P.dungeonlevel <= 0 )
         {
-            P.gold = (P.gold * 8) / 10;
-            for (i=0; i<playerdata.size(); i++)
-                playerdata[i] = ((uint8_t *)&P)[i];
+            //P.gold = (P.gold * 8) / 10;
+            //for (i=0; i<playerdata.size(); i++)
+            //    playerdata[i] = ((uint8_t *)&P)[i];
             if ( newdata.size() == 0 )
             {
                 good++;
@@ -1072,10 +1081,10 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
                         if ( (P.gold <= 0 || P.hitpoints <= 0 || (P.strength&0xffff) <= 0 || P.level <= 0 || P.experience <= 0 || P.dungeonlevel <= 0) )
                         {
                             //fprintf(stderr,"zero value character was killed -> no playerdata\n");
-                            //newdata.resize(0);
-                            P.gold = (P.gold * 8) / 10;
+                            newdata.resize(0);
+                            //P.gold = (P.gold * 8) / 10;
                         }
-                        //else
+                        else
                         {
                             //if ( maxplayers == 1 )
                             //    mult /= 2;
