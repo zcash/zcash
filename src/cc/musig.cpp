@@ -304,6 +304,17 @@ uint8_t musig_spendopretdecode(CPubKey &pk,std::vector<uint8_t> &musig64,CScript
     return(0);
 }
 
+int32_t musig_parsepubkey(secp256k1_context *ctx,secp256k1_pubkey &spk,cJSON *item)
+{
+    char *hexstr;
+    if ( (hexstr= jstr(item,0)) != 0 && is_hexstr(hexstr,0) == 66 )
+    {
+        CPubKey pk(ParseHex(hexstr));
+        if ( secp256k1_ec_pubkey_parse(ctx,&spk,pk.begin(),33) > 0 )
+            return(1);
+    } else return(-1);
+}
+
 int32_t musig_msghash(uint8_t *msg,uint256 prevhash,int32_t prevn,CTxOut vout,CPubKey pk)
 {
     CScript data; uint256 hash; int32_t len = 0;
@@ -374,7 +385,7 @@ UniValue musig_combine(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
         //fprintf(stderr,"n.%d args.(%s)\n",n,jprint(params,0));
         for (i=0; i<n; i++)
         {
-            if ( cclib_parsepubkey(ctx,spk,jitem(params,i)) < 0 )
+            if ( musig_parsepubkey(ctx,spk,jitem(params,i)) < 0 )
                 return(cclib_error(result,"error parsing pk"));
             pubkeys.push_back(spk);
         }
@@ -413,7 +424,7 @@ UniValue musig_session(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
         if ( MUSIG != 0 )
             musig_infofree(MUSIG), MUSIG = 0;
         MUSIG = musig_infocreate(myind,num);
-        if ( cclib_parsepubkey(ctx,MUSIG->combined_pk,jitem(params,2)) < 0 )
+        if ( musig_parsepubkey(ctx,MUSIG->combined_pk,jitem(params,2)) < 0 )
             return(cclib_error(result,"error parsing combined_pubkey"));
         else if ( cclib_parsehash(MUSIG->pkhash,jitem(params,3),32) < 0 )
             return(cclib_error(result,"error parsing pkhash"));
@@ -535,7 +546,7 @@ UniValue musig_nonce(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             return(cclib_error(result,"pkhash doesnt match session pkhash"));
         else if ( (ind= juint(jitem(params,1),0)) < 0 || ind >= MUSIG->num )
             return(cclib_error(result,"illegal ind for session"));
-        else if ( cclib_parsepubkey(ctx,MUSIG->nonces[ind],jitem(params,2)) < 0 )
+        else if ( musig_parsepubkey(ctx,MUSIG->nonces[ind],jitem(params,2)) < 0 )
             return(cclib_error(result,"error parsing nonce"));
         result.push_back(Pair("added_index",ind));
         /** Checks a signer's public nonce against a commitment to said nonce, and update
@@ -650,7 +661,7 @@ UniValue musig_verify(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     {
         if ( cclib_parsehash(msg,jitem(params,0),32) < 0 )
             return(cclib_error(result,"error parsing pkhash"));
-        else if ( cclib_parsepubkey(ctx,combined_pk,jitem(params,1)) < 0 )
+        else if ( musig_parsepubkey(ctx,combined_pk,jitem(params,1)) < 0 )
             return(cclib_error(result,"error parsing combined_pk"));
         else if ( cclib_parsehash(musig64,jitem(params,2),64) < 0 )
             return(cclib_error(result,"error parsing musig64"));

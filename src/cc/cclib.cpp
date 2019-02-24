@@ -577,17 +577,6 @@ uint256 juint256(cJSON *obj)
     return(revuint256(tmp));
 }
 
-int32_t cclib_parsepubkey(secp256k1_context *ctx,secp256k1_pubkey &spk,cJSON *item)
-{
-    char *hexstr;
-    if ( (hexstr= jstr(item,0)) != 0 && is_hexstr(hexstr,0) == 66 )
-    {
-        CPubKey pk(ParseHex(hexstr));
-        if ( secp256k1_ec_pubkey_parse(ctx,&spk,pk.begin(),33) > 0 )
-            return(1);
-    } else return(-1);
-}
-
 int32_t cclib_parsehash(uint8_t *hash32,cJSON *item,int32_t len)
 {
     char *hexstr;
