@@ -2981,7 +2981,7 @@ UniValue dilithium_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *par
 
 UniValue dilithium_sign(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ); uint8_t seed[SEEDBYTES],msg[32],rmd160[20],pk[CRYPTO_PUBLICKEYBYTES],sk[CRYPTO_SECRETKEYBYTES]; char coinaddr[64],str[(32+CRYPTO_BYTES)*2+1],sm[32+CRYPTO_BYTES]; int32_t n,smlen;
+    UniValue result(UniValue::VOBJ); uint8_t seed[SEEDBYTES],msg[32],rmd160[20],pk[CRYPTO_PUBLICKEYBYTES],sk[CRYPTO_SECRETKEYBYTES],sm[32+CRYPTO_BYTES]; char coinaddr[64],str[(32+CRYPTO_BYTES)*2+1]; int32_t n,smlen;
     if ( params != 0 && ((n= cJSON_GetArraySize(params)) == 1 || n == 2) )
     {
         if ( cclib_parsehash(msg,jitem(params,0),32) < 0 )
@@ -3008,7 +3008,7 @@ UniValue dilithium_sign(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 
 UniValue dilithium_verify(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ); CPubKey pk33; uint8_t msg[32],msg2[32],pk[CRYPTO_PUBLICKEYBYTES]; uint256 pubtxid; char coinaddr[64],str[(32+CRYPTO_BYTES)*2+1],sm[32+CRYPTO_BYTES]; int32_t mlen,n;
+    UniValue result(UniValue::VOBJ); CPubKey pk33; uint8_t msg[32],msg2[32],pk[CRYPTO_PUBLICKEYBYTES]; uint256 pubtxid; char coinaddr[64],str[(32+CRYPTO_BYTES)*2+1],sm[32+CRYPTO_BYTES]; int32_t mlen,n; std::string handle;
     if ( params != 0 && (n= cJSON_GetArraySize(params)) == 3 )
     {
         pubtxid = juint256(jitem(params,0));
