@@ -3008,7 +3008,7 @@ UniValue dilithium_sign(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 
 UniValue dilithium_verify(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ); CPubKey pk33; uint8_t msg[32],msg2[32],pk[CRYPTO_PUBLICKEYBYTES],sm[32+CRYPTO_BYTES]; uint256 pubtxid; char coinaddr[64],str[(32+CRYPTO_BYTES)*2+1]; int32_t mlen,n; std::string handle;
+    UniValue result(UniValue::VOBJ); CPubKey pk33; uint8_t msg[32],msg2[32],pk[CRYPTO_PUBLICKEYBYTES],sm[32+CRYPTO_BYTES]; uint256 pubtxid; char coinaddr[64],str[(32+CRYPTO_BYTES)*2+1]; int32_t smlen=32+CRYPTO_BYTES,mlen,n; std::string handle;
     if ( params != 0 && (n= cJSON_GetArraySize(params)) == 3 )
     {
         pubtxid = juint256(jitem(params,0));
@@ -3016,7 +3016,7 @@ UniValue dilithium_verify(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
             return(cclib_error(result,"couldnt parse message to sign"));
         else if ( cclib_parsehash(msg,jitem(params,1),32) < 0 )
             return(cclib_error(result,"couldnt parse message to sign"));
-        else if ( cclib_parsehash(sm,jitem(params,2),32+CRYPTO_BYTES) < 0 )
+        else if ( cclib_parsehash(sm,jitem(params,2),smlen) < 0 )
             return(cclib_error(result,"couldnt parse sig"));
         else if ( _dilithium_verify(msg2,&mlen,sm,smlen,pk) < 0 )
             return(cclib_error(result,"dilithium verify error"));
