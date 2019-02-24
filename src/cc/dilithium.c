@@ -3183,7 +3183,6 @@ UniValue dilithium_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
     if ( txfee == 0 )
         txfee = DILITHIUM_TXFEE;
     mypk = pubkey2pk(Mypubkey());
-    fprintf(stderr,"inside\n");
     if ( params != 0 && ((n= cJSON_GetArraySize(params)) == 2 || n == 3) )
     {
         prevhash = juint256(jitem(params,0));
@@ -3194,35 +3193,34 @@ UniValue dilithium_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
             result.push_back(Pair("warning","test mode using privkey for -pubkey, only for testing. there is no point using quantum secure signing if you are using a privkey with a known secp256k1 pubkey!!"));
         }
         _dilithium_keypair(pk,sk,seed);
-        fprintf(stderr,"after keypair\n");
         if ( is_hexstr(scriptstr,0) != 0 )
         {
-            fprintf(stderr,"have script\n");
             CScript scriptPubKey;
             scriptPubKey.resize(strlen(scriptstr)/2);
             decode_hex(&scriptPubKey[0],strlen(scriptstr)/2,scriptstr);
             if ( myGetTransaction(prevhash,vintx,hashBlock) != 0 && (numvouts= vintx.vout.size()) > 1 )
             {
-                fprintf(stderr,"got tx\n");
                 vout.nValue = vintx.vout[0].nValue - txfee;
                 vout.scriptPubKey = scriptPubKey;
                 musig_prevoutmsg(msg,prevhash,vout.scriptPubKey);
                 sig.resize(32+CRYPTO_BYTES);
-                if ( dilithium_bigpubget(handle,destpub33,pk2,destpubtxid) < 0 )
-                    return(cclib_error(result,"couldnt parse message to sign"));
-                else if ( memcmp(pk,pk2,sizeof(pk)) != 0 )
-                    return(cclib_error(result,"dilithium bigpub mismatch"));
-                else if ( destpub33 != mypk )
-                    return(cclib_error(result,"destpub33 is not for this -pubkey"));
-                else if ( _dilithium_sign(&sig[0],&smlen,msg,32,sk) < 0 )
-                    return(cclib_error(result,"dilithium signing error"));
-                else if ( smlen != 32+CRYPTO_BYTES )
-                    return(cclib_error(result,"siglen error"));
-                fprintf(stderr,"prepare tx\n");
-                mtx.vin.push_back(CTxIn(prevhash,0));
-                mtx.vout.push_back(vout);
-                rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,dilithium_spendopret(destpubtxid,sig));
-                return(dilithium_rawtxresult(result,rawtx));
+                if ( dilithium_sendopretdecode(destpubtxid,tx.vout[numvouts-1].scriptPubKey) == 'x' )
+                {
+                    if ( dilithium_bigpubget(handle,destpub33,pk2,destpubtxid) < 0 )
+                        return(cclib_error(result,"couldnt parse message to sign"));
+                    else if ( memcmp(pk,pk2,sizeof(pk)) != 0 )
+                        return(cclib_error(result,"dilithium bigpub mismatch"));
+                    else if ( destpub33 != mypk )
+                        return(cclib_error(result,"destpub33 is not for this -pubkey"));
+                    else if ( _dilithium_sign(&sig[0],&smlen,msg,32,sk) < 0 )
+                        return(cclib_error(result,"dilithium signing error"));
+                    else if ( smlen != 32+CRYPTO_BYTES )
+                        return(cclib_error(result,"siglen error"));
+                    mtx.vin.push_back(CTxIn(prevhash,0));
+                    mtx.vout.push_back(vout);
+                    rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,dilithium_spendopret(destpubtxid,sig));
+                    return(dilithium_rawtxresult(result,rawtx));
+                } else return(cclib_error(result,"couldnt decode send opret"));
             } else return(cclib_error(result,"couldnt find vin0"));
         } else return(cclib_error(result,"script or bad destpubtxid is not hex"));
     } else return(cclib_error(result,"need to have exactly 2 params sendtxid, scriptPubKey"));
