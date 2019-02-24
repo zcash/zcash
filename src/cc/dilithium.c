@@ -3109,7 +3109,7 @@ UniValue dilithium_sign(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 
 UniValue dilithium_verify(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ); CPubKey pk33; uint8_t rmd160[20],msg[32],msg2[32],pk[CRYPTO_PUBLICKEYBYTES],sm[32+CRYPTO_BYTES]; uint256 pubtxid; char coinaddr[64],str[(32+CRYPTO_BYTES)*2+1]; int32_t smlen=32+CRYPTO_BYTES,mlen,n; std::string handle;
+    UniValue result(UniValue::VOBJ); CPubKey pk33; uint8_t rmd160[20],msg[32],msg2[CRYPTO_BYTES+32],pk[CRYPTO_PUBLICKEYBYTES],sm[32+CRYPTO_BYTES]; uint256 pubtxid; char coinaddr[64],str[(32+CRYPTO_BYTES)*2+1]; int32_t smlen=32+CRYPTO_BYTES,mlen,n; std::string handle;
     if ( params != 0 && (n= cJSON_GetArraySize(params)) == 3 )
     {
         pubtxid = juint256(jitem(params,0));
@@ -3228,7 +3228,7 @@ UniValue dilithium_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
 
 bool dilithium_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx)
 {
-    CPubKey destpub33; std::string handle; uint256 hashBlock,destpubtxid,checktxid; CTransaction vintx; int32_t numvouts,mlen,smlen=CRYPTO_BYTES+32; std::vector<uint8_t> sig; uint8_t msg[32],msg2[32],pk[CRYPTO_PUBLICKEYBYTES];
+    CPubKey destpub33; std::string handle; uint256 hashBlock,destpubtxid,checktxid; CTransaction vintx; int32_t numvouts,mlen,smlen=CRYPTO_BYTES+32; std::vector<uint8_t> sig; uint8_t msg[32],msg2[CRYPTO_BYTES+32],pk[CRYPTO_PUBLICKEYBYTES];
     if ( tx.vout.size() != 2 )
         return eval->Invalid("numvouts != 2");
     else if ( tx.vin.size() != 1 )
@@ -3244,18 +3244,22 @@ bool dilithium_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,con
             if ( dilithium_spendopretdecode(checktxid,sig,tx.vout[tx.vout.size()-1].scriptPubKey) == 'y' )
             {
                 fprintf(stderr,"checktxid.%s vs %s\n",destpubtxid.GetHex().c_str(),checktxid.GetHex().c_str());
-                if ( destpubtxid == checktxid && sig.size() == CRYPTO_BYTES+32 )
+                if ( destpubtxid == checktxid && sig.size() == smlen )
                 {
                     fprintf(stderr,"call prevoutmsg\n");
                     musig_prevoutmsg(msg,tx.vin[0].prevout.hash,tx.vout[0].scriptPubKey);
                     fprintf(stderr,"call dilithium_bigpubget\n");
                     if ( dilithium_bigpubget(handle,destpub33,pk,destpubtxid) < 0 )
                         return eval->Invalid("couldnt get bigpub");
-                    else if ( _dilithium_verify(msg2,&mlen,&sig[0],(int32_t)sig.size(),pk) < 0 )
-                        return eval->Invalid("failed dilithium verify");
-                    else if ( mlen != 32 || memcmp(msg,msg2,32) != 0 )
-                        return eval->Invalid("failed dilithium msg verify");
-                    else return eval->Invalid("this is actually success!");
+                    else
+                    {
+                        fprintf(stderr,"call _dilithium_verify\n");
+                        if ( _dilithium_verify(msg2,&mlen,&sig[0],smlen,pk) < 0 )
+                            return eval->Invalid("failed dilithium verify");
+                        else if ( mlen != 32 || memcmp(msg,msg2,32) != 0 )
+                            return eval->Invalid("failed dilithium msg verify");
+                        else return eval->Invalid("this is actually success!");
+                    }
                 } else return eval->Invalid("destpubtxid or sig size didnt match send opret");
             } else return eval->Invalid("failed decode dilithium spendopret");
         } else return eval->Invalid("couldnt decode send opret");
