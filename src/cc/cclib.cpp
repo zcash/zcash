@@ -82,8 +82,9 @@ CClib_methods[] =
     { (char *)"musig", (char *)"send", (char *)"combined_pk amount", 2, 2, 'x', EVAL_MUSIG },
     { (char *)"musig", (char *)"spend", (char *)"sendtxid sig destpubkey", 3, 3, 'y', EVAL_MUSIG },
     { (char *)"dilithium", (char *)"keypair", (char *)"[hexseed]", 0, 1, 'K', EVAL_DILITHIUM },
-    { (char *)"dilithium", (char *)"sign", (char *)"msg privkey", 2, 2, 'S', EVAL_DILITHIUM },
-    { (char *)"dilithium", (char *)"verify", (char *)"msg sig pubtxid", 3, 3, 'V', EVAL_DILITHIUM },
+    { (char *)"dilithium", (char *)"register", (char *)"handle, [hexseed]", 1, 2, 'R', EVAL_DILITHIUM },
+    { (char *)"dilithium", (char *)"sign", (char *)"msg [hexseed]", 1, 2, 'S', EVAL_DILITHIUM },
+    { (char *)"dilithium", (char *)"verify", (char *)"pubtxid msg sig", 3, 3, 'V', EVAL_DILITHIUM },
     { (char *)"dilithium", (char *)"send", (char *)"pubtxid amount", 2, 2, 'x', EVAL_DILITHIUM },
     { (char *)"dilithium", (char *)"spend", (char *)"sendtxid sig destpubkey", 3, 3, 'y', EVAL_DILITHIUM },
 #endif
@@ -126,6 +127,7 @@ UniValue musig_verify(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue musig_send(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue musig_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 
+UniValue dilithium_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue dilithium_send(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue dilithium_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue dilithium_keypair(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
@@ -264,6 +266,8 @@ UniValue CClib_method(struct CCcontract_info *cp,char *method,char *jsonstr)
             return(dilithium_spend(txfee,cp,params));
         else if ( strcmp(method,"keypair") == 0 )
             return(dilithium_keypair(txfee,cp,params));
+        else if ( strcmp(method,"register") == 0 )
+            return(dilithium_register(txfee,cp,params));
         else if ( strcmp(method,"sign") == 0 )
             return(dilithium_sign(txfee,cp,params));
         else if ( strcmp(method,"verify") == 0 )
@@ -573,6 +577,26 @@ uint256 juint256(cJSON *obj)
     return(revuint256(tmp));
 }
 
+int32_t cclib_parsepubkey(secp256k1_context *ctx,secp256k1_pubkey &spk,cJSON *item)
+{
+    char *hexstr;
+    if ( (hexstr= jstr(item,0)) != 0 && is_hexstr(hexstr,0) == 66 )
+    {
+        CPubKey pk(ParseHex(hexstr));
+        if ( secp256k1_ec_pubkey_parse(ctx,&spk,pk.begin(),33) > 0 )
+            return(1);
+    } else return(-1);
+}
+
+int32_t cclib_parsehash(uint8_t *hash32,cJSON *item,int32_t len)
+{
+    char *hexstr;
+    if ( (hexstr= jstr(item,0)) != 0 && is_hexstr(hexstr,0) == len*2 )
+    {
+        decode_hex(hash32,len,hexstr);
+        return(0);
+    } else return(-1);
+}
 
 #ifdef BUILD_ROGUE
 #include "rogue_rpc.cpp"

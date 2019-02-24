@@ -362,27 +362,6 @@ UniValue musig_calcmsg(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     } else return(cclib_error(result,"couldnt parse params"));
 }
 
-int32_t musig_parsepubkey(secp256k1_context *ctx,secp256k1_pubkey &spk,cJSON *item)
-{
-    char *hexstr;
-    if ( (hexstr= jstr(item,0)) != 0 && is_hexstr(hexstr,0) == 66 )
-    {
-        CPubKey pk(ParseHex(hexstr));
-        if ( secp256k1_ec_pubkey_parse(ctx,&spk,pk.begin(),33) > 0 )
-            return(1);
-    } else return(-1);
-}
-
-int32_t musig_parsehash(uint8_t *hash32,cJSON *item,int32_t len)
-{
-    char *hexstr;
-    if ( (hexstr= jstr(item,0)) != 0 && is_hexstr(hexstr,0) == len*2 )
-    {
-        decode_hex(hash32,len,hexstr);
-        return(0);
-    } else return(-1);
-}
-
 UniValue musig_combine(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     static secp256k1_context *ctx;
@@ -395,7 +374,7 @@ UniValue musig_combine(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
         //fprintf(stderr,"n.%d args.(%s)\n",n,jprint(params,0));
         for (i=0; i<n; i++)
         {
-            if ( musig_parsepubkey(ctx,spk,jitem(params,i)) < 0 )
+            if ( cclib_parsepubkey(ctx,spk,jitem(params,i)) < 0 )
                 return(cclib_error(result,"error parsing pk"));
             pubkeys.push_back(spk);
         }
@@ -434,11 +413,11 @@ UniValue musig_session(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
         if ( MUSIG != 0 )
             musig_infofree(MUSIG), MUSIG = 0;
         MUSIG = musig_infocreate(myind,num);
-        if ( musig_parsepubkey(ctx,MUSIG->combined_pk,jitem(params,2)) < 0 )
+        if ( cclib_parsepubkey(ctx,MUSIG->combined_pk,jitem(params,2)) < 0 )
             return(cclib_error(result,"error parsing combined_pubkey"));
-        else if ( musig_parsehash(MUSIG->pkhash,jitem(params,3),32) < 0 )
+        else if ( cclib_parsehash(MUSIG->pkhash,jitem(params,3),32) < 0 )
             return(cclib_error(result,"error parsing pkhash"));
-        else if ( musig_parsehash(MUSIG->msg,jitem(params,4),32) < 0 )
+        else if ( cclib_parsehash(MUSIG->msg,jitem(params,4),32) < 0 )
             return(cclib_error(result,"error parsing msg"));
         Myprivkey(privkey);
         GetRandBytes(session,32);
@@ -497,13 +476,13 @@ UniValue musig_commit(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
         ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
     if ( params != 0 && (n= cJSON_GetArraySize(params)) == 3 )
     {
-        if ( musig_parsehash(pkhash,jitem(params,0),32) < 0 )
+        if ( cclib_parsehash(pkhash,jitem(params,0),32) < 0 )
             return(cclib_error(result,"error parsing pkhash"));
         else if ( memcmp(MUSIG->pkhash,pkhash,32) != 0 )
             return(cclib_error(result,"pkhash doesnt match session pkhash"));
         else if ( (ind= juint(jitem(params,1),0)) < 0 || ind >= MUSIG->num )
             return(cclib_error(result,"illegal ind for session"));
-        else if ( musig_parsehash(&MUSIG->nonce_commitments[ind*32],jitem(params,2),32) < 0 )
+        else if ( cclib_parsehash(&MUSIG->nonce_commitments[ind*32],jitem(params,2),32) < 0 )
             return(cclib_error(result,"error parsing commitment"));
         /** Gets the signer's public nonce given a list of all signers' data with commitments
          *
@@ -550,13 +529,13 @@ UniValue musig_nonce(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
         ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
     if ( params != 0 && (n= cJSON_GetArraySize(params)) == 3 )
     {
-        if ( musig_parsehash(pkhash,jitem(params,0),32) < 0 )
+        if ( cclib_parsehash(pkhash,jitem(params,0),32) < 0 )
             return(cclib_error(result,"error parsing pkhash"));
         else if ( memcmp(MUSIG->pkhash,pkhash,32) != 0 )
             return(cclib_error(result,"pkhash doesnt match session pkhash"));
         else if ( (ind= juint(jitem(params,1),0)) < 0 || ind >= MUSIG->num )
             return(cclib_error(result,"illegal ind for session"));
-        else if ( musig_parsepubkey(ctx,MUSIG->nonces[ind],jitem(params,2)) < 0 )
+        else if ( cclib_parsepubkey(ctx,MUSIG->nonces[ind],jitem(params,2)) < 0 )
             return(cclib_error(result,"error parsing nonce"));
         result.push_back(Pair("added_index",ind));
         /** Checks a signer's public nonce against a commitment to said nonce, and update
@@ -620,13 +599,13 @@ UniValue musig_partialsig(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
         ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
     if ( params != 0 && (n= cJSON_GetArraySize(params)) == 3 )
     {
-        if ( musig_parsehash(pkhash,jitem(params,0),32) < 0 )
+        if ( cclib_parsehash(pkhash,jitem(params,0),32) < 0 )
             return(cclib_error(result,"error parsing pkhash"));
         else if ( memcmp(MUSIG->pkhash,pkhash,32) != 0 )
             return(cclib_error(result,"pkhash doesnt match session pkhash"));
         else if ( (ind= juint(jitem(params,1),0)) < 0 || ind >= MUSIG->num )
             return(cclib_error(result,"illegal ind for session"));
-        else if ( musig_parsehash(psig,jitem(params,2),32) < 0 )
+        else if ( cclib_parsehash(psig,jitem(params,2),32) < 0 )
             return(cclib_error(result,"error parsing psig"));
         else if ( secp256k1_musig_partial_signature_parse(ctx,&MUSIG->partial_sig[ind],psig) == 0 )
             return(cclib_error(result,"error parsing partialsig"));
@@ -669,11 +648,11 @@ UniValue musig_verify(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
         ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
     if ( params != 0 && (n= cJSON_GetArraySize(params)) == 3 )
     {
-        if ( musig_parsehash(msg,jitem(params,0),32) < 0 )
+        if ( cclib_parsehash(msg,jitem(params,0),32) < 0 )
             return(cclib_error(result,"error parsing pkhash"));
-        else if ( musig_parsepubkey(ctx,combined_pk,jitem(params,1)) < 0 )
+        else if ( cclib_parsepubkey(ctx,combined_pk,jitem(params,1)) < 0 )
             return(cclib_error(result,"error parsing combined_pk"));
-        else if ( musig_parsehash(musig64,jitem(params,2),64) < 0 )
+        else if ( cclib_parsehash(musig64,jitem(params,2),64) < 0 )
             return(cclib_error(result,"error parsing musig64"));
         for (i=0; i<32; i++)
             sprintf(&str[i*2],"%02x",msg[i]);

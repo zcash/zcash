@@ -2841,58 +2841,195 @@ int32_t main(void)
 }
 #endif
 
+#define DILITHIUM_TXFEE 10000
+
 void calc_rmd160_sha256(uint8_t rmd160[20],uint8_t *data,int32_t datalen);
 char *bitcoin_address(char *coinaddr,uint8_t addrtype,uint8_t *pubkey_or_rmd160,int32_t len);
 
+CScript dilithium_registeropret(std::string handle,CPubKey pk,std::vector<uint8_t> bigpub)
+{
+    CScript opret; uint8_t evalcode = EVAL_DILITHIUM;
+    opret << OP_RETURN << E_MARSHAL(ss << evalcode << 'R' << handle << pk << bigpub);
+    return(opret);
+}
+
+uint8_t dilithium_registeropretdecode(std::string &handle,CPubKey &pk,std::vector<uint8_t> &bigpub,CScript scriptPubKey)
+{
+    std::vector<uint8_t> vopret; uint8_t e,f;
+    GetOpReturnData(scriptPubKey,vopret);
+    if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> handle; ss >> pk; ss >> bigpub) != 0 && e == EVAL_DILITHIUM && f == 'R' )
+    {
+        return(f);
+    }
+    return(0);
+}
+
+UniValue dilithium_rawtxresult(UniValue &result,std::string rawtx)
+{
+    CTransaction tx;
+    if ( rawtx.size() > 0 )
+    {
+        result.push_back(Pair("hex",rawtx));
+        if ( DecodeHexTx(tx,rawtx) != 0 )
+        {
+            //if ( broadcastflag != 0 && myAddtomempool(tx) != 0 )
+            //    RelayTransaction(tx);
+            result.push_back(Pair("txid",tx.GetHash().ToString()));
+            result.push_back(Pair("result","success"));
+        } else result.push_back(Pair("error","decode hex"));
+    } else result.push_back(Pair("error","couldnt finalize CCtx"));
+    return(result);
+}
+
+char *dilithium_addr(char *coinaddr,uint8_t *buf,int32_t len)
+{
+    uint8_t rmd160[20],addrtype;
+    if ( len == CRYPTO_PUBLICKEYBYTES )
+        addrtype = 55;
+    else if ( len == CRYPTO_SECRETKEYBYTES )
+        addrtype = 63;
+    else
+    {
+        strcpy(coinaddr,"unexpected len.%d",len);
+        return(coinaddr);
+    }
+    calc_rmd160_sha256(rmd160,buf,len);
+    bitcoin_address(coinaddr,addrtype,rmd160,20);
+    return(coinaddr);
+}
+
+char *dilithium_hexstr(char *str,uint8_t *buf,int32_t len)
+{
+    int32_t i;
+    for (i=0; i<len; i++)
+        sprintf(&str[i<<1],"%02x",buf[i]);
+    str[i<<1] = 0;
+    return(str);
+}
+
+int32_t dilithium_bigpubget(std::string &handle,CPubKey &pk33,uint8_t *pk,uint256 pubtxid)
+{
+    CTransaction tx; uint256 hashBlock; int32_t numvouts; std::vector<uint8_t> bigpub;
+    if ( myGetTransaction(pubtxid,tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 1 )
+    {
+        if ( dilithium_registeropretdecode(handle,pk33,bigpub,tx.vout[numvouts-1].scriptPubKey) == 'R' && bigpub.size() == CRYPTO_PUBLICKEYBYTES )
+        {
+            memcpy(pk,&bigpub[0],CRYPTO_PUBLICKEYBYTES);
+            return(0);
+        } else return(-2);
+    }
+    return(-1);
+}
+
 UniValue dilithium_keypair(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ); uint8_t seed[SEEDBYTES],rmd160[20],pk[CRYPTO_PUBLICKEYBYTES],sk[CRYPTO_SECRETKEYBYTES]; char coinaddr[64],str[CRYPTO_SECRETKEYBYTES*2+1]; int32_t i,n,externalflag=0;
-    //randombytes(seed,SEEDBYTES);
+    UniValue result(UniValue::VOBJ); uint8_t seed[SEEDBYTES],pk[CRYPTO_PUBLICKEYBYTES],sk[CRYPTO_SECRETKEYBYTES]; char coinaddr[64],str[CRYPTO_SECRETKEYBYTES*2+1]; int32_t i,n,externalflag=0;
     Myprivkey(seed);
     if ( params != 0 && (n= cJSON_GetArraySize(params)) == 1 )
     {
-        if ( musig_parsehash(seed,jitem(params,0),32) < 0 )
-            return(cclib_error(result,"error parsing seed"));
-        else externalflag = 1;
+        if ( cclib_parsehash(seed,jitem(params,0),32) < 0 )
+        {
+            randombytes(seed,SEEDBYTES);
+            result.push_back(Pair("status","using random high entropy seed"));
+        }
+        externalflag = 1;
     }
     _dilithium_keypair(pk,sk,seed);
-    for (i=0; i<sizeof(pk); i++)
-        sprintf(&str[i<<1],"%02x",pk[i]);
-    str[i<<1] = 0;
-    result.push_back(Pair("pubkey",str));
-    for (i=0; i<sizeof(sk); i++)
-        sprintf(&str[i<<1],"%02x",sk[i]);
-    str[i<<1] = 0;
-    result.push_back(Pair("privkey",str));
-    for (i=0; i<SEEDBYTES; i++)
-        sprintf(&str[i<<1],"%02x",seed[i]);
-    str[i<<1] = 0;
-    result.push_back(Pair("seed",str));
-    calc_rmd160_sha256(rmd160,pk,CRYPTO_PUBLICKEYBYTES);
-    bitcoin_address(coinaddr,55,rmd160,20);
-    result.push_back(Pair("pkaddr",coinaddr));
-    calc_rmd160_sha256(rmd160,sk,CRYPTO_SECRETKEYBYTES);
-    bitcoin_address(coinaddr,63,rmd160,20);
-    result.push_back(Pair("skaddr",coinaddr));
+    result.push_back(Pair("pubkey",dilithium_hexstr(str,pk,CRYPTO_PUBLICKEYBYTES)));
+    result.push_back(Pair("privkey",dilithium_hexstr(str,sk,CRYPTO_SECRETKEYBYTES)));
+    result.push_back(Pair("seed",dilithium_hexstr(str,seed,SEEDBYTES)));
+    result.push_back(Pair("pkaddr",dilithium_addr(coinaddr,pk,CRYPTO_PUBLICKEYBYTES)));
+    result.push_back(Pair("skaddr",dilithium_addr(coinaddr,sk,CRYPTO_SECRETKEYBYTES)));
     if ( externalflag == 0 )
         result.push_back(Pair("warning","test mode using privkey for -pubkey, only for testing. there is no point using quantum secure signing if you are using a privkey with a known secp256k1 pubkey!!"));
     result.push_back(Pair("result","success"));
-    // make a tx that has pubkey in opreturn
     return(result);
+}
+
+UniValue dilithium_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
+{
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    UniValue result(UniValue::VOBJ); std::string rawtx; CPubKey mypk,dilithiumpk; uint8_t seed[SEEDBYTES],pk[CRYPTO_PUBLICKEYBYTES],sk[CRYPTO_SECRETKEYBYTES]; char coinaddr[64],str[CRYPTO_SECRETKEYBYTES*2+1]; std::vector<uint8_t> bigpub; int32_t i,n,warningflag = 0;
+    if ( txfee == 0 )
+        txfee = DILITHIUM_TXFEE;
+    mypk = pubkey2pk(Mypubkey());
+    dilithiumpk = GetUnspendable(cp,0);
+    if ( params != 0 && ((n= cJSON_GetArraySize(params)) == 1 || n == 2) )
+    {
+        std::string handle(jstr(jitem(params,0),0));
+        result.push_back(Pair("handle",handle));
+        if ( n == 2 || cclib_parsehash(seed,jitem(params,1),32) < 0 )
+        {
+            Myprivkey(seed);
+            result.push_back(Pair("warning","test mode using privkey for -pubkey, only for testing. there is no point using quantum secure signing if you are using a privkey with a known secp256k1 pubkey!!"));
+        }
+        _dilithium_keypair(pk,sk,seed);
+        result.push_back(Pair("seed",dilithium_hexstr(str,seed,SEEDBYTES)));
+        result.push_back(Pair("pkaddr",dilithium_addr(coinaddr,pk,CRYPTO_PUBLICKEYBYTES)));
+        result.push_back(Pair("skaddr",dilithium_addr(coinaddr,sk,CRYPTO_SECRETKEYBYTES)));
+        for (i=0; i<CRYPTO_PUBLICKEYBYTES; i++)
+            bigpub.push_pack(pk[i]);
+        if ( AddNormalinputs(mtx,mypk,3*txfee,64) >= 3*txfee )
+        {
+            mtx.vout.push_back(MakeCC1vout(cp->evalcode,txfee,dilithiumpk));
+            mtx.vout.push_back(MakeCC1vout(cp->evalcode,txfee,mypk));
+            rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,dilithium_registeropret('R',handle,mypk,bigpub));
+            return(musig_rawtxresult(result,rawtx));
+        } else return(cclib_error(result,"couldnt find enough funds"));
+    } else return(cclib_error(result,"not enough parameters"));
 }
 
 UniValue dilithium_sign(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ);
-    //_dilithium_sign(sm, &smlen, m, MLEN, sk); // 7.2
-
-    return(result);
+    UniValue result(UniValue::VOBJ); uint8_t seed[SEEDBYTES],msg[32],rmd160[20],pk[CRYPTO_PUBLICKEYBYTES],sk[CRYPTO_SECRETKEYBYTES]; char coinaddr[64],str[(32+CRYPTO_BYTES)*2+1],sm[32+CRYPTO_BYTES]; int32_t n,smlen;
+    if ( params != 0 && ((n= cJSON_GetArraySize(params)) == 1 || n == 2) )
+    {
+        if ( cclib_parsehash(msg,jitem(params,0),32) < 0 )
+            return(cclib_error(result,"couldnt parse message to sign"));
+        else if ( n == 2 || cclib_parsehash(seed,jitem(params,1),32) < 0 )
+        {
+            Myprivkey(seed);
+            result.push_back(Pair("warning","test mode using privkey for -pubkey, only for testing. there is no point using quantum secure signing if you are using a privkey with a known secp256k1 pubkey!!"));
+        }
+        _dilithium_keypair(pk,sk,seed);
+        result.push_back(Pair("msg32",dilithium_hexstr(str,msg,32)));
+        result.push_back(Pair("seed",dilithium_hexstr(str,seed,SEEDBYTES)));
+        result.push_back(Pair("pkaddr",dilithium_addr(coinaddr,pk,CRYPTO_PUBLICKEYBYTES)));
+        result.push_back(Pair("skaddr",dilithium_addr(coinaddr,sk,CRYPTO_SECRETKEYBYTES)));
+        _dilithium_sign(sm,&smlen,msg,32,sk);
+        if ( smlen == 32+CRYPTO_BYTES )
+        {
+            result.push_back(Pair("signature",dilithium_hexstr(str,sm,smlen)));
+            calc_rmd160_sha256(rmd160,sm,smlen);
+            result.push_back(Pair("sighash",dilithium_hexstr(str,rmd160,20)));
+        } else return(cclib_error(result,"unexpected signed message len"));
+    } else return(cclib_error(result,"not enough parameters"));
 }
 
 UniValue dilithium_verify(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ);
-    return(result);
+    UniValue result(UniValue::VOBJ); CPubKey pk33; uint8_t msg[32],msg2[32],pk[CRYPTO_PUBLICKEYBYTES]; uint256 pubtxid; char coinaddr[64],str[(32+CRYPTO_BYTES)*2+1],sm[32+CRYPTO_BYTES]; int32_t mlen,n;
+    if ( params != 0 && (n= cJSON_GetArraySize(params)) == 3 )
+    {
+        pubtxid = juint256(jitem(params,0));
+        if ( dilithium_bigpubget(handle,pk33,pk,pubtxid) < 0 )
+            return(cclib_error(result,"couldnt parse message to sign"));
+        else if ( cclib_parsehash(msg,jitem(params,1),32) < 0 )
+            return(cclib_error(result,"couldnt parse message to sign"));
+        else if ( cclib_parsehash(sm,jitem(params,2),32+CRYPTO_BYTES) < 0 )
+            return(cclib_error(result,"couldnt parse sig"));
+        else if ( _dilithium_verify(msg2,&mlen,sm,smlen,pk) < 0 )
+            return(cclib_error(result,"dilithium verify error"));
+        else if ( mlen != 32 )
+            return(cclib_error(result,"message len mismatch"));
+        else if ( memcmp(msg2,msg,32) != 0 )
+            return(cclib_error(result,"message content mismatch"));
+        result.push_back(Pair("msg32",dilithium_hexstr(str,msg,32)));
+        result.push_back(Pair("handle",handle));
+        result.push_back(Pair("pkaddr",dilithium_addr(coinaddr,pk,CRYPTO_PUBLICKEYBYTES)));
+        result.push_back(Pair("result","success"));
+        return(result);
+    } else return(cclib_error(result,"not enough parameters"));
 }
 
 UniValue dilithium_send(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
