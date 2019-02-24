@@ -3022,6 +3022,7 @@ UniValue dilithium_sign(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             result.push_back(Pair("signature",dilithium_hexstr(str,sm,smlen)));
             calc_rmd160_sha256(rmd160,sm,smlen);
             result.push_back(Pair("sighash",dilithium_hexstr(str,rmd160,20)));
+            return(result);
         } else return(cclib_error(result,"unexpected signed message len"));
     } else return(cclib_error(result,"not enough parameters"));
 }
