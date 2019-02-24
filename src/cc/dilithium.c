@@ -3204,7 +3204,7 @@ UniValue dilithium_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
                 vout.scriptPubKey = scriptPubKey;
                 musig_prevoutmsg(msg,prevhash,vout.scriptPubKey);
                 sig.resize(32+CRYPTO_BYTES);
-                if ( dilithium_sendopretdecode(destpubtxid,tx.vout[numvouts-1].scriptPubKey) == 'x' )
+                if ( dilithium_sendopretdecode(destpubtxid,vintx.vout[numvouts-1].scriptPubKey) == 'x' )
                 {
                     if ( dilithium_bigpubget(handle,destpub33,pk2,destpubtxid) < 0 )
                         return(cclib_error(result,"couldnt parse message to sign"));
