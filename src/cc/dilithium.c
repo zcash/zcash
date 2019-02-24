@@ -2903,6 +2903,7 @@ int32_t main(void)
  dont forget to broadcast it: 4aac73ebe82c12665d1d005a0ae1a1493cb1e2c714680ef9d016f48a7c77b4a2
  notice how small the tx is! 289 bytes as it is sent to the destpubtxid, which in turn contains the handle, pub33 and bigpub. the handle is used for error check, pub33 is used to make the destination CC address, so the normal CC signing needs to be passed in addition to the spend restrictions for dilithium.
  
+ cclib spend 19 \"[%224aac73ebe82c12665d1d005a0ae1a1493cb1e2c714680ef9d016f48a7c77b4a2%22,%22210255c46dbce584e3751081b39d7fc054fc807100557e73fc444481618b5706afb4ac%22]\"
  
  */
 
@@ -3182,6 +3183,7 @@ UniValue dilithium_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
     if ( txfee == 0 )
         txfee = DILITHIUM_TXFEE;
     mypk = pubkey2pk(Mypubkey());
+    fprintf(stderr,"inside\n");
     if ( params != 0 && ((n= cJSON_GetArraySize(params)) == 2 || n == 3) )
     {
         prevhash = juint256(jitem(params,0));
@@ -3192,13 +3194,16 @@ UniValue dilithium_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
             result.push_back(Pair("warning","test mode using privkey for -pubkey, only for testing. there is no point using quantum secure signing if you are using a privkey with a known secp256k1 pubkey!!"));
         }
         _dilithium_keypair(pk,sk,seed);
+        fprintf(stderr,"after keypair\n");
         if ( is_hexstr(scriptstr,0) != 0 )
         {
+            fprintf(stderr,"have script\n");
             CScript scriptPubKey;
             scriptPubKey.resize(strlen(scriptstr)/2);
             decode_hex(&scriptPubKey[0],strlen(scriptstr)/2,scriptstr);
             if ( myGetTransaction(prevhash,vintx,hashBlock) != 0 && (numvouts= vintx.vout.size()) > 1 )
             {
+                fprintf(stderr,"got tx\n");
                 vout.nValue = vintx.vout[0].nValue - txfee;
                 vout.scriptPubKey = scriptPubKey;
                 musig_prevoutmsg(msg,prevhash,vout.scriptPubKey);
@@ -3213,6 +3218,7 @@ UniValue dilithium_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
                     return(cclib_error(result,"dilithium signing error"));
                 else if ( smlen != 32+CRYPTO_BYTES )
                     return(cclib_error(result,"siglen error"));
+                fprintf(stderr,"prepare tx\n");
                 mtx.vin.push_back(CTxIn(prevhash,0));
                 mtx.vout.push_back(vout);
                 rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,dilithium_spendopret(destpubtxid,sig));
