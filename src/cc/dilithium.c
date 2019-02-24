@@ -3178,7 +3178,7 @@ UniValue dilithium_send(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 UniValue dilithium_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); std::string rawtx; CPubKey mypk,destpub33; char *scriptstr; uint8_t msg[32]; CTransaction vintx; uint256 prevhash,hashBlock,destpubtxid; int32_t i,smlen,n,numvouts; char str[129]; CTxOut vout; std::string handle; uint8_t pk[CRYPTO_PUBLICKEYBYTES],pk2[CRYPTO_PUBLICKEYBYTES],sk[CRYPTO_SECRETKEYBYTES]; std::vector<uint8_t> sig;
+    UniValue result(UniValue::VOBJ); std::string rawtx; CPubKey mypk,destpub33; CTransaction vintx; uint256 prevhash,hashBlock,destpubtxid; int32_t i,smlen,n,numvouts; char str[129],*scriptstr; CTxOut vout; std::string handle; uint8_t pk[CRYPTO_PUBLICKEYBYTES],pk2[CRYPTO_PUBLICKEYBYTES],sk[CRYPTO_SECRETKEYBYTES],msg[32],seed[32]; std::vector<uint8_t> sig;
     if ( txfee == 0 )
         txfee = DILITHIUM_TXFEE;
     mypk = pubkey2pk(Mypubkey());
@@ -3211,11 +3211,11 @@ UniValue dilithium_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
                     return(cclib_error(result,"destpub33 is not for this -pubkey"));
                 else if ( _dilithium_sign(&sig[0],&smlen,msg,32,sk) < 0 )
                     return(cclib_error(result,"dilithium signing error"));
-                else if ( smlen != 32+CRYPTO_SIZE )
+                else if ( smlen != 32+CRYPTO_BYTES )
                     return(cclib_error(result,"siglen error"));
                 mtx.vin.push_back(CTxIn(prevhash,0));
                 mtx.vout.push_back(vout);
-                rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,dilithium_spendopret('y',destpubtxid,sig));
+                rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,dilithium_spendopret(destpubtxid,sig));
                 return(dilithium_rawtxresult(result,rawtx));
             } else return(cclib_error(result,"couldnt find vin0"));
         } else return(cclib_error(result,"script or bad destpubtxid is not hex"));
