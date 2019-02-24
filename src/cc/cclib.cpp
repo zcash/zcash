@@ -127,6 +127,7 @@ UniValue musig_verify(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue musig_send(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue musig_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 
+bool dilithium_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx);
 UniValue dilithium_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue dilithium_send(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue dilithium_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
@@ -406,6 +407,8 @@ bool CClib_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
             return(sudoku_validate(cp,height,eval,tx));
         else if ( cp->evalcode == EVAL_MUSIG )
             return(musig_validate(cp,height,eval,tx));
+        else if ( cp->evalcode == DILITHIUM_MUSIG )
+            return(dilithium_validate(cp,height,eval,tx));
         else return eval->Invalid("invalid evalcode");
 #endif
     }
