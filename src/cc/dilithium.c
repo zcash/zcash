@@ -2929,8 +2929,8 @@ int32_t dilithium_Qmsghash(uint8_t *msg,CTransaction tx,std::vector<uint256> vou
         }
         for (i=0; i<numvouts-1; i++)
         {
-            nValues.push_pack(tx.vout[i].nValue);
-            scriptPubKeys.push_pack(tx.vout[i].scriptPubKey);
+            nValues.push_back(tx.vout[i].nValue);
+            scriptPubKeys.push_back(tx.vout[i].scriptPubKey);
         }
         data << E_MARSHAL(ss << vintxids << vinprevns << nValues << scriptPubKeys << voutpubtxids);
         hash = Hash(data.begin(),data.end());
@@ -3288,7 +3288,7 @@ bool dilithium_Qvalidate(struct CCcontract_info *cp,int32_t height,Eval *eval,co
                 {
                     if ( dilithium_Qsendopretdecode(tmptxid,tmpsig,voutpubtxids,vintx.vout[numvouts-1].scriptPubKey) != 'Q' )
                         return eval->Invalid("couldnt decode destpubtxid from Qsend");
-                    else if ( vntx.vin[i].prevout.n > voutpubtxids.size() )
+                    else if ( vintx.vin[i].prevout.n > voutpubtxids.size() )
                         return eval->Invalid("no destpubtxid for prevout.n");
                     destpubtxid = voutpubtxids[vintx.vin[i].prevout.n];
                 }
@@ -3327,7 +3327,7 @@ bool dilithium_Qvalidate(struct CCcontract_info *cp,int32_t height,Eval *eval,co
 
 bool dilithium_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx)
 {
-    CPubKey destpub33; std::string handle; uint256 hashBlock,destpubtxid,checktxid; CTransaction vintx; int32_t numvouts,mlen,smlen=CRYPTO_BYTES+32; std::vector<uint8_t> sig,vpopret; uint8_t msg[32],msg2[CRYPTO_BYTES+32],pk[CRYPTO_PUBLICKEYBYTES],*script;
+    CPubKey destpub33; std::string handle; uint256 hashBlock,destpubtxid,checktxid; CTransaction vintx; int32_t numvouts,mlen,smlen=CRYPTO_BYTES+32; std::vector<uint8_t> sig,vopret; uint8_t msg[32],msg2[CRYPTO_BYTES+32],pk[CRYPTO_PUBLICKEYBYTES],*script;
     // if all dilithium tx -> do multispend/send, else:
     numvouts = tx.vout.size();
     GetOpReturnData(tx.vout[numvouts-1].scriptPubKey,vopret);
