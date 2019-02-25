@@ -723,12 +723,20 @@ void rogue_progress(struct rogue_state *rs,uint64_t seed,char *keystrokes,int32_
         }
         else
         {
+            static FILE *fp;
+            if ( fp == 0 )
+                fp = fopen("keystrokes.log","a");
             sprintf(params,"[\"keystrokes\",\"17\",\"[%%22%s%%22,%%22%s%%22]\"]",Gametxidstr,hexstr);
             if ( (retstr= komodo_issuemethod(USERPASS,"cclib",params,ROGUE_PORT)) != 0 )
             {
-                //fprintf(stderr,"KEYSTROKES.(%s)\n",retstr);
+                if ( fp != 0 )
+                {
+                    fprintf(fp,"%s\n",retstr);
+                    fflush(fp);
+                }
                 free(retstr);
             }
+            sleep(1);
         }
     }
 }
