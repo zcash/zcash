@@ -472,12 +472,25 @@ int32_t rogue_playerdata(struct CCcontract_info *cp,uint256 &origplayergame,uint
 
 int32_t rogue_playerdataspend(CMutableTransaction &mtx,uint256 playertxid,int32_t vout,uint256 origplayergame)
 {
-    int64_t txfee = 10000;
+    int64_t txfee = 10000; CTransaction tx; uint256 hashBlock;
     if ( CCgettxout(playertxid,vout,1) == 1 ) // not sure if this is enough validation
     {
         mtx.vin.push_back(CTxIn(playertxid,vout,CScript()));
         return(0);
-    } else return(-1);
+    }
+    else
+    {
+        vout = 0;
+        if ( myGetTransaction(playertxid,tx,hashBlock) != 0 && tx.vout[vout].nValue == 1 && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 )
+        {
+            if ( CCgettxout(playertxid,vout,1) == 1 ) // not sure if this is enough validation
+            {
+                mtx.vin.push_back(CTxIn(playertxid,vout,CScript()));
+                return(0);
+            }
+        }
+        return(-1);
+    }
 }
 
 int32_t rogue_findbaton(struct CCcontract_info *cp,uint256 &playertxid,char **keystrokesp,int32_t &numkeys,int32_t &regslot,std::vector<uint8_t> &playerdata,uint256 &batontxid,int32_t &batonvout,int64_t &batonvalue,int32_t &batonht,uint256 gametxid,CTransaction gametx,int32_t maxplayers,char *destaddr,int32_t &numplayers,std::string &symbol,std::string &pname)
