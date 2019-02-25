@@ -3062,15 +3062,18 @@ char *dilithium_hexstr(char *str,uint8_t *buf,int32_t len)
 
 int32_t dilithium_bigpubget(std::string &handle,CPubKey &pk33,uint8_t *pk,uint256 pubtxid)
 {
-    CTransaction tx; uint256 hashBlock; int32_t numvouts; std::vector<uint8_t> bigpub;
+    CTransaction tx; uint8_t funcid; uint256 hashBlock; int32_t numvouts=0; std::vector<uint8_t> bigpub;
     if ( myGetTransaction(pubtxid,tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 1 )
     {
-        if ( dilithium_registeropretdecode(handle,pk33,bigpub,tx.vout[numvouts-1].scriptPubKey) == 'R' && bigpub.size() == CRYPTO_PUBLICKEYBYTES )
+        if ( (funcid= dilithium_registeropretdecode(handle,pk33,bigpub,tx.vout[numvouts-1].scriptPubKey)) == 'R' && bigpub.size() == CRYPTO_PUBLICKEYBYTES )
         {
             memcpy(pk,&bigpub[0],CRYPTO_PUBLICKEYBYTES);
             return(0);
-        } else return(-2);
+        }
+        fprintf(stderr,"%s funcid.(%c) size.%d vs %d\n",handle,funcid,(int32_t)bigpub.size(),CRYPTO_PUBLICKEYBYTES);
+        return(-2);
     }
+    fprintf(stderr,"numvouts.%d\n",numvouts);
     return(-1);
 }
 
