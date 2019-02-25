@@ -2908,6 +2908,14 @@ int32_t main(void)
  this generates a really big hex, broadcast it and if all went well it will get confirmed.
  a dilithium spend!
  
+ to generate a seed that wont be directly derivable from an secp256k1 keypair, do:
+ cclib keypair 19 \"[%22rand%22]\"
+ 
+ to do a Qsend (multiple dilithium inputs and outputs)
+ 
+ cclib Qsend 19 \"[%22mypubtxid%22,%22<hexseed>%22,%22<destpubtxid>%22,0.777]\"
+ there can be up to 64 outputs, where each one can be a different destpubtxid or scriptPubKey. The only restriction is that scriptPubKey hex cant be 32 bytes.
+ 
  */
 
 #define DILITHIUM_TXFEE 10000
@@ -3315,7 +3323,6 @@ UniValue dilithium_Qsend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
         {
             amount = jdouble(jitem(params,i+1),0)*COIN + 0.0000000049;
             scriptstr = jstr(jitem(params,i),0);
-                return(cclib_error(result,"illegal dest scriptPubKey"));
             if ( is_hexstr(scriptstr,0) == 64 )
             {
                 prevhash = juint256(jitem(params,i));
