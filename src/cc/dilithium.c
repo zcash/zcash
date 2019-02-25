@@ -2915,6 +2915,30 @@ int32_t main(void)
 void calc_rmd160_sha256(uint8_t rmd160[20],uint8_t *data,int32_t datalen);
 char *bitcoin_address(char *coinaddr,uint8_t addrtype,uint8_t *pubkey_or_rmd160,int32_t len);
 
+int32_t dilithium_Qmsghash(uint8_t *msg,CTransaction tx,std::vector<uint256> voutpubtxids)
+{
+    CScript data; uint256 hash; int32_t i,numvins,numvouts,len = 0; std::vector<uint256> vintxids; std::vector<int64_t> nValues; std::vector<int32_t> vinprevns; std::vector<CScript> scriptPubKeys;
+    numvins = tx.vin.size();
+    numvouts = tx.vout.size();
+    if ( tx.vout[numvouts-1].scriptPubKey[0] == 0x6a )
+    {
+        for (i=0; i<numvins; i++)
+        {
+            vintxids.push_back(tx.vin[i].prevout.hash);
+            vinprevns.push_back(tx.vin[i].prevout.n);
+        }
+        for (i=0; i<numvouts-1; i++)
+        {
+            nValues.push_pack(tx.vout[i].nValue);
+            scriptPubKeys.push_pack(tx.vout[i].scriptPubKey);
+        }
+        data << E_MARSHAL(ss << vintxids << vinprevns << nValues << scriptPubKeys << voutpubtxids);
+        hash = Hash(data.begin(),data.end());
+        memcpy(msg,&hash,sizeof(hash));
+        return(0);
+    } else return(-1);
+}
+
 CScript dilithium_registeropret(std::string handle,CPubKey pk,std::vector<uint8_t> bigpub)
 {
     CScript opret; uint8_t evalcode = EVAL_DILITHIUM;
@@ -2963,6 +2987,24 @@ uint8_t dilithium_spendopretdecode(uint256 &destpubtxid,std::vector<uint8_t> &si
     std::vector<uint8_t> vopret; uint8_t e,f;
     GetOpReturnData(scriptPubKey,vopret);
     if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> destpubtxid; ss >> sig) != 0 && e == EVAL_DILITHIUM && f == 'y' )
+    {
+        return(f);
+    }
+    return(0);
+}
+
+CScript dilithium_Qsendopret(uint256 destpubtxid,std::vector<uint8_t>sig,std::vector<uint256> voutpubtxids)
+{
+    CScript opret; uint8_t evalcode = EVAL_DILITHIUM;
+    opret << OP_RETURN << E_MARSHAL(ss << evalcode << 'Q' << destpubtxid << sig << voutpubtxids);
+    return(opret);
+}
+
+uint8_t dilithium_Qsendopretdecode(uint256 &destpubtxid,std::vector<uint8_t>&sig,std::vector<uint256> &voutpubtxids,CScript scriptPubKey)
+{
+    std::vector<uint8_t> vopret; uint8_t e,f;
+    GetOpReturnData(scriptPubKey,vopret);
+    if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> destpubtxid; ss >> sig; ss >> voutpubtxids) != 0 && e == EVAL_DILITHIUM && f == 'Q' )
     {
         return(f);
     }
@@ -3229,14 +3271,70 @@ UniValue dilithium_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
     } else return(cclib_error(result,"need to have exactly 2 params sendtxid, scriptPubKey"));
 }
 
+bool dilithium_Qvalidate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx)
+{
+    int32_t i,numvins,numvouts,mlen,smlen=CRYPTO_BYTES+32; CPubKey destpub33; std::string handle; uint256 tmptxid,hashBlock,destpubtxid,signerpubtxid; CTransaction vintx; std::vector<uint8_t> tmpsig,sig,vopret; uint8_t msg[32],msg2[CRYPTO_BYTES+32],pk[CRYPTO_PUBLICKEYBYTES],*script; std::vector<uint256> voutpubtxids;
+    numvins = tx.vin.size();
+    signerpubtxid = zeriod;
+    for (i=0; i<numvins; i++)
+    {
+        if ( IsCCInput(tx.vin[i].scriptSig) != 0 )
+        {
+            if ( myGetTransaction(tx.vin[i].prevout.hash,vintx,hashBlock) != 0 && (numvouts= vintx.vout.size()) > 1 )
+            {
+                GetOpReturnData(vintx.vout[numvouts-1].scriptPubKey,vopret);
+                script = (uint8_t *)vopret.data();
+                if ( script[1] == 'Q' )
+                {
+                    if ( dilithium_Qsendopretdecode(tmptxid,tmpsig,voutpubtxids,vintx.vout[numvouts-1].scriptPubKey) != 'Q' )
+                        return eval->Invalid("couldnt decode destpubtxid from Qsend");
+                    else if ( vntx.vin[i].prevout.n > voutpubtxids.size() )
+                        return eval->Invalid("no destpubtxid for prevout.n");
+                    destpubtxid = voutpubtxids[vintx.vin[i].prevout.n];
+                }
+                else
+                {
+                    if ( dilithium_sendopretdecode(destpubtxid,vintx.vout[numvouts-1].scriptPubKey) != 'x' )
+                        return eval->Invalid("couldnt decode destpubtxid from send");
+                }
+                if ( signerpubtxid == zeroid )
+                    signerpubtxid = destpubtxid;
+                else if ( destpubtxid != signerpubtxid )
+                    return eval->Invalid("destpubtxid of vini doesnt match first one");
+            }
+        }
+    }
+    if ( signerpubtxid != zeroid )
+    {
+        numvouts = tx.vout.size();
+        if ( dilithium_Qsendopretdecode(destpubtxid,sig,voutpubtxids,tx.vout[numvouts-1].scriptPubKey) == 'Q' && destpubtxid == signerpubtxid && sig.size() == smlen )
+        {
+            if ( dilithium_Qmsghash(msg,tx,voutpubtxids) < 0 )
+                return eval->Invalid("couldnt get Qmsghash");
+            else if ( dilithium_bigpubget(handle,destpub33,pk,signerpubtxid) < 0 )
+                return eval->Invalid("couldnt get bigpub");
+            else
+            {
+                if ( _dilithium_verify(msg2,&mlen,&sig[0],smlen,pk) < 0 )
+                    return eval->Invalid("failed dilithium verify");
+                else if ( mlen != 32 || memcmp(msg,msg2,32) != 0 )
+                    return eval->Invalid("failed dilithium msg verify");
+                else return eval->Invalid("this is actually a success");
+            }
+        } else return eval->Invalid("failed decode Qsend");
+    } else return eval->Invalid("unexpected zero signerpubtxid");
+}
+
 bool dilithium_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx)
 {
-    CPubKey destpub33; std::string handle; uint256 hashBlock,destpubtxid,checktxid; CTransaction vintx; int32_t numvouts,numvins,mlen,smlen=CRYPTO_BYTES+32; std::vector<uint8_t> sig; uint8_t msg[32],msg2[CRYPTO_BYTES+32],pk[CRYPTO_PUBLICKEYBYTES];
+    CPubKey destpub33; std::string handle; uint256 hashBlock,destpubtxid,checktxid; CTransaction vintx; int32_t numvouts,mlen,smlen=CRYPTO_BYTES+32; std::vector<uint8_t> sig,vpopret; uint8_t msg[32],msg2[CRYPTO_BYTES+32],pk[CRYPTO_PUBLICKEYBYTES],*script;
     // if all dilithium tx -> do multispend/send, else:
     numvouts = tx.vout.size();
-    numvins = tx.vin.size();
-    
-    if ( tx.vout.size() != 2 )
+    GetOpReturnData(tx.vout[numvouts-1].scriptPubKey,vopret);
+    script = (uint8_t *)vopret.data();
+    if ( script[1] == 'Q' )
+        return(dilithium_Qvalidate(cp,height,eval,tx));
+    else if ( tx.vout.size() != 2 )
         return eval->Invalid("numvouts != 2");
     else if ( tx.vin.size() != 1 )
         return eval->Invalid("numvins != 1");
