@@ -33,7 +33,6 @@
  }
  
  sendrawtransaction of the above hex.
- 
  ./komodo-cli -ac_name=MUSIG getrawtransaction 5ce74037a153ee210413b48d4e88638b99825a2de1a1f1aa0d36ebf93019824c 1
  "vout": [
     {
@@ -83,7 +82,7 @@ the "msg" is what needs to be signed to create a valid spend
  5 args: ind, numsigners, combined_pk, pkhash, message to be signed
  
  on node with pubkey: 02fb6aa0b96cad24d46b5da93eba3864c45ce07a73bba12da530ae841e140fcf28
- ./komodo-cli -ac_name=MUSIG cclib session 18 '[0,2,"03f016c348437c7422eed92d865aa9789614f75327cada463eefc566126b54785b","c1b34139744f3b54b652dc741ebd0f9d5b53ad28795cc6614dd8ad3aaabf15ae","f5d91999b23b85630a4cbd0baea3736529411b052cf5f1f4345c5d181af12825"]'
+ ./komodo-cli -ac_name=MUSIG cclib session 18 '[0,2,"03f016c348437c7422eed92d865aa9789614f75327cada463eefc566126b54785b","5cb5a225064ca6ffc1438cb2a6ac2ac65fe2d5055dc7f6c7ebffb9a231f8912b","f7fb85d1412814e3c2f98b990802af6ee33dad368c6ba05c2050e9e5506fcd75"]'
  {
   "myind": 0,
   "numsigners": 2,
@@ -221,7 +220,9 @@ struct musig_info
     secp256k1_musig_partial_signature *partial_sig; //[N_SIGNERS];
     int32_t myind,num,numcommits,numnonces,numpartials;
     uint8_t msg[32],pkhash[32],combpk[33];
-} *MUSIG;
+};
+
+std::vector <struct musig_info *> MUSIG;
 
 struct musig_info *musig_infocreate(int32_t myind,int32_t num)
 {
@@ -412,23 +413,33 @@ UniValue musig_combine(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 UniValue musig_session(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     static secp256k1_context *ctx;
-    UniValue result(UniValue::VOBJ); int32_t i,n,myind,num; char *pkstr,*pkhashstr,*msgstr; uint8_t session[32],msg[32],pkhash[32],privkey[32],pub33[33]; CPubKey pk; char str[67];
+    UniValue result(UniValue::VOBJ); int32_t i,n,myind,num,musiglocation; char *pkstr,*pkhashstr,*msgstr; uint8_t session[32],msg[32],pkhash[32],privkey[32],pub33[33]; CPubKey pk; char str[67];
     if ( ctx == 0 )
         ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
-    if ( params != 0 && (n= cJSON_GetArraySize(params)) == 5 )
+    if ( params != 0 && (n= cJSON_GetArraySize(params)) >= 5 )
     {
         myind = juint(jitem(params,0),0);
         num = juint(jitem(params,1),0);
         if ( myind < 0 || myind >= num || num <= 0 )
             return(cclib_error(result,"illegal myindex and numsigners"));
-        if ( MUSIG != 0 )
-            musig_infofree(MUSIG), MUSIG = 0;
-        MUSIG = musig_infocreate(myind,num);
-        if ( musig_parsepubkey(ctx,MUSIG->combined_pk,jitem(params,2)) < 0 )
+        if ( n > 5 )
+            musiglocation = juint(jitem(params,5),0);
+        else if ( n == 5 )
+            musiglocation = 0;
+        //printf("number of params.%i musiglocation.%i\n",n,musiglocation);
+        if ( MUSIG.size() > musiglocation )
+        {
+            for (int i = 0; i < MUSIG.size()-1; i++)
+                musig_infofree(MUSIG[i]);
+            MUSIG.clear();
+        }
+        struct musig_info *temp_musig = musig_infocreate(myind,num);
+        MUSIG.push_back(temp_musig);
+        if ( musig_parsepubkey(ctx,MUSIG[musiglocation]->combined_pk,jitem(params,2)) < 0 )
             return(cclib_error(result,"error parsing combined_pubkey"));
-        else if ( cclib_parsehash(MUSIG->pkhash,jitem(params,3),32) < 0 )
+        else if ( cclib_parsehash(MUSIG[musiglocation]->pkhash,jitem(params,3),32) < 0 )
             return(cclib_error(result,"error parsing pkhash"));
-        else if ( cclib_parsehash(MUSIG->msg,jitem(params,4),32) < 0 )
+        else if ( cclib_parsehash(MUSIG[musiglocation]->msg,jitem(params,4),32) < 0 )
             return(cclib_error(result,"error parsing msg"));
         Myprivkey(privkey);
         GetRandBytes(session,32);
@@ -458,15 +469,17 @@ UniValue musig_session(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
              *           my_index: index of this signer in the signers array
              *             seckey: the signer's 32-byte secret key (cannot be NULL)
              */
-        if ( secp256k1_musig_session_initialize(ctx,&MUSIG->session,MUSIG->signer_data, &MUSIG->nonce_commitments[MUSIG->myind * 32],session,MUSIG->msg,&MUSIG->combined_pk,MUSIG->pkhash,MUSIG->num,MUSIG->myind,privkey) > 0 )
+        //fprintf(stderr, "SESSION: struct_size.%li using struct %i\n",MUSIG.size(), musiglocation);
+        if ( secp256k1_musig_session_initialize(ctx,&MUSIG[musiglocation]->session,MUSIG[musiglocation]->signer_data, &MUSIG[musiglocation]->nonce_commitments[MUSIG[musiglocation]->myind * 32],session,MUSIG[musiglocation]->msg,&MUSIG[musiglocation]->combined_pk,MUSIG[musiglocation]->pkhash,MUSIG[musiglocation]->num,MUSIG[musiglocation]->myind,privkey) > 0 )
         {
             memset(session,0,sizeof(session));
             result.push_back(Pair("myind",(int64_t)myind));
             result.push_back(Pair("numsigners",(int64_t)num));
             for (i=0; i<32; i++)
-                sprintf(&str[i<<1],"%02x",MUSIG->nonce_commitments[MUSIG->myind*32 + i]);
+                sprintf(&str[i<<1],"%02x",MUSIG[musiglocation]->nonce_commitments[MUSIG[musiglocation]->myind*32 + i]);
             str[64] = 0;
-            MUSIG->numcommits = 1;
+            if ( n == 5 )
+                MUSIG[musiglocation]->numcommits = 1;
             result.push_back(Pair("commitment",str));
             result.push_back(Pair("result","success"));
             return(result);
@@ -483,18 +496,22 @@ UniValue musig_commit(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     static secp256k1_context *ctx;
     size_t clen = CPubKey::PUBLIC_KEY_SIZE;
-    UniValue result(UniValue::VOBJ); int32_t i,n,ind; uint8_t pkhash[32]; CPubKey pk; char str[67];
+    UniValue result(UniValue::VOBJ); int32_t i,n,ind,myind; uint8_t pkhash[32]; CPubKey pk; char str[67];
     if ( ctx == 0 )
         ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
-    if ( params != 0 && (n= cJSON_GetArraySize(params)) == 3 )
+    if ( params != 0 && (n= cJSON_GetArraySize(params)) >= 3 )
     {
+        if ( n > 3 )
+            myind = juint(jitem(params,3),0);
+        else if ( n == 3 )
+            myind = 0;
         if ( cclib_parsehash(pkhash,jitem(params,0),32) < 0 )
             return(cclib_error(result,"error parsing pkhash"));
-        else if ( memcmp(MUSIG->pkhash,pkhash,32) != 0 )
+        else if ( memcmp(MUSIG[myind]->pkhash,pkhash,32) != 0 )
             return(cclib_error(result,"pkhash doesnt match session pkhash"));
-        else if ( (ind= juint(jitem(params,1),0)) < 0 || ind >= MUSIG->num )
+        else if ( (ind= juint(jitem(params,1),0)) < 0 || ind >= MUSIG[myind]->num )
             return(cclib_error(result,"illegal ind for session"));
-        else if ( cclib_parsehash(&MUSIG->nonce_commitments[ind*32],jitem(params,2),32) < 0 )
+        else if ( cclib_parsehash(&MUSIG[myind]->nonce_commitments[ind*32],jitem(params,2),32) < 0 )
             return(cclib_error(result,"error parsing commitment"));
         /** Gets the signer's public nonce given a list of all signers' data with commitments
          *
@@ -512,16 +529,18 @@ UniValue musig_commit(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
          *                    number of signers participating in the MuSig.
          */
         result.push_back(Pair("added_index",ind));
-        MUSIG->numcommits++;
-        if ( MUSIG->numcommits >= MUSIG->num && secp256k1_musig_session_get_public_nonce(ctx,&MUSIG->session,MUSIG->signer_data,&MUSIG->nonces[MUSIG->myind],MUSIG->commitment_ptrs,MUSIG->num) > 0 )
+        //fprintf(stderr, "COMMIT: struct_size.%li using_struct.%i added_index.%i\n",MUSIG.size(), myind, ind);
+        MUSIG[myind]->numcommits++;
+        if ( MUSIG[myind]->numcommits >= MUSIG[myind]->num && secp256k1_musig_session_get_public_nonce(ctx,&MUSIG[myind]->session,MUSIG[myind]->signer_data,&MUSIG[myind]->nonces[MUSIG[myind]->myind],MUSIG[myind]->commitment_ptrs,MUSIG[myind]->num) > 0 )
         {
-            if ( secp256k1_ec_pubkey_serialize(ctx,(uint8_t *)pk.begin(),&clen,&MUSIG->nonces[MUSIG->myind],SECP256K1_EC_COMPRESSED) > 0 && clen == 33 )
+            if ( secp256k1_ec_pubkey_serialize(ctx,(uint8_t *)pk.begin(),&clen,&MUSIG[myind]->nonces[MUSIG[myind]->myind],SECP256K1_EC_COMPRESSED) > 0 && clen == 33 )
             {
                 for (i=0; i<33; i++)
                     sprintf(&str[i<<1],"%02x",((uint8_t *)pk.begin())[i]);
                 str[66] = 0;
-                MUSIG->numnonces = 1;
-                result.push_back(Pair("myind",MUSIG->myind));
+                if ( n == 5 )
+                    MUSIG[myind]->numnonces = 1;
+                result.push_back(Pair("myind",MUSIG[myind]->myind));
                 result.push_back(Pair("nonce",str));
                 result.push_back(Pair("result","success"));
             } else return(cclib_error(result,"error serializing nonce (pubkey)"));
@@ -538,18 +557,22 @@ UniValue musig_commit(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 UniValue musig_nonce(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     static secp256k1_context *ctx;
-    UniValue result(UniValue::VOBJ); int32_t i,n,ind; uint8_t pkhash[32],psig[32]; CPubKey pk; char str[67];
+    UniValue result(UniValue::VOBJ); int32_t i,n,ind,myind; uint8_t pkhash[32],psig[32]; CPubKey pk; char str[67];
     if ( ctx == 0 )
         ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
-    if ( params != 0 && (n= cJSON_GetArraySize(params)) == 3 )
+    if ( params != 0 && (n= cJSON_GetArraySize(params)) >= 3 )
     {
+        if ( n > 3 )
+            myind = juint(jitem(params,3),0);
+        else if ( n == 3 )
+            myind = 0;
         if ( cclib_parsehash(pkhash,jitem(params,0),32) < 0 )
             return(cclib_error(result,"error parsing pkhash"));
-        else if ( memcmp(MUSIG->pkhash,pkhash,32) != 0 )
+        else if ( memcmp(MUSIG[myind]->pkhash,pkhash,32) != 0 )
             return(cclib_error(result,"pkhash doesnt match session pkhash"));
-        else if ( (ind= juint(jitem(params,1),0)) < 0 || ind >= MUSIG->num )
+        else if ( (ind= juint(jitem(params,1),0)) < 0 || ind >= MUSIG[myind]->num )
             return(cclib_error(result,"illegal ind for session"));
-        else if ( musig_parsepubkey(ctx,MUSIG->nonces[ind],jitem(params,2)) < 0 )
+        else if ( musig_parsepubkey(ctx,MUSIG[myind]->nonces[ind],jitem(params,2)) < 0 )
             return(cclib_error(result,"error parsing nonce"));
         result.push_back(Pair("added_index",ind));
         /** Checks a signer's public nonce against a commitment to said nonce, and update
@@ -563,9 +586,17 @@ UniValue musig_nonce(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
          *                  with `musig_session_initialize_verifier`.
          *  In:     nonce: signer's alleged public nonce (cannot be NULL)
          */
-        for (i=0; i<MUSIG->num; i++)
+        MUSIG[myind]->numnonces++;
+        //fprintf(stderr, "NONCE: struct_size.%li using_struct.%i added_index.%i numnounces.%i num.%i\n",MUSIG.size(), myind, ind, MUSIG[myind]->numnonces, MUSIG[myind]->num);
+        if ( MUSIG[myind]->numnonces < MUSIG[myind]->num )
         {
-            if ( secp256k1_musig_set_nonce(ctx,&MUSIG->signer_data[i],&MUSIG->nonces[i]) == 0 )
+            result.push_back(Pair("status","not enough nonces"));
+            result.push_back(Pair("result","success"));
+            return(result);
+        }
+        for (i=0; i<MUSIG[myind]->num; i++)
+        {
+            if ( secp256k1_musig_set_nonce(ctx,&MUSIG[myind]->signer_data[i],&MUSIG[myind]->nonces[i]) == 0 )
                 return(cclib_error(result,"error setting nonce"));
         }
         /** Updates a session with the combined public nonce of all signers. The combined
@@ -586,20 +617,20 @@ UniValue musig_nonce(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
          *           adaptor: point to add to the combined public nonce. If NULL, nothing is
          *                    added to the combined nonce.
          */
-        MUSIG->numnonces++;
-        if ( MUSIG->numnonces >= MUSIG->num && secp256k1_musig_session_combine_nonces(ctx,&MUSIG->session,MUSIG->signer_data,MUSIG->num,NULL,NULL) > 0 )
+        if ( secp256k1_musig_session_combine_nonces(ctx,&MUSIG[myind]->session,MUSIG[myind]->signer_data,MUSIG[myind]->num,NULL,NULL) > 0 )
         {
-            if ( secp256k1_musig_partial_sign(ctx,&MUSIG->session,&MUSIG->partial_sig[MUSIG->myind]) > 0 )
+            if ( secp256k1_musig_partial_sign(ctx,&MUSIG[myind]->session,&MUSIG[myind]->partial_sig[MUSIG[myind]->myind]) > 0 )
             {
-                if ( secp256k1_musig_partial_signature_serialize(ctx,psig,&MUSIG->partial_sig[MUSIG->myind]) > 0 )
+                if ( secp256k1_musig_partial_signature_serialize(ctx,psig,&MUSIG[myind]->partial_sig[MUSIG[myind]->myind]) > 0 )
                 {
                     for (i=0; i<32; i++)
                         sprintf(&str[i<<1],"%02x",psig[i]);
                     str[64] = 0;
-                    result.push_back(Pair("myind",MUSIG->myind));
+                    result.push_back(Pair("myind",MUSIG[myind]->myind));
                     result.push_back(Pair("partialsig",str));
                     result.push_back(Pair("result","success"));
-                    MUSIG->numpartials = 1;
+                    if ( n == 5 )
+                        MUSIG[myind]->numpartials = 1;
                     return(result);
                 } else return(cclib_error(result,"error serializing partial sig"));
             } else return(cclib_error(result,"error making partial sig"));
@@ -610,24 +641,29 @@ UniValue musig_nonce(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 UniValue musig_partialsig(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     static secp256k1_context *ctx;
-    UniValue result(UniValue::VOBJ); int32_t i,ind,n; uint8_t pkhash[32],psig[32],out64[64]; char str[129]; secp256k1_schnorrsig sig;
+    UniValue result(UniValue::VOBJ); int32_t i,ind,n,myind; uint8_t pkhash[32],psig[32],out64[64]; char str[129]; secp256k1_schnorrsig sig;
     if ( ctx == 0 )
         ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
-    if ( params != 0 && (n= cJSON_GetArraySize(params)) == 3 )
+    if ( params != 0 && (n= cJSON_GetArraySize(params)) >= 3 )
     {
+        if ( n > 3 )
+            myind = juint(jitem(params,3),0);
+        else if ( n == 3 )
+            myind = 0;
         if ( cclib_parsehash(pkhash,jitem(params,0),32) < 0 )
             return(cclib_error(result,"error parsing pkhash"));
-        else if ( memcmp(MUSIG->pkhash,pkhash,32) != 0 )
+        else if ( memcmp(MUSIG[myind]->pkhash,pkhash,32) != 0 )
             return(cclib_error(result,"pkhash doesnt match session pkhash"));
-        else if ( (ind= juint(jitem(params,1),0)) < 0 || ind >= MUSIG->num )
+        else if ( (ind= juint(jitem(params,1),0)) < 0 || ind >= MUSIG[myind]->num )
             return(cclib_error(result,"illegal ind for session"));
         else if ( cclib_parsehash(psig,jitem(params,2),32) < 0 )
             return(cclib_error(result,"error parsing psig"));
-        else if ( secp256k1_musig_partial_signature_parse(ctx,&MUSIG->partial_sig[ind],psig) == 0 )
+        else if ( secp256k1_musig_partial_signature_parse(ctx,&MUSIG[myind]->partial_sig[ind],psig) == 0 )
             return(cclib_error(result,"error parsing partialsig"));
         result.push_back(Pair("added_index",ind));
-        MUSIG->numpartials++;
-        if ( MUSIG->numpartials >= MUSIG->num && secp256k1_musig_partial_sig_combine(ctx,&MUSIG->session,&sig,MUSIG->partial_sig,MUSIG->num) > 0 )
+        //fprintf(stderr, "SIG: struct_size.%li using_struct.%i added_index.%i\n",MUSIG.size(), myind, ind);
+        MUSIG[myind]->numpartials++;
+        if ( MUSIG[myind]->numpartials >= MUSIG[myind]->num && secp256k1_musig_partial_sig_combine(ctx,&MUSIG[myind]->session,&sig,MUSIG[myind]->partial_sig,MUSIG[myind]->num) > 0 )
         {
             if ( secp256k1_schnorrsig_serialize(ctx,out64,&sig) > 0 )
             {
@@ -640,7 +676,7 @@ UniValue musig_partialsig(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
         }
         else
         {
-            if ( secp256k1_musig_partial_signature_serialize(ctx,psig,&MUSIG->partial_sig[MUSIG->myind]) > 0 )
+            if ( secp256k1_musig_partial_signature_serialize(ctx,psig,&MUSIG[myind]->partial_sig[MUSIG[myind]->myind]) > 0 )
             {
                 result.push_back(Pair("myind",ind));
                 for (i=0; i<32; i++)
