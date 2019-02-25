@@ -3339,7 +3339,7 @@ UniValue dilithium_Qsend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
         }
         if ( (inputsum= dilithium_inputs(cp,mtx,mypk,outputsum+txfee,64,myCCaddr)) >= outputsum+txfee )
         {
-            change = (inputsum - outputsum - txfee)
+            change = (inputsum - outputsum - txfee);
             if ( change >= txfee )
             {
                 mtx.vout.push_back(MakeCC1vout(cp->evalcode,change,mypk));
