@@ -1330,11 +1330,12 @@ UniValue rogue_setname(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 
 bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx)
 {
-    CScript scriptPubKey; std::vector<uint8_t> vopret; uint8_t *script,e,f,funcid; int32_t i,maxplayers,decoded=0,regslot,ind,err,dispflag,gameheight,score,numvouts; CTransaction vintx,gametx; CPubKey pk; uint256 hashBlock,gametxid,tokenid,batontxid,playertxid,ptxid; int64_t buyin,cashout; std::vector<uint8_t> playerdata,keystrokes; std::string symbol,pname;
+    CScript scriptPubKey; std::vector<uint8_t> vopret; uint8_t *script,e,f,funcid; int32_t i,maxplayers,decoded=0,regslot,ind,err,dispflag,gameheight,score,numvouts; CTransaction vintx,gametx; CPubKey pk; uint256 hashBlock,gametxid,txid,tokenid,batontxid,playertxid,ptxid; int64_t buyin,cashout; std::vector<uint8_t> playerdata,keystrokes; std::string symbol,pname;
     if ( strcmp(ASSETCHAINS_SYMBOL,"ROGUE") == 0 && height < 21274 )
         return(true);
     if ( (numvouts= tx.vout.size()) > 1 )
     {
+        txid = tx.GetHash();
         scriptPubKey = tx.vout[numvouts-1].scriptPubKey;
         GetOpReturnData(scriptPubKey,vopret);
         if ( vopret.size() > 2 )
@@ -1422,7 +1423,7 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
                             if ( funcid == 'H' )
                                 cashout *= 2;
                             if ( tx.vout.size() > 2 )
-                                fprintf(stderr,"ht.%d playertxid.%s cashout %.8f vs vout2 %.8f\n",height,ptxid.GetHex().c_str(),(double)cashout/COIN,(double)tx.vout[2].nValue/COIN);
+                                fprintf(stderr,"ht.%d txid.%s cashout %.8f vs vout2 %.8f\n",height,txid.GetHex().c_str(),(double)cashout/COIN,(double)tx.vout[2].nValue/COIN);
                         }
                         if ( funcid == 'Q' )
                         {
