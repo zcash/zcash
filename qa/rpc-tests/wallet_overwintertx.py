@@ -7,7 +7,7 @@ import sys; assert sys.version_info < (3,), ur"This script does not run under Py
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, initialize_chain_clean, \
-    start_nodes, connect_nodes_bi, wait_and_assert_operationid_status
+    start_nodes, connect_nodes_bi, wait_and_assert_operationid_status, assert_greater_than
 from test_framework.authproxy import JSONRPCException
 
 from decimal import Decimal
@@ -148,6 +148,10 @@ class WalletOverwinterTxTest (BitcoinTestFramework):
         self.nodes[0].generate(1)
         self.sync_all()
         bci = self.nodes[0].getblockchaininfo()
+
+        # size_on_disk should be > 0
+        assert_greater_than(bci['size_on_disk'], 0)
+
         assert_equal(bci['consensus']['chaintip'], '5ba81b19')
         assert_equal(bci['consensus']['nextblock'], '5ba81b19')
         assert_equal(bci['upgrades']['5ba81b19']['status'], 'active')
