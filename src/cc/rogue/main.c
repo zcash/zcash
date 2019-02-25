@@ -30,7 +30,7 @@ extern char Gametxidstr[67];
 #define SATOSHIDEN ((uint64_t)100000000L)
 #define dstr(x) ((double)(x) / SATOSHIDEN)
 #define KOMODO_ASSETCHAIN_MAXLEN 65
-char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
+char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN],IPADDRESS[100];
 
 #ifndef _BITS256
 #define _BITS256
@@ -41,7 +41,11 @@ typedef union _bits256 bits256;
 double OS_milliseconds()
 {
     struct timeval tv; double millis;
+    #ifdef __MINGW32__
+    mingw_gettimeofday(&tv,NULL);
+    #else
     gettimeofday(&tv,NULL);
+    #endif
     millis = ((double)tv.tv_sec * 1000. + (double)tv.tv_usec / 1000.);
     //printf("tv_sec.%ld usec.%d %f\n",tv.tv_sec,tv.tv_usec,millis);
     return(millis);
@@ -583,9 +587,9 @@ char *curl_post(CURL **cHandlep,char *url,char *userpass,char *postfields,char *
     return(chunk.memory);
 }
 
-uint16_t _komodo_userpass(char *username,char *password,FILE *fp)
+uint16_t _komodo_userpass(char *username, char *password, FILE *fp)
 {
-    char *rpcuser,*rpcpassword,*str,line[8192]; uint16_t port = 0;
+    char *rpcuser,*rpcpassword,*str,*ipaddress,line[8192]; uint16_t port = 0;
     rpcuser = rpcpassword = 0;
     username[0] = password[0] = 0;
     while ( fgets(line,sizeof(line),fp) != 0 )
@@ -602,13 +606,18 @@ uint16_t _komodo_userpass(char *username,char *password,FILE *fp)
             port = atoi(parse_conf_line(str,(char *)"rpcport"));
             //fprintf(stderr,"rpcport.%u in file\n",port);
         }
+        else if ( (str= strstr(line,(char *)"ipaddress")) != 0 )
+        {
+            ipaddress = parse_conf_line(str,(char *)"ipaddress");
+            strcpy(IPADDRESS,ipaddress);
+        }
     }
     if ( rpcuser != 0 && rpcpassword != 0 )
     {
         strcpy(username,rpcuser);
         strcpy(password,rpcpassword);
     }
-    //printf("rpcuser.(%s) rpcpassword.(%s) KMDUSERPASS.(%s) %u\n",rpcuser,rpcpassword,KMDUSERPASS,port);
+    //printf("rpcuser.(%s) rpcpassword.(%s) %u ipaddress.%s\n",rpcuser,rpcpassword,port,ipaddress);
     if ( rpcuser != 0 )
         free(rpcuser);
     if ( rpcpassword != 0 )
@@ -688,7 +697,7 @@ char *komodo_issuemethod(char *userpass,char *method,char *params,uint16_t port)
         params = (char *)"[]";
     if ( strlen(params) < sizeof(postdata)-128 )
     {
-        sprintf(url,(char *)"http://127.0.0.1:%u",port);
+        sprintf(url,(char *)"http://%s:%u",IPADDRESS,port);
         sprintf(postdata,"{\"method\":\"%s\",\"params\":%s}",method,params);
         //printf("[%s] (%s) postdata.(%s) params.(%s) USERPASS.(%s)\n",ASSETCHAINS_SYMBOL,url,postdata,params,USERPASS);
         retstr2 = bitcoind_RPC(&retstr,(char *)"debug",url,userpass,method,params);
@@ -715,12 +724,21 @@ void rogue_progress(struct rogue_state *rs,uint64_t seed,char *keystrokes,int32_
         }
         else
         {
+            static FILE *fp;
+            if ( fp == 0 )
+                fp = fopen("keystrokes.log","a");
             sprintf(params,"[\"keystrokes\",\"17\",\"[%%22%s%%22,%%22%s%%22]\"]",Gametxidstr,hexstr);
             if ( (retstr= komodo_issuemethod(USERPASS,"cclib",params,ROGUE_PORT)) != 0 )
             {
-                //fprintf(stderr,"KEYSTROKES.(%s)\n",retstr);
+                if ( fp != 0 )
+                {
+                    fprintf(fp,"%s\n",params);
+                    fprintf(fp,"%s\n",retstr);
+                    fflush(fp);
+                }
                 free(retstr);
             }
+            sleep(1);
         }
     }
 }
@@ -794,7 +812,9 @@ int main(int argc, char **argv, char **envp)
     }
     ASSETCHAINS_SYMBOL[j++] = 0;
     ROGUE_PORT = komodo_userpass(userpass,ASSETCHAINS_SYMBOL);
-    printf("ASSETCHAINS_SYMBOL.(%s) port.%u (%s)\n",ASSETCHAINS_SYMBOL,ROGUE_PORT,USERPASS); sleep(1);
+    if ( IPADDRESS[0] == 0 )
+        strcpy(IPADDRESS,"127.0.0.1");
+    printf("ASSETCHAINS_SYMBOL.(%s) port.%u (%s) IPADDRESS.%s \n",ASSETCHAINS_SYMBOL,ROGUE_PORT,USERPASS,IPADDRESS); sleep(1);
     if ( argc == 2 && (fp=fopen(argv[1],"rb")) == 0 )
     {
         seed = atol(argv[1]);
@@ -813,5 +833,3 @@ int main(int argc, char **argv, char **envp)
         return(rogue(argc,argv,envp));
     }
 }
-
-
