@@ -3433,7 +3433,7 @@ bool dilithium_Qvalidate(struct CCcontract_info *cp,int32_t height,Eval *eval,co
                     return eval->Invalid("failed dilithium verify");
                 else if ( mlen != 32 || memcmp(msg,msg2,32) != 0 )
                     return eval->Invalid("failed dilithium msg verify");
-                else return eval->Invalid("this is actually a success");
+                else return true;
             }
         } else return eval->Invalid("failed decode Qsend");
     } else return eval->Invalid("unexpected zero signerpubtxid");
