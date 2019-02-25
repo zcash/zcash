@@ -3063,22 +3063,17 @@ char *dilithium_hexstr(char *str,uint8_t *buf,int32_t len)
 int32_t dilithium_bigpubget(std::string &handle,CPubKey &pk33,uint8_t *pk,uint256 pubtxid)
 {
     CTransaction tx; uint8_t funcid; uint256 hashBlock; int32_t numvouts=0; std::vector<uint8_t> bigpub;
-    fprintf(stderr,"inside bigpubget\n");
     if ( myGetTransaction(pubtxid,tx,hashBlock) != 0 )
     {
-        fprintf(stderr,"got tx\n");
         if ( (numvouts= tx.vout.size()) > 1 )
         {
             if ( (funcid= dilithium_registeropretdecode(handle,pk33,bigpub,tx.vout[numvouts-1].scriptPubKey)) == 'R' && bigpub.size() == CRYPTO_PUBLICKEYBYTES )
             {
                 memcpy(pk,&bigpub[0],CRYPTO_PUBLICKEYBYTES);
                 return(0);
-            }
-            fprintf(stderr,"%s funcid.(%c) size.%d vs %d\n",handle.c_str(),funcid,(int32_t)bigpub.size(),CRYPTO_PUBLICKEYBYTES);
-            return(-2);
+            } else return(-2);
         }
-        fprintf(stderr,"numvouts.%d\n",numvouts);
-    } else fprintf(stderr,"no tx\n");
+    } 
     return(-1);
 }
 
@@ -3334,16 +3329,15 @@ UniValue dilithium_Qsend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
             if ( is_hexstr(scriptstr,0) == 64 )
             {
                 prevhash = juint256(jitem(params,i));
-                fprintf(stderr,"call bigpub\n");
                 if ( dilithium_bigpubget(handle,destpub33,pk2,prevhash) < 0 )
-                {
-                    mtx.vout.push_back(MakeCC1vout(cp->evalcode,amount,destpub33));
-                    voutpubtxids.push_back(prevhash); // binds destpub22 CC addr with dilithium bigpub
-                }
-                else
                 {
                     result.push_back(Pair("destpubtxid",prevhash.GetHex().c_str()));
                     return(cclib_error(result,"couldnt find bigpub at destpubtxid"));
+                }
+                else
+                {
+                    mtx.vout.push_back(MakeCC1vout(cp->evalcode,amount,destpub33));
+                    voutpubtxids.push_back(prevhash); // binds destpub22 CC addr with dilithium bigpub
                 }
             }
             else
