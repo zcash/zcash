@@ -1330,7 +1330,7 @@ UniValue rogue_setname(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 
 bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx)
 {
-    CScript scriptPubKey; std::vector<uint8_t> vopret; uint8_t *script,e,f,funcid; int32_t i,maxplayers,decoded=0,regslot,ind,err,dispflag,gameheight,score,numvouts; CTransaction vintx,gametx; CPubKey pk; uint256 hashBlock,gametxid,txid,tokenid,batontxid,playertxid,ptxid; int64_t buyin,cashout; std::vector<uint8_t> playerdata,keystrokes; std::string symbol,pname;
+    CScript scriptPubKey; std::vector<uint8_t> vopret; uint8_t *script,e,f,funcid,tokentx=0; int32_t i,maxplayers,decoded=0,regslot,ind,err,dispflag,gameheight,score,numvouts; CTransaction vintx,gametx; CPubKey pk; uint256 hashBlock,gametxid,txid,tokenid,batontxid,playertxid,ptxid; int64_t buyin,cashout; std::vector<uint8_t> playerdata,keystrokes; std::string symbol,pname;
     if ( strcmp(ASSETCHAINS_SYMBOL,"ROGUE") == 0 && height < 21274 )
         return(true);
     if ( (numvouts= tx.vout.size()) > 1 )
@@ -1344,6 +1344,7 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
             funcid = script[1];
             if ( (e= script[0]) == EVAL_TOKENS )
             {
+                tokentx = 1;
                 if ( (funcid= rogue_highlanderopretdecode(gametxid,tokenid,regslot,pk,playerdata,symbol,pname,scriptPubKey)) == 0 )
                 {
                     if ( (funcid= rogue_registeropretdecode(gametxid,tokenid,playertxid,scriptPubKey)) == 0 )
@@ -1408,13 +1409,14 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
                 }
                 else // this is asset transaction, which means playerdata txid already confirmed
                 {
-                    switch ( funcid )
+                    fprintf(stderr,"ht.%d tokentx.%d funcid.(%c)\n",height,tokentx,funcid);
+                    /*switch ( funcid )
                     {
                         case 'H': // win
                         case 'Q': // bailout
                             return(true);
                             break;
-                    }
+                    }*/
                 }
                 switch ( funcid )
                 {

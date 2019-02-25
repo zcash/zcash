@@ -3231,8 +3231,11 @@ UniValue dilithium_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
 
 bool dilithium_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx)
 {
-    CPubKey destpub33; std::string handle; uint256 hashBlock,destpubtxid,checktxid; CTransaction vintx; int32_t numvouts,mlen,smlen=CRYPTO_BYTES+32; std::vector<uint8_t> sig; uint8_t msg[32],msg2[CRYPTO_BYTES+32],pk[CRYPTO_PUBLICKEYBYTES];
+    CPubKey destpub33; std::string handle; uint256 hashBlock,destpubtxid,checktxid; CTransaction vintx; int32_t numvouts,numvins,mlen,smlen=CRYPTO_BYTES+32; std::vector<uint8_t> sig; uint8_t msg[32],msg2[CRYPTO_BYTES+32],pk[CRYPTO_PUBLICKEYBYTES];
     // if all dilithium tx -> do multispend/send, else:
+    numvouts = tx.vout.size();
+    numvins = tx.vin.size();
+    
     if ( tx.vout.size() != 2 )
         return eval->Invalid("numvouts != 2");
     else if ( tx.vin.size() != 1 )
