@@ -2917,7 +2917,7 @@ char *bitcoin_address(char *coinaddr,uint8_t addrtype,uint8_t *pubkey_or_rmd160,
 
 int32_t dilithium_Qmsghash(uint8_t *msg,CTransaction tx,std::vector<uint256> voutpubtxids)
 {
-    CScript data; uint256 hash; int32_t i,numvins,numvouts,len = 0; std::vector<uint256> vintxids; std::vector<int64_t> nValues; std::vector<int32_t> vinprevns; std::vector<CScript> scriptPubKeys;
+    CScript data; uint256 hash; int32_t i,numvins,numvouts,len = 0; std::vector<uint256> vintxids; std::vector<int32_t> vinprevns; std::vector<CTxOut> vouts;
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
     if ( tx.vout[numvouts-1].scriptPubKey[0] == 0x6a )
@@ -2928,11 +2928,9 @@ int32_t dilithium_Qmsghash(uint8_t *msg,CTransaction tx,std::vector<uint256> vou
             vinprevns.push_back(tx.vin[i].prevout.n);
         }
         for (i=0; i<numvouts-1; i++)
-        {
-            nValues.push_back(tx.vout[i].nValue);
-            scriptPubKeys.push_back(tx.vout[i].scriptPubKey);
-        }
-        data << E_MARSHAL(ss << vintxids << vinprevns << nValues << scriptPubKeys << voutpubtxids);
+            vouts.push_back(tx.vout[i]);
+        data << E_MARSHAL(ss << vintxids << vinprevns << vouts << voutpubtxids);
+fprintf(stderr,"size of data.%d\n",(int32_t)data.size());
         hash = Hash(data.begin(),data.end());
         memcpy(msg,&hash,sizeof(hash));
         return(0);
@@ -3275,7 +3273,7 @@ bool dilithium_Qvalidate(struct CCcontract_info *cp,int32_t height,Eval *eval,co
 {
     int32_t i,numvins,numvouts,mlen,smlen=CRYPTO_BYTES+32; CPubKey destpub33; std::string handle; uint256 tmptxid,hashBlock,destpubtxid,signerpubtxid; CTransaction vintx; std::vector<uint8_t> tmpsig,sig,vopret; uint8_t msg[32],msg2[CRYPTO_BYTES+32],pk[CRYPTO_PUBLICKEYBYTES],*script; std::vector<uint256> voutpubtxids;
     numvins = tx.vin.size();
-    signerpubtxid = zeriod;
+    signerpubtxid = zeroid;
     for (i=0; i<numvins; i++)
     {
         if ( IsCCInput(tx.vin[i].scriptSig) != 0 )
