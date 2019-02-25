@@ -3329,6 +3329,7 @@ UniValue dilithium_Qsend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
             if ( is_hexstr(scriptstr,0) == 64 )
             {
                 prevhash = juint256(jitem(params,i));
+                fprintf(stderr,"call bigpub\n");
                 if ( dilithium_bigpubget(handle,destpub33,pk2,prevhash) < 0 )
                 {
                     mtx.vout.push_back(MakeCC1vout(cp->evalcode,amount,destpub33));
