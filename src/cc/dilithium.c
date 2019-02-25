@@ -3330,7 +3330,12 @@ UniValue dilithium_Qsend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
                 {
                     mtx.vout.push_back(MakeCC1vout(cp->evalcode,amount,destpub33));
                     voutpubtxids.push_back(prevhash); // binds destpub22 CC addr with dilithium bigpub
-                } else return(cclib_error(result,"couldnt find bigpub at txid"));
+                }
+                else
+                {
+                    result.push_back(Pair("destpubtxid",prevhash.GetHex().c_str()));
+                    return(cclib_error(result,"couldnt find bigpub at destpubtxid"));
+                }
             }
             else
             {
