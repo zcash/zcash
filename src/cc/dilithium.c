@@ -3373,7 +3373,7 @@ UniValue dilithium_Qsend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
                 return(cclib_error(result,"dilithium signing error"));
             else if ( smlen != 32+CRYPTO_BYTES )
                 return(cclib_error(result,"siglen error"));
-            rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,dilithium_Qsendopret(destpubtxid,sig,voutpubtxids));
+            rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,dilithium_Qsendopret(mypubtxid,sig,voutpubtxids));
             return(dilithium_rawtxresult(result,rawtx));
         } else return(cclib_error(result,"Q couldnt find enough Q or x inputs"));
     } else return(cclib_error(result,"need to have exactly 2 params sendtxid, scriptPubKey"));
