@@ -518,7 +518,7 @@ int32_t rogue_findbaton(struct CCcontract_info *cp,uint256 &playertxid,char **ke
                 if ( active == zeroid || rogue_playerdata(cp,origplayergame,tid,pk,playerdata,symbol,pname,active) == 0 )
                 {
                     txid = matchtx.GetHash();
-                    //fprintf(stderr,"scan forward active.%s spenttxid.%s\n",active.GetHex().c_str(),txid.GetHex().c_str());
+                    fprintf(stderr,"scan forward active.%s spenttxid.%s\n",active.GetHex().c_str(),txid.GetHex().c_str());
                     n = 0;
                     while ( CCgettxout(txid,0,1) < 0 )
                     {
@@ -532,6 +532,7 @@ int32_t rogue_findbaton(struct CCcontract_info *cp,uint256 &playertxid,char **ke
                             return(-2);
                         }
                         txid = spenttxid;
+                        fprintf(stderr,"next txid.%s/v%d\n",txid.GetHex().c_str(),spentvini);
                         if ( spentvini != 0 )
                             return(-3);
                         if ( keystrokesp != 0 && myGetTransaction(spenttxid,spenttx,hashBlock) != 0 && spenttx.vout.size() >= 2 )
