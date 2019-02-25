@@ -731,6 +731,7 @@ void rogue_progress(struct rogue_state *rs,uint64_t seed,char *keystrokes,int32_
             {
                 if ( fp != 0 )
                 {
+                    fprintf(fp,"%s\n",params);
                     fprintf(fp,"%s\n",retstr);
                     fflush(fp);
                 }
