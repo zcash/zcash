@@ -567,6 +567,8 @@ playit(struct rogue_state *rs)
             }
         }
     }
+    if ( rs->guiflag != 0 )
+        flushkeystrokes(rs);
     endit(0);
 }
 

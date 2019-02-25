@@ -37,6 +37,7 @@ std::string MYCCLIBNAME = (char *)"rogue";
 
 #define EVAL_SUDOKU 17
 #define EVAL_MUSIG 18
+#define EVAL_DILITHIUM 19
 std::string MYCCLIBNAME = (char *)"sudoku";
 #endif
 
@@ -79,7 +80,13 @@ CClib_methods[] =
     { (char *)"musig", (char *)"partialsig", (char *)"pkhash,ind,partialsig", 3, 3, 'S', EVAL_MUSIG },
     { (char *)"musig", (char *)"verify", (char *)"msg sig pubkey", 3, 3, 'V', EVAL_MUSIG },
     { (char *)"musig", (char *)"send", (char *)"combined_pk amount", 2, 2, 'x', EVAL_MUSIG },
-    { (char *)"musig", (char *)"spend", (char *)"sendtxid sig destpubkey", 3, 3, 'y', EVAL_MUSIG },
+    { (char *)"musig", (char *)"spend", (char *)"sendtxid sig scriptPubKey", 3, 3, 'y', EVAL_MUSIG },
+    { (char *)"dilithium", (char *)"keypair", (char *)"[hexseed]", 0, 1, 'K', EVAL_DILITHIUM },
+    { (char *)"dilithium", (char *)"register", (char *)"handle, [hexseed]", 1, 2, 'R', EVAL_DILITHIUM },
+    { (char *)"dilithium", (char *)"sign", (char *)"msg [hexseed]", 1, 2, 'S', EVAL_DILITHIUM },
+    { (char *)"dilithium", (char *)"verify", (char *)"pubtxid msg sig", 3, 3, 'V', EVAL_DILITHIUM },
+    { (char *)"dilithium", (char *)"send", (char *)"handle pubtxid amount", 3, 3, 'x', EVAL_DILITHIUM },
+    { (char *)"dilithium", (char *)"spend", (char *)"sendtxid scriptPubKey [hexseed]", 2, 3, 'y', EVAL_DILITHIUM },
 #endif
 };
 
@@ -119,6 +126,15 @@ UniValue musig_partialsig(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
 UniValue musig_verify(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue musig_send(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue musig_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+
+bool dilithium_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx);
+UniValue dilithium_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+UniValue dilithium_send(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+UniValue dilithium_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+UniValue dilithium_keypair(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+UniValue dilithium_sign(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+UniValue dilithium_verify(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+
 #endif
 
 cJSON *cclib_reparse(int32_t *nump,char *jsonstr) // assumes origparams will be freed by caller
@@ -239,6 +255,28 @@ UniValue CClib_method(struct CCcontract_info *cp,char *method,char *jsonstr)
         {
             result.push_back(Pair("result","error"));
             result.push_back(Pair("error","invalid musig method"));
+            result.push_back(Pair("method",method));
+            return(result);
+        }
+    }
+    else if ( cp->evalcode == EVAL_DILITHIUM )
+    {
+        if ( strcmp(method,"send") == 0 )
+            return(dilithium_send(txfee,cp,params));
+        else if ( strcmp(method,"spend") == 0 )
+            return(dilithium_spend(txfee,cp,params));
+        else if ( strcmp(method,"keypair") == 0 )
+            return(dilithium_keypair(txfee,cp,params));
+        else if ( strcmp(method,"register") == 0 )
+            return(dilithium_register(txfee,cp,params));
+        else if ( strcmp(method,"sign") == 0 )
+            return(dilithium_sign(txfee,cp,params));
+        else if ( strcmp(method,"verify") == 0 )
+            return(dilithium_verify(txfee,cp,params));
+        else
+        {
+            result.push_back(Pair("result","error"));
+            result.push_back(Pair("error","invalid dilithium method"));
             result.push_back(Pair("method",method));
             return(result);
         }
@@ -369,6 +407,8 @@ bool CClib_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
             return(sudoku_validate(cp,height,eval,tx));
         else if ( cp->evalcode == EVAL_MUSIG )
             return(musig_validate(cp,height,eval,tx));
+        else if ( cp->evalcode == EVAL_DILITHIUM )
+            return(dilithium_validate(cp,height,eval,tx));
         else return eval->Invalid("invalid evalcode");
 #endif
     }
@@ -540,6 +580,15 @@ uint256 juint256(cJSON *obj)
     return(revuint256(tmp));
 }
 
+int32_t cclib_parsehash(uint8_t *hash32,cJSON *item,int32_t len)
+{
+    char *hexstr;
+    if ( (hexstr= jstr(item,0)) != 0 && is_hexstr(hexstr,0) == len*2 )
+    {
+        decode_hex(hash32,len,hexstr);
+        return(0);
+    } else return(-1);
+}
 
 #ifdef BUILD_ROGUE
 #include "rogue_rpc.cpp"
@@ -581,6 +630,7 @@ uint256 juint256(cJSON *obj)
 #else
 #include "sudoku.cpp"
 #include "musig.cpp"
-#include "../secp256k1/src/modules/musig/example.c"
+#include "dilithium.c"
+//#include "../secp256k1/src/modules/musig/example.c"
 #endif
 
