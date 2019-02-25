@@ -364,7 +364,7 @@ int32_t rogue_isvalidgame(struct CCcontract_info *cp,int32_t &gameheight,CTransa
     } else return(-1);
 }
 
-UniValue rogue_playerobj(std::vector<uint8_t> playerdata,uint256 playertxid,uint256 tokenid,std::string symbol,std::string pname)
+UniValue rogue_playerobj(std::vector<uint8_t> playerdata,uint256 playertxid,uint256 tokenid,std::string symbol,std::string pname,uint256 gametxid)
 {
     int32_t i; struct rogue_player P; char packitemstr[512],*datastr=0; UniValue obj(UniValue::VOBJ),a(UniValue::VARR);
     memset(&P,0,sizeof(P));
@@ -385,6 +385,7 @@ UniValue rogue_playerobj(std::vector<uint8_t> playerdata,uint256 playertxid,uint
         a.push_back(packitemstr);
     }
     obj.push_back(Pair("playertxid",playertxid.GetHex()));
+    obj.push_back(Pair("gametxid",gametxid.GetHex()));
     if ( tokenid != zeroid )
         obj.push_back(Pair("tokenid",tokenid.GetHex()));
     else obj.push_back(Pair("tokenid",playertxid.GetHex()));
@@ -625,7 +626,7 @@ void rogue_gameplayerinfo(struct CCcontract_info *cp,UniValue &obj,uint256 gamet
         obj.push_back(Pair("batonvalue",ValueFromAmount(batonvalue)));
         obj.push_back(Pair("batonht",(int64_t)batonht));
         if ( playerdata.size() > 0 )
-            obj.push_back(Pair("player",rogue_playerobj(playerdata,playertxid,tokenid,symbol,pname)));
+            obj.push_back(Pair("player",rogue_playerobj(playerdata,playertxid,tokenid,symbol,pname,gametxid)));
     } else fprintf(stderr,"findbaton err.%d\n",retval);
 }
 
@@ -714,7 +715,7 @@ UniValue rogue_playerinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
             playertxid = juint256(jitem(params,0));
             if ( rogue_playerdata(cp,origplayergame,tokenid,pk,playerdata,symbol,pname,playertxid) < 0 )
                 return(cclib_error(result,"invalid playerdata"));
-            result.push_back(Pair("player",rogue_playerobj(playerdata,playertxid,tokenid,symbol,pname)));
+            result.push_back(Pair("player",rogue_playerobj(playerdata,playertxid,tokenid,symbol,pname,origplayergame)));
         } else return(cclib_error(result,"no playertxid"));
         return(result);
     } else return(cclib_error(result,"couldnt reparse params"));
