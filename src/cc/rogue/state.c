@@ -1432,7 +1432,7 @@ rs_write_object(struct rogue_state *rs,FILE *savef, THING *o)
     if ( o->_o._o_packch != 0 )
     {
         item = &rs->P.roguepack[rs->P.packsize];
-        if ( 0 && pstats.s_hpt <= 0 )
+        if ( 1 && pstats.s_hpt <= 0 )
         {
             //fprintf(stderr,"KILLED\n");
             rs->P.gold = -1;

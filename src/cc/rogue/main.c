@@ -587,9 +587,9 @@ char *curl_post(CURL **cHandlep,char *url,char *userpass,char *postfields,char *
     return(chunk.memory);
 }
 
-uint16_t _komodo_userpass(char *username, char *password, char *ipaddress, FILE *fp)
+uint16_t _komodo_userpass(char *username, char *password, FILE *fp)
 {
-    char *rpcuser,*rpcpassword,*str,line[8192]; uint16_t port = 0;
+    char *rpcuser,*rpcpassword,*str,*ipaddress,line[8192]; uint16_t port = 0;
     rpcuser = rpcpassword = 0;
     username[0] = password[0] = 0;
     while ( fgets(line,sizeof(line),fp) != 0 )
@@ -609,6 +609,7 @@ uint16_t _komodo_userpass(char *username, char *password, char *ipaddress, FILE 
         else if ( (str= strstr(line,(char *)"ipaddress")) != 0 )
         {
             ipaddress = parse_conf_line(str,(char *)"ipaddress");
+            strcpy(IPADDRESS,ipaddress);
         }
     }
     if ( rpcuser != 0 && rpcpassword != 0 )
@@ -616,7 +617,7 @@ uint16_t _komodo_userpass(char *username, char *password, char *ipaddress, FILE 
         strcpy(username,rpcuser);
         strcpy(password,rpcpassword);
     }
-    //printf("rpcuser.(%s) rpcpassword.(%s) KMDUSERPASS.(%s) %u\n",rpcuser,rpcpassword,KMDUSERPASS,port);
+    //printf("rpcuser.(%s) rpcpassword.(%s) %u ipaddress.%s\n",rpcuser,rpcpassword,port,ipaddress);
     if ( rpcuser != 0 )
         free(rpcuser);
     if ( rpcpassword != 0 )
@@ -661,7 +662,7 @@ uint16_t _komodo_userpass(char *username, char *password, char *ipaddress, FILE 
     //printf("test.(%s) -> [%s] statename.(%s) %s\n",test,ASSETCHAINS_SYMBOL,symbol,fname);
 }*/
 
-uint16_t komodo_userpass(char *userpass,char *symbol,char *ipaddress)
+uint16_t komodo_userpass(char *userpass,char *symbol)
 {
     FILE *fp; uint16_t port = 0; char fname[512],username[512],password[512],confname[KOMODO_ASSETCHAIN_MAXLEN];
     userpass[0] = 0;
@@ -677,7 +678,7 @@ uint16_t komodo_userpass(char *userpass,char *symbol,char *ipaddress)
     //komodo_statefname(fname,symbol,confname);
     if ( (fp= fopen(confname,"rb")) != 0 )
     {
-        port = _komodo_userpass(username,password,ipaddress,fp);
+        port = _komodo_userpass(username,password,fp);
         sprintf(userpass,"%s:%s",username,password);
         if ( strcmp(symbol,ASSETCHAINS_SYMBOL) == 0 )
             strcpy(USERPASS,userpass);
@@ -723,12 +724,21 @@ void rogue_progress(struct rogue_state *rs,uint64_t seed,char *keystrokes,int32_
         }
         else
         {
+            static FILE *fp;
+            if ( fp == 0 )
+                fp = fopen("keystrokes.log","a");
             sprintf(params,"[\"keystrokes\",\"17\",\"[%%22%s%%22,%%22%s%%22]\"]",Gametxidstr,hexstr);
             if ( (retstr= komodo_issuemethod(USERPASS,"cclib",params,ROGUE_PORT)) != 0 )
             {
-                //fprintf(stderr,"KEYSTROKES.(%s)\n",retstr);
+                if ( fp != 0 )
+                {
+                    fprintf(fp,"%s\n",params);
+                    fprintf(fp,"%s\n",retstr);
+                    fflush(fp);
+                }
                 free(retstr);
             }
+            sleep(1);
         }
     }
 }
@@ -801,10 +811,10 @@ int main(int argc, char **argv, char **envp)
         ASSETCHAINS_SYMBOL[j++] = toupper(c);
     }
     ASSETCHAINS_SYMBOL[j++] = 0;
-    ROGUE_PORT = komodo_userpass(userpass,ASSETCHAINS_SYMBOL,IPADDRESS);
+    ROGUE_PORT = komodo_userpass(userpass,ASSETCHAINS_SYMBOL);
     if ( IPADDRESS[0] == 0 )
         strcpy(IPADDRESS,"127.0.0.1");
-    printf("ASSETCHAINS_SYMBOL.(%s) port.%u (%s)\n",ASSETCHAINS_SYMBOL,ROGUE_PORT,USERPASS); sleep(1);
+    printf("ASSETCHAINS_SYMBOL.(%s) port.%u (%s) IPADDRESS.%s \n",ASSETCHAINS_SYMBOL,ROGUE_PORT,USERPASS,IPADDRESS); sleep(1);
     if ( argc == 2 && (fp=fopen(argv[1],"rb")) == 0 )
     {
         seed = atol(argv[1]);

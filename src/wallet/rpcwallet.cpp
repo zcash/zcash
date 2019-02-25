@@ -5308,8 +5308,8 @@ UniValue setpubkey(const UniValue& params, bool fHelp)
 
     char Raddress[64];
     uint8_t pubkey33[33];
-    //if ( NOTARY_PUBKEY33[0] == 0 )
-    //{
+    if ( NOTARY_PUBKEY33[0] == 0 )
+    {
         if (strlen(params[0].get_str().c_str()) == 66)
         {
             decode_hex(pubkey33,33,(char *)params[0].get_str().c_str());
@@ -5337,14 +5337,14 @@ UniValue setpubkey(const UniValue& params, bool fHelp)
                 USE_EXTERNAL_PUBKEY = 1;
             }
         } else result.push_back(Pair("error", "pubkey is wrong length, must be 66 char hex string."));
-    /*}
+    }
     else
     {
         result.push_back(Pair("error", "Can only set pubkey once, to change it you need to restart your daemon, pubkey in use is below."));
         pubkey2addr((char *)Raddress,(uint8_t *)NOTARY_PUBKEY33);
         std::string address_ret; address_ret.assign(Raddress);
         result.push_back(Pair("address",address_ret));
-    }*/
+    }
     result.push_back(Pair("pubkey", NOTARY_PUBKEY));
     return result;
 }
