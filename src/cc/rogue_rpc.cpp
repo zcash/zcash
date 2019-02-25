@@ -505,7 +505,7 @@ int32_t rogue_findbaton(struct CCcontract_info *cp,uint256 &playertxid,char **ke
     }
     if ( matches == 1 )
     {
-        if ( myIsutxo_spent(spenttxid,gametxid,maxplayers+i+1) < 0 )
+        if ( 1 || myIsutxo_spent(spenttxid,gametxid,maxplayers+i+1) < 0 )
         {
             numvouts = matchtx.vout.size();
             //fprintf(stderr,"matchtxid.%s matches.%d numvouts.%d\n",matchtx.GetHash().GetHex().c_str(),matches,numvouts);
@@ -576,7 +576,7 @@ int32_t rogue_findbaton(struct CCcontract_info *cp,uint256 &playertxid,char **ke
         else
         {
             fprintf(stderr,"already played\n");
-            return(-5);
+            return(-6);
         }
     }
     return(-1);
