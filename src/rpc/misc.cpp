@@ -93,6 +93,7 @@ int32_t getera(int timestamp)
             return(i);
         }
     }
+    return(0)
 }
 
 UniValue getiguanajson(const UniValue& params, bool fHelp)
