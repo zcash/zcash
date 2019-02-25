@@ -77,7 +77,7 @@ Ensure you have [brew](https://brew.sh) and Command Line Tools installed.
 /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 # installs brew
 xcode-select --install 
-# opens a pop-up window to install CLT without downloading large Xcode package
+# opens a pop-up window to install CLT without installing the entire Xcode package
 brew update && brew install gcc@6
 git clone https://github.com/komodoplatform/komodo --branch master --single-branch
 cd komodo
