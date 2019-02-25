@@ -1406,6 +1406,16 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
                             break;
                     }
                 }
+                else // this is asset transaction, which means playerdata txid already confirmed
+                {
+                    switch ( funcid )
+                    {
+                        case 'H': // win
+                        case 'Q': // bailout
+                            return(true);
+                            break;
+                    }
+                }
                 switch ( funcid )
                 {
                     case 'R': // register
