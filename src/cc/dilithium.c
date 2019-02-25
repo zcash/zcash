@@ -2916,6 +2916,12 @@ int32_t main(void)
  cclib Qsend 19 \"[%22mypubtxid%22,%22<hexseed>%22,%22<destpubtxid>%22,0.777]\"
  there can be up to 64 outputs, where each one can be a different destpubtxid or scriptPubKey. The only restriction is that scriptPubKey hex cant be 32 bytes.
  
+ Qsend is able to spend many Qvins as long as they are for the same dilithium bigpub + secp pub33. And the outputs can be to many different Qvouts or normal vouts. This allows to keep funds totally within the dilithium system and also to transfer back to normal taddrs. Qsend currently only sends from Qfunds, though it could also use funds from normal inputs.
+ 
+ Currently, to get funds from normal inputs to a dilithium, the send rpc can be used as above. So that provides a way to push funds into dilithium. The spend rpc becomes redundant with Qsend.
+ 
+ To properly test this, we need to make sure that transactions Qsend can use send outputs, and Qsend outputs and a combination. Of course, it needs to be validated that funds are not lost, Qsends work properly, etc.
+ 
  */
 
 #define DILITHIUM_TXFEE 10000
