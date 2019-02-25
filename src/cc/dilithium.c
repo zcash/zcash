@@ -3070,7 +3070,7 @@ int32_t dilithium_bigpubget(std::string &handle,CPubKey &pk33,uint8_t *pk,uint25
             memcpy(pk,&bigpub[0],CRYPTO_PUBLICKEYBYTES);
             return(0);
         }
-        fprintf(stderr,"%s funcid.(%c) size.%d vs %d\n",handle,funcid,(int32_t)bigpub.size(),CRYPTO_PUBLICKEYBYTES);
+        fprintf(stderr,"%s funcid.(%c) size.%d vs %d\n",handle.c_str(),funcid,(int32_t)bigpub.size(),CRYPTO_PUBLICKEYBYTES);
         return(-2);
     }
     fprintf(stderr,"numvouts.%d\n",numvouts);
