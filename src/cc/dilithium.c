@@ -3073,7 +3073,7 @@ int32_t dilithium_bigpubget(std::string &handle,CPubKey &pk33,uint8_t *pk,uint25
                 return(0);
             } else return(-2);
         }
-    } 
+    }
     return(-1);
 }
 
@@ -3375,7 +3375,7 @@ UniValue dilithium_Qsend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
                 return(cclib_error(result,"siglen error"));
             rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,dilithium_Qsendopret(destpubtxid,sig,voutpubtxids));
             return(dilithium_rawtxresult(result,rawtx));
-        } else return(cclib_error(result,"couldnt find vin0"));
+        } else return(cclib_error(result,"Q couldnt find enough Q or x inputs"));
     } else return(cclib_error(result,"need to have exactly 2 params sendtxid, scriptPubKey"));
 }
 
