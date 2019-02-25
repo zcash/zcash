@@ -1422,7 +1422,7 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
                             }
                             if ( funcid == 'H' )
                                 cashout *= 2;
-                            if ( tx.vout.size() > 2 )
+                            if ( tx.vout.size() > 3 ) // orig of 't' has 0 cashout
                                 fprintf(stderr,"ht.%d txid.%s cashout %.8f vs vout2 %.8f\n",height,txid.GetHex().c_str(),(double)cashout/COIN,(double)tx.vout[2].nValue/COIN);
                         }
                         if ( funcid == 'Q' )
