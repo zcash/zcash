@@ -408,7 +408,7 @@ UniValue rogue_playerobj(std::vector<uint8_t> playerdata,uint256 playertxid,uint
                     break;
                 }
         }
-        fprintf(stderr,"trace spend to %s/v%d\n",txid.GetHex().c_str(),vout);
+        //fprintf(stderr,"trace spend to %s/v%d\n",txid.GetHex().c_str(),vout);
         if ( n++ > 1000 )
             break;
     }
