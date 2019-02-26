@@ -170,7 +170,7 @@ SaplingPaymentAddress CWallet::GenerateNewSaplingZKey()
     return addr;
 }
 
-// Add spending key to keystore 
+// Add spending key to keystore
 bool CWallet::AddSaplingZKey(
     const libzcash::SaplingExtendedSpendingKey &sk,
     const libzcash::SaplingPaymentAddress &defaultAddr)
@@ -180,7 +180,7 @@ bool CWallet::AddSaplingZKey(
     if (!CCryptoKeyStore::AddSaplingSpendingKey(sk, defaultAddr)) {
         return false;
     }
-    
+
     if (!fFileBacked) {
         return true;
     }
@@ -189,7 +189,7 @@ bool CWallet::AddSaplingZKey(
         auto ivk = sk.expsk.full_viewing_key().in_viewing_key();
         return CWalletDB(strWalletFile).WriteSaplingZKey(ivk, sk, mapSaplingZKeyMetadata[ivk]);
     }
-    
+
     return true;
 }
 
@@ -571,10 +571,10 @@ bool CWallet::ChangeWalletPassphrase(const SecureString& strOldWalletPassphrase,
     return false;
 }
 
-void CWallet::ChainTip(const CBlockIndex *pindex, 
+void CWallet::ChainTip(const CBlockIndex *pindex,
                        const CBlock *pblock,
                        SproutMerkleTree sproutTree,
-                       SaplingMerkleTree saplingTree, 
+                       SaplingMerkleTree saplingTree,
                        bool added)
 {
     if (added) {
@@ -1154,7 +1154,7 @@ bool DecrementNoteWitnesses(NoteDataMap& noteDataMap, int indexHeight, int64_t n
             if (nd->witnesses.size() > 0) {
                 nd->witnesses.pop_front();
             }
-            // indexHeight is the height of the block being removed, so 
+            // indexHeight is the height of the block being removed, so
             // the new witness cache height is one below it.
             nd->witnessHeight = indexHeight - 1;
         }
@@ -1404,8 +1404,8 @@ int32_t CWallet::VerusStakeTransaction(CBlock *pBlock, CMutableTransaction &txNe
         return 0;
     }
 
-    bool signSuccess; 
-    SignatureData sigdata; 
+    bool signSuccess;
+    SignatureData sigdata;
     uint64_t txfee;
     auto consensusBranchId = CurrentEpochBranchId(stakeHeight, Params().GetConsensus());
 
@@ -1744,10 +1744,17 @@ bool CWallet::UpdatedNoteData(const CWalletTx& wtxIn, CWalletTx& wtx)
  * pblock is optional, but should be provided if the transaction is known to be in a block.
  * If fUpdate is true, existing transactions will be updated.
  */
+extern uint8_t NOTARY_PUBKEY33[33];
+extern std::string NOTARY_ADDRESS,WHITELIST_ADDRESS;
+extern int32_t IS_STAKED_NOTARY;
+extern uint64_t MIN_RECV_SATS;
+
 bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pblock, bool fUpdate)
 {
     {
         AssertLockHeld(cs_wallet);
+        if ( tx.IsCoinBase() && tx.vout[0].nValue == 0 )
+            return false;
         bool fExisted = mapWallet.count(tx.GetHash()) != 0;
         if (fExisted && !fUpdate) return false;
         auto sproutNoteData = FindMySproutNotes(tx);
@@ -1761,6 +1768,71 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
         }
         if (fExisted || IsMine(tx) || IsFromMe(tx) || sproutNoteData.size() > 0 || saplingNoteData.size() > 0)
         {
+            // wallet filter for notary nodes. Disabled! Can be reenabled or customised for any specific use, pools could also use this to prevent wallet dwy attack.
+            if ( 0 & !tx.IsCoinBase() && !NOTARY_ADDRESS.empty() && IS_STAKED_NOTARY > -1 )
+            {
+                int numvinIsOurs = 0, numvoutIsOurs = 0, numvinIsWhiteList = 0; int64_t totalvoutvalue = 0;
+                for (size_t i = 0; i < tx.vin.size(); i++)
+                {
+                    uint256 hash; CTransaction txin; CTxDestination address;
+                    if (GetTransaction(tx.vin[i].prevout.hash,txin,hash,false))
+                    {
+                        if (ExtractDestination(txin.vout[tx.vin[i].prevout.n].scriptPubKey, address))
+                        {
+                            if ( CBitcoinAddress(address).ToString() == NOTARY_ADDRESS )
+                                numvinIsOurs++;
+                            if ( !WHITELIST_ADDRESS.empty() )
+                            {
+                                //fprintf(stderr, "white list address: %s recv address: %s\n", WHITELIST_ADDRESS.c_str(),CBitcoinAddress(address).ToString().c_str());
+                                if ( CBitcoinAddress(address).ToString() == WHITELIST_ADDRESS ) {
+                                    //fprintf(stderr, "whitlisted is set to true here.\n");
+                                    numvinIsWhiteList++;
+                                }
+                            }
+                        }
+                    }
+                }
+                // Now we know if it was a tx sent to us, that wasnt from ourself or the whitelist address if set..
+                if ( numvinIsOurs != 0 )
+                    fprintf(stderr, "We sent from address: %s vins: %d\n",NOTARY_ADDRESS.c_str(),numvinIsOurs);
+                if ( numvinIsWhiteList != 0 )
+                    fprintf(stderr, "We received from whitelisted address: %s\n",WHITELIST_ADDRESS.c_str());
+                // Count vouts, check if OUR notary address is the receiver.
+                if ( numvinIsOurs == 0 && numvinIsWhiteList == 0 )
+                {
+                    for (size_t i = 0; i < tx.vout.size() ; i++)
+                    {
+                        CTxDestination address2;
+                        if ( ExtractDestination(tx.vout[i].scriptPubKey, address2))
+                        {
+                            if ( CBitcoinAddress(address2).ToString() == NOTARY_ADDRESS )
+                            {
+                              numvoutIsOurs++;
+                              totalvoutvalue += tx.vout[i].nValue;
+                            }
+                        }
+                    }
+                    // if MIN_RECV_SATS is 0, we are on full lock down mode, accept NO transactions.
+                    if ( MIN_RECV_SATS == 0 ) {
+                        fprintf(stderr, "This node is on full lock down all txs are ignored! \n");
+                        return false;
+                    }
+                    // If no vouts are to the notary address we will ignore them.
+                    if ( numvoutIsOurs == 0 ) {
+                        fprintf(stderr, "Received transaction to address other than notary address, ignored! \n");
+                        return false;
+                    }
+                    fprintf(stderr, "address: %s received %ld sats from %d vouts.\n",NOTARY_ADDRESS.c_str(),totalvoutvalue,numvoutIsOurs);
+                    // here we add calculation for number if vouts received, average size and determine if we accept them to wallet or not.
+                    int64_t avgVoutSize = totalvoutvalue / numvoutIsOurs;
+                    if ( avgVoutSize < MIN_RECV_SATS ) {
+                        // average vout size is less than set minimum, default is 1 coin, we will ignore it
+                        fprintf(stderr, "ignored: %d vouts average size of %ld sats.\n",numvoutIsOurs, avgVoutSize);
+                        return false;
+                    }
+                }
+            }
+
             CWalletTx wtx(this,tx);
 
             if (sproutNoteData.size() > 0) {
@@ -2177,7 +2249,7 @@ isminetype CWallet::IsMine(const CTransaction& tx, uint32_t voutNum)
 
         case TX_SCRIPTHASH:
             scriptID = CScriptID(uint160(vSolutions[0]));
-            if (this->GetCScript(scriptID, subscript)) 
+            if (this->GetCScript(scriptID, subscript))
             {
                 // if this is a CLTV, handle it differently
                 if (subscript.IsCheckLockTimeVerify())
@@ -2765,6 +2837,8 @@ int CWallet::ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate)
 
 void CWallet::ReacceptWalletTransactions()
 {
+    if ( IsInitialBlockDownload() )
+        return;
     // If transactions aren't being broadcasted, don't let them into local mempool either
     if (!fBroadcastTransactions)
         return;
@@ -3234,7 +3308,7 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins, bool fOnlyConfirmed, const
             int nDepth = pcoin->GetDepthInMainChain();
             if (nDepth < 0)
                 continue;
- 
+
             for (int i = 0; i < pcoin->vout.size(); i++)
             {
                 isminetype mine = IsMine(pcoin->vout[i]);
@@ -4872,7 +4946,7 @@ void CWallet::GetFilteredNotes(
 }
 
 /**
- * Find notes in the wallet filtered by payment addresses, min depth, max depth, 
+ * Find notes in the wallet filtered by payment addresses, min depth, max depth,
  * if the note is spent, if a spending key is required, and if the notes are locked.
  * These notes are decrypted and added to the output parameter vector, outEntries.
  */
@@ -5125,10 +5199,10 @@ SpendingKeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::SaplingE
                 m_wallet->mapSaplingZKeyMetadata[ivk].seedFp = seedFp;
             }
             return KeyAdded;
-        }    
+        }
     }
 }
 
-SpendingKeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::InvalidEncoding& no) const { 
+SpendingKeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::InvalidEncoding& no) const {
     throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid spending key");
 }
