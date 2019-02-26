@@ -7,6 +7,7 @@
 #ifdef ENABLE_WALLET
 #include "wallet/crypter.h"
 #endif
+#include "utiltest.h"
 #include "zcash/Address.hpp"
 #include "zcash/zip32.h"
 
@@ -198,9 +199,7 @@ TEST(keystore_tests, StoreAndRetrieveSaplingSpendingKey) {
     libzcash::SaplingFullViewingKey fvkOut;
     libzcash::SaplingIncomingViewingKey ivkOut;
 
-    std::vector<unsigned char, secure_allocator<unsigned char>> rawSeed(32);
-    HDSeed seed(rawSeed);
-    auto sk = libzcash::SaplingExtendedSpendingKey::Master(seed);
+    auto sk = GetTestMasterSaplingSpendingKey();
     auto fvk = sk.expsk.full_viewing_key();
     auto ivk = fvk.in_viewing_key();
     auto addr = sk.DefaultAddress();

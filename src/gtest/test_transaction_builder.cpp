@@ -6,23 +6,18 @@
 #include "pubkey.h"
 #include "rpc/protocol.h"
 #include "transaction_builder.h"
+#include "utiltest.h"
 #include "zcash/Address.hpp"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-static const std::string tSecretRegtest = "cND2ZvtabDbJ1gucx9GWH6XT9kgTAqfb6cotPt5Q5CyxVDhid2EN";
-
 TEST(TransactionBuilder, Invoke)
 {
-    SelectParams(CBaseChainParams::REGTEST);
-    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
-    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
-    auto consensusParams = Params().GetConsensus();
+    auto consensusParams = RegtestActivateSapling();
 
     CBasicKeyStore keystore;
-    CKey tsk = DecodeSecret(tSecretRegtest);
-    keystore.AddKey(tsk);
+    CKey tsk = AddTestCKeyToKeyStore(keystore);
     auto scriptPubKey = GetScriptForDestination(tsk.GetPubKey().GetID());
 
     auto sk_from = libzcash::SaplingSpendingKey::random();
@@ -87,8 +82,7 @@ TEST(TransactionBuilder, Invoke)
     EXPECT_EQ(state.GetRejectReason(), "");
 
     // Revert to default
-    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
-    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+    RegtestDeactivateSapling();
 }
 
 TEST(TransactionBuilder, ThrowsOnTransparentInputWithoutKeyStore)
@@ -124,37 +118,27 @@ TEST(TransactionBuilder, RejectsInvalidTransparentChangeAddress)
 
 TEST(TransactionBuilder, FailsWithNegativeChange)
 {
-    SelectParams(CBaseChainParams::REGTEST);
-    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
-    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
-    auto consensusParams = Params().GetConsensus();
+    auto consensusParams = RegtestActivateSapling();
 
     // Generate dummy Sapling address
     auto sk = libzcash::SaplingSpendingKey::random();
     auto expsk = sk.expanded_spending_key();
     auto fvk = sk.full_viewing_key();
-    auto pk = sk.default_address();
+    auto pa = sk.default_address();
 
     // Set up dummy transparent address
     CBasicKeyStore keystore;
-    CKey tsk = DecodeSecret(tSecretRegtest);
-    keystore.AddKey(tsk);
+    CKey tsk = AddTestCKeyToKeyStore(keystore);
     auto tkeyid = tsk.GetPubKey().GetID();
     auto scriptPubKey = GetScriptForDestination(tkeyid);
     CTxDestination taddr = tkeyid;
 
-    // Generate dummy Sapling note
-    libzcash::SaplingNote note(pk, 59999);
-    auto cm = note.cm().value();
-    SaplingMerkleTree tree;
-    tree.append(cm);
-    auto anchor = tree.root();
-    auto witness = tree.witness();
+    auto testNote = GetTestSaplingNote(pa, 59999);
 
     // Fail if there is only a Sapling output
     // 0.0005 z-ZEC out, 0.0001 t-ZEC fee
     auto builder = TransactionBuilder(consensusParams, 1);
-    builder.AddSaplingOutput(fvk.ovk, pk, 50000, {});
+    builder.AddSaplingOutput(fvk.ovk, pa, 50000, {});
     EXPECT_EQ("Change cannot be negative", builder.Build().GetError());
 
     // Fail if there is only a transparent output
@@ -165,7 +149,7 @@ TEST(TransactionBuilder, FailsWithNegativeChange)
 
     // Fails if there is insufficient input
     // 0.0005 t-ZEC out, 0.0001 t-ZEC fee, 0.00059999 z-ZEC in
-    builder.AddSaplingSpend(expsk, note, anchor, witness);
+    builder.AddSaplingSpend(expsk, testNote.note, testNote.tree.root(), testNote.tree.witness());
     EXPECT_EQ("Change cannot be negative", builder.Build().GetError());
 
     // Succeeds if there is sufficient input
@@ -173,29 +157,19 @@ TEST(TransactionBuilder, FailsWithNegativeChange)
     EXPECT_TRUE(builder.Build().IsTx());
 
     // Revert to default
-    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
-    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+    RegtestDeactivateSapling();
 }
 
 TEST(TransactionBuilder, ChangeOutput)
 {
-    SelectParams(CBaseChainParams::REGTEST);
-    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
-    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
-    auto consensusParams = Params().GetConsensus();
+    auto consensusParams = RegtestActivateSapling();
 
     // Generate dummy Sapling address
     auto sk = libzcash::SaplingSpendingKey::random();
     auto expsk = sk.expanded_spending_key();
-    auto pk = sk.default_address();
+    auto pa = sk.default_address();
 
-    // Generate dummy Sapling note
-    libzcash::SaplingNote note(pk, 25000);
-    auto cm = note.cm().value();
-    SaplingMerkleTree tree;
-    tree.append(cm);
-    auto anchor = tree.root();
-    auto witness = tree.witness();
+    auto testNote = GetTestSaplingNote(pa, 25000);
 
     // Generate change Sapling address
     auto sk2 = libzcash::SaplingSpendingKey::random();
@@ -204,8 +178,7 @@ TEST(TransactionBuilder, ChangeOutput)
 
     // Set up dummy transparent address
     CBasicKeyStore keystore;
-    CKey tsk = DecodeSecret(tSecretRegtest);
-    keystore.AddKey(tsk);
+    CKey tsk = AddTestCKeyToKeyStore(keystore);
     auto tkeyid = tsk.GetPubKey().GetID();
     auto scriptPubKey = GetScriptForDestination(tkeyid);
     CTxDestination taddr = tkeyid;
@@ -221,7 +194,7 @@ TEST(TransactionBuilder, ChangeOutput)
     {
         auto builder = TransactionBuilder(consensusParams, 1, &keystore);
         builder.AddTransparentInput(COutPoint(), scriptPubKey, 25000);
-        builder.AddSaplingSpend(expsk, note, anchor, witness);
+        builder.AddSaplingSpend(expsk, testNote.note, testNote.tree.root(), testNote.tree.witness());
         auto tx = builder.Build().GetTxOrThrow();
 
         EXPECT_EQ(tx.vin.size(), 1);
@@ -264,36 +237,26 @@ TEST(TransactionBuilder, ChangeOutput)
     }
 
     // Revert to default
-    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
-    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+    RegtestDeactivateSapling();
 }
 
 TEST(TransactionBuilder, SetFee)
 {
-    SelectParams(CBaseChainParams::REGTEST);
-    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
-    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
-    auto consensusParams = Params().GetConsensus();
+    auto consensusParams = RegtestActivateSapling();
 
     // Generate dummy Sapling address
     auto sk = libzcash::SaplingSpendingKey::random();
     auto expsk = sk.expanded_spending_key();
     auto fvk = sk.full_viewing_key();
-    auto pk = sk.default_address();
+    auto pa = sk.default_address();
 
-    // Generate dummy Sapling note
-    libzcash::SaplingNote note(pk, 50000);
-    auto cm = note.cm().value();
-    SaplingMerkleTree tree;
-    tree.append(cm);
-    auto anchor = tree.root();
-    auto witness = tree.witness();
+    auto testNote = GetTestSaplingNote(pa, 50000);
 
     // Default fee
     {
         auto builder = TransactionBuilder(consensusParams, 1);
-        builder.AddSaplingSpend(expsk, note, anchor, witness);
-        builder.AddSaplingOutput(fvk.ovk, pk, 25000, {});
+        builder.AddSaplingSpend(expsk, testNote.note, testNote.tree.root(), testNote.tree.witness());
+        builder.AddSaplingOutput(fvk.ovk, pa, 25000, {});
         auto tx = builder.Build().GetTxOrThrow();
 
         EXPECT_EQ(tx.vin.size(), 0);
@@ -307,8 +270,8 @@ TEST(TransactionBuilder, SetFee)
     // Configured fee
     {
         auto builder = TransactionBuilder(consensusParams, 1);
-        builder.AddSaplingSpend(expsk, note, anchor, witness);
-        builder.AddSaplingOutput(fvk.ovk, pk, 25000, {});
+        builder.AddSaplingSpend(expsk, testNote.note, testNote.tree.root(), testNote.tree.witness());
+        builder.AddSaplingOutput(fvk.ovk, pa, 25000, {});
         builder.SetFee(20000);
         auto tx = builder.Build().GetTxOrThrow();
 
@@ -321,8 +284,7 @@ TEST(TransactionBuilder, SetFee)
     }
 
     // Revert to default
-    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
-    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+    RegtestDeactivateSapling();
 }
 
 TEST(TransactionBuilder, CheckSaplingTxVersion)

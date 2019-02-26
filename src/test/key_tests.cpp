@@ -10,6 +10,7 @@
 #include "uint256.h"
 #include "util.h"
 #include "utilstrencodings.h"
+#include "utiltest.h"
 #include "test/test_bitcoin.h"
 
 #include "zcash/Address.hpp"
@@ -225,9 +226,7 @@ BOOST_AUTO_TEST_CASE(zs_address_test)
 {
     SelectParams(CBaseChainParams::REGTEST);
 
-    std::vector<unsigned char, secure_allocator<unsigned char>> rawSeed(32);
-    HDSeed seed(rawSeed);
-    auto m = libzcash::SaplingExtendedSpendingKey::Master(seed);
+    auto m = GetTestMasterSaplingSpendingKey();
 
     for (uint32_t i = 0; i < 1000; i++) {
         auto sk = m.Derive(i);
