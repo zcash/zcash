@@ -385,7 +385,7 @@ UniValue rogue_playerobj(std::vector<uint8_t> playerdata,uint256 playertxid,uint
         a.push_back(packitemstr);
     }
     txid = playertxid;
-    vout = 0;
+    vout = 1;
     while ( CCgettxout(txid,vout,1) < 0 )
     {
         spenttxid = zeroid;
