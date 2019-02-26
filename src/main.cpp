@@ -19,7 +19,6 @@
  ******************************************************************************/
 
 #include "main.h"
-
 #include "sodium.h"
 
 #include "addrman.h"
@@ -48,6 +47,7 @@
 #include "validationinterface.h"
 #include "wallet/asyncrpcoperation_sendmany.h"
 #include "wallet/asyncrpcoperation_shieldcoinbase.h"
+#include "notaries_staked.h"
 
 #include <cstring>
 #include <algorithm>
@@ -186,6 +186,8 @@ namespace {
     std::vector<CBlockFileInfo> vinfoBlockFile,tmpBlockFiles;
     int nLastBlockFile = 0;
     int nLastTmpFile = 0;
+    unsigned int maxTempFileSize0 = MAX_TEMPFILE_SIZE;
+    unsigned int maxTempFileSize1 = MAX_TEMPFILE_SIZE;
     /** Global flag to indicate we should check to see if there are
      *  block/undo files that should be deleted.  Set on startup
      *  or if we allocate more file space when we're in prune mode
@@ -1108,7 +1110,9 @@ bool ContextualCheckTransaction(
         if (IsExpiredTx(tx, nHeight)) {
             // Don't increase banscore if the transaction only just expired
             int expiredDosLevel = IsExpiredTx(tx, nHeight - 1) ? (dosLevel > 10 ? dosLevel : 10) : 0;
-            return state.DoS(expiredDosLevel, error("ContextualCheckTransaction(): transaction is expired"), REJECT_INVALID, "tx-overwinter-expired");
+            string strHex = EncodeHexTx(tx);
+            //fprintf(stderr, "transaction exipred.%s\n",strHex.c_str());
+            return state.DoS(expiredDosLevel, error("ContextualCheckTransaction(): transaction %s is expired, expiry block %i vs current block %i\n txhex.%s",tx.GetHash().ToString(),tx.nExpiryHeight,nHeight,strHex), REJECT_INVALID, "tx-overwinter-expired");
         }
     }
 
@@ -1257,6 +1261,9 @@ bool CheckTransaction(uint32_t tiptime,const CTransaction& tx, CValidationState 
     }
 }
 
+extern char NOTARYADDRS[64][36];
+extern uint8_t NUM_NOTARIES;
+
 int32_t komodo_isnotaryvout(char *coinaddr) // from ac_private chains only
 {
     static int32_t didinit; static char notaryaddrs[sizeof(Notaries_elected1)/sizeof(*Notaries_elected1) + 1][64];
@@ -1274,8 +1281,8 @@ int32_t komodo_isnotaryvout(char *coinaddr) // from ac_private chains only
         didinit = 1;
     }
     for (i=0; i<=sizeof(Notaries_elected1)/sizeof(*Notaries_elected1); i++)
-        if ( strcmp(coinaddr,notaryaddrs[i]) == 0 )
-            return(1);
+    if ( strcmp(coinaddr,notaryaddrs[i]) == 0 )
+        return(1);
     return(0);
 }
 
@@ -1329,9 +1336,10 @@ bool CheckTransactionWithoutProofVerification(uint32_t tiptime,const CTransactio
 
     // Transactions containing empty `vin` must have either non-empty
     // `vjoinsplit` or non-empty `vShieldedSpend`.
-    if (tx.vin.empty() && tx.vjoinsplit.empty() && tx.vShieldedSpend.empty())
+    if (tx.vin.empty() && tx.vjoinsplit.empty() && tx.vShieldedSpend.empty()) 
         return state.DoS(10, error("CheckTransaction(): vin empty"),
                          REJECT_INVALID, "bad-txns-vin-empty");
+
     // Transactions containing empty `vout` must have either non-empty
     // `vjoinsplit` or non-empty `vShieldedOutput`.
     if (tx.vout.empty() && tx.vjoinsplit.empty() && tx.vShieldedOutput.empty())
@@ -1588,7 +1596,6 @@ bool CheckTransactionWithoutProofVerification(uint32_t tiptime,const CTransactio
 
 CAmount GetMinRelayFee(const CTransaction& tx, unsigned int nBytes, bool fAllowFree)
 {
-    extern int32_t KOMODO_ON_DEMAND;
     {
         LOCK(mempool.cs);
         uint256 hash = tx.GetHash();
@@ -1845,7 +1852,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         // Continuously rate-limit free (really, very-low-fee) transactions
         // This mitigates 'penny-flooding' -- sending thousands of free transactions just to
         // be annoying or make others' transactions take longer to confirm.
-        if (fLimitFree && nFees < ::minRelayTxFee.GetFee(nSize))
+        if (fLimitFree && nFees < ::minRelayTxFee.GetFee(nSize) && !tx.IsCoinImport())
         {
             static CCriticalSection csFreeLimiter;
             static double dFreeCount;
@@ -2269,8 +2276,9 @@ bool ReadBlockFromDisk(CBlock& block, const CBlockIndex* pindex,bool checkPOW)
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 extern uint64_t ASSETCHAINS_ENDSUBSIDY[ASSETCHAINS_MAX_ERAS], ASSETCHAINS_REWARD[ASSETCHAINS_MAX_ERAS], ASSETCHAINS_HALVING[ASSETCHAINS_MAX_ERAS];
 extern uint32_t ASSETCHAINS_MAGIC;
-extern uint64_t ASSETCHAINS_STAKED,ASSETCHAINS_LINEAR,ASSETCHAINS_COMMISSION,ASSETCHAINS_SUPPLY;
+extern uint64_t ASSETCHAINS_LINEAR,ASSETCHAINS_COMMISSION,ASSETCHAINS_SUPPLY;
 extern uint8_t ASSETCHAINS_PUBLIC,ASSETCHAINS_PRIVATE;
+extern int32_t ASSETCHAINS_STAKED;
 
 CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
 {
@@ -3248,6 +3256,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     auto verifier = libzcash::ProofVerifier::Strict();
     auto disabledVerifier = libzcash::ProofVerifier::Disabled();
     int32_t futureblock;
+    CAmount blockReward = 0;
     // Check it again to verify JoinSplit proofs, and in case a previous version let a bad block in
     if (!CheckBlock(&futureblock,pindex->GetHeight(),pindex,block, state, fExpensiveChecks ? verifier : disabledVerifier, fCheckPOW, !fJustCheck) || futureblock != 0 )
     {
@@ -3262,6 +3271,36 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             return false;
         fprintf(stderr,"grandfathered exception, until jan 15th 2019\n");
     }
+    // Do this here before the block is moved to the main block files.
+    if ( ASSETCHAINS_NOTARY_PAY[0] != 0 && pindex->GetHeight() > 10 )
+    {
+        // do a full block scan to get notarisation position and to enforce a valid notarization is in position 1.
+        // if notarisation in the block, must be position 1 and the coinbase must pay notaries.
+        int notarisationTx = komodo_connectblock(true,pindex,*(CBlock *)&block);  
+        // -1 means that the valid notarization isnt in position 1 or there are too many notarizations in this block.
+        if ( notarisationTx == -1 )
+            return state.DoS(100, error("ConnectBlock(): Notarization is not in TX position 1 or block contains more than 1 notarization! Invalid Block!"),
+                        REJECT_INVALID, "bad-notarization-position");
+        // 1 means this block contains a valid notarisation and its in position 1.
+        // its no longer possible for any attempted notarization to be in a block with a valid one!
+        // if notaries create a notarisation even if its not in this chain it will need to be mined inside its own block! 
+        if ( notarisationTx == 1 )
+        {
+            // Check if the notaries have been paid.
+            if ( block.vtx[0].vout.size() == 1 )
+                return state.DoS(100, error("ConnectBlock(): Notaries have not been paid!"),
+                                REJECT_INVALID, "bad-cb-amount");
+            // calculate the notaries compensation and validate the amounts and pubkeys are correct.
+            uint64_t notarypaycheque = komodo_checknotarypay((CBlock *)&block,(int32_t)pindex->GetHeight());
+            fprintf(stderr, "notarypaycheque.%lu\n", notarypaycheque);
+            if ( notarypaycheque > 0 )
+                blockReward += notarypaycheque;
+            else
+                return state.DoS(100, error("ConnectBlock(): Notary pay validation failed!"),
+                                REJECT_INVALID, "bad-cb-amount");
+        }
+    }
+    // Move the block to the main block file, we need this to create the TxIndex in the following loop.
     if ( (pindex->nStatus & BLOCK_IN_TMPFILE) != 0 )
     {
         unsigned int nBlockSize = ::GetSerializeSize(block, SER_DISK, CLIENT_VERSION);
@@ -3275,7 +3314,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         if (!ReceivedBlockTransactions(block, state, pindex, blockPos))
             return error("AcceptBlock(): ReceivedBlockTransactions failed");
         setDirtyFileInfo.insert(blockPos.nFile);
-        fprintf(stderr,"added ht.%d copy of tmpfile to %d.%d\n",pindex->GetHeight(),blockPos.nFile,blockPos.nPos);
+        //fprintf(stderr,"added ht.%d copy of tmpfile to %d.%d\n",pindex->GetHeight(),blockPos.nFile,blockPos.nPos);
     }
     // verify that the view's current state corresponds to the previous block
     uint256 hashPrevBlock = pindex->pprev == NULL ? uint256() : pindex->pprev->GetBlockHash();
@@ -3383,6 +3422,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         {
             if (!view.HaveInputs(tx))
             {
+                fprintf(stderr, "Connect Block missing inputs tx_number.%d \nvin txid.%s vout.%d \n",i,tx.vin[0].prevout.hash.ToString().c_str(),tx.vin[0].prevout.n);
                 return state.DoS(100, error("ConnectBlock(): inputs missing/spent"),
                                  REJECT_INVALID, "bad-txns-inputs-missingorspent");
             }
@@ -3390,6 +3430,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             if (!view.HaveJoinSplitRequirements(tx))
                 return state.DoS(100, error("ConnectBlock(): JoinSplit requirements not met"),
                                  REJECT_INVALID, "bad-txns-joinsplit-requirements-not-met");
+
             if (fAddressIndex || fSpentIndex)
             {
                 for (size_t j = 0; j < tx.vin.size(); j++) {
@@ -3542,8 +3583,8 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     int64_t nTime1 = GetTimeMicros(); nTimeConnect += nTime1 - nTimeStart;
     LogPrint("bench", "      - Connect %u transactions: %.2fms (%.3fms/tx, %.3fms/txin) [%.2fs]\n", (unsigned)block.vtx.size(), 0.001 * (nTime1 - nTimeStart), 0.001 * (nTime1 - nTimeStart) / block.vtx.size(), nInputs <= 1 ? 0 : 0.001 * (nTime1 - nTimeStart) / (nInputs-1), nTimeConnect * 0.000001);
 
-    CAmount blockReward = nFees + GetBlockSubsidy(pindex->GetHeight(), chainparams.GetConsensus()) + sum;
-    if ( ASSETCHAINS_COMMISSION != 0 ) //ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 &&
+    blockReward += nFees + GetBlockSubsidy(pindex->GetHeight(), chainparams.GetConsensus()) + sum;
+    if ( ASSETCHAINS_COMMISSION != 0 || ASSETCHAINS_FOUNDERS_REWARD != 0 ) //ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 &&
     {
         uint64_t checktoshis;
         if ( (checktoshis= komodo_commission((CBlock *)&block,(int32_t)pindex->GetHeight())) != 0 )
@@ -3563,6 +3604,8 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     {
         if ( ASSETCHAINS_SYMBOL[0] != 0 || pindex->GetHeight() >= KOMODO_NOTARIES_HEIGHT1 || block.vtx[0].vout[0].nValue > blockReward )
         {
+            //fprintf(stderr, "coinbase pays too much\n");
+            //sleepflag = true;
             return state.DoS(100,
                              error("ConnectBlock(): coinbase pays too much (actual=%d vs limit=%d)",
                                    block.vtx[0].GetValueOut(), blockReward),
@@ -3610,7 +3653,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         setDirtyBlockIndex.insert(pindex);
     }
 
-    ConnectNotarisations(block, pindex->GetHeight());
+    ConnectNotarisations(block, pindex->GetHeight()); // MoMoM notarisation DB.
 
     if (fTxIndex)
         if (!pblocktree->WriteTxIndex(vPos))
@@ -3666,7 +3709,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     LogPrint("bench", "    - Callbacks: %.2fms [%.2fs]\n", 0.001 * (nTime4 - nTime3), nTimeCallbacks * 0.000001);
 
     //FlushStateToDisk();
-    komodo_connectblock(pindex,*(CBlock *)&block);
+    komodo_connectblock(false,pindex,*(CBlock *)&block);  // dPoW state update.
     return true;
 }
 
@@ -3736,7 +3779,8 @@ bool static FlushStateToDisk(CValidationState &state, FlushStateMode mode) {
                 std::vector<std::pair<int, const CBlockFileInfo*> > vFiles;
                 vFiles.reserve(setDirtyFileInfo.size());
                 for (set<int>::iterator it = setDirtyFileInfo.begin(); it != setDirtyFileInfo.end(); ) {
-                    vFiles.push_back(make_pair(*it, &vinfoBlockFile[*it]));
+                    if ( *it < TMPFILE_START )
+                        vFiles.push_back(make_pair(*it, &vinfoBlockFile[*it]));
                     setDirtyFileInfo.erase(it++);
                 }
                 std::vector<const CBlockIndex*> vBlocks;
@@ -3854,8 +3898,8 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
         return AbortNode(state, "Failed to read block");
     //if ( ASSETCHAINS_SYMBOL[0] != 0 || pindexDelete->GetHeight() > 1400000 )
     {
-        int32_t prevMoMheight; uint256 notarizedhash,txid;
-        komodo_notarized_height(&prevMoMheight,&notarizedhash,&txid);
+        int32_t notarizedht,prevMoMheight; uint256 notarizedhash,txid;
+        notarizedht = komodo_notarized_height(&prevMoMheight,&notarizedhash,&txid);
         if ( block.GetHash() == notarizedhash )
         {
             fprintf(stderr,"DisconnectTip trying to disconnect notarized block at ht.%d\n",(int32_t)pindexDelete->GetHeight());
@@ -3921,13 +3965,17 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
     assert(pcoinsTip->GetSaplingAnchorAt(pcoinsTip->GetBestAnchor(SAPLING), newSaplingTree));
     // Let wallets know transactions went from 1-confirmed to
     // 0-confirmed or conflicted:
+    std::vector<uint256> TxToRemove;
     for (int i = 0; i < block.vtx.size(); i++)
     {
         CTransaction &tx = block.vtx[i];
         //if ((i == (block.vtx.size() - 1)) && ((ASSETCHAINS_LWMAPOS && block.IsVerusPOSBlock()) || (ASSETCHAINS_STAKED != 0 && (komodo_isPoS((CBlock *)&block) != 0))))
         if ((i == (block.vtx.size() - 1)) && (ASSETCHAINS_STAKED != 0 && (komodo_isPoS((CBlock *)&block,pindexDelete->GetHeight()) != 0)))
         {
-            EraseFromWallets(tx.GetHash());
+#ifdef ENABLE_WALLET
+            LOCK2(cs_main, pwalletMain->cs_wallet);
+            pwalletMain->EraseFromWallet(tx.GetHash());
+#endif
         }
         else
         {
@@ -4578,12 +4626,20 @@ bool FindBlockPos(int32_t tmpflag,CValidationState &state, CDiskBlockPos &pos, u
     std::vector<CBlockFileInfo> *ptr; int *lastfilep;
     LOCK(cs_LastBlockFile);
 
-    unsigned int nFile;
+    unsigned int nFile,maxTempFileSize;
+    
     if ( tmpflag != 0 )
     {
         ptr = &tmpBlockFiles;
         nFile = nLastTmpFile;
         lastfilep = &nLastTmpFile;
+        if (tmpBlockFiles.size() <= nFile) {
+            tmpBlockFiles.resize(nFile + 1);
+        }
+        if ( nFile == 0 )
+            maxTempFileSize = maxTempFileSize0;
+        else if ( nFile == 1 )
+            maxTempFileSize = maxTempFileSize1;
     }
     else
     {
@@ -4594,25 +4650,89 @@ bool FindBlockPos(int32_t tmpflag,CValidationState &state, CDiskBlockPos &pos, u
             vinfoBlockFile.resize(nFile + 1);
         }
     }
+    
     if (!fKnown) {
-        while ((*ptr)[nFile].nSize + nAddSize >= MAX_BLOCKFILE_SIZE) {
+        bool tmpfileflag = false;
+        while ( (*ptr)[nFile].nSize + nAddSize >= ((tmpflag != 0) ? maxTempFileSize : MAX_BLOCKFILE_SIZE) ) {
+            if ( tmpflag != 0 && tmpfileflag )
+                break;
             nFile++;
             if ((*ptr).size() <= nFile) {
                 (*ptr).resize(nFile + 1);
             }
+            tmpfileflag = true;
         }
         pos.nFile = nFile + tmpflag*TMPFILE_START;
         pos.nPos = (*ptr)[nFile].nSize;
-        if ( 0 && tmpflag != 0 )
-            fprintf(stderr,"pos.nFile %d nPos %u\n",pos.nFile,pos.nPos);
     }
-
     if (nFile != *lastfilep) {
         if (!fKnown) {
             LogPrintf("Leaving block file %i: %s\n", nFile, (*ptr)[nFile].ToString());
         }
         FlushBlockFile(!fKnown);
+        //fprintf(stderr, "nFile = %i size.%li maxTempFileSize0.%u maxTempFileSize1.%u\n",nFile,tmpBlockFiles.size(),maxTempFileSize0,maxTempFileSize1);
+        if ( tmpflag != 0 && tmpBlockFiles.size() >= 3 )
+        {
+            if ( nFile == 1 ) // Trying to get to second temp file.
+            {
+                if (!PruneOneBlockFile(true,TMPFILE_START+1)) 
+                {
+                    // file 1 is not ready to be used yet increase file 0's size.
+                    fprintf(stderr, "Cant clear file 1!\n");
+                    // We will reset the position to the end of the first file, even if its over max size.
+                    nFile = 0;
+                    pos.nFile = TMPFILE_START;
+                    pos.nPos = (*ptr)[0].nSize;
+                    // Increase temp file one's max size by a chunk, so we wait a reasonable time to recheck the other file.
+                    maxTempFileSize0 += BLOCKFILE_CHUNK_SIZE;
+                }
+                else 
+                {
+                    // The file 1 is able to be used now. Reset max size, and set nfile to use file 1.
+                    fprintf(stderr, "CLEARED file 1!\n");
+                    maxTempFileSize0 = MAX_TEMPFILE_SIZE;
+                    nFile = 1;
+                    tmpBlockFiles[1].SetNull();
+                    pos.nFile = TMPFILE_START+1;
+                    pos.nPos = (*ptr)[1].nSize;
+                    boost::filesystem::remove(GetBlockPosFilename(pos, "blk"));
+                    LogPrintf("Prune: deleted temp blk (%05u)\n",nFile);    
+                }
+                if ( 0 && tmpflag != 0 )
+                    fprintf(stderr,"pos.nFile %d nPos %u\n",pos.nFile,pos.nPos);
+            }
+            else if ( nFile == 2 ) // Trying to get to third temp file.
+            {
+                if (!PruneOneBlockFile(true,TMPFILE_START)) 
+                {
+                    fprintf(stderr, "Cant clear file 0!\n");
+                    // We will reset the position to the end of the second block file, even if its over max size.
+                    nFile = 1;
+                    pos.nFile = TMPFILE_START+1;
+                    pos.nPos = (*ptr)[1].nSize;
+                    // Increase temp file one's max size by a chunk, so we wait a reasonable time to recheck the other file.
+                    maxTempFileSize1 += BLOCKFILE_CHUNK_SIZE;
+                }
+                else 
+                {
+                    // The file 0 is able to be used now. Reset max size, and set nfile to use file 0.
+                    fprintf(stderr, "CLEARED file 0!\n");
+                    maxTempFileSize1 = MAX_TEMPFILE_SIZE;
+                    nFile = 0;
+                    tmpBlockFiles[0].SetNull();
+                    pos.nFile = TMPFILE_START;
+                    pos.nPos = (*ptr)[0].nSize;
+                    boost::filesystem::remove(GetBlockPosFilename(pos, "blk"));
+                    LogPrintf("Prune: deleted temp blk (%05u)\n",nFile);  
+                }
+                if ( 0 && tmpflag != 0 )
+                    fprintf(stderr,"pos.nFile %d nPos %u\n",pos.nFile,pos.nPos);
+            }
+            //sleep(30);
+        }
+        //fprintf(stderr, "nFile = %i size.%li maxTempFileSize0.%u maxTempFileSize1.%u\n",nFile,tmpBlockFiles.size(),maxTempFileSize0,maxTempFileSize1); sleep(30);
         *lastfilep = nFile;
+        //fprintf(stderr, "*lastfilep = %i\n",*lastfilep);
     }
 
     (*ptr)[nFile].AddBlock(nHeight, nTime);
@@ -4884,6 +5004,7 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
         if (!CheckTransaction(tiptime,tx, state, verifier))
             return error("CheckBlock: CheckTransaction failed");
     }
+
     unsigned int nSigOps = 0;
     BOOST_FOREACH(const CTransaction& tx, block.vtx)
     {
@@ -5209,7 +5330,10 @@ bool AcceptBlock(int32_t *futureblockp,CBlock& block, CValidationState& state, C
     }
 
     int nHeight = pindex->GetHeight();
-    int32_t usetmp = 0;
+    int32_t usetmp = 1;
+    if ( IsInitialBlockDownload() )
+        usetmp = 0;
+
     // Write block to history file
     try {
         unsigned int nBlockSize = ::GetSerializeSize(block, SER_DISK, CLIENT_VERSION);
@@ -5344,6 +5468,25 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
             komodo_currentheight_set(chainActive.LastTip()->GetHeight());
         checked = CheckBlock(&futureblock,height!=0?height:komodo_block2height(pblock),0,*pblock, state, verifier,0);
         bool fRequested = MarkBlockAsReceived(hash);
+        if ( pfrom && !fRequested && vNodes.size() > 1 )
+        {
+            pfrom->nBlocksinARow += 1;
+            if ( pfrom->nBlocksinARow >= 10 )
+            {
+                pfrom->nBlocksinARow2 += 1;
+                if ( pfrom->nBlocksinARow2 > 5 )
+                {
+                    pfrom->nBlocksinARow = 0;
+                    pfrom->nBlocksinARow2 = 0;
+                    fprintf(stderr, "reset node.%i\n",(int32_t)pfrom->GetId());
+                }
+                else 
+                {
+                    fprintf(stderr, "Requesting new peer node.%i blocksinrow.%i blocsinrow2.%i\n",(int32_t)pfrom->GetId(),pfrom->nBlocksinARow,pfrom->nBlocksinARow2);
+                    return(false);
+                }
+            }
+        }
         fRequested |= fForceProcessing;
         if ( checked != 0 && komodo_checkPOW(0,pblock,height) < 0 ) //from_miner && ASSETCHAINS_STAKED == 0
         {
@@ -5440,35 +5583,63 @@ uint64_t CalculateCurrentUsage()
 }
 
 /* Prune a block file (modify associated database entries)*/
-void PruneOneBlockFile(const int fileNumber)
+bool PruneOneBlockFile(bool tempfile, const int fileNumber)
 {
-    for (BlockMap::iterator it = mapBlockIndex.begin(); it != mapBlockIndex.end(); ++it) {
+    uint256 notarized_hash,notarized_desttxid; int32_t prevMoMheight,notarized_height;
+    notarized_height = komodo_notarized_height(&prevMoMheight,&notarized_hash,&notarized_desttxid);
+    //fprintf(stderr, "pruneblockfile.%i\n",fileNumber); sleep(15);
+    for (BlockMap::iterator it = mapBlockIndex.begin(); it != mapBlockIndex.end(); ++it) 
+    {
         CBlockIndex* pindex = it->second;
-        if (pindex && pindex->nFile == fileNumber) {
+        if (pindex && pindex->nFile == fileNumber) 
+        {
+            if ( tempfile && (pindex->nStatus & BLOCK_IN_TMPFILE != 0) )
+            {    
+                if ( chainActive.Contains(pindex) )
+                {
+                    // Block is in main chain so we cant clear this file!
+                    return(false);
+                }
+                fprintf(stderr, "pindex height.%i notarized height.%i \n", pindex->GetHeight(), notarized_height);
+                if ( pindex->GetHeight() > notarized_height ) // Need to check this, does an invalid block have a height?
+                {
+                    // This blocks height is not older than last notarization so it can be reorged into the main chain.
+                    // We cant clear this file!
+                    return(false);
+                }
+                else 
+                {
+                    // Block is not in main chain and is older than last notarised block so its safe for removal.
+                    fprintf(stderr, "Block [%i] in tempfile.%i We can clear this block!\n",pindex->GetHeight(),fileNumber);
+                    // Add index to list and remove after loop? 
+                }            
+            }
             pindex->nStatus &= ~BLOCK_HAVE_DATA;
             pindex->nStatus &= ~BLOCK_HAVE_UNDO;
             pindex->nFile = 0;
             pindex->nDataPos = 0;
             pindex->nUndoPos = 0;
             setDirtyBlockIndex.insert(pindex);
-
             // Prune from mapBlocksUnlinked -- any block we prune would have
             // to be downloaded again in order to consider its chain, at which
             // point it would be considered as a candidate for
             // mapBlocksUnlinked or setBlockIndexCandidates.
             std::pair<std::multimap<CBlockIndex*, CBlockIndex*>::iterator, std::multimap<CBlockIndex*, CBlockIndex*>::iterator> range = mapBlocksUnlinked.equal_range(pindex->pprev);
-            while (range.first != range.second) {
+            while (range.first != range.second) 
+            {
                 std::multimap<CBlockIndex *, CBlockIndex *>::iterator it = range.first;
                 range.first++;
-                if (it->second == pindex) {
+                if (it->second == pindex) 
+                {
                     mapBlocksUnlinked.erase(it);
                 }
             }
         }
     }
-
-    vinfoBlockFile[fileNumber].SetNull();
+    if (!tempfile)
+        vinfoBlockFile[fileNumber].SetNull();
     setDirtyFileInfo.insert(fileNumber);
+    return(true);
 }
 
 
@@ -5515,7 +5686,7 @@ void FindFilesToPrune(std::set<int>& setFilesToPrune)
             if (vinfoBlockFile[fileNumber].nHeightLast > nLastBlockWeCanPrune)
                 continue;
 
-            PruneOneBlockFile(fileNumber);
+            PruneOneBlockFile(false, fileNumber);
             // Queue up the files for removal
             setFilesToPrune.insert(fileNumber);
             nCurrentUsage -= nBytesToPrune;
@@ -6689,7 +6860,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         return true;
     }
 
-//fprintf(stderr,"netmsg: %s\n", strCommand.c_str());
+    //fprintf(stderr,"netmsg: %s\n", strCommand.c_str());
 
     if (strCommand == "version")
     {
@@ -6706,16 +6877,18 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         CAddress addrFrom;
         uint64_t nNonce = 1;
         int nVersion;           // use temporary for version, don't set version number until validated as connected
+        int minVersion = MIN_PEER_PROTO_VERSION;
+        if ( is_STAKED(ASSETCHAINS_SYMBOL) != 0 )
+            minVersion = STAKEDMIN_PEER_PROTO_VERSION;
         vRecv >> nVersion >> pfrom->nServices >> nTime >> addrMe;
         if (nVersion == 10300)
             nVersion = 300;
-
-        if (nVersion < MIN_PEER_PROTO_VERSION)
+        if (nVersion < minVersion)
         {
             // disconnect from peers older than this proto version
             LogPrintf("peer=%d using obsolete version %i; disconnecting\n", pfrom->id, pfrom->nVersion);
             pfrom->PushMessage("reject", strCommand, REJECT_OBSOLETE,
-                               strprintf("Version must be %d or greater", MIN_PEER_PROTO_VERSION));
+                            strprintf("Version must be %d or greater", minVersion));
             pfrom->fDisconnect = true;
             return false;
         }

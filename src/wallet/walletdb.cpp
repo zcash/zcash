@@ -878,7 +878,7 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
 
 static bool IsKeyType(string strType)
 {
-    return (strType== "key" || strType == "wkey" ||
+    return (strType == "key" || strType == "wkey" ||
             strType == "hdseed" || strType == "chdseed" ||
             strType == "zkey" || strType == "czkey" ||
             strType == "sapzkey" || strType == "csapzkey" ||
@@ -950,6 +950,24 @@ DBErrors CWalletDB::LoadWallet(CWallet* pwallet)
     catch (...) {
         result = DB_CORRUPT;
     }
+    
+    if (!deadTxns.empty())
+    {
+        int32_t reAdded = 0;
+        BOOST_FOREACH (uint256& hash, deadTxns) {
+            if (!EraseTx(hash))
+                fprintf(stderr, "could not delete tx.%s\n",hash.ToString().c_str());
+            uint256 blockhash; CTransaction tx;
+            if (GetTransaction(hash,tx,blockhash,true))
+            {
+                CWalletTx wtx(pwallet,tx);
+                pwallet->AddToWallet(wtx, true, NULL);
+                reAdded++;
+            }
+        }
+        fprintf(stderr, "Cleared %lu corrupted transactions from wallet. Readded %i known transactions.\n",deadTxns.size(),reAdded);
+        deadTxns.clear();
+    }
 
     if (!deadTxns.empty())
     {
@@ -1001,7 +1019,7 @@ DBErrors CWalletDB::LoadWallet(CWallet* pwallet)
 
     if (wss.fAnyUnordered)
         result = ReorderTransactions(pwallet);
-    
+
     return result;
 }
 
