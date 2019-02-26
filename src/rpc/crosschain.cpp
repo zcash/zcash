@@ -116,7 +116,7 @@ UniValue height_MoM(const UniValue& params, bool fHelp)
             ret.push_back(Pair("kmdendi",kmdendi));
         }
     } else ret.push_back(Pair("error",(char *)"no MoM for height"));
-    
+
     return ret;
 }
 
@@ -169,10 +169,10 @@ UniValue calc_MoM(const UniValue& params, bool fHelp)
 
 UniValue migrate_converttoexport(const UniValue& params, bool fHelp)
 {
-    std::vector<uint8_t> rawproof; uint8_t *ptr; int32_t i; uint32_t ccid = ASSETCHAINS_CC;
-    if (fHelp || params.size() != 3)
+    std::vector<uint8_t> rawproof; uint8_t *ptr; uint8_t i; uint32_t ccid = ASSETCHAINS_CC; uint64_t txfee = 10000;
+    if (fHelp || params.size() != 2)
         throw runtime_error(
-            "migrate_converttoexport rawTx dest_symbol export_amount\n"
+            "migrate_converttoexport rawTx dest_symbol\n"
             "\nConvert a raw transaction to a cross-chain export.\n"
             "If neccesary, the transaction should be funded using fundrawtransaction.\n"
             "Finally, the transaction should be signed using signrawtransaction\n"
@@ -196,22 +196,22 @@ UniValue migrate_converttoexport(const UniValue& params, bool fHelp)
     if (targetSymbol.size() == 0 || targetSymbol.size() > 32)
         throw runtime_error("targetSymbol length must be >0 and <=32");
 
-    CAmount burnAmount = AmountFromValue(params[2]);
+    if (strcmp(ASSETCHAINS_SYMBOL,targetSymbol.c_str()) == 0)
+        throw runtime_error("cant send a coin to the same chain");
+
+    CAmount burnAmount = 0;
+    
+    for (int i=0; i<tx.vout.size(); i++) burnAmount += tx.vout[i].nValue;
     if (burnAmount <= 0)
-        throw JSONRPCError(RPC_TYPE_ERROR, "Invalid amount for export");
-    {
-        CAmount needed = 0;
-        for (int i=0; i<tx.vout.size(); i++) needed += tx.vout[i].nValue;
-        if (burnAmount < needed)
-            throw runtime_error("export_amount too small");
-    }
-    //if ( ASSETCHAINS_SELFIMPORT.size() > 0 )
-    //    throw runtime_error("self-import chains cant be fungible");
+        throw JSONRPCError(RPC_TYPE_ERROR, "Cannot export a negative or zero value.");
+    if (burnAmount > 1000000LL*COIN)
+        throw JSONRPCError(RPC_TYPE_ERROR, "Cannot export more than 1 million coins per export.");
+
     rawproof.resize(strlen(ASSETCHAINS_SYMBOL));
     ptr = rawproof.data();
     for (i=0; i<rawproof.size(); i++)
         ptr[i] = ASSETCHAINS_SYMBOL[i];
-    CTxOut burnOut = MakeBurnOutput(burnAmount, ccid, targetSymbol, tx.vout,rawproof);
+    CTxOut burnOut = MakeBurnOutput(burnAmount+txfee, ccid, targetSymbol, tx.vout,rawproof);
     UniValue ret(UniValue::VOBJ);
     ret.push_back(Pair("payouts", HexStr(E_MARSHAL(ss << tx.vout))));
     tx.vout.clear();
@@ -252,8 +252,8 @@ UniValue migrate_createimporttransaction(const UniValue& params, bool fHelp)
     CTransaction burnTx;
     if (!E_UNMARSHAL(txData, ss >> burnTx))
         throw runtime_error("Couldn't parse burnTx");
-    
-    
+
+
     vector<CTxOut> payouts;
     if (!E_UNMARSHAL(ParseHexV(params[1], "argument 2"), ss >> payouts))
         throw runtime_error("Couldn't parse payouts");
@@ -273,7 +273,7 @@ UniValue migrate_completeimporttransaction(const UniValue& params, bool fHelp)
         throw runtime_error("migrate_completeimporttransaction importTx\n\n"
                 "Takes a cross chain import tx with proof generated on assetchain "
                 "and extends proof to target chain proof root");
-    
+
     if (ASSETCHAINS_SYMBOL[0] != 0)
         throw runtime_error("Must be called on KMD");
 
@@ -446,7 +446,7 @@ UniValue scanNotarisationsDB(const UniValue& params, bool fHelp)
     if (height == 0) {
         height = chainActive.Height();
     }
-    
+
     Notarisation nota;
     int matchedHeight = ScanNotarisationsDB(height, symbol, limit, nota);
     if (!matchedHeight) return NullUniValue;
@@ -455,4 +455,117 @@ UniValue scanNotarisationsDB(const UniValue& params, bool fHelp)
     out.pushKV("hash", nota.first.GetHex());
     out.pushKV("opreturn", HexStr(E_MARSHAL(ss << nota.second)));
     return out;
+}
+
+UniValue getimports(const UniValue& params, bool fHelp)
+{
+    if (fHelp || params.size() != 1)
+        throw runtime_error(
+            "getimports \"hash|height\"\n"
+            "\n\n"
+            "\nResult:\n"
+            "{\n"
+            "  \"imports\" : [                  (json array)\n"
+            "       \"transactionid\" : {       (json object)\n"
+            "           \"value\" :             (numeric)\n"
+            "           \"address\" :           (string)\n"
+            "           \"export\" {                (json object)\n"
+            "               \"txid\" :              (string)\n"
+            "               \"value\" :             (numeric)\n"
+            "               \"chain\" :             (string)\n"
+            "           }\n"
+            "       }"
+            "  ]\n"
+            "  \"TotalImported\" :              (numeric)\n"
+            "  \"time\" :                       (numeric)\n"
+            "}\n"
+            "\nExamples:\n"
+            + HelpExampleCli("getimports", "\"00000000febc373a1da2bd9f887b105ad79ddc26ac26c2b28652d64e5207c5b5\"")
+            + HelpExampleRpc("getimports", "\"00000000febc373a1da2bd9f887b105ad79ddc26ac26c2b28652d64e5207c5b5\"")
+            + HelpExampleCli("getimports", "12800")
+            + HelpExampleRpc("getimports", "12800")
+        );
+
+    LOCK(cs_main);
+
+    std::string strHash = params[0].get_str();
+
+    // If height is supplied, find the hash
+    if (strHash.size() < (2 * sizeof(uint256))) {
+        // std::stoi allows characters, whereas we want to be strict
+        regex r("[[:digit:]]+");
+        if (!regex_match(strHash, r)) {
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid block height parameter");
+        }
+
+        int nHeight = -1;
+        try {
+            nHeight = std::stoi(strHash);
+        }
+        catch (const std::exception &e) {
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid block height parameter");
+        }
+
+        if (nHeight < 0 || nHeight > chainActive.Height()) {
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
+        }
+        strHash = chainActive[nHeight]->GetBlockHash().GetHex();
+    }
+
+    uint256 hash(uint256S(strHash));
+
+    if (mapBlockIndex.count(hash) == 0)
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Block not found");
+
+    CBlock block;
+    CBlockIndex* pblockindex = mapBlockIndex[hash];
+
+    if (fHavePruned && !(pblockindex->nStatus & BLOCK_HAVE_DATA) && pblockindex->nTx > 0)
+        throw JSONRPCError(RPC_INTERNAL_ERROR, "Block not available (pruned data)");
+
+    if(!ReadBlockFromDisk(block, pblockindex,1))
+        throw JSONRPCError(RPC_INTERNAL_ERROR, "Can't read block from disk");
+
+    UniValue result(UniValue::VOBJ);
+    CAmount TotalImported = 0;
+    UniValue imports(UniValue::VARR);
+    BOOST_FOREACH(const CTransaction&tx, block.vtx)
+    {
+        if(tx.IsCoinImport())
+        {
+            UniValue objTx(UniValue::VOBJ);
+            objTx.push_back(Pair("txid",tx.GetHash().ToString()));
+            TxProof proof; CTransaction burnTx; std::vector<CTxOut> payouts; CTxDestination importaddress;
+            TotalImported += tx.vout[1].nValue;
+            objTx.push_back(Pair("amount", ValueFromAmount(tx.vout[1].nValue)));
+            if (ExtractDestination(tx.vout[1].scriptPubKey, importaddress))
+            {
+                objTx.push_back(Pair("address", CBitcoinAddress(importaddress).ToString()));
+            }
+            UniValue objBurnTx(UniValue::VOBJ);            
+            if (UnmarshalImportTx(tx, proof, burnTx, payouts)) 
+            {
+                if (burnTx.vout.size() == 0)
+                    continue;
+                objBurnTx.push_back(Pair("txid", burnTx.GetHash().ToString()));
+                objBurnTx.push_back(Pair("amount", ValueFromAmount(burnTx.vout.back().nValue)));
+                // extract op_return to get burn source chain.
+                std::vector<uint8_t> burnOpret; std::string targetSymbol; uint32_t targetCCid; uint256 payoutsHash; std::vector<uint8_t>rawproof;
+                if (UnmarshalBurnTx(burnTx, targetSymbol, &targetCCid, payoutsHash, rawproof))
+                {
+                    if (rawproof.size() > 0)
+                    {
+                        std::string sourceSymbol(rawproof.begin(), rawproof.end());
+                        objBurnTx.push_back(Pair("source", sourceSymbol));
+                    }
+                }
+            }
+            objTx.push_back(Pair("export", objBurnTx));
+            imports.push_back(objTx);
+        }
+    }
+    result.push_back(Pair("imports", imports));
+    result.push_back(Pair("TotalImported", TotalImported > 0 ? ValueFromAmount(TotalImported) : 0 ));    
+    result.push_back(Pair("time", block.GetBlockTime()));
+    return result;
 }
