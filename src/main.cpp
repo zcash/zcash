@@ -5330,7 +5330,9 @@ bool AcceptBlock(int32_t *futureblockp,CBlock& block, CValidationState& state, C
     }
 
     int nHeight = pindex->GetHeight();
-    int32_t usetmp = 1;
+    // Temp File fix. LABS has been using this for ages with no bad effects.
+    // Disabled here. Set use tmp to whatever you need to use this for. 
+    int32_t usetmp = 0;
     if ( IsInitialBlockDownload() )
         usetmp = 0;
 
@@ -5468,7 +5470,9 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
             komodo_currentheight_set(chainActive.LastTip()->GetHeight());
         checked = CheckBlock(&futureblock,height!=0?height:komodo_block2height(pblock),0,*pblock, state, verifier,0);
         bool fRequested = MarkBlockAsReceived(hash);
-        if ( pfrom && !fRequested && vNodes.size() > 1 )
+        // Test thing on LABS to test viability of rejecting a node pushing a chain.
+        // Supposed to stop malicious forks being pushed. Untested. Disabled incase of problems it may cause.
+        if ( 0 & pfrom && !fRequested && vNodes.size() > 1 )
         {
             pfrom->nBlocksinARow += 1;
             if ( pfrom->nBlocksinARow >= 10 )
