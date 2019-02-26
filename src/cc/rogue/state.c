@@ -1432,7 +1432,7 @@ rs_write_object(struct rogue_state *rs,FILE *savef, THING *o)
     if ( o->_o._o_packch != 0 )
     {
         item = &rs->P.roguepack[rs->P.packsize];
-        if ( pstats.s_hpt <= 0 )
+        if ( 1 && pstats.s_hpt <= 0 )
         {
             //fprintf(stderr,"KILLED\n");
             rs->P.gold = -1;
@@ -1452,6 +1452,7 @@ rs_write_object(struct rogue_state *rs,FILE *savef, THING *o)
                 rs->P.level = pstats.s_lvl;
                 rs->P.experience = pstats.s_exp;
                 rs->P.dungeonlevel = level;
+                rs->P.amulet = amulet;
                 //fprintf(stderr,"%ld gold.%d hp.%d strength.%d/%d level.%d exp.%d %d\n",ftell(savef),purse,max_hp,pstats.s_str,max_stats.s_str,pstats.s_lvl,pstats.s_exp,level);
             }
             //fprintf(stderr,"object (%s) x.%d y.%d type.%d pack.(%c:%d)\n",inv_name(o,FALSE),o->_o._o_pos.x,o->_o._o_pos.y,o->_o._o_type,o->_o._o_packch,o->_o._o_packch);

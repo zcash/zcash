@@ -259,7 +259,7 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
                 return eval->Invalid("invalid refund for cancelbuy");
             preventCCvins = 3;
             preventCCvouts = 0;
-            fprintf(stderr,"cancelbuy validated to origaddr.(%s)\n",origNormalAddr);
+            //fprintf(stderr,"cancelbuy validated to origaddr.(%s)\n",origNormalAddr);
             break;
             
         case 'B': // fillbuy:
@@ -305,7 +305,7 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
                         return eval->Invalid("mismatched vout0 AssetsCCaddr for fillbuy");
                 }
             }
-            fprintf(stderr,"fillbuy validated\n");
+            //fprintf(stderr,"fillbuy validated\n");
             break;
         //case 'e': // selloffer
         //    break; // disable swaps

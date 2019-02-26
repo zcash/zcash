@@ -48,7 +48,10 @@ extern WINDOW *stdscr,*curscr;
 extern int32_t ESCDELAY;
 typedef char chtype;
 
+#ifndef __MINGW32__
 int32_t getch(void); // stub
+#endif
+
 int32_t md_readchar(void); // stub
 
 WINDOW *initscr(void);
@@ -123,9 +126,10 @@ int32_t wprintw(WINDOW *win,char *fmt,...);
 int32_t mvprintw(int32_t y,int32_t x,char *fmt,...);
 int32_t mvwprintw(WINDOW *win,int32_t y,int32_t x,char *fmt,...);
 
+char *unctrl(char c);
+
 #define A_CHARTEXT 0xff
 #define baudrate() 9600
-#define unctrl(a) "^x"
 #define getmaxx(a) COLS
 #define getmaxy(a) LINES
 #define getyx(win,_argfory,_argforx) _argfory = win->y, _argforx = win->x

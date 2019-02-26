@@ -106,14 +106,7 @@ CONFIG_SITE="$PWD/depends/$HOST/share/config.site" ./configure "$HARDENING_ARG" 
 WD=$PWD
 cd src/cc
 echo $PWD
-
-if make "$@"; then
-  echo CCLIB BUILD SUCCESSFUL
-else
-  echo CCLIB BUILD FAILED
-  exit 1
-fi
-
+./makerogue
 cd $WD
 
 "$MAKE" "$@" V=1

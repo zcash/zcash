@@ -1,8 +1,38 @@
 #!/bin/sh
 cd rogue;
-./configure # only need this first time
-make; cd ..
-gcc -Wno-write-strings -DBUILD_ROGUE -std=c++11 -I../../depends/$(shell echo `../..//depends/config.guess`/include) -I../univalue/include -I../cryptoconditions/include -I../cryptoconditions/src -I../cryptoconditions/src/asn -I.. -I. -fPIC -shared -o librogue.so -c cclib.cpp 
-#gcc -std=c++11 -fPIC -shared -o librogue.so cclib.o rogue/rogue.so
-cp librogue.so ../libcc.so
 
+if [ "$HOST" = "x86_64-w64-mingw32" ]; then
+  echo building rogue.exe...
+  ./configure --host=x86_64-w64-mingw32
+  mkdir ncurses && cd ncurses
+  echo $PWD
+  wget https://invisible-island.net/datafiles/release/mingw32.zip
+  unzip mingw32.zip && rm mingw32.zip
+  echo lib archive cleaned
+  cd ..
+  echo $PWD
+  if make -f Makefile_win "$@"; then
+    echo rogue.exe build SUCCESSFUL
+    cd ..
+  else
+    echo rogue.exe build FAILED
+  exit 1
+  fi
+else
+  echo building rogue...
+  ./configure
+  if make "$@"; then
+    echo rogue build SUCCESSFUL
+    cd ..
+  else
+    echo rogue build FAILED
+    exit 1
+  fi
+fi
+
+if make -f Makefile_rogue "$@"; then
+  echo ROGUE BUILD SUCCESSFUL
+else
+  echo ROGUE BUILD FAILED
+  exit 1
+fi

@@ -157,37 +157,57 @@ out:
     }
 }
 
+int32_t num_packitems(struct rogue_state *rs)
+{
+    THING *list = pack;
+    int32_t type = 0,n = 0,total = 0;
+    for (; list != NULL; list = next(list))
+    {
+        if ( list->o_packch != 0 )
+        {
+            n++;
+            total += rogue_total(list);
+        }
+    }
+    if ( rs->guiflag != 0 ) 
+    {
+        char str[MAXSTR];
+        sprintf(str,"strength*2 %d vs total.%d vs %d inventory letters\n",ROGUE_MAXTOTAL,total,n);
+        add_line(rs,"%s",str);
+    }
+    if ( total > ROGUE_MAXTOTAL )
+        return(MAXPACK);
+    return(n);
+}
+
 /*
  * pack_room:
  *	See if there's room in the pack.  If not, print out an
  *	appropriate message
  */
-bool
-pack_room(struct rogue_state *rs,bool from_floor, THING *obj)
+bool pack_room(struct rogue_state *rs,bool from_floor, THING *obj)
 {
-    inpack = num_packitems();
-    if (++inpack > MAXPACK)
+    inpack = num_packitems(rs);
+    if ( ++inpack > MAXPACK )
     {
-	if (!terse)
-	    addmsg(rs,"there's ");
-	addmsg(rs,"no room");
-	if (!terse)
-	    addmsg(rs," in your pack");
-	endmsg(rs);
-	if (from_floor)
-	    move_msg(rs,obj);
-	inpack = MAXPACK;
-	return FALSE;
+        if (!terse)
+            addmsg(rs,"there's ");
+        addmsg(rs,"no room");
+        if (!terse)
+            addmsg(rs," in your pack");
+        endmsg(rs);
+        if (from_floor)
+            move_msg(rs,obj);
+        inpack = MAXPACK;
+        return FALSE;
     }
     //fprintf(stderr,"inpack.%d vs MAX.%d\n",inpack,MAXPACK), sleep(2);
-    
-    if (from_floor)
+    if ( from_floor != 0 )
     {
-	detach(lvl_obj, obj);
-	mvaddch(hero.y, hero.x, floor_ch());
-	chat(hero.y, hero.x) = (proom->r_flags & ISGONE) ? PASSAGE : FLOOR;
+        detach(lvl_obj, obj);
+        mvaddch(hero.y, hero.x, floor_ch());
+        chat(hero.y, hero.x) = (proom->r_flags & ISGONE) ? PASSAGE : FLOOR;
     }
-
     return TRUE;
 }
 
@@ -247,22 +267,11 @@ pack_char()
  *	the given type.
  */
 
-int32_t num_packitems()
-{
-    THING *list = pack;
-    int32_t type = 0,n = 0;
-    for (; list != NULL; list = next(list))
-    {
-        if (!list->o_packch)
-            n++;
-    }
-    return(n);
-}
 
 bool
 inventory(struct rogue_state *rs,THING *list, int type)
 {
-    static char inv_temp[MAXSTR];
+    char inv_temp[MAXSTR];
 
     n_objs = 0;
     for (; list != NULL; list = next(list))
@@ -401,59 +410,63 @@ get_item(struct rogue_state *rs,char *purpose, int type)
 {
     THING *obj;
     char ch;
-
+    
     if (pack == NULL)
-	msg(rs,"you aren't carrying anything");
+        msg(rs,"you aren't carrying anything");
     else if (again)
-	if (last_pick)
-	    return last_pick;
-	else
-	    msg(rs,"you ran out");
-    else
-    {
-	for (;;)
-	{
-	    if (!terse)
-		addmsg(rs,"which object do you want to ");
-	    addmsg(rs,purpose);
-	    if (terse)
-		addmsg(rs," what");
-	    msg(rs,"? (* for list): ");
-	    ch = readchar(rs);
-	    mpos = 0;
-	    /*
-	     * Give the poor player a chance to abort the command
-	     */
-	    if (ch == ESCAPE)
-	    {
-		reset_last();
-		after = FALSE;
-		msg(rs,"");
-		return NULL;
-	    }
-	    n_objs = 1;		/* normal case: person types one char */
-	    if (ch == '*')
-	    {
-		mpos = 0;
-		if (inventory(rs,pack, type) == 0)
-		{
-		    after = FALSE;
-		    return NULL;
-		}
-		continue;
-	    }
-	    for (obj = pack; obj != NULL; obj = next(obj))
-		if (obj->o_packch == ch)
-		    break;
-	    if (obj == NULL)
-	    {
-		msg(rs,"'%s' is not a valid item",unctrl(ch));
-		continue;
-	    }
-	    else 
-		return obj;
-	}
-    }
+        if (last_pick)
+            return last_pick;
+        else
+            msg(rs,"you ran out");
+        else
+        {
+            for (;;)
+            {
+                if (!terse)
+                    addmsg(rs,"which object do you want to ");
+                addmsg(rs,purpose);
+                if (terse)
+                    addmsg(rs," what");
+                msg(rs,"? (* for list): ");
+                ch = readchar(rs);
+                mpos = 0;
+                /*
+                 * Give the poor player a chance to abort the command
+                 */
+                if (ch == ESCAPE)
+                {
+                    reset_last();
+                    after = FALSE;
+                    msg(rs,"");
+                    return NULL;
+                }
+                n_objs = 1;		/* normal case: person types one char */
+                if (ch == '*')
+                {
+                    mpos = 0;
+                    if (inventory(rs,pack, type) == 0)
+                    {
+                        after = FALSE;
+                        return NULL;
+                    }
+                    continue;
+                }
+                for (obj = pack; obj != NULL; obj = next(obj))
+                    if (obj->o_packch == ch)
+                        break;
+                if (obj == NULL)
+                {
+                    //msg(rs,"'%s' is not a valid item",unctrl(ch));
+                    //continue;
+                    reset_last();
+                    after = FALSE;
+                    msg(rs,"'%s' is not a valid item",unctrl(ch));
+                    return NULL;
+                }
+                else
+                    return obj;
+            }
+        }
     return NULL;
 }
 
