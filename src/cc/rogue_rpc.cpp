@@ -366,7 +366,7 @@ int32_t rogue_isvalidgame(struct CCcontract_info *cp,int32_t &gameheight,CTransa
 
 UniValue rogue_playerobj(std::vector<uint8_t> playerdata,uint256 playertxid,uint256 tokenid,std::string symbol,std::string pname,uint256 gametxid)
 {
-    int32_t i,vout,spentvini,n=0; uint256 txid,spenttxid,hashblock; struct rogue_player P; char packitemstr[512],*datastr=0; UniValue obj(UniValue::VOBJ),a(UniValue::VARR); CTransaction tx;
+    int32_t i,vout,spentvini,n=0; uint256 txid,spenttxid,hashBlock; struct rogue_player P; char packitemstr[512],*datastr=0; UniValue obj(UniValue::VOBJ),a(UniValue::VARR); CTransaction tx;
     memset(&P,0,sizeof(P));
     if ( playerdata.size() > 0 )
     {
