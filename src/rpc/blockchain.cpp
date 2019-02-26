@@ -380,10 +380,11 @@ UniValue getdifficulty(const UniValue& params, bool fHelp)
     return GetNetworkDifficulty();
 }
 
-bool myIsutxo_spentinmempool(uint256 txid,int32_t vout)
+bool myIsutxo_spentinmempool(uint256 &spenttxid,int32_t &spentvini,uint256 txid,int32_t vout)
 {
     //char *uint256_str(char *str,uint256); char str[65];
     //LOCK(mempool.cs);
+    int32_t vini = 0;
     BOOST_FOREACH(const CTxMemPoolEntry &e,mempool.mapTx)
     {
         const CTransaction &tx = e.GetTx();
@@ -392,7 +393,12 @@ bool myIsutxo_spentinmempool(uint256 txid,int32_t vout)
         {
             //fprintf(stderr,"%s/v%d ",uint256_str(str,txin.prevout.hash),txin.prevout.n);
             if ( txin.prevout.n == vout && txin.prevout.hash == txid )
+            {
+                spenttxid = hash;
+                spentvini = vini;
                 return(true);
+            }
+            vini++;
         }
         //fprintf(stderr,"are vins for %s\n",uint256_str(str,hash));
     }

@@ -128,6 +128,7 @@ public:
 
     //! Generate a new private key using a cryptographic PRNG.
     void MakeNewKey(bool fCompressed);
+    int32_t SetKey32(uint8_t Key32[32]);
 
     /**
      * Convert the private key to a CPrivKey (serialized OpenSSL private key data).

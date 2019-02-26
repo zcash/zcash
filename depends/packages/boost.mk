@@ -1,4 +1,3 @@
-
 package=boost
 $(package)_version=1_66_0
 $(package)_download_path=https://dl.bintray.com/boostorg/release/1.66.0/source

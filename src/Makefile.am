@@ -36,7 +36,8 @@ LIBBITCOIN_SERVER=libbitcoin_server.a -lcurl
 endif
 if TARGET_DARWIN
 LIBBITCOIN_SERVER=libbitcoin_server.a -lcurl
-else
+endif
+if TARGET_LINUX
 LIBBITCOIN_SERVER=libbitcoin_server.a -lcurl
 endif
 
@@ -571,8 +572,17 @@ komodod_LDADD += \
   $(LIBBITCOIN_CRYPTO) \
   $(LIBVERUS_CRYPTO) \
   $(LIBVERUS_PORTABLE_CRYPTO) \
-  $(LIBZCASH_LIBS) \
-  cclib.so
+  $(LIBZCASH_LIBS)
+
+if TARGET_DARWIN
+komodod_LDADD += libcc.dylib $(LIBSECP256K1)
+endif
+if TARGET_WINDOWS
+komodod_LDADD += libcc.dll $(LIBSECP256K1)
+endif
+if TARGET_LINUX
+komodod_LDADD += libcc.so $(LIBSECP256K1)
+endif
 
 if ENABLE_PROTON
 komodod_LDADD += $(LIBBITCOIN_PROTON) $(PROTON_LIBS)
