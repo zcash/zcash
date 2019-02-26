@@ -153,7 +153,6 @@ int32_t komodo_is_notarytx(const CTransaction& tx);
 CScript Marmara_scriptPubKey(int32_t height,CPubKey pk);
 CScript MarmaraCoinbaseOpret(uint8_t funcid,int32_t height,CPubKey pk);
 uint64_t komodo_notarypay(CMutableTransaction &txNew, std::vector<int8_t> &NotarisationNotaries, uint32_t timestamp, int32_t height, uint8_t *script, int32_t len);
-int32_t komodo_getnotarizedheight(uint32_t timestamp,int32_t height, uint8_t *script, int32_t len);
 int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestamp);
 
 CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32_t gpucount, bool isStake)
@@ -233,8 +232,6 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
 
         const int64_t nMedianTimePast = pindexPrev->GetMedianTimePast();
         uint32_t proposedTime = GetAdjustedTime();
-        
-        int32_t last_notarizedheight = 0;
                 
         if (proposedTime == nMedianTimePast)
         {
@@ -391,7 +388,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
 
             if ( fNotarisation ) 
             {
-                // Special miner for notary pay chains. Can only enter this if numSN is set higher up.
+                // Special miner for notary pay chains. Can only enter this if numSN/notarypubkeys is set higher up.
                 if ( tx.vout.size() == 2 && tx.vout[1].nValue == 0 )
                 {
                     // Get the OP_RETURN for the notarisation
@@ -400,46 +397,17 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                     if ( script[0] == OP_RETURN )
                     {
                         Notarisations++;
-                        int32_t notarizedheight = komodo_getnotarizedheight(pblock->nTime, nHeight, script, scriptlen);
-                        if ( notarizedheight != 0 )
+                        if ( Notarisations > 1 ) 
                         {
-                            //fprintf(stderr, "notarizations.%d notarizedheight.%d last_notarizedheight.%d\n",Notarisations,notarizedheight,last_notarizedheight);
-                            if ( last_notarizedheight == 0 )
-                            {
-                                // this is the first one we see, add it to the block as TX1 
-                                NotarisationNotaries = TMP_NotarisationNotaries;
-                                dPriority = 1e16;
-                                fNotarisationBlock = true;
-                                fprintf(stderr, "Notarisation %s set to maximum priority\n",hash.ToString().c_str());
-                            }
-                            else if ( notarizedheight > last_notarizedheight )
-                                continue; // leave this notarisation for the next block, it will be valid!
-                            else if ( notarizedheight == last_notarizedheight )
-                                continue; // this shouldnt happen, it would mean there are 2 notarisations for the same block!
-                            else  if ( notarizedheight < last_notarizedheight )
-                            {
-                                // we need to remove the last seen notarzation from block 
-                                const CTransaction& Tx = *(vecPriority.front().get<2>());
-                                TxPriorityCompare comparer(0);
-                                std::make_heap(vecPriority.begin(), vecPriority.end(), comparer);
-                                std::pop_heap(vecPriority.begin(), vecPriority.end(), comparer);
-                                vecPriority.pop_back();
-                                // add this one as its valid before the other one.
-                                NotarisationNotaries = TMP_NotarisationNotaries;
-                                dPriority = 1e16;
-                                fNotarisationBlock = true;
-                                fprintf(stderr, "Notarisation %s set to maximum priority replacing notarization %s\n",hash.ToString().c_str(), Tx.GetHash().ToString().c_str());
-                            }
-                            last_notarizedheight = notarizedheight;
-                        }
-                        else if ( Notarisations > 1 ) 
-                        {
-                            fprintf(stderr, "skipping notarizations.%d\n",Notarisations);
+                            fprintf(stderr, "skipping notarization.%d\n",Notarisations);
                             // Any attempted notarization needs to be in its own block!
-                            // If we find a valid one and place it in position 1, an invalid one must wait until the next block to be mined.
                             continue;
                         }
-                        //fprintf(stderr, "BOTTOM: notarizations.%d notarizedheight.%d last_notarizedheight.%d\n",Notarisations,notarizedheight,last_notarizedheight);
+                        // this is the first one we see, add it to the block as TX1 
+                        NotarisationNotaries = TMP_NotarisationNotaries;
+                        dPriority = 1e16;
+                        fNotarisationBlock = true;
+                        fprintf(stderr, "Notarisation %s set to maximum priority\n",hash.ToString().c_str());
                     }
                 }
             }
@@ -447,7 +415,6 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
             {
                 dPriority -= 10;
                 // make sure notarisation is tx[1] in block. 
-                // Need to check this? Tried sapling tx and it was not set to max priotity, maybe missing something.
             }
             if (porphan)
             {
