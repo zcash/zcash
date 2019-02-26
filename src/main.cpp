@@ -5472,7 +5472,7 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
         bool fRequested = MarkBlockAsReceived(hash);
         // Test thing on LABS to test viability of rejecting a node pushing a chain.
         // Supposed to stop malicious forks being pushed. Untested. Disabled incase of problems it may cause.
-        if ( 0 & pfrom && !fRequested && vNodes.size() > 1 )
+        if ( 0 && pfrom && !fRequested && vNodes.size() > 1 )
         {
             pfrom->nBlocksinARow += 1;
             if ( pfrom->nBlocksinARow >= 10 )
