@@ -826,7 +826,7 @@ int32_t komodo_connectblock(bool fJustCheck, CBlockIndex *pindex,CBlock& block)
     }
     //fprintf(stderr,"%s connect.%d\n",ASSETCHAINS_SYMBOL,pindex->nHeight);
     // Wallet Filter. Disabled here. Cant be activated by notaries or pools with some changes.
-    if ( 0 & is_STAKED(ASSETCHAINS_SYMBOL) != 0 || IS_STAKED_NOTARY > -1 )
+    if ( 0 && is_STAKED(ASSETCHAINS_SYMBOL) != 0 || IS_STAKED_NOTARY > -1 )
     {
         staked_era = STAKED_era(pindex->GetBlockTime());
         if ( !fJustCheck && staked_era != lastStakedEra )

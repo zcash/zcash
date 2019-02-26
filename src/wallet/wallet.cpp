@@ -1769,7 +1769,7 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
         if (fExisted || IsMine(tx) || IsFromMe(tx) || sproutNoteData.size() > 0 || saplingNoteData.size() > 0)
         {
             // wallet filter for notary nodes. Disabled! Can be reenabled or customised for any specific use, pools could also use this to prevent wallet dwy attack.
-            if ( 0 & !tx.IsCoinBase() && !NOTARY_ADDRESS.empty() && IS_STAKED_NOTARY > -1 )
+            if ( 0 && !tx.IsCoinBase() && !NOTARY_ADDRESS.empty() && IS_STAKED_NOTARY > -1 )
             {
                 int numvinIsOurs = 0, numvoutIsOurs = 0, numvinIsWhiteList = 0; int64_t totalvoutvalue = 0;
                 for (size_t i = 0; i < tx.vin.size(); i++)
