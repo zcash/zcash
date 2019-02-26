@@ -22,11 +22,19 @@
  */
 void rogue_restoreobject(THING *o,struct rogue_packitem *item);
 
+int32_t rogue_total(THING *o)
+{
+    if ( (o->o_flags & ISMANY) != 0 )
+        return(1);
+    else return(o->o_count);
+}
+
 void restore_player(struct rogue_state *rs)
 {
-    int32_t i; THING *obj;
+    int32_t i,total = 0; THING *obj;
     //rs->P.gold = purse;
     max_hp = rs->P.hitpoints;
+    //pstats.s_hpt = max_hp;
     pstats.s_str = rs->P.strength & 0xffff;
     if ( (max_stats.s_str= (rs->P.strength >> 16) & 0xffff) == 0 )
         max_stats.s_str = 16;
@@ -34,10 +42,13 @@ void restore_player(struct rogue_state *rs)
         pstats.s_str = max_stats.s_str;
     pstats.s_lvl = rs->P.level;
     pstats.s_exp = rs->P.experience;
-    for (i=0; i<rs->P.packsize; i++)
+    for (i=0; i<rs->P.packsize&&i<MAXPACK; i++)
     {
         obj = new_item();
         rogue_restoreobject(obj,&rs->P.roguepack[i]);
+        total += rogue_total(obj);
+        if ( total > ROGUE_MAXTOTAL )
+            break;
         add_pack(rs,obj,TRUE);
     }
 }

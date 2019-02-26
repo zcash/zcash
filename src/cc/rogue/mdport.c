@@ -33,14 +33,14 @@
 #include <string.h>
 
 #if defined(_WIN32)
-#include <Windows.h>
-#include <Lmcons.h>
+#include <windows.h>
+#include <lmcons.h>
 #include <io.h>
 #include <conio.h>
 #pragma warning( disable: 4201 ) 
 #include <shlobj.h>
 #pragma warning( default: 4201 ) 
-#include <Shlwapi.h>
+#include <shlwapi.h>
 #undef MOUSE_MOVED
 #endif
 
@@ -705,7 +705,9 @@ md_erasechar()
 #elif defined(VERASE)
     return(_tty.c_cc[VERASE]); /* process erase character */
 #else
+    #ifndef __MINGW32__
     return(_tty.sg_erase); /* process erase character */
+    #endif
 #endif
 }
 
@@ -717,7 +719,9 @@ md_killchar()
 #elif defined(VKILL)
     return(_tty.c_cc[VKILL]);
 #else
+    #ifndef __MINGW32__
     return(_tty.sg_kill);
+    #endif
 #endif
 }
 

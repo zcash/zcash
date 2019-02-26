@@ -139,7 +139,7 @@ int32_t komodo_nextheight();
 
 int32_t CCgetspenttxid(uint256 &spenttxid,int32_t &vini,int32_t &height,uint256 txid,int32_t vout);
 void CCclearvars(struct CCcontract_info *cp);
-UniValue CClib(struct CCcontract_info *cp,char *method,cJSON *params);
+UniValue CClib(struct CCcontract_info *cp,char *method,char *jsonstr);
 UniValue CClib_info(struct CCcontract_info *cp);
 CBlockIndex *komodo_blockindex(uint256 hash);
 CBlockIndex *komodo_chainactive(int32_t height);
