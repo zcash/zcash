@@ -448,6 +448,7 @@ int32_t rogue_playerdata(struct CCcontract_info *cp,uint256 &origplayergame,uint
     {
         if ( (f= rogue_highlanderopretdecode(gametxid,tokenid,regslot,pk,playerdata,symbol,pname,playertx.vout[numvouts-1].scriptPubKey)) == 'H' || f == 'Q' )
         {
+            fprintf(stderr,"gametxid.%s\n",gametxid.GetHex().c_str());
             if ( tokenid != zeroid )
             {
                 playertxid = tokenid;
@@ -462,6 +463,7 @@ int32_t rogue_playerdata(struct CCcontract_info *cp,uint256 &origplayergame,uint
                 //fprintf(stderr,"playertxid.%s got vin.%s/v%d gametxid.%s iterate.%d\n",playertxid.ToString().c_str(),playertx.vin[1].prevout.hash.ToString().c_str(),(int32_t)playertx.vin[1].prevout.n-maxplayers,gametxid.ToString().c_str(),rogue_iterateplayer(registertxid,gametxid,playertx.vin[1].prevout.n-maxplayers,playertxid));
                 if ( (tokenid != zeroid || playertx.vin[1].prevout.hash == gametxid) && rogue_iterateplayer(registertxid,gametxid,playertx.vin[1].prevout.n-maxplayers,playertxid) == 0 )
                 {
+                    fprintf(stderr,"gametxid.%s\n",gametxid.GetHex().c_str());
                     // if registertxid has vin from pk, it can be used
                     return(0);
                 } else fprintf(stderr,"hash mismatch or illegal gametxid\n");
