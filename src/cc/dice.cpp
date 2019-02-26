@@ -1416,7 +1416,7 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
     CScript fundingPubKey; CPubKey mypk,dicepk; uint64_t sbits,entropyval,entropyval2; int64_t funding,minbet,maxbet,maxodds,timeoutblocks; uint256 entropytxid,entropytxid2,entropy,hentropy; struct CCcontract_info *cp,C;
     if ( bet < 0 )
     {
-        CCerror = "Diceinit error in bet, is your transaction confirmed?";
+        CCerror = "bet must be positive";
         return("");
     }
     if ( odds < 2 || odds > 9999 )
@@ -1426,7 +1426,7 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
     }
     if ( (cp= Diceinit(fundingPubKey,fundingtxid,&C,planstr,txfee,mypk,dicepk,sbits,minbet,maxbet,maxodds,timeoutblocks)) == 0 ) {
 
-        CCerror = "error in Diceinit";
+        CCerror = "Diceinit error in bet, is your transaction confirmed?";
         return("");
     }
     if ( bet < minbet || bet > maxbet || odds > maxodds )
