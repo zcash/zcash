@@ -366,7 +366,7 @@ int32_t rogue_isvalidgame(struct CCcontract_info *cp,int32_t &gameheight,CTransa
 
 UniValue rogue_playerobj(std::vector<uint8_t> playerdata,uint256 playertxid,uint256 tokenid,std::string symbol,std::string pname,uint256 gametxid)
 {
-    int32_t i; struct rogue_player P; char packitemstr[512],*datastr=0; UniValue obj(UniValue::VOBJ),a(UniValue::VARR);
+    int32_t i,vout,spentvini,n=0; uint256 txid,spenttxid,hashblock; struct rogue_player P; char packitemstr[512],*datastr=0; UniValue obj(UniValue::VOBJ),a(UniValue::VARR); CTransaction tx;
     memset(&P,0,sizeof(P));
     if ( playerdata.size() > 0 )
     {
@@ -384,8 +384,38 @@ UniValue rogue_playerobj(std::vector<uint8_t> playerdata,uint256 playertxid,uint
         rogue_packitemstr(packitemstr,&P.roguepack[i]);
         a.push_back(packitemstr);
     }
-    obj.push_back(Pair("playertxid",playertxid.GetHex()));
+    txid = playertxid;
+    vout = 0;
+    while ( CCgettxout(txid,vout,1) < 0 )
+    {
+        spenttxid = zeroid;
+        spentvini = -1;
+        if ( (spentvini= myIsutxo_spent(spenttxid,txid,0)) >= 0 )
+            txid = spenttxid;
+        else if ( myIsutxo_spentinmempool(spenttxid,spentvini,txid,0) == 0 || spenttxid == zeroid )
+        {
+            fprintf(stderr,"mempool tracking error %s/v0\n",txid.ToString().c_str());
+            break;
+        }
+        txid = spenttxid;
+        vout = 0;
+        if ( myGetTransaction(txid,tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 1 )
+        {
+            for (i=0; i<numvouts; i++)
+                if ( tx.vout[i].nValue == 1 )
+                {
+                    vout = i;
+                    break;
+                }
+        }
+        fprintf(stderr,"trace spend to %s/v%d\n",txid.GetHex().c_str(),vout);
+        if ( n++ > 1000 )
+            break;
+    }
     obj.push_back(Pair("gametxid",gametxid.GetHex()));
+    if ( txid != playertxid )
+        obj.push_back(Pair("batontxid",txid.GetHex()));
+    obj.push_back(Pair("playertxid",playertxid.GetHex()));
     if ( tokenid != zeroid )
         obj.push_back(Pair("tokenid",tokenid.GetHex()));
     else obj.push_back(Pair("tokenid",playertxid.GetHex()));
@@ -448,7 +478,7 @@ int32_t rogue_playerdata(struct CCcontract_info *cp,uint256 &origplayergame,uint
     {
         if ( (f= rogue_highlanderopretdecode(gametxid,tokenid,regslot,pk,playerdata,symbol,pname,playertx.vout[numvouts-1].scriptPubKey)) == 'H' || f == 'Q' )
         {
-            fprintf(stderr,"gametxid.%s\n",gametxid.GetHex().c_str());
+            origplayergame = gametxid;
             if ( tokenid != zeroid )
             {
                 playertxid = tokenid;
@@ -463,7 +493,6 @@ int32_t rogue_playerdata(struct CCcontract_info *cp,uint256 &origplayergame,uint
                 //fprintf(stderr,"playertxid.%s got vin.%s/v%d gametxid.%s iterate.%d\n",playertxid.ToString().c_str(),playertx.vin[1].prevout.hash.ToString().c_str(),(int32_t)playertx.vin[1].prevout.n-maxplayers,gametxid.ToString().c_str(),rogue_iterateplayer(registertxid,gametxid,playertx.vin[1].prevout.n-maxplayers,playertxid));
                 if ( (tokenid != zeroid || playertx.vin[1].prevout.hash == gametxid) && rogue_iterateplayer(registertxid,gametxid,playertx.vin[1].prevout.n-maxplayers,playertxid) == 0 )
                 {
-                    fprintf(stderr,"gametxid.%s\n",gametxid.GetHex().c_str());
                     // if registertxid has vin from pk, it can be used
                     return(0);
                 } else fprintf(stderr,"hash mismatch or illegal gametxid\n");
