@@ -25,6 +25,7 @@
 
 int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestamp);
 int32_t komodo_electednotary(int32_t *numnotariesp,uint8_t *pubkey33,int32_t height,uint32_t timestamp);
+int32_t komodo_voutupdate(bool fJustCheck,int32_t *isratificationp,int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,int32_t height,uint256 txhash,int32_t i,int32_t j,uint64_t *voutmaskp,int32_t *specialtxp,int32_t *notarizedheightp,uint64_t value,int32_t notarized,uint64_t signedmask,uint32_t timestamp);
 unsigned int lwmaGetNextPOSRequired(const CBlockIndex* pindexLast, const Consensus::Params& params);
 bool EnsureWalletIsAvailable(bool avoidException);
 extern bool fRequestShutdown;
@@ -1825,8 +1826,6 @@ uint64_t komodo_notarypayamount(int32_t nHeight, int64_t notarycount)
     return(ret);
 }
 
-int32_t komodo_voutupdate(bool fJustCheck,int32_t *isratificationp,int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,int32_t height,uint256 txhash,int32_t i,int32_t j,uint64_t *voutmaskp,int32_t *specialtxp,int32_t *notarizedheightp,uint64_t value,int32_t notarized,uint64_t signedmask,uint32_t timestamp);
-
 int32_t komodo_getnotarizedheight(uint32_t timestamp,int32_t height, uint8_t *script, int32_t len)
 {
     // Check the notarisation is valid, and extract notarised height. 
@@ -1855,13 +1854,12 @@ uint64_t komodo_notarypay(CMutableTransaction &txNew, std::vector<int8_t> &Notar
 {
     // fetch notary pubkey array.
     uint64_t total = 0, AmountToPay = 0;
-    int32_t staked_era; int8_t numSN;
-    uint8_t staked_pubkeys[64][33];
-    staked_era = STAKED_era(timestamp);
+    int8_t numSN = 0; uint8_t notarypubkeys[64][33] = {0};
+    numSN = komodo_notaries(notarypubkeys, height, timestamp);
+
     // No point going further, no notaries can be paid.
-    if ( staked_era == 0 )
+    if ( notarypubkeys[0][0] == 0 )
         return(0);
-    numSN = numStakedNotaries(staked_pubkeys,staked_era);
     
     // Check the notarisation is valid.
     int32_t notarizedheight = komodo_getnotarizedheight(timestamp, height, script, len);
@@ -1886,7 +1884,7 @@ uint64_t komodo_notarypay(CMutableTransaction &txNew, std::vector<int8_t> &Notar
         ptr[0] = 33;
         for (int8_t i=0; i<33; i++)
         {
-            ptr[i+1] = staked_pubkeys[NotarisationNotaries[n]][i];
+            ptr[i+1] = notarypubkeys[NotarisationNotaries[n]][i];
             //fprintf(stderr,"%02x",ptr[i+1]);
         }
         ptr[34] = OP_CHECKSIG;
@@ -1901,13 +1899,12 @@ uint64_t komodo_checknotarypay(CBlock *pblock,int32_t height)
 {
     std::vector<int8_t> NotarisationNotaries;
     uint32_t timestamp = pblock->nTime;
-    int32_t staked_era; int8_t numSN;
-    uint8_t staked_pubkeys[64][33];
-    staked_era = STAKED_era(timestamp);
+    int8_t numSN = 0; uint8_t notarypubkeys[64][33] = {0};
+    numSN = komodo_notaries(notarypubkeys, height, timestamp);
+
     // No point going further, no notaries can be paid.
-    if ( staked_era == 0 )
+    if ( notarypubkeys[0][0] == 0 )
         return(0);
-    numSN = numStakedNotaries(staked_pubkeys,staked_era);
     
     uint8_t *script; int32_t scriptlen;
     // Loop over the notarisation and extract the position of the participating notaries in the array of pukeys for this era.
@@ -1920,7 +1917,7 @@ uint64_t komodo_checknotarypay(CBlock *pblock,int32_t height)
             {
                 script = (uint8_t *)&tx1.vout[txin.prevout.n].scriptPubKey[0];
                 scriptlen = (int32_t)tx1.vout[txin.prevout.n].scriptPubKey.size();
-                if ( scriptlen == 35 && script[0] == 33 && script[34] == OP_CHECKSIG && memcmp(script+1,staked_pubkeys[i],33) == 0 )
+                if ( scriptlen == 35 && script[0] == 33 && script[34] == OP_CHECKSIG && memcmp(script+1,notarypubkeys[i],33) == 0 )
                     NotarisationNotaries.push_back(i);
             }
         }
@@ -1979,7 +1976,7 @@ uint64_t komodo_checknotarypay(CBlock *pblock,int32_t height)
         // Check the pubkeys match the pubkeys in the notarisation.
         script = (uint8_t *)&txout.scriptPubKey[0];
         scriptlen = (int32_t)txout.scriptPubKey.size();
-        if ( scriptlen == 35 && script[0] == 33 && script[34] == OP_CHECKSIG && memcmp(script+1,staked_pubkeys[NotarisationNotaries[n-1]],33) == 0 )
+        if ( scriptlen == 35 && script[0] == 33 && script[34] == OP_CHECKSIG && memcmp(script+1,notarypubkeys[NotarisationNotaries[n-1]],33) == 0 )
         {
             // check the value is correct
             if ( pblock->vtx[0].vout[n].nValue == AmountToPay )
@@ -2196,9 +2193,11 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
                 return(-1); 
             }
             // Check min sigs.
-            if ( pblock->vtx[1].vin.size() < (num_notaries_STAKED[STAKED_era(pblock->nTime)]/5) )
+            int8_t numSN = 0; uint8_t notarypubkeys[64][33] = {0};
+            numSN = komodo_notaries(notarypubkeys, height, pblock->nTime)
+            if ( pblock->vtx[1].vin.size() < numSN/5) )
             {
-                fprintf(stderr, "ht.%i does not meet minsigs.%i sigs.%li\n",height,(num_notaries_STAKED[STAKED_era(pblock->nTime)]/5),pblock->vtx[1].vin.size());
+                fprintf(stderr, "ht.%i does not meet minsigs.%i sigs.%li\n",height,numSN/5),pblock->vtx[1].vin.size());
                 return(-1);
             }
         }

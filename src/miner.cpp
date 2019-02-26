@@ -152,9 +152,9 @@ int32_t decode_hex(uint8_t *bytes,int32_t n,char *hex);
 int32_t komodo_is_notarytx(const CTransaction& tx);
 CScript Marmara_scriptPubKey(int32_t height,CPubKey pk);
 CScript MarmaraCoinbaseOpret(uint8_t funcid,int32_t height,CPubKey pk);
-int32_t komodo_is_notarytx(const CTransaction& tx);
 uint64_t komodo_notarypay(CMutableTransaction &txNew, std::vector<int8_t> &NotarisationNotaries, uint32_t timestamp, int32_t height, uint8_t *script, int32_t len);
 int32_t komodo_getnotarizedheight(uint32_t timestamp,int32_t height, uint8_t *script, int32_t len);
+int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestamp);
 
 CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32_t gpucount, bool isStake)
 {
@@ -248,15 +248,12 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
             }
         }
         pblock->nTime = GetAdjustedTime();
-        // Now we have the block time, we can get the active notaries.
-        int32_t staked_era = 0; int8_t numSN = 0;
-        uint8_t staked_pubkeys[64][33] = {0};
-        if ( is_STAKED(ASSETCHAINS_SYMBOL) < 3 )
+        // Now we have the block time + height, we can get the active notaries.
+        int8_t numSN = 0; uint8_t notarypubkeys[64][33] = {0};
+        if ( ASSETCHAINS_NOTARY_PAY[0] != 0 )
         {
-            // Only use speical miner for LABS chains in the actual cluster that use notarypay!
-            // It wouldnt hurt to use it on other chains, but serves little purpose. 
-            staked_era = STAKED_era(pblock->nTime);
-            numSN = numStakedNotaries(staked_pubkeys,staked_era);
+            // Only use speical miner for notary pay chains.
+            numSN = komodo_notaries(notarypubkeys, nHeight, pblock->nTime)
         }
 
         CCoinsViewCache view(pcoinsTip);
@@ -268,7 +265,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
         // Priority order to process transactions
         list<COrphan> vOrphan; // list memory doesn't move
         map<uint256, vector<COrphan*> > mapDependers;
-        bool fPrintPriority = GetBoolArg("-printpriority", true);
+        bool fPrintPriority = GetBoolArg("-printpriority", false);
 
         // This vector will be sorted into a priority queue:
         vector<TxPriority> vecPriority;
@@ -302,17 +299,16 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
             CAmount nTotalIn = 0;
             bool fMissingInputs = false;
             bool fNotarisation = false;
-            std::vector<int8_t> TMP_NotarisationNotaries = {0};
+            std::vector<int8_t> TMP_NotarisationNotaries;
             if (tx.IsCoinImport())
             {
                 CAmount nValueIn = GetCoinImportValue(tx); // burn amount
                 nTotalIn += nValueIn;
                 dPriority += (double)nValueIn * 1000;  // flat multiplier... max = 1e16.
             } else {
-                //int numNotaryVins = 0; 
                 TMP_NotarisationNotaries.clear();
                 bool fToCryptoAddress = false;
-                if ( numSN != 0 && staked_pubkeys[0][0] != 0 && komodo_is_notarytx(tx) == 1 )
+                if ( numSN != 0 && notarypubkeys[0][0] != 0 && komodo_is_notarytx(tx) == 1 )
                     fToCryptoAddress = true;
 
                 BOOST_FOREACH(const CTxIn& txin, tx.vin)
@@ -361,7 +357,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                         {
                             script = (uint8_t *)&tx1.vout[txin.prevout.n].scriptPubKey[0];
                             scriptlen = (int32_t)tx1.vout[txin.prevout.n].scriptPubKey.size();
-                            if ( scriptlen == 35 && script[0] == 33 && script[34] == OP_CHECKSIG && memcmp(script+1,staked_pubkeys[i],33) == 0 )
+                            if ( scriptlen == 35 && script[0] == 33 && script[34] == OP_CHECKSIG && memcmp(script+1,notarypubkeys[i],33) == 0 )
                             {
                                 // We can add the index of each notary to vector, and clear it if this notarisation is not valid later on.
                                 TMP_NotarisationNotaries.push_back(i);                          
@@ -395,7 +391,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
 
             if ( fNotarisation ) 
             {
-                // Special miner for notary pay chains.
+                // Special miner for notary pay chains. Can only enter this if numSN is set higher up.
                 if ( tx.vout.size() == 2 && tx.vout[1].nValue == 0 )
                 {
                     // Get the OP_RETURN for the notarisation
@@ -458,7 +454,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                 porphan->dPriority = dPriority;
                 porphan->feeRate = feeRate;
             }
-            else 
+            else
                 vecPriority.push_back(TxPriority(dPriority, feeRate, &(mi->GetTx())));
         }
 
