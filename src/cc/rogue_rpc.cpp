@@ -390,9 +390,9 @@ UniValue rogue_playerobj(std::vector<uint8_t> playerdata,uint256 playertxid,uint
     {
         spenttxid = zeroid;
         spentvini = -1;
-        if ( (spentvini= myIsutxo_spent(spenttxid,txid,0)) >= 0 )
+        if ( (spentvini= myIsutxo_spent(spenttxid,txid,vout)) >= 0 )
             txid = spenttxid;
-        else if ( myIsutxo_spentinmempool(spenttxid,spentvini,txid,0) == 0 || spenttxid == zeroid )
+        else if ( myIsutxo_spentinmempool(spenttxid,spentvini,txid,vout) == 0 || spenttxid == zeroid )
         {
             fprintf(stderr,"mempool tracking error %s/v0\n",txid.ToString().c_str());
             break;
