@@ -72,8 +72,12 @@ cd komodo
 ```
 
 #### OSX
-Ensure you have [brew](https://brew.sh) and the command line tools installed (comes automatically with XCode) and run:
+Ensure you have [brew](https://brew.sh) and Command Line Tools installed.
 ```shell
+/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+# installs brew
+xcode-select --install 
+# opens a pop-up window to install CLT without installing the entire Xcode package
 brew update && brew install gcc@6
 git clone https://github.com/komodoplatform/komodo --branch master --single-branch
 cd komodo
