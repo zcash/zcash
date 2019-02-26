@@ -1436,7 +1436,7 @@ void static BitcoinMiner_noeq()
                 
                 CVerusHashV2Writer ss2 = CVerusHashV2Writer(SER_GETHASH, PROTOCOL_VERSION);
                 ss2 << *((CBlockHeader *)pblock);
-                if ( ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASHV2 )
+                if ( ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASHV1_1 )
                     extraPtr = ss2.xI64p();
                 CVerusHashV2 &vh2 = ss2.GetState();
                 vh2.ClearExtra();
@@ -1459,7 +1459,7 @@ void static BitcoinMiner_noeq()
                     *extraPtr = i;
                     if ( ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASH )
                         vh.ExtraHash((unsigned char *)&hashResult);
-                    else if ( ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASHV2 )
+                    else if ( ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASHV1_1 )
                         vh2.ExtraHash((unsigned char *)&hashResult);
 
                     if ( UintToArith256(hashResult) <= hashTarget )

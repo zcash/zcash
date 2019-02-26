@@ -1031,9 +1031,7 @@ CAmount GetAccountBalance(const string& strAccount, int nMinDepth, const isminef
 }
 
 
-// for cleaning wallets, many main net notaries are using this to gain a MASSIVE advantage.
-// Disabled here. but they can enable it a bit easier now, then using their own forks. 
-/*UniValue cleanwallettransactions(const UniValue& params, bool fHelp)
+UniValue cleanwallettransactions(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -1134,7 +1132,7 @@ CAmount GetAccountBalance(const string& strAccount, int nMinDepth, const isminef
     ret.push_back(Pair("remaining_transactons", (int)remaining));
     ret.push_back(Pair("removed_transactions", (int)(txs-remaining)));
     return  (ret);
-} */
+}
 
 UniValue getbalance(const UniValue& params, bool fHelp)
 {

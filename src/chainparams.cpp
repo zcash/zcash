@@ -297,7 +297,7 @@ void *chainparams_commandline(void *ptr)
             mainParams.consensus.nPowAveragingWindow = 45;
             mainParams.consensus.powAlternate = uint256S("00000f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f");
         }
-        else if (ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASHV2)
+        else if (ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASHV1_1)
         {
             // this is only good for 60 second blocks with an averaging window of 45. for other parameters, use:
             // nLwmaAjustedWeight = (N+1)/2 * (0.9989^(500/nPowAveragingWindow)) * nPowTargetSpacing
