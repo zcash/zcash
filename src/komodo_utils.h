@@ -1690,7 +1690,7 @@ void komodo_args(char *argv0)
                     IS_KOMODO_NOTARY = 1;
                     KOMODO_MININGTHREADS = 1;
                     mapArgs ["-genproclimit"] = itostr(KOMODO_MININGTHREADS);
-					IS_STAKED_NOTARY = -1;
+                    IS_STAKED_NOTARY = -1;
                     fprintf(stderr,"running as notary.%d %s\n",i,Notaries_elected1[i][0]);
                     break;
                 }
@@ -1723,7 +1723,7 @@ void komodo_args(char *argv0)
     {
         printf("KOMODO_REWIND %d\n",KOMODO_REWIND);
     }
-		if ( name.c_str()[0] != 0 )
+	  if ( name.c_str()[0] != 0 )
     {
         std::string selectedAlgo = GetArg("-ac_algo", std::string(ASSETCHAINS_ALGORITHMS[0]));
 
@@ -1897,10 +1897,10 @@ void komodo_args(char *argv0)
                     ASSETCHAINS_COMMISSION = 53846154; // maps to 35%
                     printf("ASSETCHAINS_COMMISSION defaulted to 35%% when founders reward active\n");
                 }
-				else
-				{
-					printf("ASSETCHAINS_FOUNDERS_REWARD set to %ld\n", ASSETCHAINS_FOUNDERS_REWARD);
-				}
+                else
+                {
+                    printf("ASSETCHAINS_FOUNDERS_REWARD set to %ld\n", ASSETCHAINS_FOUNDERS_REWARD);
+                }
                 /*else if ( ASSETCHAINS_SELFIMPORT.size() == 0 )
                 {
                     //ASSETCHAINS_OVERRIDE_PUBKEY.clear();

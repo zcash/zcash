@@ -123,9 +123,8 @@ TESTS =
   bin_PROGRAMS += komodod
 #endif
 
-# komodo-tx
 if BUILD_BITCOIN_UTILS
-  bin_PROGRAMS += komodo-cli 
+  bin_PROGRAMS += komodo-cli komodo-tx
 endif
 if ENABLE_WALLET
   bin_PROGRAMS += wallet-utility
@@ -205,7 +204,7 @@ BITCOIN_CORE_H = \
   mruset.h \
   net.h \
   netbase.h \
-	notaries_staked.h \
+  notaries_staked.h \
   noui.h \
   paymentdisclosure.h \
   paymentdisclosuredb.h \
@@ -313,7 +312,7 @@ libbitcoin_server_a_SOURCES = \
   chain.cpp \
   checkpoints.cpp \
   crosschain.cpp \
-	crosschain_authority.cpp \
+  crosschain_authority.cpp \
   crypto/haraka.h \
   crypto/haraka_portable.h \
   crypto/verus_hash.h \
@@ -328,7 +327,7 @@ libbitcoin_server_a_SOURCES = \
   metrics.h \
   miner.cpp \
   net.cpp \
-	notaries_staked.cpp \
+  notaries_staked.cpp \
   noui.cpp \
   notarisationdb.cpp \
   paymentdisclosure.cpp \
@@ -620,8 +619,8 @@ komodo_cli_LDADD = \
 	$(EVENT_LIBS) \
 	$(LIBZCASH) \
 	$(LIBBITCOIN_CRYPTO) \
-  $(LIBVERUS_CRYPTO) \
-  $(LIBVERUS_PORTABLE_CRYPTO) \
+    $(LIBVERUS_CRYPTO) \
+    $(LIBVERUS_PORTABLE_CRYPTO) \
 	$(LIBZCASH_LIBS)
 
 if ENABLE_WALLET
@@ -629,8 +628,8 @@ wallet_utility_LDADD = \
 	libbitcoin_wallet.a \
 	$(LIBBITCOIN_COMMON) \
 	$(LIBBITCOIN_CRYPTO) \
-  $(LIBVERUS_CRYPTO) \
-  $(LIBVERUS_PORTABLE_CRYPTO) \
+    $(LIBVERUS_CRYPTO) \
+    $(LIBVERUS_PORTABLE_CRYPTO) \
 	$(LIBSECP256K1) \
 	$(LIBBITCOIN_UTIL) \
 	$(BOOST_LIBS) \
@@ -639,7 +638,7 @@ wallet_utility_LDADD = \
 	$(LIBZCASH) \
 	$(LIBSNARK) \
 	$(LIBZCASH_LIBS)\
-  $(LIBCRYPTOCONDITIONS)
+    $(LIBCRYPTOCONDITIONS)
 endif
 
 # zcash-tx binary #
@@ -679,7 +678,7 @@ libzcash_a_SOURCES = \
 	zcash/Note.cpp \
 	zcash/prf.cpp \
 	zcash/util.cpp \
-  zcash/zip32.cpp \
+    zcash/zip32.cpp \
 	zcash/circuit/commitment.tcc \
 	zcash/circuit/gadget.tcc \
 	zcash/circuit/merkle.tcc \

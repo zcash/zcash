@@ -1536,7 +1536,7 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
 int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_uint256 bnTarget,arith_uint256 bhash)
 {
     CBlockIndex *previndex,*pindex; char voutaddr[64],destaddr[64]; uint256 txid; uint32_t txtime,prevtime=0; int32_t vout,PoSperc,txn_count,eligible=0,isPoS = 0,segid; uint64_t value; CTxDestination voutaddress; arith_uint256 POWTarget;
-    if ( ASSETCHAINS_STAKED == 100 && height <= 100 )
+    if ( ASSETCHAINS_STAKED == 100 && height <= 10 )
         return(1);
     BlockMap::const_iterator it = mapBlockIndex.find(pblock->GetHash());
     pindex = it != mapBlockIndex.end() ? it->second : NULL;
@@ -2194,10 +2194,10 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
             }
             // Check min sigs.
             int8_t numSN = 0; uint8_t notarypubkeys[64][33] = {0};
-            numSN = komodo_notaries(notarypubkeys, height, pblock->nTime)
-            if ( pblock->vtx[1].vin.size() < numSN/5) )
+            numSN = komodo_notaries(notarypubkeys, height, pblock->nTime);
+            if ( pblock->vtx[1].vin.size() < numSN/5 )
             {
-                fprintf(stderr, "ht.%i does not meet minsigs.%i sigs.%li\n",height,numSN/5),pblock->vtx[1].vin.size());
+                fprintf(stderr, "ht.%i does not meet minsigs.%i sigs.%li\n",height,numSN/5,pblock->vtx[1].vin.size());
                 return(-1);
             }
         }

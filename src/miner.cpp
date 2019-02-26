@@ -253,7 +253,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
         if ( ASSETCHAINS_NOTARY_PAY[0] != 0 )
         {
             // Only use speical miner for notary pay chains.
-            numSN = komodo_notaries(notarypubkeys, nHeight, pblock->nTime)
+            numSN = komodo_notaries(notarypubkeys, nHeight, pblock->nTime);
         }
 
         CCoinsViewCache view(pcoinsTip);
