@@ -277,39 +277,6 @@ int32_t rogue_iamregistered(int32_t maxplayers,uint256 gametxid,CTransaction tx,
     return(0);
 }
 
-uint64_t rogue_gamefields(UniValue &obj,int64_t maxplayers,int64_t buyin,uint256 gametxid,char *myrogueaddr)
-{
-    CBlockIndex *pindex; int32_t ht,openslots,delay,numplayers; uint256 hashBlock; uint64_t seed=0; char cmd[512]; CTransaction tx;
-    if ( myGetTransaction(gametxid,tx,hashBlock) != 0 && (pindex= komodo_blockindex(hashBlock)) != 0 )
-    {
-        ht = pindex->GetHeight();
-        delay = ROGUE_REGISTRATION * (maxplayers > 1);
-        obj.push_back(Pair("height",ht));
-        obj.push_back(Pair("start",ht+delay));
-        if ( komodo_nextheight() > ht+delay )
-        {
-            if ( (pindex= komodo_chainactive(ht+delay)) != 0 )
-            {
-                hashBlock = pindex->GetBlockHash();
-                obj.push_back(Pair("starthash",hashBlock.ToString()));
-                memcpy(&seed,&hashBlock,sizeof(seed));
-                seed &= (1LL << 62) - 1;
-                obj.push_back(Pair("seed",(int64_t)seed));
-                if ( rogue_iamregistered(maxplayers,gametxid,tx,myrogueaddr) > 0 )
-                    sprintf(cmd,"cc/rogue/rogue %llu %s",(long long)seed,gametxid.ToString().c_str());
-                else sprintf(cmd,"./komodo-cli -ac_name=%s cclib register %d \"[%%22%s%%22]\"",ASSETCHAINS_SYMBOL,EVAL_ROGUE,gametxid.ToString().c_str());
-                obj.push_back(Pair("run",cmd));
-            }
-        }
-        obj.push_back(Pair("alive",rogue_playersalive(openslots,numplayers,gametxid,maxplayers,ht,tx)));
-        obj.push_back(Pair("openslots",openslots));
-        obj.push_back(Pair("numplayers",numplayers));
-    }
-    obj.push_back(Pair("maxplayers",maxplayers));
-    obj.push_back(Pair("buyin",ValueFromAmount(buyin)));
-    return(seed);
-}
-
 int32_t rogue_isvalidgame(struct CCcontract_info *cp,int32_t &gameheight,CTransaction &tx,int64_t &buyin,int32_t &maxplayers,uint256 txid,int32_t unspentv0)
 {
     uint256 hashBlock; int32_t i,numvouts; char coinaddr[64]; CPubKey roguepk; uint64_t txfee = 10000;
@@ -610,7 +577,7 @@ int32_t rogue_playersalive(int32_t &openslots,int32_t &numplayers,uint256 gametx
 {
     int32_t i,n,vout,spentvini,registration_open = 0,alive = 0; CTransaction tx; uint256 txid,spenttxid,hashBlock; CBlockIndex *pindex; uint64_t txfee = 10000;
     numplayers = openslots = 0;
-    if ( komodo_nextheight() <= gameheight+ROGUE_MAXKEYSTROKESGAP )
+    if ( komodo_nextheight() <= gameht+ROGUE_MAXKEYSTROKESGAP )
         registration_open = 1;
     for (i=0; i<maxplayers; i++)
     {
@@ -646,7 +613,7 @@ int32_t rogue_playersalive(int32_t &openslots,int32_t &numplayers,uint256 gametx
                 {
                     if ( myGetTransaction(txid,tx,hashBlock) != 0 && (pindex= komodo_blockindex(hashBlock)) != 0 )
                     {
-                        if ( pindex->GetHeight() <= gameheight+ROGUE_MAXKEYSTROKESGAP )
+                        if ( pindex->GetHeight() <= gameht+ROGUE_MAXKEYSTROKESGAP )
                             alive++;
                     }
                 }
@@ -656,6 +623,39 @@ int32_t rogue_playersalive(int32_t &openslots,int32_t &numplayers,uint256 gametx
             openslots++;
     }
     return(alive);
+}
+
+uint64_t rogue_gamefields(UniValue &obj,int64_t maxplayers,int64_t buyin,uint256 gametxid,char *myrogueaddr)
+{
+    CBlockIndex *pindex; int32_t ht,openslots,delay,numplayers; uint256 hashBlock; uint64_t seed=0; char cmd[512]; CTransaction tx;
+    if ( myGetTransaction(gametxid,tx,hashBlock) != 0 && (pindex= komodo_blockindex(hashBlock)) != 0 )
+    {
+        ht = pindex->GetHeight();
+        delay = ROGUE_REGISTRATION * (maxplayers > 1);
+        obj.push_back(Pair("height",ht));
+        obj.push_back(Pair("start",ht+delay));
+        if ( komodo_nextheight() > ht+delay )
+        {
+            if ( (pindex= komodo_chainactive(ht+delay)) != 0 )
+            {
+                hashBlock = pindex->GetBlockHash();
+                obj.push_back(Pair("starthash",hashBlock.ToString()));
+                memcpy(&seed,&hashBlock,sizeof(seed));
+                seed &= (1LL << 62) - 1;
+                obj.push_back(Pair("seed",(int64_t)seed));
+                if ( rogue_iamregistered(maxplayers,gametxid,tx,myrogueaddr) > 0 )
+                    sprintf(cmd,"cc/rogue/rogue %llu %s",(long long)seed,gametxid.ToString().c_str());
+                else sprintf(cmd,"./komodo-cli -ac_name=%s cclib register %d \"[%%22%s%%22]\"",ASSETCHAINS_SYMBOL,EVAL_ROGUE,gametxid.ToString().c_str());
+                obj.push_back(Pair("run",cmd));
+            }
+        }
+        obj.push_back(Pair("alive",rogue_playersalive(openslots,numplayers,gametxid,maxplayers,ht,tx)));
+        obj.push_back(Pair("openslots",openslots));
+        obj.push_back(Pair("numplayers",numplayers));
+    }
+    obj.push_back(Pair("maxplayers",maxplayers));
+    obj.push_back(Pair("buyin",ValueFromAmount(buyin)));
+    return(seed);
 }
 
 void rogue_gameplayerinfo(struct CCcontract_info *cp,UniValue &obj,uint256 gametxid,CTransaction gametx,int32_t vout,int32_t maxplayers,char *myrogueaddr)
