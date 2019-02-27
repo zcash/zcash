@@ -941,7 +941,7 @@ char *rogue_extractgame(int32_t makefiles,char *str,int32_t *numkeysp,std::vecto
                 else
                 {
                     sprintf(str,"extracted $$$gold.%d hp.%d strength.%d/%d level.%d exp.%d dl.%d",endP.gold,endP.hitpoints,endP.strength&0xffff,endP.strength>>16,endP.level,endP.experience,endP.dungeonlevel);
-                    fprintf(stderr,"%s\n",str);
+                    //fprintf(stderr,"%s\n",str);
                     *numkeysp = numkeys;
                     return(keystrokes);
                 }
@@ -1221,7 +1221,7 @@ UniValue rogue_highlander(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
 
 UniValue rogue_gameinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ),a(UniValue::VARR); int32_t i,n,gameheight,maxplayers,numvouts; uint256 txid; CTransaction tx; int64_t buyin; uint64_t seed; bits256 t; char myrogueaddr[64]; CPubKey mypk,roguepk;
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR); int32_t i,n,gameheight,maxplayers,numvouts; uint256 txid; CTransaction tx; int64_t buyin; uint64_t seed; bits256 t; char myrogueaddr[64],str[64]; CPubKey mypk,roguepk;
     result.push_back(Pair("name","rogue"));
     result.push_back(Pair("method","gameinfo"));
     if ( params != 0 && (n= cJSON_GetArraySize(params)) > 0 )
@@ -1247,6 +1247,11 @@ UniValue rogue_gameinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                         UniValue obj(UniValue::VOBJ);
                         rogue_gameplayerinfo(cp,obj,txid,tx,i+1,maxplayers,myrogueaddr);
                         a.push_back(obj);
+                    }
+                    else
+                    {
+                        fprintf(str,"vout %d+1 is unspent",i);
+                        result.push_back(Pair("unspent",str));
                     }
                 }
                 result.push_back(Pair("players",a));
@@ -1469,7 +1474,15 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
                             if ( funcid == 'H' )
                                 cashout *= 2;
                             if ( tx.vout.size() > 3 ) // orig of 't' has 0 cashout
-                                fprintf(stderr,"ht.%d txid.%s cashout %.8f vs vout2 %.8f\n",height,txid.GetHex().c_str(),(double)cashout/COIN,(double)tx.vout[2].nValue/COIN);
+                            {
+                                static char laststr[512];
+                                fprintf(cashstr,"ht.%d txid.%s %d,%d %.8f vs vout2 %.8f",height,txid.GetHex().c_str(),tokentx,decoded,(double)cashout/COIN,(double)tx.vout[2].nValue/COIN);
+                                if ( strcmp(laststr,cashstr) != 0 )
+                                {
+                                    strcpy(laststr,cashstr);
+                                    fprintf(stderr,"%s\n",cashstr);
+                                }
+                            }
                         }
                         if ( funcid == 'Q' )
                         {
