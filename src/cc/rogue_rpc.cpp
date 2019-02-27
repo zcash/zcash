@@ -528,8 +528,8 @@ int32_t rogue_playerdataspend(CMutableTransaction &mtx,uint256 playertxid,int32_
 int32_t rogue_findbaton(struct CCcontract_info *cp,uint256 &playertxid,char **keystrokesp,int32_t &numkeys,int32_t &regslot,std::vector<uint8_t> &playerdata,uint256 &batontxid,int32_t &batonvout,int64_t &batonvalue,int32_t &batonht,uint256 gametxid,CTransaction gametx,int32_t maxplayers,char *destaddr,int32_t &numplayers,std::string &symbol,std::string &pname)
 {
     int32_t i,numvouts,spentvini,n,matches = 0; CPubKey pk; uint256 tid,active,spenttxid,tokenid,hashBlock,txid,origplayergame; CTransaction spenttx,matchtx,batontx; std::vector<uint8_t> checkdata; CBlockIndex *pindex; char ccaddr[64],*keystrokes=0;
-    numkeys = numplayers = 0;
-    playertxid = zeroid;
+    batonvalue = numkeys = numplayers = batonht = 0;
+    playertxid = batontxid = zeroid;
     for (i=0; i<maxplayers; i++)
     {
         //fprintf(stderr,"findbaton.%d of %d\n",i,maxplayers);
@@ -577,9 +577,11 @@ int32_t rogue_findbaton(struct CCcontract_info *cp,uint256 &playertxid,char **ke
                             return(-2);
                         }
                         txid = spenttxid;
-fprintf(stderr,"n.%d next txid.%s/v%d\n",n,txid.GetHex().c_str(),spentvini);
-                        if ( spentvini != 0 )
-                            return(-3);
+//fprintf(stderr,"n.%d next txid.%s/v%d\n",n,txid.GetHex().c_str(),spentvini);
+                        if ( spentvini != 0 ) // game is over?
+                        {
+                            return(0);
+                        }
                         if ( keystrokesp != 0 && myGetTransaction(spenttxid,spenttx,hashBlock) != 0 && spenttx.vout.size() >= 2 )
                         {
                             uint256 g,b; CPubKey p; std::vector<uint8_t> k;
