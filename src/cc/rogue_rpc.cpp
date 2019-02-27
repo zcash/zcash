@@ -577,7 +577,7 @@ int32_t rogue_findbaton(struct CCcontract_info *cp,uint256 &playertxid,char **ke
                             return(-2);
                         }
                         txid = spenttxid;
-                        //fprintf(stderr,"next txid.%s/v%d\n",txid.GetHex().c_str(),spentvini);
+fprintf(stderr,"n.%d next txid.%s/v%d\n",n,txid.GetHex().c_str(),spentvini);
                         if ( spentvini != 0 )
                             return(-3);
                         if ( keystrokesp != 0 && myGetTransaction(spenttxid,spenttx,hashBlock) != 0 && spenttx.vout.size() >= 2 )
