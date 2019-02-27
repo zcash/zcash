@@ -630,6 +630,9 @@ int32_t komodo_voutupdate(bool fJustCheck,int32_t *isratificationp,int32_t notar
             if ( matched != 0 )
                 validated = komodo_validate_chain(srchash,*notarizedheightp);
             else validated = 1;
+            // Any notarization that is matched and has a decodable op_return is enough to pay notaries. Otherwise bugs! 
+            if ( fJustCheck && matched != 0 )
+                return(-2);
             if ( notarized != 0 && validated != 0 )
             {
                 //sp->NOTARIZED_HEIGHT = *notarizedheightp;
@@ -696,10 +699,6 @@ int32_t komodo_voutupdate(bool fJustCheck,int32_t *isratificationp,int32_t notar
                 }
                 else if ( ASSETCHAINS_SYMBOL[0] == 0 && matched != 0 && notarized != 0 && validated != 0 )
                     komodo_rwccdata((char *)"KMD",1,&ccdata,0);
-                
-                // Because of reorgs its not possible to use notarizations that are in order. If its validated pay the notaries!
-                if ( fJustCheck )
-                    return(-2);
                 
                 if ( matched != 0 && *notarizedheightp > sp->NOTARIZED_HEIGHT && *notarizedheightp < height )
                 {
