@@ -708,11 +708,48 @@ char *komodo_issuemethod(char *userpass,char *method,char *params,uint16_t port)
 
 #include "rogue.h"
 
-void rogue_progress(struct rogue_state *rs,uint64_t seed,char *keystrokes,int32_t num)
+int32_t rogue_confirmed(uint256 txid)
 {
-    char cmd[16384],hexstr[16384],params[32768],*retstr; int32_t i;
+    char params[512],*retstr; cJSON *retjson; int32_t numconfs = -1;
+    sprintf(params,"[\"%s\"]",txid.GetHex().c_str());
+    if ( (retstr= komodo_issuemethod(USERPASS,"getrawtransaction",params,ROGUE_PORT)) != 0 )
+    {
+        fprintf(stderr,"params.(%s) -> %s\n",params,retstr);
+        if ( (retjson= cJSON_Parse(retstr)) != 0 )
+        {
+            numconfs = juint(retjson,"confirmations");
+            free_json(retjson);
+        }
+        free(retstr);
+    }
+    fprintf(stderr,"numconfs %d\n",numconfs);
+    return(numconfs);
+}
+
+void rogue_progress(struct rogue_state *rs,int32_t waitflag,uint64_t seed,char *keystrokes,int32_t num)
+{
+    char cmd[16384],hexstr[16384],params[32768],*retstr; int32_t i; uint256 txid;
+    memset(&txid,0,sizeof(txid));
     if ( rs->guiflag != 0 && Gametxidstr[0] != 0 )
     {
+        if ( rs->keytxid != zeroid )
+        {
+            if ( rogue_confirmed(rs->keytxid) < 2 )
+            {
+                if ( waitflag == 0 )
+                    return(0);
+                else
+                {
+                    while ( rogue_confirmed(rs->keytxid) < 2 )
+                    {
+                        fprintf(stderr,"pre-rebroadcast\n");
+                        RelayTransaction(rs->keystrokestx);
+                        sleep(10);
+                    }
+                }
+            }
+            rs->keytxid = zeroid;
+        }
         for (i=0; i<num; i++)
             sprintf(&hexstr[i<<1],"%02x",keystrokes[i]&0xff);
         hexstr[i<<1] = 0;
@@ -736,9 +773,34 @@ void rogue_progress(struct rogue_state *rs,uint64_t seed,char *keystrokes,int32_
                     fprintf(fp,"%s\n",retstr);
                     fflush(fp);
                 }
+                if ( (retjson= cJSON_Parse(retstr)) != 0 )
+                {
+                    if ( (hexstr= jstr(retjson,"hex")) != 0 )
+                    {
+                        if ( DecodeHexTx(tx,rawtx) != 0 )
+                        {
+                            txid = juint256(retjson,"txid");
+                            if ( tx.GetHash() == txid )
+                            {
+                                rs->keystrokestx = tx;
+                                rs->keytxid = txid;
+                                fprintf(stderr,"set keystrokestx <- %s\n",txid.GetHex().c_str());
+                            }
+                        }
+                    }
+                    free_json(retjson);
+                }
                 free(retstr);
             }
-            sleep(1);
+            if ( waitflag != 0 && rs->keytxid != zeroid )
+            {
+                while ( rogue_confirmed(rs->keytxid) < 2 )
+                {
+                    fprintf(stderr,"post-rebroadcast\n");
+                    RelayTransaction(rs->keystrokestx);
+                    sleep(3);
+                }
+            }
         }
     }
 }

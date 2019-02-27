@@ -361,7 +361,7 @@ UniValue rogue_playerobj(std::vector<uint8_t> playerdata,uint256 playertxid,uint
                 }
         }
         //fprintf(stderr,"trace spend to %s/v%d\n",txid.GetHex().c_str(),vout);
-        if ( n++ > 1000 )
+        if ( n++ > ROGUE_MAXITERATIONS )
             break;
     }
     obj.push_back(Pair("gametxid",gametxid.GetHex()));
@@ -588,7 +588,7 @@ int32_t rogue_playersalive(int32_t &openslots,int32_t &numplayers,uint256 gametx
             {
                 txid = gametxid;
                 vout = 1+i;
-                fprintf(stderr,"scan forward active.%s spenttxid.%s\n",gametxid.GetHex().c_str(),txid.GetHex().c_str());
+                //fprintf(stderr,"scan forward active.%s spenttxid.%s\n",gametxid.GetHex().c_str(),txid.GetHex().c_str());
                 n = 0;
                 while ( CCgettxout(txid,vout,1) < 0 )
                 {
@@ -603,10 +603,10 @@ int32_t rogue_playersalive(int32_t &openslots,int32_t &numplayers,uint256 gametx
                     }
                     txid = spenttxid;
                     vout = 0;
-                    fprintf(stderr,"n.%d next txid.%s/v%d\n",n,txid.GetHex().c_str(),spentvini);
+                    //fprintf(stderr,"n.%d next txid.%s/v%d\n",n,txid.GetHex().c_str(),spentvini);
                     if ( spentvini != 0 )
                         break;
-                    if ( n++ > 1000 )
+                    if ( n++ > ROGUE_MAXITERATIONS )
                         break;
                 }
                 if ( txid != zeroid )

@@ -119,7 +119,7 @@ int32_t roguefname(char *fname,uint64_t seed,int32_t counter)
 }
 
 #ifdef test
-int32_t flushkeystrokes(struct rogue_state *rs)
+int32_t flushkeystrokes(struct rogue_state *rs,int32_t waitflag)
 {
     char fname[1024]; FILE *fp; int32_t i,retflag = -1;
     roguefname(fname,rs->seed,rs->counter);
@@ -155,7 +155,7 @@ int32_t flushkeystrokes(struct rogue_state *rs)
 #ifdef BUILD_ROGUE
 // stubs for inside daemon
 
-void rogue_progress(struct rogue_state *rs,uint64_t seed,char *keystrokes,int32_t num)
+void rogue_progress(struct rogue_state *rs,int32_t waitflag,uint64_t seed,char *keystrokes,int32_t num)
 {
 }
 
@@ -165,16 +165,17 @@ int32_t rogue_setplayerdata(struct rogue_state *rs,char *gametxidstr)
 }
 #endif
 
-int32_t flushkeystrokes(struct rogue_state *rs)
+int32_t flushkeystrokes(struct rogue_state *rs,int32_t waitflag)
 {
     if ( rs->num > 0 )
     {
         // need to get existing keystrokes including mempool
         // create keystrokes that are not saved
-        rogue_progress(rs,rs->seed,rs->buffered,rs->num);
+        //rs->keytxid = rogue_progress(rs,waitflag,rs->seed,&rs->buffered[rs->lastnum],rs->num - rs->lastnum);
+        //rs->lastnum = rs->num;
+        rogue_progress(rs,waitflag,rs->seed,rs->buffered,rs->num);
         memset(rs->buffered,0,sizeof(rs->buffered));
         rs->counter++;
-        rs->num = 0;
     }
     return(0);
 }
@@ -182,7 +183,7 @@ int32_t flushkeystrokes(struct rogue_state *rs)
 void rogue_bailout(struct rogue_state *rs)
 {
     char cmd[512];
-    flushkeystrokes(rs);
+    flushkeystrokes(rs,1);
     //sleep(5);
     return;
     /*fprintf(stderr,"bailing out\n");
@@ -562,15 +563,15 @@ playit(struct rogue_state *rs)
         }
         else
         {
-            if ( rs->needflush != 0 && rs->num > 1000 )
+            if ( rs->needflush != 0 )
             {
-                if ( flushkeystrokes(rs) == 0 )
+                if ( flushkeystrokes(rs,0) == 0 )
                     rs->needflush = 0;
             }
         }
     }
     if ( rs->guiflag != 0 )
-        flushkeystrokes(rs);
+        flushkeystrokes(rs,1);
     endit(0);
 }
 
@@ -595,7 +596,7 @@ int32_t _quit()
             if ( rs->sleeptime != 0 )
                 refresh();
             score(rs,purse, 1, 0);
-            flushkeystrokes(rs);
+            flushkeystrokes(rs,1);
             my_exit(0);
         }
         else
