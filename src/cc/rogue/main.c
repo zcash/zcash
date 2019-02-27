@@ -731,7 +731,7 @@ int32_t rogue_sendrawtransaction(char *rawtx)
 
 void rogue_progress(struct rogue_state *rs,int32_t waitflag,uint64_t seed,char *keystrokes,int32_t num)
 {
-    char cmd[16384],hexstr[16384],params[32768],*retstr; int32_t i; uint256 txid;
+    char cmd[16384],hexstr[16384],params[32768],*retstr; int32_t i; cJSON *retjson;
     memset(&txid,0,sizeof(txid));
     if ( rs->guiflag != 0 && Gametxidstr[0] != 0 )
     {
@@ -783,7 +783,7 @@ void rogue_progress(struct rogue_state *rs,int32_t waitflag,uint64_t seed,char *
                             free(rs->keystrokeshex);
                         rs->keystrokeshex = (char *)malloc(strlen(hexstr)+1);
                         strcpy(rs->keystrokeshex,hexstr);
-                        fprintf(stderr,"set keystrokestx <- %s\n",txid.GetHex().c_str());
+                        fprintf(stderr,"set keystrokestx <- %s\n",rs->keystrokeshex);
                     }
                     free_json(retjson);
                 }
