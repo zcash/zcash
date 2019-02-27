@@ -1025,7 +1025,7 @@ UniValue rogue_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             {
                 result.push_back(Pair("status","success"));
                 flag = 1;
-                hexstr = malloc(numkeys*2 + 1)
+                hexstr = (char *)malloc(numkeys*2 + 1);
                 for (i=0; i<numkeys; i++)
                     sprintf(&hexstr[i<<1],"%02x",keystrokes[i]);
                 hexstr[i<<1] = 0;
