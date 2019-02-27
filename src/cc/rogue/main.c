@@ -708,22 +708,25 @@ char *komodo_issuemethod(char *userpass,char *method,char *params,uint16_t port)
 
 #include "rogue.h"
 
-int32_t rogue_confirmed(uint256 txid)
+int32_t rogue_sendrawtransaction(char *rawtx)
 {
     char params[512],*retstr; cJSON *retjson; int32_t numconfs = -1;
-    sprintf(params,"[\"%s\"]",txid.GetHex().c_str());
-    if ( (retstr= komodo_issuemethod(USERPASS,"getrawtransaction",params,ROGUE_PORT)) != 0 )
+    sprintf(params,"[\"%s\"]",rawtx);
+    if ( (retstr= komodo_issuemethod(USERPASS,"sendrawtransaction",params,ROGUE_PORT)) != 0 )
     {
         fprintf(stderr,"params.(%s) -> %s\n",params,retstr);
+        if ( is_hexstr(retstr,64) == 64 )
+        {
+            free(retstr);
+            return(0);
+        }
         if ( (retjson= cJSON_Parse(retstr)) != 0 )
         {
-            numconfs = juint(retjson,"confirmations");
             free_json(retjson);
         }
         free(retstr);
     }
-    fprintf(stderr,"numconfs %d\n",numconfs);
-    return(numconfs);
+    return(-1);
 }
 
 void rogue_progress(struct rogue_state *rs,int32_t waitflag,uint64_t seed,char *keystrokes,int32_t num)
@@ -732,23 +735,22 @@ void rogue_progress(struct rogue_state *rs,int32_t waitflag,uint64_t seed,char *
     memset(&txid,0,sizeof(txid));
     if ( rs->guiflag != 0 && Gametxidstr[0] != 0 )
     {
-        if ( rs->keytxid != zeroid )
+        if ( rs->keystrokeshex != 0 )
         {
-            if ( rogue_confirmed(rs->keytxid) < 2 )
+            if ( rogue_sendrawtransaction(rs->keystrokeshex) == 0 )
             {
                 if ( waitflag == 0 )
-                    return(0);
+                    return;
                 else
                 {
-                    while ( rogue_confirmed(rs->keytxid) < 2 )
+                    while ( rogue_sendrawtransaction(rs->keystrokeshex) == 0 )
                     {
                         fprintf(stderr,"pre-rebroadcast\n");
-                        RelayTransaction(rs->keystrokestx);
                         sleep(10);
                     }
                 }
             }
-            rs->keytxid = zeroid;
+            free(rs->keystrokeshex), rs->keystrokeshex = 0;
         }
         for (i=0; i<num; i++)
             sprintf(&hexstr[i<<1],"%02x",keystrokes[i]&0xff);
@@ -777,27 +779,21 @@ void rogue_progress(struct rogue_state *rs,int32_t waitflag,uint64_t seed,char *
                 {
                     if ( (hexstr= jstr(retjson,"hex")) != 0 )
                     {
-                        if ( DecodeHexTx(tx,rawtx) != 0 )
-                        {
-                            txid = juint256(retjson,"txid");
-                            if ( tx.GetHash() == txid )
-                            {
-                                rs->keystrokestx = tx;
-                                rs->keytxid = txid;
-                                fprintf(stderr,"set keystrokestx <- %s\n",txid.GetHex().c_str());
-                            }
-                        }
+                        if ( rs->keystrokeshex != 0 )
+                            free(rs->keystrokeshex);
+                        rs->keystrokeshex = (char *)malloc(strlen(hexstr)+1);
+                        strcpy(rs->keystrokeshex,hexstr);
+                        fprintf(stderr,"set keystrokestx <- %s\n",txid.GetHex().c_str());
                     }
                     free_json(retjson);
                 }
                 free(retstr);
             }
-            if ( waitflag != 0 && rs->keytxid != zeroid )
+            if ( waitflag != 0 && rs->keystrokeshex != 0 )
             {
-                while ( rogue_confirmed(rs->keytxid) < 2 )
+                while ( rogue_sendrawtransaction(rs->keystrokeshex) == 0 )
                 {
                     fprintf(stderr,"post-rebroadcast\n");
-                    RelayTransaction(rs->keystrokestx);
                     sleep(3);
                 }
             }

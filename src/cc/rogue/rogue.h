@@ -361,10 +361,8 @@ typedef union _bits256 bits256;
 
 struct rogue_state
 {
-    uint256 keytxid;
-    CTransaction keystrokestx;
     uint64_t seed;
-    char *keystrokes;
+    char *keystrokes,*keystrokeshex;
     uint32_t needflush,replaydone;
     int32_t numkeys,ind,num,guiflag,counter,sleeptime,playersize,restoring,lastnum;
     struct rogue_player P;
