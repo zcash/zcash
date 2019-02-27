@@ -971,7 +971,7 @@ char *rogue_extractgame(int32_t makefiles,char *str,int32_t *numkeysp,std::vecto
                 }
                 else
                 {
-                    sprintf(str,"extracted $$$gold.%d hp.%d strength.%d/%d level.%d exp.%d dl.%d",endP.gold,endP.hitpoints,endP.strength&0xffff,endP.strength>>16,endP.level,endP.experience,endP.dungeonlevel);
+                    sprintf(str,"$$$gold.%d hp.%d strength.%d/%d level.%d exp.%d dl.%d",endP.gold,endP.hitpoints,endP.strength&0xffff,endP.strength>>16,endP.level,endP.experience,endP.dungeonlevel);
                     //fprintf(stderr,"%s\n",str);
                     *numkeysp = numkeys;
                     return(keystrokes);
@@ -991,7 +991,7 @@ char *rogue_extractgame(int32_t makefiles,char *str,int32_t *numkeysp,std::vecto
 
 UniValue rogue_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ); CPubKey pk,roguepk; int32_t i,n,numkeys,flag = 0; uint64_t seed; char str[512],rogueaddr[64],*pubstr,*keystrokes = 0; std::vector<uint8_t> newdata; uint256 gametxid,playertxid; FILE *fp; uint8_t pub33[33];
+    UniValue result(UniValue::VOBJ); CPubKey pk,roguepk; int32_t i,n,numkeys,flag = 0; uint64_t seed; char str[512],rogueaddr[64],*pubstr,*hexstr,*keystrokes = 0; std::vector<uint8_t> newdata; uint256 gametxid,playertxid; FILE *fp; uint8_t pub33[33];
     pk = pubkey2pk(Mypubkey());
     roguepk = GetUnspendable(cp,0);
     result.push_back(Pair("name","rogue"));
@@ -1025,9 +1025,15 @@ UniValue rogue_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             {
                 result.push_back(Pair("status","success"));
                 flag = 1;
+                hexstr = malloc(numkeys*2 + 1)
+                for (i=0; i<numkeys; i++)
+                    sprintf(&hexstr[i<<1],"%02x",keystrokes[i]);
+                hexstr[i<<1] = 0;
+                result.push_back(Pair("keystrokes",hexstr));
+                free(hexstr);
+                result.push_back(Pair("numkeys",(int64_t)numkeys));
                 result.push_back(Pair("playertxid",playertxid.GetHex()));
                 result.push_back(Pair("extracted",str));
-                result.push_back(Pair("numkeys",(int64_t)numkeys));
                 result.push_back(Pair("seed",(int64_t)seed));
                 sprintf(str,"cc/rogue/rogue %llu",(long long)seed);
                 result.push_back(Pair("replay",str));
