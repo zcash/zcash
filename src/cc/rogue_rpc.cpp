@@ -1012,7 +1012,7 @@ UniValue rogue_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                         decode_hex(pub33,33,pubstr);
                         pk = buf2pk(pub33);
                     }
-                    else if ( strlen(pub33) < 36 )
+                    else if ( strlen(pubstr) < 36 )
                         strcpy(rogueaddr,pubstr);
                 }
                 //fprintf(stderr,"gametxid.%s %s\n",gametxid.GetHex().c_str(),pubstr);
