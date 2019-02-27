@@ -712,6 +712,7 @@ int32_t rogue_sendrawtransaction(char *rawtx)
 {
     char params[512],*retstr; cJSON *retjson; int32_t numconfs = -1;
     sprintf(params,"[\"%s\"]",rawtx);
+    fprintf(stderr,"sendrawtransaction\n");
     if ( (retstr= komodo_issuemethod(USERPASS,"sendrawtransaction",params,ROGUE_PORT)) != 0 )
     {
         fprintf(stderr,"params.(%s) -> %s\n",params,retstr);
@@ -732,6 +733,7 @@ int32_t rogue_sendrawtransaction(char *rawtx)
 void rogue_progress(struct rogue_state *rs,int32_t waitflag,uint64_t seed,char *keystrokes,int32_t num)
 {
     char cmd[16384],hexstr[16384],params[32768],*retstr,*rawtx; int32_t i; cJSON *retjson;
+    fprintf(stderr,"rogue_progress num.%d\n",num);
     if ( rs->guiflag != 0 && Gametxidstr[0] != 0 )
     {
         if ( rs->keystrokeshex != 0 )

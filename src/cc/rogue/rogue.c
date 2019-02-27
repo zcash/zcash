@@ -318,6 +318,7 @@ int rogue(int argc, char **argv, char **envp)
     {
         rs->seed = atol(argv[1]);
         strcpy(Gametxidstr,argv[2]);
+        fprintf(stderr,"setplayerdata\n");
         if ( rogue_setplayerdata(rs,Gametxidstr) < 0 )
         {
             fprintf(stderr,"invalid gametxid, or already started\n");
@@ -413,7 +414,7 @@ int rogue(int argc, char **argv, char **envp)
 #endif
 	printf("Hello %s, just a moment while I dig the dungeon... seed.%llu", whoami,(long long)rs->seed);
     fflush(stdout);
-
+    fprintf(stderr,"rogueiterate\n");
     rogueiterate(rs);
     return(0);
 }
