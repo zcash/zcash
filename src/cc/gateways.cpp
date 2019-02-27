@@ -1815,7 +1815,7 @@ UniValue GatewaysDumpPrivKey(uint256 bindtxid,CKey key)
 
     priv=EncodeCustomSecret(key,wiftype);
     result.push_back(Pair("result","success"));
-    result.push_back(Pair("address",priv.c_str()));
+    result.push_back(Pair("privkey",priv.c_str()));
     return(result);
 }
 
