@@ -154,6 +154,7 @@ CScript Marmara_scriptPubKey(int32_t height,CPubKey pk);
 CScript MarmaraCoinbaseOpret(uint8_t funcid,int32_t height,CPubKey pk);
 uint64_t komodo_notarypay(CMutableTransaction &txNew, std::vector<int8_t> &NotarisationNotaries, uint32_t timestamp, int32_t height, uint8_t *script, int32_t len);
 int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestamp);
+int32_t komodo_getnotarizedheight(uint32_t timestamp,int32_t height, uint8_t *script, int32_t len);
 
 CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32_t gpucount, bool isStake)
 {
@@ -403,11 +404,15 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                             // Any attempted notarization needs to be in its own block!
                             continue;
                         }
-                        // this is the first one we see, add it to the block as TX1 
-                        NotarisationNotaries = TMP_NotarisationNotaries;
-                        dPriority = 1e16;
-                        fNotarisationBlock = true;
-                        fprintf(stderr, "Notarisation %s set to maximum priority\n",hash.ToString().c_str());
+                        int32_t notarizedheight = komodo_getnotarizedheight(pblock->nTime, nHeight, script, scriptlen);
+                        if ( notarizedheight != 0 )
+                        {
+                            // this is the first one we see, add it to the block as TX1 
+                            NotarisationNotaries = TMP_NotarisationNotaries;
+                            dPriority = 1e16;
+                            fNotarisationBlock = true;
+                            fprintf(stderr, "Notarisation %s set to maximum priority\n",hash.ToString().c_str());
+                        }
                     }
                 }
             }

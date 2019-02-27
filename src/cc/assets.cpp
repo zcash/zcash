@@ -146,6 +146,13 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
     numvouts = tx.vout.size();
     outputsDummy = inputs = 0;
     preventCCvins = preventCCvouts = -1;
+    
+    // add specific chains exceptions for old token support:
+    if (strcmp(ASSETCHAINS_SYMBOL, "SEC") == 0 && chainActive.Height() <= 144073)
+        return true;
+    
+    if (strcmp(ASSETCHAINS_SYMBOL, "MGNX") == 0 && chainActive.Height() <= 210190)
+        return true;
 
     // add specific chains exceptions for old token support:
     if (strcmp(ASSETCHAINS_SYMBOL, "SEC") == 0 && chainActive.Height() <= 144073)
