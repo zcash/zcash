@@ -1475,7 +1475,7 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
                                 cashout *= 2;
                             if ( tx.vout.size() > 3 ) // orig of 't' has 0 cashout
                             {
-                                static char laststr[512];
+                                static char laststr[512]; char cashstr[512];
                                 sprintf(cashstr,"ht.%d txid.%s %d,%d %.8f vs vout2 %.8f",height,txid.GetHex().c_str(),tokentx,decoded,(double)cashout/COIN,(double)tx.vout[2].nValue/COIN);
                                 if ( strcmp(laststr,cashstr) != 0 )
                                 {
