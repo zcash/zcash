@@ -175,6 +175,7 @@ int32_t flushkeystrokes(struct rogue_state *rs,int32_t waitflag)
         //rs->lastnum = rs->num;
         rogue_progress(rs,waitflag,rs->seed,rs->buffered,rs->num);
         memset(rs->buffered,0,sizeof(rs->buffered));
+        rs->num = 0;
         rs->counter++;
     }
     return(0);
