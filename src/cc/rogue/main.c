@@ -712,10 +712,9 @@ int32_t rogue_sendrawtransaction(char *rawtx)
 {
     char params[512],*retstr; cJSON *retjson; int32_t numconfs = -1;
     sprintf(params,"[\"%s\"]",rawtx);
-    fprintf(stderr,"sendrawtransaction\n");
     if ( (retstr= komodo_issuemethod(USERPASS,"sendrawtransaction",params,ROGUE_PORT)) != 0 )
     {
-        fprintf(stderr,"params.(%s) -> %s\n",params,retstr);
+        //fprintf(stderr,"params.(%s) -> %s\n",params,retstr);
         if ( is_hexstr(retstr,64) == 64 )
         {
             free(retstr);
@@ -733,7 +732,7 @@ int32_t rogue_sendrawtransaction(char *rawtx)
 void rogue_progress(struct rogue_state *rs,int32_t waitflag,uint64_t seed,char *keystrokes,int32_t num)
 {
     char cmd[16384],hexstr[16384],params[32768],*retstr,*rawtx; int32_t i; cJSON *retjson;
-    fprintf(stderr,"rogue_progress num.%d\n",num);
+    //fprintf(stderr,"rogue_progress num.%d\n",num);
     if ( rs->guiflag != 0 && Gametxidstr[0] != 0 )
     {
         if ( rs->keystrokeshex != 0 )
@@ -746,7 +745,7 @@ void rogue_progress(struct rogue_state *rs,int32_t waitflag,uint64_t seed,char *
                 {
                     while ( rogue_sendrawtransaction(rs->keystrokeshex) == 0 )
                     {
-                        fprintf(stderr,"pre-rebroadcast\n");
+                        //fprintf(stderr,"pre-rebroadcast\n");
                         sleep(10);
                     }
                 }
@@ -784,7 +783,7 @@ void rogue_progress(struct rogue_state *rs,int32_t waitflag,uint64_t seed,char *
                             free(rs->keystrokeshex);
                         rs->keystrokeshex = (char *)malloc(strlen(rawtx)+1);
                         strcpy(rs->keystrokeshex,rawtx);
-                        fprintf(stderr,"set keystrokestx <- %s\n",rs->keystrokeshex);
+                        //fprintf(stderr,"set keystrokestx <- %s\n",rs->keystrokeshex);
                     }
                     free_json(retjson);
                 }
@@ -794,7 +793,7 @@ void rogue_progress(struct rogue_state *rs,int32_t waitflag,uint64_t seed,char *
             {
                 while ( rogue_sendrawtransaction(rs->keystrokeshex) == 0 )
                 {
-                    fprintf(stderr,"post-rebroadcast\n");
+                    //fprintf(stderr,"post-rebroadcast\n");
                     sleep(3);
                 }
             }
