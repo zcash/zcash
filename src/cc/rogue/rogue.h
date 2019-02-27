@@ -366,7 +366,7 @@ struct rogue_state
     uint32_t needflush,replaydone;
     int32_t numkeys,ind,num,guiflag,counter,sleeptime,playersize,restoring,lastnum;
     struct rogue_player P;
-    char buffered[65536*16];
+    char buffered[10000];
     uint8_t playerdata[10000];
 };
 extern struct rogue_state globalR;
