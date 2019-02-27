@@ -996,6 +996,7 @@ UniValue rogue_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     roguepk = GetUnspendable(cp,0);
     result.push_back(Pair("name","rogue"));
     result.push_back(Pair("method","extract"));
+    rogueaddr[0] = 0;
     if ( params != 0 && (n= cJSON_GetArraySize(params)) > 0 )
     {
         if ( n > 0 )
@@ -1004,14 +1005,20 @@ UniValue rogue_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             result.push_back(Pair("gametxid",gametxid.GetHex()));
             if ( n == 2 )
             {
-                if ( (pubstr= jstr(jitem(params,1),0)) != 0 && strlen(pubstr) == 66 )
+                if ( (pubstr= jstr(jitem(params,1),0)) != 0 )
                 {
-                    decode_hex(pub33,33,pubstr);
-                    pk = buf2pk(pub33);
+                    if (strlen(pubstr) == 66 )
+                    {
+                        decode_hex(pub33,33,pubstr);
+                        pk = buf2pk(pub33);
+                    }
+                    else if ( strlen(pub33) < 36 )
+                        strcpy(rogueaddr,pubstr);
                 }
                 //fprintf(stderr,"gametxid.%s %s\n",gametxid.GetHex().c_str(),pubstr);
             }
-            GetCCaddress1of2(cp,rogueaddr,roguepk,pk);
+            if ( rogueaddr[0] == 0 )
+                GetCCaddress1of2(cp,rogueaddr,roguepk,pk);
             result.push_back(Pair("rogueaddr",rogueaddr));
             str[0] = 0;
             if ( (keystrokes= rogue_extractgame(1,str,&numkeys,newdata,seed,playertxid,cp,gametxid,rogueaddr)) != 0 )
