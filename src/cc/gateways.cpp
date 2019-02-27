@@ -963,7 +963,7 @@ std::string GatewaysBind(uint64_t txfee,std::string coin,uint256 tokenid,int64_t
         prefix2 = p2;
         wiftype = p3;
         taddr = p4;
-        LogPrint("gatewayscc-1","set prefix %d, prefix2 %d, wiftype %d for %s\n",prefix,prefix2,wiftype,coin.c_str());
+        LogPrint("gatewayscc-1","set prefix %d, prefix2 %d, wiftype %d, taddr %d for %s\n",prefix,prefix2,wiftype,taddr,coin.c_str());
     }
     if ( N == 0 || N > 15 || M > N )
     {
@@ -1822,7 +1822,7 @@ UniValue GatewaysDumpPrivKey(uint256 bindtxid,CKey key)
 
     priv=EncodeCustomSecret(key,wiftype);
     result.push_back(Pair("result","success"));
-    result.push_back(Pair("address",priv.c_str()));
+    result.push_back(Pair("privkey",priv.c_str()));
     return(result);
 }
 
