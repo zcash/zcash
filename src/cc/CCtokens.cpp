@@ -265,7 +265,7 @@ void FilterOutTokensUnspendablePk(const std::vector<CPubKey> &sourcePubkeys, std
 
 }
 
-void FilterOutNonCCOprets(const std::vector<std::pair<uint8_t, vscript_t>>  &oprets, vscript_t vopret) {
+void FilterOutNonCCOprets(const std::vector<std::pair<uint8_t, vscript_t>>  &oprets, vscript_t &vopret) {
 
     vopret.clear();
 
