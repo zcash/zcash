@@ -235,7 +235,7 @@ uint8_t DecodeTokenOpRet(const CScript scriptPubKey, uint8_t &evalCodeTokens, ui
                                         if (ccType == 2) ss >> voutPubkey2;
                                         if (!ss.eof()) {
                                             ss >> voldstyledata;
-                                        }) && voldstyledata.size() > 2 && 
+                                        }) && voldstyledata.size() >= 2 && 
                                             (voldstyledata.begin()[0] == 0x11 /*EVAL_ROGUE*/ && IS_CHARINSTR(voldstyledata.begin()[1], "RHQKG")  ||
                                              voldstyledata.begin()[0] == EVAL_ASSETS && IS_CHARINSTR(voldstyledata.begin()[1], "sbSBxo")) ;
                 
