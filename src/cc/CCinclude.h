@@ -67,11 +67,28 @@ one other technical note is that komodod has the insight-explorer extensions bui
 
 #include "../komodo_cJSON.h"
 
-// opret data block ids:
- enum {
-    OPRETID_NONFUNGIBLEDATA = 0x11
-    // TODO: OPRETID_ASSETSDATA = 0x12
+// token opret additional data block ids:
+ enum opretid : uint8_t {
+    // cc contracts data:
+    OPRETID_NONFUNGIBLEDATA = 0x11, 
+    OPRETID_ASSETSDATA = 0x12,
+    OPRETID_GATEWAYSDATA = 0x13,
+    OPRETID_CHANNELSDATA = 0x14,
+    OPRETID_HEIRDATA = 0x15,
+    OPRETID_ROGUEGAMEDATA = 0x16,
+
+    // non cc contract data:
+    OPRETID_FIRSTNONCCDATA = 0x80,
+    OPRETID_BURNDATA = 0x80,    
+    OPRETID_IMPORTDATA = 0x81
 };
+
+ // find opret blob by opretid
+ inline bool GetOpretBlob(const std::vector<std::pair<uint8_t, std::vector<uint8_t>>>  &oprets, uint8_t id, std::vector<uint8_t> &vopret)    {   
+     vopret.clear();
+     for(auto p : oprets)  if (p.first == id) { vopret = p.second; return true; }
+     return false;
+ }
 
 struct CC_utxo
 {
@@ -129,6 +146,8 @@ struct oracleprice_info
     int32_t height;
 };
 
+typedef std::vector<uint8_t> vscript_t;
+
 #ifdef ENABLE_WALLET
 extern CWallet* pwalletMain;
 #endif
@@ -172,18 +191,22 @@ uint256 OraclesBatontxid(uint256 oracletxid,CPubKey pk);
 
 //int64_t AddAssetInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,uint256 assetid,int64_t total,int32_t maxinputs);
 int64_t AddTokenCCInputs(struct CCcontract_info *cp, CMutableTransaction &mtx, CPubKey pk, uint256 tokenid, int64_t total, int32_t maxinputs);
-int64_t AddTokenCCInputs(struct CCcontract_info *cp, CMutableTransaction &mtx, CPubKey pk, uint256 tokenid, int64_t total, int32_t maxinputs, std::vector<uint8_t> &vopretNonfungible);
+int64_t AddTokenCCInputs(struct CCcontract_info *cp, CMutableTransaction &mtx, CPubKey pk, uint256 tokenid, int64_t total, int32_t maxinputs, vscript_t &vopretNonfungible);
 int64_t IsTokensvout(bool goDeeper, bool checkPubkeys, struct CCcontract_info *cp, Eval* eval, const CTransaction& tx, int32_t v, uint256 reftokenid);
 
 bool DecodeHexTx(CTransaction& tx, const std::string& strHexTx);
 
-CScript EncodeTokenCreateOpRet(uint8_t funcid, std::vector<uint8_t> origpubkey, std::string name, std::string description, std::vector<uint8_t> vopretNonfungible);
-CScript EncodeTokenOpRet(uint8_t tokenFuncId, uint8_t evalCodeInOpret, uint256 tokenid, std::vector<CPubKey> voutPubkeys, CScript payload); //old version
-CScript EncodeTokenOpRet(uint256 tokenid, std::vector<CPubKey> voutPubkeys, CScript payload);
+CScript EncodeTokenCreateOpRet(uint8_t funcid, std::vector<uint8_t> origpubkey, std::string name, std::string description, vscript_t vopretNonfungible);
+CScript EncodeTokenCreateOpRet(uint8_t funcid, std::vector<uint8_t> origpubkey, std::string name, std::string description, std::vector<std::pair<uint8_t, vscript_t>> oprets);
+CScript EncodeTokenImportOpRet(std::vector<uint8_t> origpubkey, std::string name, std::string description, uint256 srctokenid, std::vector<std::pair<uint8_t, vscript_t>> oprets);
+CScript EncodeTokenOpRet(uint256 tokenid, std::vector<CPubKey> voutPubkeys, std::pair<uint8_t, vscript_t> opretWithId);
+CScript EncodeTokenOpRet(uint256 tokenid, std::vector<CPubKey> voutPubkeys, std::vector<std::pair<uint8_t, vscript_t>> oprets);
 uint8_t DecodeTokenCreateOpRet(const CScript &scriptPubKey, std::vector<uint8_t> &origpubkey, std::string &name, std::string &description);
-uint8_t DecodeTokenCreateOpRet(const CScript &scriptPubKey, std::vector<uint8_t> &origpubkey, std::string &name, std::string &description, std::vector<uint8_t> &vopretNonfungible);
-uint8_t DecodeTokenOpRet(const CScript scriptPubKey, uint8_t &evalCodeTokens, uint256 &tokenid, std::vector<CPubKey> &voutPubkeys, std::vector<uint8_t> &vopretExtra);
-void GetNonfungibleData(uint256 tokenid, std::vector<uint8_t> &vopretNonfungible);
+uint8_t DecodeTokenCreateOpRet(const CScript &scriptPubKey, std::vector<uint8_t> &origpubkey, std::string &name, std::string &description, std::vector<std::pair<uint8_t, vscript_t>>  &oprets);
+uint8_t DecodeTokenImportOpRet(const CScript &scriptPubKey, std::vector<uint8_t> &origpubkey, std::string &name, std::string &description, uint256 &srctokenid, std::vector<std::pair<uint8_t, vscript_t>>  &oprets);
+uint8_t DecodeTokenOpRet(const CScript scriptPubKey, uint8_t &evalCodeTokens, uint256 &tokenid, std::vector<CPubKey> &voutPubkeys, std::vector<std::pair<uint8_t, vscript_t>>  &oprets);
+void GetNonfungibleData(uint256 tokenid, vscript_t &vopretNonfungible);
+bool ExtractTokensCCVinPubkeys(const CTransaction &tx, std::vector<CPubKey> &vinPubkeys);
 
 uint8_t DecodeOraclesData(const CScript &scriptPubKey,uint256 &oracletxid,uint256 &batontxid,CPubKey &pk,std::vector <uint8_t>&data);
 int32_t oracle_format(uint256 *hashp,int64_t *valp,char *str,uint8_t fmt,uint8_t *data,int32_t offset,int32_t datalen);
@@ -227,7 +250,7 @@ uint256 revuint256(uint256 txid);
 bool pubkey2addr(char *destaddr,uint8_t *pubkey33);
 char *uint256_str(char *dest,uint256 txid);
 char *pubkey33_str(char *dest,uint8_t *pubkey33);
-uint256 Parseuint256(char *hexstr);
+uint256 Parseuint256(const char *hexstr);
 CPubKey pubkey2pk(std::vector<uint8_t> pubkey);
 int64_t CCfullsupply(uint256 tokenid);
 int64_t CCtoken_balance(char *destaddr,uint256 tokenid);

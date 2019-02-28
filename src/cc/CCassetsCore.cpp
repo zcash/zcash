@@ -239,30 +239,30 @@ CScript EncodeAssetCreateOpRet(uint8_t funcid,std::vector<uint8_t> origpubkey,st
 }
 */
 
-CScript EncodeAssetOpRet(uint8_t assetFuncId, uint256 assetid2, int64_t price, std::vector<uint8_t> origpubkey)
+vscript_t EncodeAssetOpRet(uint8_t assetFuncId, uint256 assetid2, int64_t price, std::vector<uint8_t> origpubkey)
 {
-    CScript opret; 
+    vscript_t vopret; 
 	uint8_t evalcode = EVAL_ASSETS;
 
     switch ( assetFuncId )
     {
         //case 't': this cannot be here
 		case 'x': case 'o':
-			opret << OP_RETURN << E_MARSHAL(ss << evalcode << assetFuncId);
+			vopret = /*<< OP_RETURN <<*/ E_MARSHAL(ss << evalcode << assetFuncId);
             break;
         case 's': case 'b': case 'S': case 'B':
-            opret << OP_RETURN << E_MARSHAL(ss << evalcode << assetFuncId << price << origpubkey);
+            vopret = /*<< OP_RETURN <<*/ E_MARSHAL(ss << evalcode << assetFuncId << price << origpubkey);
             break;
         case 'E': case 'e':
             assetid2 = revuint256(assetid2);
-            opret << OP_RETURN << E_MARSHAL(ss << evalcode << assetFuncId << assetid2 << price << origpubkey);
+            vopret = /*<< OP_RETURN <<*/ E_MARSHAL(ss << evalcode << assetFuncId << assetid2 << price << origpubkey);
             break;
         default:
             fprintf(stderr,"EncodeAssetOpRet: illegal funcid.%02x\n", assetFuncId);
-            opret << OP_RETURN;
+            //opret << OP_RETURN;
             break;
     }
-    return(opret);
+    return(vopret);
 }
 
 /* it is for compatibility, do not use this for new contracts (use DecodeTokenCreateOpRet)
@@ -281,10 +281,11 @@ bool DecodeAssetCreateOpRet(const CScript &scriptPubKey, std::vector<uint8_t> &o
 
 uint8_t DecodeAssetTokenOpRet(const CScript &scriptPubKey, uint8_t &assetsEvalCode, uint256 &tokenid, uint256 &assetid2, int64_t &price, std::vector<uint8_t> &origpubkey)
 {
-    std::vector<uint8_t> vopretAssets; //, vopretAssetsStripped;
+    vscript_t vopretAssets; //, vopretAssetsStripped;
 	uint8_t *script, funcId = 0, assetsFuncId = 0, dummyEvalCode, dummyAssetFuncId;
 	uint256 dummyTokenid;
 	std::vector<CPubKey> voutPubkeysDummy;
+    std::vector<std::pair<uint8_t, vscript_t>>  oprets;
 
 	tokenid = zeroid;
 	assetid2 = zeroid;
@@ -293,7 +294,9 @@ uint8_t DecodeAssetTokenOpRet(const CScript &scriptPubKey, uint8_t &assetsEvalCo
     assetsFuncId = 0;
 
 	// First - decode token opret:
-	funcId = DecodeTokenOpRet(scriptPubKey, dummyEvalCode, tokenid, voutPubkeysDummy, vopretAssets);
+	funcId = DecodeTokenOpRet(scriptPubKey, dummyEvalCode, tokenid, voutPubkeysDummy, oprets);
+    GetOpretBlob(oprets, OPRETID_ASSETSDATA, vopretAssets);
+
     LOGSTREAM((char *)"ccassets", CCLOG_DEBUG2, stream << "DecodeAssetTokenOpRet() from DecodeTokenOpRet returned funcId=" << (int)funcId << std::endl);
 
 	if (funcId == 0 || vopretAssets.size() < 2) {
