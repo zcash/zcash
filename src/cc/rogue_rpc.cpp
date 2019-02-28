@@ -177,7 +177,7 @@ uint8_t rogue_highlanderopretdecode(uint256 &gametxid, uint256 &tokenid, int32_t
     script = (uint8_t *)vopret.data();
     if ( script[1] == 'c' && (f= DecodeTokenCreateOpRet(scriptPubKey,origpubkey,name,description, oprets)) == 'c' )
     {
-        GetOpretBlob(oprets, OPRETID_NONFUNGIBLEDATA, vopretDummy);
+        GetOpretBlob(oprets, OPRETID_NONFUNGIBLEDATA, vopretNonfungible);
         vopret = vopretNonfungible;
     }
     else if ( script[1] != 'H' && script[1] != 'Q' && (f= DecodeTokenOpRet(scriptPubKey, e, tokenid, voutPubkeys, opretsDummy)) != 0 )
