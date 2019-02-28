@@ -720,6 +720,16 @@ int32_t rogue_sendrawtransaction(char *rawtx)
             free(retstr);
             return(0);
         }
+        {
+            static FILE *fp;
+            if ( fp == 0 )
+                fp = fopen("rogue.sendlog","wb");
+            if ( fp != 0 )
+            {
+                fprintf(fp,"%s\n",retstr);
+                fflush(fp);
+            }
+        }
         if ( (retjson= cJSON_Parse(retstr)) != 0 )
         {
             free_json(retjson);
@@ -789,13 +799,14 @@ void rogue_progress(struct rogue_state *rs,int32_t waitflag,uint64_t seed,char *
                 }
                 free(retstr);
             }
-            if ( waitflag != 0 && rs->keystrokeshex != 0 )
+            if ( 0 && waitflag != 0 && rs->keystrokeshex != 0 )
             {
                 while ( rogue_sendrawtransaction(rs->keystrokeshex) == 0 )
                 {
                     //fprintf(stderr,"post-rebroadcast\n");
                     sleep(3);
                 }
+                free(rs->keystrokeshex), rs->keystrokeshex = 0;
             }
         }
     }
