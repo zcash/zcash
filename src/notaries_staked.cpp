@@ -17,6 +17,7 @@ int8_t is_STAKED(const char *chain_name)
         return(0);
     if (doneinit == 1 && ASSETCHAINS_SYMBOL[0] != 0)
         return(STAKED);
+    else STAKED = 0;
     if ( (strcmp(chain_name, "LABS") == 0) || (strcmp(chain_name, "LABSTH") == 0) ) 
         STAKED = 1; // These chains are allowed coin emissions.
     else if ( (strncmp(chain_name, "LABS", 4) == 0) ) 
