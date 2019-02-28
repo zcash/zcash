@@ -6310,7 +6310,7 @@ UniValue gatewaysdumpprivkey(const UniValue& params, bool fHelp)
     uint256 bindtxid;
 
     if ( fHelp || params.size() != 2)
-        throw runtime_error("gatewaysexternaladdress bindtxid address\n");
+        throw runtime_error("gatewaysdumpprivkey bindtxid address\n");
     if ( ensure_CCrequirements(EVAL_GATEWAYS) < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -8070,7 +8070,7 @@ UniValue test_burntx(const UniValue& params, bool fHelp)
     CPubKey unspPk = GetUnspendable(cp, tokenpriv);
     GetCCaddress(cp, unspendableTokenAddr, unspPk);
     CCaddr2set(cp, EVAL_TOKENS, unspPk, tokenpriv, unspendableTokenAddr);
-    return(FinalizeCCTx(0, cp, mtx, myPubkey, 10000, EncodeTokenOpRet(tokenid, voutPubkeys, CScript())));
+    return(FinalizeCCTx(0, cp, mtx, myPubkey, 10000, EncodeTokenOpRet(tokenid, voutPubkeys, std::make_pair(0, vscript_t()))));
 }
 
 UniValue test_proof(const UniValue& params, bool fHelp)

@@ -334,7 +334,7 @@ std::string PricesAddFunding(uint64_t txfee,uint256 refbettoken,uint256 fundingt
 				std::vector<CPubKey> voutTokenPubkeysEmpty; //TODO: add token vout pubkeys
                 return(FinalizeCCTx(0,cp,mtx,mypk,txfee,
 					EncodeTokenOpRet(bettoken, voutTokenPubkeysEmpty,
-						EncodeAssetOpRet('t',/*bettoken,*/zeroid, 0, Mypubkey()))));
+						std::make_pair(OPRETID_ASSETSDATA, EncodeAssetOpRet('t',/*bettoken,*/zeroid, 0, Mypubkey())))));
             }
             else
             {

@@ -255,25 +255,25 @@ template <class Helper> int64_t IsHeirFundingVout(struct CCcontract_info* cp, co
 }
 
 // makes coin initial tx opret
-CScript EncodeHeirCreateOpRet(uint8_t funcid, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t inactivityTimeSec, std::string heirName, std::string memo)
+vscript_t EncodeHeirCreateOpRet(uint8_t funcid, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t inactivityTimeSec, std::string heirName, std::string memo)
 {
     uint8_t evalcode = EVAL_HEIR;
     
-    return CScript() << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << ownerPubkey << heirPubkey << inactivityTimeSec << heirName << memo);
+    return /*CScript() << OP_RETURN <<*/ E_MARSHAL(ss << evalcode << funcid << ownerPubkey << heirPubkey << inactivityTimeSec << heirName << memo);
 }
 
 // makes coin additional tx opret
-CScript EncodeHeirOpRet(uint8_t funcid,  uint256 fundingtxid, uint8_t hasHeirSpendingBegun)
+vscript_t EncodeHeirOpRet(uint8_t funcid,  uint256 fundingtxid, uint8_t hasHeirSpendingBegun)
 {
     uint8_t evalcode = EVAL_HEIR;
     
     fundingtxid = revuint256(fundingtxid);
-    return CScript() << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << fundingtxid << hasHeirSpendingBegun);
+    return /*CScript() << OP_RETURN <<*/ E_MARSHAL(ss << evalcode << funcid << fundingtxid << hasHeirSpendingBegun);
 }
 
 
 // decode opret vout for Heir contract
-uint8_t _DecodeHeirOpRet(std::vector<uint8_t> vopret, CPubKey& ownerPubkey, CPubKey& heirPubkey, int64_t& inactivityTime, std::string& heirName, std::string& memo, uint256& fundingTxidInOpret, uint8_t &hasHeirSpendingBegun, bool noLogging)
+uint8_t _DecodeHeirOpRet(vscript_t vopret, CPubKey& ownerPubkey, CPubKey& heirPubkey, int64_t& inactivityTime, std::string& heirName, std::string& memo, uint256& fundingTxidInOpret, uint8_t &hasHeirSpendingBegun, bool noLogging)
 {
     uint8_t evalCodeInOpret = 0;
     uint8_t heirFuncId = 0;
@@ -287,13 +287,13 @@ uint8_t _DecodeHeirOpRet(std::vector<uint8_t> vopret, CPubKey& ownerPubkey, CPub
         uint8_t heirFuncId = 0;
         hasHeirSpendingBegun = 0;
         
-        bool result = E_UNMARSHAL(vopret, { ss >> evalCodeInOpret; ss >> heirFuncId;					\
-            if (heirFuncId == 'F') {																	\
-				ss >> ownerPubkey; ss >> heirPubkey; ss >> inactivityTime; ss >> heirName; ss >> memo;	\
-            }																							\
-            else {																						\
-                ss >> fundingTxidInOpret >> hasHeirSpendingBegun;										\
-            }																							\
+        bool result = E_UNMARSHAL(vopret, { ss >> evalCodeInOpret; ss >> heirFuncId;					
+            if (heirFuncId == 'F') {																	
+				ss >> ownerPubkey; ss >> heirPubkey; ss >> inactivityTime; ss >> heirName; ss >> memo;	
+            }																							
+            else {																						
+                ss >> fundingTxidInOpret >> hasHeirSpendingBegun;										
+            }																							
         });
         
         if (!result)	{
@@ -327,9 +327,11 @@ uint8_t _DecodeHeirEitherOpRet(CScript scriptPubKey, uint256 &tokenid, CPubKey& 
 {
 	uint8_t evalCodeTokens = 0;
 	std::vector<CPubKey> voutPubkeysDummy;
-	std::vector<uint8_t> vopretExtra /*, vopretStripped*/;
+    std::vector<std::pair<uint8_t, vscript_t>> oprets;
+    vscript_t vopretExtra /*, vopretStripped*/;
 
-	if (DecodeTokenOpRet(scriptPubKey, evalCodeTokens, tokenid, voutPubkeysDummy, vopretExtra) != 0) {
+
+	if (DecodeTokenOpRet(scriptPubKey, evalCodeTokens, tokenid, voutPubkeysDummy, oprets) != 0 && GetOpretBlob(oprets, OPRETID_HEIRDATA, vopretExtra)) {
         /* if (vopretExtra.size() > 1) {
             // restore the second opret:
 

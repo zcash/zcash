@@ -420,7 +420,8 @@ int64_t CCtoken_balance(char *coinaddr,uint256 reftokenid)
         {
             char str[65];
 			std::vector<CPubKey> voutTokenPubkeys;
-            if ( reftokenid==txid || (DecodeTokenOpRet(tx.vout[numvouts-1].scriptPubKey, evalCode, tokenid, voutTokenPubkeys, vopretExtra) != 0 && reftokenid == tokenid))
+            std::vector<std::pair<uint8_t, vscript_t>>  oprets;
+            if ( reftokenid==txid || (DecodeTokenOpRet(tx.vout[numvouts-1].scriptPubKey, evalCode, tokenid, voutTokenPubkeys, oprets) != 0 && reftokenid == tokenid))
             {
                 sum += it->second.satoshis;
             }
