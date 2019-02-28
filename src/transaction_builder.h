@@ -142,7 +142,7 @@ public:
     TransactionBuilderResult Build();
 
 private:
-    boost::optional<TransactionBuilderResult> CreateJSDescriptions();
+    void CreateJSDescriptions();
 
     void CreateJSDescription(
         uint64_t vpub_old,
