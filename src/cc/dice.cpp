@@ -1213,6 +1213,9 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
     } else {
         return(0);
     }
+    fprintf(stderr,"numentropy tx %d: %.8f\n",n,(double)totalinputs/COIN);
+    entropytxs = n;
+    return(totalinputs);
 }
 
 bool DicePlanExists(CScript &fundingPubKey,uint256 &fundingtxid,struct CCcontract_info *cp,uint64_t refsbits,CPubKey dicepk,int64_t &minbet,int64_t &maxbet,int64_t &maxodds,int64_t &timeoutblocks)
