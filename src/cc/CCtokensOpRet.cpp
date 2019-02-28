@@ -19,7 +19,8 @@ CScript EncodeTokenCreateOpRet(uint8_t funcid, std::vector<uint8_t> origpubkey, 
 
     std::vector<std::pair<uint8_t, vscript_t>> oprets;
 
-    oprets.push_back(std::make_pair(OPRETID_NONFUNGIBLEDATA, vopretNonfungible));
+    if(!vopretNonfungible.empty())
+        oprets.push_back(std::make_pair(OPRETID_NONFUNGIBLEDATA, vopretNonfungible));
     return EncodeTokenCreateOpRet(funcid, origpubkey, name, description, oprets);
 }
 
