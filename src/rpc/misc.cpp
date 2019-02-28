@@ -182,7 +182,7 @@ UniValue geterablockheights(const UniValue& params, bool fHelp)
         {
             char str[16];
             sprintf(str, "%d", era);
-            ret.push_back(Pair(str,i));
+            ret.push_back(Pair(str,(int64_t)i));
             lastera = era;
         }
     }
