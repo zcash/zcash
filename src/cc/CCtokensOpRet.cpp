@@ -193,6 +193,9 @@ uint8_t DecodeTokenOpRet(const CScript scriptPubKey, uint8_t &evalCodeTokens, ui
     uint256 dummySrcTokenId;
     CPubKey voutPubkey1, voutPubkey2;
 
+    vscript_t vroguedata;
+    bool foundRogue = false;
+
     GetOpReturnData(scriptPubKey, vopret);
     script = (uint8_t *)vopret.data();
     tokenid = zeroid;
@@ -222,16 +225,28 @@ uint8_t DecodeTokenOpRet(const CScript scriptPubKey, uint8_t &evalCodeTokens, ui
         case 't':
             //not used yet: case 'l':
             // NOTE: 'E_UNMARSHAL result==false' means 'parse error' OR 'not eof state'. Consequently, 'result==false' but 'isEof==true' means just 'parse error' 
-            if (E_UNMARSHAL(vopret, ss >> dummyEvalCode; ss >> dummyFuncId; ss >> tokenid; ss >> ccType;
-            if (ccType >= 1) ss >> voutPubkey1;
-            if (ccType == 2) ss >> voutPubkey2;
-            while (!ss.eof()) {
-                ss >> opretId;
-                if (!ss.eof()) {
-                    ss >> vblob;
-                    oprets.push_back(std::make_pair(opretId, vblob));
-                }
-            }))
+            
+            // compatibility with rogue data:
+            // try to unmarshal rogue data:
+
+            foundRogue = E_UNMARSHAL(vopret, ss >> dummyEvalCode; ss >> dummyFuncId; ss >> tokenid; ss >> ccType;
+                                        if (ccType >= 1) ss >> voutPubkey1;
+                                        if (ccType == 2) ss >> voutPubkey2;
+                                        if (!ss.eof()) {
+                                            ss >> vroguedata;
+                                        }) && vroguedata.size() > 2 && vroguedata.begin()[0] == 0x11 /*EVAL_ROGUE*/ && vroguedata.begin()[1] == 'R';
+                
+            if(foundRogue ||  // fix for compatibility with old rogue data (no opretid)
+                E_UNMARSHAL(vopret, ss >> dummyEvalCode; ss >> dummyFuncId; ss >> tokenid; ss >> ccType;
+                    if (ccType >= 1) ss >> voutPubkey1;
+                    if (ccType == 2) ss >> voutPubkey2;
+                    while (!ss.eof()) {
+                        ss >> opretId;
+                        if (!ss.eof()) {
+                            ss >> vblob;
+                            oprets.push_back(std::make_pair(opretId, vblob));
+                        }
+                    }))
             {
                 if (!(ccType >= 0 && ccType <= 2)) { //incorrect ccType
                     LOGSTREAM((char *)"cctokens", CCLOG_INFO, stream << "DecodeTokenOpRet() incorrect ccType=" << (int)ccType << " tokenid=" << revuint256(tokenid).GetHex() << std::endl);
@@ -246,6 +261,12 @@ uint8_t DecodeTokenOpRet(const CScript scriptPubKey, uint8_t &evalCodeTokens, ui
                     voutPubkeys.push_back(voutPubkey2);
 
                 tokenid = revuint256(tokenid);
+
+                if (foundRogue) {
+                    LOGSTREAM((char *)"cctokens", CCLOG_DEBUG1, stream << "DecodeTokenOpRet() found old-style rogue data" << " for tokenid=" << revuint256(tokenid).GetHex() << std::endl);
+                    oprets.push_back(std::make_pair(OPRETID_ROGUEGAMEDATA, vroguedata));
+                }
+
                 return(funcId);
             }
             LOGSTREAM((char *)"cctokens", CCLOG_INFO, stream << "DecodeTokenOpRet() bad opret format," << " ccType=" << (int)ccType << " tokenid=" <<  revuint256(tokenid).GetHex() << std::endl);
