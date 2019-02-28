@@ -263,6 +263,7 @@ uint8_t DecodeTokenOpRet(const CScript scriptPubKey, uint8_t &evalCodeTokens, ui
                 tokenid = revuint256(tokenid);
 
                 if (foundRogue) {
+                    LOGSTREAM((char *)"cctokens", CCLOG_DEBUG1, stream << "DecodeTokenOpRet() found old-style rogue data" << " for tokenid=" << revuint256(tokenid).GetHex() << std::endl);
                     oprets.push_back(std::make_pair(OPRETID_ROGUEGAMEDATA, vroguedata));
                 }
 
