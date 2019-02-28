@@ -295,7 +295,7 @@ uint8_t DecodeAssetTokenOpRet(const CScript &scriptPubKey, uint8_t &assetsEvalCo
 
 	// First - decode token opret:
 	funcId = DecodeTokenOpRet(scriptPubKey, dummyEvalCode, tokenid, voutPubkeysDummy, oprets);
-    GetOpretBlob(oprets, OPRETID_GATEWAYSDATA, vopretAssets);
+    GetOpretBlob(oprets, OPRETID_ASSETSDATA, vopretAssets);
 
     LOGSTREAM((char *)"ccassets", CCLOG_DEBUG2, stream << "DecodeAssetTokenOpRet() from DecodeTokenOpRet returned funcId=" << (int)funcId << std::endl);
 
