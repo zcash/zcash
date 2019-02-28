@@ -3,6 +3,10 @@
 
 #include "CCtokens.h"
 
+#ifndef IS_CHARINSTR
+#define IS_CHARINSTR(c, str) (std::string(str).find((char)(c)) != std::string::npos)
+#endif
+
 // NOTE: this inital tx won't be used by other contract
 // for tokens to be used there should be at least one 't' tx with other contract's custom opret
 CScript EncodeTokenCreateOpRet(uint8_t funcid, std::vector<uint8_t> origpubkey, std::string name, std::string description, vscript_t vopretNonfungible)
@@ -226,15 +230,17 @@ uint8_t DecodeTokenOpRet(const CScript scriptPubKey, uint8_t &evalCodeTokens, ui
             //not used yet: case 'l':
             // NOTE: 'E_UNMARSHAL result==false' means 'parse error' OR 'not eof state'. Consequently, 'result==false' but 'isEof==true' means just 'parse error' 
             
-            // compatibility with rogue data:
-            // try to unmarshal rogue data:
+            // compatibility with rogue or assets data:
+            // try to unmarshal rogue or assets data:
 
             foundRogue = E_UNMARSHAL(vopret, ss >> dummyEvalCode; ss >> dummyFuncId; ss >> tokenid; ss >> ccType;
                                         if (ccType >= 1) ss >> voutPubkey1;
                                         if (ccType == 2) ss >> voutPubkey2;
                                         if (!ss.eof()) {
                                             ss >> vroguedata;
-                                        }) && vroguedata.size() > 2 && vroguedata.begin()[0] == 0x11 /*EVAL_ROGUE*/ && vroguedata.begin()[1] == 'R';
+                                        }) && vroguedata.size() > 2 && 
+                                            (vroguedata.begin()[0] == 0x11 /*EVAL_ROGUE*/ && IS_CHARINSTR(vroguedata.begin()[1], "RHQKG")  ||
+                                             vroguedata.begin()[0] == EVAL_ASSETS && IS_CHARINSTR(vroguedata.begin()[1], "sbSBxo")) ;
                 
             if(foundRogue ||  // fix for compatibility with old rogue data (no opretid)
                 E_UNMARSHAL(vopret, ss >> dummyEvalCode; ss >> dummyFuncId; ss >> tokenid; ss >> ccType;
