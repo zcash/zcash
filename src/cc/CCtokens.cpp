@@ -265,16 +265,16 @@ void FilterOutTokensUnspendablePk(const std::vector<CPubKey> &sourcePubkeys, std
 
 }
 
-void FilterOutBurnOpret(const std::vector<std::pair<uint8_t, vscript_t>>  &oprets, vscript_t vopret) {
+void FilterOutNonCCOprets(const std::vector<std::pair<uint8_t, vscript_t>>  &oprets, vscript_t vopret) {
 
     vopret.clear();
 
     if (oprets.size() > 2)
-        LOGSTREAM((char *)"cctokens", CCLOG_INFO, stream << "FilterOutBurnOpret() oprets.size > 2 currently not supported" << oprets.size() << std::endl);
+        LOGSTREAM("cctokens", CCLOG_INFO, stream << "FilterOutNonCCOprets() warning!! oprets.size > 2 currently not supported" << oprets.size() << std::endl);
 
     for (auto o : oprets) {
-        if (o.first != EVAL_IMPORTCOIN) {   // skip burn opret
-            vopret = o.second;              // return first contract opret (more than 1 is not supported yet)
+        if (o.first < OPRETID_FIRSTNONCCDATA) {     // skip burn, import, etc opret data
+            vopret = o.second;                      // return first contract opret (more than 1 is not supported yet)
             break;
         }
     }
@@ -343,7 +343,7 @@ int64_t IsTokensvout(bool goDeeper, bool checkPubkeys /*<--not used, always true
             LOGSTREAM((char *)"cctokens", CCLOG_DEBUG2, stream << "IsTokensvout() oprets.size()=" << oprets.size() << std::endl);
             
             // get assets/channels/gateways token data:
-            FilterOutBurnOpret(oprets, vopretExtra);  // NOTE: only 1 additional evalcode in token opret is currently supported
+            FilterOutNonCCOprets(oprets, vopretExtra);  // NOTE: only 1 additional evalcode in token opret is currently supported
             LOGSTREAM((char *)"cctokens", CCLOG_DEBUG2, stream << "IsTokensvout() vopretExtra=" << HexStr(vopretExtra) << std::endl);
 
             // get non-fungible data
@@ -679,7 +679,7 @@ int64_t HasBurnedTokensvouts(struct CCcontract_info *cp, Eval* eval, const CTran
     }
 
     // get assets/channels/gateways token data:
-    FilterOutBurnOpret(oprets, vopretExtra);  // NOTE: only 1 additional evalcode in token opret is currently supported
+    FilterOutNonCCOprets(oprets, vopretExtra);  // NOTE: only 1 additional evalcode in token opret is currently supported
 
     LOGSTREAM((char *)"cctokens", CCLOG_DEBUG2, stream << "HasBurnedTokensvouts() vopretExtra=" << HexStr(vopretExtra) << std::endl);
 

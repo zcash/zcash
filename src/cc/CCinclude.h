@@ -69,15 +69,18 @@ one other technical note is that komodod has the insight-explorer extensions bui
 
 // token opret additional data block ids:
  enum opretid : uint8_t {
-    OPRETID_NONFUNGIBLEDATA = 0x11, OPRETID_FIRST = OPRETID_NONFUNGIBLEDATA,    // first id
+    // cc contracts data:
+    OPRETID_NONFUNGIBLEDATA = 0x11, 
     OPRETID_ASSETSDATA = 0x12,
     OPRETID_GATEWAYSDATA = 0x13,
     OPRETID_CHANNELSDATA = 0x14,
     OPRETID_HEIRDATA = 0x15,
     OPRETID_ROGUEGAMEDATA = 0x16,
 
-    OPRETID_BURNDATA = 0x70,
-    OPRETID_IMPORTDATA = 0x71,  OPRETID_LAST = OPRETID_IMPORTDATA             // last id
+    // non cc contract data:
+    OPRETID_FIRSTNONCCDATA = 0x80,
+    OPRETID_BURNDATA = 0x80,    
+    OPRETID_IMPORTDATA = 0x81
 };
 
  // find opret blob by opretid
