@@ -399,7 +399,7 @@ int64_t CCfullsupply(uint256 tokenid)
     {
         if (DecodeTokenCreateOpRet(tx.vout[numvouts-1].scriptPubKey,origpubkey,name,description))
         {
-            return(tx.vout[0].nValue);
+            return(tx.vout[1].nValue);
         }
     }
     return(0);
