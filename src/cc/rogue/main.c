@@ -751,7 +751,7 @@ void rogue_progress(struct rogue_state *rs,int32_t waitflag,uint64_t seed,char *
             {
                 if ( waitflag == 0 )
                     return;
-                else
+                else if ( 0 )
                 {
                     while ( rogue_sendrawtransaction(rs->keystrokeshex) == 0 )
                     {
