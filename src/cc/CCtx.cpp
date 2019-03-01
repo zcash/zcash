@@ -350,6 +350,7 @@ int64_t CCutxovalue(char *coinaddr,uint256 utxotxid,int32_t utxovout)
 int32_t CCgettxout(uint256 txid,int32_t vout,int32_t mempoolflag,int32_t lockflag)
 {
     CCoins coins;
+    fprintf(stderr,"CCgettxoud %s/v%d\n",txid.GetHex().c_str(),vout);
     if ( mempoolflag != 0 )
     {
         if ( lockflag != 0 )
@@ -358,7 +359,7 @@ int32_t CCgettxout(uint256 txid,int32_t vout,int32_t mempoolflag,int32_t lockfla
             CCoinsViewMemPool view(pcoinsTip, mempool);
             if (!view.GetCoins(txid, coins))
                 return(-1);
-            if ( myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) != 0 )
+            else if ( myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) != 0 )
                 return(-1);
         }
         else
@@ -366,7 +367,7 @@ int32_t CCgettxout(uint256 txid,int32_t vout,int32_t mempoolflag,int32_t lockfla
             CCoinsViewMemPool view(pcoinsTip, mempool);
             if (!view.GetCoins(txid, coins))
                 return(-1);
-            if ( myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) != 0 )
+            else if ( myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) != 0 )
                 return(-1);
         }
     }

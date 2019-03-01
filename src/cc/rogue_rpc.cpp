@@ -565,7 +565,7 @@ int32_t rogue_findbaton(struct CCcontract_info *cp,uint256 &playertxid,char **ke
                         return(-5);
                     }
                 }
-                //fprintf(stderr,"set baton %s\n",txid.GetHex().c_str());
+                fprintf(stderr,"set baton %s\n",txid.GetHex().c_str());
                 batontxid = txid;
                 batonvout = 0; // not vini
                 // how to detect timeout, bailedout, highlander
@@ -578,7 +578,7 @@ int32_t rogue_findbaton(struct CCcontract_info *cp,uint256 &playertxid,char **ke
                         return(-4);
                     else batonht = pindex->GetHeight();
                     batonvalue = batontx.vout[0].nValue;
-                    //printf("batonht.%d keystrokes[%d]\n",batonht,numkeys);
+                    printf("batonht.%d keystrokes[%d]\n",batonht,numkeys);
                     return(0);
                 } else fprintf(stderr,"couldnt find baton\n");
             } else fprintf(stderr,"error with playerdata\n");
