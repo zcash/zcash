@@ -2112,11 +2112,11 @@ bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlo
             hashBlock = header.GetHash();
             if (txOut.GetHash() != hash)
                 return error("%s: txid mismatch", __func__);
-            //fprintf(stderr,"found on disk\n");
+            fprintf(stderr,"found on disk %s\n",hash.GetHex().c_str());
             return true;
         }
     }
-    //fprintf(stderr,"not found\n");
+    fprintf(stderr,"not found on disk %s\n",hash.GetHex().c_str());
     return false;
 }
 

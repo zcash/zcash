@@ -540,13 +540,16 @@ int32_t rogue_findbaton(struct CCcontract_info *cp,uint256 &playertxid,char **ke
                     if ( keystrokesp != 0 && myGetTransaction(spenttxid,spenttx,hashBlock) != 0 && spenttx.vout.size() >= 2 )
                     {
                         uint256 g,b; CPubKey p; std::vector<uint8_t> k;
+                        fprintf(stderr,"decode keys\n");
                         if ( rogue_keystrokesopretdecode(g,b,p,k,spenttx.vout[spenttx.vout.size()-1].scriptPubKey) == 'K' )
                         {
+                            fprintf(stderr,"decoded keys %d\n",(int32_t)k.size());
                             keystrokes = (char *)realloc(keystrokes,numkeys + (int32_t)k.size());
                             for (i=0; i<k.size(); i++)
                                 keystrokes[numkeys+i] = (char)k[i];
                             numkeys += (int32_t)k.size();
                             (*keystrokesp) = keystrokes;
+                            fprintf(stderr,"updated keystrokes.%p[%d]\n",keystrokes,numkeys);
                         }
                     }
                     if ( ++n >= ROGUE_MAXITERATIONS )
