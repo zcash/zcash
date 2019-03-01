@@ -3,6 +3,10 @@
 
 #include "CCtokens.h"
 
+#ifndef IS_CHARINSTR
+#define IS_CHARINSTR(c, str) (std::string(str).find((char)(c)) != std::string::npos)
+#endif
+
 // NOTE: this inital tx won't be used by other contract
 // for tokens to be used there should be at least one 't' tx with other contract's custom opret
 CScript EncodeTokenCreateOpRet(uint8_t funcid, std::vector<uint8_t> origpubkey, std::string name, std::string description, vscript_t vopretNonfungible)
@@ -193,8 +197,8 @@ uint8_t DecodeTokenOpRet(const CScript scriptPubKey, uint8_t &evalCodeTokens, ui
     uint256 dummySrcTokenId;
     CPubKey voutPubkey1, voutPubkey2;
 
-    vscript_t vroguedata;
-    bool foundRogue = false;
+    vscript_t voldstyledata;
+    bool foundOldstyle = false;
 
     GetOpReturnData(scriptPubKey, vopret);
     script = (uint8_t *)vopret.data();
@@ -223,20 +227,19 @@ uint8_t DecodeTokenOpRet(const CScript scriptPubKey, uint8_t &evalCodeTokens, ui
             return DecodeTokenImportOpRet(scriptPubKey, dummyPubkey, dummyName, dummyDescription, dummySrcTokenId, oprets);
             //break;
         case 't':
-            //not used yet: case 'l':
-            // NOTE: 'E_UNMARSHAL result==false' means 'parse error' OR 'not eof state'. Consequently, 'result==false' but 'isEof==true' means just 'parse error' 
-            
-            // compatibility with rogue data:
-            // try to unmarshal rogue data:
-
-            foundRogue = E_UNMARSHAL(vopret, ss >> dummyEvalCode; ss >> dummyFuncId; ss >> tokenid; ss >> ccType;
+           
+            // compatibility with old-style rogue or assets data (with no opretid):
+            // try to unmarshal old-style rogue or assets data:
+            foundOldstyle = E_UNMARSHAL(vopret, ss >> dummyEvalCode; ss >> dummyFuncId; ss >> tokenid; ss >> ccType;
                                         if (ccType >= 1) ss >> voutPubkey1;
                                         if (ccType == 2) ss >> voutPubkey2;
                                         if (!ss.eof()) {
-                                            ss >> vroguedata;
-                                        }) && vroguedata.size() > 2 && vroguedata.begin()[0] == 0x11 /*EVAL_ROGUE*/ && vroguedata.begin()[1] == 'R';
+                                            ss >> voldstyledata;
+                                        }) && voldstyledata.size() >= 2 && 
+                                            (voldstyledata.begin()[0] == 0x11 /*EVAL_ROGUE*/ && IS_CHARINSTR(voldstyledata.begin()[1], "RHQKG")  ||
+                                             voldstyledata.begin()[0] == EVAL_ASSETS && IS_CHARINSTR(voldstyledata.begin()[1], "sbSBxo")) ;
                 
-            if(foundRogue ||  // fix for compatibility with old rogue data (no opretid)
+            if (foundOldstyle ||  // fix for compatibility with old style data (no opretid)
                 E_UNMARSHAL(vopret, ss >> dummyEvalCode; ss >> dummyFuncId; ss >> tokenid; ss >> ccType;
                     if (ccType >= 1) ss >> voutPubkey1;
                     if (ccType == 2) ss >> voutPubkey2;
@@ -262,9 +265,15 @@ uint8_t DecodeTokenOpRet(const CScript scriptPubKey, uint8_t &evalCodeTokens, ui
 
                 tokenid = revuint256(tokenid);
 
-                if (foundRogue) {
-                    LOGSTREAM((char *)"cctokens", CCLOG_DEBUG1, stream << "DecodeTokenOpRet() found old-style rogue data" << " for tokenid=" << revuint256(tokenid).GetHex() << std::endl);
-                    oprets.push_back(std::make_pair(OPRETID_ROGUEGAMEDATA, vroguedata));
+                if (foundOldstyle) {        //patch for old-style opret data with no opretid
+                    LOGSTREAM((char *)"cctokens", CCLOG_DEBUG1, stream << "DecodeTokenOpRet() found old-style rogue/asset data, evalcode=" << (int)voldstyledata.begin()[0] << " funcid=" << (char)voldstyledata.begin()[1] << " for tokenid=" << revuint256(tokenid).GetHex() << std::endl);
+                    uint8_t opretIdRestored;
+                    if (voldstyledata.begin()[0] == 0x11 /*EVAL_ROGUE*/)
+                        opretIdRestored = OPRETID_ROGUEGAMEDATA;
+                    else // EVAL_ASSETS
+                        opretIdRestored = OPRETID_ASSETSDATA;
+
+                    oprets.push_back(std::make_pair(opretIdRestored, voldstyledata));
                 }
 
                 return(funcId);
