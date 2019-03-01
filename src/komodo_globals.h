@@ -276,7 +276,7 @@ uint64_t komodo_current_supply(uint32_t nHeight)
             return(KOMODO_MAXNVALUE);
         else if ( newval < cur_money ) // check for underflow
             return(KOMODO_MAXNVALUE);
-        return(newvalue)
+        return(newval)
     }
     return(cur_money);
 }
