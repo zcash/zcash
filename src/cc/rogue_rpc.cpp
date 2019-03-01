@@ -508,28 +508,26 @@ int32_t rogue_findbaton(struct CCcontract_info *cp,uint256 &playertxid,char **ke
     if ( matches == 1 )
     {
         numvouts = matchtx.vout.size();
-        fprintf(stderr,"matchtxid.%s matches.%d numvouts.%d\n",matchtx.GetHash().GetHex().c_str(),matches,numvouts);
+        //fprintf(stderr,"matchtxid.%s matches.%d numvouts.%d\n",matchtx.GetHash().GetHex().c_str(),matches,numvouts);
         if ( rogue_registeropretdecode(txid,tokenid,playertxid,matchtx.vout[numvouts-1].scriptPubKey) == 'R' )//&& txid == gametxid )
         {
-            fprintf(stderr,"tokenid.%s txid.%s vs gametxid.%s player.%s\n",tokenid.GetHex().c_str(),txid.GetHex().c_str(),gametxid.GetHex().c_str(),playertxid.GetHex().c_str());
+            //fprintf(stderr,"tokenid.%s txid.%s vs gametxid.%s player.%s\n",tokenid.GetHex().c_str(),txid.GetHex().c_str(),gametxid.GetHex().c_str(),playertxid.GetHex().c_str());
             if ( tokenid != zeroid )
                 active = tokenid;
             else active = playertxid;
             if ( active == zeroid || rogue_playerdata(cp,origplayergame,tid,pk,playerdata,symbol,pname,active) == 0 )
             {
                 txid = matchtx.GetHash();
-                fprintf(stderr,"scan forward active.%s spenttxid.%s\n",active.GetHex().c_str(),txid.GetHex().c_str());
+                //fprintf(stderr,"scan forward active.%s spenttxid.%s\n",active.GetHex().c_str(),txid.GetHex().c_str());
                 n = 0;
                 while ( CCgettxout(txid,0,1,0) < 0 )
                 {
                     spenttxid = zeroid;
                     spentvini = -1;
-                    fprintf(stderr,"check myIsutxo_spent\n");
                     if ( (spentvini= myIsutxo_spent(spenttxid,txid,0)) >= 0 )
                         txid = spenttxid;
                     else
                     {
-                        fprintf(stderr,"check myIsutxo_spentinmempool\n");
                         if ( myIsutxo_spentinmempool(spenttxid,spentvini,txid,0) == 0 || spenttxid == zeroid )
                         {
                             fprintf(stderr,"mempool tracking error %s/v0\n",txid.ToString().c_str());
@@ -537,35 +535,32 @@ int32_t rogue_findbaton(struct CCcontract_info *cp,uint256 &playertxid,char **ke
                         }
                     }
                     txid = spenttxid;
-                    fprintf(stderr,"n.%d next txid.%s/v%d\n",n,txid.GetHex().c_str(),spentvini);
+                    //fprintf(stderr,"n.%d next txid.%s/v%d\n",n,txid.GetHex().c_str(),spentvini);
                     if ( spentvini != 0 ) // game is over?
                     {
                         return(0);
                     }
                     if ( keystrokesp != 0 && myGetTransaction(spenttxid,spenttx,hashBlock) != 0 && spenttx.vout.size() >= 2 )
                     {
-                        fprintf(stderr,"declares\n");
                         uint256 g,b; CPubKey p; std::vector<uint8_t> k;
-                        fprintf(stderr,"decode keys\n");
                         if ( rogue_keystrokesopretdecode(g,b,p,k,spenttx.vout[spenttx.vout.size()-1].scriptPubKey) == 'K' )
                         {
-                            fprintf(stderr,"decoded keys %d\n",(int32_t)k.size());
                             keystrokes = (char *)realloc(keystrokes,numkeys + (int32_t)k.size());
                             for (i=0; i<k.size(); i++)
                                 keystrokes[numkeys+i] = (char)k[i];
                             numkeys += (int32_t)k.size();
                             (*keystrokesp) = keystrokes;
-                            fprintf(stderr,"updated keystrokes.%p[%d]\n",keystrokes,numkeys);
+                            //fprintf(stderr,"updated keystrokes.%p[%d]\n",keystrokes,numkeys);
                         }
                     }
-                    fprintf(stderr,"n.%d txid.%s\n",n,txid.GetHex().c_str());
+                    //fprintf(stderr,"n.%d txid.%s\n",n,txid.GetHex().c_str());
                     if ( ++n >= ROGUE_MAXITERATIONS )
                     {
                         fprintf(stderr,"rogue_findbaton n.%d, seems something is wrong\n",n);
                         return(-5);
                     }
                 }
-                fprintf(stderr,"set baton %s\n",txid.GetHex().c_str());
+                //fprintf(stderr,"set baton %s\n",txid.GetHex().c_str());
                 batontxid = txid;
                 batonvout = 0; // not vini
                 // how to detect timeout, bailedout, highlander
@@ -578,7 +573,7 @@ int32_t rogue_findbaton(struct CCcontract_info *cp,uint256 &playertxid,char **ke
                         return(-4);
                     else batonht = pindex->GetHeight();
                     batonvalue = batontx.vout[0].nValue;
-                    printf("batonht.%d keystrokes[%d]\n",batonht,numkeys);
+                    //printf("batonht.%d keystrokes[%d]\n",batonht,numkeys);
                     return(0);
                 } else fprintf(stderr,"couldnt find baton\n");
             } else fprintf(stderr,"error with playerdata\n");
@@ -596,7 +591,7 @@ int32_t rogue_playersalive(int32_t &openslots,int32_t &numplayers,uint256 gametx
     fprintf(stderr,"players alive\n");
     for (i=0; i<maxplayers; i++)
     {
-        fprintf(stderr,"players alive %d\n",i);
+        fprintf(stderr,"players alive %d of %d\n",i,maxplayers);
         if ( CCgettxout(gametxid,1+i,1,0) < 0 )
         {
             numplayers++;
@@ -647,6 +642,7 @@ int32_t rogue_playersalive(int32_t &openslots,int32_t &numplayers,uint256 gametx
         else if ( registration_open != 0 )
             openslots++;
     }
+    fprintf(stderr,"numalive.%d openslots.%d\n",alive,openslots);
     return(alive);
 }
 
@@ -952,7 +948,7 @@ char *rogue_extractgame(int32_t makefiles,char *str,int32_t *numkeysp,std::vecto
         {
             UniValue obj;
             seed = rogue_gamefields(obj,maxplayers,buyin,gametxid,rogueaddr);
-            //fprintf(stderr,"(%s) found baton %s numkeys.%d seed.%llu playerdata.%d playertxid.%s\n",pname.size()!=0?pname.c_str():Rogue_pname.c_str(),batontxid.ToString().c_str(),numkeys,(long long)seed,(int32_t)playerdata.size(),playertxid.GetHex().c_str());
+            fprintf(stderr,"(%s) found baton %s numkeys.%d seed.%llu playerdata.%d playertxid.%s\n",pname.size()!=0?pname.c_str():Rogue_pname.c_str(),batontxid.ToString().c_str(),numkeys,(long long)seed,(int32_t)playerdata.size(),playertxid.GetHex().c_str());
             memset(&P,0,sizeof(P));
             if ( playerdata.size() > 0 )
             {
@@ -978,6 +974,7 @@ char *rogue_extractgame(int32_t makefiles,char *str,int32_t *numkeysp,std::vecto
                         fclose(fp);
                     }
                 }
+                fprintf(stderr,"replay2\n");
                 num = rogue_replay2(newplayer,seed,keystrokes,numkeys,playerdata.size()==0?0:&P,0);
                 newdata.resize(num);
                 for (i=0; i<num; i++)
