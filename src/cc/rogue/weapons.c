@@ -81,6 +81,8 @@ do_motion(struct rogue_state *rs,THING *obj, int ydelta, int xdelta)
     obj->o_pos = hero;
     for (;;)
     {
+        if ( rs->replaydone != 0 )
+            return;
 	/*
 	 * Erase the old one
 	 */

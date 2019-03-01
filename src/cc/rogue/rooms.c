@@ -112,7 +112,7 @@ do_rooms(struct rogue_state *rs)
                 rp->r_pos.x = top.x + rnd(bsze.x - rp->r_max.x);
                 rp->r_pos.y = top.y + rnd(bsze.y - rp->r_max.y);
             } until (rp->r_pos.y != 0);
-        draw_room(rp);
+        draw_room(rs,rp);
         /*
          * Put the gold in
          */
@@ -122,7 +122,7 @@ do_rooms(struct rogue_state *rs)
             
             gold = new_item();
             gold->o_goldval = rp->r_goldval = GOLDCALC;
-            find_floor(rp, &rp->r_gold, FALSE, FALSE);
+            find_floor(rs,rp, &rp->r_gold, FALSE, FALSE);
             gold->o_pos = rp->r_gold;
             chat(rp->r_gold.y, rp->r_gold.x) = GOLD;
             gold->o_flags = ISMANY;
@@ -136,7 +136,7 @@ do_rooms(struct rogue_state *rs)
         if (rnd(100) < (rp->r_goldval > 0 ? 80 : 25))
         {
             tp = new_item();
-            find_floor(rp, &mp, FALSE, TRUE);
+            find_floor(rs,rp, &mp, FALSE, TRUE);
             new_monster(rs,tp, randmonster(FALSE), &mp);
             give_pack(rs,tp);
         }
@@ -150,12 +150,12 @@ do_rooms(struct rogue_state *rs)
  */
 
 void
-draw_room(struct room *rp)
+draw_room(struct rogue_state *rs,struct room *rp)
 {
     int y, x;
 
     if (rp->r_flags & ISMAZE)
-	do_maze(rp);
+	do_maze(rs,rp);
     else
     {
 	vert(rp, rp->r_pos.x);				/* Draw left side */
@@ -211,7 +211,7 @@ static SPOT	maze[NUMLINES/3+1][NUMCOLS/3+1];
 
 
 void
-do_maze(struct room *rp)
+do_maze(struct rogue_state *rs,struct room *rp)
 {
     SPOT *sp;
     int starty, startx;
@@ -232,7 +232,7 @@ do_maze(struct room *rp)
     pos.y = starty + Starty;
     pos.x = startx + Startx;
     putpass(&pos);
-    dig(starty, startx);
+    dig(rs,starty, startx);
 }
 
 /*
@@ -241,7 +241,7 @@ do_maze(struct room *rp)
  */
 
 void
-dig(int y, int x)
+dig(struct rogue_state *rs,int y, int x)
 {
     coord *cp;
     int cnt, newy, newx, nexty = 0, nextx = 0;
@@ -252,6 +252,8 @@ dig(int y, int x)
 
     for (;;)
     {
+        if ( rs->replaydone != 0 )
+            return;
 	cnt = 0;
 	for (cp = del; cp <= &del[3]; cp++)
 	{
@@ -291,7 +293,7 @@ dig(int y, int x)
 	pos.y = nexty + Starty;
 	pos.x = nextx + Startx;
 	putpass(&pos);
-	dig(nexty, nextx);
+	dig(rs,nexty, nextx);
     }
 }
 
@@ -332,7 +334,7 @@ rnd_pos(struct room *rp, coord *cp)
  *	pick a new room each time around the loop.
  */
 bool
-find_floor(struct room *rp, coord *cp, int limit, bool monst)
+find_floor(struct rogue_state *rs,struct room *rp, coord *cp, int limit, bool monst)
 {
     PLACE *pp;
     int cnt;
@@ -346,6 +348,8 @@ find_floor(struct room *rp, coord *cp, int limit, bool monst)
     cnt = limit;
     for (;;)
     {
+        if ( rs->replaydone != 0 )
+            return(FALSE);
 	if (limit && cnt-- == 0)
 	    return FALSE;
 	if (pickroom)

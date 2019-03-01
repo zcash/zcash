@@ -588,19 +588,18 @@ int32_t rogue_playersalive(int32_t &openslots,int32_t &numplayers,uint256 gametx
     numplayers = openslots = 0;
     if ( komodo_nextheight() <= gameht+ROGUE_MAXKEYSTROKESGAP )
         registration_open = 1;
-    fprintf(stderr,"players alive\n");
     for (i=0; i<maxplayers; i++)
     {
-        fprintf(stderr,"players alive %d of %d\n",i,maxplayers);
+        //fprintf(stderr,"players alive %d of %d\n",i,maxplayers);
         if ( CCgettxout(gametxid,1+i,1,0) < 0 )
         {
             numplayers++;
-            fprintf(stderr,"players alive %d spent baton\n",i);
+            //fprintf(stderr,"players alive %d spent baton\n",i);
             if ( CCgettxout(gametxid,1+maxplayers+i,1,0) == txfee )
             {
                 txid = gametxid;
                 vout = 1+i;
-                fprintf(stderr,"rogue_playersalive scan forward active.%s spenttxid.%s\n",gametxid.GetHex().c_str(),txid.GetHex().c_str());
+                //fprintf(stderr,"rogue_playersalive scan forward active.%s spenttxid.%s\n",gametxid.GetHex().c_str(),txid.GetHex().c_str());
                 n = 0;
                 while ( CCgettxout(txid,vout,1,0) < 0 )
                 {
@@ -615,34 +614,29 @@ int32_t rogue_playersalive(int32_t &openslots,int32_t &numplayers,uint256 gametx
                     }
                     txid = spenttxid;
                     vout = 0;
-                    fprintf(stderr,"n.%d next txid.%s/v%d\n",n,txid.GetHex().c_str(),spentvini);
+                    //fprintf(stderr,"n.%d next txid.%s/v%d\n",n,txid.GetHex().c_str(),spentvini);
                     if ( spentvini != 0 )
                         break;
                     if ( n++ > ROGUE_MAXITERATIONS )
                         break;
                 }
-                fprintf(stderr,"out of while\n");
                 if ( txid != zeroid )
                 {
-                    fprintf(stderr,"get height of %s\n",txid.GetHex().c_str());
                     if ( myGetTransaction(txid,tx,hashBlock) != 0 )
                     {
-                        fprintf(stderr,"got tx %s\n",txid.GetHex().c_str());
                         if ( (pindex= komodo_blockindex(hashBlock)) != 0 )
                         {
-                            fprintf(stderr,"got pindex %s\n",hashBlock.GetHex().c_str());
                             if ( pindex->GetHeight() <= gameht+ROGUE_MAXKEYSTROKESGAP )
                                 alive++;
                         }
                     }
-                    fprintf(stderr,"got height of %s\n",txid.GetHex().c_str());
                 }
             }
         }
         else if ( registration_open != 0 )
             openslots++;
     }
-    fprintf(stderr,"numalive.%d openslots.%d\n",alive,openslots);
+    //fprintf(stderr,"numalive.%d openslots.%d\n",alive,openslots);
     return(alive);
 }
 

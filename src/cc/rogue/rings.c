@@ -130,24 +130,26 @@ int
 gethand(struct rogue_state *rs)
 {
     int c;
-
+    
     for (;;)
     {
-	if (terse)
-	    msg(rs,"left or right ring? ");
-	else
-	    msg(rs,"left hand or right hand? ");
-	if ((c = readchar(rs)) == ESCAPE)
-	    return -1;
-	mpos = 0;
-	if (c == 'l' || c == 'L')
-	    return LEFT;
-	else if (c == 'r' || c == 'R')
-	    return RIGHT;
-	if (terse)
-	    msg(rs,"L or R");
-	else
-	    msg(rs,"please type L or R");
+        if ( rs->replaydone != 0 )
+            return(-1);
+        if (terse)
+            msg(rs,"left or right ring? ");
+        else
+            msg(rs,"left hand or right hand? ");
+        if ((c = readchar(rs)) == ESCAPE)
+            return -1;
+        mpos = 0;
+        if (c == 'l' || c == 'L')
+            return LEFT;
+        else if (c == 'r' || c == 'R')
+            return RIGHT;
+        if (terse)
+            msg(rs,"L or R");
+        else
+            msg(rs,"please type L or R");
     }
 }
 
