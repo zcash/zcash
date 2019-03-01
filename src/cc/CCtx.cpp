@@ -347,17 +347,28 @@ int64_t CCutxovalue(char *coinaddr,uint256 utxotxid,int32_t utxovout)
     return(0);
 }
 
-int32_t CCgettxout(uint256 txid,int32_t vout,int32_t mempoolflag)
+int32_t CCgettxout(uint256 txid,int32_t vout,int32_t mempoolflag,int32_t lockflag)
 {
     CCoins coins;
     if ( mempoolflag != 0 )
     {
-        LOCK(mempool.cs);
-        CCoinsViewMemPool view(pcoinsTip, mempool);
-        if (!view.GetCoins(txid, coins))
-            return(-1);
-        if ( myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) != 0 )
-            return(-1);
+        if ( lockflag != 0 )
+        {
+            LOCK(mempool.cs);
+            CCoinsViewMemPool view(pcoinsTip, mempool);
+            if (!view.GetCoins(txid, coins))
+                return(-1);
+            if ( myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) != 0 )
+                return(-1);
+        }
+        else
+        {
+            CCoinsViewMemPool view(pcoinsTip, mempool);
+            if (!view.GetCoins(txid, coins))
+                return(-1);
+            if ( myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) != 0 )
+                return(-1);
+        }
     }
     else
     {

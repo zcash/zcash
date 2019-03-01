@@ -2859,7 +2859,7 @@ UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
                             decode_hex((uint8_t *)&txid,32,txidstr);
                             txid = revuint256(txid);
                             result.push_back(Pair("txid",txid.GetHex()));
-                            if ( CCgettxout(txid,0,1) < 0 )
+                            if ( CCgettxout(txid,0,1,0) < 0 )
                                 result.push_back(Pair("error","already solved"));
                             else if ( GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 1 )
                             {

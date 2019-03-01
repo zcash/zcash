@@ -167,7 +167,7 @@ int32_t MarmaraGetbatontxid(std::vector<uint256> &creditloop,uint256 &batontxid,
             creditloop.push_back(txid);
             //fprintf(stderr,"%d: %s\n",n,txid.GetHex().c_str());
             n++;
-            if ( (value= CCgettxout(spenttxid,vout,1)) == 10000 )
+            if ( (value= CCgettxout(spenttxid,vout,1,1)) == 10000 )
             {
                 batontxid = spenttxid;
                 //fprintf(stderr,"got baton %s %.8f\n",batontxid.GetHex().c_str(),(double)value/COIN);
