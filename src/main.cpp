@@ -2083,14 +2083,14 @@ bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlo
     memset(&hashBlock,0,sizeof(hashBlock));
     // need a GetTransaction without lock so the validation code for assets can run without deadlock
     {
-        //fprintf(stderr,"check mempool\n");
+        fprintf(stderr,"check mempool %s\n",hash.GetHex().c_str());
         if (mempool.lookup(hash, txOut))
         {
             //fprintf(stderr,"found in mempool\n");
             return true;
         }
     }
-    //fprintf(stderr,"check disk\n");
+    fprintf(stderr,"check disk %s\n",hash.GetHex().c_str());
 
     if (fTxIndex) {
         CDiskTxPos postx;
