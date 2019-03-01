@@ -630,11 +630,17 @@ int32_t rogue_playersalive(int32_t &openslots,int32_t &numplayers,uint256 gametx
                 if ( txid != zeroid )
                 {
                     fprintf(stderr,"get height of %s\n",txid.GetHex().c_str());
-                    if ( myGetTransaction(txid,tx,hashBlock) != 0 && (pindex= komodo_blockindex(hashBlock)) != 0 )
+                    if ( myGetTransaction(txid,tx,hashBlock) != 0 )
                     {
-                        if ( pindex->GetHeight() <= gameht+ROGUE_MAXKEYSTROKESGAP )
-                            alive++;
+                        fprintf(stderr,"got tx %s\n",txid.GetHex().c_str());
+                        if ( (pindex= komodo_blockindex(hashBlock)) != 0 )
+                        {
+                            fprintf(stderr,"got pindex %s\n",hashBlock.GetHex().c_str());
+                            if ( pindex->GetHeight() <= gameht+ROGUE_MAXKEYSTROKESGAP )
+                                alive++;
+                        }
                     }
+                    fprintf(stderr,"got height of %s\n",txid.GetHex().c_str());
                 }
             }
         }
