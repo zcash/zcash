@@ -539,6 +539,7 @@ int32_t rogue_findbaton(struct CCcontract_info *cp,uint256 &playertxid,char **ke
                     }
                     if ( keystrokesp != 0 && myGetTransaction(spenttxid,spenttx,hashBlock) != 0 && spenttx.vout.size() >= 2 )
                     {
+                        fprintf(stderr,"declares\n");
                         uint256 g,b; CPubKey p; std::vector<uint8_t> k;
                         fprintf(stderr,"decode keys\n");
                         if ( rogue_keystrokesopretdecode(g,b,p,k,spenttx.vout[spenttx.vout.size()-1].scriptPubKey) == 'K' )
@@ -552,12 +553,12 @@ int32_t rogue_findbaton(struct CCcontract_info *cp,uint256 &playertxid,char **ke
                             fprintf(stderr,"updated keystrokes.%p[%d]\n",keystrokes,numkeys);
                         }
                     }
+                    fprintf(stderr,"n.%d txid.%s\n",n,txid.GetHex().c_str());
                     if ( ++n >= ROGUE_MAXITERATIONS )
                     {
                         fprintf(stderr,"rogue_findbaton n.%d, seems something is wrong\n",n);
                         return(-5);
                     }
-                    //fprintf(stderr,"n.%d txid.%s\n",n,txid.GetHex().c_str());
                 }
                 //fprintf(stderr,"set baton %s\n",txid.GetHex().c_str());
                 batontxid = txid;
