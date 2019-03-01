@@ -3276,9 +3276,9 @@ UniValue dilithium_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
     } else return(cclib_error(result,"need to have exactly 2 params sendtxid, scriptPubKey"));
 }
 
-int64_t dilithium_inputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,int64_t total,int32_t maxinputs,char *cmpaddr)
+int64_t dilithium_inputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,uint256 pubtxid,int64_t total,int32_t maxinputs,char *cmpaddr)
 {
-    char coinaddr[64]; int64_t threshold,nValue,price,totalinputs = 0; uint256 tmptxid,txid,hashBlock; std::vector<uint8_t> origpubkey,tmpsig; CTransaction vintx; int32_t vout,numvouts,n = 0; std::vector<uint256> voutpubtxids;
+    char coinaddr[64]; int64_t threshold,nValue,price,totalinputs = 0; uint256 checktxid,txid,hashBlock; std::vector<uint8_t> origpubkey,tmpsig; CTransaction vintx; int32_t vout,numvouts,n = 0; std::vector<uint256> voutpubtxids;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     GetCCaddress(cp,coinaddr,pk);
     SetCCunspents(unspentOutputs,coinaddr);
@@ -3294,7 +3294,7 @@ int64_t dilithium_inputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPu
         {
             if ( (nValue= IsCClibvout(cp,vintx,vout,cmpaddr)) > DILITHIUM_TXFEE && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0 )
             {
-                if ( dilithium_Qsendopretdecode(tmptxid,tmpsig,voutpubtxids,vintx.vout[numvouts-1].scriptPubKey) == 'Q' || dilithium_sendopretdecode(tmptxid,vintx.vout[numvouts-1].scriptPubKey) == 'x' )
+                if ( (dilithium_Qsendopretdecode(checktxid,tmpsig,voutpubtxids,vintx.vout[numvouts-1].scriptPubKey) == 'Q' || dilithium_sendopretdecode(checktxid,vintx.vout[numvouts-1].scriptPubKey) == 'x') && desttxid == checktxid )
                 {
                     if ( total != 0 && maxinputs != 0 )
                         mtx.vin.push_back(CTxIn(txid,vout,CScript()));
@@ -3358,7 +3358,7 @@ UniValue dilithium_Qsend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
             }
             outputsum += amount;
         }
-        if ( (inputsum= dilithium_inputs(cp,mtx,mypk,outputsum+txfee,64,myCCaddr)) >= outputsum+txfee )
+        if ( (inputsum= dilithium_inputs(cp,mtx,mypk,mypubtxid,outputsum+txfee,64,myCCaddr)) >= outputsum+txfee )
         {
             change = (inputsum - outputsum - txfee);
             if ( change >= txfee )
