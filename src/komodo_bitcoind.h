@@ -2012,10 +2012,10 @@ int64_t komodo_checkcommission(CBlock *pblock,int32_t height)
         {
             script = (uint8_t *)&pblock->vtx[0].vout[1].scriptPubKey[0];
             scriptlen = (int32_t)pblock->vtx[0].vout[1].scriptPubKey.size();
-            //int32_t i;
-            //for (i=0; i<scriptlen; i++)
-            //    fprintf(stderr,"%02x",script[i]);
-            //fprintf(stderr," vout[1] %.8f vs %.8f\n",(double)checktoshis/COIN,(double)pblock->vtx[0].vout[1].nValue/COIN);
+            int32_t i;
+            for (i=0; i<scriptlen; i++)
+                fprintf(stderr,"%02x",script[i]);
+            fprintf(stderr," vout[1] %.8f vs %.8f\n",(double)checktoshis/COIN,(double)pblock->vtx[0].vout[1].nValue/COIN);
             if ( ASSETCHAINS_SCRIPTPUB.size() > 1 )
             {
                 if ( ASSETCHAINS_SCRIPTPUB.size()/2 == scriptlen && scriptlen < sizeof(scripthex) )
@@ -2031,7 +2031,13 @@ int64_t komodo_checkcommission(CBlock *pblock,int32_t height)
                 matched = 25;
             if ( matched == 0 )
             {
-                fprintf(stderr," payment to wrong pubkey scriptlen.%d, scriptpub[%d] checktoshis.%llu\n",scriptlen,(int32_t)ASSETCHAINS_SCRIPTPUB.size()/2,(long long)checktoshis);
+                if ( ASSETCHAINS_SCRIPTPUB.size() > 1 )
+                {
+                    int32_t i;
+                    for (i=0; i<ASSETCHAINS_SCRIPTPUB.size(); i++)
+                        fprintf(stderr,"%02x",ASSETCHAINS_SCRIPTPUB[i]);
+                }
+                fprintf(stderr," -ac[%d] payment to wrong pubkey scriptlen.%d, scriptpub[%d] checktoshis.%llu\n",(int32_t)ASSETCHAINS_SCRIPTPUB.size(),scriptlen,(int32_t)ASSETCHAINS_SCRIPTPUB.size()/2,(long long)checktoshis);
                 return(-1);
 
             }
