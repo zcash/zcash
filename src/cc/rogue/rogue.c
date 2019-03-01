@@ -119,7 +119,7 @@ int32_t roguefname(char *fname,uint64_t seed,int32_t counter)
 }
 
 #ifdef test
-int32_t flushkeystrokes(struct rogue_state *rs)
+int32_t flushkeystrokes(struct rogue_state *rs,int32_t waitflag)
 {
     char fname[1024]; FILE *fp; int32_t i,retflag = -1;
     roguefname(fname,rs->seed,rs->counter);
@@ -155,7 +155,7 @@ int32_t flushkeystrokes(struct rogue_state *rs)
 #ifdef BUILD_ROGUE
 // stubs for inside daemon
 
-void rogue_progress(struct rogue_state *rs,uint64_t seed,char *keystrokes,int32_t num)
+void rogue_progress(struct rogue_state *rs,int32_t waitflag,uint64_t seed,char *keystrokes,int32_t num)
 {
 }
 
@@ -165,14 +165,18 @@ int32_t rogue_setplayerdata(struct rogue_state *rs,char *gametxidstr)
 }
 #endif
 
-int32_t flushkeystrokes(struct rogue_state *rs)
+int32_t flushkeystrokes(struct rogue_state *rs,int32_t waitflag)
 {
     if ( rs->num > 0 )
     {
-        rogue_progress(rs,rs->seed,rs->buffered,rs->num);
+        // need to get existing keystrokes including mempool
+        // create keystrokes that are not saved
+        //rs->keytxid = rogue_progress(rs,waitflag,rs->seed,&rs->buffered[rs->lastnum],rs->num - rs->lastnum);
+        //rs->lastnum = rs->num;
+        rogue_progress(rs,waitflag,rs->seed,rs->buffered,rs->num);
         memset(rs->buffered,0,sizeof(rs->buffered));
-        rs->counter++;
         rs->num = 0;
+        rs->counter++;
     }
     return(0);
 }
@@ -180,7 +184,7 @@ int32_t flushkeystrokes(struct rogue_state *rs)
 void rogue_bailout(struct rogue_state *rs)
 {
     char cmd[512];
-    flushkeystrokes(rs);
+    flushkeystrokes(rs,1);
     //sleep(5);
     return;
     /*fprintf(stderr,"bailing out\n");
@@ -229,7 +233,7 @@ int32_t rogue_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t nu
     if ( (fp= fopen("checkfile","wb")) != 0 )
     {
         save_file(rs,fp,0);
-        fprintf(stderr,"gold.%d hp.%d strength.%d/%d level.%d exp.%d dungeon.%d data[%d]\n",rs->P.gold,rs->P.hitpoints,rs->P.strength&0xffff,rs->P.strength>>16,rs->P.level,rs->P.experience,rs->P.dungeonlevel,rs->playersize);
+        //fprintf(stderr,"gold.%d hp.%d strength.%d/%d level.%d exp.%d dungeon.%d data[%d]\n",rs->P.gold,rs->P.hitpoints,rs->P.strength&0xffff,rs->P.strength>>16,rs->P.level,rs->P.experience,rs->P.dungeonlevel,rs->playersize);
         if ( newdata != 0 && rs->playersize > 0 )
             memcpy(newdata,rs->playerdata,rs->playersize);
     }
@@ -315,6 +319,7 @@ int rogue(int argc, char **argv, char **envp)
     {
         rs->seed = atol(argv[1]);
         strcpy(Gametxidstr,argv[2]);
+        fprintf(stderr,"setplayerdata\n");
         if ( rogue_setplayerdata(rs,Gametxidstr) < 0 )
         {
             fprintf(stderr,"invalid gametxid, or already started\n");
@@ -410,7 +415,7 @@ int rogue(int argc, char **argv, char **envp)
 #endif
 	printf("Hello %s, just a moment while I dig the dungeon... seed.%llu", whoami,(long long)rs->seed);
     fflush(stdout);
-
+    fprintf(stderr,"rogueiterate\n");
     rogueiterate(rs);
     return(0);
 }
@@ -560,15 +565,15 @@ playit(struct rogue_state *rs)
         }
         else
         {
-            if ( rs->needflush != 0 && rs->num > 1000 )
+            if ( rs->needflush != 0 )
             {
-                if ( flushkeystrokes(rs) == 0 )
+                if ( flushkeystrokes(rs,0) == 0 )
                     rs->needflush = 0;
             }
         }
     }
     if ( rs->guiflag != 0 )
-        flushkeystrokes(rs);
+        flushkeystrokes(rs,1);
     endit(0);
 }
 
@@ -593,13 +598,13 @@ int32_t _quit()
             if ( rs->sleeptime != 0 )
                 refresh();
             score(rs,purse, 1, 0);
-            flushkeystrokes(rs);
+            flushkeystrokes(rs,1);
             my_exit(0);
         }
         else
         {
             //score(rs,purse, 1, 0);
-            fprintf(stderr,"done! (%c)\n",c);
+            //fprintf(stderr,"done! (%c)\n",c);
         }
         return(1);
     }

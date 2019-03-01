@@ -422,6 +422,8 @@ get_item(struct rogue_state *rs,char *purpose, int type)
         {
             for (;;)
             {
+                if ( rs->replaydone != 0 )
+                    return(NULL);
                 if (!terse)
                     addmsg(rs,"which object do you want to ");
                 addmsg(rs,purpose);

@@ -35,19 +35,21 @@ whatis(struct rogue_state *rs,bool insist, int type)
 
     for (;;)
     {
-	obj = get_item(rs,"identify", type);
-	if (insist)
-	{
-	    if (n_objs == 0)
-		return;
-	    else if (obj == NULL)
-		msg(rs,"you must identify something");
-	    else if (type && obj->o_type != type &&
-	       !(type == R_OR_S && (obj->o_type == RING || obj->o_type == STICK)) )
-		    msg(rs,"you must identify a %s", type_name(type));
-	    else
-		break;
-	}
+        if ( rs->replaydone != 0 )
+            return;
+        obj = get_item(rs,"identify", type);
+        if (insist)
+        {
+            if (n_objs == 0)
+                return;
+            else if (obj == NULL)
+                msg(rs,"you must identify something");
+            else if (type && obj->o_type != type &&
+                     !(type == R_OR_S && (obj->o_type == RING || obj->o_type == STICK)) )
+                msg(rs,"you must identify a %s", type_name(type));
+            else
+                break;
+        }
 	else
 	    break;
     }
@@ -202,7 +204,7 @@ teleport(struct rogue_state *rs)
     static coord c;
 
     mvaddch(hero.y, hero.x, floor_at());
-    find_floor((struct room *) NULL, &c, FALSE, TRUE);
+    find_floor(rs,(struct room *) NULL, &c, FALSE, TRUE);
     if (roomin(rs,&c) != proom)
     {
 	leave_room(rs,&hero);

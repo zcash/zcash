@@ -1562,7 +1562,7 @@ char *argv0names[] =
     (char *)"MNZ", (char *)"MNZ", (char *)"MNZ", (char *)"MNZ", (char *)"BTCH", (char *)"BTCH", (char *)"BTCH", (char *)"BTCH"
 };
 
-int64_t komodo_max_money()
+uint64_t komodo_max_money()
 {
     return komodo_current_supply(10000000);
 }
@@ -1787,6 +1787,11 @@ void komodo_args(char *argv0)
         ASSETCHAINS_FOUNDERS = GetArg("-ac_founders",0);// & 1;
 		ASSETCHAINS_FOUNDERS_REWARD = GetArg("-ac_founders_reward",0);
         ASSETCHAINS_SUPPLY = GetArg("-ac_supply",10);
+        if ( ASSETCHAINS_SUPPLY > (uint64_t)90*1000*1000000 )
+        {
+            fprintf(stderr,"-ac_supply must be less than 90 billion\n");
+            exit(0);
+        }
         ASSETCHAINS_COMMISSION = GetArg("-ac_perc",0);
         ASSETCHAINS_OVERRIDE_PUBKEY = GetArg("-ac_pubkey","");
         ASSETCHAINS_SCRIPTPUB = GetArg("-ac_script","");

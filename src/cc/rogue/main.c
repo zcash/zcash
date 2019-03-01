@@ -708,11 +708,60 @@ char *komodo_issuemethod(char *userpass,char *method,char *params,uint16_t port)
 
 #include "rogue.h"
 
-void rogue_progress(struct rogue_state *rs,uint64_t seed,char *keystrokes,int32_t num)
+int32_t rogue_sendrawtransaction(char *rawtx)
 {
-    char cmd[16384],hexstr[16384],params[32768],*retstr; int32_t i;
+    char params[512],*retstr; cJSON *retjson; int32_t numconfs = -1;
+    sprintf(params,"[\"%s\"]",rawtx);
+    if ( (retstr= komodo_issuemethod(USERPASS,"sendrawtransaction",params,ROGUE_PORT)) != 0 )
+    {
+        //fprintf(stderr,"params.(%s) -> %s\n",params,retstr);
+        if ( is_hexstr(retstr,64) == 64 )
+        {
+            free(retstr);
+            return(0);
+        }
+        {
+            static FILE *fp;
+            if ( fp == 0 )
+                fp = fopen("rogue.sendlog","wb");
+            if ( fp != 0 )
+            {
+                fprintf(fp,"%s\n",retstr);
+                fflush(fp);
+            }
+        }
+        if ( (retjson= cJSON_Parse(retstr)) != 0 )
+        {
+            free_json(retjson);
+        }
+        free(retstr);
+    }
+    return(-1);
+}
+
+void rogue_progress(struct rogue_state *rs,int32_t waitflag,uint64_t seed,char *keystrokes,int32_t num)
+{
+    char cmd[16384],hexstr[16384],params[32768],*retstr,*rawtx; int32_t i; cJSON *retjson;
+    //fprintf(stderr,"rogue_progress num.%d\n",num);
     if ( rs->guiflag != 0 && Gametxidstr[0] != 0 )
     {
+        if ( rs->keystrokeshex != 0 )
+        {
+            if ( rogue_sendrawtransaction(rs->keystrokeshex) == 0 )
+            {
+                if ( waitflag == 0 )
+                    return;
+                else if ( 0 )
+                {
+                    while ( rogue_sendrawtransaction(rs->keystrokeshex) == 0 )
+                    {
+                        //fprintf(stderr,"pre-rebroadcast\n");
+                        sleep(10);
+                    }
+                }
+            }
+            free(rs->keystrokeshex), rs->keystrokeshex = 0;
+        }
         for (i=0; i<num; i++)
             sprintf(&hexstr[i<<1],"%02x",keystrokes[i]&0xff);
         hexstr[i<<1] = 0;
@@ -736,9 +785,29 @@ void rogue_progress(struct rogue_state *rs,uint64_t seed,char *keystrokes,int32_
                     fprintf(fp,"%s\n",retstr);
                     fflush(fp);
                 }
+                if ( (retjson= cJSON_Parse(retstr)) != 0 )
+                {
+                    if ( (rawtx= jstr(retjson,"hex")) != 0 )
+                    {
+                        if ( rs->keystrokeshex != 0 )
+                            free(rs->keystrokeshex);
+                        rs->keystrokeshex = (char *)malloc(strlen(rawtx)+1);
+                        strcpy(rs->keystrokeshex,rawtx);
+                        //fprintf(stderr,"set keystrokestx <- %s\n",rs->keystrokeshex);
+                    }
+                    free_json(retjson);
+                }
                 free(retstr);
             }
-            sleep(1);
+            if ( 0 && waitflag != 0 && rs->keystrokeshex != 0 )
+            {
+                while ( rogue_sendrawtransaction(rs->keystrokeshex) == 0 )
+                {
+                    //fprintf(stderr,"post-rebroadcast\n");
+                    sleep(3);
+                }
+                free(rs->keystrokeshex), rs->keystrokeshex = 0;
+            }
         }
     }
 }

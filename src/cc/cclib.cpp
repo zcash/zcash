@@ -87,6 +87,7 @@ CClib_methods[] =
     { (char *)"dilithium", (char *)"verify", (char *)"pubtxid msg sig", 3, 3, 'V', EVAL_DILITHIUM },
     { (char *)"dilithium", (char *)"send", (char *)"handle pubtxid amount", 3, 3, 'x', EVAL_DILITHIUM },
     { (char *)"dilithium", (char *)"spend", (char *)"sendtxid scriptPubKey [hexseed]", 2, 3, 'y', EVAL_DILITHIUM },
+    { (char *)"dilithium", (char *)"Qsend", (char *)"mypubtxid hexseed/'mypriv' destpubtxid,amount, ...", 4, 66, 'Q', EVAL_DILITHIUM },
 #endif
 };
 
@@ -134,6 +135,7 @@ UniValue dilithium_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
 UniValue dilithium_keypair(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue dilithium_sign(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue dilithium_verify(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+UniValue dilithium_Qsend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 
 #endif
 
@@ -261,7 +263,9 @@ UniValue CClib_method(struct CCcontract_info *cp,char *method,char *jsonstr)
     }
     else if ( cp->evalcode == EVAL_DILITHIUM )
     {
-        if ( strcmp(method,"send") == 0 )
+        if ( strcmp(method,"Qsend") == 0 )
+            return(dilithium_Qsend(txfee,cp,params));
+        else if ( strcmp(method,"send") == 0 )
             return(dilithium_send(txfee,cp,params));
         else if ( strcmp(method,"spend") == 0 )
             return(dilithium_spend(txfee,cp,params));

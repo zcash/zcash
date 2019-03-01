@@ -129,7 +129,7 @@ int32_t komodo_baseid(char *origbase)
 #ifndef SATOSHIDEN
 #define SATOSHIDEN ((uint64_t)100000000L)
 #endif
-int64_t komodo_current_supply(uint32_t nHeight)
+uint64_t komodo_current_supply(uint32_t nHeight)
 {
     uint64_t cur_money;
     int32_t baseid;
@@ -264,5 +264,19 @@ int64_t komodo_current_supply(uint32_t nHeight)
             }
         }
     }
-    return((int64_t)(cur_money + (cur_money * ASSETCHAINS_COMMISSION)));
+#define KOMODO_MAXNVALUE (((uint64_t)1 << 63) - 1)
+#define KOMODO_BIT63SET(x) ((x) & ((uint64_t)1 << 63))
+    
+    if ( KOMODO_BIT63SET(cur_money) != 0 )
+        return(KOMODO_MAXNVALUE);
+    if ( ASSETCHAINS_COMMISSION != 0 )
+    {
+        uint64_t newval = (cur_money + (cur_money * ASSETCHAINS_COMMISSION));
+        if ( KOMODO_BIT63SET(newval) != 0 )
+            return(KOMODO_MAXNVALUE);
+        else if ( newval < cur_money ) // check for underflow
+            return(KOMODO_MAXNVALUE);
+        return(newval);
+    }
+    return(cur_money);
 }
