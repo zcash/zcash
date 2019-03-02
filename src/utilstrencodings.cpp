@@ -434,7 +434,7 @@ bool ParseFixedPoint(const std::string &val, int decimals, int64_t *amount_out)
         }
         if ( i == n ) // 90000000000
         {
-            *amount_out = val64 * COIN;
+            *amount_out = val64 * 100000000;
             fprintf(stderr,"special case: %s -> %.8f\n",val.c_str(),(double)val64/COIN);
             return(true);
         }
