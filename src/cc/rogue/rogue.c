@@ -141,7 +141,7 @@ int32_t flushkeystrokes_local(struct rogue_state *rs,int32_t waitflag)
                     fprintf(stderr," first part rnd.%d\n",rnd(1000));
                     fclose(fp);
                 }
-                roguefname(fname,rs->seed,rs->counter);
+                roguefname(fname,rs->seed,rs->counter+1);
                 if ( (fp= fopen(fname,"wb")) != 0 ) // truncate next file
                     fclose(fp);
                 //fprintf(stderr,"savefile <- %s retflag.%d\n",fname,retflag);
