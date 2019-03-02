@@ -1640,7 +1640,7 @@ uint64_t komodo_ac_block_subsidy(int nHeight)
         }
     }
     uint32_t magicExtra = ASSETCHAINS_STAKED ? ASSETCHAINS_MAGIC : (ASSETCHAINS_MAGIC & 0xffffff);
-    if ( ASSETCHAINS_SUPPLY > 1000000000 )
+    if ( ASSETCHAINS_SUPPLY > 10000000000 ) // over 10 billion?
     {
         if ( nHeight <= ASSETCHAINS_SUPPLY/1000000000 )
         {
