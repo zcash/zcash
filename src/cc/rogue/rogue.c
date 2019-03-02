@@ -118,22 +118,22 @@ int32_t roguefname(char *fname,uint64_t seed,int32_t counter)
     return(0);
 }
 
-#ifdef test
-int32_t flushkeystrokes(struct rogue_state *rs,int32_t waitflag)
+int32_t flushkeystrokes_local(struct rogue_state *rs,int32_t waitflag)
 {
+#ifndef BUILD_ROGUE
     char fname[1024]; FILE *fp; int32_t i,retflag = -1;
+    rs->counter++;
     roguefname(fname,rs->seed,rs->counter);
     if ( (fp= fopen(fname,"wb")) != 0 )
     {
         if ( fwrite(rs->buffered,1,rs->num,fp) == rs->num )
         {
-            rs->counter++;
             rs->num = 0;
             retflag = 0;
             fclose(fp);
             if ( (fp= fopen("savefile","wb")) != 0 )
             {
-                save_file(rs,fp,0);
+                //save_file(rs,fp,0);
                 if ( 0 && (fp= fopen("savefile","rb")) != 0 )
                 {
                     for (i=0; i<0x150; i++)
@@ -149,8 +149,10 @@ int32_t flushkeystrokes(struct rogue_state *rs,int32_t waitflag)
         } else fprintf(stderr,"error writing (%s)\n",fname);
     } else fprintf(stderr,"error creating (%s)\n",fname);
     return(retflag);
-}
 #else
+    return(0);
+#endif
+}
 
 #ifdef BUILD_ROGUE
 // stubs for inside daemon
@@ -174,9 +176,10 @@ int32_t flushkeystrokes(struct rogue_state *rs,int32_t waitflag)
         //rs->keytxid = rogue_progress(rs,waitflag,rs->seed,&rs->buffered[rs->lastnum],rs->num - rs->lastnum);
         //rs->lastnum = rs->num;
         rogue_progress(rs,waitflag,rs->seed,rs->buffered,rs->num);
+        flushkeystrokes_local(rs,waitflag);
         memset(rs->buffered,0,sizeof(rs->buffered));
-        rs->num = 0;
-        rs->counter++;
+        //rs->num = 0;
+        //rs->counter++;
     }
     return(0);
 }
@@ -241,7 +244,6 @@ int32_t rogue_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t nu
     free(rs);
     return(n);
 }
-#endif
 
 long get_filesize(FILE *fp)
 {
