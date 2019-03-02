@@ -142,7 +142,7 @@ uint64_t komodo_current_supply(uint32_t nHeight)
         cur_money = (ASSETCHAINS_SUPPLY+1) * SATOSHIDEN + (ASSETCHAINS_MAGIC & 0xffffff) + ASSETCHAINS_GENESISTXVAL;
         if ( ASSETCHAINS_LASTERA == 0 && ASSETCHAINS_REWARD[0] == 0 )
         {
-            cur_money += (nHeight * 10000) / SATOSHIDEN;
+            cur_money += (nHeight * 10000);// / SATOSHIDEN;
         }
         else
         {
@@ -266,7 +266,6 @@ uint64_t komodo_current_supply(uint32_t nHeight)
     }
 #define KOMODO_MAXNVALUE (((uint64_t)1 << 63) - 1)
 #define KOMODO_BIT63SET(x) ((x) & ((uint64_t)1 << 63))
-    cur_money *= COIN;
     if ( KOMODO_BIT63SET(cur_money) != 0 )
         return(KOMODO_MAXNVALUE);
     if ( ASSETCHAINS_COMMISSION != 0 )
