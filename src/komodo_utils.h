@@ -1639,9 +1639,18 @@ uint64_t komodo_ac_block_subsidy(int nHeight)
             }
         }
     }
-    if ( nHeight == 1 )
+    uint32_t magicExtra = ASSETCHAINS_STAKED ? ASSETCHAINS_MAGIC : (ASSETCHAINS_MAGIC & 0xffffff);
+    if ( ASSETCHAINS_SUPPLY > 1000000000 )
     {
-        uint32_t magicExtra = ASSETCHAINS_STAKED ? ASSETCHAINS_MAGIC : (ASSETCHAINS_MAGIC & 0xffffff);
+        if ( nHeight <= ASSETCHAINS_SUPPLY/1000000000 )
+        {
+            subsidy = (uint64_t)1000000000 * COIN;
+            if ( nHeight == 1 )
+                subsidy += magicExtra;
+        }
+    }
+    else if ( nHeight == 1 )
+    {
         if ( ASSETCHAINS_LASTERA == 0 )
             subsidy = ASSETCHAINS_SUPPLY * SATOSHIDEN + magicExtra;
         else
