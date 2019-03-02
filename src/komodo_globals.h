@@ -169,7 +169,7 @@ uint64_t komodo_current_supply(uint32_t nHeight)
                     uint64_t decay = ASSETCHAINS_DECAY[j];
 
                     fprintf(stderr,"period.%llu cur_money %.8f += %.8f * %d\n",(long long)period,(double)cur_money/COIN,(double)reward/COIN,nHeight);
-                    if (!period)
+                    if ( ASSETCHAINS_HALVING[j] == 0 )
                     {
                         // no halving, straight multiply
                         cur_money += reward * (nHeight - 1);
