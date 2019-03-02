@@ -156,7 +156,7 @@ uint64_t komodo_current_supply(uint32_t nHeight)
                 // add rewards from this era, up to nHeight
                 int64_t reward = ASSETCHAINS_REWARD[j];
                 
-                fprintf(stderr,"last.%d reward %llu period %llu\n",ASSETCHAINS_LASTERA,(long long)reward,(long long)ASSETCHAINS_HALVING[j]);
+                fprintf(stderr,"last.%d reward %llu period %llu\n",(int32_t)ASSETCHAINS_LASTERA,(long long)reward,(long long)ASSETCHAINS_HALVING[j]);
                 if ( reward > 0 )
                 {
                     uint64_t lastEnd = j == 0 ? 0 : ASSETCHAINS_ENDSUBSIDY[j - 1];
@@ -168,10 +168,10 @@ uint64_t komodo_current_supply(uint32_t nHeight)
                     uint32_t modulo = (curEnd - lastEnd) % period;
                     uint64_t decay = ASSETCHAINS_DECAY[j];
 
+                    fprintf(stderr,"period.%llu cur_money %.8f += %.8f * %d\n",(long long)period,(double)cur_money/COIN,(double)reward/COIN,nHeight);
                     if (!period)
                     {
                         // no halving, straight multiply
-                        fprintf(stderr,"cur_money %.8f += %.8f * %d\n",(double)cur_money/COIN,(double)reward/COIN,nHeight);
                         cur_money += reward * (nHeight - 1);
                         fprintf(stderr,"cur_money %.8f\n",(double)cur_money/COIN);
                     }
