@@ -1,5 +1,6 @@
 #!/bin/sh
 cd rogue;
+make clean;
 
 if [ "$HOST" = "x86_64-w64-mingw32" ]; then
   echo building rogue.exe...
