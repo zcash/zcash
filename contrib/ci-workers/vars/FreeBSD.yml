@@ -2,6 +2,7 @@
 buildbot_deps:
   - py27-pip
 build_deps:
+  - cmake
   - gcc
   - gmake
 dist_deps:

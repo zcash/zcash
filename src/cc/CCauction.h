@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright © 2014-2018 The SuperNET Developers.                             *
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
  *                                                                            *
  * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
  * the top-level directory of this distribution for the individual copyright  *
@@ -21,7 +21,7 @@
 
 #define EVAL_AUCTION 0xe8
 
-bool AuctionValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx);
+bool AuctionValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn);
 
 std::string AuctionPost(uint64_t txfee,uint256 itemhash,int64_t minbid,char *title,char *description);
 std::string AuctionBid(uint64_t txfee,uint256 itemhash,int64_t amount);

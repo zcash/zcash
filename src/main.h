@@ -3,6 +3,21 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 #ifndef BITCOIN_MAIN_H
 #define BITCOIN_MAIN_H
 
@@ -22,6 +37,7 @@
 #include "script/script.h"
 #include "script/serverchecker.h"
 #include "script/standard.h"
+#include "script/script_ext.h"
 #include "spentindex.h"
 #include "sync.h"
 #include "tinyformat.h"
@@ -53,7 +69,7 @@ struct CNodeStateStats;
 #define _COINBASE_MATURITY 100
 
 /** Default for -blockmaxsize and -blockminsize, which control the range of sizes the mining code will create **/
-static const unsigned int DEFAULT_BLOCK_MAX_SIZE = MAX_BLOCK_SIZE;
+static const unsigned int DEFAULT_BLOCK_MAX_SIZE = 2000000;//MAX_BLOCK_SIZE;
 static const unsigned int DEFAULT_BLOCK_MIN_SIZE = 0;
 /** Default for -blockprioritysize, maximum space for zero/low-fee transactions **/
 static const unsigned int DEFAULT_BLOCK_PRIORITY_SIZE = DEFAULT_BLOCK_MAX_SIZE / 2;
@@ -62,7 +78,7 @@ static const bool DEFAULT_ALERTS = true;
 /** Minimum alert priority for enabling safe mode. */
 static const int ALERT_PRIORITY_SAFE_MODE = 4000;
 /** Maximum reorg length we will accept before we shut down and alert the user. */
-static const unsigned int MAX_REORG_LENGTH = _COINBASE_MATURITY - 1;
+static unsigned int MAX_REORG_LENGTH = _COINBASE_MATURITY - 1;
 /** Maximum number of signature check operations in an IsStandard() P2SH script */
 static const unsigned int MAX_P2SH_SIGOPS = 15;
 /** The maximum number of sigops we're willing to relay/mine in a single tx */
@@ -74,7 +90,8 @@ static const unsigned int DEFAULT_MAX_ORPHAN_TRANSACTIONS = 100;
 /** Default for -txexpirydelta, in number of blocks */
 static const unsigned int DEFAULT_TX_EXPIRY_DELTA = 20;
 /** The maximum size of a blk?????.dat file (since 0.8) */
-static const unsigned int MAX_BLOCKFILE_SIZE = 0x8000000; // 128 MiB
+static const unsigned int MAX_BLOCKFILE_SIZE = 0x8000000; // 128 MiB 
+static const unsigned int MAX_TEMPFILE_SIZE = 0x1000000; // 16 MiB 0x8000000
 /** The pre-allocation chunk size for blk?????.dat files (since 0.8) */
 static const unsigned int BLOCKFILE_CHUNK_SIZE = 0x1000000; // 16 MiB
 /** The pre-allocation chunk size for rev?????.dat files (since 0.8) */
@@ -101,6 +118,7 @@ static const unsigned int DATABASE_WRITE_INTERVAL = 60 * 60;
 static const unsigned int DATABASE_FLUSH_INTERVAL = 24 * 60 * 60;
 /** Maximum length of reject messages. */
 static const unsigned int MAX_REJECT_MESSAGE_LENGTH = 111;
+static const int64_t DEFAULT_MAX_TIP_AGE = 24 * 60 * 60;
 
 //static const bool DEFAULT_ADDRESSINDEX = false;
 //static const bool DEFAULT_SPENTINDEX = false;
@@ -111,7 +129,7 @@ static const unsigned int DEFAULT_DB_MAX_OPEN_FILES = 1000;
 static const bool DEFAULT_DB_COMPRESSION = true;
 
 // Sanity check the magic numbers when we change them
-BOOST_STATIC_ASSERT(DEFAULT_BLOCK_MAX_SIZE <= MAX_BLOCK_SIZE);
+//BOOST_STATIC_ASSERT(DEFAULT_BLOCK_MAX_SIZE <= MAX_BLOCK_SIZE());
 BOOST_STATIC_ASSERT(DEFAULT_BLOCK_PRIORITY_SIZE <= DEFAULT_BLOCK_MAX_SIZE);
 
 #define equihash_parameters_acceptable(N, K) \
@@ -148,6 +166,7 @@ extern bool fCoinbaseEnforcedProtectionEnabled;
 extern size_t nCoinCacheUsage;
 extern CFeeRate minRelayTxFee;
 extern bool fAlerts;
+extern int64_t nMaxTipAge;
 
 /** Best header we've seen so far (used for getheaders queries' starting points). */
 extern CBlockIndex *pindexBestHeader;
@@ -224,6 +243,10 @@ void ThreadScriptCheck();
 void PartitionCheck(bool (*initialDownloadCheck)(), CCriticalSection& cs, const CBlockIndex *const &bestHeader, int64_t nPowTargetSpacing);
 /** Check whether we are doing an initial block download (synchronizing from disk or network) */
 bool IsInitialBlockDownload();
+/** Check if the daemon is in sync, if not, it returns 1 or if due to best header only, the difference in best
+ * header and activeChain tip
+ */
+int IsNotInSync();
 /** Format a string that describes several potential problems detected by the core */
 std::string GetWarnings(const std::string& strFor);
 /** Retrieve a transaction (from memory pool, or from disk, if possible) */
@@ -267,7 +290,7 @@ void PruneAndFlush();
 
 /** (try to) add transaction to memory pool **/
 bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransaction &tx, bool fLimitFree,
-                        bool* pfMissingInputs, bool fRejectAbsurdFee=false);
+                        bool* pfMissingInputs, bool fRejectAbsurdFee=false, int dosLevel=-1, bool fSkipExpiry=false);
 
 
 struct CNodeStateStats {
@@ -284,11 +307,11 @@ struct CTimestampIndexIteratorKey {
         return 4;
     }
     template<typename Stream>
-    void Serialize(Stream& s, int nType, int nVersion) const {
+    void Serialize(Stream& s) const {
         ser_writedata32be(s, timestamp);
     }
     template<typename Stream>
-    void Unserialize(Stream& s, int nType, int nVersion) {
+    void Unserialize(Stream& s) {
         timestamp = ser_readdata32be(s);
     }
 
@@ -313,14 +336,14 @@ struct CTimestampIndexKey {
         return 36;
     }
     template<typename Stream>
-    void Serialize(Stream& s, int nType, int nVersion) const {
+    void Serialize(Stream& s) const {
         ser_writedata32be(s, timestamp);
-        blockHash.Serialize(s, nType, nVersion);
+        blockHash.Serialize(s);
     }
     template<typename Stream>
-    void Unserialize(Stream& s, int nType, int nVersion) {
+    void Unserialize(Stream& s) {
         timestamp = ser_readdata32be(s);
-        blockHash.Unserialize(s, nType, nVersion);
+        blockHash.Unserialize(s);
     }
 
     CTimestampIndexKey(unsigned int time, uint256 hash) {
@@ -346,13 +369,13 @@ struct CTimestampBlockIndexKey {
     }
 
     template<typename Stream>
-    void Serialize(Stream& s, int nType, int nVersion) const {
-        blockHash.Serialize(s, nType, nVersion);
+    void Serialize(Stream& s) const {
+        blockHash.Serialize(s);
     }
 
     template<typename Stream>
-    void Unserialize(Stream& s, int nType, int nVersion) {
-        blockHash.Unserialize(s, nType, nVersion);
+    void Unserialize(Stream& s) {
+        blockHash.Unserialize(s);
     }
 
     CTimestampBlockIndexKey(uint256 hash) {
@@ -375,12 +398,12 @@ struct CTimestampBlockIndexValue {
     }
 
     template<typename Stream>
-    void Serialize(Stream& s, int nType, int nVersion) const {
+    void Serialize(Stream& s) const {
         ser_writedata32be(s, ltimestamp);
     }
 
     template<typename Stream>
-    void Unserialize(Stream& s, int nType, int nVersion) {
+    void Unserialize(Stream& s) {
         ltimestamp = ser_readdata32be(s);
     }
 
@@ -407,17 +430,17 @@ struct CAddressUnspentKey {
         return 57;
     }
     template<typename Stream>
-    void Serialize(Stream& s, int nType, int nVersion) const {
+    void Serialize(Stream& s) const {
         ser_writedata8(s, type);
-        hashBytes.Serialize(s, nType, nVersion);
-        txhash.Serialize(s, nType, nVersion);
+        hashBytes.Serialize(s);
+        txhash.Serialize(s);
         ser_writedata32(s, index);
     }
     template<typename Stream>
-    void Unserialize(Stream& s, int nType, int nVersion) {
+    void Unserialize(Stream& s) {
         type = ser_readdata8(s);
-        hashBytes.Unserialize(s, nType, nVersion);
-        txhash.Unserialize(s, nType, nVersion);
+        hashBytes.Unserialize(s);
+        txhash.Unserialize(s);
         index = ser_readdata32(s);
     }
 
@@ -440,7 +463,7 @@ struct CAddressUnspentKey {
     }
 };
 
-struct CAddressUnspentValue {
+struct  CAddressUnspentValue {
     CAmount satoshis;
     CScript script;
     int blockHeight;
@@ -448,9 +471,9 @@ struct CAddressUnspentValue {
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+    inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITE(satoshis);
-        READWRITE(script);
+        READWRITE(*(CScriptBase*)(&script));
         READWRITE(blockHeight);
     }
 
@@ -488,24 +511,24 @@ struct CAddressIndexKey {
         return 66;
     }
     template<typename Stream>
-    void Serialize(Stream& s, int nType, int nVersion) const {
+    void Serialize(Stream& s) const {
         ser_writedata8(s, type);
-        hashBytes.Serialize(s, nType, nVersion);
+        hashBytes.Serialize(s);
         // Heights are stored big-endian for key sorting in LevelDB
         ser_writedata32be(s, blockHeight);
         ser_writedata32be(s, txindex);
-        txhash.Serialize(s, nType, nVersion);
+        txhash.Serialize(s);
         ser_writedata32(s, index);
         char f = spending;
         ser_writedata8(s, f);
     }
     template<typename Stream>
-    void Unserialize(Stream& s, int nType, int nVersion) {
+    void Unserialize(Stream& s) {
         type = ser_readdata8(s);
-        hashBytes.Unserialize(s, nType, nVersion);
+        hashBytes.Unserialize(s);
         blockHeight = ser_readdata32be(s);
         txindex = ser_readdata32be(s);
-        txhash.Unserialize(s, nType, nVersion);
+        txhash.Unserialize(s);
         index = ser_readdata32(s);
         char f = ser_readdata8(s);
         spending = f;
@@ -546,14 +569,14 @@ struct CAddressIndexIteratorKey {
         return 21;
     }
     template<typename Stream>
-    void Serialize(Stream& s, int nType, int nVersion) const {
+    void Serialize(Stream& s) const {
         ser_writedata8(s, type);
-        hashBytes.Serialize(s, nType, nVersion);
+        hashBytes.Serialize(s);
     }
     template<typename Stream>
-    void Unserialize(Stream& s, int nType, int nVersion) {
+    void Unserialize(Stream& s) {
         type = ser_readdata8(s);
-        hashBytes.Unserialize(s, nType, nVersion);
+        hashBytes.Unserialize(s);
     }
 
     CAddressIndexIteratorKey(unsigned int addressType, uint160 addressHash) {
@@ -580,15 +603,15 @@ struct CAddressIndexIteratorHeightKey {
         return 25;
     }
     template<typename Stream>
-    void Serialize(Stream& s, int nType, int nVersion) const {
+    void Serialize(Stream& s) const {
         ser_writedata8(s, type);
-        hashBytes.Serialize(s, nType, nVersion);
+        hashBytes.Serialize(s);
         ser_writedata32be(s, blockHeight);
     }
     template<typename Stream>
-    void Unserialize(Stream& s, int nType, int nVersion) {
+    void Unserialize(Stream& s) {
         type = ser_readdata8(s);
-        hashBytes.Unserialize(s, nType, nVersion);
+        hashBytes.Unserialize(s);
         blockHeight = ser_readdata32be(s);
     }
 
@@ -616,7 +639,7 @@ struct CDiskTxPos : public CDiskBlockPos
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+    inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITE(*(CDiskBlockPos*)this);
         READWRITE(VARINT(nTxOffset));
     }
@@ -633,7 +656,6 @@ struct CDiskTxPos : public CDiskBlockPos
         nTxOffset = 0;
     }
 };
-
 
 CAmount GetMinRelayFee(const CTransaction& tx, unsigned int nBytes, bool fAllowFree);
 
@@ -684,7 +706,8 @@ bool ContextualCheckInputs(const CTransaction& tx, CValidationState &state, cons
                            std::vector<CScriptCheck> *pvChecks = NULL);
 
 /** Check a transaction contextually against a set of consensus rules */
-bool ContextualCheckTransaction(const CTransaction& tx, CValidationState &state, int nHeight, int dosLevel);
+bool ContextualCheckTransaction(const CTransaction& tx, CValidationState &state, int nHeight, int dosLevel,
+                                bool (*isInitBlockDownload)() = IsInitialBlockDownload);
 
 /** Apply the effects of this transaction on the UTXO set represented by view */
 void UpdateCoins(const CTransaction& tx, CCoinsViewCache& inputs, int nHeight);
@@ -692,8 +715,8 @@ void UpdateCoins(const CTransaction& tx, CCoinsViewCache& inputs, int nHeight);
 /** Transaction validation functions */
 
 /** Context-independent validity checks */
-bool CheckTransaction(const CTransaction& tx, CValidationState& state, libzcash::ProofVerifier& verifier);
-bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidationState &state);
+bool CheckTransaction(uint32_t tiptime,const CTransaction& tx, CValidationState& state, libzcash::ProofVerifier& verifier);
+bool CheckTransactionWithoutProofVerification(uint32_t tiptime,const CTransaction& tx, CValidationState &state);
 
 /** Check for standard transaction types
  * @return True if all outputs (scriptPubKeys) use only standard transaction forms
@@ -752,7 +775,7 @@ private:
 public:
     CScriptCheck(): amount(0), ptxTo(0), nIn(0), nFlags(0), cacheStore(false), consensusBranchId(0), error(SCRIPT_ERR_UNKNOWN_ERROR) {}
     CScriptCheck(const CCoins& txFromIn, const CTransaction& txToIn, unsigned int nInIn, unsigned int nFlagsIn, bool cacheIn, uint32_t consensusBranchIdIn, PrecomputedTransactionData* txdataIn) :
-        scriptPubKey(txFromIn.vout[txToIn.vin[nInIn].prevout.n].scriptPubKey), amount(txFromIn.vout[txToIn.vin[nInIn].prevout.n].nValue),
+        scriptPubKey(CCoinsViewCache::GetSpendFor(&txFromIn, txToIn.vin[nInIn])), amount(txFromIn.vout[txToIn.vin[nInIn].prevout.n].nValue),
         ptxTo(&txToIn), nIn(nInIn), nFlags(nFlagsIn), cacheStore(cacheIn), consensusBranchId(consensusBranchIdIn), error(SCRIPT_ERR_UNKNOWN_ERROR), txdata(txdataIn) { }
 
     bool operator()();
@@ -781,10 +804,11 @@ bool GetAddressUnspent(uint160 addressHash, int type,
                        std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > &unspentOutputs);
 
 /** Functions for disk access for blocks */
-bool WriteBlockToDisk(CBlock& block, CDiskBlockPos& pos, const CMessageHeader::MessageStartChars& messageStart);
+bool WriteBlockToDisk(const CBlock& block, CDiskBlockPos& pos, const CMessageHeader::MessageStartChars& messageStart);
 bool ReadBlockFromDisk(CBlock& block, const CDiskBlockPos& pos,bool checkPOW);
 bool ReadBlockFromDisk(CBlock& block, const CBlockIndex* pindex,bool checkPOW);
-
+bool RemoveOrphanedBlocks(int32_t notarized_height);
+bool PruneOneBlockFile(bool tempfile, const int fileNumber);
 
 /** Functions for validating blocks and updating the block tree */
 
@@ -826,8 +850,11 @@ bool AcceptBlockHeader(int32_t *futureblockp,const CBlockHeader& block, CValidat
  * When there are blocks in the active chain with missing data (e.g. if the
  * activation height and branch ID of a particular upgrade have been altered),
  * rewind the chainstate and remove them from the block index.
+ *
+ * clearWitnessCaches is an output parameter that will be set to true iff
+ * witness caches should be cleared in order to handle an intended long rewind.
  */
-bool RewindBlockIndex(const CChainParams& params);
+bool RewindBlockIndex(const CChainParams& params, bool& clearWitnessCaches);
 
 class CBlockFileInfo
 {
@@ -843,7 +870,7 @@ public:
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+    inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITE(VARINT(nBlocks));
         READWRITE(VARINT(nSize));
         READWRITE(VARINT(nUndoSize));

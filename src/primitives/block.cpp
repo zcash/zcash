@@ -3,18 +3,127 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 #include "primitives/block.h"
 
 #include "hash.h"
 #include "tinyformat.h"
 #include "utilstrencodings.h"
 #include "crypto/common.h"
+#include "komodo_defs.h"
 
-uint256 CBlockHeader::GetHash() const
+
+// default hash algorithm for block
+uint256 (CBlockHeader::*CBlockHeader::hashFunction)() const = &CBlockHeader::GetSHA256DHash;
+
+uint256 CBlockHeader::GetSHA256DHash() const
 {
     return SerializeHash(*this);
 }
 
+uint256 CBlockHeader::GetVerusHash() const
+{
+    if (hashPrevBlock.IsNull())
+        // always use SHA256D for genesis block
+        return SerializeHash(*this);
+    else
+        return SerializeVerusHash(*this);
+}
+
+uint256 CBlockHeader::GetVerusV2Hash() const
+{
+    if (hashPrevBlock.IsNull())
+        // always use SHA256D for genesis block
+        return SerializeHash(*this);
+    else
+        return SerializeVerusHashV2(*this);
+}
+
+void CBlockHeader::SetSHA256DHash()
+{
+    CBlockHeader::hashFunction = &CBlockHeader::GetSHA256DHash;
+}
+
+void CBlockHeader::SetVerusHash()
+{
+    CBlockHeader::hashFunction = &CBlockHeader::GetVerusHash;
+}
+
+void CBlockHeader::SetVerusHashV2()
+{
+    CBlockHeader::hashFunction = &CBlockHeader::GetVerusV2Hash;
+}
+
+// returns false if unable to fast calculate the VerusPOSHash from the header. 
+// if it returns false, value is set to 0, but it can still be calculated from the full block
+// in that case. the only difference between this and the POS hash for the contest is that it is not divided by the value out
+// this is used as a source of entropy
+bool CBlockHeader::GetRawVerusPOSHash(uint256 &ret, int32_t nHeight) const
+{
+    // if below the required height or no storage space in the solution, we can't get
+    // a cached txid value to calculate the POSHash from the header
+    if (!(CPOSNonce::NewNonceActive(nHeight) && IsVerusPOSBlock()))
+    {
+        ret = uint256();
+        return false;
+    }
+    
+    // if we can calculate, this assumes the protocol that the POSHash calculation is:
+    //    hashWriter << ASSETCHAINS_MAGIC;
+    //    hashWriter << nNonce; (nNonce is:
+    //                           (high 128 bits == low 128 bits of verus hash of low 128 bits of nonce)
+    //                           (low 32 bits == compact PoS difficult)
+    //                           (mid 96 bits == low 96 bits of HASH(pastHash, txid, voutnum)
+    //                              pastHash is hash of height - 100, either PoW hash of block or PoS hash, if new PoS
+    //                          )
+    //    hashWriter << height;
+    //    return hashWriter.GetHash();
+    CVerusHashWriter hashWriter = CVerusHashWriter(SER_GETHASH, PROTOCOL_VERSION);
+
+    hashWriter << ASSETCHAINS_MAGIC;
+    hashWriter << nNonce;
+    hashWriter << nHeight;
+    ret = hashWriter.GetHash();
+    return true;
+}
+
+bool CBlockHeader::GetVerusPOSHash(arith_uint256 &ret, int32_t nHeight, CAmount value) const
+{
+    uint256 raw;
+    if (GetRawVerusPOSHash(raw, nHeight))
+    {
+        ret = UintToArith256(raw) / value;
+        return true;
+    }
+    return false;
+}
+
+// depending on the height of the block and its type, this returns the POS hash or the POW hash
+uint256 CBlockHeader::GetVerusEntropyHash(int32_t height) const
+{
+    uint256 retVal;
+    // if we qualify as PoW, use PoW hash, regardless of PoS state
+    if (GetRawVerusPOSHash(retVal, height))
+    {
+        // POS hash
+        return retVal;
+    }
+    return GetHash();
+}
 
 uint256 BuildMerkleTree(bool* fMutated, const std::vector<uint256> leaves,
         std::vector<uint256> &vMerkleTree)
@@ -131,12 +240,12 @@ uint256 CBlock::CheckMerkleBranch(uint256 hash, const std::vector<uint256>& vMer
 std::string CBlock::ToString() const
 {
     std::stringstream s;
-    s << strprintf("CBlock(hash=%s, ver=%d, hashPrevBlock=%s, hashMerkleRoot=%s, hashReserved=%s, nTime=%u, nBits=%08x, nNonce=%s, vtx=%u)\n",
+    s << strprintf("CBlock(hash=%s, ver=%d, hashPrevBlock=%s, hashMerkleRoot=%s, hashFinalSaplingRoot=%s, nTime=%u, nBits=%08x, nNonce=%s, vtx=%u)\n",
         GetHash().ToString(),
         nVersion,
         hashPrevBlock.ToString(),
         hashMerkleRoot.ToString(),
-        hashReserved.ToString(),
+        hashFinalSaplingRoot.ToString(),
         nTime, nBits, nNonce.ToString(),
         vtx.size());
     for (unsigned int i = 0; i < vtx.size(); i++)

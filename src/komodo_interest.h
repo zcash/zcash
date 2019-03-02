@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright © 2014-2018 The SuperNET Developers.                             *
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
  *                                                                            *
  * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
  * the top-level directory of this distribution for the individual copyright  *
@@ -20,7 +20,7 @@
 
 #define KOMODO_ENDOFERA 7777777
 #define KOMODO_INTEREST ((uint64_t)5000000) //((uint64_t)(0.05 * COIN))   // 5%
-int64_t MAX_MONEY = 200000000 * 100000000LL;
+extern int64_t MAX_MONEY;
 extern uint8_t NOTARY_PUBKEY33[];
 
 #ifdef notanymore

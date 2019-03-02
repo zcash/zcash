@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright © 2014-2018 The SuperNET Developers.                             *
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
  *                                                                            *
  * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
  * the top-level directory of this distribution for the individual copyright  *
@@ -55,7 +55,7 @@ static void anonToJSON(const CC *cond, cJSON *params) {
 
 static unsigned char *anonFingerprint(const CC *cond) {
     unsigned char *out = calloc(1, 32);
-    fprintf(stderr,"anon fingerprint %p %p\n",out,cond->fingerprint);
+    //fprintf(stderr,"anon fingerprint %p %p\n",out,cond->fingerprint);
     memcpy(out, cond->fingerprint, 32);
     return out;
 }

@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright © 2014-2018 The SuperNET Developers.                             *
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
  *                                                                            *
  * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
  * the top-level directory of this distribution for the individual copyright  *
@@ -79,10 +79,10 @@ bool PegsExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction &
     else return(true);
 }
 
-bool PegsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
+bool PegsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
 {
     int32_t numvins,numvouts,preventCCvins,preventCCvouts,i,numblocks; bool retval; uint256 txid; uint8_t hash[32]; char str[65],destaddr[64];
-    return(false);
+    return eval->Invalid("no validation yet");
     std::vector<std::pair<CAddressIndexKey, CAmount> > txids;
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
@@ -134,7 +134,7 @@ int64_t AddPegsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKe
         // no need to prevent dup
         if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
         {
-            if ( (nValue= IsPegsvout(cp,vintx,vout)) > 1000000 && myIsutxo_spentinmempool(txid,vout) == 0 )
+            if ( (nValue= IsPegsvout(cp,vintx,vout)) > 1000000 && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0 )
             {
                 if ( total != 0 && maxinputs != 0 )
                     mtx.vin.push_back(CTxIn(txid,vout,CScript()));
@@ -151,7 +151,8 @@ int64_t AddPegsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKe
 
 std::string PegsGet(uint64_t txfee,int64_t nValue)
 {
-    CMutableTransaction mtx,tmpmtx; CPubKey mypk,Pegspk; int64_t inputs,CCchange=0; struct CCcontract_info *cp,C; std::string rawhex; uint32_t j; int32_t i,len; uint8_t buf[32768]; bits256 hash;
+    CMutableTransaction tmpmtx,mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    CPubKey mypk,Pegspk; int64_t inputs,CCchange=0; struct CCcontract_info *cp,C; std::string rawhex; uint32_t j; int32_t i,len; uint8_t buf[32768]; bits256 hash;
     cp = CCinit(&C,EVAL_PEGS);
     if ( txfee == 0 )
         txfee = 10000;
@@ -191,7 +192,8 @@ std::string PegsGet(uint64_t txfee,int64_t nValue)
 
 std::string PegsFund(uint64_t txfee,int64_t funds)
 {
-    CMutableTransaction mtx; CPubKey mypk,Pegspk; CScript opret; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    CPubKey mypk,Pegspk; CScript opret; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_PEGS);
     if ( txfee == 0 )
         txfee = 10000;
@@ -208,7 +210,8 @@ std::string PegsFund(uint64_t txfee,int64_t funds)
 UniValue PegsInfo()
 {
     UniValue result(UniValue::VOBJ); char numstr[64];
-    CMutableTransaction mtx; CPubKey Pegspk; struct CCcontract_info *cp,C; int64_t funding;
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    CPubKey Pegspk; struct CCcontract_info *cp,C; int64_t funding;
     result.push_back(Pair("result","success"));
     result.push_back(Pair("name","Pegs"));
     cp = CCinit(&C,EVAL_PEGS);

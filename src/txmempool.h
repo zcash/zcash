@@ -3,6 +3,21 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 #ifndef BITCOIN_TXMEMPOOL_H
 #define BITCOIN_TXMEMPOOL_H
 
@@ -133,6 +148,11 @@ private:
     uint64_t totalTxSize = 0; //! sum of all mempool tx' byte sizes
     uint64_t cachedInnerUsage; //! sum of dynamic memory usage of all the map elements (NOT the maps themselves)
 
+    std::map<uint256, const CTransaction*> mapSproutNullifiers;
+    std::map<uint256, const CTransaction*> mapSaplingNullifiers;
+
+    void checkNullifiers(ShieldedType type) const;
+    
 public:
     typedef boost::multi_index_container<
         CTxMemPoolEntry,
@@ -165,7 +185,6 @@ private:
 
 public:
     std::map<COutPoint, CInPoint> mapNextTx;
-    std::map<uint256, const CTransaction*> mapNullifiers;
     std::map<uint256, std::pair<double, CAmount> > mapDeltas;
 
     CTxMemPool(const CFeeRate& _minRelayFee);
@@ -178,7 +197,7 @@ public:
      * check does nothing.
      */
     void check(const CCoinsViewCache *pcoins) const;
-    void setSanityCheck(double dFrequency = 1.0) { nCheckFrequency = dFrequency * 4294967296.0; }
+    void setSanityCheck(double dFrequency = 1.0) { nCheckFrequency = static_cast<uint32_t>(dFrequency * 4294967295.0); }
 
     bool addUnchecked(const uint256& hash, const CTxMemPoolEntry &entry, bool fCurrentEstimate = true);
     void addAddressIndex(const CTxMemPoolEntry &entry, const CCoinsViewCache &view);
@@ -190,7 +209,7 @@ public:
     bool getSpentIndex(CSpentIndexKey &key, CSpentIndexValue &value);
     bool removeSpentIndex(const uint256 txhash);
     void remove(const CTransaction &tx, std::list<CTransaction>& removed, bool fRecursive = false);
-    void removeWithAnchor(const uint256 &invalidRoot);
+    void removeWithAnchor(const uint256 &invalidRoot, ShieldedType type);
     void removeForReorg(const CCoinsViewCache *pcoins, unsigned int nMemPoolHeight, int flags);
     void removeConflicts(const CTransaction &tx, std::list<CTransaction>& removed);
     void removeExpired(unsigned int nBlockHeight);
@@ -212,6 +231,8 @@ public:
     void PrioritiseTransaction(const uint256 hash, const std::string strHash, double dPriorityDelta, const CAmount& nFeeDelta);
     void ApplyDeltas(const uint256 hash, double &dPriorityDelta, CAmount &nFeeDelta);
     void ClearPrioritisation(const uint256 hash);
+
+    bool nullifierExists(const uint256& nullifier, ShieldedType type) const;
 
     unsigned long size()
     {
@@ -244,6 +265,11 @@ public:
     bool ReadFeeEstimates(CAutoFile& filein);
 
     size_t DynamicMemoryUsage() const;
+
+    /** Return nCheckFrequency */
+    uint32_t GetCheckFrequency() const {
+        return nCheckFrequency;
+    }
 };
 
 /** 
@@ -257,7 +283,7 @@ protected:
 
 public:
     CCoinsViewMemPool(CCoinsView *baseIn, CTxMemPool &mempoolIn);
-    bool GetNullifier(const uint256 &txid) const;
+    bool GetNullifier(const uint256 &txid, ShieldedType type) const;
     bool GetCoins(const uint256 &txid, CCoins &coins) const;
     bool HaveCoins(const uint256 &txid) const;
 };

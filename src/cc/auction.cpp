@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright © 2014-2018 The SuperNET Developers.                             *
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
  *                                                                            *
  * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
  * the top-level directory of this distribution for the individual copyright  *
@@ -70,10 +70,10 @@ bool AuctionExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransactio
     else return(true);
 }
 
-bool AuctionValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
+bool AuctionValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
 {
     int32_t numvins,numvouts,preventCCvins,preventCCvouts,i; bool retval;
-    return(false); // reject any auction CC for now
+    return eval->Invalid("no validation yet");
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
     preventCCvins = preventCCvouts = -1;
@@ -150,7 +150,8 @@ int64_t AddAuctionInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPu
 
 std::string AuctionBid(uint64_t txfee,uint256 itemhash,int64_t amount)
 {
-    CMutableTransaction mtx; CPubKey mypk,Auctionpk; CScript opret; int64_t inputs,CCchange=0,nValue=COIN; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    CPubKey mypk,Auctionpk; CScript opret; int64_t inputs,CCchange=0,nValue=COIN; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_AUCTION);
     if ( txfee == 0 )
         txfee = 10000;
@@ -170,7 +171,8 @@ std::string AuctionBid(uint64_t txfee,uint256 itemhash,int64_t amount)
 
 std::string AuctionDeliver(uint64_t txfee,uint256 itemhash,uint256 bidtxid)
 {
-    CMutableTransaction mtx; CPubKey mypk,Auctionpk; CScript opret; int64_t inputs,CCchange=0,nValue=COIN; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    CPubKey mypk,Auctionpk; CScript opret; int64_t inputs,CCchange=0,nValue=COIN; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_AUCTION);
     if ( txfee == 0 )
         txfee = 10000;
@@ -190,7 +192,8 @@ std::string AuctionDeliver(uint64_t txfee,uint256 itemhash,uint256 bidtxid)
 
 std::string AuctionPost(uint64_t txfee,uint256 itemhash,int64_t minbid,char *title,char *description)
 {
-    CMutableTransaction mtx; CPubKey mypk,Auctionpk; int64_t funds = 0; CScript opret; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    CPubKey mypk,Auctionpk; int64_t funds = 0; CScript opret; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_AUCTION);
     if ( txfee == 0 )
         txfee = 10000;

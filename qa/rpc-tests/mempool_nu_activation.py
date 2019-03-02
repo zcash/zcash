@@ -15,7 +15,10 @@ class MempoolUpgradeActivationTest(BitcoinTestFramework):
     alert_filename = None  # Set by setup_network
 
     def setup_network(self):
-        args = ["-checkmempool", "-debug=mempool", "-blockmaxsize=4000", "-nuparams=5ba81b19:200"]
+        args = ["-checkmempool", "-debug=mempool", "-blockmaxsize=4000",
+            "-nuparams=5ba81b19:200", # Overwinter
+            "-nuparams=76b809bb:210", # Sapling
+        ]
         self.nodes = []
         self.nodes.append(start_node(0, self.options.tmpdir, args))
         self.nodes.append(start_node(1, self.options.tmpdir, args))
@@ -44,76 +47,100 @@ class MempoolUpgradeActivationTest(BitcoinTestFramework):
         print wait_and_assert_operationid_status(self.nodes[1], myopid)
         self.sync_all()
 
-        # Mine block 198. After this, the mempool expects
-        # block 199, which is the last Sprout block.
-        self.nodes[0].generate(1)
+        # Mempool checks for activation of upgrade Y at height H on base X
+        def nu_activation_checks():
+            # Mine block H - 2. After this, the mempool expects
+            # block H - 1, which is the last X block.
+            self.nodes[0].generate(1)
+            self.sync_all()
+
+            # Mempool should be empty.
+            assert_equal(set(self.nodes[0].getrawmempool()), set())
+
+            # Check node 0 shielded balance
+            assert_equal(self.nodes[0].z_getbalance(node0_zaddr), Decimal('10'))
+
+            # Fill the mempool with twice as many transactions as can fit into blocks
+            node0_taddr = self.nodes[0].getnewaddress()
+            x_txids = []
+            while self.nodes[1].getmempoolinfo()['bytes'] < 2 * 4000:
+                x_txids.append(self.nodes[1].sendtoaddress(node0_taddr, Decimal('0.001')))
+            self.sync_all()
+
+            # Spends should be in the mempool
+            x_mempool = set(self.nodes[0].getrawmempool())
+            assert_equal(x_mempool, set(x_txids))
+
+            # Mine block H - 1. After this, the mempool expects
+            # block H, which is the first Y block.
+            self.nodes[0].generate(1)
+            self.sync_all()
+
+            # mempool should be empty.
+            assert_equal(set(self.nodes[0].getrawmempool()), set())
+
+            # Block H - 1 should contain a subset of the original mempool
+            # (with all other transactions having been dropped)
+            block_txids = self.nodes[0].getblock(self.nodes[0].getbestblockhash())['tx']
+            assert(len(block_txids) < len(x_txids))
+            for txid in block_txids[1:]: # Exclude coinbase
+                assert(txid in x_txids)
+
+            # Create some transparent Y transactions
+            y_txids = [self.nodes[1].sendtoaddress(node0_taddr, Decimal('0.001')) for i in range(10)]
+            self.sync_all()
+
+            # Create a shielded Y transaction
+            recipients = [{'address': node0_zaddr, 'amount': Decimal('10')}]
+            myopid = self.nodes[0].z_sendmany(node0_zaddr, recipients, 1, Decimal('0'))
+            shielded = wait_and_assert_operationid_status(self.nodes[0], myopid)
+            assert(shielded != None)
+            y_txids.append(shielded)
+            self.sync_all()
+
+            # Spends should be in the mempool
+            assert_equal(set(self.nodes[0].getrawmempool()), set(y_txids))
+
+            # Node 0 note should be unspendable
+            assert_equal(self.nodes[0].z_getbalance(node0_zaddr), Decimal('0'))
+
+            # Invalidate block H - 1.
+            block_hm1 = self.nodes[0].getbestblockhash()
+            self.nodes[0].invalidateblock(block_hm1)
+
+            # BUG: Ideally, the mempool should now only contain the transactions
+            # that were in block H - 1, the Y transactions having been dropped.
+            # However, because chainActive is not updated until after the transactions
+            # in the disconnected block have been re-added to the mempool, the height
+            # seen by AcceptToMemoryPool is one greater than it should be. This causes
+            # the block H - 1 transactions to be validated against the Y rules,
+            # and rejected because they (obviously) fail.
+            #assert_equal(set(self.nodes[0].getrawmempool()), set(block_txids[1:]))
+            assert_equal(set(self.nodes[0].getrawmempool()), set())
+
+            # Node 0 note should be spendable again
+            assert_equal(self.nodes[0].z_getbalance(node0_zaddr), Decimal('10'))
+
+            # Reconsider block H - 1.
+            self.nodes[0].reconsiderblock(block_hm1)
+
+            # Mine blocks on node 1, so that the Y transactions in its mempool
+            # will be cleared.
+            self.nodes[1].generate(6)
+            self.sync_all()
+
+        print('Testing Sprout -> Overwinter activation boundary')
+        # Current height = 197
+        nu_activation_checks()
+        # Current height = 205
+
+        self.nodes[0].generate(2)
         self.sync_all()
 
-        # Mempool should be empty.
-        assert_equal(set(self.nodes[0].getrawmempool()), set())
-
-        # Check node 0 shielded balance
-        assert_equal(self.nodes[0].z_getbalance(node0_zaddr), Decimal('10'))
-
-        # Fill the mempool with twice as many transactions as can fit into blocks
-        node0_taddr = self.nodes[0].getnewaddress()
-        sprout_txids = []
-        while self.nodes[1].getmempoolinfo()['bytes'] < 2 * 4000:
-            sprout_txids.append(self.nodes[1].sendtoaddress(node0_taddr, Decimal('0.001')))
-        self.sync_all()
-
-        # Spends should be in the mempool
-        sprout_mempool = set(self.nodes[0].getrawmempool())
-        assert_equal(sprout_mempool, set(sprout_txids))
-
-        # Mine block 199. After this, the mempool expects
-        # block 200, which is the first Overwinter block.
-        self.nodes[0].generate(1)
-        self.sync_all()
-
-        # mempool should be empty.
-        assert_equal(set(self.nodes[0].getrawmempool()), set())
-
-        # Block 199 should contain a subset of the original mempool
-        # (with all other transactions having been dropped)
-        block_txids = self.nodes[0].getblock(self.nodes[0].getbestblockhash())['tx']
-        assert(len(block_txids) < len(sprout_txids))
-        for txid in block_txids[1:]: # Exclude coinbase
-            assert(txid in sprout_txids)
-
-        # Create some transparent Overwinter transactions
-        overwinter_txids = [self.nodes[1].sendtoaddress(node0_taddr, Decimal('0.001')) for i in range(10)]
-        self.sync_all()
-
-        # Create a shielded Overwinter transaction
-        recipients = [{'address': node0_taddr, 'amount': Decimal('10')}]
-        myopid = self.nodes[0].z_sendmany(node0_zaddr, recipients, 1, Decimal('0'))
-        shielded = wait_and_assert_operationid_status(self.nodes[0], myopid)
-        assert(shielded != None)
-        overwinter_txids.append(shielded)
-        self.sync_all()
-
-        # Spends should be in the mempool
-        assert_equal(set(self.nodes[0].getrawmempool()), set(overwinter_txids))
-
-        # Node 0 note should be unspendable
-        assert_equal(self.nodes[0].z_getbalance(node0_zaddr), Decimal('0'))
-
-        # Invalidate block 199.
-        self.nodes[0].invalidateblock(self.nodes[0].getbestblockhash())
-
-        # BUG: Ideally, the mempool should now only contain the transactions
-        # that were in block 199, the Overwinter transactions having been dropped.
-        # However, because chainActive is not updated until after the transactions
-        # in the disconnected block have been re-added to the mempool, the height
-        # seen by AcceptToMemoryPool is one greater than it should be. This causes
-        # the block 199 transactions to be validated against the Overwinter rules,
-        # and rejected because they (obviously) fail.
-        #assert_equal(set(self.nodes[0].getrawmempool()), set(block_txids[1:]))
-        assert_equal(set(self.nodes[0].getrawmempool()), set())
-
-        # Node 0 note should be spendable again
-        assert_equal(self.nodes[0].z_getbalance(node0_zaddr), Decimal('10'))
+        print('Testing Overwinter -> Sapling activation boundary')
+        # Current height = 207
+        nu_activation_checks()
+        # Current height = 215
 
 if __name__ == '__main__':
     MempoolUpgradeActivationTest().main()

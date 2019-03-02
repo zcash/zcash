@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright © 2014-2018 The SuperNET Developers.                             *
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
  *                                                                            *
  * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
  * the top-level directory of this distribution for the individual copyright  *
@@ -36,6 +36,7 @@
  * there should be a code identifying it. For example,
  * a possible code is EVAL_BITCOIN_SCRIPT, where the entire binary
  * after the code is interpreted as a bitcoin script.
+ * Verus EVAL_STAKEGUARD is 0x01
  */
 #define FOREACH_EVAL(EVAL)             \
         EVAL(EVAL_IMPORTPAYOUT, 0xe1)  \
@@ -52,10 +53,15 @@
         EVAL(EVAL_ORACLES, 0xec) \
         EVAL(EVAL_PRICES, 0xed) \
         EVAL(EVAL_PEGS, 0xee) \
-        EVAL(EVAL_TRIGGERS, 0xef) \
+        EVAL(EVAL_MARMARA, 0xef) \
         EVAL(EVAL_PAYMENTS, 0xf0) \
-        EVAL(EVAL_GATEWAYS, 0xf1)
+        EVAL(EVAL_GATEWAYS, 0xf1) \
+		EVAL(EVAL_TOKENS, 0xf2)
 
+
+// evalcodes 0x10 to 0x7f are reserved for cclib dynamic CC
+#define EVAL_FIRSTUSER 0x10
+#define EVAL_LASTUSER 0x7f
 
 typedef uint8_t EvalCode;
 
@@ -103,7 +109,6 @@ public:
     virtual bool GetBlock(uint256 hash, CBlockIndex& blockIdx) const;
     virtual int32_t GetNotaries(uint8_t pubkeys[64][33], int32_t height, uint32_t timestamp) const;
     virtual bool GetNotarisationData(uint256 notarisationHash, NotarisationData &data) const;
-    virtual bool GetProofRoot(uint256 kmdNotarisationHash, uint256 &momom) const;
     virtual bool CheckNotaryInputs(const CTransaction &tx, uint32_t height, uint32_t timestamp) const;
     virtual uint32_t GetAssetchainsCC() const;
     virtual std::string GetAssetchainsSymbol() const;
@@ -174,7 +179,7 @@ public:
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+    inline void SerializationOp(Stream& s, Operation ser_action) {
 
         bool IsBack = IsBackNotarisation;
         if (2 == IsBackNotarisation) IsBack = DetectBackNotarisation(s, ser_action);
@@ -270,7 +275,7 @@ public:
     ADD_SERIALIZE_METHODS;
     
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+    inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITE(VARINT(nIndex));
         READWRITE(branch);
     }

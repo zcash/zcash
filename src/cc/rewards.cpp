@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright © 2014-2018 The SuperNET Developers.                             *
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
  *                                                                            *
  * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
  * the top-level directory of this distribution for the individual copyright  *
@@ -192,7 +192,7 @@ bool RewardsExactAmounts(struct CCcontract_info *cp,Eval *eval,const CTransactio
     else return(true);
 }
 
-bool RewardsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
+bool RewardsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
 {
     uint256 txid,fundingtxid,hashBlock,vinfundingtxid; uint64_t vinsbits,sbits,APR,minseconds,maxseconds,mindeposit,amount,reward,txfee=10000; int32_t numvins,numvouts,preventCCvins,preventCCvouts,i; uint8_t funcid; CScript scriptPubKey; CTransaction fundingTx,vinTx;
     numvins = tx.vin.size();
@@ -203,7 +203,7 @@ bool RewardsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
     else
     {
         txid = tx.GetHash();
-        if ( (funcid=  DecodeRewardsOpRet(txid,tx.vout[numvouts-1].scriptPubKey,sbits,fundingtxid)) != 0 )
+        if ( (funcid= DecodeRewardsOpRet(txid,tx.vout[numvouts-1].scriptPubKey,sbits,fundingtxid)) != 0 )
         {
             if ( eval->GetTxUnconfirmed(fundingtxid,fundingTx,hashBlock) == 0 )
                 return eval->Invalid("cant find fundingtxid");
@@ -310,7 +310,7 @@ static uint64_t myIs_unlockedtx_inmempool(uint256 &txid,int32_t &vout,uint64_t r
         if ( tx.vout.size() > 0 && tx.vout[0].nValue >= needed )
         {
             const uint256 &hash = tx.GetHash();
-            if ( tx.vout[0].scriptPubKey.IsPayToCryptoCondition() != 0 && myIsutxo_spentinmempool(hash,0) == 0 )
+            if ( tx.vout[0].scriptPubKey.IsPayToCryptoCondition() != 0 && myIsutxo_spentinmempool(ignoretxid,ignorevin,hash,0) == 0 )
             {
                 if ( (funcid= DecodeRewardsOpRet(hash,tx.vout[tx.vout.size()-1].scriptPubKey,sbits,fundingtxid)) == 'U' && sbits == refsbits && fundingtxid == reffundingtxid )
                 {
@@ -333,7 +333,7 @@ int64_t AddRewardsInputs(CScript &scriptPubKey,uint64_t maxseconds,struct CCcont
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     GetCCaddress(cp,coinaddr,pk);
     SetCCunspents(unspentOutputs,coinaddr);
-    threshold = total/maxinputs;
+    threshold = total/(maxinputs+1);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
@@ -346,7 +346,7 @@ int64_t AddRewardsInputs(CScript &scriptPubKey,uint64_t maxseconds,struct CCcont
                 break;
         if ( j != mtx.vin.size() )
             continue;
-        if ( GetTransaction(txid,tx,hashBlock,false) != 0 && tx.vout.size() > 0 && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 && myIsutxo_spentinmempool(txid,vout) == 0 )
+        if ( GetTransaction(txid,tx,hashBlock,false) != 0 && tx.vout.size() > 0 && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0 )
         {
             if ( (funcid= DecodeRewardsOpRet(txid,tx.vout[tx.vout.size()-1].scriptPubKey,sbits,fundingtxid)) != 0 )
             {
@@ -500,7 +500,8 @@ UniValue RewardsList()
 
 std::string RewardsCreateFunding(uint64_t txfee,char *planstr,int64_t funds,int64_t APR,int64_t minseconds,int64_t maxseconds,int64_t mindeposit)
 {
-    CMutableTransaction mtx; CPubKey mypk,rewardspk; CScript opret; uint64_t sbits,a,b,c,d; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    CPubKey mypk,rewardspk; CScript opret; uint64_t sbits,a,b,c,d; struct CCcontract_info *cp,C;
     if ( funds < COIN || mindeposit < 0 || minseconds < 0 || maxseconds < 0 )
     {
         fprintf(stderr,"negative parameter error\n");
@@ -534,7 +535,8 @@ std::string RewardsCreateFunding(uint64_t txfee,char *planstr,int64_t funds,int6
 
 std::string RewardsAddfunding(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t amount)
 {
-    CMutableTransaction mtx; CPubKey mypk,rewardspk; CScript opret; uint64_t sbits,a,b,c,d; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    CPubKey mypk,rewardspk; CScript opret; uint64_t sbits,a,b,c,d; struct CCcontract_info *cp,C;
     if ( amount < 0 )
     {
         fprintf(stderr,"negative parameter error\n");
@@ -568,7 +570,8 @@ std::string RewardsAddfunding(uint64_t txfee,char *planstr,uint256 fundingtxid,i
 
 std::string RewardsLock(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t deposit)
 {
-    CMutableTransaction mtx; CPubKey mypk,rewardspk; CScript opret; uint64_t lockedfunds,sbits,funding,APR,minseconds,maxseconds,mindeposit; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    CPubKey mypk,rewardspk; CScript opret; uint64_t lockedfunds,sbits,funding,APR,minseconds,maxseconds,mindeposit; struct CCcontract_info *cp,C;
     if ( deposit < txfee )
     {
         CCerror = "deposit amount less than txfee";
@@ -611,7 +614,8 @@ std::string RewardsLock(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t
 
 std::string RewardsUnlock(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 locktxid)
 {
-    CMutableTransaction mtx,firstmtx; CTransaction tx; char coinaddr[64]; CPubKey mypk,rewardspk; CScript scriptPubKey,ignore; uint256 hashBlock; uint64_t sbits,APR,minseconds,maxseconds,mindeposit; int64_t funding,reward=0,amount=0,inputs,CCchange=0; struct CCcontract_info *cp,C;
+    CMutableTransaction firstmtx,mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    CTransaction tx; char coinaddr[64]; CPubKey mypk,rewardspk; CScript scriptPubKey,ignore; uint256 hashBlock; uint64_t sbits,APR,minseconds,maxseconds,mindeposit; int64_t funding,reward=0,amount=0,inputs,CCchange=0; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_REWARDS);
     if ( txfee == 0 )
         txfee = 10000;

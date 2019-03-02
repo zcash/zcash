@@ -1,6 +1,21 @@
 // Copyright (c) 2016 The Zcash developers
 // Original code from: https://gist.github.com/laanwj/0e689cfa37b52bcbbb44
 
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 /*
 
 To set up a new alert system
@@ -71,14 +86,14 @@ void ThreadSendAlert()
     //
     CAlert alert;
     alert.nRelayUntil   = GetTime() + 15 * 60;
-    alert.nExpiration   = GetTime() + 12 * 30 * 24 * 60 * 60;
-    alert.nID           = 1004;  // use https://github.com/zcash/zcash/wiki/specification#assigned-numbers to keep track of alert IDs
-    alert.nCancel       = 1001;  // cancels previous messages up to this ID number
+    alert.nExpiration   = GetTime() + 10 * 365 * 24 * 60 * 60;
+    alert.nID           = 1005;  // use https://github.com/zcash/zcash/wiki/specification#assigned-numbers to keep track of alert IDs
+    alert.nCancel       = 1004;  // cancels previous messages up to this ID number
 
     // These versions are protocol versions
     // 170002 : 1.0.0
     alert.nMinVer       = 170002;
-    alert.nMaxVer       = 170002;
+    alert.nMaxVer       = 170004;
 
     //
     // main.cpp:
@@ -88,15 +103,14 @@ void ThreadSendAlert()
     //  4000 or higher will put the RPC into safe mode
     alert.nPriority     = 4000;
     alert.strComment    = "";
-    alert.strStatusBar  = "Your client version 1.0.10 has degraded networking behavior. Please update to the most recent version of Komodo (1.0.10-1 or later).";
+    alert.strStatusBar  = "Your client version has degraded networking behavior. Please update to the most recent version of Komodo (0.3.3 or later).";
     alert.strRPCError   = alert.strStatusBar;
 
     // Set specific client version/versions here. If setSubVer is empty, no filtering on subver is done:
     // alert.setSubVer.insert(std::string("/MagicBean:0.7.2/"));
-    const std::vector<std::string> useragents = {"MagicBean", "BeanStalk", "AppleSeed", "EleosZcash"};
+    const std::vector<std::string> useragents = {}; //{"MagicBean", "BeanStalk", "AppleSeed", "EleosZcash"};
 
     BOOST_FOREACH(const std::string& useragent, useragents) {
-        alert.setSubVer.insert(std::string("/"+useragent+":1.0.10/"));
     }
 
     // Sanity check

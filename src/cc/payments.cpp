@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright © 2014-2018 The SuperNET Developers.                             *
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
  *                                                                            *
  * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
  * the top-level directory of this distribution for the individual copyright  *
@@ -72,10 +72,10 @@ bool PaymentsExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransacti
     else return(true);
 }
 
-bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
+bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
 {
     int32_t numvins,numvouts,preventCCvins,preventCCvouts,i,numblocks; bool retval; uint256 txid; uint8_t hash[32]; char str[65],destaddr[64];
-    return(false);
+    return eval->Invalid("no validation yet");
     std::vector<std::pair<CAddressIndexKey, CAmount> > txids;
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
@@ -127,7 +127,7 @@ int64_t AddPaymentsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CP
         // no need to prevent dup
         if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
         {
-            if ( (nValue= IsPaymentsvout(cp,vintx,vout)) > 1000000 && myIsutxo_spentinmempool(txid,vout) == 0 )
+            if ( (nValue= IsPaymentsvout(cp,vintx,vout)) > 1000000 && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0 )
             {
                 if ( total != 0 && maxinputs != 0 )
                     mtx.vin.push_back(CTxIn(txid,vout,CScript()));
@@ -144,7 +144,8 @@ int64_t AddPaymentsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CP
 
 std::string PaymentsGet(uint64_t txfee,int64_t nValue)
 {
-    CMutableTransaction mtx,tmpmtx; CPubKey mypk,Paymentspk; int64_t inputs,CCchange=0; struct CCcontract_info *cp,C; std::string rawhex; uint32_t j; int32_t i,len; uint8_t buf[32768]; bits256 hash;
+    CMutableTransaction tmpmtx,mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    CPubKey mypk,Paymentspk; int64_t inputs,CCchange=0; struct CCcontract_info *cp,C; std::string rawhex; uint32_t j; int32_t i,len; uint8_t buf[32768]; bits256 hash;
     cp = CCinit(&C,EVAL_PAYMENTS);
     if ( txfee == 0 )
         txfee = 10000;
@@ -184,7 +185,8 @@ std::string PaymentsGet(uint64_t txfee,int64_t nValue)
 
 std::string PaymentsFund(uint64_t txfee,int64_t funds)
 {
-    CMutableTransaction mtx; CPubKey mypk,Paymentspk; CScript opret; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    CPubKey mypk,Paymentspk; CScript opret; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_PAYMENTS);
     if ( txfee == 0 )
         txfee = 10000;
@@ -201,7 +203,8 @@ std::string PaymentsFund(uint64_t txfee,int64_t funds)
 UniValue PaymentsInfo()
 {
     UniValue result(UniValue::VOBJ); char numstr[64];
-    CMutableTransaction mtx; CPubKey Paymentspk; struct CCcontract_info *cp,C; int64_t funding;
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    CPubKey Paymentspk; struct CCcontract_info *cp,C; int64_t funding;
     result.push_back(Pair("result","success"));
     result.push_back(Pair("name","Payments"));
     cp = CCinit(&C,EVAL_PAYMENTS);

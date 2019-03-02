@@ -5,7 +5,7 @@
 #ifndef	_INTEGER_H_
 #define	_INTEGER_H_
 
-#include <asn_application.h>
+#include "asn_application.h"
 #include <asn_codecs_prim.h>
 
 #ifdef __cplusplus

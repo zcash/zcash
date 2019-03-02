@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright © 2014-2018 The SuperNET Developers.                             *
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
  *                                                                            *
  * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
  * the top-level directory of this distribution for the individual copyright  *
@@ -72,10 +72,10 @@ bool FSMExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
     else return(true);
 }
 
-bool FSMValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
+bool FSMValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
 {
     int32_t numvins,numvouts,preventCCvins,preventCCvouts,i; bool retval;
-    return(false); // reject any FSM CC for now
+    return eval->Invalid("no validation yet");
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
     preventCCvins = preventCCvouts = -1;
@@ -157,7 +157,8 @@ std::string FSMList()
 
 std::string FSMCreate(uint64_t txfee,std::string name,std::string states)
 {
-    CMutableTransaction mtx; CPubKey mypk,fsmpk; CScript opret; int64_t inputs,CCchange=0,nValue=COIN; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    CPubKey mypk,fsmpk; CScript opret; int64_t inputs,CCchange=0,nValue=COIN; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_FSM);
     if ( txfee == 0 )
         txfee = 10000;
@@ -177,7 +178,8 @@ std::string FSMCreate(uint64_t txfee,std::string name,std::string states)
 
 std::string FSMInfo(uint256 fsmtxid)
 {
-    CMutableTransaction mtx; CPubKey mypk,fsmpk; int64_t funds = 0; CScript opret; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    CPubKey mypk,fsmpk; int64_t funds = 0; CScript opret; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_FSM);
     mypk = pubkey2pk(Mypubkey());
     fsmpk = GetUnspendable(cp,0);

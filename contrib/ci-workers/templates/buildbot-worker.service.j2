@@ -5,11 +5,11 @@ After=network.target
 
 [Service]
 Type=forking
-PIDFile=/home/{{ buildbot_worker_user }}/{{ buildbot_worker_name }}/twistd.pid
-WorkingDirectory=/home/{{ buildbot_worker_user }}
-ExecStart={{ pip_bin_dir }}/buildbot-worker start {{ buildbot_worker_name }}
-ExecReload={{ pip_bin_dir }}/buildbot-worker restart {{ buildbot_worker_name }}
-ExecStop={{ pip_bin_dir }}/buildbot-worker stop {{ buildbot_worker_name }}
+PIDFile={{ buildbot_worker_dir }}/{{ buildbot_worker_name }}/twistd.pid
+WorkingDirectory={{ buildbot_worker_dir }}
+ExecStart={{ buildbot_worker_dir }}/venv/bin/buildbot-worker start {{ buildbot_worker_name }}
+ExecReload={{ buildbot_worker_dir }}/venv/bin/buildbot-worker restart {{ buildbot_worker_name }}
+ExecStop={{ buildbot_worker_dir }}/venv/bin/buildbot-worker stop {{ buildbot_worker_name }}
 Restart=always
 User={{ buildbot_worker_user }}
 

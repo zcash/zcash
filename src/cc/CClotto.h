@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright © 2014-2018 The SuperNET Developers.                             *
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
  *                                                                            *
  * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
  * the top-level directory of this distribution for the individual copyright  *
@@ -21,7 +21,7 @@
 
 #define EVAL_LOTTO 0xe9
 
-bool LottoValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx);
+bool LottoValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn);
 
 UniValue LottoInfo(uint256 lottoid);
 UniValue LottoList();
