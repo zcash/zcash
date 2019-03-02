@@ -2845,7 +2845,7 @@ namespace {
         hasher << hashBlock;
         hasher << blockundo;
         fileout << hasher.GetHash();
-fprintf(stderr,"hashBlock.%s hasher.%s\n",hashBlock.GetHex().c_str(),hasher.GetHash().GetHex().c_str());
+//fprintf(stderr,"hashBlock.%s hasher.%s\n",hashBlock.GetHex().c_str(),hasher.GetHash().GetHex().c_str());
         return true;
     }
 
