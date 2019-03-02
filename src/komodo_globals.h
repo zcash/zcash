@@ -169,7 +169,9 @@ uint64_t komodo_current_supply(uint32_t nHeight)
                     if (!period)
                     {
                         // no halving, straight multiply
+                        fprintf(stderr,"cur_money %.8f += %.8f * %d\n",(double)cur_money/COIN,(double)reward/COIN,nHeight);
                         cur_money += reward * (nHeight - 1);
+                        fprintf(stderr,"cur_money %.8f\n",(double)cur_money/COIN);
                     }
                     // if exactly SATOSHIDEN, linear decay to zero or to next era, same as:
                     // (next_era_reward + (starting reward - next_era_reward) / 2) * num_blocks
@@ -264,12 +266,11 @@ uint64_t komodo_current_supply(uint32_t nHeight)
             }
         }
     }    
-    fprintf(stderr,"cur_money %.8f\n",(double)cur_money/COIN);
     if ( KOMODO_BIT63SET(cur_money) != 0 )
         return(KOMODO_MAXNVALUE);
     if ( ASSETCHAINS_COMMISSION != 0 )
     {
-        uint64_t newval = (cur_money + (cur_money * ASSETCHAINS_COMMISSION)/COIN);
+        uint64_t newval = (cur_money + (cur_money/COIN * ASSETCHAINS_COMMISSION));
         if ( KOMODO_BIT63SET(newval) != 0 )
             return(KOMODO_MAXNVALUE);
         else if ( newval < cur_money ) // check for underflow
