@@ -269,7 +269,7 @@ uint64_t komodo_current_supply(uint32_t nHeight)
         return(KOMODO_MAXNVALUE);
     if ( ASSETCHAINS_COMMISSION != 0 )
     {
-        uint64_t newval = (cur_money + (cur_money * ASSETCHAINS_COMMISSION));
+        uint64_t newval = (cur_money + (cur_money * ASSETCHAINS_COMMISSION)/COIN);
         if ( KOMODO_BIT63SET(newval) != 0 )
             return(KOMODO_MAXNVALUE);
         else if ( newval < cur_money ) // check for underflow
