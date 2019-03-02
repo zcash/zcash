@@ -421,7 +421,7 @@ static void SendMoney(const CTxDestination &address, CAmount nValue, bool fSubtr
     // Check amount
     if (nValue <= 0)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid amount");
-fprintf(stderr,"nValue %.8f vs curBalance %.8f\n",(double)nValue/COIN,(double)curBalance/COIN);
+//fprintf(stderr,"nValue %.8f vs curBalance %.8f\n",(double)nValue/COIN,(double)curBalance/COIN);
     if (nValue > curBalance)
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Insufficient funds");
 

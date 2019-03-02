@@ -2870,7 +2870,7 @@ namespace {
         hasher << hashBlock;
         hasher << blockundo;
         if (hashChecksum != hasher.GetHash())
-            return error("%s: Checksum mismatch", __func__);
+            return error("%s: Checksum mismatch %s vs %s", __func__,hashChecksum.GetHex().c_str(),hasher.GetHash().GetHex().c_str());
 
         return true;
     }
