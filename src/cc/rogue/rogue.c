@@ -120,6 +120,7 @@ int32_t roguefname(char *fname,uint64_t seed,int32_t counter)
 
 int32_t flushkeystrokes_local(struct rogue_state *rs,int32_t waitflag)
 {
+#ifndef BUILD_ROGUE
     char fname[1024]; FILE *fp; int32_t i,retflag = -1;
     rs->counter++;
     roguefname(fname,rs->seed,rs->counter);
@@ -148,8 +149,10 @@ int32_t flushkeystrokes_local(struct rogue_state *rs,int32_t waitflag)
         } else fprintf(stderr,"error writing (%s)\n",fname);
     } else fprintf(stderr,"error creating (%s)\n",fname);
     return(retflag);
-}
+#else
+    return(0);
 #endif
+}
 
 #ifdef BUILD_ROGUE
 // stubs for inside daemon
