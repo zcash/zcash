@@ -266,7 +266,7 @@ uint64_t komodo_current_supply(uint32_t nHeight)
     }
 #define KOMODO_MAXNVALUE (((uint64_t)1 << 63) - 1)
 #define KOMODO_BIT63SET(x) ((x) & ((uint64_t)1 << 63))
-    
+    cur_money *= COIN;
     if ( KOMODO_BIT63SET(cur_money) != 0 )
         return(KOMODO_MAXNVALUE);
     if ( ASSETCHAINS_COMMISSION != 0 )
@@ -278,5 +278,6 @@ uint64_t komodo_current_supply(uint32_t nHeight)
             return(KOMODO_MAXNVALUE);
         return(newval);
     }
+    fprintf(stderr,"cur_money %.8f\n",(double)cur_money/COIN);
     return(cur_money);
 }

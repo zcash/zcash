@@ -2049,9 +2049,9 @@ void komodo_args(char *argv0)
 
         if ( ASSETCHAINS_CC >= KOMODO_FIRSTFUNGIBLEID && MAX_MONEY < 1000000LL*SATOSHIDEN )
             MAX_MONEY = 1000000LL*SATOSHIDEN;
-        if ( MAX_MONEY <= 0 || MAX_MONEY > 10000100000LL*SATOSHIDEN )
-            MAX_MONEY = 10000100000LL*SATOSHIDEN;
-        //fprintf(stderr,"MAX_MONEY %llu %.8f\n",(long long)MAX_MONEY,(double)MAX_MONEY/SATOSHIDEN);
+        if ( MAX_MONEY <= 0 || MAX_MONEY > (uint64_t)90*1000*1000*1000*SATOSHIDEN )
+            MAX_MONEY = (uint64_t)90*1000*1000*1000*SATOSHIDEN;
+        fprintf(stderr,"MAX_MONEY %llu %.8f\n",(long long)MAX_MONEY,(double)MAX_MONEY/SATOSHIDEN);
         //printf("baseid.%d MAX_MONEY.%s %.8f\n",baseid,ASSETCHAINS_SYMBOL,(double)MAX_MONEY/SATOSHIDEN);
         uint16_t tmpport = komodo_port(ASSETCHAINS_SYMBOL,ASSETCHAINS_SUPPLY,&ASSETCHAINS_MAGIC,extraptr,extralen);
         if ( GetArg("-port",0) != 0 )
