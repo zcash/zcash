@@ -34,6 +34,10 @@
 #define GETBIT(bits,bitoffset) (((uint8_t *)bits)[(bitoffset) >> 3] & (1 << ((bitoffset) & 7)))
 #define CLEARBIT(bits,bitoffset) (((uint8_t *)bits)[(bitoffset) >> 3] &= ~(1 << ((bitoffset) & 7)))
 
+#define KOMODO_MAXNVALUE (((uint64_t)1 << 63) - 1)
+#define KOMODO_BIT63SET(x) ((x) & ((uint64_t)1 << 63))
+#define KOMODO_VALUETOOBIG(x) ((x) > (uint64_t)10000000000*COIN)
+
 extern uint8_t ASSETCHAINS_TXPOW,ASSETCHAINS_PUBLIC;
 int32_t MAX_BLOCK_SIZE(int32_t height);
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
