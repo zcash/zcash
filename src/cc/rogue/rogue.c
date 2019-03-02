@@ -244,7 +244,6 @@ int32_t rogue_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t nu
     free(rs);
     return(n);
 }
-#endif
 
 long get_filesize(FILE *fp)
 {
