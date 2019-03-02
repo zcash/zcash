@@ -3495,7 +3495,10 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
         valueout = tx.GetValueOut();
         if ( KOMODO_VALUETOOBIG(valueout) != 0 )
+        {
+            fprintf(stderr,"valueout %.8f too big\n",(double)valueout/COIN);
             return state.DoS(100, error("ConnectBlock(): GetValueOut too big"),REJECT_INVALID,"tx valueout is too big");
+        }
         prevsum = voutsum;
         voutsum += valueout;
         if ( KOMODO_VALUETOOBIG(voutsum) != 0 )
