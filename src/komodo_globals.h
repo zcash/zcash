@@ -266,7 +266,7 @@ uint64_t komodo_current_supply(uint32_t nHeight)
     }
 #define KOMODO_MAXNVALUE (((uint64_t)1 << 63) - 1)
 #define KOMODO_BIT63SET(x) ((x) & ((uint64_t)1 << 63))
-#define KOMODO_VALUETOOBIG(x) ((x) > (uint64_t)10000000000)
+#define KOMODO_VALUETOOBIG(x) ((x) > (uint64_t)10000000000*COIN)
     
     if ( KOMODO_BIT63SET(cur_money) != 0 )
         return(KOMODO_MAXNVALUE);
