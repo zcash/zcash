@@ -1644,9 +1644,9 @@ uint64_t komodo_ac_block_subsidy(int nHeight)
     {
         if ( nHeight <= ASSETCHAINS_SUPPLY/1000000000 )
         {
-            subsidy = (uint64_t)1000000000 * COIN;
+            subsidy += (uint64_t)1000000000 * COIN;
             if ( nHeight == 1 )
-                subsidy += magicExtra;
+                subsidy += (ASSETCHAINS_SUPPLY % 1000000000)*COIN + magicExtra;
         }
     }
     else if ( nHeight == 1 )
