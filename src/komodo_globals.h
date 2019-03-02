@@ -264,6 +264,7 @@ uint64_t komodo_current_supply(uint32_t nHeight)
             }
         }
     }    
+    fprintf(stderr,"cur_money %.8f\n",(double)cur_money/COIN);
     if ( KOMODO_BIT63SET(cur_money) != 0 )
         return(KOMODO_MAXNVALUE);
     if ( ASSETCHAINS_COMMISSION != 0 )
