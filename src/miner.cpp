@@ -221,7 +221,6 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
 
     uint256 cbHash;
 
-    voutsum = GetBlockSubsidy(nHeight,consensusParams) + nFees;
     CBlockIndex* pindexPrev = 0;
     {
         ENTER_CRITICAL_SECTION(cs_main);
@@ -234,7 +233,8 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
 
         const int64_t nMedianTimePast = pindexPrev->GetMedianTimePast();
         uint32_t proposedTime = GetAdjustedTime();
-                
+        voutsum = GetBlockSubsidy(nHeight,consensusParams) + 10000*COIN; // approx fees
+
         if (proposedTime == nMedianTimePast)
         {
             // too fast or stuck, this addresses the too fast issue, while moving
