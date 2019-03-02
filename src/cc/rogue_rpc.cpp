@@ -1447,9 +1447,14 @@ UniValue rogue_setname(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 
 bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx)
 {
-    CScript scriptPubKey; std::vector<uint8_t> vopret; uint8_t *script,e,f,funcid,tokentx=0; int32_t i,maxplayers,decoded=0,regslot,ind,err,dispflag,gameheight,score,numvouts; CTransaction vintx,gametx; CPubKey pk; uint256 hashBlock,gametxid,txid,tokenid,batontxid,playertxid,ptxid; int64_t buyin,cashout; std::vector<uint8_t> playerdata,keystrokes; std::string symbol,pname;
-    if ( strcmp(ASSETCHAINS_SYMBOL,"ROGUE") == 0 && height < 21274 )
-        return(true);
+    CScript scriptPubKey; std::vector<uint8_t> vopret; uint8_t *script,e,f,funcid,tokentx=0; int32_t i,maxplayers,enabled = 0,decoded=0,regslot,ind,err,dispflag,gameheight,score,numvouts; CTransaction vintx,gametx; CPubKey pk; uint256 hashBlock,gametxid,txid,tokenid,batontxid,playertxid,ptxid; int64_t buyin,cashout; std::vector<uint8_t> playerdata,keystrokes; std::string symbol,pname;
+    if ( strcmp(ASSETCHAINS_SYMBOL,"ROGUE") == 0 )
+    {
+        if (height < 21274 )
+            return(true);
+        else if ( height > 50000 )
+            enabled = 1;
+    } else enabled = 1;
     if ( (numvouts= tx.vout.size()) > 1 )
     {
         txid = tx.GetHash();
@@ -1549,6 +1554,8 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
                                     strcpy(laststr,cashstr);
                                     fprintf(stderr,"%s\n",cashstr);
                                 }
+                                if ( enabled != 0 && tx.vout[2].nValue != cashout )
+                                    return eval->Invalid("mismatched cashout amount");
                             }
                         }
                         if ( funcid == 'Q' )
