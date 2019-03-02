@@ -2944,7 +2944,7 @@ int32_t dilithium_Qmsghash(uint8_t *msg,CTransaction tx,std::vector<uint256> vou
         for (i=0; i<numvouts-1; i++)
             vouts.push_back(tx.vout[i]);
         data << E_MARSHAL(ss << vintxids << vinprevns << vouts << voutpubtxids);
-fprintf(stderr,"size of data.%d\n",(int32_t)data.size());
+//fprintf(stderr,"size of data.%d\n",(int32_t)data.size());
         hash = Hash(data.begin(),data.end());
         memcpy(msg,&hash,sizeof(hash));
         return(0);
