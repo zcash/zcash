@@ -2940,11 +2940,17 @@ int32_t dilithium_Qmsghash(uint8_t *msg,CTransaction tx,std::vector<uint256> vou
         {
             vintxids.push_back(tx.vin[i].prevout.hash);
             vinprevns.push_back(tx.vin[i].prevout.n);
+            fprintf(stderr,"%s/v%d ",tx.vin[i].prevout.hash.GetHex().c_str(),tx.vin[i].prevout.n);
         }
         for (i=0; i<numvouts-1; i++)
+        {
+            char destaddr[64];
+            Getscriptaddress(destaddr,tx.vout[i].scriptPubKey);
+            fprintf(stderr,"%s %.8f ",destaddr,(double)tx.vout[i].nValue/COIN);
             vouts.push_back(tx.vout[i]);
+        }
         data << E_MARSHAL(ss << vintxids << vinprevns << vouts << voutpubtxids);
-//fprintf(stderr,"size of data.%d\n",(int32_t)data.size());
+fprintf(stderr,"numvins.%d numvouts.%d size of data.%d\n",numvins,numvouts,(int32_t)data.size());
         hash = Hash(data.begin(),data.end());
         memcpy(msg,&hash,sizeof(hash));
         return(0);
@@ -3368,6 +3374,9 @@ UniValue dilithium_Qsend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
             }
             tx = mtx;
             dilithium_Qmsghash(msg,tx,voutpubtxids);
+            for (i=0; i<32; i++)
+                fprintf(stderr,"%02x",msg[i]);
+            fprintf(stderr," msg\n");
             sig.resize(32+CRYPTO_BYTES);
             if ( dilithium_bigpubget(handle,destpub33,pk2,mypubtxid) < 0 )
                 return(cclib_error(result,"couldnt get bigpub"));
@@ -3432,7 +3441,15 @@ bool dilithium_Qvalidate(struct CCcontract_info *cp,int32_t height,Eval *eval,co
                 if ( _dilithium_verify(msg2,&mlen,&sig[0],smlen,pk) < 0 )
                     return eval->Invalid("failed dilithium verify");
                 else if ( mlen != 32 || memcmp(msg,msg2,32) != 0 )
+                {
+                    for (i=0; i<32; i++)
+                        fprintf(stderr,"%02x",msg[i]);
+                    fprintf(stderr," vs ");
+                    for (i=0; i<mlen; i++)
+                        fprintf(stderr,"%02x",msg32[i]);
+                    fprintf(stderr,"mlen.%d\n");
                     return eval->Invalid("failed dilithium msg verify");
+                }
                 else return true;
             }
         } else return eval->Invalid("failed decode Qsend");
