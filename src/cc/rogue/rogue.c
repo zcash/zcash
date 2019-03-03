@@ -131,21 +131,21 @@ int32_t flushkeystrokes_local(struct rogue_state *rs,int32_t waitflag)
             rs->num = 0;
             retflag = 0;
             fclose(fp);
-            if ( (fp= fopen("savefile","wb")) != 0 )
+            /*if ( (fp= fopen("savefile","wb")) != 0 )
             {
-                //save_file(rs,fp,0);
+                save_file(rs,fp,0);
                 if ( 0 && (fp= fopen("savefile","rb")) != 0 )
                 {
                     for (i=0; i<0x150; i++)
                         fprintf(stderr,"%02x",fgetc(fp));
                     fprintf(stderr," first part rnd.%d\n",rnd(1000));
                     fclose(fp);
-                }
+                }*/
                 roguefname(fname,rs->seed,rs->counter+1);
                 if ( (fp= fopen(fname,"wb")) != 0 ) // truncate next file
                     fclose(fp);
                 //fprintf(stderr,"savefile <- %s retflag.%d\n",fname,retflag);
-            }
+            //}
         } else fprintf(stderr,"error writing (%s)\n",fname);
     } else fprintf(stderr,"error creating (%s)\n",fname);
     return(retflag);
