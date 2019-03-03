@@ -26,10 +26,10 @@ O=o
 CC    = x86_64-w64-mingw32-gcc
 
 #CFLAGS=-O2
-CFLAGS= -g -O2 -I./ncurses/include -I./ncurses/include/ncursesw -I../../../depends/x86_64-w64-mingw32/include
+CFLAGS= -g -O2 -I./x86_64-w64-mingw32/include -I./x86_64-w64-mingw32/include/ncursesw
 
 #LIBS=-lcurses
-LIBS = -L./ncurses/lib -lncursesw -lcurl
+LIBS = -L./x86_64-w64-mingw32/lib -lncursesw -lcurl
 
 #RM=rm -f
 RM    = rm -f
