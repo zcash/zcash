@@ -134,15 +134,15 @@ uint64_t komodo_current_supply(uint32_t nHeight)
     uint64_t cur_money;
     int32_t baseid;
 
-    if ( (baseid = komodo_baseid(ASSETCHAINS_SYMBOL)) >= 0 && baseid < 32 )
-        cur_money = ASSETCHAINS_GENESISTXVAL + ASSETCHAINS_SUPPLY + nHeight * ASSETCHAINS_REWARD[0] / SATOSHIDEN;
-    else
+    //if ( (baseid = komodo_baseid(ASSETCHAINS_SYMBOL)) >= 0 && baseid < 32 )
+    //    cur_money = ASSETCHAINS_GENESISTXVAL + ASSETCHAINS_SUPPLY + nHeight * ASSETCHAINS_REWARD[0] / SATOSHIDEN;
+    //else
     {
         // figure out max_money by adding up supply to a maximum of 10,000,000 blocks
         cur_money = (ASSETCHAINS_SUPPLY+1) * SATOSHIDEN + (ASSETCHAINS_MAGIC & 0xffffff) + ASSETCHAINS_GENESISTXVAL;
         if ( ASSETCHAINS_LASTERA == 0 && ASSETCHAINS_REWARD[0] == 0 )
         {
-            cur_money += (nHeight * 10000) / SATOSHIDEN;
+            cur_money += (nHeight * 10000);// / SATOSHIDEN;
         }
         else
         {
@@ -155,6 +155,8 @@ uint64_t komodo_current_supply(uint32_t nHeight)
 
                 // add rewards from this era, up to nHeight
                 int64_t reward = ASSETCHAINS_REWARD[j];
+                
+                //fprintf(stderr,"last.%d reward %llu period %llu\n",(int32_t)ASSETCHAINS_LASTERA,(long long)reward,(long long)ASSETCHAINS_HALVING[j]);
                 if ( reward > 0 )
                 {
                     uint64_t lastEnd = j == 0 ? 0 : ASSETCHAINS_ENDSUBSIDY[j - 1];
@@ -166,10 +168,12 @@ uint64_t komodo_current_supply(uint32_t nHeight)
                     uint32_t modulo = (curEnd - lastEnd) % period;
                     uint64_t decay = ASSETCHAINS_DECAY[j];
 
-                    if (!period)
+                    //fprintf(stderr,"period.%llu cur_money %.8f += %.8f * %d\n",(long long)period,(double)cur_money/COIN,(double)reward/COIN,nHeight);
+                    if ( ASSETCHAINS_HALVING[j] == 0 )
                     {
                         // no halving, straight multiply
                         cur_money += reward * (nHeight - 1);
+                        //fprintf(stderr,"cur_money %.8f\n",(double)cur_money/COIN);
                     }
                     // if exactly SATOSHIDEN, linear decay to zero or to next era, same as:
                     // (next_era_reward + (starting reward - next_era_reward) / 2) * num_blocks
@@ -263,20 +267,18 @@ uint64_t komodo_current_supply(uint32_t nHeight)
                 }
             }
         }
-    }
-#define KOMODO_MAXNVALUE (((uint64_t)1 << 63) - 1)
-#define KOMODO_BIT63SET(x) ((x) & ((uint64_t)1 << 63))
-    
+    }    
     if ( KOMODO_BIT63SET(cur_money) != 0 )
         return(KOMODO_MAXNVALUE);
     if ( ASSETCHAINS_COMMISSION != 0 )
     {
-        uint64_t newval = (cur_money + (cur_money * ASSETCHAINS_COMMISSION));
+        uint64_t newval = (cur_money + (cur_money/COIN * ASSETCHAINS_COMMISSION));
         if ( KOMODO_BIT63SET(newval) != 0 )
             return(KOMODO_MAXNVALUE);
         else if ( newval < cur_money ) // check for underflow
             return(KOMODO_MAXNVALUE);
         return(newval);
     }
+    //fprintf(stderr,"cur_money %.8f\n",(double)cur_money/COIN);
     return(cur_money);
 }

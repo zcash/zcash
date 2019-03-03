@@ -1639,9 +1639,18 @@ uint64_t komodo_ac_block_subsidy(int nHeight)
             }
         }
     }
-    if ( nHeight == 1 )
+    uint32_t magicExtra = ASSETCHAINS_STAKED ? ASSETCHAINS_MAGIC : (ASSETCHAINS_MAGIC & 0xffffff);
+    if ( ASSETCHAINS_SUPPLY > 10000000000 ) // over 10 billion?
     {
-        uint32_t magicExtra = ASSETCHAINS_STAKED ? ASSETCHAINS_MAGIC : (ASSETCHAINS_MAGIC & 0xffffff);
+        if ( nHeight <= ASSETCHAINS_SUPPLY/1000000000 )
+        {
+            subsidy += (uint64_t)1000000000 * COIN;
+            if ( nHeight == 1 )
+                subsidy += (ASSETCHAINS_SUPPLY % 1000000000)*COIN + magicExtra;
+        }
+    }
+    else if ( nHeight == 1 )
+    {
         if ( ASSETCHAINS_LASTERA == 0 )
             subsidy = ASSETCHAINS_SUPPLY * SATOSHIDEN + magicExtra;
         else
@@ -1792,6 +1801,8 @@ void komodo_args(char *argv0)
             fprintf(stderr,"-ac_supply must be less than 90 billion\n");
             exit(0);
         }
+        fprintf(stderr,"ASSETCHAINS_SUPPLY %llu\n",(long long)ASSETCHAINS_SUPPLY);
+        
         ASSETCHAINS_COMMISSION = GetArg("-ac_perc",0);
         ASSETCHAINS_OVERRIDE_PUBKEY = GetArg("-ac_pubkey","");
         ASSETCHAINS_SCRIPTPUB = GetArg("-ac_script","");
@@ -1885,6 +1896,11 @@ void komodo_args(char *argv0)
         }
         if ( strlen(ASSETCHAINS_OVERRIDE_PUBKEY.c_str()) == 66 || ASSETCHAINS_SCRIPTPUB.size() > 1 )
         {
+            if ( ASSETCHAINS_SUPPLY > 10000000000 )
+            {
+                printf("ac_pubkey or ac_script wont work with ac_supply over 10 billion\n");
+                exit(0);
+            }
             if ( ASSETCHAINS_NOTARY_PAY[0] != 0 )
             {
                 printf("Assetchains NOTARY PAY cannot be used with ac_pubkey or ac_script.\n");
@@ -2049,9 +2065,9 @@ void komodo_args(char *argv0)
 
         if ( ASSETCHAINS_CC >= KOMODO_FIRSTFUNGIBLEID && MAX_MONEY < 1000000LL*SATOSHIDEN )
             MAX_MONEY = 1000000LL*SATOSHIDEN;
-        if ( MAX_MONEY <= 0 || MAX_MONEY > 10000100000LL*SATOSHIDEN )
-            MAX_MONEY = 10000100000LL*SATOSHIDEN;
-        //fprintf(stderr,"MAX_MONEY %llu %.8f\n",(long long)MAX_MONEY,(double)MAX_MONEY/SATOSHIDEN);
+        if ( KOMODO_BIT63SET(MAX_MONEY) != 0 )
+            MAX_MONEY = KOMODO_MAXNVALUE;
+        fprintf(stderr,"MAX_MONEY %llu %.8f\n",(long long)MAX_MONEY,(double)MAX_MONEY/SATOSHIDEN);
         //printf("baseid.%d MAX_MONEY.%s %.8f\n",baseid,ASSETCHAINS_SYMBOL,(double)MAX_MONEY/SATOSHIDEN);
         uint16_t tmpport = komodo_port(ASSETCHAINS_SYMBOL,ASSETCHAINS_SUPPLY,&ASSETCHAINS_MAGIC,extraptr,extralen);
         if ( GetArg("-port",0) != 0 )
