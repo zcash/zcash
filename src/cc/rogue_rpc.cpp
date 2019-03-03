@@ -1562,7 +1562,7 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
                             }
                             if ( funcid == 'H' )
                                 cashout *= 2;
-                            sprintf(cashstr,"tokentx.(%c) decoded.%d ht.%d txid.%s %d,%d %.8f vs vout2 %.8f",tokentx,decoded,height,txid.GetHex().c_str(),tokentx,decoded,(double)cashout/COIN,(double)tx.vout[2].nValue/COIN);
+                            sprintf(cashstr,"tokentx.(%c) decoded.%d ht.%d txid.%s %.8f vs vout2 %.8f",tokentx,decoded,height,txid.GetHex().c_str(),(double)cashout/COIN,(double)tx.vout[2].nValue/COIN);
                             if ( strcmp(laststr,cashstr) != 0 )
                             {
                                 strcpy(laststr,cashstr);
