@@ -1544,7 +1544,7 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
                             static char laststr[512]; char cashstr[512];
                             if ( rogue_playerdata_validate(&cashout,ptxid,cp,playerdata,gametxid,pk) < 0 )
                             {
-                                sprintf(cashstr,"ht.%d gametxid.%s player.%s invalid playerdata[%d]\n",height,gametxid.GetHex().c_str(),ptxid.GetHex().c_str(),(int32_t)playerdata.size());
+                                sprintf(cashstr,"tokentx.%d decoded.%d ht.%d gametxid.%s player.%s invalid playerdata[%d]\n",tokentx,decoded,height,gametxid.GetHex().c_str(),ptxid.GetHex().c_str(),(int32_t)playerdata.size());
                                 if ( strcmp(laststr,cashstr) != 0 )
                                 {
                                     strcpy(laststr,cashstr);
@@ -1555,15 +1555,15 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
                             }
                             if ( funcid == 'H' )
                                 cashout *= 2;
-                            if ( tokentx == 0 )
+                            //if ( tokentx == 0 )
                             {
-                                sprintf(cashstr,"ht.%d txid.%s %d,%d %.8f vs vout2 %.8f",height,txid.GetHex().c_str(),tokentx,decoded,(double)cashout/COIN,(double)tx.vout[2].nValue/COIN);
+                                sprintf(cashstr,"tokentx.%d decoded.%d ht.%d txid.%s %d,%d %.8f vs vout2 %.8f",tokentx,decoded,height,txid.GetHex().c_str(),tokentx,decoded,(double)cashout/COIN,(double)tx.vout[2].nValue/COIN);
                                 if ( strcmp(laststr,cashstr) != 0 )
                                 {
                                     strcpy(laststr,cashstr);
                                     fprintf(stderr,"%s\n",cashstr);
                                 }
-                                if ( enabled != 0 && tx.vout[2].nValue != cashout )
+                                if ( tokentx == 0 && enabled != 0 && tx.vout[2].nValue != cashout )
                                     return eval->Invalid("mismatched cashout amount");
                             }
                         }
