@@ -1499,9 +1499,7 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
                         case 'R':
                             if ( (funcid= rogue_registeropretdecode(gametxid,tokenid,playertxid,scriptPubKey)) != 'R' )
                             {
-                                //fprintf(stderr,"height.%d couldnt decode register opret\n",height);
-                                //if ( height > 20000 )
-                                    return eval->Invalid("couldnt decode register opret");
+                                return eval->Invalid("couldnt decode register opret");
                             }
                             // baton is created
                             // validation is done below
@@ -1509,23 +1507,13 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
                         case 'K':
                             if ( (funcid= rogue_keystrokesopretdecode(gametxid,batontxid,pk,keystrokes,scriptPubKey)) != 'K' )
                             {
-                                //fprintf(stderr,"height.%d couldnt decode keystrokes opret\n",height);
-                                //if ( height > 20000 )
-                                    return eval->Invalid("couldnt decode keystrokes opret");
+                                return eval->Invalid("couldnt decode keystrokes opret");
                             }
                             // spending the baton proves it is the user if the pk is the signer
                             return(true);
                             break;
                         case 'H': case 'Q':
-                            /*if ( (f= rogue_highlanderopretdecode(gametxid,tokenid,regslot,pk,playerdata,symbol,pname,scriptPubKey)) != funcid )
-                            {
-                                //fprintf(stderr,"height.%d couldnt decode H/Q opret\n",height);
-                                //if ( height > 20000 )
-                                    return eval->Invalid("couldnt decode H/Q opret");
-                            }
-                            fprintf(stderr,"height.%d decoded H/Q opret\n",height);
-                            // spending the baton proves it is the user if the pk is the signer
-                            // rest of validation is done below*/
+                            // done in the next switch statement as there are some H/Q tx with playerdata which would skip this section
                             break;
                         default:
                             return eval->Invalid("illegal rogue non-decoded funcid");
