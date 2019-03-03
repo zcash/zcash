@@ -1517,7 +1517,7 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
                             return(true);
                             break;
                         case 'H': case 'Q':
-                            if ( (f= rogue_highlanderopretdecode(gametxid,tokenid,regslot,pk,playerdata,symbol,pname,scriptPubKey)) != funcid )
+                            /*if ( (f= rogue_highlanderopretdecode(gametxid,tokenid,regslot,pk,playerdata,symbol,pname,scriptPubKey)) != funcid )
                             {
                                 //fprintf(stderr,"height.%d couldnt decode H/Q opret\n",height);
                                 //if ( height > 20000 )
@@ -1525,7 +1525,7 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
                             }
                             fprintf(stderr,"height.%d decoded H/Q opret\n",height);
                             // spending the baton proves it is the user if the pk is the signer
-                            // rest of validation is done below
+                            // rest of validation is done below*/
                             break;
                         default:
                             return eval->Invalid("illegal rogue non-decoded funcid");
@@ -1546,7 +1546,7 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
                             return eval->Invalid("couldnt decode H/Q opret");
                         }
                         // verify pk belongs to this tx
-                        if ( tokentx != 'c' && playerdata.size() > 0 )
+                        if ( tokentx == 'c' && playerdata.size() > 0 )
                         {
                             static char laststr[512]; char cashstr[512];
                             if ( rogue_playerdata_validate(&cashout,ptxid,cp,playerdata,gametxid,pk) < 0 )
