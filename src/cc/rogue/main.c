@@ -742,7 +742,7 @@ int32_t rogue_sendrawtransaction(char *rawtx)
 
 void rogue_progress(struct rogue_state *rs,int32_t waitflag,uint64_t seed,char *keystrokes,int32_t num)
 {
-    char cmd[16384],hexstr[16384],params[32768],*retstr,*rawtx; int32_t i; cJSON *retjson;
+    char cmd[16384],hexstr[16384],params[32768],*retstr,*rawtx,*pastkeys; int32_t i,numpastkeys; cJSON *retjson;
     //fprintf(stderr,"rogue_progress num.%d\n",num);
     if ( rs->guiflag != 0 && Gametxidstr[0] != 0 )
     {

@@ -274,18 +274,19 @@ char *rogue_keystrokesload(int32_t *numkeysp,uint64_t seed,int32_t counter)
         {
             fprintf(stderr,"error reallocating keystrokes\n");
             fclose(fp);
-            return(-1);
+            return(0);
         }
         if ( fread(&keystrokes[num],1,fsize,fp) != fsize )
         {
             fprintf(stderr,"error reading keystrokes from (%s)\n",fname);
             fclose(fp);
-            return(-1);
+            free(keystrokes);
+            return(0);
         }
         fclose(fp);
         num += fsize;
         counter++;
-        fprintf(stderr,"loaded %ld from (%s) total %ld\n",fsize,fname,num);
+        fprintf(stderr,"loaded %ld from (%s) total %d\n",fsize,fname,num);
     }
     *numkeysp = num;
     return(keystrokes);
@@ -293,7 +294,7 @@ char *rogue_keystrokesload(int32_t *numkeysp,uint64_t seed,int32_t counter)
 
 int32_t rogue_replay(uint64_t seed,int32_t sleeptime)
 {
-    FILE *fp; char fname[1024]; char *keystrokes = 0; long num=0,fsize; int32_t i,counter = 0; struct rogue_state *rs; struct rogue_player P,*player = 0;
+    FILE *fp; char fname[1024]; char *keystrokes = 0; long fsize; int32_t i,num=0,counter = 0; struct rogue_state *rs; struct rogue_player P,*player = 0;
     if ( seed == 0 )
         seed = 777;
     keystrokes = rogue_keystrokesload(&num,seed,counter);
