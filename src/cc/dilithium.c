@@ -3446,8 +3446,8 @@ bool dilithium_Qvalidate(struct CCcontract_info *cp,int32_t height,Eval *eval,co
                         fprintf(stderr,"%02x",msg[i]);
                     fprintf(stderr," vs ");
                     for (i=0; i<mlen; i++)
-                        fprintf(stderr,"%02x",msg32[i]);
-                    fprintf(stderr,"mlen.%d\n");
+                        fprintf(stderr,"%02x",msg2[i]);
+                    fprintf(stderr,"mlen.%d\n",mlen);
                     return eval->Invalid("failed dilithium msg verify");
                 }
                 else return true;
