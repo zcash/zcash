@@ -2937,17 +2937,17 @@ int32_t dilithium_Qmsghash(uint8_t *msg,CTransaction tx,int32_t numvouts,std::ve
     {
         vintxids.push_back(tx.vin[i].prevout.hash);
         vinprevns.push_back(tx.vin[i].prevout.n);
-        fprintf(stderr,"%s/v%d ",tx.vin[i].prevout.hash.GetHex().c_str(),tx.vin[i].prevout.n);
+        //fprintf(stderr,"%s/v%d ",tx.vin[i].prevout.hash.GetHex().c_str(),tx.vin[i].prevout.n);
     }
     for (i=0; i<numvouts; i++)
     {
-        char destaddr[64];
-        Getscriptaddress(destaddr,tx.vout[i].scriptPubKey);
-        fprintf(stderr,"%s %.8f ",destaddr,(double)tx.vout[i].nValue/COIN);
+        //char destaddr[64];
+        //Getscriptaddress(destaddr,tx.vout[i].scriptPubKey);
+        //fprintf(stderr,"%s %.8f ",destaddr,(double)tx.vout[i].nValue/COIN);
         vouts.push_back(tx.vout[i]);
     }
     data << E_MARSHAL(ss << vintxids << vinprevns << vouts << voutpubtxids);
-    fprintf(stderr,"numvins.%d numvouts.%d size of data.%d\n",numvins,numvouts,(int32_t)data.size());
+    //fprintf(stderr,"numvins.%d numvouts.%d size of data.%d\n",numvins,numvouts,(int32_t)data.size());
     hash = Hash(data.begin(),data.end());
     memcpy(msg,&hash,sizeof(hash));
     return(0);
@@ -3370,9 +3370,9 @@ UniValue dilithium_Qsend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
             }
             tx = mtx;
             dilithium_Qmsghash(msg,tx,(int32_t)voutpubtxids.size(),voutpubtxids);
-            for (i=0; i<32; i++)
-                fprintf(stderr,"%02x",msg[i]);
-            fprintf(stderr," msg\n");
+            //for (i=0; i<32; i++)
+            //    fprintf(stderr,"%02x",msg[i]);
+            //fprintf(stderr," msg\n");
             sig.resize(32+CRYPTO_BYTES);
             if ( dilithium_bigpubget(handle,destpub33,pk2,mypubtxid) < 0 )
                 return(cclib_error(result,"couldnt get bigpub"));
