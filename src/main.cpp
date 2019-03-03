@@ -3373,8 +3373,8 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     int64_t nTimeStart = GetTimeMicros();
     CAmount nFees = 0;
     int nInputs = 0;
-    uint64_t voutsum = 0,prevsum=0,valueout;
-    int64_t interest,sum = 0;
+    uint64_t valueout;
+    int64_t voutsum = 0,prevsum=0,interest,sum = 0;
     unsigned int nSigOps = 0;
     CDiskTxPos pos(pindex->GetBlockPos(), GetSizeOfCompactSize(block.vtx.size()));
     std::vector<std::pair<uint256, CDiskTxPos> > vPos;
@@ -3501,12 +3501,13 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         }
         prevsum = voutsum;
         voutsum += valueout;
-        if ( KOMODO_VALUETOOBIG(voutsum) != 0 )
+        /*if ( KOMODO_VALUETOOBIG(voutsum) != 0 )
         {
             fprintf(stderr,"voutsum %.8f too big\n",(double)voutsum/COIN);
             return state.DoS(100, error("ConnectBlock(): voutsum too big"),REJECT_INVALID,"tx valueout is too big");
         }
-        else if ( voutsum < prevsum )
+        else*/
+            if ( voutsum < prevsum )
             return state.DoS(100, error("ConnectBlock(): voutsum less after adding valueout"),REJECT_INVALID,"tx valueout is too big");
         if (!tx.IsCoinBase())
         {
@@ -4276,6 +4277,7 @@ static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMo
                              ASSETCHAINS_SYMBOL,pindexFork->phashBlock->GetHex(), pindexFork->GetHeight()) + "\n\n" +
             _("Please help, human!");
             LogPrintf("*** %s\nif you launch with -maxreorg=%d it might be able to resolve this automatically", msg,reorgLength+10);
+            fprintf(stderr,"*** %s\nif you launch with -maxreorg=%d it might be able to resolve this automatically", msg.c_str(),reorgLength+10);
             uiInterface.ThreadSafeMessageBox(msg, "", CClientUIInterface::MSG_ERROR);
             StartShutdown();
             return false;

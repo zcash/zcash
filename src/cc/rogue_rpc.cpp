@@ -978,16 +978,18 @@ char *rogue_extractgame(int32_t makefiles,char *str,int32_t *numkeysp,std::vecto
                 }
                 if ( endP.gold <= 0 || endP.hitpoints <= 0 || (endP.strength&0xffff) <= 0 || endP.level <= 0 || endP.experience <= 0 || endP.dungeonlevel <= 0 )
                 {
-                    fprintf(stderr,"zero value character was killed -> no playerdata\n");
+                    sprintf(str,"zero value character was killed -> no playerdata\n");
                     newdata.resize(0);
-                    //P.gold = (P.gold * 8) / 10;
+                    *numkeysp = numkeys;
+                    return(keystrokes);
+                    /* P.gold = (P.gold * 8) / 10;
                     if ( keystrokes != 0 )
                     {
                         free(keystrokes);
                         keystrokes = 0;
                         *numkeysp = 0;
                         return(keystrokes);
-                    }
+                    }*/
                 }
                 else
                 {
@@ -1466,7 +1468,7 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
             funcid = script[1];
             if ( (e= script[0]) == EVAL_TOKENS )
             {
-                tokentx = 1;
+                tokentx = funcid;
                 if ( (funcid= rogue_highlanderopretdecode(gametxid,tokenid,regslot,pk,playerdata,symbol,pname,scriptPubKey)) == 0 )
                 {
                     if ( (funcid= rogue_registeropretdecode(gametxid,tokenid,playertxid,scriptPubKey)) == 0 )
@@ -1515,14 +1517,15 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
                             return(true);
                             break;
                         case 'H': case 'Q':
-                            if ( (f= rogue_highlanderopretdecode(gametxid,tokenid,regslot,pk,playerdata,symbol,pname,scriptPubKey)) != funcid )
+                            /*if ( (f= rogue_highlanderopretdecode(gametxid,tokenid,regslot,pk,playerdata,symbol,pname,scriptPubKey)) != funcid )
                             {
                                 //fprintf(stderr,"height.%d couldnt decode H/Q opret\n",height);
                                 //if ( height > 20000 )
                                     return eval->Invalid("couldnt decode H/Q opret");
                             }
+                            fprintf(stderr,"height.%d decoded H/Q opret\n",height);
                             // spending the baton proves it is the user if the pk is the signer
-                            // rest of validation is done below
+                            // rest of validation is done below*/
                             break;
                         default:
                             return eval->Invalid("illegal rogue non-decoded funcid");
@@ -1536,27 +1539,37 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
                         return(true);
                     case 'H': // win
                     case 'Q': // bailout
-                        // verify pk belongs to this tx
-                        if ( playerdata.size() > 0 )
+                        if ( (f= rogue_highlanderopretdecode(gametxid,tokenid,regslot,pk,playerdata,symbol,pname,scriptPubKey)) != funcid )
                         {
+                            //fprintf(stderr,"height.%d couldnt decode H/Q opret\n",height);
+                            //if ( height > 20000 )
+                            return eval->Invalid("couldnt decode H/Q opret");
+                        }
+                        // verify pk belongs to this tx
+                        if ( tokentx == 'c' && playerdata.size() > 0 )
+                        {
+                            static char laststr[512]; char cashstr[512];
                             if ( rogue_playerdata_validate(&cashout,ptxid,cp,playerdata,gametxid,pk) < 0 )
                             {
-                                fprintf(stderr,"ht.%d gametxid.%s player.%s invalid playerdata[%d]\n",height,gametxid.GetHex().c_str(),ptxid.GetHex().c_str(),(int32_t)playerdata.size());
-                            }
-                            if ( funcid == 'H' )
-                                cashout *= 2;
-                            if ( tx.vout.size() > 3 ) // orig of 't' has 0 cashout
-                            {
-                                static char laststr[512]; char cashstr[512];
-                                sprintf(cashstr,"ht.%d txid.%s %d,%d %.8f vs vout2 %.8f",height,txid.GetHex().c_str(),tokentx,decoded,(double)cashout/COIN,(double)tx.vout[2].nValue/COIN);
+                                sprintf(cashstr,"tokentx.(%c) decoded.%d ht.%d gametxid.%s player.%s invalid playerdata[%d]\n",tokentx,decoded,height,gametxid.GetHex().c_str(),ptxid.GetHex().c_str(),(int32_t)playerdata.size());
                                 if ( strcmp(laststr,cashstr) != 0 )
                                 {
                                     strcpy(laststr,cashstr);
                                     fprintf(stderr,"%s\n",cashstr);
                                 }
-                                if ( enabled != 0 && tx.vout[2].nValue != cashout )
-                                    return eval->Invalid("mismatched cashout amount");
+                                if ( enabled != 0 )
+                                    return eval->Invalid("mismatched playerdata");
                             }
+                            if ( funcid == 'H' )
+                                cashout *= 2;
+                            sprintf(cashstr,"tokentx.(%c) decoded.%d ht.%d txid.%s %.8f vs vout2 %.8f",tokentx,decoded,height,txid.GetHex().c_str(),(double)cashout/COIN,(double)tx.vout[2].nValue/COIN);
+                            if ( strcmp(laststr,cashstr) != 0 )
+                            {
+                                strcpy(laststr,cashstr);
+                                fprintf(stderr,"%s\n",cashstr);
+                            }
+                            if ( enabled != 0 && tx.vout[2].nValue != cashout )
+                                return eval->Invalid("mismatched cashout amount");
                         }
                         if ( funcid == 'Q' )
                         {
