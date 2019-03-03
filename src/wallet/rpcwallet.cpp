@@ -5955,7 +5955,7 @@ UniValue channelslist(const UniValue& params, bool fHelp)
 {
     if ( fHelp || params.size() > 0 )
         throw runtime_error("channelsinfo\n");
-    if ( ensure_CCrequirements(EVAL_MARMARA) < 0 )
+    if ( ensure_CCrequirements(EVAL_CHANNELS) < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
