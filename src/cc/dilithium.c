@@ -2931,7 +2931,7 @@ char *bitcoin_address(char *coinaddr,uint8_t addrtype,uint8_t *pubkey_or_rmd160,
 
 int32_t dilithium_Qmsghash(uint8_t *msg,CTransaction tx,int32_t numvouts,std::vector<uint256> voutpubtxids)
 {
-    CScript data; uint256 hash; int32_t i,numvins,numvouts,len = 0; std::vector<uint256> vintxids; std::vector<int32_t> vinprevns; std::vector<CTxOut> vouts;
+    CScript data; uint256 hash; int32_t i,numvins,len = 0; std::vector<uint256> vintxids; std::vector<int32_t> vinprevns; std::vector<CTxOut> vouts;
     numvins = tx.vin.size();
     for (i=0; i<numvins; i++)
     {
@@ -2939,7 +2939,7 @@ int32_t dilithium_Qmsghash(uint8_t *msg,CTransaction tx,int32_t numvouts,std::ve
         vinprevns.push_back(tx.vin[i].prevout.n);
         fprintf(stderr,"%s/v%d ",tx.vin[i].prevout.hash.GetHex().c_str(),tx.vin[i].prevout.n);
     }
-    for (i=0; i<numvouts-1; i++)
+    for (i=0; i<numvouts; i++)
     {
         char destaddr[64];
         Getscriptaddress(destaddr,tx.vout[i].scriptPubKey);
