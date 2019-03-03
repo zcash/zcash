@@ -1544,10 +1544,12 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
                             if ( rogue_playerdata_validate(&cashout,ptxid,cp,playerdata,gametxid,pk) < 0 )
                             {
                                 fprintf(stderr,"ht.%d gametxid.%s player.%s invalid playerdata[%d]\n",height,gametxid.GetHex().c_str(),ptxid.GetHex().c_str(),(int32_t)playerdata.size());
+                                if ( enabled != 0 )
+                                    return eval->Invalid("mismatched playerdata");
                             }
                             if ( funcid == 'H' )
                                 cashout *= 2;
-                            if ( tx.vout.size() > 3 ) // orig of 't' has 0 cashout
+                            if ( tokentx == 0 )
                             {
                                 static char laststr[512]; char cashstr[512];
                                 sprintf(cashstr,"ht.%d txid.%s %d,%d %.8f vs vout2 %.8f",height,txid.GetHex().c_str(),tokentx,decoded,(double)cashout/COIN,(double)tx.vout[2].nValue/COIN);
