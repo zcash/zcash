@@ -235,6 +235,7 @@ int32_t safecopy(char *dest,char *src,long len)
 #endif
 
 int32_t rogue_replay(uint64_t seed,int32_t sleeptime);
+char *rogue_keystrokesload(int32_t *numkeysp,uint64_t seed,int32_t counter);
 int rogue(int argc, char **argv, char **envp);
 
 void *OS_loadfile(char *fname,uint8_t **bufp,long *lenp,long *allocsizep)
@@ -762,6 +763,11 @@ void rogue_progress(struct rogue_state *rs,int32_t waitflag,uint64_t seed,char *
             }
             free(rs->keystrokeshex), rs->keystrokeshex = 0;
         }
+        if ( (pastkeys= rogue_keystrokesload(&numpastkeys,seed,1)) != 0 )
+        {
+            free(pastkeys);
+        }
+
         for (i=0; i<num; i++)
             sprintf(&hexstr[i<<1],"%02x",keystrokes[i]&0xff);
         hexstr[i<<1] = 0;

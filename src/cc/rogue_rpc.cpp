@@ -978,16 +978,18 @@ char *rogue_extractgame(int32_t makefiles,char *str,int32_t *numkeysp,std::vecto
                 }
                 if ( endP.gold <= 0 || endP.hitpoints <= 0 || (endP.strength&0xffff) <= 0 || endP.level <= 0 || endP.experience <= 0 || endP.dungeonlevel <= 0 )
                 {
-                    fprintf(stderr,"zero value character was killed -> no playerdata\n");
+                    sprintf(str,"zero value character was killed -> no playerdata\n");
                     newdata.resize(0);
-                    //P.gold = (P.gold * 8) / 10;
+                    *numkeysp = numkeys;
+                    return(keystrokes);
+                    /* P.gold = (P.gold * 8) / 10;
                     if ( keystrokes != 0 )
                     {
                         free(keystrokes);
                         keystrokes = 0;
                         *numkeysp = 0;
                         return(keystrokes);
-                    }
+                    }*/
                 }
                 else
                 {
