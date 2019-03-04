@@ -3526,7 +3526,7 @@ UniValue dilithium_handleinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *p
                 if ( dilithium_registrationpub33(pub33,hashstr->destpubtxid) == 0 )
                 {
                     for (i=0; i<33; i++)
-                        sprintf(&str[i<<1],"%02x",((uint8_t *)pub33.ptr())[i]);
+                        sprintf(&str[i<<1],"%02x",((uint8_t *)pub33.begin())[i]);
                     str[i<<1] = 0;
                 }
                 result.push_back(Pair("pubkey",str));
