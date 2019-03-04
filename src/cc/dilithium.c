@@ -3494,7 +3494,7 @@ bool dilithium_Qvalidate(struct CCcontract_info *cp,int32_t height,Eval *eval,co
 
 int32_t dilithium_registrationpub33(CPubKey &pub33,uint256 txid)
 {
-    std::string handle; std::vector<uint8_t> bigpub;
+    std::string handle; std::vector<uint8_t> bigpub; CTransaction tx;
     if ( myGetTransaction(txid,tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 1 )
     {
         if ( dilithium_registeropretdecode(handle,pub33,bigpub,tx.vout[numvouts-1].scriptPubKey) == 'R' )
