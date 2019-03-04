@@ -506,7 +506,7 @@ int64_t AddCClibInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubK
 
 int64_t AddCClibtxfee(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk)
 {
-    char coinaddr[64]; int64_t txfee = 10000; uint256 txid,hashBlock; CTransaction vintx; int32_t vout;
+    char coinaddr[64]; int64_t nValue,txfee = 10000; uint256 txid,hashBlock; CTransaction vintx; int32_t vout;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     GetCCaddress(cp,coinaddr,pk);
     SetCCunspents(unspentOutputs,coinaddr);

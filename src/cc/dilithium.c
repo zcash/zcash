@@ -2941,10 +2941,10 @@ struct dilithium_handle *dilithium_handlenew(std::string handle)
     struct dilithium_handle *hashstr = 0;
     if ( handle.size() < sizeof(Dilithium_handles[0].handle)-1 )
     {
-        HASH_FIND(hh,Dilithium_handles,handle,(int32_t)handle.size(),hashstr);
+        HASH_FIND(hh,Dilithium_handles,handle.c_str(),(int32_t)handle.size(),hashstr);
         if ( hashstr == 0 )
         {
-            hashstr = calloc(1,sizeof(*hashstr));
+            hashstr = (struct dilithium_handle *)calloc(1,sizeof(*hashstr));
             strncpy(hashstr->handle,handle.c_str(),sizeof(hashstr->handle));
             HASH_ADD_KEYPTR(hh,Dilithium_handles,hashstr->handle,(int32_t)handle.size(),hashstr);
         }
