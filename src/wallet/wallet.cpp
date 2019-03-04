@@ -1825,12 +1825,12 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
                         fprintf(stderr, "Received transaction to address other than notary address, ignored! \n");
                         return false;
                     }
-                    fprintf(stderr, "address: %s received %ld sats from %d vouts.\n",NOTARY_ADDRESS.c_str(),totalvoutvalue,numvoutIsOurs);
+                    fprintf(stderr, "address: %s received %ld sats from %d vouts.\n",NOTARY_ADDRESS.c_str(),totalvoutvalue,(int32_t)numvoutIsOurs);
                     // here we add calculation for number if vouts received, average size and determine if we accept them to wallet or not.
                     int64_t avgVoutSize = totalvoutvalue / numvoutIsOurs;
                     if ( avgVoutSize < MIN_RECV_SATS ) {
                         // average vout size is less than set minimum, default is 1 coin, we will ignore it
-                        fprintf(stderr, "ignored: %d vouts average size of %ld sats.\n",numvoutIsOurs, avgVoutSize);
+                        fprintf(stderr, "ignored: %d vouts average size of %ld sats.\n",numvoutIsOurs, (long)avgVoutSize);
                         return false;
                     }
                 }
