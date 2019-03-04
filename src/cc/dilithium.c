@@ -3494,7 +3494,7 @@ bool dilithium_Qvalidate(struct CCcontract_info *cp,int32_t height,Eval *eval,co
 
 int32_t dilithium_registrationpub33(CPubKey &pub33,uint256 txid)
 {
-    std::string handle; std::vector<uint8_t> bigpub; CTransaction tx;
+    std::string handle; std::vector<uint8_t> bigpub; CTransaction tx; uint256 hashBlock; int32_t numvouts;
     if ( myGetTransaction(txid,tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 1 )
     {
         if ( dilithium_registeropretdecode(handle,pub33,bigpub,tx.vout[numvouts-1].scriptPubKey) == 'R' )
@@ -3507,7 +3507,7 @@ bool dilithium_Rvalidate(struct CCcontract_info *cp,int32_t height,Eval *eval,co
 {
     static int32_t didinit;
     std::vector<std::pair<CAddressIndexKey, CAmount> > txids;
-    uint256 txid,hashBlock; int32_t numvouts; struct dilithium_handle *hashstr; std::string handle; std::vector<uint8_t> bigpub; CTransaction txi; CPubKey pub33,dilithiumpk; CTxOut vout,vout0; char CCaddr[64];
+    uint256 txid,hashBlock; int32_t numvouts; struct dilithium_handle *hashstr; std::string handle; std::vector<uint8_t> bigpub; CTransaction txi; CPubKey oldpub33,pub33,dilithiumpk; CTxOut vout,vout0; char CCaddr[64];
     dilithiumpk = GetUnspendable(cp,0);
     if ( didinit == 0 )
     {
