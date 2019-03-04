@@ -1071,7 +1071,7 @@ UniValue rogue_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 int32_t rogue_playerdata_validate(int64_t *cashoutp,uint256 &playertxid,struct CCcontract_info *cp,std::vector<uint8_t> playerdata,uint256 gametxid,CPubKey pk)
 {
     static uint32_t good,bad; static uint256 prevgame;
-    char str[512],*keystrokes,rogueaddr[64],str2[67]; int32_t i,dungeonlevel,numkeys; std::vector<uint8_t> newdata; uint64_t seed,mult = 10; CPubKey roguepk; struct rogue_player P;
+    char str[512],*keystrokes,rogueaddr[64],str2[67],fname[64]; int32_t i,dungeonlevel,numkeys; std::vector<uint8_t> newdata; uint64_t seed,mult = 10; CPubKey roguepk; struct rogue_player P;
     *cashoutp = 0;
     roguepk = GetUnspendable(cp,0);
     GetCCaddress1of2(cp,rogueaddr,roguepk,pk);
@@ -1080,6 +1080,9 @@ int32_t rogue_playerdata_validate(int64_t *cashoutp,uint256 &playertxid,struct C
     {
         //fprintf(stderr,"numkeys.%d rogue_extractgame %s\n",numkeys,gametxid.GetHex().c_str());
         free(keystrokes);
+        sprintf(fname,"rogue.%llu.pack",(long long)seed);
+        boost::filesystem::remove(fname);
+
         //fprintf(stderr,"extracted.(%s)\n",str);
         for (i=0; i<playerdata.size(); i++)
             ((uint8_t *)&P)[i] = playerdata[i];
