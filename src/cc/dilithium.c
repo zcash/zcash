@@ -3526,7 +3526,7 @@ UniValue dilithium_handleinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *p
                 if ( dilithium_registrationpub33(pub33,hashstr->destpubtxid) == 0 )
                 {
                     for (i=0; i<33; i++)
-                        sprintf(&str[i<<1],"%02x",((uint8_t *)pub33.data())[i]);
+                        sprintf(&str[i<<1],"%02x",((uint8_t *)pub33.ptr())[i]);
                     str[i<<1] = 0;
                 }
                 result.push_back(Pair("pubkey",str));
@@ -3557,7 +3557,7 @@ bool dilithium_Rvalidate(struct CCcontract_info *cp,int32_t height,Eval *eval,co
             {
                 if ( dilithium_registeropretdecode(handle,pub33,bigpub,txi.vout[numvouts-1].scriptPubKey) == 'R' )
                 {
-                    if ( (hashstr= dilithium_handlenew(handle.c_str())) != 0 )
+                    if ( (hashstr= dilithium_handlenew((char *)handle.c_str())) != 0 )
                     {
                         if ( hashstr->destpubtxid != txid )
                         {
@@ -3586,7 +3586,7 @@ bool dilithium_Rvalidate(struct CCcontract_info *cp,int32_t height,Eval *eval,co
             return eval->Invalid("vout1 for register not txfee");
         else if ( tx.vout[2] != vout )
             return eval->Invalid("register not sending to faucet");
-        else if ( (hashstr= dilithium_handlenew(handle.c_str())) == 0 )
+        else if ( (hashstr= dilithium_handlenew((char *)handle.c_str())) == 0 )
             return eval->Invalid("error creating dilithium handle");
         else if ( hashstr->destpubtxid == zeroid )
         {
