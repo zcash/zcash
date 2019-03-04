@@ -3492,6 +3492,17 @@ bool dilithium_Qvalidate(struct CCcontract_info *cp,int32_t height,Eval *eval,co
     } else return eval->Invalid("unexpected zero signerpubtxid");
 }
 
+int32_t dilithium_registrationpub33(CPubKey &pub33,uint256 txid)
+{
+    std::string handle; std::vector<uint8_t> bigpub;
+    if ( myGetTransaction(txid,tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 1 )
+    {
+        if ( dilithium_registeropretdecode(handle,pub33,bigpub,tx.vout[numvouts-1].scriptPubKey) == 'R' )
+            return(0);
+    }
+    return(-1);
+}
+
 bool dilithium_Rvalidate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx)
 {
     static int32_t didinit;
@@ -3545,8 +3556,16 @@ bool dilithium_Rvalidate(struct CCcontract_info *cp,int32_t height,Eval *eval,co
             hashstr->destpubtxid = txid;
             return(true);
         }
-        else if ( hashstr->destpubtxid == txid )
-            return(true);
+        else
+        {
+            if ( hashstr->destpubtxid == txid )
+                return(true);
+            else if ( dilithium_registrationpub33(oldpub33,hashstr->destpubtxid) == 0 )
+            {
+                if ( oldpub33 == pub33 )
+                    return(true);
+            } else return eval->Invalid("duplicate dilithium handle rejected");
+        }
         else return eval->Invalid("duplicate dilithium handle rejected");
     } else return eval->Invalid("couldnt decode register opret");
 }
