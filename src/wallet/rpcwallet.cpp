@@ -3265,19 +3265,17 @@ UniValue z_getnewaddress(const UniValue& params, bool fHelp)
 
     if (fHelp || params.size() > 1)
         throw runtime_error(
-            "z_getnewaddress ( type )\n"
-            "\nReturns a new shielded address for receiving payments.\n"
-            "\nWith no arguments, returns a Sapling address.\n"
-            "\nArguments:\n"
-            "1. \"type\"         (string, optional, default=\"" + defaultType + "\") The type of address. One of [\""
-            + ADDR_TYPE_SPROUT + "\", \"" + ADDR_TYPE_SAPLING + "\"].\n"
-            "\nResult:\n"
-            "\"zcashaddress\"    (string) The new shielded address.\n"
-            "\nExamples:\n"
-            + HelpExampleCli("z_getnewaddress", "")
-            + HelpExampleCli("z_getnewaddress", ADDR_TYPE_SAPLING)
-            + HelpExampleRpc("z_getnewaddress", "")
-        );
+            RpcDocBuilder("z_getnewaddress")
+                .SetDescription(
+                    "Returns a new shielded address for receiving payments.\n\n"
+                    "With no arguments, returns a Sapling address.")
+                .AddArgument(RpcArgument::OptionalString("type", defaultType,
+                    "The type of address. One of [\"" + ADDR_TYPE_SPROUT + "\", \"" + ADDR_TYPE_SAPLING + "\"]."))
+                .AddResult(RpcArgument::String("zcashaddress", "The new shielded address."))
+                .AddHelpExampleCli("")
+                .AddHelpExampleCli(ADDR_TYPE_SAPLING)
+                .AddHelpExampleRpc("")
+                .ToString());
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
