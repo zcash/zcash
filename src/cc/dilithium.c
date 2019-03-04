@@ -3564,9 +3564,9 @@ bool dilithium_Rvalidate(struct CCcontract_info *cp,int32_t height,Eval *eval,co
             {
                 if ( oldpub33 == pub33 )
                     return(true);
-            } else return eval->Invalid("duplicate dilithium handle rejected");
+            }
+            return eval->Invalid("duplicate dilithium handle rejected");
         }
-        else return eval->Invalid("duplicate dilithium handle rejected");
     } else return eval->Invalid("couldnt decode register opret");
 }
 
