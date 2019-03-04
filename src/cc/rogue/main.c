@@ -765,7 +765,7 @@ void rogue_progress(struct rogue_state *rs,int32_t waitflag,uint64_t seed,char *
         }
         // extract and get keystrokes field and compare it to pastkeys
         // if not matching... panic?
-        if ( (pastkeys= rogue_keystrokesload(&numpastkeys,seed,1)) != 0 )
+        if ( 0 && (pastkeys= rogue_keystrokesload(&numpastkeys,seed,1)) != 0 )
         {
             free(pastkeys);
         }
