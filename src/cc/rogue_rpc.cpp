@@ -1081,7 +1081,7 @@ int32_t rogue_playerdata_validate(int64_t *cashoutp,uint256 &playertxid,struct C
         //fprintf(stderr,"numkeys.%d rogue_extractgame %s\n",numkeys,gametxid.GetHex().c_str());
         free(keystrokes);
         sprintf(fname,"rogue.%llu.pack",(long long)seed);
-        boost::filesystem::remove(fname);
+        remove(fname);
 
         //fprintf(stderr,"extracted.(%s)\n",str);
         for (i=0; i<playerdata.size(); i++)
