@@ -3526,7 +3526,7 @@ int32_t dilithium_registrationpub33(char *pkaddr,CPubKey &pub33,uint256 txid)
 void dilithium_handleinit(struct CCcontract_info *cp)
 {
     static int32_t didinit;
-    std::vector<std::pair<CAddressIndexKey, CAmount> > txids; struct dilithium_handle *hashstr; CPubKey dilithiumpk,pub33; uint256 txid,hashBlock; CTransaction txi; int32_t numvouts; std::vector<uint8_t> bigpub; std::string handle;
+    std::vector<std::pair<CAddressIndexKey, CAmount> > txids; struct dilithium_handle *hashstr; CPubKey dilithiumpk,pub33; uint256 txid,hashBlock; CTransaction txi; int32_t numvouts; std::vector<uint8_t> bigpub; std::string handle; char CCaddr[64];
     if ( didinit != 0 )
         return;
     pthread_mutex_init(&DILITHIUM_MUTEX,NULL);
@@ -3588,7 +3588,7 @@ UniValue dilithium_handleinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *p
 bool dilithium_Rvalidate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx)
 {
     static int32_t didinit;
-    uint256 txid; int32_t numvouts; struct dilithium_handle *hashstr; std::string handle; std::vector<uint8_t> bigpub; CPubKey oldpub33,pub33,dilithiumpk; CTxOut vout,vout0; char CCaddr[64],pkaddr[64];
+    uint256 txid; int32_t numvouts; struct dilithium_handle *hashstr; std::string handle; std::vector<uint8_t> bigpub; CPubKey oldpub33,pub33,dilithiumpk; CTxOut vout,vout0; char pkaddr[64];
     if ( height < 14500 )
         return(true);
     dilithium_handleinit(cp);
