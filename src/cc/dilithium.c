@@ -2936,19 +2936,27 @@ struct dilithium_handle
     char handle[32];
 } *Dilithium_handles;
 
-struct dilithium_handle *dilithium_handlenew(std::string handle)
+struct dilithium_handle *dilithium_handlenew(char *handle)
 {
-    struct dilithium_handle *hashstr = 0;
-    if ( handle.size() < sizeof(Dilithium_handles[0].handle)-1 )
+    struct dilithium_handle *hashstr = 0; int32_t len = (int32_t)strlen(handle);
+    if ( len < sizeof(Dilithium_handles[0].handle)-1 )
     {
-        HASH_FIND(hh,Dilithium_handles,handle.c_str(),(int32_t)handle.size(),hashstr);
+        HASH_FIND(hh,Dilithium_handles,handle,len,hashstr);
         if ( hashstr == 0 )
         {
             hashstr = (struct dilithium_handle *)calloc(1,sizeof(*hashstr));
-            strncpy(hashstr->handle,handle.c_str(),sizeof(hashstr->handle));
-            HASH_ADD_KEYPTR(hh,Dilithium_handles,hashstr->handle,(int32_t)handle.size(),hashstr);
+            strncpy(hashstr->handle,handle,sizeof(hashstr->handle));
+            HASH_ADD_KEYPTR(hh,Dilithium_handles,hashstr->handle,len,hashstr);
         }
     }
+    return(hashstr);
+}
+
+struct dilithium_handle *dilithium_handlefind(char *handle)
+{
+    struct dilithium_handle *hashstr = 0; int32_t len = (int32_t)strlen(handle);
+    if ( len < sizeof(Dilithium_handles[0].handle)-1 )
+        HASH_FIND(hh,Dilithium_handles,handle,len,hashstr);
     return(hashstr);
 }
 
@@ -3503,6 +3511,33 @@ int32_t dilithium_registrationpub33(CPubKey &pub33,uint256 txid)
     return(-1);
 }
 
+UniValue dilithium_handleinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
+{
+    UniValue result(UniValue::VOBJ); CPubKey pub33; int32_t i,n; char *handlestr,str[67]; struct dilithium_handle *hashstr;
+    if ( params != 0 && (n= cJSON_GetArraySize(params)) == 1 )
+    {
+        if ( (handlestr= jstr(jitem(params,0),0)) != 0 )
+        {
+            result.push_back(Pair("result","success"));
+            result.push_back(Pair("handle",handlestr));
+            if ( (hashstr= dilithium_handlefind(handlestr)) != 0 )
+            {
+                result.push_back(Pair("destpubtxid",hashstr->destpubtxid.GetHex().c_str()));
+                if ( dilithium_registrationpub33(pub33,hashstr->destpubtxid) == 0 )
+                {
+                    for (i=0; i<33; i++)
+                        sprintf(&str[i<<1],"%02x",((uint8_t *)pub33.data())[i]);
+                    str[i<<1] = 0;
+                }
+                result.push_back(Pair("pubkey",str));
+            } else result.push_back(Pair("status","available"));
+            return(result);
+        }
+    }
+    result.push_back(Pair("result","error"));
+    return(result);
+}
+
 bool dilithium_Rvalidate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx)
 {
     static int32_t didinit;
@@ -3522,7 +3557,7 @@ bool dilithium_Rvalidate(struct CCcontract_info *cp,int32_t height,Eval *eval,co
             {
                 if ( dilithium_registeropretdecode(handle,pub33,bigpub,txi.vout[numvouts-1].scriptPubKey) == 'R' )
                 {
-                    if ( (hashstr= dilithium_handlenew(handle)) != 0 )
+                    if ( (hashstr= dilithium_handlenew(handle.c_str())) != 0 )
                     {
                         if ( hashstr->destpubtxid != txid )
                         {
@@ -3551,7 +3586,7 @@ bool dilithium_Rvalidate(struct CCcontract_info *cp,int32_t height,Eval *eval,co
             return eval->Invalid("vout1 for register not txfee");
         else if ( tx.vout[2] != vout )
             return eval->Invalid("register not sending to faucet");
-        else if ( (hashstr= dilithium_handlenew(handle)) == 0 )
+        else if ( (hashstr= dilithium_handlenew(handle.c_str())) == 0 )
             return eval->Invalid("error creating dilithium handle");
         else if ( hashstr->destpubtxid == zeroid )
         {

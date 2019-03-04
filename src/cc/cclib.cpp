@@ -83,6 +83,7 @@ CClib_methods[] =
     { (char *)"musig", (char *)"spend", (char *)"sendtxid sig scriptPubKey", 3, 3, 'y', EVAL_MUSIG },
     { (char *)"dilithium", (char *)"keypair", (char *)"[hexseed]", 0, 1, 'K', EVAL_DILITHIUM },
     { (char *)"dilithium", (char *)"register", (char *)"handle, [hexseed]", 1, 2, 'R', EVAL_DILITHIUM },
+    { (char *)"dilithium", (char *)"handleinfo", (char *)"handle", 1, 1, 'I', EVAL_DILITHIUM },
     { (char *)"dilithium", (char *)"sign", (char *)"msg [hexseed]", 1, 2, 'S', EVAL_DILITHIUM },
     { (char *)"dilithium", (char *)"verify", (char *)"pubtxid msg sig", 3, 3, 'V', EVAL_DILITHIUM },
     { (char *)"dilithium", (char *)"send", (char *)"handle pubtxid amount", 3, 3, 'x', EVAL_DILITHIUM },
@@ -130,6 +131,7 @@ UniValue musig_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 
 bool dilithium_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx);
 UniValue dilithium_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+UniValue dilithium_handleinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue dilithium_send(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue dilithium_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue dilithium_keypair(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
@@ -273,6 +275,8 @@ UniValue CClib_method(struct CCcontract_info *cp,char *method,char *jsonstr)
             return(dilithium_keypair(txfee,cp,params));
         else if ( strcmp(method,"register") == 0 )
             return(dilithium_register(txfee,cp,params));
+        else if ( strcmp(method,"handleinfo") == 0 )
+            return(dilithium_handleinfo(txfee,cp,params));
         else if ( strcmp(method,"sign") == 0 )
             return(dilithium_sign(txfee,cp,params));
         else if ( strcmp(method,"verify") == 0 )
