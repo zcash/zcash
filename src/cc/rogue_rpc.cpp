@@ -1138,7 +1138,9 @@ int32_t rogue_playerdata_validate(int64_t *cashoutp,uint256 &playertxid,struct C
             fprintf(stderr,"newdata[%d] != playerdata[%d], numkeys.%d %s pub.%s playertxid.%s good.%d bad.%d\n",(int32_t)newdata.size(),(int32_t)playerdata.size(),numkeys,rogueaddr,pubkey33_str(str2,(uint8_t *)&pk),playertxid.GetHex().c_str(),good,bad);
         }
     }
-    //fprintf(stderr,"no keys rogue_extractgame %s\n",gametxid.GetHex().c_str());
+    sprintf(fname,"rogue.%llu.pack",(long long)seed);
+    remove(fname);
+ //fprintf(stderr,"no keys rogue_extractgame %s\n",gametxid.GetHex().c_str());
     return(-1);
 }
 
