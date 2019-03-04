@@ -3527,8 +3527,8 @@ bool dilithium_Rvalidate(struct CCcontract_info *cp,int32_t height,Eval *eval,co
                         if ( hashstr->destpubtxid != txid )
                         {
                             if ( hashstr->destpubtxid != zeroid )
-                                fprintf(stderr,"overwriting %s %s with %s\n",handle.c_str(),hashstr->destpubtxid.GetHex().c_str(),txid.GetHex().c_str());
-                            fprintf(stderr,"%s <- %s\n",handle.c_str(),txid.GetHex().c_str());
+                                fprintf(stderr,"ht.%d overwriting %s %s with %s\n",height,handle.c_str(),hashstr->destpubtxid.GetHex().c_str(),txid.GetHex().c_str());
+                            fprintf(stderr,"ht.%d %s <- %s\n",height,handle.c_str(),txid.GetHex().c_str());
                             hashstr->destpubtxid = txid;
                         }
                     }
@@ -3565,7 +3565,11 @@ bool dilithium_Rvalidate(struct CCcontract_info *cp,int32_t height,Eval *eval,co
             else if ( dilithium_registrationpub33(oldpub33,hashstr->destpubtxid) == 0 )
             {
                 if ( oldpub33 == pub33 )
+                {
+                    hashstr->destpubtxid = txid;
+                    fprintf(stderr,"ht.%d %s <- %s\n",height,handle.c_str(),txid.GetHex().c_str());
                     return(true);
+                }
             }
             return eval->Invalid("duplicate dilithium handle rejected");
         }
