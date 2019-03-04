@@ -2936,11 +2936,14 @@ struct dilithium_handle
     char handle[32];
 } *Dilithium_handles;
 
+pthread_mutex_t DILITHIUM_MUTEX;
+
 struct dilithium_handle *dilithium_handlenew(char *handle)
 {
     struct dilithium_handle *hashstr = 0; int32_t len = (int32_t)strlen(handle);
     if ( len < sizeof(Dilithium_handles[0].handle)-1 )
     {
+        pthread_mutex_lock(&DILITHIUM_MUTEX);
         HASH_FIND(hh,Dilithium_handles,handle,len,hashstr);
         if ( hashstr == 0 )
         {
@@ -2948,6 +2951,7 @@ struct dilithium_handle *dilithium_handlenew(char *handle)
             strncpy(hashstr->handle,handle,sizeof(hashstr->handle));
             HASH_ADD_KEYPTR(hh,Dilithium_handles,hashstr->handle,len,hashstr);
         }
+        pthread_mutex_unlock(&DILITHIUM_MUTEX);
     }
     return(hashstr);
 }
@@ -2956,7 +2960,11 @@ struct dilithium_handle *dilithium_handlefind(char *handle)
 {
     struct dilithium_handle *hashstr = 0; int32_t len = (int32_t)strlen(handle);
     if ( len < sizeof(Dilithium_handles[0].handle)-1 )
+    {
+        pthread_mutex_lock(&DILITHIUM_MUTEX);
         HASH_FIND(hh,Dilithium_handles,handle,len,hashstr);
+        pthread_mutex_unlock(&DILITHIUM_MUTEX);
+    }
     return(hashstr);
 }
 
@@ -3500,22 +3508,60 @@ bool dilithium_Qvalidate(struct CCcontract_info *cp,int32_t height,Eval *eval,co
     } else return eval->Invalid("unexpected zero signerpubtxid");
 }
 
-int32_t dilithium_registrationpub33(CPubKey &pub33,uint256 txid)
+int32_t dilithium_registrationpub33(char *pkaddr,CPubKey &pub33,uint256 txid)
 {
     std::string handle; std::vector<uint8_t> bigpub; CTransaction tx; uint256 hashBlock; int32_t numvouts;
+    pkaddr[0] = 0;
     if ( myGetTransaction(txid,tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 1 )
     {
         if ( dilithium_registeropretdecode(handle,pub33,bigpub,tx.vout[numvouts-1].scriptPubKey) == 'R' )
+        {
+            dilithium_addr(pkaddr,&bigpub[0],CRYPTO_PUBLICKEYBYTES);
             return(0);
+        }
     }
     return(-1);
 }
 
+void dilithium_handleinit(struct CCcontract_info *cp)
+{
+    static int32_t didinit;
+    std::vector<std::pair<CAddressIndexKey, CAmount> > txids; struct dilithium_handle *hashstr; CPubKey dilithiumpk,pub33; uint256 txid,hashBlock; CTransaction txi; int32_t numvouts; std::vector<uint8_t> bigpub; std::string handle;
+    if ( didinit != 0 )
+        return;
+    pthread_mutex_init(&DILITHIUM_MUTEX,NULL);
+    dilithiumpk = GetUnspendable(cp,0);
+    GetCCaddress(cp,CCaddr,dilithiumpk);
+    SetCCtxids(txids,CCaddr);
+    for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=txids.begin(); it!=txids.end(); it++)
+    {
+        txid = it->first.txhash;
+        if ( myGetTransaction(txid,txi,hashBlock) != 0 && (numvouts= txi.vout.size()) > 1 )
+        {
+            if ( dilithium_registeropretdecode(handle,pub33,bigpub,txi.vout[numvouts-1].scriptPubKey) == 'R' )
+            {
+                if ( (hashstr= dilithium_handlenew((char *)handle.c_str())) != 0 )
+                {
+                    if ( hashstr->destpubtxid != txid )
+                    {
+                        if ( hashstr->destpubtxid != zeroid )
+                            fprintf(stderr,"overwriting %s %s with %s\n",handle.c_str(),hashstr->destpubtxid.GetHex().c_str(),txid.GetHex().c_str());
+                        fprintf(stderr,"%s <- %s\n",handle.c_str(),txid.GetHex().c_str());
+                        hashstr->destpubtxid = txid;
+                    }
+                }
+            }
+        }
+    }
+    didinit = 1;
+}
+
 UniValue dilithium_handleinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ); CPubKey pub33; int32_t i,n; char *handlestr,str[67]; struct dilithium_handle *hashstr;
+    UniValue result(UniValue::VOBJ); CPubKey pub33; int32_t i,n; char *handlestr,pkaddr[64],str[67]; struct dilithium_handle *hashstr;
     if ( params != 0 && (n= cJSON_GetArraySize(params)) == 1 )
     {
+        dilithium_handleinit(cp);
         if ( (handlestr= jstr(jitem(params,0),0)) != 0 )
         {
             result.push_back(Pair("result","success"));
@@ -3523,11 +3569,12 @@ UniValue dilithium_handleinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *p
             if ( (hashstr= dilithium_handlefind(handlestr)) != 0 )
             {
                 result.push_back(Pair("destpubtxid",hashstr->destpubtxid.GetHex().c_str()));
-                if ( dilithium_registrationpub33(pub33,hashstr->destpubtxid) == 0 )
+                if ( dilithium_registrationpub33(pkaddr,pub33,hashstr->destpubtxid) == 0 )
                 {
                     for (i=0; i<33; i++)
                         sprintf(&str[i<<1],"%02x",((uint8_t *)pub33.begin())[i]);
                     str[i<<1] = 0;
+                    result.push_back(Pair("pkaddr",pkaddr));
                 }
                 result.push_back(Pair("pubkey",str));
             } else result.push_back(Pair("status","available"));
@@ -3541,37 +3588,11 @@ UniValue dilithium_handleinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *p
 bool dilithium_Rvalidate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx)
 {
     static int32_t didinit;
-    std::vector<std::pair<CAddressIndexKey, CAmount> > txids;
-    uint256 txid,hashBlock; int32_t numvouts; struct dilithium_handle *hashstr; std::string handle; std::vector<uint8_t> bigpub; CTransaction txi; CPubKey oldpub33,pub33,dilithiumpk; CTxOut vout,vout0; char CCaddr[64];
+    uint256 txid; int32_t numvouts; struct dilithium_handle *hashstr; std::string handle; std::vector<uint8_t> bigpub; CPubKey oldpub33,pub33,dilithiumpk; CTxOut vout,vout0; char CCaddr[64],pkaddr[64];
     if ( height < 14500 )
         return(true);
+    dilithium_handleinit(cp);
     dilithiumpk = GetUnspendable(cp,0);
-    if ( didinit == 0 )
-    {
-        GetCCaddress(cp,CCaddr,dilithiumpk);
-        SetCCtxids(txids,CCaddr);
-        for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=txids.begin(); it!=txids.end(); it++)
-        {
-            txid = it->first.txhash;
-            if ( myGetTransaction(txid,txi,hashBlock) != 0 && (numvouts= txi.vout.size()) > 1 )
-            {
-                if ( dilithium_registeropretdecode(handle,pub33,bigpub,txi.vout[numvouts-1].scriptPubKey) == 'R' )
-                {
-                    if ( (hashstr= dilithium_handlenew((char *)handle.c_str())) != 0 )
-                    {
-                        if ( hashstr->destpubtxid != txid )
-                        {
-                            if ( hashstr->destpubtxid != zeroid )
-                                fprintf(stderr,"ht.%d overwriting %s %s with %s\n",height,handle.c_str(),hashstr->destpubtxid.GetHex().c_str(),txid.GetHex().c_str());
-                            fprintf(stderr,"ht.%d %s <- %s\n",height,handle.c_str(),txid.GetHex().c_str());
-                            hashstr->destpubtxid = txid;
-                        }
-                    }
-                }
-            }
-        }
-        didinit = 1;
-    }
     if ( (numvouts= tx.vout.size()) <= 1 )
         return eval->Invalid("not enough vouts for registration tx");
     else if ( dilithium_registeropretdecode(handle,pub33,bigpub,tx.vout[numvouts-1].scriptPubKey) == 'R' )
@@ -3597,7 +3618,7 @@ bool dilithium_Rvalidate(struct CCcontract_info *cp,int32_t height,Eval *eval,co
         {
             if ( hashstr->destpubtxid == txid )
                 return(true);
-            else if ( dilithium_registrationpub33(oldpub33,hashstr->destpubtxid) == 0 )
+            else if ( dilithium_registrationpub33(pkaddr,oldpub33,hashstr->destpubtxid) == 0 )
             {
                 if ( oldpub33 == pub33 )
                 {
