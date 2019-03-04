@@ -504,6 +504,31 @@ int64_t AddCClibInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubK
     return(totalinputs);
 }
 
+int64_t AddCClibtxfee(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk)
+{
+    char coinaddr[64]; int64_t txfee = 10000; uint256 txid,hashBlock; CTransaction vintx; int32_t vout;
+    std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
+    GetCCaddress(cp,coinaddr,pk);
+    SetCCunspents(unspentOutputs,coinaddr);
+    for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
+    {
+        txid = it->first.txhash;
+        vout = (int32_t)it->first.index;
+        //char str[65]; fprintf(stderr,"%s check %s/v%d %.8f vs %.8f\n",coinaddr,uint256_str(str,txid),vout,(double)it->second.satoshis/COIN,(double)threshold/COIN);
+        if ( it->second.satoshis < txfee )
+            continue;
+        if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
+        {
+            if ( (nValue= IsCClibvout(cp,vintx,vout,coinaddr)) != 0 && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0 )
+            {
+                mtx.vin.push_back(CTxIn(txid,vout,CScript()));
+                return(it->second.satoshis);
+            } //else fprintf(stderr,"nValue %.8f too small or already spent in mempool\n",(double)nValue/COIN);
+        } else fprintf(stderr,"couldnt get tx\n");
+    }
+    return(0);
+}
+
 std::string Faucet2Fund(struct CCcontract_info *cp,uint64_t txfee,int64_t funds)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
