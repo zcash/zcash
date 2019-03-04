@@ -3508,6 +3508,8 @@ bool dilithium_Rvalidate(struct CCcontract_info *cp,int32_t height,Eval *eval,co
     static int32_t didinit;
     std::vector<std::pair<CAddressIndexKey, CAmount> > txids;
     uint256 txid,hashBlock; int32_t numvouts; struct dilithium_handle *hashstr; std::string handle; std::vector<uint8_t> bigpub; CTransaction txi; CPubKey oldpub33,pub33,dilithiumpk; CTxOut vout,vout0; char CCaddr[64];
+    if ( height < 14500 )
+        return(true);
     dilithiumpk = GetUnspendable(cp,0);
     if ( didinit == 0 )
     {
