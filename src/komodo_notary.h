@@ -15,7 +15,6 @@
 
 
 #include "komodo_defs.h"
-
 #include "komodo_cJSON.h"
 
 #include "notaries_staked.h"

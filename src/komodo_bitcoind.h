@@ -62,6 +62,25 @@ void init_string(struct return_string *s)
     s->ptr[0] = '\0';
 }
 
+int tx_height( const uint256 &hash ){
+    int nHeight = 0;
+    CTransaction tx;
+    uint256 hashBlock;
+    if (!GetTransaction(hash, tx, hashBlock, true)) {
+        fprintf(stderr,"tx hash %s does not exist!\n", hash.ToString().c_str() );
+    }
+
+    BlockMap::const_iterator it = mapBlockIndex.find(hashBlock);
+    if (it != mapBlockIndex.end()) {
+        nHeight = it->second->GetHeight();
+        //fprintf(stderr,"blockHash %s height %d\n",hashBlock.ToString().c_str(), nHeight);
+    } else {
+        fprintf(stderr,"block hash %s does not exist!\n", hashBlock.ToString().c_str() );
+    }
+    return nHeight;
+}
+
+
 /************************************************************************
  *
  * Use the "writer" to accumulate text until done

@@ -84,6 +84,8 @@ UniValue z_getoperationstatus_IMPL(const UniValue&, bool);
 #define PLAN_NAME_MAX   8
 #define VALID_PLAN_NAME(x)  (strlen(x) <= PLAN_NAME_MAX)
 
+int tx_height( const uint256 &hash );
+
 std::string HelpRequiringPassphrase()
 {
     return pwalletMain && pwalletMain->IsCrypted()
@@ -933,9 +935,20 @@ UniValue getreceivedbyaddress(const UniValue& params, bool fHelp)
             continue;
 
         BOOST_FOREACH(const CTxOut& txout, wtx.vout)
-            if (txout.scriptPubKey == scriptPubKey)
-                if (wtx.GetDepthInMainChain() >= nMinDepth)
-                    nAmount += txout.nValue; // komodo_interest?
+            if (txout.scriptPubKey == scriptPubKey) {
+                int nDepth    = wtx.GetDepthInMainChain();
+                if( nMinDepth > 1 ) {
+                    int nHeight    = tx_height(wtx.GetHash());
+                    int dpowconfs  = komodo_dpowconfs(nHeight, nDepth);
+                    if (dpowconfs >= nMinDepth) {
+                        nAmount   += txout.nValue; // komodo_interest?
+                    }
+                } else {
+                    if (nDepth  >= nMinDepth) {
+                        nAmount += txout.nValue; // komodo_interest?
+                    }
+                }
+            }
     }
 
     return  ValueFromAmount(nAmount);
@@ -1013,8 +1026,18 @@ CAmount GetAccountBalance(CWalletDB& walletdb, const string& strAccount, int nMi
         CAmount nReceived, nSent, nFee;
         wtx.GetAccountAmounts(strAccount, nReceived, nSent, nFee, filter);
 
-        if (nReceived != 0 && wtx.GetDepthInMainChain() >= nMinDepth)
-            nBalance += nReceived;
+        int nDepth    = wtx.GetDepthInMainChain();
+        if( nMinDepth > 1 ) {
+            int nHeight    = tx_height(wtx.GetHash());
+            int dpowconfs  = komodo_dpowconfs(nHeight, nDepth);
+            if (nReceived != 0 && dpowconfs >= nMinDepth) {
+                nBalance += nReceived;
+            }
+        } else {
+            if (nReceived != 0 && wtx.GetDepthInMainChain() >= nMinDepth) {
+                nBalance += nReceived;
+            }
+        }
         nBalance -= nSent + nFee;
     }
 
@@ -1186,10 +1209,20 @@ UniValue getbalance(const UniValue& params, bool fHelp)
             list<COutputEntry> listReceived;
             list<COutputEntry> listSent;
             wtx.GetAmounts(listReceived, listSent, allFee, strSentAccount, filter);
-            if (wtx.GetDepthInMainChain() >= nMinDepth)
-            {
-                BOOST_FOREACH(const COutputEntry& r, listReceived)
-                    nBalance += r.amount;
+
+            int nDepth    = wtx.GetDepthInMainChain();
+            if( nMinDepth > 1 ) {
+                 int nHeight    = tx_height(wtx.GetHash());
+                 int dpowconfs  = komodo_dpowconfs(nHeight, nDepth);
+                 if (dpowconfs >= nMinDepth) {
+                    BOOST_FOREACH(const COutputEntry& r, listReceived)
+                        nBalance += r.amount;
+                 }
+             } else {
+                 if (nDepth >= nMinDepth) {
+                    BOOST_FOREACH(const COutputEntry& r, listReceived)
+                        nBalance += r.amount;
+                 }
             }
             BOOST_FOREACH(const COutputEntry& s, listSent)
                 nBalance -= s.amount;
@@ -1460,8 +1493,7 @@ UniValue sendmany(const UniValue& params, bool fHelp)
     EnsureWalletIsUnlocked();
 
     // Check funds
-    CAmount nBalance = pwalletMain->GetBalance();
-    //CAmount nBalance = GetAccountBalance(strAccount, nMinDepth, ISMINE_SPENDABLE);
+    CAmount nBalance = GetAccountBalance(strAccount, nMinDepth, ISMINE_SPENDABLE);
     if (totalAmount > nBalance)
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Account has insufficient funds");
 
@@ -1572,9 +1604,16 @@ UniValue ListReceived(const UniValue& params, bool fByAccounts)
         if (wtx.IsCoinBase() || !CheckFinalTx(wtx))
             continue;
 
-        int nDepth = wtx.GetDepthInMainChain();
-        if (nDepth < nMinDepth)
-            continue;
+        int nDepth    = wtx.GetDepthInMainChain();
+        if( nMinDepth > 1 ) {
+            int nHeight   = tx_height(wtx.GetHash());
+            int dpowconfs = komodo_dpowconfs(nHeight, nDepth);
+            if (dpowconfs < nMinDepth)
+                continue;
+        } else {
+            if (nDepth < nMinDepth)
+                continue;
+        }
 
         BOOST_FOREACH(const CTxOut& txout, wtx.vout)
         {
@@ -2851,8 +2890,16 @@ UniValue listunspent(const UniValue& params, bool fHelp)
     LOCK2(cs_main, pwalletMain->cs_wallet);
     pwalletMain->AvailableCoins(vecOutputs, false, NULL, true);
     BOOST_FOREACH(const COutput& out, vecOutputs) {
-        if (out.nDepth < nMinDepth || out.nDepth > nMaxDepth)
-            continue;
+        int nDepth    = out.tx->GetDepthInMainChain();
+        if( nMinDepth > 1 ) {
+            int nHeight    = tx_height(out.tx->GetHash());
+            int dpowconfs  = komodo_dpowconfs(nHeight, nDepth);
+            if (dpowconfs < nMinDepth || dpowconfs > nMaxDepth)
+                continue;
+        } else {
+            if (out.nDepth < nMinDepth || out.nDepth > nMaxDepth)
+                continue;
+        }
 
         CTxDestination address;
         const CScript& scriptPubKey = out.tx->vout[out.i].scriptPubKey;
@@ -3068,28 +3115,17 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
 
         for (auto & entry : sproutEntries) {
             UniValue obj(UniValue::VOBJ);
-            int nHeight = 0;
-            CTransaction tx;
-            uint256 hashBlock;
+
+            int nHeight   = tx_height(entry.jsop.hash);
+            int dpowconfs = komodo_dpowconfs(nHeight, entry.confirmations);
+            // Only return notarized results when minconf>1
+            if (nMinDepth > 1 && dpowconfs == 1)
+                continue;
 
             obj.push_back(Pair("txid", entry.jsop.hash.ToString()));
             obj.push_back(Pair("jsindex", (int)entry.jsop.js ));
             obj.push_back(Pair("jsoutindex", (int)entry.jsop.n));
-
-            if (!GetTransaction(entry.jsop.hash, tx, hashBlock, true)) {
-                // TODO: should we throw JSONRPCError ?
-                fprintf(stderr,"tx hash %s does not exist!\n", entry.jsop.hash.ToString().c_str() );
-            }
-
-            BlockMap::const_iterator it = mapBlockIndex.find(hashBlock);
-            if (it != mapBlockIndex.end()) {
-                nHeight = it->second->GetHeight();
-                //fprintf(stderr,"blockHash %s height %d\n",hashBlock.ToString().c_str(), nHeight);
-            } else {
-                // TODO: should we throw JSONRPCError ?
-                fprintf(stderr,"block hash %s does not exist!\n", hashBlock.ToString().c_str() );
-            }
-            obj.push_back(Pair("confirmations", komodo_dpowconfs(nHeight, entry.confirmations)));
+            obj.push_back(Pair("confirmations", dpowconfs));
             obj.push_back(Pair("rawconfirmations", entry.confirmations));
             bool hasSproutSpendingKey = pwalletMain->HaveSproutSpendingKey(boost::get<libzcash::SproutPaymentAddress>(entry.address));
             obj.push_back(Pair("spendable", hasSproutSpendingKey));
@@ -3105,25 +3141,17 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
 
         for (auto & entry : saplingEntries) {
             UniValue obj(UniValue::VOBJ);
+
+            int nHeight   = tx_height(entry.op.hash);
+            int dpowconfs = komodo_dpowconfs(nHeight, entry.confirmations);
+
+            // Only return notarized results when minconf>1
+            if (nMinDepth > 1 && dpowconfs == 1)
+                continue;
+
             obj.push_back(Pair("txid", entry.op.hash.ToString()));
             obj.push_back(Pair("outindex", (int)entry.op.n));
-            int nHeight = 0;
-            CTransaction tx;
-            uint256 hashBlock;
-            if (!GetTransaction(entry.op.hash, tx, hashBlock, true)) {
-                // TODO: should we throw JSONRPCError ?
-                fprintf(stderr,"tx hash %s does not exist!\n", entry.op.hash.ToString().c_str() );
-            }
-
-            BlockMap::const_iterator it = mapBlockIndex.find(hashBlock);
-            if (it != mapBlockIndex.end()) {
-                nHeight = it->second->GetHeight();
-                //fprintf(stderr,"blockHash %s height %d\n",hashBlock.ToString().c_str(), nHeight);
-            } else {
-                // TODO: should we throw JSONRPCError ?
-                fprintf(stderr,"block hash %s does not exist!\n", hashBlock.ToString().c_str() );
-            }
-            obj.push_back(Pair("confirmations", komodo_dpowconfs(nHeight, entry.confirmations)));
+            obj.push_back(Pair("confirmations", dpowconfs));
             obj.push_back(Pair("rawconfirmations", entry.confirmations));
             libzcash::SaplingIncomingViewingKey ivk;
             libzcash::SaplingFullViewingKey fvk;
@@ -3143,7 +3171,6 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
 
     return results;
 }
-
 
 UniValue fundrawtransaction(const UniValue& params, bool fHelp)
 {
@@ -3795,8 +3822,17 @@ CAmount getBalanceTaddr(std::string transparentAddress, int minDepth=1, bool ign
     pwalletMain->AvailableCoins(vecOutputs, false, NULL, true);
 
     BOOST_FOREACH(const COutput& out, vecOutputs) {
-        if (out.nDepth < minDepth) {
-            continue;
+        int nDepth    = out.tx->GetDepthInMainChain();
+        if( minDepth > 1 ) {
+            int nHeight    = tx_height(out.tx->GetHash());
+            int dpowconfs  = komodo_dpowconfs(nHeight, nDepth);
+            if (dpowconfs < minDepth) {
+                continue;
+            }
+        } else {
+            if (out.nDepth < minDepth) {
+                continue;
+            }
         }
 
         if (ignoreUnspendable && !out.fSpendable) {
@@ -3901,21 +3937,11 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
     if (boost::get<libzcash::SproutPaymentAddress>(&zaddr) != nullptr) {
         for (CSproutNotePlaintextEntry & entry : sproutEntries) {
             UniValue obj(UniValue::VOBJ);
-            int nHeight = 0;
-            CTransaction tx;
-            uint256 hashBlock;
-
-            if (GetTransaction(entry.jsop.hash, tx, hashBlock, true)) {
-                BlockMap::const_iterator it = mapBlockIndex.find(hashBlock);
-                if (it != mapBlockIndex.end()) {
-                    nHeight = it->second->GetHeight();
-                    //fprintf(stderr,"blockHash %s height %d\n",hashBlock.ToString().c_str(), nHeight);
-                } else {
-                    fprintf(stderr,"block hash %s does not exist!\n", hashBlock.ToString().c_str() );
-                }
-            } else {
-                fprintf(stderr,"tx hash %s does not exist!\n", entry.jsop.hash.ToString().c_str() );
-            }
+            int nHeight   = tx_height(entry.jsop.hash);
+            int dpowconfs = komodo_dpowconfs(nHeight, entry.confirmations);
+            // Only return notarized results when minconf>1
+            if (nMinDepth > 1 && dpowconfs == 1)
+                continue;
 
             obj.push_back(Pair("txid", entry.jsop.hash.ToString()));
             obj.push_back(Pair("amount", ValueFromAmount(CAmount(entry.plaintext.value()))));
@@ -3924,7 +3950,7 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
             obj.push_back(Pair("jsindex", entry.jsop.js));
             obj.push_back(Pair("jsoutindex", entry.jsop.n));
             obj.push_back(Pair("rawconfirmations", entry.confirmations));
-            obj.push_back(Pair("confirmations", komodo_dpowconfs(nHeight, entry.confirmations)));
+            obj.push_back(Pair("confirmations", dpowconfs));
             if (hasSpendingKey) {
                 obj.push_back(Pair("change", pwalletMain->IsNoteSproutChange(nullifierSet, entry.address, entry.jsop)));
             }
@@ -3933,27 +3959,19 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
     } else if (boost::get<libzcash::SaplingPaymentAddress>(&zaddr) != nullptr) {
         for (SaplingNoteEntry & entry : saplingEntries) {
             UniValue obj(UniValue::VOBJ);
-            int nHeight = 0;
-            CTransaction tx;
-            uint256 hashBlock;
 
-            if (GetTransaction(entry.op.hash, tx, hashBlock, true)) {
-                BlockMap::const_iterator it = mapBlockIndex.find(hashBlock);
-                if (it != mapBlockIndex.end()) {
-                    nHeight = it->second->GetHeight();
-                    //fprintf(stderr,"blockHash %s height %d\n",hashBlock.ToString().c_str(), nHeight);
-                } else {
-                    fprintf(stderr,"block hash %s does not exist!\n", hashBlock.ToString().c_str() );
-                }
-            } else {
-                fprintf(stderr,"tx hash %s does not exist!\n", entry.op.hash.ToString().c_str() );
-            }
+            int nHeight   = tx_height(entry.op.hash);
+            int dpowconfs = komodo_dpowconfs(nHeight, entry.confirmations);
+            // Only return notarized results when minconf>1
+            if (nMinDepth > 1 && dpowconfs == 1)
+                continue;
+
             obj.push_back(Pair("txid", entry.op.hash.ToString()));
             obj.push_back(Pair("amount", ValueFromAmount(CAmount(entry.note.value()))));
             obj.push_back(Pair("memo", HexStr(entry.memo)));
             obj.push_back(Pair("outindex", (int)entry.op.n));
             obj.push_back(Pair("rawconfirmations", entry.confirmations));
-            obj.push_back(Pair("confirmations", komodo_dpowconfs(nHeight, entry.confirmations)));
+            obj.push_back(Pair("confirmations", dpowconfs));
             if (hasSpendingKey) {
               obj.push_back(Pair("change", pwalletMain->IsNoteSaplingChange(nullifierSet, entry.address, entry.op)));
             }
@@ -8024,8 +8042,6 @@ UniValue test_heirmarker(const UniValue& params, bool fHelp)
 
 	cp = CCinit(&C, EVAL_HEIR);
 	return(FinalizeCCTx(0, cp, mtx, myPubkey, 10000, opret));
-
-
 }
 
 

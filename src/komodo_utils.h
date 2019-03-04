@@ -1366,7 +1366,8 @@ void komodo_statefname(char *fname,char *symbol,char *str)
             fname[len - n] = 0;
         else
         {
-            printf("unexpected fname.(%s) vs %s [%s] n.%d len.%d (%s)\n",fname,symbol,ASSETCHAINS_SYMBOL,n,len,&fname[len - n]);
+            if ( strcmp(symbol,"REGTEST") != 0 )
+                printf("unexpected fname.(%s) vs %s [%s] n.%d len.%d (%s)\n",fname,symbol,ASSETCHAINS_SYMBOL,n,len,&fname[len - n]);
             return;
         }
     }

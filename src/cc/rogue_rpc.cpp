@@ -1071,7 +1071,7 @@ UniValue rogue_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 int32_t rogue_playerdata_validate(int64_t *cashoutp,uint256 &playertxid,struct CCcontract_info *cp,std::vector<uint8_t> playerdata,uint256 gametxid,CPubKey pk)
 {
     static uint32_t good,bad; static uint256 prevgame;
-    char str[512],*keystrokes,rogueaddr[64],str2[67]; int32_t i,dungeonlevel,numkeys; std::vector<uint8_t> newdata; uint64_t seed,mult = 10; CPubKey roguepk; struct rogue_player P;
+    char str[512],*keystrokes,rogueaddr[64],str2[67],fname[64]; int32_t i,dungeonlevel,numkeys; std::vector<uint8_t> newdata; uint64_t seed,mult = 10; CPubKey roguepk; struct rogue_player P;
     *cashoutp = 0;
     roguepk = GetUnspendable(cp,0);
     GetCCaddress1of2(cp,rogueaddr,roguepk,pk);
@@ -1080,6 +1080,9 @@ int32_t rogue_playerdata_validate(int64_t *cashoutp,uint256 &playertxid,struct C
     {
         //fprintf(stderr,"numkeys.%d rogue_extractgame %s\n",numkeys,gametxid.GetHex().c_str());
         free(keystrokes);
+        sprintf(fname,"rogue.%llu.pack",(long long)seed);
+        remove(fname);
+
         //fprintf(stderr,"extracted.(%s)\n",str);
         for (i=0; i<playerdata.size(); i++)
             ((uint8_t *)&P)[i] = playerdata[i];
@@ -1135,7 +1138,9 @@ int32_t rogue_playerdata_validate(int64_t *cashoutp,uint256 &playertxid,struct C
             fprintf(stderr,"newdata[%d] != playerdata[%d], numkeys.%d %s pub.%s playertxid.%s good.%d bad.%d\n",(int32_t)newdata.size(),(int32_t)playerdata.size(),numkeys,rogueaddr,pubkey33_str(str2,(uint8_t *)&pk),playertxid.GetHex().c_str(),good,bad);
         }
     }
-    //fprintf(stderr,"no keys rogue_extractgame %s\n",gametxid.GetHex().c_str());
+    sprintf(fname,"rogue.%llu.pack",(long long)seed);
+    remove(fname);
+ //fprintf(stderr,"no keys rogue_extractgame %s\n",gametxid.GetHex().c_str());
     return(-1);
 }
 
@@ -1499,9 +1504,7 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
                         case 'R':
                             if ( (funcid= rogue_registeropretdecode(gametxid,tokenid,playertxid,scriptPubKey)) != 'R' )
                             {
-                                //fprintf(stderr,"height.%d couldnt decode register opret\n",height);
-                                //if ( height > 20000 )
-                                    return eval->Invalid("couldnt decode register opret");
+                                return eval->Invalid("couldnt decode register opret");
                             }
                             // baton is created
                             // validation is done below
@@ -1509,23 +1512,13 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
                         case 'K':
                             if ( (funcid= rogue_keystrokesopretdecode(gametxid,batontxid,pk,keystrokes,scriptPubKey)) != 'K' )
                             {
-                                //fprintf(stderr,"height.%d couldnt decode keystrokes opret\n",height);
-                                //if ( height > 20000 )
-                                    return eval->Invalid("couldnt decode keystrokes opret");
+                                return eval->Invalid("couldnt decode keystrokes opret");
                             }
                             // spending the baton proves it is the user if the pk is the signer
                             return(true);
                             break;
                         case 'H': case 'Q':
-                            /*if ( (f= rogue_highlanderopretdecode(gametxid,tokenid,regslot,pk,playerdata,symbol,pname,scriptPubKey)) != funcid )
-                            {
-                                //fprintf(stderr,"height.%d couldnt decode H/Q opret\n",height);
-                                //if ( height > 20000 )
-                                    return eval->Invalid("couldnt decode H/Q opret");
-                            }
-                            fprintf(stderr,"height.%d decoded H/Q opret\n",height);
-                            // spending the baton proves it is the user if the pk is the signer
-                            // rest of validation is done below*/
+                            // done in the next switch statement as there are some H/Q tx with playerdata which would skip this section
                             break;
                         default:
                             return eval->Invalid("illegal rogue non-decoded funcid");
