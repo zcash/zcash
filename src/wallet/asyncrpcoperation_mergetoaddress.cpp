@@ -23,14 +23,13 @@
 #include "utiltime.h"
 #include "wallet.h"
 #include "walletdb.h"
+#include "wallet/paymentdisclosuredb.h"
 #include "zcash/IncrementalMerkleTree.hpp"
 
 #include <chrono>
 #include <iostream>
 #include <string>
 #include <thread>
-
-#include "paymentdisclosuredb.h"
 
 using namespace libzcash;
 

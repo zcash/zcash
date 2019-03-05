@@ -167,8 +167,6 @@ BITCOIN_CORE_H = \
   net.h \
   netbase.h \
   noui.h \
-  paymentdisclosure.h \
-  paymentdisclosuredb.h \
   policy/fees.h \
   pow.h \
   prevector.h \
@@ -220,6 +218,8 @@ BITCOIN_CORE_H = \
   wallet/asyncrpcoperation_shieldcoinbase.h \
   wallet/crypter.h \
   wallet/db.h \
+  wallet/paymentdisclosure.h \
+  wallet/paymentdisclosuredb.h \
   wallet/rpcwallet.h \
   wallet/wallet.h \
   wallet/wallet_ismine.h \
@@ -260,8 +260,6 @@ libbitcoin_server_a_SOURCES = \
   miner.cpp \
   net.cpp \
   noui.cpp \
-  paymentdisclosure.cpp \
-  paymentdisclosuredb.cpp \
   policy/fees.cpp \
   pow.cpp \
   rest.cpp \
@@ -309,8 +307,8 @@ libbitcoin_wallet_a_SOURCES = \
   wallet/asyncrpcoperation_shieldcoinbase.cpp \
   wallet/crypter.cpp \
   wallet/db.cpp \
-  paymentdisclosure.cpp \
-  paymentdisclosuredb.cpp \
+  wallet/paymentdisclosure.cpp \
+  wallet/paymentdisclosuredb.cpp \
   wallet/rpcdisclosure.cpp \
   wallet/rpcdump.cpp \
   wallet/rpcwallet.cpp \

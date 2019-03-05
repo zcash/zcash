@@ -23,6 +23,7 @@
 #include "zcash/IncrementalMerkleTree.hpp"
 #include "sodium.h"
 #include "miner.h"
+#include "wallet/paymentdisclosuredb.h"
 
 #include <array>
 #include <iostream>
@@ -31,9 +32,6 @@
 #include <string>
 
 #include "asyncrpcoperation_shieldcoinbase.h"
-
-#include "paymentdisclosure.h"
-#include "paymentdisclosuredb.h"
 
 using namespace libzcash;
 

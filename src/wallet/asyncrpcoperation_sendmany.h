@@ -12,7 +12,7 @@
 #include "zcash/JoinSplit.hpp"
 #include "zcash/Address.hpp"
 #include "wallet.h"
-#include "paymentdisclosure.h"
+#include "wallet/paymentdisclosure.h"
 
 #include <array>
 #include <unordered_map>

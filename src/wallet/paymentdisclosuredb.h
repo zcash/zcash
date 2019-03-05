@@ -5,7 +5,7 @@
 #ifndef ZCASH_PAYMENTDISCLOSUREDB_H
 #define ZCASH_PAYMENTDISCLOSUREDB_H
 
-#include "paymentdisclosure.h"
+#include <wallet/paymentdisclosure.h>
 
 #include <cstdint>
 #include <string>
