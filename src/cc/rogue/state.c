@@ -1429,6 +1429,11 @@ rs_write_object(struct rogue_state *rs,FILE *savef, THING *o)
     struct rogue_packitem *item;
     if (write_error)
         return(WRITESTAT);
+    if ( thing_find(o) < 0 )
+    {
+        fprintf(stderr,"cant find thing.%p in list\n",o);
+        return(0);
+    }
     if ( o->_o._o_packch != 0 )
     {
         item = &rs->P.roguepack[rs->P.packsize];
@@ -1478,6 +1483,7 @@ rs_write_object(struct rogue_state *rs,FILE *savef, THING *o)
     rs_write_int(savef, o->_o._o_flags);
     rs_write_int(savef, o->_o._o_group);
     rs_write_string(savef, o->_o._o_label);
+    fprintf(stderr,"label.%p\n",o->_o._o_label);
     return(WRITESTAT);
 }
 

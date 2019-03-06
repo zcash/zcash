@@ -20,6 +20,58 @@ int total = 0;			/* total dynamic memory bytes */
 #endif
 
 /*
+ * discard:
+ *	Free up an item
+ */
+
+int32_t itemcounter;
+THING *thingptrs[100000];
+int32_t numptrs;
+
+int32_t thing_find(THING *ptr)
+{
+    for (i=0; i<numptrs; i++)
+        if ( item == thingptrs[i] )
+            return(i);
+    return(-1);
+}
+
+void
+discard(THING *item)
+{
+#ifdef MASTER
+    total--;
+#endif
+    if ( 1 )
+    {
+        int32_t i;
+        for (i=0; i<numptrs; i++)
+            if ( item == thingptrs[i] )
+            {
+                thingptrs[i] = thingptrs[--numptrs];
+                thingptrs[numptrs] = 0;
+                break;
+            }
+    }
+    itemcounter--;
+    free((char *) item);
+}
+
+void garbage_collect()
+{
+    return;
+    int32_t i;
+    fprintf(stderr,"numptrs.%d free them\n",numptrs);
+    for (i=0; i<numptrs; i++)
+    {
+        //fprintf(stderr,"%p _t_type.%d otype.%d (%c)\n",thingptrs[i],thingptrs[i]->_t._t_type,thingptrs[i]->o_type,thingptrs[i]->o_type);
+        free(thingptrs[i]);
+    }
+    memset(thingptrs,0,sizeof(thingptrs));
+    numptrs = 0;
+}
+
+/*
  * detach:
  *	takes an item out of whatever linked list it might be in
  */
@@ -77,49 +129,7 @@ _free_list(THING **ptr)
     }
 }
 
-/*
- * discard:
- *	Free up an item
- */
 
-int32_t itemcounter;
-THING *thingptrs[100000];
-int32_t numptrs;
-
-void
-discard(THING *item)
-{
-#ifdef MASTER
-    total--;
-#endif
-    if ( 0 )
-    {
-        int32_t i;
-        for (i=0; i<numptrs; i++)
-            if ( item == thingptrs[i] )
-            {
-                thingptrs[i] = thingptrs[--numptrs];
-                thingptrs[numptrs] = 0;
-                break;
-            }
-    }
-    itemcounter--;
-    free((char *) item);
-}
-
-void garbage_collect()
-{
-    return;
-    int32_t i;
-    fprintf(stderr,"numptrs.%d free them\n",numptrs);
-    for (i=0; i<numptrs; i++)
-    {
-        //fprintf(stderr,"%p _t_type.%d otype.%d (%c)\n",thingptrs[i],thingptrs[i]->_t._t_type,thingptrs[i]->o_type,thingptrs[i]->o_type);
-        free(thingptrs[i]);
-    }
-    memset(thingptrs,0,sizeof(thingptrs));
-    numptrs = 0;
-}
 
 /*
  * new_item
@@ -139,7 +149,7 @@ new_item(void)
 #else
     item = (THING *)calloc(1, sizeof *item);
 #endif
-    if ( 0 )
+    if ( 1 )
     {
         thingptrs[numptrs++] = item;
         if ( (++itemcounter % 100) == 0 )

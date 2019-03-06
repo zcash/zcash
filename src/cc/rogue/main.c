@@ -742,7 +742,7 @@ int32_t rogue_sendrawtransaction(char *rawtx)
 
 void rogue_progress(struct rogue_state *rs,int32_t waitflag,uint64_t seed,char *keystrokes,int32_t num)
 {
-    char cmd[16384],hexstr[16384],params[32768],*retstr,*rawtx,*pastkeys; int32_t i,numpastkeys; cJSON *retjson;
+    char cmd[16384],hexstr[16384],params[32768],*retstr,*rawtx,*pastkeys,*pastcmp,*keys; int32_t i,len,numpastkeys; cJSON *retjson;
     //fprintf(stderr,"rogue_progress num.%d\n",num);
     if ( rs->guiflag != 0 && Gametxidstr[0] != 0 )
     {
@@ -767,6 +767,25 @@ void rogue_progress(struct rogue_state *rs,int32_t waitflag,uint64_t seed,char *
         // if not matching... panic?
         if ( 0 && (pastkeys= rogue_keystrokesload(&numpastkeys,seed,1)) != 0 )
         {
+            sprintf(params,"[\"extract\",\"17\",\"[%%22%s%%22]\"]",Gametxidstr);
+            if ( (retstr= komodo_issuemethod(USERPASS,"cclib",params,ROGUE_PORT)) != 0 )
+            {
+                if ( (retjson= cJSON_Parse(retstr)) != 0 )
+                {
+                    if ( (keys= jstr(retjson,"keystrokes")) != 0 )
+                    {
+                        len = strlen(keys) / 2;
+                        pastcmp = (char *)malloc(len + 1)
+                        decode_hex(pastcmp,len,keys);
+                        if ( len != numpastkeys || memcmp(pastcmp,pastkeys,len) != 0 )
+                        {
+                            fprintf(stderr,"pastcmp[%d] != pastkeys[%d]?\n",len,numpastkeys);
+                        }
+                        free(pastcmp);
+                    }
+                    free_json(retjson);
+                }
+            }
             free(pastkeys);
         }
 

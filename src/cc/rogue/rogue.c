@@ -286,7 +286,7 @@ char *rogue_keystrokesload(int32_t *numkeysp,uint64_t seed,int32_t counter)
         fclose(fp);
         num += fsize;
         counter++;
-        fprintf(stderr,"loaded %ld from (%s) total %d\n",fsize,fname,num);
+        //fprintf(stderr,"loaded %ld from (%s) total %d\n",fsize,fname,num);
     }
     *numkeysp = num;
     return(keystrokes);
