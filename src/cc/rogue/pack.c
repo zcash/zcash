@@ -163,6 +163,11 @@ int32_t num_packitems(struct rogue_state *rs)
     int32_t type = 0,n = 0,total = 0;
     for (; list != NULL; list = next(list))
     {
+        if ( thing_find(list) < 0 )
+        {
+            fprintf(stderr,"num_packitems cant find %p\n",list);
+            sleep(3);
+        }
         if ( list->o_packch != 0 )
         {
             n++;
