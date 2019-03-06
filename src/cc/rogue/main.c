@@ -765,7 +765,7 @@ void rogue_progress(struct rogue_state *rs,int32_t waitflag,uint64_t seed,char *
         }
         // extract and get keystrokes field and compare it to pastkeys
         // if not matching... panic?
-        if ( 0 && (pastkeys= rogue_keystrokesload(&numpastkeys,seed,1)) != 0 )
+        if ( 1 && (pastkeys= rogue_keystrokesload(&numpastkeys,seed,1)) != 0 )
         {
             sprintf(params,"[\"extract\",\"17\",\"[%%22%s%%22]\"]",Gametxidstr);
             if ( (retstr= komodo_issuemethod(USERPASS,"cclib",params,ROGUE_PORT)) != 0 )
@@ -777,15 +777,20 @@ void rogue_progress(struct rogue_state *rs,int32_t waitflag,uint64_t seed,char *
                         len = strlen(keys) / 2;
                         pastcmp = (char *)malloc(len + 1);
                         decode_hex(pastcmp,len,keys);
+                        fprintf(stderr,"keystrokes.(%s) vs pastkeys\n",keys);
+                        for (i=0; i<numpastkeys; i++)
+                            fprintf(stderr,"%02x",pastkeys[i]);
+                        fprintf(stderr,"\n");
                         if ( len != numpastkeys || memcmp(pastcmp,pastkeys,len) != 0 )
                         {
                             fprintf(stderr,"pastcmp[%d] != pastkeys[%d]?\n",len,numpastkeys);
                         }
                         free(pastcmp);
-                    }
+                    } else fprintf(stderr,"no keystrokes in (%s)\n",retstr);
                     free_json(retjson);
-                }
-            }
+                } else fprintf(stderr,"error parsing.(%s)\n",retstr);
+                free(retstr);
+            } else fprintf(stderr,"error extracting game\n");
             free(pastkeys);
         }
 
