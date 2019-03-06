@@ -307,11 +307,6 @@ attack(struct rogue_state *rs,THING *mp)
             {
                 remove_mon(rs,&mp->t_pos, moat(mp->t_pos.y, mp->t_pos.x), FALSE);
                 mp=NULL;
-if ( thing_find(steal) < 0 )
-{
-    fprintf(stderr,"steal %p not foun\n",steal);
-    sleep(3);
-}
                 leave_pack(rs,steal, FALSE, FALSE);
                 msg(rs,"she stole %s!", inv_name(steal, TRUE));
                 discard(steal);

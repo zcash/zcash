@@ -226,6 +226,11 @@ leave_pack(struct rogue_state *rs,THING *obj, bool newobj, bool all)
     
     inpack--;
     nobj = obj;
+    if ( thing_find(obj) < 0 )
+    {
+        fprintf(stderr,"leave_pack unknown obj %p\n",obj);
+        sleep(3);
+    }
     if (obj->o_count > 1 && !all)
     {
         last_pick = obj;
