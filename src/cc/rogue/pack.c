@@ -167,6 +167,7 @@ int32_t num_packitems(struct rogue_state *rs)
         {
             fprintf(stderr,"num_packitems cant find %p\n",list);
             sleep(3);
+            return(-1);
         }
         if ( list->o_packch != 0 )
         {
@@ -224,29 +225,29 @@ THING *
 leave_pack(struct rogue_state *rs,THING *obj, bool newobj, bool all)
 {
     THING *nobj;
-
+    
     inpack--;
     nobj = obj;
     if (obj->o_count > 1 && !all)
     {
-	last_pick = obj;
-	obj->o_count--;
-	if (obj->o_group)
-	    inpack++;
-	if (newobj)
-	{
-	    nobj = new_item();
-	    *nobj = *obj;
-	    next(nobj) = NULL;
-	    prev(nobj) = NULL;
-	    nobj->o_count = 1;
-	}
+        last_pick = obj;
+        obj->o_count--;
+        if (obj->o_group)
+            inpack++;
+        if (newobj)
+        {
+            nobj = new_item();
+            *nobj = *obj;
+            next(nobj) = NULL;
+            prev(nobj) = NULL;
+            nobj->o_count = 1;
+        }
     }
     else
     {
-	last_pick = NULL;
-	pack_used[obj->o_packch - 'a'] = FALSE;
-	detach(pack, obj);
+        last_pick = NULL;
+        pack_used[obj->o_packch - 'a'] = FALSE;
+        detach(pack, obj);
     }
     return nobj;
 }

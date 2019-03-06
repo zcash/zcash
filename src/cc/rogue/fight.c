@@ -290,27 +290,31 @@ attack(struct rogue_state *rs,THING *mp)
 		}
 		when 'N':
 		{
-		    register THING *obj, *steal;
-		    register int nobj;
+            register THING *obj, *steal;
+            register int nobj;
+            
+            /*
+             * Nymph's steal a magic item, look through the pack
+             * and pick out one we like.
+             */
+            steal = NULL;
+            for (nobj = 0, obj = pack; obj != NULL; obj = next(obj))
+                if (obj != cur_armor && obj != cur_weapon
+                    && obj != cur_ring[LEFT] && obj != cur_ring[RIGHT]
+                    && is_magic(obj) && rnd(++nobj) == 0)
+                    steal = obj;
+            if (steal != NULL)
+            {
+                remove_mon(rs,&mp->t_pos, moat(mp->t_pos.y, mp->t_pos.x), FALSE);
+                mp=NULL;
+                fprintf(stderr,"%d: (%c) hp.%d num.%d\n",counter,c,pstats.s_hpt,num_packitems(rs););
 
-		    /*
-		     * Nymph's steal a magic item, look through the pack
-		     * and pick out one we like.
-		     */
-		    steal = NULL;
-		    for (nobj = 0, obj = pack; obj != NULL; obj = next(obj))
-			if (obj != cur_armor && obj != cur_weapon
-			    && obj != cur_ring[LEFT] && obj != cur_ring[RIGHT]
-			    && is_magic(obj) && rnd(++nobj) == 0)
-				steal = obj;
-		    if (steal != NULL)
-		    {
-			remove_mon(rs,&mp->t_pos, moat(mp->t_pos.y, mp->t_pos.x), FALSE);
-                        mp=NULL;
-			leave_pack(rs,steal, FALSE, FALSE);
-			msg(rs,"she stole %s!", inv_name(steal, TRUE));
-			discard(steal);
-		    }
+                leave_pack(rs,steal, FALSE, FALSE);
+                msg(rs,"she stole %s!", inv_name(steal, TRUE));
+                fprintf(stderr,"%d: (%c) hp.%d num.%d\n",counter,c,pstats.s_hpt,num_packitems(rs););
+                discard(steal);
+                fprintf(stderr,"%d: (%c) hp.%d num.%d\n",counter,c,pstats.s_hpt,num_packitems(rs););
+            }
 		}
 		otherwise:
 		    break;
