@@ -24,15 +24,19 @@ class CryptoconditionsDiceTest(CryptoconditionsTestFramework):
         result = rpc1.getbalance()
         assert_greater_than(result, 100000)
 
-        dice  = rpc.diceaddress()
-        assert_equal(dice['result'], 'success')
-        for x in ['myCCaddress', 'DiceCCaddress', 'Dicemarker', 'myaddress']:
-            assert_equal(dice[x][0], 'R')
+        result  = rpc.diceaddress()
+        for x in result.keys():
+            print(x+": "+str(result[x]))  
+        assert_equal(result['result'], 'success')
+        for x in ['myCCaddress', 'DiceCCAddress', 'myaddress']:
+            assert_equal(result[x][0], 'R')
 
-        dice  = rpc.diceaddress(self.pubkey)
-        assert_equal(dice['result'], 'success')
-        for x in ['myCCaddress', 'DiceCCaddress', 'Dicemarker', 'myaddress', 'CCaddress']:
-            assert_equal(dice[x][0], 'R')
+        result  = rpc.diceaddress(self.pubkey)
+        for x in result.keys():
+            print(x+": "+str(result[x]))   
+        assert_equal(result['result'], 'success')
+        for x in ['myCCaddress', 'DiceCCAddress', 'myaddress', 'DiceCCTokensAddress', 'DiceNormalAddress']:
+            assert_equal(result[x][0], 'R')
 
         # no dice created yet
         result  = rpc.dicelist()

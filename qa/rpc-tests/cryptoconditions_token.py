@@ -21,22 +21,22 @@ class CryptoconditionsTokenTest(CryptoconditionsTestFramework):
 
         result = rpc.tokenaddress()
         assert_success(result)
-        for x in ['TokensCCaddress', 'myCCaddress', 'Tokensmarker', 'myaddress']:
+        for x in ['TokensCCAddress', 'myCCaddress', 'myCCAddress(Tokens)', 'myaddress', 'TokensNormalAddress']:
             assert_equal(result[x][0], 'R')
 
         result = rpc.tokenaddress(self.pubkey)
         assert_success(result)
-        for x in ['TokensCCaddress', 'myCCaddress', 'Tokensmarker', 'myaddress', 'CCaddress']:
+        for x in ['TokensCCAddress', 'myCCaddress', 'myCCAddress(Tokens)', 'myaddress', 'TokensNormalAddress']:
             assert_equal(result[x][0], 'R')
 
         result = rpc.assetsaddress()
         assert_success(result)
-        for x in ['AssetsCCaddress', 'myCCaddress', 'Assetsmarker', 'myaddress']:
+        for x in ['AssetsCCAddress', 'myCCaddress', 'myCCAddress(Assets)', 'myaddress', 'AssetsNormalAddress']:
             assert_equal(result[x][0], 'R')
 
         result = rpc.assetsaddress(self.pubkey)
         assert_success(result)
-        for x in ['AssetsCCaddress', 'myCCaddress', 'Assetsmarker', 'myaddress', 'CCaddress']:
+        for x in ['AssetsCCAddress', 'myCCaddress', 'myCCAddress(Assets)', 'myaddress', 'AssetsNormalAddress']:
             assert_equal(result[x][0], 'R')
 
         # there are no tokens created yet
@@ -61,7 +61,7 @@ class CryptoconditionsTokenTest(CryptoconditionsTestFramework):
         assert_equal(result[0], tokenid)
 
         # there are no token orders yet
-        result = rpc.tokenorders()
+        result = rpc.tokenorders(tokenid)
         assert_equal(result, [])
 
         # getting token balance for non existing tokenid
@@ -117,7 +117,7 @@ class CryptoconditionsTokenTest(CryptoconditionsTestFramework):
         tokenask = rpc.tokenask("100", tokenid, "7.77")
         tokenaskhex = tokenask['hex']
         tokenaskid = self.send_and_mine(tokenask['hex'], rpc)
-        result = rpc.tokenorders()
+        result = rpc.tokenorders(tokenid)
         order = result[0]
         assert order, "found order"
 
@@ -136,7 +136,7 @@ class CryptoconditionsTokenTest(CryptoconditionsTestFramework):
         assert txid, "found txid"
 
         # should be no token orders
-        result = rpc.tokenorders()
+        result = rpc.tokenorders(tokenid)
         assert_equal(result, [])
 
         # checking ask cancellation
@@ -157,7 +157,7 @@ class CryptoconditionsTokenTest(CryptoconditionsTestFramework):
         # from valid node
         cancel = rpc.tokencancelask(tokenid, testorderid)
         self.send_and_mine(cancel["hex"], rpc)
-        result = rpc.tokenorders()
+        result = rpc.tokenorders(tokenid)
         assert_equal(result, [])
 
 
@@ -184,7 +184,7 @@ class CryptoconditionsTokenTest(CryptoconditionsTestFramework):
         tokenbid = rpc.tokenbid("100", tokenid, "10")
         tokenbidhex = tokenbid['hex']
         tokenbidid = self.send_and_mine(tokenbid['hex'], rpc)
-        result = rpc.tokenorders()
+        result = rpc.tokenorders(tokenid)
         order = result[0]
         assert order, "found order"
 
@@ -203,7 +203,7 @@ class CryptoconditionsTokenTest(CryptoconditionsTestFramework):
         assert txid, "found txid"
 
         # should be no token orders
-        result = rpc.tokenorders()
+        result = rpc.tokenorders(tokenid)
         assert_equal(result, [])
 
         # checking bid cancellation
@@ -220,7 +220,7 @@ class CryptoconditionsTokenTest(CryptoconditionsTestFramework):
         # from valid node
         cancel = rpc.tokencancelbid(tokenid, testorderid)
         self.send_and_mine(cancel["hex"], rpc)
-        result = rpc.tokenorders()
+        result = rpc.tokenorders(tokenid)
         assert_equal(result, [])
 
         # invalid token transfer amount (have to add status to CC code!)
