@@ -763,8 +763,6 @@ void rogue_progress(struct rogue_state *rs,int32_t waitflag,uint64_t seed,char *
             }
             free(rs->keystrokeshex), rs->keystrokeshex = 0;
         }
-        // extract and get keystrokes field and compare it to pastkeys
-        // if not matching... panic?
         if ( 1 && (pastkeys= rogue_keystrokesload(&numpastkeys,seed,1)) != 0 )
         {
             sprintf(params,"[\"extract\",\"17\",\"[%%22%s%%22]\"]",Gametxidstr);
@@ -789,10 +787,11 @@ void rogue_progress(struct rogue_state *rs,int32_t waitflag,uint64_t seed,char *
                     } else fprintf(stderr,"no keystrokes in (%s)\n",retstr);
                     free_json(retjson);
                 } else fprintf(stderr,"error parsing.(%s)\n",retstr);
+                fprintf(stderr,"extracted.(%s)\n",retstr);
                 free(retstr);
             } else fprintf(stderr,"error extracting game\n");
             free(pastkeys);
-        }
+        } else fprintf(stderr,"no pastkeys\n");
 
         for (i=0; i<num; i++)
             sprintf(&hexstr[i<<1],"%02x",keystrokes[i]&0xff);
