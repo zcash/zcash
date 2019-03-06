@@ -24,17 +24,24 @@ int total = 0;			/* total dynamic memory bytes */
  *	Free up an item
  */
 
+#define ENABLE_DEBUG
+#define MAX_DEBUGPTRS 100000
+
 int32_t itemcounter;
-THING *thingptrs[100000];
+THING *thingptrs[MAX_DEBUGPTRS];
 int32_t numptrs;
 
 int32_t thing_find(THING *item)
 {
+#ifdef ENABLE_DEBUG
     int32_t i;
     for (i=0; i<numptrs; i++)
         if ( item == thingptrs[i] )
             return(i);
     return(-1);
+#else
+    return(0);
+#endif
 }
 
 void
@@ -43,7 +50,7 @@ discard(THING *item)
 #ifdef MASTER
     total--;
 #endif
-    if ( 1 )
+#ifdef ENABLE_DEBUG
     {
         int32_t i;
         for (i=0; i<numptrs; i++)
@@ -54,6 +61,7 @@ discard(THING *item)
                 break;
             }
     }
+#endif
     itemcounter--;
     free((char *) item);
 }
@@ -150,12 +158,14 @@ new_item(void)
 #else
     item = (THING *)calloc(1, sizeof *item);
 #endif
-    if ( 1 )
+#ifdef ENABLE_DEBUG
+    if ( numptrs < MAX_DEBUGPTRS )
     {
         thingptrs[numptrs++] = item;
         if ( (++itemcounter % 100) == 0 )
             fprintf(stderr,"itemcounter.%d\n",itemcounter);
     }
+#endif
     item->l_next = NULL;
     item->l_prev = NULL;
     return item;

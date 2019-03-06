@@ -466,7 +466,14 @@ get_item(struct rogue_state *rs,char *purpose, int type)
                     return NULL;
                 }
                 else
+                {
+                    if ( thing_find(obj) < 0 )
+                    {
+                        fprintf(stderr,"cant find thing.%p in list\n",obj); sleep(3);
+                        return(NULL);
+                    }
                     return obj;
+                }
             }
         }
     return NULL;
