@@ -290,8 +290,7 @@ attack(struct rogue_state *rs,THING *mp)
 		}
 		when 'N':
 		{
-            register THING *obj, *steal;
-            register int nobj;
+            THING *obj, *steal; int nobj;
             
             /*
              * Nymph's steal a magic item, look through the pack
@@ -594,26 +593,25 @@ void
 remove_mon(struct rogue_state *rs,coord *mp, THING *tp, bool waskill)
 {
     register THING *obj, *nexti;
-
     for (obj = tp->t_pack; obj != NULL; obj = nexti)
     {
-	nexti = next(obj);
-	obj->o_pos = tp->t_pos;
-	detach(tp->t_pack, obj);
-	if (waskill)
-	    fall(rs,obj, FALSE);
-	else
-	    discard(obj);
+        nexti = next(obj);
+        obj->o_pos = tp->t_pos;
+        detach(tp->t_pack, obj);
+        if (waskill)
+            fall(rs,obj, FALSE);
+        else
+            discard(obj);
     }
     moat(mp->y, mp->x) = NULL;
     mvaddch(mp->y, mp->x, tp->t_oldch);
     detach(mlist, tp);
     if (on(*tp, ISTARGET))
     {
-	kamikaze = FALSE;
-	to_death = FALSE;
-	if (fight_flush)
-	    flush_type();
+        kamikaze = FALSE;
+        to_death = FALSE;
+        if (fight_flush)
+            flush_type();
     }
     discard(tp);
 }

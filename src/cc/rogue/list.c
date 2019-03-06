@@ -61,6 +61,16 @@ discard(THING *item)
                 break;
             }
     }
+    THING *list = pack;
+    for (; list != NULL; list = next(list))
+    {
+        if ( list == item )
+        {
+            fprintf(stderr,"pack item discarded? (%s)\n",inv_name(list,FALSE));
+            sleep(3);
+            break;
+        }
+    }
 #endif
     itemcounter--;
     free((char *) item);
@@ -89,11 +99,11 @@ void
 _detach(THING **list, THING *item)
 {
     if (*list == item)
-	*list = next(item);
+        *list = next(item);
     if (prev(item) != NULL)
-	item->l_prev->l_next = next(item);
+        item->l_prev->l_next = next(item);
     if (next(item) != NULL)
-	item->l_next->l_prev = prev(item);
+        item->l_next->l_prev = prev(item);
     item->l_next = NULL;
     item->l_prev = NULL;
 }
@@ -108,14 +118,14 @@ _attach(THING **list, THING *item)
 {
     if (*list != NULL)
     {
-	item->l_next = *list;
-	(*list)->l_prev = item;
-	item->l_prev = NULL;
+        item->l_next = *list;
+        (*list)->l_prev = item;
+        item->l_prev = NULL;
     }
     else
     {
-	item->l_next = NULL;
-	item->l_prev = NULL;
+        item->l_next = NULL;
+        item->l_prev = NULL;
     }
     *list = item;
 }
@@ -129,16 +139,13 @@ void
 _free_list(THING **ptr)
 {
     THING *item;
-
     while (*ptr != NULL)
     {
-	item = *ptr;
-	*ptr = next(item);
-	discard(item);
+        item = *ptr;
+        *ptr = next(item);
+        discard(item);
     }
 }
-
-
 
 /*
  * new_item
