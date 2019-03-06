@@ -83,6 +83,7 @@ CClib_methods[] =
     { (char *)"musig", (char *)"spend", (char *)"sendtxid sig scriptPubKey", 3, 3, 'y', EVAL_MUSIG },
     { (char *)"dilithium", (char *)"keypair", (char *)"[hexseed]", 0, 1, 'K', EVAL_DILITHIUM },
     { (char *)"dilithium", (char *)"register", (char *)"handle, [hexseed]", 1, 2, 'R', EVAL_DILITHIUM },
+    { (char *)"dilithium", (char *)"handleinfo", (char *)"handle", 1, 1, 'I', EVAL_DILITHIUM },
     { (char *)"dilithium", (char *)"sign", (char *)"msg [hexseed]", 1, 2, 'S', EVAL_DILITHIUM },
     { (char *)"dilithium", (char *)"verify", (char *)"pubtxid msg sig", 3, 3, 'V', EVAL_DILITHIUM },
     { (char *)"dilithium", (char *)"send", (char *)"handle pubtxid amount", 3, 3, 'x', EVAL_DILITHIUM },
@@ -130,6 +131,7 @@ UniValue musig_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 
 bool dilithium_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx);
 UniValue dilithium_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+UniValue dilithium_handleinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue dilithium_send(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue dilithium_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue dilithium_keypair(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
@@ -273,6 +275,8 @@ UniValue CClib_method(struct CCcontract_info *cp,char *method,char *jsonstr)
             return(dilithium_keypair(txfee,cp,params));
         else if ( strcmp(method,"register") == 0 )
             return(dilithium_register(txfee,cp,params));
+        else if ( strcmp(method,"handleinfo") == 0 )
+            return(dilithium_handleinfo(txfee,cp,params));
         else if ( strcmp(method,"sign") == 0 )
             return(dilithium_sign(txfee,cp,params));
         else if ( strcmp(method,"verify") == 0 )
@@ -502,6 +506,31 @@ int64_t AddCClibInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubK
         } else fprintf(stderr,"couldnt get tx\n");
     }
     return(totalinputs);
+}
+
+int64_t AddCClibtxfee(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk)
+{
+    char coinaddr[64]; int64_t nValue,txfee = 10000; uint256 txid,hashBlock; CTransaction vintx; int32_t vout;
+    std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
+    GetCCaddress(cp,coinaddr,pk);
+    SetCCunspents(unspentOutputs,coinaddr);
+    for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
+    {
+        txid = it->first.txhash;
+        vout = (int32_t)it->first.index;
+        //char str[65]; fprintf(stderr,"%s check %s/v%d %.8f vs %.8f\n",coinaddr,uint256_str(str,txid),vout,(double)it->second.satoshis/COIN,(double)threshold/COIN);
+        if ( it->second.satoshis < txfee )
+            continue;
+        if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
+        {
+            if ( (nValue= IsCClibvout(cp,vintx,vout,coinaddr)) != 0 && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0 )
+            {
+                mtx.vin.push_back(CTxIn(txid,vout,CScript()));
+                return(it->second.satoshis);
+            } //else fprintf(stderr,"nValue %.8f too small or already spent in mempool\n",(double)nValue/COIN);
+        } else fprintf(stderr,"couldnt get tx\n");
+    }
+    return(0);
 }
 
 std::string Faucet2Fund(struct CCcontract_info *cp,uint64_t txfee,int64_t funds)

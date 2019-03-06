@@ -25,7 +25,6 @@ command(struct rogue_state *rs)
     char *fp;
     THING *mp;
     static char countch, direction, newcount = FALSE;
-    
     if (on(player, ISHASTE))
         ntimes++;
     /*

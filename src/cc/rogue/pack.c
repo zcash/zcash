@@ -163,6 +163,11 @@ int32_t num_packitems(struct rogue_state *rs)
     int32_t type = 0,n = 0,total = 0;
     for (; list != NULL; list = next(list))
     {
+        if ( thing_find(list) < 0 )
+        {
+            fprintf(stderr,"num_packitems cant find %p\n",list);
+            return(-1);
+        }
         if ( list->o_packch != 0 )
         {
             n++;
@@ -219,29 +224,29 @@ THING *
 leave_pack(struct rogue_state *rs,THING *obj, bool newobj, bool all)
 {
     THING *nobj;
-
+    
     inpack--;
     nobj = obj;
     if (obj->o_count > 1 && !all)
     {
-	last_pick = obj;
-	obj->o_count--;
-	if (obj->o_group)
-	    inpack++;
-	if (newobj)
-	{
-	    nobj = new_item();
-	    *nobj = *obj;
-	    next(nobj) = NULL;
-	    prev(nobj) = NULL;
-	    nobj->o_count = 1;
-	}
+        last_pick = obj;
+        obj->o_count--;
+        if (obj->o_group)
+            inpack++;
+        if (newobj)
+        {
+            nobj = new_item();
+            *nobj = *obj;
+            next(nobj) = NULL;
+            prev(nobj) = NULL;
+            nobj->o_count = 1;
+        }
     }
     else
     {
-	last_pick = NULL;
-	pack_used[obj->o_packch - 'a'] = FALSE;
-	detach(pack, obj);
+        last_pick = NULL;
+        pack_used[obj->o_packch - 'a'] = FALSE;
+        detach(pack, obj);
     }
     return nobj;
 }
@@ -466,7 +471,9 @@ get_item(struct rogue_state *rs,char *purpose, int type)
                     return NULL;
                 }
                 else
+                {
                     return obj;
+                }
             }
         }
     return NULL;

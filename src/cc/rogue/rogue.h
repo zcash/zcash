@@ -824,6 +824,7 @@ void	doctor(struct rogue_state *rs,int);
 void	playit(struct rogue_state *rs);
 
 struct room	*roomin(struct rogue_state *rs,coord *cp);
+int32_t thing_find(THING *ptr);
 
 #define MAXDAEMONS 20
 

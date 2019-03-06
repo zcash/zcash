@@ -5393,8 +5393,8 @@ UniValue CCaddress(struct CCcontract_info *cp,char *name,std::vector<unsigned ch
             result.push_back(Pair(str,destaddr));
         }
     }
-    if ( Getscriptaddress(destaddr,(CScript() << Mypubkey() << OP_CHECKSIG)) != 0 )
-        result.push_back(Pair("myAddress",destaddr));
+    //if ( Getscriptaddress(destaddr,(CScript() << Mypubkey() << OP_CHECKSIG)) != 0 )
+    //    result.push_back(Pair("myAddress",destaddr));
     if ( GetCCaddress(cp,destaddr,pubkey2pk(Mypubkey())) != 0 )
     {
         sprintf(str,"myCCAddress(%s)",name);
