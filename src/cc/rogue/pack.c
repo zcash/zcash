@@ -166,6 +166,7 @@ int32_t num_packitems(struct rogue_state *rs)
         if ( thing_find(list) < 0 )
         {
             fprintf(stderr,"num_packitems cant find %p\n",list);
+            return(-1);
         }
         if ( list->o_packch != 0 )
         {
@@ -226,11 +227,6 @@ leave_pack(struct rogue_state *rs,THING *obj, bool newobj, bool all)
     
     inpack--;
     nobj = obj;
-    if ( thing_find(obj) < 0 )
-    {
-        fprintf(stderr,"leave_pack unknown obj %p\n",obj);
-        sleep(3);
-    }
     if (obj->o_count > 1 && !all)
     {
         last_pick = obj;
@@ -289,11 +285,11 @@ inventory(struct rogue_state *rs,THING *list, int type)
                                               list->o_type != FOOD && list->o_type != AMULET) &&
             !(type == R_OR_S && (list->o_type == RING || list->o_type == STICK)))
             continue;
-        if ( thing_find(list) < 0 )
+        /*if ( thing_find(list) < 0 )
         {
             fprintf(stderr,"cant find thing.(%c) in pack\n",list->o_packch);
             sleep(3);
-        }
+        }*/
         n_objs++;
 #ifdef MASTER
         if (!list->o_packch)
