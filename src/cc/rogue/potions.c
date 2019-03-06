@@ -220,7 +220,7 @@ quaff(struct rogue_state *rs)
     call_it(rs,&pot_info[obj->o_which]);
 
     if (discardit)
-	discard(obj);
+        discard(obj);
     return;
 }
 

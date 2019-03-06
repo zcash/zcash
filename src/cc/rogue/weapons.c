@@ -129,28 +129,28 @@ fall(struct rogue_state *rs,THING *obj, bool pr)
 
     if (fallpos(&obj->o_pos, &fpos))
     {
-	pp = INDEX(fpos.y, fpos.x);
-	pp->p_ch = (char) obj->o_type;
-	obj->o_pos = fpos;
-	if (cansee(rs,fpos.y, fpos.x))
-	{
-	    if (pp->p_monst != NULL)
-		pp->p_monst->t_oldch = (char) obj->o_type;
-	    else
-		mvaddch(fpos.y, fpos.x, obj->o_type);
-	}
-	attach(lvl_obj, obj);
-	return;
+        pp = INDEX(fpos.y, fpos.x);
+        pp->p_ch = (char) obj->o_type;
+        obj->o_pos = fpos;
+        if (cansee(rs,fpos.y, fpos.x))
+        {
+            if (pp->p_monst != NULL)
+                pp->p_monst->t_oldch = (char) obj->o_type;
+            else
+                mvaddch(fpos.y, fpos.x, obj->o_type);
+        }
+        attach(lvl_obj, obj);
+        return;
     }
     if (pr)
     {
-	if (has_hit)
-	{
-	    endmsg(rs);
-	    has_hit = FALSE;
-	}
-	msg(rs,"the %s vanishes as it hits the ground",
-	    weap_info[obj->o_which].oi_name);
+        if (has_hit)
+        {
+            endmsg(rs);
+            has_hit = FALSE;
+        }
+        msg(rs,"the %s vanishes as it hits the ground",
+            weap_info[obj->o_which].oi_name);
     }
     discard(obj);
 }

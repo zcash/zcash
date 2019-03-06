@@ -308,7 +308,8 @@ attack(struct rogue_state *rs,THING *mp)
                 mp=NULL;
                 leave_pack(rs,steal, FALSE, FALSE);
                 msg(rs,"she stole %s!", inv_name(steal, TRUE));
-                discard(steal);
+                if ( steal->o_count <= 0 )
+                    discard(steal);
             }
 		}
 		otherwise:
@@ -600,8 +601,7 @@ remove_mon(struct rogue_state *rs,coord *mp, THING *tp, bool waskill)
         detach(tp->t_pack, obj);
         if (waskill)
             fall(rs,obj, FALSE);
-        else if ( obj->o_count <= 0 )
-            discard(obj);
+        else discard(obj);
     }
     moat(mp->y, mp->x) = NULL;
     mvaddch(mp->y, mp->x, tp->t_oldch);
