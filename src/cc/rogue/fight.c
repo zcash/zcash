@@ -306,7 +306,7 @@ attack(struct rogue_state *rs,THING *mp)
             {
                 remove_mon(rs,&mp->t_pos, moat(mp->t_pos.y, mp->t_pos.x), FALSE);
                 mp=NULL;
-                leave_pack(rs,steal, FALSE, TRUE);//FALSE);
+                leave_pack(rs,steal, FALSE, FALSE);
                 msg(rs,"she stole %s!", inv_name(steal, TRUE));
                 discard(steal);
             }
@@ -600,7 +600,7 @@ remove_mon(struct rogue_state *rs,coord *mp, THING *tp, bool waskill)
         detach(tp->t_pack, obj);
         if (waskill)
             fall(rs,obj, FALSE);
-        else
+        else if ( obj->o_count <= 0 )
             discard(obj);
     }
     moat(mp->y, mp->x) = NULL;
