@@ -28,7 +28,7 @@ int32_t itemcounter;
 THING *thingptrs[100000];
 int32_t numptrs;
 
-int32_t thing_find(THING *ptr)
+int32_t thing_find(THING *item)
 {
     int32_t i;
     for (i=0; i<numptrs; i++)
