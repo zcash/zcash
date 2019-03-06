@@ -307,13 +307,13 @@ attack(struct rogue_state *rs,THING *mp)
             {
                 remove_mon(rs,&mp->t_pos, moat(mp->t_pos.y, mp->t_pos.x), FALSE);
                 mp=NULL;
-                fprintf(stderr,"hp.%d num.%d\n",pstats.s_hpt,num_packitems(rs));
+                fprintf(stderr,"hp.%d num.%d A\n",pstats.s_hpt,num_packitems(rs)); sleep(3);
 
                 leave_pack(rs,steal, FALSE, FALSE);
                 msg(rs,"she stole %s!", inv_name(steal, TRUE));
-                fprintf(stderr," hp.%d num.%d\n",pstats.s_hpt,num_packitems(rs));
+                fprintf(stderr," hp.%d num.%d B\n",pstats.s_hpt,num_packitems(rs)); sleep(3);
                 discard(steal);
-                fprintf(stderr,"  hp.%d num.%d\n",pstats.s_hpt,num_packitems(rs));
+                fprintf(stderr,"  hp.%d num.%d C\n",pstats.s_hpt,num_packitems(rs)); sleep(3);
             }
 		}
 		otherwise:
