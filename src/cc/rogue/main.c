@@ -716,11 +716,6 @@ int32_t rogue_sendrawtransaction(char *rawtx)
     if ( (retstr= komodo_issuemethod(USERPASS,"sendrawtransaction",params,ROGUE_PORT)) != 0 )
     {
         //fprintf(stderr,"params.(%s) -> %s\n",params,retstr);
-        if ( is_hexstr(retstr,64) == 64 )
-        {
-            free(retstr);
-            return(0);
-        }
         {
             static FILE *fp;
             if ( fp == 0 )
@@ -730,6 +725,11 @@ int32_t rogue_sendrawtransaction(char *rawtx)
                 fprintf(fp,"%s\n",retstr);
                 fflush(fp);
             }
+        }
+        if ( is_hexstr(retstr,64) == 64 )
+        {
+            free(retstr);
+            return(0);
         }
         if ( (retjson= cJSON_Parse(retstr)) != 0 )
         {
@@ -763,7 +763,7 @@ void rogue_progress(struct rogue_state *rs,int32_t waitflag,uint64_t seed,char *
             }
             free(rs->keystrokeshex), rs->keystrokeshex = 0;
         }
-        if ( 1 && (pastkeys= rogue_keystrokesload(&numpastkeys,seed,1)) != 0 )
+        if ( 0 && (pastkeys= rogue_keystrokesload(&numpastkeys,seed,1)) != 0 )
         {
             sprintf(params,"[\"extract\",\"17\",\"[%%22%s%%22]\"]",Gametxidstr);
             if ( (retstr= komodo_issuemethod(USERPASS,"cclib",params,ROGUE_PORT)) != 0 )
@@ -824,7 +824,7 @@ void rogue_progress(struct rogue_state *rs,int32_t waitflag,uint64_t seed,char *
                             free(rs->keystrokeshex);
                         rs->keystrokeshex = (char *)malloc(strlen(rawtx)+1);
                         strcpy(rs->keystrokeshex,rawtx);
-fprintf(stderr,"set keystrokestx <- %s\n",rs->keystrokeshex);
+//fprintf(stderr,"set keystrokestx <- %s\n",rs->keystrokeshex);
                     }
                     free_json(retjson);
                 }
