@@ -711,12 +711,11 @@ char *komodo_issuemethod(char *userpass,char *method,char *params,uint16_t port)
 
 int32_t rogue_sendrawtransaction(char *rawtx)
 {
-    char *params,*retstr,*hexstr; cJSON *retjson,*resobj; int32_t numconfs = -1;
+    char *params,*retstr,*hexstr; cJSON *retjson,*resobj; int32_t retval = -1;
     params = (char *)malloc(strlen(rawtx) + 16);
     sprintf(params,"[\"%s\"]",rawtx);
     if ( (retstr= komodo_issuemethod(USERPASS,"sendrawtransaction",params,ROGUE_PORT)) != 0 )
     {
-        free(params);
         {
             static FILE *fp;
             if ( fp == 0 )
@@ -732,17 +731,14 @@ int32_t rogue_sendrawtransaction(char *rawtx)
             if ( (resobj= jobj(retjson,"result")) != 0 )
             {
                 if ( (hexstr= jstr(resobj,0)) != 0 && is_hexstr(hexstr,64) == 64 )
-                {
-                    free(retstr);
-                    return(0);
-                }
+                    retval = 0;
             }
             free_json(retjson);
         }
         free(retstr);
     }
     free(params);
-    return(-1);
+    return(retval);
 }
 
 void rogue_progress(struct rogue_state *rs,int32_t waitflag,uint64_t seed,char *keystrokes,int32_t num)
