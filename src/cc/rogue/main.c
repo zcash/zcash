@@ -717,7 +717,7 @@ int32_t rogue_sendrawtransaction(char *rawtx)
     if ( (retstr= komodo_issuemethod(USERPASS,"sendrawtransaction",params,ROGUE_PORT)) != 0 )
     {
         free(params);
-        //fprintf(stderr,"params.(%s) -> %s\n",params,retstr);
+        fprintf(stderr,"sendrawtransaction.(%s)\n",retstr);
         {
             static FILE *fp;
             if ( fp == 0 )
