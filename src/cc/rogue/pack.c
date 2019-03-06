@@ -285,11 +285,6 @@ inventory(struct rogue_state *rs,THING *list, int type)
                                               list->o_type != FOOD && list->o_type != AMULET) &&
             !(type == R_OR_S && (list->o_type == RING || list->o_type == STICK)))
             continue;
-        /*if ( thing_find(list) < 0 )
-        {
-            fprintf(stderr,"cant find thing.(%c) in pack\n",list->o_packch);
-            sleep(3);
-        }*/
         n_objs++;
 #ifdef MASTER
         if (!list->o_packch)
@@ -477,11 +472,6 @@ get_item(struct rogue_state *rs,char *purpose, int type)
                 }
                 else
                 {
-                    if ( 0 && thing_find(obj) < 0 )
-                    {
-                        fprintf(stderr,"cant find thing.%p in list\n",obj); sleep(3);
-                        return(NULL);
-                    }
                     return obj;
                 }
             }

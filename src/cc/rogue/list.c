@@ -24,7 +24,7 @@ int total = 0;			/* total dynamic memory bytes */
  *	Free up an item
  */
 
-#define ENABLE_DEBUG
+//#define ENABLE_DEBUG
 #define MAX_DEBUGPTRS 100000
 
 int32_t itemcounter;
