@@ -711,10 +711,12 @@ char *komodo_issuemethod(char *userpass,char *method,char *params,uint16_t port)
 
 int32_t rogue_sendrawtransaction(char *rawtx)
 {
-    char params[512],*retstr; cJSON *retjson; int32_t numconfs = -1;
+    char *params,*retstr; cJSON *retjson; int32_t numconfs = -1;
+    params = (char *)malloc(strlen(rawtx) + 16);
     sprintf(params,"[\"%s\"]",rawtx);
     if ( (retstr= komodo_issuemethod(USERPASS,"sendrawtransaction",params,ROGUE_PORT)) != 0 )
     {
+        free(params);
         //fprintf(stderr,"params.(%s) -> %s\n",params,retstr);
         {
             static FILE *fp;
@@ -737,6 +739,7 @@ int32_t rogue_sendrawtransaction(char *rawtx)
         }
         free(retstr);
     }
+    free(params);
     return(-1);
 }
 
