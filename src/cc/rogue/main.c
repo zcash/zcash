@@ -711,16 +711,11 @@ char *komodo_issuemethod(char *userpass,char *method,char *params,uint16_t port)
 
 int32_t rogue_sendrawtransaction(char *rawtx)
 {
-    char params[512],*retstr; cJSON *retjson; int32_t numconfs = -1;
+    char *params,*retstr,*hexstr; cJSON *retjson,*resobj; int32_t retval = -1;
+    params = (char *)malloc(strlen(rawtx) + 16);
     sprintf(params,"[\"%s\"]",rawtx);
     if ( (retstr= komodo_issuemethod(USERPASS,"sendrawtransaction",params,ROGUE_PORT)) != 0 )
     {
-        //fprintf(stderr,"params.(%s) -> %s\n",params,retstr);
-        if ( is_hexstr(retstr,64) == 64 )
-        {
-            free(retstr);
-            return(0);
-        }
         {
             static FILE *fp;
             if ( fp == 0 )
@@ -733,16 +728,22 @@ int32_t rogue_sendrawtransaction(char *rawtx)
         }
         if ( (retjson= cJSON_Parse(retstr)) != 0 )
         {
+            if ( (resobj= jobj(retjson,"result")) != 0 )
+            {
+                if ( (hexstr= jstr(resobj,0)) != 0 && is_hexstr(hexstr,64) == 64 )
+                    retval = 0;
+            }
             free_json(retjson);
         }
         free(retstr);
     }
-    return(-1);
+    free(params);
+    return(retval);
 }
 
 void rogue_progress(struct rogue_state *rs,int32_t waitflag,uint64_t seed,char *keystrokes,int32_t num)
 {
-    char cmd[16384],hexstr[16384],params[32768],*retstr,*rawtx,*pastkeys,*pastcmp,*keys; int32_t i,len,numpastkeys; cJSON *retjson;
+    char cmd[16384],hexstr[16384],params[32768],*retstr,*rawtx,*pastkeys,*pastcmp,*keys; int32_t i,len,numpastkeys; cJSON *retjson,*resobj;
     //fprintf(stderr,"rogue_progress num.%d\n",num);
     if ( rs->guiflag != 0 && Gametxidstr[0] != 0 )
     {
@@ -763,8 +764,6 @@ void rogue_progress(struct rogue_state *rs,int32_t waitflag,uint64_t seed,char *
             }
             free(rs->keystrokeshex), rs->keystrokeshex = 0;
         }
-        // extract and get keystrokes field and compare it to pastkeys
-        // if not matching... panic?
         if ( 0 && (pastkeys= rogue_keystrokesload(&numpastkeys,seed,1)) != 0 )
         {
             sprintf(params,"[\"extract\",\"17\",\"[%%22%s%%22]\"]",Gametxidstr);
@@ -772,22 +771,28 @@ void rogue_progress(struct rogue_state *rs,int32_t waitflag,uint64_t seed,char *
             {
                 if ( (retjson= cJSON_Parse(retstr)) != 0 )
                 {
-                    if ( (keys= jstr(retjson,"keystrokes")) != 0 )
+                    if ( (resobj= jobj(retjson,"result")) != 0 && (keys= jstr(resobj,"keystrokes")) != 0 )
                     {
                         len = strlen(keys) / 2;
                         pastcmp = (char *)malloc(len + 1);
                         decode_hex(pastcmp,len,keys);
+                        fprintf(stderr,"keystrokes.(%s) vs pastkeys\n",keys);
+                        for (i=0; i<numpastkeys; i++)
+                            fprintf(stderr,"%02x",pastkeys[i]);
+                        fprintf(stderr,"\n");
                         if ( len != numpastkeys || memcmp(pastcmp,pastkeys,len) != 0 )
                         {
                             fprintf(stderr,"pastcmp[%d] != pastkeys[%d]?\n",len,numpastkeys);
                         }
                         free(pastcmp);
-                    }
+                    } else fprintf(stderr,"no keystrokes in (%s)\n",retstr);
                     free_json(retjson);
-                }
-            }
+                } else fprintf(stderr,"error parsing.(%s)\n",retstr);
+                fprintf(stderr,"extracted.(%s)\n",retstr);
+                free(retstr);
+            } else fprintf(stderr,"error extracting game\n");
             free(pastkeys);
-        }
+        } // else fprintf(stderr,"no pastkeys\n");
 
         for (i=0; i<num; i++)
             sprintf(&hexstr[i<<1],"%02x",keystrokes[i]&0xff);
@@ -814,13 +819,13 @@ void rogue_progress(struct rogue_state *rs,int32_t waitflag,uint64_t seed,char *
                 }
                 if ( (retjson= cJSON_Parse(retstr)) != 0 )
                 {
-                    if ( (rawtx= jstr(retjson,"hex")) != 0 )
+                    if ( (resobj= jobj(retjson,"result")) != 0 && (rawtx= jstr(resobj,"hex")) != 0 )
                     {
                         if ( rs->keystrokeshex != 0 )
                             free(rs->keystrokeshex);
                         rs->keystrokeshex = (char *)malloc(strlen(rawtx)+1);
                         strcpy(rs->keystrokeshex,rawtx);
-                        //fprintf(stderr,"set keystrokestx <- %s\n",rs->keystrokeshex);
+//fprintf(stderr,"set keystrokestx <- %s\n",rs->keystrokeshex);
                     }
                     free_json(retjson);
                 }

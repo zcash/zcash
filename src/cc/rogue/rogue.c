@@ -267,7 +267,7 @@ char *rogue_keystrokesload(int32_t *numkeysp,uint64_t seed,int32_t counter)
         if ( (fsize= get_filesize(fp)) <= 0 )
         {
             fclose(fp);
-            printf("fsize.%ld\n",fsize);
+            //printf("fsize.%ld\n",fsize);
             break;
         }
         if ( (keystrokes= (char *)realloc(keystrokes,num+fsize)) == 0 )
