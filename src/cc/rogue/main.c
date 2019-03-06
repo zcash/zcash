@@ -775,7 +775,7 @@ void rogue_progress(struct rogue_state *rs,int32_t waitflag,uint64_t seed,char *
                     if ( (keys= jstr(retjson,"keystrokes")) != 0 )
                     {
                         len = strlen(keys) / 2;
-                        pastcmp = (char *)malloc(len + 1)
+                        pastcmp = (char *)malloc(len + 1);
                         decode_hex(pastcmp,len,keys);
                         if ( len != numpastkeys || memcmp(pastcmp,pastkeys,len) != 0 )
                         {
