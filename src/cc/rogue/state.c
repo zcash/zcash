@@ -1734,6 +1734,7 @@ rs_write_thing(struct rogue_state *rs,FILE *savef, THING *t)
     rs_write_short(savef, t->_t._t_flags);
     rs_write_stats(savef, &t->_t._t_stats);
     rs_write_room_reference(savef, t->_t._t_room);
+    fprintf(stderr,"pack\n");
     rs_write_object_list(rs,savef, t->_t._t_pack);
     //fprintf(stderr,"%ld\n",ftell(savef));
 
@@ -2100,6 +2101,7 @@ rs_save_file(struct rogue_state *rs,FILE *savef)
     rs_write_coord(savef, oldpos);
     rs_write_coord(savef, stairs);
     rs_write_thing(rs,savef, &player);
+    fprintf(stderr,"references\n");
     rs_write_object_reference(savef, player.t_pack, cur_armor);
     rs_write_object_reference(savef, player.t_pack, cur_ring[0]);
     rs_write_object_reference(savef, player.t_pack, cur_ring[1]); 
@@ -2107,7 +2109,9 @@ rs_save_file(struct rogue_state *rs,FILE *savef)
     rs_write_object_reference(savef, player.t_pack, l_last_pick); 
     rs_write_object_reference(savef, player.t_pack, last_pick); 
 
+    fprintf(stderr,"lvl_obj\n");
     rs_write_object_list(rs,savef, lvl_obj);
+    fprintf(stderr,"mlist\n");
     rs_write_thing_list(rs,savef, mlist);
 
     rs_write_places(savef,places,MAXLINES*MAXCOLS);
