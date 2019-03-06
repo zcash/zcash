@@ -1431,7 +1431,7 @@ rs_write_object(struct rogue_state *rs,FILE *savef, THING *o)
         return(WRITESTAT);
     if ( thing_find(o) < 0 )
     {
-        fprintf(stderr,"cant find thing.%p in list\n",o);
+        fprintf(stderr,"cant find thing.%p in list\n",o); sleep(3);
         return(0);
     }
     if ( o->_o._o_packch != 0 )
