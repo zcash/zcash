@@ -588,7 +588,7 @@ void tg_init(tetris_game *obj, int rows, int cols)
 
 tetris_game *tg_create(int rows, int cols)
 {
-    tetris_game *obj = malloc(sizeof(tetris_game));
+    tetris_game *obj = (tetris_game *)malloc(sizeof(tetris_game));
     tg_init(obj, rows, cols);
     return obj;
 }
@@ -609,10 +609,11 @@ void tg_delete(tetris_game *obj) {
  */
 tetris_game *tg_load(FILE *f)
 {
-    tetris_game *obj = malloc(sizeof(tetris_game));
+    tetris_game *obj = (tetris_game *)malloc(sizeof(tetris_game));
     fread(obj, sizeof(tetris_game), 1, f);
-    obj->board = malloc(obj->rows * obj->cols);
-    fread(obj->board, sizeof(char), obj->rows * obj->cols, f);
+    obj->board = (char *)malloc(obj->rows * obj->cols);
+    if (fread(obj->board, sizeof(char), obj->rows * obj->cols, f) != obj->rows * obj->cols )
+        fprintf(stderr,"fread error\n");
     return obj;
 }
 
@@ -621,8 +622,10 @@ tetris_game *tg_load(FILE *f)
  */
 void tg_save(tetris_game *obj, FILE *f)
 {
-    fwrite(obj, sizeof(tetris_game), 1, f);
-    fwrite(obj->board, sizeof(char), obj->rows * obj->cols, f);
+    if (fwrite(obj, sizeof(tetris_game), 1, f) != 1 )
+        fprintf(stderr,"error writing tetrisgame\n");
+    else if (fwrite(obj->board, sizeof(char), obj->rows * obj->cols, f) != obj->rows * obj->cols )
+        fprintf(stderr,"error writing board\n");
 }
 
 /*
