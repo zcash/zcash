@@ -915,7 +915,7 @@ int main(int argc, char **argv)
     tg_delete(tg);
     return 0;
 }
-#endif
+#else
 
 /******************************************************************************
  * Copyright © 2014-2019 The SuperNET Developers.                             *
@@ -2390,4 +2390,5 @@ bool tetris_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const 
     } else return eval->Invalid("not enough vouts");
     return(true);
 }
+#endif
 
