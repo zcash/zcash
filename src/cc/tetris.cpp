@@ -570,7 +570,7 @@ void tg_init(tetris_game *obj, int rows, int cols)
     // Initialization logic
     obj->rows = rows;
     obj->cols = cols;
-    obj->board = malloc(rows * cols);
+    obj->board = (char *)malloc(rows * cols);
     memset(obj->board, TC_EMPTY, rows * cols);
     obj->points = 0;
     obj->level = 0;
