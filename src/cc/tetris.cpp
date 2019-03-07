@@ -610,10 +610,23 @@ void tg_delete(tetris_game *obj) {
 tetris_game *tg_load(FILE *f)
 {
     tetris_game *obj = (tetris_game *)malloc(sizeof(tetris_game));
-    fread(obj, sizeof(tetris_game), 1, f);
-    obj->board = (char *)malloc(obj->rows * obj->cols);
-    if (fread(obj->board, sizeof(char), obj->rows * obj->cols, f) != obj->rows * obj->cols )
-        fprintf(stderr,"fread error\n");
+    if (fread(obj, sizeof(tetris_game), 1, f) != 1 )
+    {
+        fprintf(stderr,"read game error\n");
+        free(obj);
+        obj = 0;
+    }
+    else
+    {
+        obj->board = (char *)malloc(obj->rows * obj->cols);
+        if (fread(obj->board, sizeof(char), obj->rows * obj->cols, f) != obj->rows * obj->cols )
+        {
+            fprintf(stderr,"fread error\n");
+            free(obj->board);
+            free(obj);
+            obj = 0;
+        }
+    }
     return obj;
 }
 
