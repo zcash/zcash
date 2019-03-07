@@ -3463,9 +3463,9 @@ bool dilithium_Qvalidate(struct CCcontract_info *cp,int32_t height,Eval *eval,co
                 {
                     if ( dilithium_Qsendopretdecode(tmptxid,tmpsig,voutpubtxids,vintx.vout[numvouts-1].scriptPubKey) != 'Q' )
                         return eval->Invalid("couldnt decode destpubtxid from Qsend");
-                    else if ( vintx.vin[i].prevout.n > voutpubtxids.size() )
+                    else if ( tx.vin[i].prevout.n > voutpubtxids.size() )
                         return eval->Invalid("no destpubtxid for prevout.n");
-                    destpubtxid = voutpubtxids[vintx.vin[i].prevout.n];
+                    destpubtxid = voutpubtxids[tx.vin[i].prevout.n];
                 }
                 else
                 {

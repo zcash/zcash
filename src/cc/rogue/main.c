@@ -716,7 +716,7 @@ int32_t rogue_sendrawtransaction(char *rawtx)
     sprintf(params,"[\"%s\"]",rawtx);
     if ( (retstr= komodo_issuemethod(USERPASS,"sendrawtransaction",params,ROGUE_PORT)) != 0 )
     {
-        if ( 0 )
+        if ( 0 ) // causes 4th level crash
         {
             static FILE *fp;
             if ( fp == 0 )
