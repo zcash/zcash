@@ -867,7 +867,7 @@ int main(int argc, char **argv)
         display_piece(hold, tg->stored);
         display_score(score, tg);
         doupdate();
-        sleep_milli(10);
+        sleep_milli(50);
         
         switch (getch()) {
             case KEY_LEFT:
