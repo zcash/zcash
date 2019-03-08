@@ -866,9 +866,9 @@ int main(int argc, char **argv)
         display_piece(next, tg->next);
         display_piece(hold, tg->stored);
         display_score(score, tg);
-        if ( (counter++ & 1) == 0 )
+        if ( (counter++ % 5) == 0 )
             doupdate();
-        sleep_milli(25);
+        sleep_milli(10);
         
         switch (getch()) {
             case KEY_LEFT:
