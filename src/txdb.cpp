@@ -491,27 +491,31 @@ UniValue CBlockTreeDB::Snapshot(int top)
 
                     getAddressFromIndex(indexKey.type, indexKey.hashBytes, address);
 
-                    std::map <std::string, int>::iterator ignored = ignoredMap.find(address);
-                    if (ignored != ignoredMap.end()) {
-                    fprintf(stderr,"ignoring %s\n", address.c_str());
-                    ignoredAddresses++;
-                    continue;
-                    }
+                    if (nValue > 0) {
+                        std::map <std::string, int>::iterator ignored = ignoredMap.find(address);
+                        if (ignored != ignoredMap.end()) {
+                        fprintf(stderr,"ignoring %s\n", address.c_str());
+                        ignoredAddresses++;
+                        continue;
+                        }
 
-                    std::map <std::string, CAmount>::iterator pos = addressAmounts.find(address);
-                    if (pos == addressAmounts.end()) {
-                    // insert new address + utxo amount
-                    //fprintf(stderr, "inserting new address %s with amount %li\n", address.c_str(), nValue);
-                    addressAmounts[address] = nValue;
-                    totalAddresses++;
+                        std::map <std::string, CAmount>::iterator pos = addressAmounts.find(address);
+                        if (pos == addressAmounts.end()) {
+                        // insert new address + utxo amount
+                        //fprintf(stderr, "inserting new address %s with amount %li\n", address.c_str(), nValue);
+                        addressAmounts[address] = nValue;
+                        totalAddresses++;
+                        } else {
+                        // update unspent tally for this address
+                        //fprintf(stderr, "updating address %s with new utxo amount %li\n", address.c_str(), nValue);
+                        addressAmounts[address] += nValue;
+                        }
+                        //fprintf(stderr,"{\"%s\", %.8f},\n",address.c_str(),(double)nValue/COIN);
+                        // total += nValue;
+                        utxos++;
                     } else {
-                    // update unspent tally for this address
-                    //fprintf(stderr, "updating address %s with new utxo amount %li\n", address.c_str(), nValue);
-                    addressAmounts[address] += nValue;
+                        fprintf(stderr,"ignoring amount=0 UTXO for %s\n", address.c_str());
                     }
-                    //fprintf(stderr,"{\"%s\", %.8f},\n",address.c_str(),(double)nValue/COIN);
-                    // total += nValue;
-                    utxos++;
                 } catch (const std::exception& e) {
                     fprintf(stderr, "DONE %s: LevelDB addressindex exception! - %s\n", __func__, e.what());
                     break;
