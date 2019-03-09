@@ -441,7 +441,7 @@ uint32_t komodo_segid32(char *coinaddr);
 UniValue CBlockTreeDB::Snapshot(int top)
 {
     int64_t total = 0; int64_t totalAddresses = 0; std::string address;
-    int64_t utxos = 0; int64_t ignoredAddresses;
+    int64_t utxos = 0; int64_t ignoredAddresses = 0;
     boost::scoped_ptr<CDBIterator> iter(NewIterator());
     std::map <std::string, CAmount> addressAmounts;
     std::vector <std::pair<CAmount, std::string>> vaddr;
