@@ -20,8 +20,7 @@ echo $pubkey
 ./komodod -pubkey=$pubkey -ac_name=KV -ac_supply=1000000 -addnode=78.47.196.146 $1 &
 ./komodod -pubkey=$pubkey -ac_name=CEAL -ac_supply=366666666 -addnode=78.47.196.146 $1 &
 ./komodod -pubkey=$pubkey -ac_name=MESH -ac_supply=1000007 -addnode=78.47.196.146 $1 &
-./komodod -pubkey=$pubkey -ac_name=MNZ -ac_supply=257142858 -addnode=51.15.138.138 $1 &
-./komodod -pubkey=$pubkey -ac_name=AXO -ac_supply=200000000 -addnode=78.47.196.146 &
+./komodod -pubkey=$pubkey -ac_name=AXO -ac_supply=200000000 -ac_ccactivate=130000 -addnode=78.47.196.146 &
 ./komodod -pubkey=$pubkey -ac_name=ETOMIC -ac_supply=100000000 -addnode=78.47.196.146 &
 ./komodod -pubkey=$pubkey -ac_name=BTCH -ac_supply=20998641 -addnode=78.47.196.146 &
 ./komodod -pubkey=$pubkey -ac_name=BEER -ac_supply=100000000 -addnode=78.47.196.146 &
