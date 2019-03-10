@@ -67,7 +67,7 @@
   {
     "ac_name": "AXO",
     "ac_supply": "200000000",
-    "ac_ccenable": "130000"
+    "ac_ccactivate": "130000"
   },
   {
     "ac_name": "ETOMIC",
