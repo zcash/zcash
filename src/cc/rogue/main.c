@@ -38,6 +38,31 @@ union _bits256 { uint8_t bytes[32]; uint16_t ushorts[16]; uint32_t uints[8]; uin
 typedef union _bits256 bits256;
 #endif
 
+#ifdef _WIN32
+#ifdef _MSC_VER
+int gettimeofday(struct timeval * tp, struct timezone * tzp)
+{
+	// Note: some broken versions only have 8 trailing zero's, the correct epoch has 9 trailing zero's
+	static const uint64_t EPOCH = ((uint64_t)116444736000000000ULL);
+
+	SYSTEMTIME  system_time;
+	FILETIME    file_time;
+	uint64_t    time;
+
+	GetSystemTime(&system_time);
+	SystemTimeToFileTime(&system_time, &file_time);
+	time = ((uint64_t)file_time.dwLowDateTime);
+	time += ((uint64_t)file_time.dwHighDateTime) << 32;
+
+	tp->tv_sec = (long)((time - EPOCH) / 10000000L);
+	tp->tv_usec = (long)(system_time.wMilliseconds * 1000);
+	return 0;
+}
+#endif // _MSC_VER
+#endif
+
+
+
 double OS_milliseconds()
 {
     struct timeval tv; double millis;
@@ -390,6 +415,12 @@ char *post_process_bitcoind_RPC(char *debugstr,char *command,char *rpcstr,char *
     //fprintf(stderr,"<<<<<<<<<<< bitcoind_RPC: postprocess returns.(%s)\n",retstr);
     return(retstr);
 }
+#endif
+
+#ifdef _WIN32
+#ifdef _MSC_VER
+#define sleep(x) Sleep(1000*(x))
+#endif
 #endif
 
 /************************************************************************
@@ -919,7 +950,19 @@ int main(int argc, char **argv, char **envp)
     printf("ASSETCHAINS_SYMBOL.(%s) port.%u (%s) IPADDRESS.%s \n",ASSETCHAINS_SYMBOL,ROGUE_PORT,USERPASS,IPADDRESS); sleep(1);
     if ( argc == 2 && (fp=fopen(argv[1],"rb")) == 0 )
     {
-        seed = atol(argv[1]);
+        
+		#ifdef _WIN32
+			#ifdef _MSC_VER
+			seed = _strtoui64(argv[1], NULL, 10);
+			fprintf(stderr, "replay seed.str(%s) seed.uint64_t(%I64u)", argv[1], seed);
+			#else
+			fprintf(stderr, "replay seed.str(%s) seed.uint64_t(%llu)", argv[1], (long long)seed);
+			seed = atol(argv[1]); // windows, but not MSVC
+			#endif // _MSC_VER
+		#else
+		seed = atol(argv[1]); // non-windows
+		#endif // _WIN32
+
         //fprintf(stderr,"replay %llu\n",(long long)seed);
         return(rogue_replay(seed,10));
     }
