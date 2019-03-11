@@ -57,7 +57,7 @@ pushd curl
 
 mkdir build64 & pushd build64
 cmake -G "Visual Studio 14 2015 Win64" -DCMAKE_INSTALL_PREFIX=%PREFIX_DIR% -DCMAKE_USE_WINSSL:BOOL=ON ..
-rem cmake --build . --config Release --target libcurl
+cmake --build . --config Release --target libcurl
 cmake --build . --config Release --target install
 popd
 popd
