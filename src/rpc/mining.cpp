@@ -21,13 +21,11 @@
 #include "txmempool.h"
 #include "util.h"
 #include "validationinterface.h"
-#ifdef ENABLE_WALLET
-#include "wallet/wallet.h"
-#endif
 
 #include <stdint.h>
 
 #include <boost/assign/list_of.hpp>
+#include <boost/shared_ptr.hpp>
 
 #include <univalue.h>
 
@@ -174,15 +172,6 @@ UniValue generate(const UniValue& params, bool fHelp)
             + HelpExampleCli("generate", "11")
         );
 
-    if (GetArg("-mineraddress", "").empty()) {
-#ifdef ENABLE_WALLET
-        if (!pwalletMain) {
-            throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Wallet disabled and -mineraddress not set");
-        }
-#else
-        throw JSONRPCError(RPC_METHOD_NOT_FOUND, "zcashd compiled without wallet and -mineraddress not set");
-#endif
-    }
     if (!Params().MineBlocksOnDemand())
         throw JSONRPCError(RPC_METHOD_NOT_FOUND, "This method can only be used on regtest");
 
@@ -190,9 +179,13 @@ UniValue generate(const UniValue& params, bool fHelp)
     int nHeightEnd = 0;
     int nHeight = 0;
     int nGenerate = params[0].get_int();
-#ifdef ENABLE_WALLET
-    CReserveKey reservekey(pwalletMain);
-#endif
+
+    boost::shared_ptr<CReserveScript> coinbaseScript;
+    GetMainSignals().ScriptForMining(coinbaseScript);
+
+    //throw an error if no script was provided
+    if (!coinbaseScript->reserveScript.size())
+        throw JSONRPCError(RPC_INTERNAL_ERROR, "No coinbase script available (mining requires a wallet or -mineraddress)");
 
     {   // Don't keep cs_main locked
         LOCK(cs_main);
@@ -206,13 +199,9 @@ UniValue generate(const UniValue& params, bool fHelp)
     unsigned int k = Params().EquihashK();
     while (nHeight < nHeightEnd)
     {
-#ifdef ENABLE_WALLET
-        std::unique_ptr<CBlockTemplate> pblocktemplate(CreateNewBlockWithKey(reservekey));
-#else
-        std::unique_ptr<CBlockTemplate> pblocktemplate(CreateNewBlockWithKey());
-#endif
+        std::unique_ptr<CBlockTemplate> pblocktemplate(CreateNewBlock(coinbaseScript->reserveScript));
         if (!pblocktemplate.get())
-            throw JSONRPCError(RPC_INTERNAL_ERROR, "Wallet keypool empty");
+            throw JSONRPCError(RPC_INTERNAL_ERROR, "Couldn't create new block");
         CBlock *pblock = &pblocktemplate->block;
         {
             LOCK(cs_main);
@@ -262,10 +251,12 @@ endloop:
             throw JSONRPCError(RPC_INTERNAL_ERROR, "ProcessNewBlock, block not accepted");
         ++nHeight;
         blockHashes.push_back(pblock->GetHash().GetHex());
+
+        //mark script as important because it was used at least for one coinbase output
+        coinbaseScript->KeepScript();
     }
     return blockHashes;
 }
-
 
 UniValue setgenerate(const UniValue& params, bool fHelp)
 {
@@ -289,15 +280,6 @@ UniValue setgenerate(const UniValue& params, bool fHelp)
             + HelpExampleRpc("setgenerate", "true, 1")
         );
 
-    if (GetArg("-mineraddress", "").empty()) {
-#ifdef ENABLE_WALLET
-        if (!pwalletMain) {
-            throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Wallet disabled and -mineraddress not set");
-        }
-#else
-        throw JSONRPCError(RPC_METHOD_NOT_FOUND, "zcashd compiled without wallet and -mineraddress not set");
-#endif
-    }
     if (Params().MineBlocksOnDemand())
         throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Use the generate method instead of setgenerate on this network");
 
@@ -315,16 +297,11 @@ UniValue setgenerate(const UniValue& params, bool fHelp)
 
     mapArgs["-gen"] = (fGenerate ? "1" : "0");
     mapArgs ["-genproclimit"] = itostr(nGenProcLimit);
-#ifdef ENABLE_WALLET
-    GenerateBitcoins(fGenerate, pwalletMain, nGenProcLimit);
-#else
-    GenerateBitcoins(fGenerate, nGenProcLimit);
-#endif
+    GenerateBitcoins(fGenerate, nGenProcLimit, Params());
 
     return NullUniValue;
 }
 #endif
-
 
 UniValue getmininginfo(const UniValue& params, bool fHelp)
 {
@@ -629,16 +606,22 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
             delete pblocktemplate;
             pblocktemplate = NULL;
         }
-#ifdef ENABLE_WALLET
-        CReserveKey reservekey(pwalletMain);
-        pblocktemplate = CreateNewBlockWithKey(reservekey);
-#else
-        pblocktemplate = CreateNewBlockWithKey();
-#endif
+
+        boost::shared_ptr<CReserveScript> coinbaseScript;
+        GetMainSignals().ScriptForMining(coinbaseScript);
+
+        // Throw an error if no script was provided
+        if (!coinbaseScript->reserveScript.size())
+            throw JSONRPCError(RPC_INTERNAL_ERROR, "No coinbase script available (mining requires a wallet or -mineraddress)");
+
+        pblocktemplate = CreateNewBlock(coinbaseScript->reserveScript);
         if (!pblocktemplate)
             throw JSONRPCError(RPC_OUT_OF_MEMORY, "Out of memory");
 
-        // Need to update only after we know CreateNewBlockWithKey succeeded
+        // Mark script as important because it was used at least for one coinbase output
+        coinbaseScript->KeepScript();
+
+        // Need to update only after we know CreateNewBlock succeeded
         pindexPrev = pindexPrevNew;
     }
     CBlock* pblock = &pblocktemplate->block; // pointer for convenience

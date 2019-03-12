@@ -419,3 +419,19 @@ def wait_and_assert_operationid_status(node, myopid, in_status='success', in_err
         return result # if there was an error return the result
     else:
         return txid # otherwise return the txid
+
+# Find a coinbase address on the node, filtering by the number of UTXOs it has.
+# If no filter is provided, returns the coinbase address on the node containing
+# the greatest number of spendable UTXOs.
+# The default cached chain has one address per coinbase output.
+def get_coinbase_address(node, expected_utxos=None):
+    addrs = [utxo['address'] for utxo in node.listunspent() if utxo['generated']]
+    assert(len(set(addrs)) > 0)
+
+    if expected_utxos is None:
+        addrs = [(addrs.count(a), a) for a in set(addrs)]
+        return sorted(addrs, reverse=True)[0][1]
+
+    addrs = [a for a in set(addrs) if addrs.count(a) == expected_utxos]
+    assert(len(addrs) > 0)
+    return addrs[0]

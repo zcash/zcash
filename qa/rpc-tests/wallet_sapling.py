@@ -9,6 +9,7 @@ from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
 from test_framework.util import (
     assert_equal,
+    get_coinbase_address,
     start_nodes,
     wait_and_assert_operationid_status,
 )
@@ -34,18 +35,18 @@ class WalletSaplingTest(BitcoinTestFramework):
         self.sync_all()
 
         # Verify RPCs disallow Sapling value transfer if Sapling is not active
-        tmp_taddr = self.nodes[3].getnewaddress()
+        tmp_taddr = get_coinbase_address(self.nodes[3])
         tmp_zaddr = self.nodes[3].z_getnewaddress('sapling')
         try:
             recipients = []
-            recipients.append({"address": tmp_zaddr, "amount": Decimal('20')})
+            recipients.append({"address": tmp_zaddr, "amount": Decimal('10')})
             self.nodes[3].z_sendmany(tmp_taddr, recipients, 1, 0)
             raise AssertionError("Should have thrown an exception")
         except JSONRPCException as e:
             assert_equal("Invalid parameter, Sapling has not activated", e.error['message'])
         try:
             recipients = []
-            recipients.append({"address": tmp_taddr, "amount": Decimal('20')})
+            recipients.append({"address": tmp_taddr, "amount": Decimal('10')})
             self.nodes[3].z_sendmany(tmp_zaddr, recipients, 1, 0)
             raise AssertionError("Should have thrown an exception")
         except JSONRPCException as e:
@@ -75,9 +76,6 @@ class WalletSaplingTest(BitcoinTestFramework):
         self.nodes[2].generate(2)
         self.sync_all()
 
-        taddr0 = self.nodes[0].getnewaddress()
-        # Skip over the address containing node 1's coinbase
-        self.nodes[1].getnewaddress()
         taddr1 = self.nodes[1].getnewaddress()
         saplingAddr0 = self.nodes[0].z_getnewaddress('sapling')
         saplingAddr1 = self.nodes[1].z_getnewaddress('sapling')
@@ -95,10 +93,9 @@ class WalletSaplingTest(BitcoinTestFramework):
 
         # Node 0 shields some funds
         # taddr -> Sapling
-        #       -> taddr (change)
         recipients = []
-        recipients.append({"address": saplingAddr0, "amount": Decimal('20')})
-        myopid = self.nodes[0].z_sendmany(taddr0, recipients, 1, 0)
+        recipients.append({"address": saplingAddr0, "amount": Decimal('10')})
+        myopid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, 0)
         mytxid = wait_and_assert_operationid_status(self.nodes[0], myopid)
 
         self.sync_all()
@@ -107,6 +104,11 @@ class WalletSaplingTest(BitcoinTestFramework):
         mempool = self.nodes[0].getrawmempool(True)
         assert(Decimal(mempool[mytxid]['startingpriority']) == Decimal('1E+16'))
 
+        # Shield another coinbase UTXO
+        myopid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, 0)
+        mytxid = wait_and_assert_operationid_status(self.nodes[0], myopid)
+
+        self.sync_all()
         self.nodes[2].generate(1)
         self.sync_all()
 

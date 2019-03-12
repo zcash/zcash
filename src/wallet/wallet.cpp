@@ -4039,6 +4039,21 @@ void CWallet::UpdatedTransaction(const uint256 &hashTx)
     }
 }
 
+void CWallet::GetScriptForMining(boost::shared_ptr<CReserveScript> &script)
+{
+    if (!GetArg("-mineraddress", "").empty()) {
+        return;
+    }
+
+    boost::shared_ptr<CReserveKey> rKey(new CReserveKey(this));
+    CPubKey pubkey;
+    if (!rKey->GetReservedKey(pubkey))
+        return;
+
+    script = rKey;
+    script->reserveScript = CScript() << OP_DUP << OP_HASH160 << ToByteVector(pubkey.GetID()) << OP_EQUALVERIFY << OP_CHECKSIG;
+}
+
 void CWallet::LockCoin(COutPoint& output)
 {
     AssertLockHeld(cs_wallet); // setLockedCoins

@@ -9,7 +9,7 @@ from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
 from test_framework.util import assert_equal, initialize_chain_clean, \
     start_node, connect_nodes_bi, sync_blocks, sync_mempools, \
-    wait_and_assert_operationid_status
+    wait_and_assert_operationid_status, get_coinbase_address
 
 from decimal import Decimal
 
@@ -46,17 +46,13 @@ class WalletShieldCoinbaseTest (BitcoinTestFramework):
         print "Mining blocks..."
 
         self.nodes[0].generate(1)
-        do_not_shield_taddr = self.nodes[0].getnewaddress()
-
         self.nodes[0].generate(4)
         walletinfo = self.nodes[0].getwalletinfo()
         assert_equal(walletinfo['immature_balance'], 50)
         assert_equal(walletinfo['balance'], 0)
         self.sync_all()
         self.nodes[2].generate(1)
-        self.nodes[2].getnewaddress()
         self.nodes[2].generate(1)
-        self.nodes[2].getnewaddress()
         self.nodes[2].generate(1)
         self.sync_all()
         self.nodes[1].generate(101)
@@ -65,8 +61,10 @@ class WalletShieldCoinbaseTest (BitcoinTestFramework):
         assert_equal(self.nodes[1].getbalance(), 10)
         assert_equal(self.nodes[2].getbalance(), 30)
 
+        do_not_shield_taddr = get_coinbase_address(self.nodes[0], 1)
+
         # Prepare to send taddr->zaddr
-        mytaddr = self.nodes[0].getnewaddress()
+        mytaddr = get_coinbase_address(self.nodes[0], 4)
         myzaddr = self.nodes[0].z_getnewaddress(self.addr_type)
 
         # Shielding will fail when trying to spend from watch-only address
@@ -145,7 +143,7 @@ class WalletShieldCoinbaseTest (BitcoinTestFramework):
         self.sync_all()
         self.nodes[1].generate(100)
         self.sync_all()
-        mytaddr = self.nodes[0].getnewaddress()
+        mytaddr = get_coinbase_address(self.nodes[0], 800)
 
         def verify_locking(first, second, limit):
             result = self.nodes[0].z_shieldcoinbase(mytaddr, myzaddr, 0, limit)
@@ -186,7 +184,7 @@ class WalletShieldCoinbaseTest (BitcoinTestFramework):
         if self.addr_type == 'sprout':
             # Verify maximum number of utxos which node 2 can shield is limited by option -mempooltxinputlimit
             # This option is used when the limit parameter is set to 0.
-            mytaddr = self.nodes[2].getnewaddress()
+            mytaddr = get_coinbase_address(self.nodes[2], 20)
             result = self.nodes[2].z_shieldcoinbase(mytaddr, myzaddr, Decimal('0.0001'), 0)
             assert_equal(result["shieldingUTXOs"], Decimal('7'))
             assert_equal(result["remainingUTXOs"], Decimal('13'))
@@ -198,7 +196,7 @@ class WalletShieldCoinbaseTest (BitcoinTestFramework):
         # Verify maximum number of utxos which node 0 can shield is set by default limit parameter of 50
         self.nodes[0].generate(200)
         self.sync_all()
-        mytaddr = self.nodes[0].getnewaddress()
+        mytaddr = get_coinbase_address(self.nodes[0], 100)
         result = self.nodes[0].z_shieldcoinbase(mytaddr, myzaddr, Decimal('0.0001'))
         assert_equal(result["shieldingUTXOs"], Decimal('50'))
         assert_equal(result["remainingUTXOs"], Decimal('50'))

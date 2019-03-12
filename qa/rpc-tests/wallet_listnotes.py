@@ -6,7 +6,12 @@
 import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import assert_equal, start_nodes, wait_and_assert_operationid_status
+from test_framework.util import (
+    assert_equal,
+    get_coinbase_address,
+    start_nodes,
+    wait_and_assert_operationid_status,
+)
 
 from decimal import Decimal
 
@@ -35,12 +40,10 @@ class WalletListNotes(BitcoinTestFramework):
         self.sync_all()
         assert_equal(201, self.nodes[0].getblockcount())
 
-        mining_addr = self.nodes[0].listunspent()[0]['address']
-
         # Shield coinbase funds (must be a multiple of 10, no change allowed pre-sapling)
         receive_amount_10 = Decimal('10.0') - Decimal('0.0001')
         recipients = [{"address":sproutzaddr, "amount":receive_amount_10}]
-        myopid = self.nodes[0].z_sendmany(mining_addr, recipients)
+        myopid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients)
         txid_1 = wait_and_assert_operationid_status(self.nodes[0], myopid)
         self.sync_all()
         
@@ -119,7 +122,7 @@ class WalletListNotes(BitcoinTestFramework):
         # so send from coin base)
         receive_amount_2 = Decimal('2.0') - Decimal('0.0001')
         recipients = [{"address": saplingzaddr, "amount":receive_amount_2}]
-        myopid = self.nodes[0].z_sendmany(mining_addr, recipients)
+        myopid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients)
         txid_3 = wait_and_assert_operationid_status(self.nodes[0], myopid)
         self.sync_all()
         unspent_tx = self.nodes[0].z_listunspent(0)

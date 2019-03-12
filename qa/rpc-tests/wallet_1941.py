@@ -10,7 +10,8 @@ import sys; assert sys.version_info < (3,), ur"This script does not run under Py
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, initialize_chain_clean, \
     initialize_datadir, start_nodes, start_node, connect_nodes_bi, \
-    bitcoind_processes, wait_and_assert_operationid_status
+    bitcoind_processes, wait_and_assert_operationid_status, \
+    get_coinbase_address
 
 from decimal import Decimal
 
@@ -48,7 +49,7 @@ class Wallet1941RegressionTest (BitcoinTestFramework):
         self.nodes[0].setmocktime(starttime)
         self.nodes[0].generate(101)
 
-        mytaddr = self.nodes[0].getnewaddress()     # where coins were mined
+        mytaddr = get_coinbase_address(self.nodes[0])
         myzaddr = self.nodes[0].z_getnewaddress('sprout')
 
         # Send 10 coins to our zaddr.
