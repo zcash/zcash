@@ -290,6 +290,16 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
         cc_free(othercond3);
     if ( othercond4 != 0 )
         cc_free(othercond4);
+    if ( othercond1of2 != 0 )
+        cc_free(othercond1of2);
+    if ( othercond1of2tokens != 0 )
+        cc_free(othercond1of2tokens);
+    if ( mytokenscond != 0 )
+        cc_free(mytokenscond);   
+    if ( mysingletokenscond != 0 )
+        cc_free(mysingletokenscond);   
+    if ( othertokenscond != 0 )
+        cc_free(othertokenscond);   
     std::string strHex = EncodeHexTx(mtx);
     if ( strHex.size() > 0 )
         return(strHex);
