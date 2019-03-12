@@ -941,9 +941,46 @@ int32_t rogue_setplayerdata(struct rogue_state *rs,char *gametxidstr)
     return(retval);
 }
 
+#ifdef _WIN32
+#ifdef _MSC_VER
+__inline int msver(void) {
+	switch (_MSC_VER) {
+	case 1500: return 2008;
+	case 1600: return 2010;
+	case 1700: return 2012;
+	case 1800: return 2013;
+	case 1900: return 2015;
+	//case 1910: return 2017;
+	default: return (_MSC_VER / 100);
+	}
+}
+
+static inline bool is_x64(void) {
+#if defined(__x86_64__) || defined(_WIN64) || defined(__aarch64__)
+	return 1;
+#elif defined(__amd64__) || defined(__amd64) || defined(_M_X64) || defined(_M_IA64)
+	return 1;
+#else
+	return 0;
+#endif
+}
+
+#define BUILD_DATE __DATE__ " " __TIME__
+#endif // _WIN32
+#endif // _MSC_VER
+
 int main(int argc, char **argv, char **envp)
 {
     uint64_t seed; FILE *fp = 0; int32_t i,j,c; char userpass[8192];
+
+	#ifdef _WIN32
+	#ifdef _MSC_VER
+	printf("*** rogue for Windows [ Build %s ] ***\n", BUILD_DATE);
+	const char* arch = is_x64() ? "64-bits" : "32-bits";
+	printf("    Built with VC++ %d (%ld) %s\n\n", msver(), _MSC_FULL_VER, arch);
+	#endif
+	#endif
+
     for (i=j=0; argv[0][i]!=0&&j<sizeof(ASSETCHAINS_SYMBOL); i++)
     {
         c = argv[0][i];
