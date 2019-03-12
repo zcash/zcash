@@ -769,12 +769,15 @@ int32_t rogue_sendrawtransaction(char *rawtx)
         }
 
 		/* log sendrawtx result in file */
+		
+		/*
 		FILE *debug_file;
 		debug_file = fopen("tx_debug.log", "a");
 		fprintf(debug_file, "%s\n", retstr);
 		fflush(debug_file);
 		fclose(debug_file);
-		
+		*/
+
         free(retstr);
     }
     free(params);
