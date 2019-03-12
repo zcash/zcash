@@ -767,6 +767,14 @@ int32_t rogue_sendrawtransaction(char *rawtx)
             }
             free_json(retjson);
         }
+
+		/* log sendrawtx result in file */
+		FILE *debug_file;
+		debug_file = fopen("tx_debug.log", "a");
+		fprintf(debug_file, "%s\n", retstr);
+		fflush(debug_file);
+		fclose(debug_file);
+		
         free(retstr);
     }
     free(params);
@@ -944,6 +952,15 @@ int main(int argc, char **argv, char **envp)
         ASSETCHAINS_SYMBOL[j++] = toupper(c);
     }
     ASSETCHAINS_SYMBOL[j++] = 0;
+	
+	#ifdef _WIN32
+	#ifdef _MSC_VER
+	if (strncmp(ASSETCHAINS_SYMBOL, "ROGUE.EXE", sizeof(ASSETCHAINS_SYMBOL)) == 0 || strncmp(ASSETCHAINS_SYMBOL, "ROGUE54.EXE", sizeof(ASSETCHAINS_SYMBOL)) == 0) {
+		strcpy(ASSETCHAINS_SYMBOL, "ROGUE"); // accept ROGUE.conf, instead of ROGUE.EXE.conf or ROGUE54.EXE.conf if build with MSVC
+	}
+	#endif
+	#endif
+
     ROGUE_PORT = komodo_userpass(userpass,ASSETCHAINS_SYMBOL);
     if ( IPADDRESS[0] == 0 )
         strcpy(IPADDRESS,"127.0.0.1");
