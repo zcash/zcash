@@ -20,7 +20,6 @@
 void
 command(struct rogue_state *rs)
 {
-    static FILE *fp2;
     register char ch;
     register int ntimes = 1;			/* Number of player moves */
     char *fp;
@@ -466,25 +465,8 @@ over:
         if (!after)
             ntimes++;
     }
-    if ( fp2 == 0 )
-        rs->logfp = fp2 = fopen("commands","wb");
-    if ( fp2 != 0 )
-    {
-        fprintf(fp2,"after if (%c).%d seed.%llu\n",ch,ch,(long long)seed);
-        fflush(fp2);
-    }
     do_daemons(rs,AFTER);
-    if ( fp2 != 0 )
-    {
-        fprintf(fp2,"after daemons (%c).%d seed.%llu isring.%d teleport.%d || search.%d teleport.%d\n",ch,ch,(long long)seed,ISRING(LEFT, R_SEARCH),ISRING(LEFT, R_TELEPORT),ISRING(RIGHT, R_SEARCH),ISRING(RIGHT, R_TELEPORT));
-        fflush(fp2);
-    }
-    do_fuses(rs,AFTER,fp2);
-    if ( fp2 != 0 )
-    {
-        fprintf(fp2,"after fuses (%c).%d seed.%llu isring.%d teleport.%d || search.%d teleport.%d\n",ch,ch,(long long)seed,ISRING(LEFT, R_SEARCH),ISRING(LEFT, R_TELEPORT),ISRING(RIGHT, R_SEARCH),ISRING(RIGHT, R_TELEPORT));
-        fflush(fp2);
-    }
+    do_fuses(rs,AFTER,0);
     if (ISRING(LEFT, R_SEARCH))
         search(rs);
     else if (ISRING(LEFT, R_TELEPORT) && rnd(50) == 0)
@@ -493,11 +475,6 @@ over:
         search(rs);
     else if (ISRING(RIGHT, R_TELEPORT) && rnd(50) == 0)
         teleport(rs);
-    if ( fp2 != 0 )
-    {
-        fprintf(fp2,"after command (%c).%d seed.%llu\n",ch,ch,(long long)seed);
-        fflush(fp2);
-    }
 }
 
 /*

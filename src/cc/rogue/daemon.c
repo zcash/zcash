@@ -187,6 +187,8 @@ char *actionfunc_str(char *str,void *ptr)
         strcpy(str,"rollwand");
     else if ( ptr == (void *)visuals )
         strcpy(str,"visuals");
+    else if ( ptr == (void *)turn_see )
+        strcpy(str,"turn_see");
     else strcpy(str,"no match");
     return(str);
 }
