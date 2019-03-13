@@ -377,18 +377,18 @@ do_pot(struct rogue_state *rs,int type, bool knowit)
 {
     PACT *pp;
     int t;
-
+    
     pp = &p_actions[type];
     if (!pot_info[type].oi_know)
-	pot_info[type].oi_know = knowit;
+        pot_info[type].oi_know = knowit;
     t = spread(pp->pa_time);
     if (!on(player, pp->pa_flags))
     {
-	player.t_flags |= pp->pa_flags;
-	fuse(pp->pa_daemon, 0, t, AFTER);
-	look(rs,FALSE);
+        player.t_flags |= pp->pa_flags;
+        fuse(pp->pa_daemon, 0, t, AFTER);
+        look(rs,FALSE);
     }
     else
-	lengthen(pp->pa_daemon, t);
+        lengthen(pp->pa_daemon, t);
     msg(rs,choose_str(pp->pa_high, pp->pa_straight));
 }

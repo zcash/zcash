@@ -169,6 +169,24 @@ char *actionfunc_str(char *str,void *ptr)
         strcpy(str,"doctor");
     else if ( ptr == (void *)stomach )
         strcpy(str,"stomach");
+    else if ( ptr == (void *)nohaste )
+        strcpy(str,"nohaste");
+    else if ( ptr == (void *)unconfuse )
+        strcpy(str,"unconfuse");
+    else if ( ptr == (void *)swander )
+        strcpy(str,"swander");
+    else if ( ptr == (void *)come_down )
+        strcpy(str,"come_down");
+    else if ( ptr == (void *)unsee )
+        strcpy(str,"unsee");
+    else if ( ptr == (void *)sight )
+        strcpy(str,"sight");
+    else if ( ptr == (void *)land )
+        strcpy(str,"land");
+    else if ( ptr == (void *)rollwand )
+        strcpy(str,"rollwand");
+    else if ( ptr == (void *)visuals )
+        strcpy(str,"visuals");
     else strcpy(str,"no match");
     return(str);
 }
