@@ -1104,8 +1104,8 @@ int32_t rogue_playerdata_validate(int64_t *cashoutp,uint256 &playertxid,struct C
         sprintf(fname,"rogue.%llu.pack",(long long)seed);
         remove(fname);
 
-        for (i=0; i<playerdata.size(); i++)
-            ((uint8_t *)&P)[i] = playerdata[i];
+        for (i=0; i<newdata.size(); i++)
+            ((uint8_t *)&P)[i] = newdata[i];
         if ( P.amulet != 0 )
             mult *= 5;
         dungeonlevel = P.dungeonlevel;
