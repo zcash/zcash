@@ -998,7 +998,7 @@ char *rogue_extractgame(int32_t makefiles,char *str,int32_t *numkeysp,std::vecto
                     newdata[i] = newplayer[i];
                     ((uint8_t *)&endP)[i] = newplayer[i];
                 }
-                fprintf(stderr,"back replay2 gold.%d\n",endP.gold);
+                //fprintf(stderr,"back replay2 gold.%d\n",endP.gold);
                 if ( endP.gold <= 0 || endP.hitpoints <= 0 || (endP.strength&0xffff) <= 0 || endP.level <= 0 || endP.experience <= 0 || endP.dungeonlevel <= 0 )
                 {
                     sprintf(str,"zero value character was killed -> no playerdata\n");
