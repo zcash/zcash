@@ -2451,6 +2451,32 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         return true;
     }
 
+    // If we're on testnet, reject a block that results in a negative
+    // shielded value pool balance.
+    if (Params().NetworkIDString() == "test") {
+        // Sprout
+        //
+        // We can expect nChainSproutValue to be valid after the hardcoded
+        // height, and this will be enforced on all descendant blocks. If
+        // the node was reindexed then this will be enforced for all blocks.
+        if (pindex->nChainSproutValue) {
+            if (*pindex->nChainSproutValue < 0) {
+                return state.DoS(100, error("ConnectBlock(): turnstile violation in Sprout shielded value pool"),
+                             REJECT_INVALID, "turnstile-violation-sprout-shielded-pool");
+            }
+        }
+
+        // Sapling
+        //
+        // If we've reached ConnectBlock, we have all transactions of
+        // parents and can expect nChainSaplingValue not to be boost::none.
+        assert(pindex->nChainSaplingValue != boost::none);
+        if (*pindex->nChainSaplingValue < 0) {
+            return state.DoS(100, error("ConnectBlock(): turnstile violation in Sapling shielded value pool"),
+                         REJECT_INVALID, "turnstile-violation-sapling-shielded-pool");
+        }
+    }
+
     // Do not allow blocks that contain transactions which 'overwrite' older transactions,
     // unless those are already completely spent.
     BOOST_FOREACH(const CTransaction& tx, block.vtx) {
