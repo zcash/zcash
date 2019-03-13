@@ -160,7 +160,7 @@ readchar(struct rogue_state *rs)
         if ( rs->ind < rs->numkeys )
         {
             c = rs->keystrokes[rs->ind++];
-            if ( 1 )
+            if ( 0 )
             {
                 static FILE *fp; static int32_t counter;
                 if ( fp == 0 )
