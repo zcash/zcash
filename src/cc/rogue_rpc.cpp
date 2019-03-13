@@ -332,7 +332,7 @@ void disp_playerdata(std::vector<uint8_t> playerdata)
         for (i=0; i<P.packsize&&i<MAXPACK; i++)
         {
             rogue_packitemstr(packitemstr,&P.roguepack[i]);
-            fprintf(stderr,"%d: %s\n",packitemstr);
+            fprintf(stderr,"%d: %s\n",i,packitemstr);
         }
         fprintf(stderr,"\n");
     }
@@ -1130,8 +1130,6 @@ int32_t rogue_playerdata_validate(int64_t *cashoutp,uint256 &playertxid,struct C
             }
             return(0);
         }
-        disp_playerdata(newdata);
-        disp_playerdata(playerdata);
         if ( P.gold <= 0 || P.hitpoints <= 0 || (P.strength&0xffff) <= 0 || P.level <= 0 || P.experience <= 0 || P.dungeonlevel <= 0 )
         {
             //P.gold = (P.gold * 8) / 10;
@@ -1153,6 +1151,8 @@ int32_t rogue_playerdata_validate(int64_t *cashoutp,uint256 &playertxid,struct C
         {
             prevgame = gametxid;
             bad++;
+            disp_playerdata(newdata);
+            disp_playerdata(playerdata);
             fprintf(stderr,"%s playerdata: gold.%d hp.%d strength.%d/%d level.%d exp.%d dl.%d\n",gametxid.GetHex().c_str(),P.gold,P.hitpoints,P.strength&0xffff,P.strength>>16,P.level,P.experience,P.dungeonlevel);
             fprintf(stderr,"newdata[%d] != playerdata[%d], numkeys.%d %s pub.%s playertxid.%s good.%d bad.%d\n",(int32_t)newdata.size(),(int32_t)playerdata.size(),numkeys,rogueaddr,pubkey33_str(str2,(uint8_t *)&pk),playertxid.GetHex().c_str(),good,bad);
         }
