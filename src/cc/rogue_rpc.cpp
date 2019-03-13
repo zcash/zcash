@@ -1133,6 +1133,17 @@ int32_t rogue_playerdata_validate(int64_t *cashoutp,uint256 &playertxid,struct C
             }
             return(0);
         }
+        newdata[0] = newdata[1] = playerdata[0] = playerdata[1] = 0; // vout.2 check will validate gold
+        if ( newdata == playerdata )
+        {
+            if ( gametxid != prevgame )
+            {
+                prevgame = gametxid;
+                good++;
+                fprintf(stderr,"%s matched after clearing lower 16bits of gold good.%d bad.%d\n",gametxid.GetHex().c_str(),good,bad);
+            }
+            return(0);
+        }
         if ( P.gold <= 0 || P.hitpoints <= 0 || (P.strength&0xffff) <= 0 || P.level <= 0 || P.experience <= 0 || P.dungeonlevel <= 0 )
         {
             //P.gold = (P.gold * 8) / 10;
