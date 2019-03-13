@@ -327,8 +327,11 @@ void disp_playerdata(std::vector<uint8_t> playerdata)
     if ( playerdata.size() > 0 )
     {
         for (i=0; i<playerdata.size(); i++)
+        {
             ((uint8_t *)&P)[i] = playerdata[i];
-        fprintf(stderr,"playerdata: gold.%d hp.%d strength.%d/%d level.%d exp.%d dl.%d\n",P.gold,P.hitpoints,P.strength&0xffff,P.strength>>16,P.level,P.experience,P.dungeonlevel);
+            fprintf(stderr,"%02x",playerdata[i]);
+        }
+        fprintf(stderr," <- playerdata: gold.%d hp.%d strength.%d/%d level.%d exp.%d dl.%d\n",P.gold,P.hitpoints,P.strength&0xffff,P.strength>>16,P.level,P.experience,P.dungeonlevel);
         for (i=0; i<P.packsize&&i<MAXPACK; i++)
         {
             rogue_packitemstr(packitemstr,&P.roguepack[i]);
