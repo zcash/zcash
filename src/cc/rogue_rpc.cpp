@@ -1498,7 +1498,7 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
     if ( (numvouts= tx.vout.size()) > 1 )
     {
         txid = tx.GetHash();
-        if ( tx == Parseuint256("1ae04dc0c5f2fca2053819a3a1b2efe5d355c34f58d6f16d59e5e2573e7baf7f") ) // osx rogue chain ht.50902
+        if ( txid == Parseuint256("1ae04dc0c5f2fca2053819a3a1b2efe5d355c34f58d6f16d59e5e2573e7baf7f") ) // osx rogue chain ht.50902
             enabled = 0;
         scriptPubKey = tx.vout[numvouts-1].scriptPubKey;
         GetOpReturnData(scriptPubKey,vopret);
