@@ -26,6 +26,7 @@ new_level(struct rogue_state *rs)
     PLACE *pp;
     char *sp;
     int i;
+    if ( 0 )
     {
         static FILE *fp;
         if ( fp == 0 )

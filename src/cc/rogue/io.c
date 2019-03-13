@@ -160,14 +160,14 @@ readchar(struct rogue_state *rs)
         if ( rs->ind < rs->numkeys )
         {
             c = rs->keystrokes[rs->ind++];
-            if ( 0 )
+            if ( 1 )
             {
                 static FILE *fp; static int32_t counter;
                 if ( fp == 0 )
                     fp = fopen("log","wb");
                 if ( fp != 0 )
                 {
-                    fprintf(fp,"%d: (%c) hp.%d num.%d\n",counter,c,pstats.s_hpt,num_packitems(rs));
+                    fprintf(fp,"%d: (%c) hp.%d num.%d gold.%d seed.%llu\n",counter,c,pstats.s_hpt,num_packitems(rs),purse,(long long)seed);
                     fflush(fp);
                     counter++;
                 }
