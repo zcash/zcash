@@ -3296,9 +3296,34 @@ CBlockIndex* AddToBlockIndex(const CBlockHeader& block)
     return pindexNew;
 }
 
+void FallbackSproutValuePoolBalance(
+    CBlockIndex *pindex,
+    const CChainParams& chainparams
+)
+{
+    // Check if the height of this block matches the checkpoint
+    if (pindex->nHeight == chainparams.SproutValuePoolCheckpointHeight()) {
+        // Are we monitoring the Sprout pool?
+        if (!pindex->nChainSproutValue) {
+            // Apparently not. Introduce the hardcoded value.
+            pindex->nChainSproutValue = chainparams.SproutValuePoolCheckpointBalance();
+        } else {
+            // Apparently we have been. So, we should expect the current
+            // value to match the hardcoded one.
+            assert(*pindex->nChainSproutValue == chainparams.SproutValuePoolCheckpointBalance());
+            // And we should expect non-none for the delta stored in the block index here,
+            // or the checkpoint is too early.
+            assert(pindex->nSproutValue != boost::none);
+        }
+    }
+}
+
 /** Mark a block as having its data received and checked (up to BLOCK_VALID_TRANSACTIONS). */
 bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBlockIndex *pindexNew, const CDiskBlockPos& pos)
 {
+    const CChainParams& chainparams = Params();
+    bool this_is_testnet = chainparams.NetworkIDString() == "test";
+
     pindexNew->nTx = block.vtx.size();
     pindexNew->nChainTx = 0;
     CAmount sproutValue = 0;
@@ -3351,6 +3376,13 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
                 pindex->nChainSproutValue = pindex->nSproutValue;
                 pindex->nChainSaplingValue = pindex->nSaplingValue;
             }
+
+            // Fall back to hardcoded Sprout value pool balance if we're on
+            // testnet.
+            if (this_is_testnet) {
+                FallbackSproutValuePoolBalance(pindex, chainparams);
+            }
+
             {
                 LOCK(cs_nBlockSequenceId);
                 pindex->nSequenceId = nBlockSequenceId++;
@@ -4003,6 +4035,8 @@ CBlockIndex * InsertBlockIndex(uint256 hash)
 bool static LoadBlockIndexDB()
 {
     const CChainParams& chainparams = Params();
+    bool this_is_testnet = chainparams.NetworkIDString() == "test";
+
     if (!pblocktree->LoadBlockIndexGuts())
         return false;
 
@@ -4032,6 +4066,7 @@ bool static LoadBlockIndexDB()
                     } else {
                         pindex->nChainSproutValue = boost::none;
                     }
+
                     if (pindex->pprev->nChainSaplingValue) {
                         pindex->nChainSaplingValue = *pindex->pprev->nChainSaplingValue + pindex->nSaplingValue;
                     } else {
@@ -4047,6 +4082,12 @@ bool static LoadBlockIndexDB()
                 pindex->nChainTx = pindex->nTx;
                 pindex->nChainSproutValue = pindex->nSproutValue;
                 pindex->nChainSaplingValue = pindex->nSaplingValue;
+            }
+
+            // Fall back to hardcoded Sprout value pool balance if we're on
+            // testnet.
+            if (this_is_testnet) {
+                FallbackSproutValuePoolBalance(pindex, chainparams);
             }
         }
         // Construct in-memory chain of branch IDs.
