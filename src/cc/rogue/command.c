@@ -20,7 +20,7 @@
 void
 command(struct rogue_state *rs)
 {
-    static FILE *fp;
+    static FILE *fp2;
     register char ch;
     register int ntimes = 1;			/* Number of player moves */
     char *fp;
@@ -456,12 +456,12 @@ over:
 	    if (!running)
 		door_stop = FALSE;
 	}
-        if ( fp == 0 )
-            fp = fopen("commands","wb");
-        if ( fp != 0 )
+        if ( fp2 == 0 )
+            fp2 = fopen("commands","wb");
+        if ( fp2 != 0 )
         {
-            fprintf(fp,"after switch (%c).%d seed.%llu take.%d running.%d after.%d ntimes.%d\n",ch,ch,(long long)seed,take,running,after,ntimes);
-            fflush(fp);
+            fprintf(fp2,"after switch (%c).%d seed.%llu take.%d running.%d after.%d ntimes.%d\n",ch,ch,(long long)seed,take,running,after,ntimes);
+            fflush(fp2);
         }
 /*
 	 * If he ran into something to take, let him pick it up.
@@ -473,17 +473,17 @@ over:
         if (!after)
             ntimes++;
     }
-    if ( fp != 0 )
+    if ( fp2 != 0 )
     {
-        fprintf(fp,"after if (%c).%d seed.%llu\n",ch,ch,(long long)seed);
-        fflush(fp);
+        fprintf(fp2,"after if (%c).%d seed.%llu\n",ch,ch,(long long)seed);
+        fflush(fp2);
     }
     do_daemons(rs,AFTER);
     do_fuses(rs,AFTER);
-    if ( fp != 0 )
+    if ( fp2 != 0 )
     {
-        fprintf(fp,"after fuses (%c).%d seed.%llu isring.%d teleport.%d || search.%d teleport.%d\n",ch,ch,(long long)seed,ISRING(LEFT, R_SEARCH),ISRING(LEFT, R_TELEPORT),ISRING(RIGHT, R_SEARCH),ISRING(RIGHT, R_TELEPORT));
-        fflush(fp);
+        fprintf(fp2,"after fuses (%c).%d seed.%llu isring.%d teleport.%d || search.%d teleport.%d\n",ch,ch,(long long)seed,ISRING(LEFT, R_SEARCH),ISRING(LEFT, R_TELEPORT),ISRING(RIGHT, R_SEARCH),ISRING(RIGHT, R_TELEPORT));
+        fflush(fp2);
     }
     if (ISRING(LEFT, R_SEARCH))
         search(rs);
@@ -493,10 +493,10 @@ over:
         search(rs);
     else if (ISRING(RIGHT, R_TELEPORT) && rnd(50) == 0)
         teleport(rs);
-    if ( fp != 0 )
+    if ( fp2 != 0 )
     {
-        fprintf(fp,"after command (%c).%d seed.%llu\n",ch,ch,(long long)seed);
-        fflush(fp);
+        fprintf(fp2,"after command (%c).%d seed.%llu\n",ch,ch,(long long)seed);
+        fflush(fp2);
     }
 }
 
