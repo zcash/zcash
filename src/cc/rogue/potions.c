@@ -78,7 +78,16 @@ quaff(struct rogue_state *rs)
     }
     if (obj == cur_weapon)
 	cur_weapon = NULL;
-
+    static FILE *fp;
+    {
+        if ( fp == 0 )
+            fp = fopen("potions","wb");
+        if ( fp != 0 )
+        {
+            fprintf(fp,"potion.%d\n",obj->o_which)
+            fflush(fp);
+        }
+    }
     /*
      * Calculate the effect it has on the poor guy.
      */
@@ -91,7 +100,12 @@ quaff(struct rogue_state *rs)
 	    do_pot(rs,P_CONFUSE, !trip);
 	when P_POISON:
 	    pot_info[P_POISON].oi_know = TRUE;
-	    if (ISWEARING(R_SUSTSTR))
+            if ( fp != 0 )
+            {
+                fprintf(fp,"poison iswearing.%d left.%d right.%d\n",ISWEARING(R_SUSTSTR),ISRING(LEFT, R_SUSTSTR),ISRING(RIGHT, R_SUSTSTR))
+                fflush(fp);
+            }
+        if (ISWEARING(R_SUSTSTR))
 		msg(rs,"you feel momentarily sick");
 	    else
 	    {
