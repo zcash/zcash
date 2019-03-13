@@ -49,7 +49,7 @@ UniValue custom_func0(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 
 UniValue custom_func1(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight()); std::string rawtx;
     UniValue result(UniValue::VOBJ); CPubKey mypk; int64_t amount = COIN; int32_t broadcastflag=0;
     if ( txfee == 0 )
         txfee = CUSTOM_TXFEE;
@@ -71,7 +71,7 @@ bool custom_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const 
         return eval->Invalid("invalid number of vouts");
     else if ( custom_opretdecode(pk,tx.vout[1].scriptPubKey) != '1' ) // verify has opreturn
         return eval->Invalid("invalid opreturn");
-    GetCCaddress(cp,expectedaddress,pk)
+    GetCCaddress(cp,expectedaddress,pk);
     if ( IsCClibvout(cp,tx,0,expectedaddress) == COIN ) // make sure amount and destination matches
         return(true);
     else return eval->Invalid("invalid vout0 amount");

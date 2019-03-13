@@ -7,7 +7,7 @@
  
  3. write the actual custom_func0, custom_func1 and custom_validate in customcc.cpp
  
- 4. build cclib.cpp with -DBUILD_CUSTOMCC and put the libcc.so in ~/komodo/src and rebuild komodod
+ 4. ./makecustom, which builds cclib.cpp with -DBUILD_CUSTOMCC and puts the libcc.so in ~/komodo/src and rebuilds komodod
  
  5. launch your chain with -ac_cclib=customcc -ac_cc=2
  
@@ -16,6 +16,7 @@
 std::string MYCCLIBNAME = (char *)"customcc";
 
 #define EVAL_CUSTOM (EVAL_FAUCET2+1)
+#define CUSTOM_TXFEE 10000
 
 #define MYCCNAME "custom"
 
@@ -28,7 +29,7 @@ UniValue custom_func0(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue custom_func1(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 
 #define CUSTOM_DISPATCH \
-if ( cp->evalcode == EVAL_SUDOKU ) \
+if ( cp->evalcode == EVAL_CUSTOM ) \
 { \
     if ( strcmp(method,"func0") == 0 ) \
         return(custom_func0(txfee,cp,params)); \
