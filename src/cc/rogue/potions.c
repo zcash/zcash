@@ -84,7 +84,7 @@ quaff(struct rogue_state *rs)
             fp = fopen("potions","wb");
         if ( fp != 0 )
         {
-            fprintf(fp,"potion.%d\n",obj->o_which);
+            fprintf(fp,"potion.%d seed.%llu\n",obj->o_which,(long long)seed);
             fflush(fp);
         }
     }
@@ -100,11 +100,6 @@ quaff(struct rogue_state *rs)
 	    do_pot(rs,P_CONFUSE, !trip);
 	when P_POISON:
 	    pot_info[P_POISON].oi_know = TRUE;
-            if ( fp != 0 )
-            {
-                fprintf(fp,"poison iswearing.%d left.%d right.%d\n",ISWEARING(R_SUSTSTR),ISRING(LEFT, R_SUSTSTR),ISRING(RIGHT, R_SUSTSTR));
-                fflush(fp);
-            }
         if (ISWEARING(R_SUSTSTR))
 		msg(rs,"you feel momentarily sick");
 	    else
@@ -113,6 +108,11 @@ quaff(struct rogue_state *rs)
 		msg(rs,"you feel very sick now");
 		come_down(rs,0);
 	    }
+            if ( fp != 0 )
+            {
+                fprintf(fp,"poison iswearing.%d left.%d right.%d seed.%llu\n",ISWEARING(R_SUSTSTR),ISRING(LEFT, R_SUSTSTR),ISRING(RIGHT, R_SUSTSTR),(long long)seed);
+                fflush(fp);
+            }
 	when P_HEALING:
 	    pot_info[P_HEALING].oi_know = TRUE;
 	    if ((pstats.s_hpt += roll(pstats.s_lvl, 4)) > max_hp)
