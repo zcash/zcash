@@ -84,7 +84,7 @@ quaff(struct rogue_state *rs)
             fp = fopen("potions","wb");
         if ( fp != 0 )
         {
-            fprintf(fp,"potion.%d\n",obj->o_which)
+            fprintf(fp,"potion.%d\n",obj->o_which);
             fflush(fp);
         }
     }
@@ -102,7 +102,7 @@ quaff(struct rogue_state *rs)
 	    pot_info[P_POISON].oi_know = TRUE;
             if ( fp != 0 )
             {
-                fprintf(fp,"poison iswearing.%d left.%d right.%d\n",ISWEARING(R_SUSTSTR),ISRING(LEFT, R_SUSTSTR),ISRING(RIGHT, R_SUSTSTR))
+                fprintf(fp,"poison iswearing.%d left.%d right.%d\n",ISWEARING(R_SUSTSTR),ISRING(LEFT, R_SUSTSTR),ISRING(RIGHT, R_SUSTSTR));
                 fflush(fp);
             }
         if (ISWEARING(R_SUSTSTR))
