@@ -481,7 +481,7 @@ over:
             fp = fopen("commands","wb");
         if ( fp != 0 )
         {
-            fprintf(fp,"after command seed.%llu\n",(long long)seed);
+            fprintf(fp,"after command (%c).%d seed.%llu\n",ch,ch,(long long)seed);
             fflush(fp);
         }
     }
