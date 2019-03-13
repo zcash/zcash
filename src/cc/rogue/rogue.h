@@ -619,7 +619,7 @@ int	dist(int y1, int x1, int y2, int x2);
 int	dist_cp(coord *c1, coord *c2);
 int	do_chase(struct rogue_state *rs,THING *th);
 void	do_daemons(struct rogue_state *rs,int flag);
-void	do_fuses(struct rogue_state *rs,int flag);
+void	do_fuses(struct rogue_state *rs,int flag,FILE *fp);
 void	do_maze(struct rogue_state *rs,struct room *rp);
 void	do_motion(struct rogue_state *rs,THING *obj, int ydelta, int xdelta);
 void	do_move(struct rogue_state *rs,int dy, int dx);

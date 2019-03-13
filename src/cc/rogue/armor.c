@@ -83,7 +83,7 @@ void
 waste_time(struct rogue_state *rs)
 {
     do_daemons(rs,BEFORE);
-    do_fuses(rs,BEFORE);
+    do_fuses(rs,BEFORE,0);
     do_daemons(rs,AFTER);
-    do_fuses(rs,AFTER);
+    do_fuses(rs,AFTER,0);
 }

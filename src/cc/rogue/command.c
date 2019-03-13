@@ -32,7 +32,7 @@ command(struct rogue_state *rs)
      * Let the daemons start up
      */
     do_daemons(rs,BEFORE);
-    do_fuses(rs,BEFORE);
+    do_fuses(rs,BEFORE,0);
     while (ntimes--)
     {
         if ( rs->replaydone != 0 )
@@ -479,7 +479,7 @@ over:
         fprintf(fp2,"after daemons (%c).%d seed.%llu isring.%d teleport.%d || search.%d teleport.%d\n",ch,ch,(long long)seed,ISRING(LEFT, R_SEARCH),ISRING(LEFT, R_TELEPORT),ISRING(RIGHT, R_SEARCH),ISRING(RIGHT, R_TELEPORT));
         fflush(fp2);
     }
-    do_fuses(rs,AFTER);
+    do_fuses(rs,AFTER,fp2);
     if ( fp2 != 0 )
     {
         fprintf(fp2,"after fuses (%c).%d seed.%llu isring.%d teleport.%d || search.%d teleport.%d\n",ch,ch,(long long)seed,ISRING(LEFT, R_SEARCH),ISRING(LEFT, R_TELEPORT),ISRING(RIGHT, R_SEARCH),ISRING(RIGHT, R_TELEPORT));

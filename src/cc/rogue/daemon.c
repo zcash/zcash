@@ -160,10 +160,22 @@ extinguish(void (*func)(struct rogue_state *rs,int))
  * do_fuses:
  *	Decrement counters and start needed fuses
  */
-void
-do_fuses(struct rogue_state *rs,int flag)
+
+char *actionfunc_str(char *str,void *ptr)
 {
-    register struct delayed_action *wire;
+    if ( ptr == (void *)runners )
+        strcpy(str,"runners");
+    else if ( ptr == (void *)doctor )
+        strcpy(str,"doctor");
+    else if ( ptr == (void *)stomach )
+        strcpy(str,"stomach");
+    else strcpy(str,"no match");
+    return(str);
+}
+void
+do_fuses(struct rogue_state *rs,int flag,FILE *fp)
+{
+    register struct delayed_action *wire; char str[64];
 
     /*
      * Step though the list
@@ -175,6 +187,8 @@ do_fuses(struct rogue_state *rs,int flag)
 	 */
 	if (flag == wire->d_type && wire->d_time > 0 && --wire->d_time == 0)
 	{
+        if ( fp != 0 )
+            fprintf(fp,"t.%d %d %s, ",wire->d_type,wire->d_time,actionfunc_str(str,wire->d_func));
 	    wire->d_type = EMPTY;
 	    (*wire->d_func)(rs,wire->d_arg);
 	}
