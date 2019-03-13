@@ -109,6 +109,10 @@ void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, 
 CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 {
     const CChainParams& chainparams = Params();
+    bool this_is_testnet_or_regtest =
+        (chainparams.NetworkIDString() == "test") ||
+        (chainparams.NetworkIDString() == "regtest");
+
     // Create new block
     std::unique_ptr<CBlockTemplate> pblocktemplate(new CBlockTemplate());
     if(!pblocktemplate.get())
@@ -250,6 +254,28 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         TxPriorityCompare comparer(fSortedByFee);
         std::make_heap(vecPriority.begin(), vecPriority.end(), comparer);
 
+        // We want to track the value pool, but if the miner gets
+        // invoked on an old block before the hardcoded fallback
+        // is active we don't want to trip up any assertions. So,
+        // we only adhere to the turnstile (as a miner) if we
+        // actually have all of the information necessary to do
+        // so.
+        CAmount sproutValue = 0;
+        CAmount saplingValue = 0;
+        bool monitoring_pool_balances = true;
+        if (this_is_testnet_or_regtest) {
+            if (pindexPrev->nChainSproutValue) {
+                sproutValue = *pindexPrev->nChainSproutValue;
+            } else {
+                monitoring_pool_balances = false;
+            }
+            if (pindexPrev->nChainSaplingValue) {
+                saplingValue = *pindexPrev->nChainSaplingValue;
+            } else {
+                monitoring_pool_balances = false;
+            }
+        }
+
         while (!vecPriority.empty())
         {
             // Take highest priority transaction off the priority queue:
@@ -304,6 +330,26 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             PrecomputedTransactionData txdata(tx);
             if (!ContextualCheckInputs(tx, state, view, true, MANDATORY_SCRIPT_VERIFY_FLAGS, true, txdata, Params().GetConsensus(), consensusBranchId))
                 continue;
+
+            if (this_is_testnet_or_regtest && monitoring_pool_balances) {
+                // Does this transaction lead to a turnstile violation?
+
+                CAmount sproutValueDummy = sproutValue;
+                CAmount saplingValueDummy = saplingValue;
+
+                sproutValueDummy += -tx.valueBalance;
+
+                for (auto js : tx.vjoinsplit) {
+                    sproutValueDummy += js.vpub_old;
+                    sproutValueDummy -= js.vpub_new;
+                }
+
+                if (sproutValueDummy < 0) continue;
+                if (saplingValueDummy < 0) continue;
+
+                sproutValue = sproutValueDummy;
+                saplingValue = saplingValueDummy;
+            }
 
             UpdateCoins(tx, view, nHeight);
 
