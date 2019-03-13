@@ -343,7 +343,15 @@ int rogue(int argc, char **argv, char **envp)
     rs->sleeptime = 1; // non-zero to allow refresh()
     if ( argc == 3 && strlen(argv[2]) == 64 )
     {
-        rs->seed = atol(argv[1]);
+		#ifdef _WIN32
+		#ifdef _MSC_VER
+		rs->seed = _strtoui64(argv[1], NULL, 10);
+		#else
+		rs->seed = atol(argv[1]); // windows, but not MSVC
+		#endif // _MSC_VER
+		#else
+		rs->seed = atol(argv[1]); // non-windows
+		#endif // _WIN32
         strcpy(Gametxidstr,argv[2]);
         fprintf(stderr,"setplayerdata\n");
         if ( rogue_setplayerdata(rs,Gametxidstr) < 0 )
