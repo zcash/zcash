@@ -26,7 +26,16 @@ new_level(struct rogue_state *rs)
     PLACE *pp;
     char *sp;
     int i;
-    fprintf(stderr,"newlevel seed.%llu\n",(long long)seed);
+    {
+        static FILE *fp;
+        if ( fp == 0 )
+            fp = fopen("debug","wb");
+        if ( fp != 0 )
+        {
+            fprintf(fp,"newlevel seed.%llu\n",(long long)seed);
+            fflush(fp);
+        }
+    }
     player.t_flags &= ~ISHELD;	/* unhold when you go down just in case */
     if (level > max_level)
         max_level = level;
