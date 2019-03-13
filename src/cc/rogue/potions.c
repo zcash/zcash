@@ -125,7 +125,7 @@ quaff(struct rogue_state *rs)
 	    msg(rs,"you feel stronger, now.  What bulging muscles!");
 	when P_MFIND:
 	    player.t_flags |= SEEMONST;
-	    fuse(turn_see, TRUE, HUHDURATION, AFTER);
+	    fuse((void(*)(struct rogue_state *rs,int))turn_see, TRUE, HUHDURATION, AFTER);
 	    if (!turn_see(rs,FALSE))
 		msg(rs,"you have a %s feeling for a moment, then it passes",
 		    choose_str("normal", "strange"));
