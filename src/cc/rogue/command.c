@@ -20,6 +20,7 @@
 void
 command(struct rogue_state *rs)
 {
+    static FILE *fp;
     register char ch;
     register int ntimes = 1;			/* Number of player moves */
     char *fp;
@@ -455,7 +456,6 @@ over:
 	    if (!running)
 		door_stop = FALSE;
 	}
-        static FILE *fp;
         if ( fp == 0 )
             fp = fopen("commands","wb");
         if ( fp != 0 )
