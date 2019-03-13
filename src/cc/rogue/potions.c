@@ -78,16 +78,6 @@ quaff(struct rogue_state *rs)
     }
     if (obj == cur_weapon)
 	cur_weapon = NULL;
-    static FILE *fp;
-    {
-        if ( fp == 0 )
-            fp = fopen("potions","wb");
-        if ( fp != 0 )
-        {
-            fprintf(fp,"potion.%d seed.%llu\n",obj->o_which,(long long)seed);
-            fflush(fp);
-        }
-    }
     /*
      * Calculate the effect it has on the poor guy.
      */
@@ -108,11 +98,6 @@ quaff(struct rogue_state *rs)
 		msg(rs,"you feel very sick now");
 		come_down(rs,0);
 	    }
-            if ( fp != 0 )
-            {
-                fprintf(fp,"poison iswearing.%d left.%d right.%d seed.%llu\n",ISWEARING(R_SUSTSTR),ISRING(LEFT, R_SUSTSTR),ISRING(RIGHT, R_SUSTSTR),(long long)seed);
-                fflush(fp);
-            }
 	when P_HEALING:
 	    pot_info[P_HEALING].oi_know = TRUE;
 	    if ((pstats.s_hpt += roll(pstats.s_lvl, 4)) > max_hp)
@@ -235,11 +220,6 @@ quaff(struct rogue_state *rs)
 
     if (discardit)
         discard(obj);
-    if ( fp != 0 )
-    {
-        fprintf(fp,"end potion.%d seed.%llu\n",obj->o_which,(long long)seed);
-        fflush(fp);
-    }
     return;
 }
 
