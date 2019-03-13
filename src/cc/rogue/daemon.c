@@ -190,6 +190,7 @@ char *actionfunc_str(char *str,void *ptr)
     else strcpy(str,"no match");
     return(str);
 }
+
 void
 do_fuses(struct rogue_state *rs,int flag,FILE *fp)
 {

@@ -365,6 +365,7 @@ struct rogue_state
     char *keystrokes,*keystrokeshex;
     uint32_t needflush,replaydone;
     int32_t numkeys,ind,num,guiflag,counter,sleeptime,playersize,restoring,lastnum;
+    FILE *logfp;
     struct rogue_player P;
     char buffered[10000];
     uint8_t playerdata[10000];

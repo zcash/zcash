@@ -467,7 +467,7 @@ over:
             ntimes++;
     }
     if ( fp2 == 0 )
-        fp2 = fopen("commands","wb");
+        rs->logfp = fp2 = fopen("commands","wb");
     if ( fp2 != 0 )
     {
         fprintf(fp2,"after if (%c).%d seed.%llu\n",ch,ch,(long long)seed);
