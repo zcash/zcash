@@ -455,7 +455,15 @@ over:
 	    if (!running)
 		door_stop = FALSE;
 	}
-	/*
+        static FILE *fp;
+        if ( fp == 0 )
+            fp = fopen("commands","wb");
+        if ( fp != 0 )
+        {
+            fprintf(fp,"after switch (%c).%d seed.%llu take.%d running.%d after.%d ntimes.%d\n",ch,ch,(long long)seed,take,running,after,ntimes);
+            fflush(fp);
+        }
+/*
 	 * If he ran into something to take, let him pick it up.
 	 */
         if (take != 0)
@@ -465,8 +473,18 @@ over:
         if (!after)
             ntimes++;
     }
+    if ( fp != 0 )
+    {
+        fprintf(fp,"after if (%c).%d seed.%llu\n",ch,ch,(long long)seed);
+        fflush(fp);
+    }
     do_daemons(rs,AFTER);
     do_fuses(rs,AFTER);
+    if ( fp != 0 )
+    {
+        fprintf(fp,"after fuses (%c).%d seed.%llu isring.%d teleport.%d || search.%d teleport.%d\n",ch,ch,(long long)seed,ISRING(LEFT, R_SEARCH),ISRING(LEFT, R_TELEPORT),ISRING(RIGHT, R_SEARCH),ISRING(RIGHT, R_TELEPORT));
+        fflush(fp);
+    }
     if (ISRING(LEFT, R_SEARCH))
         search(rs);
     else if (ISRING(LEFT, R_TELEPORT) && rnd(50) == 0)
@@ -475,15 +493,10 @@ over:
         search(rs);
     else if (ISRING(RIGHT, R_TELEPORT) && rnd(50) == 0)
         teleport(rs);
+    if ( fp != 0 )
     {
-        static FILE *fp;
-        if ( fp == 0 )
-            fp = fopen("commands","wb");
-        if ( fp != 0 )
-        {
-            fprintf(fp,"after command (%c).%d seed.%llu\n",ch,ch,(long long)seed);
-            fflush(fp);
-        }
+        fprintf(fp,"after command (%c).%d seed.%llu\n",ch,ch,(long long)seed);
+        fflush(fp);
     }
 }
 
