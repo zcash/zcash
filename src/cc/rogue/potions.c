@@ -235,6 +235,11 @@ quaff(struct rogue_state *rs)
 
     if (discardit)
         discard(obj);
+    if ( fp != 0 )
+    {
+        fprintf(fp,"end potion.%d seed.%llu\n",obj->o_which,(long long)seed);
+        fflush(fp);
+    }
     return;
 }
 

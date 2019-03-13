@@ -475,6 +475,16 @@ over:
         search(rs);
     else if (ISRING(RIGHT, R_TELEPORT) && rnd(50) == 0)
         teleport(rs);
+    {
+        static FILE *fp;
+        if ( fp == 0 )
+            fp = fopen("commands","wb");
+        if ( fp != 0 )
+        {
+            fprintf(stderr,"after command seed.%llu\n",(long long)seed);
+            fflush(fp);
+        }
+    }
 }
 
 /*
