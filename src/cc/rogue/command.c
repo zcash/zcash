@@ -31,7 +31,7 @@ command(struct rogue_state *rs)
      * Let the daemons start up
      */
     do_daemons(rs,BEFORE);
-    do_fuses(rs,BEFORE,0);
+    do_fuses(rs,BEFORE);
     while (ntimes--)
     {
         if ( rs->replaydone != 0 )
@@ -466,7 +466,7 @@ over:
             ntimes++;
     }
     do_daemons(rs,AFTER);
-    do_fuses(rs,AFTER,0);
+    do_fuses(rs,AFTER);
     if (ISRING(LEFT, R_SEARCH))
         search(rs);
     else if (ISRING(LEFT, R_TELEPORT) && rnd(50) == 0)

@@ -161,7 +161,7 @@ extinguish(void (*func)(struct rogue_state *rs,int))
  *	Decrement counters and start needed fuses
  */
 
-char *actionfunc_str(char *str,void *ptr)
+/*char *actionfunc_str(char *str,void *ptr)
 {
     if ( ptr == (void *)runners )
         strcpy(str,"runners");
@@ -191,10 +191,10 @@ char *actionfunc_str(char *str,void *ptr)
         strcpy(str,"turn_see");
     else strcpy(str,"no match");
     return(str);
-}
+}*/
 
 void
-do_fuses(struct rogue_state *rs,int flag,FILE *fp)
+do_fuses(struct rogue_state *rs,int flag)
 {
     register struct delayed_action *wire; char str[64];
 
@@ -208,8 +208,8 @@ do_fuses(struct rogue_state *rs,int flag,FILE *fp)
 	 */
 	if (flag == wire->d_type && wire->d_time > 0 && --wire->d_time == 0)
 	{
-        if ( fp != 0 )
-            fprintf(fp,"t.%d %d %s, ",wire->d_type,wire->d_time,actionfunc_str(str,wire->d_func));
+        //if ( fp != 0 )
+        //    fprintf(fp,"t.%d %d %s, ",wire->d_type,wire->d_time,actionfunc_str(str,wire->d_func));
 	    wire->d_type = EMPTY;
 	    (*wire->d_func)(rs,wire->d_arg);
 	}
