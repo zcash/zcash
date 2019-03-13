@@ -456,13 +456,6 @@ over:
 	    if (!running)
 		door_stop = FALSE;
 	}
-        if ( fp2 == 0 )
-            fp2 = fopen("commands","wb");
-        if ( fp2 != 0 )
-        {
-            fprintf(fp2,"after switch (%c).%d seed.%llu take.%d running.%d after.%d ntimes.%d\n",ch,ch,(long long)seed,take,running,after,ntimes);
-            fflush(fp2);
-        }
 /*
 	 * If he ran into something to take, let him pick it up.
 	 */
@@ -473,12 +466,19 @@ over:
         if (!after)
             ntimes++;
     }
+    if ( fp2 == 0 )
+        fp2 = fopen("commands","wb");
     if ( fp2 != 0 )
     {
         fprintf(fp2,"after if (%c).%d seed.%llu\n",ch,ch,(long long)seed);
         fflush(fp2);
     }
     do_daemons(rs,AFTER);
+    if ( fp2 != 0 )
+    {
+        fprintf(fp2,"after daemons (%c).%d seed.%llu isring.%d teleport.%d || search.%d teleport.%d\n",ch,ch,(long long)seed,ISRING(LEFT, R_SEARCH),ISRING(LEFT, R_TELEPORT),ISRING(RIGHT, R_SEARCH),ISRING(RIGHT, R_TELEPORT));
+        fflush(fp2);
+    }
     do_fuses(rs,AFTER);
     if ( fp2 != 0 )
     {
