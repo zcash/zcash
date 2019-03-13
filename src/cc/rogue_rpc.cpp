@@ -1597,7 +1597,7 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
                                     fprintf(stderr,"%s\n",cashstr);
                                 }
                             } else cashout = 10000;
-                            if ( enabled != 0 && tx.vout[2].nValue != cashout )
+                            if ( enabled != 0 && tx.vout[2].nValue > cashout )
                                 return eval->Invalid("mismatched cashout amount");
                         }
                         if ( funcid == 'Q' )
