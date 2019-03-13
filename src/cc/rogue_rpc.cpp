@@ -1263,8 +1263,8 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
                             if ( P.amulet != 0 )
                                 mult *= 5;
                             dungeonlevel = P.dungeonlevel;
-                            if ( P.amulet != 0 && dungeonlevel < 21 )
-                                dungeonlevel = 21;
+                            if ( P.amulet != 0 && dungeonlevel < 26 )
+                                dungeonlevel = 26;
                             cashout = (uint64_t)P.gold * P.gold * mult * dungeonlevel;
                             fprintf(stderr,"\nextracted $$$gold.%d -> %.8f ROGUE hp.%d strength.%d/%d level.%d exp.%d dl.%d n.%d amulet.%d\n",P.gold,(double)cashout/COIN,P.hitpoints,P.strength&0xffff,P.strength>>16,P.level,P.experience,P.dungeonlevel,n,P.amulet);
                             if ( funcid == 'H' && maxplayers > 1 )

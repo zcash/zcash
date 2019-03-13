@@ -125,8 +125,8 @@ quaff(struct rogue_state *rs)
 	    msg(rs,"you feel stronger, now.  What bulging muscles!");
 	when P_MFIND:
 	    player.t_flags |= SEEMONST;
-	    fuse((void(*)(struct rogue_state *rs,int))turn_see, TRUE, HUHDURATION, AFTER);
-	    if (!turn_see(FALSE))
+	    fuse(turn_see, TRUE, HUHDURATION, AFTER);
+	    if (!turn_see(rs,FALSE))
 		msg(rs,"you have a %s feeling for a moment, then it passes",
 		    choose_str("normal", "strange"));
 	when P_TFIND:
@@ -172,7 +172,7 @@ quaff(struct rogue_state *rs)
 	    if (!trip)
 	    {
 		if (on(player, SEEMONST))
-		    turn_see(FALSE);
+		    turn_see(rs,FALSE);
 		start_daemon(visuals, 0, BEFORE);
 		seenstairs = seen_stairs();
 	    }
@@ -282,47 +282,6 @@ invis_on()
 	    mvaddch(mp->t_pos.y, mp->t_pos.x, mp->t_disguise);
 }
 
-/*
- * turn_see:
- *	Put on or off seeing monsters on this level
- */
-bool
-turn_see(bool turn_off)
-{
-    THING *mp;
-    bool can_see, add_new;
-
-    add_new = FALSE;
-    for (mp = mlist; mp != NULL; mp = next(mp))
-    {
-	move(mp->t_pos.y, mp->t_pos.x);
-	can_see = see_monst(mp);
-	if (turn_off)
-	{
-	    if (!can_see)
-		addch(mp->t_oldch);
-	}
-	else
-	{
-	    if (!can_see)
-		standout();
-	    if (!on(player, ISHALU))
-		addch(mp->t_type);
-	    else
-		addch(rnd(26) + 'A');
-	    if (!can_see)
-	    {
-            standend();
-            add_new ^= 1;//add_new++;
-	    }
-	}
-    }
-    if (turn_off)
-	player.t_flags &= ~SEEMONST;
-    else
-	player.t_flags |= SEEMONST;
-    return add_new;
-}
 
 /*
  * seen_stairs:

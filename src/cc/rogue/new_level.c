@@ -105,7 +105,7 @@ new_level(struct rogue_state *rs)
     enter_room(rs,&hero);
     mvaddch(hero.y, hero.x, PLAYER);
     if (on(player, SEEMONST))
-        turn_see(FALSE);
+        turn_see(rs,FALSE);
     if (on(player, ISHALU))
         visuals(rs,0);
 }

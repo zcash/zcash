@@ -345,7 +345,7 @@ over:
 		    if (wizard)
 		    {
 			wizard = FALSE;
-			turn_see(TRUE);
+			turn_see(rs,TRUE);
 			msg(rs,"not wizard any more");
 		    }
 		    else
@@ -354,7 +354,7 @@ over:
 			if (wizard) 
 			{
 			    noscore = TRUE;
-			    turn_see(FALSE);
+			    turn_see(rs,FALSE);
 			    msg(rs,"you are suddenly as smart as Ken Arnold in dungeon #%d", dnum);
 			}
 			else
@@ -404,7 +404,7 @@ over:
 			when CTRL('T'): teleport();
 			when CTRL('E'): msg(rs,"food left: %d", food_left);
 			when CTRL('C'): add_pass();
-			when CTRL('X'): turn_see(on(player, SEEMONST));
+			when CTRL('X'): turn_see(rs,on(player, SEEMONST));
 			when CTRL('~'):
 			{
 			    THING *item;

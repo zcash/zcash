@@ -314,3 +314,48 @@ land(struct rogue_state *rs,int arg)
     msg(rs,choose_str("bummer!  You've hit the ground",
 		   "you float gently to the ground"));
 }
+
+/*
+ * turn_see:
+ *	Put on or off seeing monsters on this level
+ */
+bool
+turn_see(struct rogue_state *rs,bool turn_off)
+{
+    THING *mp;
+    bool can_see, add_new;
+    if ( rs->logfp != 0 )
+        fprintf(rs->logfp,"turn_see\n");
+    
+    add_new = FALSE;
+    for (mp = mlist; mp != NULL; mp = next(mp))
+    {
+        move(mp->t_pos.y, mp->t_pos.x);
+        can_see = see_monst(mp);
+        if (turn_off)
+        {
+            if (!can_see)
+                addch(mp->t_oldch);
+        }
+        else
+        {
+            if (!can_see)
+                standout();
+            if (!on(player, ISHALU))
+                addch(mp->t_type);
+            else
+                addch(rnd(26) + 'A');
+            if (!can_see)
+            {
+                standend();
+                add_new ^= 1;//add_new++;
+            }
+        }
+    }
+    if (turn_off)
+        player.t_flags &= ~SEEMONST;
+    else
+        player.t_flags |= SEEMONST;
+    return add_new;
+}
+
