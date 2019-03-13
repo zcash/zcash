@@ -487,6 +487,7 @@ int32_t rogue_findbaton(struct CCcontract_info *cp,uint256 &playertxid,char **ke
     int32_t i,numvouts,spentvini,n,matches = 0; CPubKey pk; uint256 tid,active,spenttxid,tokenid,hashBlock,txid,origplayergame; CTransaction spenttx,matchtx,batontx; std::vector<uint8_t> checkdata; CBlockIndex *pindex; char ccaddr[64],*keystrokes=0;
     batonvalue = numkeys = numplayers = batonht = 0;
     playertxid = batontxid = zeroid;
+    *keystrokesp = 0;
     for (i=0; i<maxplayers; i++)
     {
         //fprintf(stderr,"findbaton.%d of %d\n",i,maxplayers);
@@ -943,7 +944,7 @@ char *rogue_extractgame(int32_t makefiles,char *str,int32_t *numkeysp,std::vecto
         {
             UniValue obj;
             seed = rogue_gamefields(obj,maxplayers,buyin,gametxid,rogueaddr);
-            //fprintf(stderr,"(%s) found baton %s numkeys.%d seed.%llu playerdata.%d playertxid.%s\n",pname.size()!=0?pname.c_str():Rogue_pname.c_str(),batontxid.ToString().c_str(),numkeys,(long long)seed,(int32_t)playerdata.size(),playertxid.GetHex().c_str());
+fprintf(stderr,"(%s) found baton %s numkeys.%d seed.%llu playerdata.%d playertxid.%s\n",pname.size()!=0?pname.c_str():Rogue_pname.c_str(),batontxid.ToString().c_str(),numkeys,(long long)seed,(int32_t)playerdata.size(),playertxid.GetHex().c_str());
             memset(&P,0,sizeof(P));
             if ( playerdata.size() > 0 )
             {
@@ -969,7 +970,9 @@ char *rogue_extractgame(int32_t makefiles,char *str,int32_t *numkeysp,std::vecto
                         fclose(fp);
                     }
                 }
+                fprintf(stderr,"call replay2\n");
                 num = rogue_replay2(newplayer,seed,keystrokes,numkeys,playerdata.size()==0?0:&P,0);
+                fprintf(stderr,"back replay2\n");
                 newdata.resize(num);
                 for (i=0; i<num; i++)
                 {
@@ -1075,15 +1078,15 @@ int32_t rogue_playerdata_validate(int64_t *cashoutp,uint256 &playertxid,struct C
     *cashoutp = 0;
     roguepk = GetUnspendable(cp,0);
     GetCCaddress1of2(cp,rogueaddr,roguepk,pk);
-    //fprintf(stderr,"call extractgame\n");
+fprintf(stderr,"call extractgame\n");
     if ( (keystrokes= rogue_extractgame(0,str,&numkeys,newdata,seed,playertxid,cp,gametxid,rogueaddr)) != 0 )
     {
-        //fprintf(stderr,"numkeys.%d rogue_extractgame %s\n",numkeys,gametxid.GetHex().c_str());
+fprintf(stderr,"numkeys.%d rogue_extractgame %s\n",numkeys,gametxid.GetHex().c_str());
         free(keystrokes);
         sprintf(fname,"rogue.%llu.pack",(long long)seed);
         remove(fname);
 
-        //fprintf(stderr,"extracted.(%s)\n",str);
+fprintf(stderr,"extracted.(%s)\n",str);
         for (i=0; i<playerdata.size(); i++)
             ((uint8_t *)&P)[i] = playerdata[i];
         if ( P.amulet != 0 )
