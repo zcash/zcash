@@ -342,11 +342,11 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
                 }
 
                 if (sproutValueDummy < 0) {
-                    LogPrintf("CreateNewBlock(): tx %s appears to violate Sprout turnstile", tx.GetHash().ToString());
+                    LogPrintf("CreateNewBlock(): tx %s appears to violate Sprout turnstile\n", tx.GetHash().ToString());
                     continue;
                 }
                 if (saplingValueDummy < 0) {
-                    LogPrintf("CreateNewBlock(): tx %s appears to violate Sapling turnstile", tx.GetHash().ToString());
+                    LogPrintf("CreateNewBlock(): tx %s appears to violate Sapling turnstile\n", tx.GetHash().ToString());
                     continue;
                 }
 
