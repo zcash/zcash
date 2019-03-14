@@ -1,0 +1,1 @@
+gcc -std=c++11 -I../univalue/include -I../cryptoconditions/include -I../cryptoconditions/src -I../cryptoconditions/src/asn -I.. -I. -fPIC -shared -c -o ../cclib.so cclib.cpp

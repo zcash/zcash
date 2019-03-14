@@ -24,8 +24,8 @@
 #include "tinyformat.h"
 #include "utilstrencodings.h"
 #include "crypto/common.h"
+#include "komodo_defs.h"
 
-extern uint32_t ASSETCHAINS_ALGO, ASSETCHAINS_VERUSHASH;
 
 // default hash algorithm for block
 uint256 (CBlockHeader::*CBlockHeader::hashFunction)() const = &CBlockHeader::GetSHA256DHash;

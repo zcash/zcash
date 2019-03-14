@@ -101,8 +101,24 @@ eval "$MAKE" --version
 as --version
 ld -v
 
-HOST="$HOST" BUILD="$BUILD" NO_PROTON="$PROTON_ARG" "$MAKE" "$@" -C ./depends/ V=1
-./autogen.sh
 
+HOST="$HOST" BUILD="$BUILD" NO_PROTON="$PROTON_ARG" "$MAKE" "$@" -C ./depends/ V=1
+
+#BUILD CCLIB
+
+WD=$PWD
+cd src/cc
+echo $PWD
+
+if make "$@"; then
+  echo CCLIB BUILD SUCCESSFUL
+else
+  echo CCLIB BUILD FAILED
+  exit 1
+fi
+
+cd $WD
+
+./autogen.sh
 CONFIG_SITE="$PWD/depends/$HOST/share/config.site" ./configure "$HARDENING_ARG" "$LCOV_ARG" "$TEST_ARG" "$MINING_ARG" "$PROTON_ARG" $CONFIGURE_FLAGS CXXFLAGS='-g'
 "$MAKE" "$@" V=1
