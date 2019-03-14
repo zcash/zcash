@@ -13,6 +13,7 @@
 #include <signal.h>
 //#include <unistd.h>
 //#include <curses.h>
+
 #include "rogue.h"
 #ifdef STANDALONE
 #include "../komodo/src/komodo_cJSON.h"
@@ -196,6 +197,12 @@ void rogue_bailout(struct rogue_state *rs)
         fprintf(stderr,"error issuing (%s)\n",cmd);*/
 }
 
+#ifdef _WIN32
+#ifdef _MSC_VER
+#define sleep(x) Sleep(1000*(x))
+#endif
+#endif
+
 int32_t rogue_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t num,struct rogue_player *player,int32_t sleepmillis)
 {
     struct rogue_state *rs; FILE *fp; int32_t i,n;
@@ -215,6 +222,14 @@ int32_t rogue_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t nu
     globalR = *rs;
     uint32_t starttime = (uint32_t)time(NULL);
     rogueiterate(rs);
+
+	/*
+	// keypress after replay
+	printf("[Press return to continue]");
+	fflush(stdout);
+	if (fgets(prbuf, 10, stdin) != 0);
+	*/
+	
     if ( 0 )
     {
         fprintf(stderr,"elapsed %d seconds\n",(uint32_t)time(NULL) - starttime);
@@ -328,7 +343,15 @@ int rogue(int argc, char **argv, char **envp)
     rs->sleeptime = 1; // non-zero to allow refresh()
     if ( argc == 3 && strlen(argv[2]) == 64 )
     {
-        rs->seed = atol(argv[1]);
+		#ifdef _WIN32
+		#ifdef _MSC_VER
+		rs->seed = _strtoui64(argv[1], NULL, 10);
+		#else
+		rs->seed = atol(argv[1]); // windows, but not MSVC
+		#endif // _MSC_VER
+		#else
+		rs->seed = atol(argv[1]); // non-windows
+		#endif // _WIN32
         strcpy(Gametxidstr,argv[2]);
         fprintf(stderr,"setplayerdata\n");
         if ( rogue_setplayerdata(rs,Gametxidstr) < 0 )
@@ -525,6 +548,18 @@ tstp(int ignored)
 #endif
 #endif*/
 }
+
+
+#ifdef _WIN32
+#ifdef _MSC_VER
+void usleep(int32_t micros)
+{
+	if (micros < 1000)
+		Sleep(1);
+	else Sleep(micros / 1000);
+}
+#endif
+#endif
 
 /*
  * playit:

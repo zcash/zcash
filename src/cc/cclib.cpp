@@ -33,8 +33,12 @@
 #ifdef BUILD_ROGUE
 #define EVAL_ROGUE 17
 std::string MYCCLIBNAME = (char *)"rogue";
-#else
 
+
+#elif BUILD_CUSTOMCC
+#include "customcc.h"
+
+#else
 #define EVAL_SUDOKU 17
 #define EVAL_MUSIG 18
 #define EVAL_DILITHIUM 19
@@ -67,6 +71,8 @@ CClib_methods[] =
     { (char *)"rogue", (char *)"games", (char *)"<no args>", 0, 0, 'F', EVAL_ROGUE },
     { (char *)"rogue", (char *)"setname", (char *)"pname", 1, 1, 'N', EVAL_ROGUE },
     { (char *)"rogue", (char *)"extract", (char *)"gametxid [pubkey]", 1, 2, 'X', EVAL_ROGUE },
+#elif BUILD_CUSTOMCC
+    RPC_FUNCS
 #else
     { (char *)"sudoku", (char *)"gen", (char *)"<no args>", 0, 0, 'G', EVAL_SUDOKU },
     { (char *)"sudoku", (char *)"txidinfo", (char *)"txid", 1, 1, 'T', EVAL_SUDOKU },
@@ -214,6 +220,8 @@ UniValue CClib_method(struct CCcontract_info *cp,char *method,char *jsonstr)
             return(result);
         }
     }
+#elif BUILD_CUSTOMCC
+    CUSTOM_DISPATCH
 #else
     if ( cp->evalcode == EVAL_SUDOKU )
     {
@@ -410,6 +418,8 @@ bool CClib_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
     {
 #ifdef BUILD_ROGUE
         return(rogue_validate(cp,height,eval,tx));
+#elif BUILD_CUSTOMCC
+        return(custom_validate(cp,height,eval,tx));
 #else
         if ( cp->evalcode == EVAL_SUDOKU )
             return(sudoku_validate(cp,height,eval,tx));
@@ -659,6 +669,9 @@ int32_t cclib_parsehash(uint8_t *hash32,cJSON *item,int32_t len)
 #include "rogue/things.c"
 #include "rogue/weapons.c"
 #include "rogue/wizard.c"
+
+#elif BUILD_CUSTOMCC
+#include "customcc.cpp"
 
 #else
 #include "sudoku.cpp"

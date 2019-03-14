@@ -107,6 +107,12 @@
 #include <stdlib.h>
 #include <time.h>
 
+#ifdef _WIN32
+#ifdef _MSC_VER
+#include <stdint.h>
+#endif 
+#endif
+
 #undef SIGTSTP
 
 #define MAXSTR		1024	/* maximum length of strings */
@@ -142,7 +148,8 @@ void    leave(int);
 void	my_exit(int st);
 void    playltchars(void);
 void    quit(int);
-int32_t    _quit();
+int32_t _quit();
+
 void    resetltchars(void);
 void	set_order(int *order, int numthings);
 void	tstp(int ignored);

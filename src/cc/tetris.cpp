@@ -858,7 +858,7 @@ int main(int argc, char **argv)
     next  = newwin(6, 10, 0, 2 * (tg->cols + 1) + 1);
     hold  = newwin(6, 10, 7, 2 * (tg->cols + 1) + 1);
     score = newwin(6, 10, 14, 2 * (tg->cols + 1 ) + 1);
-    
+    int32_t counter = 0;
     // Game loop
     while (running) {
         running = tg_tick(tg, move);
@@ -866,7 +866,8 @@ int main(int argc, char **argv)
         display_piece(next, tg->next);
         display_piece(hold, tg->stored);
         display_score(score, tg);
-        doupdate();
+        if ( (counter++ % 5) == 0 )
+            doupdate();
         sleep_milli(10);
         
         switch (getch()) {
