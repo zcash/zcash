@@ -1623,7 +1623,7 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
                 fprintf(stderr,"ht.%d isPoS.%d utxo not validated -> must be PoW fake\n",height,isPoS);
                 isPoS = 0;
             }
-            else
+            else if ( ASSETCHAINS_STAKED != 100 )
             {
                 if ( bhash < POWTarget )
                 {
