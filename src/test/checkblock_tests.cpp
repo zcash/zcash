@@ -58,7 +58,7 @@ BOOST_AUTO_TEST_CASE(May15)
         // After May 15'th, big blocks are OK:
         forkingBlock.nTime = tMay15; // Invalidates PoW
         auto verifier = libzcash::ProofVerifier::Strict();
-        BOOST_CHECK(CheckBlock(forkingBlock, state, verifier, false, false));
+        BOOST_CHECK(CheckBlock(forkingBlock, state, Params(), verifier, false, false));
     }
 
     SetMockTime(0);
