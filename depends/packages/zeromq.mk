@@ -1,23 +1,23 @@
 ifeq ($(host_os),mingw32)
-$(package)_version=4.2.2-1
+$(package)_version=4.3.1
 $(package)_download_path=https://github.com/ca333/libzmq/archive
 $(package)_download_file=v$($(package)_version).tar.gz
 $(package)_file_name=libzmq-$($(package)_version).tar.gz
-$(package)_sha256_hash=0e225b85ce11be23bf7eb7d3f25c6686728bf30d5c31f61c12d37bb646c69962
+$(package)_sha256_hash=cb8ebe5b60dadeb526745610d6237f05a98aba287114d8991dad1fa14f4be354
 
 define $(package)_set_vars
   $(package)_build_env+=
   $(package)_config_opts=--enable-shared=false --enable-static --host=x86_64-w64-mingw32
-  $(package)_config_opts_mingw32=--enable-shared=false --enable-static --host=x86_64-w64-mingw32
+  $(package)_config_opts_mingw32=--enable-shared=false --enable-static --prefix=$(host_prefix) --host=x86_64-w64-mingw32 -disable-curve
   $(package)_cflags=-Wno-error -Wall -Wno-pedantic-ms-format -DLIBCZMQ_EXPORTS -DZMQ_DEFINED_STDINT -lws2_32 -liphlpapi -lrpcrt4
   $(package)_conf_tool=./configure
 endef
 else
 package=zeromq
-$(package)_version=4.2.1
+$(package)_version=4.3.1
 $(package)_download_path=https://github.com/zeromq/libzmq/releases/download/v$($(package)_version)
 $(package)_file_name=$(package)-$($(package)_version).tar.gz
-$(package)_sha256_hash=27d1e82a099228ee85a7ddb2260f40830212402c605a4a10b5e5498a7e0e9d03
+$(package)_sha256_hash=bcbabe1e2c7d0eec4ed612e10b94b112dd5f06fcefa994a0c79a45d835cd21eb
 
 define $(package)_set_vars
   $(package)_config_opts=--without-documentation --disable-shared --disable-curve
