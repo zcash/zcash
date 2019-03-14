@@ -72,6 +72,7 @@ public:
 
     CAmount SproutValuePoolCheckpointHeight() const { return nSproutValuePoolCheckpointHeight; }
     CAmount SproutValuePoolCheckpointBalance() const { return nSproutValuePoolCheckpointBalance; }
+    uint256 SproutValuePoolCheckpointBlockHash() const { return hashSproutValuePoolCheckpointBlock; }
     bool SproutValuePoolCheckpointEnabled() const { return fSproutValuePoolCheckpointEnabled; }
 
     const CBlock& GenesisBlock() const { return genesis; }
@@ -132,6 +133,7 @@ protected:
 
     CAmount nSproutValuePoolCheckpointHeight = 0;
     CAmount nSproutValuePoolCheckpointBalance = 0;
+    uint256 hashSproutValuePoolCheckpointBlock;
     bool fSproutValuePoolCheckpointEnabled = false;
 };
 

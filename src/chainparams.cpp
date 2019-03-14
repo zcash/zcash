@@ -359,6 +359,7 @@ public:
         nSproutValuePoolCheckpointHeight = 440329;
         nSproutValuePoolCheckpointBalance = 40000029096803;
         fSproutValuePoolCheckpointEnabled = true;
+        hashSproutValuePoolCheckpointBlock = uint256S("000a95d08ba5dcbabe881fc6471d11807bcca7df5f1795c99f3ec4580db4279b");
 
         // Founders reward script expects a vector of 2-of-3 multisig addresses
         vFoundersRewardAddress = {
@@ -476,7 +477,10 @@ public:
 
         // Enable Sprout shielded value pool checkpointing on
         // regtest.
+        nSproutValuePoolCheckpointHeight = 0;
+        nSproutValuePoolCheckpointBalance = 0;
         fSproutValuePoolCheckpointEnabled = true;
+        hashSproutValuePoolCheckpointBlock = consensus.hashGenesisBlock;
     }
 
     void UpdateNetworkUpgradeParameters(Consensus::UpgradeIndex idx, int nActivationHeight)

@@ -3334,17 +3334,25 @@ void FallbackSproutValuePoolBalance(
 
     // Check if the height of this block matches the checkpoint
     if (pindex->nHeight == chainparams.SproutValuePoolCheckpointHeight()) {
-        // Are we monitoring the Sprout pool?
-        if (!pindex->nChainSproutValue) {
-            // Apparently not. Introduce the hardcoded value.
-            pindex->nChainSproutValue = chainparams.SproutValuePoolCheckpointBalance();
+        if (pindex->GetBlockHash() == chainparams.SproutValuePoolCheckpointBlockHash()) {
+            // Are we monitoring the Sprout pool?
+            if (!pindex->nChainSproutValue) {
+                // Apparently not. Introduce the hardcoded value so we monitor for
+                // this point onwards (assuming the checkpoint is late enough)
+                pindex->nChainSproutValue = chainparams.SproutValuePoolCheckpointBalance();
+            } else {
+                // Apparently we have been. So, we should expect the current
+                // value to match the hardcoded one.
+                assert(*pindex->nChainSproutValue == chainparams.SproutValuePoolCheckpointBalance());
+                // And we should expect non-none for the delta stored in the block index here,
+                // or the checkpoint is too early.
+                assert(pindex->nSproutValue != boost::none);
+            }
         } else {
-            // Apparently we have been. So, we should expect the current
-            // value to match the hardcoded one.
-            assert(*pindex->nChainSproutValue == chainparams.SproutValuePoolCheckpointBalance());
-            // And we should expect non-none for the delta stored in the block index here,
-            // or the checkpoint is too early.
-            assert(pindex->nSproutValue != boost::none);
+            LogPrintf(
+                "FallbackSproutValuePoolBalance(): fallback block hash is incorrect, we got %s\n",
+                pindex->GetBlockHash().ToString()
+            );
         }
     }
 }
