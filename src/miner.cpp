@@ -109,9 +109,6 @@ void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, 
 CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 {
     const CChainParams& chainparams = Params();
-    bool this_is_testnet_or_regtest =
-        (chainparams.NetworkIDString() == "test") ||
-        (chainparams.NetworkIDString() == "regtest");
 
     // Create new block
     std::unique_ptr<CBlockTemplate> pblocktemplate(new CBlockTemplate());
@@ -263,7 +260,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         CAmount sproutValue = 0;
         CAmount saplingValue = 0;
         bool monitoring_pool_balances = true;
-        if (this_is_testnet_or_regtest) {
+        if (chainparams.SproutValuePoolCheckpointEnabled()) {
             if (pindexPrev->nChainSproutValue) {
                 sproutValue = *pindexPrev->nChainSproutValue;
             } else {
@@ -331,7 +328,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             if (!ContextualCheckInputs(tx, state, view, true, MANDATORY_SCRIPT_VERIFY_FLAGS, true, txdata, Params().GetConsensus(), consensusBranchId))
                 continue;
 
-            if (this_is_testnet_or_regtest && monitoring_pool_balances) {
+            if (chainparams.SproutValuePoolCheckpointEnabled() && monitoring_pool_balances) {
                 // Does this transaction lead to a turnstile violation?
 
                 CAmount sproutValueDummy = sproutValue;
@@ -344,8 +341,14 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
                     sproutValueDummy -= js.vpub_new;
                 }
 
-                if (sproutValueDummy < 0) continue;
-                if (saplingValueDummy < 0) continue;
+                if (sproutValueDummy < 0) {
+                    LogPrintf("CreateNewBlock(): tx %s appears to violate Sprout turnstile", tx.GetHash().ToString());
+                    continue;
+                }
+                if (saplingValueDummy < 0) {
+                    LogPrintf("CreateNewBlock(): tx %s appears to violate Sapling turnstile", tx.GetHash().ToString());
+                    continue;
+                }
 
                 sproutValue = sproutValueDummy;
                 saplingValue = saplingValueDummy;
