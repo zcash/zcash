@@ -30,6 +30,7 @@
 #include "CCMarmara.h"
 #include "CCPayments.h"
 #include "CCGateways.h"
+#include "CCtokens.h"
 
 /*
  CCcustom has most of the functions that need to be extended to create a new CC contract.
@@ -222,6 +223,46 @@ uint8_t GatewaysCCpriv[32] = { 0xf7, 0x4b, 0x5b, 0xa2, 0x7a, 0x5e, 0x9c, 0xda, 0
 #undef FUNCNAME
 #undef EVALCODE
 
+// Tokens
+#define FUNCNAME IsTokensInput
+#define EVALCODE EVAL_TOKENS
+const char *TokensCCaddr = "RAMvUfoyURBRxAdVeTMHxn3giJZCFWeha2";
+const char *TokensNormaladdr = "RCNgAngYAdrfzujYyPgfbjCGNVQZzCgTad"; 
+char TokensCChexstr[67] = { "03e6191c70c9c9a28f9fd87089b9488d0e6c02fb629df64979c9cdb6b2b4a68d95" };
+uint8_t TokensCCpriv[32] = { 0x1d, 0x0d, 0x0d, 0xce, 0x2d, 0xd2, 0xe1, 0x9d, 0xf5, 0xb6, 0x26, 0xd5, 0xad, 0xa0, 0xf0, 0x0a, 0xdd, 0x7a, 0x72, 0x7d, 0x17, 0x35, 0xb5, 0xe3, 0x2c, 0x6c, 0xa9, 0xa2, 0x03, 0x16, 0x4b, 0xcf };
+#include "CCcustom.inc"
+#undef FUNCNAME
+#undef EVALCODE
+
+#define FUNCNAME IsCClibInput
+#define EVALCODE EVAL_FIRSTUSER
+const char *CClibNormaladdr = "RVVeUg43rNcq3mZFnvZ8yqagyzqFgUnq4u";
+char CClibCChexstr[67] = { "032447d97655da079729dc024c61088ea415b22f4c15d4810ddaf2069ac6468d2f" };
+uint8_t CClibCCpriv[32] = { 0x57, 0xcf, 0x49, 0x71, 0x7d, 0xb4, 0x15, 0x1b, 0x4f, 0x98, 0xc5, 0x45, 0x8d, 0x26, 0x52, 0x4b, 0x7b, 0xe9, 0xbd, 0x55, 0xd8, 0x20, 0xd6, 0xc4, 0x82, 0x0f, 0xf5, 0xec, 0x6c, 0x1c, 0xa0, 0xc0 };
+#include "CCcustom.inc"
+#undef FUNCNAME
+#undef EVALCODE
+
+int32_t CClib_initcp(struct CCcontract_info *cp,uint8_t evalcode)
+{
+    CPubKey pk; uint8_t pub33[33]; char CCaddr[64];
+    if ( evalcode == EVAL_FIRSTUSER ) // eventually make a hashchain for each evalcode
+    {
+        cp->evalcode = evalcode;
+        cp->ismyvin = IsCClibInput;
+        strcpy(cp->CChexstr,CClibCChexstr);
+        memcpy(cp->CCpriv,CClibCCpriv,32);
+        decode_hex(pub33,33,cp->CChexstr);
+        pk = buf2pk(pub33);
+        Getscriptaddress(cp->normaladdr,CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG);
+        if ( strcmp(cp->normaladdr,CClibNormaladdr) != 0 )
+            fprintf(stderr,"CClib_initcp addr mismatch %s vs %s\n",cp->normaladdr,CClibNormaladdr);
+        GetCCaddress(cp,cp->unspendableCCaddr,pk);
+        return(0);
+    }
+    return(-1);
+}
+
 struct CCcontract_info *CCinit(struct CCcontract_info *cp, uint8_t evalcode)
 {
     cp->evalcode = evalcode;
@@ -346,6 +387,19 @@ struct CCcontract_info *CCinit(struct CCcontract_info *cp, uint8_t evalcode)
             memcpy(cp->CCpriv,GatewaysCCpriv,32);
             cp->validate = GatewaysValidate;
             cp->ismyvin = IsGatewaysInput;
+            break;
+
+		case EVAL_TOKENS:
+			strcpy(cp->unspendableCCaddr, TokensCCaddr);
+			strcpy(cp->normaladdr, TokensNormaladdr);
+			strcpy(cp->CChexstr, TokensCChexstr);
+			memcpy(cp->CCpriv, TokensCCpriv, 32);
+			cp->validate = TokensValidate;
+			cp->ismyvin = IsTokensInput;
+			break;
+        default:
+            if ( CClib_initcp(cp,evalcode) < 0 )
+                return(0);
             break;
     }
     return(cp);

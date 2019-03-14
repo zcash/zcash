@@ -39,8 +39,7 @@
 #endif
 #include <unistd.h>
 
-extern uint64_t ASSETCHAINS_TIMELOCKGTE;
-extern uint32_t ASSETCHAINS_ALGO, ASSETCHAINS_VERUSHASH;
+#include "komodo_defs.h"
 int64_t komodo_block_unlocktime(uint32_t nHeight);
 
 void AtomicTimer::start()
