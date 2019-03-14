@@ -5369,9 +5369,12 @@ UniValue CCaddress(struct CCcontract_info *cp,char *name,std::vector<unsigned ch
     result.push_back(Pair("result", "success"));
     sprintf(str,"%sCCAddress",name);
     result.push_back(Pair(str,cp->unspendableCCaddr));
-    result.push_back(Pair("CCbalance",ValueFromAmount(CCaddress_balance(cp->unspendableCCaddr))));
+    sprintf(str,"%sCCBalance",name);
+    result.push_back(Pair(str,ValueFromAmount(CCaddress_balance(cp->unspendableCCaddr))));
     sprintf(str,"%sNormalAddress",name);
     result.push_back(Pair(str,cp->normaladdr));
+    sprintf(str,"%sNormalBalance",name);
+    result.push_back(Pair(str,ValueFromAmount(CCaddress_balance(cp->normaladdr))));
     if (strcmp(name,"Gateways")==0) result.push_back(Pair("GatewaysPubkey","03ea9c062b9652d8eff34879b504eda0717895d27597aaeb60347d65eed96ccb40"));
     if ((strcmp(name,"Channels")==0 || strcmp(name,"Heir")==0) && pubkey.size() == 33)
     {
@@ -5393,25 +5396,22 @@ UniValue CCaddress(struct CCcontract_info *cp,char *name,std::vector<unsigned ch
             result.push_back(Pair(str,destaddr));
         }
     }
-    //if ( Getscriptaddress(destaddr,(CScript() << Mypubkey() << OP_CHECKSIG)) != 0 )
-    //    result.push_back(Pair("myAddress",destaddr));
-    if ( GetCCaddress(cp,destaddr,pubkey2pk(Mypubkey())) != 0 )
-    {
-        sprintf(str,"myCCAddress(%s)",name);
-        result.push_back(Pair(str,destaddr));
-    }    
     if ( pubkey.size() == 33 )
     {
         if ( GetCCaddress(cp,destaddr,pubkey2pk(pubkey)) != 0 )
         {
             sprintf(str,"PubkeyCCaddress(%s)",name);
             result.push_back(Pair(str,destaddr));
+            sprintf(str,"PubkeyCCbalance(%s)",name);
+            result.push_back(Pair(str,ValueFromAmount(CCaddress_balance(destaddr))));
         }
     }
     if ( GetCCaddress(cp,destaddr,pubkey2pk(Mypubkey())) != 0 )
     {
-        result.push_back(Pair("myCCaddress",destaddr));
-        result.push_back(Pair("myCCbalance",ValueFromAmount(CCaddress_balance(destaddr))));
+        sprintf(str,"myCCAddress(%s)",name);
+        result.push_back(Pair(str,destaddr));
+        sprintf(str,"myCCbalance(%s)",name);
+        result.push_back(Pair(str,ValueFromAmount(CCaddress_balance(destaddr))));
     }
     if ( Getscriptaddress(destaddr,(CScript() << Mypubkey() << OP_CHECKSIG)) != 0 )
     {
