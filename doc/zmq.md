@@ -1,8 +1,8 @@
 # Block and Transaction Broadcasting With ZeroMQ
 
 [ZeroMQ](http://zeromq.org/) is a lightweight wrapper around TCP
-connections, inter-process communication, and shared-memory,
-providing various message-oriented semantics such as publish/subscribe,
+connections, inter-process communication, and shared-memory, providing
+various message-oriented semantics such as publish/subscribe,
 request/reply, and push/pull.
 
 The Zcash daemon can be configured to act as a trusted "border
@@ -41,6 +41,20 @@ system. Typically, it is packaged by distributions as something like
 In order to run the example Python client scripts in contrib/ one must
 also install *python-zmq*, though this is not necessary for daemon
 operation.
+
+## Security WARNING
+
+Enabling this feature even on the loopback interface only (e.g. binding
+it to localhost or 127.0.0.1) will still expose it to the wilds of the
+Internet, because of an attack vector called DNS rebinding. DNS
+rebinding allows an attacker located remotely on the Internet to trick
+applications that you're running on the same computer as Zcashd to
+contact your supposedly localhost-only ZMQ port, then, depending on the
+program they may be able to attempt to attack it.
+
+Do not enable this feature unless you are sure that you know what you
+are doing, and that you have a strong reason for thinking that you are
+not vulnerable to this type of attack.
 
 ## Enabling
 
