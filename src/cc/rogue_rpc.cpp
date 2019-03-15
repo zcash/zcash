@@ -1279,6 +1279,8 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
                                 }
                                 cashout += numplayers * buyin;
                             }
+                            if ( cashout < txfee )
+                                cashout = txfee;
                             if ( cashout >= txfee )
                             {
                                 if ( (inputsum= AddCClibInputs(cp,mtx,roguepk,cashout,16,cp->unspendableCCaddr)) > (uint64_t)P.gold*mult )
