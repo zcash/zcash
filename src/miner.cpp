@@ -109,7 +109,6 @@ void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, 
 CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 {
     const CChainParams& chainparams = Params();
-
     // Create new block
     std::unique_ptr<CBlockTemplate> pblocktemplate(new CBlockTemplate());
     if(!pblocktemplate.get())
@@ -260,7 +259,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         CAmount sproutValue = 0;
         CAmount saplingValue = 0;
         bool monitoring_pool_balances = true;
-        if (chainparams.SproutValuePoolCheckpointEnabled()) {
+        if (chainparams.ZIP209Enabled()) {
             if (pindexPrev->nChainSproutValue) {
                 sproutValue = *pindexPrev->nChainSproutValue;
             } else {
@@ -328,7 +327,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             if (!ContextualCheckInputs(tx, state, view, true, MANDATORY_SCRIPT_VERIFY_FLAGS, true, txdata, Params().GetConsensus(), consensusBranchId))
                 continue;
 
-            if (chainparams.SproutValuePoolCheckpointEnabled() && monitoring_pool_balances) {
+            if (chainparams.ZIP209Enabled() && monitoring_pool_balances) {
                 // Does this transaction lead to a turnstile violation?
 
                 CAmount sproutValueDummy = sproutValue;
