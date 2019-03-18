@@ -538,7 +538,7 @@ UniValue musig_commit(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                 for (i=0; i<33; i++)
                     sprintf(&str[i<<1],"%02x",((uint8_t *)pk.begin())[i]);
                 str[66] = 0;
-                if ( n == 5 )
+                if ( n == 3 )
                     MUSIG[myind]->numnonces = 1;
                 result.push_back(Pair("myind",MUSIG[myind]->myind));
                 result.push_back(Pair("nonce",str));
@@ -629,7 +629,7 @@ UniValue musig_nonce(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                     result.push_back(Pair("myind",MUSIG[myind]->myind));
                     result.push_back(Pair("partialsig",str));
                     result.push_back(Pair("result","success"));
-                    if ( n == 5 )
+                    if ( n == 3 )
                         MUSIG[myind]->numpartials = 1;
                     return(result);
                 } else return(cclib_error(result,"error serializing partial sig"));
