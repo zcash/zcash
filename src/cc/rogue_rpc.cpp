@@ -1281,8 +1281,9 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
                             }
                             if ( cashout > 0 )
                             {
-                                if ( (inputsum= AddCClibInputs(cp,mtx,roguepk,cashout,16,cp->unspendableCCaddr)) > cashout )
+                                if ( (inputsum= AddCClibInputs(cp,mtx,roguepk,cashout,60,cp->unspendableCCaddr)) > cashout )
                                     CCchange = (inputsum - cashout);
+                                else fprintf(stderr,"couldnt find enough utxos\n");
                             }
                             mtx.vout.push_back(CTxOut(cashout,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
                         }
