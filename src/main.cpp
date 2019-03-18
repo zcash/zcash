@@ -2469,10 +2469,14 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         //
         // If we've reached ConnectBlock, we have all transactions of
         // parents and can expect nChainSaplingValue not to be boost::none.
-        assert(pindex->nChainSaplingValue != boost::none);
-        if (*pindex->nChainSaplingValue < 0) {
-            return state.DoS(100, error("ConnectBlock(): turnstile violation in Sapling shielded value pool"),
-                         REJECT_INVALID, "turnstile-violation-sapling-shielded-pool");
+        // However, the miner and mining RPCs may not have populated this
+        // value and will call `TestBlockValidity`. So, we act
+        // conditionally.
+        if (pindex->nChainSaplingValue) {
+            if (*pindex->nChainSaplingValue < 0) {
+                return state.DoS(100, error("ConnectBlock(): turnstile violation in Sapling shielded value pool"),
+                             REJECT_INVALID, "turnstile-violation-sapling-shielded-pool");
+            }
         }
     }
 
