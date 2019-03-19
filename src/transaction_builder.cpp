@@ -65,9 +65,9 @@ TransactionBuilder::TransactionBuilder(
 }
 
 // This exception is thrown in certain scenarios when building JoinSplits fails.
-struct JSDException : public std::exception
+struct JSDescException : public std::exception
 {
-    JSDException (const std::string msg_) : msg(msg_) {}
+    JSDescException (const std::string msg_) : msg(msg_) {}
 
     const char* what() { return msg.c_str(); }
 
@@ -225,8 +225,9 @@ TransactionBuilderResult TransactionBuilder::Build()
 
     if (change > 0) {
         // Send change to the specified change address. If no change address
-        // was set, send change to the first Sapling address given as input,
-        // or the first Sprout address given as input.
+        // was set, send change to the first Sapling address given as input
+        // if any; otherwise the first Sprout address given as input.
+        // (A t-address can only be used as the change address if explicitly set.)
         if (saplingChangeAddr) {
             AddSaplingOutput(saplingChangeAddr->first, saplingChangeAddr->second, change);
         } else if (sproutChangeAddr) {
@@ -346,7 +347,7 @@ TransactionBuilderResult TransactionBuilder::Build()
     if (!jsInputs.empty() || !jsOutputs.empty()) {
         try {
             CreateJSDescriptions();
-        } catch (JSDException e) {
+        } catch (JSDescException e) {
             librustzcash_sapling_proving_ctx_free(ctx);
             return TransactionBuilderResult(e.what());
         } catch (std::runtime_error e) {
@@ -528,7 +529,7 @@ void TransactionBuilder::CreateJSDescriptions()
                 if (it != intermediates.end()) {
                     tree = it->second;
                 } else if (!coinsView->GetSproutAnchorAt(prevJoinSplit.anchor, tree)) {
-                    throw JSDException("Could not find previous JoinSplit anchor");
+                    throw JSDescException("Could not find previous JoinSplit anchor");
                 }
             }
 
@@ -568,7 +569,7 @@ void TransactionBuilder::CreateJSDescriptions()
                 LogPrint("zrpcunsafe", "spending change (amount=%s)\n", FormatMoney(plaintext.value()));
 
             } catch (const std::exception& e) {
-                throw JSDException("Error decrypting output note of previous JoinSplit");
+                throw JSDescException("Error decrypting output note of previous JoinSplit");
             }
         }
 
@@ -585,7 +586,7 @@ void TransactionBuilder::CreateJSDescriptions()
                     jsInput.witness.append(commitment);
                 }
                 if (jsAnchor != jsInput.witness.root()) {
-                    throw JSDException("Witness for spendable note does not have same anchor as change input");
+                    throw JSDescException("Witness for spendable note does not have same anchor as change input");
                 }
             }
 
@@ -614,7 +615,7 @@ void TransactionBuilder::CreateJSDescriptions()
         if (jsOutputsDeque.empty() && jsInputsDeque.empty()) {
             assert(!vpubNewProcessed);
             if (jsInputValue < vpubNewTarget) {
-                throw JSDException(strprintf("Insufficient funds for vpub_new %s", FormatMoney(vpubNewTarget)));
+                throw JSDescException(strprintf("Insufficient funds for vpub_new %s", FormatMoney(vpubNewTarget)));
             }
             outAmount += vpubNewTarget;
             vpub_new += vpubNewTarget; // funds flowing back to public pool
