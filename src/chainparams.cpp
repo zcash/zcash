@@ -474,13 +474,6 @@ public:
         // Founders reward script expects a vector of 2-of-3 multisig addresses
         vFoundersRewardAddress = { "t2FwcEhFdNXuFMv1tcYwaBJtYVtMj8b1uTg" };
         assert(vFoundersRewardAddress.size() <= consensus.GetLastFoundersRewardBlockHeight());
-
-        // Enable Sprout shielded value pool checkpointing on
-        // regtest.
-        nSproutValuePoolCheckpointHeight = 0;
-        nSproutValuePoolCheckpointBalance = 0;
-        fZIP209Enabled = true;
-        hashSproutValuePoolCheckpointBlock = consensus.hashGenesisBlock;
     }
 
     void UpdateNetworkUpgradeParameters(Consensus::UpgradeIndex idx, int nActivationHeight)
