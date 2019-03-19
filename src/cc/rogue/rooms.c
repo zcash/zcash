@@ -246,20 +246,20 @@ dig(struct rogue_state *rs,int y, int x)
         if ( rs->replaydone != 0 )
             return;
 	cnt = 0;
-	for (cp = del; cp <= &del[3]; cp++)
-	{
-	    newy = y + cp->y;
-	    newx = x + cp->x;
-	    if (newy < 0 || newy > Maxy || newx < 0 || newx > Maxx)
-		continue;
-	    if (flat(newy + Starty, newx + Startx) & F_PASS)
-		continue;
-	    if (rnd(++cnt) == 0)
-	    {
-		nexty = newy;
-		nextx = newx;
-	    }
-	}
+        for (cp = (coord *)del; cp <= (coord *)&del[3]; cp++)
+        {
+            newy = y + cp->y;
+            newx = x + cp->x;
+            if (newy < 0 || newy > Maxy || newx < 0 || newx > Maxx)
+                continue;
+            if (flat(newy + Starty, newx + Startx) & F_PASS)
+                continue;
+            if (rnd(++cnt) == 0)
+            {
+                nexty = newy;
+                nextx = newx;
+            }
+        }
 	if (cnt == 0)
 	    return;
 	accnt_maze(y, x, nexty, nextx);

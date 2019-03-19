@@ -317,7 +317,7 @@ do_pot(struct rogue_state *rs,int type, bool knowit)
     PACT *pp;
     int t;
     
-    pp = &p_actions[type];
+    pp = (PACT *)&p_actions[type];
     if (!pot_info[type].oi_know)
         pot_info[type].oi_know = knowit;
     t = spread(pp->pa_time);
