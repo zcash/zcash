@@ -245,35 +245,29 @@ do_zap(struct rogue_state *rs)
  *	Do drain hit points from player shtick
  */
 
-void
-drain(struct rogue_state *rs)
+void drain(struct rogue_state *rs)
 {
-    THING *mp;
-    struct room *corp;
-    THING **dp;
-    int cnt;
-    bool inpass;
-    static THING *drainee[40];
-
+    THING *mp,**dp; struct room *corp; int cnt; bool inpass; THING *drainee[40];
+    memset(drainee,0,sizeof(drainee));
     /*
      * First cnt how many things we need to spread the hit points among
      */
     cnt = 0;
     if (chat(hero.y, hero.x) == DOOR)
-	corp = &passages[flat(hero.y, hero.x) & F_PNUM];
+        corp = &passages[flat(hero.y, hero.x) & F_PNUM];
     else
-	corp = NULL;
+        corp = NULL;
     inpass = (bool)(proom->r_flags & ISGONE);
     dp = drainee;
     for (mp = mlist; mp != NULL; mp = next(mp))
-	if (mp->t_room == proom || mp->t_room == corp ||
-	    (inpass && chat(mp->t_pos.y, mp->t_pos.x) == DOOR &&
-	    &passages[flat(mp->t_pos.y, mp->t_pos.x) & F_PNUM] == proom))
-		*dp++ = mp;
+        if (mp->t_room == proom || mp->t_room == corp ||
+            (inpass && chat(mp->t_pos.y, mp->t_pos.x) == DOOR &&
+             &passages[flat(mp->t_pos.y, mp->t_pos.x) & F_PNUM] == proom))
+            *dp++ = mp;
     if ((cnt = (int)(dp - drainee)) == 0)
     {
-	msg(rs,"you have a tingling feeling");
-	return;
+        msg(rs,"you have a tingling feeling");
+        return;
     }
     *dp = NULL;
     pstats.s_hpt /= 2;
@@ -283,11 +277,11 @@ drain(struct rogue_state *rs)
      */
     for (dp = drainee; *dp; dp++)
     {
-	mp = *dp;
-	if ((mp->t_stats.s_hpt -= cnt) <= 0)
-	    killed(rs,mp, see_monst(mp));
-	else
-	    runto(rs,&mp->t_pos);
+        mp = *dp;
+        if ((mp->t_stats.s_hpt -= cnt) <= 0)
+            killed(rs,mp, see_monst(mp));
+        else
+            runto(rs,&mp->t_pos);
     }
 }
 
@@ -421,12 +415,12 @@ char *
 charge_str(THING *obj)
 {
     static char buf[20];
-
+    
     if (!(obj->o_flags & ISKNOW))
-	buf[0] = '\0';
+        buf[0] = '\0';
     else if (terse)
-	sprintf(buf, " [%d]", obj->o_charges);
+        sprintf(buf, " [%d]", obj->o_charges);
     else
-	sprintf(buf, " [%d charges]", obj->o_charges);
+        sprintf(buf, " [%d charges]", obj->o_charges);
     return buf;
 }

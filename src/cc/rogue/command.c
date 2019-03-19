@@ -24,7 +24,7 @@ command(struct rogue_state *rs)
     register int ntimes = 1;			/* Number of player moves */
     char *fp;
     THING *mp;
-    static char countch, direction, newcount = FALSE;
+    //static char countch, direction, newcount = FALSE;
     if (on(player, ISHASTE))
         ntimes++;
     /*
@@ -74,7 +74,7 @@ command(struct rogue_state *rs)
             if (running || to_death)
                 ch = runch;
             else if (count)
-                ch = countch;
+                ch = rs->countch;
             else
             {
                 ch = readchar(rs);
@@ -98,11 +98,11 @@ command(struct rogue_state *rs)
             /*
              * check for prefixes
              */
-            newcount = FALSE;
+            rs->newcount = FALSE;
             if (isdigit(ch))
             {
                 count = 0;
-                newcount = TRUE;
+                rs->newcount = TRUE;
                 while (isdigit(ch))
                 {
                     count = count * 10 + (ch - '0');
@@ -110,7 +110,7 @@ command(struct rogue_state *rs)
                         count = 255;
                     ch = readchar(rs);
                 }
-                countch = ch;
+                rs->countch = ch;
                 /*
                  * turn off count for commands which don't make sense
                  * to repeat
@@ -205,12 +205,12 @@ over:
 			door_stop = TRUE;
 			firstmove = TRUE;
 		    }
-		    if (count && !newcount)
-			ch = direction;
+		    if (count && !rs->newcount)
+			ch = rs->direction;
 		    else
 		    {
 			ch += ('A' - CTRL('A'));
-			direction = ch;
+			rs->direction = ch;
 		    }
 		    goto over;
 		}
@@ -372,7 +372,7 @@ over:
 		    else
 		    {
 			ch = dir_ch;
-			countch = dir_ch;
+			rs->countch = dir_ch;
 			goto over;
 		    }
 		when ')': current(rs,cur_weapon, "wielding", NULL);
