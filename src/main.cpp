@@ -3365,7 +3365,6 @@ void FallbackSproutValuePoolBalance(
 bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBlockIndex *pindexNew, const CDiskBlockPos& pos)
 {
     const CChainParams& chainparams = Params();
-
     pindexNew->nTx = block.vtx.size();
     pindexNew->nChainTx = 0;
     CAmount sproutValue = 0;
