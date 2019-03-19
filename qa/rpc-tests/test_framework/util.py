@@ -399,26 +399,29 @@ def wait_and_assert_operationid_status(node, myopid, in_status='success', in_err
     assert_true(result is not None, "timeout occured")
     status = result['status']
 
-    txid = None
+    ret = None
     errormsg = None
     if status == "failed":
         errormsg = result['error']['message']
     elif status == "success":
-        txid = result['result']['txid']
+        if type(result['result']) is dict and result['result'].get('txid'):
+            ret = result['result']['txid']
+        else:
+            ret = result['result']
 
     if os.getenv("PYTHON_DEBUG", ""):
         print('...returned status: {}'.format(status))
         if errormsg is not None:
             print('...returned error: {}'.format(errormsg))
-    
+
     assert_equal(in_status, status, "Operation returned mismatched status. Error Message: {}".format(errormsg))
 
     if errormsg is not None:
         assert_true(in_errormsg is not None, "No error retured. Expected: {}".format(errormsg))
         assert_true(in_errormsg in errormsg, "Error returned: {}. Error expected: {}".format(errormsg, in_errormsg))
-        return result # if there was an error return the result
+        return result  # if there was an error return the result
     else:
-        return txid # otherwise return the txid
+        return ret  # otherwise return the txid
 
 # Find a coinbase address on the node, filtering by the number of UTXOs it has.
 # If no filter is provided, returns the coinbase address on the node containing

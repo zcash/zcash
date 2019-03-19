@@ -3906,6 +3906,27 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     return operationId;
 }
 
+UniValue z_setmigration(const UniValue& params, bool fHelp) {
+    if (!EnsureWalletIsAvailable(fHelp))
+        return NullUniValue;
+    if (fHelp || params.size() != 1)
+        throw runtime_error(
+            "z_setmigration enabled\n"
+            "When enabled the Sprout to Sapling migration will attempt to migrate all funds from this wallet’s\n"
+            "Sprout addresses to either the address for Sapling account 0 or one specified by the parameter\n"
+            "'-migrationdestaddress'. This migration is designed to minimize information leakage. As a result,\n"
+            "for wallets with a significant Sprout balance, this process may take several weeks. The migration\n"
+            "works by sending, up to 5, as many transactions as possible whenever the blockchain reaches a height\n"
+            "equal to 499 modulo 500. The transaction amounts are picked according to the random distribution\n"
+            "specified in ZIP 308. The migration will end once the wallet’s Sprout balance is below 0.01 " + CURRENCY_UNIT + ".\n"
+            "\nArguments:\n"
+            "1. enabled  (boolean, required) 'true' or 'false' to enable or disable respectively.\n"
+            "\nResult:\n"
+            "enabled  (boolean) Whether or not migration is enabled (echos the argument).\n"
+        );
+    fSaplingMigrationEnabled = params[0].get_bool();
+    return fSaplingMigrationEnabled;
+}
 
 /**
 When estimating the number of coinbase utxos we can shield in a single transaction:
@@ -4660,6 +4681,7 @@ static const CRPCCommand commands[] =
     { "wallet",             "z_gettotalbalance",        &z_gettotalbalance,        false },
     { "wallet",             "z_mergetoaddress",         &z_mergetoaddress,         false },
     { "wallet",             "z_sendmany",               &z_sendmany,               false },
+    { "wallet",             "z_setmigration",           &z_setmigration,           false },
     { "wallet",             "z_shieldcoinbase",         &z_shieldcoinbase,         false },
     { "wallet",             "z_getoperationstatus",     &z_getoperationstatus,     true  },
     { "wallet",             "z_getoperationresult",     &z_getoperationresult,     true  },
