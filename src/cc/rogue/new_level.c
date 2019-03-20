@@ -26,7 +26,17 @@ new_level(struct rogue_state *rs)
     PLACE *pp;
     char *sp;
     int i;
-    
+    if ( 0 )
+    {
+        static FILE *fp;
+        if ( fp == 0 )
+            fp = fopen("debug","wb");
+        if ( fp != 0 )
+        {
+            fprintf(fp,"newlevel seed.%llu\n",(long long)seed);
+            fflush(fp);
+        }
+    }
     player.t_flags &= ~ISHELD;	/* unhold when you go down just in case */
     if (level > max_level)
         max_level = level;
@@ -95,7 +105,7 @@ new_level(struct rogue_state *rs)
     enter_room(rs,&hero);
     mvaddch(hero.y, hero.x, PLAYER);
     if (on(player, SEEMONST))
-        turn_see(FALSE);
+        turn_see(rs,FALSE);
     if (on(player, ISHALU))
         visuals(rs,0);
 }

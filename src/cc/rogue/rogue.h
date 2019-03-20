@@ -365,6 +365,7 @@ struct rogue_state
     char *keystrokes,*keystrokeshex;
     uint32_t needflush,replaydone;
     int32_t numkeys,ind,num,guiflag,counter,sleeptime,playersize,restoring,lastnum;
+    FILE *logfp;
     struct rogue_player P;
     char buffered[10000];
     uint8_t playerdata[10000];
@@ -770,7 +771,7 @@ bool	roll_em(THING *thatt, THING *thdef, THING *weap, bool hurl);
 bool	see_monst(THING *mp);
 bool	seen_stairs(void);
 bool	turn_ok(int y, int x);
-bool	turn_see(bool turn_off);
+bool	turn_see(struct rogue_state *rs,bool turn_off);
 bool	is_current(struct rogue_state *rs,THING *obj);
 int	passwd(void);
 

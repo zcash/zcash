@@ -21,6 +21,8 @@ void
 doctor(struct rogue_state *rs,int arg)
 {
     register int lv, ohp;
+    if ( rs->logfp != 0 )
+        fprintf(rs->logfp,"doctor\n");
 
     lv = pstats.s_lvl;
     ohp = pstats.s_hpt;
@@ -52,6 +54,8 @@ doctor(struct rogue_state *rs,int arg)
 void
 swander(struct rogue_state *rs,int arg)
 {
+    if ( rs->logfp != 0 )
+        fprintf(rs->logfp,"swander\n");
     start_daemon(rollwand, 0, BEFORE);
 }
 
@@ -63,6 +67,8 @@ int between = 0;
 void
 rollwand(struct rogue_state *rs,int arg)
 {
+    if ( rs->logfp != 0 )
+        fprintf(rs->logfp,"rollwand\n");
     if (++between >= 4)
     {
 	if (roll(1, 6) == 4)
@@ -82,6 +88,8 @@ rollwand(struct rogue_state *rs,int arg)
 void
 unconfuse(struct rogue_state *rs,int arg)
 {
+    if ( rs->logfp != 0 )
+        fprintf(rs->logfp,"unconfuse\n");
     player.t_flags &= ~ISHUH;
     msg(rs,"you feel less %s now", choose_str("trippy", "confused"));
 }
@@ -94,6 +102,8 @@ void
 unsee(struct rogue_state *rs,int arg)
 {
     register THING *th;
+    if ( rs->logfp != 0 )
+        fprintf(rs->logfp,"unsee\n");
 
     for (th = mlist; th != NULL; th = next(th))
 	if (on(*th, ISINVIS) && see_monst(th))
@@ -108,6 +118,8 @@ unsee(struct rogue_state *rs,int arg)
 void
 sight(struct rogue_state *rs,int arg)
 {
+    if ( rs->logfp != 0 )
+        fprintf(rs->logfp,"sight\n");
     if (on(player, ISBLIND))
     {
 	extinguish(sight);
@@ -126,6 +138,8 @@ sight(struct rogue_state *rs,int arg)
 void
 nohaste(struct rogue_state *rs,int arg)
 {
+    if ( rs->logfp != 0 )
+        fprintf(rs->logfp,"nohaste\n");
     player.t_flags &= ~ISHASTE;
     msg(rs,"you feel yourself slowing down");
 }
@@ -139,6 +153,8 @@ stomach(struct rogue_state *rs,int arg)
 {
     register int oldfood;
     int orig_hungry = hungry_state;
+    if ( rs->logfp != 0 )
+        fprintf(rs->logfp,"stomach\n");
 
     if (food_left <= 0)
     {
@@ -194,41 +210,43 @@ come_down(struct rogue_state *rs,int arg)
 {
     register THING *tp;
     register bool seemonst;
-
+    
+    if ( rs->logfp != 0 )
+        fprintf(rs->logfp,"come_down\n");
     if (!on(player, ISHALU))
-	return;
-
+        return;
+    
     kill_daemon(visuals);
     player.t_flags &= ~ISHALU;
-
+    
     if (on(player, ISBLIND))
-	return;
-
+        return;
+    
     /*
      * undo the things
      */
     for (tp = lvl_obj; tp != NULL; tp = next(tp))
-	if (cansee(rs,tp->o_pos.y, tp->o_pos.x))
-	    mvaddch(tp->o_pos.y, tp->o_pos.x, tp->o_type);
-
+        if (cansee(rs,tp->o_pos.y, tp->o_pos.x))
+            mvaddch(tp->o_pos.y, tp->o_pos.x, tp->o_type);
+    
     /*
      * undo the monsters
      */
     seemonst = on(player, SEEMONST);
     for (tp = mlist; tp != NULL; tp = next(tp))
     {
-	move(tp->t_pos.y, tp->t_pos.x);
-	if (cansee(rs,tp->t_pos.y, tp->t_pos.x))
-	    if (!on(*tp, ISINVIS) || on(player, CANSEE))
-		addch(tp->t_disguise);
-	    else
-		addch(chat(tp->t_pos.y, tp->t_pos.x));
-	else if (seemonst)
-	{
-	    standout();
-	    addch(tp->t_type);
-	    standend();
-	}
+        move(tp->t_pos.y, tp->t_pos.x);
+        if (cansee(rs,tp->t_pos.y, tp->t_pos.x))
+            if (!on(*tp, ISINVIS) || on(player, CANSEE))
+                addch(tp->t_disguise);
+            else
+                addch(chat(tp->t_pos.y, tp->t_pos.x));
+            else if (seemonst)
+            {
+                standout();
+                addch(tp->t_type);
+                standend();
+            }
     }
     msg(rs,"Everything looks SO boring now.");
 }
@@ -242,42 +260,44 @@ visuals(struct rogue_state *rs,int arg)
 {
     register THING *tp;
     register bool seemonst;
-
+    
     if (!after || (running && jump))
-	return;
+        return;
+    if ( rs->logfp != 0 )
+        fprintf(rs->logfp,"visuals\n");
     /*
      * change the things
      */
     for (tp = lvl_obj; tp != NULL; tp = next(tp))
-	if (cansee(rs,tp->o_pos.y, tp->o_pos.x))
-	    mvaddch(tp->o_pos.y, tp->o_pos.x, rnd_thing());
-
+        if (cansee(rs,tp->o_pos.y, tp->o_pos.x))
+            mvaddch(tp->o_pos.y, tp->o_pos.x, rnd_thing());
+    
     /*
      * change the stairs
      */
     if (!seenstairs && cansee(rs,stairs.y, stairs.x))
-	mvaddch(stairs.y, stairs.x, rnd_thing());
-
+        mvaddch(stairs.y, stairs.x, rnd_thing());
+    
     /*
      * change the monsters
      */
     seemonst = on(player, SEEMONST);
     for (tp = mlist; tp != NULL; tp = next(tp))
     {
-	move(tp->t_pos.y, tp->t_pos.x);
-	if (see_monst(tp))
-	{
-	    if (tp->t_type == 'X' && tp->t_disguise != 'X')
-		addch(rnd_thing());
-	    else
-		addch(rnd(26) + 'A');
-	}
-	else if (seemonst)
-	{
-	    standout();
-	    addch(rnd(26) + 'A');
-	    standend();
-	}
+        move(tp->t_pos.y, tp->t_pos.x);
+        if (see_monst(tp))
+        {
+            if (tp->t_type == 'X' && tp->t_disguise != 'X')
+                addch(rnd_thing());
+            else
+                addch(rnd(26) + 'A');
+        }
+        else if (seemonst)
+        {
+            standout();
+            addch(rnd(26) + 'A');
+            standend();
+        }
     }
 }
 
@@ -288,7 +308,54 @@ visuals(struct rogue_state *rs,int arg)
 void
 land(struct rogue_state *rs,int arg)
 {
+    if ( rs->logfp != 0 )
+        fprintf(rs->logfp,"land\n");
     player.t_flags &= ~ISLEVIT;
     msg(rs,choose_str("bummer!  You've hit the ground",
 		   "you float gently to the ground"));
 }
+
+/*
+ * turn_see:
+ *	Put on or off seeing monsters on this level
+ */
+bool
+turn_see(struct rogue_state *rs,bool turn_off)
+{
+    THING *mp;
+    bool can_see, add_new;
+    if ( rs->logfp != 0 )
+        fprintf(rs->logfp,"turn_see\n");
+    
+    add_new = FALSE;
+    for (mp = mlist; mp != NULL; mp = next(mp))
+    {
+        move(mp->t_pos.y, mp->t_pos.x);
+        can_see = see_monst(mp);
+        if (turn_off)
+        {
+            if (!can_see)
+                addch(mp->t_oldch);
+        }
+        else
+        {
+            if (!can_see)
+                standout();
+            if (!on(player, ISHALU))
+                addch(mp->t_type);
+            else
+                addch(rnd(26) + 'A');
+            if (!can_see)
+            {
+                standend();
+                add_new ^= 1;//add_new++;
+            }
+        }
+    }
+    if (turn_off)
+        player.t_flags &= ~SEEMONST;
+    else
+        player.t_flags |= SEEMONST;
+    return add_new;
+}
+

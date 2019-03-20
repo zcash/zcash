@@ -3352,7 +3352,7 @@ int64_t dilithium_inputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPu
         {
             if ( (nValue= IsCClibvout(cp,vintx,vout,cmpaddr)) > DILITHIUM_TXFEE && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0 )
             {
-                if ( (dilithium_Qsendopretdecode(checktxid,tmpsig,voutpubtxids,vintx.vout[numvouts-1].scriptPubKey) == 'Q' || dilithium_sendopretdecode(checktxid,vintx.vout[numvouts-1].scriptPubKey) == 'x') && destpubtxid == checktxid )
+                if ( (dilithium_Qsendopretdecode(checktxid,tmpsig,voutpubtxids,vintx.vout[numvouts-1].scriptPubKey) == 'Q' && vout < voutpubtxids.size() && destpubtxid == voutpubtxids[vout]) || (dilithium_sendopretdecode(checktxid,vintx.vout[numvouts-1].scriptPubKey) == 'x' && destpubtxid == checktxid) )
                 {
                     if ( total != 0 && maxinputs != 0 )
                         mtx.vin.push_back(CTxIn(txid,vout,CScript()));

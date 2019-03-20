@@ -404,18 +404,18 @@ add_haste(struct rogue_state *rs,bool potion)
 {
     if (on(player, ISHASTE))
     {
-	no_command += rnd(8);
-	player.t_flags &= ~(ISRUN|ISHASTE);
-	extinguish(nohaste);
-	msg(rs,"you faint from exhaustion");
-	return FALSE;
+        no_command += rnd(8);
+        player.t_flags &= ~(ISRUN|ISHASTE);
+        extinguish(nohaste);
+        msg(rs,"you faint from exhaustion");
+        return FALSE;
     }
     else
     {
-	player.t_flags |= ISHASTE;
-	if (potion)
-	    fuse(nohaste, 0, rnd(4)+4, AFTER);
-	return TRUE;
+        player.t_flags |= ISHASTE;
+        if (potion)
+            fuse(nohaste, 0, rnd(4)+4, AFTER);
+        return TRUE;
     }
 }
 
