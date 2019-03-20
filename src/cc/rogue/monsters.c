@@ -39,7 +39,7 @@ randmonster(bool wander)
     int d;
     char *mons;
 
-    mons = (char *)(wander ? wand_mons : lvl_mons);
+    mons = (wander ? wand_mons : lvl_mons);
     do
     {
 	d = level + (rnd(10) - 6);

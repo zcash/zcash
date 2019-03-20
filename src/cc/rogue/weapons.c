@@ -163,7 +163,7 @@ fall(struct rogue_state *rs,THING *obj, bool pr)
 void
 init_weapon(THING *weap, int which)
 {
-    const struct init_weaps *iwp;
+    struct init_weaps *iwp;
     weap->o_type = WEAPON;
     weap->o_which = which;
     iwp = &init_dam[which];
