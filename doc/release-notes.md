@@ -39,7 +39,7 @@ Miners who wish to use the same address for every mined block, should use the
 New consensus rule: Reject blocks that violate turnstile (Testnet only)
 -----------------------------------------------------------------------
 Testnet nodes will now enforce a consensus rule which marks blocks as invalid
-if they would lead to a turnstile violation in the Sprout or Shielded value
+if they would lead to a turnstile violation in the Sprout or Sapling value
 pools. The motivations and deployment details can be found in the accompanying
 [ZIP draft](https://github.com/zcash/zips/pull/210).
 
