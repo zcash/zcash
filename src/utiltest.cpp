@@ -10,7 +10,7 @@
 #include <array>
 
 // Sprout
-CWalletTx GetValidSproutReceive(ZCJoinSplit& params,
+CMutableTransaction GetValidSproutReceiveTransaction(ZCJoinSplit& params,
                                 const libzcash::SproutSpendingKey& sk,
                                 CAmount value,
                                 bool randomInputs,
@@ -71,6 +71,34 @@ CWalletTx GetValidSproutReceive(ZCJoinSplit& params,
                                 joinSplitPrivKey
                                ) == 0);
 
+    return mtx;
+}
+
+CWalletTx GetValidSproutReceive(ZCJoinSplit& params,
+                                const libzcash::SproutSpendingKey& sk,
+                                CAmount value,
+                                bool randomInputs,
+                                int32_t version /* = 2 */)
+{
+    CMutableTransaction mtx = GetValidSproutReceiveTransaction(
+        params, sk, value, randomInputs, version
+    );
+    CTransaction tx {mtx};
+    CWalletTx wtx {NULL, tx};
+    return wtx;
+}
+
+CWalletTx GetInvalidCommitmentSproutReceive(ZCJoinSplit& params,
+                                const libzcash::SproutSpendingKey& sk,
+                                CAmount value,
+                                bool randomInputs,
+                                int32_t version /* = 2 */)
+{
+    CMutableTransaction mtx = GetValidSproutReceiveTransaction(
+        params, sk, value, randomInputs, version
+    );
+    mtx.vjoinsplit[0].commitments[0] = uint256();
+    mtx.vjoinsplit[0].commitments[1] = uint256();
     CTransaction tx {mtx};
     CWalletTx wtx {NULL, tx};
     return wtx;
