@@ -7398,8 +7398,7 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
             return true;
         }
 
-        deque<COutPoint> vWorkQueue;
-        vector<uint256> vEraseQueue;
+        std::set<uint256> orphan_work_set;
         CTransaction tx;
         vRecv >> tx;
 
@@ -7425,7 +7424,12 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
             mempool.check(pcoinsTip);
             RelayTransaction(tx);
             for (unsigned int i = 0; i < tx.vout.size(); i++) {
-                vWorkQueue.emplace_back(txid, i);
+                auto it_by_prev = mapOrphanTransactionsByPrev.find(COutPoint(txid, i));
+                if (it_by_prev != mapOrphanTransactionsByPrev.end()) {
+                    for (const auto& elem : it_by_prev->second) {
+                        orphan_work_set.insert(elem->first);
+                    }
+                }
             }
 
             LogPrint("mempool", "AcceptToMemoryPool: peer=%d %s: accepted %s (poolsz %u txn, %u kB)\n",
@@ -7435,63 +7439,56 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
 
             // Recursively process any orphan transactions that depended on this one
             set<NodeId> setMisbehaving;
-            while (!vWorkQueue.empty()) {
-                auto itByPrev = mapOrphanTransactionsByPrev.find(vWorkQueue.front());
-                vWorkQueue.pop_front();
-                if (itByPrev == mapOrphanTransactionsByPrev.end())
-                    continue;
-                for (auto mi = itByPrev->second.begin();
-                     mi != itByPrev->second.end();
-                     ++mi)
+            while (!orphan_work_set.empty()) {
+                const uint256 orphanHash = *orphan_work_set.begin();
+                orphan_work_set.erase(orphan_work_set.begin());
+
+                auto orphan_it = mapOrphanTransactions.find(orphanHash);
+                if (orphan_it == mapOrphanTransactions.end()) continue;
+
+                const CTransaction& orphanTx = orphan_it->second.tx;
+                NodeId fromPeer = orphan_it->second.fromPeer;
+                bool fMissingInputs2 = false;
+                // Use a dummy CValidationState so someone can't setup nodes to counter-DoS based on orphan
+                // resolution (that is, feeding people an invalid transaction based on LegitTxX in order to get
+                // anyone relaying LegitTxX banned)
+                CValidationState stateDummy;
+
+                if (setMisbehaving.count(fromPeer)) continue;
+                if (AcceptToMemoryPool(chainparams, mempool, stateDummy, orphanTx, true, &fMissingInputs2))
                 {
-                    const CTransaction& orphanTx = (*mi)->second.tx;
-                    const uint256& orphanHash = orphanTx.GetHash();
-                    NodeId fromPeer = (*mi)->second.fromPeer;
-                    bool fMissingInputs2 = false;
-                    // Use a dummy CValidationState so someone can't setup nodes to counter-DoS based on orphan
-                    // resolution (that is, feeding people an invalid transaction based on LegitTxX in order to get
-                    // anyone relaying LegitTxX banned)
-                    CValidationState stateDummy;
-
-
-                    if (setMisbehaving.count(fromPeer))
-                        continue;
-                    if (AcceptToMemoryPool(chainparams, mempool, stateDummy, orphanTx, true, &fMissingInputs2))
-                    {
-                        LogPrint("mempool", "   accepted orphan tx %s\n", orphanHash.ToString());
-                        RelayTransaction(orphanTx);
-                        for (unsigned int i = 0; i < orphanTx.vout.size(); i++) {
-                            vWorkQueue.emplace_back(orphanHash, i);
+                    LogPrint("mempool", "   accepted orphan tx %s\n", orphanHash.ToString());
+                    RelayTransaction(orphanTx);
+                    for (unsigned int i = 0; i < orphanTx.vout.size(); i++) {
+                        auto it_by_prev = mapOrphanTransactionsByPrev.find(COutPoint(orphanHash, i));
+                        if (it_by_prev != mapOrphanTransactionsByPrev.end()) {
+                            for (const auto& elem : it_by_prev->second) {
+                                orphan_work_set.insert(elem->first);
+                            }
                         }
-                        vEraseQueue.push_back(orphanHash);
                     }
-                    else if (!fMissingInputs2)
-                    {
-                        int nDos = 0;
-                        if (stateDummy.IsInvalid(nDos) && nDos > 0)
-                        {
-                            // Punish peer that gave us an invalid orphan tx
-                            Misbehaving(fromPeer, nDos);
-                            setMisbehaving.insert(fromPeer);
-                            LogPrint("mempool", "   invalid orphan tx %s\n", orphanHash.ToString());
-                        }
-                        // Has inputs but not accepted to mempool
-                        // Probably non-standard or insufficient fee
-                        LogPrint("mempool", "   removed orphan tx %s\n", orphanHash.ToString());
-                        vEraseQueue.push_back(orphanHash);
-                        // Add the wtxid of this transaction to our reject filter.
-                        // Unlike upstream Bitcoin Core, we can unconditionally add
-                        // these, as they are always bound to the entirety of the
-                        // transaction regardless of version.
-                        assert(recentRejects);
-                        recentRejects->insert(orphanTx.GetWTxId().ToBytes());
+                    EraseOrphanTx(orphanHash);
+                } else if (!fMissingInputs2) {
+                    int nDos = 0;
+                    if (stateDummy.IsInvalid(nDos) && nDos > 0) {
+                        // Punish peer that gave us an invalid orphan tx
+                        Misbehaving(fromPeer, nDos);
+                        setMisbehaving.insert(fromPeer);
+                        LogPrint("mempool", "   invalid orphan tx %s\n", orphanHash.ToString());
                     }
-                    mempool.check(pcoinsTip);
+                    // Has inputs but not accepted to mempool
+                    // Probably non-standard or insufficient fee
+                    LogPrint("mempool", "   removed orphan tx %s\n", orphanHash.ToString());
+                    // Add the wtxid of this transaction to our reject filter.
+                    // Unlike upstream Bitcoin Core, we can unconditionally add
+                    // these, as they are always bound to the entirety of the
+                    // transaction regardless of version.
+                    assert(recentRejects);
+                    recentRejects->insert(orphanTx.GetWTxId().ToBytes());
+                    EraseOrphanTx(orphanHash);
                 }
+                mempool.check(pcoinsTip);
             }
-
-            for (uint256 hash : vEraseQueue)
-                EraseOrphanTx(hash);
         }
         // TODO: currently, prohibit joinsplits and shielded spends/outputs/actions from entering mapOrphans
         else if (fMissingInputs &&
