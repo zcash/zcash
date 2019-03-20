@@ -571,6 +571,7 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-ac_cclib", _("Cryptoconditions dynamicly loadable library"));
     strUsage += HelpMessageOpt("-ac_ccenable", _("Cryptoconditions to enable"));
     strUsage += HelpMessageOpt("-ac_ccactivate", _("Block height to enable Cryptoconditions"));
+    strUsage += HelpMessageOpt("-ac_clientname", _("Full node client name, default 'MagicBean'"));
     strUsage += HelpMessageOpt("-ac_decay", _("Percentage of block reward decrease at each halving"));
     strUsage += HelpMessageOpt("-ac_end", _("Block height at which block rewards will end"));
     strUsage += HelpMessageOpt("-ac_eras", _("Block reward eras"));
