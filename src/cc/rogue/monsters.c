@@ -18,12 +18,12 @@
 /*
  * List of monsters in rough order of vorpalness
  */
-static const char lvl_mons[] =  {
+static char lvl_mons[] =  {
     'K', 'E', 'B', 'S', 'H', 'I', 'R', 'O', 'Z', 'L', 'C', 'Q', 'A',
     'N', 'Y', 'F', 'T', 'W', 'P', 'X', 'U', 'M', 'V', 'G', 'J', 'D'
 };
 
-static const char wand_mons[] = {
+static char wand_mons[] = {
     'K', 'E', 'B', 'S', 'H',   0, 'R', 'O', 'Z',   0, 'C', 'Q', 'A',
       0, 'Y',   0, 'T', 'W', 'P',   0, 'U', 'M', 'V', 'G', 'J',   0
 };
@@ -119,27 +119,27 @@ void
 wanderer(struct rogue_state *rs)
 {
     THING *tp;
-    coord cp;
-    memset(&cp,0,sizeof(cp));
+    static coord cp;
+
     tp = new_item();
     do
     {
-        find_floor(rs,(struct room *) NULL, &cp, FALSE, TRUE);
+	find_floor(rs,(struct room *) NULL, &cp, FALSE, TRUE);
     } while (roomin(rs,&cp) == proom);
     new_monster(rs,tp, randmonster(TRUE), &cp);
     if (on(player, SEEMONST))
     {
-        standout();
-        if (!on(player, ISHALU))
-            addch(tp->t_type);
-        else
-            addch(rnd(26) + 'A');
-        standend();
+	standout();
+	if (!on(player, ISHALU))
+	    addch(tp->t_type);
+	else
+	    addch(rnd(26) + 'A');
+	standend();
     }
     runto(rs,&tp->t_pos);
 #ifdef MASTER
     if (wizard)
-        msg(rs,"started a wandering %s", monsters[tp->t_type-'A'].m_name);
+	msg(rs,"started a wandering %s", monsters[tp->t_type-'A'].m_name);
 #endif
 }
 

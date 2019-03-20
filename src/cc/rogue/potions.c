@@ -22,7 +22,7 @@ typedef struct
     char *pa_high, *pa_straight;
 } PACT;
 
-static const PACT p_actions[] =
+static PACT p_actions[] =
 {
 	{ ISHUH,	unconfuse,	HUHDURATION,	/* P_CONFUSE */
 		"what a tripy feeling!",

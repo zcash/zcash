@@ -369,7 +369,7 @@ init_materials()
 {
     register int i, j;
     register const char *str;
-    bool metused[NMETAL];
+    static bool metused[NMETAL];
     memset(metused,0,sizeof(metused));
     for (i = 0; i < NWOOD; i++)
         used[i] = FALSE;

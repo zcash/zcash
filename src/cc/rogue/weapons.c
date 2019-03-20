@@ -19,7 +19,7 @@
 
 int group = 2;
 
-static const struct init_weaps {
+static struct init_weaps {
     char *iw_dam;	/* Damage when wielded */
     char *iw_hrl;	/* Damage when thrown */
     char iw_launch;	/* Launching weapon */
@@ -125,8 +125,8 @@ void
 fall(struct rogue_state *rs,THING *obj, bool pr)
 {
     PLACE *pp;
-    coord fpos;
-    memset(&fpos,0,sizeof(fpos));
+    static coord fpos;
+
     if (fallpos(&obj->o_pos, &fpos))
     {
         pp = INDEX(fpos.y, fpos.x);
@@ -197,8 +197,8 @@ init_weapon(THING *weap, int which)
 int
 hit_monster(struct rogue_state *rs,int y, int x, THING *obj)
 {
-    coord mp;
-    memset(&mp,0,sizeof(mp));
+    static coord mp;
+
     mp.y = y;
     mp.x = x;
     return fight(rs,&mp, obj, TRUE);

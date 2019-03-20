@@ -334,8 +334,11 @@ pick_one(struct rogue_state *rs,struct obj_info *info, int nitems)
  *	list what the player has discovered in this game of a certain type
  */
 static int line_cnt = 0;
+
 static bool newpage = FALSE;
+
 static char *lastfmt, *lastarg;
+
 
 void
 discovered(struct rogue_state *rs)
@@ -477,16 +480,16 @@ add_line(struct rogue_state *rs,char *fmt, char *arg)
 
     if (line_cnt == 0)
     {
-        wclear(hw);
-        if (inv_type == INV_SLOW)
-            mpos = 0;
+	    wclear(hw);
+	    if (inv_type == INV_SLOW)
+		mpos = 0;
     }
     if (inv_type == INV_SLOW)
     {
-        if (*fmt != '\0')
-            if (msg(rs,fmt, arg) == ESCAPE)
-                return ESCAPE;
-        line_cnt++;
+	if (*fmt != '\0')
+	    if (msg(rs,fmt, arg) == ESCAPE)
+		return ESCAPE;
+	line_cnt++;
     }
     else
     {

@@ -30,10 +30,14 @@ typedef struct spot {		/* position matrix for maze positions */
 void
 do_rooms(struct rogue_state *rs)
 {
-    int i,left_out; struct room *rp; THING *tp;
-    //static coord top;
-    coord mp,bsze,top;				/* maximum room size */
-    memset(&top,0,sizeof(top));
+    int i;
+    struct room *rp;
+    THING *tp;
+    int left_out;
+    static coord top;
+    coord bsze;				/* maximum room size */
+    coord mp;
+    
     bsze.x = NUMCOLS / 3;
     bsze.y = NUMLINES / 3;
     /*
@@ -202,18 +206,23 @@ horiz(struct room *rp, int starty)
  */
 
 static int	Maxy, Maxx, Starty, Startx;
+
 static SPOT	maze[NUMLINES/3+1][NUMCOLS/3+1];
 
-void do_maze(struct rogue_state *rs,struct room *rp)
+
+void
+do_maze(struct rogue_state *rs,struct room *rp)
 {
-    SPOT *sp; int starty, startx;
-    coord pos;
-    memset(&pos,0,sizeof(pos));
+    SPOT *sp;
+    int starty, startx;
+    static coord pos;
+
     for (sp = &maze[0][0]; sp <= &maze[NUMLINES / 3][NUMCOLS / 3]; sp++)
     {
-        sp->used = FALSE;
-        sp->nexits = 0;
+	sp->used = FALSE;
+	sp->nexits = 0;
     }
+
     Maxy = rp->r_max.y;
     Maxx = rp->r_max.x;
     Starty = rp->r_pos.y;
@@ -236,11 +245,11 @@ dig(struct rogue_state *rs,int y, int x)
 {
     coord *cp;
     int cnt, newy, newx, nexty = 0, nextx = 0;
-    coord pos;
-    static const coord del[4] = {
-        {2, 0}, {-2, 0}, {0, 2}, {0, -2}
+    static coord pos;
+    static coord del[4] = {
+	{2, 0}, {-2, 0}, {0, 2}, {0, -2}
     };
-    memset(&pos,0,sizeof(pos));
+
     for (;;)
     {
         if ( rs->replaydone != 0 )

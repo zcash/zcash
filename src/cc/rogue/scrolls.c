@@ -22,19 +22,26 @@
 void
 read_scroll(struct rogue_state *rs)
 {
-    THING *obj,*orig_obj; PLACE *pp; int i, y, x; char ch;
-    bool discardit = FALSE; struct room *cur_room; coord mp;
-    memset(&mp,0,sizeof(mp));
+    THING *obj;
+    PLACE *pp;
+    int y, x;
+    char ch;
+    int i;
+    bool discardit = FALSE;
+    struct room *cur_room;
+    THING *orig_obj;
+    static coord mp;
+
     obj = get_item(rs,"read", SCROLL);
     if (obj == NULL)
-        return;
+	return;
     if (obj->o_type != SCROLL)
     {
-        if (!terse)
-            msg(rs,"there is nothing on it to read");
-        else
-            msg(rs,"nothing to read");
-        return;
+	if (!terse)
+	    msg(rs,"there is nothing on it to read");
+	else
+	    msg(rs,"nothing to read");
+	return;
     }
     /*
      * Calculate the effect it has on the poor guy.
@@ -142,7 +149,7 @@ read_scroll(struct rogue_state *rs)
 	case S_ID_ARMOR:
 	case S_ID_R_OR_S:
 	{
-	    static const char id_type[S_ID_R_OR_S + 1] =
+	    static char id_type[S_ID_R_OR_S + 1] =
 		{ 0, 0, 0, 0, 0, POTION, SCROLL, WEAPON, ARMOR, R_OR_S };
 	    /*
 	     * Identify, let him figure something out
