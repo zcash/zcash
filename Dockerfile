@@ -3,7 +3,7 @@ FROM debian:jessie AS builder
 ENV ZCASH_URL=https://github.com/zcash/zcash.git \
     ZCASH_CONF=/home/zcash/.zcash/zcash.conf
 
-ARG TAG
+ARG VERSION=master
 
 RUN apt-get update
 
@@ -17,7 +17,7 @@ WORKDIR /src
 RUN git clone ${ZCASH_URL}
 
 WORKDIR /src/zcash
-RUN git checkout $TAG
+RUN git checkout $VERSION
 RUN ./zcutil/build.sh -j$(nproc)
 
 WORKDIR /src/zcash/src
