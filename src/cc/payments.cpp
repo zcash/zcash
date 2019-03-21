@@ -150,6 +150,10 @@ int64_t IsPaymentsvout(struct CCcontract_info *cp,const CTransaction& tx,int32_t
 
 bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
 {
+    // one of two addresses
+    // change must go to 1of2 txidaddr
+    // only 'F' or 1of2 txidaddr can be spent
+    // all vouts must match exactly
     return(true);
 }
 // end of consensus code
