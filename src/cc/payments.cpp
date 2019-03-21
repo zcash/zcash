@@ -19,9 +19,9 @@
  0) txidopret <- allocation, scriptPubKey, opret
  1) create <-  locked_blocks, minrelease, list of txidopret
  
- 2) lock amount <create txid> opretflag to global CC address with opret or txidaddr without
+ 2) fund createtxid amount opretflag to global CC address with opret or txidaddr without
  
- 3) release amount -> vout[i] will be scriptPubKeys[i] and (amount * allocations[i]) / sumallocations[] (only using vins that have been locked for locked_blocks+). will make a tx with less than amount if it can find enough vins for minrelease amount
+ 3) release amount -> vout[i] will be scriptPubKeys[i] and (amount * allocations[i]) / sumallocations[] (only using vins that have been locked for locked_blocks+). 
  
  4) info txid -> display parameters, funds
  5) list -> all txids
@@ -30,8 +30,43 @@
  
  ./c is a script that invokes komodo-cli with the correct -ac_name
  
- ./c paymentstxidopret \"[9,%222102d6f13a8f745921cdb811e32237bb98950af1a5952be7b3d429abd9152f8e388dac%22]\"
- ./c paymentstxidopret \"[1,%2221039433dc3749aece1bd568f374a45da3b0bc6856990d7da3cd175399577940a775ac%22]\"
+ ./c paymentstxidopret \"[9,%222102d6f13a8f745921cdb811e32237bb98950af1a5952be7b3d429abd9152f8e388dac%22]\" -> rawhex with txid 95d9fc8d8a3ef63693c7427e59ff5e177ef63b7345d5f6d6497ac262699a8def
+ 
+ ./c paymentstxidopret \"[1,%2221039433dc3749aece1bd568f374a45da3b0bc6856990d7da3cd175399577940a775ac%22]\" -> rawhex txid 00469695a08b975ceaf7258896abbf1455eb0f383e8a98fc650deace4cbf02a1
+ 
+ now we have 2 txid with the required info in the opreturn. one of them has a 9 and the other a 1 for a 90%/10% split.
+ 
+ ./c paymentscreate \"[0,0,%2295d9fc8d8a3ef63693c7427e59ff5e177ef63b7345d5f6d6497ac262699a8def%22,%2200469695a08b975ceaf7258896abbf1455eb0f383e8a98fc650deace4cbf02a1%22]\" -> created txid 318d827cc6d8f25f40517e7fb0982e3f707b4aa749d322483fc336686a87b28a that will be the createtxid that the other rpc calls will use.
+ 
+ lets see if this appears in the list
+ 
+ ./c paymentslist ->
+ {
+ "result": "success",
+ "createtxids": [
+ "318d827cc6d8f25f40517e7fb0982e3f707b4aa749d322483fc336686a87b28a"
+ ]
+ }
+ 
+ It appeared! now lets get more info on it:
+ ./c paymentsinfo \"[%22318d827cc6d8f25f40517e7fb0982e3f707b4aa749d322483fc336686a87b28a%22]\"
+ {
+ "lockedblocks": 0,
+ "totalallocations": 10,
+ "minrelease": 0,
+ "RWRM36sC8jSctyFZtsu7CyDcHYPdZX7nPZ": 0.00000000,
+ "REpyKi7avsVduqZ3eimncK4uKqSArLTGGK": 0.00000000,
+ "totalfunds": 0.00000000,
+ "result": "success"
+ }
+ 
+ There are 2 possible places the funds for this createtxid can be, the first is the special address that is derived from combining the globalCC address with the txidaddr. txidaddr is a non-spendable markeraddress created by converting the txid into a 33 byte pubkey by prefixing 0x02 to the txid. It is a 1of2 address, so it doesnt matter that nobody knows the privkey for this txidaddr. the second address is the global CC address and only utxo to that address with an opreturn containing the createtxid are funds valid for this payments CC createtxid
+ 
+ next let us add some funds to it. the funds can be to either of the two addresses, controlled by useopret (defaults to 0)
+ 
+ ./c paymentsfund \"[%22318d827cc6d8f25f40517e7fb0982e3f707b4aa749d322483fc336686a87b28a%22,1,0]\"
+
+ 
 */
 
 // start of consensus code
@@ -153,9 +188,9 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
 
 // helper functions for rpc calls in rpcwallet.cpp
 
-int64_t AddPaymentsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey txidpk,int64_t total,int32_t maxinputs,uint256 createtxid)
+int64_t AddPaymentsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey txidpk,int64_t total,int32_t maxinputs,uint256 createtxid,int32_t latestheight)
 {
-    char coinaddr[64]; CPubKey Paymentspk; int64_t nValue,threshold,price,totalinputs = 0; uint256 txid,checktxid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx,tx; int32_t iter,vout,n = 0;
+    char coinaddr[64]; CPubKey Paymentspk; int64_t nValue,threshold,price,totalinputs = 0; uint256 txid,checktxid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx,tx; int32_t iter,vout,ht,n = 0;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     if ( maxinputs > CC_MAXVINS )
         maxinputs = CC_MAXVINS;
@@ -175,6 +210,13 @@ int64_t AddPaymentsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CP
             vout = (int32_t)it->first.index;
             if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
             {
+                if ( latestheight != 0 )
+                {
+                    if ( (ht= komodo_blockheight(hashBlock)) == 0 )
+                        continue;
+                    else if ( ht > latestheight )
+                        continue;
+                }
                 if ( iter == 0 )
                 {
                     std::vector<uint8_t> scriptPubKey,opret;
@@ -268,7 +310,8 @@ int32_t payments_parsehexdata(std::vector<uint8_t> &hexdata,cJSON *item,int32_t 
 
 UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
 {
-    CMutableTransaction tmpmtx,mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight()); UniValue result(UniValue::VOBJ); uint256 createtxid,hashBlock;
+    int32_t latestheight,nextheight = komodo_nextheight();
+    CMutableTransaction tmpmtx,mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(),nextheight); UniValue result(UniValue::VOBJ); uint256 createtxid,hashBlock;
     CTransaction tx,txO; CPubKey mypk,txidpk,Paymentspk; int32_t i,n,numoprets=0,lockedblocks,minrelease,totalallocations,checkallocations=0,allocation; int64_t inputsum,amount,CCchange=0; CTxOut vout; CScript onlyopret; char txidaddr[64]; std::vector<uint256> txidoprets; std::string rawtx;
     cJSON *params = payments_reparse(&n,jsonstr);
     mypk = pubkey2pk(Mypubkey());
@@ -281,6 +324,21 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
         {
             if ( tx.vout.size() > 0 && DecodePaymentsOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,lockedblocks,minrelease,totalallocations,txidoprets) != 0 )
             {
+                if ( lockedblocks < 0 || minrelease < 0 || totalallocations <= 0 || txidoprets.size() < 2 )
+                {
+                    result.push_back(Pair("result","error"));
+                    result.push_back(Pair("error","negative parameter"));
+                    return(result);
+                }
+                latestheight = (nextheight - lockedblocks - 1);
+                if ( amount < minrelease )
+                {
+                    result.push_back(Pair("result","error"));
+                    result.push_back(Pair("error","amount too smal"));
+                    result.push_back(Pair("amount",ValueFromAmount(amount)));
+                    result.push_back(Pair("minrelease",ValueFromAmount(minrelease)));
+                    return(result);
+                }
                 for (i=0; i<txidoprets.size(); i++)
                 {
                     std::vector<uint8_t> scriptPubKey,opret;
@@ -334,9 +392,9 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
                     mtx.vout[i].nValue /= totalallocations;
                 }
                 txidpk = CCtxidaddr(txidaddr,createtxid);
-                if ( (inputsum= AddPaymentsInputs(cp,mtx,txidpk,amount,60,createtxid)) >= amount )
+                if ( (inputsum= AddPaymentsInputs(cp,mtx,txidpk,amount+PAYMENTS_TXFEE,60,createtxid,latestheight)) >= amount )
                 {
-                    if ( (CCchange= (inputsum - amount)) > PAYMENTS_TXFEE )
+                    if ( (CCchange= (inputsum - amount)) >= PAYMENTS_TXFEE )
                         mtx.vout.push_back(MakeCC1of2vout(EVAL_PAYMENTS,CCchange,Paymentspk,txidpk));
                     rawtx = FinalizeCCTx(0,cp,mtx,mypk,PAYMENTS_TXFEE,onlyopret);
                     if ( params != 0 )
@@ -391,6 +449,14 @@ UniValue PaymentsFund(struct CCcontract_info *cp,char *jsonstr)
         }
         else if ( AddNormalinputs(mtx,mypk,amount+PAYMENTS_TXFEE,60) > 0 )
         {
+            if ( lockedblocks < 0 || minrelease < 0 || totalallocations <= 0 || txidoprets.size() < 2 )
+            {
+                result.push_back(Pair("result","error"));
+                result.push_back(Pair("error","negative parameter"));
+                if ( params != 0 )
+                    free_json(params);
+                return(result);
+            }
             if ( useopret == 0 )
             {
                 txidpk = CCtxidaddr(txidaddr,txid);
@@ -439,7 +505,7 @@ UniValue PaymentsTxidopret(struct CCcontract_info *cp,char *jsonstr)
             rawtx = FinalizeCCTx(0,cp,mtx,mypk,PAYMENTS_TXFEE,EncodePaymentsTxidOpRet(allocation,scriptPubKey,opret));
             if ( params != 0 )
                 free_json(params);
-            return(payments_rawtxresult(result,rawtx,0));
+            return(payments_rawtxresult(result,rawtx,1));
         }
         result.push_back(Pair("result","error"));
         result.push_back(Pair("error","invalid params or cant find txfee"));
@@ -465,6 +531,14 @@ UniValue PaymentsCreate(struct CCcontract_info *cp,char *jsonstr)
     {
         lockedblocks = juint(jitem(params,0),0);
         minrelease = juint(jitem(params,1),0);
+        if ( lockedblocks < 0 || minrelease < 0 )
+        {
+            result.push_back(Pair("result","error"));
+            result.push_back(Pair("error","negative parameter"));
+            if ( params != 0 )
+                free_json(params);
+            return(result);
+        }
         for (i=0; i<n-2; i++)
             txidoprets.push_back(payments_juint256(jitem(params,2+i)));
         for (i=0; i<txidoprets.size(); i++)
@@ -531,6 +605,14 @@ UniValue PaymentsInfo(struct CCcontract_info *cp,char *jsonstr)
         {
             if ( tx.vout.size() > 0 && DecodePaymentsOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,lockedblocks,minrelease,totalallocations,txidoprets) != 0 )
             {
+                if ( lockedblocks < 0 || minrelease < 0 || totalallocations <= 0 || txidoprets.size() < 2 )
+                {
+                    result.push_back(Pair("result","error"));
+                    result.push_back(Pair("error","negative parameter"));
+                    if ( params != 0 )
+                        free_json(params);
+                    return(result);
+                }
                 result.push_back(Pair("lockedblocks",(int64_t)lockedblocks));
                 result.push_back(Pair("totalallocations",(int64_t)totalallocations));
                 result.push_back(Pair("minrelease",(int64_t)minrelease));
@@ -597,7 +679,6 @@ UniValue PaymentsList(struct CCcontract_info *cp,char *jsonstr)
 {
     std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex; uint256 txid,hashBlock;
     UniValue result(UniValue::VOBJ),a(UniValue::VARR); char markeraddr[64],str[65]; CPubKey Paymentspk; CTransaction tx; int32_t lockedblocks,minrelease,totalallocations; std::vector<uint256> txidoprets;
-    result.push_back(Pair("result","success"));
     Paymentspk = GetUnspendable(cp,0);
     GetCCaddress1of2(cp,markeraddr,Paymentspk,Paymentspk);
     SetCCtxids(addressIndex,markeraddr);
@@ -608,10 +689,17 @@ UniValue PaymentsList(struct CCcontract_info *cp,char *jsonstr)
         {
             if ( tx.vout.size() > 0 && DecodePaymentsOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,lockedblocks,minrelease,totalallocations,txidoprets) == 'C' )
             {
+                if ( lockedblocks < 0 || minrelease < 0 || totalallocations <= 0 || txidoprets.size() < 2 )
+                {
+                    result.push_back(Pair("result","error"));
+                    result.push_back(Pair("error","negative parameter"));
+                    return(result);
+                }
                 a.push_back(uint256_str(str,txid));
             }
         }
     }
+    result.push_back(Pair("result","success"));
     result.push_back(Pair("createtxids",a));
     return(result);
 }
