@@ -263,7 +263,7 @@ int32_t payments_parsehexdata(std::vector<uint8_t> &hexdata,cJSON *item,int32_t 
 UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
 {
     CMutableTransaction tmpmtx,mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight()); UniValue result(UniValue::VOBJ); uint256 createtxid,hashBlock;
-    CTransaction tx,txO; CPubKey mypk,txidpk,Paymentspk; int32_t i,n,numoprets=0,updateflag,lockedblocks,minrelease,totalallocations,checkallocations=0,allocation; int64_t inputsum,amount,CCchange=0; CTxOut vout; CScript onlyopret; char txidaddr[64]; std::vector<uint256> txidoprets;
+    CTransaction tx,txO; CPubKey mypk,txidpk,Paymentspk; int32_t i,n,numoprets=0,updateflag,lockedblocks,minrelease,totalallocations,checkallocations=0,allocation; int64_t inputsum,amount,CCchange=0; CTxOut vout; CScript onlyopret; char txidaddr[64]; std::vector<uint256> txidoprets; std::string rawtx;
     cJSON *params = payments_reparse(&n,jsonstr);
     mypk = pubkey2pk(Mypubkey());
     Paymentspk = GetUnspendable(cp,0);
@@ -287,8 +287,8 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
                         checkallocations += allocation;
                         if ( opret.size() > 0 )
                         {
-                            scriptPubKey.resize(opret.size);
-                            memcpy(&onlyopret[0],&opret[0],opret.size);
+                            scriptPubKey.resize(opret.size());
+                            memcpy(&onlyopret[0],&opret[0],opret.size());
                             numoprets++;
                         }
                     } else break;
@@ -324,7 +324,7 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
                 txidpk = CCtxidaddr(txidaddr,createtxid);
                 if ( (inputsum= AddPaymentsInputs(cp,mtx,txidpk,amount,60,createtxid)) >= amount )
                 {
-                    if ( (CCchange= (inputsum - amount)) > TRANSACTIONS_TXFEE )
+                    if ( (CCchange= (inputsum - amount)) > PAYMENTS_TXFEE )
                         mtx.vout.push_back(MakeCC1of2vout(EVAL_PAYMENTS,CCchange,Paymentspk,txidpk));
                     rawtx = FinalizeCCTx(0,cp,mtx,mypk,PAYMENTS_TXFEE,onlyopret);
                     return(payments_rawtxresult(result,rawtx,0));
@@ -378,11 +378,11 @@ UniValue PaymentsFund(struct CCcontract_info *cp,char *jsonstr)
             if ( useopret == 0 )
             {
                 txidpk = CCtxidaddr(txidaddr,txid);
-                mtx.vout.push_back(MakeCC1of2vout(EVAL_PAYMENTS,funds,Paymentspk,txidpk));
+                mtx.vout.push_back(MakeCC1of2vout(EVAL_PAYMENTS,amount,Paymentspk,txidpk));
             }
             else
             {
-                mtx.vout.push_back(MakeCCvout(EVAL_PAYMENTS,funds,Paymentspk));
+                mtx.vout.push_back(MakeCC1vout(EVAL_PAYMENTS,amount,Paymentspk));
                 opret = EncodePaymentsFundOpRet(txid);
             }
             rawtx = FinalizeCCTx(0,cp,mtx,mypk,PAYMENTS_TXFEE,opret);
@@ -411,10 +411,10 @@ UniValue PaymentsTxidopret(struct CCcontract_info *cp,char *jsonstr)
     if ( params != 0 && n > 1 && n <= 3 )
     {
         allocation = juint(jitem(params,0),0);
-        retval0 = payments_parsehexdata(scriptPubKey,jitem(params,1));
-        if ( m == 3 )
-            retval1 = payments_parsehexdata(opret,jitem(params,2));
-        if ( allocation > 0 && retval == 0 && retval1 == 0 && AddNormalinputs(mtx,mypk,PAYMENTS_TXFEE,10) > 0 )
+        retval0 = payments_parsehexdata(scriptPubKey,jitem(params,1),0);
+        if ( n == 3 )
+            retval1 = payments_parsehexdata(opret,jitem(params,2),0);
+        if ( allocation > 0 && retval0 == 0 && retval1 == 0 && AddNormalinputs(mtx,mypk,PAYMENTS_TXFEE,10) > 0 )
         {
             rawtx = FinalizeCCTx(0,cp,mtx,mypk,PAYMENTS_TXFEE,EncodePaymentsTxidOpRet(allocation,scriptPubKey,opret));
             return(payments_rawtxresult(result,rawtx,0));
@@ -433,7 +433,7 @@ UniValue PaymentsTxidopret(struct CCcontract_info *cp,char *jsonstr)
 UniValue PaymentsCreate(struct CCcontract_info *cp,char *jsonstr)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); CTransaction tx; CPubKey Paymentspk; char markeraddr[64]; std::vector<uint256> txidoprets; uint256 hashBlock; int32_t i,n,numoprets=0,updateflag,lockedblocks,minrelease,totalallocations=0;
+    UniValue result(UniValue::VOBJ); CTransaction tx; CPubKey Paymentspk,mypk; char markeraddr[64]; std::vector<uint256> txidoprets; uint256 hashBlock; int32_t i,n,numoprets=0,updateflag,lockedblocks,minrelease,totalallocations=0; std::string rawtx;
     cJSON *params = payments_reparse(&n,jsonstr);
     if ( params != 0 && n >= 4 )
     {
@@ -488,13 +488,13 @@ UniValue PaymentsCreate(struct CCcontract_info *cp,char *jsonstr)
 
 UniValue PaymentsInfo(struct CCcontract_info *cp,char *jsonstr)
 {
-    UniValue result(UniValue::VOBJ),a(UniValue:VARR); CTransaction tx,txO; CPubKey Paymentspk,txidpk; int32_t i,n,flag=0,allocation,numoprets=0,updateflag,lockedblocks,minrelease,totalallocations; std::vector<uint256> txidoprets; int64_t funds,fundsopret; char fundsaddr[64],fundsopretaddr[64],txidaddr[64];
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR); CTransaction tx,txO; CPubKey Paymentspk,txidpk; int32_t i,n,flag=0,allocation,numoprets=0,updateflag,lockedblocks,minrelease,totalallocations; std::vector<uint256> txidoprets; int64_t funds,fundsopret; char fundsaddr[64],fundsopretaddr[64],txidaddr[64]; uint256 createtxid,hashBlock;
     cJSON *params = payments_reparse(&n,jsonstr);
     if ( params != 0 && n == 1 )
     {
         Paymentspk = GetUnspendable(cp,0);
-        txid = payments_juint256(jitem(params,0));
-        if ( myGetTransaction(txid,tx,hashBlock) != 0 )
+        createtxid = payments_juint256(jitem(params,0));
+        if ( myGetTransaction(createtxid,tx,hashBlock) != 0 )
         {
             if ( tx.vout.size() > 0 && DecodePaymentsOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,updateflag,lockedblocks,minrelease,totalallocations,txidoprets) != 0 )
             {
@@ -554,7 +554,7 @@ UniValue PaymentsInfo(struct CCcontract_info *cp,char *jsonstr)
 UniValue PaymentsList(struct CCcontract_info *cp,char *jsonstr)
 {
     std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex; uint256 txid,hashBlock;
-    UniValue result(UniValue::VOBJ),a(UniValue:VARR); char markeraddr[64],str[65]; CPubKey Paymentspk; CTransaction tx; int32_t updateflag,lockedblocks,minrelease,totalallocations; std::vector<uint256> txidoprets;
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR); char markeraddr[64],str[65]; CPubKey Paymentspk; CTransaction tx; int32_t updateflag,lockedblocks,minrelease,totalallocations; std::vector<uint256> txidoprets;
     result.push_back(Pair("result","success"));
     Paymentspk = GetUnspendable(cp,0);
     GetCCaddress1of2(cp,markeraddr,Paymentspk,Paymentspk);
