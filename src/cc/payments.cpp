@@ -30,7 +30,7 @@
  
  ./c is a script that invokes komodo-cli with the correct -ac_name
  
- ./komodo-cli -ac_name=PAY paymentstxidopret \"[9,%222102d6f13a8f745921cdb811e32237bb98950af1a5952be7b3d429abd9152f8e388dac%22]\"
+ ./c paymentstxidopret \"[9,%222102d6f13a8f745921cdb811e32237bb98950af1a5952be7b3d429abd9152f8e388dac%22]\"
  ./c paymentstxidopret \"[1,%2221039433dc3749aece1bd568f374a45da3b0bc6856990d7da3cd175399577940a775ac%22]\"
 */
 
@@ -305,6 +305,8 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
                     result.push_back(Pair("result","error"));
                     result.push_back(Pair("error","invalid txidoprets[i]"));
                     result.push_back(Pair("txi",(int64_t)i));
+                    if ( params != 0 )
+                        free_json(params);
                     return(result);
                 }
                 else if ( checkallocations != totalallocations )
@@ -313,6 +315,8 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
                     result.push_back(Pair("error","totalallocations mismatch"));
                     result.push_back(Pair("checkallocations",(int64_t)checkallocations));
                     result.push_back(Pair("totalallocations",(int64_t)totalallocations));
+                    if ( params != 0 )
+                        free_json(params);
                     return(result);
                 }
                 else if ( numoprets > 0 )
@@ -320,6 +324,8 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
                     result.push_back(Pair("result","error"));
                     result.push_back(Pair("error","too many oprets"));
                     result.push_back(Pair("numoprets",(int64_t)numoprets));
+                    if ( params != 0 )
+                        free_json(params);
                     return(result);
                 }
                 for (i=0; i<txidoprets.size(); i++)
@@ -333,6 +339,8 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
                     if ( (CCchange= (inputsum - amount)) > PAYMENTS_TXFEE )
                         mtx.vout.push_back(MakeCC1of2vout(EVAL_PAYMENTS,CCchange,Paymentspk,txidpk));
                     rawtx = FinalizeCCTx(0,cp,mtx,mypk,PAYMENTS_TXFEE,onlyopret);
+                    if ( params != 0 )
+                        free_json(params);
                     return(payments_rawtxresult(result,rawtx,0));
                 }
                 else
@@ -358,6 +366,8 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
         result.push_back(Pair("result","error"));
         result.push_back(Pair("error","parameters error"));
     }
+    if ( params != 0 )
+        free_json(params);
     return(result);
 }
 
@@ -392,6 +402,8 @@ UniValue PaymentsFund(struct CCcontract_info *cp,char *jsonstr)
                 opret = EncodePaymentsFundOpRet(txid);
             }
             rawtx = FinalizeCCTx(0,cp,mtx,mypk,PAYMENTS_TXFEE,opret);
+            if ( params != 0 )
+                free_json(params);
             return(payments_rawtxresult(result,rawtx,0));
         }
         else
@@ -405,6 +417,8 @@ UniValue PaymentsFund(struct CCcontract_info *cp,char *jsonstr)
         result.push_back(Pair("result","error"));
         result.push_back(Pair("error","parameters error"));
     }
+    if ( params != 0 )
+        free_json(params);
     return(result);
 }
 
@@ -423,6 +437,8 @@ UniValue PaymentsTxidopret(struct CCcontract_info *cp,char *jsonstr)
         if ( allocation > 0 && retval0 == 0 && retval1 == 0 && AddNormalinputs(mtx,mypk,PAYMENTS_TXFEE,10) > 0 )
         {
             rawtx = FinalizeCCTx(0,cp,mtx,mypk,PAYMENTS_TXFEE,EncodePaymentsTxidOpRet(allocation,scriptPubKey,opret));
+            if ( params != 0 )
+                free_json(params);
             return(payments_rawtxresult(result,rawtx,0));
         }
         result.push_back(Pair("result","error"));
@@ -432,7 +448,11 @@ UniValue PaymentsTxidopret(struct CCcontract_info *cp,char *jsonstr)
     {
         result.push_back(Pair("result","error"));
         result.push_back(Pair("error","parameters error"));
+        result.push_back(Pair("n",(int64_t)n));
+        fprintf(stderr,"(%s) %p\n",jsonstr,params);
     }
+    if ( params != 0 )
+        free_json(params);
     return(result);
 }
 
@@ -462,6 +482,8 @@ UniValue PaymentsCreate(struct CCcontract_info *cp,char *jsonstr)
                 result.push_back(Pair("error","invalid txidopret"));
                 result.push_back(Pair("txid",txidoprets[i].GetHex()));
                 result.push_back(Pair("txi",(int64_t)i));
+                if ( params != 0 )
+                    free_json(params);
                 return(result);
             }
         }
@@ -470,6 +492,8 @@ UniValue PaymentsCreate(struct CCcontract_info *cp,char *jsonstr)
             result.push_back(Pair("result","error"));
             result.push_back(Pair("error","too many opreturns"));
             result.push_back(Pair("numoprets",(int64_t)numoprets));
+            if ( params != 0 )
+                free_json(params);
             return(result);
         }
         mypk = pubkey2pk(Mypubkey());
@@ -478,6 +502,8 @@ UniValue PaymentsCreate(struct CCcontract_info *cp,char *jsonstr)
         {
             mtx.vout.push_back(MakeCC1of2vout(cp->evalcode,PAYMENTS_TXFEE,Paymentspk,Paymentspk));
             rawtx = FinalizeCCTx(0,cp,mtx,mypk,PAYMENTS_TXFEE,EncodePaymentsOpRet(lockedblocks,minrelease,totalallocations,txidoprets));
+            if ( params != 0 )
+                free_json(params);
             return(payments_rawtxresult(result,rawtx,0));
         }
         result.push_back(Pair("result","error"));
@@ -488,6 +514,8 @@ UniValue PaymentsCreate(struct CCcontract_info *cp,char *jsonstr)
         result.push_back(Pair("result","error"));
         result.push_back(Pair("error","parameters error"));
     }
+    if ( params != 0 )
+        free_json(params);
     return(result);
 }
 
@@ -560,6 +588,8 @@ UniValue PaymentsInfo(struct CCcontract_info *cp,char *jsonstr)
         result.push_back(Pair("result","error"));
         result.push_back(Pair("error","parameters error"));
     }
+    if ( params != 0 )
+        free_json(params);
     return(result);
 }
 
