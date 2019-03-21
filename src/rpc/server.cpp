@@ -291,6 +291,9 @@ static const CRPCCommand vRPCCommands[] =
   //  --------------------- ------------------------  -----------------------  ----------
     /* Overall control/query calls */
     { "control",            "help",                   &help,                   true  },
+    { "control",            "getiguanajson",          &getiguanajson,          true  },
+    { "control",            "getnotarysendmany",      &getnotarysendmany,      true  },
+    { "control",            "geterablockheights",     &geterablockheights,     true  },
     { "control",            "stop",                   &stop,                   true  },
 
     /* P2P networking */
@@ -346,6 +349,7 @@ static const CRPCCommand vRPCCommands[] =
     { "crosschain",         "crosschainproof",        &crosschainproof,        true  },
     { "crosschain",         "getNotarisationsForBlock", &getNotarisationsForBlock, true },
     { "crosschain",         "scanNotarisationsDB",    &scanNotarisationsDB,    true },
+    { "crosschain",         "getimports",             &getimports,             true },
     { "crosschain",         "migrate_converttoexport", &migrate_converttoexport, true  },
     { "crosschain",         "migrate_createimporttransaction", &migrate_createimporttransaction, true  },
     { "crosschain",         "migrate_completeimporttransaction", &migrate_completeimporttransaction, true  },
@@ -470,6 +474,8 @@ static const CRPCCommand vRPCCommands[] =
     // Gateways
     { "gateways",       "gatewaysaddress",   &gatewaysaddress,      true },
     { "gateways",       "gatewayslist",      &gatewayslist,         true },
+    { "gateways",       "gatewaysexternaladdress",      &gatewaysexternaladdress,         true },
+    { "gateways",       "gatewaysdumpprivkey",      &gatewaysdumpprivkey,         true },
     { "gateways",       "gatewaysinfo",      &gatewaysinfo,         true },
     { "gateways",       "gatewaysbind",      &gatewaysbind,         true },
     { "gateways",       "gatewaysdeposit",   &gatewaysdeposit,      true },
@@ -478,9 +484,9 @@ static const CRPCCommand vRPCCommands[] =
     { "gateways",       "gatewayspartialsign",  &gatewayspartialsign,     true },
     { "gateways",       "gatewayscompletesigning",  &gatewayscompletesigning,     true },
     { "gateways",       "gatewaysmarkdone",  &gatewaysmarkdone,     true },
-    { "gateways",       "gatewayspending",   &gatewayspending,      true },
+    { "gateways",       "gatewayspendingdeposits",   &gatewayspendingdeposits,      true },
+    { "gateways",       "gatewayspendingwithdraws",   &gatewayspendingwithdraws,      true },
     { "gateways",       "gatewaysprocessed",   &gatewaysprocessed,  true },
-    { "gateways",       "gatewaysmultisig",  &gatewaysmultisig,     true },
 
     // dice
     { "dice",       "dicelist",      &dicelist,         true },
@@ -497,6 +503,7 @@ static const CRPCCommand vRPCCommands[] =
     { "tokens",       "tokeninfo",        &tokeninfo,         true },
     { "tokens",       "tokenlist",        &tokenlist,         true },
     { "tokens",       "tokenorders",      &tokenorders,       true },
+    { "tokens",       "mytokenorders",    &mytokenorders,     true },
     { "tokens",       "tokenaddress",     &tokenaddress,      true },
     { "tokens",       "tokenbalance",     &tokenbalance,      true },
     { "tokens",       "tokencreate",      &tokencreate,       true },
@@ -538,7 +545,10 @@ static const CRPCCommand vRPCCommands[] =
     /* Not shown in help */
     { "hidden",             "setmocktime",            &setmocktime,            true  },
 	{ "hidden",             "test_ac",                &test_ac,            true },
-	{ "hidden",             "test_heirmarker",        &test_heirmarker,    true },
+	{ "hidden",             "test_heirmarker",        &test_heirmarker,    true }, 
+	{ "hidden",             "test_proof",        &test_proof,    true },
+    { "hidden",             "test_burntx",            &test_burntx,    true },
+
 
 #ifdef ENABLE_WALLET
     /* Wallet */
