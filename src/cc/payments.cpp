@@ -16,16 +16,22 @@
 #include "CCPayments.h"
 
 /* 
- 0) create <- update_allowed flag, locked_blocks, minrelease, list of scriptPubKeys, allocations
+ 0) txidopret <- allocation, scriptPubKey, opret
+ 1) create <-  locked_blocks, minrelease, list of txidopret
  
- 1) lock amount <create txid> to global CC address
+ 2) lock amount <create txid> opretflag to global CC address with opret or txidaddr without
  
- 2) release amount -> vout[i] will be scriptPubKeys[i] and (amount * allocations[i]) / sumallocations[] (only using vins that have been locked for locked_blocks+). will make a tx with less than amount if it can find enough vins for minrelease amount
- 
- 3) update (vins from all scriptPubkeys) new update_allowed flag, locked_blocks, minrelease, list of scriptPubKeys, allocations (only if update_allowed)
+ 3) release amount -> vout[i] will be scriptPubKeys[i] and (amount * allocations[i]) / sumallocations[] (only using vins that have been locked for locked_blocks+). will make a tx with less than amount if it can find enough vins for minrelease amount
  
  4) info txid -> display parameters, funds
  5) list -> all txids
+ 
+ First step is to create txids with the info needed in their opreturns. this info is the weight, scriptPubKey and opret if needed. To do that txidopret is used:
+ 
+ ./c is a script that invokes komodo-cli with the correct -ac_name
+ 
+ ./komodo-cli -ac_name=PAY paymentstxidopret \"[9,%222102d6f13a8f745921cdb811e32237bb98950af1a5952be7b3d429abd9152f8e388dac%22]\"
+ ./c paymentstxidopret \"[1,%2221039433dc3749aece1bd568f374a45da3b0bc6856990d7da3cd175399577940a775ac%22]\"
 */
 
 // start of consensus code

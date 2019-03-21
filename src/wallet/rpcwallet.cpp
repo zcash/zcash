@@ -5581,8 +5581,8 @@ UniValue cclib(const UniValue& params, bool fHelp)
 UniValue payments_release(const UniValue& params, bool fHelp)
 {
     struct CCcontract_info *cp,C; char *jsonstr=0;
-    if ( fHelp || params.size() != 2 )
-        throw runtime_error("paymentsrelease createtxid amount\n");
+    if ( fHelp || params.size() != 1 )
+        throw runtime_error("paymentsrelease \"[%22createtxid%22,amount]\"\n");
     if ( ensure_CCrequirements(EVAL_PAYMENTS) < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     const CKeyStore& keystore = *pwalletMain;
@@ -5594,8 +5594,8 @@ UniValue payments_release(const UniValue& params, bool fHelp)
 UniValue payments_fund(const UniValue& params, bool fHelp)
 {
     struct CCcontract_info *cp,C; char *jsonstr=0;
-    if ( fHelp || params.size() < 2 || params.size() > 3 )
-        throw runtime_error("paymentsfund createtxid amount [useopret]\n");
+    if ( fHelp || params.size() != 1 )
+        throw runtime_error("paymentsfund \"[%22createtxid%22,amount(,useopret)]\"\n");
     if ( ensure_CCrequirements(EVAL_PAYMENTS) < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     const CKeyStore& keystore = *pwalletMain;
@@ -5607,8 +5607,8 @@ UniValue payments_fund(const UniValue& params, bool fHelp)
 UniValue payments_txidopret(const UniValue& params, bool fHelp)
 {
     struct CCcontract_info *cp,C; char *jsonstr=0;
-    if ( fHelp || params.size() < 2 )
-        throw runtime_error("paymentstxidopret scriptPubKey opretformat\n");
+    if ( fHelp || params.size() != 1 )
+        throw runtime_error("paymentstxidopret \"[allocation,%22scriptPubKey%22(,%22destopret%22)]\"\n");
     if ( ensure_CCrequirements(EVAL_PAYMENTS) < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     const CKeyStore& keystore = *pwalletMain;
@@ -5620,8 +5620,8 @@ UniValue payments_txidopret(const UniValue& params, bool fHelp)
 UniValue payments_create(const UniValue& params, bool fHelp)
 {
     struct CCcontract_info *cp,C; char *jsonstr=0;
-    if ( fHelp || params.size() < 4 )
-        throw runtime_error("paymentscreate lockedblocks minamount paytxid0,...,paytxidN\n");
+    if ( fHelp || params.size() != 1 )
+        throw runtime_error("paymentscreate \"[lockedblocks,minamount,%22paytxid0%22,...,%22paytxidN%22]\"\n");
     if ( ensure_CCrequirements(EVAL_PAYMENTS) < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     const CKeyStore& keystore = *pwalletMain;
@@ -5634,7 +5634,7 @@ UniValue payments_info(const UniValue& params, bool fHelp)
 {
     struct CCcontract_info *cp,C; char *jsonstr=0;
     if ( fHelp || params.size() != 1 )
-        throw runtime_error("paymentsinfo createtxid\n");
+        throw runtime_error("paymentsinfo \"[%22createtxid%22]\"\n");
     if ( ensure_CCrequirements(EVAL_PAYMENTS) < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     const CKeyStore& keystore = *pwalletMain;
