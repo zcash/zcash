@@ -508,10 +508,10 @@ UniValue PaymentsInfo(struct CCcontract_info *cp,char *jsonstr)
                     obj.push_back(Pair("txidopret",txidoprets[i].GetHex()));
                     if ( myGetTransaction(txidoprets[i],txO,hashBlock) != 0 && txO.vout.size() > 1 && DecodePaymentsTxidOpRet(txO.vout[txO.vout.size()-1].scriptPubKey,allocation,scriptPubKey,opret) == 'T' )
                     {
-                        obj.push_back(Pair("scriptPubKey",scriptPubKey.GetHex()));
+                        obj.push_back(Pair("scriptPubKey",scriptPubKey.ToString()));
                         if ( opret.size() != 0 )
                         {
-                            obj.push_back(Pair("opreturn",opret.GetHex()));
+                            obj.push_back(Pair("opreturn",opret.ToString()));
                             numoprets++;
                         }
                     }
