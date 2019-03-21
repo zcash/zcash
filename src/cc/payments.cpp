@@ -135,53 +135,15 @@ uint8_t DecodePaymentsOpRet(CScript scriptPubKey,int32_t &lockedblocks,int32_t &
     return(0);
 }
 
-int64_t IsPaymentsvout(struct CCcontract_info *cp,const CTransaction& tx,int32_t v)
+int64_t IsPaymentsvout(struct CCcontract_info *cp,const CTransaction& tx,int32_t v,char *cmpaddr)
 {
     char destaddr[64];
     if ( tx.vout[v].scriptPubKey.IsPayToCryptoCondition() != 0 )
     {
-        if ( Getscriptaddress(destaddr,tx.vout[v].scriptPubKey) > 0 && strcmp(destaddr,cp->unspendableCCaddr) == 0 )
+        if ( Getscriptaddress(destaddr,tx.vout[v].scriptPubKey) > 0 && (cmpaddr[0] == 0 || strcmp(destaddr,cmpaddr) == 0) )
             return(tx.vout[v].nValue);
     }
     return(0);
-}
-
-bool PaymentsExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx,int32_t minage,uint64_t txfee)
-{
-    static uint256 zerohash;
-    CTransaction vinTx; uint256 hashBlock,activehash; int32_t i,numvins,numvouts; int64_t inputs=0,outputs=0,assetoshis;
-    numvins = tx.vin.size();
-    numvouts = tx.vout.size();
-    for (i=0; i<numvins; i++)
-    {
-        //fprintf(stderr,"vini.%d\n",i);
-        if ( (*cp->ismyvin)(tx.vin[i].scriptSig) != 0 )
-        {
-            //fprintf(stderr,"vini.%d check mempool\n",i);
-            if ( eval->GetTxUnconfirmed(tx.vin[i].prevout.hash,vinTx,hashBlock) == 0 )
-                return eval->Invalid("cant find vinTx");
-            else
-            {
-                //fprintf(stderr,"vini.%d check hash and vout\n",i);
-                if ( hashBlock == zerohash )
-                    return eval->Invalid("cant Payments from mempool");
-                if ( (assetoshis= IsPaymentsvout(cp,vinTx,tx.vin[i].prevout.n)) != 0 )
-                    inputs += assetoshis;
-            }
-        }
-    }
-    for (i=0; i<numvouts; i++)
-    {
-        //fprintf(stderr,"i.%d of numvouts.%d\n",i,numvouts);
-        if ( (assetoshis= IsPaymentsvout(cp,tx,i)) != 0 )
-            outputs += assetoshis;
-    }
-    if ( inputs != outputs+txfee )
-    {
-        fprintf(stderr,"inputs %llu vs outputs %llu\n",(long long)inputs,(long long)outputs);
-        return eval->Invalid("mismatched inputs != outputs + txfee");
-    }
-    else return(true);
 }
 
 bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
@@ -237,7 +199,7 @@ int64_t AddPaymentsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CP
                         continue;
                     }
                 }
-                if ( (nValue= IsPaymentsvout(cp,vintx,vout)) > PAYMENTS_TXFEE && nValue >= threshold && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0 )
+                if ( (nValue= IsPaymentsvout(cp,vintx,vout,coinaddr)) > PAYMENTS_TXFEE && nValue >= threshold && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0 )
                 {
                     if ( total != 0 && maxinputs != 0 )
                         mtx.vin.push_back(CTxIn(txid,vout,CScript()));
