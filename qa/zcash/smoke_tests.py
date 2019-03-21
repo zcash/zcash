@@ -16,9 +16,13 @@ sys.path.insert(
 )
 
 import argparse
+import decimal
 import subprocess
+import time
 
 from authproxy import AuthServiceProxy, JSONRPCException
+
+DEFAULT_FEE = decimal.Decimal('0.0001')
 
 #
 # Smoke test definitions
@@ -133,6 +137,104 @@ def run_cmd(results, case, zcash, name, args=[]):
             results[case] = False
         return None
 
+def wait_for_balance(zcash, zaddr, expected=None, timeout=900):
+    print('Waiting for funds to %s...' % zaddr)
+    if expected is not None:
+        print('Expecting %s' % expected)
+    balance = zcash.z_getbalance(zaddr)
+    for _ in iter(range(timeout)):
+        balance = zcash.z_getbalance(zaddr)
+        if expected is None and balance != 0:
+            break
+        if expected is not None and balance == expected:
+            break
+        time.sleep(1)
+    print('Received %s' % balance)
+    return balance
+
+def wait_and_check_balance(results, case, zcash, addr, expected):
+    balance = wait_for_balance(zcash, addr, expected)
+    if balance != expected and results is not None and len(case) > 0:
+        results[case] = False
+    return balance
+
+def wait_for_txid_operation(zcash, opid, timeout=300):
+    print('Waiting for async operation %s' % opid)
+    result = None
+    for _ in iter(range(timeout)):
+        results = zcash.z_getoperationresult([opid])
+        if len(results) > 0:
+            result = results[0]
+            break
+        time.sleep(1)
+
+    status = result['status']
+    if status == 'failed':
+        print('Operation failed')
+        print(result['error']['message'])
+        return None
+    elif status == 'success':
+        txid = result['result']['txid']
+        print(txid)
+        return txid
+
+def async_txid_cmd(results, case, zcash, name, args=[]):
+    opid = run_cmd(results, case, zcash, name, args)
+    # Some async commands return a dictionary containing the opid
+    if type(opid) == type({}):
+        opid = opid['opid']
+    if opid is None:
+        if results is not None and len(case) > 0:
+            results[case] = False
+        return None
+
+    txid = wait_for_txid_operation(zcash, opid)
+    if txid is None:
+        if results is not None and len(case) > 0:
+            results[case] = False
+    return txid
+
+def z_sendmany(results, case, zcash, from_addr, recipients):
+    return async_txid_cmd(results, case, zcash, 'z_sendmany', [
+        from_addr,
+        [{
+            'address': to_addr,
+            'amount': amount,
+        } for (to_addr, amount) in recipients]
+    ])
+
+def check_z_sendmany(results, case, zcash, from_addr, recipients):
+    txid = z_sendmany(results, case, zcash, from_addr, recipients)
+    if txid is None:
+        return decimal.Decimal('0')
+    return [wait_and_check_balance(results, case, zcash, to_addr, amount) for (to_addr, amount) in recipients]
+
+def check_z_sendmany_parallel(results, zcash, runs):
+    # First attempt to create all the transactions
+    txids = [(run, z_sendmany(results, run[0], zcash, run[1], run[2])) for run in runs]
+    # Then wait for balance updates caused by successful transactions
+    return [
+        wait_and_check_balance(results, run[0], zcash, to_addr, amount) if txid is not None else decimal.Decimal('0')
+        for (run, txid) in txids
+        for (to_addr, amount) in run[2]]
+
+def z_mergetoaddress(results, case, zcash, from_addrs, to_addr):
+    return async_txid_cmd(results, case, zcash, 'z_mergetoaddress', [from_addrs, to_addr])
+
+def check_z_mergetoaddress(results, case, zcash, from_addrs, to_addr, amount):
+    txid = z_mergetoaddress(results, case, zcash, from_addrs, to_addr)
+    if txid is None:
+        return decimal.Decimal('0')
+    return wait_and_check_balance(results, case, zcash, to_addr, amount)
+
+def check_z_mergetoaddress_parallel(results, zcash, runs):
+    # First attempt to create all the transactions
+    txids = [(run, z_mergetoaddress(results, run[0], zcash, run[1], run[2])) for run in runs]
+    # Then wait for balance updates caused by successful transactions
+    return [
+        wait_and_check_balance(results, run[0], zcash, run[2], run[3]) if txid is not None else decimal.Decimal('0')
+        for (run, txid) in txids]
+
 
 #
 # Test runners
@@ -154,6 +256,339 @@ def simple_commands(zcash):
     run_cmd(results, '7e', zcash, 'getnetworksolps'),
     return results
 
+def transaction_chain(zcash):
+    results = {}
+
+    # Generate the various addresses we will use
+    sprout_zaddr_1 = run_cmd(results, '3a', zcash, 'z_getnewaddress', ['sprout'])
+    sprout_zaddr_2 = run_cmd(results, '3b', zcash, 'z_getnewaddress', ['sprout'])
+    sprout_zaddr_3 = run_cmd(results, '3b', zcash, 'z_getnewaddress', ['sprout'])
+    taddr_1 = run_cmd(results, '3c', zcash, 'getnewaddress')
+    taddr_2 = run_cmd(results, '3d', zcash, 'getnewaddress')
+    taddr_3 = run_cmd(results, '3d', zcash, 'getnewaddress')
+    taddr_4 = run_cmd(results, '3d', zcash, 'getnewaddress')
+    taddr_5 = run_cmd(results, '3d', zcash, 'getnewaddress')
+    sapling_zaddr_1 = run_cmd(results, '3e', zcash, 'z_getnewaddress', ['sapling'])
+    sapling_zaddr_2 = run_cmd(results, '3f', zcash, 'z_getnewaddress', ['sapling'])
+    sapling_zaddr_3 = run_cmd(results, '3f', zcash, 'z_getnewaddress', ['sapling'])
+
+    # Check that the zaddrs are all listed
+    zaddrs = run_cmd(results, '5a', zcash, 'z_listaddresses')
+    if (sprout_zaddr_1 not in zaddrs or
+        sprout_zaddr_2 not in zaddrs or
+        sapling_zaddr_1 not in zaddrs or
+        sapling_zaddr_2 not in zaddrs):
+        results['5a'] = False
+
+    # Validate the addresses
+    ret = run_cmd(results, '5b', zcash, 'z_validateaddress', [sprout_zaddr_1])
+    if not ret['isvalid'] or ret['type'] != 'sprout':
+        results['5b'] = False
+
+    ret = run_cmd(results, '5c', zcash, 'z_validateaddress', [sapling_zaddr_1])
+    if not ret['isvalid'] or ret['type'] != 'sapling':
+        results['5c'] = False
+
+    # Set up beginning and end of the chain
+    print('#')
+    print('# Initialising transaction chain')
+    print('#')
+    print()
+    chain_end = input('Type or paste transparent address where leftover funds should be sent: ')
+    if not zcash.validateaddress(chain_end)['isvalid']:
+        print('Invalid transparent address')
+        return results
+    print()
+    print('Please send at least 0.01 ZEC/TAZ to the following address:')
+    print(sprout_zaddr_1)
+    print()
+    input('Press any key once the funds have been sent.')
+    print()
+
+    # Wait to receive starting balance
+    sprout_balance = wait_for_balance(zcash, sprout_zaddr_1)
+    starting_balance = sprout_balance
+
+    #
+    # Start the transaction chain!
+    #
+    print()
+    print('#')
+    print('# Starting transaction chain')
+    print('#')
+    print()
+    try:
+        #
+        # First, split the funds across all three pools
+        #
+
+        # Sprout -> taddr
+        taddr_balance = check_z_sendmany(
+            results, '4c', zcash, sprout_zaddr_1, [(taddr_1, (starting_balance / 10) * 6)])[0]
+        sprout_balance -= taddr_balance + DEFAULT_FEE
+
+        balance = run_cmd(results, '5f', zcash, 'z_getbalance', [sprout_zaddr_1])
+        if balance != sprout_balance:
+            results['5f'] = False
+
+        # taddr -> Sapling
+        # Send it all here because z_sendmany pick a new t-addr for change
+        sapling_balance = check_z_sendmany(
+            results, '4f', zcash, taddr_1, [(sapling_zaddr_1, taddr_balance - DEFAULT_FEE)])[0]
+        taddr_balance = 0
+
+        # Sapling -> taddr
+        taddr_balance = check_z_sendmany(
+            results, '4i', zcash, sapling_zaddr_1, [(taddr_1, (starting_balance / 10) * 3)])[0]
+        sapling_balance -= taddr_balance + DEFAULT_FEE
+
+        #
+        # Intra-pool tests
+        #
+
+        # Sprout -> same Sprout
+        # Sapling -> same Sapling
+        (sprout_balance, sapling_balance) = check_z_sendmany_parallel(results, zcash, [
+            ('4a', sprout_zaddr_1, [(sprout_zaddr_1, sprout_balance - DEFAULT_FEE)]),
+            ('4g', sapling_zaddr_1, [(sapling_zaddr_1, sapling_balance - DEFAULT_FEE)]),
+        ])
+
+        # Sprout -> different Sprout
+        # taddr -> different taddr
+        # Sapling -> different Sapling
+        (sprout_balance, taddr_balance, sapling_balance) = check_z_sendmany_parallel(results, zcash, [
+            ('4b', sprout_zaddr_1, [(sprout_zaddr_2, sprout_balance - DEFAULT_FEE)]),
+            ('4e', taddr_1, [(taddr_2, taddr_balance - DEFAULT_FEE)]),
+            ('4h', sapling_zaddr_1, [(sapling_zaddr_2, sapling_balance - DEFAULT_FEE)]),
+        ])
+
+        # Sprout -> multiple Sprout
+        # taddr -> multiple taddr
+        # Sapling -> multiple Sapling
+        check_z_sendmany_parallel(results, zcash, [
+            ('4k', sprout_zaddr_2, [
+                (sprout_zaddr_1, starting_balance / 10),
+                (sprout_zaddr_3, starting_balance / 10),
+            ]),
+            ('4p', taddr_2, [
+                (taddr_1, starting_balance / 10),
+                (taddr_3, taddr_balance - (starting_balance / 10) - DEFAULT_FEE),
+            ]),
+            ('4t', sapling_zaddr_2, [
+                (sapling_zaddr_1, starting_balance / 10),
+                (sapling_zaddr_3, starting_balance / 10),
+            ]),
+        ])
+        sprout_balance -= DEFAULT_FEE
+        taddr_balance -= DEFAULT_FEE
+        sapling_balance -= DEFAULT_FEE
+
+        # multiple Sprout -> Sprout
+        # multiple Sapling -> Sapling
+        # multiple taddr -> taddr
+        check_z_mergetoaddress_parallel(results, zcash, [
+            ('4ff', [sprout_zaddr_1, sprout_zaddr_3], sprout_zaddr_2, sprout_balance - DEFAULT_FEE),
+            ('4gg', [sapling_zaddr_1, sapling_zaddr_3], sapling_zaddr_2, sapling_balance - DEFAULT_FEE),
+            ('', [taddr_1, taddr_3], taddr_2, taddr_balance - DEFAULT_FEE),
+        ])
+        sprout_balance -= DEFAULT_FEE
+        sapling_balance -= DEFAULT_FEE
+        taddr_balance -= DEFAULT_FEE
+
+        #
+        # Now test a bunch of failing cases
+        #
+
+        # Sprout -> Sapling
+        txid = z_sendmany(results, '4j', zcash, sprout_zaddr_2, [(sapling_zaddr_1, sprout_balance - DEFAULT_FEE)])
+        if txid is not None:
+            print('Should have failed')
+            return results
+
+        # Sprout -> taddr and Sapling
+        txid = z_sendmany(results, '4n', zcash, sprout_zaddr_2, [
+            (taddr_2, starting_balance / 10),
+            (sapling_zaddr_1, starting_balance / 10),
+        ])
+        if txid is not None:
+            print('Should have failed')
+            return results
+
+        # Sprout -> multiple Sapling
+        txid = z_sendmany(results, '4o', zcash, sprout_zaddr_2, [
+            (sapling_zaddr_1, starting_balance / 10),
+            (sapling_zaddr_2, starting_balance / 10),
+        ])
+        if txid is not None:
+            print('Should have failed')
+            return results
+
+        # taddr -> Sprout and Sapling
+        txid = z_sendmany(results, '4s', zcash, taddr_2, [
+            (sprout_zaddr_1, starting_balance / 10),
+            (sapling_zaddr_1, starting_balance / 10),
+        ])
+        if txid is not None:
+            print('Should have failed')
+            return results
+
+        # Sapling -> multiple Sprout
+        txid = z_sendmany(results, '4u', zcash, sapling_zaddr_2, [
+            (sprout_zaddr_1, starting_balance / 10),
+            (sprout_zaddr_2, starting_balance / 10),
+        ])
+        if txid is not None:
+            print('Should have failed')
+            return results
+
+        # Sapling -> Sapling and Sprout
+        txid = z_sendmany(results, '4x', zcash, sapling_zaddr_2, [
+            (sapling_zaddr_1, starting_balance / 10),
+            (sprout_zaddr_1, starting_balance / 10),
+        ])
+        if txid is not None:
+            print('Should have failed')
+            return results
+
+        # multiple same taddr -> Sprout
+        txid = z_mergetoaddress(results, '4aa', zcash, [taddr_2, taddr_2], sprout_zaddr_2)
+        if txid is not None:
+            print('Should have failed')
+            return results
+
+        #
+        # Inter-pool tests
+        #
+
+        # Sprout -> taddr and Sprout
+        # Sapling -> taddr and Sapling
+        check_z_sendmany_parallel(results, zcash, [
+            ('4m', sprout_zaddr_2, [
+                (taddr_1, starting_balance / 10),
+                (sprout_zaddr_1, starting_balance / 10),
+            ]),
+            ('4w', sapling_zaddr_2, [
+                (taddr_3, starting_balance / 10),
+                (sapling_zaddr_1, starting_balance / 10),
+            ]),
+        ])
+        sprout_balance -= (starting_balance / 10) + DEFAULT_FEE
+        sapling_balance -= (starting_balance / 10) + DEFAULT_FEE
+        taddr_balance += (starting_balance / 10) * 2
+
+        # taddr and Sprout -> Sprout
+        # taddr and Sapling -> Sapling
+        check_z_mergetoaddress_parallel(results, zcash, [
+            ('4dd', [taddr_1, sprout_zaddr_1], sprout_zaddr_2, sprout_balance + (starting_balance / 10) - DEFAULT_FEE),
+            ('4ee', [taddr_3, sapling_zaddr_1], sapling_zaddr_2, sapling_balance + (starting_balance / 10) - DEFAULT_FEE),
+        ])
+        sprout_balance += (starting_balance / 10) - DEFAULT_FEE
+        sapling_balance += (starting_balance / 10) - DEFAULT_FEE
+        taddr_balance -= (starting_balance / 10) * 2
+
+        # Sprout -> multiple taddr
+        # Sapling -> multiple taddr
+        check_z_sendmany_parallel(results, zcash, [
+            ('4l', sprout_zaddr_2, [
+                (taddr_1, (starting_balance / 10)),
+                (taddr_3, (starting_balance / 10)),
+            ]),
+            ('4v', sapling_zaddr_2, [
+                (taddr_4, (starting_balance / 10)),
+                (taddr_5, (starting_balance / 10)),
+            ]),
+        ])
+        sprout_balance -= ((starting_balance / 10) * 2) + DEFAULT_FEE
+        sapling_balance -= ((starting_balance / 10) * 2) + DEFAULT_FEE
+        taddr_balance += (starting_balance / 10) * 4
+
+        # multiple taddr -> Sprout
+        # multiple taddr -> Sapling
+        check_z_mergetoaddress_parallel(results, zcash, [
+            ('4z', [taddr_1, taddr_3], sprout_zaddr_2, sprout_balance + ((starting_balance / 10) * 2) - DEFAULT_FEE),
+            ('4bb', [taddr_4, taddr_5], sapling_zaddr_2, sapling_balance + ((starting_balance / 10) * 2) - DEFAULT_FEE),
+        ])
+        sprout_balance += ((starting_balance / 10) * 2) - DEFAULT_FEE
+        sapling_balance += ((starting_balance / 10) * 2) - DEFAULT_FEE
+        taddr_balance -= (starting_balance / 10) * 4
+
+        # taddr -> Sprout
+        check_z_sendmany_parallel(results, zcash, [
+            ('4d', taddr_2, [(sprout_zaddr_3, taddr_balance - DEFAULT_FEE)]),
+        ])
+        sprout_balance += taddr_balance - DEFAULT_FEE
+        taddr_balance = 0
+
+        # multiple Sprout -> taddr
+        # multiple Sapling -> taddr
+        check_z_mergetoaddress_parallel(None, zcash, [
+            ('', [sprout_zaddr_1, sprout_zaddr_2, sprout_zaddr_3], taddr_1, sprout_balance - DEFAULT_FEE),
+            ('', [sapling_zaddr_1, sapling_zaddr_2, sapling_zaddr_3], taddr_2, sapling_balance - DEFAULT_FEE),
+        ])
+        taddr_balance = sprout_balance + sapling_balance - (2 * DEFAULT_FEE)
+        sprout_balance = 0
+        sapling_balance = 0
+
+        # taddr -> multiple Sprout
+        # taddr -> multiple Sapling
+        taddr_1_balance = zcash.z_getbalance(taddr_1)
+        taddr_2_balance = zcash.z_getbalance(taddr_2)
+        check_z_sendmany_parallel(results, zcash, [
+            ('4q', taddr_1, [
+                (sprout_zaddr_1, (starting_balance / 10)),
+                (sprout_zaddr_2, taddr_1_balance - (starting_balance / 10) - DEFAULT_FEE),
+            ]),
+            ('4r', taddr_2, [
+                (sapling_zaddr_1, (starting_balance / 10)),
+                (sapling_zaddr_2, taddr_2_balance - (starting_balance / 10) - DEFAULT_FEE),
+            ]),
+        ])
+        sprout_balance = taddr_1_balance - DEFAULT_FEE
+        sapling_balance = taddr_2_balance - DEFAULT_FEE
+        taddr_balance = 0
+
+        # multiple Sprout -> taddr
+        # multiple Sapling -> taddr
+        check_z_mergetoaddress_parallel(None, zcash, [
+            ('', [sprout_zaddr_1, sprout_zaddr_2], taddr_1, sprout_balance - DEFAULT_FEE),
+            ('', [sapling_zaddr_1, sapling_zaddr_2], taddr_2, sapling_balance - DEFAULT_FEE),
+        ])
+        taddr_balance = sprout_balance + sapling_balance - (2 * DEFAULT_FEE)
+        sprout_balance = 0
+        sapling_balance = 0
+
+        # z_mergetoaddress taddr -> Sprout
+        # z_mergetoaddress taddr -> Sapling
+        taddr_1_balance = zcash.z_getbalance(taddr_1)
+        taddr_2_balance = zcash.z_getbalance(taddr_2)
+        check_z_mergetoaddress_parallel(results, zcash, [
+            ('4y', [taddr_1], sprout_zaddr_1, taddr_1_balance - DEFAULT_FEE),
+            ('4cc', [taddr_2], sapling_zaddr_1, taddr_2_balance - DEFAULT_FEE),
+        ])
+        sprout_balance = taddr_1_balance - DEFAULT_FEE
+        sapling_balance = taddr_2_balance - DEFAULT_FEE
+        taddr_balance = 0
+    finally:
+        #
+        # End the chain by returning the remaining funds
+        #
+        print()
+        print('#')
+        print('# Finishing transaction chain')
+        print('#')
+        print()
+        print('Returning remaining balance minus fees')
+        for addr in [
+            sprout_zaddr_1, sprout_zaddr_2, sprout_zaddr_3,
+            taddr_1, taddr_2, taddr_3, taddr_4, taddr_5,
+            sapling_zaddr_1, sapling_zaddr_2, sapling_zaddr_3,
+        ]:
+            balance = zcash.z_getbalance(addr)
+            if balance != 0:
+                z_sendmany(None, '', zcash, addr, [(chain_end, balance - DEFAULT_FEE)])
+
+    return results
+
 
 #
 # Test stages
@@ -161,10 +596,12 @@ def simple_commands(zcash):
 
 STAGES = [
     'simple-commands',
+    'transaction-chain'
 ]
 
 STAGE_COMMANDS = {
     'simple-commands': simple_commands,
+    'transaction-chain': transaction_chain,
 }
 
 def run_stage(stage, zcash):
