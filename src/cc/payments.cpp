@@ -488,7 +488,7 @@ UniValue PaymentsCreate(struct CCcontract_info *cp,char *jsonstr)
 
 UniValue PaymentsInfo(struct CCcontract_info *cp,char *jsonstr)
 {
-    UniValue result(UniValue::VOBJ),a(UniValue::VARR); CTransaction tx,txO; CPubKey Paymentspk,txidpk; int32_t i,n,flag=0,allocation,numoprets=0,updateflag,lockedblocks,minrelease,totalallocations; std::vector<uint256> txidoprets; int64_t funds,fundsopret; char fundsaddr[64],fundsopretaddr[64],txidaddr[64]; uint256 createtxid,hashBlock;
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR); CTransaction tx,txO; CPubKey Paymentspk,txidpk; int32_t i,j,n,flag=0,allocation,numoprets=0,updateflag,lockedblocks,minrelease,totalallocations; std::vector<uint256> txidoprets; int64_t funds,fundsopret; char fundsaddr[64],fundsopretaddr[64],txidaddr[64],*outstr; uint256 createtxid,hashBlock;
     cJSON *params = payments_reparse(&n,jsonstr);
     if ( params != 0 && n == 1 )
     {
@@ -508,12 +508,20 @@ UniValue PaymentsInfo(struct CCcontract_info *cp,char *jsonstr)
                     obj.push_back(Pair("txidopret",txidoprets[i].GetHex()));
                     if ( myGetTransaction(txidoprets[i],txO,hashBlock) != 0 && txO.vout.size() > 1 && DecodePaymentsTxidOpRet(txO.vout[txO.vout.size()-1].scriptPubKey,allocation,scriptPubKey,opret) == 'T' )
                     {
-                        obj.push_back(Pair("scriptPubKey",scriptPubKey.ToString()));
+                        outstr = (char *)malloc(scriptPubKey.size() + opret.size() + 1);
+                        for (j=0; j<scriptPubKey.size(); j++)
+                            outstr[j] = scriptPubKey[j];
+                        outstr[j] = 0;
+                        obj.push_back(Pair("scriptPubKey",outstr));
                         if ( opret.size() != 0 )
                         {
-                            obj.push_back(Pair("opreturn",opret.ToString()));
+                            for (j=0; j<opret.size(); j++)
+                                outstr[j] = opret[j];
+                            outstr[j] = 0;
+                            obj.push_back(Pair("opreturn",outstr));
                             numoprets++;
                         }
+                        free(outstr);
                     }
                 }
                 flag++;
