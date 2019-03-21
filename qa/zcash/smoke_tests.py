@@ -108,13 +108,63 @@ SMOKE_TESTS = [
 
 
 #
+# Test helpers
+#
+
+def run_cmd(results, case, zcash, name, args=[]):
+    print('-----')
+    print('%s $ zcash-cli %s %s' % (
+        case.ljust(3),
+        name,
+        ' '.join([str(arg) for arg in args],
+    )))
+    try:
+        res = zcash.__getattr__(name)(*args)
+        print(res)
+        print()
+        if results is not None and len(case) > 0:
+            results[case] = True
+        return res
+    except JSONRPCException as e:
+        print('error code: %d' % e.error['code'])
+        print('error message:')
+        print(e.error['message'])
+        if results is not None and len(case) > 0:
+            results[case] = False
+        return None
+
+
+#
+# Test runners
+#
+
+def simple_commands(zcash):
+    results = {}
+    run_cmd(results, '2a', zcash, 'getinfo'),
+    run_cmd(results, '2b', zcash, 'help'),
+    run_cmd(results, '5o', zcash, 'getwalletinfo'),
+    run_cmd(results, '6a', zcash, 'getpeerinfo'),
+    run_cmd(results, '6b', zcash, 'getnetworkinfo'),
+    run_cmd(results, '6c', zcash, 'getdeprecationinfo'),
+    run_cmd(results, '6d', zcash, 'getconnectioncount'),
+    run_cmd(results, '6e', zcash, 'getaddednodeinfo', [False]),
+    run_cmd(results, '7a', zcash, 'getblocksubsidy'),
+    run_cmd(results, '7c', zcash, 'getmininginfo'),
+    run_cmd(results, '7d', zcash, 'getnetworkhashps'),
+    run_cmd(results, '7e', zcash, 'getnetworksolps'),
+    return results
+
+
+#
 # Test stages
 #
 
 STAGES = [
+    'simple-commands',
 ]
 
 STAGE_COMMANDS = {
+    'simple-commands': simple_commands,
 }
 
 def run_stage(stage, zcash):
