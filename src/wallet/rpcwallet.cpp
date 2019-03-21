@@ -5620,8 +5620,8 @@ UniValue payments_txidopret(const UniValue& params, bool fHelp)
 UniValue payments_create(const UniValue& params, bool fHelp)
 {
     struct CCcontract_info *cp,C; char *jsonstr=0;
-    if ( fHelp || params.size() < 5 )
-        throw runtime_error("paymentscreate updateallowed lockedblocks minamount paytxid0,...,paytxidN\n");
+    if ( fHelp || params.size() < 4 )
+        throw runtime_error("paymentscreate lockedblocks minamount paytxid0,...,paytxidN\n");
     if ( ensure_CCrequirements(EVAL_PAYMENTS) < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     const CKeyStore& keystore = *pwalletMain;
