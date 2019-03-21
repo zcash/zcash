@@ -224,7 +224,7 @@ int64_t AddPaymentsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CP
                     }
                     else if ( ht > latestheight )
                     {
-                        fprintf(stderr,"ht.%d > lastheight.%d\n",ht,lastheight);
+                        fprintf(stderr,"ht.%d > lastheight.%d\n",ht,latestheight);
                         continue;
                     }
                 }
