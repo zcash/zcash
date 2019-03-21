@@ -5580,7 +5580,7 @@ UniValue cclib(const UniValue& params, bool fHelp)
 
 UniValue payments_release(const UniValue& params, bool fHelp)
 {
-    struct CCcontract_info *cp,C; char *jsonstr=0;
+    struct CCcontract_info *cp,C;
     if ( fHelp || params.size() != 1 )
         throw runtime_error("paymentsrelease \"[%22createtxid%22,amount]\"\n");
     if ( ensure_CCrequirements(EVAL_PAYMENTS) < 0 )
@@ -5588,12 +5588,12 @@ UniValue payments_release(const UniValue& params, bool fHelp)
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
     cp = CCinit(&C,EVAL_PAYMENTS);
-    return(PaymentsRelease(cp,jsonstr));
+    return(PaymentsRelease(cp,(char *)params[0].get_str().c_str()));
 }
 
 UniValue payments_fund(const UniValue& params, bool fHelp)
 {
-    struct CCcontract_info *cp,C; char *jsonstr=0;
+    struct CCcontract_info *cp,C;
     if ( fHelp || params.size() != 1 )
         throw runtime_error("paymentsfund \"[%22createtxid%22,amount(,useopret)]\"\n");
     if ( ensure_CCrequirements(EVAL_PAYMENTS) < 0 )
@@ -5601,12 +5601,12 @@ UniValue payments_fund(const UniValue& params, bool fHelp)
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
     cp = CCinit(&C,EVAL_PAYMENTS);
-    return(PaymentsFund(cp,jsonstr));
+    return(PaymentsFund(cp,(char *)params[0].get_str().c_str()));
 }
 
 UniValue payments_txidopret(const UniValue& params, bool fHelp)
 {
-    struct CCcontract_info *cp,C; char *jsonstr=0;
+    struct CCcontract_info *cp,C;
     if ( fHelp || params.size() != 1 )
         throw runtime_error("paymentstxidopret \"[allocation,%22scriptPubKey%22(,%22destopret%22)]\"\n");
     if ( ensure_CCrequirements(EVAL_PAYMENTS) < 0 )
@@ -5614,12 +5614,12 @@ UniValue payments_txidopret(const UniValue& params, bool fHelp)
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
     cp = CCinit(&C,EVAL_PAYMENTS);
-    return(PaymentsTxidopret(cp,jsonstr));
+    return(PaymentsTxidopret(cp,(char *)params[0].get_str().c_str()));
 }
 
 UniValue payments_create(const UniValue& params, bool fHelp)
 {
-    struct CCcontract_info *cp,C; char *jsonstr=0;
+    struct CCcontract_info *cp,C;
     if ( fHelp || params.size() != 1 )
         throw runtime_error("paymentscreate \"[lockedblocks,minamount,%22paytxid0%22,...,%22paytxidN%22]\"\n");
     if ( ensure_CCrequirements(EVAL_PAYMENTS) < 0 )
@@ -5627,12 +5627,12 @@ UniValue payments_create(const UniValue& params, bool fHelp)
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
     cp = CCinit(&C,EVAL_PAYMENTS);
-    return(PaymentsCreate(cp,jsonstr));
+    return(PaymentsCreate(cp,(char *)params[0].get_str().c_str()));
 }
 
 UniValue payments_info(const UniValue& params, bool fHelp)
 {
-    struct CCcontract_info *cp,C; char *jsonstr=0;
+    struct CCcontract_info *cp,C;
     if ( fHelp || params.size() != 1 )
         throw runtime_error("paymentsinfo \"[%22createtxid%22]\"\n");
     if ( ensure_CCrequirements(EVAL_PAYMENTS) < 0 )
@@ -5640,12 +5640,12 @@ UniValue payments_info(const UniValue& params, bool fHelp)
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
     cp = CCinit(&C,EVAL_PAYMENTS);
-    return(PaymentsInfo(cp,jsonstr));
+    return(PaymentsInfo(cp,(char *)params[0].get_str().c_str()));
 }
 
 UniValue payments_list(const UniValue& params, bool fHelp)
 {
-    struct CCcontract_info *cp,C; char *jsonstr=0;
+    struct CCcontract_info *cp,C;
     if ( fHelp || params.size() != 0 )
         throw runtime_error("paymentslist\n");
     if ( ensure_CCrequirements(EVAL_PAYMENTS) < 0 )
@@ -5653,7 +5653,7 @@ UniValue payments_list(const UniValue& params, bool fHelp)
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
     cp = CCinit(&C,EVAL_PAYMENTS);
-    return(PaymentsList(cp,jsonstr));
+    return(PaymentsList(cp,""));
 }
 
 UniValue oraclesaddress(const UniValue& params, bool fHelp)
