@@ -355,7 +355,7 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
                         free_json(params);
                     return(result);
                 }
-                else if ( numoprets > 0 )
+                else if ( numoprets > 1 )
                 {
                     result.push_back(Pair("result","error"));
                     result.push_back(Pair("error","too many oprets"));
