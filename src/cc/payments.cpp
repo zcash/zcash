@@ -174,8 +174,8 @@ int64_t AddPaymentsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CP
         {
             txid = it->first.txhash;
             vout = (int32_t)it->first.index;
-            fprintf(stderr,"iter.%d %s/v%d %s\n",iter,txid.GetHex().c_str(),vout,coinaddr);
-            if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
+            //fprintf(stderr,"iter.%d %s/v%d %s\n",iter,txid.GetHex().c_str(),vout,coinaddr);
+            if ( vout == 0 && GetTransaction(txid,vintx,hashBlock,false) != 0 )
             {
                 if ( latestheight != 0 )
                 {
@@ -208,7 +208,7 @@ int64_t AddPaymentsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CP
                     n++;
                     if ( (total > 0 && totalinputs >= total) || (maxinputs > 0 && n >= maxinputs) )
                         break;
-                } else fprintf(stderr,"nValue %.8f vs threshold %.8f\n",(double)nValue/COIN,(double)threshold/COIN);
+                } //else fprintf(stderr,"nValue %.8f vs threshold %.8f\n",(double)nValue/COIN,(double)threshold/COIN);
             }
         }
     }
@@ -448,7 +448,7 @@ UniValue PaymentsFund(struct CCcontract_info *cp,char *jsonstr)
             rawtx = FinalizeCCTx(0,cp,mtx,mypk,PAYMENTS_TXFEE,opret);
             if ( params != 0 )
                 free_json(params);
-            return(payments_rawtxresult(result,rawtx,0));
+            return(payments_rawtxresult(result,rawtx,1));
         }
         else
         {
@@ -556,7 +556,7 @@ UniValue PaymentsCreate(struct CCcontract_info *cp,char *jsonstr)
             rawtx = FinalizeCCTx(0,cp,mtx,mypk,PAYMENTS_TXFEE,EncodePaymentsOpRet(lockedblocks,minrelease,totalallocations,txidoprets));
             if ( params != 0 )
                 free_json(params);
-            return(payments_rawtxresult(result,rawtx,0));
+            return(payments_rawtxresult(result,rawtx,1));
         }
         result.push_back(Pair("result","error"));
         result.push_back(Pair("error","not enough normal funds"));
