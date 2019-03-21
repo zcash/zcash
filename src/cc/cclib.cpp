@@ -492,6 +492,8 @@ int64_t AddCClibInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubK
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     GetCCaddress(cp,coinaddr,pk);
     SetCCunspents(unspentOutputs,coinaddr);
+    if ( maxinputs > CC_MAXVINS )
+        maxinputs = CC_MAXVINS;
     if ( maxinputs != 0 )
         threshold = total/maxinputs;
     else threshold = total;

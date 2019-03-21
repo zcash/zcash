@@ -466,6 +466,12 @@ static const CRPCCommand vRPCCommands[] =
 
     // Payments
     { "payments",       "paymentsaddress",   &paymentsaddress,      true },
+    { "payments",       "paymentstxidopret", &payments_txidopret,      true },
+    { "payments",       "paymentscreate",    &payments_create,      true },
+    { "payments",       "paymentslist",      &payments_list,      true },
+    { "payments",       "paymentsinfo",      &payments_info,      true },
+    { "payments",       "paymentsfund",      &payments_fund,      true },
+    { "payments",       "paymentsrelease",   &payments_release,      true },
 
     { "CClib",       "cclibaddress",   &cclibaddress,      true },
     { "CClib",       "cclibinfo",   &cclibinfo,      true },
