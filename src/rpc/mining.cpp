@@ -49,6 +49,7 @@
 using namespace std;
 
 #include "komodo_defs.h"
+extern int32_t ASSETCHAINS_FOUNDERS;
 
 arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t height,int32_t goalperc);
 
@@ -785,10 +786,10 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
 
         if (tx.IsCoinBase() && coinbasetxn == true ) {
             // Show founders' reward if it is required
-            //if (pblock->vtx[0].vout.size() > 1) {
+            if (ASSETCHAINS_FOUNDERS && pblock->vtx[0].vout.size() > 1) {
                 // Correct this if GetBlockTemplate changes the order
-            //    entry.push_back(Pair("foundersreward", (int64_t)tx.vout[1].nValue));
-            //}
+                entry.push_back(Pair("foundersreward", (int64_t)tx.vout[1].nValue));
+            }
             CAmount nReward = GetBlockSubsidy(chainActive.LastTip()->GetHeight()+1, Params().GetConsensus());
             entry.push_back(Pair("coinbasevalue", nReward));
             entry.push_back(Pair("required", true));
