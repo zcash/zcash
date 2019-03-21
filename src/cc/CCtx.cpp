@@ -555,7 +555,7 @@ int64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int3
                     up->vout = vout;
                     sum += up->nValue;
                     //fprintf(stderr,"add %.8f to vins array.%d of %d\n",(double)up->nValue/COIN,n,maxutxos);
-                    if ( n >= maxutxos || sum >= total )
+                    if ( n >= maxinputs || sum >= total )
                         break;
                 }
             }
@@ -648,7 +648,7 @@ int64_t AddNormalinputs2(CMutableTransaction &mtx,int64_t total,int32_t maxinput
                 up->vout = vout;
                 sum += up->nValue;
                 //fprintf(stderr,"add %.8f to vins array.%d of %d\n",(double)up->nValue/COIN,n,maxutxos);
-                if ( n >= maxutxos || sum >= total )
+                if ( n >= maxinputs || sum >= total )
                     break;
             }
         }
