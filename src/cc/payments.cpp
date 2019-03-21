@@ -212,7 +212,7 @@ int64_t AddPaymentsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CP
         {
             txid = it->first.txhash;
             vout = (int32_t)it->first.index;
-            fprintf(stderr,"iter.%d %s/v%d %s\n",iter,txid.GetHex().c_str(),vout,coinaddr)
+            fprintf(stderr,"iter.%d %s/v%d %s\n",iter,txid.GetHex().c_str(),vout,coinaddr);
             if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
             {
                 if ( latestheight != 0 )
