@@ -1,2 +1,2 @@
 #!/bin/bash
-./komodo-cli -ac_name=EQL $1 $2 $3 $4 $5 $6
+./komodo-cli -ac_name=RICK $1 $2 $3 $4 $5 $6
