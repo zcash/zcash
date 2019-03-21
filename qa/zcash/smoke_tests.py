@@ -3,8 +3,22 @@
 # Execute the standard smoke tests for Zcash releases.
 #
 
-import argparse
+# Add RPC test_framework to module search path:
+import os
 import sys
+sys.path.insert(
+    0,
+    os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        'rpc-tests',
+        'test_framework',
+    )
+)
+
+import argparse
+import subprocess
+
+from authproxy import AuthServiceProxy, JSONRPCException
 
 #
 # Smoke test definitions
@@ -103,14 +117,14 @@ STAGES = [
 STAGE_COMMANDS = {
 }
 
-def run_stage(stage):
+def run_stage(stage, zcash):
     print('Running stage %s' % stage)
     print('=' * (len(stage) + 14))
     print()
 
     cmd = STAGE_COMMANDS[stage]
     if cmd is not None:
-        ret = cmd()
+        ret = cmd(zcash)
     else:
         print('WARNING: stage not yet implemented, skipping')
         ret = {}
@@ -124,6 +138,93 @@ def run_stage(stage):
 
 
 #
+# Zcash wrapper
+#
+
+class ZcashNode(object):
+    def __init__(self, datadir, wallet, zcashd=None, zcash_cli=None):
+        if zcashd is None:
+            zcashd = os.getenv('ZCASHD', 'zcashd')
+        if zcash_cli is None:
+            zcash_cli = os.getenv('ZCASHCLI', 'zcash-cli')
+
+        self.__datadir = datadir
+        self.__wallet = wallet
+        self.__zcashd = zcashd
+        self.__zcash_cli = zcash_cli
+        self.__process = None
+        self.__proxy = None
+
+    def start(self, testnet=True, extra_args=None, timewait=None):
+        if self.__proxy is not None:
+            raise RuntimeError('Already started')
+
+        rpcuser = 'st'
+        rpcpassword = 'st'
+
+        args = [
+            self.__zcashd,
+            '-datadir=%s' % self.__datadir,
+            '-wallet=%s' % self.__wallet,
+            '-rpcuser=%s' % rpcuser,
+            '-rpcpassword=%s' % rpcpassword,
+            '-showmetrics=0',
+            '-experimentalfeatures',
+            '-zmergetoaddress',
+        ]
+        if testnet:
+            args.append('-testnet=1')
+        if extra_args is not None:
+            args.extend(extra_args)
+
+        self.__process = subprocess.Popen(args)
+
+        cli_args = [
+            self.__zcash_cli,
+            '-datadir=%s' % self.__datadir,
+            '-rpcuser=%s' % rpcuser,
+            '-rpcpassword=%s' % rpcpassword,
+            '-rpcwait',
+        ]
+        if testnet:
+            cli_args.append('-testnet=1')
+        cli_args.append('getblockcount')
+
+        devnull = open('/dev/null', 'w+')
+        if os.getenv('PYTHON_DEBUG', ''):
+            print('start_node: zcashd started, calling zcash-cli -rpcwait getblockcount')
+        subprocess.check_call(cli_args, stdout=devnull)
+        if os.getenv('PYTHON_DEBUG', ''):
+            print('start_node: calling zcash-cli -rpcwait getblockcount returned')
+        devnull.close()
+
+        rpcuserpass = '%s:%s' % (rpcuser, rpcpassword)
+        rpchost = '127.0.0.1'
+        rpcport = 18232 if testnet else 8232
+
+        url = 'http://%s@%s:%d' % (rpcuserpass, rpchost, rpcport)
+        if timewait is not None:
+            self.__proxy = AuthServiceProxy(url, timeout=timewait)
+        else:
+            self.__proxy = AuthServiceProxy(url)
+
+    def stop(self):
+        if self.__proxy is None:
+            raise RuntimeError('Not running')
+
+        self.__proxy.stop()
+        self.__process.wait()
+        self.__proxy = None
+        self.__process = None
+
+    def __getattr__(self, name):
+        if self.__proxy is None:
+            raise RuntimeError('Not running')
+
+        return self.__proxy.__getattr__(name)
+
+
+#
 # Test driver
 #
 
@@ -131,6 +232,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--list-stages', dest='list', action='store_true')
     parser.add_argument('--mainnet', action='store_true', help='Use mainnet instead of testnet')
+    parser.add_argument('--wallet', default='wallet.dat', help='Wallet file to use (within data directory)')
+    parser.add_argument('datadir', help='Data directory to use for smoke testing', default=None)
     parser.add_argument('stage', nargs='*', default=STAGES,
                         help='One of %s'%STAGES)
     args = parser.parse_args()
@@ -147,10 +250,20 @@ def main():
             print("Invalid stage '%s' (choose from %s)" % (s, STAGES))
             sys.exit(1)
 
+    # Start zcashd
+    zcash = ZcashNode(args.datadir, args.wallet)
+    print('Starting zcashd...')
+    zcash.start(not args.mainnet)
+    print()
+
     # Run the stages
     results = {}
     for s in args.stage:
-        results.update(run_stage(s))
+        results.update(run_stage(s, zcash))
+
+    # Stop zcashd
+    print('Stopping zcashd...')
+    zcash.stop()
 
     passed = True
     print()
