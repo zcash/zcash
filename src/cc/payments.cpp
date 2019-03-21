@@ -64,8 +64,12 @@
  
  next let us add some funds to it. the funds can be to either of the two addresses, controlled by useopret (defaults to 0)
  
- ./c paymentsfund \"[%22318d827cc6d8f25f40517e7fb0982e3f707b4aa749d322483fc336686a87b28a%22,1,0]\"
+ ./c paymentsfund \"[%22318d827cc6d8f25f40517e7fb0982e3f707b4aa749d322483fc336686a87b28a%22,1,0]\" -> txid 28f69b925bb7a21d2a3ba2327e85eb2031b014e976e43f5c2c6fb8a76767b221, which indeed sent funds to RWRM36sC8jSctyFZtsu7CyDcHYPdZX7nPZ without an opreturn and it appears on the payments info.
+ 
+ ./c paymentsfund \"[%22318d827cc6d8f25f40517e7fb0982e3f707b4aa749d322483fc336686a87b28a%22,1,1]\" -> txid cc93330b5c951b724b246b3b138d00519c33f2a600a7c938bc9e51aff6e20e32, which indeed sent funds to REpyKi7avsVduqZ3eimncK4uKqSArLTGGK with an opreturn and it appears on the payments info.
 
+ 
+./c paymentsrelease \"[%22318d827cc6d8f25f40517e7fb0982e3f707b4aa749d322483fc336686a87b28a%22,1.5]\" ->
  
 */
 
@@ -208,20 +212,30 @@ int64_t AddPaymentsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CP
         {
             txid = it->first.txhash;
             vout = (int32_t)it->first.index;
+            fprintf(stderr,"iter.%d %s/v%d %s\n",iter,txid.GetHex().c_str(),vout,coinaddr)
             if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
             {
                 if ( latestheight != 0 )
                 {
                     if ( (ht= komodo_blockheight(hashBlock)) == 0 )
+                    {
+                        fprintf(stderr,"null ht\n");
                         continue;
+                    }
                     else if ( ht > latestheight )
+                    {
+                        fprintf(stderr,"ht.%d > lastheight.%d\n",ht,lastheight);
                         continue;
+                    }
                 }
                 if ( iter == 0 )
                 {
                     std::vector<uint8_t> scriptPubKey,opret;
                     if ( myGetTransaction(txid,tx,hashBlock) == 0 || tx.vout.size() < 2 || DecodePaymentsFundOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,checktxid) != 'F' || checktxid != createtxid )
+                    {
+                        fprintf(stderr,"bad opret %s vs %s\n",checktxid.GetHex().c_str(),createtxid.GetHex().c_str());
                         continue;
+                    }
                 }
                 if ( (nValue= IsPaymentsvout(cp,vintx,vout)) > PAYMENTS_TXFEE && nValue >= threshold && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0 )
                 {
@@ -232,7 +246,7 @@ int64_t AddPaymentsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CP
                     n++;
                     if ( (total > 0 && totalinputs >= total) || (maxinputs > 0 && n >= maxinputs) )
                         break;
-                }
+                } else fprintf(stderr,"nValue %.8f vs threshold %.8f\n",(double)nValue/COIN,(double)threshold/COIN);
             }
         }
     }
