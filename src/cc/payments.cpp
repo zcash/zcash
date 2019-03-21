@@ -505,13 +505,13 @@ UniValue PaymentsInfo(struct CCcontract_info *cp,char *jsonstr)
                 for (i=0; i<txidoprets.size(); i++)
                 {
                     UniValue obj(UniValue::VOBJ); std::vector<uint8_t> scriptPubKey,opret;
-                    obj.push_back(Pair("txidopret",txidoprets[i]));
+                    obj.push_back(Pair("txidopret",txidoprets[i].GetHex()));
                     if ( myGetTransaction(txidoprets[i],txO,hashBlock) != 0 && txO.vout.size() > 1 && DecodePaymentsTxidOpRet(txO.vout[txO.vout.size()-1].scriptPubKey,allocation,scriptPubKey,opret) == 'T' )
                     {
-                        obj.push_back(Pair("scriptPubKey",scriptPubKey));
+                        obj.push_back(Pair("scriptPubKey",scriptPubKey.GetHex()));
                         if ( opret.size() != 0 )
                         {
-                            obj.push_back(Pair("opreturn",opret));
+                            obj.push_back(Pair("opreturn",opret.GetHex()));
                             numoprets++;
                         }
                     }
@@ -525,7 +525,7 @@ UniValue PaymentsInfo(struct CCcontract_info *cp,char *jsonstr)
                 }
                 else
                 {
-                    txidpk = CCtxidaddr(txidaddr,txid);
+                    txidpk = CCtxidaddr(txidaddr,createtxid);
                     GetCCaddress1of2(cp,fundsaddr,Paymentspk,txidpk);
                     funds = CCaddress_balance(fundsaddr);
                     result.push_back(Pair(fundsaddr,ValueFromAmount(funds)));
