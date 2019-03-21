@@ -26,6 +26,15 @@ class CryptoconditionsChannelsTest(CryptoconditionsTestFramework):
         rpc = self.nodes[0]
         rpc1 = self.nodes[1]
 
+        # checking channelsaddress call
+        
+        result = rpc.channelsaddress(self.pubkey)
+        assert_success(result)
+        # test that additional CCaddress key is returned
+        for x in ['ChannelsCC1of2TokensAddress', 'myCCAddress(Channels)', 'ChannelsCC1of2Address', 'myAddress', \
+                  'myCCaddress', 'ChannelsNormalAddress', 'PubkeyCCaddress(Channels)', 'ChannelsCCAddress']:
+            assert_equal(result[x][0], 'R')
+
         # getting empty channels list
         result = rpc.channelslist()
         assert_equal(len(result), 2)
@@ -143,7 +152,7 @@ class CryptoconditionsChannelsTest(CryptoconditionsTestFramework):
         refund_txid = self.send_and_mine(result["hex"], rpc)
         assert refund_txid, "got txid"
 
-        # TODO: check if it refunded to opener address
+        # checking if it refunded to opener address
         raw_transaction = rpc.getrawtransaction(refund_txid, 1)
 
         result = raw_transaction["vout"][2]["valueSat"]
