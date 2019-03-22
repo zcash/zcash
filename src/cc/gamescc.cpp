@@ -34,7 +34,7 @@ UniValue games_rawtxresult(UniValue &result,std::string rawtx,int32_t broadcastf
     return(result);
 }
 
-uint64_t games_rngnext(uint64_t initseed)
+uint64_t _games_rngnext(uint64_t initseed)
 {
     uint16_t seeds[4]; int32_t i;
     seeds[0] = initseed;
@@ -46,6 +46,25 @@ uint64_t games_rngnext(uint64_t initseed)
     seeds[2] = ((seeds[0] ^ seeds[1] ^ seeds[2])*GAMES_RNGMULT + GAMES_RNGOFFSET);
     seeds[3] = ((seeds[0] ^ seeds[1] ^ seeds[2] ^ seeds[3])*GAMES_RNGMULT + GAMES_RNGOFFSET);
     return(((uint64_t)seeds[3] << 48) | ((uint64_t)seeds[2] << 24) | ((uint64_t)seeds[1] << 16) | seeds[0]);
+}
+
+UniValue games_rngnext(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
+{
+    UniValue result(UniValue::VOBJ); int32_t n; uint64_t seed;
+    if ( params != 0 && (n= cJSON_GetArraySize(params)) == 1 )
+    {
+        seed = jdouble(jitem(params,0),0);
+        result.push_back(Pair("seed",seed));
+        seed = games_rngnext(seed);
+        result.push_back(Pair("rng",seed));
+        result.push_back(Pair("result","success"));
+    }
+    else
+    {
+        result.push_back(Pair("result","error"));
+        result.push_back(Pair("error","not enough params"));
+    }
+    return(result);
 }
 
 UniValue games_rng(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
@@ -75,13 +94,13 @@ UniValue games_rng(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             }
         }
         initseed = seed;
-        seed = games_rngnext(initseed);
+        seed = _games_rngnext(initseed);
         result.push_back(Pair("playerid",(int64_t)(playerid - 1)));
-        result.push_back(Pair("initseed",initseed));
-        result.push_back(Pair("seed",seed));
+        result.push_back(Pair("seed",initseed));
+        result.push_back(Pair("rng",seed));
         for (i=0; i<GAMES_MAXRNGS; i++)
-            seed = games_rngnext(seed);
-        result.push_back(Pair("lastseed",seed));
+            seed = _games_rngnext(seed);
+        result.push_back(Pair("lastrng",seed));
         result.push_back(Pair("maxrngs",GAMES_MAXRNGS));
         result.push_back(Pair("result","success"));
     }
