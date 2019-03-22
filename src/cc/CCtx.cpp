@@ -75,7 +75,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
 	othercond = MakeCCcond1(cp->evalcode, unspendablepk);
     GetCCaddress1of2(cp,CC1of2CCaddr,unspendablepk,unspendablepk);
 
-    //printf("evalcode.%d (%s)\n",cp->evalcode,unspendable);
+    fprintf(stderr,"evalcode.%d (%s)\n",cp->evalcode,unspendable);
 
 	// tokens support:
 	// to spend from dual/three-eval mypk vout
@@ -96,6 +96,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
     //This is a must to avoid hardfork change of validation in every CC, because there could be maximum one normal vin at the begining with current validation.
     for (i=0; i<n; i++)
     {
+        fprintf(stderr,"%i.%d of %d\n",i,n);
         if ( GetTransaction(mtx.vin[i].prevout.hash,vintx,hashBlock,false) != 0 )
         {
             if ( vintx.vout[mtx.vin[i].prevout.n].scriptPubKey.IsPayToCryptoCondition() == 0 && ccvins==0)
@@ -114,6 +115,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
     memset(utxovalues,0,sizeof(utxovalues));
     for (i=0; i<n; i++)
     {
+        fprintf(stderr,"%i.%d of %d\n",i,n);
         if ( GetTransaction(mtx.vin[i].prevout.hash,vintx,hashBlock,false) != 0 )
         {
             utxovout = mtx.vin[i].prevout.n;
@@ -145,6 +147,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
     n = mtx.vin.size(); 
     for (i=0; i<n; i++)
     {
+        fprintf(stderr,"%i.%d of %d\n",i,n);
         if ( GetTransaction(mtx.vin[i].prevout.hash,vintx,hashBlock,false) != 0 )
         {
             utxovout = mtx.vin[i].prevout.n;
