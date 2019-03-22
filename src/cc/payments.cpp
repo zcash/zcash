@@ -180,7 +180,7 @@ int64_t AddPaymentsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CP
         {
             txid = it->first.txhash;
             vout = (int32_t)it->first.index;
-            //fprintf(stderr,"iter.%d %s/v%d %s\n",iter,txid.GetHex().c_str(),vout,coinaddr);
+            fprintf(stderr,"iter.%d %s/v%d %s\n",iter,txid.GetHex().c_str(),vout,coinaddr);
             if ( vout == 0 && GetTransaction(txid,vintx,hashBlock,false) != 0 )
             {
                 if ( latestheight != 0 )
@@ -212,6 +212,7 @@ int64_t AddPaymentsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CP
                     nValue = it->second.satoshis;
                     totalinputs += nValue;
                     n++;
+                    fprintf(stderr,"iter.%d %s/v%d %s %.8f\n",iter,txid.GetHex().c_str(),vout,coinaddr,(double)nValue/COIN);
                     if ( (total > 0 && totalinputs >= total) || (maxinputs > 0 && n >= maxinputs) )
                         break;
                 } //else fprintf(stderr,"nValue %.8f vs threshold %.8f\n",(double)nValue/COIN,(double)threshold/COIN);
@@ -263,7 +264,7 @@ cJSON *payments_reparse(int32_t *nump,char *jsonstr)
         }
         newstr[j] = 0;
         params = cJSON_Parse(newstr);
-        if ( 1 && params != 0 )
+        if ( 0 && params != 0 )
             printf("new.(%s) -> %s\n",newstr,jprint(params,0));
         free(newstr);
         *nump = cJSON_GetArraySize(params);
@@ -295,7 +296,6 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
     int32_t latestheight,nextheight = komodo_nextheight();
     CMutableTransaction tmpmtx,mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(),nextheight); UniValue result(UniValue::VOBJ); uint256 createtxid,hashBlock;
     CTransaction tx,txO; CPubKey mypk,txidpk,Paymentspk; int32_t i,n,numoprets=0,lockedblocks,minrelease,totalallocations,checkallocations=0,allocation; int64_t inputsum,amount,CCchange=0; CTxOut vout; CScript onlyopret; char txidaddr[64],destaddr[64]; std::vector<uint256> txidoprets; std::string rawtx;
-    fprintf(stderr,"jsonstr.(%s)\n",jsonstr);
     cJSON *params = payments_reparse(&n,jsonstr);
     mypk = pubkey2pk(Mypubkey());
     Paymentspk = GetUnspendable(cp,0);
