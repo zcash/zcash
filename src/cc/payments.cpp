@@ -337,7 +337,7 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
                         checkallocations += allocation;
                         if ( opret.size() > 0 )
                         {
-                            scriptPubKey.resize(opret.size());
+                            onlyopret.resize(opret.size());
                             memcpy(&onlyopret[0],&opret[0],opret.size());
                             numoprets++;
                         }
