@@ -36,7 +36,7 @@ UniValue games_rawtxresult(UniValue &result,std::string rawtx,int32_t broadcastf
 
 UniValue games_rng(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ); int32_t i,invertflag=0,n,playerid=0; uint16_t seeds[4]; uint64_t seed; bits256 hash;
+    UniValue result(UniValue::VOBJ); int32_t i,invertflag=0,n,playerid=0; uint16_t seeds[4]; uint64_t seed,initseed; bits256 hash;
     if ( params != 0 && ((n= cJSON_GetArraySize(params)) == 2 || n == 3) )
     {
         hash = jbits256(jitem(params,0),0);
@@ -60,21 +60,22 @@ UniValue games_rng(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                 playerid--;
             }
             for (i=0; i<8; i++)
+            {
                 if ( ((1 << i) & playerid) != 0 )
                     seed ^= hash.uints[i];
-        }
-        else
-        {
-            for (i=0; i<4; i++)
-            {
-                seeds[i] = (seed >> (i*16));
-                seeds[i] = (seeds[i]*11109 + 13849);
+                if ( invertflag != 0 )
+                    seed ^= (uint64_t)-1;
             }
-            seed = ((uint64_t)seeds[3] << 48) | ((uint64_t)seeds[2] << 24) | ((uint64_t)seeds[1] << 16) | seeds[0];
-            if ( invertflag != 0 )
-                seed ^= -1;
         }
+        initseed = seed;
+        for (i=0; i<4; i++)
+        {
+            seeds[i] = (seed >> (i*16));
+            seeds[i] = (seeds[i]*11109 + 13849);
+        }
+        seed = ((uint64_t)seeds[3] << 48) | ((uint64_t)seeds[2] << 24) | ((uint64_t)seeds[1] << 16) | seeds[0];
         result.push_back(Pair("playerid",(int64_t)(playerid - 1 + invertflag)));
+        result.push_back(Pair("initseed",initseed));
         result.push_back(Pair("seed",seed));
         result.push_back(Pair("result","success"));
     }
