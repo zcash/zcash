@@ -48,6 +48,10 @@ std::string MYCCLIBNAME = (char *)"rogue";
 std::string MYCCLIBNAME = (char *)"sudoku";
 #endif
 
+#ifndef BUILD_GAMESCC
+void komodo_netevent(std::vector<uint8_t> payload) {}
+#endif
+
 char *CClib_name() { return((char *)MYCCLIBNAME.c_str()); }
 
 struct CClib_rpcinfo

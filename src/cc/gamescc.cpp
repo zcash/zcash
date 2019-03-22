@@ -178,6 +178,14 @@ UniValue games_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     return(result);
 }
 
+void komodo_netevent(std::vector<uint8_t> payload)
+{
+    int32_t i;
+    for (i=0; i<payload.size(); i++)
+        fprintf(stderr,"%02x",payload[i]);
+    fprintf(stderr," got event[%d]\n",(int32_t)payload.size());
+}
+
 bool games_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx)
 {
     return(true);
