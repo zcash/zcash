@@ -55,7 +55,7 @@ UniValue games_rngnext(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     {
         seed = jdouble(jitem(params,0),0);
         result.push_back(Pair("seed",seed));
-        seed = games_rngnext(seed);
+        seed = _games_rngnext(seed);
         result.push_back(Pair("rng",seed));
         result.push_back(Pair("result","success"));
     }
