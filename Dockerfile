@@ -1,4 +1,4 @@
-FROM debian:jessie AS builder
+FROM debian:latest AS builder
 
 ENV ZCASH_URL=https://github.com/zcash/zcash.git \
     ZCASH_CONF=/home/zcash/.zcash/zcash.conf
@@ -23,7 +23,7 @@ RUN ./zcutil/build.sh -j$(nproc)
 WORKDIR /src/zcash/src
 RUN /usr/bin/install -c zcash-tx zcashd zcash-cli zcash-gtest ../zcutil/fetch-params.sh -t /usr/bin/
 
-FROM debian:jessie
+FROM debian:latest
 
 ENV ZCASH_CONF=/home/zcash/.zcash/zcash.conf
 
