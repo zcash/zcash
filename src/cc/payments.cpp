@@ -612,24 +612,24 @@ UniValue PaymentsInfo(struct CCcontract_info *cp,char *jsonstr)
                     fprintf(stderr,"i%d of %d\n",i,(int32_t)txidoprets.size());
                     if ( myGetTransaction(txidoprets[i],txO,hashBlock) != 0 && txO.vout.size() > 1 && DecodePaymentsTxidOpRet(txO.vout[txO.vout.size()-1].scriptPubKey,allocation,scriptPubKey,opret) == 'T' )
                     {
-                        outstr = (char *)malloc(scriptPubKey.size() + opret.size() + 1);
+                        outstr = (char *)malloc(2*(scriptPubKey.size() + opret.size()) + 1);
                         for (j=0; j<scriptPubKey.size(); j++)
-                            outstr[j] = scriptPubKey[j];
-                        outstr[j] = 0;
+                            sprintf(&outstr[j<<1],"%02x",scriptPubKey[j]);
+                        outstr[j<<1] = 0;
                         fprintf(stderr,"scriptPubKey.(%s)\n",outstr);
                         obj.push_back(Pair("scriptPubKey",outstr));
                         if ( opret.size() != 0 )
                         {
                             for (j=0; j<opret.size(); j++)
-                                outstr[j] = opret[j];
-                            outstr[j] = 0;
+                                sprintf(&outstr[j<<1],"%02x",opret[j]);
+                            outstr[j<<1] = 0;
                             fprintf(stderr,"opret.(%s)\n",outstr);
                             obj.push_back(Pair("opreturn",outstr));
                             numoprets++;
                         }
                         free(outstr);
                     } else fprintf(stderr,"error decoding voutsize.%d\n",(int32_t)txO.vout.size());
-                    result.push_back(obj);
+                    a.push_back(obj);
                 }
                 flag++;
                 if ( numoprets > 1 )
@@ -646,7 +646,7 @@ UniValue PaymentsInfo(struct CCcontract_info *cp,char *jsonstr)
                     result.push_back(Pair(fundsaddr,ValueFromAmount(funds)));
                     GetCCaddress(cp,fundsopretaddr,Paymentspk);
                     fundsopret = CCaddress_balance(fundsopretaddr);
-                    //result.push_back(Pair("txidoprets",a));
+                    result.push_back(Pair("txidoprets",a));
                     result.push_back(Pair(fundsopretaddr,ValueFromAmount(fundsopret)));
                     result.push_back(Pair("totalfunds",ValueFromAmount(funds+fundsopret)));
                     result.push_back(Pair("result","success"));
