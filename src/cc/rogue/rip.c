@@ -238,7 +238,7 @@ death(struct rogue_state *rs,char monst)
     //struct tm *localtime(const time_t *);
     if ( rs->guiflag == 0 )
     {
-        fprintf(stderr,"death during replay by (%c)\n",monst); //sleep(3);
+        //fprintf(stderr,"death during replay by (%c)\n",monst); //sleep(3);
         rs->replaydone = (uint32_t)time(NULL);
         return;
     }

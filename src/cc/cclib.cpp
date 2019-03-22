@@ -33,8 +33,12 @@
 #ifdef BUILD_ROGUE
 #define EVAL_ROGUE 17
 std::string MYCCLIBNAME = (char *)"rogue";
-#else
 
+
+#elif BUILD_CUSTOMCC
+#include "customcc.h"
+
+#else
 #define EVAL_SUDOKU 17
 #define EVAL_MUSIG 18
 #define EVAL_DILITHIUM 19
@@ -67,6 +71,8 @@ CClib_methods[] =
     { (char *)"rogue", (char *)"games", (char *)"<no args>", 0, 0, 'F', EVAL_ROGUE },
     { (char *)"rogue", (char *)"setname", (char *)"pname", 1, 1, 'N', EVAL_ROGUE },
     { (char *)"rogue", (char *)"extract", (char *)"gametxid [pubkey]", 1, 2, 'X', EVAL_ROGUE },
+#elif BUILD_CUSTOMCC
+    RPC_FUNCS
 #else
     { (char *)"sudoku", (char *)"gen", (char *)"<no args>", 0, 0, 'G', EVAL_SUDOKU },
     { (char *)"sudoku", (char *)"txidinfo", (char *)"txid", 1, 1, 'T', EVAL_SUDOKU },
@@ -83,10 +89,12 @@ CClib_methods[] =
     { (char *)"musig", (char *)"spend", (char *)"sendtxid sig scriptPubKey", 3, 3, 'y', EVAL_MUSIG },
     { (char *)"dilithium", (char *)"keypair", (char *)"[hexseed]", 0, 1, 'K', EVAL_DILITHIUM },
     { (char *)"dilithium", (char *)"register", (char *)"handle, [hexseed]", 1, 2, 'R', EVAL_DILITHIUM },
+    { (char *)"dilithium", (char *)"handleinfo", (char *)"handle", 1, 1, 'I', EVAL_DILITHIUM },
     { (char *)"dilithium", (char *)"sign", (char *)"msg [hexseed]", 1, 2, 'S', EVAL_DILITHIUM },
     { (char *)"dilithium", (char *)"verify", (char *)"pubtxid msg sig", 3, 3, 'V', EVAL_DILITHIUM },
     { (char *)"dilithium", (char *)"send", (char *)"handle pubtxid amount", 3, 3, 'x', EVAL_DILITHIUM },
     { (char *)"dilithium", (char *)"spend", (char *)"sendtxid scriptPubKey [hexseed]", 2, 3, 'y', EVAL_DILITHIUM },
+    { (char *)"dilithium", (char *)"Qsend", (char *)"mypubtxid hexseed/'mypriv' destpubtxid,amount, ...", 4, 66, 'Q', EVAL_DILITHIUM },
 #endif
 };
 
@@ -129,11 +137,13 @@ UniValue musig_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 
 bool dilithium_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx);
 UniValue dilithium_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+UniValue dilithium_handleinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue dilithium_send(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue dilithium_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue dilithium_keypair(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue dilithium_sign(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue dilithium_verify(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+UniValue dilithium_Qsend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 
 #endif
 
@@ -210,6 +220,8 @@ UniValue CClib_method(struct CCcontract_info *cp,char *method,char *jsonstr)
             return(result);
         }
     }
+#elif BUILD_CUSTOMCC
+    CUSTOM_DISPATCH
 #else
     if ( cp->evalcode == EVAL_SUDOKU )
     {
@@ -261,7 +273,9 @@ UniValue CClib_method(struct CCcontract_info *cp,char *method,char *jsonstr)
     }
     else if ( cp->evalcode == EVAL_DILITHIUM )
     {
-        if ( strcmp(method,"send") == 0 )
+        if ( strcmp(method,"Qsend") == 0 )
+            return(dilithium_Qsend(txfee,cp,params));
+        else if ( strcmp(method,"send") == 0 )
             return(dilithium_send(txfee,cp,params));
         else if ( strcmp(method,"spend") == 0 )
             return(dilithium_spend(txfee,cp,params));
@@ -269,6 +283,8 @@ UniValue CClib_method(struct CCcontract_info *cp,char *method,char *jsonstr)
             return(dilithium_keypair(txfee,cp,params));
         else if ( strcmp(method,"register") == 0 )
             return(dilithium_register(txfee,cp,params));
+        else if ( strcmp(method,"handleinfo") == 0 )
+            return(dilithium_handleinfo(txfee,cp,params));
         else if ( strcmp(method,"sign") == 0 )
             return(dilithium_sign(txfee,cp,params));
         else if ( strcmp(method,"verify") == 0 )
@@ -402,6 +418,8 @@ bool CClib_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
     {
 #ifdef BUILD_ROGUE
         return(rogue_validate(cp,height,eval,tx));
+#elif BUILD_CUSTOMCC
+        return(custom_validate(cp,height,eval,tx));
 #else
         if ( cp->evalcode == EVAL_SUDOKU )
             return(sudoku_validate(cp,height,eval,tx));
@@ -474,7 +492,11 @@ int64_t AddCClibInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubK
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     GetCCaddress(cp,coinaddr,pk);
     SetCCunspents(unspentOutputs,coinaddr);
-    threshold = total/(maxinputs+1);
+    if ( maxinputs > CC_MAXVINS )
+        maxinputs = CC_MAXVINS;
+    if ( maxinputs != 0 )
+        threshold = total/maxinputs;
+    else threshold = total;
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
@@ -498,6 +520,31 @@ int64_t AddCClibInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubK
         } else fprintf(stderr,"couldnt get tx\n");
     }
     return(totalinputs);
+}
+
+int64_t AddCClibtxfee(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk)
+{
+    char coinaddr[64]; int64_t nValue,txfee = 10000; uint256 txid,hashBlock; CTransaction vintx; int32_t vout;
+    std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
+    GetCCaddress(cp,coinaddr,pk);
+    SetCCunspents(unspentOutputs,coinaddr);
+    for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
+    {
+        txid = it->first.txhash;
+        vout = (int32_t)it->first.index;
+        //char str[65]; fprintf(stderr,"%s check %s/v%d %.8f vs %.8f\n",coinaddr,uint256_str(str,txid),vout,(double)it->second.satoshis/COIN,(double)threshold/COIN);
+        if ( it->second.satoshis < txfee )
+            continue;
+        if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
+        {
+            if ( (nValue= IsCClibvout(cp,vintx,vout,coinaddr)) != 0 && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0 )
+            {
+                mtx.vin.push_back(CTxIn(txid,vout,CScript()));
+                return(it->second.satoshis);
+            } //else fprintf(stderr,"nValue %.8f too small or already spent in mempool\n",(double)nValue/COIN);
+        } else fprintf(stderr,"couldnt get tx\n");
+    }
+    return(0);
 }
 
 std::string Faucet2Fund(struct CCcontract_info *cp,uint64_t txfee,int64_t funds)
@@ -626,6 +673,9 @@ int32_t cclib_parsehash(uint8_t *hash32,cJSON *item,int32_t len)
 #include "rogue/things.c"
 #include "rogue/weapons.c"
 #include "rogue/wizard.c"
+
+#elif BUILD_CUSTOMCC
+#include "customcc.cpp"
 
 #else
 #include "sudoku.cpp"

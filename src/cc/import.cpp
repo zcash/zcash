@@ -478,5 +478,3 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params,const CTransaction &impo
     }
     return Valid();
 }
-
-

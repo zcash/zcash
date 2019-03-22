@@ -290,6 +290,16 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
         cc_free(othercond3);
     if ( othercond4 != 0 )
         cc_free(othercond4);
+    if ( othercond1of2 != 0 )
+        cc_free(othercond1of2);
+    if ( othercond1of2tokens != 0 )
+        cc_free(othercond1of2tokens);
+    if ( mytokenscond != 0 )
+        cc_free(mytokenscond);   
+    if ( mysingletokenscond != 0 )
+        cc_free(mysingletokenscond);   
+    if ( othertokenscond != 0 )
+        cc_free(othertokenscond);   
     std::string strHex = EncodeHexTx(mtx);
     if ( strHex.size() > 0 )
         return(strHex);
@@ -347,17 +357,29 @@ int64_t CCutxovalue(char *coinaddr,uint256 utxotxid,int32_t utxovout)
     return(0);
 }
 
-int32_t CCgettxout(uint256 txid,int32_t vout,int32_t mempoolflag)
+int32_t CCgettxout(uint256 txid,int32_t vout,int32_t mempoolflag,int32_t lockflag)
 {
     CCoins coins;
+    //fprintf(stderr,"CCgettxoud %s/v%d\n",txid.GetHex().c_str(),vout);
     if ( mempoolflag != 0 )
     {
-        LOCK(mempool.cs);
-        CCoinsViewMemPool view(pcoinsTip, mempool);
-        if (!view.GetCoins(txid, coins))
-            return(-1);
-        if ( myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) != 0 )
-            return(-1);
+        if ( lockflag != 0 )
+        {
+            LOCK(mempool.cs);
+            CCoinsViewMemPool view(pcoinsTip, mempool);
+            if (!view.GetCoins(txid, coins))
+                return(-1);
+            else if ( myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) != 0 )
+                return(-1);
+        }
+        else
+        {
+            CCoinsViewMemPool view(pcoinsTip, mempool);
+            if (!view.GetCoins(txid, coins))
+                return(-1);
+            else if ( myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) != 0 )
+                return(-1);
+        }
     }
     else
     {
@@ -399,7 +421,7 @@ int64_t CCfullsupply(uint256 tokenid)
     {
         if (DecodeTokenCreateOpRet(tx.vout[numvouts-1].scriptPubKey,origpubkey,name,description))
         {
-            return(tx.vout[0].nValue);
+            return(tx.vout[1].nValue);
         }
     }
     return(0);
@@ -420,7 +442,8 @@ int64_t CCtoken_balance(char *coinaddr,uint256 reftokenid)
         {
             char str[65];
 			std::vector<CPubKey> voutTokenPubkeys;
-            if ( reftokenid==txid || (DecodeTokenOpRet(tx.vout[numvouts-1].scriptPubKey, evalCode, tokenid, voutTokenPubkeys, vopretExtra) != 0 && reftokenid == tokenid))
+            std::vector<std::pair<uint8_t, vscript_t>>  oprets;
+            if ( reftokenid==txid || (DecodeTokenOpRet(tx.vout[numvouts-1].scriptPubKey, evalCode, tokenid, voutTokenPubkeys, oprets) != 0 && reftokenid == tokenid))
             {
                 sum += it->second.satoshis;
             }
@@ -486,16 +509,18 @@ int32_t CC_vinselect(int32_t *aboveip,int64_t *abovep,int32_t *belowip,int64_t *
 
 int64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int32_t maxinputs)
 {
-    int32_t abovei,belowi,ind,vout,i,n = 0,maxutxos=CC_MAXVINS; int64_t sum,threshold,above,below; int64_t remains,nValue,totalinputs = 0; uint256 txid,hashBlock; std::vector<COutput> vecOutputs; CTransaction tx; struct CC_utxo *utxos,*up;
+    int32_t abovei,belowi,ind,vout,i,n = 0; int64_t sum,threshold,above,below; int64_t remains,nValue,totalinputs = 0; uint256 txid,hashBlock; std::vector<COutput> vecOutputs; CTransaction tx; struct CC_utxo *utxos,*up;
 #ifdef ENABLE_WALLET
     assert(pwalletMain != NULL);
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
     pwalletMain->AvailableCoins(vecOutputs, false, NULL, true);
-    utxos = (struct CC_utxo *)calloc(maxutxos,sizeof(*utxos));
-    threshold = total/(maxinputs+1);
-    if ( maxinputs > maxutxos )
-        maxutxos = maxinputs;
+    utxos = (struct CC_utxo *)calloc(CC_MAXVINS,sizeof(*utxos));
+    if ( maxinputs > CC_MAXVINS )
+        maxinputs = CC_MAXVINS;
+    if ( maxinputs > 0 )
+        threshold = total/maxinputs;
+    else threshold = total;
     sum = 0;
     BOOST_FOREACH(const COutput& out, vecOutputs)
     {
@@ -530,7 +555,7 @@ int64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int3
                     up->vout = vout;
                     sum += up->nValue;
                     //fprintf(stderr,"add %.8f to vins array.%d of %d\n",(double)up->nValue/COIN,n,maxutxos);
-                    if ( n >= maxutxos || sum >= total )
+                    if ( n >= maxinputs || sum >= total )
                         break;
                 }
             }
@@ -579,12 +604,14 @@ int64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int3
 
 int64_t AddNormalinputs2(CMutableTransaction &mtx,int64_t total,int32_t maxinputs)
 {
-    int32_t abovei,belowi,ind,vout,i,n = 0,maxutxos=CC_MAXVINS; int64_t sum,threshold,above,below; int64_t remains,nValue,totalinputs = 0; char coinaddr[64]; uint256 txid,hashBlock; CTransaction tx; struct CC_utxo *utxos,*up;
+    int32_t abovei,belowi,ind,vout,i,n = 0; int64_t sum,threshold,above,below; int64_t remains,nValue,totalinputs = 0; char coinaddr[64]; uint256 txid,hashBlock; CTransaction tx; struct CC_utxo *utxos,*up;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
-    utxos = (struct CC_utxo *)calloc(maxutxos,sizeof(*utxos));
-    threshold = total/(maxinputs+1);
-    if ( maxinputs > maxutxos )
-        maxutxos = maxinputs;
+    utxos = (struct CC_utxo *)calloc(CC_MAXVINS,sizeof(*utxos));
+    if ( maxinputs > CC_MAXVINS )
+        maxinputs = CC_MAXVINS;
+    if ( maxinputs > 0 )
+        threshold = total/maxinputs;
+    else threshold = total;
     sum = 0;
     Getscriptaddress(coinaddr,CScript() << Mypubkey() << OP_CHECKSIG);
     SetCCunspents(unspentOutputs,coinaddr);
@@ -621,7 +648,7 @@ int64_t AddNormalinputs2(CMutableTransaction &mtx,int64_t total,int32_t maxinput
                 up->vout = vout;
                 sum += up->nValue;
                 //fprintf(stderr,"add %.8f to vins array.%d of %d\n",(double)up->nValue/COIN,n,maxutxos);
-                if ( n >= maxutxos || sum >= total )
+                if ( n >= maxinputs || sum >= total )
                     break;
             }
         }

@@ -291,6 +291,9 @@ static const CRPCCommand vRPCCommands[] =
   //  --------------------- ------------------------  -----------------------  ----------
     /* Overall control/query calls */
     { "control",            "help",                   &help,                   true  },
+    { "control",            "getiguanajson",          &getiguanajson,          true  },
+    { "control",            "getnotarysendmany",      &getnotarysendmany,      true  },
+    { "control",            "geterablockheights",     &geterablockheights,     true  },
     { "control",            "stop",                   &stop,                   true  },
 
     /* P2P networking */
@@ -346,6 +349,7 @@ static const CRPCCommand vRPCCommands[] =
     { "crosschain",         "crosschainproof",        &crosschainproof,        true  },
     { "crosschain",         "getNotarisationsForBlock", &getNotarisationsForBlock, true },
     { "crosschain",         "scanNotarisationsDB",    &scanNotarisationsDB,    true },
+    { "crosschain",         "getimports",             &getimports,             true },
     { "crosschain",         "migrate_converttoexport", &migrate_converttoexport, true  },
     { "crosschain",         "migrate_createimporttransaction", &migrate_createimporttransaction, true  },
     { "crosschain",         "migrate_completeimporttransaction", &migrate_completeimporttransaction, true  },
@@ -462,6 +466,12 @@ static const CRPCCommand vRPCCommands[] =
 
     // Payments
     { "payments",       "paymentsaddress",   &paymentsaddress,      true },
+    { "payments",       "paymentstxidopret", &payments_txidopret,      true },
+    { "payments",       "paymentscreate",    &payments_create,      true },
+    { "payments",       "paymentslist",      &payments_list,      true },
+    { "payments",       "paymentsinfo",      &payments_info,      true },
+    { "payments",       "paymentsfund",      &payments_fund,      true },
+    { "payments",       "paymentsrelease",   &payments_release,      true },
 
     { "CClib",       "cclibaddress",   &cclibaddress,      true },
     { "CClib",       "cclibinfo",   &cclibinfo,      true },
@@ -557,6 +567,7 @@ static const CRPCCommand vRPCCommands[] =
     { "wallet",             "getaccountaddress",      &getaccountaddress,      true  },
     { "wallet",             "getaccount",             &getaccount,             true  },
     { "wallet",             "getaddressesbyaccount",  &getaddressesbyaccount,  true  },
+    { "wallet",             "cleanwallettransactions", &cleanwallettransactions, false },
     { "wallet",             "getbalance",             &getbalance,             false },
     { "wallet",             "getbalance64",           &getbalance64,             false },
     { "wallet",             "getnewaddress",          &getnewaddress,          true  },

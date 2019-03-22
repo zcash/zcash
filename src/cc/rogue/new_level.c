@@ -26,7 +26,17 @@ new_level(struct rogue_state *rs)
     PLACE *pp;
     char *sp;
     int i;
-    
+    if ( 0 )
+    {
+        static FILE *fp;
+        if ( fp == 0 )
+            fp = fopen("debug","wb");
+        if ( fp != 0 )
+        {
+            fprintf(fp,"newlevel seed.%llu\n",(long long)seed);
+            fflush(fp);
+        }
+    }
     player.t_flags &= ~ISHELD;	/* unhold when you go down just in case */
     if (level > max_level)
         max_level = level;
@@ -74,7 +84,7 @@ new_level(struct rogue_state *rs)
              */
             do
             {
-                find_floor((struct room *) NULL, &stairs, FALSE, FALSE);
+                find_floor(rs,(struct room *) NULL, &stairs, FALSE, FALSE);
             } while (chat(stairs.y, stairs.x) != FLOOR);
             sp = &flat(stairs.y, stairs.x);
             *sp &= ~F_REAL;
@@ -84,18 +94,18 @@ new_level(struct rogue_state *rs)
     /*
      * Place the staircase down.
      */
-    find_floor((struct room *) NULL, &stairs, FALSE, FALSE);
+    find_floor(rs,(struct room *) NULL, &stairs, FALSE, FALSE);
     chat(stairs.y, stairs.x) = STAIRS;
     seenstairs = FALSE;
     
     for (tp = mlist; tp != NULL; tp = next(tp))
         tp->t_room = roomin(rs,&tp->t_pos);
     
-    find_floor((struct room *) NULL, &hero, FALSE, TRUE);
+    find_floor(rs,(struct room *) NULL, &hero, FALSE, TRUE);
     enter_room(rs,&hero);
     mvaddch(hero.y, hero.x, PLAYER);
     if (on(player, SEEMONST))
-        turn_see(FALSE);
+        turn_see(rs,FALSE);
     if (on(player, ISHALU))
         visuals(rs,0);
 }
@@ -153,7 +163,7 @@ put_things(struct rogue_state *rs)
 	    /*
 	     * Put it somewhere
 	     */
-	    find_floor((struct room *) NULL, &obj->o_pos, FALSE, FALSE);
+	    find_floor(rs,(struct room *) NULL, &obj->o_pos, FALSE, FALSE);
 	    chat(obj->o_pos.y, obj->o_pos.x) = (char) obj->o_type;
 	}
     /*
@@ -173,7 +183,7 @@ put_things(struct rogue_state *rs)
 	/*
 	 * Put it somewhere
 	 */
-	find_floor((struct room *) NULL, &obj->o_pos, FALSE, FALSE);
+	find_floor(rs,(struct room *) NULL, &obj->o_pos, FALSE, FALSE);
 	chat(obj->o_pos.y, obj->o_pos.x) = AMULET;
     }
 }
@@ -201,7 +211,7 @@ treas_room(struct rogue_state *rs)
     num_monst = nm = rnd(spots) + MINTREAS;
     while (nm--)
     {
-	find_floor(rp, &mp, 2 * MAXTRIES, FALSE);
+	find_floor(rs,rp, &mp, 2 * MAXTRIES, FALSE);
         //fprintf(stderr,"treas_room\n");
 	tp = new_thing(rs);
 	tp->o_pos = mp;
@@ -222,7 +232,7 @@ treas_room(struct rogue_state *rs)
     while (nm--)
     {
 	spots = 0;
-	if (find_floor(rp, &mp, MAXTRIES, TRUE))
+	if (find_floor(rs,rp, &mp, MAXTRIES, TRUE))
 	{
 	    tp = new_item();
 	    new_monster(rs,tp, randmonster(FALSE), &mp);

@@ -160,10 +160,43 @@ extinguish(void (*func)(struct rogue_state *rs,int))
  * do_fuses:
  *	Decrement counters and start needed fuses
  */
+
+/*char *actionfunc_str(char *str,void *ptr)
+{
+    if ( ptr == (void *)runners )
+        strcpy(str,"runners");
+    else if ( ptr == (void *)doctor )
+        strcpy(str,"doctor");
+    else if ( ptr == (void *)stomach )
+        strcpy(str,"stomach");
+    else if ( ptr == (void *)nohaste )
+        strcpy(str,"nohaste");
+    else if ( ptr == (void *)unconfuse )
+        strcpy(str,"unconfuse");
+    else if ( ptr == (void *)swander )
+        strcpy(str,"swander");
+    else if ( ptr == (void *)come_down )
+        strcpy(str,"come_down");
+    else if ( ptr == (void *)unsee )
+        strcpy(str,"unsee");
+    else if ( ptr == (void *)sight )
+        strcpy(str,"sight");
+    else if ( ptr == (void *)land )
+        strcpy(str,"land");
+    else if ( ptr == (void *)rollwand )
+        strcpy(str,"rollwand");
+    else if ( ptr == (void *)visuals )
+        strcpy(str,"visuals");
+    else if ( ptr == (void *)turn_see )
+        strcpy(str,"turn_see");
+    else strcpy(str,"no match");
+    return(str);
+}*/
+
 void
 do_fuses(struct rogue_state *rs,int flag)
 {
-    register struct delayed_action *wire;
+    register struct delayed_action *wire; char str[64];
 
     /*
      * Step though the list
@@ -175,6 +208,8 @@ do_fuses(struct rogue_state *rs,int flag)
 	 */
 	if (flag == wire->d_type && wire->d_time > 0 && --wire->d_time == 0)
 	{
+        //if ( fp != 0 )
+        //    fprintf(fp,"t.%d %d %s, ",wire->d_type,wire->d_time,actionfunc_str(str,wire->d_func));
 	    wire->d_type = EMPTY;
 	    (*wire->d_func)(rs,wire->d_arg);
 	}

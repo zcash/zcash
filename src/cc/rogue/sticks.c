@@ -158,7 +158,7 @@ do_zap(struct rogue_state *rs)
 			{
 			    do
 			    {
-				find_floor(NULL, &new_pos, FALSE, TRUE);
+				find_floor(rs,NULL, &new_pos, FALSE, TRUE);
 			    } while (ce(new_pos, hero));
 			}
 			else

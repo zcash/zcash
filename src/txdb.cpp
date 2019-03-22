@@ -60,7 +60,7 @@ static const char DB_LAST_BLOCK = 'l';
 CCoinsViewDB::CCoinsViewDB(std::string dbName, size_t nCacheSize, bool fMemory, bool fWipe) : db(GetDataDir() / dbName, nCacheSize, fMemory, fWipe) {
 }
 
-CCoinsViewDB::CCoinsViewDB(size_t nCacheSize, bool fMemory, bool fWipe) : db(GetDataDir() / "chainstate", nCacheSize, fMemory, fWipe) 
+CCoinsViewDB::CCoinsViewDB(size_t nCacheSize, bool fMemory, bool fWipe) : db(GetDataDir() / "chainstate", nCacheSize, fMemory, fWipe)
 {
 }
 
@@ -122,7 +122,7 @@ uint256 CCoinsViewDB::GetBestBlock() const {
 
 uint256 CCoinsViewDB::GetBestAnchor(ShieldedType type) const {
     uint256 hashBestAnchor;
-    
+
     switch (type) {
         case SPROUT:
             if (!db.Read(DB_BEST_SPROUT_ANCHOR, hashBestAnchor))
@@ -436,11 +436,12 @@ bool CBlockTreeDB::ReadAddressIndex(uint160 addressHash, int type,
 }
 
 bool getAddressFromIndex(const int &type, const uint160 &hash, std::string &address);
+uint32_t komodo_segid32(char *coinaddr);
 
 UniValue CBlockTreeDB::Snapshot(int top)
 {
     int64_t total = 0; int64_t totalAddresses = 0; std::string address;
-    int64_t utxos = 0; int64_t ignoredAddresses;
+    int64_t utxos = 0; int64_t ignoredAddresses = 0;
     boost::scoped_ptr<CDBIterator> iter(NewIterator());
     std::map <std::string, CAmount> addressAmounts;
     std::vector <std::pair<CAmount, std::string>> vaddr;
@@ -448,23 +449,23 @@ UniValue CBlockTreeDB::Snapshot(int top)
     result.push_back(Pair("start_time", (int) time(NULL)));
 
     std::map <std::string,int> ignoredMap = {
-	{"RReUxSs5hGE39ELU23DfydX8riUuzdrHAE", 1},
-	{"RMUF3UDmzWFLSKV82iFbMaqzJpUnrWjcT4", 1},
-	{"RA5imhVyJa7yHhggmBytWuDr923j2P1bxx", 1},
-	{"RBM5LofZFodMeewUzoMWcxedm3L3hYRaWg", 1},
-	{"RAdcko2d94TQUcJhtFHZZjMyWBKEVfgn4J", 1},
-	{"RLzUaZ934k2EFCsAiVjrJqM8uU1vmMRFzk", 1},
-	{"RMSZMWZXv4FhUgWhEo4R3AQXmRDJ6rsGyt", 1},
-	{"RUDrX1v5toCsJMUgtvBmScKjwCB5NaR8py", 1},
-	{"RMSZMWZXv4FhUgWhEo4R3AQXmRDJ6rsGyt", 1},
-	{"RRvwmbkxR5YRzPGL5kMFHMe1AH33MeD8rN", 1},
-	{"RQLQvSgpPAJNPgnpc8MrYsbBhep95nCS8L", 1},
-	{"RK8JtBV78HdvEPvtV5ckeMPSTojZPzHUTe", 1},
-	{"RHVs2KaCTGUMNv3cyWiG1jkEvZjigbCnD2", 1},
-	{"RE3SVaDgdjkRPYA6TRobbthsfCmxQedVgF", 1},
-	{"RW6S5Lw5ZCCvDyq4QV9vVy7jDHfnynr5mn", 1},
-	{"RTkJwAYtdXXhVsS3JXBAJPnKaBfMDEswF8", 1},
-	{"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPVMY", 1} //Burnaddress for null privkey
+      	{"RReUxSs5hGE39ELU23DfydX8riUuzdrHAE", 1},
+      	{"RMUF3UDmzWFLSKV82iFbMaqzJpUnrWjcT4", 1},
+      	{"RA5imhVyJa7yHhggmBytWuDr923j2P1bxx", 1},
+      	{"RBM5LofZFodMeewUzoMWcxedm3L3hYRaWg", 1},
+      	{"RAdcko2d94TQUcJhtFHZZjMyWBKEVfgn4J", 1},
+      	{"RLzUaZ934k2EFCsAiVjrJqM8uU1vmMRFzk", 1},
+      	{"RMSZMWZXv4FhUgWhEo4R3AQXmRDJ6rsGyt", 1},
+      	{"RUDrX1v5toCsJMUgtvBmScKjwCB5NaR8py", 1},
+      	{"RMSZMWZXv4FhUgWhEo4R3AQXmRDJ6rsGyt", 1},
+      	{"RRvwmbkxR5YRzPGL5kMFHMe1AH33MeD8rN", 1},
+      	{"RQLQvSgpPAJNPgnpc8MrYsbBhep95nCS8L", 1},
+      	{"RK8JtBV78HdvEPvtV5ckeMPSTojZPzHUTe", 1},
+      	{"RHVs2KaCTGUMNv3cyWiG1jkEvZjigbCnD2", 1},
+      	{"RE3SVaDgdjkRPYA6TRobbthsfCmxQedVgF", 1},
+      	{"RW6S5Lw5ZCCvDyq4QV9vVy7jDHfnynr5mn", 1},
+      	{"RTkJwAYtdXXhVsS3JXBAJPnKaBfMDEswF8", 1},
+      	{"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPVMY", 1} //Burnaddress for null privkey
     };
 
     int64_t startingHeight = chainActive.Height();
@@ -490,27 +491,31 @@ UniValue CBlockTreeDB::Snapshot(int top)
 
                     getAddressFromIndex(indexKey.type, indexKey.hashBytes, address);
 
-                    std::map <std::string, int>::iterator ignored = ignoredMap.find(address);
-                    if (ignored != ignoredMap.end()) {
-                    fprintf(stderr,"ignoring %s\n", address.c_str());
-                    ignoredAddresses++;
-                    continue;
-                    }
+                    if (nValue > 0) {
+                        std::map <std::string, int>::iterator ignored = ignoredMap.find(address);
+                        if (ignored != ignoredMap.end()) {
+                        fprintf(stderr,"ignoring %s\n", address.c_str());
+                        ignoredAddresses++;
+                        continue;
+                        }
 
-                    std::map <std::string, CAmount>::iterator pos = addressAmounts.find(address);
-                    if (pos == addressAmounts.end()) {
-                    // insert new address + utxo amount
-                    //fprintf(stderr, "inserting new address %s with amount %li\n", address.c_str(), nValue);
-                    addressAmounts[address] = nValue;
-                    totalAddresses++;
+                        std::map <std::string, CAmount>::iterator pos = addressAmounts.find(address);
+                        if (pos == addressAmounts.end()) {
+                        // insert new address + utxo amount
+                        //fprintf(stderr, "inserting new address %s with amount %li\n", address.c_str(), nValue);
+                        addressAmounts[address] = nValue;
+                        totalAddresses++;
+                        } else {
+                        // update unspent tally for this address
+                        //fprintf(stderr, "updating address %s with new utxo amount %li\n", address.c_str(), nValue);
+                        addressAmounts[address] += nValue;
+                        }
+                        //fprintf(stderr,"{\"%s\", %.8f},\n",address.c_str(),(double)nValue/COIN);
+                        // total += nValue;
+                        utxos++;
                     } else {
-                    // update unspent tally for this address
-                    //fprintf(stderr, "updating address %s with new utxo amount %li\n", address.c_str(), nValue);
-                    addressAmounts[address] += nValue;
+                        fprintf(stderr,"ignoring amount=0 UTXO for %s\n", address.c_str());
                     }
-                    //fprintf(stderr,"{\"%s\", %.8f},\n",address.c_str(),(double)nValue/COIN);
-                    // total += nValue;
-                    utxos++;
                 } catch (const std::exception& e) {
                     fprintf(stderr, "DONE %s: LevelDB addressindex exception! - %s\n", __func__, e.what());
                     break;
@@ -526,29 +531,31 @@ UniValue CBlockTreeDB::Snapshot(int top)
     //fprintf(stderr, "total=%f, totalAddresses=%li, utxos=%li, ignored=%li\n", (double) total / COIN, totalAddresses, utxos, ignoredAddresses);
 
     for (std::pair<std::string, CAmount> element : addressAmounts) {
-	vaddr.push_back( make_pair(element.second, element.first) );
+	     vaddr.push_back( make_pair(element.second, element.first) );
     }
     std::sort(vaddr.rbegin(), vaddr.rend());
 
     UniValue obj(UniValue::VOBJ);
     UniValue addressesSorted(UniValue::VARR);
     int topN = 0;
-    for (std::vector<std::pair<CAmount, std::string>>::iterator it = vaddr.begin(); it!=vaddr.end(); ++it) {
-	UniValue obj(UniValue::VOBJ);
-	obj.push_back( make_pair("addr", it->second.c_str() ) );
-	char amount[32];
-	sprintf(amount, "%.8f", (double) it->first / COIN);
-	obj.push_back( make_pair("amount", amount) );
-	total += it->first;
-	addressesSorted.push_back(obj);
-	topN++;
-	// If requested, only show top N addresses in output JSON
- 	if (top == topN)
-	    break;
+    for (std::vector<std::pair<CAmount, std::string>>::iterator it = vaddr.begin(); it!=vaddr.end(); ++it)
+    {
+      	UniValue obj(UniValue::VOBJ);
+      	obj.push_back( make_pair("addr", it->second.c_str() ) );
+      	char amount[32];
+      	sprintf(amount, "%.8f", (double) it->first / COIN);
+      	obj.push_back( make_pair("amount", amount) );
+        obj.push_back( make_pair("segid",(int32_t)komodo_segid32((char *)it->second.c_str()) & 0x3f) );
+      	total += it->first;
+      	addressesSorted.push_back(obj);
+      	topN++;
+      	// If requested, only show top N addresses in output JSON
+       	if (top == topN)
+      	    break;
     }
 
     if (top)
-	totalAddresses = top;
+	     totalAddresses = top;
 
     if (totalAddresses > 0) {
 	// Array of all addreses with balances

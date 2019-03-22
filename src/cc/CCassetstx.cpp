@@ -353,9 +353,9 @@ std::string CreateBuyOffer(int64_t txfee, int64_t bidamount, uint256 assetid, in
         mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS, txfee, mypk));
 		std::vector<CPubKey> voutTokenPubkeys;  // should be empty - no token vouts
 
-        return(FinalizeCCTx(0, cpAssets, mtx, mypk, txfee, 
+        return FinalizeCCTx(0, cpAssets, mtx, mypk, txfee, 
 			EncodeTokenOpRet(assetid, voutTokenPubkeys,     // TODO: actually this tx is not 'tokens', maybe it is better not to have token opret here but only asset opret.
-				EncodeAssetOpRet('b', zeroid, pricetotal, Mypubkey()))));   // But still such token opret should not make problems because no token eval in these vouts
+				std::make_pair(OPRETID_ASSETSDATA, EncodeAssetOpRet('b', zeroid, pricetotal, Mypubkey()))));   // But still such token opret should not make problems because no token eval in these vouts
     }
 	CCerror = strprintf("no coins found to make buy offer");
     return("");
@@ -419,7 +419,7 @@ std::string CreateSell(int64_t txfee,int64_t askamount,uint256 assetid,int64_t p
 
             return FinalizeCCTx(mask, cpTokens, mtx, mypk, txfee, 
                 EncodeTokenOpRet(assetid, voutTokenPubkeys, 
-                    EncodeAssetOpRet('s', zeroid, pricetotal, Mypubkey())));
+                    std::make_pair(OPRETID_ASSETSDATA, EncodeAssetOpRet('s', zeroid, pricetotal, Mypubkey()))));
 		}
 		else {
 			fprintf(stderr, "need some tokens to place ask\n");
@@ -540,7 +540,7 @@ std::string CancelBuyOffer(int64_t txfee,uint256 assetid,uint256 bidtxid)
 													
             return(FinalizeCCTx(mask, cpAssets, mtx, mypk, txfee, 
 				EncodeTokenOpRet(assetid, voutTokenPubkeys, 
-                    EncodeAssetOpRet('o', zeroid, 0, Mypubkey()))));
+                    std::make_pair(OPRETID_ASSETSDATA, EncodeAssetOpRet('o', zeroid, 0, Mypubkey())))));
         }
     }
     return("");
@@ -608,7 +608,7 @@ std::string CancelSell(int64_t txfee,uint256 assetid,uint256 asktxid)
 
             return(FinalizeCCTx(mask, cpAssets, mtx, mypk, txfee, 
 				EncodeTokenOpRet(assetid, voutTokenPubkeys,  
-					EncodeAssetOpRet('x', zeroid, 0, Mypubkey()))));
+                    std::make_pair(OPRETID_ASSETSDATA, EncodeAssetOpRet('x', zeroid, 0, Mypubkey())))));
         }
     }
     return("");
@@ -695,7 +695,7 @@ std::string FillBuyOffer(int64_t txfee,uint256 assetid,uint256 bidtxid,int64_t f
 
                 return(FinalizeCCTx(mask, cpTokens, mtx, mypk, txfee, 
 					EncodeTokenOpRet(assetid, voutTokenPubkeys, 
-						EncodeAssetOpRet('B', zeroid, remaining_required, origpubkey))));
+                        std::make_pair(OPRETID_ASSETSDATA, EncodeAssetOpRet('B', zeroid, remaining_required, origpubkey)))));
             } else return("dont have any assets to fill bid");
         }
     }
@@ -820,7 +820,7 @@ std::string FillSell(int64_t txfee, uint256 assetid, uint256 assetid2, uint256 a
 
                 return(FinalizeCCTx(mask, cpAssets, mtx, mypk, txfee,
 					EncodeTokenOpRet(assetid, voutTokenPubkeys, 
-						EncodeAssetOpRet(assetid2 != zeroid ? 'E' : 'S', assetid2, remaining_nValue, origpubkey))));
+                        std::make_pair(OPRETID_ASSETSDATA, EncodeAssetOpRet(assetid2 != zeroid ? 'E' : 'S', assetid2, remaining_nValue, origpubkey)))));
             } else {
                 CCerror = strprintf("filltx not enough utxos");
                 fprintf(stderr,"%s\n", CCerror.c_str());

@@ -38,6 +38,31 @@ union _bits256 { uint8_t bytes[32]; uint16_t ushorts[16]; uint32_t uints[8]; uin
 typedef union _bits256 bits256;
 #endif
 
+#ifdef _WIN32
+#ifdef _MSC_VER
+int gettimeofday(struct timeval * tp, struct timezone * tzp)
+{
+	// Note: some broken versions only have 8 trailing zero's, the correct epoch has 9 trailing zero's
+	static const uint64_t EPOCH = ((uint64_t)116444736000000000ULL);
+
+	SYSTEMTIME  system_time;
+	FILETIME    file_time;
+	uint64_t    time;
+
+	GetSystemTime(&system_time);
+	SystemTimeToFileTime(&system_time, &file_time);
+	time = ((uint64_t)file_time.dwLowDateTime);
+	time += ((uint64_t)file_time.dwHighDateTime) << 32;
+
+	tp->tv_sec = (long)((time - EPOCH) / 10000000L);
+	tp->tv_usec = (long)(system_time.wMilliseconds * 1000);
+	return 0;
+}
+#endif // _MSC_VER
+#endif
+
+
+
 double OS_milliseconds()
 {
     struct timeval tv; double millis;
@@ -235,6 +260,7 @@ int32_t safecopy(char *dest,char *src,long len)
 #endif
 
 int32_t rogue_replay(uint64_t seed,int32_t sleeptime);
+char *rogue_keystrokesload(int32_t *numkeysp,uint64_t seed,int32_t counter);
 int rogue(int argc, char **argv, char **envp);
 
 void *OS_loadfile(char *fname,uint8_t **bufp,long *lenp,long *allocsizep)
@@ -389,6 +415,12 @@ char *post_process_bitcoind_RPC(char *debugstr,char *command,char *rpcstr,char *
     //fprintf(stderr,"<<<<<<<<<<< bitcoind_RPC: postprocess returns.(%s)\n",retstr);
     return(retstr);
 }
+#endif
+
+#ifdef _WIN32
+#ifdef _MSC_VER
+#define sleep(x) Sleep(1000*(x))
+#endif
 #endif
 
 /************************************************************************
@@ -708,11 +740,103 @@ char *komodo_issuemethod(char *userpass,char *method,char *params,uint16_t port)
 
 #include "rogue.h"
 
-void rogue_progress(struct rogue_state *rs,uint64_t seed,char *keystrokes,int32_t num)
+int32_t rogue_sendrawtransaction(char *rawtx)
 {
-    char cmd[16384],hexstr[16384],params[32768],*retstr; int32_t i;
+    char *params,*retstr,*hexstr; cJSON *retjson,*resobj; int32_t retval = -1;
+    params = (char *)malloc(strlen(rawtx) + 16);
+    sprintf(params,"[\"%s\"]",rawtx);
+    if ( (retstr= komodo_issuemethod(USERPASS,"sendrawtransaction",params,ROGUE_PORT)) != 0 )
+    {
+        if ( 0 ) // causes 4th level crash
+        {
+            static FILE *fp;
+            if ( fp == 0 )
+                fp = fopen("rogue.sendlog","wb");
+            if ( fp != 0 )
+            {
+                fprintf(fp,"%s\n",retstr);
+                fflush(fp);
+            }
+        }
+        if ( (retjson= cJSON_Parse(retstr)) != 0 )
+        {
+            if ( (resobj= jobj(retjson,"result")) != 0 )
+            {
+                if ( (hexstr= jstr(resobj,0)) != 0 && is_hexstr(hexstr,64) == 64 )
+                    retval = 0;
+            }
+            free_json(retjson);
+        }
+
+		/* log sendrawtx result in file */
+		
+		/*
+		FILE *debug_file;
+		debug_file = fopen("tx_debug.log", "a");
+		fprintf(debug_file, "%s\n", retstr);
+		fflush(debug_file);
+		fclose(debug_file);
+		*/
+
+        free(retstr);
+    }
+    free(params);
+    return(retval);
+}
+
+void rogue_progress(struct rogue_state *rs,int32_t waitflag,uint64_t seed,char *keystrokes,int32_t num)
+{
+    char cmd[16384],hexstr[16384],params[32768],*retstr,*rawtx,*pastkeys,*pastcmp,*keys; int32_t i,len,numpastkeys; cJSON *retjson,*resobj;
+    //fprintf(stderr,"rogue_progress num.%d\n",num);
     if ( rs->guiflag != 0 && Gametxidstr[0] != 0 )
     {
+        if ( rs->keystrokeshex != 0 )
+        {
+            if ( rogue_sendrawtransaction(rs->keystrokeshex) == 0 )
+            {
+                if ( waitflag == 0 )
+                    return;
+                else if ( 0 )
+                {
+                    while ( rogue_sendrawtransaction(rs->keystrokeshex) == 0 )
+                    {
+                        //fprintf(stderr,"pre-rebroadcast\n");
+                        sleep(10);
+                    }
+                }
+            }
+            free(rs->keystrokeshex), rs->keystrokeshex = 0;
+        }
+        if ( 0 && (pastkeys= rogue_keystrokesload(&numpastkeys,seed,1)) != 0 )
+        {
+            sprintf(params,"[\"extract\",\"17\",\"[%%22%s%%22]\"]",Gametxidstr);
+            if ( (retstr= komodo_issuemethod(USERPASS,"cclib",params,ROGUE_PORT)) != 0 )
+            {
+                if ( (retjson= cJSON_Parse(retstr)) != 0 )
+                {
+                    if ( (resobj= jobj(retjson,"result")) != 0 && (keys= jstr(resobj,"keystrokes")) != 0 )
+                    {
+                        len = strlen(keys) / 2;
+                        pastcmp = (char *)malloc(len + 1);
+                        decode_hex(pastcmp,len,keys);
+                        fprintf(stderr,"keystrokes.(%s) vs pastkeys\n",keys);
+                        for (i=0; i<numpastkeys; i++)
+                            fprintf(stderr,"%02x",pastkeys[i]);
+                        fprintf(stderr,"\n");
+                        if ( len != numpastkeys || memcmp(pastcmp,pastkeys,len) != 0 )
+                        {
+                            fprintf(stderr,"pastcmp[%d] != pastkeys[%d]?\n",len,numpastkeys);
+                        }
+                        free(pastcmp);
+                    } else fprintf(stderr,"no keystrokes in (%s)\n",retstr);
+                    free_json(retjson);
+                } else fprintf(stderr,"error parsing.(%s)\n",retstr);
+                fprintf(stderr,"extracted.(%s)\n",retstr);
+                free(retstr);
+            } else fprintf(stderr,"error extracting game\n");
+            free(pastkeys);
+        } // else fprintf(stderr,"no pastkeys\n");
+
         for (i=0; i<num; i++)
             sprintf(&hexstr[i<<1],"%02x",keystrokes[i]&0xff);
         hexstr[i<<1] = 0;
@@ -736,9 +860,29 @@ void rogue_progress(struct rogue_state *rs,uint64_t seed,char *keystrokes,int32_
                     fprintf(fp,"%s\n",retstr);
                     fflush(fp);
                 }
+                if ( (retjson= cJSON_Parse(retstr)) != 0 )
+                {
+                    if ( (resobj= jobj(retjson,"result")) != 0 && (rawtx= jstr(resobj,"hex")) != 0 )
+                    {
+                        if ( rs->keystrokeshex != 0 )
+                            free(rs->keystrokeshex);
+                        rs->keystrokeshex = (char *)malloc(strlen(rawtx)+1);
+                        strcpy(rs->keystrokeshex,rawtx);
+//fprintf(stderr,"set keystrokestx <- %s\n",rs->keystrokeshex);
+                    }
+                    free_json(retjson);
+                }
                 free(retstr);
             }
-            sleep(1);
+            if ( 0 && waitflag != 0 && rs->keystrokeshex != 0 )
+            {
+                while ( rogue_sendrawtransaction(rs->keystrokeshex) == 0 )
+                {
+                    //fprintf(stderr,"post-rebroadcast\n");
+                    sleep(3);
+                }
+                free(rs->keystrokeshex), rs->keystrokeshex = 0;
+            }
         }
     }
 }
@@ -797,9 +941,46 @@ int32_t rogue_setplayerdata(struct rogue_state *rs,char *gametxidstr)
     return(retval);
 }
 
+#ifdef _WIN32
+#ifdef _MSC_VER
+__inline int msver(void) {
+	switch (_MSC_VER) {
+	case 1500: return 2008;
+	case 1600: return 2010;
+	case 1700: return 2012;
+	case 1800: return 2013;
+	case 1900: return 2015;
+	//case 1910: return 2017;
+	default: return (_MSC_VER / 100);
+	}
+}
+
+static inline bool is_x64(void) {
+#if defined(__x86_64__) || defined(_WIN64) || defined(__aarch64__)
+	return 1;
+#elif defined(__amd64__) || defined(__amd64) || defined(_M_X64) || defined(_M_IA64)
+	return 1;
+#else
+	return 0;
+#endif
+}
+
+#define BUILD_DATE __DATE__ " " __TIME__
+#endif // _WIN32
+#endif // _MSC_VER
+
 int main(int argc, char **argv, char **envp)
 {
     uint64_t seed; FILE *fp = 0; int32_t i,j,c; char userpass[8192];
+
+	#ifdef _WIN32
+	#ifdef _MSC_VER
+	printf("*** rogue for Windows [ Build %s ] ***\n", BUILD_DATE);
+	const char* arch = is_x64() ? "64-bits" : "32-bits";
+	printf("    Built with VC++ %d (%ld) %s\n\n", msver(), _MSC_FULL_VER, arch);
+	#endif
+	#endif
+
     for (i=j=0; argv[0][i]!=0&&j<sizeof(ASSETCHAINS_SYMBOL); i++)
     {
         c = argv[0][i];
@@ -811,13 +992,34 @@ int main(int argc, char **argv, char **envp)
         ASSETCHAINS_SYMBOL[j++] = toupper(c);
     }
     ASSETCHAINS_SYMBOL[j++] = 0;
+	
+	#ifdef _WIN32
+	#ifdef _MSC_VER
+	if (strncmp(ASSETCHAINS_SYMBOL, "ROGUE.EXE", sizeof(ASSETCHAINS_SYMBOL)) == 0 || strncmp(ASSETCHAINS_SYMBOL, "ROGUE54.EXE", sizeof(ASSETCHAINS_SYMBOL)) == 0) {
+		strcpy(ASSETCHAINS_SYMBOL, "ROGUE"); // accept ROGUE.conf, instead of ROGUE.EXE.conf or ROGUE54.EXE.conf if build with MSVC
+	}
+	#endif
+	#endif
+
     ROGUE_PORT = komodo_userpass(userpass,ASSETCHAINS_SYMBOL);
     if ( IPADDRESS[0] == 0 )
         strcpy(IPADDRESS,"127.0.0.1");
     printf("ASSETCHAINS_SYMBOL.(%s) port.%u (%s) IPADDRESS.%s \n",ASSETCHAINS_SYMBOL,ROGUE_PORT,USERPASS,IPADDRESS); sleep(1);
     if ( argc == 2 && (fp=fopen(argv[1],"rb")) == 0 )
     {
-        seed = atol(argv[1]);
+        
+		#ifdef _WIN32
+			#ifdef _MSC_VER
+			seed = _strtoui64(argv[1], NULL, 10);
+			fprintf(stderr, "replay seed.str(%s) seed.uint64_t(%I64u)", argv[1], seed);
+			#else
+			fprintf(stderr, "replay seed.str(%s) seed.uint64_t(%llu)", argv[1], (long long)seed);
+			seed = atol(argv[1]); // windows, but not MSVC
+			#endif // _MSC_VER
+		#else
+		seed = atol(argv[1]); // non-windows
+		#endif // _WIN32
+
         //fprintf(stderr,"replay %llu\n",(long long)seed);
         return(rogue_replay(seed,10));
     }

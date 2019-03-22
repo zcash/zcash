@@ -78,7 +78,6 @@ quaff(struct rogue_state *rs)
     }
     if (obj == cur_weapon)
 	cur_weapon = NULL;
-
     /*
      * Calculate the effect it has on the poor guy.
      */
@@ -91,7 +90,7 @@ quaff(struct rogue_state *rs)
 	    do_pot(rs,P_CONFUSE, !trip);
 	when P_POISON:
 	    pot_info[P_POISON].oi_know = TRUE;
-	    if (ISWEARING(R_SUSTSTR))
+        if (ISWEARING(R_SUSTSTR))
 		msg(rs,"you feel momentarily sick");
 	    else
 	    {
@@ -112,7 +111,7 @@ quaff(struct rogue_state *rs)
 	when P_MFIND:
 	    player.t_flags |= SEEMONST;
 	    fuse((void(*)(struct rogue_state *rs,int))turn_see, TRUE, HUHDURATION, AFTER);
-	    if (!turn_see(FALSE))
+	    if (!turn_see(rs,FALSE))
 		msg(rs,"you have a %s feeling for a moment, then it passes",
 		    choose_str("normal", "strange"));
 	when P_TFIND:
@@ -158,7 +157,7 @@ quaff(struct rogue_state *rs)
 	    if (!trip)
 	    {
 		if (on(player, SEEMONST))
-		    turn_see(FALSE);
+		    turn_see(rs,FALSE);
 		start_daemon(visuals, 0, BEFORE);
 		seenstairs = seen_stairs();
 	    }
@@ -220,7 +219,7 @@ quaff(struct rogue_state *rs)
     call_it(rs,&pot_info[obj->o_which]);
 
     if (discardit)
-	discard(obj);
+        discard(obj);
     return;
 }
 
@@ -263,47 +262,6 @@ invis_on()
 	    mvaddch(mp->t_pos.y, mp->t_pos.x, mp->t_disguise);
 }
 
-/*
- * turn_see:
- *	Put on or off seeing monsters on this level
- */
-bool
-turn_see(bool turn_off)
-{
-    THING *mp;
-    bool can_see, add_new;
-
-    add_new = FALSE;
-    for (mp = mlist; mp != NULL; mp = next(mp))
-    {
-	move(mp->t_pos.y, mp->t_pos.x);
-	can_see = see_monst(mp);
-	if (turn_off)
-	{
-	    if (!can_see)
-		addch(mp->t_oldch);
-	}
-	else
-	{
-	    if (!can_see)
-		standout();
-	    if (!on(player, ISHALU))
-		addch(mp->t_type);
-	    else
-		addch(rnd(26) + 'A');
-	    if (!can_see)
-	    {
-            standend();
-            add_new ^= 1;//add_new++;
-	    }
-	}
-    }
-    if (turn_off)
-	player.t_flags &= ~SEEMONST;
-    else
-	player.t_flags |= SEEMONST;
-    return add_new;
-}
 
 /*
  * seen_stairs:
@@ -358,18 +316,18 @@ do_pot(struct rogue_state *rs,int type, bool knowit)
 {
     PACT *pp;
     int t;
-
+    
     pp = &p_actions[type];
     if (!pot_info[type].oi_know)
-	pot_info[type].oi_know = knowit;
+        pot_info[type].oi_know = knowit;
     t = spread(pp->pa_time);
     if (!on(player, pp->pa_flags))
     {
-	player.t_flags |= pp->pa_flags;
-	fuse(pp->pa_daemon, 0, t, AFTER);
-	look(rs,FALSE);
+        player.t_flags |= pp->pa_flags;
+        fuse(pp->pa_daemon, 0, t, AFTER);
+        look(rs,FALSE);
     }
     else
-	lengthen(pp->pa_daemon, t);
+        lengthen(pp->pa_daemon, t);
     msg(rs,choose_str(pp->pa_high, pp->pa_straight));
 }

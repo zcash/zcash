@@ -362,11 +362,12 @@ typedef union _bits256 bits256;
 struct rogue_state
 {
     uint64_t seed;
-    char *keystrokes;
+    char *keystrokes,*keystrokeshex;
     uint32_t needflush,replaydone;
-    int32_t numkeys,ind,num,guiflag,counter,sleeptime,playersize,restoring;
+    int32_t numkeys,ind,num,guiflag,counter,sleeptime,playersize,restoring,lastnum;
+    FILE *logfp;
     struct rogue_player P;
-    char buffered[8192];
+    char buffered[10000];
     uint8_t playerdata[10000];
 };
 extern struct rogue_state globalR;
@@ -374,12 +375,12 @@ extern struct rogue_state globalR;
 int rogue(int argc, char **argv, char **envp);
 void rogueiterate(struct rogue_state *rs);
 int32_t roguefname(char *fname,uint64_t seed,int32_t counter);
-int32_t flushkeystrokes(struct rogue_state *rs);
+int32_t flushkeystrokes(struct rogue_state *rs,int32_t waitflag);
 int32_t rogue_restorepack(struct rogue_state *rs);
 void restore_player(struct rogue_state *rs);
 int32_t rogue_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t num,struct rogue_player *player,int32_t sleepmillis);
 void rogue_bailout(struct rogue_state *rs);
-void rogue_progress(struct rogue_state *rs,uint64_t seed,char *keystrokes,int32_t num);
+void rogue_progress(struct rogue_state *rs,int32_t waitflag,uint64_t seed,char *keystrokes,int32_t num);
 int32_t rogue_setplayerdata(struct rogue_state *rs,char *gametxidstr);
 
 #define ROGUE_MAXTOTAL (pstats.s_str*2)
@@ -612,7 +613,7 @@ void	current(struct rogue_state *rs,THING *cur, char *how, char *where);
 void	d_level(struct rogue_state *rs);
 void	death(struct rogue_state *rs,char monst);
 char	death_monst(void);
-void	dig(int y, int x);
+void	dig(struct rogue_state *rs,int y, int x);
 void	discard(THING *item);
 void	discovered(struct rogue_state *rs);
 int	dist(int y1, int x1, int y2, int x2);
@@ -620,7 +621,7 @@ int	dist_cp(coord *c1, coord *c2);
 int	do_chase(struct rogue_state *rs,THING *th);
 void	do_daemons(struct rogue_state *rs,int flag);
 void	do_fuses(struct rogue_state *rs,int flag);
-void	do_maze(struct room *rp);
+void	do_maze(struct rogue_state *rs,struct room *rp);
 void	do_motion(struct rogue_state *rs,THING *obj, int ydelta, int xdelta);
 void	do_move(struct rogue_state *rs,int dy, int dx);
 void	do_passages(struct rogue_state *rs);
@@ -632,7 +633,7 @@ void	doadd(struct rogue_state *rs,char *fmt, va_list args);
 void	door(struct room *rm, coord *cp);
 void	door_open(struct rogue_state *rs,struct room *rp);
 void	drain(struct rogue_state *rs);
-void	draw_room(struct room *rp);
+void	draw_room(struct rogue_state *rs,struct room *rp);
 void	drop(struct rogue_state *rs);
 void	eat(struct rogue_state *rs);
 size_t  encread(char *start, size_t size, FILE *inf);
@@ -761,7 +762,7 @@ bool	chase(THING *tp, coord *ee);
 bool	diag_ok(coord *sp, coord *ep);
 bool	dropcheck(struct rogue_state *rs,THING *obj);
 bool	fallpos(coord *pos, coord *newpos);
-bool	find_floor(struct room *rp, coord *cp, int limit, bool monst);
+bool	find_floor(struct rogue_state *rs,struct room *rp, coord *cp, int limit, bool monst);
 bool	is_magic(THING *obj);
 bool    is_symlink(char *sp); 
 bool	levit_check(struct rogue_state *rs);
@@ -770,7 +771,7 @@ bool	roll_em(THING *thatt, THING *thdef, THING *weap, bool hurl);
 bool	see_monst(THING *mp);
 bool	seen_stairs(void);
 bool	turn_ok(int y, int x);
-bool	turn_see(bool turn_off);
+bool	turn_see(struct rogue_state *rs,bool turn_off);
 bool	is_current(struct rogue_state *rs,THING *obj);
 int	passwd(void);
 
@@ -824,6 +825,7 @@ void	doctor(struct rogue_state *rs,int);
 void	playit(struct rogue_state *rs);
 
 struct room	*roomin(struct rogue_state *rs,coord *cp);
+int32_t thing_find(THING *ptr);
 
 #define MAXDAEMONS 20
 
