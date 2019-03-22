@@ -34,9 +34,21 @@ UniValue games_rawtxresult(UniValue &result,std::string rawtx,int32_t broadcastf
     return(result);
 }
 
+uint64_t games_rngnext(uint64_t initseed)
+{
+    uint16_t seeds[4]; int32_t i;
+    for (i=0; i<4; i++)
+    {
+        seeds[i] = (seed >> (i*16));
+        seeds[i] = (seeds[i]*11109 + 13849);
+    }
+    seed = ((uint64_t)seeds[3] << 48) | ((uint64_t)seeds[2] << 24) | ((uint64_t)seeds[1] << 16) | seeds[0];
+    return(seed);
+}
+
 UniValue games_rng(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ); int32_t i,invertflag=0,n,playerid=0; uint16_t seeds[4]; uint64_t seed,initseed; bits256 hash;
+    UniValue result(UniValue::VOBJ); int32_t i,invertflag=0,n,playerid=0; uint64_t seed,initseed; bits256 hash;
     if ( params != 0 && ((n= cJSON_GetArraySize(params)) == 2 || n == 3) )
     {
         hash = jbits256(jitem(params,0),0);
@@ -44,7 +56,7 @@ UniValue games_rng(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
         if ( n == 3 )
         {
             playerid = juint(jitem(params,2),0);
-            if ( playerid >= 0x100 )
+            if ( playerid >= 0xff )
             {
                 result.push_back(Pair("result","error"));
                 result.push_back(Pair("error","playerid too big"));
@@ -54,26 +66,14 @@ UniValue games_rng(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
         if ( seed == 0 )
         {
             playerid++;
-            if ( playerid == 0x100 )
-            {
-                invertflag = 1;
-                playerid--;
-            }
             for (i=0; i<8; i++)
             {
                 if ( ((1 << i) & playerid) != 0 )
                     seed ^= hash.uints[i];
-                if ( invertflag != 0 )
-                    seed ^= (uint64_t)-1;
             }
         }
         initseed = seed;
-        for (i=0; i<4; i++)
-        {
-            seeds[i] = (seed >> (i*16));
-            seeds[i] = (seeds[i]*11109 + 13849);
-        }
-        seed = ((uint64_t)seeds[3] << 48) | ((uint64_t)seeds[2] << 24) | ((uint64_t)seeds[1] << 16) | seeds[0];
+        seed = games_rngnext(initseed);
         result.push_back(Pair("playerid",(int64_t)(playerid - 1 + invertflag)));
         result.push_back(Pair("initseed",initseed));
         result.push_back(Pair("seed",seed));
