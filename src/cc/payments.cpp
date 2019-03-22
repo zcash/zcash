@@ -386,7 +386,7 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
                 if ( (inputsum= AddPaymentsInputs(cp,mtx,txidpk,newamount+2*PAYMENTS_TXFEE,60,createtxid,latestheight)) >= newamount+2*PAYMENTS_TXFEE )
                 {
                     std::string rawtx;
-                    if ( (CCchange= (inputsum - newamount - PAYMENTS_TXFEE)) >= PAYMENTS_TXFEE )
+                    if ( (CCchange= (inputsum - newamount - 2*PAYMENTS_TXFEE)) >= PAYMENTS_TXFEE )
                         mtx.vout[0].nValue = CCchange;
                     mtx.vout.push_back(CTxOut(PAYMENTS_TXFEE,CScript() << ParseHex(HexStr(txidpk)) << OP_CHECKSIG));
                     GetCCaddress1of2(cp,destaddr,Paymentspk,txidpk);
