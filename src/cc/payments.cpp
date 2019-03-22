@@ -626,7 +626,7 @@ UniValue PaymentsInfo(struct CCcontract_info *cp,char *jsonstr)
                         }
                         free(outstr);
                     }
-                    a.push_back(obj);
+                    result.push_back(obj);
                 }
                 flag++;
                 if ( numoprets > 1 )
@@ -643,7 +643,7 @@ UniValue PaymentsInfo(struct CCcontract_info *cp,char *jsonstr)
                     result.push_back(Pair(fundsaddr,ValueFromAmount(funds)));
                     GetCCaddress(cp,fundsopretaddr,Paymentspk);
                     fundsopret = CCaddress_balance(fundsopretaddr);
-                    result.push_back(Pair("txidoprets",a));
+                    //result.push_back(Pair("txidoprets",a));
                     result.push_back(Pair(fundsopretaddr,ValueFromAmount(fundsopret)));
                     result.push_back(Pair("totalfunds",ValueFromAmount(funds+fundsopret)));
                     result.push_back(Pair("result","success"));
