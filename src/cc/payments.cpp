@@ -344,6 +344,7 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
                     } else break;
                     mtx.vout.push_back(vout);
                 }
+                result.push_back(Pair("numoprets",(int64_t)numoprets));
                 if ( i != m )
                 {
                     result.push_back(Pair("result","error"));
