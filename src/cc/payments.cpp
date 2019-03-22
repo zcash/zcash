@@ -377,12 +377,12 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
                     mtx.vout[i+1].nValue *= amount;
                     mtx.vout[i+1].nValue /= totalallocations;
                 }
-                if ( (inputsum= AddPaymentsInputs(cp,mtx,txidpk,amount+PAYMENTS_TXFEE,60,createtxid,latestheight)) >= amount )
+                if ( (inputsum= AddPaymentsInputs(cp,mtx,txidpk,amount+2*PAYMENTS_TXFEE,60,createtxid,latestheight)) >= amount )
                 {
                     std::string rawtx;
                     if ( (CCchange= (inputsum - amount)) >= PAYMENTS_TXFEE )
                         mtx.vout[0].nValue = CCchange;
-                    mtx.vout.push_back(CTxOut(0,CScript() << ParseHex(HexStr(txidpk)) << OP_CHECKSIG));
+                    mtx.vout.push_back(CTxOut(PAYMENTS_TXFEE,CScript() << ParseHex(HexStr(txidpk)) << OP_CHECKSIG));
                     GetCCaddress1of2(cp,destaddr,Paymentspk,txidpk);
                     CCaddr1of2set(cp,Paymentspk,txidpk,cp->CCpriv,destaddr);
                     rawtx = FinalizeCCTx(0,cp,mtx,mypk,PAYMENTS_TXFEE,onlyopret);
