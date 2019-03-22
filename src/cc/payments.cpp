@@ -313,12 +313,12 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
                     return(result);
                 }
                 latestheight = (nextheight - lockedblocks - 1);
-                if ( amount < minrelease )
+                if ( amount < minrelease*COIN )
                 {
                     result.push_back(Pair("result","error"));
                     result.push_back(Pair("error","amount too smal"));
                     result.push_back(Pair("amount",ValueFromAmount(amount)));
-                    result.push_back(Pair("minrelease",ValueFromAmount(minrelease)));
+                    result.push_back(Pair("minrelease",ValueFromAmount(minrelease*COIN)));
                     return(result);
                 }
                 txidpk = CCtxidaddr(txidaddr,createtxid);
@@ -375,6 +375,7 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
                     mtx.vout[i+1].nValue *= amount;
                     mtx.vout[i+1].nValue /= totalallocations;
                 }
+                fprintf(stderr,"addinputs %.8f\n",(double)amount/COIN);
                 if ( (inputsum= AddPaymentsInputs(cp,mtx,txidpk,amount+PAYMENTS_TXFEE,60,createtxid,latestheight)) >= amount )
                 {
                     if ( (CCchange= (inputsum - amount)) >= PAYMENTS_TXFEE )
