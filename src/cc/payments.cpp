@@ -180,7 +180,7 @@ int64_t AddPaymentsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CP
         {
             txid = it->first.txhash;
             vout = (int32_t)it->first.index;
-            fprintf(stderr,"iter.%d %s/v%d %s\n",iter,txid.GetHex().c_str(),vout,coinaddr);
+            //fprintf(stderr,"iter.%d %s/v%d %s\n",iter,txid.GetHex().c_str(),vout,coinaddr);
             if ( vout == 0 && GetTransaction(txid,vintx,hashBlock,false) != 0 )
             {
                 if ( latestheight != 0 )
@@ -212,7 +212,7 @@ int64_t AddPaymentsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CP
                     nValue = it->second.satoshis;
                     totalinputs += nValue;
                     n++;
-                    fprintf(stderr,"iter.%d %s/v%d %s %.8f\n",iter,txid.GetHex().c_str(),vout,coinaddr,(double)nValue/COIN);
+                    //fprintf(stderr,"iter.%d %s/v%d %s %.8f\n",iter,txid.GetHex().c_str(),vout,coinaddr,(double)nValue/COIN);
                     if ( (total > 0 && totalinputs >= total) || (maxinputs > 0 && n >= maxinputs) )
                         break;
                 } //else fprintf(stderr,"nValue %.8f vs threshold %.8f\n",(double)nValue/COIN,(double)threshold/COIN);

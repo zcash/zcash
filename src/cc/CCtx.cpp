@@ -277,9 +277,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
                 }
             }
         } else fprintf(stderr,"FinalizeCCTx couldnt find %s\n",mtx.vin[i].prevout.hash.ToString().c_str());
-        fprintf(stderr,"done i.%d of %d\n",i,n);
     }
-    fprintf(stderr,"free A\n");
     if ( mycond != 0 )
         cc_free(mycond);
     if ( condCC2 != 0 )
@@ -292,7 +290,6 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
         cc_free(othercond3);
     if ( othercond4 != 0 )
         cc_free(othercond4);
-    fprintf(stderr,"free B\n");
     if ( othercond1of2 != 0 )
         cc_free(othercond1of2);
     if ( othercond1of2tokens != 0 )
@@ -303,8 +300,8 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
         cc_free(mysingletokenscond);   
     if ( othertokenscond != 0 )
         cc_free(othertokenscond);   
-    fprintf(stderr,"free C\n");
     std::string strHex = EncodeHexTx(mtx);
+    fprintf(stderr,"hex.(%s)\n",strHex.c_str());
     if ( strHex.size() > 0 )
         return(strHex);
     else return("0");
