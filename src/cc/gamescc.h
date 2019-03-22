@@ -11,7 +11,7 @@ std::string MYCCLIBNAME = (char *)"gamescc";
 #define MYCCNAME "games"
 
 #define RPC_FUNCS    \
-    { (char *)MYCCNAME, (char *)"rng", (char *)"hash,seed,playerid", 2, 3, ' ', EVAL_GAMES }, \
+    { (char *)MYCCNAME, (char *)"rng", (char *)"hash,playerid", 1, 2, ' ', EVAL_GAMES }, \
     { (char *)MYCCNAME, (char *)"rngnext", (char *)"seed", 1, 1, ' ', EVAL_GAMES },
 
 bool games_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx);
