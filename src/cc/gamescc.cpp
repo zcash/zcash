@@ -1,4 +1,32 @@
 
+/*
+./c cclib rng 17 \"[%229433dc3749aece1bd568f374a45da3b0bc6856990d7da3cd175399577940a775%22,250]\"
+{
+    "playerid": 250,
+    "seed": 1398876319979341887,
+    "rng": 14565767519458298868,
+    "lastrng": 15075236803740723044,
+    "maxrngs": 10000,
+    "result": "success"
+}
+
+ ./c cclib rngnext 17 \"[14565767519458298868]\"
+ {
+ "seed": 14565767519458297856,
+ "rng": 4253087318999719449,
+ "result": "success"
+ }
+ 
+ The idea is for a game to start with a near future blockhash, so the lobby gets players signed up until just prior to the designated height. then that blockhash can be used to create a stream of rngs.
+ 
+ the same initial rng can be used for all players, if the identical starting condition is required. up to 255 different initial rng can be derived from a single blockhash. (Actually any number is possible, for simplicity rng rpc limits to 255).
+ 
+ you will notice maxrngs and lastrng, the lastrng is the rng value that will happen after maxrng iterations of calling rngnext with the current rng. This allows making time based multiplayer games where all the nodes can validate all the other nodes rng, even without realtime synchronization of all user input events.
+ 
+ Every time period, all players would set their rng value to the lastrng value. The only thing to be careful of is it not exceed the maxrng calls to rngnext in a single time period. otherwise the same set of rng numbers will be repeated.
+*/
+
+
 CScript games_opret(uint8_t funcid,CPubKey pk)
 {
     CScript opret; uint8_t evalcode = EVAL_GAMES;
