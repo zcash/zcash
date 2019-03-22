@@ -37,11 +37,14 @@ UniValue games_rawtxresult(UniValue &result,std::string rawtx,int32_t broadcastf
 uint64_t games_rngnext(uint64_t initseed)
 {
     uint16_t seeds[4]; int32_t i;
-    for (i=0; i<4; i++)
-    {
-        seeds[i] = (initseed >> (i*16));
-        seeds[i] = (seeds[i]*11109 + 13849);
-    }
+    seeds[0] = initseed;
+    seeds[1] = (initseed >> 16);
+    seeds[2] = (initseed >> 32);
+    seeds[3] = (initseed >> 48);
+    seeds[0] = (seeds[0]*11109 + 13849);
+    seeds[1] = ((seeds[0] ^ seeds[1])*11109 + 13849);
+    seeds[2] = ((seeds[0] ^ seeds[1] ^ seeds[2])*11109 + 13849);
+    seeds[3] = ((seeds[0] ^ seeds[1] ^ seeds[2] ^ seeds[3])*11109 + 13849);
     return(((uint64_t)seeds[3] << 48) | ((uint64_t)seeds[2] << 24) | ((uint64_t)seeds[1] << 16) | seeds[0]);
 }
 
