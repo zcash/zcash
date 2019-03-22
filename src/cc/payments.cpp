@@ -386,7 +386,7 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
                     GetCCaddress1of2(cp,destaddr,Paymentspk,txidpk);
                     fprintf(stderr,"destaddr.(%s)\n",destaddr);
                     CCaddr1of2set(cp,Paymentspk,txidpk,cp->CCpriv,destaddr);
-                    fprintf(stderr,"set 1of2\n");
+                    fprintf(stderr,"set 1of2 opretsize.%d\n",(int32_t)onlyopret.size());
                     rawtx = FinalizeCCTx(0,cp,mtx,mypk,PAYMENTS_TXFEE,onlyopret);
                     if ( params != 0 )
                         free_json(params);
