@@ -34,9 +34,49 @@ UniValue games_rawtxresult(UniValue &result,std::string rawtx,int32_t broadcastf
     return(result);
 }
 
-UniValue games_func0(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
+UniValue games_rng(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ);
+    UniValue result(UniValue::VOBJ); int32_t i,n,playerid=0; uint16_t seeds[4]; uint64_t seed; bits256 hash;
+    if ( params != 0 && ((n= cJSON_GetArraySize(params)) == 2 || n == 3) )
+    {
+        hash = jbits256(jitem(params,0),0);
+        seed = jdouble(jitem(params,1),0);
+        if ( n == 3 )
+        {
+            playerid = juint(jitem(params,2),0);
+            if ( playerid >= 0x100 )
+            {
+                result.push_back(Pair("result","error"));
+                result.push_back(Pair("error","playerid too big"));
+                return(result);
+            }
+        }
+        if ( seed == 0 )
+        {
+            playerid++;
+            if ( playerid == 0x100 )
+            {
+                for (i=0; i<8; i++)
+                    hash.uints[i] ^= 0xffffffff;
+                playerid--;
+            }
+            for (i=0; i<8; i++)
+            {
+                if ( ((1 << i) & playerid) != 0 )
+                    seed ^= hash.uints[i];
+            }
+        }
+        else
+        {
+            for (i=0; i<4; i++)
+            {
+                seeds[i] = (seed >> (i*16));
+                seeds[i] = (seeds[i]*11109 + 13849);
+            }
+            seed = ((uint64_t)seeds[3] << 48) | ((uint64_t)seeds[2] << 24) | ((uint64_t)seeds[1] << 16) | seeds[0];
+        }
+        result.push_back(Pair("seed",seed));
+    }
     result.push_back(Pair("result","success"));
     result.push_back(Pair("message","just an example of an information returning rpc"));
     return(result);
