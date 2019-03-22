@@ -7,8 +7,8 @@ std::string MYCCLIBNAME = (char *)"gamescc";
 #define MYCCNAME "games"
 
 #define RPC_FUNCS    \
-    { (char *)MYCCNAME, (char *)"func0", (char *)"<parameter help>", 1, 1, '0', EVAL_CUSTOM }, \
-    { (char *)MYCCNAME, (char *)"func1", (char *)"<no args>", 0, 0, '1', EVAL_CUSTOM },
+    { (char *)MYCCNAME, (char *)"func0", (char *)"<parameter help>", 1, 1, '0', EVAL_GAMES }, \
+    { (char *)MYCCNAME, (char *)"func1", (char *)"<no args>", 0, 0, '1', EVAL_GAMES },
 
 bool games_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx);
 UniValue games_func0(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
