@@ -376,17 +376,13 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
                     mtx.vout[i+1].nValue *= amount;
                     mtx.vout[i+1].nValue /= totalallocations;
                 }
-                fprintf(stderr,"addinputs %.8f\n",(double)amount/COIN);
                 if ( (inputsum= AddPaymentsInputs(cp,mtx,txidpk,amount+PAYMENTS_TXFEE,60,createtxid,latestheight)) >= amount )
                 {
                     if ( (CCchange= (inputsum - amount)) >= PAYMENTS_TXFEE )
                         mtx.vout[0].nValue = CCchange;
-                    fprintf(stderr,"CCchange %.8f\n",(double)CCchange/COIN);
                     mtx.vout.push_back(CTxOut(0,CScript() << ParseHex(HexStr(txidpk)) << OP_CHECKSIG));
                     GetCCaddress1of2(cp,destaddr,Paymentspk,txidpk);
-                    fprintf(stderr,"destaddr.(%s)\n",destaddr);
                     CCaddr1of2set(cp,Paymentspk,txidpk,cp->CCpriv,destaddr);
-                    fprintf(stderr,"set 1of2 opretsize.%d\n",(int32_t)onlyopret.size());
                     rawtx = FinalizeCCTx(0,cp,mtx,mypk,PAYMENTS_TXFEE,onlyopret);
                     if ( params != 0 )
                         free_json(params);
