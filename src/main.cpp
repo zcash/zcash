@@ -7035,8 +7035,22 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         Misbehaving(pfrom->GetId(), 1);
         return false;
     }
-
-
+    else if ( strCommand == "events" )
+    {
+        int32_t i;
+        if ( ASSETCHAINS_CCLIB != MYCCLIBNAME || ASSETCHAINS_CCLIB != "gamescc" )
+        {
+            Misbehaving(pfrom->GetId(), 1);
+            return false;
+        }
+        CNodeState *state = State(pfrom->GetId());
+        if (state == NULL)
+            return;
+        for (i=0; i<vRecv.size(); i++)
+            fprintf(stderr,"%02x",vRecv[i]);
+        fprintf(" got event[%d] from %s: %s\n", (int32_t)vRecv.size(),__func__, state->name );
+        return(true);
+    }
     else if (strCommand == "verack")
     {
         pfrom->SetRecvVersion(min(pfrom->nVersion, PROTOCOL_VERSION));

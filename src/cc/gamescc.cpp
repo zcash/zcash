@@ -136,35 +136,51 @@ UniValue games_rng(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     return(result);
 }
 
-// send yourself 1 coin to your CC address using normal utxo from your -pubkey
-
-UniValue games_func1(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
+UniValue games_events(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight()); std::string rawtx;
-    UniValue result(UniValue::VOBJ); CPubKey mypk; int64_t amount = COIN; int32_t broadcastflag=0;
-    if ( txfee == 0 )
-        txfee = GAMES_TXFEE;
-    mypk = pubkey2pk(Mypubkey());
-    if ( AddNormalinputs(mtx,mypk,COIN+txfee,64) >= COIN+txfee ) // add utxo to mtx
+    UniValue result(UniValue::VOBJ); std::vector<uint8_t> payload; int32_t n;
+    if ( params != 0 && (n= cJSON_GetArraySize(params)) == 1 )
     {
-        mtx.vout.push_back(MakeCC1vout(cp->evalcode,amount,mypk)); // make vout0
-        rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,games_opret('1',mypk));
-        return(games_rawtxresult(result,rawtx,broadcastflag));
+        if ( payments_parsehexdata(payload,jitem(params,0),0) == 0 )
+        {
+            komodo_sendmessage(4,8,"events",payload);
+            result.push_back(Pair("result","success"));
+        }
+        else
+        {
+            result.push_back(Pair("result","error"));
+            result.push_back(Pair("error","couldnt parsehexdata"));
+        }
+   }
+    else
+    {
+        result.push_back(Pair("result","error"));
+        result.push_back(Pair("error","not enough params"));
     }
+    return(result);
+}
+
+UniValue games_create(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
+{
+    UniValue result(UniValue::VOBJ);
+    return(result);
+}
+
+UniValue games_info(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
+{
+    UniValue result(UniValue::VOBJ);
+    return(result);
+}
+
+UniValue games_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
+{
+    UniValue result(UniValue::VOBJ);
     return(result);
 }
 
 bool games_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx)
 {
-    char expectedaddress[64]; CPubKey pk;
-    if ( tx.vout.size() != 2 ) // make sure the tx only has 2 outputs
-        return eval->Invalid("invalid number of vouts");
-    else if ( games_opretdecode(pk,tx.vout[1].scriptPubKey) != '1' ) // verify has opreturn
-        return eval->Invalid("invalid opreturn");
-    GetCCaddress(cp,expectedaddress,pk);
-    if ( IsCClibvout(cp,tx,0,expectedaddress) == COIN ) // make sure amount and destination matches
-        return(true);
-    else return eval->Invalid("invalid vout0 amount");
+    return(true);
 }
 
 
