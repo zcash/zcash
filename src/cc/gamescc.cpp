@@ -82,6 +82,7 @@ UniValue games_rng(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
         for (i=0; i<GAMES_MAXRNGS; i++)
             seed = games_rngnext(seed);
         result.push_back(Pair("lastseed",seed));
+        result.push_back(Pair("maxrngs",GAMES_MAXRNGS));
         result.push_back(Pair("result","success"));
     }
     else
