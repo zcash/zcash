@@ -1,7 +1,7 @@
 
 CScript games_opret(uint8_t funcid,CPubKey pk)
 {
-    CScript opret; uint8_t evalcode = EVAL_CUSTOM;
+    CScript opret; uint8_t evalcode = EVAL_GAMES;
     opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << pk);
     return(opret);
 }
@@ -10,7 +10,7 @@ uint8_t games_opretdecode(CPubKey &pk,CScript scriptPubKey)
 {
     std::vector<uint8_t> vopret; uint8_t e,f;
     GetOpReturnData(scriptPubKey,vopret);
-    if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> pk) != 0 && e == EVAL_CUSTOM )
+    if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> pk) != 0 && e == EVAL_GAMES )
     {
         return(f);
     }
