@@ -39,11 +39,10 @@ uint64_t games_rngnext(uint64_t initseed)
     uint16_t seeds[4]; int32_t i;
     for (i=0; i<4; i++)
     {
-        seeds[i] = (seed >> (i*16));
+        seeds[i] = (initseed >> (i*16));
         seeds[i] = (seeds[i]*11109 + 13849);
     }
-    seed = ((uint64_t)seeds[3] << 48) | ((uint64_t)seeds[2] << 24) | ((uint64_t)seeds[1] << 16) | seeds[0];
-    return(seed);
+    return(((uint64_t)seeds[3] << 48) | ((uint64_t)seeds[2] << 24) | ((uint64_t)seeds[1] << 16) | seeds[0]);
 }
 
 UniValue games_rng(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
