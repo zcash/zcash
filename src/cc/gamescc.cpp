@@ -76,9 +76,13 @@ UniValue games_rng(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             seed = ((uint64_t)seeds[3] << 48) | ((uint64_t)seeds[2] << 24) | ((uint64_t)seeds[1] << 16) | seeds[0];
         }
         result.push_back(Pair("seed",seed));
+        result.push_back(Pair("result","success"));
     }
-    result.push_back(Pair("result","success"));
-    result.push_back(Pair("message","just an example of an information returning rpc"));
+    else
+    {
+        result.push_back(Pair("result","error"));
+        result.push_back(Pair("error","not enough params"));
+    }
     return(result);
 }
 
