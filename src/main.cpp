@@ -7043,9 +7043,11 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
             Misbehaving(pfrom->GetId(), 1);
             return false;
         }
-        for (i=0; i<vRecv.size(); i++)
-            fprintf(stderr,"%02x",vRecv[i]);
-        fprintf(stderr," got event[%d]\n",(int32_t)vRecv.size());
+        std::vector<uint8_t> payload;
+        vRecv >> payload;
+        for (i=0; i<payload.size(); i++)
+            fprintf(stderr,"%02x",payload[i]);
+        fprintf(stderr," got event[%d]\n",(int32_t)payload.size());
         return(true);
     }
     else if (strCommand == "verack")
