@@ -383,7 +383,7 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
                         mtx.vout[i+1].nValue = PAYMENTS_TXFEE;
                     }
                 }
-                if ( (inputsum= AddPaymentsInputs(cp,mtx,txidpk,newamount+2*PAYMENTS_TXFEE,MAX_CCVINS/2,createtxid,latestheight)) >= newamount+2*PAYMENTS_TXFEE )
+                if ( (inputsum= AddPaymentsInputs(cp,mtx,txidpk,newamount+2*PAYMENTS_TXFEE,CC_MAXVINS/2,createtxid,latestheight)) >= newamount+2*PAYMENTS_TXFEE )
                 {
                     std::string rawtx;
                     if ( (CCchange= (inputsum - newamount - 2*PAYMENTS_TXFEE)) >= PAYMENTS_TXFEE )
