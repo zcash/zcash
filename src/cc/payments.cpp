@@ -368,7 +368,6 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
                 {
                     result.push_back(Pair("result","error"));
                     result.push_back(Pair("error","too many oprets"));
-                    result.push_back(Pair("numoprets",(int64_t)numoprets));
                     if ( params != 0 )
                         free_json(params);
                     return(result);
@@ -386,6 +385,7 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
                     mtx.vout.push_back(CTxOut(PAYMENTS_TXFEE,CScript() << ParseHex(HexStr(txidpk)) << OP_CHECKSIG));
                     GetCCaddress1of2(cp,destaddr,Paymentspk,txidpk);
                     CCaddr1of2set(cp,Paymentspk,txidpk,cp->CCpriv,destaddr);
+                    fprintf(stderr,"onlyopret.[%d]\n",(int32_t)onlyopret.size());
                     rawtx = FinalizeCCTx(0,cp,mtx,mypk,PAYMENTS_TXFEE,onlyopret);
                     if ( params != 0 )
                         free_json(params);
