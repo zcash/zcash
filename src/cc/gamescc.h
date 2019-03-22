@@ -4,6 +4,10 @@ std::string MYCCLIBNAME = (char *)"gamescc";
 #define EVAL_GAMES (EVAL_FAUCET2+1)
 #define GAMES_TXFEE 10000
 
+#define GAMES_RNGMULT 11109
+#define GAMES_RNGOFFSET 13849
+#define GAMES_MAXRNGS 10000
+
 #define MYCCNAME "games"
 
 #define RPC_FUNCS    \

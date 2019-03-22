@@ -41,10 +41,10 @@ uint64_t games_rngnext(uint64_t initseed)
     seeds[1] = (initseed >> 16);
     seeds[2] = (initseed >> 32);
     seeds[3] = (initseed >> 48);
-    seeds[0] = (seeds[0]*11109 + 13849);
-    seeds[1] = ((seeds[0] ^ seeds[1])*11109 + 13849);
-    seeds[2] = ((seeds[0] ^ seeds[1] ^ seeds[2])*11109 + 13849);
-    seeds[3] = ((seeds[0] ^ seeds[1] ^ seeds[2] ^ seeds[3])*11109 + 13849);
+    seeds[0] = (seeds[0]*GAMES_RNGMULT + GAMES_RNGOFFSET);
+    seeds[1] = ((seeds[0] ^ seeds[1])*GAMES_RNGMULT + GAMES_RNGOFFSET);
+    seeds[2] = ((seeds[0] ^ seeds[1] ^ seeds[2])*GAMES_RNGMULT + GAMES_RNGOFFSET);
+    seeds[3] = ((seeds[0] ^ seeds[1] ^ seeds[2] ^ seeds[3])*GAMES_RNGMULT + GAMES_RNGOFFSET);
     return(((uint64_t)seeds[3] << 48) | ((uint64_t)seeds[2] << 24) | ((uint64_t)seeds[1] << 16) | seeds[0]);
 }
 
@@ -79,6 +79,9 @@ UniValue games_rng(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
         result.push_back(Pair("playerid",(int64_t)(playerid - 1)));
         result.push_back(Pair("initseed",initseed));
         result.push_back(Pair("seed",seed));
+        for (i=0; i<GAMES_MAXRNGS; i++)
+            seed = games_rngnext(seed);
+        result.push_back(Pair("lastseed",seed));
         result.push_back(Pair("result","success"));
     }
     else
@@ -101,7 +104,6 @@ UniValue games_func1(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     if ( AddNormalinputs(mtx,mypk,COIN+txfee,64) >= COIN+txfee ) // add utxo to mtx
     {
         mtx.vout.push_back(MakeCC1vout(cp->evalcode,amount,mypk)); // make vout0
-        // add opreturn, change is automatically added and tx is properly signed
         rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,games_opret('1',mypk));
         return(games_rawtxresult(result,rawtx,broadcastflag));
     }
