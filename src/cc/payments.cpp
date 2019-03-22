@@ -230,7 +230,6 @@ UniValue payments_rawtxresult(UniValue &result,std::string rawtx,int32_t broadca
         result.push_back(Pair("hex",rawtx));
         if ( DecodeHexTx(tx,rawtx) != 0 )
         {
-            fprintf(stderr,"decoded\n");
             if ( broadcastflag != 0 && myAddtomempool(tx) != 0 )
                 RelayTransaction(tx);
             result.push_back(Pair("txid",tx.GetHash().ToString()));
@@ -389,7 +388,6 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
                     rawtx = FinalizeCCTx(0,cp,mtx,mypk,PAYMENTS_TXFEE,onlyopret);
                     if ( params != 0 )
                         free_json(params);
-                    fprintf(stderr,"got rawtx.(%s)\n",rawtx.c_str());
                     return(payments_rawtxresult(result,rawtx,0));
                 }
                 else
