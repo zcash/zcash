@@ -155,18 +155,18 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
     //    change is/must be in vout[0]
     // only 'F' or 1of2 txidaddr can be spent
     // all vouts must match exactly
-    BOOST_FOREACH(const CTxIn& vin, tx)
+    BOOST_FOREACH(const CTxIn& vin, tx.vin)
     {
         uint256 blockhash; CTransaction txin;
         if ( myGetTransaction(vin.prevout.hash,txin,blockhash) )
         {
-            fprintf(stderr, "vin txid.%s\n", txin.GetHex().c_str());
+            fprintf(stderr, "vin txid.%s\n", txin.GetHash().GetHex().c_str());
         }
     }
     
-    BOOST_FOREACH(const CTxOut& vout, tx)
+    BOOST_FOREACH(const CTxOut& vout, tx.vout)
     {
-        fprintf(stderr, "vout txid.%s\n", vout.hash.GetHex().c_str());
+        fprintf(stderr, "vout txid.%s\n", vout.GetHash().GetHex().c_str());
     }
     
     return(true);
@@ -392,10 +392,7 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
                     mtx.vout[i+1].nValue *= amount;
                     mtx.vout[i+1].nValue /= totalallocations;
                 }
-<<<<<<< Updated upstream
-=======
                 //fprintf(stderr,"addinputs %.8f\n",(double)amount/COIN);
->>>>>>> Stashed changes
                 if ( (inputsum= AddPaymentsInputs(cp,mtx,txidpk,amount+PAYMENTS_TXFEE,60,createtxid,latestheight)) >= amount )
                 {
                     std::string rawtx;
