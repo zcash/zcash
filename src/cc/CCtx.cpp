@@ -301,7 +301,6 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
     if ( othertokenscond != 0 )
         cc_free(othertokenscond);   
     std::string strHex = EncodeHexTx(mtx);
-    fprintf(stderr,"hex.(%s)\n",strHex.c_str());
     if ( strHex.size() > 0 )
         return(strHex);
     else return("0");

@@ -230,6 +230,7 @@ UniValue payments_rawtxresult(UniValue &result,std::string rawtx,int32_t broadca
         result.push_back(Pair("hex",rawtx));
         if ( DecodeHexTx(tx,rawtx) != 0 )
         {
+            fprintf(stderr,"decoded\n");
             if ( broadcastflag != 0 && myAddtomempool(tx) != 0 )
                 RelayTransaction(tx);
             result.push_back(Pair("txid",tx.GetHash().ToString()));
@@ -295,7 +296,7 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
 {
     int32_t latestheight,nextheight = komodo_nextheight();
     CMutableTransaction tmpmtx,mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(),nextheight); UniValue result(UniValue::VOBJ); uint256 createtxid,hashBlock;
-    CTransaction tx,txO; CPubKey mypk,txidpk,Paymentspk; int32_t i,n,numoprets=0,lockedblocks,minrelease,totalallocations,checkallocations=0,allocation; int64_t inputsum,amount,CCchange=0; CTxOut vout; CScript onlyopret; char txidaddr[64],destaddr[64]; std::vector<uint256> txidoprets; std::string rawtx;
+    CTransaction tx,txO; CPubKey mypk,txidpk,Paymentspk; int32_t i,n,m,numoprets=0,lockedblocks,minrelease,totalallocations,checkallocations=0,allocation; int64_t inputsum,amount,CCchange=0; CTxOut vout; CScript onlyopret; char txidaddr[64],destaddr[64]; std::vector<uint256> txidoprets;
     cJSON *params = payments_reparse(&n,jsonstr);
     mypk = pubkey2pk(Mypubkey());
     Paymentspk = GetUnspendable(cp,0);
@@ -324,7 +325,8 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
                 }
                 txidpk = CCtxidaddr(txidaddr,createtxid);
                 mtx.vout.push_back(MakeCC1of2vout(EVAL_PAYMENTS,0,Paymentspk,txidpk));
-                for (i=0; i<txidoprets.size(); i++)
+                m = txidoprets.size();
+                for (i=0; i<m; i++)
                 {
                     std::vector<uint8_t> scriptPubKey,opret;
                     vout.nValue = 0;
@@ -343,7 +345,7 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
                     } else break;
                     mtx.vout.push_back(vout);
                 }
-                if ( i != txidoprets.size() )
+                if ( i != m )
                 {
                     result.push_back(Pair("result","error"));
                     result.push_back(Pair("error","invalid txidoprets[i]"));
@@ -371,13 +373,14 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
                         free_json(params);
                     return(result);
                 }
-                for (i=0; i<txidoprets.size(); i++)
+                for (i=0; i<m; i++)
                 {
                     mtx.vout[i+1].nValue *= amount;
                     mtx.vout[i+1].nValue /= totalallocations;
                 }
                 if ( (inputsum= AddPaymentsInputs(cp,mtx,txidpk,amount+PAYMENTS_TXFEE,60,createtxid,latestheight)) >= amount )
                 {
+                    std::string rawtx;
                     if ( (CCchange= (inputsum - amount)) >= PAYMENTS_TXFEE )
                         mtx.vout[0].nValue = CCchange;
                     mtx.vout.push_back(CTxOut(0,CScript() << ParseHex(HexStr(txidpk)) << OP_CHECKSIG));
@@ -386,6 +389,7 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
                     rawtx = FinalizeCCTx(0,cp,mtx,mypk,PAYMENTS_TXFEE,onlyopret);
                     if ( params != 0 )
                         free_json(params);
+                    fprintf(stderr,"got rawtx.(%s)\n",rawtx.c_str());
                     return(payments_rawtxresult(result,rawtx,0));
                 }
                 else
