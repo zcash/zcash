@@ -321,6 +321,8 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
                     result.push_back(Pair("minrelease",ValueFromAmount(minrelease)));
                     return(result);
                 }
+                txidpk = CCtxidaddr(txidaddr,createtxid);
+                mtx.vout.push_back(MakeCC1of2vout(EVAL_PAYMENTS,0,Paymentspk,txidpk));
                 for (i=0; i<txidoprets.size(); i++)
                 {
                     std::vector<uint8_t> scriptPubKey,opret;
@@ -370,14 +372,13 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
                 }
                 for (i=0; i<txidoprets.size(); i++)
                 {
-                    mtx.vout[i].nValue *= amount;
-                    mtx.vout[i].nValue /= totalallocations;
+                    mtx.vout[i+1].nValue *= amount;
+                    mtx.vout[i+1].nValue /= totalallocations;
                 }
-                txidpk = CCtxidaddr(txidaddr,createtxid);
                 if ( (inputsum= AddPaymentsInputs(cp,mtx,txidpk,amount+PAYMENTS_TXFEE,60,createtxid,latestheight)) >= amount )
                 {
                     if ( (CCchange= (inputsum - amount)) >= PAYMENTS_TXFEE )
-                        mtx.vout.push_back(MakeCC1of2vout(EVAL_PAYMENTS,CCchange,Paymentspk,txidpk));
+                        mtx.vout[0].nValue = CCchange;
                     GetCCaddress1of2(cp,destaddr,Paymentspk,txidpk);
                     CCaddr1of2set(cp,Paymentspk,txidpk,cp->CCpriv,destaddr);
                     rawtx = FinalizeCCTx(0,cp,mtx,mypk,PAYMENTS_TXFEE,onlyopret);
