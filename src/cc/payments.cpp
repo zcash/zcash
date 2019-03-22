@@ -608,22 +608,21 @@ UniValue PaymentsInfo(struct CCcontract_info *cp,char *jsonstr)
                 for (i=0; i<txidoprets.size(); i++)
                 {
                     UniValue obj(UniValue::VOBJ); std::vector<uint8_t> scriptPubKey,opret;
-                    obj.push_back(Pair("txidopret",txidoprets[i].GetHex()));
-                    fprintf(stderr,"i%d of %d\n",i,(int32_t)txidoprets.size());
+                    obj.push_back(Pair("txid",txidoprets[i].GetHex()));
                     if ( myGetTransaction(txidoprets[i],txO,hashBlock) != 0 && txO.vout.size() > 1 && DecodePaymentsTxidOpRet(txO.vout[txO.vout.size()-1].scriptPubKey,allocation,scriptPubKey,opret) == 'T' )
                     {
                         outstr = (char *)malloc(2*(scriptPubKey.size() + opret.size()) + 1);
                         for (j=0; j<scriptPubKey.size(); j++)
                             sprintf(&outstr[j<<1],"%02x",scriptPubKey[j]);
                         outstr[j<<1] = 0;
-                        fprintf(stderr,"scriptPubKey.(%s)\n",outstr);
+                        //fprintf(stderr,"scriptPubKey.(%s)\n",outstr);
                         obj.push_back(Pair("scriptPubKey",outstr));
                         if ( opret.size() != 0 )
                         {
                             for (j=0; j<opret.size(); j++)
                                 sprintf(&outstr[j<<1],"%02x",opret[j]);
                             outstr[j<<1] = 0;
-                            fprintf(stderr,"opret.(%s)\n",outstr);
+                            //fprintf(stderr,"opret.(%s)\n",outstr);
                             obj.push_back(Pair("opreturn",outstr));
                             numoprets++;
                         }
@@ -632,21 +631,21 @@ UniValue PaymentsInfo(struct CCcontract_info *cp,char *jsonstr)
                     a.push_back(obj);
                 }
                 flag++;
+                result.push_back(Pair("numoprets",(int64_t)numoprets));
                 if ( numoprets > 1 )
                 {
                     result.push_back(Pair("result","error"));
                     result.push_back(Pair("error","too many opreturns"));
-                    result.push_back(Pair("numoprets",(int64_t)numoprets));
                 }
                 else
                 {
+                    result.push_back(Pair("txidoprets",a));
                     txidpk = CCtxidaddr(txidaddr,createtxid);
                     GetCCaddress1of2(cp,fundsaddr,Paymentspk,txidpk);
                     funds = CCaddress_balance(fundsaddr);
                     result.push_back(Pair(fundsaddr,ValueFromAmount(funds)));
                     GetCCaddress(cp,fundsopretaddr,Paymentspk);
                     fundsopret = CCaddress_balance(fundsopretaddr);
-                    result.push_back(Pair("txidoprets",a));
                     result.push_back(Pair(fundsopretaddr,ValueFromAmount(fundsopret)));
                     result.push_back(Pair("totalfunds",ValueFromAmount(funds+fundsopret)));
                     result.push_back(Pair("result","success"));
