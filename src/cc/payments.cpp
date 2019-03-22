@@ -381,6 +381,7 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
                 {
                     if ( (CCchange= (inputsum - amount)) >= PAYMENTS_TXFEE )
                         mtx.vout[0].nValue = CCchange;
+                    mtx.vout.push_back(CTxOut(0,CScript() << ParseHex(HexStr(txidpk)) << OP_CHECKSIG));
                     GetCCaddress1of2(cp,destaddr,Paymentspk,txidpk);
                     CCaddr1of2set(cp,Paymentspk,txidpk,cp->CCpriv,destaddr);
                     rawtx = FinalizeCCTx(0,cp,mtx,mypk,PAYMENTS_TXFEE,onlyopret);
