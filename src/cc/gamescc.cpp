@@ -48,7 +48,7 @@ uint64_t games_rngnext(uint64_t initseed)
 
 UniValue games_rng(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ); int32_t i,invertflag=0,n,playerid=0; uint64_t seed,initseed; bits256 hash;
+    UniValue result(UniValue::VOBJ); int32_t i,n,playerid=0; uint64_t seed,initseed; bits256 hash;
     if ( params != 0 && ((n= cJSON_GetArraySize(params)) == 2 || n == 3) )
     {
         hash = jbits256(jitem(params,0),0);
@@ -74,7 +74,7 @@ UniValue games_rng(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
         }
         initseed = seed;
         seed = games_rngnext(initseed);
-        result.push_back(Pair("playerid",(int64_t)(playerid - 1 + invertflag)));
+        result.push_back(Pair("playerid",(int64_t)(playerid - 1)));
         result.push_back(Pair("initseed",initseed));
         result.push_back(Pair("seed",seed));
         result.push_back(Pair("result","success"));
