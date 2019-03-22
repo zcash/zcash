@@ -295,7 +295,7 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
 {
     int32_t latestheight,nextheight = komodo_nextheight();
     CMutableTransaction tmpmtx,mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(),nextheight); UniValue result(UniValue::VOBJ); uint256 createtxid,hashBlock;
-    CTransaction tx,txO; CPubKey mypk,txidpk,Paymentspk; int32_t i,n,m,numoprets=0,lockedblocks,minrelease,totalallocations,checkallocations=0,allocation; int64_t inputsum,amount,CCchange=0; CTxOut vout; CScript onlyopret; char txidaddr[64],destaddr[64]; std::vector<uint256> txidoprets;
+    CTransaction tx,txO; CPubKey mypk,txidpk,Paymentspk; int32_t i,n,m,numoprets=0,lockedblocks,minrelease,totalallocations,checkallocations=0,allocation; int64_t newamount,inputsum,amount,CCchange=0; CTxOut vout; CScript onlyopret; char txidaddr[64],destaddr[64]; std::vector<uint256> txidoprets;
     cJSON *params = payments_reparse(&n,jsonstr);
     mypk = pubkey2pk(Mypubkey());
     Paymentspk = GetUnspendable(cp,0);
@@ -372,15 +372,21 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
                         free_json(params);
                     return(result);
                 }
+                newamount = amount;
                 for (i=0; i<m; i++)
                 {
                     mtx.vout[i+1].nValue *= amount;
                     mtx.vout[i+1].nValue /= totalallocations;
+                    if ( mtx.vout[i+1].nValue < PAYMENTS_TXFEE )
+                    {
+                        newamount += (PAYMENTS_TXFEE - mtx.vout[i+1].nValue);
+                        mtx.vout[i+1].nValue = PAYMENTS_TXFEE;
+                    }
                 }
-                if ( (inputsum= AddPaymentsInputs(cp,mtx,txidpk,amount+2*PAYMENTS_TXFEE,60,createtxid,latestheight)) >= amount )
+                if ( (inputsum= AddPaymentsInputs(cp,mtx,txidpk,newamount+2*PAYMENTS_TXFEE,60,createtxid,latestheight)) >= newamount+2*PAYMENTS_TXFEE )
                 {
                     std::string rawtx;
-                    if ( (CCchange= (inputsum - amount)) >= PAYMENTS_TXFEE )
+                    if ( (CCchange= (inputsum - newamount)) >= PAYMENTS_TXFEE )
                         mtx.vout[0].nValue = CCchange;
                     mtx.vout.push_back(CTxOut(PAYMENTS_TXFEE,CScript() << ParseHex(HexStr(txidpk)) << OP_CHECKSIG));
                     GetCCaddress1of2(cp,destaddr,Paymentspk,txidpk);
@@ -388,6 +394,8 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
                     rawtx = FinalizeCCTx(0,cp,mtx,mypk,PAYMENTS_TXFEE,onlyopret);
                     if ( params != 0 )
                         free_json(params);
+                    result.push_back(Pair("amount",ValueFromAmount(amount)));
+                    result.push_back(Pair("newamount",ValueFromAmount(newamount)));
                     return(payments_rawtxresult(result,rawtx,0));
                 }
                 else
