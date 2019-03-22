@@ -69,7 +69,7 @@ UniValue games_rng(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             for (i=0; i<8; i++)
             {
                 if ( ((1 << i) & playerid) != 0 )
-                    seed ^= hash.uints[i];
+                    seed ^= (uint64_t)hash.uints[i] << ((i&1)*32);
             }
         }
         initseed = seed;
