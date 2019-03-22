@@ -59,6 +59,9 @@ UniValue games_rng(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                 invertflag = 1;
                 playerid--;
             }
+            for (i=0; i<8; i++)
+                if ( ((1 << i) & playerid) != 0 )
+                    seed ^= hash.uints[i];
         }
         else
         {
@@ -71,6 +74,7 @@ UniValue games_rng(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             if ( invertflag != 0 )
                 seed ^= -1;
         }
+        result.push_back(Pair("playerid",(int64_t)(playerid - 1 + invertflag)));
         result.push_back(Pair("seed",seed));
         result.push_back(Pair("result","success"));
     }
