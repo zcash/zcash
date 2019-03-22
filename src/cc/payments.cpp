@@ -152,8 +152,23 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
 {
     // one of two addresses
     // change must go to 1of2 txidaddr
+    //    change is/must be in vout[0]
     // only 'F' or 1of2 txidaddr can be spent
     // all vouts must match exactly
+    BOOST_FOREACH(const CTxIn& vin, tx)
+    {
+        uint256 blockhash; CTransaction txin;
+        if ( myGetTransaction(vin.prevout.hash,txin,blockhash) )
+        {
+            fprintf(stderr, "vin txid.%s\n", txin.GetHex().c_str());
+        }
+    }
+    
+    BOOST_FOREACH(const CTxOut& vout, tx)
+    {
+        fprintf(stderr, "vout txid.%s\n", vout.hash.GetHex().c_str());
+    }
+    
     return(true);
 }
 // end of consensus code
@@ -377,6 +392,10 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
                     mtx.vout[i+1].nValue *= amount;
                     mtx.vout[i+1].nValue /= totalallocations;
                 }
+<<<<<<< Updated upstream
+=======
+                //fprintf(stderr,"addinputs %.8f\n",(double)amount/COIN);
+>>>>>>> Stashed changes
                 if ( (inputsum= AddPaymentsInputs(cp,mtx,txidpk,amount+PAYMENTS_TXFEE,60,createtxid,latestheight)) >= amount )
                 {
                     std::string rawtx;
@@ -388,7 +407,7 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
                     rawtx = FinalizeCCTx(0,cp,mtx,mypk,PAYMENTS_TXFEE,onlyopret);
                     if ( params != 0 )
                         free_json(params);
-                    return(payments_rawtxresult(result,rawtx,0));
+                    return(payments_rawtxresult(result,rawtx,1));
                 }
                 else
                 {
@@ -664,7 +683,7 @@ UniValue PaymentsInfo(struct CCcontract_info *cp,char *jsonstr)
     return(result);
 }
 
-UniValue PaymentsList(struct CCcontract_info *cp,char *jsonstr)
+UniValue PaymentsList(struct CCcontract_info *cp)
 {
     std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex; uint256 txid,hashBlock;
     UniValue result(UniValue::VOBJ),a(UniValue::VARR); char markeraddr[64],str[65]; CPubKey Paymentspk; CTransaction tx; int32_t lockedblocks,minrelease,totalallocations; std::vector<uint256> txidoprets;

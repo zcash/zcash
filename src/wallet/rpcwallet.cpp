@@ -5653,7 +5653,7 @@ UniValue payments_list(const UniValue& params, bool fHelp)
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
     cp = CCinit(&C,EVAL_PAYMENTS);
-    return(PaymentsList(cp,""));
+    return(PaymentsList(cp));
 }
 
 UniValue oraclesaddress(const UniValue& params, bool fHelp)
