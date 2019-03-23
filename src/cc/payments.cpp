@@ -290,7 +290,7 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
                         return(eval->Invalid("vin not elegible"));
                     }
                     //fprintf(stderr, "vin txid.%s\n", txin.GetHash().GetHex().c_str());
-                }
+                } else return(eval->Invalid("cant get vin transaction"));
                 i++;
             }
         } else return(eval->Invalid("create transaction cannot decode"));
