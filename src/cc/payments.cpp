@@ -148,27 +148,155 @@ int64_t IsPaymentsvout(struct CCcontract_info *cp,const CTransaction& tx,int32_t
     return(0);
 }
 
+void pub2createtxid(char *str)
+{
+    int i,n;
+    char *rev;
+    n = (int32_t)strlen(str);
+    rev = (char *)malloc(n + 1);
+    for (i=0; i<n; i+=2)
+    {
+        rev[n-2-i] = str[i];
+        rev[n-1-i] = str[i+1];
+    }
+    rev[n] = 0;
+    strcpy(str,rev);
+    free(rev);
+}
+
 bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
 {
-    // one of two addresses
+    char temp[128], coinaddr[64], txidaddr[64];
+    std::string scriptpubkey;  
+    uint256 createtxid;
+    uint256 blockhash; 
+    CTransaction tmptx;
+    int32_t lockedblocks,minrelease,totalallocations;
+    std::vector<uint256> txidoprets;
+    int32_t i; bool fHasOpret = false;
+    CPubKey txidpk,Paymentspk;
+    int64_t change;
+    
+    //the nValue 0 vout at the end of the tx (last one if no opret)
+    //it is a pay to pubkey vout
+    //the "pubkey" is just 0x02 <createtxid>
+    if ( tx.vout.size() < 2 )
+        return(false);
+    if ( tx.vout.back().scriptPubKey[0] == OP_RETURN )
+    {
+        scriptpubkey = HexStr(tx.vout[tx.vout.size()-2].scriptPubKey.begin()+2, tx.vout[tx.vout.size()-2].scriptPubKey.end()-1);  
+        fHasOpret = true;
+    } else scriptpubkey = HexStr(tx.vout[tx.vout.size()-1].scriptPubKey.begin()+2,tx.vout[tx.vout.size()-1].scriptPubKey.end()-1);
+    strcpy(temp, scriptpubkey.c_str());
+    pub2createtxid(temp);
+    createtxid = Parseuint256(temp);
+    //printf("createtxid.%s\n",createtxid.ToString().c_str());
+    
+    // use the createtxid to fetch the tx and all of the plans info.
+    if ( myGetTransaction(createtxid,tmptx,blockhash) != 0 )
+    {
+        if ( tmptx.vout.size() > 0 && DecodePaymentsOpRet(tmptx.vout[tmptx.vout.size()-1].scriptPubKey,lockedblocks,minrelease,totalallocations,txidoprets) != 0 )
+        {
+            if ( lockedblocks < 0 || minrelease < 0 || totalallocations <= 0 || txidoprets.size() < 2 )
+                return(false);
+            Paymentspk = GetUnspendable(cp,0);
+            //fprintf(stderr, "lockedblocks.%i minrelease.%i totalallocations.%i txidopret1.%s txidopret2.%s\n",lockedblocks, minrelease, totalallocations, txidoprets[0].ToString().c_str(), txidoprets[1].ToString().c_str() );
+            
+            // Get all the script pubkeys and allocations
+            std::vector<int32_t> allocations;
+            std::vector<CScript> scriptPubKeys;
+            int32_t checkallocations = 0;
+            i = 0;
+            BOOST_FOREACH(const uint256& txidopret, txidoprets)
+            {
+                CTransaction tx0; std::vector<uint8_t> scriptPubKey,opret; int32_t allocation;
+                if ( myGetTransaction(txidopret,tx0,blockhash) != 0 && tx0.vout.size() > 1 && DecodePaymentsTxidOpRet(tx0.vout[tx0.vout.size()-1].scriptPubKey,allocation,scriptPubKey,opret) == 'T' )
+                {
+                    scriptPubKeys.push_back(CScript(scriptPubKey.begin(), scriptPubKey.end()));
+                    allocations.push_back(allocation);
+                    //fprintf(stderr, "i.%i scriptpubkey.%s allocation.%i\n",i,scriptPubKeys[i].ToString().c_str(),allocation);
+                    checkallocations += allocation;
+                }
+                i++;
+            }
+            
+            // sanity check to make sure we got all the required info
+            if ( allocations.size() == 0 || scriptPubKeys.size() == 0 || allocations.size() != scriptPubKeys.size() )
+                return(false);
+                
+            //fprintf(stderr, "totalallocations.%i checkallocations.%i\n",totalallocations, checkallocations);
+            if ( totalallocations != checkallocations )
+                return(false);
+            
+            txidpk = CCtxidaddr(txidaddr,createtxid);
+            GetCCaddress1of2(cp,coinaddr,Paymentspk,txidpk);
+            //fprintf(stderr, "coinaddr.%s\n", coinaddr);
+            
+            // make sure change is in vout 0 and is paying to the contract address.
+            if ( (change= IsPaymentsvout(cp,tx,0,coinaddr)) == 0 )
+                return(false);
+            
+            // Check vouts go to the right place and pay the right amounts. 
+            int64_t amount = 0, checkamount; int32_t n = 0;
+            checkamount = tx.GetValueOut() - change - PAYMENTS_TXFEE;
+            for (i = 1; i < (fHasOpret ? tx.vout.size()-2 : tx.vout.size()-1); i++) {
+                std::string destscriptPubKey = HexStr(scriptPubKeys[n].begin(),scriptPubKeys[n].end());
+                std::string voutscriptPubKey = HexStr(tx.vout[i].scriptPubKey.begin(),tx.vout[i].scriptPubKey.end());
+                if ( destscriptPubKey != voutscriptPubKey )
+                {
+                    fprintf(stderr, "pays wrong destination destscriptPubKey.%s voutscriptPubKey.%s\n", destscriptPubKey.c_str(), voutscriptPubKey.c_str());
+                    return(false);
+                }
+                int64_t test = allocations[n];
+                test *= checkamount;
+                test /= totalallocations;
+                if ( test != tx.vout[i].nValue )
+                {
+                    fprintf(stderr, "vout.%i test.%li vs nVlaue.%li\n",i, test, tx.vout[i].nValue);
+                    return(false);
+                }
+                amount += tx.vout[i].nValue;
+                n++;
+            }
+            if ( checkamount != amount )
+                return(false);
+            
+            if ( amount < minrelease*COIN )
+            {
+                fprintf(stderr, "does not meet minrelease amount.%li minrelease.%li\n",amount, (int64_t)minrelease*COIN );
+                return(false);
+            }
+            
+            i = 0;
+            BOOST_FOREACH(const CTxIn& vin, tx.vin)
+            {
+                CTransaction txin;
+                if ( myGetTransaction(vin.prevout.hash,txin,blockhash) )
+                {
+                    // check the vin comes from the CC address's
+                    if ( IsPaymentsvout(cp,txin,i,coinaddr) != 0 )
+                    {
+                        fprintf(stderr, "vin.%i is not a payments CC vout\n", i);
+                        return(false);
+                    }
+                    // check the chain depth vs locked blcoks requirement. 
+                    CBlockIndex* pblockindex = mapBlockIndex[blockhash];
+                    if ( pblockindex->GetHeight() > chainActive.LastTip()->GetHeight()-lockedblocks )
+                    {
+                        fprintf(stderr, "vin.%i is not elegible to be spent yet height.%i vs elegible_ht.%i\n", i, pblockindex->GetHeight(), chainActive.LastTip()->GetHeight()-lockedblocks);
+                        return(false);
+                    }
+                    //fprintf(stderr, "vin txid.%s\n", txin.GetHash().GetHex().c_str());
+                }
+                i++;
+            }
+        }
+    }
+    // one of two addresses? only seems to ever use the 1!
     // change must go to 1of2 txidaddr
     //    change is/must be in vout[0]
     // only 'F' or 1of2 txidaddr can be spent
     // all vouts must match exactly
-    BOOST_FOREACH(const CTxIn& vin, tx.vin)
-    {
-        uint256 blockhash; CTransaction txin;
-        if ( myGetTransaction(vin.prevout.hash,txin,blockhash) )
-        {
-            fprintf(stderr, "vin txid.%s\n", txin.GetHash().GetHex().c_str());
-        }
-    }
-    
-    BOOST_FOREACH(const CTxOut& vout, tx.vout)
-    {
-        fprintf(stderr, "vout txid.%s\n", vout.GetHash().GetHex().c_str());
-    }
-    
     return(true);
 }
 // end of consensus code
@@ -411,7 +539,7 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
                         free_json(params);
                     result.push_back(Pair("amount",ValueFromAmount(amount)));
                     result.push_back(Pair("newamount",ValueFromAmount(newamount)));
-                    return(payments_rawtxresult(result,rawtx,0));
+                    return(payments_rawtxresult(result,rawtx,1));
                 }
                 else
                 {
@@ -691,7 +819,7 @@ UniValue PaymentsInfo(struct CCcontract_info *cp,char *jsonstr)
     return(result);
 }
 
-UniValue PaymentsList(struct CCcontract_info *cp)
+UniValue PaymentsList(struct CCcontract_info *cp,char *jsonstr)
 {
     std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex; uint256 txid,hashBlock;
     UniValue result(UniValue::VOBJ),a(UniValue::VARR); char markeraddr[64],str[65]; CPubKey Paymentspk; CTransaction tx; int32_t lockedblocks,minrelease,totalallocations; std::vector<uint256> txidoprets;
