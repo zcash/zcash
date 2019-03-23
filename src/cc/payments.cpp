@@ -181,7 +181,7 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
     //it is a pay to pubkey vout
     //the "pubkey" is just 0x02 <createtxid>
     if ( tx.vout.size() < 2 )
-        return(false);
+        return(eval->Invalid("not enough vouts"));
     if ( tx.vout.back().scriptPubKey[0] == OP_RETURN )
     {
         scriptpubkey = HexStr(tx.vout[tx.vout.size()-2].scriptPubKey.begin()+2, tx.vout[tx.vout.size()-2].scriptPubKey.end()-1);  
@@ -198,7 +198,7 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
         if ( tmptx.vout.size() > 0 && DecodePaymentsOpRet(tmptx.vout[tmptx.vout.size()-1].scriptPubKey,lockedblocks,minrelease,totalallocations,txidoprets) != 0 )
         {
             if ( lockedblocks < 0 || minrelease < 0 || totalallocations <= 0 || txidoprets.size() < 2 )
-                return(false);
+                return(eval->Invalid("negative values"));
             Paymentspk = GetUnspendable(cp,0);
             //fprintf(stderr, "lockedblocks.%i minrelease.%i totalallocations.%i txidopret1.%s txidopret2.%s\n",lockedblocks, minrelease, totalallocations, txidoprets[0].ToString().c_str(), txidoprets[1].ToString().c_str() );
             
@@ -222,11 +222,11 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
             
             // sanity check to make sure we got all the required info
             if ( allocations.size() == 0 || scriptPubKeys.size() == 0 || allocations.size() != scriptPubKeys.size() )
-                return(false);
+                return(eval->Invalid("missing data cannot validate"));
                 
             //fprintf(stderr, "totalallocations.%i checkallocations.%i\n",totalallocations, checkallocations);
             if ( totalallocations != checkallocations )
-                return(false);
+                return(eval->Invalid("allocation missmatch"));
             
             txidpk = CCtxidaddr(txidaddr,createtxid);
             GetCCaddress1of2(cp,coinaddr,Paymentspk,txidpk);
@@ -234,7 +234,7 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
             
             // make sure change is in vout 0 and is paying to the contract address.
             if ( (change= IsPaymentsvout(cp,tx,0,coinaddr)) == 0 )
-                return(false);
+                return(eval->Invalid("change is in wrong vout or is wrong tx type"));
             
             // Check vouts go to the right place and pay the right amounts. 
             int64_t amount = 0, checkamount; int32_t n = 0;
@@ -245,7 +245,7 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
                 if ( destscriptPubKey != voutscriptPubKey )
                 {
                     fprintf(stderr, "pays wrong destination destscriptPubKey.%s voutscriptPubKey.%s\n", destscriptPubKey.c_str(), voutscriptPubKey.c_str());
-                    return(false);
+                    return(eval->Invalid("pays wrong address"));
                 }
                 int64_t test = allocations[n];
                 test *= checkamount;
@@ -253,18 +253,19 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
                 if ( test != tx.vout[i].nValue )
                 {
                     fprintf(stderr, "vout.%i test.%li vs nVlaue.%li\n",i, test, tx.vout[i].nValue);
-                    return(false);
+                    //return(eval->Invalid("amounts do not match"));
                 }
                 amount += tx.vout[i].nValue;
                 n++;
             }
+            // This is a backup check to make sure there are no extra vouts paying something else!
             if ( checkamount != amount )
-                return(false);
+                return(eval->Invalid("amounts do not match"));
             
             if ( amount < minrelease*COIN )
             {
                 fprintf(stderr, "does not meet minrelease amount.%li minrelease.%li\n",amount, (int64_t)minrelease*COIN );
-                return(false);
+                //return(eval->Invalid("amount is too small"));
             }
             
             i = 0;
@@ -274,24 +275,26 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
                 if ( myGetTransaction(vin.prevout.hash,txin,blockhash) )
                 {
                     // check the vin comes from the CC address's
-                    if ( IsPaymentsvout(cp,txin,i,coinaddr) != 0 )
+                    char destaddr[64];
+                    Getscriptaddress(destaddr,txin.vout[vin.prevout.n].scriptPubKey);
+                    if ( strcmp(destaddr,coinaddr) != 0 )
                     {
-                        fprintf(stderr, "vin.%i is not a payments CC vout\n", i);
-                        return(false);
+                        fprintf(stderr, "vin.%i is not a payments CC vout: txid.%s vout.%i\n", i, txin.GetHash().ToString().c_str(), vin.prevout.n);
+                        return(eval->Invalid("vin is not paymentsCC type"));
                     }
                     // check the chain depth vs locked blcoks requirement. 
                     CBlockIndex* pblockindex = mapBlockIndex[blockhash];
                     if ( pblockindex->GetHeight() > chainActive.LastTip()->GetHeight()-lockedblocks )
                     {
                         fprintf(stderr, "vin.%i is not elegible to be spent yet height.%i vs elegible_ht.%i\n", i, pblockindex->GetHeight(), chainActive.LastTip()->GetHeight()-lockedblocks);
-                        return(false);
+                        return(eval->Invalid("vin not elegible"));
                     }
                     //fprintf(stderr, "vin txid.%s\n", txin.GetHash().GetHex().c_str());
                 }
                 i++;
             }
-        }
-    }
+        } else return(eval->Invalid("create transaction cannot decode"));
+    } else fprintf(stderr, "cannot get contract txn\n");//return(eval->Invalid("Could not get contract transaction"));
     // one of two addresses? only seems to ever use the 1!
     // change must go to 1of2 txidaddr
     //    change is/must be in vout[0]
