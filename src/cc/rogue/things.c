@@ -527,6 +527,7 @@ add_line(struct rogue_state *rs,char *fmt, char *arg)
                 touchwin(tw);
                 wrefresh(tw);
                 wait_for(rs,' ');
+				
                 if (md_hasclreol())
                 {
                     werase(tw);
@@ -543,16 +544,31 @@ add_line(struct rogue_state *rs,char *fmt, char *arg)
 	    }
 	    else
 	    {
+			char *promptex = "--Wait 5 sec.--";
             wmove(hw, LINES - 1, 0);
-            waddstr(hw, prompt);
+            waddstr(hw, newpage ? promptex : prompt);
             wrefresh(hw);
-            wait_for(rs,' ');
+            
+			if (newpage) {
+
+				#ifdef _WIN32
+				#ifdef _MSC_VER
+				#define sleep(x) Sleep(1000*(x))
+				#endif
+				#endif
+				sleep(5);
+
+			} else
+				wait_for(rs, ' ');
+
             clearok(curscr, TRUE);
             wclear(hw);
+			
             touchwin(stdscr);
         }
         newpage = TRUE;
         line_cnt = 0;
+
         maxlen = (int) strlen(prompt);
 	}
 	if (fmt != NULL && !(line_cnt == 0 && *fmt == '\0'))

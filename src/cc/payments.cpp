@@ -310,7 +310,7 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
 {
     int32_t latestheight,nextheight = komodo_nextheight();
     CMutableTransaction tmpmtx,mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(),nextheight); UniValue result(UniValue::VOBJ); uint256 createtxid,hashBlock;
-    CTransaction tx,txO; CPubKey mypk,txidpk,Paymentspk; int32_t i,n,m,numoprets=0,lockedblocks,minrelease,totalallocations,checkallocations=0,allocation; int64_t inputsum,amount,CCchange=0; CTxOut vout; CScript onlyopret; char txidaddr[64],destaddr[64]; std::vector<uint256> txidoprets;
+    CTransaction tx,txO; CPubKey mypk,txidpk,Paymentspk; int32_t i,n,m,numoprets=0,lockedblocks,minrelease,totalallocations,checkallocations=0,allocation; int64_t newamount,inputsum,amount,CCchange=0; CTxOut vout; CScript onlyopret; char txidaddr[64],destaddr[64]; std::vector<uint256> txidoprets;
     cJSON *params = payments_reparse(&n,jsonstr);
     mypk = pubkey2pk(Mypubkey());
     Paymentspk = GetUnspendable(cp,0);
@@ -352,13 +352,14 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
                         checkallocations += allocation;
                         if ( opret.size() > 0 )
                         {
-                            scriptPubKey.resize(opret.size());
+                            onlyopret.resize(opret.size());
                             memcpy(&onlyopret[0],&opret[0],opret.size());
                             numoprets++;
                         }
                     } else break;
                     mtx.vout.push_back(vout);
                 }
+                result.push_back(Pair("numoprets",(int64_t)numoprets));
                 if ( i != m )
                 {
                     result.push_back(Pair("result","error"));
@@ -382,29 +383,35 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
                 {
                     result.push_back(Pair("result","error"));
                     result.push_back(Pair("error","too many oprets"));
-                    result.push_back(Pair("numoprets",(int64_t)numoprets));
                     if ( params != 0 )
                         free_json(params);
                     return(result);
                 }
+                newamount = amount;
                 for (i=0; i<m; i++)
                 {
                     mtx.vout[i+1].nValue *= amount;
                     mtx.vout[i+1].nValue /= totalallocations;
+                    if ( mtx.vout[i+1].nValue < PAYMENTS_TXFEE )
+                    {
+                        newamount += (PAYMENTS_TXFEE - mtx.vout[i+1].nValue);
+                        mtx.vout[i+1].nValue = PAYMENTS_TXFEE;
+                    }
                 }
-                //fprintf(stderr,"addinputs %.8f\n",(double)amount/COIN);
-                if ( (inputsum= AddPaymentsInputs(cp,mtx,txidpk,amount+PAYMENTS_TXFEE,60,createtxid,latestheight)) >= amount )
+                if ( (inputsum= AddPaymentsInputs(cp,mtx,txidpk,newamount+2*PAYMENTS_TXFEE,CC_MAXVINS/2,createtxid,latestheight)) >= newamount+2*PAYMENTS_TXFEE )
                 {
                     std::string rawtx;
-                    if ( (CCchange= (inputsum - amount)) >= PAYMENTS_TXFEE )
-                        mtx.vout[0].nValue = CCchange-PAYMENTS_TXFEE;
+                    if ( (CCchange= (inputsum - newamount - 2*PAYMENTS_TXFEE)) >= PAYMENTS_TXFEE )
+                        mtx.vout[0].nValue = CCchange;
                     mtx.vout.push_back(CTxOut(PAYMENTS_TXFEE,CScript() << ParseHex(HexStr(txidpk)) << OP_CHECKSIG));
                     GetCCaddress1of2(cp,destaddr,Paymentspk,txidpk);
                     CCaddr1of2set(cp,Paymentspk,txidpk,cp->CCpriv,destaddr);
                     rawtx = FinalizeCCTx(0,cp,mtx,mypk,PAYMENTS_TXFEE,onlyopret);
                     if ( params != 0 )
                         free_json(params);
-                    return(payments_rawtxresult(result,rawtx,1));
+                    result.push_back(Pair("amount",ValueFromAmount(amount)));
+                    result.push_back(Pair("newamount",ValueFromAmount(newamount)));
+                    return(payments_rawtxresult(result,rawtx,0));
                 }
                 else
                 {
@@ -624,34 +631,38 @@ UniValue PaymentsInfo(struct CCcontract_info *cp,char *jsonstr)
                 for (i=0; i<txidoprets.size(); i++)
                 {
                     UniValue obj(UniValue::VOBJ); std::vector<uint8_t> scriptPubKey,opret;
-                    obj.push_back(Pair("txidopret",txidoprets[i].GetHex()));
+                    obj.push_back(Pair("txid",txidoprets[i].GetHex()));
                     if ( myGetTransaction(txidoprets[i],txO,hashBlock) != 0 && txO.vout.size() > 1 && DecodePaymentsTxidOpRet(txO.vout[txO.vout.size()-1].scriptPubKey,allocation,scriptPubKey,opret) == 'T' )
                     {
-                        outstr = (char *)malloc(scriptPubKey.size() + opret.size() + 1);
+                        outstr = (char *)malloc(2*(scriptPubKey.size() + opret.size()) + 1);
                         for (j=0; j<scriptPubKey.size(); j++)
-                            outstr[j] = scriptPubKey[j];
-                        outstr[j] = 0;
+                            sprintf(&outstr[j<<1],"%02x",scriptPubKey[j]);
+                        outstr[j<<1] = 0;
+                        //fprintf(stderr,"scriptPubKey.(%s)\n",outstr);
                         obj.push_back(Pair("scriptPubKey",outstr));
                         if ( opret.size() != 0 )
                         {
                             for (j=0; j<opret.size(); j++)
-                                outstr[j] = opret[j];
-                            outstr[j] = 0;
+                                sprintf(&outstr[j<<1],"%02x",opret[j]);
+                            outstr[j<<1] = 0;
+                            //fprintf(stderr,"opret.(%s)\n",outstr);
                             obj.push_back(Pair("opreturn",outstr));
                             numoprets++;
                         }
                         free(outstr);
-                    }
+                    } else fprintf(stderr,"error decoding voutsize.%d\n",(int32_t)txO.vout.size());
+                    a.push_back(obj);
                 }
                 flag++;
+                result.push_back(Pair("numoprets",(int64_t)numoprets));
                 if ( numoprets > 1 )
                 {
                     result.push_back(Pair("result","error"));
                     result.push_back(Pair("error","too many opreturns"));
-                    result.push_back(Pair("numoprets",(int64_t)numoprets));
                 }
                 else
                 {
+                    result.push_back(Pair("txidoprets",a));
                     txidpk = CCtxidaddr(txidaddr,createtxid);
                     GetCCaddress1of2(cp,fundsaddr,Paymentspk,txidpk);
                     funds = CCaddress_balance(fundsaddr);
