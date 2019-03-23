@@ -931,6 +931,23 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey, int32_t nHeight, 
     return CreateNewBlock(pubkey, scriptPubKey, gpucount, isStake);
 }
 
+void komodo_sendmessage(int32_t minpeers,int32_t maxpeers,const char *message,std::vector<uint8_t> payload)
+{
+    int32_t numsent = 0;
+    LOCK(cs_vNodes);
+    BOOST_FOREACH(CNode* pnode, vNodes)
+    {
+        if ( pnode->hSocket == INVALID_SOCKET )
+            continue;
+        if ( numsent < minpeers || (rand() % 10) == 0 )
+        {
+            pnode->PushMessage(message,payload);
+            if ( numsent++ > maxpeers )
+                break;
+        }
+    }
+}
+
 void komodo_broadcast(CBlock *pblock,int32_t limit)
 {
     if (IsInitialBlockDownload())
