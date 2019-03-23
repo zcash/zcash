@@ -3,7 +3,7 @@ name: "zcash-2.0.4-rc1"
 enable_cache: true
 distro: "debian"
 suites:
-- "jessie"
+- "stretch"
 architectures:
 - "amd64"
 packages:
