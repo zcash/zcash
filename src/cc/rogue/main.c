@@ -786,10 +786,13 @@ int32_t rogue_sendrawtransaction(char *rawtx)
 
 void rogue_progress(struct rogue_state *rs,int32_t waitflag,uint64_t seed,char *keystrokes,int32_t num)
 {
+    static uint32_t lasttime;
     char cmd[16384],hexstr[16384],params[32768],*retstr,*rawtx,*pastkeys,*pastcmp,*keys; int32_t i,len,numpastkeys; cJSON *retjson,*resobj;
     //fprintf(stderr,"rogue_progress num.%d\n",num);
     if ( rs->guiflag != 0 && Gametxidstr[0] != 0 )
     {
+        if ( waitflag == 0 && time(NULL) < lasttime+300 )
+            return;
         if ( rs->keystrokeshex != 0 )
         {
             if ( rogue_sendrawtransaction(rs->keystrokeshex) == 0 )
@@ -884,6 +887,7 @@ void rogue_progress(struct rogue_state *rs,int32_t waitflag,uint64_t seed,char *
                 free(rs->keystrokeshex), rs->keystrokeshex = 0;
             }
         }
+        lasttime = (uint32_t)time(NULL);
     }
 }
 
