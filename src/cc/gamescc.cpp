@@ -167,26 +167,20 @@ UniValue games_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 
 int32_t games_eventsign(std::vector<uint8_t> &sig,std::vector<uint8_t> payload,CPubKey pk)
 {
-    bool signSuccess; SignatureData sigdata; int32_t i,siglen; uint256 hash; uint8_t *ptr; auto consensusBranchId = 0; CMutableTransaction txNew;
-    const CKeyStore& keystore = *pwalletMain;
-    txNew.vin.resize(1);
-    txNew.vout.resize(1);
-    vcalc_sha256(0,(uint8_t *)&txNew.vin[0].prevout.hash,&payload[0],(int32_t)payload.size());
-    txNew.vin[0].prevout.n = 0;
-    txNew.vout[0].scriptPubKey = CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG;
-    txNew.vout[0].nValue = payload.size();
-    txNew.nLockTime = 0;
-    CTransaction txNewConst(txNew);
-    signSuccess = ProduceSignature(TransactionSignatureCreator(&keystore, &txNewConst, 0, payload.size(), SIGHASH_ALL), txNew.vout[0].scriptPubKey, sigdata, consensusBranchId);
-    if ( signSuccess > 0 )
+    static void *ctx;
+    size_t siglen = 74; secp256k1_ecdsa_signature signature; uint8_t privkey[32];
+    if ( ctx == 0 )
+        ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN);
+    if ( ctx != 0 )
     {
-        UpdateTransaction(txNew,0,sigdata);
-        ptr = (uint8_t *)&sigdata.scriptSig[0];
-        siglen = sigdata.scriptSig.size();
-        sig.resize(siglen);
-        for (i=0; i<siglen; i++)
-            sig[i] = ptr[i];
-        return(0);
+        Myprivkey(privkey);
+        if ( secp256k1_ecdsa_sign(ctx,&signature,(uint8_t *)&hash,privkey,NULL,NULL) > 0 )
+        {
+            sig.resize(siglen);
+            if ( secp256k1_ecdsa_signature_serialize_der(ctx,&sig[0],&siglen,&signature) > 0 )
+                return(0);
+            else return(-3);
+        } else return(-2);
     } else return(-1);
 }
 
