@@ -707,40 +707,6 @@ int32_t games_iamregistered(int32_t maxplayers,uint256 gametxid,CTransaction tx,
     return(0);
 }
 
-void games_gameplayerinfo(struct CCcontract_info *cp,UniValue &obj,uint256 gametxid,CTransaction gametx,int32_t vout,int32_t maxplayers,char *mygamesaddr)
-{
-    // identify if bailout or quit or timed out
-    uint256 batontxid,spenttxid,gtxid,ptxid,tokenid,hashBlock,playertxid; CTransaction spenttx,batontx; int32_t numplayers,regslot,numkeys,batonvout,batonht,retval; int64_t batonvalue; std::vector<uint8_t> playerdata; char destaddr[64]; std::string symbol,pname;
-    destaddr[0] = 0;
-    if ( myIsutxo_spent(spenttxid,gametxid,vout) >= 0 )
-    {
-        if ( myGetTransaction(spenttxid,spenttx,hashBlock) != 0 && spenttx.vout.size() > 0 )
-            Getscriptaddress(destaddr,spenttx.vout[0].scriptPubKey);
-    }
-    obj.push_back(Pair("slot",(int64_t)vout-1));
-    if ( (retval= games_findbaton(cp,playertxid,0,numkeys,regslot,playerdata,batontxid,batonvout,batonvalue,batonht,gametxid,gametx,maxplayers,destaddr,numplayers,symbol,pname)) == 0 )
-    {
-        if ( CCgettxout(gametxid,maxplayers+vout,1,0) == 10000 )
-        {
-            if ( myGetTransaction(batontxid,batontx,hashBlock) != 0 && batontx.vout.size() > 1 )
-            {
-                if ( games_registeropretdecode(gtxid,tokenid,ptxid,batontx.vout[batontx.vout.size()-1].scriptPubKey) == 'R' && ptxid == playertxid && gtxid == gametxid )
-                    obj.push_back(Pair("status","registered"));
-                else obj.push_back(Pair("status","alive"));
-            } else obj.push_back(Pair("status","error"));
-        } else obj.push_back(Pair("status","finished"));
-        obj.push_back(Pair("baton",batontxid.ToString()));
-        obj.push_back(Pair("tokenid",tokenid.ToString()));
-        obj.push_back(Pair("batonaddr",destaddr));
-        obj.push_back(Pair("ismine",strcmp(mygamesaddr,destaddr)==0));
-        obj.push_back(Pair("batonvout",(int64_t)batonvout));
-        obj.push_back(Pair("batonvalue",ValueFromAmount(batonvalue)));
-        obj.push_back(Pair("batonht",(int64_t)batonht));
-        if ( playerdata.size() > 0 )
-            obj.push_back(Pair("player",games_playerobj(playerdata,playertxid,tokenid,symbol,pname,gametxid)));
-    } else fprintf(stderr,"findbaton err.%d\n",retval);
-}
-
 uint64_t games_gamefields(UniValue &obj,int64_t maxplayers,int64_t buyin,uint256 gametxid,char *mygamesaddr)
 {
     CBlockIndex *pindex; int32_t ht,openslots,delay,numplayers; uint256 hashBlock; uint64_t seed=0; char cmd[512]; CTransaction tx;
@@ -934,6 +900,40 @@ int32_t games_findbaton(struct CCcontract_info *cp,uint256 &playertxid,char **ke
         } else fprintf(stderr,"findbaton opret error\n");
     }
     return(-1);
+}
+
+void games_gameplayerinfo(struct CCcontract_info *cp,UniValue &obj,uint256 gametxid,CTransaction gametx,int32_t vout,int32_t maxplayers,char *mygamesaddr)
+{
+    // identify if bailout or quit or timed out
+    uint256 batontxid,spenttxid,gtxid,ptxid,tokenid,hashBlock,playertxid; CTransaction spenttx,batontx; int32_t numplayers,regslot,numkeys,batonvout,batonht,retval; int64_t batonvalue; std::vector<uint8_t> playerdata; char destaddr[64]; std::string symbol,pname;
+    destaddr[0] = 0;
+    if ( myIsutxo_spent(spenttxid,gametxid,vout) >= 0 )
+    {
+        if ( myGetTransaction(spenttxid,spenttx,hashBlock) != 0 && spenttx.vout.size() > 0 )
+            Getscriptaddress(destaddr,spenttx.vout[0].scriptPubKey);
+    }
+    obj.push_back(Pair("slot",(int64_t)vout-1));
+    if ( (retval= games_findbaton(cp,playertxid,0,numkeys,regslot,playerdata,batontxid,batonvout,batonvalue,batonht,gametxid,gametx,maxplayers,destaddr,numplayers,symbol,pname)) == 0 )
+    {
+        if ( CCgettxout(gametxid,maxplayers+vout,1,0) == 10000 )
+        {
+            if ( myGetTransaction(batontxid,batontx,hashBlock) != 0 && batontx.vout.size() > 1 )
+            {
+                if ( games_registeropretdecode(gtxid,tokenid,ptxid,batontx.vout[batontx.vout.size()-1].scriptPubKey) == 'R' && ptxid == playertxid && gtxid == gametxid )
+                    obj.push_back(Pair("status","registered"));
+                else obj.push_back(Pair("status","alive"));
+            } else obj.push_back(Pair("status","error"));
+        } else obj.push_back(Pair("status","finished"));
+        obj.push_back(Pair("baton",batontxid.ToString()));
+        obj.push_back(Pair("tokenid",tokenid.ToString()));
+        obj.push_back(Pair("batonaddr",destaddr));
+        obj.push_back(Pair("ismine",strcmp(mygamesaddr,destaddr)==0));
+        obj.push_back(Pair("batonvout",(int64_t)batonvout));
+        obj.push_back(Pair("batonvalue",ValueFromAmount(batonvalue)));
+        obj.push_back(Pair("batonht",(int64_t)batonht));
+        if ( playerdata.size() > 0 )
+            obj.push_back(Pair("player",games_playerobj(playerdata,playertxid,tokenid,symbol,pname,gametxid)));
+    } else fprintf(stderr,"findbaton err.%d\n",retval);
 }
 
 UniValue games_create(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
