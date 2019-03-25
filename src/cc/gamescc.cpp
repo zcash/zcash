@@ -59,10 +59,9 @@ uint8_t games_eventdecode(uint32_t &timestamp,CPubKey &pk,std::vector<uint8_t> &
     timestamp = 0;
     if ( vopret.size() > 6 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> timestamp; ss >> pk; ss >> sig; ss >> payload) != 0 && e == EVAL_GAMES )
     {
-        fprintf(stderr,"timestamp %08x\n",timestamp);
         return(f);
     }
-    fprintf(stderr,"e.%d f.%d pk.%d sig.%d payload.%d\n",e,f,(int32_t)pk.size(),(int32_t)sig.size(),(int32_t)payload.size());
+    fprintf(stderr,"ERROR e.%d f.%d pk.%d sig.%d payload.%d\n",e,f,(int32_t)pk.size(),(int32_t)sig.size(),(int32_t)payload.size());
     return(0);
 }
 
@@ -178,7 +177,7 @@ UniValue games_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 int32_t games_eventsign(uint32_t &timestamp,std::vector<uint8_t> &sig,std::vector<uint8_t> payload,CPubKey pk)
 {
     static secp256k1_context *ctx;
-    size_t siglen = 74; secp256k1_ecdsa_signature signature; int32_t len; uint8_t privkey[32]; uint256 hash; uint32_t t;
+    size_t siglen = 74; secp256k1_pubkey pubkey; secp256k1_ecdsa_signature signature; int32_t len,verifyflag = 1; uint8_t privkey[32]; uint256 hash; uint32_t t;
     if ( ctx == 0 )
         ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN);
     if ( ctx != 0 )
@@ -186,26 +185,45 @@ int32_t games_eventsign(uint32_t &timestamp,std::vector<uint8_t> &sig,std::vecto
         Myprivkey(privkey);
         len = payload.size();
         payload.resize(len + 4);
-        t = timestamp = (uint32_t)time(NULL);
-        fprintf(stderr,"timestamp %08x\n",timestamp);
+        if ( timestamp == 0 )
+        {
+            timestamp = (uint32_t)time(NULL);
+            verifyflag = 0;
+        }
+        t = timestamp;
         payload[len++] = t, t >> 8;
         payload[len++] = t, t >> 8;
         payload[len++] = t, t >> 8;
         payload[len++] = t;
         vcalc_sha256(0,(uint8_t *)&hash,&payload[0],len);
-        if ( secp256k1_ecdsa_sign(ctx,&signature,(uint8_t *)&hash,privkey,NULL,NULL) > 0 )
+        if ( verifyflag == 0 )
         {
-            sig.resize(siglen);
-            if ( secp256k1_ecdsa_signature_serialize_der(ctx,&sig[0],&siglen,&signature) > 0 )
-                return(0);
-            else return(-3);
-        } else return(-2);
+            if ( secp256k1_ecdsa_sign(ctx,&signature,(uint8_t *)&hash,privkey,NULL,NULL) > 0 )
+            {
+                sig.resize(siglen);
+                if ( secp256k1_ecdsa_signature_serialize_der(ctx,&sig[0],&siglen,&signature) > 0 )
+                    return(0);
+                else return(-3);
+            } else return(-2);
+        }
+        else
+        {
+            if ( secp256k1_ec_pubkey_parse(ctx,&pubkey,pk.begin(),33) > 0 )
+            {
+                if ( secp256k1_ecdsa_signature_parse_der(ctx,&signature,&sig[0],sig.size()) > 0 )
+                {
+                    if ( secp256k1_ecdsa_verify(ctx,&signature,(uint8_t *)&hash,&pubkey) > 0 )
+                        return(0);
+                    else return(-4);
+                } else return(-3);
+            } else return(-2);
+        }
     } else return(-1);
 }
 
 UniValue games_events(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ); std::vector<uint8_t> sig,payload,vopret; int32_t n; CPubKey mypk; char str[67]; uint32_t timestamp;
+    UniValue result(UniValue::VOBJ); std::vector<uint8_t> sig,payload,vopret; int32_t n; CPubKey mypk; char str[67]; uint32_t timestamp = 0;
     if ( params != 0 && (n= cJSON_GetArraySize(params)) == 1 )
     {
         if ( payments_parsehexdata(payload,jitem(params,0),0) == 0 )
@@ -240,13 +258,18 @@ UniValue games_events(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 
 void komodo_netevent(std::vector<uint8_t> message)
 {
-    int32_t i; uint32_t timestamp,now; CPubKey pk; std::vector<uint8_t> sig,payload; char str[67];
+    int32_t i,retval; uint32_t timestamp,now; CPubKey pk; std::vector<uint8_t> sig,payload; char str[67];
     if ( games_eventdecode(timestamp,pk,sig,payload,message) == 'E' )
     {
         now = (uint32_t)time(NULL);
+        lag = now - timestamp;
+        if ( lag < -3 || lag > 3 )
+            fprintf(stderr,"LAG ERROR ");
+        if ( (retval= games_eventsign(timestamp,sig,payload,pk)) != 0 )
+            fprintf(stderr,"SIG ERROR.%d ",retval);
         for (i=0; i<payload.size(); i++)
             fprintf(stderr,"%02x",payload[i]);
-        fprintf(stderr," payload, got pk.%s siglen.%d lag.[%d]\n",pubkey33_str(str,(uint8_t *)&pk),(int32_t)sig.size(),now-timestamp);
+        fprintf(stderr," payload, got pk.%s siglen.%d lag.[%d]\n",pubkey33_str(str,(uint8_t *)&pk),(int32_t)sig.size(),lag);
     }
     else
     {
