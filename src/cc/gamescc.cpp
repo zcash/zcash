@@ -1682,8 +1682,6 @@ void games_packitemstr(char *packitemstr,struct games_packitem *item)
 #include <curl/curl.h>
 #include <curl/easy.h>
 
-void *malloc(size_t size);
-
 char USERPASS[8192]; uint16_t GAMES_PORT;
 extern char Gametxidstr[67];
 
