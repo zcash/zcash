@@ -1683,7 +1683,7 @@ void games_packitemstr(char *packitemstr,struct games_packitem *item)
 #include <time.h>
 #include <string.h>
 
-#ifdef BUILD_GAMES
+#ifdef BUILD_GAMESCC
 #include "cursesd.h"
 #else
 #include <curses.h>
