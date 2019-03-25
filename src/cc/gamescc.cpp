@@ -197,7 +197,6 @@ UniValue games_events(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                 komodo_sendmessage(4,8,"events",E_MARSHAL(ss << EVAL_GAMES << 'E' << mypk << sig << payload));
                 result.push_back(Pair("result","success"));
                 result.push_back(Pair("pubkey33",pubkey33_str(str,(uint8_t *)&mypk)));
-                result.push_back(Pair("sig",sig.HexStr()));
             }
             else
             {
