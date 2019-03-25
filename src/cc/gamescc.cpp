@@ -225,6 +225,11 @@ int32_t games_eventsign(uint32_t &timestamp,std::vector<uint8_t> &sig,std::vecto
     } else return(-1);
 }
 
+int32_t games_payload(CPubKey pk,uint32_t timestamp,std::vector<uint8_t> payload)
+{
+    return(0);
+}
+
 UniValue games_events(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     UniValue result(UniValue::VOBJ); std::vector<uint8_t> sig,payload,vopret; int32_t n; CPubKey mypk; char str[67]; uint32_t timestamp = 0;
@@ -236,6 +241,7 @@ UniValue games_events(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             if ( games_eventsign(timestamp,sig,payload,mypk) == 0 )
             {
                 GetOpReturnData(games_eventopret(timestamp,mypk,sig,payload),vopret);
+                games_payload(mypk,timestamp,payload);
                 komodo_sendmessage(4,8,"events",vopret);
                 result.push_back(Pair("result","success"));
                 result.push_back(Pair("pubkey33",pubkey33_str(str,(uint8_t *)&mypk)));
@@ -262,15 +268,26 @@ UniValue games_events(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 
 void komodo_netevent(std::vector<uint8_t> message)
 {
-    int32_t i,retval,lag; uint32_t timestamp,now; CPubKey pk; std::vector<uint8_t> sig,payload; char str[67];
+    int32_t i,retval,lag,lagerr=0; uint32_t timestamp,now; CPubKey pk; std::vector<uint8_t> sig,payload; char str[67];
     if ( games_eventdecode(timestamp,pk,sig,payload,message) == 'E' )
     {
         now = (uint32_t)time(NULL);
         lag = now - timestamp;
         if ( lag < -3 || lag > 3 )
+        {
             fprintf(stderr,"LAG ERROR ");
+            lagerr = lag;
+        }
         if ( (retval= games_eventsign(timestamp,sig,payload,pk)) != 0 )
             fprintf(stderr,"SIG ERROR.%d ",retval);
+        else if ( lagerr == 0 )
+        {
+            if ( games_payload(pk,timestamp,payload) == 0 ) // first time this is seen
+            {
+                if ( (rand() % 10) == 0 )
+                    komodo_sendmessage(2,2,"events",message);
+            }
+        }
         for (i=0; i<payload.size(); i++)
             fprintf(stderr,"%02x",payload[i]);
         fprintf(stderr," payload, got pk.%s siglen.%d lag.[%d]\n",pubkey33_str(str,(uint8_t *)&pk),(int32_t)sig.size(),lag);
