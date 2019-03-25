@@ -229,7 +229,21 @@ int32_t games_eventsign(uint32_t &timestamp,std::vector<uint8_t> &sig,std::vecto
 
 int32_t games_payload(CPubKey pk,uint32_t timestamp,std::vector<uint8_t> payload)
 {
-    return(0);
+    uint8_t gametxid; int32_t i,len; char str[67]; uint32_t eventid = 0;
+    if ( (len= payload.size()) > 36 )
+    {
+        len -= 36;
+        for (i=0; i<32; i++)
+            ((uint8_t *)&gametxid)[i] = payload[len+i];
+        eventid = (uint32_t)payload[len+32];
+        eventid |= (uint32_t)payload[len+33] << 8;
+        eventid |= (uint32_t)payload[len+34] << 16;
+        eventid |= (uint32_t)payload[len+35] << 24;
+        for (i=0; i<len; i++)
+            fprintf(stderr,"%02x",payload[i]);
+        fprintf(stderr," got payload, from %s %s/e%d\n",pubkey33_str(str,(uint8_t *)&pk),gametxid.GetHex().c_str(),eventid);
+        return(0);
+    } else return(-1);
 }
 
 UniValue games_events(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
