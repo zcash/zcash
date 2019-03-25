@@ -171,7 +171,7 @@ int32_t games_eventsign(std::vector<uint8_t> &sig,std::vector<uint8_t> payload,C
     const CKeyStore& keystore = *pwalletMain;
     txNew.vin.resize(1);
     txNew.vout.resize(1);
-    txNew.vin[0].prevout.hash = payload.GetHash();
+    vcalc_sha256(0,(uint8_t *)&txNew.vin[0].prevout.hash,&payload[0],(int32_t)payload.size());
     txNew.vin[0].prevout.n = 0;
     txNew.vout[0].scriptPubKey = CScript() << payload << OP_DROP << ParseHex(HexStr(pk)) << OP_CHECKSIG;
     txNew.vout[0].nValue = payload.size();
@@ -230,7 +230,7 @@ void komodo_netevent(std::vector<uint8_t> message)
     {
         for (i=0; i<payload.size(); i++)
             fprintf(stderr,"%02x",payload[i]);
-        fprintf(stderr," payload, got pk.%s siglen.%d\n",pubkey33_str(str,(uint8_t *)pk),(int32_t)sig.size());
+        fprintf(stderr," payload, got pk.%s siglen.%d\n",pubkey33_str(str,(uint8_t *)&pk),(int32_t)sig.size());
     }
     else
     {
