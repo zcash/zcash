@@ -191,11 +191,11 @@ int32_t games_eventsign(std::vector<uint8_t> &sig,std::vector<uint8_t> payload,C
         Myprivkey(privkey);
         len = payload.size();
         payload.resize(len + 4);
-        timestamp = (uin32_t)time(NULL);
+        timestamp = (uint32_t)time(NULL);
         payload[len++] = timestamp, timestamp >> 8;
         payload[len++] = timestamp, timestamp >> 8;
         payload[len++] = timestamp, timestamp >> 8;
-        payload[len++] = timestamp, timestamp >> 8;
+        payload[len++] = timestamp;
         vcalc_sha256(0,(uint8_t *)&hash,&payload[0],len);
         if ( secp256k1_ecdsa_sign(ctx,&signature,(uint8_t *)&hash,privkey,NULL,NULL) > 0 )
         {
