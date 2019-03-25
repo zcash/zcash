@@ -77,14 +77,14 @@
 
 // start of consensus code
 
-CScript EncodePaymentsTxidOpRet(int32_t allocation,std::vector<uint8_t> scriptPubKey,std::vector<uint8_t> destopret)
+CScript EncodePaymentsTxidOpRet(int64_t allocation,std::vector<uint8_t> scriptPubKey,std::vector<uint8_t> destopret)
 {
     CScript opret; uint8_t evalcode = EVAL_PAYMENTS;
     opret << OP_RETURN << E_MARSHAL(ss << evalcode << 'T' << allocation << scriptPubKey << destopret);
     return(opret);
 }
 
-uint8_t DecodePaymentsTxidOpRet(CScript scriptPubKey,int32_t &allocation,std::vector<uint8_t> &destscriptPubKey,std::vector<uint8_t> &destopret)
+uint8_t DecodePaymentsTxidOpRet(CScript scriptPubKey,int64_t &allocation,std::vector<uint8_t> &destscriptPubKey,std::vector<uint8_t> &destopret)
 {
     std::vector<uint8_t> vopret; uint8_t *script,e,f;
     GetOpReturnData(scriptPubKey, vopret);
@@ -117,14 +117,14 @@ uint8_t DecodePaymentsFundOpRet(CScript scriptPubKey,uint256 &checktxid)
     return(0);
 }
 
-CScript EncodePaymentsOpRet(int32_t lockedblocks,int32_t minrelease,int32_t totalallocations,std::vector<uint256> txidoprets)
+CScript EncodePaymentsOpRet(int32_t lockedblocks,int32_t minrelease,int64_t totalallocations,std::vector<uint256> txidoprets)
 {
     CScript opret; uint8_t evalcode = EVAL_PAYMENTS;
     opret << OP_RETURN << E_MARSHAL(ss << evalcode << 'C' << lockedblocks << minrelease << totalallocations << txidoprets);
     return(opret);
 }
 
-uint8_t DecodePaymentsOpRet(CScript scriptPubKey,int32_t &lockedblocks,int32_t &minrelease,int32_t &totalallocations,std::vector<uint256> &txidoprets)
+uint8_t DecodePaymentsOpRet(CScript scriptPubKey,int32_t &lockedblocks,int32_t &minrelease,int64_t &totalallocations,std::vector<uint256> &txidoprets)
 {
     std::vector<uint8_t> vopret; uint8_t *script,e,f;
     GetOpReturnData(scriptPubKey, vopret);
@@ -172,7 +172,7 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
     // only 'F' or 1of2 txidaddr can be spent
     // all vouts must match exactly
     char temp[128], coinaddr[64], txidaddr[64]; std::string scriptpubkey; uint256 createtxid, blockhash; CTransaction tmptx; 
-    int32_t i,lockedblocks,minrelease,totalallocations; int64_t change; std::vector<uint256> txidoprets; bool fHasOpret = false; CPubKey txidpk,Paymentspk;
+    int32_t i,lockedblocks,minrelease; int64_t change,totalallocations; std::vector<uint256> txidoprets; bool fHasOpret = false; CPubKey txidpk,Paymentspk;
     // user marker vout to get the createtxid
     if ( tx.vout.size() < 2 )
         return(eval->Invalid("not enough vouts"));
@@ -203,12 +203,12 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
             i = 0;
             BOOST_FOREACH(const uint256& txidopret, txidoprets)
             {
-                CTransaction tx0; std::vector<uint8_t> scriptPubKey,opret; int32_t allocation;
+                CTransaction tx0; std::vector<uint8_t> scriptPubKey,opret; int64_t allocation;
                 if ( myGetTransaction(txidopret,tx0,blockhash) != 0 && tx0.vout.size() > 1 && DecodePaymentsTxidOpRet(tx0.vout[tx0.vout.size()-1].scriptPubKey,allocation,scriptPubKey,opret) == 'T' )
                 {
                     scriptPubKeys.push_back(CScript(scriptPubKey.begin(), scriptPubKey.end()));
                     allocations.push_back(allocation);
-                    //fprintf(stderr, "i.%i scriptpubkey.%s allocation.%i\n",i,scriptPubKeys[i].ToString().c_str(),allocation);
+                    //fprintf(stderr, "i.%i scriptpubkey.%s allocation.%li\n",i,scriptPubKeys[i].ToString().c_str(),allocation);
                     checkallocations += allocation;
                 }
                 i++;
@@ -435,7 +435,7 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
 {
     int32_t latestheight,nextheight = komodo_nextheight();
     CMutableTransaction tmpmtx,mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(),nextheight); UniValue result(UniValue::VOBJ); uint256 createtxid,hashBlock;
-    CTransaction tx,txO; CPubKey mypk,txidpk,Paymentspk; int32_t i,n,m,numoprets=0,lockedblocks,minrelease,totalallocations,checkallocations=0,allocation; int64_t newamount,inputsum,amount,CCchange=0; CTxOut vout; CScript onlyopret; char txidaddr[64],destaddr[64]; std::vector<uint256> txidoprets;
+    CTransaction tx,txO; CPubKey mypk,txidpk,Paymentspk; int32_t i,n,m,numoprets=0,lockedblocks,minrelease; int64_t newamount,inputsum,amount,CCchange=0,totalallocations,checkallocations=0,allocation; CTxOut vout; CScript onlyopret; char txidaddr[64],destaddr[64]; std::vector<uint256> txidoprets;
     cJSON *params = payments_reparse(&n,jsonstr);
     mypk = pubkey2pk(Mypubkey());
     Paymentspk = GetUnspendable(cp,0);
