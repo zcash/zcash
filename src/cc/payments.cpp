@@ -166,20 +166,14 @@ void pub2createtxid(char *str)
 
 bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
 {
-    char temp[128], coinaddr[64], txidaddr[64];
-    std::string scriptpubkey;  
-    uint256 createtxid;
-    uint256 blockhash; 
-    CTransaction tmptx;
-    int32_t lockedblocks,minrelease,totalallocations;
-    std::vector<uint256> txidoprets;
-    int32_t i; bool fHasOpret = false;
-    CPubKey txidpk,Paymentspk;
-    int64_t change;
-    
-    //the nValue 0 vout at the end of the tx (last one if no opret)
-    //it is a pay to pubkey vout
-    //the "pubkey" is just 0x02 <createtxid>
+    // one of two addresses
+    // change must go to 1of2 txidaddr
+    //    change is/must be in vout[0]
+    // only 'F' or 1of2 txidaddr can be spent
+    // all vouts must match exactly
+    char temp[128], coinaddr[64], txidaddr[64]; std::string scriptpubkey; uint256 createtxid, blockhash; CTransaction tmptx; 
+    int32_t i,lockedblocks,minrelease,totalallocations; int64_t change; std::vector<uint256> txidoprets; bool fHasOpret = false; CPubKey txidpk,Paymentspk;
+    // user marker vout to get the createtxid
     if ( tx.vout.size() < 2 )
         return(eval->Invalid("not enough vouts"));
     if ( tx.vout.back().scriptPubKey[0] == OP_RETURN )
@@ -203,9 +197,9 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
             //fprintf(stderr, "lockedblocks.%i minrelease.%i totalallocations.%i txidopret1.%s txidopret2.%s\n",lockedblocks, minrelease, totalallocations, txidoprets[0].ToString().c_str(), txidoprets[1].ToString().c_str() );
             
             // Get all the script pubkeys and allocations
-            std::vector<int32_t> allocations;
+            std::vector<int64_t> allocations;
             std::vector<CScript> scriptPubKeys;
-            int32_t checkallocations = 0;
+            int64_t checkallocations = 0;
             i = 0;
             BOOST_FOREACH(const uint256& txidopret, txidoprets)
             {
@@ -224,7 +218,7 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
             if ( allocations.size() == 0 || scriptPubKeys.size() == 0 || allocations.size() != scriptPubKeys.size() )
                 return(eval->Invalid("missing data cannot validate"));
                 
-            //fprintf(stderr, "totalallocations.%i checkallocations.%i\n",totalallocations, checkallocations);
+            //fprintf(stderr, "totalallocations.%li checkallocations.%li\n",totalallocations, checkallocations);
             if ( totalallocations != checkallocations )
                 return(eval->Invalid("allocation missmatch"));
             
@@ -239,7 +233,8 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
             // Check vouts go to the right place and pay the right amounts. 
             int64_t amount = 0, checkamount; int32_t n = 0;
             checkamount = tx.GetValueOut() - change - PAYMENTS_TXFEE;
-            for (i = 1; i < (fHasOpret ? tx.vout.size()-2 : tx.vout.size()-1); i++) {
+            for (i = 1; i < (fHasOpret ? tx.vout.size()-2 : tx.vout.size()-1); i++) 
+            {
                 std::string destscriptPubKey = HexStr(scriptPubKeys[n].begin(),scriptPubKeys[n].end());
                 std::string voutscriptPubKey = HexStr(tx.vout[i].scriptPubKey.begin(),tx.vout[i].scriptPubKey.end());
                 if ( destscriptPubKey != voutscriptPubKey )
@@ -253,7 +248,7 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
                 if ( test != tx.vout[i].nValue )
                 {
                     fprintf(stderr, "vout.%i test.%li vs nVlaue.%li\n",i, test, tx.vout[i].nValue);
-                    //return(eval->Invalid("amounts do not match"));
+                    return(eval->Invalid("amounts do not match"));
                 }
                 amount += tx.vout[i].nValue;
                 n++;
@@ -265,10 +260,11 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
             if ( amount < minrelease*COIN )
             {
                 fprintf(stderr, "does not meet minrelease amount.%li minrelease.%li\n",amount, (int64_t)minrelease*COIN );
-                //return(eval->Invalid("amount is too small"));
+                return(eval->Invalid("amount is too small"));
             }
             
-            i = 0;
+            i = 0; 
+            int32_t ht = chainActive.LastTip()->GetHeight();
             BOOST_FOREACH(const CTxIn& vin, tx.vin)
             {
                 CTransaction txin;
@@ -279,27 +275,25 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
                     Getscriptaddress(destaddr,txin.vout[vin.prevout.n].scriptPubKey);
                     if ( strcmp(destaddr,coinaddr) != 0 )
                     {
-                        fprintf(stderr, "vin.%i is not a payments CC vout: txid.%s vout.%i\n", i, txin.GetHash().ToString().c_str(), vin.prevout.n);
-                        return(eval->Invalid("vin is not paymentsCC type"));
-                    }
+                        std::vector<uint8_t> scriptPubKey,opret; uint256 checktxid;
+                        if ( txin.vout.size() < 2 || DecodePaymentsFundOpRet(txin.vout[txin.vout.size()-1].scriptPubKey,checktxid) != 'F' || checktxid != createtxid )
+                        {
+                            fprintf(stderr, "vin.%i is not a payments CC vout: txid.%s\n", i, txin.GetHash().ToString().c_str());
+                            return(eval->Invalid("vin is not paymentsCC type"));
+                        } //else fprintf(stderr, "vin.%i opret type txid.%s\n", i, txin.GetHash().ToString().c_str());
+                    } 
                     // check the chain depth vs locked blcoks requirement. 
                     CBlockIndex* pblockindex = mapBlockIndex[blockhash];
-                    if ( pblockindex->GetHeight() > chainActive.LastTip()->GetHeight()-lockedblocks )
+                    if ( pblockindex->GetHeight() > ht-lockedblocks )
                     {
-                        fprintf(stderr, "vin.%i is not elegible to be spent yet height.%i vs elegible_ht.%i\n", i, pblockindex->GetHeight(), chainActive.LastTip()->GetHeight()-lockedblocks);
+                        fprintf(stderr, "vin.%i is not elegible to be spent yet height.%i vs elegible_ht.%i\n", i, pblockindex->GetHeight(), ht-lockedblocks);
                         return(eval->Invalid("vin not elegible"));
                     }
-                    //fprintf(stderr, "vin txid.%s\n", txin.GetHash().GetHex().c_str());
                 } else return(eval->Invalid("cant get vin transaction"));
                 i++;
             }
         } else return(eval->Invalid("create transaction cannot decode"));
-    } else fprintf(stderr, "cannot get contract txn\n");//return(eval->Invalid("Could not get contract transaction"));
-    // one of two addresses? only seems to ever use the 1!
-    // change must go to 1of2 txidaddr
-    //    change is/must be in vout[0]
-    // only 'F' or 1of2 txidaddr can be spent
-    // all vouts must match exactly
+    } else return(eval->Invalid("Could not get contract transaction"));
     return(true);
 }
 // end of consensus code

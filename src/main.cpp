@@ -7045,7 +7045,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         }
         std::vector<uint8_t> payload;
         vRecv >> payload;
-        //komodo_netevent(payload);
+        komodo_netevent(payload);
         return(true);
     }
     else if (strCommand == "verack")
