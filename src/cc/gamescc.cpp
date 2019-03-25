@@ -192,7 +192,7 @@ int32_t games_eventsign(std::vector<uint8_t> &sig,std::vector<uint8_t> payload,C
 
 UniValue games_events(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ); std::vector<uint8_t> sig,payload; int32_t n; CPubKey mypk; uint256 hash;
+    UniValue result(UniValue::VOBJ); std::vector<uint8_t> sig,payload; int32_t n; CPubKey mypk; char str[67];
     if ( params != 0 && (n= cJSON_GetArraySize(params)) == 1 )
     {
         if ( payments_parsehexdata(payload,jitem(params,0),0) == 0 )
@@ -202,6 +202,8 @@ UniValue games_events(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             {
                 komodo_sendmessage(4,8,"events",E_MARSHAL(ss << EVAL_GAMES << 'E' << mypk << sig << payload));
                 result.push_back(Pair("result","success"));
+                result.push_back(Pair("pubkey33",pubkey33_str(str,mypk)));
+                result.push_back(Pair("sig",sig.HexStr()));
             }
             else
             {
