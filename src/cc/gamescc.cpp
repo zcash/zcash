@@ -1679,11 +1679,14 @@ void games_packitemstr(char *packitemstr,struct games_packitem *item)
 #include <memory.h>
 #include <string.h>
 #include <unistd.h>
-#include <curl/curl.h>
-#include <curl/easy.h>
 #include "../core_io.h"
 #include "../wallet/wallet.h"
 #include <univalue.h>
+
+#define inline
+#include <curl/curl.h>
+#include <curl/easy.h>
+#undef inline
 
 char USERPASS[8192]; uint16_t GAMES_PORT;
 extern char Gametxidstr[67];
@@ -3475,7 +3478,7 @@ int tetris(int argc, char **argv)
     tetris_move move = TM_NONE;
     bool running = true;
     WINDOW *board, *next, *hold, *score;
-    int32_t c; uint256 gametxid; std::vector<uint8_t> payload; uint32_t eventid = 0;
+    int32_t c; uint256 gametxid; uint32_t eventid = 0;
     // Load file if given a filename.
     if (argc >= 2) {
         FILE *f = fopen(argv[1], "r");
@@ -3516,8 +3519,7 @@ int tetris(int argc, char **argv)
             doupdate();
         sleep_milli(10);
         c = getch();
-        payload[0] = c;
-        issue_games_events(gametxid,eventid,payload);
+        issue_games_events(gametxid,eventid,c);
         eventid++;
         switch ( c )
         {
