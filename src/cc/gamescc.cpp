@@ -166,17 +166,17 @@ UniValue games_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 
 int32_t games_eventsign(std::vector<uint8_t> &sig,std::vector<uint8_t> payload,CPubKey pk)
 {
-    bool signSuccess; SignatureData sigdata; uint256 hash; uint8_t *ptr; auto consensusBranchId = 0;
+    bool signSuccess; SignatureData sigdata; int32_t i,siglen; uint256 hash; uint8_t *ptr; auto consensusBranchId = 0; CMutableTransaction txNew;
     const CKeyStore& keystore = *pwalletMain;
     txNew.vin.resize(1);
     txNew.vout.resize(1);
     txNew.vin[0].prevout.hash = payload.GetHash();
     txNew.vin[0].prevout.n = 0;
-    txNew.vout[0].scriptPubKey = CScript() << payload << OP_DROP << ParseHex(HexString(pk)) << OP_CHECKSIG;
-    txNew.vout[0].nValue = (int32_t)payload.size();
+    txNew.vout[0].scriptPubKey = CScript() << payload << OP_DROP << ParseHex(HexStr(pk)) << OP_CHECKSIG;
+    txNew.vout[0].nValue = payload.size();
     txNew.nLockTime = 0;
     CTransaction txNewConst(txNew);
-    signSuccess = ProduceSignature(TransactionSignatureCreator(&keystore, &txNewConst, 0, *utxovaluep, SIGHASH_ALL), txNew.vout[0].scriptPubKey, sigdata, consensusBranchId);
+    signSuccess = ProduceSignature(TransactionSignatureCreator(&keystore, &txNewConst, 0, payload.size(), SIGHASH_ALL), txNew.vout[0].scriptPubKey, sigdata, consensusBranchId);
     if ( signSuccess > 0 )
     {
         UpdateTransaction(txNew,0,sigdata);

@@ -569,7 +569,7 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
 UniValue PaymentsFund(struct CCcontract_info *cp,char *jsonstr)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight()); UniValue result(UniValue::VOBJ);
-    CPubKey Paymentspk,mypk,txidpk; uint256 txid,hashBlock; int64_t amount; CScript opret; CTransaction tx; char txidaddr[64]; std::string rawtx; int32_t n,useopret = 0,lockedblocks,minrelease,totalallocations; std::vector<uint256> txidoprets;
+    CPubKey Paymentspk,mypk,txidpk; uint256 txid,hashBlock; int64_t amount,totalallocations; CScript opret; CTransaction tx; char txidaddr[64]; std::string rawtx; int32_t n,useopret = 0,lockedblocks,minrelease; std::vector<uint256> txidoprets;
     cJSON *params = payments_reparse(&n,jsonstr);
     mypk = pubkey2pk(Mypubkey());
     Paymentspk = GetUnspendable(cp,0);
@@ -662,7 +662,7 @@ UniValue PaymentsTxidopret(struct CCcontract_info *cp,char *jsonstr)
 UniValue PaymentsCreate(struct CCcontract_info *cp,char *jsonstr)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); CTransaction tx; CPubKey Paymentspk,mypk; char markeraddr[64]; std::vector<uint256> txidoprets; uint256 hashBlock; int32_t i,n,numoprets=0,lockedblocks,minrelease,totalallocations=0; std::string rawtx;
+    UniValue result(UniValue::VOBJ); CTransaction tx; CPubKey Paymentspk,mypk; char markeraddr[64]; std::vector<uint256> txidoprets; uint256 hashBlock; int32_t i,n,numoprets=0,lockedblocks,minrelease; std::string rawtx; int64_t totalallocations = 0;
     cJSON *params = payments_reparse(&n,jsonstr);
     if ( params != 0 && n >= 4 )
     {

@@ -1,3 +1,4 @@
+#include "CCinclud.h"
 
 std::string MYCCLIBNAME = (char *)"gamescc";
 
