@@ -964,7 +964,7 @@ void games_gameplayerinfo(struct CCcontract_info *cp,UniValue &obj,uint256 gamet
     } else fprintf(stderr,"findbaton err.%d\n",retval);
 }
 
-UniValue games_create(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
+UniValue games_newgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     UniValue result(UniValue::VOBJ); std::string rawtx; CPubKey gamespk,mypk; char *jsonstr; uint64_t inputsum,change,required,buyin=0; int32_t i,n,maxplayers = 1;
@@ -1030,7 +1030,7 @@ UniValue games_pending(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     return(result);
 }
 
-UniValue games_info(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
+UniValue games_gameinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     UniValue result(UniValue::VOBJ),a(UniValue::VARR); int32_t i,n,gameheight,maxplayers,numvouts; uint256 txid; CTransaction tx; int64_t buyin; uint64_t seed; bits256 t; char myaddr[64],str[64]; CPubKey mypk,gamespk;
     result.push_back(Pair("name","games"));
@@ -1599,7 +1599,7 @@ UniValue games_players(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     return(result);
 }
 
-UniValue games_list(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
+UniValue games_games(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     UniValue result(UniValue::VOBJ),a(UniValue::VARR),b(UniValue::VARR); uint256 txid,hashBlock,gametxid,tokenid,playertxid; int32_t vout,maxplayers,gameheight,numvouts; CPubKey gamespk,mypk; char coinaddr[64]; CTransaction tx,gametx; int64_t buyin;
     std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex;
