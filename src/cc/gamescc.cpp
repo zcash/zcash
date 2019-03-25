@@ -64,6 +64,7 @@ uint8_t games_eventdecode(uint32_t &timestamp,CPubKey &pk,std::vector<uint8_t> &
         timestamp |= (uint32_t)payload[--len] << 16;
         timestamp |= (uint32_t)payload[--len] << 8;
         timestamp |= (uint32_t)payload[--len];
+        fprintf(stderr,"timestamp %08x\n",timestamp);
         payload.resize(len);
         return(f);
     }
@@ -192,6 +193,7 @@ int32_t games_eventsign(std::vector<uint8_t> &sig,std::vector<uint8_t> &payload,
         len = payload.size();
         payload.resize(len + 4);
         timestamp = (uint32_t)time(NULL);
+        fprintf(stderr,"timestamp %08x\n",timestamp);
         payload[len++] = timestamp, timestamp >> 8;
         payload[len++] = timestamp, timestamp >> 8;
         payload[len++] = timestamp, timestamp >> 8;
