@@ -22,6 +22,8 @@ std::string MYCCLIBNAME = (char *)"gamescc";
 #define GAMES_MAXRNGS 10000
 
 #define MYCCNAME "games"
+
+std::string Games_pname;
 #define GAMENAME "sudoku"
 
 #define RPC_FUNCS    \
@@ -94,7 +96,7 @@ struct games_player
     struct games_packitem gamespack[MAXPACK];
 };
 
-int32_t games_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t num,struct rogue_player *player,int32_t sleepmillis);
+int32_t games_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t num,struct games_player *player,int32_t sleepmillis);
 void games_packitemstr(char *packitemstr,struct games_packitem *item);
 
 
