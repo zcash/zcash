@@ -229,7 +229,7 @@ int32_t games_eventsign(uint32_t &timestamp,std::vector<uint8_t> &sig,std::vecto
 
 int32_t games_payload(CPubKey pk,uint32_t timestamp,std::vector<uint8_t> payload)
 {
-    uint8_t gametxid; int32_t i,len; char str[67]; uint32_t eventid = 0;
+    uint256 gametxid; int32_t i,len; char str[67]; uint32_t eventid = 0;
     if ( (len= payload.size()) > 36 )
     {
         len -= 36;
