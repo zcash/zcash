@@ -180,7 +180,7 @@ UniValue games_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     return(result);
 }
 
-int32_t games_eventsign(std::vector<uint8_t> &sig,std::vector<uint8_t> payload,CPubKey pk)
+int32_t games_eventsign(std::vector<uint8_t> &sig,std::vector<uint8_t> &payload,CPubKey pk)
 {
     static secp256k1_context *ctx;
     size_t siglen = 74; secp256k1_ecdsa_signature signature; int32_t len; uint8_t privkey[32]; uint256 hash; uint32_t timestamp;
