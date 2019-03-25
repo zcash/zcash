@@ -1,3 +1,6 @@
+#ifndef H_GAMESCC_H
+#define H_GAMESCC_H
+
 #define ENABLE_WALLET
 #include "CCinclude.h"
 
@@ -51,3 +54,5 @@ if ( cp->evalcode == EVAL_GAMES ) \
         return(result); \
     } \
 }
+
+#endif

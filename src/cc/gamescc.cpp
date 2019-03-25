@@ -1,3 +1,4 @@
+#include "gamescc.h"
 
 /*
 ./c cclib rng 17 \"[%229433dc3749aece1bd568f374a45da3b0bc6856990d7da3cd175399577940a775%22,250]\"
@@ -229,7 +230,7 @@ void komodo_netevent(std::vector<uint8_t> message)
     {
         for (i=0; i<payload.size(); i++)
             fprintf(stderr,"%02x",payload[i]);
-        fprintf(stderr," payload, got pk.%s siglen.%d\n",pubkey_str(str,pk),(int32_t)sig.size());
+        fprintf(stderr," payload, got pk.%s siglen.%d\n",pubkey33_str(str,pk),(int32_t)sig.size());
     }
     else
     {
