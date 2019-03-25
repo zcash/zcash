@@ -15,6 +15,8 @@
 
 #include "gamescc.h"
 
+#ifndef STANDALONE
+
 /*
 ./c cclib rng 17 \"[%229433dc3749aece1bd568f374a45da3b0bc6856990d7da3cd175399577940a775%22,250]\"
 {
@@ -1658,8 +1660,8 @@ void games_packitemstr(char *packitemstr,struct games_packitem *item)
 {
     sprintf(packitemstr,"not yet");
 }
+#else
 
-#ifdef STANDALONE
 
 #include <stdio.h>
 #include <stdint.h>
