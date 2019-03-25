@@ -13,10 +13,11 @@
  *                                                                            *
  ******************************************************************************/
 
+#include "gamescc.h"
+
 
 #ifndef STANDALONE
 
-#include "gamescc.h"
 
 /*
 ./c cclib rng 17 \"[%229433dc3749aece1bd568f374a45da3b0bc6856990d7da3cd175399577940a775%22,250]\"

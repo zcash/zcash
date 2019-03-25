@@ -1,6 +1,8 @@
 #ifndef H_GAMESCC_H
 #define H_GAMESCC_H
 
+#ifndef STANDALONE
+
 #define ENABLE_WALLET
 extern CWallet* pwalletMain;
 
@@ -82,6 +84,7 @@ if ( cp->evalcode == EVAL_GAMES ) \
         return(result); \
     } \
 }
+#endif
 
 #define MAXPACK 23
 struct games_packitem
