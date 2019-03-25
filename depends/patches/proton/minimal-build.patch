@@ -1,6 +1,6 @@
 diff -ur qpid-proton-0.26.0/c/CMakeLists.txt qpid-proton-patched/c/CMakeLists.txt
 --- qpid-proton-0.26.0/c/CMakeLists.txt	2018-10-04 04:09:02.000000000 -0600
-+++ qpid-proton-patched/c/CMakeLists.txt	2019-03-25 10:17:47.435528680 -0600
++++ qpid-proton-patched/c/CMakeLists.txt	2019-03-25 17:32:41.521213312 -0600
 @@ -443,15 +443,15 @@
    ${qpid-proton-include-generated}
  )
@@ -117,7 +117,7 @@ diff -ur qpid-proton-0.26.0/c/CMakeLists.txt qpid-proton-patched/c/CMakeLists.tx
           DESTINATION "${PROTON_SHARE}/examples/c"
 diff -ur qpid-proton-0.26.0/CMakeLists.txt qpid-proton-patched/CMakeLists.txt
 --- qpid-proton-0.26.0/CMakeLists.txt	2018-10-04 04:09:02.000000000 -0600
-+++ qpid-proton-patched/CMakeLists.txt	2019-03-25 11:37:04.150413880 -0600
++++ qpid-proton-patched/CMakeLists.txt	2019-03-25 17:32:41.521213312 -0600
 @@ -24,22 +24,22 @@
  set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/tools/cmake/Modules")
  set (CMAKE_THREAD_PREFER_PTHREAD TRUE)
@@ -167,7 +167,7 @@ diff -ur qpid-proton-0.26.0/CMakeLists.txt qpid-proton-patched/CMakeLists.txt
    set (DEFAULT_GO ON)
 diff -ur qpid-proton-0.26.0/cpp/CMakeLists.txt qpid-proton-patched/cpp/CMakeLists.txt
 --- qpid-proton-0.26.0/cpp/CMakeLists.txt	2018-10-04 04:09:02.000000000 -0600
-+++ qpid-proton-patched/cpp/CMakeLists.txt	2019-03-25 11:07:48.761375278 -0600
++++ qpid-proton-patched/cpp/CMakeLists.txt	2019-03-25 17:32:41.521213312 -0600
 @@ -174,25 +174,25 @@
    set (CMAKE_DEBUG_POSTFIX "d")
  endif ()
@@ -277,3 +277,23 @@ diff -ur qpid-proton-0.26.0/cpp/CMakeLists.txt qpid-proton-patched/cpp/CMakeList
 +#  # Test data and output directories for connect_config_test
 +#  file(COPY  "${CMAKE_CURRENT_SOURCE_DIR}/testdata" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
 +#endif()
+diff -ur qpid-proton-0.26.0/cpp/include/proton/url.hpp qpid-proton-patched/cpp/include/proton/url.hpp
+--- qpid-proton-0.26.0/cpp/include/proton/url.hpp	2018-10-04 04:09:02.000000000 -0600
++++ qpid-proton-patched/cpp/include/proton/url.hpp	2019-03-25 17:33:50.956058757 -0600
+@@ -40,7 +40,6 @@
+ /// An error encountered during URL parsing.
+ 
+ struct
+-PN_CPP_DEPRECATED("Use a third-party URL library")
+ PN_CPP_CLASS_EXTERN url_error : public error {
+     /// @cond INTERNAL
+     /// Construct a URL error with a message.
+@@ -62,7 +61,7 @@
+ ///
+ /// - Path is normally used as a link source or target address.  On a
+ ///   broker it typically corresponds to a queue or topic name.
+-class PN_CPP_DEPRECATED("Use a third-party URL library") url {
++class url {
+   public:
+     static const std::string AMQP;     ///< "amqp" prefix
+     static const std::string AMQPS;    ///< "amqps" prefix
