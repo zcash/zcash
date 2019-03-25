@@ -2079,7 +2079,7 @@ void komodo_args(char *argv0)
 
         while ( (dirname= (char *)GetDataDir(false).string().c_str()) == 0 || dirname[0] == 0 )
         {
-            fprintf(stderr,"waiting for datadir\n");
+            fprintf(stderr,"waiting for datadir (%s)\n",dirname);
 #ifndef _WIN32
             sleep(3);
 #else
