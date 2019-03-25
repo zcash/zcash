@@ -2525,13 +2525,6 @@ int main(int argc, char **argv)
     // Deinitialize NCurses
     wclear(stdscr);
     endwin();
-    
-    /* Deinitialize Sound
-     Mix_HaltMusic();
-     Mix_FreeMusic(music);
-     Mix_CloseAudio();
-     Mix_Quit();*/
-    
     // Output ending message.
     printf("Game over!\n");
     printf("You finished with %d points on level %d.\n", tg->points, tg->level);
@@ -2540,4 +2533,5 @@ int main(int argc, char **argv)
     tg_delete(tg);
     return 0;
 }
+#endif
 
