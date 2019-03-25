@@ -3568,5 +3568,10 @@ int tetris(int argc, char **argv)
     return 0;
 }
 
+int32_t games_replay(uint64_t seed,int32_t sleeptime)
+{
+    return(-1);
+}
+
 #endif
 
