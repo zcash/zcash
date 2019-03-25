@@ -1659,6 +1659,7 @@ void games_packitemstr(char *packitemstr,struct games_packitem *item)
     sprintf(packitemstr,"not yet");
 }
 
+#ifdef includgame
 
 /***************************************************************************/
 /** https://github.com/brenns10/tetris
@@ -2532,5 +2533,6 @@ int main(int argc, char **argv)
     tg_delete(tg);
     return 0;
 }
+#endif
 #endif
 
