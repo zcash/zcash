@@ -167,7 +167,7 @@ UniValue games_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 
 int32_t games_eventsign(std::vector<uint8_t> &sig,std::vector<uint8_t> payload,CPubKey pk)
 {
-    static void *ctx;
+    static secp256k1_context *ctx;
     size_t siglen = 74; secp256k1_ecdsa_signature signature; uint8_t privkey[32];
     if ( ctx == 0 )
         ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN);
