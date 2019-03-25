@@ -1861,7 +1861,7 @@ long _stripwhite(char *buf,int accept)
 
 char *clonestr(char *str)
 {
-    char *clone;
+    char *clone; int32_t len;
     if ( str == 0 || str[0] == 0 )
     {
         printf("warning cloning nullstr.%p\n",str);
@@ -1870,7 +1870,8 @@ char *clonestr(char *str)
 #endif
         str = (char *)"<nullstr>";
     }
-    clone = (char *)malloc(strlen(str)+16);
+    len = strlen(str);
+    clone = (char *)malloc(len+16);
     strcpy(clone,str);
     return(clone);
 }
