@@ -51,6 +51,24 @@
  ./c cclib events 17 \"[%226d%22,%229433dc3749aece1bd568f374a45da3b0bc6856990d7da3cd175399577940a775%22,1]\"
 */
 
+int32_t games_payloadrecv(CPubKey pk,uint32_t timestamp,std::vector<uint8_t> payload)
+{
+    uint256 gametxid; int32_t i,len; char str[67]; uint32_t eventid = 0;
+    if ( (len= payload.size()) > 36 )
+    {
+        len -= 36;
+        for (i=0; i<32; i++)
+            ((uint8_t *)&gametxid)[i] = payload[len+i];
+        eventid = (uint32_t)payload[len+32];
+        eventid |= (uint32_t)payload[len+33] << 8;
+        eventid |= (uint32_t)payload[len+34] << 16;
+        eventid |= (uint32_t)payload[len+35] << 24;
+        for (i=0; i<len; i++)
+            fprintf(stderr,"%02x",payload[i]);
+        fprintf(stderr," got payload, from %s %s/e%d\n",pubkey33_str(str,(uint8_t *)&pk),gametxid.GetHex().c_str(),eventid);
+        return(0);
+    } else return(-1);
+}
 
 CScript games_newgameopret(int64_t buyin,int32_t maxplayers)
 {
@@ -316,25 +334,6 @@ int32_t games_eventsign(uint32_t &timestamp,std::vector<uint8_t> &sig,std::vecto
                 } else return(-3);
             } else return(-2);
         }
-    } else return(-1);
-}
-
-int32_t games_payloadrecv(CPubKey pk,uint32_t timestamp,std::vector<uint8_t> payload)
-{
-    uint256 gametxid; int32_t i,len; char str[67]; uint32_t eventid = 0;
-    if ( (len= payload.size()) > 36 )
-    {
-        len -= 36;
-        for (i=0; i<32; i++)
-            ((uint8_t *)&gametxid)[i] = payload[len+i];
-        eventid = (uint32_t)payload[len+32];
-        eventid |= (uint32_t)payload[len+33] << 8;
-        eventid |= (uint32_t)payload[len+34] << 16;
-        eventid |= (uint32_t)payload[len+35] << 24;
-        for (i=0; i<len; i++)
-            fprintf(stderr,"%02x",payload[i]);
-        fprintf(stderr," got payload, from %s %s/e%d\n",pubkey33_str(str,(uint8_t *)&pk),gametxid.GetHex().c_str(),eventid);
-        return(0);
     } else return(-1);
 }
 
@@ -3514,7 +3513,8 @@ int tetris(int argc, char **argv)
             doupdate();
         sleep_milli(10);
         c = getch();
-        issue_games_events(gametxid,eventid,c);
+        if ( c >= 0 )
+            issue_games_events(gametxid,eventid,c);
         eventid++;
         switch ( c )
         {
