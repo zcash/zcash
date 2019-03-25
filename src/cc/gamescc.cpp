@@ -204,7 +204,7 @@ UniValue games_events(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             if ( games_eventsign(sig,payload,mypk) == 0 )
             {
                 GetOpReturnData(games_eventopret(mypk,sig,payload),vopret);
-                komodo_sendmessage(4,8,"events",&vopret[0],(int32_t)vopret.size());
+                komodo_sendmessage(4,8,"events",(uint8_t *)&vopret[0],(int32_t)vopret.size());
                 result.push_back(Pair("result","success"));
                 result.push_back(Pair("pubkey33",pubkey33_str(str,(uint8_t *)&mypk)));
             }
