@@ -258,7 +258,7 @@ UniValue games_events(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 
 void komodo_netevent(std::vector<uint8_t> message)
 {
-    int32_t i,retval; uint32_t timestamp,now; CPubKey pk; std::vector<uint8_t> sig,payload; char str[67];
+    int32_t i,retval,lag; uint32_t timestamp,now; CPubKey pk; std::vector<uint8_t> sig,payload; char str[67];
     if ( games_eventdecode(timestamp,pk,sig,payload,message) == 'E' )
     {
         now = (uint32_t)time(NULL);
