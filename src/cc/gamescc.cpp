@@ -46,6 +46,25 @@ uint8_t games_opretdecode(CPubKey &pk,CScript scriptPubKey)
     return(0);
 }
 
+CScript games_eventopret(CPubKey pk,std::vector<uint8_t> sig,std::vector<uint8_t> payload)
+{
+    CScript opret; uint8_t evalcode = EVAL_GAMES;
+    opret << OP_RETURN << E_MARSHAL(ss << evalcode << 'E' << pk << sig << payload);
+    return(opret);
+}
+
+uint8_t games_eventdecode(CPubKey &pk,std::vector<uint8_t> &sig,std::vector<uint8_t> &payload,std::vector<uint8_t> message)
+{
+    std::vector<uint8_t> vopret; uint8_t e,f;
+    GetOpReturnData(message,vopret);
+    if ( message.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> pk; ss >> sig; ss >> payload) != 0 && e == EVAL_GAMES )
+    {
+        return(f);
+    }
+    fprintf(stderr,"e.%d f.%d pk.%d sig.%d payload.%d\n",e,f,(int32_t)pk.size(),(int32_t)sig.size(),(int32_t)payload.size());
+    return(0);
+}
+
 UniValue games_rawtxresult(UniValue &result,std::string rawtx,int32_t broadcastflag)
 {
     CTransaction tx;
@@ -177,7 +196,7 @@ int32_t games_eventsign(std::vector<uint8_t> &sig,std::vector<uint8_t> payload,C
 
 UniValue games_events(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ); std::vector<uint8_t> sig,payload; int32_t n; CPubKey mypk; char str[67];
+    UniValue result(UniValue::VOBJ); std::vector<uint8_t> sig,payload; int32_t n; CPubKey mypk; char str[67]; CScript msg;
     if ( params != 0 && (n= cJSON_GetArraySize(params)) == 1 )
     {
         if ( payments_parsehexdata(payload,jitem(params,0),0) == 0 )
@@ -185,7 +204,8 @@ UniValue games_events(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             mypk = pubkey2pk(Mypubkey());
             if ( games_eventsign(sig,payload,mypk) == 0 )
             {
-                komodo_sendmessage(4,8,"events",E_MARSHAL(ss << EVAL_GAMES << 'E' << mypk << sig << payload));
+                msg = games_eventopret(pk,sig,payload);
+                komodo_sendmessage(4,8,"events",&msg[0],(int32_t)msg.size());
                 result.push_back(Pair("result","success"));
                 result.push_back(Pair("pubkey33",pubkey33_str(str,(uint8_t *)&mypk)));
             }
@@ -207,17 +227,6 @@ UniValue games_events(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
         result.push_back(Pair("error","not enough params"));
     }
     return(result);
-}
-
-uint8_t games_eventdecode(CPubKey &pk,std::vector<uint8_t> &sig,std::vector<uint8_t> &payload,std::vector<uint8_t> message)
-{
-    uint8_t e,f;
-    if ( message.size() > 2 && E_UNMARSHAL(message,ss >> e; ss >> f; ss >> pk; ss >> sig; ss >> payload) != 0 && e == EVAL_GAMES )
-    {
-        return(f);
-    }
-    fprintf(stderr,"e.%d f.%d pk.%d sig.%d payload.%d\n",e,f,(int32_t)pk.size(),(int32_t)sig.size(),(int32_t)payload.size());
-    return(0);
 }
 
 void komodo_netevent(std::vector<uint8_t> message)
