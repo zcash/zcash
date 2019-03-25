@@ -2360,6 +2360,32 @@ char *komodo_issuemethod(char *userpass,char *method,char *params,uint16_t port)
     return(retstr2);
 }
 
+int32_t issue_games_events(uint256 gametxid,uint32_t eventid,char c)
+{
+    char params[512],*retstr; cJSON *retjson,*retobj; int32_t retval = -1;
+    sprintf(params,"[\"events\",\"17\",\"[%%22%02x%%22,%%22%s%%22,%u]\"]",c,gametxid.GetHex().c_str(),eventid);
+    if ( (retstr= komodo_issuemethod(USERPASS,"cclib",params,GAMES_PORT)) != 0 )
+    {
+        if ( (retjson= cJSON_Parse(retstr)) != 0 )
+        {
+            if ( (resobj= jobj(retjson,"result")) != 0 )
+            {
+                retval = 0;
+                if ( fp == 0 )
+                    fp = fopen("events.log","wb");
+                if ( fp != 0 )
+                {
+                    fprintf(fp,"%s\n",jprint(resobj,0));
+                    fflush(fp);
+                }
+            }
+            free_json(retjson);
+        }
+        free(retstr);
+    }
+    return(retval);
+}
+
 int32_t games_sendrawtransaction(char *rawtx)
 {
     char *params,*retstr,*hexstr; cJSON *retjson,*resobj; int32_t retval = -1;
@@ -3483,7 +3509,7 @@ int tetris(int argc, char **argv)
         sleep_milli(10);
         c = getch();
         payload[0] = c;
-        games_event(0,gametxid,eventid,payload);
+        issue_games_events(0,gametxid,eventid,payload);
         eventid++;
         switch ( c )
         {
