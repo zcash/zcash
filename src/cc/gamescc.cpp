@@ -136,30 +136,6 @@ UniValue games_rng(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     return(result);
 }
 
-UniValue games_events(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
-{
-    UniValue result(UniValue::VOBJ); std::vector<uint8_t> payload; int32_t n;
-    if ( params != 0 && (n= cJSON_GetArraySize(params)) == 1 )
-    {
-        if ( payments_parsehexdata(payload,jitem(params,0),0) == 0 )
-        {
-            komodo_sendmessage(4,8,"events",payload);
-            result.push_back(Pair("result","success"));
-        }
-        else
-        {
-            result.push_back(Pair("result","error"));
-            result.push_back(Pair("error","couldnt parsehexdata"));
-        }
-   }
-    else
-    {
-        result.push_back(Pair("result","error"));
-        result.push_back(Pair("error","not enough params"));
-    }
-    return(result);
-}
-
 UniValue games_create(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     UniValue result(UniValue::VOBJ);
@@ -175,6 +151,30 @@ UniValue games_info(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 UniValue games_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     UniValue result(UniValue::VOBJ);
+    return(result);
+}
+
+UniValue games_events(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
+{
+    UniValue result(UniValue::VOBJ); std::vector<uint8_t> payload; int32_t n;
+    if ( params != 0 && (n= cJSON_GetArraySize(params)) == 1 )
+    {
+        if ( payments_parsehexdata(payload,jitem(params,0),0) == 0 )
+        {
+            komodo_sendmessage(4,8,"events",payload);
+            result.push_back(Pair("result","success"));
+        }
+        else
+        {
+            result.push_back(Pair("result","error"));
+            result.push_back(Pair("error","couldnt parsehexdata"));
+        }
+    }
+    else
+    {
+        result.push_back(Pair("result","error"));
+        result.push_back(Pair("error","not enough params"));
+    }
     return(result);
 }
 
