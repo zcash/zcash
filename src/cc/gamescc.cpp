@@ -46,26 +46,20 @@ uint8_t games_opretdecode(CPubKey &pk,CScript scriptPubKey)
     return(0);
 }
 
-CScript games_eventopret(CPubKey pk,std::vector<uint8_t> sig,std::vector<uint8_t> payload)
+CScript games_eventopret(uint32_t timestamp,CPubKey pk,std::vector<uint8_t> sig,std::vector<uint8_t> payload)
 {
     CScript opret; uint8_t evalcode = EVAL_GAMES;
-    opret << OP_RETURN << E_MARSHAL(ss << evalcode << 'E' << pk << sig << payload);
+    opret << OP_RETURN << E_MARSHAL(ss << evalcode << 'E' << timestamp << pk << sig << payload);
     return(opret);
 }
 
 uint8_t games_eventdecode(uint32_t &timestamp,CPubKey &pk,std::vector<uint8_t> &sig,std::vector<uint8_t> &payload,std::vector<uint8_t> vopret)
 {
-    uint8_t e,f; int32_t len;
+    uint8_t e,f;
     timestamp = 0;
-    if ( vopret.size() > 6 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> pk; ss >> sig; ss >> payload) != 0 && e == EVAL_GAMES )
+    if ( vopret.size() > 6 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> timestamp; ss >> pk; ss >> sig; ss >> payload) != 0 && e == EVAL_GAMES )
     {
-        len = (int32_t)payload.size();
-        timestamp = (uint32_t)payload[--len] << 24;
-        timestamp |= (uint32_t)payload[--len] << 16;
-        timestamp |= (uint32_t)payload[--len] << 8;
-        timestamp |= (uint32_t)payload[--len];
         fprintf(stderr,"timestamp %08x\n",timestamp);
-        payload.resize(len);
         return(f);
     }
     fprintf(stderr,"e.%d f.%d pk.%d sig.%d payload.%d\n",e,f,(int32_t)pk.size(),(int32_t)sig.size(),(int32_t)payload.size());
@@ -181,10 +175,10 @@ UniValue games_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     return(result);
 }
 
-int32_t games_eventsign(std::vector<uint8_t> &sig,std::vector<uint8_t> &payload,CPubKey pk)
+int32_t games_eventsign(uint32_t &timestamp,std::vector<uint8_t> &sig,std::vector<uint8_t> payload,CPubKey pk)
 {
     static secp256k1_context *ctx;
-    size_t siglen = 74; secp256k1_ecdsa_signature signature; int32_t len; uint8_t privkey[32]; uint256 hash; uint32_t timestamp;
+    size_t siglen = 74; secp256k1_ecdsa_signature signature; int32_t len; uint8_t privkey[32]; uint256 hash; uint32_t t;
     if ( ctx == 0 )
         ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN);
     if ( ctx != 0 )
@@ -192,12 +186,12 @@ int32_t games_eventsign(std::vector<uint8_t> &sig,std::vector<uint8_t> &payload,
         Myprivkey(privkey);
         len = payload.size();
         payload.resize(len + 4);
-        timestamp = (uint32_t)time(NULL);
+        t = timestamp = (uint32_t)time(NULL);
         fprintf(stderr,"timestamp %08x\n",timestamp);
-        payload[len++] = timestamp, timestamp >> 8;
-        payload[len++] = timestamp, timestamp >> 8;
-        payload[len++] = timestamp, timestamp >> 8;
-        payload[len++] = timestamp;
+        payload[len++] = t, t >> 8;
+        payload[len++] = t, t >> 8;
+        payload[len++] = t, t >> 8;
+        payload[len++] = t;
         vcalc_sha256(0,(uint8_t *)&hash,&payload[0],len);
         if ( secp256k1_ecdsa_sign(ctx,&signature,(uint8_t *)&hash,privkey,NULL,NULL) > 0 )
         {
@@ -211,15 +205,15 @@ int32_t games_eventsign(std::vector<uint8_t> &sig,std::vector<uint8_t> &payload,
 
 UniValue games_events(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ); std::vector<uint8_t> sig,payload,vopret; int32_t n; CPubKey mypk; char str[67];
+    UniValue result(UniValue::VOBJ); std::vector<uint8_t> sig,payload,vopret; int32_t n; CPubKey mypk; char str[67]; uint32_t timestamp;
     if ( params != 0 && (n= cJSON_GetArraySize(params)) == 1 )
     {
         if ( payments_parsehexdata(payload,jitem(params,0),0) == 0 )
         {
             mypk = pubkey2pk(Mypubkey());
-            if ( games_eventsign(sig,payload,mypk) == 0 )
+            if ( games_eventsign(timestamp,sig,payload,mypk) == 0 )
             {
-                GetOpReturnData(games_eventopret(mypk,sig,payload),vopret);
+                GetOpReturnData(games_eventopret(timestamp,mypk,sig,payload),vopret);
                 komodo_sendmessage(4,8,"events",vopret);
                 result.push_back(Pair("result","success"));
                 result.push_back(Pair("pubkey33",pubkey33_str(str,(uint8_t *)&mypk)));
