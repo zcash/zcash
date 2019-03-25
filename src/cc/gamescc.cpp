@@ -1683,7 +1683,7 @@ void games_packitemstr(char *packitemstr,struct games_packitem *item)
 #include <curl/easy.h>
 
 char USERPASS[8192]; uint16_t GAMES_PORT;
-extern char Gametxidstr[67];
+char Gametxidstr[67];
 char *clonestr(char *str);
 
 #define MAXSTR 1024
