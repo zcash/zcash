@@ -22,15 +22,19 @@ class CryptoconditionsHeirTest(CryptoconditionsTestFramework):
 
         result = rpc.heiraddress('')
         assert_success(result)
+
         # verify all keys look like valid AC addrs, could be better
-        for x in ['HeirNormalAddress', 'HeirCCTokensAddress', 'myaddress', 'myCCaddress', 'HeirCCAddress']:
-            assert_equal(result[x][0], 'R')
+        for x in result.keys():
+            if x.find('ddress') > 0:
+                assert_equal(result[x][0], 'R')
 
         result = rpc.heiraddress(self.pubkey)
         assert_success(result)
+
         # test that additional CCaddress key is returned
-        for x in ['HeirNormalAddress', 'myCCaddress', 'myaddress', 'HeirCC1of2Address', 'HeirCCAddress', 'HeirCC1of2TokensAddress']:
-            assert_equal(result[x][0], 'R')
+        for x in result.keys():
+            if x.find('ddress') > 0:
+                assert_equal(result[x][0], 'R')
 
         # getting empty heir list
         result = rpc.heirlist()
