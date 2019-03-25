@@ -2362,7 +2362,10 @@ char *komodo_issuemethod(char *userpass,char *method,char *params,uint16_t port)
 
 int32_t issue_games_events(uint256 gametxid,uint32_t eventid,char c)
 {
+    static FILE *fp;
     char params[512],*retstr; cJSON *retjson,*retobj; int32_t retval = -1;
+    if ( fp == 0 )
+        fp = fopen("events.log","wb");
     sprintf(params,"[\"events\",\"17\",\"[%%22%02x%%22,%%22%s%%22,%u]\"]",c,gametxid.GetHex().c_str(),eventid);
     if ( (retstr= komodo_issuemethod(USERPASS,"cclib",params,GAMES_PORT)) != 0 )
     {
@@ -2371,8 +2374,6 @@ int32_t issue_games_events(uint256 gametxid,uint32_t eventid,char c)
             if ( (resobj= jobj(retjson,"result")) != 0 )
             {
                 retval = 0;
-                if ( fp == 0 )
-                    fp = fopen("events.log","wb");
                 if ( fp != 0 )
                 {
                     fprintf(fp,"%s\n",jprint(resobj,0));
@@ -2380,9 +2381,9 @@ int32_t issue_games_events(uint256 gametxid,uint32_t eventid,char c)
                 }
             }
             free_json(retjson);
-        }
+        } else fprintf(fp,"error parsing %s\n",jprint(retstr));
         free(retstr);
-    }
+    } else fprintf(fp,"error issuing method %s\n",params);
     return(retval);
 }
 
