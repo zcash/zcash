@@ -173,7 +173,7 @@ int32_t games_eventsign(std::vector<uint8_t> &sig,std::vector<uint8_t> payload,C
     txNew.vout.resize(1);
     vcalc_sha256(0,(uint8_t *)&txNew.vin[0].prevout.hash,&payload[0],(int32_t)payload.size());
     txNew.vin[0].prevout.n = 0;
-    txNew.vout[0].scriptPubKey = CScript() << payload << OP_DROP << ParseHex(HexStr(pk)) << OP_CHECKSIG;
+    txNew.vout[0].scriptPubKey = CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG;
     txNew.vout[0].nValue = payload.size();
     txNew.nLockTime = 0;
     CTransaction txNewConst(txNew);
