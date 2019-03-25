@@ -81,7 +81,7 @@ class CryptoconditionsChannelsTest(CryptoconditionsTestFramework):
         # now in channelinfo payment information should appear
         result = rpc.channelsinfo(channel_txid)
         assert_equal(result["Transactions"][1]["Payment"], payment_tx_id)
-        time.sleep(90)
+        
         # number of payments should be equal 1 (one denomination used)
         result = rpc.channelsinfo(channel_txid)["Transactions"][1]["Number of payments"]
         assert_equal(result, 1)
