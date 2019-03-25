@@ -2612,7 +2612,6 @@ static inline bool is_x64(void) {
 int main(int argc, char **argv)
 {
     uint64_t seed; FILE *fp = 0; int32_t i,j,c; char userpass[8192];
-    strcpy(ASSETCHAINS_SYMBOL,"GTEST");
 #ifdef _WIN32
 #ifdef _MSC_VER
     printf("*** games for Windows [ Build %s ] ***\n", BUILD_DATE);
@@ -2640,7 +2639,8 @@ int main(int argc, char **argv)
     }
 #endif
 #endif
-    
+    strcpy(ASSETCHAINS_SYMBOL,"GTEST");
+
     GAMES_PORT = komodo_userpass(userpass,ASSETCHAINS_SYMBOL);
     if ( IPADDRESS[0] == 0 )
         strcpy(IPADDRESS,"127.0.0.1");
