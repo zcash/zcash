@@ -2706,23 +2706,6 @@ int main(int argc, char **argv)
 #include <curses.h>
 #endif
 
-char *clonestr(char *str)
-{
-    char *clone; int32_t len;
-    if ( str == 0 || str[0] == 0 )
-    {
-        printf("warning cloning nullstr.%p\n",str);
-#ifdef __APPLE__
-        while ( 1 ) sleep(1);
-#endif
-        str = (char *)"<nullstr>";
-    }
-    len = strlen(str);
-    clone = (char *)calloc(1,len+16);
-    strcpy(clone,str);
-    return(clone);
-}
-
 /*
  Convert a tetromino type to its corresponding cell.
  */
@@ -3466,6 +3449,22 @@ void init_colors(void)
  Main tetris game!
  */
 #ifdef STANDALONE
+char *clonestr(char *str)
+{
+    char *clone; int32_t len;
+    if ( str == 0 || str[0] == 0 )
+    {
+        printf("warning cloning nullstr.%p\n",str);
+#ifdef __APPLE__
+        while ( 1 ) sleep(1);
+#endif
+        str = (char *)"<nullstr>";
+    }
+    len = strlen(str);
+    clone = (char *)calloc(1,len+16);
+    strcpy(clone,str);
+    return(clone);
+}
 
 int tetris(int argc, char **argv)
 {
