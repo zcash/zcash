@@ -1685,7 +1685,6 @@ void games_packitemstr(char *packitemstr,struct games_packitem *item)
 
 #ifdef BUILD_GAMES
 #include "cursesd.h"
-#include "rogue/cursesd.c"
 #else
 #include <curses.h>
 #endif
@@ -2433,7 +2432,7 @@ void init_colors(void)
 /*
  Main tetris game!
  */
-#ifndef STANDALONE
+#ifdef STANDALONE
 
 int main(int argc, char **argv)
 {
