@@ -285,7 +285,10 @@ void komodo_netevent(std::vector<uint8_t> message)
             if ( games_payload(pk,timestamp,payload) == 0 ) // first time this is seen
             {
                 if ( (rand() % 10) == 0 )
+                {
+                    fprintf(stderr,"relay message.[%d]\n",(int32_t)message.size());
                     komodo_sendmessage(2,2,"events",message);
+                }
             }
         }
         for (i=0; i<payload.size(); i++)
