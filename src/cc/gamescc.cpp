@@ -168,12 +168,13 @@ UniValue games_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 int32_t games_eventsign(std::vector<uint8_t> &sig,std::vector<uint8_t> payload,CPubKey pk)
 {
     static secp256k1_context *ctx;
-    size_t siglen = 74; secp256k1_ecdsa_signature signature; uint8_t privkey[32];
+    size_t siglen = 74; secp256k1_ecdsa_signature signature; uint8_t privkey[32]; uint256 hash;
     if ( ctx == 0 )
         ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN);
     if ( ctx != 0 )
     {
         Myprivkey(privkey);
+        vcalc_sha256(0,(uint8_t *)&hash,&payload[0],(int32_t)payload.size());
         if ( secp256k1_ecdsa_sign(ctx,&signature,(uint8_t *)&hash,privkey,NULL,NULL) > 0 )
         {
             sig.resize(siglen);
