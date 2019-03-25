@@ -53,11 +53,18 @@ CScript games_eventopret(CPubKey pk,std::vector<uint8_t> sig,std::vector<uint8_t
     return(opret);
 }
 
-uint8_t games_eventdecode(CPubKey &pk,std::vector<uint8_t> &sig,std::vector<uint8_t> &payload,std::vector<uint8_t> vopret)
+uint8_t games_eventdecode(uint32_t &timestamp,CPubKey &pk,std::vector<uint8_t> &sig,std::vector<uint8_t> &payload,std::vector<uint8_t> vopret)
 {
-    uint8_t e,f;
-    if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> pk; ss >> sig; ss >> payload) != 0 && e == EVAL_GAMES )
+    uint8_t e,f; int32_t len;
+    timestamp = 0;
+    if ( vopret.size() > 6 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> pk; ss >> sig; ss >> payload) != 0 && e == EVAL_GAMES )
     {
+        len = (int32_t)payload.size();
+        timestamp = payload[--len];
+        timestamp = (timestamp << 8) | payload[--len];
+        timestamp = (timestamp << 8) | payload[--len];
+        timestamp = (timestamp << 8) | payload[--len];
+        payload.resize(len);
         return(f);
     }
     fprintf(stderr,"e.%d f.%d pk.%d sig.%d payload.%d\n",e,f,(int32_t)pk.size(),(int32_t)sig.size(),(int32_t)payload.size());
@@ -176,13 +183,20 @@ UniValue games_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 int32_t games_eventsign(std::vector<uint8_t> &sig,std::vector<uint8_t> payload,CPubKey pk)
 {
     static secp256k1_context *ctx;
-    size_t siglen = 74; secp256k1_ecdsa_signature signature; uint8_t privkey[32]; uint256 hash;
+    size_t siglen = 74; secp256k1_ecdsa_signature signature; int32_t len; uint8_t privkey[32]; uint256 hash; uint32_t timestamp;
     if ( ctx == 0 )
         ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN);
     if ( ctx != 0 )
     {
         Myprivkey(privkey);
-        vcalc_sha256(0,(uint8_t *)&hash,&payload[0],(int32_t)payload.size());
+        len = payload.size();
+        payload.resize(len + 4);
+        timestamp = (uin32_t)time(NULL);
+        payload[len++] = timestamp, timestamp >> 8;
+        payload[len++] = timestamp, timestamp >> 8;
+        payload[len++] = timestamp, timestamp >> 8;
+        payload[len++] = timestamp, timestamp >> 8;
+        vcalc_sha256(0,(uint8_t *)&hash,&payload[0],len);
         if ( secp256k1_ecdsa_sign(ctx,&signature,(uint8_t *)&hash,privkey,NULL,NULL) > 0 )
         {
             sig.resize(siglen);
@@ -230,12 +244,13 @@ UniValue games_events(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 
 void komodo_netevent(std::vector<uint8_t> message)
 {
-    int32_t i; CPubKey pk; std::vector<uint8_t> sig,payload; char str[67];
-    if ( games_eventdecode(pk,sig,payload,message) == 'E' )
+    int32_t i; uint32_t timestamp,now; CPubKey pk; std::vector<uint8_t> sig,payload; char str[67];
+    if ( games_eventdecode(timestamp,pk,sig,payload,message) == 'E' )
     {
+        now = (uint32_t)time(NULL);
         for (i=0; i<payload.size(); i++)
             fprintf(stderr,"%02x",payload[i]);
-        fprintf(stderr," payload, got pk.%s siglen.%d\n",pubkey33_str(str,(uint8_t *)&pk),(int32_t)sig.size());
+        fprintf(stderr," payload, got pk.%s siglen.%d lag.[%d]\n",pubkey33_str(str,(uint8_t *)&pk),(int32_t)sig.size(),now-timestamp);
     }
     else
     {
