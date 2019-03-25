@@ -2379,9 +2379,9 @@ void display_score(WINDOW *w, tetris_game *tg)
 {
     wclear(w);
     box(w, 0, 0);
-    wprintw(w, "Score\n%d\n", tg->points);
-    wprintw(w, "Level\n%d\n", tg->level);
-    wprintw(w, "Lines\n%d\n", tg->lines_remaining);
+    wprintw(w, (char *)"Score\n%d\n", tg->points);
+    wprintw(w, (char *)"Level\n%d\n", tg->level);
+    wprintw(w, (char *)"Lines\n%d\n", tg->lines_remaining);
     wnoutrefresh(w);
 }
 
@@ -2395,7 +2395,7 @@ void save(tetris_game *game, WINDOW *w)
     wclear(w);
     box(w, 0, 0); // return the border
     wmove(w, 1, 1);
-    wprintw(w, "Save and exit? [Y/n] ");
+    wprintw(w, (char *)"Save and exit? [Y/n] ");
     wrefresh(w);
     timeout(-1);
     if (getch() == 'n') {
@@ -2407,8 +2407,8 @@ void save(tetris_game *game, WINDOW *w)
     fclose(f);
     tg_delete(game);
     endwin();
-    printf("Game saved to \"tetris.save\".\n");
-    printf("Resume by passing the filename as an argument to this program.\n");
+    fprintf(stderr,"Game saved to \"tetris.save\".\n");
+    fprintf(stderr,"Resume by passing the filename as an argument to this program.\n");
     exit(EXIT_SUCCESS);
 }
 

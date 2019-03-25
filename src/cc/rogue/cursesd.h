@@ -168,6 +168,12 @@ char *unctrl(char c);
 #define leaveok(win,bf) 0
 #define halfdelay(x) 0
 #define nocbreak() 0
+#define init_color(a,b,c) 0
+#define start_color() 0
+#define box(a,b,c) 0
+#define A_REVERSE 0
+#define COLOR_PAIR(a) 0
+#define timeout(x) 0
 
 #ifndef TRUE
 #define TRUE 1
