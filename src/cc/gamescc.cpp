@@ -700,11 +700,45 @@ int32_t games_iamregistered(int32_t maxplayers,uint256 gametxid,CTransaction tx,
                 Getscriptaddress(destaddr,spenttx.vout[0].scriptPubKey);
                 if ( strcmp(mygamesaddr,destaddr) == 0 )
                     return(1);
-                //else fprintf(stderr,"myaddr.%s vs %s\n",myrogueaddr,destaddr);
+                //else fprintf(stderr,"myaddr.%s vs %s\n",mygamesaddr,destaddr);
             } //else fprintf(stderr,"cant find spenttxid.%s\n",spenttxid.GetHex().c_str());
         } //else fprintf(stderr,"vout %d is unspent\n",vout);
     }
     return(0);
+}
+
+void games_gameplayerinfo(struct CCcontract_info *cp,UniValue &obj,uint256 gametxid,CTransaction gametx,int32_t vout,int32_t maxplayers,char *mygamesaddr)
+{
+    // identify if bailout or quit or timed out
+    uint256 batontxid,spenttxid,gtxid,ptxid,tokenid,hashBlock,playertxid; CTransaction spenttx,batontx; int32_t numplayers,regslot,numkeys,batonvout,batonht,retval; int64_t batonvalue; std::vector<uint8_t> playerdata; char destaddr[64]; std::string symbol,pname;
+    destaddr[0] = 0;
+    if ( myIsutxo_spent(spenttxid,gametxid,vout) >= 0 )
+    {
+        if ( myGetTransaction(spenttxid,spenttx,hashBlock) != 0 && spenttx.vout.size() > 0 )
+            Getscriptaddress(destaddr,spenttx.vout[0].scriptPubKey);
+    }
+    obj.push_back(Pair("slot",(int64_t)vout-1));
+    if ( (retval= games_findbaton(cp,playertxid,0,numkeys,regslot,playerdata,batontxid,batonvout,batonvalue,batonht,gametxid,gametx,maxplayers,destaddr,numplayers,symbol,pname)) == 0 )
+    {
+        if ( CCgettxout(gametxid,maxplayers+vout,1,0) == 10000 )
+        {
+            if ( myGetTransaction(batontxid,batontx,hashBlock) != 0 && batontx.vout.size() > 1 )
+            {
+                if ( games_registeropretdecode(gtxid,tokenid,ptxid,batontx.vout[batontx.vout.size()-1].scriptPubKey) == 'R' && ptxid == playertxid && gtxid == gametxid )
+                    obj.push_back(Pair("status","registered"));
+                else obj.push_back(Pair("status","alive"));
+            } else obj.push_back(Pair("status","error"));
+        } else obj.push_back(Pair("status","finished"));
+        obj.push_back(Pair("baton",batontxid.ToString()));
+        obj.push_back(Pair("tokenid",tokenid.ToString()));
+        obj.push_back(Pair("batonaddr",destaddr));
+        obj.push_back(Pair("ismine",strcmp(mygamesaddr,destaddr)==0));
+        obj.push_back(Pair("batonvout",(int64_t)batonvout));
+        obj.push_back(Pair("batonvalue",ValueFromAmount(batonvalue)));
+        obj.push_back(Pair("batonht",(int64_t)batonht));
+        if ( playerdata.size() > 0 )
+            obj.push_back(Pair("player",games_playerobj(playerdata,playertxid,tokenid,symbol,pname,gametxid)));
+    } else fprintf(stderr,"findbaton err.%d\n",retval);
 }
 
 uint64_t games_gamefields(UniValue &obj,int64_t maxplayers,int64_t buyin,uint256 gametxid,char *mygamesaddr)
@@ -939,42 +973,6 @@ UniValue games_create(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     return(result);
 }
 
-UniValue games_list(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
-{
-    UniValue result(UniValue::VOBJ),a(UniValue::VARR),b(UniValue::VARR); uint256 txid,hashBlock,gametxid,tokenid,playertxid; int32_t vout,maxplayers,gameheight,numvouts; CPubKey gamespk,mypk; char coinaddr[64]; CTransaction tx,gametx; int64_t buyin;
-    std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex;
-    gamespk = GetUnspendable(cp,0);
-    mypk = pubkey2pk(Mypubkey());
-    GetCCaddress1of2(cp,coinaddr,gamespk,mypk);
-    SetCCtxids(addressIndex,coinaddr);
-    games_univalue(result,"games",-1,-1);
-    for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=addressIndex.begin(); it!=addressIndex.end(); it++)
-    {
-        txid = it->first.txhash;
-        vout = (int32_t)it->first.index;
-        //char str[65]; fprintf(stderr,"%s check %s/v%d %.8f\n",coinaddr,uint256_str(str,txid),vout,(double)it->second.satoshis/COIN);
-        if ( vout == 0 )
-        {
-            if ( myGetTransaction(txid,tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 1 )
-            {
-                if ( games_registeropretdecode(gametxid,tokenid,playertxid,tx.vout[numvouts-1].scriptPubKey) == 'R' )
-                {
-                    if ( games_isvalidgame(cp,gameheight,gametx,buyin,maxplayers,gametxid,0) == 0 )
-                    {
-                        if ( CCgettxout(txid,vout,1,0) < 0 )
-                            b.push_back(gametxid.GetHex());
-                        else a.push_back(gametxid.GetHex());
-                    }
-                }
-            }
-        }
-    }
-    result.push_back(Pair("pastgames",b));
-    result.push_back(Pair("games",a));
-    result.push_back(Pair("numgames",(int64_t)(a.size()+b.size())));
-    return(result);
-}
-
 UniValue games_pending(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     UniValue result(UniValue::VOBJ),a(UniValue::VARR); int64_t buyin; uint256 txid,hashBlock; CTransaction tx; int32_t openslots,maxplayers,numplayers,gameheight,nextheight,vout,numvouts; CPubKey gamespk; char coinaddr[64];
@@ -1029,7 +1027,7 @@ UniValue games_info(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                     if ( CCgettxout(txid,i+1,1,0) < 0 )
                     {
                         UniValue obj(UniValue::VOBJ);
-                        games_playerinfo(cp,obj,txid,tx,i+1,maxplayers,myaddr);
+                        games_gameplayerinfo(cp,obj,txid,tx,i+1,maxplayers,myaddr);
                         a.push_back(obj);
                     }
                     else if ( 0 )
@@ -1423,7 +1421,7 @@ UniValue games_finish(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     // vout0 -> playerdata marker
     // vout0 -> 1% ingame gold
     // get any playerdata, get all keystrokes, replay game and compare final state
-    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight()); char *method = "bailout";
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight()); char *method = (char *)"bailout";
     UniValue result(UniValue::VOBJ); std::string rawtx,symbol,pname; CTransaction gametx; uint64_t seed; int64_t buyin,batonvalue,inputsum,cashout=0,CCchange=0; int32_t i,err,gameheight,tmp,numplayers,regslot,n,num,dungeonlevel,numkeys,maxplayers,batonht,batonvout; char mygamesaddr[64],*keystrokes = 0; std::vector<uint8_t> playerdata,newdata,nodata; uint256 batontxid,playertxid,gametxid; CPubKey mypk,gamespk; uint8_t player[10000],mypriv[32],funcid;
     struct CCcontract_info *cpTokens, tokensC;
     
