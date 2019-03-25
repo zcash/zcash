@@ -1681,6 +1681,9 @@ void games_packitemstr(char *packitemstr,struct games_packitem *item)
 #include <unistd.h>
 #include <curl/curl.h>
 #include <curl/easy.h>
+#include "../core_io.h"
+#include "../wallet/wallet.h"
+#include <univalue.h>
 
 char USERPASS[8192]; uint16_t GAMES_PORT;
 extern char Gametxidstr[67];
