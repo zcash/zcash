@@ -252,7 +252,7 @@ UniValue games_events(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
         if ( payments_parsehexdata(payload,jitem(params,0),0) == 0 )
         {
             if ( n >= 2 )
-                gametxid = juint256(jitem(params,1),0);
+                gametxid = juint256(jitem(params,1));
             else gametxid = zeroid;
             if ( gametxid != lastgametxid )
             {
@@ -269,7 +269,7 @@ UniValue games_events(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             len = payload.size();
             payload.resize(len + 4 + 32);
             for (i=0; i<32; i++)
-                payload[len++] = ((uint8_t *)&Gametxid)[i];
+                payload[len++] = ((uint8_t *)&gametxid)[i];
             x = eventid;
             payload[len++] = x, x >>= 8;
             payload[len++] = x, x >>= 8;
