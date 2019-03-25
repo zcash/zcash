@@ -179,7 +179,7 @@ int32_t games_eventsign(uint32_t &timestamp,std::vector<uint8_t> &sig,std::vecto
     static secp256k1_context *ctx;
     size_t siglen = 74; secp256k1_pubkey pubkey; secp256k1_ecdsa_signature signature; int32_t len,verifyflag = 1; uint8_t privkey[32]; uint256 hash; uint32_t t;
     if ( ctx == 0 )
-        ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN);
+        ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
     if ( ctx != 0 )
     {
         Myprivkey(privkey);
