@@ -46,16 +46,6 @@ uint8_t games_opretdecode(CPubKey &pk,CScript scriptPubKey)
     return(0);
 }
 
-uint8_t games_eventdecode(CPubKey &pk,std::vector<uint8_t> &sig,std::vector<uint8_t> &payload,std::vector<uint8_t> message)
-{
-    uint8_t e,f;
-    if ( message.size() > 2 && E_UNMARSHAL(message,ss >> e; ss >> f; ss >> pk; ss >> sig; ss >> payload) != 0 && e == EVAL_GAMES )
-    {
-        return(f);
-    }
-    return(0);
-}
-
 UniValue games_rawtxresult(UniValue &result,std::string rawtx,int32_t broadcastflag)
 {
     CTransaction tx;
@@ -219,6 +209,17 @@ UniValue games_events(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     return(result);
 }
 
+uint8_t games_eventdecode(CPubKey &pk,std::vector<uint8_t> &sig,std::vector<uint8_t> &payload,std::vector<uint8_t> message)
+{
+    uint8_t e,f;
+    if ( message.size() > 2 && E_UNMARSHAL(message,ss >> e; ss >> f; ss >> pk; ss >> sig; ss >> payload) != 0 && e == EVAL_GAMES )
+    {
+        return(f);
+    }
+    fprintf(stderr,"e.%d f.%d pk.%d sig.%d payload.%d\n",e,f,(int32_t)pk.size(),(int32_t)sig.size(),(int32_t)payload.size());
+    return(0);
+}
+
 void komodo_netevent(std::vector<uint8_t> message)
 {
     int32_t i; CPubKey pk; std::vector<uint8_t> sig,payload; char str[67];
@@ -230,9 +231,9 @@ void komodo_netevent(std::vector<uint8_t> message)
     }
     else
     {
-        for (i=0; i<payload.size(); i++)
-            fprintf(stderr,"%02x",payload[i]);
-        fprintf(stderr," got RAW message[%d]\n",(int32_t)payload.size());
+        for (i=0; i<message.size(); i++)
+            fprintf(stderr,"%02x",message[i]);
+        fprintf(stderr," got RAW message[%d]\n",(int32_t)message.size());
     }
 }
 
