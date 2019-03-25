@@ -239,7 +239,8 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
             // Check vouts go to the right place and pay the right amounts. 
             int64_t amount = 0, checkamount; int32_t n = 0;
             checkamount = tx.GetValueOut() - change - PAYMENTS_TXFEE;
-            for (i = 1; i < (fHasOpret ? tx.vout.size()-2 : tx.vout.size()-1); i++) {
+            for (i = 1; i < (fHasOpret ? tx.vout.size()-2 : tx.vout.size()-1); i++) 
+            {
                 std::string destscriptPubKey = HexStr(scriptPubKeys[n].begin(),scriptPubKeys[n].end());
                 std::string voutscriptPubKey = HexStr(tx.vout[i].scriptPubKey.begin(),tx.vout[i].scriptPubKey.end());
                 if ( destscriptPubKey != voutscriptPubKey )
@@ -279,9 +280,13 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
                     Getscriptaddress(destaddr,txin.vout[vin.prevout.n].scriptPubKey);
                     if ( strcmp(destaddr,coinaddr) != 0 )
                     {
-                        fprintf(stderr, "vin.%i is not a payments CC vout: txid.%s vout.%i\n", i, txin.GetHash().ToString().c_str(), vin.prevout.n);
-                        return(eval->Invalid("vin is not paymentsCC type"));
-                    }
+                        std::vector<uint8_t> scriptPubKey,opret; CTransaction tx0; uint256 checktxid;
+                        if ( txin.vout.size() < 2 || DecodePaymentsFundOpRet(txin.vout[txin.vout.size()-1].scriptPubKey,checktxid) != 'F' || checktxid != createtxid )
+                        {
+                            fprintf(stderr, "vin.%i is not a payments CC vout: txid.%s\n", i, txin.GetHash().ToString().c_str());
+                            return(eval->Invalid("vin is not paymentsCC type"));
+                        } else fprintf(stderr, "vin.%i opret type txid.%s\n", i, txin.GetHash().ToString().c_str());
+                    } 
                     // check the chain depth vs locked blcoks requirement. 
                     CBlockIndex* pblockindex = mapBlockIndex[blockhash];
                     if ( pblockindex->GetHeight() > chainActive.LastTip()->GetHeight()-lockedblocks )
