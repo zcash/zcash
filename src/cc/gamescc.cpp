@@ -248,22 +248,32 @@ int32_t games_payload(CPubKey pk,uint32_t timestamp,std::vector<uint8_t> payload
 
 UniValue games_events(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    static uint256 lastgametxid;
-    UniValue result(UniValue::VOBJ); std::vector<uint8_t> sig,payload,vopret; int32_t len,i,n; uint32_t x; CPubKey mypk; char str[67]; uint32_t timestamp = 0;
-    if ( params != 0 && (n= cJSON_GetArraySize(params)) == 1 )
+    static uint256 lastgametxid; static uint32_t numevents;
+    UniValue result(UniValue::VOBJ); std::vector<uint8_t> sig,payload,vopret; int32_t len,i,n; uint32_t x; CPubKey mypk; char str[67]; uint32_t eventid,timestamp = 0; uint256 gametxid;
+    if ( params != 0 && (n= cJSON_GetArraySize(params)) >= 1 && n <= 3 )
     {
         if ( payments_parsehexdata(payload,jitem(params,0),0) == 0 )
         {
-            if ( Gametxid != lastgametxid )
+            if ( n >= 2 )
+                gametxid = juint256(jitem(params,1),0);
+            else gametxid = zeroid;
+            if ( gametxid != lastgametxid )
             {
-                lastgametxid = Gametxid;
-                numevents = 0;
+                lastgametxid = gametxid;
+                numevents = 1;
+                eventid = 0;
             }
+            if ( n == 3 )
+            {
+                eventid = juint(jitem(params,2),0);
+                if ( numevents <= eventid )
+                    numevents = eventid+1;
+            } else eventid = numevents++;
             len = payload.size();
             payload.resize(len + 4 + 32);
             for (i=0; i<32; i++)
                 payload[len++] = ((uint8_t *)&Gametxid)[i];
-            x = numevents++;
+            x = eventid;
             payload[len++] = x, x >>= 8;
             payload[len++] = x, x >>= 8;
             payload[len++] = x, x >>= 8;
@@ -274,6 +284,9 @@ UniValue games_events(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                 GetOpReturnData(games_eventopret(timestamp,mypk,sig,payload),vopret);
                 games_payload(mypk,timestamp,payload);
                 komodo_sendmessage(4,8,"events",vopret);
+                result.push_back(Pair("gametxid",gametxid.GetHex()));
+                result.push_back(Pair("eventid",(int64_t)eventid));
+                result.push_back(Pair("timestamp",(int64_t)timestamp));
                 result.push_back(Pair("result","success"));
                 result.push_back(Pair("pubkey33",pubkey33_str(str,(uint8_t *)&mypk)));
             }

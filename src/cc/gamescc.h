@@ -23,7 +23,7 @@ std::string MYCCLIBNAME = (char *)"gamescc";
     { (char *)MYCCNAME, (char *)"rngnext", (char *)"seed", 1, 1, ' ', EVAL_GAMES }, \
     { (char *)MYCCNAME, (char *)"create", (char *)"game,minplayers,maxplayers,buyin,numblocks", 5, 5, ' ', EVAL_GAMES }, \
     { (char *)MYCCNAME, (char *)"info", (char *)"txid", 1, 1, ' ', EVAL_GAMES }, \
-    { (char *)MYCCNAME, (char *)"events", (char *)"hex", 1, 1, ' ', EVAL_GAMES }, \
+    { (char *)MYCCNAME, (char *)"events", (char *)"eventshex [gametxid [eventid]]", 1, 3, ' ', EVAL_GAMES }, \
     { (char *)MYCCNAME, (char *)"register", (char *)"txid", 1, 1, ' ', EVAL_GAMES },
 
 bool games_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx);
