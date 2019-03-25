@@ -288,6 +288,13 @@ extern UniValue marmara_creditloop(const UniValue& params, bool fHelp);
 extern UniValue marmara_settlement(const UniValue& params, bool fHelp);
 extern UniValue marmara_lock(const UniValue& params, bool fHelp);
 extern UniValue paymentsaddress(const UniValue& params, bool fHelp);
+extern UniValue payments_release(const UniValue& params, bool fHelp);
+extern UniValue payments_fund(const UniValue& params, bool fHelp);
+extern UniValue payments_txidopret(const UniValue& params, bool fHelp);
+extern UniValue payments_create(const UniValue& params, bool fHelp);
+extern UniValue payments_info(const UniValue& params, bool fHelp);
+extern UniValue payments_list(const UniValue& params, bool fHelp);
+
 extern UniValue cclibaddress(const UniValue& params, bool fHelp);
 extern UniValue cclibinfo(const UniValue& params, bool fHelp);
 extern UniValue cclib(const UniValue& params, bool fHelp);

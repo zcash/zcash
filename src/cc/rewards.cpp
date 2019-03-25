@@ -333,7 +333,11 @@ int64_t AddRewardsInputs(CScript &scriptPubKey,uint64_t maxseconds,struct CCcont
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     GetCCaddress(cp,coinaddr,pk);
     SetCCunspents(unspentOutputs,coinaddr);
-    threshold = total/(maxinputs+1);
+    if ( maxinputs > CC_MAXVINS )
+        maxinputs = CC_MAXVINS;
+    if ( maxinputs > 0 )
+        threshold = total/maxinputs;
+    else threshold = total;
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;

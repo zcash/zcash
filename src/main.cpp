@@ -7035,8 +7035,19 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         Misbehaving(pfrom->GetId(), 1);
         return false;
     }
-
-
+    else if ( strCommand == "events" )
+    {
+        int32_t i;
+        if ( ASSETCHAINS_CCLIB != "gamescc" )
+        {
+            Misbehaving(pfrom->GetId(), 1);
+            return false;
+        }
+        std::vector<uint8_t> payload;
+        vRecv >> payload;
+        komodo_netevent(payload);
+        return(true);
+    }
     else if (strCommand == "verack")
     {
         pfrom->SetRecvVersion(min(pfrom->nVersion, PROTOCOL_VERSION));

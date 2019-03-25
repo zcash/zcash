@@ -898,7 +898,11 @@ int64_t AddGatewaysInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CP
         {
             GetTokensCCaddress(cp,coinaddr,pk);
             SetCCunspents(unspentOutputs,coinaddr);
-            threshold = total/(maxinputs+1);
+            if ( maxinputs > CC_MAXVINS )
+                maxinputs = CC_MAXVINS;
+            if ( maxinputs > 0 )
+                threshold = total/maxinputs;
+            else threshold = total;
             LOGSTREAM("gatewayscc",CCLOG_DEBUG1, stream << "check " << coinaddr << " for gateway inputs" << std::endl);
             for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
             {
