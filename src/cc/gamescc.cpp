@@ -3472,7 +3472,7 @@ int tetris(int argc, char **argv)
     tetris_move move = TM_NONE;
     bool running = true;
     WINDOW *board, *next, *hold, *score;
-    int32_t c; bits256 gametxid; uint32_t eventid = 0;
+    int32_t c,skipcount=0; bits256 gametxid; uint32_t eventid = 0;
     memset(&gametxid,0,sizeof(gametxid));
     // Load file if given a filename.
     if (argc >= 2) {
@@ -3514,7 +3514,12 @@ int tetris(int argc, char **argv)
         sleep_milli(10);
         c = getch();
         if ( c >= 0 )
+        {
+            if ( skipcount > 0 )
+                issue_games_events(gametxid,eventid-skipcount,skipcount | 0x4000);
             issue_games_events(gametxid,eventid,c);
+            skipcount = 0;
+        } else skipcount++;
         eventid++;
         switch ( c )
         {
