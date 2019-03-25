@@ -16,6 +16,24 @@
 #ifndef H_CURSESD_H
 #define H_CURSESD_H
 
+#define COLOR_BLACK   0
+
+#ifdef PDC_RGB        /* RGB */
+# define COLOR_RED    1
+# define COLOR_GREEN  2
+# define COLOR_BLUE   4
+#else                 /* BGR */
+# define COLOR_BLUE   1
+# define COLOR_GREEN  2
+# define COLOR_RED    4
+#endif
+
+#define COLOR_CYAN    (COLOR_BLUE | COLOR_GREEN)
+#define COLOR_MAGENTA (COLOR_RED | COLOR_BLUE)
+#define COLOR_YELLOW  (COLOR_RED | COLOR_GREEN)
+
+#define COLOR_WHITE   7
+
 #define	LINES	24
 #define	COLS	80
 
