@@ -2364,7 +2364,7 @@ char *komodo_issuemethod(char *userpass,char *method,char *params,uint16_t port)
     return(retstr2);
 }
 
-int32_t issue_games_events(uint256 gametxid,uint32_t eventid,char c)
+int32_t issue_games_events(bits256 gametxid,uint32_t eventid,char c)
 {
     static FILE *fp;
     char params[512],*retstr; cJSON *retjson,*resobj; int32_t retval = -1;
@@ -3472,7 +3472,7 @@ int tetris(int argc, char **argv)
     tetris_move move = TM_NONE;
     bool running = true;
     WINDOW *board, *next, *hold, *score;
-    int32_t c; uint256 gametxid; uint32_t eventid = 0;
+    int32_t c; bits256 gametxid; uint32_t eventid = 0;
     // Load file if given a filename.
     if (argc >= 2) {
         FILE *f = fopen(argv[1], "r");
