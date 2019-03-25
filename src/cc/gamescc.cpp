@@ -202,7 +202,11 @@ int32_t games_eventsign(uint32_t &timestamp,std::vector<uint8_t> &sig,std::vecto
             {
                 sig.resize(siglen);
                 if ( secp256k1_ecdsa_signature_serialize_der(ctx,&sig[0],&siglen,&signature) > 0 )
+                {
+                    if ( siglen != sig.size() )
+                        sig.resize(siglen);
                     return(0);
+                }
                 else return(-3);
             } else return(-2);
         }
