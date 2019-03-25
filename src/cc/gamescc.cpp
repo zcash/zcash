@@ -387,6 +387,7 @@ UniValue games_events(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             {
                 result.push_back(Pair("gametxid",gametxid.GetHex()));
                 result.push_back(Pair("eventid",(int64_t)eventid));
+                result.push_back(Pair("payload",jstr(jitem(params,0),0)));
                 result.push_back(Pair("timestamp",(int64_t)timestamp));
                 result.push_back(Pair("result","success"));
                 result.push_back(Pair("pubkey33",pubkey33_str(str,(uint8_t *)&mypk)));
@@ -436,9 +437,9 @@ void komodo_netevent(std::vector<uint8_t> message)
                 }
             }
         }
-        for (i=0; i<payload.size(); i++)
-            fprintf(stderr,"%02x",payload[i]);
-        fprintf(stderr," payload, got pk.%s siglen.%d lag.[%d]\n",pubkey33_str(str,(uint8_t *)&pk),(int32_t)sig.size(),lag);
+        //for (i=0; i<payload.size(); i++)
+        //    fprintf(stderr,"%02x",payload[i]);
+        //fprintf(stderr," payload, got pk.%s siglen.%d lag.[%d]\n",pubkey33_str(str,(uint8_t *)&pk),(int32_t)sig.size(),lag);
     }
     else
     {
@@ -2349,13 +2350,13 @@ char *komodo_issuemethod(char *userpass,char *method,char *params,uint16_t port)
     return(retstr2);
 }
 
-int32_t issue_games_events(bits256 gametxid,uint32_t eventid,char c)
+int32_t issue_games_events(bits256 gametxid,uint32_t eventid,int32_t c)
 {
     static FILE *fp;
     char params[512],*retstr,str[65]; cJSON *retjson,*resobj; int32_t retval = -1;
     if ( fp == 0 )
         fp = fopen("events.log","wb");
-    sprintf(params,"[\"events\",\"17\",\"[%%22%02x%%22,%%22%s%%22,%u]\"]",c,bits256_str(str,gametxid),eventid);
+    sprintf(params,"[\"events\",\"17\",\"[%%22%08x%%22,%%22%s%%22,%u]\"]",c,bits256_str(str,gametxid),eventid);
     if ( (retstr= komodo_issuemethod(USERPASS,(char *)"cclib",params,GAMES_PORT)) != 0 )
     {
         if ( (retjson= cJSON_Parse(retstr)) != 0 )
@@ -3473,6 +3474,7 @@ int tetris(int argc, char **argv)
     bool running = true;
     WINDOW *board, *next, *hold, *score;
     int32_t c; bits256 gametxid; uint32_t eventid = 0;
+    memset(&gametxid,0,sizeof(gametxid));
     // Load file if given a filename.
     if (argc >= 2) {
         FILE *f = fopen(argv[1], "r");
