@@ -1676,7 +1676,6 @@ void games_packitemstr(char *packitemstr,struct games_packitem *item)
 
 #include <stdio.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <memory.h>
 #include <string.h>
 #include <unistd.h>
