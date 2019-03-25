@@ -5,6 +5,7 @@
 extern CWallet* pwalletMain;
 
 #include "CCinclude.h"
+#include "secp256k1.h"
 
 std::string MYCCLIBNAME = (char *)"gamescc";
 
