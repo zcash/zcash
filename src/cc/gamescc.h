@@ -1,6 +1,9 @@
 #ifndef H_GAMESCC_H
 #define H_GAMESCC_H
 
+#include <stdint.h>
+#include <stdio.h>
+
 #ifndef STANDALONE
 
 #define ENABLE_WALLET
