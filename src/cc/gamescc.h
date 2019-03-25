@@ -96,6 +96,18 @@ struct games_player
     struct games_packitem gamespack[MAXPACK];
 };
 
+struct games_state
+{
+    uint64_t seed;
+    char *keystrokes,*keystrokeshex;
+    uint32_t needflush,replaydone;
+    int32_t numkeys,ind,num,guiflag,counter,sleeptime,playersize,restoring,lastnum;
+    FILE *logfp;
+    struct games_player P;
+    char buffered[10000];
+    uint8_t playerdata[10000];
+};
+
 int32_t games_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t num,struct games_player *player,int32_t sleepmillis);
 void games_packitemstr(char *packitemstr,struct games_packitem *item);
 

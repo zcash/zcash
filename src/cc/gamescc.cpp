@@ -336,12 +336,34 @@ int32_t games_payloadrecv(CPubKey pk,uint32_t timestamp,std::vector<uint8_t> pay
     } else return(-1);
 }
 
+int32_t games_event(uint32_t timestamp,uint256 gametxid,int32_t eventid,std::vector<uint8_t> payload)
+{
+    std::vector<uint8_t> sig,vopret; CPubKey mypk; uint32_t x; int32_t i,len = payload.size();
+    payload.resize(len + 4 + 32);
+    for (i=0; i<32; i++)
+        payload[len++] = ((uint8_t *)&gametxid)[i];
+    x = eventid;
+    payload[len++] = x, x >>= 8;
+    payload[len++] = x, x >>= 8;
+    payload[len++] = x, x >>= 8;
+    payload[len++] = x;
+    mypk = pubkey2pk(Mypubkey());
+    if ( games_eventsign(timestamp,sig,payload,mypk) == 0 )
+    {
+        GetOpReturnData(games_eventopret(timestamp,mypk,sig,payload),vopret);
+        games_payloadrecv(mypk,timestamp,payload);
+        komodo_sendmessage(4,8,"events",vopret);
+        return(0);
+    } else return(-1);
+}
+
 UniValue games_events(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     static uint256 lastgametxid; static uint32_t numevents;
-    UniValue result(UniValue::VOBJ); std::vector<uint8_t> sig,payload,vopret; int32_t len,i,n; uint32_t x; CPubKey mypk; char str[67]; uint32_t eventid,timestamp = 0; uint256 gametxid;
+    UniValue result(UniValue::VOBJ); std::vector<uint8_t> payload; int32_t len,i,n; uint32_t x; CPubKey mypk; char str[67]; uint32_t eventid,timestamp = 0; uint256 gametxid;
     if ( params != 0 && (n= cJSON_GetArraySize(params)) >= 1 && n <= 3 )
     {
+        mypk = pubkey2pk(Mypubkey());
         if ( payments_parsehexdata(payload,jitem(params,0),0) == 0 )
         {
             if ( n >= 2 )
@@ -359,21 +381,8 @@ UniValue games_events(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                 if ( numevents <= eventid )
                     numevents = eventid+1;
             } else eventid = numevents++;
-            len = payload.size();
-            payload.resize(len + 4 + 32);
-            for (i=0; i<32; i++)
-                payload[len++] = ((uint8_t *)&gametxid)[i];
-            x = eventid;
-            payload[len++] = x, x >>= 8;
-            payload[len++] = x, x >>= 8;
-            payload[len++] = x, x >>= 8;
-            payload[len++] = x;
-            mypk = pubkey2pk(Mypubkey());
-            if ( games_eventsign(timestamp,sig,payload,mypk) == 0 )
+            if ( games_event(timestamp,gametxid,eventid,payload) == 0 )
             {
-                GetOpReturnData(games_eventopret(timestamp,mypk,sig,payload),vopret);
-                games_payloadrecv(mypk,timestamp,payload);
-                komodo_sendmessage(4,8,"events",vopret);
                 result.push_back(Pair("gametxid",gametxid.GetHex()));
                 result.push_back(Pair("eventid",(int64_t)eventid));
                 result.push_back(Pair("timestamp",(int64_t)timestamp));
@@ -2587,7 +2596,7 @@ static inline bool is_x64(void) {
 int main(int argc, char **argv)
 {
     uint64_t seed; FILE *fp = 0; int32_t i,j,c; char userpass[8192];
-    
+    strcpy(ASSETCHAINS_SYMBOL,"GTEST");
 #ifdef _WIN32
 #ifdef _MSC_VER
     printf("*** games for Windows [ Build %s ] ***\n", BUILD_DATE);
@@ -2610,8 +2619,8 @@ int main(int argc, char **argv)
     
 #ifdef _WIN32
 #ifdef _MSC_VER
-    if (strncmp(ASSETCHAINS_SYMBOL, "TETRIS.EXE", sizeof(ASSETCHAINS_SYMBOL)) == 0 || strncmp(ASSETCHAINS_SYMBOL, "TETRIS54.EXE", sizeof(ASSETCHAINS_SYMBOL)) == 0) {
-        strcpy(ASSETCHAINS_SYMBOL, "TETRIS"); // accept TETRIS.conf, instead of TETRIS.EXE.conf or TETRIS54.EXE.conf if build with MSVC
+    if (strncmp(ASSETCHAINS_SYMBOL, "GTEST.EXE", sizeof(ASSETCHAINS_SYMBOL)) == 0 || strncmp(ASSETCHAINS_SYMBOL, "GTEST54.EXE", sizeof(ASSETCHAINS_SYMBOL)) == 0) {
+        strcpy(ASSETCHAINS_SYMBOL, "GTEST"); // accept TETRIS.conf, instead of TETRIS.EXE.conf or TETRIS54.EXE.conf if build with MSVC
     }
 #endif
 #endif
@@ -3432,7 +3441,7 @@ int tetris(int argc, char **argv)
     tetris_move move = TM_NONE;
     bool running = true;
     WINDOW *board, *next, *hold, *score;
-    
+    int32_t c; uint256 gametxid; std::vector<uint8_t> payload; uint32_t eventid = 0;
     // Load file if given a filename.
     if (argc >= 2) {
         FILE *f = fopen(argv[1], "r");
@@ -3462,6 +3471,7 @@ int tetris(int argc, char **argv)
     score = newwin(6, 10, 14, 2 * (tg->cols + 1 ) + 1);
     int32_t counter = 0;
     // Game loop
+    payload.resize(1);
     while (running) {
         running = tg_tick(tg, move);
         display_board(board, tg);
@@ -3471,8 +3481,12 @@ int tetris(int argc, char **argv)
         if ( (counter++ % 5) == 0 )
             doupdate();
         sleep_milli(10);
-        
-        switch (getch()) {
+        c = getch();
+        payload[0] = c;
+        games_event(0,gametxid,eventid,payload);
+        eventid++;
+        switch ( c )
+        {
             case KEY_LEFT:
                 move = TM_LEFT;
                 break;
