@@ -25,10 +25,7 @@ class CryptoconditionsDiceTest(CryptoconditionsTestFramework):
         assert_greater_than(result, 100000)
 
         result  = rpc.diceaddress()
-        for x in result.keys():
-            print(x+": "+str(result[x]))  
         assert_equal(result['result'], 'success')
-
 
         for x in result.keys():
             if x.find('ddress') > 0:
