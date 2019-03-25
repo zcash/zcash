@@ -15,8 +15,7 @@
 class AMQPSender : public proton::messaging_handler {
   private:
     std::deque<proton::message> messages_; 
-    proton::url url_;
-    proton::connection conn_;
+    std::string url_;
     proton::sender sender_;
     std::mutex lock_;
     std::atomic<bool> terminated_ = {false};
@@ -29,8 +28,7 @@ class AMQPSender : public proton::messaging_handler {
     void on_container_start(proton::container& c) override {
         proton::duration t(10000);   // milliseconds
         proton::connection_options opts = proton::connection_options().idle_timeout(t);
-        conn_ = c.connect(url_, opts);
-        sender_ = conn_.open_sender(url_.path());
+        sender_ = c.open_sender(url_, opts);
     }
 
     // Remote end signals when the local end can send (i.e. has credit) 
@@ -58,7 +56,7 @@ class AMQPSender : public proton::messaging_handler {
             throw std::runtime_error("amqp connection was terminated");
         }
 
-        if (!conn_.active()) {
+        if (!sender_.connection().active()) {
             throw std::runtime_error("amqp connection is not active");
         }
 
@@ -76,7 +74,7 @@ class AMQPSender : public proton::messaging_handler {
     // Close connection to remote end.  Container event-loop, by default, will auto-stop.
     void terminate() {
         std::lock_guard<std::mutex> guard(lock_);
-        conn_.close();
+        sender_.connection().close();
         terminated_.store(true);
     }
 

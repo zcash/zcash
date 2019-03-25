@@ -24,7 +24,6 @@
 #include <proton/tracker.hpp>
 #include <proton/transport.hpp>
 #include <proton/types.hpp>
-#include <proton/url.hpp>
 #endif
 
 #include "primitives/block.h"
