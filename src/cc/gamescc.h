@@ -13,7 +13,7 @@ std::string MYCCLIBNAME = (char *)"gamescc";
 #define GAMES_TXFEE 10000
 #define GAMES_MAXITERATIONS 777
 #define GAMES_MAXKEYSTROKESGAP 60
-#define GAMES_MAYPLAYERS 64
+#define GAMES_MAXPLAYERS 64
 #define GAMES_REGISTRATIONSIZE (100 * 10000)
 
 #define GAMES_RNGMULT 11109
@@ -90,7 +90,7 @@ struct games_packitem
 struct games_player
 {
     int32_t gold,hitpoints,strength,level,experience,packsize,dungeonlevel,amulet;
-    struct games_packitem roguepack[MAXPACK];
+    struct games_packitem gamespack[MAXPACK];
 };
 
 int32_t games_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t num,struct rogue_player *player,int32_t sleepmillis);
