@@ -692,6 +692,7 @@ int32_t cclib_parsehash(uint8_t *hash32,cJSON *item,int32_t len)
 
 #elif BUILD_GAMESCC
 #include "gamescc.cpp"
+#include "rogue/cursesd.c"
 
 #else
 #include "sudoku.cpp"
