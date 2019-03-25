@@ -27,6 +27,8 @@
  Every time period, all players would set their rng value to the lastrng value. The only thing to be careful of is it not exceed the maxrng calls to rngnext in a single time period. otherwise the same set of rng numbers will be repeated.
 */
 
+uint256 Gametxid;
+uint32_t numevents;
 
 CScript games_opret(uint8_t funcid,CPubKey pk)
 {
@@ -232,11 +234,26 @@ int32_t games_payload(CPubKey pk,uint32_t timestamp,std::vector<uint8_t> payload
 
 UniValue games_events(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ); std::vector<uint8_t> sig,payload,vopret; int32_t n; CPubKey mypk; char str[67]; uint32_t timestamp = 0;
+    static uint256 lastgametxid;
+    UniValue result(UniValue::VOBJ); std::vector<uint8_t> sig,payload,vopret; int32_t len,i,n; uint32_t x; CPubKey mypk; char str[67]; uint32_t timestamp = 0;
     if ( params != 0 && (n= cJSON_GetArraySize(params)) == 1 )
     {
         if ( payments_parsehexdata(payload,jitem(params,0),0) == 0 )
         {
+            if ( Gametxid != lastgametxid )
+            {
+                lastgametxid = Gametxid;
+                numevents = 0;
+            }
+            len = payload.size();
+            payload.resize(len + 4 + 32);
+            for (i=0; i<32; i++)
+                payload[len++] = ((uint8_t *)&Gametxid)[i];
+            x = numevents++;
+            payload[len++] = x, x >> 8;
+            payload[len++] = x, x >> 8;
+            payload[len++] = x, x >> 8;
+            payload[len++] = x;
             mypk = pubkey2pk(Mypubkey());
             if ( games_eventsign(timestamp,sig,payload,mypk) == 0 )
             {
