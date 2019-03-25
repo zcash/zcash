@@ -56,7 +56,7 @@ CScript games_eventopret(CPubKey pk,std::vector<uint8_t> sig,std::vector<uint8_t
 uint8_t games_eventdecode(CPubKey &pk,std::vector<uint8_t> &sig,std::vector<uint8_t> &payload,std::vector<uint8_t> vopret)
 {
     uint8_t e,f;
-    if ( message.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> pk; ss >> sig; ss >> payload) != 0 && e == EVAL_GAMES )
+    if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> pk; ss >> sig; ss >> payload) != 0 && e == EVAL_GAMES )
     {
         return(f);
     }
@@ -203,7 +203,7 @@ UniValue games_events(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             mypk = pubkey2pk(Mypubkey());
             if ( games_eventsign(sig,payload,mypk) == 0 )
             {
-                GetOpReturnData(games_eventopret(pk,sig,payload),vopret);
+                GetOpReturnData(games_eventopret(mypk,sig,payload),vopret);
                 komodo_sendmessage(4,8,"events",&vopret[0],(int32_t)vopret.size());
                 result.push_back(Pair("result","success"));
                 result.push_back(Pair("pubkey33",pubkey33_str(str,(uint8_t *)&mypk)));
