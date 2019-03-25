@@ -1871,7 +1871,7 @@ char *clonestr(char *str)
         str = (char *)"<nullstr>";
     }
     len = strlen(str);
-    clone = (char *)malloc(len+16);
+    clone = (char *)calloc(1,len+16);
     strcpy(clone,str);
     return(clone);
 }
