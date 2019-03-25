@@ -1634,4 +1634,14 @@ bool games_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
     return(true);
 }
 
+int32_t games_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t num,struct games_player *player,int32_t sleepmillis)
+{
+    return(-1);
+}
+
+void games_packitemstr(char *packitemstr,struct games_packitem *item)
+{
+    sprintf(packitemstr,"not yet");
+}
+
 
