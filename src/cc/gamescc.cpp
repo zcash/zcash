@@ -13,9 +13,10 @@
  *                                                                            *
  ******************************************************************************/
 
-#include "gamescc.h"
 
 #ifndef STANDALONE
+
+#include "gamescc.h"
 
 /*
 ./c cclib rng 17 \"[%229433dc3749aece1bd568f374a45da3b0bc6856990d7da3cd175399577940a775%22,250]\"
@@ -1684,7 +1685,7 @@ void games_packitemstr(char *packitemstr,struct games_packitem *item)
 char USERPASS[8192]; uint16_t GAMES_PORT;
 extern char Gametxidstr[67];
 
-#define MAX_STR 1024
+#define MAXSTR 1024
 char whoami[MAXSTR];
 
 #define SMALLVAL 0.000000000000001
@@ -2466,7 +2467,7 @@ int32_t games_progress(struct games_state *rs,int32_t waitflag,uint64_t seed,cha
                     if ( (resobj= jobj(retjson,(char *)"result")) != 0 && (keys= jstr(resobj,(char *)"keystrokes")) != 0 )
                     {
                         len = strlen(keys) / 2;
-                        pastcmp = (char *)malloc(len + 1);
+                        pastcmp = (uint8_t *)malloc(len + 1);
                         decode_hex(pastcmp,len,keys);
                         fprintf(stderr,"keystrokes.(%s) vs pastkeys\n",keys);
                         for (i=0; i<numpastkeys; i++)
