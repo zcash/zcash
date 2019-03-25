@@ -193,9 +193,9 @@ int32_t games_eventsign(uint32_t &timestamp,std::vector<uint8_t> &sig,std::vecto
             verifyflag = 0;
         }
         t = timestamp;
-        payload[len++] = t, t >> 8;
-        payload[len++] = t, t >> 8;
-        payload[len++] = t, t >> 8;
+        payload[len++] = t, t >>= 8;
+        payload[len++] = t, t >>= 8;
+        payload[len++] = t, t >>= 8;
         payload[len++] = t;
         vcalc_sha256(0,(uint8_t *)&hash,&payload[0],len);
         if ( verifyflag == 0 )
@@ -250,9 +250,9 @@ UniValue games_events(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             for (i=0; i<32; i++)
                 payload[len++] = ((uint8_t *)&Gametxid)[i];
             x = numevents++;
-            payload[len++] = x, x >> 8;
-            payload[len++] = x, x >> 8;
-            payload[len++] = x, x >> 8;
+            payload[len++] = x, x >>= 8;
+            payload[len++] = x, x >>= 8;
+            payload[len++] = x, x >>= 8;
             payload[len++] = x;
             mypk = pubkey2pk(Mypubkey());
             if ( games_eventsign(timestamp,sig,payload,mypk) == 0 )
