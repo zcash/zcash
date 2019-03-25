@@ -1682,6 +1682,8 @@ void games_packitemstr(char *packitemstr,struct games_packitem *item)
 #include <curl/curl.h>
 #include <curl/easy.h>
 
+void *malloc(size_t size);
+
 char USERPASS[8192]; uint16_t GAMES_PORT;
 extern char Gametxidstr[67];
 
@@ -2367,10 +2369,10 @@ char *komodo_issuemethod(char *userpass,char *method,char *params,uint16_t port)
 int32_t issue_games_events(bits256 gametxid,uint32_t eventid,char c)
 {
     static FILE *fp;
-    char params[512],*retstr; cJSON *retjson,*resobj; int32_t retval = -1;
+    char params[512],*retstr,str[65]; cJSON *retjson,*resobj; int32_t retval = -1;
     if ( fp == 0 )
         fp = fopen("events.log","wb");
-    sprintf(params,"[\"events\",\"17\",\"[%%22%02x%%22,%%22%s%%22,%u]\"]",c,gametxid.GetHex().c_str(),eventid);
+    sprintf(params,"[\"events\",\"17\",\"[%%22%02x%%22,%%22%s%%22,%u]\"]",c,bits256_str(str,gametxid),eventid);
     if ( (retstr= komodo_issuemethod(USERPASS,(char *)"cclib",params,GAMES_PORT)) != 0 )
     {
         if ( (retjson= cJSON_Parse(retstr)) != 0 )
@@ -3502,7 +3504,6 @@ int tetris(int argc, char **argv)
     score = newwin(6, 10, 14, 2 * (tg->cols + 1 ) + 1);
     int32_t counter = 0;
     // Game loop
-    payload.resize(1);
     while (running) {
         running = tg_tick(tg, move);
         display_board(board, tg);
