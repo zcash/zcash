@@ -45,6 +45,16 @@ uint8_t games_opretdecode(CPubKey &pk,CScript scriptPubKey)
     return(0);
 }
 
+uint8_t games_eventdecode(CPubKey &pk,std::vector<uint8_t> &sig,std::vector<uint8_t> &payload,std::vector<uint8_t> message)
+{
+    uint8_t e,f;
+    if ( message.size() > 2 && E_UNMARSHAL(message,ss >> e; ss >> f; ss >> pk; ss >> sig; ss >> payload) != 0 && e == EVAL_GAMES )
+    {
+        return(f);
+    }
+    return(0);
+}
+
 UniValue games_rawtxresult(UniValue &result,std::string rawtx,int32_t broadcastflag)
 {
     CTransaction tx;
@@ -154,15 +164,49 @@ UniValue games_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     return(result);
 }
 
+int32_t games_eventsign(std::vector<uint8_t> &sig,std::vector<uint8_t> payload,CPubKey pk)
+{
+    bool signSuccess; SignatureData sigdata; uint256 hash; uint8_t *ptr; auto consensusBranchId = 0;
+    const CKeyStore& keystore = *pwalletMain;
+    txNew.vin.resize(1);
+    txNew.vout.resize(1);
+    txNew.vin[0].prevout.hash = payload.GetHash();
+    txNew.vin[0].prevout.n = 0;
+    txNew.vout[0].scriptPubKey = CScript() << payload << OP_DROP << ParseHex(HexString(pk)) << OP_CHECKSIG;
+    txNew.vout[0].nValue = (int32_t)payload.size();
+    txNew.nLockTime = 0;
+    CTransaction txNewConst(txNew);
+    signSuccess = ProduceSignature(TransactionSignatureCreator(&keystore, &txNewConst, 0, *utxovaluep, SIGHASH_ALL), txNew.vout[0].scriptPubKey, sigdata, consensusBranchId);
+    if ( signSuccess > 0 )
+    {
+        UpdateTransaction(txNew,0,sigdata);
+        ptr = (uint8_t *)&sigdata.scriptSig[0];
+        siglen = sigdata.scriptSig.size();
+        sig.resize(siglen);
+        for (i=0; i<siglen; i++)
+            sig[i] = ptr[i];
+        return(0);
+    } else return(-1);
+}
+
 UniValue games_events(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ); std::vector<uint8_t> payload; int32_t n;
+    UniValue result(UniValue::VOBJ); std::vector<uint8_t> sig,payload; int32_t n; CPubKey mypk; uint256 hash;
     if ( params != 0 && (n= cJSON_GetArraySize(params)) == 1 )
     {
         if ( payments_parsehexdata(payload,jitem(params,0),0) == 0 )
         {
-            komodo_sendmessage(4,8,"events",payload);
-            result.push_back(Pair("result","success"));
+            mypk = pubkey2pk(Mypubkey());
+            if ( games_eventsign(sig,payload,mypk) == 0 )
+            {
+                komodo_sendmessage(4,8,"events",E_MARSHAL(ss << EVAL_GAMES << 'E' << mypk << sig << payload));
+                result.push_back(Pair("result","success"));
+            }
+            else
+            {
+                result.push_back(Pair("result","error"));
+                result.push_back(Pair("error","signing ereror"));
+            }
         }
         else
         {
@@ -178,12 +222,21 @@ UniValue games_events(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     return(result);
 }
 
-void komodo_netevent(std::vector<uint8_t> payload)
+void komodo_netevent(std::vector<uint8_t> message)
 {
-    int32_t i;
-    for (i=0; i<payload.size(); i++)
-        fprintf(stderr,"%02x",payload[i]);
-    fprintf(stderr," got event[%d]\n",(int32_t)payload.size());
+    int32_t i; CPubKey pk; std::vector<uint8_t> sig,payload; char str[67];
+    if ( games_eventdecode(pk,sig,payload,message) == 'E' )
+    {
+        for (i=0; i<payload.size(); i++)
+            fprintf(stderr,"%02x",payload[i]);
+        fprintf(stderr," payload, got pk.%s siglen.%d\n",pub33_str(str,pk),(int32_t)sig.size());
+    }
+    else
+    {
+        for (i=0; i<payload.size(); i++)
+            fprintf(stderr,"%02x",payload[i]);
+        fprintf(stderr," got RAW message[%d]\n",(int32_t)payload.size());
+    }
 }
 
 bool games_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx)
