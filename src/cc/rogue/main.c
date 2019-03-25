@@ -784,9 +784,9 @@ int32_t rogue_sendrawtransaction(char *rawtx)
     return(retval);
 }
 
-void rogue_progress(struct rogue_state *rs,int32_t waitflag,uint64_t seed,char *keystrokes,int32_t num)
+int32_t rogue_progress(struct rogue_state *rs,int32_t waitflag,uint64_t seed,char *keystrokes,int32_t num)
 {
-    char cmd[16384],hexstr[16384],params[32768],*retstr,*rawtx,*pastkeys,*pastcmp,*keys; int32_t i,len,numpastkeys; cJSON *retjson,*resobj;
+    char cmd[16384],hexstr[16384],params[32768],*retstr,*rawtx,*pastkeys,*pastcmp,*keys; int32_t i,len,numpastkeys,retflag = -1; cJSON *retjson,*resobj;
     //fprintf(stderr,"rogue_progress num.%d\n",num);
     if ( rs->guiflag != 0 && Gametxidstr[0] != 0 )
     {
@@ -795,7 +795,7 @@ void rogue_progress(struct rogue_state *rs,int32_t waitflag,uint64_t seed,char *
             if ( rogue_sendrawtransaction(rs->keystrokeshex) == 0 )
             {
                 if ( waitflag == 0 )
-                    return;
+                    return(0);
                 else if ( 0 )
                 {
                     while ( rogue_sendrawtransaction(rs->keystrokeshex) == 0 )
@@ -866,8 +866,12 @@ void rogue_progress(struct rogue_state *rs,int32_t waitflag,uint64_t seed,char *
                     {
                         if ( rs->keystrokeshex != 0 )
                             free(rs->keystrokeshex);
-                        rs->keystrokeshex = (char *)malloc(strlen(rawtx)+1);
-                        strcpy(rs->keystrokeshex,rawtx);
+                        if ( (errstr= jstr(resobj,"error")) == 0 )
+                        {
+                            rs->keystrokeshex = (char *)malloc(strlen(rawtx)+1);
+                            strcpy(rs->keystrokeshex,rawtx);
+                            retflag = 1;
+                        } else fprintf(stderr,"error sending keystrokes tx\n"), sleep(1);
 //fprintf(stderr,"set keystrokestx <- %s\n",rs->keystrokeshex);
                     }
                     free_json(retjson);
@@ -885,6 +889,7 @@ void rogue_progress(struct rogue_state *rs,int32_t waitflag,uint64_t seed,char *
             }
         }
     }
+    return(retflag);
 }
 
 int32_t rogue_setplayerdata(struct rogue_state *rs,char *gametxidstr)
