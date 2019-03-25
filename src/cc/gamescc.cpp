@@ -27,9 +27,6 @@
  Every time period, all players would set their rng value to the lastrng value. The only thing to be careful of is it not exceed the maxrng calls to rngnext in a single time period. otherwise the same set of rng numbers will be repeated.
 */
 
-uint256 Gametxid;
-uint32_t numevents;
-
 CScript games_opret(uint8_t funcid,CPubKey pk)
 {
     CScript opret; uint8_t evalcode = EVAL_GAMES;
