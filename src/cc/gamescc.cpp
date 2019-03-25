@@ -60,10 +60,10 @@ uint8_t games_eventdecode(uint32_t &timestamp,CPubKey &pk,std::vector<uint8_t> &
     if ( vopret.size() > 6 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> pk; ss >> sig; ss >> payload) != 0 && e == EVAL_GAMES )
     {
         len = (int32_t)payload.size();
-        timestamp = payload[--len];
-        timestamp = (timestamp << 8) | payload[--len];
-        timestamp = (timestamp << 8) | payload[--len];
-        timestamp = (timestamp << 8) | payload[--len];
+        timestamp = (uint32_t)payload[--len] << 24;
+        timestamp |= (uint32_t)payload[--len] << 16;
+        timestamp |= (uin32_t)payload[--len] << 8;
+        timestamp |= (uint32_t)payload[--len];
         payload.resize(len);
         return(f);
     }
