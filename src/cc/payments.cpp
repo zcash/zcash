@@ -680,7 +680,7 @@ UniValue PaymentsCreate(struct CCcontract_info *cp,char *jsonstr)
             txidoprets.push_back(payments_juint256(jitem(params,2+i)));
         for (i=0; i<txidoprets.size(); i++)
         {
-            std::vector<uint8_t> scriptPubKey,opret; int32_t allocation;
+            std::vector<uint8_t> scriptPubKey,opret; int64_t allocation;
             if ( myGetTransaction(txidoprets[i],tx,hashBlock) != 0 && tx.vout.size() > 1 && DecodePaymentsTxidOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,allocation,scriptPubKey,opret) == 'T' )
             {
                 totalallocations += allocation;
@@ -732,7 +732,7 @@ UniValue PaymentsCreate(struct CCcontract_info *cp,char *jsonstr)
 
 UniValue PaymentsInfo(struct CCcontract_info *cp,char *jsonstr)
 {
-    UniValue result(UniValue::VOBJ),a(UniValue::VARR); CTransaction tx,txO; CPubKey Paymentspk,txidpk; int32_t i,j,n,flag=0,allocation,numoprets=0,lockedblocks,minrelease,totalallocations; std::vector<uint256> txidoprets; int64_t funds,fundsopret; char fundsaddr[64],fundsopretaddr[64],txidaddr[64],*outstr; uint256 createtxid,hashBlock;
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR); CTransaction tx,txO; CPubKey Paymentspk,txidpk; int32_t i,j,n,flag=0,numoprets=0,lockedblocks,minrelease; std::vector<uint256> txidoprets; int64_t funds,fundsopret,totalallocations=0,allocation; char fundsaddr[64],fundsopretaddr[64],txidaddr[64],*outstr; uint256 createtxid,hashBlock;
     cJSON *params = payments_reparse(&n,jsonstr);
     if ( params != 0 && n == 1 )
     {

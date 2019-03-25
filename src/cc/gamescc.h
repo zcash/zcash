@@ -1,3 +1,4 @@
+#define ENABLE_WALLET
 #include "CCinclude.h"
 
 std::string MYCCLIBNAME = (char *)"gamescc";

@@ -229,7 +229,7 @@ void komodo_netevent(std::vector<uint8_t> message)
     {
         for (i=0; i<payload.size(); i++)
             fprintf(stderr,"%02x",payload[i]);
-        fprintf(stderr," payload, got pk.%s siglen.%d\n",pub33_str(str,pk),(int32_t)sig.size());
+        fprintf(stderr," payload, got pk.%s siglen.%d\n",pubkey_str(str,pk),(int32_t)sig.size());
     }
     else
     {
