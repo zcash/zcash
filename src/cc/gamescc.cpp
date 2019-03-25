@@ -1684,6 +1684,9 @@ void games_packitemstr(char *packitemstr,struct games_packitem *item)
 char USERPASS[8192]; uint16_t GAMES_PORT;
 extern char Gametxidstr[67];
 
+#define MAX_STR 1024
+char whoami[MAXSTR];
+
 #define SMALLVAL 0.000000000000001
 #define SATOSHIDEN ((uint64_t)100000000L)
 #define dstr(x) ((double)(x) / SATOSHIDEN)
@@ -2433,7 +2436,7 @@ int32_t games_sendrawtransaction(char *rawtx)
 
 int32_t games_progress(struct games_state *rs,int32_t waitflag,uint64_t seed,char *keystrokes,int32_t num)
 {
-    char cmd[16384],hexstr[16384],params[32768],*retstr,*errstr,*rawtx,*pastkeys,*pastcmp,*keys; int32_t i,len,numpastkeys,retflag = -1; cJSON *retjson,*resobj;
+    char cmd[16384],hexstr[16384],params[32768],*retstr,*errstr,*rawtx,*pastkeys,*keys; int32_t i,len,numpastkeys,retflag = -1; cJSON *retjson,*resobj; uint8_t *pastcmp;
     if ( rs->guiflag != 0 && Gametxidstr[0] != 0 )
     {
         if ( rs->keystrokeshex != 0 )
@@ -2456,7 +2459,7 @@ int32_t games_progress(struct games_state *rs,int32_t waitflag,uint64_t seed,cha
         if ( 0 && (pastkeys= games_keystrokesload(&numpastkeys,seed,1)) != 0 )
         {
             sprintf(params,"[\"extract\",\"17\",\"[%%22%s%%22]\"]",Gametxidstr);
-            if ( (retstr= komodo_issuemethod(USERPASS,"cclib",params,GAMES_PORT)) != 0 )
+            if ( (retstr= komodo_issuemethod(USERPASS,(char *)"cclib",params,GAMES_PORT)) != 0 )
             {
                 if ( (retjson= cJSON_Parse(retstr)) != 0 )
                 {
@@ -2498,7 +2501,7 @@ int32_t games_progress(struct games_state *rs,int32_t waitflag,uint64_t seed,cha
             if ( fp == 0 )
                 fp = fopen("keystrokes.log","a");
             sprintf(params,"[\"keystrokes\",\"17\",\"[%%22%s%%22,%%22%s%%22]\"]",Gametxidstr,hexstr);
-            if ( (retstr= komodo_issuemethod(USERPASS,"cclib",params,GAMES_PORT)) != 0 )
+            if ( (retstr= komodo_issuemethod(USERPASS,(char *)"cclib",params,GAMES_PORT)) != 0 )
             {
                 if ( fp != 0 )
                 {
@@ -3510,7 +3513,7 @@ int tetris(int argc, char **argv)
         sleep_milli(10);
         c = getch();
         payload[0] = c;
-        issue_games_events(0,gametxid,eventid,payload);
+        issue_games_events(gametxid,eventid,payload);
         eventid++;
         switch ( c )
         {
