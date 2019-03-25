@@ -2,6 +2,8 @@
 #define H_GAMESCC_H
 
 #define ENABLE_WALLET
+extern CWallet* pwalletMain;
+
 #include "CCinclude.h"
 
 std::string MYCCLIBNAME = (char *)"gamescc";
