@@ -1684,7 +1684,7 @@ void games_packitemstr(char *packitemstr,struct games_packitem *item)
 #include <string.h>
 
 #ifdef BUILD_GAMESCC
-#include "cursesd.h"
+#include "rogue/cursesd.h"
 #else
 #include <curses.h>
 #endif
