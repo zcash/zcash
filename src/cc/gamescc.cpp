@@ -2363,15 +2363,15 @@ char *komodo_issuemethod(char *userpass,char *method,char *params,uint16_t port)
 int32_t issue_games_events(uint256 gametxid,uint32_t eventid,char c)
 {
     static FILE *fp;
-    char params[512],*retstr; cJSON *retjson,*retobj; int32_t retval = -1;
+    char params[512],*retstr; cJSON *retjson,*resobj; int32_t retval = -1;
     if ( fp == 0 )
         fp = fopen("events.log","wb");
     sprintf(params,"[\"events\",\"17\",\"[%%22%02x%%22,%%22%s%%22,%u]\"]",c,gametxid.GetHex().c_str(),eventid);
-    if ( (retstr= komodo_issuemethod(USERPASS,"cclib",params,GAMES_PORT)) != 0 )
+    if ( (retstr= komodo_issuemethod(USERPASS,(char *)"cclib",params,GAMES_PORT)) != 0 )
     {
         if ( (retjson= cJSON_Parse(retstr)) != 0 )
         {
-            if ( (resobj= jobj(retjson,"result")) != 0 )
+            if ( (resobj= jobj(retjson,(char *)"result")) != 0 )
             {
                 retval = 0;
                 if ( fp != 0 )
@@ -2381,7 +2381,7 @@ int32_t issue_games_events(uint256 gametxid,uint32_t eventid,char c)
                 }
             }
             free_json(retjson);
-        } else fprintf(fp,"error parsing %s\n",jprint(retstr));
+        } else fprintf(fp,"error parsing %s\n",retstr);
         free(retstr);
     } else fprintf(fp,"error issuing method %s\n",params);
     return(retval);
@@ -2392,7 +2392,7 @@ int32_t games_sendrawtransaction(char *rawtx)
     char *params,*retstr,*hexstr; cJSON *retjson,*resobj; int32_t retval = -1;
     params = (char *)malloc(strlen(rawtx) + 16);
     sprintf(params,"[\"%s\"]",rawtx);
-    if ( (retstr= komodo_issuemethod(USERPASS,"sendrawtransaction",params,GAMES_PORT)) != 0 )
+    if ( (retstr= komodo_issuemethod(USERPASS,(char *)"sendrawtransaction",params,GAMES_PORT)) != 0 )
     {
         if ( 0 ) // causes 4th level crash
         {
@@ -2407,7 +2407,7 @@ int32_t games_sendrawtransaction(char *rawtx)
         }
         if ( (retjson= cJSON_Parse(retstr)) != 0 )
         {
-            if ( (resobj= jobj(retjson,"result")) != 0 )
+            if ( (resobj= jobj(retjson,(char *)"result")) != 0 )
             {
                 if ( (hexstr= jstr(resobj,0)) != 0 && is_hexstr(hexstr,64) == 64 )
                     retval = 0;
@@ -2460,7 +2460,7 @@ int32_t games_progress(struct games_state *rs,int32_t waitflag,uint64_t seed,cha
             {
                 if ( (retjson= cJSON_Parse(retstr)) != 0 )
                 {
-                    if ( (resobj= jobj(retjson,"result")) != 0 && (keys= jstr(resobj,"keystrokes")) != 0 )
+                    if ( (resobj= jobj(retjson,(char *)"result")) != 0 && (keys= jstr(resobj,(char *)"keystrokes")) != 0 )
                     {
                         len = strlen(keys) / 2;
                         pastcmp = (char *)malloc(len + 1);
@@ -2508,11 +2508,11 @@ int32_t games_progress(struct games_state *rs,int32_t waitflag,uint64_t seed,cha
                 }
                 if ( (retjson= cJSON_Parse(retstr)) != 0 )
                 {
-                    if ( (resobj= jobj(retjson,"result")) != 0 && (rawtx= jstr(resobj,"hex")) != 0 )
+                    if ( (resobj= jobj(retjson,(char *)"result")) != 0 && (rawtx= jstr(resobj,(char *)"hex")) != 0 )
                     {
                         if ( rs->keystrokeshex != 0 )
                             free(rs->keystrokeshex);
-                        if ( (errstr= jstr(resobj,"error")) == 0 )
+                        if ( (errstr= jstr(resobj,(char *)"error")) == 0 )
                         {
                             rs->keystrokeshex = (char *)malloc(strlen(rawtx)+1);
                             strcpy(rs->keystrokeshex,rawtx);
@@ -2556,26 +2556,26 @@ int32_t games_setplayerdata(struct games_state *rs,char *gametxidstr)
     else
     {
         sprintf(params,"[\"gameinfo\",\"17\",\"[%%22%s%%22]\"]",gametxidstr);
-        filestr = komodo_issuemethod(USERPASS,"cclib",params,GAMES_PORT);
+        filestr = komodo_issuemethod(USERPASS,(char *)"cclib",params,GAMES_PORT);
     }
     if ( filestr != 0 )
     {
-        if ( (retjson= cJSON_Parse(filestr)) != 0 && (resultjson= jobj(retjson,"result")) != 0 )
+        if ( (retjson= cJSON_Parse(filestr)) != 0 && (resultjson= jobj(retjson,(char *)"result")) != 0 )
         {
             //fprintf(stderr,"gameinfo.(%s)\n",jprint(resultjson,0));
-            if ( (array= jarray(&n,resultjson,"players")) != 0 )
+            if ( (array= jarray(&n,resultjson,(char *)"players")) != 0 )
             {
                 for (i=0; i<n; i++)
                 {
                     item = jitem(array,i);
-                    if ( is_cJSON_True(jobj(item,"ismine")) != 0 && (statusstr= jstr(item,"status")) != 0 )
+                    if ( is_cJSON_True(jobj(item,(char *)"ismine")) != 0 && (statusstr= jstr(item,(char *)"status")) != 0 )
                     {
-                        if ( strcmp(statusstr,"registered") == 0 )
+                        if ( strcmp(statusstr,(char *)"registered") == 0 )
                         {
                             retval = 0;
-                            if ( (item= jobj(item,"player")) != 0 && (datastr= jstr(item,"data")) != 0 )
+                            if ( (item= jobj(item,(char *)"player")) != 0 && (datastr= jstr(item,(char *)"data")) != 0 )
                             {
-                                if ( (pname= jstr(item,"pname")) != 0 && strlen(pname) < MAXSTR-1 )
+                                if ( (pname= jstr(item,(char *)"pname")) != 0 && strlen(pname) < MAXSTR-1 )
                                     strcpy(whoami,pname);
                                 decode_hex((uint8_t *)&rs->P,(int32_t)strlen(datastr)/2,datastr);
                                 fprintf(stderr,"set pname[%s] %s\n",pname==0?"":pname,jprint(item,0));
