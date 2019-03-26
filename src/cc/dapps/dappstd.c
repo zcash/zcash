@@ -688,33 +688,6 @@ char *komodo_issuemethod(char *userpass,char *method,char *params,uint16_t port)
     return(retstr2);
 }
 
-int32_t issue_games_events(bits256 gametxid,uint32_t eventid,int32_t c)
-{
-    static FILE *fp;
-    char params[512],*retstr,str[65]; cJSON *retjson,*resobj; int32_t retval = -1;
-    if ( fp == 0 )
-        fp = fopen("events.log","wb");
-    sprintf(params,"[\"events\",\"17\",\"[%%22%08x%%22,%%22%s%%22,%u]\"]",c,bits256_str(str,gametxid),eventid);
-    if ( (retstr= komodo_issuemethod(USERPASS,(char *)"cclib",params,GAMES_PORT)) != 0 )
-    {
-        if ( (retjson= cJSON_Parse(retstr)) != 0 )
-        {
-            if ( (resobj= jobj(retjson,(char *)"result")) != 0 )
-            {
-                retval = 0;
-                if ( fp != 0 )
-                {
-                    fprintf(fp,"%s\n",jprint(resobj,0));
-                    fflush(fp);
-                }
-            }
-            free_json(retjson);
-        } else fprintf(fp,"error parsing %s\n",retstr);
-        free(retstr);
-    } else fprintf(fp,"error issuing method %s\n",params);
-    return(retval);
-}
-
 int32_t games_sendrawtransaction(char *rawtx)
 {
     char *params,*retstr,*hexstr; cJSON *retjson,*resobj; int32_t retval = -1;
@@ -781,89 +754,238 @@ int32_t games_progress(struct games_state *rs,int32_t waitflag,uint64_t seed,cha
             }
             free(rs->keystrokeshex), rs->keystrokeshex = 0;
         }
-        if ( 0 && (pastkeys= games_keystrokesload(&numpastkeys,seed,1)) != 0 )
-        {
-            sprintf(params,"[\"extract\",\"17\",\"[%%22%s%%22]\"]",Gametxidstr);
-            if ( (retstr= komodo_issuemethod(USERPASS,(char *)"cclib",params,GAMES_PORT)) != 0 )
-            {
-                if ( (retjson= cJSON_Parse(retstr)) != 0 )
-                {
-                    if ( (resobj= jobj(retjson,(char *)"result")) != 0 && (keys= jstr(resobj,(char *)"keystrokes")) != 0 )
-                    {
-                        len = strlen(keys) / 2;
-                        pastcmp = (uint8_t *)malloc(len + 1);
-                        decode_hex(pastcmp,len,keys);
-                        fprintf(stderr,"keystrokes.(%s) vs pastkeys\n",keys);
-                        for (i=0; i<numpastkeys; i++)
-                            fprintf(stderr,"%02x",pastkeys[i]);
-                        fprintf(stderr,"\n");
-                        if ( len != numpastkeys || memcmp(pastcmp,pastkeys,len) != 0 )
-                        {
-                            fprintf(stderr,"pastcmp[%d] != pastkeys[%d]?\n",len,numpastkeys);
-                        }
-                        free(pastcmp);
-                    } else fprintf(stderr,"no keystrokes in (%s)\n",retstr);
-                    free_json(retjson);
-                } else fprintf(stderr,"error parsing.(%s)\n",retstr);
-                fprintf(stderr,"extracted.(%s)\n",retstr);
-                free(retstr);
-            } else fprintf(stderr,"error extracting game\n");
-            free(pastkeys);
-        } // else fprintf(stderr,"no pastkeys\n");
-        
         for (i=0; i<num; i++)
             sprintf(&hexstr[i<<1],"%02x",keystrokes[i]&0xff);
         hexstr[i<<1] = 0;
-        if ( 0 )
+        static FILE *fp;
+        if ( fp == 0 )
+            fp = fopen("keystrokes.log","a");
+        sprintf(params,"[\"keystrokes\",\"17\",\"[%%22%s%%22,%%22%s%%22]\"]",Gametxidstr,hexstr);
+        if ( (retstr= komodo_issuemethod(USERPASS,(char *)"cclib",params,GAMES_PORT)) != 0 )
         {
-            sprintf(cmd,"./komodo-cli -ac_name=%s cclib keystrokes 17 \\\"[%%22%s%%22,%%22%s%%22]\\\" >> keystrokes.log",ASSETCHAINS_SYMBOL,Gametxidstr,hexstr);
-            if ( system(cmd) != 0 )
-                fprintf(stderr,"error issuing (%s)\n",cmd);
-        }
-        else
-        {
-            static FILE *fp;
-            if ( fp == 0 )
-                fp = fopen("keystrokes.log","a");
-            sprintf(params,"[\"keystrokes\",\"17\",\"[%%22%s%%22,%%22%s%%22]\"]",Gametxidstr,hexstr);
-            if ( (retstr= komodo_issuemethod(USERPASS,(char *)"cclib",params,GAMES_PORT)) != 0 )
+            if ( fp != 0 )
             {
-                if ( fp != 0 )
+                fprintf(fp,"%s\n",params);
+                fprintf(fp,"%s\n",retstr);
+                fflush(fp);
+            }
+            if ( (retjson= cJSON_Parse(retstr)) != 0 )
+            {
+                if ( (resobj= jobj(retjson,(char *)"result")) != 0 && (rawtx= jstr(resobj,(char *)"hex")) != 0 )
                 {
-                    fprintf(fp,"%s\n",params);
-                    fprintf(fp,"%s\n",retstr);
-                    fflush(fp);
-                }
-                if ( (retjson= cJSON_Parse(retstr)) != 0 )
-                {
-                    if ( (resobj= jobj(retjson,(char *)"result")) != 0 && (rawtx= jstr(resobj,(char *)"hex")) != 0 )
+                    if ( rs->keystrokeshex != 0 )
+                        free(rs->keystrokeshex);
+                    if ( (errstr= jstr(resobj,(char *)"error")) == 0 )
                     {
-                        if ( rs->keystrokeshex != 0 )
-                            free(rs->keystrokeshex);
-                        if ( (errstr= jstr(resobj,(char *)"error")) == 0 )
-                        {
-                            rs->keystrokeshex = (char *)malloc(strlen(rawtx)+1);
-                            strcpy(rs->keystrokeshex,rawtx);
-                            retflag = 1;
-                        } else fprintf(stderr,"error sending keystrokes tx\n"), sleep(1);
-                        //fprintf(stderr,"set keystrokestx <- %s\n",rs->keystrokeshex);
-                    }
-                    free_json(retjson);
+                        rs->keystrokeshex = (char *)malloc(strlen(rawtx)+1);
+                        strcpy(rs->keystrokeshex,rawtx);
+                        retflag = 1;
+                    } else fprintf(stderr,"error sending keystrokes tx\n"), sleep(1);
+                    //fprintf(stderr,"set keystrokestx <- %s\n",rs->keystrokeshex);
                 }
-                free(retstr);
+                free_json(retjson);
             }
-            if ( 0 && waitflag != 0 && rs->keystrokeshex != 0 )
-            {
-                while ( games_sendrawtransaction(rs->keystrokeshex) == 0 )
-                {
-                    //fprintf(stderr,"post-rebroadcast\n");
-                    sleep(3);
-                }
-                free(rs->keystrokeshex), rs->keystrokeshex = 0;
-            }
+            free(retstr);
         }
     }
     return(retflag);
+}
+
+int32_t gamesfname(char *fname,uint64_t seed,int32_t counter)
+{
+    sprintf(fname,"%s.%llu.%d",GAMENAME,(long long)seed,counter);
+    return(0);
+}
+
+int32_t flushkeystrokes_local(struct games_state *rs,int32_t waitflag)
+{
+#ifdef STANDALONE
+    char fname[1024]; FILE *fp; int32_t i,retflag = -1;
+    rs->counter++;
+    gamesfname(fname,rs->seed,rs->counter);
+    if ( (fp= fopen(fname,"wb")) != 0 )
+    {
+        if ( fwrite(rs->buffered,1,rs->num,fp) == rs->num )
+        {
+            rs->num = 0;
+            retflag = 0;
+            fclose(fp);
+            gamesfname(fname,rs->seed,rs->counter+1);
+            if ( (fp= fopen(fname,"wb")) != 0 ) // truncate next file
+                fclose(fp);
+            //fprintf(stderr,"savefile <- %s retflag.%d\n",fname,retflag);
+            //}
+        } else fprintf(stderr,"error writing (%s)\n",fname);
+    } else fprintf(stderr,"error creating (%s)\n",fname);
+    return(retflag);
+#else
+    return(0);
+#endif
+}
+
+#ifndef STANDALONE
+// stubs for inside daemon
+
+int32_t games_progress(struct games_state *rs,int32_t waitflag,uint64_t seed,char *keystrokes,int32_t num)
+{
+    return(0);
+}
+
+int32_t games_setplayerdata(struct games_state *rs,char *gametxidstr)
+{
+    return(-1);
+}
+#endif
+
+int32_t flushkeystrokes(struct games_state *rs,int32_t waitflag)
+{
+    if ( rs->num > 0 )
+    {
+        if ( games_progress(rs,waitflag,rs->seed,rs->buffered,rs->num) > 0 )
+        {
+            flushkeystrokes_local(rs,waitflag);
+            memset(rs->buffered,0,sizeof(rs->buffered));
+        }
+    }
+    return(0);
+}
+
+void games_bailout(struct games_state *rs)
+{
+    flushkeystrokes(rs,1);
+}
+
+#ifdef _WIN32
+#ifdef _MSC_VER
+#define sleep(x) Sleep(1000*(x))
+#endif
+#endif
+
+int32_t games_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t num,struct games_player *player,int32_t sleepmillis)
+{
+    struct games_state *rs; FILE *fp; int32_t i,n;
+    rs = (struct games_state *)calloc(1,sizeof(*rs));
+    rs->seed = seed;
+    rs->keystrokes = keystrokes;
+    rs->numkeys = num;
+    rs->sleeptime = sleepmillis * 1000;
+    if ( player != 0 )
+    {
+        rs->P = *player;
+        rs->restoring = 1;
+        //fprintf(stderr,"restore player packsize.%d HP.%d\n",rs->P.packsize,rs->P.hitpoints);
+        if ( rs->P.packsize > MAXPACK )
+            rs->P.packsize = MAXPACK;
+    }
+    globalR = *rs;
+    uint32_t starttime = (uint32_t)time(NULL);
+    gamesiterate(rs);
+    if ( 0 )
+    {
+        fprintf(stderr,"elapsed %d seconds\n",(uint32_t)time(NULL) - starttime);
+        sleep(2);
+        starttime = (uint32_t)time(NULL);
+        for (i=0; i<10000; i++)
+        {
+            memset(rs,0,sizeof(*rs));
+            rs->seed = seed;
+            rs->keystrokes = keystrokes;
+            rs->numkeys = num;
+            rs->sleeptime = 0;
+            gamesiterate(rs);
+        }
+        fprintf(stderr,"elapsed %d seconds\n",(uint32_t)time(NULL)-starttime);
+        sleep(3);
+    }
+    // extract playerdata
+
+    /*if ( (fp= fopen("checkfile","wb")) != 0 )
+    {
+        //save_file(rs,fp,0);
+        //fprintf(stderr,"gold.%d hp.%d strength.%d/%d level.%d exp.%d dungeon.%d data[%d]\n",rs->P.gold,rs->P.hitpoints,rs->P.strength&0xffff,rs->P.strength>>16,rs->P.level,rs->P.experience,rs->P.dungeonlevel,rs->playersize);
+        if ( newdata != 0 && rs->playersize > 0 )
+            memcpy(newdata,rs->playerdata,rs->playersize);
+    }*/
+    if ( newdata != 0 && rs->playersize > 0 )
+        memcpy(newdata,rs->playerdata,rs->playersize);
+    n = rs->playersize;
+    free(rs);
+    return(n);
+}
+
+long get_filesize(FILE *fp)
+{
+    long fsize,fpos = ftell(fp);
+    fseek(fp,0,SEEK_END);
+    fsize = ftell(fp);
+    fseek(fp,fpos,SEEK_SET);
+    return(fsize);
+}
+
+char *games_keystrokesload(int32_t *numkeysp,uint64_t seed,int32_t counter)
+{
+    char fname[1024],*keystrokes = 0; FILE *fp; long fsize; int32_t num = 0;
+    *numkeysp = 0;
+    while ( 1 )
+    {
+        gamesfname(fname,seed,counter);
+        //printf("check (%s)\n",fname);
+        if ( (fp= fopen(fname,"rb")) == 0 )
+            break;
+        if ( (fsize= get_filesize(fp)) <= 0 )
+        {
+            fclose(fp);
+            //printf("fsize.%ld\n",fsize);
+            break;
+        }
+        if ( (keystrokes= (char *)realloc(keystrokes,num+fsize)) == 0 )
+        {
+            fprintf(stderr,"error reallocating keystrokes\n");
+            fclose(fp);
+            return(0);
+        }
+        if ( fread(&keystrokes[num],1,fsize,fp) != fsize )
+        {
+            fprintf(stderr,"error reading keystrokes from (%s)\n",fname);
+            fclose(fp);
+            free(keystrokes);
+            return(0);
+        }
+        fclose(fp);
+        num += fsize;
+        counter++;
+        //fprintf(stderr,"loaded %ld from (%s) total %d\n",fsize,fname,num);
+    }
+    *numkeysp = num;
+    return(keystrokes);
+}
+
+int32_t games_replay(uint64_t seed,int32_t sleeptime)
+{
+    FILE *fp; char fname[1024]; char *keystrokes = 0; long fsize; int32_t i,num=0,counter = 0; struct games_state *rs; struct games_player P,*player = 0;
+    if ( seed == 0 )
+        seed = 777;
+    keystrokes = games_keystrokesload(&num,seed,counter);
+    if ( num > 0 )
+    {
+        sprintf(fname,"%s.%llu.player",GAMENAME,(long long)seed);
+        if ( (fp=fopen(fname,"rb")) != 0 )
+        {
+            if ( fread(&P,1,sizeof(P),fp) > 0 )
+            {
+                //printf("max size player\n");
+                player = &P;
+            }
+            fclose(fp);
+        }
+        games_replay2(0,seed,keystrokes,num,player,sleeptime);
+        mvaddstr(LINES - 2, 0, (char *)"replay completed");
+        endwin();
+        my_exit(0);
+    }
+    if ( keystrokes != 0 )
+        free(keystrokes);
+    return(num);
 }
 
 int32_t games_setplayerdata(struct games_state *rs,char *gametxidstr)

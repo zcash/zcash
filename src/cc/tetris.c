@@ -638,6 +638,34 @@ void init_colors(void)
  */
 #include "dapps/dappstd.c"
 
+int32_t issue_games_events(struct games_state *rs,bits256 gametxid,uint32_t eventid,char c)
+{
+    static FILE *fp;
+    char params[512],*retstr,str[65]; cJSON *retjson,*resobj; int32_t retval = -1;
+    if ( fp == 0 )
+        fp = fopen("events.log","wb");
+    sprintf(params,"[\"events\",\"17\",\"[%%22%02x%%22,%%22%s%%22,%u]\"]",c,bits256_str(str,gametxid),eventid);
+    rs->buffered[rs->num++] = c;
+    if ( (retstr= komodo_issuemethod(USERPASS,(char *)"cclib",params,GAMES_PORT)) != 0 )
+    {
+        if ( (retjson= cJSON_Parse(retstr)) != 0 )
+        {
+            if ( (resobj= jobj(retjson,(char *)"result")) != 0 )
+            {
+                retval = 0;
+                if ( fp != 0 )
+                {
+                    fprintf(fp,"%s\n",jprint(resobj,0));
+                    fflush(fp);
+                }
+            }
+            free_json(retjson);
+        } else fprintf(fp,"error parsing %s\n",retstr);
+        free(retstr);
+    } else fprintf(fp,"error issuing method %s\n",params);
+    return(retval);
+}
+
 char *clonestr(char *str)
 {
     char *clone; int32_t len;
@@ -730,34 +758,49 @@ int tetris(int argc, char **argv)
             doupdate();
         sleep_milli(10);
         c = getch();
-        if ( c != -1 || skipcount == 0x3fff )
+        switch ( c )
+        {
+            case KEY_LEFT:
+                c = 'h';
+                break;
+            case KEY_RIGHT:
+                c = 'l';
+                break;
+            case KEY_UP:
+                c = 'k';
+                break;
+            case KEY_DOWN:
+                c = 'j';
+                break;
+        }
+        if ( c < 0 || skipcount == 0x7f )
         {
             if ( skipcount > 0 )
-                issue_games_events(gametxid,eventid-skipcount,skipcount | 0x4000);
+                issue_games_events(rs,gametxid,eventid-skipcount,skipcount | 0x80);
             if ( c != -1 )
-                issue_games_events(gametxid,eventid,c);
+                issue_games_events(rs,gametxid,eventid,c);
             skipcount = 0;
         } else skipcount++;
         eventid++;
         switch ( c )
         {
-            case KEY_LEFT:
+            case 'h':
                 move = TM_LEFT;
                 break;
-            case KEY_RIGHT:
+            case 'l':
                 move = TM_RIGHT;
                 break;
-            case KEY_UP:
+            case 'k':
                 move = TM_CLOCK;
                 break;
-            case KEY_DOWN:
+            case 'j':
                 move = TM_DROP;
                 break;
             case 'q':
                 running = false;
                 move = TM_NONE;
                 break;
-            case 'p':
+            /*case 'p':
                 wclear(board);
                 box(board, 0, 0);
                 wmove(board, tg->rows/2, (tg->cols*COLS_PER_CELL-6)/2);
@@ -771,7 +814,7 @@ int tetris(int argc, char **argv)
             case 's':
                 save(tg, board);
                 move = TM_NONE;
-                break;
+                break;*/
             case ' ':
                 move = TM_HOLD;
                 break;
@@ -792,9 +835,9 @@ int tetris(int argc, char **argv)
     return 0;
 }
 
-int32_t games_replay(uint64_t seed,int32_t sleeptime)
+void gamesiterate(struct games_state *rs)
 {
-    return(-1);
+    
 }
 #endif
 
