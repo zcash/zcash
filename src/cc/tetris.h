@@ -1,50 +1,6 @@
-/******************************************************************************
- * Copyright © 2014-2019 The SuperNET Developers.                             *
- *                                                                            *
- * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
- * the top-level directory of this distribution for the individual copyright  *
- * holder information and the developer policies on copyright and licensing.  *
- *                                                                            *
- * Unless otherwise agreed in a custom licensing agreement, no part of the    *
- * SuperNET software, including this file may be copied, modified, propagated *
- * or distributed except according to the terms contained in the LICENSE file *
- *                                                                            *
- * Removal or modification of this copyright notice is prohibited.            *
- *                                                                            *
- ******************************************************************************/
 
 #ifndef H_TETRIS_H
 #define H_TETRIS_H
-
-#define GAMENAME "tetris"
-#define GAMEMAIN tetris
-#define CHAINNAME "GTEST"
-
-#define MAXPACK 23
-struct games_packitem
-{
-    int32_t type,launch,count,which,hplus,dplus,arm,flags,group;
-    char damage[8],hurldmg[8];
-};
-
-struct games_player
-{
-    int32_t gold,hitpoints,strength,level,experience,packsize,dungeonlevel,amulet;
-    struct games_packitem gamespack[MAXPACK];
-};
-
-struct games_state
-{
-    uint64_t seed;
-    char *keystrokes,*keystrokeshex;
-    uint32_t needflush,replaydone;
-    int32_t numkeys,ind,num,guiflag,counter,sleeptime,playersize,restoring,lastnum;
-    FILE *logfp;
-    struct games_player P;
-    char buffered[10000];
-    uint8_t playerdata[10000];
-};
-
 
 /***************************************************************************/
 /** https://github.com/brenns10/tetris
@@ -192,6 +148,50 @@ char tg_get(tetris_game *obj, int row, int col);
 bool tg_check(tetris_game *obj, int row, int col);
 bool tg_tick(tetris_game *obj, tetris_move move);
 void tg_print(tetris_game *obj, FILE *f);
+
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+#define GAMENAME "tetris"
+#define GAMEMAIN tetris
+#define CHAINNAME "GTEST"
+
+#define MAXPACK 23
+struct games_packitem
+{
+    int32_t type,launch,count,which,hplus,dplus,arm,flags,group;
+    char damage[8],hurldmg[8];
+};
+
+struct games_player
+{
+    int32_t gold,hitpoints,strength,level,experience,packsize,dungeonlevel,amulet;
+    struct games_packitem gamespack[MAXPACK];
+};
+
+struct games_state
+{
+    uint64_t seed;
+    char *keystrokes,*keystrokeshex;
+    uint32_t needflush,replaydone;
+    int32_t numkeys,ind,num,guiflag,counter,sleeptime,playersize,restoring,lastnum;
+    FILE *logfp;
+    struct games_player P;
+    char buffered[10000];
+    uint8_t playerdata[10000];
+};
+
 
 #endif
 

@@ -1,7 +1,10 @@
 
 #include "tetris.h"
-#include "dapps/dappstd.c"
 
+static int random_tetromino(void)
+{
+    return rand() % NUM_TETROMINOS;
+}
 
 /***************************************************************************/
 /** https://github.com/brenns10/tetris
@@ -622,10 +625,12 @@ void init_colors(void)
     init_pair(TC_CELLZ, COLOR_RED, COLOR_BLACK);
 }
 
+#else
 /*
  Main tetris game!
  */
-#ifdef STANDALONE
+#include "dapps/dappstd.c"
+
 char *clonestr(char *str)
 {
     char *clone; int32_t len;
@@ -756,3 +761,5 @@ int32_t games_replay(uint64_t seed,int32_t sleeptime)
 {
     return(-1);
 }
+#endif
+

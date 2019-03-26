@@ -128,6 +128,91 @@ int32_t games_playerdata_validate(int64_t *cashoutp,uint256 &playertxid,struct C
     return(-1);
 }
 
+char *games_extractgame(int32_t makefiles,char *str,int32_t *numkeysp,std::vector<uint8_t> &newdata,uint64_t &seed,uint256 &playertxid,struct CCcontract_info *cp,uint256 gametxid,char *gamesaddr)
+{
+    CPubKey gamespk; int32_t i,num,retval,maxplayers,gameheight,batonht,batonvout,numplayers,regslot,numkeys,err; std::string symbol,pname; CTransaction gametx; int64_t buyin,batonvalue; char fname[64],*keystrokes = 0; std::vector<uint8_t> playerdata; uint256 batontxid; FILE *fp; uint8_t newplayer[10000]; struct games_player P,endP;
+    gamespk = GetUnspendable(cp,0);
+    *numkeysp = 0;
+    seed = 0;
+    num = numkeys = 0;
+    playertxid = zeroid;
+    str[0] = 0;
+    if ( (err= games_isvalidgame(cp,gameheight,gametx,buyin,maxplayers,gametxid,0)) == 0 )
+    {
+        if ( (retval= games_findbaton(cp,playertxid,&keystrokes,numkeys,regslot,playerdata,batontxid,batonvout,batonvalue,batonht,gametxid,gametx,maxplayers,gamesaddr,numplayers,symbol,pname)) == 0 )
+        {
+            UniValue obj;
+            seed = games_gamefields(obj,maxplayers,buyin,gametxid,gamesaddr);
+            //fprintf(stderr,"(%s) found baton %s numkeys.%d seed.%llu playerdata.%d playertxid.%s\n",pname.size()!=0?pname.c_str():Games_pname.c_str(),batontxid.ToString().c_str(),numkeys,(long long)seed,(int32_t)playerdata.size(),playertxid.GetHex().c_str());
+            memset(&P,0,sizeof(P));
+            if ( playerdata.size() > 0 )
+            {
+                for (i=0; i<playerdata.size(); i++)
+                    ((uint8_t *)&P)[i] = playerdata[i];
+            }
+            if ( keystrokes != 0 && numkeys != 0 )
+            {
+                if ( makefiles != 0 )
+                {
+                    sprintf(fname,"%s.%llu.0",GAMENAME,(long long)seed);
+                    if ( (fp= fopen(fname,"wb")) != 0 )
+                    {
+                        if ( fwrite(keystrokes,1,numkeys,fp) != numkeys )
+                            fprintf(stderr,"error writing %s\n",fname);
+                        fclose(fp);
+                    }
+                    sprintf(fname,"%s.%llu.player",GAMENAME,(long long)seed);
+                    if ( (fp= fopen(fname,"wb")) != 0 )
+                    {
+                        if ( fwrite(&playerdata[0],1,(int32_t)playerdata.size(),fp) != playerdata.size() )
+                            fprintf(stderr,"error writing %s\n",fname);
+                        fclose(fp);
+                    }
+                }
+                //fprintf(stderr,"call replay2\n");
+                num = games_replay2(newplayer,seed,keystrokes,numkeys,playerdata.size()==0?0:&P,0);
+                newdata.resize(num);
+                for (i=0; i<num; i++)
+                {
+                    newdata[i] = newplayer[i];
+                    ((uint8_t *)&endP)[i] = newplayer[i];
+                }
+                //fprintf(stderr,"back replay2 gold.%d\n",endP.gold);
+                if ( endP.gold <= 0 || endP.hitpoints <= 0 || (endP.strength&0xffff) <= 0 || endP.level <= 0 || endP.experience <= 0 || endP.dungeonlevel <= 0 )
+                {
+                    sprintf(str,"zero value character was killed -> no playerdata\n");
+                    newdata.resize(0);
+                    *numkeysp = numkeys;
+                    return(keystrokes);
+                    /* P.gold = (P.gold * 8) / 10;
+                     if ( keystrokes != 0 )
+                     {
+                     free(keystrokes);
+                     keystrokes = 0;
+                     *numkeysp = 0;
+                     return(keystrokes);
+                     }*/
+                }
+                else
+                {
+                    sprintf(str,"$$$gold.%d hp.%d strength.%d/%d level.%d exp.%d dl.%d",endP.gold,endP.hitpoints,endP.strength&0xffff,endP.strength>>16,endP.level,endP.experience,endP.dungeonlevel);
+                    //fprintf(stderr,"%s\n",str);
+                    *numkeysp = numkeys;
+                    return(keystrokes);
+                }
+            } else num = 0;
+        }
+        else
+        {
+            fprintf(stderr,"extractgame: couldnt find baton keystrokes.%p retval.%d\n",keystrokes,retval);
+            if ( keystrokes != 0 )
+                free(keystrokes), keystrokes = 0;
+        }
+    } else fprintf(stderr,"extractgame: invalid game\n");
+    //fprintf(stderr,"extract %s\n",gametxid.GetHex().c_str());
+    return(0);
+}
+
 int32_t games_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t num,struct games_player *player,int32_t sleepmillis) // replay in daemon
 {
     return(-1);
