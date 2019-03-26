@@ -307,11 +307,11 @@ static void tg_handle_move(struct games_state *rs,tetris_game *obj, tetris_move 
 {
     switch (move) {
         case TM_LEFT:
-            //fprintf(stderr,"LEFT ");
+            fprintf(stderr,"LEFT ");
             tg_move(obj, -1);
             break;
         case TM_RIGHT:
-            //fprintf(stderr,"RIGHT ");
+            fprintf(stderr,"RIGHT ");
             tg_move(obj, 1);
             break;
         case TM_DROP:
@@ -459,7 +459,7 @@ void tg_init(struct games_state *rs,tetris_game *obj, int rows, int cols)
     obj->stored.ori = 0;
     obj->stored.loc.row = 0;
     obj->next.loc.col = obj->cols/2 - 2;
-    printf("%d", obj->falling.loc.col);
+    //printf("%d", obj->falling.loc.col);
 }
 
 tetris_game *tg_create(struct games_state *rs,int rows, int cols)
@@ -672,7 +672,7 @@ void *gamesiterate(struct games_state *rs)
     while ( running != 0 )
     {
         running = tg_tick(rs,tg,move);
-        if ( rs->guiflag != 0 || rs->sleeptime != 0 )
+        if ( 0 && (rs->guiflag != 0 || rs->sleeptime != 0) )
         {
             display_board(board,tg);
             display_piece(next,tg->next);
@@ -703,7 +703,7 @@ void *gamesiterate(struct games_state *rs)
             if ( skipcount == 0 )
             {
                 c = games_readevent(rs);
-                //fprintf(stderr,"%04x\n",c);
+                fprintf(stderr,"%04x\n",c);
                 if ( (c & 0x4000) == 0x4000 )
                 {
                     skipcount = (c & 0x3fff);
