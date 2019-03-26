@@ -914,7 +914,7 @@ gamesevent *games_keystrokesload(int32_t *numkeysp,uint64_t seed,int32_t counter
         fclose(fp);
         num += (int32_t)(fsize / sizeof(gamesevent));
         counter++;
-        fprintf(stderr,"loaded %ld from (%s) total %d\n",fsize,fname,num);
+        //fprintf(stderr,"loaded %ld from (%s) total %d\n",fsize,fname,num);
         break;
     }
     *numkeysp = num;

@@ -175,6 +175,8 @@ char *unctrl(char c);
 #define leaveok(win,bf) 0
 #define halfdelay(x) 0
 #define nocbreak() 0
+#define cbreak() 0
+#define curs_set(x) 0
 
 // for tetris
 #define init_pair(a,b,c) 0
