@@ -19,12 +19,12 @@ int32_t games_isvalidgame(struct CCcontract_info *cp,int32_t &gameheight,CTransa
 uint64_t games_gamefields(UniValue &obj,int64_t maxplayers,int64_t buyin,uint256 gametxid,char *mygamesaddr);
 
 // game specific code for daemon
-
-/*void games_packitemstr(char *packitemstr,struct games_packitem *item)
+void games_packitemstr(char *packitemstr,struct games_packitem *item)
 {
     sprintf(packitemstr,"not yet");
 }
 
+/*
 int32_t games_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t num,struct games_player *player,int32_t sleepmillis) // replay in daemon
 {
     return(0);
