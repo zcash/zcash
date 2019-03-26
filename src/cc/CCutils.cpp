@@ -168,6 +168,18 @@ bool IsCCInput(CScript const& scriptSig)
     return true;
 }
 
+bool CheckTxFee(const CTransaction &tx, uint64_t txfee, uint32_t height, uint64_t blocktime)
+{
+    int64_t interest; uint64_t valuein;
+    CCoinsViewCache &view = *pcoinsTip;
+    valuein = view.GetValueIn(height,&interest,tx,blocktime);
+    if ( valuein-tx.GetValueOut() > txfee )
+    {
+        //fprintf(stderr, "txfee.%li vs txfee.%li\n", valuein-tx.GetValueOut(), txfee);
+        return false;
+    }
+    return true;
+}
 
 // set additional 'unspendable' addr
 void CCaddr2set(struct CCcontract_info *cp,uint8_t evalcode,CPubKey pk,uint8_t *priv,char *coinaddr)

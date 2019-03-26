@@ -192,7 +192,9 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
         if ( tmptx.vout.size() > 0 && DecodePaymentsOpRet(tmptx.vout[tmptx.vout.size()-1].scriptPubKey,lockedblocks,minrelease,totalallocations,txidoprets) != 0 )
         {
             if ( lockedblocks < 0 || minrelease < 0 || totalallocations <= 0 || txidoprets.size() < 2 )
-                return(eval->Invalid("negative values"));
+                return(eval->Invalid("negative values"));    
+            if ( !CheckTxFee(tx, PAYMENTS_TXFEE, chainActive.LastTip()->GetHeight(), chainActive.LastTip()->nTime) )
+                return eval->Invalid("txfee is too high");
             Paymentspk = GetUnspendable(cp,0);
             //fprintf(stderr, "lockedblocks.%i minrelease.%i totalallocations.%i txidopret1.%s txidopret2.%s\n",lockedblocks, minrelease, totalallocations, txidoprets[0].ToString().c_str(), txidoprets[1].ToString().c_str() );
             
@@ -281,7 +283,7 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
                             fprintf(stderr, "vin.%i is not a payments CC vout: txid.%s\n", i, txin.GetHash().ToString().c_str());
                             return(eval->Invalid("vin is not paymentsCC type"));
                         } //else fprintf(stderr, "vin.%i opret type txid.%s\n", i, txin.GetHash().ToString().c_str());
-                    } 
+                    }
                     // check the chain depth vs locked blcoks requirement. 
                     CBlockIndex* pblockindex = mapBlockIndex[blockhash];
                     if ( pblockindex->GetHeight() > ht-lockedblocks )
