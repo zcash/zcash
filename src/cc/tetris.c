@@ -299,11 +299,11 @@ static void tg_handle_move(struct games_state *rs,tetris_game *obj, tetris_move 
 {
     switch (move) {
         case TM_LEFT:
-            fprintf(stderr,"LEFT ");
+            //fprintf(stderr,"LEFT ");
             tg_move(obj, -1);
             break;
         case TM_RIGHT:
-            fprintf(stderr,"RIGHT ");
+            //fprintf(stderr,"RIGHT ");
             tg_move(obj, 1);
             break;
         case TM_DROP:
@@ -644,7 +644,7 @@ void *gamesiterate(struct games_state *rs)
     uint32_t counter = 0; bool running = true; tetris_move move = TM_NONE;
     gamesevent c; uint16_t skipcount=0; uint32_t eventid = 0; tetris_game *tg;
     WINDOW *board, *next, *hold, *score;
-    if ( rs->guiflag != 0 )
+    if ( rs->guiflag != 0 || rs->sleeptime != 0 )
     {
         // NCURSES initialization:
         initscr();             // initialize curses
@@ -664,15 +664,18 @@ void *gamesiterate(struct games_state *rs)
     while ( running != 0 )
     {
         running = tg_tick(rs,tg,move);
-        if ( rs->guiflag != 0 )
+        if ( rs->guiflag != 0 || rs->sleeptime != 0 )
         {
-#ifdef STANDALONE
             display_board(board,tg);
             display_piece(next,tg->next);
             display_piece(hold,tg->stored);
             display_score(score,tg);
             if ( (counter++ % 5) == 0 )
                 doupdate();
+        }
+        if ( rs->guiflag != 0 )
+        {
+#ifdef STANDALONE
             sleep_milli(10);
             c = games_readevent(rs);
             if ( c <= 0x7f || skipcount == 0x3fff )
@@ -687,6 +690,8 @@ void *gamesiterate(struct games_state *rs)
         }
         else
         {
+            if ( rs->sleeptime >= 1000 )
+                sleep_milli(rs->sleeptime/1000);
             if ( skipcount == 0 )
             {
                 c = games_readevent(rs);

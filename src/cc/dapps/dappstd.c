@@ -885,10 +885,10 @@ long get_filesize(FILE *fp)
 gamesevent revendian(gamesevent revx)
 {
     int32_t i; gamesevent x = 0;
-    fprintf(stderr,"%04x -> ",revx);
+    //fprintf(stderr,"%04x -> ",revx);
     for (i=0; i<sizeof(gamesevent); i++)
         ((uint8_t *)&x)[i] = ((uint8_t *)&revx)[sizeof(gamesevent)-1-i];
-    fprintf(stderr,"%04x\n",x);
+    //fprintf(stderr,"%04x\n",x);
     return(x);
 }
 
@@ -952,7 +952,7 @@ int32_t games_replay(uint64_t seed,int32_t sleeptime)
     if ( seed == 0 )
         seed = 777;
     keystrokes = games_keystrokesload(&num,seed,counter);
-    fprintf(stderr,"keystrokes.%p num.%d\n",keystrokes,num);
+    //fprintf(stderr,"keystrokes.%p num.%d\n",keystrokes,num);
     if ( num > 0 )
     {
         sprintf(fname,"%s.%llu.player",GAMENAME,(long long)seed);
