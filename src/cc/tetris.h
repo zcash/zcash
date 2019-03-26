@@ -127,13 +127,13 @@ typedef struct {
  array contains 4 tetris_location objects, each mapping to an offset from a
  point on the upper left that is the tetromino "origin".
  */
-extern tetris_location TETROMINOS[NUM_TETROMINOS][NUM_ORIENTATIONS][TETRIS];
+extern const tetris_location TETROMINOS[NUM_TETROMINOS][NUM_ORIENTATIONS][TETRIS];
 
 /*
  This array tells you how many ticks per gravity by level.  Decreases as level
  increases, to add difficulty.
  */
-extern int GRAVITY_LEVEL[MAX_LEVEL+1];
+extern const int GRAVITY_LEVEL[MAX_LEVEL+1];
 
 // Data structure manipulation.
 void tg_init(tetris_game *obj, int rows, int cols);
