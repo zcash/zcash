@@ -625,7 +625,7 @@ void init_colors(void)
     init_pair(TC_CELLZ, COLOR_RED, COLOR_BLACK);
 }
 
-#else
+#ifdef STANDALONE
 /*
  Main tetris game!
  */
