@@ -819,7 +819,7 @@ UniValue PaymentsInfo(struct CCcontract_info *cp,char *jsonstr)
 UniValue PaymentsList(struct CCcontract_info *cp,char *jsonstr)
 {
     std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex; uint256 txid,hashBlock;
-    UniValue result(UniValue::VOBJ),a(UniValue::VARR); char markeraddr[64],str[65]; CPubKey Paymentspk; CTransaction tx; int32_t lockedblocks,minrelease,totalallocations; std::vector<uint256> txidoprets;
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR); char markeraddr[64],str[65]; CPubKey Paymentspk; CTransaction tx; int32_t lockedblocks,minrelease; std::vector<uint256> txidoprets; int64_t totalallocations;
     Paymentspk = GetUnspendable(cp,0);
     GetCCaddress1of2(cp,markeraddr,Paymentspk,Paymentspk);
     SetCCtxids(addressIndex,markeraddr);
