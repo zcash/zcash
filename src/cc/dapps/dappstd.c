@@ -1035,16 +1035,14 @@ char games_readchar(struct games_state *rs)
         if ( rs->replaydone != 0 && counter++ < 3 )
             fprintf(stderr,"replay finished but readchar called\n");
         rs->replaydone = (uint32_t)time(NULL);
-        if ( counter < 3 || (counter & 1) == 0 )
-            return('y');
-        else return(ESCAPE);
+        return(0);
     }
     if ( rs == 0 || rs->guiflag != 0 )
     {
         ch = (char) getch();
         if (ch == 3)
         {
-            _quit();
+            //_quit();
             return(27);
         }
         if ( rs != 0 && rs->guiflag != 0 )
