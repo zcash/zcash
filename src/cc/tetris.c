@@ -5,11 +5,10 @@
  In order to port a game into gamesCC, the RNG needs to be seeded with the gametxid seed, also events needs to be broadcast using issue_games_events. Also the game engine needs to be daemonized, preferably by putting all globals into a single data structure.
  */
 
-int rand();
-
 static int random_tetromino(void)
 {
-    return rand() % NUM_TETROMINOS;
+    return(0);
+    //return rand() % NUM_TETROMINOS;
 }
 
 /***************************************************************************/
