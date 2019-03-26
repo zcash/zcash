@@ -1112,7 +1112,7 @@ int main(int argc, char **argv)
 #endif // _WIN32
         
         fprintf(stderr,"replay %llu\n",(long long)seed);
-        return(games_replay(seed,10));
+        return(games_replay(seed,3));
     }
     else
     {
