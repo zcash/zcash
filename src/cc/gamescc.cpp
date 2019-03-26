@@ -146,12 +146,13 @@ int32_t games_replay2(uint8_t *newdata,uint64_t seed,gamesevent *keystrokes,int3
         // extract data from ptr
         if ( GAMEDATA(&rs->P,ptr) < 0 )
             memset(&rs->P,0,sizeof(rs->P));
-        else if ( newdata != 0 && rs->playersize > 0 )
+        else rs->playersize = sizeof(rs->P);
+        if ( newdata != 0 && rs->playersize > 0 )
             memcpy(newdata,rs->playerdata,rs->playersize);
         free(ptr);
     }
     n = rs->playersize;
-    fprintf(stderr,"gold.%d\n",rs->P.gold); sleep(3);
+    //fprintf(stderr,"gold.%d\n",rs->P.gold); sleep(3);
     free(rs);
     return(n);
 }
