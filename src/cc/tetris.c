@@ -2,7 +2,7 @@
 #include "tetris.h"
 
 /*
- In order to port a game into gamesCC, the RNG needs to be seeded with the gametxid seed, also events needs to be broadcast using issue_games_events
+ In order to port a game into gamesCC, the RNG needs to be seeded with the gametxid seed, also events needs to be broadcast using issue_games_events. Also the game engine needs to be daemonized, preferably by putting all globals into a single data structure.
  */
 
 int rand();
@@ -654,14 +654,40 @@ char *clonestr(char *str)
     return(clone);
 }
 
+struct games_state globalR;
+
 int tetris(int argc, char **argv)
 {
     tetris_game *tg;
     tetris_move move = TM_NONE;
     bool running = true;
     WINDOW *board, *next, *hold, *score;
+    struct games_state *rs = &globalR;
     int32_t c,skipcount=0; bits256 gametxid; uint32_t eventid = 0;
     memset(&gametxid,0,sizeof(gametxid));
+    memset(rs,0,sizeof(*rs));
+    rs->guiflag = 1;
+    rs->sleeptime = 1; // non-zero to allow refresh()
+    if ( argc == 3 && strlen(argv[2]) == 64 )
+    {
+#ifdef _WIN32
+#ifdef _MSC_VER
+        rs->seed = _strtoui64(argv[1], NULL, 10);
+#else
+        rs->seed = atol(argv[1]); // windows, but not MSVC
+#endif // _MSC_VER
+#else
+        rs->seed = atol(argv[1]); // non-windows
+#endif // _WIN32
+        strcpy(Gametxidstr,argv[2]);
+        fprintf(stderr,"setplayerdata\n");
+        if ( games_setplayerdata(rs,Gametxidstr) < 0 )
+        {
+            fprintf(stderr,"invalid gametxid, or already started\n");
+            return(-1);
+        }
+    } else rs->seed = 777;
+
     // Load file if given a filename.
     if (argc >= 2) {
         FILE *f = fopen(argv[1], "r");
