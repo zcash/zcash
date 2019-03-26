@@ -825,7 +825,7 @@ int tetris(int argc, char **argv)
     init_colors();         // setup tetris colors
     
     // Game loop
-    tg = gamesiterate(rs);
+    tg = (tetris_game *)gamesiterate(rs);
     games_bailout(rs);
     // Deinitialize NCurses
     wclear(stdscr);
