@@ -885,12 +885,10 @@ long get_filesize(FILE *fp)
 gamesevent revendian(gamesevent revx)
 {
     int32_t i; gamesevent x = 0;
+    fprintf(stderr,"%04x -> ",revx);
     for (i=0; i<sizeof(gamesevent); i++)
-    {
-        x <<= 8;
-        x |= (revx & 0xff);
-        revx >>= 8;
-    }
+        ((uint8_t *)&x)[i] = ((uint8_t *)&revx)[sizeof(gamesevent)-1-i];
+    fprintf(stderr,"%04x\n",x);
     return(x);
 }
 
