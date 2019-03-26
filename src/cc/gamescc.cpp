@@ -30,6 +30,75 @@ uint64_t _games_rngnext(uint64_t initseed)
     return(((uint64_t)seeds[3] << 48) | ((uint64_t)seeds[2] << 24) | ((uint64_t)seeds[1] << 16) | seeds[0]);
 }
 
+gamesevent games_readevent(struct games_state *rs)
+{
+    gamesevent ch = -1; int32_t c;
+    if ( rs != 0 && rs->guiflag == 0 )
+    {
+        static uint32_t counter;
+        if ( rs->ind < rs->numkeys )
+        {
+            ch = rs->keystrokes[rs->ind++];
+            if ( 0 )
+            {
+                static FILE *fp; static int32_t counter;
+                if ( fp == 0 )
+                    fp = fopen("log","wb");
+                if ( fp != 0 )
+                {
+                    fprintf(fp,"%d: (%c) seed.%llu\n",counter,c,(long long)rs->origseed);
+                    fflush(fp);
+                    counter++;
+                }
+            }
+            return(ch);
+        }
+        if ( rs->replaydone != 0 && counter++ < 3 )
+            fprintf(stderr,"replay finished but readchar called\n");
+        rs->replaydone = (uint32_t)time(NULL);
+        return(0);
+    }
+    if ( rs == 0 || rs->guiflag != 0 )
+    {
+        c = getch();
+        switch ( c )
+        {
+            case KEY_LEFT:
+                c = 'h';
+                break;
+            case KEY_RIGHT:
+                c = 'l';
+                break;
+            case KEY_UP:
+                c = 'k';
+                break;
+            case KEY_DOWN:
+                c = 'j';
+                break;
+        }
+        ch = c;
+        if (ch == 3)
+        {
+            //_quit();
+            return(27);
+        }
+        /*if ( rs != 0 && rs->guiflag != 0 )
+         {
+         if ( rs->num < sizeof(rs->buffered) )
+         {
+         rs->buffered[rs->num++] = ch;
+         if ( rs->num > (sizeof(rs->buffered)*9)/10 && rs->needflush == 0 )
+         {
+         rs->needflush = (uint32_t)time(NULL);
+         //fprintf(stderr,"needflush.%u %d of %d\n",rs->needflush,rs->num,(int32_t)sizeof(rs->buffered));
+         //sleep(3);
+         }
+         } else fprintf(stderr,"buffer filled without flushed\n");
+         }*/
+    } else fprintf(stderr,"readchar rs.%p non-gui error?\n",rs);
+    return(ch);
+}
+
 int32_t games_replay2(uint8_t *newdata,uint64_t seed,gamesevent *keystrokes,int32_t num,struct games_player *player,int32_t sleepmillis)
 {
     struct games_state *rs; FILE *fp; int32_t i,n; void *ptr;
