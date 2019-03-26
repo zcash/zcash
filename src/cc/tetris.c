@@ -724,11 +724,11 @@ void *gamesiterate(struct games_state *rs)
                     c = 'j';
                     break;
             }
-            if ( c < 0 || skipcount == 0x7f )
+            if ( c >= 0 || skipcount == 0x7f )
             {
                 if ( skipcount > 0 )
                     issue_games_events(rs,Gametxidstr,eventid-skipcount,skipcount | 0x80);
-                if ( c != -1 )
+                if ( c >= 0 )
                     issue_games_events(rs,Gametxidstr,eventid,c);
                 skipcount = 0;
             } else skipcount++;
