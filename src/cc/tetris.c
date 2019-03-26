@@ -710,7 +710,7 @@ void *gamesiterate(struct games_state *rs)
                 doupdate();
             sleep_milli(10);
             c = games_readevent(rs);
-            if ( c >= 0 || skipcount == 0x3fff )
+            if ( c <= 0x7f || skipcount == 0x3fff )
             {
                 if ( skipcount > 0 )
                     issue_games_events(rs,Gametxidstr,eventid-skipcount,skipcount | 0x4000);
