@@ -848,9 +848,9 @@ int64_t games_registrationbaton(CMutableTransaction &mtx,uint256 gametxid,CTrans
     return(0);
 }
 
-int32_t games_findbaton(struct CCcontract_info *cp,uint256 &playertxid,char **keystrokesp,int32_t &numkeys,int32_t &regslot,std::vector<uint8_t> &playerdata,uint256 &batontxid,int32_t &batonvout,int64_t &batonvalue,int32_t &batonht,uint256 gametxid,CTransaction gametx,int32_t maxplayers,char *destaddr,int32_t &numplayers,std::string &symbol,std::string &pname)
+int32_t games_findbaton(struct CCcontract_info *cp,uint256 &playertxid,gamesevent **keystrokesp,int32_t &numkeys,int32_t &regslot,std::vector<uint8_t> &playerdata,uint256 &batontxid,int32_t &batonvout,int64_t &batonvalue,int32_t &batonht,uint256 gametxid,CTransaction gametx,int32_t maxplayers,char *destaddr,int32_t &numplayers,std::string &symbol,std::string &pname)
 {
-    int32_t i,numvouts,spentvini,n,matches = 0; CPubKey pk; uint256 tid,active,spenttxid,tokenid,hashBlock,txid,origplayergame; CTransaction spenttx,matchtx,batontx; std::vector<uint8_t> checkdata; CBlockIndex *pindex; char ccaddr[64],*keystrokes=0;
+    int32_t i,numvouts,spentvini,n,matches = 0; CPubKey pk; uint256 tid,active,spenttxid,tokenid,hashBlock,txid,origplayergame; CTransaction spenttx,matchtx,batontx; std::vector<uint8_t> checkdata; CBlockIndex *pindex; char ccaddr[64]; gamesevent *keystrokes=0;
     batonvalue = numkeys = numplayers = batonht = 0;
     playertxid = batontxid = zeroid;
     if ( keystrokesp != 0 )
@@ -913,10 +913,15 @@ int32_t games_findbaton(struct CCcontract_info *cp,uint256 &playertxid,char **ke
                         uint256 g,b; CPubKey p; std::vector<uint8_t> k;
                         if ( games_keystrokesopretdecode(g,b,p,k,spenttx.vout[spenttx.vout.size()-1].scriptPubKey) == 'K' )
                         {
-                            keystrokes = (char *)realloc(keystrokes,numkeys + (int32_t)k.size());
+                            keystrokes = (char *)realloc(keystrokes,sizeof(*keystrokes)*(numkeys + (int32_t)k.size()));
                             for (i=0; i<k.size(); i++)
-                                keystrokes[numkeys+i] = (char)k[i];
-                            numkeys += (int32_t)k.size();
+                            {
+                                gamesevent val = 0;
+                                for (j=0; i<sizeof(gamesevent); j++)
+                                    val = (val << 8) | k[i + sizeof(gamesevent)-1-j];
+                                keystrokes[numkeys+i] = val;
+                            }
+                            numkeys += (int32_t)k.size() / sizeof(gamesevent);
                             (*keystrokesp) = keystrokes;
                             //fprintf(stderr,"updated keystrokes.%p[%d]\n",keystrokes,numkeys);
                         }
@@ -1292,7 +1297,7 @@ UniValue games_finish(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     // vout0 -> 1% ingame gold
     // get any playerdata, get all keystrokes, replay game and compare final state
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight()); char *method = (char *)"bailout";
-    UniValue result(UniValue::VOBJ); std::string rawtx,symbol,pname; CTransaction gametx; uint64_t seed; int64_t buyin,batonvalue,inputsum,cashout=0,CCchange=0; int32_t i,err,gameheight,tmp,numplayers,regslot,n,num,dungeonlevel,numkeys,maxplayers,batonht,batonvout; char mygamesaddr[64],*keystrokes = 0; std::vector<uint8_t> playerdata,newdata,nodata; uint256 batontxid,playertxid,gametxid; CPubKey mypk,gamespk; uint8_t player[10000],mypriv[32],funcid;
+    UniValue result(UniValue::VOBJ); std::string rawtx,symbol,pname; CTransaction gametx; uint64_t seed; int64_t buyin,batonvalue,inputsum,cashout=0,CCchange=0; int32_t i,err,gameheight,tmp,numplayers,regslot,n,num,dungeonlevel,numkeys,maxplayers,batonht,batonvout; char mygamesaddr[64]; gamesevent *keystrokes = 0; std::vector<uint8_t> playerdata,newdata,nodata; uint256 batontxid,playertxid,gametxid; CPubKey mypk,gamespk; uint8_t player[10000],mypriv[32],funcid;
     struct CCcontract_info *cpTokens, tokensC;
     
     if ( txfee == 0 )
