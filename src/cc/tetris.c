@@ -1,6 +1,12 @@
 
 #include "tetris.h"
 
+/*
+ In order to port a game into gamesCC, the RNG needs to be seeded with the gametxid seed, also events needs to be broadcast using issue_games_events
+ */
+
+int rand();
+
 static int random_tetromino(void)
 {
     return rand() % NUM_TETROMINOS;
