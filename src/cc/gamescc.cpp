@@ -818,7 +818,7 @@ int32_t games_iamregistered(int32_t maxplayers,uint256 gametxid,CTransaction tx,
     return(0);
 }
 
-int64_t games_buyins(uint256 gametxid)
+int64_t games_buyins(uint256 gametxid,int32_t maxplayers)
 {
     int32_t i,vout; uint256 spenttxid,hashBlock; CTransaction spenttx; int64_t buyins = 0;
     for (i=0; i<maxplayers; i++)
@@ -863,7 +863,7 @@ uint64_t games_gamefields(UniValue &obj,int64_t maxplayers,int64_t buyin,uint256
         obj.push_back(Pair("alive",games_playersalive(openslots,numplayers,gametxid,maxplayers,ht,tx)));
         obj.push_back(Pair("openslots",openslots));
         obj.push_back(Pair("numplayers",numplayers));
-        obj.push_back(Pair("buyins",ValueFromAmount(game_buyins(gametxid))));
+        obj.push_back(Pair("buyins",ValueFromAmount(games_buyins(gametxid,maxplayers))));
     }
     obj.push_back(Pair("maxplayers",maxplayers));
     obj.push_back(Pair("buyin",ValueFromAmount(buyin)));
@@ -890,7 +890,7 @@ UniValue games_playerinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
 
 void disp_gamesplayerdata(std::vector<uint8_t> playerdata)
 {
-    struct games_player P; int32_t i; char packitemstr[512],line[512];
+    struct games_player P; int32_t i; char packitemstr[512],str[512];
     if ( playerdata.size() > 0 )
     {
         for (i=0; i<playerdata.size(); i++)
@@ -1493,7 +1493,7 @@ UniValue games_finish(uint64_t txfee,struct CCcontract_info *cp,cJSON *params,ch
     // vout0 -> 1% ingame gold
     // get any playerdata, get all keystrokes, replay game and compare final state
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); std::string rawtx,symbol,pname; CTransaction gametx; uint64_t seed; int64_t buyin,batonvalue,inputsum,cashout=0,CCchange=0; int32_t i,err,gameheight,tmp,numplayers,regslot,n,num,numkeys,maxplayers,batonht,batonvout; char mygamesaddr[64]; gamesevent *keystrokes = 0; std::vector<uint8_t> playerdata,newdata,nodata; uint256 batontxid,playertxid,gametxid; CPubKey mypk,gamespk; uint8_t player[10000],mypriv[32],funcid;
+    UniValue result(UniValue::VOBJ); std::string rawtx,symbol,pname; CTransaction gametx; uint64_t seed; int64_t buyin,batonvalue,inputsum,cashout=0,CCchange=0; int32_t i,err,gameheight,tmp,numplayers,regslot,n,num,numkeys,maxplayers,batonht,batonvout; char mygamesaddr[64],str[512]; gamesevent *keystrokes = 0; std::vector<uint8_t> playerdata,newdata,nodata; uint256 batontxid,playertxid,gametxid; CPubKey mypk,gamespk; uint8_t player[10000],mypriv[32],funcid;
     struct CCcontract_info *cpTokens, tokensC;
     
     if ( txfee == 0 )
@@ -1572,7 +1572,7 @@ UniValue games_finish(uint64_t txfee,struct CCcontract_info *cp,cJSON *params,ch
                                     else if ( games_playersalive(tmp,tmp,gametxid,maxplayers,gameheight,gametx) > 1 )
                                         return(cclib_error(result,"highlander must be a winner or last one standing"));
                                 }
-                                cashout += games_buyins(gametxid);//numplayers * buyin;
+                                cashout += games_buyins(gametxid,maxplayers);//numplayers * buyin;
                             }
                             if ( cashout > 0 )
                             {
@@ -1616,12 +1616,12 @@ UniValue games_finish(uint64_t txfee,struct CCcontract_info *cp,cJSON *params,ch
 
 UniValue games_bailout(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    return(games_finish(txfee,cp,params,"bailout"));
+    return(games_finish(txfee,cp,params,(char *)"bailout"));
 }
 
 UniValue games_highlander(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    return(games_finish(txfee,cp,params,"highlander"));
+    return(games_finish(txfee,cp,params,(char *)"highlander"));
 }
 
 UniValue games_players(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)

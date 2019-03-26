@@ -17,7 +17,7 @@
 // game specific code for daemon
 void games_packitemstr(char *packitemstr,struct games_packitem *item)
 {
-    sprintf(packitemstr,"");
+    strcpy(packitemstr,"");
 }
 
 int64_t games_cashout(struct games_player *P)
