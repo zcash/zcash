@@ -1009,7 +1009,7 @@ int32_t games_replay(uint64_t seed,int32_t sleeptime)
     return(num);
 }
 
-char games_readchar(struct rogue_state *rs)
+char games_readchar(struct games_state *rs)
 {
     char c,ch = -1;
     if ( rs != 0 && rs->guiflag == 0 )
