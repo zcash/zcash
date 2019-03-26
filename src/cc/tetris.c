@@ -709,7 +709,7 @@ void *gamesiterate(struct games_state *rs)
             if ( skipcount == 0 )
             {
                 c = games_readevent(rs);
-                fprintf(stderr,"%04x score.%d level.%d\n",c,tg->score,tg->level);
+                fprintf(stderr,"%04x score.%d level.%d\n",c,tg->points,tg->level);
                 if ( (c & 0x4000) == 0x4000 )
                 {
                     skipcount = (c & 0x3fff);
