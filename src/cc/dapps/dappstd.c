@@ -921,10 +921,10 @@ gamesevent *games_keystrokesload(int32_t *numkeysp,uint64_t seed,int32_t counter
             free(keystrokes);
             return(0);
         }
-        for (i=0; i<num; i++)
-            keystrokes[i] = revendian(keystrokes[i]);
         fclose(fp);
         num += (int32_t)(fsize / sizeof(gamesevent));
+        for (i=0; i<num; i++)
+            keystrokes[i] = revendian(keystrokes[i]);
         counter++;
         //fprintf(stderr,"loaded %ld from (%s) total %d\n",fsize,fname,num);
         break;
