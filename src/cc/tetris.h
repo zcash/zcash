@@ -163,9 +163,12 @@ void tg_print(tetris_game *obj, FILE *f);
  * Removal or modification of this copyright notice is prohibited.            *
  *                                                                            *
  ******************************************************************************/
-#define GAMENAME "tetris"
-#define GAMEMAIN tetris
-#define CHAINNAME "GTEST"
+#define GAMENAME "tetris"    // name of executable
+#define GAMEMAIN tetris      // main program of game
+#define GAMEJSON tetrisjson  // displays game specific json
+#define GAMEDATA tetrisdata  // extracts data from game specific variables into games_state
+#define CHAINNAME "GTEST"    // -ac_name=
+typedef uint16_t gamesevent; // can be 8, 16, 32, or 64 bits
 
 #define MAXPACK 23
 struct games_packitem
@@ -180,8 +183,6 @@ struct games_player
     struct games_packitem gamespack[MAXPACK];
 };
 
-typedef uint16_t gamesevent;
-
 struct games_state
 {
     uint64_t seed,origseed;
@@ -191,7 +192,7 @@ struct games_state
     FILE *logfp;
     struct games_player P;
     gamesevent buffered[5000],*keystrokes;
-    uint8_t playerdata[1024];
+    uint8_t playerdata[8192];
 };
 extern struct games_state globalR;
 void *gamesiterate(struct games_state *rs);
@@ -200,6 +201,7 @@ void games_packitemstr(char *packitemstr,struct games_packitem *item);
 uint64_t _games_rngnext(uint64_t initseed);
 int32_t games_replay2(uint8_t *newdata,uint64_t seed,gamesevent *keystrokes,int32_t num,struct games_player *player,int32_t sleepmillis);
 gamesevent games_revendian(gamesevent revx);
+int32_t disp_gamesplayer(char *str,struct games_player *P);
 
 #endif
 

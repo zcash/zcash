@@ -7,10 +7,18 @@
  also, the standalone game needs to support argv of seed gametxid, along with replay args
  */
 
-static int random_tetromino(struct games_state *rs)
+int random_tetromino(struct games_state *rs)
 {
     rs->seed = _games_rngnext(rs->seed);
     return(rs->seed % NUM_TETROMINOS);
+}
+
+int32_t tetrisdata(struct games_player *P,void *ptr)
+{
+    tetris_game *tg = ptr;
+    P->gold = tg->points;
+    P->dungeonlevel = tg->level;
+    return(0);
 }
 
 /***************************************************************************/
@@ -676,7 +684,7 @@ void *gamesiterate(struct games_state *rs)
         if ( rs->guiflag != 0 )
         {
 #ifdef STANDALONE
-            sleep_milli(10);
+            sleep_milli(25);
             c = games_readevent(rs);
             if ( c <= 0x7f || skipcount == 0x3fff )
             {

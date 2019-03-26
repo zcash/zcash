@@ -42,7 +42,8 @@ std::string Games_pname;
     { (char *)MYCCNAME, (char *)"playerinfo", (char *)"playertxid", 1, 1, ' ', EVAL_GAMES }, \
     { (char *)MYCCNAME, (char *)"gameinfo", (char *)"gametxid", 1, 1, ' ', EVAL_GAMES }, \
     { (char *)MYCCNAME, (char *)"keystrokes", (char *)"txid,hexstr", 2, 2, 'K', EVAL_GAMES }, \
-    { (char *)MYCCNAME, (char *)"finish", (char *)"gametxid", 1, 1, 'Q', EVAL_GAMES }, \
+    { (char *)MYCCNAME, (char *)"bailout", (char *)"gametxid", 1, 1, 'Q', EVAL_GAMES }, \
+    { (char *)MYCCNAME, (char *)"highlander", (char *)"gametxid", 1, 1, 'H', EVAL_GAMES }, \
     { (char *)MYCCNAME, (char *)"events", (char *)"eventshex [gametxid [eventid]]", 1, 3, ' ', EVAL_GAMES }, \
     { (char *)MYCCNAME, (char *)"extract", (char *)"gametxid [pubkey]", 1, 2, ' ', EVAL_GAMES }, \
     { (char *)MYCCNAME, (char *)"register", (char *)"gametxid [playertxid]", 1, 2, 'R', EVAL_GAMES },
@@ -59,7 +60,8 @@ UniValue games_newgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue games_playerinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue games_gameinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue games_keystrokes(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
-UniValue games_finish(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+UniValue games_bailout(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+UniValue games_highlander(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue games_events(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue games_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue games_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
@@ -93,8 +95,10 @@ if ( cp->evalcode == EVAL_GAMES ) \
         return(games_keystrokes(txfee,cp,params)); \
     else if ( strcmp(method,"extract") == 0 ) \
         return(games_extract(txfee,cp,params)); \
-    else if ( strcmp(method,"finish") == 0 ) \
-        return(games_finish(txfee,cp,params)); \
+    else if ( strcmp(method,"bailout") == 0 ) \
+        return(games_bailout(txfee,cp,params)); \
+    else if ( strcmp(method,"highlander") == 0 ) \
+        return(games_highlander(txfee,cp,params)); \
     else if ( strcmp(method,"fund") == 0 ) \
     return(games_fund(txfee,cp,params)); \
     else \

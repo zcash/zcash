@@ -16,6 +16,9 @@
 #include "gamescc.h"
 #include "tetris.c" // replace with game code
 
+int32_t GAMEDATA(struct games_player *P,void *ptr);
+void GAMEJSON(UniValue &obj,struct games_player *P);
+
 uint64_t _games_rngnext(uint64_t initseed)
 {
     uint16_t seeds[4]; int32_t i;
@@ -92,19 +95,6 @@ gamesevent games_readevent(struct games_state *rs)
             //_quit();
             return(27);
         }
-        /*if ( rs != 0 && rs->guiflag != 0 )
-         {
-         if ( rs->num < sizeof(rs->buffered) )
-         {
-         rs->buffered[rs->num++] = ch;
-         if ( rs->num > (sizeof(rs->buffered)*9)/10 && rs->needflush == 0 )
-         {
-         rs->needflush = (uint32_t)time(NULL);
-         //fprintf(stderr,"needflush.%u %d of %d\n",rs->needflush,rs->num,(int32_t)sizeof(rs->buffered));
-         //sleep(3);
-         }
-         } else fprintf(stderr,"buffer filled without flushed\n");
-         }*/
     } else fprintf(stderr,"readchar rs.%p non-gui error?\n",rs);
     return(ch);
 }
@@ -121,7 +111,6 @@ int32_t games_replay2(uint8_t *newdata,uint64_t seed,gamesevent *keystrokes,int3
     {
         rs->P = *player;
         rs->restoring = 1;
-        //fprintf(stderr,"restore player packsize.%d HP.%d\n",rs->P.packsize,rs->P.hitpoints);
         if ( rs->P.packsize > MAXPACK )
             rs->P.packsize = MAXPACK;
     }
@@ -150,14 +139,15 @@ int32_t games_replay2(uint8_t *newdata,uint64_t seed,gamesevent *keystrokes,int3
     /*if ( (fp= fopen("checkfile","wb")) != 0 )
      {
      //save_file(rs,fp,0);
-     //fprintf(stderr,"gold.%d hp.%d strength.%d/%d level.%d exp.%d dungeon.%d data[%d]\n",rs->P.gold,rs->P.hitpoints,rs->P.strength&0xffff,rs->P.strength>>16,rs->P.level,rs->P.experience,rs->P.dungeonlevel,rs->playersize);
      if ( newdata != 0 && rs->playersize > 0 )
      memcpy(newdata,rs->playerdata,rs->playersize);
      }*/
     if ( ptr != 0 )
     {
         // extract data from ptr
-        if ( newdata != 0 && rs->playersize > 0 )
+        if ( GAMEDATA(&rs->P,ptr) < 0 )
+            memset(&rs->P,0,sizeof(rs->P));
+        else if ( newdata != 0 && rs->playersize > 0 )
             memcpy(newdata,rs->playerdata,rs->playersize);
         free(ptr);
     }
@@ -695,7 +685,6 @@ UniValue games_playerobj(std::vector<uint8_t> playerdata,uint256 playertxid,uint
         }
         datastr[i<<1] = 0;
     }
-    int32_t gold,hitpoints,strength,level,experience,packsize,dungeonlevel,pad;
     for (i=0; i<P.packsize&&i<MAXPACK; i++)
     {
         games_packitemstr(packitemstr,&P.gamespack[i]);
@@ -742,13 +731,7 @@ UniValue games_playerobj(std::vector<uint8_t> playerdata,uint256 playertxid,uint
         free(datastr);
     }
     obj.push_back(Pair("pack",a));
-    obj.push_back(Pair("packsize",(int64_t)P.packsize));
-    obj.push_back(Pair("hitpoints",(int64_t)P.hitpoints));
-    obj.push_back(Pair("strength",(int64_t)(P.strength&0xffff)));
-    obj.push_back(Pair("maxstrength",(int64_t)(P.strength>>16)));
-    obj.push_back(Pair("level",(int64_t)P.level));
-    obj.push_back(Pair("experience",(int64_t)P.experience));
-    obj.push_back(Pair("dungeonlevel",(int64_t)P.dungeonlevel));
+    GAMEPLAYERJSON(obj,&P);
     obj.push_back(Pair("chain",symbol));
     obj.push_back(Pair("pname",pname));
     return(obj);
@@ -834,6 +817,24 @@ int32_t games_iamregistered(int32_t maxplayers,uint256 gametxid,CTransaction tx,
     return(0);
 }
 
+int64_t games_buyins(uint256 gametxid)
+{
+    int32_t i,vout; uint256 spenttxid,hashBlock; CTransaction spenttx; int64_t buyins = 0;
+    for (i=0; i<maxplayers; i++)
+    {
+        vout = i+1;
+        if ( myIsutxo_spent(spenttxid,gametxid,vout) >= 0 )
+        {
+            if ( myGetTransaction(spenttxid,spenttx,hashBlock) != 0 && spenttx.vout.size() > 0 )
+            {
+                if ( spenttx.vout[0].nValue > GAMES_REGISTRATIONSIZE )
+                    buyins += (spenttx.vout[0].nValue - GAMES_REGISTRATIONSIZE);
+            } //else fprintf(stderr,"cant find spenttxid.%s\n",spenttxid.GetHex().c_str());
+        } //else fprintf(stderr,"vout %d is unspent\n",vout);
+    }
+    return(buyins);
+}
+
 uint64_t games_gamefields(UniValue &obj,int64_t maxplayers,int64_t buyin,uint256 gametxid,char *mygamesaddr)
 {
     CBlockIndex *pindex; int32_t ht,openslots,delay,numplayers; uint256 hashBlock; uint64_t seed=0; char cmd[512]; CTransaction tx;
@@ -861,6 +862,7 @@ uint64_t games_gamefields(UniValue &obj,int64_t maxplayers,int64_t buyin,uint256
         obj.push_back(Pair("alive",games_playersalive(openslots,numplayers,gametxid,maxplayers,ht,tx)));
         obj.push_back(Pair("openslots",openslots));
         obj.push_back(Pair("numplayers",numplayers));
+        obj.push_back(Pair("buyins",ValueFromAmount(game_buyins(gametxid))));
     }
     obj.push_back(Pair("maxplayers",maxplayers));
     obj.push_back(Pair("buyin",ValueFromAmount(buyin)));
@@ -883,6 +885,27 @@ UniValue games_playerinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
         } else return(cclib_error(result,"no playertxid"));
         return(result);
     } else return(cclib_error(result,"couldnt reparse params"));
+}
+
+void disp_gamesplayerdata(std::vector<uint8_t> playerdata)
+{
+    struct games_player P; int32_t i; char packitemstr[512],line[512];
+    if ( playerdata.size() > 0 )
+    {
+        for (i=0; i<playerdata.size(); i++)
+        {
+            ((uint8_t *)&P)[i] = playerdata[i];
+            fprintf(stderr,"%02x",playerdata[i]);
+        }
+        disp_gamesplayer(str,&P);
+        fprintf(stderr,"%s\n",str);
+        for (i=0; i<P.packsize&&i<MAXPACK; i++)
+        {
+            games_packitemstr(packitemstr,&P.gamespack[i]);
+            fprintf(stderr,"%d: %s\n",i,packitemstr);
+        }
+        fprintf(stderr,"\n");
+    }
 }
 
 int32_t games_playerdataspend(CMutableTransaction &mtx,uint256 playertxid,int32_t vout,uint256 origplayergame)
@@ -1308,6 +1331,81 @@ UniValue games_keystrokes(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
     } else return(cclib_error(result,"couldnt reparse params"));
 }
 
+gamesevent *games_extractgame(int32_t makefiles,char *str,int32_t *numkeysp,std::vector<uint8_t> &newdata,uint64_t &seed,uint256 &playertxid,struct CCcontract_info *cp,uint256 gametxid,char *gamesaddr)
+{
+    CPubKey gamespk; int32_t i,num,retval,maxplayers,gameheight,batonht,batonvout,numplayers,regslot,numkeys,err; std::string symbol,pname; CTransaction gametx; int64_t buyin,batonvalue; char fname[64]; gamesevent *keystrokes = 0; std::vector<uint8_t> playerdata; uint256 batontxid; FILE *fp; uint8_t newplayer[10000]; struct games_player P,endP;
+    gamespk = GetUnspendable(cp,0);
+    *numkeysp = 0;
+    seed = 0;
+    num = numkeys = 0;
+    playertxid = zeroid;
+    str[0] = 0;
+    if ( (err= games_isvalidgame(cp,gameheight,gametx,buyin,maxplayers,gametxid,0)) == 0 )
+    {
+        if ( (retval= games_findbaton(cp,playertxid,&keystrokes,numkeys,regslot,playerdata,batontxid,batonvout,batonvalue,batonht,gametxid,gametx,maxplayers,gamesaddr,numplayers,symbol,pname)) == 0 )
+        {
+            UniValue obj;
+            //fprintf(stderr,"got baton\n");
+            seed = games_gamefields(obj,maxplayers,buyin,gametxid,gamesaddr);
+            //fprintf(stderr,"(%s) found baton %s numkeys.%d seed.%llu playerdata.%d playertxid.%s\n",pname.size()!=0?pname.c_str():Games_pname.c_str(),batontxid.ToString().c_str(),numkeys,(long long)seed,(int32_t)playerdata.size(),playertxid.GetHex().c_str());
+            memset(&P,0,sizeof(P));
+            if ( playerdata.size() > 0 )
+            {
+                for (i=0; i<playerdata.size(); i++)
+                    ((uint8_t *)&P)[i] = playerdata[i];
+            }
+            if ( keystrokes != 0 && numkeys != 0 )
+            {
+                if ( makefiles != 0 )
+                {
+                    sprintf(fname,"%s.%llu.0",GAMENAME,(long long)seed);
+                    if ( (fp= fopen(fname,"wb")) != 0 )
+                    {
+                        if ( fwrite(keystrokes,sizeof(*keystrokes),numkeys,fp) != numkeys )
+                            fprintf(stderr,"error writing %s\n",fname);
+                        fclose(fp);
+                    }
+                    sprintf(fname,"%s.%llu.player",GAMENAME,(long long)seed);
+                    if ( (fp= fopen(fname,"wb")) != 0 )
+                    {
+                        if ( fwrite(&playerdata[0],1,(int32_t)playerdata.size(),fp) != playerdata.size() )
+                            fprintf(stderr,"error writing %s\n",fname);
+                        fclose(fp);
+                    }
+                }
+                //fprintf(stderr,"call replay2\n");
+                num = games_replay2(newplayer,seed,keystrokes,numkeys,playerdata.size()==0?0:&P,0);
+                newdata.resize(num);
+                for (i=0; i<num; i++)
+                {
+                    newdata[i] = newplayer[i];
+                    ((uint8_t *)&endP)[i] = newplayer[i];
+                }
+                if ( disp_gamesplayer(str,&endP) < 0 )
+                {
+                    sprintf(str,"zero value character -> no playerdata\n");
+                    newdata.resize(0);
+                    *numkeysp = numkeys;
+                    return(keystrokes);
+                }
+                else
+                {
+                    *numkeysp = numkeys;
+                    return(keystrokes);
+                }
+            } else num = 0;
+        }
+        else
+        {
+            fprintf(stderr,"extractgame: couldnt find baton keystrokes.%p retval.%d\n",keystrokes,retval);
+            if ( keystrokes != 0 )
+                free(keystrokes), keystrokes = 0;
+        }
+    } else fprintf(stderr,"extractgame: invalid game\n");
+    //fprintf(stderr,"extract %s\n",gametxid.GetHex().c_str());
+    return(0);
+}
+
 UniValue games_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     UniValue result(UniValue::VOBJ); CPubKey pk,gamespk; int32_t i,n,numkeys,flag = 0; uint64_t seed; char str[512],gamesaddr[64],*pubstr,*hexstr; gamesevent *keystrokes = 0; std::vector<uint8_t> newdata; uint256 gametxid,playertxid; FILE *fp; uint8_t pub33[33];
@@ -1380,7 +1478,7 @@ UniValue games_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     return(result);
 }
 
-UniValue games_finish(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
+UniValue games_finish(uint64_t txfee,struct CCcontract_info *cp,cJSON *params,char *method)
 {
     //vin0 -> highlander vout from creategame TCBOO
     //vin1 -> keystrokes baton of completed game, must be last to quit or first to win, only spent registration batons matter. If more than 60 blocks since last keystrokes, it is forfeit
@@ -1393,8 +1491,8 @@ UniValue games_finish(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     // vout0 -> playerdata marker
     // vout0 -> 1% ingame gold
     // get any playerdata, get all keystrokes, replay game and compare final state
-    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight()); char *method = (char *)"bailout";
-    UniValue result(UniValue::VOBJ); std::string rawtx,symbol,pname; CTransaction gametx; uint64_t seed; int64_t buyin,batonvalue,inputsum,cashout=0,CCchange=0; int32_t i,err,gameheight,tmp,numplayers,regslot,n,num,dungeonlevel,numkeys,maxplayers,batonht,batonvout; char mygamesaddr[64]; gamesevent *keystrokes = 0; std::vector<uint8_t> playerdata,newdata,nodata; uint256 batontxid,playertxid,gametxid; CPubKey mypk,gamespk; uint8_t player[10000],mypriv[32],funcid;
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    UniValue result(UniValue::VOBJ); std::string rawtx,symbol,pname; CTransaction gametx; uint64_t seed; int64_t buyin,batonvalue,inputsum,cashout=0,CCchange=0; int32_t i,err,gameheight,tmp,numplayers,regslot,n,num,numkeys,maxplayers,batonht,batonvout; char mygamesaddr[64]; gamesevent *keystrokes = 0; std::vector<uint8_t> playerdata,newdata,nodata; uint256 batontxid,playertxid,gametxid; CPubKey mypk,gamespk; uint8_t player[10000],mypriv[32],funcid;
     struct CCcontract_info *cpTokens, tokensC;
     
     if ( txfee == 0 )
@@ -1452,11 +1550,10 @@ UniValue games_finish(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                             newdata[i] = player[i];
                             ((uint8_t *)&P)[i] = player[i];
                         }
-                        if ( (P.gold <= 0 || P.hitpoints <= 0 || (P.strength&0xffff) <= 0 || P.level <= 0 || P.experience <= 0 || P.dungeonlevel <= 0) )
+                        if ( disp_gamesplayer(str,&P) < 0 )
                         {
                             //fprintf(stderr,"zero value character was killed -> no playerdata\n");
                             newdata.resize(0);
-                            //P.gold = (P.gold * 8) / 10;
                         }
                         else
                         {
@@ -1464,7 +1561,7 @@ UniValue games_finish(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                             mtx.vout.push_back(MakeCC1vout(EVAL_TOKENS, txfee, GetUnspendable(cpTokens,NULL)));            // marker to token cc addr, burnable and validated
                             mtx.vout.push_back(MakeTokensCC1vout(cp->evalcode,1,mypk));
                             cashout = games_cashout(&P);
-                            fprintf(stderr,"\nextracted $$$gold.%d -> %.8f GAME hp.%d strength.%d/%d level.%d exp.%d dl.%d n.%d amulet.%d\n",P.gold,(double)cashout/COIN,P.hitpoints,P.strength&0xffff,P.strength>>16,P.level,P.experience,P.dungeonlevel,n,P.amulet);
+                            fprintf(stderr,"\ncashout %.8f extracted %s\n",(double)cashout/COIN,str);
                             if ( funcid == 'H' && maxplayers > 1 )
                             {
                                 if ( P.amulet == 0 )
@@ -1474,7 +1571,7 @@ UniValue games_finish(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                                     else if ( games_playersalive(tmp,tmp,gametxid,maxplayers,gameheight,gametx) > 1 )
                                         return(cclib_error(result,"highlander must be a winner or last one standing"));
                                 }
-                                cashout += numplayers * buyin;
+                                cashout += games_buyins(gametxid);//numplayers * buyin;
                             }
                             if ( cashout > 0 )
                             {
@@ -1514,6 +1611,16 @@ UniValue games_finish(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
         } else fprintf(stderr,"parameters only n.%d\n",n);
     }
     return(result);
+}
+
+UniValue games_bailout(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
+{
+    return(games_finish(txfee,cp,params,"bailout"));
+}
+
+UniValue games_highlander(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
+{
+    return(games_finish(txfee,cp,params,"highlander"));
 }
 
 UniValue games_players(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
@@ -1636,6 +1743,59 @@ UniValue games_fund(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
         result.push_back(Pair("error","couldnt parse"));
     }
     return(result);
+}
+
+int32_t games_playerdata_validate(int64_t *cashoutp,uint256 &playertxid,struct CCcontract_info *cp,std::vector<uint8_t> playerdata,uint256 gametxid,CPubKey pk)
+{
+    static uint32_t good,bad; static uint256 prevgame;
+    char str[512],gamesaddr[64],str2[67],fname[64]; gamesevent *keystrokes; int32_t i,numkeys; std::vector<uint8_t> newdata; uint64_t seed; CPubKey gamespk; struct games_player P;
+    *cashoutp = 0;
+    gamespk = GetUnspendable(cp,0);
+    GetCCaddress1of2(cp,gamesaddr,gamespk,pk);
+    if ( (keystrokes= games_extractgame(0,str,&numkeys,newdata,seed,playertxid,cp,gametxid,gamesaddr)) != 0 )
+    {
+        free(keystrokes);
+        sprintf(fname,"%s.%llu.pack",GAMENAME,(long long)seed);
+        remove(fname);
+        for (i=0; i<newdata.size(); i++)
+            ((uint8_t *)&P)[i] = newdata[i];
+        *cashoutp = games_cashout(&P);
+        if ( newdata == playerdata )
+        {
+            if ( gametxid != prevgame )
+            {
+                prevgame = gametxid;
+                good++;
+            }
+            return(0);
+        }
+        if ( disp_gamesplayer(str,&P) < 0 )
+        {
+            if ( newdata.size() == 0 )
+            {
+                if ( gametxid != prevgame )
+                {
+                    prevgame = gametxid;
+                    good++;
+                }
+                *cashoutp = 0;
+                return(0);
+            }
+        }
+        if ( gametxid != prevgame )
+        {
+            prevgame = gametxid;
+            bad++;
+            disp_gamesplayerdata(newdata);
+            disp_gamesplayerdata(playerdata);
+            fprintf(stderr,"%s playerdata: %s\n",gametxid.GetHex().c_str(),str);
+            fprintf(stderr,"newdata[%d] != playerdata[%d], numkeys.%d %s pub.%s playertxid.%s good.%d bad.%d\n",(int32_t)newdata.size(),(int32_t)playerdata.size(),numkeys,gamesaddr,pubkey33_str(str2,(uint8_t *)&pk),playertxid.GetHex().c_str(),good,bad);
+        }
+    }
+    sprintf(fname,"%s.%llu.pack",GAMENAME,(long long)seed);
+    remove(fname);
+    //fprintf(stderr,"no keys games_extractgame %s\n",gametxid.GetHex().c_str());
+    return(-1);
 }
 
 #endif
