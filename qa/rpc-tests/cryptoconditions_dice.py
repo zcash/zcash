@@ -25,18 +25,20 @@ class CryptoconditionsDiceTest(CryptoconditionsTestFramework):
         assert_greater_than(result, 100000)
 
         result  = rpc.diceaddress()
-        for x in result.keys():
-            print(x+": "+str(result[x]))  
         assert_equal(result['result'], 'success')
-        for x in ['myCCaddress', 'DiceCCAddress', 'myaddress']:
-            assert_equal(result[x][0], 'R')
+
+        for x in result.keys():
+            if x.find('ddress') > 0:
+                assert_equal(result[x][0], 'R')
 
         result  = rpc.diceaddress(self.pubkey)
         for x in result.keys():
             print(x+": "+str(result[x]))   
         assert_equal(result['result'], 'success')
-        for x in ['myCCaddress', 'DiceCCAddress', 'myaddress', 'DiceCCTokensAddress', 'DiceNormalAddress']:
-            assert_equal(result[x][0], 'R')
+
+        for x in result.keys():
+            if x.find('ddress') > 0:
+                assert_equal(result[x][0], 'R')
 
         # no dice created yet
         result  = rpc.dicelist()
