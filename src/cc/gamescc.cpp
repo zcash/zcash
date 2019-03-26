@@ -14,6 +14,7 @@
  ******************************************************************************/
 
 #include "gamescc.h"
+#include "tetris.c" // replace with game code
 
 uint64_t _games_rngnext(uint64_t initseed)
 {
@@ -85,9 +86,6 @@ int32_t games_replay2(uint8_t *newdata,uint64_t seed,gamesevent *keystrokes,int3
     free(rs);
     return(n);
 }
-
-#include "tetris.c" // replace with game code
-
 
 #ifndef STANDALONE
 
