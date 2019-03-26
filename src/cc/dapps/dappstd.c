@@ -22,7 +22,6 @@
 #include <unistd.h>
 #include <curl/curl.h>
 #include <curl/easy.h>
-#include <ncurses.h>
 
 extern struct games_state globalR;
 void *gamesiterate(struct games_state *rs);
@@ -1012,7 +1011,7 @@ int32_t games_replay(uint64_t seed,int32_t sleeptime)
 
 char games_readchar(struct games_state *rs)
 {
-    char c,ch = -1;
+    char ch = -1; int32_t c;
     if ( rs != 0 && rs->guiflag == 0 )
     {
         static uint32_t counter;
@@ -1040,8 +1039,8 @@ char games_readchar(struct games_state *rs)
     }
     if ( rs == 0 || rs->guiflag != 0 )
     {
-        ch = (char) getch();
-        switch ( ch )
+        c = getch();
+        switch ( c )
         {
             case KEY_LEFT:
                 c = 'h';
@@ -1056,6 +1055,7 @@ char games_readchar(struct games_state *rs)
                 c = 'j';
                 break;
         }
+        ch = c;
         if (ch == 3)
         {
             //_quit();
@@ -1065,7 +1065,7 @@ char games_readchar(struct games_state *rs)
         {
             if ( rs->num < sizeof(rs->buffered) )
             {
-                rs->buffered[rs->num++] = ch;
+                rs->buffered[rs->num++] = c;
                 if ( rs->num > (sizeof(rs->buffered)*9)/10 && rs->needflush == 0 )
                 {
                     rs->needflush = (uint32_t)time(NULL);
@@ -1075,7 +1075,7 @@ char games_readchar(struct games_state *rs)
             } else fprintf(stderr,"buffer filled without flushed\n");
         }
     } else fprintf(stderr,"readchar rs.%p non-gui error?\n",rs);
-    return(ch);
+    return(c);
 }
 
 int32_t games_setplayerdata(struct games_state *rs,char *gametxidstr)
