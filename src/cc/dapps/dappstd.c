@@ -889,7 +889,7 @@ gamesevent *games_keystrokesload(int32_t *numkeysp,uint64_t seed,int32_t counter
     while ( 1 )
     {
         gamesfname(fname,seed,counter);
-        //printf("check (%s)\n",fname);
+        printf("check (%s)\n",fname);
         if ( (fp= fopen(fname,"rb")) == 0 )
             break;
         if ( (fsize= get_filesize(fp)) <= 0 )
@@ -898,7 +898,7 @@ gamesevent *games_keystrokesload(int32_t *numkeysp,uint64_t seed,int32_t counter
             //printf("fsize.%ld\n",fsize);
             break;
         }
-        if ( (keystrokes= (gamesevent *)realloc(keystrokes,sizeof(*keystrokes)*(num+fsize))) == 0 )
+        if ( (keystrokes= (gamesevent *)realloc(keystrokes,sizeof(*keystrokes)*num+fsize))) == 0 )
         {
             fprintf(stderr,"error reallocating keystrokes\n");
             fclose(fp);
@@ -912,9 +912,9 @@ gamesevent *games_keystrokesload(int32_t *numkeysp,uint64_t seed,int32_t counter
             return(0);
         }
         fclose(fp);
-        num += fsize;
+        num += (int32_t)(fsize / sizeof(gamesevent));
         counter++;
-        //fprintf(stderr,"loaded %ld from (%s) total %d\n",fsize,fname,num);
+        fprintf(stderr,"loaded %ld from (%s) total %d\n",fsize,fname,num);
     }
     *numkeysp = num;
     return(keystrokes);
@@ -1097,7 +1097,7 @@ int main(int argc, char **argv)
         seed = atol(argv[1]); // non-windows
 #endif // _WIN32
         
-        //fprintf(stderr,"replay %llu\n",(long long)seed);
+        fprintf(stderr,"replay %llu\n",(long long)seed);
         return(games_replay(seed,10));
     }
     else

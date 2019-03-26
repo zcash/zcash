@@ -810,7 +810,7 @@ int tetris(int argc, char **argv)
     memset(rs,0,sizeof(*rs));
     rs->guiflag = 1;
     rs->sleeptime = 1; // non-zero to allow refresh()
-    if ( argc == 3 && strlen(argv[2]) == 64 )
+    if ( argc >= 2 && strlen(argv[2]) == 64 )
     {
 #ifdef _WIN32
 #ifdef _MSC_VER
@@ -822,12 +822,15 @@ int tetris(int argc, char **argv)
         rs->origseed = atol(argv[1]); // non-windows
 #endif // _WIN32
         rs->seed = rs->origseed;
-        strcpy(Gametxidstr,argv[2]);
-        fprintf(stderr,"setplayerdata %s\n",Gametxidstr);
-        if ( games_setplayerdata(rs,Gametxidstr) < 0 )
+        if ( argc >= 3 )
         {
-            fprintf(stderr,"invalid gametxid, or already started\n");
-            return(-1);
+            strcpy(Gametxidstr,argv[2]);
+            fprintf(stderr,"setplayerdata %s\n",Gametxidstr);
+            if ( games_setplayerdata(rs,Gametxidstr) < 0 )
+            {
+                fprintf(stderr,"invalid gametxid, or already started\n");
+                return(-1);
+            }
         }
     } else rs->seed = 777;
 
