@@ -3513,11 +3513,12 @@ int tetris(int argc, char **argv)
             doupdate();
         sleep_milli(10);
         c = getch();
-        if ( c >= 0 )
+        if ( c != -1 || skipcount == 0x3fff )
         {
             if ( skipcount > 0 )
                 issue_games_events(gametxid,eventid-skipcount,skipcount | 0x4000);
-            issue_games_events(gametxid,eventid,c);
+            if ( c != -1 )
+                issue_games_events(gametxid,eventid,c);
             skipcount = 0;
         } else skipcount++;
         eventid++;
