@@ -226,7 +226,7 @@ static void tg_move(tetris_game *obj, int direction)
 /*
  Send the falling tetris block to the bottom.
  */
-static void tg_down(tetris_game *obj)
+static void tg_down(struct games_state *rs,tetris_game *obj)
 {
     tg_remove(obj, obj->falling);
     while (tg_fits(obj, obj->falling)) {
@@ -234,7 +234,7 @@ static void tg_down(tetris_game *obj)
     }
     obj->falling.loc.row--;
     tg_put(obj, obj->falling);
-    tg_new_falling(obj);
+    tg_new_falling(rs,obj);
 }
 
 /*
@@ -273,12 +273,12 @@ static void tg_rotate(tetris_game *obj, int direction)
 /*
  Swap the falling block with the block in the hold buffer.
  */
-static void tg_hold(tetris_game *obj)
+static void tg_hold(struct games_state *rs,tetris_game *obj)
 {
     tg_remove(obj, obj->falling);
     if (obj->stored.typ == -1) {
         obj->stored = obj->falling;
-        tg_new_falling(obj);
+        tg_new_falling(rs,obj);
     } else {
         int typ = obj->falling.typ, ori = obj->falling.ori;
         obj->falling.typ = obj->stored.typ;
@@ -431,7 +431,7 @@ bool tg_tick(struct games_state *rs,tetris_game *obj, tetris_move move)
     return !tg_game_over(obj);
 }
 
-void tg_init(tetris_game *obj, int rows, int cols)
+void tg_init(struct games_state *rs,tetris_game *obj, int rows, int cols)
 {
     // Initialization logic
     obj->rows = rows;
@@ -443,8 +443,8 @@ void tg_init(tetris_game *obj, int rows, int cols)
     obj->ticks_till_gravity = GRAVITY_LEVEL[obj->level];
     obj->lines_remaining = LINES_PER_LEVEL;
     //srand(time(NULL));
-    tg_new_falling(obj);
-    tg_new_falling(obj);
+    tg_new_falling(rs,obj);
+    tg_new_falling(ts,obj);
     obj->stored.typ = -1;
     obj->stored.ori = 0;
     obj->stored.loc.row = 0;
@@ -452,10 +452,10 @@ void tg_init(tetris_game *obj, int rows, int cols)
     printf("%d", obj->falling.loc.col);
 }
 
-tetris_game *tg_create(int rows, int cols)
+tetris_game *tg_create(struct games_state *rs,int rows, int cols)
 {
     tetris_game *obj = (tetris_game *)malloc(sizeof(tetris_game));
-    tg_init(obj, rows, cols);
+    tg_init(rs,obj, rows, cols);
     return obj;
 }
 
