@@ -678,13 +678,13 @@ void *gamesiterate(struct games_state *rs)
             display_piece(next,tg->next);
             display_piece(hold,tg->stored);
             display_score(score,tg);
-            if ( (counter++ % 5) == 0 )
-                doupdate();
         }
         if ( rs->guiflag != 0 )
         {
 #ifdef STANDALONE
-            sleep_milli(25);
+            sleep_milli(15);
+            if ( (counter++ % 10) == 0 )
+                doupdate();
             c = games_readevent(rs);
             if ( c <= 0x7f || skipcount == 0x3fff )
             {
@@ -699,7 +699,11 @@ void *gamesiterate(struct games_state *rs)
         else
         {
             if ( rs->sleeptime != 0 )
+            {
                 sleep_milli(1);
+                if ( (counter++ % 20) == 0 )
+                    doupdate();
+            }
             if ( skipcount == 0 )
             {
                 c = games_readevent(rs);
