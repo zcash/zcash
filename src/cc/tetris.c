@@ -637,6 +637,7 @@ void init_colors(void)
 struct games_state globalR;
 extern char Gametxidstr[];
 int32_t issue_games_events(struct games_state *rs,char *gametxidstr,uint32_t eventid,gamesevent c);
+gamesevent games_readevent(struct games_state *rs);
 
 void *gamesiterate(struct games_state *rs)
 {
