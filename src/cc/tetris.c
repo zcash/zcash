@@ -640,13 +640,13 @@ void init_colors(void)
  */
 #include "dapps/dappstd.c"
 
-int32_t issue_games_events(struct games_state *rs,char *gametxidstr,uint32_t eventid,char c)
+int32_t issue_games_events(struct games_state *rs,char *gametxidstr,uint32_t eventid,int16_t c)
 {
     static FILE *fp;
     char params[512],*retstr; cJSON *retjson,*resobj; int32_t retval = -1;
     if ( fp == 0 )
         fp = fopen("events.log","wb");
-    sprintf(params,"[\"events\",\"17\",\"[%%22%02x%%22,%%22%s%%22,%u]\"]",c&0xff,gametxidstr,eventid);
+    sprintf(params,"[\"events\",\"17\",\"[%%22%04x%%22,%%22%s%%22,%u]\"]",c&0xffff,gametxidstr,eventid);
     if ( (retstr= komodo_issuemethod(USERPASS,(char *)"cclib",params,GAMES_PORT)) != 0 )
     {
         if ( (retjson= cJSON_Parse(retstr)) != 0 )
@@ -689,7 +689,7 @@ struct games_state globalR;
 void *gamesiterate(struct games_state *rs)
 {
     uint32_t counter = 0; bool running = true; tetris_move move = TM_NONE;
-    int32_t c,skipcount=0; uint32_t eventid = 0; tetris_game *tg;
+    gamesevent c; uint16_t skipcount=0; uint32_t eventid = 0; tetris_game *tg;
     WINDOW *board, *next, *hold, *score;
     // Create windows for each section of the interface.
     tg = tg_create(rs,22, 10);
@@ -709,11 +709,11 @@ void *gamesiterate(struct games_state *rs)
             if ( (counter++ % 5) == 0 )
                 doupdate();
             sleep_milli(10);
-            c = games_readchar(rs);
-            if ( c >= 0 || skipcount == 0x7f )
+            c = games_readevent(rs);
+            if ( c >= 0 || skipcount == 0x3fff )
             {
                 if ( skipcount > 0 )
-                    issue_games_events(rs,Gametxidstr,eventid-skipcount,skipcount | 0x80);
+                    issue_games_events(rs,Gametxidstr,eventid-skipcount,skipcount | 0x4000);
                 if ( c >= 0 )
                     issue_games_events(rs,Gametxidstr,eventid,c);
                 skipcount = 0;
@@ -723,10 +723,10 @@ void *gamesiterate(struct games_state *rs)
         {
             if ( skipcount == 0 )
             {
-                c = games_readchar(rs);
-                if ( (c & 0x80) != 0 )
+                c = games_readevent(rs);
+                if ( (c & 0x4000) == 0x4000 )
                 {
-                    skipcount = (c & 0x7f);
+                    skipcount = (c & 0x3fff);
                     c = 'S';
                 }
             }

@@ -180,16 +180,18 @@ struct games_player
     struct games_packitem gamespack[MAXPACK];
 };
 
+typedef uint16_t gamesevent;
+
 struct games_state
 {
     uint64_t seed,origseed;
-    char *keystrokes,*keystrokeshex;
+    char *keystrokeshex;
     uint32_t needflush,replaydone;
     int32_t numkeys,ind,num,guiflag,counter,sleeptime,playersize,restoring,lastnum;
     FILE *logfp;
     struct games_player P;
-    char buffered[10000];
-    uint8_t playerdata[10000];
+    gamesevent buffered[5000],*keystrokes;
+    uint8_t playerdata[1024];
 };
 
 uint64_t _games_rngnext(uint64_t initseed);

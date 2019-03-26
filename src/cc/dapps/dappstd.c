@@ -249,7 +249,7 @@ int32_t safecopy(char *dest,char *src,long len)
 //#endif
 
 int32_t games_replay(uint64_t seed,int32_t sleeptime);
-char *games_keystrokesload(int32_t *numkeysp,uint64_t seed,int32_t counter);
+gamesevent *games_keystrokesload(int32_t *numkeysp,uint64_t seed,int32_t counter);
 
 int GAMEMAIN(int argc, char **argv);
 
@@ -735,9 +735,9 @@ int32_t games_sendrawtransaction(char *rawtx)
     return(retval);
 }
 
-int32_t games_progress(struct games_state *rs,int32_t waitflag,uint64_t seed,char *keystrokes,int32_t num)
+int32_t games_progress(struct games_state *rs,int32_t waitflag,uint64_t seed,gamesevent *keystrokes,int32_t num)
 {
-    char cmd[16384],hexstr[16384],params[32768],*retstr,*errstr,*rawtx,*pastkeys,*keys; int32_t i,len,numpastkeys,retflag = -1; cJSON *retjson,*resobj; uint8_t *pastcmp;
+    char cmd[16384],hexstr[16384],params[32768],*retstr,*errstr,*rawtx; int32_t i,len,retflag = -1; cJSON *retjson,*resobj;
     if ( rs->guiflag != 0 && Gametxidstr[0] != 0 )
     {
         if ( rs->keystrokeshex != 0 )
@@ -757,9 +757,18 @@ int32_t games_progress(struct games_state *rs,int32_t waitflag,uint64_t seed,cha
             }
             free(rs->keystrokeshex), rs->keystrokeshex = 0;
         }
+        memset(hexstr,0,sizeof(hexstr));
         for (i=0; i<num; i++)
-            sprintf(&hexstr[i<<1],"%02x",keystrokes[i]&0xff);
-        hexstr[i<<1] = 0;
+        {
+            if ( sizeof(gamesevent) ==  1 )
+                sprintf(&hexstr[i<<1],"%02x",keystrokes[i]&0xff);
+            else if ( sizeof(gamesevent) ==  2 )
+                sprintf(&hexstr[i<<2],"%04x",keystrokes[i]&0xffff);
+            else if ( sizeof(gamesevent) ==  4 )
+                sprintf(&hexstr[i<<3],"%08x",keystrokes[i]&0xffffffff);
+            else if ( sizeof(gamesevent) ==  8 )
+                sprintf(&hexstr[i<<4],"%016x",keystrokes[i]&0xffffffffffffffff);
+        }
         static FILE *fp;
         if ( fp == 0 )
             fp = fopen("keystrokes.log","a");
@@ -808,7 +817,7 @@ int32_t flushkeystrokes_local(struct games_state *rs,int32_t waitflag)
     gamesfname(fname,rs->origseed,rs->counter);
     if ( (fp= fopen(fname,"wb")) != 0 )
     {
-        if ( fwrite(rs->buffered,1,rs->num,fp) == rs->num )
+        if ( fwrite(rs->buffered,sizeof(*rs->buffered),rs->num,fp) == rs->num )
         {
             rs->num = 0;
             retflag = 0;
@@ -864,7 +873,7 @@ void games_bailout(struct games_state *rs)
 #endif
 #endif
 
-int32_t games_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t num,struct games_player *player,int32_t sleepmillis)
+int32_t games_replay2(uint8_t *newdata,uint64_t seed,gamesevent *keystrokes,int32_t num,struct games_player *player,int32_t sleepmillis)
 {
     struct games_state *rs; FILE *fp; int32_t i,n; void *ptr;
     rs = (struct games_state *)calloc(1,sizeof(*rs));
@@ -930,9 +939,9 @@ long get_filesize(FILE *fp)
     return(fsize);
 }
 
-char *games_keystrokesload(int32_t *numkeysp,uint64_t seed,int32_t counter)
+gamesevent *games_keystrokesload(int32_t *numkeysp,uint64_t seed,int32_t counter)
 {
-    char fname[1024],*keystrokes = 0; FILE *fp; long fsize; int32_t num = 0;
+    char fname[1024]; gamesevent *keystrokes = 0; FILE *fp; long fsize; int32_t num = 0;
     *numkeysp = 0;
     while ( 1 )
     {
@@ -946,7 +955,7 @@ char *games_keystrokesload(int32_t *numkeysp,uint64_t seed,int32_t counter)
             //printf("fsize.%ld\n",fsize);
             break;
         }
-        if ( (keystrokes= (char *)realloc(keystrokes,num+fsize)) == 0 )
+        if ( (keystrokes= (char *)realloc(keystrokes,sizeof(*keystrokes)*(num+fsize))) == 0 )
         {
             fprintf(stderr,"error reallocating keystrokes\n");
             fclose(fp);
@@ -983,7 +992,7 @@ void games_exit()
 
 int32_t games_replay(uint64_t seed,int32_t sleeptime)
 {
-    FILE *fp; char fname[1024]; char *keystrokes = 0; long fsize; int32_t i,num=0,counter = 0; struct games_state *rs; struct games_player P,*player = 0;
+    FILE *fp; char fname[1024]; gamesevent *keystrokes = 0; long fsize; int32_t i,num=0,counter = 0; struct games_state *rs; struct games_player P,*player = 0;
     if ( seed == 0 )
         seed = 777;
     keystrokes = games_keystrokesload(&num,seed,counter);
@@ -1009,15 +1018,15 @@ int32_t games_replay(uint64_t seed,int32_t sleeptime)
     return(num);
 }
 
-char games_readchar(struct games_state *rs)
+gamesevent games_readevent(struct games_state *rs)
 {
-    char ch = -1; int32_t c;
+    gamesevent ch = -1; int32_t c;
     if ( rs != 0 && rs->guiflag == 0 )
     {
         static uint32_t counter;
         if ( rs->ind < rs->numkeys )
         {
-            c = rs->keystrokes[rs->ind++];
+            ch = rs->keystrokes[rs->ind++];
             if ( 0 )
             {
                 static FILE *fp; static int32_t counter;
@@ -1030,7 +1039,7 @@ char games_readchar(struct games_state *rs)
                     counter++;
                 }
             }
-            return(c);
+            return(ch);
         }
         if ( rs->replaydone != 0 && counter++ < 3 )
             fprintf(stderr,"replay finished but readchar called\n");
@@ -1065,7 +1074,7 @@ char games_readchar(struct games_state *rs)
         {
             if ( rs->num < sizeof(rs->buffered) )
             {
-                rs->buffered[rs->num++] = c;
+                rs->buffered[rs->num++] = ch;
                 if ( rs->num > (sizeof(rs->buffered)*9)/10 && rs->needflush == 0 )
                 {
                     rs->needflush = (uint32_t)time(NULL);
@@ -1075,7 +1084,7 @@ char games_readchar(struct games_state *rs)
             } else fprintf(stderr,"buffer filled without flushed\n");
         }
     } else fprintf(stderr,"readchar rs.%p non-gui error?\n",rs);
-    return(c);
+    return(ch);
 }
 
 int32_t games_setplayerdata(struct games_state *rs,char *gametxidstr)
