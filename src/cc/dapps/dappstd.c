@@ -971,7 +971,7 @@ void games_exit()
         exit(0);
     else if ( counter++ < 10 )
     {
-        fprintf(stderr,"would have exit.(%d) sleeptime.%d\n",st,globalR.sleeptime);
+        fprintf(stderr,"would have exit sleeptime.%d\n",globalR.sleeptime);
         globalR.replaydone = 1;
     }
 }
