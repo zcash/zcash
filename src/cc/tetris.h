@@ -97,7 +97,6 @@ typedef struct {
      */
     int rows;
     int cols;
-    char *board;
     /*
      Scoring information:
      */
@@ -118,6 +117,7 @@ typedef struct {
      Number of lines until you advance to the next level.
      */
     int lines_remaining;
+    char board[];
 } tetris_game;
 
 /*

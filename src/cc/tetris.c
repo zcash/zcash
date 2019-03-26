@@ -436,7 +436,7 @@ void tg_init(struct games_state *rs,tetris_game *obj, int rows, int cols)
     // Initialization logic
     obj->rows = rows;
     obj->cols = cols;
-    obj->board = (char *)malloc(rows * cols);
+    //obj->board = (char *)malloc(rows * cols);
     memset(obj->board, TC_EMPTY, rows * cols);
     obj->points = 0;
     obj->level = 0;
@@ -454,19 +454,19 @@ void tg_init(struct games_state *rs,tetris_game *obj, int rows, int cols)
 
 tetris_game *tg_create(struct games_state *rs,int rows, int cols)
 {
-    tetris_game *obj = (tetris_game *)malloc(sizeof(tetris_game));
+    tetris_game *obj = (tetris_game *)malloc(sizeof(tetris_game) + rows*cols);
     tg_init(rs,obj, rows, cols);
     return obj;
 }
 
-void tg_destroy(tetris_game *obj)
+/*void tg_destroy(tetris_game *obj)
 {
     // Cleanup logic
     free(obj->board);
-}
+}*/
 
 void tg_delete(tetris_game *obj) {
-    tg_destroy(obj);
+    //tg_destroy(obj);
     free(obj);
 }
 
@@ -591,7 +591,7 @@ void display_score(WINDOW *w, tetris_game *tg)
 
 /*
  Save and exit the game.
- */
+ 
 void save(tetris_game *game, WINDOW *w)
 {
     FILE *f;
@@ -614,7 +614,7 @@ void save(tetris_game *game, WINDOW *w)
     fprintf(stderr,"Game saved to \"tetris.save\".\n");
     fprintf(stderr,"Resume by passing the filename as an argument to this program.\n");
     exit(EXIT_SUCCESS);
-}
+}*/
 
 /*
  Do the NCURSES initialization steps for color blocks.
@@ -685,7 +685,7 @@ char *clonestr(char *str)
 
 struct games_state globalR;
 
-void gamesiterate(struct games_state *rs)
+void *gamesiterate(struct games_state *rs)
 {
     uint32_t counter = 0; bool running = true; tetris_move move = TM_NONE;
     int32_t c,skipcount=0; uint32_t eventid = 0; tetris_game *tg;
@@ -771,12 +771,13 @@ void gamesiterate(struct games_state *rs)
                 move = TM_NONE;
         }
     }
+    return(tg);
 }
 
 int tetris(int argc, char **argv)
 {
     struct games_state *rs = &globalR;
-    int32_t c,skipcount=0; uint32_t eventid = 0;
+    int32_t c,skipcount=0; uint32_t eventid = 0; tetris_game *tg = 0;
     memset(rs,0,sizeof(*rs));
     rs->guiflag = 1;
     rs->sleeptime = 1; // non-zero to allow refresh()
@@ -824,7 +825,7 @@ int tetris(int argc, char **argv)
     init_colors();         // setup tetris colors
     
     // Game loop
-    gamesiterate(rs);
+    tg = gamesiterate(rs);
     games_bailout(rs);
     // Deinitialize NCurses
     wclear(stdscr);

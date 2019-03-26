@@ -24,7 +24,7 @@
 #include <curl/easy.h>
 
 extern struct games_state globalR;
-void gamesiterate(struct games_state *rs);
+void *gamesiterate(struct games_state *rs);
 
 char USERPASS[8192]; uint16_t GAMES_PORT;
 char Gametxidstr[67];
@@ -866,7 +866,7 @@ void games_bailout(struct games_state *rs)
 
 int32_t games_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t num,struct games_player *player,int32_t sleepmillis)
 {
-    struct games_state *rs; FILE *fp; int32_t i,n;
+    struct games_state *rs; FILE *fp; int32_t i,n; void *ptr;
     rs = (struct games_state *)calloc(1,sizeof(*rs));
     rs->seed = seed;
     rs->keystrokes = keystrokes;
@@ -882,7 +882,7 @@ int32_t games_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t nu
     }
     globalR = *rs;
     uint32_t starttime = (uint32_t)time(NULL);
-    gamesiterate(rs);
+    ptr = gamesiterate(rs);
     if ( 0 )
     {
         fprintf(stderr,"elapsed %d seconds\n",(uint32_t)time(NULL) - starttime);
@@ -909,8 +909,13 @@ int32_t games_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t nu
         if ( newdata != 0 && rs->playersize > 0 )
             memcpy(newdata,rs->playerdata,rs->playersize);
     }*/
-    if ( newdata != 0 && rs->playersize > 0 )
-        memcpy(newdata,rs->playerdata,rs->playersize);
+    if ( ptr != 0 )
+    {
+        // extract data from ptr
+        if ( newdata != 0 && rs->playersize > 0 )
+            memcpy(newdata,rs->playerdata,rs->playersize);
+        free(ptr);
+    }
     n = rs->playersize;
     free(rs);
     return(n);
