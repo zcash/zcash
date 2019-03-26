@@ -41,8 +41,8 @@ void tetrisplayerjson(UniValue &obj,struct games_player *P)
 int32_t disp_gamesplayer(char *str,struct games_player *P)
 {
     str[0] = 0;
-    if ( P->gold <= 0 )//|| P->hitpoints <= 0 || (P->strength&0xffff) <= 0 || P->level <= 0 || P->experience <= 0 || P->dungeonlevel <= 0 )
-        return(-1);
+    //if ( P->gold <= 0 )//|| P->hitpoints <= 0 || (P->strength&0xffff) <= 0 || P->level <= 0 || P->experience <= 0 || P->dungeonlevel <= 0 )
+    //    return(-1);
     sprintf(str," <- playerdata: gold.%d hp.%d strength.%d/%d level.%d exp.%d dl.%d",P->gold,P->hitpoints,P->strength&0xffff,P->strength>>16,P->level,P->experience,P->dungeonlevel);
     return(0);
 }
