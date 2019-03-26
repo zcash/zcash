@@ -1070,7 +1070,7 @@ gamesevent games_readevent(struct games_state *rs)
             //_quit();
             return(27);
         }
-        if ( rs != 0 && rs->guiflag != 0 )
+        /*if ( rs != 0 && rs->guiflag != 0 )
         {
             if ( rs->num < sizeof(rs->buffered) )
             {
@@ -1082,7 +1082,7 @@ gamesevent games_readevent(struct games_state *rs)
                     //sleep(3);
                 }
             } else fprintf(stderr,"buffer filled without flushed\n");
-        }
+        }*/
     } else fprintf(stderr,"readchar rs.%p non-gui error?\n",rs);
     return(ch);
 }

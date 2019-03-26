@@ -640,13 +640,21 @@ void init_colors(void)
  */
 #include "dapps/dappstd.c"
 
-int32_t issue_games_events(struct games_state *rs,char *gametxidstr,uint32_t eventid,int16_t c)
+int32_t issue_games_events(struct games_state *rs,char *gametxidstr,uint32_t eventid,gamesevent c)
 {
     static FILE *fp;
     char params[512],*retstr; cJSON *retjson,*resobj; int32_t retval = -1;
     if ( fp == 0 )
         fp = fopen("events.log","wb");
-    sprintf(params,"[\"events\",\"17\",\"[%%22%04x%%22,%%22%s%%22,%u]\"]",c&0xffff,gametxidstr,eventid);
+    rs->buffered[rs->num++] = c;
+    if ( sizeof(c) == 1 )
+        sprintf(params,"[\"events\",\"17\",\"[%%22%02x%%22,%%22%s%%22,%u]\"]",c&0xff,gametxidstr,eventid);
+    else if ( sizeof(c) == 2 )
+        sprintf(params,"[\"events\",\"17\",\"[%%22%04x%%22,%%22%s%%22,%u]\"]",c&0xffff,gametxidstr,eventid);
+    else if ( sizeof(c) == 4 )
+        sprintf(params,"[\"events\",\"17\",\"[%%22%08x%%22,%%22%s%%22,%u]\"]",c&0xffffffff,gametxidstr,eventid);
+    else if ( sizeof(c) == 8 )
+        sprintf(params,"[\"events\",\"17\",\"[%%22%016llx%%22,%%22%s%%22,%u]\"]",(long long)c,gametxidstr,eventid);
     if ( (retstr= komodo_issuemethod(USERPASS,(char *)"cclib",params,GAMES_PORT)) != 0 )
     {
         if ( (retjson= cJSON_Parse(retstr)) != 0 )
