@@ -102,6 +102,7 @@ gamesevent games_readevent(struct games_state *rs)
 int32_t games_replay2(uint8_t *newdata,uint64_t seed,gamesevent *keystrokes,int32_t num,struct games_player *player,int32_t sleepmillis)
 {
     struct games_state *rs; FILE *fp; int32_t i,n; void *ptr;
+return(0);
     rs = (struct games_state *)calloc(1,sizeof(*rs));
     rs->seed = rs->origseed = seed;
     rs->keystrokes = keystrokes;

@@ -24,12 +24,6 @@ void games_packitemstr(char *packitemstr,struct games_packitem *item)
     sprintf(packitemstr,"not yet");
 }
 
-/*
-int32_t games_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t num,struct games_player *player,int32_t sleepmillis) // replay in daemon
-{
-    return(0);
-}*/
-
 int32_t games_payloadrecv(CPubKey pk,uint32_t timestamp,std::vector<uint8_t> payload)
 {
     uint256 gametxid; int32_t i,len; char str[67]; uint32_t eventid = 0;
