@@ -89,9 +89,9 @@ gamesevent *games_extractgame(int32_t makefiles,char *str,int32_t *numkeysp,std:
         if ( (retval= games_findbaton(cp,playertxid,&keystrokes,numkeys,regslot,playerdata,batontxid,batonvout,batonvalue,batonht,gametxid,gametx,maxplayers,gamesaddr,numplayers,symbol,pname)) == 0 )
         {
             UniValue obj;
-            fprintf(stderr,"got baton\n");
+            //fprintf(stderr,"got baton\n");
             seed = games_gamefields(obj,maxplayers,buyin,gametxid,gamesaddr);
-        fprintf(stderr,"(%s) found baton %s numkeys.%d seed.%llu playerdata.%d playertxid.%s\n",pname.size()!=0?pname.c_str():Games_pname.c_str(),batontxid.ToString().c_str(),numkeys,(long long)seed,(int32_t)playerdata.size(),playertxid.GetHex().c_str());
+            fprintf(stderr,"(%s) found baton %s numkeys.%d seed.%llu playerdata.%d playertxid.%s\n",pname.size()!=0?pname.c_str():Games_pname.c_str(),batontxid.ToString().c_str(),numkeys,(long long)seed,(int32_t)playerdata.size(),playertxid.GetHex().c_str());
             memset(&P,0,sizeof(P));
             if ( playerdata.size() > 0 )
             {
@@ -117,7 +117,7 @@ gamesevent *games_extractgame(int32_t makefiles,char *str,int32_t *numkeysp,std:
                         fclose(fp);
                     }
                 }
-                fprintf(stderr,"call replay2\n");
+                //fprintf(stderr,"call replay2\n");
                 num = games_replay2(newplayer,seed,keystrokes,numkeys,playerdata.size()==0?0:&P,0);
                 newdata.resize(num);
                 for (i=0; i<num; i++)
@@ -125,7 +125,7 @@ gamesevent *games_extractgame(int32_t makefiles,char *str,int32_t *numkeysp,std:
                     newdata[i] = newplayer[i];
                     ((uint8_t *)&endP)[i] = newplayer[i];
                 }
-                fprintf(stderr,"back replay2 gold.%d\n",endP.gold);
+                //fprintf(stderr,"back replay2 gold.%d\n",endP.gold);
                 if ( endP.gold <= 0 || endP.hitpoints <= 0 || (endP.strength&0xffff) <= 0 || endP.level <= 0 || endP.experience <= 0 || endP.dungeonlevel <= 0 )
                 {
                     sprintf(str,"zero value character was killed -> no playerdata\n");
