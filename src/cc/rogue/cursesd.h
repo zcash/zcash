@@ -16,6 +16,13 @@
 #ifndef H_CURSESD_H
 #define H_CURSESD_H
 
+#define KEY_OFFSET 0x100
+#define KEY_DOWN         (KEY_OFFSET + 0x02) /* Down arrow key */
+#define KEY_UP           (KEY_OFFSET + 0x03) /* Up arrow key */
+#define KEY_LEFT         (KEY_OFFSET + 0x04) /* Left arrow key */
+#define KEY_RIGHT        (KEY_OFFSET + 0x05) /* Right arrow key */
+
+
 #define COLOR_BLACK   0
 
 #ifdef PDC_RGB        /* RGB */
