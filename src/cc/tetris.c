@@ -295,7 +295,7 @@ static void tg_hold(struct games_state *rs,tetris_game *obj)
 /*
  Perform the action specified by the move.
  */
-static void tg_handle_move(tetris_game *obj, tetris_move move)
+static void tg_handle_move(struct games_state *rs,tetris_game *obj, tetris_move move)
 {
     switch (move) {
         case TM_LEFT:
@@ -305,7 +305,7 @@ static void tg_handle_move(tetris_game *obj, tetris_move move)
             tg_move(obj, 1);
             break;
         case TM_DROP:
-            tg_down(obj);
+            tg_down(rs,obj);
             break;
         case TM_CLOCK:
             tg_rotate(obj, 1);
@@ -314,7 +314,7 @@ static void tg_handle_move(tetris_game *obj, tetris_move move)
             tg_rotate(obj, -1);
             break;
         case TM_HOLD:
-            tg_hold(obj);
+            tg_hold(rs,obj);
             break;
         default:
             // pass
@@ -420,7 +420,7 @@ bool tg_tick(struct games_state *rs,tetris_game *obj, tetris_move move)
     tg_do_gravity_tick(rs,obj);
     
     // Handle input.
-    tg_handle_move(obj, move);
+    tg_handle_move(rs,obj, move);
     
     // Check for cleared lines
     lines_cleared = tg_check_lines(obj);
@@ -444,7 +444,7 @@ void tg_init(struct games_state *rs,tetris_game *obj, int rows, int cols)
     obj->lines_remaining = LINES_PER_LEVEL;
     //srand(time(NULL));
     tg_new_falling(rs,obj);
-    tg_new_falling(ts,obj);
+    tg_new_falling(rs,obj);
     obj->stored.typ = -1;
     obj->stored.ori = 0;
     obj->stored.loc.row = 0;
@@ -728,9 +728,9 @@ int tetris(int argc, char **argv)
         fclose(f);
     } else {
         // Otherwise create new game.
-        tg = tg_create(22, 10);
+        tg = tg_create(rs,22, 10);
     }*/
-    tg = tg_create(22, 10);
+    tg = tg_create(rs,22, 10);
 
     // NCURSES initialization:
     initscr();             // initialize curses
