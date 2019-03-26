@@ -966,9 +966,9 @@ char *games_keystrokesload(int32_t *numkeysp,uint64_t seed,int32_t counter)
 void games_exit()
 {
     uint32_t counter;
-    resetltchars();
+    //resetltchars();
     if ( globalR.guiflag != 0 || globalR.sleeptime != 0 )
-        exit(st);
+        exit(0);
     else if ( counter++ < 10 )
     {
         fprintf(stderr,"would have exit.(%d) sleeptime.%d\n",st,globalR.sleeptime);
