@@ -1446,8 +1446,8 @@ UniValue games_setname(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 UniValue games_fund(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); std::string rawtx; int64_t amount,inputsum; CPubKey gamespk,mypk; std::vector<uint8_t> opret;
-    if ( params != 0 && (n= cJSON_GetArraySize(params)) == 1 )
+    UniValue result(UniValue::VOBJ); std::string rawtx; int64_t amount,inputsum; CPubKey gamespk,mypk; CScript opret;
+    if ( params != 0 && cJSON_GetArraySize(params) == 1 )
     {
         amount = jdouble(jitem(params,1),0) * COIN + 0.0000000049;
         gamespk = GetUnspendable(cp,0);
