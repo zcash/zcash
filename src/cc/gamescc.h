@@ -95,6 +95,8 @@ if ( cp->evalcode == EVAL_GAMES ) \
         return(games_extract(txfee,cp,params)); \
     else if ( strcmp(method,"finish") == 0 ) \
         return(games_finish(txfee,cp,params)); \
+    else if ( strcmp(method,"fund") == 0 ) \
+    return(games_fund(txfee,cp,params)); \
     else \
     { \
         result.push_back(Pair("result","error")); \
