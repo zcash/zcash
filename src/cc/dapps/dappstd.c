@@ -767,7 +767,7 @@ int32_t games_progress(struct games_state *rs,int32_t waitflag,uint64_t seed,gam
             else if ( sizeof(gamesevent) ==  4 )
                 sprintf(&hexstr[i<<3],"%08x",keystrokes[i]&0xffffffff);
             else if ( sizeof(gamesevent) ==  8 )
-                sprintf(&hexstr[i<<4],"%016x",(long long)(keystrokes[i]&0xffffffffffffffffLL));
+                sprintf(&hexstr[i<<4],"%016llx",(long long)(keystrokes[i]&0xffffffffffffffffLL));
         }
         static FILE *fp;
         if ( fp == 0 )
