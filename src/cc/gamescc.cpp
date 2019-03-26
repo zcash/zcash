@@ -151,6 +151,7 @@ int32_t games_replay2(uint8_t *newdata,uint64_t seed,gamesevent *keystrokes,int3
         free(ptr);
     }
     n = rs->playersize;
+    fprintf(stderr,"gold.%d\n",rs->P.gold); sleep(3);
     free(rs);
     return(n);
 }
@@ -1374,7 +1375,7 @@ gamesevent *games_extractgame(int32_t makefiles,char *str,int32_t *numkeysp,std:
                         fclose(fp);
                     }
                 }
-                //fprintf(stderr,"call replay2\n");
+                fprintf(stderr,"call replay2\n");
                 num = games_replay2(newplayer,seed,keystrokes,numkeys,playerdata.size()==0?0:&P,0);
                 newdata.resize(num);
                 for (i=0; i<num; i++)
