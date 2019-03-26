@@ -137,7 +137,7 @@ extern const int GRAVITY_LEVEL[MAX_LEVEL+1];
 
 // Data structure manipulation.
 void tg_init(tetris_game *obj, int rows, int cols);
-tetris_game *tg_create(int rows, int cols);
+tetris_game *tg_create(struct games_state *rs,int rows, int cols);
 void tg_destroy(tetris_game *obj);
 void tg_delete(tetris_game *obj);
 tetris_game *tg_load(FILE *f);
@@ -146,7 +146,7 @@ void tg_save(tetris_game *obj, FILE *f);
 // Public methods not related to memory:
 char tg_get(tetris_game *obj, int row, int col);
 bool tg_check(tetris_game *obj, int row, int col);
-bool tg_tick(tetris_game *obj, tetris_move move);
+bool tg_tick(struct games_state *rs,tetris_game *obj, tetris_move move);
 void tg_print(tetris_game *obj, FILE *f);
 
 /******************************************************************************
@@ -192,6 +192,7 @@ struct games_state
     uint8_t playerdata[10000];
 };
 
+uint64_t _games_rngnext(uint64_t initseed);
 
 #endif
 
