@@ -862,7 +862,7 @@ int32_t flushkeystrokes(struct games_state *rs,int32_t waitflag)
     return(0);
 }
 
-void games_bailout(struct games_state *rs)
+void gamesbailout(struct games_state *rs)
 {
     flushkeystrokes(rs,1);
 }

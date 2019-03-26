@@ -651,7 +651,7 @@ gamesevent games_readevent(struct games_state *rs);
 void *gamesiterate(struct games_state *rs)
 {
     uint32_t counter = 0; bool running = true; tetris_move move = TM_NONE;
-    gamesevent c; uint16_t skipcount=0; uint32_t eventid = 0; tetris_game *tg;
+    gamesevent c; uint16_t skipcount=0; int32_t prevlevel; uint32_t eventid = 0; tetris_game *tg;
     WINDOW *board, *next, *hold, *score;
     if ( rs->guiflag != 0 || rs->sleeptime != 0 )
     {
@@ -665,6 +665,7 @@ void *gamesiterate(struct games_state *rs)
         init_colors();         // setup tetris colors
     }
     tg = tg_create(rs,22, 10);
+    prevlevel = tg->level;
     // Create windows for each section of the interface.
     board = newwin(tg->rows + 2, 2 * tg->cols + 2, 0, 0);
     next  = newwin(6, 10, 0, 2 * (tg->cols + 1) + 1);
@@ -693,6 +694,11 @@ void *gamesiterate(struct games_state *rs)
                     issue_games_events(rs,Gametxidstr,eventid-skipcount,skipcount | 0x4000);
                 if ( c <= 0x7f )
                     issue_games_events(rs,Gametxidstr,eventid,c);
+                if ( tg->level != prevlevel )
+                {
+                    flushkeystrokes(rs,0);
+                    prevlevel = tg->level;
+                }
                 skipcount = 0;
             } else skipcount++;
 #endif
@@ -870,7 +876,7 @@ int tetris(int argc, char **argv)
 
     // Game loop
     tg = (tetris_game *)gamesiterate(rs);
-    games_bailout(rs);
+    gamesbailout(rs);
     // Deinitialize NCurses
     wclear(stdscr);
     endwin();
