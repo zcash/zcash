@@ -635,6 +635,43 @@ void init_colors(void)
 }
 
 struct games_state globalR;
+gamesevent games_readevent(struct games_state *rs);
+extern char Gametxidstr[];
+
+int32_t issue_games_events(struct games_state *rs,char *gametxidstr,uint32_t eventid,gamesevent c)
+{
+    static FILE *fp;
+    char params[512],*retstr; cJSON *retjson,*resobj; int32_t retval = -1;
+    if ( fp == 0 )
+        fp = fopen("events.log","wb");
+    rs->buffered[rs->num++] = c;
+    if ( sizeof(c) == 1 )
+        sprintf(params,"[\"events\",\"17\",\"[%%22%02x%%22,%%22%s%%22,%u]\"]",c&0xff,gametxidstr,eventid);
+    else if ( sizeof(c) == 2 )
+        sprintf(params,"[\"events\",\"17\",\"[%%22%04x%%22,%%22%s%%22,%u]\"]",c&0xffff,gametxidstr,eventid);
+    else if ( sizeof(c) == 4 )
+        sprintf(params,"[\"events\",\"17\",\"[%%22%08x%%22,%%22%s%%22,%u]\"]",c&0xffffffff,gametxidstr,eventid);
+    else if ( sizeof(c) == 8 )
+        sprintf(params,"[\"events\",\"17\",\"[%%22%016llx%%22,%%22%s%%22,%u]\"]",(long long)c,gametxidstr,eventid);
+    if ( (retstr= komodo_issuemethod(USERPASS,(char *)"cclib",params,GAMES_PORT)) != 0 )
+    {
+        if ( (retjson= cJSON_Parse(retstr)) != 0 )
+        {
+            if ( (resobj= jobj(retjson,(char *)"result")) != 0 )
+            {
+                retval = 0;
+                if ( fp != 0 )
+                {
+                    fprintf(fp,"%s\n",jprint(resobj,0));
+                    fflush(fp);
+                }
+            }
+            free_json(retjson);
+        } else fprintf(fp,"error parsing %s\n",retstr);
+        free(retstr);
+    } else fprintf(fp,"error issuing method %s\n",params);
+    return(retval);
+}
 
 void *gamesiterate(struct games_state *rs)
 {
@@ -733,40 +770,6 @@ void *gamesiterate(struct games_state *rs)
  */
 #include "dapps/dappstd.c"
 
-int32_t issue_games_events(struct games_state *rs,char *gametxidstr,uint32_t eventid,gamesevent c)
-{
-    static FILE *fp;
-    char params[512],*retstr; cJSON *retjson,*resobj; int32_t retval = -1;
-    if ( fp == 0 )
-        fp = fopen("events.log","wb");
-    rs->buffered[rs->num++] = c;
-    if ( sizeof(c) == 1 )
-        sprintf(params,"[\"events\",\"17\",\"[%%22%02x%%22,%%22%s%%22,%u]\"]",c&0xff,gametxidstr,eventid);
-    else if ( sizeof(c) == 2 )
-        sprintf(params,"[\"events\",\"17\",\"[%%22%04x%%22,%%22%s%%22,%u]\"]",c&0xffff,gametxidstr,eventid);
-    else if ( sizeof(c) == 4 )
-        sprintf(params,"[\"events\",\"17\",\"[%%22%08x%%22,%%22%s%%22,%u]\"]",c&0xffffffff,gametxidstr,eventid);
-    else if ( sizeof(c) == 8 )
-        sprintf(params,"[\"events\",\"17\",\"[%%22%016llx%%22,%%22%s%%22,%u]\"]",(long long)c,gametxidstr,eventid);
-    if ( (retstr= komodo_issuemethod(USERPASS,(char *)"cclib",params,GAMES_PORT)) != 0 )
-    {
-        if ( (retjson= cJSON_Parse(retstr)) != 0 )
-        {
-            if ( (resobj= jobj(retjson,(char *)"result")) != 0 )
-            {
-                retval = 0;
-                if ( fp != 0 )
-                {
-                    fprintf(fp,"%s\n",jprint(resobj,0));
-                    fflush(fp);
-                }
-            }
-            free_json(retjson);
-        } else fprintf(fp,"error parsing %s\n",retstr);
-        free(retstr);
-    } else fprintf(fp,"error issuing method %s\n",params);
-    return(retval);
-}
 
 char *clonestr(char *str)
 {
