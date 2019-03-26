@@ -197,6 +197,9 @@ bool RewardsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
     uint256 txid,fundingtxid,hashBlock,vinfundingtxid; uint64_t vinsbits,sbits,APR,minseconds,maxseconds,mindeposit,amount,reward,txfee=10000; int32_t numvins,numvouts,preventCCvins,preventCCvouts,i; uint8_t funcid; CScript scriptPubKey; CTransaction fundingTx,vinTx;
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
+    int64_t interest; uint64_t valuein;
+    CCoinsViewCache &view = *pcoinsTip;
+    valuein = view.GetValueIn(chainActive.LastTip()->GetHeight(),&interest,tx,chainActive.LastTip()->nTime);
     preventCCvins = preventCCvouts = -1;
     if ( numvouts < 1 )
         return eval->Invalid("no vouts");
@@ -254,6 +257,11 @@ bool RewardsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
                     {
                         if ( (*cp->ismyvin)(tx.vin[i].scriptSig) == 0 )
                             return eval->Invalid("unexpected normal vin for unlock");
+                    }
+                    if ( valuein-tx.GetValueOut() > txfee )
+                    {
+                        fprintf(stderr, "valueout.%li vs valuein.%li txfee.%li\n", tx.GetValueOut(), valuein, txfee);
+                        return eval->Invalid("alright is stealing your money");
                     }
                     if ( numvouts == 2 && numvins == 1 )
                     {
@@ -707,4 +715,3 @@ std::string RewardsUnlock(uint64_t txfee,char *planstr,uint256 fundingtxid,uint2
     fprintf(stderr,"amount %.8f -> reward %.8f\n",(double)amount/COIN,(double)reward/COIN);
     return("");
 }
-

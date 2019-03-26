@@ -22,6 +22,7 @@
 #define ROGUE_MAXPLAYERS 64 // need to send unused fees back to globalCC address to prevent leeching
 #define ROGUE_MAXKEYSTROKESGAP 60
 #define ROGUE_MAXITERATIONS 777
+#define ROGUE_MAXCASHOUT (777 * COIN)
 
 #include "rogue/rogue_player.h"
 
@@ -1112,6 +1113,8 @@ int32_t rogue_playerdata_validate(int64_t *cashoutp,uint256 &playertxid,struct C
         dungeonlevel = P.dungeonlevel;
         if ( P.amulet != 0 && dungeonlevel < 26 )
             dungeonlevel = 26;
+        if ( dungeonlevel > 42 )
+            dungeonlevel = 42;
         *cashoutp = (uint64_t)P.gold * P.gold * mult * dungeonlevel;
         if ( newdata == playerdata )
         {
@@ -1281,6 +1284,8 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
                             }
                             if ( cashout > 0 )
                             {
+                                if ( komodo_nextheight() > 77777 && cashout > ROGUE_MAXCASHOUT )
+                                    cashout = ROGUE_MAXCASHOUT;
                                 if ( (inputsum= AddCClibInputs(cp,mtx,roguepk,cashout,60,cp->unspendableCCaddr)) > cashout )
                                     CCchange = (inputsum - cashout);
                                 else fprintf(stderr,"couldnt find enough utxos\n");
@@ -1598,6 +1603,8 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
                                     cashout *= 2;
                                     //cashout += numplayers * buyin;
                                 }
+                                if ( height > 777777 && cashout > ROGUE_MAXCASHOUT )
+                                    cashout = ROGUE_MAXCASHOUT;
                                 sprintf(cashstr,"tokentx.(%c) decoded.%d ht.%d txid.%s %.8f vs vout2 %.8f",tokentx,decoded,height,txid.GetHex().c_str(),(double)cashout/COIN,(double)tx.vout[2].nValue/COIN);
                                 if ( strcmp(laststr,cashstr) != 0 )
                                 {
