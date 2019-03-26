@@ -22,6 +22,7 @@
 #include <unistd.h>
 #include <curl/curl.h>
 #include <curl/easy.h>
+#include <ncurses.h>
 
 extern struct games_state globalR;
 void *gamesiterate(struct games_state *rs);
