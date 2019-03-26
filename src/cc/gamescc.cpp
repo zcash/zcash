@@ -152,7 +152,6 @@ int32_t games_replay2(uint8_t *newdata,uint64_t seed,gamesevent *keystrokes,int3
     }
     n = rs->playersize;
     free(rs);
-    fprintf(stderr,"score.%d level.%d\n",tg->points,tg->level);
     return(n);
 }
 
