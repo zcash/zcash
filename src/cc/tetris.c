@@ -15,7 +15,7 @@ int random_tetromino(struct games_state *rs)
 
 int32_t tetrisdata(struct games_player *P,void *ptr)
 {
-    tetris_game *tg = ptr;
+    tetris_game *tg = (tetris_game *)ptr;
     P->gold = tg->points;
     P->dungeonlevel = tg->level;
     return(0);

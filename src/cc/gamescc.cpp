@@ -17,7 +17,6 @@
 #include "tetris.c" // replace with game code
 
 int32_t GAMEDATA(struct games_player *P,void *ptr);
-void GAMEJSON(UniValue &obj,struct games_player *P);
 
 uint64_t _games_rngnext(uint64_t initseed)
 {
@@ -159,6 +158,8 @@ int32_t games_replay2(uint8_t *newdata,uint64_t seed,gamesevent *keystrokes,int3
 #ifndef STANDALONE
 
 #include "tetris.cpp" // replace with game specific functions
+
+void GAMEJSON(UniValue &obj,struct games_player *P);
 
 /*
 ./c cclib rng 17 \"[%229433dc3749aece1bd568f374a45da3b0bc6856990d7da3cd175399577940a775%22,250]\"
