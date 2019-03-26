@@ -3,12 +3,14 @@
 
 /*
  In order to port a game into gamesCC, the RNG needs to be seeded with the gametxid seed, also events needs to be broadcast using issue_games_events. Also the game engine needs to be daemonized, preferably by putting all globals into a single data structure.
+ 
+ also, the standalone game needs to support argv of seed gametxid, along with replay args
  */
 
-static int random_tetromino(void)
+static int random_tetromino(struct games_state *rs)
 {
-    return(0);
-    //return rand() % NUM_TETROMINOS;
+    rs->seed = _games_rngnext(rs->seed);
+    return(rs->seed % NUM_TETROMINOS);
 }
 
 /***************************************************************************/
@@ -173,11 +175,11 @@ static bool tg_fits(tetris_game *obj, tetris_block block)
  Create a new falling block and populate the next falling block with a random
  one.
  */
-static void tg_new_falling(tetris_game *obj)
+static void tg_new_falling(struct games_state *rs,tetris_game *obj)
 {
     // Put in a new falling tetromino.
     obj->falling = obj->next;
-    obj->next.typ = random_tetromino();
+    obj->next.typ = random_tetromino(rs);
     obj->next.ori = 0;
     obj->next.loc.row = 0;
     obj->next.loc.col = obj->cols/2 - 2;
@@ -190,7 +192,7 @@ static void tg_new_falling(tetris_game *obj)
 /*
  Tick gravity, and move the block down if gravity should act.
  */
-static void tg_do_gravity_tick(tetris_game *obj)
+static void tg_do_gravity_tick(struct games_state *rs,tetris_game *obj)
 {
     obj->ticks_till_gravity--;
     if (obj->ticks_till_gravity <= 0) {
@@ -202,7 +204,7 @@ static void tg_do_gravity_tick(tetris_game *obj)
             obj->falling.loc.row--;
             tg_put(obj, obj->falling);
             
-            tg_new_falling(obj);
+            tg_new_falling(rs,obj);
         }
         tg_put(obj, obj->falling);
     }
@@ -411,11 +413,11 @@ static bool tg_game_over(tetris_game *obj)
  Do a single game tick: process gravity, user input, and score.  Return true if
  the game is still running, false if it is over.
  */
-bool tg_tick(tetris_game *obj, tetris_move move)
+bool tg_tick(struct games_state *rs,tetris_game *obj, tetris_move move)
 {
     int lines_cleared;
     // Handle gravity.
-    tg_do_gravity_tick(obj);
+    tg_do_gravity_tick(rs,obj);
     
     // Handle input.
     tg_handle_move(obj, move);
@@ -687,7 +689,7 @@ int tetris(int argc, char **argv)
         }
     } else rs->seed = 777;
 
-    // Load file if given a filename.
+    /* Load file if given a filename.
     if (argc >= 2) {
         FILE *f = fopen(argv[1], "r");
         if (f == NULL) {
@@ -699,7 +701,9 @@ int tetris(int argc, char **argv)
     } else {
         // Otherwise create new game.
         tg = tg_create(22, 10);
-    }
+    }*/
+    tg = tg_create(22, 10);
+
     // NCURSES initialization:
     initscr();             // initialize curses
     cbreak();              // pass key presses to program, but not signals
@@ -717,7 +721,7 @@ int tetris(int argc, char **argv)
     int32_t counter = 0;
     // Game loop
     while (running) {
-        running = tg_tick(tg, move);
+        running = tg_tick(rs,tg, move);
         display_board(board, tg);
         display_piece(next, tg->next);
         display_piece(hold, tg->stored);
