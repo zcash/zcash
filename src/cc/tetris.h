@@ -165,7 +165,7 @@ void tg_print(tetris_game *obj, FILE *f);
  ******************************************************************************/
 #define GAMENAME "tetris"    // name of executable
 #define GAMEMAIN tetris      // main program of game
-#define GAMEJSON tetrisjson  // displays game specific json
+#define GAMEPLAYERJSON tetrisplayerjson  // displays game specific json
 #define GAMEDATA tetrisdata  // extracts data from game specific variables into games_state
 #define CHAINNAME "GTEST"    // -ac_name=
 typedef uint16_t gamesevent; // can be 8, 16, 32, or 64 bits

@@ -27,7 +27,7 @@ int64_t games_cashout(struct games_player *P)
     return(cashout);
 }
 
-void tetrisjson(UniValue &obj,struct games_player *P)
+void tetrisplayerjson(UniValue &obj,struct games_player *P)
 {
     obj.push_back(Pair("packsize",(int64_t)P->packsize));
     obj.push_back(Pair("hitpoints",(int64_t)P->hitpoints));
