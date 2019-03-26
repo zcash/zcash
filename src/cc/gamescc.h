@@ -3,6 +3,9 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#define GAMES_RNGMULT 11109
+#define GAMES_RNGOFFSET 13849
+#define GAMES_MAXRNGS 10000
 
 #ifndef STANDALONE
 
@@ -22,9 +25,6 @@ std::string MYCCLIBNAME = (char *)"gamescc";
 #define GAMES_REGISTRATIONSIZE (100 * 10000)
 #define GAMES_REGISTRATION 1
 
-#define GAMES_RNGMULT 11109
-#define GAMES_RNGOFFSET 13849
-#define GAMES_MAXRNGS 10000
 
 #define MYCCNAME "games"
 
