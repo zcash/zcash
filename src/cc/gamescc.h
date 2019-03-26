@@ -20,7 +20,7 @@ std::string MYCCLIBNAME = (char *)"gamescc";
 #define GAMES_MAXKEYSTROKESGAP 60
 #define GAMES_MAXPLAYERS 64
 #define GAMES_REGISTRATIONSIZE (100 * 10000)
-#define GAMES_REGISTRATION 5
+#define GAMES_REGISTRATION 1
 
 #define GAMES_RNGMULT 11109
 #define GAMES_RNGOFFSET 13849
@@ -29,7 +29,6 @@ std::string MYCCLIBNAME = (char *)"gamescc";
 #define MYCCNAME "games"
 
 std::string Games_pname;
-#define GAMENAME "sudoku"
 
 #define RPC_FUNCS    \
     { (char *)MYCCNAME, (char *)"rng", (char *)"hash,playerid", 1, 2, ' ', EVAL_GAMES }, \
@@ -103,34 +102,5 @@ if ( cp->evalcode == EVAL_GAMES ) \
     } \
 }
 #endif
-
-#define MAXPACK 23
-struct games_packitem
-{
-    int32_t type,launch,count,which,hplus,dplus,arm,flags,group;
-    char damage[8],hurldmg[8];
-};
-
-struct games_player
-{
-    int32_t gold,hitpoints,strength,level,experience,packsize,dungeonlevel,amulet;
-    struct games_packitem gamespack[MAXPACK];
-};
-
-struct games_state
-{
-    uint64_t seed;
-    char *keystrokes,*keystrokeshex;
-    uint32_t needflush,replaydone;
-    int32_t numkeys,ind,num,guiflag,counter,sleeptime,playersize,restoring,lastnum;
-    FILE *logfp;
-    struct games_player P;
-    char buffered[10000];
-    uint8_t playerdata[10000];
-};
-
-int32_t games_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t num,struct games_player *player,int32_t sleepmillis);
-void games_packitemstr(char *packitemstr,struct games_packitem *item);
-
 
 #endif
