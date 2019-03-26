@@ -1449,7 +1449,7 @@ UniValue games_fund(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     UniValue result(UniValue::VOBJ); std::string rawtx; int64_t amount,inputsum; CPubKey gamespk,mypk; CScript opret;
     if ( params != 0 && cJSON_GetArraySize(params) == 1 )
     {
-        amount = jdouble(jitem(params,1),0) * COIN + 0.0000000049;
+        amount = jdouble(jitem(params,0),0) * COIN + 0.0000000049;
         gamespk = GetUnspendable(cp,0);
         mypk = pubkey2pk(Mypubkey());
         if ( amount > GAMES_TXFEE )
