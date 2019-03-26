@@ -196,6 +196,7 @@ struct games_state
 };
 extern struct games_state globalR;
 void *gamesiterate(struct games_state *rs);
+int32_t flushkeystrokes(struct games_state *rs,int32_t waitflag);
 
 void games_packitemstr(char *packitemstr,struct games_packitem *item);
 uint64_t _games_rngnext(uint64_t initseed);
