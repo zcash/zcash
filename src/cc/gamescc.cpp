@@ -1443,5 +1443,42 @@ UniValue games_setname(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     return(result);
 }
 
+UniValue games_fund(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
+{
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    UniValue result(UniValue::VOBJ); std::string rawtx; int64_t amount,inputsum; CPubKey gamespk,mypk; std::vector<uint8_t> opret;
+    if ( params != 0 && (n= cJSON_GetArraySize(params)) == 1 )
+    {
+        amount = jdouble(jitem(params,1),0) * COIN + 0.0000000049;
+        gamespk = GetUnspendable(cp,0);
+        mypk = pubkey2pk(Mypubkey());
+        if ( amount > GAMES_TXFEE )
+        {
+            if ( (inputsum= AddNormalinputs(mtx,mypk,amount+GAMES_TXFEE,64)) >= amount+GAMES_TXFEE )
+            {
+                mtx.vout.push_back(MakeTokensCC1vout(cp->evalcode,amount,gamespk));
+                rawtx = FinalizeCCTx(0,cp,mtx,mypk,GAMES_TXFEE,opret);
+                return(games_rawtxresult(result,rawtx,1));
+            }
+            else
+            {
+                result.push_back(Pair("result","error"));
+                result.push_back(Pair("error","not enough funds"));
+            }
+        }
+        else
+        {
+            result.push_back(Pair("result","error"));
+            result.push_back(Pair("error","amount too small"));
+        }
+    }
+    else
+    {
+        result.push_back(Pair("result","error"));
+        result.push_back(Pair("error","couldnt parse"));
+    }
+    return(result);
+}
+
 #endif
 

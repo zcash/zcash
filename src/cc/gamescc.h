@@ -33,6 +33,7 @@ std::string Games_pname;
 #define RPC_FUNCS    \
     { (char *)MYCCNAME, (char *)"rng", (char *)"hash,playerid", 1, 2, ' ', EVAL_GAMES }, \
     { (char *)MYCCNAME, (char *)"rngnext", (char *)"seed", 1, 1, ' ', EVAL_GAMES }, \
+    { (char *)MYCCNAME, (char *)"fund", (char *)"amount", 1, 1, ' ', EVAL_GAMES }, \
     { (char *)MYCCNAME, (char *)"players", (char *)"no params", 0, 0, ' ', EVAL_GAMES }, \
     { (char *)MYCCNAME, (char *)"games", (char *)"no params", 0, 0, ' ', EVAL_GAMES }, \
     { (char *)MYCCNAME, (char *)"pending", (char *)"no params", 0, 0, ' ', EVAL_GAMES }, \
@@ -49,6 +50,7 @@ std::string Games_pname;
 bool games_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx);
 UniValue games_rng(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue games_rngnext(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+UniValue games_fund(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue games_players(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue games_games(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue games_pending(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);

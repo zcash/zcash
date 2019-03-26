@@ -811,7 +811,7 @@ int tetris(int argc, char **argv)
 #endif // _WIN32
         rs->seed = rs->origseed;
         strcpy(Gametxidstr,argv[2]);
-        fprintf(stderr,"setplayerdata\n");
+        fprintf(stderr,"setplayerdata %s\n",Gametxidstr);
         if ( games_setplayerdata(rs,Gametxidstr) < 0 )
         {
             fprintf(stderr,"invalid gametxid, or already started\n");
