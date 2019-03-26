@@ -472,7 +472,7 @@ void tg_delete(tetris_game *obj) {
 
 /*
  Load a game from a file.
- */
+ 
 tetris_game *tg_load(FILE *f)
 {
     tetris_game *obj = (tetris_game *)malloc(sizeof(tetris_game));
@@ -494,18 +494,18 @@ tetris_game *tg_load(FILE *f)
         }
     }
     return obj;
-}
+}*/
 
 /*
  Save a game to a file.
- */
+ 
 void tg_save(tetris_game *obj, FILE *f)
 {
     if (fwrite(obj, sizeof(tetris_game), 1, f) != 1 )
         fprintf(stderr,"error writing tetrisgame\n");
     else if (fwrite(obj->board, sizeof(char), obj->rows * obj->cols, f) != obj->rows * obj->cols )
         fprintf(stderr,"error writing board\n");
-}
+}*/
 
 /*
  Print a game board to a file.  Really just for early debugging.
