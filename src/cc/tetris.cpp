@@ -89,6 +89,7 @@ gamesevent *games_extractgame(int32_t makefiles,char *str,int32_t *numkeysp,std:
         if ( (retval= games_findbaton(cp,playertxid,&keystrokes,numkeys,regslot,playerdata,batontxid,batonvout,batonvalue,batonht,gametxid,gametx,maxplayers,gamesaddr,numplayers,symbol,pname)) == 0 )
         {
             UniValue obj;
+            fprintf(stderr,"got baton\n");
             seed = games_gamefields(obj,maxplayers,buyin,gametxid,gamesaddr);
         fprintf(stderr,"(%s) found baton %s numkeys.%d seed.%llu playerdata.%d playertxid.%s\n",pname.size()!=0?pname.c_str():Games_pname.c_str(),batontxid.ToString().c_str(),numkeys,(long long)seed,(int32_t)playerdata.size(),playertxid.GetHex().c_str());
             memset(&P,0,sizeof(P));
