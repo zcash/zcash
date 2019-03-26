@@ -898,7 +898,7 @@ gamesevent *games_keystrokesload(int32_t *numkeysp,uint64_t seed,int32_t counter
             //printf("fsize.%ld\n",fsize);
             break;
         }
-        if ( (keystrokes= (gamesevent *)realloc(keystrokes,sizeof(*keystrokes)*num+fsize))) == 0 )
+        if ( (keystrokes= (gamesevent *)realloc(keystrokes,sizeof(*keystrokes)*num+fsize)) == 0 )
         {
             fprintf(stderr,"error reallocating keystrokes\n");
             fclose(fp);
