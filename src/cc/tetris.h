@@ -182,7 +182,7 @@ struct games_player
 
 struct games_state
 {
-    uint64_t seed;
+    uint64_t seed,origseed;
     char *keystrokes,*keystrokeshex;
     uint32_t needflush,replaydone;
     int32_t numkeys,ind,num,guiflag,counter,sleeptime,playersize,restoring,lastnum;

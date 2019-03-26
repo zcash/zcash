@@ -696,40 +696,57 @@ void *gamesiterate(struct games_state *rs)
     next  = newwin(6, 10, 0, 2 * (tg->cols + 1) + 1);
     hold  = newwin(6, 10, 7, 2 * (tg->cols + 1) + 1);
     score = newwin(6, 10, 14, 2 * (tg->cols + 1 ) + 1);
-    while (running)
+    while ( running != 0 )
     {
-        running = tg_tick(rs,tg, move);
-        display_board(board, tg);
-        display_piece(next, tg->next);
-        display_piece(hold, tg->stored);
-        display_score(score, tg);
-        if ( (counter++ % 5) == 0 )
-            doupdate();
-        sleep_milli(10);
-        c = getch();
-        switch ( c )
+        running = tg_tick(rs,tg,move);
+        if ( rs->guiflag != 0 )
         {
-            case KEY_LEFT:
-                c = 'h';
-                break;
-            case KEY_RIGHT:
-                c = 'l';
-                break;
-            case KEY_UP:
-                c = 'k';
-                break;
-            case KEY_DOWN:
-                c = 'j';
-                break;
+            display_board(board,tg);
+            display_piece(next,tg->next);
+            display_piece(hold,tg->stored);
+            display_score(score,tg);
+            if ( (counter++ % 5) == 0 )
+                doupdate();
+            sleep_milli(10);
+            c = games_readchar(rs);
+            switch ( c )
+            {
+                case KEY_LEFT:
+                    c = 'h';
+                    break;
+                case KEY_RIGHT:
+                    c = 'l';
+                    break;
+                case KEY_UP:
+                    c = 'k';
+                    break;
+                case KEY_DOWN:
+                    c = 'j';
+                    break;
+            }
+            if ( c < 0 || skipcount == 0x7f )
+            {
+                if ( skipcount > 0 )
+                    issue_games_events(rs,Gametxidstr,eventid-skipcount,skipcount | 0x80);
+                if ( c != -1 )
+                    issue_games_events(rs,Gametxidstr,eventid,c);
+                skipcount = 0;
+            } else skipcount++;
         }
-        if ( c < 0 || skipcount == 0x7f )
+        else
         {
+            if ( skipcount == 0 )
+            {
+                c = games_readchar(rs);
+                if ( (c & 0x80) != 0 )
+                {
+                    skipcount = (c & 0x7f);
+                    c = 'S';
+                }
+            }
             if ( skipcount > 0 )
-                issue_games_events(rs,Gametxidstr,eventid-skipcount,skipcount | 0x80);
-            if ( c != -1 )
-                issue_games_events(rs,Gametxidstr,eventid,c);
-            skipcount = 0;
-        } else skipcount++;
+                skipcount--;
+        }
         eventid++;
         switch ( c )
         {
@@ -785,13 +802,14 @@ int tetris(int argc, char **argv)
     {
 #ifdef _WIN32
 #ifdef _MSC_VER
-        rs->seed = _strtoui64(argv[1], NULL, 10);
+        rs->origseed = _strtoui64(argv[1], NULL, 10);
 #else
-        rs->seed = atol(argv[1]); // windows, but not MSVC
+        rs->origseed = atol(argv[1]); // windows, but not MSVC
 #endif // _MSC_VER
 #else
-        rs->seed = atol(argv[1]); // non-windows
+        rs->origseed = atol(argv[1]); // non-windows
 #endif // _WIN32
+        rs->seed = rs->origseed;
         strcpy(Gametxidstr,argv[2]);
         fprintf(stderr,"setplayerdata\n");
         if ( games_setplayerdata(rs,Gametxidstr) < 0 )

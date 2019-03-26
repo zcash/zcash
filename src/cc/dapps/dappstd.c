@@ -805,7 +805,7 @@ int32_t flushkeystrokes_local(struct games_state *rs,int32_t waitflag)
 #ifdef STANDALONE
     char fname[1024]; FILE *fp; int32_t i,retflag = -1;
     rs->counter++;
-    gamesfname(fname,rs->seed,rs->counter);
+    gamesfname(fname,rs->origseed,rs->counter);
     if ( (fp= fopen(fname,"wb")) != 0 )
     {
         if ( fwrite(rs->buffered,1,rs->num,fp) == rs->num )
@@ -813,7 +813,7 @@ int32_t flushkeystrokes_local(struct games_state *rs,int32_t waitflag)
             rs->num = 0;
             retflag = 0;
             fclose(fp);
-            gamesfname(fname,rs->seed,rs->counter+1);
+            gamesfname(fname,rs->origseed,rs->counter+1);
             if ( (fp= fopen(fname,"wb")) != 0 ) // truncate next file
                 fclose(fp);
             //fprintf(stderr,"savefile <- %s retflag.%d\n",fname,retflag);
@@ -844,7 +844,7 @@ int32_t flushkeystrokes(struct games_state *rs,int32_t waitflag)
 {
     if ( rs->num > 0 )
     {
-        if ( games_progress(rs,waitflag,rs->seed,rs->buffered,rs->num) > 0 )
+        if ( games_progress(rs,waitflag,rs->origseed,rs->buffered,rs->num) > 0 )
         {
             flushkeystrokes_local(rs,waitflag);
             memset(rs->buffered,0,sizeof(rs->buffered));
@@ -868,7 +868,7 @@ int32_t games_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t nu
 {
     struct games_state *rs; FILE *fp; int32_t i,n; void *ptr;
     rs = (struct games_state *)calloc(1,sizeof(*rs));
-    rs->seed = seed;
+    rs->seed = rs->origseed = seed;
     rs->keystrokes = keystrokes;
     rs->numkeys = num;
     rs->sleeptime = sleepmillis * 1000;
@@ -891,7 +891,7 @@ int32_t games_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t nu
         for (i=0; i<10000; i++)
         {
             memset(rs,0,sizeof(*rs));
-            rs->seed = seed;
+            rs->seed = rs->origseed = seed;
             rs->keystrokes = keystrokes;
             rs->numkeys = num;
             rs->sleeptime = 0;
@@ -1007,6 +1007,61 @@ int32_t games_replay(uint64_t seed,int32_t sleeptime)
     if ( keystrokes != 0 )
         free(keystrokes);
     return(num);
+}
+
+char games_readchar(struct rogue_state *rs)
+{
+    char c,ch = -1;
+    if ( rs != 0 && rs->guiflag == 0 )
+    {
+        static uint32_t counter;
+        if ( rs->ind < rs->numkeys )
+        {
+            c = rs->keystrokes[rs->ind++];
+            if ( 0 )
+            {
+                static FILE *fp; static int32_t counter;
+                if ( fp == 0 )
+                    fp = fopen("log","wb");
+                if ( fp != 0 )
+                {
+                    fprintf(fp,"%d: (%c) seed.%llu\n",counter,c,(long long)rs->origseed);
+                    fflush(fp);
+                    counter++;
+                }
+            }
+            return(c);
+        }
+        if ( rs->replaydone != 0 && counter++ < 3 )
+            fprintf(stderr,"replay finished but readchar called\n");
+        rs->replaydone = (uint32_t)time(NULL);
+        if ( counter < 3 || (counter & 1) == 0 )
+            return('y');
+        else return(ESCAPE);
+    }
+    if ( rs == 0 || rs->guiflag != 0 )
+    {
+        ch = (char) getch();
+        if (ch == 3)
+        {
+            _quit();
+            return(27);
+        }
+        if ( rs != 0 && rs->guiflag != 0 )
+        {
+            if ( rs->num < sizeof(rs->buffered) )
+            {
+                rs->buffered[rs->num++] = ch;
+                if ( rs->num > (sizeof(rs->buffered)*9)/10 && rs->needflush == 0 )
+                {
+                    rs->needflush = (uint32_t)time(NULL);
+                    //fprintf(stderr,"needflush.%u %d of %d\n",rs->needflush,rs->num,(int32_t)sizeof(rs->buffered));
+                    //sleep(3);
+                }
+            } else fprintf(stderr,"buffer filled without flushed\n");
+        }
+    } else fprintf(stderr,"readchar rs.%p non-gui error?\n",rs);
+    return(ch);
 }
 
 int32_t games_setplayerdata(struct games_state *rs,char *gametxidstr)
