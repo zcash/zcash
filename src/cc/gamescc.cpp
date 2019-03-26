@@ -913,7 +913,7 @@ int32_t games_findbaton(struct CCcontract_info *cp,uint256 &playertxid,gameseven
                         uint256 g,b; CPubKey p; std::vector<uint8_t> k;
                         if ( games_keystrokesopretdecode(g,b,p,k,spenttx.vout[spenttx.vout.size()-1].scriptPubKey) == 'K' )
                         {
-                            keystrokes = (char *)realloc(keystrokes,sizeof(*keystrokes)*(numkeys + (int32_t)k.size()));
+                            keystrokes = (gamesevent *)realloc(keystrokes,sizeof(*keystrokes)*(numkeys + (int32_t)k.size()));
                             for (i=0; i<k.size(); i++)
                             {
                                 int32_t j;
@@ -1229,7 +1229,7 @@ UniValue games_keystrokes(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
 
 UniValue games_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result(UniValue::VOBJ); CPubKey pk,gamespk; int32_t i,n,numkeys,flag = 0; uint64_t seed; char str[512],gamesaddr[64],*pubstr,*hexstr,*keystrokes = 0; std::vector<uint8_t> newdata; uint256 gametxid,playertxid; FILE *fp; uint8_t pub33[33];
+    UniValue result(UniValue::VOBJ); CPubKey pk,gamespk; int32_t i,n,numkeys,flag = 0; uint64_t seed; char str[512],gamesaddr[64],*pubstr,*hexstr; gamesevent *keystrokes = 0; std::vector<uint8_t> newdata; uint256 gametxid,playertxid; FILE *fp; uint8_t pub33[33];
     pk = pubkey2pk(Mypubkey());
     gamespk = GetUnspendable(cp,0);
     result.push_back(Pair("name","games"));
@@ -1263,10 +1263,25 @@ UniValue games_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             {
                 result.push_back(Pair("status","success"));
                 flag = 1;
-                hexstr = (char *)malloc(numkeys*2 + 1);
+                hexstr = (char *)calloc(1,sizeof(gamesevent)*numkeys*2 + 1);
                 for (i=0; i<numkeys; i++)
-                    sprintf(&hexstr[i<<1],"%02x",keystrokes[i]);
-                hexstr[i<<1] = 0;
+                {
+                    switch ( sizeof(gamesevent) )
+                    {
+                        case 1:
+                            sprintf(&hexstr[i<<1],"%02x",keystrokes[i]);
+                            break;
+                        case 2:
+                            sprintf(&hexstr[i<<2],"%04x",keystrokes[i]);
+                            break;
+                        case 4:
+                            sprintf(&hexstr[i<<3],"%08x",keystrokes[i]);
+                            break;
+                        case 8:
+                            sprintf(&hexstr[i<<4],"%016llxx",(long long)keystrokes[i]);
+                            break;
+                    }
+                }
                 result.push_back(Pair("keystrokes",hexstr));
                 free(hexstr);
                 result.push_back(Pair("numkeys",(int64_t)numkeys));
