@@ -916,6 +916,7 @@ int32_t games_findbaton(struct CCcontract_info *cp,uint256 &playertxid,gameseven
                             keystrokes = (char *)realloc(keystrokes,sizeof(*keystrokes)*(numkeys + (int32_t)k.size()));
                             for (i=0; i<k.size(); i++)
                             {
+                                int32_t j;
                                 gamesevent val = 0;
                                 for (j=0; i<sizeof(gamesevent); j++)
                                     val = (val << 8) | k[i + sizeof(gamesevent)-1-j];

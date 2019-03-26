@@ -81,9 +81,9 @@ void disp_gamesplayerdata(std::vector<uint8_t> playerdata)
     }
 }
 
-char *games_extractgame(int32_t makefiles,char *str,int32_t *numkeysp,std::vector<uint8_t> &newdata,uint64_t &seed,uint256 &playertxid,struct CCcontract_info *cp,uint256 gametxid,char *gamesaddr)
+gamesevent *games_extractgame(int32_t makefiles,char *str,int32_t *numkeysp,std::vector<uint8_t> &newdata,uint64_t &seed,uint256 &playertxid,struct CCcontract_info *cp,uint256 gametxid,char *gamesaddr)
 {
-    CPubKey gamespk; int32_t i,num,retval,maxplayers,gameheight,batonht,batonvout,numplayers,regslot,numkeys,err; std::string symbol,pname; CTransaction gametx; int64_t buyin,batonvalue; char fname[64],*keystrokes = 0; std::vector<uint8_t> playerdata; uint256 batontxid; FILE *fp; uint8_t newplayer[10000]; struct games_player P,endP;
+    CPubKey gamespk; int32_t i,num,retval,maxplayers,gameheight,batonht,batonvout,numplayers,regslot,numkeys,err; std::string symbol,pname; CTransaction gametx; int64_t buyin,batonvalue; char fname[64]; gamesevent *keystrokes = 0; std::vector<uint8_t> playerdata; uint256 batontxid; FILE *fp; uint8_t newplayer[10000]; struct games_player P,endP;
     gamespk = GetUnspendable(cp,0);
     *numkeysp = 0;
     seed = 0;
@@ -110,7 +110,7 @@ char *games_extractgame(int32_t makefiles,char *str,int32_t *numkeysp,std::vecto
                     sprintf(fname,"%s.%llu.0",GAMENAME,(long long)seed);
                     if ( (fp= fopen(fname,"wb")) != 0 )
                     {
-                        if ( fwrite(keystrokes,1,numkeys,fp) != numkeys )
+                        if ( fwrite(keystrokes,sizeof(*keystrokes),numkeys,fp) != numkeys )
                             fprintf(stderr,"error writing %s\n",fname);
                         fclose(fp);
                     }
