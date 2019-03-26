@@ -644,8 +644,19 @@ void *gamesiterate(struct games_state *rs)
     uint32_t counter = 0; bool running = true; tetris_move move = TM_NONE;
     gamesevent c; uint16_t skipcount=0; uint32_t eventid = 0; tetris_game *tg;
     WINDOW *board, *next, *hold, *score;
-    // Create windows for each section of the interface.
+    if ( rs->guiflag != 0 )
+    {
+        // NCURSES initialization:
+        initscr();             // initialize curses
+        cbreak();              // pass key presses to program, but not signals
+        noecho();              // don't echo key presses to screen
+        keypad(stdscr, TRUE);  // allow arrow keys
+        timeout(0);            // no blocking on getch()
+        curs_set(0);           // set the cursor to invisible
+        init_colors();         // setup tetris colors
+    }
     tg = tg_create(rs,22, 10);
+    // Create windows for each section of the interface.
     board = newwin(tg->rows + 2, 2 * tg->cols + 2, 0, 0);
     next  = newwin(6, 10, 0, 2 * (tg->cols + 1) + 1);
     hold  = newwin(6, 10, 7, 2 * (tg->cols + 1) + 1);
@@ -668,7 +679,7 @@ void *gamesiterate(struct games_state *rs)
             {
                 if ( skipcount > 0 )
                     issue_games_events(rs,Gametxidstr,eventid-skipcount,skipcount | 0x4000);
-                if ( c >= 0 )
+                if ( c <= 0x7f )
                     issue_games_events(rs,Gametxidstr,eventid,c);
                 skipcount = 0;
             } else skipcount++;
@@ -679,6 +690,7 @@ void *gamesiterate(struct games_state *rs)
             if ( skipcount == 0 )
             {
                 c = games_readevent(rs);
+                fprintf(stderr,"%04x\n",c);
                 if ( (c & 0x4000) == 0x4000 )
                 {
                     skipcount = (c & 0x3fff);
@@ -833,15 +845,6 @@ int tetris(int argc, char **argv)
         tg = tg_create(rs,22, 10);
     }*/
 
-    // NCURSES initialization:
-    initscr();             // initialize curses
-    cbreak();              // pass key presses to program, but not signals
-    noecho();              // don't echo key presses to screen
-    keypad(stdscr, TRUE);  // allow arrow keys
-    timeout(0);            // no blocking on getch()
-    curs_set(0);           // set the cursor to invisible
-    init_colors();         // setup tetris colors
-    
     // Game loop
     tg = (tetris_game *)gamesiterate(rs);
     games_bailout(rs);
