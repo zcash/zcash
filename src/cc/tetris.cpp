@@ -20,15 +20,15 @@ uint64_t games_gamefields(UniValue &obj,int64_t maxplayers,int64_t buyin,uint256
 
 // game specific code for daemon
 
-void games_packitemstr(char *packitemstr,struct games_packitem *item)
+/*void games_packitemstr(char *packitemstr,struct games_packitem *item)
 {
     sprintf(packitemstr,"not yet");
 }
 
 int32_t games_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t num,struct games_player *player,int32_t sleepmillis) // replay in daemon
 {
-    return(-1);
-}
+    return(0);
+}*/
 
 int32_t games_payloadrecv(CPubKey pk,uint32_t timestamp,std::vector<uint8_t> payload)
 {

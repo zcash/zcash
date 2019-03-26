@@ -873,63 +873,6 @@ void games_bailout(struct games_state *rs)
 #endif
 #endif
 
-int32_t games_replay2(uint8_t *newdata,uint64_t seed,gamesevent *keystrokes,int32_t num,struct games_player *player,int32_t sleepmillis)
-{
-    struct games_state *rs; FILE *fp; int32_t i,n; void *ptr;
-    rs = (struct games_state *)calloc(1,sizeof(*rs));
-    rs->seed = rs->origseed = seed;
-    rs->keystrokes = keystrokes;
-    rs->numkeys = num;
-    rs->sleeptime = sleepmillis * 1000;
-    if ( player != 0 )
-    {
-        rs->P = *player;
-        rs->restoring = 1;
-        //fprintf(stderr,"restore player packsize.%d HP.%d\n",rs->P.packsize,rs->P.hitpoints);
-        if ( rs->P.packsize > MAXPACK )
-            rs->P.packsize = MAXPACK;
-    }
-    globalR = *rs;
-    uint32_t starttime = (uint32_t)time(NULL);
-    ptr = gamesiterate(rs);
-    if ( 0 )
-    {
-        fprintf(stderr,"elapsed %d seconds\n",(uint32_t)time(NULL) - starttime);
-        sleep(2);
-        starttime = (uint32_t)time(NULL);
-        for (i=0; i<10000; i++)
-        {
-            memset(rs,0,sizeof(*rs));
-            rs->seed = rs->origseed = seed;
-            rs->keystrokes = keystrokes;
-            rs->numkeys = num;
-            rs->sleeptime = 0;
-            gamesiterate(rs);
-        }
-        fprintf(stderr,"elapsed %d seconds\n",(uint32_t)time(NULL)-starttime);
-        sleep(3);
-    }
-    // extract playerdata
-
-    /*if ( (fp= fopen("checkfile","wb")) != 0 )
-    {
-        //save_file(rs,fp,0);
-        //fprintf(stderr,"gold.%d hp.%d strength.%d/%d level.%d exp.%d dungeon.%d data[%d]\n",rs->P.gold,rs->P.hitpoints,rs->P.strength&0xffff,rs->P.strength>>16,rs->P.level,rs->P.experience,rs->P.dungeonlevel,rs->playersize);
-        if ( newdata != 0 && rs->playersize > 0 )
-            memcpy(newdata,rs->playerdata,rs->playersize);
-    }*/
-    if ( ptr != 0 )
-    {
-        // extract data from ptr
-        if ( newdata != 0 && rs->playersize > 0 )
-            memcpy(newdata,rs->playerdata,rs->playersize);
-        free(ptr);
-    }
-    n = rs->playersize;
-    free(rs);
-    return(n);
-}
-
 long get_filesize(FILE *fp)
 {
     long fsize,fpos = ftell(fp);
