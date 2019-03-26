@@ -984,18 +984,19 @@ int32_t games_findbaton(struct CCcontract_info *cp,uint256 &playertxid,gameseven
                         uint256 g,b; CPubKey p; std::vector<uint8_t> k;
                         if ( games_keystrokesopretdecode(g,b,p,k,spenttx.vout[spenttx.vout.size()-1].scriptPubKey) == 'K' )
                         {
-                            keystrokes = (gamesevent *)realloc(keystrokes,sizeof(*keystrokes)*(numkeys + (int32_t)k.size()));
-                            for (i=0; i<k.size(); i++)
+                            fprintf(stderr,"update keystrokes.%p[%d]\n",keystrokes,numkeys);
+                            keystrokes = (gamesevent *)realloc(keystrokes,(int32_t)(sizeof(*keystrokes)*numkeys + k.size()));
+                            for (i=0; i<k.size(); i+=sizeof(gamesevent))
                             {
                                 int32_t j;
                                 gamesevent val = 0;
-                                for (j=0; i<sizeof(gamesevent); j++)
+                                for (j=0; j<sizeof(gamesevent); j++)
                                     val = (val << 8) | k[i + sizeof(gamesevent)-1-j];
                                 keystrokes[numkeys+i] = val;
                             }
                             numkeys += (int32_t)k.size() / sizeof(gamesevent);
                             (*keystrokesp) = keystrokes;
-                            //fprintf(stderr,"updated keystrokes.%p[%d]\n",keystrokes,numkeys);
+                            fprintf(stderr,"updated keystrokes.%p[%d]\n",keystrokes,numkeys);
                         }
                     }
                     //fprintf(stderr,"n.%d txid.%s\n",n,txid.GetHex().c_str());
