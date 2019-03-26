@@ -16,6 +16,21 @@
 #include "gamescc.h"
 #include "tetris.c" // replace with game code
 
+
+uint64_t _games_rngnext(uint64_t initseed)
+{
+    uint16_t seeds[4]; int32_t i;
+    seeds[0] = initseed;
+    seeds[1] = (initseed >> 16);
+    seeds[2] = (initseed >> 32);
+    seeds[3] = (initseed >> 48);
+    seeds[0] = (seeds[0]*GAMES_RNGMULT + GAMES_RNGOFFSET);
+    seeds[1] = ((seeds[0] ^ seeds[1])*GAMES_RNGMULT + GAMES_RNGOFFSET);
+    seeds[2] = ((seeds[0] ^ seeds[1] ^ seeds[2])*GAMES_RNGMULT + GAMES_RNGOFFSET);
+    seeds[3] = ((seeds[0] ^ seeds[1] ^ seeds[2] ^ seeds[3])*GAMES_RNGMULT + GAMES_RNGOFFSET);
+    return(((uint64_t)seeds[3] << 48) | ((uint64_t)seeds[2] << 24) | ((uint64_t)seeds[1] << 16) | seeds[0]);
+}
+
 #ifndef STANDALONE
 
 #include "tetris.cpp" // replace with game specific functions
@@ -193,20 +208,6 @@ UniValue games_rawtxresult(UniValue &result,std::string rawtx,int32_t broadcastf
         } else result.push_back(Pair("error","decode hex"));
     } else result.push_back(Pair("error","couldnt finalize CCtx"));
     return(result);
-}
-
-uint64_t _games_rngnext(uint64_t initseed)
-{
-    uint16_t seeds[4]; int32_t i;
-    seeds[0] = initseed;
-    seeds[1] = (initseed >> 16);
-    seeds[2] = (initseed >> 32);
-    seeds[3] = (initseed >> 48);
-    seeds[0] = (seeds[0]*GAMES_RNGMULT + GAMES_RNGOFFSET);
-    seeds[1] = ((seeds[0] ^ seeds[1])*GAMES_RNGMULT + GAMES_RNGOFFSET);
-    seeds[2] = ((seeds[0] ^ seeds[1] ^ seeds[2])*GAMES_RNGMULT + GAMES_RNGOFFSET);
-    seeds[3] = ((seeds[0] ^ seeds[1] ^ seeds[2] ^ seeds[3])*GAMES_RNGMULT + GAMES_RNGOFFSET);
-    return(((uint64_t)seeds[3] << 48) | ((uint64_t)seeds[2] << 24) | ((uint64_t)seeds[1] << 16) | seeds[0]);
 }
 
 UniValue games_rngnext(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
