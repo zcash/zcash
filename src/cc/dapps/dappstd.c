@@ -1040,6 +1040,21 @@ char games_readchar(struct games_state *rs)
     if ( rs == 0 || rs->guiflag != 0 )
     {
         ch = (char) getch();
+        switch ( ch )
+        {
+            case KEY_LEFT:
+                c = 'h';
+                break;
+            case KEY_RIGHT:
+                c = 'l';
+                break;
+            case KEY_UP:
+                c = 'k';
+                break;
+            case KEY_DOWN:
+                c = 'j';
+                break;
+        }
         if (ch == 3)
         {
             //_quit();

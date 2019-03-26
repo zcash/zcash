@@ -299,9 +299,11 @@ static void tg_handle_move(struct games_state *rs,tetris_game *obj, tetris_move 
 {
     switch (move) {
         case TM_LEFT:
+            fprintf(stderr,"LEFT ");
             tg_move(obj, -1);
             break;
         case TM_RIGHT:
+            fprintf(stderr,"RIGHT ");
             tg_move(obj, 1);
             break;
         case TM_DROP:
@@ -644,8 +646,7 @@ int32_t issue_games_events(struct games_state *rs,char *gametxidstr,uint32_t eve
     char params[512],*retstr; cJSON *retjson,*resobj; int32_t retval = -1;
     if ( fp == 0 )
         fp = fopen("events.log","wb");
-    sprintf(params,"[\"events\",\"17\",\"[%%22%02x%%22,%%22%s%%22,%u]\"]",c,gametxidstr,eventid);
-    rs->buffered[rs->num++] = c;
+    sprintf(params,"[\"events\",\"17\",\"[%%22%02x%%22,%%22%s%%22,%u]\"]",c&0xff,gametxidstr,eventid);
     if ( (retstr= komodo_issuemethod(USERPASS,(char *)"cclib",params,GAMES_PORT)) != 0 )
     {
         if ( (retjson= cJSON_Parse(retstr)) != 0 )
@@ -709,21 +710,6 @@ void *gamesiterate(struct games_state *rs)
                 doupdate();
             sleep_milli(10);
             c = games_readchar(rs);
-            switch ( c )
-            {
-                case KEY_LEFT:
-                    c = 'h';
-                    break;
-                case KEY_RIGHT:
-                    c = 'l';
-                    break;
-                case KEY_UP:
-                    c = 'k';
-                    break;
-                case KEY_DOWN:
-                    c = 'j';
-                    break;
-            }
             if ( c >= 0 || skipcount == 0x7f )
             {
                 if ( skipcount > 0 )
