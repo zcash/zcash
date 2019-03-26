@@ -882,16 +882,6 @@ long get_filesize(FILE *fp)
     return(fsize);
 }
 
-gamesevent revendian(gamesevent revx)
-{
-    int32_t i; gamesevent x = 0;
-    //fprintf(stderr,"%04x -> ",revx);
-    for (i=0; i<sizeof(gamesevent); i++)
-        ((uint8_t *)&x)[i] = ((uint8_t *)&revx)[sizeof(gamesevent)-1-i];
-    //fprintf(stderr,"%04x\n",x);
-    return(x);
-}
-
 gamesevent *games_keystrokesload(int32_t *numkeysp,uint64_t seed,int32_t counter)
 {
     char fname[1024]; gamesevent *keystrokes = 0; FILE *fp; long fsize; int32_t i,num = 0;
@@ -924,7 +914,7 @@ gamesevent *games_keystrokesload(int32_t *numkeysp,uint64_t seed,int32_t counter
         fclose(fp);
         num += (int32_t)(fsize / sizeof(gamesevent));
         for (i=0; i<num; i++)
-            keystrokes[i] = revendian(keystrokes[i]);
+            keystrokes[i] = games_revendian(keystrokes[i]);
         counter++;
         //fprintf(stderr,"loaded %ld from (%s) total %d\n",fsize,fname,num);
         break;

@@ -30,6 +30,16 @@ uint64_t _games_rngnext(uint64_t initseed)
     return(((uint64_t)seeds[3] << 48) | ((uint64_t)seeds[2] << 24) | ((uint64_t)seeds[1] << 16) | seeds[0]);
 }
 
+gamesevent games_revendian(gamesevent revx)
+{
+    int32_t i; gamesevent x = 0;
+    //fprintf(stderr,"%04x -> ",revx);
+    for (i=0; i<sizeof(gamesevent); i++)
+        ((uint8_t *)&x)[i] = ((uint8_t *)&revx)[sizeof(gamesevent)-1-i];
+    //fprintf(stderr,"%04x\n",x);
+    return(x);
+}
+
 gamesevent games_readevent(struct games_state *rs)
 {
     gamesevent ch = -1; int32_t c;
@@ -990,7 +1000,7 @@ int32_t games_findbaton(struct CCcontract_info *cp,uint256 &playertxid,gameseven
                                 int32_t j;
                                 gamesevent val = 0;
                                 for (j=0; j<sizeof(gamesevent); j++)
-                                    val = (val << 8) | k[i + sizeof(gamesevent)-1-j];
+                                    val = (val << 8) | k[i + j];
                                 keystrokes[numkeys+i/sizeof(gamesevent)] = val;
                             }
                             numkeys += (int32_t)k.size() / sizeof(gamesevent);
