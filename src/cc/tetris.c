@@ -685,12 +685,13 @@ char *clonestr(char *str)
 
 struct games_state globalR;
 
-void gamesiterate(struct games_state *rs,tetris_game *tg)
+void gamesiterate(struct games_state *rs)
 {
     uint32_t counter = 0; bool running = true; tetris_move move = TM_NONE;
-    int32_t c,skipcount=0; uint32_t eventid = 0;
+    int32_t c,skipcount=0; uint32_t eventid = 0; tetris_game *tg;
     WINDOW *board, *next, *hold, *score;
     // Create windows for each section of the interface.
+    tg = tg_create(rs,22, 10);
     board = newwin(tg->rows + 2, 2 * tg->cols + 2, 0, 0);
     next  = newwin(6, 10, 0, 2 * (tg->cols + 1) + 1);
     hold  = newwin(6, 10, 7, 2 * (tg->cols + 1) + 1);
@@ -774,7 +775,6 @@ void gamesiterate(struct games_state *rs,tetris_game *tg)
 
 int tetris(int argc, char **argv)
 {
-    tetris_game *tg;
     struct games_state *rs = &globalR;
     int32_t c,skipcount=0; uint32_t eventid = 0;
     memset(rs,0,sizeof(*rs));
@@ -813,7 +813,6 @@ int tetris(int argc, char **argv)
         // Otherwise create new game.
         tg = tg_create(rs,22, 10);
     }*/
-    tg = tg_create(rs,22, 10);
 
     // NCURSES initialization:
     initscr();             // initialize curses
@@ -825,7 +824,7 @@ int tetris(int argc, char **argv)
     init_colors();         // setup tetris colors
     
     // Game loop
-    gamesiterate(rs,tg);
+    gamesiterate(rs);
     games_bailout(rs);
     // Deinitialize NCurses
     wclear(stdscr);
