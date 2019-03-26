@@ -17,12 +17,6 @@
 #include "tetris.c" // replace with game code
 
 #ifndef STANDALONE
-int32_t games_payloadrecv(CPubKey pk,uint32_t timestamp,std::vector<uint8_t> payload);
-int32_t games_playerdata_validate(int64_t *cashoutp,uint256 &playertxid,struct CCcontract_info *cp,std::vector<uint8_t> playerdata,uint256 gametxid,CPubKey pk);
-int32_t games_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t num,struct games_player *player,int32_t sleepmillis);
-void games_packitemstr(char *packitemstr,struct games_packitem *item);
-int64_t games_cashout(struct games_player *P);
-char *games_extractgame(int32_t makefiles,char *str,int32_t *numkeysp,std::vector<uint8_t> &newdata,uint64_t &seed,uint256 &playertxid,struct CCcontract_info *cp,uint256 gametxid,char *gamesaddr);
 
 #include "tetris.cpp" // replace with game specific functions
 
@@ -549,26 +543,6 @@ int32_t games_playersalive(int32_t &openslots,int32_t &numplayers,uint256 gametx
     }
     //fprintf(stderr,"numalive.%d openslots.%d\n",alive,openslots);
     return(alive);
-}
-
-void disp_gamesplayerdata(std::vector<uint8_t> playerdata)
-{
-    struct games_player P; int32_t i; char packitemstr[512];
-    if ( playerdata.size() > 0 )
-    {
-        for (i=0; i<playerdata.size(); i++)
-        {
-            ((uint8_t *)&P)[i] = playerdata[i];
-            fprintf(stderr,"%02x",playerdata[i]);
-        }
-        fprintf(stderr," <- playerdata: gold.%d hp.%d strength.%d/%d level.%d exp.%d dl.%d\n",P.gold,P.hitpoints,P.strength&0xffff,P.strength>>16,P.level,P.experience,P.dungeonlevel);
-        for (i=0; i<P.packsize&&i<MAXPACK; i++)
-        {
-            games_packitemstr(packitemstr,&P.gamespack[i]);
-            fprintf(stderr,"%d: %s\n",i,packitemstr);
-        }
-        fprintf(stderr,"\n");
-    }
 }
 
 UniValue games_playerobj(std::vector<uint8_t> playerdata,uint256 playertxid,uint256 tokenid,std::string symbol,std::string pname,uint256 gametxid)

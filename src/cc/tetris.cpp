@@ -14,6 +14,10 @@
  *                                                                            *
  ******************************************************************************/
 
+int32_t games_findbaton(struct CCcontract_info *cp,uint256 &playertxid,char **keystrokesp,int32_t &numkeys,int32_t &regslot,std::vector<uint8_t> &playerdata,uint256 &batontxid,int32_t &batonvout,int64_t &batonvalue,int32_t &batonht,uint256 gametxid,CTransaction gametx,int32_t maxplayers,char *destaddr,int32_t &numplayers,std::string &symbol,std::string &pname);
+int32_t games_isvalidgame(struct CCcontract_info *cp,int32_t &gameheight,CTransaction &tx,int64_t &buyin,int32_t &maxplayers,uint256 txid,int32_t unspentv0);
+uint64_t games_gamefields(UniValue &obj,int64_t maxplayers,int64_t buyin,uint256 gametxid,char *mygamesaddr);
+
 // game specific code for daemon
 
 int32_t games_payloadrecv(CPubKey pk,uint32_t timestamp,std::vector<uint8_t> payload)
@@ -45,6 +49,26 @@ int64_t games_cashout(struct games_player *P)
         dungeonlevel = 26;
     cashout = (uint64_t)P->gold * P->gold * mult * dungeonlevel;
     return(cashout);
+}
+
+void disp_gamesplayerdata(std::vector<uint8_t> playerdata)
+{
+    struct games_player P; int32_t i; char packitemstr[512];
+    if ( playerdata.size() > 0 )
+    {
+        for (i=0; i<playerdata.size(); i++)
+        {
+            ((uint8_t *)&P)[i] = playerdata[i];
+            fprintf(stderr,"%02x",playerdata[i]);
+        }
+        fprintf(stderr," <- playerdata: gold.%d hp.%d strength.%d/%d level.%d exp.%d dl.%d\n",P.gold,P.hitpoints,P.strength&0xffff,P.strength>>16,P.level,P.experience,P.dungeonlevel);
+        for (i=0; i<P.packsize&&i<MAXPACK; i++)
+        {
+            games_packitemstr(packitemstr,&P.gamespack[i]);
+            fprintf(stderr,"%d: %s\n",i,packitemstr);
+        }
+        fprintf(stderr,"\n");
+    }
 }
 
 int32_t games_playerdata_validate(int64_t *cashoutp,uint256 &playertxid,struct CCcontract_info *cp,std::vector<uint8_t> playerdata,uint256 gametxid,CPubKey pk)
