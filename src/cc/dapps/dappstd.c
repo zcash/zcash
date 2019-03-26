@@ -886,10 +886,10 @@ gamesevent *games_keystrokesload(int32_t *numkeysp,uint64_t seed,int32_t counter
 {
     char fname[1024]; gamesevent *keystrokes = 0; FILE *fp; long fsize; int32_t num = 0;
     *numkeysp = 0;
-    while ( 1 )
+    if ( 1 )
     {
         gamesfname(fname,seed,counter);
-        printf("check (%s)\n",fname);
+        //printf("check (%s)\n",fname);
         if ( (fp= fopen(fname,"rb")) == 0 )
             break;
         if ( (fsize= get_filesize(fp)) <= 0 )
@@ -939,6 +939,7 @@ int32_t games_replay(uint64_t seed,int32_t sleeptime)
     if ( seed == 0 )
         seed = 777;
     keystrokes = games_keystrokesload(&num,seed,counter);
+    fprintf(stderr,"keystrokes.%p num.%d\n",keystrokes,num);
     if ( num > 0 )
     {
         sprintf(fname,"%s.%llu.player",GAMENAME,(long long)seed);
