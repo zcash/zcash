@@ -638,13 +638,13 @@ void init_colors(void)
  */
 #include "dapps/dappstd.c"
 
-int32_t issue_games_events(struct games_state *rs,bits256 gametxid,uint32_t eventid,char c)
+int32_t issue_games_events(struct games_state *rs,char *gametxidstr,uint32_t eventid,char c)
 {
     static FILE *fp;
-    char params[512],*retstr,str[65]; cJSON *retjson,*resobj; int32_t retval = -1;
+    char params[512],*retstr; cJSON *retjson,*resobj; int32_t retval = -1;
     if ( fp == 0 )
         fp = fopen("events.log","wb");
-    sprintf(params,"[\"events\",\"17\",\"[%%22%02x%%22,%%22%s%%22,%u]\"]",c,bits256_str(str,gametxid),eventid);
+    sprintf(params,"[\"events\",\"17\",\"[%%22%02x%%22,%%22%s%%22,%u]\"]",c,gametxidstr,eventid);
     rs->buffered[rs->num++] = c;
     if ( (retstr= komodo_issuemethod(USERPASS,(char *)"cclib",params,GAMES_PORT)) != 0 )
     {
@@ -685,15 +685,98 @@ char *clonestr(char *str)
 
 struct games_state globalR;
 
+void gamesiterate(struct games_state *rs,tetris_game *tg)
+{
+    uint32_t counter = 0; bool running = true; tetris_move move = TM_NONE;
+    int32_t c,skipcount=0; uint32_t eventid = 0;
+    WINDOW *board, *next, *hold, *score;
+    // Create windows for each section of the interface.
+    board = newwin(tg->rows + 2, 2 * tg->cols + 2, 0, 0);
+    next  = newwin(6, 10, 0, 2 * (tg->cols + 1) + 1);
+    hold  = newwin(6, 10, 7, 2 * (tg->cols + 1) + 1);
+    score = newwin(6, 10, 14, 2 * (tg->cols + 1 ) + 1);
+    while (running)
+    {
+        running = tg_tick(rs,tg, move);
+        display_board(board, tg);
+        display_piece(next, tg->next);
+        display_piece(hold, tg->stored);
+        display_score(score, tg);
+        if ( (counter++ % 5) == 0 )
+            doupdate();
+        sleep_milli(10);
+        c = getch();
+        switch ( c )
+        {
+            case KEY_LEFT:
+                c = 'h';
+                break;
+            case KEY_RIGHT:
+                c = 'l';
+                break;
+            case KEY_UP:
+                c = 'k';
+                break;
+            case KEY_DOWN:
+                c = 'j';
+                break;
+        }
+        if ( c < 0 || skipcount == 0x7f )
+        {
+            if ( skipcount > 0 )
+                issue_games_events(rs,Gametxidstr,eventid-skipcount,skipcount | 0x80);
+            if ( c != -1 )
+                issue_games_events(rs,Gametxidstr,eventid,c);
+            skipcount = 0;
+        } else skipcount++;
+        eventid++;
+        switch ( c )
+        {
+            case 'h':
+                move = TM_LEFT;
+                break;
+            case 'l':
+                move = TM_RIGHT;
+                break;
+            case 'k':
+                move = TM_CLOCK;
+                break;
+            case 'j':
+                move = TM_DROP;
+                break;
+            case 'q':
+                running = false;
+                move = TM_NONE;
+                break;
+                /*case 'p':
+                 wclear(board);
+                 box(board, 0, 0);
+                 wmove(board, tg->rows/2, (tg->cols*COLS_PER_CELL-6)/2);
+                 wprintw(board, "PAUSED");
+                 wrefresh(board);
+                 timeout(-1);
+                 getch();
+                 timeout(0);
+                 move = TM_NONE;
+                 break;
+                 case 's':
+                 save(tg, board);
+                 move = TM_NONE;
+                 break;*/
+            case ' ':
+                move = TM_HOLD;
+                break;
+            default:
+                move = TM_NONE;
+        }
+    }
+}
+
 int tetris(int argc, char **argv)
 {
     tetris_game *tg;
-    tetris_move move = TM_NONE;
-    bool running = true;
-    WINDOW *board, *next, *hold, *score;
     struct games_state *rs = &globalR;
-    int32_t c,skipcount=0; bits256 gametxid; uint32_t eventid = 0;
-    memset(&gametxid,0,sizeof(gametxid));
+    int32_t c,skipcount=0; uint32_t eventid = 0;
     memset(rs,0,sizeof(*rs));
     rs->guiflag = 1;
     rs->sleeptime = 1; // non-zero to allow refresh()
@@ -741,88 +824,9 @@ int tetris(int argc, char **argv)
     curs_set(0);           // set the cursor to invisible
     init_colors();         // setup tetris colors
     
-    // Create windows for each section of the interface.
-    board = newwin(tg->rows + 2, 2 * tg->cols + 2, 0, 0);
-    next  = newwin(6, 10, 0, 2 * (tg->cols + 1) + 1);
-    hold  = newwin(6, 10, 7, 2 * (tg->cols + 1) + 1);
-    score = newwin(6, 10, 14, 2 * (tg->cols + 1 ) + 1);
-    int32_t counter = 0;
     // Game loop
-    while (running) {
-        running = tg_tick(rs,tg, move);
-        display_board(board, tg);
-        display_piece(next, tg->next);
-        display_piece(hold, tg->stored);
-        display_score(score, tg);
-        if ( (counter++ % 5) == 0 )
-            doupdate();
-        sleep_milli(10);
-        c = getch();
-        switch ( c )
-        {
-            case KEY_LEFT:
-                c = 'h';
-                break;
-            case KEY_RIGHT:
-                c = 'l';
-                break;
-            case KEY_UP:
-                c = 'k';
-                break;
-            case KEY_DOWN:
-                c = 'j';
-                break;
-        }
-        if ( c < 0 || skipcount == 0x7f )
-        {
-            if ( skipcount > 0 )
-                issue_games_events(rs,gametxid,eventid-skipcount,skipcount | 0x80);
-            if ( c != -1 )
-                issue_games_events(rs,gametxid,eventid,c);
-            skipcount = 0;
-        } else skipcount++;
-        eventid++;
-        switch ( c )
-        {
-            case 'h':
-                move = TM_LEFT;
-                break;
-            case 'l':
-                move = TM_RIGHT;
-                break;
-            case 'k':
-                move = TM_CLOCK;
-                break;
-            case 'j':
-                move = TM_DROP;
-                break;
-            case 'q':
-                running = false;
-                move = TM_NONE;
-                break;
-            /*case 'p':
-                wclear(board);
-                box(board, 0, 0);
-                wmove(board, tg->rows/2, (tg->cols*COLS_PER_CELL-6)/2);
-                wprintw(board, "PAUSED");
-                wrefresh(board);
-                timeout(-1);
-                getch();
-                timeout(0);
-                move = TM_NONE;
-                break;
-            case 's':
-                save(tg, board);
-                move = TM_NONE;
-                break;*/
-            case ' ':
-                move = TM_HOLD;
-                break;
-            default:
-                move = TM_NONE;
-        }
-    }
-    
+    gamesiterate(rs,tg);
+    games_bailout(rs);
     // Deinitialize NCurses
     wclear(stdscr);
     endwin();
@@ -835,9 +839,5 @@ int tetris(int argc, char **argv)
     return 0;
 }
 
-void gamesiterate(struct games_state *rs)
-{
-    
-}
 #endif
 
