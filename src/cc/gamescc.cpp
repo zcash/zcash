@@ -146,9 +146,12 @@ int32_t games_replay2(uint8_t *newdata,uint64_t seed,gamesevent *keystrokes,int3
         // extract data from ptr
         if ( GAMEDATA(&rs->P,ptr) < 0 )
             memset(&rs->P,0,sizeof(rs->P));
-        else rs->playersize = sizeof(rs->P);
-        if ( newdata != 0 && rs->playersize > 0 )
-            memcpy(newdata,rs->playerdata,rs->playersize);
+        else
+        {
+            rs->playersize = sizeof(rs->P);
+            if ( newdata != 0 )
+                memcpy(newdata,&rs->P,rs->playersize);
+        }
         free(ptr);
     }
     n = rs->playersize;
@@ -1383,7 +1386,7 @@ gamesevent *games_extractgame(int32_t makefiles,char *str,int32_t *numkeysp,std:
                     newdata[i] = newplayer[i];
                     ((uint8_t *)&endP)[i] = newplayer[i];
                 }
-                fprintf(stderr,"newgold.%d\n",endP.gold); sleep(3);
+                //fprintf(stderr,"newgold.%d\n",endP.gold); sleep(3);
                 if ( disp_gamesplayer(str,&endP) < 0 )
                 {
                     sprintf(str,"zero value character -> no playerdata\n");
