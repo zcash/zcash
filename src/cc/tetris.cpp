@@ -14,7 +14,7 @@
  *                                                                            *
  ******************************************************************************/
 
-int32_t games_findbaton(struct CCcontract_info *cp,uint256 &playertxid,char **keystrokesp,int32_t &numkeys,int32_t &regslot,std::vector<uint8_t> &playerdata,uint256 &batontxid,int32_t &batonvout,int64_t &batonvalue,int32_t &batonht,uint256 gametxid,CTransaction gametx,int32_t maxplayers,char *destaddr,int32_t &numplayers,std::string &symbol,std::string &pname);
+int32_t games_findbaton(struct CCcontract_info *cp,uint256 &playertxid,gamesevent **keystrokesp,int32_t &numkeys,int32_t &regslot,std::vector<uint8_t> &playerdata,uint256 &batontxid,int32_t &batonvout,int64_t &batonvalue,int32_t &batonht,uint256 gametxid,CTransaction gametx,int32_t maxplayers,char *destaddr,int32_t &numplayers,std::string &symbol,std::string &pname);
 int32_t games_isvalidgame(struct CCcontract_info *cp,int32_t &gameheight,CTransaction &tx,int64_t &buyin,int32_t &maxplayers,uint256 txid,int32_t unspentv0);
 uint64_t games_gamefields(UniValue &obj,int64_t maxplayers,int64_t buyin,uint256 gametxid,char *mygamesaddr);
 
@@ -169,7 +169,7 @@ gamesevent *games_extractgame(int32_t makefiles,char *str,int32_t *numkeysp,std:
 int32_t games_playerdata_validate(int64_t *cashoutp,uint256 &playertxid,struct CCcontract_info *cp,std::vector<uint8_t> playerdata,uint256 gametxid,CPubKey pk)
 {
     static uint32_t good,bad; static uint256 prevgame;
-    char str[512],*keystrokes,gamesaddr[64],str2[67],fname[64]; int32_t i,dungeonlevel,numkeys; std::vector<uint8_t> newdata; uint64_t seed; CPubKey gamespk; struct games_player P;
+    char str[512],gamesaddr[64],str2[67],fname[64]; gamesevent *keystrokes; int32_t i,dungeonlevel,numkeys; std::vector<uint8_t> newdata; uint64_t seed; CPubKey gamespk; struct games_player P;
     *cashoutp = 0;
     gamespk = GetUnspendable(cp,0);
     GetCCaddress1of2(cp,gamesaddr,gamespk,pk);
