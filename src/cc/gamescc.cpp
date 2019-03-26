@@ -1457,12 +1457,6 @@ UniValue games_fund(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             if ( (inputsum= AddNormalinputs(mtx,mypk,amount+GAMES_TXFEE,64)) >= amount+GAMES_TXFEE )
             {
                 mtx.vout.push_back(MakeCC1vout(cp->evalcode,amount,gamespk));
-                if ( 0 )
-                {
-                    char destaddr[64];
-                    GetScriptaddress(destaddr,mtx.vout[0].scriptPubKey);
-                    fprintf(stderr,"destaddr.(%s) %d\n",destaddr,cp->evalcode);
-                }
                 rawtx = FinalizeCCTx(0,cp,mtx,mypk,GAMES_TXFEE,opret);
                 return(games_rawtxresult(result,rawtx,1));
             }
