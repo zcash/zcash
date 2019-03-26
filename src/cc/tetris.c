@@ -672,7 +672,7 @@ void *gamesiterate(struct games_state *rs)
     while ( running != 0 )
     {
         running = tg_tick(rs,tg,move);
-        if ( 0 && (rs->guiflag != 0 || rs->sleeptime != 0) )
+        if ( 1 && (rs->guiflag != 0 || rs->sleeptime != 0) )
         {
             display_board(board,tg);
             display_piece(next,tg->next);
@@ -698,8 +698,8 @@ void *gamesiterate(struct games_state *rs)
         }
         else
         {
-            if ( rs->sleeptime >= 1000 )
-                sleep_milli(rs->sleeptime/1000);
+            if ( rs->sleeptime != 0 )
+                sleep_milli(1);
             if ( skipcount == 0 )
             {
                 c = games_readevent(rs);
