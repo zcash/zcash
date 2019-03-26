@@ -23,6 +23,9 @@
 #include <curl/curl.h>
 #include <curl/easy.h>
 
+extern struct games_state globalR;
+void gamesiterate(struct games_state *rs);
+
 char USERPASS[8192]; uint16_t GAMES_PORT;
 char Gametxidstr[67];
 char *clonestr(char *str);
@@ -960,6 +963,19 @@ char *games_keystrokesload(int32_t *numkeysp,uint64_t seed,int32_t counter)
     return(keystrokes);
 }
 
+void games_exit()
+{
+    uint32_t counter;
+    resetltchars();
+    if ( globalR.guiflag != 0 || globalR.sleeptime != 0 )
+        exit(st);
+    else if ( counter++ < 10 )
+    {
+        fprintf(stderr,"would have exit.(%d) sleeptime.%d\n",st,globalR.sleeptime);
+        globalR.replaydone = 1;
+    }
+}
+
 int32_t games_replay(uint64_t seed,int32_t sleeptime)
 {
     FILE *fp; char fname[1024]; char *keystrokes = 0; long fsize; int32_t i,num=0,counter = 0; struct games_state *rs; struct games_player P,*player = 0;
@@ -981,7 +997,7 @@ int32_t games_replay(uint64_t seed,int32_t sleeptime)
         games_replay2(0,seed,keystrokes,num,player,sleeptime);
         mvaddstr(LINES - 2, 0, (char *)"replay completed");
         endwin();
-        my_exit(0);
+        games_exit();
     }
     if ( keystrokes != 0 )
         free(keystrokes);
