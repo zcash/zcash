@@ -587,9 +587,17 @@ if test x$use_proton = xyes; then
     [],
     [AC_MSG_WARN([Proton headers not found, disabling Proton support])
     use_proton=no])
- AC_CHECK_LIB([qpid-proton-cpp], [main],
-    [PROTON_LIBS="-lqpid-proton-cpp -lqpid-proton"],
-    [AC_MSG_WARN([Proton libraries not found, disabling Proton support])
+ AC_CHECK_LIB([qpid-proton-cpp-static], [main],
+    [PROTON_LIBS="-lqpid-proton-cpp-static"],
+    [AC_MSG_WARN([Proton qpid-proton-cpp-static library not found, disabling Proton support])
+    use_proton=no])
+ AC_CHECK_LIB([qpid-proton-core-static], [main],
+    [PROTON_LIBS+=" -lqpid-proton-core-static"],
+    [AC_MSG_WARN([Proton qpid-proton-core-static library not found, disabling Proton support])
+    use_proton=no])
+ AC_CHECK_LIB([qpid-proton-static], [main],
+    [PROTON_LIBS+=" -lqpid-proton-static"],
+    [AC_MSG_WARN([Proton qpid-proton-static library not found, disabling Proton support])
     use_proton=no])
 fi
 if test x$use_proton = xyes; then
