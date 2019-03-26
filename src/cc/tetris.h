@@ -199,6 +199,7 @@ void *gamesiterate(struct games_state *rs);
 void games_packitemstr(char *packitemstr,struct games_packitem *item);
 uint64_t _games_rngnext(uint64_t initseed);
 int32_t games_replay2(uint8_t *newdata,uint64_t seed,gamesevent *keystrokes,int32_t num,struct games_player *player,int32_t sleepmillis);
+gamesevent games_revendian(gamesevent revx);
 
 #endif
 
