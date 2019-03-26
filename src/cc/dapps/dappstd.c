@@ -886,7 +886,7 @@ gamesevent *games_keystrokesload(int32_t *numkeysp,uint64_t seed,int32_t counter
 {
     char fname[1024]; gamesevent *keystrokes = 0; FILE *fp; long fsize; int32_t num = 0;
     *numkeysp = 0;
-    if ( 1 )
+    while ( 1 )
     {
         gamesfname(fname,seed,counter);
         //printf("check (%s)\n",fname);
@@ -915,6 +915,7 @@ gamesevent *games_keystrokesload(int32_t *numkeysp,uint64_t seed,int32_t counter
         num += (int32_t)(fsize / sizeof(gamesevent));
         counter++;
         fprintf(stderr,"loaded %ld from (%s) total %d\n",fsize,fname,num);
+        break;
     }
     *numkeysp = num;
     return(keystrokes);
