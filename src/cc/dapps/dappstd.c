@@ -767,7 +767,7 @@ int32_t games_progress(struct games_state *rs,int32_t waitflag,uint64_t seed,gam
             else if ( sizeof(gamesevent) ==  4 )
                 sprintf(&hexstr[i<<3],"%08x",keystrokes[i]&0xffffffff);
             else if ( sizeof(gamesevent) ==  8 )
-                sprintf(&hexstr[i<<4],"%016x",keystrokes[i]&0xffffffffffffffff);
+                sprintf(&hexstr[i<<4],"%016x",(long long)(keystrokes[i]&0xffffffffffffffffLL));
         }
         static FILE *fp;
         if ( fp == 0 )
@@ -955,7 +955,7 @@ gamesevent *games_keystrokesload(int32_t *numkeysp,uint64_t seed,int32_t counter
             //printf("fsize.%ld\n",fsize);
             break;
         }
-        if ( (keystrokes= (char *)realloc(keystrokes,sizeof(*keystrokes)*(num+fsize))) == 0 )
+        if ( (keystrokes= (gamesevent *)realloc(keystrokes,sizeof(*keystrokes)*(num+fsize))) == 0 )
         {
             fprintf(stderr,"error reallocating keystrokes\n");
             fclose(fp);
