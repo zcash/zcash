@@ -307,11 +307,11 @@ static void tg_handle_move(struct games_state *rs,tetris_game *obj, tetris_move 
 {
     switch (move) {
         case TM_LEFT:
-            fprintf(stderr,"LEFT ");
+            //fprintf(stderr,"LEFT ");
             tg_move(obj, -1);
             break;
         case TM_RIGHT:
-            fprintf(stderr,"RIGHT ");
+            //fprintf(stderr,"RIGHT ");
             tg_move(obj, 1);
             break;
         case TM_DROP:
@@ -703,7 +703,7 @@ void *gamesiterate(struct games_state *rs)
             if ( skipcount == 0 )
             {
                 c = games_readevent(rs);
-                fprintf(stderr,"%04x\n",c);
+                //fprintf(stderr,"%04x\n",c);
                 if ( (c & 0x4000) == 0x4000 )
                 {
                     skipcount = (c & 0x3fff);
