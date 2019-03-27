@@ -14,35 +14,29 @@
  *                                                                            *
  ******************************************************************************/
 
+UniValue games_rawtxresult(UniValue &result,std::string rawtx,int32_t broadcastflag);
+
 UniValue games_pricedata(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     UniValue result(UniValue::VOBJ); std::string rawtx; int64_t inputsum,price; CPubKey mypk;
     if ( params != 0 && cJSON_GetArraySize(params) == 1 )
     {
-        if ( cclib_parsehash(&price,jitem(params,0),8) < 0 )
+        if ( cclib_parsehash((uint8_t *)&price,jitem(params,0),8) < 0 )
         {
             result.push_back(Pair("result","error"));
             result.push_back(Pair("error","couldnt parsehash"));
         }
         mypk = pubkey2pk(Mypubkey());
-        if ( amount > GAMES_TXFEE )
+        if ( (inputsum= AddNormalinputs(mtx,mypk,GAMES_TXFEE,64)) >= GAMES_TXFEE )
         {
-            if ( (inputsum= AddNormalinputs(mtx,mypk,GAMES_TXFEE,64)) >= GAMES_TXFEE )
-            {
-                rawtx = FinalizeCCTx(0,cp,mtx,mypk,GAMES_TXFEE,CScript() << OP_RETURN << price);
-                return(games_rawtxresult(result,rawtx,1));
-            }
-            else
-            {
-                result.push_back(Pair("result","error"));
-                result.push_back(Pair("error","not enough funds"));
-            }
+            rawtx = FinalizeCCTx(0,cp,mtx,mypk,GAMES_TXFEE,CScript() << OP_RETURN << price);
+            return(games_rawtxresult(result,rawtx,1));
         }
         else
         {
             result.push_back(Pair("result","error"));
-            result.push_back(Pair("error","amount too small"));
+            result.push_back(Pair("error","not enough funds"));
         }
     }
     else
@@ -55,7 +49,7 @@ UniValue games_pricedata(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
 
 void prices_update(uint32_t timestamp,uint32_t uprice,int32_t ismine)
 {
-    fprintf(stderr,"%s t%u %.4f %16llx\n",ismine!=0?"mine":"ext ",timestamp,(double)uprice/10000,(long long)(timestamp<<32) | uprice);
+    fprintf(stderr,"%s t%u %.4f %16llx\n",ismine!=0?"mine":"ext ",timestamp,(double)uprice/10000,(long long)((uint64_t)timestamp<<32) | uprice);
 }
 
 // game specific code for daemon
