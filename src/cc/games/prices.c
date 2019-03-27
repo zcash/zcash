@@ -219,6 +219,7 @@ void *gamesiterate(struct games_state *rs)
 }
 
 #ifdef STANDALONE
+#include <ncurses.h>
 #include "dapps/dappstd.c"
 
 
