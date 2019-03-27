@@ -55,7 +55,7 @@ void *gamesiterate(struct games_state *rs)
         {
 #ifdef STANDALONE
             price = get_btcusd();
-            fprintf(stderr,"%llu -> t%u %.4f\n",(long long)price,(uint32_t)(price >> 32),(double)(price & 0xffffffff)/10000);
+            //fprintf(stderr,"%llu -> t%u %.4f\n",(long long)price,(uint32_t)(price >> 32),(double)(price & 0xffffffff)/10000);
             issue_games_events(rs,Gametxidstr,eventid,price);
             eventid++;
             sleep(10);
