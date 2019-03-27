@@ -546,7 +546,7 @@ void komodo_netevent(std::vector<uint8_t> message)
             {
                 if ( (rand() % 10) == 0 )
                 {
-                    fprintf(stderr,"relay message.[%d]\n",(int32_t)message.size());
+                    //fprintf(stderr,"relay message.[%d]\n",(int32_t)message.size());
                     komodo_sendmessage(2,2,"events",message);
                 }
             }
