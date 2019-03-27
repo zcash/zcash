@@ -54,9 +54,9 @@ void *gamesiterate(struct games_state *rs)
         if ( rs->guiflag != 0 )
         {
 #ifdef STANDALONE
-            sleep(10);
             price = get_btcusd();
             fprintf(stderr,"price %llu %.8f\n",(long long)price,(double)price/SATOSHIDEN);
+            sleep(10);
             /*if ( (counter++ % 10) == 0 )
                 doupdate();
             c = games_readevent(rs);
