@@ -43,7 +43,7 @@ int32_t tetrisdata(struct games_player *P,void *ptr)
 #include <string.h>
 
 #ifdef BUILD_GAMESCC
-#include "rogue/cursesd.h"
+#include "../rogue/cursesd.h"
 #else
 #include <curses.h>
 #endif

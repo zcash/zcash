@@ -2,6 +2,12 @@
 #include "prices.h"
 #include <time.h>
 #include <unistd.h>
+#ifdef BUILD_GAMESCC
+#include "../rogue/cursesd.h"
+#else
+#include <curses.h>
+#endif
+
 #define SATOSHIDEN ((uint64_t)100000000L)
 #define issue_curl(cmdstr) bitcoind_RPC(0,(char *)"prices",cmdstr,0,0,0)
 extern int64_t Net_change;
