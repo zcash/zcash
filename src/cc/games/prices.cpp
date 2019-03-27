@@ -21,7 +21,7 @@ extern uint8_t ASSETCHAINS_OVERRIDE_PUBKEY33[33];
 
 UniValue games_settle(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result; std::vector<uint8_t> vopret; CBlockIndex *pindex; CBlock block; CTransaction tx; uint64_t pricebits; char acaddr[64],destaddr[64]; uint32_t timestamp,uprice; CPubKey acpk,mypk,gamespk; uint256 hashBlock; int64_t prizefund = 0; int32_t i,n,vini,numvouts,height,nextheight = komodo_nextheight();
+    UniValue result; std::vector<uint8_t> vopret; CBlockIndex *pindex; CBlock block; CTransaction tx,vintx; uint64_t pricebits; char acaddr[64],destaddr[64]; uint32_t timestamp,uprice; CPubKey acpk,mypk,gamespk; uint256 hashBlock; int64_t prizefund = 0; int32_t i,n,vini,numvouts,height,nextheight = komodo_nextheight();
     mypk = pubkey2pk(Mypubkey());
     gamespk = GetUnspendable(cp,0);
     acpk = buf2pk(ASSETCHAINS_OVERRIDE_PUBKEY33);
@@ -60,7 +60,7 @@ UniValue games_settle(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                 {
                     // settle bets
                 }
-                result.push_back(Pair("prizefund",ValueToAmount(prizefund)));
+                result.push_back(Pair("prizefund",ValueFromAmount(prizefund)));
                 result.push_back(Pair("result","success"));
             }
             else
