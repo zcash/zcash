@@ -14,24 +14,69 @@
  *                                                                            *
  ******************************************************************************/
 
+#define PRICES_BETPERIOD 3
 UniValue games_rawtxresult(UniValue &result,std::string rawtx,int32_t broadcastflag);
 extern uint8_t ASSETCHAINS_OVERRIDE_PUBKEY33[33];
 
 
 UniValue games_settle(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result;
+    UniValue result; std::vector<uint8_t> vopret; CBlockIndex *pindex; CBlock block; CTransaction tx; uint64_t pricebits; int32_t i,n,numvouts,height,nextheight = komodo_nextheight();
+    if ( params != 0 && cJSON_GetArraySize(params) == 1 )
+    {
+        height = juint(jitem(params,0),0);
+        result.push_back(Pair("height",(int64_t)height));
+        if ( (pindex= komodo_chainactive(height)) != 0 )
+        {
+            if ( komodo_blockload(block,pindex) == 0 )
+            {
+                n = pindex->block.vtx.size();
+                for (i=0; i<n; i++)
+                {
+                    tx = block.vtx[i];
+                    if ( (numvouts= tx.vout.size()) > 1 )
+                    {
+                        GetOpReturnData(tx.vout[numvouts-1].scriptPubKey,vopret);
+                        E_UNMARSHAL(vopret,ss >> pricebits);
+                        fprintf(stderr,"i.%d %.8f %llx\n",i,(double)tx.vout[0].nValue/COIN,(long long)pricebits);
+                    }
+                }
+                // display bets
+                if ( height <= nextheight-PRICES_BETPERIOD )
+                {
+                    // settle bets
+                }
+                result.push_back(Pair("result","success"));
+            }
+            else
+            {
+                result.push_back(Pair("result","error"));
+                result.push_back(Pair("error","cant load block at height"));
+            }
+        }
+        else
+        {
+            result.push_back(Pair("result","error"));
+            result.push_back(Pair("error","cant find block at height"));
+        }
+    }
+    else
+    {
+        result.push_back(Pair("result","error"));
+        result.push_back(Pair("error","couldnt parse"));
+    }
     return(result);
 }
 
 UniValue games_bet(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); std::string rawtx; int64_t amount,inputsum,price; CPubKey gamespk,mypk,acpk;
+    UniValue result(UniValue::VOBJ); std::string rawtx; int64_t amount,inputsum; uint64_t price; CPubKey gamespk,mypk,acpk;
     if ( ASSETCHAINS_OVERRIDE_PUBKEY33[0] == 0 )
     {
         result.push_back(Pair("result","error"));
         result.push_back(Pair("error"," no -ac_pubkey for price reference"));
+        return(result);
     }
     acpk = buf2pk(ASSETCHAINS_OVERRIDE_PUBKEY33);
     if ( params != 0 && cJSON_GetArraySize(params) == 2 )
@@ -41,6 +86,7 @@ UniValue games_bet(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
         {
             result.push_back(Pair("result","error"));
             result.push_back(Pair("error","couldnt parsehash"));
+            return(result);
         }
         if ( mypk == acpk )
             amount = 0; // i am the reference price feed
