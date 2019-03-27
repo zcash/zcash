@@ -18,10 +18,41 @@
 UniValue games_rawtxresult(UniValue &result,std::string rawtx,int32_t broadcastflag);
 extern uint8_t ASSETCHAINS_OVERRIDE_PUBKEY33[33];
 
+int64_t prices_blockinfo(int32_t height,char *acaddr)
+{
+    std::vector<uint8_t> vopret; CBlockIndex *pindex; CBlock block; CTransaction tx,vintx; uint64_t pricebits; char destaddr[64]; uint32_t timestamp,uprice; uint256 hashBlock; int64_t prizefund = 0; int32_t i,n,vini,numvouts;
+    if ( (pindex= komodo_chainactive(height)) != 0 )
+    {
+        if ( komodo_blockload(block,pindex) == 0 )
+        {
+            n = block.vtx.size();
+            vini = 0;
+            for (i=0; i<n; i++)
+            {
+                tx = block.vtx[i];
+                if ( myGetTransaction(tx.vin[vini].prevout.hash,vintx,hashBlock) == 0 )
+                    continue;
+                else if ( tx.vin[vini].prevout.n >= vintx.vout.size() || Getscriptaddress(destaddr,vintx.vout[tx.vin[vini].prevout.n].scriptPubKey) == 0 )
+                    continue;
+                else if ( (numvouts= tx.vout.size()) > 1 && tx.vout[numvouts-1].scriptPubKey[0] == 0x6a )
+                {
+                    prizefund += tx.vout[0].nValue;
+                    GetOpReturnData(tx.vout[numvouts-1].scriptPubKey,vopret);
+                    E_UNMARSHAL(vopret,ss >> pricebits);
+                    timestamp = (uint32_t)(pricebits >> 32);
+                    uprice = (uint32_t)pricebits;
+                    //if ( strcmp(acaddr,destaddr) == 0 )
+                    //    fprintf(stderr,"REF ");
+                    //fprintf(stderr,"[%02x] i.%d %.8f %llx t%u %.4f numvouts.%d %s lag.%d\n",tx.vout[numvouts-1].scriptPubKey[0],i,(double)tx.vout[0].nValue/COIN,(long long)pricebits,timestamp,(double)uprice/10000,numvouts,destaddr,(int32_t)(pindex->nTime-timestamp));
+                }
+            }
+        } else return(-2);
+    } else return(-1);
+}
 
 UniValue games_settle(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result; std::vector<uint8_t> vopret; CBlockIndex *pindex; CBlock block; CTransaction tx,vintx; uint64_t pricebits; char acaddr[64],destaddr[64]; uint32_t timestamp,uprice; CPubKey acpk,mypk,gamespk; uint256 hashBlock; int64_t prizefund = 0; int32_t i,n,vini,numvouts,height,nextheight = komodo_nextheight();
+    UniValue result; char acaddr[64]; CPubKey acpk,mypk,gamespk; int64_t prizefund = 0; int32_t height,nextheight = komodo_nextheight();
     mypk = pubkey2pk(Mypubkey());
     gamespk = GetUnspendable(cp,0);
     acpk = buf2pk(ASSETCHAINS_OVERRIDE_PUBKEY33);
@@ -30,49 +61,21 @@ UniValue games_settle(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     {
         height = juint(jitem(params,0),0);
         result.push_back(Pair("height",(int64_t)height));
-        if ( (pindex= komodo_chainactive(height)) != 0 )
+        if ( 1 || (prizefund= prices_blockinfo(height,acaddr)) < 0 )
         {
-            if ( komodo_blockload(block,pindex) == 0 )
-            {
-                n = block.vtx.size();
-                vini = 0;
-                for (i=0; i<n; i++)
-                {
-                    tx = block.vtx[i];
-                    if ( myGetTransaction(tx.vin[vini].prevout.hash,vintx,hashBlock) == 0 )
-                        continue;
-                    else if ( Getscriptaddress(destaddr,vintx.vout[tx.vin[vini].prevout.n].scriptPubKey) == 0 )
-                        continue;
-                    else if ( (numvouts= tx.vout.size()) > 1 && tx.vout[numvouts-1].scriptPubKey[0] == 0x6a )
-                    {
-                        prizefund += tx.vout[0].nValue;
-                        GetOpReturnData(tx.vout[numvouts-1].scriptPubKey,vopret);
-                        E_UNMARSHAL(vopret,ss >> pricebits);
-                        timestamp = (uint32_t)(pricebits >> 32);
-                        uprice = (uint32_t)pricebits;
-                        //if ( strcmp(acaddr,destaddr) == 0 )
-                        //    fprintf(stderr,"REF ");
-                        //fprintf(stderr,"[%02x] i.%d %.8f %llx t%u %.4f numvouts.%d %s lag.%d\n",tx.vout[numvouts-1].scriptPubKey[0],i,(double)tx.vout[0].nValue/COIN,(long long)pricebits,timestamp,(double)uprice/10000,numvouts,destaddr,(int32_t)(pindex->nTime-timestamp));
-                    }
-                }
-                // display bets
-                if ( height <= nextheight-PRICES_BETPERIOD )
-                {
-                    // settle bets
-                }
-                result.push_back(Pair("prizefund",ValueFromAmount(prizefund)));
-                result.push_back(Pair("result","success"));
-            }
-            else
-            {
-                result.push_back(Pair("result","error"));
-                result.push_back(Pair("error","cant load block at height"));
-            }
+            result.push_back(Pair("result","error"));
+            result.push_back(Pair("errorcode",prizefund));
+            result.push_back(Pair("error","blockinfo error"));
         }
         else
         {
-            result.push_back(Pair("result","error"));
-            result.push_back(Pair("error","cant find block at height"));
+            // display bets
+            if ( height <= nextheight-PRICES_BETPERIOD )
+            {
+                // settle bets
+            }
+            result.push_back(Pair("prizefund",ValueFromAmount(prizefund)));
+            result.push_back(Pair("result","success"));
         }
     }
     else
