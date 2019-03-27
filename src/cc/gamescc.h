@@ -24,6 +24,7 @@ extern CWallet* pwalletMain;
 #define GAMES_REGISTRATIONSIZE (100 * 10000)
 #define GAMES_REGISTRATION 1
 
+extern std::string MYCCLIBNAME;
 
 #define MYCCNAME "games"
 
@@ -76,8 +77,6 @@ if ( cp->evalcode == EVAL_GAMES ) \
         return(games_rng(txfee,cp,params)); \
     else if ( strcmp(method,"rngnext") == 0 ) \
         return(games_rngnext(txfee,cp,params)); \
-    else if ( strcmp(method,"settle") == 0 ) \
-        return(games_settle(txfee,cp,params)); \
     else if ( strcmp(method,"newgame") == 0 ) \
         return(games_newgame(txfee,cp,params)); \
     else if ( strcmp(method,"gameinfo") == 0 ) \
@@ -108,6 +107,8 @@ if ( cp->evalcode == EVAL_GAMES ) \
         return(games_fund(txfee,cp,params)); \
     else if ( strcmp(method,"bet") == 0 ) \
         return(games_bet(txfee,cp,params)); \
+    else if ( strcmp(method,"settle") == 0 ) \
+        return(games_settle(txfee,cp,params)); \
     else \
     { \
         result.push_back(Pair("result","error")); \
