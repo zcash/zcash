@@ -1,5 +1,5 @@
 
-#include "tetris.h"
+#include "prices.h"
 
 /*
  In order to port a game into gamesCC, the RNG needs to be seeded with the gametxid seed, also events needs to be broadcast using issue_games_events. Also the game engine needs to be daemonized, preferably by putting all globals into a single data structure.
@@ -13,7 +13,7 @@ int random_tetromino(struct games_state *rs)
     return(rs->seed % NUM_TETROMINOS);
 }
 
-int32_t tetrisdata(struct games_player *P,void *ptr)
+int32_t pricesdata(struct games_player *P,void *ptr)
 {
     tetris_game *tg = (tetris_game *)ptr;
     P->gold = tg->points;
@@ -832,7 +832,7 @@ int32_t issue_games_events(struct games_state *rs,char *gametxidstr,uint32_t eve
     } else return(0);
 }
 
-int tetris(int argc, char **argv)
+int prices(int argc, char **argv)
 {
     struct games_state *rs = &globalR;
     int32_t c,skipcount=0; uint32_t eventid = 0; tetris_game *tg = 0;
