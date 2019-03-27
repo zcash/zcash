@@ -42,12 +42,15 @@ int64_t prices_blockinfo(int32_t height,char *acaddr)
                 {
                     prizefund += tx.vout[0].nValue;
                     GetOpReturnData(tx.vout[numvouts-1].scriptPubKey,vopret);
-                    E_UNMARSHAL(vopret,ss >> pricebits);
-                    timestamp = (uint32_t)(pricebits >> 32);
-                    uprice = (uint32_t)pricebits;
-                    if ( strcmp(acaddr,destaddr) == 0 )
-                        fprintf(stderr,"REF ");
-                    fprintf(stderr,"[%02x] i.%d %.8f %llx t%u %.4f numvouts.%d %s lag.%d\n",tx.vout[numvouts-1].scriptPubKey[0],i,(double)tx.vout[0].nValue/COIN,(long long)pricebits,timestamp,(double)uprice/10000,numvouts,destaddr,(int32_t)(pindex->nTime-timestamp));
+                    if ( vopret.size() == 8 )
+                    {
+                        E_UNMARSHAL(vopret,ss >> pricebits);
+                        timestamp = (uint32_t)(pricebits >> 32);
+                        uprice = (uint32_t)pricebits;
+                        if ( strcmp(acaddr,destaddr) == 0 )
+                            fprintf(stderr,"REF ");
+                        fprintf(stderr,"[%02x] i.%d %.8f %llx t%u %.4f numvouts.%d %s lag.%d\n",tx.vout[numvouts-1].scriptPubKey[0],i,(double)tx.vout[0].nValue/COIN,(long long)pricebits,timestamp,(double)uprice/10000,numvouts,destaddr,(int32_t)(pindex->nTime-timestamp));
+                    } else return(-3);
                 }
             }
             return(prizefund);
