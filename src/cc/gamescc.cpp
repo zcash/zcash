@@ -14,7 +14,11 @@
  ******************************************************************************/
 
 #include "gamescc.h"
-#include "tetris.c" // replace with game code
+#ifdef BUILD_PRICES
+#include "prices.c"
+#elif
+#include "tetris.c"
+#endif
 
 int32_t GAMEDATA(struct games_player *P,void *ptr);
 
@@ -161,8 +165,11 @@ int32_t games_replay2(uint8_t *newdata,uint64_t seed,gamesevent *keystrokes,int3
 }
 
 #ifndef STANDALONE
-
-#include "tetris.cpp" // replace with game specific functions
+#ifdef BUILD_PRICES
+#include "prices.cpp"
+#elif
+#include "tetris.cpp"
+#endif
 
 void GAMEJSON(UniValue &obj,struct games_player *P);
 
