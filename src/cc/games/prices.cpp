@@ -21,7 +21,7 @@ extern uint8_t ASSETCHAINS_OVERRIDE_PUBKEY33[33];
 
 UniValue games_settle(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result; std::vector<uint8_t> vopret; CBlockIndex *pindex; CBlock block; CTransaction tx; uint64_t pricebits; int32_t i,n,numvouts,height,nextheight = komodo_nextheight();
+    UniValue result; std::vector<uint8_t> vopret; CBlockIndex *pindex; CBlock block; CTransaction tx; uint64_t pricebits; uint32_t timestamp,pricebits; int32_t i,n,numvouts,height,nextheight = komodo_nextheight();
     if ( params != 0 && cJSON_GetArraySize(params) == 1 )
     {
         height = juint(jitem(params,0),0);
@@ -38,7 +38,9 @@ UniValue games_settle(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                     {
                         GetOpReturnData(tx.vout[numvouts-1].scriptPubKey,vopret);
                         E_UNMARSHAL(vopret,ss >> pricebits);
-                        fprintf(stderr,"i.%d %.8f %llx\n",i,(double)tx.vout[0].nValue/COIN,(long long)pricebits);
+                        timestamp = (uint32_t)(pricebits >> 32);
+                        uprice = (uint32_t)pricebits;
+                        fprintf(stderr,"[%02x] i.%d %.8f %llx t%u %.4f\n",scriptPubkey[0],i,(double)tx.vout[0].nValue/COIN,(long long)pricebits,timestamp,(double)uprice/10000);
                     }
                 }
                 // display bets
