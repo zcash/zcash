@@ -1461,13 +1461,13 @@ UniValue games_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                     switch ( sizeof(gamesevent) )
                     {
                         case 1:
-                            sprintf(&hexstr[i<<1],"%02x",keystrokes[i]);
+                            sprintf(&hexstr[i<<1],"%02x",(uint8_t)keystrokes[i]);
                             break;
                         case 2:
-                            sprintf(&hexstr[i<<2],"%04x",keystrokes[i]);
+                            sprintf(&hexstr[i<<2],"%04x",(uint16_t)keystrokes[i]);
                             break;
                         case 4:
-                            sprintf(&hexstr[i<<3],"%08x",keystrokes[i]);
+                            sprintf(&hexstr[i<<3],"%08x",(uint32_t)keystrokes[i]);
                             break;
                         case 8:
                             sprintf(&hexstr[i<<4],"%016llxx",(long long)keystrokes[i]);
