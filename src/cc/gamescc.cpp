@@ -1510,15 +1510,8 @@ UniValue games_finish(uint64_t txfee,struct CCcontract_info *cp,cJSON *params,ch
     result.push_back(Pair("method",method));
     result.push_back(Pair("mygamesaddr",mygamesaddr));
     if ( strcmp(method,"bailout") == 0 )
-    {
         funcid = 'Q';
-        //mult = 10; //100000;
-    }
-    else
-    {
-        funcid = 'H';
-        //mult = 20; //200000;
-    }
+    else funcid = 'H';
     if ( params != 0 && (n= cJSON_GetArraySize(params)) > 0 )
     {
         if ( n > 0 )
@@ -1570,13 +1563,13 @@ UniValue games_finish(uint64_t txfee,struct CCcontract_info *cp,cJSON *params,ch
                             fprintf(stderr,"\ncashout %.8f extracted %s\n",(double)cashout/COIN,str);
                             if ( funcid == 'H' && maxplayers > 1 )
                             {
-                                if ( P.amulet == 0 )
+                                /*if ( P.amulet == 0 )
                                 {
                                     if ( numplayers != maxplayers )
                                         return(cclib_error(result,"numplayers != maxplayers"));
                                     else if ( games_playersalive(tmp,tmp,gametxid,maxplayers,gameheight,gametx) > 1 )
                                         return(cclib_error(result,"highlander must be a winner or last one standing"));
-                                }
+                                }*/
                                 cashout += games_buyins(gametxid,maxplayers);//numplayers * buyin;
                             }
                             if ( cashout > 0 )

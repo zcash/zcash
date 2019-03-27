@@ -283,7 +283,7 @@ int32_t rogue_iamregistered(int32_t maxplayers,uint256 gametxid,CTransaction tx,
     return(0);
 }
 
-int64_t rogue_buyins(uint256 gametxid)
+int64_t rogue_buyins(uint256 gametxid,int32_t maxplayers)
 {
     int32_t i,vout; uint256 spenttxid,hashBlock; CTransaction spenttx; int64_t buyins = 0;
     for (i=0; i<maxplayers; i++)
@@ -708,7 +708,7 @@ uint64_t rogue_gamefields(UniValue &obj,int64_t maxplayers,int64_t buyin,uint256
         obj.push_back(Pair("alive",rogue_playersalive(openslots,numplayers,gametxid,maxplayers,ht,tx)));
         obj.push_back(Pair("openslots",openslots));
         obj.push_back(Pair("numplayers",numplayers));
-        obj.push_back(Pair("buyins",ValueFromAmount(rogue_buyins(gametxid))));
+        obj.push_back(Pair("buyins",ValueFromAmount(rogue_buyins(gametxid,maxplayers))));
     }
     obj.push_back(Pair("maxplayers",maxplayers));
     obj.push_back(Pair("buyin",ValueFromAmount(buyin)));
@@ -1114,7 +1114,7 @@ UniValue rogue_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 
 int64_t rogue_cashout(struct rogue_player *P)
 {
-    int32_t dungeonlevel; int64_t mult = 10;
+    int32_t dungeonlevel; int64_t cashout,mult = 10;
     if ( P->amulet != 0 )
         mult *= 5;
     dungeonlevel = P->dungeonlevel;
@@ -1618,7 +1618,7 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
                                 if ( funcid == 'H' )
                                 {
                                     cashout *= 2;
-                                    cashout += rogue_buyins(gametxid);
+                                    cashout += rogue_buyins(gametxid,maxplayers);
                                 }
                                 sprintf(cashstr,"tokentx.(%c) decoded.%d ht.%d txid.%s %.8f vs vout2 %.8f",tokentx,decoded,height,txid.GetHex().c_str(),(double)cashout/COIN,(double)tx.vout[2].nValue/COIN);
                                 if ( strcmp(laststr,cashstr) != 0 )
