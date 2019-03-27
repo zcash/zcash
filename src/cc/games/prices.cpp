@@ -52,16 +52,26 @@ int64_t prices_blockinfo(int32_t height,char *acaddr)
     } else return(-1);
 }
 
-UniValue games_origsettle(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
+UniValue games_settle(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     UniValue result; char acaddr[64]; CPubKey acpk,mypk,gamespk; int64_t prizefund = 0; int32_t height,nextheight = komodo_nextheight();
-    if ( 1 || ASSETCHAINS_OVERRIDE_PUBKEY33[0] == 0 )
+    if ( ASSETCHAINS_OVERRIDE_PUBKEY33[0] == 0 )
     {
         result.push_back(Pair("result","error"));
         result.push_back(Pair("error"," no -ac_pubkey for price reference"));
         return(result);
     }
     mypk = pubkey2pk(Mypubkey());
+    gamespk = GetUnspendable(cp,0);
+    acpk = buf2pk(ASSETCHAINS_OVERRIDE_PUBKEY33);
+    result.push_back(Pair("result","success"));
+    if ( params != 0 && cJSON_GetArraySize(params) == 1 )
+    {
+        height = juint(jitem(params,0),0);
+        result.push_back(Pair("height",(int64_t)height));
+    }
+    return(result);
+    /*mypk = pubkey2pk(Mypubkey());
     gamespk = GetUnspendable(cp,0);
     acpk = buf2pk(ASSETCHAINS_OVERRIDE_PUBKEY33);
     Getscriptaddress(acaddr,CScript() << ParseHex(HexStr(acpk)) << OP_CHECKSIG);
@@ -91,7 +101,7 @@ UniValue games_origsettle(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
         result.push_back(Pair("result","error"));
         result.push_back(Pair("error","couldnt parse"));
     }
-    return(result);
+    return(result);*/
 }
 
 UniValue games_settle(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
@@ -110,7 +120,7 @@ UniValue games_settle(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     result.push_back(Pair("result","success"));
     if ( params != 0 && cJSON_GetArraySize(params) == 1 )
     {
-        //height = juint(jitem(params,0),0);
+        height = juint(jitem(params,0),0);
         result.push_back(Pair("height",(int64_t)height));
     }
     /*if ( params != 0 && cJSON_GetArraySize(params) == 2 )
