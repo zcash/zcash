@@ -185,13 +185,14 @@ void *filestr(long *allocsizep,char *_fname)
 
 char *send_curl(char *url,char *fname)
 {
-    long fsize; char curlstr[1024],*retstr,*retstr2;
-    sprintf(curlstr,"curl --url \"%s\" > %s",url,fname);
-    //retstr2 = bitcoind_RPC(&retstr,(char *)"prices",url,"","","");
-
-    if ( system(curlstr) != 0 )
-        fprintf(stderr,"error doing system(%s)\n",curlstr);
-    return((char *)filestr(&fsize,fname));
+    //long fsize; char curlstr[1024];
+    //sprintf(curlstr,"curl --url \"%s\" > %s",url,fname);
+    char *retstr=0,*retstr2;
+    retstr2 = bitcoind_RPC(&retstr,(char *)"prices",url,"","","");
+    return(retstr2);
+    //if ( system(curlstr) != 0 )
+    //    fprintf(stderr,"error doing system(%s)\n",curlstr);
+    //return((char *)filestr(&fsize,fname));
 }
 
 cJSON *get_urljson(char *url,char *fname)
