@@ -24,7 +24,6 @@ extern CWallet* pwalletMain;
 #define GAMES_REGISTRATIONSIZE (100 * 10000)
 #define GAMES_REGISTRATION 1
 
-extern std::string MYCCLIBNAME;
 
 #define MYCCNAME "games"
 

@@ -52,6 +52,8 @@ std::string MYCCLIBNAME = (char *)"sudoku";
 void komodo_netevent(std::vector<uint8_t> payload) {}
 #endif
 
+extern std::string MYCCLIBNAME;
+
 char *CClib_name() { return((char *)MYCCLIBNAME.c_str()); }
 
 struct CClib_rpcinfo
