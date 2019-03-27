@@ -138,7 +138,7 @@ cJSON *get_urljson(char *url,char *fname)
 uint64_t get_btcusd()
 {
     cJSON *pjson,*bpi,*usd; uint64_t btcusd = 0;
-    if ( (pjson= get_urljson((char *)"http://api.coindesk.com/v1/bpi/currentprice.json","/tmp/oraclefeed.json")) != 0 )
+    if ( (pjson= get_urljson((char *)"http://api.coindesk.com/v1/bpi/currentprice.json",(char *)"/tmp/oraclefeed.json")) != 0 )
     {
         if ( (bpi= jobj(pjson,(char *)"bpi")) != 0 && (usd= jobj(bpi,(char *)"USD")) != 0 )
         {
