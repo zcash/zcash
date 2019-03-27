@@ -59,9 +59,9 @@ int32_t games_payloadrecv(CPubKey pk,uint32_t timestamp,std::vector<uint8_t> pay
         eventid |= (uint32_t)payload[len+33] << 8;
         eventid |= (uint32_t)payload[len+34] << 16;
         eventid |= (uint32_t)payload[len+35] << 24;
-        //for (i=0; i<len; i++)
-        //    fprintf(stderr,"%02x",payload[i]);
-        //fprintf(stderr," got payload, from %s %s/e%d\n",pubkey33_str(str,(uint8_t *)&pk),gametxid.GetHex().c_str(),eventid);
+        for (i=0; i<len; i++)
+            fprintf(stderr,"%02x",payload[i]);
+        fprintf(stderr," got payload, from %s %s/e%d\n",pubkey33_str(str,(uint8_t *)&pk),gametxid.GetHex().c_str(),eventid);
         return(0);
     } else return(-1);
 }
