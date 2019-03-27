@@ -21,10 +21,11 @@ extern uint8_t ASSETCHAINS_OVERRIDE_PUBKEY33[33];
 
 UniValue games_settle(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result; std::vector<uint8_t> vopret; CBlockIndex *pindex; CBlock block; CTransaction tx; uint64_t pricebits; uint32_t timestamp,uprice; CPubKey acpk,mypk,gamespk; int32_t i,n,numvouts,height,nextheight = komodo_nextheight();
+    UniValue result; std::vector<uint8_t> vopret; CBlockIndex *pindex; CBlock block; CTransaction tx; uint64_t pricebits; char acaddr[64],destaddr[64]; uint32_t timestamp,uprice; CPubKey acpk,mypk,gamespk; uint256 hashBlock; int64_t prizefund = 0; int32_t i,n,vini,numvouts,height,nextheight = komodo_nextheight();
     mypk = pubkey2pk(Mypubkey());
     gamespk = GetUnspendable(cp,0);
     acpk = buf2pk(ASSETCHAINS_OVERRIDE_PUBKEY33);
+    Getscriptaddress(acaddr,CScript() << ParseHex(HexStr(acpk)) << OP_CHECKSIG);
     if ( params != 0 && cJSON_GetArraySize(params) == 1 )
     {
         height = juint(jitem(params,0),0);
@@ -34,16 +35,24 @@ UniValue games_settle(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             if ( komodo_blockload(block,pindex) == 0 )
             {
                 n = block.vtx.size();
+                vini = 0;
                 for (i=0; i<n; i++)
                 {
                     tx = block.vtx[i];
-                    if ( (numvouts= tx.vout.size()) > 1 && tx.vout[numvouts-1].scriptPubKey[0] == 0x6a )
+                    if ( myGetTransaction(tx.vin[vini].prevout.hash,vintx,hashBlock) == 0 )
+                        continue;
+                    else if ( Getscriptaddress(destaddr,vintx.vout[tx.vin[vini].prevout.n].scriptPubKey) == 0 )
+                        continue;
+                    else if ( (numvouts= tx.vout.size()) > 1 && tx.vout[numvouts-1].scriptPubKey[0] == 0x6a )
                     {
+                        prizefund += tx.vout[0].nValue;
                         GetOpReturnData(tx.vout[numvouts-1].scriptPubKey,vopret);
                         E_UNMARSHAL(vopret,ss >> pricebits);
                         timestamp = (uint32_t)(pricebits >> 32);
                         uprice = (uint32_t)pricebits;
-                        fprintf(stderr,"[%02x] i.%d %.8f %llx t%u %.4f numvouts.%d\n",tx.vout[numvouts-1].scriptPubKey[0],i,(double)tx.vout[0].nValue/COIN,(long long)pricebits,timestamp,(double)uprice/10000,numvouts);
+                        if ( strcmp(acaddr,destaddr) == 0 )
+                            fprintf(stderr,"REF ");
+                        fprintf(stderr,"[%02x] i.%d %.8f %llx t%u %.4f numvouts.%d %s lag.%d\n",tx.vout[numvouts-1].scriptPubKey[0],i,(double)tx.vout[0].nValue/COIN,(long long)pricebits,timestamp,(double)uprice/10000,numvouts,destaddr,(int32_t)(pindex->nTime-timestamp));
                     }
                 }
                 // display bets
@@ -51,6 +60,7 @@ UniValue games_settle(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                 {
                     // settle bets
                 }
+                result.push_back(Pair("prizefund",ValueToAmount(prizefund)));
                 result.push_back(Pair("result","success"));
             }
             else
