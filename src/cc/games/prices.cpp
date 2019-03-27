@@ -19,7 +19,7 @@ UniValue games_rawtxresult(UniValue &result,std::string rawtx,int32_t broadcastf
 UniValue games_pricedata(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); std::string rawtx; int64_t amount,inputsum,price; CPubKey mypk;
+    UniValue result(UniValue::VOBJ); std::string rawtx; int64_t amount,inputsum,price; CPubKey gamespk,mypk;
     if ( params != 0 && cJSON_GetArraySize(params) == 2 )
     {
         amount = jdouble(jitem(params,0),0) * COIN + 0.0000000049;
