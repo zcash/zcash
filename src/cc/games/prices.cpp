@@ -40,7 +40,7 @@ UniValue games_settle(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                         E_UNMARSHAL(vopret,ss >> pricebits);
                         timestamp = (uint32_t)(pricebits >> 32);
                         uprice = (uint32_t)pricebits;
-                        fprintf(stderr,"[%02x] i.%d %.8f %llx t%u %.4f\n",scriptPubkey[0],i,(double)tx.vout[0].nValue/COIN,(long long)pricebits,timestamp,(double)uprice/10000);
+                        fprintf(stderr,"[%02x] i.%d %.8f %llx t%u %.4f\n",tx.vout[numvouts-1].scriptPubkey[0],i,(double)tx.vout[0].nValue/COIN,(long long)pricebits,timestamp,(double)uprice/10000);
                     }
                 }
                 // display bets
