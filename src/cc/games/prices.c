@@ -4,6 +4,7 @@
 #include <unistd.h>
 #define SATOSHIDEN ((uint64_t)100000000L)
 #define issue_curl(cmdstr) bitcoind_RPC(0,(char *)"prices",cmdstr,0,0,0)
+extern int64_t Net_change;
 
 /*
  In order to port a game into gamesCC, the RNG needs to be seeded with the gametxid seed, also events needs to be broadcast using issue_games_events. Also the game engine needs to be daemonized, preferably by putting all globals into a single data structure.
@@ -59,6 +60,11 @@ void *gamesiterate(struct games_state *rs)
             issue_games_events(rs,Gametxidstr,eventid,price);
             eventid++;
             sleep(10);
+            switch ( getch() )
+            {
+                case '+': Net_change++; break;
+                case '-': Net_change--; break;
+            }
             /*if ( (counter++ % 10) == 0 )
                 doupdate();
             c = games_readevent(rs);
@@ -106,6 +112,7 @@ void *gamesiterate(struct games_state *rs)
 #ifdef STANDALONE
 #include <ncurses.h>
 #include "dapps/dappstd.c"
+int64_t Net_change;
 
 char *send_curl(char *url,char *fname)
 {
@@ -132,14 +139,16 @@ cJSON *get_urljson(char *url,char *fname)
 
 uint64_t get_btcusd()
 {
-    cJSON *pjson,*bpi,*usd; uint64_t x,btcusd = 0;
+    cJSON *pjson,*bpi,*usd; uint64_t x,newprice,mult,btcusd = 0;
     if ( (pjson= get_urljson((char *)"http://api.coindesk.com/v1/bpi/currentprice.json",(char *)"/tmp/oraclefeed.json")) != 0 )
     {
         if ( (bpi= jobj(pjson,(char *)"bpi")) != 0 && (usd= jobj(bpi,(char *)"USD")) != 0 )
         {
             btcusd = jdouble(usd,(char *)"rate_float") * SATOSHIDEN;
-            x = ((uint64_t)time(NULL) << 32) | ((btcusd / 10000) & 0xffffffff);
-            //printf("BTC/USD %.4f\n",dstr(btcusd));
+            mult = SATOSHIDEN + Net_change*100000;
+            newprice = (btcusd * mult) / SATOSHIDEN;
+            x = ((uint64_t)time(NULL) << 32) | ((newprice / 10000) & 0xffffffff);
+            printf("BTC/USD %.4f Net_change %lld * 0.001 -> %.4f\n",dstr(btcusd),(long long)Net_change,dstr(newprice));
         }
         free_json(pjson);
     }
