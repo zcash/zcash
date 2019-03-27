@@ -28,6 +28,7 @@ UniValue games_bet(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             result.push_back(Pair("result","error"));
             result.push_back(Pair("error","couldnt parsehash"));
         }
+        fprintf(stderr,"amount %llu price %llx\n",(long long)amount,(long long)price);
         mypk = pubkey2pk(Mypubkey());
         gamespk = GetUnspendable(cp,0);
         if ( (inputsum= AddNormalinputs(mtx,mypk,amount+GAMES_TXFEE,64)) >= amount+GAMES_TXFEE )
