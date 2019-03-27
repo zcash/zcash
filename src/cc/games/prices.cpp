@@ -21,7 +21,7 @@ extern uint8_t ASSETCHAINS_OVERRIDE_PUBKEY33[33];
 
 UniValue games_settle(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result; std::vector<uint8_t> vopret; CBlockIndex *pindex; CBlock block; CTransaction tx; uint64_t pricebits; uint32_t timestamp,pricebits; int32_t i,n,numvouts,height,nextheight = komodo_nextheight();
+    UniValue result; std::vector<uint8_t> vopret; CBlockIndex *pindex; CBlock block; CTransaction tx; uint64_t pricebits; uint32_t timestamp,uprice; int32_t i,n,numvouts,height,nextheight = komodo_nextheight();
     if ( params != 0 && cJSON_GetArraySize(params) == 1 )
     {
         height = juint(jitem(params,0),0);
