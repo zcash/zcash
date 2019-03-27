@@ -138,7 +138,7 @@ uint64_t get_btcusd()
         if ( (bpi= jobj(pjson,(char *)"bpi")) != 0 && (usd= jobj(bpi,(char *)"USD")) != 0 )
         {
             btcusd = jdouble(usd,(char *)"rate_float") * SATOSHIDEN;
-            x = ((uint64_t)time(NULL) << 32) | (btcusd / 10000);
+            x = ((uint64_t)time(NULL) << 32) | ((btcusd / 10000) & 0xffffffff);
             //printf("BTC/USD %.4f\n",dstr(btcusd));
         }
         free_json(pjson);

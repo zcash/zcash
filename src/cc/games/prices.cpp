@@ -17,7 +17,7 @@
 
 void prices_update(uint32_t timestamp,uint32_t uprice)
 {
-    fprintf(stderr,"t%u %.4f\n",timestamp,(double)uprice/1000);
+    fprintf(stderr,"t%u %.4f\n",timestamp,(double)uprice/10000);
 }
 
 // game specific code for daemon
