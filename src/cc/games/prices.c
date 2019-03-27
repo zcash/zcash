@@ -190,6 +190,10 @@ char *send_curl(char *url,char *fname)
     //sprintf(curlstr,"curl --url \"%s\" > %s",url,fname);
     char *retstr=0,*retstr2;
     retstr2 = bitcoind_RPC(&retstr,(char *)"prices",url,(char *)"",(char *)"",(char *)"");
+    if ( retstr2 != 0 )
+        printf("retstr2 (%s)\n",retstr2);
+    if ( retstr != 0 )
+        printf("retstr (%s)\n",retstr);
     return(retstr2);
     //if ( system(curlstr) != 0 )
     //    fprintf(stderr,"error doing system(%s)\n",curlstr);
@@ -201,7 +205,7 @@ cJSON *get_urljson(char *url,char *fname)
     char *jsonstr; cJSON *json = 0;
     if ( (jsonstr= send_curl(url,fname)) != 0 )
     {
-        //printf("(%s) -> (%s)\n",url,jsonstr);
+        printf("(%s) -> (%s)\n",url,jsonstr);
         json = cJSON_Parse(jsonstr);
         free(jsonstr);
     }
