@@ -1731,7 +1731,7 @@ UniValue games_fund(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             {
                 mtx.vout.push_back(MakeCC1vout(cp->evalcode,amount,gamespk));
                 rawtx = FinalizeCCTx(0,cp,mtx,mypk,GAMES_TXFEE,opret);
-                return(games_rawtxresult(result,rawtx,1));
+                return(games_rawtxresult(resulft,rawtx,1));
             }
             else
             {

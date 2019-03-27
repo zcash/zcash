@@ -66,6 +66,12 @@ int32_t games_payloadrecv(CPubKey pk,uint32_t timestamp,std::vector<uint8_t> pay
     } else return(-1);
 }
 
+UniValue games_oracledata(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
+{
+    UniValue result;
+    return(result);
+}
+
 bool games_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx)
 {
     return(true);

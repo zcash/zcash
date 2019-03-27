@@ -12,12 +12,6 @@
 #define issue_curl(cmdstr) bitcoind_RPC(0,(char *)"prices",cmdstr,0,0,0)
 extern int64_t Net_change;
 
-/*
- In order to port a game into gamesCC, the RNG needs to be seeded with the gametxid seed, also events needs to be broadcast using issue_games_events. Also the game engine needs to be daemonized, preferably by putting all globals into a single data structure.
- 
- also, the standalone game needs to support argv of seed gametxid, along with replay args
- */
-
 int random_tetromino(struct games_state *rs)
 {
     rs->seed = _games_rngnext(rs->seed);
