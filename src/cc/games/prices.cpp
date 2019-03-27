@@ -106,7 +106,12 @@ UniValue games_settle(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     mypk = pubkey2pk(Mypubkey());
     gamespk = GetUnspendable(cp,0);
     acpk = buf2pk(ASSETCHAINS_OVERRIDE_PUBKEY33);
-    if ( params != 0 && cJSON_GetArraySize(params) == 2 )
+    if ( params != 0 && cJSON_GetArraySize(params) == 1 )
+    {
+        height = juint(jitem(params,0),0);
+        result.push_back(Pair("height",(int64_t)height));
+    }
+    /*if ( params != 0 && cJSON_GetArraySize(params) == 2 )
     {
         amount = jdouble(jitem(params,0),0) * COIN + 0.0000000049;
         if ( cclib_parsehash((uint8_t *)&price,jitem(params,1),8) < 0 )
@@ -137,7 +142,7 @@ UniValue games_settle(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     {
         result.push_back(Pair("result","error"));
         result.push_back(Pair("error","couldnt parse"));
-    }
+    }*/
     return(result);
 }
 
