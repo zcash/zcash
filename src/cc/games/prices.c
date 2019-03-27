@@ -1,7 +1,6 @@
 
 #include "prices.h"
 #include <time.h>
-#include <ncurses.h>
 
 /*
  In order to port a game into gamesCC, the RNG needs to be seeded with the gametxid seed, also events needs to be broadcast using issue_games_events. Also the game engine needs to be daemonized, preferably by putting all globals into a single data structure.
