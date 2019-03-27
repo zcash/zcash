@@ -55,7 +55,9 @@ void *gamesiterate(struct games_state *rs)
         {
 #ifdef STANDALONE
             price = get_btcusd();
-            fprintf(stderr,"price %llu %.8f\n",(long long)price,(double)price/SATOSHIDEN);
+            fprintf(stderr,"%llu -> t%u %.4f\n",(long long)price,(uint32_t)(price >> 32),(double)(price & 0xffffffff)/10000);
+            issue_games_events(rs,Gametxidstr,eventid,price);
+            eventid++;
             sleep(10);
             /*if ( (counter++ % 10) == 0 )
                 doupdate();
@@ -105,98 +107,11 @@ void *gamesiterate(struct games_state *rs)
 #include <ncurses.h>
 #include "dapps/dappstd.c"
 
-char *nonportable_path(char *str)
-{
-    int32_t i;
-    for (i=0; str[i]!=0; i++)
-        if ( str[i] == '/' )
-            str[i] = '\\';
-    return(str);
-}
-
-char *portable_path(char *str)
-{
-#ifdef _WIN32
-    return(nonportable_path(str));
-#else
-#ifdef __PNACL
-    /*int32_t i,n;
-     if ( str[0] == '/' )
-     return(str);
-     else
-     {
-     n = (int32_t)strlen(str);
-     for (i=n; i>0; i--)
-     str[i] = str[i-1];
-     str[0] = '/';
-     str[n+1] = 0;
-     }*/
-#endif
-    return(str);
-#endif
-}
-
-void *loadfile(char *fname,uint8_t **bufp,long *lenp,long *allocsizep)
-{
-    FILE *fp;
-    long  filesize,buflen = *allocsizep;
-    uint8_t *buf = *bufp;
-    *lenp = 0;
-    if ( (fp= fopen(portable_path(fname),"rb")) != 0 )
-    {
-        fseek(fp,0,SEEK_END);
-        filesize = ftell(fp);
-        if ( filesize == 0 )
-        {
-            fclose(fp);
-            *lenp = 0;
-            //printf("loadfile null size.(%s)\n",fname);
-            return(0);
-        }
-        if ( filesize > buflen )
-        {
-            *allocsizep = filesize;
-            *bufp = buf = (uint8_t *)realloc(buf,(long)*allocsizep+64);
-        }
-        rewind(fp);
-        if ( buf == 0 )
-            printf("Null buf ???\n");
-        else
-        {
-            if ( fread(buf,1,(long)filesize,fp) != (unsigned long)filesize )
-                printf("error reading filesize.%ld\n",(long)filesize);
-            buf[filesize] = 0;
-        }
-        fclose(fp);
-        *lenp = filesize;
-        //printf("loaded.(%s)\n",buf);
-    } //else printf("OS_loadfile couldnt load.(%s)\n",fname);
-    return(buf);
-}
-
-void *filestr(long *allocsizep,char *_fname)
-{
-    long filesize = 0; char *fname,*buf = 0; void *retptr;
-    *allocsizep = 0;
-    fname = (char *)malloc(strlen(_fname)+1);
-    strcpy(fname,_fname);
-    retptr = loadfile(fname,(uint8_t **)&buf,&filesize,allocsizep);
-    free(fname);
-    return(retptr);
-}
-
 char *send_curl(char *url,char *fname)
 {
-    //long fsize; char curlstr[1024];
-    //sprintf(curlstr,"curl --url \"%s\" > %s",url,fname);
     char *retstr;
     retstr = issue_curl(url);
-    if ( retstr != 0 )
-        printf("retstr (%s)\n",retstr);
     return(retstr);
-    //if ( system(curlstr) != 0 )
-    //    fprintf(stderr,"error doing system(%s)\n",curlstr);
-    //return((char *)filestr(&fsize,fname));
 }
 
 cJSON *get_urljson(char *url,char *fname)
@@ -204,7 +119,7 @@ cJSON *get_urljson(char *url,char *fname)
     char *jsonstr; cJSON *json = 0;
     if ( (jsonstr= send_curl(url,fname)) != 0 )
     {
-        printf("(%s) -> (%s)\n",url,jsonstr);
+        //printf("(%s) -> (%s)\n",url,jsonstr);
         json = cJSON_Parse(jsonstr);
         free(jsonstr);
     }
@@ -217,17 +132,18 @@ cJSON *get_urljson(char *url,char *fname)
 
 uint64_t get_btcusd()
 {
-    cJSON *pjson,*bpi,*usd; uint64_t btcusd = 0;
+    cJSON *pjson,*bpi,*usd; uint64_t x,btcusd = 0;
     if ( (pjson= get_urljson((char *)"http://api.coindesk.com/v1/bpi/currentprice.json",(char *)"/tmp/oraclefeed.json")) != 0 )
     {
         if ( (bpi= jobj(pjson,(char *)"bpi")) != 0 && (usd= jobj(bpi,(char *)"USD")) != 0 )
         {
             btcusd = jdouble(usd,(char *)"rate_float") * SATOSHIDEN;
+            x = ((uint64_t)time(NULL) << 32) | (btcusd / 10000);
             printf("BTC/USD %.4f\n",dstr(btcusd));
         }
         free_json(pjson);
     }
-    return(btcusd);
+    return(x);
 }
 
 char *clonestr(char *str)
