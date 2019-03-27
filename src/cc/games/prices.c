@@ -148,7 +148,7 @@ cJSON *get_urljson(char *url,char *fname)
 
 uint64_t get_btcusd()
 {
-    cJSON *pjson,*bpi,*usd; uint64_t x,newprice,mult,btcusd = 0;
+    cJSON *pjson,*bpi,*usd; char str[512]; uint64_t x,newprice,mult,btcusd = 0;
     if ( (pjson= get_urljson((char *)"http://api.coindesk.com/v1/bpi/currentprice.json",(char *)"/tmp/oraclefeed.json")) != 0 )
     {
         if ( (bpi= jobj(pjson,(char *)"bpi")) != 0 && (usd= jobj(bpi,(char *)"USD")) != 0 )
@@ -157,7 +157,10 @@ uint64_t get_btcusd()
             mult = 10000 + Net_change*10;
             newprice = (btcusd * mult) / 10000;
             x = ((uint64_t)time(NULL) << 32) | ((newprice / 10000) & 0xffffffff);
-            fprintf(stderr,"BTC/USD %.4f Net_change %lld * 0.001 -> %.4f\n",dstr(btcusd),(long long)Net_change,dstr(newprice));
+            sprintf(str,"BTC/USD %.4f Net_change %lld * 0.001 -> %.4f\n",dstr(btcusd),(long long)Net_change,dstr(newprice));
+            mvaddstr(0, 0, str);
+            clrtoeol();
+            refresh();
         }
         free_json(pjson);
     }
