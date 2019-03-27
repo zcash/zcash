@@ -15,9 +15,9 @@
 
 #include "gamescc.h"
 #ifdef BUILD_PRICES
-#include "prices.c"
+#include "games/prices.c"
 #else
-#include "tetris.c"
+#include "games/tetris.c"
 #endif
 
 int32_t GAMEDATA(struct games_player *P,void *ptr);
@@ -166,9 +166,9 @@ int32_t games_replay2(uint8_t *newdata,uint64_t seed,gamesevent *keystrokes,int3
 
 #ifndef STANDALONE
 #ifdef BUILD_PRICES
-#include "prices.cpp"
+#include "games/prices.cpp"
 #else
-#include "tetris.cpp"
+#include "games/tetris.cpp"
 #endif
 
 void GAMEJSON(UniValue &obj,struct games_player *P);
