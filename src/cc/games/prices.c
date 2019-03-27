@@ -31,6 +31,37 @@ void sleep_milli(int milliseconds)
     nanosleep(&ts, NULL);
 }
 
+char *nonportable_path(char *str)
+{
+    int32_t i;
+    for (i=0; str[i]!=0; i++)
+        if ( str[i] == '/' )
+            str[i] = '\\';
+    return(str);
+}
+
+char *portable_path(char *str)
+{
+#ifdef _WIN32
+    return(nonportable_path(str));
+#else
+#ifdef __PNACL
+    /*int32_t i,n;
+     if ( str[0] == '/' )
+     return(str);
+     else
+     {
+     n = (int32_t)strlen(str);
+     for (i=n; i>0; i--)
+     str[i] = str[i-1];
+     str[0] = '/';
+     str[n+1] = 0;
+     }*/
+#endif
+    return(str);
+#endif
+}
+
 void *loadfile(char *fname,uint8_t **bufp,long *lenp,long *allocsizep)
 {
     FILE *fp;
@@ -73,7 +104,7 @@ void *filestr(long *allocsizep,char *_fname)
 {
     long filesize = 0; char *fname,*buf = 0; void *retptr;
     *allocsizep = 0;
-    fname = malloc(strlen(_fname)+1);
+    fname = (char *)malloc(strlen(_fname)+1);
     strcpy(fname,_fname);
     retptr = loadfile(fname,(uint8_t **)&buf,&filesize,allocsizep);
     free(fname);
