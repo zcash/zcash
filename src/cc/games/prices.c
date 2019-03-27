@@ -116,7 +116,7 @@ char *send_curl(char *url,char *fname)
     long fsize; char curlstr[1024];
     sprintf(curlstr,"curl --url \"%s\" > %s",url,fname);
     system(curlstr);
-    return(filestr(&fsize,fname));
+    return((char *)filestr(&fsize,fname));
 }
 
 cJSON *get_urljson(char *url,char *fname)
@@ -138,11 +138,11 @@ cJSON *get_urljson(char *url,char *fname)
 uint64_t get_btcusd()
 {
     cJSON *pjson,*bpi,*usd; uint64_t btcusd = 0;
-    if ( (pjson= get_urljson("http://api.coindesk.com/v1/bpi/currentprice.json","/tmp/oraclefeed.json")) != 0 )
+    if ( (pjson= get_urljson((char *)"http://api.coindesk.com/v1/bpi/currentprice.json","/tmp/oraclefeed.json")) != 0 )
     {
-        if ( (bpi= jobj(pjson,"bpi")) != 0 && (usd= jobj(bpi,"USD")) != 0 )
+        if ( (bpi= jobj(pjson,(char *)"bpi")) != 0 && (usd= jobj(bpi,(char *)"USD")) != 0 )
         {
-            btcusd = jdouble(usd,"rate_float") * SATOSHIDEN;
+            btcusd = jdouble(usd,(char *)"rate_float") * SATOSHIDEN;
             printf("BTC/USD %.4f\n",dstr(btcusd));
         }
         free_json(pjson);
@@ -197,8 +197,6 @@ void *gamesiterate(struct games_state *rs)
             if ( rs->sleeptime != 0 )
             {
                 sleep_milli(1);
-                if ( (counter++ % 20) == 0 )
-                    doupdate();
             }
             /*if ( skipcount == 0 )
             {
