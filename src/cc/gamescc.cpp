@@ -477,7 +477,9 @@ int32_t games_event(uint32_t timestamp,uint256 gametxid,int32_t eventid,std::vec
         games_payloadrecv(mypk,timestamp,payload);
         komodo_sendmessage(4,8,"events",vopret);
         return(0);
-    } else return(-1);
+    }
+    fprintf(stderr,"games_eventsign error\n");
+    return(-1);
 }
 
 UniValue games_events(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
