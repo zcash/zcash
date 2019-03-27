@@ -68,6 +68,7 @@ void *gamesiterate(struct games_state *rs)
             //fprintf(stderr,"%llu -> t%u %.4f\n",(long long)price,(uint32_t)(price >> 32),(double)(price & 0xffffffff)/10000);
             issue_games_events(rs,Gametxidstr,eventid,price);
             eventid++;
+            doupdate();
             sleep(10);
             switch ( getch() )
             {
@@ -160,7 +161,7 @@ uint64_t get_btcusd()
             sprintf(str,"BTC/USD %.4f Net_change %lld * 0.001 -> %.4f\n",dstr(btcusd),(long long)Net_change,dstr(newprice));
             mvaddstr(0, 0, str);
             clrtoeol();
-            refresh();
+            doupdate();
         }
         free_json(pjson);
     }
