@@ -96,7 +96,7 @@ UniValue games_origsettle(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
 UniValue games_settle(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); std::string rawtx; int64_t amount,inputsum; uint64_t price; CPubKey gamespk,mypk,acpk;
+    UniValue result(UniValue::VOBJ); std::string rawtx; int64_t amount,inputsum; uint64_t price; CPubKey gamespk,mypk,acpk; int32_t height;
     if ( ASSETCHAINS_OVERRIDE_PUBKEY33[0] == 0 )
     {
         result.push_back(Pair("result","error"));
