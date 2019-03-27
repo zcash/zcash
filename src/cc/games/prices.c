@@ -54,6 +54,7 @@ void *gamesiterate(struct games_state *rs)
         initscr();             // initialize curses
         cbreak();              // pass key presses to program, but not signals
         noecho();              // don't echo key presses to screen
+        timeout(0); 
     }
     while ( running != 0 )
     {
