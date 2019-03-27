@@ -3,7 +3,7 @@
 #include <time.h>
 #include <unistd.h>
 #define SATOSHIDEN ((uint64_t)100000000L)
-#define issue_curl(cmdstr) bitcoind_RPC(0,"prices",cmdstr,0,0,0,0)
+#define issue_curl(cmdstr) bitcoind_RPC(0,"prices",cmdstr,0,0,0)
 
 /*
  In order to port a game into gamesCC, the RNG needs to be seeded with the gametxid seed, also events needs to be broadcast using issue_games_events. Also the game engine needs to be daemonized, preferably by putting all globals into a single data structure.
