@@ -16,7 +16,7 @@
 #include "gamescc.h"
 #ifdef BUILD_PRICES
 #include "prices.c"
-#elif
+#else
 #include "tetris.c"
 #endif
 
@@ -167,7 +167,7 @@ int32_t games_replay2(uint8_t *newdata,uint64_t seed,gamesevent *keystrokes,int3
 #ifndef STANDALONE
 #ifdef BUILD_PRICES
 #include "prices.cpp"
-#elif
+#else
 #include "tetris.cpp"
 #endif
 
