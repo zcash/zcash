@@ -22,8 +22,8 @@ void games_packitemstr(char *packitemstr,struct games_packitem *item)
 
 int64_t games_cashout(struct games_player *P)
 {
-    int32_t dungeonlevel = P->dungeonlevel; int64_t mult=1000,cashout = 0;
-    cashout = (uint64_t)P->gold * mult * dungeonlevel * dungeonlevel;
+    int32_t dungeonlevel = P->dungeonlevel; int64_t mult=10000,cashout = 0;
+    cashout = (uint64_t)P->gold * mult;
     return(cashout);
 }
 

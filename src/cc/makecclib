@@ -1,5 +1,5 @@
 #!/bin/sh
-rm *.so rogue/rogue tetris
+rm *.so rogue/rogue games/tetris games/prices
 
 echo rogue
 make -f Makefile_rogue
