@@ -30,7 +30,7 @@ UniValue games_settle(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
         {
             if ( komodo_blockload(block,pindex) == 0 )
             {
-                n = pindex->block.vtx.size();
+                n = block.vtx.size();
                 for (i=0; i<n; i++)
                 {
                     tx = block.vtx[i];
