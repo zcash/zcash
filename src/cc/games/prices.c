@@ -31,6 +31,77 @@ void sleep_milli(int milliseconds)
     nanosleep(&ts, NULL);
 }
 
+struct games_state globalR;
+extern char Gametxidstr[];
+int32_t issue_games_events(struct games_state *rs,char *gametxidstr,uint32_t eventid,gamesevent c);
+uint64_t get_btcusd();
+
+void *gamesiterate(struct games_state *rs)
+{
+    bool running = true; uint32_t eventid = 0; int64_t price;
+    if ( rs->guiflag != 0 || rs->sleeptime != 0 )
+    {
+    }
+    while ( running != 0 )
+    {
+        //running = tg_tick(rs,tg,move);
+        if ( rs->guiflag != 0 || rs->sleeptime != 0 )
+        {
+        }
+        if ( rs->guiflag != 0 )
+        {
+#ifdef STANDALONE
+            sleep_milli(10000);
+            price = get_btcusd();
+            fprintf(stderr,"price %llu %.8f\n",(long long)price,(double)price/COIN);
+            /*if ( (counter++ % 10) == 0 )
+                doupdate();
+            c = games_readevent(rs);
+            if ( c <= 0x7f || skipcount == 0x3fff )
+            {
+                if ( skipcount > 0 )
+                    issue_games_events(rs,Gametxidstr,eventid-skipcount,skipcount | 0x4000);
+                if ( c <= 0x7f )
+                    issue_games_events(rs,Gametxidstr,eventid,c);
+                if ( tg->level != prevlevel )
+                {
+                    flushkeystrokes(rs,0);
+                    prevlevel = tg->level;
+                }
+                skipcount = 0;
+            } else skipcount++;*/
+#endif
+        }
+        else
+        {
+            if ( rs->replaydone != 0 )
+                break;
+            if ( rs->sleeptime != 0 )
+            {
+                sleep_milli(1);
+            }
+            /*if ( skipcount == 0 )
+            {
+                c = games_readevent(rs);
+                //fprintf(stderr,"%04x score.%d level.%d\n",c,tg->points,tg->level);
+                if ( (c & 0x4000) == 0x4000 )
+                {
+                    skipcount = (c & 0x3fff);
+                    c = 'S';
+                }
+            }
+            if ( skipcount > 0 )
+                skipcount--;*/
+        }
+        eventid++;
+    }
+    return(0);
+}
+
+#ifdef STANDALONE
+#include <ncurses.h>
+#include "dapps/dappstd.c"
+
 char *nonportable_path(char *str)
 {
     int32_t i;
@@ -149,77 +220,6 @@ uint64_t get_btcusd()
     }
     return(btcusd);
 }
-
-struct games_state globalR;
-extern char Gametxidstr[];
-int32_t issue_games_events(struct games_state *rs,char *gametxidstr,uint32_t eventid,gamesevent c);
-
-void *gamesiterate(struct games_state *rs)
-{
-    bool running = true; uint32_t eventid = 0; int64_t price;
-    if ( rs->guiflag != 0 || rs->sleeptime != 0 )
-    {
-    }
-    while ( running != 0 )
-    {
-        //running = tg_tick(rs,tg,move);
-        if ( rs->guiflag != 0 || rs->sleeptime != 0 )
-        {
-        }
-        if ( rs->guiflag != 0 )
-        {
-#ifdef STANDALONE
-            sleep_milli(10000);
-            price = get_btcusd();
-            fprintf(stderr,"price %llu %.8f\n",(long long)price,(double)price/COIN);
-            /*if ( (counter++ % 10) == 0 )
-                doupdate();
-            c = games_readevent(rs);
-            if ( c <= 0x7f || skipcount == 0x3fff )
-            {
-                if ( skipcount > 0 )
-                    issue_games_events(rs,Gametxidstr,eventid-skipcount,skipcount | 0x4000);
-                if ( c <= 0x7f )
-                    issue_games_events(rs,Gametxidstr,eventid,c);
-                if ( tg->level != prevlevel )
-                {
-                    flushkeystrokes(rs,0);
-                    prevlevel = tg->level;
-                }
-                skipcount = 0;
-            } else skipcount++;*/
-#endif
-        }
-        else
-        {
-            if ( rs->replaydone != 0 )
-                break;
-            if ( rs->sleeptime != 0 )
-            {
-                sleep_milli(1);
-            }
-            /*if ( skipcount == 0 )
-            {
-                c = games_readevent(rs);
-                //fprintf(stderr,"%04x score.%d level.%d\n",c,tg->points,tg->level);
-                if ( (c & 0x4000) == 0x4000 )
-                {
-                    skipcount = (c & 0x3fff);
-                    c = 'S';
-                }
-            }
-            if ( skipcount > 0 )
-                skipcount--;*/
-        }
-        eventid++;
-    }
-    return(0);
-}
-
-#ifdef STANDALONE
-#include <ncurses.h>
-#include "dapps/dappstd.c"
-
 
 char *clonestr(char *str)
 {
