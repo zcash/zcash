@@ -53,7 +53,7 @@ void *gamesiterate(struct games_state *rs)
 #ifdef STANDALONE
             sleep_milli(10000);
             price = get_btcusd();
-            fprintf(stderr,"price %llu %.8f\n",(long long)price,(double)price/COIN);
+            fprintf(stderr,"price %llu %.8f\n",(long long)price,(double)price/SATOSHIDEN);
             /*if ( (counter++ % 10) == 0 )
                 doupdate();
             c = games_readevent(rs);
@@ -184,9 +184,12 @@ void *filestr(long *allocsizep,char *_fname)
 
 char *send_curl(char *url,char *fname)
 {
-    long fsize; char curlstr[1024];
+    long fsize; char curlstr[1024],*retstr,*retstr2;
     sprintf(curlstr,"curl --url \"%s\" > %s",url,fname);
-    system(curlstr);
+    //retstr2 = bitcoind_RPC(&retstr,(char *)"prices",url,"","","");
+
+    if ( system(curlstr) != 0 )
+        fprintf(stderr,"error doing system(%s)\n",curlstr);
     return((char *)filestr(&fsize,fname));
 }
 
