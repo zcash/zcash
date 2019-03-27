@@ -51,6 +51,9 @@ void *gamesiterate(struct games_state *rs)
     bool running = true; uint32_t eventid = 0; int64_t price;
     if ( rs->guiflag != 0 || rs->sleeptime != 0 )
     {
+        initscr();             // initialize curses
+        cbreak();              // pass key presses to program, but not signals
+        noecho();              // don't echo key presses to screen
     }
     while ( running != 0 )
     {
