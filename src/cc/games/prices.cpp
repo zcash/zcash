@@ -19,17 +19,20 @@ UniValue games_rawtxresult(UniValue &result,std::string rawtx,int32_t broadcastf
 UniValue games_pricedata(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); std::string rawtx; int64_t inputsum,price; CPubKey mypk;
-    if ( params != 0 && cJSON_GetArraySize(params) == 1 )
+    UniValue result(UniValue::VOBJ); std::string rawtx; int64_t amount,inputsum,price; CPubKey mypk;
+    if ( params != 0 && cJSON_GetArraySize(params) == 2 )
     {
-        if ( cclib_parsehash((uint8_t *)&price,jitem(params,0),8) < 0 )
+        amount = jdouble(jitem(params,0),0) * COIN + 0.0000000049;
+        if ( cclib_parsehash((uint8_t *)&price,jitem(params,1),8) < 0 )
         {
             result.push_back(Pair("result","error"));
             result.push_back(Pair("error","couldnt parsehash"));
         }
         mypk = pubkey2pk(Mypubkey());
-        if ( (inputsum= AddNormalinputs(mtx,mypk,GAMES_TXFEE,64)) >= GAMES_TXFEE )
+        gamespk = GetUnspendable(cp,0);
+        if ( (inputsum= AddNormalinputs(mtx,mypk,amount+GAMES_TXFEE,64)) >= amount+GAMES_TXFEE )
         {
+            mtx.vout.push_back(MakeCC1vout(cp->evalcode,amount,gamespk));
             rawtx = FinalizeCCTx(0,cp,mtx,mypk,GAMES_TXFEE,CScript() << OP_RETURN << price);
             return(games_rawtxresult(result,rawtx,1));
         }
