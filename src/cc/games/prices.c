@@ -159,7 +159,7 @@ uint64_t get_btcusd()
             mult = 10000 + Net_change*10;
             newprice = (btcusd * mult) / 10000;
             x = ((uint64_t)time(NULL) << 32) | ((newprice / 10000) & 0xffffffff);
-            sprintf(str,"BTC/USD %.4f -> Betsize %.8f (^ / to change) && %.4f Net %.1f%% [+ - to change]\n",dstr(btcusd),dstr(Betsize),dstr(newprice),(double)100*mult/10000);
+            sprintf(str,"BTC/USD %.4f -> Betsize %.8f (^ / to change) && %.4f Net %.1f%% [+ - to change]\n",dstr(btcusd),dstr(Betsize),dstr(newprice),(double)100*(mult-10000)/10000);
             mvaddstr(0, 0, str);
             clrtoeol();
             doupdate();
