@@ -65,11 +65,11 @@ UniValue games_settle(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     gamespk = GetUnspendable(cp,0);
     acpk = buf2pk(ASSETCHAINS_OVERRIDE_PUBKEY33);
     result.push_back(Pair("result","success"));
-    if ( params != 0 && cJSON_GetArraySize(params) == 1 )
+    /*if ( params != 0 && cJSON_GetArraySize(params) == 1 )
     {
         height = juint(jitem(params,0),0);
         result.push_back(Pair("height",(int64_t)height));
-    }
+    }*/
     return(result);
     /*mypk = pubkey2pk(Mypubkey());
     gamespk = GetUnspendable(cp,0);
