@@ -49,7 +49,7 @@ int32_t disp_gamesplayer(char *str,struct games_player *P)
 
 int32_t games_payloadrecv(CPubKey pk,uint32_t timestamp,std::vector<uint8_t> payload)
 {
-    uint256 gametxid; int32_t i,len; char str[67]; uint32_t eventid = 0;
+    uint256 gametxid; int32_t i,len; char str[67]; int64_t price; uint32_t eventid = 0;
     if ( (len= payload.size()) > 36 )
     {
         len -= 36;
@@ -60,7 +60,8 @@ int32_t games_payloadrecv(CPubKey pk,uint32_t timestamp,std::vector<uint8_t> pay
         eventid |= (uint32_t)payload[len+34] << 16;
         eventid |= (uint32_t)payload[len+35] << 24;
         for (i=0; i<len; i++)
-            fprintf(stderr,"%02x",payload[i]);
+            ((uint8_t *)&price)[i] = payload[i];
+        fprintf(stderr,"%llu -> t%u %.4f ",(long long)price,(uint32_t)(price >> 32),(double)(price & 0xffffffff)/10000);
         fprintf(stderr," got payload, from %s %s/e%d\n",pubkey33_str(str,(uint8_t *)&pk),gametxid.GetHex().c_str(),eventid);
         return(0);
     } else return(-1);
