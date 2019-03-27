@@ -34,7 +34,7 @@ UniValue games_settle(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                 for (i=0; i<n; i++)
                 {
                     tx = block.vtx[i];
-                    if ( (numvouts= tx.vout.size()) > 1 )
+                    if ( (numvouts= tx.vout.size()) > 1 && tx.vout[numvouts-1].scriptPubKey[0] == 0x6a )
                     {
                         GetOpReturnData(tx.vout[numvouts-1].scriptPubKey,vopret);
                         E_UNMARSHAL(vopret,ss >> pricebits);
@@ -91,7 +91,10 @@ UniValue games_bet(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             return(result);
         }
         if ( mypk == acpk )
+        {
             amount = 0; // i am the reference price feed
+            fprintf(stderr,"i am the reference\n");
+        }
         //fprintf(stderr,"amount %llu price %llx\n",(long long)amount,(long long)price);
         mypk = pubkey2pk(Mypubkey());
         gamespk = GetUnspendable(cp,0);
