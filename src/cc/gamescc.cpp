@@ -553,14 +553,14 @@ void komodo_netevent(std::vector<uint8_t> message)
             {
                 if ( (rand() % 10) == 0 )
                 {
-                    //fprintf(stderr,"relay message.[%d]\n",(int32_t)message.size());
+                    fprintf(stderr,"relay message.[%d]\n",(int32_t)message.size());
                     komodo_sendmessage(2,2,"events",message);
                 }
             }
         }
-        //for (i=0; i<payload.size(); i++)
-        //    fprintf(stderr,"%02x",payload[i]);
-        //fprintf(stderr," payload, got pk.%s siglen.%d lag.[%d]\n",pubkey33_str(str,(uint8_t *)&pk),(int32_t)sig.size(),lag);
+        for (i=0; i<payload.size(); i++)
+            fprintf(stderr,"%02x",payload[i]);
+        fprintf(stderr," payload, got pk.%s siglen.%d lag.[%d]\n",pubkey33_str(str,(uint8_t *)&pk),(int32_t)sig.size(),lag);
     }
     else
     {
