@@ -123,7 +123,7 @@ void *gamesiterate(struct games_state *rs)
 #ifdef STANDALONE
 #include <ncurses.h>
 #include "dapps/dappstd.c"
-int64_t Net_change,Betsize;
+int64_t Net_change,Betsize = SATOSHIDEN;
 
 char *send_curl(char *url,char *fname)
 {
@@ -159,7 +159,7 @@ uint64_t get_btcusd()
             mult = 10000 + Net_change*10;
             newprice = (btcusd * mult) / 10000;
             x = ((uint64_t)time(NULL) << 32) | ((newprice / 10000) & 0xffffffff);
-            sprintf(str,"BTC/USD %.4f Net_change %lld * 0.001 -> Betsize %.8f %.4f\n",dstr(btcusd),(long long)Net_change,dstr(Betsize),dstr(newprice));
+            sprintf(str,"BTC/USD %.4f -> Betsize %.8f (^ / to change) && %.4f [+ - to change]\n",dstr(btcusd),dstr(Betsize),dstr(newprice));
             mvaddstr(0, 0, str);
             clrtoeol();
             doupdate();
@@ -241,7 +241,7 @@ int32_t issue_bet(struct games_state *rs,int64_t x,int64_t betsize)
             if ( (resobj= jobj(retjson,(char *)"result")) != 0 )
             {
                 retval = 0;
-                fprintf(stderr,"%s\n",jprint(resobj,0));
+                //fprintf(stderr,"%s\n",jprint(resobj,0));
             }
             free_json(retjson);
         }

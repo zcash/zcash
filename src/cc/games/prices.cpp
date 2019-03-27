@@ -15,11 +15,18 @@
  ******************************************************************************/
 
 UniValue games_rawtxresult(UniValue &result,std::string rawtx,int32_t broadcastflag);
+extern uint8_t ASSETCHAINS_OVERRIDE_PUBKEY33[33];
 
 UniValue games_bet(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); std::string rawtx; int64_t amount,inputsum,price; CPubKey gamespk,mypk;
+    UniValue result(UniValue::VOBJ); std::string rawtx; int64_t amount,inputsum,price; CPubKey gamespk,mypk,acpk;
+    if ( ASSETCHAINS_OVERRIDE_PUBKEY33[0] == 0 )
+    {
+        result.push_back(Pair("result","error"));
+        result.push_back(Pair("error"," no -ac_pubkey for price reference"));
+    }
+    acpk = buf2pk(ASSETCHAINS_OVERRIDE_PUBKEY33);
     if ( params != 0 && cJSON_GetArraySize(params) == 2 )
     {
         amount = jdouble(jitem(params,0),0) * COIN + 0.0000000049;
@@ -28,7 +35,9 @@ UniValue games_bet(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             result.push_back(Pair("result","error"));
             result.push_back(Pair("error","couldnt parsehash"));
         }
-        fprintf(stderr,"amount %llu price %llx\n",(long long)amount,(long long)price);
+        if ( mypk == acpk )
+            amount = 0; // i am the reference price feed
+        //fprintf(stderr,"amount %llu price %llx\n",(long long)amount,(long long)price);
         mypk = pubkey2pk(Mypubkey());
         gamespk = GetUnspendable(cp,0);
         if ( (inputsum= AddNormalinputs(mtx,mypk,amount+GAMES_TXFEE,64)) >= amount+GAMES_TXFEE )
@@ -53,7 +62,7 @@ UniValue games_bet(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 
 void prices_update(uint32_t timestamp,uint32_t uprice,int32_t ismine)
 {
-    fprintf(stderr,"%s t%u %.4f %16llx\n",ismine!=0?"mine":"ext ",timestamp,(double)uprice/10000,(long long)((uint64_t)timestamp<<32) | uprice);
+    //fprintf(stderr,"%s t%u %.4f %16llx\n",ismine!=0?"mine":"ext ",timestamp,(double)uprice/10000,(long long)((uint64_t)timestamp<<32) | uprice);
 }
 
 // game specific code for daemon
