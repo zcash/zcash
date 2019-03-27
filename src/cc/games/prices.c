@@ -227,7 +227,13 @@ int32_t issue_games_events(struct games_state *rs,char *gametxidstr,uint32_t eve
 int32_t issue_bet(struct games_state *rs,int64_t x,int64_t betsize)
 {
     char params[512],hexstr[64],*retstr; cJSON *retjson,*resobj; int32_t retval = -1;
-    sprintf(params,"[\"bet\",\"17\",\"[%.8f,%%22%s%%22]\"]",dstr(x),hexstr);
+    memset(hexstr,0,sizeof(hexstr));
+    for (i=0; i<8; i++)
+    {
+        sprintf(&hexstr[i<<1],"%02x",x & 0xff);
+        x >>= 8;
+    }
+    sprintf(params,"[\"bet\",\"17\",\"[%.8f,%%22%s%%22]\"]",dstr(betsize),hexstr);
     if ( (retstr= komodo_issuemethod(USERPASS,(char *)"cclib",params,GAMES_PORT)) != 0 )
     {
         if ( (retjson= cJSON_Parse(retstr)) != 0 )
