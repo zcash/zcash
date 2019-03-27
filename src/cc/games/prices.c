@@ -226,7 +226,7 @@ int32_t issue_games_events(struct games_state *rs,char *gametxidstr,uint32_t eve
 
 int32_t issue_bet(struct games_state *rs,int64_t x,int64_t betsize)
 {
-    char params[512],hexstr[64],*retstr; cJSON *retjson,*resobj; int32_t retval = -1;
+    char params[512],hexstr[64],*retstr; cJSON *retjson,*resobj; int32_t i,retval = -1;
     memset(hexstr,0,sizeof(hexstr));
     for (i=0; i<8; i++)
     {
