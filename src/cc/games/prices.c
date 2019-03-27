@@ -188,7 +188,7 @@ char *send_curl(char *url,char *fname)
     //long fsize; char curlstr[1024];
     //sprintf(curlstr,"curl --url \"%s\" > %s",url,fname);
     char *retstr=0,*retstr2;
-    retstr2 = bitcoind_RPC(&retstr,(char *)"prices",url,"","","");
+    retstr2 = bitcoind_RPC(&retstr,(char *)"prices",url,(char *)"",(char *)"",(char *)"");
     return(retstr2);
     //if ( system(curlstr) != 0 )
     //    fprintf(stderr,"error doing system(%s)\n",curlstr);
