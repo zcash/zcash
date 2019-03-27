@@ -110,8 +110,8 @@ UniValue games_settle(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     result.push_back(Pair("result","success"));
     if ( params != 0 && cJSON_GetArraySize(params) == 1 )
     {
-        height = juint(jitem(params,0),0);
-        //result.push_back(Pair("height",(int64_t)height));
+        //height = juint(jitem(params,0),0);
+        result.push_back(Pair("height",(int64_t)height));
     }
     /*if ( params != 0 && cJSON_GetArraySize(params) == 2 )
     {
