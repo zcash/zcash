@@ -10,7 +10,7 @@
 
 #define SATOSHIDEN ((uint64_t)100000000L)
 #define issue_curl(cmdstr) bitcoind_RPC(0,(char *)"prices",cmdstr,0,0,0)
-extern int64_t Net_change;
+extern int64_t Net_change,Betsize;
 
 int random_tetromino(struct games_state *rs)
 {
@@ -39,6 +39,7 @@ struct games_state globalR;
 extern char Gametxidstr[];
 int32_t issue_games_events(struct games_state *rs,char *gametxidstr,uint32_t eventid,gamesevent c);
 uint64_t get_btcusd();
+int32_t issue_bet(struct games_state *rs,int64_t x,int64_t betsize);
 
 void *gamesiterate(struct games_state *rs)
 {
@@ -61,7 +62,8 @@ void *gamesiterate(struct games_state *rs)
 #ifdef STANDALONE
             price = get_btcusd();
             //fprintf(stderr,"%llu -> t%u %.4f\n",(long long)price,(uint32_t)(price >> 32),(double)(price & 0xffffffff)/10000);
-            issue_games_events(rs,Gametxidstr,eventid,price);
+            //issue_games_events(rs,Gametxidstr,eventid,price);
+            issue_bet(rs,price,Betsize);
             eventid++;
             doupdate();
             sleep(10);
@@ -69,6 +71,10 @@ void *gamesiterate(struct games_state *rs)
             {
                 case '+': Net_change++; break;
                 case '-': Net_change--; break;
+                case '0': Net_change = 0; break;
+                case '$': Betsize = SATOSHIDEN; break;
+                case '^': Betsize += (Betsize >> 3); break;
+                case '/': Betsize -= (Betsize >> 3); break;
             }
             /*if ( (counter++ % 10) == 0 )
                 doupdate();
@@ -117,7 +123,7 @@ void *gamesiterate(struct games_state *rs)
 #ifdef STANDALONE
 #include <ncurses.h>
 #include "dapps/dappstd.c"
-int64_t Net_change;
+int64_t Net_change,Betsize;
 
 char *send_curl(char *url,char *fname)
 {
@@ -153,7 +159,7 @@ uint64_t get_btcusd()
             mult = 10000 + Net_change*10;
             newprice = (btcusd * mult) / 10000;
             x = ((uint64_t)time(NULL) << 32) | ((newprice / 10000) & 0xffffffff);
-            sprintf(str,"BTC/USD %.4f Net_change %lld * 0.001 -> %.4f\n",dstr(btcusd),(long long)Net_change,dstr(newprice));
+            sprintf(str,"BTC/USD %.4f Net_change %lld * 0.001 -> Betsize %.8f %.4f\n",dstr(btcusd),(long long)Net_change,dstr(Betsize),dstr(newprice));
             mvaddstr(0, 0, str);
             clrtoeol();
             doupdate();
@@ -216,6 +222,26 @@ int32_t issue_games_events(struct games_state *rs,char *gametxidstr,uint32_t eve
         } else fprintf(fp,"error issuing method %s\n",params);
         return(retval);
     } else return(0);
+}
+
+int32_t issue_bet(struct games_state *rs,int64_t x,int64_t betsize)
+{
+    char params[512],hexstr[64],*retstr; cJSON *retjson,*resobj; int32_t retval = -1;
+    sprintf(params,"[\"bet\",\"17\",\"[%.8f,%%22%s%%22]\"]",dstr(x),hexstr);
+    if ( (retstr= komodo_issuemethod(USERPASS,(char *)"cclib",params,GAMES_PORT)) != 0 )
+    {
+        if ( (retjson= cJSON_Parse(retstr)) != 0 )
+        {
+            if ( (resobj= jobj(retjson,(char *)"result")) != 0 )
+            {
+                retval = 0;
+                fprintf(stderr,"%s\n",jprint(resobj,0));
+            }
+            free_json(retjson);
+        }
+        free(retstr);
+    }
+    return(retval);
 }
 
 int prices(int argc, char **argv)

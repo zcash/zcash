@@ -71,7 +71,6 @@ UniValue games_bet(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 #define CUSTOM_DISPATCH \
 if ( cp->evalcode == EVAL_GAMES ) \
 { \
-    UniValue res; \
     if ( strcmp(method,"rng") == 0 ) \
         return(games_rng(txfee,cp,params)); \
     else if ( strcmp(method,"rngnext") == 0 ) \
@@ -108,9 +107,9 @@ if ( cp->evalcode == EVAL_GAMES ) \
         return(games_bet(txfee,cp,params)); \
     else \
     { \
-        res.push_back(Pair("result","error")); \
-        res.push_back(Pair("error","invalid gamescc method")); \
-        return(res); \
+        result.push_back(Pair("result","error")); \
+        result.push_back(Pair("error","invalid gamescc method")); \
+        return(result); \
     } \
 }
 #endif
