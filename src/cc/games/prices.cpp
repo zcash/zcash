@@ -14,7 +14,7 @@
  *                                                                            *
  ******************************************************************************/
 
-std::string MYCCLIBNAME = (char *)"pricescc";
+std::string MYCCLIBNAME = (char *)"prices";
 
 #define PRICES_BETPERIOD 3
 UniValue games_rawtxresult(UniValue &result,std::string rawtx,int32_t broadcastflag);
