@@ -20,6 +20,8 @@ std::string MYCCLIBNAME = (char *)"prices";
 UniValue games_rawtxresult(UniValue &result,std::string rawtx,int32_t broadcastflag);
 extern uint8_t ASSETCHAINS_OVERRIDE_PUBKEY33[33];
 
+// generate bars
+
 int64_t prices_blockinfo(int32_t height,char *acaddr)
 {
     std::vector<uint8_t> vopret; CBlockIndex *pindex; CBlock block; CTransaction tx,vintx; uint64_t pricebits; char destaddr[64]; uint32_t timestamp,uprice; uint256 hashBlock; int64_t prizefund = 0; int32_t i,n,vini,numvouts;
@@ -69,7 +71,7 @@ UniValue games_settle(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     {
         height = juint(jitem(params,0),0);
         result.push_back(Pair("height",(int64_t)height));
-        if ( 1 || (prizefund= prices_blockinfo(height,acaddr)) < 0 )
+        if ( (prizefund= prices_blockinfo(height,acaddr)) < 0 )
         {
             result.push_back(Pair("result","error"));
             result.push_back(Pair("errorcode",prizefund));
@@ -80,7 +82,7 @@ UniValue games_settle(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             // display bets
             if ( height <= nextheight-PRICES_BETPERIOD )
             {
-                // settle bets
+                // settle bets by first nonzero reference bar
             }
             result.push_back(Pair("prizefund",ValueFromAmount(prizefund)));
             result.push_back(Pair("result","success"));
