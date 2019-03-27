@@ -17,6 +17,13 @@
 UniValue games_rawtxresult(UniValue &result,std::string rawtx,int32_t broadcastflag);
 extern uint8_t ASSETCHAINS_OVERRIDE_PUBKEY33[33];
 
+
+UniValue games_settle(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
+{
+    UniValue result;
+    return(result);
+}
+
 UniValue games_bet(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());

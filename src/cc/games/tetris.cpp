@@ -66,7 +66,13 @@ int32_t games_payloadrecv(CPubKey pk,uint32_t timestamp,std::vector<uint8_t> pay
     } else return(-1);
 }
 
-UniValue games_oracledata(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
+UniValue games_bet(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
+{
+    UniValue result;
+    return(result);
+}
+
+UniValue games_settle(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     UniValue result;
     return(result);
