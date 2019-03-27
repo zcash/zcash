@@ -14,6 +14,8 @@
  *                                                                            *
  ******************************************************************************/
 
+std::string MYCCLIBNAME = (char *)"gamescc";
+
 // game specific code for daemon
 void games_packitemstr(char *packitemstr,struct games_packitem *item)
 {

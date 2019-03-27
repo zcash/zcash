@@ -15,7 +15,6 @@ extern CWallet* pwalletMain;
 #include "CCinclude.h"
 #include "secp256k1.h"
 
-std::string MYCCLIBNAME = (char *)"gamescc";
 
 #define EVAL_GAMES (EVAL_FAUCET2+1)
 #define GAMES_TXFEE 10000

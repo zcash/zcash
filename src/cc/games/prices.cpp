@@ -14,6 +14,8 @@
  *                                                                            *
  ******************************************************************************/
 
+std::string MYCCLIBNAME = (char *)"gamescc";
+
 #define PRICES_BETPERIOD 3
 UniValue games_rawtxresult(UniValue &result,std::string rawtx,int32_t broadcastflag);
 extern uint8_t ASSETCHAINS_OVERRIDE_PUBKEY33[33];
