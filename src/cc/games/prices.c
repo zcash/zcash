@@ -139,7 +139,7 @@ uint64_t get_btcusd()
         {
             btcusd = jdouble(usd,(char *)"rate_float") * SATOSHIDEN;
             x = ((uint64_t)time(NULL) << 32) | (btcusd / 10000);
-            printf("BTC/USD %.4f\n",dstr(btcusd));
+            //printf("BTC/USD %.4f\n",dstr(btcusd));
         }
         free_json(pjson);
     }
@@ -170,7 +170,7 @@ int32_t issue_games_events(struct games_state *rs,char *gametxidstr,uint32_t eve
     if ( fp == 0 )
         fp = fopen("events.log","wb");
     rs->buffered[rs->num++] = c;
-    if ( 0 )
+    if ( 1 )
     {
         if ( sizeof(c) == 1 )
             sprintf(params,"[\"events\",\"17\",\"[%%22%02x%%22,%%22%s%%22,%u]\"]",(uint8_t)c&0xff,gametxidstr,eventid);
