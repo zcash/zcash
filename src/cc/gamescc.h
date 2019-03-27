@@ -109,7 +109,6 @@ if ( cp->evalcode == EVAL_GAMES ) \
     { \
         result.push_back(Pair("result","error")); \
         result.push_back(Pair("error","invalid gamescc method")); \
-        result.push_back(Pair("method",method)); \
         return(result); \
     } \
 }
