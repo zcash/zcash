@@ -1341,12 +1341,12 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
 
 UniValue rogue_bailout(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    return(rogue_finishgame(txfee,cp,params,"bailout"));
+    return(rogue_finishgame(txfee,cp,params,(char *)"bailout"));
 }
 
 UniValue rogue_highlander(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    return(rogue_finishgame(txfee,cp,params,"highlander"));
+    return(rogue_finishgame(txfee,cp,params,(char *)"highlander"));
 }
 
 UniValue rogue_gameinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
