@@ -15,9 +15,9 @@
  ******************************************************************************/
 
 
-void prices_update(uint32_t timestamp,uint32_t uprice)
+void prices_update(uint32_t timestamp,uint32_t uprice,int32_t ismine)
 {
-    fprintf(stderr,"t%u %.4f\n",timestamp,(double)uprice/10000);
+    fprintf(stderr,"%s t%u %.4f\n",ismine!=0?"mine":"ext ",timestamp,(double)uprice/10000);
 }
 
 // game specific code for daemon
@@ -67,7 +67,7 @@ int32_t games_payloadrecv(CPubKey pk,uint32_t timestamp,std::vector<uint8_t> pay
         eventid |= (uint32_t)payload[len+35] << 24;
         for (i=0; i<len&&i<sizeof(price); i++)
             ((uint8_t *)&price)[7-i] = payload[i];
-        prices_update((uint32_t)(price >> 32),(uint32_t)(price & 0xffffffff));
+        prices_update((uint32_t)(price >> 32),(uint32_t)(price & 0xffffffff),pk == pubkey2pk(Mypubkey()));
         //fprintf(stderr,"%llu -> t%u %.4f ",(long long)price,(uint32_t)(price >> 32),(double)(price & 0xffffffff)/10000);
         //fprintf(stderr," got payload, from %s %s/e%d\n",pubkey33_str(str,(uint8_t *)&pk),gametxid.GetHex().c_str(),eventid);
         return(0);
