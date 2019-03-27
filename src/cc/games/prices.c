@@ -230,7 +230,7 @@ int32_t issue_bet(struct games_state *rs,int64_t x,int64_t betsize)
     memset(hexstr,0,sizeof(hexstr));
     for (i=0; i<8; i++)
     {
-        sprintf(&hexstr[i<<1],"%02x",x & 0xff);
+        sprintf(&hexstr[i<<1],"%02x",(uint8_t)(x & 0xff));
         x >>= 8;
     }
     sprintf(params,"[\"bet\",\"17\",\"[%.8f,%%22%s%%22]\"]",dstr(betsize),hexstr);
