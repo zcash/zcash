@@ -6,7 +6,7 @@ make -f Makefile_rogue
 ./makerogue
 
 echo sudoku/musig/dilithium
-gcc -O3 -std=c++11 -I../secp256k1/include -I../univalue/include -I../cryptoconditions/include -I../cryptoconditions/src -I../cryptoconditions/src/asn -I.. -I. -fPIC -shared -c -o ../libcc.so cclib.cpp
+gcc -O3 -std=c++11 -I../secp256k1/include -I../univalue/include -I../cryptoconditions/include -I../cryptoconditions/src -I../cryptoconditions/src/asn -I.. -I. -fPIC -shared -c -o sudokucc.so cclib.cpp
 
 echo games tetris
 gcc -O3 -DBUILD_GAMESCC -std=c++11 -I../secp256k1/include -I../univalue/include -I../cryptoconditions/include -I../cryptoconditions/src -I../cryptoconditions/src/asn -I.. -I. -fPIC -shared -c -o gamescc.so cclib.cpp
