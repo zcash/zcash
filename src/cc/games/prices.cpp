@@ -21,7 +21,10 @@ extern uint8_t ASSETCHAINS_OVERRIDE_PUBKEY33[33];
 
 UniValue games_settle(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    UniValue result; std::vector<uint8_t> vopret; CBlockIndex *pindex; CBlock block; CTransaction tx; uint64_t pricebits; uint32_t timestamp,uprice; int32_t i,n,numvouts,height,nextheight = komodo_nextheight();
+    UniValue result; std::vector<uint8_t> vopret; CBlockIndex *pindex; CBlock block; CTransaction tx; uint64_t pricebits; uint32_t timestamp,uprice; CPubKey acpk,mypk,gamespk; int32_t i,n,numvouts,height,nextheight = komodo_nextheight();
+    mypk = pubkey2pk(Mypubkey());
+    gamespk = GetUnspendable(cp,0);
+    acpk = buf2pk(ASSETCHAINS_OVERRIDE_PUBKEY33);
     if ( params != 0 && cJSON_GetArraySize(params) == 1 )
     {
         height = juint(jitem(params,0),0);
@@ -80,6 +83,8 @@ UniValue games_bet(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
         result.push_back(Pair("error"," no -ac_pubkey for price reference"));
         return(result);
     }
+    mypk = pubkey2pk(Mypubkey());
+    gamespk = GetUnspendable(cp,0);
     acpk = buf2pk(ASSETCHAINS_OVERRIDE_PUBKEY33);
     if ( params != 0 && cJSON_GetArraySize(params) == 2 )
     {
@@ -93,11 +98,9 @@ UniValue games_bet(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
         if ( mypk == acpk )
         {
             amount = 0; // i am the reference price feed
-            fprintf(stderr,"i am the reference\n");
+            //fprintf(stderr,"i am the reference\n");
         }
         //fprintf(stderr,"amount %llu price %llx\n",(long long)amount,(long long)price);
-        mypk = pubkey2pk(Mypubkey());
-        gamespk = GetUnspendable(cp,0);
         if ( (inputsum= AddNormalinputs(mtx,mypk,amount+GAMES_TXFEE,64)) >= amount+GAMES_TXFEE )
         {
             mtx.vout.push_back(MakeCC1vout(cp->evalcode,amount,gamespk));
