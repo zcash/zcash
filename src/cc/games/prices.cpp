@@ -104,60 +104,6 @@ UniValue games_settle(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     return(result);*/
 }
 
-UniValue games_settle(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
-{
-    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); std::string rawtx; int64_t amount,inputsum; uint64_t price; CPubKey gamespk,mypk,acpk; int32_t height;
-    if ( ASSETCHAINS_OVERRIDE_PUBKEY33[0] == 0 )
-    {
-        result.push_back(Pair("result","error"));
-        result.push_back(Pair("error"," no -ac_pubkey for price reference"));
-        return(result);
-    }
-    mypk = pubkey2pk(Mypubkey());
-    gamespk = GetUnspendable(cp,0);
-    acpk = buf2pk(ASSETCHAINS_OVERRIDE_PUBKEY33);
-    result.push_back(Pair("result","success"));
-    if ( params != 0 && cJSON_GetArraySize(params) == 1 )
-    {
-        height = juint(jitem(params,0),0);
-        result.push_back(Pair("height",(int64_t)height));
-    }
-    /*if ( params != 0 && cJSON_GetArraySize(params) == 2 )
-    {
-        amount = jdouble(jitem(params,0),0) * COIN + 0.0000000049;
-        if ( cclib_parsehash((uint8_t *)&price,jitem(params,1),8) < 0 )
-        {
-            result.push_back(Pair("result","error"));
-            result.push_back(Pair("error","couldnt parsehash"));
-            return(result);
-        }
-        if ( mypk == acpk )
-        {
-            amount = 0; // i am the reference price feed
-            //fprintf(stderr,"i am the reference\n");
-        }
-        //fprintf(stderr,"amount %llu price %llx\n",(long long)amount,(long long)price);
-        if ( (inputsum= AddNormalinputs(mtx,mypk,amount+GAMES_TXFEE,64)) >= amount+GAMES_TXFEE )
-        {
-            mtx.vout.push_back(MakeCC1vout(cp->evalcode,amount,gamespk));
-            rawtx = FinalizeCCTx(0,cp,mtx,mypk,GAMES_TXFEE,CScript() << OP_RETURN << price);
-            return(games_rawtxresult(result,rawtx,1));
-        }
-        else
-        {
-            result.push_back(Pair("result","error"));
-            result.push_back(Pair("error","not enough funds"));
-        }
-    }
-    else
-    {
-        result.push_back(Pair("result","error"));
-        result.push_back(Pair("error","couldnt parse"));
-    }*/
-    return(result);
-}
-
 UniValue games_bet(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
