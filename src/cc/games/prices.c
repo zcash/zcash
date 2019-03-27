@@ -1,6 +1,7 @@
 
 #include "prices.h"
 #include <time.h>
+#include <unistd.h>
 #define SATOSHIDEN ((uint64_t)100000000L)
 
 /*
@@ -52,7 +53,7 @@ void *gamesiterate(struct games_state *rs)
         if ( rs->guiflag != 0 )
         {
 #ifdef STANDALONE
-            sleep(1);
+            sleep(10);
             price = get_btcusd();
             fprintf(stderr,"price %llu %.8f\n",(long long)price,(double)price/SATOSHIDEN);
             /*if ( (counter++ % 10) == 0 )
