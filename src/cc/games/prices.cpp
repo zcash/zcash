@@ -55,8 +55,12 @@ int64_t prices_blockinfo(int32_t height,char *acaddr)
 UniValue games_settle(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     UniValue result; char acaddr[64]; CPubKey acpk,mypk,gamespk; int64_t prizefund = 0; int32_t height,nextheight = komodo_nextheight();
-    result.push_back(Pair("result","success"));
-    return(result);
+    if ( 1 || ASSETCHAINS_OVERRIDE_PUBKEY33[0] == 0 )
+    {
+        result.push_back(Pair("result","error"));
+        result.push_back(Pair("error"," no -ac_pubkey for price reference"));
+        return(result);
+    }
     mypk = pubkey2pk(Mypubkey());
     gamespk = GetUnspendable(cp,0);
     acpk = buf2pk(ASSETCHAINS_OVERRIDE_PUBKEY33);
