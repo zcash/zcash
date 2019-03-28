@@ -645,7 +645,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
             txNew.vout[1].nValue = 0;
             txNew.vout[1].scriptPubKey = MarmaraCoinbaseOpret('C',nHeight,pk);
         }
-        else if ( nHeight > 1 && ASSETCHAINS_SYMBOL[0] != 0 && (ASSETCHAINS_MINEROPRET != 0 ||(ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 || ASSETCHAINS_SCRIPTPUB.size() > 1) && (ASSETCHAINS_COMMISSION != 0 || ASSETCHAINS_FOUNDERS_REWARD != 0) && (commission= komodo_commission((CBlock*)&pblocktemplate->block,(int32_t)nHeight)) != 0) )
+        else if ( nHeight > 1 && ASSETCHAINS_SYMBOL[0] != 0 && (ASSETCHAINS_CBOPRET != 0 ||(ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 || ASSETCHAINS_SCRIPTPUB.size() > 1) && (ASSETCHAINS_COMMISSION != 0 || ASSETCHAINS_FOUNDERS_REWARD != 0) && (commission= komodo_commission((CBlock*)&pblocktemplate->block,(int32_t)nHeight)) != 0) )
         {
             int32_t i; uint8_t *ptr;
             txNew.vout.resize(2);
@@ -673,10 +673,10 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                 ptr[34] = OP_CHECKSIG;
                 //fprintf(stderr," set ASSETCHAINS_OVERRIDE_PUBKEY33 into vout[1]\n");
             }
-            if ( ASSETCHAINS_MINEROPRET != 0 )
+            if ( ASSETCHAINS_CBOPRET != 0 )
             {
-                txNew.vout.resize(txNew.size()+1);
-                txNew.vout[txNew.size()-1].scriptPubKey = komodo_mineropret(nHeight);
+                txNew.vout.resize(txNew.vout.size()+1);
+                txNew.vout[txNew.vout.size()-1].scriptPubKey = komodo_mineropret(nHeight);
             }
             //printf("autocreate commision vout\n");
         }
