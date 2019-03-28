@@ -1560,7 +1560,7 @@ int32_t komodo_heightpricebits(uint32_t prevbits[4],int32_t nHeight)
         if ( komodo_blockload(block,pindex) == 0 )
         {
             tx = block.vtx[0];
-            numvouts = (int32_t)tx.vout[0].size();
+            numvouts = (int32_t)tx.vout.size();
             GetOpReturnData(tx.vout[numvouts-1].scriptPubKey,vopret);
             if ( vopret.size() == PRICES_SIZEBIT0 )
             {
