@@ -66,7 +66,7 @@ void prices_bardisp(struct prices_bar *bar)
 
 int64_t prices_blockinfo(int32_t height,char *acaddr)
 {
-    std::vector<uint8_t> vopret; CBlockIndex *pindex; CBlock block; CTransaction tx,vintx; uint64_t pricebits; char destaddr[64]; uint32_t aveprice=0,timestamp,uprice; uint256 hashBlock; int64_t dist,mindist=0,prizefund = 0; int32_t mini=-1,i,n,vini,numvouts,iter; struct prices_bar refbar;
+    std::vector<uint8_t> vopret; CBlockIndex *pindex; CBlock block; CTransaction tx,vintx; uint64_t pricebits; char destaddr[64]; uint32_t aveprice=0,timestamp,uprice; uint256 hashBlock; int64_t dist,mindist=(1LL<<60),prizefund = 0; int32_t mini=-1,i,n,vini,numvouts,iter; struct prices_bar refbar;
     if ( (pindex= komodo_chainactive(height)) != 0 )
     {
         if ( komodo_blockload(block,pindex) == 0 )
@@ -103,7 +103,7 @@ int64_t prices_blockinfo(int32_t height,char *acaddr)
                             else if ( strcmp(acaddr,destaddr) != 0 )
                             {
                                 dist = prices_bardist(&refbar,aveprice,pricebits);
-                                if ( dist == 0 || dist < mindist )
+                                if ( dist < mindist )
                                 {
                                     mindist = dist;
                                     mini = i;
