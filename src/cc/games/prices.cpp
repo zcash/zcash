@@ -51,6 +51,7 @@ int32_t prices_bardist(struct prices_bar *bar,uint32_t aveprice,uint64_t pricebi
     {
         dist = (uprice - aveprice);
         dist *= dist;
+        fprintf(stderr,"dist.%d (u %u - ave %u) %d\n",dist,uprice,aveprice,uprice-aveprice);
     }
     return(dist);
 }
@@ -97,7 +98,9 @@ int64_t prices_blockinfo(int32_t height,char *acaddr)
                                     fprintf(stderr,"REF ");
                                     prices_barupdate(&refbar,pricebits);
                                 }
-                            } else fprintf(stderr,"i.%d %.8f t%u %.4f v.%d %s lag.%d i.%d dist.%d\n",i,(double)tx.vout[0].nValue/COIN,timestamp,(double)uprice/10000,numvouts,destaddr,(int32_t)(pindex->nTime-timestamp),iter,prices_bardist(&refbar,aveprice,pricebits));
+                            }
+                            else if ( strcmp(acaddr,destaddr) != 0 )
+                                fprintf(stderr,"i.%d %.8f t%u %.4f v.%d %s lag.%d i.%d dist.%d\n",i,(double)tx.vout[0].nValue/COIN,timestamp,(double)uprice/10000,numvouts,destaddr,(int32_t)(pindex->nTime-timestamp),iter,prices_bardist(&refbar,aveprice,pricebits));
                         } else return(-3);
                     }
                 }
