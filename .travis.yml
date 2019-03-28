@@ -6,9 +6,6 @@ matrix:
       dist: xenial
       sudo: required
       env: LINUX_DEPLOY="true" OSX_DEPLOY="false" $TRAVIS_OS_NAME="linux"
-    - os: osx
-      osx_image: xcode8
-      env: OSX_DEPLOY="true" LINUX_DEPLOY="false" $TRAVIS_OS_NAME="osx"
 branches:
   only:
     - master
