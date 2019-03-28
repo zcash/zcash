@@ -1547,3 +1547,90 @@ void komodo_passport_iteration()
         printf("READY for %s RPC calls at %u! done PASSPORT %s refid.%d\n",ASSETCHAINS_SYMBOL,(uint32_t)time(NULL),ASSETCHAINS_SYMBOL,refid);
     }
 }
+
+extern std::vector<uint8_t> Mineropret;
+
+CScript komodo_mineropret(int32_t nHeight)
+{
+    CScript opret;
+    if ( Mineropret.size() != 0 )
+    {
+        opret << OP_RETURN << Mineropret);
+    }
+    return(opret);
+}
+
+int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
+{
+    std::vector<uint8_t> vopret; uint32_t pricebits[4]; int32_t i;
+    if ( ASSETCHAINS_CBOPRET != 0 )
+    {
+        GetOpReturnData(scriptPubKey,vopret);
+        if ( vopret.size() == sizeof(pricebits) )
+        {
+            memcpy(pricebits,&Mineropret[0],sizeof(pricebits));
+            fprintf(stderr,"ht.%d: t%u %.4f USD, %.4f GBP, %.4f EUR\n",nHeight,pricebits[0],(double)pricebits[1]/10000,(double)pricebits[2]/10000,(double)pricebits[3]/10000)
+            return(0);
+        }
+        return(-1);
+    }
+    return(0);
+}
+
+cJSON *get_urljson(char *url)
+{
+    char *jsonstr; cJSON *json = 0;
+    if ( (jsonstr= issue_curl(url)) != 0 )
+    {
+        fprintf(stderr,"(%s) -> (%s)\n",url,jsonstr);
+        json = cJSON_Parse(jsonstr);
+        free(jsonstr);
+    }
+    return(json);
+}
+
+int32_t get_btcusd(uint32_t pricebits[4])
+{
+    cJSON *pjson,*bpi,*obj; char str[512]; uint64_t btcusd = 0,btcgbp = 0,btceur = 0;
+    if ( (pjson= get_urljson((char *)"http://api.coindesk.com/v1/bpi/currentprice.json")) != 0 )
+    {
+        if ( (bpi= jobj(pjson,(char *)"bpi")) != 0 )
+        {
+            pricebits[0] = (uint32_t)time(NULL);
+            if ( (obj= jobj(bpi,(char *)"USD")) != 0 )
+            {
+                btcusd = jdouble(obj,(char *)"rate_float") * SATOSHIDEN;
+                pricebits[1] = ((btcusd / 10000) & 0xffffffff);
+            }
+            if ( (obj= jobj(bpi,(char *)"GBP")) != 0 )
+            {
+                btcgbp = jdouble(obj,(char *)"rate_float") * SATOSHIDEN;
+                pricebits[2] = ((btcgbp / 10000) & 0xffffffff);
+            }
+            if ( (obj= jobj(bpi,(char *)"EUR")) != 0 )
+            {
+                btceur = jdouble(obj,(char *)"rate_float") * SATOSHIDEN;
+                pricebits[3] = ((btceur / 10000) & 0xffffffff);
+            }
+        }
+        free_json(pjson);
+        fprintf(stderr,"BTC/USD %.4f, BTC/GBP %.4f, BTC/EUR %.4f\n",dstr(btcusd),dstr(btcgbp),dstr(btceur));
+        return(0);
+    }
+    return(-1);
+}
+
+void komodo_cbopretupdate()
+{
+    uint32_t pricebits[4];
+    if ( (ASSETCHAINS_CBOPRET & 1) != 0 )
+    {
+        if ( get_btcusd(pricebits) == 0 )
+        {
+            Mineropret.resize(sizeof(pricebits));
+            fprintf(stderr,"set pricebits\n");
+            memcpy(&Mineropret[0],pricebits,sizeof(pricebits));
+        }
+    }
+}
+

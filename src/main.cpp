@@ -1014,6 +1014,15 @@ bool ContextualCheckCoinbaseTransaction(const CTransaction& tx, const int nHeigh
         }
         return(false);
     }
+    else if ( ASSETCHAINS_MARMARA != 0 && nHeight > 0 && (nHeight & 1) == 0 )
+    {
+        
+    }
+    else if ( ASSETCHAINS_MINEROPRET != 0 )
+    {
+        if ( komodo_opretvalidate(nHeight,tx.vout[1].scriptPubKey) < 0 )
+            return(false);
+    }
     return(true);
 }
 
