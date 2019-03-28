@@ -1568,7 +1568,7 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
         {
             memcpy(pricebits,&vopret[0],sizeof(pricebits));
             lag = (int32_t)(time(NULL) - pricebits[0]);
-            fprintf(stderr,"ht.%d: t%u lag.%d %.4f USD, %.4f GBP, %.4f EUR\n",nHeight,pricebits[0],lag,(double)pricebits[1]/10000,(double)pricebits[2]/10000,(double)pricebits[3]/10000);
+            fprintf(stderr,"ht.%d: t%u lag.%d %.4f USD, %.4f GBP, %.4f EUR htstamp.%d\n",nHeight,pricebits[0],lag,(double)pricebits[1]/10000,(double)pricebits[2]/10000,(double)pricebits[3]/10000,komodo_heightstamp(nHeight-1));
             return(0);
         } else fprintf(stderr,"wrong size %d vs %d, scriptPubKey size %d [%02x]\n",(int32_t)vopret.size(),(int32_t)sizeof(pricebits),(int32_t)scriptPubKey.size(),scriptPubKey[0]);
         return(-1);
