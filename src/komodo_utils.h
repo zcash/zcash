@@ -1814,8 +1814,8 @@ void komodo_args(char *argv0)
         hexstr = GetArg("-ac_mineropret","");
         if ( hexstr.size() != 0 )
         {
-            Mineropret.resize(hexstr.size()/2)
-            decode_hex(&Mineropret,hexstr.size()/2,(char *)hexstr.c_str());
+            Mineropret.resize(hexstr.size()/2);
+            decode_hex(&Mineropret[0],hexstr.size()/2,(char *)hexstr.c_str());
             for (i=0; i<Mineropret.size(); i++)
                 fprintf(stderr,"%02x",Mineropret[i]);
             fprintf(stderr," Mineropret\n");

@@ -1018,7 +1018,7 @@ bool ContextualCheckCoinbaseTransaction(const CTransaction& tx, const int nHeigh
     {
         
     }
-    else if ( ASSETCHAINS_MINEROPRET != 0 )
+    else if ( ASSETCHAINS_CBOPRET != 0 )
     {
         if ( komodo_opretvalidate(nHeight,tx.vout[1].scriptPubKey) < 0 )
             return(false);
