@@ -1578,6 +1578,7 @@ uint32_t komodo_pricenew(uint32_t price,uint32_t refprice,int64_t tolerance)
     uint32_t highprice,lowprice;
     highprice = ((uint64_t)refprice * (COIN + tolerance)) / COIN;
     lowprice = ((uint64_t)refprice * (COIN - tolerance)) / COIN;
+    fprintf(stderr,"%.4f -> (%.4f %.4f)\n",(double)price/10000,(double)lowprice/10000,(double)highprice/10000);
     if ( price > highprice )
         return(highprice);
     else if ( price < lowprice )
