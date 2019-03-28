@@ -1383,7 +1383,7 @@ bool CheckTransactionWithoutProofVerification(uint32_t tiptime,const CTransactio
             }
         }
         if ( txout.scriptPubKey.size() > IGUANA_MAXSCRIPTSIZE )
-            return state.DoS(100, error("CheckTransaction(): txout.scriptPubKey.size() too big"),REJECT_INVALID, "bad-txns-vout-negative");
+            return state.DoS(100, error("CheckTransaction(): txout.scriptPubKey.size() too big"),REJECT_INVALID, "bad-txns-opret-too-big");
         nValueOut += txout.nValue;
         if (!MoneyRange(nValueOut))
             return state.DoS(100, error("CheckTransaction(): txout total out of range"),
