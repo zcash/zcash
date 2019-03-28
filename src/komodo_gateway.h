@@ -1549,13 +1549,79 @@ void komodo_passport_iteration()
 }
 
 extern std::vector<uint8_t> Mineropret;
+#define PRICES_MAXCHANGE (COIN / 100)
+#define PRICES_SIZEBIT0 (sizeof(uint32_t) * 4)
+
+int32_t komodo_heightpricebits(uint32_t prevbits[4],int32_t nHeight)
+{
+    CBlockIndex *pindex; CBlock block; int32_t numvouts; std::vector<uint8_t> vopret;
+    if ( (pindex= komodo_chainactive(nHeight)) != 0 )
+    {
+        if ( komodo_blockload(block,pindex) == 0 )
+        {
+            numvouts = (int32_t)block.vout[0].size();
+            GetOpReturnData(block.vout[numvouts-1].scriptPubKey,vopret);
+            if ( vopret.size() == PRICES_SIZEBIT0 )
+            {
+                memcpy(prevbits,&vopret[0],PRICES_SIZEBIT0);
+                return(0);
+            }
+        }
+    }
+    fprintf(stderr,"couldnt get pricebits for %d\n",nHeight);
+    return(-1);
+}
+
+uint32_t komodo_pricenew(uint32_t price,uint32_t refprice,int64_t tolerance)
+{
+    uint32_t highprice,lowprice;
+    highprice = ((uint64_t)refprice * (COIN + tolerance)) / COIN;
+    lowprice = ((uint64_t)refprice * (COIN - tolerance)) / COIN;
+    if ( price > highprice )
+        return(highprice);
+    else if ( price < lowprice )
+        return(lowprice);
+    else return(0);
+}
+
+int32_t komodo_pricecmp(uint32_t pricebitsA[4],uint32_t pricebitsB[4],int64_t tolerance)
+{
+    int32_t i;
+    for (i=1; i<4; i++)
+        if ( komodo_pricenew(pricebitsA[i],pricebitsB[i],tolerance) != 0 )
+            return(-1);
+    return(0);
+}
+
+int32_t komodo_priceclamp(uint32_t pricebits[4],uint32_t refprices[4],int64_t tolerance)
+{
+    int32_t i; uint32_t newprice;
+    for (i=1; i<4; i++)
+    {
+        if ( (newprice= komodo_pricenew(pricebits[i],refprices[i],tolerance)) != 0 )
+        {
+            fprintf(stderr,"priceclamp[%d] %u -> %u\n",i,pricebits[i],newprice);
+            pricebits[i] = newprice;
+        }
+    }
+    return(0);
+}
 
 CScript komodo_mineropret(int32_t nHeight)
 {
-    CScript opret;
-    if ( Mineropret.size() != 0 )
+    CScript opret; uint32_t pricebits[4],prevbits[4];
+    if ( Mineropret.size() == PRICES_SIZEBIT0 )
     {
-        //fprintf(stderr,"use Mineropret[%d]\n",(int32_t)Mineropret.size());
+        if ( komodo_heightpricebits(prevbits,nHeight-1) == 0 )
+        {
+            memcpy(pricebits,&Mineropret[0],PRICES_SIZEBIT0);
+            if ( komodo_pricecmp(pricebit,prevbits,PRICES_MAXCHANGE) < 0 )
+            {
+                komodo_priceclamp(pricebits,prevbits,PRICES_MAXCHANGE);
+                fprintf(stderr,"update Mineropret to clamped prices\n");
+                memcpy(&Mineropret[0],pricebits,PRICES_SIZEBIT0);
+            }
+        }
         return(opret << OP_RETURN << Mineropret);
     }
     return(opret);
@@ -1563,18 +1629,34 @@ CScript komodo_mineropret(int32_t nHeight)
 
 int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
 {
-    std::vector<uint8_t> vopret; uint32_t pricebits[4]; int32_t i,lag,lag2;
+    std::vector<uint8_t> vopret; uint32_t pricebits[4],prevbits[4]; int32_t i,lag,lag2;
     if ( ASSETCHAINS_CBOPRET != 0 )
     {
         GetOpReturnData(scriptPubKey,vopret);
-        if ( vopret.size() == sizeof(pricebits) )
+        if ( vopret.size() == PRICES_SIZEBIT0 )
         {
-            memcpy(pricebits,&vopret[0],sizeof(pricebits));
+            memcpy(pricebits,&vopret[0],PRICES_SIZEBIT0);
             lag = (int32_t)(time(NULL) - pricebits[0]);
+            if ( lag < 0 )
+                lag = -lag;
             lag2 = (int32_t)(pricebits[0] - komodo_heightstamp(nHeight-1));
             fprintf(stderr,"ht.%d: t%u lag.%d %.4f USD, %.4f GBP, %.4f EUR htstamp.%d [%d]\n",nHeight,pricebits[0],lag,(double)pricebits[1]/10000,(double)pricebits[2]/10000,(double)pricebits[3]/10000,komodo_heightstamp(nHeight-1),lag2);
+            if ( lag < ASSETCHAINS_BLOCKTIME && Mineropret.size() == PRICES_SIZEBIT0 )
+            {
+                memcpy(prevbits,&Mineropret[0],PRICES_SIZEBIT0);
+                if ( komodo_pricecmp(pricebits,prevbits,PRICES_MAXCHANGE) < 0 )
+                    return(-1);
+            }
+            if ( nHeight > 1 )
+            {
+                if ( komodo_heightpricebits(prevbits,nHeight-1) == 0 )
+                {
+                    if ( komodo_pricecmp(pricebits,prevbits,PRICES_MAXCHANGE) < 0 )
+                        return(-1);
+                } else return(-1);
+            }
             return(0);
-        } else fprintf(stderr,"wrong size %d vs %d, scriptPubKey size %d [%02x]\n",(int32_t)vopret.size(),(int32_t)sizeof(pricebits),(int32_t)scriptPubKey.size(),scriptPubKey[0]);
+        } else fprintf(stderr,"wrong size %d vs %d, scriptPubKey size %d [%02x]\n",(int32_t)vopret.size(),(int32_t)PRICES_SIZEBIT0,(int32_t)scriptPubKey.size(),scriptPubKey[0]);
         return(-1);
     }
     return(0);
@@ -1632,9 +1714,9 @@ void komodo_cbopretupdate()
     {
         if ( get_btcusd(pricebits) == 0 )
         {
-            if ( Mineropret.size() != sizeof(pricebits) )
-                Mineropret.resize(sizeof(pricebits));
-            memcpy(&Mineropret[0],pricebits,sizeof(pricebits));
+            if ( Mineropret.size() != PRICES_SIZEBIT0 )
+                Mineropret.resize(PRICES_SIZEBIT0);
+            memcpy(&Mineropret[0],pricebits,PRICES_SIZEBIT0);
             //int32_t i; for (i=0; i<Mineropret.size(); i++)
             //    fprintf(stderr,"%02x",Mineropret[i]);
             //fprintf(stderr," <- set Mineropret[%d]\n",(int32_t)Mineropret.size());
