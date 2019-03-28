@@ -1688,7 +1688,7 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
                     for (i=1; i<4; i++)
                     {
                         maxflag = 0;
-                        if ( (newprice= komodo_pricenew(maxflag,pricebits[i],prevbits[i],PRICES_MAXCHANGE)) != 0 ) // proposed price is clamped
+                        if ( (newprice= komodo_pricenew(&maxflag,pricebits[i],prevbits[i],PRICES_MAXCHANGE)) != 0 ) // proposed price is clamped
                         {
                             // make sure local price is beyond clamped
                             if ( maxflag > 0 && localbits[i] < pricebits[i] )
