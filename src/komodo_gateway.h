@@ -1615,7 +1615,7 @@ CScript komodo_mineropret(int32_t nHeight)
         if ( komodo_heightpricebits(prevbits,nHeight-1) == 0 )
         {
             memcpy(pricebits,&Mineropret[0],PRICES_SIZEBIT0);
-            if ( komodo_pricecmp(pricebit,prevbits,PRICES_MAXCHANGE) < 0 )
+            if ( komodo_pricecmp(pricebits,prevbits,PRICES_MAXCHANGE) < 0 )
             {
                 komodo_priceclamp(pricebits,prevbits,PRICES_MAXCHANGE);
                 fprintf(stderr,"update Mineropret to clamped prices\n");
