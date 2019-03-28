@@ -1614,7 +1614,7 @@ int32_t komodo_priceclamp(uint32_t pricebits[4],uint32_t refprices[4],int64_t to
     int32_t i,maxflag = 0; uint32_t newprice;
     for (i=1; i<4; i++)
     {
-        if ( (newprice= komodo_pricenew(&maxflagp,pricebits[i],refprices[i],tolerance)) != 0 )
+        if ( (newprice= komodo_pricenew(&maxflag,pricebits[i],refprices[i],tolerance)) != 0 )
         {
             fprintf(stderr,"priceclamped[%d] %u -> %u\n",i,pricebits[i],newprice);
             pricebits[i] = newprice;
