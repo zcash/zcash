@@ -2059,16 +2059,16 @@ void komodo_args(char *argv0)
             }
             if ( ASSETCHAINS_BLOCKTIME != 60 )
                 extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_BLOCKTIME),(void *)&ASSETCHAINS_BLOCKTIME);
+            if ( Mineropret.size() != 0 )
+            {
+                for (i=0; i<Mineropret.size(); i++)
+                    extraptr[extralen++] = Mineropret[i];
+            }
             if ( ASSETCHAINS_CBOPRET != 0 )
             {
                 extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_CBOPRET),(void *)&ASSETCHAINS_CBOPRET);
                 komodo_cbopretupdate();
                 fprintf(stderr,"This blockchain uses data produced from CoinDesk Bitcoin Price Index\n");
-            }
-            if ( Mineropret.size() != 0 )
-            {
-                for (i=0; i<Mineropret.size(); i++)
-                    extraptr[extralen++] = Mineropret[i];
             }
         }
         
