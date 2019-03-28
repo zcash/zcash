@@ -1554,13 +1554,14 @@ extern std::vector<uint8_t> Mineropret;
 
 int32_t komodo_heightpricebits(uint32_t prevbits[4],int32_t nHeight)
 {
-    CBlockIndex *pindex; CBlock block; int32_t numvouts; std::vector<uint8_t> vopret;
+    CBlockIndex *pindex; CBlock block; CTransaction tx; int32_t numvouts; std::vector<uint8_t> vopret;
     if ( (pindex= komodo_chainactive(nHeight)) != 0 )
     {
         if ( komodo_blockload(block,pindex) == 0 )
         {
-            numvouts = (int32_t)block.vout[0].size();
-            GetOpReturnData(block.vout[numvouts-1].scriptPubKey,vopret);
+            tx = block.vtx[0];
+            numvouts = (int32_t)tx.vout[0].size();
+            GetOpReturnData(tx.vout[numvouts-1].scriptPubKey,vopret);
             if ( vopret.size() == PRICES_SIZEBIT0 )
             {
                 memcpy(prevbits,&vopret[0],PRICES_SIZEBIT0);
