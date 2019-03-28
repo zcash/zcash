@@ -726,8 +726,10 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
         }
         if ( ASSETCHAINS_CBOPRET != 0 )
         {
-            txNew.vout.resize(txNew.vout.size()+1);
-            txNew.vout[txNew.vout.size()-1].scriptPubKey = komodo_mineropret(nHeight);
+            int32_t numv = (int32_t)txNew.vout.size();
+            txNew.vout.resize(numv+1);
+            txNew.vout[numv].nValue = 0;
+            txNew.vout[numv].scriptPubKey = komodo_mineropret(nHeight);
             printf("autocreate commision/cbopret.%lld vout[%d]\n",(long long)ASSETCHAINS_CBOPRET,(int32_t)txNew.vout.size());
         }
         pblock->vtx[0] = txNew;

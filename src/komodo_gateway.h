@@ -1555,7 +1555,7 @@ CScript komodo_mineropret(int32_t nHeight)
     CScript opret;
     if ( Mineropret.size() != 0 )
     {
-        fprintf(stderr,"use Mineropret[%d]\n",(int32_t)Mineropret.size());
+        //fprintf(stderr,"use Mineropret[%d]\n",(int32_t)Mineropret.size());
         return(opret << OP_RETURN << Mineropret);
     }
     return(opret);
