@@ -6105,6 +6105,7 @@ UniValue channelsopen(const UniValue& params, bool fHelp)
         tokenid=Parseuint256((char *)params[3].get_str().c_str());
     }
     hex = ChannelOpen(0,pubkey2pk(destpub),numpayments,payment,tokenid);
+    RETURN_IF_ERROR(CCerror);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
@@ -6135,6 +6136,7 @@ UniValue channelspayment(const UniValue& params, bool fHelp)
         secret = Parseuint256((char *)params[2].get_str().c_str());
     }
     hex = ChannelPayment(0,opentxid,amount,secret);
+    RETURN_IF_ERROR(CCerror);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
@@ -6155,6 +6157,7 @@ UniValue channelsclose(const UniValue& params, bool fHelp)
     LOCK2(cs_main, pwalletMain->cs_wallet);
     opentxid = Parseuint256((char *)params[0].get_str().c_str());
     hex = ChannelClose(0,opentxid);
+    RETURN_IF_ERROR(CCerror);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
@@ -6176,6 +6179,7 @@ UniValue channelsrefund(const UniValue& params, bool fHelp)
     opentxid = Parseuint256((char *)params[0].get_str().c_str());
     closetxid = Parseuint256((char *)params[1].get_str().c_str());
     hex = ChannelRefund(0,opentxid,closetxid);
+    RETURN_IF_ERROR(CCerror);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
