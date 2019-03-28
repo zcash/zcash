@@ -1583,7 +1583,7 @@ cJSON *get_urljson(char *url)
     char *jsonstr; cJSON *json = 0;
     if ( (jsonstr= issue_curl(url)) != 0 )
     {
-        fprintf(stderr,"(%s) -> (%s)\n",url,jsonstr);
+        //fprintf(stderr,"(%s) -> (%s)\n",url,jsonstr);
         json = cJSON_Parse(jsonstr);
         free(jsonstr);
     }
@@ -1629,7 +1629,6 @@ void komodo_cbopretupdate()
         if ( get_btcusd(pricebits) == 0 )
         {
             Mineropret.resize(sizeof(pricebits));
-            fprintf(stderr,"set pricebits\n");
             memcpy(&Mineropret[0],pricebits,sizeof(pricebits));
         }
     }
