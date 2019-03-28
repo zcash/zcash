@@ -17,8 +17,8 @@
 #include <iostream>
 #include "util.h"
 
-#include "paymentdisclosure.h"
-#include "paymentdisclosuredb.h"
+#include "wallet/paymentdisclosure.h"
+#include "wallet/paymentdisclosuredb.h"
 
 #include "sodium.h"
 

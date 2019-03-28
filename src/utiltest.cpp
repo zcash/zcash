@@ -5,13 +5,16 @@
 #include "utiltest.h"
 
 #include "consensus/upgrades.h"
+#include "transaction_builder.h"
 
 #include <array>
 
-CWalletTx GetValidReceive(ZCJoinSplit& params,
-                          const libzcash::SproutSpendingKey& sk, CAmount value,
-                          bool randomInputs,
-                          int32_t version /* = 2 */) {
+// Sprout
+CMutableTransaction GetValidSproutReceiveTransaction(ZCJoinSplit& params,
+                                const libzcash::SproutSpendingKey& sk,
+                                CAmount value,
+                                bool randomInputs,
+                                int32_t version /* = 2 */) {
     CMutableTransaction mtx;
     mtx.nVersion = version;
     mtx.vin.resize(2);
@@ -47,6 +50,9 @@ CWalletTx GetValidReceive(ZCJoinSplit& params,
                           inputs, outputs, 2*value, 0, false};
     mtx.vjoinsplit.push_back(jsdesc);
 
+    // Consider: The following is a bit misleading (given the name of this function)
+    // and should perhaps be changed, but currently a few tests in test_wallet.cpp
+    // depend on this happening.
     if (version >= 4) {
         // Shielded Output
         OutputDescription od;
@@ -65,14 +71,42 @@ CWalletTx GetValidReceive(ZCJoinSplit& params,
                                 joinSplitPrivKey
                                ) == 0);
 
+    return mtx;
+}
+
+CWalletTx GetValidSproutReceive(ZCJoinSplit& params,
+                                const libzcash::SproutSpendingKey& sk,
+                                CAmount value,
+                                bool randomInputs,
+                                int32_t version /* = 2 */)
+{
+    CMutableTransaction mtx = GetValidSproutReceiveTransaction(
+        params, sk, value, randomInputs, version
+    );
     CTransaction tx {mtx};
     CWalletTx wtx {NULL, tx};
     return wtx;
 }
 
-libzcash::SproutNote GetNote(ZCJoinSplit& params,
-                       const libzcash::SproutSpendingKey& sk,
-                       const CTransaction& tx, size_t js, size_t n) {
+CWalletTx GetInvalidCommitmentSproutReceive(ZCJoinSplit& params,
+                                const libzcash::SproutSpendingKey& sk,
+                                CAmount value,
+                                bool randomInputs,
+                                int32_t version /* = 2 */)
+{
+    CMutableTransaction mtx = GetValidSproutReceiveTransaction(
+        params, sk, value, randomInputs, version
+    );
+    mtx.vjoinsplit[0].commitments[0] = uint256();
+    mtx.vjoinsplit[0].commitments[1] = uint256();
+    CTransaction tx {mtx};
+    CWalletTx wtx {NULL, tx};
+    return wtx;
+}
+
+libzcash::SproutNote GetSproutNote(ZCJoinSplit& params,
+                                   const libzcash::SproutSpendingKey& sk,
+                                   const CTransaction& tx, size_t js, size_t n) {
     ZCNoteDecryption decryptor {sk.receiving_key()};
     auto hSig = tx.vjoinsplit[js].h_sig(params, tx.joinSplitPubKey);
     auto note_pt = libzcash::SproutNotePlaintext::decrypt(
@@ -84,9 +118,10 @@ libzcash::SproutNote GetNote(ZCJoinSplit& params,
     return note_pt.note(sk.address());
 }
 
-CWalletTx GetValidSpend(ZCJoinSplit& params,
-                        const libzcash::SproutSpendingKey& sk,
-                        const libzcash::SproutNote& note, CAmount value) {
+CWalletTx GetValidSproutSpend(ZCJoinSplit& params,
+                              const libzcash::SproutSpendingKey& sk,
+                              const libzcash::SproutNote& note,
+                              CAmount value) {
     CMutableTransaction mtx;
     mtx.vout.resize(2);
     mtx.vout[0].nValue = value;
@@ -148,6 +183,61 @@ CWalletTx GetValidSpend(ZCJoinSplit& params,
                                 joinSplitPrivKey
                                ) == 0);
     CTransaction tx {mtx};
+    CWalletTx wtx {NULL, tx};
+    return wtx;
+}
+
+// Sapling
+const Consensus::Params& RegtestActivateSapling() {
+    SelectParams(CBaseChainParams::REGTEST);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+    return Params().GetConsensus();
+}
+
+void RegtestDeactivateSapling() {
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+}
+
+libzcash::SaplingExtendedSpendingKey GetTestMasterSaplingSpendingKey() {
+    std::vector<unsigned char, secure_allocator<unsigned char>> rawSeed(32);
+    HDSeed seed(rawSeed);
+    return libzcash::SaplingExtendedSpendingKey::Master(seed);
+}
+
+CKey AddTestCKeyToKeyStore(CBasicKeyStore& keyStore) {
+    CKey tsk = DecodeSecret(T_SECRET_REGTEST);
+    keyStore.AddKey(tsk);
+    return tsk;
+}
+
+TestSaplingNote GetTestSaplingNote(const libzcash::SaplingPaymentAddress& pa, CAmount value) {
+    // Generate dummy Sapling note
+    libzcash::SaplingNote note(pa, value);
+    uint256 cm = note.cm().get();
+    SaplingMerkleTree tree;
+    tree.append(cm);
+    return { note, tree };
+}
+
+CWalletTx GetValidSaplingReceive(const Consensus::Params& consensusParams,
+                                 CBasicKeyStore& keyStore,
+                                 const libzcash::SaplingExtendedSpendingKey &sk,
+                                 CAmount value) {
+    // From taddr
+    CKey tsk = AddTestCKeyToKeyStore(keyStore);
+    auto scriptPubKey = GetScriptForDestination(tsk.GetPubKey().GetID());
+    // To zaddr
+    auto fvk = sk.expsk.full_viewing_key();
+    auto pa = sk.DefaultAddress();
+
+    auto builder = TransactionBuilder(consensusParams, 1, &keyStore);
+    builder.SetFee(0);
+    builder.AddTransparentInput(COutPoint(), scriptPubKey, value);
+    builder.AddSaplingOutput(fvk.ovk, pa, value, {});
+
+    CTransaction tx = builder.Build().GetTxOrThrow();
     CWalletTx wtx {NULL, tx};
     return wtx;
 }

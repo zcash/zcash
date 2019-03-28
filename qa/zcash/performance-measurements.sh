@@ -182,6 +182,18 @@ case "$1" in
             parameterloading)
                 zcash_rpc zcbenchmark parameterloading 10
                 ;;
+            createsaplingspend)
+                zcash_rpc zcbenchmark createsaplingspend 10
+                ;;
+            verifysaplingspend)
+                zcash_rpc zcbenchmark verifysaplingspend 1000
+                ;;
+            createsaplingoutput)
+                zcash_rpc zcbenchmark createsaplingoutput 50
+                ;;
+            verifysaplingoutput)
+                zcash_rpc zcbenchmark verifysaplingoutput 1000
+                ;;
             createjoinsplit)
                 zcash_rpc zcbenchmark createjoinsplit 10 "${@:3}"
                 ;;
@@ -231,6 +243,18 @@ case "$1" in
                 ;;
             parameterloading)
                 zcash_rpc zcbenchmark parameterloading 1
+                ;;
+            createsaplingspend)
+                zcash_rpc zcbenchmark createsaplingspend 1
+                ;;
+            verifysaplingspend)
+                zcash_rpc zcbenchmark verifysaplingspend 1
+                ;;
+            createsaplingoutput)
+                zcash_rpc zcbenchmark createsaplingoutput 1
+                ;;
+            verifysaplingoutput)
+                zcash_rpc zcbenchmark verifysaplingoutput 1
                 ;;
             createjoinsplit)
                 zcash_rpc_slow zcbenchmark createjoinsplit 1 "${@:3}"
@@ -282,6 +306,18 @@ case "$1" in
                 ;;
             parameterloading)
                 zcash_rpc zcbenchmark parameterloading 1
+                ;;
+            createsaplingspend)
+                zcash_rpc zcbenchmark createsaplingspend 1
+                ;;
+            verifysaplingspend)
+                zcash_rpc zcbenchmark verifysaplingspend 1
+                ;;
+            createsaplingoutput)
+                zcash_rpc zcbenchmark createsaplingoutput 1
+                ;;
+            verifysaplingoutput)
+                zcash_rpc zcbenchmark verifysaplingoutput 1
                 ;;
             createjoinsplit)
                 zcash_rpc_veryslow zcbenchmark createjoinsplit 1 "${@:3}"

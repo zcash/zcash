@@ -734,6 +734,7 @@ UniValue getblockchaininfo(const UniValue& params, bool fHelp)
             "  \"verificationprogress\": xxxx, (numeric) estimate of verification progress [0..1]\n"
             "  \"estimatedheight\": xxxx,  (numeric) if syncing, the estimated height of the chain, else equals the number of blocks processed\n" 
             "  \"chainwork\": \"xxxx\"     (string) total amount of work in active chain, in hexadecimal\n"
+            "  \"size_on_disk\": xxxxxx,       (numeric) the estimated size of the block and undo files on disk\n"
             "  \"commitments\": xxxxxx,    (numeric) the current number of note commitments in the commitment tree\n"
             "  \"softforks\": [            (array) status of softforks in progress\n"
             "     {\n"
@@ -777,6 +778,7 @@ UniValue getblockchaininfo(const UniValue& params, bool fHelp)
     obj.push_back(Pair("verificationprogress",  Checkpoints::GuessVerificationProgress(Params().Checkpoints(), chainActive.Tip())));
     obj.push_back(Pair("chainwork",             chainActive.Tip()->nChainWork.GetHex()));
     obj.push_back(Pair("pruned",                fPruneMode));
+    obj.push_back(Pair("size_on_disk",          CalculateCurrentUsage()));
 
     if (IsInitialBlockDownload()) {
         obj.push_back(Pair("estimatedheight",       EstimateNetHeight((int)chainActive.Height(), chainActive.Tip()->GetMedianTimePast(), Params())));

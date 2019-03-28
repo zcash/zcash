@@ -1699,6 +1699,12 @@ boost::optional<uint256> CWallet::GetSproutNoteNullifier(const JSDescription &js
         hSig,
         (unsigned char) n);
     auto note = note_pt.note(address);
+
+    // Check note plaintext against note commitment
+    if (note.cm() != jsdesc.commitments[n]) {
+        throw libzcash::note_decryption_failed();
+    }
+
     // SpendingKeys are only available if:
     // - We have them (this isn't a viewing key)
     // - The wallet is unlocked
@@ -4037,6 +4043,21 @@ void CWallet::UpdatedTransaction(const uint256 &hashTx)
         if (mi != mapWallet.end())
             NotifyTransactionChanged(this, hashTx, CT_UPDATED);
     }
+}
+
+void CWallet::GetScriptForMining(boost::shared_ptr<CReserveScript> &script)
+{
+    if (!GetArg("-mineraddress", "").empty()) {
+        return;
+    }
+
+    boost::shared_ptr<CReserveKey> rKey(new CReserveKey(this));
+    CPubKey pubkey;
+    if (!rKey->GetReservedKey(pubkey))
+        return;
+
+    script = rKey;
+    script->reserveScript = CScript() << OP_DUP << OP_HASH160 << ToByteVector(pubkey.GetID()) << OP_EQUALVERIFY << OP_CHECKSIG;
 }
 
 void CWallet::LockCoin(COutPoint& output)

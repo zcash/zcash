@@ -8,7 +8,7 @@ import sys; assert sys.version_info < (3,), ur"This script does not run under Py
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, initialize_chain_clean, \
     start_nodes, stop_nodes, connect_nodes_bi, \
-    wait_and_assert_operationid_status, wait_bitcoinds
+    wait_and_assert_operationid_status, wait_bitcoinds, get_coinbase_address
 from decimal import Decimal
 
 class WalletAnchorForkTest (BitcoinTestFramework):
@@ -45,7 +45,7 @@ class WalletAnchorForkTest (BitcoinTestFramework):
         # At this point in time, commitment tree is the empty root
 
         # Node 0 creates a joinsplit transaction
-        mytaddr0 = self.nodes[0].getnewaddress()
+        mytaddr0 = get_coinbase_address(self.nodes[0])
         myzaddr0 = self.nodes[0].z_getnewaddress('sprout')
         recipients = []
         recipients.append({"address":myzaddr0, "amount": Decimal('10.0') - Decimal('0.0001')})

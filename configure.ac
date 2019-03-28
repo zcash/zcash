@@ -2,7 +2,7 @@ dnl require autoconf 2.60 (AS_ECHO/AS_ECHO_N)
 AC_PREREQ([2.60])
 define(_CLIENT_VERSION_MAJOR, 2)
 define(_CLIENT_VERSION_MINOR, 0)
-define(_CLIENT_VERSION_REVISION, 3)
+define(_CLIENT_VERSION_REVISION, 4)
 define(_CLIENT_VERSION_BUILD, 50)
 define(_ZC_BUILD_VAL, m4_if(m4_eval(_CLIENT_VERSION_BUILD < 25), 1, m4_incr(_CLIENT_VERSION_BUILD), m4_eval(_CLIENT_VERSION_BUILD < 50), 1, m4_eval(_CLIENT_VERSION_BUILD - 24), m4_eval(_CLIENT_VERSION_BUILD == 50), 1, , m4_eval(_CLIENT_VERSION_BUILD - 50)))
 define(_CLIENT_VERSION_SUFFIX, m4_if(m4_eval(_CLIENT_VERSION_BUILD < 25), 1, _CLIENT_VERSION_REVISION-beta$1, m4_eval(_CLIENT_VERSION_BUILD < 50), 1, _CLIENT_VERSION_REVISION-rc$1, m4_eval(_CLIENT_VERSION_BUILD == 50), 1, _CLIENT_VERSION_REVISION, _CLIENT_VERSION_REVISION-$1)))
@@ -587,9 +587,17 @@ if test x$use_proton = xyes; then
     [],
     [AC_MSG_WARN([Proton headers not found, disabling Proton support])
     use_proton=no])
- AC_CHECK_LIB([qpid-proton-cpp], [main],
-    [PROTON_LIBS="-lqpid-proton-cpp -lqpid-proton"],
-    [AC_MSG_WARN([Proton libraries not found, disabling Proton support])
+ AC_CHECK_LIB([qpid-proton-cpp-static], [main],
+    [PROTON_LIBS="-lqpid-proton-cpp-static"],
+    [AC_MSG_WARN([Proton qpid-proton-cpp-static library not found, disabling Proton support])
+    use_proton=no])
+ AC_CHECK_LIB([qpid-proton-core-static], [main],
+    [PROTON_LIBS+=" -lqpid-proton-core-static"],
+    [AC_MSG_WARN([Proton qpid-proton-core-static library not found, disabling Proton support])
+    use_proton=no])
+ AC_CHECK_LIB([qpid-proton-static], [main],
+    [PROTON_LIBS+=" -lqpid-proton-static"],
+    [AC_MSG_WARN([Proton qpid-proton-static library not found, disabling Proton support])
     use_proton=no])
 fi
 if test x$use_proton = xyes; then

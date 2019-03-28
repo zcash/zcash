@@ -3,15 +3,15 @@
 #include <zcash/Address.hpp>
 #include <zcash/zip32.h>
 
+#include "utiltest.h"
+
 #include <gtest/gtest.h>
 
 TEST(Keys, EncodeAndDecodeSapling)
 {
     SelectParams(CBaseChainParams::MAIN);
 
-    std::vector<unsigned char, secure_allocator<unsigned char>> rawSeed(32);
-    HDSeed seed(rawSeed);
-    auto m = libzcash::SaplingExtendedSpendingKey::Master(seed);
+    auto m = GetTestMasterSaplingSpendingKey();
 
     for (uint32_t i = 0; i < 1000; i++) {
         auto sk = m.Derive(i);

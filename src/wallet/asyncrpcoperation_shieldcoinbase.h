@@ -12,13 +12,12 @@
 #include "zcash/JoinSplit.hpp"
 #include "zcash/Address.hpp"
 #include "wallet.h"
+#include "wallet/paymentdisclosure.h"
 
 #include <unordered_map>
 #include <tuple>
 
 #include <univalue.h>
-
-#include "paymentdisclosure.h"
 
 // Default transaction fee if caller does not specify one.
 #define SHIELD_COINBASE_DEFAULT_MINERS_FEE   10000

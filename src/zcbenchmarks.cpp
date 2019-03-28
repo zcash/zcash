@@ -44,7 +44,7 @@ void pre_wallet_load()
     if (pwalletMain)
         pwalletMain->Flush(false);
 #ifdef ENABLE_MINING
-    GenerateBitcoins(false, NULL, 0);
+    GenerateBitcoins(false, 0, Params());
 #endif
     UnregisterNodeSignals(GetNodeSignals());
     if (pwalletMain)
@@ -63,7 +63,7 @@ void post_wallet_load(){
 #ifdef ENABLE_MINING
     // Generate coins in the background
     if (pwalletMain || !GetArg("-mineraddress", "").empty())
-        GenerateBitcoins(GetBoolArg("-gen", false), pwalletMain, GetArg("-genproclimit", 1));
+        GenerateBitcoins(GetBoolArg("-gen", false), GetArg("-genproclimit", 1), Params());
 #endif    
 }
 
@@ -280,48 +280,89 @@ double benchmark_large_tx(size_t nInputs)
     return timer_stop(tv_start);
 }
 
-double benchmark_try_decrypt_notes(size_t nAddrs)
+// The two benchmarks, try_decrypt_sprout_notes and try_decrypt_sapling_notes,
+// are checking worst-case scenarios. In both we add n keys to a wallet, 
+// create a transaction using a key not in our original list of n, and then
+// check that the transaction is not associated with any of the keys in our 
+// wallet. We call assert(...) to ensure that this is true.
+double benchmark_try_decrypt_sprout_notes(size_t nKeys)
 {
     CWallet wallet;
-    for (int i = 0; i < nAddrs; i++) {
+    for (int i = 0; i < nKeys; i++) {
         auto sk = libzcash::SproutSpendingKey::random();
         wallet.AddSproutSpendingKey(sk);
     }
 
     auto sk = libzcash::SproutSpendingKey::random();
-    auto tx = GetValidReceive(*pzcashParams, sk, 10, true);
+    auto tx = GetValidSproutReceive(*pzcashParams, sk, 10, true);
 
     struct timeval tv_start;
     timer_start(tv_start);
-    auto nd = wallet.FindMySproutNotes(tx);
+    auto noteDataMap = wallet.FindMySproutNotes(tx);
+
+    assert(noteDataMap.empty());
     return timer_stop(tv_start);
 }
 
-double benchmark_increment_note_witnesses(size_t nTxs)
+double benchmark_try_decrypt_sapling_notes(size_t nKeys)
 {
+    // Set params
+    auto consensusParams = Params().GetConsensus();
+
+    auto masterKey = GetTestMasterSaplingSpendingKey();
+
+    CWallet wallet;
+
+    for (int i = 0; i < nKeys; i++) {
+        auto sk = masterKey.Derive(i);
+        wallet.AddSaplingSpendingKey(sk, sk.DefaultAddress());
+    }
+
+    // Generate a key that has not been added to the wallet
+    auto sk = masterKey.Derive(nKeys);
+    auto tx = GetValidSaplingReceive(consensusParams, wallet, sk, 10);
+
+    struct timeval tv_start;
+    timer_start(tv_start);
+    auto noteDataMapAndAddressesToAdd = wallet.FindMySaplingNotes(tx);
+    assert(noteDataMapAndAddressesToAdd.first.empty());
+    return timer_stop(tv_start);
+}
+
+CWalletTx CreateSproutTxWithNoteData(const libzcash::SproutSpendingKey& sk) {
+    auto wtx = GetValidSproutReceive(*pzcashParams, sk, 10, true);
+    auto note = GetSproutNote(*pzcashParams, sk, wtx, 0, 1);
+    auto nullifier = note.nullifier(sk);
+
+    mapSproutNoteData_t noteDataMap;
+    JSOutPoint jsoutpt {wtx.GetHash(), 0, 1};
+    SproutNoteData nd {sk.address(), nullifier};
+    noteDataMap[jsoutpt] = nd;
+
+    wtx.SetSproutNoteData(noteDataMap);
+
+    return wtx;
+}
+
+double benchmark_increment_sprout_note_witnesses(size_t nTxs)
+{
+    auto consensusParams = Params().GetConsensus();
+
     CWallet wallet;
     SproutMerkleTree sproutTree;
     SaplingMerkleTree saplingTree;
 
-    auto sk = libzcash::SproutSpendingKey::random();
-    wallet.AddSproutSpendingKey(sk);
+    auto sproutSpendingKey = libzcash::SproutSpendingKey::random();
+    wallet.AddSproutSpendingKey(sproutSpendingKey);
 
     // First block
     CBlock block1;
-    for (int i = 0; i < nTxs; i++) {
-        auto wtx = GetValidReceive(*pzcashParams, sk, 10, true);
-        auto note = GetNote(*pzcashParams, sk, wtx, 0, 1);
-        auto nullifier = note.nullifier(sk);
-
-        mapSproutNoteData_t noteData;
-        JSOutPoint jsoutpt {wtx.GetHash(), 0, 1};
-        SproutNoteData nd {sk.address(), nullifier};
-        noteData[jsoutpt] = nd;
-
-        wtx.SetSproutNoteData(noteData);
+    for (int i = 0; i < nTxs; ++i) {
+        auto wtx = CreateSproutTxWithNoteData(sproutSpendingKey);
         wallet.AddToWallet(wtx, true, NULL);
         block1.vtx.push_back(wtx);
     }
+
     CBlockIndex index1(block1);
     index1.nHeight = 1;
 
@@ -332,19 +373,73 @@ double benchmark_increment_note_witnesses(size_t nTxs)
     CBlock block2;
     block2.hashPrevBlock = block1.GetHash();
     {
-        auto wtx = GetValidReceive(*pzcashParams, sk, 10, true);
-        auto note = GetNote(*pzcashParams, sk, wtx, 0, 1);
-        auto nullifier = note.nullifier(sk);
-
-        mapSproutNoteData_t noteData;
-        JSOutPoint jsoutpt {wtx.GetHash(), 0, 1};
-        SproutNoteData nd {sk.address(), nullifier};
-        noteData[jsoutpt] = nd;
-
-        wtx.SetSproutNoteData(noteData);
-        wallet.AddToWallet(wtx, true, NULL);
-        block2.vtx.push_back(wtx);
+        auto sproutTx = CreateSproutTxWithNoteData(sproutSpendingKey);
+        wallet.AddToWallet(sproutTx, true, NULL);
+        block2.vtx.push_back(sproutTx);
     }
+
+    CBlockIndex index2(block2);
+    index2.nHeight = 2;
+
+    struct timeval tv_start;
+    timer_start(tv_start);
+    wallet.ChainTip(&index2, &block2, sproutTree, saplingTree, true);
+    return timer_stop(tv_start);
+}
+
+CWalletTx CreateSaplingTxWithNoteData(const Consensus::Params& consensusParams,
+                                      CBasicKeyStore& keyStore,
+                                      const libzcash::SaplingExtendedSpendingKey &sk) {
+    auto wtx = GetValidSaplingReceive(consensusParams, keyStore, sk, 10);
+    auto testNote = GetTestSaplingNote(sk.DefaultAddress(), 10);
+    auto fvk = sk.expsk.full_viewing_key();
+    auto nullifier = testNote.note.nullifier(fvk, testNote.tree.witness().position()).get();
+
+    mapSaplingNoteData_t noteDataMap;
+    SaplingOutPoint outPoint {wtx.GetHash(), 0};
+    auto ivk = fvk.in_viewing_key();
+    SaplingNoteData noteData {ivk, nullifier};
+    noteDataMap[outPoint] = noteData;
+
+    wtx.SetSaplingNoteData(noteDataMap);
+
+    return wtx;
+}
+
+double benchmark_increment_sapling_note_witnesses(size_t nTxs)
+{
+    auto consensusParams = Params().GetConsensus();
+
+    CWallet wallet;
+    SproutMerkleTree sproutTree;
+    SaplingMerkleTree saplingTree;
+
+    auto saplingSpendingKey = GetTestMasterSaplingSpendingKey();
+    wallet.AddSaplingSpendingKey(saplingSpendingKey, saplingSpendingKey.DefaultAddress());
+
+    // First block
+    CBlock block1;
+    for (int i = 0; i < nTxs; ++i) {
+        auto wtx = CreateSaplingTxWithNoteData(consensusParams, wallet, saplingSpendingKey);
+        wallet.AddToWallet(wtx, true, NULL);
+        block1.vtx.push_back(wtx);
+    }
+
+    CBlockIndex index1(block1);
+    index1.nHeight = 1;
+
+    // Increment to get transactions witnessed
+    wallet.ChainTip(&index1, &block1, sproutTree, saplingTree, true);
+
+    // Second block
+    CBlock block2;
+    block2.hashPrevBlock = block1.GetHash();
+    {
+        auto saplingTx = CreateSaplingTxWithNoteData(consensusParams, wallet, saplingSpendingKey);
+        wallet.AddToWallet(saplingTx, true, NULL);
+        block1.vtx.push_back(saplingTx);
+    }
+
     CBlockIndex index2(block2);
     index2.nHeight = 2;
 
@@ -355,16 +450,33 @@ double benchmark_increment_note_witnesses(size_t nTxs)
 }
 
 // Fake the input of a given block
-class FakeCoinsViewDB : public CCoinsViewDB {
+// This class is based on the class CCoinsViewDB, but with limited functionality.
+// The construtor and the functions `GetCoins` and `HaveCoins` come directly from
+// CCoinsViewDB, but the rest are either mocks and/or don't really do anything.
+class FakeCoinsViewDB : public CCoinsView {
+    // The following constant is a duplicate of the one found in txdb.cpp
+    static const char DB_COINS = 'c';
+
+    CDBWrapper db;
+
     uint256 hash;
-    SproutMerkleTree t;
+    SproutMerkleTree sproutTree;
+    SaplingMerkleTree saplingTree;
 
 public:
-    FakeCoinsViewDB(std::string dbName, uint256& hash) : CCoinsViewDB(dbName, 100, false, false), hash(hash) {}
+    FakeCoinsViewDB(std::string dbName, uint256& hash) : db(GetDataDir() / dbName, 100, false, false), hash(hash) {}
 
-    bool GetAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const {
-        if (rt == t.root()) {
-            tree = t;
+    bool GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const {
+        if (rt == sproutTree.root()) {
+            tree = sproutTree;
+            return true;
+        }
+        return false;
+    }
+
+    bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const {
+        if (rt == saplingTree.root()) {
+            tree = saplingTree;
             return true;
         }
         return false;
@@ -374,20 +486,37 @@ public:
         return false;
     }
 
+    bool GetCoins(const uint256 &txid, CCoins &coins) const {
+        return db.Read(std::make_pair(DB_COINS, txid), coins);
+    }
+
+    bool HaveCoins(const uint256 &txid) const {
+        return db.Exists(std::make_pair(DB_COINS, txid));
+    }
+
     uint256 GetBestBlock() const {
         return hash;
     }
 
-    uint256 GetBestAnchor() const {
-        return t.root();
+    uint256 GetBestAnchor(ShieldedType type) const {
+        switch (type) {
+            case SPROUT:
+                return sproutTree.root();
+            case SAPLING:
+                return saplingTree.root();
+            default:
+                throw new std::runtime_error("Unknown shielded type");
+        }
     }
 
     bool BatchWrite(CCoinsMap &mapCoins,
                     const uint256 &hashBlock,
-                    const uint256 &hashAnchor,
+                    const uint256 &hashSproutAnchor,
+                    const uint256 &hashSaplingAnchor,
                     CAnchorsSproutMap &mapSproutAnchors,
+                    CAnchorsSaplingMap &mapSaplingAnchors,
                     CNullifiersMap &mapSproutNullifiers,
-                    CNullifiersMap& mapSaplingNullifiers) {
+                    CNullifiersMap &mapSaplingNullifiers) {
         return false;
     }
 

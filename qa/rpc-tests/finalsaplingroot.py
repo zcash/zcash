@@ -9,6 +9,7 @@ from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
     assert_equal,
     connect_nodes_bi,
+    get_coinbase_address,
     initialize_chain_clean,
     start_nodes,
     wait_and_assert_operationid_status,
@@ -56,7 +57,7 @@ class FinalSaplingRootTest(BitcoinTestFramework):
             assert_equal(blk["finalsaplingroot"], SAPLING_TREE_EMPTY_ROOT)
 
         # Node 0 shields some funds
-        taddr0 = self.nodes[0].getnewaddress()
+        taddr0 = get_coinbase_address(self.nodes[0])
         saplingAddr0 = self.nodes[0].z_getnewaddress('sapling')
         recipients = []
         recipients.append({"address": saplingAddr0, "amount": Decimal('20')})

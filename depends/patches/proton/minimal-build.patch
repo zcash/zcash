@@ -1,6 +1,6 @@
-diff -ur a/c/CMakeLists.txt b/c/CMakeLists.txt
---- a/c/CMakeLists.txt	2019-01-30 13:50:51.302303958 -0700
-+++ b/c/CMakeLists.txt	2019-02-06 13:05:02.042558249 -0700
+diff -ur qpid-proton-0.26.0/c/CMakeLists.txt qpid-proton-patched/c/CMakeLists.txt
+--- qpid-proton-0.26.0/c/CMakeLists.txt	2018-10-04 04:09:02.000000000 -0600
++++ qpid-proton-patched/c/CMakeLists.txt	2019-03-25 17:32:41.521213312 -0600
 @@ -443,15 +443,15 @@
    ${qpid-proton-include-generated}
  )
@@ -74,23 +74,15 @@ diff -ur a/c/CMakeLists.txt b/c/CMakeLists.txt
    if (BUILD_STATIC_LIBS)
      add_library (qpid-proton-proactor-static STATIC ${qpid-proton-proactor})
    endif(BUILD_STATIC_LIBS)
-@@ -518,11 +518,11 @@
+@@ -518,7 +518,7 @@
  if (BUILD_STATIC_LIBS)
    set(STATIC_LIBS qpid-proton-static qpid-proton-core-static)
  endif()
 -install(TARGETS qpid-proton qpid-proton-core ${STATIC_LIBS}
--  EXPORT  proton
--  RUNTIME DESTINATION bin
--  ARCHIVE DESTINATION ${LIB_INSTALL_DIR}
--  LIBRARY DESTINATION ${LIB_INSTALL_DIR})
-+#install(TARGETS qpid-proton qpid-proton-core ${STATIC_LIBS}
-+#  EXPORT  proton
-+#  RUNTIME DESTINATION bin
-+#  ARCHIVE DESTINATION ${LIB_INSTALL_DIR}
-+#  LIBRARY DESTINATION ${LIB_INSTALL_DIR})
- 
- # Install windows pdb files
- if (MSVC)
++install(TARGETS ${STATIC_LIBS}
+   EXPORT  proton
+   RUNTIME DESTINATION bin
+   ARCHIVE DESTINATION ${LIB_INSTALL_DIR}
 @@ -538,11 +538,11 @@
    if (BUILD_STATIC_LIBS)
      set(STATIC_LIBS qpid-proton-proactor-static)
@@ -123,10 +115,10 @@ diff -ur a/c/CMakeLists.txt b/c/CMakeLists.txt
  
  install (DIRECTORY examples/
           DESTINATION "${PROTON_SHARE}/examples/c"
-diff -ur a/CMakeLists.txt b/CMakeLists.txt
---- a/CMakeLists.txt	2019-01-30 13:50:51.302303958 -0700
-+++ b/CMakeLists.txt	2019-01-30 14:01:16.283392823 -0700
-@@ -24,7 +24,7 @@
+diff -ur qpid-proton-0.26.0/CMakeLists.txt qpid-proton-patched/CMakeLists.txt
+--- qpid-proton-0.26.0/CMakeLists.txt	2018-10-04 04:09:02.000000000 -0600
++++ qpid-proton-patched/CMakeLists.txt	2019-03-25 17:32:41.521213312 -0600
+@@ -24,22 +24,22 @@
  set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/tools/cmake/Modules")
  set (CMAKE_THREAD_PREFER_PTHREAD TRUE)
  
@@ -135,13 +127,16 @@ diff -ur a/CMakeLists.txt b/CMakeLists.txt
  include (CheckLanguage)
  include (CheckLibraryExists)
  include (CheckSymbolExists)
-@@ -33,13 +33,13 @@
- find_package (OpenSSL)
+ include (CheckPythonModule)
+ 
+-find_package (OpenSSL)
++#find_package (OpenSSL)
  find_package (Threads)
  find_package (PythonInterp REQUIRED)
 -find_package (SWIG)
+-find_package (CyrusSASL)
 +#find_package (SWIG)
- find_package (CyrusSASL)
++#find_package (CyrusSASL)
  
 -enable_testing ()
 +#enable_testing ()
@@ -170,10 +165,10 @@ diff -ur a/CMakeLists.txt b/CMakeLists.txt
  mark_as_advanced(GO_EXE)
  if (GO_EXE)
    set (DEFAULT_GO ON)
-diff -ur a/cpp/CMakeLists.txt b/cpp/CMakeLists.txt
---- a/cpp/CMakeLists.txt	2019-01-30 13:50:51.255636213 -0700
-+++ b/cpp/CMakeLists.txt	2019-02-06 12:03:48.772352021 -0700
-@@ -174,29 +174,29 @@
+diff -ur qpid-proton-0.26.0/cpp/CMakeLists.txt qpid-proton-patched/cpp/CMakeLists.txt
+--- qpid-proton-0.26.0/cpp/CMakeLists.txt	2018-10-04 04:09:02.000000000 -0600
++++ qpid-proton-patched/cpp/CMakeLists.txt	2019-03-25 17:32:41.521213312 -0600
+@@ -174,25 +174,25 @@
    set (CMAKE_DEBUG_POSTFIX "d")
  endif ()
  
@@ -206,18 +201,10 @@ diff -ur a/cpp/CMakeLists.txt b/cpp/CMakeLists.txt
  ## Install
  
 -install(TARGETS qpid-proton-cpp
--  EXPORT  proton-cpp
--  RUNTIME DESTINATION bin
--  ARCHIVE DESTINATION ${LIB_INSTALL_DIR}
--  LIBRARY DESTINATION ${LIB_INSTALL_DIR})
-+#install(TARGETS qpid-proton-cpp
-+#  EXPORT  proton-cpp
-+#  RUNTIME DESTINATION bin
-+#  ARCHIVE DESTINATION ${LIB_INSTALL_DIR}
-+#  LIBRARY DESTINATION ${LIB_INSTALL_DIR})
- 
- # Install windows qpid-proton-cpp pdb files
- if (MSVC)
++install(TARGETS qpid-proton-cpp-static
+   EXPORT  proton-cpp
+   RUNTIME DESTINATION bin
+   ARCHIVE DESTINATION ${LIB_INSTALL_DIR}
 @@ -208,12 +208,12 @@
  
  install (DIRECTORY "include/proton" DESTINATION ${INCLUDE_INSTALL_DIR} FILES_MATCHING PATTERN "*.hpp")
@@ -290,3 +277,23 @@ diff -ur a/cpp/CMakeLists.txt b/cpp/CMakeLists.txt
 +#  # Test data and output directories for connect_config_test
 +#  file(COPY  "${CMAKE_CURRENT_SOURCE_DIR}/testdata" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
 +#endif()
+diff -ur qpid-proton-0.26.0/cpp/include/proton/url.hpp qpid-proton-patched/cpp/include/proton/url.hpp
+--- qpid-proton-0.26.0/cpp/include/proton/url.hpp	2018-10-04 04:09:02.000000000 -0600
++++ qpid-proton-patched/cpp/include/proton/url.hpp	2019-03-25 17:33:50.956058757 -0600
+@@ -40,7 +40,6 @@
+ /// An error encountered during URL parsing.
+ 
+ struct
+-PN_CPP_DEPRECATED("Use a third-party URL library")
+ PN_CPP_CLASS_EXTERN url_error : public error {
+     /// @cond INTERNAL
+     /// Construct a URL error with a message.
+@@ -62,7 +61,7 @@
+ ///
+ /// - Path is normally used as a link source or target address.  On a
+ ///   broker it typically corresponds to a queue or topic name.
+-class PN_CPP_DEPRECATED("Use a third-party URL library") url {
++class url {
+   public:
+     static const std::string AMQP;     ///< "amqp" prefix
+     static const std::string AMQPS;    ///< "amqps" prefix

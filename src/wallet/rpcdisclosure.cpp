@@ -12,6 +12,8 @@
 #include "util.h"
 #include "utiltime.h"
 #include "wallet.h"
+#include "wallet/paymentdisclosure.h"
+#include "wallet/paymentdisclosuredb.h"
 
 #include <fstream>
 #include <stdint.h>
@@ -20,9 +22,6 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 
 #include <univalue.h>
-
-#include "paymentdisclosure.h"
-#include "paymentdisclosuredb.h"
 
 #include "zcash/Note.hpp"
 #include "zcash/NoteEncryption.hpp"
