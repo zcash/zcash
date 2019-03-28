@@ -648,37 +648,41 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
         else if ( nHeight > 1 && ASSETCHAINS_SYMBOL[0] != 0 && (ASSETCHAINS_CBOPRET != 0 ||(ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 || ASSETCHAINS_SCRIPTPUB.size() > 1) && (ASSETCHAINS_COMMISSION != 0 || ASSETCHAINS_FOUNDERS_REWARD != 0) && (commission= komodo_commission((CBlock*)&pblocktemplate->block,(int32_t)nHeight)) != 0) )
         {
             int32_t i; uint8_t *ptr;
-            txNew.vout.resize(2);
-            txNew.vout[1].nValue = commission;
-            if ( ASSETCHAINS_SCRIPTPUB.size() > 1 )
+            if ( commission != 0 )
             {
-                //fprintf(stderr,"mine to -ac_script\n");
-                //txNew.vout[1].scriptPubKey = CScript() << ParseHex();
-                int32_t len = strlen(ASSETCHAINS_SCRIPTPUB.c_str());
-                len >>= 1;
-                txNew.vout[1].scriptPubKey.resize(len);
-                ptr = (uint8_t *)&txNew.vout[1].scriptPubKey[0];
-                decode_hex(ptr,len,(char *)ASSETCHAINS_SCRIPTPUB.c_str());
-            }
-            else
-            {
-                txNew.vout[1].scriptPubKey.resize(35);
-                ptr = (uint8_t *)&txNew.vout[1].scriptPubKey[0];
-                ptr[0] = 33;
-                for (i=0; i<33; i++)
+                fprintf(stderr,"nonzero commission %.8f\n",(double)commission/COIN);
+                txNew.vout.resize(2);
+                txNew.vout[1].nValue = commission;
+                if ( ASSETCHAINS_SCRIPTPUB.size() > 1 )
                 {
-                    ptr[i+1] = ASSETCHAINS_OVERRIDE_PUBKEY33[i];
-                    //fprintf(stderr,"%02x",ptr[i+1]);
+                    //fprintf(stderr,"mine to -ac_script\n");
+                    //txNew.vout[1].scriptPubKey = CScript() << ParseHex();
+                    int32_t len = strlen(ASSETCHAINS_SCRIPTPUB.c_str());
+                    len >>= 1;
+                    txNew.vout[1].scriptPubKey.resize(len);
+                    ptr = (uint8_t *)&txNew.vout[1].scriptPubKey[0];
+                    decode_hex(ptr,len,(char *)ASSETCHAINS_SCRIPTPUB.c_str());
                 }
-                ptr[34] = OP_CHECKSIG;
-                //fprintf(stderr," set ASSETCHAINS_OVERRIDE_PUBKEY33 into vout[1]\n");
+                else
+                {
+                    txNew.vout[1].scriptPubKey.resize(35);
+                    ptr = (uint8_t *)&txNew.vout[1].scriptPubKey[0];
+                    ptr[0] = 33;
+                    for (i=0; i<33; i++)
+                    {
+                        ptr[i+1] = ASSETCHAINS_OVERRIDE_PUBKEY33[i];
+                        //fprintf(stderr,"%02x",ptr[i+1]);
+                    }
+                    ptr[34] = OP_CHECKSIG;
+                    //fprintf(stderr," set ASSETCHAINS_OVERRIDE_PUBKEY33 into vout[1]\n");
+                }
             }
             if ( ASSETCHAINS_CBOPRET != 0 )
             {
                 txNew.vout.resize(txNew.vout.size()+1);
                 txNew.vout[txNew.vout.size()-1].scriptPubKey = komodo_mineropret(nHeight);
             }
-            //printf("autocreate commision vout\n");
+            printf("autocreate commision/cbopret.%lld vout[%d]\n",(long long)ASSETCHAINS_CBOPRET,(int32_t)txNew.vout.size());
         }
         else if ( (uint64_t)(txNew.vout[0].nValue) >= ASSETCHAINS_TIMELOCKGTE)
         {
