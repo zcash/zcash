@@ -1631,7 +1631,9 @@ void komodo_cbopretupdate()
             if ( Mineropret.size() != sizeof(pricebits) )
                 Mineropret.resize(sizeof(pricebits));
             memcpy(&Mineropret[0],pricebits,sizeof(pricebits));
-            fprintf(stderr,"set Mineropret[%d]\n",(int32_t)Mineropret.size());
+            int32_t i; for (i=0; i<Mineropret.size(); i++)
+                fprintf(stderr,"%02x",Mineropret[i]);
+            fprintf(stderr," <- set Mineropret[%d]\n",(int32_t)Mineropret.size());
         }
     }
 }

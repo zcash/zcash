@@ -1664,6 +1664,7 @@ uint64_t komodo_ac_block_subsidy(int nHeight)
 }
 
 extern int64_t MAX_MONEY;
+void komodo_cbopretupdate();
 
 void komodo_args(char *argv0)
 {
@@ -2061,6 +2062,7 @@ void komodo_args(char *argv0)
             if ( ASSETCHAINS_CBOPRET != 0 )
             {
                 extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_CBOPRET),(void *)&ASSETCHAINS_CBOPRET);
+                komodo_cbopretupdate();
                 fprintf(stderr,"This blockchain uses data produced from CoinDesk Bitcoin Price Index\n");
             }
             if ( Mineropret.size() != 0 )
