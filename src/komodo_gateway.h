@@ -1590,7 +1590,7 @@ uint32_t komodo_pricenew(int32_t *maxflagp,uint32_t price,uint32_t refprice,int6
     }
     else if ( price <= lowprice )
     {
-        *maxflagp = 1;
+        *maxflagp = -1;
         if ( price < lowprice )
             return(lowprice);
     }
@@ -1655,7 +1655,7 @@ CScript komodo_mineropret(int32_t nHeight)
 
 int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
 {
-    std::vector<uint8_t> vopret; uint32_t pricebits[4],prevbits[4]; int32_t i,lag,lag2,maxflag=0;
+    std::vector<uint8_t> vopret; uint32_t localbits[4],pricebits[4],prevbits[4],newprice; int32_t i,lag,lag2,maxflag=0;
     if ( ASSETCHAINS_CBOPRET != 0 )
     {
         GetOpReturnData(scriptPubKey,vopret);
@@ -1675,11 +1675,29 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
                         return(-1);
                 } else return(-1);
             }
-            if ( maxflag == 0 && lag < ASSETCHAINS_BLOCKTIME && Mineropret.size() >= PRICES_SIZEBIT0 )
+            if ( lag < ASSETCHAINS_BLOCKTIME && Mineropret.size() >= PRICES_SIZEBIT0 )
             {
-                memcpy(prevbits,&Mineropret[0],PRICES_SIZEBIT0);
-                if ( komodo_pricecmp(&maxflag,pricebits,prevbits,PRICES_MAXCHANGE) < 0 )
-                    return(-1);
+                memcpy(localbits,&Mineropret[0],PRICES_SIZEBIT0);
+                if ( maxflag == 0 )
+                {
+                    if ( komodo_pricecmp(&maxflag,localbits,prevbits,PRICES_MAXCHANGE) < 0 )
+                        return(-1);
+                }
+                else
+                {
+                    for (i=1; i<4; i++)
+                    {
+                        maxflag = 0;
+                        if ( (newprice= komodo_pricenew(maxflag,pricebits[i],prevbits[i],PRICES_MAXCHANGE)) != 0 ) // proposed price is clamped
+                        {
+                            // make sure local price is beyond clamped
+                            if ( maxflag > 0 && localbits[i] < pricebits[i] )
+                                return(-1);
+                            else if ( maxflag < 0 && localbits[i] > pricebits[i] )
+                                return(-1);
+                        }
+                    }
+                }
             }
             return(0);
         } else fprintf(stderr,"wrong size %d vs %d, scriptPubKey size %d [%02x]\n",(int32_t)vopret.size(),(int32_t)PRICES_SIZEBIT0,(int32_t)scriptPubKey.size(),scriptPubKey[0]);
