@@ -1566,11 +1566,11 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
         GetOpReturnData(scriptPubKey,vopret);
         if ( vopret.size() == sizeof(pricebits) )
         {
-            memcpy(pricebits,&Mineropret[0],sizeof(pricebits));
+            memcpy(pricebits,&vpopret[0],sizeof(pricebits));
             lag = (int32_t)(time(NULL) - pricebits[0]);
             fprintf(stderr,"ht.%d: t%u lag.%d %.4f USD, %.4f GBP, %.4f EUR\n",nHeight,pricebits[0],lag,(double)pricebits[1]/10000,(double)pricebits[2]/10000,(double)pricebits[3]/10000);
             return(0);
-        } else fprintf(stderr,"wrong size %d vs %d\n",(int32_t)vopret.size(),(int32_t)sizeof(pricebits));
+        } else fprintf(stderr,"wrong size %d vs %d, scriptPubKey size %d [%02x]\n",(int32_t)vopret.size(),(int32_t)sizeof(pricebits),(int32_t)scriptPubKey.size(),scriptPubKey[0]);
         return(-1);
     }
     return(0);
@@ -1628,7 +1628,8 @@ void komodo_cbopretupdate()
     {
         if ( get_btcusd(pricebits) == 0 )
         {
-            Mineropret.resize(sizeof(pricebits));
+            if ( Mineropret.size() != sizeof(pricebits) )
+                Mineropret.resize(sizeof(pricebits));
             memcpy(&Mineropret[0],pricebits,sizeof(pricebits));
             fprintf(stderr,"set Mineropret[%d]\n",(int32_t)Mineropret.size());
         }
