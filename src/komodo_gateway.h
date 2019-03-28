@@ -1575,6 +1575,8 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
     return(0);
 }
 
+#define issue_curl(cmdstr) bitcoind_RPC(0,(char *)"CBCOINBASE",cmdstr,0,0,0)
+
 cJSON *get_urljson(char *url)
 {
     char *jsonstr; cJSON *json = 0;
