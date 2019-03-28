@@ -941,6 +941,7 @@ void komodo_sendmessage(int32_t minpeers,int32_t maxpeers,const char *message,st
             continue;
         if ( numsent < minpeers || (rand() % 10) == 0 )
         {
+            //fprintf(stderr,"pushmessage\n");
             pnode->PushMessage(message,payload);
             if ( numsent++ > maxpeers )
                 break;

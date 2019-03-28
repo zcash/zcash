@@ -761,11 +761,11 @@ int32_t games_progress(struct games_state *rs,int32_t waitflag,uint64_t seed,gam
         for (i=0; i<num; i++)
         {
             if ( sizeof(gamesevent) ==  1 )
-                sprintf(&hexstr[i<<1],"%02x",keystrokes[i]&0xff);
+                sprintf(&hexstr[i<<1],"%02x",(uint8_t)keystrokes[i]&0xff);
             else if ( sizeof(gamesevent) ==  2 )
-                sprintf(&hexstr[i<<2],"%04x",keystrokes[i]&0xffff);
+                sprintf(&hexstr[i<<2],"%04x",(uint16_t)keystrokes[i]&0xffff);
             else if ( sizeof(gamesevent) ==  4 )
-                sprintf(&hexstr[i<<3],"%08x",keystrokes[i]&0xffffffff);
+                sprintf(&hexstr[i<<3],"%08x",(uint32_t)keystrokes[i]&0xffffffff);
             else if ( sizeof(gamesevent) ==  8 )
                 sprintf(&hexstr[i<<4],"%016llx",(long long)(keystrokes[i]&0xffffffffffffffffLL));
         }

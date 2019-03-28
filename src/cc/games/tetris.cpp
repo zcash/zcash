@@ -14,6 +14,8 @@
  *                                                                            *
  ******************************************************************************/
 
+std::string MYCCLIBNAME = (char *)"gamescc";
+
 // game specific code for daemon
 void games_packitemstr(char *packitemstr,struct games_packitem *item)
 {
@@ -22,8 +24,8 @@ void games_packitemstr(char *packitemstr,struct games_packitem *item)
 
 int64_t games_cashout(struct games_player *P)
 {
-    int32_t dungeonlevel = P->dungeonlevel; int64_t mult=1000,cashout = 0;
-    cashout = (uint64_t)P->gold * mult * dungeonlevel * dungeonlevel;
+    int32_t dungeonlevel = P->dungeonlevel; int64_t mult=10000,cashout = 0;
+    cashout = (uint64_t)P->gold * mult;
     return(cashout);
 }
 
@@ -64,6 +66,18 @@ int32_t games_payloadrecv(CPubKey pk,uint32_t timestamp,std::vector<uint8_t> pay
         //fprintf(stderr," got payload, from %s %s/e%d\n",pubkey33_str(str,(uint8_t *)&pk),gametxid.GetHex().c_str(),eventid);
         return(0);
     } else return(-1);
+}
+
+UniValue games_bet(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
+{
+    UniValue result;
+    return(result);
+}
+
+UniValue games_settle(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
+{
+    UniValue result;
+    return(result);
 }
 
 bool games_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx)

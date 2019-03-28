@@ -43,7 +43,7 @@ int32_t tetrisdata(struct games_player *P,void *ptr)
 #include <string.h>
 
 #ifdef BUILD_GAMESCC
-#include "rogue/cursesd.h"
+#include "../rogue/cursesd.h"
 #else
 #include <curses.h>
 #endif
@@ -801,32 +801,35 @@ int32_t issue_games_events(struct games_state *rs,char *gametxidstr,uint32_t eve
     if ( fp == 0 )
         fp = fopen("events.log","wb");
     rs->buffered[rs->num++] = c;
-    if ( sizeof(c) == 1 )
-        sprintf(params,"[\"events\",\"17\",\"[%%22%02x%%22,%%22%s%%22,%u]\"]",c&0xff,gametxidstr,eventid);
-    else if ( sizeof(c) == 2 )
-        sprintf(params,"[\"events\",\"17\",\"[%%22%04x%%22,%%22%s%%22,%u]\"]",c&0xffff,gametxidstr,eventid);
-    else if ( sizeof(c) == 4 )
-        sprintf(params,"[\"events\",\"17\",\"[%%22%08x%%22,%%22%s%%22,%u]\"]",c&0xffffffff,gametxidstr,eventid);
-    else if ( sizeof(c) == 8 )
-        sprintf(params,"[\"events\",\"17\",\"[%%22%016llx%%22,%%22%s%%22,%u]\"]",(long long)c,gametxidstr,eventid);
-    if ( (retstr= komodo_issuemethod(USERPASS,(char *)"cclib",params,GAMES_PORT)) != 0 )
+    if ( 0 )
     {
-        if ( (retjson= cJSON_Parse(retstr)) != 0 )
+        if ( sizeof(c) == 1 )
+            sprintf(params,"[\"events\",\"17\",\"[%%22%02x%%22,%%22%s%%22,%u]\"]",(uint8_t)c&0xff,gametxidstr,eventid);
+        else if ( sizeof(c) == 2 )
+            sprintf(params,"[\"events\",\"17\",\"[%%22%04x%%22,%%22%s%%22,%u]\"]",(uint16_t)c&0xffff,gametxidstr,eventid);
+        else if ( sizeof(c) == 4 )
+            sprintf(params,"[\"events\",\"17\",\"[%%22%08x%%22,%%22%s%%22,%u]\"]",(uint32_t)c&0xffffffff,gametxidstr,eventid);
+        else if ( sizeof(c) == 8 )
+            sprintf(params,"[\"events\",\"17\",\"[%%22%016llx%%22,%%22%s%%22,%u]\"]",(long long)c,gametxidstr,eventid);
+        if ( (retstr= komodo_issuemethod(USERPASS,(char *)"cclib",params,GAMES_PORT)) != 0 )
         {
-            if ( (resobj= jobj(retjson,(char *)"result")) != 0 )
+            if ( (retjson= cJSON_Parse(retstr)) != 0 )
             {
-                retval = 0;
-                if ( fp != 0 )
+                if ( (resobj= jobj(retjson,(char *)"result")) != 0 )
                 {
-                    fprintf(fp,"%s\n",jprint(resobj,0));
-                    fflush(fp);
+                    retval = 0;
+                    if ( fp != 0 )
+                    {
+                        fprintf(fp,"%s\n",jprint(resobj,0));
+                        fflush(fp);
+                    }
                 }
-            }
-            free_json(retjson);
-        } else fprintf(fp,"error parsing %s\n",retstr);
-        free(retstr);
-    } else fprintf(fp,"error issuing method %s\n",params);
-    return(retval);
+                free_json(retjson);
+            } else fprintf(fp,"error parsing %s\n",retstr);
+            free(retstr);
+        } else fprintf(fp,"error issuing method %s\n",params);
+        return(retval);
+    } else return(0);
 }
 
 int tetris(int argc, char **argv)

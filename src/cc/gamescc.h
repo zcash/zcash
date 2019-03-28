@@ -15,7 +15,6 @@ extern CWallet* pwalletMain;
 #include "CCinclude.h"
 #include "secp256k1.h"
 
-std::string MYCCLIBNAME = (char *)"gamescc";
 
 #define EVAL_GAMES (EVAL_FAUCET2+1)
 #define GAMES_TXFEE 10000
@@ -46,6 +45,8 @@ std::string Games_pname;
     { (char *)MYCCNAME, (char *)"highlander", (char *)"gametxid", 1, 1, 'H', EVAL_GAMES }, \
     { (char *)MYCCNAME, (char *)"events", (char *)"eventshex [gametxid [eventid]]", 1, 3, ' ', EVAL_GAMES }, \
     { (char *)MYCCNAME, (char *)"extract", (char *)"gametxid [pubkey]", 1, 2, ' ', EVAL_GAMES }, \
+    { (char *)MYCCNAME, (char *)"bet", (char *)"amount hexstr", 2, 2, ' ', EVAL_GAMES }, \
+    { (char *)MYCCNAME, (char *)"settle", (char *)"height", 1, 1, ' ', EVAL_GAMES }, \
     { (char *)MYCCNAME, (char *)"register", (char *)"gametxid [playertxid]", 1, 2, 'R', EVAL_GAMES },
 
 bool games_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx);
@@ -65,6 +66,8 @@ UniValue games_highlander(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
 UniValue games_events(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue games_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue games_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+UniValue games_bet(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+UniValue games_settle(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 
 #define CUSTOM_DISPATCH \
 if ( cp->evalcode == EVAL_GAMES ) \
@@ -100,12 +103,15 @@ if ( cp->evalcode == EVAL_GAMES ) \
     else if ( strcmp(method,"highlander") == 0 ) \
         return(games_highlander(txfee,cp,params)); \
     else if ( strcmp(method,"fund") == 0 ) \
-    return(games_fund(txfee,cp,params)); \
+        return(games_fund(txfee,cp,params)); \
+    else if ( strcmp(method,"bet") == 0 ) \
+        return(games_bet(txfee,cp,params)); \
+    else if ( strcmp(method,"settle") == 0 ) \
+        return(games_settle(txfee,cp,params)); \
     else \
     { \
         result.push_back(Pair("result","error")); \
         result.push_back(Pair("error","invalid gamescc method")); \
-        result.push_back(Pair("method",method)); \
         return(result); \
     } \
 }

@@ -52,6 +52,8 @@ std::string MYCCLIBNAME = (char *)"sudoku";
 void komodo_netevent(std::vector<uint8_t> payload) {}
 #endif
 
+extern std::string MYCCLIBNAME;
+
 char *CClib_name() { return((char *)MYCCLIBNAME.c_str()); }
 
 struct CClib_rpcinfo
@@ -691,8 +693,8 @@ int32_t cclib_parsehash(uint8_t *hash32,cJSON *item,int32_t len)
 #include "customcc.cpp"
 
 #elif BUILD_GAMESCC
-#include "gamescc.cpp"
 #include "rogue/cursesd.c"
+#include "gamescc.cpp"
 
 #else
 #include "sudoku.cpp"

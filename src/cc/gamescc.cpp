@@ -14,7 +14,11 @@
  ******************************************************************************/
 
 #include "gamescc.h"
-#include "tetris.c" // replace with game code
+#ifdef BUILD_PRICES
+#include "games/prices.c"
+#else
+#include "games/tetris.c"
+#endif
 
 int32_t GAMEDATA(struct games_player *P,void *ptr);
 
@@ -161,8 +165,11 @@ int32_t games_replay2(uint8_t *newdata,uint64_t seed,gamesevent *keystrokes,int3
 }
 
 #ifndef STANDALONE
-
-#include "tetris.cpp" // replace with game specific functions
+#ifdef BUILD_PRICES
+#include "games/prices.cpp"
+#else
+#include "games/tetris.cpp"
+#endif
 
 void GAMEJSON(UniValue &obj,struct games_player *P);
 
@@ -470,7 +477,9 @@ int32_t games_event(uint32_t timestamp,uint256 gametxid,int32_t eventid,std::vec
         games_payloadrecv(mypk,timestamp,payload);
         komodo_sendmessage(4,8,"events",vopret);
         return(0);
-    } else return(-1);
+    }
+    fprintf(stderr,"games_eventsign error\n");
+    return(-1);
 }
 
 UniValue games_events(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
@@ -546,14 +555,14 @@ void komodo_netevent(std::vector<uint8_t> message)
             {
                 if ( (rand() % 10) == 0 )
                 {
-                    fprintf(stderr,"relay message.[%d]\n",(int32_t)message.size());
+                    //fprintf(stderr,"relay message.[%d]\n",(int32_t)message.size());
                     komodo_sendmessage(2,2,"events",message);
                 }
             }
         }
         //for (i=0; i<payload.size(); i++)
         //    fprintf(stderr,"%02x",payload[i]);
-        //fprintf(stderr," payload, got pk.%s siglen.%d lag.[%d]\n",pubkey33_str(str,(uint8_t *)&pk),(int32_t)sig.size(),lag);
+        fprintf(stderr," payload, got pk.%s siglen.%d lag.[%d]\n",pubkey33_str(str,(uint8_t *)&pk),(int32_t)sig.size(),lag);
     }
     else
     {
@@ -1454,13 +1463,13 @@ UniValue games_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                     switch ( sizeof(gamesevent) )
                     {
                         case 1:
-                            sprintf(&hexstr[i<<1],"%02x",keystrokes[i]);
+                            sprintf(&hexstr[i<<1],"%02x",(uint8_t)keystrokes[i]);
                             break;
                         case 2:
-                            sprintf(&hexstr[i<<2],"%04x",keystrokes[i]);
+                            sprintf(&hexstr[i<<2],"%04x",(uint16_t)keystrokes[i]);
                             break;
                         case 4:
-                            sprintf(&hexstr[i<<3],"%08x",keystrokes[i]);
+                            sprintf(&hexstr[i<<3],"%08x",(uint32_t)keystrokes[i]);
                             break;
                         case 8:
                             sprintf(&hexstr[i<<4],"%016llxx",(long long)keystrokes[i]);
@@ -1510,15 +1519,8 @@ UniValue games_finish(uint64_t txfee,struct CCcontract_info *cp,cJSON *params,ch
     result.push_back(Pair("method",method));
     result.push_back(Pair("mygamesaddr",mygamesaddr));
     if ( strcmp(method,"bailout") == 0 )
-    {
         funcid = 'Q';
-        //mult = 10; //100000;
-    }
-    else
-    {
-        funcid = 'H';
-        //mult = 20; //200000;
-    }
+    else funcid = 'H';
     if ( params != 0 && (n= cJSON_GetArraySize(params)) > 0 )
     {
         if ( n > 0 )
@@ -1570,13 +1572,13 @@ UniValue games_finish(uint64_t txfee,struct CCcontract_info *cp,cJSON *params,ch
                             fprintf(stderr,"\ncashout %.8f extracted %s\n",(double)cashout/COIN,str);
                             if ( funcid == 'H' && maxplayers > 1 )
                             {
-                                if ( P.amulet == 0 )
+                                /*if ( P.amulet == 0 )
                                 {
                                     if ( numplayers != maxplayers )
                                         return(cclib_error(result,"numplayers != maxplayers"));
                                     else if ( games_playersalive(tmp,tmp,gametxid,maxplayers,gameheight,gametx) > 1 )
                                         return(cclib_error(result,"highlander must be a winner or last one standing"));
-                                }
+                                }*/
                                 cashout += games_buyins(gametxid,maxplayers);//numplayers * buyin;
                             }
                             if ( cashout > 0 )

@@ -451,4 +451,3 @@ std::string PricesFinish(uint64_t txfee,uint256 refbettoken,uint256 fundingtxid,
 }
 
 
-
