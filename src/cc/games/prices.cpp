@@ -46,14 +46,13 @@ int32_t prices_barupdate(struct prices_bar *bar,uint64_t pricebits)
 
 int64_t prices_bardist(struct prices_bar *bar,uint32_t aveprice,uint64_t pricebits)
 {
-    int64_t a,b,dist = 0; uint32_t uprice = (uint32_t)pricebits;
+    int64_t a,dist = 0;
     if ( aveprice != 0 )
     {
-        a = uprice;
-        b = aveprice;
-        dist = (a - b);
+        a = (pricebits & 0xffffffff);
+        dist = (a - aveprice);
         dist *= dist;
-        fprintf(stderr,"dist.%lld (u %u - ave %u) %d\n",(long long)dist,uprice,aveprice,uprice-aveprice);
+        //fprintf(stderr,"dist.%lld (u %u - ave %u) %d\n",(long long)dist,uprice,aveprice,uprice-aveprice);
     }
     return(dist);
 }
