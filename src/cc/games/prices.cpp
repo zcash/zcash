@@ -47,7 +47,11 @@ int32_t prices_barupdate(struct prices_bar *bar,uint64_t pricebits)
 int32_t prices_bardist(struct prices_bar *bar,uint32_t aveprice,uint64_t pricebits)
 {
     int32_t dist = 0; uint32_t uprice = (uint32_t)pricebits;
-    dist = (uprice - aveprice) * (uprice - aveprice);
+    if ( aveprice != 0 )
+    {
+        dist = (uprice - aveprice);
+        dist *= dist;
+    }
     return(dist);
 }
 
@@ -77,7 +81,7 @@ int64_t prices_blockinfo(int32_t height,char *acaddr)
                         continue;
                     else if ( tx.vin[vini].prevout.n >= vintx.vout.size() || Getscriptaddress(destaddr,vintx.vout[tx.vin[vini].prevout.n].scriptPubKey) == 0 )
                         continue;
-                    else if ( iter == 0 != strcmp(acaddr,destaddr) != 0 )
+                    else if ( iter != strcmp(acaddr,destaddr) )
                         continue;
                     else if ( (numvouts= tx.vout.size()) > 1 && tx.vout[numvouts-1].scriptPubKey[0] == 0x6a )
                     {
