@@ -81,11 +81,8 @@ int64_t prices_blockinfo(int32_t height,char *acaddr)
                         continue;
                     else if ( tx.vin[vini].prevout.n >= vintx.vout.size() || Getscriptaddress(destaddr,vintx.vout[tx.vin[vini].prevout.n].scriptPubKey) == 0 )
                         continue;
-                    else if ( iter != strcmp(acaddr,destaddr) )
-                        continue;
                     else if ( (numvouts= tx.vout.size()) > 1 && tx.vout[numvouts-1].scriptPubKey[0] == 0x6a )
                     {
-                        prizefund += tx.vout[0].nValue;
                         GetOpReturnData(tx.vout[numvouts-1].scriptPubKey,vopret);
                         if ( vopret.size() == 8 )
                         {
@@ -93,18 +90,22 @@ int64_t prices_blockinfo(int32_t height,char *acaddr)
                             timestamp = (uint32_t)(pricebits >> 32);
                             uprice = (uint32_t)pricebits;
                             if ( iter == 0 )
-                                prices_barupdate(&refbar,pricebits);
-                            if ( strcmp(acaddr,destaddr) == 0 )
-                                fprintf(stderr,"REF ");
-                            fprintf(stderr,"i.%d %.8f t%u %.4f v.%d %s lag.%d i.%d dist.%d\n",i,(double)tx.vout[0].nValue/COIN,timestamp,(double)uprice/10000,numvouts,destaddr,(int32_t)(pindex->nTime-timestamp),iter,prices_bardist(&refbar,aveprice,pricebits));
+                            {
+                                prizefund += tx.vout[0].nValue;
+                                if ( strcmp(acaddr,destaddr) == 0 )
+                                {
+                                    fprintf(stderr,"REF ");
+                                    prices_barupdate(&refbar,pricebits);
+                                }
+                            } else fprintf(stderr,"i.%d %.8f t%u %.4f v.%d %s lag.%d i.%d dist.%d\n",i,(double)tx.vout[0].nValue/COIN,timestamp,(double)uprice/10000,numvouts,destaddr,(int32_t)(pindex->nTime-timestamp),iter,prices_bardist(&refbar,aveprice,pricebits));
                         } else return(-3);
                     }
-                    if ( iter == 0 )
-                    {
-                        prices_bardisp(&refbar);
-                        if ( refbar.num != 0 )
-                            aveprice = (uint32_t)refbar.sum / refbar.num;
-                    }
+                }
+                if ( iter == 0 )
+                {
+                    prices_bardisp(&refbar);
+                    if ( refbar.num != 0 )
+                        aveprice = (uint32_t)refbar.sum / refbar.num;
                 }
             }
             return(prizefund);
