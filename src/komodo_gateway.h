@@ -1560,14 +1560,15 @@ CScript komodo_mineropret(int32_t nHeight)
 
 int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
 {
-    std::vector<uint8_t> vopret; uint32_t pricebits[4]; int32_t i;
+    std::vector<uint8_t> vopret; uint32_t pricebits[4]; int32_t i,lag;
     if ( ASSETCHAINS_CBOPRET != 0 )
     {
         GetOpReturnData(scriptPubKey,vopret);
         if ( vopret.size() == sizeof(pricebits) )
         {
             memcpy(pricebits,&Mineropret[0],sizeof(pricebits));
-            fprintf(stderr,"ht.%d: t%u %.4f USD, %.4f GBP, %.4f EUR\n",nHeight,pricebits[0],(double)pricebits[1]/10000,(double)pricebits[2]/10000,(double)pricebits[3]/10000);
+            lag = (int32_t)(time(NULL) - pricebits[0]);
+            fprintf(stderr,"ht.%d: t%u lag.%d %.4f USD, %.4f GBP, %.4f EUR\n",nHeight,pricebits[0],lag,(double)pricebits[1]/10000,(double)pricebits[2]/10000,(double)pricebits[3]/10000);
             return(0);
         }
         return(-1);
