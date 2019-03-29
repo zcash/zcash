@@ -1779,19 +1779,26 @@ void *filestr(long *allocsizep,char *_fname)
 {
     long filesize = 0; char *fname,*buf = 0; void *retptr;
     *allocsizep = 0;
-    fname = malloc(strlen(_fname)+1);
+    fname = (char *)malloc(strlen(_fname)+1);
     strcpy(fname,_fname);
     retptr = loadfile(fname,(uint8_t **)&buf,&filesize,allocsizep);
     free(fname);
     return(retptr);
 }
 
-char *send_curl(char *url,char *fname)
+cJSON *send_curl(char *url,char *fname)
 {
-    long fsize; char curlstr[1024];
+    long fsize; char curlstr[1024],*jsonstr; cJSON *json=0;
     sprintf(curlstr,"curl --url \"%s\" > %s",url,fname);
-    system(curlstr);
-    return(filestr(&fsize,fname));
+    if ( system(curlstr) == 0 )
+    {
+        if ( (jsonstr= filestr((void *)&fsize,fname)) != 0 )
+        {
+            json = cJSON_Parse(jsonstr);
+            free(jsonstr);
+        }
+    }
+    return(json);
 }
 
 // get_urljson just returns the JSON returned by the URL using issue_curl
