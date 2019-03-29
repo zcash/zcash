@@ -1728,7 +1728,7 @@ cJSON *get_urljson(char *url)
     char *jsonstr; cJSON *json = 0;
     if ( (jsonstr= issue_curl(url)) != 0 )
     {
-        //fprintf(stderr,"(%s) -> (%s)\n",url,jsonstr);
+        fprintf(stderr,"(%s) -> (%s)\n",url,jsonstr);
         json = cJSON_Parse(jsonstr);
         free(jsonstr);
     }
@@ -1839,7 +1839,7 @@ void komodo_cbopretupdate()
             //    fprintf(stderr,"%02x",Mineropret[i]);
             //fprintf(stderr," <- set Mineropret[%d]\n",(int32_t)Mineropret.size());
         }
-ASSETCHAINS_CBOPRET = 0xff;
+ASSETCHAINS_CBOPRET = 5;
         if ( (ASSETCHAINS_CBOPRET & 2) != 0 )
         {
             get_currencies(Cryptos,(int32_t)(sizeof(Cryptos)/sizeof(*Cryptos)));
