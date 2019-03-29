@@ -1631,13 +1631,13 @@ CScript komodo_mineropret(int32_t nHeight)
     {
         if ( komodo_heightpricebits(prevbits,nHeight-1) == 0 )
         {
-            memcpy(pricebits,&Mineropret[0],PRICES_SIZEBIT0);
+            memcpy(pricebits,Mineropret.data(),PRICES_SIZEBIT0);
             if ( komodo_pricecmp(&maxflag,pricebits,prevbits,PRICES_MAXCHANGE) < 0 )
             {
                 // if the new prices are not within tolerance, update Mineropret with clipped prices
                 komodo_priceclamp(pricebits,prevbits,PRICES_MAXCHANGE);
                 fprintf(stderr,"update Mineropret to clamped prices\n");
-                memcpy(&Mineropret[0],pricebits,PRICES_SIZEBIT0);
+                memcpy(Mineropret.data(),pricebits,PRICES_SIZEBIT0);
             }
         }
         return(opret << OP_RETURN << Mineropret);
@@ -1677,7 +1677,7 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
             }
             if ( lag < ASSETCHAINS_BLOCKTIME && Mineropret.size() >= PRICES_SIZEBIT0 )
             {
-                memcpy(localbits,&Mineropret[0],PRICES_SIZEBIT0);
+                memcpy(localbits,Mineropret.data(),PRICES_SIZEBIT0);
                 if ( maxflag == 0 )
                 {
                     if ( komodo_pricecmp(&maxflag,localbits,prevbits,PRICES_MAXCHANGE) < 0 )
@@ -1709,6 +1709,19 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
 // get_urljson just returns the JSON returned by the URL using issue_curl
 
 #define issue_curl(cmdstr) bitcoind_RPC(0,(char *)"CBCOINBASE",cmdstr,0,0,0)
+char *Cryptos[] = { "KMD", "BTC", "ETH", "LTC", "BCH", "XMR", "IOTA", "DASH", "XTZ", "XEM", "ZEC", "WAVES", "DOGE", "RVN", "LSK", "DCR", "BTS", "ICX", "HOT", "DGB", "STEEM", "ENJ", "STRAT", "VEO" };
+
+char *ForexMajor[] = { "USD", "EUR", "JPY", "GBP", "AUD", "CHF", "CNY", "RUB" };
+
+char *ForexMinor[] = { "CAD", "NZD", "MXN", "BRL", "INR", "HKD", "TRY", "ZAR", "PLN", "NOK", "SEK", "DKK", "CZK", "HUF", "ILS", "KRW", "MYR", "PHP", "RON", "SGD", "THB", "BGN", "IDR", "HRK", "UAH", "AED", "SAR" };
+
+char *Metals[] = { "XAU", "XAG", "XPT", "XPD", };
+
+char *Markets[] = { "DJIA", "SPX", "NDX", "VIX" };
+
+char *Techstocks[] =
+{ "AAPL","ADBE","ADSK","AKAM","AMD","AMZN","ATVI","BB","CDW","CRM","CSCO","CYBR","DBX","EA","FB","GDDY","GOOG","GRMN","GSAT","HPQ","IBM","INFY","INTC","INTU","JNPR","MSFT","MSI","MU","MXL","NATI","NCR","NFLX","NTAP","NVDA","ORCL","PANW","PYPL","QCOM","RHT","S","SHOP","SNAP","SPOT","SYMC","SYNA","T","TRIP","TWTR","TXN","VMW","VOD","VRSN","VZ","WDC","XRX","YELP","YNDX","ZEN"
+};
 
 cJSON *get_urljson(char *url)
 {
@@ -1722,6 +1735,61 @@ cJSON *get_urljson(char *url)
     return(json);
 }
 
+uint32_t get_stockprice(char *symbol)
+{
+    char url[512]; cJSON *json,*obj; uint32_t high,low,price = 0;
+    sprintf(url,"https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=%s&interval=15min&apikey=%s",symbol,NOTARY_PUBKEY.data()+50);
+    if ( (json= get_urljson(url)) != 0 )
+    {
+        if ( (obj= jobj(jitem(json,"Time Series (15min)"),0)) != 0 )
+        {
+            high = jdouble(jitem(obj,0),"2. high")*10000 + 0.000049;
+            low = jdouble(jitem(obj,0),"3. low")*10000 + 0.000049;
+            price = (high + low) / 2;
+        }
+        free_json(json);
+    }
+    return(price);
+}
+
+uint32_t get_currencyprice(char *symbol)
+{
+    char url[512]; cJSON *json,*obj; uint32_t price = 0;
+    sprintf(url,"https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&from_currency=%s&to_currency=USD&apikey=%s",symbol,NOTARY_PUBKEY.data()+50);
+    if ( (json= get_urljson(url)) != 0 )
+    {
+        if ( (obj= jobj(jitem(json,0),0)) != 0 )
+            price = jdouble(obj,"5. Exchange Rate")*10000 + 0.000049;
+        free_json(json);
+    }
+    return(price);
+}
+
+int32_t get_currencies(char *list[],int32_t n)
+{
+    int32_t i,errs=0; uint32_t price;
+    for (i=0; i<n; i++)
+    {
+        if ( (price= get_currencyprice(list[i])) == 0 )
+            errs++;
+        else fprintf(stderr,"(%s %.4f) ",list[i],(double)price/10000);
+    }
+    fprintf(stderr," errs.%d\n",errs);
+    return(-errs);
+}
+
+int32_t get_stocks(char *list[],int32_t n)
+{
+    int32_t i,errs=0; uint32_t price;
+    for (i=0; i<n; i++)
+    {
+        if ( (price= get_stockprice(list[i])) == 0 )
+            errs++;
+        else fprintf(stderr,"(%s %.4f) ",list[i],(double)price/10000);
+    }
+    fprintf(stderr," errs.%d\n",errs);
+    return(-errs);
+}
 // parse the coindesk specific data. yes, if this changes, it will require an update. However, regardless if the format from the data source changes, then the code that extracts it must be changed. One way to mitigate this is to have a large variety of data sources so that there is only a very remote chance that all of them are not available. Certainly the data gathering needs to be made more robust, but it doesnt really affect the proof of concept for the decentralized trustless oracle. The trustlessness is achieved by having all nodes get the oracle data.
 
 int32_t get_btcusd(uint32_t pricebits[4])
@@ -1756,6 +1824,7 @@ int32_t get_btcusd(uint32_t pricebits[4])
 }
 
 // komodo_cbopretupdate() obtains the external price data and encodes it into Mineropret, which will then be used by the miner and validation
+
 void komodo_cbopretupdate()
 {
     uint32_t pricebits[4];
@@ -1765,10 +1834,34 @@ void komodo_cbopretupdate()
         {
             if ( Mineropret.size() < PRICES_SIZEBIT0 )
                 Mineropret.resize(PRICES_SIZEBIT0);
-            memcpy(&Mineropret[0],pricebits,PRICES_SIZEBIT0);
+            memcpy(Mineropret.data(),pricebits,PRICES_SIZEBIT0);
             //int32_t i; for (i=0; i<Mineropret.size(); i++)
             //    fprintf(stderr,"%02x",Mineropret[i]);
             //fprintf(stderr," <- set Mineropret[%d]\n",(int32_t)Mineropret.size());
+        }
+        if ( (ASSETCHAINS_CBOPRET & 2) != 0 )
+        {
+            get_currencies(Cryptos,(int32_t)(sizeof(Cryptos)/sizeof(*Cryptos)));
+        }
+        if ( (ASSETCHAINS_CBOPRET & 4) != 0 )
+        {
+            get_currencies(Metals,(int32_t)(sizeof(Metals)/sizeof(*Metals)));
+        }
+        if ( (ASSETCHAINS_CBOPRET & 8) != 0 )
+        {
+            get_currencies(ForexMajor,(int32_t)(sizeof(ForexMajor)/sizeof(*ForexMajor)));
+        }
+        if ( (ASSETCHAINS_CBOPRET & 16) != 0 )
+        {
+            get_currencies(ForexMinor,(int32_t)(sizeof(ForexMinor)/sizeof(*ForexMinor)));
+        }
+        if ( (ASSETCHAINS_CBOPRET & 32) != 0 )
+        {
+            get_stocks(Markets,(int32_t)(sizeof(Markets)/sizeof(*Markets)));
+        }
+        if ( (ASSETCHAINS_CBOPRET & 64) != 0 )
+        {
+            get_stocks(Techstocks,(int32_t)(sizeof(Techstocks)/sizeof(*Techstocks)));
         }
     }
 }
