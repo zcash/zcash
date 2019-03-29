@@ -1741,7 +1741,7 @@ uint32_t get_stockprice(char *symbol)
     sprintf(url,"https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=%s&interval=15min&apikey=%s",symbol,NOTARY_PUBKEY.data()+50);
     if ( (json= get_urljson(url)) != 0 )
     {
-        if ( (obj= jobj(jitem(json,(char *)"Time Series (15min)"),0)) != 0 )
+        if ( (obj= jobj(json,(char *)"Time Series (15min)")) != 0 )
         {
             high = jdouble(jitem(obj,0),(char *)"2. high")*10000 + 0.000049;
             low = jdouble(jitem(obj,0),(char *)"3. low")*10000 + 0.000049;
