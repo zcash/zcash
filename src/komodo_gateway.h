@@ -1609,9 +1609,9 @@ uint32_t komodo_pricenew(int32_t *maxflagp,uint32_t price,uint32_t refprice,int6
 int32_t komodo_pricecmp(int32_t n,int32_t *maxflagp,uint32_t *pricebitsA,uint32_t *pricebitsB,int64_t tolerance)
 {
     int32_t i; uint32_t newprice;
+    *maxflagp = 0;
     for (i=1; i<n; i++)
     {
-        *maxflagp = 0;
         if ( (newprice= komodo_pricenew(maxflagp,pricebitsA[i],pricebitsB[i],tolerance)) != 0 )
         {
             fprintf(stderr,"i.%d/%d %u vs %u -> newprice.%u out of tolerance maxflag.%d\n",i,n,pricebitsB[i],pricebitsA[i],newprice,*maxflagp);
