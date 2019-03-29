@@ -1850,8 +1850,9 @@ uint32_t get_stockprice(const char *symbol)
 uint32_t get_dailyfx()
 {
     char url[512]; cJSON *json; uint32_t datenum=0,price = 0;
-    sprintf(url,"http://api.openrates.io/latest");//http://api.exchangeratesapi.io/latest");
-    if ( (json= get_urljson(url)) != 0 )
+    sprintf(url,"http://api.openrates.io/latest");
+    if ( (json= send_curl(url,(char *)"curldata")) != 0 )//get_urljson(url)) != 0 )
+    //if ( (json= get_urljson(url)) != 0 )
     {
         free_json(json);
     }
