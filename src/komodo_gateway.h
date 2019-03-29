@@ -1635,7 +1635,7 @@ int32_t komodo_priceclamp(int32_t n,uint32_t *pricebits,uint32_t *refprices,int6
 // komodo_mineropret() returns a valid pricedata to add to the coinbase opreturn for nHeight
 CScript komodo_mineropret(int32_t nHeight)
 {
-    CScript opret; uint32_t pricebits[8192],prevbits[8192]; int32_t maxflag,n,numzero=0;
+    CScript opret; uint32_t pricebits[8192],prevbits[8192]; int32_t maxflag,i,n,numzero=0;
     if ( Mineropret.size() >= PRICES_SIZEBIT0 )
     {
         n = (int32_t)(Mineropret.size() / sizeof(uint32_t));
