@@ -1580,20 +1580,24 @@ int32_t komodo_heightpricebits(uint32_t prevbits[4],int32_t nHeight)
 uint32_t komodo_pricenew(int32_t *maxflagp,uint32_t price,uint32_t refprice,int64_t tolerance)
 {
     uint64_t highprice,lowprice;
+    if ( refprice < 2 )
+        return(0);
     highprice = ((uint64_t)refprice * (COIN + tolerance)) / COIN; // calc highest acceptable price
     lowprice = ((uint64_t)refprice * (COIN - tolerance)) / COIN;  // and lowest
-    fprintf(stderr,"ref.%u * %llu -> %llu -> highprice %llu\n",refprice,(long long)(COIN+tolerance),(long long)((uint64_t)refprice * (COIN + tolerance)),(long long)highprice);
-    fprintf(stderr,"ref.%u * %llu -> %llu -> lowprice %llu\n",refprice,(long long)(COIN-tolerance),(long long)((uint64_t)refprice * (COIN - tolerance)),(long long)lowprice);
+    if ( highprice == refprice )
+        highprice++;
+    if ( lowprice == refprice )
+        lowprice--;
     if ( price >= highprice )
     {
-        fprintf(stderr,"high %u vs h%llu l%llu tolerance.%llu\n",price,(long long)highprice,(long long)lowprice,(long long)tolerance);
+        //fprintf(stderr,"high %u vs h%llu l%llu tolerance.%llu\n",price,(long long)highprice,(long long)lowprice,(long long)tolerance);
         *maxflagp = 1;
         if ( price > highprice ) // return non-zero only if we violate the tolerance
             return(highprice);
     }
     else if ( price <= lowprice )
     {
-        fprintf(stderr,"low %u vs h%llu l%llu tolerance.%llu\n",price,(long long)highprice,(long long)lowprice,(long long)tolerance);
+        //fprintf(stderr,"low %u vs h%llu l%llu tolerance.%llu\n",price,(long long)highprice,(long long)lowprice,(long long)tolerance);
         *maxflagp = -1;
         if ( price < lowprice )
             return(lowprice);
