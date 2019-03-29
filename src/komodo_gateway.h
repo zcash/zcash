@@ -1635,14 +1635,24 @@ int32_t komodo_priceclamp(int32_t n,uint32_t *pricebits,uint32_t *refprices,int6
 // komodo_mineropret() returns a valid pricedata to add to the coinbase opreturn for nHeight
 CScript komodo_mineropret(int32_t nHeight)
 {
-    CScript opret; uint32_t pricebits[8192],prevbits[8192]; int32_t maxflag,n;
+    CScript opret; uint32_t pricebits[8192],prevbits[8192]; int32_t maxflag,n,numzero=0;
     if ( Mineropret.size() >= PRICES_SIZEBIT0 )
     {
+        n = (int32_t)(Mineropret.size() / sizeof(uint32_t));
+        numzero = 1;
+        while ( numzero > 0 )
+        {
+            memcpy(pricebits,Mineropret.data(),Mineropret.size());
+            for (i=numzero=0; i<n; i++)
+                if ( pricebits[i] == 0 )
+                    numzero++;
+            if ( numzero != 0 )
+                fprintf(stderr,"numzero.%d\n",numzero);
+        }
         if ( komodo_heightpricebits(prevbits,nHeight-1) == 0 )
         {
             memcpy(pricebits,Mineropret.data(),Mineropret.size());
-            n = (int32_t)(Mineropret.size() / sizeof(uint32_t));
-            if ( komodo_pricecmp(n,&maxflag,pricebits,prevbits,Mineropret.size()) < 0 )
+            if ( komodo_pricecmp(n,&maxflag,pricebits,prevbits,PRICES_MAXCHANGE) < 0 )
             {
                 // if the new prices are not within tolerance, update Mineropret with clipped prices
                 komodo_priceclamp(n,pricebits,prevbits,PRICES_MAXCHANGE);
