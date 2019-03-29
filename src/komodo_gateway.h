@@ -1612,7 +1612,7 @@ int32_t komodo_pricecmp(int32_t n,int32_t *maxflagp,uint32_t *pricebitsA,uint32_
     for (i=1; i<n; i++)
     {
         *maxflagp = 0;
-        if ( pricebitsB[i] != 0 && pricebitsA[i] != 0 && (newprice= komodo_pricenew(maxflagp,pricebitsA[i],pricebitsB[i],tolerance)) != 0 )
+        if ( (newprice= komodo_pricenew(maxflagp,pricebitsA[i],pricebitsB[i],tolerance)) != 0 )
         {
             fprintf(stderr,"i.%d/%d %u vs %u -> newprice.%u out of tolerance maxflag.%d\n",i,n,pricebitsB[i],pricebitsA[i],newprice,*maxflagp);
             return(-1);
@@ -1711,27 +1711,33 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
             if ( lag < ASSETCHAINS_BLOCKTIME && Mineropret.size() >= PRICES_SIZEBIT0 )
             {
                 memcpy(localbits,Mineropret.data(),Mineropret.size());
-                if ( maxflag == 0 )
+                for (i=0; i<n; i++)
+                    if ( localbits[i] == 0 )
+                        break;
+                if ( i == n )
                 {
-                    if ( komodo_pricecmp(n,&maxflag,localbits,prevbits,PRICES_MAXCHANGE) < 0 )
+                    if ( maxflag == 0 )
                     {
-                        fprintf(stderr,"maxflag.0 cmp error\n");
-                        return(-1);
-                    }
-                }
-                else
-                {
-                    for (i=1; i<n; i++)
-                    {
-                        maxflag = 0;
-                        if ( (newprice= komodo_pricenew(&maxflag,pricebits[i],prevbits[i],PRICES_MAXCHANGE)) != 0 ) // proposed price is clamped
+                        if ( komodo_pricecmp(n,&maxflag,localbits,prevbits,PRICES_MAXCHANGE) < 0 )
                         {
-                            // make sure local price is beyond clamped
-                            fprintf(stderr,"maxflag.%d i.%d localbits.%u vs pricebits.%u\n",maxflag,i,localbits[i],pricebits[i]);
-                            if ( maxflag > 0 && localbits[i] < pricebits[i] )
-                                return(-1);
-                            else if ( maxflag < 0 && localbits[i] > pricebits[i] )
-                                return(-1);
+                            fprintf(stderr,"maxflag.0 cmp error\n");
+                            return(-1);
+                        }
+                    }
+                    else
+                    {
+                        for (i=1; i<n; i++)
+                        {
+                            maxflag = 0;
+                            if ( (newprice= komodo_pricenew(&maxflag,pricebits[i],prevbits[i],PRICES_MAXCHANGE)) != 0 ) // proposed price is clamped
+                            {
+                                // make sure local price is beyond clamped
+                                fprintf(stderr,"maxflag.%d i.%d localbits.%u vs pricebits.%u\n",maxflag,i,localbits[i],pricebits[i]);
+                                if ( maxflag > 0 && localbits[i] < pricebits[i] )
+                                    return(-1);
+                                else if ( maxflag < 0 && localbits[i] > pricebits[i] )
+                                    return(-1);
+                            }
                         }
                     }
                 }
