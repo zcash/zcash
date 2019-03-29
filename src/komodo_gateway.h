@@ -1993,7 +1993,7 @@ int32_t get_btcusd(uint32_t pricebits[4])
 
 void komodo_cbopretupdate()
 {
-    static uint32_t counter;
+    static uint32_t lasttime;
     static uint32_t pricebits[4],cryptoprices[sizeof(Cryptos)/sizeof(*Cryptos)],forexprices[sizeof(Forex)/sizeof(*Forex)];
     int32_t size;
     if ( (ASSETCHAINS_CBOPRET & 1) != 0 )
@@ -2014,10 +2014,11 @@ void komodo_cbopretupdate()
         }
         if ( (ASSETCHAINS_CBOPRET & 2) != 0 )
         {
-            if ( (counter % 300) == 0 || forexprices[0] == 0 )
+            if ( time(NULL) > lasttime+3600*5 || forexprices[0] == 0 )
             {
                 get_dailyfx(forexprices);
                 memcpy(&Mineropret.data()[size],forexprices,sizeof(forexprices));
+                lasttime = (uint32_t)time(NULL);
             }
             size += sizeof(forexprices);
         }
