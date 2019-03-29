@@ -1789,7 +1789,7 @@ void *filestr(long *allocsizep,char *_fname)
 cJSON *send_curl(char *url,char *fname)
 {
     long fsize; char curlstr[1024],*jsonstr; cJSON *json=0;
-    sprintf(curlstr,"curl --url \"%s\" > %s",url,fname);
+    sprintf(curlstr,"wget \"%s\" > %s",url,fname);
     if ( system(curlstr) == 0 )
     {
         if ( (jsonstr= (char *)filestr((long *)&fsize,fname)) != 0 )
