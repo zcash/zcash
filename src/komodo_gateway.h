@@ -1701,7 +1701,10 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
                 if ( komodo_heightpricebits(prevbits,nHeight-1) == 0 )
                 {
                     if ( komodo_pricecmp(n,&maxflag,pricebits,prevbits,PRICES_MAXCHANGE) < 0 )
+                    {
+                        fprintf(stderr,"vs prev maxflag.%d cmp error\n",maxflag);
                         return(-1);
+                    }
                 } else return(-1);
             }
             if ( lag < ASSETCHAINS_BLOCKTIME && Mineropret.size() >= PRICES_SIZEBIT0 )
@@ -1710,7 +1713,10 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
                 if ( maxflag == 0 )
                 {
                     if ( komodo_pricecmp(n,&maxflag,localbits,prevbits,PRICES_MAXCHANGE) < 0 )
+                    {
+                        fprintf(stderr,"maxflag.0 cmp error\n");
                         return(-1);
+                    }
                 }
                 else
                 {
