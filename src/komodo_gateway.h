@@ -1862,7 +1862,7 @@ uint32_t get_binanceprice(const char *symbol)
 {
     char url[512]; cJSON *json; uint32_t price = 0;
     sprintf(url,"https://api.binance.com/api/v1/ticker/price?symbol=%sBTC",symbol);
-    if ( (json= issue_curl(url,(char *)"bnbprice")) != 0 )
+    if ( (json= send_curl(url,(char *)"bnbprice")) != 0 )
     {
         price = jdouble(json,(char *)"price")*SATOSHIDEN + 0.0000000049;
         free_json(json);
