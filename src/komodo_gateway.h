@@ -1603,8 +1603,13 @@ int32_t komodo_pricecmp(int32_t n,int32_t *maxflagp,uint32_t *pricebitsA,uint32_
     int32_t i;
     *maxflagp = 0;
     for (i=1; i<n; i++)
+    {
         if ( komodo_pricenew(maxflagp,pricebitsA[i],pricebitsB[i],tolerance) != 0 )
+        {
+            fprintf(stderr,"i.%d %u -> %u out of tolerance maxflag.%d\n",i,pricebitsB[i],pricebitsA[i],*maxflagp);
             return(-1);
+        }
+    }
     return(0);
 }
 
@@ -1697,6 +1702,7 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
                         if ( (newprice= komodo_pricenew(&maxflag,pricebits[i],prevbits[i],PRICES_MAXCHANGE)) != 0 ) // proposed price is clamped
                         {
                             // make sure local price is beyond clamped
+                            fprintf(stderr,"maxflag.%d i.%d localbits.%u vs pricebits.%u\n",maxflag,i,localbits[i],pricebits[i]);
                             if ( maxflag > 0 && localbits[i] < pricebits[i] )
                                 return(-1);
                             else if ( maxflag < 0 && localbits[i] > pricebits[i] )
@@ -2003,9 +2009,9 @@ void komodo_cbopretupdate()
             memcpy(&Mineropret.data()[size],cryptoprices,sizeof(cryptoprices));
             size += sizeof(cryptoprices);
         }
-        int32_t i; for (i=0; i<Mineropret.size(); i++)
-            fprintf(stderr,"%02x",Mineropret[i]);
-        fprintf(stderr," <- set Mineropret[%d]\n",(int32_t)Mineropret.size());
+        //int32_t i; for (i=0; i<Mineropret.size(); i++)
+        //    fprintf(stderr,"%02x",Mineropret[i]);
+        //fprintf(stderr," <- set Mineropret[%d]\n",(int32_t)Mineropret.size());
         /*
          if ( (ASSETCHAINS_CBOPRET & 4) != 0 )
         {
