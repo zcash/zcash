@@ -1804,11 +1804,7 @@ cJSON *send_curl(char *url,char *fname)
 // get_urljson just returns the JSON returned by the URL using issue_curl
 
 #define issue_curl(cmdstr) bitcoind_RPC(0,(char *)"CBCOINBASE",cmdstr,0,0,0)
-const char *Cryptos[] = { "KMD", "BTC", "ETH", "LTC", "BCH", "XMR", "IOTA", "DASH", "XTZ", "XEM", "ZEC", "WAVES", "DOGE", "RVN", "LSK", "DCR", "BTS", "ICX", "HOT", "DGB", "STEEM", "ENJ", "STRAT", "VEO" };
-
-const char *ForexMajor[] = { "USD", "EUR", "JPY", "GBP", "AUD", "CHF", "CNY", "RUB" };
-
-const char *ForexMinor[] = { "CAD", "NZD", "MXN", "BRL", "INR", "HKD", "TRY", "ZAR", "PLN", "NOK", "SEK", "DKK", "CZK", "HUF", "ILS", "KRW", "MYR", "PHP", "RON", "SGD", "THB", "BGN", "IDR", "HRK", "UAH", "AED", "SAR" };
+const char *Cryptos[] = { "KMD", "ETH", "LTC", "BCHABC", "XMR", "IOTA", "DASH", "XEM", "ZEC", "WAVES", "RVN", "LSK", "DCR", "BTS", "ICX", "HOT", "STEEM", "ENJ", "STRAT" };
 
 const char *Metals[] = { "XAU", "XAG", "XPT", "XPD", };
 
