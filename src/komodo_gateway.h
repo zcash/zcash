@@ -1582,6 +1582,8 @@ uint32_t komodo_pricenew(int32_t *maxflagp,uint32_t price,uint32_t refprice,int6
     uint64_t highprice,lowprice;
     highprice = ((uint64_t)refprice * (COIN + tolerance)) / COIN; // calc highest acceptable price
     lowprice = ((uint64_t)refprice * (COIN - tolerance)) / COIN;  // and lowest
+    fprintf(stderr,"ref.%u * %llu -> %llu -> highprice %llu\n",refprice,(long long)(COIN+tolerance),(long long)((uint64_t)refprice * (COIN + tolerance)),(long long)highprice);
+    fprintf(stderr,"ref.%u * %llu -> %llu -> lowprice %llu\n",refprice,(long long)(COIN-tolerance),(long long)((uint64_t)refprice * (COIN - tolerance)),(long long)lowprice);
     if ( price >= highprice )
     {
         fprintf(stderr,"high %u vs h%llu l%llu tolerance.%llu\n",price,(long long)highprice,(long long)lowprice,(long long)tolerance);
