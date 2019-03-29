@@ -1602,7 +1602,7 @@ uint32_t komodo_pricenew(int32_t *maxflagp,uint32_t price,uint32_t refprice,int6
         if ( price < lowprice )
             return(lowprice);
     }
-    else return(0);
+    return(0);
 }
 
 // komodo_pricecmp() returns -1 if any of the prices are beyond the tolerance
