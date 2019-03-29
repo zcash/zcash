@@ -1755,7 +1755,7 @@ uint32_t get_stockprice(const char *symbol)
 uint32_t get_currencyprice(const char *symbol)
 {
     char url[512]; cJSON *json,*obj; uint32_t price = 0;
-    sprintf(url,"https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&from_currency=%s&to_currency=USD&apikey=%s",symbol,"D0185MGYVTIW0G6H");//NOTARY_PUBKEY.data()+50);
+    sprintf(url,"http://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&from_currency=%s&to_currency=USD&apikey=%s",symbol,"D0185MGYVTIW0G6H");//NOTARY_PUBKEY.data()+50);
     fprintf(stderr,"issue (%s)\n",url);
     if ( (json= get_urljson(url)) != 0 )
     {
