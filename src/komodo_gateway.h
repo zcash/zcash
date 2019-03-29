@@ -1804,19 +1804,21 @@ cJSON *send_curl(char *url,char *fname)
 // get_urljson just returns the JSON returned by the URL using issue_curl
 
 #define issue_curl(cmdstr) bitcoind_RPC(0,(char *)"CBCOINBASE",cmdstr,0,0,0)
+
 const char *Cryptos[] = { "KMD", "ETH", "LTC", "BCHABC", "XMR", "IOTA", "DASH", "XEM", "ZEC", "WAVES", "RVN", "LSK", "DCR", "BTS", "ICX", "HOT", "STEEM", "ENJ", "STRAT" };
-
-const char *Metals[] = { "XAU", "XAG", "XPT", "XPD", };
-
-const char *Markets[] = { "DJIA", "SPX", "NDX", "VIX" };
 
 const char *Forex[] =
 { "BGN","NZD","ILS","RUB","CAD","PHP","CHF","AUD","JPY","TRY","HKD","MYR","HRK","CZK","IDR","DKK","NOK","HUF","GBP","MXN","THB","ISK","ZAR","BRL","SGD","PLN","INR","KRW","RON","CNY","SEK","EUR"
 };
 
+/*
 const char *Techstocks[] =
 { "AAPL","ADBE","ADSK","AKAM","AMD","AMZN","ATVI","BB","CDW","CRM","CSCO","CYBR","DBX","EA","FB","GDDY","GOOG","GRMN","GSAT","HPQ","IBM","INFY","INTC","INTU","JNPR","MSFT","MSI","MU","MXL","NATI","NCR","NFLX","NTAP","NVDA","ORCL","PANW","PYPL","QCOM","RHT","S","SHOP","SNAP","SPOT","SYMC","SYNA","T","TRIP","TWTR","TXN","VMW","VOD","VRSN","VZ","WDC","XRX","YELP","YNDX","ZEN"
 };
+const char *Metals[] = { "XAU", "XAG", "XPT", "XPD", };
+
+const char *Markets[] = { "DJIA", "SPX", "NDX", "VIX" };
+*/
 
 cJSON *get_urljson(char *url)
 {
@@ -1847,10 +1849,10 @@ uint32_t get_stockprice(const char *symbol)
     return(price);
 }
 
-uint32_t get_dailyfx()
+uint32_t get_dailyfx(uint32_t *prices)
 {
     //{"base":"USD","rates":{"BGN":1.74344803,"NZD":1.471652701,"ILS":3.6329113924,"RUB":65.1997682296,"CAD":1.3430201462,"USD":1.0,"PHP":52.8641469068,"CHF":0.9970582992,"AUD":1.4129078267,"JPY":110.6792654662,"TRY":5.6523444464,"HKD":7.8499732573,"MYR":4.0824567659,"HRK":6.6232840078,"CZK":22.9862720628,"IDR":14267.4986628633,"DKK":6.6551078624,"NOK":8.6806917454,"HUF":285.131039401,"GBP":0.7626582278,"MXN":19.4183455161,"THB":31.8702085933,"ISK":122.5708682475,"ZAR":14.7033339276,"BRL":3.9750401141,"SGD":1.3573720806,"PLN":3.8286682118,"INR":69.33187734,"KRW":1139.1602781244,"RON":4.2423783206,"CNY":6.7387234801,"SEK":9.3385630237,"EUR":0.8914244963},"date":"2019-03-28"}
-    char url[512],*datestr; cJSON *json,*rates; int32_t i,n; uint32_t datenum=0,price = 0;
+    char url[512],*datestr; cJSON *json,*rates; int32_t i; uint32_t datenum=0,price = 0;
     sprintf(url,"https://api.openrates.io/latest?base=USD");
     if ( (json= send_curl(url,(char *)"dailyfx")) != 0 )
     {
@@ -1858,13 +1860,14 @@ uint32_t get_dailyfx()
         {
             for (i=0; i<sizeof(Forex)/sizeof(*Forex); i++)
             {
-                price = jdouble(rates,(char *)Forex[i]) * 10000;
-                fprintf(stderr,"(%s %.4f)",Forex[i],(double)price/10000);
+                price = jdouble(rates,(char *)Forex[i]) * 10000 + 0.000049;
+                fprintf(stderr,"(%s %.4f) ",Forex[i],(double)price/10000);
+                prices[i] = price;
             }
         }
         if ( (datestr= jstr(json,(char *)"date")) != 0 )
             fprintf(stderr,"(%s)",datestr);
-        fprintf(stderr," n.%d\n",n);
+        fprintf(stderr,"\n");
         free_json(json);
     }
     return(datenum);
@@ -1883,7 +1886,7 @@ uint32_t get_binanceprice(const char *symbol)
     return(price);
 }
 
-int32_t get_cryptoprices(const char *list[],int32_t n)
+int32_t get_cryptoprices(uint32_t *prices,const char *list[],int32_t n)
 {
     int32_t i,errs=0; uint32_t price;
     for (i=0; i<n; i++)
@@ -1891,6 +1894,7 @@ int32_t get_cryptoprices(const char *list[],int32_t n)
         if ( (price= get_binanceprice(list[i])) == 0 )
             errs++;
         fprintf(stderr,"(%s %.8f) ",list[i],(double)price/SATOSHIDEN);
+        prices[i] = price;
     }
     fprintf(stderr," errs.%d\n",errs);
     return(-errs);
@@ -1921,6 +1925,7 @@ int32_t get_stocks(const char *list[],int32_t n)
     fprintf(stderr," errs.%d\n",errs);
     return(-errs);
 }
+
 // parse the coindesk specific data. yes, if this changes, it will require an update. However, regardless if the format from the data source changes, then the code that extracts it must be changed. One way to mitigate this is to have a large variety of data sources so that there is only a very remote chance that all of them are not available. Certainly the data gathering needs to be made more robust, but it doesnt really affect the proof of concept for the decentralized trustless oracle. The trustlessness is achieved by having all nodes get the oracle data.
 
 int32_t get_btcusd(uint32_t pricebits[4])
@@ -1959,7 +1964,7 @@ int32_t get_btcusd(uint32_t pricebits[4])
 void komodo_cbopretupdate()
 {
     static uint32_t counter;
-    uint32_t pricebits[4];
+    static uint32_t pricebits[4],cryptoprices[sizeof(Cryptos)/sizeof(*Cryptos)],forexprices[sizeof(Forex)/sizeof(*Forex)];
     if ( (ASSETCHAINS_CBOPRET & 1) != 0 )
     {
         if ( get_btcusd(pricebits) == 0 )
@@ -1971,24 +1976,13 @@ void komodo_cbopretupdate()
             //    fprintf(stderr,"%02x",Mineropret[i]);
             //fprintf(stderr," <- set Mineropret[%d]\n",(int32_t)Mineropret.size());
         }
-        //get_cryptoprices(Cryptos,(int32_t)(sizeof(Cryptos)/sizeof(*Cryptos)));
-        //if ( (counter % 300) == 0 )
-            get_dailyfx();
-        /*if ( (ASSETCHAINS_CBOPRET & 2) != 0 )
-        {
-            get_currencies(Cryptos,(int32_t)(sizeof(Cryptos)/sizeof(*Cryptos)));
-        }
-        if ( (ASSETCHAINS_CBOPRET & 4) != 0 )
+        get_cryptoprices(cryptoprices,Cryptos,(int32_t)(sizeof(Cryptos)/sizeof(*Cryptos)));
+        if ( (counter % 300) == 0 || forexprices[0] == 0 )
+            get_dailyfx(forexprices);
+        /*       
+         if ( (ASSETCHAINS_CBOPRET & 4) != 0 )
         {
             get_currencies(Metals,(int32_t)(sizeof(Metals)/sizeof(*Metals)));
-        }
-        if ( (ASSETCHAINS_CBOPRET & 8) != 0 )
-        {
-            get_currencies(ForexMajor,(int32_t)(sizeof(ForexMajor)/sizeof(*ForexMajor)));
-        }
-        if ( (ASSETCHAINS_CBOPRET & 16) != 0 )
-        {
-            get_currencies(ForexMinor,(int32_t)(sizeof(ForexMinor)/sizeof(*ForexMinor)));
         }
         if ( (ASSETCHAINS_CBOPRET & 32) != 0 )
         {
