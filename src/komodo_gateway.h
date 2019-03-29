@@ -1858,7 +1858,7 @@ uint32_t get_dailyfx()
         {
             for (i=0; i<sizeof(Forex)/sizeof(*Forex); i++)
             {
-                price = jdouble(rates,Forex[i]) * 10000;
+                price = jdouble(rates,(char *)Forex[i]) * 10000;
                 fprintf(stderr,"(%s %.4f)",Forex[i],(double)price/10000);
             }
         }
