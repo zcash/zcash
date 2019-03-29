@@ -1735,7 +1735,7 @@ cJSON *get_urljson(char *url)
     return(json);
 }
 
-uint32_t get_stockprice(char *symbol)
+uint32_t get_stockprice(const char *symbol)
 {
     char url[512]; cJSON *json,*obj; uint32_t high,low,price = 0;
     sprintf(url,"https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=%s&interval=15min&apikey=%s",symbol,NOTARY_PUBKEY.data()+50);
@@ -1752,7 +1752,7 @@ uint32_t get_stockprice(char *symbol)
     return(price);
 }
 
-uint32_t get_currencyprice(char *symbol)
+uint32_t get_currencyprice(const char *symbol)
 {
     char url[512]; cJSON *json,*obj; uint32_t price = 0;
     sprintf(url,"https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&from_currency=%s&to_currency=USD&apikey=%s",symbol,NOTARY_PUBKEY.data()+50);
