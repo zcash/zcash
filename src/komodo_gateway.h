@@ -1565,7 +1565,7 @@ int32_t komodo_heightpricebits(uint32_t prevbits[4],int32_t nHeight)
             GetOpReturnData(tx.vout[numvouts-1].scriptPubKey,vopret);
             if ( vopret.size() >= PRICES_SIZEBIT0 )
             {
-                memcpy(prevbits,&vopret[0],PRICES_SIZEBIT0);
+                memcpy(prevbits,vopret.data(),vopret.size());
                 return(0);
             }
         }
@@ -1598,21 +1598,21 @@ uint32_t komodo_pricenew(int32_t *maxflagp,uint32_t price,uint32_t refprice,int6
 }
 
 // komodo_pricecmp() returns -1 if any of the prices are beyond the tolerance
-int32_t komodo_pricecmp(int32_t *maxflagp,uint32_t pricebitsA[4],uint32_t pricebitsB[4],int64_t tolerance)
+int32_t komodo_pricecmp(int32_t n,int32_t *maxflagp,uint32_t *pricebitsA,uint32_t *pricebitsB,int64_t tolerance)
 {
     int32_t i;
     *maxflagp = 0;
-    for (i=1; i<4; i++)
+    for (i=1; i<n; i++)
         if ( komodo_pricenew(maxflagp,pricebitsA[i],pricebitsB[i],tolerance) != 0 )
             return(-1);
     return(0);
 }
 
 // komodo_priceclamp() clamps any price that is beyond tolerance
-int32_t komodo_priceclamp(uint32_t pricebits[4],uint32_t refprices[4],int64_t tolerance)
+int32_t komodo_priceclamp(int32_t n,uint32_t *pricebits,uint32_t *refprices,int64_t tolerance)
 {
     int32_t i,maxflag = 0; uint32_t newprice;
-    for (i=1; i<4; i++)
+    for (i=1; i<n; i++)
     {
         if ( (newprice= komodo_pricenew(&maxflag,pricebits[i],refprices[i],tolerance)) != 0 )
         {
@@ -1626,20 +1626,25 @@ int32_t komodo_priceclamp(uint32_t pricebits[4],uint32_t refprices[4],int64_t to
 // komodo_mineropret() returns a valid pricedata to add to the coinbase opreturn for nHeight
 CScript komodo_mineropret(int32_t nHeight)
 {
-    CScript opret; uint32_t pricebits[4],prevbits[4]; int32_t maxflag;
+    CScript opret; uint32_t pricebits[8192],prevbits[8192]; int32_t maxflag,n;
     if ( Mineropret.size() >= PRICES_SIZEBIT0 )
     {
         if ( komodo_heightpricebits(prevbits,nHeight-1) == 0 )
         {
-            memcpy(pricebits,Mineropret.data(),PRICES_SIZEBIT0);
-            if ( komodo_pricecmp(&maxflag,pricebits,prevbits,PRICES_MAXCHANGE) < 0 )
+            memcpy(pricebits,Mineropret.data(),Mineropret.size());
+            n = (int32_t)(Mineropret.size() / sizeof(uint32_t));
+            if ( komodo_pricecmp(n,&maxflag,pricebits,prevbits,Mineropret.size()) < 0 )
             {
                 // if the new prices are not within tolerance, update Mineropret with clipped prices
-                komodo_priceclamp(pricebits,prevbits,PRICES_MAXCHANGE);
+                komodo_priceclamp(n,pricebits,prevbits,PRICES_MAXCHANGE);
                 fprintf(stderr,"update Mineropret to clamped prices\n");
-                memcpy(Mineropret.data(),pricebits,PRICES_SIZEBIT0);
+                memcpy(Mineropret.data(),pricebits,Mineropret.size());
             }
         }
+        int32_t i;
+        for (i=0; i<Mineropret.size(); i++)
+            fprintf(stderr,"%02x",Mineropret[i]);
+        fprintf(stderr," <- Mineropret\n");
         return(opret << OP_RETURN << Mineropret);
     }
     return(opret);
@@ -1655,13 +1660,14 @@ CScript komodo_mineropret(int32_t nHeight)
 
 int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
 {
-    std::vector<uint8_t> vopret; uint32_t localbits[4],pricebits[4],prevbits[4],newprice; int32_t i,lag,lag2,maxflag=0;
+    std::vector<uint8_t> vopret; uint32_t localbits[8192],pricebits[8192],prevbits[8192],newprice; int32_t i,lag,lag2,n,maxflag=0;
     if ( ASSETCHAINS_CBOPRET != 0 )
     {
         GetOpReturnData(scriptPubKey,vopret);
         if ( vopret.size() >= PRICES_SIZEBIT0 )
         {
-            memcpy(pricebits,&vopret[0],PRICES_SIZEBIT0);
+            n = (int32_t)(vopret.size() / sizeof(uint32_t));
+            memcpy(pricebits,vopret.data(),Mineropret.size());
             lag = (int32_t)(time(NULL) - pricebits[0]);
             if ( lag < 0 )
                 lag = -lag;
@@ -1671,21 +1677,21 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
             {
                 if ( komodo_heightpricebits(prevbits,nHeight-1) == 0 )
                 {
-                    if ( komodo_pricecmp(&maxflag,pricebits,prevbits,PRICES_MAXCHANGE) < 0 )
+                    if ( komodo_pricecmp(n,&maxflag,pricebits,prevbits,PRICES_MAXCHANGE) < 0 )
                         return(-1);
                 } else return(-1);
             }
             if ( lag < ASSETCHAINS_BLOCKTIME && Mineropret.size() >= PRICES_SIZEBIT0 )
             {
-                memcpy(localbits,Mineropret.data(),PRICES_SIZEBIT0);
+                memcpy(localbits,Mineropret.data(),Mineropret.size());
                 if ( maxflag == 0 )
                 {
-                    if ( komodo_pricecmp(&maxflag,localbits,prevbits,PRICES_MAXCHANGE) < 0 )
+                    if ( komodo_pricecmp(n,&maxflag,localbits,prevbits,PRICES_MAXCHANGE) < 0 )
                         return(-1);
                 }
                 else
                 {
-                    for (i=1; i<4; i++)
+                    for (i=1; i<n; i++)
                     {
                         maxflag = 0;
                         if ( (newprice= komodo_pricenew(&maxflag,pricebits[i],prevbits[i],PRICES_MAXCHANGE)) != 0 ) // proposed price is clamped
@@ -1700,7 +1706,7 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
                 }
             }
             return(0);
-        } else fprintf(stderr,"wrong size %d vs %d, scriptPubKey size %d [%02x]\n",(int32_t)vopret.size(),(int32_t)PRICES_SIZEBIT0,(int32_t)scriptPubKey.size(),scriptPubKey[0]);
+        } else fprintf(stderr,"wrong size %d vs %d, scriptPubKey size %d [%02x]\n",(int32_t)vopret.size(),(int32_t)Mineropret.size(),(int32_t)scriptPubKey.size(),scriptPubKey[0]);
         return(-1);
     }
     return(0);
@@ -1965,21 +1971,40 @@ void komodo_cbopretupdate()
 {
     static uint32_t counter;
     static uint32_t pricebits[4],cryptoprices[sizeof(Cryptos)/sizeof(*Cryptos)],forexprices[sizeof(Forex)/sizeof(*Forex)];
+    int32_t size;
     if ( (ASSETCHAINS_CBOPRET & 1) != 0 )
     {
+        size = PRICES_SIZEBIT0;
+        if ( (ASSETCHAINS_CBOPRET & 2) != 0 )
+            size += sizeof(forexprices);
+        if ( (ASSETCHAINS_CBOPRET & 4) != 0 )
+            size += sizeof(cryptoprices);
+        if ( Mineropret.size() < size )
+            Mineropret.resize(size);
+        size = PRICES_SIZEBIT0;
         if ( get_btcusd(pricebits) == 0 )
         {
-            if ( Mineropret.size() < PRICES_SIZEBIT0 )
-                Mineropret.resize(PRICES_SIZEBIT0);
             memcpy(Mineropret.data(),pricebits,PRICES_SIZEBIT0);
             //int32_t i; for (i=0; i<Mineropret.size(); i++)
             //    fprintf(stderr,"%02x",Mineropret[i]);
             //fprintf(stderr," <- set Mineropret[%d]\n",(int32_t)Mineropret.size());
         }
-        get_cryptoprices(cryptoprices,Cryptos,(int32_t)(sizeof(Cryptos)/sizeof(*Cryptos)));
-        if ( (counter % 300) == 0 || forexprices[0] == 0 )
-            get_dailyfx(forexprices);
-        /*       
+        if ( (ASSETCHAINS_CBOPRET & 2) != 0 )
+        {
+            if ( (counter % 300) == 0 || forexprices[0] == 0 )
+            {
+                get_dailyfx(forexprices);
+                memcpy(&Mineropret.data()[size],forexprices,sizeof(forexprices));
+            }
+            size += sizeof(forexprices);
+        }
+        if ( (ASSETCHAINS_CBOPRET & 4) != 0 )
+        {
+            get_cryptoprices(cryptoprices,Cryptos,(int32_t)(sizeof(Cryptos)/sizeof(*Cryptos)));
+            memcpy(&Mineropret.data()[size],cryptoprices,sizeof(cryptoprices));
+            size += sizeof(cryptoprices);
+        }
+        /*
          if ( (ASSETCHAINS_CBOPRET & 4) != 0 )
         {
             get_currencies(Metals,(int32_t)(sizeof(Metals)/sizeof(*Metals)));
