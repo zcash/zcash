@@ -1985,9 +1985,9 @@ void komodo_cbopretupdate()
         if ( get_btcusd(pricebits) == 0 )
         {
             memcpy(Mineropret.data(),pricebits,PRICES_SIZEBIT0);
-            //int32_t i; for (i=0; i<Mineropret.size(); i++)
-            //    fprintf(stderr,"%02x",Mineropret[i]);
-            //fprintf(stderr," <- set Mineropret[%d]\n",(int32_t)Mineropret.size());
+            int32_t i; for (i=0; i<Mineropret.size(); i++)
+                fprintf(stderr,"%02x",Mineropret[i]);
+            fprintf(stderr," <- set Mineropret[%d]\n",(int32_t)Mineropret.size());
         }
         if ( (ASSETCHAINS_CBOPRET & 2) != 0 )
         {
