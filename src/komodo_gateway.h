@@ -1792,7 +1792,7 @@ cJSON *send_curl(char *url,char *fname)
     sprintf(curlstr,"curl --url \"%s\" > %s",url,fname);
     if ( system(curlstr) == 0 )
     {
-        if ( (jsonstr= filestr((void *)&fsize,fname)) != 0 )
+        if ( (jsonstr= (char *)filestr((long *)&fsize,fname)) != 0 )
         {
             json = cJSON_Parse(jsonstr);
             free(jsonstr);
@@ -1851,7 +1851,7 @@ uint32_t get_currencyprice(const char *symbol)
 {
     char url[512]; cJSON *json,*obj; uint32_t price = 0;
     sprintf(url,"https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&from_currency=%s&to_currency=USD&apikey=%s",symbol,NOTARY_PUBKEY.data()+50);
-    if ( (json= send_curl(url,"curldata")) != 0 )//get_urljson(url)) != 0 )
+    if ( (json= send_curl(url,(char *)"curldata")) != 0 )//get_urljson(url)) != 0 )
     {
         if ( (obj= jobj(jitem(json,0),0)) != 0 )
             price = jdouble(obj,(char *)"5. Exchange Rate")*10000 + 0.000049;
