@@ -195,7 +195,7 @@ try_again:
     init_string(&s);
     headers = curl_slist_append(0,"Expect:");
 
-    curl_easy_setopt(curl_handle,CURLOPT_USERAGENT,"mozilla/4.0");//"Mozilla/4.0 (compatible; )");
+    curl_easy_setopt(curl_handle,CURLOPT_USERAGENT,"Mozilla/4.0 (compatible; )");//"mozilla/4.0");//"Mozilla/4.0 (compatible; )");
     curl_easy_setopt(curl_handle,CURLOPT_HTTPHEADER,	headers);
     curl_easy_setopt(curl_handle,CURLOPT_URL,		url);
     curl_easy_setopt(curl_handle,CURLOPT_WRITEFUNCTION,	(void *)accumulatebytes); 		// send all data to this function
