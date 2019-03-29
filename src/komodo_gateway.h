@@ -1819,7 +1819,7 @@ cJSON *get_urljson(char *url)
     char *jsonstr; cJSON *json = 0;
     if ( (jsonstr= issue_curl(url)) != 0 )
     {
-        fprintf(stderr,"(%s) -> (%s)\n",url,jsonstr);
+        //fprintf(stderr,"(%s) -> (%s)\n",url,jsonstr);
         json = cJSON_Parse(jsonstr);
         free(jsonstr);
     }
