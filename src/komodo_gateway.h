@@ -1847,6 +1847,17 @@ uint32_t get_stockprice(const char *symbol)
     return(price);
 }
 
+uint32_t get_dailyfx()
+{
+    char url[512]; cJSON *json; uint32_t datenum=0,price = 0;
+    sprintf(url,"https://api.exchangeratesapi.io/latest");
+    if ( (json= get_urljson(url)) != 0 )
+    {
+        free_json(json);
+    }
+    return(datenum);
+}
+
 uint32_t get_currencyprice(const char *symbol)
 {
     char url[512]; cJSON *json,*obj; uint32_t price = 0;
@@ -1934,7 +1945,7 @@ void komodo_cbopretupdate()
             //    fprintf(stderr,"%02x",Mineropret[i]);
             //fprintf(stderr," <- set Mineropret[%d]\n",(int32_t)Mineropret.size());
         }
-ASSETCHAINS_CBOPRET = 5;
+        get_dailyfx();
         if ( (ASSETCHAINS_CBOPRET & 2) != 0 )
         {
             get_currencies(Cryptos,(int32_t)(sizeof(Cryptos)/sizeof(*Cryptos)));
