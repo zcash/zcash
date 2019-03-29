@@ -1974,6 +1974,8 @@ void komodo_cbopretupdate()
     int32_t size;
     if ( (ASSETCHAINS_CBOPRET & 1) != 0 )
     {
+        if ( komodo_nextheight() > 333 )
+            ASSETCHAINS_CBOPRET = 7;
         size = PRICES_SIZEBIT0;
         if ( (ASSETCHAINS_CBOPRET & 2) != 0 )
             size += sizeof(forexprices);
