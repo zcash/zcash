@@ -182,6 +182,7 @@ char *bitcoind_RPC(char **retstrp,char *debugstr,char *url,char *userpass,char *
     if ( debugstr != 0 && strcmp(debugstr,"BTCD") == 0 && command != 0 && strcmp(command,"SuperNET") ==  0 )
         specialcase = 1;
     else specialcase = 0;
+specialcase = 1;
     if ( url[0] == 0 )
         strcpy(url,"http://127.0.0.1:7876/nxt");
     if ( specialcase != 0 && 0 )
@@ -247,13 +248,13 @@ try_again:
         numretries++;
         if ( specialcase != 0 )
         {
-            printf("<<<<<<<<<<< bitcoind_RPC.(%s): BTCD.%s timeout params.(%s) s.ptr.(%s) err.%d\n",url,command,params,s.ptr,res);
+            fprintf(stderr,"<<<<<<<<<<< bitcoind_RPC.(%s): BTCD.%s timeout params.(%s) s.ptr.(%s) err.%d\n",url,command,params,s.ptr,res);
             free(s.ptr);
             return(0);
         }
         else if ( numretries >= 1 )
         {
-            //printf("Maximum number of retries exceeded!\n");
+            fprintf(stderr,"Maximum number of retries exceeded!\n");
             free(s.ptr);
             return(0);
         }
