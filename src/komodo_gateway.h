@@ -1709,17 +1709,17 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
 // get_urljson just returns the JSON returned by the URL using issue_curl
 
 #define issue_curl(cmdstr) bitcoind_RPC(0,(char *)"CBCOINBASE",cmdstr,0,0,0)
-char *Cryptos[] = { "KMD", "BTC", "ETH", "LTC", "BCH", "XMR", "IOTA", "DASH", "XTZ", "XEM", "ZEC", "WAVES", "DOGE", "RVN", "LSK", "DCR", "BTS", "ICX", "HOT", "DGB", "STEEM", "ENJ", "STRAT", "VEO" };
+const char *Cryptos[] = { "KMD", "BTC", "ETH", "LTC", "BCH", "XMR", "IOTA", "DASH", "XTZ", "XEM", "ZEC", "WAVES", "DOGE", "RVN", "LSK", "DCR", "BTS", "ICX", "HOT", "DGB", "STEEM", "ENJ", "STRAT", "VEO" };
 
-char *ForexMajor[] = { "USD", "EUR", "JPY", "GBP", "AUD", "CHF", "CNY", "RUB" };
+const char *ForexMajor[] = { "USD", "EUR", "JPY", "GBP", "AUD", "CHF", "CNY", "RUB" };
 
-char *ForexMinor[] = { "CAD", "NZD", "MXN", "BRL", "INR", "HKD", "TRY", "ZAR", "PLN", "NOK", "SEK", "DKK", "CZK", "HUF", "ILS", "KRW", "MYR", "PHP", "RON", "SGD", "THB", "BGN", "IDR", "HRK", "UAH", "AED", "SAR" };
+const char *ForexMinor[] = { "CAD", "NZD", "MXN", "BRL", "INR", "HKD", "TRY", "ZAR", "PLN", "NOK", "SEK", "DKK", "CZK", "HUF", "ILS", "KRW", "MYR", "PHP", "RON", "SGD", "THB", "BGN", "IDR", "HRK", "UAH", "AED", "SAR" };
 
-char *Metals[] = { "XAU", "XAG", "XPT", "XPD", };
+const char *Metals[] = { "XAU", "XAG", "XPT", "XPD", };
 
-char *Markets[] = { "DJIA", "SPX", "NDX", "VIX" };
+const char *Markets[] = { "DJIA", "SPX", "NDX", "VIX" };
 
-char *Techstocks[] =
+const char *Techstocks[] =
 { "AAPL","ADBE","ADSK","AKAM","AMD","AMZN","ATVI","BB","CDW","CRM","CSCO","CYBR","DBX","EA","FB","GDDY","GOOG","GRMN","GSAT","HPQ","IBM","INFY","INTC","INTU","JNPR","MSFT","MSI","MU","MXL","NATI","NCR","NFLX","NTAP","NVDA","ORCL","PANW","PYPL","QCOM","RHT","S","SHOP","SNAP","SPOT","SYMC","SYNA","T","TRIP","TWTR","TXN","VMW","VOD","VRSN","VZ","WDC","XRX","YELP","YNDX","ZEN"
 };
 
