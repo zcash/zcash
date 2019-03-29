@@ -1850,13 +1850,37 @@ uint32_t get_stockprice(const char *symbol)
 uint32_t get_dailyfx()
 {
     char url[512]; cJSON *json; uint32_t datenum=0,price = 0;
-    sprintf(url,"http://api.openrates.io/latest");
-    if ( (json= send_curl(url,(char *)"curldata")) != 0 )//get_urljson(url)) != 0 )
-    //if ( (json= get_urljson(url)) != 0 )
+    sprintf(url,"http://api.openrates.io/latest?base=USD");
+    if ( (json= send_curl(url,(char *)"dailyfx")) != 0 )
     {
         free_json(json);
     }
     return(datenum);
+}
+
+uint32_t get_binanceprice(const char *symbol)
+{
+    char url[512]; cJSON *json; uint32_t price = 0;
+    sprintf(url,"https://api.binance.com/api/v1/ticker/price?symbol=%sBTC",symbol);
+    if ( (json= get_urljson(url)) != 0 )
+    {
+        price = jdouble(json,(char *)"price")*SATOSHIDEN + 0.0000000049;
+        free_json(json);
+    }
+    return(price);
+}
+
+int32_t get_cryptoprices(const char *list[],int32_t n)
+{
+    int32_t i,errs=0; uint32_t price;
+    for (i=0; i<n; i++)
+    {
+        if ( (price= get_binanceprice(list[i])) == 0 )
+            errs++;
+        else fprintf(stderr,"(%s %.4f) ",list[i],(double)price/10000);
+    }
+    fprintf(stderr," errs.%d\n",errs);
+    return(-errs);
 }
 
 uint32_t get_currencyprice(const char *symbol)
@@ -1870,19 +1894,6 @@ uint32_t get_currencyprice(const char *symbol)
         free_json(json);
     }
     return(price);
-}
-
-int32_t get_currencies(const char *list[],int32_t n)
-{
-    int32_t i,errs=0; uint32_t price;
-    for (i=0; i<n; i++)
-    {
-        if ( (price= get_currencyprice(list[i])) == 0 )
-            errs++;
-        else fprintf(stderr,"(%s %.4f) ",list[i],(double)price/10000);
-    }
-    fprintf(stderr," errs.%d\n",errs);
-    return(-errs);
 }
 
 int32_t get_stocks(const char *list[],int32_t n)
@@ -1934,6 +1945,7 @@ int32_t get_btcusd(uint32_t pricebits[4])
 
 void komodo_cbopretupdate()
 {
+    static uint32_t counter;
     uint32_t pricebits[4];
     if ( (ASSETCHAINS_CBOPRET & 1) != 0 )
     {
@@ -1946,7 +1958,9 @@ void komodo_cbopretupdate()
             //    fprintf(stderr,"%02x",Mineropret[i]);
             //fprintf(stderr," <- set Mineropret[%d]\n",(int32_t)Mineropret.size());
         }
-        get_dailyfx();
+        get_cryptoprices(Cryptos,(int32_t)(sizeof(Cryptos)/sizeof(*Cryptos)));
+        if ( (counter % 300) == 0 )
+            get_dailyfx();
         if ( (ASSETCHAINS_CBOPRET & 2) != 0 )
         {
             get_currencies(Cryptos,(int32_t)(sizeof(Cryptos)/sizeof(*Cryptos)));
@@ -1972,4 +1986,5 @@ void komodo_cbopretupdate()
             get_stocks(Techstocks,(int32_t)(sizeof(Techstocks)/sizeof(*Techstocks)));
         }
     }
+    counter++;
 }
