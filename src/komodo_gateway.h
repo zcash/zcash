@@ -1850,7 +1850,7 @@ uint32_t get_dailyfx()
     sprintf(url,"http://api.openrates.io/latest?base=USD");
     if ( (json= send_curl(url,(char *)"dailyfx")) != 0 )
     {
-        if ( (rates= jobj(json,"rates")) != 0 && (n= cJSON_GetObjectSize()) > 0 )
+        if ( (rates= jobj(json,(char *)"rates")) != 0 && (n= cJSON_GetArraySize()) > 0 )
         {
             for (i=0; i<n; i++)
             {
@@ -1858,7 +1858,7 @@ uint32_t get_dailyfx()
                 fprintf(stderr,"(%s %.4f)",jfieldname(jitem(rates,i)),(double)price/10000);
             }
         }
-        if ( (datestr= jstr(json,"data")) != 0 )
+        if ( (datestr= jstr(json,(char *)"data")) != 0 )
             fprintf(stderr,"(%s)",datestr);
         fprintf(stderr,"\n");
         free_json(json);
