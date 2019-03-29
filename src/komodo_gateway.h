@@ -1850,7 +1850,7 @@ uint32_t get_dailyfx()
     sprintf(url,"http://api.openrates.io/latest?base=USD");
     if ( (json= send_curl(url,(char *)"dailyfx")) != 0 )
     {
-        if ( (rates= jobj(json,(char *)"rates")) != 0 && (n= cJSON_GetArraySize()) > 0 )
+        if ( (rates= jobj(json,(char *)"rates")) != 0 && (n= cJSON_GetArraySize(rates)) > 0 )
         {
             for (i=0; i<n; i++)
             {
