@@ -1970,8 +1970,8 @@ void komodo_cbopretupdate()
             //    fprintf(stderr,"%02x",Mineropret[i]);
             //fprintf(stderr," <- set Mineropret[%d]\n",(int32_t)Mineropret.size());
         }
-        get_cryptoprices(Cryptos,(int32_t)(sizeof(Cryptos)/sizeof(*Cryptos)));
-        if ( (counter % 300) == 0 )
+        //get_cryptoprices(Cryptos,(int32_t)(sizeof(Cryptos)/sizeof(*Cryptos)));
+        //if ( (counter % 300) == 0 )
             get_dailyfx();
         /*if ( (ASSETCHAINS_CBOPRET & 2) != 0 )
         {
