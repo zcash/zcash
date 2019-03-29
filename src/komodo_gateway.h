@@ -1878,7 +1878,7 @@ int32_t get_cryptoprices(const char *list[],int32_t n)
     {
         if ( (price= get_binanceprice(list[i])) == 0 )
             errs++;
-        else fprintf(stderr,"(%s %.4f) ",list[i],(double)price/10000);
+        fprintf(stderr,"(%s %.8f) ",list[i],(double)price/SATOSHIDEN);
     }
     fprintf(stderr," errs.%d\n",errs);
     return(-errs);
