@@ -1961,7 +1961,7 @@ void komodo_cbopretupdate()
         get_cryptoprices(Cryptos,(int32_t)(sizeof(Cryptos)/sizeof(*Cryptos)));
         if ( (counter % 300) == 0 )
             get_dailyfx();
-        if ( (ASSETCHAINS_CBOPRET & 2) != 0 )
+        /*if ( (ASSETCHAINS_CBOPRET & 2) != 0 )
         {
             get_currencies(Cryptos,(int32_t)(sizeof(Cryptos)/sizeof(*Cryptos)));
         }
@@ -1984,7 +1984,7 @@ void komodo_cbopretupdate()
         if ( (ASSETCHAINS_CBOPRET & 64) != 0 )
         {
             get_stocks(Techstocks,(int32_t)(sizeof(Techstocks)/sizeof(*Techstocks)));
-        }
+        }*/
     }
     counter++;
 }
