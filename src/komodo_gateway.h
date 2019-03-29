@@ -1794,7 +1794,6 @@ cJSON *send_curl(char *url,char *fname)
     {
         if ( (jsonstr= (char *)filestr((long *)&fsize,fname)) != 0 )
         {
-            fprintf(stderr,"[%s]\n",jsonstr);
             json = cJSON_Parse(jsonstr);
             free(jsonstr);
         }
@@ -1810,6 +1809,10 @@ const char *Cryptos[] = { "KMD", "ETH", "LTC", "BCHABC", "XMR", "IOTA", "DASH", 
 const char *Metals[] = { "XAU", "XAG", "XPT", "XPD", };
 
 const char *Markets[] = { "DJIA", "SPX", "NDX", "VIX" };
+
+const char *Forex[] =
+{ "BGN","NZD","ILS","RUB","CAD","PHP","CHF","AUD","JPY","TRY","HKD","MYR","HRK","CZK","IDR","DKK","NOK","HUF","GBP","MXN","THB","ISK","ZAR","BRL","SGD","PLN","INR","KRW","RON","CNY","SEK","EUR"
+};
 
 const char *Techstocks[] =
 { "AAPL","ADBE","ADSK","AKAM","AMD","AMZN","ATVI","BB","CDW","CRM","CSCO","CYBR","DBX","EA","FB","GDDY","GOOG","GRMN","GSAT","HPQ","IBM","INFY","INTC","INTU","JNPR","MSFT","MSI","MU","MXL","NATI","NCR","NFLX","NTAP","NVDA","ORCL","PANW","PYPL","QCOM","RHT","S","SHOP","SNAP","SPOT","SYMC","SYNA","T","TRIP","TWTR","TXN","VMW","VOD","VRSN","VZ","WDC","XRX","YELP","YNDX","ZEN"
@@ -1851,18 +1854,17 @@ uint32_t get_dailyfx()
     sprintf(url,"https://api.openrates.io/latest?base=USD");
     if ( (json= send_curl(url,(char *)"dailyfx")) != 0 )
     {
-        fprintf(stderr,"(%s)\n",jprint(json,0));
-        if ( (rates= jobj(json,(char *)"rates")) != 0 && (n= cJSON_GetArraySize(rates)) > 0 )
+        if ( (rates= jobj(json,(char *)"rates")) != 0 )
         {
-            for (i=0; i<n; i++)
+            for (i=0; i<sizeof(Forex)/sizeof(*Forex); i++)
             {
-                price = jdouble(jitem(rates,i),0) * 10000;
-                fprintf(stderr,"(%s %.4f)",jfieldname(jitem(rates,i)),(double)price/10000);
+                price = jdouble(rates,Forex[i]) * 10000;
+                fprintf(stderr,"(%s %.4f)",Forex[i],(double)price/10000);
             }
         }
-        if ( (datestr= jstr(json,(char *)"data")) != 0 )
+        if ( (datestr= jstr(json,(char *)"date")) != 0 )
             fprintf(stderr,"(%s)",datestr);
-        fprintf(stderr,"n.%d\n",n);
+        fprintf(stderr," n.%d\n",n);
         free_json(json);
     }
     return(datenum);
