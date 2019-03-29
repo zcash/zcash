@@ -1706,6 +1706,94 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
     return(0);
 }
 
+char *nonportable_path(char *str)
+{
+    int32_t i;
+    for (i=0; str[i]!=0; i++)
+        if ( str[i] == '/' )
+            str[i] = '\\';
+    return(str);
+}
+
+char *portable_path(char *str)
+{
+#ifdef _WIN32
+    return(nonportable_path(str));
+#else
+#ifdef __PNACL
+    /*int32_t i,n;
+     if ( str[0] == '/' )
+     return(str);
+     else
+     {
+     n = (int32_t)strlen(str);
+     for (i=n; i>0; i--)
+     str[i] = str[i-1];
+     str[0] = '/';
+     str[n+1] = 0;
+     }*/
+#endif
+    return(str);
+#endif
+}
+
+void *loadfile(char *fname,uint8_t **bufp,long *lenp,long *allocsizep)
+{
+    FILE *fp;
+    long  filesize,buflen = *allocsizep;
+    uint8_t *buf = *bufp;
+    *lenp = 0;
+    if ( (fp= fopen(portable_path(fname),"rb")) != 0 )
+    {
+        fseek(fp,0,SEEK_END);
+        filesize = ftell(fp);
+        if ( filesize == 0 )
+        {
+            fclose(fp);
+            *lenp = 0;
+            //printf("loadfile null size.(%s)\n",fname);
+            return(0);
+        }
+        if ( filesize > buflen )
+        {
+            *allocsizep = filesize;
+            *bufp = buf = (uint8_t *)realloc(buf,(long)*allocsizep+64);
+        }
+        rewind(fp);
+        if ( buf == 0 )
+            printf("Null buf ???\n");
+        else
+        {
+            if ( fread(buf,1,(long)filesize,fp) != (unsigned long)filesize )
+                printf("error reading filesize.%ld\n",(long)filesize);
+            buf[filesize] = 0;
+        }
+        fclose(fp);
+        *lenp = filesize;
+        //printf("loaded.(%s)\n",buf);
+    } //else printf("OS_loadfile couldnt load.(%s)\n",fname);
+    return(buf);
+}
+
+void *filestr(long *allocsizep,char *_fname)
+{
+    long filesize = 0; char *fname,*buf = 0; void *retptr;
+    *allocsizep = 0;
+    fname = malloc(strlen(_fname)+1);
+    strcpy(fname,_fname);
+    retptr = loadfile(fname,(uint8_t **)&buf,&filesize,allocsizep);
+    free(fname);
+    return(retptr);
+}
+
+char *send_curl(char *url,char *fname)
+{
+    long fsize; char curlstr[1024];
+    sprintf(curlstr,"curl --url \"%s\" > %s",url,fname);
+    system(curlstr);
+    return(filestr(&fsize,fname));
+}
+
 // get_urljson just returns the JSON returned by the URL using issue_curl
 
 #define issue_curl(cmdstr) bitcoind_RPC(0,(char *)"CBCOINBASE",cmdstr,0,0,0)
@@ -1755,9 +1843,8 @@ uint32_t get_stockprice(const char *symbol)
 uint32_t get_currencyprice(const char *symbol)
 {
     char url[512]; cJSON *json,*obj; uint32_t price = 0;
-    sprintf(url,"https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&from_currency=%s&to_currency=USD&apikey=%s",symbol,"D0185MGYVTIW0G6H");//NOTARY_PUBKEY.data()+50);
-    fprintf(stderr,"issue (%s)\n",url);
-    if ( (json= get_urljson(url)) != 0 )
+    sprintf(url,"https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&from_currency=%s&to_currency=USD&apikey=%s",symbol,NOTARY_PUBKEY.data()+50);
+    if ( (json= send_curl(url,"curldata")) != 0 )//get_urljson(url)) != 0 )
     {
         if ( (obj= jobj(jitem(json,0),0)) != 0 )
             price = jdouble(obj,(char *)"5. Exchange Rate")*10000 + 0.000049;
