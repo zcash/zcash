@@ -2045,5 +2045,4 @@ void komodo_cbopretupdate()
             get_stocks(Techstocks,(int32_t)(sizeof(Techstocks)/sizeof(*Techstocks)));
         }*/
     }
-    counter++;
 }
