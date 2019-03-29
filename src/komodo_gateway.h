@@ -1579,19 +1579,19 @@ int32_t komodo_heightpricebits(uint32_t prevbits[4],int32_t nHeight)
  */
 uint32_t komodo_pricenew(int32_t *maxflagp,uint32_t price,uint32_t refprice,int64_t tolerance)
 {
-    uint32_t highprice,lowprice;
+    uint64_t highprice,lowprice;
     highprice = ((uint64_t)refprice * (COIN + tolerance)) / COIN; // calc highest acceptable price
     lowprice = ((uint64_t)refprice * (COIN - tolerance)) / COIN;  // and lowest
     if ( price >= highprice )
     {
-        fprintf(stderr,"high %u vs h%u l%u\n",price,highprice,lowprice);
+        fprintf(stderr,"high %u vs h%llu l%llu tolerance.%llu\n",price,(long long)highprice,(long long)lowprice,(long long)tolerance);
         *maxflagp = 1;
         if ( price > highprice ) // return non-zero only if we violate the tolerance
             return(highprice);
     }
     else if ( price <= lowprice )
     {
-        fprintf(stderr,"low %u vs h%u l%u\n",price,highprice,lowprice);
+        fprintf(stderr,"low %u vs h%llu l%llu tolerance.%llu\n",price,(long long)highprice,(long long)lowprice,(long long)tolerance);
         *maxflagp = -1;
         if ( price < lowprice )
             return(lowprice);
