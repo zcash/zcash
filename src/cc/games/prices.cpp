@@ -20,37 +20,104 @@ std::string MYCCLIBNAME = (char *)"prices";
 UniValue games_rawtxresult(UniValue &result,std::string rawtx,int32_t broadcastflag);
 extern uint8_t ASSETCHAINS_OVERRIDE_PUBKEY33[33];
 
-// generate bars
+#define bstr(x) ((double)((uint32_t)x) / 10000.)
+
+struct prices_bar
+{
+    uint64_t open,high,low,close,sum;
+    int32_t num;
+};
+
+int32_t prices_barupdate(struct prices_bar *bar,uint64_t pricebits)
+{
+    uint32_t uprice,timestamp;
+    timestamp = (uint32_t)(pricebits >> 32);
+    uprice = (uint32_t)pricebits;
+    bar->sum += uprice, bar->num++;
+    if ( bar->open == 0 )
+        bar->open = bar->high = bar->low = pricebits;
+    if ( uprice > (uint32_t)bar->high )
+        bar->high = pricebits;
+    else if ( uprice < (uint32_t)bar->low )
+        bar->low = pricebits;
+    bar->close = pricebits;
+    return(0);
+}
+
+int64_t prices_bardist(struct prices_bar *bar,uint32_t aveprice,uint64_t pricebits)
+{
+    int64_t a,dist = 0;
+    if ( aveprice != 0 )
+    {
+        a = (pricebits & 0xffffffff);
+        dist = (a - aveprice);
+        dist *= dist;
+        //fprintf(stderr,"dist.%lld (u %u - ave %u) %d\n",(long long)dist,uprice,aveprice,uprice-aveprice);
+    }
+    return(dist);
+}
+
+void prices_bardisp(struct prices_bar *bar)
+{
+    if ( bar->num == 0 )
+        fprintf(stderr,"BAR null\n");
+    else fprintf(stderr,"BAR ave %.4f (O %.4f, H %.4f, L %.4f, C %.4f)\n",bstr(bar->sum/bar->num),bstr(bar->open),bstr(bar->high),bstr(bar->low),bstr(bar->close));
+}
 
 int64_t prices_blockinfo(int32_t height,char *acaddr)
 {
-    std::vector<uint8_t> vopret; CBlockIndex *pindex; CBlock block; CTransaction tx,vintx; uint64_t pricebits; char destaddr[64]; uint32_t timestamp,uprice; uint256 hashBlock; int64_t prizefund = 0; int32_t i,n,vini,numvouts;
+    std::vector<uint8_t> vopret; CBlockIndex *pindex; CBlock block; CTransaction tx,vintx; uint64_t pricebits; char destaddr[64]; uint32_t aveprice=0,timestamp,uprice; uint256 hashBlock; int64_t dist,mindist=(1LL<<60),prizefund = 0; int32_t mini=-1,i,n,vini,numvouts,iter; struct prices_bar refbar;
     if ( (pindex= komodo_chainactive(height)) != 0 )
     {
         if ( komodo_blockload(block,pindex) == 0 )
         {
             n = block.vtx.size();
             vini = 0;
-            for (i=0; i<n; i++)
+            memset(&refbar,0,sizeof(refbar));
+            for (iter=0; iter<2; iter++)
             {
-                tx = block.vtx[i];
-                if ( myGetTransaction(tx.vin[vini].prevout.hash,vintx,hashBlock) == 0 )
-                    continue;
-                else if ( tx.vin[vini].prevout.n >= vintx.vout.size() || Getscriptaddress(destaddr,vintx.vout[tx.vin[vini].prevout.n].scriptPubKey) == 0 )
-                    continue;
-                else if ( (numvouts= tx.vout.size()) > 1 && tx.vout[numvouts-1].scriptPubKey[0] == 0x6a )
+                for (i=0; i<n; i++)
                 {
-                    prizefund += tx.vout[0].nValue;
-                    GetOpReturnData(tx.vout[numvouts-1].scriptPubKey,vopret);
-                    if ( vopret.size() == 8 )
+                    tx = block.vtx[i];
+                    if ( myGetTransaction(tx.vin[vini].prevout.hash,vintx,hashBlock) == 0 )
+                        continue;
+                    else if ( tx.vin[vini].prevout.n >= vintx.vout.size() || Getscriptaddress(destaddr,vintx.vout[tx.vin[vini].prevout.n].scriptPubKey) == 0 )
+                        continue;
+                    else if ( (numvouts= tx.vout.size()) > 1 && tx.vout[numvouts-1].scriptPubKey[0] == 0x6a )
                     {
-                        E_UNMARSHAL(vopret,ss >> pricebits);
-                        timestamp = (uint32_t)(pricebits >> 32);
-                        uprice = (uint32_t)pricebits;
-                        if ( strcmp(acaddr,destaddr) == 0 )
-                            fprintf(stderr,"REF ");
-                        fprintf(stderr,"[%02x] i.%d %.8f %llx t%u %.4f numvouts.%d %s lag.%d\n",tx.vout[numvouts-1].scriptPubKey[0],i,(double)tx.vout[0].nValue/COIN,(long long)pricebits,timestamp,(double)uprice/10000,numvouts,destaddr,(int32_t)(pindex->nTime-timestamp));
-                    } else return(-3);
+                        GetOpReturnData(tx.vout[numvouts-1].scriptPubKey,vopret);
+                        if ( vopret.size() == 8 )
+                        {
+                            E_UNMARSHAL(vopret,ss >> pricebits);
+                            timestamp = (uint32_t)(pricebits >> 32);
+                            uprice = (uint32_t)pricebits;
+                            if ( iter == 0 )
+                            {
+                                prizefund += tx.vout[0].nValue;
+                                if ( strcmp(acaddr,destaddr) == 0 )
+                                {
+                                    //fprintf(stderr,"REF ");
+                                    prices_barupdate(&refbar,pricebits);
+                                }
+                            }
+                            else if ( strcmp(acaddr,destaddr) != 0 )
+                            {
+                                dist = prices_bardist(&refbar,aveprice,pricebits);
+                                if ( dist < mindist )
+                                {
+                                    mindist = dist;
+                                    mini = i;
+                                }
+                                fprintf(stderr,"mini.%d i.%d %.8f t%u %.4f v.%d %s lag.%d i.%d dist.%lld\n",mini,i,(double)tx.vout[0].nValue/COIN,timestamp,(double)uprice/10000,numvouts,destaddr,(int32_t)(pindex->nTime-timestamp),iter,(long long)dist);
+                            }
+                        } else return(-3);
+                    }
+                }
+                if ( iter == 0 )
+                {
+                    prices_bardisp(&refbar);
+                    if ( refbar.num != 0 )
+                        aveprice = (uint32_t)refbar.sum / refbar.num;
                 }
             }
             return(prizefund);

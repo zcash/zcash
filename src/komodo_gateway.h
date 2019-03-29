@@ -1547,3 +1547,228 @@ void komodo_passport_iteration()
         printf("READY for %s RPC calls at %u! done PASSPORT %s refid.%d\n",ASSETCHAINS_SYMBOL,(uint32_t)time(NULL),ASSETCHAINS_SYMBOL,refid);
     }
 }
+
+extern std::vector<uint8_t> Mineropret; // opreturn data set by the data gathering code
+#define PRICES_MAXCHANGE (COIN / 100)	  // maximum acceptable change, set at 1%
+#define PRICES_SIZEBIT0 (sizeof(uint32_t) * 4) // 4 uint32_t unixtimestamp, BTCUSD, BTCGBP and BTCEUR
+
+// komodo_heightpricebits() extracts the price data in the coinbase for nHeight
+int32_t komodo_heightpricebits(uint32_t prevbits[4],int32_t nHeight)
+{
+    CBlockIndex *pindex; CBlock block; CTransaction tx; int32_t numvouts; std::vector<uint8_t> vopret;
+    if ( (pindex= komodo_chainactive(nHeight)) != 0 )
+    {
+        if ( komodo_blockload(block,pindex) == 0 )
+        {
+            tx = block.vtx[0];
+            numvouts = (int32_t)tx.vout.size();
+            GetOpReturnData(tx.vout[numvouts-1].scriptPubKey,vopret);
+            if ( vopret.size() >= PRICES_SIZEBIT0 )
+            {
+                memcpy(prevbits,&vopret[0],PRICES_SIZEBIT0);
+                return(0);
+            }
+        }
+    }
+    fprintf(stderr,"couldnt get pricebits for %d\n",nHeight);
+    return(-1);
+}
+
+/*
+ komodo_pricenew() is passed in a reference price, the change tolerance and the proposed price. it needs to return a clipped price if it is too big and also set a flag if it is at or above the limit
+ */
+uint32_t komodo_pricenew(int32_t *maxflagp,uint32_t price,uint32_t refprice,int64_t tolerance)
+{
+    uint32_t highprice,lowprice;
+    highprice = ((uint64_t)refprice * (COIN + tolerance)) / COIN; // calc highest acceptable price
+    lowprice = ((uint64_t)refprice * (COIN - tolerance)) / COIN;  // and lowest
+    if ( price >= highprice )
+    {
+        *maxflagp = 1;
+        if ( price > highprice ) // return non-zero only if we violate the tolerance
+            return(highprice);
+    }
+    else if ( price <= lowprice )
+    {
+        *maxflagp = -1;
+        if ( price < lowprice )
+            return(lowprice);
+    }
+    else return(0);
+}
+
+// komodo_pricecmp() returns -1 if any of the prices are beyond the tolerance
+int32_t komodo_pricecmp(int32_t *maxflagp,uint32_t pricebitsA[4],uint32_t pricebitsB[4],int64_t tolerance)
+{
+    int32_t i;
+    *maxflagp = 0;
+    for (i=1; i<4; i++)
+        if ( komodo_pricenew(maxflagp,pricebitsA[i],pricebitsB[i],tolerance) != 0 )
+            return(-1);
+    return(0);
+}
+
+// komodo_priceclamp() clamps any price that is beyond tolerance
+int32_t komodo_priceclamp(uint32_t pricebits[4],uint32_t refprices[4],int64_t tolerance)
+{
+    int32_t i,maxflag = 0; uint32_t newprice;
+    for (i=1; i<4; i++)
+    {
+        if ( (newprice= komodo_pricenew(&maxflag,pricebits[i],refprices[i],tolerance)) != 0 )
+        {
+            fprintf(stderr,"priceclamped[%d] %u -> %u\n",i,pricebits[i],newprice);
+            pricebits[i] = newprice;
+        }
+    }
+    return(0);
+}
+
+// komodo_mineropret() returns a valid pricedata to add to the coinbase opreturn for nHeight
+CScript komodo_mineropret(int32_t nHeight)
+{
+    CScript opret; uint32_t pricebits[4],prevbits[4]; int32_t maxflag;
+    if ( Mineropret.size() >= PRICES_SIZEBIT0 )
+    {
+        if ( komodo_heightpricebits(prevbits,nHeight-1) == 0 )
+        {
+            memcpy(pricebits,&Mineropret[0],PRICES_SIZEBIT0);
+            if ( komodo_pricecmp(&maxflag,pricebits,prevbits,PRICES_MAXCHANGE) < 0 )
+            {
+                // if the new prices are not within tolerance, update Mineropret with clipped prices
+                komodo_priceclamp(pricebits,prevbits,PRICES_MAXCHANGE);
+                fprintf(stderr,"update Mineropret to clamped prices\n");
+                memcpy(&Mineropret[0],pricebits,PRICES_SIZEBIT0);
+            }
+        }
+        return(opret << OP_RETURN << Mineropret);
+    }
+    return(opret);
+}
+
+/*
+ komodo_opretvalidate() is the entire price validation!
+ it prints out some useful info for debugging, like the lag from current time and prev block and the prices encoded in the opreturn.
+ 
+ The only way komodo_opretvalidate() doesnt return an error is if maxflag is set or it is within tolerance of both the prior block and the local data. The local data validation only happens if it is a recent block and not a block from the past as the local node is only getting the current price data.
+ 
+ */
+
+int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
+{
+    std::vector<uint8_t> vopret; uint32_t localbits[4],pricebits[4],prevbits[4],newprice; int32_t i,lag,lag2,maxflag=0;
+    if ( ASSETCHAINS_CBOPRET != 0 )
+    {
+        GetOpReturnData(scriptPubKey,vopret);
+        if ( vopret.size() >= PRICES_SIZEBIT0 )
+        {
+            memcpy(pricebits,&vopret[0],PRICES_SIZEBIT0);
+            lag = (int32_t)(time(NULL) - pricebits[0]);
+            if ( lag < 0 )
+                lag = -lag;
+            lag2 = (int32_t)(pricebits[0] - komodo_heightstamp(nHeight-1));
+            fprintf(stderr,"ht.%d: t%u lag.%d %.4f USD, %.4f GBP, %.4f EUR htstamp.%d [%d]\n",nHeight,pricebits[0],lag,(double)pricebits[1]/10000,(double)pricebits[2]/10000,(double)pricebits[3]/10000,komodo_heightstamp(nHeight-1),lag2);
+            if ( nHeight > 1 )
+            {
+                if ( komodo_heightpricebits(prevbits,nHeight-1) == 0 )
+                {
+                    if ( komodo_pricecmp(&maxflag,pricebits,prevbits,PRICES_MAXCHANGE) < 0 )
+                        return(-1);
+                } else return(-1);
+            }
+            if ( lag < ASSETCHAINS_BLOCKTIME && Mineropret.size() >= PRICES_SIZEBIT0 )
+            {
+                memcpy(localbits,&Mineropret[0],PRICES_SIZEBIT0);
+                if ( maxflag == 0 )
+                {
+                    if ( komodo_pricecmp(&maxflag,localbits,prevbits,PRICES_MAXCHANGE) < 0 )
+                        return(-1);
+                }
+                else
+                {
+                    for (i=1; i<4; i++)
+                    {
+                        maxflag = 0;
+                        if ( (newprice= komodo_pricenew(&maxflag,pricebits[i],prevbits[i],PRICES_MAXCHANGE)) != 0 ) // proposed price is clamped
+                        {
+                            // make sure local price is beyond clamped
+                            if ( maxflag > 0 && localbits[i] < pricebits[i] )
+                                return(-1);
+                            else if ( maxflag < 0 && localbits[i] > pricebits[i] )
+                                return(-1);
+                        }
+                    }
+                }
+            }
+            return(0);
+        } else fprintf(stderr,"wrong size %d vs %d, scriptPubKey size %d [%02x]\n",(int32_t)vopret.size(),(int32_t)PRICES_SIZEBIT0,(int32_t)scriptPubKey.size(),scriptPubKey[0]);
+        return(-1);
+    }
+    return(0);
+}
+
+// get_urljson just returns the JSON returned by the URL using issue_curl
+
+#define issue_curl(cmdstr) bitcoind_RPC(0,(char *)"CBCOINBASE",cmdstr,0,0,0)
+
+cJSON *get_urljson(char *url)
+{
+    char *jsonstr; cJSON *json = 0;
+    if ( (jsonstr= issue_curl(url)) != 0 )
+    {
+        //fprintf(stderr,"(%s) -> (%s)\n",url,jsonstr);
+        json = cJSON_Parse(jsonstr);
+        free(jsonstr);
+    }
+    return(json);
+}
+
+// parse the coindesk specific data. yes, if this changes, it will require an update. However, regardless if the format from the data source changes, then the code that extracts it must be changed. One way to mitigate this is to have a large variety of data sources so that there is only a very remote chance that all of them are not available. Certainly the data gathering needs to be made more robust, but it doesnt really affect the proof of concept for the decentralized trustless oracle. The trustlessness is achieved by having all nodes get the oracle data.
+
+int32_t get_btcusd(uint32_t pricebits[4])
+{
+    cJSON *pjson,*bpi,*obj; char str[512]; uint64_t btcusd = 0,btcgbp = 0,btceur = 0;
+    if ( (pjson= get_urljson((char *)"http://api.coindesk.com/v1/bpi/currentprice.json")) != 0 )
+    {
+        if ( (bpi= jobj(pjson,(char *)"bpi")) != 0 )
+        {
+            pricebits[0] = (uint32_t)time(NULL);
+            if ( (obj= jobj(bpi,(char *)"USD")) != 0 )
+            {
+                btcusd = jdouble(obj,(char *)"rate_float") * SATOSHIDEN;
+                pricebits[1] = ((btcusd / 10000) & 0xffffffff);
+            }
+            if ( (obj= jobj(bpi,(char *)"GBP")) != 0 )
+            {
+                btcgbp = jdouble(obj,(char *)"rate_float") * SATOSHIDEN;
+                pricebits[2] = ((btcgbp / 10000) & 0xffffffff);
+            }
+            if ( (obj= jobj(bpi,(char *)"EUR")) != 0 )
+            {
+                btceur = jdouble(obj,(char *)"rate_float") * SATOSHIDEN;
+                pricebits[3] = ((btceur / 10000) & 0xffffffff);
+            }
+        }
+        free_json(pjson);
+        fprintf(stderr,"BTC/USD %.4f, BTC/GBP %.4f, BTC/EUR %.4f\n",dstr(btcusd),dstr(btcgbp),dstr(btceur));
+        return(0);
+    }
+    return(-1);
+}
+
+// komodo_cbopretupdate() obtains the external price data and encodes it into Mineropret, which will then be used by the miner and validation
+void komodo_cbopretupdate()
+{
+    uint32_t pricebits[4];
+    if ( (ASSETCHAINS_CBOPRET & 1) != 0 )
+    {
+        if ( get_btcusd(pricebits) == 0 )
+        {
+            if ( Mineropret.size() < PRICES_SIZEBIT0 )
+                Mineropret.resize(PRICES_SIZEBIT0);
+            memcpy(&Mineropret[0],pricebits,PRICES_SIZEBIT0);
+            //int32_t i; for (i=0; i<Mineropret.size(); i++)
+            //    fprintf(stderr,"%02x",Mineropret[i]);
+            //fprintf(stderr," <- set Mineropret[%d]\n",(int32_t)Mineropret.size());
+        }
+    }
+}
