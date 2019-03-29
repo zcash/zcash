@@ -1602,13 +1602,13 @@ uint32_t komodo_pricenew(int32_t *maxflagp,uint32_t price,uint32_t refprice,int6
 // komodo_pricecmp() returns -1 if any of the prices are beyond the tolerance
 int32_t komodo_pricecmp(int32_t n,int32_t *maxflagp,uint32_t *pricebitsA,uint32_t *pricebitsB,int64_t tolerance)
 {
-    int32_t i;
+    int32_t i; uint32_t newprice;
     *maxflagp = 0;
     for (i=1; i<n; i++)
     {
-        if ( komodo_pricenew(maxflagp,pricebitsA[i],pricebitsB[i],tolerance) != 0 )
+        if ( (newprice= komodo_pricenew(maxflagp,pricebitsA[i],pricebitsB[i],tolerance)) != 0 )
         {
-            fprintf(stderr,"i.%d/%d %u -> %u out of tolerance maxflag.%d\n",i,n,pricebitsB[i],pricebitsA[i],*maxflagp);
+            fprintf(stderr,"i.%d/%d %u vs %u -> newprice.%u out of tolerance maxflag.%d\n",i,n,pricebitsB[i],pricebitsA[i],newprice,*maxflagp);
             return(-1);
         }
     }
@@ -1623,7 +1623,7 @@ int32_t komodo_priceclamp(int32_t n,uint32_t *pricebits,uint32_t *refprices,int6
     {
         if ( (newprice= komodo_pricenew(&maxflag,pricebits[i],refprices[i],tolerance)) != 0 )
         {
-            fprintf(stderr,"priceclamped[%d of %d] %u -> %u\n",i,n,pricebits[i],newprice);
+            fprintf(stderr,"priceclamped[%d of %d] %u vs %u -> %u\n",i,n,refprices[i],pricebits[i],newprice);
             pricebits[i] = newprice;
         }
     }
