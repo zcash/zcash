@@ -1765,7 +1765,7 @@ uint32_t get_currencyprice(char *symbol)
     return(price);
 }
 
-int32_t get_currencies(char *list[],int32_t n)
+int32_t get_currencies(const char *list[],int32_t n)
 {
     int32_t i,errs=0; uint32_t price;
     for (i=0; i<n; i++)
@@ -1778,7 +1778,7 @@ int32_t get_currencies(char *list[],int32_t n)
     return(-errs);
 }
 
-int32_t get_stocks(char *list[],int32_t n)
+int32_t get_stocks(const char *list[],int32_t n)
 {
     int32_t i,errs=0; uint32_t price;
     for (i=0; i<n; i++)
