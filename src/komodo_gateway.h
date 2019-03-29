@@ -1591,16 +1591,22 @@ uint32_t komodo_pricenew(int32_t *maxflagp,uint32_t price,uint32_t refprice,int6
     if ( price >= highprice )
     {
         fprintf(stderr,"high %u vs h%llu l%llu tolerance.%llu\n",price,(long long)highprice,(long long)lowprice,(long long)tolerance);
-        *maxflagp = 1;
         if ( price > highprice ) // return non-zero only if we violate the tolerance
+        {
+            *maxflagp = 2;
             return(highprice);
+        }
+        *maxflagp = 1;
     }
     else if ( price <= lowprice )
     {
         fprintf(stderr,"low %u vs h%llu l%llu tolerance.%llu\n",price,(long long)highprice,(long long)lowprice,(long long)tolerance);
-        *maxflagp = -1;
         if ( price < lowprice )
+        {
+            *maxflagp = -2;
             return(lowprice);
+        }
+        *maxflagp = -1;
     }
     return(0);
 }
