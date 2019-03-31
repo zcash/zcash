@@ -1690,7 +1690,7 @@ CScript komodo_mineropret(int32_t nHeight)
 
 int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
 {
-    std::vector<uint8_t> vopret; uint32_t localbits[8192],pricebits[8192],prevbits[8192],newprice; int32_t i,lag,lag2,n,maxflag=0; uint32_t now = (uint32_t)time(NULL);
+    std::vector<uint8_t> vopret; double btcusd,btcgbp,btceur; uint32_t localbits[8192],pricebits[8192],prevbits[8192],newprice; int32_t i,lag,lag2,n,maxflag=0; uint32_t now = (uint32_t)time(NULL);
     if ( ASSETCHAINS_CBOPRET != 0 )
     {
         GetOpReturnData(scriptPubKey,vopret);
@@ -1708,7 +1708,10 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
                     return(-1);
                 }
                 // else need to check against current blocktime to prevent pricebits[0] games
-                fprintf(stderr,"ht.%d: t%u lag.%d %.4f USD, %.4f GBP, %.4f EUR htstamp.%d [%d]\n",nHeight,pricebits[0],lag,(double)pricebits[1]/10000,(double)pricebits[2]/10000,(double)pricebits[3]/10000,komodo_heightstamp(nHeight-1),lag2);
+                btcusd = (double)pricebits[1]/10000;
+                btcgbp = (double)pricebits[2]/10000;
+                btceur = (double)pricebits[3]/10000;
+                fprintf(stderr,"ht.%d: t%u lag.%d %.4f USD, %.4f GBP, %.4f EUR, GBPUSD %.6f, EURUSD %.7f, EURGBP %.6f htstamp.%d [%d]\n",nHeight,pricebits[0],lag,btcusd,btcgbp,btceur,btcgbp/btcusd,btceur/btcusd,btceur/btcgbp,komodo_heightstamp(nHeight-1),lag2);
                 if ( komodo_heightpricebits(prevbits,nHeight-1) == 0 )
                 {
                     if ( komodo_pricecmp(nHeight,n,&maxflag,pricebits,prevbits,PRICES_MAXCHANGE) < 0 )
@@ -1720,6 +1723,7 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
                             fprintf(stderr,"%.4f ",(double)pricebits[i]/10000);
                         fprintf(stderr," newprices.%d\n",nHeight);
                         sleep(3);
+                        memcpy(pricebits,vopret.data(),Mineropret.size());
                         if ( komodo_heightpricebits(prevbits,nHeight-1) == 0 )
                         {
                             if ( komodo_pricecmp(nHeight,n,&maxflag,pricebits,prevbits,PRICES_MAXCHANGE) < 0 )
