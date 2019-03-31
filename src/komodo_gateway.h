@@ -1701,15 +1701,8 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
             if ( nHeight > 1 )
             {
                 lag = (int32_t)(now - pricebits[0]);
-                if ( lag < 0 )
-                    lag = -lag;
                 lag2 = (int32_t)(komodo_heightstamp(nHeight-1) - pricebits[0]);
-                if ( lag2 > 60 )
-                {
-                    fprintf(stderr,"now.%u htstamp.%u - pricebits[0] %u -> lag.%d\n",now,komodo_heightstamp(nHeight-1),pricebits[0],lag2);
-                    return(-1);
-                }
-                if ( lag2 < -ASSETCHAINS_BLOCKTIME-60 ) // avoid data from future
+                if ( lag < -60 ) // avoid data from future
                 {
                     fprintf(stderr,"now.%u htstamp.%u - pricebits[0] %u -> lag.%d\n",now,komodo_heightstamp(nHeight-1),pricebits[0],lag2);
                     return(-1);
