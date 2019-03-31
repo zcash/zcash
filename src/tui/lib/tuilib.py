@@ -1952,10 +1952,10 @@ def find_game_keystrokes_in_log(gametxid):
 
     operating_system = platform.system()
     if operating_system == 'Win64' or operating_system == 'Windows':
-        p1 = subprocess.Popen(["type", "../keystrokes.log"], stdout=subprocess.PIPE, shell=True)
+        p1 = subprocess.Popen(["type", "keystrokes.log"], stdout=subprocess.PIPE, shell=True)
         p2 = subprocess.Popen(["findstr", gametxid], stdin=p1.stdout, stdout=subprocess.PIPE, shell=True)
     else:
-        p1 = subprocess.Popen(["cat", "../keystrokes.log"], stdout=subprocess.PIPE)
+        p1 = subprocess.Popen(["cat", "keystrokes.log"], stdout=subprocess.PIPE)
         p2 = subprocess.Popen(["grep", gametxid], stdin=p1.stdout, stdout=subprocess.PIPE)
     p1.stdout.close()
     output = p2.communicate()[0]
