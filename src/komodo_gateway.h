@@ -1722,7 +1722,7 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
                         localbits[i] = prevbits[i];
                 if ( maxflag == 0 )
                 {
-                    if ( komodo_pricecmp(nHeight,n,&maxflag,localbits,prevbits,PRICES_MAXCHANGE) < 0 )
+                    if ( komodo_pricecmp(nHeight,n,&maxflag,pricebits,localbits,PRICES_MAXCHANGE) < 0 )
                     {
                         fprintf(stderr,"maxflag.0 cmp error\n");
                         return(-1);
