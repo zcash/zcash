@@ -1711,7 +1711,7 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
                 btcusd = (double)pricebits[1]/10000;
                 btcgbp = (double)pricebits[2]/10000;
                 btceur = (double)pricebits[3]/10000;
-                fprintf(stderr,"ht.%d: lag.%d %.4f USD, %.4f GBP, %.4f EUR, GBPUSD %.6f, EURUSD %.7f, EURGBP %.6f [%d]\n",nHeight,lag,btcusd,btcgbp,btceur,btcgbp/btcusd,btceur/btcusd,btceur/btcgbp,lag2);
+                fprintf(stderr,"ht.%d: lag.%d %.4f USD, %.4f GBP, %.4f EUR, GBPUSD %.6f, EURUSD %.6f, EURGBP %.6f [%d]\n",nHeight,lag,btcusd,btcgbp,btceur,btcgbp/btcusd,btceur/btcusd,btceur/btcgbp,lag2);
                 if ( komodo_heightpricebits(prevbits,nHeight-1) == 0 )
                 {
                     if ( komodo_pricecmp(nHeight,n,&maxflag,pricebits,prevbits,PRICES_MAXCHANGE) < 0 )
@@ -1997,7 +1997,7 @@ int32_t get_stocks(const char *list[],int32_t n)
 
 int32_t get_btcusd(uint32_t pricebits[4])
 {
-    cJSON *pjson,*bpi,*obj; char str[512]; uint64_t btcusd = 0,btcgbp = 0,btceur = 0;
+    cJSON *pjson,*bpi,*obj; char str[512]; double dbtcgbp,dbtcusd,dbtceur; uint64_t btcusd = 0,btcgbp = 0,btceur = 0;
     if ( (pjson= get_urljson((char *)"http://api.coindesk.com/v1/bpi/currentprice.json")) != 0 )
     {
         if ( (bpi= jobj(pjson,(char *)"bpi")) != 0 )
@@ -2020,7 +2020,10 @@ int32_t get_btcusd(uint32_t pricebits[4])
             }
         }
         free_json(pjson);
-        fprintf(stderr,"BTC/USD %.4f, BTC/GBP %.4f, BTC/EUR %.4f\n",dstr(btcusd),dstr(btcgbp),dstr(btceur));
+        dbtcusd = (double)pricebits[1]/10000;
+        dbtcgbp = (double)pricebits[2]/10000;
+        dbtceur = (double)pricebits[3]/10000;
+        fprintf(stderr,"BTC/USD %.4f, BTC/GBP %.4f, BTC/EUR %.4f GBPUSD %.6f, EURUSD %.6f EURGBP %.6f\n",dbtcusd,dbtcgbp,dbtceur,dbtcgbp/dbtcusd,dbtceur/dbtcusd,dbtceur/dbtcgbp);
         return(0);
     }
     return(-1);
