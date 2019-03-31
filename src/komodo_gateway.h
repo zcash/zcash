@@ -1711,7 +1711,7 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
                 btcusd = (double)pricebits[1]/10000;
                 btcgbp = (double)pricebits[2]/10000;
                 btceur = (double)pricebits[3]/10000;
-                fprintf(stderr,"ht.%d: t%u lag.%d %.4f USD, %.4f GBP, %.4f EUR, GBPUSD %.6f, EURUSD %.7f, EURGBP %.6f htstamp.%d [%d]\n",nHeight,pricebits[0],lag,btcusd,btcgbp,btceur,btcgbp/btcusd,btceur/btcusd,btceur/btcgbp,komodo_heightstamp(nHeight-1),lag2);
+                fprintf(stderr,"ht.%d: lag.%d %.4f USD, %.4f GBP, %.4f EUR, GBPUSD %.6f, EURUSD %.7f, EURGBP %.6f [%d]\n",nHeight,lag,btcusd,btcgbp,btceur,btcgbp/btcusd,btceur/btcusd,btceur/btcgbp,lag2);
                 if ( komodo_heightpricebits(prevbits,nHeight-1) == 0 )
                 {
                     if ( komodo_pricecmp(nHeight,n,&maxflag,pricebits,prevbits,PRICES_MAXCHANGE) < 0 )
