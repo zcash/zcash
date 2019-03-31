@@ -1701,19 +1701,19 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
             if ( nHeight > 1 )
             {
                 lag = (int32_t)(now - pricebits[0]);
-                if ( lag > ASSETCHAINS_BLOCKTIME )
-                {
-                    fprintf(stderr,"now.%u - pricebits[0] %u -> lag.%d\n",now,pricebits[0],lag);
-                    return(-1);
-                }
                 if ( lag < 0 )
                     lag = -lag;
-                if ( lag > 60 ) // avoid data from future
+                lag2 = (int32_t)(komodo_heightstamp(nHeight-1) - pricebits[0]);
+                if ( lag2 > 60 )
                 {
-                    fprintf(stderr,"now.%u - pricebits[0] %u -> lag.%d\n",now,pricebits[0],lag);
+                    fprintf(stderr,"now.%u htstamp.%u - pricebits[0] %u -> lag.%d\n",now,komodo_heightstamp(nHeight-1),pricebits[0],lag2);
                     return(-1);
                 }
-                lag2 = (int32_t)(pricebits[0] - komodo_heightstamp(nHeight-1));
+                if ( lag2 < -ASSETCHAINS_BLOCKTIME-60 ) // avoid data from future
+                {
+                    fprintf(stderr,"now.%u htstamp.%u - pricebits[0] %u -> lag.%d\n",now,komodo_heightstamp(nHeight-1),pricebits[0],lag2);
+                    return(-1);
+                }
                 fprintf(stderr,"ht.%d: t%u lag.%d %.4f USD, %.4f GBP, %.4f EUR htstamp.%d [%d]\n",nHeight,pricebits[0],lag,(double)pricebits[1]/10000,(double)pricebits[2]/10000,(double)pricebits[3]/10000,komodo_heightstamp(nHeight-1),lag2);
                 if ( komodo_heightpricebits(prevbits,nHeight-1) == 0 )
                 {
