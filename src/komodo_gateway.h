@@ -1590,7 +1590,7 @@ uint32_t komodo_pricenew(int32_t *maxflagp,uint32_t price,uint32_t refprice,int6
         lowprice--;
     if ( price >= highprice )
     {
-        fprintf(stderr,"high %u vs h%llu l%llu tolerance.%llu\n",price,(long long)highprice,(long long)lowprice,(long long)tolerance);
+        //fprintf(stderr,"high %u vs h%llu l%llu tolerance.%llu\n",price,(long long)highprice,(long long)lowprice,(long long)tolerance);
         if ( price > highprice ) // return non-zero only if we violate the tolerance
         {
             *maxflagp = 2;
@@ -1600,7 +1600,7 @@ uint32_t komodo_pricenew(int32_t *maxflagp,uint32_t price,uint32_t refprice,int6
     }
     else if ( price <= lowprice )
     {
-        fprintf(stderr,"low %u vs h%llu l%llu tolerance.%llu\n",price,(long long)highprice,(long long)lowprice,(long long)tolerance);
+        //fprintf(stderr,"low %u vs h%llu l%llu tolerance.%llu\n",price,(long long)highprice,(long long)lowprice,(long long)tolerance);
         if ( price < lowprice )
         {
             *maxflagp = -2;
@@ -2048,7 +2048,7 @@ void komodo_cbopretupdate()
         if ( Mineropret.size() < size )
             Mineropret.resize(size);
         size = PRICES_SIZEBIT0;
-        if ( now > lastbtc+30 && get_btcusd(pricebits) == 0 )
+        if ( now > lastbtc+120 && get_btcusd(pricebits) == 0 )
         {
             memcpy(Mineropret.data(),pricebits,PRICES_SIZEBIT0);
             lastbtc = (uint32_t)time(NULL);
@@ -2065,7 +2065,7 @@ void komodo_cbopretupdate()
         }
         if ( (ASSETCHAINS_CBOPRET & 4) != 0 )
         {
-            if ( now > lastcrypto+60 )
+            if ( now > lastcrypto+100 )
             {
                 get_cryptoprices(cryptoprices,Cryptos,(int32_t)(sizeof(Cryptos)/sizeof(*Cryptos)));
                 memcpy(&Mineropret.data()[size],cryptoprices,sizeof(cryptoprices));
