@@ -1712,6 +1712,9 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
                 if ( komodo_heightpricebits(prevbits,nHeight-1) == 0 )
                 {
                     for (i=1; i<n; i++)
+                        fprintf(stderr,"%.4f ",(double)prevbits[i]/10000);
+                    fprintf(stderr," oldprices.%d\n",nHeight);
+                    for (i=1; i<n; i++)
                         fprintf(stderr,"%.4f ",(double)pricebits[i]/10000);
                     fprintf(stderr," newprices.%d\n",nHeight);
                     if ( komodo_pricecmp(nHeight,n,&maxflag,pricebits,prevbits,PRICES_MAXCHANGE) < 0 )
