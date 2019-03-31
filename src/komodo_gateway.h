@@ -1690,7 +1690,7 @@ CScript komodo_mineropret(int32_t nHeight)
 
 int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
 {
-    std::vector<uint8_t> vopret; uint32_t localbits[8192],pricebits[8192],prevbits[8192],newprice; int32_t i,lag,lag2,n,maxflag=0;
+    std::vector<uint8_t> vopret; uint32_t localbits[8192],pricebits[8192],prevbits[8192],newprice; int32_t i,lag,lag2,n,maxflag=0; uint32_t now = (uint32_t)time(NULL);
     if ( ASSETCHAINS_CBOPRET != 0 )
     {
         GetOpReturnData(scriptPubKey,vopret);
@@ -1698,9 +1698,13 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
         {
             n = (int32_t)(vopret.size() / sizeof(uint32_t));
             memcpy(pricebits,vopret.data(),Mineropret.size());
-            lag = (int32_t)(time(NULL) - pricebits[0]);
+            lag = (int32_t)(now - pricebits[0]);
+            if ( lag > 60 ) // blocks from future not so good to have
+                return(-1);
             if ( lag < 0 )
                 lag = -lag;
+            if ( lag > ASSETCHAINS_BLOCKTIME )
+                return(-1);
             lag2 = (int32_t)(pricebits[0] - komodo_heightstamp(nHeight-1));
             fprintf(stderr,"ht.%d: t%u lag.%d %.4f USD, %.4f GBP, %.4f EUR htstamp.%d [%d]\n",nHeight,pricebits[0],lag,(double)pricebits[1]/10000,(double)pricebits[2]/10000,(double)pricebits[3]/10000,komodo_heightstamp(nHeight-1),lag2);
             if ( nHeight > 1 )
@@ -1735,11 +1739,11 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
                         maxflag = 0;
                         if ( (newprice= komodo_pricenew(&maxflag,pricebits[i],prevbits[i],PRICES_MAXCHANGE)) != 0 ) // proposed price is clamped
                         {
-                            // make sure local price is beyond clamped
+                            // make sure local price is moving in right direction
                             fprintf(stderr,"maxflag.%d i.%d localbits.%u vs pricebits.%u\n",maxflag,i,localbits[i],pricebits[i]);
-                            if ( maxflag > 0 && localbits[i] < pricebits[i] )
+                            if ( maxflag > 0 && localbits[i] < prevbits[i] )
                                 return(-1);
-                            else if ( maxflag < 0 && localbits[i] > pricebits[i] )
+                            else if ( maxflag < 0 && localbits[i] > prevbits[i] )
                                 return(-1);
                         }
                     }
@@ -2009,9 +2013,9 @@ int32_t get_btcusd(uint32_t pricebits[4])
 
 void komodo_cbopretupdate()
 {
-    static uint32_t lasttime;
+    static uint32_t lasttime,lastcrypto,lastbtc;
     static uint32_t pricebits[4],cryptoprices[sizeof(Cryptos)/sizeof(*Cryptos)],forexprices[sizeof(Forex)/sizeof(*Forex)];
-    int32_t size;
+    int32_t size; uint32_t now = (uint32_t)time(NULL);
     if ( (ASSETCHAINS_CBOPRET & 1) != 0 )
     {
         if ( komodo_nextheight() > 333 )
@@ -2024,13 +2028,14 @@ void komodo_cbopretupdate()
         if ( Mineropret.size() < size )
             Mineropret.resize(size);
         size = PRICES_SIZEBIT0;
-        if ( get_btcusd(pricebits) == 0 )
+        if ( now > lastbtc+30 && get_btcusd(pricebits) == 0 )
         {
             memcpy(Mineropret.data(),pricebits,PRICES_SIZEBIT0);
+            lastbtc = (uint32_t)time(NULL);
         }
         if ( (ASSETCHAINS_CBOPRET & 2) != 0 )
         {
-            if ( time(NULL) > lasttime+3600*5 || forexprices[0] == 0 )
+            if ( now > lasttime+3600*5 || forexprices[0] == 0 )
             {
                 get_dailyfx(forexprices);
                 memcpy(&Mineropret.data()[size],forexprices,sizeof(forexprices));
@@ -2040,8 +2045,12 @@ void komodo_cbopretupdate()
         }
         if ( (ASSETCHAINS_CBOPRET & 4) != 0 )
         {
-            get_cryptoprices(cryptoprices,Cryptos,(int32_t)(sizeof(Cryptos)/sizeof(*Cryptos)));
-            memcpy(&Mineropret.data()[size],cryptoprices,sizeof(cryptoprices));
+            if ( now > lastcrypto+60 )
+            {
+                get_cryptoprices(cryptoprices,Cryptos,(int32_t)(sizeof(Cryptos)/sizeof(*Cryptos)));
+                memcpy(&Mineropret.data()[size],cryptoprices,sizeof(cryptoprices));
+                lastcrypto = (uint32_t)time(NULL);
+            }
             size += sizeof(cryptoprices);
         }
         //int32_t i; for (i=0; i<Mineropret.size(); i++)
