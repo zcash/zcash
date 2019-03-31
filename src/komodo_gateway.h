@@ -1707,9 +1707,13 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
                     fprintf(stderr,"now.%u htstamp.%u - pricebits[0] %u -> lag.%d\n",now,komodo_heightstamp(nHeight-1),pricebits[0],lag2);
                     return(-1);
                 }
+                // else need to check against current blocktime to prevent pricebits[0] games
                 fprintf(stderr,"ht.%d: t%u lag.%d %.4f USD, %.4f GBP, %.4f EUR htstamp.%d [%d]\n",nHeight,pricebits[0],lag,(double)pricebits[1]/10000,(double)pricebits[2]/10000,(double)pricebits[3]/10000,komodo_heightstamp(nHeight-1),lag2);
                 if ( komodo_heightpricebits(prevbits,nHeight-1) == 0 )
                 {
+                    for (i=1; i<n; i++)
+                        fprintf(stderr,"%.4f ",(double)pricebits[i]/10000);
+                    fprintf(stderr," newprices.%d\n",nHeight);
                     if ( komodo_pricecmp(nHeight,n,&maxflag,pricebits,prevbits,PRICES_MAXCHANGE) < 0 )
                     {
                         fprintf(stderr,"vs prev maxflag.%d cmp error\n",maxflag);
