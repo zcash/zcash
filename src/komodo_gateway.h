@@ -1738,36 +1738,26 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
                         fprintf(stderr,"vs prev maxflag.%d cmp error\n",maxflag);
                         return(-1);
                     } // else this is the good case we hope to happen
-                } //else return(-1);
+                } else return(-1);
                 if ( lag < ASSETCHAINS_BLOCKTIME && Mineropret.size() >= PRICES_SIZEBIT0 )
                 {
                     memcpy(localbits,Mineropret.data(),Mineropret.size());
-                    for (i=0; i<n; i++)
-                        if ( localbits[i] == 0 )
-                            localbits[i] = prevbits[i];
-                    /*if ( maxflag == 0 )
+                    if ( nHeight < 500 )
                     {
-                        if ( komodo_pricecmp(nHeight,n,&maxflag,pricebits,localbits,PRICES_MAXCHANGE) < 0 )
-                        {
-                            fprintf(stderr,"maxflag.0 cmp error\n");
-                            return(-1);
-                        }
+                        for (i=0; i<n; i++)
+                            if ( localbits[i] == 0 )
+                                localbits[i] = prevbits[i];
                     }
-                    else*/
+                    for (i=1; i<n; i++)
                     {
-                        for (i=1; i<n; i++)
+                        if ( (maxflag= maxflags[i]) != 0 )
                         {
-                            //maxflag = 0;
-                            //if ( (newprice= komodo_pricenew(&maxflag,pricebits[i],prevbits[i],PRICES_MAXCHANGE)) != 0 ) // proposed price is clamped
-                            if ( (maxflag= maxflags[i]) != 0 )
-                            {
-                                // make sure local price is moving in right direction
-                                fprintf(stderr,"maxflag.%d i.%d localbits.%u vs pricebits.%u\n",maxflag,i,localbits[i],pricebits[i]);
-                                if ( maxflag > 0 && localbits[i] < prevbits[i] )
-                                    return(-1);
-                                else if ( maxflag < 0 && localbits[i] > prevbits[i] )
-                                    return(-1);
-                            }
+                            // make sure local price is moving in right direction
+                            fprintf(stderr,"maxflag.%d i.%d localbits.%u vs pricebits.%u\n",maxflag,i,localbits[i],pricebits[i]);
+                            if ( maxflag > 0 && localbits[i] < prevbits[i] )
+                                return(-1);
+                            else if ( maxflag < 0 && localbits[i] > prevbits[i] )
+                                return(-1);
                         }
                     }
                 }
