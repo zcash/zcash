@@ -1693,10 +1693,6 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
     std::vector<uint8_t> vopret; double btcusd,btcgbp,btceur; uint32_t localbits[8192],pricebits[8192],prevbits[8192],newprice; int32_t i,lag,lag2,n,maxflag=0; uint32_t now = (uint32_t)time(NULL);
     if ( ASSETCHAINS_CBOPRET != 0 && nHeight > 0 )
     {
-        if ( komodo_heightpricebits(prevbits,nHeight-1) < 0 )
-            return(-1);
-        if ( nHeight < 350 )
-            return(0);
         GetOpReturnData(scriptPubKey,vopret);
         if ( vopret.size() >= PRICES_SIZEBIT0 )
         {
@@ -1704,6 +1700,10 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
             memcpy(pricebits,vopret.data(),Mineropret.size());
             if ( nHeight > 1 )
             {
+                if ( komodo_heightpricebits(prevbits,nHeight-1) < 0 )
+                    return(-1);
+                if ( nHeight < 350 )
+                    return(0);
                 lag = (int32_t)(now - pricebits[0]);
                 lag2 = (int32_t)(komodo_heightstamp(nHeight-1) - pricebits[0]);
                 if ( lag < -60 ) // avoid data from future
