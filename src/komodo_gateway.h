@@ -1691,9 +1691,11 @@ CScript komodo_mineropret(int32_t nHeight)
 int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
 {
     std::vector<uint8_t> vopret; double btcusd,btcgbp,btceur; uint32_t localbits[8192],pricebits[8192],prevbits[8192],newprice; int32_t i,lag,lag2,n,maxflag=0; uint32_t now = (uint32_t)time(NULL);
-    if ( ASSETCHAINS_CBOPRET != 0 )
+    if ( ASSETCHAINS_CBOPRET != 0 && nHeight > 0 )
     {
-        if ( nHeight < 600 )
+        if ( komodo_heightpricebits(prevbits,nHeight-1) < 0 )
+            return(-1);
+        if ( nHeight < 350 )
             return(0);
         GetOpReturnData(scriptPubKey,vopret);
         if ( vopret.size() >= PRICES_SIZEBIT0 )
@@ -1714,7 +1716,7 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
                 btcgbp = (double)pricebits[2]/10000;
                 btceur = (double)pricebits[3]/10000;
                 fprintf(stderr,"ht.%d: lag.%d %.4f USD, %.4f GBP, %.4f EUR, GBPUSD %.6f, EURUSD %.6f, EURGBP %.6f [%d]\n",nHeight,lag,btcusd,btcgbp,btceur,btcusd/btcgbp,btcusd/btceur,btcgbp/btceur,lag2);
-                if ( komodo_heightpricebits(prevbits,nHeight-1) == 0 )
+                //if ( komodo_heightpricebits(prevbits,nHeight-1) == 0 )
                 {
                     /*if ( nHeight < 500 )
                     {
@@ -1734,7 +1736,7 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
                         fprintf(stderr,"vs prev maxflag.%d cmp error\n",maxflag);
                                 return(-1);
                     } // else this is the good case we hope to happen
-                } else return(-1);
+                } //else return(-1);
                 if ( lag < ASSETCHAINS_BLOCKTIME && Mineropret.size() >= PRICES_SIZEBIT0 )
                 {
                     memcpy(localbits,Mineropret.data(),Mineropret.size());
