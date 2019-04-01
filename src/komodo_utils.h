@@ -1816,7 +1816,7 @@ void komodo_args(char *argv0)
         if ( hexstr.size() != 0 )
         {
             Mineropret.resize(hexstr.size()/2);
-            decode_hex(&Mineropret[0],hexstr.size()/2,(char *)hexstr.c_str());
+            decode_hex(Mineropret.data(),hexstr.size()/2,(char *)hexstr.c_str());
             for (i=0; i<Mineropret.size(); i++)
                 fprintf(stderr,"%02x",Mineropret[i]);
             fprintf(stderr," Mineropret\n");
@@ -2067,7 +2067,7 @@ void komodo_args(char *argv0)
             if ( ASSETCHAINS_CBOPRET != 0 )
             {
                 extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_CBOPRET),(void *)&ASSETCHAINS_CBOPRET);
-                komodo_cbopretupdate(); // will set Mineropret
+                //komodo_cbopretupdate(); // will set Mineropret
                 fprintf(stderr,"This blockchain uses data produced from CoinDesk Bitcoin Price Index\n");
             }
         }

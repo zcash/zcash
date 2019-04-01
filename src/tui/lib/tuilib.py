@@ -7,6 +7,7 @@ import pickle
 import platform
 import os
 import subprocess
+import random
 import signal
 from slickrpc import Proxy
 from binascii import hexlify
@@ -1044,34 +1045,41 @@ def print_multiplayer_games_list(rpc_connection):
 
 def rogue_newgame_singleplayer(rpc_connection, is_game_a_rogue=True):
     try:
-        new_game_txid = rpc_connection.cclib("newgame", "17", "[1]")["txid"]
-        print("New singleplayer training game succesfully created. txid: " + new_game_txid)
-        while True:
-            mempool = rpc_connection.getrawmempool()
-            if new_game_txid in mempool:
-                print(colorize("Waiting for game transaction to be mined", "blue"))
-                time.sleep(5)
-            else:
-                print(colorize("Game transaction is mined", "green"))
-                break
-        players_list = rogue_players_list(rpc_connection)
-        if len(players_list["playerdata"]) > 0:
-            print_players_list(rpc_connection)
+        if is_game_a_rogue:
+            new_game_txid = rpc_connection.cclib("newgame", "17", "[1]")["txid"]
+            print("New singleplayer training game succesfully created. txid: " + new_game_txid)
             while True:
-                is_choice_needed = input("Do you want to choose a player for this game? [y/n] ")
-                if is_choice_needed == "y":
-                    player_txid = input("Please input player txid: ")
-                    newgame_regisration_txid = rogue_game_register(rpc_connection, new_game_txid, player_txid)["txid"]
-                    break
-                elif is_choice_needed == "n":
-                    set_warriors_name(rpc_connection)
-                    newgame_regisration_txid = rogue_game_register(rpc_connection, new_game_txid)["txid"]
-                    break
+                mempool = rpc_connection.getrawmempool()
+                if new_game_txid in mempool:
+                    print(colorize("Waiting for game transaction to be mined", "blue"))
+                    time.sleep(5)
                 else:
-                    print("Please choose y or n !")
+                    print(colorize("Game transaction is mined", "green"))
+                    break
         else:
-            print("No players available to select")
-            input("Press [Enter] to continue...")
+            pending_games = rpc_connection.cclib("pending", "17")["pending"]
+            new_game_txid = random.choice(pending_games)
+        if is_game_a_rogue:
+            players_list = rogue_players_list(rpc_connection)
+            if len(players_list["playerdata"]) > 0:
+                print_players_list(rpc_connection)
+                while True:
+                    is_choice_needed = input("Do you want to choose a player for this game? [y/n] ")
+                    if is_choice_needed == "y":
+                        player_txid = input("Please input player txid: ")
+                        newgame_regisration_txid = rogue_game_register(rpc_connection, new_game_txid, player_txid)["txid"]
+                        break
+                    elif is_choice_needed == "n":
+                        set_warriors_name(rpc_connection)
+                        newgame_regisration_txid = rogue_game_register(rpc_connection, new_game_txid)["txid"]
+                        break
+                    else:
+                        print("Please choose y or n !")
+            else:
+                print("No players available to select")
+                input("Press [Enter] to continue...")
+                newgame_regisration_txid = rogue_game_register(rpc_connection, new_game_txid)["txid"]
+        else:
             newgame_regisration_txid = rogue_game_register(rpc_connection, new_game_txid)["txid"]
         while True:
             mempool = rpc_connection.getrawmempool()
@@ -1143,7 +1151,7 @@ def rogue_newgame_singleplayer(rpc_connection, is_game_a_rogue=True):
                     print("Let's wait a little bit more")
                     time.sleep(5)
                     pass
-            if confirmations_amount < 2:
+            if confirmations_amount < 1:
                 print("Last keystroke not confirmed yet! Let's wait a little")
                 time.sleep(10)
             else:
@@ -1163,15 +1171,16 @@ def rogue_newgame_singleplayer(rpc_connection, is_game_a_rogue=True):
             is_bailout_needed = input("Do you want to make bailout now [y] or wait for one more block [n]? [y/n]: ")
             if is_bailout_needed == "y":
                 bailout_info = rogue_bailout(rpc_connection, new_game_txid)
-                while True:
-                    try:
-                        confirmations_amount = rpc_connection.getrawtransaction(bailout_info["txid"], 1)["confirmations"]
-                        break
-                    except Exception as e:
-                        print(e)
-                        print("Bailout not on blockchain yet. Let's wait a little bit more")
-                        time.sleep(20)
-                        pass
+                if is_game_a_rogue:
+                    while True:
+                        try:
+                            confirmations_amount = rpc_connection.getrawtransaction(bailout_info["txid"], 1)["confirmations"]
+                            break
+                        except Exception as e:
+                            print(e)
+                            print("Bailout not on blockchain yet. Let's wait a little bit more")
+                            time.sleep(20)
+                            pass
                 break
             elif is_bailout_needed == "n":
                 game_end_height = int(rpc_connection.getinfo()["blocks"])

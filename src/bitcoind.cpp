@@ -90,7 +90,7 @@ void WaitForShutdown(boost::thread_group* threadGroup)
             //komodo_longestchain();
             if ( ASSETCHAINS_CBOPRET != 0 )
                 komodo_cbopretupdate();
-            for (i=0; i<ASSETCHAINS_BLOCKTIME/2; i++)
+            for (i=0; i<=ASSETCHAINS_BLOCKTIME/5; i++)
             {
                 fShutdown = ShutdownRequested();
                 if ( fShutdown != 0 )

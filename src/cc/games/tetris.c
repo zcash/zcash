@@ -296,6 +296,14 @@ static void tg_hold(struct games_state *rs,tetris_game *obj)
         obj->stored.ori = ori;
         while (!tg_fits(obj, obj->falling)) {
             obj->falling.loc.row--;
+            if (tg_fits(obj, obj->falling)) {
+                break;
+            }
+            obj->falling.loc.col--;
+            if (tg_fits(obj, obj->falling)) {
+                break;
+            }
+            obj->falling.loc.col += 2;
         }
     }
     tg_put(obj, obj->falling);
