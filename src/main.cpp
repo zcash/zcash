@@ -4125,7 +4125,7 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
                 if ( ASSETCHAINS_CBOPRET != 0 )
                 {
                     pindexNew->nStatus &= ~BLOCK_FAILED_MASK;
-                    fprinf(stderr,"reconsiderblock %d\n",(int32_t)pindexNew->nHeight);
+                    fprintf(stderr,"reconsiderblock %d\n",(int32_t)pindexNew->nHeight);
                 }
             }
             return error("ConnectTip(): ConnectBlock %s failed", pindexNew->GetBlockHash().ToString());
