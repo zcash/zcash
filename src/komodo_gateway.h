@@ -1730,7 +1730,8 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
                         fprintf(stderr," newprices.%d\n",nHeight);
 
                         fprintf(stderr,"vs prev maxflag.%d cmp error\n",maxflag);
-                                return(-1);
+                        if ( nHeight != 339 )
+                            return(-1);
                     } // else this is the good case we hope to happen
                 } //else return(-1);
                 if ( lag < ASSETCHAINS_BLOCKTIME && Mineropret.size() >= PRICES_SIZEBIT0 )
