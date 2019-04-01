@@ -1692,6 +1692,8 @@ CScript komodo_mineropret(int32_t nHeight)
 // reconsiderblock 0034cf582018eacc0b4ae001491ce460113514cb1a3f217567ef4a2207de361a
 // reconsiderbloc 000abf51c023b64af327c50c1b060797b8cb281c696d30ab92fd002a8b8c9aea
 // are needed to sync past initial blocks with different data set
+// pass in blockhash and nTime, latch if it is rejected due to local price, then if localprice changes in a way that would validate then issue reconsiderblock
+// add rpc call for extracting rawprices
 
 int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
 {
@@ -1753,7 +1755,7 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
                         if ( (maxflag= maxflags[i]) != 0 )
                         {
                             // make sure local price is moving in right direction
-                            fprintf(stderr,"maxflag.%d i.%d localbits.%u vs pricebits.%u\n",maxflag,i,localbits[i],pricebits[i]);
+                            fprintf(stderr,"maxflag.%d i.%d localbits.%u vs pricebits.%u prevbits.%u\n",maxflag,i,localbits[i],pricebits[i],prevbits[i]);
                             if ( maxflag > 0 && localbits[i] < prevbits[i] )
                                 return(-1);
                             else if ( maxflag < 0 && localbits[i] > prevbits[i] )
