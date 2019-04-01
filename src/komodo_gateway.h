@@ -1687,6 +1687,10 @@ CScript komodo_mineropret(int32_t nHeight)
  The only way komodo_opretvalidate() doesnt return an error is if maxflag is set or it is within tolerance of both the prior block and the local data. The local data validation only happens if it is a recent block and not a block from the past as the local node is only getting the current price data.
  
  */
+// reconsiderblock 002aca768b09dfcf36bd934ab34b23983148b116e12cb0b6e1a3f895d1db63aa
+// and
+// reconsiderblock 0034cf582018eacc0b4ae001491ce460113514cb1a3f217567ef4a2207de361a
+// are needed to sync past initial blocks with different data set
 
 int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
 {
@@ -1714,12 +1718,12 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
                 fprintf(stderr,"ht.%d: lag.%d %.4f USD, %.4f GBP, %.4f EUR, GBPUSD %.6f, EURUSD %.6f, EURGBP %.6f [%d]\n",nHeight,lag,btcusd,btcgbp,btceur,btcusd/btcgbp,btcusd/btceur,btcgbp/btceur,lag2);
                 if ( komodo_heightpricebits(prevbits,nHeight-1) == 0 )
                 {
-                    /*if ( nHeight < 500 )
+                    if ( nHeight < 500 )
                     {
                         for (i=0; i<n; i++)
                             if ( pricebits[i] == 0 )
                                 pricebits[i] = prevbits[i];
-                    }*/
+                    }
                     if ( komodo_pricecmp(nHeight,n,&maxflag,pricebits,prevbits,PRICES_MAXCHANGE) < 0 )
                     {
                         for (i=1; i<n; i++)
@@ -1730,8 +1734,7 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
                         fprintf(stderr," newprices.%d\n",nHeight);
 
                         fprintf(stderr,"vs prev maxflag.%d cmp error\n",maxflag);
-                        //if ( nHeight > 500 )
-                            return(-1);
+                        return(-1);
                     } // else this is the good case we hope to happen
                 } //else return(-1);
                 if ( lag < ASSETCHAINS_BLOCKTIME && Mineropret.size() >= PRICES_SIZEBIT0 )
