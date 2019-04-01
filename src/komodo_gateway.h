@@ -1618,7 +1618,7 @@ int32_t komodo_pricecmp(int32_t nHeight,int32_t n,int32_t *maxflagp,uint32_t *pr
     *maxflagp = 0;
     for (i=1; i<n; i++)
     {
-        if ( (newprice= komodo_pricenew(maxflagp,pricebitsA[i],pricebitsB[i],tolerance)) != 0 )
+        if ( pricebitsB[i] != 0 && (newprice= komodo_pricenew(maxflagp,pricebitsA[i],pricebitsB[i],tolerance)) != 0 )
         {
             fprintf(stderr,"ht.%d i.%d/%d %u vs %u -> newprice.%u out of tolerance maxflag.%d\n",nHeight,i,n,pricebitsB[i],pricebitsA[i],newprice,*maxflagp);
             return(-1);
