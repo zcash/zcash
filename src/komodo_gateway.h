@@ -1619,7 +1619,7 @@ int32_t komodo_pricecmp(int32_t nHeight,int32_t n,char *maxflags,uint32_t *price
     {
         if ( (newprice= komodo_pricenew(&maxflags[i],pricebitsA[i],pricebitsB[i],tolerance)) != 0 )
         {
-            fprintf(stderr,"ht.%d i.%d/%d %u vs %u -> newprice.%u out of tolerance maxflag.%d\n",nHeight,i,n,pricebitsB[i],pricebitsA[i],newprice,*maxflagp);
+            fprintf(stderr,"ht.%d i.%d/%d %u vs %u -> newprice.%u out of tolerance maxflag.%d\n",nHeight,i,n,pricebitsB[i],pricebitsA[i],newprice,maxflags[i]);
             return(-1);
         }
     }
@@ -1695,7 +1695,7 @@ CScript komodo_mineropret(int32_t nHeight)
 
 int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
 {
-    std::vector<uint8_t> vopret; char maxflags[8192]; double btcusd,btcgbp,btceur; uint32_t localbits[8192],pricebits[8192],prevbits[8192],newprice; int32_t i,lag,lag2,n; uint32_t now = (uint32_t)time(NULL);
+    std::vector<uint8_t> vopret; char maxflags[8192]; double btcusd,btcgbp,btceur; uint32_t localbits[8192],pricebits[8192],prevbits[8192],newprice; int32_t i,maxflag,lag,lag2,n; uint32_t now = (uint32_t)time(NULL);
     if ( ASSETCHAINS_CBOPRET != 0 && nHeight > 0 )
     {
         GetOpReturnData(scriptPubKey,vopret);
