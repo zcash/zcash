@@ -1698,12 +1698,8 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
         {
             n = (int32_t)(vopret.size() / sizeof(uint32_t));
             memcpy(pricebits,vopret.data(),Mineropret.size());
-            if ( nHeight > 1 )
+            if ( nHeight > 1 && vopret.size() == Mineropret.size() )
             {
-                if ( komodo_heightpricebits(prevbits,nHeight-1) < 0 )
-                    return(-1);
-                if ( nHeight < 350 )
-                    return(0);
                 lag = (int32_t)(now - pricebits[0]);
                 lag2 = (int32_t)(komodo_heightstamp(nHeight-1) - pricebits[0]);
                 if ( lag < -60 ) // avoid data from future
@@ -1769,6 +1765,8 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
                     }
                 }
             }
+            else if ( nHeight > 500 )
+                return(-1);
             return(0);
         } else fprintf(stderr,"wrong size %d vs %d, scriptPubKey size %d [%02x]\n",(int32_t)vopret.size(),(int32_t)Mineropret.size(),(int32_t)scriptPubKey.size(),scriptPubKey[0]);
         return(-1);
