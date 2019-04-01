@@ -1590,7 +1590,7 @@ uint32_t komodo_pricenew(int32_t *maxflagp,uint32_t price,uint32_t refprice,int6
         lowprice--;
     if ( price >= highprice )
     {
-        //fprintf(stderr,"high %u vs h%llu l%llu tolerance.%llu\n",price,(long long)highprice,(long long)lowprice,(long long)tolerance);
+        fprintf(stderr,"high %u vs h%llu l%llu tolerance.%llu\n",price,(long long)highprice,(long long)lowprice,(long long)tolerance);
         if ( price > highprice ) // return non-zero only if we violate the tolerance
         {
             *maxflagp = 2;
@@ -1618,7 +1618,7 @@ int32_t komodo_pricecmp(int32_t nHeight,int32_t n,int32_t *maxflagp,uint32_t *pr
     *maxflagp = 0;
     for (i=1; i<n; i++)
     {
-        if ( pricebitsB[i] != 0 && (newprice= komodo_pricenew(maxflagp,pricebitsA[i],pricebitsB[i],tolerance)) != 0 )
+        if ( (nHeight >= 500 || pricebitsB[i] != 0) && (newprice= komodo_pricenew(maxflagp,pricebitsA[i],pricebitsB[i],tolerance)) != 0 )
         {
             fprintf(stderr,"ht.%d i.%d/%d %u vs %u -> newprice.%u out of tolerance maxflag.%d\n",nHeight,i,n,pricebitsB[i],pricebitsA[i],newprice,*maxflagp);
             return(-1);
@@ -1714,9 +1714,12 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
                 fprintf(stderr,"ht.%d: lag.%d %.4f USD, %.4f GBP, %.4f EUR, GBPUSD %.6f, EURUSD %.6f, EURGBP %.6f [%d]\n",nHeight,lag,btcusd,btcgbp,btceur,btcusd/btcgbp,btcusd/btceur,btcgbp/btceur,lag2);
                 if ( komodo_heightpricebits(prevbits,nHeight-1) == 0 )
                 {
-                    for (i=0; i<n; i++)
-                        if ( pricebits[i] == 0 )
-                            pricebits[i] = prevbits[i];
+                    if ( nHeight < 500 )
+                    {
+                        for (i=0; i<n; i++)
+                            if ( pricebits[i] == 0 )
+                                pricebits[i] = prevbits[i];
+                    }
                     if ( komodo_pricecmp(nHeight,n,&maxflag,pricebits,prevbits,PRICES_MAXCHANGE) < 0 )
                     {
                         for (i=1; i<n; i++)
