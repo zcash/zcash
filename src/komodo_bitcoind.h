@@ -1237,7 +1237,7 @@ uint64_t komodo_commission(const CBlock *pblock,int32_t height)
             n = pblock->vtx[i].vout.size();
             for (j=0; j<n; j++)
             {
-                if ( height > 100000 && ASSETCHAINS_STAKED != 0 && txn_count > 1 && i == txn_count-1 && j == n-1 )
+                if ( height > 150000 && ASSETCHAINS_STAKED != 0 && txn_count > 1 && i == txn_count-1 && j == n-1 )
                     break;
                 //fprintf(stderr,"(%d %.8f).%d ",i,dstr(pblock->vtx[i].vout[j].nValue),j);
                 if ( i != 0 || j != 1 )
