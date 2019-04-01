@@ -197,6 +197,7 @@ int64_t IsTokensvout(bool goDeeper, bool checkPubkeys, struct CCcontract_info *c
 bool DecodeHexTx(CTransaction& tx, const std::string& strHexTx);
 void komodo_sendmessage(int32_t minpeers,int32_t maxpeers,const char *message,std::vector<uint8_t> payload);
 int32_t payments_parsehexdata(std::vector<uint8_t> &hexdata,cJSON *item,int32_t len);
+int32_t komodo_blockload(CBlock& block,CBlockIndex *pindex);
 
 CScript EncodeTokenCreateOpRet(uint8_t funcid, std::vector<uint8_t> origpubkey, std::string name, std::string description, vscript_t vopretNonfungible);
 CScript EncodeTokenCreateOpRet(uint8_t funcid, std::vector<uint8_t> origpubkey, std::string name, std::string description, std::vector<std::pair<uint8_t, vscript_t>> oprets);
@@ -247,6 +248,7 @@ void CCaddrTokens1of2set(struct CCcontract_info *cp, CPubKey pk1, CPubKey pk2, c
 int32_t CClib_initcp(struct CCcontract_info *cp,uint8_t evalcode);
 
 bool IsCCInput(CScript const& scriptSig);
+bool CheckTxFee(const CTransaction &tx, uint64_t txfee, uint32_t height, uint64_t blocktime);
 int32_t unstringbits(char *buf,uint64_t bits);
 uint64_t stringbits(char *str);
 uint256 revuint256(uint256 txid);

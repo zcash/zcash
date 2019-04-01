@@ -1547,3 +1547,547 @@ void komodo_passport_iteration()
         printf("READY for %s RPC calls at %u! done PASSPORT %s refid.%d\n",ASSETCHAINS_SYMBOL,(uint32_t)time(NULL),ASSETCHAINS_SYMBOL,refid);
     }
 }
+
+extern std::vector<uint8_t> Mineropret; // opreturn data set by the data gathering code
+#define PRICES_MAXCHANGE (COIN / 100)	  // maximum acceptable change, set at 1%
+#define PRICES_SIZEBIT0 (sizeof(uint32_t) * 4) // 4 uint32_t unixtimestamp, BTCUSD, BTCGBP and BTCEUR
+
+// komodo_heightpricebits() extracts the price data in the coinbase for nHeight
+int32_t komodo_heightpricebits(uint32_t prevbits[4],int32_t nHeight)
+{
+    CBlockIndex *pindex; CBlock block; CTransaction tx; int32_t numvouts; std::vector<uint8_t> vopret;
+    if ( (pindex= komodo_chainactive(nHeight)) != 0 )
+    {
+        if ( komodo_blockload(block,pindex) == 0 )
+        {
+            tx = block.vtx[0];
+            numvouts = (int32_t)tx.vout.size();
+            GetOpReturnData(tx.vout[numvouts-1].scriptPubKey,vopret);
+            if ( vopret.size() >= PRICES_SIZEBIT0 )
+            {
+                memcpy(prevbits,vopret.data(),vopret.size());
+                return(0);
+            }
+        }
+    }
+    fprintf(stderr,"couldnt get pricebits for %d\n",nHeight);
+    return(-1);
+}
+
+/*
+ komodo_pricenew() is passed in a reference price, the change tolerance and the proposed price. it needs to return a clipped price if it is too big and also set a flag if it is at or above the limit
+ */
+uint32_t komodo_pricenew(char *maxflagp,uint32_t price,uint32_t refprice,int64_t tolerance)
+{
+    uint64_t highprice,lowprice;
+    if ( refprice < 2 )
+        return(0);
+    highprice = ((uint64_t)refprice * (COIN + tolerance)) / COIN; // calc highest acceptable price
+    lowprice = ((uint64_t)refprice * (COIN - tolerance)) / COIN;  // and lowest
+    if ( highprice == refprice )
+        highprice++;
+    if ( lowprice == refprice )
+        lowprice--;
+    if ( price >= highprice )
+    {
+        fprintf(stderr,"high %u vs h%llu l%llu tolerance.%llu\n",price,(long long)highprice,(long long)lowprice,(long long)tolerance);
+        if ( price > highprice ) // return non-zero only if we violate the tolerance
+        {
+            *maxflagp = 2;
+            return(highprice);
+        }
+        *maxflagp = 1;
+    }
+    else if ( price <= lowprice )
+    {
+        //fprintf(stderr,"low %u vs h%llu l%llu tolerance.%llu\n",price,(long long)highprice,(long long)lowprice,(long long)tolerance);
+        if ( price < lowprice )
+        {
+            *maxflagp = -2;
+            return(lowprice);
+        }
+        *maxflagp = -1;
+    }
+    return(0);
+}
+
+// komodo_pricecmp() returns -1 if any of the prices are beyond the tolerance
+int32_t komodo_pricecmp(int32_t nHeight,int32_t n,char *maxflags,uint32_t *pricebitsA,uint32_t *pricebitsB,int64_t tolerance)
+{
+    int32_t i; uint32_t newprice;
+    for (i=1; i<n; i++)
+    {
+        if ( (newprice= komodo_pricenew(&maxflags[i],pricebitsA[i],pricebitsB[i],tolerance)) != 0 )
+        {
+            fprintf(stderr,"ht.%d i.%d/%d %u vs %u -> newprice.%u out of tolerance maxflag.%d\n",nHeight,i,n,pricebitsB[i],pricebitsA[i],newprice,maxflags[i]);
+            return(-1);
+        }
+    }
+    return(0);
+}
+
+// komodo_priceclamp() clamps any price that is beyond tolerance
+int32_t komodo_priceclamp(int32_t n,uint32_t *pricebits,uint32_t *refprices,int64_t tolerance)
+{
+    int32_t i; uint32_t newprice; char maxflags[2048];
+    memset(maxflags,0,sizeof(maxflags));
+    for (i=1; i<n; i++)
+    {
+        if ( (newprice= komodo_pricenew(&maxflags[i],pricebits[i],refprices[i],tolerance)) != 0 )
+        {
+            fprintf(stderr,"priceclamped[%d of %d] %u vs %u -> %u\n",i,n,refprices[i],pricebits[i],newprice);
+            pricebits[i] = newprice;
+        }
+    }
+    return(0);
+}
+
+// komodo_mineropret() returns a valid pricedata to add to the coinbase opreturn for nHeight
+CScript komodo_mineropret(int32_t nHeight)
+{
+    CScript opret; char maxflags[2048]; uint32_t pricebits[2048],prevbits[2048]; int32_t maxflag,i,n,numzero=0;
+    if ( Mineropret.size() >= PRICES_SIZEBIT0 )
+    {
+        n = (int32_t)(Mineropret.size() / sizeof(uint32_t));
+        numzero = 1;
+        while ( numzero > 0 )
+        {
+            memcpy(pricebits,Mineropret.data(),Mineropret.size());
+            for (i=numzero=0; i<n; i++)
+                if ( pricebits[i] == 0 )
+                    numzero++;
+            if ( numzero != 0 )
+                fprintf(stderr,"numzero.%d\n",numzero);
+        }
+        if ( komodo_heightpricebits(prevbits,nHeight-1) == 0 )
+        {
+            memcpy(pricebits,Mineropret.data(),Mineropret.size());
+            memset(maxflags,0,sizeof(maxflags));
+            if ( komodo_pricecmp(0,n,maxflags,pricebits,prevbits,PRICES_MAXCHANGE) < 0 )
+            {
+                // if the new prices are outside tolerance, update Mineropret with clamped prices
+                komodo_priceclamp(n,pricebits,prevbits,PRICES_MAXCHANGE);
+                fprintf(stderr,"update Mineropret to clamped prices\n");
+                memcpy(Mineropret.data(),pricebits,Mineropret.size());
+            }
+        }
+        int32_t i;
+        for (i=0; i<Mineropret.size(); i++)
+            fprintf(stderr,"%02x",Mineropret[i]);
+        fprintf(stderr," <- Mineropret\n");
+        return(opret << OP_RETURN << Mineropret);
+    }
+    return(opret);
+}
+
+/*
+ komodo_opretvalidate() is the entire price validation!
+ it prints out some useful info for debugging, like the lag from current time and prev block and the prices encoded in the opreturn.
+ 
+ The only way komodo_opretvalidate() doesnt return an error is if maxflag is set or it is within tolerance of both the prior block and the local data. The local data validation only happens if it is a recent block and not a block from the past as the local node is only getting the current price data.
+ 
+ */
+// reconsiderblock 002aca768b09dfcf36bd934ab34b23983148b116e12cb0b6e1a3f895d1db63aa
+// and
+// reconsiderblock 0034cf582018eacc0b4ae001491ce460113514cb1a3f217567ef4a2207de361a
+// reconsiderbloc 000abf51c023b64af327c50c1b060797b8cb281c696d30ab92fd002a8b8c9aea
+// are needed to sync past initial blocks with different data set
+// pass in blockhash and nTime, latch if it is rejected due to local price, then if localprice changes in a way that would validate then issue reconsiderblock
+// add rpc call for extracting rawprices
+
+int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
+{
+    std::vector<uint8_t> vopret; char maxflags[2048]; double btcusd,btcgbp,btceur; uint32_t localbits[2048],pricebits[2048],prevbits[2048],newprice; int32_t i,maxflag,lag,lag2,n; uint32_t now = (uint32_t)time(NULL);
+    if ( ASSETCHAINS_CBOPRET != 0 && nHeight > 0 )
+    {
+        GetOpReturnData(scriptPubKey,vopret);
+        if ( vopret.size() >= PRICES_SIZEBIT0 )
+        {
+            n = (int32_t)(vopret.size() / sizeof(uint32_t));
+            memcpy(pricebits,vopret.data(),Mineropret.size());
+            memset(maxflags,0,sizeof(maxflags));
+            if ( nHeight > 1 )
+            {
+                lag = (int32_t)(now - pricebits[0]);
+                lag2 = (int32_t)(komodo_heightstamp(nHeight-1) - pricebits[0]);
+                if ( lag < -60 ) // avoid data from future
+                {
+                    fprintf(stderr,"now.%u htstamp.%u - pricebits[0] %u -> lag.%d\n",now,komodo_heightstamp(nHeight-1),pricebits[0],lag2);
+                    return(-1);
+                }
+                // else need to check against current blocktime to prevent pricebits[0] games
+                btcusd = (double)pricebits[1]/10000;
+                btcgbp = (double)pricebits[2]/10000;
+                btceur = (double)pricebits[3]/10000;
+                fprintf(stderr,"ht.%d: lag.%d %.4f USD, %.4f GBP, %.4f EUR, GBPUSD %.6f, EURUSD %.6f, EURGBP %.6f [%d]\n",nHeight,lag,btcusd,btcgbp,btceur,btcusd/btcgbp,btcusd/btceur,btcgbp/btceur,lag2);
+                if ( komodo_heightpricebits(prevbits,nHeight-1) == 0 )
+                {
+                    if ( nHeight < 500 )
+                    {
+                        for (i=0; i<n; i++)
+                            if ( pricebits[i] == 0 )
+                                pricebits[i] = prevbits[i];
+                    }
+                    if ( komodo_pricecmp(nHeight,n,maxflags,pricebits,prevbits,PRICES_MAXCHANGE) < 0 )
+                    {
+                        for (i=1; i<n; i++)
+                            fprintf(stderr,"%.4f ",(double)prevbits[i]/10000);
+                        fprintf(stderr," oldprices.%d\n",nHeight);
+                        for (i=1; i<n; i++)
+                            fprintf(stderr,"%.4f ",(double)pricebits[i]/10000);
+                        fprintf(stderr," newprices.%d\n",nHeight);
+
+                        fprintf(stderr,"vs prev maxflag.%d cmp error\n",maxflag);
+                        return(-1);
+                    } // else this is the good case we hope to happen
+                } else return(-1);
+                if ( lag < ASSETCHAINS_BLOCKTIME && Mineropret.size() >= PRICES_SIZEBIT0 )
+                {
+                    memcpy(localbits,Mineropret.data(),Mineropret.size());
+                    if ( nHeight < 500 )
+                    {
+                        for (i=0; i<n; i++)
+                            if ( localbits[i] == 0 )
+                                localbits[i] = prevbits[i];
+                    }
+                    for (i=1; i<n; i++)
+                    {
+                        if ( (maxflag= maxflags[i]) != 0 )
+                        {
+                            // make sure local price is moving in right direction
+                            fprintf(stderr,"maxflag.%d i.%d localbits.%u vs pricebits.%u prevbits.%u\n",maxflag,i,localbits[i],pricebits[i],prevbits[i]);
+                            if ( maxflag > 0 && localbits[i] < prevbits[i] )
+                                return(-1);
+                            else if ( maxflag < 0 && localbits[i] > prevbits[i] )
+                                return(-1);
+                        }
+                    }
+                }
+            }
+            return(0);
+        } else fprintf(stderr,"wrong size %d vs %d, scriptPubKey size %d [%02x]\n",(int32_t)vopret.size(),(int32_t)Mineropret.size(),(int32_t)scriptPubKey.size(),scriptPubKey[0]);
+        return(-1);
+    }
+    return(0);
+}
+
+char *nonportable_path(char *str)
+{
+    int32_t i;
+    for (i=0; str[i]!=0; i++)
+        if ( str[i] == '/' )
+            str[i] = '\\';
+    return(str);
+}
+
+char *portable_path(char *str)
+{
+#ifdef _WIN32
+    return(nonportable_path(str));
+#else
+#ifdef __PNACL
+    /*int32_t i,n;
+     if ( str[0] == '/' )
+     return(str);
+     else
+     {
+     n = (int32_t)strlen(str);
+     for (i=n; i>0; i--)
+     str[i] = str[i-1];
+     str[0] = '/';
+     str[n+1] = 0;
+     }*/
+#endif
+    return(str);
+#endif
+}
+
+void *loadfile(char *fname,uint8_t **bufp,long *lenp,long *allocsizep)
+{
+    FILE *fp;
+    long  filesize,buflen = *allocsizep;
+    uint8_t *buf = *bufp;
+    *lenp = 0;
+    if ( (fp= fopen(portable_path(fname),"rb")) != 0 )
+    {
+        fseek(fp,0,SEEK_END);
+        filesize = ftell(fp);
+        if ( filesize == 0 )
+        {
+            fclose(fp);
+            *lenp = 0;
+            //printf("loadfile null size.(%s)\n",fname);
+            return(0);
+        }
+        if ( filesize > buflen )
+        {
+            *allocsizep = filesize;
+            *bufp = buf = (uint8_t *)realloc(buf,(long)*allocsizep+64);
+        }
+        rewind(fp);
+        if ( buf == 0 )
+            printf("Null buf ???\n");
+        else
+        {
+            if ( fread(buf,1,(long)filesize,fp) != (unsigned long)filesize )
+                printf("error reading filesize.%ld\n",(long)filesize);
+            buf[filesize] = 0;
+        }
+        fclose(fp);
+        *lenp = filesize;
+        //printf("loaded.(%s)\n",buf);
+    } //else printf("OS_loadfile couldnt load.(%s)\n",fname);
+    return(buf);
+}
+
+void *filestr(long *allocsizep,char *_fname)
+{
+    long filesize = 0; char *fname,*buf = 0; void *retptr;
+    *allocsizep = 0;
+    fname = (char *)malloc(strlen(_fname)+1);
+    strcpy(fname,_fname);
+    retptr = loadfile(fname,(uint8_t **)&buf,&filesize,allocsizep);
+    free(fname);
+    return(retptr);
+}
+
+cJSON *send_curl(char *url,char *fname)
+{
+    long fsize; char curlstr[1024],*jsonstr; cJSON *json=0;
+    sprintf(curlstr,"wget -q \"%s\" -O %s",url,fname);
+    if ( system(curlstr) == 0 )
+    {
+        if ( (jsonstr= (char *)filestr((long *)&fsize,fname)) != 0 )
+        {
+            json = cJSON_Parse(jsonstr);
+            free(jsonstr);
+        }
+    }
+    return(json);
+}
+
+// get_urljson just returns the JSON returned by the URL using issue_curl
+
+#define issue_curl(cmdstr) bitcoind_RPC(0,(char *)"CBCOINBASE",cmdstr,0,0,0)
+
+const char *Cryptos[] = { "KMD", "ETH", "LTC", "BCHABC", "XMR", "IOTA", "DASH", "XEM", "ZEC", "WAVES", "RVN", "LSK", "DCR", "BTS", "ICX", "HOT", "STEEM", "ENJ", "STRAT" };
+
+const char *Forex[] =
+{ "BGN","NZD","ILS","RUB","CAD","PHP","CHF","AUD","JPY","TRY","HKD","MYR","HRK","CZK","IDR","DKK","NOK","HUF","GBP","MXN","THB","ISK","ZAR","BRL","SGD","PLN","INR","KRW","RON","CNY","SEK","EUR"
+};
+
+/*
+const char *Techstocks[] =
+{ "AAPL","ADBE","ADSK","AKAM","AMD","AMZN","ATVI","BB","CDW","CRM","CSCO","CYBR","DBX","EA","FB","GDDY","GOOG","GRMN","GSAT","HPQ","IBM","INFY","INTC","INTU","JNPR","MSFT","MSI","MU","MXL","NATI","NCR","NFLX","NTAP","NVDA","ORCL","PANW","PYPL","QCOM","RHT","S","SHOP","SNAP","SPOT","SYMC","SYNA","T","TRIP","TWTR","TXN","VMW","VOD","VRSN","VZ","WDC","XRX","YELP","YNDX","ZEN"
+};
+const char *Metals[] = { "XAU", "XAG", "XPT", "XPD", };
+
+const char *Markets[] = { "DJIA", "SPX", "NDX", "VIX" };
+*/
+
+cJSON *get_urljson(char *url)
+{
+    char *jsonstr; cJSON *json = 0;
+    if ( (jsonstr= issue_curl(url)) != 0 )
+    {
+        //fprintf(stderr,"(%s) -> (%s)\n",url,jsonstr);
+        json = cJSON_Parse(jsonstr);
+        free(jsonstr);
+    }
+    return(json);
+}
+
+uint32_t get_stockprice(const char *symbol)
+{
+    char url[512]; cJSON *json,*obj; uint32_t high,low,price = 0;
+    sprintf(url,"https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=%s&interval=15min&apikey=%s",symbol,NOTARY_PUBKEY.data()+50);
+    if ( (json= get_urljson(url)) != 0 )
+    {
+        if ( (obj= jobj(json,(char *)"Time Series (15min)")) != 0 )
+        {
+            high = jdouble(jitem(obj,0),(char *)"2. high")*10000 + 0.000049;
+            low = jdouble(jitem(obj,0),(char *)"3. low")*10000 + 0.000049;
+            price = (high + low) / 2;
+        }
+        free_json(json);
+    }
+    return(price);
+}
+
+uint32_t get_dailyfx(uint32_t *prices)
+{
+    //{"base":"USD","rates":{"BGN":1.74344803,"NZD":1.471652701,"ILS":3.6329113924,"RUB":65.1997682296,"CAD":1.3430201462,"USD":1.0,"PHP":52.8641469068,"CHF":0.9970582992,"AUD":1.4129078267,"JPY":110.6792654662,"TRY":5.6523444464,"HKD":7.8499732573,"MYR":4.0824567659,"HRK":6.6232840078,"CZK":22.9862720628,"IDR":14267.4986628633,"DKK":6.6551078624,"NOK":8.6806917454,"HUF":285.131039401,"GBP":0.7626582278,"MXN":19.4183455161,"THB":31.8702085933,"ISK":122.5708682475,"ZAR":14.7033339276,"BRL":3.9750401141,"SGD":1.3573720806,"PLN":3.8286682118,"INR":69.33187734,"KRW":1139.1602781244,"RON":4.2423783206,"CNY":6.7387234801,"SEK":9.3385630237,"EUR":0.8914244963},"date":"2019-03-28"}
+    char url[512],*datestr; cJSON *json,*rates; int32_t i; uint32_t datenum=0,price = 0;
+    sprintf(url,"https://api.openrates.io/latest?base=USD");
+    if ( (json= send_curl(url,(char *)"dailyfx")) != 0 )
+    {
+        if ( (rates= jobj(json,(char *)"rates")) != 0 )
+        {
+            for (i=0; i<sizeof(Forex)/sizeof(*Forex); i++)
+            {
+                price = jdouble(rates,(char *)Forex[i]) * 10000 + 0.000049;
+                fprintf(stderr,"(%s %.4f) ",Forex[i],(double)price/10000);
+                prices[i] = price;
+            }
+        }
+        if ( (datestr= jstr(json,(char *)"date")) != 0 )
+            fprintf(stderr,"(%s)",datestr);
+        fprintf(stderr,"\n");
+        free_json(json);
+    }
+    return(datenum);
+}
+
+uint32_t get_binanceprice(const char *symbol)
+{
+    char url[512]; cJSON *json; uint32_t price = 0;
+    sprintf(url,"https://api.binance.com/api/v1/ticker/price?symbol=%sBTC",symbol);
+    if ( (json= send_curl(url,(char *)"bnbprice")) != 0 )
+    {
+        price = jdouble(json,(char *)"price")*SATOSHIDEN + 0.0000000049;
+        free_json(json);
+    }
+    usleep(100000);
+    return(price);
+}
+
+int32_t get_cryptoprices(uint32_t *prices,const char *list[],int32_t n)
+{
+    int32_t i,errs=0; uint32_t price;
+    for (i=0; i<n; i++)
+    {
+        if ( (price= get_binanceprice(list[i])) == 0 )
+            errs++;
+        fprintf(stderr,"(%s %.8f) ",list[i],(double)price/SATOSHIDEN);
+        prices[i] = price;
+    }
+    fprintf(stderr," errs.%d\n",errs);
+    return(-errs);
+}
+
+uint32_t get_currencyprice(const char *symbol)
+{
+    char url[512]; cJSON *json,*obj; uint32_t price = 0;
+    sprintf(url,"https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&from_currency=%s&to_currency=USD&apikey=%s",symbol,NOTARY_PUBKEY.data()+50);
+    if ( (json= send_curl(url,(char *)"curldata")) != 0 )//get_urljson(url)) != 0 )
+    {
+        if ( (obj= jobj(jitem(json,0),0)) != 0 )
+            price = jdouble(obj,(char *)"5. Exchange Rate")*10000 + 0.000049;
+        free_json(json);
+    }
+    return(price);
+}
+
+int32_t get_stocks(const char *list[],int32_t n)
+{
+    int32_t i,errs=0; uint32_t price;
+    for (i=0; i<n; i++)
+    {
+        if ( (price= get_stockprice(list[i])) == 0 )
+            errs++;
+        else fprintf(stderr,"(%s %.4f) ",list[i],(double)price/10000);
+    }
+    fprintf(stderr," errs.%d\n",errs);
+    return(-errs);
+}
+
+// parse the coindesk specific data. yes, if this changes, it will require an update. However, regardless if the format from the data source changes, then the code that extracts it must be changed. One way to mitigate this is to have a large variety of data sources so that there is only a very remote chance that all of them are not available. Certainly the data gathering needs to be made more robust, but it doesnt really affect the proof of concept for the decentralized trustless oracle. The trustlessness is achieved by having all nodes get the oracle data.
+
+int32_t get_btcusd(uint32_t pricebits[4])
+{
+    cJSON *pjson,*bpi,*obj; char str[512]; double dbtcgbp,dbtcusd,dbtceur; uint64_t btcusd = 0,btcgbp = 0,btceur = 0;
+    if ( (pjson= get_urljson((char *)"http://api.coindesk.com/v1/bpi/currentprice.json")) != 0 )
+    {
+        if ( (bpi= jobj(pjson,(char *)"bpi")) != 0 )
+        {
+            pricebits[0] = (uint32_t)time(NULL);
+            if ( (obj= jobj(bpi,(char *)"USD")) != 0 )
+            {
+                btcusd = jdouble(obj,(char *)"rate_float") * SATOSHIDEN;
+                pricebits[1] = ((btcusd / 10000) & 0xffffffff);
+            }
+            if ( (obj= jobj(bpi,(char *)"GBP")) != 0 )
+            {
+                btcgbp = jdouble(obj,(char *)"rate_float") * SATOSHIDEN;
+                pricebits[2] = ((btcgbp / 10000) & 0xffffffff);
+            }
+            if ( (obj= jobj(bpi,(char *)"EUR")) != 0 )
+            {
+                btceur = jdouble(obj,(char *)"rate_float") * SATOSHIDEN;
+                pricebits[3] = ((btceur / 10000) & 0xffffffff);
+            }
+        }
+        free_json(pjson);
+        dbtcusd = (double)pricebits[1]/10000;
+        dbtcgbp = (double)pricebits[2]/10000;
+        dbtceur = (double)pricebits[3]/10000;
+        fprintf(stderr,"BTC/USD %.4f, BTC/GBP %.4f, BTC/EUR %.4f GBPUSD %.6f, EURUSD %.6f EURGBP %.6f\n",dbtcusd,dbtcgbp,dbtceur,dbtcusd/dbtcgbp,dbtcusd/dbtceur,dbtcgbp/dbtceur);
+        return(0);
+    }
+    return(-1);
+}
+
+// komodo_cbopretupdate() obtains the external price data and encodes it into Mineropret, which will then be used by the miner and validation
+// save history, use new data to approve past rejection, where is the auto-reconsiderblock?
+// 51% correlation, smoothing
+
+void komodo_cbopretupdate()
+{
+    static uint32_t lasttime,lastcrypto,lastbtc;
+    static uint32_t pricebits[4],cryptoprices[sizeof(Cryptos)/sizeof(*Cryptos)],forexprices[sizeof(Forex)/sizeof(*Forex)];
+    int32_t size; uint32_t now = (uint32_t)time(NULL);
+    if ( (ASSETCHAINS_CBOPRET & 1) != 0 )
+    {
+        if ( komodo_nextheight() > 333 )
+            ASSETCHAINS_CBOPRET = 7;
+        size = PRICES_SIZEBIT0;
+        if ( (ASSETCHAINS_CBOPRET & 2) != 0 )
+            size += sizeof(forexprices);
+        if ( (ASSETCHAINS_CBOPRET & 4) != 0 )
+            size += sizeof(cryptoprices);
+        if ( Mineropret.size() < size )
+            Mineropret.resize(size);
+        size = PRICES_SIZEBIT0;
+        if ( now > lastbtc+120 && get_btcusd(pricebits) == 0 )
+        {
+            memcpy(Mineropret.data(),pricebits,PRICES_SIZEBIT0);
+            lastbtc = (uint32_t)time(NULL);
+        }
+        if ( (ASSETCHAINS_CBOPRET & 2) != 0 )
+        {
+            if ( now > lasttime+3600*5 || forexprices[0] == 0 )
+            {
+                get_dailyfx(forexprices);
+                memcpy(&Mineropret.data()[size],forexprices,sizeof(forexprices));
+                lasttime = (uint32_t)time(NULL);
+            }
+            size += sizeof(forexprices);
+        }
+        if ( (ASSETCHAINS_CBOPRET & 4) != 0 )
+        {
+            if ( now > lastcrypto+100 )
+            {
+                get_cryptoprices(cryptoprices,Cryptos,(int32_t)(sizeof(Cryptos)/sizeof(*Cryptos)));
+                memcpy(&Mineropret.data()[size],cryptoprices,sizeof(cryptoprices));
+                lastcrypto = (uint32_t)time(NULL);
+            }
+            size += sizeof(cryptoprices);
+        }
+        //int32_t i; for (i=0; i<Mineropret.size(); i++)
+        //    fprintf(stderr,"%02x",Mineropret[i]);
+        //fprintf(stderr," <- set Mineropret[%d]\n",(int32_t)Mineropret.size());
+        /*
+         if ( (ASSETCHAINS_CBOPRET & 4) != 0 )
+        {
+            get_currencies(Metals,(int32_t)(sizeof(Metals)/sizeof(*Metals)));
+        }
+        if ( (ASSETCHAINS_CBOPRET & 32) != 0 )
+        {
+            get_stocks(Markets,(int32_t)(sizeof(Markets)/sizeof(*Markets)));
+        }
+        if ( (ASSETCHAINS_CBOPRET & 64) != 0 )
+        {
+            get_stocks(Techstocks,(int32_t)(sizeof(Techstocks)/sizeof(*Techstocks)));
+        }*/
+    }
+}

@@ -1014,6 +1014,15 @@ bool ContextualCheckCoinbaseTransaction(const CTransaction& tx, const int nHeigh
         }
         return(false);
     }
+    else if ( ASSETCHAINS_MARMARA != 0 && nHeight > 0 && (nHeight & 1) == 0 )
+    {
+        
+    }
+    else if ( ASSETCHAINS_CBOPRET != 0 && nHeight > 0 && tx.vout.size() > 0 )
+    {
+        if ( komodo_opretvalidate(nHeight,tx.vout[tx.vout.size()-1].scriptPubKey) < 0 )
+            return(false);
+    }
     return(true);
 }
 
@@ -4111,7 +4120,14 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
         GetMainSignals().BlockChecked(*pblock, state);
         if (!rv) {
             if (state.IsInvalid())
+            {
                 InvalidBlockFound(pindexNew, state);
+                /*if ( ASSETCHAINS_CBOPRET != 0 )
+                {
+                    pindexNew->nStatus &= ~BLOCK_FAILED_MASK;
+                    fprintf(stderr,"reconsiderblock %d\n",(int32_t)pindexNew->GetHeight());
+                }*/
+            }
             return error("ConnectTip(): ConnectBlock %s failed", pindexNew->GetBlockHash().ToString());
         }
         mapBlockSource.erase(pindexNew->GetBlockHash());
@@ -5202,7 +5218,7 @@ bool AcceptBlockHeader(int32_t *futureblockp,const CBlockHeader& block, CValidat
             miSelf->second = pindex = AddToBlockIndex(block);
         if (ppindex)
             *ppindex = pindex;
-        if ( pindex != 0 && pindex->nStatus & BLOCK_FAILED_MASK )
+        if ( pindex != 0 && (pindex->nStatus & BLOCK_FAILED_MASK) != 0 )
         {
             if ( ASSETCHAINS_CC == 0 )//&& (ASSETCHAINS_PRIVATE == 0 || KOMODO_INSYNC >= Params().GetConsensus().vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight) )
                 return state.Invalid(error("%s: block is marked invalid", __func__), 0, "duplicate");

@@ -3,6 +3,9 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#define GAMES_RNGMULT 11109
+#define GAMES_RNGOFFSET 13849
+#define GAMES_MAXRNGS 10000
 
 #ifndef STANDALONE
 
@@ -12,7 +15,6 @@ extern CWallet* pwalletMain;
 #include "CCinclude.h"
 #include "secp256k1.h"
 
-std::string MYCCLIBNAME = (char *)"gamescc";
 
 #define EVAL_GAMES (EVAL_FAUCET2+1)
 #define GAMES_TXFEE 10000
@@ -20,20 +22,17 @@ std::string MYCCLIBNAME = (char *)"gamescc";
 #define GAMES_MAXKEYSTROKESGAP 60
 #define GAMES_MAXPLAYERS 64
 #define GAMES_REGISTRATIONSIZE (100 * 10000)
-#define GAMES_REGISTRATION 5
+#define GAMES_REGISTRATION 1
 
-#define GAMES_RNGMULT 11109
-#define GAMES_RNGOFFSET 13849
-#define GAMES_MAXRNGS 10000
 
 #define MYCCNAME "games"
 
 std::string Games_pname;
-#define GAMENAME "sudoku"
 
 #define RPC_FUNCS    \
     { (char *)MYCCNAME, (char *)"rng", (char *)"hash,playerid", 1, 2, ' ', EVAL_GAMES }, \
     { (char *)MYCCNAME, (char *)"rngnext", (char *)"seed", 1, 1, ' ', EVAL_GAMES }, \
+    { (char *)MYCCNAME, (char *)"fund", (char *)"amount", 1, 1, ' ', EVAL_GAMES }, \
     { (char *)MYCCNAME, (char *)"players", (char *)"no params", 0, 0, ' ', EVAL_GAMES }, \
     { (char *)MYCCNAME, (char *)"games", (char *)"no params", 0, 0, ' ', EVAL_GAMES }, \
     { (char *)MYCCNAME, (char *)"pending", (char *)"no params", 0, 0, ' ', EVAL_GAMES }, \
@@ -42,14 +41,18 @@ std::string Games_pname;
     { (char *)MYCCNAME, (char *)"playerinfo", (char *)"playertxid", 1, 1, ' ', EVAL_GAMES }, \
     { (char *)MYCCNAME, (char *)"gameinfo", (char *)"gametxid", 1, 1, ' ', EVAL_GAMES }, \
     { (char *)MYCCNAME, (char *)"keystrokes", (char *)"txid,hexstr", 2, 2, 'K', EVAL_GAMES }, \
-    { (char *)MYCCNAME, (char *)"finish", (char *)"gametxid", 1, 1, 'Q', EVAL_GAMES }, \
+    { (char *)MYCCNAME, (char *)"bailout", (char *)"gametxid", 1, 1, 'Q', EVAL_GAMES }, \
+    { (char *)MYCCNAME, (char *)"highlander", (char *)"gametxid", 1, 1, 'H', EVAL_GAMES }, \
     { (char *)MYCCNAME, (char *)"events", (char *)"eventshex [gametxid [eventid]]", 1, 3, ' ', EVAL_GAMES }, \
     { (char *)MYCCNAME, (char *)"extract", (char *)"gametxid [pubkey]", 1, 2, ' ', EVAL_GAMES }, \
+    { (char *)MYCCNAME, (char *)"bet", (char *)"amount hexstr", 2, 2, ' ', EVAL_GAMES }, \
+    { (char *)MYCCNAME, (char *)"settle", (char *)"height", 1, 1, ' ', EVAL_GAMES }, \
     { (char *)MYCCNAME, (char *)"register", (char *)"gametxid [playertxid]", 1, 2, 'R', EVAL_GAMES },
 
 bool games_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx);
 UniValue games_rng(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue games_rngnext(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+UniValue games_fund(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue games_players(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue games_games(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue games_pending(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
@@ -58,10 +61,13 @@ UniValue games_newgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue games_playerinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue games_gameinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue games_keystrokes(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
-UniValue games_finish(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+UniValue games_bailout(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+UniValue games_highlander(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue games_events(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue games_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 UniValue games_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+UniValue games_bet(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
+UniValue games_settle(uint64_t txfee,struct CCcontract_info *cp,cJSON *params);
 
 #define CUSTOM_DISPATCH \
 if ( cp->evalcode == EVAL_GAMES ) \
@@ -92,45 +98,23 @@ if ( cp->evalcode == EVAL_GAMES ) \
         return(games_keystrokes(txfee,cp,params)); \
     else if ( strcmp(method,"extract") == 0 ) \
         return(games_extract(txfee,cp,params)); \
-    else if ( strcmp(method,"finish") == 0 ) \
-        return(games_finish(txfee,cp,params)); \
+    else if ( strcmp(method,"bailout") == 0 ) \
+        return(games_bailout(txfee,cp,params)); \
+    else if ( strcmp(method,"highlander") == 0 ) \
+        return(games_highlander(txfee,cp,params)); \
+    else if ( strcmp(method,"fund") == 0 ) \
+        return(games_fund(txfee,cp,params)); \
+    else if ( strcmp(method,"bet") == 0 ) \
+        return(games_bet(txfee,cp,params)); \
+    else if ( strcmp(method,"settle") == 0 ) \
+        return(games_settle(txfee,cp,params)); \
     else \
     { \
         result.push_back(Pair("result","error")); \
         result.push_back(Pair("error","invalid gamescc method")); \
-        result.push_back(Pair("method",method)); \
         return(result); \
     } \
 }
 #endif
-
-#define MAXPACK 23
-struct games_packitem
-{
-    int32_t type,launch,count,which,hplus,dplus,arm,flags,group;
-    char damage[8],hurldmg[8];
-};
-
-struct games_player
-{
-    int32_t gold,hitpoints,strength,level,experience,packsize,dungeonlevel,amulet;
-    struct games_packitem gamespack[MAXPACK];
-};
-
-struct games_state
-{
-    uint64_t seed;
-    char *keystrokes,*keystrokeshex;
-    uint32_t needflush,replaydone;
-    int32_t numkeys,ind,num,guiflag,counter,sleeptime,playersize,restoring,lastnum;
-    FILE *logfp;
-    struct games_player P;
-    char buffered[10000];
-    uint8_t playerdata[10000];
-};
-
-int32_t games_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t num,struct games_player *player,int32_t sleepmillis);
-void games_packitemstr(char *packitemstr,struct games_packitem *item);
-
 
 #endif

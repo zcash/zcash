@@ -155,6 +155,7 @@ CScript MarmaraCoinbaseOpret(uint8_t funcid,int32_t height,CPubKey pk);
 uint64_t komodo_notarypay(CMutableTransaction &txNew, std::vector<int8_t> &NotarisationNotaries, uint32_t timestamp, int32_t height, uint8_t *script, int32_t len);
 int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestamp);
 int32_t komodo_getnotarizedheight(uint32_t timestamp,int32_t height, uint8_t *script, int32_t len);
+CScript komodo_mineropret(int32_t nHeight);
 
 CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32_t gpucount, bool isStake)
 {
@@ -723,7 +724,14 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                 fprintf(stderr, "Created notary payment coinbase totalsat.%lu\n",totalsats);    
             } else fprintf(stderr, "vout 2 of notarisation is not OP_RETURN scriptlen.%i\n", scriptlen);
         }
-
+        if ( ASSETCHAINS_CBOPRET != 0 )
+        {
+            int32_t numv = (int32_t)txNew.vout.size();
+            txNew.vout.resize(numv+1);
+            txNew.vout[numv].nValue = 0;
+            txNew.vout[numv].scriptPubKey = komodo_mineropret(nHeight);
+            //printf("autocreate commision/cbopret.%lld vout[%d]\n",(long long)ASSETCHAINS_CBOPRET,(int32_t)txNew.vout.size());
+        }
         pblock->vtx[0] = txNew;
         pblocktemplate->vTxFees[0] = -nFees;
 
@@ -941,6 +949,7 @@ void komodo_sendmessage(int32_t minpeers,int32_t maxpeers,const char *message,st
             continue;
         if ( numsent < minpeers || (rand() % 10) == 0 )
         {
+            //fprintf(stderr,"pushmessage\n");
             pnode->PushMessage(message,payload);
             if ( numsent++ > maxpeers )
                 break;
