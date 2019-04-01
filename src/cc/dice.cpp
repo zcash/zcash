@@ -269,7 +269,7 @@ int32_t dicefinish_utxosget(int32_t &total,struct dicefinish_utxo *utxos,int32_t
         LOCK(mempool.cs);
         for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
         {
-            if ( myIsutxo_spentinmempool(it->first.txhash,(int32_t)it->first.index) == 0 )
+            if ( myIsutxo_spentinmempool(ignoretxid,ignorevin,it->first.txhash,(int32_t)it->first.index) == 0 )
             {
                 if ( it->second.satoshis < threshold || it->second.satoshis > 10*threshold )
                     continue;
@@ -302,7 +302,7 @@ int32_t dice_betspent(char *debugstr,uint256 bettxid)
     }
     {
         //LOCK(mempool.cs);
-        if ( myIsutxo_spentinmempool(bettxid,0) != 0 || myIsutxo_spentinmempool(bettxid,1) != 0 )
+        if ( myIsutxo_spentinmempool(ignoretxid,ignorevin,bettxid,0) != 0 || myIsutxo_spentinmempool(ignoretxid,ignorevin,bettxid,1) != 0 )
         {
             fprintf(stderr,"%s bettxid.%s already spent in mempool\n",debugstr,bettxid.GetHex().c_str());
             return(-1);
@@ -1067,7 +1067,7 @@ uint64_t AddDiceInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubK
                 break;
         if ( j != mtx.vin.size() )
             continue;
-        if ( myGetTransaction(txid,tx,hashBlock) != 0 && tx.vout.size() > 0 && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 && myIsutxo_spentinmempool(txid,vout) == 0 )
+        if ( myGetTransaction(txid,tx,hashBlock) != 0 && tx.vout.size() > 0 && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0 )
         {
             if ( (funcid= DecodeDiceOpRet(txid,tx.vout[tx.vout.size()-1].scriptPubKey,sbits,fundingtxid,hash,proof)) != 0 )
             {
@@ -1176,7 +1176,7 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
                                         continue;
                                     }
                                 }
-                                if ( myIsutxo_spentinmempool(txid,vout) == 0 )
+                                if ( myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0 )
                                 {
                                     entropytxid = txid;
                                     entropyval = tx.vout[0].nValue;
@@ -1213,6 +1213,9 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
     } else {
         return(0);
     }
+    //fprintf(stderr,"numentropy tx %d: %.8f\n",n,(double)totalinputs/COIN);
+    entropytxs = n;
+    return(totalinputs);
 }
 
 bool DicePlanExists(CScript &fundingPubKey,uint256 &fundingtxid,struct CCcontract_info *cp,uint64_t refsbits,CPubKey dicepk,int64_t &minbet,int64_t &maxbet,int64_t &maxodds,int64_t &timeoutblocks)
@@ -1447,7 +1450,7 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
             CCerror = "Your dealer is broke, find a new casino.";
             return("");
         }
-        if ( myIsutxo_spentinmempool(entropytxid,0) != 0 )
+        if ( myIsutxo_spentinmempool(ignoretxid,ignorevin,entropytxid,0) != 0 )
         {
             CCerror = "entropy txid is spent";
             return("");

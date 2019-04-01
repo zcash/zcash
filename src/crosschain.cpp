@@ -66,7 +66,7 @@ uint256 CalculateProofRoot(const char* symbol, uint32_t targetCCid, int kmdHeigh
 
     int seenOwnNotarisations = 0;
 
-    bool txscl = IsTXSCL(symbol);
+    int authority = GetSymbolAuthority(symbol);
 
     for (int i=0; i<NOTARISATION_SCAN_LIMIT_BLOCKS; i++) {
         if (i > kmdHeight) break;
@@ -90,12 +90,19 @@ uint256 CalculateProofRoot(const char* symbol, uint32_t targetCCid, int kmdHeigh
 
         if (seenOwnNotarisations == 1) {
             BOOST_FOREACH(Notarisation& nota, notarisations) {
-                if (IsTXSCL(nota.second.symbol) == txscl)
-                    if (nota.second.ccId == targetCCid)
-                        moms.push_back(nota.second.MoM);
+                if (GetSymbolAuthority(nota.second.symbol) == authority)
+                    if (nota.second.ccId == targetCCid) {
+                      moms.push_back(nota.second.MoM);
+                      //fprintf(stderr, "added mom: %s\n",nota.second.MoM.GetHex().data());
+                    }
             }
         }
     }
+
+    // Not enough own notarisations found to return determinate MoMoM
+    destNotarisationTxid = uint256();
+    moms.clear();
+    return uint256();
 
 end:
     return GetMerkleRoot(moms);

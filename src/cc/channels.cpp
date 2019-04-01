@@ -92,26 +92,29 @@ int64_t IsChannelsMarkervout(struct CCcontract_info *cp,const CTransaction& tx,C
 CScript EncodeChannelsOpRet(uint8_t funcid,uint256 tokenid,uint256 opentxid,CPubKey srcpub,CPubKey destpub,int32_t numpayments,int64_t payment,uint256 hashchain)
 {
     CScript opret; uint8_t evalcode = EVAL_CHANNELS;
+    vscript_t vopret;
 
-    opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << opentxid << srcpub << destpub << numpayments << payment << hashchain);
+    vopret = E_MARSHAL(ss << evalcode << funcid << opentxid << srcpub << destpub << numpayments << payment << hashchain);
     if (tokenid!=zeroid)
     {
         std::vector<CPubKey> pks;
         pks.push_back(srcpub);
         pks.push_back(destpub);
-        return(EncodeTokenOpRet(tokenid,pks,opret));
+        return(EncodeTokenOpRet(tokenid,pks, std::make_pair(OPRETID_CHANNELSDATA,  vopret)));
     }
+    opret << OP_RETURN << vopret;
     return(opret);
 }
 
 uint8_t DecodeChannelsOpRet(const CScript &scriptPubKey, uint256 &tokenid, uint256 &opentxid, CPubKey &srcpub,CPubKey &destpub,int32_t &numpayments,int64_t &payment,uint256 &hashchain)
 {
-    std::vector<uint8_t> vopret; uint8_t *script,e,f,tokenevalcode;
-    std::vector<CPubKey> pubkeys; std::vector<uint8_t> vOpretExtra;
+    std::vector<std::pair<uint8_t, vscript_t>>  oprets;
+    std::vector<uint8_t> vopret,vOpretExtra; uint8_t *script,e,f,tokenevalcode;
+    std::vector<CPubKey> pubkeys;
 
-    if (DecodeTokenOpRet(scriptPubKey,tokenevalcode,tokenid,pubkeys,vOpretExtra)!=0 && tokenevalcode==EVAL_TOKENS && vOpretExtra.size()>0)
+    if (DecodeTokenOpRet(scriptPubKey,tokenevalcode,tokenid,pubkeys,oprets)!=0 && GetOpretBlob(oprets, OPRETID_CHANNELSDATA, vOpretExtra) && tokenevalcode==EVAL_TOKENS && vOpretExtra.size()>0)
     {
-        if (!E_UNMARSHAL(vOpretExtra, { ss >> vopret; })) return (0);
+        vopret=vOpretExtra;
     }
     else GetOpReturnData(scriptPubKey, vopret);
     if ( vopret.size() > 2 )
@@ -430,7 +433,7 @@ int64_t AddChannelsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx, C
             }
         }
     }
-    if (txid!=zeroid && myIsutxo_spentinmempool(txid,0) != 0)
+    if (txid!=zeroid && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,0) != 0)
     {
         txid=zeroid;
         int32_t mindepth=CHANNELS_MAXPAYMENTS;
@@ -455,7 +458,7 @@ int64_t AddChannelsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx, C
         mtx.vin.push_back(CTxIn(txid,marker,CScript()));
         Myprivkey(myprivkey);        
         if (tokenid!=zeroid) CCaddrTokens1of2set(cp,srcpub,destpub,coinaddr);
-        else CCaddr1of2set(cp,srcpub,destpub,coinaddr);
+        else CCaddr1of2set(cp,srcpub,destpub,myprivkey,coinaddr);
         return totalinputs;
     }
     else return 0;

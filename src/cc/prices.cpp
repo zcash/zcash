@@ -13,6 +13,7 @@
  *                                                                            *
  ******************************************************************************/
 
+#include "CCassets.h"
 #include "CCPrices.h"
 
 /*
@@ -89,6 +90,9 @@ uint8_t DecodePricesFundingOpRet(CScript scriptPubKey,CPubKey &planpk,uint256 &o
 bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
 {
     int32_t numvins,numvouts,preventCCvins,preventCCvouts,i,numblocks; bool retval; uint256 txid; uint8_t hash[32]; char str[65],destaddr[64];
+
+    return true; // TODO remove, for test dual-evals
+
     return eval->Invalid("no validation yet");
     std::vector<std::pair<CAddressIndexKey, CAmount> > txids;
     numvins = tx.vin.size();
@@ -141,7 +145,7 @@ int64_t AddTokensInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,char
         if ( GetTransaction(txid,vintx,hashBlock,false) != 0 && vout < vintx.vout.size() )
         {
             // need to verify assetid
-            if ( (nValue= vintx.vout[vout].nValue) >= 10000 && myIsutxo_spentinmempool(txid,vout) == 0 )
+            if ( (nValue= vintx.vout[vout].nValue) >= 10000 && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0 )
             {
                 if ( total != 0 && maxinputs != 0 )
                     mtx.vin.push_back(CTxIn(txid,vout,CScript()));
@@ -330,7 +334,7 @@ std::string PricesAddFunding(uint64_t txfee,uint256 refbettoken,uint256 fundingt
 				std::vector<CPubKey> voutTokenPubkeysEmpty; //TODO: add token vout pubkeys
                 return(FinalizeCCTx(0,cp,mtx,mypk,txfee,
 					EncodeTokenOpRet(bettoken, voutTokenPubkeysEmpty,
-						EncodeAssetOpRet('t',/*bettoken,*/zeroid, 0, Mypubkey()))));
+						std::make_pair(OPRETID_ASSETSDATA, EncodeAssetOpRet('t',/*bettoken,*/zeroid, 0, Mypubkey())))));
             }
             else
             {

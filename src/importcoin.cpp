@@ -26,14 +26,19 @@
 
 int32_t komodo_nextheight();
 
-CTransaction MakeImportCoinTransaction(const TxProof proof, const CTransaction burnTx, const std::vector<CTxOut> payouts)
+CTransaction MakeImportCoinTransaction(const TxProof proof, const CTransaction burnTx, const std::vector<CTxOut> payouts, uint32_t nExpiryHeightOverride)
 {
     std::vector<uint8_t> payload = E_MARSHAL(ss << EVAL_IMPORTCOIN);
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    if (mtx.fOverwintered) 
+        mtx.nExpiryHeight = 0;
     mtx.vin.push_back(CTxIn(COutPoint(burnTx.GetHash(), 10e8), CScript() << payload));
     mtx.vout = payouts;
     auto importData = E_MARSHAL(ss << proof; ss << burnTx);
     mtx.vout.insert(mtx.vout.begin(), CTxOut(0, CScript() << OP_RETURN << importData));
+
+	if (nExpiryHeightOverride != 0)
+		mtx.nExpiryHeight = nExpiryHeightOverride;  //this is for construction of the tx used for validating importtx
     return CTransaction(mtx);
 }
 
@@ -67,20 +72,10 @@ bool UnmarshalBurnTx(const CTransaction &burnTx, std::string &targetSymbol, uint
     std::vector<uint8_t> burnOpret; uint32_t ccid = 0;
     if (burnTx.vout.size() == 0) return false;
     GetOpReturnData(burnTx.vout.back().scriptPubKey, burnOpret);
-    E_UNMARSHAL(burnOpret, ss >> VARINT(ccid));
-    /*if ( ccid != 0xffffffff )
-    {
-        return E_UNMARSHAL(burnOpret, ss >> VARINT(*targetCCid);
-                                    ss >> targetSymbol;
-                                    ss >> payoutsHash);
-    }
-    else*/
-    {
-        return E_UNMARSHAL(burnOpret, ss >> VARINT(*targetCCid);
-                           ss >> targetSymbol;
-                           ss >> payoutsHash;
-                           ss >> rawproof);
-    }
+    return E_UNMARSHAL(burnOpret, ss >> VARINT(*targetCCid);
+                    ss >> targetSymbol;
+                    ss >> payoutsHash;
+                    ss >> rawproof);
 }
 
 
@@ -108,7 +103,7 @@ bool VerifyCoinImport(const CScript& scriptSig, TransactionSignatureChecker& che
     auto pc = scriptSig.begin();
     opcodetype opcode;
     std::vector<uint8_t> evalScript;
-    
+
     auto f = [&] () {
         if (!scriptSig.GetOp(pc, opcode, evalScript))
             return false;
