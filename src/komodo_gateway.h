@@ -1577,7 +1577,7 @@ int32_t komodo_heightpricebits(uint32_t prevbits[4],int32_t nHeight)
 /*
  komodo_pricenew() is passed in a reference price, the change tolerance and the proposed price. it needs to return a clipped price if it is too big and also set a flag if it is at or above the limit
  */
-uint32_t komodo_pricenew(int32_t *maxflagp,uint32_t price,uint32_t refprice,int64_t tolerance)
+uint32_t komodo_pricenew(char *maxflagp,uint32_t price,uint32_t refprice,int64_t tolerance)
 {
     uint64_t highprice,lowprice;
     if ( refprice < 2 )
@@ -1612,13 +1612,12 @@ uint32_t komodo_pricenew(int32_t *maxflagp,uint32_t price,uint32_t refprice,int6
 }
 
 // komodo_pricecmp() returns -1 if any of the prices are beyond the tolerance
-int32_t komodo_pricecmp(int32_t nHeight,int32_t n,int32_t *maxflagp,uint32_t *pricebitsA,uint32_t *pricebitsB,int64_t tolerance)
+int32_t komodo_pricecmp(int32_t nHeight,int32_t n,char *maxflags,uint32_t *pricebitsA,uint32_t *pricebitsB,int64_t tolerance)
 {
     int32_t i; uint32_t newprice;
-    *maxflagp = 0;
     for (i=1; i<n; i++)
     {
-        if ( (newprice= komodo_pricenew(maxflagp,pricebitsA[i],pricebitsB[i],tolerance)) != 0 )
+        if ( (newprice= komodo_pricenew(&maxflags[i],pricebitsA[i],pricebitsB[i],tolerance)) != 0 )
         {
             fprintf(stderr,"ht.%d i.%d/%d %u vs %u -> newprice.%u out of tolerance maxflag.%d\n",nHeight,i,n,pricebitsB[i],pricebitsA[i],newprice,*maxflagp);
             return(-1);
@@ -1646,7 +1645,7 @@ int32_t komodo_priceclamp(int32_t n,uint32_t *pricebits,uint32_t *refprices,int6
 // komodo_mineropret() returns a valid pricedata to add to the coinbase opreturn for nHeight
 CScript komodo_mineropret(int32_t nHeight)
 {
-    CScript opret; uint32_t pricebits[8192],prevbits[8192]; int32_t maxflag,i,n,numzero=0;
+    CScript opret; char maxflags[8192]; uint32_t pricebits[8192],prevbits[8192]; int32_t maxflag,i,n,numzero=0;
     if ( Mineropret.size() >= PRICES_SIZEBIT0 )
     {
         n = (int32_t)(Mineropret.size() / sizeof(uint32_t));
@@ -1663,7 +1662,8 @@ CScript komodo_mineropret(int32_t nHeight)
         if ( komodo_heightpricebits(prevbits,nHeight-1) == 0 )
         {
             memcpy(pricebits,Mineropret.data(),Mineropret.size());
-            if ( komodo_pricecmp(0,n,&maxflag,pricebits,prevbits,PRICES_MAXCHANGE) < 0 )
+            memset(maxflags,0,sizeof(maxflags));
+            if ( komodo_pricecmp(0,n,maxflags,pricebits,prevbits,PRICES_MAXCHANGE) < 0 )
             {
                 // if the new prices are outside tolerance, update Mineropret with clamped prices
                 komodo_priceclamp(n,pricebits,prevbits,PRICES_MAXCHANGE);
@@ -1690,11 +1690,12 @@ CScript komodo_mineropret(int32_t nHeight)
 // reconsiderblock 002aca768b09dfcf36bd934ab34b23983148b116e12cb0b6e1a3f895d1db63aa
 // and
 // reconsiderblock 0034cf582018eacc0b4ae001491ce460113514cb1a3f217567ef4a2207de361a
+// reconsiderbloc 000abf51c023b64af327c50c1b060797b8cb281c696d30ab92fd002a8b8c9aea
 // are needed to sync past initial blocks with different data set
 
 int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
 {
-    std::vector<uint8_t> vopret; double btcusd,btcgbp,btceur; uint32_t localbits[8192],pricebits[8192],prevbits[8192],newprice; int32_t i,lag,lag2,n,maxflag=0; uint32_t now = (uint32_t)time(NULL);
+    std::vector<uint8_t> vopret; char maxflags[8192]; double btcusd,btcgbp,btceur; uint32_t localbits[8192],pricebits[8192],prevbits[8192],newprice; int32_t i,lag,lag2,n; uint32_t now = (uint32_t)time(NULL);
     if ( ASSETCHAINS_CBOPRET != 0 && nHeight > 0 )
     {
         GetOpReturnData(scriptPubKey,vopret);
@@ -1702,6 +1703,7 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
         {
             n = (int32_t)(vopret.size() / sizeof(uint32_t));
             memcpy(pricebits,vopret.data(),Mineropret.size());
+            memset(maxflags,0,sizeof(maxflags));
             if ( nHeight > 1 )
             {
                 lag = (int32_t)(now - pricebits[0]);
@@ -1724,7 +1726,7 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
                             if ( pricebits[i] == 0 )
                                 pricebits[i] = prevbits[i];
                     }
-                    if ( komodo_pricecmp(nHeight,n,&maxflag,pricebits,prevbits,PRICES_MAXCHANGE) < 0 )
+                    if ( komodo_pricecmp(nHeight,n,maxflags,pricebits,prevbits,PRICES_MAXCHANGE) < 0 )
                     {
                         for (i=1; i<n; i++)
                             fprintf(stderr,"%.4f ",(double)prevbits[i]/10000);
@@ -1743,7 +1745,7 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
                     for (i=0; i<n; i++)
                         if ( localbits[i] == 0 )
                             localbits[i] = prevbits[i];
-                    if ( maxflag == 0 )
+                    /*if ( maxflag == 0 )
                     {
                         if ( komodo_pricecmp(nHeight,n,&maxflag,pricebits,localbits,PRICES_MAXCHANGE) < 0 )
                         {
@@ -1751,12 +1753,13 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
                             return(-1);
                         }
                     }
-                    else
+                    else*/
                     {
                         for (i=1; i<n; i++)
                         {
-                            maxflag = 0;
-                            if ( (newprice= komodo_pricenew(&maxflag,pricebits[i],prevbits[i],PRICES_MAXCHANGE)) != 0 ) // proposed price is clamped
+                            //maxflag = 0;
+                            //if ( (newprice= komodo_pricenew(&maxflag,pricebits[i],prevbits[i],PRICES_MAXCHANGE)) != 0 ) // proposed price is clamped
+                            if ( (maxflag= maxflags[i]) != 0 )
                             {
                                 // make sure local price is moving in right direction
                                 fprintf(stderr,"maxflag.%d i.%d localbits.%u vs pricebits.%u\n",maxflag,i,localbits[i],pricebits[i]);
