@@ -1730,7 +1730,7 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
                         fprintf(stderr," newprices.%d\n",nHeight);
 
                         fprintf(stderr,"vs prev maxflag.%d cmp error\n",maxflag);
-                        if ( nHeight != 339 && nHeight != 340 && nHeight != 341 )
+                        if ( nHeight > 500 )
                             return(-1);
                     } // else this is the good case we hope to happen
                 } //else return(-1);
