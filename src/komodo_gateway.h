@@ -1618,7 +1618,7 @@ int32_t komodo_pricecmp(int32_t nHeight,int32_t n,int32_t *maxflagp,uint32_t *pr
     *maxflagp = 0;
     for (i=1; i<n; i++)
     {
-        if ( (nHeight >= 500 || pricebitsB[i] != 0) && (newprice= komodo_pricenew(maxflagp,pricebitsA[i],pricebitsB[i],tolerance)) != 0 )
+        if ( (newprice= komodo_pricenew(maxflagp,pricebitsA[i],pricebitsB[i],tolerance)) != 0 )
         {
             fprintf(stderr,"ht.%d i.%d/%d %u vs %u -> newprice.%u out of tolerance maxflag.%d\n",nHeight,i,n,pricebitsB[i],pricebitsA[i],newprice,*maxflagp);
             return(-1);
@@ -1693,6 +1693,8 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
     std::vector<uint8_t> vopret; double btcusd,btcgbp,btceur; uint32_t localbits[8192],pricebits[8192],prevbits[8192],newprice; int32_t i,lag,lag2,n,maxflag=0; uint32_t now = (uint32_t)time(NULL);
     if ( ASSETCHAINS_CBOPRET != 0 )
     {
+        if ( nHeight < 500 )
+            return(0);
         GetOpReturnData(scriptPubKey,vopret);
         if ( vopret.size() >= PRICES_SIZEBIT0 )
         {
@@ -1714,13 +1716,13 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
                 fprintf(stderr,"ht.%d: lag.%d %.4f USD, %.4f GBP, %.4f EUR, GBPUSD %.6f, EURUSD %.6f, EURGBP %.6f [%d]\n",nHeight,lag,btcusd,btcgbp,btceur,btcusd/btcgbp,btcusd/btceur,btcgbp/btceur,lag2);
                 if ( komodo_heightpricebits(prevbits,nHeight-1) == 0 )
                 {
-                    if ( nHeight < 500 )
+                    /*if ( nHeight < 500 )
                     {
                         for (i=0; i<n; i++)
                             if ( pricebits[i] == 0 )
                                 pricebits[i] = prevbits[i];
-                    }
-                    if ( nHeight < 500 && komodo_pricecmp(nHeight,n,&maxflag,pricebits,prevbits,PRICES_MAXCHANGE) < 0 )
+                    }*/
+                    if ( komodo_pricecmp(nHeight,n,&maxflag,pricebits,prevbits,PRICES_MAXCHANGE) < 0 )
                     {
                         for (i=1; i<n; i++)
                             fprintf(stderr,"%.4f ",(double)prevbits[i]/10000);
