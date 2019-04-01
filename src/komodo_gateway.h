@@ -1693,7 +1693,7 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
     std::vector<uint8_t> vopret; double btcusd,btcgbp,btceur; uint32_t localbits[8192],pricebits[8192],prevbits[8192],newprice; int32_t i,lag,lag2,n,maxflag=0; uint32_t now = (uint32_t)time(NULL);
     if ( ASSETCHAINS_CBOPRET != 0 )
     {
-        if ( nHeight < 500 )
+        if ( nHeight < 600 )
             return(0);
         GetOpReturnData(scriptPubKey,vopret);
         if ( vopret.size() >= PRICES_SIZEBIT0 )
