@@ -1698,7 +1698,7 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
         {
             n = (int32_t)(vopret.size() / sizeof(uint32_t));
             memcpy(pricebits,vopret.data(),Mineropret.size());
-            if ( nHeight > 1 && vopret.size() == Mineropret.size() )
+            if ( nHeight > 1 )
             {
                 lag = (int32_t)(now - pricebits[0]);
                 lag2 = (int32_t)(komodo_heightstamp(nHeight-1) - pricebits[0]);
@@ -1712,14 +1712,14 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
                 btcgbp = (double)pricebits[2]/10000;
                 btceur = (double)pricebits[3]/10000;
                 fprintf(stderr,"ht.%d: lag.%d %.4f USD, %.4f GBP, %.4f EUR, GBPUSD %.6f, EURUSD %.6f, EURGBP %.6f [%d]\n",nHeight,lag,btcusd,btcgbp,btceur,btcusd/btcgbp,btcusd/btceur,btcgbp/btceur,lag2);
-                //if ( komodo_heightpricebits(prevbits,nHeight-1) == 0 )
+                if ( komodo_heightpricebits(prevbits,nHeight-1) == 0 )
                 {
-                    /*if ( nHeight < 500 )
+                    if ( nHeight < 500 )
                     {
                         for (i=0; i<n; i++)
                             if ( pricebits[i] == 0 )
                                 pricebits[i] = prevbits[i];
-                    }*/
+                    }
                     if ( komodo_pricecmp(nHeight,n,&maxflag,pricebits,prevbits,PRICES_MAXCHANGE) < 0 )
                     {
                         for (i=1; i<n; i++)
@@ -1765,8 +1765,6 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
                     }
                 }
             }
-            else if ( nHeight > 500 )
-                return(-1);
             return(0);
         } else fprintf(stderr,"wrong size %d vs %d, scriptPubKey size %d [%02x]\n",(int32_t)vopret.size(),(int32_t)Mineropret.size(),(int32_t)scriptPubKey.size(),scriptPubKey[0]);
         return(-1);
