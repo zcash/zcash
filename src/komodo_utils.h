@@ -2067,7 +2067,7 @@ void komodo_args(char *argv0)
             if ( ASSETCHAINS_CBOPRET != 0 )
             {
                 extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_CBOPRET),(void *)&ASSETCHAINS_CBOPRET);
-                //komodo_cbopretupdate(); // will set Mineropret
+                komodo_cbopretupdate(); // will set Mineropret
                 fprintf(stderr,"This blockchain uses data produced from CoinDesk Bitcoin Price Index\n");
             }
         }

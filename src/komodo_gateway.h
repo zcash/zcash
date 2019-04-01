@@ -1665,7 +1665,7 @@ CScript komodo_mineropret(int32_t nHeight)
             memcpy(pricebits,Mineropret.data(),Mineropret.size());
             if ( komodo_pricecmp(0,n,&maxflag,pricebits,prevbits,PRICES_MAXCHANGE) < 0 )
             {
-                // if the new prices are not within tolerance, update Mineropret with clipped prices
+                // if the new prices are outside tolerance, update Mineropret with clamped prices
                 komodo_priceclamp(n,pricebits,prevbits,PRICES_MAXCHANGE);
                 fprintf(stderr,"update Mineropret to clamped prices\n");
                 memcpy(Mineropret.data(),pricebits,Mineropret.size());
@@ -1722,17 +1722,10 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
                         for (i=1; i<n; i++)
                             fprintf(stderr,"%.4f ",(double)pricebits[i]/10000);
                         fprintf(stderr," newprices.%d\n",nHeight);
-                        sleep(3);
-                        memcpy(pricebits,vopret.data(),Mineropret.size());
-                        if ( komodo_heightpricebits(prevbits,nHeight-1) == 0 )
-                        {
-                            if ( komodo_pricecmp(nHeight,n,&maxflag,pricebits,prevbits,PRICES_MAXCHANGE) < 0 )
-                            {
-                                fprintf(stderr,"vs prev maxflag.%d cmp error\n",maxflag);
+
+                        fprintf(stderr,"vs prev maxflag.%d cmp error\n",maxflag);
                                 return(-1);
-                            }
-                        }
-                    }
+                    } // else this is the good case we hope to happen
                 } else return(-1);
                 if ( lag < ASSETCHAINS_BLOCKTIME && Mineropret.size() >= PRICES_SIZEBIT0 )
                 {
@@ -2030,6 +2023,8 @@ int32_t get_btcusd(uint32_t pricebits[4])
 }
 
 // komodo_cbopretupdate() obtains the external price data and encodes it into Mineropret, which will then be used by the miner and validation
+// save history, use new data to approve past rejection, where is the auto-reconsiderblock?
+// 51% correlation, smoothing
 
 void komodo_cbopretupdate()
 {
