@@ -216,7 +216,7 @@ public:
     bool HaveSproutSpendingKey(const libzcash::SproutPaymentAddress &address) const
     {
         {
-            LOCK(cs_SpendingKeyStore);
+            LOCK(cs_KeyStore);
             if (!IsCrypted())
                 return CBasicKeyStore::HaveSproutSpendingKey(address);
             return mapCryptedSproutSpendingKeys.count(address) > 0;
@@ -250,7 +250,7 @@ public:
     bool HaveSaplingSpendingKey(const libzcash::SaplingFullViewingKey &fvk) const
     {
         {
-            LOCK(cs_SpendingKeyStore);
+            LOCK(cs_KeyStore);
             if (!IsCrypted())
                 return CBasicKeyStore::HaveSaplingSpendingKey(fvk);
             for (auto entry : mapCryptedSaplingSpendingKeys) {
