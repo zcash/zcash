@@ -2312,7 +2312,7 @@ int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int
                         if ( (price= nonzprices[i]) != 0 )
                         {
                             den += (daywindow - i);
-                            sum += (daywindow - i) * price;
+                            sum += ((daywindow - i) * (price + firstprice*9)) / 10;
                             n++;
                         }
                     }
@@ -2361,10 +2361,10 @@ int64_t komodo_pricesmoothed(int64_t *correlated,int32_t daywindow,int64_t *nonz
         sum = den = 0;
         for (i=0; i<daywindow; i++)
         {
-            sum += (daywindow - i) * correlated[i];
+            sum += ((daywindow - i) * (correlated[i] + firstprice*9))/10;
             den += (daywindow - i);
         }
-        smoothed = ((sum / den) + firstprice) >> 1;
+        smoothed = (sum / den);
     }
     return(smoothed);
 }
