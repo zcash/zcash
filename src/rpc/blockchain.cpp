@@ -1187,6 +1187,9 @@ UniValue prices(const UniValue& params, bool fHelp)
         throw runtime_error("prices maxsamples\n");
     LOCK(cs_main);
     UniValue ret(UniValue::VOBJ); int64_t smoothed,*correlated; char name[64],*str; uint32_t rawprices[2048],*prices; uint32_t i,width,j,numpricefeeds=-1,n,nextheight,offset,ht,num=0,daywindow = (3600*24/ASSETCHAINS_BLOCKTIME) + 1;
+    if ( ASSETCHAINS_CBOPRET == 0 )
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "only -ac_cbopret chains have prices");
+
     int32_t maxsamples = atoi(params[0].get_str().c_str());
     if ( maxsamples < 1 )
         maxsamples = 1;
@@ -1256,7 +1259,7 @@ UniValue prices(const UniValue& params, bool fHelp)
     ret.push_back(Pair("height",(int64_t)nextheight-1));
     ret.push_back(Pair("maxsamples",(int64_t)maxsamples));
     ret.push_back(Pair("width",(int64_t)width));
-    ret.push_back(Pair("daywidth",(int64_t)daywidth));
+    ret.push_back(Pair("daywindow",(int64_t)daywindow));
     ret.push_back(Pair("numpricefeeds",(int64_t)numpricefeeds));
     free(prices);
     free(correlated);
