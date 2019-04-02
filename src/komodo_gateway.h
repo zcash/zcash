@@ -1697,6 +1697,7 @@ CScript komodo_mineropret(int32_t nHeight)
 
 int32_t komodo_opretvalidate(const CBlock *block,CBlockIndex * const previndex,int32_t nHeight,CScript scriptPubKey)
 {
+    int32_t testchain_exemption = 500;
     std::vector<uint8_t> vopret; char maxflags[2048]; double btcusd,btcgbp,btceur; uint32_t localbits[2048],pricebits[2048],prevbits[2048],newprice; int32_t i,prevtime,maxflag,lag,lag2,lag3,n; uint32_t now = (uint32_t)time(NULL);
     if ( ASSETCHAINS_CBOPRET != 0 && nHeight > 0 )
     {
@@ -1720,9 +1721,10 @@ int32_t komodo_opretvalidate(const CBlock *block,CBlockIndex * const previndex,i
                 if ( lag2 < 0 ) // must be after last block timestamp
                 {
                     fprintf(stderr,"B ht.%d now.%u htstamp.%u %u - pricebits[0] %u -> lags.%d %d %d\n",nHeight,now,prevtime,block->nTime,pricebits[0],lag,lag2,lag3);
-                    return(-1);
+                    if ( nHeight > testchain_exemption )
+                        return(-1);
                 }
-                if ( lag3 < -60 || lag > ASSETCHAINS_BLOCKTIME )
+                if ( lag3 < -60 || lag3 > ASSETCHAINS_BLOCKTIME )
                 {
                     fprintf(stderr,"C ht.%d now.%u htstamp.%u %u - pricebits[0] %u -> lags.%d %d %d\n",nHeight,now,prevtime,block->nTime,pricebits[0],lag,lag2,lag3);
                     return(-1);
@@ -1733,7 +1735,7 @@ int32_t komodo_opretvalidate(const CBlock *block,CBlockIndex * const previndex,i
                 fprintf(stderr,"ht.%d: lag.%d %.4f USD, %.4f GBP, %.4f EUR, GBPUSD %.6f, EURUSD %.6f, EURGBP %.6f [%d]\n",nHeight,lag,btcusd,btcgbp,btceur,btcusd/btcgbp,btcusd/btceur,btcgbp/btceur,lag2);
                 if ( komodo_heightpricebits(prevbits,nHeight-1) == 0 )
                 {
-                    if ( nHeight < 500 )
+                    if ( nHeight < testchain_exemption )
                     {
                         for (i=0; i<n; i++)
                             if ( pricebits[i] == 0 )
@@ -1755,7 +1757,7 @@ int32_t komodo_opretvalidate(const CBlock *block,CBlockIndex * const previndex,i
                 if ( lag < ASSETCHAINS_BLOCKTIME && Mineropret.size() >= PRICES_SIZEBIT0 )
                 {
                     memcpy(localbits,Mineropret.data(),Mineropret.size());
-                    if ( nHeight < 500 )
+                    if ( nHeight < testchain_exemption )
                     {
                         for (i=0; i<n; i++)
                             if ( localbits[i] == 0 )
