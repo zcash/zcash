@@ -2261,7 +2261,7 @@ int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int
                 if ( correlation > (daywindow>>1) )
                 {
                     fprintf(stderr,"iter.%d j.%d i.%d correlation.%d ref %llu -> %llu\n",iter,j,i,correlation,(long long)refprice,(long long)sum/correlation);
-                    return(sum / correlation)
+                    return(sum / correlation);
                 }
             }
         }
