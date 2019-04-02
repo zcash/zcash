@@ -2296,7 +2296,7 @@ int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int
                         if ( (price= rawprices2[i]) != 0 )
                         {
                             den += (daywindow - i);
-                            sum += (daywindow - i) * ((price + firstprice) >> 1);
+                            sum += (daywindow - i) * ((price + firstprice*2) / 3);
                             n++;
                         }
                     }
@@ -2305,7 +2305,7 @@ int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int
                         fprintf(stderr,"seed.%llu n.%d vs correlation.%d sum %llu, den %llu\n",(long long)seed,n,correlation,(long long)sum,(long long)den);
                         return(-1);
                     }
-                    //fprintf(stderr,"firstprice.%llu weighted -> %.8f\n",(long long)firstprice,((double)(sum*mult) / den) / COIN);
+                    fprintf(stderr,"firstprice.%llu weighted -> %.8f\n",(long long)firstprice,((double)(sum*mult) / den) / COIN);
                     return((sum * mult) / den);
                 }
             }
@@ -2341,7 +2341,7 @@ int64_t komodo_pricesmoothed(int64_t *correlated,int32_t numprices)
         sum = den = 0;
         for (i=0; i<numprices; i++)
         {
-            sum += (numprices - i) * ((correlated[i] + firstprice) >> 1);
+            sum += (numprices - i) * ((correlated[i] + firstprice*2) / 3);
             den += (numprices - i);
         }
         smoothed = (sum / den);
