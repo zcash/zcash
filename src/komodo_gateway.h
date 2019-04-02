@@ -1682,11 +1682,15 @@ CScript komodo_mineropret(int32_t nHeight)
             memcpy(pricebits,Mineropret.data(),Mineropret.size());
             for (i=numzero=0; i<n; i++)
                 if ( pricebits[i] == 0 )
+                {
+                    fprintf(stderr,"%d ",i);
                     numzero++;
+                }
             if ( numzero != 0 )
             {
-                fprintf(stderr,"komodo_mineropret numzero.%d vs n.%d\n",numzero,n);
+                fprintf(stderr," komodo_mineropret numzero.%d vs n.%d\n",numzero,n);
                 komodo_cbopretupdate(1);
+                sleep(5);
             }
         }
         if ( komodo_heightpricebits(0,prevbits,nHeight-1) > 0 )
@@ -2167,10 +2171,10 @@ if ( komodo_nextheight() > 333 ) // for debug only!
             if ( (flags & 4) != 0 )
                 lastcrypto = now;
             memcpy(Mineropret.data(),PriceCache[0],size);
+            int32_t i; for (i=0; i<Mineropret.size(); i++)
+                fprintf(stderr,"%02x",Mineropret[i]);
+            fprintf(stderr," <- set Mineropret[%d]\n",(int32_t)Mineropret.size());
         }
-        //int32_t i; for (i=0; i<Mineropret.size(); i++)
-        //    fprintf(stderr,"%02x",Mineropret[i]);
-        //fprintf(stderr," <- set Mineropret[%d]\n",(int32_t)Mineropret.size());
         /*
          if ( (ASSETCHAINS_CBOPRET & 4) != 0 )
         {
