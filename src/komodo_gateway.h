@@ -1573,6 +1573,7 @@ void komodo_PriceCache_shift()
         //for (j=0; j<4+sizeof(Cryptos)/sizeof(*Cryptos)+sizeof(Forex)/sizeof(*Forex); j++)
         //    PriceCache[i][j] = PriceCache[i-1][j];
     }
+    memcpy(PriceCache[0],Mineropret.data(),Mineropret.size());
 }
 
 // komodo_heightpricebits() extracts the price data in the coinbase for nHeight
@@ -2173,7 +2174,7 @@ if ( komodo_nextheight() > 333 ) // for debug only!
             memcpy(Mineropret.data(),PriceCache[0],size);
             int32_t i; for (i=0; i<Mineropret.size(); i++)
                 fprintf(stderr,"%02x",Mineropret[i]);
-            fprintf(stderr," <- set Mineropret[%d]\n",(int32_t)Mineropret.size());
+            fprintf(stderr," <- set Mineropret[%d] size.%d %ld\n",(int32_t)Mineropret.size(),size,sizeof(PriceCache[0]));
         }
         /*
          if ( (ASSETCHAINS_CBOPRET & 4) != 0 )
