@@ -2172,9 +2172,9 @@ if ( komodo_nextheight() > 333 ) // for debug only!
             if ( (flags & 4) != 0 )
                 lastcrypto = now;
             memcpy(Mineropret.data(),PriceCache[0],size);
-            int32_t i; for (i=0; i<Mineropret.size(); i++)
-                fprintf(stderr,"%02x",Mineropret[i]);
-            fprintf(stderr," <- set Mineropret[%d] size.%d %ld\n",(int32_t)Mineropret.size(),size,sizeof(PriceCache[0]));
+            //int32_t i; for (i=0; i<Mineropret.size(); i++)
+            //    fprintf(stderr,"%02x",Mineropret[i]);
+            //fprintf(stderr," <- set Mineropret[%d] size.%d %ld\n",(int32_t)Mineropret.size(),size,sizeof(PriceCache[0]));
         }
         /*
          if ( (ASSETCHAINS_CBOPRET & 4) != 0 )
