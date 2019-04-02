@@ -1219,7 +1219,7 @@ UniValue prices(const UniValue& params, bool fHelp)
                     {
                         prices[j*width + i] = rawprices[j];
                         if ( j == 1 )
-                            fprintf(stderr,"[%d] <- %.1f ",j*width+i,(double)rawprices[j]/10000)
+                            fprintf(stderr,"[%d] <- %.1f ",j*width+i,(double)rawprices[j]/10000);
                     }
                 }
             } else throw JSONRPCError(RPC_INVALID_PARAMETER, "no komodo_rawprices found");
