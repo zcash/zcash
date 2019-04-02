@@ -1222,16 +1222,13 @@ UniValue prices(const UniValue& params, bool fHelp)
             } else throw JSONRPCError(RPC_INVALID_PARAMETER, "no komodo_rawprices found");
         }
     }
+    ret.push_back(Pair("firstheight", (int64_t)nextheight-1-i));
+    UniValue timestamps(UniValue::VARR);
     for (i=0; i<maxsamples; i++)
-    {
-        UniValue timestamps(UniValue::VARR);
         timestamps.push_back((int64_t)prices[i]);
-        timestamps.push_back((int64_t)komodo_heightstamp(nextheight-1-i));
-        ret.push_back(Pair("timestamps",timestamps));
-        ret.push_back(Pair("firstheight", (int64_t)nextheight-1-i));
-    }
+    ret.push_back(Pair("timestamps",timestamps));
     rngval = seed;
-    for (i=0; i<maxsamples; i++)
+    for (i=0; i<daywindow; i++)
         fprintf(stderr,"%.4f ",(double)prices[width+i]/10000);
     fprintf(stderr," maxsamples.%d\n",maxsamples);
     for (j=1; j<numpricefeeds; j++)
