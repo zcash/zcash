@@ -1233,7 +1233,6 @@ UniValue prices(const UniValue& params, bool fHelp)
     rngval = seed;
     for (j=1; j<numpricefeeds; j++)
     {
-        rngval = (rngval*11109 + 13849);
         UniValue item(UniValue::VOBJ),p(UniValue::VARR);
         if ( (str= komodo_pricename(name,j)) != 0 )
         {
@@ -1241,6 +1240,7 @@ UniValue prices(const UniValue& params, bool fHelp)
             for (i=0; i<maxsamples+daywindow; i++)
             {
                 offset = j*width + i;
+                rngval = (rngval*11109 + 13849);
                 if ( (correlated[i]= komodo_pricecorrelated(rngval,j,&prices[offset],daywindow,prices2)) < 0 )
                     throw JSONRPCError(RPC_INVALID_PARAMETER, "null correlated price");
             }
