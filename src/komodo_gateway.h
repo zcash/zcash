@@ -2242,12 +2242,12 @@ int64_t komodo_pricesmoothed(int64_t *correlated,int32_t numprices)
 
 int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int32_t daywindow)
 {
-    int32_t i,j,iter,correlation,maxcorrelation=0; int64_t price,sum; uint32_t refprice,lowprice,highprice;
+    int32_t i,j,n,iter,correlation,maxcorrelation=0; int64_t price,sum,den; uint32_t refprice,lowprice,highprice;
     if ( daywindow < 2 )
         return(-1);
     for (iter=0; iter<daywindow; iter++)
     {
-        sum = correlation = 0;
+        correlation = 0;
         i = (j + seed) % daywindow;
         refprice = rawprices[i] * (ind < 36 ? 10000 : 1);
         highprice = ((int64_t)refprice * (COIN + PRICES_MAXCHANGE)) / COIN;
@@ -2264,12 +2264,42 @@ int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int
                 return(-1);
             if ( price >= lowprice && price <= highprice )
             {
-                sum += price;
                 correlation++;
                 if ( correlation > (daywindow>>1) )
                 {
-                    fprintf(stderr,"ind.%d iter.%d j.%d i.%d correlation.%d ref %llu -> %llu\n",ind,iter,j,i,correlation,(long long)refprice,(long long)sum/correlation);
-                    return(sum / correlation);
+                    n = 0;
+                    i = (j + seed) % daywindow;
+                    for (j=0; j<daywindow; j++,i++)
+                    {
+                        if ( i >= daywindow )
+                            i = 0;
+                        if ( n >= (daywindow>>1) )
+                            rawprices[i] = 0;
+                        else
+                        {
+                            price = rawprices[i];
+                            if ( price < lowprice || price > highprice )
+                                rawprices[i] = 0;
+                            else n++;
+                        }
+                    }
+                    fprintf(stderr,"ind.%d iter.%d j.%d i.%d n.%d correlation.%d ref %llu -> %llu\n",ind,iter,j,i,n,correlation,(long long)refprice,(long long)sum/correlation);
+                    if ( n != correlation )
+                        return(-1);
+                    sum = den = n = 0;
+                    for (i=0; i<daywindow; i++)
+                    {
+                        if ( (price= rawprices[i]) != 0 )
+                        {
+                            den += (daywindow - i);
+                            sum += (daywindow - i) * price;
+                            n++;
+                        }
+                    }
+                    if ( n != correlation || sum == 0 || den == 0 )
+                        return(-1);
+                    fprintf(stderr,"weighted -> %.8f\n",((double)sum / den) / COIN);
+                    return(sum / den);
                 }
             }
         }
