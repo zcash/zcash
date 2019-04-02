@@ -1727,7 +1727,8 @@ int32_t komodo_opretvalidate(const CBlock *block,CBlockIndex * const previndex,i
                 if ( lag3 < -60 || lag3 > ASSETCHAINS_BLOCKTIME )
                 {
                     fprintf(stderr,"C ht.%d now.%u htstamp.%u %u - pricebits[0] %u -> lags.%d %d %d\n",nHeight,now,prevtime,block->nTime,pricebits[0],lag,lag2,lag3);
-                    return(-1);
+                    if ( nHeight > testchain_exemption )
+                        return(-1);
                 }
                 btcusd = (double)pricebits[1]/10000;
                 btcgbp = (double)pricebits[2]/10000;
