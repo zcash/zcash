@@ -1714,17 +1714,17 @@ int32_t komodo_opretvalidate(const CBlock *block,CBlockIndex * const previndex,i
                 lag3 = (int32_t)(block->nTime - pricebits[0]);
                 if ( lag < -60 ) // avoid data from future
                 {
-                    fprintf(stderr,"ht.%d now.%u htstamp.%u %u - pricebits[0] %u -> lags.%d %d %d\n",nHeight,now,prevtime,block->nTime,pricebits[0],lag,lag2,lag3);
+                    fprintf(stderr,"A ht.%d now.%u htstamp.%u %u - pricebits[0] %u -> lags.%d %d %d\n",nHeight,now,prevtime,block->nTime,pricebits[0],lag,lag2,lag3);
                     return(-1);
                 }
                 if ( lag2 < 0 ) // must be after last block timestamp
                 {
-                    fprintf(stderr,"ht.%d now.%u htstamp.%u - pricebits[0] %u -> lags.%d %d %d\n",nHeight,now,prevtime,block->nTime,pricebits[0],lag,lag2,lag3);
+                    fprintf(stderr,"B ht.%d now.%u htstamp.%u %u - pricebits[0] %u -> lags.%d %d %d\n",nHeight,now,prevtime,block->nTime,pricebits[0],lag,lag2,lag3);
                     return(-1);
                 }
                 if ( lag3 < -60 || lag > ASSETCHAINS_BLOCKTIME )
                 {
-                    fprintf(stderr,"ht.%d now.%u htstamp.%u - pricebits[0] %u -> lags.%d %d %d\n",nHeight,now,prevtime,block->nTime,pricebits[0],lag,lag2,lag3);
+                    fprintf(stderr,"C ht.%d now.%u htstamp.%u %u - pricebits[0] %u -> lags.%d %d %d\n",nHeight,now,prevtime,block->nTime,pricebits[0],lag,lag2,lag3);
                     return(-1);
                 }
                 btcusd = (double)pricebits[1]/10000;
