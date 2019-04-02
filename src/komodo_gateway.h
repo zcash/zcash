@@ -2336,7 +2336,7 @@ int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int
 
 int64_t komodo_pricesmoothed(int64_t *correlated,int32_t daywindow,int64_t *nonzprices,int32_t smoothwidth)
 {
-    const int64_t coeffs[7] = { 7, 13, 5, 4, 6, 7, 3 };
+    const int64_t coeffs[7] = { 7, 7, 7, 7, 7, 7, 7 };
     int32_t i,iter; int64_t smoothedden,smoothedsum,sum,den,smoothed[7],firstprice = correlated[0];
     if ( daywindow < 2 )
         return(0);
@@ -2378,8 +2378,8 @@ int64_t komodo_pricesmoothed(int64_t *correlated,int32_t daywindow,int64_t *nonz
         for (i=0; i<7; i++)
         {
             fprintf(stderr,"%.4f ",(double)smoothed[i]/10000);
-            smoothedsum += coeffs[i] * smoothed[i];
-            smoothedden += coeffs[i];
+            smoothedsum += (7-i) * smoothed[i];
+            smoothedden += (7-i);
         }
         fprintf(stderr,"-> %.4f\n",(double)(smoothedsum/smoothedden)/10000);
         return(smoothedsum/smoothedden);
