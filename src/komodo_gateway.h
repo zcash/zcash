@@ -2239,6 +2239,7 @@ int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int
     if ( ind < 36 )
         mult = 10000;
     else mult = 1;
+    memset(nonzprices,0,sizeof(*nonzprices)*daywindow);
     for (iter=0; iter<daywindow; iter++)
     {
         correlation = 0;
@@ -2302,7 +2303,7 @@ int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int
                         if ( (price= nonzprices[i]) != 0 )
                         {
                             den += (daywindow - i);
-                            sum += (daywindow - i) * ((price + firstprice*2) / 3);
+                            sum += (daywindow - i) * price;//((price + firstprice*2) / 3);
                             n++;
                         }
                     }
@@ -2324,12 +2325,13 @@ int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int
 }
 
 
-int64_t komodo_pricesmoothed(int64_t *correlated,int32_t numprices)
+int64_t komodo_pricesmoothed(int64_t *correlated,int32_t daywindow,int64_t *nonzprices)
 {
     int32_t i; int64_t sum,den,smoothed=0,firstprice = correlated[0];
-    if ( numprices < 2 )
+    if ( daywindow < 2 )
         return(0);
-    for (i=1; i<numprices; i++)
+    memset(nonzprices,0,sizeof(*nonzprices)*daywindow);
+    for (i=1; i<daywindow; i++)
     {
         if ( correlated[i] == 0 )
             correlated[i] = correlated[i-1];
@@ -2338,17 +2340,17 @@ int64_t komodo_pricesmoothed(int64_t *correlated,int32_t numprices)
     }
     if ( firstprice != 0 )
     {
-        for (i=0; i<numprices; i++)
+        for (i=0; i<daywindow; i++)
         {
             if ( correlated[i] == 0 )
                 correlated[i] = firstprice;
             else break;
         }
         sum = den = 0;
-        for (i=0; i<numprices; i++)
+        for (i=0; i<daywindow; i++)
         {
-            sum += (numprices - i) * ((correlated[i] + firstprice*2) / 3);
-            den += (numprices - i);
+            sum += (daywindow - i) * correlated[i];
+            den += (daywindow - i);
         }
         smoothed = (sum / den);
     }
