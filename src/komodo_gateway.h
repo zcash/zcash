@@ -2400,8 +2400,8 @@ void smooth64(int64_t dest[],int64_t src[],int32_t width,int32_t smoothiters)
         buf_trioave64(smoothbufA,src,width);
         for (i=0; i<smoothiters; i++)
         {
-            buf_trioave(smoothbufB,smoothbufA,width);
-            buf_trioave(smoothbufA,smoothbufB,width);
+            buf_trioave64(smoothbufB,smoothbufA,width);
+            buf_trioave64(smoothbufA,smoothbufB,width);
         }
         buf_trioave(dest,smoothbufA,width);
     } else memcpy(dest,src,width*sizeof(*dest));
@@ -2438,7 +2438,7 @@ int64_t komodo_pricesmoothed(int64_t *correlated,int32_t daywindow,int64_t *nonz
                 correlated[i] = firstprice;
             else break;
         }
-        memcpy(orig,correlated,(daywindow+smoothdepth)*sizeof(*correlated));
+        memcpy(orig,correlated,(daywindow+smoothwidth)*sizeof(*correlated));
         for (iter=0; iter<smoothwidth; iter++)
         {
             sum = den = 0;
@@ -2450,7 +2450,7 @@ int64_t komodo_pricesmoothed(int64_t *correlated,int32_t daywindow,int64_t *nonz
                 den += (daywindow - i);
             }
             smoothed[iter] = (sum / den);
-            memcpy(correlated,orig,(daywindow+smoothdepth)*sizeof(*correlated));
+            memcpy(correlated,orig,(daywindow+smoothwidth)*sizeof(*correlated));
         }
         smoothedsum = 0;
         smoothedden = 64;
