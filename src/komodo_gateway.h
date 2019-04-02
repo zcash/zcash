@@ -2242,14 +2242,17 @@ int64_t komodo_pricesmoothed(int64_t *correlated,int32_t numprices)
 
 int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int32_t daywindow)
 {
-    int32_t i,j,n,iter,correlation,maxcorrelation=0; int64_t price,sum,den; uint32_t refprice,lowprice,highprice;
+    int32_t i,j,n,iter,correlation,maxcorrelation=0; int64_t price,sum,den; uint32_t mult,refprice,lowprice,highprice;
     if ( daywindow < 2 )
         return(-1);
+    if ( ind < 36 )
+        mult = 10000;
+    else mult = 1;
     for (iter=0; iter<daywindow; iter++)
     {
         correlation = 0;
         i = (j + seed) % daywindow;
-        refprice = rawprices[i] * (ind < 36 ? 10000 : 1);
+        refprice = rawprices[i] * mult;
         highprice = ((int64_t)refprice * (COIN + PRICES_MAXCHANGE)) / COIN;
         lowprice = ((int64_t)refprice * (COIN - PRICES_MAXCHANGE)) / COIN;
         if ( highprice == refprice )
@@ -2262,8 +2265,7 @@ int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int
                 i = 0;
             if ( (price= rawprices[i]) == 0 )
                 return(-1);
-            if ( ind < 36 )
-                price *= 10000;
+            price *= mult;
             if ( price >= lowprice && price <= highprice )
             {
                 correlation++;
