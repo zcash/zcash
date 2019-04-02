@@ -4531,7 +4531,7 @@ bool CVerifyDB::VerifyDB(const CChainParams& chainparams, CCoinsView *coinsview,
     return true;
 }
 
-bool RewindBlockIndex(const CChainParams& params, bool& clearWitnessCaches)
+bool RewindBlockIndex(const CChainParams& chainparams, bool& clearWitnessCaches)
 {
     LOCK(cs_main);
 
@@ -4544,8 +4544,8 @@ bool RewindBlockIndex(const CChainParams& params, bool& clearWitnessCaches)
     //
     // - BLOCK_ACTIVATES_UPGRADE is set only on blocks that activate upgrades.
     // - nCachedBranchId for each block matches what we expect.
-    auto sufficientlyValidated = [&params](const CBlockIndex* pindex) {
-        auto consensus = params.GetConsensus();
+    auto sufficientlyValidated = [&chainparams](const CBlockIndex* pindex) {
+        auto consensus = chainparams.GetConsensus();
         bool fFlagSet = pindex->nStatus & BLOCK_ACTIVATES_UPGRADE;
         bool fFlagExpected = IsActivationHeightForAnyUpgrade(pindex->nHeight, consensus);
         return fFlagSet == fFlagExpected &&
@@ -4568,7 +4568,7 @@ bool RewindBlockIndex(const CChainParams& params, bool& clearWitnessCaches)
     if (rewindLength > 0) {
         LogPrintf("*** First insufficiently validated block at height %d, rewind length %d\n", nHeight, rewindLength);
         const uint256 *phashFirstInsufValidated = chainActive[nHeight]->phashBlock;
-        auto networkID = params.NetworkIDString();
+        auto networkID = chainparams.NetworkIDString();
 
         // This is true when we intend to do a long rewind.
         bool intendedRewind =
@@ -4615,7 +4615,7 @@ bool RewindBlockIndex(const CChainParams& params, bool& clearWitnessCaches)
             // of the blockchain).
             break;
         }
-        if (!DisconnectTip(state, params, true)) {
+        if (!DisconnectTip(state, chainparams, true)) {
             return error("RewindBlockIndex: unable to disconnect block at height %i", pindex->nHeight);
         }
         // Occasionally flush state to disk.
@@ -4677,7 +4677,7 @@ bool RewindBlockIndex(const CChainParams& params, bool& clearWitnessCaches)
 
     PruneBlockIndexCandidates();
 
-    CheckBlockIndex(params.GetConsensus());
+    CheckBlockIndex(chainparams.GetConsensus());
 
     if (!FlushStateToDisk(state, FLUSH_STATE_ALWAYS)) {
         return false;
@@ -5348,14 +5348,14 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         }
 
         // Reject incoming connections from nodes that don't know about the current epoch
-        const Consensus::Params& params = chainparams.GetConsensus();
-        auto currentEpoch = CurrentEpoch(GetHeight(), params);
-        if (pfrom->nVersion < params.vUpgrades[currentEpoch].nProtocolVersion)
+        const Consensus::Params& consensusParams = chainparams.GetConsensus();
+        auto currentEpoch = CurrentEpoch(GetHeight(), consensusParams);
+        if (pfrom->nVersion < consensusParams.vUpgrades[currentEpoch].nProtocolVersion)
         {
             LogPrintf("peer=%d using obsolete version %i; disconnecting\n", pfrom->id, pfrom->nVersion);
             pfrom->PushMessage("reject", strCommand, REJECT_OBSOLETE,
                             strprintf("Version must be %d or greater",
-                            params.vUpgrades[currentEpoch].nProtocolVersion));
+                            consensusParams.vUpgrades[currentEpoch].nProtocolVersion));
             pfrom->fDisconnect = true;
             return false;
         }

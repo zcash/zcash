@@ -480,7 +480,7 @@ bool TestBlockValidity(CValidationState& state, const CChainParams& chainparams,
  * clearWitnessCaches is an output parameter that will be set to true iff
  * witness caches should be cleared in order to handle an intended long rewind.
  */
-bool RewindBlockIndex(const CChainParams& params, bool& clearWitnessCaches);
+bool RewindBlockIndex(const CChainParams& chainparams, bool& clearWitnessCaches);
 
 /** RAII wrapper for VerifyDB: Verify consistency of the block and coin databases */
 class CVerifyDB {
