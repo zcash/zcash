@@ -56,7 +56,7 @@ Build Zcash along with most dependencies from source by running the following co
 ./zcutil/build.sh -j$(nproc)
 ```
 
-Currently, Zcash is only built for Linux.
+Currently, Zcash is only officially supported on Debian and Ubuntu.
 
 License
 -------
