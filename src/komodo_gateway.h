@@ -1706,7 +1706,7 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
             n = (int32_t)(vopret.size() / sizeof(uint32_t));
             memcpy(pricebits,vopret.data(),Mineropret.size());
             memset(maxflags,0,sizeof(maxflags));
-            if ( nHeight > 1 )
+            if ( nHeight > 2 )
             {
                 lag = (int32_t)(now - pricebits[0]);
                 lag2 = (int32_t)(komodo_heightstamp(nHeight-1) - pricebits[0]);
@@ -1720,7 +1720,6 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
                     fprintf(stderr,"now.%u htstamp.%u - pricebits[0] %u -> lag2.%d\n",now,komodo_heightstamp(nHeight-1),pricebits[0],lag2);
                     return(-1);
                 }
-                // else need to check against current blocktime to prevent pricebits[0] games
                 btcusd = (double)pricebits[1]/10000;
                 btcgbp = (double)pricebits[2]/10000;
                 btceur = (double)pricebits[3]/10000;
