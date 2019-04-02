@@ -2340,7 +2340,7 @@ int64_t komodo_pricesmoothed(int64_t *correlated,int32_t daywindow,int64_t *nonz
     int32_t i,iter; int64_t smoothedden,smoothedsum,sum,den,smoothed[7],firstprice = correlated[0];
     if ( daywindow < 2 )
         return(0);
-    if ( sizeof(smoothed)/sizeof(*smoothed) )
+    if ( smoothwidth != sizeof(smoothed)/sizeof(*smoothed) )
     {
         fprintf(stderr,"smoothwidth %d != %d\n",smoothwidth,(int32_t)(sizeof(smoothed)/sizeof(*smoothed)));
         return(0);
