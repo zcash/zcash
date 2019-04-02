@@ -2239,8 +2239,6 @@ int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int
     if ( ind < 36 )
         mult = 10000;
     else mult = 1;
-    //if ( memcmp(rawprices,rawprices2,daywindow*sizeof(*rawprices)) != 0 )
-    //    fprintf(stderr,"ind.%d rawprices2 != rawprices\n",ind);
     for (iter=0; iter<daywindow; iter++)
     {
         correlation = 0;
@@ -2285,7 +2283,7 @@ int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int
                             }
                         }
                     }
-                    fprintf(stderr,"ind.%d iter.%d j.%d i.%d n.%d correlation.%d ref %llu -> %llu\n",ind,iter,j,i,n,correlation,(long long)refprice,(long long)sum/correlation);
+                    //fprintf(stderr,"ind.%d iter.%d j.%d i.%d n.%d correlation.%d ref %llu -> %llu\n",ind,iter,j,i,n,correlation,(long long)refprice,(long long)sum/correlation);
                     if ( n != correlation )
                         return(-1);
                     sum = den = n = 0;
@@ -2303,7 +2301,7 @@ int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int
                         fprintf(stderr,"seed.%llu n.%d vs correlation.%d sum %llu, den %llu\n",(long long)seed,n,correlation,(long long)sum,(long long)den);
                         return(-1);
                     }
-                    fprintf(stderr,"weighted -> %.8f\n",((double)(sum*mult) / den) / COIN);
+                    //fprintf(stderr,"weighted -> %.8f\n",((double)(sum*mult) / den) / COIN);
                     return((sum * mult) / den);
                 }
             }
@@ -2318,10 +2316,32 @@ int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int
 
 int64_t komodo_pricesmoothed(int64_t *correlated,int32_t numprices)
 {
-    int32_t i;
-    for (i=0; i<numprices; i++)
-        if ( correlated[i] != 0 )
-            return(correlated[i]);
-    return(0);
+    int32_t i; int64_t sum,den,smoothed=0,firstprice = correlated[0];
+    if ( numprices < 2 )
+        return(0);
+    for (i=1; i<numprices; i++)
+    {
+        if ( correlated[i] == 0 )
+            correlated[i] = correlated[i-1];
+        if ( firstprice == 0 && correlated[i] != 0 )
+            firstprice = correlated[i];
+    }
+    if ( firstprice != 0 )
+    {
+        for (i=0; i<numprices; i++)
+        {
+            if ( correlated[i] == 0 )
+                correlated[i] = firstprice;
+            else break;
+        }
+        sum = den = 0;
+        for (i=0; i<numprices; i++)
+        {
+            sum += (numprices - i) * correlated[i];
+            den += (numprices - i);
+        }
+        smoothed = (sum / den);
+    }
+    return(smoothed);
 }
 
