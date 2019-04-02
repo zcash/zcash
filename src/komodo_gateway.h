@@ -2361,7 +2361,7 @@ int64_t komodo_pricesmoothed(int64_t *correlated,int32_t daywindow,int64_t *nonz
         sum = den = 0;
         for (i=0; i<daywindow; i++)
         {
-            sum += (daywindow - i) * (correlated[i] + firstprice*19)/20;
+            sum += (daywindow - i) * (correlated[i] + firstprice*2)/3;
             den += (daywindow - i);
         }
         smoothed = (sum / den);
