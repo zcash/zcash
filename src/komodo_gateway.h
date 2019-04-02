@@ -2411,7 +2411,7 @@ int64_t komodo_pricesmoothed(int64_t *correlated,int32_t daywindow,int64_t *nonz
 {
     //const int64_t coeffs[7] = { -1, 9, -45, 1, 45, -9, 1 }; // / 60
     const int64_t coeffs[7] = { -2, 0, 18, 32, 18, 0, -2 };
-    int32_t i,iter; int64_t dest[1440*3],orig[1440*3],smoothedden,smoothedsum,sum,den,smoothed[7],firstprice = correlated[0];
+    int32_t i,iter; int64_t smoothedden,smoothedsum,sum,den,smoothed[7],firstprice = correlated[0];
     if ( daywindow < 2 )
         return(0);
     if ( smoothwidth != sizeof(smoothed)/sizeof(*smoothed) )
@@ -2438,19 +2438,19 @@ int64_t komodo_pricesmoothed(int64_t *correlated,int32_t daywindow,int64_t *nonz
                 correlated[i] = firstprice;
             else break;
         }
-        memcpy(orig,correlated,(daywindow+smoothwidth)*sizeof(*correlated));
+        //memcpy(orig,correlated,(daywindow+smoothwidth)*sizeof(*correlated));
         for (iter=0; iter<smoothwidth; iter++)
         {
             sum = den = 0;
-            smooth64(dest,correlated+iter,daywindow,1);
-            smooth64(correlated+iter,dest,daywindow,1);
+            //smooth64(dest,correlated+iter,daywindow,1);
+            //smooth64(correlated+iter,dest,daywindow,1);
             for (i=0; i<daywindow; i++)
             {
                 sum += ((daywindow - i) * (correlated[i+iter] + firstprice*4)) / 5;
                 den += (daywindow - i);
             }
             smoothed[iter] = (sum / den);
-            memcpy(correlated,orig,(daywindow+smoothwidth)*sizeof(*correlated));
+            //memcpy(correlated,orig,(daywindow+smoothwidth)*sizeof(*correlated));
         }
         smoothedsum = 0;
         smoothedden = 64;
