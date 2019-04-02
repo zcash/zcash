@@ -2345,7 +2345,10 @@ int64_t komodo_pricesmoothed(int64_t *correlated,int32_t daywindow,int64_t *nonz
         if ( correlated[i] == 0 )
             correlated[i] = correlated[i-1];
         if ( firstprice == 0 && correlated[i] != 0 )
+        {
             firstprice = correlated[i];
+            break;
+        }
     }
     if ( firstprice != 0 )
     {
@@ -2358,7 +2361,7 @@ int64_t komodo_pricesmoothed(int64_t *correlated,int32_t daywindow,int64_t *nonz
         sum = den = 0;
         for (i=0; i<daywindow; i++)
         {
-            sum += (daywindow - i) * correlated[i];
+            sum += (daywindow - i) * (correlated[i] + 9*firstprice)/10;
             den += (daywindow - i);
         }
         smoothed = (sum / den);
