@@ -1216,11 +1216,7 @@ UniValue prices(const UniValue& params, bool fHelp)
                 else
                 {
                     for (j=0; j<numpricefeeds; j++)
-                    {
                         prices[j*width + i] = rawprices[j];
-                        if ( j == 1 )
-                            fprintf(stderr,"[%d] <- %.1f ",j*width+i,(double)rawprices[j]/10000);
-                    }
                 }
             } else throw JSONRPCError(RPC_INVALID_PARAMETER, "no komodo_rawprices found");
         }
