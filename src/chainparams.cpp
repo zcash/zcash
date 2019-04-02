@@ -91,7 +91,7 @@ static CBlock CreateGenesisBlock(uint32_t nTime, const uint256& nNonce, const st
  */
 void *chainparams_commandline(void *ptr);
 #include "komodo_defs.h"
-uint32_t ASSETCHAINS_BLOCKTIME = 60;
+int32_t ASSETCHAINS_BLOCKTIME = 60;
 
 const arith_uint256 maxUint = UintToArith256(uint256S("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
 
