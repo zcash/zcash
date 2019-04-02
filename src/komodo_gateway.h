@@ -2231,15 +2231,6 @@ char *komodo_pricename(char *name,int32_t ind)
     return(0);
 }
 
-int64_t komodo_pricesmoothed(int64_t *correlated,int32_t numprices)
-{
-    int32_t i;
-    for (i=0; i<numprices; i++)
-        if ( correlated[i] == 0 )
-            return(0);
-    return(correlated[0]);
-}
-
 int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int32_t daywindow)
 {
     int32_t i,j,n,iter,correlation,maxcorrelation=0; int64_t price,sum,den,mult,refprice,lowprice,highprice;
@@ -2288,7 +2279,7 @@ int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int
                             else n++;
                         }
                     }*/
-                    fprintf(stderr,"ind.%d iter.%d j.%d i.%d correlation.%d ref %llu -> %llu\n",ind,iter,j,i,correlation,(long long)refprice,(long long)sum/correlation);
+                    //fprintf(stderr,"ind.%d iter.%d j.%d i.%d correlation.%d ref %llu -> %llu\n",ind,iter,j,i,correlation,(long long)refprice,(long long)sum/correlation);
                     /*if ( n != correlation )
                         return(-1);
                     sum = den = n = 0;
@@ -2312,6 +2303,17 @@ int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int
         if ( correlation > maxcorrelation )
             maxcorrelation = correlation;
     }
-    fprintf(stderr,"ind.%d iter.%d maxcorrelation.%d ref.%u high.%u low.%u\n",ind,iter,maxcorrelation,refprice,highprice,lowprice);
+    fprintf(stderr,"ind.%d iter.%d maxcorrelation.%d ref.%llu high.%llu low.%llu\n",ind,iter,maxcorrelation,(long long)refprice,(long long)highprice,(long long)lowprice);
     return(0);
 }
+
+
+int64_t komodo_pricesmoothed(int64_t *correlated,int32_t numprices)
+{
+    int32_t i;
+    for (i=0; i<numprices; i++)
+        if ( correlated[i] != 0 )
+            return(correlated[i]);
+    return(0);
+}
+
