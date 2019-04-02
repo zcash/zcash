@@ -1684,7 +1684,10 @@ CScript komodo_mineropret(int32_t nHeight)
                 if ( pricebits[i] == 0 )
                     numzero++;
             if ( numzero != 0 )
-                fprintf(stderr,"numzero.%d\n",numzero);
+            {
+                fprintf(stderr,"komodo_mineropret numzero.%d vs n.%d\n",numzero,n);
+                komodo_cbopretupdate(1);
+            }
         }
         if ( komodo_heightpricebits(0,prevbits,nHeight-1) > 0 )
         {
