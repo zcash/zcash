@@ -2231,7 +2231,7 @@ char *komodo_pricename(char *name,int32_t ind)
     return(0);
 }
 
-int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int32_t daywindow,uint32_t *rawprices2)
+int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int32_t daywindow,uint32_t *nonzprices)
 {
     int32_t i,j,k,n,iter,correlation,maxcorrelation=0; int64_t firstprice,price,sum,den,mult,refprice,lowprice,highprice;
     if ( daywindow < 2 )
@@ -2270,15 +2270,16 @@ int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int
                         if ( i >= daywindow )
                             i = 0;
                         if ( n > (daywindow>>1) )
-                            rawprices2[i] = 0;
+                            nonzprices[i] = 0;
                         else
                         {
                             price = rawprices[i];
                             if ( price < lowprice || price > highprice )
-                                rawprices2[i] = 0;
+                                nonzprices[i] = 0;
                             else
                             {
-                                rawprices2[i] = price;
+                                nonzprices[i] = price;
+                                fprintf(stderr,"(%d %u) ",i,rawprices[i]);
                                 n++;
                             }
                         }
@@ -2288,12 +2289,13 @@ int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int
                         return(-1);
                     sum = den = n = 0;
                     for (i=0; i<daywindow; i++)
-                        if ( rawprices2[i] != 0 )
+                        if ( nonzprices[i] != 0 )
                             break;
-                    firstprice = rawprices2[i];
+                    firstprice = nonzprices[i];
+                    fprintf(stderr,"firsti.%d: ",i);
                     for (i=0; i<daywindow; i++)
                     {
-                        if ( (price= rawprices2[i]) != 0 )
+                        if ( (price= nonzprices[i]) != 0 )
                         {
                             den += (daywindow - i);
                             sum += (daywindow - i) * ((price + firstprice*2) / 3);
