@@ -10,6 +10,7 @@
 #include "script/script.h"
 #include "script/standard.h"
 #include "script/sign.h"
+#include "consensus/upgrades.h"
 
 #include <boost/foreach.hpp>
 
@@ -89,8 +90,13 @@ isminetype IsMine(const CKeyStore &keystore, const CScript& scriptPubKey)
 
     if (keystore.HaveWatchOnly(scriptPubKey)) {
         // TODO: This could be optimized some by doing some work after the above solver
-        CScript scriptSig;
-        return ProduceSignature(DummySignatureCreator(&keystore), scriptPubKey, scriptSig) ? ISMINE_WATCH_SOLVABLE : ISMINE_WATCH_UNSOLVABLE;
+        SignatureData sigdata;
+        for (int idx = Consensus::BASE_SPROUT; idx < Consensus::MAX_NETWORK_UPGRADES; idx++) {
+            if (ProduceSignature(DummySignatureCreator(&keystore), scriptPubKey, sigdata, NetworkUpgradeInfo[idx].nBranchId)) {
+                return ISMINE_WATCH_SOLVABLE;
+            }
+        }
+        return ISMINE_WATCH_UNSOLVABLE;
     }
     return ISMINE_NO;
 }
