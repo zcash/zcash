@@ -1691,7 +1691,7 @@ CScript komodo_mineropret(int32_t nHeight)
             {
                 fprintf(stderr," komodo_mineropret numzero.%d vs n.%d\n",numzero,n);
                 komodo_cbopretupdate(1);
-                sleep(5);
+                sleep(61);
             }
         }
         if ( komodo_heightpricebits(0,prevbits,nHeight-1) > 0 )
@@ -1702,7 +1702,7 @@ CScript komodo_mineropret(int32_t nHeight)
             {
                 // if the new prices are outside tolerance, update Mineropret with clamped prices
                 komodo_priceclamp(n,pricebits,prevbits,PRICES_MAXCHANGE);
-                fprintf(stderr,"update Mineropret to clamped prices\n");
+                //fprintf(stderr,"update Mineropret to clamped prices\n");
                 memcpy(Mineropret.data(),pricebits,Mineropret.size());
             }
         }
@@ -2146,7 +2146,7 @@ if ( komodo_nextheight() > 333 ) // for debug only!
                 if ( flags == 0 )
                     komodo_PriceCache_shift();
                 flags |= 2;
-                memcpy(&PriceCache[0][size],forexprices,sizeof(forexprices));
+                memcpy(&PriceCache[0][size/sizeof(uint32_t)],forexprices,sizeof(forexprices));
             }
             size += sizeof(forexprices);
         }
@@ -2157,7 +2157,7 @@ if ( komodo_nextheight() > 333 ) // for debug only!
                 get_cryptoprices(cryptoprices,Cryptos,(int32_t)(sizeof(Cryptos)/sizeof(*Cryptos)));
                 if ( flags == 0 )
                     komodo_PriceCache_shift();
-                memcpy(&PriceCache[0][size],cryptoprices,sizeof(cryptoprices));
+                memcpy(&PriceCache[0][size/sizeof(uint32_t)],cryptoprices,sizeof(cryptoprices));
                 flags |= 4; // very rarely we can see flags == 6 case
             }
             size += sizeof(cryptoprices);
