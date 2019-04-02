@@ -1177,7 +1177,7 @@ UniValue paxprice(const UniValue& params, bool fHelp)
 int32_t komodo_heightpricebits(uint64_t *seedp,uint32_t *heightbits,int32_t nHeight);
 char *komodo_pricename(char *name,int32_t ind);
 int64_t komodo_pricesmoothed(int64_t *correlated,int32_t numprices);
-int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int32_t numprices);
+int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int32_t numprices,uint32_t *rawprices2);
 int32_t komodo_nextheight();
 uint32_t komodo_heightstamp(int32_t height);
 
@@ -1186,7 +1186,7 @@ UniValue prices(const UniValue& params, bool fHelp)
     if ( fHelp || params.size() != 1 )
         throw runtime_error("prices maxsamples\n");
     LOCK(cs_main);
-    UniValue ret(UniValue::VOBJ); uint64_t seed; int64_t smoothed,*correlated; char name[64],*str; uint32_t rawprices[2048],*prices; uint32_t i,width,j,numpricefeeds=-1,n,nextheight,offset,ht,num=0,daywindow = (3600*24/ASSETCHAINS_BLOCKTIME) + 1;
+    UniValue ret(UniValue::VOBJ); uint64_t seed; int64_t smoothed,*correlated; char name[64],*str; uint32_t rawprices[2048],*prices,*prices2; uint32_t i,width,j,numpricefeeds=-1,n,nextheight,offset,ht,num=0,daywindow = (3600*24/ASSETCHAINS_BLOCKTIME) + 1;
     if ( ASSETCHAINS_CBOPRET == 0 )
         throw JSONRPCError(RPC_INVALID_PARAMETER, "only -ac_cbopret chains have prices");
 
@@ -1203,6 +1203,7 @@ UniValue prices(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "illegal numpricefeeds");
     prices = (uint32_t *)calloc(sizeof(*prices),width*numpricefeeds);
     correlated = (int64_t *)calloc(sizeof(*correlated),width);
+    prices2 = (int64_t *)calloc(sizeof(*prices2),width);
     for (ht=nextheight-1,i=0; i<width&&ht>2*daywindow+2; i++,ht--)
     {
         if ( ht < 0 || ht > chainActive.Height() )
@@ -1238,7 +1239,8 @@ UniValue prices(const UniValue& params, bool fHelp)
             for (i=0; i<maxsamples+daywindow; i++)
             {
                 offset = j*width + i;
-                if ( (correlated[i]= komodo_pricecorrelated(seed,j,&prices[offset],daywindow)) < 0 )
+                memcpy(prices2,&prices[offset],sizeof(*prices2)*daywindow);
+                if ( (correlated[i]= komodo_pricecorrelated(seed,j,&prices[offset],daywindow,prices2)) < 0 )
                     throw JSONRPCError(RPC_INVALID_PARAMETER, "null correlated price");
             }
             for (i=0; i<maxsamples; i++)
@@ -1264,6 +1266,7 @@ UniValue prices(const UniValue& params, bool fHelp)
     ret.push_back(Pair("daywindow",(int64_t)daywindow));
     ret.push_back(Pair("numpricefeeds",(int64_t)numpricefeeds));
     free(prices);
+    free(prices2);
     free(correlated);
     return ret;
 }
