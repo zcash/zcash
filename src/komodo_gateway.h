@@ -2240,7 +2240,7 @@ char *komodo_pricename(char *name,int32_t ind)
     return(0);
 }
 
-int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int32_t daywindow,uint32_t *nonzprices)
+int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int32_t daywindow,uint32_t *nonzprices,int32_t smoothwidth)
 {
     int32_t i,j,k,n,iter,correlation,maxcorrelation=0; int64_t firstprice,price,sum,den,mult,refprice,lowprice,highprice;
     if ( daywindow < 2 )
@@ -2249,7 +2249,7 @@ int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int
         mult = 10000;
     else mult = 1;
     memset(nonzprices,0,sizeof(*nonzprices)*daywindow);
-    for (iter=0; iter<daywindow; iter++)
+    for (iter=0; iter<daywindow+smoothwidth; iter++)
     {
         correlation = 0;
         i = (iter + seed) % daywindow;
@@ -2267,7 +2267,10 @@ int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int
             if ( i >= daywindow )
                 i = 0;
             if ( (price= rawprices[i]) == 0 )
+            {
+                fprintf(stderr,"null rawprice.[%d]\n",i);
                 return(-1);
+            }
             if ( price >= lowprice && price <= highprice )
             {
                 //fprintf(stderr,"%.1f ",(double)price/10000);
