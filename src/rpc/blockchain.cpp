@@ -1174,10 +1174,10 @@ UniValue paxprice(const UniValue& params, bool fHelp)
     return ret;
 }
 
-int32_t komodo_heightpricebits(uint32_t *heightbits,int32_t nHeight);
+int32_t komodo_heightpricebits(uint64_t *seedp,uint32_t *heightbits,int32_t nHeight);
 char *komodo_pricename(char *name,int32_t ind);
 int64_t komodo_pricesmoothed(int64_t *correlated,int32_t numprices);
-int64_t komodo_pricecorrelated(int32_t ind,uint32_t *rawprices,int32_t numprices);
+int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int32_t numprices);
 int32_t komodo_nextheight();
 uint32_t komodo_heightstamp(int32_t height);
 
@@ -1186,7 +1186,7 @@ UniValue prices(const UniValue& params, bool fHelp)
     if ( fHelp || params.size() != 1 )
         throw runtime_error("prices maxsamples\n");
     LOCK(cs_main);
-    UniValue ret(UniValue::VOBJ); int64_t smoothed,*correlated; char name[64],*str; uint32_t rawprices[2048],*prices; uint32_t i,width,j,numpricefeeds=-1,n,nextheight,offset,ht,num=0,daywindow = (3600*24/ASSETCHAINS_BLOCKTIME) + 1;
+    UniValue ret(UniValue::VOBJ); uint64_t seed; int64_t smoothed,*correlated; char name[64],*str; uint32_t rawprices[2048],*prices; uint32_t i,width,j,numpricefeeds=-1,n,nextheight,offset,ht,num=0,daywindow = (3600*24/ASSETCHAINS_BLOCKTIME) + 1;
     if ( ASSETCHAINS_CBOPRET == 0 )
         throw JSONRPCError(RPC_INVALID_PARAMETER, "only -ac_cbopret chains have prices");
 
@@ -1198,7 +1198,7 @@ UniValue prices(const UniValue& params, bool fHelp)
     if ( daywindow < 7 )
         daywindow = 7;
     width = maxsamples+2*daywindow;
-    numpricefeeds = komodo_heightpricebits(rawprices,nextheight-1);
+    numpricefeeds = komodo_heightpricebits(&seed,rawprices,nextheight-1);
     if ( numpricefeeds <= 0 )
         throw JSONRPCError(RPC_INVALID_PARAMETER, "illegal numpricefeeds");
     prices = (uint32_t *)calloc(sizeof(*prices),width*numpricefeeds);
@@ -1209,7 +1209,7 @@ UniValue prices(const UniValue& params, bool fHelp)
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
         else
         {
-            if ( (n= komodo_heightpricebits(rawprices,ht)) > 0 )
+            if ( (n= komodo_heightpricebits(0,rawprices,ht)) > 0 )
             {
                 if ( n != numpricefeeds )
                     throw JSONRPCError(RPC_INVALID_PARAMETER, "numprices != first numprices");
@@ -1238,7 +1238,7 @@ UniValue prices(const UniValue& params, bool fHelp)
             for (i=0; i<maxsamples+daywindow; i++)
             {
                 offset = j*width + i;
-                correlated[i] = komodo_pricecorrelated(j,&prices[offset],daywindow);
+                correlated[i] = komodo_pricecorrelated(seed,j,&prices[offset],daywindow);
             }
             for (i=0; i<maxsamples; i++)
             {

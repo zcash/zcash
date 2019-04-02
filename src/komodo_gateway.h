@@ -1576,9 +1576,11 @@ void komodo_PriceCache_shift()
 }
 
 // komodo_heightpricebits() extracts the price data in the coinbase for nHeight
-int32_t komodo_heightpricebits(uint32_t *heightbits,int32_t nHeight)
+int32_t komodo_heightpricebits(uint64_t *seedp,uint32_t *heightbits,int32_t nHeight)
 {
     CBlockIndex *pindex; CBlock block; CTransaction tx; int32_t numvouts; std::vector<uint8_t> vopret;
+    if ( seedp != 0 )
+        *seedp = 0;
     if ( (pindex= komodo_chainactive(nHeight)) != 0 )
     {
         if ( komodo_blockload(block,pindex) == 0 )
@@ -1588,6 +1590,8 @@ int32_t komodo_heightpricebits(uint32_t *heightbits,int32_t nHeight)
             GetOpReturnData(tx.vout[numvouts-1].scriptPubKey,vopret);
             if ( vopret.size() >= PRICES_SIZEBIT0 )
             {
+                if ( seedp != 0 )
+                    memcpy(seedp,&pindex->hashMerkleRoot,sizeof(*seedp));
                 memcpy(heightbits,vopret.data(),vopret.size());
                 return((int32_t)(vopret.size()/sizeof(uint32_t)));
             }
@@ -1682,7 +1686,7 @@ CScript komodo_mineropret(int32_t nHeight)
             if ( numzero != 0 )
                 fprintf(stderr,"numzero.%d\n",numzero);
         }
-        if ( komodo_heightpricebits(prevbits,nHeight-1) > 0 )
+        if ( komodo_heightpricebits(0,prevbits,nHeight-1) > 0 )
         {
             memcpy(pricebits,Mineropret.data(),Mineropret.size());
             memset(maxflags,0,sizeof(maxflags));
@@ -1757,7 +1761,7 @@ int32_t komodo_opretvalidate(const CBlock *block,CBlockIndex * const previndex,i
                 btcgbp = (double)pricebits[2]/10000;
                 btceur = (double)pricebits[3]/10000;
                 fprintf(stderr,"ht.%d: lag.%d %.4f USD, %.4f GBP, %.4f EUR, GBPUSD %.6f, EURUSD %.6f, EURGBP %.6f [%d]\n",nHeight,lag,btcusd,btcgbp,btceur,btcusd/btcgbp,btcusd/btceur,btcgbp/btceur,lag2);
-                if ( komodo_heightpricebits(prevbits,nHeight-1) > 0 )
+                if ( komodo_heightpricebits(0,prevbits,nHeight-1) > 0 )
                 {
                     if ( nHeight < testchain_exemption )
                     {
@@ -2228,14 +2232,14 @@ int64_t komodo_pricesmoothed(int64_t *correlated,int32_t numprices)
     return(correlated[0]);
 }
 
-int64_t komodo_pricecorrelated(int32_t ind,uint32_t *rawprices,int32_t numprices)
+int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int32_t numprices)
 {
     int32_t i; int64_t price,sum = 0;
     for (i=0; i<numprices; i++)
     {
         if ( (price= rawprices[i]) == 0 )
             return(0);
-        if ( ind >= 36 )
+        if ( ind < 36 )
             price *= 10000;
         sum += price;
     }
