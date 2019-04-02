@@ -2243,23 +2243,23 @@ int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int
     {
         correlation = 0;
         i = (j + seed) % daywindow;
-        refprice = rawprices[i] * mult;
+        refprice = rawprices[i];
         highprice = (refprice * (COIN + PRICES_MAXCHANGE)) / COIN;
         lowprice = (refprice * (COIN - PRICES_MAXCHANGE)) / COIN;
         if ( highprice == refprice )
             highprice++;
         if ( lowprice == refprice )
             lowprice--;
+        sum = 0;
         for (j=0; j<daywindow; j++,i++)
         {
             if ( i >= daywindow )
                 i = 0;
             if ( (price= rawprices[i]) == 0 )
                 return(-1);
-            price *= mult;
             if ( price >= lowprice && price <= highprice )
             {
-                sum += price;
+                sum += price * mult;
                 correlation++;
                 if ( correlation > (daywindow>>1) )
                 {
