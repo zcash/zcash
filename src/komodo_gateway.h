@@ -2199,6 +2199,7 @@ char *komodo_pricename(char *name,int32_t ind)
                 if ( ind < sizeof(Forex)/sizeof(*Forex) )
                 {
                     strcpy(name,Forex[ind]);
+                    strcat(name,"USD");
                     return(name);
                 } else ind -= sizeof(Forex)/sizeof(*Forex);
             }
@@ -2209,6 +2210,7 @@ char *komodo_pricename(char *name,int32_t ind)
                 if ( ind < sizeof(Cryptos)/sizeof(*Cryptos) )
                 {
                     strcpy(name,Cryptos[ind]);
+                    strcat(name,"BTC");
                     return(name);
                 } else ind -= sizeof(Cryptos)/sizeof(*Cryptos);
             }
