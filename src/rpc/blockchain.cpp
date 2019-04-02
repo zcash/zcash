@@ -1174,38 +1174,80 @@ UniValue paxprice(const UniValue& params, bool fHelp)
     return ret;
 }
 
-UniValue paxprices(const UniValue& params, bool fHelp)
+int32_t komodo_prices(uint32_t *prices,uint32_t *correlated,uint32_t *smoothed,int32_t height);
+
+UniValue prices(const UniValue& params, bool fHelp)
 {
-    if ( fHelp || params.size() != 3 )
-        throw runtime_error("paxprices \"base\" \"rel\" maxsamples\n");
+    if ( fHelp || params.size() != 1 )
+        throw runtime_error("prices maxsamples\n");
     LOCK(cs_main);
-    UniValue ret(UniValue::VOBJ); uint64_t relvolume,prices[4096]; uint32_t i,n; int32_t heights[sizeof(prices)/sizeof(*prices)];
-    std::string base = params[0].get_str();
-    std::string rel = params[1].get_str();
-    int32_t maxsamples = atoi(params[2].get_str().c_str());
+    UniValue ret(UniValue::VOBJ); uint32_t *prices,*correlated,*smoothed; uint32_t i,firstn=-1,n,nextheight,ht,num=0,daywindow = (3600*24/ASSETCHAINS_BLOCKTIME) + 1;
+    int32_t maxsamples = atoi(params[0].get_str().c_str());
     if ( maxsamples < 1 )
         maxsamples = 1;
     else if ( maxsamples > sizeof(heights)/sizeof(*heights) )
         maxsamples = sizeof(heights)/sizeof(*heights);
-    ret.push_back(Pair("base", base));
-    ret.push_back(Pair("rel", rel));
-    n = komodo_paxprices(heights,prices,maxsamples,(char *)base.c_str(),(char *)rel.c_str());
+    nextheight = komodo_nextheight();
     UniValue a(UniValue::VARR);
-    for (i=0; i<n; i++)
+    prices = (uint32_t *)calloc(sizeof(*prices),maxsamples+daywindow);
+    correlated = (uint32_t *)calloc(sizeof(*correlated),maxsamples+daywindow);
+    smoothed = (uint32_t *)calloc(sizeof(*smoothed),maxsamples+daywindow);
+    for (ht=nextheight-1,i=0; i<maxsamples+daywindow&&ht>daywindow+2; i++,ht--)
     {
-        UniValue item(UniValue::VOBJ);
-        if ( heights[i] < 0 || heights[i] > chainActive.Height() )
+        if ( ht < 0 || ht > chainActive.Height() )
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
         else
         {
-            CBlockIndex *pblockindex = chainActive[heights[i]];
-
-            item.push_back(Pair("t", (int64_t)pblockindex->nTime));
-            item.push_back(Pair("p", (double)prices[i] / COIN));
-            a.push_back(item);
+            if ( (n= komodo_prices(rawprices,ht)) > 0 )
+            {
+                if ( firstn == -1 )
+                    firstn = n;
+                else if ( n != firstn )
+                    throw JSONRPCError(RPC_INVALID_PARAMETER, "numprices != first numprices");
+                else
+                {
+                    for (j=0; j<n; j++)
+                        prices[j*(maxsamples+daywindow) + i] = rawprices[i];
+                }
+            } else throw JSONRPCError(RPC_INVALID_PARAMETER, "no komodo_rawprices found");
         }
     }
-    ret.push_back(Pair("array", a));
+    free(prices);
+    free(correlated);
+    free(smoothed);
+    /*for (i=0; i<maxsamples; i++)
+    {
+        UniValue item(UniValue::VOBJ),parr(UniValue::VARR);
+        item.push_back(Pair("height", (int64_t)ht));
+        if ( (n= komodo_prices(prices,correlated,smoothed,ht)) <= 0 )
+            item.push_back(Pair("heighterror",(int64_t)n));
+        else
+        {
+            UniValue timestamps(UniValue::VARR);
+            timestamps.push_back((int64_t)prices[0]);
+            timestamps.push_back((int64_t)correlated[0]);
+            timestamps.push_back((int64_t)smoothed[0]);
+            timestamps.push_back((int64_t)komodo_heightstamp(ht));
+            item.push_back(Pair("timestamps",timestamps));
+            for (j=0; j<n; i++)
+            {
+                UniValue prices(UniValue::VARR);
+                prices.push_back((double)prices[j]/10000.);
+                prices.push_back((double)correlated[j]/10000.);
+                prices.push_back((double)smoothed[j]/10000.);
+                parr.push_back(prices);
+            }
+            item.push_back(Pair("prices",parr));
+            item.push_back(Pair("numprices",n));
+            a.push_back(item);
+            num++;
+        }
+    }*/
+    ret.push_back(Pair("array",a));
+    ret.push_back(Pair("result","success"));
+    ret.push_back(Pair("height",(int64_t)nextheight-1));
+    ret.push_back(Pair("numsamples",(int64_t)num));
+    ret.push_back(Pair("maxsamples",(int64_t)maxsamples));
     return ret;
 }
 

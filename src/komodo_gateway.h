@@ -1553,7 +1553,7 @@ extern std::vector<uint8_t> Mineropret; // opreturn data set by the data gatheri
 #define PRICES_SIZEBIT0 (sizeof(uint32_t) * 4) // 4 uint32_t unixtimestamp, BTCUSD, BTCGBP and BTCEUR
 
 // komodo_heightpricebits() extracts the price data in the coinbase for nHeight
-int32_t komodo_heightpricebits(uint32_t prevbits[4],int32_t nHeight)
+int32_t komodo_heightpricebits(uint32_t *heightbits,int32_t nHeight)
 {
     CBlockIndex *pindex; CBlock block; CTransaction tx; int32_t numvouts; std::vector<uint8_t> vopret;
     if ( (pindex= komodo_chainactive(nHeight)) != 0 )
@@ -1565,13 +1565,27 @@ int32_t komodo_heightpricebits(uint32_t prevbits[4],int32_t nHeight)
             GetOpReturnData(tx.vout[numvouts-1].scriptPubKey,vopret);
             if ( vopret.size() >= PRICES_SIZEBIT0 )
             {
-                memcpy(prevbits,vopret.data(),vopret.size());
-                return(0);
+                memcpy(heightbits,vopret.data(),vopret.size());
+                return((int32_t)(vopret.size()/sizeof(uint32_t)));
             }
         }
     }
     fprintf(stderr,"couldnt get pricebits for %d\n",nHeight);
     return(-1);
+}
+
+int32_t komodo_prices(uint32_t *prices,uint32_t *correlated,uint32_t *smoothed,int32_t height)
+{
+    int32_t i,n;
+    n = komodo_heightpricebits(prices,height);
+    for (i=0; i<n; i++)
+    {
+        correlated[i] = prices[i];
+    }
+    for (i=0; i<n; i++)
+    {
+        smoothed[i] = correlated[i];
+    }
 }
 
 /*
@@ -1659,7 +1673,7 @@ CScript komodo_mineropret(int32_t nHeight)
             if ( numzero != 0 )
                 fprintf(stderr,"numzero.%d\n",numzero);
         }
-        if ( komodo_heightpricebits(prevbits,nHeight-1) == 0 )
+        if ( komodo_heightpricebits(prevbits,nHeight-1) > 0 )
         {
             memcpy(pricebits,Mineropret.data(),Mineropret.size());
             memset(maxflags,0,sizeof(maxflags));
@@ -1718,7 +1732,7 @@ int32_t komodo_opretvalidate(const CBlock *block,CBlockIndex * const previndex,i
                     fprintf(stderr,"A ht.%d now.%u htstamp.%u %u - pricebits[0] %u -> lags.%d %d %d\n",nHeight,now,prevtime,block->nTime,pricebits[0],lag,lag2,lag3);
                     return(-1);
                 }
-                if ( lag2 < -120 )//-ASSETCHAINS_BLOCKTIME/2 ) // must be close to last block timestamp
+                if ( lag2 < -testchain_exemption ) // must be close to last block timestamp
                 {
                     fprintf(stderr,"B ht.%d now.%u htstamp.%u %u - pricebits[0] %u -> lags.%d %d %d vs %d cmp.%d\n",nHeight,now,prevtime,block->nTime,pricebits[0],lag,lag2,lag3,ASSETCHAINS_BLOCKTIME,lag2<-ASSETCHAINS_BLOCKTIME);
                     if ( nHeight > testchain_exemption )
@@ -1734,7 +1748,7 @@ int32_t komodo_opretvalidate(const CBlock *block,CBlockIndex * const previndex,i
                 btcgbp = (double)pricebits[2]/10000;
                 btceur = (double)pricebits[3]/10000;
                 fprintf(stderr,"ht.%d: lag.%d %.4f USD, %.4f GBP, %.4f EUR, GBPUSD %.6f, EURUSD %.6f, EURGBP %.6f [%d]\n",nHeight,lag,btcusd,btcgbp,btceur,btcusd/btcgbp,btcusd/btceur,btcgbp/btceur,lag2);
-                if ( komodo_heightpricebits(prevbits,nHeight-1) == 0 )
+                if ( komodo_heightpricebits(prevbits,nHeight-1) > 0 )
                 {
                     if ( nHeight < testchain_exemption )
                     {
