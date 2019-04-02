@@ -1695,9 +1695,9 @@ CScript komodo_mineropret(int32_t nHeight)
 // pass in blockhash and nTime, latch if it is rejected due to local price, then if localprice changes in a way that would validate then issue reconsiderblock
 // add rpc call for extracting rawprices
 
-int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
+int32_t komodo_opretvalidate(const CBlock *block,CBlockIndex * const previndex,int32_t nHeight,CScript scriptPubKey)
 {
-    std::vector<uint8_t> vopret; char maxflags[2048]; double btcusd,btcgbp,btceur; uint32_t localbits[2048],pricebits[2048],prevbits[2048],newprice; int32_t i,maxflag,lag,lag2,n; uint32_t now = (uint32_t)time(NULL);
+    std::vector<uint8_t> vopret; char maxflags[2048]; double btcusd,btcgbp,btceur; uint32_t localbits[2048],pricebits[2048],prevbits[2048],newprice; int32_t i,prevtime,maxflag,lag,lag2,lag3,n; uint32_t now = (uint32_t)time(NULL);
     if ( ASSETCHAINS_CBOPRET != 0 && nHeight > 0 )
     {
         GetOpReturnData(scriptPubKey,vopret);
@@ -1708,16 +1708,23 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
             memset(maxflags,0,sizeof(maxflags));
             if ( nHeight > 2 )
             {
+                prevtime = previndex->nTime;
                 lag = (int32_t)(now - pricebits[0]);
-                lag2 = (int32_t)(komodo_heightstamp(nHeight-1) - pricebits[0]);
+                lag2 = (int32_t)(pricebits[0] - prevtime);
+                lag3 = (int32_t)(block->nTime - pricebits[0]);
                 if ( lag < -60 ) // avoid data from future
                 {
-                    fprintf(stderr,"ht.%d now.%u htstamp.%u - pricebits[0] %u -> lag.%d\n",nHeight,now,komodo_heightstamp(nHeight-1),pricebits[0],lag);
+                    fprintf(stderr,"ht.%d now.%u htstamp.%u %u - pricebits[0] %u -> lags.%d %d %d\n",nHeight,now,prevtime,block->nTime,pricebits[0],lag,lag2,lag3);
                     return(-1);
                 }
-                if ( lag2 < 0 )
+                if ( lag2 < 0 ) // must be after last block timestamp
                 {
-                    fprintf(stderr,"ht.%d now.%u htstamp.%u - pricebits[0] %u -> lag2.%d\n",nHeight,now,komodo_heightstamp(nHeight-1),pricebits[0],lag2);
+                    fprintf(stderr,"ht.%d now.%u htstamp.%u - pricebits[0] %u -> lags.%d %d %d\n",nHeight,now,prevtime,block->nTime,pricebits[0],lag,lag2,lag3);
+                    return(-1);
+                }
+                if ( lag3 < -60 || lag > ASSETCHAINS_BLOCKTIME )
+                {
+                    fprintf(stderr,"ht.%d now.%u htstamp.%u - pricebits[0] %u -> lags.%d %d %d\n",nHeight,now,prevtime,block->nTime,pricebits[0],lag,lag2,lag3);
                     return(-1);
                 }
                 btcusd = (double)pricebits[1]/10000;

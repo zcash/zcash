@@ -977,7 +977,7 @@ unsigned int GetP2SHSigOpCount(const CTransaction& tx, const CCoinsViewCache& in
  * Ensure that a coinbase transaction is structured according to the consensus rules of the
  * chain
  */
-bool ContextualCheckCoinbaseTransaction(const CTransaction& tx, const int nHeight)
+bool ContextualCheckCoinbaseTransaction(const CBlock *block,CBlockIndex * const previndex,const CTransaction& tx, const int nHeight)
 {
     // if time locks are on, ensure that this coin base is time locked exactly as it should be
     if (((uint64_t)(tx.GetValueOut()) >= ASSETCHAINS_TIMELOCKGTE) ||
@@ -1020,7 +1020,7 @@ bool ContextualCheckCoinbaseTransaction(const CTransaction& tx, const int nHeigh
     }
     else if ( ASSETCHAINS_CBOPRET != 0 && nHeight > 0 && tx.vout.size() > 0 )
     {
-        if ( komodo_opretvalidate(nHeight,tx.vout[tx.vout.size()-1].scriptPubKey) < 0 )
+        if ( komodo_opretvalidate(block,previndex,nHeight,tx.vout[tx.vout.size()-1].scriptPubKey) < 0 )
             return(false);
     }
     return(true);
@@ -1035,7 +1035,7 @@ bool ContextualCheckCoinbaseTransaction(const CTransaction& tx, const int nHeigh
  *    and ContextualCheckBlock (which calls this function).
  * 3. The isInitBlockDownload argument is only to assist with testing.
  */
-bool ContextualCheckTransaction(
+bool ContextualCheckTransaction(const CBlock *block, CBlockIndex * const previndex,
         const CTransaction& tx,
         CValidationState &state,
         const int nHeight,
@@ -1171,7 +1171,7 @@ bool ContextualCheckTransaction(
 
     if (tx.IsCoinBase())
     {
-        if (!ContextualCheckCoinbaseTransaction(tx, nHeight))
+        if (!ContextualCheckCoinbaseTransaction(block,previndex,tx, nHeight))
             return state.DoS(100, error("CheckTransaction(): invalid script data for coinbase time lock"),
                                 REJECT_INVALID, "bad-txns-invalid-script-data-for-coinbase-time-lock");
     }
@@ -1679,7 +1679,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
     }
     // DoS level set to 10 to be more forgiving.
     // Check transaction contextually against the set of consensus rules which apply in the next block to be mined.
-    if (!fSkipExpiry && !ContextualCheckTransaction(tx, state, nextBlockHeight, (dosLevel == -1) ? 10 : dosLevel))
+    if (!fSkipExpiry && !ContextualCheckTransaction(0,0,tx, state, nextBlockHeight, (dosLevel == -1) ? 10 : dosLevel))
     {
         return error("AcceptToMemoryPool: ContextualCheckTransaction failed");
     }
@@ -5173,7 +5173,7 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, CBlockIn
         const CTransaction& tx = block.vtx[i];
 
         // Check transaction contextually against consensus rules at block height
-        if (!ContextualCheckTransaction(tx, state, nHeight, 100)) {
+        if (!ContextualCheckTransaction(&block,pindexPrev,tx, state, nHeight, 100)) {
             return false; // Failure reason has been set in validation state object
         }
 
