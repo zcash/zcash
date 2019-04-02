@@ -2228,15 +2228,16 @@ int64_t komodo_pricesmoothed(int64_t *correlated,int32_t numprices)
     return(correlated[0]);
 }
 
-int64_t komodo_pricecorrelated(uint32_t *rawprices,int32_t numprices)
+int64_t komodo_pricecorrelated(int32_t ind,uint32_t *rawprices,int32_t numprices)
 {
     int32_t i; int64_t price,sum = 0;
     for (i=0; i<numprices; i++)
     {
         if ( (price= rawprices[i]) == 0 )
             return(0);
-        //fprintf(stderr,"%.0f ",(double)price/10000);
-        sum += price * 10000;
+        if ( ind >= 36 )
+            price *= 10000;
+        sum += price;
     }
     //fprintf(stderr," ave %.8f [%d]\n",((double)sum/numprices)/COIN,numprices);
     return(sum / numprices);

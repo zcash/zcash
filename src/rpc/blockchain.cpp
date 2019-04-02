@@ -1246,8 +1246,8 @@ UniValue prices(const UniValue& params, bool fHelp)
                 smoothed = komodo_pricesmoothed(&correlated[i],daywindow);
                 UniValue parr(UniValue::VARR);
                 parr.push_back(ValueFromAmount((int64_t)prices[offset]));
-                parr.push_back(ValueFromAmount(correlated[i]/10000));
-                parr.push_back(ValueFromAmount(smoothed/10000));
+                parr.push_back(ValueFromAmount(correlated[i]));
+                parr.push_back(ValueFromAmount(smoothed));
                 p.push_back(parr);
             }
             item.push_back(Pair("prices",p));
