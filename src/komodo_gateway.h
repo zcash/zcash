@@ -2224,7 +2224,7 @@ int64_t komodo_pricesmoothed(int64_t *correlated,int32_t numprices)
 
 int64_t komodo_pricecorrelated(uint32_t *rawprices,int32_t numprices)
 {
-    int64_t sum = 0; uint32_t price;
+    int32_t i; uint32_t price; int64_t sum = 0; 
     for (i=0; i<numprices; i++)
     {
         if ( (price= rawprices[i]) == 0 )
