@@ -1617,7 +1617,7 @@ uint32_t komodo_pricenew(char *maxflagp,uint32_t price,uint32_t refprice,int64_t
         lowprice--;
     if ( price >= highprice )
     {
-        fprintf(stderr,"high %u vs h%llu l%llu tolerance.%llu\n",price,(long long)highprice,(long long)lowprice,(long long)tolerance);
+        //fprintf(stderr,"high %u vs h%llu l%llu tolerance.%llu\n",price,(long long)highprice,(long long)lowprice,(long long)tolerance);
         if ( price > highprice ) // return non-zero only if we violate the tolerance
         {
             *maxflagp = 2;
@@ -2287,7 +2287,10 @@ int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int
                     if ( n != correlation )
                         return(-1);
                     sum = den = n = 0;
-                    firstprice = rawprices2[0];
+                    for (i=0; i<daywindow; i++)
+                        if ( rawprices2[i] != 0 )
+                            break;
+                    firstprice = rawprices2[i];
                     for (i=0; i<daywindow; i++)
                     {
                         if ( (price= rawprices2[i]) != 0 )
@@ -2295,14 +2298,14 @@ int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int
                             den += (daywindow - i);
                             sum += (daywindow - i) * ((price + firstprice) >> 1);
                             n++;
-                        }
+                        } else return(-1);
                     }
                     if ( n != correlation || sum == 0 || den == 0 )
                     {
                         fprintf(stderr,"seed.%llu n.%d vs correlation.%d sum %llu, den %llu\n",(long long)seed,n,correlation,(long long)sum,(long long)den);
                         return(-1);
                     }
-                    fprintf(stderr,"weighted -> %.8f\n",((double)(sum*mult) / den) / COIN);
+                    //fprintf(stderr,"firstprice.%llu weighted -> %.8f\n",(long long)firstprice,((double)(sum*mult) / den) / COIN);
                     return((sum * mult) / den);
                 }
             }
