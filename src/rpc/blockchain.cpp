@@ -1178,6 +1178,8 @@ int32_t komodo_heightpricebits(uint32_t *heightbits,int32_t nHeight);
 char *komodo_pricename(char *name,int32_t ind);
 uint32_t komodo_pricesmoothed(uint32_t *correlatedp,uint32_t *rawprices,int32_t numprices);
 uint32_t komodo_timestampset(uint32_t *correlatedp,uint32_t *rawprices,int32_t numprices);
+int32_t komodo_nextheight();
+uint32_t komodo_heightstamp(int32_t height);
 
 UniValue prices(const UniValue& params, bool fHelp)
 {
@@ -1237,9 +1239,9 @@ UniValue prices(const UniValue& params, bool fHelp)
                 offset = j*(maxsamples+daywindow) + i;
                 smoothed[offset] = komodo_pricesmoothed(&correlated[offset],&rawprices[offset],daywindow);
                 UniValue parr(UniValue::VARR);
-                parr.push_back((double)prices[offset]/10000.);
-                parr.push_back((double)correlated[offset]/10000.);
-                parr.push_back((double)smoothed[offset]/10000.);
+                parr.push_back((uint64_t)prices[offset]);
+                parr.push_back((uint64_t)correlated[offset]);
+                parr.push_back((uint64_t)smoothed[offset]);
                 prices.push_back(parr);
             }
             item.push_back(Pair("prices",prices));
