@@ -1231,7 +1231,7 @@ UniValue prices(const UniValue& params, bool fHelp)
     }
     for (j=1; j<numpricefeeds; j++)
     {
-        UniValue item(UniValue::VOBJ),prices(UniValue::VARR);
+        UniValue item(UniValue::VOBJ),p(UniValue::VARR);
         if ( (str= komodo_pricename(name,j)) != 0 )
         {
             item.push_back(Pair("name",str));
@@ -1246,12 +1246,12 @@ UniValue prices(const UniValue& params, bool fHelp)
                 offset = j*width + i;
                 smoothed = komodo_pricesmoothed(&correlated[i],daywindow);
                 UniValue parr(UniValue::VARR);
-                parr.push_back((uint64_t)prices[offset]);
+                parr.push_back((double)prices[offset]/10000);
                 parr.push_back(ValueFromAmount(correlated[i]));
                 parr.push_back(ValueFromAmount(smoothed));
-                prices.push_back(parr);
+                p.push_back(parr);
             }
-            item.push_back(Pair("prices",prices));
+            item.push_back(Pair("prices",p));
         } else item.push_back(Pair("name","error"));
         a.push_back(item);
     }
