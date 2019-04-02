@@ -583,7 +583,7 @@ void CWallet::ChainTip(const CBlockIndex *pindex,
         ChainTipAdded(pindex, pblock, sproutTree, saplingTree);
         // Prevent migration transactions from being created when node is syncing after launch,
         // and also when node wakes up from suspension/hibernation and incoming blocks are old.
-        if (!IsInitialBlockDownload() &&
+        if (!IsInitialBlockDownload(Params()) &&
             pblock->GetBlockTime() > GetAdjustedTime() - 3 * 60 * 60)
         {
             RunSaplingMigration(pindex->nHeight);
