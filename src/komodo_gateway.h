@@ -2312,7 +2312,7 @@ int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int
                         if ( (price= nonzprices[i]) != 0 )
                         {
                             den += (daywindow - i);
-                            sum += ((daywindow - i) * (price + firstprice*9)) / 10;
+                            sum += ((daywindow - i) * (price + firstprice*2)) / 3;
                             n++;
                         }
                     }
@@ -2334,11 +2334,17 @@ int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int
 }
 
 
-int64_t komodo_pricesmoothed(int64_t *correlated,int32_t daywindow,int64_t *nonzprices)
+int64_t komodo_pricesmoothed(int64_t *correlated,int32_t daywindow,int64_t *nonzprices,int32_t smoothwidth)
 {
-    int32_t i; int64_t sum,den,smoothed=0,firstprice = correlated[0];
+    const int64_t coeffs[7] = { 7, 13, 5, 4, 6, 7, 3 };
+    int32_t i,iter; int64_t smoothedden,smoothedsum,sum,den,smoothed[7],firstprice = correlated[0];
     if ( daywindow < 2 )
         return(0);
+    if ( sizeof(smoothed)/sizeof(*smoothed) )
+    {
+        fprintf(stderr,"smoothwidth %d != %d\n",smoothwidth,(int32_t)(sizeof(smoothed)/sizeof(*smoothed)));
+        return(0);
+    }
     memset(nonzprices,0,sizeof(*nonzprices)*daywindow);
     for (i=1; i<daywindow; i++)
     {
@@ -2358,14 +2364,26 @@ int64_t komodo_pricesmoothed(int64_t *correlated,int32_t daywindow,int64_t *nonz
                 correlated[i] = firstprice;
             else break;
         }
-        sum = den = 0;
-        for (i=0; i<daywindow; i++)
+        for (iter=0; iter<smoothwidth; iter++)
         {
-            sum += ((daywindow - i) * (correlated[i] + firstprice*9))/10;
-            den += (daywindow - i);
+            sum = den = 0;
+            for (i=0; i<daywindow; i++)
+            {
+                sum += ((daywindow - i) * (correlated[i+iter] + firstprice*9))/10;
+                den += (daywindow - i);
+            }
+            smoothed[iter] = (sum / den);
         }
-        smoothed = (sum / den);
+        smoothedsum = smoothedden = 0;
+        for (i=0; i<7; i++)
+        {
+            fprintf(stderr,"%.4f ",(double)smoothed[i]/10000);
+            smoothedsum += coeffs[i] * smoothed[i];
+            smoothedden += coeffs[i];
+        }
+        fprintf(stderr,"-> %.4f\n",(double)(smoothedsum/smoothedden)/10000);
+        return(smoothedsum/smoothedden);
     }
-    return(smoothed);
+    return(0);
 }
 
