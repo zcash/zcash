@@ -1229,7 +1229,7 @@ UniValue prices(const UniValue& params, bool fHelp)
         ret.push_back(Pair("timestamps",timestamps));
         ret.push_back(Pair("firstheight", (int64_t)nextheight-1-i));
     }
-    for (j=1; j<2; j++)
+    for (j=1; j<numpricefeeds; j++)
     {
         UniValue item(UniValue::VOBJ),p(UniValue::VARR);
         if ( (str= komodo_pricename(name,j)) != 0 )
@@ -1245,7 +1245,7 @@ UniValue prices(const UniValue& params, bool fHelp)
                 offset = j*width + i;
                 smoothed = komodo_pricesmoothed(&correlated[i],daywindow);
                 UniValue parr(UniValue::VARR);
-                parr.push_back(ValueFromAmount(prices[offset]*10000));
+                parr.push_back(ValueFromAmount((int64_t)prices[offset]*10000));
                 parr.push_back(ValueFromAmount(correlated[i]));
                 parr.push_back(ValueFromAmount(smoothed));
                 p.push_back(parr);
