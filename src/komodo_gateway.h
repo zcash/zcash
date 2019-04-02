@@ -2233,14 +2233,14 @@ char *komodo_pricename(char *name,int32_t ind)
 
 int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int32_t daywindow,uint32_t *rawprices2)
 {
-    int32_t i,j,n,iter,correlation,maxcorrelation=0; int64_t price,sum,den,mult,refprice,lowprice,highprice;
+    int32_t i,j,k,n,iter,correlation,maxcorrelation=0; int64_t price,sum,den,mult,refprice,lowprice,highprice;
     if ( daywindow < 2 )
         return(-1);
     if ( ind < 36 )
         mult = 10000;
     else mult = 1;
-    if ( memcmp(rawprices,rawprices2,daywindow*sizeof(*rawprices)) != 0 )
-        fprintf(stderr,"ind.%d rawprices2 != rawprices\n",ind);
+    //if ( memcmp(rawprices,rawprices2,daywindow*sizeof(*rawprices)) != 0 )
+    //    fprintf(stderr,"ind.%d rawprices2 != rawprices\n",ind);
     for (iter=0; iter<daywindow; iter++)
     {
         correlation = 0;
@@ -2267,7 +2267,7 @@ int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int
                 {
                     n = 0;
                     i = (j + seed) % daywindow;
-                    for (j=0; j<daywindow; j++,i++)
+                    for (k=0; k<daywindow; k++,i++)
                     {
                         if ( i >= daywindow )
                             i = 0;
@@ -2300,7 +2300,7 @@ int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int
                     }
                     if ( n != correlation || sum == 0 || den == 0 )
                     {
-                        fprintf(stderr,"n.%d vs correlation.%d sum %llu, den %llu\n",n,correlation,(long long)sum,(long long)den);
+                        fprintf(stderr,"seed.%llu n.%d vs correlation.%d sum %llu, den %llu\n",(long long)seed,n,correlation,(long long)sum,(long long)den);
                         return(-1);
                     }
                     fprintf(stderr,"weighted -> %.8f\n",((double)(sum*mult) / den) / COIN);
