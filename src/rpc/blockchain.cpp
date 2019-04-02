@@ -1235,6 +1235,7 @@ UniValue prices(const UniValue& params, bool fHelp)
         if ( (str= komodo_pricename(name,j)) != 0 )
         {
             item.push_back(Pair("name",str));
+            fprintf(stderr,"%s from %d to %d width.%d\n",name,j*width,j*width+maxsamples+daywindow,width);
             for (i=0; i<maxsamples+daywindow; i++)
             {
                 offset = j*width + i;
