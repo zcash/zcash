@@ -1712,12 +1712,12 @@ int32_t komodo_opretvalidate(int32_t nHeight,CScript scriptPubKey)
                 lag2 = (int32_t)(komodo_heightstamp(nHeight-1) - pricebits[0]);
                 if ( lag < -60 ) // avoid data from future
                 {
-                    fprintf(stderr,"now.%u htstamp.%u - pricebits[0] %u -> lag.%d\n",now,komodo_heightstamp(nHeight-1),pricebits[0],lag);
+                    fprintf(stderr,"ht.%d now.%u htstamp.%u - pricebits[0] %u -> lag.%d\n",nHeight,now,komodo_heightstamp(nHeight-1),pricebits[0],lag);
                     return(-1);
                 }
                 if ( lag2 < 0 )
                 {
-                    fprintf(stderr,"now.%u htstamp.%u - pricebits[0] %u -> lag2.%d\n",now,komodo_heightstamp(nHeight-1),pricebits[0],lag2);
+                    fprintf(stderr,"ht.%d now.%u htstamp.%u - pricebits[0] %u -> lag2.%d\n",nHeight,now,komodo_heightstamp(nHeight-1),pricebits[0],lag2);
                     return(-1);
                 }
                 btcusd = (double)pricebits[1]/10000;
