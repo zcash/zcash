@@ -2251,7 +2251,7 @@ int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int
         if ( lowprice == refprice )
             lowprice--;
         sum = 0;
-        fprintf(stderr,"firsti.%d: ",firsti);
+        fprintf(stderr,"firsti.%d: ",i);
         for (j=0; j<daywindow; j++,i++)
         {
             if ( i >= daywindow )
