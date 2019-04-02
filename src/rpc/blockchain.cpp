@@ -1176,8 +1176,9 @@ UniValue paxprice(const UniValue& params, bool fHelp)
 
 int32_t komodo_heightpricebits(uint32_t *heightbits,int32_t nHeight);
 char *komodo_pricename(char *name,int32_t ind);
-uint32_t komodo_pricesmoothed(uint32_t *correlatedp,uint32_t *rawprices,int32_t numprices);
-uint32_t komodo_timestampset(uint32_t *correlatedp,uint32_t *rawprices,int32_t numprices);
+int64_t komodo_pricesmoothed(int64_t *correlated,int32_t numprices);
+int64_t komodo_pricecorrelated(uint32_t *rawprices,int32_t numprices);
+int64_t komodo_timestampset(int64_t *correlatedp,uint32_t *rawprices,int32_t numprices);
 int32_t komodo_nextheight();
 uint32_t komodo_heightstamp(int32_t height);
 
@@ -1186,7 +1187,7 @@ UniValue prices(const UniValue& params, bool fHelp)
     if ( fHelp || params.size() != 1 )
         throw runtime_error("prices maxsamples\n");
     LOCK(cs_main);
-    UniValue ret(UniValue::VOBJ); char name[64],*str; uint32_t rawprices[2048],*prices,*correlated,*smoothed; uint32_t i,j,firstn=-1,n,nextheight,offset,ht,num=0,daywindow = (3600*24/ASSETCHAINS_BLOCKTIME) + 1;
+    UniValue ret(UniValue::VOBJ); int64_t smoothed,*correlated; char name[64],*str; uint32_t rawprices[2048],*prices; uint32_t i,width,j,firstn=-1,n,nextheight,offset,ht,num=0,daywindow = (3600*24/ASSETCHAINS_BLOCKTIME) + 1;
     int32_t maxsamples = atoi(params[0].get_str().c_str());
     if ( maxsamples < 1 )
         maxsamples = 1;
@@ -1194,10 +1195,11 @@ UniValue prices(const UniValue& params, bool fHelp)
     UniValue a(UniValue::VARR);
     if ( daywindow < 7 )
         daywindow = 7;
-    prices = (uint32_t *)calloc(sizeof(*prices),maxsamples+daywindow);
-    correlated = (uint32_t *)calloc(sizeof(*correlated),maxsamples+daywindow);
-    smoothed = (uint32_t *)calloc(sizeof(*smoothed),maxsamples+daywindow);
-    for (ht=nextheight-1,i=0; i<maxsamples+daywindow&&ht>daywindow+2; i++,ht--)
+    width = maxsamples+2*daywindow;
+    prices = (uint32_t *)calloc(sizeof(*prices),width);
+    correlated = (int64_t *)calloc(sizeof(*correlated),width);
+    //smoothed = (uint32_t *)calloc(sizeof(*smoothed),width);
+    for (ht=nextheight-1,i=0; i<width&&ht>2*daywindow+2; i++,ht--)
     {
         if ( ht < 0 || ht > chainActive.Height() )
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
@@ -1212,7 +1214,7 @@ UniValue prices(const UniValue& params, bool fHelp)
                 else
                 {
                     for (j=0; j<n; j++)
-                        prices[j*(maxsamples+daywindow) + i] = rawprices[i];
+                        prices[j*width + i] = rawprices[i];
                 }
             } else throw JSONRPCError(RPC_INVALID_PARAMETER, "no komodo_rawprices found");
         }
@@ -1220,12 +1222,12 @@ UniValue prices(const UniValue& params, bool fHelp)
     for (i=0; i<maxsamples; i++)
     {
         UniValue timestamps(UniValue::VARR);
-        smoothed[i] = komodo_timestampset(&correlated[i],&rawprices[i],daywindow);
+        smoothed = komodo_timestampset(&correlated[i],&rawprices[i],daywindow);
         timestamps.push_back((int64_t)rawprices[i]);
-        timestamps.push_back((int64_t)correlated[i]);
-        timestamps.push_back((int64_t)smoothed[i]);
+        timestamps.push_back(correlated[i]);
+        timestamps.push_back(smoothed);
         timestamps.push_back((int64_t)komodo_heightstamp(nextheight-1-i));
-        ret.push_back(Pair("timestamps",timestamps));
+        ret.push_back(Pair("rawtimestamps",timestamps));
         ret.push_back(Pair("heights", (int64_t)nextheight-1-i));
     }
     for (j=1; j<firstn; j++)
@@ -1234,14 +1236,19 @@ UniValue prices(const UniValue& params, bool fHelp)
         if ( (str= komodo_pricename(name,j)) != 0 )
         {
             item.push_back(Pair("name",str));
+            for (i=0; i<maxsamples+daywindow; i++)
+            {
+                offset = j*width + i;
+                correlated[offset] = komodo_pricecorrelated(&rawprices[offset],daywindow);
+            }
             for (i=0; i<maxsamples; i++)
             {
-                offset = j*(maxsamples+daywindow) + i;
-                smoothed[offset] = komodo_pricesmoothed(&correlated[offset],&rawprices[offset],daywindow);
+                offset = j*width + i;
+                smoothed = komodo_pricesmoothed(&correlated[offset],daywindow);
                 UniValue parr(UniValue::VARR);
-                parr.push_back((uint64_t)prices[offset]);
-                parr.push_back((uint64_t)correlated[offset]);
-                parr.push_back((uint64_t)smoothed[offset]);
+                parr.push_back((uint64_t)rawprices[offset]);
+                parr.push_back(ValueFromAmount(correlated[offset]));
+                parr.push_back(ValueFromAmount(smoothed));
                 prices.push_back(parr);
             }
             item.push_back(Pair("prices",prices));
@@ -1251,11 +1258,12 @@ UniValue prices(const UniValue& params, bool fHelp)
     ret.push_back(Pair("pricefeeds",a));
     ret.push_back(Pair("result","success"));
     ret.push_back(Pair("height",(int64_t)nextheight-1));
+    ret.push_back(Pair("width",(int64_t)width));
     ret.push_back(Pair("numsamples",(int64_t)firstn));
     ret.push_back(Pair("maxsamples",(int64_t)maxsamples));
     free(prices);
-    free(correlated);
-    free(smoothed);
+    //free(correlated);
+    //free(smoothed);
     return ret;
 }
 

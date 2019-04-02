@@ -2213,14 +2213,18 @@ char *komodo_pricename(char *name,int32_t ind)
     return(0);
 }
 
-uint32_t komodo_timestampset(uint32_t *correlatedp,uint32_t *rawtimestamps,int32_t numtimestamps)
+int64_t komodo_timestampset(int64_t *correlatedp,uint32_t *rawtimestamps,int32_t numtimestamps)
 {
     *correlatedp = rawtimestamps[0];
-    return(rawtimestamps[0]); // really to do this would need to do it on a per pricefeed and which prices were used in the correlation, but that is a lot of extra work for a field which is not critical
+    return(*correlatedp); // really to do this would need to do it on a per pricefeed and which prices were used in the correlation, but that is a lot of extra work for a field which is not critical
 }
 
-uint32_t komodo_pricesmoothed(uint32_t *correlatedp,uint32_t *rawprices,int32_t numprices)
+int64_t komodo_pricesmoothed(int64_t *correlated,int32_t numprices)
 {
-    
+    return(0);
 }
 
+int64_t komodo_pricecorrelated(uint32_t *rawprices,int32_t numprices)
+{
+    return(0);
+}
