@@ -1177,7 +1177,7 @@ UniValue paxprice(const UniValue& params, bool fHelp)
 int32_t komodo_heightpricebits(uint32_t *heightbits,int32_t nHeight);
 char *komodo_pricename(char *name,int32_t ind);
 int64_t komodo_pricesmoothed(int64_t *correlated,int32_t numprices);
-int64_t komodo_pricecorrelated(uint32_t *rawprices,int32_t numprices);
+int64_t komodo_pricecorrelated(int32_t ind,uint32_t *rawprices,int32_t numprices);
 int32_t komodo_nextheight();
 uint32_t komodo_heightstamp(int32_t height);
 
@@ -1238,7 +1238,7 @@ UniValue prices(const UniValue& params, bool fHelp)
             for (i=0; i<maxsamples+daywindow; i++)
             {
                 offset = j*width + i;
-                correlated[i] = komodo_pricecorrelated(&prices[offset],daywindow);
+                correlated[i] = komodo_pricecorrelated(j,&prices[offset],daywindow);
             }
             for (i=0; i<maxsamples; i++)
             {
