@@ -1718,7 +1718,7 @@ int32_t komodo_opretvalidate(const CBlock *block,CBlockIndex * const previndex,i
                     fprintf(stderr,"A ht.%d now.%u htstamp.%u %u - pricebits[0] %u -> lags.%d %d %d\n",nHeight,now,prevtime,block->nTime,pricebits[0],lag,lag2,lag3);
                     return(-1);
                 }
-                if ( lag2 < -63 )//-ASSETCHAINS_BLOCKTIME/2 ) // must be close to last block timestamp
+                if ( lag2 < -120 )//-ASSETCHAINS_BLOCKTIME/2 ) // must be close to last block timestamp
                 {
                     fprintf(stderr,"B ht.%d now.%u htstamp.%u %u - pricebits[0] %u -> lags.%d %d %d vs %d cmp.%d\n",nHeight,now,prevtime,block->nTime,pricebits[0],lag,lag2,lag3,ASSETCHAINS_BLOCKTIME,lag2<-ASSETCHAINS_BLOCKTIME);
                     if ( nHeight > testchain_exemption )
