@@ -2298,7 +2298,7 @@ int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int
                             den += (daywindow - i);
                             sum += (daywindow - i) * ((price + firstprice) >> 1);
                             n++;
-                        } else return(-1);
+                        }
                     }
                     if ( n != correlation || sum == 0 || den == 0 )
                     {
