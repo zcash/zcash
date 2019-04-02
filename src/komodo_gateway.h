@@ -2403,7 +2403,7 @@ void smooth64(int64_t dest[],int64_t src[],int32_t width,int32_t smoothiters)
             buf_trioave64(smoothbufB,smoothbufA,width);
             buf_trioave64(smoothbufA,smoothbufB,width);
         }
-        buf_trioave(dest,smoothbufA,width);
+        buf_trioave64(dest,smoothbufA,width);
     } else memcpy(dest,src,width*sizeof(*dest));
 }
 
