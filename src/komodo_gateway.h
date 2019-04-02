@@ -2202,8 +2202,8 @@ char *komodo_pricename(char *name,int32_t ind)
                     return(0);
                 if ( ind < sizeof(Forex)/sizeof(*Forex) )
                 {
-                    strcpy(name,Forex[ind]);
-                    strcat(name,"USD");
+                    name[0] = 'U', name[1] = 'S', name[2] = 'D';
+                    strcpy(name+3,Forex[ind]);
                     return(name);
                 } else ind -= sizeof(Forex)/sizeof(*Forex);
             }
