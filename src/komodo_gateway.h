@@ -2299,7 +2299,10 @@ int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int
                         }
                     }
                     if ( n != correlation || sum == 0 || den == 0 )
+                    {
+                        fprintf(stderr,"n.%d vs correlation.%d sum %llu, den %llu\n",n,correlation,(long long)sum,(long long)den);
                         return(-1);
+                    }
                     fprintf(stderr,"weighted -> %.8f\n",((double)(sum*mult) / den) / COIN);
                     return((sum * mult) / den);
                 }
