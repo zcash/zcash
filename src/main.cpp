@@ -1392,7 +1392,7 @@ bool CheckTransactionWithoutProofVerification(uint32_t tiptime,const CTransactio
             }
         }
         if ( txout.scriptPubKey.size() > IGUANA_MAXSCRIPTSIZE )
-            return state.DoS(100, error("CheckTransaction(): txout.scriptPubKey.size() too big"),REJECT_INVALID, "bad-txns-vout-negative");
+            return state.DoS(100, error("CheckTransaction(): txout.scriptPubKey.size() too big"),REJECT_INVALID, "bad-txns-opret-too-big");
         nValueOut += txout.nValue;
         if (!MoneyRange(nValueOut))
             return state.DoS(100, error("CheckTransaction(): txout total out of range"),
@@ -3274,14 +3274,17 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         //fprintf(stderr,"checkblock failure in connectblock futureblock.%d\n",futureblock);
         return false;
     }
-    // check pindex->CONTEXT_VALIDATED flag
-    if ( fCheckPOW != 0 && !ContextualCheckBlock(block, state, pindex->pprev) ) // Activate Jan 15th, 2019
+    if ( fCheckPOW != 0 && (pindex->nStatus & BLOCK_VALID_CONTEXT) != BLOCK_VALID_CONTEXT ) // Activate Jan 15th, 2019
     {
-        fprintf(stderr,"ContextualCheckBlock failed ht.%d\n",(int32_t)pindex->GetHeight());
-        if ( pindex->nTime > 1547510400 )
-            return false;
-        fprintf(stderr,"grandfathered exception, until jan 15th 2019\n");
+        if ( !ContextualCheckBlock(block, state, pindex->pprev) )
+        {
+            fprintf(stderr,"ContextualCheckBlock failed ht.%d\n",(int32_t)pindex->GetHeight());
+            if ( pindex->nTime > 1547510400 )
+                return false;
+            fprintf(stderr,"grandfathered exception, until jan 15th 2019\n");
+        } else pindex->nStatus |= BLOCK_VALID_CONTEXT;
     }
+    
     // Do this here before the block is moved to the main block files.
     if ( ASSETCHAINS_NOTARY_PAY[0] != 0 && pindex->GetHeight() > 10 )
     {
@@ -5340,7 +5343,8 @@ bool AcceptBlock(int32_t *futureblockp,CBlock& block, CValidationState& state, C
 
     // See method docstring for why this is always disabled
     auto verifier = libzcash::ProofVerifier::Disabled();
-    if ((!CheckBlock(futureblockp,pindex->GetHeight(),pindex,block, state, verifier,0)) || !ContextualCheckBlock(block, state, pindex->pprev))
+    bool fContextualCheckBlock = ContextualCheckBlock(block, state, pindex->pprev);
+    if ( (!CheckBlock(futureblockp,pindex->GetHeight(),pindex,block, state, verifier,0)) || !fContextualCheckBlock )
     {
         static int32_t saplinght = -1;
         CBlockIndex *tmpptr;
@@ -5365,6 +5369,8 @@ bool AcceptBlock(int32_t *futureblockp,CBlock& block, CValidationState& state, C
             return false;
         }
     }
+    if ( fContextualCheckBlock )
+        pindex->nStatus |= BLOCK_VALID_CONTEXT;
 
     int nHeight = pindex->GetHeight();
     // Temp File fix. LABS has been using this for ages with no bad effects.
