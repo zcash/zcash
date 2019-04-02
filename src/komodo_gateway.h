@@ -2235,7 +2235,9 @@ int64_t komodo_pricecorrelated(uint32_t *rawprices,int32_t numprices)
     {
         if ( (price= rawprices[i]) == 0 )
             return(0);
+        fprintf(stderr,"%.4f ",(double)price/10000);
         sum += price * 10000;
     }
+    fprintf(stderr," ave %.8f [%d]\n",((double)sum/numprices)/COIN,numprices);
     return(sum / numprices);
 }

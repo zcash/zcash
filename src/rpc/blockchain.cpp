@@ -1229,13 +1229,12 @@ UniValue prices(const UniValue& params, bool fHelp)
         ret.push_back(Pair("timestamps",timestamps));
         ret.push_back(Pair("firstheight", (int64_t)nextheight-1-i));
     }
-    for (j=1; j<numpricefeeds; j++)
+    for (j=1; j<2; j++)
     {
         UniValue item(UniValue::VOBJ),p(UniValue::VARR);
         if ( (str= komodo_pricename(name,j)) != 0 )
         {
             item.push_back(Pair("name",str));
-            fprintf(stderr,"%s from %d to %d width.%d %d\n",name,j*width,j*width+maxsamples+daywindow,width,width*numpricefeeds);
             for (i=0; i<maxsamples+daywindow; i++)
             {
                 offset = j*width + i;
