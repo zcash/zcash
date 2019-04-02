@@ -1567,8 +1567,12 @@ uint32_t PriceCache[KOMODO_LOCALPRICE_CACHESIZE][4+sizeof(Cryptos)/sizeof(*Crypt
 void komodo_PriceCache_shift()
 {
     int32_t i;
-    for (i=KOMODO_LOCALPRICE_CACHESIZE-1; i>=0; i--)
+    for (i=KOMODO_LOCALPRICE_CACHESIZE-1; i>0; i--)
+    {
         memcpy(PriceCache[i],PriceCache[i-1],sizeof(PriceCache[i]));
+        //for (j=0; j<4+sizeof(Cryptos)/sizeof(*Cryptos)+sizeof(Forex)/sizeof(*Forex); j++)
+        //    PriceCache[i][j] = PriceCache[i-1][j];
+    }
 }
 
 // komodo_heightpricebits() extracts the price data in the coinbase for nHeight
@@ -1787,7 +1791,7 @@ int32_t komodo_opretvalidate(const CBlock *block,CBlockIndex * const previndex,i
                     {
                         for (i=1; i<n; i++)
                         {
-                            if ( (maxflag= maxflags[i]) != 0 )
+                            if ( (maxflag= maxflags[i]) != 0 && localbits[i] != 0 )
                             {
                                 // make sure local price is moving in right direction
                                 fprintf(stderr,"maxflag.%d i.%d localbits.%u vs pricebits.%u prevbits.%u\n",maxflag,i,localbits[i],pricebits[i],prevbits[i]);
