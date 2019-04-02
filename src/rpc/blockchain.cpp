@@ -1228,9 +1228,9 @@ UniValue prices(const UniValue& params, bool fHelp)
         timestamps.push_back((int64_t)prices[i]);
     ret.push_back(Pair("timestamps",timestamps));
     rngval = seed;
-    for (i=0; i<daywindow; i++)
-        fprintf(stderr,"%.4f ",(double)prices[width+i]/10000);
-    fprintf(stderr," maxsamples.%d\n",maxsamples);
+    //for (i=0; i<daywindow; i++)
+    //    fprintf(stderr,"%.4f ",(double)prices[width+i]/10000);
+    //fprintf(stderr," maxsamples.%d\n",maxsamples);
     for (j=1; j<numpricefeeds; j++)
     {
         UniValue item(UniValue::VOBJ),p(UniValue::VARR);
@@ -1257,7 +1257,6 @@ UniValue prices(const UniValue& params, bool fHelp)
             item.push_back(Pair("prices",p));
         } else item.push_back(Pair("name","error"));
         a.push_back(item);
-break;
     }
     ret.push_back(Pair("pricefeeds",a));
     ret.push_back(Pair("result","success"));
