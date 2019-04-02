@@ -1231,6 +1231,9 @@ UniValue prices(const UniValue& params, bool fHelp)
         ret.push_back(Pair("firstheight", (int64_t)nextheight-1-i));
     }
     rngval = seed;
+    for (i=0; i<maxsamples; i++)
+        fprintf(stderr,"%.4f ",(double)prices[width+i]/10000);
+    fprintf(stderr," maxsamples.%d\n",maxsamples);
     for (j=1; j<numpricefeeds; j++)
     {
         UniValue item(UniValue::VOBJ),p(UniValue::VARR);
