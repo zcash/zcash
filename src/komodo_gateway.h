@@ -1832,6 +1832,7 @@ int32_t komodo_opretvalidate(const CBlock *block,CBlockIndex * const previndex,i
                             {
                                 fprintf(stderr,"force update prices\n");
                                 komodo_cbopretupdate(1);
+                                memcpy(localbits,Mineropret.data(),Mineropret.size());
                             } else return(-1);
                         }
                     }
