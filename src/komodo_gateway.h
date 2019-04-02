@@ -2233,7 +2233,7 @@ char *komodo_pricename(char *name,int32_t ind)
 
 int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int32_t daywindow,uint32_t *rawprices2)
 {
-    int32_t i,j,k,n,iter,correlation,maxcorrelation=0; int64_t price,sum,den,mult,refprice,lowprice,highprice;
+    int32_t i,j,k,n,iter,correlation,maxcorrelation=0; int64_t firstprice,price,sum,den,mult,refprice,lowprice,highprice;
     if ( daywindow < 2 )
         return(-1);
     if ( ind < 36 )
@@ -2287,12 +2287,13 @@ int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int
                     if ( n != correlation )
                         return(-1);
                     sum = den = n = 0;
+                    firstprice = rawprices2[0];
                     for (i=0; i<daywindow; i++)
                     {
                         if ( (price= rawprices2[i]) != 0 )
                         {
                             den += (daywindow - i);
-                            sum += (daywindow - i) * price;
+                            sum += (daywindow - i) * ((price + firstprice) >> 1);
                             n++;
                         }
                     }
@@ -2337,7 +2338,7 @@ int64_t komodo_pricesmoothed(int64_t *correlated,int32_t numprices)
         sum = den = 0;
         for (i=0; i<numprices; i++)
         {
-            sum += (numprices - i) * correlated[i];
+            sum += (numprices - i) * ((correlated[i] + firstprice) >> 1);
             den += (numprices - i);
         }
         smoothed = (sum / den);

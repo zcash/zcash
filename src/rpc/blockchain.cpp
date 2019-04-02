@@ -1256,6 +1256,7 @@ UniValue prices(const UniValue& params, bool fHelp)
             item.push_back(Pair("prices",p));
         } else item.push_back(Pair("name","error"));
         a.push_back(item);
+break;
     }
     ret.push_back(Pair("pricefeeds",a));
     ret.push_back(Pair("result","success"));
