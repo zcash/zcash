@@ -144,7 +144,7 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
     return EncodeDestination(vchAddress);
 }
 
-void ImportAddress(const CBitcoinAddress& address, const string& strLabel);
+void ImportAddress(const CTxDestination& dest, const string& strLabel);
 void ImportScript(const CScript& script, const string& strLabel, bool isRedeemScript)
 {
     if (!isRedeemScript && ::IsMine(*pwalletMain, script) == ISMINE_SPENDABLE)
@@ -158,17 +158,17 @@ void ImportScript(const CScript& script, const string& strLabel, bool isRedeemSc
     if (isRedeemScript) {
         if (!pwalletMain->HaveCScript(script) && !pwalletMain->AddCScript(script))
             throw JSONRPCError(RPC_WALLET_ERROR, "Error adding p2sh redeemScript to wallet");
-        ImportAddress(CBitcoinAddress(CScriptID(script)), strLabel);
+        ImportAddress(CScriptID(script), strLabel);
     }
 }
 
-void ImportAddress(const CBitcoinAddress& address, const string& strLabel)
+void ImportAddress(const CTxDestination& dest, const string& strLabel)
 {
-    CScript script = GetScriptForDestination(address.Get());
+    CScript script = GetScriptForDestination(dest);
     ImportScript(script, strLabel, false);
     // add to address book or update label
-    if (address.IsValid())
-        pwalletMain->SetAddressBook(address.Get(), strLabel, "receive");
+    if (IsValidDestination(dest))
+        pwalletMain->SetAddressBook(dest, strLabel, "receive");
 }
 
 UniValue importaddress(const UniValue& params, bool fHelp)
@@ -215,11 +215,11 @@ UniValue importaddress(const UniValue& params, bool fHelp)
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
-    CBitcoinAddress address(params[0].get_str());
-    if (address.IsValid()) {
+    CTxDestination dest = DecodeDestination(params[0].get_str());
+    if (IsValidDestination(dest)) {
         if (fP2SH)
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Cannot use the p2sh flag with an address - use a script instead");
-        ImportAddress(address, strLabel);
+        ImportAddress(dest, strLabel);
     } else if (IsHex(params[0].get_str())) {
         std::vector<unsigned char> data(ParseHex(params[0].get_str()));
         ImportScript(CScript(data.begin(), data.end()), strLabel, fP2SH);
@@ -303,7 +303,7 @@ UniValue importpubkey(const UniValue& params, bool fHelp)
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
-    ImportAddress(CBitcoinAddress(pubKey.GetID()), strLabel);
+    ImportAddress(pubKey.GetID(), strLabel);
     ImportScript(GetScriptForRawPubKey(pubKey), strLabel, false);
 
     if (fRescan)
