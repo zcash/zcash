@@ -2263,6 +2263,7 @@ int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int
                 correlation++;
                 if ( correlation > (daywindow>>1) )
                 {
+                    return(sum*mult/correlation);
                     n = 0;
                     i = (iter + seed) % daywindow;
                     for (k=0; k<daywindow; k++,i++)
