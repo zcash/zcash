@@ -2336,12 +2336,82 @@ int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int
     return(0);
 }
 
+int64_t _pairave64(int64_t valA,int64_t valB)
+{
+    if ( valA != 0 && valB != 0 )
+        return((valA + valB) / 2);
+    else if ( valA != 0 ) return(valA);
+    else return(valB);
+}
+
+int64_t _pairdiff64(register int64_t valA,register int64_t valB)
+{
+    if ( valA != 0 && valB != 0 )
+        return(valA - valB);
+    else return(0);
+}
+
+int64_t balanced_ave64(int64_t buf[],int32_t i,int32_t width)
+{
+    register int32_t nonz,j; register int64_t sum,price;
+    nonz = 0;
+    sum = 0;
+    for (j=-width; j<=width; j++)
+    {
+        price = buf[i + j];
+        if ( price != 0 )
+        {
+            sum += price;
+            nonz++;
+        }
+    }
+    if ( nonz != 0 )
+        sum /= nonz;
+    return(sum);
+}
+
+void buf_trioave64(int64_t dest[],int64_t src[],int32_t n)
+{
+    register int32_t i,j,width = 3;
+    for (i=0; i<128; i++)
+        src[i] = 0;
+    //for (i=n-width-1; i>width; i--)
+    //	dest[i] = balanced_ave(src,i,width);
+    //for (i=width; i>0; i--)
+    //	dest[i] = balanced_ave(src,i,i);
+    for (i=1; i<width; i++)
+        dest[i] = balanced_ave64(src,i,i);
+    for (i=width; i<n-width; i++)
+        dest[i] = balanced_ave64(src,i,width);
+    dest[0] = _pairave64(dest[0],dest[1] - _pairdiff64(dest[2],dest[1]));
+    j = width-1;
+    for (i=n-width; i<n-1; i++,j--)
+        dest[i] = balanced_ave64(src,i,j);
+    if ( dest[n-3] != 0. && dest[n-2] != 0. )
+        dest[n-1] = ((2 * dest[n-2]) - dest[n-3]);
+    else dest[n-1] = 0;
+}
+
+void smooth64(int64_t dest[],int64_t src[],int32_t width,int32_t smoothiters)
+{
+    int64_t smoothbufA[1024],smoothbufB[1024]; int32_t i;
+    if ( width < sizeof(smoothbufA)/sizeof(*smoothbufA) )
+    {
+        buf_trioave64(smoothbufA,src,width);
+        for (i=0; i<smoothiters; i++)
+        {
+            buf_trioave(smoothbufB,smoothbufA,width);
+            buf_trioave(smoothbufA,smoothbufB,width);
+        }
+        buf_trioave(dest,smoothbufA,width);
+    } else memcpy(dest,src,width*sizeof(*dest));
+}
 
 int64_t komodo_pricesmoothed(int64_t *correlated,int32_t daywindow,int64_t *nonzprices,int32_t smoothwidth)
 {
     //const int64_t coeffs[7] = { -1, 9, -45, 1, 45, -9, 1 }; // / 60
     const int64_t coeffs[7] = { -2, 0, 18, 32, 18, 0, -2 };
-    int32_t i,iter; int64_t smoothedden,smoothedsum,sum,den,smoothed[7],firstprice = correlated[0];
+    int32_t i,iter; int64_t dest[1440*3],orig[1440*3],smoothedden,smoothedsum,sum,den,smoothed[7],firstprice = correlated[0];
     if ( daywindow < 2 )
         return(0);
     if ( smoothwidth != sizeof(smoothed)/sizeof(*smoothed) )
@@ -2368,15 +2438,19 @@ int64_t komodo_pricesmoothed(int64_t *correlated,int32_t daywindow,int64_t *nonz
                 correlated[i] = firstprice;
             else break;
         }
+        memcpy(orig,correlated,(daywindow+smoothdepth)*sizeof(*correlated));
         for (iter=0; iter<smoothwidth; iter++)
         {
             sum = den = 0;
+            smooth64(dest,correlated+iter,daywindow,1);
+            smooth64(correlated+iter,dest,daywindow,1);
             for (i=0; i<daywindow; i++)
             {
                 sum += ((daywindow - i) * (correlated[i+iter] + firstprice*4)) / 5;
                 den += (daywindow - i);
             }
             smoothed[iter] = (sum / den);
+            memcpy(correlated,orig,(daywindow+smoothdepth)*sizeof(*correlated));
         }
         smoothedsum = 0;
         smoothedden = 64;
