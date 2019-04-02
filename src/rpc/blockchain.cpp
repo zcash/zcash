@@ -1243,7 +1243,7 @@ UniValue prices(const UniValue& params, bool fHelp)
             {
                 offset = j*width + i;
                 rngval = (rngval*11109 + 13849);
-                if ( (correlated[i]= komodo_pricecorrelated(rngval,j,&prices[offset],daywindow+smoothwidth,prices2,smoothwidth)) < 0 )
+                if ( (correlated[i]= komodo_pricecorrelated(rngval,j,&prices[offset],daywindow,prices2,smoothwidth)) < 0 )
                     throw JSONRPCError(RPC_INVALID_PARAMETER, "null correlated price");
             }
             for (i=0; i<maxsamples; i++)
