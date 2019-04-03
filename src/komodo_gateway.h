@@ -2030,8 +2030,8 @@ int32_t get_cryptoprices(uint32_t *prices,const char *list[],int32_t n,std::vect
     for (i=0; i<n; i++)
     {
         if ( i < n )
-            symbol = list[i];
-        else symbol = strvec[i - n].c_str();
+            symbol = (char *)list[i];
+        else symbol = (char *)strvec[i - n].c_str();
         if ( (price= get_binanceprice(symbol)) == 0 )
             errs++;
         fprintf(stderr,"(%s %.8f) ",symbol,(double)price/SATOSHIDEN);
@@ -2219,7 +2219,7 @@ int64_t komodo_pricemult(int32_t ind)
             }
             if ( (ASSETCHAINS_CBOPRET & 4) != 0 )
             {
-                for (j=0; j<sizeof(Crypto)/sizeof(*Crypto)+ASSETCHAINS_PRICES.size(); j++)
+                for (j=0; j<sizeof(Cryptos)/sizeof(*Cryptos)+ASSETCHAINS_PRICES.size(); j++)
                     PriceMult[i++] = 1;
             }
         }
