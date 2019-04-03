@@ -1266,9 +1266,7 @@ UniValue prices(const UniValue& params, bool fHelp)
                 for (i=0; i<maxsamples&&i<num; i++)
                 {
                     offset = j*width + i;
-                    UniValue parr(UniValue::VARR);
-                    parr.push_back(ValueFromAmount((int64_t)prices[offset] * komodo_pricemult(j)));
-                    p.push_back(parr);
+                    p.push_back(ValueFromAmount((int64_t)prices[offset] * komodo_pricemult(j)));
                 }
             }
             item.push_back(Pair("prices",p));
