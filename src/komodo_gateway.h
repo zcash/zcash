@@ -1816,9 +1816,10 @@ int32_t komodo_opretvalidate(const CBlock *block,CBlockIndex * const previndex,i
                                         if ( PriceCache[j][i] >= prevbits[i] )
                                         {
                                             fprintf(stderr,"i.%d within recent localprices[%d] %u >= %u\n",i,j,PriceCache[j][i],prevbits[i]);
-                                            continue;
+                                            break;
                                         }
-                                    break;
+                                    if ( j == KOMODO_LOCALPRICE_CACHESIZE )
+                                        break;
                                 }
                                 else if ( maxflag < 0 && localbits[i] > prevbits[i] )
                                 {
@@ -1828,9 +1829,10 @@ int32_t komodo_opretvalidate(const CBlock *block,CBlockIndex * const previndex,i
                                         if ( PriceCache[j][i] <= prevbits[i] )
                                         {
                                             fprintf(stderr,"i.%d within recent localprices[%d] %u <= prev %u\n",i,j,PriceCache[j][i],prevbits[i]);
-                                            continue;
+                                            break;
                                         }
-                                    break;
+                                    if ( j == KOMODO_LOCALPRICE_CACHESIZE )
+                                        break;
                                 }
                             }
                         }
