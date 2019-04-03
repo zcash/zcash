@@ -1556,8 +1556,8 @@ extern std::vector<uint8_t> Mineropret; // opreturn data set by the data gatheri
 
 #define issue_curl(cmdstr) bitcoind_RPC(0,(char *)"CBCOINBASE",cmdstr,0,0,0)
 
-const char *Cryptos[] = { "KMD", "ETH", "LTC", "BCHABC", "XMR", "IOTA", "DASH", "XEM", "ZEC", "WAVES", "RVN", "LSK", "DCR", "BTS", "ICX", "HOT", "STEEM", "ENJ", "STRAT" }; // must be on binance (for now)
-
+const char *Cryptos[] = { "KMD", "ETH", "LTC", "BCHABC", "XMR", "IOTA", "ZEC", "WAVES",  "LSK", "DCR" }; // must be on binance (for now)
+//"RVN", "DASH", "XEM", "BTS", "ICX", "HOT", "STEEM", "ENJ", "STRAT"
 const char *Forex[] =
 { "BGN","NZD","ILS","RUB","CAD","PHP","CHF","AUD","JPY","TRY","HKD","MYR","HRK","CZK","IDR","DKK","NOK","HUF","GBP","MXN","THB","ISK","ZAR","BRL","SGD","PLN","INR","KRW","RON","CNY","SEK","EUR"
 }; // must be in ECB list
