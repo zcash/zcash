@@ -1207,7 +1207,8 @@ UniValue prices(const UniValue& params, bool fHelp)
     correlated = (int64_t *)calloc(sizeof(*correlated),width);
     correlated2 = (int64_t *)calloc(sizeof(*correlated2),width);
     prices2 = (uint32_t *)calloc(sizeof(*prices2),width);
-    for (ht=nextheight-1,i=0; i<width&&ht>2*daywindow+2+smoothwidth; i++,ht--)
+    i = 0;
+    for (ht=nextheight-1,i=0; i<width&&ht>2; i++,ht--)
     {
         if ( ht < 0 || ht > chainActive.Height() )
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
