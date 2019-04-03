@@ -110,7 +110,6 @@ if ( cp->evalcode == EVAL_GAMES ) \
         return(games_settle(txfee,cp,params)); \
     else \
     { \
-fprintf(stderr,"invalid method (%s)\n",method); \
         result.push_back(Pair("result","error")); \
         result.push_back(Pair("error","invalid gamescc method")); \
         return(result); \

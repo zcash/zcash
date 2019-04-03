@@ -351,7 +351,7 @@ UniValue CClib_info(struct CCcontract_info *cp)
 UniValue CClib(struct CCcontract_info *cp,char *method,char *jsonstr)
 {
     UniValue result(UniValue::VOBJ); int32_t i; std::string rawtx; cJSON *params;
-    //printf("CClib params.(%s)\n",jsonstr!=0?jsonstr:"");
+//printf("CClib params.(%s)\n",jsonstr!=0?jsonstr:"");
     for (i=0; i<sizeof(CClib_methods)/sizeof(*CClib_methods); i++)
     {
         if ( cp->evalcode == CClib_methods[i].evalcode && strcmp(method,CClib_methods[i].method) == 0 )
@@ -369,7 +369,7 @@ UniValue CClib(struct CCcontract_info *cp,char *method,char *jsonstr)
         }
     }
     result.push_back(Pair("result","error"));
-    result.push_back(Pair("method",CClib_methods[i].method));
+    result.push_back(Pair("method",method));
     result.push_back(Pair("error","method not found"));
     return(result);
 }
