@@ -486,6 +486,8 @@ extern UniValue paxprices(const UniValue& params, bool fHelp);
 extern UniValue paxdeposit(const UniValue& params, bool fHelp);
 extern UniValue paxwithdraw(const UniValue& params, bool fHelp);
 
+extern UniValue prices(const UniValue& params, bool fHelp);
+
 // test rpc:
 extern UniValue test_ac(const UniValue& params, bool fHelp);
 extern UniValue test_heirmarker(const UniValue& params, bool fHelp);

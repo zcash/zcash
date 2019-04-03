@@ -59,12 +59,12 @@ static bool fDaemon;
 #include "komodo_defs.h"
 #define KOMODO_ASSETCHAIN_MAXLEN 65
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
-extern uint32_t ASSETCHAINS_BLOCKTIME;
+extern int32_t ASSETCHAINS_BLOCKTIME;
 extern uint64_t ASSETCHAINS_CBOPRET;
 void komodo_passport_iteration();
 uint64_t komodo_interestsum();
 int32_t komodo_longestchain();
-void komodo_cbopretupdate();
+void komodo_cbopretupdate(int32_t forceflag);
 
 void WaitForShutdown(boost::thread_group* threadGroup)
 {
@@ -89,7 +89,7 @@ void WaitForShutdown(boost::thread_group* threadGroup)
             //komodo_interestsum();
             //komodo_longestchain();
             if ( ASSETCHAINS_CBOPRET != 0 )
-                komodo_cbopretupdate();
+                komodo_cbopretupdate(0);
             for (i=0; i<=ASSETCHAINS_BLOCKTIME/5; i++)
             {
                 fShutdown = ShutdownRequested();

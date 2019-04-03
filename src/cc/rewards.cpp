@@ -257,13 +257,14 @@ bool RewardsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
                     }
                     if ( !CheckTxFee(tx, txfee, chainActive.LastTip()->GetHeight(), chainActive.LastTip()->nTime) )
                         return eval->Invalid("txfee is too high");
+                    amount = vinTx.vout[0].nValue;
                     reward = RewardsCalc(amount,tx.vin[0].prevout.hash,APR,minseconds,maxseconds,mindeposit);
+                    if ( reward == 0 )
+                        return eval->Invalid("no eligible rewards");
                     if ( numvins == 1 && tx.vout[0].scriptPubKey.IsPayToCryptoCondition() == 0 )
                     {
-                        if ( reward == 0 )
-                            return eval->Invalid("unlock recover no rewards");
-                        else if ( tx.vout[1].nValue != 10000 )
-                            return eval->Invalid("wrong marker vour value");
+                        if ( tx.vout[1].nValue != 10000 )
+                            return eval->Invalid("wrong marker vout value");
                         else if ( tx.vout[1].scriptPubKey != tx.vout[0].scriptPubKey )
                             return eval->Invalid("unlock recover tx vout.1 mismatched scriptPubKey");
                         else if ( tx.vout[0].scriptPubKey != vinTx.vout[1].scriptPubKey )
@@ -284,8 +285,6 @@ bool RewardsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
                         return eval->Invalid("unlock tx vout.1 is CC output");
                     else if ( tx.vout[1].scriptPubKey != vinTx.vout[1].scriptPubKey )
                         return eval->Invalid("unlock tx vout.1 mismatched scriptPubKey");
-                    amount = vinTx.vout[0].nValue;
-                    reward = RewardsCalc(amount,tx.vin[0].prevout.hash,APR,minseconds,maxseconds,mindeposit);
                     if ( RewardsExactAmounts(cp,eval,tx,txfee+tx.vout[1].nValue,sbits,fundingtxid) == 0 )
                         return false;
                     else if ( tx.vout[1].nValue > amount+reward )

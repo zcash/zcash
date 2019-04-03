@@ -35,7 +35,7 @@
  * for both bitcoind and bitcoin-core, to make it harder for attackers to
  * target servers or GUI users specifically.
  */
-const std::string CLIENT_NAME = GetArg("-ac_clientname", "MagicBean");
+const std::string CLIENT_NAME = GetArg("-clientname", "MagicBean");
 
 /**
  * Client version number

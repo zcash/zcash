@@ -441,6 +441,7 @@ static const CRPCCommand vRPCCommands[] =
     { "oracles",       "oraclessamples",   &oraclessamples,     true },
 
     // Prices
+    { "prices",       "prices",      &prices,      true },
     { "prices",       "pricesaddress",      &pricesaddress,      true },
     { "prices",       "priceslist",         &priceslist,         true },
     { "prices",       "pricesinfo",         &pricesinfo,         true },
