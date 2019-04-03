@@ -14,6 +14,7 @@
 # ************************************************************************/
 
 import os
+import sys
 import psutil
 import platform
 import time
@@ -26,18 +27,79 @@ logging.basicConfig(format='%(asctime)s - PID:%(process)d - %(levelname)s: %(mes
 #get system information to setup according work directory for RPCs
 HOST_OS = platform.system()
 
+def expanduser(path):
+    # os.path.expanduser is hopelessly broken for Unicode paths on Windows (ticket #1674).
+    if sys.platform == "win32":
+        return windows_expanduser(path)
+    else:
+        return os.path.expanduser(path)
+
+# <https://msdn.microsoft.com/en-us/library/windows/desktop/ms681382%28v=vs.85%29.aspx>
+ERROR_ENVVAR_NOT_FOUND = 203
+
+def windows_getenv(name):
+    # Based on <http://stackoverflow.com/questions/2608200/problems-with-umlauts-in-python-appdata-environvent-variable/2608368#2608368>,
+    # with improved error handling. Returns None if there is no enivronment variable of the given name.
+    if not isinstance(name, unicode):
+        raise AssertionError("name must be Unicode")
+
+    n = GetEnvironmentVariableW(name, None, 0)
+    # GetEnvironmentVariableW returns DWORD, so n cannot be negative.
+    if n == 0:
+        err = get_last_error()
+        if err == ERROR_ENVVAR_NOT_FOUND:
+            return None
+        raise OSError("WinError: %s\n attempting to read size of environment variable %r"
+                      % (WinError(err), name))
+    if n == 1:
+        # Avoid an ambiguity between a zero-length string and an error in the return value of the
+        # call to GetEnvironmentVariableW below.
+        return u""
+
+    buf = create_unicode_buffer(u'\0'*n)
+    retval = GetEnvironmentVariableW(name, buf, n)
+    if retval == 0:
+        err = get_last_error()
+        if err == ERROR_ENVVAR_NOT_FOUND:
+            return None
+        raise OSError("WinError: %s\n attempting to read environment variable %r"
+                      % (WinError(err), name))
+    if retval >= n:
+        raise OSError("Unexpected result %d (expected less than %d) from GetEnvironmentVariableW attempting to read environment variable %r"
+                      % (retval, n, name))
+
+    return buf.value
+
+def windows_expanduser(path):
+    if not path.startswith('~'):
+        return path
+
+    home_dir = windows_getenv(u'USERPROFILE')
+    if home_dir is None:
+        home_drive = windows_getenv(u'HOMEDRIVE')
+        home_path = windows_getenv(u'HOMEPATH')
+        if home_drive is None or home_path is None:
+            raise OSError("Could not find home directory: neither %USERPROFILE% nor (%HOMEDRIVE% and %HOMEPATH%) are set.")
+        home_dir = os.path.join(home_drive, home_path)
+
+    if path == '~':
+        return home_dir
+    elif path.startswith('~/') or path.startswith('~\\'):
+        return os.path.join(home_dir, path[2 :])
+    else:
+        return path
+
 #get host platform path for current user
-WORK_DIR = os.path.expanduser('~')
+WORK_DIR = expanduser('~')
 
 if HOST_OS == 'Windows':
-    os.environ["BITCOINCLI"] = WORK_DIR + r"\\Documents\\zcash\\zcash-cli"
-    os.environ["BITCOIND"] = WORK_DIR + r"\\Documents\\zcash\\zcashd"
-elif HOST_OS == 'Linux':
-    os.environ["BITCOINCLI"] = WORK_DIR + r"\zcash-cli"
-    os.environ["BITCOIND"] = WORK_DIR + r"\zcashd"
-elif HOST_OS == 'Darwin':
-    os.environ["BITCOINCLI"] = WORK_DIR + r"\zcash-cli"
-    os.environ["BITCOIND"] = WORK_DIR + r"\zcashd"
+    os.environ["BITCOIND"] = os.path.join(WORK_DIR, "Documents", "zcash", "zcashd")
+    os.environ["BITCOINCLI"] = os.path.join(WORK_DIR, "Documents", "zcash", "zcash-cli")
+    WORK_DIR = os.path.join(WORK_DIR,"zcash")
+elif HOST_OS != 'Windows':
+    os.environ["BITCOIND"] = os.path.join(WORK_DIR,"zcash", "zcashd")
+    os.environ["BITCOINCLI"] = os.path.join(WORK_DIR, "zcash", "zcash-cli")
+    WORK_DIR = os.path.join(WORK_DIR,"zcash")
 else:
     logging.error(" %s is not currently supported.", HOST_OS)
 
@@ -124,8 +186,10 @@ EXTENDED_SCRIPTS=(
 )
 
 NON_SCRIPTS =(
-    'rpc-tester.py'
+    'test.py'
 )
+
+#@TODO Add Support for conditionally running ZMQ and Proton RPC tests
 
 def cleanup_failed_tests():
     pass
@@ -133,7 +197,6 @@ def cleanup_failed_tests():
 def run_test_scripts(test_list, args):
     fail_list = []
     pass_list = []
-    stats = []
 
     total_tests = len(test_list)
     num_tests_ran = 0
@@ -142,7 +205,6 @@ def run_test_scripts(test_list, args):
     total_stime = time.time()
     for file in test_list:
         logging.info("--- Running test : %s ---", file)
-        stats.append(file)
         #might want to add routine to properly clean SIGTERM tests so they don't conga line the rest
         try:
             start_time = time.time()
@@ -153,7 +215,8 @@ def run_test_scripts(test_list, args):
         
         elapsed_time = time.time() - start_time
         logging.info("Elapsed time: %s", time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))
-        stats.append(time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))
+        t_time = time.strftime("%H:%M:%S", time.gmtime(elapsed_time))
+        stats = (file, t_time)
        
         if p1.returncode != 0:
             fail_list.append(stats)
@@ -170,8 +233,8 @@ def run_test_scripts(test_list, args):
     logging.info("Total tests: %i ", total_tests)
     logging.info("Tests ran: %i ", num_tests_ran)
     logging.info("Duration: ~%s ", time.strftime("%H:%M:%S", time.gmtime(total_elapsed_time)))
-    logging.info("Num Fail: %i", len(fail_list) )
-    logging.info("Num Pass: %i", len(pass_list) )
+    logging.info("Num Fail: %i", len(fail_list))
+    logging.info("Num Pass: %i", len(pass_list))
     logging.info("=====")
     #add sort routine
     #maybe cache meta stuff
@@ -184,10 +247,8 @@ def run_test_scripts(test_list, args):
     print_test_results(fail_list)
 
 def print_test_results(test_list):
-    i =0
-    for test in test_list:
-        logging.info("%s : %s", test[i], test[i+1])
-        i+=2
+    for stats in test_list:
+        logging.info("%s %s", stats[0], stats[1])
 
 def opt_list():
     opt_listbase()
