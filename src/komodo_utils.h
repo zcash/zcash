@@ -1665,6 +1665,7 @@ uint64_t komodo_ac_block_subsidy(int nHeight)
 
 extern int64_t MAX_MONEY;
 void komodo_cbopretupdate(int32_t forceflag);
+void SplitStr(const std::string& strVal, std::vector<std::string> outVals);
 
 void komodo_args(char *argv0)
 {
@@ -1812,6 +1813,13 @@ void komodo_args(char *argv0)
         ASSETCHAINS_CODAPORT = GetArg("-ac_coda",0);
         ASSETCHAINS_MARMARA = GetArg("-ac_marmara",0);
         ASSETCHAINS_CBOPRET = GetArg("-ac_cbopret",0);
+        if ( ASSETCHAINS_CBOPRET != 0 )
+        {
+            SplitStr(GetArg("-ac_prices",""),  ASSETCHAINS_PRICES);
+            for (i=0; i<ASSETCHAINS_PRICES.size(); i++)
+                fprintf(stderr,"%s ",ASSETCHAINS_PRICES[i].c_str());
+            fprintf(stderr,"%d -ac_prices\n",(int32_t)ASSETCHAINS_PRICES.size());
+        }
         hexstr = GetArg("-ac_mineropret","");
         if ( hexstr.size() != 0 )
         {
