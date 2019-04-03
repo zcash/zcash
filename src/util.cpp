@@ -394,7 +394,7 @@ void ParseParameters(int argc, const char* const argv[])
     }
 }
 
-void SplitStr(const std::string& strVal, std::vector<std::string> outVals)
+void SplitStr(const std::string& strVal, std::vector<std::string> &outVals)
 {
     stringstream ss(strVal);
     std::string str; 

@@ -1665,7 +1665,7 @@ uint64_t komodo_ac_block_subsidy(int nHeight)
 
 extern int64_t MAX_MONEY;
 void komodo_cbopretupdate(int32_t forceflag);
-void SplitStr(const std::string& strVal, std::vector<std::string> outVals);
+void SplitStr(const std::string& strVal, std::vector<std::string> &outVals);
 
 void komodo_args(char *argv0)
 {
