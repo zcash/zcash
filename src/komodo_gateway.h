@@ -1732,7 +1732,7 @@ CScript komodo_mineropret(int32_t nHeight)
 
 int32_t komodo_opretvalidate(const CBlock *block,CBlockIndex * const previndex,int32_t nHeight,CScript scriptPubKey)
 {
-    int32_t testchain_exemption = 0;
+    int32_t testchain_exemption = 350;
     std::vector<uint8_t> vopret; char maxflags[2048]; double btcusd,btcgbp,btceur; uint32_t localbits[2048],pricebits[2048],prevbits[2048],newprice; int32_t i,j,prevtime,maxflag,lag,lag2,lag3,n,errflag,iter; uint32_t now = (uint32_t)time(NULL);
     if ( ASSETCHAINS_CBOPRET != 0 && nHeight > 0 )
     {
@@ -1753,7 +1753,7 @@ int32_t komodo_opretvalidate(const CBlock *block,CBlockIndex * const previndex,i
                     fprintf(stderr,"A ht.%d now.%u htstamp.%u %u - pricebits[0] %u -> lags.%d %d %d\n",nHeight,now,prevtime,block->nTime,pricebits[0],lag,lag2,lag3);
                     return(-1);
                 }
-                if ( lag2 < -60 ) //testchain_exemption ) // must be close to last block timestamp
+                if ( lag2 < -testchain_exemption ) // must be close to last block timestamp
                 {
                     fprintf(stderr,"B ht.%d now.%u htstamp.%u %u - pricebits[0] %u -> lags.%d %d %d vs %d cmp.%d\n",nHeight,now,prevtime,block->nTime,pricebits[0],lag,lag2,lag3,ASSETCHAINS_BLOCKTIME,lag2<-ASSETCHAINS_BLOCKTIME);
                     if ( nHeight > testchain_exemption )
@@ -2137,8 +2137,8 @@ void komodo_cbopretupdate(int32_t forceflag)
     now = (uint32_t)time(NULL);
     if ( (ASSETCHAINS_CBOPRET & 1) != 0 )
     {
-//if ( komodo_nextheight() > 333 ) // for debug only!
-//    ASSETCHAINS_CBOPRET = 7;
+if ( komodo_nextheight() > 333 ) // for debug only!
+    ASSETCHAINS_CBOPRET = 7;
         size = komodo_cbopretsize(ASSETCHAINS_CBOPRET);
         if ( Mineropret.size() < size )
             Mineropret.resize(size);
