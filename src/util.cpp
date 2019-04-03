@@ -397,7 +397,7 @@ void ParseParameters(int argc, const char* const argv[])
 void SplitStr(const std::string& strVal, std::vector<std::string> outVals)
 {
     stringstream ss(strVal);
-    vector<std::string> str;
+    std::string str; 
     
     while ( ss.peek() == ' ' )
         ss.ignore();
