@@ -404,10 +404,7 @@ void SplitStr(const std::string& strVal, std::vector<std::string> outVals)
     
     while ( ss >> str )
     {
-        //outVals[numVals] = i;
         outVals.push_back(str);
-        numVals += 1;
-        
         while ( ss.peek() == ' ' )
             ss.ignore();
         if ( ss.peek() == ',' )
