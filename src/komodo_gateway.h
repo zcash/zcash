@@ -1553,7 +1553,6 @@ extern std::vector<uint8_t> Mineropret; // opreturn data set by the data gatheri
 #define PRICES_SIZEBIT0 (sizeof(uint32_t) * 4) // 4 uint32_t unixtimestamp, BTCUSD, BTCGBP and BTCEUR
 #define KOMODO_LOCALPRICE_CACHESIZE 7
 
-
 #define issue_curl(cmdstr) bitcoind_RPC(0,(char *)"CBCOINBASE",cmdstr,0,0,0)
 
 const char *Cryptos[] = { "KMD", "ETH", "LTC", "BCHABC", "XMR", "IOTA", "DASH", "XEM", "ZEC", "WAVES", "RVN", "LSK", "DCR", "BTS", "ICX", "HOT", "STEEM", "ENJ", "STRAT" }; // must be on binance (for now)
@@ -1563,6 +1562,7 @@ const char *Forex[] =
 }; // must be in ECB list
 
 uint32_t PriceCache[KOMODO_LOCALPRICE_CACHESIZE][4+sizeof(Cryptos)/sizeof(*Cryptos)+sizeof(Forex)/sizeof(*Forex)];
+int32_t komodo_cbopretsize(uint64_t flags);
 
 void komodo_PriceCache_shift()
 {
@@ -1722,7 +1722,7 @@ CScript komodo_mineropret(int32_t nHeight)
  The only way komodo_opretvalidate() doesnt return an error is if maxflag is set or it is within tolerance of both the prior block and the local data. The local data validation only happens if it is a recent block and not a block from the past as the local node is only getting the current price data.
  
  */
-// reconsiderblock 002aca768b09dfcf36bd934ab34b23983148b116e12cb0b6e1a3f895d1db63aa
+// for PRICES: reconsiderblock 002aca768b09dfcf36bd934ab34b23983148b116e12cb0b6e1a3f895d1db63aa
 // and
 // reconsiderblock 0034cf582018eacc0b4ae001491ce460113514cb1a3f217567ef4a2207de361a
 // reconsiderbloc 000abf51c023b64af327c50c1b060797b8cb281c696d30ab92fd002a8b8c9aea
@@ -1732,7 +1732,7 @@ CScript komodo_mineropret(int32_t nHeight)
 
 int32_t komodo_opretvalidate(const CBlock *block,CBlockIndex * const previndex,int32_t nHeight,CScript scriptPubKey)
 {
-    int32_t testchain_exemption = 500;
+    int32_t testchain_exemption = 0;
     std::vector<uint8_t> vopret; char maxflags[2048]; double btcusd,btcgbp,btceur; uint32_t localbits[2048],pricebits[2048],prevbits[2048],newprice; int32_t i,j,prevtime,maxflag,lag,lag2,lag3,n,errflag,iter; uint32_t now = (uint32_t)time(NULL);
     if ( ASSETCHAINS_CBOPRET != 0 && nHeight > 0 )
     {
@@ -1753,7 +1753,7 @@ int32_t komodo_opretvalidate(const CBlock *block,CBlockIndex * const previndex,i
                     fprintf(stderr,"A ht.%d now.%u htstamp.%u %u - pricebits[0] %u -> lags.%d %d %d\n",nHeight,now,prevtime,block->nTime,pricebits[0],lag,lag2,lag3);
                     return(-1);
                 }
-                if ( lag2 < -testchain_exemption ) // must be close to last block timestamp
+                if ( lag2 < -60 ) //testchain_exemption ) // must be close to last block timestamp
                 {
                     fprintf(stderr,"B ht.%d now.%u htstamp.%u %u - pricebits[0] %u -> lags.%d %d %d vs %d cmp.%d\n",nHeight,now,prevtime,block->nTime,pricebits[0],lag,lag2,lag3,ASSETCHAINS_BLOCKTIME,lag2<-ASSETCHAINS_BLOCKTIME);
                     if ( nHeight > testchain_exemption )
@@ -2107,6 +2107,19 @@ int32_t get_btcusd(uint32_t pricebits[4])
 // komodo_cbopretupdate() obtains the external price data and encodes it into Mineropret, which will then be used by the miner and validation
 // save history, use new data to approve past rejection, where is the auto-reconsiderblock?
 
+int32_t komodo_cbopretsize(uint64_t flags)
+{
+    int32_t size = 0;
+    if ( (ASSETCHAINS_CBOPRET & 1) != 0 )
+    {
+        size = PRICES_SIZEBIT0;
+        if ( (ASSETCHAINS_CBOPRET & 2) != 0 )
+            size += sizeof(forexprices);
+        if ( (ASSETCHAINS_CBOPRET & 4) != 0 )
+            size += sizeof(cryptoprices);
+    }
+    return(size);
+}
 
 void komodo_cbopretupdate(int32_t forceflag)
 {
@@ -2123,13 +2136,9 @@ void komodo_cbopretupdate(int32_t forceflag)
     now = (uint32_t)time(NULL);
     if ( (ASSETCHAINS_CBOPRET & 1) != 0 )
     {
-if ( komodo_nextheight() > 333 ) // for debug only!
-    ASSETCHAINS_CBOPRET = 7;
-        size = PRICES_SIZEBIT0;
-        if ( (ASSETCHAINS_CBOPRET & 2) != 0 )
-            size += sizeof(forexprices);
-        if ( (ASSETCHAINS_CBOPRET & 4) != 0 )
-            size += sizeof(cryptoprices);
+//if ( komodo_nextheight() > 333 ) // for debug only!
+//    ASSETCHAINS_CBOPRET = 7;
+        size = komodo_cbopretsize(ASSETCHAINS_CBOPRET);
         if ( Mineropret.size() < size )
             Mineropret.resize(size);
         size = PRICES_SIZEBIT0;

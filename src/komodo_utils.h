@@ -1812,6 +1812,13 @@ void komodo_args(char *argv0)
         ASSETCHAINS_CODAPORT = GetArg("-ac_coda",0);
         ASSETCHAINS_MARMARA = GetArg("-ac_marmara",0);
         ASSETCHAINS_CBOPRET = GetArg("-ac_cbopret",0);
+        if ( ASSETCHAINS_CBOPRET != 0 )
+        {
+            Split(GetArg("-ac_prices",""),  ASSETCHAINS_PRICES, 0);
+            for (i=0; i<ASSETCHAINS_PRICES.size(); i++)
+                fprintf(stderr,"%s ",ASSETCHAINS_PRICES[i]);
+            fprintf(stderr,"%d -ac_prices\n",(int32_t)ASSETCHAINS_PRICES.size());
+        }
         hexstr = GetArg("-ac_mineropret","");
         if ( hexstr.size() != 0 )
         {
