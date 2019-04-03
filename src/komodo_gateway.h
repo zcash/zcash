@@ -2109,7 +2109,8 @@ int32_t get_btcusd(uint32_t pricebits[4])
 
 int32_t komodo_cbopretsize(uint64_t flags)
 {
-    int32_t size = 0;
+    int32_t size = 0; uint32_t cryptoprices[sizeof(Cryptos)/sizeof(*Cryptos)],forexprices[sizeof(Forex)/sizeof(*Forex)];
+
     if ( (ASSETCHAINS_CBOPRET & 1) != 0 )
     {
         size = PRICES_SIZEBIT0;

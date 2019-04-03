@@ -394,6 +394,29 @@ void ParseParameters(int argc, const char* const argv[])
     }
 }
 
+void SplitStr(const std::string& strVal, std::vector<std::string> outVals)
+{
+    stringstream ss(strVal);
+    vector<std::string> str;
+    
+    while ( ss.peek() == ' ' )
+        ss.ignore();
+    
+    while ( ss >> str )
+    {
+        //outVals[numVals] = i;
+        outVals.push_back(i);
+        numVals += 1;
+        
+        while ( ss.peek() == ' ' )
+            ss.ignore();
+        if ( ss.peek() == ',' )
+            ss.ignore();
+        while ( ss.peek() == ' ' )
+            ss.ignore();
+    }
+}
+
 void Split(const std::string& strVal, uint64_t *outVals, const uint64_t nDefault)
 {
     stringstream ss(strVal);
