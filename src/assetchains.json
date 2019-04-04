@@ -65,12 +65,9 @@
     "ac_supply": "1000007"
   },
   {
-    "ac_name": "MNZ",
-    "ac_supply": "257142858"
-  },
-  {
     "ac_name": "AXO",
-    "ac_supply": "200000000"
+    "ac_supply": "200000000",
+    "ac_ccactivate": "130000"
   },
   {
     "ac_name": "ETOMIC",
@@ -182,7 +179,7 @@
       "190.114.254.104"
     ]
   },
-  {
+ {
     "ac_name": "DION",
     "ac_supply": "3900000000",
     "ac_reward": "22260000000",
@@ -246,6 +243,19 @@
    "ac_supply": "10000000000",
    "ac_cc": "2",
    "addnode": ["51.75.122.83"]
+ },
+ {
+   "ac_name": "RICK",
+   "ac_supply": "90000000000",
+   "ac_reward": "100000000",
+   "ac_cc": "3",
+   "addnode": ["138.201.136.145"]
+ },
+ {
+   "ac_name": "MORTY",
+   "ac_supply": "90000000000",
+   "ac_reward": "100000000",
+   "ac_cc": "3",
+   "addnode": ["138.201.136.145"]
  }
-
 ]
