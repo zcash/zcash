@@ -499,8 +499,14 @@ bool CWallet::Unlock(const SecureString& strWalletPassphrase)
                 return false;
             if (!crypter.Decrypt(pMasterKey.second.vchCryptedKey, vMasterKey))
                 continue; // try another master key
-            if (CCryptoKeyStore::Unlock(vMasterKey))
+            if (CCryptoKeyStore::Unlock(vMasterKey)) {
+                // Now that the wallet is decrypted, ensure we have an HD seed.
+                // https://github.com/zcash/zcash/issues/3607
+                if (!this->HaveHDSeed()) {
+                    this->GenerateNewSeed();
+                }
                 return true;
+            }
         }
     }
     return false;
