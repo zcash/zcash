@@ -152,26 +152,6 @@ int64_t AddPricesInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,char
     return(totalinputs);
 }
 
-UniValue PricesList()
-{
-    UniValue result(UniValue::VARR); std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex; struct CCcontract_info *cp,C; int64_t amount,firstprice; int32_t height; int16_t leverage; uint256 txid,hashBlock,tokenid; CPubKey pk,pricespk; std::vector<uint16_t> vec; CTransaction vintx; char str[65];
-    cp = CCinit(&C,EVAL_PRICES);
-    pricespk = GetUnspendable(cp,0);
-    SetCCtxids(addressIndex,cp->normaladdr);
-    for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=addressIndex.begin(); it!=addressIndex.end(); it++)
-    {
-        txid = it->first.txhash;
-        if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
-        {
-            if ( vintx.vout.size() > 0 && prices_betopretdecode(vintx.vout[vintx.vout.size()-1].scriptPubKey,pk,height,amount,leverage,firstprice,vec,tokenid) == 'B' )
-            {
-                result.push_back(uint256_str(str,txid));
-            }
-        }
-    }
-    return(result);
-}
-
 UniValue prices_rawtxresult(UniValue &result,std::string rawtx,int32_t broadcastflag)
 {
     CTransaction tx;
@@ -621,6 +601,26 @@ UniValue PricesInfo(uint256 bettxid,int32_t refheight)
     }
     result.push_back(Pair("result","error"));
     result.push_back(Pair("error","cant find bettxid"));
+    return(result);
+}
+
+UniValue PricesList()
+{
+    UniValue result(UniValue::VARR); std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex; struct CCcontract_info *cp,C; int64_t amount,firstprice; int32_t height; int16_t leverage; uint256 txid,hashBlock,tokenid; CPubKey pk,pricespk; std::vector<uint16_t> vec; CTransaction vintx; char str[65];
+    cp = CCinit(&C,EVAL_PRICES);
+    pricespk = GetUnspendable(cp,0);
+    SetCCtxids(addressIndex,cp->normaladdr);
+    for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=addressIndex.begin(); it!=addressIndex.end(); it++)
+    {
+        txid = it->first.txhash;
+        if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
+        {
+            if ( vintx.vout.size() > 0 && prices_betopretdecode(vintx.vout[vintx.vout.size()-1].scriptPubKey,pk,height,amount,leverage,firstprice,vec,tokenid) == 'B' )
+            {
+                result.push_back(uint256_str(str,txid));
+            }
+        }
+    }
     return(result);
 }
 
