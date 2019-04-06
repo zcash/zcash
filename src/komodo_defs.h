@@ -84,5 +84,6 @@ int tx_height( const uint256 &hash );
 extern char NOTARYADDRS[64][36];
 extern uint8_t NUM_NOTARIES;
 void komodo_netevent(std::vector<uint8_t> payload);
+int32_t komodo_priceind(char *symbol);
 
 #endif

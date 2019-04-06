@@ -26,7 +26,7 @@ int32_t prices_extract(int64_t *pricedata,int32_t firstheight,int32_t numblocks,
 #define KOMODO_MAXPRICES 2048 // must be power of 2 and less than 8192
 #define KOMODO_PRICEMASK (~(KOMODO_MAXPRICES -  1))
 #define PRICES_WEIGHT (KOMODO_MAXPRICES * 1)
-#define PRICES_MUL (KOMODO_MAXPRICES * 2)
+#define PRICES_MULT (KOMODO_MAXPRICES * 2)
 #define PRICES_DIV (KOMODO_MAXPRICES * 3)
 #define PRICES_INV (KOMODO_MAXPRICES * 4)
 #define PRICES_MDD (KOMODO_MAXPRICES * 5)

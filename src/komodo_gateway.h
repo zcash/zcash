@@ -2284,6 +2284,18 @@ char *komodo_pricename(char *name,int32_t ind)
     return(0);
 }
 
+int32_t komodo_priceind(char *symbol)
+{
+    char name[65]; int32_t i,n = (int32_t)(komodo_cbopretsize(ASSETCHAINS_CBOPRET) / sizeof(uint32_t));
+    for (i=1; i<n; i++)
+    {
+        komodo_pricename(name,i);
+        if ( strcmp(name,symbol) == 0 )
+            return(i);
+    }
+    return(-1);
+}
+
 int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int32_t rawskip,uint32_t *nonzprices,int32_t smoothwidth)
 {
     int32_t i,j,k,n,iter,correlation,maxcorrelation=0; int64_t firstprice,price,sum,den,mult,refprice,lowprice,highprice;
