@@ -212,7 +212,7 @@ int32_t prices_syntheticvec(std::vector<uint16_t> &vec,std::vector<std::string> 
             opcode = PRICES_MMM, need = 3;
         else if ( opstr == "///" )
             opcode = PRICES_DDD, need = 3;
-        else if ( (ind= komodo_pricesind(opstr.c_str())) >= 0 )
+        else if ( (ind= komodo_priceind(opstr.c_str())) >= 0 )
             opcode = ind, need = 0;
         else if ( (weight= atoi(opstr.c_str())) > 0 && weight < KOMODO_MAXPRICES )
         {
@@ -446,7 +446,7 @@ UniValue PricesAddFunding(uint64_t txfee,uint256 bettxid,int64_t amount)
     GetCCaddress(cp,myaddr,mypk);
     if ( AddNormalinputs(mtx,mypk,amount+txfee,64) >= amount+txfee )
     {
-        if ( prices_batontxid(addedbets,batontxid,bettxid) >= 0 )
+        if ( prices_batontxid(batontxid,bettx,bettxid) >= 0 )
         {
             mtx.vin.push_back(CTxIn(batontxid,0,CScript()));
             mtx.vout.push_back(MakeCC1vout(cp->evalcode,txfee,mypk)); // baton for total funding
@@ -481,7 +481,7 @@ UniValue PricesSetcostbasis(uint64_t txfee,uint256 bettxid)
         if ( prices_betopretdecode(bettx.vout[numvouts-1].scriptPubKey,pk,firstheight,positionsize,leverage,firstprice,vec,tokenid) == 'B' )
         {
             addedbets = prices_batontxid(batontxid,bettx,bettxid);
-            mtx.vin.push_back(CTxIn(bettx,1,CScript()));
+            mtx.vin.push_back(CTxIn(bettxid,1,CScript()));
             for (i=0; i<PRICES_DAYWINDOW; i++)
             {
                 if ( (profits= prices_syntheticprofits(&costbasis,firstheight,firstheight+i,leverage,vec,positionsize,addedbets)) < 0 )

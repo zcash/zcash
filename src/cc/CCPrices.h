@@ -18,7 +18,7 @@
 #define CC_PRICES_H
 
 #include "CCinclude.h"
-int32_t prices_extract(int64_t *pricedata,int32_t firstheight,int32_t numblocks,int32_t ind,int32_t daywindow);
+int32_t prices_extract(int64_t *pricedata,int32_t firstheight,int32_t numblocks,int32_t ind);
 
 #define PRICES_DAYWINDOW ((3600*24/ASSETCHAINS_BLOCKTIME) + 1)
 #define PRICES_TXFEE 10000
