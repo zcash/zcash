@@ -83,7 +83,58 @@ CBOPRET creates trustless oracles, which can be used for making a synthetic cash
  
  Appendix Synthetic position definition language:
  
-*/
+ Let us start from the familiar BTCUSD nomenclature. this is similar (identical) to forex EURUSD and the equivalent. Notice the price needs two things as it is actually a ratio, ie. BTCUSD is how many USD does 1 BTC get converted to. It can be thought of as the value of BTC/USD, in other words a ratio.
+ 
+ The value of BTC alone, or USD alone, it is actually quite an abstract issue and it can only be approximated. Specific ways of how to do this can be discussed later, for now it is only important to understand that all prices are actually ratios.
+ 
+ And these ratios work as normal algebra does. So a/b * b/c == a/c! You can try this out with BTCUSD and USDJPY -> BTC/USD * USD/JPY -> BTC/JPY or the BTCJPY price
+ 
+ division is the reciprocal, so BTCUSD reciprocated is USDBTC
+ 
+ Without getting into all the possible combinations of things, let us first understand what the language allows. It uses a stack based language, where individual tokens update the state. The final state needs to have an empty stack and it will have a calculated price.
+ 
+ The most important is pushing a specific price onto the stack. All the correlated and smoothed prices are normalized so it has each integer unit equal to 0.00000001, amounts above 100 million are above one, amounts less are below one. 100 million is the unit constant.
+ 
+ In the prices CC synthetic definition language, the symbol that is returned pushes the adjusted price to the stack. The adjustment is selecting between the correlated and smoothed if within a day from the bet creation, or just the smoothed if after a day. You can have a maximum depth of 3, any more than that and it should return an error.
+ 
+ This means there are operations that are possible on 1, 2 and 3 symbols. For 1 symbol, it is easy, the only direct operation is the inverse, which is represented by "!". All items in the language are separated by ","
+ 
+ "BTCUSD, !"
+ 
+ The above is the inverse or USD/BTC, which is another way to short BTCUSD. It is also possible to short the entire synthetic with a negative leverage. The exact results of a -1 leverage and inverse, might not be exact due to the math involved with calculating the profit, but it should generally be similar.
+ 
+ For two symbols, there is a bit more we can do, namely multiply and divide, combined with inverting, however to simplify the language any inverting is required to be done by the ordering of the symbols and usage of multiply or divide. multiply is "*" and divide is "/" the top of the stack (last to be pushed) is the divisor, the one right before the divisor is the numerator.
+ 
+ "BTCUSD, USDJPY, *" <- That will create a BTCJPY synthetic
+ 
+ "BTCEUR, BTCUSD, /" <- That will create a USDEUR synthetic
+ 
+ If you experiment around with this, you will see that given two symbols and the proper order and * or /, you can always create the synthetic that you want, assuming what you want is the cancelling out of the term in common with the two symbols and the resulting ratio is between the two unique terms.
+ */
+
+// Now we get to the three symbol operations, which there are 4 of *//, **/, *** and ///
+ 
+/*
+ these four operators work on the top of the stack in left to right order as the syntax of the definition lists it, though it is even possible to have the value from an earlier computation on the top of the stack. Ultimately all three will be multiplied together, so a * in a spot means it us used without changing. A / means its inverse will be used.
+ 
+ "KMDBTC, BTCUSD, USDJPY, ***" <- this would create a KMDJPY synthetic. The various location of the / to make an inverse is to orient the raw symbol into the right orientation as the pricefeed is only getting one orientation of the ratio.
+
+ So now we have covered all ways to map 1, 2 and 3 values on the top of the stack. A value can be on the top of the stack directly from a symbol, or as the result of some 1, 2 or 3 symbol operation. With a maximum stack depth of 3, it might require some experimentation to get a very complex synthetic to compile. Alternately, a stack deeper than 3 might be the acceptable solution  if there are a family of synthetics that need it.
+ 
+ At this point, it is time to describe the weights. It turns out that all above examples are incomplete and the synthetic descriptions are all insufficient and should generate an error. The reason is that the actual synthetic price is the value of the accumulator, which adds up all the weighted prices. In order to assign a weight to a price value on the stack, you simply use a number that is less than 2048. 
+ 
+ What such a weight number does, is consume the top of the stack, which also must be at depth of 1 and adds it to the accumulator. This allows combining multiple different synthetics into a meta synthetic, like for an aggregated index that is weighted by marketcap, or whatever other type of ratio trade that is desired.
+ 
+ "BTCUSD, 1000, ETHBTC, BTCUSD, *, 300" -> that creates a dual index of BTCUSD and ETHUSD with a 30% ETH weight
+ 
+ all weight operations consumes the one and only stack element and adds its weight to the accumulator, using this a very large number of terms can be all added together. Using inverses, allows to get the short direction into the equation mixed with longs, but all terms must be positive. If you want to create a spread between two synthetics, you need to create two different synthetics and go long with one and short with another.
+ 
+ "BTCUSD, 1" with leverage -2 and "KMDBTC, BTCUSD, *, 1" with leverage 1 this will setup a +KMDUSD -2 BTCUSD spread when the two are combined, and would be at breakeven when KMDUSD gains 2x more percentage wise than BTC does. anytime KMD gains more, will be positive, if the gains are less, would be negative.
+ 
+ Believe it or not, the string to binary compiler for synthetic description and interpretation of it is less than 200 lines of code.
+ 
+ */
+
 
 // start of consensus code
 
