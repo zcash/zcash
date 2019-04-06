@@ -154,7 +154,7 @@ int64_t AddPricesInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,char
 
 UniValue PricesList()
 {
-    UniValue result(UniValue::VARR); std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex; struct CCcontract_info *cp,C; int64_t amount,firstprice; int32_t height; int16_t leverage; uint256 txid,hashBlock; CPubKey pk,pricespk; std::vector<uint16_t> vec; CTransaction vintx;
+    UniValue result(UniValue::VARR); std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex; struct CCcontract_info *cp,C; int64_t amount,firstprice; int32_t height; int16_t leverage; uint256 txid,hashBlock,tokenid; CPubKey pk,pricespk; std::vector<uint16_t> vec; CTransaction vintx;
     cp = CCinit(&C,EVAL_PRICES);
     pricespk = GetUnspendable(cp,0);
     SetCCtxids(addressIndex,cp->normaladdr);
@@ -163,7 +163,7 @@ UniValue PricesList()
         txid = it->first.txhash;
         if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
         {
-            if ( vintx.vout.size() > 0 && prices_betopretdecode(vintx.vout[vintx.vout.size()-1].scriptPubKey,pk,height,amount,leverage,firstprice,vec) == 'B' )
+            if ( vintx.vout.size() > 0 && prices_betopretdecode(vintx.vout[vintx.vout.size()-1].scriptPubKey,pk,height,amount,leverage,firstprice,vec,tokenid) == 'B' )
             {
                 result.push_back(uint256_str(str,txid));
             }
@@ -470,7 +470,7 @@ UniValue PricesSetcostbasis(uint64_t txfee,uint256 bettxid)
 {
     int32_t nextheight = komodo_nextheight();
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(),nextheight); UniValue result(UniValue::VOBJ);
-    struct CCcontract_info *cp,C; CTransaction bettx; uint256 hashBlock; int64_t myfee,positionsize=0,addedbets,firstprice=0,profits=0,costbasis=0; int32_t i,firstheight=0,height,numvouts; int16_t leverage=0; std::vector<uint16_t> vec; CPubKey pk,mypk,pricespk; std::string rawtx;
+    struct CCcontract_info *cp,C; CTransaction bettx; uint256 hashBlock,tokenid; int64_t myfee,positionsize=0,addedbets,firstprice=0,profits=0,costbasis=0; int32_t i,firstheight=0,height,numvouts; int16_t leverage=0; std::vector<uint16_t> vec; CPubKey pk,mypk,pricespk; std::string rawtx;
     cp = CCinit(&C,EVAL_PRICES);
     if ( txfee == 0 )
         txfee = PRICES_TXFEE;
@@ -478,7 +478,7 @@ UniValue PricesSetcostbasis(uint64_t txfee,uint256 bettxid)
     pricespk = GetUnspendable(cp,0);
     if ( myGetTransaction(bettxid,bettx,hashBlock) != 0 && (numvouts= bettx.vout.size()) > 3 )
     {
-        if ( prices_betopretdecode(bettx.vout[numvouts-1].scriptPubKey,pk,firstheight,positionsize,leverage,firstprice,vec) == 'B' )
+        if ( prices_betopretdecode(bettx.vout[numvouts-1].scriptPubKey,pk,firstheight,positionsize,leverage,firstprice,vec,tokenid) == 'B' )
         {
             addedbets = prices_addedbets(bettx);
             mtx.vin.push_back(CTxVin(bettx,1,CScript()));
