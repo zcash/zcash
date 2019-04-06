@@ -6915,7 +6915,7 @@ UniValue pricesinfo(const UniValue& params, bool fHelp)
     if ( ensure_CCrequirements(EVAL_PRICES) < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     fundingtxid = Parseuint256((char *)params[0].get_str().c_str());
-    return(PricesInfo(txfee,fundingtxid));
+    return(PricesInfo(0,fundingtxid));
 }
 
 UniValue dicefund(const UniValue& params, bool fHelp)
