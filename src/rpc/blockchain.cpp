@@ -1177,7 +1177,7 @@ UniValue paxprice(const UniValue& params, bool fHelp)
 int32_t komodo_heightpricebits(uint64_t *seedp,uint32_t *heightbits,int32_t nHeight);
 char *komodo_pricename(char *name,int32_t ind);
 int64_t komodo_pricesmoothed(int64_t *correlated,int32_t cskip,int64_t *correlated2,int32_t numprices);
-int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int32_t skip,int32_t numprices,uint32_t *rawprices2,int32_t smoothwidth);
+int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int32_t rawskip,uint32_t *nonzprices,int32_t smoothwidth);
 int32_t komodo_nextheight();
 uint32_t komodo_heightstamp(int32_t height);
 int64_t komodo_pricemult(int32_t ind);
@@ -1185,7 +1185,7 @@ int64_t komodo_pricemult(int32_t ind);
 
 int32_t prices_extract(int64_t *pricedata,int32_t firstheight,int32_t numblocks,int32_t ind)
 {
-    int32_t height,i,n,width,numpricefeeds = -1; uint64_t seed,rngval; int64_t *correlated2; uint32_t rawprices[1440*6],*ptr;
+    int32_t height,i,n,width,numpricefeeds = -1; uint64_t seed,ignore,rngval; int64_t *correlated2; uint32_t rawprices[1440*6],*ptr;
     //daywindow = (3600*24/ASSETCHAINS_BLOCKTIME) + 1;
     //pricedata = (uint32_t *)calloc(sizeof(*prices)*3,numblocks + daywindow*2 + PRICES_SMOOTHWIDTH);
     width = numblocks+PRICES_DAYWINDOW*2+PRICES_SMOOTHWIDTH;
@@ -1211,7 +1211,7 @@ int32_t prices_extract(int64_t *pricedata,int32_t firstheight,int32_t numblocks,
         rngval = (rngval*11109 + 13849);
         ptr = (uint32_t *)&pricedata[i*3];
         correlated2[i] = ptr[0];
-        if ( (pricedata[i*3+1]= komodo_pricecorrelated(rngval,ind,(uint32_t)&pricedata[i*3],6,0,PRICES_SMOOTHWIDTH)) < 0 )
+        if ( (pricedata[i*3+1]= komodo_pricecorrelated(rngval,ind,(uint32_t *)&pricedata[i*3],6,0,PRICES_SMOOTHWIDTH)) < 0 )
         {
             free(correlated2);
             return(-3);
