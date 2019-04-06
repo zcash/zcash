@@ -212,7 +212,7 @@ int32_t prices_syntheticvec(std::vector<uint16_t> &vec,std::vector<std::string> 
             opcode = PRICES_MMM, need = 3;
         else if ( opstr == "///" )
             opcode = PRICES_DDD, need = 3;
-        else if ( (ind= komodo_priceind(opstr.c_str())) >= 0 )
+        else if ( (ind= komodo_priceind((char *)opstr.c_str())) >= 0 )
             opcode = ind, need = 0;
         else if ( (weight= atoi(opstr.c_str())) > 0 && weight < KOMODO_MAXPRICES )
         {
@@ -256,8 +256,8 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec,int32_t height,int32_t m
                     else
                     {
                         if ( leverage > 0 )
-                            pricestack[depth] = MAX(pricedata[1],pricedata[2]);
-                        else pricestack[depth] = MIN(pricedata[1],pricedata[2]);
+                            pricestack[depth] = (pricedata[1] > pricedata[2]) ? pricedata[1] : pricedata[2]; // MAX
+                        else pricestack[depth] = (pricedata[1] < pricedata[2]) ? pricedata[1] : pricedata[2]; // MIN
                     }
                 }
                 if ( pricestack[depth] == 0 )
@@ -389,7 +389,7 @@ int64_t prices_costbasis(CTransaction bettx)
     return(costbasis);
 }
 
-int64_t prices_batontxid(uint256 &batontxid,CTransaction bettx,uint256 bettxid);
+int64_t prices_batontxid(uint256 &batontxid,CTransaction bettx,uint256 bettxid)
 {
     int64_t addedbets = 0;
     // iterate through batons, adding up vout1 -> addedbets
@@ -437,7 +437,7 @@ UniValue PricesAddFunding(uint64_t txfee,uint256 bettxid,int64_t amount)
 {
     int32_t nextheight = komodo_nextheight();
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(),nextheight); UniValue result(UniValue::VOBJ);
-    struct CCcontract_info *cp,C; CPubKey pricespk,mypk; int64_t addedbets=0,betamount,firstprice; std::vector<uint16_t> vec; uint256 batontxid; std::string rawtx; char myaddr[64];
+    struct CCcontract_info *cp,C; CTransaction bettx; CPubKey pricespk,mypk; int64_t addedbets=0,betamount,firstprice; std::vector<uint16_t> vec; uint256 batontxid; std::string rawtx; char myaddr[64];
     cp = CCinit(&C,EVAL_PRICES);
     if ( txfee == 0 )
         txfee = PRICES_TXFEE;
@@ -484,7 +484,7 @@ UniValue PricesSetcostbasis(uint64_t txfee,uint256 bettxid)
             mtx.vin.push_back(CTxIn(bettxid,1,CScript()));
             for (i=0; i<PRICES_DAYWINDOW; i++)
             {
-                if ( (profits= prices_syntheticprofits(&costbasis,firstheight,firstheight+i,leverage,vec,positionsize,addedbets)) < 0 )
+                if ( (profits= prices_syntheticprofits(costbasis,firstheight,firstheight+i,leverage,vec,positionsize,addedbets)) < 0 )
                 {
                     result.push_back(Pair("rekt",(int64_t)1));
                     result.push_back(Pair("rektheight",(int64_t)firstheight+i));
@@ -523,7 +523,7 @@ UniValue PricesRekt(uint64_t txfee,uint256 bettxid,int32_t rektheight)
         {
             costbasis = prices_costbasis(bettx);
             addedbets = prices_batontxid(batontxid,bettx,bettxid);
-            if ( (profits= prices_syntheticprofits(&ignore,firstheight,rektheight,leverage,vec,positionsize,addedbets)) < 0 )
+            if ( (profits= prices_syntheticprofits(ignore,firstheight,rektheight,leverage,vec,positionsize,addedbets)) < 0 )
             {
                 myfee = (positionsize + addedbets) / 500;
             }
@@ -572,7 +572,7 @@ UniValue PricesCashout(uint64_t txfee,uint256 bettxid)
         {
             costbasis = prices_costbasis(bettx);
             addedbets = prices_batontxid(batontxid,bettx,bettxid);
-            if ( (profits= prices_syntheticprofits(&ignore,firstheight,nextheight-1,leverage,vec,positionsize,addedbets)) < 0 )
+            if ( (profits= prices_syntheticprofits(ignore,firstheight,nextheight-1,leverage,vec,positionsize,addedbets)) < 0 )
             {
                 prices_betjson(result,profits,costbasis,positionsize,addedbets,leverage,firstheight,firstprice);
                 result.push_back(Pair("result","error"));
@@ -608,7 +608,7 @@ UniValue PricesInfo(uint256 bettxid,int32_t height)
         {
             costbasis = prices_costbasis(bettx);
             addedbets = prices_batontxid(batontxid,bettx,bettxid);
-            if ( (profits= prices_syntheticprofits(&ignore,firstheight,firstheight+i,leverage,vec,positionsize,addedbets)) < 0 )
+            if ( (profits= prices_syntheticprofits(ignore,firstheight,firstheight+i,leverage,vec,positionsize,addedbets)) < 0 )
             {
                 result.push_back(Pair("rekt",1));
                 result.push_back(Pair("rektfee",(positionsize + addedbets) / 500));
