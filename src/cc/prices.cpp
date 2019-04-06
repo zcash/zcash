@@ -17,123 +17,115 @@
 #include "CCPrices.h"
 
 /*
- Prices CC would best build on top of the oracles CC, ie. to combine payments for multiple oracles and to calculate a 51% protected price feed.
+CBOPRET creates trustless oracles, which can be used for making a synthetic cash settlement system based on real world prices;
  
- We need to assume there is an oracle for a specific price. In the event there are more than one provider, the majority need to be within correlation distance to update a pricepoint.
-
- int64_t OraclePrice(int32_t height,uint256 reforacletxid,char *markeraddr,char *format);
-
- Using the above function, a consensus price can be obtained for a datasource.
+ 0.5% fee based on betamount, NOT leveraged betamount!!
+ 0.1% collected by price basis determinant
+ 0.2% collected by rekt tx
  
- given an oracletxid, the marketaddr and format can be extracted to be used for future calls to OraclePrice. This allows to set a starting price and that in turn allows cash settled leveraged trading!
+ PricesBet -> +/-leverage, amount, synthetic -> opreturn includes current price
+    funds are locked into 1of2 global CC address
+    for first day, long basis is MAX(correlated,smoothed), short is MIN()
+    reference price is the smoothed of the previous block
+    if synthetic value + amount goes negative, then anybody can rekt it to collect a rektfee, proof of rekt must be included to show cost basis, rekt price
+    original creator can liquidate at anytime and collect (synthetic value + amount) from globalfund
+    0.5% of bet -> globalfund
+  
+ PricesStatus -> bettxid maxsamples returns initial params, cost basis, amount left, rekt:true/false, rektheight, initial synthetic price, current synthetic price, net gain
  
- Funds work like with dice, ie. there is a Prices plan that traders bet against.
+ PricesRekt -> bettxid height -> 0.1% to miner, rest to global CC
  
- PricesFunding oracletxid, margin, priceaveraging, maxleverage, funding, longtoken, shorttoken, N [pubkeys]
+ PricesClose -> bettxid returns (synthetic value + amount)
  
- PricesBet -> oracletxid start with 'L', leverage, funding, direction
-    funds are locked into global CC address
-    it can be closed at anytime by the trader for cash settlement
-    the house account can close it if rekt
+ PricesList -> all bettxid -> list [bettxid, netgain]
  
- Implementation Notes:
-  In order to eliminate the need for worrying about sybil attacks, each prices plan would be able to specific pubkey(s?) for whitelisted publishers. It would be possible to have a non-whitelisted plan that would use 50% correlation between publishers. 
- 
- delta neutral balancing of riskexposure: fabs(long exposure - short exposure)
- bet +B at leverage L
- absval(sum(+BLi) - sum(-Bli))
- 
- validate: update riskexposure and it needs to be <= funds
- 
- PricesProfits: limit withdraw to funds in excess of riskexposure
- PricesFinish: payout (if winning) and update riskexposure
- need long/short exposure assets
- 
- funding -> 1of2 CC global CC address and dealer address, exposure tokens to global 1of2 assets CC address
- pricebet -> user funds and exposure token to 1of2 address.
- pricewin -> winnings from dealer funds, exposure token back to global address
- priceloss -> exposuretoken back to global address
- 
- exposure address, funds address
- 
-
  
 */
 
 // start of consensus code
 
-int64_t PricesOraclePrice(int64_t &rektprice,uint64_t mode,uint256 oracletxid,std::vector<CPubKey>pubkeys,int32_t dir,int64_t amount,int32_t leverage)
-{
-    int64_t price;
-    // howto ensure price when block it confirms it not known
-    // get price from oracle + current chaintip
-    // normalize leveraged amount
-    if ( dir > 0 )
-        rektprice = price * leverage / (leverage-1);
-    else rektprice = price * (leverage-1) / leverage;
-    return(price);
-}
-
-CScript EncodePricesFundingOpRet(uint8_t funcid,CPubKey planpk,uint256 oracletxid,uint256 longtoken,uint256 shorttoken,int32_t millimargin,uint64_t mode,int32_t maxleverage,std::vector<CPubKey> pubkeys,uint256 bettoken)
+CScript prices_betopret(CPubKey mypk,int32_t height,int64_t amount,int16_t leverage,int64_t firstprice,std::vector<uint16_t> vec,uint256 tokenid)
 {
     CScript opret;
-    fprintf(stderr,"implement EncodePricesFundingOpRet\n");
+    opret << OP_RETURN << E_MARSHAL(ss << EVAL_PRICES << 'B' << mypk << height << amount << leverage << firstprice << vec << tokenid);
     return(opret);
 }
 
-uint8_t DecodePricesFundingOpRet(CScript scriptPubKey,CPubKey &planpk,uint256 &oracletxid,uint256 &longtoken,uint256 &shorttoken,int32_t &millimargin,uint64_t &mode,int32_t &maxleverage,std::vector<CPubKey> &pubkeys,uint256 &bettoken)
+uint8_t prices_betopretdecode(CScript scriptPubKey,CPubKey &pk,int32_t &height,int64_t &amount,int16_t &leverage,int64_t &firstprice,std::vector<uint16_t> &vec,uint256 &tokenid)
 {
-    fprintf(stderr,"implement DecodePricesFundingOpRet\n");
+    std::vector<uint8_t> vopret; uint8_t e,f;
+    GetOpReturnData(scriptPubKey,vopret);
+    if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> pk; ss >> height; ss >> amount; ss >> leverage; ss >> firstprice; ss >> vec; ss >> tokenid) != 0 && e == EVAL_PRICES && f == 'B' )
+    {
+        return(f);
+    }
+    return(0);
+}
+
+CScript prices_addopret(uint256 bettxid,CPubKey mypk,int64_t amount)
+{
+    CScript opret;
+    opret << OP_RETURN << E_MARSHAL(ss << EVAL_PRICES << 'A' << bettxid << mypk << amount);
+    return(opret);
+}
+
+uint8_t prices_addopretdecode(CScript scriptPubKey,uint256 &bettxid,CPubKey &pk,int64_t &amount)
+{
+    std::vector<uint8_t> vopret; uint8_t e,f;
+    GetOpReturnData(scriptPubKey,vopret);
+    if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> bettxid; ss >> pk; ss >> amount) != 0 && e == EVAL_PRICES && f == 'A' )
+    {
+        return(f);
+    }
+    return(0);
+}
+
+CScript prices_costbasisopret(uint256 bettxid,CPubKey mypk,int32_t height,int64_t costbasis)
+{
+    CScript opret;
+    opret << OP_RETURN << E_MARSHAL(ss << EVAL_PRICES << 'C' << bettxid << mypk << height << costbasis);
+    return(opret);
+}
+
+uint8_t prices_costbasisopretdecode(CScript scriptPubKey,uint256 &bettxid,CPubKey &pk,int32_t &height,int64_t &costbasis)
+{
+    std::vector<uint8_t> vopret; uint8_t e,f;
+    GetOpReturnData(scriptPubKey,vopret);
+    if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> bettxid; ss >> pk; ss >> height; ss >> costbasis) != 0 && e == EVAL_PRICES && f == 'C' )
+    {
+        return(f);
+    }
+    return(0);
+}
+
+CScript prices_finalopret(uint256 bettxid,int64_t profits,int32_t height,CPubKey mypk,int64_t firstprice,int64_t costbasis,int64_t addedbets,int64_t positionsize,int16_t leverage)
+{
+    CScript opret;
+    opret << OP_RETURN << E_MARSHAL(ss << EVAL_PRICES << 'F' << bettxid << profits << height << mypk << firstprice << costbasis << addedbets << positionsize << leverage);
+    return(opret);
+}
+
+uint8_t prices_finalopretdecode(CScript scriptPubKey,uint256 &bettxid,int64_t &profits,int32_t &height,CPubKey &pk,int64_t &firstprice,int64_t &costbasis,int64_t &addedbets,int64_t &positionsize,int16_t &leverage)
+{
+    std::vector<uint8_t> vopret; uint8_t e,f;
+    GetOpReturnData(scriptPubKey,vopret);
+    if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> bettxid; ss >> profits; ss >> height; ss >> pk; ss >> firstprice; ss >> costbasis; ss >> addedbets; ss >> positionsize; ss >> leverage) != 0 && e == EVAL_PRICES && f == 'F' )
+    {
+        return(f);
+    }
     return(0);
 }
 
 bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
 {
-    int32_t numvins,numvouts,preventCCvins,preventCCvouts,i,numblocks; bool retval; uint256 txid; uint8_t hash[32]; char str[65],destaddr[64];
-
-    return true; // TODO remove, for test dual-evals
-
-    return eval->Invalid("no validation yet");
-    std::vector<std::pair<CAddressIndexKey, CAmount> > txids;
-    numvins = tx.vin.size();
-    numvouts = tx.vout.size();
-    preventCCvins = preventCCvouts = -1;
-    if ( numvouts < 1 )
-        return eval->Invalid("no vouts");
-    else
-    {
-        for (i=0; i<numvins; i++)
-        {
-            if ( IsCCInput(tx.vin[0].scriptSig) == 0 )
-            {
-                return eval->Invalid("illegal normal vini");
-            }
-        }
-        //fprintf(stderr,"check amounts\n");
-        //if ( PricesExactAmounts(cp,eval,tx,1,10000) == false )
-        {
-            fprintf(stderr,"Pricesget invalid amount\n");
-            return false;
-        }
-        //else
-        {
-            txid = tx.GetHash();
-            memcpy(hash,&txid,sizeof(hash));
-            retval = PreventCC(eval,tx,preventCCvins,numvins,preventCCvouts,numvouts);
-            if ( retval != 0 )
-                fprintf(stderr,"Pricesget validated\n");
-            else fprintf(stderr,"Pricesget invalid\n");
-            return(retval);
-        }
-    }
+    return true;
 }
 // end of consensus code
 
 // helper functions for rpc calls in rpcwallet.cpp
 
-int64_t AddTokensInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,char *destaddr,uint256 tolenid,int64_t total,int32_t maxinputs)
+int64_t AddPricesInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,char *destaddr,int64_t total,int32_t maxinputs,uint256 vintxid,int32_t vinvout)
 {
-    // add threshold check
     int64_t nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t vout,n = 0;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     SetCCunspents(unspentOutputs,destaddr);
@@ -141,11 +133,11 @@ int64_t AddTokensInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,char
     {
         txid = it->first.txhash;
         vout = (int32_t)it->first.index;
-        // need to prevent dup
+        if ( vout == vinvout && txid == vintxid )
+            continue;
         if ( GetTransaction(txid,vintx,hashBlock,false) != 0 && vout < vintx.vout.size() )
         {
-            // need to verify assetid
-            if ( (nValue= vintx.vout[vout].nValue) >= 10000 && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0 )
+            if ( (nValue= vintx.vout[vout].nValue) >= total/maxinputs && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0 )
             {
                 if ( total != 0 && maxinputs != 0 )
                     mtx.vin.push_back(CTxIn(txid,vout,CScript()));
@@ -160,9 +152,461 @@ int64_t AddTokensInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,char
     return(totalinputs);
 }
 
+UniValue prices_rawtxresult(UniValue &result,std::string rawtx,int32_t broadcastflag)
+{
+    CTransaction tx;
+    if ( rawtx.size() > 0 )
+    {
+        result.push_back(Pair("hex",rawtx));
+        if ( DecodeHexTx(tx,rawtx) != 0 )
+        {
+            if ( broadcastflag != 0 && myAddtomempool(tx) != 0 )
+                RelayTransaction(tx);
+            result.push_back(Pair("txid",tx.GetHash().ToString()));
+            result.push_back(Pair("result","success"));
+        } else result.push_back(Pair("error","decode hex"));
+    } else result.push_back(Pair("error","couldnt finalize CCtx"));
+    return(result);
+}
+
+int32_t prices_syntheticvec(std::vector<uint16_t> &vec,std::vector<std::string> synthetic)
+{
+    int32_t i,need,ind,depth = 0; std::string opstr; uint16_t opcode,weight;
+    if ( synthetic.size() == 0 )
+        return(-1);
+    for (i=0; i<synthetic.size(); i++)
+    {
+        need = 0;
+        opstr = synthetic[i];
+        if ( opstr == "*" )
+            opcode = PRICES_MULT, need = 2;
+        else if ( opstr == "/" )
+            opcode = PRICES_DIV, need = 2;
+        else if ( opstr == "!" )
+            opcode = PRICES_INV, need = 1;
+        else if ( opstr == "**/" )
+            opcode = PRICES_MMD, need = 3;
+        else if ( opstr == "*//" )
+            opcode = PRICES_MDD, need = 3;
+        else if ( opstr == "***" )
+            opcode = PRICES_MMM, need = 3;
+        else if ( opstr == "///" )
+            opcode = PRICES_DDD, need = 3;
+        else if ( (ind= komodo_priceind((char *)opstr.c_str())) >= 0 )
+            opcode = ind, need = 0;
+        else if ( (weight= atoi(opstr.c_str())) > 0 && weight < KOMODO_MAXPRICES )
+        {
+            opcode = PRICES_WEIGHT | weight;
+            need = 1;
+        } else return(-2);
+        if ( depth < need )
+            return(-3);
+        depth -= need;
+        if ( (opcode & KOMODO_PRICEMASK) != PRICES_WEIGHT ) // weight
+            depth++;
+        if ( depth > 3 )
+            return(-4);
+        vec.push_back(opcode);
+    }
+    if ( depth != 0 )
+    {
+        fprintf(stderr,"depth.%d not empty\n",depth);
+        return(-5);
+    }
+    return(0);
+}
+
+int64_t prices_syntheticprice(std::vector<uint16_t> vec,int32_t height,int32_t minmax,int16_t leverage)
+{
+    int32_t i,ind,errcode,depth,retval = -1; uint16_t opcode; int64_t *pricedata,pricestack[4],price,den,a,b,c;
+    pricedata = (int64_t *)calloc(sizeof(*pricedata)*3,1 + PRICES_DAYWINDOW*2 + PRICES_SMOOTHWIDTH);
+    price = den = depth = errcode = 0;
+    for (i=0; i<vec.size(); i++)
+    {
+        opcode = vec[i];
+        ind = (opcode & (KOMODO_MAXPRICES-1));
+        switch ( opcode & KOMODO_PRICEMASK )
+        {
+            case 0:
+                pricestack[depth] = 0;
+                if ( prices_extract(pricedata,height,1,ind) == 0 )
+                {
+                    if ( minmax == 0 )
+                        pricestack[depth] = pricedata[2];
+                    else
+                    {
+                        if ( leverage > 0 )
+                            pricestack[depth] = (pricedata[1] > pricedata[2]) ? pricedata[1] : pricedata[2]; // MAX
+                        else pricestack[depth] = (pricedata[1] < pricedata[2]) ? pricedata[1] : pricedata[2]; // MIN
+                    }
+                }
+                if ( pricestack[depth] == 0 )
+                    errcode = -1;
+                depth++;
+                break;
+            case PRICES_WEIGHT: // multiply by weight and consume top of stack by updating price
+                if ( depth == 1 )
+                {
+                    depth--;
+                    price += pricestack[0] * ind;
+                    den += ind;
+                } else errcode = -2;
+                break;
+            case PRICES_MULT:
+                if ( depth >= 2 )
+                {
+                    b = pricestack[--depth];
+                    a = pricestack[--depth];
+                    pricestack[depth++] = (a * b) / SATOSHIDEN;
+                } else errcode = -3;
+                break;
+            case PRICES_DIV:
+                if ( depth >= 2 )
+                {
+                    b = pricestack[--depth];
+                    a = pricestack[--depth];
+                    pricestack[depth++] = (a * SATOSHIDEN) / b;
+                } else errcode = -4;
+                break;
+            case PRICES_INV:
+                if ( depth >= 1 )
+                {
+                    a = pricestack[--depth];
+                    pricestack[depth++] = (SATOSHIDEN * SATOSHIDEN) / a;
+                } else errcode = -5;
+                break;
+            case PRICES_MDD:
+                if ( depth >= 3 )
+                {
+                    c = pricestack[--depth];
+                    b = pricestack[--depth];
+                    a = pricestack[--depth];
+                    pricestack[depth++] = (((a * SATOSHIDEN) / b) * SATOSHIDEN) / c;
+                } else errcode = -6;
+                break;
+            case PRICES_MMD:
+                if ( depth >= 3 )
+                {
+                    c = pricestack[--depth];
+                    b = pricestack[--depth];
+                    a = pricestack[--depth];
+                    pricestack[depth++] = (a * b) / c;
+                } else errcode = -7;
+                break;
+            case PRICES_MMM:
+                if ( depth >= 3 )
+                {
+                    c = pricestack[--depth];
+                    b = pricestack[--depth];
+                    a = pricestack[--depth];
+                    pricestack[depth++] = ((a * b) / SATOSHIDEN) * c;
+               } else errcode = -8;
+                break;
+            case PRICES_DDD:
+                if ( depth >= 3 )
+                {
+                    c = pricestack[--depth];
+                    b = pricestack[--depth];
+                    a = pricestack[--depth];
+                    pricestack[depth++] = (((((SATOSHIDEN * SATOSHIDEN) / a) * SATOSHIDEN) / b) * SATOSHIDEN) / c;
+                } else errcode = -9;
+                break;
+            default:
+                errcode = -10;
+                break;
+        }
+        if ( errcode != 0 )
+            break;
+    }
+    free(pricedata);
+    if ( den == 0 )
+        return(-11);
+    else if ( depth != 0 )
+        return(-12);
+    else if ( errcode != 0 )
+        return(errcode);
+    return(price / den);
+}
+
+int64_t prices_syntheticprofits(int64_t &costbasis,int32_t firstheight,int32_t height,int16_t leverage,std::vector<uint16_t> vec,int64_t positionsize,int64_t addedbets)
+{
+    int64_t price,profits = 0; int32_t minmax;
+    minmax = (height > firstheight+PRICES_DAYWINDOW);
+    if ( (price= prices_syntheticprice(vec,height,minmax,leverage)) < 0 )
+    {
+        fprintf(stderr,"unexpected zero synthetic price at height.%d\n",height);
+        return(0);
+    }
+    if ( minmax != 0 )
+    {
+        if ( leverage > 0 && price > costbasis )
+            costbasis = price;
+        else if ( leverage < 0 && (costbasis == 0 || price < costbasis) )
+            costbasis = price;
+    }
+    profits = ((price * SATOSHIDEN) / costbasis) - SATOSHIDEN;
+    profits *= leverage * positionsize;
+    return(positionsize + addedbets + profits);
+}
+
+void prices_betjson(UniValue &result,int64_t profits,int64_t costbasis,int64_t positionsize,int64_t addedbets,int16_t leverage,int32_t firstheight,int64_t firstprice)
+{
+    result.push_back(Pair("profits",ValueFromAmount(profits)));
+    result.push_back(Pair("costbasis",ValueFromAmount(costbasis)));
+    result.push_back(Pair("positionsize",ValueFromAmount(positionsize)));
+    result.push_back(Pair("addedbets",ValueFromAmount(addedbets)));
+    result.push_back(Pair("leverage",(int64_t)leverage));
+    result.push_back(Pair("firstheight",(int64_t)firstheight));
+    result.push_back(Pair("firstprice",ValueFromAmount(firstprice)));
+}
+
+int64_t prices_costbasis(CTransaction bettx)
+{
+    int64_t costbasis = 0;
+    // if vout1 is spent, follow and extract costbasis from opreturn
+    //uint8_t prices_costbasisopretdecode(CScript scriptPubKey,uint256 &bettxid,CPubKey &pk,int32_t &height,int64_t &costbasis)
+
+    return(costbasis);
+}
+
+int64_t prices_batontxid(uint256 &batontxid,CTransaction bettx,uint256 bettxid)
+{
+    int64_t addedbets = 0;
+    // iterate through batons, adding up vout1 -> addedbets
+    return(addedbets);
+}
+
+UniValue PricesBet(uint64_t txfee,int64_t amount,int16_t leverage,std::vector<std::string> synthetic)
+{
+    int32_t nextheight = komodo_nextheight();
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(),nextheight); UniValue result(UniValue::VOBJ);
+    struct CCcontract_info *cp,C; CPubKey pricespk,mypk; int64_t betamount,firstprice; std::vector<uint16_t> vec; char myaddr[64]; std::string rawtx;
+    if ( leverage > PRICES_MAXLEVERAGE || leverage < -PRICES_MAXLEVERAGE )
+    {
+        result.push_back(Pair("result","error"));
+        result.push_back(Pair("error","leverage too big"));
+        return(result);
+    }
+    cp = CCinit(&C,EVAL_PRICES);
+    if ( txfee == 0 )
+        txfee = PRICES_TXFEE;
+    mypk = pubkey2pk(Mypubkey());
+    pricespk = GetUnspendable(cp,0);
+    GetCCaddress(cp,myaddr,mypk);
+    if ( prices_syntheticvec(vec,synthetic) < 0 || (firstprice= prices_syntheticprice(vec,nextheight-1,1,leverage)) < 0 || vec.size() == 0 || vec.size() > 4096 )
+    {
+        result.push_back(Pair("result","error"));
+        result.push_back(Pair("error","invalid synthetic"));
+        return(result);
+    }
+    if ( AddNormalinputs(mtx,mypk,amount+4*txfee,64) >= amount+4*txfee )
+    {
+        betamount = (amount * 199) / 200;
+        mtx.vout.push_back(MakeCC1vout(cp->evalcode,txfee,mypk)); // baton for total funding
+        mtx.vout.push_back(MakeCC1vout(cp->evalcode,(amount-betamount)+2*txfee,pricespk));
+        mtx.vout.push_back(MakeCC1of2vout(cp->evalcode,betamount,pricespk,mypk));
+        rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,prices_betopret(mypk,nextheight-1,amount,leverage,firstprice,vec,zeroid));
+        return(prices_rawtxresult(result,rawtx,0));
+    }
+    result.push_back(Pair("result","error"));
+    result.push_back(Pair("error","not enough funds"));
+    return(result);
+}
+
+UniValue PricesAddFunding(uint64_t txfee,uint256 bettxid,int64_t amount)
+{
+    int32_t nextheight = komodo_nextheight();
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(),nextheight); UniValue result(UniValue::VOBJ);
+    struct CCcontract_info *cp,C; CTransaction bettx; CPubKey pricespk,mypk; int64_t addedbets=0,betamount,firstprice; std::vector<uint16_t> vec; uint256 batontxid; std::string rawtx; char myaddr[64];
+    cp = CCinit(&C,EVAL_PRICES);
+    if ( txfee == 0 )
+        txfee = PRICES_TXFEE;
+    mypk = pubkey2pk(Mypubkey());
+    pricespk = GetUnspendable(cp,0);
+    GetCCaddress(cp,myaddr,mypk);
+    if ( AddNormalinputs(mtx,mypk,amount+txfee,64) >= amount+txfee )
+    {
+        if ( prices_batontxid(batontxid,bettx,bettxid) >= 0 )
+        {
+            mtx.vin.push_back(CTxIn(batontxid,0,CScript()));
+            mtx.vout.push_back(MakeCC1vout(cp->evalcode,txfee,mypk)); // baton for total funding
+            mtx.vout.push_back(MakeCC1vout(cp->evalcode,amount,pricespk));
+            rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,prices_addopret(bettxid,mypk,amount));
+            return(prices_rawtxresult(result,rawtx,0));
+        }
+        else
+        {
+            result.push_back(Pair("result","error"));
+            result.push_back(Pair("error","couldnt find batonttxid"));
+            return(result);
+        }
+    }
+    result.push_back(Pair("result","error"));
+    result.push_back(Pair("error","not enough funds"));
+    return(result);
+}
+
+UniValue PricesSetcostbasis(uint64_t txfee,uint256 bettxid)
+{
+    int32_t nextheight = komodo_nextheight();
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(),nextheight); UniValue result(UniValue::VOBJ);
+    struct CCcontract_info *cp,C; CTransaction bettx; uint256 hashBlock,batontxid,tokenid; int64_t myfee,positionsize=0,addedbets,firstprice=0,profits=0,costbasis=0; int32_t i,firstheight=0,height,numvouts; int16_t leverage=0; std::vector<uint16_t> vec; CPubKey pk,mypk,pricespk; std::string rawtx;
+    cp = CCinit(&C,EVAL_PRICES);
+    if ( txfee == 0 )
+        txfee = PRICES_TXFEE;
+    mypk = pubkey2pk(Mypubkey());
+    pricespk = GetUnspendable(cp,0);
+    if ( myGetTransaction(bettxid,bettx,hashBlock) != 0 && (numvouts= bettx.vout.size()) > 3 )
+    {
+        if ( prices_betopretdecode(bettx.vout[numvouts-1].scriptPubKey,pk,firstheight,positionsize,leverage,firstprice,vec,tokenid) == 'B' )
+        {
+            addedbets = prices_batontxid(batontxid,bettx,bettxid);
+            mtx.vin.push_back(CTxIn(bettxid,1,CScript()));
+            for (i=0; i<PRICES_DAYWINDOW; i++)
+            {
+                if ( (profits= prices_syntheticprofits(costbasis,firstheight,firstheight+i,leverage,vec,positionsize,addedbets)) < 0 )
+                {
+                    result.push_back(Pair("rekt",(int64_t)1));
+                    result.push_back(Pair("rektheight",(int64_t)firstheight+i));
+                    break;
+                }
+            }
+            if ( i == PRICES_DAYWINDOW )
+                result.push_back(Pair("rekt",0));
+            prices_betjson(result,profits,costbasis,positionsize,addedbets,leverage,firstheight,firstprice);
+            myfee = bettx.vout[1].nValue / 10;
+            result.push_back(Pair("myfee",myfee));
+            mtx.vout.push_back(CTxOut(myfee,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
+            mtx.vout.push_back(MakeCC1vout(cp->evalcode,bettx.vout[1].nValue-myfee-txfee,pricespk));
+            rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,prices_costbasisopret(bettxid,mypk,firstheight+PRICES_DAYWINDOW-1,costbasis));
+            return(prices_rawtxresult(result,rawtx,0));
+        }
+    }
+    result.push_back(Pair("result","error"));
+    result.push_back(Pair("error","cant find bettxid"));
+    return(result);
+}
+
+UniValue PricesRekt(uint64_t txfee,uint256 bettxid,int32_t rektheight)
+{
+    int32_t nextheight = komodo_nextheight();
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(),nextheight); UniValue result(UniValue::VOBJ);
+    struct CCcontract_info *cp,C; CTransaction bettx; uint256 hashBlock,tokenid,batontxid; int64_t myfee=0,positionsize,addedbets,firstprice,profits,ignore,costbasis=0; int32_t firstheight,numvouts; int16_t leverage; std::vector<uint16_t> vec; CPubKey pk,mypk,pricespk; std::string rawtx;
+    cp = CCinit(&C,EVAL_PRICES);
+    if ( txfee == 0 )
+        txfee = PRICES_TXFEE;
+    mypk = pubkey2pk(Mypubkey());
+    pricespk = GetUnspendable(cp,0);
+    if ( myGetTransaction(bettxid,bettx,hashBlock) != 0 && (numvouts= bettx.vout.size()) > 3 )
+    {
+        if ( prices_betopretdecode(bettx.vout[numvouts-1].scriptPubKey,pk,firstheight,positionsize,leverage,firstprice,vec,tokenid) == 'B' )
+        {
+            costbasis = prices_costbasis(bettx);
+            addedbets = prices_batontxid(batontxid,bettx,bettxid);
+            if ( (profits= prices_syntheticprofits(ignore,firstheight,rektheight,leverage,vec,positionsize,addedbets)) < 0 )
+            {
+                myfee = (positionsize + addedbets) / 500;
+            }
+            prices_betjson(result,profits,costbasis,positionsize,addedbets,leverage,firstheight,firstprice);
+            if ( myfee != 0 )
+            {
+                mtx.vin.push_back(CTxIn(bettxid,2,CScript()));
+                mtx.vout.push_back(CTxOut(myfee,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
+                mtx.vout.push_back(MakeCC1vout(cp->evalcode,bettx.vout[2].nValue-myfee-txfee,pricespk));
+                rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,prices_finalopret(bettxid,profits,rektheight,mypk,firstprice,costbasis,addedbets,positionsize,leverage));
+                return(prices_rawtxresult(result,rawtx,0));
+            }
+            else
+            {
+                result.push_back(Pair("result","error"));
+                result.push_back(Pair("error","position not rekt"));
+                return(result);
+            }
+        }
+        else
+        {
+            result.push_back(Pair("result","error"));
+            result.push_back(Pair("error","cant decode opret"));
+            return(result);
+        }
+    }
+    result.push_back(Pair("result","error"));
+    result.push_back(Pair("error","cant find bettxid"));
+    return(result);
+}
+
+UniValue PricesCashout(uint64_t txfee,uint256 bettxid)
+{
+    int32_t nextheight = komodo_nextheight();
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(),nextheight); UniValue result(UniValue::VOBJ);
+    struct CCcontract_info *cp,C; char destaddr[64]; CTransaction bettx; uint256 hashBlock,batontxid,tokenid; int64_t CCchange=0,positionsize,inputsum,ignore,addedbets,firstprice,profits,costbasis=0; int32_t i,firstheight,height,numvouts; int16_t leverage; std::vector<uint16_t> vec; CPubKey pk,mypk,pricespk; std::string rawtx;
+    cp = CCinit(&C,EVAL_PRICES);
+    if ( txfee == 0 )
+        txfee = PRICES_TXFEE;
+    mypk = pubkey2pk(Mypubkey());
+    pricespk = GetUnspendable(cp,0);
+    GetCCaddress(cp,destaddr,pricespk);
+    if ( myGetTransaction(bettxid,bettx,hashBlock) != 0 && (numvouts= bettx.vout.size()) > 3 )
+    {
+        if ( prices_betopretdecode(bettx.vout[numvouts-1].scriptPubKey,pk,firstheight,positionsize,leverage,firstprice,vec,tokenid) == 'B' )
+        {
+            costbasis = prices_costbasis(bettx);
+            addedbets = prices_batontxid(batontxid,bettx,bettxid);
+            if ( (profits= prices_syntheticprofits(ignore,firstheight,nextheight-1,leverage,vec,positionsize,addedbets)) < 0 )
+            {
+                prices_betjson(result,profits,costbasis,positionsize,addedbets,leverage,firstheight,firstprice);
+                result.push_back(Pair("result","error"));
+                result.push_back(Pair("error","position rekt"));
+                return(result);
+            }
+            prices_betjson(result,profits,costbasis,positionsize,addedbets,leverage,firstheight,firstprice);
+            mtx.vin.push_back(CTxIn(bettxid,2,CScript()));
+            if ( (inputsum= AddPricesInputs(cp,mtx,destaddr,profits+txfee,64,bettxid,2)) > profits+txfee )
+                CCchange = (inputsum - profits);
+            mtx.vout.push_back(CTxOut(bettx.vout[2].nValue + profits,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
+            if ( CCchange >= txfee )
+                mtx.vout.push_back(MakeCC1vout(cp->evalcode,CCchange,pricespk));
+            rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,prices_finalopret(bettxid,profits,nextheight-1,mypk,firstprice,costbasis,addedbets,positionsize,leverage));
+            return(prices_rawtxresult(result,rawtx,0));
+        }
+        else
+        {
+            result.push_back(Pair("result","error"));
+            result.push_back(Pair("error","cant decode opret"));
+            return(result);
+        }
+    }
+    return(result);
+}
+
+UniValue PricesInfo(uint256 bettxid,int32_t refheight)
+{
+    UniValue result(UniValue::VOBJ); CTransaction bettx; uint256 hashBlock,batontxid,tokenid; int64_t myfee,ignore,positionsize=0,addedbets=0,firstprice=0,profits=0,costbasis=0; int32_t i,firstheight=0,height,numvouts; int16_t leverage=0; std::vector<uint16_t> vec; CPubKey pk,mypk,pricespk; std::string rawtx;
+    if ( myGetTransaction(bettxid,bettx,hashBlock) != 0 && (numvouts= bettx.vout.size()) > 3 )
+    {
+        if ( prices_betopretdecode(bettx.vout[numvouts-1].scriptPubKey,pk,firstheight,positionsize,leverage,firstprice,vec,tokenid) == 'B' )
+        {
+            costbasis = prices_costbasis(bettx);
+            addedbets = prices_batontxid(batontxid,bettx,bettxid);
+            if ( (profits= prices_syntheticprofits(ignore,firstheight,refheight,leverage,vec,positionsize,addedbets)) < 0 )
+            {
+                result.push_back(Pair("rekt",1));
+                result.push_back(Pair("rektfee",(positionsize + addedbets) / 500));
+            } else result.push_back(Pair("rekt",0));
+            result.push_back(Pair("batontxid",batontxid.GetHex()));
+            prices_betjson(result,profits,costbasis,positionsize,addedbets,leverage,firstheight,firstprice);
+            result.push_back(Pair("height",(int64_t)refheight));
+            return(result);
+        }
+    }
+    result.push_back(Pair("result","error"));
+    result.push_back(Pair("error","cant find bettxid"));
+    return(result);
+}
+
 UniValue PricesList()
 {
-    UniValue result(UniValue::VARR); std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex; struct CCcontract_info *cp,C; uint64_t mode; int32_t margin,maxleverage; std::vector<CPubKey>pubkeys; uint256 txid,hashBlock,oracletxid,longtoken,shorttoken,bettoken; CPubKey planpk,pricespk; char str[65]; CTransaction vintx;
+    UniValue result(UniValue::VARR); std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex; struct CCcontract_info *cp,C; int64_t amount,firstprice; int32_t height; int16_t leverage; uint256 txid,hashBlock,tokenid; CPubKey pk,pricespk; std::vector<uint16_t> vec; CTransaction vintx; char str[65];
     cp = CCinit(&C,EVAL_PRICES);
     pricespk = GetUnspendable(cp,0);
     SetCCtxids(addressIndex,cp->normaladdr);
@@ -171,283 +615,13 @@ UniValue PricesList()
         txid = it->first.txhash;
         if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
         {
-            if ( vintx.vout.size() > 0 && DecodePricesFundingOpRet(vintx.vout[vintx.vout.size()-1].scriptPubKey,planpk,oracletxid,longtoken,shorttoken,margin,mode,maxleverage,pubkeys,bettoken) == 'F' )
+            if ( vintx.vout.size() > 0 && prices_betopretdecode(vintx.vout[vintx.vout.size()-1].scriptPubKey,pk,height,amount,leverage,firstprice,vec,tokenid) == 'B' )
             {
                 result.push_back(uint256_str(str,txid));
             }
         }
     }
     return(result);
-}
-
-// longtoken satoshis limits long exposure
-// shorttoken satoshis limits short exposure
-// both must be in the 1of2 CC address with its total supply
-// bettoken
-std::string PricesCreateFunding(uint64_t txfee,uint256 bettoken,uint256 oracletxid,uint64_t margin,uint64_t mode,uint256 longtoken,uint256 shorttoken,int32_t maxleverage,int64_t funding,std::vector<CPubKey> pubkeys)
-{
-    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    CTransaction oracletx; int64_t fullsupply,inputs,CCchange=0; uint256 hashBlock; char str[65],coinaddr[64],houseaddr[64]; CPubKey mypk,pricespk; int32_t i,N,numvouts; struct CCcontract_info *cp,C;
-    if ( funding < 100*COIN || maxleverage <= 0 || maxleverage > 10000 )
-    {
-        CCerror = "invalid parameter error";
-        fprintf(stderr,"%s\n", CCerror.c_str() );
-        return("");
-    }
-    cp = CCinit(&C,EVAL_PRICES);
-    if ( txfee == 0 )
-        txfee = 10000;
-    mypk = pubkey2pk(Mypubkey());
-    pricespk = GetUnspendable(cp,0);
-    if ( (N= (int32_t)pubkeys.size()) || N > 15 )
-    {
-        fprintf(stderr,"too many pubkeys N.%d\n",N);
-        return("");
-    }
-    for (i=0; i<N; i++)
-    {
-        Getscriptaddress(coinaddr,CScript() << ParseHex(HexStr(pubkeys[i])) << OP_CHECKSIG);
-        if ( CCaddress_balance(coinaddr) == 0 )
-        {
-            fprintf(stderr,"N.%d but pubkeys[%d] has no balance\n",N,i);
-            return("");
-        }
-    }
-    if ( GetCCaddress1of2(cp,houseaddr,pricespk,mypk) == 0 )
-    {
-        fprintf(stderr,"PricesCreateFunding cant create globaladdr\n");
-        return("");
-    }
-    if ( CCtoken_balance(houseaddr,longtoken) != CCfullsupply(longtoken) )
-    {
-        fprintf(stderr,"PricesCreateFunding (%s) globaladdr.%s token balance %.8f != %.8f\n",uint256_str(str,longtoken),houseaddr,(double)CCtoken_balance(houseaddr,longtoken)/COIN,(double)CCfullsupply(longtoken)/COIN);
-        return("");
-    }
-    if ( CCtoken_balance(houseaddr,shorttoken) != CCfullsupply(shorttoken) )
-    {
-        fprintf(stderr,"PricesCreateFunding (%s) globaladdr.%s token balance %.8f != %.8f\n",uint256_str(str,longtoken),houseaddr,(double)CCtoken_balance(houseaddr,longtoken)/COIN,(double)CCfullsupply(shorttoken)/COIN);
-        return("");
-    }
-    if ( GetTransaction(oracletxid,oracletx,hashBlock,false) == 0 || (numvouts= oracletx.vout.size()) <= 0 )
-    {
-        fprintf(stderr,"cant find oracletxid %s\n",uint256_str(str,oracletxid));
-        return("");
-    }
-    fprintf(stderr,"error check bettoken\n");
-    if ( AddNormalinputs(mtx,mypk,3*txfee,4) > 0 )
-    {
-        mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
-        mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(pricespk)) << OP_CHECKSIG));
-        return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodePricesFundingOpRet('F',mypk,oracletxid,longtoken,shorttoken,margin,mode,maxleverage,pubkeys,bettoken)));
-    }
-    else
-    {
-        CCerror = "cant find enough inputs";
-        fprintf(stderr,"%s\n", CCerror.c_str() );
-    }
-    return("");
-}
-
-UniValue PricesInfo(uint256 fundingtxid)
-{
-    UniValue result(UniValue::VOBJ),a(UniValue::VARR); CPubKey pricespk,planpk; uint256 hashBlock,oracletxid,longtoken,shorttoken,bettoken; CTransaction vintx; int64_t balance,supply,exposure; uint64_t funding,mode; int32_t i,margin,maxleverage; char numstr[65],houseaddr[64],exposureaddr[64],str[65]; std::vector<CPubKey>pubkeys; struct CCcontract_info *cp,C;
-    cp = CCinit(&C,EVAL_PRICES);
-    pricespk = GetUnspendable(cp,0);
-    if ( GetTransaction(fundingtxid,vintx,hashBlock,false) == 0 )
-    {
-        fprintf(stderr,"cant find fundingtxid\n");
-        ERR_RESULT("cant find fundingtxid");
-        return(result);
-    }
-    if ( vintx.vout.size() > 0 && DecodePricesFundingOpRet(vintx.vout[vintx.vout.size()-1].scriptPubKey,planpk,oracletxid,longtoken,shorttoken,margin,mode,maxleverage,pubkeys,bettoken) == 'F' )
-    {
-        result.push_back(Pair("result","success"));
-        result.push_back(Pair("fundingtxid",uint256_str(str,fundingtxid)));
-        result.push_back(Pair("bettoken",uint256_str(str,bettoken)));
-        result.push_back(Pair("oracletxid",uint256_str(str,oracletxid)));
-        sprintf(numstr,"%.3f",(double)margin/1000);
-        result.push_back(Pair("profitmargin",numstr));
-        result.push_back(Pair("maxleverage",maxleverage));
-        result.push_back(Pair("mode",(int64_t)mode));
-        for (i=0; i<pubkeys.size(); i++)
-            a.push_back(pubkey33_str(str,(uint8_t *)&pubkeys[i]));
-        result.push_back(Pair("pubkeys",a));
-        GetCCaddress1of2(cp,houseaddr,pricespk,planpk);
-        GetCCaddress1of2(cp,exposureaddr,pricespk,pricespk); // assets addr
-        result.push_back(Pair("houseaddr",houseaddr));
-        result.push_back(Pair("betaddr",exposureaddr));
-        result.push_back(Pair("longtoken",uint256_str(str,longtoken)));
-        supply = CCfullsupply(longtoken);
-        result.push_back(Pair("longsupply",supply));
-        balance = CCtoken_balance(houseaddr,longtoken);
-        result.push_back(Pair("longavail",balance));
-        exposure = CCtoken_balance(exposureaddr,longtoken);
-        result.push_back(Pair("longexposure",exposure));
-        result.push_back(Pair("shorttoken",uint256_str(str,shorttoken)));
-        supply = CCfullsupply(shorttoken);
-        result.push_back(Pair("shortsupply",supply));
-        balance = CCtoken_balance(houseaddr,shorttoken);
-        result.push_back(Pair("shortavail",balance));
-        exposure = CCtoken_balance(exposureaddr,shorttoken);
-        result.push_back(Pair("shortexposure",exposure));
-        sprintf(numstr,"%.8f",(double)CCtoken_balance(houseaddr,bettoken)/COIN);
-        result.push_back(Pair("funds",numstr));
-    }
-    return(result);
-}
-
-std::string PricesAddFunding(uint64_t txfee,uint256 refbettoken,uint256 fundingtxid,int64_t amount)
-{
-    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    struct CCcontract_info *cp,C; CPubKey pricespk,planpk,mypk; uint256 hashBlock,oracletxid,longtoken,shorttoken,bettoken; CTransaction tx; int64_t balance,supply,exposure,inputs,CCchange = 0; uint64_t funding,mode; int32_t margin,maxleverage; char houseaddr[64],myaddr[64]; std::vector<CPubKey>pubkeys;
-    if ( amount < 10000 )
-    {
-        CCerror = "amount must be positive";
-        fprintf(stderr,"%s\n", CCerror.c_str() );
-        return("");
-    }
-    cp = CCinit(&C,EVAL_PRICES);
-    if ( txfee == 0 )
-        txfee = 10000;
-    mypk = pubkey2pk(Mypubkey());
-    pricespk = GetUnspendable(cp,0);
-    GetCCaddress(cp,myaddr,mypk);
-    if ( GetTransaction(fundingtxid,tx,hashBlock,false) == 0 )
-    {
-        fprintf(stderr,"cant find fundingtxid\n");
-        return("");
-    }
-    if ( tx.vout.size() > 0 && DecodePricesFundingOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,planpk,oracletxid,longtoken,shorttoken,margin,mode,maxleverage,pubkeys,bettoken) == 'F' && bettoken == refbettoken )
-    {
-        GetCCaddress1of2(cp,houseaddr,pricespk,planpk);
-        if ( AddNormalinputs(mtx,mypk,2*txfee,3) > 0 )
-        {
-            if ( (inputs= AddTokensInputs(cp,mtx,myaddr,bettoken,amount,60)) >= amount )
-            {
-                mtx.vout.push_back(MakeCC1of2vout(cp->evalcode,amount,pricespk,planpk));
-                mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(planpk)) << OP_CHECKSIG));
-                if ( inputs > amount+txfee )
-                    CCchange = (inputs - amount);
-                mtx.vout.push_back(MakeCC1vout(cp->evalcode,CCchange,mypk));
-                // add addr2
-
-				std::vector<CPubKey> voutTokenPubkeysEmpty; //TODO: add token vout pubkeys
-                return(FinalizeCCTx(0,cp,mtx,mypk,txfee,
-					EncodeTokenOpRet(bettoken, voutTokenPubkeysEmpty,
-						std::make_pair(OPRETID_ASSETSDATA, EncodeAssetOpRet('t',/*bettoken,*/zeroid, 0, Mypubkey())))));
-            }
-            else
-            {
-                CCerror = "cant find enough bet inputs";
-                fprintf(stderr,"%s\n", CCerror.c_str() );
-            }
-        }
-        else
-        {
-            CCerror = "cant find enough inputs";
-            fprintf(stderr,"%s\n", CCerror.c_str() );
-        }
-    }
-    return("");
-}
-
-std::string PricesBet(uint64_t txfee,uint256 refbettoken,uint256 fundingtxid,int64_t amount,int32_t leverage)
-{
-    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    struct CCcontract_info *cp,C; CPubKey pricespk,planpk,mypk; uint256 hashBlock,oracletxid,longtoken,shorttoken,tokenid,bettoken; CTransaction tx; int64_t balance,supply,exposure,inputs,inputs2,longexposure,netexposure,shortexposure,CCchange = 0,CCchange2 = 0; uint64_t funding,mode; int32_t dir,margin,maxleverage; char houseaddr[64],myaddr[64],exposureaddr[64]; std::vector<CPubKey>pubkeys;
-    if ( amount < 0 )
-    {
-        amount = -amount;
-        dir = -1;
-    } else dir = 1;
-    cp = CCinit(&C,EVAL_PRICES);
-    if ( txfee == 0 )
-        txfee = 10000;
-    mypk = pubkey2pk(Mypubkey());
-    pricespk = GetUnspendable(cp,0);
-    GetCCaddress(cp,myaddr,mypk);
-    if ( GetTransaction(fundingtxid,tx,hashBlock,false) == 0 )
-    {
-        fprintf(stderr,"cant find fundingtxid\n");
-        return("");
-    }
-    if ( tx.vout.size() > 0 && DecodePricesFundingOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,planpk,oracletxid,longtoken,shorttoken,margin,mode,maxleverage,pubkeys,bettoken) == 'F' && bettoken == refbettoken )
-    {
-        if ( leverage > maxleverage || leverage < 1 )
-        {
-            fprintf(stderr,"illegal leverage\n");
-            return("");
-        }
-        GetCCaddress1of2(cp,houseaddr,pricespk,planpk);
-        GetCCaddress1of2(cp,exposureaddr,pricespk,pricespk);
-        if ( dir < 0 )
-            tokenid = shorttoken;
-        else tokenid = longtoken;
-        exposure = leverage * amount;
-        longexposure = CCtoken_balance(exposureaddr,longtoken);
-        shortexposure = CCtoken_balance(exposureaddr,shorttoken);
-        netexposure = (longexposure - shortexposure + exposure*dir);
-        if ( netexposure < 0 )
-            netexposure = -netexposure;
-        balance = CCtoken_balance(myaddr,bettoken) / COIN;
-        if ( balance < netexposure*9/10 ) // 10% extra room for dynamically closed bets in wrong direction
-        {
-            fprintf(stderr,"balance %lld < 90%% netexposure %lld, refuse bet\n",(long long)balance,(long long)netexposure);
-            return("");
-        }
-        if ( AddNormalinputs(mtx,mypk,txfee,3) > 0 )
-        {
-            if ( (inputs= AddTokensInputs(cp,mtx,houseaddr,tokenid,exposure,30)) >= exposure )
-            {
-                if ( (inputs2= AddTokensInputs(cp,mtx,myaddr,bettoken,amount,30)) >= amount )
-                {
-                    mtx.vout.push_back(MakeCC1of2vout(cp->evalcode,amount,pricespk,planpk));
-                    mtx.vout.push_back(MakeCC1of2vout(cp->evalcode,exposure,pricespk,pricespk));
-                    if ( inputs > exposure+txfee )
-                        CCchange = (inputs - exposure);
-                    if ( inputs2 > amount+txfee )
-                        CCchange2 = (inputs2 - amount);
-                    mtx.vout.push_back(MakeCC1of2vout(cp->evalcode,CCchange,pricespk,planpk));
-                    mtx.vout.push_back(MakeCC1vout(cp->evalcode,CCchange2,mypk));
-                    // add addr2 and addr3
-                    //return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodePricesExtra('T',tokenid,bettoken,zeroid,dir*leverage)));
-                    CScript opret;
-                    return(FinalizeCCTx(0,cp,mtx,mypk,txfee,opret));
-                }
-                else
-                {
-                    fprintf(stderr,"cant find enough bettoken inputs\n");
-                    return("");
-                }
-            }
-            else
-            {
-                fprintf(stderr,"cant find enough exposure inputs\n");
-                return("");
-            }
-        }
-        else
-        {
-            CCerror = "cant find enough inputsB";
-            fprintf(stderr,"%s\n", CCerror.c_str() );
-        }
-    }
-    return("");
-}
-
-UniValue PricesStatus(uint64_t txfee,uint256 refbettoken,uint256 fundingtxid,uint256 bettxid)
-{
-    UniValue result(UniValue::VOBJ);
-    // get height of bettxid
-    // get price and rekt
-    // get current height and price
-    // what about if rekt in the past?
-    return(result);
-}
-
-std::string PricesFinish(uint64_t txfee,uint256 refbettoken,uint256 fundingtxid,uint256 bettxid)
-{
-    return("");
 }
 
 

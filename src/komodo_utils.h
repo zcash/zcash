@@ -1665,12 +1665,12 @@ uint64_t komodo_ac_block_subsidy(int nHeight)
 
 extern int64_t MAX_MONEY;
 void komodo_cbopretupdate(int32_t forceflag);
-void SplitStr(const std::string& strVal, std::vector<std::string> outVals);
+void SplitStr(const std::string& strVal, std::vector<std::string> &outVals);
 
 void komodo_args(char *argv0)
 {
     extern const char *Notaries_elected1[][2];
-    std::string name,addn,hexstr; char *dirname,fname[512],arg0str[64],magicstr[9]; uint8_t magic[4],extrabuf[8192],disablebits[32],*extraptr=0; FILE *fp; uint64_t val; uint16_t port; int32_t i,nonz=0,baseid,len,n,extralen = 0; uint64_t ccenables[256];
+    std::string name,addn,hexstr,symbol; char *dirname,fname[512],arg0str[64],magicstr[9]; uint8_t magic[4],extrabuf[8192],disablebits[32],*extraptr=0; FILE *fp; uint64_t val; uint16_t port; int32_t i,nonz=0,baseid,len,n,extralen = 0; uint64_t ccenables[256];
     IS_KOMODO_NOTARY = GetBoolArg("-notary", false);
     IS_STAKED_NOTARY = GetArg("-stakednotary", -1);
     if ( IS_STAKED_NOTARY != -1 && IS_KOMODO_NOTARY == true ) {
@@ -1735,7 +1735,7 @@ void komodo_args(char *argv0)
     {
         printf("KOMODO_REWIND %d\n",KOMODO_REWIND);
     }
-	  if ( name.c_str()[0] != 0 )
+    if ( name.c_str()[0] != 0 )
     {
         std::string selectedAlgo = GetArg("-ac_algo", std::string(ASSETCHAINS_ALGORITHMS[0]));
 
@@ -2075,6 +2075,15 @@ void komodo_args(char *argv0)
             if ( ASSETCHAINS_CBOPRET != 0 )
             {
                 extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_CBOPRET),(void *)&ASSETCHAINS_CBOPRET);
+                if ( ASSETCHAINS_PRICES.size() != 0 )
+                {
+                    for (i=0; i<ASSETCHAINS_PRICES.size(); i++)
+                    {
+                        symbol = ASSETCHAINS_PRICES[i];
+                        memcpy(&extraptr[extralen],(char *)symbol.c_str(),symbol.size());
+                        extralen += symbol.size();
+                    }
+                }
                 komodo_cbopretupdate(1); // will set Mineropret
                 fprintf(stderr,"This blockchain uses data produced from CoinDesk Bitcoin Price Index\n");
             }
