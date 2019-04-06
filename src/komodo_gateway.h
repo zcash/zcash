@@ -2307,8 +2307,13 @@ int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int
     for (iter=0; iter<PRICES_DAYWINDOW; iter++)
     {
         correlation = 0;
+<<<<<<< HEAD
         i = (iter + seed) % PRICES_DAYWINDOW;
         refprice = rawprices[i*rawskip];
+=======
+        i = (iter + seed) % daywindow;
+        refprice = rawprices[i];
+>>>>>>> FSM
         highprice = (refprice * (COIN + PRICES_MAXCHANGE*5)) / COIN;
         lowprice = (refprice * (COIN - PRICES_MAXCHANGE*5)) / COIN;
         if ( highprice == refprice )
