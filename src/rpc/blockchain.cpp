@@ -1185,7 +1185,7 @@ int64_t komodo_pricemult(int32_t ind);
 
 int32_t prices_extract(int64_t *pricedata,int32_t firstheight,int32_t numblocks,int32_t ind)
 {
-    int32_t height,i,width,numpricefeeds = -1; uint64_t seed,rngval,*correlated2; uint32_t rawprices[1440*6],*ptr;
+    int32_t height,i,n,width,numpricefeeds = -1; uint64_t seed,rngval; int64_t *correlated2; uint32_t rawprices[1440*6],*ptr;
     //daywindow = (3600*24/ASSETCHAINS_BLOCKTIME) + 1;
     //pricedata = (uint32_t *)calloc(sizeof(*prices)*3,numblocks + daywindow*2 + PRICES_SMOOTHWIDTH);
     width = numblocks+PRICES_DAYWINDOW*2+PRICES_SMOOTHWIDTH;
