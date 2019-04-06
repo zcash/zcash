@@ -44,7 +44,7 @@ UniValue PricesSetcostbasis(uint64_t txfee,uint256 bettxid);
 UniValue PricesRekt(uint64_t txfee,uint256 bettxid,int32_t rektheight);
 UniValue PricesCashout(uint64_t txfee,uint256 bettxid);
 UniValue PricesInfo(uint256 bettxid,int32_t refheight);
-UniValue PricesList()
+UniValue PricesList();
 
 
 #endif
