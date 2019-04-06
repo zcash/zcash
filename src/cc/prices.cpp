@@ -19,11 +19,39 @@
 /*
 CBOPRET creates trustless oracles, which can be used for making a synthetic cash settlement system based on real world prices;
  
- 
- 
  0.5% fee based on betamount, NOT leveraged betamount!!
  0.1% collected by price basis determinant
  0.2% collected by rekt tx
+
+ At the simplest, prices CC allows to make leveraged cash settled bets on long and short BTCUSD:
+ BTCUSD, 1 with positive leverage parameter up to 777
+ BTCUSD, 1 with negative leverage parameter up to -777
+ 
+ These specific limits of 0.5%, 0.1%, 0.2%, 777 should be able to be changed based on #define
+ 
+ Another configuration is to send the 0.4% (or 0.2%) fees to a fee collection address (this is not currently implemented, but would be needed for systems that dont use -ac_perc to collect a global override)
+ 
+ The definition of the synthetic instrument that is being tracked is actually defined with a forth type of syntax and is quite flexible to allow unlimited combinations and weights, but that is an independent aspect and will be covered later.
+ 
+ Let us discuss the simplest synthetic case of a long or short of BTCUSD (or any other direct pricepoint from the trustless oracle). If you look at the charts, you will see the blue line that is direct from the miners (and therefore cant be directly used). The orange line is the 51% correlated price that is deterministically random selected from the prior 24 hours. And finally the green line which is simply the average value from the priot 24 hours.
+ 
+ We will assume that the orange and green prices are able to be deterministically calculated from the raw coinbase data (blue). The prices rpc is currently working reasonably well and appears to return deterministic prices, however for use in the prices CC, it is often needed to find just a single data point. To that effect there is the temporary function prices_syntheticprice, which uses a bruteforce and totally inefficient way to calculate the correlated and smoothed prices. This inefficient process will need to be changed to a permanent storage of correlated and smoothed prices for each trustless oracle that is updated each block. This will then allow to directly lookup each value for any of the trustless prices. Such speed will indeed be needed to scale up usage of a REKT chain.
+ 
+ Since the mined prices can be manipulated by any miner, combined with the +/-1% tolerance, it would be possible for an external miner to obtain a large hashrate and skew the price +1%, then to -1% to create a 2% price difference, which under high leverage might be able to generate a large profit.
+ 
+ To avoid this precisely controllable biasing, the 51% correlation of past day is used (orange), which makes the price jump around a lot. The green line that sums the prior day is needed to remove this jitter back to the average value. However, this creates a 1.5 day delay to the price movement of the smoothed price compared to the current price. What this means is that if we want to use the green line to settle prices automatically, a trivial way to make money is to bet in the direct that the mined prices are relative to the smoothed prices. Given 1.5 day head start, it wont be any mystery which direction the smoothed line will move in the next 24 hours.
+ 
+ So this makes the smoothed price unusable for settling the bets with. However, we cant use the correlated price either, as it would also allow to make bets when the correlated price picked a significantly lower/higher price than the raw price. The solution is to have a floating basis for the costbasis of the bet. In order to allow finding the right costbasis, for long bets the maximum price between the correlated and smoothed price is needed over the first day after the bet. For short bets, the minimum price is needed.
+ 
+ What this means is that the actual starting price for a bet wont be known for sure when the bet is made, but if the price is relatively stable, there wont be much of a change. If there is a lot of recent volatility, then the starting price will have a high variability. In order to calculate the costbasis, it currently requires many calculations to find the MAX (or MIN) for the first day. Even when this is made to be a lookup, it still requires to issue a transaction to change the state of a bet from a "starting" state to a "in effect" state and this state change is indicated by whether the bettx vout that contains the costbasis utxo is spent or not.
+ 
+ Once a bet goes into effect, then block by block, it is checked by the decentralized set of rekt scanners if it is rekt or not, in this case for double the reward for calculating the cost basis. This fully decentralized mechanism ensures that some node will decide to collect the free money and ensures that the bankroll is growing. To miss a rekt bet and not close it out when it can be is to allow it to survive for another block, which can change it profitability from negative to positive.
+ 
+ Which comes to how profits are calculated. Once the costbasis is locked, then the profit calculation can be made based on the ratio between the costbasis and the current price, multiplied by the leverage. So, if a long position gains 10% at a 10x leverage, then approximately the entire bet amount will be made, ie. a double. Similarily with a short position, a 10% drop in price at 10x leverage will double the bet amount. Since it takes a full day to establish the costbasis, it is not possible to allow changing the costbasis for an existing bet, however it is possible to add funds so that it is less likely to be rekt. The sum of the initial bet and all added funds must be greater than the loss at every block to prevent a position from being rekt. To make it simple to calculate the amount of funds added, another bettx vout is used as a baton. Techniques similar to rogue CC to find where the bettx vout was spent and looking at each such transaction to find the total funds added can be used.
+ 
+ The once that makes the bet is able to add funds or cashout at any block, as long as it isnt rekt. If it is rekt, the bettor is able to collect the rekt fee, so at least that is some consolation, but it is advised to increase the total funding to avoid being rekt. On a cashout all the funds that were bet adjusted by the profits can be collected.
+ 
+ Hopefully the above description makes it clear what the following rpc calls should be doing:
  
  UniValue PricesBet(uint64_t txfee,int64_t amount,int16_t leverage,std::vector<std::string> synthetic)
      funds are locked into 1of2 global CC address
@@ -51,6 +79,9 @@ CBOPRET creates trustless oracles, which can be used for making a synthetic cash
  
  UniValue PricesList()
     a list of all pending and completed bets in different lists
+ 
+ 
+ Appendix Synthetic position definition language:
  
 */
 
