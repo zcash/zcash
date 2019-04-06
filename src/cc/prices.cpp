@@ -133,6 +133,11 @@ CBOPRET creates trustless oracles, which can be used for making a synthetic cash
  
  Believe it or not, the string to binary compiler for synthetic description and interpretation of it is less than 200 lines of code.
  
+ todo: complete all the above, bet tokens, cross chain prices within cluster These specific limits of 0.5%, 0.1%, 0.2%, 777 should be able to be changed based on #define
+ 
+ Another configuration is to send the 0.4% (or 0.2%) fees to a fee collection scriptPubKey (this is not currently implemented, but would be needed for systems that dont use -ac_perc to collect a global override) this requires adding new vouts
+ 
+ Modification: in the event there is one price in the accumulator and one price on the stack at the end, then it is a (A - B) spread
  */
 
 

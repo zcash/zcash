@@ -16,17 +16,7 @@
 #include "CCPegs.h"
 
 /*
- Pegs CC builds on top of CCOPRET modes which will create pricefeeds in the coinbase.
- 
- flag&1: BTC/USD 4966.1400, BTC/GBP 3770.0402, BTC/EUR 4416.8452 GBPUSD 1.317264, EURUSD 1.124364 EURGBP 0.853560
- flag&2: (BGN 1.7462) (NZD 1.4771) (ILS 3.6258) (RUB 65.3700) (CAD 1.3320) (PHP 52.4160) (CHF 0.9995) (AUD 1.4122) (JPY 111.3660) (TRY 5.5483) (HKD 7.8498) (MYR 4.0816) (HRK 6.6337) (CZK 22.9937) (IDR 14220.0000) (DKK 6.6648) (NOK 8.6111) (HUF 287.2142) (GBP 0.7678) (MXN 19.1046) (THB 31.7500) (ISK 122.4107) (ZAR 14.1300) (BRL 3.8604) (SGD 1.3551) (PLN 3.8350) (INR 68.7531) (KRW 1136.3839) (RON 4.2516) (CNY 6.7200) (SEK 9.3230) (EUR 0.8928) (2019-04-02)
-flag&4:  (KMD 0.00025110) (ETH 0.03357500) (LTC 0.01642400) (BCHABC 0.05167400) (XMR 0.01398800) (IOTA 0.00007217) (DASH 0.02552600) (XEM 0.00001459) (ZEC 0.01440500) (WAVES 0.00062170) (RVN 0.00001215) (LSK 0.00041130) (DCR 0.00496000) (BTS 0.00001444) (ICX 0.00008750) (HOT 0.00000027) (STEEM 0.00010070) (ENJ 0.00003221) (STRAT 0.00022790)  errs.0
 
- Funds deposited into CC address for a specific peg would then be used to fund the bid/ask as the pricefeed changes the price. Profits/losses would accumulate in the associated address.
- 
- In the event funds exceed a specified level, it can be spent into a collection address. The idea is that the collection address can further be used for revshares.
- 
- 
  
 */
 
