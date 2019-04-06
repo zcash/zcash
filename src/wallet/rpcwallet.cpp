@@ -6909,13 +6909,14 @@ UniValue priceslist(const UniValue& params, bool fHelp)
 
 UniValue pricesinfo(const UniValue& params, bool fHelp)
 {
-    uint256 fundingtxid;
-    if ( fHelp || params.size() != 1 )
+    uint256 bettxid; int32_t height;
+    if ( fHelp || params.size() != 2 )
         throw runtime_error("pricesinfo fundingtxid\n");
     if ( ensure_CCrequirements(EVAL_PRICES) < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
-    fundingtxid = Parseuint256((char *)params[0].get_str().c_str());
-    return(PricesInfo(0,fundingtxid));
+    bettxid = Parseuint256((char *)params[0].get_str().c_str());
+    height = atoi(params[1].get_str().c_str());
+    return(PricesInfo(bettxid,height));
 }
 
 UniValue dicefund(const UniValue& params, bool fHelp)
