@@ -511,7 +511,7 @@ UniValue PricesRekt(uint64_t txfee,uint256 bettxid,int32_t rektheight)
 {
     int32_t nextheight = komodo_nextheight();
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(),nextheight); UniValue result(UniValue::VOBJ);
-    struct CCcontract_info *cp,C; CTransaction bettx; uint256 hashBlock,tokenid; int64_t myfee=0,positionsize,addedbets,firstprice,profits,ignore,costbasis=0; int32_t firstheight,numvouts; int16_t leverage; std::vector<uint16_t> vec; CPubKey pk,mypk,pricespk; std::string rawtx;
+    struct CCcontract_info *cp,C; CTransaction bettx; uint256 hashBlock,tokenid,batontxid; int64_t myfee=0,positionsize,addedbets,firstprice,profits,ignore,costbasis=0; int32_t firstheight,numvouts; int16_t leverage; std::vector<uint16_t> vec; CPubKey pk,mypk,pricespk; std::string rawtx;
     cp = CCinit(&C,EVAL_PRICES);
     if ( txfee == 0 )
         txfee = PRICES_TXFEE;
@@ -599,7 +599,7 @@ UniValue PricesCashout(uint64_t txfee,uint256 bettxid)
     return(result);
 }
 
-UniValue PricesInfo(uint256 bettxid,int32_t height)
+UniValue PricesInfo(uint256 bettxid,int32_t refheight)
 {
     UniValue result(UniValue::VOBJ); CTransaction bettx; uint256 hashBlock,batontxid,tokenid; int64_t myfee,ignore,positionsize=0,addedbets=0,firstprice=0,profits=0,costbasis=0; int32_t i,firstheight=0,height,numvouts; int16_t leverage=0; std::vector<uint16_t> vec; CPubKey pk,mypk,pricespk; std::string rawtx;
     if ( myGetTransaction(bettxid,bettx,hashBlock) != 0 && (numvouts= bettx.vout.size()) > 3 )
@@ -608,13 +608,14 @@ UniValue PricesInfo(uint256 bettxid,int32_t height)
         {
             costbasis = prices_costbasis(bettx);
             addedbets = prices_batontxid(batontxid,bettx,bettxid);
-            if ( (profits= prices_syntheticprofits(ignore,firstheight,firstheight+i,leverage,vec,positionsize,addedbets)) < 0 )
+            if ( (profits= prices_syntheticprofits(ignore,firstheight,refheight,leverage,vec,positionsize,addedbets)) < 0 )
             {
                 result.push_back(Pair("rekt",1));
                 result.push_back(Pair("rektfee",(positionsize + addedbets) / 500));
             } else result.push_back(Pair("rekt",0));
             result.push_back(Pair("batontxid",batontxid.GetHex()));
             prices_betjson(result,profits,costbasis,positionsize,addedbets,leverage,firstheight,firstprice);
+            result.push_back(Pair("height",(int64_t)refheight));
             return(result);
         }
     }
