@@ -19,26 +19,38 @@
 /*
 CBOPRET creates trustless oracles, which can be used for making a synthetic cash settlement system based on real world prices;
  
+ 
+ 
  0.5% fee based on betamount, NOT leveraged betamount!!
  0.1% collected by price basis determinant
  0.2% collected by rekt tx
  
- PricesBet -> +/-leverage, amount, synthetic -> opreturn includes current price
-    funds are locked into 1of2 global CC address
-    for first day, long basis is MAX(correlated,smoothed), short is MIN()
-    reference price is the smoothed of the previous block
-    if synthetic value + amount goes negative, then anybody can rekt it to collect a rektfee, proof of rekt must be included to show cost basis, rekt price
-    original creator can liquidate at anytime and collect (synthetic value + amount) from globalfund
-    0.5% of bet -> globalfund
-  
- PricesStatus -> bettxid maxsamples returns initial params, cost basis, amount left, rekt:true/false, rektheight, initial synthetic price, current synthetic price, net gain
+ UniValue PricesBet(uint64_t txfee,int64_t amount,int16_t leverage,std::vector<std::string> synthetic)
+     funds are locked into 1of2 global CC address
+     for first day, long basis is MAX(correlated,smoothed), short is MIN()
+     reference price is the smoothed of the previous block
+     if synthetic value + amount goes negative, then anybody can rekt it to collect a rektfee, proof of rekt must be included to show cost basis, rekt price
+     original creator can liquidate at anytime and collect (synthetic value + amount) from globalfund
+     0.5% of bet -> globalfund
+
+ UniValue PricesAddFunding(uint64_t txfee,uint256 bettxid,int64_t amount)
+    add funding to an existing bet, doesnt change the profit calcs but does make the bet less likely to be rekt
  
- PricesRekt -> bettxid height -> 0.1% to miner, rest to global CC
+ UniValue PricesSetcostbasis(uint64_t txfee,uint256 bettxid)
+    in the first day from the bet, the costbasis can (and usually does) change based on the MAX(correlated,smoothed) for long and MIN() for shorts
+    to calculate this requires a bit of work, so whatever node is first to get the proper calculation confirmed, gets a 0.1% costbasis fee
  
- PricesClose -> bettxid returns (synthetic value + amount)
+ UniValue PricesRekt(uint64_t txfee,uint256 bettxid,int32_t rektheight)
+    similarily, any node can submit a rekt tx and cash in on 0.2% fee if their claim is confirmed
  
- PricesList -> all bettxid -> list [bettxid, netgain]
+ UniValue PricesCashout(uint64_t txfee,uint256 bettxid)
+    only the actually creator of bet is able to cashout and only if it isnt rekt at that moment
  
+ UniValue PricesInfo(uint256 bettxid,int32_t refheight)
+    all relevant info about a bet
+ 
+ UniValue PricesList()
+    a list of all pending and completed bets in different lists
  
 */
 
