@@ -18,17 +18,27 @@
 #define CC_PRICES_H
 
 #include "CCinclude.h"
+int32_t prices_extract(int64_t *pricedata,int32_t firstheight,int32_t numblocks,int32_t ind,int32_t daywindow);
+
+#define PRICES_DAYWINDOW ((3600*24/ASSETCHAINS_BLOCKTIME) + 1)
+#define PRICES_TXFEE 10000
+#define PRICES_SMOOTHWIDTH 1
+#define KOMODO_MAXPRICES 2048 // must be power of 2 and less than 8192
+#define KOMODO_PRICEMASK (~(KOMODO_MAXPRICES -  1))
+#define PRICES_WEIGHT (KOMODO_MAXPRICES * 1)
+#define PRICES_MUL (KOMODO_MAXPRICES * 2)
+#define PRICES_DIV (KOMODO_MAXPRICES * 3)
+#define PRICES_INV (KOMODO_MAXPRICES * 4)
+#define PRICES_MDD (KOMODO_MAXPRICES * 5)
+#define PRICES_MMD (KOMODO_MAXPRICES * 6)
+#define PRICES_MMM (KOMODO_MAXPRICES * 7)
+#define PRICES_DDD (KOMODO_MAXPRICES * 8)
 
 bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn);
 
 // CCcustom
 UniValue PricesList();
-UniValue PricesInfo(uint256 fundingtxid);
-UniValue PricesStatus(uint64_t txfee,uint256 refbettoken,uint256 fundingtxid,uint256 bettxid);
-std::string PricesCreateFunding(uint64_t txfee,uint256 bettoken,uint256 oracletxid,uint64_t margin,uint64_t mode,uint256 longtoken,uint256 shorttoken,int32_t maxleverage,int64_t funding,std::vector<CPubKey> pubkeys);
-std::string PricesAddFunding(uint64_t txfee,uint256 bettoken,uint256 fundingtxid,int64_t amount);
-std::string PricesBet(uint64_t txfee,uint256 bettoken,uint256 fundingtxid,int64_t amount,int32_t leverage);
-std::string PricesFinish(uint64_t txfee,uint256 bettoken,uint256 fundingtxid,uint256 bettxid);
+UniValue PricesBet(uint64_t txfee,int64_t amount,int32_t leverage,std::string synthetic);
 
 
 #endif

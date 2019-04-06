@@ -2182,6 +2182,9 @@ void komodo_cbopretupdate(int32_t forceflag)
             if ( (flags & 4) != 0 )
                 lastcrypto = now;
             memcpy(Mineropret.data(),PriceCache[0],size);
+            // high volatility still strands nodes so we need to check new prices to approve a stuck block
+            // scan list of stuck blocks (one?) and auto reconsiderblock if it changed state
+            
             //int32_t i; for (i=0; i<Mineropret.size(); i++)
             //    fprintf(stderr,"%02x",Mineropret[i]);
             //fprintf(stderr," <- set Mineropret[%d] size.%d %ld\n",(int32_t)Mineropret.size(),size,sizeof(PriceCache[0]));
@@ -2281,31 +2284,32 @@ char *komodo_pricename(char *name,int32_t ind)
     return(0);
 }
 
-int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int32_t daywindow,uint32_t *nonzprices,int32_t smoothwidth)
+int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int32_t rawskip,uint32_t *nonzprices,int32_t smoothwidth)
 {
     int32_t i,j,k,n,iter,correlation,maxcorrelation=0; int64_t firstprice,price,sum,den,mult,refprice,lowprice,highprice;
-    if ( daywindow < 2 || ind >= KOMODO_MAXPRICES )
+    if ( PRICES_DAYWINDOW < 2 || ind >= KOMODO_MAXPRICES )
         return(-1);
     mult = PriceMult[ind];
-    memset(nonzprices,0,sizeof(*nonzprices)*daywindow);
-    for (iter=0; iter<daywindow; iter++)
+    if ( nonzprices != 0 )
+        memset(nonzprices,0,sizeof(*nonzprices)*PRICES_DAYWINDOW);
+    for (iter=0; iter<PRICES_DAYWINDOW; iter++)
     {
         correlation = 0;
-        i = (iter + seed) % daywindow;
-        refprice = rawprices[i];
-        highprice = (refprice * (COIN + PRICES_MAXCHANGE*3)) / COIN;
-        lowprice = (refprice * (COIN - PRICES_MAXCHANGE*3)) / COIN;
+        i = (iter + seed) % PRICES_DAYWINDOW;
+        refprice = rawprices[i*rawskip];
+        highprice = (refprice * (COIN + PRICES_MAXCHANGE*5)) / COIN;
+        lowprice = (refprice * (COIN - PRICES_MAXCHANGE*5)) / COIN;
         if ( highprice == refprice )
             highprice++;
         if ( lowprice == refprice )
             lowprice--;
         sum = 0;
         //fprintf(stderr,"firsti.%d: ",i);
-        for (j=0; j<daywindow; j++,i++)
+        for (j=0; j<PRICES_DAYWINDOW; j++,i++)
         {
-            if ( i >= daywindow )
+            if ( i >= PRICES_DAYWINDOW )
                 i = 0;
-            if ( (price= rawprices[i]) == 0 )
+            if ( (price= rawprices[i*rawskip]) == 0 )
             {
                 fprintf(stderr,"null rawprice.[%d]\n",i);
                 return(-1);
@@ -2315,28 +2319,29 @@ int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int
                 //fprintf(stderr,"%.1f ",(double)price/10000);
                 sum += price;
                 correlation++;
-                if ( correlation > (daywindow>>1) )
+                if ( correlation > (PRICES_DAYWINDOW>>1) )
                 {
-                    return(refprice * mult);
+                    if ( nonzprices == 0 )
+                        return(refprice * mult);
                     //fprintf(stderr,"-> %.4f\n",(double)sum*mult/correlation);
                     //return(sum*mult/correlation);
                     n = 0;
-                    i = (iter + seed) % daywindow;
-                    for (k=0; k<daywindow; k++,i++)
+                    i = (iter + seed) % PRICES_DAYWINDOW;
+                    for (k=0; k<PRICES_DAYWINDOW; k++,i++)
                     {
-                        if ( i >= daywindow )
+                        if ( i >= PRICES_DAYWINDOW )
                             i = 0;
-                        if ( n > (daywindow>>1) )
+                        if ( n > (PRICES_DAYWINDOW>>1) )
                             nonzprices[i] = 0;
                         else
                         {
-                            price = rawprices[i];
+                            price = rawprices[i*rawskip];
                             if ( price < lowprice || price > highprice )
                                 nonzprices[i] = 0;
                             else
                             {
                                 nonzprices[i] = price;
-                                //fprintf(stderr,"(%d %u) ",i,rawprices[i]);
+                                //fprintf(stderr,"(%d %u) ",i,rawprices[i*rawskip]);
                                 n++;
                             }
                         }
@@ -2345,17 +2350,17 @@ int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int
                     if ( n != correlation )
                         return(-1);
                     sum = den = n = 0;
-                    for (i=0; i<daywindow; i++)
+                    for (i=0; i<PRICES_DAYWINDOW; i++)
                         if ( nonzprices[i] != 0 )
                             break;
                     firstprice = nonzprices[i];
                     //fprintf(stderr,"firsti.%d: ",i);
-                    for (i=0; i<daywindow; i++)
+                    for (i=0; i<PRICES_DAYWINDOW; i++)
                     {
                         if ( (price= nonzprices[i]) != 0 )
                         {
-                            den += (daywindow - i);
-                            sum += ((daywindow - i) * (price + firstprice*4)) / 5;
+                            den += (PRICES_DAYWINDOW - i);
+                            sum += ((PRICES_DAYWINDOW - i) * (price + firstprice*4)) / 5;
                             n++;
                         }
                     }
@@ -2447,61 +2452,29 @@ void smooth64(int64_t dest[],int64_t src[],int32_t width,int32_t smoothiters)
     } else memcpy(dest,src,width*sizeof(*dest));
 }
 
-int64_t komodo_pricesmoothed(int64_t *correlated,int32_t daywindow,int64_t *nonzprices,int32_t smoothwidth)
+int64_t komodo_pricesmoothed(int64_t *correlated,int32_t cskip,int64_t *rawprices,int32_t numprices)
 {
-    const int64_t coeffs[7] = { -2, 0, 18, 32, 18, 0, -2 };
-    int32_t i,iter; int64_t smoothedden,smoothedsum,sum,den,smoothed[7],firstprice = correlated[0];
-    if ( daywindow < 2 )
+    //const int64_t coeffs[7] = { -2, 0, 18, 32, 18, 0, -2 };
+    int32_t i; int64_t sum=0,nonzprice,price;
+    if ( PRICES_DAYWINDOW < 2 )
         return(0);
-    if ( smoothwidth != sizeof(smoothed)/sizeof(*smoothed) )
+    for (i=0; i<PRICES_DAYWINDOW; i++)
     {
-        fprintf(stderr,"smoothwidth %d != %d\n",smoothwidth,(int32_t)(sizeof(smoothed)/sizeof(*smoothed)));
-        return(0);
-    }
-    memset(nonzprices,0,sizeof(*nonzprices)*daywindow);
-    for (i=1; i<daywindow; i++)
-    {
-        if ( correlated[i] == 0 )
-            correlated[i] = correlated[i-1];
-        if ( firstprice == 0 && correlated[i] != 0 )
-        {
-            firstprice = correlated[i];
+        if ( (nonzprice= correlated[i*cskip]) != 0 )
             break;
-        }
     }
-    if ( firstprice != 0 )
+    if ( nonzprice == 0 )
+        return(-1);
+    for (i=0; i<PRICES_DAYWINDOW; i++)
     {
-        for (i=0; i<daywindow; i++)
-        {
-            if ( correlated[i] == 0 )
-                correlated[i] = firstprice;
-            else break;
-        }
-        //memcpy(orig,correlated,(daywindow+smoothwidth)*sizeof(*correlated));
-        for (iter=0; iter<smoothwidth; iter++)
-        {
-            sum = den = 0;
-            //smooth64(dest,correlated+iter,daywindow,1);
-            //smooth64(correlated+iter,dest,daywindow,1);
-            for (i=0; i<daywindow; i++)
-            {
-                sum += correlated[i+iter];//((daywindow - i) * (correlated[i+iter] + firstprice*4)) / 5;
-                den += 1;//(daywindow - i);
-            }
-            smoothed[iter] = (sum / den);
-            //memcpy(correlated,orig,(daywindow+smoothwidth)*sizeof(*correlated));
-        }
-        smoothedsum = 0;
-        smoothedden = 64;
-        for (i=0; i<7; i++)
-        {
-            //fprintf(stderr,"%.4f ",(double)smoothed[i]/10000);
-            smoothedsum += coeffs[i] * smoothed[i];
-            //smoothedden += (7-i);
-        }
-        //fprintf(stderr,"-> %.4f\n",(double)(smoothedsum/smoothedden)/10000);
-        return(smoothedsum/smoothedden);
+        if ( (price= correlated[i*cskip]) != 0 )
+            nonzprice = price;
+        //correlated2[i] = nonzprice / PRICES_DAYWINDOW; // reduce precision
+        sum += nonzprice;
     }
-    return(0);
+    price = sum / PRICES_DAYWINDOW;
+    // improve smoothing with correlated2 processing
+    // price = smooth(correlated2,PRICES_DAYWINDOW,price/daywindow) * PRICES_DAYWINDOW;
+    return(price);
 }
 

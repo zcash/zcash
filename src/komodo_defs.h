@@ -37,6 +37,7 @@
 #define KOMODO_MAXNVALUE (((uint64_t)1 << 63) - 1)
 #define KOMODO_BIT63SET(x) ((x) & ((uint64_t)1 << 63))
 #define KOMODO_VALUETOOBIG(x) ((x) > (uint64_t)10000000001*COIN)
+#define PRICES_DAYWINDOW ((3600*24/ASSETCHAINS_BLOCKTIME) + 1)
 
 extern uint8_t ASSETCHAINS_TXPOW,ASSETCHAINS_PUBLIC;
 int32_t MAX_BLOCK_SIZE(int32_t height);
