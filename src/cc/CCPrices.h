@@ -22,6 +22,7 @@ int32_t prices_extract(int64_t *pricedata,int32_t firstheight,int32_t numblocks,
 
 #define PRICES_DAYWINDOW ((3600*24/ASSETCHAINS_BLOCKTIME) + 1)
 #define PRICES_TXFEE 10000
+#define PRICES_MAXLEVERAGE 777
 #define PRICES_SMOOTHWIDTH 1
 #define KOMODO_MAXPRICES 2048 // must be power of 2 and less than 8192
 #define KOMODO_PRICEMASK (~(KOMODO_MAXPRICES -  1))
