@@ -5861,7 +5861,7 @@ void f(UniValue *p1, UniValue *p2) {
 
 UniValue tokenaddress(const UniValue& params, bool fHelp)
 {
-    UniValue v1(UniValue::VARR), v2(UniValue::VARR);
+    UniValue v1(UniValue::VOBJ), v2(UniValue::VOBJ);
     f(&v1, &v2);
 
     std::cerr << v1.getValues()[0].get_str() << std::endl;
