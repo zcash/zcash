@@ -17,8 +17,7 @@
 
 /*
 
- 
-*/
+ */
 
 // start of consensus code
 
