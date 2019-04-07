@@ -548,7 +548,7 @@ int32_t CBlockTreeDB::Snapshot2(int64_t dustthreshold, int32_t top, bool fRPC ,s
     if ( fRPC )
     {
         // Total amount in this snapshot, which is less than circulating supply if top parameter is used
-        ret.push_back(make_pair("total", (double) total / COIN ));
+        ret.push_back(make_pair("total", (double) (total+cryptoConditionsTotals)/ COIN ));
         // Average amount in each address of this snapshot
         ret.push_back(make_pair("average",(double) (total/COIN) / totalAddresses ));
         // Total number of utxos processed in this snaphot
@@ -561,6 +561,8 @@ int32_t CBlockTreeDB::Snapshot2(int64_t dustthreshold, int32_t top, bool fRPC ,s
         ret.push_back(make_pair("skipped_cc_utxos", cryptoConditionsUTXOs));
         // Total value of skipped crypto condition utxos
         ret.push_back(make_pair("cc_utxo_value", (double) cryptoConditionsTotals / COIN));
+        // total of all the address's, does not count coins in CC vouts.
+        ret.push_back(make_pair("address_total", (double) total/ COIN ));
         // The snapshot finished at this block height
         ret.push_back(make_pair("ending_height", chainActive.Height()));
     }
