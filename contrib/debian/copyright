@@ -13,6 +13,89 @@ Comment: The Bitcoin Core developers encompasses the current developers listed o
  The Zcash developers are listed at https://z.cash/team.html and in doc/authors.md.
  This copyright entry excludes files explicitly listed below.
 
+Files: build-aux/m4/ax_boost_base.m4
+Copyright: 2008, Thomas Porschberg <thomas@randspringer.de>
+ 2009, Peter Adolphs
+License: GNU-All-permissive-License
+
+Files: build-aux/m4/ax_boost_chrono.m4
+Copyright: 2012, Xiyue Deng <manphiz@gmail.com>
+License: GNU-All-permissive-License
+
+Files: build-aux/m4/ax_boost_filesystem.m4
+Copyright: 2009, Thomas Porschberg <thomas@randspringer.de>
+ 2009, Michael Tindal
+ 2009, Roman Rybalko <libtorrent@romanr.info>
+License: GNU-All-permissive-License
+
+Files: build-aux/m4/ax_boost_program_options.m4
+Copyright: 2009, Thomas Porschberg <thomas@randspringer.de>
+License: GNU-All-permissive-License
+
+Files: build-aux/m4/ax_boost_system.m4
+Copyright: 2008, Thomas Porschberg <thomas@randspringer.de>
+ 2008, Michael Tindal
+ 2008, Daniel Casimiro <dan.casimiro@gmail.com>
+License: GNU-All-permissive-License
+
+Files: build-aux/m4/ax_boost_unit_test_framework.m4
+Copyright: 2008, Thomas Porschberg <thomas@randspringer.de>
+License: GNU-All-permissive-License
+
+Files: build-aux/m4/ax_cxx_compile_stdcxx.m4
+Copyright: 2008, Benjamin Kosnik <bkoz@redhat.com>
+ 2012, Zack Weinberg <zackw@panix.com>
+ 2013, Roy Stogner <roystgnr@ices.utexas.edu>
+ 2014-2015, Google Inc.; contributed by Alexey Sokolov <sokolov@google.com>
+ 2015, Paul Norman <penorman@mac.com>
+ 2015, Moritz Klammler <moritz@klammler.eu>
+License: GNU-All-permissive-License
+
+Files: build-aux/m4/ax_gcc_func_attribute.m4
+Copyright: 2013, Gabriele Svelto <gabriele.svelto@gmail.com>
+License: GNU-All-permissive-License
+
+Files: build-aux/m4/l_atomic.m4
+Copyright: 2015, Tim Kosse <tim.kosse@filezilla-project.org>
+License: GNU-All-permissive-License
+
+Files: build-aux/m4/ax_check_compile_flag.m4
+ build-aux/m4/ax_check_link_flag.m4
+ build-aux/m4/ax_check_preproc_flag.m4
+Copyright: 2008, Guido U. Draheim <guidod@gmx.de>
+ 2011, Maarten Bosmans <mkbosmans@gmail.com>
+License: GPLv3-or-later-with-Autoconf-exception
+
+Files: build-aux/m4/ax_compiler_vendor.m4
+Copyright: 2008, Steven G. Johnson <stevenj@alum.mit.edu>
+ 2008, Matteo Frigo
+ 2018-19, John Zaitseff <J.Zaitseff@zap.org.au>
+License: GPLv3-or-later-with-Autoconf-exception
+
+Files: build-aux/m4/ax_gcc_archflag.m4
+Copyright: 2008, Steven G. Johnson <stevenj@alum.mit.edu>
+ 2008, Matteo Frigo
+ 2014, Tsukasa Oi
+ 2017-2018, Alexey Kopytov
+License: GPLv3-or-later-with-Autoconf-exception
+
+Files: build-aux/m4/ax_gcc_x86_cpuid.m4
+Copyright: 2008, Steven G. Johnson <stevenj@alum.mit.edu>
+ 2008, Matteo Frigo
+ 2015, Michael Petch <mpetch@capp-sysware.com>
+License: GPLv3-or-later-with-Autoconf-exception
+
+Files: build-aux/m4/ax_openmp.m4
+Copyright: 2008, Steven G. Johnson <stevenj@alum.mit.edu>
+ 2015, John W. Peterson <jwpeterson@gmail.com>
+ 2016, Nick R. Papior <nickpapior@gmail.com>
+License: GPLv3-or-later-with-Autoconf-exception
+
+Files: build-aux/m4/ax_pthread.m4
+Copyright: 2008, Steven G. Johnson <stevenj@alum.mit.edu>
+ 2011, Daniel Richard G. <skunk@iSKUNK.ORG>
+License: GPLv3-or-later-with-Autoconf-exception
+
 Files: depends/sources/libsodium-*.tar.gz
 Copyright: 2013-2016 Frank Denis
 License: ISC
@@ -1330,3 +1413,32 @@ License: GNU-All-permissive-License
  and this notice are preserved. This file is offered as-is, without any
  warranty.
 
+License: GPLv3-or-later-with-Autoconf-exception
+ This program is free software: you can redistribute it and/or modify it
+ under the terms of the GNU General Public License as published by the
+ Free Software Foundation, either version 3 of the License, or (at your
+ option) any later version.
+ .
+ This program is distributed in the hope that it will be useful, but
+ WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+ Public License for more details.
+ .
+ You should have received a copy of the GNU General Public License along
+ with this program. If not, see <http://www.gnu.org/licenses/>.
+ .
+ As a special exception, the respective Autoconf Macro's copyright owner
+ gives unlimited permission to copy, distribute and modify the configure
+ scripts that are the output of Autoconf when processing the Macro. You
+ need not follow the terms of the GNU General Public License when using
+ or distributing such scripts, even though portions of the text of the
+ Macro appear in them. The GNU General Public License (GPL) does govern
+ all other use of the material that constitutes the Autoconf Macro.
+ .
+ This special exception to the GPL applies to versions of the Autoconf
+ Macro released by the Autoconf Archive. When you make and distribute a
+ modified version of the Autoconf Macro, you may extend this special
+ exception to the GPL to apply to your modified version as well.
+Comment:
+ The "special exception" is extended to the versions of files covered by
+ this license that are distributed with this software.
