@@ -6105,6 +6105,7 @@ UniValue channelsopen(const UniValue& params, bool fHelp)
         tokenid=Parseuint256((char *)params[3].get_str().c_str());
     }
     hex = ChannelOpen(0,pubkey2pk(destpub),numpayments,payment,tokenid);
+    RETURN_IF_ERROR(CCerror);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
@@ -6135,6 +6136,7 @@ UniValue channelspayment(const UniValue& params, bool fHelp)
         secret = Parseuint256((char *)params[2].get_str().c_str());
     }
     hex = ChannelPayment(0,opentxid,amount,secret);
+    RETURN_IF_ERROR(CCerror);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
@@ -6155,6 +6157,7 @@ UniValue channelsclose(const UniValue& params, bool fHelp)
     LOCK2(cs_main, pwalletMain->cs_wallet);
     opentxid = Parseuint256((char *)params[0].get_str().c_str());
     hex = ChannelClose(0,opentxid);
+    RETURN_IF_ERROR(CCerror);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
@@ -6176,6 +6179,7 @@ UniValue channelsrefund(const UniValue& params, bool fHelp)
     opentxid = Parseuint256((char *)params[0].get_str().c_str());
     closetxid = Parseuint256((char *)params[1].get_str().c_str());
     hex = ChannelRefund(0,opentxid,closetxid);
+    RETURN_IF_ERROR(CCerror);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
@@ -6909,143 +6913,14 @@ UniValue priceslist(const UniValue& params, bool fHelp)
 
 UniValue pricesinfo(const UniValue& params, bool fHelp)
 {
-    uint256 fundingtxid;
-    if ( fHelp || params.size() != 1 )
+    uint256 bettxid; int32_t height;
+    if ( fHelp || params.size() != 2 )
         throw runtime_error("pricesinfo fundingtxid\n");
     if ( ensure_CCrequirements(EVAL_PRICES) < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
-    fundingtxid = Parseuint256((char *)params[0].get_str().c_str());
-    return(PricesInfo(fundingtxid));
-}
-
-UniValue pricescreate(const UniValue& params, bool fHelp)
-{
-    UniValue result(UniValue::VOBJ); uint64_t mode; int64_t funding; int32_t i,n,margin,maxleverage; std::string hex; uint256 oracletxid,longtoken,shorttoken,bettoken; std::vector<CPubKey> pubkeys; std::vector<uint8_t>pubkey;
-    if ( fHelp || params.size() < 8 )
-        throw runtime_error("pricescreate bettoken oracletxid margin mode longtoken shorttoken maxleverage funding N [pubkeys]\n");
-    if ( ensure_CCrequirements(EVAL_PRICES) < 0 )
-        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
-    const CKeyStore& keystore = *pwalletMain;
-    LOCK2(cs_main, pwalletMain->cs_wallet);
-    bettoken = Parseuint256((char *)params[0].get_str().c_str());
-    oracletxid = Parseuint256((char *)params[1].get_str().c_str());
-    margin = atof(params[2].get_str().c_str()) * 1000;
-    mode = atol(params[3].get_str().c_str());
-    longtoken = Parseuint256((char *)params[4].get_str().c_str());
-    shorttoken = Parseuint256((char *)params[5].get_str().c_str());
-    maxleverage = atol(params[6].get_str().c_str());
-    funding = atof(params[7].get_str().c_str()) * COIN + 0.00000000499999;
-    n = atoi(params[8].get_str().c_str());
-    if ( n > 0 )
-    {
-        for (i=0; i<n; i++)
-        {
-            if ( params.size() < 9+i+1 )
-                throw runtime_error("not enough parameters for N pubkeys\n");
-            pubkey = ParseHex(params[9+i].get_str().c_str());
-            pubkeys.push_back(pubkey2pk(pubkey));
-        }
-    }
-    hex = PricesCreateFunding(0,bettoken,oracletxid,margin,mode,longtoken,shorttoken,maxleverage,funding,pubkeys);
-    if ( hex.size() > 0 )
-    {
-        result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    }
-    else
-    {
-        ERR_RESULT("couldnt create prices funding transaction");
-    }
-    return(result);
-}
-
-UniValue pricesaddfunding(const UniValue& params, bool fHelp)
-{
-    UniValue result(UniValue::VOBJ); std::string hex; uint256 fundingtxid,bettoken; int64_t amount;
-    if ( fHelp || params.size() != 3 )
-        throw runtime_error("pricesaddfunding fundingtxid bettoken amount\n");
-    if ( ensure_CCrequirements(EVAL_PRICES) < 0 )
-        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
-    const CKeyStore& keystore = *pwalletMain;
-    LOCK2(cs_main, pwalletMain->cs_wallet);
-    fundingtxid = Parseuint256((char *)params[0].get_str().c_str());
-    bettoken = Parseuint256((char *)params[1].get_str().c_str());
-    amount = atof(params[2].get_str().c_str()) * COIN + 0.00000000499999;
-    hex = PricesAddFunding(0,bettoken,fundingtxid,amount);
-    if ( hex.size() > 0 )
-    {
-        result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    }
-    else
-    {
-        ERR_RESULT("couldnt create pricesaddfunding transaction");
-    }
-    return(result);
-}
-
-UniValue pricesbet(const UniValue& params, bool fHelp)
-{
-    UniValue result(UniValue::VOBJ); std::string hex; uint256 fundingtxid,bettoken; int64_t amount; int32_t leverage;
-    if ( fHelp || params.size() != 4 )
-        throw runtime_error("pricesbet fundingtxid bettoken amount leverage\n");
-    if ( ensure_CCrequirements(EVAL_PRICES) < 0 )
-        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
-    const CKeyStore& keystore = *pwalletMain;
-    LOCK2(cs_main, pwalletMain->cs_wallet);
-    fundingtxid = Parseuint256((char *)params[0].get_str().c_str());
-    bettoken = Parseuint256((char *)params[1].get_str().c_str());
-    amount = atof(params[2].get_str().c_str()) * COIN + 0.00000000499999;
-    leverage = atoi(params[3].get_str().c_str());
-    hex = PricesBet(0,bettoken,fundingtxid,amount,leverage);
-    if ( hex.size() > 0 )
-    {
-        result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    }
-    else
-    {
-        ERR_RESULT("couldnt create pricesbet transaction");
-    }
-    return(result);
-}
-
-UniValue pricesstatus(const UniValue& params, bool fHelp)
-{
-    uint256 fundingtxid,bettxid,bettoken;
-    if ( fHelp || params.size() != 3 )
-        throw runtime_error("pricesstatus fundingtxid bettoken bettxid\n");
-    if ( ensure_CCrequirements(EVAL_PRICES) < 0 )
-        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
-    fundingtxid = Parseuint256((char *)params[0].get_str().c_str());
-    bettoken = Parseuint256((char *)params[1].get_str().c_str());
-    bettxid = Parseuint256((char *)params[2].get_str().c_str());
-    return(PricesStatus(0,bettoken,fundingtxid,bettxid));
-}
-
-UniValue pricesfinish(const UniValue& params, bool fHelp)
-{
-    UniValue result(UniValue::VOBJ); uint256 fundingtxid,bettxid,bettoken; std::string hex;
-    if ( fHelp || params.size() != 3 )
-        throw runtime_error("pricesfinish fundingtxid bettoken bettxid\n");
-    if ( ensure_CCrequirements(EVAL_PRICES) < 0 )
-        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
-    const CKeyStore& keystore = *pwalletMain;
-    LOCK2(cs_main, pwalletMain->cs_wallet);
-    fundingtxid = Parseuint256((char *)params[0].get_str().c_str());
-    bettoken = Parseuint256((char *)params[1].get_str().c_str());
-    bettxid = Parseuint256((char *)params[2].get_str().c_str());
-    hex = PricesFinish(0,bettoken,fundingtxid,bettxid);
-    if ( hex.size() > 0 )
-    {
-        result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    }
-    else
-    {
-        ERR_RESULT("couldnt create pricesfinish transaction");
-    }
-    return(result);
+    bettxid = Parseuint256((char *)params[0].get_str().c_str());
+    height = atoi(params[1].get_str().c_str());
+    return(PricesInfo(bettxid,height));
 }
 
 UniValue dicefund(const UniValue& params, bool fHelp)

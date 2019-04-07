@@ -732,6 +732,78 @@ UniValue PaymentsCreate(struct CCcontract_info *cp,char *jsonstr)
     return(result);
 }
 
+UniValue PaymentsAirdrop(struct CCcontract_info *cp,char *jsonstr)
+{
+    // need to code: exclude list of tokenid, dust threshold, maxpayees, excluded pubkeys[]
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    UniValue result(UniValue::VOBJ); CTransaction tx; CPubKey Paymentspk,mypk; char markeraddr[64]; std::vector<uint256> txidoprets; uint256 hashBlock; int32_t i,n,numoprets=0,lockedblocks,minrelease; std::string rawtx; int64_t totalallocations = 0;
+    cJSON *params = payments_reparse(&n,jsonstr);
+    if ( params != 0 && n >= 4 )
+    {
+        lockedblocks = juint(jitem(params,0),0);
+        minrelease = juint(jitem(params,1),0);
+        if ( lockedblocks < 0 || minrelease < 0 )
+        {
+            result.push_back(Pair("result","error"));
+            result.push_back(Pair("error","negative parameter"));
+            if ( params != 0 )
+                free_json(params);
+            return(result);
+        }
+        for (i=0; i<n-2; i++)
+            txidoprets.push_back(payments_juint256(jitem(params,2+i)));
+        for (i=0; i<txidoprets.size(); i++)
+        {
+            std::vector<uint8_t> scriptPubKey,opret; int64_t allocation;
+            if ( myGetTransaction(txidoprets[i],tx,hashBlock) != 0 && tx.vout.size() > 1 && DecodePaymentsTxidOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,allocation,scriptPubKey,opret) == 'T' )
+            {
+                totalallocations += allocation;
+                if ( opret.size() > 0 )
+                    numoprets++;
+            }
+            else
+            {
+                result.push_back(Pair("result","error"));
+                result.push_back(Pair("error","invalid txidopret"));
+                result.push_back(Pair("txid",txidoprets[i].GetHex()));
+                result.push_back(Pair("txi",(int64_t)i));
+                if ( params != 0 )
+                    free_json(params);
+                return(result);
+            }
+        }
+        if ( numoprets > 1 )
+        {
+            result.push_back(Pair("result","error"));
+            result.push_back(Pair("error","too many opreturns"));
+            result.push_back(Pair("numoprets",(int64_t)numoprets));
+            if ( params != 0 )
+                free_json(params);
+            return(result);
+        }
+        mypk = pubkey2pk(Mypubkey());
+        Paymentspk = GetUnspendable(cp,0);
+        if ( AddNormalinputs(mtx,mypk,2*PAYMENTS_TXFEE,60) > 0 )
+        {
+            mtx.vout.push_back(MakeCC1of2vout(cp->evalcode,PAYMENTS_TXFEE,Paymentspk,Paymentspk));
+            rawtx = FinalizeCCTx(0,cp,mtx,mypk,PAYMENTS_TXFEE,EncodePaymentsOpRet(lockedblocks,minrelease,totalallocations,txidoprets));
+            if ( params != 0 )
+                free_json(params);
+            return(payments_rawtxresult(result,rawtx,1));
+        }
+        result.push_back(Pair("result","error"));
+        result.push_back(Pair("error","not enough normal funds"));
+    }
+    else
+    {
+        result.push_back(Pair("result","error"));
+        result.push_back(Pair("error","parameters error"));
+    }
+    if ( params != 0 )
+        free_json(params);
+    return(result);
+}
+
 UniValue PaymentsInfo(struct CCcontract_info *cp,char *jsonstr)
 {
     UniValue result(UniValue::VOBJ),a(UniValue::VARR); CTransaction tx,txO; CPubKey Paymentspk,txidpk; int32_t i,j,n,flag=0,numoprets=0,lockedblocks,minrelease; std::vector<uint256> txidoprets; int64_t funds,fundsopret,totalallocations=0,allocation; char fundsaddr[64],fundsopretaddr[64],txidaddr[64],*outstr; uint256 createtxid,hashBlock;
