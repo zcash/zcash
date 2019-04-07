@@ -5848,8 +5848,26 @@ UniValue assetsaddress(const UniValue& params, bool fHelp)
 	return(CCaddress(cp, (char *)"Assets", pubkey));
 }
 
+void f(UniValue *p1, UniValue *p2) {
+
+    if (p1)
+        p1->push_back(make_pair("x", "y"));
+
+    // or...
+    if (p2)
+        (*p2).push_back(make_pair("a", "b"));
+
+}
+
 UniValue tokenaddress(const UniValue& params, bool fHelp)
 {
+    UniValue v1, v2;
+    f(&v1, &v2);
+
+    std::cerr << v1.getValues()[0].get_str() << std::endl;
+    std::cerr << v2.getValues()[0].get_str() << std::endl;
+
+
     struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
     cp = CCinit(&C,EVAL_TOKENS);
     if ( fHelp || params.size() > 1 )
@@ -8101,4 +8119,15 @@ UniValue test_proof(const UniValue& params, bool fHelp)
     result.push_back(Pair("SafeCheckMerkleBranch", ourResult.GetHex()));
 
 	return result;
+}
+
+void f(UniValue *p) {
+
+    if (p)
+        p->push_back(make_pair("x", "y"));
+
+    // or...
+    if (p)
+        (*p).push_back(make_pair("x", "y"));
+
 }
