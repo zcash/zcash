@@ -274,8 +274,10 @@ UniValue prices_rawtxresult(UniValue &result,std::string rawtx,int32_t broadcast
 int32_t prices_syntheticvec(std::vector<uint16_t> &vec,std::vector<std::string> synthetic)
 {
     int32_t i,need,ind,depth = 0; std::string opstr; uint16_t opcode,weight;
-    if ( synthetic.size() == 0 )
+    if (synthetic.size() == 0) {
+        std::cerr << "synthetic expression is empty" << std::endl;
         return(-1);
+    }
     for (i=0; i<synthetic.size(); i++)
     {
         need = 0;
@@ -300,14 +302,22 @@ int32_t prices_syntheticvec(std::vector<uint16_t> &vec,std::vector<std::string> 
         {
             opcode = PRICES_WEIGHT | weight;
             need = 1;
-        } else return(-2);
-        if ( depth < need )
+        }
+        else {
+            std::cerr << "incorrect opcode=" << opstr << std::endl;
+            return(-2);
+        }
+        if (depth < need) {
+            std::cerr << "incorrect not enough operands for opcode=" << opstr << std::endl;
             return(-3);
+        }
         depth -= need;
         if ( (opcode & KOMODO_PRICEMASK) != PRICES_WEIGHT ) // weight
             depth++;
-        if ( depth > 3 )
+        if (depth > 3) {
+            std::cerr << "to many operands, last=" << opstr << std::endl;
             return(-4);
+        }
         vec.push_back(opcode);
     }
     if ( depth != 0 )
