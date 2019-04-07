@@ -548,6 +548,7 @@ int32_t CBlockTreeDB::Snapshot2(int64_t dustthreshold, int32_t top, bool fRPC ,s
     if ( fRPC )
     {
         // Total amount in this snapshot, which is less than circulating supply if top parameter is used
+        // Use the address_total for a total of all address included when using top parameter.
         ret.push_back(make_pair("total", (double) (total+cryptoConditionsTotals)/ COIN ));
         // Average amount in each address of this snapshot
         ret.push_back(make_pair("average",(double) (total/COIN) / totalAddresses ));
