@@ -144,6 +144,16 @@ CBOPRET creates trustless oracles, which can be used for making a synthetic cash
  */
 
 
+// helpers:
+
+// returns true if there are only digits and no alphas in 's'
+inline bool is_weight(std::string s) {
+    return 
+        std::count_if(s.begin(), s.end(), [](unsigned char c) { return std::isdigit(c); } ) > 0  &&
+        std::count_if(s.begin(), s.end(), [](unsigned char c) { return std::isalpha(c); } ) == 0;
+}
+
+
 // start of consensus code
 
 CScript prices_betopret(CPubKey mypk,int32_t height,int64_t amount,int16_t leverage,int64_t firstprice,std::vector<uint16_t> vec,uint256 tokenid)
@@ -296,7 +306,7 @@ int32_t prices_syntheticvec(std::vector<uint16_t> &vec,std::vector<std::string> 
             opcode = PRICES_MMM, need = 3;
         else if ( opstr == "///" )
             opcode = PRICES_DDD, need = 3;
-        else if ( (ind= komodo_priceind((char *)opstr.c_str())) >= 0 )
+        else if (!is_weight(opstr) && (ind= komodo_priceind(opstr.c_str())) >= 0 )
             opcode = ind, need = 0;
         else if ( (weight= atoi(opstr.c_str())) > 0 && weight < KOMODO_MAXPRICES )
         {
@@ -429,12 +439,18 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec,int32_t height,int32_t m
         if ( errcode != 0 )
             break;
     }
-    if ( den == 0 )
+    if (den == 0) {
+        std::cerr << "prices_syntheticprice den==0 return err=-11" << std::endl;
         return(-11);
-    else if ( depth != 0 )
+    }
+    else if (depth != 0) {
+        std::cerr << "prices_syntheticprice depth!=0 err=-12" << std::endl;
         return(-12);
-    else if ( errcode != 0 )
+    }
+    else if (errcode != 0) {
+        std::cerr << "prices_syntheticprice err=" << errcode << std::endl;
         return(errcode);
+    }
     return(price / den);
 }
 

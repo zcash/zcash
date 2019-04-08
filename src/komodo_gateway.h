@@ -2111,7 +2111,7 @@ uint32_t get_binanceprice(const char *symbol)
 int32_t get_cryptoprices(uint32_t *prices,const char *list[],int32_t n,std::vector<std::string> strvec)
 {
     int32_t i,errs=0; uint32_t price; char *symbol;
-    std::cerr << "Crypto rates:" << std::endl;
+    std::cerr << "Crypto binance rates:" << std::endl;
 
     for (i=0; i<n+strvec.size(); i++)
     {
@@ -2202,7 +2202,7 @@ int32_t get_btcusd(uint32_t pricebits[4])
         dbtcusd = (double)pricebits[1]/10000;
         dbtcgbp = (double)pricebits[2]/10000;
         dbtceur = (double)pricebits[3]/10000;
-        fprintf(stderr,"BTC/USD %.4f, BTC/GBP %.4f, BTC/EUR %.4f GBPUSD %.6f, EURUSD %.6f EURGBP %.6f\n",dbtcusd,dbtcgbp,dbtceur,dbtcusd/dbtcgbp,dbtcusd/dbtceur,dbtcgbp/dbtceur);
+        fprintf(stderr,"BTC/USD %.4f, BTC/GBP %.4f, BTC/EUR %.4f not used: GBPUSD %.6f, EURUSD %.6f EURGBP %.6f\n",dbtcusd,dbtcgbp,dbtceur,dbtcusd/dbtcgbp,dbtcusd/dbtceur,dbtcgbp/dbtceur);
         return(0);
     }
     return(-1);
@@ -2431,7 +2431,7 @@ char *komodo_pricename(char *name,int32_t ind)
 }
 
 // finds index value for its symbol name
-int32_t komodo_priceind(char *symbol)
+int32_t komodo_priceind(const char *symbol)
 {
     char name[65]; int32_t i,n = (int32_t)(komodo_cbopretsize(ASSETCHAINS_CBOPRET) / sizeof(uint32_t));
 
@@ -2439,7 +2439,7 @@ int32_t komodo_priceind(char *symbol)
     for (i=1; i<n; i++)
     {
         komodo_pricename(name,i);
-        std::cerr << "komodo_priceind name=" << name << " i=" << i << std::endl;
+        //std::cerr << "komodo_priceind name=" << name << " i=" << i << std::endl;
         if (strcmp(name, symbol) == 0) {
             std::cerr << "komodo_priceind for symbol=" << symbol << " returns=" << i << std::endl;
             return(i);
