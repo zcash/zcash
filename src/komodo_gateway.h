@@ -2337,6 +2337,7 @@ int64_t komodo_pricemult(int32_t ind)
     return(0);
 }
 
+// returns index name for ind value
 char *komodo_pricename(char *name,int32_t ind)
 {
     strcpy(name,"error");
@@ -2401,14 +2402,18 @@ char *komodo_pricename(char *name,int32_t ind)
     return(0);
 }
 
+// finds index value for its char* name
 int32_t komodo_priceind(char *symbol)
 {
     char name[65]; int32_t i,n = (int32_t)(komodo_cbopretsize(ASSETCHAINS_CBOPRET) / sizeof(uint32_t));
     for (i=1; i<n; i++)
     {
         komodo_pricename(name,i);
-        if ( strcmp(name,symbol) == 0 )
+        std::cerr << "komodo_priceind name=" << name << " i=" << i << std::endl;
+        if (strcmp(name, symbol) == 0) {
+            std::cerr << "komodo_priceind for symbol=" << symbol << " returns=" << i << std::endl;
             return(i);
+        }
     }
     return(-1);
 }
