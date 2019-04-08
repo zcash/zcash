@@ -2102,7 +2102,6 @@ uint32_t get_binanceprice(const char *symbol)
     if ( (json= get_urljson(url)) != 0 ) //if ( (json= send_curl(url,(char *)"bnbprice")) != 0 )
     {
         price = jdouble(json,(char *)"price")*SATOSHIDEN + 0.0000000049;
-        std::cerr << price << std::endl;
         free_json(json);
     }
     usleep(100000);
