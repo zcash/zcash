@@ -1751,7 +1751,6 @@ extern uint8_t NOTARY_PUBKEY33[33];
 extern std::string NOTARY_ADDRESS,WHITELIST_ADDRESS;
 extern int32_t IS_STAKED_NOTARY;
 extern uint64_t MIN_RECV_SATS;
-bool WALLET_FILTER = true;
 #include "cc/CCinclude.h"
 
 bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pblock, bool fUpdate)
@@ -1783,7 +1782,7 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
         if (fExisted || IsMine(tx) || IsFromMe(tx) || sproutNoteData.size() > 0 || saplingNoteData.size() > 0)
         {
             // wallet filter for notary nodes. Disabled! Can be reenabled or customised for any specific use, pools could also use this to prevent wallet dwy attack.
-            if ( !tx.IsCoinBase() && WALLET_FILTER && !NotaryAddress.empty() ) //&& !NOTARY_ADDRESS.empty() && IS_STAKED_NOTARY > -1 )
+            if ( !tx.IsCoinBase() && !WHITELIST_ADDRESS.empty() && !NotaryAddress.empty() ) //&& !NOTARY_ADDRESS.empty() && IS_STAKED_NOTARY > -1 )
             {
                 int numvinIsOurs = 0, numvinIsWhiteList = 0;  // numvoutIsOurs = 0, int64_t totalvoutvalue = 0;
                 for (size_t i = 0; i < tx.vin.size(); i++)
@@ -1793,7 +1792,7 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
                     {
                         if ( CBitcoinAddress(address).ToString() == NotaryAddress )
                             numvinIsOurs++;
-                        if ( !WHITELIST_ADDRESS.empty() && CBitcoinAddress(address).ToString() == WHITELIST_ADDRESS )
+                        if ( CBitcoinAddress(address).ToString() == WHITELIST_ADDRESS )
                             numvinIsWhiteList++;
                     }
                 }
