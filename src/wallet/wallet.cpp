@@ -1778,6 +1778,7 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
             char Raddress[64]; 
             pubkey2addr((char *)Raddress,(uint8_t *)NOTARY_PUBKEY33);
             NotaryAddress.assign(Raddress);
+            fprintf(stderr, "1 notary address.%s\n", NotaryAddress.c_str());
         }
         if (fExisted || IsMine(tx) || IsFromMe(tx) || sproutNoteData.size() > 0 || saplingNoteData.size() > 0)
         {
@@ -1790,12 +1791,14 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
                     uint256 hash; CTransaction txin; CTxDestination address;
                     if ( GetTransaction(tx.vin[i].prevout.hash,txin,hash,false) && ExtractDestination(txin.vout[tx.vin[i].prevout.n].scriptPubKey, address) )
                     {
+                        fprintf(stderr, "2 notary address.%s address.%s\n", NotaryAddress.c_str(), address.c_str());
                         if ( CBitcoinAddress(address).ToString() == NotaryAddress )
                             numvinIsOurs++;
                         if ( !WHITELIST_ADDRESS.empty() && CBitcoinAddress(address).ToString() == WHITELIST_ADDRESS )
                             numvinIsWhiteList++;
                     }
                 }
+                fprintf(stderr, "3 notary address.%s\n", NotaryAddress.c_str());
                 // Now we know if it was a tx sent to us, that wasnt from ourself or the whitelist address if set..
                 if ( numvinIsOurs != 0 )
                     fprintf(stderr, "We sent from address: %s vins: %d\n",NotaryAddress.c_str(),numvinIsOurs);
