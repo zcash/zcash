@@ -16,6 +16,23 @@
 // paxdeposit equivalent in reverse makes opreturn and KMD does the same in reverse
 #include "komodo_defs.h"
 
+#ifdef _WIN32
+#ifdef _MSC_VER
+#define sleep(x) Sleep(1000*(x))
+#endif
+#endif
+
+#ifdef _WIN32
+#ifdef _MSC_VER
+void usleep(int32_t micros)
+{
+    if (micros < 1000)
+        Sleep(1);
+    else Sleep(micros / 1000);
+}
+#endif
+#endif
+
 /*#include "secp256k1/include/secp256k1.h"
 #include "secp256k1/include/secp256k1_schnorrsig.h"
 #include "secp256k1/include/secp256k1_musig.h"
@@ -2054,10 +2071,13 @@ int32_t get_stockprices(uint32_t now,uint32_t *prices,std::vector<std::string> s
 uint32_t get_dailyfx(uint32_t *prices)
 {
     //{"base":"USD","rates":{"BGN":1.74344803,"NZD":1.471652701,"ILS":3.6329113924,"RUB":65.1997682296,"CAD":1.3430201462,"USD":1.0,"PHP":52.8641469068,"CHF":0.9970582992,"AUD":1.4129078267,"JPY":110.6792654662,"TRY":5.6523444464,"HKD":7.8499732573,"MYR":4.0824567659,"HRK":6.6232840078,"CZK":22.9862720628,"IDR":14267.4986628633,"DKK":6.6551078624,"NOK":8.6806917454,"HUF":285.131039401,"GBP":0.7626582278,"MXN":19.4183455161,"THB":31.8702085933,"ISK":122.5708682475,"ZAR":14.7033339276,"BRL":3.9750401141,"SGD":1.3573720806,"PLN":3.8286682118,"INR":69.33187734,"KRW":1139.1602781244,"RON":4.2423783206,"CNY":6.7387234801,"SEK":9.3385630237,"EUR":0.8914244963},"date":"2019-03-28"}
+    
     char url[512],*datestr; cJSON *json,*rates; int32_t i; uint32_t datenum=0,price = 0;
+    
     sprintf(url,"https://api.openrates.io/latest?base=USD");
     if ( (json= get_urljson(url)) != 0 ) //if ( (json= send_curl(url,(char *)"dailyfx")) != 0 )
     {
+        std::cerr << "Forex rates:" << std::endl;
         if ( (rates= jobj(json,(char *)"rates")) != 0 )
         {
             for (i=0; i<sizeof(Forex)/sizeof(*Forex); i++)
@@ -2082,6 +2102,7 @@ uint32_t get_binanceprice(const char *symbol)
     if ( (json= get_urljson(url)) != 0 ) //if ( (json= send_curl(url,(char *)"bnbprice")) != 0 )
     {
         price = jdouble(json,(char *)"price")*SATOSHIDEN + 0.0000000049;
+        std::cerr << price << std::endl;
         free_json(json);
     }
     usleep(100000);
@@ -2091,6 +2112,8 @@ uint32_t get_binanceprice(const char *symbol)
 int32_t get_cryptoprices(uint32_t *prices,const char *list[],int32_t n,std::vector<std::string> strvec)
 {
     int32_t i,errs=0; uint32_t price; char *symbol;
+    std::cerr << "Crypto rates:" << std::endl;
+
     for (i=0; i<n+strvec.size(); i++)
     {
         if ( i < n )
@@ -2102,6 +2125,7 @@ int32_t get_cryptoprices(uint32_t *prices,const char *list[],int32_t n,std::vect
         prices[i] = price;
     }
     fprintf(stderr," errs.%d\n",errs);
+    std::cerr << std::endl;
     return(-errs);
 }
 
@@ -2155,6 +2179,7 @@ int32_t get_btcusd(uint32_t pricebits[4])
     cJSON *pjson,*bpi,*obj; char str[512]; double dbtcgbp,dbtcusd,dbtceur; uint64_t btcusd = 0,btcgbp = 0,btceur = 0;
     if ( (pjson= get_urljson((char *)"http://api.coindesk.com/v1/bpi/currentprice.json")) != 0 )
     {
+        std::cerr << "coindesk rates:" << std::endl;
         if ( (bpi= jobj(pjson,(char *)"bpi")) != 0 )
         {
             pricebits[0] = (uint32_t)time(NULL);
@@ -2337,7 +2362,11 @@ int64_t komodo_pricemult(int32_t ind)
     return(0);
 }
 
-// returns index name for ind value
+// returns index name for its value (ind param)
+// ind values:  
+// [1..4) basic Coindesk BTC indices
+// [4..4+sizeof Forex) Forex indices
+// [4+sizeof Forex..4+sizeof Forex+sizeof Crypto) Crypto indices
 char *komodo_pricename(char *name,int32_t ind)
 {
     strcpy(name,"error");
@@ -2402,7 +2431,7 @@ char *komodo_pricename(char *name,int32_t ind)
     return(0);
 }
 
-// finds index value for its char* name
+// finds index value for its symbol name
 int32_t komodo_priceind(char *symbol)
 {
     char name[65]; int32_t i,n = (int32_t)(komodo_cbopretsize(ASSETCHAINS_CBOPRET) / sizeof(uint32_t));
