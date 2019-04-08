@@ -352,7 +352,7 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec,int32_t height,int32_t m
         ind = (opcode & (KOMODO_MAXPRICES-1));   // weight value
         switch ( opcode & KOMODO_PRICEMASK )
         {
-            case 0:
+            case 0: // indices 
                 pricestack[depth] = 0;
                 if ( komodo_priceget(pricedata,ind,height,1) > 0 )
                 {
@@ -375,7 +375,7 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec,int32_t height,int32_t m
                 {
                     depth--;
                     price += pricestack[0] * ind;
-                    den += ind;
+                    den += ind;     // acc weight values
                 } else errcode = -2;
                 break;
             case PRICES_MULT:
@@ -444,6 +444,10 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec,int32_t height,int32_t m
         if ( errcode != 0 )
             break;
     }
+    
+    if (errcode != 0) 
+        std::cerr << "prices_syntheticprice warning: errcode in switch=" << errcode << std::endl;
+    
     if (den == 0) {
         std::cerr << "prices_syntheticprice den==0 return err=-11" << std::endl;
         return(-11);
