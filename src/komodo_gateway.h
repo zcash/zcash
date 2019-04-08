@@ -2536,7 +2536,7 @@ int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int
                         fprintf(stderr,"seed.%llu n.%d vs correlation.%d sum %llu, den %llu\n",(long long)seed,n,correlation,(long long)sum,(long long)den);
                         return(-1);
                     }
-                    std::cerr << "sum=" << sum << " mul=" << mul << " den=" << den << std::endl;
+                    std::cerr << "sum=" << sum << " mult=" << mult << " den=" << den << std::endl;
                     fprintf(stderr,"firstprice.%llu weighted -> %.8f\n",(long long)firstprice,((double)(sum*mult) / den) / COIN);
                     return((sum * mult) / den);
                 }
