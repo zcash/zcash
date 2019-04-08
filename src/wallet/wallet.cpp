@@ -1751,6 +1751,8 @@ extern uint8_t NOTARY_PUBKEY33[33];
 extern std::string NOTARY_ADDRESS,WHITELIST_ADDRESS;
 extern int32_t IS_STAKED_NOTARY;
 extern uint64_t MIN_RECV_SATS;
+bool WALLET_FILTER = true;
+#include "cc/CCinclude.h"
 
 bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pblock, bool fUpdate)
 {
@@ -1769,41 +1771,41 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
                 return false;
             }
         }
+        static std::string NotaryAddress; static bool didinit;
+        if ( !didinit && NotaryAddress.empty() && NOTARY_PUBKEY33[0] != 0 )
+        {
+            didinit = true;
+            char Raddress[64]; 
+            pubkey2addr((char *)Raddress,(uint8_t *)NOTARY_PUBKEY33);
+            NotaryAddress.assign(Raddress);
+        }
         if (fExisted || IsMine(tx) || IsFromMe(tx) || sproutNoteData.size() > 0 || saplingNoteData.size() > 0)
         {
             // wallet filter for notary nodes. Disabled! Can be reenabled or customised for any specific use, pools could also use this to prevent wallet dwy attack.
-            if ( !tx.IsCoinBase() ) //&& !NOTARY_ADDRESS.empty() && IS_STAKED_NOTARY > -1 )
+            if ( !tx.IsCoinBase() && WALLET_FILTER && !NotaryAddress.empty() ) //&& !NOTARY_ADDRESS.empty() && IS_STAKED_NOTARY > -1 )
             {
-                int numvinIsOurs = 0, numvoutIsOurs = 0, numvinIsWhiteList = 0; int64_t totalvoutvalue = 0;
+                int numvinIsOurs = 0, numvinIsWhiteList = 0;  // numvoutIsOurs = 0, int64_t totalvoutvalue = 0;
                 for (size_t i = 0; i < tx.vin.size(); i++)
                 {
                     uint256 hash; CTransaction txin; CTxDestination address;
-                    if (GetTransaction(tx.vin[i].prevout.hash,txin,hash,false))
+                    if ( GetTransaction(tx.vin[i].prevout.hash,txin,hash,false) && ExtractDestination(txin.vout[tx.vin[i].prevout.n].scriptPubKey, address) )
                     {
-                        if (ExtractDestination(txin.vout[tx.vin[i].prevout.n].scriptPubKey, address))
-                        {
-                            if ( CBitcoinAddress(address).ToString() == "RXhapCShoqNeWytLXeWR2wX7m5xfNYfxNx" )
-                                numvinIsOurs++;
-                            if ( !WHITELIST_ADDRESS.empty() )
-                            {
-                                //fprintf(stderr, "white list address: %s recv address: %s\n", WHITELIST_ADDRESS.c_str(),CBitcoinAddress(address).ToString().c_str());
-                                if ( CBitcoinAddress(address).ToString() == WHITELIST_ADDRESS ) {
-                                    //fprintf(stderr, "whitlisted is set to true here.\n");
-                                    numvinIsWhiteList++;
-                                }
-                            }
-                        }
+                        if ( CBitcoinAddress(address).ToString() == NotaryAddress )
+                            numvinIsOurs++;
+                        if ( !WHITELIST_ADDRESS.empty() && CBitcoinAddress(address).ToString() == WHITELIST_ADDRESS )
+                            numvinIsWhiteList++;
                     }
                 }
                 // Now we know if it was a tx sent to us, that wasnt from ourself or the whitelist address if set..
                 if ( numvinIsOurs != 0 )
-                    fprintf(stderr, "We sent from address: %s vins: %d\n",NOTARY_ADDRESS.c_str(),numvinIsOurs);
+                    fprintf(stderr, "We sent from address: %s vins: %d\n",NotaryAddress.c_str(),numvinIsOurs);
                 if ( numvinIsWhiteList != 0 )
                     fprintf(stderr, "We received from whitelisted address: %s\n",WHITELIST_ADDRESS.c_str());
                 // Count vouts, check if OUR notary address is the receiver.
                 if ( numvinIsOurs == 0 && numvinIsWhiteList == 0 )
                 {
-                    // if MIN_RECV_SATS is 0, we are on full lock down mode, accept NO transactions.
+                    return false;
+                    /*/ if MIN_RECV_SATS is 0, we are on full lock down mode, accept NO transactions.
                     if ( 1 ) { //MIN_RECV_SATS == 0 ) {
                         fprintf(stderr, "This node is on full lock down all txs are ignored! \n");
                         return false;
@@ -1832,7 +1834,7 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
                         // average vout size is less than set minimum, default is 1 coin, we will ignore it
                         fprintf(stderr, "ignored: %d vouts average size of %ld sats.\n",numvoutIsOurs, (long)avgVoutSize);
                         return false;
-                    }
+                    } */
                 }
             }
 
