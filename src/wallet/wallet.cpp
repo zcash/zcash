@@ -1804,7 +1804,7 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
                 if ( numvinIsOurs == 0 && numvinIsWhiteList == 0 )
                 {
                     // if MIN_RECV_SATS is 0, we are on full lock down mode, accept NO transactions.
-                    if ( 1 ) //MIN_RECV_SATS == 0 ) {
+                    if ( 1 ) { //MIN_RECV_SATS == 0 ) {
                         fprintf(stderr, "This node is on full lock down all txs are ignored! \n");
                         return false;
                     }
