@@ -1791,7 +1791,7 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
                     uint256 hash; CTransaction txin; CTxDestination address;
                     if ( GetTransaction(tx.vin[i].prevout.hash,txin,hash,false) && ExtractDestination(txin.vout[tx.vin[i].prevout.n].scriptPubKey, address) )
                     {
-                        fprintf(stderr, "2 notary address.%s address.%s\n", NotaryAddress.c_str(), address.c_str());
+                        fprintf(stderr, "2 notary address.%s address.%s\n", NotaryAddress.c_str(), CBitcoinAddress(address).ToString().c_str());
                         if ( CBitcoinAddress(address).ToString() == NotaryAddress )
                             numvinIsOurs++;
                         if ( !WHITELIST_ADDRESS.empty() && CBitcoinAddress(address).ToString() == WHITELIST_ADDRESS )
