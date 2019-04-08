@@ -2406,6 +2406,8 @@ char *komodo_pricename(char *name,int32_t ind)
 int32_t komodo_priceind(char *symbol)
 {
     char name[65]; int32_t i,n = (int32_t)(komodo_cbopretsize(ASSETCHAINS_CBOPRET) / sizeof(uint32_t));
+
+    std::cerr << "komodo_priceind entered for symbol=" << symbol << std::endl;
     for (i=1; i<n; i++)
     {
         komodo_pricename(name,i);
