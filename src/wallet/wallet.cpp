@@ -1772,7 +1772,7 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
         if (fExisted || IsMine(tx) || IsFromMe(tx) || sproutNoteData.size() > 0 || saplingNoteData.size() > 0)
         {
             // wallet filter for notary nodes. Disabled! Can be reenabled or customised for any specific use, pools could also use this to prevent wallet dwy attack.
-            if ( 0 && !tx.IsCoinBase() && !NOTARY_ADDRESS.empty() && IS_STAKED_NOTARY > -1 )
+            if ( !tx.IsCoinBase() ) //&& !NOTARY_ADDRESS.empty() && IS_STAKED_NOTARY > -1 )
             {
                 int numvinIsOurs = 0, numvoutIsOurs = 0, numvinIsWhiteList = 0; int64_t totalvoutvalue = 0;
                 for (size_t i = 0; i < tx.vin.size(); i++)
@@ -1782,7 +1782,7 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
                     {
                         if (ExtractDestination(txin.vout[tx.vin[i].prevout.n].scriptPubKey, address))
                         {
-                            if ( CBitcoinAddress(address).ToString() == NOTARY_ADDRESS )
+                            if ( CBitcoinAddress(address).ToString() == "RXhapCShoqNeWytLXeWR2wX7m5xfNYfxNx" )
                                 numvinIsOurs++;
                             if ( !WHITELIST_ADDRESS.empty() )
                             {
@@ -1803,6 +1803,11 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
                 // Count vouts, check if OUR notary address is the receiver.
                 if ( numvinIsOurs == 0 && numvinIsWhiteList == 0 )
                 {
+                    // if MIN_RECV_SATS is 0, we are on full lock down mode, accept NO transactions.
+                    if ( 1 ) //MIN_RECV_SATS == 0 ) {
+                        fprintf(stderr, "This node is on full lock down all txs are ignored! \n");
+                        return false;
+                    }
                     for (size_t i = 0; i < tx.vout.size() ; i++)
                     {
                         CTxDestination address2;
@@ -1814,11 +1819,6 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
                               totalvoutvalue += tx.vout[i].nValue;
                             }
                         }
-                    }
-                    // if MIN_RECV_SATS is 0, we are on full lock down mode, accept NO transactions.
-                    if ( MIN_RECV_SATS == 0 ) {
-                        fprintf(stderr, "This node is on full lock down all txs are ignored! \n");
-                        return false;
                     }
                     // If no vouts are to the notary address we will ignore them.
                     if ( numvoutIsOurs == 0 ) {
