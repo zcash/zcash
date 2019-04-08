@@ -146,11 +146,11 @@ CBOPRET creates trustless oracles, which can be used for making a synthetic cash
 
 // helpers:
 
-// returns true if there are only digits and no alphas in 's'
-inline bool is_weight(std::string s) {
+// returns true if there are only digits and no alphas or slashes in 's'
+inline bool is_weight_str(std::string s) {
     return 
         std::count_if(s.begin(), s.end(), [](unsigned char c) { return std::isdigit(c); } ) > 0  &&
-        std::count_if(s.begin(), s.end(), [](unsigned char c) { return std::isalpha(c); } ) == 0;
+        std::count_if(s.begin(), s.end(), [](unsigned char c) { return std::isalpha(c) || c == '/'; } ) == 0;
 }
 
 
@@ -285,7 +285,7 @@ int32_t prices_syntheticvec(std::vector<uint16_t> &vec,std::vector<std::string> 
 {
     int32_t i,need,ind,depth = 0; std::string opstr; uint16_t opcode,weight;
     if (synthetic.size() == 0) {
-        std::cerr << "synthetic expression is empty" << std::endl;
+        std::cerr << "prices_syntheticvec() expression is empty" << std::endl;
         return(-1);
     }
     for (i=0; i<synthetic.size(); i++)
@@ -306,7 +306,7 @@ int32_t prices_syntheticvec(std::vector<uint16_t> &vec,std::vector<std::string> 
             opcode = PRICES_MMM, need = 3;
         else if ( opstr == "///" )
             opcode = PRICES_DDD, need = 3;
-        else if (!is_weight(opstr) && (ind= komodo_priceind(opstr.c_str())) >= 0 )
+        else if (!is_weight_str(opstr) && (ind= komodo_priceind(opstr.c_str())) >= 0 )
             opcode = ind, need = 0;
         else if ( (weight= atoi(opstr.c_str())) > 0 && weight < KOMODO_MAXPRICES )
         {
@@ -314,30 +314,34 @@ int32_t prices_syntheticvec(std::vector<uint16_t> &vec,std::vector<std::string> 
             need = 1;
         }
         else {
-            std::cerr << "incorrect opcode=" << opstr << std::endl;
+            std::cerr << "prices_syntheticvec() incorrect opcode=" << opstr << std::endl;
             return(-2);
         }
         if (depth < need) {
-            std::cerr << "incorrect not enough operands for opcode=" << opstr << std::endl;
+            std::cerr << "prices_syntheticvec() incorrect not enough operands for opcode=" << opstr << std::endl;
             return(-3);
         }
         depth -= need;
-        if ( (opcode & KOMODO_PRICEMASK) != PRICES_WEIGHT ) // weight
-            depth++;
+        std::cerr << "opcode=" << opcode << " opstr=" << opstr << " depth-=need=" << depth << std::endl;
+        if ((opcode & KOMODO_PRICEMASK) != PRICES_WEIGHT) { // skip weight
+            depth++;                                          // increase operands count
+            std::cerr << "depth++=" << depth << std::endl;
+        }
         if (depth > 3) {
-            std::cerr << "to many operands, last=" << opstr << std::endl;
+            std::cerr << "prices_syntheticvec() to many operands, last=" << opstr << std::endl;
             return(-4);
         }
         vec.push_back(opcode);
     }
     if ( depth != 0 )
     {
-        fprintf(stderr,"depth.%d not empty\n",depth);
+        fprintf(stderr,"prices_syntheticvec() depth.%d not empty\n",depth);
         return(-5);
     }
     return(0);
 }
 
+// calculate price for synthetic expression
 int64_t prices_syntheticprice(std::vector<uint16_t> vec,int32_t height,int32_t minmax,int16_t leverage)
 {
     int32_t i,ind,errcode,depth,retval = -1; uint16_t opcode; int64_t pricedata[PRICES_MAXDATAPOINTS],pricestack[4],price,den,a,b,c;
@@ -345,7 +349,7 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec,int32_t height,int32_t m
     for (i=0; i<vec.size(); i++)
     {
         opcode = vec[i];
-        ind = (opcode & (KOMODO_MAXPRICES-1));
+        ind = (opcode & (KOMODO_MAXPRICES-1));   // weight value
         switch ( opcode & KOMODO_PRICEMASK )
         {
             case 0:
@@ -358,7 +362,8 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec,int32_t height,int32_t m
                     {
                         if ( leverage > 0 )
                             pricestack[depth] = (pricedata[1] > pricedata[2]) ? pricedata[1] : pricedata[2]; // MAX
-                        else pricestack[depth] = (pricedata[1] < pricedata[2]) ? pricedata[1] : pricedata[2]; // MIN
+                        else 
+                            pricestack[depth] = (pricedata[1] < pricedata[2]) ? pricedata[1] : pricedata[2]; // MIN
                     }
                 }
                 if ( pricestack[depth] == 0 )

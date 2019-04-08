@@ -25,15 +25,15 @@ int32_t komodo_priceget(int64_t *buf64,int32_t ind,int32_t height,int32_t numblo
 #define PRICES_MAXLEVERAGE 777
 #define PRICES_SMOOTHWIDTH 1
 #define KOMODO_MAXPRICES 2048 // must be power of 2 and less than 8192
-#define KOMODO_PRICEMASK (~(KOMODO_MAXPRICES -  1))
-#define PRICES_WEIGHT (KOMODO_MAXPRICES * 1)
-#define PRICES_MULT (KOMODO_MAXPRICES * 2)
-#define PRICES_DIV (KOMODO_MAXPRICES * 3)
-#define PRICES_INV (KOMODO_MAXPRICES * 4)
-#define PRICES_MDD (KOMODO_MAXPRICES * 5)
-#define PRICES_MMD (KOMODO_MAXPRICES * 6)
-#define PRICES_MMM (KOMODO_MAXPRICES * 7)
-#define PRICES_DDD (KOMODO_MAXPRICES * 8)
+#define KOMODO_PRICEMASK (~(KOMODO_MAXPRICES -  1))     // actually 1111 1000 0000 0000
+#define PRICES_WEIGHT (KOMODO_MAXPRICES * 1)            //          0000 1000 0000 0000
+#define PRICES_MULT (KOMODO_MAXPRICES * 2)              //          0001 0000 0000 0000
+#define PRICES_DIV (KOMODO_MAXPRICES * 3)               //          0001 1000 0000 0000
+#define PRICES_INV (KOMODO_MAXPRICES * 4)               //          0010 0000 0000 0000
+#define PRICES_MDD (KOMODO_MAXPRICES * 5)               //          0010 1000 0000 0000
+#define PRICES_MMD (KOMODO_MAXPRICES * 6)               //          0011 0000 0000 0000
+#define PRICES_MMM (KOMODO_MAXPRICES * 7)               //          0011 1000 0000 0000
+#define PRICES_DDD (KOMODO_MAXPRICES * 8)               //          0100 0000 0000 0000
 
 bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn);
 

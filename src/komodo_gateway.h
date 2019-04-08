@@ -2077,7 +2077,7 @@ uint32_t get_dailyfx(uint32_t *prices)
     sprintf(url,"https://api.openrates.io/latest?base=USD");
     if ( (json= get_urljson(url)) != 0 ) //if ( (json= send_curl(url,(char *)"dailyfx")) != 0 )
     {
-        std::cerr << "Forex rates:" << std::endl;
+        std::cerr << "Forex USD rates:" << std::endl;
         if ( (rates= jobj(json,(char *)"rates")) != 0 )
         {
             for (i=0; i<sizeof(Forex)/sizeof(*Forex); i++)
@@ -2111,7 +2111,7 @@ uint32_t get_binanceprice(const char *symbol)
 int32_t get_cryptoprices(uint32_t *prices,const char *list[],int32_t n,std::vector<std::string> strvec)
 {
     int32_t i,errs=0; uint32_t price; char *symbol;
-    std::cerr << "Crypto binance rates:" << std::endl;
+    std::cerr << "Crypto binance BTC rates:" << std::endl;
 
     for (i=0; i<n+strvec.size(); i++)
     {
