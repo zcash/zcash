@@ -349,7 +349,7 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec,int32_t height,int32_t m
     for (i=0; i<vec.size(); i++)
     {
         opcode = vec[i];
-        ind = (opcode & (KOMODO_MAXPRICES-1));   // weight value
+        ind = (opcode & (KOMODO_MAXPRICES-1));   // price index value
         switch ( opcode & KOMODO_PRICEMASK )
         {
             case 0: // indices 
@@ -370,6 +370,7 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec,int32_t height,int32_t m
                     errcode = -1;
                 depth++;
                 break;
+
             case PRICES_WEIGHT: // multiply by weight and consume top of stack by updating price
                 if ( depth == 1 )
                 {
@@ -378,6 +379,7 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec,int32_t height,int32_t m
                     den += ind;     // acc weight values
                 } else errcode = -2;
                 break;
+
             case PRICES_MULT:
                 if ( depth >= 2 )
                 {
@@ -386,6 +388,7 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec,int32_t height,int32_t m
                     pricestack[depth++] = (a * b) / SATOSHIDEN;
                 } else errcode = -3;
                 break;
+
             case PRICES_DIV:
                 if ( depth >= 2 )
                 {
@@ -394,6 +397,7 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec,int32_t height,int32_t m
                     pricestack[depth++] = (a * SATOSHIDEN) / b;
                 } else errcode = -4;
                 break;
+
             case PRICES_INV:
                 if ( depth >= 1 )
                 {
@@ -401,6 +405,7 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec,int32_t height,int32_t m
                     pricestack[depth++] = (SATOSHIDEN * SATOSHIDEN) / a;
                 } else errcode = -5;
                 break;
+
             case PRICES_MDD:
                 if ( depth >= 3 )
                 {
@@ -410,6 +415,7 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec,int32_t height,int32_t m
                     pricestack[depth++] = (((a * SATOSHIDEN) / b) * SATOSHIDEN) / c;
                 } else errcode = -6;
                 break;
+
             case PRICES_MMD:
                 if ( depth >= 3 )
                 {
@@ -419,6 +425,7 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec,int32_t height,int32_t m
                     pricestack[depth++] = (a * b) / c;
                 } else errcode = -7;
                 break;
+
             case PRICES_MMM:
                 if ( depth >= 3 )
                 {
@@ -428,6 +435,7 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec,int32_t height,int32_t m
                     pricestack[depth++] = ((a * b) / SATOSHIDEN) * c;
                } else errcode = -8;
                 break;
+
             case PRICES_DDD:
                 if ( depth >= 3 )
                 {
@@ -437,6 +445,7 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec,int32_t height,int32_t m
                     pricestack[depth++] = (((((SATOSHIDEN * SATOSHIDEN) / a) * SATOSHIDEN) / b) * SATOSHIDEN) / c;
                 } else errcode = -9;
                 break;
+
             default:
                 errcode = -10;
                 break;
