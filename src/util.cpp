@@ -399,20 +399,18 @@ void SplitStr(const std::string& strVal, std::vector<std::string> &outVals)
 {
     stringstream ss(strVal);
     
-    while (true) {
+    while (!ss.eof()) {
         int c;
         std::string str;
 
         while (std::isspace(ss.peek()))
             ss.ignore();
 
-        while (!ss.eof() && !std::isspace(c = ss.get()) && c != ',')
+        while ((c = ss.get()) != EOF && !std::isspace(c = ss.get()) && c != ',')
             str += c;
 
         if (!str.empty())
             outVals.push_back(str);
-        else
-            break;
     }
 }
 
