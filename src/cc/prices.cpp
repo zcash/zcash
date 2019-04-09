@@ -509,7 +509,7 @@ int64_t prices_syntheticprofits(int64_t &costbasis,int32_t firstheight,int32_t h
         else if ( leverage < 0 && (costbasis == 0 || price < costbasis) )
             costbasis = price;
     }
-    profits = ((price * SATOSHIDEN) / costbasis) - SATOSHIDEN;
+    profits = costbasis > 0 ? ((price * SATOSHIDEN) / costbasis) - SATOSHIDEN : 0;
     profits *= leverage * positionsize;
     return(positionsize + addedbets + profits);
 }
@@ -747,18 +747,29 @@ UniValue PricesCashout(uint64_t txfee,uint256 bettxid)
 
 UniValue PricesInfo(uint256 bettxid,int32_t refheight)
 {
-    UniValue result(UniValue::VOBJ); CTransaction bettx; uint256 hashBlock,batontxid,tokenid; int64_t myfee,ignore,positionsize=0,addedbets=0,firstprice=0,profits=0,costbasis=0; int32_t i,firstheight=0,height,numvouts; int16_t leverage=0; std::vector<uint16_t> vec; CPubKey pk,mypk,pricespk; std::string rawtx;
-    if ( myGetTransaction(bettxid,bettx,hashBlock) != 0 && (numvouts= bettx.vout.size()) > 3 )
+    UniValue result(UniValue::VOBJ); 
+    CTransaction bettx; 
+    uint256 hashBlock,batontxid,tokenid; 
+    int64_t myfee,ignore=0,positionsize=0,addedbets=0,firstprice=0,profits=0,costbasis=0; 
+    int32_t i,firstheight=0,height,numvouts; 
+    int16_t leverage=0; 
+    std::vector<uint16_t> vec; 
+    CPubKey pk,mypk,pricespk; 
+    std::string rawtx;
+
+    if( myGetTransaction(bettxid,bettx,hashBlock) != 0 && (numvouts= bettx.vout.size()) > 3 )
     {
-        if ( prices_betopretdecode(bettx.vout[numvouts-1].scriptPubKey,pk,firstheight,positionsize,leverage,firstprice,vec,tokenid) == 'B' )
+        if( prices_betopretdecode(bettx.vout[numvouts-1].scriptPubKey,pk,firstheight,positionsize,leverage,firstprice,vec,tokenid) == 'B' )
         {
             costbasis = prices_costbasis(bettx);
             addedbets = prices_batontxid(batontxid,bettx,bettxid);
-            if ( (profits= prices_syntheticprofits(ignore,firstheight,refheight,leverage,vec,positionsize,addedbets)) < 0 )
+            if ((profits= prices_syntheticprofits(ignore,firstheight,refheight,leverage,vec,positionsize,addedbets)) < 0)
             {
                 result.push_back(Pair("rekt",1));
                 result.push_back(Pair("rektfee",(positionsize + addedbets) / 500));
-            } else result.push_back(Pair("rekt",0));
+            } 
+            else 
+                result.push_back(Pair("rekt",0));
             result.push_back(Pair("batontxid",batontxid.GetHex()));
             prices_betjson(result,profits,costbasis,positionsize,addedbets,leverage,firstheight,firstprice);
             result.push_back(Pair("height",(int64_t)refheight));
