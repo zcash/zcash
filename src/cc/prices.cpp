@@ -469,6 +469,7 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec,int32_t height,int32_t m
         std::cerr << "prices_syntheticprice err=" << errcode << std::endl;
         return(errcode);
     }
+    std::cerr << "prices_syntheticprice price=" << price << " den=" << den << std::endl;
     return(price / den);
 }
 
