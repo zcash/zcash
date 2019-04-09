@@ -355,7 +355,7 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec,int32_t height,int32_t m
     {
         opcode = vec[i];
         value = (opcode & (KOMODO_MAXPRICES-1));   // index or weight 
-        std::cerr << "prices_syntheticprice" << " i=" << i << " price=" << price << " value=" << value << " pricestack[depth=" << depth << "]=" << pricestack[depth] << std::endl;
+        std::cerr << "prices_syntheticprice" << " i=" << i << " price=" << price << " value=" << value << " depth=" << depth << std::endl;
         switch( opcode & KOMODO_PRICEMASK )
         {
             case 0: // indices 
@@ -376,7 +376,6 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec,int32_t height,int32_t m
                 if ( pricestack[depth] == 0 )
                     errcode = -1;
 
-                std::cerr << "pricestack[depth=" << depth <<  "]=" << pricestack[depth] << std::endl;
                 depth++;
                 break;
 
@@ -469,6 +468,9 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec,int32_t height,int32_t m
         }
         if (errcode != 0)
             break;
+
+        std::cerr << "pricestack[depth-1=" << depth-1 << "]=" << pricestack[depth-1] << std::endl;
+
     }
     free(pricedata);
     
