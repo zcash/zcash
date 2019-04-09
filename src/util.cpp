@@ -406,7 +406,7 @@ void SplitStr(const std::string& strVal, std::vector<std::string> &outVals)
         while (std::isspace(ss.peek()))
             ss.ignore();
 
-        while (!ss.eofbit && !std::isspace(c = ss.get() && c != ','))
+        while (!ss.eofbit && !std::isspace(c = ss.get()) && c != ',')
             str += c;
 
         if (!str.empty())
