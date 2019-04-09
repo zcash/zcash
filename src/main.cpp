@@ -1270,9 +1270,6 @@ bool CheckTransaction(uint32_t tiptime,const CTransaction& tx, CValidationState 
     }
 }
 
-extern char NOTARYADDRS[64][36];
-extern uint8_t NUM_NOTARIES;
-
 int32_t komodo_isnotaryvout(char *coinaddr) // from ac_private chains only
 {
     static int32_t didinit; static char notaryaddrs[sizeof(Notaries_elected1)/sizeof(*Notaries_elected1) + 1][64];

@@ -4,11 +4,11 @@
 #include "cc/CCinclude.h"
 #include <cstring>
 
-extern char NOTARYADDRS[64][36];
+extern char NOTARYADDRS[64][64];
 extern std::string NOTARY_ADDRESS,NOTARY_PUBKEY;
 extern int32_t STAKED_ERA,IS_STAKED_NOTARY,IS_KOMODO_NOTARY;
 extern pthread_mutex_t staked_mutex;
-extern uint8_t NOTARY_PUBKEY33[33],NUM_NOTARIES;
+extern uint8_t NOTARY_PUBKEY33[33];
 
 int8_t is_STAKED(const char *chain_name) 
 {
@@ -45,16 +45,6 @@ int32_t STAKED_era(int timestamp)
   // if we are in a gap, return era 0, this allows to invalidate notarizations when in GAP.
   return(0);
 };
-
-int8_t updateStakedNotary() {
-    std::string notaryname;
-    char Raddress[18]; uint8_t pubkey33[33];
-    decode_hex(pubkey33,33,(char *)NOTARY_PUBKEY.c_str());
-    pubkey2addr((char *)Raddress,(uint8_t *)pubkey33);
-    NOTARY_ADDRESS.clear();
-    NOTARY_ADDRESS.assign(Raddress);
-    return(StakedNotaryID(notaryname,Raddress));
-}
 
 int8_t StakedNotaryID(std::string &notaryname, char *Raddress) {
     if ( STAKED_ERA != 0 )
@@ -116,7 +106,6 @@ void UpdateNotaryAddrs(uint8_t pubkeys[64][33],int8_t numNotaries) {
         // null pubkeys, era 0.
         pthread_mutex_lock(&staked_mutex);
         memset(NOTARYADDRS,0,sizeof(NOTARYADDRS));
-        NUM_NOTARIES = 0;
         pthread_mutex_unlock(&staked_mutex);
     }
     else
@@ -125,7 +114,6 @@ void UpdateNotaryAddrs(uint8_t pubkeys[64][33],int8_t numNotaries) {
         pthread_mutex_lock(&staked_mutex);
         for (int i = 0; i<numNotaries; i++)
             pubkey2addr((char *)NOTARYADDRS[i],(uint8_t *)pubkeys[i]);
-        NUM_NOTARIES = numNotaries;
         pthread_mutex_unlock(&staked_mutex);
     }
 }
