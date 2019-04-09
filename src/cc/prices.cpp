@@ -353,9 +353,9 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec,int32_t height,int32_t m
 
     for (i=0; i<vec.size(); i++)
     {
-        std::cerr << "prices_syntheticprice depth=" << depth << " i=" << i << " price=" << price << std::endl;
         opcode = vec[i];
         value = (opcode & (KOMODO_MAXPRICES-1));   // index or weight 
+        std::cerr << "prices_syntheticprice depth=" << depth << " i=" << i << " price=" << price << " value=" << value << std::endl;
         switch( opcode & KOMODO_PRICEMASK )
         {
             case 0: // indices 
