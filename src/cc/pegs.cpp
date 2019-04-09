@@ -61,7 +61,10 @@ pegs CC is able to create a coin backed (by any supported coin with gateways CC 
  (1000 KMD, -1200 USD, 200KMD reserve, -160KMD, issue $1600 USD, 40 KMD reserve)
 
  what sort of non-liquidation withdraw would be acceptable? if the base amount 1000 KMD is reduced along with USD owed, then the reserve status will go up for the account. but that would seem to allow extra USD to be able to be issued. there should be no disadvantage from funding a withdraw, but also not any large advantage. it needs to be a neutral event.... 
- UNSOLVED selection, account adjustment issue
+ 
+ One solution is to allow for the chance for any account to be liquidated, but the equity compensated for with a premium based on the account reserves. So in the above case, a premium of 5% on the 40KMD reserve is paid to liquidate its account. Instead of 5% premium, a lower 1% can be done if based on the MAX(correlated[daywindow],smoothed) so we get something that is close to the current marketprice. To prevent people taking advantage of the slowness of the smoothed price to adjust, there would need to be a one day delay in the withdraw. 
+ 
+ From a practical sense, it seems a day is a long time, so maybe having a way to pay a premium like 10%, or wait a day to get the MAX(correlated[daywindow],smoothed) price. This price "jumping" might also be taken advantage of in the deposit side, so similar to prices CC it seems good to have the MAX(correlated[daywindow],smoothed) method.
  
  Now, we have a decentralized mechanism to handle the price going lower! Combined with the fully decentralized method new USD coins are issued, makes this argubably the first decentralized blockchain that is both backed and pegged. There is the reliance on the gateways CC multisig signers, so there is a fundamental federated trust for chains without intrinsic value.
  
