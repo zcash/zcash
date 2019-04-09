@@ -375,12 +375,13 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec,int32_t height,int32_t m
                 }
                 if ( pricestack[depth] == 0 )
                     errcode = -1;
+
+                std::cerr << "pricestack[depth=" << depth <<  "]=" << pricestack[depth] << std::endl;
                 depth++;
                 break;
 
             case PRICES_WEIGHT: // multiply by weight and consume top of stack by updating price
-                if ( depth == 1 )
-                {
+                if( depth == 1 )  {
                     depth--;
                     price += pricestack[0] * value;
                     den += value;     // acc weight value
@@ -390,8 +391,7 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec,int32_t height,int32_t m
                 break;
 
             case PRICES_MULT:
-                if ( depth >= 2 )
-                {
+                if( depth >= 2 )     {
                     b = pricestack[--depth];
                     a = pricestack[--depth];
                     pricestack[depth++] = (a * b) / SATOSHIDEN;
@@ -401,8 +401,7 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec,int32_t height,int32_t m
                 break;
 
             case PRICES_DIV:
-                if ( depth >= 2 )
-                {
+                if( depth >= 2 )     {
                     b = pricestack[--depth];
                     a = pricestack[--depth];
                     pricestack[depth++] = (a * SATOSHIDEN) / b;
@@ -412,8 +411,7 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec,int32_t height,int32_t m
                 break;
 
             case PRICES_INV:
-                if ( depth >= 1 )
-                {
+                if( depth >= 1 )      {
                     a = pricestack[--depth];
                     pricestack[depth++] = (SATOSHIDEN * SATOSHIDEN) / a;
                 } 
@@ -422,8 +420,7 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec,int32_t height,int32_t m
                 break;
 
             case PRICES_MDD:
-                if ( depth >= 3 )
-                {
+                if( depth >= 3 )   {
                     c = pricestack[--depth];
                     b = pricestack[--depth];
                     a = pricestack[--depth];
@@ -434,8 +431,7 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec,int32_t height,int32_t m
                 break;
 
             case PRICES_MMD:
-                if ( depth >= 3 )
-                {
+                if( depth >= 3 )      {
                     c = pricestack[--depth];
                     b = pricestack[--depth];
                     a = pricestack[--depth];
@@ -446,8 +442,7 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec,int32_t height,int32_t m
                 break;
 
             case PRICES_MMM:
-                if ( depth >= 3 )
-                {
+                if( depth >= 3 )    {
                     c = pricestack[--depth];
                     b = pricestack[--depth];
                     a = pricestack[--depth];
@@ -458,8 +453,7 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec,int32_t height,int32_t m
                 break;
 
             case PRICES_DDD:
-                if ( depth >= 3 )
-                {
+                if( depth >= 3 )  {
                     c = pricestack[--depth];
                     b = pricestack[--depth];
                     a = pricestack[--depth];
