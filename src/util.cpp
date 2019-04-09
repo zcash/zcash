@@ -394,7 +394,7 @@ void ParseParameters(int argc, const char* const argv[])
     }
 }
 
-// split string using by space or comma as delimiter char
+// split string using by space or comma as a delimiter char
 void SplitStr(const std::string& strVal, std::vector<std::string> &outVals)
 {
     stringstream ss(strVal);
