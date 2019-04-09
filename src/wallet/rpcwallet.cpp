@@ -6931,7 +6931,7 @@ UniValue priceslist(const UniValue& params, bool fHelp)
 UniValue pricesinfo(const UniValue& params, bool fHelp)
 {
     uint256 bettxid; int32_t height;
-    if ( fHelp || params.size() != 2 )
+    if ( fHelp || params.size() != 1 )
         throw runtime_error("pricesinfo fundingtxid\n");
     if ( ensure_CCrequirements(EVAL_PRICES) < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");

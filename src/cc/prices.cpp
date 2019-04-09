@@ -564,9 +564,10 @@ UniValue PricesBet(uint64_t txfee,int64_t amount,int16_t leverage,std::vector<st
         result.push_back(Pair("error","invalid synthetic"));
         return(result);
     }
-    if ( AddNormalinputs(mtx,mypk,amount+4*txfee,64) >= amount+4*txfee )
+    if ( AddNormalinputs(mtx,mypk,amount+5*txfee,64) >= amount+5*txfee )
     {
         betamount = (amount * 199) / 200;
+        mtx.vout.push_back(CTxOut(txfee, CScript() << std::vector<uint8_t>(pricespk.begin(), pricespk.end()))); // marker
         mtx.vout.push_back(MakeCC1vout(cp->evalcode,txfee,mypk)); // baton for total funding
         mtx.vout.push_back(MakeCC1vout(cp->evalcode,(amount-betamount)+2*txfee,pricespk));
         mtx.vout.push_back(MakeCC1of2vout(cp->evalcode,betamount,pricespk,mypk));
