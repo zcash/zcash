@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 """
-build komodod from here: https://github.com/blackjok3rtt/komodo/tree/nota_stats
 sudo apt-get install python3-dev
 sudo apt-get install python3 libgnutls28-dev libssl-dev
 sudo apt-get install python3-pip
