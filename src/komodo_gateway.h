@@ -1815,7 +1815,7 @@ int32_t komodo_opretvalidate(const CBlock *block,CBlockIndex * const previndex,i
                                         }
                                     if ( j == KOMODO_LOCALPRICE_CACHESIZE )
                                     {
-                                        komodo_queuelocalprice(1,block->GetBlockHash(),i,prevbits[i]);
+                                        komodo_queuelocalprice(1,block->GetHash(),i,prevbits[i]);
                                         break;
                                     }
                                 }
@@ -1831,7 +1831,7 @@ int32_t komodo_opretvalidate(const CBlock *block,CBlockIndex * const previndex,i
                                         }
                                     if ( j == KOMODO_LOCALPRICE_CACHESIZE )
                                     {
-                                        komodo_queuelocalprice(-1,block->GetBlockHash(),i,prevbits[i]);
+                                        komodo_queuelocalprice(-1,block->GetHash(),i,prevbits[i]);
                                         break;
                                     }
                                 }
