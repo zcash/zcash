@@ -413,9 +413,9 @@ UniValue selfimport(const UniValue& params, bool fHelp)
     return result;
 }
 
-<<<<<<< HEAD
 bool GetNotarisationNotaries(uint8_t notarypubkeys[64][33], int8_t &numNN, const std::vector<CTxIn> &vin, std::vector<int8_t> &NotarisationNotaries);
-=======
+
+
 UniValue importdual(const UniValue& params, bool fHelp)
 {
     UniValue result(UniValue::VOBJ);
@@ -749,7 +749,6 @@ UniValue importgatewaydumpprivkey(const UniValue& params, bool fHelp)
     //}
     return(ImportGatewayDumpPrivKey(bindtxid,vchSecret));
 }
->>>>>>> FSM
 
 UniValue getNotarisationsForBlock(const UniValue& params, bool fHelp)
 {
