@@ -1551,7 +1551,7 @@ void komodo_passport_iteration()
 extern std::vector<uint8_t> Mineropret; // opreturn data set by the data gathering code
 #define PRICES_MAXCHANGE (COIN / 100)	  // maximum acceptable change, set at 1%
 #define PRICES_SIZEBIT0 (sizeof(uint32_t) * 4) // 4 uint32_t unixtimestamp, BTCUSD, BTCGBP and BTCEUR
-#define KOMODO_LOCALPRICE_CACHESIZE 7
+#define KOMODO_LOCALPRICE_CACHESIZE 13
 #define KOMODO_MAXPRICES 2048
 
 #define issue_curl(cmdstr) bitcoind_RPC(0,(char *)"CBCOINBASE",cmdstr,0,0,0)
@@ -1815,7 +1815,10 @@ int32_t komodo_opretvalidate(const CBlock *block,CBlockIndex * const previndex,i
                                             break;
                                         }
                                     if ( j == KOMODO_LOCALPRICE_CACHESIZE )
+                                    {
+                                        komodo_queuelocalprice(1,block.GetHash(),i,prevbits[i]);
                                         break;
+                                    }
                                 }
                                 else if ( maxflag < 0 && localbits[i] > prevbits[i] )
                                 {
@@ -1828,7 +1831,10 @@ int32_t komodo_opretvalidate(const CBlock *block,CBlockIndex * const previndex,i
                                             break;
                                         }
                                     if ( j == KOMODO_LOCALPRICE_CACHESIZE )
+                                    {
+                                        komodo_queuelocalprice(-1,block.GetHash(),i,prevbits[i]);
                                         break;
+                                    }
                                 }
                             }
                         }
