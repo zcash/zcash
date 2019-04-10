@@ -314,7 +314,6 @@ extern UniValue channelsopen(const UniValue& params, bool fHelp);
 extern UniValue channelspayment(const UniValue& params, bool fHelp);
 extern UniValue channelsclose(const UniValue& params, bool fHelp);
 extern UniValue channelsrefund(const UniValue& params, bool fHelp);
-
 //extern UniValue tokenswapask(const UniValue& params, bool fHelp);
 //extern UniValue tokenfillswap(const UniValue& params, bool fHelp);
 extern UniValue faucetfund(const UniValue& params, bool fHelp);
@@ -435,6 +434,18 @@ extern UniValue invalidateblock(const UniValue& params, bool fHelp);
 extern UniValue reconsiderblock(const UniValue& params, bool fHelp);
 extern UniValue getspentinfo(const UniValue& params, bool fHelp);
 extern UniValue selfimport(const UniValue& params, bool fHelp);
+extern UniValue importdual(const UniValue& params, bool fHelp);
+extern UniValue importgatewayaddress(const UniValue& params, bool fHelp);
+extern UniValue importgatewayinfo(const UniValue& params, bool fHelp);
+extern UniValue importgatewaybind(const UniValue& params, bool fHelp);
+extern UniValue importgatewaydeposit(const UniValue& params, bool fHelp);
+extern UniValue importgatewaywithdraw(const UniValue& params, bool fHelp);
+extern UniValue importgatewaypartialsign(const UniValue& params, bool fHelp);
+extern UniValue importgatewaycompletesigning(const UniValue& params, bool fHelp);
+extern UniValue importgatewaymarkdone(const UniValue& params, bool fHelp);
+extern UniValue importgatewaypendingdeposits(const UniValue& params, bool fHelp);
+extern UniValue importgatewaypendingwithdraws(const UniValue& params, bool fHelp);
+extern UniValue importgatewayprocessed(const UniValue& params, bool fHelp);
 
 extern UniValue getblocksubsidy(const UniValue& params, bool fHelp);
 

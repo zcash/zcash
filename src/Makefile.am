@@ -288,6 +288,7 @@ libbitcoin_server_a_SOURCES = \
   bloom.cpp \
   cc/eval.cpp \
   cc/import.cpp \
+  cc/importgateway.cpp \
   cc/CCassetsCore.cpp \
   cc/CCcustom.cpp \
   cc/CCtx.cpp \
