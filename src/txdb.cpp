@@ -458,7 +458,7 @@ uint32_t komodo_segid32(char *coinaddr);
     {"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPVMY", 1} \
 };
 
-int32_t CBlockTreeDB::Snapshot2(int64_t dustthreshold, int32_t top, bool fRPC ,std::vector <std::pair<CAmount, std::string>> &vaddr, UniValue &ret)
+int32_t CBlockTreeDB::Snapshot2(int64_t dustthreshold, int32_t top ,std::vector <std::pair<CAmount, std::string>> &vaddr, UniValue *ret)
 {
     int64_t total = 0; int64_t totalAddresses = 0; std::string address;
     int64_t utxos = 0; int64_t ignoredAddresses = 0, cryptoConditionsUTXOs = 0, cryptoConditionsTotals = 0;
@@ -542,30 +542,28 @@ int32_t CBlockTreeDB::Snapshot2(int64_t dustthreshold, int32_t top, bool fRPC ,s
        	if ( top == topN )
             break;
     }
-    // this is for the snapshot RPC, you can skip this by passing false to the 3rd arugment.
-    // Still needs UniValue defined to use SnapShot2 though, can this be changed to just pass 0? 
-    // I tried to make it a pointer, and check if the pointer was 0, but UniValue class didnt like that.
-    if ( fRPC )
+    // this is for the snapshot RPC, you can skip this by passing a 0 as the last argument.
+    if (ret)
     {
         // Total amount in this snapshot, which is less than circulating supply if top parameter is used
         // Use the address_total for a total of all address included when using top parameter.
-        ret.push_back(make_pair("total", (double) (total+cryptoConditionsTotals)/ COIN ));
+        ret->push_back(make_pair("total", (double) (total+cryptoConditionsTotals)/ COIN ));
         // Average amount in each address of this snapshot
-        ret.push_back(make_pair("average",(double) (total/COIN) / totalAddresses ));
+        ret->push_back(make_pair("average",(double) (total/COIN) / totalAddresses ));
         // Total number of utxos processed in this snaphot
-        ret.push_back(make_pair("utxos", utxos));
+        ret->push_back(make_pair("utxos", utxos));
         // Total number of addresses in this snaphot
-        ret.push_back(make_pair("total_addresses", top ? top : totalAddresses ));
+        ret->push_back(make_pair("total_addresses", top ? top : totalAddresses ));
         // Total number of ignored addresses in this snaphot
-        ret.push_back(make_pair("ignored_addresses", ignoredAddresses));
+        ret->push_back(make_pair("ignored_addresses", ignoredAddresses));
         // Total number of crypto condition utxos we skipped
-        ret.push_back(make_pair("skipped_cc_utxos", cryptoConditionsUTXOs));
+        ret->push_back(make_pair("skipped_cc_utxos", cryptoConditionsUTXOs));
         // Total value of skipped crypto condition utxos
-        ret.push_back(make_pair("cc_utxo_value", (double) cryptoConditionsTotals / COIN));
+        ret->push_back(make_pair("cc_utxo_value", (double) cryptoConditionsTotals / COIN));
         // total of all the address's, does not count coins in CC vouts.
-        ret.push_back(make_pair("address_total", (double) total/ COIN ));
+        ret->push_back(make_pair("address_total", (double) total/ COIN ));
         // The snapshot finished at this block height
-        ret.push_back(make_pair("ending_height", chainActive.Height()));
+        ret->push_back(make_pair("ending_height", chainActive.Height()));
     }
     return(topN);
 }
@@ -577,7 +575,7 @@ UniValue CBlockTreeDB::Snapshot(int top)
     UniValue result(UniValue::VOBJ);
     UniValue addressesSorted(UniValue::VARR);
     result.push_back(Pair("start_time", (int) time(NULL)));
-    if ( Snapshot2(0,top,true,vaddr,result) != 0 )
+    if ( Snapshot2(0,top,vaddr,&result) != 0 )
     {
         for (std::vector<std::pair<CAmount, std::string>>::iterator it = vaddr.begin(); it!=vaddr.end(); ++it)
         {
