@@ -1677,8 +1677,6 @@ void komodo_args(char *argv0)
         fprintf(stderr, "Cannot be STAKED and KMD notary at the same time!\n");
         exit(0);
     }
-    MIN_RECV_SATS = GetArg("-mintxvalue",-1);
-    WHITELIST_ADDRESS = GetArg("-whitelistaddress","");
     memset(ccenables,0,sizeof(ccenables));
     memset(disablebits,0,sizeof(disablebits));
     if ( GetBoolArg("-gen", false) != 0 )
