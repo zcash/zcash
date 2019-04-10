@@ -1720,11 +1720,10 @@ CScript komodo_mineropret(int32_t nHeight)
  The only way komodo_opretvalidate() doesnt return an error is if maxflag is set or it is within tolerance of both the prior block and the local data. The local data validation only happens if it is a recent block and not a block from the past as the local node is only getting the current price data.
  
  */
-// for PRICES: reconsiderblock 002aca768b09dfcf36bd934ab34b23983148b116e12cb0b6e1a3f895d1db63aa
-// and
-// reconsiderblock 0034cf582018eacc0b4ae001491ce460113514cb1a3f217567ef4a2207de361a
-// reconsiderbloc 000abf51c023b64af327c50c1b060797b8cb281c696d30ab92fd002a8b8c9aea
-// are needed to sync past initial blocks with different data set
+void komodo_queuelocalprice(int32_t dir,uint256 blockhash,int32_t ind,uint32_t pricebits)
+{
+    
+}
 
 int32_t komodo_opretvalidate(const CBlock *block,CBlockIndex * const previndex,int32_t nHeight,CScript scriptPubKey)
 {
@@ -1816,7 +1815,7 @@ int32_t komodo_opretvalidate(const CBlock *block,CBlockIndex * const previndex,i
                                         }
                                     if ( j == KOMODO_LOCALPRICE_CACHESIZE )
                                     {
-                                        komodo_queuelocalprice(1,block.GetHash(),i,prevbits[i]);
+                                        komodo_queuelocalprice(1,block.GetBlockHash(),i,prevbits[i]);
                                         break;
                                     }
                                 }
@@ -1832,7 +1831,7 @@ int32_t komodo_opretvalidate(const CBlock *block,CBlockIndex * const previndex,i
                                         }
                                     if ( j == KOMODO_LOCALPRICE_CACHESIZE )
                                     {
-                                        komodo_queuelocalprice(-1,block.GetHash(),i,prevbits[i]);
+                                        komodo_queuelocalprice(-1,block.GetBlockHash(),i,prevbits[i]);
                                         break;
                                     }
                                 }
