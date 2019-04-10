@@ -58,14 +58,14 @@ pp = pprint.PrettyPrinter(indent=2)
 notarynames = [ "0dev1_jl777", "0dev2_kolo", "0dev3_kolo", "0dev4_decker", "a-team_SH", "artik_AR", "artik_EU", "artik_NA", "artik_SH", "badass_EU", "badass_NA", "batman_AR", "batman_SH", "ca333_EU", "chainmakers_EU", "chainmakers_NA", "chainstrike_SH", "cipi_AR", "cipi_NA", "crackers_EU", "crackers_NA", "dwy_EU", "emmanux_SH", "etszombi_EU", "fullmoon_AR", "fullmoon_NA", "fullmoon_SH", "goldenman_EU", "indenodes_AR", "indenodes_EU", "indenodes_NA", "indenodes_SH", "jackson_AR", "jeezy_EU", "karasugoi_NA", "komodoninja_EU", "komodoninja_SH", "komodopioneers_SH", "libscott_SH", "lukechilds_AR", "madmax_AR", "meshbits_AR", "meshbits_SH", "metaphilibert_AR", "metaphilibert_SH", "patchkez_SH", "pbca26_NA", "peer2cloud_AR", "peer2cloud_SH", "polycryptoblog_NA", "hyper_AR", "hyper_EU", "hyper_SH", "hyper_NA", "popcornbag_AR", "popcornbag_NA", "alien_AR", "alien_EU", "thegaltmines_NA", "titomane_AR", "titomane_EU", "titomane_SH", "webworker01_NA", "xrobesx_NA" ]
 notaries = 64 * [0]
 
-startheight = 821657
-stopheight =  1300000
+startheight =  1300000 #821657
+stopheight =  99999999
 for i in range(startheight,stopheight):
     ret = rpc.getNotarisationsForBlock(i)
     KMD = ret['KMD']
     if len(KMD) > 0:
         for obj in KMD:
-            # sanity check, KMD nota dont appear in DB anyway!
+            #for now skip KMD for this. As official stats are from BTC chain?
             if obj['chain'] == 'KMD':
                 continue;
             for notary in obj['notaries']:
