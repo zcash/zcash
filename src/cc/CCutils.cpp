@@ -532,6 +532,95 @@ int64_t CCduration(int32_t &numblocks,uint256 txid)
     return(duration);
 }
 
+uint256 CCOraclesReverseScan(char const *logcategory,uint256 &txid,int32_t height,uint256 reforacletxid,uint256 batontxid)
+{
+    CTransaction tx; uint256 hash,mhash,bhash,hashBlock,oracletxid; int32_t len,len2,numvouts;
+    int64_t val,merkleht; CPubKey pk; std::vector<uint8_t>data; char str[65],str2[65];
+    
+    txid = zeroid;
+    LogPrint(logcategory,"start reverse scan %s\n",uint256_str(str,batontxid));
+    while ( myGetTransaction(batontxid,tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 0 )
+    {
+        LogPrint(logcategory,"check %s\n",uint256_str(str,batontxid));
+        if ( DecodeOraclesData(tx.vout[numvouts-1].scriptPubKey,oracletxid,bhash,pk,data) == 'D' && oracletxid == reforacletxid )
+        {
+            LogPrint(logcategory,"decoded %s\n",uint256_str(str,batontxid));
+            if ( oracle_format(&hash,&merkleht,0,'I',(uint8_t *)data.data(),0,(int32_t)data.size()) == sizeof(int32_t) && merkleht == height )
+            {
+                len = oracle_format(&hash,&val,0,'h',(uint8_t *)data.data(),sizeof(int32_t),(int32_t)data.size());
+                len2 = oracle_format(&mhash,&val,0,'h',(uint8_t *)data.data(),(int32_t)(sizeof(int32_t)+sizeof(uint256)),(int32_t)data.size());
+
+                LogPrint(logcategory,"found merkleht.%d len.%d len2.%d %s %s\n",(int32_t)merkleht,len,len2,uint256_str(str,hash),uint256_str(str2,mhash));
+                if ( len == sizeof(hash)+sizeof(int32_t) && len2 == 2*sizeof(mhash)+sizeof(int32_t) && mhash != zeroid )
+                {
+                    txid = batontxid;
+                    LogPrint(logcategory,"set txid\n");
+                    return(mhash);
+                }
+                else
+                {
+                    LogPrint(logcategory,"missing hash\n");
+                    return(zeroid);
+                }
+            }
+            else LogPrint(logcategory,"height.%d vs search ht.%d\n",(int32_t)merkleht,(int32_t)height);
+            batontxid = bhash;
+            LogPrint(logcategory,"new hash %s\n",uint256_str(str,batontxid));
+        } else break;
+    }
+    LogPrint(logcategory,"end of loop\n");
+    return(zeroid);
+}
+
+int32_t myIs_coinaddr_inmempoolvout(char const *logcategory,char *coinaddr)
+{
+    int32_t i,n; char destaddr[64];
+    BOOST_FOREACH(const CTxMemPoolEntry &e,mempool.mapTx)
+    {
+        const CTransaction &tx = e.GetTx();
+        if ( (n= tx.vout.size()) > 0 )
+        {
+            const uint256 &txid = tx.GetHash();
+            for (i=0; i<n; i++)
+            {
+                Getscriptaddress(destaddr,tx.vout[i].scriptPubKey);
+                if ( strcmp(destaddr,coinaddr) == 0 )
+                {
+                    LogPrint(logcategory,"found (%s) vout in mempool\n",coinaddr);
+                    return(1);
+                }
+            }
+        }
+    }
+    return(0);
+}
+
+int32_t CCCointxidExists(char const *logcategory,uint256 cointxid)
+{
+    char txidaddr[64]; std::string coin; int32_t numvouts; uint256 hashBlock;
+    std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex;
+    CCtxidaddr(txidaddr,cointxid);
+    SetCCtxids(addressIndex,txidaddr);
+    for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=addressIndex.begin(); it!=addressIndex.end(); it++)
+    {
+        return(-1);
+    }
+    return(myIs_coinaddr_inmempoolvout(logcategory,txidaddr));
+}
+
+/* Get the block merkle root for a proof
+ * IN: proofData
+ * OUT: merkle root
+ * OUT: transaction IDS
+ */
+uint256 BitcoinGetProofMerkleRoot(const std::vector<uint8_t> &proofData, std::vector<uint256> &txids)
+{
+    CMerkleBlock merkleBlock;
+    if (!E_UNMARSHAL(proofData, ss >> merkleBlock))
+        return uint256();
+    return merkleBlock.txn.ExtractMatches(txids);
+}
+
 bool komodo_txnotarizedconfirmed(uint256 txid)
 {
     char str[65];

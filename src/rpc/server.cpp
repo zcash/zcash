@@ -354,6 +354,21 @@ static const CRPCCommand vRPCCommands[] =
     { "crosschain",         "migrate_createimporttransaction", &migrate_createimporttransaction, true  },
     { "crosschain",         "migrate_completeimporttransaction", &migrate_completeimporttransaction, true  },
     { "crosschain",         "selfimport", &selfimport, true  },
+    { "crosschain",         "importdual", &importdual, true  },
+    //ImportGateway
+    { "crosschain",       "importgatewayddress",     &importgatewayaddress,      true },
+    { "crosschain",       "importgatewayinfo", &importgatewayinfo, true  },
+    { "crosschain",       "importgatewaybind", &importgatewaybind, true  },
+    { "crosschain",       "importgatewaydeposit", &importgatewaydeposit, true  },
+    { "crosschain",       "importgatewaywithdraw",  &importgatewaywithdraw,     true },
+    { "crosschain",       "importgatewaypartialsign",  &importgatewaypartialsign,     true },
+    { "crosschain",       "importgatewaycompletesigning",  &importgatewaycompletesigning,     true },
+    { "crosschain",       "importgatewaymarkdone",  &importgatewaymarkdone,     true },
+    { "crosschain",       "importgatewaypendingdeposits",   &importgatewaypendingdeposits,      true },
+    { "crosschain",       "importgatewaypendingwithdraws",   &importgatewaypendingwithdraws,      true },
+    { "crosschain",       "importgatewayprocessed",   &importgatewayprocessed,  true },
+
+
 
     /* Mining */
     { "mining",             "getblocktemplate",       &getblocktemplate,       true  },
