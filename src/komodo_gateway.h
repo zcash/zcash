@@ -2516,9 +2516,11 @@ void smooth64(int64_t dest[],int64_t src[],int32_t width,int32_t smoothiters)
     } else memcpy(dest,src,width*sizeof(*dest));
 }
 
-int64_t komodo_pricesmoothed(int64_t *correlated,int32_t cskip,int64_t *rawprices,int32_t numprices)
+// http://www.holoborodko.com/pavel/numerical-methods/noise-robust-smoothing-filter/
+//const int64_t coeffs[7] = { -2, 0, 18, 32, 18, 0, -2 };
+
+int64_t komodo_pricesmoothed(int64_t *correlated,int32_t cskip)
 {
-    //const int64_t coeffs[7] = { -2, 0, 18, 32, 18, 0, -2 };
     int32_t i; int64_t sum=0,nonzprice,price;
     if ( PRICES_DAYWINDOW < 2 )
         return(0);
@@ -2533,12 +2535,9 @@ int64_t komodo_pricesmoothed(int64_t *correlated,int32_t cskip,int64_t *rawprice
     {
         if ( (price= correlated[i*cskip]) != 0 )
             nonzprice = price;
-        //correlated2[i] = nonzprice / PRICES_DAYWINDOW; // reduce precision
         sum += nonzprice;
     }
     price = sum / PRICES_DAYWINDOW;
-    // improve smoothing with correlated2 processing
-    // price = smooth(correlated2,PRICES_DAYWINDOW,price/daywindow) * PRICES_DAYWINDOW;
     return(price);
 }
 
@@ -2573,20 +2572,67 @@ void komodo_pricesinit()
 
 void komodo_pricesupdate(int32_t height,CBlock *pblock)
 {
-    static int numprices;
-    int32_t i; uint64_t seed; uint32_t rawprices[KOMODO_MAXPRICES];
+    static int numprices; static uint32_t *ptr32,*ptr64;
+    int32_t ind,offset,width; int64_t correlated,smoothed; uint64_t seed,rngval; uint32_t rawprices[KOMODO_MAXPRICES],buf[4];
+    width = (2*PRICES_DAYWINDOW + PRICES_SMOOTHWIDTH);
     if ( numprices == 0 )
+    {
         numprices = (int32_t)(komodo_cbopretsize(ASSETCHAINS_CBOPRET) / sizeof(uint32_t));
+        ptr32 = (uint32_t *)calloc(sizeof(uint32_t),numprices * width);
+        ptr64 = (int64_t *)calloc(sizeof(int64_t),PRICES_DAYWINDOW*3);
+    }
     if ( _komodo_heightpricebits(&seed,rawprices,pblock) == numprices )
     {
-        for (i=0; i<numprices; i++)
-            fprintf(stderr,"%u ",rawprices[i]);
-        fprintf(stderr,"numprices.%d\n",numprices);
+        //for (i=0; i<numprices; i++)
+        //    fprintf(stderr,"%u ",rawprices[i]);
+        //fprintf(stderr,"numprices.%d\n",numprices);
         if ( PRICES[0].fp != 0 )
         {
             fseek(PRICES[0].fp,height * numprices * sizeof(uint32_t),SEEK_SET);
             if ( fwrite(rawprices,sizeof(uint32_t),numprices,PRICES[0].fp) != numprices )
                 fprintf(stderr,"error writing rawprices for ht.%d\n",height);
+            else fflush(PRICES[0].fp);
+            if ( height > width )
+            {
+                fseek(PRICES[0].fp,(height-width+1) * numprices * sizeof(uint32_t),SEEK_SET);
+                if ( fread(ptr32,sizeof(uint32_t),width*numprices,PRICES[0].fp) == width*numprices )
+                {
+                    rngval = seed;
+                    for (ind=1; ind<numprices; ind++)
+                    {
+                        offset = (width-1)*numprices + ind;
+                        rngval = (rngval*11109 + 13849);
+                        if ( (correlated= komodo_pricecorrelated(rngval,ind,&ptr32[offset],-numprices,0,PRICES_SMOOTHWIDTH)) > 0 )
+                        {
+                            fseek(PRICES[ind].fp,height * sizeof(int64_t) * 3,SEEK_SET);
+                            buf[0] = rawprices[ind];
+                            buf[1] = rawprices[0]; // timestamp
+                            memcpy(&buf[2],&correlated,sizeof(correlated));
+                            if ( fwrite(buf,1,sizeof(buf),PRICES[ind].fp) != sizeof(buf) )
+                                fprintf(stderr,"error fwrite buf for ht.%d ind.%d\n",height,ind);
+                            else
+                            {
+                                fseek(PRICES[ind].fp,(height-PRICES_DAYWINDOW+1) * 3 * sizeof(int64_t),SEEK_SET);
+                                if ( fread(ptr64,sizeof(int64_t),PRICES_DAYWINDOW*3,PRICES[ind].fp) == PRICES_DAYWINDOW*3 )
+                                {
+                                    if ( (smoothed= komodo_pricesmoothed(&ptr64[PRICES_DAYWINDOW*3-1],-3)) > 0 )
+                                    {
+                                        fseek(PRICES[ind].fp,(height * 3 + 2) * sizeof(int64_t),SEEK_SET);
+                                        if ( fwrite(&smoothed,1,sizeof(smoothed),PRICES[ind].fp) != sizeof(smoothed) )
+                                            fprintf(stderr,"error fwrite smoothed for ht.%d ind.%d\n",height,ind);
+                                        else
+                                        {
+                                            fprintf(stderr,"%.4f ",(double)smoothed/COIN);
+                                            fflush(PRICES[ind].fp);
+                                        }
+                                    } else fprintf(stderr,"error price_smoothed ht.%d ind.%d\n",height,ind);
+                                } else fprintf(stderr,"error fread ptr64 for ht.%d ind.%d\n",height,ind);
+                            }
+                        } else fprintf(stderr,"error komodo_pricecorrelated for ht.%d ind.%d\n",height,ind);
+                    }
+                    fprintf(stderr,"height.%d\n",height);
+                } else fprintf(stderr,"error reading rawprices for ht.%d\n",height);
+            }
         }
     } else fprintf(stderr,"numprices mismatch\n");
 
