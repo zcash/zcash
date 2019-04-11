@@ -84,6 +84,9 @@ extern char NOTARYADDRS[64][64];
 int tx_height( const uint256 &hash );
 extern std::vector<std::string> vWhiteListAddress;
 void komodo_netevent(std::vector<uint8_t> payload);
+
+#define PRICES_SMOOTHWIDTH 1
 int32_t komodo_priceind(char *symbol);
+void komodo_pricesinit();
 
 #endif
