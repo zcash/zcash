@@ -2541,7 +2541,7 @@ void komodo_pricesinit()
             pricefname = pricesdir / symbol;
             fp = fopen(pricefname.string().c_str(), "wb+");
             fseek(fp,(2*PRICES_DAYWINDOW+PRICES_SMOOTHWIDTH) * sizeof(int64_t) * 3,SEEK_SET);
-            fputc(fp,0);
+            fputc(0,fp);
             fflush(fp);
         }
     }
