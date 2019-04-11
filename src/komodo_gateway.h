@@ -2519,7 +2519,7 @@ void smooth64(int64_t dest[],int64_t src[],int32_t width,int32_t smoothiters)
 // http://www.holoborodko.com/pavel/numerical-methods/noise-robust-smoothing-filter/
 //const int64_t coeffs[7] = { -2, 0, 18, 32, 18, 0, -2 };
 
-int64_t komodo_pricesmoothed(int64_t *correlated,int32_t cskip)
+int64_t komodo_priceave(int64_t *correlated,int32_t cskip)
 {
     int32_t i; int64_t sum=0,nonzprice,price;
     if ( PRICES_DAYWINDOW < 2 )
@@ -2615,7 +2615,7 @@ void komodo_pricesupdate(int32_t height,CBlock *pblock)
                                 fseek(PRICES[ind].fp,(height-PRICES_DAYWINDOW+1) * 3 * sizeof(int64_t),SEEK_SET);
                                 if ( fread(ptr64,sizeof(int64_t),PRICES_DAYWINDOW*3,PRICES[ind].fp) == PRICES_DAYWINDOW*3 )
                                 {
-                                    if ( (smoothed= komodo_pricesmoothed(&ptr64[PRICES_DAYWINDOW*3-1],-3)) > 0 )
+                                    if ( (smoothed= komodo_priceave(&ptr64[PRICES_DAYWINDOW*3-1],-3)) > 0 )
                                     {
                                         fseek(PRICES[ind].fp,(height * 3 + 2) * sizeof(int64_t),SEEK_SET);
                                         if ( fwrite(&smoothed,1,sizeof(smoothed),PRICES[ind].fp) != sizeof(smoothed) )
