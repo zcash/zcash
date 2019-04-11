@@ -2356,6 +2356,9 @@ int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int
     mult = PriceMult[ind];
     if ( nonzprices != 0 )
         memset(nonzprices,0,sizeof(*nonzprices)*PRICES_DAYWINDOW);
+    for (i=0; i<PRICES_DAYWINDOW; i++)
+        fprintf(stderr,"%u ",rawprices[i*rawskip]);
+    fprintf(stderr,"ind.%d\n",ind);
     for (iter=0; iter<PRICES_DAYWINDOW; iter++)
     {
         correlation = 0;
@@ -2575,7 +2578,7 @@ void komodo_pricesupdate(int32_t height,CBlock *pblock)
 {
     static int numprices; static uint32_t *ptr32; static int64_t *ptr64;
     int32_t ind,offset,width; int64_t correlated,smoothed; uint64_t seed,rngval; uint32_t rawprices[KOMODO_MAXPRICES],buf[4];
-    width = (2*PRICES_DAYWINDOW + PRICES_SMOOTHWIDTH);
+    width = PRICES_DAYWINDOW;//(2*PRICES_DAYWINDOW + PRICES_SMOOTHWIDTH);
     if ( numprices == 0 )
     {
         numprices = (int32_t)(komodo_cbopretsize(ASSETCHAINS_CBOPRET) / sizeof(uint32_t));
@@ -2594,7 +2597,7 @@ void komodo_pricesupdate(int32_t height,CBlock *pblock)
             if ( fwrite(rawprices,sizeof(uint32_t),numprices,PRICES[0].fp) != numprices )
                 fprintf(stderr,"error writing rawprices for ht.%d\n",height);
             else fflush(PRICES[0].fp);
-            if ( height > width )
+            if ( height > PRICES_DAYWINDOW )
             {
                 fseek(PRICES[0].fp,(height-width+1) * numprices * sizeof(uint32_t),SEEK_SET);
                 if ( fread(ptr32,sizeof(uint32_t),width*numprices,PRICES[0].fp) == width*numprices )
@@ -2612,7 +2615,7 @@ void komodo_pricesupdate(int32_t height,CBlock *pblock)
                             memcpy(&buf[2],&correlated,sizeof(correlated));
                             if ( fwrite(buf,1,sizeof(buf),PRICES[ind].fp) != sizeof(buf) )
                                 fprintf(stderr,"error fwrite buf for ht.%d ind.%d\n",height,ind);
-                            else
+                            else if ( height > PRICES_DAYWINDOW*2 )
                             {
                                 fseek(PRICES[ind].fp,(height-PRICES_DAYWINDOW+1) * 3 * sizeof(int64_t),SEEK_SET);
                                 if ( fread(ptr64,sizeof(int64_t),PRICES_DAYWINDOW*3,PRICES[ind].fp) == PRICES_DAYWINDOW*3 )
