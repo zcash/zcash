@@ -2585,8 +2585,8 @@ void komodo_pricesupdate(int32_t height,CBlock *pblock)
     }
     if ( _komodo_heightpricebits(&seed,rawprices,pblock) == numprices )
     {
-        for (i=0; i<numprices; i++)
-            fprintf(stderr,"%u ",rawprices[i]);
+        for (ind=0; ind<numprices; ind++)
+            fprintf(stderr,"%u ",rawprices[ind]);
         fprintf(stderr,"numprices.%d\n",numprices);
         if ( PRICES[0].fp != 0 )
         {
