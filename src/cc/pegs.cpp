@@ -16,19 +16,72 @@
 #include "CCPegs.h"
 
 /*
- Pegs CC builds on top of CCOPRET modes which will create pricefeeds in the coinbase.
+pegs CC is able to create a coin backed (by any supported coin with gateways CC deposits) and pegged to any synthetic price that is able to be calculated based on prices CC
  
- flag&1: BTC/USD 4966.1400, BTC/GBP 3770.0402, BTC/EUR 4416.8452 GBPUSD 1.317264, EURUSD 1.124364 EURGBP 0.853560
- flag&2: (BGN 1.7462) (NZD 1.4771) (ILS 3.6258) (RUB 65.3700) (CAD 1.3320) (PHP 52.4160) (CHF 0.9995) (AUD 1.4122) (JPY 111.3660) (TRY 5.5483) (HKD 7.8498) (MYR 4.0816) (HRK 6.6337) (CZK 22.9937) (IDR 14220.0000) (DKK 6.6648) (NOK 8.6111) (HUF 287.2142) (GBP 0.7678) (MXN 19.1046) (THB 31.7500) (ISK 122.4107) (ZAR 14.1300) (BRL 3.8604) (SGD 1.3551) (PLN 3.8350) (INR 68.7531) (KRW 1136.3839) (RON 4.2516) (CNY 6.7200) (SEK 9.3230) (EUR 0.8928) (2019-04-02)
-flag&4:  (KMD 0.00025110) (ETH 0.03357500) (LTC 0.01642400) (BCHABC 0.05167400) (XMR 0.01398800) (IOTA 0.00007217) (DASH 0.02552600) (XEM 0.00001459) (ZEC 0.01440500) (WAVES 0.00062170) (RVN 0.00001215) (LSK 0.00041130) (DCR 0.00496000) (BTS 0.00001444) (ICX 0.00008750) (HOT 0.00000027) (STEEM 0.00010070) (ENJ 0.00003221) (STRAT 0.00022790)  errs.0
+ First, the prices CC needs to be understood, so the extensive comments at the top of ~/src/cc/prices.cpp needs to be understood.
+ 
+ The second aspect is the ability to import coins, as used by the crosschain burn/import and the -ac_import chains.
+ 
+ <one hour later...>
+ 
+ OK, now we are ready to describe the pegs CC. Let us imagine an -ac_import sidechain with KMD gateways CC. Now we have each native coin fungible with the real KMD via the gateways deposit/withdraw mechanism. Let us start with that and make a pegged and backed USD chain.
+ 
+ <alternatively we can start from a CC enabled chain with external value>
+ 
+ Here the native coin is KMD, but we want USD, so there needs to be a way to convert the KMD amounts into USD amounts. Something like "KMDBTC, BTCUSD, *, 1" which is the prices CC syntax to calculate KMD/USD, which is exactly what we need. So now we can assume that we have a block by block usable KMD/USD price. implementationwise, there can be an -ac option like -ac_peg="KMDBTC, BTCUSD, *, 1" and in conjunction with -ac_import=KMD gateways CC sidechain, we now have a chain where deposit of KMD issues the correct USD coins and redeem of USD coins releases the correct number of KMD coins.
+ 
+ Are we done yet?
+ 
+ Not quite, as the prices of KMD will be quite volatile relative to USD, which is good during bull markets, not so happy during bear markets. There are 2 halves to this problem, how to deal with massive price increase (easy to solve), how to solve 90% price drop (a lot harder).
+ 
+ In order to solve both, what is needed is an "account" based tracking which updates based on both price change, coins issued, payments made. So let us create an account that is based on a specific pubkey, where all relevant deposits, issuances, withdraws are tracked via appropriate vin/vout markers.
+ 
+ Let us modify the USD chain above so that only 80% of the possible USD is issued and 20% held in reserve. This 80% should be at least some easily changeable #define, or even an -ac parameter. We want the issued coins to be released without any encumberances, but the residual 20% value is still controlled (owned) but the depositor. This account has the amount of KMD deposited and USD issued. At the moment of deposit, there will still be 20% equity left. Let us start with 1000 KMD deposit, $1.5 per KMD -> 800 KMD converted to 1200 USD into depositor pubkey and the account of (1000 KMD, -1200 USD) = 200 KMD or $300 equity.
+ 
+ Now it becomes easy for the bull market case, which is to allow (for a fee like 1%) issuance of more USD as the equity increases, so let us imagine KMD at $10:
+ 
+ (1000 KMD, -1200 USD, 200KMD reserve) -> $2000 equity, issue 80% -> $1600 using 160 KMD
+ (1000 KMD, -1200 USD, 200KMD reserve, -160KMD, issue $1600 USD, 40 KMD reserve)
+ 
+ we have $2800 USD in circulation, 40 KMD reserve left against $10000 marketcap of the original deposit. It it easy to see that there are never any problems with lack of KMD to redeem the issued USD in a world where prices only go up. Total USD issuance can be limited by using a decentralized account tracking based on each deposit.
+ 
+ What is evident though is that with the constantly changing price and the various times that all the various deposits issue USD, the global reserves are something that will be hard to predict and in fact needs to be specifically tracked. Let us combine all accounts exposure in to a global reserves factor. This factor will control various max/min/ allowed and fee percentages.
+ 
+ Now we are prepared to handle the price goes down scenario. We can rely on the global equity/reserve ratio to be changing relatively slowly as the reference price is the smooted trustless oracles price. This means there will be enough blocks to adjust the global reserves percentage. What we need to do is liquidate specific positions that have the least reserves.
+ 
+ What does liquidation mean? It means a specific account will be purchased at below its current value and the KMD withdrawn. Let us assume the price drops to $5:
+ 
+ (1000 KMD, -1200 USD, 200KMD reserve, -160KMD, issue $1600 USD, 40 KMD reserve) 1000 KMD with 2800 USD issued so $2200 reserves. Let us assume it can be liquidated at a 10% discount, so for $2000 in addition to the $2800, the 5000 KMD is able to be withdrawn. This removes 4800 USD coins for 1000 KMD, which is a very low reserve amount of 4%. If a low reserve amount is removed from the system, then the global reserve amount must be improved.
+ 
+ In addition to the global reserves calculation, there needs to be a trigger percentage that enables positions to be liquidated. We also want to liquidate the worst positions, so in addition to the trigger percentage, there should be a liquidation threshold, and the liquidator would need to find 3 or more better positions that are beyond the liquidation threshold, to be able to liquidate. This will get us to at most 3 accounts that could be liquidated but are not able to, so some method to allow those to also be liquidated. The liquidating nodes are making instant profits, so they should be expected to do whatever blockchain scanning and proving to make things easy for the rest of the nodes.
+ 
+ One last issue is the normal redemption case where we are not liquidating. In this case, it should be done at the current marketprice, should improve the global reserves metrics and not cause anybody whose position was modified to have cause for complaint. Ideally, there would be an account that has the identical to the global reserve percentage and also at the same price as current marketprice, but this is not realistic, so we need to identify classes of accounts and consider which ones can be fully or partially liquidated to satisfy the constraints.
+ 
+ looking at our example account:
+ (1000 KMD, -1200 USD, 200KMD reserve, -160KMD, issue $1600 USD, 40 KMD reserve)
 
- Funds deposited into CC address for a specific peg would then be used to fund the bid/ask as the pricefeed changes the price. Profits/losses would accumulate in the associated address.
+ what sort of non-liquidation withdraw would be acceptable? if the base amount 1000 KMD is reduced along with USD owed, then the reserve status will go up for the account. but that would seem to allow extra USD to be able to be issued. there should be no disadvantage from funding a withdraw, but also not any large advantage. it needs to be a neutral event.... 
  
- In the event funds exceed a specified level, it can be spent into a collection address. The idea is that the collection address can further be used for revshares.
+ One solution is to allow for the chance for any account to be liquidated, but the equity compensated for with a premium based on the account reserves. So in the above case, a premium of 5% on the 40KMD reserve is paid to liquidate its account. Instead of 5% premium, a lower 1% can be done if based on the MAX(correlated[daywindow],smoothed) so we get something that is close to the current marketprice. To prevent people taking advantage of the slowness of the smoothed price to adjust, there would need to be a one day delay in the withdraw. 
  
+ From a practical sense, it seems a day is a long time, so maybe having a way to pay a premium like 10%, or wait a day to get the MAX(correlated[daywindow],smoothed) price. This price "jumping" might also be taken advantage of in the deposit side, so similar to prices CC it seems good to have the MAX(correlated[daywindow],smoothed) method.
  
+ Now, we have a decentralized mechanism to handle the price going lower! Combined with the fully decentralized method new USD coins are issued, makes this argubably the first decentralized blockchain that is both backed and pegged. There is the reliance on the gateways CC multisig signers, so there is a fundamental federated trust for chains without intrinsic value.
  
-*/
+ Also, notice that the flexibly syntax of prices CC allows to define pegs easily for virtually any type of synthetic, and all the ECB fiats can easily get a backed and pegged coin.
+ 
+ Let us now consider how to enforce a peg onto a specific gateways CC token. If this can also be achieved, then a full DEX for all the different gateways CC supported coins can be created onto a single fiat denominated chain.
+ 
+ I think just having a pegscreate rpc call that binds an existing gateways create to a price CC syntax price will be almost enough to support this. Let us assume a USD stablechain and we have a BTC token, then pegscreate <btc gateways txid> "BTCUSD, 1"
+ that will specify using the BTCUSD price, so now we need to create a <txid> based way to do tokenbid/tokenask. For a <txid> based price, the smoothed price is substituted.
+ 
+ There is the issue of the one day delay, so it might make sense to allow specific bid/ask to be based on some simple combinations of the three possible prices. it might even be possible to go a bit overboard and make a forth like syntax to define the dynamic price for a bid, which maybe at times wont be valid, like it is only valid if the three prices are within 1% of each other. But all that seems over complex and for initial release it can just use the mined, correlated or smoothed price, with some specified percentage offset
+ 
+ Implementation notes:
+    make sure that fees and markers that can be sent to an unspendable address are sent to: RNdqHx26GWy9bk8MtmH1UiXjQcXE4RKK2P, this is the address for BOTS
+
+ 
+ */
 
 // start of consensus code
 

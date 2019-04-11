@@ -34,6 +34,7 @@
 #include "script/script_error.h"
 #include "script/sign.h"
 #include "script/standard.h"
+#include "notaries_staked.h"
 
 #include "key_io.h"
 #include "cc/CCImportGateway.h"
@@ -56,6 +57,7 @@ int32_t komodo_MoM(int32_t *notarized_htp,uint256 *MoMp,uint256 *kmdtxidp,int32_
 int32_t komodo_MoMoMdata(char *hexstr,int32_t hexsize,struct komodo_ccdataMoMoM *mdata,char *symbol,int32_t kmdheight,int32_t notarized_height);
 struct komodo_ccdata_entry *komodo_allMoMs(int32_t *nump,uint256 *MoMoMp,int32_t kmdstarti,int32_t kmdendi);
 uint256 komodo_calcMoM(int32_t height,int32_t MoMdepth);
+int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestamp);
 extern std::string ASSETCHAINS_SELFIMPORT;
 
 std::string MakeSelfImportSourceTx(CTxDestination &dest, int64_t amount, CMutableTransaction &mtx);
@@ -411,6 +413,9 @@ UniValue selfimport(const UniValue& params, bool fHelp)
     return result;
 }
 
+bool GetNotarisationNotaries(uint8_t notarypubkeys[64][33], int8_t &numNN, const std::vector<CTxIn> &vin, std::vector<int8_t> &NotarisationNotaries);
+
+
 UniValue importdual(const UniValue& params, bool fHelp)
 {
     UniValue result(UniValue::VOBJ);
@@ -747,6 +752,60 @@ UniValue importgatewaydumpprivkey(const UniValue& params, bool fHelp)
 
 UniValue getNotarisationsForBlock(const UniValue& params, bool fHelp)
 {
+    // TODO take timestamp as param, and loop blockindex to get starting/finish height.
+    if (fHelp || params.size() != 1)
+        throw runtime_error("getNotarisationsForBlock height\n\n"
+                "Takes a block height and returns notarisation information "
+                "within the block");
+
+    LOCK(cs_main);
+    int32_t height = params[0].get_int();
+    if ( height < 0 || height > chainActive.Height() )
+        throw runtime_error("height out of range.\n");
+    
+    uint256 blockHash = chainActive[height]->GetBlockHash(); 
+    
+    NotarisationsInBlock nibs;
+    GetBlockNotarisations(blockHash, nibs);
+    UniValue out(UniValue::VOBJ);
+    //out.push_back(make_pair("blocktime",(int)));
+    UniValue labs(UniValue::VARR);
+    UniValue kmd(UniValue::VARR);
+    // Gets KMD notaries on KMD... but LABS notaries on labs chains needs to be fixed so LABS are identified on KMD.
+    int8_t numNN = 0; uint8_t notarypubkeys[64][33] = {0};
+    numNN = komodo_notaries(notarypubkeys, height, chainActive[height]->nTime);
+    
+    BOOST_FOREACH(const Notarisation& n, nibs)
+    {
+        UniValue item(UniValue::VOBJ); UniValue notaryarr(UniValue::VARR); std::vector<int8_t> NotarisationNotaries;
+        if ( is_STAKED(n.second.symbol) != 0 )
+            continue; // for now just skip this... need to fetch diff pubkeys for these chains. labs.push_back(item);
+        uint256 hash; CTransaction tx;
+        if ( GetTransaction(n.first,tx,hash,false) )
+        {
+            if ( !GetNotarisationNotaries(notarypubkeys, numNN, tx.vin, NotarisationNotaries) )
+                continue;
+            if ( NotarisationNotaries.size() < numNN/5 )
+                continue;
+        }
+        item.push_back(make_pair("txid", n.first.GetHex()));
+        item.push_back(make_pair("chain", n.second.symbol));
+        item.push_back(make_pair("height", (int)n.second.height));
+        item.push_back(make_pair("blockhash", n.second.blockHash.GetHex()));
+        item.push_back(make_pair("KMD_height", height)); // for when timstamp input is used.
+        
+        for ( auto notary : NotarisationNotaries )
+            notaryarr.push_back(notary);
+        item.push_back(make_pair("notaries",notaryarr));
+        kmd.push_back(item);
+    }
+    out.push_back(make_pair("KMD", kmd));
+    //out.push_back(make_pair("LABS", labs));
+    return out;
+}
+
+/*UniValue getNotarisationsForBlock(const UniValue& params, bool fHelp)
+{
     if (fHelp || params.size() != 1)
         throw runtime_error("getNotarisationsForBlock blockHash\n\n"
                 "Takes a block hash and returns notarisation transactions "
@@ -765,7 +824,7 @@ UniValue getNotarisationsForBlock(const UniValue& params, bool fHelp)
         out.push_back(item);
     }
     return out;
-}
+}*/
 
 
 UniValue scanNotarisationsDB(const UniValue& params, bool fHelp)

@@ -1551,7 +1551,7 @@ void komodo_passport_iteration()
 extern std::vector<uint8_t> Mineropret; // opreturn data set by the data gathering code
 #define PRICES_MAXCHANGE (COIN / 100)	  // maximum acceptable change, set at 1%
 #define PRICES_SIZEBIT0 (sizeof(uint32_t) * 4) // 4 uint32_t unixtimestamp, BTCUSD, BTCGBP and BTCEUR
-#define KOMODO_LOCALPRICE_CACHESIZE 7
+#define KOMODO_LOCALPRICE_CACHESIZE 13
 #define KOMODO_MAXPRICES 2048
 
 #define issue_curl(cmdstr) bitcoind_RPC(0,(char *)"CBCOINBASE",cmdstr,0,0,0)
@@ -1720,18 +1720,33 @@ CScript komodo_mineropret(int32_t nHeight)
  The only way komodo_opretvalidate() doesnt return an error is if maxflag is set or it is within tolerance of both the prior block and the local data. The local data validation only happens if it is a recent block and not a block from the past as the local node is only getting the current price data.
  
  */
-// for PRICES: reconsiderblock 002aca768b09dfcf36bd934ab34b23983148b116e12cb0b6e1a3f895d1db63aa
-// and
-// reconsiderblock 0034cf582018eacc0b4ae001491ce460113514cb1a3f217567ef4a2207de361a
-// reconsiderbloc 000abf51c023b64af327c50c1b060797b8cb281c696d30ab92fd002a8b8c9aea
-// are needed to sync past initial blocks with different data set
+
+struct komodo_extremeprice
+{
+    uint256 blockhash;
+    uint32_t pricebits,timestamp;
+    int32_t height;
+    int16_t dir,ind;
+} ExtremePrice;
+
+void komodo_queuelocalprice(int32_t dir,int32_t height,uint32_t timestamp,uint256 blockhash,int32_t ind,uint32_t pricebits)
+{
+    ExtremePrice.dir = dir;
+    ExtremePrice.height = height;
+    ExtremePrice.blockhash = blockhash;
+    ExtremePrice.ind = ind;
+    ExtremePrice.timestamp = timestamp;
+    ExtremePrice.pricebits = pricebits;
+}
 
 int32_t komodo_opretvalidate(const CBlock *block,CBlockIndex * const previndex,int32_t nHeight,CScript scriptPubKey)
 {
-    int32_t testchain_exemption = 350;
-    std::vector<uint8_t> vopret; char maxflags[KOMODO_MAXPRICES]; double btcusd,btcgbp,btceur; uint32_t localbits[KOMODO_MAXPRICES],pricebits[KOMODO_MAXPRICES],prevbits[KOMODO_MAXPRICES],newprice; int32_t i,j,prevtime,maxflag,lag,lag2,lag3,n,errflag,iter; uint32_t now = (uint32_t)time(NULL);
+    int32_t testchain_exemption = 0;
+    std::vector<uint8_t> vopret; char maxflags[KOMODO_MAXPRICES]; uint256 bhash; double btcusd,btcgbp,btceur; uint32_t localbits[KOMODO_MAXPRICES],pricebits[KOMODO_MAXPRICES],prevbits[KOMODO_MAXPRICES],newprice; int32_t i,j,prevtime,maxflag,lag,lag2,lag3,n,errflag,iter; uint32_t now;
+    now = (uint32_t)time(NULL);
     if ( ASSETCHAINS_CBOPRET != 0 && nHeight > 0 )
     {
+        bhash = block->GetHash();
         GetOpReturnData(scriptPubKey,vopret);
         if ( vopret.size() >= PRICES_SIZEBIT0 )
         {
@@ -1815,7 +1830,10 @@ int32_t komodo_opretvalidate(const CBlock *block,CBlockIndex * const previndex,i
                                             break;
                                         }
                                     if ( j == KOMODO_LOCALPRICE_CACHESIZE )
+                                    {
+                                        komodo_queuelocalprice(1,nHeight,block->nTime,bhash,i,prevbits[i]);
                                         break;
+                                    }
                                 }
                                 else if ( maxflag < 0 && localbits[i] > prevbits[i] )
                                 {
@@ -1828,7 +1846,10 @@ int32_t komodo_opretvalidate(const CBlock *block,CBlockIndex * const previndex,i
                                             break;
                                         }
                                     if ( j == KOMODO_LOCALPRICE_CACHESIZE )
+                                    {
+                                        komodo_queuelocalprice(-1,nHeight,block->nTime,bhash,i,prevbits[i]);
                                         break;
+                                    }
                                 }
                             }
                         }
@@ -1843,6 +1864,11 @@ int32_t komodo_opretvalidate(const CBlock *block,CBlockIndex * const previndex,i
                         }
                     }
                 }
+            }
+            if ( bhash == ExtremePrice.blockhash )
+            {
+                fprintf(stderr,"approved a previously extreme price based on new data ht.%d vs %u vs %u\n",ExtremePrice.height,ExtremePrice.timestamp,(uint32_t)block->nTime);
+                memset(&ExtremePrice,0,sizeof(ExtremePrice));
             }
             return(0);
         } else fprintf(stderr,"wrong size %d vs %d, scriptPubKey size %d [%02x]\n",(int32_t)vopret.size(),(int32_t)Mineropret.size(),(int32_t)scriptPubKey.size(),scriptPubKey[0]);
@@ -2124,7 +2150,7 @@ void komodo_cbopretupdate(int32_t forceflag)
 {
     static uint32_t lasttime,lastcrypto,lastbtc,pending;
     static uint32_t pricebits[4],cryptoprices[KOMODO_MAXPRICES],forexprices[sizeof(Forex)/sizeof(*Forex)];
-    int32_t size; uint32_t flags=0,now;
+    int32_t size; uint32_t flags=0,now; CBlockIndex *pindex;
     if ( forceflag != 0 && pending != 0 )
     {
         while ( pending != 0 )
@@ -2135,8 +2161,8 @@ void komodo_cbopretupdate(int32_t forceflag)
     now = (uint32_t)time(NULL);
     if ( (ASSETCHAINS_CBOPRET & 1) != 0 )
     {
-if ( komodo_nextheight() > 333 ) // for debug only!
-    ASSETCHAINS_CBOPRET = 7;
+//if ( komodo_nextheight() > 333 ) // for debug only!
+//    ASSETCHAINS_CBOPRET = 7;
         size = komodo_cbopretsize(ASSETCHAINS_CBOPRET);
         if ( Mineropret.size() < size )
             Mineropret.resize(size);
@@ -2182,6 +2208,16 @@ if ( komodo_nextheight() > 333 ) // for debug only!
             if ( (flags & 4) != 0 )
                 lastcrypto = now;
             memcpy(Mineropret.data(),PriceCache[0],size);
+            if ( ExtremePrice.dir != 0 && ExtremePrice.ind > 0 && ExtremePrice.ind < size/sizeof(uint32_t) && now < ExtremePrice.timestamp+3600 )
+            {
+                if ( (ExtremePrice.dir > 0 && PriceCache[0][ExtremePrice.ind] >= ExtremePrice.pricebits) || (ExtremePrice.dir < 0 && PriceCache[0][ExtremePrice.ind] <= ExtremePrice.pricebits) )
+                {
+                    fprintf(stderr,"future price is close enough to allow approving previously rejected block ind.%d %u vs %u\n",ExtremePrice.ind,PriceCache[0][ExtremePrice.ind],ExtremePrice.pricebits);
+                    if ( (pindex= komodo_blockindex(ExtremePrice.blockhash)) != 0 )
+                        pindex->nStatus &= ~BLOCK_FAILED_MASK;
+                    else fprintf(stderr,"couldnt find block.%s\n",ExtremePrice.blockhash.GetHex().c_str());
+                }
+            }
             // high volatility still strands nodes so we need to check new prices to approve a stuck block
             // scan list of stuck blocks (one?) and auto reconsiderblock if it changed state
             

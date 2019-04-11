@@ -1270,9 +1270,6 @@ bool CheckTransaction(uint32_t tiptime,const CTransaction& tx, CValidationState 
     }
 }
 
-extern char NOTARYADDRS[64][36];
-extern uint8_t NUM_NOTARIES;
-
 int32_t komodo_isnotaryvout(char *coinaddr) // from ac_private chains only
 {
     static int32_t didinit; static char notaryaddrs[sizeof(Notaries_elected1)/sizeof(*Notaries_elected1) + 1][64];
@@ -2967,6 +2964,33 @@ void DisconnectNotarisations(const CBlock &block)
     }
 }
 
+int8_t GetAddressType(const CScript &scriptPubKey, CTxDestination &vDest, txnouttype &txType, vector<vector<unsigned char>> &vSols)
+{
+    int8_t keyType = 0;
+    // some non-standard types, like time lock coinbases, don't solve, but do extract
+    if ( (Solver(scriptPubKey, txType, vSols) || ExtractDestination(scriptPubKey, vDest)) )
+    {
+        keyType = 1;
+        if (vDest.which())
+        {
+            // if we failed to solve, and got a vDest, assume P2PKH or P2PK address returned
+            CKeyID kid;
+            if (CBitcoinAddress(vDest).GetKeyID(kid))
+            {
+                vSols.push_back(vector<unsigned char>(kid.begin(), kid.end()));
+            }
+        }
+        else if (txType == TX_SCRIPTHASH)
+        {
+            keyType = 2;
+        }
+        else if (txType == TX_CRYPTOCONDITION )
+        {
+            keyType = 3;
+        }
+    }
+    return keyType;
+}
 
 bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex, CCoinsViewCache& view, bool* pfClean)
 {
@@ -3002,20 +3026,9 @@ bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex
                 vector<vector<unsigned char>> vSols;
                 CTxDestination vDest;
                 txnouttype txType = TX_PUBKEYHASH;
-                int keyType = 1;
-                if ((Solver(out.scriptPubKey, txType, vSols) || ExtractDestination(out.scriptPubKey, vDest)) && txType != TX_MULTISIG) {
-                    if (vDest.which())
-                    {
-                        CKeyID kid;
-                        if (CBitcoinAddress(vDest).GetKeyID(kid))
-                        {
-                            vSols.push_back(vector<unsigned char>(kid.begin(), kid.end()));
-                        }
-                    }
-                    else if (txType == TX_SCRIPTHASH)
-                    {
-                        keyType =  2;
-                    }
+                int keyType = GetAddressType(out.scriptPubKey, vDest, txType, vSols);
+                if ( keyType != 0 )
+                {
                     for (auto addr : vSols)
                     {
                         uint160 addrHash = addr.size() == 20 ? uint160(addr) : Hash160(addr);
@@ -3072,23 +3085,9 @@ bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex
                     vector<vector<unsigned char>> vSols;
                     CTxDestination vDest;
                     txnouttype txType = TX_PUBKEYHASH;
-                    int keyType = 1;
-                    // some non-standard types, like time lock coinbases, don't solve, but do extract
-                    if ((Solver(prevout.scriptPubKey, txType, vSols) || ExtractDestination(prevout.scriptPubKey, vDest)))
+                    int keyType = GetAddressType(prevout.scriptPubKey, vDest, txType, vSols);
+                    if ( keyType != 0 )
                     {
-                        // if we failed to solve, and got a vDest, assume P2PKH or P2PK address returned
-                        if (vDest.which())
-                        {
-                            CKeyID kid;
-                            if (CBitcoinAddress(vDest).GetKeyID(kid))
-                            {
-                                vSols.push_back(vector<unsigned char>(kid.begin(), kid.end()));
-                            }
-                        }
-                        else if (txType == TX_SCRIPTHASH)
-                        {
-                            keyType =  2;
-                        }
                         for (auto addr : vSols)
                         {
                             uint160 addrHash = addr.size() == 20 ? uint160(addr) : Hash160(addr);
@@ -3448,8 +3447,8 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
             if (fAddressIndex || fSpentIndex)
             {
-                for (size_t j = 0; j < tx.vin.size(); j++) {
-
+                for (size_t j = 0; j < tx.vin.size(); j++) 
+                {
                     const CTxIn input = tx.vin[j];
                     const CTxOut &prevout = view.GetOutputFor(tx.vin[j]);
 
@@ -3457,25 +3456,9 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                     CTxDestination vDest;
                     txnouttype txType = TX_PUBKEYHASH;
                     uint160 addrHash;
-                    int keyType = 0;
-                    // some non-standard types, like time lock coinbases, don't solve, but do extract
-                    if ((Solver(prevout.scriptPubKey, txType, vSols) || ExtractDestination(prevout.scriptPubKey, vDest)))
+                    int keyType = GetAddressType(prevout.scriptPubKey, vDest, txType, vSols);
+                    if ( keyType != 0 )
                     {
-                        keyType = 1;
-
-                        // if we failed to solve, and got a vDest, assume P2PKH or P2PK address returned
-                        if (vDest.which())
-                        {
-                            CKeyID kid;
-                            if (CBitcoinAddress(vDest).GetKeyID(kid))
-                            {
-                                vSols.push_back(vector<unsigned char>(kid.begin(), kid.end()));
-                            }
-                        }
-                        else if (txType == TX_SCRIPTHASH)
-                        {
-                            keyType =  2;
-                        }
                         for (auto addr : vSols)
                         {
                             addrHash = addr.size() == 20 ? uint160(addr) : Hash160(addr);
@@ -3485,12 +3468,12 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                             // remove address from unspent index
                             addressUnspentIndex.push_back(make_pair(CAddressUnspentKey(keyType, addrHash, input.prevout.hash, input.prevout.n), CAddressUnspentValue()));
                         }
-                    }
 
-                    if (fSpentIndex) {
-                        // add the spent index to determine the txid and input that spent an output
-                        // and to find the amount and address from an input
-                        spentIndex.push_back(make_pair(CSpentIndexKey(input.prevout.hash, input.prevout.n), CSpentIndexValue(txhash, j, pindex->GetHeight(), prevout.nValue, keyType, addrHash)));
+                        if (fSpentIndex) {
+                            // add the spent index to determine the txid and input that spent an output
+                            // and to find the amount and address from an input
+                            spentIndex.push_back(make_pair(CSpentIndexKey(input.prevout.hash, input.prevout.n), CSpentIndexValue(txhash, j, pindex->GetHeight(), prevout.nValue, keyType, addrHash)));
+                        }
                     }
                 }
             }
@@ -3541,23 +3524,9 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                 vector<vector<unsigned char>> vSols;
                 CTxDestination vDest;
                 txnouttype txType = TX_PUBKEYHASH;
-                int keyType = 1;
-                // some non-standard types, like time lock coinbases, don't solve, but do extract
-                if ((Solver(out.scriptPubKey, txType, vSols) || ExtractDestination(out.scriptPubKey, vDest)) && txType != TX_MULTISIG)
+                int keyType = GetAddressType(out.scriptPubKey, vDest, txType, vSols);
+                if ( keyType != 0 )
                 {
-                    // if we failed to solve, and got a vDest, assume P2PKH or P2PK address returned
-                    if (vDest.which())
-                    {
-                        CKeyID kid;
-                        if (CBitcoinAddress(vDest).GetKeyID(kid))
-                        {
-                            vSols.push_back(vector<unsigned char>(kid.begin(), kid.end()));
-                        }
-                    }
-                    else if (txType == TX_SCRIPTHASH)
-                    {
-                        keyType =  2;
-                    }
                     for (auto addr : vSols)
                     {
                         addrHash = addr.size() == 20 ? uint160(addr) : Hash160(addr);

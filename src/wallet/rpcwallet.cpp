@@ -5151,7 +5151,9 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     boost::optional<TransactionBuilder> builder;
     if (isToSaplingZaddr || saplingNoteInputs.size() > 0) {
         builder = TransactionBuilder(Params().GetConsensus(), nextBlockHeight, pwalletMain);
-    }
+    } else 
+        contextualTx.nExpiryHeight = 0; // set non z-tx to have no expiry height.
+
     // Create operation and add to global queue
     std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
     std::shared_ptr<AsyncRPCOperation> operation(
