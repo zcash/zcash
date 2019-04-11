@@ -2529,7 +2529,7 @@ int64_t komodo_pricesmoothed(int64_t *correlated,int32_t cskip,int64_t *rawprice
 
 void komodo_pricesinit()
 {
-    FILE *fp; char symbol[65]; int32_t i;
+    FILE *fp,*fp0 = 0; char symbol[65]; int32_t i;
     boost::filesystem::path pricefname,pricesdir = GetDataDir() / "prices";
     fprintf(stderr,"pricesinit (%s)\n",pricesdir.string().c_str());
     if (!boost::filesystem::exists(pricesdir))
@@ -2539,11 +2539,21 @@ void komodo_pricesinit()
         {
             if ( komodo_pricename(symbol,i) == 0 )
                 break;
+            if ( i == 0 )
+                strcpy(symbol,"rawprices");
             pricefname = pricesdir / symbol;
             fp = fopen(pricefname.string().c_str(), "wb+");
+            if ( i == 0 )
+                fp0 = fp;
             fseek(fp,(2*PRICES_DAYWINDOW+PRICES_SMOOTHWIDTH) * sizeof(int64_t) * 3,SEEK_SET);
             fputc(0,fp);
             fflush(fp);
+        }
+        if ( fp0 != 0 && i > 0 )
+        {
+            fseek(fp0,(2*PRICES_DAYWINDOW+PRICES_SMOOTHWIDTH) * sizeof(uint32_t) * i,SEEK_SET);
+            fputc(0,fp0);
+            fflush(fp0);
         }
     }
 }
