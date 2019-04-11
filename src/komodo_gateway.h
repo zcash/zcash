@@ -2556,7 +2556,7 @@ void komodo_pricesinit()
                 break;
             if ( i == 0 )
                 strcpy(PRICES[i].symbol,"rawprices");
-            pricefname = pricesdir / symbol;
+            pricefname = pricesdir / PRICES[i].symbol;
             PRICES[i].fp = fopen(pricefname.string().c_str(), "wb+");
             fseek(PRICES[i].fp,(2*PRICES_DAYWINDOW+PRICES_SMOOTHWIDTH) * sizeof(int64_t) * 3,SEEK_SET);
             fputc(0,PRICES[i].fp);
