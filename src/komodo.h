@@ -691,7 +691,7 @@ int32_t komodo_voutupdate(bool fJustCheck,int32_t *isratificationp,int32_t notar
                     else
                     {
                         komodo_rwccdata(ASSETCHAINS_SYMBOL,1,&ccdata,&MoMoMdata);
-                        if ( !fJustCheck && matched != 0 )
+                        if ( matched != 0 )
                             printf("[%s] matched.%d VALID (%s) MoM.%s [%d] CCid.%u\n",ASSETCHAINS_SYMBOL,matched,ccdata.symbol,MoM.ToString().c_str(),MoMdepth&0xffff,(MoMdepth>>16)&0xffff);
                     }
                     if ( MoMoMdata.pairs != 0 )
@@ -747,7 +747,7 @@ int32_t komodo_voutupdate(bool fJustCheck,int32_t *isratificationp,int32_t notar
         }
         else if ( matched != 0 && i == 0 && j == 1 && opretlen == 149 )
         {
-            if ( !fJustCheck && notaryid >= 0 && notaryid < 64 )
+            if ( notaryid >= 0 && notaryid < 64 )
                 komodo_paxpricefeed(height,&scriptbuf[len],opretlen);
         }
         else if ( matched != 0 )
