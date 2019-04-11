@@ -498,6 +498,7 @@ extern UniValue paxwithdraw(const UniValue& params, bool fHelp);
 
 extern UniValue prices(const UniValue& params, bool fHelp);
 extern UniValue pricesbet(const UniValue& params, bool fHelp);
+extern UniValue pricessetcostbasis(const UniValue& params, bool fHelp);
 
 // test rpc:
 extern UniValue test_ac(const UniValue& params, bool fHelp);

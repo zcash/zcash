@@ -40,7 +40,7 @@ bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
 // CCcustom
 UniValue PricesBet(uint64_t txfee,int64_t amount,int16_t leverage,std::vector<std::string> synthetic);
 UniValue PricesAddFunding(uint64_t txfee,uint256 bettxid,int64_t amount);
-UniValue PricesSetcostbasis(uint64_t txfee,uint256 bettxid);
+UniValue PricesSetcostbasis(int64_t txfee,uint256 bettxid);
 UniValue PricesRekt(uint64_t txfee,uint256 bettxid,int32_t rektheight);
 UniValue PricesCashout(uint64_t txfee,uint256 bettxid);
 UniValue PricesInfo(uint256 bettxid,int32_t refheight);

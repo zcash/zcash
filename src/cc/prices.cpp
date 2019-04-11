@@ -362,12 +362,13 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec,int32_t height,int32_t m
                 pricestack[depth] = 0;
                 if ( prices_extract(pricedata,height,1,value) == 0 )
                 {
-                    // push to the prices stack
+                    // push price to the prices stack
                     if ( minmax == 0 )
-                        pricestack[depth] = pricedata[2];
+                        pricestack[depth] = pricedata[2];   // use smoothed value if we are over 24h
                     else
                     {
-                        if ( leverage > 0 )
+                        // if we are within 24h use min or max price
+                        if ( leverage > 0 )  
                             pricestack[depth] = (pricedata[1] > pricedata[2]) ? pricedata[1] : pricedata[2]; // MAX
                         else 
                             pricestack[depth] = (pricedata[1] < pricedata[2]) ? pricedata[1] : pricedata[2]; // MIN
@@ -495,20 +496,29 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec,int32_t height,int32_t m
 
 int64_t prices_syntheticprofits(int64_t &costbasis,int32_t firstheight,int32_t height,int16_t leverage,std::vector<uint16_t> vec,int64_t positionsize,int64_t addedbets)
 {
-    int64_t price,profits = 0; int32_t minmax;
-    minmax = (height > firstheight+PRICES_DAYWINDOW);
-    if ( (price= prices_syntheticprice(vec,height,minmax,leverage)) < 0 )
-    {
-        fprintf(stderr,"unexpected zero synthetic price at height.%d\n",height);
-        return(0);
+    int64_t price, profits = 0; 
+
+    if (firstheight >= 0) {  // >=0 means request to find costbase
+        int32_t minmax = (height < firstheight + PRICES_DAYWINDOW);  // use minmax value if we are within 24h
+
+        if ((price = prices_syntheticprice(vec, height, minmax, leverage)) < 0)
+        {
+            fprintf(stderr, "unexpected zero synthetic price at height.%d\n", height);
+            return(0);
+        }
+        if (minmax /*!= 0*/) // if we are within day window, use bigger or lesser value
+        {
+            if (leverage > 0 && price > costbasis)
+                costbasis = price;  // set costbasis
+            else if (leverage < 0 && (costbasis == 0 || price < costbasis))
+                costbasis = price;
+            // else -> use the previous value
+        }
+        else
+           costbasis = price; //??
     }
-    if ( minmax != 0 )
-    {
-        if ( leverage > 0 && price > costbasis )
-            costbasis = price;
-        else if ( leverage < 0 && (costbasis == 0 || price < costbasis) )
-            costbasis = price;
-    }
+    // else < 0 then use the passed costbase
+
     profits = costbasis > 0 ? ((price * SATOSHIDEN) / costbasis) - SATOSHIDEN : 0;
     profits *= leverage * positionsize;
     return(positionsize + addedbets + profits);
@@ -567,10 +577,10 @@ UniValue PricesBet(uint64_t txfee,int64_t amount,int16_t leverage,std::vector<st
     if ( AddNormalinputs(mtx,mypk,amount+5*txfee,64) >= amount+5*txfee )
     {
         betamount = (amount * 199) / 200;
-        mtx.vout.push_back(CTxOut(txfee, CScript() << ParseHex(HexStr(pricespk)) << OP_CHECKSIG)); // marker
         mtx.vout.push_back(MakeCC1vout(cp->evalcode,txfee,mypk)); // baton for total funding
         mtx.vout.push_back(MakeCC1vout(cp->evalcode,(amount-betamount)+2*txfee,pricespk));
         mtx.vout.push_back(MakeCC1of2vout(cp->evalcode,betamount,pricespk,mypk));
+        mtx.vout.push_back(CTxOut(txfee, CScript() << ParseHex(HexStr(pricespk)) << OP_CHECKSIG)); // marker
         rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,prices_betopret(mypk,nextheight-1,amount,leverage,firstprice,vec,zeroid));
         return(prices_rawtxresult(result,rawtx,0));
     }
@@ -612,7 +622,7 @@ UniValue PricesAddFunding(uint64_t txfee,uint256 bettxid,int64_t amount)
     return(result);
 }
 
-UniValue PricesSetcostbasis(uint64_t txfee,uint256 bettxid)
+UniValue PricesSetcostbasis(int64_t txfee,uint256 bettxid)
 {
     int32_t nextheight = komodo_nextheight();
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(),nextheight); UniValue result(UniValue::VOBJ);
@@ -626,12 +636,12 @@ UniValue PricesSetcostbasis(uint64_t txfee,uint256 bettxid)
     {
         if ( prices_betopretdecode(bettx.vout[numvouts-1].scriptPubKey,pk,firstheight,positionsize,leverage,firstprice,vec,tokenid) == 'B' )
         {
-            addedbets = prices_batontxid(batontxid,bettx,bettxid);
+            addedbets = prices_batontxid(batontxid, bettx, bettxid);
             mtx.vin.push_back(CTxIn(bettxid,1,CScript()));
-            for (i=0; i<PRICES_DAYWINDOW; i++)
+            for (i=0; i<PRICES_DAYWINDOW; i++)  // we need a full day to check if there was a rekt
             {
                 if ( (profits= prices_syntheticprofits(costbasis,firstheight,firstheight+i,leverage,vec,positionsize,addedbets)) < 0 )
-                {
+                {   // we are in loss
                     result.push_back(Pair("rekt",(int64_t)1));
                     result.push_back(Pair("rektheight",(int64_t)firstheight+i));
                     break;
@@ -639,8 +649,9 @@ UniValue PricesSetcostbasis(uint64_t txfee,uint256 bettxid)
             }
             if ( i == PRICES_DAYWINDOW )
                 result.push_back(Pair("rekt",0));
+
             prices_betjson(result,profits,costbasis,positionsize,addedbets,leverage,firstheight,firstprice);
-            myfee = bettx.vout[1].nValue / 10;
+            myfee = bettx.vout[1].nValue / 10;   // fee for setting costbasis
             result.push_back(Pair("myfee",myfee));
             mtx.vout.push_back(CTxOut(myfee,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
             mtx.vout.push_back(MakeCC1vout(cp->evalcode,bettx.vout[1].nValue-myfee-txfee,pricespk));
@@ -669,7 +680,7 @@ UniValue PricesRekt(uint64_t txfee,uint256 bettxid,int32_t rektheight)
         {
             costbasis = prices_costbasis(bettx);
             addedbets = prices_batontxid(batontxid,bettx,bettxid);
-            if ( (profits= prices_syntheticprofits(ignore,firstheight,rektheight,leverage,vec,positionsize,addedbets)) < 0 )
+            if ( (profits= prices_syntheticprofits(costbasis /*ignore*/, -1, rektheight, leverage, vec, positionsize, addedbets)) < 0 )
             {
                 myfee = (positionsize + addedbets) / 500;
             }
