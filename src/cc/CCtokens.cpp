@@ -586,8 +586,7 @@ int64_t AddTokenCCInputs(struct CCcontract_info *cp, CMutableTransaction &mtx, C
         LOGSTREAM((char *)"cctokens", CCLOG_INFO, stream << "AddTokenCCInputs() no utxos for token dual/three eval addr=" << tokenaddr << " evalcode=" << (int)cp->evalcode << " additionalTokensEvalcode2=" << (int)cp->additionalTokensEvalcode2 << std::endl);
     }
 
-	threshold = total / (maxinputs != 0 ? maxinputs : 64); // TODO: maxinputs really could not be over 64? what if i want to calc total balance for all available uxtos?
-                                                           // maybe it is better to add all uxtos if maxinputs == 0
+	threshold = total / (maxinputs != 0 ? maxinputs : CC_MAXVINS);
 
 	for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it = unspentOutputs.begin(); it != unspentOutputs.end(); it++)
 	{

@@ -56,7 +56,8 @@
         EVAL(EVAL_MARMARA, 0xef) \
         EVAL(EVAL_PAYMENTS, 0xf0) \
         EVAL(EVAL_GATEWAYS, 0xf1) \
-		EVAL(EVAL_TOKENS, 0xf2)
+		EVAL(EVAL_TOKENS, 0xf2) \
+        EVAL(EVAL_IMPORTGATEWAY, 0xf3)  \
 
 
 // evalcodes 0x10 to 0x7f are reserved for cclib dynamic CC

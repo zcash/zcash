@@ -255,15 +255,23 @@ bool RewardsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
                         if ( (*cp->ismyvin)(tx.vin[i].scriptSig) == 0 )
                             return eval->Invalid("unexpected normal vin for unlock");
                     }
-                    if ( numvouts == 2 && numvins == 1 )
+                    if ( !CheckTxFee(tx, txfee, chainActive.LastTip()->GetHeight(), chainActive.LastTip()->nTime) )
+                        return eval->Invalid("txfee is too high");
+                    amount = vinTx.vout[0].nValue;
+                    reward = RewardsCalc(amount,tx.vin[0].prevout.hash,APR,minseconds,maxseconds,mindeposit);
+                    if ( reward == 0 )
+                        return eval->Invalid("no eligible rewards");
+                    if ( numvins == 1 && tx.vout[0].scriptPubKey.IsPayToCryptoCondition() == 0 )
                     {
-                        if ( tx.vout[0].scriptPubKey.IsPayToCryptoCondition() != 0 )
-                            return eval->Invalid("unlock recover tx vout.0 is not normal output");
+                        if ( tx.vout[1].nValue != 10000 )
+                            return eval->Invalid("wrong marker vout value");
+                        else if ( tx.vout[1].scriptPubKey != tx.vout[0].scriptPubKey )
+                            return eval->Invalid("unlock recover tx vout.1 mismatched scriptPubKey");
                         else if ( tx.vout[0].scriptPubKey != vinTx.vout[1].scriptPubKey )
                             return eval->Invalid("unlock recover tx vout.0 mismatched scriptPubKey");
                         else if ( tx.vout[0].nValue > vinTx.vout[0].nValue )
                             return eval->Invalid("unlock recover tx vout.0 mismatched amounts");
-                        else if ( tx.vout[1].nValue > 0 )
+                        else if ( tx.vout[2].nValue > 0 )
                             return eval->Invalid("unlock recover tx vout.1 nonz amount");
                         else return(true);
                     }
@@ -277,8 +285,6 @@ bool RewardsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
                         return eval->Invalid("unlock tx vout.1 is CC output");
                     else if ( tx.vout[1].scriptPubKey != vinTx.vout[1].scriptPubKey )
                         return eval->Invalid("unlock tx vout.1 mismatched scriptPubKey");
-                    amount = vinTx.vout[0].nValue;
-                    reward = RewardsCalc(amount,tx.vin[0].prevout.hash,APR,minseconds,maxseconds,mindeposit);
                     if ( RewardsExactAmounts(cp,eval,tx,txfee+tx.vout[1].nValue,sbits,fundingtxid) == 0 )
                         return false;
                     else if ( tx.vout[1].nValue > amount+reward )
@@ -333,7 +339,11 @@ int64_t AddRewardsInputs(CScript &scriptPubKey,uint64_t maxseconds,struct CCcont
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     GetCCaddress(cp,coinaddr,pk);
     SetCCunspents(unspentOutputs,coinaddr);
-    threshold = total/(maxinputs+1);
+    if ( maxinputs > CC_MAXVINS )
+        maxinputs = CC_MAXVINS;
+    if ( maxinputs > 0 )
+        threshold = total/maxinputs;
+    else threshold = total;
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
@@ -677,8 +687,7 @@ std::string RewardsUnlock(uint64_t txfee,char *planstr,uint256 fundingtxid,uint2
                 }
                 else
                 {
-                    firstmtx.vout.push_back(CTxOut(amount-txfee,scriptPubKey));
-                    //CCerror = "cant find enough rewards inputs";
+                    firstmtx.vout.push_back(CTxOut(amount-txfee*2,scriptPubKey));
                     fprintf(stderr,"not enough rewards funds to payout %.8f, recover mode tx\n",(double)(reward+txfee)/COIN);
                     return(FinalizeCCTx(-1LL,cp,firstmtx,mypk,txfee,EncodeRewardsOpRet('U',sbits,fundingtxid)));
                 }
@@ -703,4 +712,3 @@ std::string RewardsUnlock(uint64_t txfee,char *planstr,uint256 fundingtxid,uint2
     fprintf(stderr,"amount %.8f -> reward %.8f\n",(double)amount/COIN,(double)reward/COIN);
     return("");
 }
-

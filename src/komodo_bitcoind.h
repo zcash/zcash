@@ -201,6 +201,9 @@ try_again:
     curl_easy_setopt(curl_handle,CURLOPT_WRITEDATA,		&s); 			// we pass our 's' struct to the callback
     curl_easy_setopt(curl_handle,CURLOPT_NOSIGNAL,		1L);   			// supposed to fix "Alarm clock" and long jump crash
     curl_easy_setopt(curl_handle,CURLOPT_NOPROGRESS,	1L);			// no progress callback
+    //curl_easy_setopt(curl_handle, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
+    //curl_easy_setopt(curl_handle, CURLOPT_SSLVERSION, 2);
+
     if ( strncmp(url,"https",5) == 0 )
     {
         curl_easy_setopt(curl_handle,CURLOPT_SSL_VERIFYPEER,0);
@@ -247,13 +250,13 @@ try_again:
         numretries++;
         if ( specialcase != 0 )
         {
-            printf("<<<<<<<<<<< bitcoind_RPC.(%s): BTCD.%s timeout params.(%s) s.ptr.(%s) err.%d\n",url,command,params,s.ptr,res);
+            fprintf(stderr,"<<<<<<<<<<< bitcoind_RPC.(%s): BTCD.%s timeout params.(%s) s.ptr.(%s) err.%d\n",url,command,params,s.ptr,res);
             free(s.ptr);
             return(0);
         }
         else if ( numretries >= 1 )
         {
-            //printf("Maximum number of retries exceeded!\n");
+            fprintf(stderr,"Maximum number of retries exceeded!\n");
             free(s.ptr);
             return(0);
         }
@@ -1914,33 +1917,37 @@ uint64_t komodo_notarypay(CMutableTransaction &txNew, std::vector<int8_t> &Notar
     return(total);
 }
 
-uint64_t komodo_checknotarypay(CBlock *pblock,int32_t height)
+bool GetNotarisationNotaries(uint8_t notarypubkeys[64][33], int8_t &numNN, const std::vector<CTxIn> &vin, std::vector<int8_t> &NotarisationNotaries)
 {
-    std::vector<int8_t> NotarisationNotaries;
-    uint32_t timestamp = pblock->nTime;
-    int8_t numSN = 0; uint8_t notarypubkeys[64][33] = {0};
-    numSN = komodo_notaries(notarypubkeys, height, timestamp);
-
-    // No point going further, no notaries can be paid.
-    if ( notarypubkeys[0][0] == 0 )
-        return(0);
-    
     uint8_t *script; int32_t scriptlen;
-    // Loop over the notarisation and extract the position of the participating notaries in the array of pukeys for this era.
-    BOOST_FOREACH(const CTxIn& txin, pblock->vtx[1].vin)
+    if ( notarypubkeys[0][0] == 0 )
+        return false;
+    BOOST_FOREACH(const CTxIn& txin, vin)
     {
         uint256 hash; CTransaction tx1;
         if ( GetTransaction(txin.prevout.hash,tx1,hash,false) )
         {
-            for (int8_t i = 0; i < numSN; i++) 
+            for (int8_t i = 0; i < numNN; i++) 
             {
                 script = (uint8_t *)&tx1.vout[txin.prevout.n].scriptPubKey[0];
                 scriptlen = (int32_t)tx1.vout[txin.prevout.n].scriptPubKey.size();
                 if ( scriptlen == 35 && script[0] == 33 && script[34] == OP_CHECKSIG && memcmp(script+1,notarypubkeys[i],33) == 0 )
                     NotarisationNotaries.push_back(i);
             }
-        }
+        } else return false;
     }
+    return true;
+}
+
+uint64_t komodo_checknotarypay(CBlock *pblock,int32_t height)
+{
+    std::vector<int8_t> NotarisationNotaries; uint8_t *script; int32_t scriptlen;
+    uint64_t timestamp = pblock->nTime;
+    int8_t numSN = 0; uint8_t notarypubkeys[64][33] = {0};
+    numSN = komodo_notaries(notarypubkeys, height, timestamp);
+    if ( !GetNotarisationNotaries(notarypubkeys, numSN, pblock->vtx[1].vin, NotarisationNotaries) )
+        return(0);
+    
     // check a notary didnt sign twice (this would be an invalid notarisation later on and cause problems)
     std::set<int> checkdupes( NotarisationNotaries.begin(), NotarisationNotaries.end() );
     if ( checkdupes.size() != NotarisationNotaries.size() ) {

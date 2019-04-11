@@ -19,12 +19,14 @@ class CryptoconditionsRewardsTest(CryptoconditionsTestFramework):
         rpc = self.nodes[0]
 
         result = rpc.rewardsaddress()
-        for x in ['myCCaddress', 'myaddress', 'RewardsCCAddress', 'RewardsCCTokensAddress', 'RewardsNormalAddress']:
-            assert_equal(result[x][0], 'R')
+        for x in result.keys():
+            if x.find('ddress') > 0:
+                assert_equal(result[x][0], 'R')
 
         result = rpc.rewardsaddress(self.pubkey)
-        for x in ['myCCaddress', 'myaddress', 'RewardsCCAddress', 'RewardsCCTokensAddress', 'RewardsNormalAddress']:
-            assert_equal(result[x][0], 'R')
+        for x in result.keys():
+            if x.find('ddress') > 0:
+                assert_equal(result[x][0], 'R')
 
         # no rewards yet
         result = rpc.rewardslist()

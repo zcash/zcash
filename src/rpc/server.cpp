@@ -354,6 +354,21 @@ static const CRPCCommand vRPCCommands[] =
     { "crosschain",         "migrate_createimporttransaction", &migrate_createimporttransaction, true  },
     { "crosschain",         "migrate_completeimporttransaction", &migrate_completeimporttransaction, true  },
     { "crosschain",         "selfimport", &selfimport, true  },
+    { "crosschain",         "importdual", &importdual, true  },
+    //ImportGateway
+    { "crosschain",       "importgatewayddress",     &importgatewayaddress,      true },
+    { "crosschain",       "importgatewayinfo", &importgatewayinfo, true  },
+    { "crosschain",       "importgatewaybind", &importgatewaybind, true  },
+    { "crosschain",       "importgatewaydeposit", &importgatewaydeposit, true  },
+    { "crosschain",       "importgatewaywithdraw",  &importgatewaywithdraw,     true },
+    { "crosschain",       "importgatewaypartialsign",  &importgatewaypartialsign,     true },
+    { "crosschain",       "importgatewaycompletesigning",  &importgatewaycompletesigning,     true },
+    { "crosschain",       "importgatewaymarkdone",  &importgatewaymarkdone,     true },
+    { "crosschain",       "importgatewaypendingdeposits",   &importgatewaypendingdeposits,      true },
+    { "crosschain",       "importgatewaypendingwithdraws",   &importgatewaypendingwithdraws,      true },
+    { "crosschain",       "importgatewayprocessed",   &importgatewayprocessed,  true },
+
+
 
     /* Mining */
     { "mining",             "getblocktemplate",       &getblocktemplate,       true  },
@@ -441,14 +456,10 @@ static const CRPCCommand vRPCCommands[] =
     { "oracles",       "oraclessamples",   &oraclessamples,     true },
 
     // Prices
+    { "prices",       "prices",      &prices,      true },
     { "prices",       "pricesaddress",      &pricesaddress,      true },
     { "prices",       "priceslist",         &priceslist,         true },
     { "prices",       "pricesinfo",         &pricesinfo,         true },
-    { "prices",       "pricescreate",       &pricescreate,       true },
-    { "prices",       "pricesaddfunding",   &pricesaddfunding,   true },
-    { "prices",       "pricesbet",          &pricesbet,          true },
-    { "prices",       "pricesstatus",       &pricesstatus,       true },
-    { "prices",       "pricesfinish",       &pricesfinish,       true },
 
     // Pegs
     { "pegs",       "pegsaddress",   &pegsaddress,      true },
@@ -466,6 +477,12 @@ static const CRPCCommand vRPCCommands[] =
 
     // Payments
     { "payments",       "paymentsaddress",   &paymentsaddress,      true },
+    { "payments",       "paymentstxidopret", &payments_txidopret,      true },
+    { "payments",       "paymentscreate",    &payments_create,      true },
+    { "payments",       "paymentslist",      &payments_list,      true },
+    { "payments",       "paymentsinfo",      &payments_info,      true },
+    { "payments",       "paymentsfund",      &payments_fund,      true },
+    { "payments",       "paymentsrelease",   &payments_release,      true },
 
     { "CClib",       "cclibaddress",   &cclibaddress,      true },
     { "CClib",       "cclibinfo",   &cclibinfo,      true },

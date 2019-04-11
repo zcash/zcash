@@ -22,6 +22,7 @@
 #define ROGUE_MAXPLAYERS 64 // need to send unused fees back to globalCC address to prevent leeching
 #define ROGUE_MAXKEYSTROKESGAP 60
 #define ROGUE_MAXITERATIONS 777
+#define ROGUE_MAXCASHOUT (777 * COIN)
 
 #include "rogue/rogue_player.h"
 
@@ -280,6 +281,24 @@ int32_t rogue_iamregistered(int32_t maxplayers,uint256 gametxid,CTransaction tx,
         } //else fprintf(stderr,"vout %d is unspent\n",vout);
     }
     return(0);
+}
+
+int64_t rogue_buyins(uint256 gametxid,int32_t maxplayers)
+{
+    int32_t i,vout; uint256 spenttxid,hashBlock; CTransaction spenttx; int64_t buyins = 0;
+    for (i=0; i<maxplayers; i++)
+    {
+        vout = i+1;
+        if ( myIsutxo_spent(spenttxid,gametxid,vout) >= 0 )
+        {
+            if ( myGetTransaction(spenttxid,spenttx,hashBlock) != 0 && spenttx.vout.size() > 0 )
+            {
+                if ( spenttx.vout[0].nValue > ROGUE_REGISTRATIONSIZE )
+                    buyins += (spenttx.vout[0].nValue - ROGUE_REGISTRATIONSIZE);
+            } //else fprintf(stderr,"cant find spenttxid.%s\n",spenttxid.GetHex().c_str());
+        } //else fprintf(stderr,"vout %d is unspent\n",vout);
+    }
+    return(buyins);
 }
 
 int32_t rogue_isvalidgame(struct CCcontract_info *cp,int32_t &gameheight,CTransaction &tx,int64_t &buyin,int32_t &maxplayers,uint256 txid,int32_t unspentv0)
@@ -689,6 +708,7 @@ uint64_t rogue_gamefields(UniValue &obj,int64_t maxplayers,int64_t buyin,uint256
         obj.push_back(Pair("alive",rogue_playersalive(openslots,numplayers,gametxid,maxplayers,ht,tx)));
         obj.push_back(Pair("openslots",openslots));
         obj.push_back(Pair("numplayers",numplayers));
+        obj.push_back(Pair("buyins",ValueFromAmount(rogue_buyins(gametxid,maxplayers))));
     }
     obj.push_back(Pair("maxplayers",maxplayers));
     obj.push_back(Pair("buyin",ValueFromAmount(buyin)));
@@ -917,8 +937,8 @@ UniValue rogue_keystrokes(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
     int32_t nextheight = komodo_nextheight();
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(),nextheight);
     UniValue result(UniValue::VOBJ); CPubKey roguepk,mypk; uint256 gametxid,playertxid,batontxid; int64_t batonvalue,buyin; std::vector<uint8_t> keystrokes,playerdata; int32_t numplayers,regslot,numkeys,batonht,batonvout,n,elapsed,gameheight,maxplayers; CTransaction tx; CTxOut txout; char *keystrokestr,destaddr[64]; std::string rawtx,symbol,pname; bits256 t; uint8_t mypriv[32];
-    if ( txfee == 0 )
-        txfee = 10000;
+   // if ( txfee == 0 )
+        txfee = 1000; // smaller than normal on purpose
     rogue_univalue(result,"keystrokes",-1,-1);
     if ( params != 0 && (n= cJSON_GetArraySize(params)) == 2 && (keystrokestr= jstr(jitem(params,1),0)) != 0 )
     {
@@ -1092,6 +1112,20 @@ UniValue rogue_extract(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     return(result);
 }
 
+int64_t rogue_cashout(struct rogue_player *P)
+{
+    int32_t dungeonlevel; int64_t cashout,mult = 10;
+    if ( P->amulet != 0 )
+        mult *= 5;
+    dungeonlevel = P->dungeonlevel;
+    if ( P->amulet != 0 && dungeonlevel < 26 )
+        dungeonlevel = 26;
+    if ( dungeonlevel > 42 )
+        dungeonlevel = 42;
+    cashout = (uint64_t)P->gold * P->gold * mult * dungeonlevel;
+    return(cashout);
+}
+
 int32_t rogue_playerdata_validate(int64_t *cashoutp,uint256 &playertxid,struct CCcontract_info *cp,std::vector<uint8_t> playerdata,uint256 gametxid,CPubKey pk)
 {
     static uint32_t good,bad; static uint256 prevgame;
@@ -1104,15 +1138,9 @@ int32_t rogue_playerdata_validate(int64_t *cashoutp,uint256 &playertxid,struct C
         free(keystrokes);
         sprintf(fname,"rogue.%llu.pack",(long long)seed);
         remove(fname);
-
         for (i=0; i<newdata.size(); i++)
             ((uint8_t *)&P)[i] = newdata[i];
-        if ( P.amulet != 0 )
-            mult *= 5;
-        dungeonlevel = P.dungeonlevel;
-        if ( P.amulet != 0 && dungeonlevel < 26 )
-            dungeonlevel = 26;
-        *cashoutp = (uint64_t)P.gold * P.gold * mult * dungeonlevel;
+        *cashoutp = rogue_cashout(&P);
         if ( newdata == playerdata )
         {
             if ( gametxid != prevgame )
@@ -1203,16 +1231,10 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
     result.push_back(Pair("name","rogue"));
     result.push_back(Pair("method",method));
     result.push_back(Pair("myrogueaddr",myrogueaddr));
+    mult = 10; //100000;
     if ( strcmp(method,"bailout") == 0 )
-    {
         funcid = 'Q';
-        mult = 10; //100000;
-    }
-    else
-    {
-        funcid = 'H';
-        mult = 20; //200000;
-    }
+    else funcid = 'H';
     if ( params != 0 && (n= cJSON_GetArraySize(params)) > 0 )
     {
         if ( n > 0 )
@@ -1261,13 +1283,10 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
                             cpTokens = CCinit(&tokensC, EVAL_TOKENS);
                             mtx.vout.push_back(MakeCC1vout(EVAL_TOKENS, txfee, GetUnspendable(cpTokens,NULL)));            // marker to token cc addr, burnable and validated
                             mtx.vout.push_back(MakeTokensCC1vout(cp->evalcode,1,mypk));
-                            if ( P.amulet != 0 )
-                                mult *= 5;
-                            dungeonlevel = P.dungeonlevel;
-                            if ( P.amulet != 0 && dungeonlevel < 26 )
-                                dungeonlevel = 26;
-                            cashout = (uint64_t)P.gold * P.gold * mult * dungeonlevel;
+                            cashout = rogue_cashout(&P);
                             fprintf(stderr,"\nextracted $$$gold.%d -> %.8f ROGUE hp.%d strength.%d/%d level.%d exp.%d dl.%d n.%d amulet.%d\n",P.gold,(double)cashout/COIN,P.hitpoints,P.strength&0xffff,P.strength>>16,P.level,P.experience,P.dungeonlevel,n,P.amulet);
+                            if ( komodo_nextheight() > 77777 && cashout > ROGUE_MAXCASHOUT )
+                                cashout = ROGUE_MAXCASHOUT;
                             if ( funcid == 'H' && maxplayers > 1 )
                             {
                                 if ( P.amulet == 0 )
@@ -1277,6 +1296,7 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
                                     else if ( rogue_playersalive(tmp,tmp,gametxid,maxplayers,gameheight,gametx) > 1 )
                                         return(cclib_error(result,"highlander must be a winner or last one standing"));
                                 }
+                                cashout *= 2;
                                 cashout += numplayers * buyin;
                             }
                             if ( cashout > 0 )
@@ -1321,12 +1341,12 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
 
 UniValue rogue_bailout(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    return(rogue_finishgame(txfee,cp,params,"bailout"));
+    return(rogue_finishgame(txfee,cp,params,(char *)"bailout"));
 }
 
 UniValue rogue_highlander(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
-    return(rogue_finishgame(txfee,cp,params,"highlander"));
+    return(rogue_finishgame(txfee,cp,params,(char *)"highlander"));
 }
 
 UniValue rogue_gameinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
@@ -1501,7 +1521,7 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
     if ( (numvouts= tx.vout.size()) > 1 )
     {
         txid = tx.GetHash();
-        if ( txid == Parseuint256("1ae04dc0c5f2fca2053819a3a1b2efe5d355c34f58d6f16d59e5e2573e7baf7f") ) // osx rogue chain ht.50902
+        if ( txid == Parseuint256("1ae04dc0c5f2fca2053819a3a1b2efe5d355c34f58d6f16d59e5e2573e7baf7f") || txid == Parseuint256("2a34b36cc1292aecfaabdad79b42cab9989fa6dcc87ac8ca88aa6162dab1e2c4") ) // osx rogue chain ht.50902, 69522
             enabled = 0;
         scriptPubKey = tx.vout[numvouts-1].scriptPubKey;
         GetOpReturnData(scriptPubKey,vopret);
@@ -1593,8 +1613,13 @@ bool rogue_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
                                     if ( enabled != 0 )
                                         return eval->Invalid("mismatched playerdata");
                                 }
+                                if ( height > 777777 && cashout > ROGUE_MAXCASHOUT )
+                                    cashout = ROGUE_MAXCASHOUT;
                                 if ( funcid == 'H' )
+                                {
                                     cashout *= 2;
+                                    cashout += rogue_buyins(gametxid,maxplayers);
+                                }
                                 sprintf(cashstr,"tokentx.(%c) decoded.%d ht.%d txid.%s %.8f vs vout2 %.8f",tokentx,decoded,height,txid.GetHex().c_str(),(double)cashout/COIN,(double)tx.vout[2].nValue/COIN);
                                 if ( strcmp(laststr,cashstr) != 0 )
                                 {
