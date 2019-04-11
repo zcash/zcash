@@ -2663,7 +2663,7 @@ void komodo_pricesupdate(int32_t height,CBlock *pblock)
                                 fseek(PRICES[ind].fp,(height-PRICES_DAYWINDOW+1) * 3 * sizeof(int64_t),SEEK_SET);
                                 if ( fread(ptr64,sizeof(int64_t),PRICES_DAYWINDOW*3-1,PRICES[ind].fp) == PRICES_DAYWINDOW*3-1 )
                                 {
-                                    if ( (smoothed= komodo_priceave(tmpbuf,&ptr64[PRICES_DAYWINDOW*3-1],-3)) > 0 )
+                                    if ( (smoothed= komodo_priceave(tmpbuf,&ptr64[PRICES_DAYWINDOW*3-2],-3)) > 0 )
                                     {
                                         fseek(PRICES[ind].fp,(height * 3 + 2) * sizeof(int64_t),SEEK_SET);
                                         if ( fwrite(&smoothed,1,sizeof(smoothed),PRICES[ind].fp) != sizeof(smoothed) )
