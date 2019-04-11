@@ -2588,7 +2588,7 @@ int64_t komodo_priceave(int64_t *buf,int64_t *correlated,int32_t cskip)
         //fprintf(stderr,"%.4f ",(double)buf[i]/COIN);
     }
     //fprintf(stderr,"%ssort half %.4f vs %.4f -> %.4f\n",halfave<price?"rev":"",(double)halfave/COIN,(double)price/COIN,(double)decayprice/COIN);
-    return((price*7 + halvave*5 + thirdave*3 + fourthave*2 + decayprice + buf[PRICES_DAYWINDOW-1]) / 19);
+    return((price*7 + halfave*5 + thirdave*3 + fourthave*2 + decayprice + buf[PRICES_DAYWINDOW-1]) / 19);
 }
 
 void komodo_pricesinit()
