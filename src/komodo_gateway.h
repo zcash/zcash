@@ -2574,27 +2574,15 @@ int64_t komodo_priceave(int64_t *buf,int64_t *correlated,int32_t cskip)
     if ( halfave == price )
         return(price);
     else if ( halfave > price ) // rising prices
-    {
         sort64(buf,PRICES_DAYWINDOW);
-        decayprice = buf[0];
-        for (i=0; i<PRICES_DAYWINDOW; i++)
-        {
-            decayprice = ((decayprice * 9) + (buf[i] * 1)) / 10;
-            fprintf(stderr,"%.4f ",(double)buf[i]/COIN);
-        }
-        fprintf(stderr,"sort half %.4f vs %.4f -> %.4f\n",(double)halfprice/COIN,(double)price/COIN,(double)decayprice/COIN);
-    }
-    else
+    else revsort64(buf,PRICES_DAYWINDOW);
+    decayprice = buf[0];
+    for (i=0; i<PRICES_DAYWINDOW; i++)
     {
-        revsort64(buf,PRICES_DAYWINDOW);
-        decayprice = buf[0];
-        for (i=0; i<PRICES_DAYWINDOW; i++)
-        {
-            decayprice = ((decayprice * 9) + (buf[i] * 1)) / 10;
-            fprintf(stderr,"%.4f ",(double)buf[i]/COIN);
-        }
-        fprintf(stderr,"revsort half %.4f vs %.4f -> %.4f\n",(double)halfprice/COIN,(double)price/COIN,(double)decayprice/COIN);
+        decayprice = ((decayprice * 9) + (buf[i] * 1)) / 10;
+        fprintf(stderr,"%.4f ",(double)buf[i]/COIN);
     }
+    fprintf(stderr,"%ssort half %.4f vs %.4f -> %.4f\n",halfave<price?"rev":"",(double)halfave/COIN,(double)price/COIN,(double)decayprice/COIN);
     return(decayprice);
 }
 
