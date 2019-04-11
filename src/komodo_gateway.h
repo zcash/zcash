@@ -2543,30 +2543,31 @@ int64_t komodo_priceave(int64_t *correlated,int32_t cskip)
 
 void komodo_pricesinit()
 {
-    int32_t i;
+    int32_t i,createflag = 0;
     boost::filesystem::path pricefname,pricesdir = GetDataDir() / "prices";
     fprintf(stderr,"pricesinit (%s)\n",pricesdir.string().c_str());
     if (!boost::filesystem::exists(pricesdir))
+        boost::filesystem::create_directories(pricesdir), createflag = 1;
+    for (i=0; i<KOMODO_MAXPRICES; i++)
     {
-        boost::filesystem::create_directories(pricesdir);
-        for (i=0; i<KOMODO_MAXPRICES; i++)
+        if ( komodo_pricename(PRICES[i].symbol,i) == 0 )
+            break;
+        if ( i == 0 )
+            strcpy(PRICES[i].symbol,"rawprices");
+        pricefname = pricesdir / PRICES[i].symbol;
+        PRICES[i].fp = fopen(pricefname.string().c_str(), createflag != 0 ? "wb+" : "rb+");
+        if ( createflag != 0 )
         {
-            if ( komodo_pricename(PRICES[i].symbol,i) == 0 )
-                break;
-            if ( i == 0 )
-                strcpy(PRICES[i].symbol,"rawprices");
-            pricefname = pricesdir / PRICES[i].symbol;
-            PRICES[i].fp = fopen(pricefname.string().c_str(), "wb+");
             fseek(PRICES[i].fp,(2*PRICES_DAYWINDOW+PRICES_SMOOTHWIDTH) * sizeof(int64_t) * 3,SEEK_SET);
             fputc(0,PRICES[i].fp);
             fflush(PRICES[i].fp);
         }
-        if ( i > 0 && PRICES[0].fp != 0 )
-        {
-            fseek(PRICES[0].fp,(2*PRICES_DAYWINDOW+PRICES_SMOOTHWIDTH) * sizeof(uint32_t) * i,SEEK_SET);
-            fputc(0,PRICES[0].fp);
-            fflush(PRICES[0].fp);
-        }
+    }
+    if ( i > 0 && PRICES[0].fp != 0 && createflag != 0 )
+    {
+        fseek(PRICES[0].fp,(2*PRICES_DAYWINDOW+PRICES_SMOOTHWIDTH) * sizeof(uint32_t) * i,SEEK_SET);
+        fputc(0,PRICES[0].fp);
+        fflush(PRICES[0].fp);
     }
 }
 
