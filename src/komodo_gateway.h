@@ -2580,12 +2580,13 @@ void komodo_pricesupdate(int32_t height,CBlock *pblock)
         numprices = (int32_t)(komodo_cbopretsize(ASSETCHAINS_CBOPRET) / sizeof(uint32_t));
         ptr32 = (uint32_t *)calloc(sizeof(uint32_t),numprices * width);
         ptr64 = (int64_t *)calloc(sizeof(int64_t),PRICES_DAYWINDOW*3);
+        fprintf(stderr,"prices update: numprices.%d %p %p\n",numprices,ptr32,ptr64);
     }
     if ( _komodo_heightpricebits(&seed,rawprices,pblock) == numprices )
     {
-        //for (i=0; i<numprices; i++)
-        //    fprintf(stderr,"%u ",rawprices[i]);
-        //fprintf(stderr,"numprices.%d\n",numprices);
+        for (i=0; i<numprices; i++)
+            fprintf(stderr,"%u ",rawprices[i]);
+        fprintf(stderr,"numprices.%d\n",numprices);
         if ( PRICES[0].fp != 0 )
         {
             fseek(PRICES[0].fp,height * numprices * sizeof(uint32_t),SEEK_SET);
@@ -2632,10 +2633,9 @@ void komodo_pricesupdate(int32_t height,CBlock *pblock)
                     }
                     fprintf(stderr,"height.%d\n",height);
                 } else fprintf(stderr,"error reading rawprices for ht.%d\n",height);
-            }
-        }
+            } else fprintf(stderr,"height.%d <= width.%d\n",height,width);
+        } else fprintf(stderr,"null PRICES[0].fp\n");
     } else fprintf(stderr,"numprices mismatch\n");
-
 }
 
 
