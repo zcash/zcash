@@ -1067,9 +1067,9 @@ UniValue cleanwallettransactions(const UniValue& params, bool fHelp)
             "1. \"txid\"    (string, optional) The transaction id to keep.\n"
             "\nResult:\n"
             "{\n"
-            "  \"total_transactons\" : n,         (numeric) Transactions in wallet of " + strprintf("%s",komodo_chainname()) + "\n"
-            "  \"remaining_transactons\" : n,     (numeric) Transactions in wallet after clean.\n"
-            "  \"removed_transactons\" : n,       (numeric) The number of transactions removed.\n"
+            "  \"total_transactions\" : n,         (numeric) Transactions in wallet of " + strprintf("%s",komodo_chainname()) + "\n"
+            "  \"remaining_transactions\" : n,     (numeric) Transactions in wallet after clean.\n"
+            "  \"removed_transactions\" : n,       (numeric) The number of transactions removed.\n"
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("cleanwallettransactions", "")
