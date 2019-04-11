@@ -2524,8 +2524,10 @@ void smooth64(int64_t dest[],int64_t src[],int32_t width,int32_t smoothiters)
 static int cmp_llu(const void *a, const void*b)
 {
     if(*(int64_t *)a < *(int64_t *)b) return -1;
-    if(*(int64_t *)a > *(int64_t *)b) return 1;
-    return 0;
+    else if(*(int64_t *)a > *(int64_t *)b) return 1;
+    else if ( (uint64_t)a < (uint64_t)b ) // jl777 prevent nondeterminism
+        return(-1);
+    else return(1);
 }
 
 static int64_t sort64(int64_t *l, int32_t llen)
@@ -2536,13 +2538,15 @@ static int64_t sort64(int64_t *l, int32_t llen)
 static int revcmp_llu(const void *a, const void*b)
 {
     if(*(int64_t *)a < *(int64_t *)b) return 1;
-    if(*(int64_t *)a > *(int64_t *)b) return -1;
-    return 0;
+    else if(*(int64_t *)a > *(int64_t *)b) return -1;
+    else if ( (uint64_t)a < (uint64_t)b ) // jl777 prevent nondeterminism
+        return(-1);
+    else return(1);
 }
 
 static int64_t revsort64(int64_t *l, int32_t llen)
 {
-    heapsort(l,llen,sizeof(uint64_t),cmp_llu);
+    qsort(l,llen,sizeof(uint64_t),revcmp_llu);
 }
 
 int64_t komodo_priceave(int64_t *buf,int64_t *correlated,int32_t cskip)
@@ -2575,7 +2579,7 @@ int64_t komodo_priceave(int64_t *buf,int64_t *correlated,int32_t cskip)
         decayprice = buf[0];
         for (i=0; i<PRICES_DAYWINDOW; i++)
         {
-            decayprice = ((decayprice * 9) + (buf[i] * 1)) / 10
+            decayprice = ((decayprice * 9) + (buf[i] * 1)) / 10;
             fprintf(stderr,"%.4f ",(double)buf[i]/COIN);
         }
         fprintf(stderr,"sort half %.4f vs %.4f -> %.4f\n",(double)halfprice/COIN,(double)price/COIN,(double)decayprice/COIN);
@@ -2586,7 +2590,7 @@ int64_t komodo_priceave(int64_t *buf,int64_t *correlated,int32_t cskip)
         decayprice = buf[0];
         for (i=0; i<PRICES_DAYWINDOW; i++)
         {
-            decayprice = ((decayprice * 9) + (buf[i] * 1)) / 10
+            decayprice = ((decayprice * 9) + (buf[i] * 1)) / 10;
             fprintf(stderr,"%.4f ",(double)buf[i]/COIN);
         }
         fprintf(stderr,"revsort half %.4f vs %.4f -> %.4f\n",(double)halfprice/COIN,(double)price/COIN,(double)decayprice/COIN);
