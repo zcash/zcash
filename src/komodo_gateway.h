@@ -1549,10 +1549,11 @@ void komodo_passport_iteration()
 }
 
 extern std::vector<uint8_t> Mineropret; // opreturn data set by the data gathering code
-#define PRICES_MAXCHANGE (COIN / 100)	  // maximum acceptable change, set at 1%
+#define PRICES_ERRORRATE (COIN / 100)	  // maximum acceptable change, set at 1%
 #define PRICES_SIZEBIT0 (sizeof(uint32_t) * 4) // 4 uint32_t unixtimestamp, BTCUSD, BTCGBP and BTCEUR
 #define KOMODO_LOCALPRICE_CACHESIZE 13
 #define KOMODO_MAXPRICES 2048
+#define PRICES_SMOOTHWIDTH 1
 
 #define issue_curl(cmdstr) bitcoind_RPC(0,(char *)"CBCOINBASE",cmdstr,0,0,0)
 
@@ -1696,10 +1697,10 @@ CScript komodo_mineropret(int32_t nHeight)
         {
             memcpy(pricebits,Mineropret.data(),Mineropret.size());
             memset(maxflags,0,sizeof(maxflags));
-            if ( komodo_pricecmp(0,n,maxflags,pricebits,prevbits,PRICES_MAXCHANGE) < 0 )
+            if ( komodo_pricecmp(0,n,maxflags,pricebits,prevbits,PRICES_ERRORRATE) < 0 )
             {
                 // if the new prices are outside tolerance, update Mineropret with clamped prices
-                komodo_priceclamp(n,pricebits,prevbits,PRICES_MAXCHANGE);
+                komodo_priceclamp(n,pricebits,prevbits,PRICES_ERRORRATE);
                 //fprintf(stderr,"update Mineropret to clamped prices\n");
                 memcpy(Mineropret.data(),pricebits,Mineropret.size());
             }
@@ -1788,7 +1789,7 @@ int32_t komodo_opretvalidate(const CBlock *block,CBlockIndex * const previndex,i
                             if ( pricebits[i] == 0 )
                                 pricebits[i] = prevbits[i];
                     }
-                    if ( komodo_pricecmp(nHeight,n,maxflags,pricebits,prevbits,PRICES_MAXCHANGE) < 0 )
+                    if ( komodo_pricecmp(nHeight,n,maxflags,pricebits,prevbits,PRICES_ERRORRATE) < 0 )
                     {
                         for (i=1; i<n; i++)
                             fprintf(stderr,"%.4f ",(double)prevbits[i]/10000);
@@ -2345,8 +2346,8 @@ int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int
         correlation = 0;
         i = (iter + seed) % PRICES_DAYWINDOW;
         refprice = rawprices[i*rawskip];
-        highprice = (refprice * (COIN + PRICES_MAXCHANGE*5)) / COIN;
-        lowprice = (refprice * (COIN - PRICES_MAXCHANGE*5)) / COIN;
+        highprice = (refprice * (COIN + PRICES_ERRORRATE*5)) / COIN;
+        lowprice = (refprice * (COIN - PRICES_ERRORRATE*5)) / COIN;
         if ( highprice == refprice )
             highprice++;
         if ( lowprice == refprice )
@@ -2529,7 +2530,7 @@ int64_t komodo_pricesmoothed(int64_t *correlated,int32_t cskip,int64_t *rawprice
 void komodo_pricesinit()
 {
     FILE *fp; char symbol[65]; int32_t i;
-    boost::filesystem::path pricefname,pricesdir = GetDataDir() / "prices";
+    boost::filesystem::path pricefname,pricesdir = GetDataDir() / ASSETCHAINS_SYMBOL / "prices";
     if (!boost::filesystem::exists(pricesdir))
     {
         boost::filesystem::create_directories(pricesdir);
@@ -2539,6 +2540,9 @@ void komodo_pricesinit()
                 break;
             pricefname = pricesdir / symbol;
             fp = fopen(pricefname.string().c_str(), "wb+");
+            fseek(fp,(2*PRICES_DAYWINDOW+PRICES_SMOOTHWIDTH) * sizeof(int64_t) * 3,SEEK_SET);
+            fputc(fp,0);
+            fflush(fp);
         }
     }
 }
