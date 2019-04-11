@@ -85,5 +85,6 @@ int tx_height( const uint256 &hash );
 extern std::vector<std::string> vWhiteListAddress;
 void komodo_netevent(std::vector<uint8_t> payload);
 int32_t komodo_priceind(char *symbol);
+void komodo_pricesinit();
 
 #endif

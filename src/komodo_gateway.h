@@ -2526,3 +2526,19 @@ int64_t komodo_pricesmoothed(int64_t *correlated,int32_t cskip,int64_t *rawprice
     return(price);
 }
 
+void komodo_pricesinit()
+{
+    FILE *fp; char symbol[65]; int32_t i;
+    boost::filesystem::path pricefname,pricesdir = GetDataDir() / "prices";
+    if (!boost::filesystem::exists(pricesdir))
+    {
+        boost::filesystem::create_directories(pricesdir);
+        for (i=0; i<KOMODO_MAXPRICES; i++)
+        {
+            if ( komodo_pricename(symbol,i) == 0 )
+                break;
+            pricefname = pricesdir / symbol;
+            fp = fopen(pricefname.string().c_str(), "wb+");
+        }
+    }
+}

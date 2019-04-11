@@ -2082,6 +2082,7 @@ void komodo_args(char *argv0)
                         extralen += symbol.size();
                     }
                 }
+                komodo_pricesinit();
                 komodo_cbopretupdate(1); // will set Mineropret
                 fprintf(stderr,"This blockchain uses data produced from CoinDesk Bitcoin Price Index\n");
             }
