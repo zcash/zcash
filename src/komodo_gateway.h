@@ -2530,7 +2530,8 @@ int64_t komodo_pricesmoothed(int64_t *correlated,int32_t cskip,int64_t *rawprice
 void komodo_pricesinit()
 {
     FILE *fp; char symbol[65]; int32_t i;
-    boost::filesystem::path pricefname,pricesdir = GetDataDir() / ASSETCHAINS_SYMBOL / "prices";
+    boost::filesystem::path pricefname,pricesdir = GetDataDir() / "prices";
+    fprintf(stderr,"pricesinit (%s)\n",pricesdir.string().c_str());
     if (!boost::filesystem::exists(pricesdir))
     {
         boost::filesystem::create_directories(pricesdir);
