@@ -2576,7 +2576,7 @@ int64_t komodo_priceave(int64_t *buf,int64_t *correlated,int32_t cskip)
     }
     memcpy(buf,&buf[PRICES_DAYWINDOW],PRICES_DAYWINDOW*sizeof(*buf));
     price = sum / PRICES_DAYWINDOW;
-    if ( halfave == price )
+    //if ( halfave == price )
         return(price);
     else if ( halfave > price ) // rising prices
         sort64(buf,PRICES_DAYWINDOW);
