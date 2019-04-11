@@ -2587,7 +2587,7 @@ int64_t komodo_priceave(int64_t *buf,int64_t *correlated,int32_t cskip)
         decayprice = ((decayprice * 97) + (buf[i] * 3)) / 100;
         //fprintf(stderr,"%.4f ",(double)buf[i]/COIN);
     }
-    //fprintf(stderr,"%ssort half %.4f vs %.4f -> %.4f\n",halfave<price?"rev":"",(double)halfave/COIN,(double)price/COIN,(double)decayprice/COIN);
+    fprintf(stderr,"%ssort half %.8f %.8f %.8f %.8f %.8f %.8f -> %.8f\n",halfave<price?"rev":"",(double)price/COIN,(double)halfave/COIN,(double)thirdave/COIN,(double)fourthave/COIN,(double)decayprice/COIN,(double)buf[PRICES_DAYWINDOW-1]/COIN,(double)(price*7 + halfave*5 + thirdave*3 + fourthave*2 + decayprice + buf[PRICES_DAYWINDOW-1])/COIN);
     return((price*7 + halfave*5 + thirdave*3 + fourthave*2 + decayprice + buf[PRICES_DAYWINDOW-1]) / 19);
 }
 
@@ -2636,9 +2636,9 @@ void komodo_pricesupdate(int32_t height,CBlock *pblock)
     }
     if ( _komodo_heightpricebits(&seed,rawprices,pblock) == numprices )
     {
-        for (ind=0; ind<numprices; ind++)
-            fprintf(stderr,"%u ",rawprices[ind]);
-        fprintf(stderr,"numprices.%d\n",numprices);
+        //for (ind=0; ind<numprices; ind++)
+        //    fprintf(stderr,"%u ",rawprices[ind]);
+        //fprintf(stderr,"numprices.%d\n",numprices);
         if ( PRICES[0].fp != 0 )
         {
             fseek(PRICES[0].fp,height * numprices * sizeof(uint32_t),SEEK_SET);
