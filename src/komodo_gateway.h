@@ -2551,7 +2551,7 @@ static int64_t revsort64(int64_t *l, int32_t llen)
 
 int64_t komodo_priceave(int64_t *buf,int64_t *correlated,int32_t cskip)
 {
-    int32_t i,dir=0; int64_t sum=0,nonzprice,price,halfave,decayprice;
+    int32_t i,dir=0; int64_t sum=0,nonzprice,price,halfave,thirdave,fourthave,decayprice;
     if ( PRICES_DAYWINDOW < 2 )
         return(0);
     for (i=0; i<PRICES_DAYWINDOW; i++)
@@ -2569,6 +2569,10 @@ int64_t komodo_priceave(int64_t *buf,int64_t *correlated,int32_t cskip)
         sum += nonzprice;
         if ( i == PRICES_DAYWINDOW/2 )
             halfave = (sum / (PRICES_DAYWINDOW/2));
+        else if ( i == PRICES_DAYWINDOW/3 )
+            thirdave = (sum / (PRICES_DAYWINDOW/3));
+        else if ( i == PRICES_DAYWINDOW/4 )
+            fourthave = (sum / (PRICES_DAYWINDOW/4));
     }
     memcpy(buf,&buf[PRICES_DAYWINDOW],PRICES_DAYWINDOW*sizeof(*buf));
     price = sum / PRICES_DAYWINDOW;
@@ -2580,11 +2584,11 @@ int64_t komodo_priceave(int64_t *buf,int64_t *correlated,int32_t cskip)
     decayprice = buf[0];
     for (i=0; i<PRICES_DAYWINDOW; i++)
     {
-        decayprice = ((decayprice * 2) + (buf[i] * 1)) / 3;
+        decayprice = ((decayprice * 97) + (buf[i] * 3)) / 100;
         //fprintf(stderr,"%.4f ",(double)buf[i]/COIN);
     }
     //fprintf(stderr,"%ssort half %.4f vs %.4f -> %.4f\n",halfave<price?"rev":"",(double)halfave/COIN,(double)price/COIN,(double)decayprice/COIN);
-    return((decayprice*2 + price*7 + halfave*3 + buf[PRICES_DAYWINDOW-1]) / 13);
+    return((price*7 + halvave*5 + thirdave*3 + fourthave*2 + decayprice + buf[PRICES_DAYWINDOW-1]) / 19);
 }
 
 void komodo_pricesinit()
