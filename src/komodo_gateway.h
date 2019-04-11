@@ -2565,11 +2565,12 @@ int64_t komodo_priceave(int64_t *buf,int64_t *correlated,int32_t cskip)
     {
         if ( (price= correlated[i*cskip]) != 0 )
             nonzprice = price;
-        buf[i] = nonzprice;
+        buf[PRICES_DAYWINDOW+i] = nonzprice;
         sum += nonzprice;
         if ( i == PRICES_DAYWINDOW/2 )
             halfave = (sum / (PRICES_DAYWINDOW/2));
     }
+    memcp(buf,&buf[PRICES_DAYWINDOW],PRICES_DAYWINDOW*sizeof(*buf));
     price = sum / PRICES_DAYWINDOW;
     if ( halfave == price )
         return(price);
@@ -2579,11 +2580,11 @@ int64_t komodo_priceave(int64_t *buf,int64_t *correlated,int32_t cskip)
     decayprice = buf[0];
     for (i=0; i<PRICES_DAYWINDOW; i++)
     {
-        decayprice = ((decayprice * 9) + (buf[i] * 1)) / 10;
-        fprintf(stderr,"%.4f ",(double)buf[i]/COIN);
+        decayprice = ((decayprice * 2) + (buf[i] * 1)) / 3;
+        //fprintf(stderr,"%.4f ",(double)buf[i]/COIN);
     }
-    fprintf(stderr,"%ssort half %.4f vs %.4f -> %.4f\n",halfave<price?"rev":"",(double)halfave/COIN,(double)price/COIN,(double)decayprice/COIN);
-    return(decayprice);
+    //fprintf(stderr,"%ssort half %.4f vs %.4f -> %.4f\n",halfave<price?"rev":"",(double)halfave/COIN,(double)price/COIN,(double)decayprice/COIN);
+    return((decayprice*2 + price*7 + halfave*3 + buf[PRICES_DAYWINDOW-1]) / 13);
 }
 
 void komodo_pricesinit()
@@ -2626,7 +2627,7 @@ void komodo_pricesupdate(int32_t height,CBlock *pblock)
         numprices = (int32_t)(komodo_cbopretsize(ASSETCHAINS_CBOPRET) / sizeof(uint32_t));
         ptr32 = (uint32_t *)calloc(sizeof(uint32_t),numprices * width);
         ptr64 = (int64_t *)calloc(sizeof(int64_t),PRICES_DAYWINDOW*3);
-        tmpbuf = (int64_t *)calloc(sizeof(int64_t),PRICES_DAYWINDOW);
+        tmpbuf = (int64_t *)calloc(sizeof(int64_t),2*PRICES_DAYWINDOW);
         fprintf(stderr,"prices update: numprices.%d %p %p\n",numprices,ptr32,ptr64);
     }
     if ( _komodo_heightpricebits(&seed,rawprices,pblock) == numprices )

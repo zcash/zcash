@@ -1210,7 +1210,7 @@ int32_t prices_extract(int64_t *pricedata,int32_t firstheight,int32_t numblocks,
         if ( (pricedata[i*3+1]= komodo_pricecorrelated(rngval,ind,(uint32_t *)&pricedata[i*3],6,0,PRICES_SMOOTHWIDTH)) < 0 )
             return(-3);
     }
-    tmpbuf = (int64_t *)calloc(sizeof(int64_t),PRICES_DAYWINDOW);
+    tmpbuf = (int64_t *)calloc(sizeof(int64_t),2*PRICES_DAYWINDOW);
     for (i=0; i<numblocks; i++)
         pricedata[i*3+2] = komodo_priceave(tmpbuf,&pricedata[i*3+1],3);
     free(tmpbuf);
@@ -1283,7 +1283,7 @@ UniValue prices(const UniValue& params, bool fHelp)
                     if ( (correlated[i]= komodo_pricecorrelated(rngval,j,&prices[offset],1,0,PRICES_SMOOTHWIDTH)) < 0 )
                         throw JSONRPCError(RPC_INVALID_PARAMETER, "null correlated price");
                 }
-                tmpbuf = (int64_t *)calloc(sizeof(int64_t),PRICES_DAYWINDOW);
+                tmpbuf = (int64_t *)calloc(sizeof(int64_t),2*PRICES_DAYWINDOW);
                 for (i=0; i<maxsamples&&i<numsamples; i++)
                 {
                     offset = j*width + i;
