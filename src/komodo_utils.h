@@ -1664,19 +1664,19 @@ uint64_t komodo_ac_block_subsidy(int nHeight)
 }
 
 extern int64_t MAX_MONEY;
+void komodo_cbopretupdate(int32_t forceflag);
+void SplitStr(const std::string& strVal, std::vector<std::string> &outVals);
 
 void komodo_args(char *argv0)
 {
     extern const char *Notaries_elected1[][2];
-    std::string name,addn; char *dirname,fname[512],arg0str[64],magicstr[9]; uint8_t magic[4],extrabuf[8192],disablebits[32],*extraptr=0; FILE *fp; uint64_t val; uint16_t port; int32_t i,nonz=0,baseid,len,n,extralen = 0; uint64_t ccenables[256];
+    std::string name,addn,hexstr,symbol; char *dirname,fname[512],arg0str[64],magicstr[9]; uint8_t magic[4],extrabuf[8192],disablebits[32],*extraptr=0; FILE *fp; uint64_t val; uint16_t port; int32_t i,nonz=0,baseid,len,n,extralen = 0; uint64_t ccenables[256];
     IS_KOMODO_NOTARY = GetBoolArg("-notary", false);
     IS_STAKED_NOTARY = GetArg("-stakednotary", -1);
     if ( IS_STAKED_NOTARY != -1 && IS_KOMODO_NOTARY == true ) {
         fprintf(stderr, "Cannot be STAKED and KMD notary at the same time!\n");
         exit(0);
     }
-    MIN_RECV_SATS = GetArg("-mintxvalue",-1);
-    WHITELIST_ADDRESS = GetArg("-whitelistaddress","");
     memset(ccenables,0,sizeof(ccenables));
     memset(disablebits,0,sizeof(disablebits));
     if ( GetBoolArg("-gen", false) != 0 )
@@ -1733,7 +1733,7 @@ void komodo_args(char *argv0)
     {
         printf("KOMODO_REWIND %d\n",KOMODO_REWIND);
     }
-	  if ( name.c_str()[0] != 0 )
+    if ( name.c_str()[0] != 0 )
     {
         std::string selectedAlgo = GetArg("-ac_algo", std::string(ASSETCHAINS_ALGORITHMS[0]));
 
@@ -1810,6 +1810,23 @@ void komodo_args(char *argv0)
         ASSETCHAINS_BEAMPORT = GetArg("-ac_beam",0);
         ASSETCHAINS_CODAPORT = GetArg("-ac_coda",0);
         ASSETCHAINS_MARMARA = GetArg("-ac_marmara",0);
+        ASSETCHAINS_CBOPRET = GetArg("-ac_cbopret",0);
+        if ( ASSETCHAINS_CBOPRET != 0 )
+        {
+            SplitStr(GetArg("-ac_prices",""),  ASSETCHAINS_PRICES);
+            for (i=0; i<ASSETCHAINS_PRICES.size(); i++)
+                fprintf(stderr,"%s ",ASSETCHAINS_PRICES[i].c_str());
+            fprintf(stderr,"%d -ac_prices\n",(int32_t)ASSETCHAINS_PRICES.size());
+        }
+        hexstr = GetArg("-ac_mineropret","");
+        if ( hexstr.size() != 0 )
+        {
+            Mineropret.resize(hexstr.size()/2);
+            decode_hex(Mineropret.data(),hexstr.size()/2,(char *)hexstr.c_str());
+            for (i=0; i<Mineropret.size(); i++)
+                fprintf(stderr,"%02x",Mineropret[i]);
+            fprintf(stderr," Mineropret\n");
+        }
         if ( ASSETCHAINS_COMMISSION != 0 && ASSETCHAINS_FOUNDERS_REWARD != 0 )
         {
             fprintf(stderr,"cannot use founders reward and commission on the same chain.\n");
@@ -1948,7 +1965,7 @@ void komodo_args(char *argv0)
             fprintf(stderr,"-ac_script and -ac_marmara are mutually exclusive\n");
             exit(0);
         }
-        if ( ASSETCHAINS_ENDSUBSIDY[0] != 0 || ASSETCHAINS_REWARD[0] != 0 || ASSETCHAINS_HALVING[0] != 0 || ASSETCHAINS_DECAY[0] != 0 || ASSETCHAINS_COMMISSION != 0 || ASSETCHAINS_PUBLIC != 0 || ASSETCHAINS_PRIVATE != 0 || ASSETCHAINS_TXPOW != 0 || ASSETCHAINS_FOUNDERS != 0 || ASSETCHAINS_SCRIPTPUB.size() > 1 || ASSETCHAINS_SELFIMPORT.size() > 0 || ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 || ASSETCHAINS_TIMELOCKGTE != _ASSETCHAINS_TIMELOCKOFF|| ASSETCHAINS_ALGO != ASSETCHAINS_EQUIHASH || ASSETCHAINS_LWMAPOS != 0 || ASSETCHAINS_LASTERA > 0 || ASSETCHAINS_BEAMPORT != 0 || ASSETCHAINS_CODAPORT != 0 || ASSETCHAINS_MARMARA != 0 || nonz > 0 || ASSETCHAINS_CCLIB.size() > 0 || ASSETCHAINS_FOUNDERS_REWARD != 0 || ASSETCHAINS_NOTARY_PAY[0] != 0 || ASSETCHAINS_BLOCKTIME != 60 )
+        if ( ASSETCHAINS_ENDSUBSIDY[0] != 0 || ASSETCHAINS_REWARD[0] != 0 || ASSETCHAINS_HALVING[0] != 0 || ASSETCHAINS_DECAY[0] != 0 || ASSETCHAINS_COMMISSION != 0 || ASSETCHAINS_PUBLIC != 0 || ASSETCHAINS_PRIVATE != 0 || ASSETCHAINS_TXPOW != 0 || ASSETCHAINS_FOUNDERS != 0 || ASSETCHAINS_SCRIPTPUB.size() > 1 || ASSETCHAINS_SELFIMPORT.size() > 0 || ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 || ASSETCHAINS_TIMELOCKGTE != _ASSETCHAINS_TIMELOCKOFF|| ASSETCHAINS_ALGO != ASSETCHAINS_EQUIHASH || ASSETCHAINS_LWMAPOS != 0 || ASSETCHAINS_LASTERA > 0 || ASSETCHAINS_BEAMPORT != 0 || ASSETCHAINS_CODAPORT != 0 || ASSETCHAINS_MARMARA != 0 || nonz > 0 || ASSETCHAINS_CCLIB.size() > 0 || ASSETCHAINS_FOUNDERS_REWARD != 0 || ASSETCHAINS_NOTARY_PAY[0] != 0 || ASSETCHAINS_BLOCKTIME != 60 || ASSETCHAINS_CBOPRET != 0 || Mineropret.size() != 0 )
         {
             fprintf(stderr,"perc %.4f%% ac_pub=[%02x%02x%02x...] acsize.%d\n",dstr(ASSETCHAINS_COMMISSION)*100,ASSETCHAINS_OVERRIDE_PUBKEY33[0],ASSETCHAINS_OVERRIDE_PUBKEY33[1],ASSETCHAINS_OVERRIDE_PUBKEY33[2],(int32_t)ASSETCHAINS_SCRIPTPUB.size());
             extraptr = extrabuf;
@@ -2048,6 +2065,26 @@ void komodo_args(char *argv0)
             }
             if ( ASSETCHAINS_BLOCKTIME != 60 )
                 extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_BLOCKTIME),(void *)&ASSETCHAINS_BLOCKTIME);
+            if ( Mineropret.size() != 0 )
+            {
+                for (i=0; i<Mineropret.size(); i++)
+                    extraptr[extralen++] = Mineropret[i];
+            }
+            if ( ASSETCHAINS_CBOPRET != 0 )
+            {
+                extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_CBOPRET),(void *)&ASSETCHAINS_CBOPRET);
+                if ( ASSETCHAINS_PRICES.size() != 0 )
+                {
+                    for (i=0; i<ASSETCHAINS_PRICES.size(); i++)
+                    {
+                        symbol = ASSETCHAINS_PRICES[i];
+                        memcpy(&extraptr[extralen],(char *)symbol.c_str(),symbol.size());
+                        extralen += symbol.size();
+                    }
+                }
+                komodo_cbopretupdate(1); // will set Mineropret
+                fprintf(stderr,"This blockchain uses data produced from CoinDesk Bitcoin Price Index\n");
+            }
         }
         
         addn = GetArg("-seednode","");
@@ -2079,7 +2116,7 @@ void komodo_args(char *argv0)
 
         while ( (dirname= (char *)GetDataDir(false).string().c_str()) == 0 || dirname[0] == 0 )
         {
-            fprintf(stderr,"waiting for datadir\n");
+            fprintf(stderr,"waiting for datadir (%s)\n",dirname);
 #ifndef _WIN32
             sleep(3);
 #else

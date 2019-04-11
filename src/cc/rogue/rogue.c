@@ -158,7 +158,7 @@ int32_t flushkeystrokes_local(struct rogue_state *rs,int32_t waitflag)
 #ifdef BUILD_ROGUE
 // stubs for inside daemon
 
-void rogue_progress(struct rogue_state *rs,int32_t waitflag,uint64_t seed,char *keystrokes,int32_t num)
+int32_t rogue_progress(struct rogue_state *rs,int32_t waitflag,uint64_t seed,char *keystrokes,int32_t num)
 {
 }
 
@@ -172,15 +172,11 @@ int32_t flushkeystrokes(struct rogue_state *rs,int32_t waitflag)
 {
     if ( rs->num > 0 )
     {
-        // need to get existing keystrokes including mempool
-        // create keystrokes that are not saved
-        //rs->keytxid = rogue_progress(rs,waitflag,rs->seed,&rs->buffered[rs->lastnum],rs->num - rs->lastnum);
-        //rs->lastnum = rs->num;
-        rogue_progress(rs,waitflag,rs->seed,rs->buffered,rs->num);
-        flushkeystrokes_local(rs,waitflag);
-        memset(rs->buffered,0,sizeof(rs->buffered));
-        //rs->num = 0;
-        //rs->counter++;
+        if ( rogue_progress(rs,waitflag,rs->seed,rs->buffered,rs->num) > 0 )
+        {
+            flushkeystrokes_local(rs,waitflag);
+            memset(rs->buffered,0,sizeof(rs->buffered));
+        }
     }
     return(0);
 }

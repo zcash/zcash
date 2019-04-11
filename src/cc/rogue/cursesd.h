@@ -16,6 +16,31 @@
 #ifndef H_CURSESD_H
 #define H_CURSESD_H
 
+#define KEY_OFFSET 0x100
+#define KEY_DOWN         (KEY_OFFSET + 0x02) /* Down arrow key */
+#define KEY_UP           (KEY_OFFSET + 0x03) /* Up arrow key */
+#define KEY_LEFT         (KEY_OFFSET + 0x04) /* Left arrow key */
+#define KEY_RIGHT        (KEY_OFFSET + 0x05) /* Right arrow key */
+
+
+#define COLOR_BLACK   0
+
+#ifdef PDC_RGB        /* RGB */
+# define COLOR_RED    1
+# define COLOR_GREEN  2
+# define COLOR_BLUE   4
+#else                 /* BGR */
+# define COLOR_BLUE   1
+# define COLOR_GREEN  2
+# define COLOR_RED    4
+#endif
+
+#define COLOR_CYAN    (COLOR_BLUE | COLOR_GREEN)
+#define COLOR_MAGENTA (COLOR_RED | COLOR_BLUE)
+#define COLOR_YELLOW  (COLOR_RED | COLOR_GREEN)
+
+#define COLOR_WHITE   7
+
 #define	LINES	24
 #define	COLS	80
 
@@ -150,6 +175,17 @@ char *unctrl(char c);
 #define leaveok(win,bf) 0
 #define halfdelay(x) 0
 #define nocbreak() 0
+#define cbreak() 0
+#define curs_set(x) 0
+
+// for tetris
+#define init_pair(a,b,c) 0
+#define start_color() 0
+#define box(a,b,c) 0
+#define A_REVERSE 0
+#define COLOR_PAIR(a) 0
+#define timeout(x) 0
+// end for tetris
 
 #ifndef TRUE
 #define TRUE 1

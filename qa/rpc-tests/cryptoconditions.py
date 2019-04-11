@@ -3,7 +3,6 @@
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
 from test_framework.util import assert_equal, assert_greater_than, \
@@ -24,7 +23,6 @@ def assert_error(result):
 def generate_random_string(length):
     random_string = ''.join(choice(ascii_uppercase) for i in range(length))
     return random_string
-
 
 class CryptoConditionsTest (BitcoinTestFramework):
 
@@ -105,13 +103,13 @@ class CryptoConditionsTest (BitcoinTestFramework):
         faucet  = rpc.faucetaddress()
         assert_equal(faucet['result'], 'success')
         # verify all keys look like valid AC addrs, could be better
-        for x in ['myCCaddress', 'FaucetCCaddress', 'Faucetmarker', 'myaddress']:
+        for x in ['myCCAddress(Faucet)', 'FaucetCCAddress', 'FaucetCCTokensAddress', 'myaddress', 'FaucetNormalAddress']:
             assert_equal(faucet[x][0], 'R')
-
+    
         result  = rpc.faucetaddress(self.pubkey)
         assert_success(result)
         # test that additional CCaddress key is returned
-        for x in ['myCCaddress', 'FaucetCCaddress', 'Faucetmarker', 'myaddress', 'CCaddress']:
+        for x in ['myCCAddress(Faucet)', 'FaucetCCAddress', 'FaucetCCTokensAddress', 'myaddress', 'FaucetNormalAddress']:
             assert_equal(result[x][0], 'R')
 
         # no funds in the faucet yet
@@ -179,12 +177,12 @@ class CryptoConditionsTest (BitcoinTestFramework):
 
         dice  = rpc.diceaddress()
         assert_equal(dice['result'], 'success')
-        for x in ['myCCaddress', 'DiceCCaddress', 'Dicemarker', 'myaddress']:
+        for x in ['myCCAddress(Dice)', 'DiceCCAddress', 'DiceCCTokensAddress', 'myaddress', 'DiceNormalAddress']:
             assert_equal(dice[x][0], 'R')
 
         dice  = rpc.diceaddress(self.pubkey)
         assert_equal(dice['result'], 'success')
-        for x in ['myCCaddress', 'DiceCCaddress', 'Dicemarker', 'myaddress', 'CCaddress']:
+        for x in ['myCCAddress(Dice)', 'DiceCCAddress', 'DiceCCTokensAddress', 'myaddress', 'DiceNormalAddress']:
             assert_equal(dice[x][0], 'R')
 
         # no dice created yet
@@ -333,12 +331,12 @@ class CryptoConditionsTest (BitcoinTestFramework):
         rpc    = self.nodes[0]
         result = rpc.tokenaddress()
         assert_success(result)
-        for x in ['AssetsCCaddress', 'myCCaddress', 'Assetsmarker', 'myaddress']:
+        for x in ['myCCAddress(Tokens)', 'TokensNormalAddress', 'TokensNormalAddress', 'myaddress','TokensCCAddress']:
             assert_equal(result[x][0], 'R')
 
         result = rpc.tokenaddress(self.pubkey)
         assert_success(result)
-        for x in ['AssetsCCaddress', 'myCCaddress', 'Assetsmarker', 'myaddress', 'CCaddress']:
+        for x in ['myCCAddress(Tokens)', 'TokensNormalAddress', 'TokensNormalAddress', 'myaddress','TokensCCAddress']:
             assert_equal(result[x][0], 'R')
         # there are no tokens created yet
         result = rpc.tokenlist()
@@ -360,17 +358,6 @@ class CryptoConditionsTest (BitcoinTestFramework):
 
         result = rpc.tokenlist()
         assert_equal(result[0], tokenid)
-
-        # there are no token orders yet
-        result = rpc.tokenorders()
-        assert_equal(result, [])
-
-        # getting token balance for pubkey
-        result = rpc.tokenbalance(self.pubkey)
-        assert_success(result)
-        assert_equal(result['balance'], 0)
-        assert_equal(result['CCaddress'], 'RCRsm3VBXz8kKTsYaXKpy7pSEzrtNNQGJC')
-        assert_equal(result['tokenid'], self.pubkey)
 
         # get token balance for token with pubkey
         result = rpc.tokenbalance(tokenid, self.pubkey)
@@ -421,7 +408,7 @@ class CryptoConditionsTest (BitcoinTestFramework):
         tokenask = rpc.tokenask("100", tokenid, "7.77")
         tokenaskhex = tokenask['hex']
         tokenaskid = self.send_and_mine(tokenask['hex'], rpc)
-        result = rpc.tokenorders()
+        result = rpc.tokenorders(tokenid)
         order = result[0]
         assert order, "found order"
 
@@ -440,7 +427,7 @@ class CryptoConditionsTest (BitcoinTestFramework):
         assert txid, "found txid"
 
         # should be no token orders
-        result = rpc.tokenorders()
+        result = rpc.tokenorders(tokenid)
         assert_equal(result, [])
 
         # checking ask cancellation
@@ -448,7 +435,7 @@ class CryptoConditionsTest (BitcoinTestFramework):
         testorderid = self.send_and_mine(testorder['hex'], rpc)
         cancel = rpc.tokencancelask(tokenid, testorderid)
         self.send_and_mine(cancel["hex"], rpc)
-        result = rpc.tokenorders()
+        result = rpc.tokenorders(tokenid)
         assert_equal(result, [])
 
         # invalid numtokens bid
@@ -474,7 +461,7 @@ class CryptoConditionsTest (BitcoinTestFramework):
         tokenbid = rpc.tokenbid("100", tokenid, "10")
         tokenbidhex = tokenbid['hex']
         tokenbidid = self.send_and_mine(tokenbid['hex'], rpc)
-        result = rpc.tokenorders()
+        result = rpc.tokenorders(tokenid)
         order = result[0]
         assert order, "found order"
 
@@ -493,7 +480,7 @@ class CryptoConditionsTest (BitcoinTestFramework):
         assert txid, "found txid"
 
         # should be no token orders
-        result = rpc.tokenorders()
+        result = rpc.tokenorders(tokenid)
         assert_equal(result, [])
 
         # checking bid cancellation
@@ -501,7 +488,7 @@ class CryptoConditionsTest (BitcoinTestFramework):
         testorderid = self.send_and_mine(testorder['hex'], rpc)
         cancel = rpc.tokencancelbid(tokenid, testorderid)
         self.send_and_mine(cancel["hex"], rpc)
-        result = rpc.tokenorders()
+        result = rpc.tokenorders(tokenid)
         assert_equal(result, [])
 
         # invalid token transfer amount (have to add status to CC code!)
@@ -522,11 +509,11 @@ class CryptoConditionsTest (BitcoinTestFramework):
     def run_rewards_tests(self):
         rpc     = self.nodes[0]
         result = rpc.rewardsaddress()
-        for x in ['RewardsCCaddress', 'myCCaddress', 'Rewardsmarker', 'myaddress']:
+        for x in ['myCCAddress(Rewards)', 'myaddress', 'RewardsCCAddress', 'RewardsCCTokensAddress', 'RewardsNormalAddress']:
             assert_equal(result[x][0], 'R')
 
         result = rpc.rewardsaddress(self.pubkey)
-        for x in ['RewardsCCaddress', 'myCCaddress', 'Rewardsmarker', 'myaddress', 'CCaddress']:
+        for x in ['myCCAddress(Rewards)', 'myaddress', 'RewardsCCAddress', 'RewardsCCTokensAddress', 'RewardsNormalAddress']:
             assert_equal(result[x][0], 'R')
 
         # no rewards yet
@@ -637,12 +624,13 @@ class CryptoConditionsTest (BitcoinTestFramework):
 
         result = rpc.oraclesaddress()
         assert_success(result)
-        for x in ['OraclesCCaddress', 'Oraclesmarker', 'myCCaddress', 'myaddress']:
+
+        for x in ['OraclesCCAddress', 'OraclesNormalAddress', 'myCCAddress(Oracles)','OraclesCCTokensAddress', 'myaddress']:
             assert_equal(result[x][0], 'R')
 
         result = rpc.oraclesaddress(self.pubkey)
         assert_success(result)
-        for x in ['OraclesCCaddress', 'Oraclesmarker', 'myCCaddress', 'myaddress']:
+        for x in ['OraclesCCAddress', 'OraclesNormalAddress', 'myCCAddress(Oracles)','OraclesCCTokensAddress', 'myaddress']:
             assert_equal(result[x][0], 'R')
 
         # there are no oracles created yet
@@ -673,7 +661,6 @@ class CryptoConditionsTest (BitcoinTestFramework):
         #     result = rpc.oraclescreate("Test", "Test", f)
         #     assert_success(result)
         #     globals()["oracle_{}".format(f)] = self.send_and_mine(result['hex'], rpc)
-
 
     def run_test (self):
         print("Mining blocks...")

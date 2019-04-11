@@ -26,19 +26,21 @@ class CryptoconditionsFaucetTest(CryptoconditionsTestFramework):
 
         result  = rpc.faucetaddress()
         assert_equal(result['result'], 'success')
-        for x in result.keys():
-            print(x+": "+str(result[x]))   
+        
         # verify all keys look like valid AC addrs, could be better
-        for x in ['myCCaddress', 'FaucetCCTokensAddress', 'FaucetNormalAddress', 'myaddress']:
-            assert_equal(result[x][0], 'R')
+        for x in result.keys():
+            if x.find('ddress') > 0:
+                assert_equal(result[x][0], 'R')
 
         result  = rpc.faucetaddress(self.pubkey)
         assert_success(result)
         for x in result.keys():
             print(x+": "+str(result[x]))   
         # test that additional CCaddress key is returned
-        for x in ['myCCaddress', 'FaucetCCTokensAddress', 'FaucetNormalAddress', 'myaddress']:
-            assert_equal(result[x][0], 'R')
+
+        for x in result.keys():
+            if x.find('ddress') > 0:
+                assert_equal(result[x][0], 'R')
 
         # no funds in the faucet yet
         result = rpc.faucetget()

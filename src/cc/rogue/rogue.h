@@ -380,7 +380,7 @@ int32_t rogue_restorepack(struct rogue_state *rs);
 void restore_player(struct rogue_state *rs);
 int32_t rogue_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t num,struct rogue_player *player,int32_t sleepmillis);
 void rogue_bailout(struct rogue_state *rs);
-void rogue_progress(struct rogue_state *rs,int32_t waitflag,uint64_t seed,char *keystrokes,int32_t num);
+int32_t rogue_progress(struct rogue_state *rs,int32_t waitflag,uint64_t seed,char *keystrokes,int32_t num);
 int32_t rogue_setplayerdata(struct rogue_state *rs,char *gametxidstr);
 
 #define ROGUE_MAXTOTAL (pstats.s_str*2)

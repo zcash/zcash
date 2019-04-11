@@ -21,23 +21,27 @@ class CryptoconditionsTokenTest(CryptoconditionsTestFramework):
 
         result = rpc.tokenaddress()
         assert_success(result)
-        for x in ['TokensCCAddress', 'myCCaddress', 'myCCAddress(Tokens)', 'myaddress', 'TokensNormalAddress']:
-            assert_equal(result[x][0], 'R')
+        for x in result.keys():
+            if x.find('ddress') > 0:
+                assert_equal(result[x][0], 'R')
 
         result = rpc.tokenaddress(self.pubkey)
         assert_success(result)
-        for x in ['TokensCCAddress', 'myCCaddress', 'myCCAddress(Tokens)', 'myaddress', 'TokensNormalAddress']:
-            assert_equal(result[x][0], 'R')
+        for x in result.keys():
+            if x.find('ddress') > 0:
+                assert_equal(result[x][0], 'R')
 
         result = rpc.assetsaddress()
         assert_success(result)
-        for x in ['AssetsCCAddress', 'myCCaddress', 'myCCAddress(Assets)', 'myaddress', 'AssetsNormalAddress']:
-            assert_equal(result[x][0], 'R')
+        for x in result.keys():
+            if x.find('ddress') > 0:
+                assert_equal(result[x][0], 'R')
 
         result = rpc.assetsaddress(self.pubkey)
         assert_success(result)
-        for x in ['AssetsCCAddress', 'myCCaddress', 'myCCAddress(Assets)', 'myaddress', 'AssetsNormalAddress']:
-            assert_equal(result[x][0], 'R')
+        for x in result.keys():
+            if x.find('ddress') > 0:
+                assert_equal(result[x][0], 'R')
 
         # there are no tokens created yet
         result = rpc.tokenlist()

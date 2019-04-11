@@ -38,12 +38,21 @@ std::string MYCCLIBNAME = (char *)"rogue";
 #elif BUILD_CUSTOMCC
 #include "customcc.h"
 
+#elif BUILD_GAMESCC
+#include "gamescc.h"
+
 #else
 #define EVAL_SUDOKU 17
 #define EVAL_MUSIG 18
 #define EVAL_DILITHIUM 19
 std::string MYCCLIBNAME = (char *)"sudoku";
 #endif
+
+#ifndef BUILD_GAMESCC
+void komodo_netevent(std::vector<uint8_t> payload) {}
+#endif
+
+extern std::string MYCCLIBNAME;
 
 char *CClib_name() { return((char *)MYCCLIBNAME.c_str()); }
 
@@ -72,6 +81,8 @@ CClib_methods[] =
     { (char *)"rogue", (char *)"setname", (char *)"pname", 1, 1, 'N', EVAL_ROGUE },
     { (char *)"rogue", (char *)"extract", (char *)"gametxid [pubkey]", 1, 2, 'X', EVAL_ROGUE },
 #elif BUILD_CUSTOMCC
+    RPC_FUNCS
+#elif BUILD_GAMESCC
     RPC_FUNCS
 #else
     { (char *)"sudoku", (char *)"gen", (char *)"<no args>", 0, 0, 'G', EVAL_SUDOKU },
@@ -184,7 +195,7 @@ cJSON *cclib_reparse(int32_t *nump,char *jsonstr) // assumes origparams will be 
 UniValue CClib_method(struct CCcontract_info *cp,char *method,char *jsonstr)
 {
     UniValue result(UniValue::VOBJ); uint64_t txfee = 10000; int32_t m; cJSON *params = cclib_reparse(&m,jsonstr);
-    //fprintf(stderr,"method.(%s) -> (%s)\n",jsonstr!=0?jsonstr:"",params!=0?jprint(params,0):"");
+    fprintf(stderr,"method.(%s) -> (%s)\n",jsonstr!=0?jsonstr:"",params!=0?jprint(params,0):"");
 #ifdef BUILD_ROGUE
     if ( cp->evalcode == EVAL_ROGUE )
     {
@@ -221,6 +232,8 @@ UniValue CClib_method(struct CCcontract_info *cp,char *method,char *jsonstr)
         }
     }
 #elif BUILD_CUSTOMCC
+    CUSTOM_DISPATCH
+#elif BUILD_GAMESCC
     CUSTOM_DISPATCH
 #else
     if ( cp->evalcode == EVAL_SUDOKU )
@@ -338,7 +351,7 @@ UniValue CClib_info(struct CCcontract_info *cp)
 UniValue CClib(struct CCcontract_info *cp,char *method,char *jsonstr)
 {
     UniValue result(UniValue::VOBJ); int32_t i; std::string rawtx; cJSON *params;
-    //printf("CClib params.(%s)\n",jsonstr!=0?jsonstr:"");
+//printf("CClib params.(%s)\n",jsonstr!=0?jsonstr:"");
     for (i=0; i<sizeof(CClib_methods)/sizeof(*CClib_methods); i++)
     {
         if ( cp->evalcode == CClib_methods[i].evalcode && strcmp(method,CClib_methods[i].method) == 0 )
@@ -356,7 +369,7 @@ UniValue CClib(struct CCcontract_info *cp,char *method,char *jsonstr)
         }
     }
     result.push_back(Pair("result","error"));
-    result.push_back(Pair("method",CClib_methods[i].method));
+    result.push_back(Pair("method",method));
     result.push_back(Pair("error","method not found"));
     return(result);
 }
@@ -420,6 +433,8 @@ bool CClib_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
         return(rogue_validate(cp,height,eval,tx));
 #elif BUILD_CUSTOMCC
         return(custom_validate(cp,height,eval,tx));
+#elif BUILD_GAMESCC
+        return(games_validate(cp,height,eval,tx));
 #else
         if ( cp->evalcode == EVAL_SUDOKU )
             return(sudoku_validate(cp,height,eval,tx));
@@ -492,6 +507,8 @@ int64_t AddCClibInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubK
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     GetCCaddress(cp,coinaddr,pk);
     SetCCunspents(unspentOutputs,coinaddr);
+    if ( maxinputs > CC_MAXVINS )
+        maxinputs = CC_MAXVINS;
     if ( maxinputs != 0 )
         threshold = total/maxinputs;
     else threshold = total;
@@ -674,6 +691,10 @@ int32_t cclib_parsehash(uint8_t *hash32,cJSON *item,int32_t len)
 
 #elif BUILD_CUSTOMCC
 #include "customcc.cpp"
+
+#elif BUILD_GAMESCC
+#include "rogue/cursesd.c"
+#include "gamescc.cpp"
 
 #else
 #include "sudoku.cpp"

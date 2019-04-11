@@ -102,6 +102,9 @@ enum BlockStatus: uint32_t {
     //! Scripts & signatures ok. Implies all parents are also at least SCRIPTS.
     BLOCK_VALID_SCRIPTS      =    5,
 
+    // flag to check if contextual check block has passed in Accept block, if it has not check at connect block. 
+    BLOCK_VALID_CONTEXT      =    6,
+    
     //! All validity bits.
     BLOCK_VALID_MASK         =   BLOCK_VALID_HEADER | BLOCK_VALID_TREE | BLOCK_VALID_TRANSACTIONS |
                                  BLOCK_VALID_CHAIN | BLOCK_VALID_SCRIPTS,
@@ -115,7 +118,7 @@ enum BlockStatus: uint32_t {
     BLOCK_FAILED_MASK        =   BLOCK_FAILED_VALID | BLOCK_FAILED_CHILD,
 
     BLOCK_ACTIVATES_UPGRADE  =   128, //! block activates a network upgrade
-    BLOCK_IN_TMPFILE = 256
+    BLOCK_IN_TMPFILE = 256 
 };
 
 //! Short-hand for the highest consensus validity we implement.

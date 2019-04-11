@@ -977,7 +977,7 @@ unsigned int GetP2SHSigOpCount(const CTransaction& tx, const CCoinsViewCache& in
  * Ensure that a coinbase transaction is structured according to the consensus rules of the
  * chain
  */
-bool ContextualCheckCoinbaseTransaction(const CTransaction& tx, const int nHeight)
+bool ContextualCheckCoinbaseTransaction(const CBlock *block,CBlockIndex * const previndex,const CTransaction& tx, const int nHeight)
 {
     // if time locks are on, ensure that this coin base is time locked exactly as it should be
     if (((uint64_t)(tx.GetValueOut()) >= ASSETCHAINS_TIMELOCKGTE) ||
@@ -1014,6 +1014,15 @@ bool ContextualCheckCoinbaseTransaction(const CTransaction& tx, const int nHeigh
         }
         return(false);
     }
+    else if ( ASSETCHAINS_MARMARA != 0 && nHeight > 0 && (nHeight & 1) == 0 )
+    {
+        
+    }
+    else if ( ASSETCHAINS_CBOPRET != 0 && nHeight > 0 && tx.vout.size() > 0 )
+    {
+        if ( komodo_opretvalidate(block,previndex,nHeight,tx.vout[tx.vout.size()-1].scriptPubKey) < 0 )
+            return(false);
+    }
     return(true);
 }
 
@@ -1026,7 +1035,7 @@ bool ContextualCheckCoinbaseTransaction(const CTransaction& tx, const int nHeigh
  *    and ContextualCheckBlock (which calls this function).
  * 3. The isInitBlockDownload argument is only to assist with testing.
  */
-bool ContextualCheckTransaction(
+bool ContextualCheckTransaction(const CBlock *block, CBlockIndex * const previndex,
         const CTransaction& tx,
         CValidationState &state,
         const int nHeight,
@@ -1162,7 +1171,7 @@ bool ContextualCheckTransaction(
 
     if (tx.IsCoinBase())
     {
-        if (!ContextualCheckCoinbaseTransaction(tx, nHeight))
+        if (!ContextualCheckCoinbaseTransaction(block,previndex,tx, nHeight))
             return state.DoS(100, error("CheckTransaction(): invalid script data for coinbase time lock"),
                                 REJECT_INVALID, "bad-txns-invalid-script-data-for-coinbase-time-lock");
     }
@@ -1260,9 +1269,6 @@ bool CheckTransaction(uint32_t tiptime,const CTransaction& tx, CValidationState 
         return true;
     }
 }
-
-extern char NOTARYADDRS[64][36];
-extern uint8_t NUM_NOTARIES;
 
 int32_t komodo_isnotaryvout(char *coinaddr) // from ac_private chains only
 {
@@ -1383,7 +1389,7 @@ bool CheckTransactionWithoutProofVerification(uint32_t tiptime,const CTransactio
             }
         }
         if ( txout.scriptPubKey.size() > IGUANA_MAXSCRIPTSIZE )
-            return state.DoS(100, error("CheckTransaction(): txout.scriptPubKey.size() too big"),REJECT_INVALID, "bad-txns-vout-negative");
+            return state.DoS(100, error("CheckTransaction(): txout.scriptPubKey.size() too big"),REJECT_INVALID, "bad-txns-opret-too-big");
         nValueOut += txout.nValue;
         if (!MoneyRange(nValueOut))
             return state.DoS(100, error("CheckTransaction(): txout total out of range"),
@@ -1670,7 +1676,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
     }
     // DoS level set to 10 to be more forgiving.
     // Check transaction contextually against the set of consensus rules which apply in the next block to be mined.
-    if (!fSkipExpiry && !ContextualCheckTransaction(tx, state, nextBlockHeight, (dosLevel == -1) ? 10 : dosLevel))
+    if (!fSkipExpiry && !ContextualCheckTransaction(0,0,tx, state, nextBlockHeight, (dosLevel == -1) ? 10 : dosLevel))
     {
         return error("AcceptToMemoryPool: ContextualCheckTransaction failed");
     }
@@ -2958,6 +2964,33 @@ void DisconnectNotarisations(const CBlock &block)
     }
 }
 
+int8_t GetAddressType(const CScript &scriptPubKey, CTxDestination &vDest, txnouttype &txType, vector<vector<unsigned char>> &vSols)
+{
+    int8_t keyType = 0;
+    // some non-standard types, like time lock coinbases, don't solve, but do extract
+    if ( (Solver(scriptPubKey, txType, vSols) || ExtractDestination(scriptPubKey, vDest)) )
+    {
+        keyType = 1;
+        if (vDest.which())
+        {
+            // if we failed to solve, and got a vDest, assume P2PKH or P2PK address returned
+            CKeyID kid;
+            if (CBitcoinAddress(vDest).GetKeyID(kid))
+            {
+                vSols.push_back(vector<unsigned char>(kid.begin(), kid.end()));
+            }
+        }
+        else if (txType == TX_SCRIPTHASH)
+        {
+            keyType = 2;
+        }
+        else if (txType == TX_CRYPTOCONDITION )
+        {
+            keyType = 3;
+        }
+    }
+    return keyType;
+}
 
 bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex, CCoinsViewCache& view, bool* pfClean)
 {
@@ -2993,20 +3026,9 @@ bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex
                 vector<vector<unsigned char>> vSols;
                 CTxDestination vDest;
                 txnouttype txType = TX_PUBKEYHASH;
-                int keyType = 1;
-                if ((Solver(out.scriptPubKey, txType, vSols) || ExtractDestination(out.scriptPubKey, vDest)) && txType != TX_MULTISIG) {
-                    if (vDest.which())
-                    {
-                        CKeyID kid;
-                        if (CBitcoinAddress(vDest).GetKeyID(kid))
-                        {
-                            vSols.push_back(vector<unsigned char>(kid.begin(), kid.end()));
-                        }
-                    }
-                    else if (txType == TX_SCRIPTHASH)
-                    {
-                        keyType =  2;
-                    }
+                int keyType = GetAddressType(out.scriptPubKey, vDest, txType, vSols);
+                if ( keyType != 0 )
+                {
                     for (auto addr : vSols)
                     {
                         uint160 addrHash = addr.size() == 20 ? uint160(addr) : Hash160(addr);
@@ -3063,23 +3085,9 @@ bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex
                     vector<vector<unsigned char>> vSols;
                     CTxDestination vDest;
                     txnouttype txType = TX_PUBKEYHASH;
-                    int keyType = 1;
-                    // some non-standard types, like time lock coinbases, don't solve, but do extract
-                    if ((Solver(prevout.scriptPubKey, txType, vSols) || ExtractDestination(prevout.scriptPubKey, vDest)))
+                    int keyType = GetAddressType(prevout.scriptPubKey, vDest, txType, vSols);
+                    if ( keyType != 0 )
                     {
-                        // if we failed to solve, and got a vDest, assume P2PKH or P2PK address returned
-                        if (vDest.which())
-                        {
-                            CKeyID kid;
-                            if (CBitcoinAddress(vDest).GetKeyID(kid))
-                            {
-                                vSols.push_back(vector<unsigned char>(kid.begin(), kid.end()));
-                            }
-                        }
-                        else if (txType == TX_SCRIPTHASH)
-                        {
-                            keyType =  2;
-                        }
                         for (auto addr : vSols)
                         {
                             uint160 addrHash = addr.size() == 20 ? uint160(addr) : Hash160(addr);
@@ -3265,14 +3273,17 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         //fprintf(stderr,"checkblock failure in connectblock futureblock.%d\n",futureblock);
         return false;
     }
-    // check pindex->CONTEXT_VALIDATED flag
-    if ( fCheckPOW != 0 && !ContextualCheckBlock(block, state, pindex->pprev) ) // Activate Jan 15th, 2019
+    if ( fCheckPOW != 0 && (pindex->nStatus & BLOCK_VALID_CONTEXT) != BLOCK_VALID_CONTEXT ) // Activate Jan 15th, 2019
     {
-        fprintf(stderr,"ContextualCheckBlock failed ht.%d\n",(int32_t)pindex->GetHeight());
-        if ( pindex->nTime > 1547510400 )
-            return false;
-        fprintf(stderr,"grandfathered exception, until jan 15th 2019\n");
+        if ( !ContextualCheckBlock(block, state, pindex->pprev) )
+        {
+            fprintf(stderr,"ContextualCheckBlock failed ht.%d\n",(int32_t)pindex->GetHeight());
+            if ( pindex->nTime > 1547510400 )
+                return false;
+            fprintf(stderr,"grandfathered exception, until jan 15th 2019\n");
+        } else pindex->nStatus |= BLOCK_VALID_CONTEXT;
     }
+    
     // Do this here before the block is moved to the main block files.
     if ( ASSETCHAINS_NOTARY_PAY[0] != 0 && pindex->GetHeight() > 10 )
     {
@@ -3436,8 +3447,8 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
             if (fAddressIndex || fSpentIndex)
             {
-                for (size_t j = 0; j < tx.vin.size(); j++) {
-
+                for (size_t j = 0; j < tx.vin.size(); j++) 
+                {
                     const CTxIn input = tx.vin[j];
                     const CTxOut &prevout = view.GetOutputFor(tx.vin[j]);
 
@@ -3445,25 +3456,9 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                     CTxDestination vDest;
                     txnouttype txType = TX_PUBKEYHASH;
                     uint160 addrHash;
-                    int keyType = 0;
-                    // some non-standard types, like time lock coinbases, don't solve, but do extract
-                    if ((Solver(prevout.scriptPubKey, txType, vSols) || ExtractDestination(prevout.scriptPubKey, vDest)))
+                    int keyType = GetAddressType(prevout.scriptPubKey, vDest, txType, vSols);
+                    if ( keyType != 0 )
                     {
-                        keyType = 1;
-
-                        // if we failed to solve, and got a vDest, assume P2PKH or P2PK address returned
-                        if (vDest.which())
-                        {
-                            CKeyID kid;
-                            if (CBitcoinAddress(vDest).GetKeyID(kid))
-                            {
-                                vSols.push_back(vector<unsigned char>(kid.begin(), kid.end()));
-                            }
-                        }
-                        else if (txType == TX_SCRIPTHASH)
-                        {
-                            keyType =  2;
-                        }
                         for (auto addr : vSols)
                         {
                             addrHash = addr.size() == 20 ? uint160(addr) : Hash160(addr);
@@ -3473,12 +3468,12 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                             // remove address from unspent index
                             addressUnspentIndex.push_back(make_pair(CAddressUnspentKey(keyType, addrHash, input.prevout.hash, input.prevout.n), CAddressUnspentValue()));
                         }
-                    }
 
-                    if (fSpentIndex) {
-                        // add the spent index to determine the txid and input that spent an output
-                        // and to find the amount and address from an input
-                        spentIndex.push_back(make_pair(CSpentIndexKey(input.prevout.hash, input.prevout.n), CSpentIndexValue(txhash, j, pindex->GetHeight(), prevout.nValue, keyType, addrHash)));
+                        if (fSpentIndex) {
+                            // add the spent index to determine the txid and input that spent an output
+                            // and to find the amount and address from an input
+                            spentIndex.push_back(make_pair(CSpentIndexKey(input.prevout.hash, input.prevout.n), CSpentIndexValue(txhash, j, pindex->GetHeight(), prevout.nValue, keyType, addrHash)));
+                        }
                     }
                 }
             }
@@ -3529,23 +3524,9 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                 vector<vector<unsigned char>> vSols;
                 CTxDestination vDest;
                 txnouttype txType = TX_PUBKEYHASH;
-                int keyType = 1;
-                // some non-standard types, like time lock coinbases, don't solve, but do extract
-                if ((Solver(out.scriptPubKey, txType, vSols) || ExtractDestination(out.scriptPubKey, vDest)) && txType != TX_MULTISIG)
+                int keyType = GetAddressType(out.scriptPubKey, vDest, txType, vSols);
+                if ( keyType != 0 )
                 {
-                    // if we failed to solve, and got a vDest, assume P2PKH or P2PK address returned
-                    if (vDest.which())
-                    {
-                        CKeyID kid;
-                        if (CBitcoinAddress(vDest).GetKeyID(kid))
-                        {
-                            vSols.push_back(vector<unsigned char>(kid.begin(), kid.end()));
-                        }
-                    }
-                    else if (txType == TX_SCRIPTHASH)
-                    {
-                        keyType =  2;
-                    }
                     for (auto addr : vSols)
                     {
                         addrHash = addr.size() == 20 ? uint160(addr) : Hash160(addr);
@@ -4111,7 +4092,14 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
         GetMainSignals().BlockChecked(*pblock, state);
         if (!rv) {
             if (state.IsInvalid())
+            {
                 InvalidBlockFound(pindexNew, state);
+                /*if ( ASSETCHAINS_CBOPRET != 0 )
+                {
+                    pindexNew->nStatus &= ~BLOCK_FAILED_MASK;
+                    fprintf(stderr,"reconsiderblock %d\n",(int32_t)pindexNew->GetHeight());
+                }*/
+            }
             return error("ConnectTip(): ConnectBlock %s failed", pindexNew->GetBlockHash().ToString());
         }
         mapBlockSource.erase(pindexNew->GetBlockHash());
@@ -5157,7 +5145,7 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, CBlockIn
         const CTransaction& tx = block.vtx[i];
 
         // Check transaction contextually against consensus rules at block height
-        if (!ContextualCheckTransaction(tx, state, nHeight, 100)) {
+        if (!ContextualCheckTransaction(&block,pindexPrev,tx, state, nHeight, 100)) {
             return false; // Failure reason has been set in validation state object
         }
 
@@ -5202,7 +5190,7 @@ bool AcceptBlockHeader(int32_t *futureblockp,const CBlockHeader& block, CValidat
             miSelf->second = pindex = AddToBlockIndex(block);
         if (ppindex)
             *ppindex = pindex;
-        if ( pindex != 0 && pindex->nStatus & BLOCK_FAILED_MASK )
+        if ( pindex != 0 && (pindex->nStatus & BLOCK_FAILED_MASK) != 0 )
         {
             if ( ASSETCHAINS_CC == 0 )//&& (ASSETCHAINS_PRIVATE == 0 || KOMODO_INSYNC >= Params().GetConsensus().vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight) )
                 return state.Invalid(error("%s: block is marked invalid", __func__), 0, "duplicate");
@@ -5324,7 +5312,8 @@ bool AcceptBlock(int32_t *futureblockp,CBlock& block, CValidationState& state, C
 
     // See method docstring for why this is always disabled
     auto verifier = libzcash::ProofVerifier::Disabled();
-    if ((!CheckBlock(futureblockp,pindex->GetHeight(),pindex,block, state, verifier,0)) || !ContextualCheckBlock(block, state, pindex->pprev))
+    bool fContextualCheckBlock = ContextualCheckBlock(block, state, pindex->pprev);
+    if ( (!CheckBlock(futureblockp,pindex->GetHeight(),pindex,block, state, verifier,0)) || !fContextualCheckBlock )
     {
         static int32_t saplinght = -1;
         CBlockIndex *tmpptr;
@@ -5349,6 +5338,8 @@ bool AcceptBlock(int32_t *futureblockp,CBlock& block, CValidationState& state, C
             return false;
         }
     }
+    if ( fContextualCheckBlock )
+        pindex->nStatus |= BLOCK_VALID_CONTEXT;
 
     int nHeight = pindex->GetHeight();
     // Temp File fix. LABS has been using this for ages with no bad effects.
@@ -7035,8 +7026,19 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         Misbehaving(pfrom->GetId(), 1);
         return false;
     }
-
-
+    else if ( strCommand == "events" )
+    {
+        int32_t i;
+        if ( ASSETCHAINS_CCLIB != "gamescc" )
+        {
+            Misbehaving(pfrom->GetId(), 1);
+            return false;
+        }
+        std::vector<uint8_t> payload;
+        vRecv >> payload;
+        komodo_netevent(payload);
+        return(true);
+    }
     else if (strCommand == "verack")
     {
         pfrom->SetRecvVersion(min(pfrom->nVersion, PROTOCOL_VERSION));
