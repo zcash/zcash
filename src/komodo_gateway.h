@@ -2570,7 +2570,7 @@ int64_t komodo_priceave(int64_t *buf,int64_t *correlated,int32_t cskip)
         if ( i == PRICES_DAYWINDOW/2 )
             halfave = (sum / (PRICES_DAYWINDOW/2));
     }
-    memcp(buf,&buf[PRICES_DAYWINDOW],PRICES_DAYWINDOW*sizeof(*buf));
+    memcpy(buf,&buf[PRICES_DAYWINDOW],PRICES_DAYWINDOW*sizeof(*buf));
     price = sum / PRICES_DAYWINDOW;
     if ( halfave == price )
         return(price);
