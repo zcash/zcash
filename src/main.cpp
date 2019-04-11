@@ -4233,22 +4233,22 @@ static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMo
     const CBlockIndex *pindexOldTip = chainActive.Tip();
     const CBlockIndex *pindexFork = chainActive.FindFork(pindexMostWork);
 
+    // stop trying to reorg if the reorged chain is before last notarized height. 
+    // stay on the same chain tip! 
+    int32_t notarizedht,prevMoMheight; uint256 notarizedhash,txid;
+    notarizedht = komodo_notarized_height(&prevMoMheight,&notarizedhash,&txid);
+    if ( pindexFork->GetHeight() < notarizedht )
+    {
+        fprintf(stderr,"pindexFork->GetHeight().%d is < notarizedht %d, so ignore it\n",(int32_t)pindexFork->GetHeight(),notarizedht);
+        return false;
+    }
     // - On ChainDB initialization, pindexOldTip will be null, so there are no removable blocks.
     // - If pindexMostWork is in a chain that doesn't have the same genesis block as our chain,
     //   then pindexFork will be null, and we would need to remove the entire chain including
     //   our genesis block. In practice this (probably) won't happen because of checks elsewhere.
     auto reorgLength = pindexOldTip ? pindexOldTip->GetHeight() - (pindexFork ? pindexFork->GetHeight() : -1) : 0;
     assert(MAX_REORG_LENGTH > 0);//, "We must be able to reorg some distance");
-    
-    int32_t notarizedht,prevMoMheight; uint256 notarizedhash,txid;
-    notarizedht = komodo_notarized_height(&prevMoMheight,&notarizedhash,&txid);
-    if ( pindexFork->GetHeight() < notarizedht )
-    {
-        fprintf(stderr,"pindexFork->GetHeight().%d is < notarizedht %d, so ignore it\n",(int32_t)pindexFork->GetHeight(),notarizedht);
-        pindexFork = pindexOldTip;
-    }
-    
-    if (reorgLength > MAX_REORG_LENGTH)
+    if ( reorgLength > MAX_REORG_LENGTH)
     {
         auto msg = strprintf(_(
                                "A block chain reorganization has been detected that would roll back %d blocks! "
