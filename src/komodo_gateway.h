@@ -2670,7 +2670,8 @@ void komodo_pricesupdate(int32_t height,CBlock *pblock)
                                             fprintf(stderr,"error fwrite smoothed for ht.%d ind.%d\n",height,ind);
                                         else
                                         {
-                                            fprintf(stderr,"%.8f ",(double)smoothed/COIN);
+                                            if ( ind == 36 )
+                                            fprintf(stderr,"(%.8f %.8f) ",(double)ptr64[PRICES_DAYWINDOW*3-2]/COIN,(double)smoothed/COIN);
                                             fflush(PRICES[ind].fp);
                                         }
                                     } else fprintf(stderr,"error price_smoothed ht.%d ind.%d\n",height,ind);
