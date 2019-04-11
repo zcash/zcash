@@ -88,6 +88,5 @@ void komodo_netevent(std::vector<uint8_t> payload);
 #define PRICES_SMOOTHWIDTH 1
 int32_t komodo_priceind(char *symbol);
 void komodo_pricesinit();
-void komodo_pricesupdate(int32_t height,CBlock *pblock);
 
 #endif

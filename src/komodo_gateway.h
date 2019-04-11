@@ -2582,6 +2582,12 @@ void komodo_pricesupdate(int32_t height,CBlock *pblock)
         for (i=0; i<numprices; i++)
             fprintf(stderr,"%u ",rawprices[i]);
         fprintf(stderr,"numprices.%d\n",numprices);
+        if ( PRICES[0].fp != 0 )
+        {
+            fseek(PRICES[0].fp,height * numprices * sizeof(uint32_t),SEEK_SET);
+            if ( fwrite(rawprices,sizeof(uint32_t),numprices,PRICES[0].fp) != numprices )
+                fprintf(stderr,"error writing rawprices for ht.%d\n",height);
+        }
     } else fprintf(stderr,"numprices mismatch\n");
 
 }
