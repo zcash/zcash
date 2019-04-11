@@ -3905,7 +3905,8 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
         if ( block.GetHash() == notarizedhash )
         {
             fprintf(stderr,"DisconnectTip trying to disconnect notarized block at ht.%d\n",(int32_t)pindexDelete->GetHeight());
-            return(false);
+            return state.DoS(100, error("AcceptBlock(): DisconnectTip trying to disconnect notarized blockht.%d",(int32_t)pindexDelete->GetHeight()),
+                        REJECT_INVALID, "past-notarized-height");
         }
     }
     // Apply the block atomically to the chain state.
@@ -4243,7 +4244,8 @@ static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMo
     if ( pindexFork->GetHeight() < notarizedht )
     {
         fprintf(stderr,"pindexFork->GetHeight().%d is < notarizedht %d, so ignore it\n",(int32_t)pindexFork->GetHeight(),notarizedht);
-        return false;
+        return state.DoS(100, error("ActivateBestChainStep(): pindexFork->GetHeight().%d is < notarizedht %d, so ignore it",(int32_t)pindexFork->GetHeight(),notarizedht),
+                    REJECT_INVALID, "past-notarized-height");
     }
     // - On ChainDB initialization, pindexOldTip will be null, so there are no removable blocks.
     // - If pindexMostWork is in a chain that doesn't have the same genesis block as our chain,
