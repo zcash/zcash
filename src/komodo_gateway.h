@@ -2028,20 +2028,20 @@ int32_t get_stockprices(uint32_t now,uint32_t *prices,std::vector<std::string> s
                 obj = jitem(json,i);
                 if ( (symbol= jstr(obj,(char *)"symbol")) != 0 )
                 {
-                    timestamp = j64bits(obj,(char *)"time"); 
                     uprice = jdouble(obj,(char *)"price")*100 + 0.0049;
                     prices[i] = uprice;
+                    /*timestamp = j64bits(obj,(char *)"time");
                     if ( timestamp > now+60 || timestamp < now-ASSETCHAINS_BLOCKTIME )
                     {
                         fprintf(stderr,"time error.%d (%u vs %u)\n",timestamp-now,timestamp,now);
                         retval = -1;
-                    }
+                    }*/
                     if ( symbols[i] != symbol )
                     {
                         retval = -1;
                         fprintf(stderr,"MISMATCH.");
                     }
-                    fprintf(stderr,"(%s %u).%d ",symbol,uprice,timestamp-now);
+                    fprintf(stderr,"(%s %u) ",symbol,uprice);
                 }
             }
             fprintf(stderr,"numstocks.%d\n",n);
