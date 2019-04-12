@@ -2028,7 +2028,7 @@ int32_t get_stockprices(uint32_t now,uint32_t *prices,std::vector<std::string> s
                 obj = jitem(json,i);
                 if ( (symbol= jstr(obj,(char *)"symbol")) != 0 )
                 {
-                    timestamp = juint(obj,(char *)"time");
+                    timestamp = jdouble(obj,(char *)"time");
                     uprice = jdouble(obj,(char *)"price")*100 + 0.0049;
                     prices[i] = uprice;
                     if ( timestamp > now+60 || timestamp < now-ASSETCHAINS_BLOCKTIME )
@@ -2669,7 +2669,6 @@ void komodo_pricesinit()
     {
         if ( komodo_pricename(PRICES[i].symbol,i) == 0 )
             break;
-        fprintf(stderr,"i.%d %s\n",i,PRICES[i].symbol);
         if ( i == 0 )
             strcpy(PRICES[i].symbol,"rawprices");
         pricefname = pricesdir / PRICES[i].symbol;
