@@ -39,11 +39,12 @@ static int cmpCostDesc(const void *a, const void *b)
 {
     int retval;
     retval = (int) ( *(unsigned long*)b - *(unsigned long*)a );
-    //if ( retval != 0 )
+    return(retval);
+    /*if ( retval != 0 )
         return(retval);
     else if ( (uint64_t)a < (uint64_t)b ) // jl777 prevent nondeterminism
         return(-1);
-    else return(1);
+    else return(1);*/
 }
 
 
