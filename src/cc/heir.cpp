@@ -399,7 +399,7 @@ uint256 _FindLatestFundingTx(uint256 fundingtxid, uint8_t& funcId, uint256 &toke
     
     //char markeraddr[64];
     //CCtxidaddr(markeraddr, fundingtxid);
-    //SetCCunspents(unspentOutputs, markeraddr);
+    //SetCCunspents(unspentOutputs, markeraddr,true);
     
     hasHeirSpendingBegun = 0;
     funcId = 0;
@@ -429,7 +429,7 @@ uint256 _FindLatestFundingTx(uint256 fundingtxid, uint8_t& funcId, uint256 &toke
     char coinaddr[64];
     GetCCaddress1of2(cp, coinaddr, ownerPubkey, heirPubkey); // get the address of cryptocondition '1 of 2 pubkeys'
     
-    SetCCunspents(unspentOutputs, coinaddr);				 // get vector with tx's with unspent vouts of 1of2pubkey address:
+    SetCCunspents(unspentOutputs, coinaddr,true);				 // get vector with tx's with unspent vouts of 1of2pubkey address:
     //std::cerr << "FindLatestFundingTx() using 1of2address=" << coinaddr << " unspentOutputs.size()=" << unspentOutputs.size() << '\n';
     
     int32_t maxBlockHeight = 0; // max block height
@@ -514,11 +514,11 @@ template <class Helper> int64_t Add1of2AddressInputs(struct CCcontract_info* cp,
     
     char coinaddr[64];
     Helper::GetCoinsOrTokensCCaddress1of2(coinaddr, ownerPubkey, heirPubkey);   // get address of cryptocondition '1 of 2 pubkeys'
-    SetCCunspents(unspentOutputs, coinaddr);
+    SetCCunspents(unspentOutputs, coinaddr,true);
     
     //   char markeraddr[64];
     //   CCtxidaddr(markeraddr, fundingtxid);
-    //   SetCCunspents(unspentOutputs, markeraddr);
+    //   SetCCunspents(unspentOutputs, markeraddr,true);
     
     std::cerr << "Add1of2AddressInputs() using 1of2addr=" << coinaddr << " unspentOutputs.size()=" << unspentOutputs.size() << std::endl;
     
@@ -569,7 +569,7 @@ template <class Helper> int64_t LifetimeHeirContractFunds(struct CCcontract_info
     Helper::GetCoinsOrTokensCCaddress1of2(coinaddr, ownerPubkey, heirPubkey); // get the address of cryptocondition '1 of 2 pubkeys'
     
     std::vector<std::pair<CAddressIndexKey, CAmount>> addressIndexes;
-    SetCCtxids(addressIndexes, coinaddr);
+    SetCCtxids(addressIndexes, coinaddr,true);
     
     //fprintf(stderr,"LifetimeHeirContractFunds() scan lifetime of %s\n",coinaddr);
     int64_t total = 0;
@@ -1053,7 +1053,7 @@ UniValue HeirInfo(uint256 fundingtxid)
     
     //char markeraddr[64];
     //CCtxidaddr(markeraddr, fundingtxid);
-    //SetCCunspents(unspentOutputs, markeraddr);
+    //SetCCunspents(unspentOutputs, markeraddr,true);
     
     // get initial funding tx and set it as initial lasttx:
     if (myGetTransaction(fundingtxid, fundingtx, hashBlock) && fundingtx.vout.size()) {
@@ -1218,7 +1218,7 @@ void _HeirList(struct CCcontract_info *cp, UniValue &result)
     char markeraddr[64];
 
 	GetCCaddress(cp, markeraddr, GetUnspendable(cp, NULL));
-    SetCCunspents(unspentOutputs, markeraddr);
+    SetCCunspents(unspentOutputs, markeraddr,true);
     
     //std::cerr << "HeirList() finding heir marker from unspendable addr=" << markeraddr << " unspentOutputs.size()=" << unspentOutputs.size() << '\n';
     

@@ -16,55 +16,6 @@
 #include "CCassets.h"
 #include "CCtokens.h"
 
-/* use AddTokenCCInputs instead
-int64_t AddAssetInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,uint256 assetid,int64_t total,int32_t maxinputs)
-{
-    char coinaddr[64],destaddr[64]; int64_t threshold,nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t j,vout,n = 0;
-    std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
-    GetCCaddress(cp,coinaddr,pk);
-    SetCCunspents(unspentOutputs,coinaddr);
-    
-	threshold = total/(maxinputs!=0?maxinputs:64); // TODO: is maxinputs really not over 64, what if i want to calc total balance?
-
-    for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
-    {
-        txid = it->first.txhash;
-        vout = (int32_t)it->first.index;
-        
-		if (it->second.satoshis < threshold)
-            continue;
-
-        for (j=0; j<mtx.vin.size(); j++)
-            if (txid == mtx.vin[j].prevout.hash && vout == mtx.vin[j].prevout.n)
-                break;
-        
-		if( j != mtx.vin.size() )
-            continue;
-
-        if( GetTransaction(txid,vintx,hashBlock,false) != 0 )
-        {
-            Getscriptaddress(destaddr,vintx.vout[vout].scriptPubKey);
-            if( strcmp(destaddr,coinaddr) != 0 && strcmp(destaddr,cp->unspendableCCaddr) != 0 && strcmp(destaddr,cp->unspendableaddr2) != 0 )
-                continue;
-            fprintf(stderr,"AddAssetInputs() check destaddress=%s vout amount=%.8f\n",destaddr,(double)vintx.vout[vout].nValue/COIN);
-            if( (nValue = IsAssetvout(cp, price, origpubkey, vintx, vout, assetid)) > 0 && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0 )
-            {
-                if ( total != 0 && maxinputs != 0 )
-                    mtx.vin.push_back(CTxIn(txid,vout,CScript()));
-                nValue = it->second.satoshis;
-                totalinputs += nValue;
-				//std::cerr << "AddAssetInputs() adding input nValue=" << nValue  << std::endl;
-                n++;
-                if ( (total > 0 && totalinputs >= total) || (maxinputs > 0 && n >= maxinputs) )
-                    break;
-            }
-        }
-    }
-
-	//std::cerr << "AddAssetInputs() found totalinputs=" << totalinputs << std::endl;
-    return(totalinputs);
-}
-*/
 
 UniValue AssetOrders(uint256 refassetid, CPubKey pk, uint8_t additionalEvalCode)
 {
@@ -165,7 +116,7 @@ UniValue AssetOrders(uint256 refassetid, CPubKey pk, uint8_t additionalEvalCode)
 
 	char assetsUnspendableAddr[64];
 	GetCCaddress(cpAssets, assetsUnspendableAddr, GetUnspendable(cpAssets, NULL));
-	SetCCunspents(unspentOutputsCoins, assetsUnspendableAddr);  
+	SetCCunspents(unspentOutputsCoins, assetsUnspendableAddr,true);
 
 	char assetsTokensUnspendableAddr[64];
     std::vector<uint8_t> vopretNonfungible;
@@ -175,7 +126,7 @@ UniValue AssetOrders(uint256 refassetid, CPubKey pk, uint8_t additionalEvalCode)
             cpAssets->additionalTokensEvalcode2 = vopretNonfungible.begin()[0];
     }
 	GetTokensCCaddress(cpAssets, assetsTokensUnspendableAddr, GetUnspendable(cpAssets, NULL));
-	SetCCunspents(unspentOutputsTokens, assetsTokensUnspendableAddr);
+	SetCCunspents(unspentOutputsTokens, assetsTokensUnspendableAddr,true);
 
     // tokenbids:
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator itCoins = unspentOutputsCoins.begin();
@@ -195,7 +146,7 @@ UniValue AssetOrders(uint256 refassetid, CPubKey pk, uint8_t additionalEvalCode)
         // try also dual eval tokenasks (and we do not need bids):
         cpAssets->additionalTokensEvalcode2 = additionalEvalCode;
         GetTokensCCaddress(cpAssets, assetsDualEvalTokensUnspendableAddr, GetUnspendable(cpAssets, NULL));
-        SetCCunspents(unspentOutputsDualEvalTokens, assetsDualEvalTokensUnspendableAddr);
+        SetCCunspents(unspentOutputsDualEvalTokens, assetsDualEvalTokensUnspendableAddr,true);
 
         for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator itDualEvalTokens = unspentOutputsDualEvalTokens.begin();
             itDualEvalTokens != unspentOutputsDualEvalTokens.end();
