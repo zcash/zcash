@@ -2195,7 +2195,7 @@ void komodo_cbopretupdate(int32_t forceflag)
             fprintf(stderr,"pricewait "), sleep(1);
         return;
     }
-    get_stockprices("AAPL");
+    get_stockprices(0);
     
     pending = 1;
     now = (uint32_t)time(NULL);
