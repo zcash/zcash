@@ -2718,8 +2718,9 @@ static int cmp_llu(const void *a, const void*b)
 {
     if(*(int64_t *)a < *(int64_t *)b) return -1;
     else if(*(int64_t *)a > *(int64_t *)b) return 1;
-    else if ( (uint64_t)a < (uint64_t)b ) return -1;
-    else return 1;
+    //else if ( (uint64_t)a < (uint64_t)b ) return -1;
+    //else return 1;
+    return(0);
 }
 
 static int64_t median(int64_t *l, size_t llen)
