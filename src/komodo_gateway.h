@@ -2392,6 +2392,7 @@ char *komodo_pricename(char *name,int32_t ind)
                     return(0);
                 if ( ind < ASSETCHAINS_STOCKS.size() )
                 {
+                    fprintf(stderr,"ind.%d vs size.%d\n",ind,(int32_t)ASSETCHAINS_PRICES.size());
                     strcpy(name,ASSETCHAINS_PRICES[ind].c_str());
                     strcat(name,"/USD");
                     return(name);
@@ -2669,6 +2670,7 @@ void komodo_pricesinit()
     {
         if ( komodo_pricename(PRICES[i].symbol,i) == 0 )
             break;
+        fprintf(stderr,"i.%d %s\n",i,PRICES[i].symbol);
         if ( i == 0 )
             strcpy(PRICES[i].symbol,"rawprices");
         pricefname = pricesdir / PRICES[i].symbol;
