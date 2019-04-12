@@ -70,6 +70,8 @@ void WaitForShutdown(boost::thread_group* threadGroup)
 {
     int32_t i; bool fShutdown = ShutdownRequested();
     // Tell the main threads to shutdown.
+    if ( ASSETCHAINS_CBOPRET != 0 )
+        komodo_pricesinit();
     while (!fShutdown)
     {
         //fprintf(stderr,"call passport iteration\n");

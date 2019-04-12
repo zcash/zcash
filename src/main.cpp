@@ -85,6 +85,7 @@ int32_t komodo_block2pubkey33(uint8_t *pubkey33,CBlock *block);
 //void komodo_broadcast(CBlock *pblock,int32_t limit);
 bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey);
 void komodo_setactivation(int32_t height);
+void komodo_pricesupdate(int32_t height,CBlock *pblock);
 
 BlockMap mapBlockIndex;
 CChain chainActive;
@@ -3904,7 +3905,8 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
         if ( block.GetHash() == notarizedhash )
         {
             fprintf(stderr,"DisconnectTip trying to disconnect notarized block at ht.%d\n",(int32_t)pindexDelete->GetHeight());
-            return(false);
+            return state.DoS(100, error("AcceptBlock(): DisconnectTip trying to disconnect notarized blockht.%d",(int32_t)pindexDelete->GetHeight()),
+                        REJECT_INVALID, "past-notarized-height");
         }
     }
     // Apply the block atomically to the chain state.
@@ -4148,6 +4150,8 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
         komodo_broadcast(pblock,8);
     else if ( ASSETCHAINS_SYMBOL[0] != 0 )
         komodo_broadcast(pblock,4);*/
+    if ( ASSETCHAINS_CBOPRET != 0 )
+        komodo_pricesupdate(pindexNew->GetHeight(),pblock);
     if ( ASSETCHAINS_SAPLING <= 0 && pindexNew->nTime > KOMODO_SAPLING_ACTIVATION - 24*3600 )
         komodo_activate_sapling(pindexNew);
     return true;
@@ -4233,43 +4237,43 @@ static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMo
     const CBlockIndex *pindexOldTip = chainActive.Tip();
     const CBlockIndex *pindexFork = chainActive.FindFork(pindexMostWork);
 
+    // stop trying to reorg if the reorged chain is before last notarized height. 
+    // stay on the same chain tip! 
+    int32_t notarizedht,prevMoMheight; uint256 notarizedhash,txid;
+    notarizedht = komodo_notarized_height(&prevMoMheight,&notarizedhash,&txid);
+    if ( pindexFork != 0 && pindexFork->GetHeight() < notarizedht )
+    {
+        fprintf(stderr,"pindexFork->GetHeight().%d is < notarizedht %d, so ignore it\n",(int32_t)pindexFork->GetHeight(),notarizedht);
+        return state.DoS(100, error("ActivateBestChainStep(): pindexFork->GetHeight().%d is < notarizedht %d, so ignore it",(int32_t)pindexFork->GetHeight(),notarizedht),
+                    REJECT_INVALID, "past-notarized-height");
+    }
     // - On ChainDB initialization, pindexOldTip will be null, so there are no removable blocks.
     // - If pindexMostWork is in a chain that doesn't have the same genesis block as our chain,
     //   then pindexFork will be null, and we would need to remove the entire chain including
     //   our genesis block. In practice this (probably) won't happen because of checks elsewhere.
     auto reorgLength = pindexOldTip ? pindexOldTip->GetHeight() - (pindexFork ? pindexFork->GetHeight() : -1) : 0;
     assert(MAX_REORG_LENGTH > 0);//, "We must be able to reorg some distance");
-    if (reorgLength > MAX_REORG_LENGTH)
+    if ( reorgLength > MAX_REORG_LENGTH)
     {
-        int32_t notarizedht,prevMoMheight; uint256 notarizedhash,txid;
-        notarizedht = komodo_notarized_height(&prevMoMheight,&notarizedhash,&txid);
-        if ( pindexFork->GetHeight() < notarizedht )
-        {
-            fprintf(stderr,"pindexFork->GetHeight().%d is < notarizedht %d, so ignore it\n",(int32_t)pindexFork->GetHeight(),notarizedht);
-            pindexFork = pindexOldTip;
-        }
-        else
-        {
-            auto msg = strprintf(_(
-                                   "A block chain reorganization has been detected that would roll back %d blocks! "
-                                   "This is larger than the maximum of %d blocks, and so the node is shutting down for your safety."
-                                   ), reorgLength, MAX_REORG_LENGTH) + "\n\n" +
-            _("Reorganization details") + ":\n" +
-            "- " + strprintf(_("Current tip: %s, height %d, work %s\nstake %s"),
-                             pindexOldTip->phashBlock->GetHex(), pindexOldTip->GetHeight(), pindexOldTip->chainPower.chainWork.GetHex(),
-                             pindexOldTip->chainPower.chainStake.GetHex()) + "\n" +
-            "- " + strprintf(_("New tip:     %s, height %d, work %s\nstake %s"),
-                             pindexMostWork->phashBlock->GetHex(), pindexMostWork->GetHeight(), pindexMostWork->chainPower.chainWork.GetHex(),
-                             pindexMostWork->chainPower.chainStake.GetHex()) + "\n" +
-            "- " + strprintf(_("Fork point:  %s %s, height %d"),
-                             ASSETCHAINS_SYMBOL,pindexFork->phashBlock->GetHex(), pindexFork->GetHeight()) + "\n\n" +
-            _("Please help, human!");
-            LogPrintf("*** %s\nif you launch with -maxreorg=%d it might be able to resolve this automatically", msg,reorgLength+10);
-            fprintf(stderr,"*** %s\nif you launch with -maxreorg=%d it might be able to resolve this automatically", msg.c_str(),reorgLength+10);
-            uiInterface.ThreadSafeMessageBox(msg, "", CClientUIInterface::MSG_ERROR);
-            StartShutdown();
-            return false;
-        }
+        auto msg = strprintf(_(
+                               "A block chain reorganization has been detected that would roll back %d blocks! "
+                               "This is larger than the maximum of %d blocks, and so the node is shutting down for your safety."
+                               ), reorgLength, MAX_REORG_LENGTH) + "\n\n" +
+        _("Reorganization details") + ":\n" +
+        "- " + strprintf(_("Current tip: %s, height %d, work %s\nstake %s"),
+                         pindexOldTip->phashBlock->GetHex(), pindexOldTip->GetHeight(), pindexOldTip->chainPower.chainWork.GetHex(),
+                         pindexOldTip->chainPower.chainStake.GetHex()) + "\n" +
+        "- " + strprintf(_("New tip:     %s, height %d, work %s\nstake %s"),
+                         pindexMostWork->phashBlock->GetHex(), pindexMostWork->GetHeight(), pindexMostWork->chainPower.chainWork.GetHex(),
+                         pindexMostWork->chainPower.chainStake.GetHex()) + "\n" +
+        "- " + strprintf(_("Fork point:  %s %s, height %d"),
+                         ASSETCHAINS_SYMBOL,pindexFork->phashBlock->GetHex(), pindexFork->GetHeight()) + "\n\n" +
+        _("Please help, human!");
+        LogPrintf("*** %s\nif you launch with -maxreorg=%d it might be able to resolve this automatically", msg,reorgLength+10);
+        fprintf(stderr,"*** %s\nif you launch with -maxreorg=%d it might be able to resolve this automatically", msg.c_str(),reorgLength+10);
+        uiInterface.ThreadSafeMessageBox(msg, "", CClientUIInterface::MSG_ERROR);
+        StartShutdown();
+        return false;
     }
 
     // Disconnect active blocks which are no longer in the best chain.

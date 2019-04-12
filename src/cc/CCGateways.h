@@ -18,7 +18,6 @@
 #define CC_GATEWAYS_H
 
 #include "CCinclude.h"
-#include "../merkleblock.h"
 
 bool GatewaysValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn);
 std::string GatewaysBind(uint64_t txfee,std::string coin,uint256 tokenid,int64_t totalsupply,uint256 oracletxid,uint8_t M,uint8_t N,std::vector<CPubKey> pubkeys,uint8_t p1,uint8_t p2,uint8_t p3,uint8_t p4);

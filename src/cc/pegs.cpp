@@ -72,7 +72,13 @@ pegs CC is able to create a coin backed (by any supported coin with gateways CC 
  
  Let us now consider how to enforce a peg onto a specific gateways CC token. If this can also be achieved, then a full DEX for all the different gateways CC supported coins can be created onto a single fiat denominated chain.
  
+ I think just having a pegscreate rpc call that binds an existing gateways create to a price CC syntax price will be almost enough to support this. Let us assume a USD stablechain and we have a BTC token, then pegscreate <btc gateways txid> "BTCUSD, 1"
+ that will specify using the BTCUSD price, so now we need to create a <txid> based way to do tokenbid/tokenask. For a <txid> based price, the smoothed price is substituted.
  
+ There is the issue of the one day delay, so it might make sense to allow specific bid/ask to be based on some simple combinations of the three possible prices. it might even be possible to go a bit overboard and make a forth like syntax to define the dynamic price for a bid, which maybe at times wont be valid, like it is only valid if the three prices are within 1% of each other. But all that seems over complex and for initial release it can just use the mined, correlated or smoothed price, with some specified percentage offset
+ 
+ Implementation notes:
+    make sure that fees and markers that can be sent to an unspendable address are sent to: RNdqHx26GWy9bk8MtmH1UiXjQcXE4RKK2P, this is the address for BOTS
 
  
  */

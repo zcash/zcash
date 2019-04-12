@@ -138,6 +138,9 @@ CBOPRET creates trustless oracles, which can be used for making a synthetic cash
  Another configuration is to send the 0.4% (or 0.2%) fees to a fee collection scriptPubKey (this is not currently implemented, but would be needed for systems that dont use -ac_perc to collect a global override) this requires adding new vouts
  
  Modification: in the event there is one price in the accumulator and one price on the stack at the end, then it is a (A - B) spread
+ 
+ Monetizations should be sent to: RGsWqwFviaNJSbmgWi6338NL2tKkY7ZqKL
+ 
  */
 
 
