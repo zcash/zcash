@@ -2348,9 +2348,9 @@ char *komodo_pricename(char *name,int32_t ind)
             switch ( ind )
             {
                 case 0: strcpy(name,"timestamp"); break;
-                case 1: strcpy(name,"BTCUSD"); break;
-                case 2: strcpy(name,"BTCGBP"); break;
-                case 3: strcpy(name,"BTCEUR"); break;
+                case 1: strcpy(name,"BTC_USD"); break;
+                case 2: strcpy(name,"BTC_GBP"); break;
+                case 3: strcpy(name,"BTC_EUR"); break;
                 default: return(0); break;
             }
             return(name);
@@ -2364,8 +2364,8 @@ char *komodo_pricename(char *name,int32_t ind)
                     return(0);
                 if ( ind < sizeof(Forex)/sizeof(*Forex) )
                 {
-                    name[0] = 'U', name[1] = 'S', name[2] = 'D';
-                    strcpy(name+3,Forex[ind]);
+                    name[0] = 'U', name[1] = 'S', name[2] = 'D', name[3] = '_';
+                    strcpy(name+4,Forex[ind]);
                     return(name);
                 } else ind -= sizeof(Forex)/sizeof(*Forex);
             }
@@ -2382,7 +2382,7 @@ char *komodo_pricename(char *name,int32_t ind)
                         ind -= (sizeof(Cryptos)/sizeof(*Cryptos));
                         strcpy(name,ASSETCHAINS_PRICES[ind].c_str());
                     }
-                    strcat(name,"BTC");
+                    strcat(name,"_BTC");
                     return(name);
                 } else ind -= (sizeof(Cryptos)/sizeof(*Cryptos) + ASSETCHAINS_PRICES.size());
             }
@@ -2393,7 +2393,7 @@ char *komodo_pricename(char *name,int32_t ind)
                 if ( ind < ASSETCHAINS_STOCKS.size() )
                 {
                     strcpy(name,ASSETCHAINS_STOCKS[ind].c_str());
-                    strcat(name,"USD");
+                    strcat(name,"_USD");
                     return(name);
                 } else ind -= ASSETCHAINS_STOCKS.size();
             }
