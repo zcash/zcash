@@ -5336,7 +5336,7 @@ bool AcceptBlock(int32_t *futureblockp,CBlock& block, CValidationState& state, C
             if ( ASSETCHAINS_CBOPRET != 0 )
             {
                 CValidationState tmpstate; CBlockIndex *tmpindex; int32_t ht,longest;
-                ht = (int32_t)pindex->GetHeight();
+                ht = (int32_t)pindex->GetHeight()-1;
                 longest = komodo_longestchain();
                 if ( (longest == 0 || ht < longest-6) && (tmpindex=komodo_chainactive(ht)) != 0 )
                 {
