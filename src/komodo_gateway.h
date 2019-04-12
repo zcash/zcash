@@ -2625,7 +2625,7 @@ void komodo_pricesinit()
     }
 }
 
-extern Queued_reconsiderblock;
+extern uint256 Queued_reconsiderblock;
 
 void komodo_pricesupdate(int32_t height,CBlock *pblock)
 {

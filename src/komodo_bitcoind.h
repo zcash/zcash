@@ -452,7 +452,6 @@ void komodo_reconsiderblock(uint256 blockhash)
 {
     char params[256],*jsonstr,*hexstr;
     sprintf(params,"[\"%s\"]",blockhash.ToString().c_str());
-    komodo_reconsiderblock(Queued_reconsiderblock);
     if ( (jsonstr= komodo_issuemethod(KMDUSERPASS,(char *)"reconsiderblock",params,KMD_PORT)) != 0 )
     {
         fprintf(stderr,"komodo_reconsiderblock.(%s) -> (%s)\n",params,jsonstr);
