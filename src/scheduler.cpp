@@ -36,7 +36,7 @@ CScheduler::~CScheduler()
     {
         for (i=0; i<10; i++)
         {
-            MilliSleep(1000);
+            sleep(1);
             fprintf(stderr,"CScheduler nThreadsServicingQueue.%d\n",(int32_t)nThreadsServicingQueue);
             if ( nThreadsServicingQueue == 0 )
                 break;
