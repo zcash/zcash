@@ -600,7 +600,7 @@ int32_t CCCointxidExists(char const *logcategory,uint256 cointxid)
     char txidaddr[64]; std::string coin; int32_t numvouts; uint256 hashBlock;
     std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex;
     CCtxidaddr(txidaddr,cointxid);
-    SetCCtxids(addressIndex,txidaddr);
+    SetCCtxids(addressIndex,txidaddr,true);
     for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=addressIndex.begin(); it!=addressIndex.end(); it++)
     {
         return(-1);
