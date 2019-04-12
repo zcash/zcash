@@ -454,10 +454,10 @@ void komodo_reconsiderblock(uint256 blockhash)
     sprintf(params,"[\"%s\"]",blockhash.ToString().c_str());
     if ( (jsonstr= komodo_issuemethod(ASSETCHAINS_USERPASS,(char *)"reconsiderblock",params,ASSETCHAINS_RPCPORT)) != 0 )
     {
-        fprintf(stderr,"komodo_reconsiderblock.(%s) (%s %u) -> (%s)\n",params,USERPASS,KMD_PORT,jsonstr);
+        fprintf(stderr,"komodo_reconsiderblock.(%s) (%s %u) -> (%s)\n",params,ASSETCHAINS_USERPASS,ASSETCHAINS_RPCPORT,jsonstr);
         free(jsonstr);
     }
-    fprintf(stderr,"komodo_reconsiderblock.(%s) (%s %u) -> NULL\n",params,USERPASS,KMD_PORT);
+    fprintf(stderr,"komodo_reconsiderblock.(%s) (%s %u) -> NULL\n",params,ASSETCHAINS_USERPASS,ASSETCHAINS_RPCPORT);
 }
 
 int32_t komodo_verifynotarization(char *symbol,char *dest,int32_t height,int32_t NOTARIZED_HEIGHT,uint256 NOTARIZED_HASH,uint256 NOTARIZED_DESTTXID)
