@@ -2628,7 +2628,7 @@ void komodo_pricesinit()
 void komodo_pricesupdate(int32_t height,CBlock *pblock)
 {
     static int numprices; static uint32_t *ptr32; static int64_t *ptr64,*tmpbuf;
-    int32_t ind,offset,width; int64_t correlated,smoothed; uint64_t seed,rngval; uint32_t rawprices[KOMODO_MAXPRICES],buf[4];
+    int32_t ind,offset,width; int64_t correlated,smoothed; uint64_t seed,rngval; uint32_t rawprices[KOMODO_MAXPRICES],buf[PRICES_MAXDATAPOINTS*2];
     width = PRICES_DAYWINDOW;//(2*PRICES_DAYWINDOW + PRICES_SMOOTHWIDTH);
     if ( numprices == 0 )
     {
@@ -2662,6 +2662,7 @@ void komodo_pricesupdate(int32_t height,CBlock *pblock)
                         if ( (correlated= komodo_pricecorrelated(rngval,ind,&ptr32[offset],-numprices,0,PRICES_SMOOTHWIDTH)) > 0 )
                         {
                             fseek(PRICES[ind].fp,height * sizeof(int64_t) * PRICES_MAXDATAPOINTS,SEEK_SET);
+                            memset(buf,0,sizeof(buf));
                             buf[0] = rawprices[ind];
                             buf[1] = rawprices[0]; // timestamp
                             memcpy(&buf[2],&correlated,sizeof(correlated));
@@ -2670,7 +2671,7 @@ void komodo_pricesupdate(int32_t height,CBlock *pblock)
                             else if ( height > PRICES_DAYWINDOW*2 )
                             {
                                 fseek(PRICES[ind].fp,(height-PRICES_DAYWINDOW+1) * PRICES_MAXDATAPOINTS * sizeof(int64_t),SEEK_SET);
-                                if ( fread(ptr64,sizeof(int64_t),(PRICES_DAYWINDOW-1)*PRICES_MAXDATAPOINTS+2,PRICES[ind].fp) == (PRICES_DAYWINDOW-1)*PRICES_MAXDATAPOINTS+2 )
+                                if ( fread(ptr64,sizeof(int64_t),PRICES_DAYWINDOW*PRICES_MAXDATAPOINTS,PRICES[ind].fp) == PRICES_DAYWINDOW*PRICES_MAXDATAPOINTS )
                                 {
                                     if ( (smoothed= komodo_priceave(tmpbuf,&ptr64[(PRICES_DAYWINDOW-1)*PRICES_MAXDATAPOINTS+1],-PRICES_MAXDATAPOINTS)) > 0 )
                                     {
@@ -2687,7 +2688,7 @@ void komodo_pricesupdate(int32_t height,CBlock *pblock)
                 } else fprintf(stderr,"error reading rawprices for ht.%d\n",height);
             } else fprintf(stderr,"height.%d <= width.%d\n",height,width);
         } else fprintf(stderr,"null PRICES[0].fp\n");
-    } else fprintf(stderr,"numprices mismatch\n");
+    } else fprintf(stderr,"numprices mismatch, height.%d\n",height);
 }
 
 
