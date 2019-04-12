@@ -2014,10 +2014,10 @@ cJSON *get_urljson(char *url)
     return(json);
 }
 
-uint32_t get_stockprices()//std::vector<std::string> symbols)
+int32_t get_stockprices()//std::vector<std::string> symbols)
 {
     std::vector<std::string> symbols;
-    char url[32768],*symbol; cJSON *json,*obj; int32_t i,n; uint32_t uprice;
+    char url[32768],*symbol; cJSON *json,*obj; int32_t i,n=0; uint32_t uprice;
     symbols.push_back("AAPL");
     symbols.push_back("MSFT");
     sprintf(url,"https://api.iextrading.com/1.0/tops/last?symbols=AAPL, MSFT");
@@ -2041,7 +2041,7 @@ uint32_t get_stockprices()//std::vector<std::string> symbols)
         //https://api.iextrading.com/1.0/tops/last?symbols=AAPL -> [{"symbol":"AAPL","price":198.63,"size":100,"time":1555092606076}]
         free_json(json);
     }
-    return(price);
+    return(n);
 }
 
 uint32_t get_dailyfx(uint32_t *prices)
