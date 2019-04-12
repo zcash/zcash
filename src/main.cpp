@@ -5335,14 +5335,15 @@ bool AcceptBlock(int32_t *futureblockp,CBlock& block, CValidationState& state, C
                 *futureblockp = 1;
             if ( ASSETCHAINS_CBOPRET != 0 )
             {
-                CValidationState tmpstate; CBlockIndex *tmpindex;
-                if ( (tmpindex=komodo_chainactive(tmpptr->GetHeight()-1)) != 0 )
+                CValidationState tmpstate; CBlockIndex *tmpindex; int32_t ht;
+                ht = (int32_t)pindex->GetHeight();
+                if ( (tmpindex=komodo_chainactive(ht-1)) != 0 )
                 {
-                    fprintf(stderr,"reconsider height.%d\n",(int32_t)tmpptr->GetHeight()-1);
+                    fprintf(stderr,"reconsider height.%d\n",(int32_t)ht-1);
                     ReconsiderBlock(tmpstate,tmpindex);
-                    if ( (tmpindex=komodo_chainactive(tmpptr->GetHeight())) != 0 )
+                    if ( (tmpindex=komodo_chainactive(ht)) != 0 )
                     {
-                        fprintf(stderr,"reconsider height.%d\n",(int32_t)tmpptr->GetHeight());
+                        fprintf(stderr,"reconsider height.%d\n",(int32_t)ht);
                         ReconsiderBlock(tmpstate,tmpindex);
                     }
                 }
