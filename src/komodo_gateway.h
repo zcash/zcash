@@ -2016,10 +2016,28 @@ cJSON *get_urljson(char *url)
 
 uint32_t get_stockprices()//std::vector<std::string> symbols)
 {
-    char url[32768]; cJSON *json,*obj; uint32_t high,low,price = 0;
+    std::vector<std::string> symbols;
+    char url[32768],*symbol; cJSON *json,*obj; int32_t i,n; uint32_t uprice;
+    symbols.push_back("AAPL");
+    symbols.push_back("MSFT");
     sprintf(url,"https://api.iextrading.com/1.0/tops/last?symbols=AAPL, MSFT");
     if ( (json= send_curl(url,(char *)"iex")) != 0 ) //if ( (json= get_urljson(url)) != 0 )
     {
+        if ( (n= cJSON_GetArraySize(json)) > 0 )
+        {
+            for (i=0; i<n; i++)
+            {
+                obj = jitem(json,i);
+                if ( (symbol= jstr(obj,"symbol")) != 0 )
+                {
+                    uprice = jdouble(obj,"price")*100 + 0.0049;
+                    if ( symbols[i] != symbol )
+                        fprintf(stderr,"MISMATCH.");
+                    fprintf(stderr,"(%s %u) ",symbol,uprice);
+                }
+            }
+            fprintf(stderr,"numstocks.%d\n",n);
+        }
         //https://api.iextrading.com/1.0/tops/last?symbols=AAPL -> [{"symbol":"AAPL","price":198.63,"size":100,"time":1555092606076}]
         free_json(json);
     }
