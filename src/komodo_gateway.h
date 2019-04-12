@@ -2017,10 +2017,10 @@ cJSON *get_urljson(char *url)
 uint32_t get_stockprices()//std::vector<std::string> symbols)
 {
     char url[32768]; cJSON *json,*obj; uint32_t high,low,price = 0;
-    sprintf(url,"https://api.iextrading.com/1.0/tops/last?symbols=AAPL");
+    sprintf(url,"https://api.iextrading.com/1.0/tops/last?symbols=AAPL, MSFT");
     if ( (json= send_curl(url,(char *)"iex")) != 0 ) //if ( (json= get_urljson(url)) != 0 )
     {
-        fprintf(stderr,"%s -> %s\n",url,jprint(json,0));
+        //https://api.iextrading.com/1.0/tops/last?symbols=AAPL -> [{"symbol":"AAPL","price":198.63,"size":100,"time":1555092606076}]
         free_json(json);
     }
     return(price);
