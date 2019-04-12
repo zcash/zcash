@@ -31,7 +31,7 @@ CScheduler::CScheduler() : nThreadsServicingQueue(0), stopRequested(false), stop
 
 CScheduler::~CScheduler()
 {
-    int32_t i;
+    /*int32_t i;
     if ( nThreadsServicingQueue != 0 )
     {
         for (i=0; i<10; i++)
@@ -41,7 +41,7 @@ CScheduler::~CScheduler()
             if ( nThreadsServicingQueue == 0 )
                 break;
         }
-    }
+    }*/
     assert(nThreadsServicingQueue == 0);
 }
 
