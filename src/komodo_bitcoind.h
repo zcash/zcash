@@ -371,7 +371,7 @@ char *komodo_issuemethod(char *userpass,char *method,char *params,uint16_t port)
     {
         sprintf(url,(char *)"http://127.0.0.1:%u",port);
         sprintf(postdata,"{\"method\":\"%s\",\"params\":%s}",method,params);
-printf("[%s] (%s) postdata.(%s) params.(%s) USERPASS.(%s)\n",ASSETCHAINS_SYMBOL,url,postdata,params,KMDUSERPASS);
+//printf("[%s] (%s) postdata.(%s) params.(%s) USERPASS.(%s)\n",ASSETCHAINS_SYMBOL,url,postdata,params,KMDUSERPASS);
         retstr2 = bitcoind_RPC(&retstr,(char *)"debug",url,userpass,method,params);
         //retstr = curl_post(&cHandle,url,USERPASS,postdata,0,0,0,0);
     }
@@ -452,12 +452,12 @@ void komodo_reconsiderblock(uint256 blockhash)
 {
     char params[256],*jsonstr,*hexstr;
     sprintf(params,"[\"%s\"]",blockhash.ToString().c_str());
-    if ( (jsonstr= komodo_issuemethod(KMDUSERPASS,(char *)"reconsiderblock",params,KMD_PORT)) != 0 )
+    if ( (jsonstr= komodo_issuemethod(ASSETCHAINS_USERPASS,(char *)"reconsiderblock",params,ASSETCHAINS_RPCPORT)) != 0 )
     {
-        fprintf(stderr,"komodo_reconsiderblock.(%s) (%s %u) -> (%s)\n",params,KMDUSERPASS,KMD_PORT,jsonstr);
+        fprintf(stderr,"komodo_reconsiderblock.(%s) (%s %u) -> (%s)\n",params,USERPASS,KMD_PORT,jsonstr);
         free(jsonstr);
     }
-    fprintf(stderr,"komodo_reconsiderblock.(%s) -> NULL\n",params);
+    fprintf(stderr,"komodo_reconsiderblock.(%s) (%s %u) -> NULL\n",params,USERPASS,KMD_PORT);
 }
 
 int32_t komodo_verifynotarization(char *symbol,char *dest,int32_t height,int32_t NOTARIZED_HEIGHT,uint256 NOTARIZED_HASH,uint256 NOTARIZED_DESTTXID)
