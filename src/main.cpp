@@ -5273,6 +5273,8 @@ bool AcceptBlockHeader(int32_t *futureblockp,const CBlockHeader& block, CValidat
     return true;
 }
 
+uint256 Queued_reconsiderblock;
+
 bool AcceptBlock(int32_t *futureblockp,CBlock& block, CValidationState& state, CBlockIndex** ppindex, bool fRequested, CDiskBlockPos* dbp)
 {
     const CChainParams& chainparams = Params();
@@ -5336,12 +5338,13 @@ bool AcceptBlock(int32_t *futureblockp,CBlock& block, CValidationState& state, C
             if ( ASSETCHAINS_CBOPRET != 0 )
             {
                 CValidationState tmpstate; CBlockIndex *tmpindex; int32_t ht,longest;
-                ht = (int32_t)pindex->GetHeight()-1;
+                ht = (int32_t)pindex->GetHeight();
                 longest = komodo_longestchain();
                 if ( (longest == 0 || ht < longest-6) && (tmpindex=komodo_chainactive(ht)) != 0 )
                 {
                     fprintf(stderr,"reconsider height.%d, longest.%d\n",(int32_t)ht,longest);
-                    InvalidateBlock(tmpstate,tmpindex);
+                    if ( Queued_reconsiderblock == zeroid )
+                        Queued_reconsiderblock = pindex->GetHash();
                 }
             }
         }
