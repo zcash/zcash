@@ -1815,11 +1815,17 @@ void komodo_args(char *argv0)
         if ( ASSETCHAINS_CBOPRET != 0 )
         {
             SplitStr(GetArg("-ac_prices",""),  ASSETCHAINS_PRICES);
-            for (i=0; i<ASSETCHAINS_PRICES.size(); i++)
-                fprintf(stderr,"%s ",ASSETCHAINS_PRICES[i].c_str());
             if ( ASSETCHAINS_PRICES.size() > 0 )
                 ASSETCHAINS_CBOPRET |= 4;
+            SplitStr(GetArg("-ac_stocks",""),  ASSETCHAINS_STOCKS);
+            if ( ASSETCHAINS_STOCKS.size() > 0 )
+                ASSETCHAINS_CBOPRET |= 8;
+            for (i=0; i<ASSETCHAINS_PRICES.size(); i++)
+                fprintf(stderr,"%s ",ASSETCHAINS_PRICES[i].c_str());
             fprintf(stderr,"%d -ac_prices\n",(int32_t)ASSETCHAINS_PRICES.size());
+            for (i=0; i<ASSETCHAINS_STOCKS.size(); i++)
+                fprintf(stderr,"%s ",ASSETCHAINS_STOCKS[i].c_str());
+            fprintf(stderr,"%d -ac_stocks\n",(int32_t)ASSETCHAINS_STOCKS.size());
         }
         hexstr = GetArg("-ac_mineropret","");
         if ( hexstr.size() != 0 )
@@ -2081,6 +2087,15 @@ void komodo_args(char *argv0)
                     for (i=0; i<ASSETCHAINS_PRICES.size(); i++)
                     {
                         symbol = ASSETCHAINS_PRICES[i];
+                        memcpy(&extraptr[extralen],(char *)symbol.c_str(),symbol.size());
+                        extralen += symbol.size();
+                    }
+                }
+                if ( ASSETCHAINS_STOCKS.size() != 0 )
+                {
+                    for (i=0; i<ASSETCHAINS_STOCKS.size(); i++)
+                    {
+                        symbol = ASSETCHAINS_STOCKS[i];
                         memcpy(&extraptr[extralen],(char *)symbol.c_str(),symbol.size());
                         extralen += symbol.size();
                     }
