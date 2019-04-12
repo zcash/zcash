@@ -1748,7 +1748,7 @@ CScript komodo_mineropret(int32_t nHeight)
 
 void komodo_queuelocalprice(int32_t dir,int32_t height,uint32_t timestamp,uint256 blockhash,int32_t ind,uint32_t pricebits)
 {
-    fprintf(stderr,"ExtremePrice dir.%d ht.%d ind.%d cmpbits.%u\n",dir,height,ind,cmpbits);
+    fprintf(stderr,"ExtremePrice dir.%d ht.%d ind.%d cmpbits.%u\n",dir,height,ind,pricebits);
     ExtremePrice.dir = dir;
     ExtremePrice.height = height;
     ExtremePrice.blockhash = blockhash;
