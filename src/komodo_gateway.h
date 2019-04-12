@@ -2028,9 +2028,9 @@ uint32_t get_stockprices()//std::vector<std::string> symbols)
             for (i=0; i<n; i++)
             {
                 obj = jitem(json,i);
-                if ( (symbol= jstr(obj,"symbol")) != 0 )
+                if ( (symbol= jstr(obj,(char *)"symbol")) != 0 )
                 {
-                    uprice = jdouble(obj,"price")*100 + 0.0049;
+                    uprice = jdouble(obj,(char *)"price")*100 + 0.0049;
                     if ( symbols[i] != symbol )
                         fprintf(stderr,"MISMATCH.");
                     fprintf(stderr,"(%s %u) ",symbol,uprice);
