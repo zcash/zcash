@@ -2660,7 +2660,11 @@ int64_t komodo_priceave(int64_t *buf,int64_t *correlated,int32_t cskip)
 
 void komodo_pricesinit()
 {
+    static int32_t didinit;
     int32_t i,createflag = 0;
+    if ( didinit != 0 )
+        return;
+    didinit = 1;
     boost::filesystem::path pricefname,pricesdir = GetDataDir() / "prices";
     fprintf(stderr,"pricesinit (%s)\n",pricesdir.string().c_str());
     if (!boost::filesystem::exists(pricesdir))
@@ -2720,6 +2724,11 @@ void komodo_pricesupdate(int32_t height,CBlock *pblock)
                     rngval = seed;
                     for (ind=1; ind<numprices; ind++)
                     {
+                        if ( PRICES[ind].fp == 0 )
+                        {
+                            fprintf(stderr,"PRICES[%d].fp is null\n",ind);
+                            continue;
+                        }
                         offset = (width-1)*numprices + ind;
                         rngval = (rngval*11109 + 13849);
                         if ( (correlated= komodo_pricecorrelated(rngval,ind,&ptr32[offset],-numprices,0,PRICES_SMOOTHWIDTH)) > 0 )
