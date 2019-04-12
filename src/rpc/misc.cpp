@@ -863,11 +863,14 @@ bool getAddressFromIndex(const int &type, const uint160 &hash, std::string &addr
 
 bool getAddressesFromParams(const UniValue& params, std::vector<std::pair<uint160, int> > &addresses)
 {
+    bool ccVout = false;
+    if (params.size() == 2)
+        ccVout = true;
     if (params[0].isStr()) {
         CBitcoinAddress address(params[0].get_str());
         uint160 hashBytes;
         int type = 0;
-        if (!address.GetIndexKey(hashBytes, type, 0)) {
+        if (!address.GetIndexKey(hashBytes, type, ccVout)) {
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid address");
         }
         addresses.push_back(std::make_pair(hashBytes, type));
@@ -885,7 +888,7 @@ bool getAddressesFromParams(const UniValue& params, std::vector<std::pair<uint16
             CBitcoinAddress address(it->get_str());
             uint160 hashBytes;
             int type = 0;
-            if (!address.GetIndexKey(hashBytes, type, 0)) {
+            if (!address.GetIndexKey(hashBytes, type, ccVout)) {
                 throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid addresses");
             }
             addresses.push_back(std::make_pair(hashBytes, type));
@@ -909,7 +912,7 @@ bool timestampSort(std::pair<CMempoolAddressDeltaKey, CMempoolAddressDelta> a,
 
 UniValue getaddressmempool(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() != 1)
+    if (fHelp || params.size() > 2 || params.size() == 0)
         throw runtime_error(
             "getaddressmempool\n"
             "\nReturns all mempool deltas for an address (requires addressindex to be enabled).\n"
@@ -921,6 +924,7 @@ UniValue getaddressmempool(const UniValue& params, bool fHelp)
             "      ,...\n"
             "    ]\n"
             "}\n"
+            "\nCCvout (optional) Return CCvouts instead of normal vouts\n"
             "\nResult:\n"
             "[\n"
             "  {\n"
@@ -934,8 +938,8 @@ UniValue getaddressmempool(const UniValue& params, bool fHelp)
             "  }\n"
             "]\n"
             "\nExamples:\n"
-            + HelpExampleCli("getaddressmempool", "'{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]}'")
-            + HelpExampleRpc("getaddressmempool", "{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]}")
+            + HelpExampleCli("getaddressmempool", "'{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]}' (ccvout)")
+            + HelpExampleRpc("getaddressmempool", "{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]} (ccvout)")
         );
 
     std::vector<std::pair<uint160, int> > addresses;
@@ -980,7 +984,7 @@ UniValue getaddressmempool(const UniValue& params, bool fHelp)
 
 UniValue getaddressutxos(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() != 1)
+    if (fHelp || params.size() > 2 || params.size() == 0)
         throw runtime_error(
             "getaddressutxos\n"
             "\nReturns all unspent outputs for an address (requires addressindex to be enabled).\n"
@@ -993,6 +997,7 @@ UniValue getaddressutxos(const UniValue& params, bool fHelp)
             "    ],\n"
             "  \"chainInfo\"  (boolean) Include chain info with results\n"
             "}\n"
+            "\nCCvout (optional) Return CCvouts instead of normal vouts\n"
             "\nResult\n"
             "[\n"
             "  {\n"
@@ -1005,8 +1010,8 @@ UniValue getaddressutxos(const UniValue& params, bool fHelp)
             "  }\n"
             "]\n"
             "\nExamples:\n"
-            + HelpExampleCli("getaddressutxos", "'{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]}'")
-            + HelpExampleRpc("getaddressutxos", "{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]}")
+            + HelpExampleCli("getaddressutxos", "'{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]}' (ccvout)")
+            + HelpExampleRpc("getaddressutxos", "{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]} (ccvout)")
             );
 
     bool includeChainInfo = false;
@@ -1066,7 +1071,7 @@ UniValue getaddressutxos(const UniValue& params, bool fHelp)
 
 UniValue getaddressdeltas(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() != 1 || !params[0].isObject())
+    if (fHelp || params.size() > 2 || params.size() == 0 || !params[0].isObject())
         throw runtime_error(
             "getaddressdeltas\n"
             "\nReturns all changes for an address (requires addressindex to be enabled).\n"
@@ -1081,6 +1086,7 @@ UniValue getaddressdeltas(const UniValue& params, bool fHelp)
             "  \"end\" (number) The end block height\n"
             "  \"chainInfo\" (boolean) Include chain info in results, only applies if start and end specified\n"
             "}\n"
+            "\nCCvout (optional) Return CCvouts instead of normal vouts\n"
             "\nResult:\n"
             "[\n"
             "  {\n"
@@ -1092,8 +1098,8 @@ UniValue getaddressdeltas(const UniValue& params, bool fHelp)
             "  }\n"
             "]\n"
             "\nExamples:\n"
-            + HelpExampleCli("getaddressdeltas", "'{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]}'")
-            + HelpExampleRpc("getaddressdeltas", "{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]}")
+            + HelpExampleCli("getaddressdeltas", "'{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]}' (ccvout)")
+            + HelpExampleRpc("getaddressdeltas", "{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]} (ccvout)")
         );
 
 
@@ -1191,7 +1197,7 @@ UniValue getaddressdeltas(const UniValue& params, bool fHelp)
 
 UniValue getaddressbalance(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() != 1)
+    if (fHelp ||params.size() > 2 || params.size() == 0)
         throw runtime_error(
             "getaddressbalance\n"
             "\nReturns the balance for an address(es) (requires addressindex to be enabled).\n"
@@ -1203,14 +1209,15 @@ UniValue getaddressbalance(const UniValue& params, bool fHelp)
             "      ,...\n"
             "    ]\n"
             "}\n"
+            "\nCCvout (optional) Return CCvouts instead of normal vouts\n"
             "\nResult:\n"
             "{\n"
             "  \"balance\"  (string) The current balance in satoshis\n"
             "  \"received\"  (string) The total number of satoshis received (including change)\n"
             "}\n"
             "\nExamples:\n"
-            + HelpExampleCli("getaddressbalance", "'{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]}'")
-            + HelpExampleRpc("getaddressbalance", "{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]}")
+            + HelpExampleCli("getaddressbalance", "'{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]}' (ccvout)")
+            + HelpExampleRpc("getaddressbalance", "{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]} (ccvout)")
         );
 
     std::vector<std::pair<uint160, int> > addresses;
@@ -1301,9 +1308,9 @@ UniValue getsnapshot(const UniValue& params, bool fHelp)
 
 UniValue getaddresstxids(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() != 1)
+    if (fHelp || params.size() > 2)
         throw runtime_error(
-            "getaddresstxids\n"
+            "getaddresstxids (ccvout)\n"
             "\nReturns the txids for an address(es) (requires addressindex to be enabled).\n"
             "\nArguments:\n"
             "{\n"
@@ -1315,14 +1322,15 @@ UniValue getaddresstxids(const UniValue& params, bool fHelp)
             "  \"start\" (number) The start block height\n"
             "  \"end\" (number) The end block height\n"
             "}\n"
+            "\nCCvout (optional) Return CCvouts instead of normal vouts\n"
             "\nResult:\n"
             "[\n"
             "  \"transactionid\"  (string) The transaction id\n"
             "  ,...\n"
             "]\n"
             "\nExamples:\n"
-            + HelpExampleCli("getaddresstxids", "'{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]}'")
-            + HelpExampleRpc("getaddresstxids", "{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]}")
+            + HelpExampleCli("getaddresstxids", "'{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]}' (ccvout)")
+            + HelpExampleRpc("getaddresstxids", "{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]} (ccvout)")
         );
 
     std::vector<std::pair<uint160, int> > addresses;
