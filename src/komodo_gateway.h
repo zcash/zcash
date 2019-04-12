@@ -2695,6 +2695,11 @@ int32_t komodo_pricesinit()
         fflush(PRICES[0].fp);
     }
     fprintf(stderr,"pricesinit done i.%d num.%d numprices.%d\n",i,num,(int32_t)(komodo_cbopretsize(ASSETCHAINS_CBOPRET)/sizeof(uint32_t)));
+    if ( i != num || i != komodo_cbopretsize(ASSETCHAINS_CBOPRET)/sizeof(uint32_t) )
+    {
+        fprintf(stderr,"fatal error opening prices files, start shutdown\n");
+        StartShutdown();
+    }
     return(0);
 }
 
