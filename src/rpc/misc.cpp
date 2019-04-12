@@ -867,7 +867,7 @@ bool getAddressesFromParams(const UniValue& params, std::vector<std::pair<uint16
         CBitcoinAddress address(params[0].get_str());
         uint160 hashBytes;
         int type = 0;
-        if (!address.GetIndexKey(hashBytes, type)) {
+        if (!address.GetIndexKey(hashBytes, type, 0)) {
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid address");
         }
         addresses.push_back(std::make_pair(hashBytes, type));
@@ -885,7 +885,7 @@ bool getAddressesFromParams(const UniValue& params, std::vector<std::pair<uint16
             CBitcoinAddress address(it->get_str());
             uint160 hashBytes;
             int type = 0;
-            if (!address.GetIndexKey(hashBytes, type)) {
+            if (!address.GetIndexKey(hashBytes, type, 0)) {
                 throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid addresses");
             }
             addresses.push_back(std::make_pair(hashBytes, type));
