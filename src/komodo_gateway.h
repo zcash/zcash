@@ -2658,12 +2658,12 @@ int64_t komodo_priceave(int64_t *buf,int64_t *correlated,int32_t cskip)
     return((price*7 + halfave*5 + thirdave*3 + fourthave*2 + decayprice + buf[PRICES_DAYWINDOW-1]) / 19);
 }
 
-void komodo_pricesinit()
+int32_t komodo_pricesinit()
 {
     static int32_t didinit;
     int32_t i,createflag = 0;
     if ( didinit != 0 )
-        return;
+        return(-1);
     didinit = 1;
     boost::filesystem::path pricefname,pricesdir = GetDataDir() / "prices";
     fprintf(stderr,"pricesinit (%s)\n",pricesdir.string().c_str());
@@ -2690,6 +2690,8 @@ void komodo_pricesinit()
         fputc(0,PRICES[0].fp);
         fflush(PRICES[0].fp);
     }
+    fprintf(stderr,"pricesinit done\n");
+    return(0);
 }
 
 void komodo_pricesupdate(int32_t height,CBlock *pblock)
