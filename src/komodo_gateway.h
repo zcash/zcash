@@ -2014,18 +2014,13 @@ cJSON *get_urljson(char *url)
     return(json);
 }
 
-uint32_t get_stockprice(const char *symbol)
+uint32_t get_stockprices(std::vector<std::string> symbols)
 {
-    char url[512]; cJSON *json,*obj; uint32_t high,low,price = 0;
-    sprintf(url,"https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=%s&interval=15min&apikey=%s",symbol,NOTARY_PUBKEY.data()+50);
+    char url[32768]; cJSON *json,*obj; uint32_t high,low,price = 0;
+    sprintf(url,"https://api.iextrading.com/1.0/tops/last?symbols=AAPL");
     if ( (json= get_urljson(url)) != 0 )
     {
-        if ( (obj= jobj(json,(char *)"Time Series (15min)")) != 0 )
-        {
-            high = jdouble(jitem(obj,0),(char *)"2. high")*10000 + 0.000049;
-            low = jdouble(jitem(obj,0),(char *)"3. low")*10000 + 0.000049;
-            price = (high + low) / 2;
-        }
+        fprintf(stderr,"%s -> %s\n",url,jprint(json,0));
         free_json(json);
     }
     return(price);
@@ -2085,6 +2080,23 @@ int32_t get_cryptoprices(uint32_t *prices,const char *list[],int32_t n,std::vect
     return(-errs);
 }
 
+/*uint32_t oldget_stockprice(const char *symbol)
+{
+    char url[512]; cJSON *json,*obj; uint32_t high,low,price = 0;
+    sprintf(url,"https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=%s&interval=15min&apikey=%s",symbol,NOTARY_PUBKEY.data()+50);
+    if ( (json= get_urljson(url)) != 0 )
+    {
+        if ( (obj= jobj(json,(char *)"Time Series (15min)")) != 0 )
+        {
+            high = jdouble(jitem(obj,0),(char *)"2. high")*10000 + 0.000049;
+            low = jdouble(jitem(obj,0),(char *)"3. low")*10000 + 0.000049;
+            price = (high + low) / 2;
+        }
+        free_json(json);
+    }
+    return(price);
+}
+
 uint32_t get_currencyprice(const char *symbol)
 {
     char url[512]; cJSON *json,*obj; uint32_t price = 0;
@@ -2109,7 +2121,7 @@ int32_t get_stocks(const char *list[],int32_t n)
     }
     fprintf(stderr," errs.%d\n",errs);
     return(-errs);
-}
+}*/
 
 // parse the coindesk specific data. yes, if this changes, it will require an update. However, regardless if the format from the data source changes, then the code that extracts it must be changed. One way to mitigate this is to have a large variety of data sources so that there is only a very remote chance that all of them are not available. Certainly the data gathering needs to be made more robust, but it doesnt really affect the proof of concept for the decentralized trustless oracle. The trustlessness is achieved by having all nodes get the oracle data.
 
@@ -2183,6 +2195,8 @@ void komodo_cbopretupdate(int32_t forceflag)
             fprintf(stderr,"pricewait "), sleep(1);
         return;
     }
+    get_stockprices("AAPL");
+    
     pending = 1;
     now = (uint32_t)time(NULL);
     if ( (ASSETCHAINS_CBOPRET & 1) != 0 )
