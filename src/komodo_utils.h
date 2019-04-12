@@ -1811,6 +1811,7 @@ void komodo_args(char *argv0)
         ASSETCHAINS_CODAPORT = GetArg("-ac_coda",0);
         ASSETCHAINS_MARMARA = GetArg("-ac_marmara",0);
         ASSETCHAINS_CBOPRET = GetArg("-ac_cbopret",0);
+        fprintf(stderr,"ASSETCHAINS_CBOPRET.%llx\n",(long long)ASSETCHAINS_CBOPRET);
         if ( ASSETCHAINS_CBOPRET != 0 )
         {
             SplitStr(GetArg("-ac_prices",""),  ASSETCHAINS_PRICES);
