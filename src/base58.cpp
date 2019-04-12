@@ -296,13 +296,13 @@ CTxDestination CBitcoinAddress::Get() const
         return CNoDestination();
 }
 
-bool CBitcoinAddress::GetIndexKey(uint160& hashBytes, int& type) const
+bool CBitcoinAddress::GetIndexKey(uint160& hashBytes, int& type, bool ccflag) const
 {
     if (!IsValid()) {
         return false;
     } else if (vchVersion == Params().Base58Prefix(CChainParams::PUBKEY_ADDRESS)) {
         memcpy(&hashBytes, &vchData[0], 20);
-        type = 1;
+        ccflag ? type = 3 : type = 1;
         return true;
     } else if (vchVersion == Params().Base58Prefix(CChainParams::SCRIPT_ADDRESS)) {
         memcpy(&hashBytes, &vchData[0], 20);
@@ -392,13 +392,13 @@ CTxDestination CCustomBitcoinAddress::Get() const
         return CNoDestination();
 }
 
-bool CCustomBitcoinAddress::GetIndexKey(uint160& hashBytes, int& type) const
+bool CCustomBitcoinAddress::GetIndexKey(uint160& hashBytes, int& type, bool ccflag) const
 {
     if (!IsValid()) {
         return false;
     } else if (vchVersion == base58Prefixes[0]) {
         memcpy(&hashBytes, &vchData[0], 20);
-        type = 1;
+        ccflag ? type = 3 : type = 1;
         return true;
     } else if (vchVersion == base58Prefixes[1]) {
         memcpy(&hashBytes, &vchData[0], 20);
