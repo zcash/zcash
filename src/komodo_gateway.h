@@ -2171,9 +2171,9 @@ void komodo_cbopretupdate(int32_t forceflag)
     static uint32_t lasttime,lastcrypto,lastbtc,pending;
     static uint32_t pricebits[4],cryptoprices[KOMODO_MAXPRICES],forexprices[sizeof(Forex)/sizeof(*Forex)];
     int32_t size; uint32_t flags=0,now; CBlockIndex *pindex;
-    fprintf(stderr,"Queued_reconsiderblock %s\n",Queued_reconsiderblock.GetHex().c_str());
     if ( Queued_reconsiderblock != zeroid )
     {
+        fprintf(stderr,"Queued_reconsiderblock %s\n",Queued_reconsiderblock.GetHex().c_str());
         komodo_reconsiderblock(Queued_reconsiderblock);
         Queued_reconsiderblock = zeroid;
     }
