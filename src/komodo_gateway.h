@@ -2197,9 +2197,9 @@ int32_t komodo_cbopretsize(uint64_t flags)
         if ( (ASSETCHAINS_CBOPRET & 2) != 0 )
             size += (sizeof(Forex)/sizeof(*Forex)) * sizeof(uint32_t);
         if ( (ASSETCHAINS_CBOPRET & 4) != 0 )
-            size += (sizeof(Cryptos)/sizeof(*Cryptos) + ASSETCHAINS_PRICES.size())*sizeof(uint32_t);
+            size += (sizeof(Cryptos)/sizeof(*Cryptos) + ASSETCHAINS_PRICES.size()) * sizeof(uint32_t);
         if ( (ASSETCHAINS_CBOPRET & 8) != 0 )
-            size += (ASSETCHAINS_STOCKS.size())*sizeof(uint32_t);
+            size += (ASSETCHAINS_STOCKS.size() * sizeof(uint32_t));
     }
     return(size);
 }
@@ -2661,7 +2661,7 @@ int64_t komodo_priceave(int64_t *buf,int64_t *correlated,int32_t cskip)
 int32_t komodo_pricesinit()
 {
     static int32_t didinit;
-    int32_t i,createflag = 0;
+    int32_t i,num=0,createflag = 0;
     if ( didinit != 0 )
         return(-1);
     didinit = 1;
@@ -2676,12 +2676,15 @@ int32_t komodo_pricesinit()
         if ( i == 0 )
             strcpy(PRICES[i].symbol,"rawprices");
         pricefname = pricesdir / PRICES[i].symbol;
-        PRICES[i].fp = fopen(pricefname.string().c_str(), createflag != 0 ? "wb+" : "rb+");
-        if ( createflag != 0 )
+        if ( (PRICES[i].fp= fopen(pricefname.string().c_str(), createflag != 0 ? "wb+" : "rb+")) != 0 )
         {
-            fseek(PRICES[i].fp,(2*PRICES_DAYWINDOW+PRICES_SMOOTHWIDTH) * sizeof(int64_t) * PRICES_MAXDATAPOINTS,SEEK_SET);
-            fputc(0,PRICES[i].fp);
-            fflush(PRICES[i].fp);
+            num++;
+            if ( createflag != 0 )
+            {
+                fseek(PRICES[i].fp,(2*PRICES_DAYWINDOW+PRICES_SMOOTHWIDTH) * sizeof(int64_t) * PRICES_MAXDATAPOINTS,SEEK_SET);
+                fputc(0,PRICES[i].fp);
+                fflush(PRICES[i].fp);
+            }
         }
     }
     if ( i > 0 && PRICES[0].fp != 0 && createflag != 0 )
@@ -2690,7 +2693,7 @@ int32_t komodo_pricesinit()
         fputc(0,PRICES[0].fp);
         fflush(PRICES[0].fp);
     }
-    fprintf(stderr,"pricesinit done\n");
+    fprintf(stderr,"pricesinit done i.%d num.%d numprices.%d\n",i,num,(int32_t)(komodo_cbopretsize(ASSETCHAINS_CBOPRET)/sizeof(uint32_t)));
     return(0);
 }
 
