@@ -2033,7 +2033,7 @@ int32_t get_stockprices(uint32_t now,uint32_t *prices,std::vector<std::string> s
                     prices[i] = uprice;
                     if ( timestamp > now+60 || timestamp < now-ASSETCHAINS_BLOCKTIME )
                     {
-                        fprintf(stderr,"time error.%d\n",timestamp-now);
+                        fprintf(stderr,"time error.%d (%u vs %u)\n",timestamp-now,timestamp,now);
                         retval = -1;
                     }
                     if ( symbols[i] != symbol )
@@ -2392,8 +2392,7 @@ char *komodo_pricename(char *name,int32_t ind)
                     return(0);
                 if ( ind < ASSETCHAINS_STOCKS.size() )
                 {
-                    fprintf(stderr,"ind.%d vs size.%d\n",ind,(int32_t)ASSETCHAINS_PRICES.size());
-                    strcpy(name,ASSETCHAINS_PRICES[ind].c_str());
+                    strcpy(name,ASSETCHAINS_STOCKS[ind].c_str());
                     strcat(name,"/USD");
                     return(name);
                 } else ind -= ASSETCHAINS_STOCKS.size();
