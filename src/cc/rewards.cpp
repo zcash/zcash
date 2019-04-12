@@ -338,7 +338,7 @@ int64_t AddRewardsInputs(CScript &scriptPubKey,uint64_t maxseconds,struct CCcont
     char coinaddr[64],str[65]; uint64_t threshold,sbits,nValue,totalinputs = 0; uint256 txid,hashBlock,fundingtxid; CTransaction tx; int32_t numblocks,j,vout,n = 0; uint8_t funcid;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     GetCCaddress(cp,coinaddr,pk);
-    SetCCunspents(unspentOutputs,coinaddr);
+    SetCCunspents(unspentOutputs,coinaddr,true);
     if ( maxinputs > CC_MAXVINS )
         maxinputs = CC_MAXVINS;
     if ( maxinputs > 0 )
@@ -403,7 +403,7 @@ int64_t RewardsPlanFunds(uint64_t &lockedfunds,uint64_t refsbits,struct CCcontra
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     lockedfunds = 0;
     GetCCaddress(cp,coinaddr,pk);
-    SetCCunspents(unspentOutputs,coinaddr);
+    SetCCunspents(unspentOutputs,coinaddr,true);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
@@ -433,7 +433,7 @@ bool RewardsPlanExists(struct CCcontract_info *cp,uint64_t refsbits,CPubKey rewa
     char CCaddr[64]; uint64_t sbits; uint256 txid,hashBlock; CTransaction tx;
     std::vector<std::pair<CAddressIndexKey, CAmount> > txids;
     GetCCaddress(cp,CCaddr,rewardspk);
-    SetCCtxids(txids,CCaddr);
+    SetCCtxids(txids,CCaddr,true);
     for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=txids.begin(); it!=txids.end(); it++)
     {
         //int height = it->first.blockHeight;
@@ -493,7 +493,7 @@ UniValue RewardsList()
 {
     UniValue result(UniValue::VARR); std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex; struct CCcontract_info *cp,C; uint256 txid,hashBlock; CTransaction vintx; uint64_t sbits,APR,minseconds,maxseconds,mindeposit; char str[65];
     cp = CCinit(&C,EVAL_REWARDS);
-    SetCCtxids(addressIndex,cp->normaladdr);
+    SetCCtxids(addressIndex,cp->normaladdr,false);
     for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=addressIndex.begin(); it!=addressIndex.end(); it++)
     {
         txid = it->first.txhash;

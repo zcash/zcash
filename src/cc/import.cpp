@@ -129,7 +129,7 @@ bool ImportCoinGatewaysVerify(CTransaction oracletx, int32_t claimvout, std::str
 //         return("");
 //     }
 //     CCtxidaddr(markeraddr,oracletxid);
-//     SetCCunspents(unspentOutputs,markeraddr);
+//     SetCCunspents(unspentOutputs,markeraddr,true);
 //     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
 //     {
 //         txid = it->first.txhash;
@@ -478,7 +478,7 @@ int32_t CheckGATEWAYimport(CTransaction importTx,CTransaction burnTx,std::string
     //     return(-1);
     // }
     // CCtxidaddr(markeraddr,oracletxid);
-    // SetCCunspents(unspentOutputs,markeraddr);
+    // SetCCunspents(unspentOutputs,markeraddr,true);
     // for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     // {
     //     txid = it->first.txhash;

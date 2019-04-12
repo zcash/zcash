@@ -2772,7 +2772,7 @@ UniValue sudoku_pending(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     sudokupk = GetUnspendable(cp,0);
     GetCCaddress(cp,coinaddr,sudokupk);
-    SetCCunspents(unspentOutputs,coinaddr);
+    SetCCunspents(unspentOutputs,coinaddr,true);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;

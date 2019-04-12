@@ -1152,7 +1152,7 @@ UniValue games_pending(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     gamespk = GetUnspendable(cp,0);
     GetCCaddress(cp,coinaddr,gamespk);
-    SetCCunspents(unspentOutputs,coinaddr);
+    SetCCunspents(unspentOutputs,coinaddr,true);
     nextheight = komodo_nextheight();
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
@@ -1638,7 +1638,7 @@ UniValue games_players(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     gamespk = GetUnspendable(cp,0);
     mypk = pubkey2pk(Mypubkey());
     GetTokensCCaddress(cp,coinaddr,mypk);
-    SetCCunspents(unspentOutputs,coinaddr);
+    SetCCunspents(unspentOutputs,coinaddr,true);
     games_univalue(result,"players",-1,-1);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
@@ -1665,7 +1665,7 @@ UniValue games_games(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     gamespk = GetUnspendable(cp,0);
     mypk = pubkey2pk(Mypubkey());
     GetCCaddress1of2(cp,coinaddr,gamespk,mypk);
-    SetCCtxids(addressIndex,coinaddr);
+    SetCCtxids(addressIndex,coinaddr,true);
     games_univalue(result,"games",-1,-1);
     for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=addressIndex.begin(); it!=addressIndex.end(); it++)
     {

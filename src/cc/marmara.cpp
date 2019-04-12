@@ -352,7 +352,7 @@ int64_t AddMarmaraCoinbases(struct CCcontract_info *cp,CMutableTransaction &mtx,
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     Marmarapk = GetUnspendable(cp,0);
     GetCCaddress1of2(cp,coinaddr,Marmarapk,poolpk);
-    SetCCunspents(unspentOutputs,coinaddr);
+    SetCCunspents(unspentOutputs,coinaddr,true);
     unlocks = MarmaraUnlockht(firstheight);
     //fprintf(stderr,"check coinaddr.(%s)\n",coinaddr);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
@@ -387,7 +387,7 @@ int64_t AddMarmarainputs(CMutableTransaction &mtx,std::vector<CPubKey> &pubkeys,
 {
     uint64_t threshold,nValue,totalinputs = 0; uint256 txid,hashBlock; CTransaction tx; int32_t numvouts,ht,unlockht,vout,i,n = 0; uint8_t funcid; CPubKey pk; std::vector<int64_t> vals;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
-    SetCCunspents(unspentOutputs,coinaddr);
+    SetCCunspents(unspentOutputs,coinaddr,true);
     if ( maxinputs > CC_MAXVINS )
         maxinputs = CC_MAXVINS;
     if ( maxinputs > 0 )
@@ -457,7 +457,7 @@ UniValue MarmaraLock(uint64_t txfee,int64_t amount,int32_t height)
         remains = (amount + txfee) - inputsum;
         std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
         GetCCaddress1of2(cp,coinaddr,Marmarapk,mypk);
-        SetCCunspents(unspentOutputs,coinaddr);
+        SetCCunspents(unspentOutputs,coinaddr,true);
         threshold = remains / (MARMARA_VINS+1);
         uint8_t mypriv[32];
         Myprivkey(mypriv);
@@ -666,7 +666,7 @@ int32_t MarmaraGetCreditloops(int64_t &totalamount,std::vector<uint256> &issuanc
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     Marmarapk = GetUnspendable(cp,0);
     GetCCaddress(cp,coinaddr,Marmarapk);
-    SetCCunspents(unspentOutputs,coinaddr);
+    SetCCunspents(unspentOutputs,coinaddr,true);
     // do all txid, conditional on spent/unspent
     //fprintf(stderr,"check coinaddr.(%s)\n",coinaddr);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)

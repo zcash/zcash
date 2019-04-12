@@ -482,7 +482,7 @@ bool CClib_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
             else if ( (hash[0] & 0xff) != 0 || (hash[31] & 0xff) != 0 )
                 return eval->Invalid("invalid faucetget txid");
             Getscriptaddress(destaddr,tx.vout[i].scriptPubKey);
-            SetCCtxids(txids,destaddr);
+            SetCCtxids(txids,destaddr,tx.vout[i].scriptPubKey.IsPayToCryptoCondition());
             for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=txids.begin(); it!=txids.end(); it++)
             {
                 //int height = it->first.blockHeight;
@@ -501,12 +501,12 @@ bool CClib_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const C
     }
 }
 
-int64_t AddCClibInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,int64_t total,int32_t maxinputs,char *cmpaddr)
+int64_t AddCClibInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,int64_t total,int32_t maxinputs,char *cmpaddr,int32_t CCflag)
 {
     char coinaddr[64]; int64_t threshold,nValue,price,totalinputs = 0,txfee = 10000; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t vout,n = 0;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     GetCCaddress(cp,coinaddr,pk);
-    SetCCunspents(unspentOutputs,coinaddr);
+    SetCCunspents(unspentOutputs,coinaddr,CCflag!=0?true:false);
     if ( maxinputs > CC_MAXVINS )
         maxinputs = CC_MAXVINS;
     if ( maxinputs != 0 )
@@ -542,7 +542,7 @@ int64_t AddCClibtxfee(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKe
     char coinaddr[64]; int64_t nValue,txfee = 10000; uint256 txid,hashBlock; CTransaction vintx; int32_t vout;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     GetCCaddress(cp,coinaddr,pk);
-    SetCCunspents(unspentOutputs,coinaddr);
+    SetCCunspents(unspentOutputs,coinaddr,true);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;

@@ -261,7 +261,7 @@ int32_t ImportGatewayBindExists(struct CCcontract_info *cp,CPubKey importgateway
     std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex;
 
     _GetCCaddress(markeraddr,EVAL_IMPORTGATEWAY,importgatewaypk);
-    SetCCtxids(addressIndex,markeraddr);
+    SetCCtxids(addressIndex,markeraddr,true);
     for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=addressIndex.begin(); it!=addressIndex.end(); it++)
     {
         if ( myGetTransaction(it->first.txhash,tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 0 && DecodeImportGatewayOpRet(tx.vout[numvouts-1].scriptPubKey)=='B' )
@@ -663,7 +663,7 @@ std::string ImportGatewayWithdraw(uint64_t txfee,uint256 bindtxid,std::string re
         return("");
     }
     _GetCCaddress(coinaddr,EVAL_IMPORTGATEWAY,importgatewaypk);
-    SetCCunspents(unspentOutputs,coinaddr);
+    SetCCunspents(unspentOutputs,coinaddr,true);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
@@ -992,7 +992,7 @@ UniValue ImportGatewayPendingDeposits(uint256 bindtxid,std::string refcoin)
         LOGSTREAM("importgateway",CCLOG_INFO, stream << CCerror << std::endl);
         return("");
     }  
-    SetCCunspents(unspentOutputs,coinaddr);    
+    SetCCunspents(unspentOutputs,coinaddr,true);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
@@ -1054,7 +1054,7 @@ UniValue ImportGatewayPendingWithdraws(uint256 bindtxid,std::string refcoin)
             queueflag = 1;
             break;
         }    
-    SetCCunspents(unspentOutputs,coinaddr);    
+    SetCCunspents(unspentOutputs,coinaddr,true);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
@@ -1142,7 +1142,7 @@ UniValue ImportGatewayProcessedWithdraws(uint256 bindtxid,std::string refcoin)
             queueflag = 1;
             break;
         }    
-    SetCCunspents(unspentOutputs,coinaddr);    
+    SetCCunspents(unspentOutputs,coinaddr,true);    
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
@@ -1181,7 +1181,7 @@ UniValue ImportGatewayList()
     struct CCcontract_info *cp,C; uint256 txid,hashBlock,oracletxid; CTransaction vintx; std::string coin;
     char str[65],burnaddr[64]; uint8_t M,N,taddr,prefix,prefix2,wiftype; std::vector<CPubKey> pubkeys;
     cp = CCinit(&C,EVAL_IMPORTGATEWAY);
-    SetCCtxids(addressIndex,cp->unspendableCCaddr);
+    SetCCtxids(addressIndex,cp->unspendableCCaddr,true);
     for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=addressIndex.begin(); it!=addressIndex.end(); it++)
     {
         txid = it->first.txhash;

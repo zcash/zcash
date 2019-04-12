@@ -1397,7 +1397,7 @@ UniValue rogue_pending(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     roguepk = GetUnspendable(cp,0);
     GetCCaddress(cp,coinaddr,roguepk);
-    SetCCunspents(unspentOutputs,coinaddr);
+    SetCCunspents(unspentOutputs,coinaddr,true);
     nextheight = komodo_nextheight();
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
@@ -1427,7 +1427,7 @@ UniValue rogue_players(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     roguepk = GetUnspendable(cp,0);
     mypk = pubkey2pk(Mypubkey());
     GetTokensCCaddress(cp,coinaddr,mypk);
-    SetCCunspents(unspentOutputs,coinaddr);
+    SetCCunspents(unspentOutputs,coinaddr,true);
     rogue_univalue(result,"players",-1,-1);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
@@ -1456,7 +1456,7 @@ UniValue rogue_games(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     mypk = pubkey2pk(Mypubkey());
     GetCCaddress1of2(cp,coinaddr,roguepk,mypk);
     //SetCCunspents(unspentOutputs,coinaddr);
-    SetCCtxids(addressIndex,coinaddr);
+    SetCCtxids(addressIndex,coinaddr,true);
     rogue_univalue(result,"games",-1,-1);
     for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=addressIndex.begin(); it!=addressIndex.end(); it++)
     //for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
