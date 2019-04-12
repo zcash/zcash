@@ -39,7 +39,7 @@ static int cmpCostDesc(const void *a, const void *b)
 {
     int retval;
     retval = (int) ( *(unsigned long*)b - *(unsigned long*)a );
-    if ( retval != 0 )
+    //if ( retval != 0 )
         return(retval);
     else if ( (uint64_t)a < (uint64_t)b ) // jl777 prevent nondeterminism
         return(-1);
@@ -86,9 +86,10 @@ static int cmpConditionBin(const void *a, const void *b) {
 
     if (ret == 0)
         return r0.encoded < r1.encoded ? -1 : 1;
-    else if ( (uint64_t)a < (uint64_t)b ) // jl777 prevent nondeterminism
-        return(-1);
-    else return(1);
+    //else if ( (uint64_t)a < (uint64_t)b ) // jl777 prevent nondeterminism
+    //    return(-1);
+    //else return(1);
+    return(0);
 }
 
 
