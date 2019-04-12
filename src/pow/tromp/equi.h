@@ -78,11 +78,12 @@ int compu32(const void *pa, const void *pb) {
     int32_t retval;
   u32 a = *(u32 *)pa, b = *(u32 *)pb;
   retval = a<b ? -1 : a==b ? 0 : +1;
-    if ( retval != 0 )
+    return(retval);
+/*   if ( retval != 0 )
         return(retval);
     else if ( (uint64_t)pa < (uint64_t)pb ) // jl777 prevent nondeterminism
         return(-1);
-    else return(1);
+    else return(1);*/
 }
 
 bool duped(proof prf) {
