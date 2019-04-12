@@ -2026,9 +2026,9 @@ int32_t get_stockprices(uint32_t now,uint32_t *prices,std::vector<std::string> s
             for (i=0; i<n; i++)
             {
                 obj = jitem(json,i);
-                if ( (symbol= jstr(obj,(char *)"symbol")) != 0 && (timestr= jstr(obj,(char *)"time")) != 0 )
+                if ( (symbol= jstr(obj,(char *)"symbol")) != 0 )
                 {
-                    timestamp = atol(timestr);
+                    timestamp = j64bits(obj,(char *)"time"); 
                     uprice = jdouble(obj,(char *)"price")*100 + 0.0049;
                     prices[i] = uprice;
                     if ( timestamp > now+60 || timestamp < now-ASSETCHAINS_BLOCKTIME )
