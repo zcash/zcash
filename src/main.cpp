@@ -5340,6 +5340,11 @@ bool AcceptBlock(int32_t *futureblockp,CBlock& block, CValidationState& state, C
                 {
                     fprintf(stderr,"reconsider height.%d\n",(int32_t)tmpptr->GetHeight()-1);
                     ReconsiderBlock(tmpstate,tmpindex);
+                    if ( (tmpindex=komodo_chainactive(tmpptr->GetHeight())) != 0 )
+                    {
+                        fprintf(stderr,"reconsider height.%d\n",(int32_t)tmpptr->GetHeight());
+                        ReconsiderBlock(tmpstate,tmpindex);
+                    }
                 }
             }
         }
