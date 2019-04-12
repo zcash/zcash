@@ -2014,7 +2014,7 @@ cJSON *get_urljson(char *url)
     return(json);
 }
 
-uint32_t get_stockprices(std::vector<std::string> symbols)
+uint32_t get_stockprices()//std::vector<std::string> symbols)
 {
     char url[32768]; cJSON *json,*obj; uint32_t high,low,price = 0;
     sprintf(url,"https://api.iextrading.com/1.0/tops/last?symbols=AAPL");
@@ -2195,7 +2195,7 @@ void komodo_cbopretupdate(int32_t forceflag)
             fprintf(stderr,"pricewait "), sleep(1);
         return;
     }
-    get_stockprices(0);
+    get_stockprices();
     
     pending = 1;
     now = (uint32_t)time(NULL);
