@@ -484,7 +484,7 @@ int32_t GatewaysBindExists(struct CCcontract_info *cp,CPubKey gatewayspk,uint256
     std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex;
 
     _GetCCaddress(markeraddr,EVAL_GATEWAYS,gatewayspk);
-    SetCCtxids(addressIndex,markeraddr);
+    SetCCtxids(addressIndex,markeraddr,true);
     for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=addressIndex.begin(); it!=addressIndex.end(); it++)
     {
         if ( myGetTransaction(it->first.txhash,tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 0 && DecodeGatewaysOpRet(tx.vout[numvouts-1].scriptPubKey)=='B' )
@@ -831,7 +831,7 @@ int64_t AddGatewaysInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CP
         if ((numvouts=bindtx.vout.size())!=0 && DecodeGatewaysBindOpRet(depositaddr,bindtx.vout[numvouts-1].scriptPubKey,tokenid,refcoin,totalsupply,oracletxid,M,N,pubkeys,taddr,prefix,prefix2,wiftype) == 'B')
         {
             GetTokensCCaddress(cp,coinaddr,pk);
-            SetCCunspents(unspentOutputs,coinaddr);
+            SetCCunspents(unspentOutputs,coinaddr,true);
             if ( maxinputs > CC_MAXVINS )
                 maxinputs = CC_MAXVINS;
             if ( maxinputs > 0 )
@@ -905,7 +905,7 @@ std::string GatewaysBind(uint64_t txfee,std::string coin,uint256 tokenid,int64_t
     for (i=0; i<N; i++)
     {
         Getscriptaddress(coinaddr,CScript() << ParseHex(HexStr(pubkeys[i])) << OP_CHECKSIG);
-        if ( CCaddress_balance(coinaddr) == 0 )
+        if ( CCaddress_balance(coinaddr,0) == 0 )
         {
             CCerror = strprintf("M.%d N.%d but pubkeys[%d] has no balance",M,N,i);
             LOGSTREAM("gatewayscc",CCLOG_INFO, stream << CCerror << std::endl);
@@ -1160,7 +1160,7 @@ std::string GatewaysWithdraw(uint64_t txfee,uint256 bindtxid,std::string refcoin
         return("");
     }
     _GetCCaddress(coinaddr,EVAL_GATEWAYS,gatewayspk);
-    SetCCunspents(unspentOutputs,coinaddr);
+    SetCCunspents(unspentOutputs,coinaddr,true);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
@@ -1500,7 +1500,7 @@ UniValue GatewaysPendingDeposits(uint256 bindtxid,std::string refcoin)
         result.push_back(Pair("error",strprintf("invalid bindtxid %s coin.%s",uint256_str(str,bindtxid),coin.c_str())));     
         return(result);
     }  
-    SetCCunspents(unspentOutputs,coinaddr);    
+    SetCCunspents(unspentOutputs,coinaddr,true);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
@@ -1563,7 +1563,7 @@ UniValue GatewaysPendingWithdraws(uint256 bindtxid,std::string refcoin)
             queueflag = 1;
             break;
         }    
-    SetCCunspents(unspentOutputs,coinaddr);    
+    SetCCunspents(unspentOutputs,coinaddr,true);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
@@ -1651,7 +1651,7 @@ UniValue GatewaysProcessedWithdraws(uint256 bindtxid,std::string refcoin)
             queueflag = 1;
             break;
         }    
-    SetCCunspents(unspentOutputs,coinaddr);    
+    SetCCunspents(unspentOutputs,coinaddr,true);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
@@ -1688,7 +1688,7 @@ UniValue GatewaysList()
 {
     UniValue result(UniValue::VARR); std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex; struct CCcontract_info *cp,C; uint256 txid,hashBlock,oracletxid,tokenid; CTransaction vintx; std::string coin; int64_t totalsupply; char str[65],depositaddr[64]; uint8_t M,N,taddr,prefix,prefix2,wiftype; std::vector<CPubKey> pubkeys;
     cp = CCinit(&C,EVAL_GATEWAYS);
-    SetCCtxids(addressIndex,cp->unspendableCCaddr);
+    SetCCtxids(addressIndex,cp->unspendableCCaddr,true);
     for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=addressIndex.begin(); it!=addressIndex.end(); it++)
     {
         txid = it->first.txhash;

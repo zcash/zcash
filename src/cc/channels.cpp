@@ -411,7 +411,7 @@ int64_t AddChannelsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx, C
     {
         if (tokenid!=zeroid) GetTokensCCaddress1of2(cp,coinaddr,srcpub,destpub);
         else GetCCaddress1of2(cp,coinaddr,srcpub,destpub);
-        SetCCunspents(unspentOutputs,coinaddr);
+        SetCCunspents(unspentOutputs,coinaddr,true);
     }
     else
     {
@@ -797,7 +797,7 @@ UniValue ChannelsList()
     cp = CCinit(&C,EVAL_CHANNELS);
     mypk = pubkey2pk(Mypubkey());
     GetCCaddress(cp,myCCaddr,mypk);
-    SetCCtxids(txids,myCCaddr);
+    SetCCtxids(txids,myCCaddr,true);
     result.push_back(Pair("result","success"));
     result.push_back(Pair("name","Channels List"));
     for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=txids.begin(); it!=txids.end(); it++)
@@ -848,7 +848,7 @@ UniValue ChannelsInfo(uint256 channeltxid)
             result.push_back(Pair("Denomination (satoshi)",i64tostr(param2)));
             result.push_back(Pair("Amount (satoshi)",i64tostr(param1*param2)));
         }        
-        SetCCtxids(addressIndex,CCaddr);                      
+        SetCCtxids(addressIndex,CCaddr,true);                      
         for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=addressIndex.begin(); it!=addressIndex.end(); it++)
         {
             if (GetTransaction(it->first.txhash,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 0 )

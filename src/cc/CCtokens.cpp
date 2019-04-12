@@ -580,7 +580,7 @@ int64_t AddTokenCCInputs(struct CCcontract_info *cp, CMutableTransaction &mtx, C
         cp->additionalTokensEvalcode2 = vopretNonfungible.begin()[0];
 
 	GetTokensCCaddress(cp, tokenaddr, pk);
-	SetCCunspents(unspentOutputs, tokenaddr);
+	SetCCunspents(unspentOutputs, tokenaddr,true);
 
     if (unspentOutputs.empty()) {
         LOGSTREAM((char *)"cctokens", CCLOG_INFO, stream << "AddTokenCCInputs() no utxos for token dual/three eval addr=" << tokenaddr << " evalcode=" << (int)cp->evalcode << " additionalTokensEvalcode2=" << (int)cp->additionalTokensEvalcode2 << std::endl);
@@ -942,12 +942,12 @@ UniValue TokenList()
         }
     };
 
-	SetCCtxids(addressIndex, cp->normaladdr);                      // find by old normal addr marker 
+	SetCCtxids(addressIndex, cp->normaladdr,false);                      // find by old normal addr marker
    	for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it = addressIndex.begin(); it != addressIndex.end(); it++) 	{
         addTokenId(it->first.txhash);
 	}
 
-    SetCCunspents(addressIndexCCMarker, cp->unspendableCCaddr);    // find by burnable validated cc addr marker 
+    SetCCunspents(addressIndexCCMarker, cp->unspendableCCaddr,true);    // find by burnable validated cc addr marker
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it = addressIndexCCMarker.begin(); it != addressIndexCCMarker.end(); it++) {
         addTokenId(it->first.txhash);
     }
