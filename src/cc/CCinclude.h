@@ -179,7 +179,7 @@ int32_t decode_hex(uint8_t *bytes,int32_t n,char *hex);
 int32_t iguana_rwnum(int32_t rwflag,uint8_t *serialized,int32_t len,void *endianedp);
 int32_t iguana_rwbignum(int32_t rwflag,uint8_t *serialized,int32_t len,uint8_t *endianedp);
 CScript GetScriptForMultisig(int nRequired, const std::vector<CPubKey>& keys);
-int64_t CCaddress_balance(char *coinaddr);
+int64_t CCaddress_balance(char *coinaddr,int32_t CCflag);
 CPubKey CCtxidaddr(char *txidaddr,uint256 txid);
 CPubKey CCCustomtxidaddr(char *txidaddr,uint256 txid,uint8_t taddr,uint8_t prefix,uint8_t prefix2);
 bool GetCCParams(Eval* eval, const CTransaction &tx, uint32_t nIn,
@@ -282,7 +282,7 @@ void SetCCunspents(std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValu
 void SetCCtxids(std::vector<std::pair<CAddressIndexKey, CAmount> > &addressIndex,char *coinaddr,bool CCflag = true);
 int64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int32_t maxinputs);
 int64_t AddNormalinputs2(CMutableTransaction &mtx,int64_t total,int32_t maxinputs);
-int64_t CCutxovalue(char *coinaddr,uint256 utxotxid,int32_t utxovout);
+int64_t CCutxovalue(char *coinaddr,uint256 utxotxid,int32_t utxovout,int32_t CCflag);
 
 // curve25519 and sha256
 bits256 curve25519_shared(bits256 privkey,bits256 otherpub);

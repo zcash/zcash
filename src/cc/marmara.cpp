@@ -441,7 +441,7 @@ UniValue MarmaraLock(uint64_t txfee,int64_t amount,int32_t height)
     mypk = pubkey2pk(Mypubkey());
     Marmarapk = GetUnspendable(cp,0);
     Getscriptaddress(coinaddr,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG);
-    if ( (val= CCaddress_balance(coinaddr)) < amount )
+    if ( (val= CCaddress_balance(coinaddr,0)) < amount )
         val -= txfee;
     else val = amount;
     if ( val > txfee )
@@ -1059,16 +1059,16 @@ UniValue MarmaraInfo(CPubKey refpk,int32_t firstheight,int32_t lastheight,int64_
     result.push_back(Pair("result","success"));
     Getscriptaddress(coinaddr,CScript() << ParseHex(HexStr(Mypubkey())) << OP_CHECKSIG);
     result.push_back(Pair("myaddress",coinaddr));
-    result.push_back(Pair("normal",ValueFromAmount(CCaddress_balance(coinaddr))));
+    result.push_back(Pair("normal",ValueFromAmount(CCaddress_balance(coinaddr,0))));
     
     GetCCaddress1of2(cp,coinaddr,Marmarapk,Mypubkey());
     result.push_back(Pair("myCCactivated",coinaddr));
-    result.push_back(Pair("activated",ValueFromAmount(CCaddress_balance(coinaddr))));
+    result.push_back(Pair("activated",ValueFromAmount(CCaddress_balance(coinaddr,1))));
     result.push_back(Pair("activated16",ValueFromAmount(AddMarmarainputs(mtx,pubkeys,coinaddr,0,MARMARA_VINS))));
     
     GetCCaddress(cp,coinaddr,Mypubkey());
     result.push_back(Pair("myCCaddress",coinaddr));
-    result.push_back(Pair("CCutxos",ValueFromAmount(CCaddress_balance(coinaddr))));
+    result.push_back(Pair("CCutxos",ValueFromAmount(CCaddress_balance(coinaddr,1))));
 
     if ( refpk.size() == 33 )
         result.push_back(Pair("issuer",HexStr(refpk)));

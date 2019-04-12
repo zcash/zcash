@@ -2844,7 +2844,7 @@ UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
                     pk = buf2pk(pub33);
                     GetCCaddress(cp,CCaddr,pk);
                     result.push_back(Pair("sudokuaddr",CCaddr));
-                    balance = CCaddress_balance(CCaddr);
+                    balance = CCaddress_balance(CCaddr,1);
                     result.push_back(Pair("amount",ValueFromAmount(balance)));
                     if ( sudoku_captcha(1,timestamps,komodo_nextheight()) < 0 )
                     {

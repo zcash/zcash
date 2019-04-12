@@ -650,7 +650,7 @@ std::string RewardsUnlock(uint64_t txfee,char *planstr,uint256 fundingtxid,uint2
     else
     {
         GetCCaddress(cp,coinaddr,rewardspk);
-        if ( (amount= CCutxovalue(coinaddr,locktxid,0)) == 0 )
+        if ( (amount= CCutxovalue(coinaddr,locktxid,0,1)) == 0 )
         {
             fprintf(stderr,"%s locktxid/v0 is spent\n",coinaddr);
             CCerror = "locktxid/v0 is spent";

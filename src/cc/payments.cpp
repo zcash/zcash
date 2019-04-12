@@ -864,10 +864,10 @@ UniValue PaymentsInfo(struct CCcontract_info *cp,char *jsonstr)
                     result.push_back(Pair("txidoprets",a));
                     txidpk = CCtxidaddr(txidaddr,createtxid);
                     GetCCaddress1of2(cp,fundsaddr,Paymentspk,txidpk);
-                    funds = CCaddress_balance(fundsaddr);
+                    funds = CCaddress_balance(fundsaddr,1);
                     result.push_back(Pair(fundsaddr,ValueFromAmount(funds)));
                     GetCCaddress(cp,fundsopretaddr,Paymentspk);
-                    fundsopret = CCaddress_balance(fundsopretaddr);
+                    fundsopret = CCaddress_balance(fundsopretaddr,1);
                     result.push_back(Pair(fundsopretaddr,ValueFromAmount(fundsopret)));
                     result.push_back(Pair("totalfunds",ValueFromAmount(funds+fundsopret)));
                     result.push_back(Pair("result","success"));

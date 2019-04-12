@@ -905,7 +905,7 @@ std::string GatewaysBind(uint64_t txfee,std::string coin,uint256 tokenid,int64_t
     for (i=0; i<N; i++)
     {
         Getscriptaddress(coinaddr,CScript() << ParseHex(HexStr(pubkeys[i])) << OP_CHECKSIG);
-        if ( CCaddress_balance(coinaddr) == 0 )
+        if ( CCaddress_balance(coinaddr,0) == 0 )
         {
             CCerror = strprintf("M.%d N.%d but pubkeys[%d] has no balance",M,N,i);
             LOGSTREAM("gatewayscc",CCLOG_INFO, stream << CCerror << std::endl);
