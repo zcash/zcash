@@ -512,8 +512,8 @@ namespace {
         // Never fetch further than the best block we know the peer has, or more than BLOCK_DOWNLOAD_WINDOW + 1 beyond the last
         // linked block we have in common with this peer. The +1 is so we can detect stalling, namely if we would be able to
         // download that next block if the window were 1 larger.
-        //if ( ASSETCHAINS_CBOPRET != 0 )
-        //    BLOCK_DOWNLOAD_WINDOW = 1;
+        if ( ASSETCHAINS_CBOPRET != 0 && IsInitialBlockDownload() == 0 )
+            BLOCK_DOWNLOAD_WINDOW = 1;
         int nWindowEnd = state->pindexLastCommonBlock->GetHeight() + BLOCK_DOWNLOAD_WINDOW;
         int nMaxHeight = std::min<int>(state->pindexBestKnownBlock->GetHeight(), nWindowEnd + 1);
         NodeId waitingfor = -1;
