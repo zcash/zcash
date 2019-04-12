@@ -806,7 +806,7 @@ UniValue rogue_newgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     roguepk = GetUnspendable(cp,0);
     rogue_univalue(result,"newgame",maxplayers,buyin);
     required = (3*txfee + maxplayers*(ROGUE_REGISTRATIONSIZE+txfee));
-    if ( (inputsum= AddCClibInputs(cp,mtx,roguepk,required,16,cp->unspendableCCaddr)) >= required )
+    if ( (inputsum= AddCClibInputs(cp,mtx,roguepk,required,16,cp->unspendableCCaddr,1)) >= required )
     {
         mtx.vout.push_back(MakeCC1vout(cp->evalcode,txfee,roguepk)); // for highlander TCBOO creation
         for (i=0; i<maxplayers; i++)
@@ -1301,7 +1301,7 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
                             }
                             if ( cashout > 0 )
                             {
-                                if ( (inputsum= AddCClibInputs(cp,mtx,roguepk,cashout,60,cp->unspendableCCaddr)) > cashout )
+                                if ( (inputsum= AddCClibInputs(cp,mtx,roguepk,cashout,60,cp->unspendableCCaddr,1)) > cashout )
                                     CCchange = (inputsum - cashout);
                                 else fprintf(stderr,"couldnt find enough utxos\n");
                             }

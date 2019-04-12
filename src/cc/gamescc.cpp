@@ -1130,7 +1130,7 @@ UniValue games_newgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     gamespk = GetUnspendable(cp,0);
     games_univalue(result,"newgame",maxplayers,buyin);
     required = (3*txfee + maxplayers*(GAMES_REGISTRATIONSIZE+txfee));
-    if ( (inputsum= AddCClibInputs(cp,mtx,gamespk,required,16,cp->unspendableCCaddr)) >= required )
+    if ( (inputsum= AddCClibInputs(cp,mtx,gamespk,required,16,cp->unspendableCCaddr,1)) >= required )
     {
         mtx.vout.push_back(MakeCC1vout(cp->evalcode,txfee,gamespk));
         for (i=0; i<maxplayers; i++)
@@ -1583,7 +1583,7 @@ UniValue games_finish(uint64_t txfee,struct CCcontract_info *cp,cJSON *params,ch
                             }
                             if ( cashout > 0 )
                             {
-                                if ( (inputsum= AddCClibInputs(cp,mtx,gamespk,cashout,60,cp->unspendableCCaddr)) > cashout )
+                                if ( (inputsum= AddCClibInputs(cp,mtx,gamespk,cashout,60,cp->unspendableCCaddr,1)) > cashout )
                                     CCchange = (inputsum - cashout);
                                 else fprintf(stderr,"couldnt find enough utxos\n");
                             }
