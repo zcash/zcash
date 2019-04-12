@@ -2673,6 +2673,7 @@ int32_t komodo_pricesinit()
     {
         if ( komodo_pricename(PRICES[i].symbol,i) == 0 )
             break;
+        fprintf(stderr,"%s.%d ",PRICES[i].symbol,i);
         if ( i == 0 )
             strcpy(PRICES[i].symbol,"rawprices");
         pricefname = pricesdir / PRICES[i].symbol;
@@ -2685,7 +2686,7 @@ int32_t komodo_pricesinit()
                 fputc(0,PRICES[i].fp);
                 fflush(PRICES[i].fp);
             }
-        }
+        } else fprintf(stderr,"error operning %s createflag.%d\n",pricefname.string().c_str(), createflag);
     }
     if ( i > 0 && PRICES[0].fp != 0 && createflag != 0 )
     {
