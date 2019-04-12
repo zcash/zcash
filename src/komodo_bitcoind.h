@@ -457,6 +457,7 @@ void komodo_reconsiderblock(uint256 blockhash)
         fprintf(stderr,"komodo_reconsiderblock.(%s) -> (%s)\n",params,jsonstr);
         free(jsonstr);
     }
+    fprintf(stderr,"komodo_reconsiderblock.(%s) -> NULL\n",params);
 }
 
 int32_t komodo_verifynotarization(char *symbol,char *dest,int32_t height,int32_t NOTARIZED_HEIGHT,uint256 NOTARIZED_HASH,uint256 NOTARIZED_DESTTXID)
