@@ -5344,7 +5344,7 @@ bool AcceptBlock(int32_t *futureblockp,CBlock& block, CValidationState& state, C
                 {
                     fprintf(stderr,"reconsider height.%d, longest.%d\n",(int32_t)ht,longest);
                     if ( Queued_reconsiderblock == zeroid )
-                        Queued_reconsiderblock = pindex->GetHash();
+                        Queued_reconsiderblock = pindex->GetBlockHash();
                 }
             }
         }
