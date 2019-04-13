@@ -2707,6 +2707,14 @@ int32_t komodo_pricesinit()
     return(0);
 }
 
+pthread_mutex_t pricemutex;
+
+// PRICES file layouts
+// [0] rawprice32 / timestamp
+// [1] correlated
+// [2] 24hr ave
+// [3] to [7] reserved
+
 void komodo_pricesupdate(int32_t height,CBlock *pblock)
 {
     static int numprices; static uint32_t *ptr32; static int64_t *ptr64,*tmpbuf;
@@ -2714,6 +2722,7 @@ void komodo_pricesupdate(int32_t height,CBlock *pblock)
     width = PRICES_DAYWINDOW;//(2*PRICES_DAYWINDOW + PRICES_SMOOTHWIDTH);
     if ( numprices == 0 )
     {
+        pthread_mutex_init(&pricemutex,0);
         numprices = (int32_t)(komodo_cbopretsize(ASSETCHAINS_CBOPRET) / sizeof(uint32_t));
         ptr32 = (uint32_t *)calloc(sizeof(uint32_t),numprices * width);
         ptr64 = (int64_t *)calloc(sizeof(int64_t),PRICES_DAYWINDOW*PRICES_MAXDATAPOINTS);
@@ -2727,6 +2736,7 @@ void komodo_pricesupdate(int32_t height,CBlock *pblock)
         //fprintf(stderr,"numprices.%d\n",numprices);
         if ( PRICES[0].fp != 0 )
         {
+            pthread_mutex_lock(&pricemutex);
             fseek(PRICES[0].fp,height * numprices * sizeof(uint32_t),SEEK_SET);
             if ( fwrite(rawprices,sizeof(uint32_t),numprices,PRICES[0].fp) != numprices )
                 fprintf(stderr,"error writing rawprices for ht.%d\n",height);
@@ -2774,8 +2784,22 @@ void komodo_pricesupdate(int32_t height,CBlock *pblock)
                     fprintf(stderr,"height.%d\n",height);
                 } else fprintf(stderr,"error reading rawprices for ht.%d\n",height);
             } else fprintf(stderr,"height.%d <= width.%d\n",height,width);
+            pthread_mutex_unlock(&pricemutex);
         } else fprintf(stderr,"null PRICES[0].fp\n");
     } else fprintf(stderr,"numprices mismatch, height.%d\n",height);
 }
 
+int32_t komodo_priceget(int64_t *buf64,int32_t ind,int32_t height,int32_t numblocks)
+{
+    FILE *fp; int32_t retval = PRICES_MAXDATAPOINTS;
+    pthread_mutex_lock(&pricemutex);
+    if ( ind < KOMODO_MAXPRICES && (fp= PRICES[ind].fp) != 0 )
+    {
+        fseek(fp,height * PRICES_MAXDATAPOINTS * sizeof(int64_t),SEEK_SET);
+        if ( fread(buf64,sizeof(int64_t),numblocks*PRICES_MAXDATAPOINTS,fp) != numblocks*PRICES_MAXDATAPOINTS )
+            retval = -1;
+    }
+    pthread_mutex_unlock(&pricemutex);
+    return(retval);
+}
 
