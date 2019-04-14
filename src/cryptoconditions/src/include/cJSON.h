@@ -35,8 +35,8 @@
  *                                                                            *
  ******************************************************************************/
 
-#ifndef cJSON__h
-#define cJSON__h
+#ifndef cJSON__cch
+#define cJSON__cch
 
 #ifdef __cplusplus
 extern "C"

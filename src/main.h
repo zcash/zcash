@@ -90,7 +90,8 @@ static const unsigned int DEFAULT_MAX_ORPHAN_TRANSACTIONS = 100;
 /** Default for -txexpirydelta, in number of blocks */
 static const unsigned int DEFAULT_TX_EXPIRY_DELTA = 20;
 /** The maximum size of a blk?????.dat file (since 0.8) */
-static const unsigned int MAX_BLOCKFILE_SIZE = 0x8000000; // 128 MiB
+static const unsigned int MAX_BLOCKFILE_SIZE = 0x8000000; // 128 MiB 
+static const unsigned int MAX_TEMPFILE_SIZE = 0x1000000; // 16 MiB 0x8000000
 /** The pre-allocation chunk size for blk?????.dat files (since 0.8) */
 static const unsigned int BLOCKFILE_CHUNK_SIZE = 0x1000000; // 16 MiB
 /** The pre-allocation chunk size for rev?????.dat files (since 0.8) */
@@ -251,7 +252,7 @@ std::string GetWarnings(const std::string& strFor);
 /** Retrieve a transaction (from memory pool, or from disk, if possible) */
 bool GetTransaction(const uint256 &hash, CTransaction &tx, uint256 &hashBlock, bool fAllowSlow = false);
 /** Find the best known block, and make it the tip of the block chain */
-bool ActivateBestChain(CValidationState &state, CBlock *pblock = NULL);
+bool ActivateBestChain(bool fSkipdpow, CValidationState &state, CBlock *pblock = NULL);
 CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams);
 
 /**
@@ -705,7 +706,7 @@ bool ContextualCheckInputs(const CTransaction& tx, CValidationState &state, cons
                            std::vector<CScriptCheck> *pvChecks = NULL);
 
 /** Check a transaction contextually against a set of consensus rules */
-bool ContextualCheckTransaction(const CTransaction& tx, CValidationState &state, int nHeight, int dosLevel,
+bool ContextualCheckTransaction(const CBlock *block, CBlockIndex * const pindexPrev,const CTransaction& tx, CValidationState &state, int nHeight, int dosLevel,
                                 bool (*isInitBlockDownload)() = IsInitialBlockDownload);
 
 /** Apply the effects of this transaction on the UTXO set represented by view */
@@ -807,6 +808,7 @@ bool WriteBlockToDisk(const CBlock& block, CDiskBlockPos& pos, const CMessageHea
 bool ReadBlockFromDisk(CBlock& block, const CDiskBlockPos& pos,bool checkPOW);
 bool ReadBlockFromDisk(CBlock& block, const CBlockIndex* pindex,bool checkPOW);
 bool RemoveOrphanedBlocks(int32_t notarized_height);
+bool PruneOneBlockFile(bool tempfile, const int fileNumber);
 
 /** Functions for validating blocks and updating the block tree */
 

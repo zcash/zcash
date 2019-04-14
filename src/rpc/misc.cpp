@@ -28,7 +28,9 @@
 #include "timedata.h"
 #include "txmempool.h"
 #include "util.h"
+#include "notaries_staked.h"
 #include "cc/eval.h"
+#include "cc/CCinclude.h"
 #ifdef ENABLE_WALLET
 #include "wallet/wallet.h"
 #include "wallet/walletdb.h"
@@ -62,26 +64,131 @@ int32_t Jumblr_depositaddradd(char *depositaddr);
 int32_t Jumblr_secretaddradd(char *secretaddr);
 uint64_t komodo_interestsum();
 int32_t komodo_longestchain();
-int32_t komodo_notarized_height(int32_t *prevhtp,uint256 *hashp,uint256 *txidp);
+int32_t komodo_notarized_height(int32_t *prevMoMheightp,uint256 *hashp,uint256 *txidp);
 bool komodo_txnotarizedconfirmed(uint256 txid);
 uint32_t komodo_chainactive_timestamp();
 int32_t komodo_whoami(char *pubkeystr,int32_t height,uint32_t timestamp);
 extern uint64_t KOMODO_INTERESTSUM,KOMODO_WALLETBALANCE;
-extern int32_t KOMODO_LASTMINED,JUMBLR_PAUSE,KOMODO_LONGESTCHAIN;
+extern int32_t KOMODO_LASTMINED,JUMBLR_PAUSE,KOMODO_LONGESTCHAIN,IS_STAKED_NOTARY,IS_KOMODO_NOTARY,STAKED_ERA;
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 uint32_t komodo_segid32(char *coinaddr);
 int64_t komodo_coinsupply(int64_t *zfundsp,int64_t *sproutfundsp,int32_t height);
 int32_t notarizedtxid_height(char *dest,char *txidstr,int32_t *kmdnotarized_heightp);
+int8_t StakedNotaryID(std::string &notaryname, char *Raddress);
+
 #define KOMODO_VERSION "0.3.3b"
 #define VERUS_VERSION "0.4.0g"
 extern uint16_t ASSETCHAINS_P2PPORT,ASSETCHAINS_RPCPORT;
 extern uint32_t ASSETCHAINS_CC;
-extern uint32_t ASSETCHAINS_MAGIC;
-extern uint64_t ASSETCHAINS_COMMISSION,ASSETCHAINS_STAKED,ASSETCHAINS_SUPPLY;
-extern uint32_t ASSETCHAINS_LASTERA;
-extern int32_t ASSETCHAINS_LWMAPOS,ASSETCHAINS_SAPLING;
-extern uint64_t ASSETCHAINS_ENDSUBSIDY[],ASSETCHAINS_REWARD[],ASSETCHAINS_HALVING[],ASSETCHAINS_DECAY[];
-extern std::string NOTARY_PUBKEY; extern uint8_t NOTARY_PUBKEY33[];
+extern uint32_t ASSETCHAINS_MAGIC,ASSETCHAINS_ALGO;
+extern uint64_t ASSETCHAINS_COMMISSION,ASSETCHAINS_SUPPLY;
+extern int32_t ASSETCHAINS_LWMAPOS,ASSETCHAINS_SAPLING,ASSETCHAINS_STAKED;
+extern uint64_t ASSETCHAINS_ENDSUBSIDY[],ASSETCHAINS_REWARD[],ASSETCHAINS_HALVING[],ASSETCHAINS_DECAY[],ASSETCHAINS_NOTARY_PAY[];
+extern std::string NOTARY_PUBKEY,NOTARY_ADDRESS; extern uint8_t NOTARY_PUBKEY33[];
+
+int32_t getera(int timestamp)
+{
+    for (int32_t i = 0; i < NUM_STAKED_ERAS; i++) {
+        if ( timestamp <= STAKED_NOTARIES_TIMESTAMP[i] ) {
+            return(i);
+        }
+    }
+    return(0);
+}
+
+UniValue getiguanajson(const UniValue& params, bool fHelp)
+{
+    if (fHelp || params.size() != 0)
+      throw runtime_error("getiguanajson\nreturns json for iguana, for the current ERA.");
+
+    UniValue json(UniValue::VOBJ);
+    UniValue seeds(UniValue::VARR);
+    UniValue notaries(UniValue::VARR);
+    // get the current era, use local time for now.
+    // should ideally take blocktime of last known block?
+    int now = time(NULL);
+    int32_t era = getera(now);
+
+    // loop over seeds array and push back to json array for seeds
+    for (int8_t i = 0; i < 8; i++) {
+        seeds.push_back(iguanaSeeds[i][0]);
+    }
+
+    // loop over era's notaries and push back each pair to the notary array
+    for (int8_t i = 0; i < num_notaries_STAKED[era]; i++) {
+        UniValue notary(UniValue::VOBJ);
+        notary.push_back(Pair(notaries_STAKED[era][i][0],notaries_STAKED[era][i][1]));
+        notaries.push_back(notary);
+    }
+
+    // get the min sigs .. this always rounds UP so min sigs in iguana is +1 min sigs in komodod, due to some rounding error.
+    int minsigs;
+    if ( num_notaries_STAKED[era]/5 > overrideMinSigs )
+        minsigs = (num_notaries_STAKED[era] / 5) + 1;
+    else
+        minsigs = overrideMinSigs;
+
+    json.push_back(Pair("port",iguanaPort));
+    json.push_back(Pair("BTCminsigs",BTCminsigs));
+    json.push_back(Pair("minsigs",minsigs));
+    json.push_back(Pair("seeds",seeds));
+    json.push_back(Pair("notaries",notaries));
+    return json;
+}
+
+UniValue getnotarysendmany(const UniValue& params, bool fHelp)
+{
+    if (fHelp || params.size() > 1)
+      throw runtime_error(
+          "getnotarysendmany\n"
+          "Returns a sendmany JSON array with all current notaries Raddress's.\n"
+          "\nExamples:\n"
+          + HelpExampleCli("getnotarysendmany", "10")
+          + HelpExampleRpc("getnotarysendmany", "10")
+      );
+    int amount = 0;
+    if ( params.size() == 1 ) {
+        amount = params[0].get_int();
+    }
+
+    int era = getera(time(NULL));
+
+    UniValue ret(UniValue::VOBJ);
+    for (int i = 0; i<num_notaries_STAKED[era]; i++)
+    {
+        char Raddress[18]; uint8_t pubkey33[33];
+        decode_hex(pubkey33,33,(char *)notaries_STAKED[era][i][1]);
+        pubkey2addr((char *)Raddress,(uint8_t *)pubkey33);
+        ret.push_back(Pair(Raddress,amount));
+    }
+    return ret;
+}
+
+UniValue geterablockheights(const UniValue& params, bool fHelp)
+{
+    if (fHelp || params.size() != 0)
+      throw runtime_error(
+          "getnotarysendmany\n"
+          "Returns a JSON object with the first block in each era.\n"
+          );
+      
+    CBlockIndex *pindex; int8_t lastera,era = 0; UniValue ret(UniValue::VOBJ);
+
+    for (size_t i = 1; i < chainActive.LastTip()->GetHeight(); i++)
+    {
+        pindex = chainActive[i];
+        era = getera(pindex->nTime)+1;
+        if ( era > lastera )
+        {
+            char str[16];
+            sprintf(str, "%d", era);
+            ret.push_back(Pair(str,(int64_t)i));
+            lastera = era;
+        }
+    }
+    
+    return(ret);
+}
 
 UniValue getinfo(const UniValue& params, bool fHelp)
 {
@@ -179,17 +286,17 @@ UniValue getinfo(const UniValue& params, bool fHelp)
 #endif
     obj.push_back(Pair("relayfee",      ValueFromAmount(::minRelayTxFee.GetFeePerK())));
     obj.push_back(Pair("errors",        GetWarnings("statusbar")));
-    {
-        char pubkeystr[65]; int32_t notaryid;
-        if ( (notaryid= komodo_whoami(pubkeystr,(int32_t)chainActive.LastTip()->GetHeight(),komodo_chainactive_timestamp())) >= 0 )
-        {
+     if ( NOTARY_PUBKEY33[0] != 0 ) {
+        char pubkeystr[65]; int32_t notaryid; std::string notaryname;
+        if ( (notaryid= StakedNotaryID(notaryname, (char *)NOTARY_ADDRESS.c_str())) != -1 ) {
             obj.push_back(Pair("notaryid",        notaryid));
-            obj.push_back(Pair("pubkey",        pubkeystr));
+            obj.push_back(Pair("notaryname",      notaryname));
+        } else if( (notaryid= komodo_whoami(pubkeystr,(int32_t)chainActive.LastTip()->GetHeight(),komodo_chainactive_timestamp())) >= 0 )  {
+            obj.push_back(Pair("notaryid",        notaryid));
             if ( KOMODO_LASTMINED != 0 )
-                obj.push_back(Pair("lastmined",        KOMODO_LASTMINED));
-        } else if ( NOTARY_PUBKEY33[0] != 0 ) {
-            obj.push_back(Pair("pubkey", NOTARY_PUBKEY));
+                obj.push_back(Pair("lastmined", KOMODO_LASTMINED));
         }
+        obj.push_back(Pair("pubkey", NOTARY_PUBKEY));
     }
     if ( ASSETCHAINS_CC != 0 )
         obj.push_back(Pair("CCid",        (int)ASSETCHAINS_CC));
@@ -200,13 +307,15 @@ UniValue getinfo(const UniValue& params, bool fHelp)
     obj.push_back(Pair("rpcport",        ASSETCHAINS_RPCPORT));
     if ( ASSETCHAINS_SYMBOL[0] != 0 )
     {
+        if ( is_STAKED(ASSETCHAINS_SYMBOL) != 0 )
+            obj.push_back(Pair("StakedEra",        STAKED_ERA));
         //obj.push_back(Pair("name",        ASSETCHAINS_SYMBOL));
         obj.push_back(Pair("magic",        (int)ASSETCHAINS_MAGIC));
         obj.push_back(Pair("premine",        ASSETCHAINS_SUPPLY));
 
         if ( ASSETCHAINS_REWARD[0] != 0 || ASSETCHAINS_LASTERA > 0 )
         {
-            std::string acReward = "", acHalving = "", acDecay = "", acEndSubsidy = "";
+            std::string acReward = "", acHalving = "", acDecay = "", acEndSubsidy = "", acNotaryPay = "";
             for (int i = 0; i <= ASSETCHAINS_LASTERA; i++)
             {
                 if (i == 0)
@@ -215,6 +324,7 @@ UniValue getinfo(const UniValue& params, bool fHelp)
                     acHalving = std::to_string(ASSETCHAINS_HALVING[i]);
                     acDecay = std::to_string(ASSETCHAINS_DECAY[i]);
                     acEndSubsidy = std::to_string(ASSETCHAINS_ENDSUBSIDY[i]);
+                    acNotaryPay = std::to_string(ASSETCHAINS_NOTARY_PAY[i]);
                 }
                 else
                 {
@@ -222,6 +332,7 @@ UniValue getinfo(const UniValue& params, bool fHelp)
                     acHalving += "," + std::to_string(ASSETCHAINS_HALVING[i]);
                     acDecay += "," + std::to_string(ASSETCHAINS_DECAY[i]);
                     acEndSubsidy += "," + std::to_string(ASSETCHAINS_ENDSUBSIDY[i]);
+                    acNotaryPay += "," + std::to_string(ASSETCHAINS_NOTARY_PAY[i]);
                 }
             }
             if (ASSETCHAINS_LASTERA > 0)
@@ -230,6 +341,7 @@ UniValue getinfo(const UniValue& params, bool fHelp)
             obj.push_back(Pair("halving", acHalving));
             obj.push_back(Pair("decay", acDecay));
             obj.push_back(Pair("endsubsidy", acEndSubsidy));
+            obj.push_back(Pair("notarypay", acNotaryPay));
         }
 
         if ( ASSETCHAINS_COMMISSION != 0 )
@@ -238,6 +350,8 @@ UniValue getinfo(const UniValue& params, bool fHelp)
             obj.push_back(Pair("staked",        ASSETCHAINS_STAKED));
         if ( ASSETCHAINS_LWMAPOS != 0 )
             obj.push_back(Pair("veruspos", ASSETCHAINS_LWMAPOS));
+        if ( ASSETCHAINS_ALGO != ASSETCHAINS_EQUIHASH )
+            obj.push_back(Pair("algo",ASSETCHAINS_ALGORITHMS[ASSETCHAINS_ALGO]));
     }
     return obj;
 }
@@ -739,8 +853,9 @@ bool getAddressFromIndex(const int &type, const uint160 &hash, std::string &addr
         address = CBitcoinAddress(CScriptID(hash)).ToString();
     } else if (type == 1) {
         address = CBitcoinAddress(CKeyID(hash)).ToString();
-    }
-    else {
+    } else if (type == 3) {
+        address = CBitcoinAddress(CKeyID(hash)).ToString();
+    } else {
         return false;
     }
     return true;
@@ -752,7 +867,7 @@ bool getAddressesFromParams(const UniValue& params, std::vector<std::pair<uint16
         CBitcoinAddress address(params[0].get_str());
         uint160 hashBytes;
         int type = 0;
-        if (!address.GetIndexKey(hashBytes, type)) {
+        if (!address.GetIndexKey(hashBytes, type, 0)) {
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid address");
         }
         addresses.push_back(std::make_pair(hashBytes, type));
@@ -770,7 +885,7 @@ bool getAddressesFromParams(const UniValue& params, std::vector<std::pair<uint16
             CBitcoinAddress address(it->get_str());
             uint160 hashBytes;
             int type = 0;
-            if (!address.GetIndexKey(hashBytes, type)) {
+            if (!address.GetIndexKey(hashBytes, type, 0)) {
                 throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid addresses");
             }
             addresses.push_back(std::make_pair(hashBytes, type));
@@ -1322,15 +1437,15 @@ UniValue txnotarizedconfirmed(const UniValue& params, bool fHelp)
     if (fHelp || params.size() < 1 || params.size() > 1)
     {
         string msg = "txnotarizedconfirmed txid\n"
-            "\nReturns true if transaction is notarized on chain that has dPoW or if confirmation number is greater than 60 on chain taht does not have dPoW.\n"           
+            "\nReturns true if transaction is notarized on chain that has dPoW or if confirmation number is greater than 60 on chain taht does not have dPoW.\n"
 
             "\nArguments:\n"
-            "1. txid      (string, required) Transaction id.\n"            
+            "1. txid      (string, required) Transaction id.\n"
 
             "\nResult:\n"
             "{\n"
-            "  true,  (bool) The value the check.\n"            
-            "}\n"            
+            "  true,  (bool) The value the check.\n"
+            "}\n"
         ;
         throw runtime_error(msg);
     }
@@ -1343,17 +1458,17 @@ UniValue txnotarizedconfirmed(const UniValue& params, bool fHelp)
 
 UniValue decodeccopret(const UniValue& params, bool fHelp)
 {
-    CTransaction tx; uint256 txid,hashBlock;
-    std::vector<uint8_t> vopret; uint8_t *script;
-    UniValue result(UniValue::VOBJ);
+    CTransaction tx; uint256 tokenid,txid,hashblock;
+    std::vector<uint8_t> vopret,vOpretExtra; uint8_t *script,tokenevalcode;
+    UniValue result(UniValue::VOBJ),array(UniValue::VARR); std::vector<CPubKey> pubkeys;
 
     if (fHelp || params.size() < 1 || params.size() > 1)
     {
-        string msg = "decodeccopret hex\n"
+        string msg = "decodeccopret scriptPubKey\n"
             "\nReturns eval code and function id for CC OP RETURN data.\n"           
 
             "\nArguments:\n"
-            "1. txid      (string, required) Transaction id.\n"          
+            "1. scriptPubKey      (string, required) Hex of scriptPubKey with OP_RETURN data.\n"          
 
             "\nResult:\n"
             "{\n"
@@ -1363,21 +1478,41 @@ UniValue decodeccopret(const UniValue& params, bool fHelp)
         ;
         throw runtime_error(msg);
     }
-    txid = uint256S((char *)params[0].get_str().c_str());
+    std::vector<unsigned char> hex(ParseHex(params[0].get_str()));
+    CScript scripthex(hex.begin(),hex.end());
+    std::vector<std::pair<uint8_t, vscript_t>>  oprets;
+    if (DecodeTokenOpRet(scripthex,tokenevalcode,tokenid,pubkeys, oprets)!=0 && tokenevalcode==EVAL_TOKENS && oprets.size()>0)
     {
-        LOCK(cs_main);
-            if (!GetTransaction(txid, tx, hashBlock, true))
-                throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "No information available about transaction");
+        // seems we need a loop here
+        vOpretExtra = oprets[0].second;  
+        UniValue obj(UniValue::VOBJ);
+        GetOpReturnData(scripthex,vopret);
+        script = (uint8_t *)vopret.data();
+        if ( vopret.size() > 1)
+        {        
+            char func[5];
+            sprintf(func,"%c",script[1]);
+            obj.push_back(Pair("eval_code", EvalToStr(script[0])));
+            obj.push_back(Pair("function", func));
+        }
+        else
+        {
+            obj.push_back(Pair("error", "invalid or no CC opret data for Token OP_RETURN"));
+        }
+        array.push_back(obj);
+        if (!E_UNMARSHAL(vOpretExtra, { ss >> vopret; })) return (0);
     }
-    GetOpReturnData(tx.vout[tx.vout.size()-1].scriptPubKey,vopret);
+    else GetOpReturnData(scripthex,vopret);
     script = (uint8_t *)vopret.data();
     if ( vopret.size() > 1)
     {        
-        char func[5];
-        sprintf(func,"%c",script[1]);
+        char func[5]; UniValue obj(UniValue::VOBJ);
         result.push_back(Pair("result", "success"));
-        result.push_back(Pair("eval_code", EvalToStr(script[0])));
-        result.push_back(Pair("function", func));
+        sprintf(func,"%c",script[1]);        
+        obj.push_back(Pair("eval_code", EvalToStr(script[0])));
+        obj.push_back(Pair("function", func));
+        array.push_back(obj);
+        result.push_back(Pair("OpRets",array));
     }
     else
     {

@@ -167,7 +167,7 @@ int32_t MarmaraGetbatontxid(std::vector<uint256> &creditloop,uint256 &batontxid,
             creditloop.push_back(txid);
             //fprintf(stderr,"%d: %s\n",n,txid.GetHex().c_str());
             n++;
-            if ( (value= CCgettxout(spenttxid,vout,1)) == 10000 )
+            if ( (value= CCgettxout(spenttxid,vout,1,1)) == 10000 )
             {
                 batontxid = spenttxid;
                 //fprintf(stderr,"got baton %s %.8f\n",batontxid.GetHex().c_str(),(double)value/COIN);
@@ -352,7 +352,7 @@ int64_t AddMarmaraCoinbases(struct CCcontract_info *cp,CMutableTransaction &mtx,
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     Marmarapk = GetUnspendable(cp,0);
     GetCCaddress1of2(cp,coinaddr,Marmarapk,poolpk);
-    SetCCunspents(unspentOutputs,coinaddr);
+    SetCCunspents(unspentOutputs,coinaddr,true);
     unlocks = MarmaraUnlockht(firstheight);
     //fprintf(stderr,"check coinaddr.(%s)\n",coinaddr);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
@@ -366,7 +366,7 @@ int64_t AddMarmaraCoinbases(struct CCcontract_info *cp,CMutableTransaction &mtx,
             {
                 if ( DecodeMaramaraCoinbaseOpRet(vintx.vout[1].scriptPubKey,pk,ht,unlockht) == 'C' && unlockht == unlocks && pk == poolpk && ht >= firstheight )
                 {
-                    if ( (nValue= vintx.vout[vout].nValue) > 0 && myIsutxo_spentinmempool(txid,vout) == 0 )
+                    if ( (nValue= vintx.vout[vout].nValue) > 0 && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0 )
                     {
                         if ( maxinputs != 0 )
                             mtx.vin.push_back(CTxIn(txid,vout,CScript()));
@@ -387,15 +387,19 @@ int64_t AddMarmarainputs(CMutableTransaction &mtx,std::vector<CPubKey> &pubkeys,
 {
     uint64_t threshold,nValue,totalinputs = 0; uint256 txid,hashBlock; CTransaction tx; int32_t numvouts,ht,unlockht,vout,i,n = 0; uint8_t funcid; CPubKey pk; std::vector<int64_t> vals;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
-    SetCCunspents(unspentOutputs,coinaddr);
-    threshold = total/(maxinputs+1);
+    SetCCunspents(unspentOutputs,coinaddr,true);
+    if ( maxinputs > CC_MAXVINS )
+        maxinputs = CC_MAXVINS;
+    if ( maxinputs > 0 )
+        threshold = total/maxinputs;
+    else threshold = total;
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
         vout = (int32_t)it->first.index;
         if ( it->second.satoshis < threshold )
             continue;
-        if ( GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 0 && vout < numvouts && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 && myIsutxo_spentinmempool(txid,vout) == 0 )
+        if ( GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 0 && vout < numvouts && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0 )
         {
             if ( (funcid= DecodeMaramaraCoinbaseOpRet(tx.vout[numvouts-1].scriptPubKey,pk,ht,unlockht)) == 'C' || funcid == 'P' || funcid == 'L' )
             {
@@ -437,7 +441,7 @@ UniValue MarmaraLock(uint64_t txfee,int64_t amount,int32_t height)
     mypk = pubkey2pk(Mypubkey());
     Marmarapk = GetUnspendable(cp,0);
     Getscriptaddress(coinaddr,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG);
-    if ( (val= CCaddress_balance(coinaddr)) < amount )
+    if ( (val= CCaddress_balance(coinaddr,0)) < amount )
         val -= txfee;
     else val = amount;
     if ( val > txfee )
@@ -453,16 +457,18 @@ UniValue MarmaraLock(uint64_t txfee,int64_t amount,int32_t height)
         remains = (amount + txfee) - inputsum;
         std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
         GetCCaddress1of2(cp,coinaddr,Marmarapk,mypk);
-        SetCCunspents(unspentOutputs,coinaddr);
+        SetCCunspents(unspentOutputs,coinaddr,true);
         threshold = remains / (MARMARA_VINS+1);
-        CCaddr1of2set(cp,Marmarapk,mypk,coinaddr);
+        uint8_t mypriv[32];
+        Myprivkey(mypriv);
+        CCaddr1of2set(cp,Marmarapk,mypk,mypriv,coinaddr);
         for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
         {
             txid = it->first.txhash;
             vout = (int32_t)it->first.index;
             if ( (nValue= it->second.satoshis) < threshold )
                 continue;
-            if ( GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 0 && vout < numvouts && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 && myIsutxo_spentinmempool(txid,vout) == 0 )
+            if ( GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 0 && vout < numvouts && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0 )
             {
                 if ( (funcid= DecodeMaramaraCoinbaseOpRet(tx.vout[numvouts-1].scriptPubKey,pk,ht,unlockht)) == 'C' || funcid == 'P' || funcid == 'L' )
                 {
@@ -660,7 +666,7 @@ int32_t MarmaraGetCreditloops(int64_t &totalamount,std::vector<uint256> &issuanc
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     Marmarapk = GetUnspendable(cp,0);
     GetCCaddress(cp,coinaddr,Marmarapk);
-    SetCCunspents(unspentOutputs,coinaddr);
+    SetCCunspents(unspentOutputs,coinaddr,true);
     // do all txid, conditional on spent/unspent
     //fprintf(stderr,"check coinaddr.(%s)\n",coinaddr);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
@@ -1053,16 +1059,16 @@ UniValue MarmaraInfo(CPubKey refpk,int32_t firstheight,int32_t lastheight,int64_
     result.push_back(Pair("result","success"));
     Getscriptaddress(coinaddr,CScript() << ParseHex(HexStr(Mypubkey())) << OP_CHECKSIG);
     result.push_back(Pair("myaddress",coinaddr));
-    result.push_back(Pair("normal",ValueFromAmount(CCaddress_balance(coinaddr))));
+    result.push_back(Pair("normal",ValueFromAmount(CCaddress_balance(coinaddr,0))));
     
     GetCCaddress1of2(cp,coinaddr,Marmarapk,Mypubkey());
     result.push_back(Pair("myCCactivated",coinaddr));
-    result.push_back(Pair("activated",ValueFromAmount(CCaddress_balance(coinaddr))));
+    result.push_back(Pair("activated",ValueFromAmount(CCaddress_balance(coinaddr,1))));
     result.push_back(Pair("activated16",ValueFromAmount(AddMarmarainputs(mtx,pubkeys,coinaddr,0,MARMARA_VINS))));
     
     GetCCaddress(cp,coinaddr,Mypubkey());
     result.push_back(Pair("myCCaddress",coinaddr));
-    result.push_back(Pair("CCutxos",ValueFromAmount(CCaddress_balance(coinaddr))));
+    result.push_back(Pair("CCutxos",ValueFromAmount(CCaddress_balance(coinaddr,1))));
 
     if ( refpk.size() == 33 )
         result.push_back(Pair("issuer",HexStr(refpk)));
