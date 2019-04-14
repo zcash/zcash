@@ -57,7 +57,7 @@ void init_string(struct return_string *s)
     if ( s->ptr == NULL )
     {
         fprintf(stderr,"init_string malloc() failed\n");
-        exit(-1);
+        StartShutdown();
     }
     s->ptr[0] = '\0';
 }
@@ -94,7 +94,7 @@ size_t accumulatebytes(void *ptr,size_t size,size_t nmemb,struct return_string *
     if ( s->ptr == NULL )
     {
         fprintf(stderr, "accumulate realloc() failed\n");
-        exit(-1);
+        StartShutdown();
     }
     memcpy(s->ptr+s->len,ptr,size*nmemb);
     s->ptr[new_len] = '\0';

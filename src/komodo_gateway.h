@@ -653,7 +653,7 @@ int32_t komodo_bannedset(int32_t *indallvoutsp,uint256 *array,int32_t max)
     if ( sizeof(banned_txids)/sizeof(*banned_txids) > max )
     {
         fprintf(stderr,"komodo_bannedset: buffer too small %ld vs %d\n",sizeof(banned_txids)/sizeof(*banned_txids),max);
-        exit(-1);
+        StartShutdown();
     }
     for (i=0; i<sizeof(banned_txids)/sizeof(*banned_txids); i++)
         array[i] = uint256S(banned_txids[i]);

@@ -68,7 +68,7 @@ void lockSign() {
     }
     if (!secp256k1_context_randomize(ec_ctx_sign, ent)) {
         fprintf(stderr, "Could not randomize secp256k1 context\n");
-        exit(1);
+        StartShutdown();
     }
 }
 
