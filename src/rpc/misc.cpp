@@ -413,7 +413,7 @@ public:
 
 UniValue coinsupply(const UniValue& params, bool fHelp)
 {
-    int32_t height = 0; int32_t currentHeight; int64_t sproutfunds,zfunds,supply = 0; UniValue result(UniValue::VOBJ);
+    int32_t height = 0; int32_t currentHeight; int64_t blocks_per_year,zf,sf,sproutfunds,zfunds,supply1,supply3,supply12,supply = 0; UniValue result(UniValue::VOBJ);
     if (fHelp || params.size() > 1)
         throw runtime_error("coinsupply <height>\n"
             "\nReturn coin supply information at a given block height. If no height is given, the current height is used.\n"
@@ -448,6 +448,26 @@ UniValue coinsupply(const UniValue& params, bool fHelp)
             result.push_back(Pair("zfunds", ValueFromAmount(zfunds)));
             result.push_back(Pair("sprout", ValueFromAmount(sproutfunds)));
             result.push_back(Pair("total", ValueFromAmount(zfunds + supply)));
+            if ( ASSETCHAINS_BLOCKTIME > 0 )
+            {
+                blocks_per_year = 24*3600*365 / ASSETCHAINS_BLOCKTIME;
+                if ( height > blocks_per_year )
+                {
+                    supply1 = komodo_coinsupply(&zf,&sf,height - blocks_per_year/12);
+                    supply3 = komodo_coinsupply(&zf,&sf,height - blocks_per_year/4);
+                    supply12 = komodo_coinsupply(&zf,&sf,height - blocks_per_year);
+                    if ( supply1 != 0 && supply3 != 0 && supply12 != 0 )
+                    {
+                        result.push_back(Pair("lastmonth", ValueFromAmount(supply1)));
+                        result.push_back(Pair("monthcoins", ValueFromAmount(supply - supply1)));
+                        result.push_back(Pair("lastquarter", ValueFromAmount(supply3)));
+                        result.push_back(Pair("quartercoins", ValueFromAmount(supply - supply3)));
+                        result.push_back(Pair("lastyear", ValueFromAmount(supply12)));
+                        result.push_back(Pair("yearcoins", ValueFromAmount(supply - supply12)));
+                        result.push_back(Pair("inflation", 100. * (((double)supply/supply12)-1.)));
+                    }
+                }
+            }
         } else result.push_back(Pair("error", "couldnt calculate supply"));
     } else {
         result.push_back(Pair("error", "invalid height"));
