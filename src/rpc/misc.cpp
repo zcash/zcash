@@ -413,7 +413,7 @@ public:
 
 UniValue coinsupply(const UniValue& params, bool fHelp)
 {
-    int32_t height = 0; int32_t currentHeight; int64_t blocks_per_year,zf,sf,sproutfunds,zfunds,supply1,supply3,supply12,supply = 0; UniValue result(UniValue::VOBJ);
+    int32_t height = 0; int32_t currentHeight; int64_t blocks_per_year,zf1,zf3,zf12,sf1,sf3,sf12,sproutfunds,zfunds,supply1,supply3,supply12,supply = 0; UniValue result(UniValue::VOBJ);
     if (fHelp || params.size() > 1)
         throw runtime_error("coinsupply <height>\n"
             "\nReturn coin supply information at a given block height. If no height is given, the current height is used.\n"
@@ -453,18 +453,19 @@ UniValue coinsupply(const UniValue& params, bool fHelp)
                 blocks_per_year = 24*3600*365 / ASSETCHAINS_BLOCKTIME;
                 if ( height > blocks_per_year )
                 {
-                    supply1 = komodo_coinsupply(&zf,&sf,height - blocks_per_year/12);
-                    supply3 = komodo_coinsupply(&zf,&sf,height - blocks_per_year/4);
-                    supply12 = komodo_coinsupply(&zf,&sf,height - blocks_per_year);
+                    supply1 = komodo_coinsupply(&zf1,&sf1,height - blocks_per_year/12);
+                    supply3 = komodo_coinsupply(&zf3,&sf3,height - blocks_per_year/4);
+                    supply12 = komodo_coinsupply(&zf12,&sf12,height - blocks_per_year);
                     if ( supply1 != 0 && supply3 != 0 && supply12 != 0 )
                     {
-                        result.push_back(Pair("lastmonth", ValueFromAmount(supply1)));
-                        result.push_back(Pair("monthcoins", ValueFromAmount(supply - supply1)));
-                        result.push_back(Pair("lastquarter", ValueFromAmount(supply3)));
-                        result.push_back(Pair("quartercoins", ValueFromAmount(supply - supply3)));
-                        result.push_back(Pair("lastyear", ValueFromAmount(supply12)));
-                        result.push_back(Pair("yearcoins", ValueFromAmount(supply - supply12)));
-                        result.push_back(Pair("inflation", 100. * (((double)supply/supply12)-1.)));
+                        result.push_back(Pair("lastmonth", ValueFromAmount(supply1+zf1)));
+                        result.push_back(Pair("monthcoins", ValueFromAmount(zfunds + supply - supply1-zf1)));
+                        result.push_back(Pair("lastquarter", ValueFromAmount(supply3+zf3)));
+                        result.push_back(Pair("quartercoins", ValueFromAmount(zfunds + supply - supply3-zf3)));
+                        result.push_back(Pair("lastyear", ValueFromAmount(supply12+zf12)));
+                        result.push_back(Pair("yearcoins", ValueFromAmount(zfunds + supply - supply12-zf12)));
+                        result.push_back(Pair("inflation", 100. * (((double)(zfunds + supply)/(supply12+zf12))-1.)));
+                        result.push_back(Pair("blocksperyear", (int64_t)blocks_per_year)));
                     }
                 }
             }
