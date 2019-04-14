@@ -465,7 +465,7 @@ UniValue coinsupply(const UniValue& params, bool fHelp)
                         result.push_back(Pair("lastyear", ValueFromAmount(supply12+zf12)));
                         result.push_back(Pair("yearcoins", ValueFromAmount(zfunds + supply - supply12-zf12)));
                         result.push_back(Pair("inflation", 100. * (((double)(zfunds + supply)/(supply12+zf12))-1.)));
-                        result.push_back(Pair("blocksperyear", (int64_t)blocks_per_year)));
+                        result.push_back(Pair("blocksperyear", (int64_t)blocks_per_year));
                     }
                 }
             }
