@@ -1662,7 +1662,7 @@ void *dealer0_loop(void *_arg)
     if ( (cp= Diceinit(fundingPubKey,dealer0_fundingtxid,&C,planstr,txfee,mypk,dicepk,refsbits,minbet,maxbet,maxodds,timeoutblocks)) == 0 )
     {
         fprintf(stderr,"error initializing dealer0_loop\n");
-        exit(-1);
+        StartShutdown();
     }
     fprintf(stderr,"dealer0 node running\n");
     height = lastht = 0;
