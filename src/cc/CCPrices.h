@@ -38,11 +38,11 @@ int32_t komodo_priceget(int64_t *buf64,int32_t ind,int32_t height,int32_t numblo
 bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn);
 
 // CCcustom
-UniValue PricesBet(uint64_t txfee,int64_t amount,int16_t leverage,std::vector<std::string> synthetic);
-UniValue PricesAddFunding(uint64_t txfee,uint256 bettxid,int64_t amount);
+UniValue PricesBet(int64_t txfee,int64_t amount,int16_t leverage,std::vector<std::string> synthetic);
+UniValue PricesAddFunding(int64_t txfee,uint256 bettxid,int64_t amount);
 UniValue PricesSetcostbasis(int64_t txfee,uint256 bettxid);
-UniValue PricesRekt(uint64_t txfee,uint256 bettxid,int32_t rektheight);
-UniValue PricesCashout(uint64_t txfee,uint256 bettxid);
+UniValue PricesRekt(int64_t txfee,uint256 bettxid,int32_t rektheight);
+UniValue PricesCashout(int64_t txfee,uint256 bettxid);
 UniValue PricesInfo(uint256 bettxid,int32_t refheight);
 UniValue PricesList();
 

@@ -497,7 +497,7 @@ int64_t prices_batontxid(uint256 &batontxid,CTransaction bettx,uint256 bettxid)
     return(addedbets);
 }
 
-UniValue PricesBet(uint64_t txfee,int64_t amount,int16_t leverage,std::vector<std::string> synthetic)
+UniValue PricesBet(int64_t txfee,int64_t amount,int16_t leverage,std::vector<std::string> synthetic)
 {
     int32_t nextheight = komodo_nextheight();
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(),nextheight); UniValue result(UniValue::VOBJ);
@@ -535,7 +535,7 @@ UniValue PricesBet(uint64_t txfee,int64_t amount,int16_t leverage,std::vector<st
     return(result);
 }
 
-UniValue PricesAddFunding(uint64_t txfee, uint256 bettxid, int64_t amount)
+UniValue PricesAddFunding(int64_t txfee, uint256 bettxid, int64_t amount)
 {
     int32_t nextheight = komodo_nextheight();
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), nextheight); UniValue result(UniValue::VOBJ);
@@ -624,7 +624,7 @@ UniValue PricesSetcostbasis(int64_t txfee, uint256 bettxid)
     return(result);
 }
 
-UniValue PricesRekt(uint64_t txfee, uint256 bettxid, int32_t rektheight)
+UniValue PricesRekt(int64_t txfee, uint256 bettxid, int32_t rektheight)
 {
     int32_t nextheight = komodo_nextheight();
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), nextheight); UniValue result(UniValue::VOBJ);
@@ -678,7 +678,7 @@ UniValue PricesRekt(uint64_t txfee, uint256 bettxid, int32_t rektheight)
     return(result);
 }
 
-UniValue PricesCashout(uint64_t txfee, uint256 bettxid)
+UniValue PricesCashout(int64_t txfee, uint256 bettxid)
 {
     int32_t nextheight = komodo_nextheight();
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), nextheight); UniValue result(UniValue::VOBJ);

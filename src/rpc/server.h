@@ -501,6 +501,7 @@ extern UniValue pricesbet(const UniValue& params, bool fHelp);
 extern UniValue pricessetcostbasis(const UniValue& params, bool fHelp);
 extern UniValue pricescashout(const UniValue& params, bool fHelp);
 extern UniValue pricesrekt(const UniValue& params, bool fHelp);
+extern UniValue pricesaddfunding(const UniValue& params, bool fHelp);
 
 
 // test rpc:
