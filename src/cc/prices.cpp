@@ -464,7 +464,7 @@ int64_t prices_costbasis(CTransaction bettx)
 }
 
 // calculates added bet total, returns the last baton txid
-int64_t prices_batontxid(uint256 &batontxid,CTransaction bettx,uint256 bettxid)
+int64_t prices_batontxid(uint256 &batontxid, CTransaction bettx, uint256 bettxid)
 {
     int64_t addedbets = 0;
     int32_t vini;
@@ -490,11 +490,10 @@ int64_t prices_batontxid(uint256 &batontxid,CTransaction bettx,uint256 bettxid)
             addedbets += amount;
             std::cerr << "prices_batontxid() added amount=" << amount << std::endl;
         }
-        else   {
+        else {
             std::cerr << "prices_batontxid() cannot load or decode add bet tx, isLoaded=" << isLoaded << " funcId=" << (int)funcId << std::endl;
         }
     }
-
 
     return(addedbets);
 }
@@ -548,7 +547,7 @@ UniValue PricesAddFunding(int64_t txfee, uint256 bettxid, int64_t amount)
     mypk = pubkey2pk(Mypubkey());
     pricespk = GetUnspendable(cp, 0);
     GetCCaddress(cp, myaddr, mypk);
-    if (AddNormalinputs(mtx, mypk, amount + txfee, 64) >= amount + txfee)
+    if (AddNormalinputs(mtx, mypk, amount + 2*txfee, 64) >= amount + 2*txfee)
     {
         if (prices_batontxid(batontxid, bettx, bettxid) >= 0)
         {
