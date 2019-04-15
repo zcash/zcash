@@ -240,142 +240,142 @@ int32_t prices_syntheticvec(std::vector<uint16_t> &vec,std::vector<std::string> 
 }
 
 // calculates price for synthetic expression
-int64_t prices_syntheticprice(std::vector<uint16_t> vec,int32_t height,int32_t minmax,int16_t leverage)
+int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t minmax, int16_t leverage)
 {
-    int32_t i,value,errcode,depth,retval = -1; 
-    uint16_t opcode; 
-    int64_t *pricedata,pricestack[4],price,den,a,b,c;
+    int32_t i, value, errcode, depth, retval = -1;
+    uint16_t opcode;
+    int64_t *pricedata, pricestack[4], price, den, a, b, c;
 
-    pricedata = (int64_t *)calloc(sizeof(*pricedata)*3,1 + PRICES_DAYWINDOW*2 + PRICES_SMOOTHWIDTH);
+    pricedata = (int64_t *)calloc(sizeof(*pricedata) * 3, 1 + PRICES_DAYWINDOW * 2 + PRICES_SMOOTHWIDTH);
     price = den = depth = errcode = 0;
 
-    for (i=0; i<vec.size(); i++)
+    for (i = 0; i < vec.size(); i++)
     {
         opcode = vec[i];
-        value = (opcode & (KOMODO_MAXPRICES-1));   // index or weight 
+        value = (opcode & (KOMODO_MAXPRICES - 1));   // index or weight 
         std::cerr << "prices_syntheticprice" << " i=" << i << " price=" << price << " value=" << value << " depth=" << depth << std::endl;
-        switch( opcode & KOMODO_PRICEMASK )
+        switch (opcode & KOMODO_PRICEMASK)
         {
-            case 0: // indices 
-                pricestack[depth] = 0;
-                if ( prices_extract(pricedata,height,1,value) == 0 )
+        case 0: // indices 
+            pricestack[depth] = 0;
+            if (prices_extract(pricedata, height, 1, value) == 0)
+            {
+                // push price to the prices stack
+                if (!minmax)
+                    pricestack[depth] = pricedata[2];   // use smoothed value if we are over 24h
+                else
                 {
-                    // push price to the prices stack
-                    if ( !minmax )
-                        pricestack[depth] = pricedata[2];   // use smoothed value if we are over 24h
+                    // if we are within 24h use min or max price
+                    if (leverage > 0)
+                        pricestack[depth] = (pricedata[1] > pricedata[2]) ? pricedata[1] : pricedata[2]; // MAX
                     else
-                    {
-                        // if we are within 24h use min or max price
-                        if ( leverage > 0 )  
-                            pricestack[depth] = (pricedata[1] > pricedata[2]) ? pricedata[1] : pricedata[2]; // MAX
-                        else 
-                            pricestack[depth] = (pricedata[1] < pricedata[2]) ? pricedata[1] : pricedata[2]; // MIN
-                    }
+                        pricestack[depth] = (pricedata[1] < pricedata[2]) ? pricedata[1] : pricedata[2]; // MIN
                 }
-                if ( pricestack[depth] == 0 )
-                    errcode = -1;
+            }
+            if (pricestack[depth] == 0)
+                errcode = -1;
 
-                depth++;
-                break;
+            depth++;
+            break;
 
-            case PRICES_WEIGHT: // multiply by weight and consume top of stack by updating price
-                if( depth == 1 )  {
-                    depth--;
-                    price += pricestack[0] * value;
-                    den += value;     // acc weight value
-                } 
-                else 
-                    errcode = -2;
-                break;
+        case PRICES_WEIGHT: // multiply by weight and consume top of stack by updating price
+            if (depth == 1) {
+                depth--;
+                price += pricestack[0] * value;
+                den += value;     // acc weight value
+            }
+            else
+                errcode = -2;
+            break;
 
-            case PRICES_MULT:
-                if( depth >= 2 )     {
-                    b = pricestack[--depth];
-                    a = pricestack[--depth];
-                    pricestack[depth++] = (a * b) / SATOSHIDEN;
-                } 
-                else 
-                    errcode = -3;
-                break;
+        case PRICES_MULT:
+            if (depth >= 2) {
+                b = pricestack[--depth];
+                a = pricestack[--depth];
+                pricestack[depth++] = (a * b) / SATOSHIDEN;
+            }
+            else
+                errcode = -3;
+            break;
 
-            case PRICES_DIV:
-                if( depth >= 2 )     {
-                    b = pricestack[--depth];
-                    a = pricestack[--depth];
-                    pricestack[depth++] = (a * SATOSHIDEN) / b;
-                } 
-                else 
-                    errcode = -4;
-                break;
+        case PRICES_DIV:
+            if (depth >= 2) {
+                b = pricestack[--depth];
+                a = pricestack[--depth];
+                pricestack[depth++] = (a * SATOSHIDEN) / b;
+            }
+            else
+                errcode = -4;
+            break;
 
-            case PRICES_INV:
-                if( depth >= 1 )      {
-                    a = pricestack[--depth];
-                    pricestack[depth++] = (SATOSHIDEN * SATOSHIDEN) / a;
-                } 
-                else 
-                    errcode = -5;
-                break;
+        case PRICES_INV:
+            if (depth >= 1) {
+                a = pricestack[--depth];
+                pricestack[depth++] = (SATOSHIDEN * SATOSHIDEN) / a;
+            }
+            else
+                errcode = -5;
+            break;
 
-            case PRICES_MDD:
-                if( depth >= 3 )   {
-                    c = pricestack[--depth];
-                    b = pricestack[--depth];
-                    a = pricestack[--depth];
-                    pricestack[depth++] = (((a * SATOSHIDEN) / b) * SATOSHIDEN) / c;
-                } 
-                else 
-                    errcode = -6;
-                break;
+        case PRICES_MDD:
+            if (depth >= 3) {
+                c = pricestack[--depth];
+                b = pricestack[--depth];
+                a = pricestack[--depth];
+                pricestack[depth++] = (((a * SATOSHIDEN) / b) * SATOSHIDEN) / c;
+            }
+            else
+                errcode = -6;
+            break;
 
-            case PRICES_MMD:
-                if( depth >= 3 )      {
-                    c = pricestack[--depth];
-                    b = pricestack[--depth];
-                    a = pricestack[--depth];
-                    pricestack[depth++] = (a * b) / c;
-                } 
-                else 
-                    errcode = -7;
-                break;
+        case PRICES_MMD:
+            if (depth >= 3) {
+                c = pricestack[--depth];
+                b = pricestack[--depth];
+                a = pricestack[--depth];
+                pricestack[depth++] = (a * b) / c;
+            }
+            else
+                errcode = -7;
+            break;
 
-            case PRICES_MMM:
-                if( depth >= 3 )    {
-                    c = pricestack[--depth];
-                    b = pricestack[--depth];
-                    a = pricestack[--depth];
-                    pricestack[depth++] = ((a * b) / SATOSHIDEN) * c;
-                } 
-                else 
-                    errcode = -8;
-                break;
+        case PRICES_MMM:
+            if (depth >= 3) {
+                c = pricestack[--depth];
+                b = pricestack[--depth];
+                a = pricestack[--depth];
+                pricestack[depth++] = ((a * b) / SATOSHIDEN) * c;
+            }
+            else
+                errcode = -8;
+            break;
 
-            case PRICES_DDD:
-                if( depth >= 3 )  {
-                    c = pricestack[--depth];
-                    b = pricestack[--depth];
-                    a = pricestack[--depth];
-                    pricestack[depth++] = (((((SATOSHIDEN * SATOSHIDEN) / a) * SATOSHIDEN) / b) * SATOSHIDEN) / c;
-                } 
-                else 
-                    errcode = -9;
-                break;
+        case PRICES_DDD:
+            if (depth >= 3) {
+                c = pricestack[--depth];
+                b = pricestack[--depth];
+                a = pricestack[--depth];
+                pricestack[depth++] = (((((SATOSHIDEN * SATOSHIDEN) / a) * SATOSHIDEN) / b) * SATOSHIDEN) / c;
+            }
+            else
+                errcode = -9;
+            break;
 
-            default:
-                errcode = -10;
-                break;
+        default:
+            errcode = -10;
+            break;
         }
         if (errcode != 0)
             break;
 
-        std::cerr << "pricestack[depth-1=" << depth-1 << "]=" << pricestack[depth-1] << std::endl;
+        std::cerr << "pricestack[depth=" << depth << "]=" << pricestack[depth] << std::endl;
 
     }
     free(pricedata);
-    
-    if (errcode != 0) 
+
+    if (errcode != 0)
         std::cerr << "prices_syntheticprice warning: errcode in switch=" << errcode << std::endl;
-    
+
     if (den == 0) {
         std::cerr << "prices_syntheticprice den==0 return err=-11" << std::endl;
         return(-11);
