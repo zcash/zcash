@@ -474,7 +474,7 @@ int64_t prices_batontxid(uint256 &batontxid, CTransaction bettx, uint256 bettxid
     batontxid = bettxid; // initially set to the source bet tx
     uint256 sourcetxid = bettxid;
     // iterate through batons, adding up vout1 -> addedbets
-    while ((retcode = CCgetspenttxid(batontxid, vini, height, sourcetxid, 1)) == 0) {
+    while ((retcode = CCgetspenttxid(batontxid, vini, height, sourcetxid, 0)) == 0) {
 
         CTransaction txBaton;
         uint256 hashBlock;
@@ -531,7 +531,7 @@ UniValue PricesBet(int64_t txfee, int64_t amount, int16_t leverage, std::vector<
     {
         betamount = (amount * 199) / 200;
         mtx.vout.push_back(MakeCC1vout(cp->evalcode, txfee, mypk)); // vout0 baton for total funding
-        mtx.vout.push_back(MakeCC1vout(cp->evalcode, (amount - betamount) + 2 * txfee, pricespk));
+        mtx.vout.push_back(MakeCC1vout(cp->evalcode, (amount - betamount) + 2 * txfee, pricespk));  // vout1, when spent, costbasis is set
         mtx.vout.push_back(MakeCC1of2vout(cp->evalcode, betamount, pricespk, mypk));
         mtx.vout.push_back(CTxOut(txfee, CScript() << ParseHex(HexStr(pricespk)) << OP_CHECKSIG)); // marker
         rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, prices_betopret(mypk, nextheight - 1, amount, leverage, firstprice, vec, zeroid));
