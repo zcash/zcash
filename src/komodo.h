@@ -691,7 +691,7 @@ int32_t komodo_voutupdate(bool fJustCheck,int32_t *isratificationp,int32_t notar
                     else
                     {
                         komodo_rwccdata(ASSETCHAINS_SYMBOL,1,&ccdata,&MoMoMdata);
-                        if ( !fJustCheck && matched != 0 )
+                        if ( matched != 0 )
                             printf("[%s] matched.%d VALID (%s) MoM.%s [%d] CCid.%u\n",ASSETCHAINS_SYMBOL,matched,ccdata.symbol,MoM.ToString().c_str(),MoMdepth&0xffff,(MoMdepth>>16)&0xffff);
                     }
                     if ( MoMoMdata.pairs != 0 )
@@ -747,7 +747,7 @@ int32_t komodo_voutupdate(bool fJustCheck,int32_t *isratificationp,int32_t notar
         }
         else if ( matched != 0 && i == 0 && j == 1 && opretlen == 149 )
         {
-            if ( !fJustCheck && notaryid >= 0 && notaryid < 64 )
+            if ( notaryid >= 0 && notaryid < 64 )
                 komodo_paxpricefeed(height,&scriptbuf[len],opretlen);
         }
         else if ( matched != 0 )
@@ -836,16 +836,6 @@ int32_t komodo_connectblock(bool fJustCheck, CBlockIndex *pindex,CBlock& block)
             int8_t numSN = numStakedNotaries(tmp_pubkeys,staked_era);
             UpdateNotaryAddrs(tmp_pubkeys,numSN);
             STAKED_ERA = staked_era;
-            if ( NOTARYADDRS[0][0] != 0 && NOTARY_PUBKEY33[0] != 0 )
-            {
-                if ( (IS_STAKED_NOTARY= updateStakedNotary()) > -1 )
-                {
-                    IS_KOMODO_NOTARY = 0;
-                    if ( MIN_RECV_SATS == -1 )
-                        MIN_RECV_SATS = 100000000;
-                    fprintf(stderr, "Staked Notary Protection Active! NotaryID.%d RADD.%s ERA.%d MIN_TX_VALUE.%lu \n",IS_STAKED_NOTARY,NOTARY_ADDRESS.c_str(),staked_era,MIN_RECV_SATS);
-                }
-            }
             lastStakedEra = staked_era;
         }
     }

@@ -2717,8 +2717,10 @@ int64_t *tred, *tadd, *tmul, *tround, *tsample, *tpack, *tshake;
 static int cmp_llu(const void *a, const void*b)
 {
     if(*(int64_t *)a < *(int64_t *)b) return -1;
-    if(*(int64_t *)a > *(int64_t *)b) return 1;
-    return 0;
+    else if(*(int64_t *)a > *(int64_t *)b) return 1;
+    //else if ( (uint64_t)a < (uint64_t)b ) return -1;
+    //else return 1;
+    return(0);
 }
 
 static int64_t median(int64_t *l, size_t llen)
@@ -3339,8 +3341,12 @@ int64_t dilithium_inputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPu
     char coinaddr[64]; int64_t threshold,nValue,price,totalinputs = 0; uint256 checktxid,txid,hashBlock; std::vector<uint8_t> origpubkey,tmpsig; CTransaction vintx; int32_t vout,numvouts,n = 0; std::vector<uint256> voutpubtxids;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     GetCCaddress(cp,coinaddr,pk);
-    SetCCunspents(unspentOutputs,coinaddr);
-    threshold = total/(maxinputs+1);
+    SetCCunspents(unspentOutputs,coinaddr,true);
+    if ( maxinputs > CC_MAXVINS )
+        maxinputs = CC_MAXVINS;
+    if ( maxinputs > 0 )
+        threshold = total/maxinputs;
+    else threshold = total;
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
@@ -3532,7 +3538,7 @@ void dilithium_handleinit(struct CCcontract_info *cp)
     pthread_mutex_init(&DILITHIUM_MUTEX,NULL);
     dilithiumpk = GetUnspendable(cp,0);
     GetCCaddress(cp,CCaddr,dilithiumpk);
-    SetCCtxids(txids,CCaddr);
+    SetCCtxids(txids,CCaddr,true);
     for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=txids.begin(); it!=txids.end(); it++)
     {
         txid = it->first.txhash;

@@ -27,13 +27,14 @@ class CryptoconditionsChannelsTest(CryptoconditionsTestFramework):
         rpc1 = self.nodes[1]
 
         # checking channelsaddress call
-        
+
         result = rpc.channelsaddress(self.pubkey)
         assert_success(result)
         # test that additional CCaddress key is returned
-        for x in ['ChannelsCC1of2TokensAddress', 'myCCAddress(Channels)', 'ChannelsCC1of2Address', 'myAddress', \
-                  'myCCaddress', 'ChannelsNormalAddress', 'PubkeyCCaddress(Channels)', 'ChannelsCCAddress']:
-            assert_equal(result[x][0], 'R')
+
+        for x in result.keys():
+            if x.find('ddress') > 0:
+                assert_equal(result[x][0], 'R')
 
         # getting empty channels list
         result = rpc.channelslist()
@@ -80,7 +81,7 @@ class CryptoconditionsChannelsTest(CryptoconditionsTestFramework):
         # now in channelinfo payment information should appear
         result = rpc.channelsinfo(channel_txid)
         assert_equal(result["Transactions"][1]["Payment"], payment_tx_id)
-
+        
         # number of payments should be equal 1 (one denomination used)
         result = rpc.channelsinfo(channel_txid)["Transactions"][1]["Number of payments"]
         assert_equal(result, 1)
