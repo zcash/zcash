@@ -197,7 +197,7 @@ int64_t OracleCurrentDatafee(uint256 reforacletxid,char *markeraddr,CPubKey publ
 {
     uint256 txid,oracletxid,hashBlock; int64_t datafee=0,dfee; int32_t dheight=0,vout,height,numvouts; CTransaction tx; CPubKey pk;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
-    SetCCunspents(unspentOutputs,markeraddr,true);
+    SetCCunspents(unspentOutputs,markeraddr,false);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
@@ -306,7 +306,7 @@ uint256 OraclesBatontxid(uint256 reforacletxid,CPubKey refpk)
     batontxid = zeroid;
     cp = CCinit(&C,EVAL_ORACLES);
     CCtxidaddr(markeraddr,reforacletxid);
-    SetCCunspents(unspentOutputs,markeraddr,true);
+    SetCCunspents(unspentOutputs,markeraddr,false);
     //char str[67]; fprintf(stderr,"markeraddr.(%s) %s\n",markeraddr,pubkey33_str(str,(uint8_t *)&refpk));
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
@@ -532,7 +532,7 @@ int32_t oracleprice_add(std::vector<struct oracleprice_info> &publishers,CPubKey
     if ( format[0] != 'L' )
         return(0);
     cp = CCinit(&C,EVAL_ORACLES);
-    SetCCunspents(unspentOutputs,markeraddr,true);
+    SetCCunspents(unspentOutputs,markeraddr,false);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
@@ -992,7 +992,7 @@ UniValue OracleInfo(uint256 origtxid)
             result.push_back(Pair("description",description));
             result.push_back(Pair("format",format));
             result.push_back(Pair("marker",markeraddr));
-            SetCCunspents(unspentOutputs,markeraddr,true);
+            SetCCunspents(unspentOutputs,markeraddr,false);
             for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
             {
                 txid = it->first.txhash;
