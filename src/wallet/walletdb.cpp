@@ -961,7 +961,7 @@ DBErrors CWalletDB::LoadWallet(CWallet* pwallet)
             if (GetTransaction(hash,tx,blockhash,true))
             {
                 CWalletTx wtx(pwallet,tx);
-                pwallet->AddToWallet(wtx, true, NULL);
+                pwallet->AddToWallet(wtx, false, NULL);
                 reAdded++;
             }
         }

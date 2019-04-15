@@ -57,7 +57,7 @@ void init_string(struct return_string *s)
     if ( s->ptr == NULL )
     {
         fprintf(stderr,"init_string malloc() failed\n");
-        exit(-1);
+        StartShutdown();
     }
     s->ptr[0] = '\0';
 }
@@ -94,7 +94,7 @@ size_t accumulatebytes(void *ptr,size_t size,size_t nmemb,struct return_string *
     if ( s->ptr == NULL )
     {
         fprintf(stderr, "accumulate realloc() failed\n");
-        exit(-1);
+        StartShutdown();
     }
     memcpy(s->ptr+s->len,ptr,size*nmemb);
     s->ptr[new_len] = '\0';
@@ -371,7 +371,7 @@ char *komodo_issuemethod(char *userpass,char *method,char *params,uint16_t port)
     {
         sprintf(url,(char *)"http://127.0.0.1:%u",port);
         sprintf(postdata,"{\"method\":\"%s\",\"params\":%s}",method,params);
-        //printf("[%s] (%s) postdata.(%s) params.(%s) USERPASS.(%s)\n",ASSETCHAINS_SYMBOL,url,postdata,params,KMDUSERPASS);
+ //printf("[%s] (%s) postdata.(%s) params.(%s) USERPASS.(%s)\n",ASSETCHAINS_SYMBOL,url,postdata,params,KMDUSERPASS);
         retstr2 = bitcoind_RPC(&retstr,(char *)"debug",url,userpass,method,params);
         //retstr = curl_post(&cHandle,url,USERPASS,postdata,0,0,0,0);
     }
@@ -446,6 +446,18 @@ int32_t komodo_verifynotarizedscript(int32_t height,uint8_t *script,int32_t len,
         printf("%02x",((uint8_t *)&hash)[i]);
     printf(" opreturn from [%s] ht.%d MISMATCHED\n",ASSETCHAINS_SYMBOL,height);
     return(-1);
+}
+
+void komodo_reconsiderblock(uint256 blockhash)
+{
+    char params[256],*jsonstr,*hexstr;
+    sprintf(params,"[\"%s\"]",blockhash.ToString().c_str());
+    if ( (jsonstr= komodo_issuemethod(ASSETCHAINS_USERPASS,(char *)"reconsiderblock",params,ASSETCHAINS_RPCPORT)) != 0 )
+    {
+        //fprintf(stderr,"komodo_reconsiderblock.(%s) (%s %u) -> (%s)\n",params,ASSETCHAINS_USERPASS,ASSETCHAINS_RPCPORT,jsonstr);
+        free(jsonstr);
+    }
+    //fprintf(stderr,"komodo_reconsiderblock.(%s) (%s %u) -> NULL\n",params,ASSETCHAINS_USERPASS,ASSETCHAINS_RPCPORT);
 }
 
 int32_t komodo_verifynotarization(char *symbol,char *dest,int32_t height,int32_t NOTARIZED_HEIGHT,uint256 NOTARIZED_HASH,uint256 NOTARIZED_DESTTXID)
