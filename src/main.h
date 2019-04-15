@@ -707,7 +707,7 @@ bool ContextualCheckInputs(const CTransaction& tx, CValidationState &state, cons
 
 /** Check a transaction contextually against a set of consensus rules */
 bool ContextualCheckTransaction(const CBlock *block, CBlockIndex * const pindexPrev,const CTransaction& tx, CValidationState &state, int nHeight, int dosLevel,
-                                bool (*isInitBlockDownload)() = IsInitialBlockDownload);
+                                bool (*isInitBlockDownload)() = IsInitialBlockDownload,int32_t validateprices=1);
 
 /** Apply the effects of this transaction on the UTXO set represented by view */
 void UpdateCoins(const CTransaction& tx, CCoinsViewCache& inputs, int nHeight);

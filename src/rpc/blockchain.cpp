@@ -47,10 +47,8 @@ using namespace std;
 
 extern void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry);
 void ScriptPubKeyToJSON(const CScript& scriptPubKey, UniValue& out, bool fIncludeHex);
-int32_t komodo_longestchain();
-int32_t komodo_dpowconfs(int32_t height,int32_t numconfs);
-extern int8_t komodo_segid(int32_t nocache,int32_t height);
-extern int32_t KOMODO_LONGESTCHAIN;
+#include "komodo_defs.h"
+#include "komodo_structs.h"
 
 double GetDifficultyINTERNAL(const CBlockIndex* blockindex, bool networkDifficulty)
 {
@@ -628,8 +626,6 @@ UniValue getblockhash(const UniValue& params, bool fHelp)
     return pblockindex->GetBlockHash().GetHex();
 }
 
-extern int32_t ASSETCHAINS_STAKED;
-
 UniValue getlastsegidstakes(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 1)
@@ -915,20 +911,6 @@ UniValue gettxoutsetinfo(const UniValue& params, bool fHelp)
     return ret;
 }
 
-#include "komodo_defs.h"
-#include "komodo_structs.h"
-
-#define IGUANA_MAXSCRIPTSIZE 10001
-#define KOMODO_KVDURATION 1440
-#define KOMODO_KVBINARY 2
-extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
-extern int32_t ASSETCHAINS_LWMAPOS;
-uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uint64_t basevolume);
-int32_t komodo_paxprices(int32_t *heights,uint64_t *prices,int32_t max,char *base,char *rel);
-int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestamp);
-char *bitcoin_address(char *coinaddr,uint8_t addrtype,uint8_t *pubkey_or_rmd160,int32_t len);
-int32_t komodo_minerids(uint8_t *minerids,int32_t height,int32_t width);
-int32_t komodo_kvsearch(uint256 *refpubkeyp,int32_t current_height,uint32_t *flagsp,int32_t *heightp,uint8_t value[IGUANA_MAXSCRIPTSIZE],uint8_t *key,int32_t keylen);
 
 UniValue kvsearch(const UniValue& params, bool fHelp)
 {
@@ -1174,15 +1156,6 @@ UniValue paxprice(const UniValue& params, bool fHelp)
     return ret;
 }
 
-int32_t komodo_heightpricebits(uint64_t *seedp,uint32_t *heightbits,int32_t nHeight);
-char *komodo_pricename(char *name,int32_t ind);
-int64_t komodo_priceave(int64_t *tmpbuf,int64_t *correlated,int32_t cskip);
-int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int32_t rawskip,uint32_t *nonzprices,int32_t smoothwidth);
-int32_t komodo_nextheight();
-uint32_t komodo_heightstamp(int32_t height);
-int64_t komodo_pricemult(int32_t ind);
-#define PRICES_SMOOTHWIDTH 1
-
 int32_t prices_extract(int64_t *pricedata,int32_t firstheight,int32_t numblocks,int32_t ind)
 {
     int32_t height,i,n,width,numpricefeeds = -1; uint64_t seed,ignore,rngval; uint32_t rawprices[1440*6],*ptr; int64_t *tmpbuf;
@@ -1282,6 +1255,7 @@ UniValue prices(const UniValue& params, bool fHelp)
                     rngval = (rngval*11109 + 13849);
                     if ( (correlated[i]= komodo_pricecorrelated(rngval,j,&prices[offset],1,0,PRICES_SMOOTHWIDTH)) < 0 )
                         throw JSONRPCError(RPC_INVALID_PARAMETER, "null correlated price");
+                    
                 }
                 tmpbuf = (int64_t *)calloc(sizeof(int64_t),2*PRICES_DAYWINDOW);
                 for (i=0; i<maxsamples&&i<numsamples; i++)
@@ -1323,8 +1297,6 @@ UniValue prices(const UniValue& params, bool fHelp)
     free(correlated);
     return ret;
 }
-
-uint64_t komodo_accrued_interest(int32_t *txheightp,uint32_t *locktimep,uint256 hash,int32_t n,int32_t checkheight,uint64_t checkvalue,int32_t tipheight);
 
 UniValue gettxout(const UniValue& params, bool fHelp)
 {

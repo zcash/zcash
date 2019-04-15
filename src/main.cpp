@@ -512,7 +512,7 @@ namespace {
         // Never fetch further than the best block we know the peer has, or more than BLOCK_DOWNLOAD_WINDOW + 1 beyond the last
         // linked block we have in common with this peer. The +1 is so we can detect stalling, namely if we would be able to
         // download that next block if the window were 1 larger.
-        if ( ASSETCHAINS_CBOPRET != 0 )
+        if ( ASSETCHAINS_CBOPRET != 0 && IsInitialBlockDownload() == 0 )
             BLOCK_DOWNLOAD_WINDOW = 1;
         int nWindowEnd = state->pindexLastCommonBlock->GetHeight() + BLOCK_DOWNLOAD_WINDOW;
         int nMaxHeight = std::min<int>(state->pindexBestKnownBlock->GetHeight(), nWindowEnd + 1);
@@ -980,7 +980,7 @@ unsigned int GetP2SHSigOpCount(const CTransaction& tx, const CCoinsViewCache& in
  * Ensure that a coinbase transaction is structured according to the consensus rules of the
  * chain
  */
-bool ContextualCheckCoinbaseTransaction(const CBlock *block,CBlockIndex * const previndex,const CTransaction& tx, const int nHeight)
+bool ContextualCheckCoinbaseTransaction(const CBlock *block,CBlockIndex * const previndex,const CTransaction& tx, const int nHeight,int32_t validateprices)
 {
     // if time locks are on, ensure that this coin base is time locked exactly as it should be
     if (((uint64_t)(tx.GetValueOut()) >= ASSETCHAINS_TIMELOCKGTE) ||
@@ -1021,7 +1021,7 @@ bool ContextualCheckCoinbaseTransaction(const CBlock *block,CBlockIndex * const 
     {
         
     }
-    else if ( ASSETCHAINS_CBOPRET != 0 && nHeight > 0 && tx.vout.size() > 0 )
+    else if ( ASSETCHAINS_CBOPRET != 0 && validateprices != 0 && nHeight > 0 && tx.vout.size() > 0 )
     {
         if ( komodo_opretvalidate(block,previndex,nHeight,tx.vout[tx.vout.size()-1].scriptPubKey) < 0 )
             return(false);
@@ -1043,7 +1043,7 @@ bool ContextualCheckTransaction(const CBlock *block, CBlockIndex * const prevind
         CValidationState &state,
         const int nHeight,
         const int dosLevel,
-        bool (*isInitBlockDownload)())
+        bool (*isInitBlockDownload)(),int32_t validateprices)
 {
     bool overwinterActive = NetworkUpgradeActive(nHeight, Params().GetConsensus(), Consensus::UPGRADE_OVERWINTER);
     bool saplingActive = NetworkUpgradeActive(nHeight, Params().GetConsensus(), Consensus::UPGRADE_SAPLING);
@@ -1174,7 +1174,7 @@ bool ContextualCheckTransaction(const CBlock *block, CBlockIndex * const prevind
 
     if (tx.IsCoinBase())
     {
-        if (!ContextualCheckCoinbaseTransaction(block,previndex,tx, nHeight))
+        if (!ContextualCheckCoinbaseTransaction(block,previndex,tx, nHeight,validateprices))
             return state.DoS(100, error("CheckTransaction(): invalid script data for coinbase time lock"),
                                 REJECT_INVALID, "bad-txns-invalid-script-data-for-coinbase-time-lock");
     }
@@ -1679,7 +1679,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
     }
     // DoS level set to 10 to be more forgiving.
     // Check transaction contextually against the set of consensus rules which apply in the next block to be mined.
-    if (!fSkipExpiry && !ContextualCheckTransaction(0,0,tx, state, nextBlockHeight, (dosLevel == -1) ? 10 : dosLevel))
+    if (!fSkipExpiry && !ContextualCheckTransaction(0,0,tx, state, nextBlockHeight, (dosLevel == -1) ? 10 : dosLevel,0))
     {
         return error("AcceptToMemoryPool: ContextualCheckTransaction failed");
     }
@@ -5273,6 +5273,8 @@ bool AcceptBlockHeader(int32_t *futureblockp,const CBlockHeader& block, CValidat
     return true;
 }
 
+uint256 Queued_reconsiderblock;
+
 bool AcceptBlock(int32_t *futureblockp,CBlock& block, CValidationState& state, CBlockIndex** ppindex, bool fRequested, CDiskBlockPos* dbp)
 {
     const CChainParams& chainparams = Params();
@@ -5333,6 +5335,18 @@ bool AcceptBlock(int32_t *futureblockp,CBlock& block, CValidationState& state, C
             fprintf(stderr,"saplinght.%d tipht.%d blockht.%d cmp.%d\n",saplinght,(int32_t)tmpptr->GetHeight(),pindex->GetHeight(),pindex->GetHeight() < 0 || (pindex->GetHeight() >= saplinght && pindex->GetHeight() < saplinght+50000) || (tmpptr->GetHeight() > saplinght-720 && tmpptr->GetHeight() < saplinght+720));
             if ( pindex->GetHeight() < 0 || (pindex->GetHeight() >= saplinght && pindex->GetHeight() < saplinght+50000) || (tmpptr->GetHeight() > saplinght-720 && tmpptr->GetHeight() < saplinght+720) )
                 *futureblockp = 1;
+            if ( ASSETCHAINS_CBOPRET != 0 )
+            {
+                CValidationState tmpstate; CBlockIndex *tmpindex; int32_t ht,longest;
+                ht = (int32_t)pindex->GetHeight();
+                longest = komodo_longestchain();
+                if ( (longest == 0 || ht < longest-6) && (tmpindex=komodo_chainactive(ht)) != 0 )
+                {
+                    fprintf(stderr,"reconsider height.%d, longest.%d\n",(int32_t)ht,longest);
+                    if ( Queued_reconsiderblock == zeroid )
+                        Queued_reconsiderblock = pindex->GetBlockHash();
+                }
+            }
         }
         if ( *futureblockp == 0 )
         {
