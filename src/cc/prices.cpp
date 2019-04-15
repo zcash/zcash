@@ -471,6 +471,8 @@ int64_t prices_batontxid(uint256 &batontxid,CTransaction bettx,uint256 bettxid)
     int32_t height;
     int32_t retcode;
 
+    batontxid = bettxid; // initially set to the source bet tx
+
     // iterate through batons, adding up vout1 -> addedbets
     while ((retcode = CCgetspenttxid(batontxid, vini, height, bettxid, 1)) == 0) {
 
