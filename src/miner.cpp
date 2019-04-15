@@ -224,7 +224,8 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
 
     CBlockIndex* pindexPrev = 0;
     {
-        LOCK2(cs_main,mempool.cs);
+        ENTER_CRITICAL_SECTION(cs_main);
+        ENTER_CRITICAL_SECTION(mempool.cs);
         pindexPrev = chainActive.LastTip();
         const int nHeight = pindexPrev->GetHeight() + 1;
         const Consensus::Params &consensusParams = chainparams.GetConsensus();
@@ -563,10 +564,11 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
         //LogPrintf("CreateNewBlock(): total size %u blocktime.%u nBits.%08x stake.%i\n", nBlockSize,blocktime,pblock->nBits,isStake);
         if ( ASSETCHAINS_SYMBOL[0] != 0 && isStake )
         {
-            uint64_t txfees,utxovalue; uint32_t txtime; uint256 utxotxid; int32_t i,siglen,numsigs,utxovout; uint8_t utxosig[512],*ptr;
-            CMutableTransaction txStaked = CreateNewContextualCMutableTransaction(Params().GetConsensus(), stakeHeight);
             LEAVE_CRITICAL_SECTION(cs_main);
             LEAVE_CRITICAL_SECTION(mempool.cs);
+            uint64_t txfees,utxovalue; uint32_t txtime; uint256 utxotxid; int32_t i,siglen,numsigs,utxovout; uint8_t utxosig[512],*ptr;
+            CMutableTransaction txStaked = CreateNewContextualCMutableTransaction(Params().GetConsensus(), stakeHeight);
+
             if (ASSETCHAINS_LWMAPOS != 0)
             {
                 uint32_t nBitsPOS;
@@ -591,7 +593,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                 {
                     sleep(1);
                     if ( (rand() % 100) < 1 )
-                        fprintf(stderr, "%u seconds until elegible, waiting...\n", blocktime-((uint32_t)GetAdjustedTime()+57));
+                        fprintf(stderr, "%u seconds until elegible, waiting.\n", blocktime-((uint32_t)GetAdjustedTime()+57));
                     if ( chainActive.LastTip()->GetHeight() >= stakeHeight )
                     {
                         fprintf(stderr, "Block Arrived, reset staking loop.\n");
@@ -601,8 +603,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                         return(0);
                 }
             }
-            ENTER_CRITICAL_SECTION(cs_main);
-            ENTER_CRITICAL_SECTION(mempool.cs);
+
             if ( siglen > 0 )
             {
                 CAmount txfees;
@@ -615,7 +616,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                 nFees += txfees;
                 pblock->nTime = blocktime;
                 //printf("staking PoS ht.%d t%u lag.%u\n",(int32_t)chainActive.LastTip()->GetHeight()+1,blocktime,(uint32_t)(GetAdjustedTime() - (blocktime-13)));
-            } else return(0); //fprintf(stderr,"no utxos eligible for staking\n");
+            } else return(0); //fprintf(stderr,"no utxos eligible for staking\n");         
         }
         
         // Create coinbase tx
@@ -687,6 +688,11 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
             if (scriptPubKeyIn.IsPayToScriptHash() || scriptPubKeyIn.IsPayToCryptoCondition())
             {
                 fprintf(stderr,"CreateNewBlock: attempt to add timelock to pay2sh or pay2cc\n");
+                if ( ASSETCHAINS_SYMBOL[0] == 0 ||  (ASSETCHAINS_SYMBOL[0] != 0 && !isStake) )
+                {
+                    LEAVE_CRITICAL_SECTION(cs_main);
+                    LEAVE_CRITICAL_SECTION(mempool.cs);
+                }
                 return 0;
             }
             
@@ -708,6 +714,11 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                 if ( totalsats == 0 )
                 {
                     fprintf(stderr, "Could not create notary payment, trying again.\n");
+                    if ( ASSETCHAINS_SYMBOL[0] == 0 ||  (ASSETCHAINS_SYMBOL[0] != 0 && !isStake) )
+                    {
+                        LEAVE_CRITICAL_SECTION(cs_main);
+                        LEAVE_CRITICAL_SECTION(mempool.cs);
+                    }
                     return(0);
                 }
                 fprintf(stderr, "Created notary payment coinbase totalsat.%lu\n",totalsats);    
@@ -778,6 +789,11 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
             else
             {
                 fprintf(stderr,"error adding notaryvin, need to create 0.0001 utxos\n");
+                if ( ASSETCHAINS_SYMBOL[0] == 0 ||  (ASSETCHAINS_SYMBOL[0] != 0 && !isStake) )
+                {
+                    LEAVE_CRITICAL_SECTION(cs_main);
+                    LEAVE_CRITICAL_SECTION(mempool.cs);
+                }
                 return(0);
             }
         }
@@ -791,6 +807,11 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
             }
             //fprintf(stderr,"valid\n");
         }
+    }
+    if ( ASSETCHAINS_SYMBOL[0] == 0 ||  (ASSETCHAINS_SYMBOL[0] != 0 && !isStake) )
+    {
+        LEAVE_CRITICAL_SECTION(cs_main);
+        LEAVE_CRITICAL_SECTION(mempool.cs);
     }
     //fprintf(stderr,"done new block\n");
     return pblocktemplate.release();
