@@ -413,7 +413,7 @@ public:
 
 UniValue coinsupply(const UniValue& params, bool fHelp)
 {
-    int32_t height = 0; int32_t currentHeight; int64_t sproutfunds,zfunds,supply = 0; UniValue result(UniValue::VOBJ);
+    int32_t height = 0; int32_t currentHeight; int64_t blocks_per_year,zf1,zf3,zf12,sf1,sf3,sf12,sproutfunds,zfunds,supply1,supply3,supply12,supply = 0; UniValue result(UniValue::VOBJ);
     if (fHelp || params.size() > 1)
         throw runtime_error("coinsupply <height>\n"
             "\nReturn coin supply information at a given block height. If no height is given, the current height is used.\n"
@@ -448,6 +448,27 @@ UniValue coinsupply(const UniValue& params, bool fHelp)
             result.push_back(Pair("zfunds", ValueFromAmount(zfunds)));
             result.push_back(Pair("sprout", ValueFromAmount(sproutfunds)));
             result.push_back(Pair("total", ValueFromAmount(zfunds + supply)));
+            if ( ASSETCHAINS_BLOCKTIME > 0 )
+            {
+                blocks_per_year = 24*3600*365 / ASSETCHAINS_BLOCKTIME;
+                if ( height > blocks_per_year )
+                {
+                    supply1 = komodo_coinsupply(&zf1,&sf1,height - blocks_per_year/12);
+                    supply3 = komodo_coinsupply(&zf3,&sf3,height - blocks_per_year/4);
+                    supply12 = komodo_coinsupply(&zf12,&sf12,height - blocks_per_year);
+                    if ( supply1 != 0 && supply3 != 0 && supply12 != 0 )
+                    {
+                        result.push_back(Pair("lastmonth", ValueFromAmount(supply1+zf1)));
+                        result.push_back(Pair("monthcoins", ValueFromAmount(zfunds + supply - supply1-zf1)));
+                        result.push_back(Pair("lastquarter", ValueFromAmount(supply3+zf3)));
+                        result.push_back(Pair("quartercoins", ValueFromAmount(zfunds + supply - supply3-zf3)));
+                        result.push_back(Pair("lastyear", ValueFromAmount(supply12+zf12)));
+                        result.push_back(Pair("yearcoins", ValueFromAmount(zfunds + supply - supply12-zf12)));
+                        result.push_back(Pair("inflation", 100. * (((double)(zfunds + supply)/(supply12+zf12))-1.)));
+                        result.push_back(Pair("blocksperyear", (int64_t)blocks_per_year));
+                    }
+                }
+            }
         } else result.push_back(Pair("error", "couldnt calculate supply"));
     } else {
         result.push_back(Pair("error", "invalid height"));
@@ -863,11 +884,14 @@ bool getAddressFromIndex(const int &type, const uint160 &hash, std::string &addr
 
 bool getAddressesFromParams(const UniValue& params, std::vector<std::pair<uint160, int> > &addresses)
 {
+    bool ccVout = false;
+    if (params.size() == 2)
+        ccVout = true;
     if (params[0].isStr()) {
         CBitcoinAddress address(params[0].get_str());
         uint160 hashBytes;
         int type = 0;
-        if (!address.GetIndexKey(hashBytes, type, 0)) {
+        if (!address.GetIndexKey(hashBytes, type, ccVout)) {
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid address");
         }
         addresses.push_back(std::make_pair(hashBytes, type));
@@ -885,7 +909,7 @@ bool getAddressesFromParams(const UniValue& params, std::vector<std::pair<uint16
             CBitcoinAddress address(it->get_str());
             uint160 hashBytes;
             int type = 0;
-            if (!address.GetIndexKey(hashBytes, type, 0)) {
+            if (!address.GetIndexKey(hashBytes, type, ccVout)) {
                 throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid addresses");
             }
             addresses.push_back(std::make_pair(hashBytes, type));
@@ -909,7 +933,7 @@ bool timestampSort(std::pair<CMempoolAddressDeltaKey, CMempoolAddressDelta> a,
 
 UniValue getaddressmempool(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() != 1)
+    if (fHelp || params.size() > 2 || params.size() == 0)
         throw runtime_error(
             "getaddressmempool\n"
             "\nReturns all mempool deltas for an address (requires addressindex to be enabled).\n"
@@ -921,6 +945,7 @@ UniValue getaddressmempool(const UniValue& params, bool fHelp)
             "      ,...\n"
             "    ]\n"
             "}\n"
+            "\nCCvout (optional) Return CCvouts instead of normal vouts\n"
             "\nResult:\n"
             "[\n"
             "  {\n"
@@ -934,8 +959,8 @@ UniValue getaddressmempool(const UniValue& params, bool fHelp)
             "  }\n"
             "]\n"
             "\nExamples:\n"
-            + HelpExampleCli("getaddressmempool", "'{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]}'")
-            + HelpExampleRpc("getaddressmempool", "{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]}")
+            + HelpExampleCli("getaddressmempool", "'{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]}' (ccvout)")
+            + HelpExampleRpc("getaddressmempool", "{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]} (ccvout)")
         );
 
     std::vector<std::pair<uint160, int> > addresses;
@@ -980,7 +1005,7 @@ UniValue getaddressmempool(const UniValue& params, bool fHelp)
 
 UniValue getaddressutxos(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() != 1)
+    if (fHelp || params.size() > 2 || params.size() == 0)
         throw runtime_error(
             "getaddressutxos\n"
             "\nReturns all unspent outputs for an address (requires addressindex to be enabled).\n"
@@ -993,6 +1018,7 @@ UniValue getaddressutxos(const UniValue& params, bool fHelp)
             "    ],\n"
             "  \"chainInfo\"  (boolean) Include chain info with results\n"
             "}\n"
+            "\nCCvout (optional) Return CCvouts instead of normal vouts\n"
             "\nResult\n"
             "[\n"
             "  {\n"
@@ -1005,8 +1031,8 @@ UniValue getaddressutxos(const UniValue& params, bool fHelp)
             "  }\n"
             "]\n"
             "\nExamples:\n"
-            + HelpExampleCli("getaddressutxos", "'{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]}'")
-            + HelpExampleRpc("getaddressutxos", "{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]}")
+            + HelpExampleCli("getaddressutxos", "'{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]}' (ccvout)")
+            + HelpExampleRpc("getaddressutxos", "{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]} (ccvout)")
             );
 
     bool includeChainInfo = false;
@@ -1066,7 +1092,7 @@ UniValue getaddressutxos(const UniValue& params, bool fHelp)
 
 UniValue getaddressdeltas(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() != 1 || !params[0].isObject())
+    if (fHelp || params.size() > 2 || params.size() == 0 || !params[0].isObject())
         throw runtime_error(
             "getaddressdeltas\n"
             "\nReturns all changes for an address (requires addressindex to be enabled).\n"
@@ -1081,6 +1107,7 @@ UniValue getaddressdeltas(const UniValue& params, bool fHelp)
             "  \"end\" (number) The end block height\n"
             "  \"chainInfo\" (boolean) Include chain info in results, only applies if start and end specified\n"
             "}\n"
+            "\nCCvout (optional) Return CCvouts instead of normal vouts\n"
             "\nResult:\n"
             "[\n"
             "  {\n"
@@ -1092,8 +1119,8 @@ UniValue getaddressdeltas(const UniValue& params, bool fHelp)
             "  }\n"
             "]\n"
             "\nExamples:\n"
-            + HelpExampleCli("getaddressdeltas", "'{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]}'")
-            + HelpExampleRpc("getaddressdeltas", "{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]}")
+            + HelpExampleCli("getaddressdeltas", "'{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]}' (ccvout)")
+            + HelpExampleRpc("getaddressdeltas", "{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]} (ccvout)")
         );
 
 
@@ -1191,7 +1218,7 @@ UniValue getaddressdeltas(const UniValue& params, bool fHelp)
 
 UniValue getaddressbalance(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() != 1)
+    if (fHelp ||params.size() > 2 || params.size() == 0)
         throw runtime_error(
             "getaddressbalance\n"
             "\nReturns the balance for an address(es) (requires addressindex to be enabled).\n"
@@ -1203,14 +1230,15 @@ UniValue getaddressbalance(const UniValue& params, bool fHelp)
             "      ,...\n"
             "    ]\n"
             "}\n"
+            "\nCCvout (optional) Return CCvouts instead of normal vouts\n"
             "\nResult:\n"
             "{\n"
             "  \"balance\"  (string) The current balance in satoshis\n"
             "  \"received\"  (string) The total number of satoshis received (including change)\n"
             "}\n"
             "\nExamples:\n"
-            + HelpExampleCli("getaddressbalance", "'{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]}'")
-            + HelpExampleRpc("getaddressbalance", "{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]}")
+            + HelpExampleCli("getaddressbalance", "'{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]}' (ccvout)")
+            + HelpExampleRpc("getaddressbalance", "{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]} (ccvout)")
         );
 
     std::vector<std::pair<uint160, int> > addresses;
@@ -1301,9 +1329,9 @@ UniValue getsnapshot(const UniValue& params, bool fHelp)
 
 UniValue getaddresstxids(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() != 1)
+    if (fHelp || params.size() > 2)
         throw runtime_error(
-            "getaddresstxids\n"
+            "getaddresstxids (ccvout)\n"
             "\nReturns the txids for an address(es) (requires addressindex to be enabled).\n"
             "\nArguments:\n"
             "{\n"
@@ -1315,14 +1343,15 @@ UniValue getaddresstxids(const UniValue& params, bool fHelp)
             "  \"start\" (number) The start block height\n"
             "  \"end\" (number) The end block height\n"
             "}\n"
+            "\nCCvout (optional) Return CCvouts instead of normal vouts\n"
             "\nResult:\n"
             "[\n"
             "  \"transactionid\"  (string) The transaction id\n"
             "  ,...\n"
             "]\n"
             "\nExamples:\n"
-            + HelpExampleCli("getaddresstxids", "'{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]}'")
-            + HelpExampleRpc("getaddresstxids", "{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]}")
+            + HelpExampleCli("getaddresstxids", "'{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]}' (ccvout)")
+            + HelpExampleRpc("getaddresstxids", "{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]} (ccvout)")
         );
 
     std::vector<std::pair<uint160, int> > addresses;
