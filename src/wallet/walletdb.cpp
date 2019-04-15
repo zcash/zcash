@@ -954,6 +954,7 @@ DBErrors CWalletDB::LoadWallet(CWallet* pwallet)
     if (!deadTxns.empty())
     {
         int32_t reAdded = 0;
+        CWalletDB walletdb(pwallet->strWalletFile, "r+", false);
         BOOST_FOREACH (uint256& hash, deadTxns) {
             if (!EraseTx(hash))
                 fprintf(stderr, "could not delete tx.%s\n",hash.ToString().c_str());
@@ -961,7 +962,7 @@ DBErrors CWalletDB::LoadWallet(CWallet* pwallet)
             if (GetTransaction(hash,tx,blockhash,true))
             {
                 CWalletTx wtx(pwallet,tx);
-                pwallet->AddToWallet(wtx, false, NULL);
+                pwallet->AddToWallet(wtx, false, &walletdb);
                 reAdded++;
             }
         }
