@@ -397,6 +397,11 @@ int64_t prices_syntheticprofits(bool calcCostbasis, int64_t &costbasis, int32_t 
 {
     int64_t price, profits = 0; 
 
+    if (height < firstheight) {
+        fprintf(stderr, "requested height is lower than bet firstheight.%d\n", height);
+        return 0;
+    }
+
     int32_t minmax = (height < firstheight + PRICES_DAYWINDOW);  // if we are within 24h then use min or max value 
 
     if ((price = prices_syntheticprice(vec, height, minmax, leverage)) < 0)
@@ -768,6 +773,14 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
     {
         if (prices_betopretdecode(bettx.vout[numvouts - 1].scriptPubKey, pk, firstheight, positionsize, leverage, firstprice, vec, tokenid) == 'B')
         {
+            if (refheight > 0 && refheight < firstheight) {
+                result.push_back(Pair("result", "error"));
+                result.push_back(Pair("error", "incorrect height"));
+                return(result);
+            }
+            if (refheight == 0)
+                refheight = komodo_nextheight()-1;
+
             costbasis = prices_costbasis(bettx);
             addedbets = prices_batontxid(batontxid, bettx, bettxid);
             if ((profits = prices_syntheticprofits(false, costbasis, firstheight, refheight, leverage, vec, positionsize, addedbets)) < 0)
