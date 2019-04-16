@@ -16,6 +16,8 @@
 #include "CCassets.h"
 #include "CCPrices.h"
 
+#define IS_CHARINSTR(c, str) (std::string(str).find((char)(c)) != std::string::npos)
+
 /*
 CBOPRET creates trustless oracles, which can be used for making a synthetic cash settlement system based on real world prices;
  
@@ -128,7 +130,8 @@ uint8_t prices_finalopretdecode(CScript scriptPubKey,uint256 &bettxid,int64_t &p
 
 bool CheckPricesOpret(const CTransaction & tx, vscript_t &opret)
 {
-    return (tx.vout.size() == 0 || !GetOpReturnData(tx.vout.back().scriptPubKey, opret) || opret.size() < 3 || opret.begin()[0] != EVAL_PRICES) || opret.begin()[1] == 0;
+    return !(tx.vout.size() < 1 || !GetOpReturnData(tx.vout.back().scriptPubKey, opret) || opret.size() < 3 || opret.begin()[0] != EVAL_PRICES || 
+            IS_CHARINSTR(opret.begin()[1], "BACF"));
 }
 
 bool ValidateBetTx(struct CCcontract_info *cp, Eval *eval, const CTransaction & bettx)
