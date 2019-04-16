@@ -130,8 +130,7 @@ uint8_t prices_finalopretdecode(CScript scriptPubKey,uint256 &bettxid,int64_t &p
 
 bool CheckPricesOpret(const CTransaction & tx, vscript_t &opret)
 {
-    return !(tx.vout.size() < 1 || !GetOpReturnData(tx.vout.back().scriptPubKey, opret) || opret.size() < 3 || opret.begin()[0] != EVAL_PRICES || 
-            IS_CHARINSTR(opret.begin()[1], "BACF"));
+    return tx.vout.size() > 0 && GetOpReturnData(tx.vout.back().scriptPubKey, opret) && opret.size() > 2 && opret.begin()[0] == EVAL_PRICES && IS_CHARINSTR(opret.begin()[1], "BACF");
 }
 
 bool ValidateBetTx(struct CCcontract_info *cp, Eval *eval, const CTransaction & bettx)
