@@ -128,6 +128,7 @@ uint8_t prices_finalopretdecode(CScript scriptPubKey,uint256 &bettxid,int64_t &p
     return(0);
 }
 
+// price opret basic validation and retrieval
 bool CheckPricesOpret(const CTransaction & tx, vscript_t &opret)
 {
     return tx.vout.size() > 0 && GetOpReturnData(tx.vout.back().scriptPubKey, opret) && opret.size() > 2 && opret.begin()[0] == EVAL_PRICES && IS_CHARINSTR(opret.begin()[1], "BACF");
@@ -260,7 +261,7 @@ bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
     vscript_t vopret;
 
     // check basic opret rules:
-    if (CheckPricesOpret(tx, vopret))
+    if (!CheckPricesOpret(tx, vopret))
         return eval->Invalid("tx has no prices opreturn");
 
     uint8_t funcId = vopret.begin()[1];
