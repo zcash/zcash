@@ -721,7 +721,7 @@ UniValue verifytxoutproof(const UniValue& params, bool fHelp)
 
 UniValue createrawtransaction(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() < 2 || params.size() > 4)
+    if (fHelp ) || //params.size() < 2 || params.size() > 4)
         throw runtime_error(
             "createrawtransaction [{\"txid\":\"id\",\"vout\":n},...] {\"address\":amount,...} ( locktime ) ( expiryheight )\n"
             "\nCreate a transaction spending the given inputs and sending to the given addresses.\n"
@@ -754,6 +754,32 @@ UniValue createrawtransaction(const UniValue& params, bool fHelp)
             + HelpExampleRpc("createrawtransaction", "\"[{\\\"txid\\\":\\\"myid\\\",\\\"vout\\\":0}]\", \"{\\\"address\\\":0.01}\"")
         );
 
+    int nextBlockHeight = chainActive.Height() + 1;
+    CMutableTransaction rawTx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), nextBlockHeight);
+    CCcontract_info *cp, C;
+    
+    cp = CCinit(&C,EVAL_ORACLES);
+    CPubKey ccAddress = CPubKey(ParseHex(cp->CChexstr));
+    CPubKey mypk = Mypubkey();
+
+    CTxOut vout = MakeCC1of2vout(EVAL_ORACLES, 1000000, mypk, ccAddress);
+
+    std::vector<CPubKey> vPubKeys = std::vector<CPubKey>();
+    vPubKeys.push_back(mypk);
+    vPubKeys.push_back(ccAddress);
+        
+    std::vector<std::vector<unsigned char>> vData = std::vector<std::vector<unsigned char>>();
+    std::string test = "thisisatest";
+    vData.push_back(std::vector<unsigned char>(test.begin(), test.end()));
+    test = "anothertest";
+    vData.push_back(std::vector<unsigned char>(test.begin(), test.end()));
+    COptCCParams ccp = COptCCParams(COptCCParams::VERSION, EVAL_ORACLES, 1, 2, vPubKeys, vData);
+
+    vout.scriptPubKey << ccp.AsVector() << OP_DROP;
+    rawTx.vout.push_back(vout);
+    
+    return EncodeHexTx(rawTx);
+    
     LOCK(cs_main);
     RPCTypeCheck(params, boost::assign::list_of(UniValue::VARR)(UniValue::VOBJ)(UniValue::VNUM)(UniValue::VNUM), true);
     if (params[0].isNull() || params[1].isNull())
