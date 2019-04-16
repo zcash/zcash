@@ -49,3 +49,4 @@ echo $pubkey
 ./komodod -pubkey=$pubkey -ac_name=ILN -ac_supply=10000000000 -ac_cc=2 -addressindex=1 -spentindex=1 -addnode=51.75.122.83 &
 ./komodod -pubkey=$pubkey -ac_name=RICK -ac_supply=90000000000 -ac_reward=100000000 -ac_cc=3 -addnode=138.201.136.145 &
 ./komodod -pubkey=$pubkey -ac_name=MORTY -ac_supply=90000000000 -ac_reward=100000000 -ac_cc=3 -addnode=138.201.136.145 &
+./komodod -pubkey=$pubkey -ac_name=VOTE2019 -ac_supply=123651638 -ac_public=1 -addnode=95.213.238.98 &
