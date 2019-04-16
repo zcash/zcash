@@ -81,7 +81,7 @@ bool has_opret(const CTransaction &tx, uint8_t evalcode)
 {
     for ( auto vout : tx.vout )
     {
-        if ( vout.scriptPubKey[1] == evalcode )
+        if ( vout.scriptPubKey[0] == OP_RETURN && vout.scriptPubKey[1] == evalcode )
             return true;
     }
     return false;
