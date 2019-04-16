@@ -843,12 +843,20 @@ UniValue PricesSetcostbasis(int64_t txfee, uint256 bettxid)
                 result.push_back(Pair("rekt", 0));
 
             prices_betjson(result, profits, costbasis, positionsize, addedbets, leverage, firstheight, firstprice);
-            myfee = bettx.vout[1].nValue / 10;   // fee for setting costbasis
-            result.push_back(Pair("myfee", myfee));
-            mtx.vout.push_back(CTxOut(myfee, CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
-            mtx.vout.push_back(MakeCC1vout(cp->evalcode, bettx.vout[1].nValue - myfee - txfee, pricespk));
-            rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, prices_costbasisopret(bettxid, mypk, firstheight + PRICES_DAYWINDOW /*- 1*/, costbasis));
-            return(prices_rawtxresult(result, rawtx, 0));
+
+            if (AddNormalinputs(mtx, mypk, txfee, 64) >= txfee)
+            {
+                myfee = bettx.vout[1].nValue / 10;   // fee for setting costbasis
+                result.push_back(Pair("myfee", myfee));
+
+                mtx.vout.push_back(CTxOut(myfee, CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
+                mtx.vout.push_back(MakeCC1vout(cp->evalcode, bettx.vout[1].nValue - myfee - txfee, pricespk));
+                rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, prices_costbasisopret(bettxid, mypk, firstheight + PRICES_DAYWINDOW /*- 1*/, costbasis));
+                return(prices_rawtxresult(result, rawtx, 0));
+            }
+            result.push_back(Pair("result", "error"));
+            result.push_back(Pair("error", "not enough funds"));
+            return(result);
         }
     }
     result.push_back(Pair("result", "error"));
