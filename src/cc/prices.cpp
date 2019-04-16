@@ -126,35 +126,240 @@ uint8_t prices_finalopretdecode(CScript scriptPubKey,uint256 &bettxid,int64_t &p
     return(0);
 }
 
+bool CheckPricesOpret(const CTransaction & tx, vscript_t &opret)
+{
+    return (tx.vout.size() == 0 || !GetOpReturnData(tx.vout.back().scriptPubKey, opret) || opret.size() < 3 || opret.begin()[0] != EVAL_PRICES) || opret.begin()[1] == 0;
+}
+
+bool ValidateBetTx(struct CCcontract_info *cp, Eval *eval, const CTransaction & bettx)
+{
+    uint256 tokenid;
+    int64_t positionsize, firstprice;
+    int32_t firstheight; 
+    int16_t leverage;
+    CPubKey pk, pricespk; 
+    std::vector<uint16_t> vec;
+
+    if (bettx.vout.size() < 5 || bettx.vout.size() > 6)
+        return eval->Invalid("incorrect vout number for bet tx");
+
+    vscript_t opret;
+    if( prices_betopretdecode(bettx.vout.back().scriptPubKey, pk, firstheight, positionsize, leverage, firstprice, vec, tokenid) != 'B')
+        return eval->Invalid("cannot decode opreturn for bet tx");
+
+    pricespk = GetUnspendable(cp, 0);
+
+    if (MakeCC1vout(cp->evalcode, bettx.vout[0].nValue, pk) != bettx.vout[0])
+        return eval->Invalid("cannot validate vout0 in bet tx with pk from opreturn");
+    if (MakeCC1vout(cp->evalcode, bettx.vout[1].nValue, pricespk) != bettx.vout[1])
+        return eval->Invalid("cannot validate vout1 in bet tx with global pk");
+    if( MakeCC1of2vout(cp->evalcode, bettx.vout[2].nValue, pk, pricespk) != bettx.vout[2] )
+        return eval->Invalid("cannot validate 1of2 vout2 in bet tx with pk from opreturn");
+
+    return true;
+}
+
+
+bool ValidateAddFundingTx(struct CCcontract_info *cp, Eval *eval, const CTransaction & addfundingtx)
+{
+    uint256 bettxid;
+    int64_t amount;
+    CPubKey pk, pricespk;
+
+    if (addfundingtx.vout.size() < 3 || addfundingtx.vout.size() > 4)
+        return eval->Invalid("incorrect vout number for add funding tx");
+
+    vscript_t opret;
+    if (prices_addopretdecode(addfundingtx.vout.back().scriptPubKey, bettxid, pk, amount) != 'A')
+        return eval->Invalid("cannot decode opreturn for add funding tx");
+
+    pricespk = GetUnspendable(cp, 0);
+
+    if (MakeCC1vout(cp->evalcode, addfundingtx.vout[0].nValue, pk) != addfundingtx.vout[0])
+        return eval->Invalid("cannot validate vout0 in add funding tx with pk from opreturn");
+    if (MakeCC1vout(cp->evalcode, addfundingtx.vout[1].nValue, pricespk) != addfundingtx.vout[1])
+        return eval->Invalid("cannot validate vout1 in add funding tx with global pk");
+
+    return true;
+}
+
+bool ValidateCostbasisTx(struct CCcontract_info *cp, Eval *eval, const CTransaction & costbasistx, const CTransaction & bettx)
+{
+    uint256 bettxid;
+    int64_t amount;
+    CPubKey pk, pricespk;
+    int32_t height;
+
+    // check basic structure:
+    if (costbasistx.vout.size() < 3 || costbasistx.vout.size() > 4)
+        return eval->Invalid("incorrect vout number for add funding tx");
+
+    vscript_t opret;
+    if (prices_costbasisopretdecode(costbasistx.vout.back().scriptPubKey, bettxid, pk, height, amount) != 'C')
+        return eval->Invalid("cannot decode opreturn for setcostbasis tx");
+
+    pricespk = GetUnspendable(cp, 0);
+    if (MakeCC1vout(cp->evalcode, costbasistx.vout[0].nValue, pk) != costbasistx.vout[0])
+        return eval->Invalid("cannot validate vout0 in add funding tx with pk from opreturn");
+    if (MakeCC1vout(cp->evalcode, costbasistx.vout[1].nValue, pricespk) != costbasistx.vout[1])
+        return eval->Invalid("cannot validate vout1 in add funding tx with global pk");
+
+    if (bettx.vout.size() < 1) // maybe this is already checked outside, but it is safe to check here too and have encapsulated check
+        return eval->Invalid("incorrect bettx");
+
+    // check costbasis rules:
+    if (costbasistx.vout[0].nValue > bettx.vout[1].nValue / 10)
+        return eval->Invalid("costbasis myfee too big");
+
+    uint256 tokenid;
+    int64_t positionsize, firstprice;
+    int32_t firstheight;
+    int16_t leverage;
+    std::vector<uint16_t> vec;
+    if (prices_betopretdecode(bettx.vout.back().scriptPubKey, pk, firstheight, positionsize, leverage, firstprice, vec, tokenid) != 'B')
+        return eval->Invalid("cannot decode opreturn for bet tx");
+
+    if( firstheight + PRICES_DAYWINDOW + PRICES_SMOOTHWIDTH > chainActive.Height() )
+        return eval->Invalid("cannot calculate costbasis yet");
+
+    return true;
+}
+
+bool ValidateFinalTx(struct CCcontract_info *cp, Eval *eval, const CTransaction & finaltx)
+{
+    uint256 bettxid;
+    int64_t amount;
+    CPubKey pk, pricespk;
+    int64_t profits;
+    int32_t height;
+    int64_t firstprice, costbasis, addedbets, positionsize;
+    int16_t leverage;
+
+    if (finaltx.vout.size() < 2 || finaltx.vout.size() > 3)
+        return eval->Invalid("incorrect vout number for final tx");
+
+    vscript_t opret;
+    if (prices_finalopretdecode(finaltx.vout.back().scriptPubKey, bettxid, profits, height, pk, firstprice, costbasis, addedbets, positionsize, leverage) != 'F')
+        return eval->Invalid("cannot decode opreturn for final tx");
+
+    pricespk = GetUnspendable(cp, 0);
+
+    if (MakeCC1vout(cp->evalcode, finaltx.vout[0].nValue, pk) != finaltx.vout[0])
+        return eval->Invalid("cannot validate vout0 in final tx with pk from opreturn");
+
+    if( finaltx.vout.size() == 3 && MakeCC1vout(cp->evalcode, finaltx.vout[1].nValue, pricespk) != finaltx.vout[1] ) 
+        return eval->Invalid("cannot validate vout1 in final tx with global pk");
+
+    return true;
+}
+
 bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
 {
+    vscript_t vopret;
+
+    // check basic opret rules:
+    if (CheckPricesOpret(tx, vopret))
+        return eval->Invalid("tx has no prices opreturn");
+
+    uint8_t funcId = vopret.begin()[1];
+
+    CTransaction vintx;
+    vscript_t vintxOpret;
+    int32_t ccVinCount = 0;
+    int32_t prevoutN = 0;
+    // load vintx:
+    for (auto vin : tx.vin)
+        if (cp->ismyvin(vin.scriptSig)) {
+            uint256 hashBlock;
+            if (myGetTransaction(vin.prevout.hash, vintx, hashBlock))
+                return eval->Invalid("cannot load vin tx");
+            prevoutN = vin.prevout.n;
+            ccVinCount++;
+        }
+    if (ccVinCount != 1)   // must be only one cc vintx
+        return eval->Invalid("incorrect cc vin txns num");
+
+    if (!CheckPricesOpret(vintx, vintxOpret))
+        return eval->Invalid("cannot find prices opret in vintx");
+
+    if (vintxOpret.begin()[1] == 'B' && prevoutN == 3) {   // check basic spending rules
+        return eval->Invalid("cannot spend bet marker");
+    }
+
+    switch (funcId) {
+    case 'B':   // bet 
+        return eval->Invalid("unexpected validate for bet funcid");
+
+    case 'A':   // add funding
+        // check tx structure:
+        if (!ValidateAddFundingTx(cp, eval, tx))
+            return false;  // invalid state is already set in the func
+
+        if (vintxOpret.begin()[1] == 'B') {
+            if (!ValidateBetTx(cp, eval, vintx)) // check tx structure
+                return false;  
+        }
+        else if (vintxOpret.begin()[1] == 'A') {
+            // no need to validate the previous addfunding tx (it was validated when added)
+        }
+
+        if (prevoutN != 0) {   // check spending rules
+            return eval->Invalid("incorrect vout to spend");
+        }
+        break;
+
+    case 'C':   // set costbasis 
+        if (!ValidateBetTx(cp, eval, vintx)) // first check bet tx 
+            return false;  
+        if (!ValidateCostbasisTx(cp, eval, tx, vintx))
+            return false;  
+        if (prevoutN != 1) {   // check spending rules
+            return eval->Invalid("incorrect vout to spend");
+        }
+        break;
+
+    case 'F':   // final tx 
+        if (!ValidateBetTx(cp, eval, vintx)) // first check bet tx 
+            return false;
+        if (!ValidateFinalTx(cp, eval, tx))
+            return false;
+        if (prevoutN != 2) {   // check spending rules
+            return eval->Invalid("incorrect vout to spend");
+        }
+        break;
+
+    default:
+        return eval->Invalid("invalid funcid");
+    }
+
     return true;
 }
 // end of consensus code
 
 // helper functions for rpc calls in rpcwallet.cpp
 
-int64_t AddPricesInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,char *destaddr,int64_t total,int32_t maxinputs,uint256 vintxid,int32_t vinvout)
+int64_t AddPricesInputs(struct CCcontract_info *cp, CMutableTransaction &mtx, char *destaddr, int64_t total, int32_t maxinputs, uint256 vintxid, int32_t vinvout)
 {
-    int64_t nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t vout,n = 0;
+    int64_t nValue, price, totalinputs = 0; uint256 txid, hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t vout, n = 0;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
-    SetCCunspents(unspentOutputs,destaddr);
-    for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
+
+    SetCCunspents(unspentOutputs, destaddr);
+    for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it = unspentOutputs.begin(); it != unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
         vout = (int32_t)it->first.index;
-        if ( vout == vinvout && txid == vintxid )
+        if (vout == vinvout && txid == vintxid)
             continue;
-        if ( GetTransaction(txid,vintx,hashBlock,false) != 0 && vout < vintx.vout.size() )
+        if (GetTransaction(txid, vintx, hashBlock, false) != 0 && vout < vintx.vout.size())
         {
-            if ( (nValue= vintx.vout[vout].nValue) >= total/maxinputs && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0 )
+            if ((nValue = vintx.vout[vout].nValue) >= total / maxinputs && myIsutxo_spentinmempool(ignoretxid, ignorevin, txid, vout) == 0)
             {
-                if ( total != 0 && maxinputs != 0 )
-                    mtx.vin.push_back(CTxIn(txid,vout,CScript()));
+                if (total != 0 && maxinputs != 0)
+                    mtx.vin.push_back(CTxIn(txid, vout, CScript()));
                 nValue = it->second.satoshis;
                 totalinputs += nValue;
                 n++;
-                if ( (total > 0 && totalinputs >= total) || (maxinputs > 0 && n >= maxinputs) )
+                if ((total > 0 && totalinputs >= total) || (maxinputs > 0 && n >= maxinputs))
                     break;
             }
         }
@@ -162,51 +367,55 @@ int64_t AddPricesInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,char
     return(totalinputs);
 }
 
-UniValue prices_rawtxresult(UniValue &result,std::string rawtx,int32_t broadcastflag)
+UniValue prices_rawtxresult(UniValue &result, std::string rawtx, int32_t broadcastflag)
 {
     CTransaction tx;
-    if ( rawtx.size() > 0 )
+    if (rawtx.size() > 0)
     {
-        result.push_back(Pair("hex",rawtx));
-        if ( DecodeHexTx(tx,rawtx) != 0 )
+        result.push_back(Pair("hex", rawtx));
+        if (DecodeHexTx(tx, rawtx) != 0)
         {
-            if ( broadcastflag != 0 && myAddtomempool(tx) != 0 )
+            if (broadcastflag != 0 && myAddtomempool(tx) != 0)
                 RelayTransaction(tx);
-            result.push_back(Pair("txid",tx.GetHash().ToString()));
-            result.push_back(Pair("result","success"));
-        } else result.push_back(Pair("error","decode hex"));
-    } else result.push_back(Pair("error","couldnt finalize CCtx"));
+            result.push_back(Pair("txid", tx.GetHash().ToString()));
+            result.push_back(Pair("result", "success"));
+        }
+        else 
+            result.push_back(Pair("error", "decode hex"));
+    }
+    else 
+        result.push_back(Pair("error", "couldnt finalize CCtx"));
     return(result);
 }
 
-int32_t prices_syntheticvec(std::vector<uint16_t> &vec,std::vector<std::string> synthetic)
+int32_t prices_syntheticvec(std::vector<uint16_t> &vec, std::vector<std::string> synthetic)
 {
-    int32_t i,need,ind,depth = 0; std::string opstr; uint16_t opcode,weight;
+    int32_t i, need, ind, depth = 0; std::string opstr; uint16_t opcode, weight;
     if (synthetic.size() == 0) {
         std::cerr << "prices_syntheticvec() expression is empty" << std::endl;
         return(-1);
     }
-    for (i=0; i<synthetic.size(); i++)
+    for (i = 0; i < synthetic.size(); i++)
     {
         need = 0;
         opstr = synthetic[i];
-        if ( opstr == "*" )
+        if (opstr == "*")
             opcode = PRICES_MULT, need = 2;
-        else if ( opstr == "/" )
+        else if (opstr == "/")
             opcode = PRICES_DIV, need = 2;
-        else if ( opstr == "!" )
+        else if (opstr == "!")
             opcode = PRICES_INV, need = 1;
-        else if ( opstr == "**/" )
+        else if (opstr == "**/")
             opcode = PRICES_MMD, need = 3;
-        else if ( opstr == "*//" )
+        else if (opstr == "*//")
             opcode = PRICES_MDD, need = 3;
-        else if ( opstr == "***" )
+        else if (opstr == "***")
             opcode = PRICES_MMM, need = 3;
-        else if ( opstr == "///" )
+        else if (opstr == "///")
             opcode = PRICES_DDD, need = 3;
-        else if (!is_weight_str(opstr) && (ind= komodo_priceind(opstr.c_str())) >= 0 )
+        else if (!is_weight_str(opstr) && (ind = komodo_priceind(opstr.c_str())) >= 0)
             opcode = ind, need = 0;
-        else if ( (weight= atoi(opstr.c_str())) > 0 && weight < KOMODO_MAXPRICES )
+        else if ((weight = atoi(opstr.c_str())) > 0 && weight < KOMODO_MAXPRICES)
         {
             opcode = PRICES_WEIGHT | weight;
             need = 1;
@@ -231,9 +440,9 @@ int32_t prices_syntheticvec(std::vector<uint16_t> &vec,std::vector<std::string> 
         }
         vec.push_back(opcode);
     }
-    if ( depth != 0 )
+    if (depth != 0)
     {
-        fprintf(stderr,"prices_syntheticvec() depth.%d not empty\n",depth);
+        fprintf(stderr, "prices_syntheticvec() depth.%d not empty\n", depth);
         return(-5);
     }
     return(0);
@@ -446,6 +655,7 @@ int64_t prices_costbasis(CTransaction bettx)
     uint256 txidCostbasis;
     int32_t vini;
     int32_t height;
+
     if (CCgetspenttxid(txidCostbasis, vini, height, bettx.GetHash(), 1) < 0) {
         std::cerr << "prices_costbasis() no costbasis txid found" << std::endl;
         return 0;
@@ -509,9 +719,11 @@ UniValue PricesBet(int64_t txfee, int64_t amount, int16_t leverage, std::vector<
 {
     int32_t nextheight = komodo_nextheight();
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), nextheight); UniValue result(UniValue::VOBJ);
-    struct CCcontract_info *cp, C; CPubKey pricespk, mypk; int64_t betamount, firstprice; 
+    struct CCcontract_info *cp, C; 
+    CPubKey pricespk, mypk; 
+    int64_t betamount, firstprice; 
     std::vector<uint16_t> vec; 
-    char myaddr[64]; 
+    //char myaddr[64]; 
     std::string rawtx;
 
     if (leverage > PRICES_MAXLEVERAGE || leverage < -PRICES_MAXLEVERAGE)
@@ -525,7 +737,7 @@ UniValue PricesBet(int64_t txfee, int64_t amount, int16_t leverage, std::vector<
         txfee = PRICES_TXFEE;
     mypk = pubkey2pk(Mypubkey());
     pricespk = GetUnspendable(cp, 0);
-    GetCCaddress(cp, myaddr, mypk);
+    //GetCCaddress(cp, myaddr, mypk);
     if (prices_syntheticvec(vec, synthetic) < 0 || (firstprice = prices_syntheticprice(vec, nextheight - 1, 1, leverage)) < 0 || vec.size() == 0 || vec.size() > 4096)
     {
         result.push_back(Pair("result", "error"));
