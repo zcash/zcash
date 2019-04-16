@@ -1195,7 +1195,7 @@ UniValue prices(const UniValue& params, bool fHelp)
     if ( fHelp || params.size() != 1 )
         throw runtime_error("prices maxsamples\n");
     LOCK(cs_main);
-    UniValue ret(UniValue::VOBJ); uint64_t seed,rngval; int64_t *tmpbuf,smoothed,*correlated; char name[64],*str; uint32_t rawprices[1440*6],*prices; uint32_t i,width,j,numpricefeeds=-1,n,numsamples,nextheight,offset,ht;
+    UniValue ret(UniValue::VOBJ); uint64_t seed,rngval; int64_t *tmpbuf,smoothed,*correlated,checkprices[PRICES_MAXDATAPOINTS]; char name[64],*str; uint32_t rawprices[1440*6],*prices; uint32_t i,width,j,numpricefeeds=-1,n,numsamples,nextheight,offset,ht;
     if ( ASSETCHAINS_CBOPRET == 0 )
         throw JSONRPCError(RPC_INVALID_PARAMETER, "only -ac_cbopret chains have prices");
 
@@ -1256,11 +1256,13 @@ UniValue prices(const UniValue& params, bool fHelp)
                     if ( (correlated[i]= komodo_pricecorrelated(rngval,j,&prices[offset],1,0,PRICES_SMOOTHWIDTH)) < 0 )
                         throw JSONRPCError(RPC_INVALID_PARAMETER, "null correlated price");
                     {
-                        int64_t checkprices[PRICES_MAXDATAPOINTS];
                         if ( komodo_priceget(checkprices,j,nextheight-1-i,1) >= 0 )
                         {
                             if ( checkprices[1] != correlated[i] )
-                                fprintf(stderr,"ind.%d ht.%d %.8f != %.8f\n",j,nextheight-1-i,(double)checkprices[1]/COIN,(double)correlated[i]/COIN);
+                            {
+                                //fprintf(stderr,"ind.%d ht.%d %.8f != %.8f\n",j,nextheight-1-i,(double)checkprices[1]/COIN,(double)correlated[i]/COIN);
+                                correlated[i] = checkprices[1];
+                            }
                         }
                     }
                 }
@@ -1269,6 +1271,14 @@ UniValue prices(const UniValue& params, bool fHelp)
                 {
                     offset = j*width + i;
                     smoothed = komodo_priceave(tmpbuf,&correlated[i],1);
+                    if ( komodo_priceget(checkprices,j,nextheight-1-i,1) >= 0 )
+                    {
+                        if ( checkprices[2] != smoothed )
+                        {
+                            fprintf(stderr,"ind.%d ht.%d %.8f != %.8f\n",j,nextheight-1-i,(double)checkprices[2]/COIN,(double)smoothed/COIN);
+                            smoothed = checkprices[2];
+                        }
+                    }
                     UniValue parr(UniValue::VARR);
                     parr.push_back(ValueFromAmount((int64_t)prices[offset] * komodo_pricemult(j)));
                     parr.push_back(ValueFromAmount(correlated[i]));
