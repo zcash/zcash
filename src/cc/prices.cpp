@@ -271,7 +271,7 @@ bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
     for (auto vin : tx.vin)
         if (cp->ismyvin(vin.scriptSig)) {
             uint256 hashBlock;
-            if (myGetTransaction(vin.prevout.hash, vintx, hashBlock))
+            if (!myGetTransaction(vin.prevout.hash, vintx, hashBlock))
                 return eval->Invalid("cannot load vin tx");
             prevoutN = vin.prevout.n;
             ccVinCount++;
