@@ -829,7 +829,7 @@ UniValue PricesSetcostbasis(int64_t txfee, uint256 bettxid)
             }
 
             addedbets = prices_batontxid(batontxid, bettx, bettxid);
-            mtx.vin.push_back(CTxIn(bettxid, 1, CScript()));              // spend vin1
+            mtx.vin.push_back(CTxIn(bettxid, 1, CScript()));              // spend vin1 with betamount
             for (i = 0; i < PRICES_DAYWINDOW + PRICES_SMOOTHWIDTH; i++)   // the last datum for 24h is the costbasis value
             {
                 if ((profits = prices_syntheticprofits(true, costbasis, firstheight, firstheight + i, leverage, vec, positionsize, addedbets)) < 0)
@@ -844,13 +844,13 @@ UniValue PricesSetcostbasis(int64_t txfee, uint256 bettxid)
 
             prices_betjson(result, profits, costbasis, positionsize, addedbets, leverage, firstheight, firstprice);
 
-            if (AddNormalinputs(mtx, mypk, txfee, 64) >= txfee)
+            if (AddNormalinputs(mtx, mypk, txfee, 4) >= txfee)
             {
                 myfee = bettx.vout[1].nValue / 10;   // fee for setting costbasis
                 result.push_back(Pair("myfee", myfee));
 
                 mtx.vout.push_back(CTxOut(myfee, CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
-                mtx.vout.push_back(MakeCC1vout(cp->evalcode, bettx.vout[1].nValue - myfee - txfee, pricespk));
+                mtx.vout.push_back(MakeCC1vout(cp->evalcode, bettx.vout[1].nValue - myfee, pricespk));
                 rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, prices_costbasisopret(bettxid, mypk, firstheight + PRICES_DAYWINDOW /*- 1*/, costbasis));
                 return(prices_rawtxresult(result, rawtx, 0));
             }
