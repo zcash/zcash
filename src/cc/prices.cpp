@@ -316,6 +316,7 @@ bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
         if (prevoutN != 1) {   // check spending rules
             return eval->Invalid("incorrect vout to spend");
         }
+        return eval->Invalid("test: costbasis is good");
         break;
 
     case 'F':   // final tx 
