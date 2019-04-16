@@ -1156,7 +1156,7 @@ UniValue paxprice(const UniValue& params, bool fHelp)
     return ret;
 }
 
-int32_t prices_extract(int64_t *pricedata,int32_t firstheight,int32_t numblocks,int32_t ind)
+/*int32_t prices_extract(int64_t *pricedata,int32_t firstheight,int32_t numblocks,int32_t ind)
 {
     int32_t height,i,n,width,numpricefeeds = -1; uint64_t seed,ignore,rngval; uint32_t rawprices[1440*6],*ptr; int64_t *tmpbuf;
     width = numblocks+PRICES_DAYWINDOW*2+PRICES_SMOOTHWIDTH;
@@ -1188,7 +1188,7 @@ int32_t prices_extract(int64_t *pricedata,int32_t firstheight,int32_t numblocks,
         pricedata[i*3+2] = komodo_priceave(tmpbuf,&pricedata[i*3+1],3);
     free(tmpbuf);
     return(0);
-}
+}*/
 
 UniValue prices(const UniValue& params, bool fHelp)
 {
