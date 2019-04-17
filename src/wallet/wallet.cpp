@@ -606,6 +606,9 @@ void CWallet::RunSaplingMigration(int blockHeight) {
         saplingMigrationOperation = operation;
         q->addOperation(operation);
     } else if (blockHeight % 500 == 499) {
+        if (saplingMigrationOperation != nullptr) {
+            saplingMigrationOperation->cancel();
+        }
         for (const CTransaction& transaction : pendingSaplingMigrationTxs) {
             // The following is taken from z_sendmany/z_mergetoaddress
             // Send the transaction
@@ -623,6 +626,7 @@ void CWallet::RunSaplingMigration(int blockHeight) {
 }
 
 void CWallet::AddPendingSaplingMigrationTx(const CTransaction& tx) {
+    LOCK(cs_wallet);
     pendingSaplingMigrationTxs.push_back(tx);
 }
 
