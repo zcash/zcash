@@ -320,8 +320,7 @@ int32_t prices_syntheticvec(std::vector<uint16_t> &vec,std::vector<std::string> 
 
 int64_t prices_syntheticprice(std::vector<uint16_t> vec,int32_t height,int32_t minmax,int16_t leverage)
 {
-    int32_t i,ind,errcode,depth,retval = -1; uint16_t opcode; int64_t *pricedata,pricestack[4],price,den,a,b,c;
-    pricedata = (int64_t *)calloc(sizeof(*pricedata)*3,1 + PRICES_DAYWINDOW*2 + PRICES_SMOOTHWIDTH);
+    int32_t i,ind,errcode,depth,retval = -1; uint16_t opcode; int64_t pricedata[PRICES_MAXDATAPOINTS],pricestack[4],price,den,a,b,c;
     price = den = depth = errcode = 0;
     for (i=0; i<vec.size(); i++)
     {
@@ -331,7 +330,7 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec,int32_t height,int32_t m
         {
             case 0:
                 pricestack[depth] = 0;
-                if ( prices_extract(pricedata,height,1,ind) == 0 )
+                if ( komodo_priceget(pricedata,ind,height,1) > 0 )
                 {
                     if ( minmax == 0 )
                         pricestack[depth] = pricedata[2];
@@ -420,7 +419,6 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec,int32_t height,int32_t m
         if ( errcode != 0 )
             break;
     }
-    free(pricedata);
     if ( den == 0 )
         return(-11);
     else if ( depth != 0 )
