@@ -16,23 +16,6 @@
 // paxdeposit equivalent in reverse makes opreturn and KMD does the same in reverse
 #include "komodo_defs.h"
 
-#ifdef _WIN32
-#ifdef _MSC_VER
-#define sleep(x) Sleep(1000*(x))
-#endif
-#endif
-
-#ifdef _WIN32
-#ifdef _MSC_VER
-void usleep(int32_t micros)
-{
-    if (micros < 1000)
-        Sleep(1);
-    else Sleep(micros / 1000);
-}
-#endif
-#endif
-
 /*#include "secp256k1/include/secp256k1.h"
 #include "secp256k1/include/secp256k1_schnorrsig.h"
 #include "secp256k1/include/secp256k1_musig.h"
@@ -2071,13 +2054,10 @@ int32_t get_stockprices(uint32_t now,uint32_t *prices,std::vector<std::string> s
 uint32_t get_dailyfx(uint32_t *prices)
 {
     //{"base":"USD","rates":{"BGN":1.74344803,"NZD":1.471652701,"ILS":3.6329113924,"RUB":65.1997682296,"CAD":1.3430201462,"USD":1.0,"PHP":52.8641469068,"CHF":0.9970582992,"AUD":1.4129078267,"JPY":110.6792654662,"TRY":5.6523444464,"HKD":7.8499732573,"MYR":4.0824567659,"HRK":6.6232840078,"CZK":22.9862720628,"IDR":14267.4986628633,"DKK":6.6551078624,"NOK":8.6806917454,"HUF":285.131039401,"GBP":0.7626582278,"MXN":19.4183455161,"THB":31.8702085933,"ISK":122.5708682475,"ZAR":14.7033339276,"BRL":3.9750401141,"SGD":1.3573720806,"PLN":3.8286682118,"INR":69.33187734,"KRW":1139.1602781244,"RON":4.2423783206,"CNY":6.7387234801,"SEK":9.3385630237,"EUR":0.8914244963},"date":"2019-03-28"}
-    
     char url[512],*datestr; cJSON *json,*rates; int32_t i; uint32_t datenum=0,price = 0;
-    
     sprintf(url,"https://api.openrates.io/latest?base=USD");
     if ( (json= get_urljson(url)) != 0 ) //if ( (json= send_curl(url,(char *)"dailyfx")) != 0 )
     {
-        std::cerr << "Forex USD rates:" << std::endl;
         if ( (rates= jobj(json,(char *)"rates")) != 0 )
         {
             for (i=0; i<sizeof(Forex)/sizeof(*Forex); i++)
@@ -2111,8 +2091,6 @@ uint32_t get_binanceprice(const char *symbol)
 int32_t get_cryptoprices(uint32_t *prices,const char *list[],int32_t n,std::vector<std::string> strvec)
 {
     int32_t i,errs=0; uint32_t price; char *symbol;
-    std::cerr << "Crypto binance BTC rates:" << std::endl;
-
     for (i=0; i<n+strvec.size(); i++)
     {
         if ( i < n )
@@ -2124,7 +2102,6 @@ int32_t get_cryptoprices(uint32_t *prices,const char *list[],int32_t n,std::vect
         prices[i] = price;
     }
     fprintf(stderr," errs.%d\n",errs);
-    std::cerr << std::endl;
     return(-errs);
 }
 
@@ -2178,7 +2155,6 @@ int32_t get_btcusd(uint32_t pricebits[4])
     cJSON *pjson,*bpi,*obj; char str[512]; double dbtcgbp,dbtcusd,dbtceur; uint64_t btcusd = 0,btcgbp = 0,btceur = 0;
     if ( (pjson= get_urljson((char *)"http://api.coindesk.com/v1/bpi/currentprice.json")) != 0 )
     {
-        std::cerr << "coindesk rates:" << std::endl;
         if ( (bpi= jobj(pjson,(char *)"bpi")) != 0 )
         {
             pricebits[0] = (uint32_t)time(NULL);
@@ -2202,7 +2178,7 @@ int32_t get_btcusd(uint32_t pricebits[4])
         dbtcusd = (double)pricebits[1]/10000;
         dbtcgbp = (double)pricebits[2]/10000;
         dbtceur = (double)pricebits[3]/10000;
-        fprintf(stderr,"BTC/USD %.4f, BTC/GBP %.4f, BTC/EUR %.4f not used: GBPUSD %.6f, EURUSD %.6f EURGBP %.6f\n",dbtcusd,dbtcgbp,dbtceur,dbtcusd/dbtcgbp,dbtcusd/dbtceur,dbtcgbp/dbtceur);
+        fprintf(stderr,"BTC/USD %.4f, BTC/GBP %.4f, BTC/EUR %.4f GBPUSD %.6f, EURUSD %.6f EURGBP %.6f\n",dbtcusd,dbtcgbp,dbtceur,dbtcusd/dbtcgbp,dbtcusd/dbtceur,dbtcgbp/dbtceur);
         return(0);
     }
     return(-1);
@@ -2361,11 +2337,6 @@ int64_t komodo_pricemult(int32_t ind)
     return(0);
 }
 
-// returns index name for its value (ind param)
-// ind values:  
-// [1..4) basic Coindesk BTC indices
-// [4..4+sizeof Forex) Forex indices
-// [4+sizeof Forex..4+sizeof Forex+sizeof Crypto) Crypto indices
 char *komodo_pricename(char *name,int32_t ind)
 {
     strcpy(name,"error");
@@ -2429,25 +2400,18 @@ char *komodo_pricename(char *name,int32_t ind)
     }
     return(0);
 }
-
-// finds index value for its symbol name
-int32_t komodo_priceind(const char *symbol)
+// finds index for its symbol name
+int32_t komodo_priceind(char *symbol)
 {
     char name[65]; int32_t i,n = (int32_t)(komodo_cbopretsize(ASSETCHAINS_CBOPRET) / sizeof(uint32_t));
-
-    std::cerr << "komodo_priceind entered for symbol=" << symbol << std::endl;
     for (i=1; i<n; i++)
     {
         komodo_pricename(name,i);
-        //std::cerr << "komodo_priceind name=" << name << " i=" << i << std::endl;
-        if (strcmp(name, symbol) == 0) {
-            std::cerr << "komodo_priceind for symbol=" << symbol << " returns=" << i << std::endl;
+        if ( strcmp(name,symbol) == 0 )
             return(i);
-        }
     }
     return(-1);
 }
-
 // returns price value which is in a 10% interval for more than 50% points for the preceding 24 hours
 int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int32_t rawskip,uint32_t *nonzprices,int32_t smoothwidth)
 {
@@ -2472,7 +2436,7 @@ int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int
         if ( lowprice == refprice )
             lowprice--;
         sum = 0;
-        fprintf(stderr,"firsti.%d: ",i);
+        //fprintf(stderr,"firsti.%d: ",i);
         for (j=0; j<PRICES_DAYWINDOW; j++,i++)
         {
             if ( i >= PRICES_DAYWINDOW )
@@ -2487,11 +2451,11 @@ int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int
                 //fprintf(stderr,"%.1f ",(double)price/10000);
                 sum += price;
                 correlation++;
-                if ( correlation > (PRICES_DAYWINDOW>>1) ) // if there are more than 50% raw price values lay within +/-5% interval from the refprice picked from random pos
+                if ( correlation > (PRICES_DAYWINDOW>>1) )
                 {
                     if ( nonzprices == 0 )
                         return(refprice * mult);
-                    fprintf(stderr,"-> %.4f\n",(double)sum*mult/correlation);
+                    //fprintf(stderr,"-> %.4f\n",(double)sum*mult/correlation);
                     //return(sum*mult/correlation);
                     n = 0;
                     i = (iter + seed) % PRICES_DAYWINDOW;
@@ -2509,12 +2473,12 @@ int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int
                             else
                             {
                                 nonzprices[i] = price;
-                                fprintf(stderr,"(%d %u) ",i,rawprices[i*rawskip]);
+                                //fprintf(stderr,"(%d %u) ",i,rawprices[i*rawskip]);
                                 n++;
                             }
                         }
                     }
-                    fprintf(stderr,"ind.%d iter.%d j.%d i.%d n.%d correlation.%d ref %llu -> %llu\n",ind,iter,j,i,n,correlation,(long long)refprice,(long long)sum/correlation);
+                    //fprintf(stderr,"ind.%d iter.%d j.%d i.%d n.%d correlation.%d ref %llu -> %llu\n",ind,iter,j,i,n,correlation,(long long)refprice,(long long)sum/correlation);
                     if ( n != correlation )
                         return(-1);
                     sum = den = n = 0;
@@ -2537,8 +2501,7 @@ int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int
                         fprintf(stderr,"seed.%llu n.%d vs correlation.%d sum %llu, den %llu\n",(long long)seed,n,correlation,(long long)sum,(long long)den);
                         return(-1);
                     }
-                    std::cerr << "sum=" << sum << " mult=" << mult << " den=" << den << std::endl;
-                    fprintf(stderr,"firstprice.%llu weighted -> %.8f\n",(long long)firstprice,((double)(sum*mult) / den) / COIN);
+                    //fprintf(stderr,"firstprice.%llu weighted -> %.8f\n",(long long)firstprice,((double)(sum*mult) / den) / COIN);
                     return((sum * mult) / den);
                 }
             }
@@ -2838,4 +2801,3 @@ int32_t komodo_priceget(int64_t *buf64,int32_t ind,int32_t height,int32_t numblo
     pthread_mutex_unlock(&pricemutex);
     return(retval);
 }
-

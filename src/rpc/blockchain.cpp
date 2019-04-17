@@ -1158,11 +1158,11 @@ UniValue paxprice(const UniValue& params, bool fHelp)
     }
     return ret;
 }
-
+// fills pricedata with raw price, correlated and smoothed values for numblock
 /*int32_t prices_extract(int64_t *pricedata,int32_t firstheight,int32_t numblocks,int32_t ind)
 {
     int32_t height,i,n,width,numpricefeeds = -1; uint64_t seed,ignore,rngval; uint32_t rawprices[1440*6],*ptr; int64_t *tmpbuf;
-    width = numblocks+PRICES_DAYWINDOW*2+PRICES_SMOOTHWIDTH;
+    width = numblocks+PRICES_DAYWINDOW*2+PRICES_SMOOTHWIDTH;    // need 2*PRICES_DAYWINDOW previous raw price points to calc PRICES_DAYWINDOW correlated points to calc, in turn, smoothed point
     komodo_heightpricebits(&seed,rawprices,firstheight + numblocks - 1);
     if ( firstheight < width )
         return(-1);
