@@ -28,6 +28,7 @@ class CChainPower;
 #include "pow.h"
 #include "tinyformat.h"
 #include "uint256.h"
+extern int8_t is_STAKED(const char *chain_name);
 
 #include <vector>
 
@@ -36,6 +37,8 @@ class CChainPower;
 static const int SPROUT_VALUE_VERSION = 1001400;
 static const int SAPLING_VALUE_VERSION = 1010100;
 extern int32_t ASSETCHAINS_LWMAPOS;
+extern char ASSETCHAINS_SYMBOL[65];
+//extern uint64_t ASSETCHAINS_NOTARY_PAY;
 
 struct CDiskBlockPos
 {
@@ -532,11 +535,6 @@ public:
         READWRITE(nBits);
         READWRITE(nNonce);
         READWRITE(nSolution);
-        
-        // LABS extra blockindex stuff. 
-        //  only read/write nNotaryPay if it has a value. This should be backwards compatible with all existing chains.
-        if ( nNotaryPay != 0 )
-            READWRITE(nNotaryPay);
 
         // Only read/write nSproutValue if the client version used to create
         // this index was storing them.
@@ -548,6 +546,11 @@ public:
         // this index was storing them.
         if ((s.GetType() & SER_DISK) && (nVersion >= SAPLING_VALUE_VERSION)) {
             READWRITE(nSaplingValue);
+        }
+        if ( (s.GetType() & SER_DISK) && (is_STAKED(ASSETCHAINS_SYMBOL) != 0) )
+        {
+            READWRITE(nNotaryPay);
+            READWRITE(segid);
         }
     }
 
