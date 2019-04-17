@@ -3924,8 +3924,9 @@ UniValue z_setmigration(const UniValue& params, bool fHelp) {
             "\nResult:\n"
             "enabled  (boolean) Whether or not migration is enabled (echos the argument).\n"
         );
-    fSaplingMigrationEnabled = params[0].get_bool();
-    return fSaplingMigrationEnabled;
+    LOCK(pwalletMain->cs_wallet);
+    pwalletMain->fSaplingMigrationEnabled = params[0].get_bool();
+    return pwalletMain->fSaplingMigrationEnabled;
 }
 
 /**

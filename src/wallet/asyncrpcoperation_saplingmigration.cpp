@@ -73,7 +73,7 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
         pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, "", 0);
     }
     if (sproutEntries.empty()) { // Consider, should the migration remain enabled?
-        fSaplingMigrationEnabled = false;
+        pwalletMain->fSaplingMigrationEnabled = false;
         return true;
     }
     CAmount availableFunds = 0;
@@ -82,7 +82,7 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
     }
     // If the remaining amount to be migrated is less than 0.01 ZEC, end the migration.
     if (availableFunds < CENT) {
-        fSaplingMigrationEnabled = false;
+        pwalletMain->fSaplingMigrationEnabled = false;
         return true;
     }
 
