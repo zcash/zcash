@@ -712,6 +712,8 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
                 pindexNew->nTx            = diskindex.nTx;
                 pindexNew->nSproutValue   = diskindex.nSproutValue;
                 pindexNew->nSaplingValue  = diskindex.nSaplingValue;
+                pindexNew->segid          = diskindex.segid;
+                pindexNew->nNotaryPay     = diskindex.nNotaryPay;
 //fprintf(stderr,"loadguts ht.%d\n",pindexNew->GetHeight());
                 // Consistency checks
                 auto header = pindexNew->GetBlockHeader();

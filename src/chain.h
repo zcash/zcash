@@ -118,7 +118,7 @@ enum BlockStatus: uint32_t {
     BLOCK_FAILED_MASK        =   BLOCK_FAILED_VALID | BLOCK_FAILED_CHILD,
 
     BLOCK_ACTIVATES_UPGRADE  =   128, //! block activates a network upgrade
-    BLOCK_IN_TMPFILE = 256 
+    BLOCK_IN_TMPFILE         =   256 
 };
 
 //! Short-hand for the highest consensus validity we implement.
@@ -238,7 +238,7 @@ public:
     CBlockIndex* pskip;
 
     //! height of the entry in the chain. The genesis block has height 0
-    int64_t newcoins,zfunds,sproutfunds; int8_t segid; // jl777 fields
+    int64_t newcoins,zfunds,sproutfunds,nNotaryPay; int8_t segid; // jl777 fields
     //! Which # file this block is stored in (blk?????.dat)
     int nFile;
 
@@ -309,6 +309,7 @@ public:
         phashBlock = NULL;
         newcoins = zfunds = 0;
         segid = -2;
+        nNotaryPay = 0;
         pprev = NULL;
         pskip = NULL;
         nFile = 0;
@@ -531,6 +532,11 @@ public:
         READWRITE(nBits);
         READWRITE(nNonce);
         READWRITE(nSolution);
+        
+        // LABS extra blockindex stuff. 
+        //  only read/write nNotaryPay if it has a value. This should be backwards compatible with all existing chains.
+        if ( nNotaryPay != 0 )
+            READWRITE(nNotaryPay);
 
         // Only read/write nSproutValue if the client version used to create
         // this index was storing them.
