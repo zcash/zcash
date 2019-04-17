@@ -54,6 +54,8 @@ using namespace libzcash;
 
 extern char ASSETCHAINS_SYMBOL[65];
 
+int32_t komodo_dpowconfs(int32_t height,int32_t numconfs);
+int tx_height( const uint256 &hash );
 extern UniValue signrawtransaction(const UniValue& params, bool fHelp);
 extern UniValue sendrawtransaction(const UniValue& params, bool fHelp);
 
@@ -1049,8 +1051,16 @@ bool AsyncRPCOperation_sendmany::find_utxos(bool fAcceptCoinbase=false) {
             continue;
         }
 
-        if (out.nDepth < mindepth_) {
-            continue;
+        if( mindepth_ > 1 ) {
+            int nHeight    = tx_height(out.tx->GetHash());
+            int dpowconfs  = komodo_dpowconfs(nHeight, out.nDepth);
+            if (dpowconfs < mindepth_) {
+                continue;
+            }
+        } else {
+            if (out.nDepth < mindepth_) {
+                continue;
+            }
         }
 
         const CScript &scriptPubKey = out.tx->vout[out.i].scriptPubKey;

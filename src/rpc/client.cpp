@@ -51,6 +51,8 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "sendtoaddress", 1 },
     { "sendtoaddress", 4 },
     { "settxfee", 0 },
+    { "getnotarysendmany", 0 },
+    { "getnotarysendmany", 1 },
     { "getreceivedbyaddress", 1 },
     { "getreceivedbyaccount", 1 },
     { "listreceivedbyaddress", 0 },
@@ -87,6 +89,8 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "listunspent", 2 },
     { "getblock", 1 },
     { "getblockheader", 1 },
+    { "getchaintxstats", 0  },
+    { "getlastsegidstakes", 0 },
     { "gettransaction", 1 },
     { "getrawtransaction", 1 },
     { "getlastsegidstakes", 0 },
@@ -104,6 +108,7 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "lockunspent", 0 },
     { "lockunspent", 1 },
     { "importprivkey", 2 },
+    { "importprivkey", 3 },
     { "importaddress", 2 },
     { "verifychain", 0 },
     { "verifychain", 1 },
@@ -167,8 +172,10 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "assetchainproof", 1},
     { "crosschainproof", 1},
     { "getproofroot", 2},
+    { "getNotarisationsForBlock", 0},
     { "height_MoM", 1},
     { "calc_MoM", 2},
+    { "migrate_completeimporttransaction", 1},
 };
 
 class CRPCConvertTable

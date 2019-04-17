@@ -160,7 +160,7 @@ void CTxMemPool::addAddressIndex(const CTxMemPoolEntry &entry, const CCoinsViewC
             if (vDest.which())
             {
                 uint160 hashBytes;
-                if (CBitcoinAddress(vDest).GetIndexKey(hashBytes, keyType))
+                if (CBitcoinAddress(vDest).GetIndexKey(hashBytes, keyType, prevout.scriptPubKey.IsPayToCryptoCondition()))
                 {
                     vSols.push_back(vector<unsigned char>(hashBytes.begin(), hashBytes.end()));
                 }
@@ -192,7 +192,7 @@ void CTxMemPool::addAddressIndex(const CTxMemPoolEntry &entry, const CCoinsViewC
             if (vDest.which())
             {
                 uint160 hashBytes;
-                if (CBitcoinAddress(vDest).GetIndexKey(hashBytes, keyType))
+                if (CBitcoinAddress(vDest).GetIndexKey(hashBytes, keyType, out.scriptPubKey.IsPayToCryptoCondition()))
                 {
                     vSols.push_back(vector<unsigned char>(hashBytes.begin(), hashBytes.end()));
                 }

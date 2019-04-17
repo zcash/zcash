@@ -30,6 +30,7 @@
 #include "utiltime.h"
 #include "wallet/wallet.h"
 #include "zcash/Proof.hpp"
+#include "komodo_defs.h"
 
 #include <boost/filesystem.hpp>
 #include <boost/foreach.hpp>
@@ -39,6 +40,7 @@
 using namespace std;
 
 static uint64_t nAccountingEntryNumber = 0;
+static list<uint256> deadTxns; 
 
 //
 // CWalletDB
@@ -484,8 +486,10 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             CValidationState state;
             auto verifier = libzcash::ProofVerifier::Strict();
             if (!(CheckTransaction(0,wtx, state, verifier) && (wtx.GetHash() == hash) && state.IsValid()))
+            {
+                deadTxns.push_back(hash);
                 return false;
-
+            } 
             // Undo serialize changes in 31600
             if (31404 <= wtx.fTimeReceivedIsTxTime && wtx.fTimeReceivedIsTxTime <= 31703)
             {
@@ -874,7 +878,7 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
 
 static bool IsKeyType(string strType)
 {
-    return (strType== "key" || strType == "wkey" ||
+    return (strType == "key" || strType == "wkey" ||
             strType == "hdseed" || strType == "chdseed" ||
             strType == "zkey" || strType == "czkey" ||
             strType == "sapzkey" || strType == "csapzkey" ||
@@ -933,9 +937,6 @@ DBErrors CWalletDB::LoadWallet(CWallet* pwallet)
                 {
                     // Leave other errors alone, if we try to fix them we might make things worse.
                     fNoncriticalErrors = true; // ... but do warn the user there is something wrong.
-                    if (strType == "tx")
-                        // Rescan if there is a bad transaction record:
-                        SoftSetBoolArg("-rescan", true);
                 }
             }
             if (!strErr.empty())
@@ -950,6 +951,37 @@ DBErrors CWalletDB::LoadWallet(CWallet* pwallet)
         result = DB_CORRUPT;
     }
 
+    if ( !deadTxns.empty() )
+    {
+        if ( ASSETCHAINS_STAKED != 0 )
+        {
+            int32_t reAdded = 0;
+            CWalletDB walletdb(pwallet->strWalletFile, "r+", false);
+            BOOST_FOREACH (uint256& hash, deadTxns) 
+            {
+                fprintf(stderr, "Removing corrupt tx from wallet.%s\n", hash.ToString().c_str());
+                if (!EraseTx(hash))
+                    fprintf(stderr, "could not delete tx.%s\n",hash.ToString().c_str());
+                uint256 blockhash; CTransaction tx;
+                if (GetTransaction(hash,tx,blockhash,true))
+                {
+                    CWalletTx wtx(pwallet,tx);
+                    pwallet->AddToWallet(wtx, false, &walletdb);
+                    reAdded++;
+                }
+            }
+            fprintf(stderr, "Cleared %lu corrupted transactions from wallet. Readded %i known transactions.\n",(long)deadTxns.size(),reAdded);
+            fNoncriticalErrors = false;
+            deadTxns.clear();
+        }
+        else if ( (GetBoolArg("-zapwallettxes", false)) )
+        {
+            LogPrintf("Transactions are corrupted. Please restart daemon with -zapwallettxes=2\n");
+            fprintf(stderr,"Transactions are corrupted. Please restart daemon with -zapwallettxes=2\n");
+            return DB_CORRUPT;
+        }
+    }
+    
     if (fNoncriticalErrors && result == DB_LOAD_OK)
         result = DB_NONCRITICAL_ERROR;
 
@@ -982,7 +1014,7 @@ DBErrors CWalletDB::LoadWallet(CWallet* pwallet)
 
     if (wss.fAnyUnordered)
         result = ReorderTransactions(pwallet);
-    
+
     return result;
 }
 
