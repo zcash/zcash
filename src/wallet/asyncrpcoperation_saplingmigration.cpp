@@ -169,7 +169,7 @@ libzcash::SaplingPaymentAddress AsyncRPCOperation_saplingmigration::getMigration
     // Derive m/32'/coin_type'
     auto m_32h_cth = m_32h.Derive(bip44CoinType | ZIP32_HARDENED_KEY_LIMIT);
 
-    // Derive account key at next index, skip keys already known to the wallet
+    // Derive m/32'/coin_type'/0'
     libzcash::SaplingExtendedSpendingKey xsk = m_32h_cth.Derive(0 | ZIP32_HARDENED_KEY_LIMIT);
 
     libzcash::SaplingPaymentAddress toAddress = xsk.DefaultAddress();

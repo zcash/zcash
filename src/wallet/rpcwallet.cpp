@@ -3913,20 +3913,20 @@ UniValue z_setmigration(const UniValue& params, bool fHelp) {
         throw runtime_error(
             "z_setmigration enabled\n"
             "When enabled the Sprout to Sapling migration will attempt to migrate all funds from this wallet’s\n"
-            "Sprout addresses to either the address for Sapling account 0 or one specified by the parameter\n"
-            "'-migrationdestaddress'. This migration is designed to minimize information leakage. As a result,\n"
-            "for wallets with a significant Sprout balance, this process may take several weeks. The migration\n"
-            "works by sending, up to 5, as many transactions as possible whenever the blockchain reaches a height\n"
-            "equal to 499 modulo 500. The transaction amounts are picked according to the random distribution\n"
-            "specified in ZIP 308. The migration will end once the wallet’s Sprout balance is below 0.01 " + CURRENCY_UNIT + ".\n"
+            "Sprout addresses to either the address for Sapling account 0 or the address specified by the parameter\n"
+            "'-migrationdestaddress'.\n"
+            "\n"
+            "This migration is designed to minimize information leakage. As a result for wallets with a significant\n"
+            "Sprout balance, this process may take several weeks. The migration works by sending, up to 5, as many\n"
+            "transactions as possible whenever the blockchain reaches a height equal to 499 modulo 500. The transaction\n"
+            "amounts are picked according to the random distribution specified in ZIP 308. The migration will end once\n"
+            "the wallet’s Sprout balance is below" + strprintf("%s %s", FormatMoney(CENT), CURRENCY_UNIT) + ".\n"
             "\nArguments:\n"
             "1. enabled  (boolean, required) 'true' or 'false' to enable or disable respectively.\n"
-            "\nResult:\n"
-            "enabled  (boolean) Whether or not migration is enabled (echos the argument).\n"
         );
     LOCK(pwalletMain->cs_wallet);
     pwalletMain->fSaplingMigrationEnabled = params[0].get_bool();
-    return pwalletMain->fSaplingMigrationEnabled;
+    return NullUniValue;
 }
 
 /**

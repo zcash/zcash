@@ -41,7 +41,7 @@ class SproutSaplingMigration(BitcoinTestFramework):
         assert_equal(self.nodes[0].z_getbalance(saplingAddr), Decimal('0'))
 
         # Migrate
-        assert_equal(True, self.nodes[0].z_setmigration(True))
+        self.nodes[0].z_setmigration(True)
         print "Mining to block 494..."
         self.nodes[0].generate(392)  # 102 -> 494
         self.sync_all()
