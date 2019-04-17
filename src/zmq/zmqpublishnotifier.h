@@ -52,4 +52,10 @@ public:
     bool NotifyTransaction(const CTransaction &transaction);
 };
 
+class CZMQPublishCheckedBlockNotifier : public CZMQAbstractPublishNotifier
+{
+public:
+    bool NotifyBlock(const CBlock &block);
+};
+
 #endif // BITCOIN_ZMQ_ZMQPUBLISHNOTIFIER_H
