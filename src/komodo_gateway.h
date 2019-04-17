@@ -2401,7 +2401,7 @@ char *komodo_pricename(char *name,int32_t ind)
     return(0);
 }
 // finds index for its symbol name
-int32_t komodo_priceind(char *symbol)
+int32_t komodo_priceind(const char *symbol)
 {
     char name[65]; int32_t i,n = (int32_t)(komodo_cbopretsize(ASSETCHAINS_CBOPRET) / sizeof(uint32_t));
     for (i=1; i<n; i++)
