@@ -2448,6 +2448,7 @@ int32_t komodo_priceind(const char *symbol)
     return(-1);
 }
 
+// returns price value which is in a 10% interval for more than 50% points for the preceding 24 hours
 int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int32_t rawskip,uint32_t *nonzprices,int32_t smoothwidth)
 {
     int32_t i,j,k,n,iter,correlation,maxcorrelation=0; int64_t firstprice,price,sum,den,mult,refprice,lowprice,highprice;
@@ -2486,7 +2487,7 @@ int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int
                 //fprintf(stderr,"%.1f ",(double)price/10000);
                 sum += price;
                 correlation++;
-                if ( correlation > (PRICES_DAYWINDOW>>1) )
+                if ( correlation > (PRICES_DAYWINDOW>>1) ) // if there are more than 50% raw price values lay within +/-5% interval from the refprice picked from random pos
                 {
                     if ( nonzprices == 0 )
                         return(refprice * mult);
