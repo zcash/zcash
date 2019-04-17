@@ -1035,11 +1035,10 @@ UniValue PricesList()
     CPubKey pk, pricespk; 
     std::vector<uint16_t> vec; 
     CTransaction vintx; 
-    char str[65];
 
     cp = CCinit(&C, EVAL_PRICES);
     pricespk = GetUnspendable(cp, 0);
-    SetCCtxids(addressIndex, cp->normaladdr);
+    SetCCtxids(addressIndex, cp->normaladdr, false);
     for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it = addressIndex.begin(); it != addressIndex.end(); it++)
     {
         txid = it->first.txhash;
@@ -1047,7 +1046,7 @@ UniValue PricesList()
         {
             if (vintx.vout.size() > 0 && prices_betopretdecode(vintx.vout[vintx.vout.size() - 1].scriptPubKey, pk, height, amount, leverage, firstprice, vec, tokenid) == 'B')
             {
-                result.push_back(uint256_str(str, txid));
+                result.push_back(txid.GetHex());
             }
         }
     }
