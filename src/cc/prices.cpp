@@ -195,17 +195,17 @@ bool ValidateCostbasisTx(struct CCcontract_info *cp, Eval *eval, const CTransact
 
     // check basic structure:
     if (costbasistx.vout.size() < 3 || costbasistx.vout.size() > 4)
-        return eval->Invalid("incorrect vout number for add funding tx");
+        return eval->Invalid("incorrect vout count for costbasis tx");
 
     vscript_t opret;
     if (prices_costbasisopretdecode(costbasistx.vout.back().scriptPubKey, bettxid, pk, height, amount) != 'C')
-        return eval->Invalid("cannot decode opreturn for setcostbasis tx");
+        return eval->Invalid("cannot decode opreturn for costbasis tx");
 
     pricespk = GetUnspendable(cp, 0);
-    if (MakeCC1vout(cp->evalcode, costbasistx.vout[0].nValue, pk) != costbasistx.vout[0])
-        return eval->Invalid("cannot validate vout0 in add funding tx with pk from opreturn");
+    if (CTxOut(costbasistx.vout[0].nValue, CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG) != costbasistx.vout[0])  //might go to any pk who calculated costbasis
+        return eval->Invalid("cannot validate vout0 in costbasis tx with pk from opreturn");
     if (MakeCC1vout(cp->evalcode, costbasistx.vout[1].nValue, pricespk) != costbasistx.vout[1])
-        return eval->Invalid("cannot validate vout1 in add funding tx with global pk");
+        return eval->Invalid("cannot validate vout1 in costbasis tx with global pk");
 
     if (bettx.vout.size() < 1) // maybe this is already checked outside, but it is safe to check here too and have encapsulated check
         return eval->Invalid("incorrect bettx");
@@ -218,8 +218,9 @@ bool ValidateCostbasisTx(struct CCcontract_info *cp, Eval *eval, const CTransact
     int64_t positionsize, firstprice;
     int32_t firstheight;
     int16_t leverage;
+    CPubKey betpk;
     std::vector<uint16_t> vec;
-    if (prices_betopretdecode(bettx.vout.back().scriptPubKey, pk, firstheight, positionsize, leverage, firstprice, vec, tokenid) != 'B')
+    if (prices_betopretdecode(bettx.vout.back().scriptPubKey, betpk, firstheight, positionsize, leverage, firstprice, vec, tokenid) != 'B')
         return eval->Invalid("cannot decode opreturn for bet tx");
 
     if( firstheight + PRICES_DAYWINDOW + PRICES_SMOOTHWIDTH > chainActive.Height() )
@@ -270,7 +271,7 @@ bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
     vscript_t vintxOpret;
     int32_t ccVinCount = 0;
     int32_t prevoutN = 0;
-    // load vintx:
+    // load vintx (might be either bet or add funding tx):
     for (auto vin : tx.vin)
         if (cp->ismyvin(vin.scriptSig)) {
             uint256 hashBlock;
@@ -651,6 +652,7 @@ void prices_betjson(UniValue &result,int64_t profits,int64_t costbasis,int64_t p
     result.push_back(Pair("firstprice",ValueFromAmount(firstprice)));
 }
 
+// retrives costbasis from a tx spending bettx vout1
 int64_t prices_costbasis(CTransaction bettx)
 {
     int64_t costbasis = 0;
