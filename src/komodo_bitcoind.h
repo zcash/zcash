@@ -1224,7 +1224,6 @@ uint64_t komodo_commission(const CBlock *pblock,int32_t height)
         return(0);
 
     int32_t i,j,n=0,txn_count; int64_t nSubsidy; uint64_t commission,total = 0;
-    txn_count = pblock->vtx.size();
     if ( ASSETCHAINS_FOUNDERS != 0 )
     {
         nSubsidy = GetBlockSubsidy(height,Params().GetConsensus());
@@ -1242,8 +1241,9 @@ uint64_t komodo_commission(const CBlock *pblock,int32_t height)
             else commission = 0;
         }
     }
-    else
+    else if ( pblock != 0 )
     {
+        txn_count = pblock->vtx.size();
         for (i=0; i<txn_count; i++)
         {
             n = pblock->vtx[i].vout.size();
