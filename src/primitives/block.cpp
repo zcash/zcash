@@ -3,14 +3,29 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 #include "primitives/block.h"
 
 #include "hash.h"
 #include "tinyformat.h"
 #include "utilstrencodings.h"
 #include "crypto/common.h"
+#include "komodo_defs.h"
 
-extern uint32_t ASSETCHAINS_ALGO, ASSETCHAINS_VERUSHASH;
 
 // default hash algorithm for block
 uint256 (CBlockHeader::*CBlockHeader::hashFunction)() const = &CBlockHeader::GetSHA256DHash;
@@ -31,8 +46,11 @@ uint256 CBlockHeader::GetVerusHash() const
 
 uint256 CBlockHeader::GetVerusV2Hash() const
 {
-    // no check for genesis block and use the optimized hash
-    return SerializeVerusHashV2(*this);
+    if (hashPrevBlock.IsNull())
+        // always use SHA256D for genesis block
+        return SerializeHash(*this);
+    else
+        return SerializeVerusHashV2(*this);
 }
 
 void CBlockHeader::SetSHA256DHash()
@@ -43,6 +61,11 @@ void CBlockHeader::SetSHA256DHash()
 void CBlockHeader::SetVerusHash()
 {
     CBlockHeader::hashFunction = &CBlockHeader::GetVerusHash;
+}
+
+void CBlockHeader::SetVerusHashV2()
+{
+    CBlockHeader::hashFunction = &CBlockHeader::GetVerusV2Hash;
 }
 
 // returns false if unable to fast calculate the VerusPOSHash from the header. 

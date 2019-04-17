@@ -3,6 +3,21 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 #include "script/standard.h"
 
 #include "pubkey.h"
@@ -392,7 +407,7 @@ bool ExtractDestination(const CScript& _scriptPubKey, CTxDestination& addressRet
         addressRet = CScriptID(uint160(vSolutions[0]));
         return true;
     }
-    
+
     else if (IsCryptoConditionsEnabled() != 0 && whichType == TX_CRYPTOCONDITION)
     {
         if (vSolutions.size() > 1)
@@ -453,26 +468,27 @@ bool ExtractDestinations(const CScript& scriptPubKey, txnouttype& typeRet, vecto
         if (addressRet.empty())
             return false;
     }
-    else if (IsCryptoConditionsEnabled() != 0 && typeRet == TX_CRYPTOCONDITION)
-    {
-        nRequiredRet = vSolutions.front()[0];
-        for (unsigned int i = 1; i < vSolutions.size()-1; i++)
-        {
-            CTxDestination address;
-            if (vSolutions[i].size() == 20)
-            {
-                address = CKeyID(uint160(vSolutions[i]));
-            }
-            else
-            {
-                address = CPubKey(vSolutions[i]);
-            }
-            addressRet.push_back(address);
-        }
+    // Removed to get CC address printed in getrawtransaction and decoderawtransaction
+    // else if (IsCryptoConditionsEnabled() != 0 && typeRet == TX_CRYPTOCONDITION)
+    // {
+    //     nRequiredRet = vSolutions.front()[0];
+    //     for (unsigned int i = 1; i < vSolutions.size()-1; i++)
+    //     {
+    //         CTxDestination address;
+    //         if (vSolutions[i].size() == 20)
+    //         {
+    //             address = CKeyID(uint160(vSolutions[i]));
+    //         }
+    //         else
+    //         {
+    //             address = CPubKey(vSolutions[i]);
+    //         }
+    //         addressRet.push_back(address);
+    //     }
 
-        if (addressRet.empty())
-            return false;
-    }
+    //     if (addressRet.empty())
+    //         return false;
+    // }
     else
     {
         nRequiredRet = 1;

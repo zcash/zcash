@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright © 2014-2018 The SuperNET Developers.                             *
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
  *                                                                            *
  * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
  * the top-level directory of this distribution for the individual copyright  *
@@ -53,10 +53,16 @@
         EVAL(EVAL_ORACLES, 0xec) \
         EVAL(EVAL_PRICES, 0xed) \
         EVAL(EVAL_PEGS, 0xee) \
-        EVAL(EVAL_TRIGGERS, 0xef) \
+        EVAL(EVAL_MARMARA, 0xef) \
         EVAL(EVAL_PAYMENTS, 0xf0) \
-        EVAL(EVAL_GATEWAYS, 0xf1)
+        EVAL(EVAL_GATEWAYS, 0xf1) \
+		EVAL(EVAL_TOKENS, 0xf2) \
+        EVAL(EVAL_IMPORTGATEWAY, 0xf3)  \
 
+
+// evalcodes 0x10 to 0x7f are reserved for cclib dynamic CC
+#define EVAL_FIRSTUSER 0x10
+#define EVAL_LASTUSER 0x7f
 
 typedef uint8_t EvalCode;
 

@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright © 2014-2018 The SuperNET Developers.                             *
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
  *                                                                            *
  * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
  * the top-level directory of this distribution for the individual copyright  *
@@ -35,8 +35,16 @@ static uint32_t thresholdSubtypes(const CC *cond) {
 }
 
 
-static int cmpCostDesc(const void *a, const void *b) {
-    return (int) ( *(unsigned long*)b - *(unsigned long*)a );
+static int cmpCostDesc(const void *a, const void *b)
+{
+    int retval;
+    retval = (int) ( *(unsigned long*)b - *(unsigned long*)a );
+    return(retval);
+    /*if ( retval != 0 )
+        return(retval);
+    else if ( (uint64_t)a < (uint64_t)b ) // jl777 prevent nondeterminism
+        return(-1);
+    else return(1);*/
 }
 
 
@@ -79,7 +87,10 @@ static int cmpConditionBin(const void *a, const void *b) {
 
     if (ret == 0)
         return r0.encoded < r1.encoded ? -1 : 1;
-    return 0;
+    //else if ( (uint64_t)a < (uint64_t)b ) // jl777 prevent nondeterminism
+    //    return(-1);
+    //else return(1);
+    return(0);
 }
 
 

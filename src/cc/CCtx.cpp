@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright © 2014-2018 The SuperNET Developers.                             *
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
  *                                                                            *
  * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
  * the top-level directory of this distribution for the individual copyright  *
@@ -15,6 +15,8 @@
 
 #include "CCinclude.h"
 #include "key_io.h"
+
+std::vector<CPubKey> NULL_pubkeys;
 
 /*
  FinalizeCCTx is a very useful function that will properly sign both CC and normal inputs, adds normal change and the opreturn.
@@ -38,13 +40,18 @@ bool SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const CScrip
     return(false);
 }
 
-std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey mypk,uint64_t txfee,CScript opret)
+std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey mypk,uint64_t txfee,CScript opret,std::vector<CPubKey> pubkeys)
 {
     auto consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
-    CTransaction vintx; std::string hex; uint256 hashBlock; uint64_t mask=0,nmask=0,vinimask=0;
-    int64_t utxovalues[64],change,normalinputs=0,totaloutputs=0,normaloutputs=0,totalinputs=0,normalvins=0,ccvins=0; 
-    int32_t i,utxovout,n,err = 0; char myaddr[64],destaddr[64],unspendable[64];
-    uint8_t *privkey,myprivkey[32],unspendablepriv[32],*msg32 = 0; CC *mycond=0,*othercond=0,*othercond2=0,*othercond3=0,*cond; CPubKey unspendablepk;
+    CTransaction vintx; std::string hex; CPubKey globalpk; uint256 hashBlock; uint64_t mask=0,nmask=0,vinimask=0;
+    int64_t utxovalues[CC_MAXVINS],change,normalinputs=0,totaloutputs=0,normaloutputs=0,totalinputs=0,normalvins=0,ccvins=0; 
+    int32_t i,flag,utxovout,n,err = 0;
+	char myaddr[64], destaddr[64], unspendable[64], mytokensaddr[64], mysingletokensaddr[64], unspendabletokensaddr[64],CC1of2CCaddr[64];
+    uint8_t *privkey, myprivkey[32], unspendablepriv[32], /*tokensunspendablepriv[32],*/ *msg32 = 0;
+	CC *mycond=0, *othercond=0, *othercond2=0,*othercond4=0, *othercond3=0, *othercond1of2=NULL, *othercond1of2tokens = NULL, *cond=0,  *condCC2=0,*mytokenscond = NULL, *mysingletokenscond = NULL, *othertokenscond = NULL;
+	CPubKey unspendablepk /*, tokensunspendablepk*/;
+	struct CCcontract_info *cpTokens, tokensC;
+    globalpk = GetUnspendable(cp,0);
     n = mtx.vout.size();
     for (i=0; i<n; i++)
     {
@@ -52,17 +59,39 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
             normaloutputs += mtx.vout[i].nValue;
         totaloutputs += mtx.vout[i].nValue;
     }
-    if ( (n= mtx.vin.size()) > 64 )
+    if ( (n= mtx.vin.size()) > CC_MAXVINS )
     {
         fprintf(stderr,"FinalizeCCTx: %d is too many vins\n",n);
         return("0");
     }
     Myprivkey(myprivkey);
-    unspendablepk = GetUnspendable(cp,unspendablepriv);
+
     GetCCaddress(cp,myaddr,mypk);
     mycond = MakeCCcond1(cp->evalcode,mypk);
-    GetCCaddress(cp,unspendable,unspendablepk);
-    othercond = MakeCCcond1(cp->evalcode,unspendablepk);    
+
+	// to spend from single-eval evalcode 'unspendable' cc addr
+	unspendablepk = GetUnspendable(cp, unspendablepriv);
+	GetCCaddress(cp, unspendable, unspendablepk);
+	othercond = MakeCCcond1(cp->evalcode, unspendablepk);
+    GetCCaddress1of2(cp,CC1of2CCaddr,unspendablepk,unspendablepk);
+
+    //fprintf(stderr,"evalcode.%d (%s)\n",cp->evalcode,unspendable);
+
+	// tokens support:
+	// to spend from dual/three-eval mypk vout
+	GetTokensCCaddress(cp, mytokensaddr, mypk);
+    // NOTE: if additionalEvalcode2 is not set it is a dual-eval (not three-eval) cc cond:
+	mytokenscond = MakeTokensCCcond1(cp->evalcode, cp->additionalTokensEvalcode2, mypk);  
+
+	// to spend from single-eval EVAL_TOKENS mypk 
+	cpTokens = CCinit(&tokensC, EVAL_TOKENS);
+	GetCCaddress(cpTokens, mysingletokensaddr, mypk);
+	mysingletokenscond = MakeCCcond1(EVAL_TOKENS, mypk);
+
+	// to spend from dual/three-eval EVAL_TOKEN+evalcode 'unspendable' pk:
+	GetTokensCCaddress(cp, unspendabletokensaddr, unspendablepk);  // it may be a three-eval cc, if cp->additionalEvalcode2 is set
+	othertokenscond = MakeTokensCCcond1(cp->evalcode, cp->additionalTokensEvalcode2, unspendablepk);
+
     //Reorder vins so that for multiple normal vins all other except vin0 goes to the end
     //This is a must to avoid hardfork change of validation in every CC, because there could be maximum one normal vin at the begining with current validation.
     for (i=0; i<n; i++)
@@ -127,41 +156,107 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
             else
             {
                 Getscriptaddress(destaddr,vintx.vout[utxovout].scriptPubKey);
-                //fprintf(stderr,"vin.%d is CC %.8f -> (%s)\n",i,(double)utxovalues[i]/COIN,destaddr);
-                if ( strcmp(destaddr,myaddr) == 0 )
+                //fprintf(stderr,"FinalizeCCTx() vin.%d is CC %.8f -> (%s) vs %s\n",i,(double)utxovalues[i]/COIN,destaddr,cp->unspendableaddr2);
+				//std::cerr << "FinalizeCCtx() searching destaddr=" << destaddr << " for vin[" << i << "] satoshis=" << utxovalues[i] << std::endl;
+                if( strcmp(destaddr, myaddr) == 0 )
                 {
+                    //fprintf(stderr, "FinalizeCCTx() matched cc myaddr (%s)\n", myaddr);
                     privkey = myprivkey;
                     cond = mycond;
-
                 }
+				else if (strcmp(destaddr, mytokensaddr) == 0)  // if this is TokensCC1vout
+				{
+					privkey = myprivkey;
+					cond = mytokenscond;
+					//fprintf(stderr,"FinalizeCCTx() matched dual-eval TokensCC1vout my token addr.(%s)\n",mytokensaddr);
+				}
+				else if (strcmp(destaddr, mysingletokensaddr) == 0)  // if this is TokensCC1vout
+				{
+					privkey = myprivkey;
+					cond = mysingletokenscond;
+					//fprintf(stderr, "FinalizeCCTx() matched single-eval token CC1vout my token addr.(%s)\n", mytokensaddr);
+				}
                 else if ( strcmp(destaddr,unspendable) == 0 )
                 {
                     privkey = unspendablepriv;
                     cond = othercond;
-                    //fprintf(stderr,"unspendable CC addr.(%s)\n",unspendable);
+                    //fprintf(stderr,"FinalizeCCTx evalcode(%d) matched unspendable CC addr.(%s)\n",cp->evalcode,unspendable);
                 }
-                else if ( strcmp(destaddr,cp->unspendableaddr2) == 0)
+				else if (strcmp(destaddr, unspendabletokensaddr) == 0)
+				{
+					privkey = unspendablepriv;
+					cond = othertokenscond;
+					//fprintf(stderr,"FinalizeCCTx() matched unspendabletokensaddr dual/three-eval CC addr.(%s)\n",unspendabletokensaddr);
+				}
+				// check if this is the 2nd additional evalcode + 'unspendable' cc addr:
+                else if ( strcmp(destaddr, cp->unspendableaddr2) == 0)
                 {
-                    //fprintf(stderr,"matched %s unspendable2!\n",cp->unspendableaddr2);
+                    //fprintf(stderr,"FinalizeCCTx() matched %s unspendable2!\n",cp->unspendableaddr2);
                     privkey = cp->unspendablepriv2;
-                    if ( othercond2 == 0 && cp->evalcode != EVAL_CHANNELS && cp->evalcode != EVAL_HEIR )
-                        othercond2 = MakeCCcond1(cp->evalcode2,cp->unspendablepk2);
-                    else if ( othercond2 == 0 && (cp->evalcode == EVAL_CHANNELS || cp->evalcode == EVAL_HEIR) )
-                        othercond2 = MakeCCcond1of2(cp->evalcode2,cp->unspendablepk2,cp->unspendablepk3);
+                    if( othercond2 == 0 ) 
+                        othercond2 = MakeCCcond1(cp->unspendableEvalcode2, cp->unspendablepk2);
                     cond = othercond2;
                 }
+				// check if this is 3rd additional evalcode + 'unspendable' cc addr:
                 else if ( strcmp(destaddr,cp->unspendableaddr3) == 0 )
                 {
-                    //fprintf(stderr,"matched %s unspendable3!\n",cp->unspendableaddr3);
+                    //fprintf(stderr,"FinalizeCCTx() matched %s unspendable3!\n",cp->unspendableaddr3);
                     privkey = cp->unspendablepriv3;
-                    if ( othercond3 == 0 )
-                        othercond3 = MakeCCcond1(cp->evalcode3,cp->unspendablepk3);
+                    if( othercond3 == 0 )
+                        othercond3 = MakeCCcond1(cp->unspendableEvalcode3, cp->unspendablepk3);
                     cond = othercond3;
                 }
+				// check if this is spending from 1of2 cc coins addr:
+				else if (strcmp(cp->coins1of2addr, destaddr) == 0)
+				{
+					//fprintf(stderr,"FinalizeCCTx() matched %s unspendable1of2!\n",cp->coins1of2addr);
+                    privkey = cp->coins1of2priv;//myprivkey;
+					if (othercond1of2 == 0)
+						othercond1of2 = MakeCCcond1of2(cp->evalcode, cp->coins1of2pk[0], cp->coins1of2pk[1]);
+					cond = othercond1of2;
+				}
+                else if ( strcmp(CC1of2CCaddr,destaddr) == 0 )
+                {
+                    //fprintf(stderr,"FinalizeCCTx() matched %s CC1of2CCaddr!\n",CC1of2CCaddr);
+                    privkey = unspendablepriv;
+                    if (condCC2 == 0)
+                        condCC2 = MakeCCcond1of2(cp->evalcode,unspendablepk,unspendablepk);
+                    cond = condCC2;
+                }
+				// check if this is spending from 1of2 cc tokens addr:
+				else if (strcmp(cp->tokens1of2addr, destaddr) == 0)
+				{
+					//fprintf(stderr,"FinalizeCCTx() matched %s cp->tokens1of2addr!\n", cp->tokens1of2addr);
+					privkey = myprivkey;
+					if (othercond1of2tokens == 0)
+                        // NOTE: if additionalEvalcode2 is not set then it is dual-eval cc else three-eval cc
+                        // TODO: verify evalcodes order if additionalEvalcode2 is not 0
+						othercond1of2tokens = MakeTokensCCcond1of2(cp->evalcode, cp->additionalTokensEvalcode2, cp->tokens1of2pk[0], cp->tokens1of2pk[1]);
+					cond = othercond1of2tokens;
+				}
                 else
                 {
-                    fprintf(stderr,"CC signing error: vini.%d has unknown CC address.(%s)\n",i,destaddr);
-                    continue;
+                    flag = 0;
+                    if ( pubkeys != NULL_pubkeys )
+                    {
+                        char coinaddr[64];
+                        GetCCaddress1of2(cp,coinaddr,globalpk,pubkeys[i]);
+                        //fprintf(stderr,"%s + %s -> %s vs %s\n",HexStr(globalpk).c_str(),HexStr(pubkeys[i]).c_str(),coinaddr,destaddr);
+                        if ( strcmp(destaddr,coinaddr) == 0 )
+                        {
+                            privkey = cp->CCpriv;
+                            if ( othercond4 != 0 )
+                                cc_free(othercond4);
+                            othercond4 = MakeCCcond1of2(cp->evalcode,globalpk,pubkeys[i]);
+                            cond = othercond4;
+                            flag = 1;
+                        }
+                    }
+                    if ( flag == 0 )
+                    {
+                        fprintf(stderr,"CC signing error: vini.%d has unknown CC address.(%s)\n",i,destaddr);
+                        return("");
+                    }
                 }
                 uint256 sighash = SignatureHash(CCPubKey(cond), mtx, i, SIGHASH_ALL, utxovalues[i],consensusBranchId, &txdata);
                 if ( cc_signTreeSecp256k1Msg32(cond,privkey,sighash.begin()) != 0 )
@@ -178,25 +273,40 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
                 else
                 {
                     fprintf(stderr,"vini.%d has CC signing error address.(%s)\n",i,destaddr);
+                    return("");
                 }
             }
         } else fprintf(stderr,"FinalizeCCTx couldnt find %s\n",mtx.vin[i].prevout.hash.ToString().c_str());
-    }     
+    }
     if ( mycond != 0 )
         cc_free(mycond);
+    if ( condCC2 != 0 )
+        cc_free(condCC2);
     if ( othercond != 0 )
         cc_free(othercond);
     if ( othercond2 != 0 )
         cc_free(othercond2);
     if ( othercond3 != 0 )
         cc_free(othercond3);
+    if ( othercond4 != 0 )
+        cc_free(othercond4);
+    if ( othercond1of2 != 0 )
+        cc_free(othercond1of2);
+    if ( othercond1of2tokens != 0 )
+        cc_free(othercond1of2tokens);
+    if ( mytokenscond != 0 )
+        cc_free(mytokenscond);   
+    if ( mysingletokenscond != 0 )
+        cc_free(mysingletokenscond);   
+    if ( othertokenscond != 0 )
+        cc_free(othertokenscond);   
     std::string strHex = EncodeHexTx(mtx);
     if ( strHex.size() > 0 )
         return(strHex);
     else return("0");
 }
 
-void SetCCunspents(std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > &unspentOutputs,char *coinaddr)
+void SetCCunspents(std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > &unspentOutputs,char *coinaddr,bool ccflag)
 {
     int32_t type=0,i,n; char *ptr; std::string addrstr; uint160 hashBytes; std::vector<std::pair<uint160, int> > addresses;
     n = (int32_t)strlen(coinaddr);
@@ -205,7 +315,7 @@ void SetCCunspents(std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValu
     for (i=0; i<=n; i++)
         ptr[i] = coinaddr[i];
     CBitcoinAddress address(addrstr);
-    if ( address.GetIndexKey(hashBytes, type) == 0 )
+    if ( address.GetIndexKey(hashBytes, type, ccflag) == 0 )
         return;
     addresses.push_back(std::make_pair(hashBytes,type));
     for (std::vector<std::pair<uint160, int> >::iterator it = addresses.begin(); it != addresses.end(); it++)
@@ -215,7 +325,7 @@ void SetCCunspents(std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValu
     }
 }
 
-void SetCCtxids(std::vector<std::pair<CAddressIndexKey, CAmount> > &addressIndex,char *coinaddr)
+void SetCCtxids(std::vector<std::pair<CAddressIndexKey, CAmount> > &addressIndex,char *coinaddr,bool ccflag)
 {
     int32_t type=0,i,n; char *ptr; std::string addrstr; uint160 hashBytes; std::vector<std::pair<uint160, int> > addresses;
     n = (int32_t)strlen(coinaddr);
@@ -224,7 +334,7 @@ void SetCCtxids(std::vector<std::pair<CAddressIndexKey, CAmount> > &addressIndex
     for (i=0; i<=n; i++)
         ptr[i] = coinaddr[i];
     CBitcoinAddress address(addrstr);
-    if ( address.GetIndexKey(hashBytes, type) == 0 )
+    if ( address.GetIndexKey(hashBytes, type, ccflag) == 0 )
         return;
     addresses.push_back(std::make_pair(hashBytes,type));
     for (std::vector<std::pair<uint160, int> >::iterator it = addresses.begin(); it != addresses.end(); it++)
@@ -234,10 +344,10 @@ void SetCCtxids(std::vector<std::pair<CAddressIndexKey, CAmount> > &addressIndex
     }
 }
 
-int64_t CCutxovalue(char *coinaddr,uint256 utxotxid,int32_t utxovout)
+int64_t CCutxovalue(char *coinaddr,uint256 utxotxid,int32_t utxovout,int32_t CCflag)
 {
     uint256 txid; std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
-    SetCCunspents(unspentOutputs,coinaddr);
+    SetCCunspents(unspentOutputs,coinaddr,CCflag!=0?true:false);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
@@ -247,10 +357,56 @@ int64_t CCutxovalue(char *coinaddr,uint256 utxotxid,int32_t utxovout)
     return(0);
 }
 
-int64_t CCaddress_balance(char *coinaddr)
+int32_t CCgettxout(uint256 txid,int32_t vout,int32_t mempoolflag,int32_t lockflag)
+{
+    CCoins coins;
+    //fprintf(stderr,"CCgettxoud %s/v%d\n",txid.GetHex().c_str(),vout);
+    if ( mempoolflag != 0 )
+    {
+        if ( lockflag != 0 )
+        {
+            LOCK(mempool.cs);
+            CCoinsViewMemPool view(pcoinsTip, mempool);
+            if (!view.GetCoins(txid, coins))
+                return(-1);
+            else if ( myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) != 0 )
+                return(-1);
+        }
+        else
+        {
+            CCoinsViewMemPool view(pcoinsTip, mempool);
+            if (!view.GetCoins(txid, coins))
+                return(-1);
+            else if ( myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) != 0 )
+                return(-1);
+        }
+    }
+    else
+    {
+        if (!pcoinsTip->GetCoins(txid, coins))
+            return(-1);
+    }
+    if ( vout < coins.vout.size() )
+        return(coins.vout[vout].nValue);
+    else return(-1);
+}
+
+int32_t CCgetspenttxid(uint256 &spenttxid,int32_t &vini,int32_t &height,uint256 txid,int32_t vout)
+{
+    CSpentIndexKey key(txid, vout);
+    CSpentIndexValue value;
+    if ( !GetSpentIndex(key, value) )
+        return(-1);
+    spenttxid = value.txid;
+    vini = (int32_t)value.inputIndex;
+    height = value.blockHeight;
+    return(0);
+}
+
+int64_t CCaddress_balance(char *coinaddr,int32_t CCflag)
 {
     int64_t sum = 0; std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
-    SetCCunspents(unspentOutputs,coinaddr);
+    SetCCunspents(unspentOutputs,coinaddr,CCflag!=0?true:false);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         sum += it->second.satoshis;
@@ -261,28 +417,33 @@ int64_t CCaddress_balance(char *coinaddr)
 int64_t CCfullsupply(uint256 tokenid)
 {
     uint256 hashBlock; int32_t numvouts; CTransaction tx; std::vector<uint8_t> origpubkey; std::string name,description;
-    if ( GetTransaction(tokenid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 0 )
+    if ( myGetTransaction(tokenid,tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 0 )
     {
-        if ( DecodeAssetCreateOpRet(tx.vout[numvouts-1].scriptPubKey,origpubkey,name,description) > 0 )
+        if (DecodeTokenCreateOpRet(tx.vout[numvouts-1].scriptPubKey,origpubkey,name,description))
         {
-            return(tx.vout[0].nValue);
+            return(tx.vout[1].nValue);
         }
     }
     return(0);
 }
 
-int64_t CCtoken_balance(char *coinaddr,uint256 tokenid)
+int64_t CCtoken_balance(char *coinaddr,uint256 reftokenid)
 {
-    int64_t price,sum = 0; int32_t numvouts; CTransaction tx; uint256 assetid,assetid2,txid,hashBlock; std::vector<uint8_t> origpubkey;
+    int64_t price,sum = 0; int32_t numvouts; CTransaction tx; uint256 tokenid,txid,hashBlock; 
+	std::vector<uint8_t>  vopretExtra;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
-    SetCCunspents(unspentOutputs,coinaddr);
+	uint8_t evalCode;
+
+    SetCCunspents(unspentOutputs,coinaddr,true);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
-        if ( GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 0 )
+        if ( myGetTransaction(txid,tx,hashBlock) != 0 && (numvouts=tx.vout.size()) > 0 )
         {
-            char str[65]; fprintf(stderr,"check %s %.8f\n",uint256_str(str,txid),(double)it->second.satoshis/COIN);
-            if ( DecodeAssetOpRet(tx.vout[numvouts-1].scriptPubKey,assetid,assetid2,price,origpubkey) != 0 && assetid == tokenid )
+            char str[65];
+			std::vector<CPubKey> voutTokenPubkeys;
+            std::vector<std::pair<uint8_t, vscript_t>>  oprets;
+            if ( reftokenid==txid || (DecodeTokenOpRet(tx.vout[numvouts-1].scriptPubKey, evalCode, tokenid, voutTokenPubkeys, oprets) != 0 && reftokenid == tokenid))
             {
                 sum += it->second.satoshis;
             }
@@ -348,16 +509,18 @@ int32_t CC_vinselect(int32_t *aboveip,int64_t *abovep,int32_t *belowip,int64_t *
 
 int64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int32_t maxinputs)
 {
-    int32_t abovei,belowi,ind,vout,i,n = 0,maxutxos=64; int64_t sum,threshold,above,below; int64_t remains,nValue,totalinputs = 0; uint256 txid,hashBlock; std::vector<COutput> vecOutputs; CTransaction tx; struct CC_utxo *utxos,*up;
+    int32_t abovei,belowi,ind,vout,i,n = 0; int64_t sum,threshold,above,below; int64_t remains,nValue,totalinputs = 0; uint256 txid,hashBlock; std::vector<COutput> vecOutputs; CTransaction tx; struct CC_utxo *utxos,*up;
 #ifdef ENABLE_WALLET
-    const CKeyStore& keystore = *pwalletMain;
     assert(pwalletMain != NULL);
+    const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
     pwalletMain->AvailableCoins(vecOutputs, false, NULL, true);
-    utxos = (struct CC_utxo *)calloc(maxutxos,sizeof(*utxos));
-    threshold = total/(maxinputs+1);
-    if ( maxinputs > maxutxos )
-        maxutxos = maxinputs;
+    utxos = (struct CC_utxo *)calloc(CC_MAXVINS,sizeof(*utxos));
+    if ( maxinputs > CC_MAXVINS )
+        maxinputs = CC_MAXVINS;
+    if ( maxinputs > 0 )
+        threshold = total/maxinputs;
+    else threshold = total;
     sum = 0;
     BOOST_FOREACH(const COutput& out, vecOutputs)
     {
@@ -384,7 +547,7 @@ int64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int3
                     if ( i != n )
                         continue;
                 }
-                if ( myIsutxo_spentinmempool(txid,vout) == 0 )
+                if ( myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0 )
                 {
                     up = &utxos[n++];
                     up->txid = txid;
@@ -392,7 +555,7 @@ int64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int3
                     up->vout = vout;
                     sum += up->nValue;
                     //fprintf(stderr,"add %.8f to vins array.%d of %d\n",(double)up->nValue/COIN,n,maxutxos);
-                    if ( n >= maxutxos || sum >= total )
+                    if ( n >= maxinputs || sum >= total )
                         break;
                 }
             }
@@ -438,18 +601,19 @@ int64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int3
     return(0);
 }
 
-
 int64_t AddNormalinputs2(CMutableTransaction &mtx,int64_t total,int32_t maxinputs)
 {
-    int32_t abovei,belowi,ind,vout,i,n = 0,maxutxos=64; int64_t sum,threshold,above,below; int64_t remains,nValue,totalinputs = 0; char coinaddr[64]; uint256 txid,hashBlock; CTransaction tx; struct CC_utxo *utxos,*up;
+    int32_t abovei,belowi,ind,vout,i,n = 0; int64_t sum,threshold,above,below; int64_t remains,nValue,totalinputs = 0; char coinaddr[64]; uint256 txid,hashBlock; CTransaction tx; struct CC_utxo *utxos,*up;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
-    utxos = (struct CC_utxo *)calloc(maxutxos,sizeof(*utxos));
-    threshold = total/(maxinputs+1);
-    if ( maxinputs > maxutxos )
-        maxutxos = maxinputs;
+    utxos = (struct CC_utxo *)calloc(CC_MAXVINS,sizeof(*utxos));
+    if ( maxinputs > CC_MAXVINS )
+        maxinputs = CC_MAXVINS;
+    if ( maxinputs > 0 )
+        threshold = total/maxinputs;
+    else threshold = total;
     sum = 0;
     Getscriptaddress(coinaddr,CScript() << Mypubkey() << OP_CHECKSIG);
-    SetCCunspents(unspentOutputs,coinaddr);
+    SetCCunspents(unspentOutputs,coinaddr,false);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
@@ -475,7 +639,7 @@ int64_t AddNormalinputs2(CMutableTransaction &mtx,int64_t total,int32_t maxinput
                 if ( i != n )
                     continue;
             }
-            if ( myIsutxo_spentinmempool(txid,vout) == 0 )
+            if ( myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0 )
             {
                 up = &utxos[n++];
                 up->txid = txid;
@@ -483,7 +647,7 @@ int64_t AddNormalinputs2(CMutableTransaction &mtx,int64_t total,int32_t maxinput
                 up->vout = vout;
                 sum += up->nValue;
                 //fprintf(stderr,"add %.8f to vins array.%d of %d\n",(double)up->nValue/COIN,n,maxutxos);
-                if ( n >= maxutxos || sum >= total )
+                if ( n >= maxinputs || sum >= total )
                     break;
             }
         }
