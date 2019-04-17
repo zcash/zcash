@@ -137,12 +137,12 @@ UniValue MoMoMdata(const UniValue& params, bool fHelp)
     int kmdheight = atoi(params[1].get_str().c_str());
     uint32_t ccid = atoi(params[2].get_str().c_str());
     ret.push_back(Pair("coin",symbol));
-    ret.push_back(Pair("kmdheight",kmdheight));
+    ret.push_back(Pair("kmdheight",kmdheight-5));
     ret.push_back(Pair("ccid", (int) ccid));
 
     uint256 destNotarisationTxid;
     std::vector<uint256> moms;
-    uint256 MoMoM = CalculateProofRoot(symbol, ccid, kmdheight, moms, destNotarisationTxid);
+    uint256 MoMoM = CalculateProofRoot(symbol, ccid, kmdheight-5, moms, destNotarisationTxid);
 
     UniValue valMoms(UniValue::VARR);
     for (int i=0; i<moms.size(); i++) valMoms.push_back(moms[i].GetHex());
@@ -277,10 +277,11 @@ UniValue migrate_createimporttransaction(const UniValue& params, bool fHelp)
 
 UniValue migrate_completeimporttransaction(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() != 1)
-        throw runtime_error("migrate_completeimporttransaction importTx\n\n"
+    if (fHelp || params.size() < 1 || params.size() > 2)
+        throw runtime_error("migrate_completeimporttransaction importTx (offset)\n\n"
                 "Takes a cross chain import tx with proof generated on assetchain "
-                "and extends proof to target chain proof root");
+                "and extends proof to target chain proof root\n"
+                "offset is optional, use it to increase the used KMD height, use when import fails on target.");
 
     if (ASSETCHAINS_SYMBOL[0] != 0)
         throw runtime_error("Must be called on KMD");
@@ -289,7 +290,11 @@ UniValue migrate_completeimporttransaction(const UniValue& params, bool fHelp)
     if (!E_UNMARSHAL(ParseHexV(params[0], "argument 1"), ss >> importTx))
         throw runtime_error("Couldn't parse importTx");
 
-    CompleteImportTransaction(importTx);
+    int32_t offset = 0;
+    if ( params.size() == 2 )
+        offset = params[1].get_int();
+    
+    CompleteImportTransaction(importTx, offset);
 
     return HexStr(E_MARSHAL(ss << importTx));
 }
