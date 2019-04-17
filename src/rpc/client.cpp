@@ -175,6 +175,7 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "getNotarisationsForBlock", 0},
     { "height_MoM", 1},
     { "calc_MoM", 2},
+    { "migrate_completeimporttransaction", 1},
 };
 
 class CRPCConvertTable
