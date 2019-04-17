@@ -1555,7 +1555,6 @@ extern std::vector<uint8_t> Mineropret; // opreturn data set by the data gatheri
 #define KOMODO_LOCALPRICE_CACHESIZE 13
 #define KOMODO_MAXPRICES 2048
 #define PRICES_SMOOTHWIDTH 1
-#define PRICES_MAXDATAPOINTS 8
 
 #define issue_curl(cmdstr) bitcoind_RPC(0,(char *)"CBCOINBASE",cmdstr,0,0,0)
 
