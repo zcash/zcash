@@ -58,20 +58,37 @@ CC *MakeCCcond1(uint8_t evalcode,CPubKey pk)
     return CCNewThreshold(2, {condCC, Sig});
 }
 
-CTxOut MakeCC1vout(uint8_t evalcode,CAmount nValue,CPubKey pk)
+CTxOut MakeCC1vout(uint8_t evalcode,CAmount nValue, CPubKey pk, const std::vector<std::vector<unsigned char>>* vData)
 {
     CTxOut vout;
     CC *payoutCond = MakeCCcond1(evalcode,pk);
     vout = CTxOut(nValue,CCPubKey(payoutCond));
+    if ( vData )
+    {
+        std::vector<std::vector<unsigned char>> vtmpData = std::vector<std::vector<unsigned char>>(vData->begin(), vData->end());
+        std::vector<CPubKey> vPubKeys = std::vector<CPubKey>();
+        vPubKeys.push_back(pk);
+        COptCCParams ccp = COptCCParams(COptCCParams::VERSION, evalcode, 1, 1, vPubKeys, vtmpData);
+        vout.scriptPubKey << ccp.AsVector() << OP_DROP;
+    }
     cc_free(payoutCond);
     return(vout);
 }
 
-CTxOut MakeCC1of2vout(uint8_t evalcode,CAmount nValue,CPubKey pk1,CPubKey pk2)
+CTxOut MakeCC1of2vout(uint8_t evalcode,CAmount nValue,CPubKey pk1,CPubKey pk2, const std::vector<std::vector<unsigned char>>* vData)
 {
     CTxOut vout;
     CC *payoutCond = MakeCCcond1of2(evalcode,pk1,pk2);
     vout = CTxOut(nValue,CCPubKey(payoutCond));
+    if ( vData )
+    {
+        std::vector<std::vector<unsigned char>> vtmpData = std::vector<std::vector<unsigned char>>(vData->begin(), vData->end());
+        std::vector<CPubKey> vPubKeys = std::vector<CPubKey>();
+        vPubKeys.push_back(pk1);
+        vPubKeys.push_back(pk2);
+        COptCCParams ccp = COptCCParams(COptCCParams::VERSION, evalcode, 1, 2, vPubKeys, vtmpData);
+        vout.scriptPubKey << ccp.AsVector() << OP_DROP;
+    }
     cc_free(payoutCond);
     return(vout);
 }
