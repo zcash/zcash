@@ -60,6 +60,8 @@ public:
             READWRITE(notaryTxids);
         else if (proofKind == PROOF_MERKLEBLOCK)
             READWRITE(proofBlock);
+        else
+            proofKind = PROOF_NONE;  // if we have read some trash
     }
 
     bool IsMerkleBranch(TxProof &_proofBranch) const {
