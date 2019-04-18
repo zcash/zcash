@@ -1027,7 +1027,7 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
             costbasis = prices_costbasis(bettx, costbasistxid);
             addedbets = prices_batontxid(batontxid, bettx, bettxid);
             bool calcCostbasis = costbasis == 0 ? true : false;
-            if ((profits = prices_syntheticprofits(true, costbasis, firstheight, refheight, leverage, vec, positionsize, addedbets)) < 0)
+            if ((profits = prices_syntheticprofits(calcCostbasis, costbasis, firstheight, refheight, leverage, vec, positionsize, addedbets)) < 0)
             {
                 result.push_back(Pair("rekt", 1));
                 result.push_back(Pair("rektfee", (positionsize + addedbets) / 500));
