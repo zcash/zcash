@@ -206,11 +206,13 @@ bool UnmarshalBurnTx(const CTransaction &burnTx, std::string &targetSymbol, uint
 
     if (vburnOpret.begin()[0] == EVAL_IMPORTCOIN) {
         uint8_t evalCode;
+        bool isEof = true;
         return E_UNMARSHAL(vburnOpret,  ss >> evalCode;
                                         ss >> VARINT(*targetCCid);
                                         ss >> targetSymbol;
                                         ss >> payoutsHash;
-                                        ss >> rawproof);
+                                        ss >> rawproof; isEof = ss.eof();) || !isEof; // if isEof == false it means we successfully read add the data 
+                                                                                      // and it might be additional data further that we do not need here
     }
     else {
         LOGSTREAM("importcoin", CCLOG_INFO, stream << "UnmarshalBurnTx() invalid eval code in opret" << std::endl);
