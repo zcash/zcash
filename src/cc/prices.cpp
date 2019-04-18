@@ -649,7 +649,10 @@ int64_t prices_syntheticprofits(bool calcCostbasis, int64_t &costbasis, int32_t 
     }
 
     profits = costbasis > 0 ? ((price * SATOSHIDEN) / costbasis) - SATOSHIDEN : 0;
+    std::cerr << "prices_syntheticprofits() profits1=" << profits << std::endl;
     profits *= leverage * positionsize;
+    std::cerr << "prices_syntheticprofits() profits2=" << profits << std::endl;
+
     return(positionsize + addedbets + profits);
 }
 
