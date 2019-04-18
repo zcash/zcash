@@ -437,7 +437,7 @@ int32_t prices_syntheticvec(std::vector<uint16_t> &vec, std::vector<std::string>
             return(-3);
         }
         depth -= need;
-        std::cerr << "opcode=" << opcode << " opstr=" << opstr << " need=" << need << " depth-=need=" << depth << std::endl;
+        std::cerr << "opcode=" << opcode << " opstr=" << opstr << " need=" << need << " depth=" << depth << std::endl;
         if ((opcode & KOMODO_PRICEMASK) != PRICES_WEIGHT) { // skip weight
             depth++;                                          // increase operands count
             std::cerr << "depth++=" << depth << std::endl;
@@ -475,7 +475,7 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
         {
         case 0: // indices 
             pricestack[depth] = 0;
-            if (komodo_priceget(pricedata, value, height, 1) == 0)
+            if (komodo_priceget(pricedata, value, height, 1) >= 0)
             {
                 // push price to the prices stack
                 if (!minmax)
