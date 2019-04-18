@@ -656,14 +656,15 @@ void prices_betjson(UniValue &result,int64_t profits,int64_t costbasis,int64_t p
 }
 
 // retrives costbasis from a tx spending bettx vout1
-int64_t prices_costbasis(CTransaction bettx)
+int64_t prices_costbasis(CTransaction bettx, uint256 &txidCostbasis)
 {
     int64_t costbasis = 0;
     // if vout1 is spent, follow and extract costbasis from opreturn
     //uint8_t prices_costbasisopretdecode(CScript scriptPubKey,uint256 &bettxid,CPubKey &pk,int32_t &height,int64_t &costbasis)
-    uint256 txidCostbasis;
+    //uint256 txidCostbasis;
     int32_t vini;
     int32_t height;
+    txidCostbasis = zeroid;
 
     if (CCgetspenttxid(txidCostbasis, vini, height, bettx.GetHash(), 1) < 0) {
         std::cerr << "prices_costbasis() no costbasis txid found" << std::endl;
@@ -886,7 +887,8 @@ UniValue PricesRekt(int64_t txfee, uint256 bettxid, int32_t rektheight)
     {
         if (prices_betopretdecode(bettx.vout[numvouts - 1].scriptPubKey, pk, firstheight, positionsize, leverage, firstprice, vec, tokenid) == 'B')
         {
-            costbasis = prices_costbasis(bettx);
+            uint256 costbasistxid;
+            costbasis = prices_costbasis(bettx, costbasistxid);
             if (costbasis == 0) {
                 result.push_back(Pair("result", "error"));
                 result.push_back(Pair("error", "costbasis not defined yet"));
@@ -951,7 +953,9 @@ UniValue PricesCashout(int64_t txfee, uint256 bettxid)
     {
         if (prices_betopretdecode(bettx.vout[numvouts - 1].scriptPubKey, pk, firstheight, positionsize, leverage, firstprice, vec, tokenid) == 'B')
         {
-            costbasis = prices_costbasis(bettx);
+            uint256 costbasistxid;
+
+            costbasis = prices_costbasis(bettx, costbasistxid);
             if (costbasis == 0) {
                 result.push_back(Pair("result", "error"));
                 result.push_back(Pair("error", "costbasis not defined yet"));
@@ -997,6 +1001,7 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
     std::vector<uint16_t> vec;
     CPubKey pk, mypk, pricespk;
     std::string rawtx;
+    uint256 costbasistxid;
 
     if (myGetTransaction(bettxid, bettx, hashBlock) != 0 && (numvouts = bettx.vout.size()) > 3)
     {
@@ -1010,9 +1015,9 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
             if (refheight == 0)
                 refheight = komodo_nextheight()-1;
 
-            costbasis = prices_costbasis(bettx);
+            costbasis = prices_costbasis(bettx, costbasistxid);
             addedbets = prices_batontxid(batontxid, bettx, bettxid);
-            if ((profits = prices_syntheticprofits(false, costbasis, firstheight, refheight, leverage, vec, positionsize, addedbets)) < 0)
+            if ((profits = prices_syntheticprofits(true, costbasis, firstheight, refheight, leverage, vec, positionsize, addedbets)) < 0)
             {
                 result.push_back(Pair("rekt", 1));
                 result.push_back(Pair("rektfee", (positionsize + addedbets) / 500));
@@ -1020,6 +1025,8 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
             else
                 result.push_back(Pair("rekt", 0));
             result.push_back(Pair("batontxid", batontxid.GetHex()));
+            if(!costbasistxid.IsNull())
+                result.push_back(Pair("costbasistxid", costbasistxid.GetHex()));
             prices_betjson(result, profits, costbasis, positionsize, addedbets, leverage, firstheight, firstprice);
             result.push_back(Pair("height", (int64_t)refheight));
             return(result);
