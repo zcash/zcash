@@ -649,11 +649,20 @@ int64_t prices_syntheticprofits(bool calcCostbasis, int64_t &costbasis, int32_t 
     }
 
     profits = costbasis > 0 ? ((price * SATOSHIDEN) / costbasis) - SATOSHIDEN : 0;
-    std::cerr << "prices_syntheticprofits() profits1=" << profits << std::endl;
-    profits *= leverage * positionsize;
-    std::cerr << "prices_syntheticprofits() profits2=" << profits << std::endl;
+    std::cerr << "prices_syntheticprofits() (price * SATOSHIDEN)=" << (price * SATOSHIDEN) << std::endl;
+    std::cerr << "prices_syntheticprofits() (price * SATOSHIDEN)/costbasis=" << (price * SATOSHIDEN)/costbasis << std::endl;
 
-    return(positionsize + addedbets + profits);
+    std::cerr << "prices_syntheticprofits() profits1=" << profits << std::endl;
+    std::cerr << "prices_syntheticprofits() profits double=" << (double)price / (double)costbasis -1.0 << std::endl;
+    double dprofits = (double)price / (double)costbasis - 1.0;
+
+    profits *= leverage * positionsize;
+    dprofits *= leverage * positionsize;
+    std::cerr << "prices_syntheticprofits() profits2=" << profits << std::endl;
+    std::cerr << "prices_syntheticprofits() dprofits=" << dprofits << std::endl;
+
+
+    return(positionsize + addedbets + dprofits);
 }
 
 void prices_betjson(UniValue &result,int64_t profits,int64_t costbasis,int64_t positionsize,int64_t addedbets,int16_t leverage,int32_t firstheight,int64_t firstprice)
