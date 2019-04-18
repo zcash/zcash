@@ -67,9 +67,13 @@ CScript prices_betopret(CPubKey mypk,int32_t height,int64_t amount,int16_t lever
 uint8_t prices_betopretdecode(CScript scriptPubKey,CPubKey &pk,int32_t &height,int64_t &amount,int16_t &leverage,int64_t &firstprice,std::vector<uint16_t> &vec,uint256 &tokenid)
 {
     std::vector<uint8_t> vopret; uint8_t e,f;
+    unsigned char u, l;
     GetOpReturnData(scriptPubKey,vopret);
-    if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> pk; ss >> height; ss >> amount; ss >> leverage; ss >> firstprice; ss >> vec; ss >> tokenid) != 0 && e == EVAL_PRICES && f == 'B' )
+    if (vopret.size() > 2 && E_UNMARSHAL(vopret, ss >> e; ss >> f; ss >> pk; ss >> height; ss >> amount; ss >> l; ss >> u; ss >> firstprice; ss >> vec; ss >> tokenid) != 0 && e == EVAL_PRICES && f == 'B')
     {
+        unsigned char *p = (unsigned char*)&leverage;
+        *p = l;
+        *(p + 1) = u;
         std::cerr << "prices_betopretdecode() leverage=" << leverage << std::endl;
         return(f);
     }
