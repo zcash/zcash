@@ -10,7 +10,7 @@ from test_framework.authproxy import JSONRPCException
 from test_framework.mininode import COIN
 from test_framework.util import assert_equal, initialize_chain_clean, \
     start_nodes, connect_nodes_bi, wait_and_assert_operationid_status, \
-    get_coinbase_address
+    wait_and_assert_operationid_status_result, get_coinbase_address
 
 import sys
 import timeit
@@ -92,7 +92,7 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
         recipients.append({"address":myzaddr, "amount":Decimal('1.23456789')})
         
         myopid = self.nodes[0].z_sendmany(mytaddr, recipients)
-        error_result = wait_and_assert_operationid_status(self.nodes[0], myopid, "failed", "wallet does not allow any change", 10)
+        error_result = wait_and_assert_operationid_status_result(self.nodes[0], myopid, "failed", "wallet does not allow any change", 10)
 
         # Test that the returned status object contains a params field with the operation's input parameters
         assert_equal(error_result["method"], "z_sendmany")

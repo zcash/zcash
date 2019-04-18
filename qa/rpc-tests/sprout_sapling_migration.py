@@ -8,7 +8,8 @@ import sys; assert sys.version_info < (3,), ur"This script does not run under Py
 from decimal import Decimal
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, assert_true, get_coinbase_address, \
-    initialize_chain_clean, start_nodes, wait_and_assert_operationid_status
+    initialize_chain_clean, start_nodes, wait_and_assert_operationid_status, \
+    wait_and_assert_operationid_status_result
 
 
 class SproutSaplingMigration(BitcoinTestFramework):
@@ -54,14 +55,17 @@ class SproutSaplingMigration(BitcoinTestFramework):
 
         # At 495 we should have an async operation
         operationstatus = self.nodes[0].z_getoperationstatus()
+        print "migration operation: {}".format(operationstatus)
         assert_equal(1, len(operationstatus), "num async operations at 495")
         assert_equal('saplingmigration', operationstatus[0]['method'])
         assert_equal(500, operationstatus[0]['target_height'])
 
-        print "migration operation: {}".format(operationstatus)
-        migration_opid = operationstatus[0]['id']
-        result = wait_and_assert_operationid_status(self.nodes[0], migration_opid)
+        result = wait_and_assert_operationid_status_result(self.nodes[0], operationstatus[0]['id'])
         print "result: {}".format(result)
+        assert_equal('saplingmigration', result['method'])
+        assert_equal(500, result['target_height'])
+        assert_equal(1, result['result']['num_tx_created'])
+
         assert_equal(0, len(self.nodes[0].getrawmempool()), "mempool size at 495")
 
         self.nodes[0].generate(3)
