@@ -179,6 +179,22 @@ void CKey::MakeNewKey(bool fCompressedIn) {
     fCompressed = fCompressedIn;
 }
 
+int32_t CKey::SetKey32(uint8_t Key32[32])
+{
+    memcpy(vch,Key32,32);
+    fCompressed = true;
+    if ( Check(vch) == 0 )
+    {
+        fValid = false;
+        return(-1);
+    }
+    else
+    {
+        fValid = true;
+        return(0);
+    }
+}
+
 bool CKey::SetPrivKey(const CPrivKey &privkey, bool fCompressedIn) {
     if (!ec_privkey_import_der(secp256k1_context_sign, (unsigned char*)begin(), &privkey[0], privkey.size()))
         return false;
