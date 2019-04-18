@@ -628,14 +628,22 @@ int64_t prices_syntheticprofits(bool calcCostbasis, int64_t &costbasis, int32_t 
     }
     if (calcCostbasis) {
         if (minmax)    { // if we are within day window, set costbasis to max or min price value
-            if (leverage > 0 && price > costbasis)
+            if (leverage > 0 && price > costbasis) {
                 costbasis = price;  // set costbasis
-            else if (leverage < 0 && (costbasis == 0 || price < costbasis))
+                std::cerr << "prices_syntheticprofits() minmax costbasis=" << costbasis << " price=" << price << std::endl;
+            }
+            else if (leverage < 0 && (costbasis == 0 || price < costbasis)) {
                 costbasis = price;
-            // else -> use the previous value
+                std::cerr << "prices_syntheticprofits() minmax costbasis=" << costbasis << " price=" << price << std::endl;
+            }
+            else {  //-> use the previous value
+                std::cerr << "prices_syntheticprofits() unchanged costbasis=" << costbasis << " price=" << price << std::endl;
+            }
+            
         }
         else   {
             costbasis = price; // smoothed value
+            std::cerr << "prices_syntheticprofits() smoothed costbasis=" << costbasis << " price=" << price << std::endl;
         }
     }
 
