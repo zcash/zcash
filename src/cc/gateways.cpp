@@ -597,10 +597,7 @@ bool GatewaysValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &
                             return eval->Invalid(validationError);
                         }
                         else if ( DecodeOraclesCreateOpRet(tmptx.vout[numvouts-1].scriptPubKey,name,description,format) != 'C' )
-                        {
-                            sprintf(validationError,"invalid oraclescreate OP_RETURN data\n");
-                            return eval->Invalid(validationError);   
-                        }
+                            return eval->Invalid("invalid oraclescreate OP_RETURN data");
                         else if (refcoin!=name)
                         {
                             sprintf(validationError,"mismatched oracle name %s != %s\n",name.c_str(),refcoin.c_str());
