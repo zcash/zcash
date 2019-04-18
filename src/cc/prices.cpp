@@ -60,6 +60,7 @@ CScript prices_betopret(CPubKey mypk,int32_t height,int64_t amount,int16_t lever
 {
     CScript opret;
     opret << OP_RETURN << E_MARSHAL(ss << EVAL_PRICES << 'B' << mypk << height << amount << leverage << firstprice << vec << tokenid);
+    std::cerr << "prices_betopret() leverage=" << leverage << std::endl;
     return(opret);
 }
 
@@ -69,6 +70,7 @@ uint8_t prices_betopretdecode(CScript scriptPubKey,CPubKey &pk,int32_t &height,i
     GetOpReturnData(scriptPubKey,vopret);
     if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> pk; ss >> height; ss >> amount; ss >> leverage; ss >> firstprice; ss >> vec; ss >> tokenid) != 0 && e == EVAL_PRICES && f == 'B' )
     {
+        std::cerr << "prices_betopretdecode() leverage=" << leverage << std::endl;
         return(f);
     }
     return(0);
