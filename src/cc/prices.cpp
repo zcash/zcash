@@ -156,7 +156,7 @@ bool ValidateBetTx(struct CCcontract_info *cp, Eval *eval, const CTransaction & 
         return eval->Invalid("cannot validate vout0 in bet tx with pk from opreturn");
     if (MakeCC1vout(cp->evalcode, bettx.vout[1].nValue, pricespk) != bettx.vout[1])
         return eval->Invalid("cannot validate vout1 in bet tx with global pk");
-    if( MakeCC1of2vout(cp->evalcode, bettx.vout[2].nValue, pk, pricespk) != bettx.vout[2] )
+    if( MakeCC1vout(cp->evalcode, bettx.vout[2].nValue, pricespk) != bettx.vout[2] )
         return eval->Invalid("cannot validate 1of2 vout2 in bet tx with pk from opreturn");
 
     return true;
@@ -323,7 +323,7 @@ bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
         if (prevoutN != 1) {   // check spending rules
             return eval->Invalid("incorrect vout to spend");
         }
-        return eval->Invalid("test: costbasis is good");
+        //return eval->Invalid("test: costbasis is good");
         break;
 
     case 'F':   // final tx 
@@ -758,7 +758,7 @@ UniValue PricesBet(int64_t txfee, int64_t amount, int16_t leverage, std::vector<
         betamount = (amount * 199) / 200;
         mtx.vout.push_back(MakeCC1vout(cp->evalcode, txfee, mypk)); // vout0 baton for total funding
         mtx.vout.push_back(MakeCC1vout(cp->evalcode, (amount - betamount) + 2 * txfee, pricespk));  // vout1, when spent, costbasis is set
-        mtx.vout.push_back(MakeCC1of2vout(cp->evalcode, betamount, pricespk, mypk));
+        mtx.vout.push_back(MakeCC1vout(cp->evalcode, betamount, pricespk));
         mtx.vout.push_back(CTxOut(txfee, CScript() << ParseHex(HexStr(pricespk)) << OP_CHECKSIG)); // marker
         rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, prices_betopret(mypk, nextheight - 1, amount, leverage, firstprice, vec, zeroid));
         return(prices_rawtxresult(result, rawtx, 0));
