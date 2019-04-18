@@ -475,7 +475,7 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
         {
         case 0: // indices 
             pricestack[depth] = 0;
-            if (komodo_priceget(pricedata, height, 1, value) == 0)
+            if (komodo_priceget(pricedata, value, height, 1) == 0)
             {
                 // push price to the prices stack
                 if (!minmax)
