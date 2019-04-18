@@ -203,7 +203,7 @@ void TxToJSONExpanded(const CTransaction& tx, const uint256 hashBlock, UniValue&
             in.push_back(Pair("coinbase", HexStr(txin.scriptSig.begin(), txin.scriptSig.end())));
         else if (tx.IsCoinImport()) {
             in.push_back(Pair("is_import", "1"));
-            TxProof proof; CTransaction burnTx; std::vector<CTxOut> payouts; CTxDestination importaddress;
+            ImportProof proof; CTransaction burnTx; std::vector<CTxOut> payouts; CTxDestination importaddress;
             if (UnmarshalImportTx(tx, proof, burnTx, payouts)) 
             {
                 if (burnTx.vout.size() == 0)
