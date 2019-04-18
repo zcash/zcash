@@ -1324,7 +1324,10 @@ UniValue prices(const UniValue& params, bool fHelp)
 UniValue pricesbet(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 3)
-        throw runtime_error("pricesbet amount leverage \"synthetic-expression\"\n");
+        throw runtime_error("pricesbet amount leverage \"synthetic-expression\"\n"
+            "amount is in coins\n"
+            "leverage is integer non-zero value, positive for long, negative for short position\n"
+            "synthetic-expression example \"BTC_USD, 1\"\n");
     LOCK(cs_main);
     UniValue ret(UniValue::VOBJ);
 
@@ -1332,8 +1335,10 @@ UniValue pricesbet(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "only -ac_cbopret chains have prices");
 
     CAmount txfee = 10000;
-    CAmount amount = atoll(params[0].get_str().c_str());
+    CAmount amount = atof(params[0].get_str().c_str()) * COIN;
     int16_t leverage = (int16_t)atoi(params[1].get_str().c_str());
+    if (leverage == 0)
+        throw runtime_error("invalid leverage\n");
 
     std::string sexpr = params[2].get_str();
     std::vector<std::string> vexpr;
