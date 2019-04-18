@@ -212,7 +212,7 @@ int64_t ImportGatewayVerify(char *refburnaddr,uint256 oracletxid,int32_t claimvo
     }
     if (std::find(txids.begin(), txids.end(), burntxid) == txids.end())
     {
-        LOGSTREAM("importgateway",CCLOG_INFO, stream << "ImportGatewayVerify invalid proof for this burntxid" << std::endl);
+        LOGSTREAM("importgateway",CCLOG_INFO, stream << "ImportGatewayVerify invalid proof for this burntxid " << burntxid.GetHex() << std::endl);
         return 0;
     }
     if ( DecodeHexTx(tx,deposithex) != 0 )
@@ -611,18 +611,18 @@ std::string ImportGatewayDeposit(uint64_t txfee,uint256 bindtxid,int32_t height,
     LOGSTREAM("importgateway",CCLOG_INFO, stream << "burntxid." << burntxid.GetHex() << " m." << m << " of n." << n << std::endl);
     if ( merkleroot == zeroid || m < n/2 )
     {
-        CCerror = strprintf("couldnt find merkleroot for ht.%d %s oracle.%s m.%d vs n.%d",height,coin.c_str(),uint256_str(str,oracletxid),m,n);
+        CCerror = strprintf("couldnt find merkleroot for ht.%d %s oracle.%s m.%d vs n.%d",height,refcoin.c_str(),uint256_str(str,oracletxid),m,n);
         LOGSTREAM("importgateway",CCLOG_INFO, stream << CCerror << std::endl);
         return("");
     }
-    if ( ImportGatewayVerify(burnaddr,oracletxid,claimvout,coin,burntxid,rawburntx,proof,merkleroot,destpub,taddr,prefix,prefix2) != amount )
+    if ( ImportGatewayVerify(burnaddr,oracletxid,claimvout,refcoin,burntxid,rawburntx,proof,merkleroot,destpub,taddr,prefix,prefix2) != amount )
     {
         CCerror = strprintf("burntxid didnt validate!");
         LOGSTREAM("importgateway",CCLOG_INFO, stream << CCerror << std::endl);
         return("");
     }
     vouts.push_back(CTxOut(amount,CScript() << ParseHex(HexStr(destpub)) << OP_CHECKSIG));
-    burntx.vout.push_back(MakeBurnOutput((CAmount)amount,0xffffffff,refcoin,vouts,proof,bindtxid,publishers,txids,height,claimvout,rawburntx,destpub));
+    burntx.vout.push_back(MakeBurnOutput((CAmount)amount,0xffffffff,refcoin,vouts,proof,bindtxid,publishers,txids,burntxid,height,claimvout,rawburntx,destpub,amount));
     std::vector<uint256> leaftxids;
     BitcoinGetProofMerkleRoot(proof, leaftxids);
     MerkleBranch newBranch(0, leaftxids);

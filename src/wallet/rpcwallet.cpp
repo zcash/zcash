@@ -6594,6 +6594,7 @@ UniValue gatewayspartialsign(const UniValue& params, bool fHelp)
     coin = params[1].get_str();
     parthex = params[2].get_str();
     hex = GatewaysPartialSign(0,txid,coin,parthex);
+    RETURN_IF_ERROR(CCerror);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));

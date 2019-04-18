@@ -53,7 +53,7 @@ CTxOut MakeBurnOutput(CAmount value, uint32_t targetCCid, std::string targetSymb
 }
 
 CTxOut MakeBurnOutput(CAmount value, uint32_t targetCCid, std::string targetSymbol, const std::vector<CTxOut> payouts,std::vector<uint8_t> rawproof,
-                        uint256 bindtxid,std::vector<CPubKey> publishers,std::vector<uint256> txids,int32_t height,int32_t burnvout,std::string rawburntx,CPubKey destpub)
+                        uint256 bindtxid,std::vector<CPubKey> publishers,std::vector<uint256> txids,uint256 burntxid,int32_t height,int32_t burnvout,std::string rawburntx,CPubKey destpub, int64_t amount)
 {
     std::vector<uint8_t> opret;
     opret = E_MARSHAL(ss << VARINT(targetCCid);
@@ -63,10 +63,12 @@ CTxOut MakeBurnOutput(CAmount value, uint32_t targetCCid, std::string targetSymb
                       ss << bindtxid;
                       ss << publishers;
                       ss << txids;
+                      ss << burntxid;
                       ss << height;
                       ss << burnvout;
                       ss << rawburntx;                      
-                      ss << destpub);
+                      ss << destpub;
+                      ss << amount);
                       
     return CTxOut(value, CScript() << OP_RETURN << opret);
 }
@@ -125,7 +127,7 @@ bool UnmarshalBurnTx(const CTransaction burnTx, std::string &srcaddr, std::strin
                     ss >> receipt));
 }
 
-bool UnmarshalBurnTx(const CTransaction burnTx,uint256 &bindtxid,std::vector<CPubKey> &publishers,std::vector<uint256> &txids,int32_t &height,int32_t &burnvout,std::string &rawburntx,CPubKey &destpub)
+bool UnmarshalBurnTx(const CTransaction burnTx,uint256 &bindtxid,std::vector<CPubKey> &publishers,std::vector<uint256> &txids,uint256& burntxid,int32_t &height,int32_t &burnvout,std::string &rawburntx,CPubKey &destpub, int64_t &amount)
 {
     std::vector<uint8_t> burnOpret,rawproof; bool isEof=true;
     uint32_t targetCCid; uint256 payoutsHash; std::string targetSymbol;
@@ -139,10 +141,12 @@ bool UnmarshalBurnTx(const CTransaction burnTx,uint256 &bindtxid,std::vector<CPu
                     ss >> bindtxid;
                     ss >> publishers;
                     ss >> txids;
+                    ss >> burntxid;
                     ss >> height;
                     ss >> burnvout;
                     ss >> rawburntx;                      
-                    ss >> destpub));
+                    ss >> destpub;
+                    ss >> amount));
 }
 
 

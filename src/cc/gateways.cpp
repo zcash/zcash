@@ -571,8 +571,6 @@ bool GatewaysValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &
                             return eval->Invalid("invalid gatewaysbind OP_RETURN data!"); 
                         else if ( IsCCInput(tmptx.vin[0].scriptSig) != 0 )
                             return eval->Invalid("vin.0 is normal for gatewaysbind!");
-                        else if ( IsCCInput(tmptx.vin[1].scriptSig) == 0 )
-                            return eval->Invalid("vin.1 is CC for gatewaysbind!");
                         else if ( ConstrainVout(tmptx.vout[0],1,gatewaystokensaddr,totalsupply)==0)
                             return eval->Invalid("invalid tokens to gateways vout for gatewaysbind!");
                         else if ( ConstrainVout(tmptx.vout[1],1,cp->unspendableCCaddr,CC_MARKER_VALUE)==0)
@@ -599,6 +597,8 @@ bool GatewaysValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &
                             return eval->Invalid(validationError);
                         }
                         else if ( DecodeOraclesCreateOpRet(tmptx.vout[numvouts-1].scriptPubKey,name,description,format) != 'C' )
+                            return eval->Invalid("invalid oraclescreate OP_RETURN data");
+                        else if (refcoin!=name)
                         {
                             sprintf(validationError,"mismatched oracle name %s != %s\n",name.c_str(),refcoin.c_str());
                             return eval->Invalid(validationError);
@@ -632,10 +632,8 @@ bool GatewaysValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &
                             return eval->Invalid("invalid gatewaysdeposittxid!");
                         else if (IsCCInput(tx.vin[0].scriptSig) != 0)
                             return eval->Invalid("vin.0 is normal for gatewaysclaim!");
-                        else if (IsCCInput(tx.vin[1].scriptSig) == 0)
-                            return eval->Invalid("vin.1 is CC for gatewaysclaim!");
-                        else if ((*cp->ismyvin)(tx.vin[2].scriptSig) == 0 || myGetTransaction(tx.vin[2].prevout.hash,tmptx,hashblock)==0 || tmptx.vout[tx.vin[2].prevout.n].nValue!=CC_MARKER_VALUE)
-                            return eval->Invalid("vin.2 is CC marker for gatewaysclaim or invalid marker amount!");
+                        else if ((*cp->ismyvin)(tx.vin[tx.vin.size()-1].scriptSig) == 0 || myGetTransaction(tx.vin[tx.vin.size()-1].prevout.hash,tmptx,hashblock)==0 || tmptx.vout[tx.vin[tx.vin.size()-1].prevout.n].nValue!=CC_MARKER_VALUE)
+                            return eval->Invalid("vin."+std::to_string(tx.vin.size()-1)+" is CC marker for gatewaysclaim or invalid marker amount!");
                         else if (_GetCCaddress(destaddr,EVAL_TOKENS,pubkey)==0 || ConstrainVout(tx.vout[0],1,destaddr,amount)==0)
                             return eval->Invalid("invalid vout tokens to destpub for gatewaysclaim!");
                         else if (numvouts>2 && (myGetTransaction(tx.vin[1].prevout.hash,tmptx,hashblock)==0 || ConstrainVout(tx.vout[1],1,gatewaystokensaddr,tmptx.vout[tx.vin[1].prevout.n].nValue-amount)==0))
@@ -695,8 +693,6 @@ bool GatewaysValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &
                             return eval->Invalid("refcoin different than in bind tx");                        
                         else if ( IsCCInput(tmptx.vin[0].scriptSig) != 0 )
                             return eval->Invalid("vin.0 is normal for gatewaysWithdraw!");
-                        else if ( IsCCInput(tmptx.vin[1].scriptSig) == 0 )
-                            return eval->Invalid("vin.1 is CC for gatewaysWithdraw!");
                         else if ( ConstrainVout(tmptx.vout[0],1,cp->unspendableCCaddr,CC_MARKER_VALUE)==0)
                             return eval->Invalid("invalid marker vout for gatewaysWithdraw!");
                         else if ( ConstrainVout(tmptx.vout[1],1,gatewaystokensaddr,amount)==0)
@@ -717,8 +713,8 @@ bool GatewaysValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &
                             return eval->Invalid("gatewaysbind tx is not yet confirmed(notarised)!");
                         else if (IsCCInput(tx.vin[0].scriptSig) != 0)
                             return eval->Invalid("vin.0 is normal for gatewayspartialsign!");
-                        else if ((*cp->ismyvin)(tx.vin[1].scriptSig) == 0 || myGetTransaction(tx.vin[1].prevout.hash,tmptx,hashblock)==0 || tmptx.vout[tx.vin[1].prevout.n].nValue!=CC_MARKER_VALUE)
-                            return eval->Invalid("vin.1 is CC marker for gatewayspartialsign or invalid marker amount!");
+                        else if ((*cp->ismyvin)(tx.vin[tx.vin.size()-1].scriptSig) == 0 || myGetTransaction(tx.vin[tx.vin.size()-1].prevout.hash,tmptx,hashblock)==0 || tmptx.vout[tx.vin[tx.vin.size()-1].prevout.n].nValue!=CC_MARKER_VALUE)
+                            return eval->Invalid("vin."+std::to_string(tx.vin.size()-1)+" is CC marker for gatewayspartialsign or invalid marker amount!");
                         else if (ConstrainVout(tx.vout[0],1,cp->unspendableCCaddr,CC_MARKER_VALUE) == 0 )
                             return eval->Invalid("vout.0 invalid marker for gatewayspartialsign!");
                         else if (K>M)
@@ -739,8 +735,6 @@ bool GatewaysValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &
                             return eval->Invalid("refcoin different than in bind tx");                        
                         else if ( IsCCInput(tmptx.vin[0].scriptSig) != 0 )
                             return eval->Invalid("vin.0 is normal for gatewaysWithdraw!");
-                        else if ( IsCCInput(tmptx.vin[1].scriptSig) == 0 )
-                            return eval->Invalid("vin.1 is CC for gatewaysWithdraw!");
                         else if ( ConstrainVout(tmptx.vout[0],1,cp->unspendableCCaddr,CC_MARKER_VALUE)==0)
                             return eval->Invalid("invalid marker vout for gatewaysWithdraw!");
                         else if ( ConstrainVout(tmptx.vout[1],1,gatewaystokensaddr,amount)==0)
@@ -761,8 +755,8 @@ bool GatewaysValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &
                             return eval->Invalid("gatewaysbind tx is not yet confirmed(notarised)!");
                         else if (IsCCInput(tx.vin[0].scriptSig) != 0)
                             return eval->Invalid("vin.0 is normal for gatewayscompletesigning!");
-                        else if ((*cp->ismyvin)(tx.vin[1].scriptSig) == 0 || myGetTransaction(tx.vin[1].prevout.hash,tmptx,hashblock)==0 || tmptx.vout[tx.vin[1].prevout.n].nValue!=CC_MARKER_VALUE)
-                            return eval->Invalid("vin.1 is CC marker for gatewayscompletesigning or invalid marker amount!");
+                        else if ((*cp->ismyvin)(tx.vin[tx.vin.size()-1].scriptSig) == 0 || myGetTransaction(tx.vin[tx.vin.size()-1].prevout.hash,tmptx,hashblock)==0 || tmptx.vout[tx.vin[tx.vin.size()-1].prevout.n].nValue!=CC_MARKER_VALUE)
+                            return eval->Invalid("vin."+std::to_string(tx.vin.size()-1)+" is CC marker for gatewayscompletesigning or invalid marker amount!");
                         else if (ConstrainVout(tx.vout[0],1,cp->unspendableCCaddr,CC_MARKER_VALUE) == 0 )
                             return eval->Invalid("vout.0 invalid marker for gatewayscompletesigning!");
                         else if (K<M)
@@ -800,8 +794,8 @@ bool GatewaysValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &
                             return eval->Invalid("gatewaysbind tx is not yet confirmed(notarised)!");
                         else if ( IsCCInput(tx.vin[0].scriptSig) != 0 )
                             return eval->Invalid("vin.0 is normal for gatewaysmarkdone!");
-                        else if ((*cp->ismyvin)(tx.vin[1].scriptSig) == 0 || myGetTransaction(tx.vin[1].prevout.hash,tmptx,hashblock)==0 || tmptx.vout[tx.vin[1].prevout.n].nValue!=CC_MARKER_VALUE)
-                            return eval->Invalid("vin.1 is CC marker for gatewaysmarkdone or invalid marker amount!");
+                        else if ((*cp->ismyvin)(tx.vin[tx.vin.size()-1].scriptSig) == 0 || myGetTransaction(tx.vin[tx.vin.size()-1].prevout.hash,tmptx,hashblock)==0 || tmptx.vout[tx.vin[tx.vin.size()-1].prevout.n].nValue!=CC_MARKER_VALUE)
+                            return eval->Invalid("vin."+std::to_string(tx.vin.size()-1)+" is CC marker for gatewaysmarkdone or invalid marker amount!");
                         else if (K<M)
                             return eval->Invalid("invalid number of signs!");
                         break;                    
