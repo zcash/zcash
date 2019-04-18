@@ -637,7 +637,7 @@ int64_t prices_syntheticprofits(bool calcCostbasis, int64_t &costbasis, int32_t 
                 std::cerr << "prices_syntheticprofits() minmax costbasis=" << costbasis << " price=" << price << std::endl;
             }
             else {  //-> use the previous value
-                std::cerr << "prices_syntheticprofits() unchanged costbasis=" << costbasis << " price=" << price << std::endl;
+                std::cerr << "prices_syntheticprofits() unchanged costbasis=" << costbasis << " price=" << price << " leverage=" << leverage << std::endl;
             }
             
         }
@@ -1025,6 +1025,7 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
 
             costbasis = prices_costbasis(bettx, costbasistxid);
             addedbets = prices_batontxid(batontxid, bettx, bettxid);
+            bool calcCostbasis = costbasis == 0 ? true : false;
             if ((profits = prices_syntheticprofits(true, costbasis, firstheight, refheight, leverage, vec, positionsize, addedbets)) < 0)
             {
                 result.push_back(Pair("rekt", 1));
