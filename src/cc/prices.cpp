@@ -628,6 +628,10 @@ int64_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t
         fprintf(stderr, "unexpected zero synthetic price at height.%d\n", height);
         return(0);
     }
+
+    // clear lowest positions:
+    price /= 10000;
+    price *= 10000;
    
     if (minmax)    { // if we are within day window, set costbasis to max or min price value
         if (leverage > 0 && price > costbasis) {
