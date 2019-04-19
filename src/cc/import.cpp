@@ -521,7 +521,7 @@ int32_t CheckPUBKEYimport(TxProof proof,std::vector<uint8_t> rawproof,CTransacti
 
 bool CheckMigration(Eval *eval, const CTransaction &importTx, const CTransaction &burnTx, std::vector<CTxOut> & payouts, const ImportProof &proof, const std::vector<uint8_t> &rawproof)
 {
-    if (strcmp(ASSETCHAINS_SYMBOL, "CFEKDIMXY6") == 0 && chainActive.Height() <= 10699)
+    if (strcmp(ASSETCHAINS_SYMBOL, "CFEKDIMXY6") == 0 && chainActive.Height() <= 44693)
         return true;
 
     vscript_t vimportOpret;
@@ -641,6 +641,11 @@ bool CheckMigration(Eval *eval, const CTransaction &importTx, const CTransaction
     else {
         return eval->Invalid("invalid-import-proof");
     }
+
+    if (vimportOpret.begin()[0] == EVAL_TOKENS)
+        return eval->Invalid("test-invalid-tokens-are-good!!");
+    else
+        return eval->Invalid("test-invalid-coins-are-good!!");
     return true;
 }
 
@@ -741,11 +746,6 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
 
     // return Invalid("test-invalid");
     LOGSTREAM("importcoin", CCLOG_DEBUG2, stream << "Valid import tx! txid=" << importTx.GetHash().GetHex() << std::endl);
-    
-    /*if (vimportOpret.begin()[0] == EVAL_TOKENS)
-        return Invalid("test-invalid-tokens-are-good!!");
-    else
-        return Invalid("test-invalid-coins-are-good!!");*/
-    
+       
     return Valid();
 }
