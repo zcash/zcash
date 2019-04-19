@@ -519,7 +519,7 @@ int32_t CheckPUBKEYimport(TxProof proof,std::vector<uint8_t> rawproof,CTransacti
     return(0);
 }
 
-bool CheckFungible(Eval *eval, const CTransaction &importTx, const CTransaction &burnTx, std::vector<CTxOut> & payouts, const ImportProof &proof, const std::vector<uint8_t> &rawproof)
+bool CheckMigration(Eval *eval, const CTransaction &importTx, const CTransaction &burnTx, std::vector<CTxOut> & payouts, const ImportProof &proof, const std::vector<uint8_t> &rawproof)
 {
     if (strcmp(ASSETCHAINS_SYMBOL, "CFEKDIMXY6") == 0 && chainActive.Height() <= 10699)
         return true;
@@ -649,12 +649,12 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
     ImportProof proof; 
     CTransaction burnTx; 
     std::vector<CTxOut> payouts; 
-    CAmount txfee = 10000;
+    CAmount txfee = 10000, amount;
     int32_t height, burnvout; 
     std::vector<CPubKey> publishers;
     uint32_t targetCcid; 
     std::string targetSymbol, srcaddr, destaddr, receipt, rawburntx; 
-    uint256 payoutsHash, bindtxid; 
+    uint256 payoutsHash, bindtxid, burntxid;
     std::vector<uint8_t> rawproof;
     std::vector<uint256> txids; 
     CPubKey destpub;
@@ -700,8 +700,8 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
         if (targetCcid != GetAssetchainsCC() || targetSymbol != GetAssetchainsSymbol())
             return Invalid("importcoin-wrong-chain");
 
-        if (!CheckFungible(this, importTx, burnTx, payouts, proof, rawproof))
-            return false;
+        if (!CheckMigration(this, importTx, burnTx, payouts, proof, rawproof))
+            return false;  // eval->Invalid() is called in the func
     }
     else
     {

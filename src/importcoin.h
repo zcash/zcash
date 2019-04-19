@@ -94,9 +94,9 @@ public:
 
 CAmount GetCoinImportValue(const CTransaction &tx);
 
-CTransaction MakeImportCoinTransaction(const ImportProof &proof, const CTransaction &burnTx, const std::vector<CTxOut> &payouts, uint32_t nExpiryHeightOverride = 0);
+CTransaction MakeImportCoinTransaction(const ImportProof proof, const CTransaction burnTx, const std::vector<CTxOut> payouts, uint32_t nExpiryHeightOverride = 0);
 
-CTxOut MakeBurnOutput(CAmount value, uint32_t targetCCid, const std::string &targetSymbol, const std::vector<CTxOut> &payouts, const std::vector<uint8_t> &rawproof);
+CTxOut MakeBurnOutput(CAmount value, uint32_t targetCCid, const std::string targetSymbol, const std::vector<CTxOut> payouts, const std::vector<uint8_t> rawproof);
 CTxOut MakeBurnOutput(CAmount value, uint32_t targetCCid, std::string targetSymbol, const std::vector<CTxOut> payouts,std::vector<uint8_t> rawproof,
                         uint256 bindtxid,std::vector<CPubKey> publishers,std::vector<uint256>txids,uint256 burntxid,int32_t height,int32_t burnvout,std::string rawburntx,CPubKey destpub, int64_t amount);
 CTxOut MakeBurnOutput(CAmount value, uint32_t targetCCid, std::string targetSymbol, const std::vector<CTxOut> payouts,std::vector<uint8_t> rawproof,std::string srcaddr,
@@ -105,7 +105,7 @@ CTxOut MakeBurnOutput(CAmount value, uint32_t targetCCid, std::string targetSymb
 bool UnmarshalBurnTx(const CTransaction burnTx, std::string &targetSymbol, uint32_t *targetCCid, uint256 &payoutsHash,std::vector<uint8_t> &rawproof);
 bool UnmarshalBurnTx(const CTransaction burnTx, std::string &srcaddr, std::string &receipt);
 bool UnmarshalBurnTx(const CTransaction burnTx,uint256 &bindtxid,std::vector<CPubKey> &publishers,std::vector<uint256> &txids,uint256& burntxid,int32_t &height,int32_t &burnvout,std::string &rawburntx,CPubKey &destpub, int64_t &amount);
-bool UnmarshalImportTx(const CTransaction &importTx, ImportProof &proof, CTransaction &burnTx,std::vector<CTxOut> &payouts);
+bool UnmarshalImportTx(const CTransaction importTx, ImportProof &proof, CTransaction &burnTx,std::vector<CTxOut> &payouts);
 
 bool VerifyCoinImport(const CScript& scriptSig, TransactionSignatureChecker& checker, CValidationState &state);
 
@@ -116,6 +116,6 @@ int ExistsImportTombstone(const CTransaction &importTx, const CCoinsViewCache &i
 bool CheckVinPubKey(const CTransaction &sourcetx, int32_t i, uint8_t pubkey33[33]);
 
 CMutableTransaction MakeSelfImportSourceTx(CTxDestination &dest, int64_t amount);
-int32_t GetSelfimportProof(const CMutableTransaction &sourceMtx, CMutableTransaction &templateMtx, ImportProof &proofNull);
+int32_t GetSelfimportProof(const CMutableTransaction sourceMtx, CMutableTransaction &templateMtx, ImportProof &proofNull);
 
 #endif /* IMPORTCOIN_H */

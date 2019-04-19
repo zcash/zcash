@@ -29,7 +29,7 @@
 int32_t komodo_nextheight();
 
 // makes import tx for either coins or tokens
-CTransaction MakeImportCoinTransaction(const ImportProof &proof, const CTransaction &burnTx, const std::vector<CTxOut> &payouts, uint32_t nExpiryHeightOverride)
+CTransaction MakeImportCoinTransaction(const ImportProof proof, const CTransaction burnTx, const std::vector<CTxOut> payouts, uint32_t nExpiryHeightOverride)
 {
     //std::vector<uint8_t> payload = E_MARSHAL(ss << EVAL_IMPORTCOIN);
     CScript scriptSig;
@@ -76,7 +76,7 @@ CTransaction MakeImportCoinTransaction(const ImportProof &proof, const CTransact
 }
 
 
-CTxOut MakeBurnOutput(CAmount value, uint32_t targetCCid, const std::string &targetSymbol, const std::vector<CTxOut> &payouts, const std::vector<uint8_t> &rawproof)
+CTxOut MakeBurnOutput(CAmount value, uint32_t targetCCid, const std::string targetSymbol, const std::vector<CTxOut> payouts, const std::vector<uint8_t> rawproof)
 {
     std::vector<uint8_t> opret;
     opret = E_MARSHAL(ss << (uint8_t)EVAL_IMPORTCOIN;  // should mark burn opret to differentiate it from token opret
@@ -91,7 +91,8 @@ CTxOut MakeBurnOutput(CAmount value, uint32_t targetCCid, std::string targetSymb
                         uint256 bindtxid,std::vector<CPubKey> publishers,std::vector<uint256> txids,uint256 burntxid,int32_t height,int32_t burnvout,std::string rawburntx,CPubKey destpub, int64_t amount)
 {
     std::vector<uint8_t> opret;
-    opret = E_MARSHAL(ss << VARINT(targetCCid);
+    opret = E_MARSHAL(ss << (uint8_t)EVAL_IMPORTCOIN;
+                      ss << VARINT(targetCCid);
                       ss << targetSymbol;
                       ss << SerializeHash(payouts);
                       ss << rawproof;
@@ -112,7 +113,8 @@ CTxOut MakeBurnOutput(CAmount value, uint32_t targetCCid, std::string targetSymb
                         std::string receipt)
 {
     std::vector<uint8_t> opret;
-    opret = E_MARSHAL(ss << VARINT(targetCCid);
+    opret = E_MARSHAL(ss << (uint8_t)EVAL_IMPORTCOIN;
+                      ss << VARINT(targetCCid);
                       ss << targetSymbol;
                       ss << SerializeHash(payouts);
                       ss << rawproof;
@@ -122,7 +124,7 @@ CTxOut MakeBurnOutput(CAmount value, uint32_t targetCCid, std::string targetSymb
 }
 
 
-bool UnmarshalImportTx(const CTransaction &importTx, ImportProof &proof, CTransaction &burnTx, std::vector<CTxOut> &payouts)
+bool UnmarshalImportTx(const CTransaction importTx, ImportProof &proof, CTransaction &burnTx, std::vector<CTxOut> &payouts)
 {
     if (importTx.vout.size() < 1) 
         return false;
@@ -173,7 +175,7 @@ bool UnmarshalImportTx(const CTransaction &importTx, ImportProof &proof, CTransa
 }
 
 
-bool UnmarshalBurnTx(const CTransaction &burnTx, std::string &targetSymbol, uint32_t *targetCCid, uint256 &payoutsHash,std::vector<uint8_t>&rawproof)
+bool UnmarshalBurnTx(const CTransaction burnTx, std::string &targetSymbol, uint32_t *targetCCid, uint256 &payoutsHash,std::vector<uint8_t>&rawproof)
 {
     std::vector<uint8_t> vburnOpret; uint32_t ccid = 0;
     uint8_t evalCode;
@@ -211,8 +213,8 @@ bool UnmarshalBurnTx(const CTransaction &burnTx, std::string &targetSymbol, uint
                                         ss >> VARINT(*targetCCid);
                                         ss >> targetSymbol;
                                         ss >> payoutsHash;
-                                        ss >> rawproof; isEof = ss.eof();) || !isEof; // if isEof == false it means we successfully read add the data 
-                                                                                      // and it might be additional data further that we do not need here
+                                        ss >> rawproof; isEof = ss.eof();) || !isEof; // if isEof == false it means we have successfully read the vars upto 'rawproof'
+                                                                                      // and it might be additional data further that we do not need here so we allow !isEof
     }
     else {
         LOGSTREAM("importcoin", CCLOG_INFO, stream << "UnmarshalBurnTx() invalid eval code in opret" << std::endl);
@@ -220,14 +222,16 @@ bool UnmarshalBurnTx(const CTransaction &burnTx, std::string &targetSymbol, uint
     }
 }
 
-bool UnmarshalBurnTx(const CTransaction &burnTx, std::string &srcaddr, std::string &receipt)
+bool UnmarshalBurnTx(const CTransaction burnTx, std::string &srcaddr, std::string &receipt)
 {
     std::vector<uint8_t> burnOpret,rawproof; bool isEof=true;
     std::string targetSymbol; uint32_t targetCCid; uint256 payoutsHash;
+    uint8_t evalCode;
 
     if (burnTx.vout.size() == 0) return false;
     GetOpReturnData(burnTx.vout.back().scriptPubKey, burnOpret);
-    return (E_UNMARSHAL(burnOpret, ss >> VARINT(targetCCid);
+    return (E_UNMARSHAL(burnOpret, ss >> evalCode;
+                    ss >> VARINT(targetCCid);
                     ss >> targetSymbol;
                     ss >> payoutsHash;
                     ss >> rawproof;
@@ -239,10 +243,12 @@ bool UnmarshalBurnTx(const CTransaction burnTx,uint256 &bindtxid,std::vector<CPu
 {
     std::vector<uint8_t> burnOpret,rawproof; bool isEof=true;
     uint32_t targetCCid; uint256 payoutsHash; std::string targetSymbol;
+    uint8_t evalCode;
 
     if (burnTx.vout.size() == 0) return false;
     GetOpReturnData(burnTx.vout.back().scriptPubKey, burnOpret);
-    return (E_UNMARSHAL(burnOpret, ss >> VARINT(targetCCid);
+    return (E_UNMARSHAL(burnOpret, ss >> evalCode;
+                    ss >> VARINT(targetCCid);
                     ss >> targetSymbol;
                     ss >> payoutsHash;
                     ss >> rawproof;
