@@ -541,13 +541,13 @@ UniValue importgatewaydeposit(const UniValue& params, bool fHelp)
 {
     UniValue result(UniValue::VOBJ);
     CMutableTransaction mtx; std::vector<uint8_t> rawproof;
-    std::string hex,coin,rawburntx; int32_t height,burnvout;
+    std::string hex,coin,rawburntx; int32_t height,burnvout; int64_t amount;
     CPubKey destpub; std::vector<CTxOut> vouts; uint256 bindtxid,burntxid;
 
     if ( ASSETCHAINS_SELFIMPORT.size() == 0 )
         throw runtime_error("importgatewaydeposit only works on -ac_import chains");
-    if ( fHelp || params.size() != 8) 
-        throw runtime_error("use \'importgatewaydeposit bindtxid height coin burntxid nvout rawburntx rawproof destpub\' to import deposited coins\n");
+    if ( fHelp || params.size() != 9) 
+        throw runtime_error("use \'importgatewaydeposit bindtxid height coin burntxid nvout rawburntx rawproof destpub amount\' to import deposited coins\n");
     if ( ensure_CCrequirements(EVAL_IMPORTGATEWAY) < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     CCerror = "";
@@ -559,6 +559,7 @@ UniValue importgatewaydeposit(const UniValue& params, bool fHelp)
     rawburntx = params[5].get_str();
     rawproof = ParseHex(params[6].get_str());
     destpub = ParseHex(params[7].get_str());
+    amount = atof(params[8].get_str().c_str()) * COIN + 0.00000000499999;
     if (coin == "BEAM" || coin == "CODA")
     {
         ERR_RESULT("for BEAM and CODA import use importdual RPC");
@@ -569,7 +570,7 @@ UniValue importgatewaydeposit(const UniValue& params, bool fHelp)
         ERR_RESULT("source coin not equal to ac_import name");
         return result;
     }
-    hex = ImportGatewayDeposit(0, bindtxid, height, coin, burntxid, burnvout, rawburntx, rawproof, destpub);
+    hex = ImportGatewayDeposit(0, bindtxid, height, coin, burntxid, burnvout, rawburntx, rawproof, destpub, amount);
     RETURN_IF_ERROR(CCerror);
     if ( hex.size() > 0 )
     {
