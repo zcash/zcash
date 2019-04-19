@@ -612,9 +612,10 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
 }
 
 // calculates profit/loss for the bet
-int64_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t height, int16_t leverage, std::vector<uint16_t> vec, int64_t positionsize, int64_t addedbets, int64_t &price)
+int64_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t height, int16_t leverage, std::vector<uint16_t> vec, int64_t positionsize, int64_t addedbets, int64_t &outprice)
 {
     int64_t profits = 0; 
+    int64_t price;
 
     if (height < firstheight) {
         fprintf(stderr, "requested height is lower than bet firstheight.%d\n", height);
@@ -632,6 +633,7 @@ int64_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t
     // clear lowest positions:
     price /= PRICES_NORMFACTOR;
     price *= PRICES_NORMFACTOR;
+    outprice = price;
    
     if (minmax)    { // if we are within day window, set costbasis to max or min price value
         if (leverage > 0 && price > costbasis) {
