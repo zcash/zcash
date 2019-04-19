@@ -1078,7 +1078,8 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
                     result.push_back(Pair("rekt", 0));
             }
             else {
-                for (i = 0; i < PRICES_DAYWINDOW + 1; i++)   // the last datum for 24h is the costbasis value
+                bool isRekt = false;
+                for (i = 0; i < PRICES_DAYWINDOW + 1 && firstheight + i <= refheight; i++)   // the last datum for 24h is the costbasis value
                 {
                     profits = prices_syntheticprofits(costbasis, firstheight, firstheight + i, leverage, vec, positionsize, addedbets, lastprice);
                     equity = positionsize + addedbets + profits;
@@ -1087,10 +1088,11 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
                         result.push_back(Pair("rekt", (int64_t)1));
                         result.push_back(Pair("rektfee", (positionsize + addedbets) / 500));
                         result.push_back(Pair("rektheight", (int64_t)firstheight + i));
+                        isRekt = true;
                         break;
                     }
                 }
-                if (i == PRICES_DAYWINDOW + 1)
+                if (!isRekt /*i == PRICES_DAYWINDOW + 1*/)
                     result.push_back(Pair("rekt", 0));
             }
 
