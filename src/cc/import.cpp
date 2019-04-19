@@ -20,9 +20,18 @@
 #include "primitives/transaction.h"
 #include "cc/CCinclude.h"
 #include <openssl/sha.h>
+#include "cc/CCtokens.h"
 
 #include "key_io.h"
 #define CODA_BURN_ADDRESS "KPrrRoPfHOnNpZZQ6laHXdQDkSQDkVHaN0V+LizLlHxz7NaA59sBAAAA"
+/*
+ * CC Eval method for import coin.
+ *
+ * This method should control every parameter of the ImportCoin transaction, since it has no signature
+ * to protect it from malleability.
+ 
+ ##### 0xffffffff is a special CCid for single chain/dual daemon imports
+ */
 
 extern std::string ASSETCHAINS_SELFIMPORT;
 extern uint16_t ASSETCHAINS_CODAPORT,ASSETCHAINS_BEAMPORT;
@@ -61,64 +70,65 @@ cJSON* CodaRPC(char **retstr,char const *arg0,char const *arg1,char const *arg2,
 }
 
 // makes source tx for self import tx
-std::string MakeSelfImportSourceTx(CTxDestination &dest, int64_t amount, CMutableTransaction &mtx) 
+CMutableTransaction MakeSelfImportSourceTx(CTxDestination &dest, int64_t amount)
 {
     const int64_t txfee = 10000;
     int64_t inputs, change;
     CPubKey myPubKey = Mypubkey();
     struct CCcontract_info *cpDummy, C;
 
-    cpDummy = CCinit(&C, EVAL_TOKENS);
+    cpDummy = CCinit(&C, EVAL_TOKENS);  // this is just for FinalizeCCTx to work
 
-    mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
 
-    if( (inputs = AddNormalinputs(mtx, myPubKey, txfee, 4)) == 0 ) {
-        LOGSTREAM("importcoin", CCLOG_INFO, stream << "MakeSelfImportSourceTx: cannot find normal imputs for txfee" << std::endl);
-        return std::string("");
+    if (AddNormalinputs(mtx, myPubKey, 2 * txfee, 4) == 0) {
+        LOGSTREAM("importcoin", CCLOG_INFO, stream << "MakeSelfImportSourceTx() warning: cannot find normal inputs for txfee" << std::endl);
     }
-
+    
     CScript scriptPubKey = GetScriptForDestination(dest);
     mtx.vout.push_back(CTxOut(txfee, scriptPubKey));
-    change = inputs - txfee;
-    if( change != 0 )
-        mtx.vout.push_back(CTxOut(change, CScript() << ParseHex(HexStr(myPubKey)) << OP_CHECKSIG));
 
-    //make opret with amount:
-    return FinalizeCCTx(0, cpDummy, mtx, myPubKey, txfee, CScript() << OP_RETURN << E_MARSHAL(ss << (uint8_t)EVAL_IMPORTCOIN << (uint8_t)'A' << amount));
+    //make opret with 'burned' amount:
+    FinalizeCCTx(0, cpDummy, mtx, myPubKey, txfee, CScript() << OP_RETURN << E_MARSHAL(ss << (uint8_t)EVAL_IMPORTCOIN << (uint8_t)'A' << amount));
+    return mtx;
 }
 
-// make sure vin0 is signed by ASSETCHAINS_OVERRIDE_PUBKEY33
-int32_t CheckVin0PubKey(const CTransaction &sourcetx)
+// make sure vin is signed by pubkey33
+bool CheckVinPubKey(const CTransaction &sourcetx, int32_t i, uint8_t pubkey33[33])
 {
     CTransaction vintx;
     uint256 blockHash;
     char destaddr[64], pkaddr[64];
 
-    if( !myGetTransaction(sourcetx.vin[0].prevout.hash, vintx, blockHash) ) {
-        LOGSTREAM("importcoin", CCLOG_INFO, stream << "CheckVin0PubKey() could not load vintx" << sourcetx.vin[0].prevout.hash.GetHex() << std::endl);
-        return(-1);
+    if (i < 0 || i >= sourcetx.vin.size())
+        return false;
+
+    if( !myGetTransaction(sourcetx.vin[i].prevout.hash, vintx, blockHash) ) {
+        LOGSTREAM("importcoin", CCLOG_INFO, stream << "CheckVinPubKey() could not load vintx" << sourcetx.vin[i].prevout.hash.GetHex() << std::endl);
+        return false;
     }
-    if( sourcetx.vin[0].prevout.n < vintx.vout.size() && Getscriptaddress(destaddr, vintx.vout[sourcetx.vin[0].prevout.n].scriptPubKey) != 0 )
+    if( sourcetx.vin[i].prevout.n < vintx.vout.size() && Getscriptaddress(destaddr, vintx.vout[sourcetx.vin[i].prevout.n].scriptPubKey) != 0 )
     {
-        pubkey2addr(pkaddr, ASSETCHAINS_OVERRIDE_PUBKEY33);
+        pubkey2addr(pkaddr, pubkey33);
         if (strcmp(pkaddr, destaddr) == 0) {
-            return(0);
+            return true;
         }
-        LOGSTREAM("importcoin", CCLOG_INFO, stream << "CheckVin0PubKey() mismatched vin0[prevout.n=" << sourcetx.vin[0].prevout.n << "] -> destaddr=" << destaddr << " vs pkaddr=" << pkaddr << std::endl);
+        LOGSTREAM("importcoin", CCLOG_INFO, stream << "CheckVinPubKey() mismatched vin[" << i << "].prevout.n=" << sourcetx.vin[i].prevout.n << " -> destaddr=" << destaddr << " vs pkaddr=" << pkaddr << std::endl);
     }
-    return -1;
+    return false;
 }
 
 // ac_import=PUBKEY support:
 // prepare a tx for creating import tx and quasi-burn tx
-int32_t GetSelfimportProof(std::string source, CMutableTransaction &mtx, CScript &scriptPubKey, TxProof &proof, std::string rawsourcetx, int32_t &ivout, uint256 sourcetxid, uint64_t burnAmount) // find burnTx with hash from "other" daemon
+int32_t GetSelfimportProof(const CMutableTransaction sourceMtx, CMutableTransaction &templateMtx, ImportProof &proofNull) // find burnTx with hash from "other" daemon
 {
     MerkleBranch newBranch; 
     CMutableTransaction tmpmtx; 
-    CTransaction sourcetx; 
+    //CTransaction sourcetx; 
 
     tmpmtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
 
+    /*
     if (!E_UNMARSHAL(ParseHex(rawsourcetx), ss >> sourcetx)) {
         LOGSTREAM("importcoin", CCLOG_INFO, stream << "GetSelfimportProof: could not unmarshal source tx" << std::endl);
         return(-1);
@@ -127,9 +137,9 @@ int32_t GetSelfimportProof(std::string source, CMutableTransaction &mtx, CScript
     if (sourcetx.vout.size() == 0) {
         LOGSTREAM("importcoin", CCLOG_INFO, stream << "GetSelfimportProof: vout size is 0" << std::endl);
         return -1;
-    }
+    } */
 
-	if (ivout < 0) {  // "ivout < 0" means "find"  
+	/*if (ivout < 0) {  // "ivout < 0" means "find"  
 		// try to find vout
 		CPubKey myPubkey = Mypubkey();
 		ivout = 0;
@@ -141,38 +151,49 @@ int32_t GetSelfimportProof(std::string source, CMutableTransaction &mtx, CScript
     if (ivout >= sourcetx.vout.size()) {
         LOGSTREAM("importcoin", CCLOG_INFO, stream << "GetSelfimportProof: needed vout not found" << std::endl);
         return -1;
-    }
+    } */
 
-	LOGSTREAM("importcoin", CCLOG_DEBUG1, stream << "GetSelfimportProof: using vout[" << ivout << "] of the passed rawtx" << std::endl);
+    int32_t ivout = 0;
 
-    scriptPubKey = sourcetx.vout[ivout].scriptPubKey;
+	// LOGSTREAM("importcoin", CCLOG_DEBUG1, stream << "GetSelfimportProof: using vout[" << ivout << "] of the passed rawtx" << std::endl);
+
+    CScript scriptPubKey = sourceMtx.vout[ivout].scriptPubKey;
 
 	//mtx is template for import tx
-    mtx = sourcetx;
-    mtx.fOverwintered = tmpmtx.fOverwintered;
+    templateMtx = sourceMtx;
+    templateMtx.fOverwintered = tmpmtx.fOverwintered;
     
     //malleability fix for burn tx:
     //mtx.nExpiryHeight = tmpmtx.nExpiryHeight;
-    mtx.nExpiryHeight = sourcetx.nExpiryHeight;
+    templateMtx.nExpiryHeight = sourceMtx.nExpiryHeight;
 
-    mtx.nVersionGroupId = tmpmtx.nVersionGroupId;
-    mtx.nVersion = tmpmtx.nVersion;
-    mtx.vout.clear();
-    mtx.vout.resize(1);
-    mtx.vout[0].nValue = burnAmount;
-    mtx.vout[0].scriptPubKey = scriptPubKey;
+    templateMtx.nVersionGroupId = tmpmtx.nVersionGroupId;
+    templateMtx.nVersion = tmpmtx.nVersion;
+    templateMtx.vout.clear();
+    templateMtx.vout.resize(1);
 
-    // not sure we need this now as we create sourcetx ourselves:
-    if (sourcetx.GetHash() != sourcetxid) {
-        LOGSTREAM("importcoin", CCLOG_INFO, stream << "GetSelfimportProof: passed source txid incorrect" << std::endl);
-        return(-1);
-    }
-
-    // check ac_pubkey:
-    if (CheckVin0PubKey(sourcetx) < 0) {
+    uint8_t evalCode, funcId;
+    int64_t burnAmount;
+    vscript_t vopret;
+    if( !GetOpReturnData(sourceMtx.vout.back().scriptPubKey, vopret) ||
+        !E_UNMARSHAL(vopret, ss >> evalCode; ss >> funcId; ss >> burnAmount)) {
+        LOGSTREAM("importcoin", CCLOG_INFO, stream << "GetSelfimportProof() could not unmarshal source tx opret" << std::endl);
         return -1;
     }
-    proof = std::make_pair(sourcetxid, newBranch);
+    templateMtx.vout[0].nValue = burnAmount;
+    templateMtx.vout[0].scriptPubKey = scriptPubKey;
+
+    // not sure we need this now as we create sourcetx ourselves:
+    /*if (sourcetx.GetHash() != sourcetxid) {
+        LOGSTREAM("importcoin", CCLOG_INFO, stream << "GetSelfimportProof: passed source txid incorrect" << std::endl);
+        return(-1);
+    }*/
+
+    // check ac_pubkey:
+    if (!CheckVinPubKey(sourceMtx, 0, ASSETCHAINS_OVERRIDE_PUBKEY33)) {
+        return -1;
+    }
+    proofNull = ImportProof(std::make_pair(sourceMtx.GetHash(), newBranch));
     return 0;
 }
 
@@ -476,7 +497,7 @@ int32_t CheckPUBKEYimport(TxProof proof,std::vector<uint8_t> rawproof,CTransacti
     }
 
     //ac_pubkey check:
-    if (CheckVin0PubKey(sourcetx) < 0) {
+    if (!CheckVinPubKey(sourcetx, 0, ASSETCHAINS_OVERRIDE_PUBKEY33)) {
         return -1;
     }
 
@@ -485,9 +506,11 @@ int32_t CheckPUBKEYimport(TxProof proof,std::vector<uint8_t> rawproof,CTransacti
     uint8_t evalCode, funcId;
     int64_t amount;
 
-    GetOpReturnData(sourcetx.vout.back().scriptPubKey, vopret);
-    if (vopret.size() == 0 || !E_UNMARSHAL(vopret, ss >> evalCode; ss >> funcId; ss >> amount) || evalCode != EVAL_IMPORTCOIN || funcId != 'A') {
-        LOGSTREAM("importcoin", CCLOG_INFO, stream << "no or incorrect opret to validate in source txid=" << sourcetxid.GetHex() << std::endl);
+    if (!GetOpReturnData(sourcetx.vout.back().scriptPubKey, vopret) || 
+        vopret.size() == 0 || 
+        !E_UNMARSHAL(vopret, ss >> evalCode; ss >> funcId; ss >> amount) || 
+        evalCode != EVAL_IMPORTCOIN || funcId != 'A') {
+        LOGSTREAM("importcoin", CCLOG_INFO, stream << "none or incorrect opret to validate in source txid=" << sourcetxid.GetHex() << std::endl);
         return -1;
     }
 
@@ -502,21 +525,154 @@ int32_t CheckPUBKEYimport(TxProof proof,std::vector<uint8_t> rawproof,CTransacti
     return(0);
 }
 
-/*
- * CC Eval method for import coin.
- *
- * This method should control every parameter of the ImportCoin transaction, since it has no signature
- * to protect it from malleability.
- 
- ##### 0xffffffff is a special CCid for single chain/dual daemon imports
- */
-bool Eval::ImportCoin(const std::vector<uint8_t> params,const CTransaction &importTx,unsigned int nIn)
+bool CheckMigration(Eval *eval, const CTransaction &importTx, const CTransaction &burnTx, std::vector<CTxOut> & payouts, const ImportProof &proof, const std::vector<uint8_t> &rawproof)
 {
-    TxProof proof; CTransaction burnTx; std::vector<CTxOut> payouts; int64_t txfee = 10000, amount; int32_t height,burnvout; std::vector<CPubKey> publishers;
-    uint32_t targetCcid; std::string targetSymbol,srcaddr,destaddr,receipt,rawburntx; uint256 payoutsHash,bindtxid,burntxid; std::vector<uint8_t> rawproof;
-    std::vector<uint256> txids; CPubKey destpub;
+    vscript_t vimportOpret;
+    if (!GetOpReturnData(importTx.vout.back().scriptPubKey, vimportOpret)  ||        
+        vimportOpret.empty())
+        return eval->Invalid("invalid-import-tx-no-opret");
 
-    if ( importTx.vout.size() < 2 )
+
+    uint256 tokenid = zeroid;
+    if (vimportOpret.begin()[0] == EVAL_TOKENS) { // for tokens (new opret with tokens)
+        struct CCcontract_info *cpTokens, CCtokens_info;
+        std::vector<std::pair<uint8_t, vscript_t>>  oprets;
+        uint8_t evalCodeInOpret;
+        std::vector<CPubKey> voutTokenPubkeys;
+        vscript_t vnonfungibleOpret;
+
+        cpTokens = CCinit(&CCtokens_info, EVAL_TOKENS);
+
+        if (DecodeTokenOpRet(importTx.vout.back().scriptPubKey, evalCodeInOpret, tokenid, voutTokenPubkeys, oprets) == 0)
+            return eval->Invalid("cannot-decode-import-tx-token-opret");
+
+        uint8_t nonfungibleEvalCode = EVAL_TOKENS; // init to no non-fungibles
+        GetOpretBlob(oprets, OPRETID_NONFUNGIBLEDATA, vnonfungibleOpret);
+        if (!vnonfungibleOpret.empty())
+            nonfungibleEvalCode = vnonfungibleOpret.begin()[0];
+
+        // check if burn tx at least has cc evaltoken vins (we cannot get cc input)
+        bool hasTokenVin = false;
+        for (auto vin : burnTx.vin)
+            if (cpTokens->ismyvin(vin.scriptSig))
+                hasTokenVin = true;
+        if (!hasTokenVin)
+            return eval->Invalid("burn-tx-has-no-token-vins");
+
+        // calc outputs for burn tx
+        CAmount ccBurnOutputs = 0;
+        for (auto v : burnTx.vout)
+            if (v.scriptPubKey.IsPayToCryptoCondition() &&
+                CTxOut(v.nValue, v.scriptPubKey) == MakeTokensCC1vout(nonfungibleEvalCode, v.nValue, pubkey2pk(ParseHex(CC_BURNPUBKEY))))  // burned to dead pubkey
+                ccBurnOutputs += v.nValue;
+
+        // calc outputs for import tx
+        CAmount ccImportOutputs = 0;
+        for (auto v : importTx.vout)
+            if (v.scriptPubKey.IsPayToCryptoCondition() &&
+                !IsTokenMarkerVout(v))  // should not be marker here
+                ccImportOutputs += v.nValue;
+
+        if (ccBurnOutputs != ccImportOutputs)
+            return eval->Invalid("token-cc-burned-output-not-equal-cc-imported-output");
+
+    }
+    else if (vimportOpret.begin()[0] != EVAL_IMPORTCOIN) {
+        return eval->Invalid("import-tx-incorrect-opret-eval");
+    }
+
+    // for tokens check burn, import, tokenbase tx 
+    if (!tokenid.IsNull()) {
+
+        std::string sourceSymbol;
+        CTransaction tokenbaseTx;
+        if (!E_UNMARSHAL(rawproof, ss >> sourceSymbol; ss >> tokenbaseTx))
+            return eval->Invalid("cannot-unmarshal-rawproof-for-tokens");
+
+        uint256 sourceTokenId;
+        std::vector<std::pair<uint8_t, vscript_t>>  oprets;
+        uint8_t evalCodeInOpret;
+        std::vector<CPubKey> voutTokenPubkeys;
+        if (burnTx.vout.size() > 0 && DecodeTokenOpRet(burnTx.vout.back().scriptPubKey, evalCodeInOpret, sourceTokenId, voutTokenPubkeys, oprets) == 0)
+            return eval->Invalid("cannot-decode-burn-tx-token-opret");
+
+        if (sourceTokenId != tokenbaseTx.GetHash())              // check tokenid in burn tx opret maches the passed tokenbase tx (to prevent cheating by importing user)
+            return eval->Invalid("incorrect-token-creation-tx-passed");
+
+        std::vector<std::pair<uint8_t, vscript_t>>  opretsSrc;
+        vscript_t vorigpubkeySrc;
+        std::string nameSrc, descSrc;
+        if (DecodeTokenCreateOpRet(tokenbaseTx.vout.back().scriptPubKey, vorigpubkeySrc, nameSrc, descSrc, opretsSrc) == 0)
+            return eval->Invalid("cannot-decode-token-creation-tx");
+
+        std::vector<std::pair<uint8_t, vscript_t>>  opretsImport;
+        vscript_t vorigpubkeyImport;
+        std::string nameImport, descImport;
+        if (importTx.vout.size() == 0 || DecodeTokenCreateOpRet(importTx.vout.back().scriptPubKey, vorigpubkeySrc, nameSrc, descSrc, opretsImport) == 0)
+            return eval->Invalid("cannot-decode-token-import-tx");
+
+        // check that name,pubkey,description in import tx correspond ones in token creation tx in the source chain:
+        if (vorigpubkeySrc != vorigpubkeyImport ||
+            nameSrc != nameImport ||
+            descSrc != descImport)
+            return eval->Invalid("import-tx-token-params-incorrect");
+    }
+
+
+    // Check burntx shows correct outputs hash
+//    if (payoutsHash != SerializeHash(payouts))  // done in ImportCoin
+//        return eval->Invalid("wrong-payouts");
+
+
+    TxProof merkleBranchProof;
+    std::vector<uint256> notaryTxids;
+
+    // Check proof confirms existance of burnTx
+    if (proof.IsMerkleBranch(merkleBranchProof)) {
+        uint256 target = merkleBranchProof.second.Exec(burnTx.GetHash());
+        LOGSTREAM("importcoin", CCLOG_DEBUG2, stream << "Eval::ImportCoin() momom target=" << target.GetHex() << " merkleBranchProof.first=" << merkleBranchProof.first.GetHex() << std::endl);
+        if (!CheckMoMoM(merkleBranchProof.first, target)) {
+            LOGSTREAM("importcoin", CCLOG_INFO, stream << "MoMoM check failed for importtx=" << importTx.GetHash().GetHex() << std::endl);
+            return eval->Invalid("momom-check-fail");
+        }
+    }
+    else if (proof.IsNotaryTxids(notaryTxids)) {
+        if (!CheckNotariesApproval(burnTx.GetHash(), notaryTxids)) {
+            return eval->Invalid("notaries-approval-check-fail");
+        }
+    }
+    else {
+        return eval->Invalid("invalid-import-proof");
+    }
+
+/*  if (vimportOpret.begin()[0] == EVAL_TOKENS)
+        return eval->Invalid("test-invalid-tokens-are-good!!");
+    else
+        return eval->Invalid("test-invalid-coins-are-good!!"); */
+    return true;
+}
+
+bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &importTx, unsigned int nIn)
+{
+    ImportProof proof; 
+    CTransaction burnTx; 
+    std::vector<CTxOut> payouts; 
+    CAmount txfee = 10000, amount;
+    int32_t height, burnvout; 
+    std::vector<CPubKey> publishers;
+    uint32_t targetCcid; 
+    std::string targetSymbol, srcaddr, destaddr, receipt, rawburntx; 
+    uint256 payoutsHash, bindtxid, burntxid;
+    std::vector<uint8_t> rawproof;
+    std::vector<uint256> txids; 
+    CPubKey destpub;
+
+    LOGSTREAM("importcoin", CCLOG_DEBUG1, stream << "Validating import tx..., txid=" << importTx.GetHash().GetHex() << std::endl);
+
+    if (strcmp(ASSETCHAINS_SYMBOL, "CFEKDIMXY6") == 0 && chainActive.Height() <= 44693)
+        return true;
+
+    if (importTx.vout.size() < 2)
         return Invalid("too-few-vouts");
     // params
     if (!UnmarshalImportTx(importTx, proof, burnTx, payouts))
@@ -528,38 +684,47 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params,const CTransaction &impo
     // burn params
     if (!UnmarshalBurnTx(burnTx, targetSymbol, &targetCcid, payoutsHash, rawproof))
         return Invalid("invalid-burn-tx");
-    // check burn amount
-    {
-        uint64_t burnAmount = burnTx.vout.back().nValue;
-        if (burnAmount == 0)
-            return Invalid("invalid-burn-amount");
-        uint64_t totalOut = 0;
-        for (int i=0; i<importTx.vout.size(); i++)
-            totalOut += importTx.vout[i].nValue;
-        if (totalOut > burnAmount || totalOut < burnAmount-txfee )
-            return Invalid("payout-too-high-or-too-low");
-    }
+    
+    if (burnTx.vout.size() == 0)
+        return Invalid("invalid-burn-tx-no-vouts");
+
+    // check burned normal amount >= import amount  && burned amount <= import amount + txfee (extra txfee is for miners and relaying, see GetImportCoinValue() func)
+    CAmount burnAmount = burnTx.vout.back().nValue;
+    if (burnAmount == 0)
+        return Invalid("invalid-burn-amount");
+    CAmount totalOut = 0;
+    for (auto v : importTx.vout)
+        if (!v.scriptPubKey.IsPayToCryptoCondition())
+            totalOut += v.nValue;
+    if (totalOut > burnAmount || totalOut < burnAmount - txfee)
+        return Invalid("payout-too-high-or-too-low");
+
     // Check burntx shows correct outputs hash
     if (payoutsHash != SerializeHash(payouts))
         return Invalid("wrong-payouts");
     if (targetCcid < KOMODO_FIRSTFUNGIBLEID)
         return Invalid("chain-not-fungible");
-    // Check proof confirms existance of burnTx
+
     if ( targetCcid != 0xffffffff )
     {
-        if ( targetCcid != GetAssetchainsCC() || targetSymbol != GetAssetchainsSymbol() )
+
+        if (targetCcid != GetAssetchainsCC() || targetSymbol != GetAssetchainsSymbol())
             return Invalid("importcoin-wrong-chain");
-        uint256 target = proof.second.Exec(burnTx.GetHash());
-        if (!CheckMoMoM(proof.first, target))
-            return Invalid("momom-check-fail");
+
+        if (!CheckMigration(this, importTx, burnTx, payouts, proof, rawproof))
+            return false;  // eval->Invalid() is called in the func
     }
     else
     {
+        TxProof merkleBranchProof;
+        if (!proof.IsMerkleBranch(merkleBranchProof)) 
+            return Invalid("invalid-import-proof-for-0xFFFFFFFF");
+
         if ( targetSymbol == "BEAM" )
         {
             if ( ASSETCHAINS_BEAMPORT == 0 )
                 return Invalid("BEAM-import-without-port");
-            else if ( CheckBEAMimport(proof,rawproof,burnTx,payouts) < 0 )
+            else if ( CheckBEAMimport(merkleBranchProof,rawproof,burnTx,payouts) < 0 )
                 return Invalid("BEAM-import-failure");
         }
         else if ( targetSymbol == "CODA" )
@@ -573,7 +738,7 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params,const CTransaction &impo
         {
             if ( ASSETCHAINS_SELFIMPORT != "PUBKEY" )
                 return Invalid("PUBKEY-import-when-notPUBKEY");
-            else if ( CheckPUBKEYimport(proof,rawproof,burnTx,payouts) < 0 )
+            else if ( CheckPUBKEYimport(merkleBranchProof,rawproof,burnTx,payouts) < 0 )
                 return Invalid("PUBKEY-import-failure");
         }
         else
@@ -584,5 +749,9 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params,const CTransaction &impo
                 return Invalid("GATEWAY-import-failure");
         }
     }
+
+    // return Invalid("test-invalid");
+    LOGSTREAM("importcoin", CCLOG_DEBUG2, stream << "Valid import tx! txid=" << importTx.GetHash().GetHex() << std::endl);
+       
     return Valid();
 }
