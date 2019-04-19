@@ -672,12 +672,12 @@ int64_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t
     return profits; //  (positionsize + addedbets + profits);
 }
 
-void prices_betjson(UniValue &result,int64_t profits,int64_t costbasis,int64_t positionsize,int64_t addedbets,int16_t leverage,int32_t firstheight,int64_t firstprice, int64_t lastprice)
+void prices_betjson(UniValue &result,int64_t profits,int64_t costbasis,int64_t positionsize,int64_t addedbets,int16_t leverage,int32_t firstheight,int64_t firstprice, int64_t lastprice, int64_t equity)
 {
     result.push_back(Pair("profits",ValueFromAmount(profits)));
     result.push_back(Pair("costbasis",ValueFromAmount(costbasis)));
     result.push_back(Pair("positionsize",ValueFromAmount(positionsize)));
-    result.push_back(Pair("equity", ValueFromAmount(positionsize + addedbets + profits)));
+    result.push_back(Pair("equity", ValueFromAmount(equity)));
     result.push_back(Pair("addedbets",ValueFromAmount(addedbets)));
     result.push_back(Pair("leverage",(int64_t)leverage));
     result.push_back(Pair("firstheight",(int64_t)firstheight));
@@ -846,7 +846,7 @@ UniValue PricesSetcostbasis(int64_t txfee, uint256 bettxid)
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), nextheight);
     UniValue result(UniValue::VOBJ);
     struct CCcontract_info *cp, C; CTransaction bettx; uint256 hashBlock, batontxid, tokenid;
-    int64_t myfee, positionsize = 0, addedbets, firstprice = 0, lastprice, profits = 0, costbasis = 0;
+    int64_t myfee, positionsize = 0, addedbets, firstprice = 0, lastprice, profits = 0, costbasis = 0, equity;
     int32_t i, firstheight = 0, height, numvouts; int16_t leverage = 0;
     std::vector<uint16_t> vec;
     CPubKey pk, mypk, pricespk; std::string rawtx;
@@ -871,17 +871,19 @@ UniValue PricesSetcostbasis(int64_t txfee, uint256 bettxid)
             mtx.vin.push_back(CTxIn(bettxid, 1, CScript()));              // spend vin1 with betamount
             for (i = 0; i < PRICES_DAYWINDOW + 1; i++)   // the last datum for 24h is the costbasis value
             {
-                if ((profits = prices_syntheticprofits(costbasis, firstheight, firstheight + i, leverage, vec, positionsize, addedbets, lastprice)) < 0)
+                profits = prices_syntheticprofits(costbasis, firstheight, firstheight + i, leverage, vec, positionsize, addedbets, lastprice);
+                equity = positionsize + addedbets + profits;
+                if (equity < 0)
                 {   // we are in loss
                     result.push_back(Pair("rekt", (int64_t)1));
                     result.push_back(Pair("rektheight", (int64_t)firstheight + i));
                     break;
                 }
             }
-            if (i == PRICES_DAYWINDOW)
+            if (i == PRICES_DAYWINDOW + 1)
                 result.push_back(Pair("rekt", 0));
 
-            prices_betjson(result, profits, costbasis, positionsize, addedbets, leverage, firstheight, firstprice, lastprice);
+            prices_betjson(result, profits, costbasis, positionsize, addedbets, leverage, firstheight, firstprice, lastprice, equity);
 
             if (AddNormalinputs(mtx, mypk, txfee, 4) >= txfee)
             {
@@ -910,7 +912,7 @@ UniValue PricesRekt(int64_t txfee, uint256 bettxid, int32_t rektheight)
     struct CCcontract_info *cp, C; 
     CTransaction bettx; 
     uint256 hashBlock, tokenid, batontxid; 
-    int64_t myfee = 0, positionsize, addedbets, firstprice, lastprice, profits, ignore, costbasis = 0; 
+    int64_t myfee = 0, positionsize, addedbets, firstprice, lastprice, profits, ignore, costbasis = 0, equity; 
     int32_t firstheight, numvouts; 
     int16_t leverage; 
     std::vector<uint16_t> vec; 
@@ -935,11 +937,13 @@ UniValue PricesRekt(int64_t txfee, uint256 bettxid, int32_t rektheight)
             }
 
             addedbets = prices_batontxid(batontxid, bettx, bettxid);
-            if ((profits = prices_syntheticprofits(costbasis /*ignore*/, firstheight, rektheight, leverage, vec, positionsize, addedbets, lastprice)) < 0)
+            profits = prices_syntheticprofits(costbasis, firstheight, rektheight, leverage, vec, positionsize, addedbets, lastprice);
+            equity = positionsize + addedbets + profits;
+            if (equity < 0)
             {
                 myfee = (positionsize + addedbets) / 500;
             }
-            prices_betjson(result, profits, costbasis, positionsize, addedbets, leverage, firstheight, firstprice, lastprice);
+            prices_betjson(result, profits, costbasis, positionsize, addedbets, leverage, firstheight, firstprice, lastprice, equity);
             if (myfee != 0)
             {
                 mtx.vin.push_back(CTxIn(bettxid, 2, CScript()));
@@ -974,7 +978,7 @@ UniValue PricesCashout(int64_t txfee, uint256 bettxid)
     struct CCcontract_info *cp, C; char destaddr[64]; 
     CTransaction bettx; 
     uint256 hashBlock, batontxid, tokenid; 
-    int64_t CCchange = 0, positionsize, inputsum, ignore, addedbets, firstprice, lastprice, profits, costbasis = 0; 
+    int64_t CCchange = 0, positionsize, inputsum, ignore, addedbets, firstprice, lastprice, profits, costbasis = 0, equity; 
     int32_t i, firstheight, height, numvouts; 
     int16_t leverage; 
     std::vector<uint16_t> vec;
@@ -1002,14 +1006,16 @@ UniValue PricesCashout(int64_t txfee, uint256 bettxid)
             }
 
             addedbets = prices_batontxid(batontxid, bettx, bettxid);
-            if ((profits = prices_syntheticprofits(costbasis, firstheight, nextheight - 1, leverage, vec, positionsize, addedbets, lastprice)) < 0)
+            profits = prices_syntheticprofits(costbasis, firstheight, nextheight - 1, leverage, vec, positionsize, addedbets, lastprice);
+            equity = positionsize + addedbets + profits;
+            if (equity < 0)
             {
-                prices_betjson(result, profits, costbasis, positionsize, addedbets, leverage, firstheight, firstprice, lastprice);
+                prices_betjson(result, profits, costbasis, positionsize, addedbets, leverage, firstheight, firstprice, lastprice, equity);
                 result.push_back(Pair("result", "error"));
                 result.push_back(Pair("error", "position rekt"));
                 return(result);
             }
-            prices_betjson(result, profits, costbasis, positionsize, addedbets, leverage, firstheight, firstprice, lastprice);
+            prices_betjson(result, profits, costbasis, positionsize, addedbets, leverage, firstheight, firstprice, lastprice, equity);
             mtx.vin.push_back(CTxIn(bettxid, 2, CScript()));
             if ((inputsum = AddPricesInputs(cp, mtx, destaddr, profits + txfee, 64, bettxid, 2)) > profits + txfee)
                 CCchange = (inputsum - profits);
@@ -1034,7 +1040,7 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
     UniValue result(UniValue::VOBJ);
     CTransaction bettx;
     uint256 hashBlock, batontxid, tokenid;
-    int64_t myfee, ignore = 0, positionsize = 0, addedbets = 0, firstprice = 0, lastprice, profits = 0, costbasis = 0;
+    int64_t myfee, ignore = 0, positionsize = 0, addedbets = 0, firstprice = 0, lastprice, profits = 0, costbasis = 0, equity;
     int32_t i, firstheight = 0, height, numvouts;
     int16_t leverage = 0;
     std::vector<uint16_t> vec;
@@ -1057,24 +1063,40 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
             costbasis = prices_costbasis(bettx, costbasistxid);
             addedbets = prices_batontxid(batontxid, bettx, bettxid);
 
-            /*
-            if( costbasis == 0 && prices_syntheticprofits(true, costbasis, firstheight, firstheight, leverage, vec, positionsize, addedbets) < 0) {
-                result.push_back(Pair("result", "error"));
-                result.push_back(Pair("error", "cannot calculate costbasis"));
-                return(result);
-            } */
-
-            if ((profits = prices_syntheticprofits(costbasis, firstheight, refheight, leverage, vec, positionsize, addedbets, lastprice)) < 0)
-            {
-                result.push_back(Pair("rekt", 1));
-                result.push_back(Pair("rektfee", (positionsize + addedbets) / 500));
+            if (costbasis != 0) { // costbasis fixed
+                profits = prices_syntheticprofits(costbasis, firstheight, refheight, leverage, vec, positionsize, addedbets, lastprice);
+                equity = positionsize + addedbets + profits;
+                if (equity < 0)
+                {
+                    result.push_back(Pair("rekt", 1));
+                    result.push_back(Pair("rektfee", (positionsize + addedbets) / 500));
+                    result.push_back(Pair("rektheight", (int64_t)refheight));
+                }
+                else
+                    result.push_back(Pair("rekt", 0));
             }
-            else
-                result.push_back(Pair("rekt", 0));
+            else {
+                for (i = 0; i < PRICES_DAYWINDOW + 1; i++)   // the last datum for 24h is the costbasis value
+                {
+                    profits = prices_syntheticprofits(costbasis, firstheight, firstheight + i, leverage, vec, positionsize, addedbets, lastprice);
+                    equity = positionsize + addedbets + profits;
+                    if (equity < 0)
+                    {   // we are in loss
+                        result.push_back(Pair("rekt", (int64_t)1));
+                        result.push_back(Pair("rektfee", (positionsize + addedbets) / 500));
+                        result.push_back(Pair("rektheight", (int64_t)firstheight + i));
+                        break;
+                    }
+                }
+                if (i == PRICES_DAYWINDOW + 1)
+                    result.push_back(Pair("rekt", 0));
+            }
+
+
             result.push_back(Pair("batontxid", batontxid.GetHex()));
             if(!costbasistxid.IsNull())
                 result.push_back(Pair("costbasistxid", costbasistxid.GetHex()));
-            prices_betjson(result, profits, costbasis, positionsize, addedbets, leverage, firstheight, firstprice, lastprice);
+            prices_betjson(result, profits, costbasis, positionsize, addedbets, leverage, firstheight, firstprice, lastprice, equity);
             result.push_back(Pair("height", (int64_t)refheight));
             return(result);
         }
