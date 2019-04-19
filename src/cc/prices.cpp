@@ -611,9 +611,9 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
 }
 
 // calculates profit/loss for the bet
-int64_t prices_syntheticprofits(bool calcCostbasis, int64_t &costbasis, int32_t firstheight, int32_t height, int16_t leverage, std::vector<uint16_t> vec, int64_t positionsize, int64_t addedbets)
+int64_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t height, int16_t leverage, std::vector<uint16_t> vec, int64_t positionsize, int64_t addedbets, int64_t &price)
 {
-    int64_t price, profits = 0; 
+    int64_t profits = 0; 
 
     if (height < firstheight) {
         fprintf(stderr, "requested height is lower than bet firstheight.%d\n", height);
@@ -627,53 +627,57 @@ int64_t prices_syntheticprofits(bool calcCostbasis, int64_t &costbasis, int32_t 
         fprintf(stderr, "unexpected zero synthetic price at height.%d\n", height);
         return(0);
     }
-    if (calcCostbasis) {
-        if (minmax)    { // if we are within day window, set costbasis to max or min price value
-            if (leverage > 0 && price > costbasis) {
-                costbasis = price;  // set costbasis
-                std::cerr << "prices_syntheticprofits() minmax costbasis=" << costbasis << " price=" << price << std::endl;
-            }
-            else if (leverage < 0 && (costbasis == 0 || price < costbasis)) {
-                costbasis = price;
-                std::cerr << "prices_syntheticprofits() minmax costbasis=" << costbasis << " price=" << price << std::endl;
-            }
-            else {  //-> use the previous value
-                std::cerr << "prices_syntheticprofits() unchanged costbasis=" << costbasis << " price=" << price << " leverage=" << leverage << std::endl;
-            }
+   
+    if (minmax)    { // if we are within day window, set costbasis to max or min price value
+        if (leverage > 0 && price > costbasis) {
+            costbasis = price;  // set temp costbasis
+            std::cerr << "prices_syntheticprofits() minmax costbasis=" << costbasis << " price=" << price << std::endl;
+        }
+        else if (leverage < 0 && (costbasis == 0 || price < costbasis)) {
+            costbasis = price;
+            std::cerr << "prices_syntheticprofits() minmax costbasis=" << costbasis << " price=" << price << std::endl;
+        }
+        else {  //-> use the previous value
+            std::cerr << "prices_syntheticprofits() unchanged costbasis=" << costbasis << " price=" << price << " leverage=" << leverage << std::endl;
+        }
             
-        }
-        else   {
-            costbasis = price; // smoothed value
-            std::cerr << "prices_syntheticprofits() smoothed costbasis=" << costbasis << " price=" << price << std::endl;
-        }
     }
+    else   {
+        // use provided costbasis
+        std::cerr << "prices_syntheticprofits() provided costbasis=" << costbasis << " price=" << price << std::endl;
+        if (costbasis == 0)
+            costbasis = price;
+    }
+    
 
-    profits = costbasis > 0 ? ((price * SATOSHIDEN) / costbasis) - SATOSHIDEN : 0;
-    std::cerr << "prices_syntheticprofits() (price * SATOSHIDEN)=" << (price * SATOSHIDEN) << std::endl;
-    std::cerr << "prices_syntheticprofits() (price * SATOSHIDEN)/costbasis=" << (price * SATOSHIDEN)/costbasis << std::endl;
+    profits = costbasis > 0 ? ( ((price / 10000 * SATOSHIDEN) / costbasis) - SATOSHIDEN / 10000 ) : 0;
+    std::cerr << "prices_syntheticprofits() (price /10000 * SATOSHIDEN)=" << (price /10000 * SATOSHIDEN) << std::endl;
+    std::cerr << "prices_syntheticprofits() (price /10000 * SATOSHIDEN)/costbasis=" << (price /10000 * SATOSHIDEN)/costbasis << std::endl;
 
     std::cerr << "prices_syntheticprofits() profits1=" << profits << std::endl;
-    std::cerr << "prices_syntheticprofits() profits double=" << (double)price / (double)costbasis -1.0 << std::endl;
-    double dprofits = (double)price / (double)costbasis - 1.0;
+    //std::cerr << "prices_syntheticprofits() profits double=" << (double)price / (double)costbasis -1.0 << std::endl;
+    //double dprofits = (double)price / (double)costbasis - 1.0;
 
     profits *= leverage * positionsize;
-    dprofits *= leverage * positionsize;
+    //dprofits *= leverage * positionsize;
     std::cerr << "prices_syntheticprofits() profits2=" << profits << std::endl;
-    std::cerr << "prices_syntheticprofits() dprofits=" << dprofits << std::endl;
+    //std::cerr << "prices_syntheticprofits() dprofits=" << dprofits << std::endl;
 
 
-    return(positionsize + addedbets + dprofits);
+    return profits; //  (positionsize + addedbets + profits);
 }
 
-void prices_betjson(UniValue &result,int64_t profits,int64_t costbasis,int64_t positionsize,int64_t addedbets,int16_t leverage,int32_t firstheight,int64_t firstprice)
+void prices_betjson(UniValue &result,int64_t profits,int64_t costbasis,int64_t positionsize,int64_t addedbets,int16_t leverage,int32_t firstheight,int64_t firstprice, int64_t lastprice)
 {
     result.push_back(Pair("profits",ValueFromAmount(profits)));
     result.push_back(Pair("costbasis",ValueFromAmount(costbasis)));
     result.push_back(Pair("positionsize",ValueFromAmount(positionsize)));
+    result.push_back(Pair("equity", ValueFromAmount(positionsize + addedbets + profits)));
     result.push_back(Pair("addedbets",ValueFromAmount(addedbets)));
     result.push_back(Pair("leverage",(int64_t)leverage));
     result.push_back(Pair("firstheight",(int64_t)firstheight));
     result.push_back(Pair("firstprice",ValueFromAmount(firstprice)));
+    result.push_back(Pair("lastprice", ValueFromAmount(lastprice)));
 }
 
 // retrives costbasis from a tx spending bettx vout1
@@ -837,7 +841,7 @@ UniValue PricesSetcostbasis(int64_t txfee, uint256 bettxid)
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), nextheight);
     UniValue result(UniValue::VOBJ);
     struct CCcontract_info *cp, C; CTransaction bettx; uint256 hashBlock, batontxid, tokenid;
-    int64_t myfee, positionsize = 0, addedbets, firstprice = 0, profits = 0, costbasis = 0;
+    int64_t myfee, positionsize = 0, addedbets, firstprice = 0, lastprice, profits = 0, costbasis = 0;
     int32_t i, firstheight = 0, height, numvouts; int16_t leverage = 0;
     std::vector<uint16_t> vec;
     CPubKey pk, mypk, pricespk; std::string rawtx;
@@ -852,7 +856,7 @@ UniValue PricesSetcostbasis(int64_t txfee, uint256 bettxid)
     {
         if (prices_betopretdecode(bettx.vout[numvouts - 1].scriptPubKey, pk, firstheight, positionsize, leverage, firstprice, vec, tokenid) == 'B')
         {
-            if (nextheight <= firstheight + PRICES_DAYWINDOW + PRICES_SMOOTHWIDTH) {
+            if (nextheight <= firstheight + PRICES_DAYWINDOW + 1) {
                 result.push_back(Pair("result", "error"));
                 result.push_back(Pair("error", "cannot calculate costbasis yet"));
                 return(result);
@@ -860,9 +864,9 @@ UniValue PricesSetcostbasis(int64_t txfee, uint256 bettxid)
 
             addedbets = prices_batontxid(batontxid, bettx, bettxid);
             mtx.vin.push_back(CTxIn(bettxid, 1, CScript()));              // spend vin1 with betamount
-            for (i = 0; i < PRICES_DAYWINDOW + PRICES_SMOOTHWIDTH; i++)   // the last datum for 24h is the costbasis value
+            for (i = 0; i < PRICES_DAYWINDOW + 1; i++)   // the last datum for 24h is the costbasis value
             {
-                if ((profits = prices_syntheticprofits(true, costbasis, firstheight, firstheight + i, leverage, vec, positionsize, addedbets)) < 0)
+                if ((profits = prices_syntheticprofits(costbasis, firstheight, firstheight + i, leverage, vec, positionsize, addedbets, lastprice)) < 0)
                 {   // we are in loss
                     result.push_back(Pair("rekt", (int64_t)1));
                     result.push_back(Pair("rektheight", (int64_t)firstheight + i));
@@ -872,7 +876,7 @@ UniValue PricesSetcostbasis(int64_t txfee, uint256 bettxid)
             if (i == PRICES_DAYWINDOW)
                 result.push_back(Pair("rekt", 0));
 
-            prices_betjson(result, profits, costbasis, positionsize, addedbets, leverage, firstheight, firstprice);
+            prices_betjson(result, profits, costbasis, positionsize, addedbets, leverage, firstheight, firstprice, lastprice);
 
             if (AddNormalinputs(mtx, mypk, txfee, 4) >= txfee)
             {
@@ -898,7 +902,16 @@ UniValue PricesRekt(int64_t txfee, uint256 bettxid, int32_t rektheight)
 {
     int32_t nextheight = komodo_nextheight();
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), nextheight); UniValue result(UniValue::VOBJ);
-    struct CCcontract_info *cp, C; CTransaction bettx; uint256 hashBlock, tokenid, batontxid; int64_t myfee = 0, positionsize, addedbets, firstprice, profits, ignore, costbasis = 0; int32_t firstheight, numvouts; int16_t leverage; std::vector<uint16_t> vec; CPubKey pk, mypk, pricespk; std::string rawtx;
+    struct CCcontract_info *cp, C; 
+    CTransaction bettx; 
+    uint256 hashBlock, tokenid, batontxid; 
+    int64_t myfee = 0, positionsize, addedbets, firstprice, lastprice, profits, ignore, costbasis = 0; 
+    int32_t firstheight, numvouts; 
+    int16_t leverage; 
+    std::vector<uint16_t> vec; 
+    CPubKey pk, mypk, pricespk; 
+    std::string rawtx;
+
     cp = CCinit(&C, EVAL_PRICES);
     if (txfee == 0)
         txfee = PRICES_TXFEE;
@@ -917,11 +930,11 @@ UniValue PricesRekt(int64_t txfee, uint256 bettxid, int32_t rektheight)
             }
 
             addedbets = prices_batontxid(batontxid, bettx, bettxid);
-            if ((profits = prices_syntheticprofits(false, costbasis /*ignore*/, firstheight, rektheight, leverage, vec, positionsize, addedbets)) < 0)
+            if ((profits = prices_syntheticprofits(costbasis /*ignore*/, firstheight, rektheight, leverage, vec, positionsize, addedbets, lastprice)) < 0)
             {
                 myfee = (positionsize + addedbets) / 500;
             }
-            prices_betjson(result, profits, costbasis, positionsize, addedbets, leverage, firstheight, firstprice);
+            prices_betjson(result, profits, costbasis, positionsize, addedbets, leverage, firstheight, firstprice, lastprice);
             if (myfee != 0)
             {
                 mtx.vin.push_back(CTxIn(bettxid, 2, CScript()));
@@ -956,7 +969,7 @@ UniValue PricesCashout(int64_t txfee, uint256 bettxid)
     struct CCcontract_info *cp, C; char destaddr[64]; 
     CTransaction bettx; 
     uint256 hashBlock, batontxid, tokenid; 
-    int64_t CCchange = 0, positionsize, inputsum, ignore, addedbets, firstprice, profits, costbasis = 0; 
+    int64_t CCchange = 0, positionsize, inputsum, ignore, addedbets, firstprice, lastprice, profits, costbasis = 0; 
     int32_t i, firstheight, height, numvouts; 
     int16_t leverage; 
     std::vector<uint16_t> vec;
@@ -984,14 +997,14 @@ UniValue PricesCashout(int64_t txfee, uint256 bettxid)
             }
 
             addedbets = prices_batontxid(batontxid, bettx, bettxid);
-            if ((profits = prices_syntheticprofits(false, costbasis, firstheight, nextheight - 1, leverage, vec, positionsize, addedbets)) < 0)
+            if ((profits = prices_syntheticprofits(costbasis, firstheight, nextheight - 1, leverage, vec, positionsize, addedbets, lastprice)) < 0)
             {
-                prices_betjson(result, profits, costbasis, positionsize, addedbets, leverage, firstheight, firstprice);
+                prices_betjson(result, profits, costbasis, positionsize, addedbets, leverage, firstheight, firstprice, lastprice);
                 result.push_back(Pair("result", "error"));
                 result.push_back(Pair("error", "position rekt"));
                 return(result);
             }
-            prices_betjson(result, profits, costbasis, positionsize, addedbets, leverage, firstheight, firstprice);
+            prices_betjson(result, profits, costbasis, positionsize, addedbets, leverage, firstheight, firstprice, lastprice);
             mtx.vin.push_back(CTxIn(bettxid, 2, CScript()));
             if ((inputsum = AddPricesInputs(cp, mtx, destaddr, profits + txfee, 64, bettxid, 2)) > profits + txfee)
                 CCchange = (inputsum - profits);
@@ -1016,7 +1029,7 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
     UniValue result(UniValue::VOBJ);
     CTransaction bettx;
     uint256 hashBlock, batontxid, tokenid;
-    int64_t myfee, ignore = 0, positionsize = 0, addedbets = 0, firstprice = 0, profits = 0, costbasis = 0;
+    int64_t myfee, ignore = 0, positionsize = 0, addedbets = 0, firstprice = 0, lastprice, profits = 0, costbasis = 0;
     int32_t i, firstheight = 0, height, numvouts;
     int16_t leverage = 0;
     std::vector<uint16_t> vec;
@@ -1038,13 +1051,15 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
 
             costbasis = prices_costbasis(bettx, costbasistxid);
             addedbets = prices_batontxid(batontxid, bettx, bettxid);
+
+            /*
             if( costbasis == 0 && prices_syntheticprofits(true, costbasis, firstheight, firstheight, leverage, vec, positionsize, addedbets) < 0) {
                 result.push_back(Pair("result", "error"));
                 result.push_back(Pair("error", "cannot calculate costbasis"));
                 return(result);
-            }
+            } */
 
-            if ((profits = prices_syntheticprofits(false, costbasis, firstheight, refheight, leverage, vec, positionsize, addedbets)) < 0)
+            if ((profits = prices_syntheticprofits(costbasis, firstheight, refheight, leverage, vec, positionsize, addedbets, lastprice)) < 0)
             {
                 result.push_back(Pair("rekt", 1));
                 result.push_back(Pair("rektfee", (positionsize + addedbets) / 500));
@@ -1054,7 +1069,7 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
             result.push_back(Pair("batontxid", batontxid.GetHex()));
             if(!costbasistxid.IsNull())
                 result.push_back(Pair("costbasistxid", costbasistxid.GetHex()));
-            prices_betjson(result, profits, costbasis, positionsize, addedbets, leverage, firstheight, firstprice);
+            prices_betjson(result, profits, costbasis, positionsize, addedbets, leverage, firstheight, firstprice, lastprice);
             result.push_back(Pair("height", (int64_t)refheight));
             return(result);
         }
