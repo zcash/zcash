@@ -521,9 +521,6 @@ int32_t CheckPUBKEYimport(TxProof proof,std::vector<uint8_t> rawproof,CTransacti
 
 bool CheckMigration(Eval *eval, const CTransaction &importTx, const CTransaction &burnTx, std::vector<CTxOut> & payouts, const ImportProof &proof, const std::vector<uint8_t> &rawproof)
 {
-    if (strcmp(ASSETCHAINS_SYMBOL, "CFEKDIMXY6") == 0 && chainActive.Height() <= 44693)
-        return true;
-
     vscript_t vimportOpret;
     if (!GetOpReturnData(importTx.vout.back().scriptPubKey, vimportOpret)  ||        
         vimportOpret.empty())
@@ -665,6 +662,9 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
     CPubKey destpub;
 
     LOGSTREAM("importcoin", CCLOG_DEBUG1, stream << "Validating import tx..., txid=" << importTx.GetHash().GetHex() << std::endl);
+
+    if (strcmp(ASSETCHAINS_SYMBOL, "CFEKDIMXY6") == 0 && chainActive.Height() <= 44693)
+        return true;
 
     if (importTx.vout.size() < 2)
         return Invalid("too-few-vouts");
