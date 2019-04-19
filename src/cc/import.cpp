@@ -119,7 +119,7 @@ bool CheckVinPubKey(const CTransaction &sourcetx, int32_t i, uint8_t pubkey33[33
 
 // ac_import=PUBKEY support:
 // prepare a tx for creating import tx and quasi-burn tx
-int32_t GetSelfimportProof(const CMutableTransaction &sourceMtx, CMutableTransaction &templateMtx, ImportProof &proofNull) // find burnTx with hash from "other" daemon
+int32_t GetSelfimportProof(const CMutableTransaction sourceMtx, CMutableTransaction &templateMtx, ImportProof &proofNull) // find burnTx with hash from "other" daemon
 {
     MerkleBranch newBranch; 
     CMutableTransaction tmpmtx; 
