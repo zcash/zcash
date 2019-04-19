@@ -639,10 +639,10 @@ bool CheckMigration(Eval *eval, const CTransaction &importTx, const CTransaction
         return eval->Invalid("invalid-import-proof");
     }
 
-    if (vimportOpret.begin()[0] == EVAL_TOKENS)
+/*  if (vimportOpret.begin()[0] == EVAL_TOKENS)
         return eval->Invalid("test-invalid-tokens-are-good!!");
     else
-        return eval->Invalid("test-invalid-coins-are-good!!");
+        return eval->Invalid("test-invalid-coins-are-good!!"); */
     return true;
 }
 
