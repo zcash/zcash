@@ -1358,7 +1358,7 @@ UniValue pricesaddfunding(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 2)
         throw runtime_error("pricesaddfunding bettxid amount\n"
-            "where amount is in satoshis\n");
+            "where amount is in coins\n");
     LOCK(cs_main);
     UniValue ret(UniValue::VOBJ);
 
@@ -1370,7 +1370,7 @@ UniValue pricesaddfunding(const UniValue& params, bool fHelp)
     if (bettxid.IsNull())
         throw runtime_error("invalid bettxid\n");
 
-    CAmount amount = atoll(params[1].get_str().c_str());
+    CAmount amount = atof(params[1].get_str().c_str()) * COIN;
     if (amount <= 0)
         throw runtime_error("invalid amount\n");
 
