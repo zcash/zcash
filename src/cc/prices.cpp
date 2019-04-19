@@ -478,7 +478,7 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
             pricestack[depth] = 0;
             if (komodo_priceget(pricedata, value, height, 1) >= 0)
             {
-                std::cerr << "prices_syntheticprice" << " pricedata[0]=" << pricedata[0] << " pricedata[1]=" << pricedata[1] << " pricedata[2]=" << pricedata[2] << std::endl;
+                std::cerr << "prices_syntheticprice" << " pricedata[0]=" << pricedata[0] << " pricedata[1]=" << pricedata[1] << " pricedata[2]=" << pricedata[2] <<  " pricedata_int32[2]=" << *((uint32_t*)pricedata[2]) << std::endl;
                 // push price to the prices stack
                 if (!minmax)
                     pricestack[depth] = pricedata[2];   // use smoothed value if we are over 24h
