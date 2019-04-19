@@ -34,6 +34,7 @@ int32_t komodo_priceget(int64_t *buf64,int32_t ind,int32_t height,int32_t numblo
 #define PRICES_MMD (KOMODO_MAXPRICES * 6)               //          0011 0000 0000 0000
 #define PRICES_MMM (KOMODO_MAXPRICES * 7)               //          0011 1000 0000 0000
 #define PRICES_DDD (KOMODO_MAXPRICES * 8)               //          0100 0000 0000 0000
+#define PRICES_NORMFACTOR   10000
 
 bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn);
 

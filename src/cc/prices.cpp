@@ -630,8 +630,8 @@ int64_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t
     }
 
     // clear lowest positions:
-    price /= 10000;
-    price *= 10000;
+    price /= PRICES_NORMFACTOR;
+    price *= PRICES_NORMFACTOR;
    
     if (minmax)    { // if we are within day window, set costbasis to max or min price value
         if (leverage > 0 && price > costbasis) {
@@ -655,17 +655,17 @@ int64_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t
     }
     
 
-    profits = costbasis > 0 ? ( ((price / 10000 * SATOSHIDEN) / costbasis) - SATOSHIDEN / 10000 ) : 0;
-    std::cerr << "prices_syntheticprofits() (price /10000 * SATOSHIDEN)=" << (price /10000 * SATOSHIDEN) << std::endl;
-    std::cerr << "prices_syntheticprofits() (price /10000 * SATOSHIDEN)/costbasis=" << (price /10000 * SATOSHIDEN)/costbasis << std::endl;
+    profits = costbasis > 0 ? ((price / PRICES_NORMFACTOR * SATOSHIDEN) / costbasis) - SATOSHIDEN / PRICES_NORMFACTOR : 0;
+    std::cerr << "prices_syntheticprofits() test value1 (price/PRICES_NORMFACTOR * SATOSHIDEN)=" << (price / PRICES_NORMFACTOR * SATOSHIDEN) << std::endl;
+    std::cerr << "prices_syntheticprofits() test value2 (price/PRICES_NORMFACTOR * SATOSHIDEN)/costbasis=" << (price / PRICES_NORMFACTOR * SATOSHIDEN)/costbasis << std::endl;
 
-    std::cerr << "prices_syntheticprofits() profits1=" << profits << std::endl;
+    std::cerr << "prices_syntheticprofits() fract profits=" << profits << std::endl;
     //std::cerr << "prices_syntheticprofits() profits double=" << (double)price / (double)costbasis -1.0 << std::endl;
     //double dprofits = (double)price / (double)costbasis - 1.0;
 
     profits *= leverage * positionsize;
     //dprofits *= leverage * positionsize;
-    std::cerr << "prices_syntheticprofits() profits2=" << profits << std::endl;
+    std::cerr << "prices_syntheticprofits() val profits=" << profits << std::endl;
     //std::cerr << "prices_syntheticprofits() dprofits=" << dprofits << std::endl;
 
 
