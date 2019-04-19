@@ -27,6 +27,7 @@
 extern std::string ASSETCHAINS_SELFIMPORT;
 extern uint16_t ASSETCHAINS_CODAPORT,ASSETCHAINS_BEAMPORT;
 extern uint8_t ASSETCHAINS_OVERRIDE_PUBKEY33[33];
+extern uint256 KOMODO_EARLYTXID;
 
 // utilities from gateways.cpp
 uint256 BitcoinGetProofMerkleRoot(const std::vector<uint8_t> &proofData, std::vector<uint256> &txids);
@@ -339,6 +340,11 @@ int32_t CheckGATEWAYimport(CTransaction importTx,CTransaction burnTx,std::string
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
 
     // ASSETCHAINS_SELFIMPORT is coin
+    if (KOMODO_EARLYTXID!=zeroid && bindtxid!=KOMODO_EARLYTXID)
+    { 
+        LOGSTREAM("importgateway", CCLOG_INFO, stream << "CheckGATEWAYimport invalid import gateway. On this chain only valid import gateway is " << KOMODO_EARLYTXID.GetHex() << std::endl);
+        return(-1);
+    }
     // check for valid burn from external coin blockchain and if valid return(0);
     if (GetTransaction(bindtxid, bindtx, hashBlock, false) == 0 || (numvouts = bindtx.vout.size()) <= 0)
     {
