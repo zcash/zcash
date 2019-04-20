@@ -1224,7 +1224,6 @@ uint64_t komodo_commission(const CBlock *pblock,int32_t height)
         return(0);
 
     int32_t i,j,n=0,txn_count; int64_t nSubsidy; uint64_t commission,total = 0;
-    txn_count = pblock->vtx.size();
     if ( ASSETCHAINS_FOUNDERS != 0 )
     {
         nSubsidy = GetBlockSubsidy(height,Params().GetConsensus());
@@ -1242,8 +1241,9 @@ uint64_t komodo_commission(const CBlock *pblock,int32_t height)
             else commission = 0;
         }
     }
-    else
+    else if ( pblock != 0 )
     {
+        txn_count = pblock->vtx.size();
         for (i=0; i<txn_count; i++)
         {
             n = pblock->vtx[i].vout.size();
@@ -1855,7 +1855,7 @@ uint64_t komodo_notarypayamount(int32_t nHeight, int64_t notarycount)
     // Because of reorgs we cannot use the notarized height value. 
     // We need to basically guess here and just pay some static amount.
     // Has the unwanted effect of varying coin emission, but cannot be helped.
-    fprintf(stderr, "era.%i paying total of %lu\n",curEra, ASSETCHAINS_NOTARY_PAY[curEra]);
+    //fprintf(stderr, "era.%i paying total of %lu\n",curEra, ASSETCHAINS_NOTARY_PAY[curEra]);
     ret = ASSETCHAINS_NOTARY_PAY[curEra] / notarycount;
     return(ret);
 }
@@ -1870,13 +1870,8 @@ int32_t komodo_getnotarizedheight(uint32_t timestamp,int32_t height, uint8_t *sc
     if ( len >= sizeof(uint32_t) && len <= sizeof(scriptbuf) )
     {
         memcpy(scriptbuf,script,len);
-        if ( komodo_voutupdate(true,&isratification,0,scriptbuf,len,height,uint256(),1,1,&voutmask,&specialtx,&notarizedheight,0,1,0,timestamp) == -2 )
+        if ( komodo_voutupdate(true,&isratification,0,scriptbuf,len,height,uint256(),1,1,&voutmask,&specialtx,&notarizedheight,0,1,0,timestamp) != -2 )
         {
-            fprintf(stderr, ">>>>>>VALID NOTARIZATION ht.%i\n",notarizedheight);
-        }
-        else
-        {
-            // This should no longer happen. Unless notaries are making actual invalid notarizations.
             fprintf(stderr, "<<<<<<INVALID NOTARIZATION ht.%i\n",notarizedheight);
             return(0);
         }
@@ -2029,7 +2024,7 @@ uint64_t komodo_checknotarypay(CBlock *pblock,int32_t height)
     }
     if ( matches != 0 && matches == NotarisationNotaries.size() && totalsats == total )
     {
-        fprintf(stderr, "Validated coinbase matches notarisation in tx position 1.\n" );
+        //fprintf(stderr, "Validated coinbase matches notarisation in tx position 1.\n" );
         return(totalsats);
     }
     return(0);

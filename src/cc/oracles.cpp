@@ -1028,7 +1028,7 @@ UniValue OraclesList()
 {
     UniValue result(UniValue::VARR); std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex; struct CCcontract_info *cp,C; uint256 txid,hashBlock; CTransaction createtx; std::string name,description,format; char str[65];
     cp = CCinit(&C,EVAL_ORACLES);
-    SetCCtxids(addressIndex,cp->normaladdr,true);
+    SetCCtxids(addressIndex,cp->normaladdr,false);
     for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=addressIndex.begin(); it!=addressIndex.end(); it++)
     {
         txid = it->first.txhash;
