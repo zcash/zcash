@@ -146,6 +146,13 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
     numvouts = tx.vout.size();
     outputsDummy = inputs = 0;
     preventCCvins = preventCCvouts = -1;
+    
+    // add specific chains exceptions for old token support:
+    if (strcmp(ASSETCHAINS_SYMBOL, "SEC") == 0 && chainActive.Height() <= 144073)
+        return true;
+    
+    if (strcmp(ASSETCHAINS_SYMBOL, "MGNX") == 0 && chainActive.Height() <= 210190)
+        return true;
 
     // add specific chains exceptions for old token support:
     if (strcmp(ASSETCHAINS_SYMBOL, "SEC") == 0 && chainActive.Height() <= 144073)
@@ -259,7 +266,7 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
                 return eval->Invalid("invalid refund for cancelbuy");
             preventCCvins = 3;
             preventCCvouts = 0;
-            fprintf(stderr,"cancelbuy validated to origaddr.(%s)\n",origNormalAddr);
+            //fprintf(stderr,"cancelbuy validated to origaddr.(%s)\n",origNormalAddr);
             break;
             
         case 'B': // fillbuy:
@@ -290,6 +297,7 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
                         return eval->Invalid("vout2 doesnt go to origpubkey fillbuy");
                     else if ( inputs != tx.vout[2].nValue + tx.vout[4].nValue )
                         return eval->Invalid("asset inputs doesnt match vout2+3 fillbuy");
+                    preventCCvouts ++;
                 }
                 else if( ConstrainVout(tx.vout[2], 1, origTokensCCaddr, inputs) == 0 )      // tokens to originator cc addr (tokens+nonfungible evals)
                     return eval->Invalid("vout2 doesnt match inputs fillbuy");
@@ -305,7 +313,7 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
                         return eval->Invalid("mismatched vout0 AssetsCCaddr for fillbuy");
                 }
             }
-            fprintf(stderr,"fillbuy validated\n");
+            //fprintf(stderr,"fillbuy validated\n");
             break;
         //case 'e': // selloffer
         //    break; // disable swaps
@@ -461,7 +469,7 @@ bool AssetsValidate(struct CCcontract_info *cpAssets,Eval* eval,const CTransacti
     }
 
     // what does this do?
-	bool bPrevent = PreventCC(eval, tx, preventCCvins, numvins, preventCCvouts, numvouts);
+	bool bPrevent = PreventCC(eval, tx, preventCCvins, numvins, preventCCvouts, numvouts);  // seems we do not need this call as we already checked vouts well
 	//std::cerr << "AssetsValidate() PreventCC returned=" << bPrevent << std::endl;
 	return (bPrevent);
 }

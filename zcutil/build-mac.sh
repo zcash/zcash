@@ -47,14 +47,7 @@ make "$@" -C ./depends/ V=1 NO_QT=1 NO_PROTON=1
 WD=$PWD
 cd src/cc
 echo $PWD
-
-if make "$@"; then
-  echo CCLIB BUILD SUCCESSFUL
-else
-  echo CCLIB BUILD FAILED
-  exit 1
-fi
-
+./makerogue
 cd $WD
 
 ./autogen.sh

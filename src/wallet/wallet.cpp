@@ -38,6 +38,7 @@
 #include "crypter.h"
 #include "coins.h"
 #include "zcash/zip32.h"
+#include "cc/CCinclude.h"
 
 #include <assert.h>
 
@@ -60,6 +61,9 @@ bool fPayAtLeastCustomFee = true;
 #include "komodo_defs.h"
 
 CBlockIndex *komodo_chainactive(int32_t height);
+extern std::string DONATION_PUBKEY;
+int32_t komodo_dpowconfs(int32_t height,int32_t numconfs);
+int tx_height( const uint256 &hash );
 
 /**
  * Fees smaller than this (in satoshi) are considered zero fee (for transaction creation)
@@ -1744,10 +1748,6 @@ bool CWallet::UpdatedNoteData(const CWalletTx& wtxIn, CWalletTx& wtx)
  * pblock is optional, but should be provided if the transaction is known to be in a block.
  * If fUpdate is true, existing transactions will be updated.
  */
-extern uint8_t NOTARY_PUBKEY33[33];
-extern std::string NOTARY_ADDRESS,WHITELIST_ADDRESS;
-extern int32_t IS_STAKED_NOTARY;
-extern uint64_t MIN_RECV_SATS;
 
 bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pblock, bool fUpdate)
 {
@@ -1766,70 +1766,49 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
                 return false;
             }
         }
+        static std::string NotaryAddress; static bool didinit;
+        if ( !didinit && NotaryAddress.empty() && NOTARY_PUBKEY33[0] != 0 )
+        {
+            didinit = true;
+            char Raddress[64]; 
+            pubkey2addr((char *)Raddress,(uint8_t *)NOTARY_PUBKEY33);
+            NotaryAddress.assign(Raddress);
+            vWhiteListAddress = mapMultiArgs["-whitelistaddress"];
+            if ( !vWhiteListAddress.empty() )
+            {
+                fprintf(stderr, "Activated Wallet Filter \n  Notary Address: %s \n  Adding whitelist address's:\n", NotaryAddress.c_str());
+                for ( auto wladdr : vWhiteListAddress )
+                    fprintf(stderr, "    %s\n", wladdr.c_str());
+            }
+        }
         if (fExisted || IsMine(tx) || IsFromMe(tx) || sproutNoteData.size() > 0 || saplingNoteData.size() > 0)
         {
-            if ( !tx.IsCoinBase() && !NOTARY_ADDRESS.empty() && IS_STAKED_NOTARY > -1 )
+            // wallet filter for notary nodes. Enables by setting -whitelistaddress= as startup param or in conf file (works same as -addnode byut with R-address's)
+            if ( !tx.IsCoinBase() && !vWhiteListAddress.empty() && !NotaryAddress.empty() ) 
             {
-                int numvinIsOurs = 0, numvoutIsOurs = 0, numvinIsWhiteList = 0; int64_t totalvoutvalue = 0;
+                int numvinIsOurs = 0, numvinIsWhiteList = 0;  
                 for (size_t i = 0; i < tx.vin.size(); i++)
                 {
                     uint256 hash; CTransaction txin; CTxDestination address;
-                    if (GetTransaction(tx.vin[i].prevout.hash,txin,hash,false))
+                    if ( GetTransaction(tx.vin[i].prevout.hash,txin,hash,false) && ExtractDestination(txin.vout[tx.vin[i].prevout.n].scriptPubKey, address) )
                     {
-                        if (ExtractDestination(txin.vout[tx.vin[i].prevout.n].scriptPubKey, address))
+                        if ( CBitcoinAddress(address).ToString() == NotaryAddress )
+                            numvinIsOurs++;
+                        for ( auto wladdr : vWhiteListAddress )
                         {
-                            if ( CBitcoinAddress(address).ToString() == NOTARY_ADDRESS )
-                                numvinIsOurs++;
-                            if ( !WHITELIST_ADDRESS.empty() )
+                            if ( CBitcoinAddress(address).ToString() == wladdr )
                             {
-                                //fprintf(stderr, "white list address: %s recv address: %s\n", WHITELIST_ADDRESS.c_str(),CBitcoinAddress(address).ToString().c_str());
-                                if ( CBitcoinAddress(address).ToString() == WHITELIST_ADDRESS ) {
-                                    //fprintf(stderr, "whitlisted is set to true here.\n");
-                                    numvinIsWhiteList++;
-                                }
+                                //fprintf(stderr, "We received from whitelisted address.%s\n", wladdr.c_str());
+                                numvinIsWhiteList++;
                             }
                         }
                     }
                 }
-                // Now we know if it was a tx sent to us, that wasnt from ourself or the whitelist address if set..
+                // Now we know if it was a tx sent to us, by either a whitelisted address, or ourself.
                 if ( numvinIsOurs != 0 )
-                    fprintf(stderr, "We sent from address: %s vins: %d\n",NOTARY_ADDRESS.c_str(),numvinIsOurs);
-                if ( numvinIsWhiteList != 0 )
-                    fprintf(stderr, "We received from whitelisted address: %s\n",WHITELIST_ADDRESS.c_str());
-                // Count vouts, check if OUR notary address is the receiver.
+                    fprintf(stderr, "We sent from address: %s vins: %d\n",NotaryAddress.c_str(),numvinIsOurs);
                 if ( numvinIsOurs == 0 && numvinIsWhiteList == 0 )
-                {
-                    for (size_t i = 0; i < tx.vout.size() ; i++)
-                    {
-                        CTxDestination address2;
-                        if ( ExtractDestination(tx.vout[i].scriptPubKey, address2))
-                        {
-                            if ( CBitcoinAddress(address2).ToString() == NOTARY_ADDRESS )
-                            {
-                              numvoutIsOurs++;
-                              totalvoutvalue += tx.vout[i].nValue;
-                            }
-                        }
-                    }
-                    // if MIN_RECV_SATS is 0, we are on full lock down mode, accept NO transactions.
-                    if ( MIN_RECV_SATS == 0 ) {
-                        fprintf(stderr, "This node is on full lock down all txs are ignored! \n");
-                        return false;
-                    }
-                    // If no vouts are to the notary address we will ignore them.
-                    if ( numvoutIsOurs == 0 ) {
-                        fprintf(stderr, "Received transaction to address other than notary address, ignored! \n");
-                        return false;
-                    }
-                    fprintf(stderr, "address: %s received %ld sats from %d vouts.\n",NOTARY_ADDRESS.c_str(),totalvoutvalue,numvoutIsOurs);
-                    // here we add calculation for number if vouts received, average size and determine if we accept them to wallet or not.
-                    int64_t avgVoutSize = totalvoutvalue / numvoutIsOurs;
-                    if ( avgVoutSize < MIN_RECV_SATS ) {
-                        // average vout size is less than set minimum, default is 1 coin, we will ignore it
-                        fprintf(stderr, "ignored: %d vouts average size of %ld sats.\n",numvoutIsOurs, avgVoutSize);
-                        return false;
-                    }
-                }
+                    return false;
             }
 
             CWalletTx wtx(this,tx);
@@ -4965,11 +4944,21 @@ void CWallet::GetFilteredNotes(
         CWalletTx wtx = p.second;
 
         // Filter the transactions before checking for notes
-        if (!CheckFinalTx(wtx) ||
-            wtx.GetBlocksToMaturity() > 0 ||
-            wtx.GetDepthInMainChain() < minDepth ||
-            wtx.GetDepthInMainChain() > maxDepth) {
+        if (!CheckFinalTx(wtx) || wtx.GetBlocksToMaturity() > 0)
             continue;
+
+        if (minDepth > 1) {
+            int nHeight    = tx_height(wtx.GetHash());
+            int nDepth     = wtx.GetDepthInMainChain();
+            int dpowconfs  = komodo_dpowconfs(nHeight,nDepth);
+            if ( dpowconfs < minDepth || dpowconfs > maxDepth) {
+                continue;
+            }
+        } else {
+            if ( wtx.GetDepthInMainChain() < minDepth ||
+                wtx.GetDepthInMainChain() > maxDepth) {
+                continue;
+            }
         }
 
         for (auto & pair : wtx.mapSproutNoteData) {

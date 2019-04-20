@@ -313,7 +313,7 @@ def:
     call_it(rs,&scr_info[obj->o_which]);
 
     if (discardit)
-	discard(obj);
+        discard(obj);
 }
 
 /*

@@ -22,13 +22,17 @@ class CryptoconditionsOraclesTest(CryptoconditionsTestFramework):
 
         result = rpc.oraclesaddress()
         assert_success(result)
-        for x in ['OraclesCCaddress', 'Oraclesmarker', 'myCCaddress', 'myaddress']:
-            assert_equal(result[x][0], 'R')
+
+        for x in result.keys():
+            if x.find('ddress') > 0:
+                assert_equal(result[x][0], 'R')
 
         result = rpc.oraclesaddress(self.pubkey)
         assert_success(result)
-        for x in ['OraclesCCaddress', 'Oraclesmarker', 'myCCaddress', 'myaddress']:
-            assert_equal(result[x][0], 'R')
+
+        for x in result.keys():
+            if x.find('ddress') > 0:
+                assert_equal(result[x][0], 'R')
 
         # there are no oracles created yet
         result = rpc.oracleslist()

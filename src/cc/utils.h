@@ -20,7 +20,6 @@
 #include "version.h"
 
 
-
 /*
  * Serialisation boilerplate
  */

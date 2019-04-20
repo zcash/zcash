@@ -2679,7 +2679,7 @@ UniValue sudoku_generate(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
     sudokupk = GetUnspendable(cp,0);
     result.push_back(Pair("srand",(int)srandi));
     result.push_back(Pair("amount",ValueFromAmount(amount)));
-    if ( (inputsum= AddCClibInputs(cp,mtx,sudokupk,amount+2*txfee,16,cp->unspendableCCaddr)) >= amount+2*txfee )
+    if ( (inputsum= AddCClibInputs(cp,mtx,sudokupk,amount+2*txfee,16,cp->unspendableCCaddr,1)) >= amount+2*txfee )
     {
         //printf("inputsum %.8f\n",(double)inputsum/COIN);
         mtx.vout.push_back(MakeCC1vout(cp->evalcode,txfee,sudokupk));
@@ -2772,7 +2772,7 @@ UniValue sudoku_pending(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     sudokupk = GetUnspendable(cp,0);
     GetCCaddress(cp,coinaddr,sudokupk);
-    SetCCunspents(unspentOutputs,coinaddr);
+    SetCCunspents(unspentOutputs,coinaddr,true);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
@@ -2817,7 +2817,7 @@ UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
     good = 0;
     if ( params != 0 )
     {
-        if ( (params= cclib_reparse(&n,params)) != 0 )
+        if ( params != 0 && (n= cJSON_GetArraySize(params)) > 0 )
         {
             if ( n > 2 && n <= (sizeof(timestamps)/sizeof(*timestamps))+2 )
             {
@@ -2844,7 +2844,7 @@ UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
                     pk = buf2pk(pub33);
                     GetCCaddress(cp,CCaddr,pk);
                     result.push_back(Pair("sudokuaddr",CCaddr));
-                    balance = CCaddress_balance(CCaddr);
+                    balance = CCaddress_balance(CCaddr,1);
                     result.push_back(Pair("amount",ValueFromAmount(balance)));
                     if ( sudoku_captcha(1,timestamps,komodo_nextheight()) < 0 )
                     {
@@ -2859,7 +2859,7 @@ UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
                             decode_hex((uint8_t *)&txid,32,txidstr);
                             txid = revuint256(txid);
                             result.push_back(Pair("txid",txid.GetHex()));
-                            if ( CCgettxout(txid,0,1) < 0 )
+                            if ( CCgettxout(txid,0,1,0) < 0 )
                                 result.push_back(Pair("error","already solved"));
                             else if ( GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 1 )
                             {
@@ -2892,7 +2892,7 @@ UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
                         if ( good != 0 )
                         {
                             mtx.vin.push_back(CTxIn(txid,0,CScript()));
-                            if ( (inputsum= AddCClibInputs(cp,mtx,pk,balance,16,CCaddr)) >= balance )
+                            if ( (inputsum= AddCClibInputs(cp,mtx,pk,balance,16,CCaddr,1)) >= balance )
                             {
                                 mtx.vout.push_back(CTxOut(balance,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
                                 CCaddr2set(cp,cp->evalcode,pk,priv32,CCaddr);
@@ -3048,4 +3048,5 @@ bool sudoku_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const 
     }
     return eval->Invalid("not enough vouts");
 }
+
 

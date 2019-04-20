@@ -152,9 +152,10 @@ int32_t decode_hex(uint8_t *bytes,int32_t n,char *hex);
 int32_t komodo_is_notarytx(const CTransaction& tx);
 CScript Marmara_scriptPubKey(int32_t height,CPubKey pk);
 CScript MarmaraCoinbaseOpret(uint8_t funcid,int32_t height,CPubKey pk);
-int32_t komodo_is_notarytx(const CTransaction& tx);
 uint64_t komodo_notarypay(CMutableTransaction &txNew, std::vector<int8_t> &NotarisationNotaries, uint32_t timestamp, int32_t height, uint8_t *script, int32_t len);
+int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestamp);
 int32_t komodo_getnotarizedheight(uint32_t timestamp,int32_t height, uint8_t *script, int32_t len);
+CScript komodo_mineropret(int32_t nHeight);
 
 CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32_t gpucount, bool isStake)
 {
@@ -173,7 +174,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
         }
     } else pk = _pk;
 
-    uint64_t deposits; int32_t isrealtime,kmdheight; uint32_t blocktime; const CChainParams& chainparams = Params();
+    uint64_t deposits,voutsum=0; int32_t isrealtime,kmdheight; uint32_t blocktime; const CChainParams& chainparams = Params();
     bool fNotarisationBlock = false; std::vector<int8_t> NotarisationNotaries;
     
     //fprintf(stderr,"create new block\n");
@@ -233,9 +234,8 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
 
         const int64_t nMedianTimePast = pindexPrev->GetMedianTimePast();
         uint32_t proposedTime = GetAdjustedTime();
-        
-        int32_t last_notarizedheight = 0;
-                
+        voutsum = GetBlockSubsidy(nHeight,consensusParams) + 10000*COIN; // approx fees
+
         if (proposedTime == nMedianTimePast)
         {
             // too fast or stuck, this addresses the too fast issue, while moving
@@ -248,15 +248,12 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
             }
         }
         pblock->nTime = GetAdjustedTime();
-        // Now we have the block time, we can get the active notaries.
-        int32_t staked_era = 0; int8_t numSN = 0;
-        uint8_t staked_pubkeys[64][33] = {0};
-        if ( is_STAKED(ASSETCHAINS_SYMBOL) < 3 )
+        // Now we have the block time + height, we can get the active notaries.
+        int8_t numSN = 0; uint8_t notarypubkeys[64][33] = {0};
+        if ( ASSETCHAINS_NOTARY_PAY[0] != 0 )
         {
-            // Only use speical miner for LABS chains in the actual cluster that use notarypay!
-            // It wouldnt hurt to use it on other chains, but serves little purpose. 
-            staked_era = STAKED_era(pblock->nTime);
-            numSN = numStakedNotaries(staked_pubkeys,staked_era);
+            // Only use speical miner for notary pay chains.
+            numSN = komodo_notaries(notarypubkeys, nHeight, pblock->nTime);
         }
 
         CCoinsViewCache view(pcoinsTip);
@@ -268,14 +265,14 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
         // Priority order to process transactions
         list<COrphan> vOrphan; // list memory doesn't move
         map<uint256, vector<COrphan*> > mapDependers;
-        bool fPrintPriority = GetBoolArg("-printpriority", true);
+        bool fPrintPriority = GetBoolArg("-printpriority", false);
 
         // This vector will be sorted into a priority queue:
         vector<TxPriority> vecPriority;
         vecPriority.reserve(mempool.mapTx.size() + 1);
 
         // now add transactions from the mem pool
-        int32_t Notarisations = 0;
+        int32_t Notarisations = 0; uint64_t txvalue;
         for (CTxMemPool::indexed_transaction_set::iterator mi = mempool.mapTx.begin();
              mi != mempool.mapTx.end(); ++mi)
         {
@@ -290,7 +287,12 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                 //fprintf(stderr,"coinbase.%d finaltx.%d expired.%d\n",tx.IsCoinBase(),IsFinalTx(tx, nHeight, nLockTimeCutoff),IsExpiredTx(tx, nHeight));
                 continue;
             }
-
+            txvalue = tx.GetValueOut();
+            if ( KOMODO_VALUETOOBIG(txvalue) != 0 )
+                continue;
+            if ( KOMODO_VALUETOOBIG(txvalue + voutsum) != 0 )
+                continue;
+            voutsum += txvalue;
             if ( ASSETCHAINS_SYMBOL[0] == 0 && komodo_validate_interest(tx,nHeight,(uint32_t)pblock->nTime,0) < 0 )
             {
                 //fprintf(stderr,"CreateNewBlock: komodo_validate_interest failure nHeight.%d nTime.%u vs locktime.%u\n",nHeight,(uint32_t)pblock->nTime,(uint32_t)tx.nLockTime);
@@ -302,17 +304,16 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
             CAmount nTotalIn = 0;
             bool fMissingInputs = false;
             bool fNotarisation = false;
-            std::vector<int8_t> TMP_NotarisationNotaries = {0};
+            std::vector<int8_t> TMP_NotarisationNotaries;
             if (tx.IsCoinImport())
             {
                 CAmount nValueIn = GetCoinImportValue(tx); // burn amount
                 nTotalIn += nValueIn;
                 dPriority += (double)nValueIn * 1000;  // flat multiplier... max = 1e16.
             } else {
-                //int numNotaryVins = 0; 
                 TMP_NotarisationNotaries.clear();
                 bool fToCryptoAddress = false;
-                if ( numSN != 0 && staked_pubkeys[0][0] != 0 && komodo_is_notarytx(tx) == 1 )
+                if ( numSN != 0 && notarypubkeys[0][0] != 0 && komodo_is_notarytx(tx) == 1 )
                     fToCryptoAddress = true;
 
                 BOOST_FOREACH(const CTxIn& txin, tx.vin)
@@ -361,7 +362,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                         {
                             script = (uint8_t *)&tx1.vout[txin.prevout.n].scriptPubKey[0];
                             scriptlen = (int32_t)tx1.vout[txin.prevout.n].scriptPubKey.size();
-                            if ( scriptlen == 35 && script[0] == 33 && script[34] == OP_CHECKSIG && memcmp(script+1,staked_pubkeys[i],33) == 0 )
+                            if ( scriptlen == 35 && script[0] == 33 && script[34] == OP_CHECKSIG && memcmp(script+1,notarypubkeys[i],33) == 0 )
                             {
                                 // We can add the index of each notary to vector, and clear it if this notarisation is not valid later on.
                                 TMP_NotarisationNotaries.push_back(i);                          
@@ -370,7 +371,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                     }
                     dPriority += (double)nValueIn * nConf;
                 }
-                if ( numSN != 0 && TMP_NotarisationNotaries.size() >= numSN / 5 )
+                if ( numSN != 0 && notarypubkeys[0][0] != 0 && TMP_NotarisationNotaries.size() >= numSN / 5 )
                 {
                     // check a notary didnt sign twice (this would be an invalid notarisation later on and cause problems)
                     std::set<int> checkdupes( TMP_NotarisationNotaries.begin(), TMP_NotarisationNotaries.end() );
@@ -395,7 +396,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
 
             if ( fNotarisation ) 
             {
-                // Special miner for notary pay chains.
+                // Special miner for notary pay chains. Can only enter this if numSN/notarypubkeys is set higher up.
                 if ( tx.vout.size() == 2 && tx.vout[1].nValue == 0 )
                 {
                     // Get the OP_RETURN for the notarisation
@@ -404,46 +405,21 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                     if ( script[0] == OP_RETURN )
                     {
                         Notarisations++;
+                        if ( Notarisations > 1 ) 
+                        {
+                            fprintf(stderr, "skipping notarization.%d\n",Notarisations);
+                            // Any attempted notarization needs to be in its own block!
+                            continue;
+                        }
                         int32_t notarizedheight = komodo_getnotarizedheight(pblock->nTime, nHeight, script, scriptlen);
                         if ( notarizedheight != 0 )
                         {
-                            //fprintf(stderr, "notarizations.%d notarizedheight.%d last_notarizedheight.%d\n",Notarisations,notarizedheight,last_notarizedheight);
-                            if ( last_notarizedheight == 0 )
-                            {
-                                // this is the first one we see, add it to the block as TX1 
-                                NotarisationNotaries = TMP_NotarisationNotaries;
-                                dPriority = 1e16;
-                                fNotarisationBlock = true;
-                                fprintf(stderr, "Notarisation %s set to maximum priority\n",hash.ToString().c_str());
-                            }
-                            else if ( notarizedheight > last_notarizedheight )
-                                continue; // leave this notarisation for the next block, it will be valid!
-                            else if ( notarizedheight == last_notarizedheight )
-                                continue; // this shouldnt happen, it would mean there are 2 notarisations for the same block!
-                            else  if ( notarizedheight < last_notarizedheight )
-                            {
-                                // we need to remove the last seen notarzation from block 
-                                const CTransaction& Tx = *(vecPriority.front().get<2>());
-                                TxPriorityCompare comparer(0);
-                                std::make_heap(vecPriority.begin(), vecPriority.end(), comparer);
-                                std::pop_heap(vecPriority.begin(), vecPriority.end(), comparer);
-                                vecPriority.pop_back();
-                                // add this one as its valid before the other one.
-                                NotarisationNotaries = TMP_NotarisationNotaries;
-                                dPriority = 1e16;
-                                fNotarisationBlock = true;
-                                fprintf(stderr, "Notarisation %s set to maximum priority replacing notarization %s\n",hash.ToString().c_str(), Tx.GetHash().ToString().c_str());
-                            }
-                            last_notarizedheight = notarizedheight;
+                            // this is the first one we see, add it to the block as TX1 
+                            NotarisationNotaries = TMP_NotarisationNotaries;
+                            dPriority = 1e16;
+                            fNotarisationBlock = true;
+                            //fprintf(stderr, "Notarisation %s set to maximum priority\n",hash.ToString().c_str());
                         }
-                        else if ( Notarisations > 1 ) 
-                        {
-                            fprintf(stderr, "skipping notarizations.%d\n",Notarisations);
-                            // Any attempted notarization needs to be in its own block!
-                            // If we find a valid one and place it in position 1, an invalid one must wait until the next block to be mined.
-                            continue;
-                        }
-                        //fprintf(stderr, "BOTTOM: notarizations.%d notarizedheight.%d last_notarizedheight.%d\n",Notarisations,notarizedheight,last_notarizedheight);
                     }
                 }
             }
@@ -451,14 +427,13 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
             {
                 dPriority -= 10;
                 // make sure notarisation is tx[1] in block. 
-                // Need to check this? Tried sapling tx and it was not set to max priotity, maybe missing something.
             }
             if (porphan)
             {
                 porphan->dPriority = dPriority;
                 porphan->feeRate = feeRate;
             }
-            else 
+            else
                 vecPriority.push_back(TxPriority(dPriority, feeRate, &(mi->GetTx())));
         }
 
@@ -653,7 +628,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
         txNew.vout.resize(1);
         txNew.vout[0].scriptPubKey = scriptPubKeyIn;
         txNew.vout[0].nValue = GetBlockSubsidy(nHeight,consensusParams) + nFees;
-
+        //fprintf(stderr,"mine ht.%d with %.8f\n",nHeight,(double)txNew.vout[0].nValue/COIN);
         txNew.nExpiryHeight = 0;
         txNew.nLockTime = std::max(pindexPrev->GetMedianTimePast()+1, GetAdjustedTime());
 
@@ -749,7 +724,14 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                 fprintf(stderr, "Created notary payment coinbase totalsat.%lu\n",totalsats);    
             } else fprintf(stderr, "vout 2 of notarisation is not OP_RETURN scriptlen.%i\n", scriptlen);
         }
-
+        if ( ASSETCHAINS_CBOPRET != 0 )
+        {
+            int32_t numv = (int32_t)txNew.vout.size();
+            txNew.vout.resize(numv+1);
+            txNew.vout[numv].nValue = 0;
+            txNew.vout[numv].scriptPubKey = komodo_mineropret(nHeight);
+            //printf("autocreate commision/cbopret.%lld vout[%d]\n",(long long)ASSETCHAINS_CBOPRET,(int32_t)txNew.vout.size());
+        }
         pblock->vtx[0] = txNew;
         pblocktemplate->vTxFees[0] = -nFees;
 
@@ -955,6 +937,24 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey, int32_t nHeight, 
     if ( ASSETCHAINS_MARMARA != 0 && nHeight > 0 && (nHeight & 1) == 0 )
         scriptPubKey = Marmara_scriptPubKey(nHeight,pubkey);
     return CreateNewBlock(pubkey, scriptPubKey, gpucount, isStake);
+}
+
+void komodo_sendmessage(int32_t minpeers,int32_t maxpeers,const char *message,std::vector<uint8_t> payload)
+{
+    int32_t numsent = 0;
+    LOCK(cs_vNodes);
+    BOOST_FOREACH(CNode* pnode, vNodes)
+    {
+        if ( pnode->hSocket == INVALID_SOCKET )
+            continue;
+        if ( numsent < minpeers || (rand() % 10) == 0 )
+        {
+            //fprintf(stderr,"pushmessage\n");
+            pnode->PushMessage(message,payload);
+            if ( numsent++ > maxpeers )
+                break;
+        }
+    }
 }
 
 void komodo_broadcast(CBlock *pblock,int32_t limit)
@@ -1440,7 +1440,7 @@ void static BitcoinMiner_noeq()
                 
                 CVerusHashV2Writer ss2 = CVerusHashV2Writer(SER_GETHASH, PROTOCOL_VERSION);
                 ss2 << *((CBlockHeader *)pblock);
-                if ( ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASHV2 )
+                if ( ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASHV1_1 )
                     extraPtr = ss2.xI64p();
                 CVerusHashV2 &vh2 = ss2.GetState();
                 vh2.ClearExtra();
@@ -1463,7 +1463,7 @@ void static BitcoinMiner_noeq()
                     *extraPtr = i;
                     if ( ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASH )
                         vh.ExtraHash((unsigned char *)&hashResult);
-                    else if ( ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASHV2 )
+                    else if ( ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASHV1_1 )
                         vh2.ExtraHash((unsigned char *)&hashResult);
 
                     if ( UintToArith256(hashResult) <= hashTarget )
@@ -1608,9 +1608,10 @@ void static BitcoinMiner()
     if ( notaryid != My_notaryid )
         My_notaryid = notaryid;
     std::string solver;
-    //if ( notaryid >= 0 || ASSETCHAINS_SYMBOL[0] != 0 )
-    solver = "tromp";
-    //else solver = "default";
+    if ( ASSETCHAINS_NK[0] == 0 && ASSETCHAINS_NK[1] == 0 )
+        solver = "tromp";
+    else 
+        solver = "default";
     assert(solver == "tromp" || solver == "default");
     LogPrint("pow", "Using Equihash solver \"%s\" with n = %u, k = %u\n", solver, n, k);
     if ( ASSETCHAINS_SYMBOL[0] != 0 )
@@ -1951,11 +1952,11 @@ void static BitcoinMiner()
                             ehSolverRuns.increment();
                             if (found) {
                                 int32_t i; uint256 hash = pblock->GetHash();
-                                for (i=0; i<32; i++)
-                                    fprintf(stderr,"%02x",((uint8_t *)&hash)[i]);
-                                fprintf(stderr," <- %s Block found %d\n",ASSETCHAINS_SYMBOL,Mining_height);
-                                FOUND_BLOCK = 1;
-                                KOMODO_MAYBEMINED = Mining_height;
+                                //for (i=0; i<32; i++)
+                                //    fprintf(stderr,"%02x",((uint8_t *)&hash)[i]);
+                                //fprintf(stderr," <- %s Block found %d\n",ASSETCHAINS_SYMBOL,Mining_height);
+                                //FOUND_BLOCK = 1;
+                                //KOMODO_MAYBEMINED = Mining_height;
                                 break;
                             }
                         } catch (EhSolverCancelledException&) {
@@ -1968,12 +1969,12 @@ void static BitcoinMiner()
                     // Check for stop or if block needs to be rebuilt
                     boost::this_thread::interruption_point();
                     // Regtest mode doesn't require peers
-                    if ( FOUND_BLOCK != 0 )
+                    /*if ( FOUND_BLOCK != 0 )
                     {
                         FOUND_BLOCK = 0;
                         fprintf(stderr,"FOUND_BLOCK!\n");
                         //sleep(2000);
-                    }
+                    } */
                     if (vNodes.empty() && chainparams.MiningRequiresPeers())
                     {
                         if ( ASSETCHAINS_SYMBOL[0] == 0 || Mining_height > ASSETCHAINS_MINHEIGHT )

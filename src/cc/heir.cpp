@@ -255,25 +255,25 @@ template <class Helper> int64_t IsHeirFundingVout(struct CCcontract_info* cp, co
 }
 
 // makes coin initial tx opret
-CScript EncodeHeirCreateOpRet(uint8_t funcid, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t inactivityTimeSec, std::string heirName, std::string memo)
+vscript_t EncodeHeirCreateOpRet(uint8_t funcid, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t inactivityTimeSec, std::string heirName, std::string memo)
 {
     uint8_t evalcode = EVAL_HEIR;
     
-    return CScript() << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << ownerPubkey << heirPubkey << inactivityTimeSec << heirName << memo);
+    return /*CScript() << OP_RETURN <<*/ E_MARSHAL(ss << evalcode << funcid << ownerPubkey << heirPubkey << inactivityTimeSec << heirName << memo);
 }
 
 // makes coin additional tx opret
-CScript EncodeHeirOpRet(uint8_t funcid,  uint256 fundingtxid, uint8_t hasHeirSpendingBegun)
+vscript_t EncodeHeirOpRet(uint8_t funcid,  uint256 fundingtxid, uint8_t hasHeirSpendingBegun)
 {
     uint8_t evalcode = EVAL_HEIR;
     
     fundingtxid = revuint256(fundingtxid);
-    return CScript() << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << fundingtxid << hasHeirSpendingBegun);
+    return /*CScript() << OP_RETURN <<*/ E_MARSHAL(ss << evalcode << funcid << fundingtxid << hasHeirSpendingBegun);
 }
 
 
 // decode opret vout for Heir contract
-uint8_t _DecodeHeirOpRet(std::vector<uint8_t> vopret, CPubKey& ownerPubkey, CPubKey& heirPubkey, int64_t& inactivityTime, std::string& heirName, std::string& memo, uint256& fundingTxidInOpret, uint8_t &hasHeirSpendingBegun, bool noLogging)
+uint8_t _DecodeHeirOpRet(vscript_t vopret, CPubKey& ownerPubkey, CPubKey& heirPubkey, int64_t& inactivityTime, std::string& heirName, std::string& memo, uint256& fundingTxidInOpret, uint8_t &hasHeirSpendingBegun, bool noLogging)
 {
     uint8_t evalCodeInOpret = 0;
     uint8_t heirFuncId = 0;
@@ -287,13 +287,13 @@ uint8_t _DecodeHeirOpRet(std::vector<uint8_t> vopret, CPubKey& ownerPubkey, CPub
         uint8_t heirFuncId = 0;
         hasHeirSpendingBegun = 0;
         
-        bool result = E_UNMARSHAL(vopret, { ss >> evalCodeInOpret; ss >> heirFuncId;					\
-            if (heirFuncId == 'F') {																	\
-				ss >> ownerPubkey; ss >> heirPubkey; ss >> inactivityTime; ss >> heirName; ss >> memo;	\
-            }																							\
-            else {																						\
-                ss >> fundingTxidInOpret >> hasHeirSpendingBegun;										\
-            }																							\
+        bool result = E_UNMARSHAL(vopret, { ss >> evalCodeInOpret; ss >> heirFuncId;					
+            if (heirFuncId == 'F') {																	
+				ss >> ownerPubkey; ss >> heirPubkey; ss >> inactivityTime; ss >> heirName; ss >> memo;	
+            }																							
+            else {																						
+                ss >> fundingTxidInOpret >> hasHeirSpendingBegun;										
+            }																							
         });
         
         if (!result)	{
@@ -327,9 +327,11 @@ uint8_t _DecodeHeirEitherOpRet(CScript scriptPubKey, uint256 &tokenid, CPubKey& 
 {
 	uint8_t evalCodeTokens = 0;
 	std::vector<CPubKey> voutPubkeysDummy;
-	std::vector<uint8_t> vopretExtra /*, vopretStripped*/;
+    std::vector<std::pair<uint8_t, vscript_t>> oprets;
+    vscript_t vopretExtra /*, vopretStripped*/;
 
-	if (DecodeTokenOpRet(scriptPubKey, evalCodeTokens, tokenid, voutPubkeysDummy, vopretExtra) != 0) {
+
+	if (DecodeTokenOpRet(scriptPubKey, evalCodeTokens, tokenid, voutPubkeysDummy, oprets) != 0 && GetOpretBlob(oprets, OPRETID_HEIRDATA, vopretExtra)) {
         /* if (vopretExtra.size() > 1) {
             // restore the second opret:
 
@@ -397,7 +399,7 @@ uint256 _FindLatestFundingTx(uint256 fundingtxid, uint8_t& funcId, uint256 &toke
     
     //char markeraddr[64];
     //CCtxidaddr(markeraddr, fundingtxid);
-    //SetCCunspents(unspentOutputs, markeraddr);
+    //SetCCunspents(unspentOutputs, markeraddr,true);
     
     hasHeirSpendingBegun = 0;
     funcId = 0;
@@ -427,7 +429,7 @@ uint256 _FindLatestFundingTx(uint256 fundingtxid, uint8_t& funcId, uint256 &toke
     char coinaddr[64];
     GetCCaddress1of2(cp, coinaddr, ownerPubkey, heirPubkey); // get the address of cryptocondition '1 of 2 pubkeys'
     
-    SetCCunspents(unspentOutputs, coinaddr);				 // get vector with tx's with unspent vouts of 1of2pubkey address:
+    SetCCunspents(unspentOutputs, coinaddr,true);				 // get vector with tx's with unspent vouts of 1of2pubkey address:
     //std::cerr << "FindLatestFundingTx() using 1of2address=" << coinaddr << " unspentOutputs.size()=" << unspentOutputs.size() << '\n';
     
     int32_t maxBlockHeight = 0; // max block height
@@ -512,11 +514,11 @@ template <class Helper> int64_t Add1of2AddressInputs(struct CCcontract_info* cp,
     
     char coinaddr[64];
     Helper::GetCoinsOrTokensCCaddress1of2(coinaddr, ownerPubkey, heirPubkey);   // get address of cryptocondition '1 of 2 pubkeys'
-    SetCCunspents(unspentOutputs, coinaddr);
+    SetCCunspents(unspentOutputs, coinaddr,true);
     
     //   char markeraddr[64];
     //   CCtxidaddr(markeraddr, fundingtxid);
-    //   SetCCunspents(unspentOutputs, markeraddr);
+    //   SetCCunspents(unspentOutputs, markeraddr,true);
     
     std::cerr << "Add1of2AddressInputs() using 1of2addr=" << coinaddr << " unspentOutputs.size()=" << unspentOutputs.size() << std::endl;
     
@@ -567,7 +569,7 @@ template <class Helper> int64_t LifetimeHeirContractFunds(struct CCcontract_info
     Helper::GetCoinsOrTokensCCaddress1of2(coinaddr, ownerPubkey, heirPubkey); // get the address of cryptocondition '1 of 2 pubkeys'
     
     std::vector<std::pair<CAddressIndexKey, CAmount>> addressIndexes;
-    SetCCtxids(addressIndexes, coinaddr);
+    SetCCtxids(addressIndexes, coinaddr,true);
     
     //fprintf(stderr,"LifetimeHeirContractFunds() scan lifetime of %s\n",coinaddr);
     int64_t total = 0;
@@ -1051,7 +1053,7 @@ UniValue HeirInfo(uint256 fundingtxid)
     
     //char markeraddr[64];
     //CCtxidaddr(markeraddr, fundingtxid);
-    //SetCCunspents(unspentOutputs, markeraddr);
+    //SetCCunspents(unspentOutputs, markeraddr,true);
     
     // get initial funding tx and set it as initial lasttx:
     if (myGetTransaction(fundingtxid, fundingtx, hashBlock) && fundingtx.vout.size()) {
@@ -1216,7 +1218,7 @@ void _HeirList(struct CCcontract_info *cp, UniValue &result)
     char markeraddr[64];
 
 	GetCCaddress(cp, markeraddr, GetUnspendable(cp, NULL));
-    SetCCunspents(unspentOutputs, markeraddr);
+    SetCCunspents(unspentOutputs, markeraddr,true);
     
     //std::cerr << "HeirList() finding heir marker from unspendable addr=" << markeraddr << " unspentOutputs.size()=" << unspentOutputs.size() << '\n';
     

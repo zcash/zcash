@@ -13,6 +13,7 @@
 #include <signal.h>
 //#include <unistd.h>
 //#include <curses.h>
+
 #include "rogue.h"
 #ifdef STANDALONE
 #include "../komodo/src/komodo_cJSON.h"
@@ -25,8 +26,8 @@
  *	The main program, of course
  */
 struct rogue_state globalR;
-void garbage_collect();
 char Gametxidstr[67];
+void garbage_collect();
 
 void purge_obj_guess(struct obj_info *array,int32_t n)
 {
@@ -118,20 +119,20 @@ int32_t roguefname(char *fname,uint64_t seed,int32_t counter)
     return(0);
 }
 
-#ifdef test
-int32_t flushkeystrokes(struct rogue_state *rs)
+int32_t flushkeystrokes_local(struct rogue_state *rs,int32_t waitflag)
 {
+#ifndef BUILD_ROGUE
     char fname[1024]; FILE *fp; int32_t i,retflag = -1;
+    rs->counter++;
     roguefname(fname,rs->seed,rs->counter);
     if ( (fp= fopen(fname,"wb")) != 0 )
     {
         if ( fwrite(rs->buffered,1,rs->num,fp) == rs->num )
         {
-            rs->counter++;
             rs->num = 0;
             retflag = 0;
             fclose(fp);
-            if ( (fp= fopen("savefile","wb")) != 0 )
+            /*if ( (fp= fopen("savefile","wb")) != 0 )
             {
                 save_file(rs,fp,0);
                 if ( 0 && (fp= fopen("savefile","rb")) != 0 )
@@ -140,86 +141,42 @@ int32_t flushkeystrokes(struct rogue_state *rs)
                         fprintf(stderr,"%02x",fgetc(fp));
                     fprintf(stderr," first part rnd.%d\n",rnd(1000));
                     fclose(fp);
-                }
-                roguefname(fname,rs->seed,rs->counter);
+                }*/
+                roguefname(fname,rs->seed,rs->counter+1);
                 if ( (fp= fopen(fname,"wb")) != 0 ) // truncate next file
                     fclose(fp);
                 //fprintf(stderr,"savefile <- %s retflag.%d\n",fname,retflag);
-            }
+            //}
         } else fprintf(stderr,"error writing (%s)\n",fname);
     } else fprintf(stderr,"error creating (%s)\n",fname);
     return(retflag);
-}
 #else
+    return(0);
+#endif
+}
 
-uint8_t *OS_fileptr(long *allocsizep,char *fname);
-#define is_cJSON_True(json) ((json) != 0 && ((json)->type & 0xff) == cJSON_True)
+#ifdef BUILD_ROGUE
+// stubs for inside daemon
+
+int32_t rogue_progress(struct rogue_state *rs,int32_t waitflag,uint64_t seed,char *keystrokes,int32_t num)
+{
+}
 
 int32_t rogue_setplayerdata(struct rogue_state *rs,char *gametxidstr)
 {
-    char cmd[32768]; int32_t i,n,retval=-1; char *filestr,*pname,*statusstr,*datastr,fname[128]; long allocsize; cJSON *retjson,*array,*item;
-    if ( gametxidstr == 0 || *gametxidstr == 0 )
-        return(retval);
-    sprintf(fname,"%s.gameinfo",gametxidstr);
-    sprintf(cmd,"./komodo-cli -ac_name=ROGUE cclib gameinfo 17 \\\"[%%22%s%%22]\\\" > %s",gametxidstr,fname);
-    if ( system(cmd) != 0 )
-        fprintf(stderr,"error issuing (%s)\n",cmd);
-    else
-    {
-        filestr = (char *)OS_fileptr(&allocsize,fname);
-        if ( (retjson= cJSON_Parse(filestr)) != 0 )
-        {
-            if ( (array= jarray(&n,retjson,"players")) != 0 )
-            {
-                for (i=0; i<n; i++)
-                {
-                    item = jitem(array,i);
-                    if ( is_cJSON_True(jobj(item,"ismine")) != 0 && (statusstr= jstr(item,"status")) != 0 )
-                    {
-                        if ( strcmp(statusstr,"registered") == 0 )
-                        {
-                            retval = 0;
-                            if ( (item= jobj(item,"player")) != 0 && (datastr= jstr(item,"data")) != 0 )
-                            {
-                                if ( (pname= jstr(item,"pname")) != 0 && strlen(pname) < MAXSTR-1 )
-                                    strcpy(whoami,pname);
-                                decode_hex((uint8_t *)&rs->P,(int32_t)strlen(datastr)/2,datastr);
-                                fprintf(stderr,"set pname[%s] %s\n",pname==0?"":pname,jprint(item,0));
-                                rs->restoring = 1;
-                            }
-                        }
-                    }
-                }
-            }
-            free_json(retjson);
-        }
-        free(filestr);
-    }
-    return(retval);
+    return(-1);
 }
+#endif
 
-void rogue_progress(uint64_t seed,char *keystrokes,int32_t num)
-{
-    char cmd[16384],hexstr[16384]; int32_t i;
-    if ( Gametxidstr[0] != 0 )
-    {
-        for (i=0; i<num; i++)
-            sprintf(&hexstr[i<<1],"%02x",keystrokes[i]);
-        hexstr[i<<1] = 0;
-        sprintf(cmd,"./komodo-cli -ac_name=ROGUE cclib keystrokes 17 \\\"[%%22%s%%22,%%22%s%%22]\\\" >> keystrokes.log",Gametxidstr,hexstr);
-        if ( system(cmd) != 0 )
-            fprintf(stderr,"error issuing (%s)\n",cmd);
-    }
-}
-
-int32_t flushkeystrokes(struct rogue_state *rs)
+int32_t flushkeystrokes(struct rogue_state *rs,int32_t waitflag)
 {
     if ( rs->num > 0 )
     {
-        rogue_progress(rs->seed,rs->buffered,rs->num);
-        memset(rs->buffered,0,sizeof(rs->buffered));
-        rs->counter++;
-        rs->num = 0;
+        if ( rogue_progress(rs,waitflag,rs->seed,rs->buffered,rs->num) > 0 )
+        {
+            flushkeystrokes_local(rs,waitflag);
+            memset(rs->buffered,0,sizeof(rs->buffered));
+        }
     }
     return(0);
 }
@@ -227,18 +184,24 @@ int32_t flushkeystrokes(struct rogue_state *rs)
 void rogue_bailout(struct rogue_state *rs)
 {
     char cmd[512];
-    flushkeystrokes(rs);
+    flushkeystrokes(rs,1);
     //sleep(5);
     return;
-    fprintf(stderr,"bailing out\n");
+    /*fprintf(stderr,"bailing out\n");
     sprintf(cmd,"./komodo-cli -ac_name=ROGUE cclib bailout 17 \\\"[%%22%s%%22]\\\" >> bailout.log",Gametxidstr);
     if ( system(cmd) != 0 )
-        fprintf(stderr,"error issuing (%s)\n",cmd);
+        fprintf(stderr,"error issuing (%s)\n",cmd);*/
 }
+
+#ifdef _WIN32
+#ifdef _MSC_VER
+#define sleep(x) Sleep(1000*(x))
+#endif
+#endif
 
 int32_t rogue_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t num,struct rogue_player *player,int32_t sleepmillis)
 {
-    struct rogue_state *rs; FILE *fp; int32_t i;
+    struct rogue_state *rs; FILE *fp; int32_t i,n;
     rs = (struct rogue_state *)calloc(1,sizeof(*rs));
     rs->seed = seed;
     rs->keystrokes = keystrokes;
@@ -249,10 +212,20 @@ int32_t rogue_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t nu
         rs->P = *player;
         rs->restoring = 1;
         //fprintf(stderr,"restore player packsize.%d HP.%d\n",rs->P.packsize,rs->P.hitpoints);
+        if ( rs->P.packsize > MAXPACK )
+            rs->P.packsize = MAXPACK;
     }
     globalR = *rs;
     uint32_t starttime = (uint32_t)time(NULL);
     rogueiterate(rs);
+
+	/*
+	// keypress after replay
+	printf("[Press return to continue]");
+	fflush(stdout);
+	if (fgets(prbuf, 10, stdin) != 0);
+	*/
+	
     if ( 0 )
     {
         fprintf(stderr,"elapsed %d seconds\n",(uint32_t)time(NULL) - starttime);
@@ -274,14 +247,14 @@ int32_t rogue_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t nu
     if ( (fp= fopen("checkfile","wb")) != 0 )
     {
         save_file(rs,fp,0);
-        fprintf(stderr,"gold.%d hp.%d strength.%d/%d level.%d exp.%d dungeon.%d data[%d]\n",rs->P.gold,rs->P.hitpoints,rs->P.strength&0xffff,rs->P.strength>>16,rs->P.level,rs->P.experience,rs->P.dungeonlevel,rs->playersize);
+        //fprintf(stderr,"gold.%d hp.%d strength.%d/%d level.%d exp.%d dungeon.%d data[%d]\n",rs->P.gold,rs->P.hitpoints,rs->P.strength&0xffff,rs->P.strength>>16,rs->P.level,rs->P.experience,rs->P.dungeonlevel,rs->playersize);
         if ( newdata != 0 && rs->playersize > 0 )
             memcpy(newdata,rs->playerdata,rs->playersize);
     }
+    n = rs->playersize;
     free(rs);
-    return(rs->playersize);
+    return(n);
 }
-#endif
 
 long get_filesize(FILE *fp)
 {
@@ -292,11 +265,10 @@ long get_filesize(FILE *fp)
     return(fsize);
 }
 
-int32_t rogue_replay(uint64_t seed,int32_t sleeptime)
+char *rogue_keystrokesload(int32_t *numkeysp,uint64_t seed,int32_t counter)
 {
-    FILE *fp; char fname[1024]; char *keystrokes = 0; long num=0,fsize; int32_t i,counter = 0; struct rogue_state *rs; struct rogue_player P,*player = 0;
-    if ( seed == 0 )
-        seed = 777;
+    char fname[1024],*keystrokes = 0; FILE *fp; long fsize; int32_t num = 0;
+    *numkeysp = 0;
     while ( 1 )
     {
         roguefname(fname,seed,counter);
@@ -306,26 +278,37 @@ int32_t rogue_replay(uint64_t seed,int32_t sleeptime)
         if ( (fsize= get_filesize(fp)) <= 0 )
         {
             fclose(fp);
-            printf("fsize.%ld\n",fsize);
+            //printf("fsize.%ld\n",fsize);
             break;
         }
         if ( (keystrokes= (char *)realloc(keystrokes,num+fsize)) == 0 )
         {
             fprintf(stderr,"error reallocating keystrokes\n");
             fclose(fp);
-            return(-1);
+            return(0);
         }
         if ( fread(&keystrokes[num],1,fsize,fp) != fsize )
         {
             fprintf(stderr,"error reading keystrokes from (%s)\n",fname);
             fclose(fp);
-            return(-1);
+            free(keystrokes);
+            return(0);
         }
         fclose(fp);
         num += fsize;
         counter++;
-        fprintf(stderr,"loaded %ld from (%s) total %ld\n",fsize,fname,num);
+        //fprintf(stderr,"loaded %ld from (%s) total %d\n",fsize,fname,num);
     }
+    *numkeysp = num;
+    return(keystrokes);
+}
+
+int32_t rogue_replay(uint64_t seed,int32_t sleeptime)
+{
+    FILE *fp; char fname[1024]; char *keystrokes = 0; long fsize; int32_t i,num=0,counter = 0; struct rogue_state *rs; struct rogue_player P,*player = 0;
+    if ( seed == 0 )
+        seed = 777;
+    keystrokes = rogue_keystrokesload(&num,seed,counter);
     if ( num > 0 )
     {
         sprintf(fname,"rogue.%llu.player",(long long)seed);
@@ -339,7 +322,6 @@ int32_t rogue_replay(uint64_t seed,int32_t sleeptime)
             fclose(fp);
         }
         rogue_replay2(0,seed,keystrokes,num,player,sleeptime);
-
         mvaddstr(LINES - 2, 0, (char *)"replay completed");
         endwin();
         my_exit(0);
@@ -353,18 +335,27 @@ int rogue(int argc, char **argv, char **envp)
 {
     char *env; int lowtime; struct rogue_state *rs = &globalR;
     memset(rs,0,sizeof(*rs));
+    rs->guiflag = 1;
+    rs->sleeptime = 1; // non-zero to allow refresh()
     if ( argc == 3 && strlen(argv[2]) == 64 )
     {
-        rs->seed = atol(argv[1]);
+		#ifdef _WIN32
+		#ifdef _MSC_VER
+		rs->seed = _strtoui64(argv[1], NULL, 10);
+		#else
+		rs->seed = atol(argv[1]); // windows, but not MSVC
+		#endif // _MSC_VER
+		#else
+		rs->seed = atol(argv[1]); // non-windows
+		#endif // _WIN32
         strcpy(Gametxidstr,argv[2]);
+        fprintf(stderr,"setplayerdata\n");
         if ( rogue_setplayerdata(rs,Gametxidstr) < 0 )
         {
             fprintf(stderr,"invalid gametxid, or already started\n");
             return(-1);
         }
     } else rs->seed = 777;
-    rs->guiflag = 1;
-    rs->sleeptime = 1; // non-zero to allow refresh()
     md_init();
 
 #ifdef MASTER
@@ -454,7 +445,7 @@ int rogue(int argc, char **argv, char **envp)
 #endif
 	printf("Hello %s, just a moment while I dig the dungeon... seed.%llu", whoami,(long long)rs->seed);
     fflush(stdout);
-
+    fprintf(stderr,"rogueiterate\n");
     rogueiterate(rs);
     return(0);
 }
@@ -545,14 +536,26 @@ tstp(int ignored)
     getyx(curscr, y, x);
     mvcur(y, x, oy, ox);
     fflush(stdout);
-    //wmove(curscr,oy,ox);
-#ifndef __APPLE__
+    wmove(curscr,oy,ox);
+/*#ifndef __APPLE__
 #ifndef BUILD_ROGUE
     curscr->_cury = oy;
     curscr->_curx = ox;
 #endif
-#endif
+#endif*/
 }
+
+
+#ifdef _WIN32
+#ifdef _MSC_VER
+void usleep(int32_t micros)
+{
+	if (micros < 1000)
+		Sleep(1);
+	else Sleep(micros / 1000);
+}
+#endif
+#endif
 
 /*
  * playit:
@@ -604,13 +607,15 @@ playit(struct rogue_state *rs)
         }
         else
         {
-            if ( rs->needflush != 0 && rs->num > 1024 )
+            if ( rs->needflush != 0 )
             {
-                if ( flushkeystrokes(rs) == 0 )
+                if ( flushkeystrokes(rs,0) == 0 )
                     rs->needflush = 0;
             }
         }
     }
+    if ( rs->guiflag != 0 )
+        flushkeystrokes(rs,1);
     endit(0);
 }
 
@@ -635,19 +640,19 @@ int32_t _quit()
             if ( rs->sleeptime != 0 )
                 refresh();
             score(rs,purse, 1, 0);
-            flushkeystrokes(rs);
+            flushkeystrokes(rs,1);
             my_exit(0);
         }
         else
         {
             //score(rs,purse, 1, 0);
-            fprintf(stderr,"done! (%c)\n",c);
+            //fprintf(stderr,"done! (%c)\n",c);
         }
         return(1);
     }
     else
     {
-        fprintf(stderr,"'Q' answer (%c)\n",c);
+        //fprintf(stderr,"'Q' answer (%c)\n",c);
         move(0, 0);
         clrtoeol();
         status(rs);

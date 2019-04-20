@@ -25,6 +25,7 @@
 
 int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestamp);
 int32_t komodo_electednotary(int32_t *numnotariesp,uint8_t *pubkey33,int32_t height,uint32_t timestamp);
+int32_t komodo_voutupdate(bool fJustCheck,int32_t *isratificationp,int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,int32_t height,uint256 txhash,int32_t i,int32_t j,uint64_t *voutmaskp,int32_t *specialtxp,int32_t *notarizedheightp,uint64_t value,int32_t notarized,uint64_t signedmask,uint32_t timestamp);
 unsigned int lwmaGetNextPOSRequired(const CBlockIndex* pindexLast, const Consensus::Params& params);
 bool EnsureWalletIsAvailable(bool avoidException);
 extern bool fRequestShutdown;
@@ -56,10 +57,29 @@ void init_string(struct return_string *s)
     if ( s->ptr == NULL )
     {
         fprintf(stderr,"init_string malloc() failed\n");
-        exit(-1);
+        StartShutdown();
     }
     s->ptr[0] = '\0';
 }
+
+int tx_height( const uint256 &hash ){
+    int nHeight = 0;
+    CTransaction tx;
+    uint256 hashBlock;
+    if (!GetTransaction(hash, tx, hashBlock, true)) {
+        fprintf(stderr,"tx hash %s does not exist!\n", hash.ToString().c_str() );
+    }
+
+    BlockMap::const_iterator it = mapBlockIndex.find(hashBlock);
+    if (it != mapBlockIndex.end()) {
+        nHeight = it->second->GetHeight();
+        //fprintf(stderr,"blockHash %s height %d\n",hashBlock.ToString().c_str(), nHeight);
+    } else {
+        fprintf(stderr,"block hash %s does not exist!\n", hashBlock.ToString().c_str() );
+    }
+    return nHeight;
+}
+
 
 /************************************************************************
  *
@@ -74,7 +94,7 @@ size_t accumulatebytes(void *ptr,size_t size,size_t nmemb,struct return_string *
     if ( s->ptr == NULL )
     {
         fprintf(stderr, "accumulate realloc() failed\n");
-        exit(-1);
+        StartShutdown();
     }
     memcpy(s->ptr+s->len,ptr,size*nmemb);
     s->ptr[new_len] = '\0';
@@ -181,6 +201,9 @@ try_again:
     curl_easy_setopt(curl_handle,CURLOPT_WRITEDATA,		&s); 			// we pass our 's' struct to the callback
     curl_easy_setopt(curl_handle,CURLOPT_NOSIGNAL,		1L);   			// supposed to fix "Alarm clock" and long jump crash
     curl_easy_setopt(curl_handle,CURLOPT_NOPROGRESS,	1L);			// no progress callback
+    //curl_easy_setopt(curl_handle, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
+    //curl_easy_setopt(curl_handle, CURLOPT_SSLVERSION, 2);
+
     if ( strncmp(url,"https",5) == 0 )
     {
         curl_easy_setopt(curl_handle,CURLOPT_SSL_VERIFYPEER,0);
@@ -227,13 +250,13 @@ try_again:
         numretries++;
         if ( specialcase != 0 )
         {
-            printf("<<<<<<<<<<< bitcoind_RPC.(%s): BTCD.%s timeout params.(%s) s.ptr.(%s) err.%d\n",url,command,params,s.ptr,res);
+            fprintf(stderr,"<<<<<<<<<<< bitcoind_RPC.(%s): BTCD.%s timeout params.(%s) s.ptr.(%s) err.%d\n",url,command,params,s.ptr,res);
             free(s.ptr);
             return(0);
         }
         else if ( numretries >= 1 )
         {
-            //printf("Maximum number of retries exceeded!\n");
+            fprintf(stderr,"Maximum number of retries exceeded!\n");
             free(s.ptr);
             return(0);
         }
@@ -348,7 +371,7 @@ char *komodo_issuemethod(char *userpass,char *method,char *params,uint16_t port)
     {
         sprintf(url,(char *)"http://127.0.0.1:%u",port);
         sprintf(postdata,"{\"method\":\"%s\",\"params\":%s}",method,params);
-        //printf("[%s] (%s) postdata.(%s) params.(%s) USERPASS.(%s)\n",ASSETCHAINS_SYMBOL,url,postdata,params,KMDUSERPASS);
+ //printf("[%s] (%s) postdata.(%s) params.(%s) USERPASS.(%s)\n",ASSETCHAINS_SYMBOL,url,postdata,params,KMDUSERPASS);
         retstr2 = bitcoind_RPC(&retstr,(char *)"debug",url,userpass,method,params);
         //retstr = curl_post(&cHandle,url,USERPASS,postdata,0,0,0,0);
     }
@@ -423,6 +446,18 @@ int32_t komodo_verifynotarizedscript(int32_t height,uint8_t *script,int32_t len,
         printf("%02x",((uint8_t *)&hash)[i]);
     printf(" opreturn from [%s] ht.%d MISMATCHED\n",ASSETCHAINS_SYMBOL,height);
     return(-1);
+}
+
+void komodo_reconsiderblock(uint256 blockhash)
+{
+    char params[256],*jsonstr,*hexstr;
+    sprintf(params,"[\"%s\"]",blockhash.ToString().c_str());
+    if ( (jsonstr= komodo_issuemethod(ASSETCHAINS_USERPASS,(char *)"reconsiderblock",params,ASSETCHAINS_RPCPORT)) != 0 )
+    {
+        //fprintf(stderr,"komodo_reconsiderblock.(%s) (%s %u) -> (%s)\n",params,ASSETCHAINS_USERPASS,ASSETCHAINS_RPCPORT,jsonstr);
+        free(jsonstr);
+    }
+    //fprintf(stderr,"komodo_reconsiderblock.(%s) (%s %u) -> NULL\n",params,ASSETCHAINS_USERPASS,ASSETCHAINS_RPCPORT);
 }
 
 int32_t komodo_verifynotarization(char *symbol,char *dest,int32_t height,int32_t NOTARIZED_HEIGHT,uint256 NOTARIZED_HASH,uint256 NOTARIZED_DESTTXID)
@@ -1131,10 +1166,10 @@ uint64_t komodo_accrued_interest(int32_t *txheightp,uint32_t *locktimep,uint256 
 
 int32_t komodo_nextheight()
 {
-    CBlockIndex *pindex; int32_t ht,longest = komodo_longestchain();
-    if ( (pindex= chainActive.LastTip()) != 0 && (ht= pindex->GetHeight()) >= longest )
+    CBlockIndex *pindex; int32_t ht;
+    if ( (pindex= chainActive.LastTip()) != 0 && (ht= pindex->GetHeight()) > 0 )
         return(ht+1);
-    else return(longest + 1);
+    else return(komodo_longestchain() + 1);
 }
 
 int32_t komodo_isrealtime(int32_t *kmdheightp)
@@ -1189,7 +1224,6 @@ uint64_t komodo_commission(const CBlock *pblock,int32_t height)
         return(0);
 
     int32_t i,j,n=0,txn_count; int64_t nSubsidy; uint64_t commission,total = 0;
-    txn_count = pblock->vtx.size();
     if ( ASSETCHAINS_FOUNDERS != 0 )
     {
         nSubsidy = GetBlockSubsidy(height,Params().GetConsensus());
@@ -1207,14 +1241,15 @@ uint64_t komodo_commission(const CBlock *pblock,int32_t height)
             else commission = 0;
         }
     }
-    else
+    else if ( pblock != 0 )
     {
+        txn_count = pblock->vtx.size();
         for (i=0; i<txn_count; i++)
         {
             n = pblock->vtx[i].vout.size();
             for (j=0; j<n; j++)
             {
-                if ( height > 100000 && ASSETCHAINS_STAKED != 0 && txn_count > 1 && i == txn_count-1 && j == n-1 )
+                if ( height > 225000 && ASSETCHAINS_STAKED != 0 && txn_count > 1 && i == txn_count-1 && j == n-1 )
                     break;
                 //fprintf(stderr,"(%d %.8f).%d ",i,dstr(pblock->vtx[i].vout[j].nValue),j);
                 if ( i != 0 || j != 1 )
@@ -1347,7 +1382,7 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
     if ( m+n < 100 )
     {
         // We do actual PoS % at the start. Requires coin distribution in first 10 blocks! 
-        if ( ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASH || ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASHV2 )
+        if ( ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASH || ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASHV1_1 )
             percPoS = (percPoS*100) / (m+n); 
         else
             // This seems to be inverse. The actual PoS % is backwards in the first 100 blocks. 
@@ -1452,7 +1487,7 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
         if ( blocktime+iter+segid*2 < txtime+minage )
             continue;
         diff = (iter + blocktime - txtime - minage);
-        if ( ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASH || ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASHV2 )
+        if ( ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASH || ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASHV1_1 )
         {
             /*if ( PoSperc < ASSETCHAINS_STAKED )
             {
@@ -1480,7 +1515,7 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
         if ( iter > 0 )
             diff += segid*2;
         coinage = (value * diff);
-        if ( ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASH || ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASHV2 )
+        if ( ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASH || ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASHV1_1 )
         {
             if ( PoSperc < ASSETCHAINS_STAKED )
             {
@@ -1535,7 +1570,7 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
 int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_uint256 bnTarget,arith_uint256 bhash)
 {
     CBlockIndex *previndex,*pindex; char voutaddr[64],destaddr[64]; uint256 txid; uint32_t txtime,prevtime=0; int32_t vout,PoSperc,txn_count,eligible=0,isPoS = 0,segid; uint64_t value; CTxDestination voutaddress; arith_uint256 POWTarget;
-    if ( ASSETCHAINS_STAKED == 100 && height <= 100 )
+    if ( ASSETCHAINS_STAKED == 100 && height <= 10 )
         return(1);
     BlockMap::const_iterator it = mapBlockIndex.find(pblock->GetHash());
     pindex = it != mapBlockIndex.end() ? it->second : NULL;
@@ -1603,7 +1638,7 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
                 fprintf(stderr,"ht.%d isPoS.%d utxo not validated -> must be PoW fake\n",height,isPoS);
                 isPoS = 0;
             }
-            else
+            else if ( ASSETCHAINS_STAKED != 100 )
             {
                 if ( bhash < POWTarget )
                 {
@@ -1820,12 +1855,10 @@ uint64_t komodo_notarypayamount(int32_t nHeight, int64_t notarycount)
     // Because of reorgs we cannot use the notarized height value. 
     // We need to basically guess here and just pay some static amount.
     // Has the unwanted effect of varying coin emission, but cannot be helped.
-    fprintf(stderr, "era.%i paying total of %lu\n",curEra, ASSETCHAINS_NOTARY_PAY[curEra]);
+    //fprintf(stderr, "era.%i paying total of %lu\n",curEra, ASSETCHAINS_NOTARY_PAY[curEra]);
     ret = ASSETCHAINS_NOTARY_PAY[curEra] / notarycount;
     return(ret);
 }
-
-int32_t komodo_voutupdate(bool fJustCheck,int32_t *isratificationp,int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,int32_t height,uint256 txhash,int32_t i,int32_t j,uint64_t *voutmaskp,int32_t *specialtxp,int32_t *notarizedheightp,uint64_t value,int32_t notarized,uint64_t signedmask,uint32_t timestamp);
 
 int32_t komodo_getnotarizedheight(uint32_t timestamp,int32_t height, uint8_t *script, int32_t len)
 {
@@ -1837,13 +1870,8 @@ int32_t komodo_getnotarizedheight(uint32_t timestamp,int32_t height, uint8_t *sc
     if ( len >= sizeof(uint32_t) && len <= sizeof(scriptbuf) )
     {
         memcpy(scriptbuf,script,len);
-        if ( komodo_voutupdate(true,&isratification,0,scriptbuf,len,height,uint256(),1,1,&voutmask,&specialtx,&notarizedheight,0,1,0,timestamp) == -2 )
+        if ( komodo_voutupdate(true,&isratification,0,scriptbuf,len,height,uint256(),1,1,&voutmask,&specialtx,&notarizedheight,0,1,0,timestamp) != -2 )
         {
-            fprintf(stderr, ">>>>>>VALID NOTARIZATION ht.%i\n",notarizedheight);
-        }
-        else
-        {
-            // This should no longer happen. Unless notaries are making actual invalid notarizations.
             fprintf(stderr, "<<<<<<INVALID NOTARIZATION ht.%i\n",notarizedheight);
             return(0);
         }
@@ -1855,13 +1883,12 @@ uint64_t komodo_notarypay(CMutableTransaction &txNew, std::vector<int8_t> &Notar
 {
     // fetch notary pubkey array.
     uint64_t total = 0, AmountToPay = 0;
-    int32_t staked_era; int8_t numSN;
-    uint8_t staked_pubkeys[64][33];
-    staked_era = STAKED_era(timestamp);
+    int8_t numSN = 0; uint8_t notarypubkeys[64][33] = {0};
+    numSN = komodo_notaries(notarypubkeys, height, timestamp);
+
     // No point going further, no notaries can be paid.
-    if ( staked_era == 0 )
+    if ( notarypubkeys[0][0] == 0 )
         return(0);
-    numSN = numStakedNotaries(staked_pubkeys,staked_era);
     
     // Check the notarisation is valid.
     int32_t notarizedheight = komodo_getnotarizedheight(timestamp, height, script, len);
@@ -1886,7 +1913,7 @@ uint64_t komodo_notarypay(CMutableTransaction &txNew, std::vector<int8_t> &Notar
         ptr[0] = 33;
         for (int8_t i=0; i<33; i++)
         {
-            ptr[i+1] = staked_pubkeys[NotarisationNotaries[n]][i];
+            ptr[i+1] = notarypubkeys[NotarisationNotaries[n]][i];
             //fprintf(stderr,"%02x",ptr[i+1]);
         }
         ptr[34] = OP_CHECKSIG;
@@ -1897,34 +1924,37 @@ uint64_t komodo_notarypay(CMutableTransaction &txNew, std::vector<int8_t> &Notar
     return(total);
 }
 
-uint64_t komodo_checknotarypay(CBlock *pblock,int32_t height)
+bool GetNotarisationNotaries(uint8_t notarypubkeys[64][33], int8_t &numNN, const std::vector<CTxIn> &vin, std::vector<int8_t> &NotarisationNotaries)
 {
-    std::vector<int8_t> NotarisationNotaries;
-    uint32_t timestamp = pblock->nTime;
-    int32_t staked_era; int8_t numSN;
-    uint8_t staked_pubkeys[64][33];
-    staked_era = STAKED_era(timestamp);
-    // No point going further, no notaries can be paid.
-    if ( staked_era == 0 )
-        return(0);
-    numSN = numStakedNotaries(staked_pubkeys,staked_era);
-    
     uint8_t *script; int32_t scriptlen;
-    // Loop over the notarisation and extract the position of the participating notaries in the array of pukeys for this era.
-    BOOST_FOREACH(const CTxIn& txin, pblock->vtx[1].vin)
+    if ( notarypubkeys[0][0] == 0 )
+        return false;
+    BOOST_FOREACH(const CTxIn& txin, vin)
     {
         uint256 hash; CTransaction tx1;
         if ( GetTransaction(txin.prevout.hash,tx1,hash,false) )
         {
-            for (int8_t i = 0; i < numSN; i++) 
+            for (int8_t i = 0; i < numNN; i++) 
             {
                 script = (uint8_t *)&tx1.vout[txin.prevout.n].scriptPubKey[0];
                 scriptlen = (int32_t)tx1.vout[txin.prevout.n].scriptPubKey.size();
-                if ( scriptlen == 35 && script[0] == 33 && script[34] == OP_CHECKSIG && memcmp(script+1,staked_pubkeys[i],33) == 0 )
+                if ( scriptlen == 35 && script[0] == 33 && script[34] == OP_CHECKSIG && memcmp(script+1,notarypubkeys[i],33) == 0 )
                     NotarisationNotaries.push_back(i);
             }
-        }
+        } else return false;
     }
+    return true;
+}
+
+uint64_t komodo_checknotarypay(CBlock *pblock,int32_t height)
+{
+    std::vector<int8_t> NotarisationNotaries; uint8_t *script; int32_t scriptlen;
+    uint64_t timestamp = pblock->nTime;
+    int8_t numSN = 0; uint8_t notarypubkeys[64][33] = {0};
+    numSN = komodo_notaries(notarypubkeys, height, timestamp);
+    if ( !GetNotarisationNotaries(notarypubkeys, numSN, pblock->vtx[1].vin, NotarisationNotaries) )
+        return(0);
+    
     // check a notary didnt sign twice (this would be an invalid notarisation later on and cause problems)
     std::set<int> checkdupes( NotarisationNotaries.begin(), NotarisationNotaries.end() );
     if ( checkdupes.size() != NotarisationNotaries.size() ) {
@@ -1979,7 +2009,7 @@ uint64_t komodo_checknotarypay(CBlock *pblock,int32_t height)
         // Check the pubkeys match the pubkeys in the notarisation.
         script = (uint8_t *)&txout.scriptPubKey[0];
         scriptlen = (int32_t)txout.scriptPubKey.size();
-        if ( scriptlen == 35 && script[0] == 33 && script[34] == OP_CHECKSIG && memcmp(script+1,staked_pubkeys[NotarisationNotaries[n-1]],33) == 0 )
+        if ( scriptlen == 35 && script[0] == 33 && script[34] == OP_CHECKSIG && memcmp(script+1,notarypubkeys[NotarisationNotaries[n-1]],33) == 0 )
         {
             // check the value is correct
             if ( pblock->vtx[0].vout[n].nValue == AmountToPay )
@@ -1994,7 +2024,7 @@ uint64_t komodo_checknotarypay(CBlock *pblock,int32_t height)
     }
     if ( matches != 0 && matches == NotarisationNotaries.size() && totalsats == total )
     {
-        fprintf(stderr, "Validated coinbase matches notarisation in tx position 1.\n" );
+        //fprintf(stderr, "Validated coinbase matches notarisation in tx position 1.\n" );
         return(totalsats);
     }
     return(0);
@@ -2015,10 +2045,13 @@ int64_t komodo_checkcommission(CBlock *pblock,int32_t height)
         {
             script = (uint8_t *)&pblock->vtx[0].vout[1].scriptPubKey[0];
             scriptlen = (int32_t)pblock->vtx[0].vout[1].scriptPubKey.size();
-            //int32_t i;
-            //for (i=0; i<scriptlen; i++)
-            //    fprintf(stderr,"%02x",script[i]);
-            //fprintf(stderr," vout[1] %.8f vs %.8f\n",(double)checktoshis/COIN,(double)pblock->vtx[0].vout[1].nValue/COIN);
+            if ( 0 )
+            {
+                int32_t i;
+                for (i=0; i<scriptlen; i++)
+                    fprintf(stderr,"%02x",script[i]);
+                fprintf(stderr," vout[1] %.8f vs %.8f\n",(double)checktoshis/COIN,(double)pblock->vtx[0].vout[1].nValue/COIN);
+            }
             if ( ASSETCHAINS_SCRIPTPUB.size() > 1 )
             {
                 if ( ASSETCHAINS_SCRIPTPUB.size()/2 == scriptlen && scriptlen < sizeof(scripthex) )
@@ -2034,7 +2067,13 @@ int64_t komodo_checkcommission(CBlock *pblock,int32_t height)
                 matched = 25;
             if ( matched == 0 )
             {
-                fprintf(stderr," payment to wrong pubkey scriptlen.%d, scriptpub[%d] checktoshis.%llu\n",scriptlen,(int32_t)ASSETCHAINS_SCRIPTPUB.size()/2,(long long)checktoshis);
+                if ( 0 && ASSETCHAINS_SCRIPTPUB.size() > 1 )
+                {
+                    int32_t i;
+                    for (i=0; i<ASSETCHAINS_SCRIPTPUB.size(); i++)
+                        fprintf(stderr,"%02x",ASSETCHAINS_SCRIPTPUB[i]);
+                }
+                fprintf(stderr," -ac[%d] payment to wrong pubkey scriptlen.%d, scriptpub[%d] checktoshis.%llu\n",(int32_t)ASSETCHAINS_SCRIPTPUB.size(),scriptlen,(int32_t)ASSETCHAINS_SCRIPTPUB.size()/2,(long long)checktoshis);
                 return(-1);
 
             }
@@ -2120,7 +2159,7 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
             else
             {
                 bnTarget = komodo_PoWtarget(&PoSperc,bnTarget,height,ASSETCHAINS_STAKED);
-                if ( bhash > bnTarget )
+                if ( bhash > bnTarget && height > 100 )
                 {
                     for (i=31; i>=16; i--)
                         fprintf(stderr,"%02x",((uint8_t *)&bhash)[i]);
@@ -2129,7 +2168,8 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
                         fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[i]);
                     fprintf(stderr," ht.%d PoW diff violation PoSperc.%d vs goalperc.%d\n",height,PoSperc,(int32_t)ASSETCHAINS_STAKED);
                     return(-1);
-                } else
+                }
+                else
                 {
                     failed = 0; 
                     CBlockIndex *pindex; 
@@ -2196,9 +2236,11 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
                 return(-1); 
             }
             // Check min sigs.
-            if ( pblock->vtx[1].vin.size() < (num_notaries_STAKED[STAKED_era(pblock->nTime)]/5) )
+            int8_t numSN = 0; uint8_t notarypubkeys[64][33] = {0};
+            numSN = komodo_notaries(notarypubkeys, height, pblock->nTime);
+            if ( pblock->vtx[1].vin.size() < numSN/5 )
             {
-                fprintf(stderr, "ht.%i does not meet minsigs.%i sigs.%li\n",height,(num_notaries_STAKED[STAKED_era(pblock->nTime)]/5),pblock->vtx[1].vin.size());
+                fprintf(stderr, "ht.%i does not meet minsigs.%i sigs.%li\n",height,numSN/5,pblock->vtx[1].vin.size());
                 return(-1);
             }
         }
@@ -2437,7 +2479,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
             mypk = pubkey2pk(Mypubkey());
             Marmarapk = GetUnspendable(cp,0);
             GetCCaddress1of2(cp,coinaddr,Marmarapk,mypk);
-            SetCCunspents(unspentOutputs,coinaddr);
+            SetCCunspents(unspentOutputs,coinaddr,true);
             for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
             {
                 txid = it->first.txhash;

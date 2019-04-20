@@ -44,14 +44,17 @@ struct komodo_state KOMODO_STATES[34];
 #define _COINBASE_MATURITY 100
 int COINBASE_MATURITY = _COINBASE_MATURITY;//100;
 unsigned int WITNESS_CACHE_SIZE = _COINBASE_MATURITY+10;
-
+uint256 KOMODO_EARLYTXID;
 int32_t KOMODO_MININGTHREADS = -1,IS_KOMODO_NOTARY,IS_STAKED_NOTARY,USE_EXTERNAL_PUBKEY,KOMODO_CHOSEN_ONE,ASSETCHAINS_SEED,KOMODO_ON_DEMAND,KOMODO_EXTERNAL_NOTARIES,KOMODO_PASSPORT_INITDONE,KOMODO_PAX,KOMODO_EXCHANGEWALLET,KOMODO_REWIND,STAKED_ERA,KOMODO_CONNECTING = -1,KOMODO_DEALERNODE,KOMODO_EXTRASATOSHI,ASSETCHAINS_FOUNDERS;
 int32_t KOMODO_INSYNC,KOMODO_LASTMINED,prevKOMODO_LASTMINED,KOMODO_CCACTIVATE,JUMBLR_PAUSE = 1;
-std::string NOTARY_PUBKEY,ASSETCHAINS_NOTARIES,ASSETCHAINS_OVERRIDE_PUBKEY,DONATION_PUBKEY,ASSETCHAINS_SCRIPTPUB,NOTARY_ADDRESS,WHITELIST_ADDRESS,ASSETCHAINS_SELFIMPORT,ASSETCHAINS_CCLIB;
-uint8_t NOTARY_PUBKEY33[33],ASSETCHAINS_OVERRIDE_PUBKEY33[33],ASSETCHAINS_OVERRIDE_PUBKEYHASH[20],ASSETCHAINS_PUBLIC,ASSETCHAINS_PRIVATE,ASSETCHAINS_TXPOW,NUM_NOTARIES,ASSETCHAINS_MARMARA;
+std::string NOTARY_PUBKEY,ASSETCHAINS_NOTARIES,ASSETCHAINS_OVERRIDE_PUBKEY,DONATION_PUBKEY,ASSETCHAINS_SCRIPTPUB,NOTARY_ADDRESS,ASSETCHAINS_SELFIMPORT,ASSETCHAINS_CCLIB;
+uint8_t NOTARY_PUBKEY33[33],ASSETCHAINS_OVERRIDE_PUBKEY33[33],ASSETCHAINS_OVERRIDE_PUBKEYHASH[20],ASSETCHAINS_PUBLIC,ASSETCHAINS_PRIVATE,ASSETCHAINS_TXPOW,ASSETCHAINS_MARMARA;
 bool VERUS_MINTBLOCKS;
+std::vector<uint8_t> Mineropret;
+std::vector<std::string> vWhiteListAddress;
+char NOTARYADDRS[64][64];
 
-char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN],ASSETCHAINS_USERPASS[4096],NOTARYADDRS[64][36];
+char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN],ASSETCHAINS_USERPASS[4096];
 uint16_t ASSETCHAINS_P2PPORT,ASSETCHAINS_RPCPORT,ASSETCHAINS_BEAMPORT,ASSETCHAINS_CODAPORT;
 uint32_t ASSETCHAIN_INIT,ASSETCHAINS_CC,KOMODO_STOPAT,KOMODO_DPOWCONFS = 1,STAKING_MIN_DIFF;
 uint32_t ASSETCHAINS_MAGIC = 2387029918;
@@ -66,17 +69,18 @@ int64_t MAX_MONEY = 200000000 * 100000000LL;
 // spec will use an op_return with CLTV at front and anything after |OP_RETURN|PUSH of rest|OPRETTYPE_TIMELOCK|script|
 #define _ASSETCHAINS_TIMELOCKOFF 0xffffffffffffffff
 uint64_t ASSETCHAINS_TIMELOCKGTE = _ASSETCHAINS_TIMELOCKOFF;
-uint64_t ASSETCHAINS_TIMEUNLOCKFROM = 0, ASSETCHAINS_TIMEUNLOCKTO = 0;
+uint64_t ASSETCHAINS_TIMEUNLOCKFROM = 0, ASSETCHAINS_TIMEUNLOCKTO = 0,ASSETCHAINS_CBOPRET=0;
 
 uint64_t ASSETCHAINS_LASTERA = 1;
 uint64_t ASSETCHAINS_ENDSUBSIDY[ASSETCHAINS_MAX_ERAS],ASSETCHAINS_REWARD[ASSETCHAINS_MAX_ERAS],ASSETCHAINS_HALVING[ASSETCHAINS_MAX_ERAS],ASSETCHAINS_DECAY[ASSETCHAINS_MAX_ERAS],ASSETCHAINS_NOTARY_PAY[ASSETCHAINS_MAX_ERAS];
 uint8_t ASSETCHAINS_CCDISABLES[256];
+std::vector<std::string> ASSETCHAINS_PRICES,ASSETCHAINS_STOCKS;
 
 #define _ASSETCHAINS_EQUIHASH 0
 uint32_t ASSETCHAINS_NUMALGOS = 3;
 uint32_t ASSETCHAINS_EQUIHASH = _ASSETCHAINS_EQUIHASH;
 uint32_t ASSETCHAINS_VERUSHASH = 1;
-uint32_t ASSETCHAINS_VERUSHASHV2 = 2;
+uint32_t ASSETCHAINS_VERUSHASHV1_1 = 2;
 const char *ASSETCHAINS_ALGORITHMS[] = {"equihash", "verushash", "verushash11"};
 uint64_t ASSETCHAINS_NONCEMASK[] = {0xffff,0xfffffff,0xfffffff};
 uint32_t ASSETCHAINS_NONCESHIFT[] = {32,16,16};
@@ -97,7 +101,7 @@ int32_t ASSETCHAINS_OVERWINTER = -1;
 
 uint64_t KOMODO_INTERESTSUM,KOMODO_WALLETBALANCE;
 int32_t ASSETCHAINS_STAKED;
-uint64_t ASSETCHAINS_COMMISSION,ASSETCHAINS_SUPPLY = 10,MIN_RECV_SATS,ASSETCHAINS_FOUNDERS_REWARD;
+uint64_t ASSETCHAINS_COMMISSION,ASSETCHAINS_SUPPLY = 10,ASSETCHAINS_FOUNDERS_REWARD;
 
 uint32_t KOMODO_INITDONE;
 char KMDUSERPASS[8192+512+1],BTCUSERPASS[8192]; uint16_t KMD_PORT = 7771,BITCOIND_RPCPORT = 7771;
@@ -129,20 +133,20 @@ int32_t komodo_baseid(char *origbase)
 #ifndef SATOSHIDEN
 #define SATOSHIDEN ((uint64_t)100000000L)
 #endif
-int64_t komodo_current_supply(uint32_t nHeight)
+uint64_t komodo_current_supply(uint32_t nHeight)
 {
     uint64_t cur_money;
     int32_t baseid;
 
-    if ( (baseid = komodo_baseid(ASSETCHAINS_SYMBOL)) >= 0 && baseid < 32 )
-        cur_money = ASSETCHAINS_GENESISTXVAL + ASSETCHAINS_SUPPLY + nHeight * ASSETCHAINS_REWARD[0] / SATOSHIDEN;
-    else
+    //if ( (baseid = komodo_baseid(ASSETCHAINS_SYMBOL)) >= 0 && baseid < 32 )
+    //    cur_money = ASSETCHAINS_GENESISTXVAL + ASSETCHAINS_SUPPLY + nHeight * ASSETCHAINS_REWARD[0] / SATOSHIDEN;
+    //else
     {
         // figure out max_money by adding up supply to a maximum of 10,000,000 blocks
         cur_money = (ASSETCHAINS_SUPPLY+1) * SATOSHIDEN + (ASSETCHAINS_MAGIC & 0xffffff) + ASSETCHAINS_GENESISTXVAL;
         if ( ASSETCHAINS_LASTERA == 0 && ASSETCHAINS_REWARD[0] == 0 )
         {
-            cur_money += (nHeight * 10000) / SATOSHIDEN;
+            cur_money += (nHeight * 10000);// / SATOSHIDEN;
         }
         else
         {
@@ -155,6 +159,8 @@ int64_t komodo_current_supply(uint32_t nHeight)
 
                 // add rewards from this era, up to nHeight
                 int64_t reward = ASSETCHAINS_REWARD[j];
+                
+                //fprintf(stderr,"last.%d reward %llu period %llu\n",(int32_t)ASSETCHAINS_LASTERA,(long long)reward,(long long)ASSETCHAINS_HALVING[j]);
                 if ( reward > 0 )
                 {
                     uint64_t lastEnd = j == 0 ? 0 : ASSETCHAINS_ENDSUBSIDY[j - 1];
@@ -166,10 +172,12 @@ int64_t komodo_current_supply(uint32_t nHeight)
                     uint32_t modulo = (curEnd - lastEnd) % period;
                     uint64_t decay = ASSETCHAINS_DECAY[j];
 
-                    if (!period)
+                    //fprintf(stderr,"period.%llu cur_money %.8f += %.8f * %d\n",(long long)period,(double)cur_money/COIN,(double)reward/COIN,nHeight);
+                    if ( ASSETCHAINS_HALVING[j] == 0 )
                     {
                         // no halving, straight multiply
                         cur_money += reward * (nHeight - 1);
+                        //fprintf(stderr,"cur_money %.8f\n",(double)cur_money/COIN);
                     }
                     // if exactly SATOSHIDEN, linear decay to zero or to next era, same as:
                     // (next_era_reward + (starting reward - next_era_reward) / 2) * num_blocks
@@ -263,6 +271,18 @@ int64_t komodo_current_supply(uint32_t nHeight)
                 }
             }
         }
+    }    
+    if ( KOMODO_BIT63SET(cur_money) != 0 )
+        return(KOMODO_MAXNVALUE);
+    if ( ASSETCHAINS_COMMISSION != 0 )
+    {
+        uint64_t newval = (cur_money + (cur_money/COIN * ASSETCHAINS_COMMISSION));
+        if ( KOMODO_BIT63SET(newval) != 0 )
+            return(KOMODO_MAXNVALUE);
+        else if ( newval < cur_money ) // check for underflow
+            return(KOMODO_MAXNVALUE);
+        return(newval);
     }
-    return((int64_t)(cur_money + (cur_money * ASSETCHAINS_COMMISSION)));
+    //fprintf(stderr,"cur_money %.8f\n",(double)cur_money/COIN);
+    return(cur_money);
 }
