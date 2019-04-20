@@ -16,6 +16,12 @@
 #include "CCPayments.h"
 
 /* 
+
+-earlytxid is not an -ac_param, so it doesnt affect the chain magics
+extra data after the normal CCvout is whatever data we want and can represent whatever we want
+so -ac_script=<payments CC vout + useearlytxid>
+in the validation if you see the useearlytxid in the opreturn data or extra data, you use the earlytxid as the txid that specifies the payment
+
  0) txidopret <- allocation, scriptPubKey, opret
  1) create <-  locked_blocks, minrelease, list of txidopret
  
@@ -212,6 +218,20 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
                     allocations.push_back(allocation);
                     //fprintf(stderr, "i.%i scriptpubkey.%s allocation.%li\n",i,scriptPubKeys[i].ToString().c_str(),allocation);
                     checkallocations += allocation;
+                    // if we have an op_return to pay to need to check it exists and is paying the correct opret. 
+                    if ( !opret.empty() )
+                    {
+                        if ( !fHasOpret )
+                        {
+                            fprintf(stderr, "missing opret.%s in payments release.\n",HexStr(opret.begin(), opret.end()).c_str());
+                            return(eval->Invalid("missing opret in payments release"));
+                        }
+                        else if ( CScript(opret.begin(),opret.end()) != tx.vout[tx.vout.size()-1].scriptPubKey )
+                        {
+                            fprintf(stderr, "opret.%s vs opret.%s\n",HexStr(opret.begin(), opret.end()).c_str(), HexStr(tx.vout[tx.vout.size()-1].scriptPubKey.begin(), tx.vout[tx.vout.size()-1].scriptPubKey.end()).c_str());
+                            return(eval->Invalid("pays incorrect opret"));
+                        }
+                    }
                 }
                 i++;
             }
@@ -277,14 +297,24 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
                     Getscriptaddress(destaddr,txin.vout[vin.prevout.n].scriptPubKey);
                     if ( strcmp(destaddr,coinaddr) != 0 )
                     {
-                        std::vector<uint8_t> scriptPubKey,opret; uint256 checktxid;
-                        if ( txin.vout.size() < 2 || DecodePaymentsFundOpRet(txin.vout[txin.vout.size()-1].scriptPubKey,checktxid) != 'F' || checktxid != createtxid )
+                        CScript opret; uint256 checktxid; int32_t opret_ind;
+                        if ( (opret_ind= has_opret(txin, EVAL_PAYMENTS)) == 0 )
+                        {
+                            // get op_return from CCvout
+                            opret = getCCopret(txin.vout[0].scriptPubKey);
+                        }
+                        else
+                        {
+                            // get op_return from the op_return 
+                            opret = txin.vout[opret_ind].scriptPubKey;
+                        } // else return(eval->Invalid("vin has wrong amount of vouts")); // dont think this is needed?
+                        if ( DecodePaymentsFundOpRet(opret,checktxid) != 'F' || checktxid != createtxid )
                         {
                             fprintf(stderr, "vin.%i is not a payments CC vout: txid.%s\n", i, txin.GetHash().ToString().c_str());
                             return(eval->Invalid("vin is not paymentsCC type"));
-                        } //else fprintf(stderr, "vin.%i opret type txid.%s\n", i, txin.GetHash().ToString().c_str());
+                        }
                     }
-                    // check the chain depth vs locked blcoks requirement. 
+                    // check the chain depth vs locked blocks requirement. 
                     CBlockIndex* pblockindex = mapBlockIndex[blockhash];
                     if ( pblockindex->GetHeight() > ht-lockedblocks )
                     {
@@ -340,8 +370,18 @@ int64_t AddPaymentsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CP
                 }
                 if ( iter == 0 )
                 {
-                    std::vector<uint8_t> scriptPubKey,opret;
-                    if ( myGetTransaction(txid,tx,hashBlock) == 0 || tx.vout.size() < 2 || DecodePaymentsFundOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,checktxid) != 'F' || checktxid != createtxid )
+                    CScript opret; uint256 checktxid; int32_t opret_ind;
+                    if ( (opret_ind= has_opret(vintx, EVAL_PAYMENTS)) == 0 )
+                    {
+                        // get op_return from CCvout
+                        opret = getCCopret(vintx.vout[0].scriptPubKey);
+                    }
+                    else
+                    {
+                        // get op_return from the op_return 
+                        opret = vintx.vout[opret_ind].scriptPubKey;
+                    }
+                    if ( myGetTransaction(txid,tx,hashBlock) == 0 || DecodePaymentsFundOpRet(opret,checktxid) != 'F' || checktxid != createtxid )
                     {
                         fprintf(stderr,"bad opret %s vs %s\n",checktxid.GetHex().c_str(),createtxid.GetHex().c_str());
                         continue;
@@ -603,10 +643,16 @@ UniValue PaymentsFund(struct CCcontract_info *cp,char *jsonstr)
             }
             else
             {
-                mtx.vout.push_back(MakeCC1vout(EVAL_PAYMENTS,amount,Paymentspk));
                 opret = EncodePaymentsFundOpRet(txid);
+                fprintf(stderr, "opret.%s\n", HexStr(opret.begin(), opret.end()).c_str());
+                std::vector<std::vector<unsigned char>> vData = std::vector<std::vector<unsigned char>>();
+                if ( makeCCopret(opret, vData) )
+                {
+                    mtx.vout.push_back(MakeCC1vout(EVAL_PAYMENTS,amount,Paymentspk,&vData));
+                    fprintf(stderr, "params_size.%li parmas_hexstr.%s\n", vData.size(), HexStr(vData[0].begin(),vData[0].end()).c_str());
+                }
             }
-            rawtx = FinalizeCCTx(0,cp,mtx,mypk,PAYMENTS_TXFEE,opret);
+            rawtx = FinalizeCCTx(0,cp,mtx,mypk,PAYMENTS_TXFEE,CScript());
             if ( params != 0 )
                 free_json(params);
             return(payments_rawtxresult(result,rawtx,1));
@@ -630,24 +676,34 @@ UniValue PaymentsFund(struct CCcontract_info *cp,char *jsonstr)
 UniValue PaymentsTxidopret(struct CCcontract_info *cp,char *jsonstr)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight()); UniValue result(UniValue::VOBJ); CPubKey mypk; std::string rawtx;
-    std::vector<uint8_t> scriptPubKey,opret; int32_t allocation,n,retval0,retval1=0;
+    std::vector<uint8_t> scriptPubKey,opret; int32_t n,retval0,retval1=0; int64_t allocation;
     cJSON *params = payments_reparse(&n,jsonstr);
     mypk = pubkey2pk(Mypubkey());
     if ( params != 0 && n > 1 && n <= 3 )
     {
-        allocation = juint(jitem(params,0),0);
+        allocation = (int64_t)jint(jitem(params,0),0);
         retval0 = payments_parsehexdata(scriptPubKey,jitem(params,1),0);
-        if ( n == 3 )
-            retval1 = payments_parsehexdata(opret,jitem(params,2),0);
-        if ( allocation > 0 && retval0 == 0 && retval1 == 0 && AddNormalinputs(mtx,mypk,PAYMENTS_TXFEE,10) > 0 )
+        CScript test = CScript(scriptPubKey.begin(),scriptPubKey.end());
+        txnouttype whichType;
+        if (!::IsStandard(test, whichType))
         {
-            rawtx = FinalizeCCTx(0,cp,mtx,mypk,PAYMENTS_TXFEE,EncodePaymentsTxidOpRet(allocation,scriptPubKey,opret));
-            if ( params != 0 )
-                free_json(params);
-            return(payments_rawtxresult(result,rawtx,1));
+            result.push_back(Pair("result","error"));
+            result.push_back(Pair("error","scriptPubkey is not valid payment."));
         }
-        result.push_back(Pair("result","error"));
-        result.push_back(Pair("error","invalid params or cant find txfee"));
+        else 
+        {
+            if ( n == 3 )
+                retval1 = payments_parsehexdata(opret,jitem(params,2),0);
+            if ( allocation > 0 && retval0 == 0 && retval1 == 0 && AddNormalinputs(mtx,mypk,PAYMENTS_TXFEE*2,10) > 0 )
+            {
+                rawtx = FinalizeCCTx(0,cp,mtx,mypk,PAYMENTS_TXFEE,EncodePaymentsTxidOpRet(allocation,scriptPubKey,opret));
+                if ( params != 0 )
+                    free_json(params);
+                return(payments_rawtxresult(result,rawtx,1));
+            }
+            result.push_back(Pair("result","error"));
+            result.push_back(Pair("error","invalid params or cant find txfee"));
+        }
     }
     else
     {
@@ -867,7 +923,7 @@ UniValue PaymentsInfo(struct CCcontract_info *cp,char *jsonstr)
                     funds = CCaddress_balance(fundsaddr,1);
                     result.push_back(Pair(fundsaddr,ValueFromAmount(funds)));
                     GetCCaddress(cp,fundsopretaddr,Paymentspk);
-                    fundsopret = CCaddress_balance(fundsopretaddr,1);
+                    fundsopret = CCaddress_balance(fundsopretaddr,1); // Shows balance for ALL payments plans, not just the one asked for!
                     result.push_back(Pair(fundsopretaddr,ValueFromAmount(fundsopret)));
                     result.push_back(Pair("totalfunds",ValueFromAmount(funds+fundsopret)));
                     result.push_back(Pair("result","success"));
