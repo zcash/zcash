@@ -67,38 +67,26 @@ UniValue custom_func1(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
         // make op_return payload as normal. 
         CScript opret = custom_opret('1',mypk);
         std::vector<std::vector<unsigned char>> vData = std::vector<std::vector<unsigned char>>();
-        vData.push_back(std::vector<unsigned char>(opret.begin(), opret.end()));
-        // make vout0 with op_return included as payload.
-        mtx.vout.push_back(MakeCC1vout(cp->evalcode,amount,mypk,&vData));
-        fprintf(stderr, "vout size2.%li\n", mtx.vout.size());
-        rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,CScript());
-        return(custom_rawtxresult(result,rawtx,broadcastflag));
+        if ( makeCCopret(opret, vData) )
+        {
+            // make vout0 with op_return included as payload.
+            mtx.vout.push_back(MakeCC1vout(cp->evalcode,amount,mypk,&vData));
+            fprintf(stderr, "vout size2.%li\n", mtx.vout.size());
+            rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,CScript());
+            return(custom_rawtxresult(result,rawtx,broadcastflag));
+        }
     }
     return(result);
-}
-
-bool has_opret(const CTransaction &tx, uint8_t evalcode)
-{
-    for ( auto vout : tx.vout )
-    {
-        if ( vout.scriptPubKey[0] == OP_RETURN && vout.scriptPubKey[1] == evalcode )
-            return true;
-    }
-    return false;
 }
 
 bool custom_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx)
 {
     char expectedaddress[64]; CPubKey pk;
     CScript opret; int32_t numvout;
-    if ( !has_opret(tx, EVAL_CUSTOM) )
+    if ( has_opret(tx, EVAL_CUSTOM) == 0 )
     {
         std::vector<std::vector<unsigned char>> vParams = std::vector<std::vector<unsigned char>>();
-        CScript dummy;
-        if ( tx.vout[0].scriptPubKey.IsPayToCryptoCondition(&dummy, vParams) && vParams.size() == 1 )
-        {
-            opret << E_MARSHAL(ss << vParams[0]);
-        }
+        opret = getCCopret(tx.vout[0].scriptPubKey);
         numvout = 1;
     }
     else 
