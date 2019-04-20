@@ -93,79 +93,6 @@ CTxOut MakeCC1of2vout(uint8_t evalcode,CAmount nValue,CPubKey pk1,CPubKey pk2, c
     return(vout);
 }
 
-// make three-eval (token+evalcode+evalcode2) 1of2 cryptocondition:
-CC *MakeTokensCCcond1of2(uint8_t evalcode, uint8_t evalcode2, CPubKey pk1, CPubKey pk2)
-{
-	// make 1of2 sigs cond 
-	std::vector<CC*> pks;
-	pks.push_back(CCNewSecp256k1(pk1));
-	pks.push_back(CCNewSecp256k1(pk2));
-
-	std::vector<CC*> thresholds;
-	thresholds.push_back( CCNewEval(E_MARSHAL(ss << evalcode)) );
-	if( evalcode != EVAL_TOKENS )	                                                // if evalCode == EVAL_TOKENS, it is actually MakeCCcond1of2()!
-		thresholds.push_back(CCNewEval(E_MARSHAL(ss << (uint8_t)EVAL_TOKENS)));	    // this is eval token cc
-    if( evalcode2 != 0 )
-        thresholds.push_back(CCNewEval(E_MARSHAL(ss << evalcode2)));                // add optional additional evalcode
-	thresholds.push_back(CCNewThreshold(1, pks));		                            // this is 1 of 2 sigs cc
-
-	return CCNewThreshold(thresholds.size(), thresholds);
-}
-// overload to make two-eval (token+evalcode) 1of2 cryptocondition:
-CC *MakeTokensCCcond1of2(uint8_t evalcode, CPubKey pk1, CPubKey pk2) {
-    return MakeTokensCCcond1of2(evalcode, 0, pk1, pk2);
-}
-
-// make three-eval (token+evalcode+evalcode2) cryptocondition:
-CC *MakeTokensCCcond1(uint8_t evalcode, uint8_t evalcode2, CPubKey pk)
-{
-	std::vector<CC*> pks;
-	pks.push_back(CCNewSecp256k1(pk));
-
-	std::vector<CC*> thresholds;
-	thresholds.push_back(CCNewEval(E_MARSHAL(ss << evalcode)));
-	if (evalcode != EVAL_TOKENS)                                                    // if evalCode == EVAL_TOKENS, it is actually MakeCCcond1()!
-		thresholds.push_back(CCNewEval(E_MARSHAL(ss << (uint8_t)EVAL_TOKENS)));	    // this is eval token cc
-    if (evalcode2 != 0)
-        thresholds.push_back(CCNewEval(E_MARSHAL(ss << evalcode2)));                // add optional additional evalcode
-	thresholds.push_back(CCNewThreshold(1, pks));			                        // signature
-
-	return CCNewThreshold(thresholds.size(), thresholds);
-}
-// overload to make two-eval (token+evalcode) cryptocondition:
-CC *MakeTokensCCcond1(uint8_t evalcode, CPubKey pk) {
-    return MakeTokensCCcond1(evalcode, 0, pk);
-}
-
-// make three-eval (token+evalcode+evalcode2) 1of2 cc vout:
-CTxOut MakeTokensCC1of2vout(uint8_t evalcode, uint8_t evalcode2, CAmount nValue, CPubKey pk1, CPubKey pk2)
-{
-	CTxOut vout;
-	CC *payoutCond = MakeTokensCCcond1of2(evalcode, evalcode2, pk1, pk2);
-	vout = CTxOut(nValue, CCPubKey(payoutCond));
-	cc_free(payoutCond);
-	return(vout);
-}
-// overload to make two-eval (token+evalcode) 1of2 cc vout:
-CTxOut MakeTokensCC1of2vout(uint8_t evalcode, CAmount nValue, CPubKey pk1, CPubKey pk2) {
-    return MakeTokensCC1of2vout(evalcode, 0, nValue, pk1, pk2);
-}
-
-// make three-eval (token+evalcode+evalcode2) cc vout:
-CTxOut MakeTokensCC1vout(uint8_t evalcode, uint8_t evalcode2, CAmount nValue, CPubKey pk)
-{
-	CTxOut vout;
-	CC *payoutCond = MakeTokensCCcond1(evalcode, evalcode2, pk);
-	vout = CTxOut(nValue, CCPubKey(payoutCond));
-	cc_free(payoutCond);
-	return(vout);
-}
-// overload to make two-eval (token+evalcode) cc vout:
-CTxOut MakeTokensCC1vout(uint8_t evalcode, CAmount nValue, CPubKey pk) {
-    return MakeTokensCC1vout(evalcode, 0, nValue, pk);
-}
-
-
 CC* GetCryptoCondition(CScript const& scriptSig)
 {
     auto pc = scriptSig.begin();
@@ -707,6 +634,57 @@ CPubKey check_signing_pubkey(CScript scriptSig)
         }
     }
 	return CPubKey();
+}
+
+
+// returns total of normal inputs signed with this pubkey
+int64_t TotalPubkeyNormalInputs(const CTransaction &tx, const CPubKey &pubkey)
+{
+    int64_t total = 0;
+    for (auto vin : tx.vin) {
+        CTransaction vintx;
+        uint256 hashBlock;
+        if (!IsCCInput(vin.scriptSig) && myGetTransaction(vin.prevout.hash, vintx, hashBlock)) {
+            typedef std::vector<unsigned char> valtype;
+            std::vector<valtype> vSolutions;
+            txnouttype whichType;
+
+            if (Solver(vintx.vout[vin.prevout.n].scriptPubKey, whichType, vSolutions)) {
+                switch (whichType) {
+                case TX_PUBKEY:
+                    if (pubkey == CPubKey(vSolutions[0]))   // is my input?
+                        total += vintx.vout[vin.prevout.n].nValue;
+                    break;
+                case TX_PUBKEYHASH:
+                    if (pubkey.GetID() == CKeyID(uint160(vSolutions[0])))    // is my input?
+                        total += vintx.vout[vin.prevout.n].nValue;
+                    break;
+                }
+            }
+        }
+    }
+    return total;
+}
+
+// returns total of CC inputs signed with this pubkey
+int64_t TotalPubkeyCCInputs(const CTransaction &tx, const CPubKey &pubkey)
+{
+    int64_t total = 0;
+    for (auto vin : tx.vin) {
+        if (IsCCInput(vin.scriptSig)) {
+            CPubKey vinPubkey = check_signing_pubkey(vin.scriptSig);
+            if (vinPubkey.IsValid()) {
+                if (vinPubkey == pubkey) {
+                    CTransaction vintx;
+                    uint256 hashBlock;
+                    if (myGetTransaction(vin.prevout.hash, vintx, hashBlock)) {
+                        total += vintx.vout[vin.prevout.n].nValue;
+                    }
+                }
+            }
+        }
+    }
+    return total;
 }
 
 bool ProcessCC(struct CCcontract_info *cp,Eval* eval, std::vector<uint8_t> paramsNull,const CTransaction &ctx, unsigned int nIn)
