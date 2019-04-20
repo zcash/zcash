@@ -25,7 +25,6 @@
 #include "util.h"
 #include "utilstrencodings.h"
 
-
 #include <boost/filesystem/operations.hpp>
 #include <stdio.h>
 

@@ -27,6 +27,8 @@
 
 #define KOMODO_ASSETCHAINS_WAITNOTARIZE
 #define KOMODO_PAXMAX (10000 * COIN)
+extern int32_t NOTARIZED_HEIGHT;
+uint256 NOTARIZED_HASH,NOTARIZED_DESTTXID;
 
 #include <stdint.h>
 #include <stdio.h>
@@ -630,6 +632,9 @@ int32_t komodo_voutupdate(bool fJustCheck,int32_t *isratificationp,int32_t notar
             if ( matched != 0 )
                 validated = komodo_validate_chain(srchash,*notarizedheightp);
             else validated = 1;
+            // Any notarization that is matched and has a decodable op_return is enough to pay notaries. Otherwise bugs! 
+            if ( fJustCheck && matched != 0 )
+                return(-2);
             if ( notarized != 0 && validated != 0 )
             {
                 //sp->NOTARIZED_HEIGHT = *notarizedheightp;
@@ -686,7 +691,7 @@ int32_t komodo_voutupdate(bool fJustCheck,int32_t *isratificationp,int32_t notar
                     else
                     {
                         komodo_rwccdata(ASSETCHAINS_SYMBOL,1,&ccdata,&MoMoMdata);
-                        if ( !fJustCheck && matched != 0 )
+                        if ( matched != 0 )
                             printf("[%s] matched.%d VALID (%s) MoM.%s [%d] CCid.%u\n",ASSETCHAINS_SYMBOL,matched,ccdata.symbol,MoM.ToString().c_str(),MoMdepth&0xffff,(MoMdepth>>16)&0xffff);
                     }
                     if ( MoMoMdata.pairs != 0 )
@@ -696,10 +701,6 @@ int32_t komodo_voutupdate(bool fJustCheck,int32_t *isratificationp,int32_t notar
                 }
                 else if ( ASSETCHAINS_SYMBOL[0] == 0 && matched != 0 && notarized != 0 && validated != 0 )
                     komodo_rwccdata((char *)"KMD",1,&ccdata,0);
-                
-                // Because of reorgs its not possible to use notarizations that are in order. If its validated pay the notaries!
-                if ( fJustCheck )
-                    return(-2);
                 
                 if ( matched != 0 && *notarizedheightp > sp->NOTARIZED_HEIGHT && *notarizedheightp < height )
                 {
@@ -746,7 +747,7 @@ int32_t komodo_voutupdate(bool fJustCheck,int32_t *isratificationp,int32_t notar
         }
         else if ( matched != 0 && i == 0 && j == 1 && opretlen == 149 )
         {
-            if ( !fJustCheck && notaryid >= 0 && notaryid < 64 )
+            if ( notaryid >= 0 && notaryid < 64 )
                 komodo_paxpricefeed(height,&scriptbuf[len],opretlen);
         }
         else if ( matched != 0 )
@@ -825,6 +826,7 @@ int32_t komodo_connectblock(bool fJustCheck, CBlockIndex *pindex,CBlock& block)
         return(0);
     }
     //fprintf(stderr,"%s connect.%d\n",ASSETCHAINS_SYMBOL,pindex->nHeight);
+    // Wallet Filter. Disabled here. Cant be activated by notaries or pools with some changes.
     if ( is_STAKED(ASSETCHAINS_SYMBOL) != 0 || IS_STAKED_NOTARY > -1 )
     {
         staked_era = STAKED_era(pindex->GetBlockTime());
@@ -834,16 +836,6 @@ int32_t komodo_connectblock(bool fJustCheck, CBlockIndex *pindex,CBlock& block)
             int8_t numSN = numStakedNotaries(tmp_pubkeys,staked_era);
             UpdateNotaryAddrs(tmp_pubkeys,numSN);
             STAKED_ERA = staked_era;
-            if ( NOTARYADDRS[0][0] != 0 && NOTARY_PUBKEY33[0] != 0 )
-            {
-                if ( (IS_STAKED_NOTARY= updateStakedNotary()) > -1 )
-                {
-                    IS_KOMODO_NOTARY = 0;
-                    if ( MIN_RECV_SATS == -1 )
-                        MIN_RECV_SATS = 100000000;
-                    fprintf(stderr, "Staked Notary Protection Active! NotaryID.%d RADD.%s ERA.%d MIN_TX_VALUE.%lu \n",IS_STAKED_NOTARY,NOTARY_ADDRESS.c_str(),staked_era,MIN_RECV_SATS);
-                }
-            }
             lastStakedEra = staked_era;
         }
     }
@@ -929,6 +921,13 @@ int32_t komodo_connectblock(bool fJustCheck, CBlockIndex *pindex,CBlock& block)
                      printf("[%s] ht.%d txi.%d signedmask.%llx numvins.%d numvouts.%d <<<<<<<<<<<  notarized\n",ASSETCHAINS_SYMBOL,height,i,(long long)signedmask,numvins,numvouts);
                 }
                 notarized = 1;
+            }
+            // simulate DPoW in regtest mode for dpowconfs tests/etc
+            if ( Params().NetworkIDString() == "regtest" && ( height%7 == 0) ) {
+                notarized              = 1;
+                sp->NOTARIZED_HEIGHT   = height;
+                sp->NOTARIZED_HASH     = block.GetHash();
+                sp->NOTARIZED_DESTTXID = txhash;
             }
             if ( IS_KOMODO_NOTARY != 0 && ASSETCHAINS_SYMBOL[0] == 0 )
                 printf("(tx.%d: ",i);

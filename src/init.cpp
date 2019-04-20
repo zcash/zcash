@@ -367,6 +367,7 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-blocknotify=<cmd>", _("Execute command when the best block changes (%s in cmd is replaced by block hash)"));
     strUsage += HelpMessageOpt("-checkblocks=<n>", strprintf(_("How many blocks to check at startup (default: %u, 0 = all)"), 288));
     strUsage += HelpMessageOpt("-checklevel=<n>", strprintf(_("How thorough the block verification of -checkblocks is (0-4, default: %u)"), 3));
+    strUsage += HelpMessageOpt("-clientname=<SomeName>", _("Full node client name, default 'MagicBean'"));
     strUsage += HelpMessageOpt("-conf=<file>", strprintf(_("Specify configuration file (default: %s)"), "komodo.conf"));
     if (mode == HMM_BITCOIND)
     {
@@ -450,6 +451,7 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-wallet=<file>", _("Specify wallet file (within data directory)") + " " + strprintf(_("(default: %s)"), "wallet.dat"));
     strUsage += HelpMessageOpt("-walletbroadcast", _("Make the wallet broadcast transactions") + " " + strprintf(_("(default: %u)"), true));
     strUsage += HelpMessageOpt("-walletnotify=<cmd>", _("Execute command when a wallet transaction changes (%s in cmd is replaced by TxID)"));
+    strUsage += HelpMessageOpt("-whitelistaddress=<Raddress>", _("Enable the wallet filter for notary nodes and add one Raddress to the whitelist of the wallet filter. If -whitelistaddress= is used, then the wallet filter is automatically activated. Several Raddresses can be defined using several -whitelistaddress= (similar to -addnode). The wallet filter will filter the utxo to only ones coming from my own Raddress (derived from pubkey) and each Raddress defined using -whitelistaddress= this option is mostly for Notary Nodes)."));
     strUsage += HelpMessageOpt("-zapwallettxes=<mode>", _("Delete all wallet transactions and only recover those parts of the blockchain through -rescan on startup") +
         " " + _("(1 = keep tx meta data e.g. account owner and payment request information, 2 = drop tx meta data)"));
 #endif
@@ -562,6 +564,36 @@ std::string HelpMessage(HelpMessageMode mode)
         strUsage += HelpMessageOpt("-metricsui", _("Set to 1 for a persistent metrics screen, 0 for sequential metrics output (default: 1 if running in a console, 0 otherwise)"));
         strUsage += HelpMessageOpt("-metricsrefreshtime", strprintf(_("Number of seconds between metrics refreshes (default: %u if running in a console, %u otherwise)"), 1, 600));
     }
+    strUsage += HelpMessageGroup(_("Komodo Asset Chain options:"));
+    strUsage += HelpMessageOpt("-ac_algo", _("Choose PoW mining algorithm, default is Equihash"));
+    strUsage += HelpMessageOpt("-ac_blocktime", _("Block time in seconds, default is 60"));
+    strUsage += HelpMessageOpt("-ac_cc", _("Cryptoconditions, default 0"));
+    strUsage += HelpMessageOpt("-ac_beam", _("BEAM integration"));
+    strUsage += HelpMessageOpt("-ac_coda", _("CODA integration"));
+    strUsage += HelpMessageOpt("-ac_cclib", _("Cryptoconditions dynamicly loadable library"));
+    strUsage += HelpMessageOpt("-ac_ccenable", _("Cryptoconditions to enable"));
+    strUsage += HelpMessageOpt("-ac_ccactivate", _("Block height to enable Cryptoconditions"));
+    strUsage += HelpMessageOpt("-ac_decay", _("Percentage of block reward decrease at each halving"));
+    strUsage += HelpMessageOpt("-ac_end", _("Block height at which block rewards will end"));
+    strUsage += HelpMessageOpt("-ac_eras", _("Block reward eras"));
+    strUsage += HelpMessageOpt("-ac_founders", _("Number of blocks between founders reward payouts"));
+    strUsage += HelpMessageOpt("-ac_halving", _("Number of blocks between each block reward halving"));
+    strUsage += HelpMessageOpt("-ac_name", _("Name of asset chain"));
+    strUsage += HelpMessageOpt("-ac_notarypay", _("Pay notaries, default 0"));
+    strUsage += HelpMessageOpt("-ac_perc", _("Percentage of block rewards paid to the founder"));
+    strUsage += HelpMessageOpt("-ac_private", _("Shielded transactions only (except coinbase + notaries), default is 0"));
+    strUsage += HelpMessageOpt("-ac_pubkey", _("Public key for receiving payments on the network"));
+    strUsage += HelpMessageOpt("-ac_public", _("Transparent transactions only, default 0"));
+    strUsage += HelpMessageOpt("-ac_reward", _("Block reward in satoshis, default is 0"));
+    strUsage += HelpMessageOpt("-ac_sapling", _("Sapling activation block height"));
+    strUsage += HelpMessageOpt("-ac_script", _("P2SH/multisig address to receive founders rewards"));
+    strUsage += HelpMessageOpt("-ac_staked", _("Percentage of blocks that are Proof-Of-Stake, default 0"));
+    strUsage += HelpMessageOpt("-ac_supply", _("Starting supply, default is 0"));
+    strUsage += HelpMessageOpt("-ac_timelockfrom", _("Timelocked coinbase start height"));
+    strUsage += HelpMessageOpt("-ac_timelockgte",  _("Timelocked coinbase minimum amount to be locked"));
+    strUsage += HelpMessageOpt("-ac_timelockto",   _("Timelocked coinbase stop height"));
+    strUsage += HelpMessageOpt("-ac_txpow", _("Enforce transaction-rate limit, default 0"));
+    strUsage += HelpMessageOpt("-ac_veruspos", _("Use Verus Proof-Of-Stake (-ac_veruspos=50) default 0"));
 
     return strUsage;
 }
@@ -1178,7 +1210,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     // set the hash algorithm to use for this chain
     // Again likely better solution here, than using long IF ELSE. 
-    extern uint32_t ASSETCHAINS_ALGO, ASSETCHAINS_VERUSHASH, ASSETCHAINS_VERUSHASHV2;
+    extern uint32_t ASSETCHAINS_ALGO, ASSETCHAINS_VERUSHASH, ASSETCHAINS_VERUSHASHV1_1;
     CVerusHash::init();
     CVerusHashV2::init();
     if (ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASH)
@@ -1186,7 +1218,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         // initialize VerusHash
         CBlockHeader::SetVerusHash();
     }
-    else if (ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASHV2)
+    else if (ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASHV1_1)
     {
         // initialize VerusHashV2
         CBlockHeader::SetVerusHashV2();
@@ -1855,7 +1887,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         uiInterface.InitMessage(_("Activating best chain..."));
         // scan for better chains in the block chain database, that are not yet connected in the active best chain
         CValidationState state;
-        if ( !ActivateBestChain(state))
+        if ( !ActivateBestChain(true,state))
             strErrors << "Failed to connect best block";
     }
     std::vector<boost::filesystem::path> vImportFiles;

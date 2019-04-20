@@ -16,6 +16,31 @@
 #ifndef H_CURSESD_H
 #define H_CURSESD_H
 
+#define KEY_OFFSET 0x100
+#define KEY_DOWN         (KEY_OFFSET + 0x02) /* Down arrow key */
+#define KEY_UP           (KEY_OFFSET + 0x03) /* Up arrow key */
+#define KEY_LEFT         (KEY_OFFSET + 0x04) /* Left arrow key */
+#define KEY_RIGHT        (KEY_OFFSET + 0x05) /* Right arrow key */
+
+
+#define COLOR_BLACK   0
+
+#ifdef PDC_RGB        /* RGB */
+# define COLOR_RED    1
+# define COLOR_GREEN  2
+# define COLOR_BLUE   4
+#else                 /* BGR */
+# define COLOR_BLUE   1
+# define COLOR_GREEN  2
+# define COLOR_RED    4
+#endif
+
+#define COLOR_CYAN    (COLOR_BLUE | COLOR_GREEN)
+#define COLOR_MAGENTA (COLOR_RED | COLOR_BLUE)
+#define COLOR_YELLOW  (COLOR_RED | COLOR_GREEN)
+
+#define COLOR_WHITE   7
+
 #define	LINES	24
 #define	COLS	80
 
@@ -48,7 +73,10 @@ extern WINDOW *stdscr,*curscr;
 extern int32_t ESCDELAY;
 typedef char chtype;
 
+#ifndef __MINGW32__
 int32_t getch(void); // stub
+#endif
+
 int32_t md_readchar(void); // stub
 
 WINDOW *initscr(void);
@@ -123,9 +151,10 @@ int32_t wprintw(WINDOW *win,char *fmt,...);
 int32_t mvprintw(int32_t y,int32_t x,char *fmt,...);
 int32_t mvwprintw(WINDOW *win,int32_t y,int32_t x,char *fmt,...);
 
+char *unctrl(char c);
+
 #define A_CHARTEXT 0xff
 #define baudrate() 9600
-#define unctrl(a) "^x"
 #define getmaxx(a) COLS
 #define getmaxy(a) LINES
 #define getyx(win,_argfory,_argforx) _argfory = win->y, _argforx = win->x
@@ -146,6 +175,17 @@ int32_t mvwprintw(WINDOW *win,int32_t y,int32_t x,char *fmt,...);
 #define leaveok(win,bf) 0
 #define halfdelay(x) 0
 #define nocbreak() 0
+#define cbreak() 0
+#define curs_set(x) 0
+
+// for tetris
+#define init_pair(a,b,c) 0
+#define start_color() 0
+#define box(a,b,c) 0
+#define A_REVERSE 0
+#define COLOR_PAIR(a) 0
+#define timeout(x) 0
+// end for tetris
 
 #ifndef TRUE
 #define TRUE 1

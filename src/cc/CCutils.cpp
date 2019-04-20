@@ -58,96 +58,40 @@ CC *MakeCCcond1(uint8_t evalcode,CPubKey pk)
     return CCNewThreshold(2, {condCC, Sig});
 }
 
-CTxOut MakeCC1vout(uint8_t evalcode,CAmount nValue,CPubKey pk)
+CTxOut MakeCC1vout(uint8_t evalcode,CAmount nValue, CPubKey pk, const std::vector<std::vector<unsigned char>>* vData)
 {
     CTxOut vout;
     CC *payoutCond = MakeCCcond1(evalcode,pk);
     vout = CTxOut(nValue,CCPubKey(payoutCond));
+    if ( vData )
+    {
+        std::vector<std::vector<unsigned char>> vtmpData = std::vector<std::vector<unsigned char>>(vData->begin(), vData->end());
+        std::vector<CPubKey> vPubKeys = std::vector<CPubKey>();
+        vPubKeys.push_back(pk);
+        COptCCParams ccp = COptCCParams(COptCCParams::VERSION, evalcode, 1, 1, vPubKeys, vtmpData);
+        vout.scriptPubKey << ccp.AsVector() << OP_DROP;
+    }
     cc_free(payoutCond);
     return(vout);
 }
 
-CTxOut MakeCC1of2vout(uint8_t evalcode,CAmount nValue,CPubKey pk1,CPubKey pk2)
+CTxOut MakeCC1of2vout(uint8_t evalcode,CAmount nValue,CPubKey pk1,CPubKey pk2, const std::vector<std::vector<unsigned char>>* vData)
 {
     CTxOut vout;
     CC *payoutCond = MakeCCcond1of2(evalcode,pk1,pk2);
     vout = CTxOut(nValue,CCPubKey(payoutCond));
+    if ( vData )
+    {
+        std::vector<std::vector<unsigned char>> vtmpData = std::vector<std::vector<unsigned char>>(vData->begin(), vData->end());
+        std::vector<CPubKey> vPubKeys = std::vector<CPubKey>();
+        vPubKeys.push_back(pk1);
+        vPubKeys.push_back(pk2);
+        COptCCParams ccp = COptCCParams(COptCCParams::VERSION, evalcode, 1, 2, vPubKeys, vtmpData);
+        vout.scriptPubKey << ccp.AsVector() << OP_DROP;
+    }
     cc_free(payoutCond);
     return(vout);
 }
-
-// make three-eval (token+evalcode+evalcode2) 1of2 cryptocondition:
-CC *MakeTokensCCcond1of2(uint8_t evalcode, uint8_t evalcode2, CPubKey pk1, CPubKey pk2)
-{
-	// make 1of2 sigs cond 
-	std::vector<CC*> pks;
-	pks.push_back(CCNewSecp256k1(pk1));
-	pks.push_back(CCNewSecp256k1(pk2));
-
-	std::vector<CC*> thresholds;
-	thresholds.push_back( CCNewEval(E_MARSHAL(ss << evalcode)) );
-	if( evalcode != EVAL_TOKENS )	                                                // if evalCode == EVAL_TOKENS, it is actually MakeCCcond1of2()!
-		thresholds.push_back(CCNewEval(E_MARSHAL(ss << (uint8_t)EVAL_TOKENS)));	    // this is eval token cc
-    if( evalcode2 != 0 )
-        thresholds.push_back(CCNewEval(E_MARSHAL(ss << evalcode2)));                // add optional additional evalcode
-	thresholds.push_back(CCNewThreshold(1, pks));		                            // this is 1 of 2 sigs cc
-
-	return CCNewThreshold(thresholds.size(), thresholds);
-}
-// overload to make two-eval (token+evalcode) 1of2 cryptocondition:
-CC *MakeTokensCCcond1of2(uint8_t evalcode, CPubKey pk1, CPubKey pk2) {
-    return MakeTokensCCcond1of2(evalcode, 0, pk1, pk2);
-}
-
-// make three-eval (token+evalcode+evalcode2) cryptocondition:
-CC *MakeTokensCCcond1(uint8_t evalcode, uint8_t evalcode2, CPubKey pk)
-{
-	std::vector<CC*> pks;
-	pks.push_back(CCNewSecp256k1(pk));
-
-	std::vector<CC*> thresholds;
-	thresholds.push_back(CCNewEval(E_MARSHAL(ss << evalcode)));
-	if (evalcode != EVAL_TOKENS)                                                    // if evalCode == EVAL_TOKENS, it is actually MakeCCcond1()!
-		thresholds.push_back(CCNewEval(E_MARSHAL(ss << (uint8_t)EVAL_TOKENS)));	    // this is eval token cc
-    if (evalcode2 != 0)
-        thresholds.push_back(CCNewEval(E_MARSHAL(ss << evalcode2)));                // add optional additional evalcode
-	thresholds.push_back(CCNewThreshold(1, pks));			                        // signature
-
-	return CCNewThreshold(thresholds.size(), thresholds);
-}
-// overload to make two-eval (token+evalcode) cryptocondition:
-CC *MakeTokensCCcond1(uint8_t evalcode, CPubKey pk) {
-    return MakeTokensCCcond1(evalcode, 0, pk);
-}
-
-// make three-eval (token+evalcode+evalcode2) 1of2 cc vout:
-CTxOut MakeTokensCC1of2vout(uint8_t evalcode, uint8_t evalcode2, CAmount nValue, CPubKey pk1, CPubKey pk2)
-{
-	CTxOut vout;
-	CC *payoutCond = MakeTokensCCcond1of2(evalcode, evalcode2, pk1, pk2);
-	vout = CTxOut(nValue, CCPubKey(payoutCond));
-	cc_free(payoutCond);
-	return(vout);
-}
-// overload to make two-eval (token+evalcode) 1of2 cc vout:
-CTxOut MakeTokensCC1of2vout(uint8_t evalcode, CAmount nValue, CPubKey pk1, CPubKey pk2) {
-    return MakeTokensCC1of2vout(evalcode, 0, nValue, pk1, pk2);
-}
-
-// make three-eval (token+evalcode+evalcode2) cc vout:
-CTxOut MakeTokensCC1vout(uint8_t evalcode, uint8_t evalcode2, CAmount nValue, CPubKey pk)
-{
-	CTxOut vout;
-	CC *payoutCond = MakeTokensCCcond1(evalcode, evalcode2, pk);
-	vout = CTxOut(nValue, CCPubKey(payoutCond));
-	cc_free(payoutCond);
-	return(vout);
-}
-// overload to make two-eval (token+evalcode) cc vout:
-CTxOut MakeTokensCC1vout(uint8_t evalcode, CAmount nValue, CPubKey pk) {
-    return MakeTokensCC1vout(evalcode, 0, nValue, pk);
-}
-
 
 CC* GetCryptoCondition(CScript const& scriptSig)
 {
@@ -168,88 +112,17 @@ bool IsCCInput(CScript const& scriptSig)
     return true;
 }
 
-int32_t unstringbits(char *buf,uint64_t bits)
+bool CheckTxFee(const CTransaction &tx, uint64_t txfee, uint32_t height, uint64_t blocktime)
 {
-    int32_t i;
-    for (i=0; i<8; i++,bits>>=8)
-        if ( (buf[i]= (char)(bits & 0xff)) == 0 )
-            break;
-    buf[i] = 0;
-    return(i);
-}
-
-uint64_t stringbits(char *str)
-{
-    uint64_t bits = 0;
-    if ( str == 0 )
-        return(0);
-    int32_t i,n = (int32_t)strlen(str);
-    if ( n > 8 )
-        n = 8;
-    for (i=n-1; i>=0; i--)
-        bits = (bits << 8) | (str[i] & 0xff);
-    //printf("(%s) -> %llx %llu\n",str,(long long)bits,(long long)bits);
-    return(bits);
-}
-
-uint256 revuint256(uint256 txid)
-{
-    uint256 revtxid; int32_t i;
-    for (i=31; i>=0; i--)
-        ((uint8_t *)&revtxid)[31-i] = ((uint8_t *)&txid)[i];
-    return(revtxid);
-}
-
-char *uint256_str(char *dest,uint256 txid)
-{
-    int32_t i,j=0;
-    for (i=31; i>=0; i--)
-        sprintf(&dest[j++ * 2],"%02x",((uint8_t *)&txid)[i]);
-    dest[64] = 0;
-    return(dest);
-}
-
-char *pubkey33_str(char *dest,uint8_t *pubkey33)
-{
-    int32_t i;
-    if ( pubkey33 != 0 )
+    int64_t interest; uint64_t valuein;
+    CCoinsViewCache &view = *pcoinsTip;
+    valuein = view.GetValueIn(height,&interest,tx,blocktime);
+    if ( valuein-tx.GetValueOut() > txfee )
     {
-        for (i=0; i<33; i++)
-            sprintf(&dest[i * 2],"%02x",pubkey33[i]);
-    } else dest[0] = 0;
-    return(dest);
-}
-
-uint256 Parseuint256(char *hexstr)
-{
-    uint256 txid; int32_t i; std::vector<unsigned char> txidbytes(ParseHex(hexstr));
-    memset(&txid,0,sizeof(txid));
-    if ( strlen(hexstr) == 64 )
-    {
-        for (i=31; i>=0; i--)
-            ((uint8_t *)&txid)[31-i] = ((uint8_t *)txidbytes.data())[i];
+        //fprintf(stderr, "txfee.%li vs txfee.%li\n", valuein-tx.GetValueOut(), txfee);
+        return false;
     }
-    return(txid);
-}
-
-CPubKey buf2pk(uint8_t *buf33)
-{
-    CPubKey pk; int32_t i; uint8_t *dest;
-    dest = (uint8_t *)pk.begin();
-    for (i=0; i<33; i++)
-        dest[i] = buf33[i];
-    return(pk);
-}
-
-CPubKey pubkey2pk(std::vector<uint8_t> pubkey)
-{
-    CPubKey pk; int32_t i,n; uint8_t *dest,*pubkey33;
-    n = pubkey.size();
-    dest = (uint8_t *)pk.begin();
-    pubkey33 = (uint8_t *)pubkey.data();
-    for (i=0; i<n; i++)
-        dest[i] = pubkey33[i];
-    return(pk);
+    return true;
 }
 
 // set additional 'unspendable' addr
@@ -603,6 +476,95 @@ int64_t CCduration(int32_t &numblocks,uint256 txid)
     return(duration);
 }
 
+uint256 CCOraclesReverseScan(char const *logcategory,uint256 &txid,int32_t height,uint256 reforacletxid,uint256 batontxid)
+{
+    CTransaction tx; uint256 hash,mhash,bhash,hashBlock,oracletxid; int32_t len,len2,numvouts;
+    int64_t val,merkleht; CPubKey pk; std::vector<uint8_t>data; char str[65],str2[65];
+    
+    txid = zeroid;
+    LogPrint(logcategory,"start reverse scan %s\n",uint256_str(str,batontxid));
+    while ( myGetTransaction(batontxid,tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 0 )
+    {
+        LogPrint(logcategory,"check %s\n",uint256_str(str,batontxid));
+        if ( DecodeOraclesData(tx.vout[numvouts-1].scriptPubKey,oracletxid,bhash,pk,data) == 'D' && oracletxid == reforacletxid )
+        {
+            LogPrint(logcategory,"decoded %s\n",uint256_str(str,batontxid));
+            if ( oracle_format(&hash,&merkleht,0,'I',(uint8_t *)data.data(),0,(int32_t)data.size()) == sizeof(int32_t) && merkleht == height )
+            {
+                len = oracle_format(&hash,&val,0,'h',(uint8_t *)data.data(),sizeof(int32_t),(int32_t)data.size());
+                len2 = oracle_format(&mhash,&val,0,'h',(uint8_t *)data.data(),(int32_t)(sizeof(int32_t)+sizeof(uint256)),(int32_t)data.size());
+
+                LogPrint(logcategory,"found merkleht.%d len.%d len2.%d %s %s\n",(int32_t)merkleht,len,len2,uint256_str(str,hash),uint256_str(str2,mhash));
+                if ( len == sizeof(hash)+sizeof(int32_t) && len2 == 2*sizeof(mhash)+sizeof(int32_t) && mhash != zeroid )
+                {
+                    txid = batontxid;
+                    LogPrint(logcategory,"set txid\n");
+                    return(mhash);
+                }
+                else
+                {
+                    LogPrint(logcategory,"missing hash\n");
+                    return(zeroid);
+                }
+            }
+            else LogPrint(logcategory,"height.%d vs search ht.%d\n",(int32_t)merkleht,(int32_t)height);
+            batontxid = bhash;
+            LogPrint(logcategory,"new hash %s\n",uint256_str(str,batontxid));
+        } else break;
+    }
+    LogPrint(logcategory,"end of loop\n");
+    return(zeroid);
+}
+
+int32_t myIs_coinaddr_inmempoolvout(char const *logcategory,char *coinaddr)
+{
+    int32_t i,n; char destaddr[64];
+    BOOST_FOREACH(const CTxMemPoolEntry &e,mempool.mapTx)
+    {
+        const CTransaction &tx = e.GetTx();
+        if ( (n= tx.vout.size()) > 0 )
+        {
+            const uint256 &txid = tx.GetHash();
+            for (i=0; i<n; i++)
+            {
+                Getscriptaddress(destaddr,tx.vout[i].scriptPubKey);
+                if ( strcmp(destaddr,coinaddr) == 0 )
+                {
+                    LogPrint(logcategory,"found (%s) vout in mempool\n",coinaddr);
+                    return(1);
+                }
+            }
+        }
+    }
+    return(0);
+}
+
+int32_t CCCointxidExists(char const *logcategory,uint256 cointxid)
+{
+    char txidaddr[64]; std::string coin; int32_t numvouts; uint256 hashBlock;
+    std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex;
+    CCtxidaddr(txidaddr,cointxid);
+    SetCCtxids(addressIndex,txidaddr,true);
+    for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=addressIndex.begin(); it!=addressIndex.end(); it++)
+    {
+        return(-1);
+    }
+    return(myIs_coinaddr_inmempoolvout(logcategory,txidaddr));
+}
+
+/* Get the block merkle root for a proof
+ * IN: proofData
+ * OUT: merkle root
+ * OUT: transaction IDS
+ */
+uint256 BitcoinGetProofMerkleRoot(const std::vector<uint8_t> &proofData, std::vector<uint256> &txids)
+{
+    CMerkleBlock merkleBlock;
+    if (!E_UNMARSHAL(proofData, ss >> merkleBlock))
+        return uint256();
+    return merkleBlock.txn.ExtractMatches(txids);
+}
+
 bool komodo_txnotarizedconfirmed(uint256 txid)
 {
     char str[65];
@@ -672,6 +634,57 @@ CPubKey check_signing_pubkey(CScript scriptSig)
         }
     }
 	return CPubKey();
+}
+
+
+// returns total of normal inputs signed with this pubkey
+int64_t TotalPubkeyNormalInputs(const CTransaction &tx, const CPubKey &pubkey)
+{
+    int64_t total = 0;
+    for (auto vin : tx.vin) {
+        CTransaction vintx;
+        uint256 hashBlock;
+        if (!IsCCInput(vin.scriptSig) && myGetTransaction(vin.prevout.hash, vintx, hashBlock)) {
+            typedef std::vector<unsigned char> valtype;
+            std::vector<valtype> vSolutions;
+            txnouttype whichType;
+
+            if (Solver(vintx.vout[vin.prevout.n].scriptPubKey, whichType, vSolutions)) {
+                switch (whichType) {
+                case TX_PUBKEY:
+                    if (pubkey == CPubKey(vSolutions[0]))   // is my input?
+                        total += vintx.vout[vin.prevout.n].nValue;
+                    break;
+                case TX_PUBKEYHASH:
+                    if (pubkey.GetID() == CKeyID(uint160(vSolutions[0])))    // is my input?
+                        total += vintx.vout[vin.prevout.n].nValue;
+                    break;
+                }
+            }
+        }
+    }
+    return total;
+}
+
+// returns total of CC inputs signed with this pubkey
+int64_t TotalPubkeyCCInputs(const CTransaction &tx, const CPubKey &pubkey)
+{
+    int64_t total = 0;
+    for (auto vin : tx.vin) {
+        if (IsCCInput(vin.scriptSig)) {
+            CPubKey vinPubkey = check_signing_pubkey(vin.scriptSig);
+            if (vinPubkey.IsValid()) {
+                if (vinPubkey == pubkey) {
+                    CTransaction vintx;
+                    uint256 hashBlock;
+                    if (myGetTransaction(vin.prevout.hash, vintx, hashBlock)) {
+                        total += vintx.vout[vin.prevout.n].nValue;
+                    }
+                }
+            }
+        }
+    }
+    return total;
 }
 
 bool ProcessCC(struct CCcontract_info *cp,Eval* eval, std::vector<uint8_t> paramsNull,const CTransaction &ctx, unsigned int nIn)

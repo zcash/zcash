@@ -31,6 +31,7 @@
 #include "CCPayments.h"
 #include "CCGateways.h"
 #include "CCtokens.h"
+#include "CCImportGateway.h"
 
 /*
  CCcustom has most of the functions that need to be extended to create a new CC contract.
@@ -63,7 +64,6 @@ const char *AssetsCCaddr = "RGKRjeTBw4LYFotSDLT6RWzMHbhXri6BG6";
 const char *AssetsNormaladdr = "RFYE2yL3KknWdHK6uNhvWacYsCUtwzjY3u";
 char AssetsCChexstr[67] = { "02adf84e0e075cf90868bd4e3d34a03420e034719649c41f371fc70d8e33aa2702" };
 uint8_t AssetsCCpriv[32] = { 0x9b, 0x17, 0x66, 0xe5, 0x82, 0x66, 0xac, 0xb6, 0xba, 0x43, 0x83, 0x74, 0xf7, 0x63, 0x11, 0x3b, 0xf0, 0xf3, 0x50, 0x6f, 0xd9, 0x6b, 0x67, 0x85, 0xf9, 0x7a, 0xf0, 0x54, 0x4d, 0xb1, 0x30, 0x77 };
-
 #include "CCcustom.inc"
 #undef FUNCNAME
 #undef EVALCODE
@@ -75,7 +75,6 @@ const char *FaucetCCaddr = "R9zHrofhRbub7ER77B7NrVch3A63R39GuC";
 const char *FaucetNormaladdr = "RKQV4oYs4rvxAWx1J43VnT73rSTVtUeckk";
 char FaucetCChexstr[67] = { "03682b255c40d0cde8faee381a1a50bbb89980ff24539cb8518e294d3a63cefe12" };
 uint8_t FaucetCCpriv[32] = { 0xd4, 0x4f, 0xf2, 0x31, 0x71, 0x7d, 0x28, 0x02, 0x4b, 0xc7, 0xdd, 0x71, 0xa0, 0x39, 0xc4, 0xbe, 0x1a, 0xfe, 0xeb, 0xc2, 0x46, 0xda, 0x76, 0xf8, 0x07, 0x53, 0x3d, 0x96, 0xb4, 0xca, 0xa0, 0xe9 };
-
 #include "CCcustom.inc"
 #undef FUNCNAME
 #undef EVALCODE
@@ -239,6 +238,17 @@ uint8_t TokensCCpriv[32] = { 0x1d, 0x0d, 0x0d, 0xce, 0x2d, 0xd2, 0xe1, 0x9d, 0xf
 const char *CClibNormaladdr = "RVVeUg43rNcq3mZFnvZ8yqagyzqFgUnq4u";
 char CClibCChexstr[67] = { "032447d97655da079729dc024c61088ea415b22f4c15d4810ddaf2069ac6468d2f" };
 uint8_t CClibCCpriv[32] = { 0x57, 0xcf, 0x49, 0x71, 0x7d, 0xb4, 0x15, 0x1b, 0x4f, 0x98, 0xc5, 0x45, 0x8d, 0x26, 0x52, 0x4b, 0x7b, 0xe9, 0xbd, 0x55, 0xd8, 0x20, 0xd6, 0xc4, 0x82, 0x0f, 0xf5, 0xec, 0x6c, 0x1c, 0xa0, 0xc0 };
+#include "CCcustom.inc"
+#undef FUNCNAME
+#undef EVALCODE
+
+// ImportGateway
+#define FUNCNAME IsImportGatewayInput
+#define EVALCODE EVAL_IMPORTGATEWAY
+const char *ImportGatewayCCaddr = "RXJT6CRAXHFuQ2UjqdxMj7EfrayF6UJpzZ";
+const char *ImportGatewayNormaladdr = "RNFRho63Ddz1Rh2eGPETykrU4fA8r67S4Y"; 
+char ImportGatewayCChexstr[67] = { "0397231cfe04ea32d5fafb2206773ec9fba6e15c5a4e86064468bca195f7542714" };
+uint8_t ImportGatewayCCpriv[32] = { 0x65, 0xef, 0x27, 0xeb, 0x3d, 0xb0, 0xb4, 0xae, 0x0f, 0xbc, 0x77, 0xdb, 0xf8, 0x40, 0x48, 0x90, 0x52, 0x20, 0x9e, 0x45, 0x3b, 0x49, 0xd8, 0x97, 0x60, 0x8c, 0x27, 0x4c, 0x59, 0x46, 0xe1, 0xdf };
 #include "CCcustom.inc"
 #undef FUNCNAME
 #undef EVALCODE
@@ -424,6 +434,14 @@ struct CCcontract_info *CCinit(struct CCcontract_info *cp, uint8_t evalcode)
 			memcpy(cp->CCpriv, TokensCCpriv, 32);
 			cp->validate = TokensValidate;
 			cp->ismyvin = IsTokensInput;
+			break;
+        case EVAL_IMPORTGATEWAY:
+			strcpy(cp->unspendableCCaddr, ImportGatewayCCaddr);
+			strcpy(cp->normaladdr, ImportGatewayNormaladdr);
+			strcpy(cp->CChexstr, ImportGatewayCChexstr);
+			memcpy(cp->CCpriv, ImportGatewayCCpriv, 32);
+			cp->validate = ImportGatewayValidate;
+			cp->ismyvin = IsImportGatewayInput;
 			break;
         default:
             if ( CClib_initcp(cp,evalcode) < 0 )

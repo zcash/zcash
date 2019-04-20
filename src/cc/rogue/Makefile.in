@@ -28,8 +28,8 @@ CC    = @CC@
 #CFLAGS=-O2
 CFLAGS= @CFLAGS@ -fPIC
 
-#LIBS=-lcurses
-LIBS =	@LIBS@
+LIBS=-lcurses -lcurl
+#LIBS =	@LIBS@
 
 #RM=rm -f
 RM    = rm -f
@@ -128,9 +128,11 @@ MISC     = Makefile.std LICENSE.TXT rogue54.sln rogue54.vcproj rogue.spec \
     
 .c.o:
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c $*.c
-    
+
+#$(RM) rogue.so ; $(CC) -shared -o rogue.so cursesd.c $(OBJS1) $(OBJS2); $(CC) $(CFLAGS) $(LDFLAGS) $(OBJS) $(LIBS) -o $@
+
 $(PROGRAM): $(HDRS) $(OBJS)
-	$(RM) rogue.so ; $(CC) -shared -o rogue.so $(OBJS1) $(OBJS2) -lcurses; $(CC) $(CFLAGS) $(LDFLAGS) $(OBJS) $(LIBS) -o $@
+	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS) $(LIBS) -o $@
 
 clean:
 	$(RM) $(OBJS1); $(RM) main.$(O) ; $(RM) rogue.so

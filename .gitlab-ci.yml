@@ -32,9 +32,9 @@ build:ubuntu:
   variables:
     DOCKER_DRIVER: overlay2
   cache:
-    key: "${CI_JOB_NAME}${CI_COMMIT_REF_NAME}"
+    key: ${CI_COMMIT_REF_SLUG}
     paths:
-    - depends/built
+    - depends/
   script:
   - zcutil/build.sh -j$(nproc)
   - mkdir ${PACKAGE_DIR_LINUX}
@@ -71,6 +71,10 @@ build:windows:
   - cp src/komodod.exe
     src/komodo-cli.exe
     src/komodo-tx.exe
+    src/cc/rogue/rogue.exe
+    zcutil/fetch-params.bat
+    src/cc/rogue/x86_64-w64-mingw32/bin/libcurl-4.dll
+    src/cc/rogue/x86_64-w64-mingw32/bin/libncursesw6.dll
     ${PACKAGE_DIR_WINDOWS}
   - zip -r ${PACKAGE_DIR_WINDOWS}.zip ${PACKAGE_DIR_WINDOWS}
   - md5sum ${AGAMA_ARTIFACTS_WINDOWS} > ${AGAMA_ARTIFACTS_WINDOWS_CHECKSUM}
@@ -91,6 +95,7 @@ build:macos:
     key: "${CI_JOB_NAME}${CI_COMMIT_REF_NAME}"
     paths:
     - depends/built
+  allow_failure: true
   script:
   - zcutil/build-mac.sh -j$(sysctl -n hw.physicalcpu)
   - ./makeRelease.sh ${PACKAGE_DIR_MACOS}
