@@ -664,6 +664,7 @@ int32_t z_exportkey(char *privkey,char *refcoin,char *acname,char *zaddr)
         free(retstr);
         return(0);
     }
+    return(-1);
 }
 
 int32_t getnewaddress(char *coinaddr,char *refcoin,char *acname)

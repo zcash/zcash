@@ -289,6 +289,8 @@ void *chainparams_commandline(void *ptr)
             mainParams.SetNValue(ASSETCHAINS_NK[0]);
             mainParams.SetKValue(ASSETCHAINS_NK[1]);
         }
+        if ( KOMODO_TESTNODE != 0 )
+            mainParams.SetMiningRequiresPeers(false);
         if ( ASSETCHAINS_RPCPORT == 0 )
             ASSETCHAINS_RPCPORT = ASSETCHAINS_P2PPORT + 1;
         mainParams.pchMessageStart[0] = ASSETCHAINS_MAGIC & 0xff;
