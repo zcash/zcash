@@ -76,11 +76,9 @@ CScript getCCopret(const CScript &scriptPubKey)
     CScript dummy; CScript opret;
     if ( scriptPubKey.IsPayToCryptoCondition(&dummy, vParams) )
     {
-        //opret << E_MARSHAL(ss << vParams[0]);
+        //fprintf(stderr, "vparams.%s\n", HexStr(vParams[0].begin(), vParams[0].end()).c_str());
         opret = CScript(vParams[0].begin()+6, vParams[0].end());
     }
-    //fprintf(stderr, "params_size.%li parmas_hexstr.%s\n", vParams.size(), HexStr(vParams[0].begin(),vParams[0].end()).c_str());
-    //opret = CScript(vParams[0].begin(), vParams[0].end());
     return opret;
 }
 

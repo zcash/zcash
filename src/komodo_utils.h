@@ -2072,6 +2072,7 @@ void komodo_args(char *argv0)
                     extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_FOUNDERS),(void *)&ASSETCHAINS_FOUNDERS);
                 if ( ASSETCHAINS_FOUNDERS_REWARD != 0 )
                 {
+                    fprintf(stderr, "set founders reward.%li\n",ASSETCHAINS_FOUNDERS_REWARD);
                     extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_FOUNDERS_REWARD),(void *)&ASSETCHAINS_FOUNDERS_REWARD);
                 }
             }
