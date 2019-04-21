@@ -1102,6 +1102,9 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
                 result.push_back(Pair("costbasistxid", costbasistxid.GetHex()));
             prices_betjson(result, profits, costbasis, positionsize, addedbets, leverage, firstheight, firstprice, lastprice, equity);
             result.push_back(Pair("height", (int64_t)refheight));
+#ifdef TESTMODE
+            result.push_back(Pair("test_daywindow", PRICES_DAYWINDOW));
+#endif
             return(result);
         }
     }

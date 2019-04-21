@@ -17,10 +17,11 @@
 #ifndef CC_PRICES_H
 #define CC_PRICES_H
 
+#include "komodo_defs.h"
 #include "CCinclude.h"
 int32_t komodo_priceget(int64_t *buf64,int32_t ind,int32_t height,int32_t numblocks);
 
-#define PRICES_DAYWINDOW ((3600*24/ASSETCHAINS_BLOCKTIME) + 1)
+// #define PRICES_DAYWINDOW ((3600*24/ASSETCHAINS_BLOCKTIME) + 1) // defined in komodo_defs.h
 #define PRICES_TXFEE 10000
 #define PRICES_MAXLEVERAGE 777
 #define PRICES_SMOOTHWIDTH 1
