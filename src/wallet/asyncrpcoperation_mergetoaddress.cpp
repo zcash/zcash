@@ -46,6 +46,7 @@
 #include <thread>
 
 #include "paymentdisclosuredb.h"
+#include "komodo_defs.h"
 
 using namespace libzcash;
 
