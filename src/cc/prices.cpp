@@ -158,7 +158,7 @@ bool ValidateBetTx(struct CCcontract_info *cp, Eval *eval, const CTransaction & 
     if (MakeCC1vout(cp->evalcode, bettx.vout[1].nValue, pricespk) != bettx.vout[1])
         return eval->Invalid("cannot validate vout1 in bet tx with global pk");
     if( MakeCC1vout(cp->evalcode, bettx.vout[2].nValue, pricespk) != bettx.vout[2] )
-        return eval->Invalid("cannot validate 1of2 vout2 in bet tx with pk from opreturn");
+        return eval->Invalid("cannot validate vout2 in bet tx with pk from opreturn");
 
     return true;
 }
@@ -665,7 +665,7 @@ int64_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t
     //std::cerr << "prices_syntheticprofits() profits double=" << (double)price / (double)costbasis -1.0 << std::endl;
     //double dprofits = (double)price / (double)costbasis - 1.0;
 
-    profits *= leverage * positionsize / SATOSHIDEN;
+    profits *= leverage * positionsize / (int64_t)SATOSHIDEN;
     //dprofits *= leverage * positionsize;
     std::cerr << "prices_syntheticprofits() val profits=" << profits << std::endl;
     //std::cerr << "prices_syntheticprofits() dprofits=" << dprofits << std::endl;
