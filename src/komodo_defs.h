@@ -78,6 +78,7 @@ extern std::string DONATION_PUBKEY;
 extern uint8_t ASSETCHAINS_PRIVATE;
 extern int32_t USE_EXTERNAL_PUBKEY;
 extern char NOTARYADDRS[64][64];
+extern int32_t KOMODO_TESTNODE;
 int tx_height( const uint256 &hash );
 extern std::vector<std::string> vWhiteListAddress;
 void komodo_netevent(std::vector<uint8_t> payload);
