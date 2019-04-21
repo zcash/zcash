@@ -75,7 +75,8 @@ int tx_height( const uint256 &hash ){
         nHeight = it->second->GetHeight();
         //fprintf(stderr,"blockHash %s height %d\n",hashBlock.ToString().c_str(), nHeight);
     } else {
-        fprintf(stderr,"block hash %s does not exist!\n", hashBlock.ToString().c_str() );
+        // Unconfirmed xtns
+        //fprintf(stderr,"block hash %s does not exist!\n", hashBlock.ToString().c_str() );
     }
     return nHeight;
 }
