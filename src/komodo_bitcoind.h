@@ -1091,6 +1091,17 @@ int32_t komodo_blockheight(uint256 hash)
     return(0);
 }
 
+uint32_t komodo_blocktime(uint256 hash)
+{
+    BlockMap::const_iterator it; CBlockIndex *pindex = 0;
+    if ( (it = mapBlockIndex.find(hash)) != mapBlockIndex.end() )
+    {
+        if ( (pindex= it->second) != 0 )
+            return(pindex->nTime);
+    }
+    return(0);
+}
+
 int32_t komodo_checkpoint(int32_t *notarized_heightp,int32_t nHeight,uint256 hash)
 {
     int32_t notarized_height,MoMdepth; uint256 MoM,notarized_hash,notarized_desttxid; CBlockIndex *notary,*pindex;
