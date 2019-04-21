@@ -55,6 +55,7 @@ using namespace libzcash;
 extern char ASSETCHAINS_SYMBOL[65];
 
 int32_t komodo_dpowconfs(int32_t height,int32_t numconfs);
+int32_t komodo_blockheight(uint256 hash);
 int tx_height( const uint256 &hash );
 extern UniValue signrawtransaction(const UniValue& params, bool fHelp);
 extern UniValue sendrawtransaction(const UniValue& params, bool fHelp);
