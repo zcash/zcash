@@ -46,6 +46,7 @@
 #include <thread>
 
 #include "paymentdisclosuredb.h"
+int32_t komodo_blockheight(uint256 hash);
 
 using namespace libzcash;
 
