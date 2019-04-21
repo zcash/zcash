@@ -149,8 +149,12 @@ bool IsCCInput(CScript const& scriptSig)
 
 bool CheckTxFee(const CTransaction &tx, uint64_t txfee, uint32_t height, uint64_t blocktime)
 {
+    LOCK(mempool.cs);
+    CCoinsView dummy;
+    CCoinsViewCache view(&dummy);
     int64_t interest; uint64_t valuein;
-    CCoinsViewCache &view = *pcoinsTip;
+    CCoinsViewMemPool viewMemPool(pcoinsTip, mempool);
+    view.SetBackend(viewMemPool);
     valuein = view.GetValueIn(height,&interest,tx,blocktime);
     if ( valuein-tx.GetValueOut() > txfee )
     {

@@ -199,11 +199,10 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
         {
             if ( lockedblocks < 0 || minrelease < 0 || totalallocations <= 0 || txidoprets.size() < 2 )
                 return(eval->Invalid("negative values"));    
-            if ( !CheckTxFee(tx, PAYMENTS_TXFEE, chainActive.LastTip()->GetHeight(), chainActive.LastTip()->nTime) )
-                return eval->Invalid("txfee is too high");
             Paymentspk = GetUnspendable(cp,0);
             //fprintf(stderr, "lockedblocks.%i minrelease.%i totalallocations.%i txidopret1.%s txidopret2.%s\n",lockedblocks, minrelease, totalallocations, txidoprets[0].ToString().c_str(), txidoprets[1].ToString().c_str() );
-            
+            if ( !CheckTxFee(tx, PAYMENTS_TXFEE+1, chainActive.LastTip()->GetHeight(), chainActive.LastTip()->nTime) )
+                return eval->Invalid("txfee is too high");
             // Get all the script pubkeys and allocations
             std::vector<int64_t> allocations;
             std::vector<CScript> scriptPubKeys;
@@ -267,7 +266,7 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
                 int64_t test = allocations[n];
                 test *= checkamount;
                 test /= totalallocations;
-                if ( test != tx.vout[i].nValue )
+                if ( test != tx.vout[i].nValue && test != tx.vout[i].nValue-1 )
                 {
                     fprintf(stderr, "vout.%i test.%li vs nVlaue.%li\n",i, test, tx.vout[i].nValue);
                     return(eval->Invalid("amounts do not match"));
@@ -564,7 +563,7 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
                         newamount += (PAYMENTS_TXFEE - mtx.vout[i+1].nValue);
                         mtx.vout[i+1].nValue = PAYMENTS_TXFEE;
                     }
-                }
+                } 
                 if ( (inputsum= AddPaymentsInputs(cp,mtx,txidpk,newamount+2*PAYMENTS_TXFEE,CC_MAXVINS/2,createtxid,latestheight)) >= newamount+2*PAYMENTS_TXFEE )
                 {
                     std::string rawtx;
