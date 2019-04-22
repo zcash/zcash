@@ -130,12 +130,13 @@ uint8_t prices_finalopretdecode(CScript scriptPubKey,uint256 &bettxid,int64_t &p
 }
 
 // price opret basic validation and retrieval
-bool CheckPricesOpret(const CTransaction & tx, vscript_t &opret)
+static bool CheckPricesOpret(const CTransaction & tx, vscript_t &opret)
 {
     return tx.vout.size() > 0 && GetOpReturnData(tx.vout.back().scriptPubKey, opret) && opret.size() > 2 && opret.begin()[0] == EVAL_PRICES && IS_CHARINSTR(opret.begin()[1], "BACF");
 }
 
-bool ValidateBetTx(struct CCcontract_info *cp, Eval *eval, const CTransaction & bettx)
+// validate bet tx helper
+static bool ValidateBetTx(struct CCcontract_info *cp, Eval *eval, const CTransaction & bettx)
 {
     uint256 tokenid;
     int64_t positionsize, firstprice;
@@ -163,12 +164,13 @@ bool ValidateBetTx(struct CCcontract_info *cp, Eval *eval, const CTransaction & 
     return true;
 }
 
-
-bool ValidateAddFundingTx(struct CCcontract_info *cp, Eval *eval, const CTransaction & addfundingtx)
+// validate add funding tx helper
+static bool ValidateAddFundingTx(struct CCcontract_info *cp, Eval *eval, const CTransaction & addfundingtx, const CTransaction & vintx)
 {
     uint256 bettxid;
     int64_t amount;
     CPubKey pk, pricespk;
+    vscript_t vintxOpret;
 
     if (addfundingtx.vout.size() < 3 || addfundingtx.vout.size() > 4)
         return eval->Invalid("incorrect vout number for add funding tx");
@@ -179,6 +181,9 @@ bool ValidateAddFundingTx(struct CCcontract_info *cp, Eval *eval, const CTransac
 
     pricespk = GetUnspendable(cp, 0);
 
+    if (CheckPricesOpret(vintx, vintxOpret) && vintxOpret.begin()[1] == 'B' && vintx.GetHash() != bettxid)   // if vintx is bettx
+        return eval->Invalid("incorrect bettx id");
+
     if (MakeCC1vout(cp->evalcode, addfundingtx.vout[0].nValue, pk) != addfundingtx.vout[0])
         return eval->Invalid("cannot validate vout0 in add funding tx with pk from opreturn");
     if (MakeCC1vout(cp->evalcode, addfundingtx.vout[1].nValue, pricespk) != addfundingtx.vout[1])
@@ -187,7 +192,8 @@ bool ValidateAddFundingTx(struct CCcontract_info *cp, Eval *eval, const CTransac
     return true;
 }
 
-bool ValidateCostbasisTx(struct CCcontract_info *cp, Eval *eval, const CTransaction & costbasistx, const CTransaction & bettx)
+// validate costbasis tx helper
+static bool ValidateCostbasisTx(struct CCcontract_info *cp, Eval *eval, const CTransaction & costbasistx, const CTransaction & bettx)
 {
     uint256 bettxid;
     int64_t amount;
@@ -208,8 +214,11 @@ bool ValidateCostbasisTx(struct CCcontract_info *cp, Eval *eval, const CTransact
     if (MakeCC1vout(cp->evalcode, costbasistx.vout[1].nValue, pricespk) != costbasistx.vout[1])
         return eval->Invalid("cannot validate vout1 in costbasis tx with global pk");
 
-    if (bettx.vout.size() < 1) // maybe this is already checked outside, but it is safe to check here too and have encapsulated check
-        return eval->Invalid("incorrect bettx");
+    if (bettx.GetHash() != bettxid)
+        return eval->Invalid("incorrect bettx id");
+
+    if (bettx.vout.size() < 1) // for safety and for check encapsulation
+        return eval->Invalid("incorrect bettx no vouts");
 
     // check costbasis rules:
     if (costbasistx.vout[0].nValue > bettx.vout[1].nValue / 10)
@@ -230,7 +239,8 @@ bool ValidateCostbasisTx(struct CCcontract_info *cp, Eval *eval, const CTransact
     return true;
 }
 
-bool ValidateFinalTx(struct CCcontract_info *cp, Eval *eval, const CTransaction & finaltx)
+// validate final tx helper
+static bool ValidateFinalTx(struct CCcontract_info *cp, Eval *eval, const CTransaction & finaltx, const CTransaction & bettx)
 {
     uint256 bettxid;
     int64_t amount;
@@ -247,6 +257,9 @@ bool ValidateFinalTx(struct CCcontract_info *cp, Eval *eval, const CTransaction 
     if (prices_finalopretdecode(finaltx.vout.back().scriptPubKey, bettxid, profits, height, pk, firstprice, costbasis, addedbets, positionsize, leverage) != 'F')
         return eval->Invalid("cannot decode opreturn for final tx");
 
+    if (bettx.GetHash() != bettxid)
+        return eval->Invalid("incorrect bettx id");
+
     pricespk = GetUnspendable(cp, 0);
 
     if (MakeCC1vout(cp->evalcode, finaltx.vout[0].nValue, pk) != finaltx.vout[0])
@@ -258,10 +271,10 @@ bool ValidateFinalTx(struct CCcontract_info *cp, Eval *eval, const CTransaction 
     return true;
 }
 
+// validate prices tx function
 bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
 {
     vscript_t vopret;
-
 
     if (strcmp(ASSETCHAINS_SYMBOL, "REKT0") == 0 && chainActive.Height() < 2100)
         return true;
@@ -271,28 +284,44 @@ bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
 
     uint8_t funcId = vopret.begin()[1];
 
-    CTransaction vintx;
-    vscript_t vintxOpret;
+    CTransaction firstVinTx;
+    vscript_t firstVinTxOpret;
+    bool foundFirst = false;
     int32_t ccVinCount = 0;
-    int32_t prevoutN = 0;
-    // load vintx (might be either bet or add funding tx):
+    uint32_t prevoutN = 0;
+
+    // check basic rules:
+
+    // find first cc vin and load vintx (might be either bet or add funding tx):
     for (auto vin : tx.vin)
         if (cp->ismyvin(vin.scriptSig)) {
+            CTransaction vintx;
             uint256 hashBlock;
+            vscript_t vintxOpret;
+
             if (!myGetTransaction(vin.prevout.hash, vintx, hashBlock))
-                return eval->Invalid("cannot load vin tx");
-            prevoutN = vin.prevout.n;
+                return eval->Invalid("cannot load vintx");
+
+            if (!CheckPricesOpret(vintx, vintxOpret))
+                return eval->Invalid("cannot find prices opret in vintx");
+
+            if (vintxOpret.begin()[1] == 'B' && prevoutN == 3) {   
+                return eval->Invalid("cannot spend bet marker");
+            }
+
+            if (!foundFirst) {
+                prevoutN = vin.prevout.n;
+                firstVinTx = vintx;
+                firstVinTxOpret = vintxOpret;
+                foundFirst = true;
+            }
             ccVinCount++;
         }
-    if (ccVinCount != 1)   // must be only one cc vintx
-        return eval->Invalid("incorrect cc vin txns num");
+    if (!foundFirst)   
+        return eval->Invalid("prices cc vin not found");
 
-    if (!CheckPricesOpret(vintx, vintxOpret))
-        return eval->Invalid("cannot find prices opret in vintx");
-
-    if (vintxOpret.begin()[1] == 'B' && prevoutN == 3) {   // check basic spending rules
-        return eval->Invalid("cannot spend bet marker");
-    }
+    if (funcId != 'F' && ccVinCount > 1)
+        return eval->Invalid("only one prices cc vin allowed for this tx");
 
     switch (funcId) {
     case 'B':   // bet 
@@ -300,26 +329,26 @@ bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
 
     case 'A':   // add funding
         // check tx structure:
-        if (!ValidateAddFundingTx(cp, eval, tx))
+        if (!ValidateAddFundingTx(cp, eval, tx, firstVinTx))
             return false;  // invalid state is already set in the func
 
-        if (vintxOpret.begin()[1] == 'B') {
-            if (!ValidateBetTx(cp, eval, vintx)) // check tx structure
+        if (firstVinTxOpret.begin()[1] == 'B') {
+            if (!ValidateBetTx(cp, eval, firstVinTx)) // check tx structure
                 return false;  
         }
-        else if (vintxOpret.begin()[1] == 'A') {
+        else if (firstVinTxOpret.begin()[1] == 'A') {
             // no need to validate the previous addfunding tx (it was validated when added)
         }
 
         if (prevoutN != 0) {   // check spending rules
-            return eval->Invalid("incorrect vout to spend");
+            return eval->Invalid("incorrect vintx vout to spend");
         }
         break;
 
     case 'C':   // set costbasis 
-        if (!ValidateBetTx(cp, eval, vintx)) // first check bet tx 
-            return false;  
-        if (!ValidateCostbasisTx(cp, eval, tx, vintx))
+        if (!ValidateCostbasisTx(cp, eval, tx, firstVinTx))
+            return false;
+        if (!ValidateBetTx(cp, eval, firstVinTx)) 
             return false;  
         if (prevoutN != 1) {   // check spending rules
             return eval->Invalid("incorrect vout to spend");
@@ -328,9 +357,9 @@ bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
         break;
 
     case 'F':   // final tx 
-        if (!ValidateBetTx(cp, eval, vintx)) // first check bet tx 
+        if (!ValidateFinalTx(cp, eval, tx, firstVinTx))
             return false;
-        if (!ValidateFinalTx(cp, eval, tx))
+        if (!ValidateBetTx(cp, eval, firstVinTx)) 
             return false;
         if (prevoutN != 2) {   // check spending rules
             return eval->Invalid("incorrect vout to spend");
