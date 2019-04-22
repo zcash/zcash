@@ -665,9 +665,10 @@ int64_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t
     //std::cerr << "prices_syntheticprofits() profits double=" << (double)price / (double)costbasis -1.0 << std::endl;
     //double dprofits = (double)price / (double)costbasis - 1.0;
 
-    profits *= ((int64_t)leverage * (int64_t)positionsize) / (int64_t)SATOSHIDEN;
+    profits *= ((int64_t)leverage * (int64_t)positionsize);
+    profits /= (int64_t)SATOSHIDEN;
     //dprofits *= leverage * positionsize;
-    std::cerr << "prices_syntheticprofits() value of profits=" << profits << " leverage=" << leverage << " positionsize=" << positionsize << std::endl;
+    std::cerr << "prices_syntheticprofits() value of profits=" << profits << std::endl;
     //std::cerr << "prices_syntheticprofits() dprofits=" << dprofits << std::endl;
 
 
