@@ -26,7 +26,6 @@ endif
 define $(package)_config_cmds
   echo '=== config for $(package):' && \
   echo '$($(package)_config_env) $($(package)_conf_tool) $($(package)_config_opts)' && \
-  sleep 10 && \
   echo '=== ' && \
   $($(package)_config_env) $($(package)_conf_tool) $($(package)_config_opts) 
 endef
@@ -43,6 +42,5 @@ endif
 
 define $(package)_stage_cmds
   echo 'Staging dir: $($(package)_staging_dir)$(host_prefix)/' && \
-  sleep 10 && \
   $(MAKE) DESTDIR=$($(package)_staging_dir) install
 endef
