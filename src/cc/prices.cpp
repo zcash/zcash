@@ -1113,14 +1113,14 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
     return(result);
 }
 
-UniValue PricesList()
+UniValue PricesList(CPubKey mypk)
 {
-    UniValue result(UniValue::VARR); std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex; 
-    struct CCcontract_info *cp, C; 
-    int64_t amount, firstprice; int32_t height; int16_t leverage; uint256 txid, hashBlock, tokenid; 
-    CPubKey pk, pricespk; 
-    std::vector<uint16_t> vec; 
-    CTransaction vintx; 
+    UniValue result(UniValue::VARR); std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex;
+    struct CCcontract_info *cp, C;
+    int64_t amount, firstprice; int32_t height; int16_t leverage; uint256 txid, hashBlock, tokenid;
+    CPubKey pk, pricespk;
+    std::vector<uint16_t> vec;
+    CTransaction vintx;
 
     cp = CCinit(&C, EVAL_PRICES);
     pricespk = GetUnspendable(cp, 0);
@@ -1130,7 +1130,8 @@ UniValue PricesList()
         txid = it->first.txhash;
         if (GetTransaction(txid, vintx, hashBlock, false) != 0)
         {
-            if (vintx.vout.size() > 0 && prices_betopretdecode(vintx.vout[vintx.vout.size() - 1].scriptPubKey, pk, height, amount, leverage, firstprice, vec, tokenid) == 'B')
+            if (vintx.vout.size() > 0 && prices_betopretdecode(vintx.vout[vintx.vout.size() - 1].scriptPubKey, pk, height, amount, leverage, firstprice, vec, tokenid) == 'B' &&
+                (mypk == CPubKey() || mypk == pk))  // if only mypubkey to list
             {
                 result.push_back(txid.GetHex());
             }
@@ -1138,5 +1139,3 @@ UniValue PricesList()
     }
     return(result);
 }
-
-

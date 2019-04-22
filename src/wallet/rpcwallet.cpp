@@ -6925,7 +6925,18 @@ UniValue priceslist(const UniValue& params, bool fHelp)
         throw runtime_error("priceslist\n");
     if ( ensure_CCrequirements(EVAL_PRICES) < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
-    return(PricesList());
+    CPubKey emptypk;
+    return(PricesList(emptypk));
+}
+
+UniValue mypriceslist(const UniValue& params, bool fHelp)
+{
+    if (fHelp || params.size() > 0)
+        throw runtime_error("priceslist\n");
+    if (ensure_CCrequirements(EVAL_PRICES) < 0)
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    CPubKey mypk = pubkey2pk(Mypubkey());
+    return(PricesList(mypk));
 }
 
 UniValue pricesinfo(const UniValue& params, bool fHelp)
