@@ -59,6 +59,7 @@
 #include <numeric>
 
 #include "komodo_defs.h"
+#include <string.h>
 
 using namespace std;
 
@@ -6929,6 +6930,7 @@ uint32_t pricesGetParam(UniValue param) {
         filter = 2;
     else
         throw runtime_error("incorrect parameter\n");
+    return filter;
 }
 
 UniValue priceslist(const UniValue& params, bool fHelp)
