@@ -75,7 +75,8 @@ int tx_height( const uint256 &hash ){
         nHeight = it->second->GetHeight();
         //fprintf(stderr,"blockHash %s height %d\n",hashBlock.ToString().c_str(), nHeight);
     } else {
-        fprintf(stderr,"block hash %s does not exist!\n", hashBlock.ToString().c_str() );
+        // Unconfirmed xtns
+        //fprintf(stderr,"block hash %s does not exist!\n", hashBlock.ToString().c_str() );
     }
     return nHeight;
 }
@@ -206,8 +207,11 @@ try_again:
 
     if ( strncmp(url,"https",5) == 0 )
     {
-        curl_easy_setopt(curl_handle,CURLOPT_SSL_VERIFYPEER,0);
-        curl_easy_setopt(curl_handle,CURLOPT_SSL_VERIFYHOST,0);
+        
+        /* printf("[ Decker ] SSL: %s\n", curl_version()); */
+        curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0L);
+        curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0L);
+        //curl_easy_setopt(curl_handle, CURLOPT_VERBOSE, 1L); // this is useful for debug, but seems crash on libcurl/7.64.1 OpenSSL/1.1.1b zlib/1.2.8 librtmp/2.3
     }
     if ( userpass != 0 )
         curl_easy_setopt(curl_handle,CURLOPT_USERPWD,	userpass);
