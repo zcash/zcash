@@ -1054,7 +1054,8 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
     {
         if (prices_betopretdecode(bettx.vout[numvouts - 1].scriptPubKey, pk, firstheight, positionsize, leverage, firstprice, vec, tokenid) == 'B')
         {
-            if (refheight > 0 && refheight < firstheight) {
+            // check acceptable refheight:
+            if (refheight < 0 || refheight > 0 && refheight < firstheight) {
                 result.push_back(Pair("result", "error"));
                 result.push_back(Pair("error", "incorrect height"));
                 return(result);
@@ -1113,7 +1114,7 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
     return(result);
 }
 
-UniValue PricesList(CPubKey mypk)
+UniValue PricesList(uint32_t filter, CPubKey mypk)
 {
     UniValue result(UniValue::VARR); std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex;
     struct CCcontract_info *cp, C;
@@ -1133,7 +1134,21 @@ UniValue PricesList(CPubKey mypk)
             if (vintx.vout.size() > 0 && prices_betopretdecode(vintx.vout[vintx.vout.size() - 1].scriptPubKey, pk, height, amount, leverage, firstprice, vec, tokenid) == 'B' &&
                 (mypk == CPubKey() || mypk == pk))  // if only mypubkey to list
             {
-                result.push_back(txid.GetHex());
+                bool bAppend = false;
+                if (filter == 0)
+                    bAppend = true;
+                else {
+                    int32_t vini;
+                    int32_t height;
+                    uint256 finaltxid;
+
+                    int32_t spent = CCgetspenttxid(finaltxid, vini, height, txid, 2);
+                    if (filter == 1 && spent < 0 ||
+                        filter == 2 && spent == 0)
+                        bAppend = true;
+                }
+                if (bAppend)
+                    result.push_back(txid.GetHex());
             }
         }
     }
