@@ -649,25 +649,25 @@ int64_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t
         }
             
     }
-    else   {
+    else   { 
         // use provided costbasis
         std::cerr << "prices_syntheticprofits() provided costbasis=" << costbasis << " price=" << price << std::endl;
-        if (costbasis == 0)
-            costbasis = price;
+        //if (costbasis == 0)
+        //    costbasis = price;
     }
     
 
     profits = costbasis > 0 ? (((price / PRICES_NORMFACTOR * SATOSHIDEN) / costbasis) - SATOSHIDEN / PRICES_NORMFACTOR) * PRICES_NORMFACTOR : 0;
     std::cerr << "prices_syntheticprofits() test value1 (price/PRICES_NORMFACTOR * SATOSHIDEN)=" << (price / PRICES_NORMFACTOR * SATOSHIDEN) << std::endl;
-    std::cerr << "prices_syntheticprofits() test value2 (price/PRICES_NORMFACTOR * SATOSHIDEN)/costbasis=" << (costbasis != 0 ? (price / PRICES_NORMFACTOR * SATOSHIDEN)/costbasis : -1) << std::endl;
+    std::cerr << "prices_syntheticprofits() test value2 (price/PRICES_NORMFACTOR * SATOSHIDEN)/costbasis=" << (costbasis != 0 ? (price / PRICES_NORMFACTOR * SATOSHIDEN)/costbasis : 0) << std::endl;
 
-    std::cerr << "prices_syntheticprofits() fract profits=" << profits << std::endl;
+    std::cerr << "prices_syntheticprofits() fractional profits=" << profits << std::endl;
     //std::cerr << "prices_syntheticprofits() profits double=" << (double)price / (double)costbasis -1.0 << std::endl;
     //double dprofits = (double)price / (double)costbasis - 1.0;
 
-    profits *= leverage * positionsize / (int64_t)SATOSHIDEN;
+    profits *= ((int64_t)leverage * (int64_t)positionsize) / (int64_t)SATOSHIDEN;
     //dprofits *= leverage * positionsize;
-    std::cerr << "prices_syntheticprofits() val profits=" << profits << std::endl;
+    std::cerr << "prices_syntheticprofits() value of profits=" << profits << " leverage=" << leverage << " positionsize=" << positionsize << std::endl;
     //std::cerr << "prices_syntheticprofits() dprofits=" << dprofits << std::endl;
 
 
@@ -1143,8 +1143,8 @@ UniValue PricesList(uint32_t filter, CPubKey mypk)
                     uint256 finaltxid;
 
                     int32_t spent = CCgetspenttxid(finaltxid, vini, height, txid, 2);
-                    if (filter == 1 && spent < 0 ||
-                        filter == 2 && spent == 0)
+                    if (filter == 1 && spent < 0 ||  // open positions
+                        filter == 2 && spent == 0)   // closed positions
                         bAppend = true;
                 }
                 if (bAppend)
