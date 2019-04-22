@@ -6922,11 +6922,11 @@ UniValue faucetget(const UniValue& params, bool fHelp)
 
 uint32_t pricesGetParam(UniValue param) {
     uint32_t filter = 0;
-    if (strcmpi(param.get_str().c_str(), "all") == 0)
+    if (STR_TOLOWER(param.get_str()) == "all")
         filter = 0;
-    if (strcmpi(param.get_str().c_str(), "open") == 0)
+    if (STR_TOLOWER(param.get_str()) == "open")
         filter = 1;
-    if (strcmpi(param.get_str().c_str(), "closed") == 0)
+    if (STR_TOLOWER(param.get_str()) == "closed")
         filter = 2;
     else
         throw runtime_error("incorrect parameter\n");
