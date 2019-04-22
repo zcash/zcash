@@ -1,8 +1,9 @@
 package=openssl
-$(package)_version=1.1.1b
+$(package)_version=1.1.1a
 $(package)_download_path=https://www.openssl.org/source
 $(package)_file_name=$(package)-$($(package)_version).tar.gz
-$(package)_sha256_hash=5c557b023230413dfb0756f3137a13e6d726838ccd1430888ad15bfb2b43ea4b
+$(package)_sha256_hash=fc20130f8b7cbd2fb918b2f14e2f429e109c31ddd0fb38fc5d71d9ffed3f9f41
+$(package)_patches=ssl_fix.patch
 
 define $(package)_set_vars
 $(package)_config_env=AR="$($(package)_ar)" RANLIB="$($(package)_ranlib)" CC="$($(package)_cc)"
@@ -25,7 +26,8 @@ endef
 
 define $(package)_preprocess_cmds
   sed -i.old 's/built on: $date/built on: not available/' util/mkbuildinf.pl && \
-  sed -i.old "s|\"engines\", \"apps\", \"test\"|\"engines\"|" Configure
+  sed -i.old "s|\"engines\", \"apps\", \"test\"|\"engines\"|" Configure && \
+  patch -p1 < $($(package)_patch_dir)/ssl_fix.patch
 endef
 
 define $(package)_config_cmds
