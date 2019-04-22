@@ -16,60 +16,6 @@
 #include "CCPayments.h"
 
 /* 
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ac_script + -earlytxid instructions with payments cc + rewards CC as an example. 
-How this works:
-    - earlytxid must be a transaction included in the chain before block 100. The chain MUST not have any other of these type of tx before block 100, or someone may be able to change it and mess things up.
-    - When it gets to block 100, it takes the txid specified by the -earlytxid param (does not affect magic) 
-    - Looks up the transaction searches for the opreturn, then permenantly appends it to the end of ac_script in RAM.
-    - After every daemon restart, the first time the daemon mines a block, or receives a block that pays ac_script it will look up the op_return and save it again. 
-    - this enables it to always reach consensus but doesnt need to constantly keep looking up the tx in the chain.
-    - The trick is to use ac_founders=101 or higher so that nothing is ever paid to the unspendable CC address. Although it should still work without this it burns coins.
-    
--ac_script can be any Global CC address you can spend to with an OP_RETURN. Here we use example of paymentsCC being used to fund a rewards plan, and a set of founders address's.
-    you can get the ac_script from another chain, but the op_return payload must generated on the chain itself. this command gives you the needed info to get the scripPubKey Hex:
-        ./komodo-cli -ac_name=TEST paymentsfund '["5d536f54332db09f2be04593c54f764cf569e225f4d8df5155658c679e663682",1000]'
-    append: b8, to the end of ac_script, this changes magic value for -earlytxid chains vs normal ac_script and allows bypass of ac_supply paid to the scritpt as it would be unspendable and you would be unable to create the needed plans with no coins.
-    -ac_script=2ea22c8020987fad30df055db6fd922c3a57e55d76601229ed3da3b31340112e773df3d0d28103120c008203000401ccb8
-
-start chain and make sure to do the following steps before block 100 (set generate false/true is a good idea between steps)
-create rewards plan and fund it with all or a % of the premine. Must be some amount. eg.
-    ./komodo-cli -ac_name=TEST rewardscreatefunding test 1000 10 0 10 10
-
-do rewards add funding and get the script pubkey and op_return from this tx (no need to send it) eg.
-    scriptPubKey: 2ea22c802065686d47a4049c2c845a71895a915eb84c04445896eec5dc0be40df0b31372da8103120c008203000401cc
-    OP_RETURN:    6a2ae541746573740000000061e7063fa8f99ef92a47e4aebf7ea28c59aeadaf3c1784312de64e4bcb3666f1
-
-create txidopreturn for this payment:
-    ./komodo-cli -ac_name=TEST paymentstxidopret '[50,"2ea22c802065686d47a4049c2c845a71895a915eb84c04445896eec5dc0be40df0b31372da8103120c008203000401cc","6a2ae541746573740000000061e7063fa8f99ef92a47e4aebf7ea28c59aeadaf3c1784312de64e4bcb3666f1"]'
-        
-create the txidopret for the founders reward(s) pubkeys: should be able to be a few here, not sure of max number yet. These can pay anything that does not need an opreturn. allocation and scriptpubkey hex.
-    ./komodo-cli -ac_name=TEST paymentstxidopret '[50,"76a9146bf5dd9f679c87a3f83ea176f82148d26653c04388ac"]'
-    
-create payments plan:
-    ./komodo-cli -ac_name=TEST paymentscreate '[0,0,"273d193e5d09928e471926827dcac1f06c4801bdaa5524a84b17a00f4eaf8d38","81264daf7874b2041802ac681e49618413313cc2f29b47d47bd8e63dc2a06cad"]'
-gives plan txid eg.  5d536f54332db09f2be04593c54f764cf569e225f4d8df5155658c679e663682
-
-paymentsfund: 
-    send some of the premine to this payments fund to get the rest of the scriptpubkey payload. (could skip send and just gen/decode the tx if required.)
-    send opret path this time to get the required script pubkey. For payments this mode is enabled by default rather than a traditional OP_RETURN,
-    for other CC we would need to modify daemon to get the correct info.
-    ./komodo-cli -ac_name=TEST paymentsfund '["5d536f54332db09f2be04593c54f764cf569e225f4d8df5155658c679e663682",1000,1]'
-
-get the payment fund script pubkey: (the split it at OP_CHECKCRYPTOCONDITION or 'cc' )
-    2ea22c8020987fad30df055db6fd922c3a57e55d76601229ed3da3b31340112e773df3d0d28103120c008203000401cc 2a0401f00101246a22f0466b75e35aa4d8ea6c3dd1b76141a0acbd06dfb4897288a62b8a8ec31b75a5b6cb75
-
-    put the second half into an OP_RETURN: (the remaining part of the the above scriptpubkey) eg.
-        ./komodo-cli -ac_name=TEST opreturn_burn 1 2a0401f00101246a22f0466b75e35aa4d8ea6c3dd1b76141a0acbd06dfb4897288a62b8a8ec31b75a5b6cb75
-            opret_burn takes any burn amount and arbitrary hex string. (RPC works, but may have bugs, likely use this for LABS too with some fixes)
-    this gives a txid to locate it in the chain eg:
-        -earlytxid=1acd0b9b728feaea37a3f52d4106c35b0f8cfd19f9f3e64815d23ace0721d69d
-    restart the chain with earlytxid param before height 100 on BOTH NODES!
-    
-once the payments plan has been funded with the mined coinbase you can issue payments release when conditions of the plan are met to fund founders reward/rewards plan. eg.
-    ./komodo-cli -ac_name=TEST paymentsrelease '["5d536f54332db09f2be04593c54f764cf569e225f4d8df5155658c679e663682",500]'
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
  0) txidopret <- allocation, scriptPubKey, opret
  1) create <-  locked_blocks, minrelease, list of txidopret
  
@@ -347,14 +293,14 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
                         CScript opret; uint256 checktxid; int32_t opret_ind;
                         if ( (opret_ind= has_opret(txin, EVAL_PAYMENTS)) == 0 )
                         {
-                            // get op_return from CCvout
-                            opret = getCCopret(txin.vout[0].scriptPubKey);
+                            // get op_return from CCvout, 
+                            opret = getCCopret(txin.vout[vin.prevout.n].scriptPubKey);
                         }
                         else
                         {
                             // get op_return from the op_return 
                             opret = txin.vout[opret_ind].scriptPubKey;
-                        } // else return(eval->Invalid("vin has wrong amount of vouts")); // dont think this is needed?
+                        }
                         if ( DecodePaymentsFundOpRet(opret,checktxid) != 'F' || checktxid != createtxid )
                         {
                             fprintf(stderr, "vin.%i is not a payments CC vout: txid.%s\n", i, txin.GetHash().ToString().c_str());
@@ -381,7 +327,7 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
 
 int64_t AddPaymentsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey txidpk,int64_t total,int32_t maxinputs,uint256 createtxid,int32_t latestheight)
 {
-    char coinaddr[64]; CPubKey Paymentspk; int64_t nValue,threshold,price,totalinputs = 0; uint256 txid,checktxid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx,tx; int32_t iter,vout,ht,n = 0;
+    char coinaddr[64]; CPubKey Paymentspk; int64_t nValue,threshold,price,totalinputs = 0; uint256 txid,checktxid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t iter,vout,ht,n = 0;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     if ( maxinputs > CC_MAXVINS )
         maxinputs = CC_MAXVINS;
@@ -400,7 +346,7 @@ int64_t AddPaymentsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CP
             txid = it->first.txhash;
             vout = (int32_t)it->first.index;
             //fprintf(stderr,"iter.%d %s/v%d %s\n",iter,txid.GetHex().c_str(),vout,coinaddr);
-            if ( vout == 0 && GetTransaction(txid,vintx,hashBlock,false) != 0 )
+            if ( (vout == 0 || vout == 1) && GetTransaction(txid,vintx,hashBlock,false) != 0 )
             {
                 if ( latestheight != 0 )
                 {
@@ -421,14 +367,14 @@ int64_t AddPaymentsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CP
                     if ( (opret_ind= has_opret(vintx, EVAL_PAYMENTS)) == 0 )
                     {
                         // get op_return from CCvout
-                        opret = getCCopret(vintx.vout[0].scriptPubKey);
+                        opret = getCCopret(vintx.vout[vout].scriptPubKey);
                     }
                     else
                     {
                         // get op_return from the op_return 
                         opret = vintx.vout[opret_ind].scriptPubKey;
                     }
-                    if ( myGetTransaction(txid,tx,hashBlock) == 0 || DecodePaymentsFundOpRet(opret,checktxid) != 'F' || checktxid != createtxid )
+                    if ( DecodePaymentsFundOpRet(opret,checktxid) != 'F' || checktxid != createtxid )
                     {
                         fprintf(stderr,"bad opret %s vs %s\n",checktxid.GetHex().c_str(),createtxid.GetHex().c_str());
                         continue;
@@ -690,16 +636,18 @@ UniValue PaymentsFund(struct CCcontract_info *cp,char *jsonstr)
             }
             else
             {
-                opret = EncodePaymentsFundOpRet(txid);
+                mtx.vout.push_back(MakeCC1vout(EVAL_PAYMENTS,amount,Paymentspk));
+                // Use the below one along with other FinalizeCCTx/return, to get the ccvout scriptpubkey
+                /*opret = EncodePaymentsFundOpRet(txid);
                 std::vector<std::vector<unsigned char>> vData = std::vector<std::vector<unsigned char>>();
                 if ( makeCCopret(opret, vData) )
-                    mtx.vout.push_back(MakeCC1vout(EVAL_PAYMENTS,amount,Paymentspk,&vData));
-                //fprintf(stderr, "scriptpubkey.%s\n", mtx.vout.back().scriptPubKey.ToString().c_str());
-                //fprintf(stderr, "hex.%s\n", HexStr(mtx.vout.back().scriptPubKey.begin(), mtx.vout.back().scriptPubKey.end()).c_str());
+                    mtx.vout.push_back(MakeCC1vout(EVAL_PAYMENTS,amount,Paymentspk,&vData)); */
             }
-            rawtx = FinalizeCCTx(0,cp,mtx,mypk,PAYMENTS_TXFEE,CScript());
+            rawtx = FinalizeCCTx(0,cp,mtx,mypk,PAYMENTS_TXFEE,EncodePaymentsFundOpRet(txid));
+            //rawtx = FinalizeCCTx(0,cp,mtx,mypk,PAYMENTS_TXFEE,CScript()); // use this one to get ccvout scriptpubkey.
             if ( params != 0 )
                 free_json(params);
+            //return(payments_rawtxresult(result,rawtx,0)); // disable sending for CCvout, as we only need to decode the tx.
             return(payments_rawtxresult(result,rawtx,1));
         }
         else

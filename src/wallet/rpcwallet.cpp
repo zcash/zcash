@@ -8014,13 +8014,13 @@ UniValue test_heirmarker(const UniValue& params, bool fHelp)
 
 UniValue opreturn_burn(const UniValue& params, bool fHelp)
 {
+    if (fHelp || (params.size() != 2))
+		throw runtime_error("amount to burn, hexstring to send\n");
     struct CCcontract_info *cp, C; UniValue ret(UniValue::VOBJ);
     if (ensure_CCrequirements(EVAL_PAYMENTS) < 0)
     	throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     cp = CCinit(&C, EVAL_PAYMENTS);
-	if (fHelp || (params.size() != 2))
-		throw runtime_error("amount to burn, hexstring to send\n");
-    
+	    
 	CAmount nAmount = AmountFromValue(params[0]);
     if (nAmount <= 10000)
         throw JSONRPCError(RPC_TYPE_ERROR, "must send at least 10000 sat");
@@ -8032,13 +8032,13 @@ UniValue opreturn_burn(const UniValue& params, bool fHelp)
 	if (normalInputs < nAmount)
 		throw runtime_error("not enough normals\n");
 
-    CScript opret; uint8_t scripthex[8192];
-    
-    decode_hex(scripthex,strHex.size()/2,(char *)strHex.c_str());
-    std::string test;
-    test.append((char*)scripthex);
-    std::vector<uint8_t> opretdata(test.begin(), test.end());
-    opret << OP_RETURN << E_MARSHAL(ss << opretdata);
+    CScript opret; uint8_t *ptr;
+    opret << OP_RETURN;
+    int32_t len = strlen(strHex.c_str());
+    len >>=1;
+    opret.resize(len+1);
+    ptr = (uint8_t *)&opret[1];
+    decode_hex(ptr,len,(char *)strHex.c_str());
 	mtx.vout.push_back(CTxOut(nAmount,opret));
     ret.push_back(Pair("hex",FinalizeCCTx(0, cp, mtx, myPubkey, 10000, CScript())));
 	return(ret);

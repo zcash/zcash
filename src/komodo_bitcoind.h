@@ -2047,7 +2047,8 @@ bool komodo_appendACscriptpub()
                  {
                      ASSETCHAINS_SCRIPTPUB.pop_back(); ASSETCHAINS_SCRIPTPUB.pop_back(); // remove last 2 chars. 
                       // get OP_RETURN from txid and append the HexStr of it to scriptpub 
-                     ASSETCHAINS_SCRIPTPUB.append(HexStr(tx.vout[i].scriptPubKey.begin()+3, tx.vout[i].scriptPubKey.end()));
+                      // encoded opreturn incorrectly on TESTHC chain, once we no longer need this it can be changed to a straight +1 to drop OP_RETURN opcode.
+                     ASSETCHAINS_SCRIPTPUB.append(HexStr(tx.vout[i].scriptPubKey.begin()+(strcmp("TESTHC",ASSETCHAINS_SYMBOL) == 0 ? 3 : 1), tx.vout[i].scriptPubKey.end()));
                      //fprintf(stderr, "ac_script.%s\n",ASSETCHAINS_SCRIPTPUB.c_str());
                      didinit = true;
                      return true;
