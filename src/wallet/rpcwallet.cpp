@@ -6924,9 +6924,9 @@ uint32_t pricesGetParam(UniValue param) {
     uint32_t filter = 0;
     if (STR_TOLOWER(param.get_str()) == "all")
         filter = 0;
-    if (STR_TOLOWER(param.get_str()) == "open")
+    else if (STR_TOLOWER(param.get_str()) == "open")
         filter = 1;
-    if (STR_TOLOWER(param.get_str()) == "closed")
+    else if (STR_TOLOWER(param.get_str()) == "closed")
         filter = 2;
     else
         throw runtime_error("incorrect parameter\n");
@@ -6935,7 +6935,7 @@ uint32_t pricesGetParam(UniValue param) {
 
 UniValue priceslist(const UniValue& params, bool fHelp)
 {
-    if ( fHelp || params.size() != 0 || params.size() != 1)
+    if ( fHelp || params.size() != 0 && params.size() != 1)
         throw runtime_error("priceslist [all|open|closed]\n");
     if ( ensure_CCrequirements(EVAL_PRICES) < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
@@ -6950,7 +6950,7 @@ UniValue priceslist(const UniValue& params, bool fHelp)
 
 UniValue mypriceslist(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() > 0)
+    if (fHelp || params.size() != 0 && params.size() != 1)
         throw runtime_error("mypriceslist [all|open|closed]\n");
     if (ensure_CCrequirements(EVAL_PRICES) < 0)
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
