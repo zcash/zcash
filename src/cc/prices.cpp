@@ -262,7 +262,7 @@ static bool ValidateFinalTx(struct CCcontract_info *cp, Eval *eval, const CTrans
 
     pricespk = GetUnspendable(cp, 0);
 
-    if (MakeCC1vout(cp->evalcode, finaltx.vout[0].nValue, pk) != finaltx.vout[0])
+    if (CTxOut(finaltx.vout[0].nValue, CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG) != finaltx.vout[0])
         return eval->Invalid("cannot validate vout0 in final tx with pk from opreturn");
 
     if( finaltx.vout.size() == 3 && MakeCC1vout(cp->evalcode, finaltx.vout[1].nValue, pricespk) != finaltx.vout[1] ) 
@@ -272,6 +272,17 @@ static bool ValidateFinalTx(struct CCcontract_info *cp, Eval *eval, const CTrans
 }
 
 // validate prices tx function
+// important checks:
+// tx structure 
+// reference to the bet tx vout 
+// referenced bet tx structure 
+// referrenced bet txid in opret
+// disable marker spending
+// TODO:
+// opret params (firstprice,positionsize...) 
+// cashout balance (PricesExactAmounts)
+// costbasis calculation (?)
+// use the special addr for fees
 bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
 {
     vscript_t vopret;
