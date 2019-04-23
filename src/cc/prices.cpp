@@ -161,6 +161,15 @@ static bool ValidateBetTx(struct CCcontract_info *cp, Eval *eval, const CTransac
     if( MakeCC1vout(cp->evalcode, bettx.vout[2].nValue, pricespk) != bettx.vout[2] )
         return eval->Invalid("cannot validate vout2 in bet tx with pk from opreturn");
 
+    // validate if normal inputs are really signed by originator pubkey (someone not cheating with originator pubkey)
+    CAmount ccOutputs = 0;
+    for (auto vout : bettx.vout)
+        if (vout.scriptPubKey.IsPayToCryptoCondition())  
+            ccOutputs += vout.nValue;
+    CAmount normalInputs = TotalPubkeyNormalInputs(bettx, pk);
+    if (normalInputs < ccOutputs)
+        return eval->Invalid("bettx normal input signed with not pubkey in opret");
+
     return true;
 }
 
