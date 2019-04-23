@@ -1172,10 +1172,10 @@ UniValue PricesList(uint32_t filter, CPubKey mypk)
         txid = it->first.txhash;
         if (GetTransaction(txid, vintx, hashBlock, false) != 0)
         {
+            bool bAppend = false;
             if (vintx.vout.size() > 0 && prices_betopretdecode(vintx.vout[vintx.vout.size() - 1].scriptPubKey, pk, height, amount, leverage, firstprice, vec, tokenid) == 'B' &&
                 (mypk == CPubKey() || mypk == pk))  // if only mypubkey to list
             {
-                bool bAppend = false;
                 if (filter == 0)
                     bAppend = true;
                 else {
@@ -1191,6 +1191,7 @@ UniValue PricesList(uint32_t filter, CPubKey mypk)
                 if (bAppend)
                     result.push_back(txid.GetHex());
             }
+            std::cerr << "PricesList() " << " bettxid=" << txid.GetHex() << " mypk=" << HexStr(mypk) << " opret pk=" << HexStr(pk) << " filter=" << filter << " bAppend=" << bAppend << std::endl;
         }
     }
     return(result);
