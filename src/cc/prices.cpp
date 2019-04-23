@@ -167,7 +167,7 @@ static bool ValidateBetTx(struct CCcontract_info *cp, Eval *eval, const CTransac
         if (vout.scriptPubKey.IsPayToCryptoCondition())  
             ccOutputs += vout.nValue;
     CAmount normalInputs = TotalPubkeyNormalInputs(bettx, pk);
-    if (normalInputs < ccOutputs)
+    if (0 && normalInputs < ccOutputs)
         return eval->Invalid("bettx normal input signed with not pubkey in opret");
 
     return true;
