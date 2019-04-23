@@ -555,11 +555,9 @@ TEST(WalletTests, FindMySaplingNotesWithIvkOnly) {
 
     // Generate transaction
     auto builder = TransactionBuilder(consensusParams, 1);
-    ASSERT_TRUE(builder.AddSaplingSpend(expsk, note, anchor, witness));
+    builder.AddSaplingSpend(expsk, note, anchor, witness);
     builder.AddSaplingOutput(fvk.ovk, pk, 25000, {});
-    auto maybe_tx = builder.Build();
-    ASSERT_EQ(static_cast<bool>(maybe_tx), true);
-    auto tx = maybe_tx.get();
+    auto tx = builder.Build().GetTxOrThrow();
 
     // No Sapling notes can be found in tx which does not belong to the wallet
     CWalletTx wtx {&wallet, tx};
