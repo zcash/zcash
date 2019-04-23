@@ -839,7 +839,7 @@ UniValue PricesBet(int64_t txfee, int64_t amount, int16_t leverage, std::vector<
     if (AddNormalinputs(mtx, mypk, amount + 5 * txfee, 64) >= amount + 5 * txfee)
     {
         betamount = (amount * 199) / 200;
-        mtx.vout.push_back(MakeCC1vout(cp->evalcode, txfee, mypk)); // vout0 baton for total funding
+        mtx.vout.push_back(MakeCC1vout(cp->evalcode, txfee, /*mypk*/pubkey2pk(ParseHex("03069fc09829259b3cd7b53bd97714498614f9ca323287bc783e39b02046f696db")))); // vout0 baton for total funding
         mtx.vout.push_back(MakeCC1vout(cp->evalcode, (amount - betamount) + 2 * txfee, pricespk));  // vout1, when spent, costbasis is set
         mtx.vout.push_back(MakeCC1vout(cp->evalcode, betamount, pricespk));
         mtx.vout.push_back(CTxOut(txfee, CScript() << ParseHex(HexStr(pricespk)) << OP_CHECKSIG)); // marker
