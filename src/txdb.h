@@ -24,9 +24,12 @@ struct CAddressUnspentValue;
 struct CAddressIndexKey;
 struct CAddressIndexIteratorKey;
 struct CAddressIndexIteratorHeightKey;
+struct CSpentIndexKey;
+struct CSpentIndexValue;
 
 typedef std::pair<CAddressUnspentKey, CAddressUnspentValue> CAddressUnspentDbEntry;
 typedef std::pair<CAddressIndexKey, CAmount> CAddressIndexDbEntry;
+typedef std::pair<CSpentIndexKey, CSpentIndexValue> CSpentIndexDbEntry;
 // END insightexplorer
 
 class uint256;
@@ -89,6 +92,8 @@ public:
     bool WriteAddressIndex(const std::vector<CAddressIndexDbEntry> &vect);
     bool EraseAddressIndex(const std::vector<CAddressIndexDbEntry> &vect);
     bool ReadAddressIndex(uint160 addressHash, int type, std::vector<CAddressIndexDbEntry> &addressIndex, int start = 0, int end = 0);
+    bool ReadSpentIndex(CSpentIndexKey &key, CSpentIndexValue &value);
+    bool UpdateSpentIndex(const std::vector<CSpentIndexDbEntry> &vect);
     // END insightexplorer
 
     bool WriteFlag(const std::string &name, bool fValue);

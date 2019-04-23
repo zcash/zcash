@@ -262,8 +262,9 @@ uint160 CScript::AddressHash() const
     else if (this->IsPayToScriptHash())
         start = 2;
     else {
-        // unknown script type; return an empty vector
+        // unknown script type; return zeros
         vector<unsigned char> hashBytes;
+        hashBytes.resize(20);
         return uint160(hashBytes);
     }
     vector<unsigned char> hashBytes(this->begin()+start, this->begin()+start+20);
