@@ -167,7 +167,7 @@ static bool ValidateBetTx(struct CCcontract_info *cp, Eval *eval, const CTransac
         if (vout.scriptPubKey.IsPayToCryptoCondition())  
             ccOutputs += vout.nValue;
     CAmount normalInputs = TotalPubkeyNormalInputs(bettx, pk);
-    if (0 && normalInputs < ccOutputs)
+    if (normalInputs < ccOutputs)
         return eval->Invalid("bettx normal input signed with not pubkey in opret");
 
     return true;
@@ -289,9 +289,9 @@ static bool ValidateFinalTx(struct CCcontract_info *cp, Eval *eval, const CTrans
 // disable marker spending
 // TODO:
 // opret params (firstprice,positionsize...) 
+// costbasis calculation
 // cashout balance (PricesExactAmounts)
-// costbasis calculation (?)
-// use the special addr for fees
+// use the special address for 50% fees
 bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
 {
     vscript_t vopret;
@@ -843,7 +843,7 @@ UniValue PricesBet(int64_t txfee, int64_t amount, int16_t leverage, std::vector<
         mtx.vout.push_back(MakeCC1vout(cp->evalcode, (amount - betamount) + 2 * txfee, pricespk));  // vout1, when spent, costbasis is set
         mtx.vout.push_back(MakeCC1vout(cp->evalcode, betamount, pricespk));
         mtx.vout.push_back(CTxOut(txfee, CScript() << ParseHex(HexStr(pricespk)) << OP_CHECKSIG)); // marker
-        rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, prices_betopret(mypk, nextheight - 1, amount, leverage, firstprice, vec, zeroid));
+        rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, prices_betopret(/*mypk*/ pubkey2pk(ParseHex("03069fc09829259b3cd7b53bd97714498614f9ca323287bc783e39b02046f696db")), nextheight - 1, amount, leverage, firstprice, vec, zeroid));
         return(prices_rawtxresult(result, rawtx, 0));
     }
     result.push_back(Pair("result", "error"));
