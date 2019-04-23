@@ -221,6 +221,7 @@ UniValue test_proof(const UniValue& params, bool fHelp)
     return result;
 }
 
+extern CScript prices_costbasisopret(uint256 bettxid, CPubKey mypk, int32_t height, int64_t costbasis);
 UniValue test_pricesmarker(const UniValue& params, bool fHelp)
 {
     // make fake token tx: 
@@ -244,7 +245,7 @@ UniValue test_pricesmarker(const UniValue& params, bool fHelp)
     mtx.vin.push_back(CTxIn(bettxid, 1));
     mtx.vout.push_back(CTxOut(1000, CScript() << ParseHex(HexStr(myPubkey)) << OP_CHECKSIG));
 
-    return(FinalizeCCTx(0, cp, mtx, myPubkey, 10000, CScript()));
+    return(FinalizeCCTx(0, cp, mtx, myPubkey, 10000, prices_costbasisopret(bettxid, myPubkey, 100, 100)));
 }
 
 
