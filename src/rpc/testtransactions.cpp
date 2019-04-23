@@ -18,6 +18,8 @@
  *                                                                            *
  ******************************************************************************/
 
+#include <stdexcept>
+
 #include "amount.h"
 #include "chain.h"
 #include "chainparams.h"
@@ -43,9 +45,13 @@
 
 #include <regex>
 
+
 #include "cc/CCinclude.h"
 #include "cc/CCPrices.h"
 
+using namespace std;
+
+int32_t ensure_CCrequirements(uint8_t evalcode);
 
 UniValue test_ac(const UniValue& params, bool fHelp)
 {
@@ -236,7 +242,7 @@ UniValue test_pricesmarker(const UniValue& params, bool fHelp)
         throw runtime_error("not enough normals\n");
 
     mtx.vin.push_back(CTxIn(bettxid, 1));
-    mtx.vout.push_back(CTxOut(1000, ParseHex(HexStr(myPubkey)));
+    mtx.vout.push_back(CTxOut(1000, CScript() << ParseHex(HexStr(myPubkey)) << OP_CHECKSIG));
 
     return(FinalizeCCTx(0, cp, mtx, myPubkey, 10000, CScript()));
 }
