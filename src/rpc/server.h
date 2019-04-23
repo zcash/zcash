@@ -272,11 +272,6 @@ extern UniValue oraclessamples(const UniValue& params, bool fHelp);
 extern UniValue pricesaddress(const UniValue& params, bool fHelp);
 extern UniValue priceslist(const UniValue& params, bool fHelp);
 extern UniValue pricesinfo(const UniValue& params, bool fHelp);
-extern UniValue pricescreate(const UniValue& params, bool fHelp);
-extern UniValue pricesaddfunding(const UniValue& params, bool fHelp);
-extern UniValue pricesbet(const UniValue& params, bool fHelp);
-extern UniValue pricesstatus(const UniValue& params, bool fHelp);
-extern UniValue pricesfinish(const UniValue& params, bool fHelp);
 extern UniValue pegsaddress(const UniValue& params, bool fHelp);
 extern UniValue marmaraaddress(const UniValue& params, bool fHelp);
 extern UniValue marmara_poolpayout(const UniValue& params, bool fHelp);
@@ -288,6 +283,13 @@ extern UniValue marmara_creditloop(const UniValue& params, bool fHelp);
 extern UniValue marmara_settlement(const UniValue& params, bool fHelp);
 extern UniValue marmara_lock(const UniValue& params, bool fHelp);
 extern UniValue paymentsaddress(const UniValue& params, bool fHelp);
+extern UniValue payments_release(const UniValue& params, bool fHelp);
+extern UniValue payments_fund(const UniValue& params, bool fHelp);
+extern UniValue payments_txidopret(const UniValue& params, bool fHelp);
+extern UniValue payments_create(const UniValue& params, bool fHelp);
+extern UniValue payments_info(const UniValue& params, bool fHelp);
+extern UniValue payments_list(const UniValue& params, bool fHelp);
+
 extern UniValue cclibaddress(const UniValue& params, bool fHelp);
 extern UniValue cclibinfo(const UniValue& params, bool fHelp);
 extern UniValue cclib(const UniValue& params, bool fHelp);
@@ -312,7 +314,6 @@ extern UniValue channelsopen(const UniValue& params, bool fHelp);
 extern UniValue channelspayment(const UniValue& params, bool fHelp);
 extern UniValue channelsclose(const UniValue& params, bool fHelp);
 extern UniValue channelsrefund(const UniValue& params, bool fHelp);
-
 //extern UniValue tokenswapask(const UniValue& params, bool fHelp);
 //extern UniValue tokenfillswap(const UniValue& params, bool fHelp);
 extern UniValue faucetfund(const UniValue& params, bool fHelp);
@@ -433,6 +434,18 @@ extern UniValue invalidateblock(const UniValue& params, bool fHelp);
 extern UniValue reconsiderblock(const UniValue& params, bool fHelp);
 extern UniValue getspentinfo(const UniValue& params, bool fHelp);
 extern UniValue selfimport(const UniValue& params, bool fHelp);
+extern UniValue importdual(const UniValue& params, bool fHelp);
+extern UniValue importgatewayaddress(const UniValue& params, bool fHelp);
+extern UniValue importgatewayinfo(const UniValue& params, bool fHelp);
+extern UniValue importgatewaybind(const UniValue& params, bool fHelp);
+extern UniValue importgatewaydeposit(const UniValue& params, bool fHelp);
+extern UniValue importgatewaywithdraw(const UniValue& params, bool fHelp);
+extern UniValue importgatewaypartialsign(const UniValue& params, bool fHelp);
+extern UniValue importgatewaycompletesigning(const UniValue& params, bool fHelp);
+extern UniValue importgatewaymarkdone(const UniValue& params, bool fHelp);
+extern UniValue importgatewaypendingdeposits(const UniValue& params, bool fHelp);
+extern UniValue importgatewaypendingwithdraws(const UniValue& params, bool fHelp);
+extern UniValue importgatewayprocessed(const UniValue& params, bool fHelp);
 
 extern UniValue getblocksubsidy(const UniValue& params, bool fHelp);
 
@@ -478,6 +491,8 @@ extern UniValue paxpending(const UniValue& params, bool fHelp);
 extern UniValue paxprices(const UniValue& params, bool fHelp);
 extern UniValue paxdeposit(const UniValue& params, bool fHelp);
 extern UniValue paxwithdraw(const UniValue& params, bool fHelp);
+
+extern UniValue prices(const UniValue& params, bool fHelp);
 
 // test rpc:
 extern UniValue test_ac(const UniValue& params, bool fHelp);
