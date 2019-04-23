@@ -331,7 +331,7 @@ bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
     if (!foundFirst)   
         return eval->Invalid("prices cc vin not found");
 
-    if (funcId != 'F' && ccVinCount > 1)
+    if (funcId != 'F' && ccVinCount > 1)  // for all prices tx except final tx only one cc vin is allowed
         return eval->Invalid("only one prices cc vin allowed for this tx");
 
     switch (funcId) {
