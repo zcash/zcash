@@ -260,7 +260,7 @@ static const CRPCCommand commands[] =
     { "hidden",             "test_pricesmarker",      &test_pricesmarker,       true }
 };
 
-void RegisterBlockchainRPCCommands(CRPCTable &tableRPC)
+void RegisterTesttransactionsRPCCommands(CRPCTable &tableRPC)
 {
     for (unsigned int vcidx = 0; vcidx < ARRAYLEN(commands); vcidx++)
         tableRPC.appendCommand(commands[vcidx].name, &commands[vcidx]);
