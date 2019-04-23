@@ -3457,6 +3457,14 @@ void FallbackSproutValuePoolBalance(
         return;
     }
 
+    // When developer option -developersetpoolsizezero is enabled, we don't need a fallback balance.
+    if ((chainparams.NetworkIDString() == "test" || chainparams.NetworkIDString() == "regtest") &&
+        fExperimentalMode &&
+        mapArgs.count("-developersetpoolsizezero"))
+    {
+        return;
+    }
+
     // Check if the height of this block matches the checkpoint
     if (pindex->nHeight == chainparams.SproutValuePoolCheckpointHeight()) {
         if (pindex->GetBlockHash() == chainparams.SproutValuePoolCheckpointBlockHash()) {
@@ -4243,6 +4251,17 @@ bool static LoadBlockIndexDB()
 
             // Fall back to hardcoded Sprout value pool balance
             FallbackSproutValuePoolBalance(pindex, chainparams);
+
+            // If developer option -developersetpoolsizezero has been enabled on testnet or in regtest mode,
+            // override and set the in-memory size of shielded pools to zero.  An unshielding transaction
+            // can then be used to trigger and test the handling of turnstile violations.
+            if ((chainparams.NetworkIDString() == "test" || chainparams.NetworkIDString() == "regtest") &&
+                fExperimentalMode &&
+                mapArgs.count("-developersetpoolsizezero"))
+            {
+                pindex->nChainSproutValue = 0;
+                pindex->nChainSaplingValue = 0;
+            }
         }
         // Construct in-memory chain of branch IDs.
         // Relies on invariant: a block that does not activate a network upgrade
