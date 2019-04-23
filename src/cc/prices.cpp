@@ -44,6 +44,8 @@ CBOPRET creates trustless oracles, which can be used for making a synthetic cash
  
 */
 
+int32_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t height, int16_t leverage, std::vector<uint16_t> vec, int64_t positionsize, int64_t addedbets, int64_t &profits, int64_t &outprice);
+
 // helpers:
 
 // returns true if there are only digits and no alphas or slashes in 's'
@@ -161,6 +163,10 @@ static bool ValidateBetTx(struct CCcontract_info *cp, Eval *eval, const CTransac
     if( MakeCC1vout(cp->evalcode, bettx.vout[2].nValue, pricespk) != bettx.vout[2] )
         return eval->Invalid("cannot validate vout2 in bet tx with pk from opreturn");
 
+    int64_t betamount = bettx.vout[2].nValue;
+    if( betamount != (positionsize * 199) / 200 )
+        return eval->Invalid("invalid position size in the opreturn");
+
     // validate if normal inputs are really signed by originator pubkey (someone not cheating with originator pubkey)
     CAmount ccOutputs = 0;
     for (auto vout : bettx.vout)
@@ -169,6 +175,9 @@ static bool ValidateBetTx(struct CCcontract_info *cp, Eval *eval, const CTransac
     CAmount normalInputs = TotalPubkeyNormalInputs(bettx, pk);
     if (normalInputs < ccOutputs)
         return eval->Invalid("bettx normal input signed with not pubkey in opret");
+
+    if (leverage > PRICES_MAXLEVERAGE || leverage < -PRICES_MAXLEVERAGE)
+        return eval->Invalid("invalid leverage");
 
     return true;
 }
@@ -205,7 +214,7 @@ static bool ValidateAddFundingTx(struct CCcontract_info *cp, Eval *eval, const C
 static bool ValidateCostbasisTx(struct CCcontract_info *cp, Eval *eval, const CTransaction & costbasistx, const CTransaction & bettx)
 {
     uint256 bettxid;
-    int64_t amount;
+    int64_t costbasisInOpret;
     CPubKey pk, pricespk;
     int32_t height;
 
@@ -214,7 +223,7 @@ static bool ValidateCostbasisTx(struct CCcontract_info *cp, Eval *eval, const CT
         return eval->Invalid("incorrect vout count for costbasis tx");
 
     vscript_t opret;
-    if (prices_costbasisopretdecode(costbasistx.vout.back().scriptPubKey, bettxid, pk, height, amount) != 'C')
+    if (prices_costbasisopretdecode(costbasistx.vout.back().scriptPubKey, bettxid, pk, height, costbasisInOpret) != 'C')
         return eval->Invalid("cannot decode opreturn for costbasis tx");
 
     pricespk = GetUnspendable(cp, 0);
@@ -244,6 +253,13 @@ static bool ValidateCostbasisTx(struct CCcontract_info *cp, Eval *eval, const CT
 
     if( firstheight + PRICES_DAYWINDOW + PRICES_SMOOTHWIDTH > chainActive.Height() )
         return eval->Invalid("cannot calculate costbasis yet");
+    
+    int64_t costbasis = 0, profits, lastprice;
+    int32_t retcode = prices_syntheticprofits(costbasis, firstheight, firstheight + PRICES_DAYWINDOW, leverage, vec, positionsize, 0, profits, lastprice);
+    if (retcode < 0) 
+        return eval->Invalid("cannot calculate costbasis yet");
+    if( costbasis != costbasisInOpret )
+        return eval->Invalid("incorrect costbasis value");
 
     return true;
 }
@@ -281,12 +297,16 @@ static bool ValidateFinalTx(struct CCcontract_info *cp, Eval *eval, const CTrans
 }
 
 // validate prices tx function
-// important checks:
-// tx structure 
-// reference to the bet tx vout 
+// performed checks:
+// basic tx structure (vout num)
+// basic tx opret structure
+// reference to the bet tx vout
+// referenced bet txid in tx opret
 // referenced bet tx structure 
-// referrenced bet txid in opret
-// disable marker spending
+// non-final tx has only 1 cc vin
+// cc vouts to self with mypubkey from opret
+// cc vouts to global pk with global pk
+// for bet tx that normal inputs digned with my pubkey from the opret >= cc outputs - disable betting for other pubkeys (Do we need this rule?)
 // TODO:
 // opret params (firstprice,positionsize...) 
 // costbasis calculation
@@ -661,22 +681,21 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
 }
 
 // calculates profit/loss for the bet
-int64_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t height, int16_t leverage, std::vector<uint16_t> vec, int64_t positionsize, int64_t addedbets, int64_t &outprice)
+int32_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t height, int16_t leverage, std::vector<uint16_t> vec, int64_t positionsize, int64_t addedbets, int64_t &profits, int64_t &outprice)
 {
-    int64_t profits = 0; 
     int64_t price;
 
     if (height < firstheight) {
         fprintf(stderr, "requested height is lower than bet firstheight.%d\n", height);
-        return 0;
+        return -1;
     }
 
     int32_t minmax = (height < firstheight + PRICES_DAYWINDOW);  // if we are within 24h then use min or max value 
 
     if ((price = prices_syntheticprice(vec, height, minmax, leverage)) < 0)
     {
-        fprintf(stderr, "unexpected zero synthetic price at height.%d\n", height);
-        return(0);
+        fprintf(stderr, "error getting synthetic price at height.%d\n", height);
+        return -1;
     }
 
     // clear lowest positions:
@@ -684,7 +703,7 @@ int64_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t
     price *= PRICES_NORMFACTOR;
     outprice = price;
    
-    if (minmax)    { // if we are within day window, set costbasis to max or min price value
+    if (minmax)    { // if we are within day window, set temp costbasis to max (or min) price value
         if (leverage > 0 && price > costbasis) {
             costbasis = price;  // set temp costbasis
             std::cerr << "prices_syntheticprofits() minmax costbasis=" << costbasis << " price=" << price << std::endl;
@@ -699,13 +718,17 @@ int64_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t
             
     }
     else   { 
-        // use provided costbasis
-        std::cerr << "prices_syntheticprofits() provided costbasis=" << costbasis << " price=" << price << std::endl;
-        //if (costbasis == 0)
-        //    costbasis = price;
+        if (costbasis == 0) {
+            // if costbasis not set, just set it
+            costbasis = price;
+            std::cerr << "prices_syntheticprofits() set costbasis=" << costbasis <<  std::endl;
+        }
+        else {
+            // use provided costbasis
+            std::cerr << "prices_syntheticprofits() provided costbasis=" << costbasis << " price=" << price << std::endl;
+        }
     }
     
-
     profits = costbasis > 0 ? (((price / PRICES_NORMFACTOR * SATOSHIDEN) / costbasis) - SATOSHIDEN / PRICES_NORMFACTOR) * PRICES_NORMFACTOR : 0;
     std::cerr << "prices_syntheticprofits() test value1 (price/PRICES_NORMFACTOR * SATOSHIDEN)=" << (price / PRICES_NORMFACTOR * SATOSHIDEN) << std::endl;
     std::cerr << "prices_syntheticprofits() test value2 (price/PRICES_NORMFACTOR * SATOSHIDEN)/costbasis=" << (costbasis != 0 ? (price / PRICES_NORMFACTOR * SATOSHIDEN)/costbasis : 0) << std::endl;
@@ -720,8 +743,7 @@ int64_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t
     std::cerr << "prices_syntheticprofits() value of profits=" << profits << std::endl;
     //std::cerr << "prices_syntheticprofits() dprofits=" << dprofits << std::endl;
 
-
-    return profits; //  (positionsize + addedbets + profits);
+    return 0; //  (positionsize + addedbets + profits);
 }
 
 void prices_betjson(UniValue &result,int64_t profits,int64_t costbasis,int64_t positionsize,int64_t addedbets,int16_t leverage,int32_t firstheight,int64_t firstprice, int64_t lastprice, int64_t equity)
@@ -839,11 +861,11 @@ UniValue PricesBet(int64_t txfee, int64_t amount, int16_t leverage, std::vector<
     if (AddNormalinputs(mtx, mypk, amount + 5 * txfee, 64) >= amount + 5 * txfee)
     {
         betamount = (amount * 199) / 200;
-        mtx.vout.push_back(MakeCC1vout(cp->evalcode, txfee, /*mypk*/pubkey2pk(ParseHex("03069fc09829259b3cd7b53bd97714498614f9ca323287bc783e39b02046f696db")))); // vout0 baton for total funding
+        mtx.vout.push_back(MakeCC1vout(cp->evalcode, txfee, mypk)); // vout0 baton for total funding
         mtx.vout.push_back(MakeCC1vout(cp->evalcode, (amount - betamount) + 2 * txfee, pricespk));  // vout1, when spent, costbasis is set
         mtx.vout.push_back(MakeCC1vout(cp->evalcode, betamount, pricespk));
         mtx.vout.push_back(CTxOut(txfee, CScript() << ParseHex(HexStr(pricespk)) << OP_CHECKSIG)); // marker
-        rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, prices_betopret(/*mypk*/ pubkey2pk(ParseHex("03069fc09829259b3cd7b53bd97714498614f9ca323287bc783e39b02046f696db")), nextheight - 1, amount, leverage, firstprice, vec, zeroid));
+        rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, prices_betopret(mypk, nextheight - 1, amount, leverage, firstprice, vec, zeroid));
         return(prices_rawtxresult(result, rawtx, 0));
     }
     result.push_back(Pair("result", "error"));
@@ -921,19 +943,24 @@ UniValue PricesSetcostbasis(int64_t txfee, uint256 bettxid)
 
             addedbets = prices_batontxid(batontxid, bettx, bettxid);
             mtx.vin.push_back(CTxIn(bettxid, 1, CScript()));              // spend vin1 with betamount
-            for (i = 0; i < PRICES_DAYWINDOW + 1; i++)   // the last datum for 24h is the costbasis value
-            {
-                profits = prices_syntheticprofits(costbasis, firstheight, firstheight + i, leverage, vec, positionsize, addedbets, lastprice);
+            //for (i = 0; i < PRICES_DAYWINDOW + 1; i++)   // the last datum for 24h is the actual costbasis value
+            //{
+                int32_t retcode = prices_syntheticprofits(costbasis, firstheight, firstheight + PRICES_DAYWINDOW, leverage, vec, positionsize, addedbets, profits, lastprice);
+                if (retcode < 0) {
+                    result.push_back(Pair("result", "error"));
+                    result.push_back(Pair("error", "cannot calculate costbasis error getting price"));
+                    return(result);
+                }
                 equity = positionsize + addedbets + profits;
-                if (equity < 0)
+                /*if (equity < 0)
                 {   // we are in loss
                     result.push_back(Pair("rekt", (int64_t)1));
                     result.push_back(Pair("rektheight", (int64_t)firstheight + i));
                     break;
-                }
-            }
-            if (i == PRICES_DAYWINDOW + 1)
-                result.push_back(Pair("rekt", 0));
+                }*/
+            //}
+            //if (i == PRICES_DAYWINDOW + 1)
+            //    result.push_back(Pair("rekt", 0));
 
             prices_betjson(result, profits, costbasis, positionsize, addedbets, leverage, firstheight, firstprice, lastprice, equity);
 
@@ -989,7 +1016,13 @@ UniValue PricesRekt(int64_t txfee, uint256 bettxid, int32_t rektheight)
             }
 
             addedbets = prices_batontxid(batontxid, bettx, bettxid);
-            profits = prices_syntheticprofits(costbasis, firstheight, rektheight, leverage, vec, positionsize, addedbets, lastprice);
+            int32_t retcode = prices_syntheticprofits(costbasis, firstheight, rektheight, leverage, vec, positionsize, addedbets, profits, lastprice);
+            if (retcode < 0) {
+                result.push_back(Pair("result", "error"));
+                result.push_back(Pair("error", "cannot get price"));
+                return(result);
+            }
+
             equity = positionsize + addedbets + profits;
             if (equity < 0)
             {
@@ -1058,7 +1091,12 @@ UniValue PricesCashout(int64_t txfee, uint256 bettxid)
             }
 
             addedbets = prices_batontxid(batontxid, bettx, bettxid);
-            profits = prices_syntheticprofits(costbasis, firstheight, nextheight - 1, leverage, vec, positionsize, addedbets, lastprice);
+            int32_t retcode = prices_syntheticprofits(costbasis, firstheight, nextheight - 1, leverage, vec, positionsize, addedbets, profits, lastprice);
+            if (retcode < 0) {
+                result.push_back(Pair("result", "error"));
+                result.push_back(Pair("error", "cannot get price"));
+                return(result);
+            }
             equity = positionsize + addedbets + profits;
             if (equity < 0)
             {
@@ -1102,6 +1140,9 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
 
     if (myGetTransaction(bettxid, bettx, hashBlock) != 0 && (numvouts = bettx.vout.size()) > 3)
     {
+        if (hashBlock.IsNull())
+            throw std::runtime_error("tx still in mempool");
+
         if (prices_betopretdecode(bettx.vout[numvouts - 1].scriptPubKey, pk, firstheight, positionsize, leverage, firstprice, vec, tokenid) == 'B')
         {
             // check acceptable refheight:
@@ -1117,7 +1158,12 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
             addedbets = prices_batontxid(batontxid, bettx, bettxid);
 
             if (costbasis != 0) { // costbasis fixed
-                profits = prices_syntheticprofits(costbasis, firstheight, refheight, leverage, vec, positionsize, addedbets, lastprice);
+                int32_t retcode = prices_syntheticprofits(costbasis, firstheight, refheight, leverage, vec, positionsize, addedbets, profits, lastprice);
+                if (retcode < 0) {
+                    result.push_back(Pair("result", "error"));
+                    result.push_back(Pair("error", "cannot get price"));
+                    return(result);
+                }
                 equity = positionsize + addedbets + profits;
                 if (equity < 0)
                 {
@@ -1132,7 +1178,12 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
                 bool isRekt = false;
                 for (i = 0; i < PRICES_DAYWINDOW + 1 && firstheight + i <= refheight; i++)   // the last datum for 24h is the costbasis value
                 {
-                    profits = prices_syntheticprofits(costbasis, firstheight, firstheight + i, leverage, vec, positionsize, addedbets, lastprice);
+                    int32_t retcode = prices_syntheticprofits(costbasis, firstheight, firstheight + i, leverage, vec, positionsize, addedbets, profits, lastprice);
+                    if (retcode < 0) {
+                        result.push_back(Pair("result", "error"));
+                        result.push_back(Pair("error", "cannot get price"));
+                        return(result);
+                    }
                     equity = positionsize + addedbets + profits;
                     if (equity < 0)
                     {   // we are in loss
