@@ -506,8 +506,7 @@ UniValue dumpwallet_impl(const UniValue& params, bool fHelp, bool fDumpZKeys)
     file << strprintf("# * Best block at time of backup was %i (%s),\n", chainActive.Height(), chainActive.Tip()->GetBlockHash().ToString());
     file << strprintf("#   mined on %s\n", EncodeDumpTime(chainActive.Tip()->GetBlockTime()));
     {
-        HDSeed hdSeed;
-        pwalletMain->GetHDSeed(hdSeed);
+        HDSeed hdSeed = pwalletMain->GetHDSeedForRPC();
         auto rawSeed = hdSeed.RawSeed();
         file << strprintf("# HDSeed=%s fingerprint=%s", HexStr(rawSeed.begin(), rawSeed.end()), hdSeed.Fingerprint().GetHex());
         file << "\n";

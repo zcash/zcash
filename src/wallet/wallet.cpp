@@ -2156,6 +2156,14 @@ bool CWallet::SetCryptedHDSeed(const uint256& seedFp, const std::vector<unsigned
     return false;
 }
 
+HDSeed CWallet::GetHDSeedForRPC() const {
+    HDSeed seed;
+    if (!pwalletMain->GetHDSeed(seed)) {
+        throw JSONRPCError(RPC_WALLET_ERROR, "HD seed not found");
+    }
+    return seed;
+}
+
 void CWallet::SetHDChain(const CHDChain& chain, bool memonly)
 {
     LOCK(cs_wallet);
