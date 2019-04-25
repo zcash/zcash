@@ -24,7 +24,7 @@ typedef struct BetInfo {
     int64_t costbasis;
     int64_t profits;
 
-    BetInfo() { amount = 0; firstheight = 0; costbasis = 0; profits = 0; }
+    BetInfo() { amount = 0; firstheight = 0; costbasis = 0; profits = 0; }  // important to clear costbasis as it will be calculated as minmax
 } betinfo;
 
 /*
@@ -713,7 +713,7 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
     return(price / den);
 }
 
-// calculates profit/loss for the bet
+// calculates costbasis and profit/loss for the bet
 int32_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t height, int16_t leverage, std::vector<uint16_t> vec, int64_t positionsize,  int64_t &profits, int64_t &outprice)
 {
     int64_t price;
@@ -779,6 +779,7 @@ int32_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t
     return 0; //  (positionsize + addedbets + profits);
 }
 
+// makes result json object
 void prices_betjson(UniValue &result, std::vector<BetInfo> bets, int16_t leverage, int32_t endheight, int64_t lastprice)
 {
 
@@ -840,7 +841,7 @@ int64_t prices_costbasis(CTransaction bettx, uint256 &txidCostbasis)
     return 0;
 }
 
-// calculates added bet total, returns the last baton txid
+// enumerates and retrieves added bets, returns the last baton txid
 int64_t prices_enumaddedbets(uint256 &batontxid, std::vector<BetInfo> &bets, uint256 bettxid)
 {
     int64_t addedBetsTotal = 0;
@@ -969,8 +970,49 @@ UniValue PricesAddFunding(int64_t txfee, uint256 bettxid, int64_t amount)
     return(result);
 }
 
-// set cost basis (open price) for the bet
+// scan chain from the initial bet's first position upto the chain tip and calculate bet's costbasises and profits, breaks if rekt detected 
+int32_t prices_scanchain(std::vector<BetInfo> &bets, int16_t leverage, std::vector<uint16_t> vec, int64_t &lastprice, int32_t &endheight) {
 
+    if (bets.size() == 0)
+        return -1;
+
+    bool stop = false;
+    for (int32_t height = bets[0].firstheight; ; height++)   // the last datum for 24h is the costbasis value
+    {
+        int64_t totalbets = 0;
+        int64_t totalprofits = 0;
+
+        // scan upto the chain tip
+        for (int i = 0; i < bets.size(); i++) {
+
+            if (height > bets[i].firstheight) {
+
+                int32_t retcode = prices_syntheticprofits(bets[i].costbasis, bets[i].firstheight, height, leverage, vec, bets[i].amount, bets[i].profits, lastprice);
+                if (retcode < 0) {
+                    std::cerr << "prices_scanchain() prices_syntheticprofits returned -1, breaking" << std::endl;
+                    stop = true;
+                    break;
+                }
+                totalbets += bets[i].amount;
+                totalprofits += bets[i].profits;
+            }
+        }
+
+        if (stop)
+            break;
+
+        endheight = height;
+        int64_t equity = totalbets + totalprofits;
+        if (equity < 0)
+        {   // we are in loss
+            break;
+        }
+    }
+
+    return 0;
+}
+
+// set cost basis (open price) for the bet
 UniValue PricesSetcostbasis(int64_t txfee, uint256 bettxid)
 {
     int32_t nextheight = komodo_nextheight();
@@ -1048,8 +1090,8 @@ UniValue PricesRekt(int64_t txfee, uint256 bettxid, int32_t rektheight)
     struct CCcontract_info *cp, C; 
     CTransaction bettx; 
     uint256 hashBlock, tokenid, batontxid; 
-    int64_t myfee = 0, positionsize, addedbets, firstprice, lastprice, profits, ignore, costbasis = 0, equity; 
-    int32_t firstheight, numvouts; 
+    int64_t myfee = 0, firstprice, lastprice = 0, positionsize; 
+    int32_t firstheight; 
     int16_t leverage; 
     std::vector<uint16_t> vec; 
     CPubKey pk, mypk, pricespk; 
@@ -1060,40 +1102,45 @@ UniValue PricesRekt(int64_t txfee, uint256 bettxid, int32_t rektheight)
         txfee = PRICES_TXFEE;
     mypk = pubkey2pk(Mypubkey());
     pricespk = GetUnspendable(cp, 0);
-    if (myGetTransaction(bettxid, bettx, hashBlock) != 0 && (numvouts = bettx.vout.size()) > 3)
+    if (myGetTransaction(bettxid, bettx, hashBlock) != 0 && bettx.vout.size() > 3)
     {
-        if (prices_betopretdecode(bettx.vout[numvouts - 1].scriptPubKey, pk, firstheight, positionsize, leverage, firstprice, vec, tokenid) == 'B')
+        if (prices_betopretdecode(bettx.vout.back().scriptPubKey, pk, firstheight, positionsize, leverage, firstprice, vec, tokenid) == 'B')
         {
-            //uint256 costbasistxid;
-            std::vector<BetInfo> addedBets;
+            int32_t endheight;
+            std::vector<BetInfo> bets;
+            BetInfo bet1;
+            bet1.amount = positionsize;
+            bet1.firstheight = firstheight;
+            bets.push_back(bet1);
 
-            /*costbasis = prices_costbasis(bettx, costbasistxid);
-            if (costbasis == 0) {
-                result.push_back(Pair("result", "error"));
-                result.push_back(Pair("error", "costbasis not defined yet"));
-                return(result);
-            }*/
+            prices_enumaddedbets(batontxid, bets, bettxid);
 
-            addedbets = prices_enumaddedbets(batontxid, addedBets, bettxid);
-            int32_t retcode = prices_syntheticprofits(costbasis, firstheight, rektheight, leverage, vec, positionsize, profits, lastprice);
-            if (retcode < 0) {
+            if (prices_scanchain(bets, leverage, vec, lastprice, endheight) < 0) {
                 result.push_back(Pair("result", "error"));
-                result.push_back(Pair("error", "cannot get price"));
+                result.push_back(Pair("error", "error scanning chain"));
                 return(result);
             }
 
-            equity = positionsize + addedbets + profits;
+            int64_t totalbets = 0;
+            int64_t totalprofits = 0;
+            for (auto b : bets) {
+                totalbets += b.amount;
+                totalprofits += b.profits;
+            }
+
+            prices_betjson(result, bets, leverage, endheight, lastprice); // fill output json
+
+            int64_t equity = totalbets + totalprofits;
             if (equity < 0)
             {
-                myfee = (positionsize + addedbets) / 500;
+                myfee = totalbets / 500; // consolation fee for loss
             }
-            //prices_betjson(result, profits, costbasis, positionsize, addedbets, leverage, firstheight, firstprice, lastprice, equity);
             if (myfee != 0)
             {
                 mtx.vin.push_back(CTxIn(bettxid, 2, CScript()));
                 mtx.vout.push_back(CTxOut(myfee, CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
                 mtx.vout.push_back(MakeCC1vout(cp->evalcode, bettx.vout[2].nValue - myfee - txfee, pricespk));
-                rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, prices_finalopret(bettxid, profits, rektheight, mypk, firstprice, costbasis, addedbets, positionsize, leverage));
+                rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, prices_finalopret(bettxid, totalprofits, rektheight, mypk, firstprice, 0, totalbets - positionsize, positionsize, leverage));
                 return(prices_rawtxresult(result, rawtx, 0));
             }
             else
@@ -1111,7 +1158,7 @@ UniValue PricesRekt(int64_t txfee, uint256 bettxid, int32_t rektheight)
         }
     }
     result.push_back(Pair("result", "error"));
-    result.push_back(Pair("error", "cant find bettxid"));
+    result.push_back(Pair("error", "cant load or incorrect bettx"));
     return(result);
 }
 
@@ -1122,8 +1169,8 @@ UniValue PricesCashout(int64_t txfee, uint256 bettxid)
     struct CCcontract_info *cp, C; char destaddr[64]; 
     CTransaction bettx; 
     uint256 hashBlock, batontxid, tokenid; 
-    int64_t CCchange = 0, positionsize, inputsum, ignore, addedbets, firstprice, lastprice, profits, costbasis = 0, equity; 
-    int32_t i, firstheight, height, numvouts; 
+    int64_t CCchange = 0, positionsize, inputsum, firstprice, lastprice = 0; 
+    int32_t firstheight, height; 
     int16_t leverage; 
     std::vector<uint16_t> vec;
     CPubKey pk, mypk, pricespk; 
@@ -1136,44 +1183,48 @@ UniValue PricesCashout(int64_t txfee, uint256 bettxid)
     mypk = pubkey2pk(Mypubkey());
     pricespk = GetUnspendable(cp, 0);
     GetCCaddress(cp, destaddr, pricespk);
-    if (myGetTransaction(bettxid, bettx, hashBlock) != 0 && (numvouts = bettx.vout.size()) > 3)
+    if (myGetTransaction(bettxid, bettx, hashBlock) != 0 && bettx.vout.size() > 3)
     {
-        if (prices_betopretdecode(bettx.vout[numvouts - 1].scriptPubKey, pk, firstheight, positionsize, leverage, firstprice, vec, tokenid) == 'B')
+        if (prices_betopretdecode(bettx.vout.back().scriptPubKey, pk, firstheight, positionsize, leverage, firstprice, vec, tokenid) == 'B')
         {
-            //uint256 costbasistxid;
-            std::vector<BetInfo> addedBets;
+            int32_t endheight;
+            std::vector<BetInfo> bets;
+            BetInfo bet1;
+            bet1.amount = positionsize;
+            bet1.firstheight = firstheight;
+            bets.push_back(bet1);
 
-            /*
-            costbasis = prices_costbasis(bettx, costbasistxid);
-            if (costbasis == 0) {
-                result.push_back(Pair("result", "error"));
-                result.push_back(Pair("error", "costbasis not defined yet"));
-                return(result);
-            }*/
+            prices_enumaddedbets(batontxid, bets, bettxid);
 
-            addedbets = prices_enumaddedbets(batontxid, addedBets, bettxid);
-            int32_t retcode = prices_syntheticprofits(costbasis, firstheight, nextheight - 1, leverage, vec, positionsize, profits, lastprice);
-            if (retcode < 0) {
+            if (prices_scanchain(bets, leverage, vec, lastprice, endheight) < 0) {
                 result.push_back(Pair("result", "error"));
-                result.push_back(Pair("error", "cannot get price"));
+                result.push_back(Pair("error", "error scanning chain"));
                 return(result);
             }
-            equity = positionsize + addedbets + profits;
+
+            int64_t totalbets = 0;
+            int64_t totalprofits = 0;
+            for (auto b : bets) {
+                totalbets += b.amount;
+                totalprofits += b.profits;
+            }
+            prices_betjson(result, bets, leverage, endheight, lastprice); // fill output json
+
+            int64_t equity = totalbets + totalprofits;
             if (equity < 0)
             {
-                //prices_betjson(result, profits, costbasis, positionsize, addedbets, leverage, firstheight, firstprice, lastprice, equity);
                 result.push_back(Pair("result", "error"));
                 result.push_back(Pair("error", "position rekt"));
                 return(result);
             }
-            //prices_betjson(result, profits, costbasis, positionsize, addedbets, leverage, firstheight, firstprice, lastprice, equity);
+
             mtx.vin.push_back(CTxIn(bettxid, 2, CScript()));
-            if ((inputsum = AddPricesInputs(cp, mtx, destaddr, profits + txfee, 64, bettxid, 2)) > profits + txfee)
-                CCchange = (inputsum - profits);
-            mtx.vout.push_back(CTxOut(bettx.vout[2].nValue + profits, CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
+            if ((inputsum = AddPricesInputs(cp, mtx, destaddr, equity + txfee, 64, bettxid, 2)) > equity + txfee)
+                CCchange = (inputsum - equity);
+            mtx.vout.push_back(CTxOut(bettx.vout[2].nValue + equity, CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
             if (CCchange >= txfee)
                 mtx.vout.push_back(MakeCC1vout(cp->evalcode, CCchange, pricespk));
-            rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, prices_finalopret(bettxid, profits, nextheight - 1, mypk, firstprice, costbasis, addedbets, positionsize, leverage));
+            rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, prices_finalopret(bettxid, totalprofits, nextheight - 1, mypk, firstprice, 0, totalbets-positionsize, positionsize, leverage));
             return(prices_rawtxresult(result, rawtx, 0));
         }
         else
@@ -1183,82 +1234,18 @@ UniValue PricesCashout(int64_t txfee, uint256 bettxid)
             return(result);
         }
     }
+    result.push_back(Pair("result", "error"));
+    result.push_back(Pair("error", "cant load or incorrect bettx"));
     return(result);
 }
-
-int32_t prices_scanchain(std::vector<BetInfo> &bets, int16_t leverage, std::vector<uint16_t> vec, int64_t &lastprice, int32_t &endheight) {
-
-    vscript_t opret;
-    uint8_t funcId;
-   
-
- /*   if (bettx.vout.size() < 1 || (funcId = CheckPricesOpret(bettx, opret)) == 0) {
-        std::cerr << "prices_scanchain() " << "incorrect tx, must be \'B\' or \'A\'" << std::endl;
-        return -1;
-    }*/
-
-   
-    // check acceptable refheight:
-/*    if (refheight < 0 || refheight > 0 && refheight < firstheight) {
-        result.push_back(Pair("result", "error"));
-        result.push_back(Pair("error", "incorrect height"));
-        return(result);
-    }
-    if (refheight == 0)
-        refheight = komodo_nextheight() - 1;*/
-
-    //costbasis = prices_costbasis(bettx, costbasistxid)
-
-
-
-    if (bets.size() == 0)
-        return -1;
-
-    bool stop = false;
-    for (int32_t height = bets[0].firstheight; ; height++)   // the last datum for 24h is the costbasis value
-    {
-        int64_t totalbets = 0;
-        int64_t totalprofits = 0;
-
-        // scan upto the chain tip
-        for (int i = 0; i < bets.size(); i++) {
-
-            if (height > bets[i].firstheight) {
-
-                int32_t retcode = prices_syntheticprofits(bets[i].costbasis, bets[i].firstheight, height, leverage, vec, bets[i].amount, bets[i].profits, lastprice);
-                if (retcode < 0) {
-                    std::cerr << "prices_scanchain() prices_syntheticprofits returned -1, breaking" << std::endl;
-                    stop = true;
-                    break;
-                }
-                totalbets += bets[i].amount;
-                totalprofits += bets[i].profits;
-            }
-        }
-
-        if (stop)
-            break;
-
-        endheight = height;
-        int64_t equity = totalbets + totalprofits;
-        if (equity < 0)
-        {   // we are in loss
-            break;
-        }
-    }
-    
-    return 0;
-}
-
 
 UniValue PricesInfo(uint256 bettxid, int32_t refheight)
 {
     UniValue result(UniValue::VOBJ);
     CTransaction bettx;
     uint256 hashBlock, batontxid, tokenid;
-    int64_t myfee;
-    int64_t positionsize = 0, firstprice = 0, lastprice = 0, costbasis = 0, equity;
-    int32_t i, firstheight = 0, endheight;
+    int64_t positionsize = 0, firstprice = 0, lastprice = 0;
+    int32_t firstheight = 0, endheight;
     int16_t leverage = 0;
     std::vector<uint16_t> vec;
     CPubKey pk, mypk, pricespk;
@@ -1272,7 +1259,6 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
 
         if (prices_betopretdecode(bettx.vout.back().scriptPubKey, pk, firstheight, positionsize, leverage, firstprice, vec, tokenid) == 'B')
         {
-            bool isRekt;
             std::vector<BetInfo> bets;
             BetInfo bet1;
             bet1.amount = positionsize;
@@ -1287,20 +1273,20 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
                 return(result);
             }
             
-            int64_t totalbet = 0;
+            int64_t totalbets = 0;
             int64_t totalprofits = 0;
             for (auto b : bets) {
-                totalbet += b.amount;
+                totalbets += b.amount;
                 totalprofits += b.profits;
             }
-            int64_t equity = totalbet + totalprofits;
+            int64_t equity = totalbets + totalprofits;
 
             if (equity >= 0)
                 result.push_back(Pair("rekt", 0));
             else
             {
                 result.push_back(Pair("rekt", (int64_t)1));
-                result.push_back(Pair("rektfee", totalbet / 500));
+                result.push_back(Pair("rektfee", totalbets / 500));
                 result.push_back(Pair("rektheight", (int64_t)endheight));
             }
             
