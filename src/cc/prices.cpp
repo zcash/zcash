@@ -1215,27 +1215,31 @@ int32_t prices_scanchain(std::vector<BetInfo> &bets, int16_t leverage, std::vect
         return -1;
 
     bool stop = false;
-    for (int32_t h = bets[0].firstheight; ; h++)   // the last datum for 24h is the costbasis value
+    for (int32_t height = bets[0].firstheight; ; height++)   // the last datum for 24h is the costbasis value
     {
         int64_t totalbets = 0;
         int64_t totalprofits = 0;
 
         // scan upto the chain tip
         for (int i = 0; i < bets.size(); i++) {
-            int32_t retcode = prices_syntheticprofits(bets[i].costbasis, bets[i].firstheight, h, leverage, vec, bets[i].amount, bets[i].profits, lastprice);
-            if (retcode < 0) {
-                std::cerr << "prices_scanchain() prices_syntheticprofits returned -1, breaking" << std::endl;
-                stop = true;
-                break;
+
+            if (height > bets[i].firstheight) {
+
+                int32_t retcode = prices_syntheticprofits(bets[i].costbasis, bets[i].firstheight, height, leverage, vec, bets[i].amount, bets[i].profits, lastprice);
+                if (retcode < 0) {
+                    std::cerr << "prices_scanchain() prices_syntheticprofits returned -1, breaking" << std::endl;
+                    stop = true;
+                    break;
+                }
+                totalbets += bets[i].amount;
+                totalprofits += bets[i].profits;
             }
-            totalbets += bets[i].amount;
-            totalprofits += bets[i].profits;
         }
 
         if (stop)
             break;
 
-        endheight = h;
+        endheight = height;
         int64_t equity = totalbets + totalprofits;
         if (equity < 0)
         {   // we are in loss
