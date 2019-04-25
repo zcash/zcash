@@ -23,6 +23,8 @@ typedef struct BetInfo {
     int32_t firstheight;
     int64_t costbasis;
     int64_t profits;
+
+    BetInfo() { amount = 0; firstheight = 0; costbasis = 0; profits = 0; }
 } betinfo;
 
 /*
@@ -798,9 +800,9 @@ void prices_betjson(UniValue &result, std::vector<BetInfo> bets, int16_t leverag
 
     result.push_back(Pair("bets", resultbets));
     result.push_back(Pair("leverage", (int64_t)leverage));
-    result.push_back(Pair("TotalPositionSize", totalbets));
-    result.push_back(Pair("TotalProfits", totalprofits));
-    result.push_back(Pair("equity", equity));
+    result.push_back(Pair("TotalPositionSize", ValueFromAmount(totalbets)));
+    result.push_back(Pair("TotalProfits", ValueFromAmount(totalprofits)));
+    result.push_back(Pair("equity", ValueFromAmount(equity)));
     result.push_back(Pair("LastPrice", ValueFromAmount(lastprice)));
     result.push_back(Pair("LastHeight", endheight));
 }
@@ -1215,30 +1217,26 @@ int32_t prices_scanchain(std::vector<BetInfo> &bets, int16_t leverage, std::vect
     bool stop = false;
     for (int32_t h = bets[0].firstheight; ; h++)   // the last datum for 24h is the costbasis value
     {
-        int64_t total = 0;
+        int64_t totalbets = 0;
         int64_t totalprofits = 0;
 
         for (int i = 0; i < bets.size(); i++) {
             int64_t costbasis, profits;
-
-            int32_t retcode = prices_syntheticprofits(costbasis, bets[i].firstheight, h, leverage, vec, bets[i].amount, profits, lastprice);
+            int32_t retcode = prices_syntheticprofits(bets[i].costbasis, bets[i].firstheight, h, leverage, vec, bets[i].amount, bets[i].profits, lastprice);
             if (retcode < 0) {
                 std::cerr << "prices_scanchain() error: prices_syntheticprofits returned -1 for addedbet" << std::endl;
                 stop = true;
                 break;
             }
-            total += bets[i].amount;
-            totalprofits += profits;
-
-            bets[i].costbasis = costbasis;
-            bets[i].profits = profits;
+            totalbets += bets[i].amount;
+            totalprofits += bets[i].profits;
         }
 
         if (stop)
             break;
 
         endheight = h;
-        int64_t equity = total + totalprofits;
+        int64_t equity = totalbets + totalprofits;
         if (equity < 0)
         {   // we are in loss
             break;
