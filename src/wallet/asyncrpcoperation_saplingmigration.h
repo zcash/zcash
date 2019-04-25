@@ -25,6 +25,8 @@ private:
 
     bool main_impl();
 
+    void setMigrationResult(int numTxCreated);
+
     CAmount chooseAmount(const CAmount& availableFunds);
 
     libzcash::SaplingPaymentAddress getMigrationDestAddress(const HDSeed& seed);

@@ -54,7 +54,7 @@ void AsyncRPCOperation_saplingmigration::main() {
         set_state(OperationStatus::FAILED);
     }
 
-    std::string s = strprintf("%s: Sprout->Sapling transactions sent. (status=%s", getId(), getStateAsString());
+    std::string s = strprintf("%s: Sprout->Sapling transactions created. (status=%s", getId(), getStateAsString());
     if (success) {
         s += strprintf(", success)\n");
     } else {
@@ -69,12 +69,10 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
     std::vector<SaplingNoteEntry> saplingEntries;
     {
         LOCK2(cs_main, pwalletMain->cs_wallet);
+        // We set minDepth to 11 to avoid unconfirmed notes and in anticipation of specifying
+        // an anchor at height N-10 for each Sprout JoinSplit description
         // Consider, should notes be sorted?
-        pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, "", 0);
-    }
-    if (sproutEntries.empty()) { // Consider, should the migration remain enabled?
-        pwalletMain->fSaplingMigrationEnabled = false;
-        return true;
+        pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, "", 11);
     }
     CAmount availableFunds = 0;
     for (const CSproutNotePlaintextEntry& sproutEntry : sproutEntries) {
@@ -82,7 +80,7 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
     }
     // If the remaining amount to be migrated is less than 0.01 ZEC, end the migration.
     if (availableFunds < CENT) {
-        pwalletMain->fSaplingMigrationEnabled = false;
+        setMigrationResult(0);
         return true;
     }
 
@@ -136,10 +134,14 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
         ++numTxCreated;
     } while (numTxCreated < 5 && availableFunds > CENT);
 
+    setMigrationResult(numTxCreated);
+    return true;
+}
+
+void AsyncRPCOperation_saplingmigration::setMigrationResult(int numTxCreated) {
     UniValue res(UniValue::VOBJ);
     res.push_back(Pair("num_tx_created", numTxCreated));
     set_result(res);
-    return true;
 }
 
 CAmount AsyncRPCOperation_saplingmigration::chooseAmount(const CAmount& availableFunds) {

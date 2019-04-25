@@ -94,6 +94,7 @@ class SproutSaplingMigration(BitcoinTestFramework):
         print "sprout balance: {}, sapling balance: {}".format(sprout_balance, sapling_balance)
         assert_true(sprout_balance < Decimal('10'), "Should have less Sprout funds")
         assert_true(sapling_balance > Decimal('0'), "Should have more Sapling funds")
+        assert_true(sprout_balance + sapling_balance, Decimal('9.9999'))
 
 
 if __name__ == '__main__':
