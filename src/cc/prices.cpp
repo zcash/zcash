@@ -1341,7 +1341,7 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
 UniValue PricesList(uint32_t filter, CPubKey mypk)
 {
     UniValue result(UniValue::VARR); 
-    std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex;
+    std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex, addressIndexCC;
     struct CCcontract_info *cp, C;
   
 
@@ -1391,8 +1391,8 @@ UniValue PricesList(uint32_t filter, CPubKey mypk)
         priceslist(it);
     }
 
-    SetCCtxids(addressIndex, cp->unspendableCCaddr, true);  // cc marker
-    for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it = addressIndex.begin(); it != addressIndex.end(); it++)
+    SetCCtxids(addressIndexCC, cp->unspendableCCaddr, true);  // cc marker
+    for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it = addressIndexCC.begin(); it != addressIndexCC.end(); it++)
     {
         priceslist(it);
     }
