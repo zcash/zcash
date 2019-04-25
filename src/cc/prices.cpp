@@ -794,6 +794,7 @@ void prices_betjson(UniValue &result, std::vector<BetInfo> bets, int16_t leverag
     }
     int64_t equity = totalbets + totalprofits;
 
+    result.setArray();
     result.push_back(resultbets);
     result.push_back(Pair("leverage", (int64_t)leverage));
     result.push_back(Pair("TotalPositionSize", totalbets));
