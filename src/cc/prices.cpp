@@ -44,7 +44,7 @@ CBOPRET creates trustless oracles, which can be used for making a synthetic cash
  
 */
 
-int32_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t height, int16_t leverage, std::vector<uint16_t> vec, int64_t positionsize, int64_t addedbets, int64_t &profits, int64_t &outprice);
+int32_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t height, int16_t leverage, std::vector<uint16_t> vec, int64_t positionsize, int64_t &profits, int64_t &outprice);
 
 // helpers:
 
@@ -271,7 +271,7 @@ static bool ValidateCostbasisTx(struct CCcontract_info *cp, Eval *eval, const CT
     }
     
     int64_t costbasis = 0, profits, lastprice;
-    int32_t retcode = prices_syntheticprofits(costbasis, firstheight, firstheight + PRICES_DAYWINDOW, leverage, vec, positionsize, 0, profits, lastprice);
+    int32_t retcode = prices_syntheticprofits(costbasis, firstheight, firstheight + PRICES_DAYWINDOW, leverage, vec, positionsize, profits, lastprice);
     if (retcode < 0) 
         return eval->Invalid("cannot calculate costbasis yet");
     std::cerr << "ValidateCostbasisTx() costbasis=" << costbasis << " costbasisInOpret=" << costbasisInOpret << std::endl;
@@ -1047,7 +1047,7 @@ UniValue PricesRekt(int64_t txfee, uint256 bettxid, int32_t rektheight)
             }
 
             addedbets = prices_enumaddedbets(batontxid, addedBets, bettxid);
-            int32_t retcode = prices_syntheticprofits(costbasis, firstheight, rektheight, leverage, vec, positionsize, addedbets, profits, lastprice);
+            int32_t retcode = prices_syntheticprofits(costbasis, firstheight, rektheight, leverage, vec, positionsize, profits, lastprice);
             if (retcode < 0) {
                 result.push_back(Pair("result", "error"));
                 result.push_back(Pair("error", "cannot get price"));
@@ -1123,7 +1123,7 @@ UniValue PricesCashout(int64_t txfee, uint256 bettxid)
             }
 
             addedbets = prices_enumaddedbets(batontxid, addedBets, bettxid);
-            int32_t retcode = prices_syntheticprofits(costbasis, firstheight, nextheight - 1, leverage, vec, positionsize, addedbets, profits, lastprice);
+            int32_t retcode = prices_syntheticprofits(costbasis, firstheight, nextheight - 1, leverage, vec, positionsize, profits, lastprice);
             if (retcode < 0) {
                 result.push_back(Pair("result", "error"));
                 result.push_back(Pair("error", "cannot get price"));
