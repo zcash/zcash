@@ -917,10 +917,10 @@ UniValue PricesBet(int64_t txfee, int64_t amount, int16_t leverage, std::vector<
     if (AddNormalinputs(mtx, mypk, amount + 5 * txfee, 64) >= amount + 5 * txfee)
     {
         betamount = (amount * 199) / 200;
-        mtx.vout.push_back(MakeCC1vout(cp->evalcode, txfee, mypk)); // vout0 baton for total funding
+        mtx.vout.push_back(MakeCC1vout(cp->evalcode, txfee, mypk));                                 // vout0 baton for total funding
         mtx.vout.push_back(MakeCC1vout(cp->evalcode, (amount - betamount) + 2 * txfee, pricespk));  // vout1, when spent, costbasis is set
-        mtx.vout.push_back(MakeCC1vout(cp->evalcode, betamount, pricespk));
-        mtx.vout.push_back(CTxOut(txfee, CScript() << ParseHex(HexStr(pricespk)) << OP_CHECKSIG)); // marker
+        mtx.vout.push_back(MakeCC1vout(cp->evalcode, betamount, pricespk));                         // betamount
+        mtx.vout.push_back(CTxOut(txfee, CScript() << ParseHex(HexStr(pricespk)) << OP_CHECKSIG));  // normal marker
         rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, prices_betopret(mypk, nextheight - 1, amount, leverage, firstprice, vec, zeroid));
         return(prices_rawtxresult(result, rawtx, 0));
     }
@@ -1235,10 +1235,10 @@ UniValue PricesCashout(int64_t txfee, uint256 bettxid)
                 return(result);
             }
 
-            mtx.vin.push_back(CTxIn(bettxid, 2, CScript()));
+            //mtx.vin.push_back(CTxIn(bettxid, 2, CScript()));  // take back betamount (with fee subtracted)
             if ((inputsum = AddPricesInputs(cp, mtx, destaddr, equity + txfee, 64, bettxid, 2)) > equity + txfee)
                 CCchange = (inputsum - equity);
-            mtx.vout.push_back(CTxOut(bettx.vout[2].nValue + equity, CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
+            mtx.vout.push_back(CTxOut(equity, CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
             if (CCchange >= txfee)
                 mtx.vout.push_back(MakeCC1vout(cp->evalcode, CCchange, pricespk));
             rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, prices_finalopret(bettxid, totalprofits, nextheight - 1, mypk, firstprice, 0, totalbets-positionsize, positionsize, leverage));
