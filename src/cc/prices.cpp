@@ -303,8 +303,10 @@ static bool ValidateFinalTx(struct CCcontract_info *cp, Eval *eval, const CTrans
     int64_t firstprice, costbasis, addedbets, positionsize;
     int16_t leverage;
 
-    if (finaltx.vout.size() < 2 || finaltx.vout.size() > 3)
-        return eval->Invalid("incorrect vout number for final tx");
+    if (finaltx.vout.size() < 3 || finaltx.vout.size() > 4) {
+        //return eval->Invalid("incorrect vout number for final tx");
+        std::cerr << "ValidateFinalTx()" << " incorrect vout number for final tx =" << finaltx.vout.size() << std::endl;
+    }
 
     vscript_t opret;
     if (prices_finalopretdecode(finaltx.vout.back().scriptPubKey, bettxid, profits, height, pk, firstprice, costbasis, addedbets, positionsize, leverage) != 'F')
@@ -1155,7 +1157,7 @@ UniValue PricesRekt(int64_t txfee, uint256 bettxid, int32_t rektheight)
             {
                 mtx.vin.push_back(CTxIn(bettxid, 1, CScript()));  // spend cc marker
                 mtx.vout.push_back(CTxOut(myfee, CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
-                mtx.vout.push_back(MakeCC1vout(cp->evalcode, bettx.vout[2].nValue - myfee - txfee, pricespk));
+                mtx.vout.push_back(MakeCC1vout(cp->evalcode, bettx.vout[2].nValue - myfee - txfee, pricespk));  // change
                 rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, prices_finalopret(bettxid, totalprofits, rektheight, mypk, firstprice, 0, totalbets - positionsize, positionsize, leverage));
                 return(prices_rawtxresult(result, rawtx, 0));
             }
