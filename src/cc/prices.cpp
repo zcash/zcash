@@ -1077,9 +1077,9 @@ UniValue PricesSetcostbasis(int64_t txfee, uint256 bettxid)
             result.push_back(Pair("error", "not enough funds"));
             return(result);
         }
-    }
+    } */
     result.push_back(Pair("result", "error"));
-    result.push_back(Pair("error", "cant find bettxid")); */
+    result.push_back(Pair("error", "deprecated")); 
     return(result);
 }
 
@@ -1106,9 +1106,18 @@ UniValue PricesRekt(int64_t txfee, uint256 bettxid, int32_t rektheight)
     {
         if (prices_betopretdecode(bettx.vout.back().scriptPubKey, pk, firstheight, positionsize, leverage, firstprice, vec, tokenid) == 'B')
         {
-            int32_t endheight;
+            uint256 finaltxid;
+            int32_t vini;
+            int32_t finalheight, endheight;
             std::vector<BetInfo> bets;
             BetInfo bet1;
+
+            if (CCgetspenttxid(finaltxid, vini, finalheight, bettxid, 2) < 0) {
+                result.push_back(Pair("result", "error"));
+                result.push_back(Pair("error", "position closed"));
+                return result;
+            }
+
             bet1.amount = positionsize;
             bet1.firstheight = firstheight;
             bets.push_back(bet1);
@@ -1170,7 +1179,7 @@ UniValue PricesCashout(int64_t txfee, uint256 bettxid)
     CTransaction bettx; 
     uint256 hashBlock, batontxid, tokenid; 
     int64_t CCchange = 0, positionsize, inputsum, firstprice, lastprice = 0; 
-    int32_t firstheight, height; 
+    int32_t firstheight; 
     int16_t leverage; 
     std::vector<uint16_t> vec;
     CPubKey pk, mypk, pricespk; 
@@ -1187,13 +1196,21 @@ UniValue PricesCashout(int64_t txfee, uint256 bettxid)
     {
         if (prices_betopretdecode(bettx.vout.back().scriptPubKey, pk, firstheight, positionsize, leverage, firstprice, vec, tokenid) == 'B')
         {
-            int32_t endheight;
+            uint256 finaltxid;
+            int32_t vini;
+            int32_t finalheight, endheight;
             std::vector<BetInfo> bets;
             BetInfo bet1;
+
+            if (CCgetspenttxid(finaltxid, vini, finalheight, bettxid, 2) < 0) {
+                result.push_back(Pair("result", "error"));
+                result.push_back(Pair("error", "position closed"));
+                return result;
+            }
+
             bet1.amount = positionsize;
             bet1.firstheight = firstheight;
             bets.push_back(bet1);
-
             prices_enumaddedbets(batontxid, bets, bettxid);
 
             if (prices_scanchain(bets, leverage, vec, lastprice, endheight) < 0) {
@@ -1259,8 +1276,17 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
 
         if (prices_betopretdecode(bettx.vout.back().scriptPubKey, pk, firstheight, positionsize, leverage, firstprice, vec, tokenid) == 'B')
         {
+            uint256 finaltxid;
+            int32_t vini;
+            int32_t finalheight, endheight;
             std::vector<BetInfo> bets;
             BetInfo bet1;
+
+            if (CCgetspenttxid(finaltxid, vini, finalheight, bettxid, 2) < 0) 
+                result.push_back(Pair("status", "closed"));
+            else
+                result.push_back(Pair("status", "open"));
+
             bet1.amount = positionsize;
             bet1.firstheight = firstheight;
             bets.push_back(bet1);
