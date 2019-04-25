@@ -1112,7 +1112,7 @@ UniValue PricesRekt(int64_t txfee, uint256 bettxid, int32_t rektheight)
             std::vector<BetInfo> bets;
             BetInfo bet1;
 
-            if (CCgetspenttxid(finaltxid, vini, finalheight, bettxid, 2) < 0) {
+            if (CCgetspenttxid(finaltxid, vini, finalheight, bettxid, 2) == 0) {
                 result.push_back(Pair("result", "error"));
                 result.push_back(Pair("error", "position closed"));
                 return result;
@@ -1202,7 +1202,7 @@ UniValue PricesCashout(int64_t txfee, uint256 bettxid)
             std::vector<BetInfo> bets;
             BetInfo bet1;
 
-            if (CCgetspenttxid(finaltxid, vini, finalheight, bettxid, 2) < 0) {
+            if (CCgetspenttxid(finaltxid, vini, finalheight, bettxid, 2) == 0) {
                 result.push_back(Pair("result", "error"));
                 result.push_back(Pair("error", "position closed"));
                 return result;
@@ -1282,7 +1282,7 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
             std::vector<BetInfo> bets;
             BetInfo bet1;
 
-            if (CCgetspenttxid(finaltxid, vini, finalheight, bettxid, 2) < 0) 
+            if (CCgetspenttxid(finaltxid, vini, finalheight, bettxid, 2) == 0) 
                 result.push_back(Pair("status", "closed"));
             else
                 result.push_back(Pair("status", "open"));
