@@ -1348,7 +1348,7 @@ UniValue PricesList(uint32_t filter, CPubKey mypk)
     cp = CCinit(&C, EVAL_PRICES);
     //pricespk = GetUnspendable(cp, 0);
 
-    auto priceslist = [&](std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it)
+    auto priceslist = [&](std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it, int32_t vini)
     {
         int64_t amount, firstprice; 
         int32_t height; 
@@ -1359,6 +1359,7 @@ UniValue PricesList(uint32_t filter, CPubKey mypk)
         CTransaction vintx;
 
         txid = it->first.txhash;
+
         if (GetTransaction(txid, vintx, hashBlock, false) != 0)
         {
             bool bAppend = false;
@@ -1380,7 +1381,7 @@ UniValue PricesList(uint32_t filter, CPubKey mypk)
                 if (bAppend)
                     result.push_back(txid.GetHex());
             }
-            std::cerr << "PricesList() " << " bettxid=" << txid.GetHex() << " mypk=" << HexStr(mypk) << " opret pk=" << HexStr(pk) << " filter=" << filter << " bAppend=" << bAppend << std::endl;
+            std::cerr << "PricesList() " << " bettxid=" << txid.GetHex() << " mypk=" << HexStr(mypk) << " opretpk=" << HexStr(pk) << " filter=" << filter << " bAppend=" << bAppend << " index=" << it->first.index << " txindex=" << it->first.txindex  << std::endl;
         }
     };
 
@@ -1388,13 +1389,13 @@ UniValue PricesList(uint32_t filter, CPubKey mypk)
     SetCCtxids(addressIndex, cp->normaladdr, false);        // old normal marker
     for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it = addressIndex.begin(); it != addressIndex.end(); it++)
     {
-        priceslist(it);
+        priceslist(it, 3);
     }
 
     SetCCtxids(addressIndexCC, cp->unspendableCCaddr, true);  // cc marker
     for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it = addressIndexCC.begin(); it != addressIndexCC.end(); it++)
     {
-        priceslist(it);
+        priceslist(it, 1);
     }
 
     return(result);
