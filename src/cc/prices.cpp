@@ -1210,6 +1210,7 @@ int32_t prices_scanchain(std::vector<BetInfo> &bets, int16_t leverage, std::vect
     if (bets.size() == 0)
         return -1;
 
+    bool stop = false;
     for (int32_t h = bets[0].firstheight; ; h++)   // the last datum for 24h is the costbasis value
     {
         int64_t total = 0;
@@ -1220,7 +1221,8 @@ int32_t prices_scanchain(std::vector<BetInfo> &bets, int16_t leverage, std::vect
 
             int32_t retcode = prices_syntheticprofits(costbasis, bets[i].firstheight, h, leverage, vec, bets[i].amount, profits, lastprice);
             if (retcode < 0) {
-                std::cerr << "PricesInfo() error: prices_syntheticprofits returned -1 for addedbet" << std::endl;
+                std::cerr << "prices_scanchain() error: prices_syntheticprofits returned -1 for addedbet" << std::endl;
+                stop = true;
                 break;
             }
             total += bets[i].amount;
@@ -1228,9 +1230,12 @@ int32_t prices_scanchain(std::vector<BetInfo> &bets, int16_t leverage, std::vect
 
             bets[i].costbasis = costbasis;
             bets[i].profits = profits;
-            endheight = h;
         }
 
+        if (stop)
+            break;
+
+        endheight = h;
         int64_t equity = total + totalprofits;
         if (equity < 0)
         {   // we are in loss
