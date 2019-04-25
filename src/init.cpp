@@ -1663,8 +1663,12 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
         if (!pwalletMain->HaveHDSeed())
         {
-            // generate a new HD seed
-            pwalletMain->GenerateNewSeed();
+            // We can't set the new HD seed until the wallet is decrypted.
+            // https://github.com/zcash/zcash/issues/3607
+            if (!pwalletMain->IsCrypted()) {
+                // generate a new HD seed
+                pwalletMain->GenerateNewSeed();
+            }
         }
 
         if (fFirstRun)
