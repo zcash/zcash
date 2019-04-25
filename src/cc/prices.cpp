@@ -739,31 +739,31 @@ int32_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t
     if (minmax)    { // if we are within day window, set temp costbasis to max (or min) price value
         if (leverage > 0 && price > costbasis) {
             costbasis = price;  // set temp costbasis
-            std::cerr << "prices_syntheticprofits() minmax costbasis=" << costbasis << " price=" << price << std::endl;
+            std::cerr << "prices_syntheticprofits() minmax costbasis=" << costbasis << std::endl;
         }
         else if (leverage < 0 && (costbasis == 0 || price < costbasis)) {
             costbasis = price;
-            std::cerr << "prices_syntheticprofits() minmax costbasis=" << costbasis << " price=" << price << std::endl;
+            std::cerr << "prices_syntheticprofits() minmax costbasis=" << costbasis << std::endl;
         }
-        else {  //-> use the previous value
-            std::cerr << "prices_syntheticprofits() unchanged costbasis=" << costbasis << " price=" << price << " leverage=" << leverage << std::endl;
-        }
+        //else {  //-> use the previous value
+        //    std::cerr << "prices_syntheticprofits() unchanged costbasis=" << costbasis << " price=" << price << " leverage=" << leverage << std::endl;
+        //}
             
     }
     else   { 
-        if (costbasis == 0) {
+        if (height == firstheight + PRICES_DAYWINDOW) {
             // if costbasis not set, just set it
             costbasis = price;
-            std::cerr << "prices_syntheticprofits() set costbasis=" << costbasis <<  std::endl;
+            std::cerr << "prices_syntheticprofits() permanent costbasis=" << costbasis << " height=" << height << std::endl;
         }
         else {
             // use provided costbasis
-            std::cerr << "prices_syntheticprofits() provided costbasis=" << costbasis << " price=" << price << std::endl;
+            //std::cerr << "prices_syntheticprofits() provided costbasis=" << costbasis << " price=" << price << std::endl;
         }
     }
     
     profits = costbasis > 0 ? (((price / PRICES_NORMFACTOR * SATOSHIDEN) / costbasis) - SATOSHIDEN / PRICES_NORMFACTOR) * PRICES_NORMFACTOR : 0;
-    std::cerr << "prices_syntheticprofits() test value1 (price/PRICES_NORMFACTOR * SATOSHIDEN)=" << (price / PRICES_NORMFACTOR * SATOSHIDEN) << std::endl;
+    //std::cerr << "prices_syntheticprofits() test value1 (price/PRICES_NORMFACTOR * SATOSHIDEN)=" << (price / PRICES_NORMFACTOR * SATOSHIDEN) << std::endl;
     std::cerr << "prices_syntheticprofits() test value2 (price/PRICES_NORMFACTOR * SATOSHIDEN)/costbasis=" << (costbasis != 0 ? (price / PRICES_NORMFACTOR * SATOSHIDEN)/costbasis : 0) << std::endl;
 
     std::cerr << "prices_syntheticprofits() fractional profits=" << profits << std::endl;
@@ -773,7 +773,7 @@ int32_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t
     profits *= ((int64_t)leverage * (int64_t)positionsize);
     profits /= (int64_t)SATOSHIDEN;
     //dprofits *= leverage * positionsize;
-    std::cerr << "prices_syntheticprofits() value of profits=" << profits << std::endl;
+    std::cerr << "prices_syntheticprofits() profits=" << profits << std::endl;
     //std::cerr << "prices_syntheticprofits() dprofits=" << dprofits << std::endl;
 
     return 0; //  (positionsize + addedbets + profits);
@@ -1220,11 +1220,11 @@ int32_t prices_scanchain(std::vector<BetInfo> &bets, int16_t leverage, std::vect
         int64_t totalbets = 0;
         int64_t totalprofits = 0;
 
+        // scan upto the chain tip
         for (int i = 0; i < bets.size(); i++) {
-            int64_t costbasis, profits;
             int32_t retcode = prices_syntheticprofits(bets[i].costbasis, bets[i].firstheight, h, leverage, vec, bets[i].amount, bets[i].profits, lastprice);
             if (retcode < 0) {
-                std::cerr << "prices_scanchain() error: prices_syntheticprofits returned -1 for addedbet" << std::endl;
+                std::cerr << "prices_scanchain() prices_syntheticprofits returned -1, breaking" << std::endl;
                 stop = true;
                 break;
             }
