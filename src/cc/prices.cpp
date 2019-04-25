@@ -216,14 +216,16 @@ static bool ValidateAddFundingTx(struct CCcontract_info *cp, Eval *eval, const C
         return eval->Invalid("cannot decode opreturn for add funding tx");
 
     pricespk = GetUnspendable(cp, 0);
-    uint8_t funcId;
-    if ((funcId=CheckPricesOpret(vintx, vintxOpret)) != 'B') { // if vintx is bettx
-        std::cerr << "ValidateBetTx() " << "bad funcId=" << (funcId?funcId:'0') << std::endl;
-        //return eval->Invalid("incorrect bettx funcid");
+    uint8_t vintxFuncId = CheckPricesOpret(vintx, vintxOpret);
+    if (vintxFuncId != 'A' && vintxFuncId != 'B') { // if vintx is bettx
+        std::cerr << "ValidateAddFundingTx() " << "bad vintx funcId=" << (char)(vintxFuncId ? vintxFuncId :'0') << std::endl;
+        //return eval->Invalid("incorrect vintx funcid");
     }
 
-    if (vintx.GetHash() != bettxid)   // if vintx is bettx
-        return eval->Invalid("incorrect bet txid in opreturn");
+    if (vintxFuncId == 'B' && vintx.GetHash() != bettxid) {// if vintx is bettx
+        //return eval->Invalid("incorrect bet txid in opreturn");
+        std::cerr << "ValidateAddFundingTx() " << "incorrect net txid" << std::endl;
+    }
 
     if (MakeCC1vout(cp->evalcode, addfundingtx.vout[0].nValue, pk) != addfundingtx.vout[0])
         return eval->Invalid("cannot validate vout0 in add funding tx with pk from opreturn");
