@@ -375,9 +375,10 @@ bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
             if (CheckPricesOpret(vintx, vintxOpret) == 0)
                 return eval->Invalid("cannot find prices opret in vintx");
 
-            //if (vintxOpret.begin()[1] == 'B' && prevoutN == 3) {   
-            //    return eval->Invalid("cannot spend bet marker");
-            //}
+            if (funcId != 'F' && vintxOpret.begin()[1] == 'B' && prevoutN == 1) {   
+                //return eval->Invalid("cannot spend bet marker");
+                std::cerr << "PricesValidate() " << " non-final tx cannot spend cc marker vout=" << prevoutN << std::endl;
+            }
 
             if (!foundFirst) {
                 prevoutN = vin.prevout.n;
@@ -412,7 +413,8 @@ bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
         }
 
         if (prevoutN != 0) {   // check spending rules
-            return eval->Invalid("incorrect vintx vout to spend");
+            // return eval->Invalid("incorrect vintx vout to spend");
+            std::cerr << "PricesValidate() " << "add fund tx incorrect vout to spend=" << prevoutN << std::endl;
         }
         break;
 
@@ -432,8 +434,9 @@ bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
             return false;
         if (!ValidateBetTx(cp, eval, firstVinTx)) 
             return false;
-        if (prevoutN != 2) {   // check spending rules
-            return eval->Invalid("incorrect vout to spend");
+        if (prevoutN != 1) {   // check spending rules
+            // return eval->Invalid("incorrect vout to spend");
+            std::cerr << "PricesValidate() "<< "final tx incorrect vout to spend=" << prevoutN << std::endl;
         }
         break;
 
