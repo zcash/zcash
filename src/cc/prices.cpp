@@ -1291,7 +1291,7 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
             }
             int64_t equity = totalbet + totalprofits;
 
-            if (!equity < 0)
+            if (equity >= 0)
                 result.push_back(Pair("rekt", 0));
             else
             {
