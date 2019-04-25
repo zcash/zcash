@@ -308,10 +308,10 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
                         }
                     }
                     // check the chain depth vs locked blocks requirement. 
-                    CBlockIndex* pblockindex = mapBlockIndex[blockhash];
-                    if ( pblockindex->GetHeight() > ht-lockedblocks )
+                    CBlockIndex* pblockindex = komodo_blockindex(blockhash);
+                    if ( pblockindex == 0 || pblockindex->GetHeight() > ht-lockedblocks )
                     {
-                        fprintf(stderr, "vin.%i is not elegible to be spent yet height.%i vs elegible_ht.%i\n", i, pblockindex->GetHeight(), ht-lockedblocks);
+                        fprintf(stderr, "vin.%i is not elegible to be spent yet height.%i vs elegible_ht.%i\n", i, pblockindex!=0?pblockindex->GetHeight():0, ht-lockedblocks);
                         return(eval->Invalid("vin not elegible"));
                     }
                 } else return(eval->Invalid("cant get vin transaction"));
