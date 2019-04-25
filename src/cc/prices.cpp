@@ -216,9 +216,11 @@ static bool ValidateAddFundingTx(struct CCcontract_info *cp, Eval *eval, const C
         return eval->Invalid("cannot decode opreturn for add funding tx");
 
     pricespk = GetUnspendable(cp, 0);
-
-    if (CheckPricesOpret(vintx, vintxOpret) != 'B')   // if vintx is bettx
-        return eval->Invalid("incorrect bettx");
+    uint8_t funcId;
+    if ((funcId=CheckPricesOpret(vintx, vintxOpret)) != 'B') { // if vintx is bettx
+        std::cerr << "ValidateBetTx() " << "bad funcId=" << (funcId?funcId:'0') << std::endl;
+        //return eval->Invalid("incorrect bettx funcid");
+    }
 
     if (vintx.GetHash() != bettxid)   // if vintx is bettx
         return eval->Invalid("incorrect bet txid in opreturn");
@@ -262,7 +264,7 @@ static bool ValidateCostbasisTx(struct CCcontract_info *cp, Eval *eval, const CT
     // check costbasis rules:
     if (costbasistx.vout[0].nValue > bettx.vout[1].nValue / 10) {
         // return eval->Invalid("costbasis myfee too big");
-        std::cerr << "ValidateBetTx() " << "costbasis myfee too big" << std::endl;
+        std::cerr << "ValidateCostbasisTx() " << "costbasis myfee too big" << std::endl;
     }
 
     uint256 tokenid;
