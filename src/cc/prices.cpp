@@ -1348,7 +1348,8 @@ UniValue PricesList(uint32_t filter, CPubKey mypk)
     cp = CCinit(&C, EVAL_PRICES);
     //pricespk = GetUnspendable(cp, 0);
 
-    auto priceslist = [&](std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it, int32_t vini)
+    // filters and outputs prices bet txid
+    auto priceslist = [&](std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it, int32_t nvout)
     {
         int64_t amount, firstprice; 
         int32_t height; 
@@ -1359,6 +1360,8 @@ UniValue PricesList(uint32_t filter, CPubKey mypk)
         CTransaction vintx;
 
         txid = it->first.txhash;
+        if (nvout != it->first.index)  // our marker vout
+            return;
 
         if (GetTransaction(txid, vintx, hashBlock, false) != 0)
         {
@@ -1392,11 +1395,12 @@ UniValue PricesList(uint32_t filter, CPubKey mypk)
         priceslist(it, 3);
     }
 
+    /* for future when switch to cc marker only
     SetCCtxids(addressIndexCC, cp->unspendableCCaddr, true);  // cc marker
     for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it = addressIndexCC.begin(); it != addressIndexCC.end(); it++)
     {
         priceslist(it, 1);
     }
-
+    */
     return(result);
 }
