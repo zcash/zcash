@@ -243,6 +243,8 @@ static bool ValidateCostbasisTx(struct CCcontract_info *cp, Eval *eval, const CT
     CPubKey pk, pricespk;
     int32_t height;
 
+    return true;  //deprecated
+
     // check basic structure:
     if (costbasistx.vout.size() < 3 || costbasistx.vout.size() > 4)
         return eval->Invalid("incorrect vout count for costbasis tx");
