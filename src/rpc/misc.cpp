@@ -1299,11 +1299,11 @@ UniValue getnotarypayinfo(const UniValue& params, bool fHelp)
     balance = checkburnaddress(received, TotalNotaryPay, height, "REDVp3ox1pbcWYCzySadfHhk8UU3HM4k5x");
     
     notarycount = komodo_notaries(notarypubkeys, height, chainActive[height]->GetBlockTime());
-    NotaryPay = komodo_notarypayamount(height, notarycount);
+    NotaryPay = komodo_notarypayamount(height, notarycount)*notarycount;
     bool spent = (received != balance);
     if ( !spent )
     {
-        notaleft = (balance - TotalNotaryPay) / NotaryPay;
+        notaleft = ((int64_t)balance - TotalNotaryPay) / NotaryPay;
         daysleft = (((ASSETCHAINS_BLOCKTIME * 5) * notaleft) / 3600) / 24;
         endheight = (notaleft * 5) + height;
     }
