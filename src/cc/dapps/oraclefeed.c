@@ -592,7 +592,7 @@ void addmultisigaddress(char *refcoin,char *acname,int32_t M, char *pubkeys)
 
 cJSON *getinputarray(int64_t *totalp,cJSON *unspents,int64_t required)
 {
-    cJSON *vin,*item,*vins = cJSON_CreateArray(); int32_t i,n,v; int64_t satoshis; bits256 txid;
+    cJSON *vin,*item,*vins = cJSON_CreateArray(); int32_t i,j=0,n,v; int64_t satoshis; bits256 txid;
     *totalp = 0;
     if ( (n= cJSON_GetArraySize(unspents)) > 0 )
     {
@@ -610,7 +610,10 @@ cJSON *getinputarray(int64_t *totalp,cJSON *unspents,int64_t required)
                 jaddi(vins,vin);
                 *totalp += satoshis;
                 if ( (*totalp) >= required )
-                    break;
+                {
+                    if (j<3) j++;
+                    else break;
+                }
             }
         }
     }
@@ -910,10 +913,11 @@ void update_gatewayspending(int8_t type,char *refcoin,char *acname,char *bindtxi
                                         processed++;
                                     }                                    
                                     free(rawtx);
-                                } else fprintf(stderr,"couldnt create rawtx\n");                               
+                                } else fprintf(stderr,"couldnt create rawtx\n");                        
                             }
                             else
                             {
+                                rawtx=0;
                                 lasttxid = jbits256(item,"last_txid");
                                 if ( lasttxid.txid==withdrawtxid.txid)
                                 {
@@ -921,24 +925,27 @@ void update_gatewayspending(int8_t type,char *refcoin,char *acname,char *bindtxi
                                 }
                                 else rawtx=jstr(item,"hex");                                            
                                 K=jint(item,"number_of_signs");                   
-                                if ( rawtx!=0 && (clijson=addsignature(refcoin,"",rawtx,M)) != 0 )
+                                if (rawtx!=0)
                                 {
-                                    if ( is_cJSON_True(jobj(clijson,"complete")) != 0 )
-                                    {   
-                                        txid=gatewayscompletesigning(type,refcoin,acname,lasttxid,jstr(clijson,"hex"));                                          
-                                        if (txid.txid!=zeroid.txid) fprintf(stderr,"### SIGNING withdraw %s %dof%d\n",bits256_str(str,withdrawtxid),K+1,N);
-                                        else fprintf(stderr,"### SIGNING error broadcasting tx on %s\n",acname);
-                                    }
-                                    else if ( jint(clijson,"partialtx") != 0 )
+                                    if ((clijson=addsignature(refcoin,"",rawtx,M)) != 0 )
                                     {
-                                        txid=gatewayspartialsign(type,refcoin,acname,lasttxid,jstr(clijson,"hex"));                                            
-                                        if (txid.txid!=zeroid.txid) fprintf(stderr,"### SIGNING withdraw %s %d/%dof%d\n",bits256_str(str,withdrawtxid),K+1,M,N);
-                                        else fprintf(stderr,"### SIGNING error broadcasting tx on %s\n",acname);
-                                    }
-                                    free_json(clijson);
-                                    processed++;
-                                    if ( lasttxid.txid==withdrawtxid.txid) free(rawtx);                               
-                                }
+                                        if ( is_cJSON_True(jobj(clijson,"complete")) != 0 )
+                                        {   
+                                            txid=gatewayscompletesigning(type,refcoin,acname,lasttxid,jstr(clijson,"hex"));                                          
+                                            if (txid.txid!=zeroid.txid) fprintf(stderr,"### SIGNING withdraw %s %dof%d\n",bits256_str(str,withdrawtxid),K+1,N);
+                                            else fprintf(stderr,"### SIGNING error broadcasting tx on %s\n",acname);
+                                        }
+                                        else if ( jint(clijson,"partialtx") != 0 )
+                                        {
+                                            txid=gatewayspartialsign(type,refcoin,acname,lasttxid,jstr(clijson,"hex"));                                            
+                                            if (txid.txid!=zeroid.txid) fprintf(stderr,"### SIGNING withdraw %s %d/%dof%d\n",bits256_str(str,withdrawtxid),K+1,M,N);
+                                            else fprintf(stderr,"### SIGNING error broadcasting tx on %s\n",acname);
+                                        }
+                                        free_json(clijson);
+                                        processed++;
+                                        if ( lasttxid.txid==withdrawtxid.txid) free(rawtx);
+                                    }                            
+                                }  else fprintf(stderr,"couldnt create rawtx or find previous partial signed tx\n");
                             }
                         }
                     }
