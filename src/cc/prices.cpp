@@ -785,16 +785,17 @@ void prices_betjson(UniValue &result, std::vector<BetInfo> bets, int16_t leverag
     int64_t totalprofits = 0;
 
     for (auto b : bets) {
-        resultbets.push_back(Pair("positionsize", ValueFromAmount(b.amount)));
-        resultbets.push_back(Pair("profits", ValueFromAmount(b.profits)));
-        resultbets.push_back(Pair("costbasis", ValueFromAmount(b.costbasis)));
-        resultbets.push_back(Pair("firstheight", b.firstheight));
+        UniValue entry(UniValue::VOBJ);
+        entry.push_back(Pair("positionsize", ValueFromAmount(b.amount)));
+        entry.push_back(Pair("profits", ValueFromAmount(b.profits)));
+        entry.push_back(Pair("costbasis", ValueFromAmount(b.costbasis)));
+        entry.push_back(Pair("firstheight", b.firstheight));
+        resultbets.push_back(entry);
         totalbets += b.amount;
         totalprofits += b.profits;
     }
     int64_t equity = totalbets + totalprofits;
 
-    result.setArray();
     result.push_back(resultbets);
     result.push_back(Pair("leverage", (int64_t)leverage));
     result.push_back(Pair("TotalPositionSize", totalbets));
