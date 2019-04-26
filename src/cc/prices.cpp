@@ -460,6 +460,7 @@ bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
         return eval->Invalid("invalid funcid");
     }
 
+    eval->state = CValidationState();
     return true;
 }
 // end of consensus code
