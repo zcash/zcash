@@ -20,6 +20,7 @@
 #include "CCinclude.h"
 
 #define PAYMENTS_TXFEE 10000
+bool komodo_snapshot2(std::map <std::string, CAmount> &addressAmounts);
 
 bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn);
 
@@ -28,6 +29,7 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr);
 UniValue PaymentsFund(struct CCcontract_info *cp,char *jsonstr);
 UniValue PaymentsTxidopret(struct CCcontract_info *cp,char *jsonstr);
 UniValue PaymentsCreate(struct CCcontract_info *cp,char *jsonstr);
+UniValue PaymentsAirdrop(struct CCcontract_info *cp,char *jsonstr);
 UniValue PaymentsInfo(struct CCcontract_info *cp,char *jsonstr);
 UniValue PaymentsList(struct CCcontract_info *cp,char *jsonstr);
 

@@ -56,7 +56,7 @@ get the payment fund scriptpubkey hex from vout 0: (the split it at OP_CHECKCRYP
     put the second half into an OP_RETURN: (the remaining part of the the above scriptpubkey) eg.
         ./komodo-cli -ac_name=TESTHC opreturn_burn 1 2a0401f00101246a22f046337db779358deaa69b9af053e27d85cb8e8e48b0b13805c084b04f87be6577ee75
             opret_burn takes any burn amount and arbitrary hex string. (RPC works, but may have bugs, likely use this for LABS too with some fixes)
-    this gives a raw hex. Decode it and check the OP_RETURN is right before sending (using this RPC currently adds 3 extra bytes to the front (6a2d2c), which is truncated later on, this should be fixed if possible before making any real chains as its consensus code. Need to try diffrent methods to decode the hex correctly.)
+    this gives a raw hex. Decode it and check the OP_RETURN is right before sending. 
         -earlytxid=810bd62fb8353fad20267ff2050684b8829affa3edf6b366633931530791dfce
     restart the chain with earlytxid param before height 100 on all nodes (if not using -testnode=1) 
     ./komodod -ac_name=TESTHC -ac_supply=1000000 -ac_reward=100000000000 -ac_cc=2 -ac_script=2ea22c8020987fad30df055db6fd922c3a57e55d76601229ed3da3b31340112e773df3d0d28103120c008203000401ccb8 -ac_founders=150 -ac_blocktime=20 -ac_nk=96,5 -earlytxid=810bd62fb8353fad20267ff2050684b8829affa3edf6b366633931530791dfce

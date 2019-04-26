@@ -642,6 +642,96 @@ UniValue komodo_snapshot(int top)
     return(result);
 }
 
+bool komodo_snapshot2(std::map <std::string, CAmount> &addressAmounts)
+{
+    if ( fAddressIndex && pblocktree != 0 ) 
+    {
+		return pblocktree->Snapshot2(addressAmounts, 0);
+    }
+    else return false;
+}
+
+int32_t lastSnapShotHeight = 0;
+std::vector <std::pair<CAmount, CTxDestination>> vAddressSnapshot;
+
+bool komodo_dailysnapshot(int32_t height)
+{
+    uint256 notarized_hash,notarized_desttxid; int32_t prevMoMheight,notarized_height,undo_height;
+    notarized_height = komodo_notarized_height(&prevMoMheight,&notarized_hash,&notarized_desttxid);
+    if ( notarized_height > height-100 )
+    {
+        // notarized height is higher than 100 blocks before this height, so snapshot the notarized height.
+        undo_height = notarized_height;
+    }
+    else
+    {
+        //snapshot 100 blocks ago. Could still be reorged but very unlikley and expensive to carry out constantly. 
+        undo_height = height-100;
+    }
+    fprintf(stderr, "doing snapshot for height.%i lastSnapShotHeight.%i\n", undo_height, lastSnapShotHeight);
+    // if we already did this height dont bother doing it again, this is just a reorg. The actual snapshot height cannot be reorged.
+    if ( undo_height == lastSnapShotHeight )
+        return true;
+    std::map <std::string, int64_t> addressAmounts;
+    if ( !komodo_snapshot2(addressAmounts) )
+        return false;
+
+    // undo blocks in reverse order
+    for (int32_t n = height; n > undo_height; n--) 
+    {
+        //fprintf(stderr, "undoing block.%i\n",n);
+        CBlockIndex *pindex; CBlock block;
+        if ( (pindex= komodo_chainactive(n)) == 0 || komodo_blockload(block, pindex) != 0 ) 
+            return false;
+        // undo transactions in reverse order
+        for (int32_t i = block.vtx.size() - 1; i >= 0; i--) 
+        {
+            const CTransaction &tx = block.vtx[i];
+            uint256 hash = tx.GetHash();
+            CTxDestination vDest; 
+            //fprintf(stderr, "undong tx.%s\n",hash.GetHex().c_str());
+            // loop vouts reverse order 
+            for (unsigned int k = tx.vout.size(); k-- > 0;) 
+            {
+                const CTxOut &out = tx.vout[k];
+                //fprintf(stderr, "scriptpubkey.%s\n",out.scriptPubKey.ToString().c_str() );
+                if ( ExtractDestination(out.scriptPubKey, vDest) )
+                {
+                    // add outputs to destination
+                    addressAmounts[CBitcoinAddress(vDest).ToString()] += out.nValue;
+                    //fprintf(stderr, "address.%s addcoins.%li\n",CBitcoinAddress(vDest).ToString().c_str(), out.nValue);
+                } 
+            }
+            // loop vins in reverse order, get prevout and remove the balance from its destination
+            for (unsigned int j = tx.vin.size(); j-- > 0;) 
+            {
+                uint256 blockhash; CTransaction txin;
+                if ( !tx.IsCoinImport() && !tx.IsCoinBase() && GetTransaction(tx.vin[j].prevout.hash,txin,blockhash,false) ) // myGetTransaction!
+                {
+                    int vout = tx.vin[j].prevout.n;
+                    if ( ExtractDestination(txin.vout[vout].scriptPubKey, vDest) )
+                    {
+                        // remove outputs from destination
+                        //fprintf(stderr, "address.%s removecoins.%li\n",CBitcoinAddress(vDest).ToString().c_str(), txin.vout[vout].nValue);
+                        addressAmounts[CBitcoinAddress(vDest).ToString()] -= txin.vout[vout].nValue;
+                    }
+                }
+            }
+        }
+    }
+    vAddressSnapshot.clear(); // clear existing snapshot
+    // convert address string to destination for easier conversion to what ever is required, eg, scriptPubKey. 
+    for ( auto element : addressAmounts)
+        vAddressSnapshot.push_back(make_pair(element.second, DecodeDestination(element.first)));
+    // sort the vector by amount, highest at top.
+    std::sort(vAddressSnapshot.rbegin(), vAddressSnapshot.rend());
+    // include only top 5000 address.
+    if ( vAddressSnapshot.size() > 5000 ) vAddressSnapshot.resize(5000);
+    lastSnapShotHeight = undo_height; 
+    fprintf(stderr, "vAddressSnapshot.size.%li\n", vAddressSnapshot.size());
+    return true;
+}
+
 //////////////////////////////////////////////////////////////////////////////
 //
 // mapOrphanTransactions
@@ -3096,7 +3186,6 @@ bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex
                             uint160 addrHash = addr.size() == 20 ? uint160(addr) : Hash160(addr);
                             // undo spending activity
                             addressIndex.push_back(make_pair(CAddressIndexKey(keyType, addrHash, pindex->GetHeight(), i, hash, j, true), prevout.nValue * -1));
-
                             // restore unspent index
                             addressUnspentIndex.push_back(make_pair(CAddressUnspentKey(keyType, addrHash, input.prevout.hash, input.prevout.n), CAddressUnspentValue(prevout.nValue, prevout.scriptPubKey, undo.nHeight)));
                         }
@@ -4156,6 +4245,13 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
         komodo_pricesupdate(pindexNew->GetHeight(),pblock);
     if ( ASSETCHAINS_SAPLING <= 0 && pindexNew->nTime > KOMODO_SAPLING_ACTIVATION - 24*3600 )
         komodo_activate_sapling(pindexNew);
+    if ( ASSETCHAINS_CC != 0 && (pindexNew->GetHeight() % KOMODO_SNAPSHOT_INTERVAL) == 0 )
+    {
+        uint64_t start = time(NULL);
+        if ( !komodo_dailysnapshot(pindexNew->GetHeight()) )
+            fprintf(stderr, "daily snapshot failed, please reindex your chain\n"); // maybe force shutdown here?
+        fprintf(stderr, "snapshot completed in: %lu seconds\n", time(NULL)-start);
+    }
     return true;
 }
 
@@ -6095,7 +6191,14 @@ bool CVerifyDB::VerifyDB(CCoinsView *coinsview, int nCheckLevel, int nCheckDepth
     }
 
     LogPrintf("No coin database inconsistencies in last %i blocks (%i transactions)\n", chainActive.Height() - pindexState->GetHeight(), nGoodTransactions);
-
+    
+    if ( ASSETCHAINS_CC != 0 && lastSnapShotHeight == 0 ) 
+    {
+        int32_t init_SS_height = chainActive.Height() - (chainActive.Height() % KOMODO_SNAPSHOT_INTERVAL);
+        if ( !komodo_dailysnapshot(init_SS_height) )
+            fprintf(stderr, "daily snapshot failed, please reindex your chain\n"); // maybe force shutdown here?
+    }
+    
     return true;
 }
 
