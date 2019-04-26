@@ -178,7 +178,6 @@ static bool ValidateBetTx(struct CCcontract_info *cp, Eval *eval, const CTransac
     int64_t betamount = bettx.vout[2].nValue;
     if (betamount != (positionsize * 199) / 200) {
         return eval->Invalid("invalid position size in the opreturn");
-        std::cerr << "ValidateBetTx() " << "invalid position size in the opreturn" << std::endl;
     }
 
     // validate if normal inputs are really signed by originator pubkey (someone not cheating with originator pubkey)
@@ -188,13 +187,11 @@ static bool ValidateBetTx(struct CCcontract_info *cp, Eval *eval, const CTransac
             ccOutputs += vout.nValue;
     CAmount normalInputs = TotalPubkeyNormalInputs(bettx, pk);
     if (normalInputs < ccOutputs) {
-        // return eval->Invalid("bettx normal inputs not signed with pubkey in opret");
-        std::cerr << "ValidateBetTx() " << "warning: bettx normal inputs signed with pubkey in opreturn =" << normalInputs << std::endl;
+        return eval->Invalid("bettx normal inputs not signed with pubkey in opret");
     }
 
     if (leverage > PRICES_MAXLEVERAGE || leverage < -PRICES_MAXLEVERAGE) {
-        // return eval->Invalid("invalid leverage");
-        std::cerr << "ValidateBetTx() " << "invalid leverage" << std::endl;
+        return eval->Invalid("invalid leverage");
     }
 
     return true;
@@ -218,13 +215,11 @@ static bool ValidateAddFundingTx(struct CCcontract_info *cp, Eval *eval, const C
     pricespk = GetUnspendable(cp, 0);
     uint8_t vintxFuncId = CheckPricesOpret(vintx, vintxOpret);
     if (vintxFuncId != 'A' && vintxFuncId != 'B') { // if vintx is bettx
-        std::cerr << "ValidateAddFundingTx() " << "bad vintx funcId=" << (char)(vintxFuncId ? vintxFuncId :'0') << std::endl;
-        //return eval->Invalid("incorrect vintx funcid");
+        return eval->Invalid("incorrect vintx funcid");
     }
 
     if (vintxFuncId == 'B' && vintx.GetHash() != bettxid) {// if vintx is bettx
-        //return eval->Invalid("incorrect bet txid in opreturn");
-        std::cerr << "ValidateAddFundingTx() " << "incorrect net txid" << std::endl;
+        return eval->Invalid("incorrect bet txid in opreturn");
     }
 
     if (MakeCC1vout(cp->evalcode, addfundingtx.vout[0].nValue, pk) != addfundingtx.vout[0])
@@ -267,8 +262,7 @@ static bool ValidateCostbasisTx(struct CCcontract_info *cp, Eval *eval, const CT
 
     // check costbasis rules:
     if (costbasistx.vout[0].nValue > bettx.vout[1].nValue / 10) {
-        // return eval->Invalid("costbasis myfee too big");
-        std::cerr << "ValidateCostbasisTx() " << "costbasis myfee too big" << std::endl;
+        return eval->Invalid("costbasis myfee too big");
     }
 
     uint256 tokenid;
@@ -281,8 +275,7 @@ static bool ValidateCostbasisTx(struct CCcontract_info *cp, Eval *eval, const CT
         return eval->Invalid("cannot decode opreturn for bet tx");
 
     if (firstheight + PRICES_DAYWINDOW + PRICES_SMOOTHWIDTH > chainActive.Height()) {
-        // return eval->Invalid("cannot calculate costbasis yet");
-        std::cerr << "ValidateBetTx() " << "cannot calculate costbasis yet" << std::endl;
+        return eval->Invalid("cannot calculate costbasis yet");
     }
     
     int64_t costbasis = 0, profits, lastprice;
@@ -291,8 +284,8 @@ static bool ValidateCostbasisTx(struct CCcontract_info *cp, Eval *eval, const CT
         return eval->Invalid("cannot calculate costbasis yet");
     std::cerr << "ValidateCostbasisTx() costbasis=" << costbasis << " costbasisInOpret=" << costbasisInOpret << std::endl;
     if (costbasis != costbasisInOpret) {
-        // return eval->Invalid("incorrect costbasis value");
-        std::cerr << "ValidateBetTx() " << "incorrect costbasis value" << std::endl;
+        //std::cerr << "ValidateBetTx() " << "incorrect costbasis value" << std::endl;
+        return eval->Invalid("incorrect costbasis value");
     }
 
     return true;
@@ -310,8 +303,8 @@ static bool ValidateFinalTx(struct CCcontract_info *cp, Eval *eval, const CTrans
     int16_t leverage;
 
     if (finaltx.vout.size() < 3 || finaltx.vout.size() > 4) {
-        //return eval->Invalid("incorrect vout number for final tx");
-        std::cerr << "ValidateFinalTx()" << " incorrect vout number for final tx =" << finaltx.vout.size() << std::endl;
+        //std::cerr << "ValidateFinalTx()" << " incorrect vout number for final tx =" << finaltx.vout.size() << std::endl;
+        return eval->Invalid("incorrect vout number for final tx");
     }
 
     vscript_t opret;
@@ -378,8 +371,10 @@ bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
             if (!myGetTransaction(vin.prevout.hash, vintx, hashBlock))
                 return eval->Invalid("cannot load vintx");
 
-            if (CheckPricesOpret(vintx, vintxOpret) == 0)
-                return eval->Invalid("cannot find prices opret in vintx");
+            if (CheckPricesOpret(vintx, vintxOpret) == 0) {
+                //return eval->Invalid("cannot find prices opret in vintx");
+                std::cerr << "PricesValidate() " << "cannot find prices opret in vintx" << std::endl;
+            }
 
             if (funcId != 'F' && vintxOpret.begin()[1] == 'B' && prevoutN == 1) {   
                 //return eval->Invalid("cannot spend bet marker");
@@ -398,8 +393,10 @@ bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
     if (!foundFirst)   
         return eval->Invalid("prices cc vin not found");
 
-    if (funcId != 'F' && ccVinCount > 1)  // for all prices tx except final tx only one cc vin is allowed
-        return eval->Invalid("only one prices cc vin allowed for this tx");
+    if (funcId != 'F' && ccVinCount > 1) {// for all prices tx except final tx only one cc vin is allowed
+        //return eval->Invalid("only one prices cc vin allowed for this tx");
+        std::cerr << "PricesValidate() " << "only one prices cc vin allowed for this tx" << std::endl;
+    }
 
     switch (funcId) {
     case 'B':   // bet 
@@ -407,12 +404,16 @@ bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
 
     case 'A':   // add funding
         // check tx structure:
-        if (!ValidateAddFundingTx(cp, eval, tx, firstVinTx))
-            return false;  // invalid state is already set in the func
+        if (!ValidateAddFundingTx(cp, eval, tx, firstVinTx)) {
+            //return false;  // invalid state is already set in the func
+            std::cerr << "PricesValidate() " << "ValidateAddFundingTx = false " << eval->state.GetRejectReason()  << std::endl;
+        }
 
         if (firstVinTxOpret.begin()[1] == 'B') {
-            if (!ValidateBetTx(cp, eval, firstVinTx)) // check tx structure
-                return false;  
+            if (!ValidateBetTx(cp, eval, firstVinTx)) {// check tx structure
+                // return false;
+                std::cerr << "PricesValidate() " << "funcId=A ValidatebetTx = false " << eval->state.GetRejectReason() << std::endl;
+            }
         }
         else if (firstVinTxOpret.begin()[1] == 'A') {
             // no need to validate the previous addfunding tx (it was validated when added)
@@ -425,21 +426,30 @@ bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
         break;
 
     case 'C':   // set costbasis 
-        if (!ValidateCostbasisTx(cp, eval, tx, firstVinTx))
-            return false;
-        if (!ValidateBetTx(cp, eval, firstVinTx)) 
-            return false;  
+        if (!ValidateCostbasisTx(cp, eval, tx, firstVinTx)) {
+            //return false;
+            std::cerr << "PricesValidate() " << "ValidateCostbasisTx=false " << eval->state.GetRejectReason() << std::endl;
+        }
+        if (!ValidateBetTx(cp, eval, firstVinTx)) {
+            //return false;
+            std::cerr << "PricesValidate() " << "funcId=C ValidateBetTx=false " << eval->state.GetRejectReason() << std::endl;
+        }
         if (prevoutN != 1) {   // check spending rules
-            return eval->Invalid("incorrect vout to spend");
+            // return eval->Invalid("incorrect vout to spend");
+            std::cerr << "PricesValidate() " << "costbasis tx incorrect vout to spend=" << prevoutN << std::endl;
         }
         //return eval->Invalid("test: costbasis is good");
         break;
 
     case 'F':   // final tx 
-        if (!ValidateFinalTx(cp, eval, tx, firstVinTx))
-            return false;
-        if (!ValidateBetTx(cp, eval, firstVinTx)) 
-            return false;
+        if (!ValidateFinalTx(cp, eval, tx, firstVinTx)) {
+            ///return false;
+            std::cerr << "PricesValidate() " << "ValidateFinalTx=false " << eval->state.GetRejectReason() << std::endl;
+        }
+        if (!ValidateBetTx(cp, eval, firstVinTx)) {
+            // return false;
+            std::cerr << "PricesValidate() " << "ValidateBetTx=false " << eval->state.GetRejectReason() << std::endl;
+        }
         if (prevoutN != 1) {   // check spending rules
             // return eval->Invalid("incorrect vout to spend");
             std::cerr << "PricesValidate() "<< "final tx incorrect vout to spend=" << prevoutN << std::endl;
