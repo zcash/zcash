@@ -11,12 +11,36 @@ from test_framework.util import assert_equal, assert_true, get_coinbase_address,
     initialize_chain_clean, start_nodes, wait_and_assert_operationid_status, \
     wait_and_assert_operationid_status_result
 
+SAPLING_ADDR = 'zregtestsapling1ssqj3f3majnl270985gqcdqedd9t4nlttjqskccwevj2v20sc25deqspv3masufnwcdy67cydyy'
+SAPLING_KEY = 'secret-extended-key-regtest1qv62zt2fqyqqpqrh2qzc08h7gncf4447jh9kvnnnhjg959fkwt7mhw9j8e9at7attx8z6u3953u86vcnsujdc2ckdlcmztjt44x3uxpah5mxtncxd0mqcnz9eq8rghh5m4j44ep5d9702sdvvwawqassulktfegrcp4twxgqdxx4eww3lau0mywuaeztpla2cmvagr5nj98elt45zh6fjznadl6wz52n2uyhdwcm2wlsu8fnxstrk6s4t55t8dy6jkgx5g0cwpchh5qffp8x5'
+
+
+def check_migration_status(
+        node,
+        enabled,
+        non_zero_unmigrated_amount,
+        non_zero_unfinalized_migrated_amount,
+        non_zero_finalized_migrated_amount,
+        finalized_migration_transactions,
+        len_migration_txids
+):
+    status = node.z_getmigrationstatus()
+    assert_equal(enabled, status['enabled'])
+    assert_equal(SAPLING_ADDR, status['destination_address'])
+    assert_equal(non_zero_unmigrated_amount, Decimal(status['unmigrated_amount']) > Decimal('0.00'))
+    assert_equal(non_zero_unfinalized_migrated_amount, Decimal(status['unfinalized_migrated_amount']) > Decimal('0'))
+    assert_equal(non_zero_finalized_migrated_amount, Decimal(status['finalized_migrated_amount']) > Decimal('0'))
+    assert_equal(finalized_migration_transactions, status['finalized_migration_transactions'])
+    assert_equal(len_migration_txids, len(status['migration_txids']))
+
 
 class SproutSaplingMigration(BitcoinTestFramework):
     def setup_nodes(self):
         return start_nodes(4, self.options.tmpdir, [[
             '-nuparams=5ba81b19:100',  # Overwinter
             '-nuparams=76b809bb:100',  # Sapling
+            '-migration',
+            '-migrationdestaddress=' + SAPLING_ADDR
         ]] * 4)
 
     def setup_chain(self):
@@ -24,6 +48,10 @@ class SproutSaplingMigration(BitcoinTestFramework):
         initialize_chain_clean(self.options.tmpdir, 4)
 
     def run_test(self):
+        check_migration_status(self.nodes[0], True, False, False, False, 0, 0)
+        self.nodes[0].z_setmigration(False)
+        check_migration_status(self.nodes[0], False, False, False, False, 0, 0)
+
         print "Mining blocks..."
         self.nodes[0].generate(101)
         self.sync_all()
@@ -31,7 +59,8 @@ class SproutSaplingMigration(BitcoinTestFramework):
         # Send some ZEC to a Sprout address
         tAddr = get_coinbase_address(self.nodes[0])
         sproutAddr = self.nodes[0].z_getnewaddress('sprout')
-        saplingAddr = self.nodes[0].z_getnewaddress('sapling')
+        # Import a previously generated key to test '-migrationdestaddress'
+        self.nodes[0].z_importkey(SAPLING_KEY)
 
         opid = self.nodes[0].z_sendmany(tAddr, [{"address": sproutAddr, "amount": Decimal('10')}], 1, 0)
         wait_and_assert_operationid_status(self.nodes[0], opid)
@@ -39,7 +68,7 @@ class SproutSaplingMigration(BitcoinTestFramework):
         self.sync_all()
 
         assert_equal(self.nodes[0].z_getbalance(sproutAddr), Decimal('10'))
-        assert_equal(self.nodes[0].z_getbalance(saplingAddr), Decimal('0'))
+        assert_equal(self.nodes[0].z_getbalance(SAPLING_ADDR), Decimal('0'))
 
         # Migrate
         self.nodes[0].z_setmigration(True)
@@ -49,6 +78,7 @@ class SproutSaplingMigration(BitcoinTestFramework):
 
         # At 494 we should have no async operations
         assert_equal(0, len(self.nodes[0].z_getoperationstatus()), "num async operations at 494")
+        check_migration_status(self.nodes[0], True, True, False, False, 0, 0)
 
         self.nodes[0].generate(1)
         self.sync_all()
@@ -74,7 +104,7 @@ class SproutSaplingMigration(BitcoinTestFramework):
         # At 498 the mempool will be empty and no funds will have moved
         assert_equal(0, len(self.nodes[0].getrawmempool()), "mempool size at 498")
         assert_equal(self.nodes[0].z_getbalance(sproutAddr), Decimal('10'))
-        assert_equal(self.nodes[0].z_getbalance(saplingAddr), Decimal('0'))
+        assert_equal(self.nodes[0].z_getbalance(SAPLING_ADDR), Decimal('0'))
 
         self.nodes[0].generate(1)
         self.sync_all()
@@ -82,19 +112,25 @@ class SproutSaplingMigration(BitcoinTestFramework):
         # At 499 there will be a transaction in the mempool and the note will be locked
         assert_equal(1, len(self.nodes[0].getrawmempool()), "mempool size at 499")
         assert_equal(self.nodes[0].z_getbalance(sproutAddr), Decimal('0'))
-        assert_equal(self.nodes[0].z_getbalance(saplingAddr), Decimal('0'))
-        assert_true(self.nodes[0].z_getbalance(saplingAddr, 0) > Decimal('0'), "Unconfirmed sapling")
+        assert_equal(self.nodes[0].z_getbalance(SAPLING_ADDR), Decimal('0'))
+        assert_true(self.nodes[0].z_getbalance(SAPLING_ADDR, 0) > Decimal('0'), "Unconfirmed sapling")
 
         self.nodes[0].generate(1)
         self.sync_all()
 
         # At 500 funds will have moved
         sprout_balance = self.nodes[0].z_getbalance(sproutAddr)
-        sapling_balance = self.nodes[0].z_getbalance(saplingAddr)
+        sapling_balance = self.nodes[0].z_getbalance(SAPLING_ADDR)
         print "sprout balance: {}, sapling balance: {}".format(sprout_balance, sapling_balance)
         assert_true(sprout_balance < Decimal('10'), "Should have less Sprout funds")
         assert_true(sapling_balance > Decimal('0'), "Should have more Sapling funds")
         assert_true(sprout_balance + sapling_balance, Decimal('9.9999'))
+
+        check_migration_status(self.nodes[0], True, True, True, False, 0, 1)
+        # At 510 the transactions will be considered 'finalized'
+        self.nodes[0].generate(10)
+        self.sync_all()
+        check_migration_status(self.nodes[0], True, True, False, True, 1, 1)
 
 
 if __name__ == '__main__':
