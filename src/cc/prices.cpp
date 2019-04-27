@@ -1337,7 +1337,7 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
             for (auto b : bets) {
                 totalbets += b.amount;
                 totalprofits += b.profits;
-                costbasis += b.amount * (b.costbasis / PRICES_NORMFACTOR);  // prevent overflow
+                costbasis += b.amount * (b.costbasis / PRICES_NORMFACTOR);  // prevent int64 overflow
                 std::cerr << "PricesInfo() acc costbasis=" << costbasis << " b.amount=" << b.amount << " b.costbasis/PRICES_NORMFACTOR=" << (b.costbasis / PRICES_NORMFACTOR) << std::endl;
             }
 
