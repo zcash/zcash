@@ -1342,7 +1342,7 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
             }
 
             int64_t equity = totalbets + totalprofits;
-            costbasis /= totalbets * PRICES_NORMFACTOR;
+            costbasis /= totalbets / PRICES_NORMFACTOR;
             int64_t liqprice = costbasis - costbasis / leverage;
 
 
