@@ -16,17 +16,18 @@
 #include "CCPayments.h"
 
 /* 
+use notarizations DB to scan back from the correct height, then undo ALL blocks back to this notarized height!
 payments airdrop:
     - extra RPC to merge all payments inputs to a single utxo, this must be called first and be confirmed before payments release, 
         or tx will be too big, we can check add payments inputs is only 1 input, at RPC and in validation very early on. 
-    - do getsnapshot2 every 1440 blocks and save the result into some global sorted vector or DB?
+    - do getsnapshot2 every 1440 blocks and save the result into some global sorted vector.
         -this allows any address balance to be calculated by only iterating each 1439 blocks maximum. 
     - calculate scriptpubkey to pay from each address, set allocations from balance of each address. allocation = balance?
 
-payments airdrop paying a token:  ( maybe this is more reasonable speed wise? )
+payments airdrop paying a token: 
     - tokenid, top number of tokens to pay, list of pubkeys to exclude as optional param
-    - add vector of tokenids to getsnapshot2 - then sort each tokenid by balance. 
-        put the pubkey to pay to as scriptpubkey in the saved vector. 
+    - token airdrop code should be the same as normal snapshot, but call a diffrent snapshot function that only fetches the info for a specific tokenid given.
+        this should be fine to work in validation/rpc level rather than a global saved result, as a single token id doesnt require iterating the whole DB. 
 
  0) txidopret <- allocation, scriptPubKey, opret
  1) create <-  locked_blocks, minrelease, list of txidopret
@@ -793,13 +794,10 @@ UniValue PaymentsCreate(struct CCcontract_info *cp,char *jsonstr)
     return(result);
 }
 
-extern bool komodo_dailysnapshot(int32_t height);
-
 UniValue PaymentsAirdrop(struct CCcontract_info *cp,char *jsonstr)
 {
     uint64_t start = time(NULL);
-    komodo_dailysnapshot(chainActive.Height());
-    //CScript scriptPubKey = GetScriptForDestination(dest);
+    
     return(time(NULL)-start);
 }
 

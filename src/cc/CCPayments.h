@@ -20,7 +20,7 @@
 #include "CCinclude.h"
 
 #define PAYMENTS_TXFEE 10000
-bool komodo_snapshot2(std::map <std::string, CAmount> &addressAmounts);
+extern std::vector <std::pair<CAmount, CTxDestination>> vAddressSnapshot;
 
 bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn);
 

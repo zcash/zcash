@@ -656,19 +656,34 @@ std::vector <std::pair<CAmount, CTxDestination>> vAddressSnapshot;
 
 bool komodo_dailysnapshot(int32_t height)
 {
-    uint256 notarized_hash,notarized_desttxid; int32_t prevMoMheight,notarized_height,undo_height;
-    notarized_height = komodo_notarized_height(&prevMoMheight,&notarized_hash,&notarized_desttxid);
-    if ( notarized_height > height-100 )
+    uint256 notarized_hash,notarized_desttxid; int32_t prevMoMheight,notarized_height,undo_height,extraoffset;
+    if ( (extraoffset= height % KOMODO_SNAPSHOT_INTERVAL) != 0 )
     {
-        // notarized height is higher than 100 blocks before this height, so snapshot the notarized height.
-        undo_height = notarized_height;
+        // we are on chain init, and need to scan all the way back to the correct height, other wise our node will have a diffrent snapshot to online nodes.
+        // use the notarizationsDB to scan back from the consesnus height to get the offset we need.
+        std::string symbol; Notarisation nota;
+        symbol.assign(ASSETCHAINS_SYMBOL);
+        ScanNotarisationsDB(height-extraoffset, symbol, 100, nota);
+        undo_height = nota.second.height;
+        if ( undo_height == 0 ) undo_height = height-extraoffset-100;
+        fprintf(stderr, "height.%i-extraoffset.%i = startscanfrom.%i to get undo_height.%i\n", height, extraoffset, height-extraoffset, undo_height);
     }
-    else
+    else 
     {
-        //snapshot 100 blocks ago. Could still be reorged but very unlikley and expensive to carry out constantly. 
-        undo_height = height-100;
+        // we are at the right height in connect block to scan back to last notarized height. 
+        notarized_height = komodo_notarized_height(&prevMoMheight,&notarized_hash,&notarized_desttxid);
+        if ( notarized_height > height-100 )
+        {
+            // notarized height is higher than 100 blocks before this height, so snapshot the notarized height.
+            undo_height = notarized_height;
+        }
+        else
+        {
+            //snapshot 100 blocks ago. Could still be reorged but very unlikley and expensive to carry out constantly. 
+            undo_height = height-100;
+        }
     }
-    fprintf(stderr, "doing snapshot for height.%i lastSnapShotHeight.%i\n", undo_height, lastSnapShotHeight);
+    fprintf(stderr, "doing snapshot for height.%i undo_height.%i\n", height, undo_height);
     // if we already did this height dont bother doing it again, this is just a reorg. The actual snapshot height cannot be reorged.
     if ( undo_height == lastSnapShotHeight )
         return true;
@@ -690,30 +705,29 @@ bool komodo_dailysnapshot(int32_t height)
             uint256 hash = tx.GetHash();
             CTxDestination vDest; 
             //fprintf(stderr, "undong tx.%s\n",hash.GetHex().c_str());
-            // loop vouts reverse order 
+            // loop vouts reverse order, remove value recieved.
             for (unsigned int k = tx.vout.size(); k-- > 0;) 
             {
                 const CTxOut &out = tx.vout[k];
-                //fprintf(stderr, "scriptpubkey.%s\n",out.scriptPubKey.ToString().c_str() );
                 if ( ExtractDestination(out.scriptPubKey, vDest) )
                 {
-                    // add outputs to destination
-                    addressAmounts[CBitcoinAddress(vDest).ToString()] += out.nValue;
-                    //fprintf(stderr, "address.%s addcoins.%li\n",CBitcoinAddress(vDest).ToString().c_str(), out.nValue);
+                    addressAmounts[CBitcoinAddress(vDest).ToString()] -= out.nValue;
+                    if ( addressAmounts[CBitcoinAddress(vDest).ToString()] < 1 )
+                        addressAmounts.erase(CBitcoinAddress(vDest).ToString());
+                    //fprintf(stderr, "VOUT: address.%s remove_coins.%li\n",CBitcoinAddress(vDest).ToString().c_str(), out.nValue);
                 } 
             }
-            // loop vins in reverse order, get prevout and remove the balance from its destination
+            // loop vins in reverse order, get prevout and return the sent balance.
             for (unsigned int j = tx.vin.size(); j-- > 0;) 
             {
                 uint256 blockhash; CTransaction txin;
-                if ( !tx.IsCoinImport() && !tx.IsCoinBase() && GetTransaction(tx.vin[j].prevout.hash,txin,blockhash,false) ) // myGetTransaction!
+                if ( !tx.IsCoinImport() && !tx.IsCoinBase() && myGetTransaction(tx.vin[j].prevout.hash,txin,blockhash) ) // myGetTransaction!
                 {
                     int vout = tx.vin[j].prevout.n;
                     if ( ExtractDestination(txin.vout[vout].scriptPubKey, vDest) )
                     {
-                        // remove outputs from destination
-                        //fprintf(stderr, "address.%s removecoins.%li\n",CBitcoinAddress(vDest).ToString().c_str(), txin.vout[vout].nValue);
-                        addressAmounts[CBitcoinAddress(vDest).ToString()] -= txin.vout[vout].nValue;
+                        //fprintf(stderr, "VIN: address.%s add_coins.%li\n",CBitcoinAddress(vDest).ToString().c_str(), txin.vout[vout].nValue);
+                        addressAmounts[CBitcoinAddress(vDest).ToString()] += txin.vout[vout].nValue;
                     }
                 }
             }
@@ -725,6 +739,8 @@ bool komodo_dailysnapshot(int32_t height)
         vAddressSnapshot.push_back(make_pair(element.second, DecodeDestination(element.first)));
     // sort the vector by amount, highest at top.
     std::sort(vAddressSnapshot.rbegin(), vAddressSnapshot.rend());
+    //for (int j = 0; j < 50; j++) 
+    //    fprintf(stderr, "j.%i address.%s nValue.%li\n",j, CBitcoinAddress(vAddressSnapshot[j].second).ToString().c_str(), vAddressSnapshot[j].first );
     // include only top 5000 address.
     if ( vAddressSnapshot.size() > 5000 ) vAddressSnapshot.resize(5000);
     lastSnapShotHeight = undo_height; 
@@ -4339,10 +4355,10 @@ static bool ActivateBestChainStep(bool fSkipdpow, CValidationState &state, CBloc
     // stay on the same chain tip! 
     int32_t notarizedht,prevMoMheight; uint256 notarizedhash,txid;
     notarizedht = komodo_notarized_height(&prevMoMheight,&notarizedhash,&txid);
-    if ( !fSkipdpow && pindexFork != 0 && pindexFork->GetHeight() < notarizedht )
+    if ( !fSkipdpow && pindexFork != 0 && pindexOldTip->GetHeight() > notarizedht && pindexFork->GetHeight() < notarizedht )
     {
-        fprintf(stderr,"pindexFork->GetHeight().%d is < notarizedht %d, so ignore it\n",(int32_t)pindexFork->GetHeight(),notarizedht);
-        return state.DoS(100, error("ActivateBestChainStep(): pindexFork->GetHeight().%d is < notarizedht %d, so ignore it",(int32_t)pindexFork->GetHeight(),notarizedht),
+        fprintf(stderr,"pindexOldTip->GetHeight().%d > notarizedht %d && pindexFork->GetHeight().%d is < notarizedht %d, so ignore it\n",(int32_t)pindexFork->GetHeight(),notarizedht,(int32_t)pindexOldTip->GetHeight(),notarizedht);
+        return state.DoS(100, error("ActivateBestChainStep(): pindexOldTip->GetHeight().%d > notarizedht %d && pindexFork->GetHeight().%d is < notarizedht %d, so ignore it",(int32_t)pindexFork->GetHeight(),notarizedht,(int32_t)pindexOldTip->GetHeight(),notarizedht),
                     REJECT_INVALID, "past-notarized-height");
     }
     // - On ChainDB initialization, pindexOldTip will be null, so there are no removable blocks.
@@ -6192,10 +6208,9 @@ bool CVerifyDB::VerifyDB(CCoinsView *coinsview, int nCheckLevel, int nCheckDepth
 
     LogPrintf("No coin database inconsistencies in last %i blocks (%i transactions)\n", chainActive.Height() - pindexState->GetHeight(), nGoodTransactions);
     
-    if ( ASSETCHAINS_CC != 0 && lastSnapShotHeight == 0 ) 
+    if ( ASSETCHAINS_CC != 0 && chainActive.Height() > KOMODO_SNAPSHOT_INTERVAL )
     {
-        int32_t init_SS_height = chainActive.Height() - (chainActive.Height() % KOMODO_SNAPSHOT_INTERVAL);
-        if ( !komodo_dailysnapshot(init_SS_height) )
+        if ( !komodo_dailysnapshot(chainActive.Height()) )
             fprintf(stderr, "daily snapshot failed, please reindex your chain\n"); // maybe force shutdown here?
     }
     
