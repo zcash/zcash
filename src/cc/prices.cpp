@@ -1342,9 +1342,15 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
             }
 
             int64_t equity = totalbets + totalprofits;
-            costbasis /= (totalbets / PRICES_NORMFACTOR);
-            int64_t liqprice = costbasis - costbasis / leverage;
-
+            if (totalbets / PRICES_NORMFACTOR != 0) //prevent zero div
+                costbasis /= (totalbets / PRICES_NORMFACTOR);
+            else
+                costbasis = 0;
+            int64_t liqprice;
+            if (leverage != 0)
+                liqprice = costbasis - costbasis / leverage;
+            else
+                liqprice = 0;
 
             if (equity >= 0)
                 result.push_back(Pair("rekt", 0));
