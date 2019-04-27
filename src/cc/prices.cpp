@@ -1341,7 +1341,7 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
             }
 
             int64_t equity = totalbets + totalprofits;
-            costbasis /= bets.size();
+            costbasis /= totalbets;
             int64_t liqprice = costbasis - costbasis / leverage;
 
 
@@ -1355,11 +1355,11 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
             }
             
             result.push_back(Pair("batontxid", batontxid.GetHex()));
-            result.push_back(Pair("costbasis", costbasis));
+            result.push_back(Pair("costbasis", ValueFromAmount(costbasis)));
 
             prices_betjson(result, bets, leverage, endheight, lastprice);
 
-            result.push_back(Pair("LiquidationPrice", liqprice));
+            result.push_back(Pair("LiquidationPrice", ValueFromAmount(liqprice)));
 
             //result.push_back(Pair("height", (int64_t)endheight));
 //#ifdef TESTMODE
