@@ -1345,7 +1345,7 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
             std::cerr << "PricesInfo() " << " totalbets=" << (totalbets / PRICES_NORMFACTOR) << std::endl;
             if (totalbets != 0) { //prevent zero div
                 costbasis /= totalbets; 
-                costbasis /= PRICES_NORMFACTOR;  //denormalization
+                costbasis *= PRICES_NORMFACTOR;  //denormalization
             }
             else
                 costbasis = 0;
