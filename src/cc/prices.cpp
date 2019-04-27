@@ -789,7 +789,9 @@ int32_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t
         }
     }
     
+    // normalize to 10,000,000 to prevent underflow
     profits = costbasis > 0 ? (((price / PRICES_NORMFACTOR * SATOSHIDEN) / costbasis) - SATOSHIDEN / PRICES_NORMFACTOR) * PRICES_NORMFACTOR : 0;
+    
     //std::cerr << "prices_syntheticprofits() test value1 (price/PRICES_NORMFACTOR * SATOSHIDEN)=" << (price / PRICES_NORMFACTOR * SATOSHIDEN) << std::endl;
     std::cerr << "prices_syntheticprofits() test value2 (price/PRICES_NORMFACTOR * SATOSHIDEN)/costbasis=" << (costbasis != 0 ? (price / PRICES_NORMFACTOR * SATOSHIDEN)/costbasis : 0) << std::endl;
 
@@ -798,7 +800,8 @@ int32_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t
     //double dprofits = (double)price / (double)costbasis - 1.0;
 
     profits *= ((int64_t)leverage * (int64_t)positionsize);
-    profits /= (int64_t)SATOSHIDEN;
+    profits /= (int64_t)SATOSHIDEN;  // de-normalize
+
     //dprofits *= leverage * positionsize;
     std::cerr << "prices_syntheticprofits() profits=" << profits << std::endl;
     //std::cerr << "prices_syntheticprofits() dprofits=" << dprofits << std::endl;
@@ -1330,11 +1333,17 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
             
             int64_t totalbets = 0;
             int64_t totalprofits = 0;
+            int64_t costbasis = 0;
             for (auto b : bets) {
                 totalbets += b.amount;
                 totalprofits += b.profits;
+                costbasis += b.amount * b.costbasis;
             }
+
             int64_t equity = totalbets + totalprofits;
+            costbasis /= bets.size();
+            int64_t liqprice = costbasis - costbasis / leverage;
+
 
             if (equity >= 0)
                 result.push_back(Pair("rekt", 0));
@@ -1346,8 +1355,12 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
             }
             
             result.push_back(Pair("batontxid", batontxid.GetHex()));
+            result.push_back(Pair("costbasis", costbasis));
 
             prices_betjson(result, bets, leverage, endheight, lastprice);
+
+            result.push_back(Pair("LiquidationPrice", liqprice));
+
             //result.push_back(Pair("height", (int64_t)endheight));
 //#ifdef TESTMODE
 //            result.push_back(Pair("test_daywindow", PRICES_DAYWINDOW));
