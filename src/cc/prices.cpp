@@ -1344,13 +1344,16 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
             int64_t equity = totalbets + totalprofits;
             if (totalbets != 0) { //prevent zero div
                 costbasis /= totalbets; 
-                costbasis *= PRICES_NORMFACTOR;  //denormalization
+                costbasis *= PRICES_NORMFACTOR;  //denormalization, last posiitons should be == 0000
             }
             else
                 costbasis = 0;
             int64_t liqprice;
-            if (leverage != 0) // prevent zero div
+            if (leverage != 0) {// prevent zero div
                 liqprice = costbasis - costbasis / leverage;
+                liqprice /= PRICES_NORMFACTOR;
+                liqprice *= PRICES_NORMFACTOR; // last posiitons should be == 0000
+            }
             else
                 liqprice = 0;
 
