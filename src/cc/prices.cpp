@@ -1338,6 +1338,7 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
                 totalbets += b.amount;
                 totalprofits += b.profits;
                 costbasis += b.amount * b.costbasis;
+                std::cerr << "PricesInfo() acc costbasis=" << costbasis << " b.amount=" << b.amount << " b.costbasis=" << b.costbasis << std::endl;
             }
 
             int64_t equity = totalbets + totalprofits;
