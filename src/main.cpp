@@ -4243,7 +4243,7 @@ static bool ActivateBestChainStep(bool fSkipdpow, CValidationState &state, CBloc
     // stay on the same chain tip! 
     int32_t notarizedht,prevMoMheight; uint256 notarizedhash,txid;
     notarizedht = komodo_notarized_height(&prevMoMheight,&notarizedhash,&txid);
-    if ( !fSkipdpow && pindexFork != 0 && pindexFork->GetHeight() < notarizedht )
+    if ( !fSkipdpow && pindexFork != 0 && pindexOldTip->GetHeight() > notarizedht && pindexFork->GetHeight() < notarizedht )
     {
         fprintf(stderr,"pindexFork->GetHeight().%d is < notarizedht %d, so ignore it\n",(int32_t)pindexFork->GetHeight(),notarizedht);
         return state.DoS(100, error("ActivateBestChainStep(): pindexFork->GetHeight().%d is < notarizedht %d, so ignore it",(int32_t)pindexFork->GetHeight(),notarizedht),
