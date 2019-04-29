@@ -1334,11 +1334,11 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
             
             int64_t totalbets = 0;
             int64_t totalprofits = 0;
-            long double dcostbasis = 0.0;
+            double dcostbasis = 0.0;
             for (auto b : bets) {
                 totalbets += b.amount;
                 totalprofits += b.profits;
-                dcostbasis += b.amount * b.costbasis;  
+                dcostbasis += b.amount * (double)b.costbasis;  
                 // costbasis += b.amount * (b.costbasis / PRICES_POINTFACTOR);  // prevent int64 overflow (but we have underflow for 1/BTC)
                 std::cerr << "PricesInfo() acc dcostbasis=" << dcostbasis << " b.amount=" << b.amount << " b.costbasis/PRICES_POINTFACTOR=" << (b.costbasis / PRICES_POINTFACTOR) << std::endl;
             }
