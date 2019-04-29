@@ -790,19 +790,24 @@ int32_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t
     }
     
     // normalize to 10,000,000 to prevent underflow
-    profits = costbasis > 0 ? (((price / PRICES_POINTFACTOR * PRICES_NORMFACTOR) / costbasis) - PRICES_NORMFACTOR / PRICES_POINTFACTOR) * PRICES_POINTFACTOR : 0;
+    //profits = costbasis > 0 ? (((price / PRICES_POINTFACTOR * PRICES_NORMFACTOR) / costbasis) - PRICES_NORMFACTOR / PRICES_POINTFACTOR) * PRICES_POINTFACTOR : 0;
+
+    double dprofits = costbasis > 0 ? ((double)price / (double)costbasis - 1) : 0;
     
     //std::cerr << "prices_syntheticprofits() test value1 (price/PRICES_POINTFACTOR * PRICES_NORMFACTOR)=" << (price / PRICES_POINTFACTOR * PRICES_NORMFACTOR) << std::endl;
-    std::cerr << "prices_syntheticprofits() test value2 (price/PRICES_POINTFACTOR * PRICES_NORMFACTOR)/costbasis=" << (costbasis != 0 ? (price / PRICES_POINTFACTOR * PRICES_NORMFACTOR)/costbasis : 0) << std::endl;
+    //std::cerr << "prices_syntheticprofits() test value2 (price/PRICES_POINTFACTOR * PRICES_NORMFACTOR)/costbasis=" << (costbasis != 0 ? (price / PRICES_POINTFACTOR * PRICES_NORMFACTOR)/costbasis : 0) << std::endl;
 
-    std::cerr << "prices_syntheticprofits() fractional profits=" << profits << std::endl;
+    //std::cerr << "prices_syntheticprofits() fractional profits=" << profits << std::endl;
     //std::cerr << "prices_syntheticprofits() profits double=" << (double)price / (double)costbasis -1.0 << std::endl;
     //double dprofits = (double)price / (double)costbasis - 1.0;
 
-    profits *= ((int64_t)leverage * (int64_t)positionsize);
-    profits /= (int64_t)PRICES_NORMFACTOR;  // de-normalize
+    //profits *= ((int64_t)leverage * (int64_t)positionsize);
+    //profits /= (int64_t)PRICES_NORMFACTOR;  // de-normalize
+
+    dprofits *= ((double)leverage * (double)positionsize);
 
     //dprofits *= leverage * positionsize;
+    profits = dprofits;
     std::cerr << "prices_syntheticprofits() profits=" << profits << std::endl;
     //std::cerr << "prices_syntheticprofits() dprofits=" << dprofits << std::endl;
 
