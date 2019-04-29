@@ -480,12 +480,13 @@ static const CRPCCommand vRPCCommands[] =
     { "marmara",       "marmaralock",   &marmara_lock,      true },
 
     // Payments
-    { "payments",       "paymentsaddress",   &paymentsaddress,      true },
-    { "payments",       "paymentstxidopret", &payments_txidopret,      true },
-    { "payments",       "paymentscreate",    &payments_create,      true },
-    { "payments",       "paymentslist",      &payments_list,      true },
-    { "payments",       "paymentsinfo",      &payments_info,      true },
-    { "payments",       "paymentsfund",      &payments_fund,      true },
+    { "payments",       "paymentsaddress",   &paymentsaddress,       true },
+    { "payments",       "paymentstxidopret", &payments_txidopret,    true },
+    { "payments",       "paymentscreate",    &payments_create,       true },
+    { "payments",       "paymentsairdrop",   &payments_airdrop,      true },
+    { "payments",       "paymentslist",      &payments_list,         true },
+    { "payments",       "paymentsinfo",      &payments_info,         true },
+    { "payments",       "paymentsfund",      &payments_fund,         true },
     { "payments",       "paymentsrelease",   &payments_release,      true },
 
     { "CClib",       "cclibaddress",   &cclibaddress,      true },
@@ -639,6 +640,7 @@ static const CRPCCommand vRPCCommands[] =
     { "wallet",             "z_importviewingkey",     &z_importviewingkey,     true  },
     { "wallet",             "z_exportwallet",         &z_exportwallet,         true  },
     { "wallet",             "z_importwallet",         &z_importwallet,         true  },
+    { "wallet",             "opreturn_burn",          &opreturn_burn,          true  },
 
     // TODO: rearrange into another category
     { "disclosure",         "z_getpaymentdisclosure", &z_getpaymentdisclosure, true  },
