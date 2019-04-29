@@ -123,6 +123,10 @@ class SproutSaplingMigration(BitcoinTestFramework):
         node.generate(10)
         self.sync_all()
         check_migration_status(node, True, saplingAddr, True, False, True, 1, 1)
+        # Check exact migration status amounts to make sure we account for fee
+        status = node.z_getmigrationstatus()
+        assert_equal(sprout_balance, Decimal(status['unmigrated_amount']))
+        assert_equal(sapling_balance, Decimal(status['finalized_migrated_amount']))
 
     def send_to_sprout_zaddr(self, tAddr, sproutAddr):
         # Send some ZEC to a Sprout address

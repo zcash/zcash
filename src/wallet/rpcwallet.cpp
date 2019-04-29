@@ -3989,23 +3989,27 @@ UniValue z_getmigrationstatus(const UniValue& params, bool fHelp) {
         // * one or more Sprout JoinSplits with nonzero vpub_new field; and
         // * no Sapling Spends, and;
         // * one or more Sapling Outputs.
-        if (tx.vjoinsplit.size() > 0 && tx.vShieldedSpend.empty() && tx.vShieldedOutput.size() > 0) {
-            CAmount migrationAmount = 0;
+        if (tx.vjoinsplit.size() > 0 && tx.vShieldedSpend.empty() && tx.vShieldedOutput.size() > 0 &&
+            tx.vin.empty() && tx.vout.empty()) {
+            bool nonZeroVPubNew = false;
             for (const auto& js : tx.vjoinsplit) {
-                migrationAmount += js.vpub_new;
+                if (js.vpub_new > 0) {
+                    nonZeroVPubNew = true;
+                    break;
+                }
             }
-            if (migrationAmount == 0) {
+            if (!nonZeroVPubNew) {
                 continue;
             }
             migrationTxids.push_back(txPair.first.ToString());
             CBlockIndex* blockIndex = mapBlockIndex[tx.hashBlock];
-            //  A transaction is "finalized" iff it has 10 confirmations.
+            //  A transaction is "finalized" iff it has at least 10 confirmations.
             // TODO: subject to change, if the recommended number of confirmations changes.
             if (currentHeight >= blockIndex->nHeight + 10) {
-                finalizedMigratedAmount += migrationAmount;
+                finalizedMigratedAmount -= tx.valueBalance;
                 ++numFinalizedMigrationTxs;
             } else {
-                unfinalizedMigratedAmount += migrationAmount;
+                unfinalizedMigratedAmount -= tx.valueBalance;
             }
             //  The value of "time_started" is the earliest Unix timestamp of any known
             // migration transaction involving this wallet; if there is no such transaction,
