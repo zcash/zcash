@@ -1334,7 +1334,7 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
             
             int64_t totalbets = 0;
             int64_t totalprofits = 0;
-            double dcostbasis = 0.0;
+            long double dcostbasis = 0.0;
             for (auto b : bets) {
                 totalbets += b.amount;
                 totalprofits += b.profits;
