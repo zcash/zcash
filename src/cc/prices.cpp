@@ -716,7 +716,10 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
         if (errcode != 0)
             break;
 
-        std::cerr << "top pricestack[depth-1=" << depth-1 << "]=" << pricestack[depth-1] << std::endl;
+        if( depth >= 0 )
+            std::cerr << "top pricestack[depth-1=" << depth-1 << "]=" << pricestack[depth-1] << std::endl;
+        else
+            std::cerr << "pricestack empty" << std::endl;
 
     }
     free(pricedata);
@@ -759,8 +762,8 @@ int32_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t
     }
 
     // clear lowest positions:
-    price /= PRICES_POINTFACTOR;
-    price *= PRICES_POINTFACTOR;
+    //price /= PRICES_POINTFACTOR;
+    //price *= PRICES_POINTFACTOR;
     outprice = price;
    
     if (minmax)    { // if we are within day window, set temp costbasis to max (or min) price value
