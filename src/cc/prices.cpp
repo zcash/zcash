@@ -1344,8 +1344,8 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
 
             int64_t equity = totalbets + totalprofits;
             if (totalbets != 0) { //prevent zero div
+                costbasis *= PRICES_POINTFACTOR;  // save last 0.0000xxxx positions
                 costbasis /= totalbets; 
-                costbasis *= PRICES_POINTFACTOR;  //denormalization, last posiitons should be == 0000
             }
             else
                 costbasis = 0;
