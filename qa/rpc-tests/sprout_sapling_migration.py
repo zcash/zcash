@@ -18,6 +18,7 @@ SAPLING_KEY = 'secret-extended-key-regtest1qv62zt2fqyqqpqrh2qzc08h7gncf4447jh9kv
 def check_migration_status(
         node,
         enabled,
+        destination_address,
         non_zero_unmigrated_amount,
         non_zero_unfinalized_migrated_amount,
         non_zero_finalized_migrated_amount,
@@ -26,7 +27,7 @@ def check_migration_status(
 ):
     status = node.z_getmigrationstatus()
     assert_equal(enabled, status['enabled'])
-    assert_equal(SAPLING_ADDR, status['destination_address'])
+    assert_equal(destination_address, status['destination_address'])
     assert_equal(non_zero_unmigrated_amount, Decimal(status['unmigrated_amount']) > Decimal('0.00'))
     assert_equal(non_zero_unfinalized_migrated_amount, Decimal(status['unfinalized_migrated_amount']) > Decimal('0'))
     assert_equal(non_zero_finalized_migrated_amount, Decimal(status['finalized_migrated_amount']) > Decimal('0'))
@@ -36,101 +37,134 @@ def check_migration_status(
 
 class SproutSaplingMigration(BitcoinTestFramework):
     def setup_nodes(self):
-        return start_nodes(4, self.options.tmpdir, [[
+        # Activate overwinter/sapling on all nodes
+        extra_args = [[
             '-nuparams=5ba81b19:100',  # Overwinter
             '-nuparams=76b809bb:100',  # Sapling
+        ]] * 4
+        # Add migration parameters to nodes[0]
+        extra_args[0] = extra_args[0] + [
             '-migration',
             '-migrationdestaddress=' + SAPLING_ADDR
-        ]] * 4)
+        ]
+        assert_equal(4, len(extra_args[0]))
+        assert_equal(2, len(extra_args[1]))
+        return start_nodes(4, self.options.tmpdir, extra_args)
 
     def setup_chain(self):
         print("Initializing test directory " + self.options.tmpdir)
         initialize_chain_clean(self.options.tmpdir, 4)
 
-    def run_test(self):
-        check_migration_status(self.nodes[0], True, False, False, False, 0, 0)
-        self.nodes[0].z_setmigration(False)
-        check_migration_status(self.nodes[0], False, False, False, False, 0, 0)
-
-        print "Mining blocks..."
-        self.nodes[0].generate(101)
-        self.sync_all()
-
-        # Send some ZEC to a Sprout address
-        tAddr = get_coinbase_address(self.nodes[0])
-        sproutAddr = self.nodes[0].z_getnewaddress('sprout')
-        # Import a previously generated key to test '-migrationdestaddress'
-        self.nodes[0].z_importkey(SAPLING_KEY)
-
-        opid = self.nodes[0].z_sendmany(tAddr, [{"address": sproutAddr, "amount": Decimal('10')}], 1, 0)
-        wait_and_assert_operationid_status(self.nodes[0], opid)
-        self.nodes[0].generate(1)
-        self.sync_all()
-
-        assert_equal(self.nodes[0].z_getbalance(sproutAddr), Decimal('10'))
-        assert_equal(self.nodes[0].z_getbalance(SAPLING_ADDR), Decimal('0'))
+    def run_migration_test(self, node, sproutAddr, saplingAddr, target_height):
+        # Make sure we are in a good state to run the test
+        assert_equal(102, node.getblockcount() % 500, "Should be at block 102 % 500")
+        assert_equal(node.z_getbalance(sproutAddr), Decimal('10'))
+        assert_equal(node.z_getbalance(saplingAddr), Decimal('0'))
+        check_migration_status(node, False, saplingAddr, True, False, False, 0, 0)
 
         # Migrate
-        self.nodes[0].z_setmigration(True)
-        print "Mining to block 494..."
-        self.nodes[0].generate(392)  # 102 -> 494
+        node.z_setmigration(True)
+        print "Mining to block 494 % 500..."
+        node.generate(392)  # 102 % 500 -> 494 % 500
         self.sync_all()
 
-        # At 494 we should have no async operations
-        assert_equal(0, len(self.nodes[0].z_getoperationstatus()), "num async operations at 494")
-        check_migration_status(self.nodes[0], True, True, False, False, 0, 0)
+        # At 494 % 500 we should have no async operations
+        assert_equal(0, len(node.z_getoperationstatus()), "num async operations at 494 % 500")
+        check_migration_status(node, True, saplingAddr, True, False, False, 0, 0)
 
-        self.nodes[0].generate(1)
+        node.generate(1)
         self.sync_all()
 
-        # At 495 we should have an async operation
-        operationstatus = self.nodes[0].z_getoperationstatus()
+        # At 495 % 500 we should have an async operation
+        operationstatus = node.z_getoperationstatus()
         print "migration operation: {}".format(operationstatus)
-        assert_equal(1, len(operationstatus), "num async operations at 495")
+        assert_equal(1, len(operationstatus), "num async operations at 495  % 500")
         assert_equal('saplingmigration', operationstatus[0]['method'])
-        assert_equal(500, operationstatus[0]['target_height'])
+        assert_equal(target_height, operationstatus[0]['target_height'])
 
-        result = wait_and_assert_operationid_status_result(self.nodes[0], operationstatus[0]['id'])
+        result = wait_and_assert_operationid_status_result(node, operationstatus[0]['id'])
         print "result: {}".format(result)
         assert_equal('saplingmigration', result['method'])
-        assert_equal(500, result['target_height'])
+        assert_equal(target_height, result['target_height'])
         assert_equal(1, result['result']['num_tx_created'])
 
-        assert_equal(0, len(self.nodes[0].getrawmempool()), "mempool size at 495")
+        assert_equal(0, len(node.getrawmempool()), "mempool size at 495 % 500")
 
-        self.nodes[0].generate(3)
+        node.generate(3)
         self.sync_all()
 
-        # At 498 the mempool will be empty and no funds will have moved
-        assert_equal(0, len(self.nodes[0].getrawmempool()), "mempool size at 498")
-        assert_equal(self.nodes[0].z_getbalance(sproutAddr), Decimal('10'))
-        assert_equal(self.nodes[0].z_getbalance(SAPLING_ADDR), Decimal('0'))
+        # At 498 % 500 the mempool will be empty and no funds will have moved
+        assert_equal(0, len(node.getrawmempool()), "mempool size at 498 % 500")
+        assert_equal(node.z_getbalance(sproutAddr), Decimal('10'))
+        assert_equal(node.z_getbalance(saplingAddr), Decimal('0'))
 
-        self.nodes[0].generate(1)
+        node.generate(1)
         self.sync_all()
 
-        # At 499 there will be a transaction in the mempool and the note will be locked
-        assert_equal(1, len(self.nodes[0].getrawmempool()), "mempool size at 499")
-        assert_equal(self.nodes[0].z_getbalance(sproutAddr), Decimal('0'))
-        assert_equal(self.nodes[0].z_getbalance(SAPLING_ADDR), Decimal('0'))
-        assert_true(self.nodes[0].z_getbalance(SAPLING_ADDR, 0) > Decimal('0'), "Unconfirmed sapling")
+        # At 499 % 500 there will be a transaction in the mempool and the note will be locked
+        assert_equal(1, len(node.getrawmempool()), "mempool size at 499 % 500")
+        assert_equal(node.z_getbalance(sproutAddr), Decimal('0'))
+        assert_equal(node.z_getbalance(saplingAddr), Decimal('0'))
+        assert_true(node.z_getbalance(saplingAddr, 0) > Decimal('0'), "Unconfirmed sapling balance at 499")
 
-        self.nodes[0].generate(1)
+        node.generate(1)
         self.sync_all()
 
-        # At 500 funds will have moved
-        sprout_balance = self.nodes[0].z_getbalance(sproutAddr)
-        sapling_balance = self.nodes[0].z_getbalance(SAPLING_ADDR)
+        # At 0 % 500 funds will have moved
+        sprout_balance = node.z_getbalance(sproutAddr)
+        sapling_balance = node.z_getbalance(saplingAddr)
         print "sprout balance: {}, sapling balance: {}".format(sprout_balance, sapling_balance)
         assert_true(sprout_balance < Decimal('10'), "Should have less Sprout funds")
         assert_true(sapling_balance > Decimal('0'), "Should have more Sapling funds")
         assert_true(sprout_balance + sapling_balance, Decimal('9.9999'))
 
-        check_migration_status(self.nodes[0], True, True, True, False, 0, 1)
-        # At 510 the transactions will be considered 'finalized'
-        self.nodes[0].generate(10)
+        check_migration_status(node, True, saplingAddr, True, True, False, 0, 1)
+        # At 10 % 500 the transactions will be considered 'finalized'
+        node.generate(10)
         self.sync_all()
-        check_migration_status(self.nodes[0], True, True, False, True, 1, 1)
+        check_migration_status(node, True, saplingAddr, True, False, True, 1, 1)
+
+    def send_to_sprout_zaddr(self, tAddr, sproutAddr):
+        # Send some ZEC to a Sprout address
+        opid = self.nodes[0].z_sendmany(tAddr, [{"address": sproutAddr, "amount": Decimal('10')}], 1, 0)
+        wait_and_assert_operationid_status(self.nodes[0], opid)
+        self.nodes[0].generate(1)
+        self.sync_all()
+
+    def run_test(self):
+        # Check enabling via '-migration' and disabling via rpc
+        check_migration_status(self.nodes[0], True, SAPLING_ADDR, False, False, False, 0, 0)
+        self.nodes[0].z_setmigration(False)
+        check_migration_status(self.nodes[0], False, SAPLING_ADDR, False, False, False, 0, 0)
+
+        # 1. Test using self.nodes[0] which has the parameter
+        print "Runing test using '-migrationdestaddress'..."
+        print "Mining blocks..."
+        self.nodes[0].generate(101)
+        self.sync_all()
+        tAddr = get_coinbase_address(self.nodes[0])
+
+        # Import a previously generated key to test '-migrationdestaddress'
+        self.nodes[0].z_importkey(SAPLING_KEY)
+        sproutAddr0 = self.nodes[0].z_getnewaddress('sprout')
+
+        self.send_to_sprout_zaddr(tAddr, sproutAddr0)
+        self.run_migration_test(self.nodes[0], sproutAddr0, SAPLING_ADDR, 500)
+        # Disable migration so only self.nodes[1] has a transaction in the mempool at block 999
+        self.nodes[0].z_setmigration(False)
+
+        # 2. Test using self.nodes[1] which will use the default Sapling address
+        print "Runing test using default Sapling address..."
+        # Mine more blocks so we start at 102 % 500
+        print "Mining blocks..."
+        self.nodes[1].generate(91)  # 511 -> 602
+        self.sync_all()
+
+        sproutAddr1 = self.nodes[1].z_getnewaddress('sprout')
+        saplingAddr1 = self.nodes[1].z_getnewaddress('sapling')
+
+        self.send_to_sprout_zaddr(tAddr, sproutAddr1)
+        self.run_migration_test(self.nodes[1], sproutAddr1, saplingAddr1, 1000)
 
 
 if __name__ == '__main__':
