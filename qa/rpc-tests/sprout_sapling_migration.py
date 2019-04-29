@@ -105,7 +105,7 @@ class SproutSaplingMigration(BitcoinTestFramework):
         assert_equal(1, len(node.getrawmempool()), "mempool size at 499 % 500")
         assert_equal(node.z_getbalance(sproutAddr), Decimal('0'))
         assert_equal(node.z_getbalance(saplingAddr), Decimal('0'))
-        assert_true(node.z_getbalance(saplingAddr, 0) > Decimal('0'), "Unconfirmed sapling balance at 499")
+        assert_true(node.z_getbalance(saplingAddr, 0) > Decimal('0'), "Unconfirmed sapling balance at 499 % 500")
 
         node.generate(1)
         self.sync_all()
@@ -138,7 +138,7 @@ class SproutSaplingMigration(BitcoinTestFramework):
         check_migration_status(self.nodes[0], False, SAPLING_ADDR, False, False, False, 0, 0)
 
         # 1. Test using self.nodes[0] which has the parameter
-        print "Runing test using '-migrationdestaddress'..."
+        print "Running test using '-migrationdestaddress'..."
         print "Mining blocks..."
         self.nodes[0].generate(101)
         self.sync_all()
@@ -154,7 +154,7 @@ class SproutSaplingMigration(BitcoinTestFramework):
         self.nodes[0].z_setmigration(False)
 
         # 2. Test using self.nodes[1] which will use the default Sapling address
-        print "Runing test using default Sapling address..."
+        print "Running test using default Sapling address..."
         # Mine more blocks so we start at 102 % 500
         print "Mining blocks..."
         self.nodes[1].generate(91)  # 511 -> 602

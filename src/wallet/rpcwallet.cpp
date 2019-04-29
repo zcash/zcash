@@ -3937,13 +3937,14 @@ UniValue z_getmigrationstatus(const UniValue& params, bool fHelp) {
         throw runtime_error(
             "z_getmigrationstatus\n"
             "Returns information about the status of the Sprout to Sapling migration.\n"
-            "In the result a transactions is defined as finalized iff it has ten confirmations.\n"
-            "Note: It is possible that manually created transactions invloving this wallet\n"
+            "In the result a transactions is defined as finalized if and only if it has\n"
+            "at least ten confirmations.\n"
+            "Note: It is possible that manually created transactions involving this wallet\n"
             "will be included in the result.\n"
             "\nResult:\n"
             "{\n"
             "  \"enabled\": true|false,                    (boolean) Whether or not migration is enabled\n"
-            "  \"destination_address\": \"zaddr\",           (string) The Sapling address which will receive Sprout funds\n"
+            "  \"destination_address\": \"zaddr\",           (string) The Sapling address that will receive Sprout funds\n"
             "  \"unmigrated_amount\": nnn.n,               (numeric) The total amount of unmigrated " + CURRENCY_UNIT +" \n"
             "  \"unfinalized_migrated_amount\": nnn.n,     (numeric) The total amount of unfinalized " + CURRENCY_UNIT + " \n"
             "  \"finalized_migrated_amount\": nnn.n,       (numeric) The total amount of finalized " + CURRENCY_UNIT + " \n"
@@ -3955,7 +3956,7 @@ UniValue z_getmigrationstatus(const UniValue& params, bool fHelp) {
     LOCK2(cs_main, pwalletMain->cs_wallet);
     UniValue migrationStatus(UniValue::VOBJ);
     migrationStatus.push_back(Pair("enabled", pwalletMain->fSaplingMigrationEnabled));
-    //  The "destination_address" field MAY be omitted if the "-migrationaddress"
+    //  The "destination_address" field MAY be omitted if the "-migrationdestaddress"
     // parameter is not set and no default address has yet been generated.
     // Note: The following function may return the default address even if it has not been added to the wallet
     auto destinationAddress = AsyncRPCOperation_saplingmigration::getMigrationDestAddress(pwalletMain->GetHDSeedForRPC());
