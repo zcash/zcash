@@ -485,11 +485,16 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             ssValue >> wtx;
             CValidationState state;
             auto verifier = libzcash::ProofVerifier::Strict();
-            if (!(CheckTransaction(0,wtx, state, verifier) && (wtx.GetHash() == hash) && state.IsValid()))
+            // ac_public chains set at height like KMD and ZEX, will force a rescan if we dont ignore this error: bad-txns-acpublic-chain
+            // there cannot be any ztx in the wallet on ac_public chains that started from block 1, so this wont affect those. 
+            if ( !(CheckTransaction(0,wtx, state, verifier) && (wtx.GetHash() == hash) && state.IsValid()) && (state.GetRejectReason() != "bad-txns-acpublic-chain") )
             {
-                deadTxns.push_back(hash);
+                //fprintf(stderr, "tx failed: %s rejectreason.%s\n", wtx.GetHash().GetHex().c_str(), state.GetRejectReason().c_str());
+                // vin-empty on staking chains is error relating to a failed staking tx, that for some unknown reason did not fully erase. save them here to erase and re-add later on.
+                if ( ASSETCHAINS_STAKED != 0 && state.GetRejectReason() == "bad-txns-vin-empty" )
+                    deadTxns.push_back(hash);
                 return false;
-            } 
+            }
             // Undo serialize changes in 31600
             if (31404 <= wtx.fTimeReceivedIsTxTime && wtx.fTimeReceivedIsTxTime <= 31703)
             {
@@ -937,6 +942,9 @@ DBErrors CWalletDB::LoadWallet(CWallet* pwallet)
                 {
                     // Leave other errors alone, if we try to fix them we might make things worse.
                     fNoncriticalErrors = true; // ... but do warn the user there is something wrong.
+                    // set rescan for any error that is not vin-empty on staking chains.
+                    if ( deadTxns.empty() && strType == "tx")
+                        SoftSetBoolArg("-rescan", true);
                 }
             }
             if (!strErr.empty())
@@ -953,33 +961,26 @@ DBErrors CWalletDB::LoadWallet(CWallet* pwallet)
 
     if ( !deadTxns.empty() )
     {
-        if ( ASSETCHAINS_STAKED != 0 )
+        // staking chains with vin-empty error is a failed staking tx. 
+        // we remove then re add the tx here to stop needing a full rescan, which does not actually fix the problem.
+        int32_t reAdded = 0;
+        CWalletDB walletdb(pwallet->strWalletFile, "r+", false);
+        BOOST_FOREACH (uint256& hash, deadTxns) 
         {
-            int32_t reAdded = 0;
-            CWalletDB walletdb(pwallet->strWalletFile, "r+", false);
-            BOOST_FOREACH (uint256& hash, deadTxns) 
+            fprintf(stderr, "Removing corrupt tx from wallet.%s\n", hash.ToString().c_str());
+            if (!EraseTx(hash))
+                fprintf(stderr, "could not delete tx.%s\n",hash.ToString().c_str());
+            uint256 blockhash; CTransaction tx;
+            if (GetTransaction(hash,tx,blockhash,true))
             {
-                fprintf(stderr, "Removing corrupt tx from wallet.%s\n", hash.ToString().c_str());
-                if (!EraseTx(hash))
-                    fprintf(stderr, "could not delete tx.%s\n",hash.ToString().c_str());
-                uint256 blockhash; CTransaction tx;
-                if (GetTransaction(hash,tx,blockhash,true))
-                {
-                    CWalletTx wtx(pwallet,tx);
-                    pwallet->AddToWallet(wtx, false, &walletdb);
-                    reAdded++;
-                }
+                CWalletTx wtx(pwallet,tx);
+                pwallet->AddToWallet(wtx, false, &walletdb);
+                reAdded++;
             }
-            fprintf(stderr, "Cleared %lu corrupted transactions from wallet. Readded %i known transactions.\n",(long)deadTxns.size(),reAdded);
-            fNoncriticalErrors = false;
-            deadTxns.clear();
         }
-        else if ( (GetBoolArg("-zapwallettxes", false)) )
-        {
-            LogPrintf("Transactions are corrupted. Please restart daemon with -zapwallettxes=2\n");
-            fprintf(stderr,"Transactions are corrupted. Please restart daemon with -zapwallettxes=2\n");
-            return DB_CORRUPT;
-        }
+        fprintf(stderr, "Cleared %li corrupted transactions from wallet. Readded %i known transactions.\n",deadTxns.size(),reAdded);
+        fNoncriticalErrors = false;
+        deadTxns.clear();
     }
     
     if (fNoncriticalErrors && result == DB_LOAD_OK)
