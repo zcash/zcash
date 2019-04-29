@@ -3503,17 +3503,12 @@ void FallbackSproutValuePoolBalance(
     const CChainParams& chainparams
 )
 {
-    // We might not want to enable the checkpointing for mainnet
-    // yet.
     if (!chainparams.ZIP209Enabled()) {
         return;
     }
 
     // When developer option -developersetpoolsizezero is enabled, we don't need a fallback balance.
-    if ((chainparams.NetworkIDString() == "test" || chainparams.NetworkIDString() == "regtest") &&
-        fExperimentalMode &&
-        mapArgs.count("-developersetpoolsizezero"))
-    {
+    if (fExperimentalMode && mapArgs.count("-developersetpoolsizezero")) {
         return;
     }
 
@@ -4304,13 +4299,10 @@ bool static LoadBlockIndexDB()
             // Fall back to hardcoded Sprout value pool balance
             FallbackSproutValuePoolBalance(pindex, chainparams);
 
-            // If developer option -developersetpoolsizezero has been enabled on testnet or in regtest mode,
+            // If developer option -developersetpoolsizezero has been enabled,
             // override and set the in-memory size of shielded pools to zero.  An unshielding transaction
             // can then be used to trigger and test the handling of turnstile violations.
-            if ((chainparams.NetworkIDString() == "test" || chainparams.NetworkIDString() == "regtest") &&
-                fExperimentalMode &&
-                mapArgs.count("-developersetpoolsizezero"))
-            {
+            if (fExperimentalMode && mapArgs.count("-developersetpoolsizezero")) {
                 pindex->nChainSproutValue = 0;
                 pindex->nChainSaplingValue = 0;
             }
