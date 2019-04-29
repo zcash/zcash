@@ -656,6 +656,7 @@ std::vector <std::pair<CAmount, CTxDestination>> vAddressSnapshot;
 
 bool komodo_dailysnapshot(int32_t height)
 {
+    int reorglimit = 10; // CHANGE BACK TO 100 AFTER TESTING!
     uint256 notarized_hash,notarized_desttxid; int32_t prevMoMheight,notarized_height,undo_height,extraoffset;
     if ( (extraoffset= height % KOMODO_SNAPSHOT_INTERVAL) != 0 )
     {
@@ -663,25 +664,16 @@ bool komodo_dailysnapshot(int32_t height)
         // use the notarizationsDB to scan back from the consesnus height to get the offset we need.
         std::string symbol; Notarisation nota;
         symbol.assign(ASSETCHAINS_SYMBOL);
-        ScanNotarisationsDB(height-extraoffset, symbol, 100, nota);
-        undo_height = nota.second.height;
-        if ( undo_height == 0 ) undo_height = height-extraoffset-100;
-        fprintf(stderr, "height.%i-extraoffset.%i = startscanfrom.%i to get undo_height.%i\n", height, extraoffset, height-extraoffset, undo_height);
+        if ( ScanNotarisationsDB(height-extraoffset, symbol, 100, nota) == 0 )
+            undo_height = height-extraoffset-reorglimit; 
+        else undo_height = nota.second.height;
+        //fprintf(stderr, "height.%i-extraoffset.%i = startscanfrom.%i to get undo_height.%i\n", height, extraoffset, height-extraoffset, undo_height);
     }
     else 
     {
         // we are at the right height in connect block to scan back to last notarized height. 
         notarized_height = komodo_notarized_height(&prevMoMheight,&notarized_hash,&notarized_desttxid);
-        if ( notarized_height > height-100 )
-        {
-            // notarized height is higher than 100 blocks before this height, so snapshot the notarized height.
-            undo_height = notarized_height;
-        }
-        else
-        {
-            //snapshot 100 blocks ago. Could still be reorged but very unlikley and expensive to carry out constantly. 
-            undo_height = height-100;
-        }
+        notarized_height > height-100 ? undo_height = notarized_height : undo_height = height-reorglimit; 
     }
     fprintf(stderr, "doing snapshot for height.%i undo_height.%i\n", height, undo_height);
     // if we already did this height dont bother doing it again, this is just a reorg. The actual snapshot height cannot be reorged.
@@ -702,9 +694,7 @@ bool komodo_dailysnapshot(int32_t height)
         for (int32_t i = block.vtx.size() - 1; i >= 0; i--) 
         {
             const CTransaction &tx = block.vtx[i];
-            uint256 hash = tx.GetHash();
             CTxDestination vDest; 
-            //fprintf(stderr, "undong tx.%s\n",hash.GetHex().c_str());
             // loop vouts reverse order, remove value recieved.
             for (unsigned int k = tx.vout.size(); k-- > 0;) 
             {
@@ -721,7 +711,7 @@ bool komodo_dailysnapshot(int32_t height)
             for (unsigned int j = tx.vin.size(); j-- > 0;) 
             {
                 uint256 blockhash; CTransaction txin;
-                if ( !tx.IsCoinImport() && !tx.IsCoinBase() && myGetTransaction(tx.vin[j].prevout.hash,txin,blockhash) ) // myGetTransaction!
+                if ( !tx.IsCoinImport() && !tx.IsCoinBase() && myGetTransaction(tx.vin[j].prevout.hash,txin,blockhash) ) 
                 {
                     int vout = tx.vin[j].prevout.n;
                     if ( ExtractDestination(txin.vout[vout].scriptPubKey, vDest) )

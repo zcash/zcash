@@ -18,6 +18,7 @@
 #define CC_PAYMENTS_H
 
 #include "CCinclude.h"
+#include <gmp.h>
 
 #define PAYMENTS_TXFEE 10000
 extern std::vector <std::pair<CAmount, CTxDestination>> vAddressSnapshot;
@@ -34,3 +35,4 @@ UniValue PaymentsInfo(struct CCcontract_info *cp,char *jsonstr);
 UniValue PaymentsList(struct CCcontract_info *cp,char *jsonstr);
 
 #endif
+ 
