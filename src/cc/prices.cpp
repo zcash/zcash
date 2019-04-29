@@ -716,7 +716,7 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
         if (errcode != 0)
             break;
 
-        if( depth >= 0 )
+        if( depth > 0 )
             std::cerr << "top pricestack[depth-1=" << depth-1 << "]=" << pricestack[depth-1] << std::endl;
         else
             std::cerr << "pricestack empty" << std::endl;
@@ -1340,7 +1340,7 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
                 totalprofits += b.profits;
                 dcostbasis += b.amount * b.costbasis;  
                 // costbasis += b.amount * (b.costbasis / PRICES_POINTFACTOR);  // prevent int64 overflow (but we have underflow for 1/BTC)
-                // std::cerr << "PricesInfo() acc costbasis=" << costbasis << " b.amount=" << b.amount << " b.costbasis/PRICES_POINTFACTOR=" << (b.costbasis / PRICES_POINTFACTOR) << std::endl;
+                std::cerr << "PricesInfo() acc dcostbasis=" << dcostbasis << " b.amount=" << b.amount << " b.costbasis/PRICES_POINTFACTOR=" << (b.costbasis / PRICES_POINTFACTOR) << std::endl;
             }
 
             int64_t equity = totalbets + totalprofits;
