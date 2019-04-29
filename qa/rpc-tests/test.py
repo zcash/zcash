@@ -208,7 +208,7 @@ def run_test_scripts(test_list, args):
         #might want to add routine to properly clean SIGTERM tests so they don't conga line the rest
         try:
             start_time = time.time()
-            p1 = Popen(['python', file])
+            p1 = Popen(['python3', file])
             buffer = p1.communicate()[0]
         except:
             fail_list.append(file)
@@ -256,14 +256,14 @@ def opt_list():
 
 def opt_listbase():
     for test_file in BASE_SCRIPTS:
-            print test_file[:-3]
+            logging.info("%s", test_file[:-3])
 
 def opt_listextended():
     for ext_test_file in EXTENDED_SCRIPTS:
-            print ext_test_file[:-3]
+            logging.info("%s", ext_test_file[:-3])
 
 def opt_individual(args):
-    print 'files: {}'.format(args.args)
+    logging.info("%s", 'files: {}'.format(args.args))
     run_test_scripts(args.args, args)
 
 def main():
@@ -282,9 +282,9 @@ def main():
 
 
     if args.ENABLE_PROTON:
-        BASE_SCRIPTS += 'proton_test.py'
+        BASE_SCRIPTS.apped('proton_test.py')
     if args.ENABLE_ZMQ:
-        BASE_SCRIPTS += 'zmq_test.py'
+        BASE_SCRIPTS.append('zmq_test.py' )
     if args.list:
         opt_list()
     if args.listbase:
