@@ -775,17 +775,14 @@ int32_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t
         //else {  //-> use the previous value
         //    std::cerr << "prices_syntheticprofits() unchanged costbasis=" << costbasis << " price=" << price << " leverage=" << leverage << std::endl;
         //}
-            
     }
     else   { 
         if (height == firstheight + PRICES_DAYWINDOW) {
             // if costbasis not set, just set it
-            costbasis = price;
-            std::cerr << "prices_syntheticprofits() permanent costbasis=" << costbasis << " height=" << height << std::endl;
-        }
-        else {
-            // use provided costbasis
-            //std::cerr << "prices_syntheticprofits() provided costbasis=" << costbasis << " price=" << price << std::endl;
+            //costbasis = price;
+
+            // use calculated minmax costbasis
+            std::cerr << "prices_syntheticprofits() use permanent costbasis=" << costbasis << " height=" << height << std::endl;
         }
     }
     
