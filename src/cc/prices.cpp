@@ -1352,8 +1352,8 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
             int64_t liqprice;
             if (leverage != 0) {// prevent zero div
                 liqprice = costbasis - costbasis / leverage;
-                liqprice /= PRICES_POINTFACTOR;
-                liqprice *= PRICES_POINTFACTOR; // last posiitons should be == 0000
+                //liqprice /= PRICES_POINTFACTOR;
+                //liqprice *= PRICES_POINTFACTOR; // last posiitons should be == 0000
             }
             else
                 liqprice = 0;
