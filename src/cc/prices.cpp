@@ -1334,18 +1334,20 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
             
             int64_t totalbets = 0;
             int64_t totalprofits = 0;
-            int64_t costbasis = 0;
+            double dcostbasis = 0.0;
             for (auto b : bets) {
                 totalbets += b.amount;
                 totalprofits += b.profits;
-                costbasis += b.amount * (b.costbasis / PRICES_POINTFACTOR);  // prevent int64 overflow
-                std::cerr << "PricesInfo() acc costbasis=" << costbasis << " b.amount=" << b.amount << " b.costbasis/PRICES_POINTFACTOR=" << (b.costbasis / PRICES_POINTFACTOR) << std::endl;
+                dcostbasis += b.amount * b.costbasis;  
+                // costbasis += b.amount * (b.costbasis / PRICES_POINTFACTOR);  // prevent int64 overflow (but we have underflow for 1/BTC)
+                // std::cerr << "PricesInfo() acc costbasis=" << costbasis << " b.amount=" << b.amount << " b.costbasis/PRICES_POINTFACTOR=" << (b.costbasis / PRICES_POINTFACTOR) << std::endl;
             }
 
             int64_t equity = totalbets + totalprofits;
+            int64_t costbasis;
             if (totalbets != 0) { //prevent zero div
-                costbasis *= PRICES_POINTFACTOR;  // save last 0.0000xxxx positions
-                costbasis /= totalbets; 
+                // costbasis *= PRICES_POINTFACTOR;  // save last 0.0000xxxx positions
+                costbasis = (int64_t) (dcostbasis / (double)totalbets); 
             }
             else
                 costbasis = 0;
