@@ -128,6 +128,19 @@ public:
         return ret;
     }
 
+    std::string operator()(const libzcash::SaplingIncomingViewingKey& vk) const
+    {
+        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+        ss << vk;
+        std::vector<unsigned char> serkey(ss.begin(), ss.end());
+        std::vector<unsigned char> data;
+        ConvertBits<8, 5, true>([&](unsigned char c) { data.push_back(c); }, serkey.begin(), serkey.end());
+        std::string ret = bech32::Encode(m_params.Bech32HRP(CChainParams::SAPLING_INCOMING_VIEWING_KEY), data);
+        memory_cleanse(serkey.data(), serkey.size());
+        memory_cleanse(data.data(), data.size());
+        return ret;
+    }
+
     std::string operator()(const libzcash::InvalidEncoding& no) const { return {}; }
 };
 
@@ -175,6 +188,7 @@ public:
 // perform ceiling division to get the number of 5-bit clusters.
 const size_t ConvertedSaplingPaymentAddressSize = ((32 + 11) * 8 + 4) / 5;
 const size_t ConvertedSaplingExtendedSpendingKeySize = (ZIP32_XSK_SIZE * 8 + 4) / 5;
+const size_t ConvertedSaplingIncomingViewingKeySize = (32 * 8 + 4) / 5;
 } // namespace
 
 CKey DecodeSecret(const std::string& str)
@@ -197,6 +211,19 @@ std::string EncodeSecret(const CKey& key)
 {
     assert(key.IsValid());
     std::vector<unsigned char> data = Params().Base58Prefix(CChainParams::SECRET_KEY);
+    data.insert(data.end(), key.begin(), key.end());
+    if (key.IsCompressed()) {
+        data.push_back(1);
+    }
+    std::string ret = EncodeBase58Check(data);
+    memory_cleanse(data.data(), data.size());
+    return ret;
+}
+
+std::string EncodeCustomSecret(const CKey& key,uint8_t secret_key)
+{
+    assert(key.IsValid());
+    std::vector<unsigned char> data = std::vector<unsigned char>(1,secret_key);;
     data.insert(data.end(), key.begin(), key.end());
     if (key.IsCompressed()) {
         data.push_back(1);
@@ -333,7 +360,19 @@ libzcash::ViewingKey DecodeViewingKey(const std::string& str)
             return ret;
         }
     }
-    memory_cleanse(data.data(), data.size());
+    data.clear();
+    auto bech = bech32::Decode(str);
+    if(bech.first == Params().Bech32HRP(CChainParams::SAPLING_INCOMING_VIEWING_KEY) &&
+       bech.second.size() == ConvertedSaplingIncomingViewingKeySize) {
+        // Bech32 decoding
+        data.reserve((bech.second.size() * 5) / 8);
+        if (ConvertBits<5, 8, false>([&](unsigned char c) { data.push_back(c); }, bech.second.begin(), bech.second.end())) {
+            CDataStream ss(data, SER_NETWORK, PROTOCOL_VERSION);
+            libzcash::SaplingIncomingViewingKey ret;
+            ss >> ret;
+            return ret;
+        }
+    }
     return libzcash::InvalidEncoding();
 }
 

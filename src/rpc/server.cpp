@@ -291,6 +291,9 @@ static const CRPCCommand vRPCCommands[] =
   //  --------------------- ------------------------  -----------------------  ----------
     /* Overall control/query calls */
     { "control",            "help",                   &help,                   true  },
+    { "control",            "getiguanajson",          &getiguanajson,          true  },
+    { "control",            "getnotarysendmany",      &getnotarysendmany,      true  },
+    { "control",            "geterablockheights",     &geterablockheights,     true  },
     { "control",            "stop",                   &stop,                   true  },
 
     /* P2P networking */
@@ -346,10 +349,26 @@ static const CRPCCommand vRPCCommands[] =
     { "crosschain",         "crosschainproof",        &crosschainproof,        true  },
     { "crosschain",         "getNotarisationsForBlock", &getNotarisationsForBlock, true },
     { "crosschain",         "scanNotarisationsDB",    &scanNotarisationsDB,    true },
+    { "crosschain",         "getimports",             &getimports,             true },
     { "crosschain",         "migrate_converttoexport", &migrate_converttoexport, true  },
     { "crosschain",         "migrate_createimporttransaction", &migrate_createimporttransaction, true  },
     { "crosschain",         "migrate_completeimporttransaction", &migrate_completeimporttransaction, true  },
     { "crosschain",         "selfimport", &selfimport, true  },
+    { "crosschain",         "importdual", &importdual, true  },
+    //ImportGateway
+    { "crosschain",       "importgatewayddress",     &importgatewayaddress,      true },
+    { "crosschain",       "importgatewayinfo", &importgatewayinfo, true  },
+    { "crosschain",       "importgatewaybind", &importgatewaybind, true  },
+    { "crosschain",       "importgatewaydeposit", &importgatewaydeposit, true  },
+    { "crosschain",       "importgatewaywithdraw",  &importgatewaywithdraw,     true },
+    { "crosschain",       "importgatewaypartialsign",  &importgatewaypartialsign,     true },
+    { "crosschain",       "importgatewaycompletesigning",  &importgatewaycompletesigning,     true },
+    { "crosschain",       "importgatewaymarkdone",  &importgatewaymarkdone,     true },
+    { "crosschain",       "importgatewaypendingdeposits",   &importgatewaypendingdeposits,      true },
+    { "crosschain",       "importgatewaypendingwithdraws",   &importgatewaypendingwithdraws,      true },
+    { "crosschain",       "importgatewayprocessed",   &importgatewayprocessed,  true },
+
+
 
     /* Mining */
     { "mining",             "getblocktemplate",       &getblocktemplate,       true  },
@@ -406,8 +425,16 @@ static const CRPCCommand vRPCCommands[] =
     { "faucet",       "faucetget",       &faucetget,          true },
     { "faucet",       "faucetaddress",   &faucetaddress,      true },
 
-    // Heir
-    { "heir",       "heiraddress",   &heiraddress,      true },
+		// Heir
+	{ "heir",       "heiraddress",   &heiraddress,      true },
+	{ "heir",       "heirfund",   &heirfund,      true },
+	{ "heir",       "heiradd",    &heiradd,        true },
+	{ "heir",       "heirclaim",  &heirclaim,     true },
+/*	{ "heir",       "heirfundtokens",   &heirfundtokens,      true },
+	{ "heir",       "heiraddtokens",    &heiraddtokens,        true },
+	{ "heir",       "heirclaimtokens",  &heirclaimtokens,     true },*/
+	{ "heir",       "heirinfo",   &heirinfo,      true },
+	{ "heir",       "heirlist",   &heirlist,      true },
 
     // Channels
     { "channels",       "channelsaddress",   &channelsaddress,   true },
@@ -429,27 +456,43 @@ static const CRPCCommand vRPCCommands[] =
     { "oracles",       "oraclessamples",   &oraclessamples,     true },
 
     // Prices
+    { "prices",       "prices",      &prices,      true },
     { "prices",       "pricesaddress",      &pricesaddress,      true },
     { "prices",       "priceslist",         &priceslist,         true },
     { "prices",       "pricesinfo",         &pricesinfo,         true },
-    { "prices",       "pricescreate",       &pricescreate,       true },
-    { "prices",       "pricesaddfunding",   &pricesaddfunding,   true },
-    { "prices",       "pricesbet",          &pricesbet,          true },
-    { "prices",       "pricesstatus",       &pricesstatus,       true },
-    { "prices",       "pricesfinish",       &pricesfinish,       true },
 
     // Pegs
     { "pegs",       "pegsaddress",   &pegsaddress,      true },
 
     // Marmara
-    { "marmara",       "Marmaraaddress",   &marmaraaddress,      true },
+    { "marmara",       "marmaraaddress",   &marmaraaddress,      true },
+    { "marmara",       "marmarapoolpayout",   &marmara_poolpayout,      true },
+    { "marmara",       "marmarareceive",   &marmara_receive,      true },
+    { "marmara",       "marmaraissue",   &marmara_issue,      true },
+    { "marmara",       "marmaratransfer",   &marmara_transfer,      true },
+    { "marmara",       "marmarainfo",   &marmara_info,      true },
+    { "marmara",       "marmaracreditloop",   &marmara_creditloop,      true },
+    { "marmara",       "marmarasettlement",   &marmara_settlement,      true },
+    { "marmara",       "marmaralock",   &marmara_lock,      true },
 
     // Payments
     { "payments",       "paymentsaddress",   &paymentsaddress,      true },
+    { "payments",       "paymentstxidopret", &payments_txidopret,      true },
+    { "payments",       "paymentscreate",    &payments_create,      true },
+    { "payments",       "paymentslist",      &payments_list,      true },
+    { "payments",       "paymentsinfo",      &payments_info,      true },
+    { "payments",       "paymentsfund",      &payments_fund,      true },
+    { "payments",       "paymentsrelease",   &payments_release,      true },
+
+    { "CClib",       "cclibaddress",   &cclibaddress,      true },
+    { "CClib",       "cclibinfo",   &cclibinfo,      true },
+    { "CClib",       "cclib",   &cclib,      true },
 
     // Gateways
     { "gateways",       "gatewaysaddress",   &gatewaysaddress,      true },
     { "gateways",       "gatewayslist",      &gatewayslist,         true },
+    { "gateways",       "gatewaysexternaladdress",      &gatewaysexternaladdress,         true },
+    { "gateways",       "gatewaysdumpprivkey",      &gatewaysdumpprivkey,         true },
     { "gateways",       "gatewaysinfo",      &gatewaysinfo,         true },
     { "gateways",       "gatewaysbind",      &gatewaysbind,         true },
     { "gateways",       "gatewaysdeposit",   &gatewaysdeposit,      true },
@@ -458,9 +501,9 @@ static const CRPCCommand vRPCCommands[] =
     { "gateways",       "gatewayspartialsign",  &gatewayspartialsign,     true },
     { "gateways",       "gatewayscompletesigning",  &gatewayscompletesigning,     true },
     { "gateways",       "gatewaysmarkdone",  &gatewaysmarkdone,     true },
-    { "gateways",       "gatewayspending",   &gatewayspending,      true },
+    { "gateways",       "gatewayspendingdeposits",   &gatewayspendingdeposits,      true },
+    { "gateways",       "gatewayspendingwithdraws",   &gatewayspendingwithdraws,      true },
     { "gateways",       "gatewaysprocessed",   &gatewaysprocessed,  true },
-    { "gateways",       "gatewaysmultisig",  &gatewaysmultisig,     true },
 
     // dice
     { "dice",       "dicelist",      &dicelist,         true },
@@ -472,10 +515,12 @@ static const CRPCCommand vRPCCommands[] =
     { "dice",       "dicestatus",    &dicestatus,       true },
     { "dice",       "diceaddress",   &diceaddress,      true },
 
-    // tokens
+    // tokens & assets
+	{ "tokens",       "assetsaddress",     &assetsaddress,      true },
     { "tokens",       "tokeninfo",        &tokeninfo,         true },
     { "tokens",       "tokenlist",        &tokenlist,         true },
     { "tokens",       "tokenorders",      &tokenorders,       true },
+    { "tokens",       "mytokenorders",    &mytokenorders,     true },
     { "tokens",       "tokenaddress",     &tokenaddress,      true },
     { "tokens",       "tokenbalance",     &tokenbalance,      true },
     { "tokens",       "tokencreate",      &tokencreate,       true },
@@ -516,6 +561,12 @@ static const CRPCCommand vRPCCommands[] =
     { "util",             "reconsiderblock",        &reconsiderblock,        true  },
     /* Not shown in help */
     { "hidden",             "setmocktime",            &setmocktime,            true  },
+	{ "hidden",             "test_ac",                &test_ac,            true },
+	{ "hidden",             "test_heirmarker",        &test_heirmarker,    true }, 
+	{ "hidden",             "test_proof",        &test_proof,    true },
+    { "hidden",             "test_burntx",            &test_burntx,    true },
+
+
 #ifdef ENABLE_WALLET
     /* Wallet */
     { "wallet",             "resendwallettransactions", &resendwallettransactions, true},
@@ -527,6 +578,7 @@ static const CRPCCommand vRPCCommands[] =
     { "wallet",             "getaccountaddress",      &getaccountaddress,      true  },
     { "wallet",             "getaccount",             &getaccount,             true  },
     { "wallet",             "getaddressesbyaccount",  &getaddressesbyaccount,  true  },
+    { "wallet",             "cleanwallettransactions", &cleanwallettransactions, false },
     { "wallet",             "getbalance",             &getbalance,             false },
     { "wallet",             "getbalance64",           &getbalance64,             false },
     { "wallet",             "getnewaddress",          &getnewaddress,          true  },

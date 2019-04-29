@@ -22,13 +22,17 @@ class CryptoconditionsOraclesTest(CryptoconditionsTestFramework):
 
         result = rpc.oraclesaddress()
         assert_success(result)
-        for x in ['OraclesCCaddress', 'Oraclesmarker', 'myCCaddress', 'myaddress']:
-            assert_equal(result[x][0], 'R')
+
+        for x in result.keys():
+            if x.find('ddress') > 0:
+                assert_equal(result[x][0], 'R')
 
         result = rpc.oraclesaddress(self.pubkey)
         assert_success(result)
-        for x in ['OraclesCCaddress', 'Oraclesmarker', 'myCCaddress', 'myaddress']:
-            assert_equal(result[x][0], 'R')
+
+        for x in result.keys():
+            if x.find('ddress') > 0:
+                assert_equal(result[x][0], 'R')
 
         # there are no oracles created yet
         result = rpc.oracleslist()
@@ -112,17 +116,15 @@ class CryptoconditionsOraclesTest(CryptoconditionsTestFramework):
         # baton
         oraclesdata_d = self.send_and_mine(result["hex"], rpc)
         result = rpc.oraclessamples(globals()["oracle_{}".format("d")], oraclesdata_d, "1")
-        # TODO: working not correct now!
-        #assert_equal("[u'01']", str(result["samples"][0]), "Data match")
+        assert_equal("[u'01']", str(result["samples"][0]), "Data match")
 
         # D type
-        result = rpc.oraclesdata(globals()["oracle_{}".format("D")], "0101")
+        result = rpc.oraclesdata(globals()["oracle_{}".format("D")], "010001")
         assert_success(result)
         # baton
         oraclesdata_D = self.send_and_mine(result["hex"], rpc)
         result = rpc.oraclessamples(globals()["oracle_{}".format("D")], oraclesdata_D, "1")
-        # TODO: working not correct now!
-        #assert_equal("[u'01']", str(result["samples"][0]), "Data match")
+        assert_equal("[u'01']", str(result["samples"][0]), "Data match")
 
         # c type
         result = rpc.oraclesdata(globals()["oracle_{}".format("c")], "ff")
@@ -198,12 +200,12 @@ class CryptoconditionsOraclesTest(CryptoconditionsTestFramework):
         assert_equal("[u'ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000']", str(result["samples"][0]), "Data match")
 
         # Ihh type
-        result = rpc.oraclesdata(globals()["oracle_{}".format("Ihh")], "00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff")
+        result = rpc.oraclesdata(globals()["oracle_{}".format("Ihh")], "ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff")
         assert_success(result)
         # baton
         oraclesdata_Ihh = self.send_and_mine(result["hex"], rpc)
         result = rpc.oraclessamples(globals()["oracle_{}".format("Ihh")], oraclesdata_Ihh, "1")
-        assert_equal("[u'0']", str(result["samples"][0]), "Data match")
+        assert_equal("[u'4294967295', u'ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000', u'ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000']", str(result["samples"][0]), "Data match")
 
 
     def run_test(self):
