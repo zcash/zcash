@@ -2,6 +2,7 @@
 #include "boost/variant/static_visitor.hpp"
 #include "asyncrpcoperation_saplingmigration.h"
 #include "init.h"
+#include "key_io.h"
 #include "rpc/protocol.h"
 #include "random.h"
 #include "sync.h"
@@ -161,6 +162,13 @@ CAmount AsyncRPCOperation_saplingmigration::chooseAmount(const CAmount& availabl
 
 // Unless otherwise specified, the migration destination address is the address for Sapling account 0
 libzcash::SaplingPaymentAddress AsyncRPCOperation_saplingmigration::getMigrationDestAddress(const HDSeed& seed) {
+    if (mapArgs.count("-migrationdestaddress")) {
+        std::string migrationDestAddress = mapArgs["-migrationdestaddress"];
+        auto address = DecodePaymentAddress(migrationDestAddress);
+        auto saplingAddress = boost::get<libzcash::SaplingPaymentAddress>(&address);
+        assert(saplingAddress != nullptr); // This is checked in init.cpp
+        return *saplingAddress;
+    }
     // Derive the address for Sapling account 0
     auto m = libzcash::SaplingExtendedSpendingKey::Master(seed);
     uint32_t bip44CoinType = Params().BIP44CoinType();
