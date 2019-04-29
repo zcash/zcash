@@ -640,7 +640,7 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
             if (depth >= 2) {
                 b = pricestack[--depth];
                 a = pricestack[--depth];
-                pricestack[depth++] = (a * b) / SATOSHIDEN;
+                pricestack[depth++] = (a * b) / PRICES_NORMFACTOR;
             }
             else
                 errcode = -3;
@@ -650,7 +650,7 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
             if (depth >= 2) {
                 b = pricestack[--depth];
                 a = pricestack[--depth];
-                pricestack[depth++] = (a * SATOSHIDEN) / b;
+                pricestack[depth++] = (a * PRICES_NORMFACTOR) / b;
             }
             else
                 errcode = -4;
@@ -659,7 +659,7 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
         case PRICES_INV:
             if (depth >= 1) {
                 a = pricestack[--depth];
-                pricestack[depth++] = (SATOSHIDEN * SATOSHIDEN) / a;
+                pricestack[depth++] = (PRICES_NORMFACTOR * PRICES_NORMFACTOR) / a;
             }
             else
                 errcode = -5;
@@ -670,7 +670,7 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
                 c = pricestack[--depth];
                 b = pricestack[--depth];
                 a = pricestack[--depth];
-                pricestack[depth++] = (((a * SATOSHIDEN) / b) * SATOSHIDEN) / c;
+                pricestack[depth++] = (((a * PRICES_NORMFACTOR) / b) * PRICES_NORMFACTOR) / c;
             }
             else
                 errcode = -6;
@@ -692,7 +692,7 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
                 c = pricestack[--depth];
                 b = pricestack[--depth];
                 a = pricestack[--depth];
-                pricestack[depth++] = ((a * b) / SATOSHIDEN) * c;
+                pricestack[depth++] = ((a * b) / PRICES_NORMFACTOR) * c;
             }
             else
                 errcode = -8;
@@ -703,7 +703,7 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
                 c = pricestack[--depth];
                 b = pricestack[--depth];
                 a = pricestack[--depth];
-                pricestack[depth++] = (((((SATOSHIDEN * SATOSHIDEN) / a) * SATOSHIDEN) / b) * SATOSHIDEN) / c;
+                pricestack[depth++] = (((((PRICES_NORMFACTOR * PRICES_NORMFACTOR) / a) * PRICES_NORMFACTOR) / b) * PRICES_NORMFACTOR) / c;
             }
             else
                 errcode = -9;
@@ -716,7 +716,7 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
         if (errcode != 0)
             break;
 
-        std::cerr << "pricestack[depth=" << depth << "]=" << pricestack[depth] << std::endl;
+        std::cerr << "top pricestack[depth-1=" << depth-1 << "]=" << pricestack[depth-1] << std::endl;
 
     }
     free(pricedata);
@@ -759,8 +759,8 @@ int32_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t
     }
 
     // clear lowest positions:
-    price /= PRICES_NORMFACTOR;
-    price *= PRICES_NORMFACTOR;
+    price /= PRICES_POINTFACTOR;
+    price *= PRICES_POINTFACTOR;
     outprice = price;
    
     if (minmax)    { // if we are within day window, set temp costbasis to max (or min) price value
@@ -787,17 +787,17 @@ int32_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t
     }
     
     // normalize to 10,000,000 to prevent underflow
-    profits = costbasis > 0 ? (((price / PRICES_NORMFACTOR * SATOSHIDEN) / costbasis) - SATOSHIDEN / PRICES_NORMFACTOR) * PRICES_NORMFACTOR : 0;
+    profits = costbasis > 0 ? (((price / PRICES_POINTFACTOR * PRICES_NORMFACTOR) / costbasis) - PRICES_NORMFACTOR / PRICES_POINTFACTOR) * PRICES_POINTFACTOR : 0;
     
-    //std::cerr << "prices_syntheticprofits() test value1 (price/PRICES_NORMFACTOR * SATOSHIDEN)=" << (price / PRICES_NORMFACTOR * SATOSHIDEN) << std::endl;
-    std::cerr << "prices_syntheticprofits() test value2 (price/PRICES_NORMFACTOR * SATOSHIDEN)/costbasis=" << (costbasis != 0 ? (price / PRICES_NORMFACTOR * SATOSHIDEN)/costbasis : 0) << std::endl;
+    //std::cerr << "prices_syntheticprofits() test value1 (price/PRICES_POINTFACTOR * PRICES_NORMFACTOR)=" << (price / PRICES_POINTFACTOR * PRICES_NORMFACTOR) << std::endl;
+    std::cerr << "prices_syntheticprofits() test value2 (price/PRICES_POINTFACTOR * PRICES_NORMFACTOR)/costbasis=" << (costbasis != 0 ? (price / PRICES_POINTFACTOR * PRICES_NORMFACTOR)/costbasis : 0) << std::endl;
 
     std::cerr << "prices_syntheticprofits() fractional profits=" << profits << std::endl;
     //std::cerr << "prices_syntheticprofits() profits double=" << (double)price / (double)costbasis -1.0 << std::endl;
     //double dprofits = (double)price / (double)costbasis - 1.0;
 
     profits *= ((int64_t)leverage * (int64_t)positionsize);
-    profits /= (int64_t)SATOSHIDEN;  // de-normalize
+    profits /= (int64_t)PRICES_NORMFACTOR;  // de-normalize
 
     //dprofits *= leverage * positionsize;
     std::cerr << "prices_syntheticprofits() profits=" << profits << std::endl;
@@ -892,6 +892,7 @@ int64_t prices_enumaddedbets(uint256 &batontxid, std::vector<BetInfo> &bets, uin
         EvalRef eval;
 
         if ((isLoaded = eval->GetTxConfirmed(batontxid, txBaton, blockIdx)) &&
+            blockIdx.IsValid() &&
             txBaton.vout.size() > 0 &&
             (funcId = prices_addopretdecode(txBaton.vout.back().scriptPubKey, bettxidInOpret, pk, amount)) != 0) 
         {    
@@ -1334,22 +1335,22 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
             for (auto b : bets) {
                 totalbets += b.amount;
                 totalprofits += b.profits;
-                costbasis += b.amount * (b.costbasis / PRICES_NORMFACTOR);  // prevent int64 overflow
-                std::cerr << "PricesInfo() acc costbasis=" << costbasis << " b.amount=" << b.amount << " b.costbasis/PRICES_NORMFACTOR=" << (b.costbasis / PRICES_NORMFACTOR) << std::endl;
+                costbasis += b.amount * (b.costbasis / PRICES_POINTFACTOR);  // prevent int64 overflow
+                std::cerr << "PricesInfo() acc costbasis=" << costbasis << " b.amount=" << b.amount << " b.costbasis/PRICES_POINTFACTOR=" << (b.costbasis / PRICES_POINTFACTOR) << std::endl;
             }
 
             int64_t equity = totalbets + totalprofits;
             if (totalbets != 0) { //prevent zero div
                 costbasis /= totalbets; 
-                costbasis *= PRICES_NORMFACTOR;  //denormalization, last posiitons should be == 0000
+                costbasis *= PRICES_POINTFACTOR;  //denormalization, last posiitons should be == 0000
             }
             else
                 costbasis = 0;
             int64_t liqprice;
             if (leverage != 0) {// prevent zero div
                 liqprice = costbasis - costbasis / leverage;
-                liqprice /= PRICES_NORMFACTOR;
-                liqprice *= PRICES_NORMFACTOR; // last posiitons should be == 0000
+                liqprice /= PRICES_POINTFACTOR;
+                liqprice *= PRICES_POINTFACTOR; // last posiitons should be == 0000
             }
             else
                 liqprice = 0;
