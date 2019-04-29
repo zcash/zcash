@@ -20,6 +20,7 @@
 #define ASSETCHAINS_MINHEIGHT 128
 #define ASSETCHAINS_MAX_ERAS 3
 #define KOMODO_ELECTION_GAP 2000
+#define KOMODO_SNAPSHOT_INTERVAL 1440 // 1440 is approx 1 day. Maybe this can be -ac param to allow for diffrent block times etc.?
 #define ROUNDROBIN_DELAY 61
 #define KOMODO_ASSETCHAIN_MAXLEN 65
 #define KOMODO_LIMITED_NETWORKSIZE 4

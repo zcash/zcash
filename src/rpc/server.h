@@ -287,6 +287,7 @@ extern UniValue payments_release(const UniValue& params, bool fHelp);
 extern UniValue payments_fund(const UniValue& params, bool fHelp);
 extern UniValue payments_txidopret(const UniValue& params, bool fHelp);
 extern UniValue payments_create(const UniValue& params, bool fHelp);
+extern UniValue payments_airdrop(const UniValue& params, bool fHelp);
 extern UniValue payments_info(const UniValue& params, bool fHelp);
 extern UniValue payments_list(const UniValue& params, bool fHelp);
 
