@@ -189,7 +189,7 @@ NON_SCRIPTS =(
     'test.py'
 )
 
-#@TODO Add Support for conditionally running ZMQ and Proton RPC tests
+#@TODO Add Support for conditionally running ZMQ, Proton RPC, enable wallet, enable unittest tests
 
 def cleanup_failed_tests():
     pass
@@ -268,6 +268,8 @@ def opt_individual(args):
 
 def main():
     parser = argparse.ArgumentParser(description="Zcashd RPC Tester")
+    parser.add_argument('--ENABLE_PROTON', '-ep', action='store_true', help='Enable Proton RPC tests.')
+    parser.add_argument('--ENABLE_ZMQ', '-ez', action='store_true', help='Enable ZMQ RPC tests.')
     parser.add_argument('--list', '-l', action='store_true', help='Prints a list of the base and extended RPC tests.')
     parser.add_argument('--listbase', '-lb', action='store_true', help='Prints a list of the base RPC tests.')
     parser.add_argument('--listextended', '-le', action='store_true', help='Prints a list of the extended RPC tests.')
@@ -278,6 +280,11 @@ def main():
     parser.add_argument('args', nargs=argparse.REMAINDER)
     args = parser.parse_args()
 
+
+    if args.ENABLE_PROTON:
+        BASE_SCRIPTS += 'proton_test.py'
+    if args.ENABLE_ZMQ:
+        BASE_SCRIPTS += 'zmq_test.py'
     if args.list:
         opt_list()
     if args.listbase:
