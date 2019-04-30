@@ -18,8 +18,6 @@
 
 #include "mini-gmp.h"
 
-#include "mini-gmp.c"
-
 #define IS_CHARINSTR(c, str) (std::string(str).find((char)(c)) != std::string::npos)
 
 typedef struct BetInfo {
