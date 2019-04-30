@@ -831,14 +831,13 @@ int32_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t
         mpz_set_ui(mpzPrice, price);
         mpz_mul_ui(mpzPrice, mpzPrice, SATOSHIDEN);                              // (price*SATOSHIDEN)
 
-        mpz_set_si(mpzLeverage, leverage);
-
         mpz_tdiv_qr(mpzProfits, mpzRemainder, mpzPrice, mpzCostbasis);           // profits = (price*SATOSHIDEN)/costbasis  // normalization
         mpz_sub_ui(mpzProfits, mpzProfits, SATOSHIDEN);                          // profits -= SATOSHIDEN
 
+        mpz_set_si(mpzLeverage, leverage);
         mpz_mul(mpzProfits, mpzProfits, mpzLeverage);                            // profits *= leverage
         mpz_mul_ui(mpzProfits, mpzProfits, positionsize);                        // profits *= positionsize
-        mpz_tdiv_qr_ui(mpzProfits, mpzRemainder, mpzPrice, SATOSHIDEN);          // profits /= SATOSHIDEN   // de-normalization
+        mpz_tdiv_qr_ui(mpzProfits, mpzRemainder, mpzProfits, SATOSHIDEN);          // profits /= SATOSHIDEN   // de-normalization
 
         profits = mpz_get_si(mpzProfits);
 
