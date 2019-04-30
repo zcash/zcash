@@ -827,7 +827,6 @@ int32_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t
         mpz_init(mpzLeverage);
         mpz_init(mpzRemainder);
 
-
         mpz_set_ui(mpzCostbasis, costbasis);
         mpz_mul_ui(mpzCostbasis, mpzCostbasis, SATOSHIDEN);
         mpz_set_ui(mpzPrice, price);
@@ -842,11 +841,44 @@ int32_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t
 
         profits = mpz_get_si(mpzProfits);
 
+
+
         mpz_clear(mpzRemainder);
         mpz_clear(mpzLeverage);
         mpz_clear(mpzProfits);
         mpz_clear(mpzCostbasis);
         mpz_clear(mpzPrice);
+
+        mpz_t mpzTest;
+        mpz_init(mpzTest);
+
+        mpz_set_si(mpzTest, 5);
+        mpz_cdiv_qr_ui(mpzTest, mpzRemainder, mpzTest, 2);
+        std::cerr << "mpz_cdiv_qr_ui 5/2=" << mpz_get_si(mpzTest);
+
+        mpz_set_si(mpzTest, 5);
+        mpz_tdiv_qr_ui(mpzTest, mpzRemainder, mpzTest, 2);
+        std::cerr << "mpz_tdiv_qr_ui 5/2=" << mpz_get_si(mpzTest);
+
+        mpz_set_si(mpzTest, 5);
+        mpz_fdiv_qr_ui(mpzTest, mpzRemainder, mpzTest, 2);
+        std::cerr << "mpz_tdiv_qr_ui 5/2=" << mpz_get_si(mpzTest);
+
+        mpz_set_si(mpzTest, -5);
+        mpz_cdiv_qr_ui(mpzTest, mpzRemainder, mpzTest, 2);
+        std::cerr << "mpz_cdiv_qr_ui -5/2=" << mpz_get_si(mpzTest);
+
+        mpz_set_si(mpzTest, -5);
+        mpz_tdiv_qr_ui(mpzTest, mpzRemainder, mpzTest, 2);
+        std::cerr << "mpz_tdiv_qr_ui -5/2=" << mpz_get_si(mpzTest);
+
+        mpz_set_si(mpzTest, -5);
+        mpz_fdiv_qr_ui(mpzTest, mpzRemainder, mpzTest, 2);
+        std::cerr << "mpz_fdiv_qr_ui -5/2=" << mpz_get_si(mpzTest);
+        std::cerr << std::endl;
+
+        mpz_clear(mpzTest);
+
     }
     else
         profits = 0;
