@@ -817,24 +817,28 @@ int32_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t
         mpz_t mpzProfits;
         mpz_t mpzCostbasis;
         mpz_t mpzPrice;
+        mpz_t mpzLeverage;
 
         mpz_init(mpzProfits);
         mpz_init(mpzCostbasis);
         mpz_init(mpzPrice);
+        mpz_init(mpzLeverage);
 
         mpz_set_ui(mpzCostbasis, costbasis);
         mpz_mul_ui(mpzCostbasis, mpzCostbasis, SATOSHIDEN);
         mpz_set_ui(mpzPrice, price);
+        mpz_set_si(mpzLeverage, leverage);
 
-        mpz_divexact(mpzProfits, mpzPrice, mpzCostbasis);           // profits = (price*SATOSHIDEN)/costbasis  // normalization
+        mpz_fdiv_q(mpzProfits, mpzPrice, mpzCostbasis);           // profits = (price*SATOSHIDEN)/costbasis  // normalization
         mpz_sub_ui(mpzProfits, mpzProfits, SATOSHIDEN);             // profits -= SATOSHIDEN
 
-        mpz_mul_ui(mpzProfits, mpzProfits, leverage);               // profits *= leverage
+        mpz_mul(mpzProfits, mpzProfits, mpzLeverage);               // profits *= leverage
         mpz_mul_ui(mpzProfits, mpzProfits, positionsize);           // profits *= positionsize
-        mpz_divexact_ui(mpzProfits, mpzPrice, SATOSHIDEN);          // profits /= SATOSHIDEN   // de-normalization
+        mpz_fdiv_q_ui(mpzProfits, mpzPrice, SATOSHIDEN);          // profits /= SATOSHIDEN   // de-normalization
 
         profits = mpz_get_ui(mpzProfits);
 
+        mpz_clear(mpzLeverage);
         mpz_clear(mpzProfits);
         mpz_clear(mpzCostbasis);
         mpz_clear(mpzPrice);
