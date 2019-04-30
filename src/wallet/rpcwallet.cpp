@@ -3949,7 +3949,7 @@ UniValue z_getmigrationstatus(const UniValue& params, bool fHelp) {
             "  \"unfinalized_migrated_amount\": nnn.n,     (numeric) The total amount of unfinalized " + CURRENCY_UNIT + " \n"
             "  \"finalized_migrated_amount\": nnn.n,       (numeric) The total amount of finalized " + CURRENCY_UNIT + " \n"
             "  \"finalized_migration_transactions\": nnn,  (numeric) The number of migration transactions involving this wallet\n"
-            "  \"time_started\": ttt,                      (numeric, optional) The block time of the first migration transaction\n"
+            "  \"time_started\": ttt,                      (numeric, optional) The block time of the first migration transaction as a Unix timestamp\n"
             "  \"migration_txids\": [txids]                (json array of strings) An array of all migration txids involving this wallet\n"
             "}\n"
         );
@@ -3989,8 +3989,7 @@ UniValue z_getmigrationstatus(const UniValue& params, bool fHelp) {
         // * one or more Sprout JoinSplits with nonzero vpub_new field; and
         // * no Sapling Spends, and;
         // * one or more Sapling Outputs.
-        if (tx.vjoinsplit.size() > 0 && tx.vShieldedSpend.empty() && tx.vShieldedOutput.size() > 0 &&
-            tx.vin.empty() && tx.vout.empty()) {
+        if (tx.vjoinsplit.size() > 0 && tx.vShieldedSpend.empty() && tx.vShieldedOutput.size() > 0) {
             bool nonZeroVPubNew = false;
             for (const auto& js : tx.vjoinsplit) {
                 if (js.vpub_new > 0) {

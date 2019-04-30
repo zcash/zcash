@@ -64,7 +64,7 @@ class SproutSaplingMigration(BitcoinTestFramework):
 
         # Migrate
         node.z_setmigration(True)
-        print "Mining to block 494 % 500..."
+        print("Mining to block 494 % 500...")
         node.generate(392)  # 102 % 500 -> 494 % 500
         self.sync_all()
 
@@ -77,13 +77,13 @@ class SproutSaplingMigration(BitcoinTestFramework):
 
         # At 495 % 500 we should have an async operation
         operationstatus = node.z_getoperationstatus()
-        print "migration operation: {}".format(operationstatus)
+        print("migration operation: {}".format(operationstatus))
         assert_equal(1, len(operationstatus), "num async operations at 495  % 500")
         assert_equal('saplingmigration', operationstatus[0]['method'])
         assert_equal(target_height, operationstatus[0]['target_height'])
 
         result = wait_and_assert_operationid_status_result(node, operationstatus[0]['id'])
-        print "result: {}".format(result)
+        print("result: {}".format(result))
         assert_equal('saplingmigration', result['method'])
         assert_equal(target_height, result['target_height'])
         assert_equal(1, result['result']['num_tx_created'])
@@ -113,7 +113,7 @@ class SproutSaplingMigration(BitcoinTestFramework):
         # At 0 % 500 funds will have moved
         sprout_balance = node.z_getbalance(sproutAddr)
         sapling_balance = node.z_getbalance(saplingAddr)
-        print "sprout balance: {}, sapling balance: {}".format(sprout_balance, sapling_balance)
+        print("sprout balance: {}, sapling balance: {}".format(sprout_balance, sapling_balance))
         assert_true(sprout_balance < Decimal('10'), "Should have less Sprout funds")
         assert_true(sapling_balance > Decimal('0'), "Should have more Sapling funds")
         assert_true(sprout_balance + sapling_balance, Decimal('9.9999'))
@@ -142,8 +142,8 @@ class SproutSaplingMigration(BitcoinTestFramework):
         check_migration_status(self.nodes[0], False, SAPLING_ADDR, False, False, False, 0, 0)
 
         # 1. Test using self.nodes[0] which has the parameter
-        print "Running test using '-migrationdestaddress'..."
-        print "Mining blocks..."
+        print("Running test using '-migrationdestaddress'...")
+        print("Mining blocks...")
         self.nodes[0].generate(101)
         self.sync_all()
         tAddr = get_coinbase_address(self.nodes[0])
@@ -158,9 +158,9 @@ class SproutSaplingMigration(BitcoinTestFramework):
         self.nodes[0].z_setmigration(False)
 
         # 2. Test using self.nodes[1] which will use the default Sapling address
-        print "Running test using default Sapling address..."
+        print("Running test using default Sapling address...")
         # Mine more blocks so we start at 102 % 500
-        print "Mining blocks..."
+        print("Mining blocks...")
         self.nodes[1].generate(91)  # 511 -> 602
         self.sync_all()
 
