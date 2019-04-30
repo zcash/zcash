@@ -16,6 +16,8 @@
 #include "CCassets.h"
 #include "CCPrices.h"
 
+#include "mini-gmp.h"
+
 #define IS_CHARINSTR(c, str) (std::string(str).find((char)(c)) != std::string::npos)
 
 typedef struct BetInfo {
@@ -791,9 +793,8 @@ int32_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t
     
     // normalize to 10,000,000 to prevent underflow
     //profits = costbasis > 0 ? (((price / PRICES_POINTFACTOR * PRICES_NORMFACTOR) / costbasis) - PRICES_NORMFACTOR / PRICES_POINTFACTOR) * PRICES_POINTFACTOR : 0;
+    //double dprofits = costbasis > 0 ? ((double)price / (double)costbasis - 1) : 0;
 
-    double dprofits = costbasis > 0 ? ((double)price / (double)costbasis - 1) : 0;
-    
     //std::cerr << "prices_syntheticprofits() test value1 (price/PRICES_POINTFACTOR * PRICES_NORMFACTOR)=" << (price / PRICES_POINTFACTOR * PRICES_NORMFACTOR) << std::endl;
     //std::cerr << "prices_syntheticprofits() test value2 (price/PRICES_POINTFACTOR * PRICES_NORMFACTOR)/costbasis=" << (costbasis != 0 ? (price / PRICES_POINTFACTOR * PRICES_NORMFACTOR)/costbasis : 0) << std::endl;
 
@@ -804,13 +805,44 @@ int32_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t
     //profits *= ((int64_t)leverage * (int64_t)positionsize);
     //profits /= (int64_t)PRICES_NORMFACTOR;  // de-normalize
 
-    dprofits *= ((double)leverage * (double)positionsize);
+    //dprofits *= ((double)leverage * (double)positionsize);
 
     //dprofits *= leverage * positionsize;
-    profits = dprofits;
-    std::cerr << "prices_syntheticprofits() profits=" << profits << std::endl;
+    // profits = dprofits;
     //std::cerr << "prices_syntheticprofits() dprofits=" << dprofits << std::endl;
 
+
+
+    if (costbasis > 0)  {
+        mpz_t mpzProfits;
+        mpz_t mpzCostbasis;
+        mpz_t mpzPrice;
+
+        mpz_init(mpzProfits);
+        mpz_init(mpzCostbasis);
+        mpz_init(mpzPrice);
+
+        mpz_set_si(mpzCostbasis, costbasis);
+        mpz_mul_ui(mpzCostbasis, mpzCostbasis, SATOSHIDEN);
+        mpz_set_si(mpzPrice, price);
+
+        mpz_divexact(mpzProfits, mpzPrice, mpzCostbasis);           // profits = (price*SATOSHIDEN)/costbasis  // normalization
+        mpz_sub_ui(mpzProfits, mpzProfits, SATOSHIDEN);             // profits -= SATOSHIDEN
+
+        mpz_mul_si(mpzProfits, mpzProfits, leverage);               // profits *= leverage
+        mpz_mul_si(mpzProfits, mpzProfits, positionsize);           // profits *= positionsize
+        mpz_divexact_ui(mpzProfits, mpzPrice, SATOSHIDEN);          // profits /= SATOSHIDEN   // de-normalization
+
+        profits = mpz_get_si(mpzProfits);
+
+        mpz_clear(mpzProfits);
+        mpz_clear(mpzCostbasis);
+        mpz_clear(mpzPrice);
+    }
+    else
+        profits = 0;
+
+    std::cerr << "prices_syntheticprofits() profits=" << profits << std::endl;
     return 0; //  (positionsize + addedbets + profits);
 }
 
