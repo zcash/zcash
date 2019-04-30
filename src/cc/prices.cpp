@@ -824,6 +824,8 @@ int32_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t
         mpz_init(mpzCostbasis);
         mpz_init(mpzPrice);
         mpz_init(mpzLeverage);
+        mpz_init(mpzRemainder);
+
 
         mpz_set_ui(mpzCostbasis, costbasis);
         mpz_mul_ui(mpzCostbasis, mpzCostbasis, SATOSHIDEN);
