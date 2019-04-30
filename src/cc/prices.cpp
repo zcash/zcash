@@ -841,68 +841,11 @@ int32_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t
 
         profits = mpz_get_si(mpzProfits);
 
-
-
-        mpz_t mpzTest;
-        mpz_init(mpzTest);
-
-        mpz_set_si(mpzTest, 5);
-        mpz_cdiv_qr_ui(mpzTest, mpzRemainder, mpzTest, 2);
-        std::cerr << "mpz_cdiv_qr_ui 5/2=" << mpz_get_si(mpzTest);
-
-        mpz_set_si(mpzTest, 5);
-        mpz_tdiv_qr_ui(mpzTest, mpzRemainder, mpzTest, 2);
-        std::cerr << " mpz_tdiv_qr_ui 5/2=" << mpz_get_si(mpzTest);
-
-        mpz_set_si(mpzTest, 5);
-        mpz_fdiv_qr_ui(mpzTest, mpzRemainder, mpzTest, 2);
-        std::cerr << " mpz_fdiv_qr_ui 5/2=" << mpz_get_si(mpzTest);
-
-        mpz_set_si(mpzTest, -5);
-        mpz_cdiv_qr_ui(mpzTest, mpzRemainder, mpzTest, 2);
-        std::cerr << " mpz_cdiv_qr_ui -5/2=" << mpz_get_si(mpzTest);
-
-        mpz_set_si(mpzTest, -5);
-        mpz_tdiv_qr_ui(mpzTest, mpzRemainder, mpzTest, 2);
-        std::cerr << " mpz_tdiv_qr_ui -5/2=" << mpz_get_si(mpzTest);
-
-        mpz_set_si(mpzTest, -5);
-        mpz_fdiv_qr_ui(mpzTest, mpzRemainder, mpzTest, 2);
-        std::cerr << " mpz_fdiv_qr_ui -5/2=" << mpz_get_si(mpzTest);
-
-        std::cerr << std::endl;
-
-        mpz_set_si(mpzTest, 7);
-        mpz_cdiv_qr_ui(mpzTest, mpzRemainder, mpzTest, 3);
-        std::cerr << "mpz_cdiv_qr_ui 7/3=" << mpz_get_si(mpzTest);
-
-        mpz_set_si(mpzTest, 7);
-        mpz_tdiv_qr_ui(mpzTest, mpzRemainder, mpzTest, 3);
-        std::cerr << " mpz_tdiv_qr_ui 7/3=" << mpz_get_si(mpzTest);
-
-        mpz_set_si(mpzTest, 7);
-        mpz_fdiv_qr_ui(mpzTest, mpzRemainder, mpzTest, 3);
-        std::cerr << " mpz_fdiv_qr_ui 7/3=" << mpz_get_si(mpzTest);
-
-        mpz_set_si(mpzTest, -7);
-        mpz_cdiv_qr_ui(mpzTest, mpzRemainder, mpzTest, 3);
-        std::cerr << " mpz_cdiv_qr_ui -7/3=" << mpz_get_si(mpzTest);
-
-        mpz_set_si(mpzTest, -7);
-        mpz_tdiv_qr_ui(mpzTest, mpzRemainder, mpzTest, 3);
-        std::cerr << " mpz_tdiv_qr_ui -7/3=" << mpz_get_si(mpzTest);
-
-        mpz_set_si(mpzTest, -7);
-        mpz_fdiv_qr_ui(mpzTest, mpzRemainder, mpzTest, 3);
-        std::cerr << " mpz_fdiv_qr_ui -7/3=" << mpz_get_si(mpzTest);
-        std::cerr << std::endl;
-
         mpz_clear(mpzRemainder);
         mpz_clear(mpzLeverage);
         mpz_clear(mpzProfits);
         mpz_clear(mpzCostbasis);
         mpz_clear(mpzPrice);
-        mpz_clear(mpzTest);
 
     }
     else
@@ -1434,34 +1377,66 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
                 result.push_back(Pair("error", "error scanning chain"));
                 return(result);
             }
-            
+
+            mpz_t mpzTotalbets;
+            mpz_t mpzTotalprofits;
+            mpz_t mpzTotalcostbasis;
+
+            mpz_init(mpzTotalbets);
+            mpz_init(mpzTotalprofits);
+            mpz_init(mpzTotalcostbasis);
+
+
             int64_t totalbets = 0;
             int64_t totalprofits = 0;
             double dcostbasis = 0.0;
+
+
             for (auto b : bets) {
-                totalbets += b.amount;
-                totalprofits += b.profits;
-                dcostbasis += b.amount * (double)b.costbasis;  
+                mpz_t mpzProduct;
+                mpz_t mpzProfits;
+                
+                mpz_init(mpzProduct);
+                mpz_init(mpzProfits);
+                
+                //totalprofits += b.profits;
+                //dcostbasis += b.amount * (double)b.costbasis;  
                 // costbasis += b.amount * (b.costbasis / PRICES_POINTFACTOR);  // prevent int64 overflow (but we have underflow for 1/BTC)
-                std::cerr << "PricesInfo() acc dcostbasis=" << dcostbasis << " b.amount=" << b.amount << " b.costbasis/PRICES_POINTFACTOR=" << (b.costbasis / PRICES_POINTFACTOR) << std::endl;
+                // std::cerr << "PricesInfo() acc dcostbasis=" << dcostbasis << " b.amount=" << b.amount << " b.costbasis/PRICES_POINTFACTOR=" << (b.costbasis / PRICES_POINTFACTOR) << std::endl;
+                //std::cerr << "PricesInfo() acc dcostbasis=" << dcostbasis << " b.amount=" << b.amount << " b.costbasis/PRICES_POINTFACTOR=" << (b.costbasis / PRICES_POINTFACTOR) << std::endl;
+                mpz_set_ui(mpzProduct, b.costbasis);
+                mpz_mul_ui(mpzProduct, mpzProduct, (uint64_t)b.amount);         // b.costbasis * b.amount
+                mpz_add(mpzTotalcostbasis, mpzTotalcostbasis, mpzProduct);      //averageCostbasis += b.costbasis * b.amount;
+
+                mpz_add_ui(mpzTotalbets, mpzTotalbets, (uint64_t)b.amount);     //totalbets += b.amount;
+                mpz_add(mpzTotalprofits, mpzTotalprofits, mpzProfits);          //totalprofits += b.profits;
+
+                mpz_clear(mpzProduct);
+                mpz_clear(mpzProfits);
             }
 
             int64_t equity = totalbets + totalprofits;
-            int64_t costbasis;
+            int64_t averageCostbasis = 0;
+
             if (totalbets != 0) { //prevent zero div
                 // costbasis *= PRICES_POINTFACTOR;  // save last 0.0000xxxx positions
-                costbasis = (int64_t) (dcostbasis / (double)totalbets); 
+                //costbasis = (int64_t) (dcostbasis / (double)totalbets); 
+                mpz_t mpzAverageCostbasis;
+
+                mpz_init(mpzAverageCostbasis);
+                mpz_mul_ui(mpzTotalcostbasis, mpzTotalcostbasis, SATOSHIDEN);  // normalization to prevent loss while div
+                mpz_tdiv_q(mpzAverageCostbasis, mpzTotalcostbasis, mpzTotalbets);          // profits /= SATOSHIDEN   // de-normalization
+
+                mpz_tdiv_q_ui(mpzAverageCostbasis, mpzAverageCostbasis, SATOSHIDEN);          // profits /= SATOSHIDEN   // de-normalization
+
+                averageCostbasis = mpz_get_ui(mpzAverageCostbasis);
+                mpz_clear(mpzAverageCostbasis);
             }
-            else
-                costbasis = 0;
-            int64_t liqprice;
+
+            int64_t liqprice = 0;
             if (leverage != 0) {// prevent zero div
-                liqprice = costbasis - costbasis / leverage;
-                //liqprice /= PRICES_POINTFACTOR;
-                //liqprice *= PRICES_POINTFACTOR; // last posiitons should be == 0000
+                liqprice = averageCostbasis - averageCostbasis / leverage;
             }
-            else
-                liqprice = 0;
 
             if (equity >= 0)
                 result.push_back(Pair("rekt", 0));
@@ -1473,7 +1448,7 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
             }
             
             result.push_back(Pair("batontxid", batontxid.GetHex()));
-            result.push_back(Pair("costbasis", ValueFromAmount(costbasis)));
+            result.push_back(Pair("costbasis", ValueFromAmount(averageCostbasis)));
 
             prices_betjson(result, bets, leverage, endheight, lastprice);
 
@@ -1483,6 +1458,10 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
 //#ifdef TESTMODE
 //            result.push_back(Pair("test_daywindow", PRICES_DAYWINDOW));
 //#endif
+
+            mpz_clear(mpzTotalbets);
+            mpz_clear(mpzTotalprofits);
+            mpz_clear(mpzTotalcostbasis);
             return(result);
         }
     }
