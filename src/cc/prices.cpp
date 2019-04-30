@@ -840,7 +840,7 @@ int32_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t
         mpz_mul_ui(mpzProfits, mpzProfits, positionsize);           // profits *= positionsize
         mpz_tdiv_qr_ui(mpzProfits, mpzRemainder, mpzPrice, SATOSHIDEN);          // profits /= SATOSHIDEN   // de-normalization
 
-        profits = mpz_get_ui(mpzProfits);
+        profits = mpz_get_si(mpzProfits);
 
         mpz_clear(mpzRemainder);
         mpz_clear(mpzLeverage);
