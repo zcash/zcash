@@ -1411,6 +1411,9 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
                 mpz_add_ui(mpzTotalbets, mpzTotalbets, (uint64_t)b.amount);     //totalbets += b.amount;
                 mpz_add(mpzTotalprofits, mpzTotalprofits, mpzProfits);          //totalprofits += b.profits;
 
+                totalbets += b.amount;
+                totalprofits += b.profits;
+
                 mpz_clear(mpzProduct);
                 mpz_clear(mpzProfits);
             }
@@ -1418,7 +1421,7 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
             int64_t equity = totalbets + totalprofits;
             int64_t averageCostbasis = 0;
 
-            if (totalbets != 0) { //prevent zero div
+            if (mpz_get_ui(mpzTotalbets) != 0) { //prevent zero div
                 // costbasis *= PRICES_POINTFACTOR;  // save last 0.0000xxxx positions
                 //costbasis = (int64_t) (dcostbasis / (double)totalbets); 
                 mpz_t mpzAverageCostbasis;
