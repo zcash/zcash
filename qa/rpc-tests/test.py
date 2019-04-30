@@ -208,7 +208,7 @@ def run_test_scripts(test_list, args):
         #might want to add routine to properly clean SIGTERM tests so they don't conga line the rest
         try:
             start_time = time.time()
-            p1 = Popen(['python3', file])
+            p1 = Popen(['python', file])
             buffer = p1.communicate()[0]
         except:
             fail_list.append(file)
