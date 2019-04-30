@@ -3978,7 +3978,6 @@ UniValue z_getmigrationstatus(const UniValue& params, bool fHelp) {
     // known migration transactions involving this wallet, as lowercase hexadecimal
     // in RPC byte order.
     UniValue migrationTxids(UniValue::VARR);
-    int currentHeight = chainActive.Height();
     CAmount unfinalizedMigratedAmount = 0;
     CAmount finalizedMigratedAmount = 0;
     int numFinalizedMigrationTxs = 0;
@@ -4004,7 +4003,7 @@ UniValue z_getmigrationstatus(const UniValue& params, bool fHelp) {
             CBlockIndex* blockIndex = mapBlockIndex[tx.hashBlock];
             //  A transaction is "finalized" iff it has at least 10 confirmations.
             // TODO: subject to change, if the recommended number of confirmations changes.
-            if (currentHeight >= blockIndex->nHeight + 10) {
+            if (tx.GetDepthInMainChain() >= 10) {
                 finalizedMigratedAmount -= tx.valueBalance;
                 ++numFinalizedMigrationTxs;
             } else {
