@@ -16,7 +16,8 @@
 #include "CCassets.h"
 #include "CCPrices.h"
 
-#include "mini-gmp.h"
+//#include "mini-gmp.h"
+#include <gmp.h>
 
 #define IS_CHARINSTR(c, str) (std::string(str).find((char)(c)) != std::string::npos)
 
