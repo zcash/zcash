@@ -592,6 +592,13 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
     uint16_t opcode;
     int64_t *pricedata, pricestack[4], price, den, a, b, c;
 
+    mpz_t mpzA, mpzB, mpzC, mpzResult;
+
+    mpz_init(mpzA);
+    mpz_init(mpzB);
+    mpz_init(mpzC);
+    mpz_init(mpzResult);
+
     pricedata = (int64_t *)calloc(sizeof(*pricedata) * 3, 1 + PRICES_DAYWINDOW * 2 + PRICES_SMOOTHWIDTH);
     price = den = depth = errcode = 0;
 
@@ -599,7 +606,10 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
     {
         opcode = vec[i];
         value = (opcode & (KOMODO_MAXPRICES - 1));   // index or weight 
-        std::cerr << "prices_syntheticprice" << " i=" << i << " price=" << price << " value=" << value << " depth=" << depth << std::endl;
+
+        mpz_set_ui(mpzResult, 0);  // clear result to test overflow (see below)
+
+        std::cerr << "prices_syntheticprice" << " i=" << i << " price=" << price << " value=" << value << " depth=" << depth <<  " opcode&KOMODO_PRICEMASK=" << (opcode & KOMODO_PRICEMASK) <<std::endl;
         switch (opcode & KOMODO_PRICEMASK)
         {
         case 0: // indices 
@@ -639,74 +649,122 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
                 errcode = -2;
             break;
 
-        case PRICES_MULT:
+        case PRICES_MULT:   // "*"
             if (depth >= 2) {
                 b = pricestack[--depth];
                 a = pricestack[--depth];
-                pricestack[depth++] = (a * b) / PRICES_NORMFACTOR;
+                // pricestack[depth++] = (a * b) / SATOSHIDEN;
+                mpz_set_si(mpzA, a);
+                mpz_set_si(mpzB, b);
+                mpz_mul(mpzResult, mpzA, mpzB);
+                mpz_tdiv_q_ui(mpzResult, mpzResult, SATOSHIDEN);
+                pricestack[depth++] = mpz_get_si(mpzResult);
+
             }
             else
                 errcode = -3;
             break;
 
-        case PRICES_DIV:
+        case PRICES_DIV:    // "/"
             if (depth >= 2) {
                 b = pricestack[--depth];
                 a = pricestack[--depth];
-                pricestack[depth++] = (a * PRICES_NORMFACTOR) / b;
+                // pricestack[depth++] = (a * SATOSHIDEN) / b;
+                mpz_set_si(mpzA, a);
+                mpz_set_si(mpzB, b);
+                mpz_mul_ui(mpzResult, mpzA, SATOSHIDEN);
+                mpz_tdiv_q(mpzResult, mpzResult, mpzB);                 
+                pricestack[depth++] = mpz_get_si(mpzResult);
             }
             else
                 errcode = -4;
             break;
 
-        case PRICES_INV:
+        case PRICES_INV:    // "1/price"
             if (depth >= 1) {
                 a = pricestack[--depth];
-                pricestack[depth++] = (PRICES_NORMFACTOR * PRICES_NORMFACTOR) / a;
+                // pricestack[depth++] = (SATOSHIDEN * SATOSHIDEN) / a;
+                mpz_set_si(mpzA, a);
+                mpz_set_ui(mpzResult, SATOSHIDEN);
+                mpz_mul_ui(mpzResult, mpzResult, SATOSHIDEN);           
+                mpz_tdiv_q(mpzResult, mpzResult, mpzA);                 
+                pricestack[depth++] = mpz_get_si(mpzResult);
             }
             else
                 errcode = -5;
             break;
 
-        case PRICES_MDD:
+        case PRICES_MDD:    // "*//"
             if (depth >= 3) {
                 c = pricestack[--depth];
                 b = pricestack[--depth];
                 a = pricestack[--depth];
-                pricestack[depth++] = (((a * PRICES_NORMFACTOR) / b) * PRICES_NORMFACTOR) / c;
+                // pricestack[depth++] = (((a * SATOSHIDEN) / b) * SATOSHIDEN) / c;
+                mpz_set_si(mpzA, a);
+                mpz_set_si(mpzB, b);
+                mpz_set_si(mpzC, c);
+                mpz_mul_ui(mpzResult, mpzA, SATOSHIDEN);
+                mpz_tdiv_q(mpzResult, mpzResult, mpzB);                 
+                mpz_mul_ui(mpzResult, mpzA, SATOSHIDEN);
+                mpz_tdiv_q(mpzResult, mpzResult, mpzC);
+                pricestack[depth++] = mpz_get_si(mpzResult);
             }
             else
                 errcode = -6;
             break;
 
-        case PRICES_MMD:
+        case PRICES_MMD:    // "**/"
             if (depth >= 3) {
                 c = pricestack[--depth];
                 b = pricestack[--depth];
                 a = pricestack[--depth];
-                pricestack[depth++] = (a * b) / c;
+                // pricestack[depth++] = (a * b) / c;
+                mpz_set_si(mpzA, a);
+                mpz_set_si(mpzB, b);
+                mpz_set_si(mpzC, c);
+                mpz_mul(mpzResult, mpzA, mpzB);
+                mpz_tdiv_q(mpzResult, mpzResult, mpzC);
+                pricestack[depth++] = mpz_get_si(mpzResult);
             }
             else
                 errcode = -7;
             break;
 
-        case PRICES_MMM:
+        case PRICES_MMM:    // "***"
             if (depth >= 3) {
                 c = pricestack[--depth];
                 b = pricestack[--depth];
                 a = pricestack[--depth];
-                pricestack[depth++] = ((a * b) / PRICES_NORMFACTOR) * c;
+                // pricestack[depth++] = ((a * b) / SATOSHIDEN) * c;
+                mpz_set_si(mpzA, a);
+                mpz_set_si(mpzB, b);
+                mpz_set_si(mpzC, c);
+                mpz_mul(mpzResult, mpzA, mpzB);
+                mpz_tdiv_q_ui(mpzResult, mpzResult, SATOSHIDEN);
+                mpz_mul(mpzResult, mpzResult, mpzC);
+                pricestack[depth++] = mpz_get_si(mpzResult);
             }
             else
                 errcode = -8;
             break;
-
-        case PRICES_DDD:
+                
+        case PRICES_DDD:    // "///"
             if (depth >= 3) {
                 c = pricestack[--depth];
                 b = pricestack[--depth];
                 a = pricestack[--depth];
-                pricestack[depth++] = (((((PRICES_NORMFACTOR * PRICES_NORMFACTOR) / a) * PRICES_NORMFACTOR) / b) * PRICES_NORMFACTOR) / c;
+                //pricestack[depth++] = (((((SATOSHIDEN * SATOSHIDEN) / a) * SATOSHIDEN) / b) * SATOSHIDEN) / c;
+                mpz_set_si(mpzA, a);
+                mpz_set_si(mpzB, b);
+                mpz_set_si(mpzC, c);
+                mpz_set_ui(mpzResult, SATOSHIDEN);
+                mpz_mul_ui(mpzResult, mpzResult, SATOSHIDEN);
+                mpz_tdiv_q(mpzResult, mpzResult, mpzA);
+                mpz_mul_ui(mpzResult, mpzResult, SATOSHIDEN);
+                mpz_tdiv_q(mpzResult, mpzResult, mpzB);
+                mpz_mul_ui(mpzResult, mpzResult, SATOSHIDEN);
+                mpz_tdiv_q(mpzResult, mpzResult, mpzC);
+                pricestack[depth++] = mpz_get_si(mpzResult);
             }
             else
                 errcode = -9;
@@ -716,19 +774,36 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
             errcode = -10;
             break;
         }
+
+        std::cerr << "prices_syntheticprice test mpzResult=" << mpz_get_si(mpzResult) << std::endl;
+        // check overflow:
+        if (mpz_cmp_si(mpzResult, std::numeric_limits<int64_t>::max()) > 0) {
+            errcode = -13;
+            break;
+        }
+
         if (errcode != 0)
             break;
 
         if( depth > 0 )
-            std::cerr << "top pricestack[depth-1=" << depth-1 << "]=" << pricestack[depth-1] << std::endl;
+            std::cerr << "prices_syntheticprice top pricestack[depth-1=" << depth-1 << "]=" << pricestack[depth-1] << std::endl;
         else
-            std::cerr << "pricestack empty" << std::endl;
+            std::cerr << "prices_syntheticprice pricestack empty" << std::endl;
 
     }
     free(pricedata);
+    mpz_clear(mpzResult);
+    mpz_clear(mpzA);
+    mpz_clear(mpzB);
+    mpz_clear(mpzC);
 
     if (errcode != 0)
-        std::cerr << "prices_syntheticprice warning: errcode in switch=" << errcode << std::endl;
+        std::cerr << "prices_syntheticprice errcode in switch=" << errcode << std::endl;
+
+    if (errcode == -13) {
+        std::cerr << "prices_syntheticprice overflow in price" << std::endl;
+        return errcode;
+    }
 
     if (den == 0) {
         std::cerr << "prices_syntheticprice den==0 return err=-11" << std::endl;
@@ -819,29 +894,26 @@ int32_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t
         mpz_t mpzCostbasis;
         mpz_t mpzPrice;
         mpz_t mpzLeverage;
-        mpz_t mpzRemainder;
 
         mpz_init(mpzProfits);
         mpz_init(mpzCostbasis);
         mpz_init(mpzPrice);
         mpz_init(mpzLeverage);
-        mpz_init(mpzRemainder);
 
-        mpz_set_ui(mpzCostbasis, costbasis);
-        mpz_set_ui(mpzPrice, price);
+        mpz_set_si(mpzCostbasis, costbasis);
+        mpz_set_si(mpzPrice, price);
         mpz_mul_ui(mpzPrice, mpzPrice, SATOSHIDEN);                              // (price*SATOSHIDEN)
 
-        mpz_tdiv_qr(mpzProfits, mpzRemainder, mpzPrice, mpzCostbasis);           // profits = (price*SATOSHIDEN)/costbasis  // normalization
+        mpz_tdiv_q(mpzProfits, mpzPrice, mpzCostbasis);           // profits = (price*SATOSHIDEN)/costbasis  // normalization
         mpz_sub_ui(mpzProfits, mpzProfits, SATOSHIDEN);                          // profits -= SATOSHIDEN
 
         mpz_set_si(mpzLeverage, leverage);
         mpz_mul(mpzProfits, mpzProfits, mpzLeverage);                            // profits *= leverage
         mpz_mul_ui(mpzProfits, mpzProfits, positionsize);                        // profits *= positionsize
-        mpz_tdiv_qr_ui(mpzProfits, mpzRemainder, mpzProfits, SATOSHIDEN);          // profits /= SATOSHIDEN   // de-normalization
+        mpz_tdiv_q_ui(mpzProfits, mpzProfits, SATOSHIDEN);          // profits /= SATOSHIDEN   // de-normalization
 
         profits = mpz_get_si(mpzProfits);
 
-        mpz_clear(mpzRemainder);
         mpz_clear(mpzLeverage);
         mpz_clear(mpzProfits);
         mpz_clear(mpzCostbasis);
@@ -988,6 +1060,7 @@ UniValue PricesBet(int64_t txfee, int64_t amount, int16_t leverage, std::vector<
     //GetCCaddress(cp, myaddr, mypk);
     if (prices_syntheticvec(vec, synthetic) < 0 || (firstprice = prices_syntheticprice(vec, nextheight - 1, 1, leverage)) < 0 || vec.size() == 0 || vec.size() > 4096)
     {
+        std::cerr << "PricesBet() firstprice=" << firstprice << (firstprice < 0 ? "error or overflow" : "") << std::endl;
         result.push_back(Pair("result", "error"));
         result.push_back(Pair("error", "invalid synthetic"));
         return(result);
