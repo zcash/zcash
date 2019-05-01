@@ -113,6 +113,7 @@ static int ComputeNextBlockAndDepth(const CBlockIndex* tip, const CBlockIndex* b
 
 UniValue blockheaderToJSON(const CBlockIndex* tip, const CBlockIndex* blockindex)
 {
+    // Serialize passed information without accessing chain state of the active chain!
     UniValue result(UniValue::VOBJ);
     result.pushKV("hash", blockindex->GetBlockHash().GetHex());
     const CBlockIndex* pnext;
@@ -227,6 +228,7 @@ UniValue blockToDeltasJSON(const CBlock& block, const CBlockIndex* blockindex)
 
 UniValue blockToJSON(const CBlock& block, const CBlockIndex* tip, const CBlockIndex* blockindex, bool txDetails = false)
 {
+    // Serialize passed information without accessing chain state of the active chain!
     UniValue result(UniValue::VOBJ);
     result.pushKV("hash", block.GetHash().GetHex());
     const CBlockIndex* pnext;
@@ -736,41 +738,47 @@ UniValue getblock(const UniValue& params, bool fHelp)
             + HelpExampleRpc("getblock", "12800")
         );
 
-    LOCK(cs_main);
-
-    std::string strHash = params[0].get_str();
-
-    // If height is supplied, find the hash
-    if (strHash.size() < (2 * sizeof(uint256))) {
-        strHash = chainActive[parseHeightArg(strHash, chainActive.Height())]->GetBlockHash().GetHex();
-    }
-
-    uint256 hash(uint256S(strHash));
-
-    int verbosity = 1;
-    if (params.size() > 1) {
-        if(params[1].isNum()) {
-            verbosity = params[1].get_int();
-        } else {
-            verbosity = params[1].get_bool() ? 1 : 0;
-        }
-    }
-
-    if (verbosity < 0 || verbosity > 2) {
-        throw JSONRPCError(RPC_INVALID_PARAMETER, "Verbosity must be in range from 0 to 2");
-    }
-
-    if (mapBlockIndex.count(hash) == 0)
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Block not found");
-
+    int verbosity;
+    CBlockIndex* pblockindex;
     CBlock block;
-    CBlockIndex* pblockindex = mapBlockIndex[hash];
+    const CBlockIndex* tip;
+    {
+        LOCK(cs_main);
 
-    if (fHavePruned && !(pblockindex->nStatus & BLOCK_HAVE_DATA) && pblockindex->nTx > 0)
-        throw JSONRPCError(RPC_INTERNAL_ERROR, "Block not available (pruned data)");
+        std::string strHash = params[0].get_str();
 
-    if(!ReadBlockFromDisk(block, pblockindex, Params().GetConsensus()))
-        throw JSONRPCError(RPC_INTERNAL_ERROR, "Can't read block from disk");
+        // If height is supplied, find the hash
+        if (strHash.size() < (2 * sizeof(uint256))) {
+            strHash = chainActive[parseHeightArg(strHash, chainActive.Height())]->GetBlockHash().GetHex();
+        }
+
+        uint256 hash(uint256S(strHash));
+
+        verbosity = 1;
+        if (params.size() > 1) {
+            if(params[1].isNum()) {
+                verbosity = params[1].get_int();
+            } else {
+                verbosity = params[1].get_bool() ? 1 : 0;
+            }
+        }
+
+        if (verbosity < 0 || verbosity > 2) {
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Verbosity must be in range from 0 to 2");
+        }
+
+        if (mapBlockIndex.count(hash) == 0)
+            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Block not found");
+
+        pblockindex = mapBlockIndex[hash];
+
+        if (fHavePruned && !(pblockindex->nStatus & BLOCK_HAVE_DATA) && pblockindex->nTx > 0)
+            throw JSONRPCError(RPC_INTERNAL_ERROR, "Block not available (pruned data)");
+
+        if(!ReadBlockFromDisk(block, pblockindex, Params().GetConsensus()))
+            throw JSONRPCError(RPC_INTERNAL_ERROR, "Can't read block from disk");
+        tip = chainActive.Tip();
+    }
 
     if (verbosity == 0)
     {
@@ -780,7 +788,7 @@ UniValue getblock(const UniValue& params, bool fHelp)
         return strHex;
     }
 
-    return blockToJSON(block, chainActive.Tip(), pblockindex, verbosity >= 2);
+    return blockToJSON(block, tip, pblockindex, verbosity >= 2);
 }
 
 UniValue gettxoutsetinfo(const UniValue& params, bool fHelp)
