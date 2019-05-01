@@ -525,6 +525,69 @@ UniValue prices_rawtxresult(UniValue &result, std::string rawtx, int32_t broadca
     return(result);
 }
 
+std::string prices_getsourceexpression(std::vector<uint16_t> &vec) {
+
+    std::string exp;
+
+    for (int32_t i = 0; i < vec.size(); i++) 
+    {
+        char name[65];
+        std::string operand;
+        uint16_t opcode = vec[i];
+        int32_t value = (opcode & (KOMODO_MAXPRICES - 1));   // index or weight 
+
+        switch (opcode & KOMODO_PRICEMASK)
+        {
+        case 0: // indices 
+            komodo_pricename(name, value);
+            operand = std::string(name);
+            break;
+
+        case PRICES_WEIGHT: // multiply by weight and consume top of stack by updating price
+            operand = std::to_string(value);
+            break;
+
+        case PRICES_MULT:   // "*"
+            operand = std::string("*");
+            break;
+
+        case PRICES_DIV:    // "/"
+            operand = std::string("/");
+            break;
+
+        case PRICES_INV:    // "1/price"
+            operand = std::string("!");
+            break;
+
+        case PRICES_MDD:    // "*//"
+            operand = std::string("*//");
+            break;
+
+        case PRICES_MMD:    // "**/"
+            operand = std::string("**/");
+            break;
+
+        case PRICES_MMM:    // "***"
+            operand = std::string("***");
+            break;
+
+        case PRICES_DDD:    // "///"
+            operand = std::string("///");
+            break;
+
+        default:
+            return "invalid opcode";
+            break;
+        }
+
+        if (exp.size() > 0)
+            exp += std::string(", ");
+        exp += operand;
+    }
+    return exp;
+}
+
+
 int32_t prices_syntheticvec(std::vector<uint16_t> &vec, std::vector<std::string> synthetic)
 {
     int32_t i, need, ind, depth = 0; std::string opstr; uint16_t opcode, weight;
@@ -1462,8 +1525,6 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
 
             int64_t totalbets = 0;
             int64_t totalprofits = 0;
-            double dcostbasis = 0.0;
-
 
             for (auto b : bets) {
                 mpz_t mpzProduct;
@@ -1495,15 +1556,14 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
             int64_t averageCostbasis = 0;
 
             if (mpz_get_ui(mpzTotalbets) != 0) { //prevent zero div
-                // costbasis *= PRICES_POINTFACTOR;  // save last 0.0000xxxx positions
-                //costbasis = (int64_t) (dcostbasis / (double)totalbets); 
                 mpz_t mpzAverageCostbasis;
-
                 mpz_init(mpzAverageCostbasis);
-                mpz_mul_ui(mpzTotalcostbasis, mpzTotalcostbasis, SATOSHIDEN);  // normalization to prevent loss while div
-                mpz_tdiv_q(mpzAverageCostbasis, mpzTotalcostbasis, mpzTotalbets);          // profits /= SATOSHIDEN   // de-normalization
 
-                mpz_tdiv_q_ui(mpzAverageCostbasis, mpzAverageCostbasis, SATOSHIDEN);          // profits /= SATOSHIDEN   // de-normalization
+                //averageCostbasis =  totalcostbasis / totalbets; 
+                mpz_mul_ui(mpzTotalcostbasis, mpzTotalcostbasis, SATOSHIDEN);                 // profits *= SATOSHIDEN normalization to prevent loss of significance while division
+                mpz_tdiv_q(mpzAverageCostbasis, mpzTotalcostbasis, mpzTotalbets);          
+
+                mpz_tdiv_q_ui(mpzAverageCostbasis, mpzAverageCostbasis, SATOSHIDEN);          // profits /= SATOSHIDEN de-normalization
 
                 averageCostbasis = mpz_get_ui(mpzAverageCostbasis);
                 mpz_clear(mpzAverageCostbasis);
@@ -1522,7 +1582,8 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
                 result.push_back(Pair("rektfee", totalbets / 500));
                 result.push_back(Pair("rektheight", (int64_t)endheight));
             }
-            
+
+            result.push_back(Pair("expression", prices_getsourceexpression(vec)));
             result.push_back(Pair("batontxid", batontxid.GetHex()));
             result.push_back(Pair("costbasis", ValueFromAmount(averageCostbasis)));
 
