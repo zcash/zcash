@@ -31,6 +31,7 @@ public:
     {
         std::vector<unsigned char> data = m_params.Base58Prefix(CChainParams::PUBKEY_ADDRESS);
         data.insert(data.end(), id.begin(), id.end());
+        LogPrintStr("Encoding key:" + id.ToString() + "\n");
         return EncodeBase58Check(data);
     }
 
@@ -38,6 +39,7 @@ public:
     {
         std::vector<unsigned char> data = m_params.Base58Prefix(CChainParams::SCRIPT_ADDRESS);
         data.insert(data.end(), id.begin(), id.end());
+        LogPrintStr("Encoding script"  + id.ToString() + "\n");
         return EncodeBase58Check(data);
     }
 
@@ -53,7 +55,12 @@ CTxDestination DecodeDestination(const std::string& str, const CChainParams& par
         // Public-key-hash-addresses have version 0 (or 111 testnet).
         // The data vector contains RIPEMD160(SHA256(pubkey)), where pubkey is the serialized public key.
         const std::vector<unsigned char>& pubkey_prefix = params.Base58Prefix(CChainParams::PUBKEY_ADDRESS);
-        if (data.size() == hash.size() + pubkey_prefix.size() && std::equal(pubkey_prefix.begin(), pubkey_prefix.end(), data.begin())) {
+        const std::vector<unsigned char> zcash_pubkey_prefix = params.Base58Prefix(CChainParams::ZCASH_PUBKEY_ADDRESS);
+
+        if (data.size() == hash.size() + pubkey_prefix.size() && 
+                (std::equal(pubkey_prefix.begin(), pubkey_prefix.end(), data.begin()) ||
+                 std::equal(zcash_pubkey_prefix.begin(), zcash_pubkey_prefix.end(), data.begin()))
+            ) {
             std::copy(data.begin() + pubkey_prefix.size(), data.end(), hash.begin());
             return CKeyID(hash);
         }

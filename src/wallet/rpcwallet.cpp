@@ -366,11 +366,14 @@ UniValue getaddressesbyaccount(const UniValue& params, bool fHelp)
 
     // Find all addresses that have the given account
     UniValue ret(UniValue::VARR);
+    LogPrintf("AddresBook size: %d\n", pwalletMain->mapAddressBook.size());
     for (const std::pair<CTxDestination, CAddressBookData>& item : pwalletMain->mapAddressBook) {
         const CTxDestination& dest = item.first;
         const std::string& strName = item.second.name;
         if (strName == strAccount) {
-            ret.push_back(EncodeDestination(dest));
+            std::string enc = EncodeDestination(dest);
+            LogPrintStr("Encoded addr:" + enc + "\n");
+            ret.push_back(enc);
         }
     }
     return ret;

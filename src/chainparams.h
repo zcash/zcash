@@ -53,6 +53,8 @@ public:
         ZCSPENDING_KEY,
         ZCVIEWING_KEY,
 
+        ZCASH_PUBKEY_ADDRESS,
+
         MAX_BASE58_TYPES
     };
 
