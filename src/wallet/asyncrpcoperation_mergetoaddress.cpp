@@ -348,12 +348,7 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
                 // generate a common one from the HD seed. This ensures the data is
                 // recoverable, while keeping it logically separate from the ZIP 32
                 // Sapling key hierarchy, which the user might not be using.
-                HDSeed seed;
-                if (!pwalletMain->GetHDSeed(seed)) {
-                    throw JSONRPCError(
-                        RPC_WALLET_ERROR,
-                        "AsyncRPCOperation_sendmany: HD seed not found");
-                }
+                HDSeed seed = pwalletMain->GetHDSeedForRPC();
                 ovk = ovkForShieldingFromTaddr(seed);
             }
             if (!ovk) {

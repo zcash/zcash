@@ -85,13 +85,7 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
         return true;
     }
 
-    HDSeed seed;
-    if (!pwalletMain->GetHDSeed(seed)) {
-        throw JSONRPCError(
-            RPC_WALLET_ERROR,
-            "AsyncRPCOperation_AsyncRPCOperation_saplingmigration: HD seed not found");
-    }
-
+    HDSeed seed = pwalletMain->GetHDSeedForRPC();
     libzcash::SaplingPaymentAddress migrationDestAddress = getMigrationDestAddress(seed);
 
     auto consensusParams = Params().GetConsensus();
