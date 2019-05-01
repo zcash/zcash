@@ -296,6 +296,15 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     BOOST_CHECK_NO_THROW(CallRPC("getblock 0 2"));
     BOOST_CHECK_THROW(CallRPC("getblock 0 -1"), runtime_error); // bad verbosity
     BOOST_CHECK_THROW(CallRPC("getblock 0 3"), runtime_error); // bad verbosity
+
+    /*
+     * migration (sprout to sapling)
+     */
+    BOOST_CHECK_NO_THROW(CallRPC("z_setmigration true"));
+    BOOST_CHECK_NO_THROW(CallRPC("z_setmigration false"));
+    BOOST_CHECK_THROW(CallRPC("z_setmigration"), runtime_error);
+    BOOST_CHECK_THROW(CallRPC("z_setmigration nonboolean"), runtime_error);
+    BOOST_CHECK_THROW(CallRPC("z_setmigration 1"), runtime_error);
 }
 
 BOOST_AUTO_TEST_CASE(rpc_wallet_getbalance)
