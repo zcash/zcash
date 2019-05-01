@@ -29,6 +29,19 @@ extern const struct NUInfo NetworkUpgradeInfo[];
 // Consensus branch id to identify pre-overwinter (Sprout) consensus rules.
 extern const uint32_t SPROUT_BRANCH_ID;
 
+
+struct EquihashInfo {
+    unsigned int N;
+    unsigned int K;
+
+    // Use default value as set in chainparams and genesis block
+    static constexpr int DEFAULT_PARAMS = 0;
+};
+
+extern struct EquihashInfo EquihashUpgradeInfo[];
+
+
+
 /**
  * Checks the state of a given network upgrade based on block height.
  * Caller must check that the height is >= 0 (and handle unknown heights).

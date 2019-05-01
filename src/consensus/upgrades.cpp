@@ -30,13 +30,49 @@ const struct NUInfo NetworkUpgradeInfo[Consensus::MAX_NETWORK_UPGRADES] = {
         /*.strInfo =*/ "See https://z.cash/upgrade/sapling.html for details.",
     },
     {
-        /*.nBranchId =*/ 0x2bb40e60,
-        /*.strName =*/ "Blossom",
-        /*.strInfo =*/ "See https://z.cash/upgrade/blossom.html for details.",
+        /*.nBranchId =*/ 0x4bb40e60,
+        /*.strName =*/ "YCash",
+        /*.strInfo =*/ "See YCash for details.",
     }
 };
 
 const uint32_t SPROUT_BRANCH_ID = NetworkUpgradeInfo[Consensus::BASE_SPROUT].nBranchId;
+
+
+/**
+ * General information associating epoch with equihash parameters.
+ * Ordered by Consensus::UpgradeIndex, to match NetworkUpgradeInfo.
+ * TODO: Maybe refactor and include in NetworkUpgradeInfo
+ * TODO: Make this const
+ */
+struct EquihashInfo EquihashUpgradeInfo[Consensus::MAX_NETWORK_UPGRADES] = {
+    // BASE_SPROUT
+    {
+        /* N = */ EquihashInfo::DEFAULT_PARAMS,
+        /* K = */ EquihashInfo::DEFAULT_PARAMS,
+    },
+    // UPGRADE_TESTDUMMY
+    {
+        /* N = */ EquihashInfo::DEFAULT_PARAMS,
+        /* K = */ EquihashInfo::DEFAULT_PARAMS,
+    },
+    //  UPGRADE_OVERWINTER
+    {
+        /* N = */ EquihashInfo::DEFAULT_PARAMS,
+        /* K = */ EquihashInfo::DEFAULT_PARAMS,
+    },
+    // UPGRADE SAPLING
+    {
+        /* N = */ EquihashInfo::DEFAULT_PARAMS,
+        /* K = */ EquihashInfo::DEFAULT_PARAMS,
+    },
+    // UPGRADE YCASH
+    {
+        // TODO (A): Finalize Equihash params
+        /* N = */ 96,
+        /* K = */  5,
+    }
+};
 
 UpgradeState NetworkUpgradeState(
     int nHeight,

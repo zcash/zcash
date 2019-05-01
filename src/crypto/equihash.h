@@ -199,6 +199,7 @@ static Equihash<96,3> Eh96_3;
 static Equihash<200,9> Eh200_9;
 static Equihash<96,5> Eh96_5;
 static Equihash<48,5> Eh48_5;
+static Equihash<144,5> Eh144_5;
 
 #define EhInitialiseState(n, k, base_state)  \
     if (n == 96 && k == 3) {                 \
@@ -209,6 +210,8 @@ static Equihash<48,5> Eh48_5;
         Eh96_5.InitialiseState(base_state);  \
     } else if (n == 48 && k == 5) {          \
         Eh48_5.InitialiseState(base_state);  \
+    } else if (n == 144 && k == 5) {         \
+        Eh144_5.InitialiseState(base_state); \
     } else {                                 \
         throw std::invalid_argument("Unsupported Equihash parameters"); \
     }
@@ -226,6 +229,8 @@ inline bool EhBasicSolve(unsigned int n, unsigned int k, const eh_HashState& bas
         return Eh96_5.BasicSolve(base_state, validBlock, cancelled);
     } else if (n == 48 && k == 5) {
         return Eh48_5.BasicSolve(base_state, validBlock, cancelled);
+    } else if (n == 144 && k == 5) {
+        return Eh144_5.BasicSolve(base_state, validBlock, cancelled);
     } else {
         throw std::invalid_argument("Unsupported Equihash parameters");
     }
@@ -250,6 +255,8 @@ inline bool EhOptimisedSolve(unsigned int n, unsigned int k, const eh_HashState&
         return Eh96_5.OptimisedSolve(base_state, validBlock, cancelled);
     } else if (n == 48 && k == 5) {
         return Eh48_5.OptimisedSolve(base_state, validBlock, cancelled);
+    } else if (n == 144 && k == 5) {
+        return Eh144_5.OptimisedSolve(base_state, validBlock, cancelled);
     } else {
         throw std::invalid_argument("Unsupported Equihash parameters");
     }
@@ -272,6 +279,8 @@ inline bool EhOptimisedSolveUncancellable(unsigned int n, unsigned int k, const 
         ret = Eh96_5.IsValidSolution(base_state, soln);  \
     } else if (n == 48 && k == 5) {                      \
         ret = Eh48_5.IsValidSolution(base_state, soln);  \
+    } else if (n == 144 && k == 5) {                      \
+        ret = Eh144_5.IsValidSolution(base_state, soln);  \
     } else {                                             \
         throw std::invalid_argument("Unsupported Equihash parameters"); \
     }

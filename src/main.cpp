@@ -3753,6 +3753,22 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
 
     int nHeight = pindexPrev->nHeight+1;
 
+    // If the equihash solution is set, check the size is correct for given parameters.
+    size_t nSolSize = block.nSolution.size();
+    if (nSolSize > 0) {
+        int n = chainParams.EquihashN(nHeight);
+        int k = chainParams.EquihashK(nHeight);
+        size_t expectedSize = (pow(2, k) * ((n/(k+1))+1)) / 8;
+        if (nSolSize != expectedSize){
+            return state.DoS(
+                100,
+                error("%s: incorrect equihash solution size %d, expected size %d for parameters (%d, %d)",
+                __func__, nSolSize, expectedSize, n, k),
+                REJECT_INVALID,
+                "bad-equihash-solution-size");
+        }
+    }
+
     // Check proof of work
     if (block.nBits != GetNextWorkRequired(pindexPrev, &block, consensusParams))
         return state.DoS(100, error("%s: incorrect proof of work", __func__),

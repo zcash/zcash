@@ -454,6 +454,7 @@ std::string HelpMessage(HelpMessageMode mode)
         strUsage += HelpMessageOpt("-flushwallet", strprintf("Run a thread to flush wallet periodically (default: %u)", 1));
         strUsage += HelpMessageOpt("-stopafterblockimport", strprintf("Stop running after importing blocks from disk (default: %u)", 0));
         strUsage += HelpMessageOpt("-nuparams=hexBranchId:activationHeight", "Use given activation height for specified network upgrade (regtest-only)");
+        strUsage += HelpMessageOpt("-eqparams=hexBranchId:N:K", "Use given equihash parameters for specified network upgrade");
     }
     string debugCategories = "addrman, alert, bench, coindb, db, estimatefee, http, libevent, lock, mempool, net, partitioncheck, pow, proxy, prune, "
                              "rand, reindex, rpc, selectcoins, tor, zmq, zrpc, zrpcunsafe (implies zrpc)"; // Don't translate these
@@ -1137,6 +1138,46 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             }
         }
     }
+
+
+    if (!mapMultiArgs["-eqparams"].empty()) {
+        // Allow overriding equihash upgrade parameters for testing
+        if (Params().NetworkIDString() != "regtest") {
+            return InitError("Network upgrade parameters may only be overridden on regtest.");
+        }
+        const vector<string>& deployments = mapMultiArgs["-eqparams"];
+        for (auto i : deployments) {
+            std::vector<std::string> vDeploymentParams;
+            boost::split(vDeploymentParams, i, boost::is_any_of(":"));
+            if (vDeploymentParams.size() != 3) {
+                return InitError("Equihash upgrade parameters malformed, expecting hexBranchId:N:K");
+            }
+            int n, k;
+            // TODO: Restrict to support n,k parameters and cast to unsigned int
+            if (!ParseInt32(vDeploymentParams[1], &n)) {
+                return InitError(strprintf("Invalid N (%s)", vDeploymentParams[1]));
+            }
+            if (!ParseInt32(vDeploymentParams[2], &k)) {
+                return InitError(strprintf("Invalid K (%s)", vDeploymentParams[2]));
+            }
+            bool found = false;
+            // Exclude Sprout from upgrades
+            for (auto i = Consensus::BASE_SPROUT + 1; i < Consensus::MAX_NETWORK_UPGRADES; ++i)
+            {
+                if (vDeploymentParams[0].compare(HexInt(NetworkUpgradeInfo[i].nBranchId)) == 0) {
+                    UpdateEquihashUpgradeParameters(Consensus::UpgradeIndex(i), n, k);
+                    found = true;
+                    LogPrintf("Setting equihash upgrade activation parameters for %s to n=%d, k=%d\n", vDeploymentParams[0], n, k);
+                    break;
+                }
+            }
+            if (!found) {
+                return InitError(strprintf("Invalid equihash upgrade (%s)", vDeploymentParams[0]));
+            }
+        }
+    }
+
+
 
     // ********************************************************* Step 4: application initialization: dir lock, daemonize, pidfile, debug log
 
