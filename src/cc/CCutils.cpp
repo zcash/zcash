@@ -58,35 +58,70 @@ CC *MakeCCcond1(uint8_t evalcode,CPubKey pk)
     return CCNewThreshold(2, {condCC, Sig});
 }
 
-CTxOut MakeCC1vout(uint8_t evalcode,CAmount nValue, CPubKey pk, const std::vector<std::vector<unsigned char>>* vData)
+int32_t has_opret(const CTransaction &tx, uint8_t evalcode)
+{
+    int i = 0;
+    for ( auto vout : tx.vout )
+    {
+        if ( vout.scriptPubKey[0] == OP_RETURN && vout.scriptPubKey[1] == evalcode )
+            return i;
+        i++;
+    }
+    return 0;
+}
+
+CScript getCCopret(const CScript &scriptPubKey)
+{
+    std::vector<std::vector<unsigned char>> vParams = std::vector<std::vector<unsigned char>>();
+    CScript dummy; CScript opret;
+    if ( scriptPubKey.IsPayToCryptoCondition(&dummy, vParams) )
+    {
+        //opret << E_MARSHAL(ss << vParams[0]);
+        opret = CScript(vParams[0].begin()+6, vParams[0].end());
+    }
+    //fprintf(stderr, "params_size.%li parmas_hexstr.%s\n", vParams.size(), HexStr(vParams[0].begin(),vParams[0].end()).c_str());
+    //opret = CScript(vParams[0].begin(), vParams[0].end());
+    return opret;
+}
+
+bool makeCCopret(CScript &opret, std::vector<std::vector<unsigned char>> &vData)
+{
+    if ( opret.empty() )
+        return false;
+    vData.push_back(std::vector<unsigned char>(opret.begin(), opret.end()));
+    return true;
+}
+
+CTxOut MakeCC1vout(uint8_t evalcode,CAmount nValue, CPubKey pk, std::vector<std::vector<unsigned char>>* vData)
 {
     CTxOut vout;
     CC *payoutCond = MakeCCcond1(evalcode,pk);
     vout = CTxOut(nValue,CCPubKey(payoutCond));
     if ( vData )
     {
-        std::vector<std::vector<unsigned char>> vtmpData = std::vector<std::vector<unsigned char>>(vData->begin(), vData->end());
+        //std::vector<std::vector<unsigned char>> vtmpData = std::vector<std::vector<unsigned char>>(vData->begin(), vData->end());
         std::vector<CPubKey> vPubKeys = std::vector<CPubKey>();
-        vPubKeys.push_back(pk);
-        COptCCParams ccp = COptCCParams(COptCCParams::VERSION, evalcode, 1, 1, vPubKeys, vtmpData);
+        //vPubKeys.push_back(pk);
+        COptCCParams ccp = COptCCParams(COptCCParams::VERSION, evalcode, 1, 1, vPubKeys, ( * vData));
         vout.scriptPubKey << ccp.AsVector() << OP_DROP;
     }
     cc_free(payoutCond);
     return(vout);
 }
 
-CTxOut MakeCC1of2vout(uint8_t evalcode,CAmount nValue,CPubKey pk1,CPubKey pk2, const std::vector<std::vector<unsigned char>>* vData)
+CTxOut MakeCC1of2vout(uint8_t evalcode,CAmount nValue,CPubKey pk1,CPubKey pk2, std::vector<std::vector<unsigned char>>* vData)
 {
     CTxOut vout;
     CC *payoutCond = MakeCCcond1of2(evalcode,pk1,pk2);
     vout = CTxOut(nValue,CCPubKey(payoutCond));
     if ( vData )
     {
-        std::vector<std::vector<unsigned char>> vtmpData = std::vector<std::vector<unsigned char>>(vData->begin(), vData->end());
+        //std::vector<std::vector<unsigned char>> vtmpData = std::vector<std::vector<unsigned char>>(vData->begin(), vData->end());
         std::vector<CPubKey> vPubKeys = std::vector<CPubKey>();
-        vPubKeys.push_back(pk1);
-        vPubKeys.push_back(pk2);
-        COptCCParams ccp = COptCCParams(COptCCParams::VERSION, evalcode, 1, 2, vPubKeys, vtmpData);
+         // skip pubkeys. These need to maybe be optional and we need some way to get them out that is easy!
+        //vPubKeys.push_back(pk1);
+        //vPubKeys.push_back(pk2);
+        COptCCParams ccp = COptCCParams(COptCCParams::VERSION, evalcode, 1, 2, vPubKeys, ( * vData));
         vout.scriptPubKey << ccp.AsVector() << OP_DROP;
     }
     cc_free(payoutCond);
@@ -114,8 +149,12 @@ bool IsCCInput(CScript const& scriptSig)
 
 bool CheckTxFee(const CTransaction &tx, uint64_t txfee, uint32_t height, uint64_t blocktime)
 {
+    LOCK(mempool.cs);
+    CCoinsView dummy;
+    CCoinsViewCache view(&dummy);
     int64_t interest; uint64_t valuein;
-    CCoinsViewCache &view = *pcoinsTip;
+    CCoinsViewMemPool viewMemPool(pcoinsTip, mempool);
+    view.SetBackend(viewMemPool);
     valuein = view.GetValueIn(height,&interest,tx,blocktime);
     if ( valuein-tx.GetValueOut() > txfee )
     {
@@ -584,7 +623,7 @@ bool komodo_txnotarizedconfirmed(uint256 txid)
         fprintf(stderr,"komodo_txnotarizedconfirmed no hashBlock for txid %s\n",txid.ToString().c_str());
         return(0);
     }
-    else if ( (pindex= mapBlockIndex[hashBlock]) == 0 || (txheight= pindex->GetHeight()) <= 0 )
+    else if ( (pindex= komodo_blockindex(hashBlock)) == 0 || (txheight= pindex->GetHeight()) <= 0 )
     {
         fprintf(stderr,"komodo_txnotarizedconfirmed no txheight.%d %p for txid %s\n",txheight,pindex,txid.ToString().c_str());
         return(0);
