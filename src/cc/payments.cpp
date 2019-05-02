@@ -894,16 +894,16 @@ UniValue PaymentsFund(struct CCcontract_info *cp,char *jsonstr)
                 mtx.vout.push_back(MakeCC1vout(EVAL_PAYMENTS,amount,Paymentspk));
                 opret = EncodePaymentsFundOpRet(txid);
                 // Use the below one along with other FinalizeCCTx/return, to get the ccvout scriptpubkey
-                std::vector<std::vector<unsigned char>> vData = std::vector<std::vector<unsigned char>>();
+                /*std::vector<std::vector<unsigned char>> vData = std::vector<std::vector<unsigned char>>();
                 if ( makeCCopret(opret, vData) )
-                    mtx.vout.push_back(MakeCC1vout(EVAL_PAYMENTS,amount,Paymentspk,&vData)); 
+                    mtx.vout.push_back(MakeCC1vout(EVAL_PAYMENTS,amount,Paymentspk,&vData)); */
             }
-            //rawtx = FinalizeCCTx(0,cp,mtx,mypk,PAYMENTS_TXFEE,opret);
-            rawtx = FinalizeCCTx(0,cp,mtx,mypk,PAYMENTS_TXFEE,CScript()); // use this one to get ccvout scriptpubkey.
+            rawtx = FinalizeCCTx(0,cp,mtx,mypk,PAYMENTS_TXFEE,opret);
+            //rawtx = FinalizeCCTx(0,cp,mtx,mypk,PAYMENTS_TXFEE,CScript()); // use this one to get ccvout scriptpubkey.
             if ( params != 0 )
                 free_json(params);
-            return(payments_rawtxresult(result,rawtx,0)); // disable sending for CCvout, as we only need to decode the tx.
-            //return(payments_rawtxresult(result,rawtx,1));
+            //return(payments_rawtxresult(result,rawtx,0)); // disable sending for CCvout, as we only need to decode the tx.
+            return(payments_rawtxresult(result,rawtx,1));
         }
         else
         {
