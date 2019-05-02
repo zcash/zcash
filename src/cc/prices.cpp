@@ -1508,12 +1508,15 @@ UniValue PricesRekt(int64_t txfee, uint256 bettxid, int32_t rektheight)
     std::vector<uint16_t> vec; 
     CPubKey pk, mypk, pricespk; 
     std::string rawtx;
+    char destaddr[64];
 
     cp = CCinit(&C, EVAL_PRICES);
     if (txfee == 0)
         txfee = PRICES_TXFEE;
     mypk = pubkey2pk(Mypubkey());
     pricespk = GetUnspendable(cp, 0);
+    GetCCaddress(cp, destaddr, pricespk);
+
     if (myGetTransaction(bettxid, bettx, hashBlock) != 0 && bettx.vout.size() > 3)
     {
         if (prices_betopretdecode(bettx.vout.back().scriptPubKey, pk, firstheight, positionsize, leverage, firstprice, vec, tokenid) == 'B')
@@ -1558,9 +1561,16 @@ UniValue PricesRekt(int64_t txfee, uint256 bettxid, int32_t rektheight)
             }
             if (myfee != 0)
             {
+                int64_t CCchange = 0, inputsum;
+
                 mtx.vin.push_back(CTxIn(bettxid, 1, CScript()));  // spend cc marker
+                if ((inputsum = AddPricesInputs(cp, mtx, destaddr, myfee + txfee, 64)) > myfee + txfee)  // TODO: why do we take txfee from global addr and not from user's addr?
+                    CCchange = (inputsum - myfee);
                 mtx.vout.push_back(CTxOut(myfee, CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
-                mtx.vout.push_back(MakeCC1vout(cp->evalcode, bettx.vout[2].nValue - myfee - txfee, pricespk));  // change
+                if (CCchange >= txfee)
+                    mtx.vout.push_back(MakeCC1vout(cp->evalcode, CCchange, pricespk));
+
+                /// mtx.vout.push_back(MakeCC1vout(cp->evalcode, bettx.vout[2].nValue - myfee - txfee, pricespk));  // change
                 rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, prices_finalopret(bettxid, totalprofits, rektheight, mypk, firstprice, 0, totalbets - positionsize, positionsize, leverage));
                 return(prices_rawtxresult(result, rawtx, 0));
             }
