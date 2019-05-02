@@ -5629,6 +5629,19 @@ UniValue payments_create(const UniValue& params, bool fHelp)
     return(PaymentsCreate(cp,(char *)params[0].get_str().c_str()));
 }
 
+UniValue payments_airdrop(const UniValue& params, bool fHelp)
+{
+    struct CCcontract_info *cp,C;
+    if ( fHelp || params.size() != 1 )
+        throw runtime_error("paymentsairdrop \"[lockedblocks,minamount,top,bottom,fixedFlag,%22excludeAddress%22,...,%22excludeAddressN%22]\"\n");
+    if ( ensure_CCrequirements(EVAL_PAYMENTS) < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    const CKeyStore& keystore = *pwalletMain;
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+    cp = CCinit(&C,EVAL_PAYMENTS);
+    return(PaymentsAirdrop(cp,(char *)params[0].get_str().c_str()));
+}
+
 UniValue payments_info(const UniValue& params, bool fHelp)
 {
     struct CCcontract_info *cp,C;
@@ -7980,9 +7993,11 @@ UniValue test_ac(const UniValue& params, bool fHelp)
 	return(FinalizeCCTx(0, cp, mtx, myPubkey, txfee, opret));
 }
 
+extern bool komodo_appendACscriptpub();
+
 UniValue test_heirmarker(const UniValue& params, bool fHelp)
 {
-	// make fake token tx: 
+    //make fake token tx: 
 	struct CCcontract_info *cp, C;
 
 	if (fHelp || (params.size() != 1))
@@ -8009,6 +8024,45 @@ UniValue test_heirmarker(const UniValue& params, bool fHelp)
 
 	cp = CCinit(&C, EVAL_HEIR);
 	return(FinalizeCCTx(0, cp, mtx, myPubkey, 10000, opret));
+}
+
+UniValue opreturn_burn(const UniValue& params, bool fHelp)
+{
+    if (fHelp || (params.size() != 2))
+		throw runtime_error("amount to burn, hexstring to send\n");
+    struct CCcontract_info *cp, C; UniValue ret(UniValue::VOBJ);
+    if (ensure_CCrequirements(EVAL_PAYMENTS) < 0)
+    	throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    cp = CCinit(&C, EVAL_PAYMENTS);
+	    
+	CAmount nAmount = AmountFromValue(params[0]);
+    if (nAmount <= 10000)
+        throw JSONRPCError(RPC_TYPE_ERROR, "must send at least 10000 sat");
+    std::string strHex = params[1].get_str();
+	CPubKey myPubkey = pubkey2pk(Mypubkey());
+	CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+
+	int64_t normalInputs = AddNormalinputs(mtx, myPubkey, nAmount, 60);
+	if (normalInputs < nAmount)
+		throw runtime_error("not enough normals\n");
+        
+    CScript opret; uint8_t scripthex[8192];
+          
+    decode_hex(scripthex,strHex.size()/2,(char *)strHex.c_str());
+    std::string test;
+    test.append((char*)scripthex);
+    std::vector<uint8_t> opretdata(test.begin(), test.end());
+    opret << OP_RETURN << E_MARSHAL(ss << opretdata);
+    /*CScript opret; uint8_t *ptr;
+    opret << OP_RETURN << 0;
+    int32_t len = strlen(strHex.c_str());
+    len >>=1;
+    opret.resize(len+2);
+    ptr = (uint8_t *)&opret[1];
+    decode_hex(ptr,len,(char *)strHex.c_str()); */
+	mtx.vout.push_back(CTxOut(nAmount,opret));
+    ret.push_back(Pair("hex",FinalizeCCTx(0, cp, mtx, myPubkey, 10000, CScript())));
+	return(ret);
 }
 
 UniValue test_burntx(const UniValue& params, bool fHelp)

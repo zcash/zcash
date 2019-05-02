@@ -63,7 +63,7 @@ extern uint8_t NOTARY_PUBKEY33[33],ASSETCHAINS_OVERRIDE_PUBKEY33[33],ASSETCHAINS
 extern std::vector<std::string> ASSETCHAINS_PRICES,ASSETCHAINS_STOCKS;
 
 extern int32_t VERUS_BLOCK_POSUNITS, VERUS_CONSECUTIVE_POS_THRESHOLD, VERUS_NOPOS_THRESHHOLD;
-
+extern uint256 KOMODO_EARLYTXID;
 
 extern int32_t KOMODO_CONNECTING,KOMODO_CCACTIVATE,KOMODO_DEALERNODE;
 extern uint32_t ASSETCHAINS_CC;
@@ -78,7 +78,7 @@ extern std::string DONATION_PUBKEY;
 extern uint8_t ASSETCHAINS_PRIVATE;
 extern int32_t USE_EXTERNAL_PUBKEY;
 extern char NOTARYADDRS[64][64];
-extern int32_t KOMODO_TESTNODE;
+extern int32_t KOMODO_TESTNODE, KOMODO_SNAPSHOT_INTERVAL;
 int tx_height( const uint256 &hash );
 extern std::vector<std::string> vWhiteListAddress;
 void komodo_netevent(std::vector<uint8_t> payload);
