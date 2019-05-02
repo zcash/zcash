@@ -8047,10 +8047,10 @@ UniValue opreturn_burn(const UniValue& params, bool fHelp)
 		throw runtime_error("not enough normals\n");
 
     CScript opret; uint8_t *ptr;
-    opret << OP_RETURN;
+    opret << OP_RETURN << 0;
     int32_t len = strlen(strHex.c_str());
     len >>=1;
-    opret.resize(len+1);
+    opret.resize(len+2);
     ptr = (uint8_t *)&opret[1];
     decode_hex(ptr,len,(char *)strHex.c_str());
 	mtx.vout.push_back(CTxOut(nAmount,opret));
