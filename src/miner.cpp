@@ -533,12 +533,9 @@ void static BitcoinMiner(const CChainParams& chainparams)
     boost::shared_ptr<CReserveScript> coinbaseScript;
     GetMainSignals().ScriptForMining(coinbaseScript);
 
-    unsigned int n = chainparams.EquihashN();
-    unsigned int k = chainparams.EquihashK();
-
     std::string solver = GetArg("-equihashsolver", "default");
     assert(solver == "tromp" || solver == "default");
-    LogPrint("pow", "Using Equihash solver \"%s\" with n = %u, k = %u\n", solver, n, k);
+    
 
     std::mutex m_cs;
     bool cancelSolver = false;
@@ -577,7 +574,19 @@ void static BitcoinMiner(const CChainParams& chainparams)
             // Create new block
             //
             unsigned int nTransactionsUpdatedLast = mempool.GetTransactionsUpdated();
-            CBlockIndex* pindexPrev = chainActive.Tip();
+           
+            // Get the height of current tip
+            int nHeight = chainActive.Height();
+            if (nHeight == -1) {
+                LogPrintf("Error in ZcashMiner: chainActive.Height() returned -1\n");
+                return;
+            }
+            CBlockIndex* pindexPrev = chainActive[nHeight];
+
+            // Get equihash parameters for the next block to be mined.
+            unsigned int n = chainparams.EquihashN(nHeight + 1);
+            unsigned int k = chainparams.EquihashK(nHeight + 1);
+            LogPrint("pow", "Using Equihash solver \"%s\" with n = %u, k = %u\n", solver, n, k);
 
             unique_ptr<CBlockTemplate> pblocktemplate(CreateNewBlock(coinbaseScript->reserveScript));
             if (!pblocktemplate.get())

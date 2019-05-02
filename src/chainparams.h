@@ -83,8 +83,10 @@ public:
     /** Policy: Filter transactions that do not match well-defined patterns */
     bool RequireStandard() const { return fRequireStandard; }
     int64_t PruneAfterHeight() const { return nPruneAfterHeight; }
-    unsigned int EquihashN() const { return nEquihashN; }
-    unsigned int EquihashK() const { return nEquihashK; }
+    
+    unsigned int EquihashN(int nHeight = 0) const;
+    unsigned int EquihashK(int nHeight = 0) const;
+
     std::string CurrencyUnits() const { return strCurrencyUnits; }
     uint32_t BIP44CoinType() const { return bip44CoinType; }
     /** Make miner stop after a block is found. In RPC, don't return until nGenProcLimit blocks are generated */
@@ -159,5 +161,10 @@ bool SelectParamsFromCommandLine();
  * Allows modifying the network upgrade regtest parameters.
  */
 void UpdateNetworkUpgradeParameters(Consensus::UpgradeIndex idx, int nActivationHeight);
+
+/**
+ * Let developers modify the equihash upgrade parameters for testing purposes.
+ */
+void UpdateEquihashUpgradeParameters(Consensus::UpgradeIndex idx, unsigned int n, unsigned int k);
 
 #endif // BITCOIN_CHAINPARAMS_H

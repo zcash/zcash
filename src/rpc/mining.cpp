@@ -195,10 +195,12 @@ UniValue generate(const UniValue& params, bool fHelp)
     }
     unsigned int nExtraNonce = 0;
     UniValue blockHashes(UniValue::VARR);
-    unsigned int n = Params().EquihashN();
-    unsigned int k = Params().EquihashK();
+    
     while (nHeight < nHeightEnd)
     {
+        unsigned int n = Params().EquihashN(nHeight + 1);
+        unsigned int k = Params().EquihashK(nHeight + 1);
+
         std::unique_ptr<CBlockTemplate> pblocktemplate(CreateNewBlock(coinbaseScript->reserveScript));
         if (!pblocktemplate.get())
             throw JSONRPCError(RPC_INTERNAL_ERROR, "Couldn't create new block");
