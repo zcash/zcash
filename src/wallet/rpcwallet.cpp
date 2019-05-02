@@ -374,8 +374,6 @@ UniValue getaddressesbyaccount(const UniValue& params, bool fHelp)
             std::string enc = EncodeDestination(dest);
             LogPrintStr("Encoded addr:" + enc + "\n");
             ret.push_back(enc);
-        } else {
-            LogPrintStr("Skipping because account mismatch:" + strName + ":" + strAccount);
         }
     }
     return ret;
