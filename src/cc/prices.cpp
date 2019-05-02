@@ -525,9 +525,9 @@ UniValue prices_rawtxresult(UniValue &result, std::string rawtx, int32_t broadca
     return(result);
 }
 
-std::string prices_getsourceexpression(std::vector<uint16_t> &vec) {
+static std::string prices_getsourceexpression(const std::vector<uint16_t> &vec) {
 
-    std::string exp;
+    std::string expr;
 
     for (int32_t i = 0; i < vec.size(); i++) 
     {
@@ -555,7 +555,7 @@ std::string prices_getsourceexpression(std::vector<uint16_t> &vec) {
             operand = std::string("/");
             break;
 
-        case PRICES_INV:    // "1/price"
+        case PRICES_INV:    // "!"
             operand = std::string("!");
             break;
 
@@ -580,12 +580,74 @@ std::string prices_getsourceexpression(std::vector<uint16_t> &vec) {
             break;
         }
 
-        if (exp.size() > 0)
-            exp += std::string(", ");
-        exp += operand;
+        if (expr.size() > 0)
+            expr += std::string(", ");
+        expr += operand;
     }
-    return exp;
+    return expr;
 }
+
+static void prices_splitpair(const std::string &pair, std::string &upperquote, std::string &bottomquote)
+{
+    size_t pos = pair.find('_');   // like BTC_USD
+    if (pos != std::string::npos) {
+        upperquote = pair.substr(0, pos);
+        bottomquote = pair.substr(pos);
+    }
+    else {
+        upperquote = pair;
+        bottomquote = "";
+    }
+}
+
+// search for an upper or bottom quote in the vectored expression, remove it from the vector with its weight and with operation correction
+static bool prices_tryextractpair(const std::vector<std::string> &vexpr, size_t istart, const std::string &quote, bool isSearchUpper, std::string &foundpair, int32_t &weight) {
+
+/*    for (size_t i = istart; i < vexpr.size(); i++) {
+        if (komodo_priceind(vexpr[i].c_str()) >= 0) {
+            std::string upperquote, bottomquote;
+            prices_splitpair(vexpr[i], upperquote, bottomquote);
+
+            if (quote == upperquote) {
+                if( )
+
+            }
+
+
+        }
+    }*/
+    return true;
+}
+
+// try to reduce synthetic expression by substituting "BTC_USD, 20, BTC_EUR, 30, *" with "EUR_USD, 30/20"
+static std::string prices_reduceexp(const std::vector<uint16_t> &vec)
+{
+    std::string reduced;
+
+
+    return reduced;
+/*
+    std::vector<std::string> vexpr;
+    SplitStr(expr, vexpr);
+
+    for (size_t i = 0; i < vexpr.size(); i ++) {
+        if (komodo_priceind(vexpr[i].c_str()) >= 0) {
+            std::string upperquote, bottomquote;
+            std::string foundpair1, foundpair2;
+            int32_t weight1, weight2;
+
+            prices_splitpair(vexpr[i], upperquote, bottomquote);
+            if (prices_tryextractpair(vexpr, i+1, upperquote, false, foundpair1, weight1)) {
+
+            }
+            if (prices_tryextractpair(vexpr, i+1, bottomquote, true, foundpair2, weight2)) {
+
+            }
+        }
+    }
+*/
+}
+
 
 
 int32_t prices_syntheticvec(std::vector<uint16_t> &vec, std::vector<std::string> synthetic)
@@ -629,13 +691,13 @@ int32_t prices_syntheticvec(std::vector<uint16_t> &vec, std::vector<std::string>
             return(-3);
         }
         depth -= need;
-        std::cerr << "opcode=" << opcode << " opstr=" << opstr << " need=" << need << " depth=" << depth << std::endl;
+        std::cerr << "prices_syntheticvec() opcode=" << opcode << " opstr=" << opstr << " need=" << need << " depth=" << depth << std::endl;
         if ((opcode & KOMODO_PRICEMASK) != PRICES_WEIGHT) { // skip weight
             depth++;                                          // increase operands count
             std::cerr << "depth++=" << depth << std::endl;
         }
         if (depth > 3) {
-            std::cerr << "prices_syntheticvec() to many operands, last=" << opstr << std::endl;
+            std::cerr << "prices_syntheticvec() too many operands, last=" << opstr << std::endl;
             return(-4);
         }
         vec.push_back(opcode);
@@ -743,7 +805,7 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
                 errcode = -4;
             break;
 
-        case PRICES_INV:    // "1/price"
+        case PRICES_INV:    // "!"
             if (depth >= 1) {
                 a = pricestack[--depth];
                 // pricestack[depth++] = (SATOSHIDEN * SATOSHIDEN) / a;
@@ -768,7 +830,7 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
                 mpz_set_si(mpzC, c);
                 mpz_mul_ui(mpzResult, mpzA, SATOSHIDEN);
                 mpz_tdiv_q(mpzResult, mpzResult, mpzB);                 
-                mpz_mul_ui(mpzResult, mpzA, SATOSHIDEN);
+                mpz_mul_ui(mpzResult, mpzResult, SATOSHIDEN);
                 mpz_tdiv_q(mpzResult, mpzResult, mpzC);
                 pricestack[depth++] = mpz_get_si(mpzResult);
             }
@@ -798,13 +860,14 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
                 c = pricestack[--depth];
                 b = pricestack[--depth];
                 a = pricestack[--depth];
-                // pricestack[depth++] = ((a * b) / SATOSHIDEN) * c;
+                // pricestack[depth++] = (((a * b) / SATOSHIDEN ) * c) / SATOSHIDEN;
                 mpz_set_si(mpzA, a);
                 mpz_set_si(mpzB, b);
                 mpz_set_si(mpzC, c);
                 mpz_mul(mpzResult, mpzA, mpzB);
                 mpz_tdiv_q_ui(mpzResult, mpzResult, SATOSHIDEN);
                 mpz_mul(mpzResult, mpzResult, mpzC);
+                mpz_tdiv_q_ui(mpzResult, mpzResult, SATOSHIDEN);
                 pricestack[depth++] = mpz_get_si(mpzResult);
             }
             else
@@ -1104,7 +1167,7 @@ UniValue PricesBet(int64_t txfee, int64_t amount, int16_t leverage, std::vector<
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), nextheight); UniValue result(UniValue::VOBJ);
     struct CCcontract_info *cp, C; 
     CPubKey pricespk, mypk; 
-    int64_t betamount, firstprice; 
+    int64_t betamount, firstprice = 0; 
     std::vector<uint16_t> vec; 
     //char myaddr[64]; 
     std::string rawtx;
@@ -1123,7 +1186,6 @@ UniValue PricesBet(int64_t txfee, int64_t amount, int16_t leverage, std::vector<
     //GetCCaddress(cp, myaddr, mypk);
     if (prices_syntheticvec(vec, synthetic) < 0 || (firstprice = prices_syntheticprice(vec, nextheight - 1, 1, leverage)) < 0 || vec.size() == 0 || vec.size() > 4096)
     {
-        std::cerr << "PricesBet() firstprice=" << firstprice << (firstprice < 0 ? "error or overflow" : "") << std::endl;
         result.push_back(Pair("result", "error"));
         result.push_back(Pair("error", "invalid synthetic"));
         return(result);
