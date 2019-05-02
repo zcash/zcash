@@ -632,7 +632,7 @@ static std::string prices_invertpair(const std::string &pair)
 }
 
 // invert pairs in operation accordingly to "/" operator
-static void prices_invert(const std::vector<std::string> &vexpr, int p, std::vector<std::string> &voperation)
+static void prices_invertoperation(const std::vector<std::string> &vexpr, int p, std::vector<std::string> &voperation)
 {
     int need;
 
