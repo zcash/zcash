@@ -5,6 +5,14 @@
 #ifndef BITCOIN_RPC_BLOCKCHAIN_H
 #define BITCOIN_RPC_BLOCKCHAIN_H
 
+#include <amount.h>
+#include <sync.h>
+
+#include <stdint.h>
+#include <vector>
+
+extern CCriticalSection cs_main;
+
 class CBlock;
 class CBlockIndex;
 class CScript;
@@ -25,7 +33,7 @@ double GetDifficulty(const CBlockIndex* blockindex);
 void RPCNotifyBlockChange(bool ibd, const CBlockIndex *);
 
 /** Block description to JSON */
-UniValue blockToJSON(const CBlock& block, const CBlockIndex* tip, const CBlockIndex* blockindex, bool txDetails = false);
+UniValue blockToJSON(const CBlock& block, const CBlockIndex* tip, const CBlockIndex* blockindex, bool txDetails = false) LOCKS_EXCLUDED(cs_main);
 
 /** Mempool information to JSON */
 UniValue mempoolInfoToJSON();
@@ -34,6 +42,6 @@ UniValue mempoolInfoToJSON();
 UniValue mempoolToJSON(bool fVerbose = false);
 
 /** Block header to JSON */
-UniValue blockheaderToJSON(const CBlockIndex* tip, const CBlockIndex* blockindex);
+UniValue blockheaderToJSON(const CBlockIndex* tip, const CBlockIndex* blockindex) LOCKS_EXCLUDED(cs_main);
 
 #endif
