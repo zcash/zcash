@@ -587,69 +587,199 @@ static std::string prices_getsourceexpression(const std::vector<uint16_t> &vec) 
     return expr;
 }
 
+// helper functions to get synthetic expression reduced:
+
+// return s true and needed operand count if string is opcode
+static bool prices_isopcode(const std::string &s, int &need)
+{
+    if (s == "!") {
+        need = 1;
+        return true;
+    }
+    else if (s == "*" || s == "/") {
+        need = 2;
+        return true;
+    }
+    else if (s == "***" || s == "///" || s == "*//" || s == "**/") {
+        need = 3;
+        return true;
+    }
+    else
+        return false;
+}
+
+// split pair onto two quotes divided by "_" 
 static void prices_splitpair(const std::string &pair, std::string &upperquote, std::string &bottomquote)
 {
     size_t pos = pair.find('_');   // like BTC_USD
     if (pos != std::string::npos) {
         upperquote = pair.substr(0, pos);
-        bottomquote = pair.substr(pos);
+        bottomquote = pair.substr(pos + 1);
     }
     else {
         upperquote = pair;
         bottomquote = "";
     }
+    std::cerr << "prices_splitpair: upperquote=" << upperquote << " bottomquote=" << bottomquote << std::endl;
 }
 
-// search for an upper or bottom quote in the vectored expression, remove it from the vector with its weight and with operation correction
-static bool prices_tryextractpair(const std::vector<std::string> &vexpr, size_t istart, const std::string &quote, bool isSearchUpper, std::string &foundpair, int32_t &weight) {
+// invert pair like BTS_USD -> USD_BTC
+static std::string prices_invertpair(const std::string &pair)
+{
+    std::string upperquote, bottomquote;
+    prices_splitpair(pair, upperquote, bottomquote);
+    return bottomquote + std::string("_") + upperquote;
+}
 
-/*    for (size_t i = istart; i < vexpr.size(); i++) {
-        if (komodo_priceind(vexpr[i].c_str()) >= 0) {
+// invert pairs in operation accordingly to "/" operator
+static void prices_invertoperation(const std::vector<std::string> &vexpr, int p, std::vector<std::string> &voperation)
+{
+    int32_t need;
+
+    voperation.clear();
+    if (prices_isopcode(vexpr[p], need) && need > 1) {
+        if (need == 2) {
+            voperation.push_back(vexpr[p - 2]);
+            if (vexpr[p] == "/")
+                voperation.push_back(prices_invertpair(vexpr[p - 1]));
+            else
+                voperation.push_back(vexpr[p - 1]);
+            voperation.push_back("*");
+        }
+
+        if (need == 3) {
+            int i;
+            std::string::const_iterator c;
+            for (c = vexpr[p].begin(), i = -3; c != vexpr[p].end(); c++, i++) {
+                if (*c == '/')
+                    voperation.push_back(prices_invertpair(vexpr[p + i]));
+                else
+                    voperation.push_back(vexpr[p + i]);
+            }
+            voperation.push_back("***");
+        }
+    }
+
+    //std::cerr << "prices_invert inverted=";
+    for (auto v : voperation) std::cerr << v << " ";
+    std::cerr << std::endl;
+}
+
+// reduce pair in operation, change or remove opcode if reduced
+static int prices_reduceoperands(std::vector<std::string> &voperation)
+{
+    int opcount = voperation.size() - 1;
+    int need = opcount;
+    //std::cerr << "prices_reduceoperands begin need=" << need << std::endl;
+
+    while (true) {
+        int i;
+        //std::cerr << "prices_reduceoperands opcount=" << opcount << std::endl;
+        for (i = 0; i < opcount; i++) {
             std::string upperquote, bottomquote;
-            prices_splitpair(vexpr[i], upperquote, bottomquote);
+            bool breaktostart = false;
 
-            if (quote == upperquote) {
-                if( )
+            //std::cerr << "prices_reduceoperands voperation[i]=" << voperation[i] << " i=" << i << std::endl;
 
+            prices_splitpair(voperation[i], upperquote, bottomquote);
+            if (upperquote == bottomquote) {
+                std::cerr << "prices_reduceoperands erasing i=" << i << std::endl;
+                voperation.erase(voperation.begin() + i);
+                opcount--;
+                //std::cerr << "prices_reduceoperands erased, size=" << voperation.size() << std::endl;
+
+                if (voperation.size() > 0 && voperation.back() == "*")
+                    voperation.pop_back();
+                breaktostart = true;
+                break;
             }
 
 
+            int j;
+            for (j = i + 1; j < opcount; j++) {
+
+                //std::cerr << "prices_reduceoperands voperation[j]=" << voperation[j] << " j=" << j << std::endl;
+
+                std::string upperquotej, bottomquotej;
+                prices_splitpair(voperation[j], upperquotej, bottomquotej);
+                if (upperquote == bottomquotej || bottomquote == upperquotej) {
+                    if (upperquote == bottomquotej)
+                        voperation[i] = upperquotej + "_" + bottomquote;
+                    else
+                        voperation[i] = upperquote + "_" + bottomquotej;
+                    //std::cerr << "prices_reduceoperands erasing j=" << j << std::endl;
+                    voperation.erase(voperation.begin() + j);
+                    opcount--;
+                    //std::cerr << "prices_reduceoperands erased, size=" << voperation.size() << std::endl;
+
+                    need--;
+                    if (voperation.back() == "***") {
+                        voperation.pop_back();
+                        voperation.push_back("*");
+                    }
+                    else if (voperation.back() == "*") {
+                        voperation.pop_back();
+                    }
+                    breaktostart = true;
+                    break;
+                }
+
+
+            }
+            //if (j < voperation.size() - 1)
+            if (breaktostart)
+                break;
         }
-    }*/
-    return true;
+        if (i >= opcount)  // all seen
+            break;
+    }
+
+    //std::cerr << "prices_reduceoperands end need=" << need << std::endl;
+    return need;
 }
 
-// try to reduce synthetic expression by substituting "BTC_USD, 20, BTC_EUR, 30, *" with "EUR_USD, 30/20"
-static std::string prices_reduceexp(const std::vector<uint16_t> &vec)
+// substitute reduced operation in vectored expr
+static void prices_substitutereduced(std::vector<std::string> &vexpr, int p, std::vector<std::string> voperation)
+{
+    int need;
+    prices_isopcode(vexpr[p], need);
+
+    vexpr.erase(vexpr.begin() + p - need, vexpr.begin() + p + 1);
+    vexpr.insert(vexpr.begin() + p - need, voperation.begin(), voperation.end());
+}
+
+// try to reduce synthetic expression by substituting "BTC_USD, BTC_EUR, 30, /" with "EUR_USD, 30"
+static std::string prices_getreducedexpr(const std::string &expr)
 {
     std::string reduced;
 
-
-    return reduced;
-/*
     std::vector<std::string> vexpr;
     SplitStr(expr, vexpr);
 
-    for (size_t i = 0; i < vexpr.size(); i ++) {
-        if (komodo_priceind(vexpr[i].c_str()) >= 0) {
-            std::string upperquote, bottomquote;
-            std::string foundpair1, foundpair2;
-            int32_t weight1, weight2;
+    for (size_t i = 0; i < vexpr.size(); i++) {
+        int need;
 
-            prices_splitpair(vexpr[i], upperquote, bottomquote);
-            if (prices_tryextractpair(vexpr, i+1, upperquote, false, foundpair1, weight1)) {
-
-            }
-            if (prices_tryextractpair(vexpr, i+1, bottomquote, true, foundpair2, weight2)) {
-
+        if (prices_isopcode(vexpr[i], need)) {
+            std::vector<std::string> voperation;
+            prices_invertoperation(vexpr, i, voperation);
+            int reducedneed = prices_reduceoperands(voperation);
+            if (reducedneed < need) {
+                prices_substitutereduced(vexpr, i, voperation);
             }
         }
     }
-*/
+
+    for (size_t i = 0; i < vexpr.size(); i++) {
+        if (reduced.size() > 0)
+            reduced += std::string(", ");
+        reduced += vexpr[i];
+    }
+
+    //std::cerr << "reduced=" << reduced << std::endl;
+    return reduced;
 }
 
-
-
+// parse synthetic expression into vector of codes
 int32_t prices_syntheticvec(std::vector<uint16_t> &vec, std::vector<std::string> synthetic)
 {
     int32_t i, need, ind, depth = 0; std::string opstr; uint16_t opcode, weight;
@@ -1013,8 +1143,6 @@ int32_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t
     // profits = dprofits;
     //std::cerr << "prices_syntheticprofits() dprofits=" << dprofits << std::endl;
 
-
-
     if (costbasis > 0)  {
         mpz_t mpzProfits;
         mpz_t mpzCostbasis;
@@ -1161,6 +1289,7 @@ int64_t prices_enumaddedbets(uint256 &batontxid, std::vector<BetInfo> &bets, uin
     return(addedBetsTotal);
 }
 
+// pricesbet rpc impl: make betting tx
 UniValue PricesBet(int64_t txfee, int64_t amount, int16_t leverage, std::vector<std::string> synthetic)
 {
     int32_t nextheight = komodo_nextheight();
@@ -1206,6 +1335,7 @@ UniValue PricesBet(int64_t txfee, int64_t amount, int16_t leverage, std::vector<
     return(result);
 }
 
+// pricesaddfunding rpc impl: add yet another bet
 UniValue PricesAddFunding(int64_t txfee, uint256 bettxid, int64_t amount)
 {
     int32_t nextheight = komodo_nextheight();
@@ -1289,7 +1419,7 @@ int32_t prices_scanchain(std::vector<BetInfo> &bets, int16_t leverage, std::vect
     return 0;
 }
 
-// set cost basis (open price) for the bet
+// pricescostbasis rpc impl: set cost basis (open price) for the bet (deprecated)
 UniValue PricesSetcostbasis(int64_t txfee, uint256 bettxid)
 {
     int32_t nextheight = komodo_nextheight();
@@ -1360,6 +1490,7 @@ UniValue PricesSetcostbasis(int64_t txfee, uint256 bettxid)
     return(result);
 }
 
+// pricesrekt rpc: anyone can rekt a bet at some block where losses reached limit, collecting fee
 UniValue PricesRekt(int64_t txfee, uint256 bettxid, int32_t rektheight)
 {
     int32_t nextheight = komodo_nextheight();
@@ -1448,6 +1579,7 @@ UniValue PricesRekt(int64_t txfee, uint256 bettxid, int32_t rektheight)
     return(result);
 }
 
+// pricescashout rpc impl: bettor can cashout hit bet if it is not rekt
 UniValue PricesCashout(int64_t txfee, uint256 bettxid)
 {
     int32_t nextheight = komodo_nextheight();
@@ -1533,6 +1665,7 @@ UniValue PricesCashout(int64_t txfee, uint256 bettxid)
     return(result);
 }
 
+// pricesinfo rpc impl
 UniValue PricesInfo(uint256 bettxid, int32_t refheight)
 {
     UniValue result(UniValue::VOBJ);
@@ -1645,7 +1778,9 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
                 result.push_back(Pair("rektheight", (int64_t)endheight));
             }
 
-            result.push_back(Pair("expression", prices_getsourceexpression(vec)));
+            std::string expr = prices_getsourceexpression(vec);
+            result.push_back(Pair("expression", expr));
+            result.push_back(Pair("reduced", prices_getreducedexpr(expr)));
             result.push_back(Pair("batontxid", batontxid.GetHex()));
             result.push_back(Pair("costbasis", ValueFromAmount(averageCostbasis)));
 
@@ -1669,6 +1804,7 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
     return(result);
 }
 
+// priceslist rpc impl
 UniValue PricesList(uint32_t filter, CPubKey mypk)
 {
     UniValue result(UniValue::VARR); 
