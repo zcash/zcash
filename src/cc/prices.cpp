@@ -620,7 +620,7 @@ static void prices_splitpair(const std::string &pair, std::string &upperquote, s
         upperquote = pair;
         bottomquote = "";
     }
-    std::cerr << "prices_splitpair: upperquote=" << upperquote << " bottomquote=" << bottomquote << std::endl;
+    //std::cerr << "prices_splitpair: upperquote=" << upperquote << " bottomquote=" << bottomquote << std::endl;
 }
 
 // invert pair like BTS_USD -> USD_BTC
@@ -631,7 +631,7 @@ static std::string prices_invertpair(const std::string &pair)
     return bottomquote + std::string("_") + upperquote;
 }
 
-// invert pairs in operation accordingly to "/" operator
+// invert pairs in operation accordingly to "/" operator, convert operator to * or ***
 static void prices_invertoperation(const std::vector<std::string> &vexpr, int p, std::vector<std::string> &voperation)
 {
     int need;
@@ -671,7 +671,7 @@ static void prices_invertoperation(const std::vector<std::string> &vexpr, int p,
     //std::cerr << std::endl;
 }
 
-// reduce pair in operation, change or remove opcode if reduced
+// reduce pairs in the operation, change or remove opcode if reduced
 static int prices_reduceoperands(std::vector<std::string> &voperation)
 {
     int opcount = voperation.size() - 1;
@@ -686,7 +686,6 @@ static int prices_reduceoperands(std::vector<std::string> &voperation)
             bool breaktostart = false;
 
             //std::cerr << "prices_reduceoperands voperation[i]=" << voperation[i] << " i=" << i << std::endl;
-
             prices_splitpair(voperation[i], upperquote, bottomquote);
             if (upperquote == bottomquote) {
                 std::cerr << "prices_reduceoperands erasing i=" << i << std::endl;
@@ -721,18 +720,15 @@ static int prices_reduceoperands(std::vector<std::string> &voperation)
                     need--;
                     if (voperation.back() == "***") {
                         voperation.pop_back();
-                        voperation.push_back("*");
+                        voperation.push_back("*");  // convert *** to *
                     }
                     else if (voperation.back() == "*") {
-                        voperation.pop_back();
+                        voperation.pop_back();      // convert * to nothing
                     }
                     breaktostart = true;
                     break;
                 }
-
-
             }
-            //if (j < voperation.size() - 1)
             if (breaktostart)
                 break;
         }
@@ -748,13 +744,13 @@ static int prices_reduceoperands(std::vector<std::string> &voperation)
 static void prices_substitutereduced(std::vector<std::string> &vexpr, int p, std::vector<std::string> voperation)
 {
     int need;
-    prices_isopcode(vexpr[p], need);
-
-    vexpr.erase(vexpr.begin() + p - need, vexpr.begin() + p + 1);
-    vexpr.insert(vexpr.begin() + p - need, voperation.begin(), voperation.end());
+    if (prices_isopcode(vexpr[p], need)) {
+        vexpr.erase(vexpr.begin() + p - need, vexpr.begin() + p + 1);
+        vexpr.insert(vexpr.begin() + p - need, voperation.begin(), voperation.end());
+    }
 }
 
-// try to reduce synthetic expression by substituting "BTC_USD, BTC_EUR, 30, /" with "EUR_USD, 30"
+// try to reduce synthetic expression by substituting "BTC_USD, BTC_EUR, 30, /" with "EUR_USD, 30" etc
 static std::string prices_getreducedexpr(const std::string &expr)
 {
     std::string reduced;
