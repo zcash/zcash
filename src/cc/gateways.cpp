@@ -628,20 +628,25 @@ bool GatewaysValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &
                             return eval->Invalid("deposit amount greater then bind total supply");                        
                         else if (komodo_txnotarizedconfirmed(deposittxid) == false)
                             return eval->Invalid("gatewaysdeposit tx is not yet confirmed(notarised)!");
-                        else if (myGetTransaction(tx.vin[2].prevout.hash,tmptx,hashblock) == 0)
-                            return eval->Invalid("invalid gatewaysdeposittxid!");
                         else if (IsCCInput(tx.vin[0].scriptSig) != 0)
                             return eval->Invalid("vin.0 is normal for gatewaysclaim!");
-                        else if ((*cp->ismyvin)(tx.vin[tx.vin.size()-1].scriptSig) == 0 || myGetTransaction(tx.vin[tx.vin.size()-1].prevout.hash,tmptx,hashblock)==0 || tmptx.vout[tx.vin[tx.vin.size()-1].prevout.n].nValue!=CC_MARKER_VALUE)
+                        else if (tx.vin.size()>2)
+                        {
+                            i=1;
+                            while (i<=tx.vin.size()-2)
+                            {
+                                if (IsCCInput(tx.vin[i].scriptSig)==0) return eval->Invalid("vin."+std::to_string(i)+" is CC for gatewaysclaim!");
+                                i++;
+                            }
+                        }
+                        else if ((*cp->ismyvin)(tx.vin[tx.vin.size()-1].scriptSig) == 0 || tmptx.vout[tx.vin[tx.vin.size()-1].prevout.n].nValue!=CC_MARKER_VALUE)
                             return eval->Invalid("vin."+std::to_string(tx.vin.size()-1)+" is CC marker for gatewaysclaim or invalid marker amount!");
                         else if (_GetCCaddress(destaddr,EVAL_TOKENS,pubkey)==0 || ConstrainVout(tx.vout[0],1,destaddr,amount)==0)
                             return eval->Invalid("invalid vout tokens to destpub for gatewaysclaim!");
-                        else if (numvouts>2 && (myGetTransaction(tx.vin[1].prevout.hash,tmptx,hashblock)==0 || ConstrainVout(tx.vout[1],1,gatewaystokensaddr,tmptx.vout[tx.vin[1].prevout.n].nValue-amount)==0))
+                        else if (numvouts>2 && tx.vout[1].scriptPubKey.IsPayToCryptoCondition() && (myGetTransaction(tx.vin[1].prevout.hash,tmptx,hashblock)==0 || ConstrainVout(tx.vout[1],1,gatewaystokensaddr,tmptx.vout[tx.vin[1].prevout.n].nValue-amount)==0))
                             return eval->Invalid("invalid CC change vout for gatewaysclaim!");
                         else if (amount!=tmpamount)
-                            return eval->Invalid("claimed amount different then deposit amount");
-                        else if (tx.vout[0].nValue!=amount)
-                            return eval->Invalid("claim amount not matching amount in opret");       
+                            return eval->Invalid("claimed amount different then deposit amount");    
                         else if (pubkey!=tmppubkey)
                             return eval->Invalid("claim destination pubkey different than in deposit tx");
                         else 
@@ -697,8 +702,6 @@ bool GatewaysValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &
                             return eval->Invalid("invalid marker vout for gatewaysWithdraw!");
                         else if ( ConstrainVout(tmptx.vout[1],1,gatewaystokensaddr,amount)==0)
                             return eval->Invalid("invalid tokens to gateways vout for gatewaysWithdraw!");
-                        else if (tmptx.vout[1].nValue!=amount)
-                            return eval->Invalid("amount in opret not matching tx tokens amount!");
                         else if (komodo_txnotarizedconfirmed(withdrawtxid) == false)
                             return eval->Invalid("gatewayswithdraw tx is not yet confirmed(notarised)!");
                         else if (myGetTransaction(bindtxid,tmptx,hashblock) == 0)
@@ -953,7 +956,7 @@ std::string GatewaysBind(uint64_t txfee,std::string coin,uint256 tokenid,int64_t
         LOGSTREAM("gatewayscc",CCLOG_INFO, stream << CCerror << std::endl);
         return("");
     }
-    if ( AddNormalinputs(mtx,mypk,txfee+CC_MARKER_VALUE,3) > 0 )
+    if ( AddNormalinputs(mtx,mypk,txfee+CC_MARKER_VALUE,2) > 0 )
     {
         if (AddTokenCCInputs(cpTokens, mtx, mypk, tokenid, totalsupply, 64)>0)
         {
@@ -1032,7 +1035,7 @@ std::string GatewaysDeposit(uint64_t txfee,uint256 bindtxid,int32_t height,std::
         LOGSTREAM("gatewayscc",CCLOG_INFO, stream << CCerror << std::endl);
         return("");
     }
-    if ( AddNormalinputs(mtx,mypk,txfee+2*CC_MARKER_VALUE,4) > 0 )
+    if ( AddNormalinputs(mtx,mypk,txfee+2*CC_MARKER_VALUE,3) > 0 )
     {
         mtx.vout.push_back(MakeCC1vout(cp->evalcode,CC_MARKER_VALUE,destpub));
         mtx.vout.push_back(CTxOut(CC_MARKER_VALUE,CScript() << ParseHex(HexStr(CCtxidaddr(txidaddr,cointxid))) << OP_CHECKSIG));
@@ -1104,7 +1107,7 @@ std::string GatewaysClaim(uint64_t txfee,uint256 bindtxid,std::string refcoin,ui
         LOGSTREAM("gatewayscc",CCLOG_INFO, stream << CCerror << std::endl);
         return("");
     }
-    if ( AddNormalinputs(mtx,mypk,txfee,3) > 0 )
+    if ( AddNormalinputs(mtx,mypk,txfee,1) > 0 )
     {
 		if ((inputs=AddGatewaysInputs(cp, mtx, gatewayspk, bindtxid, amount, 60)) > 0)
         {
@@ -1182,7 +1185,7 @@ std::string GatewaysWithdraw(uint64_t txfee,uint256 bindtxid,std::string refcoin
             }
         }
     }
-    if( AddNormalinputs(mtx, mypk, txfee+CC_MARKER_VALUE, 4) > 0 )
+    if( AddNormalinputs(mtx, mypk, txfee+CC_MARKER_VALUE, 2) > 0 )
     {
 		if ((inputs = AddTokenCCInputs(cpTokens, mtx, mypk, tokenid, amount, 60)) > 0)
         {
@@ -1294,7 +1297,7 @@ std::string GatewaysPartialSign(uint64_t txfee,uint256 lasttxid,std::string refc
             return("");
         }
     }
-    if (AddNormalinputs(mtx,mypk,txfee,3)!=0)
+    if (AddNormalinputs(mtx,mypk,txfee,1)!=0)
     {
         mtx.vin.push_back(CTxIn(tx.GetHash(),0,CScript()));
         mtx.vout.push_back(MakeCC1vout(EVAL_GATEWAYS,CC_MARKER_VALUE,gatewayspk));       
@@ -1393,7 +1396,7 @@ std::string GatewaysCompleteSigning(uint64_t txfee,uint256 lasttxid,std::string 
             return("");
         }
     }
-    if (AddNormalinputs(mtx,mypk,txfee,3)!=0) 
+    if (AddNormalinputs(mtx,mypk,txfee,1)!=0) 
     {
         mtx.vin.push_back(CTxIn(lasttxid,0,CScript()));
         mtx.vout.push_back(MakeCC1vout(EVAL_GATEWAYS,CC_MARKER_VALUE,gatewayspk));       
@@ -1458,7 +1461,7 @@ std::string GatewaysMarkDone(uint64_t txfee,uint256 completetxid,std::string ref
         LOGSTREAM("gatewayscc",CCLOG_INFO, stream << CCerror << std::endl);
         return("");
     }
-    if (AddNormalinputs(mtx,mypk,txfee,3)!=0) 
+    if (AddNormalinputs(mtx,mypk,txfee,1)!=0) 
     {
         mtx.vin.push_back(CTxIn(completetxid,0,CScript()));
         mtx.vout.push_back(CTxOut(CC_MARKER_VALUE,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));        
