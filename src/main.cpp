@@ -4258,7 +4258,7 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
         komodo_pricesupdate(pindexNew->GetHeight(),pblock);
     if ( ASSETCHAINS_SAPLING <= 0 && pindexNew->nTime > KOMODO_SAPLING_ACTIVATION - 24*3600 )
         komodo_activate_sapling(pindexNew);
-    if ( ASSETCHAINS_CC != 0 && KOMODO_SNAPSHOT_INTERVAL != 0 && (pindexNew->GetHeight() % KOMODO_SNAPSHOT_INTERVAL) == 0 && pindexNew->GetHeight() > KOMODO_SNAPSHOT_INTERVAL )
+    if ( ASSETCHAINS_CC != 0 && KOMODO_SNAPSHOT_INTERVAL != 0 && (pindexNew->GetHeight() % KOMODO_SNAPSHOT_INTERVAL) == 0 && pindexNew->GetHeight() >= KOMODO_SNAPSHOT_INTERVAL )
     {
         uint64_t start = time(NULL);
         if ( !komodo_dailysnapshot(pindexNew->GetHeight()) )
