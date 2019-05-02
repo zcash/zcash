@@ -632,37 +632,43 @@ static std::string prices_invertpair(const std::string &pair)
 }
 
 // invert pairs in operation accordingly to "/" operator
-static void prices_invertoperation(const std::vector<std::string> &vexpr, int p, std::vector<std::string> &voperation)
+static void prices_invert(const std::vector<std::string> &vexpr, int p, std::vector<std::string> &voperation)
 {
-    int32_t need;
+    int need;
 
     voperation.clear();
-    if (prices_isopcode(vexpr[p], need) && need > 1) {
-        if (need == 2) {
-            voperation.push_back(vexpr[p - 2]);
-            if (vexpr[p] == "/")
-                voperation.push_back(prices_invertpair(vexpr[p - 1]));
-            else
-                voperation.push_back(vexpr[p - 1]);
-            voperation.push_back("*");
-        }
-
-        if (need == 3) {
-            int i;
-            std::string::const_iterator c;
-            for (c = vexpr[p].begin(), i = -3; c != vexpr[p].end(); c++, i++) {
-                if (*c == '/')
-                    voperation.push_back(prices_invertpair(vexpr[p + i]));
+    if (prices_isopcode(vexpr[p], need)) {
+        if (need > 1) {
+            if (need == 2) {
+                voperation.push_back(vexpr[p - 2]);
+                if (vexpr[p] == "/")
+                    voperation.push_back(prices_invertpair(vexpr[p - 1]));
                 else
-                    voperation.push_back(vexpr[p + i]);
+                    voperation.push_back(vexpr[p - 1]);
+                voperation.push_back("*");
             }
-            voperation.push_back("***");
+
+            if (need == 3) {
+                int i;
+                std::string::const_iterator c;
+                for (c = vexpr[p].begin(), i = -3; c != vexpr[p].end(); c++, i++) {
+                    if (*c == '/')
+                        voperation.push_back(prices_invertpair(vexpr[p + i]));
+                    else
+                        voperation.push_back(vexpr[p + i]);
+                }
+                voperation.push_back("***");
+            }
+        }
+        else if (vexpr[p] == "!") {
+            voperation.push_back(prices_invertpair(vexpr[p - 1]));
+            // do not add operator
         }
     }
 
     //std::cerr << "prices_invert inverted=";
-    for (auto v : voperation) std::cerr << v << " ";
-    std::cerr << std::endl;
+    //for (auto v : voperation) std::cerr << v << " ";
+    //std::cerr << std::endl;
 }
 
 // reduce pair in operation, change or remove opcode if reduced
