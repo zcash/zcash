@@ -289,6 +289,7 @@ extern UniValue payments_release(const UniValue& params, bool fHelp);
 extern UniValue payments_fund(const UniValue& params, bool fHelp);
 extern UniValue payments_txidopret(const UniValue& params, bool fHelp);
 extern UniValue payments_create(const UniValue& params, bool fHelp);
+extern UniValue payments_airdrop(const UniValue& params, bool fHelp);
 extern UniValue payments_info(const UniValue& params, bool fHelp);
 extern UniValue payments_list(const UniValue& params, bool fHelp);
 
@@ -468,6 +469,7 @@ extern UniValue z_shieldcoinbase(const UniValue& params, bool fHelp); // in rpcw
 extern UniValue z_getoperationstatus(const UniValue& params, bool fHelp); // in rpcwallet.cpp
 extern UniValue z_getoperationresult(const UniValue& params, bool fHelp); // in rpcwallet.cpp
 extern UniValue z_listoperationids(const UniValue& params, bool fHelp); // in rpcwallet.cpp
+extern UniValue opreturn_burn(const UniValue& params, bool fHelp); // in rpcwallet.cpp
 extern UniValue z_validateaddress(const UniValue& params, bool fHelp); // in rpcmisc.cpp
 extern UniValue z_getpaymentdisclosure(const UniValue& params, bool fHelp); // in rpcdisclosure.cpp
 extern UniValue z_validatepaymentdisclosure(const UniValue &params, bool fHelp); // in rpcdisclosure.cpp

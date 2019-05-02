@@ -2045,9 +2045,40 @@ uint64_t komodo_checknotarypay(CBlock *pblock,int32_t height)
     return(0);
 }
 
+bool komodo_appendACscriptpub()
+{
+    static bool didinit = false;
+    if ( didinit ) 
+        return didinit;
+    if ( ASSETCHAINS_SCRIPTPUB[ASSETCHAINS_SCRIPTPUB.back()] == 49 && ASSETCHAINS_SCRIPTPUB[ASSETCHAINS_SCRIPTPUB.back()-1] == 51 )
+    {
+        CTransaction tx; uint256 blockhash; 
+        // get transaction and check that it occured before height 100. 
+        if ( myGetTransaction(KOMODO_EARLYTXID,tx,blockhash) && mapBlockIndex[blockhash]->GetHeight() < 100 )
+        {
+             for (int i = 0; i < tx.vout.size(); i++) 
+             {
+                 if ( tx.vout[i].scriptPubKey[0] == OP_RETURN )
+                 {
+                     ASSETCHAINS_SCRIPTPUB.pop_back(); ASSETCHAINS_SCRIPTPUB.pop_back(); // remove last 2 chars. 
+                      // get OP_RETURN from txid and append the HexStr of it to scriptpub 
+                      // encoded opreturn incorrectly on TESTHC chain, once we no longer need this it can be changed to a straight +1 to drop OP_RETURN opcode.
+                     ASSETCHAINS_SCRIPTPUB.append(HexStr(tx.vout[i].scriptPubKey.begin()+(strcmp("TESTHC",ASSETCHAINS_SYMBOL) == 0 ? 3 : 1), tx.vout[i].scriptPubKey.end()));
+                     //fprintf(stderr, "ac_script.%s\n",ASSETCHAINS_SCRIPTPUB.c_str());
+                     didinit = true;
+                     return true;
+                 }
+             }
+        }
+        fprintf(stderr, "could not get KOMODO_EARLYTXID.%s OP_RETURN data. Restart with correct txid!\n", KOMODO_EARLYTXID.GetHex().c_str());
+        StartShutdown();
+    }
+    return false;
+}
+
 int64_t komodo_checkcommission(CBlock *pblock,int32_t height)
 {
-    int64_t checktoshis=0; uint8_t *script,scripthex[8192]; int32_t scriptlen,matched = 0;
+    int64_t checktoshis=0; uint8_t *script,scripthex[8192]; int32_t scriptlen,matched = 0; static bool didinit = false;
     if ( ASSETCHAINS_COMMISSION != 0 || ASSETCHAINS_FOUNDERS_REWARD != 0 )
     {
         checktoshis = komodo_commission(pblock,height);
@@ -2069,6 +2100,12 @@ int64_t komodo_checkcommission(CBlock *pblock,int32_t height)
             }
             if ( ASSETCHAINS_SCRIPTPUB.size() > 1 )
             {
+                static bool didinit = false;
+                if ( !didinit && height > 100 && KOMODO_EARLYTXID != zeroid && komodo_appendACscriptpub() )
+                {
+                    fprintf(stderr, "appended CC_op_return to ASSETCHAINS_SCRIPTPUB.%s\n", ASSETCHAINS_SCRIPTPUB.c_str());
+                    didinit = true;
+                }
                 if ( ASSETCHAINS_SCRIPTPUB.size()/2 == scriptlen && scriptlen < sizeof(scripthex) )
                 {
                     decode_hex(scripthex,scriptlen,(char *)ASSETCHAINS_SCRIPTPUB.c_str());
@@ -2205,11 +2242,11 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
         else if ( ASSETCHAINS_STAKED != 0 )
             failed = 0;
     }
-    if ( failed == 0 && ASSETCHAINS_COMMISSION != 0 ) //ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 )
+    if ( failed == 0 && ASSETCHAINS_COMMISSION != 0 ) 
     {
         if ( height == 1 )
         {
-            if ( ASSETCHAINS_SCRIPTPUB.size() > 1 )
+            if ( ASSETCHAINS_SCRIPTPUB.size() > 1 && ASSETCHAINS_SCRIPTPUB[ASSETCHAINS_SCRIPTPUB.back()] != 49 && ASSETCHAINS_SCRIPTPUB[ASSETCHAINS_SCRIPTPUB.back()-1] != 51 )
             {
                 int32_t scriptlen; uint8_t scripthex[10000];
                 script = (uint8_t *)&pblock->vtx[0].vout[0].scriptPubKey[0];
@@ -2221,7 +2258,7 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
                         return(-1);
                 } else return(-1);
             }
-            else
+            else if ( ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 )
             {
                 script = (uint8_t *)&pblock->vtx[0].vout[0].scriptPubKey[0];
                 scriptlen = (int32_t)pblock->vtx[0].vout[0].scriptPubKey.size();

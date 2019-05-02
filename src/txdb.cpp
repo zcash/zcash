@@ -458,13 +458,13 @@ uint32_t komodo_segid32(char *coinaddr);
     {"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPVMY", 1} \
 };
 
-int32_t CBlockTreeDB::Snapshot2(int64_t dustthreshold, int32_t top ,std::vector <std::pair<CAmount, std::string>> &vaddr, UniValue *ret)
+bool CBlockTreeDB::Snapshot2(std::map <std::string, CAmount> &addressAmounts, UniValue *ret)
 {
     int64_t total = 0; int64_t totalAddresses = 0; std::string address;
     int64_t utxos = 0; int64_t ignoredAddresses = 0, cryptoConditionsUTXOs = 0, cryptoConditionsTotals = 0;
     DECLARE_IGNORELIST
     boost::scoped_ptr<CDBIterator> iter(NewIterator());
-    std::map <std::string, CAmount> addressAmounts;
+    //std::map <std::string, CAmount> addressAmounts;
     for (iter->SeekToLast(); iter->Valid(); iter->Prev())
     {
         boost::this_thread::interruption_point();
@@ -486,40 +486,39 @@ int32_t CBlockTreeDB::Snapshot2(int64_t dustthreshold, int32_t top ,std::vector 
                     {
                         cryptoConditionsUTXOs++;
                         cryptoConditionsTotals += nValue;
+                        total += nValue;
                         continue;
                     }
-                    if ( nValue > dustthreshold )
+                    std::map <std::string, int>::iterator ignored = ignoredMap.find(address);
+                    if (ignored != ignoredMap.end())
                     {
-                        std::map <std::string, int>::iterator ignored = ignoredMap.find(address);
-                        if (ignored != ignoredMap.end())
-                        {
-                            fprintf(stderr,"ignoring %s\n", address.c_str());
-                            ignoredAddresses++;
-                            continue;
-                        }
-                        std::map <std::string, CAmount>::iterator pos = addressAmounts.find(address);
-                        if ( pos == addressAmounts.end() )
-                        {
-                            // insert new address + utxo amount
-                            //fprintf(stderr, "inserting new address %s with amount %li\n", address.c_str(), nValue);
-                            addressAmounts[address] = nValue;
-                            totalAddresses++;
-                        }
-                        else
-                        {
-                            // update unspent tally for this address
-                            //fprintf(stderr, "updating address %s with new utxo amount %li\n", address.c_str(), nValue);
-                            addressAmounts[address] += nValue;
-                        }
-                        //fprintf(stderr,"{\"%s\", %.8f},\n",address.c_str(),(double)nValue/COIN);
-                        // total += nValue;
-                        utxos++;
-                    } //else fprintf(stderr,"ignoring amount=0 UTXO for %s\n", address.c_str());
+                        fprintf(stderr,"ignoring %s\n", address.c_str());
+                        ignoredAddresses++;
+                        continue;
+                    }
+                    std::map <std::string, CAmount>::iterator pos = addressAmounts.find(address);
+                    if ( pos == addressAmounts.end() )
+                    {
+                        // insert new address + utxo amount
+                        //fprintf(stderr, "inserting new address %s with amount %li\n", address.c_str(), nValue);
+                        addressAmounts[address] = nValue;
+                        totalAddresses++;
+                    }
+                    else
+                    {
+                        // update unspent tally for this address
+                        //fprintf(stderr, "updating address %s with new utxo amount %li\n", address.c_str(), nValue);
+                        addressAmounts[address] += nValue;
+                    }
+                    //fprintf(stderr,"{\"%s\", %.8f},\n",address.c_str(),(double)nValue/COIN);
+                    // total += nValue;
+                    utxos++;
+                    total += nValue;
                 }
                 catch (const std::exception& e)
                 {
                     fprintf(stderr, "DONE %s: LevelDB addressindex exception! - %s\n", __func__, e.what());
-                    break;
+                    return false; //break; this means failiure of DB? we need to exit here if so for consensus code!
                 }
             }
         }
@@ -530,30 +529,18 @@ int32_t CBlockTreeDB::Snapshot2(int64_t dustthreshold, int32_t top ,std::vector 
         }
     }
     //fprintf(stderr, "total=%f, totalAddresses=%li, utxos=%li, ignored=%li\n", (double) total / COIN, totalAddresses, utxos, ignoredAddresses);
-    for (std::pair<std::string, CAmount> element : addressAmounts)
-        vaddr.push_back( make_pair(element.second, element.first) );
-    std::sort(vaddr.rbegin(), vaddr.rend());
-    int topN = 0;
-    for (std::vector<std::pair<CAmount, std::string>>::iterator it = vaddr.begin(); it!=vaddr.end(); ++it)
-    {
-        total += it->first;
-        topN++;
-        // If requested, only show top N addresses in output JSON
-       	if ( top == topN )
-            break;
-    }
+    
     // this is for the snapshot RPC, you can skip this by passing a 0 as the last argument.
     if (ret)
     {
-        // Total amount in this snapshot, which is less than circulating supply if top parameter is used
-        // Use the address_total for a total of all address included when using top parameter.
-        ret->push_back(make_pair("total", (double) (total+cryptoConditionsTotals)/ COIN ));
+        // Total circulating supply without CC vouts.
+        ret->push_back(make_pair("total", (double) (total)/ COIN ));
         // Average amount in each address of this snapshot
         ret->push_back(make_pair("average",(double) (total/COIN) / totalAddresses ));
         // Total number of utxos processed in this snaphot
         ret->push_back(make_pair("utxos", utxos));
         // Total number of addresses in this snaphot
-        ret->push_back(make_pair("total_addresses", top ? top : totalAddresses ));
+        ret->push_back(make_pair("total_addresses", totalAddresses ));
         // Total number of ignored addresses in this snaphot
         ret->push_back(make_pair("ignored_addresses", ignoredAddresses));
         // Total number of crypto condition utxos we skipped
@@ -561,22 +548,28 @@ int32_t CBlockTreeDB::Snapshot2(int64_t dustthreshold, int32_t top ,std::vector 
         // Total value of skipped crypto condition utxos
         ret->push_back(make_pair("cc_utxo_value", (double) cryptoConditionsTotals / COIN));
         // total of all the address's, does not count coins in CC vouts.
-        ret->push_back(make_pair("address_total", (double) total/ COIN ));
+        ret->push_back(make_pair("total_includeCCvouts", (double) (total+cryptoConditionsTotals)/ COIN ));
         // The snapshot finished at this block height
         ret->push_back(make_pair("ending_height", chainActive.Height()));
     }
-    return(topN);
+    return true;
 }
 
 UniValue CBlockTreeDB::Snapshot(int top)
 {
     int topN = 0;
     std::vector <std::pair<CAmount, std::string>> vaddr;
+    //std::vector <std::vector <std::pair<CAmount, CScript>>> tokenids;
+    std::map <std::string, CAmount> addressAmounts;
     UniValue result(UniValue::VOBJ);
     UniValue addressesSorted(UniValue::VARR);
     result.push_back(Pair("start_time", (int) time(NULL)));
-    if ( Snapshot2(0,top,vaddr,&result) != 0 )
+    if ( Snapshot2(addressAmounts,&result) )
     {
+        for (std::pair<std::string, CAmount> element : addressAmounts)
+            vaddr.push_back( make_pair(element.second, element.first) );
+        std::sort(vaddr.rbegin(), vaddr.rend());
+        int topN = 0;
         for (std::vector<std::pair<CAmount, std::string>>::iterator it = vaddr.begin(); it!=vaddr.end(); ++it)
         {
           	UniValue obj(UniValue::VOBJ);
