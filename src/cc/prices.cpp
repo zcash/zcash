@@ -16,10 +16,11 @@
 #include "CCassets.h"
 #include "CCPrices.h"
 
-//#include "mini-gmp.h"
 #include <gmp.h>
 
 #define IS_CHARINSTR(c, str) (std::string(str).find((char)(c)) != std::string::npos)
+
+#define N_CCMARKER 1
 
 typedef struct BetInfo {
     int64_t amount;
@@ -1214,7 +1215,7 @@ void prices_betjson(UniValue &result, std::vector<BetInfo> bets, int16_t leverag
     result.push_back(Pair("LastHeight", endheight));
 }
 
-// retrives costbasis from a tx spending bettx vout1
+// retrieves costbasis from a tx spending bettx vout1 (deprecated)
 int64_t prices_costbasis(CTransaction bettx, uint256 &txidCostbasis)
 {
     int64_t costbasis = 0;
@@ -1224,7 +1225,7 @@ int64_t prices_costbasis(CTransaction bettx, uint256 &txidCostbasis)
     int32_t vini;
     int32_t height;
     txidCostbasis = zeroid;
-
+/*
     if (CCgetspenttxid(txidCostbasis, vini, height, bettx.GetHash(), 1) < 0) {
         std::cerr << "prices_costbasis() no costbasis txid found" << std::endl;
         return 0;
@@ -1243,7 +1244,7 @@ int64_t prices_costbasis(CTransaction bettx, uint256 &txidCostbasis)
         return costbasis;
     }
 
-    std::cerr << "prices_costbasis() cannot load costbasis tx or decode opret" << " isLoaded=" << isLoaded <<  " funcId=" << (int)funcId << std::endl;
+    std::cerr << "prices_costbasis() cannot load costbasis tx or decode opret" << " isLoaded=" << isLoaded <<  " funcId=" << (int)funcId << std::endl;  */
     return 0;
 }
 
@@ -1327,10 +1328,10 @@ UniValue PricesBet(int64_t txfee, int64_t amount, int16_t leverage, std::vector<
     {
         betamount = (amount * 199) / 200;
         mtx.vout.push_back(MakeCC1vout(cp->evalcode, txfee, mypk));                                 // vout0 baton for total funding
-    //  mtx.vout.push_back(MakeCC1vout(cp->evalcode, (amount - betamount) + 2 * txfee, pricespk));  // vout1, when spent, costbasis is set
-        mtx.vout.push_back(MakeCC1vout(cp->evalcode, txfee, pricespk));                             // vout1 cc marker
+        //  mtx.vout.push_back(MakeCC1vout(cp->evalcode, (amount - betamount) + 2 * txfee, pricespk));  // vout1, when spent, costbasis is set
+        mtx.vout.push_back(MakeCC1vout(cp->evalcode, txfee, pricespk));                             // vout1 cc marker (N_CCMARKER)
         mtx.vout.push_back(MakeCC1vout(cp->evalcode, betamount, pricespk));                         // vout2 betamount
-        mtx.vout.push_back(CTxOut(txfee, CScript() << ParseHex(HexStr(pricespk)) << OP_CHECKSIG));  // vout3 normal marker
+        mtx.vout.push_back(CTxOut(txfee, CScript() << ParseHex(HexStr(pricespk)) << OP_CHECKSIG));  // vout3 normal marker - may remove it as we have cc marker now
         rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, prices_betopret(mypk, nextheight - 1, amount, leverage, firstprice, vec, zeroid));
         return(prices_rawtxresult(result, rawtx, 0));
     }
@@ -1527,7 +1528,7 @@ UniValue PricesRekt(int64_t txfee, uint256 bettxid, int32_t rektheight)
             std::vector<BetInfo> bets;
             BetInfo bet1;
 
-            if (CCgetspenttxid(finaltxid, vini, finalheight, bettxid, 2) == 0) {
+            if (CCgetspenttxid(finaltxid, vini, finalheight, bettxid, N_CCMARKER) == 0) {
                 result.push_back(Pair("result", "error"));
                 result.push_back(Pair("error", "position closed"));
                 return result;
@@ -1563,7 +1564,7 @@ UniValue PricesRekt(int64_t txfee, uint256 bettxid, int32_t rektheight)
             {
                 int64_t CCchange = 0, inputsum;
 
-                mtx.vin.push_back(CTxIn(bettxid, 1, CScript()));  // spend cc marker
+                mtx.vin.push_back(CTxIn(bettxid, N_CCMARKER, CScript()));  // spend cc marker
                 if ((inputsum = AddPricesInputs(cp, mtx, destaddr, myfee + txfee, 64)) > myfee + txfee)  // TODO: why do we take txfee from global addr and not from user's addr?
                     CCchange = (inputsum - myfee);
                 mtx.vout.push_back(CTxOut(myfee, CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
@@ -1625,7 +1626,7 @@ UniValue PricesCashout(int64_t txfee, uint256 bettxid)
             std::vector<BetInfo> bets;
             BetInfo bet1;
 
-            if (CCgetspenttxid(finaltxid, vini, finalheight, bettxid, 2) == 0) {
+            if (CCgetspenttxid(finaltxid, vini, finalheight, bettxid, N_CCMARKER) == 0) {
                 result.push_back(Pair("result", "error"));
                 result.push_back(Pair("error", "position closed"));
                 return result;
@@ -1658,7 +1659,7 @@ UniValue PricesCashout(int64_t txfee, uint256 bettxid)
                 return(result);
             }
 
-            mtx.vin.push_back(CTxIn(bettxid, 1, CScript()));  // spend cc marker
+            mtx.vin.push_back(CTxIn(bettxid, N_CCMARKER, CScript()));  // spend cc marker
             if ((inputsum = AddPricesInputs(cp, mtx, destaddr, equity + txfee, 64)) > equity + txfee)
                 CCchange = (inputsum - equity);
             mtx.vout.push_back(CTxOut(equity, CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
@@ -1706,7 +1707,7 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
             std::vector<BetInfo> bets;
             BetInfo bet1;
 
-            if (CCgetspenttxid(finaltxid, vini, finalheight, bettxid, 2) == 0) 
+            if (CCgetspenttxid(finaltxid, vini, finalheight, bettxid, N_CCMARKER) == 0) 
                 result.push_back(Pair("status", "closed"));
             else
                 result.push_back(Pair("status", "open"));
@@ -1857,7 +1858,7 @@ UniValue PricesList(uint32_t filter, CPubKey mypk)
                     int32_t height;
                     uint256 finaltxid;
 
-                    int32_t spent = CCgetspenttxid(finaltxid, vini, height, txid, 2);
+                    int32_t spent = CCgetspenttxid(finaltxid, vini, height, txid, N_CCMARKER);
                     if (filter == 1 && spent < 0 ||  // open positions
                         filter == 2 && spent == 0)   // closed positions
                         bAppend = true;
