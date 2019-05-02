@@ -22,6 +22,7 @@
 
 #define PAYMENTS_TXFEE 10000
 extern std::vector <std::pair<CAmount, CTxDestination>> vAddressSnapshot;
+extern int32_t lastSnapShotHeight;
 
 bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn);
 
