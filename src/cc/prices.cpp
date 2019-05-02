@@ -768,9 +768,11 @@ static std::string prices_getreducedexpr(const std::string &expr)
         if (prices_isopcode(vexpr[i], need)) {
             std::vector<std::string> voperation;
             prices_invertoperation(vexpr, i, voperation);
-            int reducedneed = prices_reduceoperands(voperation);
-            if (reducedneed < need) {
-                prices_substitutereduced(vexpr, i, voperation);
+            if (voperation.size() > 0)  {
+                int reducedneed = prices_reduceoperands(voperation);
+                if (reducedneed < need) {
+                    prices_substitutereduced(vexpr, i, voperation);
+                }
             }
         }
     }
