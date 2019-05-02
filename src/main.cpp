@@ -673,7 +673,7 @@ bool komodo_dailysnapshot(int32_t height)
     {
         // we are at the right height in connect block to scan back to last notarized height. 
         notarized_height = komodo_notarized_height(&prevMoMheight,&notarized_hash,&notarized_desttxid);
-        notarized_height > height-100 ? undo_height = notarized_height : undo_height = height-reorglimit; 
+        notarized_height > height-reorglimit ? undo_height = notarized_height : undo_height = height-reorglimit; 
     }
     fprintf(stderr, "doing snapshot for height.%i undo_height.%i\n", height, undo_height);
     // if we already did this height dont bother doing it again, this is just a reorg. The actual snapshot height cannot be reorged.
@@ -732,7 +732,7 @@ bool komodo_dailysnapshot(int32_t height)
     //for (int j = 0; j < 50; j++) 
     //    fprintf(stderr, "j.%i address.%s nValue.%li\n",j, CBitcoinAddress(vAddressSnapshot[j].second).ToString().c_str(), vAddressSnapshot[j].first );
     // include only top 5000 address.
-    if ( vAddressSnapshot.size() > 5000 ) vAddressSnapshot.resize(5000);
+    if ( vAddressSnapshot.size() > 3999 ) vAddressSnapshot.resize(3999);
     lastSnapShotHeight = undo_height; 
     fprintf(stderr, "vAddressSnapshot.size.%li\n", vAddressSnapshot.size());
     return true;
@@ -3592,8 +3592,8 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             fprintf(stderr,"valueout %.8f too big\n",(double)valueout/COIN);
             return state.DoS(100, error("ConnectBlock(): GetValueOut too big"),REJECT_INVALID,"tx valueout is too big");
         }
-        prevsum = voutsum;
-        voutsum += valueout;
+        //prevsum = voutsum;
+        //voutsum += valueout;
         /*if ( KOMODO_VALUETOOBIG(voutsum) != 0 )
         {
             fprintf(stderr,"voutsum %.8f too big\n",(double)voutsum/COIN);
@@ -4251,7 +4251,7 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
         komodo_pricesupdate(pindexNew->GetHeight(),pblock);
     if ( ASSETCHAINS_SAPLING <= 0 && pindexNew->nTime > KOMODO_SAPLING_ACTIVATION - 24*3600 )
         komodo_activate_sapling(pindexNew);
-    if ( ASSETCHAINS_CC != 0 && (pindexNew->GetHeight() % KOMODO_SNAPSHOT_INTERVAL) == 0 )
+    if ( ASSETCHAINS_CC != 0 && KOMODO_SNAPSHOT_INTERVAL != 0 && (pindexNew->GetHeight() % KOMODO_SNAPSHOT_INTERVAL) == 0 && pindexNew->GetHeight() >= KOMODO_SNAPSHOT_INTERVAL )
     {
         uint64_t start = time(NULL);
         if ( !komodo_dailysnapshot(pindexNew->GetHeight()) )
@@ -6197,12 +6197,6 @@ bool CVerifyDB::VerifyDB(CCoinsView *coinsview, int nCheckLevel, int nCheckDepth
     }
 
     LogPrintf("No coin database inconsistencies in last %i blocks (%i transactions)\n", chainActive.Height() - pindexState->GetHeight(), nGoodTransactions);
-    
-    if ( ASSETCHAINS_CC != 0 && chainActive.Height() > KOMODO_SNAPSHOT_INTERVAL )
-    {
-        if ( !komodo_dailysnapshot(chainActive.Height()) )
-            fprintf(stderr, "daily snapshot failed, please reindex your chain\n"); // maybe force shutdown here?
-    }
     
     return true;
 }

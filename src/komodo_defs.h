@@ -20,7 +20,6 @@
 #define ASSETCHAINS_MINHEIGHT 128
 #define ASSETCHAINS_MAX_ERAS 3
 #define KOMODO_ELECTION_GAP 2000
-#define KOMODO_SNAPSHOT_INTERVAL 1440 // 1440 is approx 1 day. Maybe this can be -ac param to allow for diffrent block times etc.?
 #define ROUNDROBIN_DELAY 61
 #define KOMODO_ASSETCHAIN_MAXLEN 65
 #define KOMODO_LIMITED_NETWORKSIZE 4
@@ -79,7 +78,7 @@ extern std::string DONATION_PUBKEY;
 extern uint8_t ASSETCHAINS_PRIVATE;
 extern int32_t USE_EXTERNAL_PUBKEY;
 extern char NOTARYADDRS[64][64];
-extern int32_t KOMODO_TESTNODE;
+extern int32_t KOMODO_TESTNODE, KOMODO_SNAPSHOT_INTERVAL;
 int tx_height( const uint256 &hash );
 extern std::vector<std::string> vWhiteListAddress;
 void komodo_netevent(std::vector<uint8_t> payload);

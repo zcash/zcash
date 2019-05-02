@@ -5633,7 +5633,7 @@ UniValue payments_airdrop(const UniValue& params, bool fHelp)
 {
     struct CCcontract_info *cp,C;
     if ( fHelp || params.size() != 1 )
-        throw runtime_error("paymentsairdrop \"[lockedblocks,minamount,top,%22paytxid0%22,...,%22paytxidN%22]\"\n");
+        throw runtime_error("paymentsairdrop \"[lockedblocks,minamount,top,bottom,fixedFlag,%22excludeAddress%22,...,%22excludeAddressN%22]\"\n");
     if ( ensure_CCrequirements(EVAL_PAYMENTS) < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     const CKeyStore& keystore = *pwalletMain;
@@ -8045,14 +8045,21 @@ UniValue opreturn_burn(const UniValue& params, bool fHelp)
 	int64_t normalInputs = AddNormalinputs(mtx, myPubkey, nAmount, 60);
 	if (normalInputs < nAmount)
 		throw runtime_error("not enough normals\n");
-
-    CScript opret; uint8_t *ptr;
-    opret << OP_RETURN;
+        
+    CScript opret; uint8_t scripthex[8192];
+          
+    decode_hex(scripthex,strHex.size()/2,(char *)strHex.c_str());
+    std::string test;
+    test.append((char*)scripthex);
+    std::vector<uint8_t> opretdata(test.begin(), test.end());
+    opret << OP_RETURN << E_MARSHAL(ss << opretdata);
+    /*CScript opret; uint8_t *ptr;
+    opret << OP_RETURN << 0;
     int32_t len = strlen(strHex.c_str());
     len >>=1;
-    opret.resize(len+1);
+    opret.resize(len+2);
     ptr = (uint8_t *)&opret[1];
-    decode_hex(ptr,len,(char *)strHex.c_str());
+    decode_hex(ptr,len,(char *)strHex.c_str()); */
 	mtx.vout.push_back(CTxOut(nAmount,opret));
     ret.push_back(Pair("hex",FinalizeCCTx(0, cp, mtx, myPubkey, 10000, CScript())));
 	return(ret);
