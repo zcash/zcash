@@ -481,6 +481,8 @@ bool CBlockTreeDB::Snapshot2(std::map <std::string, CAmount> &addressAmounts, Un
                 try {
                     CAmount nValue;
                     iter->GetValue(nValue);
+                    if ( nValue == 0 )
+                        continue;
                     getAddressFromIndex(indexKey.type, indexKey.hashBytes, address);
                     if ( indexKey.type == 3 )
                     {
@@ -566,9 +568,9 @@ UniValue CBlockTreeDB::Snapshot(int top)
     UniValue result(UniValue::VOBJ);
     UniValue addressesSorted(UniValue::VARR);
     result.push_back(Pair("start_time", (int) time(NULL)));
-    if ( (vAddressSnapshot.size() > 0 && top < 0) || (Snapshot2(addressAmounts,&result) && top > 0) )
+    if ( (vAddressSnapshot.size() > 0 && top < 0) || (Snapshot2(addressAmounts,&result) && top >= 0) )
     {
-        if ( top > 0 )
+        if ( top > -1 )
         {
             for (std::pair<std::string, CAmount> element : addressAmounts)
                 vaddr.push_back( make_pair(element.second, element.first) );

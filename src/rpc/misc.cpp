@@ -1383,7 +1383,7 @@ UniValue getsnapshot(const UniValue& params, bool fHelp)
 
     if (params.size() > 0 && !params[0].isNull()) {
         top = atoi(params[0].get_str().c_str());
-    if (top <= 0)
+    if (top < 0)
         //throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, top must be a positive integer");
         top = -1;
     }
