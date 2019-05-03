@@ -1086,16 +1086,19 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
 int32_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t height, int16_t leverage, std::vector<uint16_t> vec, int64_t positionsize,  int64_t &profits, int64_t &outprice)
 {
     int64_t price;
+#ifndef TESTMODE
+    const int32_t COSTBASIS_PERIOD = PRICES_DAYWINDOW;
+#else
+    const int32_t COSTBASIS_PERIOD = 7;
+#endif
+
 
     if (height < firstheight) {
         fprintf(stderr, "requested height is lower than bet firstheight.%d\n", height);
         return -1;
     }
-#ifndef TESTMODE
-    int32_t minmax = (height < firstheight + PRICES_DAYWINDOW);  // if we are within 24h then use min or max value 
-#else
-    int32_t minmax = (height < firstheight + 7);  // if we are within 24h then use min or max value 
-#endif
+
+    int32_t minmax = (height < firstheight + COSTBASIS_PERIOD);  // if we are within 24h then use min or max value 
 
     if ((price = prices_syntheticprice(vec, height, minmax, leverage)) < 0)
     {
@@ -1122,12 +1125,12 @@ int32_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t
         //}
     }
     else   { 
-        if (height == firstheight + PRICES_DAYWINDOW) {
+        if (height == firstheight + COSTBASIS_PERIOD) {
             // if costbasis not set, just set it
             //costbasis = price;
 
             // use calculated minmax costbasis
-            std::cerr << "prices_syntheticprofits() use permanent costbasis=" << costbasis << " height=" << height << std::endl;
+            std::cerr << "prices_syntheticprofits() use permanent costbasis=" << costbasis << " at height=" << height << std::endl;
         }
     }
     
