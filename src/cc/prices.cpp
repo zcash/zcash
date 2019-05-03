@@ -1801,6 +1801,9 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
             result.push_back(Pair("reduced", prices_getreducedexpr(expr)));
             result.push_back(Pair("batontxid", batontxid.GetHex()));
             result.push_back(Pair("costbasis", ValueFromAmount(averageCostbasis)));
+#ifdef TESTMODE
+            result.push_back(Pair("costbasis_test_period", 7));
+#endif
 
             prices_betjson(result, bets, leverage, endheight, lastprice);
 
