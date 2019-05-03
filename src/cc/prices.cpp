@@ -1091,8 +1091,11 @@ int32_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t
         fprintf(stderr, "requested height is lower than bet firstheight.%d\n", height);
         return -1;
     }
-
+#ifndef TESTMODE
     int32_t minmax = (height < firstheight + PRICES_DAYWINDOW);  // if we are within 24h then use min or max value 
+#else
+    int32_t minmax = (height < firstheight + 7);  // if we are within 24h then use min or max value 
+#endif
 
     if ((price = prices_syntheticprice(vec, height, minmax, leverage)) < 0)
     {
@@ -1802,11 +1805,6 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
             prices_betjson(result, bets, leverage, endheight, lastprice);
 
             result.push_back(Pair("LiquidationPrice", ValueFromAmount(liqprice)));
-
-            //result.push_back(Pair("height", (int64_t)endheight));
-//#ifdef TESTMODE
-//            result.push_back(Pair("test_daywindow", PRICES_DAYWINDOW));
-//#endif
 
             mpz_clear(mpzTotalbets);
             mpz_clear(mpzTotalprofits);
