@@ -555,6 +555,8 @@ bool CBlockTreeDB::Snapshot2(std::map <std::string, CAmount> &addressAmounts, Un
     return true;
 }
 
+extern std::vector <std::pair<CAmount, CTxDestination>> vAddressSnapshot;
+
 UniValue CBlockTreeDB::Snapshot(int top)
 {
     int topN = 0;
@@ -564,11 +566,20 @@ UniValue CBlockTreeDB::Snapshot(int top)
     UniValue result(UniValue::VOBJ);
     UniValue addressesSorted(UniValue::VARR);
     result.push_back(Pair("start_time", (int) time(NULL)));
-    if ( Snapshot2(addressAmounts,&result) )
+    if ( (vAddressSnapshot.size() > 0 && top < 0) || (Snapshot2(addressAmounts,&result) && top > 0) )
     {
-        for (std::pair<std::string, CAmount> element : addressAmounts)
-            vaddr.push_back( make_pair(element.second, element.first) );
-        std::sort(vaddr.rbegin(), vaddr.rend());
+        if ( top > 0 )
+        {
+            for (std::pair<std::string, CAmount> element : addressAmounts)
+                vaddr.push_back( make_pair(element.second, element.first) );
+            std::sort(vaddr.rbegin(), vaddr.rend());
+        }
+        else 
+        {
+            for ( auto address : vAddressSnapshot )
+                vaddr.push_back(make_pair(address.first, CBitcoinAddress(address.second).ToString()));
+            top = vAddressSnapshot.size();
+        }
         int topN = 0;
         for (std::vector<std::pair<CAmount, std::string>>::iterator it = vaddr.begin(); it!=vaddr.end(); ++it)
         {
