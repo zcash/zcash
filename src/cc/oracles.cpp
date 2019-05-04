@@ -935,13 +935,13 @@ UniValue OracleFormat(uint8_t *data,int32_t datalen,char *format,int32_t formatl
         if ( j >= datalen )
             break;
     }
-    return(obj);
+    return(str);
 }
 
 UniValue OracleDataSamples(uint256 reforacletxid,uint256 batontxid,int32_t num)
 {
-    UniValue result(UniValue::VOBJ),a(UniValue::VARR); CTransaction tx,oracletx; uint256 hashBlock,btxid,oracletxid; 
-    CPubKey pk; std::string name,description,format; int32_t numvouts,n=0; std::vector<uint8_t> data; char *formatstr = 0;
+    UniValue result(UniValue::VOBJ),b(UniValue::VARR); CTransaction tx,oracletx; uint256 hashBlock,btxid,oracletxid; 
+    CPubKey pk; std::string name,description,format; int32_t numvouts,n=0; std::vector<uint8_t> data; char str[67], *formatstr = 0;
     
     result.push_back(Pair("result","success"));
     if ( GetTransaction(reforacletxid,oracletx,hashBlock,false) != 0 && (numvouts=oracletx.vout.size()) > 0 )
@@ -954,7 +954,10 @@ UniValue OracleDataSamples(uint256 reforacletxid,uint256 batontxid,int32_t num)
                 {
                     if ( (formatstr= (char *)format.c_str()) == 0 )
                         formatstr = (char *)"";
+                    UniValue a(UniValue::VARR);
                     a.push_back(OracleFormat((uint8_t *)data.data(),(int32_t)data.size(),formatstr,(int32_t)format.size()));
+                    a.push_back(uint256_str(str,batontxid));
+                    b.push_back(a);
                     batontxid = btxid;
                     if ( ++n >= num )
                         break;
@@ -962,7 +965,7 @@ UniValue OracleDataSamples(uint256 reforacletxid,uint256 batontxid,int32_t num)
             }
         }
     }
-    result.push_back(Pair("samples",a));
+    result.push_back(Pair("samples",b));
     return(result);
 }
 
