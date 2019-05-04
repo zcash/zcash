@@ -27,7 +27,7 @@ For information on how to build see the [User Guide](https://zcash.readthedocs.i
 
 Users on the Zcash forum have reported successes with both the Pine64 Rock64Pro and Odroid C2 which contain 4GB and 2GB of RAM respectively.
 
-Just released, the Odroid N2 looks like a great solution with 4GB of RAM. The newly released Jetson Nano Developer Kit from Nvidia (also 4GB of RAM) is also worth a look. The NanoPC-T3 Plus is another option but for the simplest/best experience choose a board with 4GB of RAM. Just make sure before purchase thatthe CPU supports the 64-bit ARMv8 architecture.
+Just released, the Odroid N2 looks like a great solution with 4GB of RAM. The newly released Jetson Nano Developer Kit from Nvidia (also 4GB of RAM) is also worth a look. The NanoPC-T3 Plus is another option but for the simplest/best experience choose a board with 4GB of RAM. Just make sure before purchase that the CPU supports the 64-bit ARMv8 architecture.
 
 # Summary of the Changes Included in this Release
 
