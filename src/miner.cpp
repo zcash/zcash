@@ -406,9 +406,20 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         // Set to 0 so expiry height does not apply to coinbase txs
         txNew.nExpiryHeight = 0;
 
-        if ((nHeight > 0) && (nHeight <= chainparams.GetConsensus().GetLastFoundersRewardBlockHeight())) {
-            // Founders reward is 20% of the block subsidy
-            auto vFoundersReward = txNew.vout[0].nValue / 5;
+        const Consensus::Params& consensusParams = Params().GetConsensus();
+        if (CurrentEpoch(nHeight, consensusParams) < Consensus::UPGRADE_YCASH) {
+            if ((nHeight > 0) && (nHeight <= chainparams.GetConsensus().GetLastFoundersRewardBlockHeight())) {
+                // Founders reward is 20% of the block subsidy
+                auto vFoundersReward = txNew.vout[0].nValue / 5;
+                // Take some reward away from us
+                txNew.vout[0].nValue -= vFoundersReward;
+
+                // And give it to the founders
+                txNew.vout.push_back(CTxOut(vFoundersReward, chainparams.GetFoundersRewardScriptAtHeight(nHeight)));
+            }
+        } else {
+            // Founders reward is 5% of the block subsidy after YCash
+            auto vFoundersReward = txNew.vout[0].nValue / 20;
             // Take some reward away from us
             txNew.vout[0].nValue -= vFoundersReward;
 
