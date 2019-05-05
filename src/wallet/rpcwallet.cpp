@@ -3967,7 +3967,8 @@ UniValue z_getmigrationstatus(const UniValue& params, bool fHelp) {
     {
         std::vector<CSproutNotePlaintextEntry> sproutEntries;
         std::vector<SaplingNoteEntry> saplingEntries;
-        pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, "", 1);
+        std::set<PaymentAddress> zaddrs;
+        pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, zaddrs, 0, INT_MAX, true, true, false);
         CAmount unmigratedAmount = 0;
         for (const auto& sproutEntry : sproutEntries) {
             unmigratedAmount += sproutEntry.plaintext.value();
@@ -4000,7 +4001,6 @@ UniValue z_getmigrationstatus(const UniValue& params, bool fHelp) {
                 continue;
             }
             migrationTxids.push_back(txPair.first.ToString());
-            CBlockIndex* blockIndex = mapBlockIndex[tx.hashBlock];
             //  A transaction is "finalized" iff it has at least 10 confirmations.
             // TODO: subject to change, if the recommended number of confirmations changes.
             if (tx.GetDepthInMainChain() >= 10) {
@@ -4009,6 +4009,11 @@ UniValue z_getmigrationstatus(const UniValue& params, bool fHelp) {
             } else {
                 unfinalizedMigratedAmount -= tx.valueBalance;
             }
+            // If the transaction is in the mempool it will not be associated with a block yet
+            if (tx.hashBlock.IsNull() || mapBlockIndex[tx.hashBlock] == nullptr) {
+                continue;
+            }
+            CBlockIndex* blockIndex = mapBlockIndex[tx.hashBlock];
             //  The value of "time_started" is the earliest Unix timestamp of any known
             // migration transaction involving this wallet; if there is no such transaction,
             // then the field is absent.
