@@ -487,6 +487,7 @@ static const CRPCCommand vRPCCommands[] =
     { "payments",       "paymentslist",      &payments_list,         true },
     { "payments",       "paymentsinfo",      &payments_info,         true },
     { "payments",       "paymentsfund",      &payments_fund,         true },
+    { "payments",       "paymentsmerge",     &payments_merge,        true },
     { "payments",       "paymentsrelease",   &payments_release,      true },
 
     { "CClib",       "cclibaddress",   &cclibaddress,      true },
@@ -543,6 +544,8 @@ static const CRPCCommand vRPCCommands[] =
     /* Address index */
     { "addressindex",       "getaddressmempool",      &getaddressmempool,      true  },
     { "addressindex",       "getaddressutxos",        &getaddressutxos,        false },
+    { "addressindex",       "checknotarization",      &checknotarization,      false },
+    { "addressindex",       "getnotarypayinfo",       &getnotarypayinfo,       false },
     { "addressindex",       "getaddressdeltas",       &getaddressdeltas,       false },
     { "addressindex",       "getaddresstxids",        &getaddresstxids,        false },
     { "addressindex",       "getaddressbalance",      &getaddressbalance,      false },

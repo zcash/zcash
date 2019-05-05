@@ -33,7 +33,9 @@
 
 #include <boost/filesystem/path.hpp>
 
-#include <db_cxx.h>
+// CCLIB fails to compile with this!
+//#include <db_cxx.h>
+#include "../depends/x86_64-unknown-linux-gnu/include/db_cxx.h"
 
 extern unsigned int nWalletDBUpdated;
 
