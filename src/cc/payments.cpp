@@ -239,6 +239,19 @@ bool payments_game(int32_t &top, int32_t &bottom)
     return true;
 }
 
+bool payments_lockedblocks(uint256 blockhash,int32_t lockedblocks,int32_t &blocksleft)
+{
+    int32_t ht = chainActive.Height();
+    CBlockIndex* pblockindex = komodo_blockindex(blockhash);
+    if ( pblockindex == 0 || pblockindex->GetHeight()+lockedblocks > ht)
+    {
+        blocksleft = pblockindex->GetHeight()+lockedblocks - ht;
+        fprintf(stderr, "not elegible to be spent yet height.%i vs elegible_ht.%i blocksleft.%i\n",ht,(pblockindex!=0?pblockindex->GetHeight():0)+lockedblocks,blocksleft);
+        return false; 
+    }
+    return true;
+}
+
 bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
 {
     // one of two addresses
@@ -422,7 +435,7 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
             
             // Check vins
             i = 0; 
-            int32_t ht = chainActive.LastTip()->GetHeight();
+            int32_t blocksleft;
             BOOST_FOREACH(const CTxIn& vin, tx.vin)
             {
                 CTransaction txin;
@@ -446,12 +459,8 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
                         }
                     }
                     // check the chain depth vs locked blocks requirement. 
-                    CBlockIndex* pblockindex = komodo_blockindex(blockhash);
-                    if ( pblockindex == 0 || pblockindex->GetHeight() > ht-lockedblocks )
-                    {
-                        fprintf(stderr, "vin.%i is not elegible to be spent yet height.%i vs elegible_ht.%i\n", i, pblockindex!=0?pblockindex->GetHeight():0, ht-lockedblocks);
+                    if ( !payments_lockedblocks(blockhash, lockedblocks, blocksleft) )
                         return(eval->Invalid("vin not elegible"));
-                    }
                 } else return(eval->Invalid("cant get vin transaction"));
                 i++;
             }
@@ -462,19 +471,27 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
 // end of consensus code
 
 // helper functions for rpc calls in rpcwallet.cpp
-
-int64_t AddPaymentsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey txidpk,int64_t total,int32_t maxinputs,uint256 createtxid,int32_t latestheight)
+int64_t AddPaymentsInputs(bool fLockedBlocks,int8_t GetBalance,struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey txidpk,int64_t total,int32_t maxinputs,uint256 createtxid,int32_t lockedblocks,int64_t minrelease,int32_t &blocksleft)
 {
     char coinaddr[64]; CPubKey Paymentspk; int64_t nValue,threshold,price,totalinputs = 0; uint256 txid,checktxid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t iter,vout,ht,n = 0;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
-    if ( maxinputs > CC_MAXVINS )
-        maxinputs = CC_MAXVINS;
-    if ( maxinputs > 0 )
-        threshold = total/maxinputs;
-    else threshold = total;
+    std::vector<std::pair<int32_t,CAmount> > blocksleft_balance;
+    if ( GetBalance == 0 )
+    {
+        if ( maxinputs > CC_MAXVINS )
+            maxinputs = CC_MAXVINS;
+        if ( maxinputs > 0 )
+            threshold = total/maxinputs;
+        else threshold = total;
+    }
+    else threshold = 0;
     Paymentspk = GetUnspendable(cp,0);
     for (iter=0; iter<2; iter++)
     {
+        if ( GetBalance == 1 && iter == 1 )
+            continue; // getbalance of global paymentsCC address.
+        if ( GetBalance == 2 && iter == 0 )
+            continue; // get balance of txidpk address. 
         if ( iter == 0 )
             GetCCaddress(cp,coinaddr,Paymentspk);
         else GetCCaddress1of2(cp,coinaddr,Paymentspk,txidpk);
@@ -486,19 +503,6 @@ int64_t AddPaymentsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CP
             //fprintf(stderr,"iter.%d %s/v%d %s\n",iter,txid.GetHex().c_str(),vout,coinaddr);
             if ( (vout == 0 || vout == 1) && GetTransaction(txid,vintx,hashBlock,false) != 0 )
             {
-                if ( latestheight != 0 )
-                {
-                    if ( (ht= komodo_blockheight(hashBlock)) == 0 )
-                    {
-                        fprintf(stderr,"null ht\n");
-                        continue;
-                    }
-                    else if ( ht > latestheight )
-                    {
-                        fprintf(stderr,"ht.%d > lastheight.%d\n",ht,latestheight);
-                        continue;
-                    }
-                }
                 if ( iter == 0 )
                 {
                     CScript opret; uint256 checktxid; int32_t opret_ind;
@@ -520,16 +524,37 @@ int64_t AddPaymentsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CP
                 }
                 if ( (nValue= IsPaymentsvout(cp,vintx,vout,coinaddr)) > PAYMENTS_TXFEE && nValue >= threshold && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0 )
                 {
-                    if ( total != 0 && maxinputs != 0 )
+                    int32_t tmpblocksleft = 0;
+                    if ( GetBalance == 0 && total != 0 && maxinputs != 0 )
                         mtx.vin.push_back(CTxIn(txid,vout,CScript()));
                     nValue = it->second.satoshis;
+                    if ( fLockedBlocks && !payments_lockedblocks(hashBlock, lockedblocks, tmpblocksleft) )
+                    {
+                        blocksleft_balance.push_back(std::make_pair(tmpblocksleft,nValue));
+                        continue;
+                    }
                     totalinputs += nValue;
                     n++;
                     //fprintf(stderr,"iter.%d %s/v%d %s %.8f\n",iter,txid.GetHex().c_str(),vout,coinaddr,(double)nValue/COIN);
-                    if ( (total > 0 && totalinputs >= total) || (maxinputs > 0 && n >= maxinputs) )
-                        break;
+                    if ( GetBalance == 0 && ((total > 0 && totalinputs >= total) || (maxinputs > 0 && n >= maxinputs)) )
+                        break; // create tx. We have ebnough inputs to make it. 
                 } //else fprintf(stderr,"nValue %.8f vs threshold %.8f\n",(double)nValue/COIN,(double)threshold/COIN);
-                iter++;
+            }
+        }
+    }
+    if ( GetBalance == 3 ) // return elegible balance to be spent, and blocks left until min release can be released.
+    {
+        int64_t lockedblocks_balance = totalinputs; // inputs that can be spent already. 
+        // sort utxos by blocks until able to be spent, smallest at top.
+        std::sort(blocksleft_balance.begin(), blocksleft_balance.end());
+        // iterate the utxos blocks left vector, to get block height min release is able to be released. 
+        for ( auto utxo : blocksleft_balance )
+        {
+            lockedblocks_balance += utxo.second;
+            if ( lockedblocks_balance >= minrelease )
+            {
+                blocksleft = utxo.first;
+                break;
             }
         }
     }
@@ -607,10 +632,11 @@ int32_t payments_parsehexdata(std::vector<uint8_t> &hexdata,cJSON *item,int32_t 
 
 UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
 {
-    int32_t latestheight,nextheight = komodo_nextheight();
+    int32_t nextheight = komodo_nextheight();
+    //int32_t latestheight,nextheight = komodo_nextheight();
     CMutableTransaction tmpmtx,mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(),nextheight); UniValue result(UniValue::VOBJ); uint256 createtxid,hashBlock,tokenid;
     CTransaction tx,txO; CPubKey mypk,txidpk,Paymentspk; int32_t i,n,m,numoprets=0,lockedblocks,minrelease; int64_t newamount,inputsum,amount,CCchange=0,totalallocations=0,checkallocations=0,allocation; CTxOut vout; CScript onlyopret; char txidaddr[64],destaddr[64]; std::vector<uint256> txidoprets;
-    int32_t top,bottom=0; std::vector<std::vector<uint8_t>> excludeScriptPubKeys; int8_t funcid,fixedAmount=0; bool fFixedAmount = false;
+    int32_t top,bottom=0,blocksleft=0; std::vector<std::vector<uint8_t>> excludeScriptPubKeys; int8_t funcid,fixedAmount=0; bool fFixedAmount = false;
     mpz_t mpzTotalAllocations; mpz_init(mpzTotalAllocations);
     cJSON *params = payments_reparse(&n,jsonstr);
     mypk = pubkey2pk(Mypubkey());
@@ -631,7 +657,7 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
                         free_json(params);
                     return(result);
                 }
-                latestheight = (nextheight - lockedblocks - 1);
+                //latestheight = (nextheight - lockedblocks - 1);
                 if ( amount < minrelease*COIN )
                 {
                     result.push_back(Pair("result","error"));
@@ -812,7 +838,7 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
                     free_json(params);
                 return(result);
             }
-            if ( (inputsum= AddPaymentsInputs(cp,mtx,txidpk,newamount+2*PAYMENTS_TXFEE,CC_MAXVINS/2,createtxid,latestheight)) >= newamount+2*PAYMENTS_TXFEE )
+            if ( (inputsum= AddPaymentsInputs(true,0,cp,mtx,txidpk,newamount+2*PAYMENTS_TXFEE,CC_MAXVINS/2,createtxid,lockedblocks,minrelease,blocksleft)) >= newamount+2*PAYMENTS_TXFEE )
             {
                 std::string rawtx;
                 if ( (CCchange= (inputsum - newamount - 2*PAYMENTS_TXFEE)) >= PAYMENTS_TXFEE )
@@ -1100,9 +1126,9 @@ UniValue PaymentsAirdrop(struct CCcontract_info *cp,char *jsonstr)
 
 UniValue PaymentsInfo(struct CCcontract_info *cp,char *jsonstr)
 {
-    UniValue result(UniValue::VOBJ),a(UniValue::VARR); CTransaction tx,txO; CPubKey Paymentspk,txidpk; int32_t i,j,n,flag=0,numoprets=0,lockedblocks,minrelease; std::vector<uint256> txidoprets; int64_t funds,fundsopret,totalallocations=0,allocation; char fundsaddr[64],fundsopretaddr[64],txidaddr[64],*outstr; uint256 createtxid,hashBlock;
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR); CTransaction tx,txO; CPubKey Paymentspk,txidpk; int32_t i,j,n,flag=0,numoprets=0,lockedblocks,minrelease,blocksleft=0; std::vector<uint256> txidoprets; int64_t funds,fundsopret,elegiblefunds,totalallocations=0,allocation; char fundsaddr[64],fundsopretaddr[64],txidaddr[64],*outstr; uint256 createtxid,hashBlock;
     int32_t top,bottom; std::vector<std::vector<uint8_t>> excludeScriptPubKeys; // snapshot 
-    uint256 tokenid; int8_t fixedAmount;
+    uint256 tokenid; int8_t fixedAmount; CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(),komodo_nextheight());
     cJSON *params = payments_reparse(&n,jsonstr);
     if ( params != 0 && n == 1 )
     {
@@ -1210,13 +1236,19 @@ UniValue PaymentsInfo(struct CCcontract_info *cp,char *jsonstr)
             {
                 txidpk = CCtxidaddr(txidaddr,createtxid);
                 GetCCaddress1of2(cp,fundsaddr,Paymentspk,txidpk);
-                funds = CCaddress_balance(fundsaddr,1);
+                funds = AddPaymentsInputs(false,2,cp,mtx,txidpk,0,CC_MAXVINS,createtxid,lockedblocks,minrelease,blocksleft);
+                //CCaddress_balance(fundsaddr,1);
                 result.push_back(Pair(fundsaddr,ValueFromAmount(funds)));
                 GetCCaddress(cp,fundsopretaddr,Paymentspk);
                 // TODO: Shows balance for ALL payments plans, not just the one asked for! Needs to be reworked. 
-                fundsopret = CCaddress_balance(fundsopretaddr,1);
+                fundsopret = AddPaymentsInputs(false,1,cp,mtx,txidpk,0,CC_MAXVINS,createtxid,lockedblocks,minrelease,blocksleft);
+                //CCaddress_balance(fundsopretaddr,1);
                 result.push_back(Pair(fundsopretaddr,ValueFromAmount(fundsopret)));
                 result.push_back(Pair("totalfunds",ValueFromAmount(funds+fundsopret)));
+                // Blocks until minrelease can be released. 
+                elegiblefunds = AddPaymentsInputs(true,3,cp,mtx,txidpk,0,CC_MAXVINS,createtxid,lockedblocks,minrelease,blocksleft);
+                result.push_back(Pair("elegiblefunds",ValueFromAmount(elegiblefunds)));
+                result.push_back(Pair("min_release_height",chainActive.Height()+blocksleft));
                 result.push_back(Pair("result","success"));
             }
         }
