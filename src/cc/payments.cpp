@@ -224,6 +224,21 @@ void pub2createtxid(char *str)
     free(rev);
 }
 
+bool payments_game(int32_t &top, int32_t &bottom)
+{
+    uint64_t x;
+    uint256 tmphash = chainActive[lastSnapShotHeight]->GetBlockHash();
+    memcpy(&x,&tmphash,sizeof(x));
+    bottom = ((x & 0xff) % 50);
+    if ( bottom == 0 ) bottom = 1;
+    top = (((x>>8) & 0xff) % 100);
+    if ( top < 50 ) top += 50;
+    bottom = (vAddressSnapshot.size()*bottom)/100;
+    top = (vAddressSnapshot.size()*top)/100;
+    fprintf(stderr, "bottom.%i top.%i\n",bottom,top);
+    return true;
+}
+
 bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
 {
     // one of two addresses
@@ -309,17 +324,7 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
                 if ( fixedAmount == 7 ) 
                 {
                     // game setting, randomise bottom and top values 
-                    uint64_t x;
-                    uint256 tmphash = chainActive[lastSnapShotHeight]->GetBlockHash();
-                    memcpy(&x,&tmphash,sizeof(x));
-                    bottom = ((x & 0xff) % 50);
-                    if ( bottom == 0 ) bottom = 1;
-                    top = (((x>>8) & 0xff) % 100);
-                    if ( top < 50 ) top += 50;
-                    bottom = (vAddressSnapshot.size()*bottom)/100;
-                    top = (vAddressSnapshot.size()*top)/100;
-                    fprintf(stderr, "bottom.%i top.%i\n",bottom,top);
-                    fFixedAmount = true;
+                    fFixedAmount = payments_game(top,bottom);
                 }
                 else if ( fixedAmount != 0 )
                 {
@@ -717,17 +722,7 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
                     if ( fixedAmount == 7 ) 
                     {
                         // game setting, randomise bottom and top values 
-                        uint64_t x;
-                        uint256 tmphash = chainActive[lastSnapShotHeight]->GetBlockHash();
-                        memcpy(&x,&tmphash,sizeof(x));
-                        bottom = ((x & 0xff) % 50);
-                        if ( bottom == 0 ) bottom = 1;
-                        top = (((x>>8) & 0xff) % 100);
-                        if ( top < 50 ) top += 50;
-                        bottom = (vAddressSnapshot.size()*bottom)/100;
-                        top = (vAddressSnapshot.size()*top)/100;
-                        fprintf(stderr, "bottom.%i top.%i\n",bottom,top);
-                        fFixedAmount = true;
+                        fFixedAmount = payments_game(top,bottom);
                     }
                     else if ( fixedAmount != 0 )
                     {
@@ -1172,11 +1167,14 @@ UniValue PaymentsInfo(struct CCcontract_info *cp,char *jsonstr)
                         free_json(params);
                     return(result);
                 }
-                result.push_back(Pair("plan_type","snapshot"));
+                if ( fixedAmount == 7 && payments_game(top,bottom))
+                    result.push_back(Pair("plan_type","payments_game"));
+                else 
+                    result.push_back(Pair("plan_type","snapshot"));
                 result.push_back(Pair("lockedblocks",(int64_t)lockedblocks));
-                result.push_back(Pair("minrelease",(int64_t)minrelease));
-                result.push_back(Pair("top",(int64_t)top));
+                result.push_back(Pair("minrelease",(int64_t)minrelease));                
                 result.push_back(Pair("bottom",(int64_t)bottom));
+                result.push_back(Pair("top",(int64_t)top));
                 result.push_back(Pair("fixedFlag",(int64_t)fixedAmount));
                 // TODO: convert to show addresses instead of scriptpubkey.
                 for ( auto scriptPubKey : excludeScriptPubKeys )
