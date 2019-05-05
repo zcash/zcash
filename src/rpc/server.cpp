@@ -487,6 +487,7 @@ static const CRPCCommand vRPCCommands[] =
     { "payments",       "paymentslist",      &payments_list,         true },
     { "payments",       "paymentsinfo",      &payments_info,         true },
     { "payments",       "paymentsfund",      &payments_fund,         true },
+    { "payments",       "paymentsmerge",     &payments_merge,        true },
     { "payments",       "paymentsrelease",   &payments_release,      true },
 
     { "CClib",       "cclibaddress",   &cclibaddress,      true },

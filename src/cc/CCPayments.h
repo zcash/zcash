@@ -21,6 +21,7 @@
 #include <gmp.h>
 
 #define PAYMENTS_TXFEE 10000
+#define PAYMENTS_MERGEOFSET 10  // 100? 
 extern std::vector <std::pair<CAmount, CTxDestination>> vAddressSnapshot;
 extern int32_t lastSnapShotHeight;
 
@@ -29,6 +30,7 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
 // CCcustom
 UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr);
 UniValue PaymentsFund(struct CCcontract_info *cp,char *jsonstr);
+UniValue PaymentsMerge(struct CCcontract_info *cp,char *jsonstr);
 UniValue PaymentsTxidopret(struct CCcontract_info *cp,char *jsonstr);
 UniValue PaymentsCreate(struct CCcontract_info *cp,char *jsonstr);
 UniValue PaymentsAirdrop(struct CCcontract_info *cp,char *jsonstr);
