@@ -959,7 +959,7 @@ UniValue OracleDataSamples(uint256 reforacletxid,uint256 batontxid,int32_t num)
                     a.push_back(uint256_str(str,batontxid));
                     b.push_back(a);
                     batontxid = btxid;
-                    if ( ++n >= num )
+                    if ( ++n >= num && num != 0)
                         break;
                 } else break;
             }
