@@ -850,9 +850,13 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
 {
     int32_t i, value, errcode, depth, retval = -1;
     uint16_t opcode;
-    int64_t *pricedata, pricestack[4], price, den, a, b, c;
+    int64_t *pricedata, pricestack[4], a, b, c;
 
-    mpz_t mpzA, mpzB, mpzC, mpzResult;
+    mpz_t mpzTotalPrice, mpzPriceValue, mpzDen, mpzA, mpzB, mpzC, mpzResult;
+
+    mpz_init(mpzTotalPrice);
+    mpz_init(mpzPriceValue);
+    mpz_init(mpzDen);
 
     mpz_init(mpzA);
     mpz_init(mpzB);
@@ -860,7 +864,7 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
     mpz_init(mpzResult);
 
     pricedata = (int64_t *)calloc(sizeof(*pricedata) * 3, 1 + PRICES_DAYWINDOW * 2 + PRICES_SMOOTHWIDTH);
-    price = den = depth = errcode = 0;
+    depth = errcode = 0;
 
     for (i = 0; i < vec.size(); i++)
     {
@@ -869,7 +873,7 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
 
         mpz_set_ui(mpzResult, 0);  // clear result to test overflow (see below)
 
-        std::cerr << "prices_syntheticprice" << " i=" << i << " price=" << price << " value=" << value << " depth=" << depth <<  " opcode&KOMODO_PRICEMASK=" << (opcode & KOMODO_PRICEMASK) <<std::endl;
+        std::cerr << "prices_syntheticprice" << " i=" << i << " mpzPrice=" << mpz_get_ui(mpzTotalPrice) << " value=" << value << " depth=" << depth <<  " opcode&KOMODO_PRICEMASK=" << (opcode & KOMODO_PRICEMASK) <<std::endl;
         switch (opcode & KOMODO_PRICEMASK)
         {
         case 0: // indices 
@@ -902,8 +906,11 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
         case PRICES_WEIGHT: // multiply by weight and consume top of stack by updating price
             if (depth == 1) {
                 depth--;
-                price += pricestack[0] * value;
-                den += value;     // acc weight value
+                //price += pricestack[0] * value;
+                mpz_set_si(mpzPriceValue, pricestack[0]);
+                mpz_mul_si(mpzPriceValue, mpzPriceValue, value);
+                // den += value; 
+                mpz_add_ui(mpzDen, mpzDen, (uint64_t)value);              // accumulate weight's value  
             }
             else
                 errcode = -2;
@@ -1058,6 +1065,16 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
     mpz_clear(mpzB);
     mpz_clear(mpzC);
 
+    if( mpz_get_si(mpzDen) != 0 )
+        mpz_tdiv_q(mpzTotalPrice, mpzTotalPrice, mpzDen);   // price / den
+    
+    int64_t den = mpz_get_si(mpzDen);
+    int64_t priceIndex = mpz_get_si(mpzTotalPrice);
+
+    mpz_clear(mpzDen);
+    mpz_clear(mpzTotalPrice);
+    mpz_clear(mpzPriceValue);
+
     if (errcode != 0)
         std::cerr << "prices_syntheticprice errcode in switch=" << errcode << std::endl;
 
@@ -1078,8 +1095,9 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
         std::cerr << "prices_syntheticprice err=" << errcode << std::endl;
         return(errcode);
     }
-    std::cerr << "prices_syntheticprice price=" << price << " den=" << den << std::endl;
-    return(price / den);
+    std::cerr << "prices_syntheticprice priceIndex=" << priceIndex << " den=" << den << std::endl;
+
+    return priceIndex;
 }
 
 // calculates costbasis and profit/loss for the bet
