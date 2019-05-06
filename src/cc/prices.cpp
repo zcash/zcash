@@ -875,7 +875,7 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
 
         mpz_set_ui(mpzResult, 0);  // clear result to test overflow (see below)
 
-        std::cerr << "prices_syntheticprice" << " i=" << i << " mpzPrice=" << mpz_get_ui(mpzTotalPrice) << " value=" << value << " depth=" << depth <<  " opcode&KOMODO_PRICEMASK=" << (opcode & KOMODO_PRICEMASK) <<std::endl;
+        std::cerr << "prices_syntheticprice" << " i=" << i << " mpzTotalPrice=" << mpz_get_ui(mpzTotalPrice) << " value=" << value << " depth=" << depth <<  " opcode&KOMODO_PRICEMASK=" << (opcode & KOMODO_PRICEMASK) <<std::endl;
         switch (opcode & KOMODO_PRICEMASK)
         {
         case 0: // indices 
