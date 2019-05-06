@@ -4,4 +4,3 @@ cp customcc.so ../libcc.so
 cd ..
 make
 cd cc
-

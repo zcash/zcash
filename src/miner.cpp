@@ -728,7 +728,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                     }
                     return(0);
                 }
-                fprintf(stderr, "Created notary payment coinbase totalsat.%lu\n",totalsats);    
+                //fprintf(stderr, "Created notary payment coinbase totalsat.%lu\n",totalsats);    
             } else fprintf(stderr, "vout 2 of notarisation is not OP_RETURN scriptlen.%i\n", scriptlen);
         }
         if ( ASSETCHAINS_CBOPRET != 0 )

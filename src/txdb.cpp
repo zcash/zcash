@@ -481,6 +481,8 @@ bool CBlockTreeDB::Snapshot2(std::map <std::string, CAmount> &addressAmounts, Un
                 try {
                     CAmount nValue;
                     iter->GetValue(nValue);
+                    if ( nValue == 0 )
+                        continue;
                     getAddressFromIndex(indexKey.type, indexKey.hashBytes, address);
                     if ( indexKey.type == 3 )
                     {
@@ -555,6 +557,8 @@ bool CBlockTreeDB::Snapshot2(std::map <std::string, CAmount> &addressAmounts, Un
     return true;
 }
 
+extern std::vector <std::pair<CAmount, CTxDestination>> vAddressSnapshot;
+
 UniValue CBlockTreeDB::Snapshot(int top)
 {
     int topN = 0;
@@ -564,11 +568,20 @@ UniValue CBlockTreeDB::Snapshot(int top)
     UniValue result(UniValue::VOBJ);
     UniValue addressesSorted(UniValue::VARR);
     result.push_back(Pair("start_time", (int) time(NULL)));
-    if ( Snapshot2(addressAmounts,&result) )
+    if ( (vAddressSnapshot.size() > 0 && top < 0) || (Snapshot2(addressAmounts,&result) && top >= 0) )
     {
-        for (std::pair<std::string, CAmount> element : addressAmounts)
-            vaddr.push_back( make_pair(element.second, element.first) );
-        std::sort(vaddr.rbegin(), vaddr.rend());
+        if ( top > -1 )
+        {
+            for (std::pair<std::string, CAmount> element : addressAmounts)
+                vaddr.push_back( make_pair(element.second, element.first) );
+            std::sort(vaddr.rbegin(), vaddr.rend());
+        }
+        else 
+        {
+            for ( auto address : vAddressSnapshot )
+                vaddr.push_back(make_pair(address.first, CBitcoinAddress(address.second).ToString()));
+            top = vAddressSnapshot.size();
+        }
         int topN = 0;
         for (std::vector<std::pair<CAmount, std::string>>::iterator it = vaddr.begin(); it!=vaddr.end(); ++it)
         {
@@ -705,6 +718,8 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
                 pindexNew->nTx            = diskindex.nTx;
                 pindexNew->nSproutValue   = diskindex.nSproutValue;
                 pindexNew->nSaplingValue  = diskindex.nSaplingValue;
+                pindexNew->segid          = diskindex.segid;
+                pindexNew->nNotaryPay     = diskindex.nNotaryPay;
 //fprintf(stderr,"loadguts ht.%d\n",pindexNew->GetHeight());
                 // Consistency checks
                 auto header = pindexNew->GetBlockHeader();
