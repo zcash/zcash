@@ -303,7 +303,7 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
         pub2createtxid(temp);
         createtxid = Parseuint256(temp);
     }
-    //printf("createtxid.%s\n",createtxid.ToString().c_str());
+    printf("createtxid.%s\n",createtxid.ToString().c_str());
     
     // use the createtxid to fetch the tx and all of the plans info.
     if ( myGetTransaction(createtxid,plantx,blockhash) != 0 && plantx.vout.size() > 0 )
@@ -501,7 +501,7 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
                     {
                         mergeoffset = PAYMENTS_MERGEOFSET;
                     }
-                    fprintf(stderr, "mergeoffset.%i\n", mergeoffset);
+                    //fprintf(stderr, "mergeoffset.%i\n", mergeoffset);
                     // check the chain depth vs locked blocks requirement. 
                     if ( !payments_lockedblocks(blockhash, lockedblocks+mergeoffset, blocksleft) )
                         return(eval->Invalid("vin not elegible"));
@@ -576,16 +576,16 @@ int64_t AddPaymentsInputs(bool fLockedBlocks,int8_t GetBalance,struct CCcontract
                 if ( (nValue= IsPaymentsvout(cp,vintx,vout,coinaddr,ccopret)) > PAYMENTS_TXFEE && nValue >= threshold && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0 )
                 {
                     int32_t tmpblocksleft = 0;
-                    if ( (GetBalance == 0 && total != 0 && maxinputs != 0) || GetBalance == 4 )
-                        mtx.vin.push_back(CTxIn(txid,vout,CScript()));
-                    nValue = it->second.satoshis;
-                    if ( nValue < COIN )
-                        blocksleft++; // count dust with unused variable.
                     if ( fLockedBlocks && !payments_lockedblocks(hashBlock, lockedblocks+(GetBalance == 4 ? PAYMENTS_MERGEOFSET : 0), tmpblocksleft) )
                     {
                         blocksleft_balance.push_back(std::make_pair(tmpblocksleft,nValue));
                         continue;
                     }
+                    if ( (GetBalance == 0 && total != 0 && maxinputs != 0) || GetBalance == 4 )
+                        mtx.vin.push_back(CTxIn(txid,vout,CScript()));
+                    nValue = it->second.satoshis;
+                    if ( nValue < COIN )
+                        blocksleft++; // count dust with unused variable.
                     totalinputs += nValue;
                     n++;
                     //fprintf(stderr,"iter.%d %s/v%d %s %.8f\n",iter,txid.GetHex().c_str(),vout,coinaddr,(double)nValue/COIN);
@@ -1021,24 +1021,25 @@ UniValue PaymentsMerge(struct CCcontract_info *cp,char *jsonstr)
         else if ( (inputsum= AddPaymentsInputs(true,4,cp,mtx,txidpk,0,CC_MAXVINS,createtxid,lockedblocks,minrelease,blocksleft)) > 0 && mtx.vin.size() > 1 )
         {
             int32_t dust = blocksleft;
-            if ( mtx.vin.size() != dust+1 )
+            if ( mtx.vin.size() == dust+1 )
             {
                 result.push_back(Pair("result","error"));
                 result.push_back(Pair("error","cannot merge only dust"));
             } 
             else 
-            {
+            { 
                 // encode the checktxid into the end of the ccvout, along with 'M' to flag merge type tx. 
                 opret = EncodePaymentsMergeOpRet(createtxid);
                 std::vector<std::vector<unsigned char>> vData = std::vector<std::vector<unsigned char>>();
                 if ( makeCCopret(opret, vData) )
-                    mtx.vout.push_back(MakeCC1vout(EVAL_PAYMENTS,inputsum-PAYMENTS_TXFEE,Paymentspk,&vData)); 
+                    mtx.vout.push_back(MakeCC1of2vout(EVAL_PAYMENTS,inputsum-PAYMENTS_TXFEE,Paymentspk,txidpk,&vData));
+                    //mtx.vout.push_back(MakeCC1vout(EVAL_PAYMENTS,inputsum-PAYMENTS_TXFEE,txidpk,&vData)); 
                 GetCCaddress1of2(cp,destaddr,Paymentspk,txidpk);
                 CCaddr1of2set(cp,Paymentspk,txidpk,cp->CCpriv,destaddr);
                 rawtx = FinalizeCCTx(0,cp,mtx,mypk,PAYMENTS_TXFEE,CScript());
                 if ( params != 0 )
                     free_json(params);
-                return(payments_rawtxresult(result,rawtx,1));
+                return(payments_rawtxresult(result,rawtx,0));
             }
         }
         else
