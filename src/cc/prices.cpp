@@ -865,6 +865,8 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
 
     pricedata = (int64_t *)calloc(sizeof(*pricedata) * 3, 1 + PRICES_DAYWINDOW * 2 + PRICES_SMOOTHWIDTH);
     depth = errcode = 0;
+    mpz_set_ui(mpzTotalPrice, 0);
+    mpz_set_ui(mpzDen, 0);
 
     for (i = 0; i < vec.size(); i++)
     {
@@ -909,6 +911,8 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
                 //price += pricestack[0] * value;
                 mpz_set_si(mpzPriceValue, pricestack[0]);
                 mpz_mul_si(mpzPriceValue, mpzPriceValue, value);
+                mpz_add(mpzTotalPrice, mpzTotalPrice, mpzPriceValue);              // accumulate weight's value  
+
                 // den += value; 
                 mpz_add_ui(mpzDen, mpzDen, (uint64_t)value);              // accumulate weight's value  
             }
