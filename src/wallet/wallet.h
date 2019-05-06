@@ -757,7 +757,7 @@ private:
     TxNullifiers mapTxSaplingNullifiers;
 
     std::vector<CTransaction> pendingSaplingMigrationTxs;
-    std::shared_ptr<AsyncRPCOperation> saplingMigrationOperation = nullptr;
+    AsyncRPCOperationId saplingMigrationOperationId;
 
     void AddToTransparentSpends(const COutPoint& outpoint, const uint256& wtxid);
     void AddToSproutSpends(const uint256& nullifier, const uint256& wtxid);

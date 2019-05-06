@@ -106,6 +106,9 @@ class SproutSaplingMigration(BitcoinTestFramework):
         assert_equal(node.z_getbalance(sproutAddr), Decimal('0'))
         assert_equal(node.z_getbalance(saplingAddr), Decimal('0'))
         assert_true(node.z_getbalance(saplingAddr, 0) > Decimal('0'), "Unconfirmed sapling balance at 499 % 500")
+        # Check that unmigrated amount + unfinalized = starting balance - fee
+        status = node.z_getmigrationstatus()
+        assert_equal(Decimal('9.9999'), Decimal(status['unmigrated_amount']) + Decimal(status['unfinalized_migrated_amount']))
 
         node.generate(1)
         self.sync_all()
