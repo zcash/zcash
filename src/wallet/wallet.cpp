@@ -603,17 +603,20 @@ void CWallet::RunSaplingMigration(int blockHeight) {
     // height N, implementations SHOULD start generating the transactions at around
     // height N-5
     if (blockHeight % 500 == 495) {
-        if (saplingMigrationOperation != nullptr) {
-            saplingMigrationOperation->cancel();
+        std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
+        std::shared_ptr<AsyncRPCOperation> lastOperation = q->popOperationForId(saplingMigrationOperationId);
+        if (lastOperation != nullptr) {
+            lastOperation->cancel();
         }
         pendingSaplingMigrationTxs.clear();
-        std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
         std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_saplingmigration(blockHeight + 5));
-        saplingMigrationOperation = operation;
+        saplingMigrationOperationId = operation->getId();
         q->addOperation(operation);
     } else if (blockHeight % 500 == 499) {
-        if (saplingMigrationOperation != nullptr) {
-            saplingMigrationOperation->cancel();
+        std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
+        std::shared_ptr<AsyncRPCOperation> lastOperation = q->popOperationForId(saplingMigrationOperationId);
+        if (lastOperation != nullptr) {
+            lastOperation->cancel();
         }
         for (const CTransaction& transaction : pendingSaplingMigrationTxs) {
             // The following is taken from z_sendmany/z_mergetoaddress

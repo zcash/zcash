@@ -20,6 +20,8 @@ public:
 
     virtual void main();
 
+    virtual void cancel();
+
     virtual UniValue getStatus() const;
 
 private:
