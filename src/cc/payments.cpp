@@ -303,7 +303,7 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
         pub2createtxid(temp);
         createtxid = Parseuint256(temp);
     }
-    printf("createtxid.%s\n",createtxid.ToString().c_str());
+    //printf("createtxid.%s\n",createtxid.ToString().c_str());
     
     // use the createtxid to fetch the tx and all of the plans info.
     if ( myGetTransaction(createtxid,plantx,blockhash) != 0 && plantx.vout.size() > 0 )
@@ -496,7 +496,7 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
                             fprintf(stderr, "vin.%i is not a payments CC vout: txid.%s\n", i, txin.GetHash().ToString().c_str());
                             return(eval->Invalid("vin is not paymentsCC type"));
                         }
-                    } 
+                    }
                     else if ( fIsMerge && getCCopret(txin.vout[vin.prevout.n].scriptPubKey,opret) && opret.size() > 2 && DecodePaymentsMergeOpRet(opret,checktxid) == 'M' )
                     {
                         mergeoffset = PAYMENTS_MERGEOFSET;
@@ -514,7 +514,7 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
                     return(eval->Invalid("must have at least 2 vins to carry out merge"));
                 else if ( i == dust+1 )
                     return(eval->Invalid("cannot merge only dust"));
-            }    
+            }
         } else return(eval->Invalid("create transaction cannot decode"));
     } else return(eval->Invalid("Could not get contract transaction"));
     return(true);
@@ -595,7 +595,7 @@ int64_t AddPaymentsInputs(bool fLockedBlocks,int8_t GetBalance,struct CCcontract
             }
         }
     }
-    if ( GetBalance == 3 ) // return elegible balance to be spent, and blocks left until min release can be released.
+    if ( GetBalance == 3 && totalinputs < minrelease ) // return elegible balance to be spent, and blocks left until min release can be released.
     {
         int64_t lockedblocks_balance = totalinputs; // inputs that can be spent already. 
         // sort utxos by blocks until able to be spent, smallest at top.
@@ -800,7 +800,6 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
                         return(result);
                     }
                     i = 0;
-                    //for ( auto address : vAddressSnapshot )
                     if ( fixedAmount == 7 ) 
                     {
                         // game setting, randomise bottom and top values 
@@ -846,7 +845,6 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
                 newamount = amount;
                 int64_t totalamountsent = 0;
                 mpz_t mpzAmount; mpz_init(mpzAmount); mpz_set_si(mpzAmount,amount);
-                fprintf(stderr, "m.%i\n",m);
                 for (i=0; i<m; i++)
                 {
                     mpz_t mpzValue; mpz_init(mpzValue);
@@ -1002,8 +1000,8 @@ UniValue PaymentsFund(struct CCcontract_info *cp,char *jsonstr)
 UniValue PaymentsMerge(struct CCcontract_info *cp,char *jsonstr)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight()); UniValue result(UniValue::VOBJ);
-    CPubKey Paymentspk,mypk,txidpk; uint256 createtxid,hashBlock; int64_t totalallocations,inputsum; CScript opret; CTransaction tx; char txidaddr[64],destaddr[64]; std::string rawtx; 
-    int32_t n,useopret = 0,lockedblocks,minrelease,top,bottom,minimum=10000,blocksleft; std::vector<uint256> txidoprets;
+    CPubKey Paymentspk,mypk,txidpk; uint256 createtxid,hashBlock; int64_t inputsum,totalallocations=0; CScript opret; CTransaction tx; char txidaddr[64],destaddr[64]; std::string rawtx; 
+    int32_t n,lockedblocks,minrelease,top,bottom,minimum=10000,blocksleft; std::vector<uint256> txidoprets;
     std::vector<std::vector<uint8_t>> excludeScriptPubKeys; // snapshot 
     uint256 tokenid; int8_t fixedAmount;
     cJSON *params = payments_reparse(&n,jsonstr);
@@ -1033,7 +1031,6 @@ UniValue PaymentsMerge(struct CCcontract_info *cp,char *jsonstr)
                 std::vector<std::vector<unsigned char>> vData = std::vector<std::vector<unsigned char>>();
                 if ( makeCCopret(opret, vData) )
                     mtx.vout.push_back(MakeCC1of2vout(EVAL_PAYMENTS,inputsum-PAYMENTS_TXFEE,Paymentspk,txidpk,&vData));
-                    //mtx.vout.push_back(MakeCC1vout(EVAL_PAYMENTS,inputsum-PAYMENTS_TXFEE,txidpk,&vData)); 
                 GetCCaddress1of2(cp,destaddr,Paymentspk,txidpk);
                 CCaddr1of2set(cp,Paymentspk,txidpk,cp->CCpriv,destaddr);
                 rawtx = FinalizeCCTx(0,cp,mtx,mypk,PAYMENTS_TXFEE,CScript());
@@ -1364,12 +1361,9 @@ UniValue PaymentsInfo(struct CCcontract_info *cp,char *jsonstr)
                 txidpk = CCtxidaddr(txidaddr,createtxid);
                 GetCCaddress1of2(cp,fundsaddr,Paymentspk,txidpk);
                 funds = AddPaymentsInputs(false,2,cp,mtx,txidpk,0,CC_MAXVINS,createtxid,lockedblocks,minrelease,blocksleft);
-                //CCaddress_balance(fundsaddr,1);
                 result.push_back(Pair(fundsaddr,ValueFromAmount(funds)));
                 GetCCaddress(cp,fundsopretaddr,Paymentspk);
-                // TODO: Shows balance for ALL payments plans, not just the one asked for! Needs to be reworked. 
                 fundsopret = AddPaymentsInputs(false,1,cp,mtx,txidpk,0,CC_MAXVINS,createtxid,lockedblocks,minrelease,blocksleft);
-                //CCaddress_balance(fundsopretaddr,1);
                 result.push_back(Pair(fundsopretaddr,ValueFromAmount(fundsopret)));
                 result.push_back(Pair("totalfunds",ValueFromAmount(funds+fundsopret)));
                 // Blocks until minrelease can be released. 
