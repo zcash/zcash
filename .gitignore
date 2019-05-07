@@ -109,3 +109,8 @@ libzcashconsensus.pc
 
 contrib/debian/files
 contrib/debian/substvars
+
+# tex
+ycashprotocol.pdf
+ycashprotocol.aux
+ycashprotocol.*.gz

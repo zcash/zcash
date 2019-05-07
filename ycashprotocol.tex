@@ -1,0 +1,64 @@
+\documentclass{article}
+\setlength{\parskip}{1em}
+\setlength{\parindent}{0em}
+\usepackage{blindtext}
+\title{YCash Protocol}
+\date{2019 May}
+\author{YCash Foundation}
+\begin{document}
+\maketitle
+
+\section{Introduction}
+This document describes the YCash protocol and the ways in which it changes from the ZCash protocol on which it is based. 
+
+\section{PoW Changes}
+The most notable change in the YCash protocol is the change in the PoW function used. While ZCash uses Equihash with N=200 and K=9, Ycash will use the Equihash parameters N=192 and K=7. The solution size for the new parameters is 400 bytes, which fits in the existing block header space, where 1344 bytes are currently allocated, requiring no changes to the block header format. 
+\par 
+Note that YCash will use N=192 and K=7 for both the testnet and the mainnet.
+
+\section{Founders Reward}
+Ycash changes the founders reward to 5\% of the block reward in perpetuity. This is enforced as a consensus rule change, and is paid out to a new set of Founders reward addresses after the fork block. These addresses belong to the YCash Foundation.
+
+\section{Fork Block Difficulty}
+Because of the change in Equihash parameters for the PoW function and the large likely change in hashrate available on the new YCash blockchain at the fork block, the difficulty will need to be tuned down at the fork block to allow for blocks to be mined on the YCash blockchain within reasonable intervals. 
+\par
+To help with this, the difficulty for the fork block and subsequent 5\footnote{This needs to be validated} blocks will be adjusted down by a factor of 10.\footnote{This needs to be estimated}
+\par
+YCash will use the same difficulty adjustment algorithm as ZCash, which means difficulty adjusts every block. It is expected that the difficulty will stabilize soon after the fork block, quickly resulting in blocks being mined at 2.5 minute intervals.
+
+\section{Upgrade Mechanism}
+ZIP 200\footnote{https://github.com/zcash/zips/blob/master/zip-0200.rst} lays out a very easy to use upgrade mechanism that YCash will use to fork the network at the fork block. Accordingly, YCash is designed as an "upgrade" with a Branch ID of "0x374d694f". YCash will also upgrade the "Protocol Version" to "270007", which will allow the YCash nodes to separate from the Zcash nodes after the fork. 
+\par
+Note that by changing the branchID of the fork, YCash will have two-way replay protection after the fork block. 
+
+\section{Address Formats}
+To protect against any inadvertant confusion with YCash and ZCash, YCash will also change the address formats used. 
+\begin{center}
+ \begin{tabular}{||c c c c||} 
+ \hline
+ Address Type & Network & ZCash & YCash \\ [0.5ex] 
+ \hline\hline
+ t-Addresses & Testnet & tm (0x1C,0x90) & s4 (0x1C,0x30)  \\ 
+ \hline
+ t-Addresses Multisig & Testnet & t2 (0x1C,0xBA) & TBD (TBD)  \\ 
+ \hline
+ t-Addresses & Mainnet & t1 (0x1C,0xB8) & s1 (TBD) \\
+ \hline
+ t-Addresses Multisig & Mainnet & t3 (0x1C,0xBD) & TBD (TBD) \\
+ \hline
+ \hline
+ Sprout Addresses & Testnet & zt (0x16,0xB6) & yt (0x15, 0xB6) \\
+ \hline
+ Sprout Addresses & Mainnet & zc (0x16,0x9A) & yc (TBD) \\
+ \hline
+ \hline
+ Sapling Addresses & Testnet & "ztestsapling" & "ytestsapling" \\
+ \hline
+ Sapling Addresses & Mainnet & "zs" & "ys" \\ [1ex] 
+ \hline
+\end{tabular}
+\end{center}
+
+Note that the encoding formats for the private keys and view keys are not changing in YCash, to allow for easy portability of accounts and addresses across chains. 
+
+\end{document}
