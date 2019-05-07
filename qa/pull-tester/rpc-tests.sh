@@ -38,6 +38,7 @@ testScripts=(
     'txn_doublespend.py --mineblock'
     'getchaintips.py'
     'rawtransactions.py'
+    'getrawtransaction_insight.py'
     'rest.py'
     'mempool_spendcoinbase.py'
     'mempool_reorg.py'

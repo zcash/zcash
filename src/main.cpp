@@ -1607,6 +1607,14 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
     return true;
 }
 
+bool GetSpentIndex(CSpentIndexKey &key, CSpentIndexValue &value)
+{
+    AssertLockHeld(cs_main);
+    if (!fSpentIndex)
+        return false;
+    return pblocktree->ReadSpentIndex(key, value);
+}
+
 /** Return transaction in tx, and if it was found inside a block, its hash is placed in hashBlock */
 bool GetTransaction(const uint256 &hash, CTransaction &txOut, const Consensus::Params& consensusParams, uint256 &hashBlock, bool fAllowSlow)
 {
@@ -2269,8 +2277,8 @@ static DisconnectResult DisconnectBlock(const CBlock& block, CValidationState& s
         if (fAddressIndex && updateIndices) {
             for (unsigned int k = tx.vout.size(); k-- > 0;) {
                 const CTxOut &out = tx.vout[k];
-                int const scriptType = out.scriptPubKey.Type();
-                if (scriptType > 0) {
+                CScript::ScriptType scriptType = out.scriptPubKey.GetType();
+                if (scriptType != CScript::UNKNOWN) {
                     uint160 const addrHash = out.scriptPubKey.AddressHash();
 
                     // undo receiving activity
@@ -2326,8 +2334,8 @@ static DisconnectResult DisconnectBlock(const CBlock& block, CValidationState& s
                 const CTxIn input = tx.vin[j];
                 if (fAddressIndex && updateIndices) {
                     const CTxOut &prevout = view.GetOutputFor(input);
-                    int const scriptType = prevout.scriptPubKey.Type();
-                    if (scriptType > 0) {
+                    CScript::ScriptType scriptType = prevout.scriptPubKey.GetType();
+                    if (scriptType != CScript::UNKNOWN) {
                         uint160 const addrHash = prevout.scriptPubKey.AddressHash();
 
                         // undo spending activity
@@ -2643,9 +2651,9 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
                     const CTxIn input = tx.vin[j];
                     const CTxOut &prevout = view.GetOutputFor(tx.vin[j]);
-                    int const scriptType = prevout.scriptPubKey.Type();
+                    CScript::ScriptType scriptType = prevout.scriptPubKey.GetType();
                     const uint160 addrHash = prevout.scriptPubKey.AddressHash();
-                    if (fAddressIndex && scriptType > 0) {
+                    if (fAddressIndex && scriptType != CScript::UNKNOWN) {
                         // record spending activity
                         addressIndex.push_back(make_pair(
                             CAddressIndexKey(scriptType, addrHash, pindex->nHeight, i, hash, j, true),
@@ -2695,8 +2703,8 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         if (fAddressIndex) {
             for (unsigned int k = 0; k < tx.vout.size(); k++) {
                 const CTxOut &out = tx.vout[k];
-                int const scriptType = out.scriptPubKey.Type();
-                if (scriptType > 0) {
+                CScript::ScriptType scriptType = out.scriptPubKey.GetType();
+                if (scriptType != CScript::UNKNOWN) {
                     uint160 const addrHash = out.scriptPubKey.AddressHash();
 
                     // record receiving activity
