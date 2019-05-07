@@ -1640,10 +1640,10 @@ int32_t prices_getbetinfo(uint256 bettxid, BetInfo &betinfo)
             }
 
             if (betinfo.equity >= 0)
-                betinfo.isRekt = true;
+                betinfo.isRekt = false;
             else
             {
-                betinfo.isRekt = false;
+                betinfo.isRekt = true;
                 betinfo.rektfee = totalbets / 500;
             }
 
