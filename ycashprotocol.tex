@@ -22,19 +22,21 @@ Ycash changes the founders reward to 5\% of the block reward in perpetuity. This
 \section{Fork Block Difficulty}
 Because of the change in Equihash parameters for the PoW function and the large likely change in hashrate available on the new YCash blockchain at the fork block, the difficulty will need to be tuned down at the fork block to allow for blocks to be mined on the YCash blockchain within reasonable intervals. 
 \par
-To help with this, the difficulty for the fork block and subsequent 5\footnote{This needs to be validated} blocks will be adjusted down by a factor of 10.\footnote{This needs to be estimated}
+To help with this, the difficulty for the fork block and subsequent 10 [Final number TBD] blocks will be adjusted down by a factor of 100 [Final number TBD].\footnote{This needs to be estimated based on the change in Sol/s for Equihash <192,7> and the estimated hashpower available}. The adjustment factor is chosen based on an estimate of the amount of hashpower available to Ycash at the fork block on Equihash <192, 7>. 
 \par
 YCash will use the same difficulty adjustment algorithm as ZCash, which means difficulty adjusts every block. It is expected that the difficulty will stabilize soon after the fork block, quickly resulting in blocks being mined at 2.5 minute intervals.
 
 \section{Upgrade Mechanism}
-ZIP 200\footnote{https://github.com/zcash/zips/blob/master/zip-0200.rst} lays out a very easy to use upgrade mechanism that YCash will use to fork the network at the fork block. Accordingly, YCash is designed as an "upgrade" with a Branch ID of "0x374d694f". YCash will also upgrade the "Protocol Version" to "270007", which will allow the YCash nodes to separate from the Zcash nodes after the fork. 
-\par
-Note that by changing the branchID of the fork, YCash will have two-way replay protection after the fork block. 
+ZIP 200\footnote{https://github.com/zcash/zips/blob/master/zip-0200.rst\label{refnote}} lays out a very easy to use upgrade mechanism that YCash will use to fork the network at the fork block. Accordingly, YCash is designed as an "upgrade" with a Branch ID of "0x374d694f". YCash will also upgrade the "Protocol Version" to "270007", which will allow the YCash nodes to separate from the Zcash nodes after the fork. 
+
+\section{Replay Protection}
+By changing the branchID of the fork, YCash will have two-way replay protection after the fork block as specified in ZIP-200\footnotemark[\ref{refnote}].
+
 
 \section{Address Formats}
 To protect against any inadvertant confusion with YCash and ZCash, YCash will also change the address formats used. 
 \begin{center}
- \begin{tabular}{||c c c c||} 
+ \begin{tabular}{||l l l l||} 
  \hline
  Address Type & Network & ZCash & YCash \\ [0.5ex] 
  \hline\hline
@@ -52,9 +54,9 @@ To protect against any inadvertant confusion with YCash and ZCash, YCash will al
  Sprout Addresses & Mainnet & zc (0x16,0x9A) & yc (TBD) \\
  \hline
  \hline
- Sapling Addresses & Testnet & "ztestsapling" & "ytestsapling" \\
+ Sapling Addresses & Testnet & ztestsapling & ytestsapling \\
  \hline
- Sapling Addresses & Mainnet & "zs" & "ys" \\ [1ex] 
+ Sapling Addresses & Mainnet & zs & ys \\ [1ex] 
  \hline
 \end{tabular}
 \end{center}
