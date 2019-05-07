@@ -524,6 +524,10 @@ void TransactionBuilder::CreateJSDescriptions()
             // Update tree state with previous joinsplit
             SproutMerkleTree tree;
             {
+                // assert that coinsView is not null
+                assert(coinsView);
+                // We do not check cs_coinView because we do not set this in testing
+                // assert(cs_coinsView);
                 LOCK(cs_coinsView);
                 auto it = intermediates.find(prevJoinSplit.anchor);
                 if (it != intermediates.end()) {

@@ -95,9 +95,10 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
     int numTxCreated = 0;
     CAmount amountMigrated = 0;
     int noteIndex = 0;
+    CCoinsViewCache coinsView(pcoinsTip);
     do {
         CAmount amountToSend = chooseAmount(availableFunds);
-        auto builder = TransactionBuilder(consensusParams, targetHeight_, pwalletMain, pzcashParams);
+        auto builder = TransactionBuilder(consensusParams, targetHeight_, pwalletMain, pzcashParams, &coinsView, &cs_main);
         std::vector<CSproutNotePlaintextEntry> fromNotes;
         CAmount fromNoteAmount = 0;
         while (fromNoteAmount < amountToSend) {
