@@ -1029,6 +1029,7 @@ UniValue PaymentsMerge(struct CCcontract_info *cp,char *jsonstr)
                 // encode the checktxid into the end of the ccvout, along with 'M' to flag merge type tx. 
                 opret = EncodePaymentsMergeOpRet(createtxid);
                 std::vector<std::vector<unsigned char>> vData = std::vector<std::vector<unsigned char>>();
+                // try to pay to diffrent pubkey here... change txidpk.
                 if ( makeCCopret(opret, vData) )
                     mtx.vout.push_back(MakeCC1of2vout(EVAL_PAYMENTS,inputsum-PAYMENTS_TXFEE,Paymentspk,txidpk,&vData));
                 GetCCaddress1of2(cp,destaddr,Paymentspk,txidpk);
@@ -1036,7 +1037,7 @@ UniValue PaymentsMerge(struct CCcontract_info *cp,char *jsonstr)
                 rawtx = FinalizeCCTx(0,cp,mtx,mypk,PAYMENTS_TXFEE,CScript());
                 if ( params != 0 )
                     free_json(params);
-                return(payments_rawtxresult(result,rawtx,0));
+                return(payments_rawtxresult(result,rawtx,1));
             }
         }
         else
