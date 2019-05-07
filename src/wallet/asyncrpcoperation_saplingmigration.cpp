@@ -77,7 +77,7 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
     }
     CAmount availableFunds = 0;
     for (const CSproutNotePlaintextEntry& sproutEntry : sproutEntries) {
-        availableFunds = sproutEntry.plaintext.value();
+        availableFunds += sproutEntry.plaintext.value();
     }
     // If the remaining amount to be migrated is less than 0.01 ZEC, end the migration.
     if (availableFunds < CENT) {
