@@ -29,7 +29,7 @@ private:
 
     bool main_impl();
 
-    void setMigrationResult(int numTxCreated);
+    void setMigrationResult(int numTxCreated, CAmount amountMigrated);
 
     CAmount chooseAmount(const CAmount& availableFunds);
 };

@@ -9,6 +9,7 @@
 #include "tinyformat.h"
 #include "transaction_builder.h"
 #include "util.h"
+#include "utilmoneystr.h"
 #include "wallet.h"
 
 const CAmount FEE = 10000;
@@ -81,7 +82,7 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
     }
     // If the remaining amount to be migrated is less than 0.01 ZEC, end the migration.
     if (availableFunds < CENT) {
-        setMigrationResult(0);
+        setMigrationResult(0, 0);
         return true;
     }
 
@@ -92,6 +93,7 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
 
     // Up to the limit of 5, as many transactions are sent as are needed to migrate the remaining funds
     int numTxCreated = 0;
+    CAmount amountMigrated = 0;
     int noteIndex = 0;
     do {
         CAmount amountToSend = chooseAmount(availableFunds);
@@ -127,15 +129,17 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
         }
         pwalletMain->AddPendingSaplingMigrationTx(tx);
         ++numTxCreated;
+        amountMigrated += amountToSend;
     } while (numTxCreated < 5 && availableFunds > CENT);
 
-    setMigrationResult(numTxCreated);
+    setMigrationResult(numTxCreated, amountMigrated);
     return true;
 }
 
-void AsyncRPCOperation_saplingmigration::setMigrationResult(int numTxCreated) {
+void AsyncRPCOperation_saplingmigration::setMigrationResult(int numTxCreated, CAmount amountMigrated) {
     UniValue res(UniValue::VOBJ);
     res.push_back(Pair("num_tx_created", numTxCreated));
+    res.push_back(Pair("amount_migrated", FormatMoney(amountMigrated)));
     set_result(res);
 }
 
