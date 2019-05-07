@@ -575,8 +575,11 @@ int64_t AddPaymentsInputs(bool fLockedBlocks,int8_t GetBalance,struct CCcontract
                 }
                 if ( (nValue= IsPaymentsvout(cp,vintx,vout,coinaddr,ccopret)) > PAYMENTS_TXFEE && nValue >= threshold && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0 )
                 {
+                    int32_t offset = 0;
+                    if ( ccopret.size() > 2 && DecodePaymentsMergeOpRet(ccopret,checktxid) == 'M' )
+                        offset = PAYMENTS_MERGEOFSET;
                     int32_t tmpblocksleft = 0;
-                    if ( fLockedBlocks && !payments_lockedblocks(hashBlock, lockedblocks+(GetBalance == 4 ? PAYMENTS_MERGEOFSET : 0), tmpblocksleft) )
+                    if ( fLockedBlocks && !payments_lockedblocks(hashBlock, lockedblocks+offset, tmpblocksleft) )
                     {
                         blocksleft_balance.push_back(std::make_pair(tmpblocksleft,nValue));
                         continue;
