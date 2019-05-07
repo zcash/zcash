@@ -470,6 +470,8 @@ static const CRPCCommand vRPCCommands[] =
     { "prices",       "pricescashout",         &pricescashout,         true },
     { "prices",       "pricesrekt",         &pricesrekt,         true },
     { "prices",       "pricesaddfunding",         &pricesaddfunding,         true },
+    { "prices",       "pricesgetorderbook",         &pricesgetorderbook,         true },
+
 
     // Pegs
     { "pegs",       "pegsaddress",   &pegsaddress,      true },

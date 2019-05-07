@@ -49,6 +49,7 @@ UniValue PricesRekt(int64_t txfee,uint256 bettxid,int32_t rektheight);
 UniValue PricesCashout(int64_t txfee,uint256 bettxid);
 UniValue PricesInfo(uint256 bettxid,int32_t refheight);
 UniValue PricesList(uint32_t filter, CPubKey mypk);
+UniValue PricesGetOrderbook();
 
 
 #endif

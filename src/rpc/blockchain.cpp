@@ -1439,6 +1439,19 @@ UniValue pricesrekt(const UniValue& params, bool fHelp)
     return PricesRekt(txfee, bettxid, height);
 }
 
+// pricesrekt rpc implementation
+UniValue pricesgetorderbook(const UniValue& params, bool fHelp)
+{
+    if (fHelp || params.size() != 0)
+        throw runtime_error("pricesgetorderbook\n");
+    LOCK(cs_main);
+    UniValue ret(UniValue::VOBJ);
+
+    if (ASSETCHAINS_CBOPRET == 0)
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "only -ac_cbopret chains have prices");
+
+    return PricesGetOrderbook();
+}
 
 UniValue gettxout(const UniValue& params, bool fHelp)
 {
