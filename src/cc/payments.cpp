@@ -595,7 +595,7 @@ int64_t AddPaymentsInputs(bool fLockedBlocks,int8_t GetBalance,struct CCcontract
             }
         }
     }
-    if ( GetBalance == 3 && totalinputs < minrelease ) // return elegible balance to be spent, and blocks left until min release can be released.
+    if ( GetBalance == 3 && totalinputs < minrelease*COIN ) // return elegible balance to be spent, and blocks left until min release can be released.
     {
         int64_t lockedblocks_balance = totalinputs; // inputs that can be spent already. 
         // sort utxos by blocks until able to be spent, smallest at top.

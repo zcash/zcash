@@ -64,7 +64,7 @@ int32_t has_opret(const CTransaction &tx, uint8_t evalcode)
     for ( auto vout : tx.vout )
     {
         //fprintf(stderr, "[txid.%s] 1.%i 2.%i 3.%i 4.%i\n",tx.GetHash().GetHex().c_str(),  vout.scriptPubKey[0], vout.scriptPubKey[1], vout.scriptPubKey[2], vout.scriptPubKey[3]);
-        if ( vout.scriptPubKey[0] == OP_RETURN && vout.scriptPubKey[2] == evalcode )
+        if ( vout.scriptPubKey.size() > 2 && vout.scriptPubKey[0] == OP_RETURN && vout.scriptPubKey[2] == evalcode )
             return i;
         i++;
     }
