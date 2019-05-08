@@ -62,6 +62,7 @@ typedef struct OneBetData {
 } onebetdata;
 
 typedef struct BetInfo {
+    uint256 txid;
     int64_t averageCostbasis, firstprice, lastprice, liquidationprice, equity;
     int64_t rektfee;
     int32_t lastheight;
@@ -69,7 +70,7 @@ typedef struct BetInfo {
     bool isOpen, isRekt;
     uint256 tokenid;
 
-    std::vector<uint16_t> parsed;
+    std::vector<uint16_t> vecparsed;
     std::vector<onebetdata> bets;
     CPubKey pk;
 
@@ -1599,13 +1600,13 @@ int32_t prices_getbetinfo(uint256 bettxid, BetInfo &betinfo)
             return -2;
 
         OneBetData bet1;
-        if (prices_betopretdecode(bettx.vout.back().scriptPubKey, betinfo.pk, bet1.firstheight, bet1.positionsize, betinfo.leverage, betinfo.firstprice, betinfo.parsed, betinfo.tokenid) == 'B')
+        if (prices_betopretdecode(bettx.vout.back().scriptPubKey, betinfo.pk, bet1.firstheight, bet1.positionsize, betinfo.leverage, betinfo.firstprice, betinfo.vecparsed, betinfo.tokenid) == 'B')
         {
             uint256 finaltxid;
             int32_t vini;
             int32_t finaltxheight; //, endheight;
                                    //std::vector<OneBetData> bets;
-
+            betinfo.txid = bettxid;
 
             if (CCgetspenttxid(finaltxid, vini, finaltxheight, bettxid, NVOUT_CCMARKER) == 0)
                 betinfo.isOpen = false;
@@ -1618,7 +1619,7 @@ int32_t prices_getbetinfo(uint256 bettxid, BetInfo &betinfo)
 
             prices_enumaddedbets(batontxid, betinfo.bets, bettxid);
 
-            if (prices_scanchain(betinfo.bets, betinfo.leverage, betinfo.parsed, betinfo.lastprice, betinfo.lastheight) < 0) {
+            if (prices_scanchain(betinfo.bets, betinfo.leverage, betinfo.vecparsed, betinfo.lastprice, betinfo.lastheight) < 0) {
                 return -4;
             }
 
@@ -1921,7 +1922,7 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
         result.push_back(Pair("rektheight", betinfo.lastheight));
     }
 
-    std::string expr = prices_getsourceexpression(betinfo.parsed);
+    std::string expr = prices_getsourceexpression(betinfo.vecparsed);
     result.push_back(Pair("expression", expr));
     result.push_back(Pair("reduced", prices_getreducedexpr(expr)));
 //            result.push_back(Pair("batontxid", batontxid.GetHex()));
@@ -2002,11 +2003,52 @@ UniValue PricesList(uint32_t filter, CPubKey mypk)
 }
 
 
-void prices_addbookentry(uint256 txid)
+static bool prices_addbookentry(uint256 txid, std::vector<BetInfo> &book)
 {
     BetInfo betinfo;
-    //if( prices_getbetinfo(txid, betinfo) == 0 )
+    if (prices_getbetinfo(txid, betinfo) == 0) {
+        book.push_back(betinfo);
+        return true;
+    }
+    return false;
 }
+/*
+static bool prices_isopposite(BetInfo p1, BetInfo p2) {
+    if (p1.vecparsed.size() <= 3 && p2.vecparsed.size() <= 3) {   // simple synthetic exp
+
+        uint16_t opcode1 = p1.vecparsed[0];
+        uint16_t opcode2 = p2.vecparsed[0];
+
+        int32_t value1 = (opcode1 & (KOMODO_MAXPRICES - 1));   // index or weight 
+        int32_t value2 = (opcode2 & (KOMODO_MAXPRICES - 1));   // index or weight 
+
+        if ( (opcode1 & KOMODO_PRICEMASK) && (opcode2 & KOMODO_PRICEMASK) ) {
+            char name1[65];
+            char name2[65];
+            if (komodo_pricename(name1, value1) && komodo_pricename(name2, value2)) {
+
+                std::string upperquote1, bottomquote1, upperquote2, bottomquote2;
+                prices_splitpair(std::string(name1), upperquote1, bottomquote1);
+                prices_splitpair(std::string(name2), upperquote2, bottomquote2);
+
+                if (upperquote == "BTC")
+                    isTop = true;
+                else if (bottomquote == "BTC")
+                    isTop = false;
+                else
+                    continue;
+
+                if (!bottomquote.empty()) {
+
+                    for (int j = i + 1; j < book.size(); j++) {
+
+                    }
+                }
+            }
+        }
+    }
+}
+*/
 
 // walk through uxtos on the global address
 // calculate the balance:
@@ -2016,16 +2058,50 @@ void prices_addbookentry(uint256 txid)
 UniValue PricesGetOrderbook()
 {
     UniValue result(UniValue::VARR);
-    std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex, addressIndexCC;
+    std::vector<BetInfo> book, opposits;
+    std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex;
     struct CCcontract_info *cp, C;
 
     cp = CCinit(&C, EVAL_PRICES);
 
+    // add all bets:
     SetCCtxids(addressIndex, cp->normaladdr, false);        // old normal marker
     for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it = addressIndex.begin(); it != addressIndex.end(); it++)
     {
         if (it->first.txindex == NVOUT_NORMALMARKER)
-            prices_addbookentry(it->first.txhash);
+            prices_addbookentry(it->first.txhash, book);
     }
+
+
+    // calc total fund amount 
+    int64_t totalfund = 0;
+    std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > addressCCunspents;
+    SetCCunspents(addressCCunspents, cp->unspendableCCaddr, true);  // cc marker
+    for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it = addressCCunspents.begin(); it != addressCCunspents.end(); it++)
+    {
+        totalfund += it->second.satoshis;
+    }
+    
+    // extract out opposit bets:
+    int lastbtcpos = -1;
+    int lastleverage = 0;
+    for (int i = 0; i < book.size() - 1; i++) {
+        for (int j = 0; j < book.size(); j++) {
+            if (book[i].isOpen && book[j].isOpen) {
+                //if (prices_isopposite(book[i], book[j])) {
+                //}
+            }
+        }
+    }
+
+    int64_t totalliabilities = 0;
+    for (int i = 0; i < book.size() - 1; i++) {
+        if (book[i].isOpen) {
+            totalliabilities += book[i].equity;
+        }
+    }
+
+    result.push_back(Pair("TotalFund", ValueFromAmount(totalfund)));
+    result.push_back(Pair("TotalLiabilities", ValueFromAmount(totalliabilities)));
     return result;
 }
