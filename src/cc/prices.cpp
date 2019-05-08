@@ -1922,6 +1922,8 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
         result.push_back(Pair("rektheight", betinfo.lastheight));
     }
 
+    result.push_back(Pair("open", betinfo.isOpen ? 1 : 0 ));
+
     std::string expr = prices_getsourceexpression(betinfo.vecparsed);
     result.push_back(Pair("expression", expr));
     result.push_back(Pair("reduced", prices_getreducedexpr(expr)));
@@ -2100,7 +2102,7 @@ UniValue PricesGetOrderbook()
         if (book[i].isOpen) {
             int64_t t = 0;
             for (auto b : book[i].bets) t += b.positionsize;
-            std::cerr << "book[i].=" << book[i].txid.GetHex() << " exp=" << prices_getsourceexpression(book[i].vecparsed) << " totalpos=" << t << " equity=" << book[i].equity << std::endl;
+            std::cerr << "book[i].txid=" << book[i].txid.GetHex() << " exp=" << prices_getsourceexpression(book[i].vecparsed) << " totalpos=" << t << " equity=" << book[i].equity << std::endl;
             totalliabilities += book[i].equity;
         }
     }
