@@ -2082,8 +2082,6 @@ UniValue PricesGetOrderbook()
     // extract out opposite bets:
     std::map<std::string, std::vector<BetInfo> > bookmatched;
     while (book.size() > 0) {
-        std::string sname = prices_getsourceexpression(book[0].vecparsed);
-        bookmatched[sname].push_back(book[0]);
 
         if (book[0].vecparsed.size() <= 3) {   // only short expr matched: "BTC_USD,1" or "BTC_USD,!,1"
             char name[65];
