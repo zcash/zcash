@@ -29,6 +29,7 @@ int32_t komodo_voutupdate(bool fJustCheck,int32_t *isratificationp,int32_t notar
 unsigned int lwmaGetNextPOSRequired(const CBlockIndex* pindexLast, const Consensus::Params& params);
 bool EnsureWalletIsAvailable(bool avoidException);
 extern bool fRequestShutdown;
+extern CScript KOMODO_PRICES_FEE_SCRIPTPUB;
 
 int32_t MarmaraSignature(uint8_t *utxosig,CMutableTransaction &txNew);
 uint8_t DecodeMaramaraCoinbaseOpRet(const CScript scriptPubKey,CPubKey &pk,int32_t &height,int32_t &unlockht);
@@ -2074,6 +2075,56 @@ bool komodo_appendACscriptpub()
         StartShutdown();
     }
     return false;
+}
+
+void GetFeeAddress()
+{
+    if ( KOMODO_EARLYTXID == zeroid )
+    {
+        fprintf(stderr, "PLEASE RESTART DAEMON WITH -earlytxid.\n");
+        StartShutdown();
+        return;
+    }
+    if ( KOMODO_SNAPSHOT_INTERVAL == 0 )
+    {
+        fprintf(stderr, "PRICES FEE ADDRESS MUST HAVE -ac_snapshot enabled to pay out.\n");
+        StartShutdown();
+        return;
+    }
+    if ( chainActive.Height() < 100 )
+    {
+        fprintf(stderr, "Cannot fetch -earlytxid before block 100.\n");
+        StartShutdown();
+        return;
+    }
+    CTransaction tx; uint256 blockhash, txid = zeroid; char txidaddr[64];
+    // get transaction and check that it occured before height 100. 
+    if ( myGetTransaction(KOMODO_EARLYTXID,tx,blockhash) && mapBlockIndex[blockhash]->GetHeight() < 100 )
+    {
+        for (int i = 0; i < tx.vout.size(); i++) 
+            if ( tx.vout[i].scriptPubKey[0] == OP_RETURN )
+                txid = uint256S(HexStr(tx.vout[i].scriptPubKey.begin()+3, tx.vout[i].scriptPubKey.end()));
+        if ( txid == zeroid )
+        {
+            fprintf(stderr, "INVALID -earlytxid, restart daemon with correct txid.\n");
+            StartShutdown();
+        }
+        fprintf(stderr, "txid.%s\n", txid.GetHex().c_str());
+        struct CCcontract_info *cp, C; CPubKey Paymentspk,txidpk;
+        cp = CCinit(&C, EVAL_PAYMENTS);
+        Paymentspk = GetUnspendable(cp,0);
+        txidpk = CCtxidaddr(txidaddr,txid);
+        GetCCaddress1of2(cp,txidaddr,Paymentspk,txidpk);
+        CC *payoutCond = MakeCCcond1of2(EVAL_PAYMENTS,Paymentspk,txidpk);
+        KOMODO_PRICES_FEE_SCRIPTPUB = CCPubKey(payoutCond);
+        cc_free(payoutCond);
+        fprintf(stderr, "KOMODO_PRICES_FEE_SCRIPTPUB.%s address.%s\n", HexStr(KOMODO_PRICES_FEE_SCRIPTPUB.begin(),KOMODO_PRICES_FEE_SCRIPTPUB.end()).c_str(),txidaddr);
+    }
+    else 
+    {
+        fprintf(stderr, "INVALID -earlytxid, restart daemon with correct txid.\n");
+        StartShutdown();
+    }
 }
 
 int64_t komodo_checkcommission(CBlock *pblock,int32_t height)

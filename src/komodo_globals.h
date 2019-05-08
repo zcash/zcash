@@ -110,6 +110,7 @@ extern int32_t KOMODO_LOADINGBLOCKS;
 unsigned int MAX_BLOCK_SIGOPS = 20000;
 
 int32_t KOMODO_TESTNODE, KOMODO_SNAPSHOT_INTERVAL; 
+CScript KOMODO_PRICES_FEE_SCRIPTPUB;
 
 struct komodo_kv *KOMODO_KV;
 pthread_mutex_t KOMODO_KV_mutex,KOMODO_CC_mutex;

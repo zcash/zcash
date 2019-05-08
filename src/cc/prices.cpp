@@ -11,7 +11,25 @@
  *                                                                            *
  * Removal or modification of this copyright notice is prohibited.            *
  *                                                                            *
- ******************************************************************************/
+ *****************************************************************************
+ To create payments plan start a chain with -ac_snapshot=1440 (or for test something shorter, if you like.)
+ then in very early block < 10 or so, do paymentsairdrop eg. 
+    `./komodo-cli -ac_name=TESTDP paymentsairdrop '[10,10,0,3999,0,0]'
+ copy the txid of this transaction after it is confirmed, then do: 
+    './komodo-cli -ac_name=TESTDP opreturn_burn 1 4a8f6469f713251a0381170e275d68899d481270a5e48586276dbbbadff91b57'
+copy the hex, and sendrawtransaction, copy the txid returned. 
+this places the txid that locates the plan into an op_return before block 100, allowing us to retreive it. 
+Restart the daemon with -earlytxid=<txid of opreturn_burn transaction> 
+mine the chain past block 100, preventing anyone else, creating another payments plan on chain before block 100. 
+
+We call the following in Validation and RPC where the address is needed. 
+if ( KOMODO_PRICES_FEE_SCRIPTPUB.size() == 0 )
+    GetFeeAddress();
+
+This will fetch the op_return, calculate the scriptPubKey and save it to the global. 
+On daemon restart as soon as validation for BETTX happens the global will be filled, afte this the transaction never needs to be looked up again. 
+GetFeeAddress is on line #2080 of komodo_bitcoind.h
+ */
 
 #include "CCassets.h"
 #include "CCPrices.h"
@@ -184,7 +202,8 @@ static bool ValidateBetTx(struct CCcontract_info *cp, Eval *eval, const CTransac
     int16_t leverage;
     CPubKey pk, pricespk; 
     std::vector<uint16_t> vec;
-
+    if ( KOMODO_PRICES_FEE_SCRIPTPUB.size() == 0 )
+        GetFeeAddress();
     if (bettx.vout.size() < 5 || bettx.vout.size() > 6)
         return eval->Invalid("incorrect vout number for bet tx");
 
@@ -198,8 +217,11 @@ static bool ValidateBetTx(struct CCcontract_info *cp, Eval *eval, const CTransac
         return eval->Invalid("cannot validate vout0 in bet tx with pk from opreturn");
     if (MakeCC1vout(cp->evalcode, bettx.vout[1].nValue, pricespk) != bettx.vout[1])
         return eval->Invalid("cannot validate vout1 in bet tx with global pk");
-    if( MakeCC1vout(cp->evalcode, bettx.vout[2].nValue, pricespk) != bettx.vout[2] )
+    if (MakeCC1vout(cp->evalcode, bettx.vout[2].nValue, pricespk) != bettx.vout[2] )
         return eval->Invalid("cannot validate vout2 in bet tx with pk from opreturn");
+    // This should be all you need to verify it, maybe also check amount? 
+    if ( bettx.vout[4].scriptPubKey != KOMODO_PRICES_FEE_SCRIPTPUB )
+        return eval->Invalid("the fee was paid to wrong address.");
 
     int64_t betamount = bettx.vout[2].nValue;
     if (betamount != (positionsize * 199) / 200) {
@@ -1382,14 +1404,22 @@ UniValue PricesBet(int64_t txfee, int64_t amount, int16_t leverage, std::vector<
         mtx.vout.push_back(MakeCC1vout(cp->evalcode, txfee, pricespk));                             // vout1 cc marker (NVOUT_CCMARKER)
         mtx.vout.push_back(MakeCC1vout(cp->evalcode, betamount, pricespk));                         // vout2 betamount
         mtx.vout.push_back(CTxOut(txfee, CScript() << ParseHex(HexStr(pricespk)) << OP_CHECKSIG));  // vout3 normal marker NVOUT_NORMALMARKER - TODO: remove it as we have cc marker now, when move to the new chain
-
+        if ( KOMODO_PRICES_FEE_SCRIPTPUB.size() == 0 )
+        {
+            // Lock here, as in validation we cannot call lock in the function itself.
+            // may not be needed as the validation call to update the global, is called in a LOCK already, and it can only update there and here.
+            LOCK(cs_main);
+            GetFeeAddress();
+        }
+        mtx.vout.push_back(CTxOut(amount-betamount, KOMODO_PRICES_FEE_SCRIPTPUB));
+            
 
         rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, prices_betopret(mypk, nextheight - 1, amount, leverage, firstprice, vec, zeroid));
         return(prices_rawtxresult(result, rawtx, 0));
     }
     result.push_back(Pair("result", "error"));
     result.push_back(Pair("error", "not enough funds"));
-    return(result);
+    return(result); 
 }
 
 // pricesaddfunding rpc impl: add yet another bet

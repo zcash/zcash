@@ -1192,6 +1192,7 @@ UniValue PaymentsAirdrop(struct CCcontract_info *cp,char *jsonstr)
         lockedblocks = juint(jitem(params,0),0);
         minrelease = juint(jitem(params,1),0);
         minimum = juint(jitem(params,2),0);
+        if ( minimum < 10000 ) minimum = 10000;
         top = juint(jitem(params,3),0);
         bottom = juint(jitem(params,4),0);
         fixedAmount = juint(jitem(params,5),0); // fixed amount is a flag, set to 7 does game mode, 0 normal snapshot, anything else fixed allocations. 
