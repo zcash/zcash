@@ -144,7 +144,8 @@ public:
         vSeeds.push_back(CDNSSeedData("znodes.org", "dnsseed.znodes.org")); // @bitcartel
 
         // guarantees the first 2 characters, when base58 encoded, are "t1"
-        base58Prefixes[PUBKEY_ADDRESS]     = {0x1C,0xB8};
+        base58Prefixes[PUBKEY_ADDRESS]       = {0x1C,0xB8};
+        base58Prefixes[ZCASH_PUBKEY_ADDRESS] = {0x1C,0xB8};
         // guarantees the first 2 characters, when base58 encoded, are "t3"
         base58Prefixes[SCRIPT_ADDRESS]     = {0x1C,0xBD};
         // the first character, when base58 encoded, is "5" or "K" or "L" (as in Bitcoin)
@@ -471,7 +472,8 @@ public:
             0
         };
         // These prefixes are the same as the testnet prefixes
-        base58Prefixes[PUBKEY_ADDRESS]     = {0x1D,0x25};
+        base58Prefixes[PUBKEY_ADDRESS]       = {0x1D,0x25};
+        base58Prefixes[ZCASH_PUBKEY_ADDRESS] = {0x1D,0x25};
         base58Prefixes[SCRIPT_ADDRESS]     = {0x1C,0xBA};
         base58Prefixes[SECRET_KEY]         = {0xEF};
         // do not rely on these BIP32 prefixes; they are not specified and may change
@@ -561,7 +563,7 @@ std::string CChainParams::GetFoundersRewardAddressAtHeight(int nHeight) const {
 // Block height must be >0 and <=last founders reward block height for pre YCash. The founders reward address
 // is expected to be a multisig (P2SH) address.
 // Post YCash, return a regular address (For now)
-CScript CChainParams::GetFoundersRewardScriptAtHeight(int nHeight) const {
+CScript CChainParams::GetFoundersRewardScriptAtHeight(int nHeight) const {    
     if (CurrentEpoch(nHeight, this->GetConsensus()) < Consensus::UPGRADE_YCASH) {
         assert(nHeight > 0 && nHeight <= consensus.GetLastFoundersRewardBlockHeight());
 
