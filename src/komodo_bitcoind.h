@@ -29,7 +29,7 @@ int32_t komodo_voutupdate(bool fJustCheck,int32_t *isratificationp,int32_t notar
 unsigned int lwmaGetNextPOSRequired(const CBlockIndex* pindexLast, const Consensus::Params& params);
 bool EnsureWalletIsAvailable(bool avoidException);
 extern bool fRequestShutdown;
-extern CScript KOMODO_PRICES_FEE_SCRIPTPUB;
+extern CScript KOMODO_EARLYTXID_SCRIPTPUB;
 
 int32_t MarmaraSignature(uint8_t *utxosig,CMutableTransaction &txNew);
 uint8_t DecodeMaramaraCoinbaseOpRet(const CScript scriptPubKey,CPubKey &pk,int32_t &height,int32_t &unlockht);
@@ -2063,7 +2063,6 @@ bool komodo_appendACscriptpub()
                  {
                      ASSETCHAINS_SCRIPTPUB.pop_back(); ASSETCHAINS_SCRIPTPUB.pop_back(); // remove last 2 chars. 
                       // get OP_RETURN from txid and append the HexStr of it to scriptpub 
-                      // encoded opreturn incorrectly on TESTHC chain, once we no longer need this it can be changed to a straight +1 to drop OP_RETURN opcode.
                      ASSETCHAINS_SCRIPTPUB.append(HexStr(tx.vout[i].scriptPubKey.begin()+3, tx.vout[i].scriptPubKey.end()));
                      //fprintf(stderr, "ac_script.%s\n",ASSETCHAINS_SCRIPTPUB.c_str());
                      didinit = true;
@@ -2077,17 +2076,17 @@ bool komodo_appendACscriptpub()
     return false;
 }
 
-void GetFeeAddress()
+void GetKomodoEarlytxidScriptPub()
 {
     if ( KOMODO_EARLYTXID == zeroid )
     {
-        fprintf(stderr, "PLEASE RESTART DAEMON WITH -earlytxid.\n");
+        fprintf(stderr, "Restart deamon with -earlytxid.\n");
         StartShutdown();
         return;
     }
-    if ( KOMODO_SNAPSHOT_INTERVAL == 0 )
+    if ( ASSETCHAINS_EARLYTXIDCONTRACT == EVAL_PRICES && KOMODO_SNAPSHOT_INTERVAL == 0 )
     {
-        fprintf(stderr, "PRICES FEE ADDRESS MUST HAVE -ac_snapshot enabled to pay out.\n");
+        fprintf(stderr, "Prices->paymentsCC contract must have -ac_snapshot enabled to pay out.\n");
         StartShutdown();
         return;
     }
@@ -2097,34 +2096,22 @@ void GetFeeAddress()
         StartShutdown();
         return;
     }
-    CTransaction tx; uint256 blockhash, txid = zeroid; char txidaddr[64];
+    CTransaction tx; uint256 blockhash; int32_t i;
     // get transaction and check that it occured before height 100. 
     if ( myGetTransaction(KOMODO_EARLYTXID,tx,blockhash) && mapBlockIndex[blockhash]->GetHeight() < 100 )
     {
-        for (int i = 0; i < tx.vout.size(); i++) 
+        for (i = 0; i < tx.vout.size(); i++) 
             if ( tx.vout[i].scriptPubKey[0] == OP_RETURN )
-                txid = uint256S(HexStr(tx.vout[i].scriptPubKey.begin()+3, tx.vout[i].scriptPubKey.end()));
-        if ( txid == zeroid )
+                break;
+        if ( i < tx.vout.size() )
         {
-            fprintf(stderr, "INVALID -earlytxid, restart daemon with correct txid.\n");
-            StartShutdown();
+            KOMODO_EARLYTXID_SCRIPTPUB = CScript(tx.vout[i].scriptPubKey.begin()+3, tx.vout[i].scriptPubKey.end());
+            fprintf(stderr, "KOMODO_EARLYTXID_SCRIPTPUB.%s\n", HexStr(KOMODO_EARLYTXID_SCRIPTPUB.begin(),KOMODO_EARLYTXID_SCRIPTPUB.end()).c_str());
+            return;
         }
-        fprintf(stderr, "txid.%s\n", txid.GetHex().c_str());
-        struct CCcontract_info *cp, C; CPubKey Paymentspk,txidpk;
-        cp = CCinit(&C, EVAL_PAYMENTS);
-        Paymentspk = GetUnspendable(cp,0);
-        txidpk = CCtxidaddr(txidaddr,txid);
-        GetCCaddress1of2(cp,txidaddr,Paymentspk,txidpk);
-        CC *payoutCond = MakeCCcond1of2(EVAL_PAYMENTS,Paymentspk,txidpk);
-        KOMODO_PRICES_FEE_SCRIPTPUB = CCPubKey(payoutCond);
-        cc_free(payoutCond);
-        fprintf(stderr, "KOMODO_PRICES_FEE_SCRIPTPUB.%s address.%s\n", HexStr(KOMODO_PRICES_FEE_SCRIPTPUB.begin(),KOMODO_PRICES_FEE_SCRIPTPUB.end()).c_str(),txidaddr);
     }
-    else 
-    {
-        fprintf(stderr, "INVALID -earlytxid, restart daemon with correct txid.\n");
-        StartShutdown();
-    }
+    fprintf(stderr, "INVALID -earlytxid, restart daemon with correct txid.\n");
+    StartShutdown();
 }
 
 int64_t komodo_checkcommission(CBlock *pblock,int32_t height)

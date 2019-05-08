@@ -12,23 +12,34 @@
  * Removal or modification of this copyright notice is prohibited.            *
  *                                                                            *
  *****************************************************************************
- To create payments plan start a chain with -ac_snapshot=1440 (or for test something shorter, if you like.)
- then in very early block < 10 or so, do paymentsairdrop eg. 
-    `./komodo-cli -ac_name=TESTDP paymentsairdrop '[10,10,0,3999,0,0]'
- copy the txid of this transaction after it is confirmed, then do: 
-    './komodo-cli -ac_name=TESTDP opreturn_burn 1 4a8f6469f713251a0381170e275d68899d481270a5e48586276dbbbadff91b57'
+To create payments plan start a chain with the following ac_params:
+    -ac_snapshot=1440 (or for test chain something smaller, if you like.)
+        - this enables the payments airdrop cc to work. 
+    -ac_earlytxidcontract=237 (Eval code for prices cc.)
+        - this allows to know what contract this chain is paying with the scriptpubkey in the earlytxid op_return. 
+
+./komodod -ac_name=TESTPRC -ac_supply=100000000 -ac_reward=1000000000 -ac_nk=96,5 -ac_blocktime=20 -ac_cc=2 -ac_snapshot=50 -ac_sapling=1 -ac_earlytxidcontract=237 -testnode=1 -gen -genproclimit=1
+
+Then in very early block < 10 or so, do paymentsairdrop eg. 
+    `./komodo-cli -ac_name=TESTPRC paymentsairdrop '[10,10,0,3999,0,0]'
+Once this tx is confirmed, do `paymentsfund` and decode the raw hex. You can edit the source to not send the tx if requried. 
+Get the full `hex` of the vout[0] that pays to CryptoCondition. then place it on chain with the following command: with the hex you got in place of the hex below.
+    './komodo-cli -ac_name=TESTPRC opreturn_burn 1 2ea22c8020292ba5c8fd9cc89b12b35bf8f5d00196990ecbb06102b84d9748d11d883ef01e81031210008203000401cc'
 copy the hex, and sendrawtransaction, copy the txid returned. 
-this places the txid that locates the plan into an op_return before block 100, allowing us to retreive it. 
-Restart the daemon with -earlytxid=<txid of opreturn_burn transaction> 
+this places the scriptpubkey that pays the plan into an op_return before block 100, allowing us to retreive it, and nobody to change it.
+Restart the daemon with -earlytxid=<txid of opreturn_burn transaction>  eg: 
+
+./komodod -ac_name=TESTPRC -ac_supply=100000000 -ac_reward=1000000000 -ac_nk=96,5 -ac_blocktime=20 -ac_cc=2 -ac_snapshot=50 -ac_sapling=1 -ac_earlytxidcontract=237 -earlytxid=cf89d17fb11037f65c160d0749dddd74dc44d9893b0bb67fe1f96c1f59786496 -testnode=1 -gen -genproclimit=1
+
 mine the chain past block 100, preventing anyone else, creating another payments plan on chain before block 100. 
 
 We call the following in Validation and RPC where the address is needed. 
-if ( KOMODO_PRICES_FEE_SCRIPTPUB.size() == 0 )
-    GetFeeAddress();
+if ( ASSETCHAINS_EARLYTXIDCONTRACT == EVAL_PRICES && KOMODO_EARLYTXID_SCRIPTPUB.size() == 0 )
+    GetKomodoEarlytxidScriptPub();
 
 This will fetch the op_return, calculate the scriptPubKey and save it to the global. 
-On daemon restart as soon as validation for BETTX happens the global will be filled, afte this the transaction never needs to be looked up again. 
-GetFeeAddress is on line #2080 of komodo_bitcoind.h
+On daemon restart as soon as validation for BETTX happens the global will be filled, after this the transaction never needs to be looked up again. 
+GetKomodoEarlytxidScriptPub is on line #2080 of komodo_bitcoind.h
  */
 
 #include "CCassets.h"
@@ -202,8 +213,8 @@ static bool ValidateBetTx(struct CCcontract_info *cp, Eval *eval, const CTransac
     int16_t leverage;
     CPubKey pk, pricespk; 
     std::vector<uint16_t> vec;
-    if ( KOMODO_PRICES_FEE_SCRIPTPUB.size() == 0 )
-        GetFeeAddress();
+    if ( ASSETCHAINS_EARLYTXIDCONTRACT == EVAL_PRICES && KOMODO_EARLYTXID_SCRIPTPUB.size() == 0 )
+        GetKomodoEarlytxidScriptPub();
     if (bettx.vout.size() < 5 || bettx.vout.size() > 6)
         return eval->Invalid("incorrect vout number for bet tx");
 
@@ -220,7 +231,7 @@ static bool ValidateBetTx(struct CCcontract_info *cp, Eval *eval, const CTransac
     if (MakeCC1vout(cp->evalcode, bettx.vout[2].nValue, pricespk) != bettx.vout[2] )
         return eval->Invalid("cannot validate vout2 in bet tx with pk from opreturn");
     // This should be all you need to verify it, maybe also check amount? 
-    if ( bettx.vout[4].scriptPubKey != KOMODO_PRICES_FEE_SCRIPTPUB )
+    if ( bettx.vout[4].scriptPubKey != KOMODO_EARLYTXID_SCRIPTPUB )
         return eval->Invalid("the fee was paid to wrong address.");
 
     int64_t betamount = bettx.vout[2].nValue;
@@ -1369,6 +1380,15 @@ int64_t prices_enumaddedbets(uint256 &batontxid, std::vector<OneBetData> &bets, 
 // pricesbet rpc impl: make betting tx
 UniValue PricesBet(int64_t txfee, int64_t amount, int16_t leverage, std::vector<std::string> synthetic)
 {
+    fprintf(stderr, "assetchains_contract.%i vs eval_prices.%i\n",ASSETCHAINS_EARLYTXIDCONTRACT, EVAL_PRICES);
+    if ( ASSETCHAINS_EARLYTXIDCONTRACT == EVAL_PRICES && KOMODO_EARLYTXID_SCRIPTPUB.size() == 0 )
+    {
+        // Lock here, as in validation we cannot call lock in the function itself.
+        // may not be needed as the validation call to update the global, is called in a LOCK already, and it can only update there and here.
+        LOCK(cs_main);
+        GetKomodoEarlytxidScriptPub();
+    }
+    /*
     int32_t nextheight = komodo_nextheight();
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), nextheight); UniValue result(UniValue::VOBJ);
     struct CCcontract_info *cp, C; 
@@ -1404,15 +1424,14 @@ UniValue PricesBet(int64_t txfee, int64_t amount, int16_t leverage, std::vector<
         mtx.vout.push_back(MakeCC1vout(cp->evalcode, txfee, pricespk));                             // vout1 cc marker (NVOUT_CCMARKER)
         mtx.vout.push_back(MakeCC1vout(cp->evalcode, betamount, pricespk));                         // vout2 betamount
         mtx.vout.push_back(CTxOut(txfee, CScript() << ParseHex(HexStr(pricespk)) << OP_CHECKSIG));  // vout3 normal marker NVOUT_NORMALMARKER - TODO: remove it as we have cc marker now, when move to the new chain
-        if ( KOMODO_PRICES_FEE_SCRIPTPUB.size() == 0 )
+        if ( ASSETCHAINS_EARLYTXIDCONTRACT == EVAL_PRICES && KOMODO_EARLYTXID_SCRIPTPUB.size() == 0 )
         {
             // Lock here, as in validation we cannot call lock in the function itself.
             // may not be needed as the validation call to update the global, is called in a LOCK already, and it can only update there and here.
             LOCK(cs_main);
-            GetFeeAddress();
+            GetKomodoEarlytxidScriptPub();
         }
-        mtx.vout.push_back(CTxOut(amount-betamount, KOMODO_PRICES_FEE_SCRIPTPUB));
-            
+        mtx.vout.push_back(CTxOut(amount-betamount, KOMODO_EARLYTXID_SCRIPTPUB));
 
         rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, prices_betopret(mypk, nextheight - 1, amount, leverage, firstprice, vec, zeroid));
         return(prices_rawtxresult(result, rawtx, 0));
@@ -1420,6 +1439,7 @@ UniValue PricesBet(int64_t txfee, int64_t amount, int16_t leverage, std::vector<
     result.push_back(Pair("result", "error"));
     result.push_back(Pair("error", "not enough funds"));
     return(result); 
+    */
 }
 
 // pricesaddfunding rpc impl: add yet another bet

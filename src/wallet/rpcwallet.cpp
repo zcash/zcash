@@ -8000,6 +8000,7 @@ void RegisterWalletRPCCommands(CRPCTable &tableRPC)
 
 UniValue opreturn_burn(const UniValue& params, bool fHelp)
 {
+    std::vector<uint8_t> vHexStr; CScript opret; int32_t txfee = 10000;
     if (fHelp || (params.size() != 2))
 		throw runtime_error("amount to burn, hexstring to send\n");
     struct CCcontract_info *cp, C; UniValue ret(UniValue::VOBJ);
@@ -8009,30 +8010,22 @@ UniValue opreturn_burn(const UniValue& params, bool fHelp)
 	    
 	CAmount nAmount = AmountFromValue(params[0]);
     if (nAmount <= 10000)
-        throw JSONRPCError(RPC_TYPE_ERROR, "must send at least 10000 sat");
-    std::string strHex = params[1].get_str();
+        throw JSONRPCError(RPC_TYPE_ERROR, "must burn at least 10000 sat");
+    vHexStr = ParseHex(params[1].get_str());
+    if ( vHexStr.size() == 0 )
+        throw JSONRPCError(RPC_TYPE_ERROR, "hexstring is not valid.");
+
 	CPubKey myPubkey = pubkey2pk(Mypubkey());
 	CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
 
 	int64_t normalInputs = AddNormalinputs(mtx, myPubkey, nAmount, 60);
 	if (normalInputs < nAmount)
 		throw runtime_error("not enough normals\n");
-        
-    CScript opret; uint8_t scripthex[8192];
-          
-    decode_hex(scripthex,strHex.size()/2,(char *)strHex.c_str());
-    std::string test;
-    test.append((char*)scripthex);
-    std::vector<uint8_t> opretdata(test.begin(), test.end());
-    opret << OP_RETURN << E_MARSHAL(ss << opretdata);
-    /*CScript opret; uint8_t *ptr;
-    opret << OP_RETURN << 0;
-    int32_t len = strlen(strHex.c_str());
-    len >>=1;
-    opret.resize(len+2);
-    ptr = (uint8_t *)&opret[1];
-    decode_hex(ptr,len,(char *)strHex.c_str()); */
-	mtx.vout.push_back(CTxOut(nAmount,opret));
-    ret.push_back(Pair("hex",FinalizeCCTx(0, cp, mtx, myPubkey, 10000, CScript())));
+    
+	opret << OP_RETURN << E_MARSHAL(ss << vHexStr);
+    
+    mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(myPubkey)) << OP_CHECKSIG));
+    mtx.vout.push_back(CTxOut(nAmount,opret));
+    ret.push_back(Pair("hex",FinalizeCCTx(0, cp, mtx, myPubkey, txfee, CScript())));
 	return(ret);
 }
