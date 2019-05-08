@@ -882,7 +882,7 @@ int32_t prices_syntheticvec(std::vector<uint16_t> &vec, std::vector<std::string>
             return(-3);
         }
         depth -= need;
-        std::cerr << "prices_syntheticvec() opcode=" << opcode << " opstr=" << opstr << " need=" << need << " depth=" << depth << std::endl;
+        //std::cerr << "prices_syntheticvec() opcode=" << opcode << " opstr=" << opstr << " need=" << need << " depth=" << depth << std::endl;
         if ((opcode & KOMODO_PRICEMASK) != PRICES_WEIGHT) { // skip weight
             depth++;                                          // increase operands count
             std::cerr << "depth++=" << depth << std::endl;
@@ -931,14 +931,14 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
 
         mpz_set_ui(mpzResult, 0);  // clear result to test overflow (see below)
 
-        std::cerr << "prices_syntheticprice" << " i=" << i << " mpzTotalPrice=" << mpz_get_si(mpzTotalPrice) << " value=" << value << " depth=" << depth <<  " opcode&KOMODO_PRICEMASK=" << (opcode & KOMODO_PRICEMASK) <<std::endl;
+        //std::cerr << "prices_syntheticprice" << " i=" << i << " mpzTotalPrice=" << mpz_get_si(mpzTotalPrice) << " value=" << value << " depth=" << depth <<  " opcode&KOMODO_PRICEMASK=" << (opcode & KOMODO_PRICEMASK) <<std::endl;
         switch (opcode & KOMODO_PRICEMASK)
         {
         case 0: // indices 
             pricestack[depth] = 0;
             if (komodo_priceget(pricedata, value, height, 1) >= 0)
             {
-                std::cerr << "prices_syntheticprice" << " pricedata[0]=" << pricedata[0] << " pricedata[1]=" << pricedata[1] << " pricedata[2]=" << pricedata[2] << std::endl;
+                //std::cerr << "prices_syntheticprice" << " pricedata[0]=" << pricedata[0] << " pricedata[1]=" << pricedata[1] << " pricedata[2]=" << pricedata[2] << std::endl;
                 // push price to the prices stack
                 /*if (!minmax)
                     pricestack[depth] = pricedata[2];   // use smoothed value if we are over 24h
@@ -964,7 +964,7 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
         case PRICES_WEIGHT: // multiply by weight and consume top of stack by updating price
             if (depth == 1) {
                 depth--;
-                //price += pricestack[0] * value;
+                // price += pricestack[0] * value;
                 mpz_set_si(mpzPriceValue, pricestack[0]);
                 mpz_mul_si(mpzPriceValue, mpzPriceValue, value);
                 mpz_add(mpzTotalPrice, mpzTotalPrice, mpzPriceValue);              // accumulate weight's value  
@@ -1113,10 +1113,10 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
         if (errcode != 0)
             break;
 
-        if( depth > 0 )
-            std::cerr << "prices_syntheticprice top pricestack[depth-1=" << depth-1 << "]=" << pricestack[depth-1] << std::endl;
-        else
-            std::cerr << "prices_syntheticprice pricestack empty" << std::endl;
+ //       if( depth > 0 )
+ //           std::cerr << "prices_syntheticprice top pricestack[depth-1=" << depth-1 << "]=" << pricestack[depth-1] << std::endl;
+ //       else
+ //           std::cerr << "prices_syntheticprice pricestack empty" << std::endl;
 
     }
     free(pricedata);
@@ -1155,7 +1155,7 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
         std::cerr << "prices_syntheticprice err=" << errcode << std::endl;
         return(errcode);
     }
-    std::cerr << "prices_syntheticprice priceIndex=" << priceIndex << " den=" << den << std::endl;
+    //std::cerr << "prices_syntheticprice priceIndex=" << priceIndex << " den=" << den << std::endl;
 
     return priceIndex;
 }
@@ -1192,11 +1192,11 @@ int32_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t
     if (minmax)    { // if we are within day window, set temp costbasis to max (or min) price value
         if (leverage > 0 && price > costbasis) {
             costbasis = price;  // set temp costbasis
-            std::cerr << "prices_syntheticprofits() minmax costbasis=" << costbasis << std::endl;
+            //std::cerr << "prices_syntheticprofits() minmax costbasis=" << costbasis << std::endl;
         }
         else if (leverage < 0 && (costbasis == 0 || price < costbasis)) {
             costbasis = price;
-            std::cerr << "prices_syntheticprofits() minmax costbasis=" << costbasis << std::endl;
+            //std::cerr << "prices_syntheticprofits() minmax costbasis=" << costbasis << std::endl;
         }
         //else {  //-> use the previous value
         //    std::cerr << "prices_syntheticprofits() unchanged costbasis=" << costbasis << " price=" << price << " leverage=" << leverage << std::endl;
@@ -1208,7 +1208,7 @@ int32_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t
             //costbasis = price;
 
             // use calculated minmax costbasis
-            std::cerr << "prices_syntheticprofits() use permanent costbasis=" << costbasis << " at height=" << height << std::endl;
+            //std::cerr << "prices_syntheticprofits() use permanent costbasis=" << costbasis << " at height=" << height << std::endl;
         }
     }
     
@@ -1266,7 +1266,7 @@ int32_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t
     else
         profits = 0;
 
-    std::cerr << "prices_syntheticprofits() profits=" << profits << std::endl;
+    //std::cerr << "prices_syntheticprofits() profits=" << profits << std::endl;
     return 0; //  (positionsize + addedbets + profits);
 }
 
@@ -1366,7 +1366,7 @@ int64_t prices_enumaddedbets(uint256 &batontxid, std::vector<OneBetData> &bets, 
             added.positionsize = amount;
             added.firstheight = blockIdx.GetHeight();
             bets.push_back(added);
-            std::cerr << "prices_batontxid() added amount=" << amount << std::endl;
+            //std::cerr << "prices_batontxid() added amount=" << amount << std::endl;
         }
         else {
             std::cerr << "prices_batontxid() cannot load or decode add bet tx, isLoaded=" << isLoaded << " funcId=" << (int)funcId << std::endl;
@@ -1494,7 +1494,7 @@ int32_t prices_scanchain(std::vector<OneBetData> &bets, int16_t leverage, std::v
 
                 int32_t retcode = prices_syntheticprofits(bets[i].costbasis, bets[i].firstheight, height, leverage, vec, bets[i].positionsize, bets[i].profits, lastprice);
                 if (retcode < 0) {
-                    std::cerr << "prices_scanchain() prices_syntheticprofits returned -1, breaking" << std::endl;
+                    std::cerr << "prices_scanchain() prices_syntheticprofits returned -1, finishing..." << std::endl;
                     stop = true;
                     break;
                 }
