@@ -2097,6 +2097,9 @@ UniValue PricesGetOrderbook()
     int64_t totalliabilities = 0;
     for (int i = 0; i < book.size() - 1; i++) {
         if (book[i].isOpen) {
+            int64_t t = 0;
+            for (auto b : book[i].bets) t += b.positionsize;
+            std::cerr << "book[i].exp=" << prices_getsourceexpression(book[i].vecparsed) << " totalpos" << t << " equity=" << book[i].equity << std::endl;
             totalliabilities += book[i].equity;
         }
     }
