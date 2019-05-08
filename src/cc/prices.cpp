@@ -1103,7 +1103,7 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
             break;
         }
 
-        std::cerr << "prices_syntheticprice test mpzResult=" << mpz_get_si(mpzResult) << std::endl;
+ //       std::cerr << "prices_syntheticprice test mpzResult=" << mpz_get_si(mpzResult) << std::endl;
         // check overflow:
         if (mpz_cmp_si(mpzResult, std::numeric_limits<int64_t>::max()) > 0) {
             errcode = -13;
@@ -1155,7 +1155,7 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
         std::cerr << "prices_syntheticprice err=" << errcode << std::endl;
         return(errcode);
     }
-    //std::cerr << "prices_syntheticprice priceIndex=" << priceIndex << " den=" << den << std::endl;
+//    std::cerr << "prices_syntheticprice priceIndex=totalprice/den=" << priceIndex << " den=" << den << std::endl;
 
     return priceIndex;
 }
