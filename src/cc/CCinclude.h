@@ -229,7 +229,7 @@ uint256 DiceHashEntropy(uint256 &entropy,uint256 _txidpriv,int32_t entropyvout,i
 CTxOut MakeCC1vout(uint8_t evalcode,CAmount nValue,CPubKey pk, std::vector<std::vector<unsigned char>>* vData = NULL);
 CTxOut MakeCC1of2vout(uint8_t evalcode,CAmount nValue,CPubKey pk,CPubKey pk2, std::vector<std::vector<unsigned char>>* vData = NULL);
 int32_t has_opret(const CTransaction &tx, uint8_t evalcode);
-CScript getCCopret(const CScript &scriptPubKey);
+bool getCCopret(const CScript &scriptPubKey, CScript &opret);
 bool makeCCopret(CScript &opret, std::vector<std::vector<unsigned char>> &vData);
 CC *MakeCCcond1(uint8_t evalcode,CPubKey pk);
 CC *MakeCCcond1of2(uint8_t evalcode,CPubKey pk1,CPubKey pk2);
@@ -298,6 +298,7 @@ UniValue ValueFromAmount(const CAmount& amount);
 
 int64_t TotalPubkeyNormalInputs(const CTransaction &tx, const CPubKey &pubkey);
 int64_t TotalPubkeyCCInputs(const CTransaction &tx, const CPubKey &pubkey);
+inline std::string STR_TOLOWER(const std::string &str) { std::string out; for (std::string::const_iterator i = str.begin(); i != str.end(); i++) out += std::tolower(*i); return out; }
 
 // bitcoin LogPrintStr with category "-debug" cmdarg support for C++ ostringstream:
 #define CCLOG_INFO   0

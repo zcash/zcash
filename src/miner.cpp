@@ -156,6 +156,7 @@ uint64_t komodo_notarypay(CMutableTransaction &txNew, std::vector<int8_t> &Notar
 int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestamp);
 int32_t komodo_getnotarizedheight(uint32_t timestamp,int32_t height, uint8_t *script, int32_t len);
 CScript komodo_mineropret(int32_t nHeight);
+bool komodo_appendACscriptpub();
 
 CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32_t gpucount, bool isStake)
 {
@@ -290,9 +291,9 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
             txvalue = tx.GetValueOut();
             if ( KOMODO_VALUETOOBIG(txvalue) != 0 )
                 continue;
-            if ( KOMODO_VALUETOOBIG(txvalue + voutsum) != 0 )
-                continue;
-            voutsum += txvalue;
+            //if ( KOMODO_VALUETOOBIG(txvalue + voutsum) != 0 ) // has been commented from main.cpp ? 
+            //    continue;
+            //voutsum += txvalue;
             if ( ASSETCHAINS_SYMBOL[0] == 0 && komodo_validate_interest(tx,nHeight,(uint32_t)pblock->nTime,0) < 0 )
             {
                 //fprintf(stderr,"CreateNewBlock: komodo_validate_interest failure nHeight.%d nTime.%u vs locktime.%u\n",nHeight,(uint32_t)pblock->nTime,(uint32_t)tx.nLockTime);
@@ -652,6 +653,12 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
             txNew.vout[1].nValue = commission;
             if ( ASSETCHAINS_SCRIPTPUB.size() > 1 )
             {
+                static bool didinit = false;
+                if ( !didinit && nHeight > 100 && KOMODO_EARLYTXID != zeroid && komodo_appendACscriptpub() )
+                {
+                    fprintf(stderr, "appended ccopreturn to ASSETCHAINS_SCRIPTPUB.%s\n", ASSETCHAINS_SCRIPTPUB.c_str());
+                    didinit = true;
+                }
                 //fprintf(stderr,"mine to -ac_script\n");
                 //txNew.vout[1].scriptPubKey = CScript() << ParseHex();
                 int32_t len = strlen(ASSETCHAINS_SCRIPTPUB.c_str());
@@ -721,7 +728,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                     }
                     return(0);
                 }
-                fprintf(stderr, "Created notary payment coinbase totalsat.%lu\n",totalsats);    
+                //fprintf(stderr, "Created notary payment coinbase totalsat.%lu\n",totalsats);    
             } else fprintf(stderr, "vout 2 of notarisation is not OP_RETURN scriptlen.%i\n", scriptlen);
         }
         if ( ASSETCHAINS_CBOPRET != 0 )
@@ -895,14 +902,14 @@ void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& 
 CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey, int32_t nHeight, int32_t gpucount, bool isStake)
 {
     CPubKey pubkey; CScript scriptPubKey; uint8_t *script,*ptr; int32_t i,len;
-    if ( nHeight == 1 && ASSETCHAINS_COMMISSION != 0 )
+    if ( nHeight == 1 && ASSETCHAINS_COMMISSION != 0 && ASSETCHAINS_SCRIPTPUB[ASSETCHAINS_SCRIPTPUB.back()] != 49 && ASSETCHAINS_SCRIPTPUB[ASSETCHAINS_SCRIPTPUB.back()-1] != 51 )
     {
         if ( ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 )
         {
             pubkey = ParseHex(ASSETCHAINS_OVERRIDE_PUBKEY);
             scriptPubKey = CScript() << ParseHex(HexStr(pubkey)) << OP_CHECKSIG;
         }
-        else
+        else 
         {
             len = strlen(ASSETCHAINS_SCRIPTPUB.c_str());
             len >>= 1;

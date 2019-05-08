@@ -463,7 +463,15 @@ static const CRPCCommand vRPCCommands[] =
     { "prices",       "prices",      &prices,      true },
     { "prices",       "pricesaddress",      &pricesaddress,      true },
     { "prices",       "priceslist",         &priceslist,         true },
+    { "prices",       "mypriceslist",         &mypriceslist,         true },
     { "prices",       "pricesinfo",         &pricesinfo,         true },
+    { "prices",       "pricesbet",         &pricesbet,         true },
+    { "prices",       "pricessetcostbasis",         &pricessetcostbasis,         true },
+    { "prices",       "pricescashout",         &pricescashout,         true },
+    { "prices",       "pricesrekt",         &pricesrekt,         true },
+    { "prices",       "pricesaddfunding",         &pricesaddfunding,         true },
+    { "prices",       "pricesgetorderbook",         &pricesgetorderbook,         true },
+
 
     // Pegs
     { "pegs",       "pegsaddress",   &pegsaddress,      true },
@@ -480,12 +488,14 @@ static const CRPCCommand vRPCCommands[] =
     { "marmara",       "marmaralock",   &marmara_lock,      true },
 
     // Payments
-    { "payments",       "paymentsaddress",   &paymentsaddress,      true },
-    { "payments",       "paymentstxidopret", &payments_txidopret,      true },
-    { "payments",       "paymentscreate",    &payments_create,      true },
-    { "payments",       "paymentslist",      &payments_list,      true },
-    { "payments",       "paymentsinfo",      &payments_info,      true },
-    { "payments",       "paymentsfund",      &payments_fund,      true },
+    { "payments",       "paymentsaddress",   &paymentsaddress,       true },
+    { "payments",       "paymentstxidopret", &payments_txidopret,    true },
+    { "payments",       "paymentscreate",    &payments_create,       true },
+    { "payments",       "paymentsairdrop",   &payments_airdrop,      true },
+    { "payments",       "paymentslist",      &payments_list,         true },
+    { "payments",       "paymentsinfo",      &payments_info,         true },
+    { "payments",       "paymentsfund",      &payments_fund,         true },
+    { "payments",       "paymentsmerge",     &payments_merge,        true },
     { "payments",       "paymentsrelease",   &payments_release,      true },
 
     { "CClib",       "cclibaddress",   &cclibaddress,      true },
@@ -542,6 +552,8 @@ static const CRPCCommand vRPCCommands[] =
     /* Address index */
     { "addressindex",       "getaddressmempool",      &getaddressmempool,      true  },
     { "addressindex",       "getaddressutxos",        &getaddressutxos,        false },
+    { "addressindex",       "checknotarization",      &checknotarization,      false },
+    { "addressindex",       "getnotarypayinfo",       &getnotarypayinfo,       false },
     { "addressindex",       "getaddressdeltas",       &getaddressdeltas,       false },
     { "addressindex",       "getaddresstxids",        &getaddresstxids,        false },
     { "addressindex",       "getaddressbalance",      &getaddressbalance,      false },
@@ -565,10 +577,6 @@ static const CRPCCommand vRPCCommands[] =
     { "util",             "reconsiderblock",        &reconsiderblock,        true  },
     /* Not shown in help */
     { "hidden",             "setmocktime",            &setmocktime,            true  },
-	{ "hidden",             "test_ac",                &test_ac,            true },
-	{ "hidden",             "test_heirmarker",        &test_heirmarker,    true }, 
-	{ "hidden",             "test_proof",        &test_proof,    true },
-    { "hidden",             "test_burntx",            &test_burntx,    true },
 
 
 #ifdef ENABLE_WALLET
@@ -639,6 +647,7 @@ static const CRPCCommand vRPCCommands[] =
     { "wallet",             "z_importviewingkey",     &z_importviewingkey,     true  },
     { "wallet",             "z_exportwallet",         &z_exportwallet,         true  },
     { "wallet",             "z_importwallet",         &z_importwallet,         true  },
+    { "wallet",             "opreturn_burn",          &opreturn_burn,          true  },
 
     // TODO: rearrange into another category
     { "disclosure",         "z_getpaymentdisclosure", &z_getpaymentdisclosure, true  },

@@ -53,6 +53,15 @@ bool RunCCEval(const CC *cond, const CTransaction &tx, unsigned int nIn)
             eval->state.GetRejectReason().data(),
             tx.vin[nIn].prevout.hash.GetHex().data());
     if (eval->state.IsError()) fprintf(stderr, "Culprit: %s\n", EncodeHexTx(tx).data());
+    CTransaction tmp; 
+    if (mempool.lookup(tx.GetHash(), tmp))
+    {
+        // This is to remove a payments airdrop if it gets stuck in the mempool. 
+        // Miner will mine 1 invalid block, but doesnt stop them mining until a restart.
+        // This would almost never happen in normal use.
+        std::list<CTransaction> dummy;
+        mempool.remove(tx,dummy,true);
+    }
     return false;
 }
 
