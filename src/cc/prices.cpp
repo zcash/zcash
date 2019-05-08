@@ -2014,7 +2014,7 @@ static bool prices_addbookentry(uint256 txid, std::vector<BetInfo> &book)
     }
     return false;
 }
-/*
+
 static bool prices_isopposite(BetInfo p1, BetInfo p2) {
     if (p1.vecparsed.size() <= 3 && p2.vecparsed.size() <= 3) {   // simple synthetic exp
 
@@ -2033,24 +2033,15 @@ static bool prices_isopposite(BetInfo p1, BetInfo p2) {
                 prices_splitpair(std::string(name1), upperquote1, bottomquote1);
                 prices_splitpair(std::string(name2), upperquote2, bottomquote2);
 
-                if (upperquote == "BTC")
-                    isTop = true;
-                else if (bottomquote == "BTC")
-                    isTop = false;
-                else
-                    continue;
-
-                if (!bottomquote.empty()) {
-
-                    for (int j = i + 1; j < book.size(); j++) {
-
-                    }
-                }
+                if (upperquote1 == bottomquote2 && bottomquote1 == upperquote2 && (p1.leverage > 0 == p2.leverage > 0) ||
+                    upperquote1 == upperquote2 && bottomquote1 == bottomquote2 && (p1.leverage > 0 != p2.leverage > 0))
+                    return true;
             }
         }
     }
+    return false;
 }
-*/
+
 
 // walk through uxtos on the global address
 // calculate the balance:
@@ -2085,17 +2076,48 @@ UniValue PricesGetOrderbook()
         totalfund += it->second.satoshis;
     }
     
-    // extract out opposit bets:
-    int lastbtcpos = -1;
-    int lastleverage = 0;
+    // extract out opposite bets:
+    std::map<std::string, std::vector<BetInfo> > bookmatched;
     for (int i = 0; i < book.size() - 1; i++) {
         for (int j = 0; j < book.size(); j++) {
             if (book[i].isOpen && book[j].isOpen) {
-                //if (prices_isopposite(book[i], book[j])) {
-                //}
+                if (prices_isopposite(book[i], book[j])) {
+                    char name[65];
+                    komodo_pricename(name, (book[i].vecparsed[0] & (KOMODO_MAXPRICES - 1)));
+                    std::string sname = name;
+                    bookmatched[sname].push_back(book[i]);
+                    bookmatched[sname].push_back(book[j]);
+                    book.erase(book.begin() + j);
+                    book.erase(book.begin() + i);
+                }
             }
         }
     }
+
+    UniValue resbook (UniValue::VARR);
+    for (int i = 0; i < book.size(); i++) {
+        UniValue entry(UniValue::VOBJ);
+        entry.push_back(Pair("expression", prices_getsourceexpression(book[i].vecparsed)));
+        entry.push_back(Pair("costbasis", book[i].averageCostbasis));
+        entry.push_back(Pair("leverage", book[i].leverage));
+        entry.push_back(Pair("equity", book[i].equity));
+        resbook.push_back(entry);
+    }
+    result.push_back(Pair("unmatched", resbook));
+
+    for (auto m : bookmatched) {
+        UniValue resbook(UniValue::VARR);
+        for (int i = 0; i < m.second.size(); i++) {
+            UniValue entry(UniValue::VOBJ);
+            entry.push_back(Pair("expression", prices_getsourceexpression(m.second[i].vecparsed)));
+            entry.push_back(Pair("costbasis", m.second[i].averageCostbasis));
+            entry.push_back(Pair("leverage", m.second[i].leverage));
+            entry.push_back(Pair("equity", m.second[i].equity));
+            resbook.push_back(entry);
+        }
+        result.push_back(Pair(m.first, resbook));
+    }
+
 
     int64_t totalliabilities = 0;
     for (int i = 0; i < book.size(); i++) {
