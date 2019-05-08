@@ -575,8 +575,11 @@ int64_t AddPaymentsInputs(bool fLockedBlocks,int8_t GetBalance,struct CCcontract
                 }
                 if ( (nValue= IsPaymentsvout(cp,vintx,vout,coinaddr,ccopret)) > PAYMENTS_TXFEE && nValue >= threshold && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0 )
                 {
+                    int32_t offset = 0;
+                    if ( ccopret.size() > 2 && DecodePaymentsMergeOpRet(ccopret,checktxid) == 'M' )
+                        offset = PAYMENTS_MERGEOFSET;
                     int32_t tmpblocksleft = 0;
-                    if ( fLockedBlocks && !payments_lockedblocks(hashBlock, lockedblocks+(GetBalance == 4 ? PAYMENTS_MERGEOFSET : 0), tmpblocksleft) )
+                    if ( fLockedBlocks && !payments_lockedblocks(hashBlock, lockedblocks+offset, tmpblocksleft) )
                     {
                         blocksleft_balance.push_back(std::make_pair(tmpblocksleft,nValue));
                         continue;
@@ -1029,6 +1032,7 @@ UniValue PaymentsMerge(struct CCcontract_info *cp,char *jsonstr)
                 // encode the checktxid into the end of the ccvout, along with 'M' to flag merge type tx. 
                 opret = EncodePaymentsMergeOpRet(createtxid);
                 std::vector<std::vector<unsigned char>> vData = std::vector<std::vector<unsigned char>>();
+                // try to pay to diffrent pubkey here... change txidpk.
                 if ( makeCCopret(opret, vData) )
                     mtx.vout.push_back(MakeCC1of2vout(EVAL_PAYMENTS,inputsum-PAYMENTS_TXFEE,Paymentspk,txidpk,&vData));
                 GetCCaddress1of2(cp,destaddr,Paymentspk,txidpk);
@@ -1036,7 +1040,7 @@ UniValue PaymentsMerge(struct CCcontract_info *cp,char *jsonstr)
                 rawtx = FinalizeCCTx(0,cp,mtx,mypk,PAYMENTS_TXFEE,CScript());
                 if ( params != 0 )
                     free_json(params);
-                return(payments_rawtxresult(result,rawtx,0));
+                return(payments_rawtxresult(result,rawtx,1));
             }
         }
         else
@@ -1188,6 +1192,7 @@ UniValue PaymentsAirdrop(struct CCcontract_info *cp,char *jsonstr)
         lockedblocks = juint(jitem(params,0),0);
         minrelease = juint(jitem(params,1),0);
         minimum = juint(jitem(params,2),0);
+        if ( minimum < 10000 ) minimum = 10000;
         top = juint(jitem(params,3),0);
         bottom = juint(jitem(params,4),0);
         fixedAmount = juint(jitem(params,5),0); // fixed amount is a flag, set to 7 does game mode, 0 normal snapshot, anything else fixed allocations. 
