@@ -2079,7 +2079,7 @@ UniValue PricesGetOrderbook()
     SetCCunspents(addressCCunspents, cp->unspendableCCaddr, true);  // cc marker
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it = addressCCunspents.begin(); it != addressCCunspents.end(); it++)
     {
-        std::cerr << "totalfund calc txid=" << it->first.txhash.GetHex() << " nvout=" << it->first.index << " satoshis=" << it->second.satoshis;
+        std::cerr << "totalfund calc txid=" << it->first.txhash.GetHex() << " nvout=" << it->first.index << " satoshis=" << it->second.satoshis << std::endl;
         totalfund += it->second.satoshis;
     }
     
