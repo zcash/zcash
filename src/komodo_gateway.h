@@ -2400,8 +2400,8 @@ char *komodo_pricename(char *name,int32_t ind)
     }
     return(0);
 }
-
-int32_t komodo_priceind(char *symbol)
+// finds index for its symbol name
+int32_t komodo_priceind(const char *symbol)
 {
     char name[65]; int32_t i,n = (int32_t)(komodo_cbopretsize(ASSETCHAINS_CBOPRET) / sizeof(uint32_t));
     for (i=1; i<n; i++)
@@ -2412,7 +2412,7 @@ int32_t komodo_priceind(char *symbol)
     }
     return(-1);
 }
-
+// returns price value which is in a 10% interval for more than 50% points for the preceding 24 hours
 int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int32_t rawskip,uint32_t *nonzprices,int32_t smoothwidth)
 {
     int32_t i,j,k,n,iter,correlation,maxcorrelation=0; int64_t firstprice,price,sum,den,mult,refprice,lowprice,highprice;
@@ -2801,4 +2801,3 @@ int32_t komodo_priceget(int64_t *buf64,int32_t ind,int32_t height,int32_t numblo
     pthread_mutex_unlock(&pricemutex);
     return(retval);
 }
-
