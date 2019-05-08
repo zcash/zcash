@@ -2024,17 +2024,20 @@ static bool prices_isopposite(BetInfo p1, BetInfo p2) {
         int32_t value1 = (opcode1 & (KOMODO_MAXPRICES - 1));   // index or weight 
         int32_t value2 = (opcode2 & (KOMODO_MAXPRICES - 1));   // index or weight 
 
-        if ( (opcode1 & KOMODO_PRICEMASK) && (opcode2 & KOMODO_PRICEMASK) ) {
+        if ( (opcode1 & KOMODO_PRICEMASK) == 0 && (opcode2 & KOMODO_PRICEMASK) == 0 ) {
             char name1[65];
             char name2[65];
             if (komodo_pricename(name1, value1) && komodo_pricename(name2, value2)) {
+
+                uint16_t opcode1 = p1.vecparsed[1];
+                uint16_t opcode2 = p2.vecparsed[1];
 
                 std::string upperquote1, bottomquote1, upperquote2, bottomquote2;
                 prices_splitpair(std::string(name1), upperquote1, bottomquote1);
                 prices_splitpair(std::string(name2), upperquote2, bottomquote2);
 
-                if (upperquote1 == bottomquote2 && bottomquote1 == upperquote2 && (p1.leverage > 0 == p2.leverage > 0) ||
-                    upperquote1 == upperquote2 && bottomquote1 == bottomquote2 && (p1.leverage > 0 != p2.leverage > 0))
+                if (/*upperquote1 == bottomquote2 && bottomquote1 == upperquote2 && (p1.leverage > 0 == p2.leverage > 0 || (opcode1 & KOMODO_PRICEMASK) == PRICES_INV == (opcode2 & KOMODO_PRICEMASK) == PRICES_INV) ||*/
+                    upperquote1 == upperquote2 && bottomquote1 == bottomquote2 && ((p1.leverage > 0) != (p2.leverage > 0) || ((opcode1 & KOMODO_PRICEMASK) == PRICES_INV) != ((opcode2 & KOMODO_PRICEMASK) == PRICES_INV)) )
                     return true;
             }
         }
@@ -2078,20 +2081,22 @@ UniValue PricesGetOrderbook()
     
     // extract out opposite bets:
     std::map<std::string, std::vector<BetInfo> > bookmatched;
-    for (int i = 0; i < book.size() - 1; i++) {
-        for (int j = 0; j < book.size(); j++) {
-            if (book[i].isOpen && book[j].isOpen) {
-                if (prices_isopposite(book[i], book[j])) {
-                    char name[65];
-                    komodo_pricename(name, (book[i].vecparsed[0] & (KOMODO_MAXPRICES - 1)));
-                    std::string sname = name;
-                    bookmatched[sname].push_back(book[i]);
+    while (book.size() > 0) {
+        char name[65];
+        komodo_pricename(name, (book[0].vecparsed[0] & (KOMODO_MAXPRICES - 1)));
+        std::string sname = name;
+        bookmatched[sname].push_back(book[0]);
+
+        for (int j = 1; j < book.size(); j++) {
+            if (book[0].isOpen && book[j].isOpen) {
+                if (prices_isopposite(book[0], book[j])) {
+                  
                     bookmatched[sname].push_back(book[j]);
                     book.erase(book.begin() + j);
-                    book.erase(book.begin() + i);
                 }
             }
         }
+        book.erase(book.begin());
     }
 
     UniValue resbook (UniValue::VARR);
