@@ -30,7 +30,7 @@ const struct NUInfo NetworkUpgradeInfo[Consensus::MAX_NETWORK_UPGRADES] = {
         /*.strInfo =*/ "See https://z.cash/upgrade/sapling.html for details.",
     },
     {
-        /*.nBranchId =*/ 0x4bb40e60,
+        /*.nBranchId =*/ 0x374d694f,
         /*.strName =*/ "YCash",
         /*.strInfo =*/ "See YCash for details.",
     }
@@ -68,9 +68,8 @@ struct EquihashInfo EquihashUpgradeInfo[Consensus::MAX_NETWORK_UPGRADES] = {
     },
     // UPGRADE YCASH
     {
-        // TODO (A): Finalize Equihash params
-        /* N = */ 96,
-        /* K = */  5,
+        /* N = */ 192,
+        /* K = */   7,
     }
 };
 

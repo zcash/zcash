@@ -130,6 +130,9 @@ bool CheckEquihashSolution(const CBlockHeader *pblock, const CChainParams& param
     } else if (nSolSize == 68) {
         n = 96;
         k = 5;
+    } else if (nSolSize == 400) {
+        n = 192;
+        k = 7;
     } else {
         return error("%s: Unsupported solution size of %d", __func__, nSolSize);
     }
