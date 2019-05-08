@@ -90,7 +90,7 @@ void checkNumberOfUniqueAddresses(int nUnique) {
     for (int i = 1; i <= maxHeight; i++) {
         addresses.insert(Params().GetFoundersRewardAddressAtHeight(i));
     }
-    ASSERT_TRUE(addresses.size() == nUnique);
+    EXPECT_EQ(addresses.size(), nUnique);
 }
 
 
@@ -110,13 +110,22 @@ TEST(founders_reward_test, general) {
     EXPECT_EQ(HexStr(params.GetFoundersRewardScriptAtHeight(53127)), "a91455d64928e69829d9376c776550b6cc710d42715387");
     EXPECT_EQ(params.GetFoundersRewardAddressAtHeight(53127), "t2ENg7hHVqqs9JwU5cgjvSbxnT2a9USNfhy");
 
-    int maxHeight = params.GetConsensus().GetLastFoundersRewardBlockHeight();
+    // For YCash, the founders rewards should still work
+    int ycashHeight = params.GetConsensus().vUpgrades[Consensus::UPGRADE_YCASH].nActivationHeight;
     
-    // If the block height parameter is out of bounds, there is an assert.
-    EXPECT_DEATH(params.GetFoundersRewardScriptAtHeight(0), "nHeight");
-    EXPECT_DEATH(params.GetFoundersRewardScriptAtHeight(maxHeight+1), "nHeight");
-    EXPECT_DEATH(params.GetFoundersRewardAddressAtHeight(0), "nHeight");
-    EXPECT_DEATH(params.GetFoundersRewardAddressAtHeight(maxHeight+1), "nHeight"); 
+    EXPECT_EQ(params.GetFoundersRewardAddressAtHeight(ycashHeight), "s4k5ZMauJJUqLsQo6LuDUYxQpYkhBNBg1rK");
+    EXPECT_EQ(HexStr(params.GetFoundersRewardScriptAtHeight(ycashHeight)), "76a9146f94cc80998b048203891d9fdabf59394ef7e14d88ac");
+
+    // Ycash founders reward should continue past the old Zcash's last reward height
+    int zcashMaxHeight = params.GetConsensus().GetLastFoundersRewardBlockHeight();
+
+    EXPECT_EQ(params.GetFoundersRewardAddressAtHeight(zcashMaxHeight+1), "s4k5ZMauJJUqLsQo6LuDUYxQpYkhBNBg1rK");
+    EXPECT_EQ(HexStr(params.GetFoundersRewardScriptAtHeight(zcashMaxHeight+1)), "76a9146f94cc80998b048203891d9fdabf59394ef7e14d88ac");
+    // // If the block height parameter is out of bounds, there is an assert.
+    // EXPECT_DEATH(params.GetFoundersRewardScriptAtHeight(0), "nHeight");
+    // EXPECT_DEATH(params.GetFoundersRewardScriptAtHeight(maxHeight+1), "nHeight");
+    // EXPECT_DEATH(params.GetFoundersRewardAddressAtHeight(0), "nHeight");
+    // EXPECT_DEATH(params.GetFoundersRewardAddressAtHeight(maxHeight+1), "nHeight"); 
 }
 
 
@@ -128,7 +137,8 @@ TEST(founders_reward_test, mainnet) {
 }
 
 
-#define NUM_TESTNET_FOUNDER_ADDRESSES 48
+// Ycash: The unique addresses are only uptil the fork block, so 29 of them.
+#define NUM_TESTNET_FOUNDER_ADDRESSES 29
 
 TEST(founders_reward_test, testnet) {
     SelectParams(CBaseChainParams::TESTNET);
@@ -164,7 +174,8 @@ TEST(founders_reward_test, slow_start_subsidy) {
 
 // For use with mainnet and testnet which each have 48 addresses.
 // Verify the number of rewards each individual address receives.
-void verifyNumberOfRewards() {
+// Ycash: After the fork block, the rewards go to a different address
+void verifyNumberOfRewards(int numRewardAddresses) {
     CChainParams params = Params();
     int maxHeight = params.GetConsensus().GetLastFoundersRewardBlockHeight();
     std::multiset<std::string> ms;
@@ -172,21 +183,32 @@ void verifyNumberOfRewards() {
         ms.insert(params.GetFoundersRewardAddressAtHeight(nHeight));
     }
 
-    ASSERT_TRUE(ms.count(params.GetFoundersRewardAddressAtIndex(0)) == 17708);
-    for (int i = 1; i <= 46; i++) {
-        ASSERT_TRUE(ms.count(params.GetFoundersRewardAddressAtIndex(i)) == 17709);
+    ASSERT_EQ(ms.count(params.GetFoundersRewardAddressAtIndex(0)), 17708);
+    for (int i = 1; i <= numRewardAddresses-3; i++) {
+        ASSERT_EQ(ms.count(params.GetFoundersRewardAddressAtIndex(i)), 17709);
     }
-    ASSERT_TRUE(ms.count(params.GetFoundersRewardAddressAtIndex(47)) == 17677);
+
+    // Ycash: For testnet, the last-but-one address has a partial number of rewards
+    // and the last one has the Ycash rewards, which is currently only one address
+    if (params.NetworkIDString() == "test") {
+        ASSERT_EQ(ms.count(params.GetFoundersRewardAddressAtIndex(numRewardAddresses-2)), 8553);
+        ASSERT_EQ(ms.count(params.GetFoundersRewardAddressAtHeight(maxHeight)), 363304);
+    } else {
+        ASSERT_EQ(ms.count(params.GetFoundersRewardAddressAtIndex(numRewardAddresses-2)), 17709);
+        ASSERT_EQ(ms.count(params.GetFoundersRewardAddressAtIndex(numRewardAddresses-1)), 17677);
+    }
 }
 
 // Verify the number of rewards going to each mainnet address
 TEST(founders_reward_test, per_address_reward_mainnet) {
     SelectParams(CBaseChainParams::MAIN);
-    verifyNumberOfRewards();
+    verifyNumberOfRewards(48);
 }
 
 // Verify the number of rewards going to each testnet address
+// Ycash: Since the founders rewards are only till the fork block, we'll also
+// check that the Ycash founders reward is in perpetuity
 TEST(founders_reward_test, per_address_reward_testnet) {
     SelectParams(CBaseChainParams::TESTNET);
-    verifyNumberOfRewards();
+    verifyNumberOfRewards(29);
 }
