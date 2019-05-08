@@ -289,8 +289,8 @@ public:
         consensus.vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight = 207500;
         consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nProtocolVersion = 170007;
         consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight = 280000;
-        consensus.vUpgrades[Consensus::UPGRADE_YCASH].nProtocolVersion = 270008;
-        consensus.vUpgrades[Consensus::UPGRADE_YCASH].nActivationHeight = 485280;
+        consensus.vUpgrades[Consensus::UPGRADE_YCASH].nProtocolVersion = 270007;
+        consensus.vUpgrades[Consensus::UPGRADE_YCASH].nActivationHeight = 486696;
 
         // The best chain should have at least this much work.
         consensus.nMinimumChainWork = uint256S("0x00000000000000000000000000000000000000000000000000000001d0c4d9cd");
@@ -320,7 +320,7 @@ public:
         vSeeds.clear();
         vSeeds.push_back(CDNSSeedData("z.cash", "dnsseed.testnet.z.cash")); // Zcash
 
-        // guarantees the first 2 characters, when base58 encoded, are "sj"
+        // guarantees the first 2 characters, when base58 encoded, are "s4"
         base58Prefixes[PUBKEY_ADDRESS]       = {0x1C,0x30}; // s4 - {0x1C,0x30}; tm =  {0x1C,0x90};
         base58Prefixes[ZCASH_PUBKEY_ADDRESS] = {0x1C,0x90};
         // guarantees the first 2 characters, when base58 encoded, are "t2"
