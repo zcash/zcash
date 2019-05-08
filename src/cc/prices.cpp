@@ -2057,7 +2057,7 @@ static bool prices_isopposite(BetInfo p1, BetInfo p2) {
 // - unbalanced positions
 UniValue PricesGetOrderbook()
 {
-    UniValue result(UniValue::VARR);
+    UniValue result(UniValue::VOBJ);
     std::vector<BetInfo> book, opposits;
     std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex;
     struct CCcontract_info *cp, C;
