@@ -2082,17 +2082,20 @@ UniValue PricesGetOrderbook()
     // extract out opposite bets:
     std::map<std::string, std::vector<BetInfo> > bookmatched;
     while (book.size() > 0) {
-        char name[65];
-        komodo_pricename(name, (book[0].vecparsed[0] & (KOMODO_MAXPRICES - 1)));
-        std::string sname = name;
+        //char name[65];
+        //komodo_pricename(name, (book[0].vecparsed[0] & (KOMODO_MAXPRICES - 1)));
+        std::string sname = prices_getsourceexpression(book[0].vecparsed);
         bookmatched[sname].push_back(book[0]);
 
-        for (int j = 1; j < book.size(); j++) {
-            if (book[0].isOpen && book[j].isOpen) {
-                if (prices_isopposite(book[0], book[j])) {
-                  
-                    bookmatched[sname].push_back(book[j]);
-                    book.erase(book.begin() + j);
+        if (book[0].vecparsed.size() <= 3) {   // only short expr matched: "BTC_USD,1" or "BTC_USD,!,1"
+
+            for (int j = 1; j < book.size(); j++) {
+                if (book[0].isOpen && book[j].isOpen) {
+                    if (prices_isopposite(book[0], book[j])) {
+
+                        bookmatched[sname].push_back(book[j]);
+                        book.erase(book.begin() + j);
+                    }
                 }
             }
         }
