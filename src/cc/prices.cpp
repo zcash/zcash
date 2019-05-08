@@ -1988,7 +1988,7 @@ UniValue PricesList(uint32_t filter, CPubKey mypk)
     SetCCtxids(addressIndex, cp->normaladdr, false);        // old normal marker
     for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it = addressIndex.begin(); it != addressIndex.end(); it++)
     {
-        if( it->first.txindex == NVOUT_NORMALMARKER )
+        if( it->first.index == NVOUT_NORMALMARKER )
             AddBetToList(it->first.txhash);
     }
 
@@ -2068,7 +2068,7 @@ UniValue PricesGetOrderbook()
     SetCCtxids(addressIndex, cp->normaladdr, false);        // old normal marker
     for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it = addressIndex.begin(); it != addressIndex.end(); it++)
     {
-        if (it->first.txindex == NVOUT_NORMALMARKER)
+        if (it->first.index == NVOUT_NORMALMARKER)
             prices_addbookentry(it->first.txhash, book);
     }
 
@@ -2095,11 +2095,11 @@ UniValue PricesGetOrderbook()
     }
 
     int64_t totalliabilities = 0;
-    for (int i = 0; i < book.size() - 1; i++) {
+    for (int i = 0; i < book.size(); i++) {
         if (book[i].isOpen) {
             int64_t t = 0;
             for (auto b : book[i].bets) t += b.positionsize;
-            std::cerr << "book[i].exp=" << prices_getsourceexpression(book[i].vecparsed) << " totalpos" << t << " equity=" << book[i].equity << std::endl;
+            std::cerr << "book[i].exp=" << prices_getsourceexpression(book[i].vecparsed) << " totalpos=" << t << " equity=" << book[i].equity << std::endl;
             totalliabilities += book[i].equity;
         }
     }
