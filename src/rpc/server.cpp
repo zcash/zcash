@@ -492,6 +492,7 @@ static const CRPCCommand vRPCCommands[] =
     { "payments",       "paymentstxidopret", &payments_txidopret,    true },
     { "payments",       "paymentscreate",    &payments_create,       true },
     { "payments",       "paymentsairdrop",   &payments_airdrop,      true },
+    { "payments",       "paymentsairdroptokens",   &payments_airdroptokens,      true },
     { "payments",       "paymentslist",      &payments_list,         true },
     { "payments",       "paymentsinfo",      &payments_info,         true },
     { "payments",       "paymentsfund",      &payments_fund,         true },

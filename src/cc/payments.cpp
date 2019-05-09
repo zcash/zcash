@@ -160,13 +160,7 @@ uint8_t DecodePaymentsOpRet(CScript scriptPubKey,int32_t &lockedblocks,int32_t &
 CScript EncodePaymentsSnapsShotOpRet(int32_t lockedblocks,int32_t minrelease,int32_t minimum,int32_t top,int32_t bottom,int8_t fixedAmount,std::vector<std::vector<uint8_t>> excludeScriptPubKeys)
 {
     CScript opret; uint8_t evalcode = EVAL_PAYMENTS;
-    if ( (strcmp(ASSETCHAINS_SYMBOL, "CFEKPAY") == 0) ) // exempt for now, remove this after game completed.
-    {
-        minimum = 10000;
-        opret << OP_RETURN << E_MARSHAL(ss << evalcode << 'S' << lockedblocks << minrelease << top << bottom << fixedAmount << excludeScriptPubKeys);
-    }
-    else 
-        opret << OP_RETURN << E_MARSHAL(ss << evalcode << 'S' << lockedblocks << minrelease << minimum << top << bottom << fixedAmount << excludeScriptPubKeys);
+    opret << OP_RETURN << E_MARSHAL(ss << evalcode << 'S' << lockedblocks << minrelease << minimum << top << bottom << fixedAmount << excludeScriptPubKeys);
     return(opret);
 }
 
@@ -175,40 +169,27 @@ uint8_t DecodePaymentsSnapsShotOpRet(CScript scriptPubKey,int32_t &lockedblocks,
     std::vector<uint8_t> vopret; uint8_t *script,e,f;
     GetOpReturnData(scriptPubKey, vopret);
     script = (uint8_t *)vopret.data();
-    if ( (strcmp(ASSETCHAINS_SYMBOL, "CFEKPAY") == 0) )  // exempt for now, remove this after game completed.
+    if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> lockedblocks; ss >> minrelease; ss >> minimum; ss >> top; ; ss >> bottom; ss >> fixedAmount; ss >> excludeScriptPubKeys) != 0 )
     {
-        minimum = 10000;
-        if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> lockedblocks; ss >> minrelease; ss >> top; ; ss >> bottom; ss >> fixedAmount; ss >> excludeScriptPubKeys) != 0 )
-        {
-            if ( e == EVAL_PAYMENTS && f == 'S' )
-                return(f);
-        }
-    }
-    else
-    {
-        
-        if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> lockedblocks; ss >> minrelease; ss >> minimum; ss >> top; ; ss >> bottom; ss >> fixedAmount; ss >> excludeScriptPubKeys) != 0 )
-        {
-            if ( e == EVAL_PAYMENTS && f == 'S' )
-                return(f);
-        }
+        if ( e == EVAL_PAYMENTS && f == 'S' )
+            return(f);
     }
     return(0);
 }
 
-CScript EncodePaymentsTokensOpRet(int32_t lockedblocks,int32_t minrelease,int32_t top,std::vector<std::vector<uint8_t>> excludeScriptPubKeys, uint256 tokenid)
+CScript EncodePaymentsTokensOpRet(int32_t lockedblocks,int32_t minrelease,int32_t minimum,int32_t top,int32_t bottom,int8_t fixedAmount,std::vector<std::vector<uint8_t>> excludeScriptPubKeys,uint256 tokenid)
 {
     CScript opret; uint8_t evalcode = EVAL_PAYMENTS;
-    opret << OP_RETURN << E_MARSHAL(ss << evalcode << 'O' << lockedblocks << minrelease << top << excludeScriptPubKeys << tokenid);
+    opret << OP_RETURN << E_MARSHAL(ss << evalcode << 'O' << lockedblocks << minrelease << minimum << top << bottom << fixedAmount << excludeScriptPubKeys << tokenid);
     return(opret);
 }
 
-uint8_t DecodePaymentsTokensOpRet(CScript scriptPubKey,int32_t &lockedblocks,int32_t &minrelease,int32_t &top,std::vector<std::vector<uint8_t>>  &excludeScriptPubKeys, uint256 &tokenid)
+uint8_t DecodePaymentsTokensOpRet(CScript scriptPubKey,int32_t &lockedblocks,int32_t &minrelease,int32_t &minimum,int32_t &top,int32_t &bottom,int8_t &fixedAmount,std::vector<std::vector<uint8_t>> &excludeScriptPubKeys, uint256 &tokenid)
 {
     std::vector<uint8_t> vopret; uint8_t *script,e,f;
     GetOpReturnData(scriptPubKey, vopret);
     script = (uint8_t *)vopret.data();
-    if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> lockedblocks; ss >> minrelease; ss >> top; ss >> excludeScriptPubKeys; ss >> tokenid) != 0 )
+    if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> lockedblocks; ss >> minimum; ss >> top; ; ss >> bottom; ss >> fixedAmount; ss >> excludeScriptPubKeys; ss >> tokenid) != 0 )
     {
         if ( e == EVAL_PAYMENTS && f == 'O' )
             return(f);
@@ -308,7 +289,7 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
     // use the createtxid to fetch the tx and all of the plans info.
     if ( myGetTransaction(createtxid,plantx,blockhash) != 0 && plantx.vout.size() > 0 )
     {                                                                                                                        
-        if ( ((funcid= DecodePaymentsOpRet(plantx.vout[plantx.vout.size()-1].scriptPubKey,lockedblocks,minrelease,totalallocations,txidoprets)) == 'C' || (funcid= DecodePaymentsSnapsShotOpRet(plantx.vout[plantx.vout.size()-1].scriptPubKey,lockedblocks,minrelease,minimum,top,bottom,fixedAmount,excludeScriptPubKeys)) == 'S' || (funcid= DecodePaymentsTokensOpRet(plantx.vout[plantx.vout.size()-1].scriptPubKey,lockedblocks,minrelease,top,excludeScriptPubKeys,tokenid)) == 'O') )
+        if ( ((funcid= DecodePaymentsOpRet(plantx.vout[plantx.vout.size()-1].scriptPubKey,lockedblocks,minrelease,totalallocations,txidoprets)) == 'C' || (funcid= DecodePaymentsSnapsShotOpRet(plantx.vout[plantx.vout.size()-1].scriptPubKey,lockedblocks,minrelease,minimum,top,bottom,fixedAmount,excludeScriptPubKeys)) == 'S' || (funcid= DecodePaymentsTokensOpRet(plantx.vout[plantx.vout.size()-1].scriptPubKey,lockedblocks,minrelease,minimum,top,bottom,fixedAmount,excludeScriptPubKeys,tokenid)) == 'O') )
         {
             if ( lockedblocks < 0 || minrelease < 0 || (totalallocations <= 0 && top <= 0 ) )
                 return(eval->Invalid("negative values"));
@@ -587,8 +568,10 @@ int64_t AddPaymentsInputs(bool fLockedBlocks,int8_t GetBalance,struct CCcontract
                     if ( (GetBalance == 0 && total != 0 && maxinputs != 0) || GetBalance == 4 )
                         mtx.vin.push_back(CTxIn(txid,vout,CScript()));
                     nValue = it->second.satoshis;
-                    if ( nValue < COIN )
+                    if ( GetBalance == 4 && nValue < COIN )
                         blocksleft++; // count dust with unused variable.
+                    if ( GetBalance == 2 || GetBalance == 1 )
+                        blocksleft++; // count all utxos with unused variable.
                     totalinputs += nValue;
                     n++;
                     //fprintf(stderr,"iter.%d %s/v%d %s %.8f\n",iter,txid.GetHex().c_str(),vout,coinaddr,(double)nValue/COIN);
@@ -703,7 +686,7 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
         amount = jdouble(jitem(params,1),0) * SATOSHIDEN + 0.0000000049;
         if ( myGetTransaction(createtxid,tx,hashBlock) != 0 && tx.vout.size() > 0 )
         {
-            if ( ((funcid= DecodePaymentsOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,lockedblocks,minrelease,totalallocations,txidoprets)) == 'C' || (funcid= DecodePaymentsSnapsShotOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,lockedblocks,minrelease,minimum,top,bottom,fixedAmount,excludeScriptPubKeys)) == 'S' || (funcid= DecodePaymentsTokensOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,lockedblocks,minrelease,top,excludeScriptPubKeys,tokenid)) == 'O') )
+            if ( ((funcid= DecodePaymentsOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,lockedblocks,minrelease,totalallocations,txidoprets)) == 'C' || (funcid= DecodePaymentsSnapsShotOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,lockedblocks,minrelease,minimum,top,bottom,fixedAmount,excludeScriptPubKeys)) == 'S' || (funcid= DecodePaymentsTokensOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,lockedblocks,minrelease,minimum,top,bottom,fixedAmount,excludeScriptPubKeys,tokenid)) == 'O') )
             {
                 if ( lockedblocks < 0 || minrelease < 0 || (totalallocations <= 0 && top <= 0 ) )
                 {
@@ -948,7 +931,7 @@ UniValue PaymentsFund(struct CCcontract_info *cp,char *jsonstr)
         amount = jdouble(jitem(params,1),0) * SATOSHIDEN + 0.0000000049;
         if ( n == 3 )
             useopret = jint(jitem(params,2),0) != 0;
-        if ( myGetTransaction(txid,tx,hashBlock) == 0 || tx.vout.size() == 1 || (DecodePaymentsOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,lockedblocks,minrelease,totalallocations,txidoprets) == 0 && DecodePaymentsSnapsShotOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,lockedblocks,minrelease,minimum,top,bottom,fixedAmount,excludeScriptPubKeys) == 0 && DecodePaymentsTokensOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,lockedblocks,minrelease,top,excludeScriptPubKeys,tokenid) == 0) )
+        if ( myGetTransaction(txid,tx,hashBlock) == 0 || tx.vout.size() == 1 || (DecodePaymentsOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,lockedblocks,minrelease,totalallocations,txidoprets) == 0 && DecodePaymentsSnapsShotOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,lockedblocks,minrelease,minimum,top,bottom,fixedAmount,excludeScriptPubKeys) == 0 && DecodePaymentsTokensOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,lockedblocks,minrelease,minimum,top,bottom,fixedAmount,excludeScriptPubKeys,tokenid) == 0) )
         {
             result.push_back(Pair("result","error"));
             result.push_back(Pair("error","invalid createtxid"));
@@ -1014,7 +997,7 @@ UniValue PaymentsMerge(struct CCcontract_info *cp,char *jsonstr)
     {
         createtxid = payments_juint256(jitem(params,0));
         txidpk = CCtxidaddr(txidaddr,createtxid);
-        if ( myGetTransaction(createtxid,tx,hashBlock) == 0 || tx.vout.size() == 1 || (DecodePaymentsOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,lockedblocks,minrelease,totalallocations,txidoprets) == 0 && DecodePaymentsSnapsShotOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,lockedblocks,minrelease,minimum,top,bottom,fixedAmount,excludeScriptPubKeys) == 0 && DecodePaymentsTokensOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,lockedblocks,minrelease,top,excludeScriptPubKeys,tokenid) == 0) )
+        if ( myGetTransaction(createtxid,tx,hashBlock) == 0 || tx.vout.size() == 1 || (DecodePaymentsOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,lockedblocks,minrelease,totalallocations,txidoprets) == 0 && DecodePaymentsSnapsShotOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,lockedblocks,minrelease,minimum,top,bottom,fixedAmount,excludeScriptPubKeys) == 0 && DecodePaymentsTokensOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,lockedblocks,minrelease,minimum,top,bottom,fixedAmount,excludeScriptPubKeys,tokenid) == 0) )
         {
             result.push_back(Pair("result","error"));
             result.push_back(Pair("error","invalid createtxid"));
@@ -1125,6 +1108,7 @@ UniValue PaymentsCreate(struct CCcontract_info *cp,char *jsonstr)
         for (i=0; i<txidoprets.size(); i++)
         {
             std::vector<uint8_t> scriptPubKey,opret; int64_t allocation;
+            fprintf(stderr, "txid.%s\n",txidoprets[i].GetHex().c_str());
             if ( myGetTransaction(txidoprets[i],tx,hashBlock) != 0 && tx.vout.size() > 1 && DecodePaymentsTxidOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,allocation,scriptPubKey,opret) == 'T' )
             {
                 totalallocations += allocation;
@@ -1258,6 +1242,87 @@ UniValue PaymentsAirdrop(struct CCcontract_info *cp,char *jsonstr)
     return(result);
 }
 
+UniValue PaymentsAirdropTokens(struct CCcontract_info *cp,char *jsonstr)
+{
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    UniValue result(UniValue::VOBJ); 
+    uint256 hashBlock, tokenid = zeroid; CTransaction tx; CPubKey Paymentspk,mypk; char markeraddr[64]; std::string rawtx; 
+    int32_t lockedblocks,minrelease,top,bottom,n,i,minimum=10000; std::vector<std::vector<uint8_t>> excludeScriptPubKeys; int8_t fixedAmount;
+    cJSON *params = payments_reparse(&n,jsonstr);
+    if ( params != 0 && n >= 6 )
+    {
+        tokenid = payments_juint256(jitem(params,0));
+        lockedblocks = juint(jitem(params,1),0);
+        minrelease = juint(jitem(params,2),0);
+        minimum = juint(jitem(params,3),0);
+        if ( minimum < 10000 ) minimum = 10000;
+        top = juint(jitem(params,4),0);
+        bottom = juint(jitem(params,5),0);
+        fixedAmount = juint(jitem(params,6),0); // fixed amount is a flag, set to 7 does game mode, 0 normal snapshot, anything else fixed allocations. 
+        if ( lockedblocks < 0 || minrelease < 0 || top <= 0 || bottom < 0 || minimum < 0 || fixedAmount < 0 || top > 3999 || tokenid == zeroid )
+        {
+            result.push_back(Pair("result","error"));
+            result.push_back(Pair("error","negative parameter, or top over 3999"));
+            if ( params != 0 )
+                free_json(params);
+            return(result);
+        }
+        // TODO: lookup tokenid and make sure it exists. 
+        if ( n > 7 )
+        {
+            for (i=0; i<n-7; i++)
+            {
+                // Change to pubkeys! tokens are owned by a pubkey not an address.
+                std::string address; 
+                address.append(jstri(params,7+i));
+                CTxDestination destination = DecodeDestination(address);
+                if (!IsValidDestination(destination))
+                {
+                    result.push_back(Pair("result","error"));
+                    result.push_back(Pair("error","address is not valid."));
+                    result.push_back(Pair("invalid_address",address));
+                    if ( params != 0 )
+                        free_json(params);
+                    return(result);
+                }
+                std::vector<uint8_t> vscriptPubKey;
+                CScript scriptPubKey = GetScriptForDestination(destination);
+                vscriptPubKey.assign(scriptPubKey.begin(), scriptPubKey.end());
+                excludeScriptPubKeys.push_back(vscriptPubKey);
+            }
+        }
+        mypk = pubkey2pk(Mypubkey());
+        Paymentspk = GetUnspendable(cp,0);
+        if ( AddNormalinputs(mtx,mypk,2*PAYMENTS_TXFEE,60) > 0 )
+        {
+            mtx.vout.push_back(MakeCC1of2vout(cp->evalcode,PAYMENTS_TXFEE,Paymentspk,Paymentspk));
+            CScript tempopret = EncodePaymentsTokensOpRet(lockedblocks,minrelease,minimum,top,bottom,fixedAmount,excludeScriptPubKeys,tokenid);
+            if ( tempopret.size() > 10000 ) // TODO: Check this!
+            {
+                result.push_back(Pair("result","error"));
+                result.push_back(Pair("error","op_return is too big, try with less exclude pubkeys."));
+                if ( params != 0 )
+                    free_json(params);
+                return(result);
+            }
+            rawtx = FinalizeCCTx(0,cp,mtx,mypk,PAYMENTS_TXFEE,tempopret);
+            if ( params != 0 )
+                free_json(params);
+            return(payments_rawtxresult(result,rawtx,0));
+        } 
+        result.push_back(Pair("result","error"));
+        result.push_back(Pair("error","not enough normal funds"));
+    }
+    else
+    {
+        result.push_back(Pair("result","error"));
+        result.push_back(Pair("error","parameters error"));
+    }
+    if ( params != 0 )
+        free_json(params);
+    return(result);
+}
+
 UniValue PaymentsInfo(struct CCcontract_info *cp,char *jsonstr)
 {
     UniValue result(UniValue::VOBJ),a(UniValue::VARR); CTransaction tx,txO; CPubKey Paymentspk,txidpk; int32_t i,j,n,flag=0,numoprets=0,lockedblocks,minrelease,blocksleft=0; std::vector<uint256> txidoprets; int64_t funds,fundsopret,elegiblefunds,totalallocations=0,allocation; char fundsaddr[64],fundsopretaddr[64],txidaddr[64],*outstr; uint256 createtxid,hashBlock;
@@ -1345,7 +1410,7 @@ UniValue PaymentsInfo(struct CCcontract_info *cp,char *jsonstr)
                 }
                 result.push_back(Pair("excludeAddresses",a));
             }
-            else if ( DecodePaymentsTokensOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,lockedblocks,minrelease,top,excludeScriptPubKeys,tokenid) != 0 )
+            else if ( DecodePaymentsTokensOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,lockedblocks,minrelease,minimum,top,bottom,fixedAmount,excludeScriptPubKeys,tokenid) != 0 )
             {
                 if ( lockedblocks < 0 || minrelease < 0 || top <= 0 )
                 {
@@ -1374,11 +1439,15 @@ UniValue PaymentsInfo(struct CCcontract_info *cp,char *jsonstr)
             {
                 txidpk = CCtxidaddr(txidaddr,createtxid);
                 GetCCaddress1of2(cp,fundsaddr,Paymentspk,txidpk);
+                blocksleft = 0;
                 funds = AddPaymentsInputs(false,2,cp,mtx,txidpk,0,CC_MAXVINS,createtxid,lockedblocks,minrelease,blocksleft);
                 result.push_back(Pair(fundsaddr,ValueFromAmount(funds)));
+                result.push_back(Pair("utxos", (int64_t)blocksleft));
+                blocksleft = 0;
                 GetCCaddress(cp,fundsopretaddr,Paymentspk);
                 fundsopret = AddPaymentsInputs(false,1,cp,mtx,txidpk,0,CC_MAXVINS,createtxid,lockedblocks,minrelease,blocksleft);
                 result.push_back(Pair(fundsopretaddr,ValueFromAmount(fundsopret)));
+                result.push_back(Pair("utxos", (int64_t)blocksleft));
                 result.push_back(Pair("totalfunds",ValueFromAmount(funds+fundsopret)));
                 // Blocks until minrelease can be released. 
                 elegiblefunds = AddPaymentsInputs(true,3,cp,mtx,txidpk,0,CC_MAXVINS,createtxid,lockedblocks,minrelease,blocksleft);
@@ -1416,7 +1485,7 @@ UniValue PaymentsList(struct CCcontract_info *cp,char *jsonstr)
         txid = it->first.txhash;
         if ( it->first.index == 0 && myGetTransaction(txid,tx,hashBlock) != 0 )
         {
-            if ( tx.vout.size() > 0 && (DecodePaymentsOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,lockedblocks,minrelease,totalallocations,txidoprets) == 'C' || DecodePaymentsSnapsShotOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,lockedblocks,minrelease,minimum,top,bottom,fixedAmount,excludeScriptPubKeys) == 'S' || DecodePaymentsTokensOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,lockedblocks,minrelease,top,excludeScriptPubKeys,tokenid) == 'O') )
+            if ( tx.vout.size() > 0 && (DecodePaymentsOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,lockedblocks,minrelease,totalallocations,txidoprets) == 'C' || DecodePaymentsSnapsShotOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,lockedblocks,minrelease,minimum,top,bottom,fixedAmount,excludeScriptPubKeys) == 'S' || DecodePaymentsTokensOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,lockedblocks,minrelease,minimum,top,bottom,fixedAmount,excludeScriptPubKeys,tokenid) == 'O') )
             {
                 if ( lockedblocks < 0 || minrelease < 0 || (totalallocations <= 0 && top <= 0 ) || bottom < 0 || fixedAmount < 0 || minimum < 10000 )
                 {
