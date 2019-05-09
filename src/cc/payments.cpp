@@ -568,8 +568,10 @@ int64_t AddPaymentsInputs(bool fLockedBlocks,int8_t GetBalance,struct CCcontract
                     if ( (GetBalance == 0 && total != 0 && maxinputs != 0) || GetBalance == 4 )
                         mtx.vin.push_back(CTxIn(txid,vout,CScript()));
                     nValue = it->second.satoshis;
-                    if ( nValue < COIN )
+                    if ( GetBalance == 4 && nValue < COIN )
                         blocksleft++; // count dust with unused variable.
+                    if ( GetBalance == 2 || GetBalance == 1 )
+                        blocksleft++; // count all utxos with unused variable.
                     totalinputs += nValue;
                     n++;
                     //fprintf(stderr,"iter.%d %s/v%d %s %.8f\n",iter,txid.GetHex().c_str(),vout,coinaddr,(double)nValue/COIN);
@@ -1355,11 +1357,15 @@ UniValue PaymentsInfo(struct CCcontract_info *cp,char *jsonstr)
             {
                 txidpk = CCtxidaddr(txidaddr,createtxid);
                 GetCCaddress1of2(cp,fundsaddr,Paymentspk,txidpk);
+                blocksleft = 0;
                 funds = AddPaymentsInputs(false,2,cp,mtx,txidpk,0,CC_MAXVINS,createtxid,lockedblocks,minrelease,blocksleft);
                 result.push_back(Pair(fundsaddr,ValueFromAmount(funds)));
+                result.push_back(Pair("utxos", (int64_t)blocksleft));
+                blocksleft = 0;
                 GetCCaddress(cp,fundsopretaddr,Paymentspk);
                 fundsopret = AddPaymentsInputs(false,1,cp,mtx,txidpk,0,CC_MAXVINS,createtxid,lockedblocks,minrelease,blocksleft);
                 result.push_back(Pair(fundsopretaddr,ValueFromAmount(fundsopret)));
+                result.push_back(Pair("utxos", (int64_t)blocksleft));
                 result.push_back(Pair("totalfunds",ValueFromAmount(funds+fundsopret)));
                 // Blocks until minrelease can be released. 
                 elegiblefunds = AddPaymentsInputs(true,3,cp,mtx,txidpk,0,CC_MAXVINS,createtxid,lockedblocks,minrelease,blocksleft);
