@@ -130,9 +130,9 @@ public:
  */
 class CBitcoinAddress : public CBase58Data {
 public:
-    bool Set(const CKeyID &id);
-    bool Set(const CPubKey &key);
-    bool Set(const CScriptID &id);
+    virtual bool Set(const CKeyID &id);
+    virtual bool Set(const CPubKey &key);
+    virtual bool Set(const CScriptID &id);
     bool Set(const CTxDestination &dest);
     bool IsValid() const;
     bool IsValid(const CChainParams &params) const;
@@ -147,7 +147,32 @@ public:
     CTxDestination Get() const;
     bool GetKeyID(CKeyID &keyID) const;
     bool GetKeyID_NoCheck(CKeyID& keyID) const;
-    bool GetIndexKey(uint160& hashBytes, int& type) const;
+    bool GetIndexKey(uint160& hashBytes, int& type, bool ccflag) const;
+    bool IsScript() const;
+};
+
+class CCustomBitcoinAddress : public CBitcoinAddress {
+    std::vector<unsigned char> base58Prefixes[2];
+public:
+    bool Set(const CKeyID &id);
+    bool Set(const CPubKey &key);
+    bool Set(const CScriptID &id);
+    bool Set(const CTxDestination &dest);
+    bool IsValid() const;
+
+    CCustomBitcoinAddress() {}
+    CCustomBitcoinAddress(const CTxDestination &dest,uint8_t taddr,uint8_t pubkey_prefix,uint8_t script_prefix)
+    {
+        if (taddr!=0) base58Prefixes[0].push_back(taddr);
+        base58Prefixes[0].push_back(pubkey_prefix);
+        base58Prefixes[1].push_back(script_prefix);
+        Set(dest);        
+    }
+
+    CTxDestination Get() const;
+    bool GetKeyID(CKeyID &keyID) const;
+    bool GetKeyID_NoCheck(CKeyID& keyID) const;
+    bool GetIndexKey(uint160& hashBytes, int& type, bool ccflag) const;
     bool IsScript() const;
 };
 
