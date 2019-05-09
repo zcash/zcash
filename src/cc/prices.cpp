@@ -2190,7 +2190,7 @@ UniValue PricesGetOrderbook()
 
     // calculate cancelling amount
     std::map<std::string, MatchedBookTotal> matchedTotals;
-    for (auto m : bookmatched) {
+    for (auto &m : bookmatched) {
         int64_t totalLeveragedPositionUp = 0;
         int64_t totalLeveragedPositionDown = 0;
 
@@ -2221,11 +2221,12 @@ UniValue PricesGetOrderbook()
     result.push_back(Pair("unmatched", resbook)); */
 
     // copy to rpc UniResult
-    for (auto m : bookmatched) {
+    for (auto &m : bookmatched) {
         UniValue mathedBookHeader(UniValue::VOBJ);
         UniValue resbook(UniValue::VARR);
         for (int i = 0; i < m.second.size(); i++) {
             UniValue entry(UniValue::VOBJ);
+            entry.push_back(Pair("isOpen", (m.second[i].isOpen ? 1 : 0 )));
             entry.push_back(Pair("expression", prices_getsourceexpression(m.second[i].vecparsed)));
             entry.push_back(Pair("costbasis", m.second[i].averageCostbasis));
             entry.push_back(Pair("leverage", m.second[i].leverage));
