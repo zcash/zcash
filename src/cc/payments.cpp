@@ -1241,6 +1241,87 @@ UniValue PaymentsAirdrop(struct CCcontract_info *cp,char *jsonstr)
     return(result);
 }
 
+UniValue PaymentsAirdropTokens(struct CCcontract_info *cp,char *jsonstr)
+{
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    UniValue result(UniValue::VOBJ); 
+    uint256 hashBlock, tokenid = zeroid; CTransaction tx; CPubKey Paymentspk,mypk; char markeraddr[64]; std::string rawtx; 
+    int32_t lockedblocks,minrelease,top,bottom,n,i,minimum=10000; std::vector<std::vector<uint8_t>> excludeScriptPubKeys; int8_t fixedAmount;
+    cJSON *params = payments_reparse(&n,jsonstr);
+    if ( params != 0 && n >= 6 )
+    {
+        tokenid = payments_juint256(jitem(params,0));
+        lockedblocks = juint(jitem(params,1),0);
+        minrelease = juint(jitem(params,2),0);
+        minimum = juint(jitem(params,3),0);
+        if ( minimum < 10000 ) minimum = 10000;
+        top = juint(jitem(params,4),0);
+        bottom = juint(jitem(params,5),0);
+        fixedAmount = juint(jitem(params,6),0); // fixed amount is a flag, set to 7 does game mode, 0 normal snapshot, anything else fixed allocations. 
+        if ( lockedblocks < 0 || minrelease < 0 || top <= 0 || bottom < 0 || minimum < 0 || fixedAmount < 0 || top > 3999 || tokenid == zeroid )
+        {
+            result.push_back(Pair("result","error"));
+            result.push_back(Pair("error","negative parameter, or top over 3999"));
+            if ( params != 0 )
+                free_json(params);
+            return(result);
+        }
+        // TODO: lookup tokenid and make sure it exists. 
+        if ( n > 7 )
+        {
+            for (i=0; i<n-7; i++)
+            {
+                // Change to pubkeys! tokens are owned by a pubkey not an address.
+                std::string address; 
+                address.append(jstri(params,7+i));
+                CTxDestination destination = DecodeDestination(address);
+                if (!IsValidDestination(destination))
+                {
+                    result.push_back(Pair("result","error"));
+                    result.push_back(Pair("error","address is not valid."));
+                    result.push_back(Pair("invalid_address",address));
+                    if ( params != 0 )
+                        free_json(params);
+                    return(result);
+                }
+                std::vector<uint8_t> vscriptPubKey;
+                CScript scriptPubKey = GetScriptForDestination(destination);
+                vscriptPubKey.assign(scriptPubKey.begin(), scriptPubKey.end());
+                excludeScriptPubKeys.push_back(vscriptPubKey);
+            }
+        }
+        mypk = pubkey2pk(Mypubkey());
+        Paymentspk = GetUnspendable(cp,0);
+        if ( AddNormalinputs(mtx,mypk,2*PAYMENTS_TXFEE,60) > 0 )
+        {
+            mtx.vout.push_back(MakeCC1of2vout(cp->evalcode,PAYMENTS_TXFEE,Paymentspk,Paymentspk));
+            CScript tempopret = EncodePaymentsTokensOpRet(lockedblocks,minrelease,minimum,top,bottom,fixedAmount,excludeScriptPubKeys,tokenid);
+            if ( tempopret.size() > 10000 ) // TODO: Check this!
+            {
+                result.push_back(Pair("result","error"));
+                result.push_back(Pair("error","op_return is too big, try with less exclude pubkeys."));
+                if ( params != 0 )
+                    free_json(params);
+                return(result);
+            }
+            rawtx = FinalizeCCTx(0,cp,mtx,mypk,PAYMENTS_TXFEE,tempopret);
+            if ( params != 0 )
+                free_json(params);
+            return(payments_rawtxresult(result,rawtx,0));
+        } 
+        result.push_back(Pair("result","error"));
+        result.push_back(Pair("error","not enough normal funds"));
+    }
+    else
+    {
+        result.push_back(Pair("result","error"));
+        result.push_back(Pair("error","parameters error"));
+    }
+    if ( params != 0 )
+        free_json(params);
+    return(result);
+}
+
 UniValue PaymentsInfo(struct CCcontract_info *cp,char *jsonstr)
 {
     UniValue result(UniValue::VOBJ),a(UniValue::VARR); CTransaction tx,txO; CPubKey Paymentspk,txidpk; int32_t i,j,n,flag=0,numoprets=0,lockedblocks,minrelease,blocksleft=0; std::vector<uint256> txidoprets; int64_t funds,fundsopret,elegiblefunds,totalallocations=0,allocation; char fundsaddr[64],fundsopretaddr[64],txidaddr[64],*outstr; uint256 createtxid,hashBlock;

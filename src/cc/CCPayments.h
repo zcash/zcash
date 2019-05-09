@@ -35,6 +35,7 @@ UniValue PaymentsMerge(struct CCcontract_info *cp,char *jsonstr);
 UniValue PaymentsTxidopret(struct CCcontract_info *cp,char *jsonstr);
 UniValue PaymentsCreate(struct CCcontract_info *cp,char *jsonstr);
 UniValue PaymentsAirdrop(struct CCcontract_info *cp,char *jsonstr);
+UniValue PaymentsAirdropTokens(struct CCcontract_info *cp,char *jsonstr);
 UniValue PaymentsInfo(struct CCcontract_info *cp,char *jsonstr);
 UniValue PaymentsList(struct CCcontract_info *cp,char *jsonstr);
 
