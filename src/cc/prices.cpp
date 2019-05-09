@@ -889,10 +889,10 @@ int32_t prices_syntheticvec(std::vector<uint16_t> &vec, std::vector<std::string>
             return(-3);
         }
         depth -= need;
-        //std::cerr << "prices_syntheticvec() opcode=" << opcode << " opstr=" << opstr << " need=" << need << " depth=" << depth << std::endl;
+        ///std::cerr << "prices_syntheticvec() opcode=" << opcode << " opstr=" << opstr << " need=" << need << " depth=" << depth << std::endl;
         if ((opcode & KOMODO_PRICEMASK) != PRICES_WEIGHT) { // skip weight
             depth++;                                          // increase operands count
-            std::cerr << "depth++=" << depth << std::endl;
+            ///std::cerr << "depth++=" << depth << std::endl;
         }
         if (depth > 3) {
             std::cerr << "prices_syntheticvec() too many operands, last=" << opstr << std::endl;
@@ -1620,8 +1620,9 @@ int32_t prices_getbetinfo(uint256 bettxid, BetInfo &betinfo)
             else
                 betinfo.isOpen = true;
 
-            //bet1.amount = betinfo.positionsize;
-            //bet1.firstheight = firstheight;
+            // override with real amount (TODO: check this)
+            bet1.positionsize = bettx.vout[2].nValue;
+
             betinfo.bets.push_back(bet1);
 
             prices_enumaddedbets(batontxid, betinfo.bets, bettxid);
