@@ -1433,9 +1433,9 @@ UniValue PricesBet(int64_t txfee, int64_t amount, int16_t leverage, std::vector<
         return(result);
     }
 
-    if (prices_isacceptableamount(vec, amount, leverage)) {
+    if (!prices_isacceptableamount(vec, amount, leverage)) {
         result.push_back(Pair("result", "error"));
-        result.push_back(Pair("error", "too large amount and leverage"));
+        result.push_back(Pair("error", "too big amount and leverage"));
         return(result);
     }
 
@@ -2244,14 +2244,14 @@ static bool prices_isacceptableamount(const std::vector<uint16_t> &vecparsed, in
     prices_getorderbook(matchedBook, matchedTotals, fundTotals);
     std::string pricename = findMatchedBook(vecparsed, matchedBook);
     if (!pricename.empty()) {
-        std::cerr << "IsAcceptableAmount() found matched book=" << pricename << " diffLeveragedPosition=" << matchedTotals[pricename].diffLeveragedPosition << std::endl;
+        std::cerr << "prices_isacceptableamount() found matched book=" << pricename << " diffLeveragedPosition=" << matchedTotals[pricename].diffLeveragedPosition << std::endl;
         // could fit into leveraged amount
         if ((prices_ispositionup(vecparsed, leverage) || leverage > 0) && amount*abs(leverage) + matchedTotals[pricename].diffLeveragedPosition <= 0) {
-            std::cerr << "IsAcceptableAmount() could fit into opposite negative lev amount" << std::endl;
+            std::cerr << "prices_isacceptableamount() could fit into opposite negative lev amount" << std::endl;
             return true;
         }
         if ((!prices_ispositionup(vecparsed, leverage) || leverage < 0) && -amount*abs(leverage) + matchedTotals[pricename].diffLeveragedPosition >= 0) {
-            std::cerr << "IsAcceptableAmount() could fit into opposite positive lev amount" << std::endl;
+            std::cerr << "prices_isacceptableamount() could fit into opposite positive lev amount" << std::endl;
             return true;
         }
     }
