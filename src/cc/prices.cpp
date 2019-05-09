@@ -1627,7 +1627,7 @@ int32_t prices_getbetinfo(uint256 bettxid, BetInfo &betinfo)
                 betinfo.isOpen = true;
 
             // override with real amount (TODO: check this)
-            bet1.positionsize = bettx.vout[2].nValue;
+            //bet1.positionsize = bettx.vout[2].nValue;
 
             betinfo.bets.push_back(bet1);
 
