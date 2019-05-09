@@ -83,7 +83,7 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
     }
     // If the remaining amount to be migrated is less than 0.01 ZEC, end the migration.
     if (availableFunds < CENT) {
-        setMigrationResult(0, 0);
+        setMigrationResult(0, 0, std::vector<std::string>());
         return true;
     }
 
@@ -95,6 +95,7 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
     // Up to the limit of 5, as many transactions are sent as are needed to migrate the remaining funds
     int numTxCreated = 0;
     CAmount amountMigrated = 0;
+    std::vector<std::string> migrationTxIds;
     int noteIndex = 0;
     CCoinsViewCache coinsView(pcoinsTip);
     do {
@@ -132,17 +133,23 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
         }
         pwalletMain->AddPendingSaplingMigrationTx(tx);
         ++numTxCreated;
-        amountMigrated += amountToSend;
+        amountMigrated += amountToSend - FEE;
+        migrationTxIds.push_back(tx.GetHash().ToString());
     } while (numTxCreated < 5 && availableFunds > CENT);
 
-    setMigrationResult(numTxCreated, amountMigrated);
+    setMigrationResult(numTxCreated, amountMigrated, migrationTxIds);
     return true;
 }
 
-void AsyncRPCOperation_saplingmigration::setMigrationResult(int numTxCreated, CAmount amountMigrated) {
+void AsyncRPCOperation_saplingmigration::setMigrationResult(int numTxCreated, const CAmount& amountMigrated, const std::vector<std::string>& migrationTxIds) {
     UniValue res(UniValue::VOBJ);
     res.push_back(Pair("num_tx_created", numTxCreated));
     res.push_back(Pair("amount_migrated", FormatMoney(amountMigrated)));
+    UniValue txIds(UniValue::VARR);
+    for (const std::string& txId : migrationTxIds) {
+        txIds.push_back(txId);
+    }
+    res.push_back(Pair("migration_txids", txIds));
     set_result(res);
 }
 

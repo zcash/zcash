@@ -29,7 +29,7 @@ private:
 
     bool main_impl();
 
-    void setMigrationResult(int numTxCreated, CAmount amountMigrated);
+    void setMigrationResult(int numTxCreated, const CAmount& amountMigrated, const std::vector<std::string>& migrationTxIds);
 
     CAmount chooseAmount(const CAmount& availableFunds);
 };
