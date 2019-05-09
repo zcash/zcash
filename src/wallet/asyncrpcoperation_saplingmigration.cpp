@@ -68,6 +68,7 @@ void AsyncRPCOperation_saplingmigration::main() {
 }
 
 bool AsyncRPCOperation_saplingmigration::main_impl() {
+    LogPrint("zrpcunsafe", "Beginning AsyncRPCOperation_saplingmigration. id=%s\n", getId());
     std::vector<CSproutNotePlaintextEntry> sproutEntries;
     std::vector<SaplingNoteEntry> saplingEntries;
     {
@@ -83,6 +84,8 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
     }
     // If the remaining amount to be migrated is less than 0.01 ZEC, end the migration.
     if (availableFunds < CENT) {
+        LogPrint("zrpcunsafe", "%s: Available Sprout balance (%s) less than required minimum (%s). Stopping.\n",
+            getId(), FormatMoney(availableFunds), FormatMoney(CENT));
         setMigrationResult(0, 0, std::vector<std::string>());
         return true;
     }
@@ -102,6 +105,7 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
         CAmount amountToSend = chooseAmount(availableFunds);
         auto builder = TransactionBuilder(consensusParams, targetHeight_, MIGRATION_EXPIRY_DELTA, pwalletMain, pzcashParams,
                                           &coinsView, &cs_main);
+        LogPrint("zrpcunsafe", "%s: Beginning creating transaction with Sapling output amount=%s\n", getId(), amountToSend - FEE);
         std::vector<CSproutNotePlaintextEntry> fromNotes;
         CAmount fromNoteAmount = 0;
         while (fromNoteAmount < amountToSend) {
@@ -111,6 +115,15 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
         }
         availableFunds -= fromNoteAmount;
         for (const CSproutNotePlaintextEntry& sproutEntry : fromNotes) {
+            std::string data(sproutEntry.plaintext.memo().begin(), sproutEntry.plaintext.memo().end());
+            LogPrint("zrpcunsafe", "%s: Adding Sprout note input (txid=%s, vjoinsplit=%d, ciphertext=%d, amount=%s, memo=%s)\n",
+                getId(),
+                sproutEntry.jsop.hash.ToString().substr(0, 10),
+                sproutEntry.jsop.js,
+                int(sproutEntry.jsop.n),  // uint8_t
+                FormatMoney(sproutEntry.plaintext.value()),
+                HexStr(data).substr(0, 10)
+                );
             libzcash::SproutNote sproutNote = sproutEntry.plaintext.note(sproutEntry.address);
             libzcash::SproutSpendingKey sproutSk;
             pwalletMain->GetSproutSpendingKey(sproutEntry.address, sproutSk);
@@ -129,14 +142,17 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
         builder.AddSaplingOutput(ovkForShieldingFromTaddr(seed), migrationDestAddress, amountToSend - FEE);
         CTransaction tx = builder.Build().GetTxOrThrow();
         if (isCancelled()) {
+            LogPrint("zrpcunsafe", "%s: Canceled. Stopping.\n");
             break;
         }
         pwalletMain->AddPendingSaplingMigrationTx(tx);
+        LogPrint("zrpcunsafe", "%s: Added pending migration transaction with txid=%s\n", getId(), tx.GetHash().ToString());
         ++numTxCreated;
         amountMigrated += amountToSend - FEE;
         migrationTxIds.push_back(tx.GetHash().ToString());
     } while (numTxCreated < 5 && availableFunds > CENT);
 
+    LogPrint("zrpcunsafe", "%s: Created %d transactions with total Sapling output amount=%s\n", getId(), numTxCreated, FormatMoney(amountMigrated));
     setMigrationResult(numTxCreated, amountMigrated, migrationTxIds);
     return true;
 }
