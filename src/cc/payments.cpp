@@ -1208,16 +1208,22 @@ UniValue PaymentsAirdrop(struct CCcontract_info *cp,char *jsonstr)
         {
             for (i=0; i<n-6; i++)
             {
-                /* TODO: Change this RPC to take an address. Because a tokens airdrop needs its own RPC anyway.
-                CTxDestination destination = DecodeDestination(name_);
+                std::string address; 
+                address.append(jstri(params,6+i));
+                CTxDestination destination = DecodeDestination(address);
+                if (!IsValidDestination(destination))
+                {
+                    result.push_back(Pair("result","error"));
+                    result.push_back(Pair("error","address is not valid."));
+                    result.push_back(Pair("invalid_address",address));
+                    if ( params != 0 )
+                        free_json(params);
+                    return(result);
+                }
+                std::vector<uint8_t> vscriptPubKey;
                 CScript scriptPubKey = GetScriptForDestination(destination);
-                */
-                char *inputhex = jstri(params,6+i);
-                std::vector<uint8_t> scriptPubKey;
-                int32_t len = strlen(inputhex)/2;
-                scriptPubKey.resize(len);
-                decode_hex((uint8_t *)scriptPubKey.data(),len,(char *)inputhex);
-                excludeScriptPubKeys.push_back(scriptPubKey);
+                vscriptPubKey.assign(scriptPubKey.begin(), scriptPubKey.end());
+                excludeScriptPubKeys.push_back(vscriptPubKey);
             }
         }
         mypk = pubkey2pk(Mypubkey());
@@ -1331,10 +1337,13 @@ UniValue PaymentsInfo(struct CCcontract_info *cp,char *jsonstr)
                 result.push_back(Pair("bottom",(int64_t)bottom));
                 result.push_back(Pair("top",(int64_t)top));
                 result.push_back(Pair("fixedFlag",(int64_t)fixedAmount));
-                // TODO: convert to show addresses instead of scriptpubkey.
                 for ( auto scriptPubKey : excludeScriptPubKeys )
-                    a.push_back(HexStr(scriptPubKey.begin(),scriptPubKey.end()));
-                result.push_back(Pair("excludeScriptPubkeys",a));
+                {
+                    CTxDestination dest;
+                    if ( ExtractDestination(CScript(scriptPubKey.begin(),scriptPubKey.end()), dest) )
+                        a.push_back(CBitcoinAddress(dest).ToString());
+                }
+                result.push_back(Pair("excludeAddresses",a));
             }
             else if ( DecodePaymentsTokensOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,lockedblocks,minrelease,top,excludeScriptPubKeys,tokenid) != 0 )
             {

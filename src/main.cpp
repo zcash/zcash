@@ -731,7 +731,7 @@ bool komodo_dailysnapshot(int32_t height)
     std::sort(vAddressSnapshot.rbegin(), vAddressSnapshot.rend());
     //for (int j = 0; j < 50; j++) 
     //    fprintf(stderr, "j.%i address.%s nValue.%li\n",j, CBitcoinAddress(vAddressSnapshot[j].second).ToString().c_str(), vAddressSnapshot[j].first );
-    // include only top 5000 address.
+    // include only top 3999 address.
     if ( vAddressSnapshot.size() > 3999 ) vAddressSnapshot.resize(3999);
     lastSnapShotHeight = undo_height; 
     fprintf(stderr, "vAddressSnapshot.size.%li\n", vAddressSnapshot.size());
