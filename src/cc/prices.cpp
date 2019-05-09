@@ -11,7 +11,34 @@
  *                                                                            *
  * Removal or modification of this copyright notice is prohibited.            *
  *                                                                            *
- *****************************************************************************
+ *****************************************************************************/
+
+ /*
+ CBOPRET creates trustless oracles, which can be used for making a synthetic cash settlement system based on real world prices;
+
+ 0.5% fee based on betamount, NOT leveraged betamount!!
+ 0.1% collected by price basis determinant
+ 0.2% collected by rekt tx
+
+ PricesBet -> +/-leverage, amount, synthetic -> opreturn includes current price
+ funds are locked into 1of2 global CC address
+ for first day, long basis is MAX(correlated,smoothed), short is MIN()
+ reference price is the smoothed of the previous block
+ if synthetic value + amount goes negative, then anybody can rekt it to collect a rektfee, proof of rekt must be included to show cost basis, rekt price
+ original creator can liquidate at anytime and collect (synthetic value + amount) from globalfund
+ 0.5% of bet -> globalfund
+
+ PricesStatus -> bettxid maxsamples returns initial params, cost basis, amount left, rekt:true/false, rektheight, initial synthetic price, current synthetic price, net gain
+
+ PricesRekt -> bettxid height -> 0.1% to miner, rest to global CC
+
+ PricesClose -> bettxid returns (synthetic value + amount)
+
+ PricesList -> all bettxid -> list [bettxid, netgain]
+ 
+ */
+
+/*
 To create payments plan start a chain with the following ac_params:
     -ac_snapshot=1440 (or for test chain something smaller, if you like.)
         - this enables the payments airdrop cc to work. 
@@ -83,31 +110,11 @@ typedef struct BetInfo {
     }
 } BetInfo;
 
-/*
-CBOPRET creates trustless oracles, which can be used for making a synthetic cash settlement system based on real world prices;
- 
- 0.5% fee based on betamount, NOT leveraged betamount!!
- 0.1% collected by price basis determinant
- 0.2% collected by rekt tx
- 
- PricesBet -> +/-leverage, amount, synthetic -> opreturn includes current price
-    funds are locked into 1of2 global CC address
-    for first day, long basis is MAX(correlated,smoothed), short is MIN()
-    reference price is the smoothed of the previous block
-    if synthetic value + amount goes negative, then anybody can rekt it to collect a rektfee, proof of rekt must be included to show cost basis, rekt price
-    original creator can liquidate at anytime and collect (synthetic value + amount) from globalfund
-    0.5% of bet -> globalfund
-  
- PricesStatus -> bettxid maxsamples returns initial params, cost basis, amount left, rekt:true/false, rektheight, initial synthetic price, current synthetic price, net gain
- 
- PricesRekt -> bettxid height -> 0.1% to miner, rest to global CC
- 
- PricesClose -> bettxid returns (synthetic value + amount)
- 
- PricesList -> all bettxid -> list [bettxid, netgain]
- 
- 
-*/
+typedef struct MatchedBookTotal {
+
+    int64_t diffLeveragedPosition;
+
+} MatchedBookTotal;
 
 int32_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t height, int16_t leverage, std::vector<uint16_t> vec, int64_t positionsize, int64_t &profits, int64_t &outprice);
 
@@ -2081,33 +2088,64 @@ UniValue PricesGetOrderbook()
     
     // extract out opposite bets:
     std::map<std::string, std::vector<BetInfo> > bookmatched;
+    int64_t totalBets = 0;
+    int64_t totalRekt = 0;
+    int64_t totalEquity = 0;
     while (book.size() > 0) {
 
-        if (book[0].vecparsed.size() <= 3) {   // only short expr matched: "BTC_USD,1" or "BTC_USD,!,1"
-            char name[65];
-            komodo_pricename(name, (book[0].vecparsed[0] & (KOMODO_MAXPRICES - 1)));
-            std::string sname = name;
-            bookmatched[sname].push_back(book[0]);
+        int64_t betspos = 0;
+        for (auto bet : book[0].bets) betspos += bet.positionsize;
+        
+        if (!book[0].isRekt) {
+        
+            totalBets += betspos;
+            totalEquity += book[0].equity;
 
-            for (int j = 1; j < book.size(); j++) {
-                if (book[0].isOpen && book[j].isOpen) {
-                    if (prices_isopposite(book[0], book[j])) {
+            if (book[0].vecparsed.size() <= 3) {   // only short expr check for match: "BTC_USD,1" or "BTC_USD,!,1"
+                char name[65];
+                komodo_pricename(name, (book[0].vecparsed[0] & (KOMODO_MAXPRICES - 1)));
+                std::string sname = name;
+                bookmatched[sname].push_back(book[0]);
 
-                        bookmatched[sname].push_back(book[j]);
-                        book.erase(book.begin() + j);
+                for (int j = 1; j < book.size(); j++) {
+                    if (book[0].isOpen && book[j].isOpen) {
+                        if (prices_isopposite(book[0], book[j])) {
+
+                            bookmatched[sname].push_back(book[j]);
+                            book.erase(book.begin() + j);
+                        }
                     }
                 }
             }
+            else {
+                // store as is
+                std::string sname = prices_getsourceexpression(book[0].vecparsed);
+                bookmatched[sname].push_back(book[0]);
+            }
         }
-        else     {
-            // store as is
-            std::string sname = prices_getsourceexpression(book[0].vecparsed);
-            bookmatched[sname].push_back(book[0]);
+        else {
+            totalRekt += betspos;
         }
         book.erase(book.begin());
     }
 
-    UniValue resbook (UniValue::VARR);
+    // calculate cancelling amount
+    std::map<std::string, MatchedBookTotal> matchedTotals;
+    for (auto m : bookmatched) {
+        int64_t totalLeveragedPositionUp = 0;
+        int64_t totalLeveragedPositionDown = 0;
+        int64_t totalLeverageUp = 0;
+        int64_t totalLeverageDown = 0;
+
+
+        for (int i = 0; i < m.second.size(); i++) {
+            
+        }
+        matchedTotals[m.first].diffLeveragedPosition = totalLeveragedPositionUp / totalLeverageUp - totalLeveragedPositionDown / totalLeverageDown;
+    }
+
+
+    /*UniValue resbook (UniValue::VARR);
     for (int i = 0; i < book.size(); i++) {
         UniValue entry(UniValue::VOBJ);
         entry.push_back(Pair("expression", prices_getsourceexpression(book[i].vecparsed)));
@@ -2116,7 +2154,7 @@ UniValue PricesGetOrderbook()
         entry.push_back(Pair("equity", book[i].equity));
         resbook.push_back(entry);
     }
-    result.push_back(Pair("unmatched", resbook));
+    result.push_back(Pair("unmatched", resbook)); */
 
     for (auto m : bookmatched) {
         UniValue resbook(UniValue::VARR);
@@ -2131,18 +2169,23 @@ UniValue PricesGetOrderbook()
         result.push_back(Pair(m.first, resbook));
     }
 
-
-    int64_t totalliabilities = 0;
+    int64_t totalLiabilities = 0;
+    /* empty
     for (int i = 0; i < book.size(); i++) {
         if (book[i].isOpen) {
             int64_t t = 0;
             for (auto b : book[i].bets) t += b.positionsize;
             std::cerr << "book[i].txid=" << book[i].txid.GetHex() << " exp=" << prices_getsourceexpression(book[i].vecparsed) << " totalpos=" << t << " equity=" << book[i].equity << std::endl;
-            totalliabilities += book[i].equity;
+            totalLiabilities += book[i].equity;
         }
-    }
+    } */
 
     result.push_back(Pair("TotalFund", ValueFromAmount(totalfund)));
-    result.push_back(Pair("TotalLiabilities", ValueFromAmount(totalliabilities)));
+    result.push_back(Pair("TotalRekt", ValueFromAmount(totalRekt)));
+    result.push_back(Pair("TotalBets", ValueFromAmount(totalBets)));
+    result.push_back(Pair("TotalEquity", ValueFromAmount(totalEquity)));
+
+
+//    result.push_back(Pair("TotalLiabilities", ValueFromAmount(totalLiabilities)));
     return result;
 }
