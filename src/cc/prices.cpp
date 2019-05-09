@@ -1146,10 +1146,10 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
     if (errcode != 0) 
         std::cerr << "prices_syntheticprice errcode in switch=" << errcode << std::endl;
     
-    if( errcode = -1 )  {
-        std::cerr << "prices_syntheticprice error getting price (could be end of chain)" << std::endl;
-        return errcode;
-    }
+    //if( errcode = -1 )  {
+    //    std::cerr << "prices_syntheticprice error getting price (could be end of chain)" << std::endl;
+    //    return errcode;
+    //}
 
     if (errcode == -13) {
         std::cerr << "prices_syntheticprice overflow in price" << std::endl;
