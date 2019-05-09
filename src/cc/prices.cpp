@@ -119,7 +119,16 @@ typedef struct MatchedBookTotal {
 
 } MatchedBookTotal;
 
+typedef struct TotalFund {
+    int64_t totalFund;
+    int64_t totalBets;
+    int64_t totalRekt;
+    int64_t totalEquity;
+
+} TotalFund;
+
 int32_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t height, int16_t leverage, std::vector<uint16_t> vec, int64_t positionsize, int64_t &profits, int64_t &outprice);
+static bool prices_isacceptableamount(const std::vector<uint16_t> &vecparsed, int64_t amount, int16_t leverage);
 
 // helpers:
 
@@ -1423,6 +1432,13 @@ UniValue PricesBet(int64_t txfee, int64_t amount, int16_t leverage, std::vector<
         result.push_back(Pair("error", "invalid synthetic"));
         return(result);
     }
+
+    if (prices_isacceptableamount(vec, amount, leverage)) {
+        result.push_back(Pair("result", "error"));
+        result.push_back(Pair("error", "too large amount and leverage"));
+        return(result);
+    }
+
     if (AddNormalinputs(mtx, mypk, amount + 4 * txfee, 64) >= amount + 4 * txfee)
     {
         betamount = (amount * 199) / 200;
@@ -1431,14 +1447,14 @@ UniValue PricesBet(int64_t txfee, int64_t amount, int16_t leverage, std::vector<
         mtx.vout.push_back(MakeCC1vout(cp->evalcode, txfee, pricespk));                             // vout1 cc marker (NVOUT_CCMARKER)
         mtx.vout.push_back(MakeCC1vout(cp->evalcode, betamount, pricespk));                         // vout2 betamount
         mtx.vout.push_back(CTxOut(txfee, CScript() << ParseHex(HexStr(pricespk)) << OP_CHECKSIG));  // vout3 normal marker NVOUT_NORMALMARKER - TODO: remove it as we have cc marker now, when move to the new chain
-        if ( ASSETCHAINS_EARLYTXIDCONTRACT == EVAL_PRICES && KOMODO_EARLYTXID_SCRIPTPUB.size() == 0 )
+        /*if ( ASSETCHAINS_EARLYTXIDCONTRACT == EVAL_PRICES && KOMODO_EARLYTXID_SCRIPTPUB.size() == 0 )
         {
             // Lock here, as in validation we cannot call lock in the function itself.
             // may not be needed as the validation call to update the global, is called in a LOCK already, and it can only update there and here.
             LOCK(cs_main);
             GetKomodoEarlytxidScriptPub();
         }
-        mtx.vout.push_back(CTxOut(amount-betamount, KOMODO_EARLYTXID_SCRIPTPUB));
+        mtx.vout.push_back(CTxOut(amount-betamount, KOMODO_EARLYTXID_SCRIPTPUB)); */
 
         rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, prices_betopret(mypk, nextheight - 1, amount, leverage, firstprice, vec, zeroid));
         return(prices_rawtxresult(result, rawtx, 0));
@@ -1635,13 +1651,13 @@ int32_t prices_getbetinfo(uint256 bettxid, BetInfo &betinfo)
 
             prices_enumaddedbets(batontxid, betinfo.bets, bettxid);
 
-            if (!betinfo.isOpen) {
+            /*if (!betinfo.isOpen) {
                 CTransaction finaltx;
                 uint256 hashBlock;
                 if (myGetTransaction(finaltxid, finaltx, hashBlock) && finaltx.vout.size() > 0 && prices_finalopretdecode)
                 {
                 }
-            }
+            }*/
 
 
             if (prices_scanchain(betinfo.bets, betinfo.leverage, betinfo.vecparsed, betinfo.lastprice, betinfo.lastheight) < 0) {
@@ -2039,9 +2055,9 @@ static bool prices_addbookentry(uint256 txid, std::vector<BetInfo> &book)
 }
 
 
-static bool prices_ispositionup(BetInfo p) {
-    if (p.vecparsed.size() > 1 && p.vecparsed.size() <= 3) {
-        uint16_t opcode = p.vecparsed[0];
+static bool prices_ispositionup(const std::vector<uint16_t> &vecparsed, int16_t leverage) {
+    if (vecparsed.size() > 1 && vecparsed.size() <= 3) {
+        uint16_t opcode = vecparsed[0];
 
         int32_t value = (opcode & (KOMODO_MAXPRICES - 1));   // filter index or weight = opcode & (2048-1)
 
@@ -2051,13 +2067,13 @@ static bool prices_ispositionup(BetInfo p) {
                 std::string upperquote, bottomquote;
                 prices_splitpair(std::string(name), upperquote, bottomquote);
                 
-                uint16_t opcode1 = p.vecparsed[1];
+                uint16_t opcode1 = vecparsed[1];
 
-                std::cerr << "prices_ispositionup upperquote=" << upperquote << " bottomquote=" << bottomquote << " opcode1=" << opcode1 << " (opcode1 & KOMODO_PRICEMASK)=" << (opcode1 & KOMODO_PRICEMASK) << std::endl;
+                //std::cerr << "prices_ispositionup upperquote=" << upperquote << " bottomquote=" << bottomquote << " opcode1=" << opcode1 << " (opcode1 & KOMODO_PRICEMASK)=" << (opcode1 & KOMODO_PRICEMASK) << std::endl;
 
                 if (upperquote == "BTC" || bottomquote == "BTC") { // it is relatively btc
-                    if (upperquote == "BTC" && (p.leverage > 0 || (opcode1 & KOMODO_PRICEMASK) != PRICES_INV) ||
-                        bottomquote == "BTC" && (p.leverage < 0 || (opcode1 & KOMODO_PRICEMASK) == PRICES_INV)) {
+                    if (upperquote == "BTC" && (leverage > 0 || (opcode1 & KOMODO_PRICEMASK) != PRICES_INV) ||
+                        bottomquote == "BTC" && (leverage < 0 || (opcode1 & KOMODO_PRICEMASK) == PRICES_INV)) {
                         std::cerr << "prices_ispositionup return true for BTC" << std::endl;
                         return true;
                     }
@@ -2066,8 +2082,8 @@ static bool prices_ispositionup(BetInfo p) {
                 }
 
                 if (upperquote == "USD" || bottomquote == "USD") { // it is relatively usd
-                    if (upperquote == "USD" && (p.leverage > 0 || (opcode1 & KOMODO_PRICEMASK) != PRICES_INV) ||
-                        bottomquote == "USD" && (p.leverage < 0 || (opcode1 & KOMODO_PRICEMASK) == PRICES_INV)) {
+                    if (upperquote == "USD" && (leverage > 0 || (opcode1 & KOMODO_PRICEMASK) != PRICES_INV) ||
+                        bottomquote == "USD" && (leverage < 0 || (opcode1 & KOMODO_PRICEMASK) == PRICES_INV)) {
                         std::cerr << "prices_ispositionup return true for USD" << std::endl;
                         return true;
                     }
@@ -2111,15 +2127,30 @@ static bool prices_isopposite(BetInfo p1, BetInfo p2) {
 }
 
 
-// walk through uxtos on the global address
-// calculate the balance:
-// + rekt positions
-// = opposite positions
-// - unbalanced positions
-UniValue PricesGetOrderbook()
+
+static std::string findMatchedBook(const std::vector<uint16_t> &vecparsed, const std::map<std::string, std::vector<BetInfo> > & bookmatched) {
+
+    if (vecparsed.size() > 1 && vecparsed.size() <= 3) {
+        uint16_t opcode = vecparsed[0];
+
+        int32_t value = (opcode & (KOMODO_MAXPRICES - 1));   // filter index or weight = opcode & (2048-1)
+
+        if ((opcode & KOMODO_PRICEMASK) == 0) {
+            char name[65];
+            if (komodo_pricename(name, value)) {
+                auto it = bookmatched.find(std::string(name));
+                if (it != bookmatched.end())
+                    return it->first;
+            }
+        }
+    }
+    return std::string("");
+}
+
+
+void prices_getorderbook(std::map<std::string, std::vector<BetInfo> > & bookmatched, std::map<std::string, MatchedBookTotal> &matchedTotals, TotalFund &fundTotals)
 {
-    UniValue result(UniValue::VOBJ);
-    std::vector<BetInfo> book, opposits;
+    std::vector<BetInfo> book;
     std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex;
     struct CCcontract_info *cp, C;
 
@@ -2135,29 +2166,25 @@ UniValue PricesGetOrderbook()
 
 
     // calc total fund amount 
-    int64_t totalfund = 0;
+    fundTotals.totalFund = 0;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > addressCCunspents;
     SetCCunspents(addressCCunspents, cp->unspendableCCaddr, true);  // cc marker
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it = addressCCunspents.begin(); it != addressCCunspents.end(); it++)
     {
         std::cerr << "totalfund calc txid=" << it->first.txhash.GetHex() << " nvout=" << it->first.index << " satoshis=" << it->second.satoshis << std::endl;
-        totalfund += it->second.satoshis;
+        fundTotals.totalFund += it->second.satoshis;
     }
-    
+
     // extract out opposite bets:
-    std::map<std::string, std::vector<BetInfo> > bookmatched;
-    int64_t totalBets = 0;
-    int64_t totalRekt = 0;
-    int64_t totalEquity = 0;
     while (book.size() > 0) {
 
         int64_t betspos = 0;
         for (auto bet : book[0].bets) betspos += bet.positionsize;
-        
+
         if (!book[0].isRekt) {
-        
-            totalBets += betspos;
-            totalEquity += book[0].equity;
+
+            fundTotals.totalBets += betspos;
+            fundTotals.totalEquity += book[0].equity;
 
             if (book[0].vecparsed.size() <= 3) {   // only short expr check for match: "BTC_USD,1" or "BTC_USD,!,1"
                 char name[65];
@@ -2182,14 +2209,13 @@ UniValue PricesGetOrderbook()
             }
         }
         else {
-            totalRekt += (betspos - book[0].rektfee);
+            fundTotals.totalRekt += (betspos - book[0].rektfee);
             //TODO: store rekt
         }
         book.erase(book.begin());
     }
 
     // calculate cancelling amount
-    std::map<std::string, MatchedBookTotal> matchedTotals;
     for (auto &m : bookmatched) {
         int64_t totalLeveragedPositionUp = 0;
         int64_t totalLeveragedPositionDown = 0;
@@ -2197,17 +2223,55 @@ UniValue PricesGetOrderbook()
         for (int i = 0; i < m.second.size(); i++) {
             int64_t betspos = 0;
             for (auto bet : m.second[i].bets) betspos += bet.positionsize;
-            m.second[i].isUp = prices_ispositionup(m.second[i]);
+            m.second[i].isUp = prices_ispositionup(m.second[i].vecparsed, m.second[i].leverage);
             if (m.second[i].isUp)
                 totalLeveragedPositionUp += betspos * abs(m.second[i].leverage);
             else
                 totalLeveragedPositionDown += betspos * abs(m.second[i].leverage);
-            std::cerr << "PricesGetOrderbook 0 m.second[i].isUp=" << m.second[i].isUp << " i=" << i << std::endl;
-            
+            //std::cerr << "PricesGetOrderbook 0 m.second[i].isUp=" << m.second[i].isUp << " i=" << i << std::endl;
+
         }
         matchedTotals[m.first].diffLeveragedPosition = totalLeveragedPositionUp - totalLeveragedPositionDown;
     }
+}
 
+static bool prices_isacceptableamount(const std::vector<uint16_t> &vecparsed, int64_t amount, int16_t leverage) {
+
+    std::map<std::string, std::vector<BetInfo> > matchedBook;
+    std::map<std::string, MatchedBookTotal> matchedTotals;
+    TotalFund fundTotals;
+
+    prices_getorderbook(matchedBook, matchedTotals, fundTotals);
+    std::string pricename = findMatchedBook(vecparsed, matchedBook);
+    if (!pricename.empty()) {
+        std::cerr << "IsAcceptableAmount() found matched book=" << pricename << " diffLeveragedPosition=" << matchedTotals[pricename].diffLeveragedPosition << std::endl;
+        // could fit into leveraged amount
+        if ((prices_ispositionup(vecparsed, leverage) || leverage > 0) && amount*abs(leverage) + matchedTotals[pricename].diffLeveragedPosition <= 0) {
+            std::cerr << "IsAcceptableAmount() could fit into opposite negative lev amount" << std::endl;
+            return true;
+        }
+        if ((!prices_ispositionup(vecparsed, leverage) || leverage < 0) && -amount*abs(leverage) + matchedTotals[pricename].diffLeveragedPosition >= 0) {
+            std::cerr << "IsAcceptableAmount() could fit into opposite positive lev amount" << std::endl;
+            return true;
+        }
+    }
+    return false;
+}
+
+
+// walk through uxtos on the global address
+// calculate the balance:
+// + rekt positions
+// = opposite positions
+// - unbalanced positions
+UniValue PricesGetOrderbook()
+{
+    UniValue result(UniValue::VOBJ);
+    std::map<std::string, std::vector<BetInfo> > matchedBook;
+    std::map<std::string, MatchedBookTotal> matchedTotals;
+    TotalFund fundTotals;
+
+    prices_getorderbook(matchedBook, matchedTotals, fundTotals);
 
     /*UniValue resbook (UniValue::VARR);
     for (int i = 0; i < book.size(); i++) {
@@ -2221,8 +2285,8 @@ UniValue PricesGetOrderbook()
     result.push_back(Pair("unmatched", resbook)); */
 
     // copy to rpc UniResult
-    for (auto &m : bookmatched) {
-        UniValue mathedBookHeader(UniValue::VOBJ);
+    for (auto &m : matchedBook) {
+        UniValue resheader(UniValue::VOBJ);
         UniValue resbook(UniValue::VARR);
         for (int i = 0; i < m.second.size(); i++) {
             UniValue entry(UniValue::VOBJ);
@@ -2231,16 +2295,16 @@ UniValue PricesGetOrderbook()
             entry.push_back(Pair("costbasis", m.second[i].averageCostbasis));
             entry.push_back(Pair("leverage", m.second[i].leverage));
             entry.push_back(Pair("equity", m.second[i].equity));
-            std::cerr << "PricesGetOrderbook 1 m.second[i].isUp=" << m.second[i].isUp << " i=" << i << std::endl;
+            //std::cerr << "PricesGetOrderbook 1 m.second[i].isUp=" << m.second[i].isUp << " i=" << i << std::endl;
             entry.push_back(Pair("isUpPosition", (m.second[i].isUp ? 1 : 0)));
             resbook.push_back(entry);
         }
-        mathedBookHeader.push_back(Pair("positions", resbook));
-        mathedBookHeader.push_back(Pair("DiffLeveragedPosition", matchedTotals[m.first].diffLeveragedPosition));
-        result.push_back(Pair(m.first, mathedBookHeader));
+        resheader.push_back(Pair("positions", resbook));
+        resheader.push_back(Pair("DiffLeveragedPosition", matchedTotals[m.first].diffLeveragedPosition));
+        result.push_back(Pair(m.first, resheader));
     }
 
-    int64_t totalLiabilities = 0;
+    //int64_t totalLiabilities = 0;
     /* empty
     for (int i = 0; i < book.size(); i++) {
         if (book[i].isOpen) {
@@ -2251,10 +2315,10 @@ UniValue PricesGetOrderbook()
         }
     } */
 
-    result.push_back(Pair("TotalFund", ValueFromAmount(totalfund)));
-    result.push_back(Pair("TotalRekt", ValueFromAmount(totalRekt)));
-    result.push_back(Pair("TotalBets", ValueFromAmount(totalBets)));
-    result.push_back(Pair("TotalEquity", ValueFromAmount(totalEquity)));
+    result.push_back(Pair("TotalFund", ValueFromAmount(fundTotals.totalFund)));
+    result.push_back(Pair("TotalRekt", ValueFromAmount(fundTotals.totalRekt)));
+    result.push_back(Pair("TotalBets", ValueFromAmount(fundTotals.totalBets)));
+    result.push_back(Pair("TotalEquity", ValueFromAmount(fundTotals.totalEquity)));
 
 
 //    result.push_back(Pair("TotalLiabilities", ValueFromAmount(totalLiabilities)));
