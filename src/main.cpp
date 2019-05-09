@@ -6503,7 +6503,7 @@ bool LoadExternalBlockFile(FILE* fileIn, CDiskBlockPos *dbp)
                 blkdat.SetPos(nBlockPos);
                 CBlock block;
                 blkdat >> block;
-                nRewind = blkdat.GetPos();
+                nRewind = blkdat.GetPos(); 
 
                 // detect out of order blocks, and store them for later
                 uint256 hash = block.GetHash();
