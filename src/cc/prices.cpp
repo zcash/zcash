@@ -2043,23 +2043,25 @@ static bool prices_ispositionup(BetInfo p) {
 
         int32_t value = (opcode & (KOMODO_MAXPRICES - 1));   // index or weight 
 
-        if ((opcode & KOMODO_PRICEMASK)) {
+        if ((opcode & KOMODO_PRICEMASK) == 0) {
             char name[65];
             if (komodo_pricename(name, value)) {
                 std::string upperquote, bottomquote;
                 prices_splitpair(std::string(name), upperquote, bottomquote);
+                
+                uint16_t opcode1 = p.vecparsed[1];
 
                 if (upperquote == "BTC" || bottomquote == "BTC") { // it is relatively btc
-                    if (upperquote == "BTC" && (p.leverage > 0 || (opcode & KOMODO_PRICEMASK) != PRICES_INV) ||
-                        bottomquote == "BTC" && (p.leverage < 0 || (opcode & KOMODO_PRICEMASK) == PRICES_INV))
+                    if (upperquote == "BTC" && (p.leverage > 0 || (opcode1 & KOMODO_PRICEMASK) != PRICES_INV) ||
+                        bottomquote == "BTC" && (p.leverage < 0 || (opcode1 & KOMODO_PRICEMASK) == PRICES_INV))
                         return true;
                     else
                         return false;
                 }
 
                 if (upperquote == "USD" || bottomquote == "USD") { // it is relatively usd
-                    if (upperquote == "USD" && (p.leverage > 0 || (opcode & KOMODO_PRICEMASK) != PRICES_INV) ||
-                        bottomquote == "USD" && (p.leverage < 0 || (opcode & KOMODO_PRICEMASK) == PRICES_INV))
+                    if (upperquote == "USD" && (p.leverage > 0 || (opcode1 & KOMODO_PRICEMASK) != PRICES_INV) ||
+                        bottomquote == "USD" && (p.leverage < 0 || (opcode1 & KOMODO_PRICEMASK) == PRICES_INV))
                         return true;
                     else
                         return false;
