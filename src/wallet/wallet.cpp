@@ -581,7 +581,13 @@ void CWallet::ChainTip(const CBlockIndex *pindex,
 {
     if (added) {
         ChainTipAdded(pindex, pblock, sproutTree, saplingTree);
-        RunSaplingMigration(pindex->nHeight);
+        // Prevent migration transactions from being created when node is syncing after launch,
+        // and also when node wakes up from suspension/hibernation and incoming blocks are old.
+        if (!IsInitialBlockDownload() &&
+            pblock->GetBlockTime() > GetAdjustedTime() - 3 * 60 * 60)
+        {
+            RunSaplingMigration(pindex->nHeight);
+        }
     } else {
         DecrementNoteWitnesses(pindex);
         UpdateSaplingNullifierNoteMapForBlock(pblock);
