@@ -95,7 +95,7 @@ typedef struct BetInfo {
     int64_t rektfee;
     int32_t lastheight;
     int16_t leverage;
-    bool isOpen, isRekt;
+    bool isOpen, isRekt, isUp;
     uint256 tokenid;
 
     std::vector<uint16_t> vecparsed;
@@ -107,7 +107,7 @@ typedef struct BetInfo {
         lastheight = 0;
         leverage = 0;
         rektfee = 0;
-        isOpen = isRekt = false;
+        isOpen = isRekt = isUp = false;
     }
 } BetInfo;
 
@@ -1633,6 +1633,15 @@ int32_t prices_getbetinfo(uint256 bettxid, BetInfo &betinfo)
 
             prices_enumaddedbets(batontxid, betinfo.bets, bettxid);
 
+            if (!betinfo.isOpen) {
+                CTransaction finaltx;
+                uint256 hashBlock;
+                if (myGetTransaction(finaltxid, finaltx, hashBlock) && finaltx.vout.size() > 0 && prices_finalopretdecode)
+                {
+                }
+            }
+
+
             if (prices_scanchain(betinfo.bets, betinfo.leverage, betinfo.vecparsed, betinfo.lastprice, betinfo.lastheight) < 0) {
                 return -4;
             }
@@ -1793,7 +1802,7 @@ UniValue PricesRekt(int64_t txfee, uint256 bettxid, int32_t rektheight)
             mtx.vout.push_back(MakeCC1vout(cp->evalcode, CCchange, pricespk));
 
         /// mtx.vout.push_back(MakeCC1vout(cp->evalcode, bettx.vout[2].nValue - myfee - txfee, pricespk));  // change
-        rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, prices_finalopret(bettxid, totalprofits, rektheight, mypk, betinfo.firstprice, 0, totalbets /*- positionsize*/, 0/*positionsize*/, betinfo.leverage));
+        rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, prices_finalopret(bettxid, totalprofits, rektheight, mypk, betinfo.firstprice, betinfo.averageCostbasis, totalbets, 0, betinfo.leverage));
         return(prices_rawtxresult(result, rawtx, 0));
     }
     else
@@ -1877,13 +1886,13 @@ UniValue PricesCashout(int64_t txfee, uint256 bettxid)
     }
 
     mtx.vin.push_back(CTxIn(bettxid, NVOUT_CCMARKER, CScript()));  // spend cc marker
-    if ((inputsum = AddPricesInputs(cp, mtx, destaddr, betinfo.equity + txfee, 64)) > betinfo.equity + txfee)
+    if ((inputsum = AddPricesInputs(cp, mtx, destaddr, betinfo.equity + txfee, 64)) > betinfo.equity + txfee)   // TODO: why txfee from the fund?
         CCchange = (inputsum - betinfo.equity);
     mtx.vout.push_back(CTxOut(betinfo.equity, CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
     if (CCchange >= txfee)
         mtx.vout.push_back(MakeCC1vout(cp->evalcode, CCchange, pricespk));
     // TODO: what should the opret param be:
-    rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, prices_finalopret(bettxid, totalprofits, nextheight - 1, mypk, betinfo.firstprice, 0, totalbets/*- betinfo.positionsize*/, 0/*betinfo.positionsize*/, betinfo.leverage));
+    rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, prices_finalopret(bettxid, totalprofits, nextheight - 1, mypk, betinfo.firstprice, betinfo.averageCostbasis, totalbets, 0, betinfo.leverage));
     return(prices_rawtxresult(result, rawtx, 0));
         
 }
@@ -2177,10 +2186,12 @@ UniValue PricesGetOrderbook()
         for (int i = 0; i < m.second.size(); i++) {
             int64_t betspos = 0;
             for (auto bet : m.second[i].bets) betspos += bet.positionsize;
-            if (prices_ispositionup(m.second[i]))
+            m.second[i].isUp = prices_ispositionup(m.second[i]);
+            if (m.second[i].isUp)
                 totalLeveragedPositionUp += betspos * abs(m.second[i].leverage);
             else
                 totalLeveragedPositionDown += betspos * abs(m.second[i].leverage);
+            
         }
         matchedTotals[m.first].diffLeveragedPosition = totalLeveragedPositionUp - totalLeveragedPositionDown;
     }
@@ -2206,6 +2217,7 @@ UniValue PricesGetOrderbook()
             entry.push_back(Pair("costbasis", m.second[i].averageCostbasis));
             entry.push_back(Pair("leverage", m.second[i].leverage));
             entry.push_back(Pair("equity", m.second[i].equity));
+            entry.push_back(Pair("isUpPosition", (m.second[i].isUp ? 1 : 0)));
             resbook.push_back(entry);
         }
         mathedBookHeader.push_back(Pair("positions", resbook));
