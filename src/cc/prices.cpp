@@ -1883,8 +1883,6 @@ UniValue PricesCashout(int64_t txfee, uint256 bettxid)
 }
 
 
-
-
 // pricesinfo rpc impl
 UniValue PricesInfo(uint256 bettxid, int32_t refheight)
 {
@@ -2125,7 +2123,7 @@ UniValue PricesGetOrderbook()
             }
         }
         else {
-            totalRekt += betspos;
+            totalRekt += (betspos - book[0].rektfee);
         }
         book.erase(book.begin());
     }
