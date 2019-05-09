@@ -2199,6 +2199,7 @@ UniValue PricesGetOrderbook()
                 totalLeveragedPositionUp += betspos * abs(m.second[i].leverage);
             else
                 totalLeveragedPositionDown += betspos * abs(m.second[i].leverage);
+            std::cerr << "PricesGetOrderbook 0 m.second[i].isUp=" << m.second[i].isUp << " i=" << i << std::endl;
             
         }
         matchedTotals[m.first].diffLeveragedPosition = totalLeveragedPositionUp - totalLeveragedPositionDown;
@@ -2216,6 +2217,7 @@ UniValue PricesGetOrderbook()
     }
     result.push_back(Pair("unmatched", resbook)); */
 
+    // copy to rpc UniResult
     for (auto m : bookmatched) {
         UniValue mathedBookHeader(UniValue::VOBJ);
         UniValue resbook(UniValue::VARR);
@@ -2225,6 +2227,7 @@ UniValue PricesGetOrderbook()
             entry.push_back(Pair("costbasis", m.second[i].averageCostbasis));
             entry.push_back(Pair("leverage", m.second[i].leverage));
             entry.push_back(Pair("equity", m.second[i].equity));
+            std::cerr << "PricesGetOrderbook 1 m.second[i].isUp=" << m.second[i].isUp << " i=" << i << std::endl;
             entry.push_back(Pair("isUpPosition", (m.second[i].isUp ? 1 : 0)));
             resbook.push_back(entry);
         }
