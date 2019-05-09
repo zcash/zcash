@@ -72,6 +72,7 @@ GetKomodoEarlytxidScriptPub is on line #2080 of komodo_bitcoind.h
 #include "CCassets.h"
 #include "CCPrices.h"
 
+#include <cstdlib>
 #include <gmp.h>
 
 #define IS_CHARINSTR(c, str) (std::string(str).find((char)(c)) != std::string::npos)
@@ -1142,8 +1143,13 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
     mpz_clear(mpzTotalPrice);
     mpz_clear(mpzPriceValue);
 
-    if (errcode != 0)
+    if (errcode != 0) 
         std::cerr << "prices_syntheticprice errcode in switch=" << errcode << std::endl;
+    
+    if( errcode = -1 )  {
+        std::cerr << "prices_syntheticprice error getting price (could be end of chain)" << std::endl;
+        return errcode;
+    }
 
     if (errcode == -13) {
         std::cerr << "prices_syntheticprice overflow in price" << std::endl;
@@ -2021,6 +2027,40 @@ static bool prices_addbookentry(uint256 txid, std::vector<BetInfo> &book)
     return false;
 }
 
+
+static bool prices_ispositionup(BetInfo p) {
+    if (p.vecparsed.size() <= 3) {
+        uint16_t opcode = p.vecparsed[0];
+
+        int32_t value = (opcode & (KOMODO_MAXPRICES - 1));   // index or weight 
+
+        if ((opcode & KOMODO_PRICEMASK)) {
+            char name[65];
+            if (komodo_pricename(name, value)) {
+                std::string upperquote, bottomquote;
+                prices_splitpair(std::string(name), upperquote, bottomquote);
+
+                if (upperquote == "BTC" || bottomquote == "BTC") { // it is relatively btc
+                    if (upperquote == "BTC" && (p.leverage > 0 || (opcode & KOMODO_PRICEMASK) != PRICES_INV) ||
+                        bottomquote == "BTC" && (p.leverage < 0 || (opcode & KOMODO_PRICEMASK) == PRICES_INV))
+                        return true;
+                    else
+                        return false;
+                }
+
+                if (upperquote == "USD" || bottomquote == "USD") { // it is relatively usd
+                    if (upperquote == "USD" && (p.leverage > 0 || (opcode & KOMODO_PRICEMASK) != PRICES_INV) ||
+                        bottomquote == "USD" && (p.leverage < 0 || (opcode & KOMODO_PRICEMASK) == PRICES_INV))
+                        return true;
+                    else
+                        return false;
+                }
+            }
+        }
+    }
+    return false;
+}
+
 static bool prices_isopposite(BetInfo p1, BetInfo p2) {
     if (p1.vecparsed.size() <= 3 && p2.vecparsed.size() <= 3) {   // simple synthetic exp
 
@@ -2133,14 +2173,16 @@ UniValue PricesGetOrderbook()
     for (auto m : bookmatched) {
         int64_t totalLeveragedPositionUp = 0;
         int64_t totalLeveragedPositionDown = 0;
-        int64_t totalLeverageUp = 0;
-        int64_t totalLeverageDown = 0;
-
 
         for (int i = 0; i < m.second.size(); i++) {
-            
+            int64_t betspos = 0;
+            for (auto bet : m.second[i].bets) betspos += bet.positionsize;
+            if (prices_ispositionup(m.second[i]))
+                totalLeveragedPositionUp += betspos * abs(m.second[i].leverage);
+            else
+                totalLeveragedPositionDown += betspos * abs(m.second[i].leverage);
         }
-        matchedTotals[m.first].diffLeveragedPosition = totalLeveragedPositionUp / totalLeverageUp - totalLeveragedPositionDown / totalLeverageDown;
+        matchedTotals[m.first].diffLeveragedPosition = totalLeveragedPositionUp - totalLeveragedPositionDown;
     }
 
 
@@ -2156,6 +2198,7 @@ UniValue PricesGetOrderbook()
     result.push_back(Pair("unmatched", resbook)); */
 
     for (auto m : bookmatched) {
+        UniValue mathedBookHeader(UniValue::VOBJ);
         UniValue resbook(UniValue::VARR);
         for (int i = 0; i < m.second.size(); i++) {
             UniValue entry(UniValue::VOBJ);
@@ -2165,7 +2208,9 @@ UniValue PricesGetOrderbook()
             entry.push_back(Pair("equity", m.second[i].equity));
             resbook.push_back(entry);
         }
-        result.push_back(Pair(m.first, resbook));
+        mathedBookHeader.push_back(Pair("positions", resbook));
+        mathedBookHeader.push_back(Pair("DiffLeveragedPosition", matchedTotals[m.first].diffLeveragedPosition));
+        result.push_back(Pair(m.first, mathedBookHeader));
     }
 
     int64_t totalLiabilities = 0;
