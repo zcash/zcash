@@ -2038,10 +2038,10 @@ static bool prices_addbookentry(uint256 txid, std::vector<BetInfo> &book)
 
 
 static bool prices_ispositionup(BetInfo p) {
-    if (p.vecparsed.size() <= 3) {
+    if (p.vecparsed.size() > 1 && p.vecparsed.size() <= 3) {
         uint16_t opcode = p.vecparsed[0];
 
-        int32_t value = (opcode & (KOMODO_MAXPRICES - 1));   // index or weight 
+        int32_t value = (opcode & (KOMODO_MAXPRICES - 1));   // filter index or weight = opcode & (2048-1)
 
         if ((opcode & KOMODO_PRICEMASK) == 0) {
             char name[65];
@@ -2051,18 +2051,24 @@ static bool prices_ispositionup(BetInfo p) {
                 
                 uint16_t opcode1 = p.vecparsed[1];
 
+                std::cerr << "prices_ispositionup upperquote=" << upperquote << " bottomquote=" << bottomquote << " opcode1=" << opcode1 << " (opcode1 & KOMODO_PRICEMASK)=" << (opcode1 & KOMODO_PRICEMASK) << std::endl;
+
                 if (upperquote == "BTC" || bottomquote == "BTC") { // it is relatively btc
                     if (upperquote == "BTC" && (p.leverage > 0 || (opcode1 & KOMODO_PRICEMASK) != PRICES_INV) ||
-                        bottomquote == "BTC" && (p.leverage < 0 || (opcode1 & KOMODO_PRICEMASK) == PRICES_INV))
+                        bottomquote == "BTC" && (p.leverage < 0 || (opcode1 & KOMODO_PRICEMASK) == PRICES_INV)) {
+                        std::cerr << "prices_ispositionup return true for BTC" << std::endl;
                         return true;
+                    }
                     else
                         return false;
                 }
 
                 if (upperquote == "USD" || bottomquote == "USD") { // it is relatively usd
                     if (upperquote == "USD" && (p.leverage > 0 || (opcode1 & KOMODO_PRICEMASK) != PRICES_INV) ||
-                        bottomquote == "USD" && (p.leverage < 0 || (opcode1 & KOMODO_PRICEMASK) == PRICES_INV))
+                        bottomquote == "USD" && (p.leverage < 0 || (opcode1 & KOMODO_PRICEMASK) == PRICES_INV)) {
+                        std::cerr << "prices_ispositionup return true for USD" << std::endl;
                         return true;
+                    }
                     else
                         return false;
                 }
