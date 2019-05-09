@@ -19,6 +19,7 @@
 
 #include "CCinclude.h"
 #include <gmp.h>
+#include <key_io.h>
 
 #define PAYMENTS_TXFEE 10000
 #define PAYMENTS_MERGEOFSET 10  // 100? 
