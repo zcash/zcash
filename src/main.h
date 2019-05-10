@@ -595,7 +595,10 @@ int GetSpendHeight(const CCoinsViewCache& inputs);
 
 uint64_t CalculateCurrentUsage();
 
-/** Return a CMutableTransaction with contextual default values based on set of consensus rules at height */
+/** Return a CMutableTransaction with contextual default values based on set of consensus rules at nHeight, and the default expiry delta. */
 CMutableTransaction CreateNewContextualCMutableTransaction(const Consensus::Params& consensusParams, int nHeight);
+
+/** Return a CMutableTransaction with contextual default values based on set of consensus rules at nHeight, and given expiry delta. */
+CMutableTransaction CreateNewContextualCMutableTransaction(const Consensus::Params& consensusParams, int nHeight, int nExpiryDelta);
 
 #endif // BITCOIN_MAIN_H
