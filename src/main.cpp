@@ -6612,12 +6612,19 @@ public:
 // Set default values of new CMutableTransaction based on consensus rules at given height.
 CMutableTransaction CreateNewContextualCMutableTransaction(const Consensus::Params& consensusParams, int nHeight)
 {
-    CMutableTransaction mtx;
+    return CreateNewContextualCMutableTransaction(consensusParams, nHeight, expiryDelta);
+}
 
+CMutableTransaction CreateNewContextualCMutableTransaction(const Consensus::Params& consensusParams, int nHeight, int nExpiryDelta) {
+    CMutableTransaction mtx;
     bool isOverwintered = NetworkUpgradeActive(nHeight, consensusParams, Consensus::UPGRADE_OVERWINTER);
     if (isOverwintered) {
         mtx.fOverwintered = true;
-        mtx.nExpiryHeight = nHeight + expiryDelta;
+        mtx.nExpiryHeight = nHeight + nExpiryDelta;
+
+        if (mtx.nExpiryHeight <= 0 || mtx.nExpiryHeight >= TX_EXPIRY_HEIGHT_THRESHOLD) {
+            throw new std::runtime_error("CreateNewContextualCMutableTransaction: invalid expiry height");
+        }
 
         // NOTE: If the expiry height crosses into an incompatible consensus epoch, and it is changed to the last block
         // of the current epoch (see below: Overwinter->Sapling), the transaction will be rejected if it falls within
