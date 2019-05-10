@@ -2244,7 +2244,7 @@ static bool prices_isacceptableamount(const std::vector<uint16_t> &vecparsed, in
     prices_getorderbook(matchedBook, matchedTotals, fundTotals);
     std::string pricename = findMatchedBook(vecparsed, matchedBook);
     if (!pricename.empty()) {
-        std::cerr << "prices_isacceptableamount() found matched book=" << pricename << " diffLeveragedPosition=" << matchedTotals[pricename].diffLeveragedPosition << std::endl;
+        std::cerr << "prices_isacceptableamount() found matched book=" << pricename << " diffLeveragedPosition=" << matchedTotals[pricename].diffLeveragedPosition << "expr=" << prices_getsourceexpression(vecparsed) << std::endl;
         // could fit into leveraged amount
         if (prices_ispositionup(vecparsed, leverage) && amount*abs(leverage) + matchedTotals[pricename].diffLeveragedPosition <= 0) {
             std::cerr << "prices_isacceptableamount() could fit into opposite negative lev amount" << std::endl;
