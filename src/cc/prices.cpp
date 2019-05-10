@@ -121,12 +121,13 @@ typedef struct MatchedBookTotal {
 
 typedef struct TotalFund {
     int64_t totalFund;
-    int64_t totalBets;
+    int64_t totalActiveBets;
+    int64_t totalCashout;
     int64_t totalRekt;
     int64_t totalEquity;
 
     TotalFund() {
-        totalFund = totalBets = totalRekt = totalEquity = 0;
+        totalFund = totalActiveBets = totalCashout = totalRekt = totalEquity = 0;
     }
 
 } TotalFund;
@@ -1304,7 +1305,7 @@ void prices_betjson(UniValue &result, std::vector<OneBetData> bets, int16_t leve
 {
 
     UniValue resultbets(UniValue::VARR);
-    int64_t totalbets = 0;
+    int64_t totalposition = 0;
     int64_t totalprofits = 0;
 
     for (auto b : bets) {
@@ -1314,14 +1315,14 @@ void prices_betjson(UniValue &result, std::vector<OneBetData> bets, int16_t leve
         entry.push_back(Pair("costbasis", ValueFromAmount(b.costbasis)));
         entry.push_back(Pair("firstheight", b.firstheight));
         resultbets.push_back(entry);
-        totalbets += b.positionsize;
+        totalposition += b.positionsize;
         totalprofits += b.profits;
     }
-    int64_t equity = totalbets + totalprofits;
+    int64_t equity = totalposition + totalprofits;
 
     result.push_back(Pair("bets", resultbets));
     result.push_back(Pair("leverage", (int64_t)leverage));
-    result.push_back(Pair("TotalPositionSize", ValueFromAmount(totalbets)));
+    result.push_back(Pair("TotalPositionSize", ValueFromAmount(totalposition)));
     result.push_back(Pair("TotalProfits", ValueFromAmount(totalprofits)));
     result.push_back(Pair("equity", ValueFromAmount(equity)));
     result.push_back(Pair("LastPrice", ValueFromAmount(lastprice)));
@@ -1538,7 +1539,7 @@ int32_t prices_scanchain(std::vector<OneBetData> &bets, int16_t leverage, std::v
     bool stop = false;
     for (int32_t height = bets[0].firstheight; ; height++)   // the last datum for 24h is the costbasis value
     {
-        int64_t totalbets = 0;
+        int64_t totalposition = 0;
         int64_t totalprofits = 0;
 
         // scan upto the chain tip
@@ -1552,7 +1553,7 @@ int32_t prices_scanchain(std::vector<OneBetData> &bets, int16_t leverage, std::v
                     stop = true;
                     break;
                 }
-                totalbets += bets[i].positionsize;
+                totalposition += bets[i].positionsize;
                 totalprofits += bets[i].profits;
             }
         }
@@ -1561,7 +1562,7 @@ int32_t prices_scanchain(std::vector<OneBetData> &bets, int16_t leverage, std::v
             break;
 
         endheight = height;
-        int64_t equity = totalbets + totalprofits;
+        int64_t equity = totalposition + totalprofits;
         if (equity < 0)
         {   // we are in loss
             break;
@@ -1702,15 +1703,15 @@ int32_t prices_getbetinfo(uint256 bettxid, BetInfo &betinfo)
                 return -4;
             }
 
-            mpz_t mpzTotalbets;
+            mpz_t mpzTotalPosition;
             mpz_t mpzTotalprofits;
             mpz_t mpzTotalcostbasis;
 
-            mpz_init(mpzTotalbets);
+            mpz_init(mpzTotalPosition);
             mpz_init(mpzTotalprofits);
             mpz_init(mpzTotalcostbasis);
 
-            int64_t totalbets = 0;
+            int64_t totalposition = 0;
             int64_t totalprofits = 0;
 
             for (auto b : betinfo.bets) {
@@ -1729,26 +1730,26 @@ int32_t prices_getbetinfo(uint256 bettxid, BetInfo &betinfo)
                 mpz_mul_ui(mpzProduct, mpzProduct, (uint64_t)b.positionsize);         // b.costbasis * b.amount
                 mpz_add(mpzTotalcostbasis, mpzTotalcostbasis, mpzProduct);      //averageCostbasis += b.costbasis * b.amount;
 
-                mpz_add_ui(mpzTotalbets, mpzTotalbets, (uint64_t)b.positionsize);     //totalbets += b.amount;
+                mpz_add_ui(mpzTotalPosition, mpzTotalPosition, (uint64_t)b.positionsize);     //totalposition += b.amount;
                 mpz_add(mpzTotalprofits, mpzTotalprofits, mpzProfits);          //totalprofits += b.profits;
 
-                totalbets += b.positionsize;
+                totalposition += b.positionsize;
                 totalprofits += b.profits;
 
                 mpz_clear(mpzProduct);
                 mpz_clear(mpzProfits);
             }
 
-            betinfo.equity = totalbets + totalprofits;
+            betinfo.equity = totalposition + totalprofits;
             //int64_t averageCostbasis = 0;
 
-            if (mpz_get_ui(mpzTotalbets) != 0) { //prevent zero div
+            if (mpz_get_ui(mpzTotalPosition) != 0) { //prevent zero div
                 mpz_t mpzAverageCostbasis;
                 mpz_init(mpzAverageCostbasis);
 
-                //averageCostbasis =  totalcostbasis / totalbets; 
+                //averageCostbasis =  totalcostbasis / totalposition; 
                 mpz_mul_ui(mpzTotalcostbasis, mpzTotalcostbasis, SATOSHIDEN);                 // profits *= SATOSHIDEN normalization to prevent loss of significance while division
-                mpz_tdiv_q(mpzAverageCostbasis, mpzTotalcostbasis, mpzTotalbets);
+                mpz_tdiv_q(mpzAverageCostbasis, mpzTotalcostbasis, mpzTotalPosition);
 
                 mpz_tdiv_q_ui(mpzAverageCostbasis, mpzAverageCostbasis, SATOSHIDEN);          // profits /= SATOSHIDEN de-normalization
 
@@ -1766,10 +1767,10 @@ int32_t prices_getbetinfo(uint256 bettxid, BetInfo &betinfo)
             else
             {
                 betinfo.isRekt = true;
-                betinfo.exitfee = totalbets / 500;
+                betinfo.exitfee = totalposition / 500;
             }
 
-            mpz_clear(mpzTotalbets);
+            mpz_clear(mpzTotalPosition);
             mpz_clear(mpzTotalprofits);
             mpz_clear(mpzTotalcostbasis);
             return 0;
@@ -1821,11 +1822,11 @@ UniValue PricesRekt(int64_t txfee, uint256 bettxid, int32_t rektheight)
         return(result);
     }
 
-    int64_t totalbets = 0;
+    int64_t totalposition = 0;
     int64_t totalprofits = 0;
 
     for (auto b : betinfo.bets) {
-        totalbets += b.positionsize;
+        totalposition += b.positionsize;
         totalprofits += b.profits;
     }
 
@@ -1906,11 +1907,11 @@ UniValue PricesCashout(int64_t txfee, uint256 bettxid)
         return(result);
     }
 
-    int64_t totalbets = 0;
+    int64_t totalposition = 0;
     int64_t totalprofits = 0;
 
     for (auto b : betinfo.bets) {
-        totalbets += b.positionsize;
+        totalposition += b.positionsize;
         totalprofits += b.profits;
     }
     
@@ -2211,7 +2212,7 @@ void prices_getorderbook(std::map<std::string, std::vector<BetInfo> > & bookmatc
     fundTotals.totalFund = 0;
     fundTotals.totalRekt = 0;
     fundTotals.totalEquity = 0;
-    fundTotals.totalBets = 0;
+    fundTotals.totalActiveBets = 0;
 
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > addressCCunspents;
     SetCCunspents(addressCCunspents, cp->unspendableCCaddr, true);  // cc marker
@@ -2224,12 +2225,12 @@ void prices_getorderbook(std::map<std::string, std::vector<BetInfo> > & bookmatc
     // extract out opposite bets:
     while (book.size() > 0) {
 
-        int64_t betspos = 0;
-        for (auto bet : book[0].bets) betspos += bet.positionsize;
+        int64_t totalPos = 0;
+        for (auto bet : book[0].bets) totalPos += bet.positionsize;
 
-        if (!book[0].isRekt) {
+        if (book[0].isOpen) {
 
-            fundTotals.totalBets += betspos;
+            fundTotals.totalActiveBets += totalPos;
             fundTotals.totalEquity += book[0].equity;
 
             if (book[0].vecparsed.size() <= 3) {   // only short expr check for match: "BTC_USD,1" or "BTC_USD,!,1"
@@ -2255,7 +2256,11 @@ void prices_getorderbook(std::map<std::string, std::vector<BetInfo> > & bookmatc
             }
         }
         else {
-            fundTotals.totalRekt += (betspos - book[0].exitfee);
+            if( book[0].isRekt )
+                fundTotals.totalRekt += (totalPos - book[0].exitfee);
+            else
+                fundTotals.totalCashout += (totalPos - book[0].exitfee);
+
             //TODO: store rekt
         }
         book.erase(book.begin());
@@ -2368,11 +2373,11 @@ UniValue PricesGetOrderbook()
     } */
 
     result.push_back(Pair("TotalFund", ValueFromAmount(fundTotals.totalFund)));
-    result.push_back(Pair("TotalRekt", ValueFromAmount(fundTotals.totalRekt)));
-    result.push_back(Pair("TotalBets", ValueFromAmount(fundTotals.totalBets)));
     result.push_back(Pair("TotalEquity", ValueFromAmount(fundTotals.totalEquity)));
-
-
+    result.push_back(Pair("TotalRekt", ValueFromAmount(fundTotals.totalRekt)));
+    result.push_back(Pair("TotalBets", ValueFromAmount(fundTotals.totalActiveBets)));
+    result.push_back(Pair("TotalCashoutBets", ValueFromAmount(fundTotals.totalCashout)));
+    
 //    result.push_back(Pair("TotalLiabilities", ValueFromAmount(totalLiabilities)));
     return result;
 }
