@@ -2069,7 +2069,7 @@ static bool prices_ispositionup(const std::vector<uint16_t> &vecparsed, int16_t 
                 
                 uint16_t opcode1 = vecparsed[1];
 
-                //std::cerr << "prices_ispositionup upperquote=" << upperquote << " bottomquote=" << bottomquote << " opcode1=" << opcode1 << " (opcode1 & KOMODO_PRICEMASK)=" << (opcode1 & KOMODO_PRICEMASK) << std::endl;
+                std::cerr << "prices_ispositionup upperquote=" << upperquote << " bottomquote=" << bottomquote << " opcode1=" << opcode1 << " (opcode1 & KOMODO_PRICEMASK)=" << (opcode1 & KOMODO_PRICEMASK) << std::endl;
 
                 if (upperquote == "BTC" || bottomquote == "BTC") { // it is relatively btc
                     if (upperquote == "BTC" && (leverage > 0 || (opcode1 & KOMODO_PRICEMASK) != PRICES_INV) ||
@@ -2246,11 +2246,11 @@ static bool prices_isacceptableamount(const std::vector<uint16_t> &vecparsed, in
     if (!pricename.empty()) {
         std::cerr << "prices_isacceptableamount() found matched book=" << pricename << " diffLeveragedPosition=" << matchedTotals[pricename].diffLeveragedPosition << std::endl;
         // could fit into leveraged amount
-        if ((prices_ispositionup(vecparsed, leverage) || leverage > 0) && amount*abs(leverage) + matchedTotals[pricename].diffLeveragedPosition <= 0) {
+        if (prices_ispositionup(vecparsed, leverage) && amount*abs(leverage) + matchedTotals[pricename].diffLeveragedPosition <= 0) {
             std::cerr << "prices_isacceptableamount() could fit into opposite negative lev amount" << std::endl;
             return true;
         }
-        if ((!prices_ispositionup(vecparsed, leverage) || leverage < 0) && -amount*abs(leverage) + matchedTotals[pricename].diffLeveragedPosition >= 0) {
+        if (!prices_ispositionup(vecparsed, leverage) && -amount*abs(leverage) + matchedTotals[pricename].diffLeveragedPosition >= 0) {
             std::cerr << "prices_isacceptableamount() could fit into opposite positive lev amount" << std::endl;
             return true;
         }
