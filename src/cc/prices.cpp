@@ -1476,7 +1476,7 @@ UniValue PricesAddFunding(int64_t txfee, uint256 bettxid, int64_t amount)
     int32_t firstheight;
     std::vector<uint16_t> vecparsed; 
     uint256 batontxid, tokenid, hashBlock;
-    int16_t leverage;
+    int16_t leverage = 0;
     std::string rawtx; 
     //char myaddr[64];
 
@@ -2287,6 +2287,7 @@ static bool prices_isacceptableamount(const std::vector<uint16_t> &vecparsed, in
         }
     }
 
+    std::cerr << "prices_isacceptableamount() amount=" << amount << " leverage=" << leverage << " fundTotals.totalFund=" << fundTotals.totalFund << " fundTotals.totalEquity=" << fundTotals.totalEquity << std::endl;
     // if not fit to matched = allow to bet for leveraged amount no more than 10% from free fund
     if (amount * leverage < (fundTotals.totalFund - fundTotals.totalEquity) * 0.1)
         return true;
