@@ -525,6 +525,7 @@ bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
         break;
 
     case 'F':   // final tx 
+    case 'R':
         if (!ValidateFinalTx(cp, eval, tx, firstVinTx)) {
             ///return false;
             std::cerr << "PricesValidate() " << "ValidateFinalTx=false " << eval->state.GetRejectReason() << std::endl;
