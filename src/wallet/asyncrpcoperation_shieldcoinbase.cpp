@@ -2,8 +2,11 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "asyncrpcqueue.h"
+#include "asyncrpcoperation_shieldcoinbase.h"
+
 #include "amount.h"
+#include "asyncrpcoperation_common.h"
+#include "asyncrpcqueue.h"
 #include "consensus/upgrades.h"
 #include "core_io.h"
 #include "init.h"
@@ -30,8 +33,6 @@
 #include <chrono>
 #include <thread>
 #include <string>
-
-#include "asyncrpcoperation_shieldcoinbase.h"
 
 using namespace libzcash;
 
@@ -260,22 +261,8 @@ bool ShieldToAddress::operator()(const libzcash::SaplingPaymentAddress &zaddr) c
     // Build the transaction
     m_op->tx_ = m_op->builder_.Build().GetTxOrThrow();
 
-    // Send the transaction
-    if (!m_op->testmode) {
-        CWalletTx wtx(pwalletMain, m_op->tx_);
-        pwalletMain->CommitTransaction(wtx, boost::none);
-
-        UniValue o(UniValue::VOBJ);
-        o.push_back(Pair("txid", m_op->tx_.GetHash().ToString()));
-        m_op->set_result(o);
-    } else {
-        // Test mode does not send the transaction to the network.
-        UniValue o(UniValue::VOBJ);
-        o.push_back(Pair("test", 1));
-        o.push_back(Pair("txid", m_op->tx_.GetHash().ToString()));
-        o.push_back(Pair("hex", EncodeHexTx(m_op->tx_)));
-        m_op->set_result(o);
-    }
+    UniValue sendResult = SendTransaction(m_op->tx_, m_op->testmode);
+    m_op->set_result(sendResult);
 
     return true;
 }
@@ -318,21 +305,9 @@ void AsyncRPCOperation_shieldcoinbase::sign_send_raw_transaction(UniValue obj)
     CTransaction tx;
     stream >> tx;
     tx_ = tx;
-    // Send the signed transaction
-    if (!testmode) {
-        CWalletTx wtx(pwalletMain, tx_);
-        pwalletMain->CommitTransaction(wtx, boost::none);
-        UniValue o(UniValue::VOBJ);
-        o.push_back(Pair("txid", tx_.GetHash().ToString()));
-        set_result(o);
-    } else {
-        // Test mode does not send the transaction to the network.
-        UniValue o(UniValue::VOBJ);
-        o.push_back(Pair("test", 1));
-        o.push_back(Pair("txid", tx_.GetHash().ToString()));
-        o.push_back(Pair("hex", signedtxn));
-        set_result(o);
-    }
+    
+    UniValue sendResult = SendTransaction(tx_, testmode);
+    set_result(sendResult);
 }
 
 

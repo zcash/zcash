@@ -3,8 +3,10 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "asyncrpcoperation_sendmany.h"
-#include "asyncrpcqueue.h"
+
 #include "amount.h"
+#include "asyncrpcoperation_common.h"
+#include "asyncrpcqueue.h"
 #include "consensus/upgrades.h"
 #include "core_io.h"
 #include "init.h"
@@ -460,22 +462,8 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         // Build the transaction
         tx_ = builder_.Build().GetTxOrThrow();
 
-        // Send the transaction
-        if (!testmode) {
-            CWalletTx wtx(pwalletMain, tx_);
-            pwalletMain->CommitTransaction(wtx, boost::none);
-
-            UniValue o(UniValue::VOBJ);
-            o.push_back(Pair("txid", tx_.GetHash().ToString()));
-            set_result(o);
-        } else {
-            // Test mode does not send the transaction to the network.
-            UniValue o(UniValue::VOBJ);
-            o.push_back(Pair("test", 1));
-            o.push_back(Pair("txid", tx_.GetHash().ToString()));
-            o.push_back(Pair("hex", EncodeHexTx(tx_)));
-            set_result(o);
-        }
+        UniValue sendResult = SendTransaction(tx_, testmode);
+        set_result(sendResult);
 
         return true;
     }
@@ -936,21 +924,9 @@ void AsyncRPCOperation_sendmany::sign_send_raw_transaction(UniValue obj)
     CTransaction tx;
     stream >> tx;
     tx_ = tx;
-    // Send the signed transaction
-    if (!testmode) {
-        CWalletTx wtx(pwalletMain, tx_);
-        pwalletMain->CommitTransaction(wtx, boost::none);
-        UniValue o(UniValue::VOBJ);
-        o.push_back(Pair("txid", tx_.GetHash().ToString()));
-        set_result(o);
-    } else {
-        // Test mode does not send the transaction to the network.
-        UniValue o(UniValue::VOBJ);
-        o.push_back(Pair("test", 1));
-        o.push_back(Pair("txid", tx_.GetHash().ToString()));
-        o.push_back(Pair("hex", signedtxn));
-        set_result(o);
-    }
+
+    UniValue sendResult = SendTransaction(tx_, testmode);
+    set_result(sendResult);
 }
 
 
