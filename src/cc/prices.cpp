@@ -92,7 +92,7 @@ typedef struct OneBetData {
 typedef struct BetInfo {
     uint256 txid;
     int64_t averageCostbasis, firstprice, lastprice, liquidationprice, equity;
-    int64_t rektfee;
+    int64_t exitfee;
     int32_t lastheight;
     int16_t leverage;
     bool isOpen, isRekt;
@@ -108,7 +108,7 @@ typedef struct BetInfo {
         averageCostbasis = firstprice = lastprice = liquidationprice = equity = 0;
         lastheight = 0;
         leverage = 0;
-        rektfee = 0;
+        exitfee = 0;
         isOpen = isRekt = isUp = false;
     }
 } BetInfo;
@@ -201,18 +201,18 @@ uint8_t prices_costbasisopretdecode(CScript scriptPubKey,uint256 &bettxid,CPubKe
     return(0);
 }
 
-CScript prices_finalopret(uint256 bettxid,int64_t profits,int32_t height,CPubKey mypk,int64_t firstprice,int64_t costbasis,int64_t addedbets,int64_t positionsize,int16_t leverage)
+CScript prices_finalopret(bool isRekt, uint256 bettxid, CPubKey pk, int32_t lastheight, int64_t costbasis, int64_t lastprice, int64_t liquidationprice, int64_t equity, int64_t exitfee)
 {
     CScript opret;
-    opret << OP_RETURN << E_MARSHAL(ss << EVAL_PRICES << 'F' << bettxid << profits << height << mypk << firstprice << costbasis << addedbets << positionsize << leverage);
+    opret << OP_RETURN << E_MARSHAL(ss << EVAL_PRICES << (isRekt ? 'F' : 'R') << bettxid << pk << lastheight << costbasis << lastprice << liquidationprice << equity << exitfee);
     return(opret);
 }
 
-uint8_t prices_finalopretdecode(CScript scriptPubKey,uint256 &bettxid,int64_t &profits,int32_t &height,CPubKey &pk,int64_t &firstprice,int64_t &costbasis,int64_t &addedbets,int64_t &positionsize,int16_t &leverage)
+uint8_t prices_finalopretdecode(CScript scriptPubKey, uint256 &bettxid,  CPubKey &pk, int32_t &lastheight, int64_t &costbasis, int64_t &lastprice, int64_t &liquidationprice, int64_t &equity, int64_t &exitfee)
 {
     std::vector<uint8_t> vopret; uint8_t e,f;
     GetOpReturnData(scriptPubKey,vopret);
-    if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> bettxid; ss >> profits; ss >> height; ss >> pk; ss >> firstprice; ss >> costbasis; ss >> addedbets; ss >> positionsize; ss >> leverage) != 0 && e == EVAL_PRICES && f == 'F' )
+    if (vopret.size() > 2 && E_UNMARSHAL(vopret, ss >> e; ss >> f; ss >> bettxid; ss >> pk; ss >> lastheight; ss >> costbasis; ss >> lastprice; ss >> liquidationprice; ss >> equity; ss >> exitfee) != 0 && e == EVAL_PRICES && (f == 'F' || f == 'R'))
     {
         return(f);
     }
@@ -381,8 +381,8 @@ static bool ValidateFinalTx(struct CCcontract_info *cp, Eval *eval, const CTrans
     int64_t amount;
     CPubKey pk, pricespk;
     int64_t profits;
-    int32_t height;
-    int64_t firstprice, costbasis, addedbets, positionsize;
+    int32_t lastheight;
+    int64_t firstprice, costbasis, lastprice, liquidationprice, equity, fee;
     int16_t leverage;
 
     if (finaltx.vout.size() < 3 || finaltx.vout.size() > 4) {
@@ -391,7 +391,7 @@ static bool ValidateFinalTx(struct CCcontract_info *cp, Eval *eval, const CTrans
     }
 
     vscript_t opret;
-    if (prices_finalopretdecode(finaltx.vout.back().scriptPubKey, bettxid, profits, height, pk, firstprice, costbasis, addedbets, positionsize, leverage) != 'F')
+    if (prices_finalopretdecode(finaltx.vout.back().scriptPubKey, bettxid, pk, lastheight, costbasis, lastprice, liquidationprice, equity, fee) == 0)
         return eval->Invalid("cannot decode opreturn for final tx");
 
     if (bettx.GetHash() != bettxid)
@@ -1679,13 +1679,19 @@ int32_t prices_getbetinfo(uint256 bettxid, BetInfo &betinfo)
 
             prices_enumaddedbets(batontxid, betinfo.bets, bettxid);
 
-            /*if (!betinfo.isOpen) {
+            if (!betinfo.isOpen) {
                 CTransaction finaltx;
                 uint256 hashBlock;
-                if (myGetTransaction(finaltxid, finaltx, hashBlock) && finaltx.vout.size() > 0 && prices_finalopretdecode)
-                {
+                vscript_t vopret;
+                if (myGetTransaction(finaltxid, finaltx, hashBlock) && finaltx.vout.size() > 0  && PricesCheckOpret(finaltx, vopret) != 0)       {
+                    uint8_t funcId = prices_finalopretdecode(finaltx.vout.back().scriptPubKey, betinfo.txid, betinfo.pk, betinfo.lastheight, betinfo.averageCostbasis, betinfo.lastprice, betinfo.liquidationprice, betinfo.equity, betinfo.exitfee);
+                    betinfo.isRekt = (funcId == 'R');  
+
+                    return 0;
                 }
-            }*/
+                else
+                    return -6;
+            }
 
 
             if (prices_scanchain(betinfo.bets, betinfo.leverage, betinfo.vecparsed, betinfo.lastprice, betinfo.lastheight) < 0) {
@@ -1756,7 +1762,7 @@ int32_t prices_getbetinfo(uint256 bettxid, BetInfo &betinfo)
             else
             {
                 betinfo.isRekt = true;
-                betinfo.rektfee = totalbets / 500;
+                betinfo.exitfee = totalbets / 500;
             }
 
             mpz_clear(mpzTotalbets);
@@ -1776,18 +1782,13 @@ UniValue PricesRekt(int64_t txfee, uint256 bettxid, int32_t rektheight)
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), nextheight); UniValue result(UniValue::VOBJ);
     struct CCcontract_info *cp, C; 
     CTransaction bettx; 
-/*    uint256 hashBlock, tokenid, batontxid; 
-    int64_t firstprice, lastprice = 0, positionsize; 
-    int32_t firstheight; 
-    int16_t leverage; 
-    std::vector<uint16_t> vec; */
     int64_t myfee = 0;
     CPubKey pk, mypk, pricespk; 
     std::string rawtx;
     char destaddr[64];
 
     cp = CCinit(&C, EVAL_PRICES);
-    if (txfee == 0)     // TODO: what did we want tot do with txfee in prices?
+    if (txfee == 0)     // TODO: what did we want to do with txfee in prices?
         txfee = PRICES_TXFEE;
     mypk = pubkey2pk(Mypubkey());
     pricespk = GetUnspendable(cp, 0);
@@ -1834,7 +1835,7 @@ UniValue PricesRekt(int64_t txfee, uint256 bettxid, int32_t rektheight)
     prices_betjson(result, betinfo.bets, betinfo.leverage, betinfo.lastheight, betinfo.lastprice); // fill output 
     if (betinfo.isRekt)
     {
-        myfee = betinfo.rektfee; // consolation fee for loss
+        myfee = betinfo.exitfee; // consolation fee for loss
     }
     if (myfee != 0)
     {
@@ -1848,7 +1849,7 @@ UniValue PricesRekt(int64_t txfee, uint256 bettxid, int32_t rektheight)
             mtx.vout.push_back(MakeCC1vout(cp->evalcode, CCchange, pricespk));
 
         /// mtx.vout.push_back(MakeCC1vout(cp->evalcode, bettx.vout[2].nValue - myfee - txfee, pricespk));  // change
-        rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, prices_finalopret(bettxid, totalprofits, rektheight, mypk, betinfo.firstprice, betinfo.averageCostbasis, totalbets, 0, betinfo.leverage));
+        rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, prices_finalopret(false, bettxid, mypk, betinfo.lastheight, betinfo.averageCostbasis, betinfo.lastprice, betinfo.liquidationprice, betinfo.equity, myfee));
         return(prices_rawtxresult(result, rawtx, 0));
     }
     else
@@ -1866,12 +1867,6 @@ UniValue PricesCashout(int64_t txfee, uint256 bettxid)
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), nextheight); 
     UniValue result(UniValue::VOBJ);
     struct CCcontract_info *cp, C; char destaddr[64]; 
-/*    CTransaction bettx; 
-    uint256 hashBlock, batontxid, tokenid; 
-    int64_t positionsize, firstprice, lastprice = 0; 
-    int32_t firstheight; 
-    int16_t leverage; 
-    std::vector<uint16_t> vec;*/
     int64_t CCchange = 0, inputsum;
     CPubKey pk, mypk, pricespk; 
     std::string rawtx;
@@ -1938,7 +1933,7 @@ UniValue PricesCashout(int64_t txfee, uint256 bettxid)
     if (CCchange >= txfee)
         mtx.vout.push_back(MakeCC1vout(cp->evalcode, CCchange, pricespk));
     // TODO: what should the opret param be:
-    rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, prices_finalopret(bettxid, totalprofits, nextheight - 1, mypk, betinfo.firstprice, betinfo.averageCostbasis, totalbets, 0, betinfo.leverage));
+    rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, prices_finalopret(false, bettxid, mypk, nextheight-1, betinfo.averageCostbasis, betinfo.lastprice, betinfo.liquidationprice, betinfo.equity, txfee));
     return(prices_rawtxresult(result, rawtx, 0));
         
 }
@@ -1985,7 +1980,7 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
     else
     {
         result.push_back(Pair("rekt", (int64_t)1));
-        result.push_back(Pair("rektfee", betinfo.rektfee));
+        result.push_back(Pair("rektfee", betinfo.exitfee));
         result.push_back(Pair("rektheight", betinfo.lastheight));
     }
 
@@ -2104,26 +2099,30 @@ static bool prices_ispositionup(const std::vector<uint16_t> &vecparsed, int16_t 
                 uint16_t opcode1 = vecparsed[1];
                 bool isInverted = ((opcode1 & KOMODO_PRICEMASK) == PRICES_INV);
 
-                std::cerr << "prices_ispositionup upperquote=" << upperquote << " bottomquote=" << bottomquote << " opcode1=" << opcode1 << " (opcode1 & KOMODO_PRICEMASK)=" << (opcode1 & KOMODO_PRICEMASK) << std::endl;
+                //std::cerr << "prices_ispositionup upperquote=" << upperquote << " bottomquote=" << bottomquote << " opcode1=" << opcode1 << " (opcode1 & KOMODO_PRICEMASK)=" << (opcode1 & KOMODO_PRICEMASK) << std::endl;
 
                 if (upperquote == "BTC" || bottomquote == "BTC") { // it is relatively btc
                     if (upperquote == "BTC" && (leverage > 0 && !isInverted || leverage < 0 && isInverted) ||
                         bottomquote == "BTC" && (leverage < 0 && !isInverted || leverage > 0 && isInverted)) {
-                        std::cerr << "prices_ispositionup return true for BTC for expr=" << prices_getsourceexpression(vecparsed) << std::endl;
+                        std::cerr << "prices_ispositionup returns true for BTC for expr=" << prices_getsourceexpression(vecparsed) << std::endl;
                         return true;
                     }
-                    else
+                    else {
+                        std::cerr << "prices_ispositionup returns false for BTC for expr=" << prices_getsourceexpression(vecparsed) << std::endl;
                         return false;
+                    }
                 }
 
                 if (upperquote == "USD" || bottomquote == "USD") { // it is relatively usd
                     if (upperquote == "USD" && (leverage > 0 && !isInverted || leverage < 0 && isInverted) ||
                         bottomquote == "USD" && (leverage < 0 && !isInverted || leverage > 0 && isInverted)) {
-                        std::cerr << "prices_ispositionup return true for USD for expr=" << prices_getsourceexpression(vecparsed) << std::endl;
+                        std::cerr << "prices_ispositionup returns true for USD for expr=" << prices_getsourceexpression(vecparsed) << std::endl;
                         return true;
                     }
-                    else
+                    else {
+                        std::cerr << "prices_ispositionup returns false for USD for expr=" << prices_getsourceexpression(vecparsed) << std::endl;
                         return false;
+                    }
                 }
             }
         }
@@ -2252,7 +2251,7 @@ void prices_getorderbook(std::map<std::string, std::vector<BetInfo> > & bookmatc
             }
         }
         else {
-            fundTotals.totalRekt += (betspos - book[0].rektfee);
+            fundTotals.totalRekt += (betspos - book[0].exitfee);
             //TODO: store rekt
         }
         book.erase(book.begin());
