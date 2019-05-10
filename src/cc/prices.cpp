@@ -2256,6 +2256,11 @@ static bool prices_isacceptableamount(const std::vector<uint16_t> &vecparsed, in
             return true;
         }
     }
+
+    // if not fit to matched = allow to bet for leveraged amount no more than 10% from free fund
+    if (amount * leverage < (fundTotals.totalFund - fundTotals.totalEquity) * 0.1)
+        return true;
+
     return false;
 }
 
