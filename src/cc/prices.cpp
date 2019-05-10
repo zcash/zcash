@@ -222,7 +222,7 @@ uint8_t prices_finalopretdecode(CScript scriptPubKey, uint256 &bettxid,  CPubKey
 // price opret basic validation and retrieval
 static uint8_t PricesCheckOpret(const CTransaction & tx, vscript_t &opret)
 {
-    if (tx.vout.size() > 0 && GetOpReturnData(tx.vout.back().scriptPubKey, opret) && opret.size() > 2 && opret.begin()[0] == EVAL_PRICES && IS_CHARINSTR(opret.begin()[1], "BACF"))
+    if (tx.vout.size() > 0 && GetOpReturnData(tx.vout.back().scriptPubKey, opret) && opret.size() > 2 && opret.begin()[0] == EVAL_PRICES && IS_CHARINSTR(opret.begin()[1], "BACFR"))
         return opret.begin()[1];
     else
         return (uint8_t)0;
