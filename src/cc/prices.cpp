@@ -459,7 +459,7 @@ bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
                 std::cerr << "PricesValidate() " << "cannot find prices opret in vintx" << std::endl;
             }
 
-            if (funcId != 'F' && vintxOpret.begin()[1] == 'B' && prevoutN == 1) {   
+            if (!IS_CHARINSTR(funcId, "FR") && vintxOpret.begin()[1] == 'B' && prevoutN == 1) {   
                 //return eval->Invalid("cannot spend bet marker");
                 std::cerr << "PricesValidate() " << " non-final tx cannot spend cc marker vout=" << prevoutN << std::endl;
             }
@@ -476,7 +476,7 @@ bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
     if (!foundFirst)   
         return eval->Invalid("prices cc vin not found");
 
-    if (funcId != 'F' && ccVinCount > 1) {// for all prices tx except final tx only one cc vin is allowed
+    if (!IS_CHARINSTR(funcId, "FR") && ccVinCount > 1) {// for all prices tx except final tx only one cc vin is allowed
         //return eval->Invalid("only one prices cc vin allowed for this tx");
         std::cerr << "PricesValidate() " << "only one prices cc vin allowed for this tx" << std::endl;
     }
