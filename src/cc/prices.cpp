@@ -1388,7 +1388,7 @@ int64_t prices_enumaddedbets(uint256 &batontxid, std::vector<OneBetData> &bets, 
 
             addedBetsTotal += amount;
             added.positionsize = amount;
-            added.firstheight = blockIdx.GetHeight();
+            added.firstheight = blockIdx.GetHeight();  //TODO: check if this is correct (to get height from the block not from the opret)
             bets.push_back(added);
             //std::cerr << "prices_batontxid() added amount=" << amount << std::endl;
         }
@@ -1469,11 +1469,14 @@ UniValue PricesAddFunding(int64_t txfee, uint256 bettxid, int64_t amount)
 {
     int32_t nextheight = komodo_nextheight();
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), nextheight); UniValue result(UniValue::VOBJ);
-    struct CCcontract_info *cp, C; CTransaction bettx; 
-    CPubKey pricespk, mypk; 
-    //int64_t addedbets = 0, betamount, firstprice; 
-    std::vector<uint16_t> vec; 
-    uint256 batontxid; 
+    struct CCcontract_info *cp, C; 
+    CTransaction bettx; 
+    CPubKey pricespk, mypk, pk; 
+    int64_t positionsize, betamount, firstprice; 
+    int32_t firstheight;
+    std::vector<uint16_t> vecparsed; 
+    uint256 batontxid, tokenid, hashBlock;
+    int16_t leverage;
     std::string rawtx; 
     //char myaddr[64];
 
@@ -1482,7 +1485,22 @@ UniValue PricesAddFunding(int64_t txfee, uint256 bettxid, int64_t amount)
         txfee = PRICES_TXFEE;
     mypk = pubkey2pk(Mypubkey());
     pricespk = GetUnspendable(cp, 0);
-    //GetCCaddress(cp, myaddr, mypk);
+
+    if (!myGetTransaction(bettxid, bettx, hashBlock) || 
+        bettx.vout.size() <= 3 ||
+        hashBlock.IsNull()  ||
+        prices_betopretdecode(bettx.vout.back().scriptPubKey, pk, firstheight, positionsize, leverage, firstprice, vecparsed, tokenid) != 'B')    {
+        result.push_back(Pair("result", "error"));
+        result.push_back(Pair("error", "invalid bet tx"));
+        return(result);
+    }
+
+    if (!prices_isacceptableamount(vecparsed, amount, leverage)) {
+        result.push_back(Pair("result", "error"));
+        result.push_back(Pair("error", "too big amount and leverage"));
+        return(result);
+    }
+
     if (AddNormalinputs(mtx, mypk, amount + 2*txfee, 64) >= amount + 2*txfee)
     {
         std::vector<OneBetData> bets;
@@ -2229,7 +2247,7 @@ void prices_getorderbook(std::map<std::string, std::vector<BetInfo> > & bookmatc
     }
 
     // calculate cancelling amount
-    for (auto &m : bookmatched) {
+    for (auto &m : bookmatched) {   // note: use reference &m otherwise isUp will be changed only in a copy
         int64_t totalLeveragedPositionUp = 0;
         int64_t totalLeveragedPositionDown = 0;
 
