@@ -1630,6 +1630,12 @@ int32_t prices_getbetinfo(uint256 bettxid, BetInfo &betinfo)
         if (hashBlock.IsNull())
             return -2;
 
+
+        // TODO: forget old tx
+        CBlockIndex *bi = komodo_getblockindex(hashBlock);
+        if (bi && bi->GetHeight() > 5342)
+            return -5;
+
         OneBetData bet1;
         if (prices_betopretdecode(bettx.vout.back().scriptPubKey, betinfo.pk, bet1.firstheight, bet1.positionsize, betinfo.leverage, betinfo.firstprice, betinfo.vecparsed, betinfo.tokenid) == 'B')
         {
@@ -2002,6 +2008,12 @@ UniValue PricesList(uint32_t filter, CPubKey mypk)
 
         if (GetTransaction(txid, vintx, hashBlock, false) != 0)
         {
+
+            // TODO: forget old tx
+            CBlockIndex *bi = komodo_getblockindex(hashBlock);
+            if (bi && bi->GetHeight() > 5342)
+                return;
+
             bool bAppend = false;
             if (vintx.vout.size() > 0 && prices_betopretdecode(vintx.vout.back().scriptPubKey, pk, height, amount, leverage, firstprice, vec, tokenid) == 'B' &&
                 (mypk == CPubKey() || mypk == pk))  // if only mypubkey to list
