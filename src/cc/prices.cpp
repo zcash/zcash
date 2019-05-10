@@ -2109,7 +2109,7 @@ static bool prices_ispositionup(const std::vector<uint16_t> &vecparsed, int16_t 
                 if (upperquote == "BTC" || bottomquote == "BTC") { // it is relatively btc
                     if (upperquote == "BTC" && (leverage > 0 && !isInverted || leverage < 0 && isInverted) ||
                         bottomquote == "BTC" && (leverage < 0 && !isInverted || leverage > 0 && isInverted)) {
-                        std::cerr << "prices_ispositionup return true for BTC" << std::endl;
+                        std::cerr << "prices_ispositionup return true for BTC for expr=" << prices_getsourceexpression(vecparsed) << std::endl;
                         return true;
                     }
                     else
@@ -2119,7 +2119,7 @@ static bool prices_ispositionup(const std::vector<uint16_t> &vecparsed, int16_t 
                 if (upperquote == "USD" || bottomquote == "USD") { // it is relatively usd
                     if (upperquote == "USD" && (leverage > 0 && !isInverted || leverage < 0 && isInverted) ||
                         bottomquote == "USD" && (leverage < 0 && !isInverted || leverage > 0 && isInverted)) {
-                        std::cerr << "prices_ispositionup return true for USD" << std::endl;
+                        std::cerr << "prices_ispositionup return true for USD for expr=" << prices_getsourceexpression(vecparsed) << std::endl;
                         return true;
                     }
                     else
@@ -2128,6 +2128,7 @@ static bool prices_ispositionup(const std::vector<uint16_t> &vecparsed, int16_t 
             }
         }
     }
+    std::cerr << "prices_ispositionup returns false for expr=" << prices_getsourceexpression(vecparsed) << std::endl;
     return false;
 }
 
@@ -2152,8 +2153,11 @@ static bool prices_isopposite(BetInfo p1, BetInfo p2) {
                 prices_splitpair(std::string(name1), upperquote1, bottomquote1);
                 prices_splitpair(std::string(name2), upperquote2, bottomquote2);
 
+                bool isInverted1 = ((opcode1 & KOMODO_PRICEMASK) != PRICES_INV);
+                bool isInverted2 = ((opcode2 & KOMODO_PRICEMASK) != PRICES_INV);
+
                 if (/*upperquote1 == bottomquote2 && bottomquote1 == upperquote2 && (p1.leverage > 0 == p2.leverage > 0 || (opcode1 & KOMODO_PRICEMASK) == PRICES_INV == (opcode2 & KOMODO_PRICEMASK) == PRICES_INV) ||*/
-                    upperquote1 == upperquote2 && bottomquote1 == bottomquote2 && ((p1.leverage > 0) != (p2.leverage > 0) || ((opcode1 & KOMODO_PRICEMASK) == PRICES_INV) != ((opcode2 & KOMODO_PRICEMASK) == PRICES_INV)) )
+                    upperquote1 == upperquote2 && bottomquote1 == bottomquote2 && ((p1.leverage > 0) != (p2.leverage > 0) || isInverted1 != isInverted2) )
                     return true;
             }
         }
@@ -2210,7 +2214,7 @@ void prices_getorderbook(std::map<std::string, std::vector<BetInfo> > & bookmatc
     SetCCunspents(addressCCunspents, cp->unspendableCCaddr, true);  // cc marker
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it = addressCCunspents.begin(); it != addressCCunspents.end(); it++)
     {
-        std::cerr << "totalfund calc txid=" << it->first.txhash.GetHex() << " nvout=" << it->first.index << " satoshis=" << it->second.satoshis << std::endl;
+        //std::cerr << "totalfund calc txid=" << it->first.txhash.GetHex() << " nvout=" << it->first.index << " satoshis=" << it->second.satoshis << std::endl;
         fundTotals.totalFund += it->second.satoshis;
     }
 
