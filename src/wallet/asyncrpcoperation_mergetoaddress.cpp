@@ -645,7 +645,7 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
                 wtxHeight = mapBlockIndex[wtx.hashBlock]->nHeight;
                 wtxDepth = wtx.GetDepthInMainChain();
             }
-            LogPrint("zrpcunsafe", "%s: spending note (txid=%s, vjoinsplit=%d, ciphertext=%d, amount=%s, height=%d, confirmations=%d)\n",
+            LogPrint("zrpcunsafe", "%s: spending note (txid=%s, vjoinsplit=%d, jsoutindex=%d, amount=%s, height=%d, confirmations=%d)\n",
                      getId(),
                      jso.hash.ToString().substr(0, 10),
                      jso.js,

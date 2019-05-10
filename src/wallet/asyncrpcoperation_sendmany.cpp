@@ -784,7 +784,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
                 wtxHeight = mapBlockIndex[wtx.hashBlock]->nHeight;
                 wtxDepth = wtx.GetDepthInMainChain();
             }
-            LogPrint("zrpcunsafe", "%s: spending note (txid=%s, vjoinsplit=%d, ciphertext=%d, amount=%s, height=%d, confirmations=%d)\n",
+            LogPrint("zrpcunsafe", "%s: spending note (txid=%s, vjoinsplit=%d, jsoutindex=%d, amount=%s, height=%d, confirmations=%d)\n",
                     getId(),
                     jso.hash.ToString().substr(0, 10),
                     jso.js,
@@ -1048,7 +1048,7 @@ bool AsyncRPCOperation_sendmany::find_unspent_notes() {
     for (CSproutNotePlaintextEntry & entry : sproutEntries) {
         z_sprout_inputs_.push_back(SendManyInputJSOP(entry.jsop, entry.plaintext.note(boost::get<libzcash::SproutPaymentAddress>(frompaymentaddress_)), CAmount(entry.plaintext.value())));
         std::string data(entry.plaintext.memo().begin(), entry.plaintext.memo().end());
-        LogPrint("zrpcunsafe", "%s: found unspent Sprout note (txid=%s, vjoinsplit=%d, ciphertext=%d, amount=%s, memo=%s)\n",
+        LogPrint("zrpcunsafe", "%s: found unspent Sprout note (txid=%s, vjoinsplit=%d, jsoutindex=%d, amount=%s, memo=%s)\n",
             getId(),
             entry.jsop.hash.ToString().substr(0, 10),
             entry.jsop.js,

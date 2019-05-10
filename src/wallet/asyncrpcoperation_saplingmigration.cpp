@@ -68,7 +68,7 @@ void AsyncRPCOperation_saplingmigration::main() {
 }
 
 bool AsyncRPCOperation_saplingmigration::main_impl() {
-    LogPrint("zrpcunsafe", "Beginning AsyncRPCOperation_saplingmigration. id=%s\n", getId());
+    LogPrint("zrpcunsafe", "%s: Beginning AsyncRPCOperation_saplingmigration.\n", getId());
     std::vector<CSproutNotePlaintextEntry> sproutEntries;
     std::vector<SaplingNoteEntry> saplingEntries;
     {
@@ -105,7 +105,7 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
         CAmount amountToSend = chooseAmount(availableFunds);
         auto builder = TransactionBuilder(consensusParams, targetHeight_, MIGRATION_EXPIRY_DELTA, pwalletMain, pzcashParams,
                                           &coinsView, &cs_main);
-        LogPrint("zrpcunsafe", "%s: Beginning creating transaction with Sapling output amount=%s\n", getId(), amountToSend - FEE);
+        LogPrint("zrpcunsafe", "%s: Beginning creating transaction with Sapling output amount=%s\n", getId(), FormatMoney(amountToSend - FEE));
         std::vector<CSproutNotePlaintextEntry> fromNotes;
         CAmount fromNoteAmount = 0;
         while (fromNoteAmount < amountToSend) {
@@ -116,7 +116,7 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
         availableFunds -= fromNoteAmount;
         for (const CSproutNotePlaintextEntry& sproutEntry : fromNotes) {
             std::string data(sproutEntry.plaintext.memo().begin(), sproutEntry.plaintext.memo().end());
-            LogPrint("zrpcunsafe", "%s: Adding Sprout note input (txid=%s, vjoinsplit=%d, ciphertext=%d, amount=%s, memo=%s)\n",
+            LogPrint("zrpcunsafe", "%s: Adding Sprout note input (txid=%s, vjoinsplit=%d, jsoutindex=%d, amount=%s, memo=%s)\n",
                 getId(),
                 sproutEntry.jsop.hash.ToString().substr(0, 10),
                 sproutEntry.jsop.js,
@@ -142,7 +142,7 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
         builder.AddSaplingOutput(ovkForShieldingFromTaddr(seed), migrationDestAddress, amountToSend - FEE);
         CTransaction tx = builder.Build().GetTxOrThrow();
         if (isCancelled()) {
-            LogPrint("zrpcunsafe", "%s: Canceled. Stopping.\n");
+            LogPrint("zrpcunsafe", "%s: Canceled. Stopping.\n", getId());
             break;
         }
         pwalletMain->AddPendingSaplingMigrationTx(tx);
