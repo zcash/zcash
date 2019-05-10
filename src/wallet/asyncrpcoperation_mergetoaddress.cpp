@@ -33,8 +33,6 @@
 
 using namespace libzcash;
 
-extern UniValue sendrawtransaction(const UniValue& params, bool fHelp);
-
 int mta_find_output(UniValue obj, int n)
 {
     UniValue outputMapValue = find_value(obj, "outputmap");
@@ -362,27 +360,19 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
         tx_ = builder_.Build().GetTxOrThrow();
 
         // Send the transaction
-        // TODO: Use CWallet::CommitTransaction instead of sendrawtransaction
-        auto signedtxn = EncodeHexTx(tx_);
         if (!testmode) {
-            UniValue params = UniValue(UniValue::VARR);
-            params.push_back(signedtxn);
-            UniValue sendResultValue = sendrawtransaction(params, false);
-            if (sendResultValue.isNull()) {
-                throw JSONRPCError(RPC_WALLET_ERROR, "sendrawtransaction did not return an error or a txid.");
-            }
-
-            auto txid = sendResultValue.get_str();
+            CWalletTx wtx(pwalletMain, tx_);
+            pwalletMain->CommitTransaction(wtx, boost::none);
 
             UniValue o(UniValue::VOBJ);
-            o.push_back(Pair("txid", txid));
+            o.push_back(Pair("txid", tx_.GetHash().ToString()));
             set_result(o);
         } else {
             // Test mode does not send the transaction to the network.
             UniValue o(UniValue::VOBJ);
             o.push_back(Pair("test", 1));
             o.push_back(Pair("txid", tx_.GetHash().ToString()));
-            o.push_back(Pair("hex", signedtxn));
+            o.push_back(Pair("hex", EncodeHexTx(tx_)));
             set_result(o);
         }
 
@@ -775,41 +765,25 @@ void AsyncRPCOperation_mergetoaddress::sign_send_raw_transaction(UniValue obj)
         throw JSONRPCError(RPC_WALLET_ERROR, "Missing hex data for signed transaction");
     }
     std::string signedtxn = hexValue.get_str();
-
-    // Send the signed transaction
-    if (!testmode) {
-        params.clear();
-        params.setArray();
-        params.push_back(signedtxn);
-        UniValue sendResultValue = sendrawtransaction(params, false);
-        if (sendResultValue.isNull()) {
-            throw JSONRPCError(RPC_WALLET_ERROR, "Send raw transaction did not return an error or a txid.");
-        }
-
-        std::string txid = sendResultValue.get_str();
-
-        UniValue o(UniValue::VOBJ);
-        o.push_back(Pair("txid", txid));
-        set_result(o);
-    } else {
-        // Test mode does not send the transaction to the network.
-
-        CDataStream stream(ParseHex(signedtxn), SER_NETWORK, PROTOCOL_VERSION);
-        CTransaction tx;
-        stream >> tx;
-
-        UniValue o(UniValue::VOBJ);
-        o.push_back(Pair("test", 1));
-        o.push_back(Pair("txid", tx.GetHash().ToString()));
-        o.push_back(Pair("hex", signedtxn));
-        set_result(o);
-    }
-
-    // Keep the signed transaction so we can hash to the same txid
     CDataStream stream(ParseHex(signedtxn), SER_NETWORK, PROTOCOL_VERSION);
     CTransaction tx;
     stream >> tx;
     tx_ = tx;
+    // Send the signed transaction
+    if (!testmode) {
+        CWalletTx wtx(pwalletMain, tx_);
+        pwalletMain->CommitTransaction(wtx, boost::none);
+        UniValue o(UniValue::VOBJ);
+        o.push_back(Pair("txid", tx_.GetHash().ToString()));
+        set_result(o);
+    } else {
+        // Test mode does not send the transaction to the network.
+        UniValue o(UniValue::VOBJ);
+        o.push_back(Pair("test", 1));
+        o.push_back(Pair("txid", tx_.GetHash().ToString()));
+        o.push_back(Pair("hex", signedtxn));
+        set_result(o);
+    }
 }
 
 
