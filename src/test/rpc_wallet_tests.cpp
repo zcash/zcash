@@ -1302,7 +1302,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_taddr_to_sapling)
     pwalletMain->AddToWallet(wtx, true, NULL);
 
     // Context that z_sendmany requires
-    auto builder = TransactionBuilder(consensusParams, nextBlockHeight, pwalletMain);
+    auto builder = TransactionBuilder(consensusParams, nextBlockHeight, expiryDelta, pwalletMain);
     mtx = CreateNewContextualCMutableTransaction(consensusParams, nextBlockHeight);
 
     std::vector<SendManyRecipient> recipients = { SendManyRecipient(zaddr1, 1 * COIN, "ABCD") };
