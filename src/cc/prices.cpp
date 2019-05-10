@@ -204,7 +204,7 @@ uint8_t prices_costbasisopretdecode(CScript scriptPubKey,uint256 &bettxid,CPubKe
 CScript prices_finalopret(bool isRekt, uint256 bettxid, CPubKey pk, int32_t lastheight, int64_t costbasis, int64_t lastprice, int64_t liquidationprice, int64_t equity, int64_t exitfee)
 {
     CScript opret;
-    opret << OP_RETURN << E_MARSHAL(ss << EVAL_PRICES << (isRekt ? 'F' : 'R') << bettxid << pk << lastheight << costbasis << lastprice << liquidationprice << equity << exitfee);
+    opret << OP_RETURN << E_MARSHAL(ss << EVAL_PRICES << (isRekt ? 'R' : 'F') << bettxid << pk << lastheight << costbasis << lastprice << liquidationprice << equity << exitfee);
     return(opret);
 }
 
@@ -1686,6 +1686,9 @@ int32_t prices_getbetinfo(uint256 bettxid, BetInfo &betinfo)
                 vscript_t vopret;
                 if (myGetTransaction(finaltxid, finaltx, hashBlock) && finaltx.vout.size() > 0  && PricesCheckOpret(finaltx, vopret) != 0)       {
                     uint8_t funcId = prices_finalopretdecode(finaltx.vout.back().scriptPubKey, betinfo.txid, betinfo.pk, betinfo.lastheight, betinfo.averageCostbasis, betinfo.lastprice, betinfo.liquidationprice, betinfo.equity, betinfo.exitfee);
+                    if (funcId == 0)
+                        return -3;
+
                     betinfo.isRekt = (funcId == 'R');  
 
                     return 0;
