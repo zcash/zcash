@@ -125,6 +125,10 @@ typedef struct TotalFund {
     int64_t totalRekt;
     int64_t totalEquity;
 
+    TotalFund() {
+        totalFund = totalBets = totalRekt = totalEquity = 0;
+    }
+
 } TotalFund;
 
 int32_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t height, int16_t leverage, std::vector<uint16_t> vec, int64_t positionsize, int64_t &profits, int64_t &outprice);
@@ -2198,6 +2202,10 @@ void prices_getorderbook(std::map<std::string, std::vector<BetInfo> > & bookmatc
 
     // calc total fund amount 
     fundTotals.totalFund = 0;
+    fundTotals.totalRekt = 0;
+    fundTotals.totalEquity = 0;
+    fundTotals.totalBets = 0;
+
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > addressCCunspents;
     SetCCunspents(addressCCunspents, cp->unspendableCCaddr, true);  // cc marker
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it = addressCCunspents.begin(); it != addressCCunspents.end(); it++)
@@ -2275,7 +2283,7 @@ static bool prices_isacceptableamount(const std::vector<uint16_t> &vecparsed, in
     prices_getorderbook(matchedBook, matchedTotals, fundTotals);
     std::string pricename = findMatchedBook(vecparsed, matchedBook);
     if (!pricename.empty()) {
-        std::cerr << "prices_isacceptableamount() found matched book=" << pricename << " diffLeveragedPosition=" << matchedTotals[pricename].diffLeveragedPosition << "expr=" << prices_getsourceexpression(vecparsed) << std::endl;
+        std::cerr << "prices_isacceptableamount() found matched book=" << pricename << " diffLeveragedPosition=" << matchedTotals[pricename].diffLeveragedPosition << " expr=" << prices_getsourceexpression(vecparsed) << std::endl;
         // could fit into leveraged amount
         if (prices_ispositionup(vecparsed, leverage) && amount*abs(leverage) + matchedTotals[pricename].diffLeveragedPosition <= 0) {
             std::cerr << "prices_isacceptableamount() could fit into opposite negative lev amount" << std::endl;
