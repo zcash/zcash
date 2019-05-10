@@ -3921,7 +3921,7 @@ UniValue z_setmigration(const UniValue& params, bool fHelp) {
             "Sprout balance, this process may take several weeks. The migration works by sending, up to 5, as many\n"
             "transactions as possible whenever the blockchain reaches a height equal to 499 modulo 500. The transaction\n"
             "amounts are picked according to the random distribution specified in ZIP 308. The migration will end once\n"
-            "the wallet’s Sprout balance is below" + strprintf("%s %s", FormatMoney(CENT), CURRENCY_UNIT) + ".\n"
+            "the wallet’s Sprout balance is below " + strprintf("%s %s", FormatMoney(CENT), CURRENCY_UNIT) + ".\n"
             "\nArguments:\n"
             "1. enabled  (boolean, required) 'true' or 'false' to enable or disable respectively.\n"
         );
