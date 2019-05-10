@@ -1633,7 +1633,7 @@ int32_t prices_getbetinfo(uint256 bettxid, BetInfo &betinfo)
 
         // TODO: forget old tx
         CBlockIndex *bi = komodo_getblockindex(hashBlock);
-        if (bi && bi->GetHeight() > 5342)
+        if (bi && bi->GetHeight() < 5342)
             return -5;
 
         OneBetData bet1;
@@ -2011,7 +2011,7 @@ UniValue PricesList(uint32_t filter, CPubKey mypk)
 
             // TODO: forget old tx
             CBlockIndex *bi = komodo_getblockindex(hashBlock);
-            if (bi && bi->GetHeight() > 5342)
+            if (bi && bi->GetHeight() < 5342)
                 return;
 
             bool bAppend = false;
