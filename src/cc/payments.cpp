@@ -716,6 +716,7 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
                 if ( funcid == 'C' )
                 {
                     // normal payments
+                    m = txidoprets.size();
                     for (i=0; i<m; i++)
                     {
                         std::vector<uint8_t> scriptPubKey,opret;
@@ -1108,7 +1109,7 @@ UniValue PaymentsCreate(struct CCcontract_info *cp,char *jsonstr)
         for (i=0; i<txidoprets.size(); i++)
         {
             std::vector<uint8_t> scriptPubKey,opret; int64_t allocation;
-            fprintf(stderr, "txid.%s\n",txidoprets[i].GetHex().c_str());
+            //fprintf(stderr, "txid.%s\n",txidoprets[i].GetHex().c_str());
             if ( myGetTransaction(txidoprets[i],tx,hashBlock) != 0 && tx.vout.size() > 1 && DecodePaymentsTxidOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,allocation,scriptPubKey,opret) == 'T' )
             {
                 totalallocations += allocation;
