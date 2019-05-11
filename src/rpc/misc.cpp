@@ -1432,8 +1432,8 @@ UniValue getsnapshot(const UniValue& params, bool fHelp)
 
 UniValue getaddresstxids(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() > 2)
-        throw runtime_error(
+    if (fHelp || params.size() > 2 || params.size() < 1)
+        throw runtime_error
             "getaddresstxids (ccvout)\n"
             "\nReturns the txids for an address(es) (requires addressindex to be enabled).\n"
             "\nArguments:\n"
