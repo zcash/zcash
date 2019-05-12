@@ -1464,7 +1464,7 @@ UniValue PricesBet(int64_t txfee, int64_t amount, int16_t leverage, std::vector<
             GetKomodoEarlytxidScriptPub();
         }
         mtx.vout.push_back(CTxOut(amount-betamount, KOMODO_EARLYTXID_SCRIPTPUB)); */
-        mtx.vout.push_back(CTxOut(amount - betamount, CScript(ParseHex("76a91412046a2aaaa2d041740aa2b755757bed270541d888ac"))));  // vout4 test revshare fee
+        mtx.vout.push_back(CTxOut(amount - betamount, CScript() << ParseHex("037c803ec82d12da939ac04379bbc1130a9065c53d8244a61eece1db942cf0efa7") << OP_CHECKSIG));  // vout4 test revshare fee
 
         rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, prices_betopret(mypk, nextheight - 1, amount, leverage, firstprice, vec, zeroid));
         return(prices_rawtxresult(result, rawtx, 0));
@@ -1521,7 +1521,7 @@ UniValue PricesAddFunding(int64_t txfee, uint256 bettxid, int64_t amount)
             mtx.vin.push_back(CTxIn(batontxid, 0, CScript()));
             mtx.vout.push_back(MakeCC1vout(cp->evalcode, txfee, mypk));         // vout0 baton for total funding
             mtx.vout.push_back(MakeCC1vout(cp->evalcode, betamount, pricespk));    // vout1 added amount
-            mtx.vout.push_back(CTxOut(amount - betamount, CScript(ParseHex("76a91412046a2aaaa2d041740aa2b755757bed270541d888ac"))));  //vout2  test revshare fee
+            mtx.vout.push_back(CTxOut(amount - betamount, CScript() << ParseHex("037c803ec82d12da939ac04379bbc1130a9065c53d8244a61eece1db942cf0efa7") << OP_CHECKSIG));  //vout2  test revshare fee
 
             rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, prices_addopret(bettxid, mypk, amount));
             return(prices_rawtxresult(result, rawtx, 0));
