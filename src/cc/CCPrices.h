@@ -41,6 +41,8 @@ extern CScript KOMODO_EARLYTXID_SCRIPTPUB;
 #define PRICES_NORMFACTOR   (int64_t)(SATOSHIDEN)
 #define PRICES_POINTFACTOR   (int64_t)10000
 
+#define PRICES_SUBREVSHAREFEE(amount) ((amount) / 199 * 200)
+
 bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn);
 
 // CCcustom

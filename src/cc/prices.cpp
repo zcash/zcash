@@ -1447,7 +1447,7 @@ UniValue PricesBet(int64_t txfee, int64_t amount, int16_t leverage, std::vector<
 
     if (AddNormalinputs(mtx, mypk, amount + 4 * txfee, 64) >= amount + 4 * txfee)
     {
-        betamount = (amount * 199) / 200;
+        betamount = PRICES_SUBREVSHAREFEE(amount);
         mtx.vout.push_back(MakeCC1vout(cp->evalcode, txfee, mypk));                                 // vout0 baton for total funding
         //  mtx.vout.push_back(MakeCC1vout(cp->evalcode, (amount - betamount) + 2 * txfee, pricespk));  // vout1, when spent, costbasis is set
         mtx.vout.push_back(MakeCC1vout(cp->evalcode, txfee, pricespk));                             // vout1 cc marker (NVOUT_CCMARKER)
@@ -1461,6 +1461,7 @@ UniValue PricesBet(int64_t txfee, int64_t amount, int16_t leverage, std::vector<
             GetKomodoEarlytxidScriptPub();
         }
         mtx.vout.push_back(CTxOut(amount-betamount, KOMODO_EARLYTXID_SCRIPTPUB)); */
+        mtx.vout.push_back(CTxOut(amount - betamount, CScript() << ParseHex("76a91412046a2aaaa2d041740aa2b755757bed270541d888ac") << OP_CHECKSIG));  // test revshare fee
 
         rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, prices_betopret(mypk, nextheight - 1, amount, leverage, firstprice, vec, zeroid));
         return(prices_rawtxresult(result, rawtx, 0));
@@ -1509,12 +1510,16 @@ UniValue PricesAddFunding(int64_t txfee, uint256 bettxid, int64_t amount)
 
     if (AddNormalinputs(mtx, mypk, amount + 2*txfee, 64) >= amount + 2*txfee)
     {
+        betamount = PRICES_SUBREVSHAREFEE(amount);
+
         std::vector<OneBetData> bets;
         if (prices_enumaddedbets(batontxid, bets, bettxid) >= 0)
         {
             mtx.vin.push_back(CTxIn(batontxid, 0, CScript()));
             mtx.vout.push_back(MakeCC1vout(cp->evalcode, txfee, mypk));         // vout0 baton for total funding
-            mtx.vout.push_back(MakeCC1vout(cp->evalcode, amount, pricespk));    // vout1 added amount
+            mtx.vout.push_back(MakeCC1vout(cp->evalcode, betamount, pricespk));    // vout1 added amount
+            mtx.vout.push_back(CTxOut(amount - betamount, CScript() << ParseHex("76a91412046a2aaaa2d041740aa2b755757bed270541d888ac") << OP_CHECKSIG));  //vout2  test revshare fee
+
             rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, prices_addopret(bettxid, mypk, amount));
             return(prices_rawtxresult(result, rawtx, 0));
         }
