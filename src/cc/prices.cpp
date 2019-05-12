@@ -238,8 +238,11 @@ static bool ValidateBetTx(struct CCcontract_info *cp, Eval *eval, const CTransac
     int16_t leverage;
     CPubKey pk, pricespk; 
     std::vector<uint16_t> vec;
+
+    // check payment cc config:
     if ( ASSETCHAINS_EARLYTXIDCONTRACT == EVAL_PRICES && KOMODO_EARLYTXID_SCRIPTPUB.size() == 0 )
         GetKomodoEarlytxidScriptPub();
+
     if (bettx.vout.size() < 5 || bettx.vout.size() > 6)
         return eval->Invalid("incorrect vout number for bet tx");
 
@@ -260,7 +263,7 @@ static bool ValidateBetTx(struct CCcontract_info *cp, Eval *eval, const CTransac
         return eval->Invalid("the fee was paid to wrong address.");
 
     int64_t betamount = bettx.vout[2].nValue;
-    if (betamount != (positionsize * 199) / 200) {
+    if (betamount != PRICES_SUBREVSHAREFEE(positionsize)) {
         return eval->Invalid("invalid position size in the opreturn");
     }
 
@@ -289,7 +292,11 @@ static bool ValidateAddFundingTx(struct CCcontract_info *cp, Eval *eval, const C
     CPubKey pk, pricespk;
     vscript_t vintxOpret;
 
-    if (addfundingtx.vout.size() < 3 || addfundingtx.vout.size() > 4)
+    // check payment cc config:
+    if (ASSETCHAINS_EARLYTXIDCONTRACT == EVAL_PRICES && KOMODO_EARLYTXID_SCRIPTPUB.size() == 0)
+        GetKomodoEarlytxidScriptPub();
+
+    if (addfundingtx.vout.size() < 4 || addfundingtx.vout.size() > 5)
         return eval->Invalid("incorrect vout number for add funding tx");
 
     vscript_t opret;
@@ -310,6 +317,11 @@ static bool ValidateAddFundingTx(struct CCcontract_info *cp, Eval *eval, const C
         return eval->Invalid("cannot validate vout0 in add funding tx with pk from opreturn");
     if (MakeCC1vout(cp->evalcode, addfundingtx.vout[1].nValue, pricespk) != addfundingtx.vout[1])
         return eval->Invalid("cannot validate vout1 in add funding tx with global pk");
+
+    int64_t betamount = addfundingtx.vout[2].nValue;
+    if (betamount != PRICES_SUBREVSHAREFEE(amount)) {
+        return eval->Invalid("invalid position size in the opreturn");
+    }
 
     return true;
 }
