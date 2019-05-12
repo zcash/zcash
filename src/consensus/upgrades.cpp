@@ -68,6 +68,8 @@ struct EquihashInfo EquihashUpgradeInfo[Consensus::MAX_NETWORK_UPGRADES] = {
     },
     // UPGRADE YCASH
     {
+        // The PoW change code is based on the work done by @bitcartel 
+        // See: https://github.com/zcash/zcash/issues/1211#issuecomment-379882647
         /* N = */ 192,
         /* K = */   7,
     }
