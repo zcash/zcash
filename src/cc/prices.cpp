@@ -2272,13 +2272,13 @@ void prices_getorderbook(std::map<std::string, std::vector<BetInfo> > & bookmatc
         int64_t totalLeveragedPositionDown = 0;
 
         for (int i = 0; i < m.second.size(); i++) {
-            int64_t betspos = 0;
-            for (auto bet : m.second[i].bets) betspos += bet.positionsize;
+            int64_t totalPos = 0;
+            for (auto bet : m.second[i].bets) totalPos += bet.positionsize;
             m.second[i].isUp = prices_ispositionup(m.second[i].vecparsed, m.second[i].leverage);
             if (m.second[i].isUp)
-                totalLeveragedPositionUp += betspos * abs(m.second[i].leverage);
+                totalLeveragedPositionUp += totalPos * abs(m.second[i].leverage);
             else
-                totalLeveragedPositionDown += betspos * abs(m.second[i].leverage);
+                totalLeveragedPositionDown += totalPos * abs(m.second[i].leverage);
             //std::cerr << "PricesGetOrderbook 0 m.second[i].isUp=" << m.second[i].isUp << " i=" << i << std::endl;
 
         }
@@ -2347,8 +2347,12 @@ UniValue PricesGetOrderbook()
         UniValue resbook(UniValue::VARR);
         for (int i = 0; i < m.second.size(); i++) {
             UniValue entry(UniValue::VOBJ);
+
+            int64_t totalPos = 0;
+            for (auto bet : m.second[i].bets) totalPos += bet.positionsize;
             entry.push_back(Pair("isOpen", (m.second[i].isOpen ? 1 : 0 )));
             entry.push_back(Pair("expression", prices_getsourceexpression(m.second[i].vecparsed)));
+            entry.push_back(Pair("positionsize", totalPos));
             entry.push_back(Pair("costbasis", m.second[i].averageCostbasis));
             entry.push_back(Pair("leverage", m.second[i].leverage));
             entry.push_back(Pair("equity", m.second[i].equity));
