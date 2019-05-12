@@ -1451,6 +1451,14 @@ UniValue PricesBet(int64_t txfee, int64_t amount, int16_t leverage, std::vector<
     if (AddNormalinputs(mtx, mypk, amount + 4 * txfee, 64) >= amount + 4 * txfee)
     {
         betamount = PRICES_SUBREVSHAREFEE(amount);
+
+        if( amount - betamount < PRICES_REVSHAREDUST)   {
+            result.push_back(Pair("result", "error"));
+            result.push_back(Pair("error", "bet amount too small"));
+            return(result);
+        }
+
+
         mtx.vout.push_back(MakeCC1vout(cp->evalcode, txfee, mypk));                                 // vout0 baton for total funding
         //  mtx.vout.push_back(MakeCC1vout(cp->evalcode, (amount - betamount) + 2 * txfee, pricespk));  // vout1, when spent, costbasis is set
         mtx.vout.push_back(MakeCC1vout(cp->evalcode, txfee, pricespk));                             // vout1 cc marker (NVOUT_CCMARKER)
@@ -1514,6 +1522,11 @@ UniValue PricesAddFunding(int64_t txfee, uint256 bettxid, int64_t amount)
     if (AddNormalinputs(mtx, mypk, amount + 2*txfee, 64) >= amount + 2*txfee)
     {
         betamount = PRICES_SUBREVSHAREFEE(amount);
+        if (amount - betamount < PRICES_REVSHAREDUST) {
+            result.push_back(Pair("result", "error"));
+            result.push_back(Pair("error", "bet amount too small"));
+            return(result);
+        }
 
         std::vector<OneBetData> bets;
         if (prices_enumaddedbets(batontxid, bets, bettxid) >= 0)

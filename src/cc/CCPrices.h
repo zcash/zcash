@@ -38,9 +38,10 @@ extern CScript KOMODO_EARLYTXID_SCRIPTPUB;
 #define PRICES_MMM (KOMODO_MAXPRICES * 7)               //          0011 1000 0000 0000
 #define PRICES_DDD (KOMODO_MAXPRICES * 8)               //          0100 0000 0000 0000
 
-#define PRICES_NORMFACTOR   (int64_t)(SATOSHIDEN)
-#define PRICES_POINTFACTOR   (int64_t)10000
+//#define PRICES_NORMFACTOR   (int64_t)(SATOSHIDEN)
+//#define PRICES_POINTFACTOR   (int64_t)10000
 
+#define PRICES_REVSHAREDUST 10000
 #define PRICES_SUBREVSHAREFEE(amount) ((amount) * 199 / 200)
 
 bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn);
