@@ -405,8 +405,9 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
 
                 // Check vouts go to the right place and pay the right amounts. 
                 int64_t amount = 0, checkamount; int32_t n = 0; 
-                checkamount = tx.GetValueOut() - change - actualtxfee; //PAYMENTS_TXFEE;
-                fprintf(stderr, "totalvalueout.%li change.%li txfee.%li checkamount.%li\n",tx.GetValueOut(), change, actualtxfee, checkamount);
+                checkamount = tx.GetValueOut() - change - actualtxfee - PAYMENTS_TXFEE;
+                int64_t temptst = mpz_get_si(mpzTotalAllocations);
+                fprintf(stderr, "validation checkamount.%li totalallocations.%li\n",checkamount,temptst);
                 mpz_t mpzCheckamount; mpz_init(mpzCheckamount); mpz_set_si(mpzCheckamount,checkamount); 
                 for (i = 1; i < (fHasOpret ? tx.vout.size()-2 : tx.vout.size()-1); i++) 
                 {
@@ -893,6 +894,8 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
                     totalamountsent += mtx.vout[i+1].nValue;
                 } 
                 if ( totalamountsent < amount ) newamount = totalamountsent;
+                int64_t temptst = mpz_get_si(mpzTotalAllocations);
+                fprintf(stderr, "checkamount RPC.%li totalallocations.%li\n",totalamountsent, temptst);
                 mpz_clear(mpzAmount); mpz_clear(mpzTotalAllocations);
             }
             else
@@ -906,9 +909,7 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
             if ( (inputsum= AddPaymentsInputs(true,0,cp,mtx,txidpk,newamount+2*PAYMENTS_TXFEE,CC_MAXVINS/2,createtxid,lockedblocks,minrelease,blocksleft)) >= newamount+2*PAYMENTS_TXFEE )
             {
                 std::string rawtx;
-                fprintf(stderr, "inputsum.%li - newamount.%li = ",inputsum,newamount);
                 mtx.vout[0].nValue = inputsum - newamount - 2*PAYMENTS_TXFEE;
-                fprintf(stderr, "change.%li\n", mtx.vout[0].nValue);
                 mtx.vout.push_back(CTxOut(PAYMENTS_TXFEE,CScript() << ParseHex(HexStr(txidpk)) << OP_CHECKSIG));
                 GetCCaddress1of2(cp,destaddr,Paymentspk,txidpk);
                 CCaddr1of2set(cp,Paymentspk,txidpk,cp->CCpriv,destaddr);
