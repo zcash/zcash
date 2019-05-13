@@ -443,7 +443,7 @@ bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
 {
     vscript_t vopret;
 
-    if (strcmp(ASSETCHAINS_SYMBOL, "REKT0") == 0 && chainActive.Height() < 2965)
+    if (strcmp(ASSETCHAINS_SYMBOL, "REKT0") == 0 && chainActive.Height() < 5851)
         return true;
     // check basic opret rules:
     if (PricesCheckOpret(tx, vopret) == 0)
