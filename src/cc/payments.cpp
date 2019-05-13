@@ -426,8 +426,9 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
                         test = mpz_get_si(mpzAllocation);
                         mpz_clear(mpzAllocation);
                     }
+                    //fprintf(stderr, "vout %i test.%li nValue.%li\n", i, test, tx.vout[i].nValue);
                     // Vairance of 1 sat is allowed, for rounding errors.
-                    if ( test >= tx.vout[i].nValue+1 && test <= tx.vout[i].nValue-1 )
+                    if ( test > tx.vout[i].nValue+1 || test < tx.vout[i].nValue-1 )
                     {
                         fprintf(stderr, "vout.%i test.%li vs nVlaue.%li\n",i, test, tx.vout[i].nValue);
                         return(eval->Invalid("amounts do not match"));
