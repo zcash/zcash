@@ -190,7 +190,6 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
                     if (!mempool.mapTx.count(txin.prevout.hash))
                     {
                         LogPrintf("ERROR: mempool transaction missing input\n");
-                        if (fDebug) assert("mempool transaction missing input" == 0);
                         fMissingInputs = true;
                         if (porphan)
                             vOrphan.pop_back();
