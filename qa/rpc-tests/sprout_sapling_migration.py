@@ -45,9 +45,10 @@ class SproutSaplingMigration(BitcoinTestFramework):
         # Add migration parameters to nodes[0]
         extra_args[0] = extra_args[0] + [
             '-migration',
-            '-migrationdestaddress=' + SAPLING_ADDR
+            '-migrationdestaddress=' + SAPLING_ADDR,
+            '-debug=zrpcunsafe'
         ]
-        assert_equal(4, len(extra_args[0]))
+        assert_equal(5, len(extra_args[0]))
         assert_equal(2, len(extra_args[1]))
         return start_nodes(4, self.options.tmpdir, extra_args)
 
@@ -87,6 +88,8 @@ class SproutSaplingMigration(BitcoinTestFramework):
         assert_equal('saplingmigration', result['method'])
         assert_equal(target_height, result['target_height'])
         assert_equal(1, result['result']['num_tx_created'])
+        assert_equal(1, len(result['result']['migration_txids']))
+        assert_true(result['result']['amount_migrated'] > Decimal('0'))
 
         assert_equal(0, len(node.getrawmempool()), "mempool size at 495 % 500")
 
