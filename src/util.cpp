@@ -465,7 +465,7 @@ boost::filesystem::path GetDefaultDataDir()
     // Unix: ~/.zcash
 #ifdef WIN32
     // Windows
-    return GetSpecialFolderPath(CSIDL_APPDATA) / "Zcash";
+    return GetSpecialFolderPath(CSIDL_APPDATA) / "Ycash";
 #else
     fs::path pathRet;
     char* pszHome = getenv("HOME");
@@ -477,10 +477,10 @@ boost::filesystem::path GetDefaultDataDir()
     // Mac
     pathRet /= "Library/Application Support";
     TryCreateDirectory(pathRet);
-    return pathRet / "Zcash";
+    return pathRet / "Ycash";
 #else
     // Unix
-    return pathRet / ".zcash";
+    return pathRet / ".ycash";
 #endif
 #endif
 }
@@ -597,7 +597,7 @@ void ClearDatadirCache()
 
 boost::filesystem::path GetConfigFile()
 {
-    boost::filesystem::path pathConfigFile(GetArg("-conf", "zcash.conf"));
+    boost::filesystem::path pathConfigFile(GetArg("-conf", "ycash.conf"));
     if (!pathConfigFile.is_complete())
         pathConfigFile = GetDataDir(false) / pathConfigFile;
 
@@ -616,7 +616,7 @@ void ReadConfigFile(map<string, string>& mapSettingsRet,
 
     for (boost::program_options::detail::config_file_iterator it(streamConfig, setOptions), end; it != end; ++it)
     {
-        // Don't overwrite existing settings so command line settings override zcash.conf
+        // Don't overwrite existing settings so command line settings override ycash.conf
         string strKey = string("-") + it->string_key;
         if (mapSettingsRet.count(strKey) == 0)
         {

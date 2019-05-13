@@ -138,7 +138,7 @@ Notify the Zcash DevOps engineer/sysadmin that the release has been tagged. They
 * often the same server can be re-used, and the role idempotently handles upgrades, but if not then they also need to update DNS records
 * possible manual steps: blowing away the `testnet3` dir, deleting old parameters, restarting DNS seeder
 
-Then, verify that nodes can connect to the testnet server, and update the guide on the wiki to ensure the correct hostname is listed in the recommended zcash.conf.
+Then, verify that nodes can connect to the testnet server, and update the guide on the wiki to ensure the correct hostname is listed in the recommended ycash.conf.
 
 ### Update the 1.0 User Guide
 

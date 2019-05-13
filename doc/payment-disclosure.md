@@ -14,7 +14,7 @@ This is an experimental feature.  Enable it by launching `zcashd` with flags:
 
     zcashd -experimentalfeatures -paymentdisclosure -debug=paymentdisclosure -txindex=1
 
-These flags can also be set as options in `zcash.conf`.
+These flags can also be set as options in `ycash.conf`.
 
 All nodes that generate or validate payment disclosures must run with `txindex=1` enabled.
 

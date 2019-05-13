@@ -132,7 +132,7 @@ void CreatePidFile(const boost::filesystem::path &path, pid_t pid);
 #endif
 class missing_zcash_conf : public std::runtime_error {
 public:
-    missing_zcash_conf() : std::runtime_error("Missing zcash.conf") { }
+    missing_zcash_conf() : std::runtime_error("Missing ycash.conf") { }
 };
 void ReadConfigFile(std::map<std::string, std::string>& mapSettingsRet, std::map<std::string, std::vector<std::string> >& mapMultiSettingsRet);
 #ifdef WIN32

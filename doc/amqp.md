@@ -103,7 +103,7 @@ the topic is `hashtx` (no null terminator) and the body is the hexadecimal
 transaction hash (32 bytes).  This transaction hash and the block hash
 found in `hashblock` are in RPC byte order.
 
-These options can also be provided in zcash.conf.
+These options can also be provided in ycash.conf.
 
 Please see `contrib/amqp/amqp_sub.py` for a working example of an
 AMQP server listening for messages.

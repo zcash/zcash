@@ -75,7 +75,7 @@ def initialize_datadir(dirname, n):
     datadir = os.path.join(dirname, "node"+str(n))
     if not os.path.isdir(datadir):
         os.makedirs(datadir)
-    with open(os.path.join(datadir, "zcash.conf"), 'w') as f:
+    with open(os.path.join(datadir, "ycash.conf"), 'w') as f:
         f.write("regtest=1\n")
         f.write("showmetrics=0\n")
         f.write("rpcuser=rt\n")
@@ -144,7 +144,7 @@ def initialize_chain(test_dir):
         from_dir = os.path.join("cache", "node"+str(i))
         to_dir = os.path.join(test_dir,  "node"+str(i))
         shutil.copytree(from_dir, to_dir)
-        initialize_datadir(test_dir, i) # Overwrite port/rpcport in zcash.conf
+        initialize_datadir(test_dir, i) # Overwrite port/rpcport in ycash.conf
 
 def initialize_chain_clean(test_dir, num_nodes):
     """
