@@ -731,7 +731,7 @@ bool komodo_dailysnapshot(int32_t height)
     std::sort(vAddressSnapshot.rbegin(), vAddressSnapshot.rend());
     //for (int j = 0; j < 50; j++) 
     //    fprintf(stderr, "j.%i address.%s nValue.%li\n",j, CBitcoinAddress(vAddressSnapshot[j].second).ToString().c_str(), vAddressSnapshot[j].first );
-    // include only top 5000 address.
+    // include only top 3999 address.
     if ( vAddressSnapshot.size() > 3999 ) vAddressSnapshot.resize(3999);
     lastSnapShotHeight = undo_height; 
     fprintf(stderr, "vAddressSnapshot.size.%li\n", vAddressSnapshot.size());
@@ -6469,7 +6469,7 @@ bool LoadExternalBlockFile(FILE* fileIn, CDiskBlockPos *dbp)
     try {
         // This takes over fileIn and calls fclose() on it in the CBufferedFile destructor
         //CBufferedFile blkdat(fileIn, 2*MAX_BLOCK_SIZE, MAX_BLOCK_SIZE+8, SER_DISK, CLIENT_VERSION);
-        CBufferedFile blkdat(fileIn, 32*MAX_BLOCK_SIZE(10000000), MAX_BLOCK_SIZE(10000000)+8, SER_DISK, CLIENT_VERSION);
+        CBufferedFile blkdat(fileIn, 2*MAX_BLOCK_SIZE(10000000), MAX_BLOCK_SIZE(10000000)+8, SER_DISK, CLIENT_VERSION);
         uint64_t nRewind = blkdat.GetPos();
         while (!blkdat.eof()) {
             boost::this_thread::interruption_point();
@@ -6503,7 +6503,7 @@ bool LoadExternalBlockFile(FILE* fileIn, CDiskBlockPos *dbp)
                 blkdat.SetPos(nBlockPos);
                 CBlock block;
                 blkdat >> block;
-                nRewind = blkdat.GetPos();
+                nRewind = blkdat.GetPos(); 
 
                 // detect out of order blocks, and store them for later
                 uint256 hash = block.GetHash();

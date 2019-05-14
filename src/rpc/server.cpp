@@ -463,7 +463,15 @@ static const CRPCCommand vRPCCommands[] =
     { "prices",       "prices",      &prices,      true },
     { "prices",       "pricesaddress",      &pricesaddress,      true },
     { "prices",       "priceslist",         &priceslist,         true },
+    { "prices",       "mypriceslist",         &mypriceslist,         true },
     { "prices",       "pricesinfo",         &pricesinfo,         true },
+    { "prices",       "pricesbet",         &pricesbet,         true },
+    { "prices",       "pricessetcostbasis",         &pricessetcostbasis,         true },
+    { "prices",       "pricescashout",         &pricescashout,         true },
+    { "prices",       "pricesrekt",         &pricesrekt,         true },
+    { "prices",       "pricesaddfunding",         &pricesaddfunding,         true },
+    { "prices",       "pricesgetorderbook",         &pricesgetorderbook,         true },
+
 
     // Pegs
     { "pegs",       "pegsaddress",   &pegsaddress,      true },
@@ -484,6 +492,7 @@ static const CRPCCommand vRPCCommands[] =
     { "payments",       "paymentstxidopret", &payments_txidopret,    true },
     { "payments",       "paymentscreate",    &payments_create,       true },
     { "payments",       "paymentsairdrop",   &payments_airdrop,      true },
+    { "payments",       "paymentsairdroptokens",   &payments_airdroptokens,      true },
     { "payments",       "paymentslist",      &payments_list,         true },
     { "payments",       "paymentsinfo",      &payments_info,         true },
     { "payments",       "paymentsfund",      &payments_fund,         true },
@@ -569,10 +578,6 @@ static const CRPCCommand vRPCCommands[] =
     { "util",             "reconsiderblock",        &reconsiderblock,        true  },
     /* Not shown in help */
     { "hidden",             "setmocktime",            &setmocktime,            true  },
-	{ "hidden",             "test_ac",                &test_ac,            true },
-	{ "hidden",             "test_heirmarker",        &test_heirmarker,    true }, 
-	{ "hidden",             "test_proof",        &test_proof,    true },
-    { "hidden",             "test_burntx",            &test_burntx,    true },
 
 
 #ifdef ENABLE_WALLET

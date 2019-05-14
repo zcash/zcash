@@ -273,6 +273,7 @@ extern UniValue oraclesdata(const UniValue& params, bool fHelp);
 extern UniValue oraclessamples(const UniValue& params, bool fHelp);
 extern UniValue pricesaddress(const UniValue& params, bool fHelp);
 extern UniValue priceslist(const UniValue& params, bool fHelp);
+extern UniValue mypriceslist(const UniValue& params, bool fHelp);
 extern UniValue pricesinfo(const UniValue& params, bool fHelp);
 extern UniValue pegsaddress(const UniValue& params, bool fHelp);
 extern UniValue marmaraaddress(const UniValue& params, bool fHelp);
@@ -291,6 +292,7 @@ extern UniValue payments_merge(const UniValue& params, bool fHelp);
 extern UniValue payments_txidopret(const UniValue& params, bool fHelp);
 extern UniValue payments_create(const UniValue& params, bool fHelp);
 extern UniValue payments_airdrop(const UniValue& params, bool fHelp);
+extern UniValue payments_airdroptokens(const UniValue& params, bool fHelp);
 extern UniValue payments_info(const UniValue& params, bool fHelp);
 extern UniValue payments_list(const UniValue& params, bool fHelp);
 
@@ -502,11 +504,13 @@ extern UniValue paxdeposit(const UniValue& params, bool fHelp);
 extern UniValue paxwithdraw(const UniValue& params, bool fHelp);
 
 extern UniValue prices(const UniValue& params, bool fHelp);
+extern UniValue pricesbet(const UniValue& params, bool fHelp);
+extern UniValue pricessetcostbasis(const UniValue& params, bool fHelp);
+extern UniValue pricescashout(const UniValue& params, bool fHelp);
+extern UniValue pricesrekt(const UniValue& params, bool fHelp);
+extern UniValue pricesaddfunding(const UniValue& params, bool fHelp);
+extern UniValue pricesgetorderbook(const UniValue& params, bool fHelp);
 
-// test rpc:
-extern UniValue test_ac(const UniValue& params, bool fHelp);
-extern UniValue test_heirmarker(const UniValue& params, bool fHelp);
-extern UniValue test_burntx(const UniValue& params, bool fHelp);
-extern UniValue test_proof(const UniValue& params, bool fHelp);
+
 
 #endif // BITCOIN_RPCSERVER_H
