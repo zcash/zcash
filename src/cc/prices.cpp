@@ -519,7 +519,7 @@ bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
 
         if (prevoutN != 0) {   // check spending rules
             // return eval->Invalid("incorrect vintx vout to spend");
-            std::cerr << "PricesValidate() " << "add fund tx incorrect vout to spend=" << prevoutN << std::endl;
+            std::cerr << "PricesValidate() " << "addfunding tx incorrect vout to spend=" << prevoutN << std::endl;
         }
         break;
 
