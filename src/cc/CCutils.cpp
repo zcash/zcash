@@ -162,7 +162,7 @@ bool CheckTxFee(const CTransaction &tx, uint64_t txfee, uint32_t height, uint64_
     actualtxfee = valuein-tx.GetValueOut();
     if ( actualtxfee > txfee )
     {
-        fprintf(stderr, "actualtxfee.%li vs txfee.%li\n", actualtxfee, txfee);
+        //fprintf(stderr, "actualtxfee.%li vs txfee.%li\n", actualtxfee, txfee);
         return false;
     }
     return true;
