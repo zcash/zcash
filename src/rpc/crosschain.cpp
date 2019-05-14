@@ -1464,8 +1464,10 @@ UniValue getwalletburntransactions(const UniValue& params, bool fHelp)
 
                 // check for corrupted strings (look for non-printable chars) from some older versions 
                 // which caused "couldn't parse reply from server" error on client:
-                if (std::find_if(targetSymbol.begin(), targetSymbol.end(), [](int c) {return !std::isprint(c);}) != targetSymbol.end()) 
-                    targetSymbol = "corrupted";
+                // if (std::find_if(targetSymbol.begin(), targetSymbol.end(), [](int c) {return !std::isprint(c);}) != targetSymbol.end()) 
+                UniValue testval(UniValue::VSTR);
+                if( !testval.read(targetSymbol) )
+                    targetSymbol = "<value corrupted>";
                 
                 entry.push_back(Pair("targetSymbol", targetSymbol));
                 entry.push_back(Pair("targetCCid", std::to_string(targetCCid)));
