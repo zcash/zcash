@@ -292,7 +292,7 @@ int32_t payments_gettokenallocations(int32_t top, int32_t bottom, const std::vec
     /*
     - check tokenid exists.
     - iterate tokenid address and extract all pubkeys, add to map. 
-    - rewind to last notarized height for balances? 
+    - rewind to last notarized height for balances? see main.cpp: line# 660.
     - convert balances to mpz_t and add up totalallocations
     - sort the map into a vector, then convert to the correct output.
     */
@@ -885,6 +885,7 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
                         } 
                         else 
                         {
+                            // NOTE: should make this default behaviour.
                             // truncate off any vouts that are less than minimum. 
                             mtx.vout.resize(i+1);
                             break;
