@@ -21,14 +21,16 @@ See [ZIP308](https://github.com/zcash/zips/blob/master/zip-0308.rst) for full de
 Sprout to Sapling Migration Tool Fixes
 --------------------------------------
 The 2.0.5-1 and 2.0.5-2 releases include fixes to the Sprout to Sapling
-Migration Tool found in testing. For a complete list see the [2.0.5 milestone](https://github.com/zcash/zcash/milestone/79?closed=1)
+Migration Tool found in testing.
+
+For a complete list of changes in 2.0.5, 2.0.5-1 and 2.0.5-2, see the [2.0.5 milestone](https://github.com/zcash/zcash/milestone/79?closed=1).
 
 New consensus rule: Reject blocks that violate turnstile
 --------------------------------------------------------
 In the 2.0.4 release the consensus rules were changed on testnet to enforce a
 consensus rule which marks blocks as invalid if they would lead to a turnstile
 violation in the Sprout or Shielded value pools.
-**This release enforces the consensus rule change on mainnet**
+**This release enforces the consensus rule change on mainnet.**
 
 The motivations and deployment details can be found in the accompanying
 [ZIP draft](https://github.com/zcash/zips/pull/210) and
@@ -42,7 +44,7 @@ Sprout and Sapling turnstile violations. See [PR 3964](https://github.com/zcash/
 Added ARMv8 (AArch64) support. This enables users to build zcash on even more
 devices.
 
-For information on how to build see the [User Guide](https://zcash.readthedocs.io/en/latest/rtd_pages/user_guide.html#build)
+For information on how to build see the [User Guide](https://zcash.readthedocs.io/en/latest/rtd_pages/user_guide.html#build).
 
 Users on the Zcash forum have reported successes with both the Pine64 Rock64Pro
 and Odroid C2 which contain 4GB and 2GB of RAM respectively.
