@@ -1383,9 +1383,13 @@ UniValue getsnapshot(const UniValue& params, bool fHelp)
 
     if (params.size() > 0 && !params[0].isNull()) {
         top = atoi(params[0].get_str().c_str());
-    if (top < 0)
-        //throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, top must be a positive integer");
-        top = -1;
+        if ( top < 0 ) 
+        {
+            if ( KOMODO_SNAPSHOT_INTERVAL == 0 )
+                throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, top must be a positive integer");
+            else 
+                top = -1;
+        }
     }
 
     if ( fHelp || params.size() > 1)
@@ -1432,7 +1436,7 @@ UniValue getsnapshot(const UniValue& params, bool fHelp)
 
 UniValue getaddresstxids(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() > 2)
+    if (fHelp || params.size() > 2 || params.size() < 1)
         throw runtime_error(
             "getaddresstxids (ccvout)\n"
             "\nReturns the txids for an address(es) (requires addressindex to be enabled).\n"

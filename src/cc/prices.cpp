@@ -1380,15 +1380,6 @@ int64_t prices_enumaddedbets(uint256 &batontxid, std::vector<OneBetData> &bets, 
 // pricesbet rpc impl: make betting tx
 UniValue PricesBet(int64_t txfee, int64_t amount, int16_t leverage, std::vector<std::string> synthetic)
 {
-    fprintf(stderr, "assetchains_contract.%i vs eval_prices.%i\n",ASSETCHAINS_EARLYTXIDCONTRACT, EVAL_PRICES);
-    if ( ASSETCHAINS_EARLYTXIDCONTRACT == EVAL_PRICES && KOMODO_EARLYTXID_SCRIPTPUB.size() == 0 )
-    {
-        // Lock here, as in validation we cannot call lock in the function itself.
-        // may not be needed as the validation call to update the global, is called in a LOCK already, and it can only update there and here.
-        LOCK(cs_main);
-        GetKomodoEarlytxidScriptPub();
-    }
-    /*
     int32_t nextheight = komodo_nextheight();
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), nextheight); UniValue result(UniValue::VOBJ);
     struct CCcontract_info *cp, C; 
@@ -1439,7 +1430,6 @@ UniValue PricesBet(int64_t txfee, int64_t amount, int16_t leverage, std::vector<
     result.push_back(Pair("result", "error"));
     result.push_back(Pair("error", "not enough funds"));
     return(result); 
-    */
 }
 
 // pricesaddfunding rpc impl: add yet another bet

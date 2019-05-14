@@ -5582,7 +5582,7 @@ UniValue payments_release(const UniValue& params, bool fHelp)
 {
     struct CCcontract_info *cp,C;
     if ( fHelp || params.size() != 1 )
-        throw runtime_error("paymentsrelease \"[%22createtxid%22,amount]\"\n");
+        throw runtime_error("paymentsrelease \"[%22createtxid%22,amount,(skipminimum)]\"\n");
     if ( ensure_CCrequirements(EVAL_PAYMENTS) < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     const CKeyStore& keystore = *pwalletMain;
@@ -5654,6 +5654,19 @@ UniValue payments_airdrop(const UniValue& params, bool fHelp)
     LOCK2(cs_main, pwalletMain->cs_wallet);
     cp = CCinit(&C,EVAL_PAYMENTS);
     return(PaymentsAirdrop(cp,(char *)params[0].get_str().c_str()));
+}
+
+UniValue payments_airdroptokens(const UniValue& params, bool fHelp)
+{
+    struct CCcontract_info *cp,C;
+    if ( fHelp || params.size() != 1 )
+        throw runtime_error("paymentsairdrop \"[%22tokenid%22,lockedblocks,minamount,mintoaddress,top,bottom,fixedFlag,%22excludePubKey%22,...,%22excludePubKeyN%22]\"\n");
+    if ( ensure_CCrequirements(EVAL_PAYMENTS) < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    const CKeyStore& keystore = *pwalletMain;
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+    cp = CCinit(&C,EVAL_PAYMENTS);
+    return(PaymentsAirdropTokens(cp,(char *)params[0].get_str().c_str()));
 }
 
 UniValue payments_info(const UniValue& params, bool fHelp)
