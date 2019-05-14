@@ -51,8 +51,9 @@ We have set up agreements with the following neighboring projects to share vulne
 
 Specifically, we have agreed to engage in responsible disclosures for security issues affecting Zcash technology with the following contacts:
 
-- security@horizen.com via PGP
-- ca333@komodoplatform.com via PGP
+- Horizen security@horizen.com via PGP
+- Komodo ca333@komodoplatform.com via PGP
+- BitcoinABC https://github.com/Bitcoin-ABC/bitcoin-abc/blob/master/DISCLOSURE_POLICY.md
 
 ## Deviations from the Standard
 
