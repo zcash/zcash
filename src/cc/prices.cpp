@@ -318,6 +318,10 @@ static bool ValidateAddFundingTx(struct CCcontract_info *cp, Eval *eval, const C
     if (MakeCC1vout(cp->evalcode, addfundingtx.vout[1].nValue, pricespk) != addfundingtx.vout[1])
         return eval->Invalid("cannot validate vout1 in add funding tx with global pk");
 
+    // This should be all you need to verify it, maybe also check amount? 
+    if (addfundingtx.vout[2].scriptPubKey != KOMODO_EARLYTXID_SCRIPTPUB)
+        return eval->Invalid("the fee was paid to wrong address.");
+
     int64_t betamount = addfundingtx.vout[2].nValue;
     if (betamount != PRICES_SUBREVSHAREFEE(amount)) {
         return eval->Invalid("invalid position size in the opreturn");
@@ -455,7 +459,7 @@ bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
     vscript_t firstVinTxOpret;
     bool foundFirst = false;
     int32_t ccVinCount = 0;
-    uint32_t prevoutN = 0;
+    uint32_t prevCCoutN = 0;
 
     // check basic rules:
 
@@ -474,13 +478,13 @@ bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
                 std::cerr << "PricesValidate() " << "cannot find prices opret in vintx" << std::endl;
             }
 
-            if (!IS_CHARINSTR(funcId, "FR") && vintxOpret.begin()[1] == 'B' && prevoutN == 1) {   
+            if (!IS_CHARINSTR(funcId, "FR") && vintxOpret.begin()[1] == 'B' && prevCCoutN == 1) {   
                 //return eval->Invalid("cannot spend bet marker");
-                std::cerr << "PricesValidate() " << " non-final tx cannot spend cc marker vout=" << prevoutN << std::endl;
+                std::cerr << "PricesValidate() " << " non-final tx cannot spend cc marker vout=" << prevCCoutN << std::endl;
             }
 
             if (!foundFirst) {
-                prevoutN = vin.prevout.n;
+                prevCCoutN = vin.prevout.n;
                 firstVinTx = vintx;
                 firstVinTxOpret = vintxOpret;
                 foundFirst = true;
@@ -503,23 +507,20 @@ bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
     case 'A':   // add funding
         // check tx structure:
         if (!ValidateAddFundingTx(cp, eval, tx, firstVinTx)) {
-            //return false;  // invalid state is already set in the func
             std::cerr << "PricesValidate() " << "ValidateAddFundingTx = false " << eval->state.GetRejectReason()  << std::endl;
+            return false;  // invalid state is already set in the func
         }
 
         if (firstVinTxOpret.begin()[1] == 'B') {
             if (!ValidateBetTx(cp, eval, firstVinTx)) {// check tx structure
-                // return false;
                 std::cerr << "PricesValidate() " << "funcId=A ValidatebetTx = false " << eval->state.GetRejectReason() << std::endl;
+                return false;  // invalid state is already set in the func
             }
         }
-        else if (firstVinTxOpret.begin()[1] == 'A') {
-            // no need to validate the previous addfunding tx (it was validated when added)
-        }
 
-        if (prevoutN != 0) {   // check spending rules
-            // return eval->Invalid("incorrect vintx vout to spend");
-            std::cerr << "PricesValidate() " << "addfunding tx incorrect vout to spend=" << prevoutN << std::endl;
+        if (prevCCoutN != 0) {   // check spending rules
+            std::cerr << "PricesValidate() " << "addfunding tx incorrect vout to spend=" << prevCCoutN << std::endl;
+            return eval->Invalid("incorrect vintx vout to spend");
         }
         break;
 
@@ -543,16 +544,16 @@ bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
     case 'F':   // final tx 
     case 'R':
         if (!ValidateFinalTx(cp, eval, tx, firstVinTx)) {
-            ///return false;
             std::cerr << "PricesValidate() " << "ValidateFinalTx=false " << eval->state.GetRejectReason() << std::endl;
+            return false;
         }
         if (!ValidateBetTx(cp, eval, firstVinTx)) {
-            // return false;
             std::cerr << "PricesValidate() " << "ValidateBetTx=false " << eval->state.GetRejectReason() << std::endl;
+            return false;
         }
-        if (prevoutN != 1) {   // check spending rules
-            // return eval->Invalid("incorrect vout to spend");
-            std::cerr << "PricesValidate() "<< "final tx incorrect vout to spend=" << prevoutN << std::endl;
+        if (prevCCoutN != 1) {   // check spending rules
+            std::cerr << "PricesValidate() "<< "final tx incorrect vout to spend=" << prevCCoutN << std::endl;
+            return eval->Invalid("incorrect vout to spend");
         }
         break;
 
@@ -1476,15 +1477,15 @@ UniValue PricesBet(int64_t txfee, int64_t amount, int16_t leverage, std::vector<
         mtx.vout.push_back(MakeCC1vout(cp->evalcode, txfee, pricespk));                             // vout1 cc marker (NVOUT_CCMARKER)
         mtx.vout.push_back(MakeCC1vout(cp->evalcode, betamount, pricespk));                         // vout2 betamount
         mtx.vout.push_back(CTxOut(txfee, CScript() << ParseHex(HexStr(pricespk)) << OP_CHECKSIG));  // vout3 normal marker NVOUT_NORMALMARKER - TODO: remove it as we have cc marker now, when move to the new chain
-        /*if ( ASSETCHAINS_EARLYTXIDCONTRACT == EVAL_PRICES && KOMODO_EARLYTXID_SCRIPTPUB.size() == 0 )
+        if ( ASSETCHAINS_EARLYTXIDCONTRACT == EVAL_PRICES && KOMODO_EARLYTXID_SCRIPTPUB.size() == 0 )
         {
             // Lock here, as in validation we cannot call lock in the function itself.
             // may not be needed as the validation call to update the global, is called in a LOCK already, and it can only update there and here.
             LOCK(cs_main);
             GetKomodoEarlytxidScriptPub();
         }
-        mtx.vout.push_back(CTxOut(amount-betamount, KOMODO_EARLYTXID_SCRIPTPUB)); */
-        mtx.vout.push_back(CTxOut(amount - betamount, CScript() << ParseHex("037c803ec82d12da939ac04379bbc1130a9065c53d8244a61eece1db942cf0efa7") << OP_CHECKSIG));  // vout4 test revshare fee
+        mtx.vout.push_back(CTxOut(amount-betamount, KOMODO_EARLYTXID_SCRIPTPUB)); 
+        //test: mtx.vout.push_back(CTxOut(amount - betamount, CScript() << ParseHex("037c803ec82d12da939ac04379bbc1130a9065c53d8244a61eece1db942cf0efa7") << OP_CHECKSIG));  // vout4 test revshare fee
 
         rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, prices_betopret(mypk, nextheight - 1, amount, leverage, firstprice, vec, zeroid));
         return(prices_rawtxresult(result, rawtx, 0));
@@ -1546,7 +1547,16 @@ UniValue PricesAddFunding(int64_t txfee, uint256 bettxid, int64_t amount)
             mtx.vin.push_back(CTxIn(batontxid, 0, CScript()));
             mtx.vout.push_back(MakeCC1vout(cp->evalcode, txfee, mypk));         // vout0 baton for total funding
             mtx.vout.push_back(MakeCC1vout(cp->evalcode, betamount, pricespk));    // vout1 added amount
-            mtx.vout.push_back(CTxOut(amount - betamount, CScript() << ParseHex("037c803ec82d12da939ac04379bbc1130a9065c53d8244a61eece1db942cf0efa7") << OP_CHECKSIG));  //vout2  test revshare fee
+
+            if (ASSETCHAINS_EARLYTXIDCONTRACT == EVAL_PRICES && KOMODO_EARLYTXID_SCRIPTPUB.size() == 0)
+            {
+                // Lock here, as in validation we cannot call lock in the function itself.
+                // may not be needed as the validation call to update the global, is called in a LOCK already, and it can only update there and here.
+                LOCK(cs_main);
+                GetKomodoEarlytxidScriptPub();
+            }
+            mtx.vout.push_back(CTxOut(amount - betamount, KOMODO_EARLYTXID_SCRIPTPUB));
+            // test: mtx.vout.push_back(CTxOut(amount - betamount, CScript() << ParseHex("037c803ec82d12da939ac04379bbc1130a9065c53d8244a61eece1db942cf0efa7") << OP_CHECKSIG));  //vout2  test revshare fee
 
             rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, prices_addopret(bettxid, mypk, amount));
             return(prices_rawtxresult(result, rawtx, 0));
