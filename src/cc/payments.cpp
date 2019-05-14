@@ -256,6 +256,49 @@ bool payments_lockedblocks(uint256 blockhash,int32_t lockedblocks,int32_t &block
     return true;
 }
 
+int32_t payments_getallocations(int32_t top, int32_t bottom, const std::vector<std::vector<uint8_t>> &excludeScriptPubKeys, mpz_t &mpzTotalAllocations, std::vector<CScript> &scriptPubKeys,  std::vector<int64_t> &allocations)
+{
+    mpz_t mpzAllocation; int32_t i =0;
+    for (int32_t j = bottom; j < vAddressSnapshot.size(); j++)
+    {
+        auto &address = vAddressSnapshot[j];
+        CScript scriptPubKey = GetScriptForDestination(address.second); 
+        bool skip = false;
+        // skip excluded addresses. 
+        for ( auto skipkey : excludeScriptPubKeys ) 
+        {
+            if ( scriptPubKey == CScript(skipkey.begin(), skipkey.end()) )
+                skip = true;
+        }
+        if ( !skip )
+        {
+            mpz_init(mpzAllocation); 
+            i++;
+            //fprintf(stderr, "address: %s nValue.%li \n", CBitcoinAddress(address.second).ToString().c_str(), address.first);
+            scriptPubKeys.push_back(scriptPubKey);
+            allocations.push_back(address.first);
+            mpz_set_si(mpzAllocation,address.first);
+            mpz_add(mpzTotalAllocations,mpzTotalAllocations,mpzAllocation); 
+            mpz_clear(mpzAllocation);
+        }
+        if ( i+bottom == top ) 
+            break; // we reached top amount to pay, it can be less than this, if less address exist on chain, return the number we got.
+    }
+    return(i);
+}
+
+int32_t payments_gettokenallocations(int32_t top, int32_t bottom, const std::vector<std::vector<uint8_t>> &excludeScriptPubKeys, uint256 tokenid, mpz_t &mpzTotalAllocations, std::vector<CScript> &scriptPubKeys,  std::vector<int64_t> &allocations)
+{
+    /*
+    - check tokenid exists.
+    - iterate tokenid address and extract all pubkeys, add to map. 
+    - rewind to last notarized height for balances? 
+    - convert balances to mpz_t and add up totalallocations
+    - sort the map into a vector, then convert to the correct output.
+    */
+    return(0);
+}
+
 bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
 {
     char temp[128], txidaddr[64]={0}; std::string scriptpubkey; uint256 createtxid, blockhash, tokenid; CTransaction plantx; int8_t funcid=0, fixedAmount=0;
@@ -339,7 +382,7 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
                         return(eval->Invalid("allocation missmatch"));
                     mpz_set_si(mpzTotalAllocations,totalallocations);
                 }
-                else if ( funcid == 'S' )
+                else if ( funcid == 'S' || funcid == 'O' )
                 {
                     // snapshot payment
                     if ( KOMODO_SNAPSHOT_INTERVAL == 0 )
@@ -357,34 +400,13 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
                     {
                         fFixedAmount = true;
                     }
-                    for (int32_t j = bottom; j < vAddressSnapshot.size(); j++)
+                    if ( funcid == 'S' )
+                        payments_getallocations(top, bottom, excludeScriptPubKeys, mpzTotalAllocations, scriptPubKeys, allocations);
+                    else 
                     {
-                        auto &address = vAddressSnapshot[j];
-                        CScript scriptPubKey = GetScriptForDestination(address.second); 
-                        bool skip = false;
-                        // skip excluded addresses. 
-                        for ( auto skipkey : excludeScriptPubKeys ) 
-                        {
-                            if ( scriptPubKey == CScript(skipkey.begin(), skipkey.end()) )
-                                skip = true;
-                        }
-                        if ( !skip )
-                        {
-                            mpz_init(mpzAllocation); 
-                            i++;
-                            scriptPubKeys.push_back(scriptPubKey);
-                            allocations.push_back(address.first);
-                            mpz_set_si(mpzAllocation,address.first);
-                            mpz_add(mpzTotalAllocations,mpzTotalAllocations,mpzAllocation); 
-                            mpz_clear(mpzAllocation);
-                        }
-                        if ( i+bottom == top ) 
-                            break; // we reached top amount to pay, it can be less than this, if less address exist on chain.
+                        // token snapshot
+                        // payments_gettokenallocations(top, bottom, excludeScriptPubKeys, tokenid, mpzTotalAllocations, scriptPubKeys, allocations);
                     }
-                }
-                else if ( funcid == 'O' )
-                {
-                    // tokens snapshot.
                 }
                 // sanity check to make sure we got all the required info, skip for merge type tx
                 //fprintf(stderr, " allocations.size().%li scriptPubKeys.size.%li\n",allocations.size(), scriptPubKeys.size());
@@ -667,7 +689,7 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
     CMutableTransaction tmpmtx,mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(),komodo_nextheight()); UniValue result(UniValue::VOBJ); uint256 createtxid,hashBlock,tokenid;
     CTransaction tx,txO; CPubKey mypk,txidpk,Paymentspk; int32_t i,n,m,numoprets=0,lockedblocks,minrelease; int64_t newamount,inputsum,amount,CCchange=0,totalallocations=0,checkallocations=0,allocation; CTxOut vout; CScript onlyopret,ccopret; char txidaddr[64],destaddr[64]; std::vector<uint256> txidoprets;
     int32_t top,bottom=0,blocksleft=0,minimum=10000; std::vector<std::vector<uint8_t>> excludeScriptPubKeys; int8_t funcid,fixedAmount=0,skipminimum=0; bool fFixedAmount = false;
-    mpz_t mpzTotalAllocations; mpz_init(mpzTotalAllocations);
+    mpz_t mpzTotalAllocations, mpzAllocation; mpz_init(mpzTotalAllocations);
     cJSON *params = payments_reparse(&n,jsonstr);
     mypk = pubkey2pk(Mypubkey());
     Paymentspk = GetUnspendable(cp,0);
@@ -762,7 +784,7 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
                     // set totalallocations to a mpz_t bignum, for amounts calculation later. 
                     mpz_set_si(mpzTotalAllocations,totalallocations);
                 }
-                else if ( funcid == 'S' )
+                else if ( funcid == 'S' || funcid == 'O' )
                 {
                     // normal snapshot
                     if ( vAddressSnapshot.size() == 0 )
@@ -781,7 +803,6 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
                             free_json(params);
                         return(result);
                     }
-                    i = 0;
                     if ( fixedAmount == 7 ) 
                     {
                         // game setting, randomise bottom and top values 
@@ -799,38 +820,32 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
                             free_json(params);
                         return(result);
                     }
-                    for (int32_t j = bottom; j < vAddressSnapshot.size(); j++)
+                    
+                    std::vector<int64_t> allocations;
+                    std::vector<CScript> scriptPubKeys;
+                    if ( funcid == 'S' )
+                        m = payments_getallocations(top, bottom, excludeScriptPubKeys, mpzTotalAllocations, scriptPubKeys, allocations);
+                    else 
                     {
-                        auto &address = vAddressSnapshot[j];
-                        CScript scriptPubKey = GetScriptForDestination(address.second); bool skip = false;
-                        for ( auto skipkey : excludeScriptPubKeys ) 
-                        {
-                            if ( scriptPubKey == CScript(skipkey.begin(), skipkey.end()) )
-                            {
-                                skip = true;
-                                //fprintf(stderr, "SKIPPED::: %s\n", CBitcoinAddress(address.second).ToString().c_str());
-                            } 
-                        }
-                        if ( !skip )
-                        {
-                            mpz_t mpzAllocation; mpz_init(mpzAllocation);
-                            i++;
-                            //fprintf(stderr, "address: %s nValue.%li \n", CBitcoinAddress(address.second).ToString().c_str(), address.first);
-                            vout.nValue = address.first;
-                            vout.scriptPubKey = scriptPubKey;
-                            mpz_set_si(mpzAllocation,address.first); 
-                            mpz_add(mpzTotalAllocations,mpzTotalAllocations,mpzAllocation); 
-                            mtx.vout.push_back(vout);
-                            mpz_clear(mpzAllocation);
-                        }
-                        if ( i+bottom == top ) // we reached top amount to pay, it can be less than this!
-                            break;
+                        // token snapshot
+                        // payments_gettokenallocations(top, bottom, excludeScriptPubKeys, tokenid, mpzTotalAllocations, scriptPubKeys, allocations);
                     }
-                    m = i; // this is the amount we got, either top, or all of the address on the chain.
-                }
-                else if ( funcid == 'O' )
-                {
-                    // token snapshot
+                    if ( (allocations.size() == 0 || scriptPubKeys.size() == 0 || allocations.size() != scriptPubKeys.size()) )
+                    {
+                        result.push_back(Pair("result","error"));
+                        result.push_back(Pair("error","mismatched allocations, scriptpubkeys"));
+                        if ( params != 0 )
+                            free_json(params);
+                        return(result);
+                    }
+                    i = 0;
+                    for ( auto allocation : allocations )
+                    {
+                        vout.nValue = allocation; 
+                        vout.scriptPubKey = scriptPubKeys[i];
+                        mtx.vout.push_back(vout);
+                        i++;
+                    }
                 }
                 newamount = amount;
                 int64_t totalamountsent = 0;
@@ -863,7 +878,7 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
                         if ( skipminimum == 0 )
                         {
                             result.push_back(Pair("result","error"));
-                            result.push_back(Pair("error","value too small, try releasing a larger amount"));
+                            result.push_back(Pair("error","value too small, try releasing a larger amount, or use skipminimum flag"));
                             if ( params != 0 )
                                 free_json(params);
                             return(result);
