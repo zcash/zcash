@@ -556,7 +556,7 @@ int64_t AddPaymentsInputs(bool fLockedBlocks,int8_t GetBalance,struct CCcontract
             txid = it->first.txhash;
             vout = (int32_t)it->first.index;
             //fprintf(stderr,"iter.%d %s/v%d %s\n",iter,txid.GetHex().c_str(),vout,coinaddr);
-            if ( (vout == 0 || vout == 1) && GetTransaction(txid,vintx,hashBlock,false) != 0 )
+            if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
             {
                 if ( (nValue= IsPaymentsvout(cp,vintx,vout,coinaddr,ccopret)) > PAYMENTS_TXFEE && nValue >= threshold && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0 )
                 {
