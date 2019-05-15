@@ -2016,7 +2016,7 @@ cJSON *get_urljson(char *url)
 int32_t get_stockprices(uint32_t now,uint32_t *prices,std::vector<std::string> symbols)
 {
     char url[32768],*symbol,*timestr; cJSON *json,*obj; int32_t i,n=0,retval=-1; uint32_t uprice,timestamp;
-    sprintf(url,"http://api.iextrading.com/1.0/tops/last?symbols=%s",GetArg("-ac_stocks","").c_str());
+    sprintf(url,"https://api.iextrading.com/1.0/tops/last?symbols=%s",GetArg("-ac_stocks","").c_str());
     fprintf(stderr,"url.(%s)\n",url);
     if ( (json= get_urljson(url)) != 0 ) //if ( (json= send_curl(url,(char *)"iex")) != 0 ) //
     {
