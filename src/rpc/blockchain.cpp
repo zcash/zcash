@@ -1454,6 +1454,23 @@ UniValue pricesgetorderbook(const UniValue& params, bool fHelp)
     return PricesGetOrderbook();
 }
 
+// pricesrekt rpc implementation
+UniValue pricesrefillfund(const UniValue& params, bool fHelp)
+{
+    if (fHelp || params.size() != 1)
+        throw runtime_error("pricesrefillfund\n");
+    LOCK(cs_main);
+    UniValue ret(UniValue::VOBJ);
+
+    if (ASSETCHAINS_CBOPRET == 0)
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "only -ac_cbopret chains have prices");
+
+    CAmount amount = atof(params[0].get_str().c_str()) * COIN;
+
+    return PricesRefillFund(amount);
+}
+
+
 UniValue gettxout(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() < 2 || params.size() > 3)

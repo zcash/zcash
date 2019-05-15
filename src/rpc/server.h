@@ -510,6 +510,7 @@ extern UniValue pricescashout(const UniValue& params, bool fHelp);
 extern UniValue pricesrekt(const UniValue& params, bool fHelp);
 extern UniValue pricesaddfunding(const UniValue& params, bool fHelp);
 extern UniValue pricesgetorderbook(const UniValue& params, bool fHelp);
+extern UniValue pricesrefillfund(const UniValue& params, bool fHelp);
 
 
 

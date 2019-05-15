@@ -1687,6 +1687,34 @@ UniValue PricesSetcostbasis(int64_t txfee, uint256 bettxid)
 }
 
 
+// pricesaddfunding rpc impl: add yet another bet
+UniValue PricesRefillFund(int64_t amount)
+{
+    int32_t nextheight = komodo_nextheight();
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), nextheight); UniValue result(UniValue::VOBJ);
+    struct CCcontract_info *cp, C;
+    CPubKey pricespk, mypk, pk;
+    std::string rawtx;
+    //char myaddr[64];
+
+    cp = CCinit(&C, EVAL_PRICES);
+    const int64_t   txfee = PRICES_TXFEE;
+    mypk = pubkey2pk(Mypubkey());
+    pricespk = GetUnspendable(cp, 0);
+
+    if (AddNormalinputs(mtx, mypk, amount + txfee, 64) >= amount + txfee)
+    {            
+        mtx.vout.push_back(MakeCC1vout(cp->evalcode, amount, pricespk));    // vout1 added amount
+        rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, CScript());
+        return(prices_rawtxresult(result, rawtx, 0));
+        
+    }
+    result.push_back(Pair("result", "error"));
+    result.push_back(Pair("error", "not enough funds"));
+    return(result);
+}
+
+
 int32_t prices_getbetinfo(uint256 bettxid, BetInfo &betinfo)
 {
     CTransaction bettx;
