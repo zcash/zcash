@@ -2047,6 +2047,10 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
         else if (retcode == -4) {
             result.push_back(Pair("result", "error"));
             result.push_back(Pair("error", "error scanning chain"));
+        } 
+        else {
+            result.push_back(Pair("result", "error"));
+            result.push_back(Pair("error", retcode));
         }
         return(result);
     }
