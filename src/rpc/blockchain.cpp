@@ -1458,7 +1458,7 @@ UniValue pricesgetorderbook(const UniValue& params, bool fHelp)
 UniValue pricesrefillfund(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 1)
-        throw runtime_error("pricesrefillfund\n");
+        throw runtime_error("pricesrefillfund amount\n");
     LOCK(cs_main);
     UniValue ret(UniValue::VOBJ);
 
