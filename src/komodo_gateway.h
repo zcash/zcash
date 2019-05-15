@@ -2019,6 +2019,7 @@ int32_t get_stockprices(uint32_t now,uint32_t *prices,std::vector<std::string> s
     sprintf(url,"https://api.iextrading.com/1.0/tops/last?symbols=%s",GetArg("-ac_stocks","").c_str());
     if ( (json= get_urljson(url)) != 0 ) //if ( (json= send_curl(url,(char *)"iex")) != 0 ) //
     {
+        fprintf(stderr,"stocks.(%s)\n",jprint(json,0));
         if ( (n= cJSON_GetArraySize(json)) > 0 )
         {
             retval = n;
