@@ -554,7 +554,7 @@ TEST(WalletTests, FindMySaplingNotesWithIvkOnly) {
     auto witness = tree.witness();
 
     // Generate transaction
-    auto builder = TransactionBuilder(consensusParams, 1);
+    auto builder = TransactionBuilder(consensusParams, 1, expiryDelta);
     builder.AddSaplingSpend(expsk, note, anchor, witness);
     builder.AddSaplingOutput(fvk.ovk, pk, 25000, {});
     auto tx = builder.Build().GetTxOrThrow();
