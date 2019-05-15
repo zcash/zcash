@@ -212,7 +212,7 @@ try_again:
         /* printf("[ Decker ] SSL: %s\n", curl_version()); */
         curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0L);
         curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0L);
-        curl_easy_setopt(curl_handle, CURLOPT_VERBOSE, 1L); // this is useful for debug, but seems crash on libcurl/7.64.1 OpenSSL/1.1.1b zlib/1.2.8 librtmp/2.3
+        //curl_easy_setopt(curl_handle, CURLOPT_VERBOSE, 1L); // this is useful for debug, but seems crash on libcurl/7.64.1 OpenSSL/1.1.1b zlib/1.2.8 librtmp/2.3
     }
     if ( userpass != 0 )
         curl_easy_setopt(curl_handle,CURLOPT_USERPWD,	userpass);
