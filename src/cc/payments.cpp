@@ -326,11 +326,6 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
                 return(eval->Invalid("negative values"));
             if ( minimum < 10000 )
                 return(eval->Invalid("minimum must be over 10000"));
-            if ( amountReleased < minrelease*COIN )
-            {
-                fprintf(stderr, "does not meet minrelease amount.%li minrelease.%li\n",amountReleased, (int64_t)minrelease*COIN);
-                return(eval->Invalid("amount is too small"));
-            }
             Paymentspk = GetUnspendable(cp,0);
             txidpk = CCtxidaddr(txidaddr,createtxid);
             GetCCaddress1of2(cp,txidaddr,Paymentspk,txidpk);
@@ -343,6 +338,11 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
 
             if ( !fIsMerge )
             {
+                if ( amountReleased < minrelease*COIN )
+                {
+                    fprintf(stderr, "does not meet minrelease amount.%li minrelease.%li\n",amountReleased, (int64_t)minrelease*COIN);
+                    return(eval->Invalid("amount is too small"));
+                }
                 // Get all the script pubkeys and allocations
                 std::vector<int64_t> allocations;
                 std::vector<CScript> scriptPubKeys;
