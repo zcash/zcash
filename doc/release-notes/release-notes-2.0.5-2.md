@@ -29,8 +29,8 @@ consensus rule which marks blocks as invalid if they would lead to a turnstile
 violation in the Sprout or Shielded value pools.
 **This release enforces the consensus rule change on mainnet.**
 
-The motivations and deployment details can be found in the accompanying
-[ZIP draft](https://github.com/zcash/zips/pull/210) and
+The motivations and deployment details can be found in
+[ZIP209](https://github.com/zcash/zips/blob/master/zip-0209.rst) and
 [PR 3968](https://github.com/zcash/zcash/pull/3968).
 
 Developers can use a new experimental feature `-developersetpoolsizezero` to test
