@@ -1420,6 +1420,7 @@ UniValue getwalletburntransactions(const UniValue& params, bool fHelp)
                 UnmarshalBurnTx(*pwtx, targetSymbol, &targetCCid, payoutsHash, rawproof)) {
                 UniValue entry(UniValue::VOBJ);
                 entry.push_back(Pair("txid", pwtx->GetHash().GetHex()));
+
                 if (vopret.begin()[0] == EVAL_TOKENS) {
                     // get burned token value
                     std::vector<std::pair<uint8_t, vscript_t>>  oprets;
@@ -1460,6 +1461,12 @@ UniValue getwalletburntransactions(const UniValue& params, bool fHelp)
                 }
                 else 
                     entry.push_back(Pair("burnedAmount", ValueFromAmount(pwtx->vout.back().nValue)));   // coins
+
+                // check for corrupted strings (look for non-printable chars) from some older versions 
+                // which caused "couldn't parse reply from server" error on client:
+                if (std::find_if(targetSymbol.begin(), targetSymbol.end(), [](int c) {return !std::isprint(c);}) != targetSymbol.end()) 
+                    targetSymbol = "<value corrupted>";
+                
                 entry.push_back(Pair("targetSymbol", targetSymbol));
                 entry.push_back(Pair("targetCCid", std::to_string(targetCCid)));
                 if (mytxid_inmempool(pwtx->GetHash()))
