@@ -70,6 +70,7 @@ extern std::string ASSETCHAINS_OVERRIDE_PUBKEY;
 const std::string ADDR_TYPE_SPROUT = "sprout";
 const std::string ADDR_TYPE_SAPLING = "sapling";
 extern UniValue TxJoinSplitToJSON(const CTransaction& tx);
+extern int32_t KOMODO_INSYNC;
 uint32_t komodo_segid32(char *coinaddr);
 int32_t komodo_dpowconfs(int32_t height,int32_t numconfs);
 int32_t komodo_isnotaryvout(char *coinaddr); // from ac_private chains only
@@ -84,6 +85,7 @@ UniValue z_getoperationstatus_IMPL(const UniValue&, bool);
 
 #define PLAN_NAME_MAX   8
 #define VALID_PLAN_NAME(x)  (strlen(x) <= PLAN_NAME_MAX)
+#define THROW_IF_SYNCING(INSYNC)  if (INSYNC == 0) { throw runtime_error(strprintf("%s: Chain still syncing at height %d, aborting to prevent linkability analysis!",__FUNCTION__,chainActive.Tip()->GetHeight())); }
 
 int tx_height( const uint256 &hash );
 
@@ -4248,6 +4250,8 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
             + HelpExampleRpc("z_sendmany", "\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\", [{\"address\": \"zs14d8tc0hl9q0vg5l28uec5vk6sk34fkj2n8s7jalvw5fxpy6v39yn4s2ga082lymrkjk0x2nqg37\" ,\"amount\": 5.0}]")
         );
 
+    THROW_IF_SYNCING(KOMODO_INSYNC);
+
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
     // Check that the from address is valid.
@@ -4557,6 +4561,8 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
             + HelpExampleRpc("z_shieldcoinbase", "\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\", \"zs14d8tc0hl9q0vg5l28uec5vk6sk34fkj2n8s7jalvw5fxpy6v39yn4s2ga082lymrkjk0x2nqg37\"")
         );
 
+    THROW_IF_SYNCING(KOMODO_INSYNC);
+
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
     // Validate the from address
@@ -4816,6 +4822,8 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     if (!fEnableMergeToAddress) {
         throw JSONRPCError(RPC_WALLET_ERROR, "Error: z_mergetoaddress is disabled.");
     }
+
+    THROW_IF_SYNCING(KOMODO_INSYNC);
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
