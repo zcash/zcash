@@ -1067,15 +1067,27 @@ UniValue PaymentsMerge(struct CCcontract_info *cp,char *jsonstr)
 UniValue PaymentsTxidopret(struct CCcontract_info *cp,char *jsonstr)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight()); UniValue result(UniValue::VOBJ); CPubKey mypk; std::string rawtx;
-    std::vector<uint8_t> scriptPubKey,opret; int32_t n,retval0,retval1=0; int64_t allocation;
+    std::vector<uint8_t> scriptPubKey,opret; int32_t n,retval0,retval1=0; int64_t allocation; CScript test; txnouttype whichType;
     cJSON *params = payments_reparse(&n,jsonstr);
     mypk = pubkey2pk(Mypubkey());
     if ( params != 0 && n > 1 && n <= 3 )
     {
         allocation = (int64_t)jint(jitem(params,0),0);
-        retval0 = payments_parsehexdata(scriptPubKey,jitem(params,1),0);
-        CScript test = CScript(scriptPubKey.begin(),scriptPubKey.end());
-        txnouttype whichType;
+        std::string address; 
+        address.append(jstri(params,1));
+        CTxDestination destination = DecodeDestination(address);
+        if ( IsValidDestination(destination) )
+        {
+            // its an address 
+            test = GetScriptForDestination(destination);
+            scriptPubKey = std::vector<uint8_t> (test.begin(),test.end());
+        }
+        else 
+        {
+            // its a scriptpubkey
+            retval0 = payments_parsehexdata(scriptPubKey,jitem(params,1),0);
+            test = CScript(scriptPubKey.begin(),scriptPubKey.end());
+        }
         if (!::IsStandard(test, whichType))
         {
             result.push_back(Pair("result","error"));
@@ -1090,7 +1102,7 @@ UniValue PaymentsTxidopret(struct CCcontract_info *cp,char *jsonstr)
                 rawtx = FinalizeCCTx(0,cp,mtx,mypk,PAYMENTS_TXFEE,EncodePaymentsTxidOpRet(allocation,scriptPubKey,opret));
                 if ( params != 0 )
                     free_json(params);
-                return(payments_rawtxresult(result,rawtx,1));
+                return(payments_rawtxresult(result,rawtx,0));
             }
             result.push_back(Pair("result","error"));
             result.push_back(Pair("error","invalid params or cant find txfee"));
