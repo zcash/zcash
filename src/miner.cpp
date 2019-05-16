@@ -803,6 +803,8 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
             //fprintf(stderr,"check validity\n");
             if ( !TestBlockValidity(state, *pblock, pindexPrev, false, false)) // invokes CC checks
             {
+                LEAVE_CRITICAL_SECTION(cs_main);
+                LEAVE_CRITICAL_SECTION(mempool.cs);
                 throw std::runtime_error("CreateNewBlock(): TestBlockValidity failed");
             }
             //fprintf(stderr,"valid\n");
