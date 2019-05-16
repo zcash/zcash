@@ -249,7 +249,7 @@ TEST(merkletree, EmptyrootsSapling) {
 }
 
 TEST(merkletree, emptyroot) {
-    // This literal is the depth-20 empty tree root with the bytes reversed to
+    // This literal is the depth-29 empty tree root with the bytes reversed to
     // account for the fact that uint256S() loads a big-endian representation of
     // an integer which converted to little-endian internally.
     uint256 expected = uint256S("59d2cde5e65c1414c32ba54f0fe4bdb3d67618125286e6a191317917c812c6d7");
@@ -258,7 +258,7 @@ TEST(merkletree, emptyroot) {
 }
 
 TEST(merkletree, EmptyrootSapling) {
-    // This literal is the depth-20 empty tree root with the bytes reversed to
+    // This literal is the depth-32 empty tree root with the bytes reversed to
     // account for the fact that uint256S() loads a big-endian representation of
     // an integer which converted to little-endian internally.
     uint256 expected = uint256S("3e49b5f954aa9d3545bc6c37744661eea48d7c34e3000d82b7f0010c30f4c2fb");
