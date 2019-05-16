@@ -682,11 +682,32 @@ int32_t komodo_WhoStaked(CBlock *pblock, CTxDestination &addressout)
 
 bool MarmaraPoScheck(char *destaddr,CScript opret,CTransaction staketx);
 
-int32_t komodo_isPoS(CBlock *pblock,int32_t height)
+int32_t komodo_isPoS2(CBlock *pblock)
 {
-    int32_t n,vout,numvouts; uint32_t txtime; uint64_t value; char voutaddr[64],destaddr[64]; CTxDestination voutaddress; uint256 txid; CScript opret;
+    CBlockIndex *pindex = komodo_blockindex(pblock->GetHash());
+    if ( pindex != 0 && pindex->segid >= -1 )
+    {
+        //fprintf(stderr,"isPoSblock segid.%d\n",pindex->segid);
+        if ( pindex->segid == -1 )
+            return(0);
+        else return(1);
+    }
+    return (-1);
+}
+
+int32_t komodo_isPoS(CBlock *pblock,int32_t height,bool fJustCheck)
+{
+    int32_t n,vout,numvouts,ret; uint32_t txtime; uint64_t value; char voutaddr[64],destaddr[64]; CTxDestination voutaddress; uint256 txid; CScript opret;
     if ( ASSETCHAINS_STAKED != 0 )
     {
+        if ( fJustCheck )
+        {
+            // check pindex first, if that does not work, continue with slow check.
+            if ( (ret= komodo_isPoS2(pblock)) == 1 )
+                return (1);
+            else if ( ret == 0 )
+                return (0);
+        }
         n = pblock->vtx.size();
         //fprintf(stderr,"ht.%d check for PoS numtx.%d numvins.%d numvouts.%d\n",height,n,(int32_t)pblock->vtx[n-1].vin.size(),(int32_t)pblock->vtx[n-1].vout.size());
         if ( n > 1 && pblock->vtx[n-1].vin.size() == 1 && pblock->vtx[n-1].vout.size() == 1+(ASSETCHAINS_MARMARA!=0) )
@@ -1585,7 +1606,7 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
 
 int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_uint256 bnTarget,arith_uint256 bhash)
 {
-    CBlockIndex *previndex,*pindex; char voutaddr[64],destaddr[64]; uint256 txid; uint32_t txtime,prevtime=0; int32_t vout,PoSperc,txn_count,eligible=0,isPoS = 0,segid; uint64_t value; CTxDestination voutaddress; arith_uint256 POWTarget;
+    CBlockIndex *previndex,*pindex; char voutaddr[64],destaddr[64]; uint256 txid; uint32_t txtime,prevtime=0; int32_t ret,vout,PoSperc,txn_count,eligible=0,isPoS = 0,segid; uint64_t value; CTxDestination voutaddress; arith_uint256 POWTarget;
     if ( ASSETCHAINS_STAKED == 100 && height <= 10 )
         return(1);
     BlockMap::const_iterator it = mapBlockIndex.find(pblock->GetHash());
@@ -1604,7 +1625,7 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
     //fprintf(stderr,"checkblock n.%d vins.%d vouts.%d %.8f %.8f\n",txn_count,(int32_t)pblock->vtx[txn_count-1].vin.size(),(int32_t)pblock->vtx[txn_count-1].vout.size(),(double)pblock->vtx[txn_count-1].vout[0].nValue/COIN,(double)pblock->vtx[txn_count-1].vout[1].nValue/COIN);
     if ( txn_count > 1 && pblock->vtx[txn_count-1].vin.size() == 1 && pblock->vtx[txn_count-1].vout.size() == 1 + (ASSETCHAINS_MARMARA!=0) )
     {
-        it = mapBlockIndex.find(pblock->hashPrevBlock);
+        BlockMap::const_iterator it = mapBlockIndex.find(pblock->hashPrevBlock);
         if ( it != mapBlockIndex.end() && (previndex = it->second) != NULL )
             prevtime = (uint32_t)previndex->nTime;
 
@@ -1612,7 +1633,7 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
         vout = pblock->vtx[txn_count-1].vin[0].prevout.n;
         if ( slowflag != 0 && prevtime != 0 )
         {
-            if ( komodo_isPoS(pblock,height) != 0 )
+            if ( komodo_isPoS(pblock,height,false) != 0 )
             {
                 eligible = komodo_stake(1,bnTarget,height,txid,vout,pblock->nTime,prevtime+27,(char *)"",PoSperc);
             }
@@ -1644,7 +1665,7 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
         } 
         else if ( slowflag == 0 ) // previous blocks are not seen yet, do the best approx
         {
-            if ( komodo_isPoS(pblock,height) != 0 )
+            if ( komodo_isPoS(pblock,height,false) != 0 )
                 isPoS = 1;
         }
         if ( slowflag != 0 && isPoS != 0 )
