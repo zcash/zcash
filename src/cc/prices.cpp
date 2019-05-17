@@ -1782,7 +1782,7 @@ int32_t prices_getbetinfo(uint256 bettxid, BetInfo &betinfo)
 
                     betinfo.isRekt = (funcId == 'R');  
 
-                    return 0;
+                    // return 0;
                 }
                 else
                     return -6;
