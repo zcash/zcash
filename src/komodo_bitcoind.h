@@ -1625,7 +1625,7 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
     //fprintf(stderr,"checkblock n.%d vins.%d vouts.%d %.8f %.8f\n",txn_count,(int32_t)pblock->vtx[txn_count-1].vin.size(),(int32_t)pblock->vtx[txn_count-1].vout.size(),(double)pblock->vtx[txn_count-1].vout[0].nValue/COIN,(double)pblock->vtx[txn_count-1].vout[1].nValue/COIN);
     if ( txn_count > 1 && pblock->vtx[txn_count-1].vin.size() == 1 && pblock->vtx[txn_count-1].vout.size() == 1 + (ASSETCHAINS_MARMARA!=0) )
     {
-        BlockMap::const_iterator it = mapBlockIndex.find(pblock->hashPrevBlock);
+        it = mapBlockIndex.find(pblock->hashPrevBlock);
         if ( it != mapBlockIndex.end() && (previndex = it->second) != NULL )
             prevtime = (uint32_t)previndex->nTime;
 
