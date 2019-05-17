@@ -243,7 +243,7 @@ static bool ValidateBetTx(struct CCcontract_info *cp, Eval *eval, const CTransac
     if ( ASSETCHAINS_EARLYTXIDCONTRACT == EVAL_PRICES && KOMODO_EARLYTXID_SCRIPTPUB.size() == 0 )
         GetKomodoEarlytxidScriptPub();
 
-    if (bettx.vout.size() < 5 || bettx.vout.size() > 6)
+    if (bettx.vout.size() < 6 || bettx.vout.size() > 7)
         return eval->Invalid("incorrect vout number for bet tx");
 
     vscript_t opret;
@@ -322,9 +322,9 @@ static bool ValidateAddFundingTx(struct CCcontract_info *cp, Eval *eval, const C
     if (addfundingtx.vout[2].scriptPubKey != KOMODO_EARLYTXID_SCRIPTPUB)
         return eval->Invalid("the fee was paid to wrong address.");
 
-    int64_t betamount = addfundingtx.vout[2].nValue;
+    int64_t betamount = addfundingtx.vout[1].nValue;
     if (betamount != PRICES_SUBREVSHAREFEE(amount)) {
-        return eval->Invalid("invalid position size in the opreturn");
+        return eval->Invalid("invalid bet position size in the opreturn");
     }
 
     return true;
@@ -601,6 +601,19 @@ int64_t AddPricesInputs(struct CCcontract_info *cp, CMutableTransaction &mtx, ch
     }
     return(totalinputs);
 }
+
+// return min equity percentage depending on leverage value
+// for lev=1 2%
+// for lev>=100 10%
+double prices_minmarginpercent(int16_t leverage)
+{
+    int16_t absleverage = std::abs(leverage);
+    if (absleverage < 100)
+        return (absleverage * 0.080808 + 1.9191919) / 100.0;
+    else
+        return 0.01;
+}
+
 
 UniValue prices_rawtxresult(UniValue &result, std::string rawtx, int32_t broadcastflag)
 {
@@ -1606,7 +1619,7 @@ int32_t prices_scanchain(std::vector<OneBetData> &bets, int16_t leverage, std::v
 
         endheight = height;
         int64_t equity = totalposition + totalprofits;
-        if (equity < 0)
+        if (equity < (double)totalposition * prices_minmarginpercent(leverage))
         {   // we are in loss
             break;
         }
@@ -1833,7 +1846,7 @@ int32_t prices_getbetinfo(uint256 bettxid, BetInfo &betinfo)
                 betinfo.liquidationprice = betinfo.averageCostbasis - betinfo.averageCostbasis / betinfo.leverage;
             }
 
-            if (betinfo.equity >= 0)
+            if (betinfo.equity >= (double)totalposition * prices_minmarginpercent(betinfo.leverage))
                 betinfo.isRekt = false;
             else
             {
@@ -2384,7 +2397,7 @@ static bool prices_isacceptableamount(const std::vector<uint16_t> &vecparsed, in
 
     std::cerr << "prices_isacceptableamount() amount=" << amount << " leverage=" << leverage << " fundTotals.totalFund=" << fundTotals.totalFund << " fundTotals.totalEquity=" << fundTotals.totalEquity << std::endl;
     // if not fit to matched = allow to bet for leveraged amount no more than 10% from free fund
-    if (amount * leverage < (fundTotals.totalFund - fundTotals.totalEquity) * 0.1)
+    if (amount * leverage < (fundTotals.totalFund - fundTotals.totalEquity) * PRICES_MINAVAILFUNDFRACTION)
         return true;
 
     return false;

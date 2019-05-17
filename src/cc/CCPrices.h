@@ -42,7 +42,8 @@ extern CScript KOMODO_EARLYTXID_SCRIPTPUB;
 //#define PRICES_POINTFACTOR   (int64_t)10000
 
 #define PRICES_REVSHAREDUST 10000
-#define PRICES_SUBREVSHAREFEE(amount) ((amount) * 199 / 200)
+#define PRICES_SUBREVSHAREFEE(amount) ((amount) * 199 / 200)    // revshare fee percentage == 0.005
+#define PRICES_MINAVAILFUNDFRACTION  0.1                             // leveraged bet limit < fund fraction
 
 bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn);
 
