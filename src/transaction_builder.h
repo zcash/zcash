@@ -43,6 +43,8 @@ struct OutputDescriptionInfo {
         uint256 ovk,
         libzcash::SaplingNote note,
         std::array<unsigned char, ZC_MEMO_SIZE> memo) : ovk(ovk), note(note), memo(memo) {}
+
+    boost::optional<OutputDescription> Build(void* ctx);
 };
 
 struct TransparentInputInfo {
