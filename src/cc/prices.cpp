@@ -1775,12 +1775,12 @@ int32_t prices_getbetinfo(uint256 bettxid, BetInfo &betinfo)
                 CTransaction finaltx;
                 uint256 hashBlock;
                 vscript_t vopret;
-                if (myGetTransaction(finaltxid, finaltx, hashBlock) && finaltx.vout.size() > 0  && PricesCheckOpret(finaltx, vopret) != 0)       {
+                if (myGetTransaction(finaltxid, finaltx, hashBlock) && finaltx.vout.size() > 0 && PricesCheckOpret(finaltx, vopret) != 0) {
                     uint8_t funcId = prices_finalopretdecode(finaltx.vout.back().scriptPubKey, betinfo.txid, betinfo.pk, betinfo.lastheight, betinfo.averageCostbasis, betinfo.lastprice, betinfo.liquidationprice, betinfo.equity, betinfo.exitfee);
                     if (funcId == 0)
                         return -3;
 
-                    betinfo.isRekt = (funcId == 'R');  
+                    betinfo.isRekt = (funcId == 'R');
 
                     // return 0;
                 }
@@ -1849,15 +1849,18 @@ int32_t prices_getbetinfo(uint256 bettxid, BetInfo &betinfo)
 
             betinfo.liquidationprice = 0;
             if (betinfo.leverage != 0) {// prevent zero div
-                betinfo.liquidationprice = betinfo.averageCostbasis - (betinfo.averageCostbasis * (1 - prices_minmarginpercent(betinfo.leverage)))/ betinfo.leverage;
+                betinfo.liquidationprice = betinfo.averageCostbasis - (betinfo.averageCostbasis * (1 - prices_minmarginpercent(betinfo.leverage))) / betinfo.leverage;
             }
 
-            if (betinfo.equity > (int64_t)((double)totalposition * prices_minmarginpercent(betinfo.leverage)))
-                betinfo.isRekt = false;
-            else
-            {
-                betinfo.isRekt = true;
-                betinfo.exitfee = (totalposition - betinfo.equity) / 10;    // was: totalposition / 500
+            if (!betinfo.isRekt)    {  // not set by check for final tx 
+
+                if (betinfo.equity > (int64_t)((double)totalposition * prices_minmarginpercent(betinfo.leverage)))
+                    betinfo.isRekt = false;
+                else
+                {
+                    betinfo.isRekt = true;
+                    betinfo.exitfee = (totalposition - betinfo.equity) / 10;    // was: totalposition / 500
+                }
             }
 
             mpz_clear(mpzTotalPosition);
