@@ -791,6 +791,7 @@ bool ContextualCheckTransaction(
     bool overwinterActive = chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_OVERWINTER);
     bool saplingActive = chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_SAPLING);
     bool isSprout = !overwinterActive;
+    bool heartwoodActive = chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_HEARTWOOD);
 
     // If Sprout rules apply, reject transactions which are intended for Overwinter and beyond
     if (isSprout && tx.fOverwintered) {
@@ -885,6 +886,51 @@ bool ContextualCheckTransaction(
                 dosLevelPotentiallyRelaxing,
                 error("ContextualCheckTransaction(): size limits failed"),
                 REJECT_INVALID, "bad-txns-oversize");
+    }
+
+    // Rules that apply before Heartwood:
+    if (!heartwoodActive) {
+        if (tx.IsCoinBase()) {
+            // A coinbase transaction cannot have output descriptions
+            if (tx.vShieldedOutput.size() > 0)
+                return state.DoS(100, error("CheckTransaction(): coinbase has output descriptions"),
+                                REJECT_INVALID, "bad-cb-has-output-description");
+        }
+    }
+
+    // Rules that apply to Heartwood or later:
+    if (heartwoodActive) {
+        if (tx.IsCoinBase()) {
+            // All Sapling outputs in coinbase transactions MUST have valid note commitments
+            // when recovered using a 32-byte array of zeroes as the outgoing viewing key.
+            uint256 ovk;
+            for (const OutputDescription &output : tx.vShieldedOutput) {
+                auto outPlaintext = SaplingOutgoingPlaintext::decrypt(
+                    output.outCiphertext, ovk, output.cv, output.cmu, output.ephemeralKey);
+                if (!outPlaintext) {
+                    return state.DoS(
+                        100,
+                        error("CheckTransaction(): coinbase output description has invalid outCiphertext"),
+                        REJECT_INVALID,
+                        "bad-cb-output-desc-invalid-outct");
+                }
+
+                // SaplingNotePlaintext::decrypt() checks note commitment validity.
+                if (!SaplingNotePlaintext::decrypt(
+                    output.encCiphertext,
+                    output.ephemeralKey,
+                    outPlaintext->esk,
+                    outPlaintext->pk_d,
+                    output.cmu)
+                ) {
+                    return state.DoS(
+                        100,
+                        error("CheckTransaction(): coinbase output description has invalid encCiphertext"),
+                        REJECT_INVALID,
+                        "bad-cb-output-desc-invalid-encct");
+                }
+            }
+        }
     }
 
     uint256 dataToBeSigned;
@@ -1219,13 +1265,11 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
             return state.DoS(100, error("CheckTransaction(): coinbase has joinsplits"),
                              REJECT_INVALID, "bad-cb-has-joinsplits");
 
-        // A coinbase transaction cannot have spend descriptions or output descriptions
+        // A coinbase transaction cannot have spend descriptions
         if (tx.vShieldedSpend.size() > 0)
             return state.DoS(100, error("CheckTransaction(): coinbase has spend descriptions"),
                              REJECT_INVALID, "bad-cb-has-spend-description");
-        if (tx.vShieldedOutput.size() > 0)
-            return state.DoS(100, error("CheckTransaction(): coinbase has output descriptions"),
-                             REJECT_INVALID, "bad-cb-has-output-description");
+        // See ContextualCheckTransaction for consensus rules on coinbase output descriptions.
 
         if (tx.vin[0].scriptSig.size() < 2 || tx.vin[0].scriptSig.size() > 100)
             return state.DoS(100, error("CheckTransaction(): coinbase script size"),

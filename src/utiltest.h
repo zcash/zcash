@@ -49,6 +49,10 @@ const Consensus::Params& RegtestActivateBlossom(bool updatePow, int blossomActiv
 
 void RegtestDeactivateBlossom();
 
+const Consensus::Params& RegtestActivateHeartwood(bool updatePow, int heartwoodActivationHeight = Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+
+void RegtestDeactivateHeartwood();
+
 libzcash::SaplingExtendedSpendingKey GetTestMasterSaplingSpendingKey();
 
 CKey AddTestCKeyToKeyStore(CBasicKeyStore& keyStore);

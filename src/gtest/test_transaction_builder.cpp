@@ -94,7 +94,7 @@ TEST(TransactionBuilder, TransparentToSapling)
     // Create a shielding transaction from transparent to Sapling
     // 0.0005 t-ZEC in, 0.0004 z-ZEC out, 0.0001 t-ZEC fee
     auto builder = TransactionBuilder(consensusParams, 1, &keystore);
-    builder.AddTransparentInput(COutPoint(), scriptPubKey, 50000);
+    builder.AddTransparentInput(COutPoint(uint256S("1234"), 0), scriptPubKey, 50000);
     builder.AddSaplingOutput(fvk_from.ovk, pk, 40000, {});
     auto tx = builder.Build().GetTxOrThrow();
 
