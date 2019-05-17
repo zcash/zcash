@@ -1599,7 +1599,7 @@ int32_t prices_scanchain(std::vector<OneBetData> &bets, int16_t leverage, std::v
         return -1;
 
     bool stop = false;
-    for (int32_t height = bets[0].firstheight; ; height++)   // the last datum for 24h is the costbasis value
+    for (int32_t height = bets[0].firstheight+1; ; height++)   // the last datum for 24h is the costbasis value
     {
         int64_t totalposition = 0;
         int64_t totalprofits = 0;
