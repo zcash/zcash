@@ -67,7 +67,12 @@ CTxDestination DecodeDestination(const std::string& str, const CChainParams& par
         // Script-hash-addresses have version 5 (or 196 testnet).
         // The data vector contains RIPEMD160(SHA256(cscript)), where cscript is the serialized redemption script.
         const std::vector<unsigned char>& script_prefix = params.Base58Prefix(CChainParams::SCRIPT_ADDRESS);
-        if (data.size() == hash.size() + script_prefix.size() && std::equal(script_prefix.begin(), script_prefix.end(), data.begin())) {
+        const std::vector<unsigned char>& zcash_script_prefix = params.Base58Prefix(CChainParams::ZCASH_SCRIPT_ADDRESS);
+
+        if (data.size() == hash.size() + script_prefix.size() && 
+                (std::equal(script_prefix.begin(), script_prefix.end(), data.begin()) || 
+                 std::equal(zcash_script_prefix.begin(), zcash_script_prefix.end(), data.begin()))
+            ) {
             std::copy(data.begin() + script_prefix.size(), data.end(), hash.begin());
             return CScriptID(hash);
         }
@@ -282,8 +287,12 @@ libzcash::PaymentAddress DecodePaymentAddress(const std::string& str)
     std::vector<unsigned char> data;
     if (DecodeBase58Check(str, data)) {
         const std::vector<unsigned char>& zaddr_prefix = Params().Base58Prefix(CChainParams::ZCPAYMENT_ADDRRESS);
+        const std::vector<unsigned char>& zcash_zaddr_prefix = Params().Base58Prefix(CChainParams::ZCASH_ZCPAYMENT_ADDRRESS);
+
         if ((data.size() == libzcash::SerializedSproutPaymentAddressSize + zaddr_prefix.size()) &&
-            std::equal(zaddr_prefix.begin(), zaddr_prefix.end(), data.begin())) {
+                (std::equal(zaddr_prefix.begin(), zaddr_prefix.end(), data.begin()) ||
+                 std::equal(zcash_zaddr_prefix.begin(), zcash_zaddr_prefix.end(), data.begin()))
+            ) {
             CSerializeData serialized(data.begin() + zaddr_prefix.size(), data.end());
             CDataStream ss(serialized, SER_NETWORK, PROTOCOL_VERSION);
             libzcash::SproutPaymentAddress ret;

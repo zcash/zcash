@@ -54,6 +54,8 @@ public:
         ZCVIEWING_KEY,
 
         ZCASH_PUBKEY_ADDRESS,
+        ZCASH_SCRIPT_ADDRESS,
+        ZCASH_ZCPAYMENT_ADDRRESS,
 
         MAX_BASE58_TYPES
     };
