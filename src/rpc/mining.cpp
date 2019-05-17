@@ -183,12 +183,13 @@ UniValue generate(const UniValue& params, bool fHelp)
     int nHeight = 0;
     int nGenerate = params[0].get_int();
 
-    boost::shared_ptr<CReserveScript> coinbaseScript;
-    GetMainSignals().ScriptForMining(coinbaseScript);
+    MinerAddress minerAddress;
+    GetMainSignals().AddressForMining(minerAddress);
 
-    //throw an error if no script was provided
-    if (!coinbaseScript->reserveScript.size())
-        throw JSONRPCError(RPC_INTERNAL_ERROR, "No coinbase script available (mining requires a wallet or -mineraddress)");
+    // Throw an error if no miner address was provided
+    if (!IsValidMinerAddress(minerAddress)) {
+        throw JSONRPCError(RPC_INTERNAL_ERROR, "No miner address available (mining requires a wallet or -mineraddress)");
+    }
 
     {   // Don't keep cs_main locked
         LOCK(cs_main);
@@ -202,7 +203,7 @@ UniValue generate(const UniValue& params, bool fHelp)
     unsigned int k = Params().GetConsensus().nEquihashK;
     while (nHeight < nHeightEnd)
     {
-        std::unique_ptr<CBlockTemplate> pblocktemplate(CreateNewBlock(Params(), coinbaseScript->reserveScript));
+        std::unique_ptr<CBlockTemplate> pblocktemplate(CreateNewBlock(Params(), minerAddress));
         if (!pblocktemplate.get())
             throw JSONRPCError(RPC_INTERNAL_ERROR, "Couldn't create new block");
         CBlock *pblock = &pblocktemplate->block;
@@ -255,8 +256,8 @@ endloop:
         ++nHeight;
         blockHashes.push_back(pblock->GetHash().GetHex());
 
-        //mark script as important because it was used at least for one coinbase output
-        coinbaseScript->KeepScript();
+        //mark miner address as important because it was used at least for one coinbase output
+        boost::apply_visitor(KeepMinerAddress(), minerAddress);
     }
     return blockHashes;
 }
@@ -610,19 +611,20 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
             pblocktemplate = NULL;
         }
 
-        boost::shared_ptr<CReserveScript> coinbaseScript;
-        GetMainSignals().ScriptForMining(coinbaseScript);
+        MinerAddress minerAddress;
+        GetMainSignals().AddressForMining(minerAddress);
 
-        // Throw an error if no script was provided
-        if (!coinbaseScript->reserveScript.size())
-            throw JSONRPCError(RPC_INTERNAL_ERROR, "No coinbase script available (mining requires a wallet or -mineraddress)");
+        // Throw an error if no miner address was provided
+        if (!IsValidMinerAddress(minerAddress)) {
+            throw JSONRPCError(RPC_INTERNAL_ERROR, "No miner address available (mining requires a wallet or -mineraddress)");
+        }
 
-        pblocktemplate = CreateNewBlock(Params(), coinbaseScript->reserveScript);
+        pblocktemplate = CreateNewBlock(Params(), minerAddress);
         if (!pblocktemplate)
             throw JSONRPCError(RPC_OUT_OF_MEMORY, "Out of memory");
 
         // Mark script as important because it was used at least for one coinbase output
-        coinbaseScript->KeepScript();
+        boost::apply_visitor(KeepMinerAddress(), minerAddress);
 
         // Need to update only after we know CreateNewBlock succeeded
         pindexPrev = pindexPrevNew;
