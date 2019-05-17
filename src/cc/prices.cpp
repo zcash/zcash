@@ -424,6 +424,9 @@ static bool ValidateFinalTx(struct CCcontract_info *cp, Eval *eval, const CTrans
     if( finaltx.vout.size() == 3 && MakeCC1vout(cp->evalcode, finaltx.vout[1].nValue, pricespk) != finaltx.vout[1] ) 
         return eval->Invalid("cannot validate vout1 in final tx with global pk");
 
+    // TODO: validate exitfee for 'R'
+    // TODO: validate amount for 'F'
+
     return true;
 }
 
@@ -1262,13 +1265,13 @@ int32_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t
         //}
     }
     else   { 
-        if (height == firstheight + COSTBASIS_PERIOD) {
+        //if (height == firstheight + COSTBASIS_PERIOD) {
             // if costbasis not set, just set it
             //costbasis = price;
 
             // use calculated minmax costbasis
             //std::cerr << "prices_syntheticprofits() use permanent costbasis=" << costbasis << " at height=" << height << std::endl;
-        }
+        //}
     }
     
     // normalize to 10,000,000 to prevent underflow
@@ -1619,7 +1622,7 @@ int32_t prices_scanchain(std::vector<OneBetData> &bets, int16_t leverage, std::v
 
         endheight = height;
         int64_t equity = totalposition + totalprofits;
-        if (equity < (double)totalposition * prices_minmarginpercent(leverage))
+        if (equity <= (int64_t)((double)totalposition * prices_minmarginpercent(leverage)))
         {   // we are in loss
             break;
         }
@@ -1843,15 +1846,15 @@ int32_t prices_getbetinfo(uint256 bettxid, BetInfo &betinfo)
 
             betinfo.liquidationprice = 0;
             if (betinfo.leverage != 0) {// prevent zero div
-                betinfo.liquidationprice = betinfo.averageCostbasis - betinfo.averageCostbasis / betinfo.leverage;
+                betinfo.liquidationprice = betinfo.averageCostbasis - (betinfo.averageCostbasis * (1 - prices_minmarginpercent(betinfo.leverage)))/ betinfo.leverage;
             }
 
-            if (betinfo.equity >= (double)totalposition * prices_minmarginpercent(betinfo.leverage))
+            if (betinfo.equity > (int64_t)((double)totalposition * prices_minmarginpercent(betinfo.leverage)))
                 betinfo.isRekt = false;
             else
             {
                 betinfo.isRekt = true;
-                betinfo.exitfee = totalposition / 500;
+                betinfo.exitfee = (totalposition - betinfo.equity) / 10;    // was: totalposition / 500
             }
 
             mpz_clear(mpzTotalPosition);
