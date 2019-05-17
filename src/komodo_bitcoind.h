@@ -1422,10 +1422,6 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
         if ( ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASH || ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASHV1_1 )
             percPoS = (percPoS*100) / (m+n); 
         else
-            // This seems to be inverse. The actual PoS % is backwards in the first 100 blocks. 
-            // I dont't understand the math here, or why its backwards, so I am just disabling it for VerusHash.
-            // No doubt this is probably wrong for equihash aswell, we may need to test an equihash chain with the rule above.
-            // Need to ask james what the deal is here! Seems to be causeing ALL the problems.
             percPoS = ((percPoS * n) + (goalperc * (100-n))) / 100;            
     } 
     if ( dispflag != 0 && ASSETCHAINS_STAKED < 100 )
@@ -1625,7 +1621,7 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
     //fprintf(stderr,"checkblock n.%d vins.%d vouts.%d %.8f %.8f\n",txn_count,(int32_t)pblock->vtx[txn_count-1].vin.size(),(int32_t)pblock->vtx[txn_count-1].vout.size(),(double)pblock->vtx[txn_count-1].vout[0].nValue/COIN,(double)pblock->vtx[txn_count-1].vout[1].nValue/COIN);
     if ( txn_count > 1 && pblock->vtx[txn_count-1].vin.size() == 1 && pblock->vtx[txn_count-1].vout.size() == 1 + (ASSETCHAINS_MARMARA!=0) )
     {
-        BlockMap::const_iterator it = mapBlockIndex.find(pblock->hashPrevBlock);
+        it = mapBlockIndex.find(pblock->hashPrevBlock);
         if ( it != mapBlockIndex.end() && (previndex = it->second) != NULL )
             prevtime = (uint32_t)previndex->nTime;
 
@@ -2627,7 +2623,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
             besttime = 0;
             if ( eligible == komodo_stake(1,bnTarget,nHeight,kp->txid,kp->vout,eligible,(uint32_t)tipindex->nTime+27,kp->address,PoSperc) )
             {
-                // have elegible utxo to stak with. 
+                // have elegible utxo to stake with. 
                 if ( earliest == 0 || eligible < earliest || (eligible == earliest && (*utxovaluep == 0 || kp->nValue < *utxovaluep)) )
                 {
                     // is better than the previous best, so use it instead.
@@ -2643,7 +2639,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
             } else continue;
         }
     }
-    if ( numkp < 1000 && array != 0 )
+    if ( numkp < 500 && array != 0 )
     {
         free(array);
         array = 0;
