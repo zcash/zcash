@@ -1013,7 +1013,7 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
                 errcode = -1;
 
             if (pricestack[depth] == 0)
-                errcode = -1;
+                errcode = -14;
 
             depth++;
             break;
@@ -1204,7 +1204,10 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
         std::cerr << "prices_syntheticprice overflow in price" << std::endl;
         return errcode;
     }
-
+    if (errcode == -14) {
+        std::cerr << "prices_syntheticprice price is zero, not enough historic data yet" << std::endl;
+        return errcode;
+    }
     if (den == 0) {
         std::cerr << "prices_syntheticprice den==0 return err=-11" << std::endl;
         return(-11);
