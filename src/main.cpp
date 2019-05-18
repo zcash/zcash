@@ -1373,26 +1373,21 @@ bool CheckTransaction(uint32_t tiptime,const CTransaction& tx, CValidationState 
     }
 }
 
+extern int32_t getacseason(int32_t timestamp);
+
 int32_t komodo_isnotaryvout(char *coinaddr,uint32_t tiptime) // from ac_private chains only
 {
-    static int32_t didinit; static char notaryaddrs[sizeof(Notaries_elected1)/sizeof(*Notaries_elected1) + 1][64];
-    //use normal notary functions
-    int32_t i;
-    if ( didinit == 0 )
+    int32_t season = getacseason(tiptime);
+    if ( NOTARY_ADDRESSES[season-1][0][0] == 0 )
     {
-        uint8_t pubkey33[33];
-        for (i=0; i<=sizeof(Notaries_elected1)/sizeof(*Notaries_elected1); i++)
-        {
-            if ( i < sizeof(Notaries_elected1)/sizeof(*Notaries_elected1) )
-                decode_hex(pubkey33,33,(char *)Notaries_elected1[i][1]);
-            else decode_hex(pubkey33,33,(char *)CRYPTO777_PUBSECPSTR);
-            pubkey2addr((char *)notaryaddrs[i],(uint8_t *)pubkey33);
-        }
-        didinit = 1;
+        uint8_t pubkeys[64][33];
+        komodo_notaries(pubkeys,0,tiptime);
     }
-    for (i=0; i<=sizeof(Notaries_elected1)/sizeof(*Notaries_elected1); i++)
-    if ( strcmp(coinaddr,notaryaddrs[i]) == 0 )
-        return(1);
+    for (int32_t i = 0; i < NUM_KMD_NOTARIES; i++) 
+    {
+        if ( strcmp(coinaddr,NOTARY_ADDRESSES[season-1][i]) == 0 )
+            return(1);
+    }
     return(0);
 }
 

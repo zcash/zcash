@@ -1665,6 +1665,7 @@ uint64_t komodo_ac_block_subsidy(int nHeight)
 
 extern int64_t MAX_MONEY;
 void komodo_cbopretupdate(int32_t forceflag);
+int32_t getacseason(int32_t timestamp);
 void SplitStr(const std::string& strVal, std::vector<std::string> &outVals);
 
 int8_t equihash_params_possible(uint64_t n, uint64_t k)
@@ -1691,14 +1692,9 @@ int8_t equihash_params_possible(uint64_t n, uint64_t k)
 
 void komodo_args(char *argv0)
 {
-    extern const char *Notaries_elected1[][2];
     std::string name,addn,hexstr,symbol; char *dirname,fname[512],arg0str[64],magicstr[9]; uint8_t magic[4],extrabuf[32756],disablebits[32],*extraptr=0; FILE *fp; uint64_t val; uint16_t port; int32_t i,nonz=0,baseid,len,n,extralen = 0; uint64_t ccenables[256];
     IS_KOMODO_NOTARY = GetBoolArg("-notary", false);
     IS_STAKED_NOTARY = GetArg("-stakednotary", -1);
-    if ( IS_STAKED_NOTARY != -1 && IS_KOMODO_NOTARY == true ) {
-        fprintf(stderr, "Cannot be STAKED and KMD notary at the same time!\n");
-        StartShutdown();
-    }
     memset(ccenables,0,sizeof(ccenables));
     memset(disablebits,0,sizeof(disablebits));
     if ( GetBoolArg("-gen", false) != 0 )
@@ -1717,17 +1713,24 @@ void komodo_args(char *argv0)
         USE_EXTERNAL_PUBKEY = 1;
         if ( IS_KOMODO_NOTARY == 0 )
         {
+            // We dont have any chain data yet, so use system clock to guess. 
+            // I think on season change should reccomend notaries to use -notary to avoid needing this. 
+            int32_t kmd_season = getacseason(time(NULL));
             for (i=0; i<64; i++)
-                if ( strcmp(NOTARY_PUBKEY.c_str(),Notaries_elected1[i][1]) == 0 )
+                if ( strcmp(NOTARY_PUBKEY.c_str(),notaries_elected[kmd_season][NUM_KMD_NOTARIES][1]) == 0 )
                 {
                     IS_KOMODO_NOTARY = 1;
                     KOMODO_MININGTHREADS = 1;
                     mapArgs ["-genproclimit"] = itostr(KOMODO_MININGTHREADS);
                     IS_STAKED_NOTARY = -1;
-                    fprintf(stderr,"running as notary.%d %s\n",i,Notaries_elected1[i][0]);
+                    fprintf(stderr,"running as notary.%d %s\n",i,notaries_elected[kmd_season][NUM_KMD_NOTARIES][0]);
                     break;
                 }
         }
+    }
+    if ( IS_STAKED_NOTARY != -1 && IS_KOMODO_NOTARY == true ) {
+        fprintf(stderr, "Cannot be STAKED and KMD notary at the same time!\n");
+        StartShutdown();
     }
 	name = GetArg("-ac_name","");
     if ( argv0 != 0 )
@@ -1760,7 +1763,6 @@ void komodo_args(char *argv0)
     }
     KOMODO_EARLYTXID = Parseuint256(GetArg("-earlytxid","0").c_str());
     ASSETCHAINS_EARLYTXIDCONTRACT = GetArg("-ac_earlytxidcontract",0);
-    fprintf(stderr, "ASSETCHAINS_EARLYTXIDCONTRACT.%i\n", ASSETCHAINS_EARLYTXIDCONTRACT);
     if ( name.c_str()[0] != 0 )
     {
         std::string selectedAlgo = GetArg("-ac_algo", std::string(ASSETCHAINS_ALGORITHMS[0]));
