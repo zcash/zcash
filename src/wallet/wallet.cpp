@@ -2874,9 +2874,9 @@ void CWallet::ReacceptWalletTransactions()
             bool invalid = state.IsInvalid(nDoS);
 
             // log rejection and deletion
-            // printf("ERROR reaccepting wallet transaction %s to mempool, reason: %s, DoS: %d\n", wtx.GetHash().ToString().c_str(), state.GetRejectReason().c_str(), nDoS);
+            //printf("ERROR reaccepting wallet transaction %s to mempool, reason: %s, DoS: %d\n", wtx.GetHash().ToString().c_str(), state.GetRejectReason().c_str(), nDoS);
 
-            if (!wtx.IsCoinBase() && invalid && nDoS > 0)
+            if (!wtx.IsCoinBase() && invalid && nDoS > 0 && state.GetRejectReason() != "tx-overwinter-expired")
             {
                 LogPrintf("erasing transaction %s\n", wtx.GetHash().GetHex().c_str());
                 vwtxh.push_back(wtx.GetHash());
