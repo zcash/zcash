@@ -2883,12 +2883,9 @@ void CWallet::ReacceptWalletTransactions()
             }
         }
     }
-    if ( IsInitialBlockDownload() == 0 )
+    for (auto hash : vwtxh)
     {
-        for (auto hash : vwtxh)
-        {
-            EraseFromWallet(hash);
-        }
+        EraseFromWallet(hash);
     }
 }
 
