@@ -1859,7 +1859,7 @@ int32_t prices_getbetinfo(uint256 bettxid, BetInfo &betinfo)
                 else
                 {
                     betinfo.isRekt = true;
-                    betinfo.exitfee = (totalposition - betinfo.equity) / 10;    // was: totalposition / 500
+                    betinfo.exitfee = (int64_t)(((double)totalposition * prices_minmarginpercent(betinfo.leverage)) / 10);    // was: totalposition / 500
                 }
             }
 
