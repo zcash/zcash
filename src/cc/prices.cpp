@@ -614,7 +614,7 @@ double prices_minmarginpercent(int16_t leverage)
     if (absleverage < 100)
         return (absleverage * 0.080808 + 1.9191919) / 100.0;
     else
-        return 0.01;
+        return 0.1;
 }
 
 
