@@ -2206,11 +2206,11 @@ static bool prices_ispositionup(const std::vector<uint16_t> &vecparsed, int16_t 
                 if (upperquote == "BTC" || bottomquote == "BTC") { // it is relatively btc
                     if (upperquote == "BTC" && (leverage > 0 && !isInverted || leverage < 0 && isInverted) ||
                         bottomquote == "BTC" && (leverage < 0 && !isInverted || leverage > 0 && isInverted)) {
-                        std::cerr << "prices_ispositionup returns true for BTC for expr=" << prices_getsourceexpression(vecparsed) << std::endl;
+                        std::cerr << "prices_ispositionup returns true for BTC for expr=" << prices_getsourceexpression(vecparsed) << " lev=" << leverage << std::endl;
                         return true;
                     }
                     else {
-                        std::cerr << "prices_ispositionup returns false for BTC for expr=" << prices_getsourceexpression(vecparsed) << std::endl;
+                        std::cerr << "prices_ispositionup returns false for BTC for expr=" << prices_getsourceexpression(vecparsed) << " lev=" << leverage << std::endl;
                         return false;
                     }
                 }
@@ -2218,18 +2218,18 @@ static bool prices_ispositionup(const std::vector<uint16_t> &vecparsed, int16_t 
                 if (upperquote == "USD" || bottomquote == "USD") { // it is relatively usd
                     if (upperquote == "USD" && (leverage > 0 && !isInverted || leverage < 0 && isInverted) ||
                         bottomquote == "USD" && (leverage < 0 && !isInverted || leverage > 0 && isInverted)) {
-                        std::cerr << "prices_ispositionup returns true for USD for expr=" << prices_getsourceexpression(vecparsed) << std::endl;
+                        std::cerr << "prices_ispositionup returns true for USD for expr=" << prices_getsourceexpression(vecparsed) << " lev=" << leverage << std::endl;
                         return true;
                     }
                     else {
-                        std::cerr << "prices_ispositionup returns false for USD for expr=" << prices_getsourceexpression(vecparsed) << std::endl;
+                        std::cerr << "prices_ispositionup returns false for USD for expr=" << prices_getsourceexpression(vecparsed) << " lev=" << leverage << std::endl;
                         return false;
                     }
                 }
             }
         }
     }
-    std::cerr << "prices_ispositionup returns false for expr=" << prices_getsourceexpression(vecparsed) << std::endl;
+    std::cerr << "prices_ispositionup returns false for expr=" << prices_getsourceexpression(vecparsed) << " lev=" << leverage << std::endl;
     return false;
 }
 
