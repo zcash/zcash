@@ -2450,10 +2450,10 @@ UniValue PricesGetOrderbook()
             entry.push_back(Pair("isOpen", (m.second[i].isOpen ? 1 : 0 )));
             entry.push_back(Pair("expression", prices_getsourceexpression(m.second[i].vecparsed)));
             entry.push_back(Pair("positionsize", totalPos));
-            entry.push_back(Pair("costbasis", m.second[i].averageCostbasis));
             entry.push_back(Pair("leverage", m.second[i].leverage));
+            entry.push_back(Pair("costbasis", m.second[i].averageCostbasis));
+            entry.push_back(Pair("lastprice", m.second[i].lastprice));
             entry.push_back(Pair("equity", m.second[i].equity));
-            //std::cerr << "PricesGetOrderbook 1 m.second[i].isUp=" << m.second[i].isUp << " i=" << i << std::endl;
             entry.push_back(Pair("isUpPosition", (m.second[i].isUp ? 1 : 0)));
             resbook.push_back(entry);
         }
