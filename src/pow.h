@@ -19,7 +19,8 @@ class arith_uint256;
 unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params&);
 unsigned int CalculateNextWorkRequired(arith_uint256 bnAvg,
                                        int64_t nLastBlockTime, int64_t nFirstBlockTime,
-                                       const Consensus::Params&);
+                                       const Consensus::Params&,
+                                       int nextHeight = 0);
 
 /** Check whether the Equihash solution in a block header is valid */
 bool CheckEquihashSolution(const CBlockHeader *pblock, const Consensus::Params&);
