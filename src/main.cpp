@@ -2436,6 +2436,9 @@ void ThreadScriptCheck() {
 // we're being fed a bad chain (blocks being generated much
 // too slowly or too quickly).
 //
+// When parameter nPowTargetSpacing is not set, the default value of 0
+// means use the block height of the best header to determine target spacing.
+// Setting the parameter value is useful for testing.
 void PartitionCheck(bool (*initialDownloadCheck)(const CChainParams&),
                     CCriticalSection& cs, const CBlockIndex *const &bestHeader,
                     int64_t nPowTargetSpacing)
@@ -2448,14 +2451,36 @@ void PartitionCheck(bool (*initialDownloadCheck)(const CChainParams&),
 
     const int SPAN_HOURS=4;
     const int SPAN_SECONDS=SPAN_HOURS*60*60;
+
+    LOCK(cs);
+
+    int bestHeaderHeight = bestHeader->nHeight;
+    int blossomHeight = Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
+    if (nPowTargetSpacing == 0) {
+        nPowTargetSpacing = Params().GetConsensus().PoWTargetSpacing(bestHeaderHeight);
+        blossomHeight = Params().GetConsensus().vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight;
+    }
+
     int BLOCKS_EXPECTED = SPAN_SECONDS / nPowTargetSpacing;
+
+    // If the span period includes Blossom activation, adjust the number of expected blocks.
+    if (blossomHeight != Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT &&
+        bestHeaderHeight > blossomHeight)
+    {
+        int t = SPAN_SECONDS;
+        int nBlossomBlocks = bestHeaderHeight - blossomHeight;
+        t -= nBlossomBlocks * Consensus::POST_BLOSSOM_POW_TARGET_SPACING;
+        if (t > 0) {
+            int nPreBlossomBlocks = t / Consensus::PRE_BLOSSOM_POW_TARGET_SPACING;
+            BLOCKS_EXPECTED = nPreBlossomBlocks + nBlossomBlocks;
+        }
+    }
 
     boost::math::poisson_distribution<double> poisson(BLOCKS_EXPECTED);
 
     std::string strWarning;
     int64_t startTime = GetAdjustedTime()-SPAN_SECONDS;
 
-    LOCK(cs);
     const CBlockIndex* i = bestHeader;
     int nBlocks = 0;
     while (i->GetBlockTime() >= startTime) {
