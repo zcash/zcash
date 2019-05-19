@@ -10,6 +10,14 @@
 
 #include <boost/optional.hpp>
 
+// Forward declaration.  Enum requires storage type.
+namespace Consensus {
+    struct Params;
+    enum UpgradeIndex : uint32_t;
+}
+bool NetworkUpgradeActive(int nHeight, const Consensus::Params& params, Consensus::UpgradeIndex idx);
+
+
 namespace Consensus {
 
 /**
@@ -20,7 +28,7 @@ namespace Consensus {
  * The order of these indices MUST match the order of the upgrades on-chain, as
  * several functions depend on the enum being sorted.
  */
-enum UpgradeIndex {
+enum UpgradeIndex : uint32_t {
     // Sprout must be first
     BASE_SPROUT,
     UPGRADE_TESTDUMMY,
@@ -61,6 +69,11 @@ struct NetworkUpgrade {
     static constexpr int NO_ACTIVATION_HEIGHT = -1;
 };
 
+/** ZIP208 block target interval in seconds. */
+static const unsigned int PRE_BLOSSOM_POW_TARGET_SPACING = 150;
+static const unsigned int POST_BLOSSOM_POW_TARGET_SPACING = 75;
+BOOST_STATIC_ASSERT(POST_BLOSSOM_POW_TARGET_SPACING < PRE_BLOSSOM_POW_TARGET_SPACING);
+
 /**
  * Parameters that influence chain consensus.
  */
@@ -100,10 +113,26 @@ struct Params {
     int64_t nPowAveragingWindow;
     int64_t nPowMaxAdjustDown;
     int64_t nPowMaxAdjustUp;
-    int64_t nPowTargetSpacing;
-    int64_t AveragingWindowTimespan() const { return nPowAveragingWindow * nPowTargetSpacing; }
-    int64_t MinActualTimespan() const { return (AveragingWindowTimespan() * (100 - nPowMaxAdjustUp  )) / 100; }
-    int64_t MaxActualTimespan() const { return (AveragingWindowTimespan() * (100 + nPowMaxAdjustDown)) / 100; }
+    int64_t nPreBlossomPowTargetSpacing;
+    int64_t nPostBlossomPowTargetSpacing;
+
+    int64_t PoWTargetSpacing(int nHeight) const {
+        bool blossomActive = NetworkUpgradeActive(nHeight, *this, Consensus::UPGRADE_BLOSSOM);
+        return blossomActive ? nPostBlossomPowTargetSpacing : nPreBlossomPowTargetSpacing;
+    }
+
+    int64_t AveragingWindowTimespan(int nHeight) const {
+        return nPowAveragingWindow * PoWTargetSpacing(nHeight);
+    }
+
+    int64_t MinActualTimespan(int nHeight) const {
+        return (AveragingWindowTimespan(nHeight) * (100 - nPowMaxAdjustUp  )) / 100;
+    }
+
+    int64_t MaxActualTimespan(int nHeight) const {
+        return (AveragingWindowTimespan(nHeight) * (100 + nPowMaxAdjustDown)) / 100;
+    }
+
     uint256 nMinimumChainWork;
 };
 } // namespace Consensus
