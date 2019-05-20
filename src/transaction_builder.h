@@ -95,6 +95,7 @@ public:
     TransactionBuilder(
         const Consensus::Params& consensusParams,
         int nHeight,
+        int nExpiryDelta,
         CKeyStore* keyStore = nullptr,
         ZCJoinSplit* sproutParams = nullptr,
         CCoinsViewCache* coinsView = nullptr,

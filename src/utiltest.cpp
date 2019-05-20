@@ -232,7 +232,7 @@ CWalletTx GetValidSaplingReceive(const Consensus::Params& consensusParams,
     auto fvk = sk.expsk.full_viewing_key();
     auto pa = sk.DefaultAddress();
 
-    auto builder = TransactionBuilder(consensusParams, 1, &keyStore);
+    auto builder = TransactionBuilder(consensusParams, 1, expiryDelta, &keyStore);
     builder.SetFee(0);
     builder.AddTransparentInput(COutPoint(), scriptPubKey, value);
     builder.AddSaplingOutput(fvk.ovk, pa, value, {});

@@ -1,5 +1,5 @@
 ---
-name: "zcash-2.0.4"
+name: "zcash-2.0.5-2"
 enable_cache: true
 distro: "debian"
 suites:
@@ -7,6 +7,7 @@ suites:
 architectures:
 - "amd64"
 packages:
+- "curl"
 - "autoconf"
 - "automake"
 - "bsdmainutils"
