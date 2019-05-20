@@ -140,8 +140,7 @@ public:
         vFixedSeeds.clear();
         vSeeds.clear();
         vSeeds.push_back(CDNSSeedData("z.cash", "dnsseed.z.cash")); // Zcash
-        vSeeds.push_back(CDNSSeedData("str4d.xyz", "dnsseed.str4d.xyz")); // @str4d
-        vSeeds.push_back(CDNSSeedData("znodes.org", "dnsseed.znodes.org")); // @bitcartel
+        vSeeds.push_back(CDNSSeedData("ycash.xyz", "seed.str4d.xyz")); // Ycash Seed
 
         // guarantees the first 2 characters, when base58 encoded, are "s1"
         base58Prefixes[PUBKEY_ADDRESS]       = {0x1C,0x28};
@@ -302,7 +301,7 @@ public:
         consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nProtocolVersion = 170007;
         consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight = 280000;
         consensus.vUpgrades[Consensus::UPGRADE_YCASH].nProtocolVersion = 270007;
-        consensus.vUpgrades[Consensus::UPGRADE_YCASH].nActivationHeight = 495052;
+        consensus.vUpgrades[Consensus::UPGRADE_YCASH].nActivationHeight = 498184;
 
         // The best chain should have at least this much work.
         consensus.nMinimumChainWork = uint256S("0x00000000000000000000000000000000000000000000000000000001d0c4d9cd");
@@ -331,6 +330,7 @@ public:
         vFixedSeeds.clear();
         vSeeds.clear();
         vSeeds.push_back(CDNSSeedData("z.cash", "dnsseed.testnet.z.cash")); // Zcash
+        vSeeds.push_back(CDNSSeedData("ycash.xyz", "testseed.ycash.xyz")); // Ycash
 
         // guarantees the first 2 characters, when base58 encoded, are "sm"
         base58Prefixes[PUBKEY_ADDRESS]       = {0x1C,0x95}; 
