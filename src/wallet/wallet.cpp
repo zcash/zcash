@@ -5,8 +5,10 @@
 
 #include "wallet/wallet.h"
 
+#include "asyncrpcqueue.h"
 #include "checkpoints.h"
 #include "coincontrol.h"
+#include "core_io.h"
 #include "consensus/upgrades.h"
 #include "consensus/validation.h"
 #include "consensus/consensus.h"
@@ -15,12 +17,14 @@
 #include "main.h"
 #include "net.h"
 #include "rpc/protocol.h"
+#include "rpc/server.h"
 #include "script/script.h"
 #include "script/sign.h"
 #include "timedata.h"
 #include "utilmoneystr.h"
 #include "zcash/Note.hpp"
 #include "crypter.h"
+#include "wallet/asyncrpcoperation_saplingmigration.h"
 #include "zcash/zip32.h"
 
 #include <assert.h>
@@ -31,6 +35,8 @@
 
 using namespace std;
 using namespace libzcash;
+
+extern UniValue sendrawtransaction(const UniValue& params, bool fHelp);
 
 /**
  * Settings
@@ -499,8 +505,14 @@ bool CWallet::Unlock(const SecureString& strWalletPassphrase)
                 return false;
             if (!crypter.Decrypt(pMasterKey.second.vchCryptedKey, vMasterKey))
                 continue; // try another master key
-            if (CCryptoKeyStore::Unlock(vMasterKey))
+            if (CCryptoKeyStore::Unlock(vMasterKey)) {
+                // Now that the wallet is decrypted, ensure we have an HD seed.
+                // https://github.com/zcash/zcash/issues/3607
+                if (!this->HaveHDSeed()) {
+                    this->GenerateNewSeed();
+                }
                 return true;
+            }
         }
     }
     return false;
@@ -552,6 +564,15 @@ bool CWallet::ChangeWalletPassphrase(const SecureString& strOldWalletPassphrase,
     return false;
 }
 
+void CWallet::ChainTipAdded(const CBlockIndex *pindex,
+                            const CBlock *pblock,
+                            SproutMerkleTree sproutTree,
+                            SaplingMerkleTree saplingTree)
+{
+    IncrementNoteWitnesses(pindex, pblock, sproutTree, saplingTree);
+    UpdateSaplingNullifierNoteMapForBlock(pblock);
+}
+
 void CWallet::ChainTip(const CBlockIndex *pindex, 
                        const CBlock *pblock,
                        SproutMerkleTree sproutTree,
@@ -559,11 +580,69 @@ void CWallet::ChainTip(const CBlockIndex *pindex,
                        bool added)
 {
     if (added) {
-        IncrementNoteWitnesses(pindex, pblock, sproutTree, saplingTree);
+        ChainTipAdded(pindex, pblock, sproutTree, saplingTree);
+        // Prevent migration transactions from being created when node is syncing after launch,
+        // and also when node wakes up from suspension/hibernation and incoming blocks are old.
+        if (!IsInitialBlockDownload() &&
+            pblock->GetBlockTime() > GetAdjustedTime() - 3 * 60 * 60)
+        {
+            RunSaplingMigration(pindex->nHeight);
+        }
     } else {
         DecrementNoteWitnesses(pindex);
+        UpdateSaplingNullifierNoteMapForBlock(pblock);
     }
-    UpdateSaplingNullifierNoteMapForBlock(pblock);
+}
+
+void CWallet::RunSaplingMigration(int blockHeight) {
+    if (!NetworkUpgradeActive(blockHeight, Params().GetConsensus(), Consensus::UPGRADE_SAPLING)) {
+        return;
+    }
+    LOCK(cs_wallet);
+    if (!fSaplingMigrationEnabled) {
+        return;
+    }
+    // The migration transactions to be sent in a particular batch can take
+    // significant time to generate, and this time depends on the speed of the user's
+    // computer. If they were generated only after a block is seen at the target
+    // height minus 1, then this could leak information. Therefore, for target
+    // height N, implementations SHOULD start generating the transactions at around
+    // height N-5
+    if (blockHeight % 500 == 495) {
+        std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
+        std::shared_ptr<AsyncRPCOperation> lastOperation = q->getOperationForId(saplingMigrationOperationId);
+        if (lastOperation != nullptr) {
+            lastOperation->cancel();
+        }
+        pendingSaplingMigrationTxs.clear();
+        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_saplingmigration(blockHeight + 5));
+        saplingMigrationOperationId = operation->getId();
+        q->addOperation(operation);
+    } else if (blockHeight % 500 == 499) {
+        std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
+        std::shared_ptr<AsyncRPCOperation> lastOperation = q->getOperationForId(saplingMigrationOperationId);
+        if (lastOperation != nullptr) {
+            lastOperation->cancel();
+        }
+        for (const CTransaction& transaction : pendingSaplingMigrationTxs) {
+            // The following is taken from z_sendmany/z_mergetoaddress
+            // Send the transaction
+            // TODO: Use CWallet::CommitTransaction instead of sendrawtransaction
+            auto signedtxn = EncodeHexTx(transaction);
+            UniValue params = UniValue(UniValue::VARR);
+            params.push_back(signedtxn);
+            UniValue sendResultValue = sendrawtransaction(params, false);
+            if (sendResultValue.isNull()) {
+                throw JSONRPCError(RPC_WALLET_ERROR, "sendrawtransaction did not return an error or a txid.");
+            }
+        }
+        pendingSaplingMigrationTxs.clear();
+    }
+}
+
+void CWallet::AddPendingSaplingMigrationTx(const CTransaction& tx) {
+    LOCK(cs_wallet);
+    pendingSaplingMigrationTxs.push_back(tx);
 }
 
 void CWallet::SetBestChain(const CBlockLocator& loc)
@@ -2086,6 +2165,14 @@ bool CWallet::SetCryptedHDSeed(const uint256& seedFp, const std::vector<unsigned
     return false;
 }
 
+HDSeed CWallet::GetHDSeedForRPC() const {
+    HDSeed seed;
+    if (!pwalletMain->GetHDSeed(seed)) {
+        throw JSONRPCError(RPC_WALLET_ERROR, "HD seed not found");
+    }
+    return seed;
+}
+
 void CWallet::SetHDChain(const CHDChain& chain, bool memonly)
 {
     LOCK(cs_wallet);
@@ -2444,7 +2531,7 @@ int CWallet::ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate)
                 }
             }
             // Increment note witness caches
-            ChainTip(pindex, &block, sproutTree, saplingTree, true);
+            ChainTipAdded(pindex, &block, sproutTree, saplingTree);
 
             pindex = chainActive.Next(pindex);
             if (GetTime() >= nNow + 60) {

@@ -69,6 +69,8 @@ bool fReindex = false;
 bool fTxIndex = false;
 bool fInsightExplorer = false;  // insightexplorer
 bool fAddressIndex = false;     // insightexplorer
+bool fSpentIndex = false;       // insightexplorer
+bool fTimestampIndex = false;   // insightexplorer
 bool fHavePruned = false;
 bool fPruneMode = false;
 bool fIsBareMultisigStd = true;
@@ -2229,10 +2231,10 @@ enum DisconnectResult
 
 /** Undo the effects of this block (with given index) on the UTXO set represented by coins.
  *  When UNCLEAN or FAILED is returned, view is left in an indeterminate state.
- *  The addressIndex will be updated if requested.
+ *  The addressIndex and spentIndex will be updated if requested.
  */
 static DisconnectResult DisconnectBlock(const CBlock& block, CValidationState& state,
-    const CBlockIndex* pindex, CCoinsViewCache& view, const bool fUpdateAddressIndex)
+    const CBlockIndex* pindex, CCoinsViewCache& view, bool const updateIndices)
 {
     assert(pindex->GetBlockHash() == view.GetBestBlock());
 
@@ -2255,6 +2257,7 @@ static DisconnectResult DisconnectBlock(const CBlock& block, CValidationState& s
     }
     std::vector<CAddressIndexDbEntry> addressIndex;
     std::vector<CAddressUnspentDbEntry> addressUnspentIndex;
+    std::vector<CSpentIndexDbEntry> spentIndex;
 
     // undo transactions in reverse order
     for (int i = block.vtx.size() - 1; i >= 0; i--) {
@@ -2263,7 +2266,7 @@ static DisconnectResult DisconnectBlock(const CBlock& block, CValidationState& s
 
         // insightexplorer
         // https://github.com/bitpay/bitcoin/commit/017f548ea6d89423ef568117447e61dd5707ec42#diff-7ec3c68a81efff79b6ca22ac1f1eabbaR2236
-        if (fAddressIndex && fUpdateAddressIndex) {
+        if (fAddressIndex && updateIndices) {
             for (unsigned int k = tx.vout.size(); k-- > 0;) {
                 const CTxOut &out = tx.vout[k];
                 int const scriptType = out.scriptPubKey.Type();
@@ -2320,8 +2323,8 @@ static DisconnectResult DisconnectBlock(const CBlock& block, CValidationState& s
 
                 // insightexplorer
                 // https://github.com/bitpay/bitcoin/commit/017f548ea6d89423ef568117447e61dd5707ec42#diff-7ec3c68a81efff79b6ca22ac1f1eabbaR2304
-                if (fAddressIndex && fUpdateAddressIndex) {
-                    const CTxIn input = tx.vin[j];
+                const CTxIn input = tx.vin[j];
+                if (fAddressIndex && updateIndices) {
                     const CTxOut &prevout = view.GetOutputFor(input);
                     int const scriptType = prevout.scriptPubKey.Type();
                     if (scriptType > 0) {
@@ -2337,6 +2340,13 @@ static DisconnectResult DisconnectBlock(const CBlock& block, CValidationState& s
                             CAddressUnspentKey(scriptType, addrHash, input.prevout.hash, input.prevout.n),
                             CAddressUnspentValue(prevout.nValue, prevout.scriptPubKey, undo.nHeight)));
                     }
+                }
+                // insightexplorer
+                if (fSpentIndex && updateIndices) {
+                    // undo and delete the spent index
+                    spentIndex.push_back(make_pair(
+                        CSpentIndexKey(input.prevout.hash, input.prevout.n),
+                        CSpentIndexValue()));
                 }
             }
         }
@@ -2360,13 +2370,20 @@ static DisconnectResult DisconnectBlock(const CBlock& block, CValidationState& s
     view.SetBestBlock(pindex->pprev->GetBlockHash());
 
     // insightexplorer
-    if (fAddressIndex && fUpdateAddressIndex) {
+    if (fAddressIndex && updateIndices) {
         if (!pblocktree->EraseAddressIndex(addressIndex)) {
             AbortNode(state, "Failed to delete address index");
             return DISCONNECT_FAILED;
         }
         if (!pblocktree->UpdateAddressUnspentIndex(addressUnspentIndex)) {
             AbortNode(state, "Failed to write address unspent index");
+            return DISCONNECT_FAILED;
+        }
+    }
+    // insightexplorer
+    if (fSpentIndex && updateIndices) {
+        if (!pblocktree->UpdateSpentIndex(spentIndex)) {
+            AbortNode(state, "Failed to write transaction index");
             return DISCONNECT_FAILED;
         }
     }
@@ -2568,6 +2585,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     blockundo.vtxundo.reserve(block.vtx.size() - 1);
     std::vector<CAddressIndexDbEntry> addressIndex;
     std::vector<CAddressUnspentDbEntry> addressUnspentIndex;
+    std::vector<CSpentIndexDbEntry> spentIndex;
 
     // Construct the incremental merkle tree at the current
     // block position,
@@ -2619,15 +2637,14 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
             // insightexplorer
             // https://github.com/bitpay/bitcoin/commit/017f548ea6d89423ef568117447e61dd5707ec42#diff-7ec3c68a81efff79b6ca22ac1f1eabbaR2597
-            if (fAddressIndex) {
+            if (fAddressIndex || fSpentIndex) {
                 for (size_t j = 0; j < tx.vin.size(); j++) {
 
                     const CTxIn input = tx.vin[j];
                     const CTxOut &prevout = view.GetOutputFor(tx.vin[j]);
                     int const scriptType = prevout.scriptPubKey.Type();
-                    if (scriptType > 0) {
-                        uint160 const addrHash = prevout.scriptPubKey.AddressHash();
-
+                    const uint160 addrHash = prevout.scriptPubKey.AddressHash();
+                    if (fAddressIndex && scriptType > 0) {
                         // record spending activity
                         addressIndex.push_back(make_pair(
                             CAddressIndexKey(scriptType, addrHash, pindex->nHeight, i, hash, j, true),
@@ -2637,6 +2654,15 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                         addressUnspentIndex.push_back(make_pair(
                             CAddressUnspentKey(scriptType, addrHash, input.prevout.hash, input.prevout.n),
                             CAddressUnspentValue()));
+                    }
+                    if (fSpentIndex) {
+                        // Add the spent index to determine the txid and input that spent an output
+                        // and to find the amount and address from an input.
+                        // If we do not recognize the script type, we still add an entry to the
+                        // spentindex db, with a script type of 0 and addrhash of all zeroes.
+                        spentIndex.push_back(make_pair(
+                            CSpentIndexKey(input.prevout.hash, input.prevout.n),
+                            CSpentIndexValue(hash, j, pindex->nHeight, prevout.nValue, scriptType, addrHash)));
                     }
                 }
             }
@@ -2776,7 +2802,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         if (!pblocktree->WriteTxIndex(vPos))
             return AbortNode(state, "Failed to write transaction index");
 
-    // insightexplorer
+    // START insightexplorer
     if (fAddressIndex) {
         if (!pblocktree->WriteAddressIndex(addressIndex)) {
             return AbortNode(state, "Failed to write address index");
@@ -2785,6 +2811,32 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             return AbortNode(state, "Failed to write address unspent index");
         }
     }
+    if (fSpentIndex) {
+        if (!pblocktree->UpdateSpentIndex(spentIndex)) {
+            return AbortNode(state, "Failed to write spent index");
+        }
+    }
+    if (fTimestampIndex) {
+        unsigned int logicalTS = pindex->nTime;
+        unsigned int prevLogicalTS = 0;
+
+        // retrieve logical timestamp of the previous block
+        if (pindex->pprev)
+            if (!pblocktree->ReadTimestampBlockIndex(pindex->pprev->GetBlockHash(), prevLogicalTS))
+                LogPrintf("%s: Failed to read previous block's logical timestamp\n", __func__);
+
+        if (logicalTS <= prevLogicalTS) {
+            logicalTS = prevLogicalTS + 1;
+            LogPrintf("%s: Previous logical timestamp is newer Actual[%d] prevLogical[%d] Logical[%d]\n", __func__, pindex->nTime, prevLogicalTS, logicalTS);
+        }
+
+        if (!pblocktree->WriteTimestampIndex(CTimestampIndexKey(logicalTS, pindex->GetBlockHash())))
+            return AbortNode(state, "Failed to write timestamp index");
+
+        if (!pblocktree->WriteTimestampBlockIndex(CTimestampBlockIndexKey(pindex->GetBlockHash()), CTimestampBlockIndexValue(logicalTS)))
+            return AbortNode(state, "Failed to write blockhash index");
+    }
+    // END insightexplorer
 
     // add this block to the view's block chain
     view.SetBestBlock(pindex->GetBlockHash());
@@ -3451,9 +3503,12 @@ void FallbackSproutValuePoolBalance(
     const CChainParams& chainparams
 )
 {
-    // We might not want to enable the checkpointing for mainnet
-    // yet.
     if (!chainparams.ZIP209Enabled()) {
+        return;
+    }
+
+    // When developer option -developersetpoolsizezero is enabled, we don't need a fallback balance.
+    if (fExperimentalMode && mapArgs.count("-developersetpoolsizezero")) {
         return;
     }
 
@@ -4277,6 +4332,14 @@ bool static LoadBlockIndexDB()
 
             // Fall back to hardcoded Sprout value pool balance
             FallbackSproutValuePoolBalance(pindex, chainparams);
+
+            // If developer option -developersetpoolsizezero has been enabled,
+            // override and set the in-memory size of shielded pools to zero.  An unshielding transaction
+            // can then be used to trigger and test the handling of turnstile violations.
+            if (fExperimentalMode && mapArgs.count("-developersetpoolsizezero")) {
+                pindex->nChainSproutValue = 0;
+                pindex->nChainSaplingValue = 0;
+            }
         }
         // Construct in-memory chain of branch IDs.
         // Relies on invariant: a block that does not activate a network upgrade
@@ -4355,6 +4418,7 @@ bool static LoadBlockIndexDB()
     pblocktree->ReadFlag("insightexplorer", fInsightExplorer);
     LogPrintf("%s: insight explorer %s\n", __func__, fAddressIndex ? "enabled" : "disabled");
     fAddressIndex = fInsightExplorer;
+    fSpentIndex = fInsightExplorer;
 
     // Fill in-memory data
     BOOST_FOREACH(const PAIRTYPE(uint256, CBlockIndex*)& item, mapBlockIndex)
@@ -4697,6 +4761,8 @@ bool InitBlockIndex() {
     fInsightExplorer = GetBoolArg("-insightexplorer", false);
     pblocktree->WriteFlag("insightexplorer", fInsightExplorer);
     fAddressIndex = fInsightExplorer;
+    fSpentIndex = fInsightExplorer;
+    fTimestampIndex = fInsightExplorer;
 
     LogPrintf("Initializing databases...\n");
 
@@ -6580,12 +6646,19 @@ public:
 // Set default values of new CMutableTransaction based on consensus rules at given height.
 CMutableTransaction CreateNewContextualCMutableTransaction(const Consensus::Params& consensusParams, int nHeight)
 {
-    CMutableTransaction mtx;
+    return CreateNewContextualCMutableTransaction(consensusParams, nHeight, expiryDelta);
+}
 
+CMutableTransaction CreateNewContextualCMutableTransaction(const Consensus::Params& consensusParams, int nHeight, int nExpiryDelta) {
+    CMutableTransaction mtx;
     bool isOverwintered = NetworkUpgradeActive(nHeight, consensusParams, Consensus::UPGRADE_OVERWINTER);
     if (isOverwintered) {
         mtx.fOverwintered = true;
-        mtx.nExpiryHeight = nHeight + expiryDelta;
+        mtx.nExpiryHeight = nHeight + nExpiryDelta;
+
+        if (mtx.nExpiryHeight <= 0 || mtx.nExpiryHeight >= TX_EXPIRY_HEIGHT_THRESHOLD) {
+            throw new std::runtime_error("CreateNewContextualCMutableTransaction: invalid expiry height");
+        }
 
         // NOTE: If the expiry height crosses into an incompatible consensus epoch, and it is changed to the last block
         // of the current epoch (see below: Overwinter->Sapling), the transaction will be rejected if it falls within
