@@ -202,18 +202,20 @@ uint8_t prices_costbasisopretdecode(CScript scriptPubKey,uint256 &bettxid,CPubKe
     return(0);
 }
 
-CScript prices_finalopret(bool isRekt, uint256 bettxid, CPubKey pk, int32_t lastheight, int64_t costbasis, int64_t lastprice, int64_t liquidationprice, int64_t equity, int64_t exitfee)
+CScript prices_finalopret(bool isRekt, uint256 bettxid, CPubKey pk, int32_t lastheight, int64_t costbasis, int64_t lastprice, int64_t liquidationprice, int64_t equity, int64_t exitfee, uint32_t nonce)
 {
     CScript opret;
-    opret << OP_RETURN << E_MARSHAL(ss << EVAL_PRICES << (isRekt ? 'R' : 'F') << bettxid << pk << lastheight << costbasis << lastprice << liquidationprice << equity << exitfee);
+    opret << OP_RETURN << E_MARSHAL(ss << EVAL_PRICES << (isRekt ? 'R' : 'F') << bettxid << pk << lastheight << costbasis << lastprice << liquidationprice << equity << exitfee << nonce);
     return(opret);
 }
 
 uint8_t prices_finalopretdecode(CScript scriptPubKey, uint256 &bettxid,  CPubKey &pk, int32_t &lastheight, int64_t &costbasis, int64_t &lastprice, int64_t &liquidationprice, int64_t &equity, int64_t &exitfee)
 {
     std::vector<uint8_t> vopret; uint8_t e,f;
+    uint32_t nonce;
+
     GetOpReturnData(scriptPubKey,vopret);
-    if (vopret.size() > 2 && E_UNMARSHAL(vopret, ss >> e; ss >> f; ss >> bettxid; ss >> pk; ss >> lastheight; ss >> costbasis; ss >> lastprice; ss >> liquidationprice; ss >> equity; ss >> exitfee) != 0 && e == EVAL_PRICES && (f == 'F' || f == 'R'))
+    if (vopret.size() > 2 && E_UNMARSHAL(vopret, ss >> e; ss >> f; ss >> bettxid; ss >> pk; ss >> lastheight; ss >> costbasis; ss >> lastprice; ss >> liquidationprice; ss >> equity; ss >> exitfee; if (!ss.eof()) ss >> nonce; ) != 0 && e == EVAL_PRICES && (f == 'F' || f == 'R'))
     {
         return(f);
     }
@@ -1947,8 +1949,35 @@ UniValue PricesRekt(int64_t txfee, uint256 bettxid, int32_t rektheight)
             mtx.vout.push_back(MakeCC1vout(cp->evalcode, CCchange, pricespk));
 
         /// mtx.vout.push_back(MakeCC1vout(cp->evalcode, bettx.vout[2].nValue - myfee - txfee, pricespk));  // change
-        rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, prices_finalopret(true, bettxid, mypk, betinfo.lastheight, betinfo.averageCostbasis, betinfo.lastprice, betinfo.liquidationprice, betinfo.equity, myfee));
-        return(prices_rawtxresult(result, rawtx, 0));
+
+        // make some PoW to get txid=0x00.....00 to 'faucet' rekts
+        fprintf(stderr, "start PoW at %u\n", (uint32_t)time(NULL));
+        uint32_t nonce = rand() & 0xfffffff;
+        for (int i = 0; i<1000000; i++, nonce++)
+        {
+            CMutableTransaction tmpmtx = mtx;
+            int32_t len;
+            uint8_t txbuf[32768];
+
+            rawtx = FinalizeCCTx(0, cp, tmpmtx, mypk, txfee, prices_finalopret(true, bettxid, mypk, betinfo.lastheight, betinfo.averageCostbasis, betinfo.lastprice, betinfo.liquidationprice, betinfo.equity, myfee, nonce));
+            if ((len = (int32_t)rawtx.size()) > 0 && len < sizeof(txbuf) / sizeof(txbuf[0]) * 2)
+            {
+                len >>= 1;  // sizeof hex divide by 2
+                decode_hex(txbuf, len, (char *)rawtx.c_str());
+                bits256 hash = bits256_doublesha256(0, txbuf, len);
+                if ((hash.bytes[0] & 0xff) == 0 && (hash.bytes[31] & 0xff) == 0)
+                {
+                    fprintf(stderr, "found valid txid after %d iterations %u\n", i, (uint32_t)time(NULL));
+                    return(prices_rawtxresult(result, rawtx, 0));
+                }
+                //fprintf(stderr,"%02x%02x ",hash.bytes[0],hash.bytes[31]);
+            }
+        }
+        fprintf(stderr, "couldnt generate valid txid %u\n", (uint32_t)time(NULL));
+
+        result.push_back(Pair("result", "error"));
+        result.push_back(Pair("error", "could not generate valid txid"));
+        return(result);
     }
     else
     {
@@ -2031,7 +2060,7 @@ UniValue PricesCashout(int64_t txfee, uint256 bettxid)
     if (CCchange >= txfee)
         mtx.vout.push_back(MakeCC1vout(cp->evalcode, CCchange, pricespk));
     // TODO: what should the opret param be:
-    rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, prices_finalopret(false, bettxid, mypk, nextheight-1, betinfo.averageCostbasis, betinfo.lastprice, betinfo.liquidationprice, betinfo.equity, txfee));
+    rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, prices_finalopret(false, bettxid, mypk, nextheight-1, betinfo.averageCostbasis, betinfo.lastprice, betinfo.liquidationprice, betinfo.equity, txfee, 0));
     return(prices_rawtxresult(result, rawtx, 0));
         
 }
