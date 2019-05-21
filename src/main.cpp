@@ -4085,7 +4085,8 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
         if ((i == (block.vtx.size() - 1)) && (ASSETCHAINS_STAKED != 0 && (komodo_isPoS((CBlock *)&block,pindexDelete->GetHeight(),true) != 0)))
         {
 #ifdef ENABLE_WALLET
-            pwalletMain->EraseFromWallet(tx.GetHash());
+            if ( !GetBoolArg("-disablewallet", false) )
+                pwalletMain->EraseFromWallet(tx.GetHash());
 #endif
         }
         else
@@ -6503,15 +6504,15 @@ bool LoadExternalBlockFile(FILE* fileIn, CDiskBlockPos *dbp)
             }
             try {
                 // read block
+                CBlock block;
                 uint64_t nBlockPos = blkdat.GetPos();
                 if (dbp)
                     dbp->nPos = nBlockPos;
                 blkdat.SetLimit(nBlockPos + nSize);
                 blkdat.SetPos(nBlockPos);
-                CBlock block;
                 blkdat >> block;
-                nRewind = blkdat.GetPos(); 
-
+                
+                nRewind = blkdat.GetPos();
                 // detect out of order blocks, and store them for later
                 uint256 hash = block.GetHash();
                 if (hash != chainparams.GetConsensus().hashGenesisBlock && mapBlockIndex.find(block.hashPrevBlock) == mapBlockIndex.end()) {
@@ -6542,6 +6543,7 @@ bool LoadExternalBlockFile(FILE* fileIn, CDiskBlockPos *dbp)
                     std::pair<std::multimap<uint256, CDiskBlockPos>::iterator, std::multimap<uint256, CDiskBlockPos>::iterator> range = mapBlocksUnknownParent.equal_range(head);
                     while (range.first != range.second) {
                         std::multimap<uint256, CDiskBlockPos>::iterator it = range.first;
+                        
                         if (ReadBlockFromDisk(mapBlockIndex.count(hash)!=0?mapBlockIndex[hash]->GetHeight():0,block, it->second,1))
                         {
                             LogPrintf("%s: Processing out of order child %s of %s\n", __func__, block.GetHash().ToString(),
