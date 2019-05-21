@@ -412,8 +412,13 @@ static bool ValidateFinalTx(struct CCcontract_info *cp, Eval *eval, const CTrans
     }
 
     vscript_t opret;
-    if (prices_finalopretdecode(finaltx.vout.back().scriptPubKey, bettxid, pk, lastheight, costbasis, lastprice, liquidationprice, equity, fee) == 0)
+    uint8_t funcId;
+    if ((funcId = prices_finalopretdecode(finaltx.vout.back().scriptPubKey, bettxid, pk, lastheight, costbasis, lastprice, liquidationprice, equity, fee)) == 0)
         return eval->Invalid("cannot decode opreturn for final tx");
+
+    // check rekt txid mining:
+    if( funcId == 'R' && (finaltx.GetHash().begin()[0] != 0 || finaltx.GetHash().begin()[31] != 0) )
+        return eval->Invalid("incorrect rekt txid");
 
     if (bettx.GetHash() != bettxid)
         return eval->Invalid("incorrect bettx id");
