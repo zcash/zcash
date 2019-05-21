@@ -7,6 +7,8 @@ make -f Makefile_rogue
 rm ../libcc.so 
 cp librogue.so ../libcc.so
 
+#exit 0
+
 echo sudoku/musig/dilithium
 gcc -O3 -std=c++11 -I../secp256k1/include -I../univalue/include -I../cryptoconditions/include -I../cryptoconditions/src -I../cryptoconditions/src/asn -I.. -I. -fPIC -shared -c -o sudokucc.so cclib.cpp
 
