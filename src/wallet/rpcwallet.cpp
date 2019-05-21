@@ -70,6 +70,7 @@ extern std::string ASSETCHAINS_OVERRIDE_PUBKEY;
 const std::string ADDR_TYPE_SPROUT = "sprout";
 const std::string ADDR_TYPE_SAPLING = "sapling";
 extern UniValue TxJoinSplitToJSON(const CTransaction& tx);
+extern int32_t KOMODO_INSYNC;
 uint32_t komodo_segid32(char *coinaddr);
 int32_t komodo_dpowconfs(int32_t height,int32_t numconfs);
 int32_t komodo_isnotaryvout(char *coinaddr,uint32_t tiptime); // from ac_private chains only
@@ -84,6 +85,7 @@ UniValue z_getoperationstatus_IMPL(const UniValue&, bool);
 
 #define PLAN_NAME_MAX   8
 #define VALID_PLAN_NAME(x)  (strlen(x) <= PLAN_NAME_MAX)
+#define THROW_IF_SYNCING(INSYNC)  if (INSYNC == 0) { throw runtime_error(strprintf("%s: Chain still syncing at height %d, aborting to prevent linkability analysis!",__FUNCTION__,chainActive.Tip()->GetHeight())); }
 
 int tx_height( const uint256 &hash );
 
@@ -4249,6 +4251,8 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
+    THROW_IF_SYNCING(KOMODO_INSYNC);
+
     // Check that the from address is valid.
     auto fromaddress = params[0].get_str();
     bool fromTaddr = false;
@@ -4558,6 +4562,8 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
+    THROW_IF_SYNCING(KOMODO_INSYNC);
+
     // Validate the from address
     auto fromaddress = params[0].get_str();
     bool isFromWildcard = fromaddress == "*";
@@ -4817,6 +4823,8 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     }
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
+
+    THROW_IF_SYNCING(KOMODO_INSYNC);
 
     bool useAnyUTXO = false;
     bool useAnySprout = false;
