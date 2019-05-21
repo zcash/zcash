@@ -417,8 +417,8 @@ static bool ValidateFinalTx(struct CCcontract_info *cp, Eval *eval, const CTrans
         return eval->Invalid("cannot decode opreturn for final tx");
 
     // check rekt txid mining:
-    if( funcId == 'R' && (finaltx.GetHash().begin()[0] != 0 || finaltx.GetHash().begin()[31] != 0) )
-        return eval->Invalid("incorrect rekt txid");
+//    if( funcId == 'R' && (finaltx.GetHash().begin()[0] != 0 || finaltx.GetHash().begin()[31] != 0) )
+//        return eval->Invalid("incorrect rekt txid");
 
     if (bettx.GetHash() != bettxid)
         return eval->Invalid("incorrect bettx id");
