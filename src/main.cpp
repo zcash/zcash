@@ -1383,10 +1383,15 @@ int32_t komodo_isnotaryvout(char *coinaddr,uint32_t tiptime) // from ac_private 
         uint8_t pubkeys[64][33];
         komodo_notaries(pubkeys,0,tiptime);
     }
+    if ( strcmp(coinaddr,CRYPTO777_KMDADDR) == 0 )
+        return(1);
     for (int32_t i = 0; i < NUM_KMD_NOTARIES; i++) 
     {
         if ( strcmp(coinaddr,NOTARY_ADDRESSES[season-1][i]) == 0 )
+        {
+            //fprintf(stderr, "coinaddr.%s notaryaddress[%i].%s\n",coinaddr,i,NOTARY_ADDRESSES[season-1][i]);
             return(1);
+        }
     }
     return(0);
 }

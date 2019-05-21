@@ -124,7 +124,7 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
                 {
                     // this is PIRATE, we need to populate the address array for the notary exemptions. 
                     for (i = 0; i<NUM_KMD_NOTARIES; i++)
-                        pubkey2addr((char *)NOTARY_ADDRESSES[kmd_season-1][i],(uint8_t *)kmd_pubkeys[kmd_season-1]);
+                        pubkey2addr((char *)NOTARY_ADDRESSES[kmd_season-1][i],(uint8_t *)kmd_pubkeys[kmd_season-1][i]);
                 }
                 didinit[kmd_season-1] = 1;
             }
