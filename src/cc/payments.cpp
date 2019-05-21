@@ -406,6 +406,7 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
                     {
                         // token snapshot
                         // payments_gettokenallocations(top, bottom, excludeScriptPubKeys, tokenid, mpzTotalAllocations, scriptPubKeys, allocations);
+                        return(eval->Invalid("tokens not yet implemented"));
                     }
                 }
                 // sanity check to make sure we got all the required info, skip for merge type tx
@@ -519,8 +520,8 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
                 else if ( i == dust+1 )
                     return(eval->Invalid("cannot merge only dust"));
             }
-        } else return(eval->Invalid("create transaction cannot decode"));
-    } else return(eval->Invalid("Could not get contract transaction"));
+        } else return(eval->Invalid("cannot decode create transaction"));
+    } else return(eval->Invalid("could not get contract transaction"));
     return(true);
 }
 // end of consensus code
@@ -1102,7 +1103,7 @@ UniValue PaymentsTxidopret(struct CCcontract_info *cp,char *jsonstr)
                 rawtx = FinalizeCCTx(0,cp,mtx,mypk,PAYMENTS_TXFEE,EncodePaymentsTxidOpRet(allocation,scriptPubKey,opret));
                 if ( params != 0 )
                     free_json(params);
-                return(payments_rawtxresult(result,rawtx,0));
+                return(payments_rawtxresult(result,rawtx,1));
             }
             result.push_back(Pair("result","error"));
             result.push_back(Pair("error","invalid params or cant find txfee"));
@@ -1291,7 +1292,8 @@ UniValue PaymentsAirdropTokens(struct CCcontract_info *cp,char *jsonstr)
     uint256 hashBlock, tokenid = zeroid; CTransaction tx; CPubKey Paymentspk,mypk; char markeraddr[64]; std::string rawtx; 
     int32_t lockedblocks,minrelease,top,bottom,n,i,minimum=10000; std::vector<std::vector<uint8_t>> excludeScriptPubKeys; int8_t fixedAmount;
     cJSON *params = payments_reparse(&n,jsonstr);
-    if ( params != 0 && n >= 6 )
+    // disable for now. Need token snapshot function. 
+    if ( 0 ) //params != 0 && n >= 6 )
     {
         tokenid = payments_juint256(jitem(params,0));
         lockedblocks = juint(jitem(params,1),0);
@@ -1358,7 +1360,8 @@ UniValue PaymentsAirdropTokens(struct CCcontract_info *cp,char *jsonstr)
     else
     {
         result.push_back(Pair("result","error"));
-        result.push_back(Pair("error","parameters error"));
+        //result.push_back(Pair("error","parameters error"));
+        result.push_back(Pair("error","tokens airdrop not yet impmlemented"));
     }
     if ( params != 0 )
         free_json(params);
