@@ -2874,21 +2874,18 @@ void CWallet::ReacceptWalletTransactions()
             bool invalid = state.IsInvalid(nDoS);
 
             // log rejection and deletion
-            // printf("ERROR reaccepting wallet transaction %s to mempool, reason: %s, DoS: %d\n", wtx.GetHash().ToString().c_str(), state.GetRejectReason().c_str(), nDoS);
+            //printf("ERROR reaccepting wallet transaction %s to mempool, reason: %s, DoS: %d\n", wtx.GetHash().ToString().c_str(), state.GetRejectReason().c_str(), nDoS);
 
-            if (!wtx.IsCoinBase() && invalid && nDoS > 0)
+            if (!wtx.IsCoinBase() && invalid && nDoS > 0 && state.GetRejectReason() != "tx-overwinter-expired")
             {
                 LogPrintf("erasing transaction %s\n", wtx.GetHash().GetHex().c_str());
                 vwtxh.push_back(wtx.GetHash());
             }
         }
     }
-    if ( IsInitialBlockDownload() == 0 )
+    for (auto hash : vwtxh)
     {
-        for (auto hash : vwtxh)
-        {
-            EraseFromWallet(hash);
-        }
+        EraseFromWallet(hash);
     }
 }
 
@@ -2896,7 +2893,7 @@ bool CWalletTx::RelayWalletTransaction()
 {
     if ( pwallet == 0 )
     {
-        fprintf(stderr,"unexpected null pwallet in RelayWalletTransaction\n");
+        //fprintf(stderr,"unexpected null pwallet in RelayWalletTransaction\n");
         return(false);
     }
     assert(pwallet->GetBroadcastTransactions());

@@ -4249,9 +4249,9 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
             + HelpExampleRpc("z_sendmany", "\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\", [{\"address\": \"zs14d8tc0hl9q0vg5l28uec5vk6sk34fkj2n8s7jalvw5fxpy6v39yn4s2ga082lymrkjk0x2nqg37\" ,\"amount\": 5.0}]")
         );
 
-    THROW_IF_SYNCING(KOMODO_INSYNC);
-
     LOCK2(cs_main, pwalletMain->cs_wallet);
+
+    THROW_IF_SYNCING(KOMODO_INSYNC);
 
     // Check that the from address is valid.
     auto fromaddress = params[0].get_str();
@@ -4560,9 +4560,9 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
             + HelpExampleRpc("z_shieldcoinbase", "\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\", \"zs14d8tc0hl9q0vg5l28uec5vk6sk34fkj2n8s7jalvw5fxpy6v39yn4s2ga082lymrkjk0x2nqg37\"")
         );
 
-    THROW_IF_SYNCING(KOMODO_INSYNC);
-
     LOCK2(cs_main, pwalletMain->cs_wallet);
+
+    THROW_IF_SYNCING(KOMODO_INSYNC);
 
     // Validate the from address
     auto fromaddress = params[0].get_str();
@@ -4822,9 +4822,9 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_WALLET_ERROR, "Error: z_mergetoaddress is disabled.");
     }
 
-    THROW_IF_SYNCING(KOMODO_INSYNC);
-
     LOCK2(cs_main, pwalletMain->cs_wallet);
+
+    THROW_IF_SYNCING(KOMODO_INSYNC);
 
     bool useAnyUTXO = false;
     bool useAnySprout = false;
