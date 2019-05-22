@@ -1,7 +1,7 @@
 Source: zcash
 Section: utils
 Priority: optional
-Maintainer: Zcash Company <team@z.cash>
+Maintainer: Electric Coin Company <team@z.cash>
 Homepage: https://z.cash
 Build-Depends: autoconf, automake, bsdmainutils, build-essential,
  git, g++-multilib, libc6-dev, libtool,

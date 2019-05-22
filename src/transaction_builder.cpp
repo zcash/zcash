@@ -8,6 +8,7 @@
 #include "pubkey.h"
 #include "rpc/protocol.h"
 #include "script/sign.h"
+#include "utilmoneystr.h"
 
 #include <boost/variant.hpp>
 #include <librustzcash.h>
@@ -49,10 +50,31 @@ std::string TransactionBuilderResult::GetError() {
 TransactionBuilder::TransactionBuilder(
     const Consensus::Params& consensusParams,
     int nHeight,
-    CKeyStore* keystore) : consensusParams(consensusParams), nHeight(nHeight), keystore(keystore)
+    int nExpiryDelta,
+    CKeyStore* keystore,
+    ZCJoinSplit* sproutParams,
+    CCoinsViewCache* coinsView,
+    CCriticalSection* cs_coinsView) :
+    consensusParams(consensusParams),
+    nHeight(nHeight),
+    keystore(keystore),
+    sproutParams(sproutParams),
+    coinsView(coinsView),
+    cs_coinsView(cs_coinsView)
 {
-    mtx = CreateNewContextualCMutableTransaction(consensusParams, nHeight);
+    mtx = CreateNewContextualCMutableTransaction(consensusParams, nHeight, nExpiryDelta);
 }
+
+// This exception is thrown in certain scenarios when building JoinSplits fails.
+struct JSDescException : public std::exception
+{
+    JSDescException (const std::string msg_) : msg(msg_) {}
+
+    const char* what() { return msg.c_str(); }
+
+private:
+    std::string msg;
+};
 
 void TransactionBuilder::AddSaplingSpend(
     libzcash::SaplingExpandedSpendingKey expsk,
@@ -90,6 +112,39 @@ void TransactionBuilder::AddSaplingOutput(
     mtx.valueBalance -= value;
 }
 
+void TransactionBuilder::AddSproutInput(
+    libzcash::SproutSpendingKey sk,
+    libzcash::SproutNote note,
+    SproutWitness witness)
+{
+    if (sproutParams == nullptr) {
+        throw std::runtime_error("Cannot add Sprout inputs to a TransactionBuilder without Sprout params");
+    }
+
+    // Consistency check: all anchors must equal the first one
+    if (!jsInputs.empty()) {
+        if (jsInputs[0].witness.root() != witness.root()) {
+            throw JSONRPCError(RPC_WALLET_ERROR, "Anchor does not match previously-added Sprout spends.");
+        }
+    }
+
+    jsInputs.emplace_back(witness, note, sk);
+}
+
+void TransactionBuilder::AddSproutOutput(
+    libzcash::SproutPaymentAddress to,
+    CAmount value,
+    std::array<unsigned char, ZC_MEMO_SIZE> memo)
+{
+    if (sproutParams == nullptr) {
+        throw std::runtime_error("Cannot add Sprout outputs to a TransactionBuilder without Sprout params");
+    }
+
+    libzcash::JSOutput jsOutput(to, value);
+    jsOutput.memo = memo;
+    jsOutputs.push_back(jsOutput);
+}
+
 void TransactionBuilder::AddTransparentInput(COutPoint utxo, CScript scriptPubKey, CAmount value)
 {
     if (keystore == nullptr) {
@@ -118,7 +173,15 @@ void TransactionBuilder::SetFee(CAmount fee)
 
 void TransactionBuilder::SendChangeTo(libzcash::SaplingPaymentAddress changeAddr, uint256 ovk)
 {
-    zChangeAddr = std::make_pair(ovk, changeAddr);
+    saplingChangeAddr = std::make_pair(ovk, changeAddr);
+    sproutChangeAddr = boost::none;
+    tChangeAddr = boost::none;
+}
+
+void TransactionBuilder::SendChangeTo(libzcash::SproutPaymentAddress changeAddr)
+{
+    sproutChangeAddr = changeAddr;
+    saplingChangeAddr = boost::none;
     tChangeAddr = boost::none;
 }
 
@@ -129,7 +192,8 @@ void TransactionBuilder::SendChangeTo(CTxDestination& changeAddr)
     }
 
     tChangeAddr = changeAddr;
-    zChangeAddr = boost::none;
+    saplingChangeAddr = boost::none;
+    sproutChangeAddr = boost::none;
 }
 
 TransactionBuilderResult TransactionBuilder::Build()
@@ -140,6 +204,12 @@ TransactionBuilderResult TransactionBuilder::Build()
 
     // Valid change
     CAmount change = mtx.valueBalance - fee;
+    for (auto jsInput : jsInputs) {
+        change += jsInput.note.value();
+    }
+    for (auto jsOutput : jsOutputs) {
+        change -= jsOutput.value;
+    }
     for (auto tIn : tIns) {
         change += tIn.value;
     }
@@ -156,9 +226,13 @@ TransactionBuilderResult TransactionBuilder::Build()
 
     if (change > 0) {
         // Send change to the specified change address. If no change address
-        // was set, send change to the first Sapling address given as input.
-        if (zChangeAddr) {
-            AddSaplingOutput(zChangeAddr->first, zChangeAddr->second, change);
+        // was set, send change to the first Sapling address given as input
+        // if any; otherwise the first Sprout address given as input.
+        // (A t-address can only be used as the change address if explicitly set.)
+        if (saplingChangeAddr) {
+            AddSaplingOutput(saplingChangeAddr->first, saplingChangeAddr->second, change);
+        } else if (sproutChangeAddr) {
+            AddSproutOutput(sproutChangeAddr.get(), change);
         } else if (tChangeAddr) {
             // tChangeAddr has already been validated.
             AddTransparentOutput(tChangeAddr.value(), change);
@@ -167,6 +241,9 @@ TransactionBuilderResult TransactionBuilder::Build()
             auto note = spends[0].note;
             libzcash::SaplingPaymentAddress changeAddr(note.d, note.pk_d);
             AddSaplingOutput(fvk.ovk, changeAddr, change);
+        } else if (!jsInputs.empty()) {
+            auto changeAddr = jsInputs[0].key.address();
+            AddSproutOutput(changeAddr, change);
         } else {
             return TransactionBuilderResult("Could not determine change address");
         }
@@ -261,6 +338,26 @@ TransactionBuilderResult TransactionBuilder::Build()
     }
 
     //
+    // Sprout JoinSplits
+    //
+
+    unsigned char joinSplitPrivKey[crypto_sign_SECRETKEYBYTES];
+    crypto_sign_keypair(mtx.joinSplitPubKey.begin(), joinSplitPrivKey);
+
+    // Create Sprout JSDescriptions
+    if (!jsInputs.empty() || !jsOutputs.empty()) {
+        try {
+            CreateJSDescriptions();
+        } catch (JSDescException e) {
+            librustzcash_sapling_proving_ctx_free(ctx);
+            return TransactionBuilderResult(e.what());
+        } catch (std::runtime_error e) {
+            librustzcash_sapling_proving_ctx_free(ctx);
+            throw e;
+        }
+    }
+
+    //
     // Signatures
     //
 
@@ -292,6 +389,24 @@ TransactionBuilderResult TransactionBuilder::Build()
 
     librustzcash_sapling_proving_ctx_free(ctx);
 
+    // Create Sprout joinSplitSig
+    if (crypto_sign_detached(
+        mtx.joinSplitSig.data(), NULL,
+        dataToBeSigned.begin(), 32,
+        joinSplitPrivKey) != 0)
+    {
+        return TransactionBuilderResult("Failed to create Sprout joinSplitSig");
+    }
+
+    // Sanity check Sprout joinSplitSig
+    if (crypto_sign_verify_detached(
+        mtx.joinSplitSig.data(),
+        dataToBeSigned.begin(), 32,
+        mtx.joinSplitPubKey.begin()) != 0)
+    {
+        return TransactionBuilderResult("Sprout joinSplitSig sanity check failed");
+    }
+
     // Transparent signatures
     CTransaction txNewConst(mtx);
     for (int nIn = 0; nIn < mtx.vin.size(); nIn++) {
@@ -310,4 +425,290 @@ TransactionBuilderResult TransactionBuilder::Build()
     }
 
     return TransactionBuilderResult(CTransaction(mtx));
+}
+
+void TransactionBuilder::CreateJSDescriptions()
+{
+    // Copy jsInputs and jsOutputs to more flexible containers
+    std::deque<libzcash::JSInput> jsInputsDeque;
+    for (auto jsInput : jsInputs) {
+        jsInputsDeque.push_back(jsInput);
+    }
+    std::deque<libzcash::JSOutput> jsOutputsDeque;
+    for (auto jsOutput : jsOutputs) {
+        jsOutputsDeque.push_back(jsOutput);
+    }
+
+    // If we have no Sprout shielded inputs, then we do the simpler more-leaky
+    // process where we just create outputs directly. We save the chaining logic,
+    // at the expense of leaking the sums of pairs of output values in vpub_old.
+    if (jsInputs.empty()) {
+        // Create joinsplits, where each output represents a zaddr recipient.
+        while (jsOutputsDeque.size() > 0) {
+            // Default array entries are dummy inputs and outputs
+            std::array<libzcash::JSInput, ZC_NUM_JS_INPUTS> vjsin;
+            std::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS> vjsout;
+            uint64_t vpub_old = 0;
+
+            for (int n = 0; n < ZC_NUM_JS_OUTPUTS && jsOutputsDeque.size() > 0; n++) {
+                vjsout[n] = jsOutputsDeque.front();
+                jsOutputsDeque.pop_front();
+
+                // Funds are removed from the value pool and enter the private pool
+                vpub_old += vjsout[n].value;
+            }
+
+            std::array<size_t, ZC_NUM_JS_INPUTS> inputMap;
+            std::array<size_t, ZC_NUM_JS_OUTPUTS> outputMap;
+            CreateJSDescription(vpub_old, 0, vjsin, vjsout, inputMap, outputMap);
+        }
+        return;
+    }
+
+    // At this point, we are guaranteed to have at least one input note.
+    // Use address of first input note as the temporary change address.
+    auto changeKey = jsInputsDeque.front().key;
+    auto changeAddress = changeKey.address();
+
+    CAmount jsChange = 0;          // this is updated after each joinsplit
+    int changeOutputIndex = -1;    // this is updated after each joinsplit if jsChange > 0
+    bool vpubOldProcessed = false; // updated when vpub_old for taddr inputs is set in first joinsplit
+    bool vpubNewProcessed = false; // updated when vpub_new for miner fee and taddr outputs is set in last joinsplit
+
+    CAmount valueOut = 0;
+    for (auto jsInput : jsInputs) {
+        valueOut += jsInput.note.value();
+    }
+    for (auto jsOutput : jsOutputs) {
+        valueOut -= jsOutput.value;
+    }
+    CAmount vpubOldTarget = valueOut < 0 ? -valueOut : 0;
+    CAmount vpubNewTarget = valueOut > 0 ? valueOut : 0;
+
+    // Keep track of treestate within this transaction
+    boost::unordered_map<uint256, SproutMerkleTree, CCoinsKeyHasher> intermediates;
+    std::vector<uint256> previousCommitments;
+
+    while (!vpubNewProcessed) {
+        // Default array entries are dummy inputs and outputs
+        std::array<libzcash::JSInput, ZC_NUM_JS_INPUTS> vjsin;
+        std::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS> vjsout;
+        uint64_t vpub_old = 0;
+        uint64_t vpub_new = 0;
+
+        // Set vpub_old in the first joinsplit
+        if (!vpubOldProcessed) {
+            vpub_old += vpubOldTarget; // funds flowing from public pool
+            vpubOldProcessed = true;
+        }
+
+        CAmount jsInputValue = 0;
+        uint256 jsAnchor;
+
+        JSDescription prevJoinSplit;
+
+        // Keep track of previous JoinSplit and its commitments
+        if (mtx.vjoinsplit.size() > 0) {
+            prevJoinSplit = mtx.vjoinsplit.back();
+        }
+
+        // If there is no change, the chain has terminated so we can reset the tracked treestate.
+        if (jsChange == 0 && mtx.vjoinsplit.size() > 0) {
+            intermediates.clear();
+            previousCommitments.clear();
+        }
+
+        //
+        // Consume change as the first input of the JoinSplit.
+        //
+        if (jsChange > 0) {
+            // Update tree state with previous joinsplit
+            SproutMerkleTree tree;
+            {
+                // assert that coinsView is not null
+                assert(coinsView);
+                // We do not check cs_coinView because we do not set this in testing
+                // assert(cs_coinsView);
+                LOCK(cs_coinsView);
+                auto it = intermediates.find(prevJoinSplit.anchor);
+                if (it != intermediates.end()) {
+                    tree = it->second;
+                } else if (!coinsView->GetSproutAnchorAt(prevJoinSplit.anchor, tree)) {
+                    throw JSDescException("Could not find previous JoinSplit anchor");
+                }
+            }
+
+            assert(changeOutputIndex != -1);
+            assert(changeOutputIndex < prevJoinSplit.commitments.size());
+            boost::optional<SproutWitness> changeWitness;
+            int n = 0;
+            for (const uint256& commitment : prevJoinSplit.commitments) {
+                tree.append(commitment);
+                previousCommitments.push_back(commitment);
+                if (!changeWitness && changeOutputIndex == n++) {
+                    changeWitness = tree.witness();
+                } else if (changeWitness) {
+                    changeWitness.get().append(commitment);
+                }
+            }
+            assert(changeWitness.has_value());
+            jsAnchor = tree.root();
+            intermediates.insert(std::make_pair(tree.root(), tree)); // chained js are interstitial (found in between block boundaries)
+
+            // Decrypt the change note's ciphertext to retrieve some data we need
+            ZCNoteDecryption decryptor(changeKey.receiving_key());
+            auto hSig = prevJoinSplit.h_sig(*sproutParams, mtx.joinSplitPubKey);
+            try {
+                auto plaintext = libzcash::SproutNotePlaintext::decrypt(
+                    decryptor,
+                    prevJoinSplit.ciphertexts[changeOutputIndex],
+                    prevJoinSplit.ephemeralKey,
+                    hSig,
+                    (unsigned char)changeOutputIndex);
+
+                auto note = plaintext.note(changeAddress);
+                vjsin[0] = libzcash::JSInput(changeWitness.get(), note, changeKey);
+
+                jsInputValue += plaintext.value();
+
+                LogPrint("zrpcunsafe", "spending change (amount=%s)\n", FormatMoney(plaintext.value()));
+
+            } catch (const std::exception& e) {
+                throw JSDescException("Error decrypting output note of previous JoinSplit");
+            }
+        }
+
+        //
+        // Consume spendable non-change notes
+        //
+        for (int n = (jsChange > 0) ? 1 : 0; n < ZC_NUM_JS_INPUTS && jsInputsDeque.size() > 0; n++) {
+            auto jsInput = jsInputsDeque.front();
+            jsInputsDeque.pop_front();
+
+            // Add history of previous commitments to witness
+            if (jsChange > 0) {
+                for (const uint256& commitment : previousCommitments) {
+                    jsInput.witness.append(commitment);
+                }
+                if (jsAnchor != jsInput.witness.root()) {
+                    throw JSDescException("Witness for spendable note does not have same anchor as change input");
+                }
+            }
+
+            // The jsAnchor is null if this JoinSplit is at the start of a new chain
+            if (jsAnchor.IsNull()) {
+                jsAnchor = jsInput.witness.root();
+            }
+
+            jsInputValue += jsInput.note.value();
+            vjsin[n] = jsInput;
+        }
+
+        // Find recipient to transfer funds to
+        libzcash::JSOutput recipient;
+        if (jsOutputsDeque.size() > 0) {
+            recipient = jsOutputsDeque.front();
+            jsOutputsDeque.pop_front();
+        }
+        // `recipient` is now either a valid recipient, or a dummy output with value = 0
+
+        // Reset change
+        jsChange = 0;
+        CAmount outAmount = recipient.value;
+
+        // Set vpub_new in the last joinsplit (when there are no more notes to spend or zaddr outputs to satisfy)
+        if (jsOutputsDeque.empty() && jsInputsDeque.empty()) {
+            assert(!vpubNewProcessed);
+            if (jsInputValue < vpubNewTarget) {
+                throw JSDescException(strprintf("Insufficient funds for vpub_new %s", FormatMoney(vpubNewTarget)));
+            }
+            outAmount += vpubNewTarget;
+            vpub_new += vpubNewTarget; // funds flowing back to public pool
+            vpubNewProcessed = true;
+            jsChange = jsInputValue - outAmount;
+            assert(jsChange >= 0);
+        } else {
+            // This is not the last joinsplit, so compute change and any amount still due to the recipient
+            if (jsInputValue > outAmount) {
+                jsChange = jsInputValue - outAmount;
+            } else if (outAmount > jsInputValue) {
+                // Any amount due is owed to the recipient.  Let the miners fee get paid first.
+                CAmount due = outAmount - jsInputValue;
+                libzcash::JSOutput recipientDue(recipient.addr, due);
+                recipientDue.memo = recipient.memo;
+                jsOutputsDeque.push_front(recipientDue);
+
+                // reduce the amount being sent right now to the value of all inputs
+                recipient.value = jsInputValue;
+            }
+        }
+
+        // create output for recipient
+        assert(ZC_NUM_JS_OUTPUTS == 2); // If this changes, the logic here will need to be adjusted
+        vjsout[0] = recipient;
+
+        // create output for any change
+        if (jsChange > 0) {
+            vjsout[1] = libzcash::JSOutput(changeAddress, jsChange);
+
+            LogPrint("zrpcunsafe", "generating note for change (amount=%s)\n", FormatMoney(jsChange));
+        }
+
+        std::array<size_t, ZC_NUM_JS_INPUTS> inputMap;
+        std::array<size_t, ZC_NUM_JS_OUTPUTS> outputMap;
+        CreateJSDescription(vpub_old, vpub_new, vjsin, vjsout, inputMap, outputMap);
+
+        if (jsChange > 0) {
+            changeOutputIndex = -1;
+            for (size_t i = 0; i < outputMap.size(); i++) {
+                if (outputMap[i] == 1) {
+                    changeOutputIndex = i;
+                }
+            }
+            assert(changeOutputIndex != -1);
+        }
+    }
+}
+
+void TransactionBuilder::CreateJSDescription(
+    uint64_t vpub_old,
+    uint64_t vpub_new,
+    std::array<libzcash::JSInput, ZC_NUM_JS_INPUTS> vjsin,
+    std::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS> vjsout,
+    std::array<size_t, ZC_NUM_JS_INPUTS>& inputMap,
+    std::array<size_t, ZC_NUM_JS_OUTPUTS>& outputMap)
+{
+    LogPrint("zrpcunsafe", "CreateJSDescription: creating joinsplit at index %d (vpub_old=%s, vpub_new=%s, in[0]=%s, in[1]=%s, out[0]=%s, out[1]=%s)\n",
+        mtx.vjoinsplit.size(),
+        FormatMoney(vpub_old), FormatMoney(vpub_new),
+        FormatMoney(vjsin[0].note.value()), FormatMoney(vjsin[1].note.value()),
+        FormatMoney(vjsout[0].value), FormatMoney(vjsout[1].value));
+
+    uint256 esk; // payment disclosure - secret
+
+    // Generate the proof, this can take over a minute.
+    JSDescription jsdesc = JSDescription::Randomized(
+            mtx.fOverwintered && (mtx.nVersion >= SAPLING_TX_VERSION),
+            *sproutParams,
+            mtx.joinSplitPubKey,
+            vjsin[0].witness.root(),
+            vjsin,
+            vjsout,
+            inputMap,
+            outputMap,
+            vpub_old,
+            vpub_new,
+            true, //!this->testmode,
+            &esk); // parameter expects pointer to esk, so pass in address
+
+    {
+        auto verifier = libzcash::ProofVerifier::Strict();
+        if (!jsdesc.Verify(*sproutParams, verifier, mtx.joinSplitPubKey)) {
+            throw std::runtime_error("error verifying joinsplit");
+        }
+    }
+
+    mtx.vjoinsplit.push_back(jsdesc);
+
+    // TODO: Sprout payment disclosure
 }

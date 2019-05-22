@@ -71,6 +71,8 @@ testScripts=(
     'p2p_node_bloom.py'
     'regtest_signrawtransaction.py'
     'finalsaplingroot.py'
+    'sprout_sapling_migration.py'
+    'turnstile.py'
 );
 testScriptsExt=(
     'getblocktemplate_longpoll.py'

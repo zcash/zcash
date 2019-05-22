@@ -348,12 +348,7 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
                 // generate a common one from the HD seed. This ensures the data is
                 // recoverable, while keeping it logically separate from the ZIP 32
                 // Sapling key hierarchy, which the user might not be using.
-                HDSeed seed;
-                if (!pwalletMain->GetHDSeed(seed)) {
-                    throw JSONRPCError(
-                        RPC_WALLET_ERROR,
-                        "AsyncRPCOperation_sendmany: HD seed not found");
-                }
+                HDSeed seed = pwalletMain->GetHDSeedForRPC();
                 ovk = ovkForShieldingFromTaddr(seed);
             }
             if (!ovk) {
@@ -650,7 +645,7 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
                 wtxHeight = mapBlockIndex[wtx.hashBlock]->nHeight;
                 wtxDepth = wtx.GetDepthInMainChain();
             }
-            LogPrint("zrpcunsafe", "%s: spending note (txid=%s, vjoinsplit=%d, ciphertext=%d, amount=%s, height=%d, confirmations=%d)\n",
+            LogPrint("zrpcunsafe", "%s: spending note (txid=%s, vjoinsplit=%d, jsoutindex=%d, amount=%s, height=%d, confirmations=%d)\n",
                      getId(),
                      jso.hash.ToString().substr(0, 10),
                      jso.js,
