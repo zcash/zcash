@@ -38,7 +38,7 @@ This is the official Komodo sourcecode repository based on https://github.com/jl
 
 ## Tech Specification
 - Max Supply: 200 million KMD
-- Block Time: 1m 2s
+- Block Time: 60 seconds
 - Block Reward: 3 KMD
 - Mining Algorithm: Equihash
 
