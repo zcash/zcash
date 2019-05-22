@@ -16,6 +16,7 @@ define $(package)_set_vars
   $(package)_config_opts=--disable-shared --disable-openssl --disable-libevent-regress
   $(package)_config_opts_release=--disable-debug-mode
   $(package)_config_opts_linux=--with-pic
+  $(package)_config_opts_freebsd=--with-pic
 endef
 
 define $(package)_config_cmds

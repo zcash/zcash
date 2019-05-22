@@ -8,6 +8,7 @@ $(package)_sha256_hash=58a6f4277ca2bc8565222b3bbd58a177609e9c488e8a72649359ba514
 define $(package)_set_vars
 $(package)_cxxflags+=-std=c++11
 $(package)_cxxflags_linux=-fPIC
+$(package)_cxxflags_freebsd=-fPIC
 endef
 
 define $(package)_build_cmds
