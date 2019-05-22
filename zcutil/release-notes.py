@@ -20,14 +20,18 @@ RELEASE_NOTES_CHANGELOG_HEADING = [
 ]
 
 author_aliases = {
-    'Simon': 'Simon Liu',
-    'bitcartel': 'Simon Liu',
-    'EthanHeilman': 'Ethan Heilman',
     'Ariel': 'Ariel Gabizon',
     'arielgabizon': 'Ariel Gabizon',
+    'bitcartel': 'Simon Liu',
     'Charlie OKeefe': 'Charlie O\'Keefe',
+    'Duke Leto': 'Jonathan \"Duke\" Leto',
+    'Eirik0': 'Eirik Ogilvie-Wigley',
+    'EthanHeilman': 'Ethan Heilman',
+    'mdr0id': 'Marshall Gaucher',
+    'paveljanik': 'Pavel Janik',
+    'Simon': 'Simon Liu',
     'str4d': 'Jack Grigg',
-    'Duke Leto': 'Jonathan \"Duke\" Leto'
+    'zebambam': 'Benjamin Winston'
 }
 
 def apply_author_aliases(name):
