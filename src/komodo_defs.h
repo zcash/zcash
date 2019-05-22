@@ -33,15 +33,15 @@
 
 // KMD Notary Seasons 
 // 1: May 1st 2018 1530921600
-// 2: July 1st 2019 1561939200
-// 3: 3rd season ending isnt known, so use very far times in future. 
+// 2: July 15th 2019 1563148800 -> estimated height 1444000
+// 3: 3rd season ending isnt known, so use very far times in future.
     // 1751328000 = dummy timestamp, 1 July 2025!
     // 7113400 = 5x current KMD blockheight. 
 // to add 4th season, change NUM_KMD_SEASONS to 4, and add timestamp and height of activation to these arrays. 
 #define NUM_KMD_SEASONS 3
 #define NUM_KMD_NOTARIES 64
-static const uint32_t KMD_SEASON_TIMESTAMPS[NUM_KMD_SEASONS] = {1525132800, 1561939200, 1751328000};
-static const int32_t KMD_SEASON_HEIGHTS[NUM_KMD_SEASONS] = {814000, 1422680, 7113400};
+static const uint32_t KMD_SEASON_TIMESTAMPS[NUM_KMD_SEASONS] = {1525132800, 1563148800, 1751328000};
+static const int32_t KMD_SEASON_HEIGHTS[NUM_KMD_SEASONS] = {814000, 1444000, 7113400};
 
 // Era array of pubkeys. Add extra seasons to bottom as requried, after adding appropriate info above. 
 static const char *notaries_elected[NUM_KMD_SEASONS][NUM_KMD_NOTARIES][2] =
