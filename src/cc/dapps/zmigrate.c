@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright © 2014-2018 The SuperNET Developers.                             *
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
  *                                                                            *
  * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
  * the top-level directory of this distribution for the individual copyright  *
@@ -668,36 +668,36 @@ int32_t z_exportkey(char *privkey,char *refcoin,char *acname,char *zaddr)
 
 int32_t getnewaddress(char *coinaddr,char *refcoin,char *acname)
 {
-    cJSON *retjson; char *retstr; int64_t amount=0;
+    cJSON *retjson; char *retstr; int64_t amount=0; int32_t retval = -1;
     if ( (retjson= get_komodocli(refcoin,&retstr,acname,"getnewaddress","","","","")) != 0 )
     {
         fprintf(stderr,"getnewaddress.(%s) %s returned json!\n",refcoin,acname);
         free_json(retjson);
-        return(-1);
     }
     else if ( retstr != 0 )
     {
         strcpy(coinaddr,retstr);
         free(retstr);
-        return(0);
+        retval = 0;
     }
+    return(retval);
 }
 
 int32_t z_getnewaddress(char *coinaddr,char *refcoin,char *acname,char *typestr)
 {
-    cJSON *retjson; char *retstr; int64_t amount=0;
+    cJSON *retjson; char *retstr; int64_t amount=0; int32_t retval = -1;
     if ( (retjson= get_komodocli(refcoin,&retstr,acname,"z_getnewaddress",typestr,"","","")) != 0 )
     {
         fprintf(stderr,"z_getnewaddress.(%s) %s returned json!\n",refcoin,acname);
         free_json(retjson);
-        return(-1);
     }
     else if ( retstr != 0 )
     {
         strcpy(coinaddr,retstr);
         free(retstr);
-        return(0);
+        retval = 0;
     }
+    return(retval);
 }
 
 int64_t find_onetime_amount(char *coinstr,char *coinaddr)
@@ -772,7 +772,7 @@ void importaddress(char *refcoin,char *acname,char *depositaddr)
 
 int32_t z_sendmany(char *opidstr,char *coinstr,char *acname,char *srcaddr,char *destaddr,int64_t amount)
 {
-    cJSON *retjson; char *retstr,params[1024],addr[128];
+    cJSON *retjson; char *retstr,params[1024],addr[128]; int32_t retval = -1;
     sprintf(params,"'[{\"address\":\"%s\",\"amount\":%.8f}]'",destaddr,dstr(amount));
     sprintf(addr,"\"%s\"",srcaddr);
     printf("z_sendmany from.(%s) -> %s\n",srcaddr,params);
@@ -780,35 +780,23 @@ int32_t z_sendmany(char *opidstr,char *coinstr,char *acname,char *srcaddr,char *
     {
         printf("unexpected json z_sendmany.(%s)\n",jprint(retjson,0));
         free_json(retjson);
-        return(-1);
     }
     else if ( retstr != 0 )
     {
         fprintf(stderr,"z_sendmany.(%s) -> opid.(%s)\n",coinstr,retstr);
         strcpy(opidstr,retstr);
         free(retstr);
-        return(0);
+        retval = 0;
     }
+    return(retval);
 }
 
 int32_t z_mergetoaddress(char *opidstr,char *coinstr,char *acname,char *destaddr)
 {
     cJSON *retjson; char *retstr,addr[128],*opstr; int32_t retval = -1;
     sprintf(addr,"[\\\"ANY_SPROUT\\\"]");
-    //printf("z_sendmany from.(%s) -> %s\n",addr,destaddr);
     if ( (retjson= get_komodocli(coinstr,&retstr,acname,"z_mergetoaddress",addr,destaddr,"","")) != 0 )
     {
-        /*{
-         "remainingUTXOs": 0,
-         "remainingTransparentValue": 0.00000000,
-         "remainingNotes": 222,
-         "remainingShieldedValue": 5413.39093055,
-         "mergingUTXOs": 0,
-         "mergingTransparentValue": 0.00000000,
-         "mergingNotes": 10,
-         "mergingShieldedValue": 822.47447172,
-         "opid": "opid-f28f6261-4120-436c-aca5-859870a40a70"
-         }*/
         if ( (opstr= jstr(retjson,"opid")) != 0 )
             strcpy(opidstr,opstr);
         retval = jint(retjson,"remainingNotes");

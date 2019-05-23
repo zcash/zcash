@@ -3,6 +3,21 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 #if defined(HAVE_CONFIG_H)
 #include "config/bitcoin-config.h"
 #endif
@@ -63,6 +78,8 @@ namespace {
 // Global state variables
 //
 extern uint16_t ASSETCHAINS_P2PPORT;
+extern int8_t is_STAKED(const char *chain_name);
+extern char ASSETCHAINS_SYMBOL[65];
 
 bool fDiscover = true;
 bool fListen = true;
@@ -1260,7 +1277,6 @@ void ThreadSocketHandler()
     }
 }
 
-
 void ThreadDNSAddressSeed()
 {
     // goal: only query DNS seeds if address need is acute
@@ -1375,12 +1391,16 @@ void ThreadOpenConnections()
         if (GetTime() - nStart > 60) {
             static bool done = false;
             if (!done) {
-                //LogPrintf("Adding fixed seed nodes as DNS doesn't seem to be available.\n");
-                LogPrintf("Adding fixed seed nodes.\n");
-                addrman.Add(convertSeed6(Params().FixedSeeds()), CNetAddr("127.0.0.1"));
+                // skip DNS seeds for staked chains.
+                if ( is_STAKED(ASSETCHAINS_SYMBOL) == 0 ) {
+                    //LogPrintf("Adding fixed seed nodes as DNS doesn't seem to be available.\n");
+                    LogPrintf("Adding fixed seed nodes.\n");
+                    addrman.Add(convertSeed6(Params().FixedSeeds()), CNetAddr("127.0.0.1"));
+                }
                 done = true;
             }
         }
+
 
         //
         // Choose an address to connect to based on most recently seen
@@ -1787,6 +1807,12 @@ void StartNode(boost::thread_group& threadGroup, CScheduler& scheduler)
         pnodeLocalHost = new CNode(INVALID_SOCKET, CAddress(CService("127.0.0.1", 0), nLocalServices));
 
     Discover(threadGroup);
+
+    // skip DNS seeds for staked chains.
+    extern int8_t is_STAKED(const char *chain_name);
+    extern char ASSETCHAINS_SYMBOL[65];
+    if ( is_STAKED(ASSETCHAINS_SYMBOL) != 0 )
+        SoftSetBoolArg("-dnsseed", false);
 
     //
     // Start threads

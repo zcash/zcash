@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright © 2014-2018 The SuperNET Developers.                             *
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
  *                                                                            *
  * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
  * the top-level directory of this distribution for the individual copyright  *
@@ -13,15 +13,23 @@
  *                                                                            *
  ******************************************************************************/
 
+#ifndef ROGUE_DECLARED_PACK
+#define ROGUE_DECLARED_PACK
 
-#ifndef CC_TRIGGERS_H
-#define CC_TRIGGERS_H
 
-#include "CCinclude.h"
-
-bool TriggersValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn);
-
-// CCcustom
-UniValue TriggersInfo();
+#define MAXPACK 23
+struct rogue_packitem
+{
+    int32_t type,launch,count,which,hplus,dplus,arm,flags,group;
+    char damage[8],hurldmg[8];
+};
+struct rogue_player
+{
+    int32_t gold,hitpoints,strength,level,experience,packsize,dungeonlevel,amulet;
+    struct rogue_packitem roguepack[MAXPACK];
+};
+int32_t rogue_replay2(uint8_t *newdata,uint64_t seed,char *keystrokes,int32_t num,struct rogue_player *player,int32_t sleepmillis);
+void rogue_packitemstr(char *packitemstr,struct rogue_packitem *item);
 
 #endif
+

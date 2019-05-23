@@ -836,7 +836,7 @@ UniValue kvsearch(const UniValue& params, bool fHelp)
             "  \"currentheight\": xxxxx,     (numeric) current height of the chain\n"
             "  \"key\": \"xxxxx\",           (string) key\n"
             "  \"keylen\": xxxxx,            (string) length of the key \n"
-            "  \"owner\": \"xxxxx\"          (string) hex string representing the owner of the key \n" 
+            "  \"owner\": \"xxxxx\"          (string) hex string representing the owner of the key \n"
             "  \"height\": xxxxx,            (numeric) height the key was stored at\n"
             "  \"expiration\": xxxxx,        (numeric) height the key will expire\n"
             "  \"flags\": x                  (numeric) 1 if the key was created with a password; 0 otherwise.\n"

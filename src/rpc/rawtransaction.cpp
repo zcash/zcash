@@ -3,6 +3,21 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 #include "consensus/upgrades.h"
 #include "consensus/validation.h"
 #include "core_io.h"
@@ -20,6 +35,7 @@
 #include "script/sign.h"
 #include "script/standard.h"
 #include "uint256.h"
+#include "importcoin.h"
 #ifdef ENABLE_WALLET
 #include "wallet/wallet.h"
 #endif
@@ -187,6 +203,25 @@ void TxToJSONExpanded(const CTransaction& tx, const uint256 hashBlock, UniValue&
             in.push_back(Pair("coinbase", HexStr(txin.scriptSig.begin(), txin.scriptSig.end())));
         else if (tx.IsCoinImport()) {
             in.push_back(Pair("is_import", "1"));
+            TxProof proof; CTransaction burnTx; std::vector<CTxOut> payouts; CTxDestination importaddress;
+            if (UnmarshalImportTx(tx, proof, burnTx, payouts)) 
+            {
+                if (burnTx.vout.size() == 0)
+                    continue;
+                in.push_back(Pair("txid", burnTx.GetHash().ToString()));
+                in.push_back(Pair("value", ValueFromAmount(burnTx.vout.back().nValue)));
+                in.push_back(Pair("valueSat", burnTx.vout.back().nValue));
+                // extract op_return to get burn source chain.
+                std::vector<uint8_t> burnOpret; std::string targetSymbol; uint32_t targetCCid; uint256 payoutsHash; std::vector<uint8_t>rawproof;
+                if (UnmarshalBurnTx(burnTx, targetSymbol, &targetCCid, payoutsHash, rawproof))
+                {
+                    if (rawproof.size() > 0)
+                    {
+                        std::string sourceSymbol(rawproof.begin(), rawproof.end());
+                        in.push_back(Pair("address", "IMP-" + sourceSymbol + "-" + burnTx.GetHash().ToString()));
+                    }
+                }
+            }
         }
         else {
             in.push_back(Pair("txid", txin.prevout.hash.GetHex()));
@@ -241,6 +276,14 @@ void TxToJSONExpanded(const CTransaction& tx, const uint256 hashBlock, UniValue&
         out.push_back(Pair("n", (int64_t)i));
         UniValue o(UniValue::VOBJ);
         ScriptPubKeyToJSON(txout.scriptPubKey, o, true);
+        if (txout.scriptPubKey.IsOpReturn() && txout.nValue != 0)
+        {
+            std::vector<uint8_t> burnOpret; std::string targetSymbol; uint32_t targetCCid; uint256 payoutsHash; std::vector<uint8_t>rawproof;
+            if (UnmarshalBurnTx(tx, targetSymbol, &targetCCid, payoutsHash, rawproof)) 
+            {
+                out.push_back(Pair("target", "EXPORT->" +  targetSymbol));
+            }
+        }
         out.push_back(Pair("scriptPubKey", o));
 
         // Add spent information if spentindex is enabled
@@ -282,6 +325,7 @@ void TxToJSONExpanded(const CTransaction& tx, const uint256 hashBlock, UniValue&
         } else {
             entry.push_back(Pair("height", -1));
             entry.push_back(Pair("confirmations", 0));
+            entry.push_back(Pair("rawconfirmations", 0));
         }
     }
 
@@ -364,9 +408,10 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
                 entry.push_back(Pair("confirmations", komodo_dpowconfs(pindex->GetHeight(),1 + chainActive.Height() - pindex->GetHeight())));
                 entry.push_back(Pair("time", pindex->GetBlockTime()));
                 entry.push_back(Pair("blocktime", pindex->GetBlockTime()));
-            }
-            else
+            } else {
                 entry.push_back(Pair("confirmations", 0));
+                entry.push_back(Pair("rawconfirmations", 0));
+            }
         }
     }
 }
@@ -454,7 +499,8 @@ UniValue getrawtransaction(const UniValue& params, bool fHelp)
             "     ,...\n"
             "  ],\n"
             "  \"blockhash\" : \"hash\",   (string) the block hash\n"
-            "  \"confirmations\" : n,      (numeric) The confirmations\n"
+            "  \"confirmations\" : n,      (numeric) The number of notarized DPoW confirmations\n"
+            "  \"rawconfirmations\" : n,   (numeric) The number of raw confirmations\n"
             "  \"time\" : ttt,             (numeric) The transaction time in seconds since epoch (Jan 1 1970 GMT)\n"
             "  \"blocktime\" : ttt         (numeric) The block time in seconds since epoch (Jan 1 1970 GMT)\n"
             "}\n"
@@ -547,7 +593,7 @@ int32_t gettxout_scriptPubKey(uint8_t *scriptPubKey,int32_t maxsize,uint256 txid
     uint256 hashBlock;
     if ( GetTransaction(txid,tx,hashBlock,false) == 0 )
         return(-1);
-    else if ( n < tx.vout.size() ) 
+    else if ( n < tx.vout.size() )
     {
         ptr = (uint8_t *)&tx.vout[n].scriptPubKey[0];
         m = tx.vout[n].scriptPubKey.size();
@@ -1286,7 +1332,7 @@ UniValue sendrawtransaction(const UniValue& params, bool fHelp)
         }
     } else if (fHaveChain) {
         throw JSONRPCError(RPC_TRANSACTION_ALREADY_IN_CHAIN, "transaction already in block chain");
-    }    
+    }
     RelayTransaction(tx);
 
     return hashTx.GetHex();

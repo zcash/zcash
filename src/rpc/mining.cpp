@@ -3,6 +3,21 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 #include "amount.h"
 #include "chainparams.h"
 #include "consensus/consensus.h"
@@ -33,10 +48,9 @@
 
 using namespace std;
 
-extern int32_t ASSETCHAINS_ALGO, ASSETCHAINS_EQUIHASH, ASSETCHAINS_LWMAPOS;
-extern uint64_t ASSETCHAINS_STAKED;
-extern int32_t KOMODO_MININGTHREADS;
-extern bool VERUS_MINTBLOCKS;
+#include "komodo_defs.h"
+extern int32_t ASSETCHAINS_FOUNDERS;
+
 arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t height,int32_t goalperc);
 
 /**
@@ -167,8 +181,11 @@ UniValue getgenerate(const UniValue& params, bool fHelp)
 
     LOCK(cs_main);
     UniValue obj(UniValue::VOBJ);
-    obj.push_back(Pair("staking",          VERUS_MINTBLOCKS));
-    obj.push_back(Pair("generate",         GetBoolArg("-gen", false)));
+    bool staking = VERUS_MINTBLOCKS;
+    if ( ASSETCHAINS_STAKED != 0 && GetBoolArg("-gen", false) && GetBoolArg("-genproclimit", -1) == 0 )
+        staking = true;
+    obj.push_back(Pair("staking",          staking));
+    obj.push_back(Pair("generate",         GetBoolArg("-gen", false) && GetBoolArg("-genproclimit", -1) != 0 ));
     obj.push_back(Pair("numthreads",       (int64_t)KOMODO_MININGTHREADS));
     return obj;
 }
@@ -202,7 +219,18 @@ UniValue generate(const UniValue& params, bool fHelp)
 #endif
     }
     if (!Params().MineBlocksOnDemand())
-        throw JSONRPCError(RPC_METHOD_NOT_FOUND, "This method can only be used on regtest");
+    {
+        if ( params[0].get_int() == 1 )
+        {
+            mapArgs["disablemining"] = "1";
+            throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Mining Disabled");
+        }
+        else 
+        {
+            mapArgs["disablemining"] = "0";
+            throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Mining Enabled");
+        }
+    }
 
     int nHeightStart = 0;
     int nHeightEnd = 0;
@@ -332,29 +360,32 @@ UniValue setgenerate(const UniValue& params, bool fHelp)
     if (params.size() > 0)
         fGenerate = params[0].get_bool();
 
-    int nGenProcLimit = GetArg("-genproclimit", -1);;
+    int nGenProcLimit = GetArg("-genproclimit", 0);;
     if (params.size() > 1)
     {
         nGenProcLimit = params[1].get_int();
         //if (nGenProcLimit == 0)
         //    fGenerate = false;
     }
-
-    if (fGenerate && !nGenProcLimit)
+    if ( ASSETCHAINS_LWMAPOS != 0 )
     {
-        VERUS_MINTBLOCKS = 1;
-        fGenerate = GetBoolArg("-gen", false);
-        if ( ASSETCHAINS_STAKED == 0 )
-            nGenProcLimit = KOMODO_MININGTHREADS;
-        else
+        if (fGenerate && !nGenProcLimit)
+        {
+            VERUS_MINTBLOCKS = 1;
+            fGenerate = GetBoolArg("-gen", false);
             KOMODO_MININGTHREADS = nGenProcLimit;
+        }
+        else if (!fGenerate)
+        {
+            VERUS_MINTBLOCKS = 0;
+            KOMODO_MININGTHREADS = 0;
+        }
+        else KOMODO_MININGTHREADS = (int32_t)nGenProcLimit;
     }
-    else if (!fGenerate)
+    else
     {
-        VERUS_MINTBLOCKS = 0;
-        KOMODO_MININGTHREADS = 0;
+        KOMODO_MININGTHREADS = (int32_t)nGenProcLimit;
     }
-    else KOMODO_MININGTHREADS = (int32_t)nGenProcLimit;
 
     mapArgs["-gen"] = (fGenerate ? "1" : "0");
     mapArgs ["-genproclimit"] = itostr(KOMODO_MININGTHREADS);
@@ -420,8 +451,11 @@ UniValue getmininginfo(const UniValue& params, bool fHelp)
     obj.push_back(Pair("testnet",          Params().TestnetToBeDeprecatedFieldRPC()));
     obj.push_back(Pair("chain",            Params().NetworkIDString()));
 #ifdef ENABLE_MINING
-    obj.push_back(Pair("staking",          VERUS_MINTBLOCKS));
-    obj.push_back(Pair("generate",         GetBoolArg("-gen", false)));
+    bool staking = VERUS_MINTBLOCKS;
+    if ( ASSETCHAINS_STAKED != 0 && GetBoolArg("-gen", false) && GetBoolArg("-genproclimit", -1) == 0 )
+        staking = true;
+    obj.push_back(Pair("staking",          staking));
+    obj.push_back(Pair("generate",         GetBoolArg("-gen", false) && GetBoolArg("-genproclimit", -1) != 0 ));
     obj.push_back(Pair("numthreads",       (int64_t)KOMODO_MININGTHREADS));
 #endif
     return obj;
@@ -554,6 +588,9 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_METHOD_NOT_FOUND, "komodod compiled without wallet and -mineraddress not set");
 #endif
     }
+    
+    if ( GetArg("disablemining",false) )
+        throw JSONRPCError(RPC_TYPE_ERROR, "Mining is Disabled");
 
     UniValue lpval = NullUniValue;
     // TODO: Re-enable coinbasevalue once a specification has been written
@@ -698,10 +735,12 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
         }
 #ifdef ENABLE_WALLET
         CReserveKey reservekey(pwalletMain);
-        pblocktemplate = CreateNewBlockWithKey(reservekey,chainActive.LastTip()->GetHeight()+1,KOMODO_MAXGPUCOUNT);
+        LEAVE_CRITICAL_SECTION(cs_main);
+        pblocktemplate = CreateNewBlockWithKey(reservekey,pindexPrevNew->GetHeight()+1,KOMODO_MAXGPUCOUNT,false);
 #else
         pblocktemplate = CreateNewBlockWithKey();
 #endif
+        ENTER_CRITICAL_SECTION(cs_main);
         if (!pblocktemplate)
             throw JSONRPCError(RPC_OUT_OF_MEMORY, "Out of memory or no available utxo for staking");
 
@@ -747,10 +786,10 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
 
         if (tx.IsCoinBase() && coinbasetxn == true ) {
             // Show founders' reward if it is required
-            //if (pblock->vtx[0].vout.size() > 1) {
+            if (ASSETCHAINS_FOUNDERS && pblock->vtx[0].vout.size() > 1) {
                 // Correct this if GetBlockTemplate changes the order
-            //    entry.push_back(Pair("foundersreward", (int64_t)tx.vout[1].nValue));
-            //}
+                entry.push_back(Pair("foundersreward", (int64_t)tx.vout[1].nValue));
+            }
             CAmount nReward = GetBlockSubsidy(chainActive.LastTip()->GetHeight()+1, Params().GetConsensus());
             entry.push_back(Pair("coinbasevalue", nReward));
             entry.push_back(Pair("required", true));

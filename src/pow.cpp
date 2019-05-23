@@ -3,6 +3,21 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 #include "pow.h"
 #include "consensus/upgrades.h"
 
@@ -22,18 +37,22 @@
 #endif // ENABLE_RUST
 uint32_t komodo_chainactive_timestamp();
 
-extern uint32_t ASSETCHAINS_ALGO, ASSETCHAINS_EQUIHASH, ASSETCHAINS_STAKED;
-extern char ASSETCHAINS_SYMBOL[65];
-extern int32_t ASSETCHAINS_LWMAPOS,VERUS_BLOCK_POSUNITS, VERUS_CONSECUTIVE_POS_THRESHOLD, VERUS_NOPOS_THRESHHOLD;
+#include "komodo_defs.h"
+
 unsigned int lwmaGetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params);
 unsigned int lwmaCalculateNextWorkRequired(const CBlockIndex* pindexLast, const Consensus::Params& params);
 
 unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params)
 {
-    if (ASSETCHAINS_ALGO != ASSETCHAINS_EQUIHASH)
+    if (ASSETCHAINS_ALGO != ASSETCHAINS_EQUIHASH && ASSETCHAINS_STAKED == 0)
         return lwmaGetNextWorkRequired(pindexLast, pblock, params);
 
-    unsigned int nProofOfWorkLimit = UintToArith256(params.powLimit).GetCompact();
+    arith_uint256 bnLimit;
+    if (ASSETCHAINS_ALGO == ASSETCHAINS_EQUIHASH)
+        bnLimit = UintToArith256(params.powLimit);
+    else
+        bnLimit = UintToArith256(params.powAlternate);
+    unsigned int nProofOfWorkLimit = bnLimit.GetCompact();
     // Genesis block
     if (pindexLast == NULL )
         return nProofOfWorkLimit;
@@ -88,7 +107,13 @@ unsigned int CalculateNextWorkRequired(arith_uint256 bnAvg,
         nActualTimespan = params.MaxActualTimespan();
 
     // Retarget
-    const arith_uint256 bnPowLimit = UintToArith256(params.powLimit);
+    arith_uint256 bnLimit;
+    if (ASSETCHAINS_ALGO == ASSETCHAINS_EQUIHASH)
+        bnLimit = UintToArith256(params.powLimit);
+    else
+        bnLimit = UintToArith256(params.powAlternate);
+
+    const arith_uint256 bnPowLimit = bnLimit; //UintToArith256(params.powLimit);
     arith_uint256 bnNew {bnAvg};
     bnNew /= params.AveragingWindowTimespan();
     bnNew *= nActualTimespan;
@@ -119,6 +144,8 @@ unsigned int lwmaCalculateNextWorkRequired(const CBlockIndex* pindexLast, const 
         bnLimit = UintToArith256(params.powAlternate);
 
     unsigned int nProofOfWorkLimit = bnLimit.GetCompact();
+    
+    //printf("PoWLimit: %u\n", nProofOfWorkLimit);
 
     // Find the first block in the averaging interval as we total the linearly weighted average
     const CBlockIndex* pindexFirst = pindexLast;

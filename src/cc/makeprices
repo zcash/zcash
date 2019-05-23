@@ -1,0 +1,8 @@
+echo pricescc.so
+gcc -O3 -DBUILD_GAMESCC -DBUILD_PRICES -std=c++11 -I../secp256k1/include -I../univalue/include -I../cryptoconditions/include -I../cryptoconditions/src -I../cryptoconditions/src/asn -I.. -I. -fPIC -shared -c -o pricescc.so cclib.cpp
+echo prices
+cd games
+gcc -O3 -std=c++11 -I../secp256k1/include -I../univalue/include -I../cryptoconditions/include -I../cryptoconditions/src -I../cryptoconditions/src/asn -I.. -I. -DSTANDALONE -DBUILD_PRICES ../gamescc.cpp -lncurses -lcurl -o prices
+cd ..
+
+

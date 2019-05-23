@@ -18,6 +18,7 @@
 
 CKey DecodeSecret(const std::string& str);
 std::string EncodeSecret(const CKey& key);
+std::string EncodeCustomSecret(const CKey& key,uint8_t secret_key);
 
 CExtKey DecodeExtKey(const std::string& str);
 std::string EncodeExtKey(const CExtKey& extkey);
