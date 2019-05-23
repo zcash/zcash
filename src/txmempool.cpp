@@ -56,8 +56,8 @@ CTxMemPoolEntry::GetPriority(unsigned int currentHeight) const
     return dResult;
 }
 
-CTxMemPool::CTxMemPool(const CFeeRate& _minRelayFee) :
-    nTransactionsUpdated(0)
+CTxMemPool::CTxMemPool(const CFeeRate& _minRelayFee)
+    : nTransactionsUpdated(0)
 {
     // Sanity checks off by default for performance, because otherwise
     // accepting transactions becomes O(N^2) where N is the number
@@ -89,13 +89,11 @@ void CTxMemPool::pruneSpent(const uint256 &hashTx, CCoins &coins)
 
 unsigned int CTxMemPool::GetTransactionsUpdated() const
 {
-    LOCK(cs);
     return nTransactionsUpdated;
 }
 
 void CTxMemPool::AddTransactionsUpdated(unsigned int n)
 {
-    LOCK(cs);
     nTransactionsUpdated += n;
 }
 

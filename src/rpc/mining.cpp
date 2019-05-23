@@ -624,6 +624,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
                 if (chainActive.Tip()->GetBlockHash() != hashWatchedChain) break;
 
                 // Timeout: Check transactions for update
+                // without holding ::mempool.cs to avoid deadlocks
                 if (timedout && mempool.GetTransactionsUpdated() != nTransactionsUpdatedLastLP) {
                     // Create a non-empty block.
                     next_cb_mtx = nullopt;
