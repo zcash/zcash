@@ -584,10 +584,6 @@ komodo_cli_SOURCES = bitcoin-cli.cpp
 komodo_cli_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(EVENT_CFLAGS)
 komodo_cli_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 komodo_cli_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
-if TARGET_DARWIN
-komodo_cli_LDFLAGS += -static-libgcc
-endif
-
 
 # wallet-utility binary #
 if ENABLE_WALLET
@@ -595,9 +591,6 @@ wallet_utility_SOURCES = wallet-utility.cpp
 wallet_utility_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
 wallet_utility_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 wallet_utility_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
-if TARGET_DARWIN
-wallet_utility_LDFLAGS += -static-libgcc
-endif
 endif
 
 if TARGET_WINDOWS
@@ -641,9 +634,6 @@ komodo_tx_SOURCES = komodo-tx.cpp
 komodo_tx_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
 komodo_tx_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 komodo_tx_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
-if TARGET_DARWIN
-komodo_tx_LDFLAGS += -static-libgcc
-endif
 
 if TARGET_WINDOWS
 komodo_tx_SOURCES += bitcoin-tx-res.rc
