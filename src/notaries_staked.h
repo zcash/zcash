@@ -5,9 +5,9 @@
 #include "crosschain.h"
 #include "cc/CCinclude.h"
 
-static const int32_t iguanaPort = 9997;
+static const int32_t iguanaPort = 9333;
 static const int8_t BTCminsigs = 13;
-static const int8_t overrideMinSigs = 6;
+static const int8_t overrideMinSigs = 7;
 static const char *iguanaSeeds[8][1] =
 {
   {"94.23.1.95"},
