@@ -47,12 +47,12 @@
 
 // start of consensus code
 
-int64_t IsMarmaravout(struct CCcontract_info *cp,const CTransaction& tx,int32_t v)
+int64_t IsMarmaravout(struct CCcontract_info *cp, const CTransaction& tx,int32_t v)
 {
     char destaddr[64];
     if ( tx.vout[v].scriptPubKey.IsPayToCryptoCondition() != 0 )
     {
-        if ( Getscriptaddress(destaddr,tx.vout[v].scriptPubKey) > 0 && strcmp(destaddr,cp->unspendableCCaddr) == 0 )
+        if ( Getscriptaddress(destaddr, tx.vout[v].scriptPubKey) && strcmp(destaddr, cp->unspendableCCaddr) == 0 )
             return(tx.vout[v].nValue);
     }
     return(0);
@@ -435,50 +435,73 @@ int64_t AddMarmarainputs(CMutableTransaction &mtx,std::vector<CPubKey> &pubkeys,
     return(totalinputs);
 }
 
-UniValue MarmaraLock(uint64_t txfee,int64_t amount,int32_t height)
+// lock the amount on the specified block height
+UniValue MarmaraLock(int64_t txfee,int64_t amount,int32_t height)
 {
     CMutableTransaction tmpmtx,mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); struct CCcontract_info *cp,C; CPubKey Marmarapk,mypk,pk; int32_t unlockht,refunlockht,vout,ht,numvouts; int64_t nValue,val,inputsum=0,threshold,remains,change = 0; std::string rawtx,errorstr; char coinaddr[64]; uint256 txid,hashBlock; CTransaction tx; uint8_t funcid;
+    UniValue result(UniValue::VOBJ); 
+    struct CCcontract_info *cp,C; 
+    CPubKey Marmarapk,mypk,pk; 
+    int32_t unlockht,refunlockht,vout,ht,numvouts; 
+    int64_t nValue,val,inputsum=0,threshold,remains,change = 0; 
+    std::string rawtx,errorstr; 
+    char mynormaladdr[64], lock1of2addr[64];
+    uint256 txid,hashBlock; 
+    CTransaction tx; 
+    uint8_t funcid;
+    
     if ( txfee == 0 )
         txfee = 10000;
     if ( (height & 1) != 0 )
         height++;
+    
     cp = CCinit(&C,EVAL_MARMARA);
     mypk = pubkey2pk(Mypubkey());
     Marmarapk = GetUnspendable(cp,0);
-    Getscriptaddress(coinaddr,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG);
-    if ( (val= CCaddress_balance(coinaddr,0)) < amount )
-        val -= txfee;
-    else val = amount;
-    if ( val > txfee )
-        inputsum = AddNormalinputs2(mtx,val,CC_MAXVINS/2);
-    //fprintf(stderr,"normal inputs %.8f val %.8f\n",(double)inputsum/COIN,(double)val/COIN);
+
+    Getscriptaddress(mynormaladdr, CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG);
+    if((val = CCaddress_balance(mynormaladdr, 0)) < amount) // if not enough funds in the wallet
+        val -= 2*txfee;    // dont take all, should al least 1 txfee remained 
+    else 
+        val = amount;
+    if( val > txfee )
+        inputsum = AddNormalinputs2(mtx, val + txfee, CC_MAXVINS/2);  //added txfee because if inputsum exactly was equal to val we'd exit from insufficient funds 
+    //fprintf(stderr,"added normal inputs=%.8f required val+txfee=%.8f\n",(double)inputsum/COIN,(double)(val+txfee)/COIN);
+
+    // lock the amount on 1of2 address:
     mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA,amount,Marmarapk,mypk));
-    if ( inputsum < amount+txfee )
+
+    if( inputsum < amount+txfee )  // if not enough normal inputs for collateral
     {
-        refunlockht = MarmaraUnlockht(height);
+        refunlockht = MarmaraUnlockht(height);  // randomized 
+
         result.push_back(Pair("normalfunds",ValueFromAmount(inputsum)));
         result.push_back(Pair("height",height));
         result.push_back(Pair("unlockht",refunlockht));
+
+        // fund remainder to add:
         remains = (amount + txfee) - inputsum;
+
         std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
-        GetCCaddress1of2(cp,coinaddr,Marmarapk,mypk);
-        SetCCunspents(unspentOutputs,coinaddr,true);
+        GetCCaddress1of2(cp,lock1of2addr,Marmarapk,mypk);
+        SetCCunspents(unspentOutputs,lock1of2addr,true);
         threshold = remains / (MARMARA_VINS+1);
         uint8_t mypriv[32];
         Myprivkey(mypriv);
-        CCaddr1of2set(cp,Marmarapk,mypk,mypriv,coinaddr);
+        CCaddr1of2set(cp,Marmarapk,mypk,mypriv,lock1of2addr);
+
+        // try to add collateral remainder from the locked fund:
         for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
         {
             txid = it->first.txhash;
             vout = (int32_t)it->first.index;
-            if ( (nValue= it->second.satoshis) < threshold )
+            if( (nValue= it->second.satoshis) < threshold )
                 continue;
             if ( myGetTransaction(txid,tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 0 && vout < numvouts && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0 )
             {
-                if ( (funcid= DecodeMaramaraCoinbaseOpRet(tx.vout[numvouts-1].scriptPubKey,pk,ht,unlockht)) == 'C' || funcid == 'P' || funcid == 'L' )
+                if( (funcid= DecodeMaramaraCoinbaseOpRet(tx.vout[numvouts-1].scriptPubKey,pk,ht,unlockht)) == 'C' || funcid == 'P' || funcid == 'L' )
                 {
-                    if ( unlockht < refunlockht )
+                    if( unlockht < refunlockht )  // if allowed to unlock already
                     {
                         mtx.vin.push_back(CTxIn(txid,vout,CScript()));
                         //fprintf(stderr,"merge CC vout %s/v%d %.8f unlockht.%d < ref.%d\n",txid.GetHex().c_str(),vout,(double)nValue/COIN,unlockht,refunlockht);
@@ -496,23 +519,27 @@ UniValue MarmaraLock(uint64_t txfee,int64_t amount,int32_t height)
         }
         memset(mypriv,0,sizeof(mypriv));
     }
-    if ( inputsum >= amount+txfee )
+    if( inputsum >= amount+txfee )
     {
-        if ( inputsum > amount+txfee )
+        if( inputsum > amount+txfee )
         {
             change = (inputsum - amount);
             mtx.vout.push_back(CTxOut(change,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
         }
         rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,MarmaraCoinbaseOpret('L',height,mypk));
-        if ( rawtx.size() == 0 )
+        if( rawtx.size() == 0 )
+        {
             errorstr = (char *)"couldnt finalize CCtx";
+        }
         else
         {
             result.push_back(Pair("result",(char *)"success"));
             result.push_back(Pair("hex",rawtx));
             return(result);
         }
-    } else errorstr = (char *)"insufficient funds";
+    } 
+    else 
+        errorstr = (char *)"insufficient funds";
     result.push_back(Pair("result",(char *)"error"));
     result.push_back(Pair("error",errorstr));
     return(result);
@@ -520,7 +547,7 @@ UniValue MarmaraLock(uint64_t txfee,int64_t amount,int32_t height)
 
 int32_t MarmaraSignature(uint8_t *utxosig,CMutableTransaction &mtx)
 {
-    uint256 txid,hashBlock; uint8_t *ptr; int32_t i,siglen,vout,numvouts; CTransaction tx; std::string rawtx; CPubKey mypk; std::vector<CPubKey> pubkeys; struct CCcontract_info *cp,C; uint64_t txfee;
+    uint256 txid,hashBlock; uint8_t *ptr; int32_t i,siglen,vout,numvouts; CTransaction tx; std::string rawtx; CPubKey mypk; std::vector<CPubKey> pubkeys; struct CCcontract_info *cp,C; int64_t txfee;
     txfee = 10000;
     vout = mtx.vin[0].prevout.n;
     if ( myGetTransaction(mtx.vin[0].prevout.hash,tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 1 && vout < numvouts )
@@ -547,7 +574,7 @@ int32_t MarmaraSignature(uint8_t *utxosig,CMutableTransaction &mtx)
 
 // jl777: decide on what unlockht settlement change should have -> from utxo making change
 
-UniValue MarmaraSettlement(uint64_t txfee,uint256 refbatontxid)
+UniValue MarmaraSettlement(int64_t txfee,uint256 refbatontxid)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     UniValue result(UniValue::VOBJ),a(UniValue::VARR); std::vector<uint256> creditloop; uint256 batontxid,createtxid,refcreatetxid,hashBlock; uint8_t funcid; int32_t numerrs=0,i,n,numvouts,matures,refmatures,height; int64_t amount,refamount,remaining,inputsum,change; CPubKey Marmarapk,mypk,pk; std::string currency,refcurrency,rawtx; CTransaction tx,batontx; char coinaddr[64],myCCaddr[64],destaddr[64],batonCCaddr[64],str[2],txidaddr[64]; std::vector<CPubKey> pubkeys; struct CCcontract_info *cp,C;
@@ -700,7 +727,7 @@ int32_t MarmaraGetCreditloops(int64_t &totalamount,std::vector<uint256> &issuanc
     return(n);
 }
 
-UniValue MarmaraReceive(uint64_t txfee,CPubKey senderpk,int64_t amount,std::string currency,int32_t matures,uint256 batontxid,bool automaticflag)
+UniValue MarmaraReceive(int64_t txfee,CPubKey senderpk,int64_t amount,std::string currency,int32_t matures,uint256 batontxid,bool automaticflag)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     UniValue result(UniValue::VOBJ); CPubKey mypk; struct CCcontract_info *cp,C; std::string rawtx; char *errorstr=0; uint256 createtxid; int64_t batonamount; int32_t needbaton = 0;
@@ -757,7 +784,7 @@ UniValue MarmaraReceive(uint64_t txfee,CPubKey senderpk,int64_t amount,std::stri
     return(result);
 }
 
-UniValue MarmaraIssue(uint64_t txfee,uint8_t funcid,CPubKey receiverpk,int64_t amount,std::string currency,int32_t matures,uint256 approvaltxid,uint256 batontxid)
+UniValue MarmaraIssue(int64_t txfee,uint8_t funcid,CPubKey receiverpk,int64_t amount,std::string currency,int32_t matures,uint256 approvaltxid,uint256 batontxid)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     UniValue result(UniValue::VOBJ); CPubKey mypk,Marmarapk; struct CCcontract_info *cp,C; std::string rawtx; uint256 createtxid; char *errorstr=0;
@@ -968,7 +995,7 @@ UniValue MarmaraCreditloop(uint256 txid)
     return(result);
 }
 
-UniValue MarmaraPoolPayout(uint64_t txfee,int32_t firstheight,double perc,char *jsonstr) // [[pk0, shares0], [pk1, shares1], ...]
+UniValue MarmaraPoolPayout(int64_t txfee,int32_t firstheight,double perc,char *jsonstr) // [[pk0, shares0], [pk1, shares1], ...]
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     UniValue result(UniValue::VOBJ),a(UniValue::VARR); cJSON *item,*array; std::string rawtx; int32_t i,n; uint8_t buf[33]; CPubKey Marmarapk,pk,poolpk; int64_t payout,poolfee=0,total,totalpayout=0; double poolshares,share,shares = 0.; char *pkstr,*errorstr=0; struct CCcontract_info *cp,C;
