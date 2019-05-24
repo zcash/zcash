@@ -15,7 +15,7 @@ static const char *iguanaSeeds[8][1] =
   {"18.224.176.46"},
   {"45.76.120.247"},
   {"185.62.57.32"},
-  {"103.6.12.112"},
+  {"149.28.253.160"},
   {"103.6.12.112"},
   {"103.6.12.112"},
 };
@@ -33,7 +33,7 @@ static const char *notaries_STAKED[NUM_STAKED_ERAS][64][2] =
         {"blackjok3r", "021914947402d936a89fbdd1b12be49eb894a1568e5e17bb18c8a6cffbd3dc106e" }, // RTVti13NP4eeeZaCCmQxc2bnPdHxCJFP9x
         {"alright", "0285657c689b903218c97f5f10fe1d10ace2ed6595112d9017f54fb42ea1c1dda8" }, //RXmXeQ8LfJK6Y1aTM97cRz9Gu5f6fmR3sg
         {"webworker01", "031d1fb39ae4dca28965c3abdbd21faa0f685f6d7b87a60561afa7c448343fef6d" }, //RGsQiArk5sTmjXZV9UzGMW5njyvtSnsTN8
-        {"CrisF", "024d19acf0d5de212cdd50326cd143292545d366a71b2b9c6df9f2110de2dfa1f2" }, // RKtAD2kyRRMx4EiG1eeTNprF5h2nmGbzzu
+        {"CrisF", "03745656c8991c4597828aad2820760c43c00ff2e3b381fef3b5c040f32a7b3a34" }, // RKtAD2kyRRMx4EiG1eeTNprF5h2nmGbzzu
         {"smk762", "02381616fbc02d3f0398c912fe7b7daf2f3f29e55dc35287f686b15686d8135a9f" }, // RSchwBApVquaG6mXH31bQ6P83kMN4Hound
         {"jorian", "0343eec31037d7b909efd968a5b5e7af60321bf7e464da28f815f0fb23ee7aadd7" }, // RJorianBXNwfNDYPxtNYJJ6vX7Z3VdTR25
         {"TonyL", "021a559101e355c907d9c553671044d619769a6e71d624f68bfec7d0afa6bd6a96" }, // RHq3JsvLxU45Z8ufYS6RsDpSG4wi6ucDev
