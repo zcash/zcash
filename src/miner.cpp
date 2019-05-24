@@ -810,12 +810,17 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
             //fprintf(stderr,"check validity\n");
             if ( !TestBlockValidity(state, *pblock, pindexPrev, false, false)) // invokes CC checks
             {
+                if ( ASSETCHAINS_SYMBOL[0] == 0 || (ASSETCHAINS_SYMBOL[0] != 0 && !isStake) )
+                {
+                    LEAVE_CRITICAL_SECTION(cs_main);
+                    LEAVE_CRITICAL_SECTION(mempool.cs);
+                }
                 throw std::runtime_error("CreateNewBlock(): TestBlockValidity failed");
             }
             //fprintf(stderr,"valid\n");
         }
     }
-    if ( ASSETCHAINS_SYMBOL[0] == 0 ||  (ASSETCHAINS_SYMBOL[0] != 0 && !isStake) )
+    if ( ASSETCHAINS_SYMBOL[0] == 0 || (ASSETCHAINS_SYMBOL[0] != 0 && !isStake) )
     {
         LEAVE_CRITICAL_SECTION(cs_main);
         LEAVE_CRITICAL_SECTION(mempool.cs);

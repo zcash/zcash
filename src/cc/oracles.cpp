@@ -924,14 +924,13 @@ std::string OracleData(int64_t txfee,uint256 oracletxid,std::vector <uint8_t> da
 
 UniValue OracleFormat(uint8_t *data,int32_t datalen,char *format,int32_t formatlen)
 {
-    UniValue obj(UniValue::VARR); uint256 hash; int32_t i,j=0; int64_t val; char str[IGUANA_MAXSCRIPTSIZE*2+1];
+    uint256 hash; int32_t i,j=0; int64_t val; char str[IGUANA_MAXSCRIPTSIZE*2+1];
     for (i=0; i<formatlen && j<datalen; i++)
     {
         str[0] = 0;
         j = oracle_format(&hash,&val,str,format[i],data,j,datalen);
         if ( j < 0 )
             break;
-        obj.push_back(str);
         if ( j >= datalen )
             break;
     }
@@ -954,9 +953,9 @@ UniValue OracleDataSamples(uint256 reforacletxid,uint256 batontxid,int32_t num)
                 {
                     if ( (formatstr= (char *)format.c_str()) == 0 )
                         formatstr = (char *)"";
-                    UniValue a(UniValue::VARR);
-                    a.push_back(OracleFormat((uint8_t *)data.data(),(int32_t)data.size(),formatstr,(int32_t)format.size()));
-                    a.push_back(uint256_str(str,batontxid));
+                    UniValue a(UniValue::VOBJ);
+                    a.push_back(Pair("data",OracleFormat((uint8_t *)data.data(),(int32_t)data.size(),formatstr,(int32_t)format.size())));
+                    a.push_back(Pair("txid",uint256_str(str,batontxid)));
                     b.push_back(a);
                     batontxid = btxid;
                     if ( ++n >= num && num != 0)

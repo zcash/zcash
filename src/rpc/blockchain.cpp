@@ -48,6 +48,7 @@
 
 using namespace std;
 
+extern int32_t KOMODO_INSYNC;
 extern void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry);
 void ScriptPubKeyToJSON(const CScript& scriptPubKey, UniValue& out, bool fIncludeHex);
 #include "komodo_defs.h"
@@ -1453,6 +1454,23 @@ UniValue pricesgetorderbook(const UniValue& params, bool fHelp)
     return PricesGetOrderbook();
 }
 
+// pricesrekt rpc implementation
+UniValue pricesrefillfund(const UniValue& params, bool fHelp)
+{
+    if (fHelp || params.size() != 1)
+        throw runtime_error("pricesrefillfund amount\n");
+    LOCK(cs_main);
+    UniValue ret(UniValue::VOBJ);
+
+    if (ASSETCHAINS_CBOPRET == 0)
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "only -ac_cbopret chains have prices");
+
+    CAmount amount = atof(params[0].get_str().c_str()) * COIN;
+
+    return PricesRefillFund(amount);
+}
+
+
 UniValue gettxout(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() < 2 || params.size() > 3)
@@ -1689,6 +1707,7 @@ UniValue getblockchaininfo(const UniValue& params, bool fHelp)
     UniValue obj(UniValue::VOBJ);
     obj.push_back(Pair("chain",                 Params().NetworkIDString()));
     obj.push_back(Pair("blocks",                (int)chainActive.Height()));
+    obj.push_back(Pair("synced",                KOMODO_INSYNC!=0));
     obj.push_back(Pair("headers",               pindexBestHeader ? pindexBestHeader->GetHeight() : -1));
     obj.push_back(Pair("bestblockhash",         chainActive.LastTip()->GetBlockHash().GetHex()));
     obj.push_back(Pair("difficulty",            (double)GetNetworkDifficulty()));
