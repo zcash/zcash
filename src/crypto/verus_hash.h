@@ -86,6 +86,7 @@ class CVerusHashV2
             result = buf2;
             curPos = 0;
             std::fill(buf1, buf1 + sizeof(buf1), 0);
+            return *this;
         }
 
         int64_t *ExtraI64Ptr() { return (int64_t *)(curBuf + 32); }

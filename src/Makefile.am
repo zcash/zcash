@@ -574,6 +574,11 @@ if ENABLE_PROTON
 komodod_LDADD += $(LIBBITCOIN_PROTON) $(PROTON_LIBS)
 endif
 
+# [+] Decker: use static linking for libstdc++.6.dylib, libgomp.1.dylib, libgcc_s.1.dylib
+if TARGET_DARWIN
+komodod_LDFLAGS += -static-libgcc
+endif
+
 # bitcoin-cli binary #
 komodo_cli_SOURCES = bitcoin-cli.cpp
 komodo_cli_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(EVENT_CFLAGS)

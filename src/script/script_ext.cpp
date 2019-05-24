@@ -70,6 +70,7 @@ const CScriptExt &CScriptExt::AddCheckLockTimeVerify(int64_t unlocktime) const
         *((CScript *)this) << OP_DROP;
         return *this;
     }
+    return *this;
 }
 
 // combined CLTV script and P2PKH
