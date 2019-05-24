@@ -18,7 +18,7 @@ int8_t is_STAKED(const char *chain_name)
     if (doneinit == 1 && ASSETCHAINS_SYMBOL[0] != 0)
         return(STAKED);
     else STAKED = 0;
-    if ( (strcmp(chain_name, "LABS") == 0) || (strcmp(chain_name, "LABSRCTEST") == 0) ) 
+    if ( (strcmp(chain_name, "LABS") == 0) ) 
         STAKED = 1; // These chains are allowed coin emissions.
     else if ( (strncmp(chain_name, "LABS", 4) == 0) ) 
         STAKED = 2; // These chains have no coin emission, block subsidy is always 0, and comission is 0. Notary pay is allowed.
