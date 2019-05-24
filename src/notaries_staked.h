@@ -50,6 +50,7 @@ static const char *notaries_STAKED[NUM_STAKED_ERAS][64][2] =
         {"SHossain", "02791f5c215b8a19c143a98e3371ff03b5613df9ac430c4a331ca55fed5761c800" }, // RKdLoHkyeorXmMtj91B1AAnAGiwsdt9MdF
         {"Nabob", "03ee91c20b6d26e3604022f42df6bb8de6f669da4591f93b568778cba13d9e9ddf" }, // RRwCLPZDzpHEFJnLev4phy51e2stHRUAaU
         {"mylo", "03f6b7fcaf0b8b8ec432d0de839a76598b78418dadd50c8e5594c0e557d914ec09" }, // RXN4hoZkhUkkrnef9nTUDw3E3vVALAD8Kx
+        {"PHBA2061", "039fc98c764bc85aed97d690d7942a4fd1190b2fa4f5f4c5c8e0957fac5c6ede00" }, // RPHba2o61hcpX4ds91oj3sKJ8aDXv6QdQf
     },
     {
         {"blackjok3r", "021914947402d936a89fbdd1b12be49eb894a1568e5e17bb18c8a6cffbd3dc106e" }, // RTVti13NP4eeeZaCCmQxc2bnPdHxCJFP9x
