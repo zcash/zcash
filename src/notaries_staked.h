@@ -10,7 +10,7 @@ static const int8_t BTCminsigs = 13;
 static const int8_t overrideMinSigs = 6;
 static const char *iguanaSeeds[8][1] =
 {
-  {"80.240.17.222"},
+  {"94.23.1.95"},
   {"103.6.12.112"},
   {"18.224.176.46"},
   {"45.76.120.247"},
@@ -32,17 +32,17 @@ static const char *notaries_STAKED[NUM_STAKED_ERAS][64][2] =
     {
         {"blackjok3r", "035fc678bf796ad52f69e1f5759be54ec671c559a22adf27eed067e0ddf1531574" }, // RTcYRJ6WopYkUqcmksyjxoV1CueYyqxFuk    right
         {"alright", "0285657c689b903218c97f5f10fe1d10ace2ed6595112d9017f54fb42ea1c1dda8" }, //RXmXeQ8LfJK6Y1aTM97cRz9Gu5f6fmR3sg
-        {"webworker01", "031d1fb39ae4dca28965c3abdbd21faa0f685f6d7b87a60561afa7c448343fef6d" }, //RGsQiArk5sTmjXZV9UzGMW5njyvtSnsTN8
+        {"webworker01", "031d1fb39ae4dca28965c3abdbd21faa0f685f6d7b87a60561afa7c448343fef6d" }, //RGsQiArk5sTmjXZV9UzGMW5njyvtSnsTN8    right
         {"CrisF", "03745656c8991c4597828aad2820760c43c00ff2e3b381fef3b5c040f32a7b3a34" }, // RNhYJAaPHJCVXGWNVEJeP3TfepEPdhjrRr         right
         {"smk762", "02381616fbc02d3f0398c912fe7b7daf2f3f29e55dc35287f686b15686d8135a9f" }, // RSchwBApVquaG6mXH31bQ6P83kMN4Hound        right
         {"jorian", "0343eec31037d7b909efd968a5b5e7af60321bf7e464da28f815f0fb23ee7aadd7" }, // RJorianBXNwfNDYPxtNYJJ6vX7Z3VdTR25        right
         {"TonyL", "021a559101e355c907d9c553671044d619769a6e71d624f68bfec7d0afa6bd6a96" }, // RHq3JsvLxU45Z8ufYS6RsDpSG4wi6ucDev
         {"CHMEX", "03ed125d1beb118d12ff0a052bdb0cee32591386d718309b2924f2c36b4e7388e6" }, // RF4HiVeuYpaznRPs7fkRAKKYqT5tuxQQTL         right 
-        {"metaphilibert", "0344182c376f054e3755d712361672138660bda8005abb64067eb5aa98bdb40d10" }, // RG28QSnYFADBg1dAVkH1uPGYS6F8ioEUM2
-        {"gt", "02312dcecb6e4a32927a075972d3c009f3c68635d8100562cc1813ea66751b9fde" }, // RCg4tzKWQ7i3wrZEU8bvCbCQ4xRJnHnyoo
+        {"metaphilibert", "0344182c376f054e3755d712361672138660bda8005abb64067eb5aa98bdb40d10" }, // RG28QSnYFADBg1dAVkH1uPGYS6F8ioEUM2 right
+        {"gt", "02312dcecb6e4a32927a075972d3c009f3c68635d8100562cc1813ea66751b9fde" }, // RCg4tzKWQ7i3wrZEU8bvCbCQ4xRJnHnyoo            right
         {"CMaurice", "026c6d094523e810641b89f2d7f0ddd8f0b59d97c32e1fa97f0e3e0ac119c26ae4" }, // RSjayeSuYUE1E22rBjnqoexobaRjbAZ2Yb
         {"Bar_F1sh_Rel", "0395f2d9dd9ccb78caf74bff49b6d959afb95af746462e1b35f4a167d8e82b3666" }, // RBbLxJagCA9QHDazQvfnDZe874V1K4Gu8t
-        {"zatJUM", "030fff499b6dc0215344b28a0b6b4becdfb00cd34cd1b36b983ec14f47965fd4bc" }, // RSoEDLBasth7anxS8gbkg6KgeGiz8rhqv1
+        {"zatJUM", "030fff499b6dc0215344b28a0b6b4becdfb00cd34cd1b36b983ec14f47965fd4bc" }, // RSoEDLBasth7anxS8gbkg6KgeGiz8rhqv1        right
         {"dwy", "03669457b2934d98b5761121dd01b243aed336479625b293be9f8c43a6ae7aaeff" }, // RKhZMqRF361FSGFAzstP5AhozekPjoVh5q
         {"gcharang", "021569dd350d99e685a739c5b36bd01f217efb4f448a6f9a56da80c5edf6ce20ee" }, // RE8SsNwhYoygXJSvw9DuQbJicDc28dwR78      right
         {"computergenie", "027313dabde94fb72f823231d0a1c59fc7baa2e5b3bb2af97ca7d70aae116026b9" }, // RLabsCGxTRqJcJvz6foKuXAB61puJ2x8yt right
