@@ -74,7 +74,7 @@ cd komodo
 #### OSX
 Ensure you have [brew](https://brew.sh) and the command line tools installed (comes automatically with XCode) and run:
 ```shell
-brew update && brew install gcc@6
+brew update && brew install gcc@8
 git clone https://github.com/komodoplatform/komodo --branch master --single-branch
 cd komodo
 ./zcutil/fetch-params.sh
