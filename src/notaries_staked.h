@@ -31,7 +31,7 @@ static const char *notaries_STAKED[NUM_STAKED_ERAS][64][2] =
 {
     {
         {"blackjok3r", "035fc678bf796ad52f69e1f5759be54ec671c559a22adf27eed067e0ddf1531574" }, // RTcYRJ6WopYkUqcmksyjxoV1CueYyqxFuk    right
-        {"alright", "0285657c689b903218c97f5f10fe1d10ace2ed6595112d9017f54fb42ea1c1dda8" }, //RXmXeQ8LfJK6Y1aTM97cRz9Gu5f6fmR3sg
+        {"Alright", "02b718c60a035f77b7103a507d36aed942b4f655b8d13bce6f28b8eac523944278" }, //RG77F4mQpP1K1q2CDSc2vZSJvKUZgF8R26
         {"webworker01", "031d1fb39ae4dca28965c3abdbd21faa0f685f6d7b87a60561afa7c448343fef6d" }, //RGsQiArk5sTmjXZV9UzGMW5njyvtSnsTN8    right
         {"CrisF", "03745656c8991c4597828aad2820760c43c00ff2e3b381fef3b5c040f32a7b3a34" }, // RNhYJAaPHJCVXGWNVEJeP3TfepEPdhjrRr         right
         {"smk762", "02381616fbc02d3f0398c912fe7b7daf2f3f29e55dc35287f686b15686d8135a9f" }, // RSchwBApVquaG6mXH31bQ6P83kMN4Hound        right
