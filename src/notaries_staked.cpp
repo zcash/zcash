@@ -113,7 +113,14 @@ void UpdateNotaryAddrs(uint8_t pubkeys[64][33],int8_t numNotaries) {
         // staked era is set.
         pthread_mutex_lock(&staked_mutex);
         for (int i = 0; i<numNotaries; i++)
+        {
             pubkey2addr((char *)NOTARYADDRS[i],(uint8_t *)pubkeys[i]);
+            if ( memcmp(NOTARY_PUBKEY33,pubkeys[i],33) == 0 )
+            {
+                NOTARY_ADDRESS.assign(NOTARYADDRS[i]);
+                IS_STAKED_NOTARY = i;
+            }
+        }
         pthread_mutex_unlock(&staked_mutex);
     }
 }
