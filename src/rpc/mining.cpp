@@ -1051,6 +1051,7 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp)
     return result;
 }
 
+
 static const CRPCCommand commands[] =
 { //  category              name                      actor (function)         okSafeMode
   //  --------------------- ------------------------  -----------------------  ----------

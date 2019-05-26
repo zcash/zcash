@@ -18,7 +18,7 @@ int8_t is_STAKED(const char *chain_name)
     if (doneinit == 1 && ASSETCHAINS_SYMBOL[0] != 0)
         return(STAKED);
     else STAKED = 0;
-    if ( (strcmp(chain_name, "LABS") == 0) || (strcmp(chain_name, "LABSRCTEST") == 0) ) 
+    if ( (strcmp(chain_name, "LABS") == 0) ) 
         STAKED = 1; // These chains are allowed coin emissions.
     else if ( (strncmp(chain_name, "LABS", 4) == 0) ) 
         STAKED = 2; // These chains have no coin emission, block subsidy is always 0, and comission is 0. Notary pay is allowed.
@@ -113,7 +113,14 @@ void UpdateNotaryAddrs(uint8_t pubkeys[64][33],int8_t numNotaries) {
         // staked era is set.
         pthread_mutex_lock(&staked_mutex);
         for (int i = 0; i<numNotaries; i++)
+        {
             pubkey2addr((char *)NOTARYADDRS[i],(uint8_t *)pubkeys[i]);
+            if ( memcmp(NOTARY_PUBKEY33,pubkeys[i],33) == 0 )
+            {
+                NOTARY_ADDRESS.assign(NOTARYADDRS[i]);
+                IS_STAKED_NOTARY = i;
+            }
+        }
         pthread_mutex_unlock(&staked_mutex);
     }
 }
