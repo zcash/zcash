@@ -8028,9 +8028,9 @@ UniValue opreturn_burn(const UniValue& params, bool fHelp)
     if (fHelp || (params.size() != 2))
 		throw runtime_error("amount to burn, hexstring to send\n");
     struct CCcontract_info *cp, C; UniValue ret(UniValue::VOBJ);
-    if (ensure_CCrequirements(EVAL_PAYMENTS) < 0)
+    if (ensure_CCrequirements(EVAL_ORACLES) < 0)
     	throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
-    cp = CCinit(&C, EVAL_PAYMENTS);
+    cp = CCinit(&C, EVAL_ORACLES);
 	    
 	CAmount nAmount = AmountFromValue(params[0]);
     if (nAmount <= 10000)
