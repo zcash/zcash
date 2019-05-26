@@ -48,6 +48,8 @@
 
 #include <univalue.h>
 
+int32_t komodo_notarized_height(int32_t *prevMoMheightp,uint256 *hashp,uint256 *txidp);
+
 using namespace std;
 
 extern char ASSETCHAINS_SYMBOL[];
