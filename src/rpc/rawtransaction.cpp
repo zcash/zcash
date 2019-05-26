@@ -185,10 +185,13 @@ int32_t myIsutxo_spent(uint256 &spenttxid,uint256 txid,int32_t vout)
 
 void TxToJSONExpanded(const CTransaction& tx, const uint256 hashBlock, UniValue& entry, int nHeight = 0, int nConfirmations = 0, int nBlockTime = 0)
 {
+    uint256 notarized_hash,notarized_desttxid; int32_t prevMoMheight,notarized_height;
+    notarized_height = komodo_notarized_height(&prevMoMheight,&notarized_hash,&notarized_desttxid);
     uint256 txid = tx.GetHash();
     entry.push_back(Pair("txid", txid.GetHex()));
     entry.push_back(Pair("overwintered", tx.fOverwintered));
     entry.push_back(Pair("version", tx.nVersion));
+    entry.push_back(Pair("last_notarized_height", notarized_height));
     if (tx.fOverwintered) {
         entry.push_back(Pair("versiongroupid", HexInt(tx.nVersionGroupId)));
     }
