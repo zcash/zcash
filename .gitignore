@@ -155,3 +155,5 @@ src/rogue.scr
 
 src/cc/rogue/confdefs.h
 src/cc/rogue/x64
+
+src/cc/dapps/a.out

@@ -33,6 +33,7 @@ public:
     virtual void Shutdown() = 0;
 
     virtual bool NotifyBlock(const CBlockIndex *pindex);
+    virtual bool NotifyBlock(const CBlock& pblock);
     virtual bool NotifyTransaction(const CTransaction &transaction);
 
 protected:

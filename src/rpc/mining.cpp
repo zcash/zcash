@@ -49,8 +49,10 @@
 using namespace std;
 
 #include "komodo_defs.h"
-extern int32_t ASSETCHAINS_FOUNDERS;
 
+extern int32_t ASSETCHAINS_FOUNDERS;
+uint64_t komodo_commission(const CBlock *pblock,int32_t height);
+int32_t komodo_blockload(CBlock& block,CBlockIndex *pindex);
 arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t height,int32_t goalperc);
 
 /**
@@ -1009,6 +1011,7 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp)
             "\nResult:\n"
             "{\n"
             "  \"miner\" : x.xxx           (numeric) The mining reward amount in KMD.\n"
+            "  \"ac_pubkey\" : x.xxx       (numeric) The mining reward amount in KMD.\n"
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("getblocksubsidy", "1000")
@@ -1019,13 +1022,35 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp)
     int nHeight = (params.size()==1) ? params[0].get_int() : chainActive.Height();
     if (nHeight < 0)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
-
+    
+    CAmount nFoundersReward = 0;
     CAmount nReward = GetBlockSubsidy(nHeight, Params().GetConsensus());
     UniValue result(UniValue::VOBJ);
     result.push_back(Pair("miner", ValueFromAmount(nReward)));
-    //result.push_back(Pair("founders", ValueFromAmount(nFoundersReward)));
+    
+    if ( strlen(ASSETCHAINS_OVERRIDE_PUBKEY.c_str()) == 66 || ASSETCHAINS_SCRIPTPUB.size() > 1 )
+    {
+        if ( ASSETCHAINS_FOUNDERS == 0 && ASSETCHAINS_COMMISSION != 0 )
+        {
+            // ac comission chains need the block to exist to calulate the reward.
+            if ( nHeight <= chainActive.Height() )
+            {
+                CBlockIndex* pblockIndex = chainActive[nHeight];
+                CBlock block;
+                if ( komodo_blockload(block, pblockIndex) == 0 )
+                    nFoundersReward = komodo_commission(&block, nHeight);
+            }
+        }
+        else if ( ASSETCHAINS_FOUNDERS != 0 )
+        {
+            // Assetchains founders chains have a fixed reward so can be calculated at any given height.
+            nFoundersReward = komodo_commission(0, nHeight);
+        }
+        result.push_back(Pair("ac_pubkey", ValueFromAmount(nFoundersReward)));
+    }
     return result;
 }
+
 
 static const CRPCCommand commands[] =
 { //  category              name                      actor (function)         okSafeMode
