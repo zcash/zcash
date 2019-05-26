@@ -41,6 +41,7 @@ using namespace std;
 
 static uint64_t nAccountingEntryNumber = 0;
 static list<uint256> deadTxns; 
+extern CBlockIndex *komodo_blockindex(uint256 hash);
 
 //
 // CWalletDB
@@ -964,21 +965,20 @@ DBErrors CWalletDB::LoadWallet(CWallet* pwallet)
         // staking chains with vin-empty error is a failed staking tx. 
         // we remove then re add the tx here to stop needing a full rescan, which does not actually fix the problem.
         int32_t reAdded = 0;
-        CWalletDB walletdb(pwallet->strWalletFile, "r+", false);
         BOOST_FOREACH (uint256& hash, deadTxns) 
         {
-            fprintf(stderr, "Removing corrupt tx from wallet.%s\n", hash.ToString().c_str());
+            fprintf(stderr, "Removing possible orphaned staking transaction from wallet.%s\n", hash.ToString().c_str());
             if (!EraseTx(hash))
                 fprintf(stderr, "could not delete tx.%s\n",hash.ToString().c_str());
-            uint256 blockhash; CTransaction tx;
-            if (GetTransaction(hash,tx,blockhash,true))
+            uint256 blockhash; CTransaction tx; CBlockIndex* pindex;
+            if ( GetTransaction(hash,tx,blockhash,false) && (pindex= komodo_blockindex(blockhash)) != 0 && chainActive.Contains(pindex) )
             {
                 CWalletTx wtx(pwallet,tx);
-                pwallet->AddToWallet(wtx, false, &walletdb);
+                pwallet->AddToWallet(wtx, true, NULL);
                 reAdded++;
             }
         }
-        fprintf(stderr, "Cleared %li corrupted transactions from wallet. Readded %i known transactions.\n",deadTxns.size(),reAdded);
+        fprintf(stderr, "Cleared %li orphaned staking transactions from wallet. Readded %i real transactions.\n",deadTxns.size(),reAdded);
         fNoncriticalErrors = false;
         deadTxns.clear();
     }

@@ -924,24 +924,23 @@ std::string OracleData(int64_t txfee,uint256 oracletxid,std::vector <uint8_t> da
 
 UniValue OracleFormat(uint8_t *data,int32_t datalen,char *format,int32_t formatlen)
 {
-    UniValue obj(UniValue::VARR); uint256 hash; int32_t i,j=0; int64_t val; char str[IGUANA_MAXSCRIPTSIZE*2+1];
+    uint256 hash; int32_t i,j=0; int64_t val; char str[IGUANA_MAXSCRIPTSIZE*2+1];
     for (i=0; i<formatlen && j<datalen; i++)
     {
         str[0] = 0;
         j = oracle_format(&hash,&val,str,format[i],data,j,datalen);
         if ( j < 0 )
             break;
-        obj.push_back(str);
         if ( j >= datalen )
             break;
     }
-    return(obj);
+    return(str);
 }
 
 UniValue OracleDataSamples(uint256 reforacletxid,uint256 batontxid,int32_t num)
 {
-    UniValue result(UniValue::VOBJ),a(UniValue::VARR); CTransaction tx,oracletx; uint256 hashBlock,btxid,oracletxid; 
-    CPubKey pk; std::string name,description,format; int32_t numvouts,n=0; std::vector<uint8_t> data; char *formatstr = 0;
+    UniValue result(UniValue::VOBJ),b(UniValue::VARR); CTransaction tx,oracletx; uint256 hashBlock,btxid,oracletxid; 
+    CPubKey pk; std::string name,description,format; int32_t numvouts,n=0; std::vector<uint8_t> data; char str[67], *formatstr = 0;
     
     result.push_back(Pair("result","success"));
     if ( GetTransaction(reforacletxid,oracletx,hashBlock,false) != 0 && (numvouts=oracletx.vout.size()) > 0 )
@@ -954,15 +953,18 @@ UniValue OracleDataSamples(uint256 reforacletxid,uint256 batontxid,int32_t num)
                 {
                     if ( (formatstr= (char *)format.c_str()) == 0 )
                         formatstr = (char *)"";
-                    a.push_back(OracleFormat((uint8_t *)data.data(),(int32_t)data.size(),formatstr,(int32_t)format.size()));
+                    UniValue a(UniValue::VOBJ);
+                    a.push_back(Pair("data",OracleFormat((uint8_t *)data.data(),(int32_t)data.size(),formatstr,(int32_t)format.size())));
+                    a.push_back(Pair("txid",uint256_str(str,batontxid)));
+                    b.push_back(a);
                     batontxid = btxid;
-                    if ( ++n >= num )
+                    if ( ++n >= num && num != 0)
                         break;
                 } else break;
             }
         }
     }
-    result.push_back(Pair("samples",a));
+    result.push_back(Pair("samples",b));
     return(result);
 }
 
@@ -1028,7 +1030,7 @@ UniValue OraclesList()
 {
     UniValue result(UniValue::VARR); std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex; struct CCcontract_info *cp,C; uint256 txid,hashBlock; CTransaction createtx; std::string name,description,format; char str[65];
     cp = CCinit(&C,EVAL_ORACLES);
-    SetCCtxids(addressIndex,cp->normaladdr,true);
+    SetCCtxids(addressIndex,cp->normaladdr,false);
     for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=addressIndex.begin(); it!=addressIndex.end(); it++)
     {
         txid = it->first.txhash;

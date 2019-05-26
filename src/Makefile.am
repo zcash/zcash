@@ -491,7 +491,7 @@ libbitcoin_common_a_SOURCES = \
   script/sign.cpp \
   script/standard.cpp \
   transaction_builder.cpp \
-  cc/CCtokensOpRet.cpp \
+  cc/CCtokenutils.cpp \
   cc/CCutilbits.cpp \
   $(BITCOIN_CORE_H) \
   $(LIBZCASH_H)
@@ -523,6 +523,11 @@ libbitcoin_util_a_SOURCES = \
 if GLIBC_BACK_COMPAT
 libbitcoin_util_a_SOURCES += compat/glibc_compat.cpp
 endif
+
+if ENABLE_TESTS
+libbitcoin_server_a_SOURCES += rpc/testtransactions.cpp
+endif
+
 
 # cli: zcash-cli
 libbitcoin_cli_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)

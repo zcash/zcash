@@ -344,6 +344,9 @@ bool CheckEquihashSolution(const CBlockHeader *pblock, const CChainParams& param
 {
     if (ASSETCHAINS_ALGO != ASSETCHAINS_EQUIHASH)
         return true;
+    
+    if ( ASSETCHAINS_NK[0] != 0 && ASSETCHAINS_NK[1] != 0 && pblock->GetHash().ToString() == "027e3758c3a65b12aa1046462b486d0a63bfa1beae327897f56c5cfb7daaae71" )
+        return true;
 
     unsigned int n = params.EquihashN();
     unsigned int k = params.EquihashK();

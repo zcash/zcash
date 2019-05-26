@@ -92,6 +92,7 @@ static CBlock CreateGenesisBlock(uint32_t nTime, const uint256& nNonce, const st
 void *chainparams_commandline(void *ptr);
 #include "komodo_defs.h"
 int32_t ASSETCHAINS_BLOCKTIME = 60;
+uint64_t ASSETCHAINS_NK[2];
 
 const arith_uint256 maxUint = UintToArith256(uint256S("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
 
@@ -282,6 +283,14 @@ void *chainparams_commandline(void *ptr)
             mainParams.consensus.nPowTargetSpacing = ASSETCHAINS_BLOCKTIME;
         }
         mainParams.SetDefaultPort(ASSETCHAINS_P2PPORT);
+        if ( ASSETCHAINS_NK[0] != 0 && ASSETCHAINS_NK[1] != 0 )
+        {
+            //BOOST_STATIC_ASSERT(equihash_parameters_acceptable(ASSETCHAINS_NK[0], ASSETCHAINS_NK[1]));
+            mainParams.SetNValue(ASSETCHAINS_NK[0]);
+            mainParams.SetKValue(ASSETCHAINS_NK[1]);
+        }
+        if ( KOMODO_TESTNODE != 0 )
+            mainParams.SetMiningRequiresPeers(false);
         if ( ASSETCHAINS_RPCPORT == 0 )
             ASSETCHAINS_RPCPORT = ASSETCHAINS_P2PPORT + 1;
         mainParams.pchMessageStart[0] = ASSETCHAINS_MAGIC & 0xff;
