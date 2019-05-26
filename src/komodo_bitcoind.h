@@ -32,7 +32,7 @@ extern bool fRequestShutdown;
 extern CScript KOMODO_EARLYTXID_SCRIPTPUB;
 
 int32_t MarmaraSignature(uint8_t *utxosig,CMutableTransaction &txNew);
-uint8_t DecodeMaramaraCoinbaseOpRet(const CScript scriptPubKey,CPubKey &pk,int32_t &height,int32_t &unlockht);
+uint8_t DecodeMarmaraCoinbaseOpRet(const CScript scriptPubKey,CPubKey &pk,int32_t &height,int32_t &unlockht);
 uint32_t komodo_heightstamp(int32_t height);
 
 //#define issue_curl(cmdstr) bitcoind_RPC(0,(char *)"curl",(char *)"http://127.0.0.1:7776",0,0,(char *)(cmdstr))
@@ -2741,7 +2741,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
                 if ( myGetTransaction(txid,tx,hashBlock) != 0 && (pindex= komodo_getblockindex(hashBlock)) != 0 && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0 )
                 {
                     const CScript &scriptPubKey = tx.vout[vout].scriptPubKey;
-                    if ( DecodeMaramaraCoinbaseOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,pk,ht,unlockht) != 0 && pk == mypk )
+                    if ( DecodeMarmaraCoinbaseOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,pk,ht,unlockht) != 0 && pk == mypk )
                     {
                         array = komodo_addutxo(array,&numkp,&maxkp,(uint32_t)pindex->nTime,(uint64_t)nValue,txid,vout,coinaddr,hashbuf,(CScript)scriptPubKey);
                     }
