@@ -59,6 +59,20 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
  * Return average network hashes per second based on the last 'lookup' blocks,
  * or over the difficulty averaging window if 'lookup' is nonpositive.
  * If 'height' is nonnegative, compute the estimate at the time when a given block was found.
+time =0, lastBlockTime=time_of_last_block, PoWblocks=0
+for x = 1 to 100
+get block info
+if PoS then
+    lastBlockTime = ThisBlockTime
+    next x
+else
+    PoWblocks += 1
+    some var/array about diff
+    newTime = timeNow - lastBlockTime
+    totalTime = totalTime + newTime
+    lastBlockTime = newTime
+next x
+do math of num PoW blocks over PoW active Time with stored diff info
  */
 int64_t GetNetworkHashPS(int lookup, int height) {
     CBlockIndex *pb = chainActive.LastTip();
@@ -79,21 +93,36 @@ int64_t GetNetworkHashPS(int lookup, int height) {
 
     CBlockIndex *pb0 = pb;
     int64_t minTime = pb0->GetBlockTime();
+    int64_t timeoffset = 0, n=0,i=0;
     int64_t maxTime = minTime;
-    for (int i = 0; i < lookup; i++) {
+    for (i = 0; i < lookup; i++) {
         pb0 = pb0->pprev;
+        // if PoW block save block time, and skip the hash. 
+        if ( pb0->segid >= 0 && pb0->segid != -2 )
+        {
+            n++;
+            // only staking chains should ever set this.
+            
+            timeoffset += pb0->GetBlockTime() - pb0->pprev->GetBlockTime(); 
+            //fprintf(stderr, "staking tx.%li segid.%i blocktime.%li\n", n, pb0->segid, (pb0->GetBlockTime() - pb0->pprev->GetBlockTime()));
+            if ( lookup > pb->GetHeight() )
+                break;
+            lookup++;
+            continue;
+        }
         int64_t time = pb0->GetBlockTime();
         minTime = std::min(time, minTime);
         maxTime = std::max(time, maxTime);
     }
+    //fprintf(stderr, "number blocks scanned.%li\n",i );
 
     // In case there's a situation where minTime == maxTime, we don't want a divide by zero exception.
     if (minTime == maxTime)
         return 0;
 
     arith_uint256 workDiff = pb->chainPower.chainWork - pb0->chainPower.chainWork;
-    int64_t timeDiff = maxTime - minTime;
-
+    int64_t timeDiff = maxTime - minTime;// - timeoffset;
+    fprintf(stderr, "timediff.%li timeoffset.%li mintime.%li maxtime.%li\n", timeDiff, timeoffset, minTime, maxTime);
     return (int64_t)(workDiff.getdouble() / timeDiff);
 }
 
