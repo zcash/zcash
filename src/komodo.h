@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright © 2014-2018 The SuperNET Developers.                             *
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
  *                                                                            *
  * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
  * the top-level directory of this distribution for the individual copyright  *
@@ -16,6 +16,7 @@
 #ifndef H_KOMODO_H
 #define H_KOMODO_H
 #include "komodo_defs.h"
+#include "notaries_staked.h"
 
 #ifdef _WIN32
 #define printf(...)
@@ -26,6 +27,8 @@
 
 #define KOMODO_ASSETCHAINS_WAITNOTARIZE
 #define KOMODO_PAXMAX (10000 * COIN)
+extern int32_t NOTARIZED_HEIGHT;
+uint256 NOTARIZED_HASH,NOTARIZED_DESTTXID;
 
 #include <stdint.h>
 #include <stdio.h>
@@ -36,7 +39,8 @@
 
 int32_t gettxout_scriptPubKey(uint8_t *scriptPubkey,int32_t maxsize,uint256 txid,int32_t n);
 void komodo_event_rewind(struct komodo_state *sp,char *symbol,int32_t height);
-void komodo_connectblock(CBlockIndex *pindex,CBlock& block);
+int32_t komodo_connectblock(bool fJustCheck, CBlockIndex *pindex,CBlock& block);
+bool check_pprevnotarizedht();
 
 #include "komodo_structs.h"
 #include "komodo_globals.h"
@@ -530,7 +534,7 @@ int32_t komodo_validate_chain(uint256 srchash,int32_t notarized_height)
     } else return(1);
 }
 
-int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,int32_t height,uint256 txhash,int32_t i,int32_t j,uint64_t *voutmaskp,int32_t *specialtxp,int32_t *notarizedheightp,uint64_t value,int32_t notarized,uint64_t signedmask,uint32_t timestamp)
+int32_t komodo_voutupdate(bool fJustCheck,int32_t *isratificationp,int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,int32_t height,uint256 txhash,int32_t i,int32_t j,uint64_t *voutmaskp,int32_t *specialtxp,int32_t *notarizedheightp,uint64_t value,int32_t notarized,uint64_t signedmask,uint32_t timestamp)
 {
     static uint256 zero; static FILE *signedfp;
     int32_t opretlen,nid,offset,k,MoMdepth,matched,len = 0; uint256 MoM,srchash,desttxid; uint8_t crypto777[33]; struct komodo_state *sp; char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN];
@@ -615,9 +619,9 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
         if ( j == 1 && opretlen >= len+offset-opoffset )
         {
             memset(&MoMoMdata,0,sizeof(MoMoMdata));
-            if ( matched == 0 && bitweight(signedmask) >= KOMODO_MINRATIFY )
+            if ( matched == 0 && signedmask != 0 && bitweight(signedmask) >= KOMODO_MINRATIFY )
                 notarized = 1;
-            if ( strcmp("PIZZA",ccdata.symbol) == 0 || strncmp("TXSCL",ccdata.symbol,5) == 0 )
+            if ( strcmp("PIZZA",ccdata.symbol) == 0 || strncmp("TXSCL",ccdata.symbol,5) == 0 || strcmp("BEER",ccdata.symbol) == 0)
                 notarized = 1;
             if ( 0 && opretlen != 149 )
                 printf("[%s].%d (%s) matched.%d i.%d j.%d notarized.%d %llx opretlen.%d len.%d offset.%d opoffset.%d\n",ASSETCHAINS_SYMBOL,height,ccdata.symbol,matched,i,j,notarized,(long long)signedmask,opretlen,len,offset,opoffset);
@@ -628,6 +632,9 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
             if ( matched != 0 )
                 validated = komodo_validate_chain(srchash,*notarizedheightp);
             else validated = 1;
+            // Any notarization that is matched and has a decodable op_return is enough to pay notaries. Otherwise bugs! 
+            if ( fJustCheck && matched != 0 )
+                return(-2);
             if ( notarized != 0 && validated != 0 )
             {
                 //sp->NOTARIZED_HEIGHT = *notarizedheightp;
@@ -694,6 +701,7 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                 }
                 else if ( ASSETCHAINS_SYMBOL[0] == 0 && matched != 0 && notarized != 0 && validated != 0 )
                     komodo_rwccdata((char *)"KMD",1,&ccdata,0);
+                
                 if ( matched != 0 && *notarizedheightp > sp->NOTARIZED_HEIGHT && *notarizedheightp < height )
                 {
                     sp->NOTARIZED_HEIGHT = *notarizedheightp;
@@ -705,8 +713,9 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                         sp->MoMdepth = MoMdepth;
                     }
                     komodo_stateupdate(height,0,0,0,zero,0,0,0,0,0,0,0,0,0,0,sp->MoM,sp->MoMdepth);
-                    if ( ASSETCHAINS_SYMBOL[0] != 0 )
-                        printf("[%s] ht.%d NOTARIZED.%d %s.%s %sTXID.%s lens.(%d %d) MoM.%s %d\n",ASSETCHAINS_SYMBOL,height,*notarizedheightp,ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,srchash.ToString().c_str(),ASSETCHAINS_SYMBOL[0]==0?"BTC":"KMD",desttxid.ToString().c_str(),opretlen,len,sp->MoM.ToString().c_str(),sp->MoMdepth);
+                    //if ( ASSETCHAINS_SYMBOL[0] != 0 )
+                        printf("[%s] ht.%d NOTARIZED.%d %s.%s %sTXID.%s lens.(%d %d) MoM.%s %d\n",ASSETCHAINS_SYMBOL,height,sp->NOTARIZED_HEIGHT,ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,srchash.ToString().c_str(),ASSETCHAINS_SYMBOL[0]==0?"BTC":"KMD",desttxid.ToString().c_str(),opretlen,len,sp->MoM.ToString().c_str(),sp->MoMdepth);
+                    
                     if ( ASSETCHAINS_SYMBOL[0] == 0 )
                     {
                         if ( signedfp == 0 )
@@ -731,7 +740,8 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                             komodo_stateupdate(height,0,0,0,txhash,0,0,0,0,0,0,value,&scriptbuf[len],opretlen-len+4+3+(scriptbuf[1] == 0x4d),j,zero,0);
                         }
                     }
-                }
+                } //else if ( fJustCheck )
+                //    return (-3); // if the notarisation is only invalid because its out of order it cannot be mined in a block with a valid one!
             } else if ( opretlen != 149 && height > 600000 && matched != 0 )
                 printf("%s validated.%d notarized.%d %llx reject ht.%d NOTARIZED.%d prev.%d %s.%s DESTTXID.%s len.%d opretlen.%d\n",ccdata.symbol,validated,notarized,(long long)signedmask,height,*notarizedheightp,sp->NOTARIZED_HEIGHT,ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,srchash.ToString().c_str(),desttxid.ToString().c_str(),len,opretlen);
         }
@@ -756,7 +766,7 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                     printf("ISRATIFICATION (%s)\n",(char *)&scriptbuf[len+32*2+4]);
                 }
             }
-            
+
             if ( *isratificationp == 0 && (signedmask != 0 || (scriptbuf[len] != 'X' && scriptbuf[len] != 'A')) ) // && scriptbuf[len] != 'I')
                 komodo_stateupdate(height,0,0,0,txhash,0,0,0,0,0,0,value,&scriptbuf[len],opretlen,j,zero,0);
         }
@@ -793,21 +803,42 @@ int32_t komodo_notarycmp(uint8_t *scriptPubKey,int32_t scriptlen,uint8_t pubkeys
     return(-1);
 }
 
-void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
+// int32_t ! 
+int32_t komodo_connectblock(bool fJustCheck, CBlockIndex *pindex,CBlock& block)
 {
     static int32_t hwmheight;
+    int32_t staked_era; static int32_t lastStakedEra;
+    std::vector<int32_t> notarisations;
     uint64_t signedmask,voutmask; char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; struct komodo_state *sp;
     uint8_t scriptbuf[10001],pubkeys[64][33],rmd160[20],scriptPubKey[35]; uint256 zero,btctxid,txhash;
     int32_t i,j,k,numnotaries,notarized,scriptlen,isratification,nid,numvalid,specialtx,notarizedheight,notaryid,len,numvouts,numvins,height,txn_count;
+    if ( pindex == 0 )
+    {
+        fprintf(stderr,"komodo_connectblock null pindex\n");
+        return(0);
+    }
     memset(&zero,0,sizeof(zero));
     komodo_init(pindex->GetHeight());
     KOMODO_INITDONE = (uint32_t)time(NULL);
     if ( (sp= komodo_stateptr(symbol,dest)) == 0 )
     {
         fprintf(stderr,"unexpected null komodostateptr.[%s]\n",ASSETCHAINS_SYMBOL);
-        return;
+        return(0);
     }
-    //fprintf(stderr,"%s connect.%d\n",ASSETCHAINS_SYMBOL,pindex->GetHeight());
+    //fprintf(stderr,"%s connect.%d\n",ASSETCHAINS_SYMBOL,pindex->nHeight);
+    // Wallet Filter. Disabled here. Cant be activated by notaries or pools with some changes.
+    if ( is_STAKED(ASSETCHAINS_SYMBOL) != 0 || IS_STAKED_NOTARY > -1 )
+    {
+        staked_era = STAKED_era(pindex->GetBlockTime());
+        if ( !fJustCheck && staked_era != lastStakedEra )
+        {
+            uint8_t tmp_pubkeys[64][33];
+            int8_t numSN = numStakedNotaries(tmp_pubkeys,staked_era);
+            UpdateNotaryAddrs(tmp_pubkeys,numSN);
+            STAKED_ERA = staked_era;
+            lastStakedEra = staked_era;
+        }
+    }
     numnotaries = komodo_notaries(pubkeys,pindex->GetHeight(),pindex->GetBlockTime());
     calc_rmd160_sha256(rmd160,pubkeys[0],33);
     if ( pindex->GetHeight() > hwmheight )
@@ -820,16 +851,27 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
             komodo_purge_ccdata((int32_t)pindex->GetHeight());
             hwmheight = pindex->GetHeight();
         }
-        komodo_event_rewind(sp,symbol,pindex->GetHeight());
-        komodo_stateupdate(pindex->GetHeight(),0,0,0,zero,0,0,0,0,-pindex->GetHeight(),pindex->nTime,0,0,0,0,zero,0);
+        if (!fJustCheck)
+        {
+            komodo_event_rewind(sp,symbol,pindex->GetHeight());
+            komodo_stateupdate(pindex->GetHeight(),0,0,0,zero,0,0,0,0,-pindex->GetHeight(),pindex->nTime,0,0,0,0,zero,0);
+        }
     }
     komodo_currentheight_set(chainActive.LastTip()->GetHeight());
+    int transaction = 0;
     if ( pindex != 0 )
     {
         height = pindex->GetHeight();
         txn_count = block.vtx.size();
         for (i=0; i<txn_count; i++)
         {
+            if ( (is_STAKED(ASSETCHAINS_SYMBOL) != 0 && staked_era == 0) || (is_STAKED(ASSETCHAINS_SYMBOL) == 255) ) {
+                // in era gap or chain banned, no point checking any invlaid notarisations.
+                break;
+            }
+            // Notary pay chains need notarisation in position 1, ignore the rest on validation. Check notarisation is 1 on check.
+            if ( !fJustCheck && i > 1 && ASSETCHAINS_NOTARY_PAY[0] != 0 )
+                break;
             txhash = block.vtx[i].GetHash();
             numvouts = block.vtx[i].vout.size();
             notaryid = -1;
@@ -854,11 +896,11 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                 } //else printf("cant get scriptPubKey for ht.%d txi.%d vin.%d\n",height,i,j);
             }
             numvalid = bitweight(signedmask);
-            if ( (((height < 90000 || (signedmask & 1) != 0) && numvalid >= KOMODO_MINRATIFY) ||
+            if ( ((height < 90000 || (signedmask & 1) != 0) && numvalid >= KOMODO_MINRATIFY) ||
                   (numvalid >= KOMODO_MINRATIFY && ASSETCHAINS_SYMBOL[0] != 0) ||
-                  numvalid > (numnotaries/5)) )
+                  numvalid > (numnotaries/5) )
             {
-                if ( ASSETCHAINS_SYMBOL[0] != 0 )
+                if ( !fJustCheck && ASSETCHAINS_SYMBOL[0] != 0)
                 {
                     static FILE *signedfp;
                     if ( signedfp == 0 )
@@ -875,9 +917,17 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                         fwrite(&signedmask,1,sizeof(signedmask),signedfp);
                         fflush(signedfp);
                     }
+                    transaction = i;
                      printf("[%s] ht.%d txi.%d signedmask.%llx numvins.%d numvouts.%d <<<<<<<<<<<  notarized\n",ASSETCHAINS_SYMBOL,height,i,(long long)signedmask,numvins,numvouts);
                 }
                 notarized = 1;
+            }
+            // simulate DPoW in regtest mode for dpowconfs tests/etc
+            if ( Params().NetworkIDString() == "regtest" && ( height%7 == 0) ) {
+                notarized              = 1;
+                sp->NOTARIZED_HEIGHT   = height;
+                sp->NOTARIZED_HASH     = block.GetHash();
+                sp->NOTARIZED_DESTTXID = txhash;
             }
             if ( IS_KOMODO_NOTARY != 0 && ASSETCHAINS_SYMBOL[0] == 0 )
                 printf("(tx.%d: ",i);
@@ -900,10 +950,16 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                 if ( IS_KOMODO_NOTARY != 0 && ASSETCHAINS_SYMBOL[0] == 0 )
                     printf("%.8f ",dstr(block.vtx[i].vout[j].nValue));
                 len = block.vtx[i].vout[j].scriptPubKey.size();
+                
                 if ( len >= sizeof(uint32_t) && len <= sizeof(scriptbuf) )
                 {
                     memcpy(scriptbuf,(uint8_t *)&block.vtx[i].vout[j].scriptPubKey[0],len);
-                    notaryid = komodo_voutupdate(&isratification,notaryid,scriptbuf,len,height,txhash,i,j,&voutmask,&specialtx,&notarizedheight,(uint64_t)block.vtx[i].vout[j].nValue,notarized,signedmask,(uint32_t)chainActive.LastTip()->GetBlockTime());
+                    notaryid = komodo_voutupdate(fJustCheck,&isratification,notaryid,scriptbuf,len,height,txhash,i,j,&voutmask,&specialtx,&notarizedheight,(uint64_t)block.vtx[i].vout[j].nValue,notarized,signedmask,(uint32_t)chainActive.LastTip()->GetBlockTime());
+                    if ( fJustCheck && notaryid == -2 )
+                    {
+                        // We see a valid notarisation here, save its location.
+                        notarisations.push_back(i);
+                    }
                     if ( 0 && i > 0 )
                     {
                         for (k=0; k<len; k++)
@@ -916,7 +972,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                 printf(") ");
             if ( 0 && ASSETCHAINS_SYMBOL[0] == 0 )
                 printf("[%s] ht.%d txi.%d signedmask.%llx numvins.%d numvouts.%d notarized.%d special.%d isratification.%d\n",ASSETCHAINS_SYMBOL,height,i,(long long)signedmask,numvins,numvouts,notarized,specialtx,isratification);
-            if ( notarized != 0 && (notarizedheight != 0 || specialtx != 0) )
+            if ( !fJustCheck && (notarized != 0 && (notarizedheight != 0 || specialtx != 0)) )
             {
                 if ( isratification != 0 )
                 {
@@ -942,23 +998,35 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                             }
                         }
                     }
-                    if ( ((signedmask & 1) != 0 && numvalid >= KOMODO_MINRATIFY) || bitweight(signedmask) > (numnotaries/3) )
+                    if ( ASSETCHAINS_SYMBOL[0] != 0 || height < 100000 )
                     {
-                        memset(&txhash,0,sizeof(txhash));
-                        komodo_stateupdate(height,pubkeys,numvalid,0,txhash,0,0,0,0,0,0,0,0,0,0,zero,0);
-                        printf("RATIFIED! >>>>>>>>>> new notaries.%d newheight.%d from height.%d\n",numvalid,(((height+KOMODO_ELECTION_GAP/2)/KOMODO_ELECTION_GAP)+1)*KOMODO_ELECTION_GAP,height);
-                    } else printf("signedmask.%llx numvalid.%d wt.%d numnotaries.%d\n",(long long)signedmask,numvalid,bitweight(signedmask),numnotaries);
+                        if ( ((signedmask & 1) != 0 && numvalid >= KOMODO_MINRATIFY) || bitweight(signedmask) > (numnotaries/3) )
+                        {
+                            memset(&txhash,0,sizeof(txhash));
+                            komodo_stateupdate(height,pubkeys,numvalid,0,txhash,0,0,0,0,0,0,0,0,0,0,zero,0);
+                            printf("RATIFIED! >>>>>>>>>> new notaries.%d newheight.%d from height.%d\n",numvalid,(((height+KOMODO_ELECTION_GAP/2)/KOMODO_ELECTION_GAP)+1)*KOMODO_ELECTION_GAP,height);
+                        } else printf("signedmask.%llx numvalid.%d wt.%d numnotaries.%d\n",(long long)signedmask,numvalid,bitweight(signedmask),numnotaries);
+                    }
                 }
             }
         }
-        if ( IS_KOMODO_NOTARY != 0 && ASSETCHAINS_SYMBOL[0] == 0 )
+        if ( !fJustCheck && IS_KOMODO_NOTARY != 0 && ASSETCHAINS_SYMBOL[0] == 0 )
             printf("%s ht.%d\n",ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSETCHAINS_SYMBOL,height);
-        if ( pindex->GetHeight() == hwmheight )
+        if ( !fJustCheck && pindex->GetHeight() == hwmheight )
             komodo_stateupdate(height,0,0,0,zero,0,0,0,0,height,(uint32_t)pindex->nTime,0,0,0,0,zero,0);
     } else fprintf(stderr,"komodo_connectblock: unexpected null pindex\n");
     //KOMODO_INITDONE = (uint32_t)time(NULL);
     //fprintf(stderr,"%s end connect.%d\n",ASSETCHAINS_SYMBOL,pindex->GetHeight());
+    if (fJustCheck)
+    {
+        if ( notarisations.size() == 0 )
+            return(0);
+        if ( notarisations.size() == 1 && notarisations[0] == 1 )
+            return(1);
+        if ( notarisations.size() > 1 || (notarisations.size() == 1 && notarisations[0] != 1) )
+            return(-1);
+    }
+    else return(0);
 }
-
 
 #endif

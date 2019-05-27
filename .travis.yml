@@ -5,22 +5,32 @@ matrix:
     - os: linux
       dist: xenial
       sudo: required
+      env: LINUX_DEPLOY="true" OSX_DEPLOY="false" $TRAVIS_OS_NAME="linux"
     - os: osx
-      osx_image: xcode8      
+      osx_image: xcode8
+      env: OSX_DEPLOY="true" LINUX_DEPLOY="false" $TRAVIS_OS_NAME="osx"
+branches:
+  only:
+    - master
+    - dev
+    - cctests
 compiler:
-- gcc
+  - gcc
 before_install:
-- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo add-apt-repository --yes ppa:ubuntu-sdk-team/ppa; fi
-- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get update -qq; fi
-- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install libgnutls28-dev; fi
-- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install build-essential pkg-config libcurl3-gnutls-dev libc6-dev libevent-dev m4 g++-multilib autoconf libtool ncurses-dev unzip git python zlib1g-dev wget bsdmainutils automake libssl-dev libprotobuf-dev protobuf-compiler libdb++-dev ntp ntpdate; fi
-- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then rm '/usr/local/include/c++'; fi
-- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
-- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install gcc@6; fi
-- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew link --overwrite gcc@6; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo add-apt-repository --yes ppa:ubuntu-sdk-team/ppa; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get update -qq; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install libgnutls28-dev; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install build-essential pkg-config libcurl3-gnutls-dev libc6-dev libevent-dev m4 g++-multilib autoconf libtool ncurses-dev unzip git python zlib1g-dev wget bsdmainutils automake libssl-dev libprotobuf-dev protobuf-compiler libdb++-dev ntp ntpdate; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then rm '/usr/local/include/c++'; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install gcc@6; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew link --overwrite gcc@6; fi
 script:
-- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./zcutil/build.sh -j 5; fi
-- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./zcutil/build-mac.sh -j 5; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./zcutil/build.sh -j 5; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then tar cvfz komodo_linux_$TRAVIS_BRANCH.tar.gz src/komodod src/komodo-cli; fi 
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./zcutil/build-mac.sh -j 5; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./makeRelease.sh; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then tar cvfz komodo_osx_$TRAVIS_BRANCH.tar.gz src/komodod src/komodo-cli src/libgcc_s.1.dylib src/libgomp.1.dylib src/libstdc++.6.dylib; fi 
 notifications:
   irc:
     channels:
@@ -32,15 +42,50 @@ notifications:
     - 'Change view : %{compare_url}'
     - 'Build details : %{build_url}'
 before_deploy:
-    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then git tag "linux-$(date +'%Y%m%d%H%M')-$(git log --format=%h -1)"; fi
-    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then git tag "osx-$(date +'%Y%m%d%H%M')-$(git log --format=%h -1)"; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then git tag "$TRAVIS_BRANCH-linux-$(date +'%Y%m%d%H%M')-$(git log --format=%h -1)"; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then git tag "$TRAVIS_BRANCH-osx-$(date +'%Y%m%d%H%M')-$(git log --format=%h -1)"; fi
 deploy:
-  provider: releases
-  api_key:
-    secure: Jms7dz5GMZmuXUCHl5u6iZUtAybv86oW3x36DCJfdzbDiO4B9EWB04z7zA0qvoomefyujHTmQUHxyOKfd4h9/rVMFFv9hgmUxWkrcg7KyLNisOQRaovVOuNtu2lRNXTOSF16Cy+xFGkVh1ObBRhAoMsVKPhMl6PCDiKhNWIekRR9pBtjafKsClQ2ieknUYfqhuvgj7zmqCedeyVaVQyt2W/J65leD0BkfCUESTpANSprHs4bQB65VuQIKKMi+URKx2VgpDdUcWJySt9jAHVPIbI5cT5maAT6RUMnE4oha7Ca1Ox8StBqjQ/hkkMyDbN0keIlN7RjZlwdZQf/qUnT/dPQhsyUCdPXOxmEJ2jekezEK/LGr4Fb+v+vjd9dhLNkD5nVn9zp36biGSCjiMpffQ3fjMeM0YGmVEVRP9kZXLWVRYQoVKrzjyzg5dY8iChbiQEfYpTeBuU+e2rqj4mns+Jvy0zjUbMy6Tyva+iqdZ/PdsBDbiB7c+FIgB1IUTVOD+GgKx6dhCtBZEccn5EyWFwZF9IdQJHZCYV4PA7nuzfm1Ol9SDdZkGHd2OgRCqK/sTwyfTHv8exNqZ1k+epGJp2a0q4IOEknc9aPCAF+m9pHahk7s7VO5gmhO6pvbvuKoeEtEXRZHRzCkGkXfzJlBk+23X5gBexKb6inRdBlj6M=
-  file: 
-    - src/komodod
-    - src/komodo-cli
-  skip_cleanup: true
-  on:
-    repo: KomodoPlatform/komodo
+  - provider: releases
+    api_key:
+      secure: id69KBVsY0p41WFlqd5cGrAIksJAkUempmdrQwHtfqIbB6es7MVfXuxfmTxk7lZNEItSvLGilYtqhBMNVAVjRRPvk90hveGDMkbpjFz3XBbFEFqtrAr2GdIcpGtII2T3T/TG7j11TMtJ6GvBVt4OcatHFVsKBCFDIx0fB0fd1oLrEAwgRdBO2Jq7bMzoLdzGx3mVtdW5dSRBQzG/Z0yvx+R9mQHSvyPGh6oNPD6mvXPzEaCeRW6Y8g8y1SW/6zDJR6sSdOKA0jsHkr/hM8st3Qkr5Cu3roEbL8598uvfBahjxVHVT8+lu/nJnQyrvtWZKu/uUefybqgZl7UpGvZVFxbNwAB/ZNn0pBKIpZlX/kh6rdGF0XrAG7g+Ths6iklh7wDefYP2JeGwHWJ38YcdF8T/VcSdOXz7EiWwEeZO5sGcTRSl5Ql8mcU3YyyB7BTdViYNTHf5VFFJ/baLZG+shZ/0tb1Ntx5mLDbV8vcYXJpUNTJcXbhcUDSF3QuSz04ftkzgpcsODzcTzD6+2sezV1vlOAlxK04C+zzxG96Md/TegvZYYns78RSgrP/UH1qwEbgxTo3xpErGllzntzZfHJ887Goez+DeB9ga7pUBc5AXGpfRhYqJP66wR10zqfWuWYvjAwRBRNySjr3pUvaA3T1iSZ5HLrpKBfcHXJOTg8M=
+    name: komodo_linux-$TRAVIS_BRANCH
+    prerelease: true
+    file: komodo_linux_$TRAVIS_BRANCH.tar.gz
+    skip_cleanup: true
+    on:
+      repo: KomodoPlatform/komodo
+      branch: master
+      condition: $LINUX_DEPLOY = "true"
+  - provider: releases
+    api_key:
+      secure: id69KBVsY0p41WFlqd5cGrAIksJAkUempmdrQwHtfqIbB6es7MVfXuxfmTxk7lZNEItSvLGilYtqhBMNVAVjRRPvk90hveGDMkbpjFz3XBbFEFqtrAr2GdIcpGtII2T3T/TG7j11TMtJ6GvBVt4OcatHFVsKBCFDIx0fB0fd1oLrEAwgRdBO2Jq7bMzoLdzGx3mVtdW5dSRBQzG/Z0yvx+R9mQHSvyPGh6oNPD6mvXPzEaCeRW6Y8g8y1SW/6zDJR6sSdOKA0jsHkr/hM8st3Qkr5Cu3roEbL8598uvfBahjxVHVT8+lu/nJnQyrvtWZKu/uUefybqgZl7UpGvZVFxbNwAB/ZNn0pBKIpZlX/kh6rdGF0XrAG7g+Ths6iklh7wDefYP2JeGwHWJ38YcdF8T/VcSdOXz7EiWwEeZO5sGcTRSl5Ql8mcU3YyyB7BTdViYNTHf5VFFJ/baLZG+shZ/0tb1Ntx5mLDbV8vcYXJpUNTJcXbhcUDSF3QuSz04ftkzgpcsODzcTzD6+2sezV1vlOAlxK04C+zzxG96Md/TegvZYYns78RSgrP/UH1qwEbgxTo3xpErGllzntzZfHJ887Goez+DeB9ga7pUBc5AXGpfRhYqJP66wR10zqfWuWYvjAwRBRNySjr3pUvaA3T1iSZ5HLrpKBfcHXJOTg8M=
+    name: komodo_linux-$TRAVIS_BRANCH
+    prerelease: true
+    file: komodo_linux_$TRAVIS_BRANCH.tar.gz
+    skip_cleanup: true
+    on:
+      repo: KomodoPlatform/komodo
+      branch: dev
+      condition: $LINUX_DEPLOY = "true"
+  - provider: releases
+    api_key:
+      secure: id69KBVsY0p41WFlqd5cGrAIksJAkUempmdrQwHtfqIbB6es7MVfXuxfmTxk7lZNEItSvLGilYtqhBMNVAVjRRPvk90hveGDMkbpjFz3XBbFEFqtrAr2GdIcpGtII2T3T/TG7j11TMtJ6GvBVt4OcatHFVsKBCFDIx0fB0fd1oLrEAwgRdBO2Jq7bMzoLdzGx3mVtdW5dSRBQzG/Z0yvx+R9mQHSvyPGh6oNPD6mvXPzEaCeRW6Y8g8y1SW/6zDJR6sSdOKA0jsHkr/hM8st3Qkr5Cu3roEbL8598uvfBahjxVHVT8+lu/nJnQyrvtWZKu/uUefybqgZl7UpGvZVFxbNwAB/ZNn0pBKIpZlX/kh6rdGF0XrAG7g+Ths6iklh7wDefYP2JeGwHWJ38YcdF8T/VcSdOXz7EiWwEeZO5sGcTRSl5Ql8mcU3YyyB7BTdViYNTHf5VFFJ/baLZG+shZ/0tb1Ntx5mLDbV8vcYXJpUNTJcXbhcUDSF3QuSz04ftkzgpcsODzcTzD6+2sezV1vlOAlxK04C+zzxG96Md/TegvZYYns78RSgrP/UH1qwEbgxTo3xpErGllzntzZfHJ887Goez+DeB9ga7pUBc5AXGpfRhYqJP66wR10zqfWuWYvjAwRBRNySjr3pUvaA3T1iSZ5HLrpKBfcHXJOTg8M=
+    name: komodo_osx-$TRAVIS_BRANCH
+    prerelease: true
+    file: komodo_osx_$TRAVIS_BRANCH.tar.gz
+    skip_cleanup: true
+    on:
+      repo: KomodoPlatform/komodo
+      branch: master
+      condition: $OSX_DEPLOY = "true"
+  - provider: releases
+    api_key:
+      secure: id69KBVsY0p41WFlqd5cGrAIksJAkUempmdrQwHtfqIbB6es7MVfXuxfmTxk7lZNEItSvLGilYtqhBMNVAVjRRPvk90hveGDMkbpjFz3XBbFEFqtrAr2GdIcpGtII2T3T/TG7j11TMtJ6GvBVt4OcatHFVsKBCFDIx0fB0fd1oLrEAwgRdBO2Jq7bMzoLdzGx3mVtdW5dSRBQzG/Z0yvx+R9mQHSvyPGh6oNPD6mvXPzEaCeRW6Y8g8y1SW/6zDJR6sSdOKA0jsHkr/hM8st3Qkr5Cu3roEbL8598uvfBahjxVHVT8+lu/nJnQyrvtWZKu/uUefybqgZl7UpGvZVFxbNwAB/ZNn0pBKIpZlX/kh6rdGF0XrAG7g+Ths6iklh7wDefYP2JeGwHWJ38YcdF8T/VcSdOXz7EiWwEeZO5sGcTRSl5Ql8mcU3YyyB7BTdViYNTHf5VFFJ/baLZG+shZ/0tb1Ntx5mLDbV8vcYXJpUNTJcXbhcUDSF3QuSz04ftkzgpcsODzcTzD6+2sezV1vlOAlxK04C+zzxG96Md/TegvZYYns78RSgrP/UH1qwEbgxTo3xpErGllzntzZfHJ887Goez+DeB9ga7pUBc5AXGpfRhYqJP66wR10zqfWuWYvjAwRBRNySjr3pUvaA3T1iSZ5HLrpKBfcHXJOTg8M=
+    name: komodo_osx-$TRAVIS_BRANCH
+    prerelease: true
+    file: komodo_osx_$TRAVIS_BRANCH.tar.gz
+    skip_cleanup: true
+    on:
+      repo: KomodoPlatform/komodo
+      branch: dev
+      condition: $OSX_DEPLOY = "true"

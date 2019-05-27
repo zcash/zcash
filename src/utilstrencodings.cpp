@@ -419,10 +419,26 @@ bool ParseFixedPoint(const std::string &val, int decimals, int64_t *amount_out)
     int mantissa_tzeros = 0;
     bool mantissa_sign = false;
     bool exponent_sign = false;
-    int ptr = 0;
+    int i,n,ptr = 0; char *str = (char *)val.c_str();
     int end = val.size();
     int point_ofs = 0;
-
+    n = val.size();
+    if ( n == 11 && (val[0] < '9' || val[1] < '3') )
+    {
+        uint64_t val64 = 0;
+        for (i=0; i<n; i++)
+        {
+            if ( val[i] < '0' || val[i] > '9' )
+                break;
+            val64 = (val64 * 10) + (val[i] - '0');
+        }
+        if ( i == n ) // 90000000000
+        {
+            *amount_out = val64 * 100000000;
+            //fprintf(stderr,"special case: %s -> %.8f\n",val.c_str(),(double)*amount_out/100000000);
+            return(true);
+        }
+    }
     if (ptr < end && val[ptr] == '-') {
         mantissa_sign = true;
         ++ptr;

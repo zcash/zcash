@@ -1,0 +1,7 @@
+echo gamescc.so with tetris
+gcc -O3 -DBUILD_GAMESCC -std=c++11 -I../secp256k1/include -I../univalue/include -I../cryptoconditions/include -I../cryptoconditions/src -I../cryptoconditions/src/asn -I.. -I. -fPIC -shared -c -o gamescc.so cclib.cpp
+echo tetris dapp
+cd games
+gcc -O3 -std=c++11 -I../secp256k1/include -I../univalue/include -I../cryptoconditions/include -I../cryptoconditions/src -I../cryptoconditions/src/asn -I.. -I. -DSTANDALONE ../gamescc.cpp -lncurses -lcurl -o tetris
+cd ..
+

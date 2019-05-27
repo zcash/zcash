@@ -11,7 +11,7 @@ src/test/test_bitcoin
 *zcashTest.vk
 
 # autoreconf
-Makefile.in
+#Makefile.in
 aclocal.m4
 autom4te.cache/
 build-aux/config.guess
@@ -29,7 +29,7 @@ build-aux/compile
 build-aux/test-driver
 config.log
 config.status
-configure
+#configure
 libtool
 src/config/bitcoin-config.h
 src/config/bitcoin-config.h.in
@@ -126,3 +126,34 @@ src/komodo-tx.exe
 
 
 src/cryptoconditions/compile
+
+src/cc/rogue/rogue
+
+src/cc/rogue/rogue.so
+
+src/cc/rogue/test.zip
+src/checkfile
+
+src/foo.zip
+
+src/log
+
+src/rogue.530623577502174316.0
+
+src/rogue.530623577502174316.pack
+
+src/rogue.530623577502174316.player
+
+
+src/cc/rogue/config.h
+
+src/cc/rogue/config.h
+
+src/ROGUE.conf
+
+src/rogue.scr
+
+src/cc/rogue/confdefs.h
+src/cc/rogue/x64
+
+src/cc/dapps/a.out

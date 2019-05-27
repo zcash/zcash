@@ -1,0 +1,37 @@
+#!/bin/sh
+cd rogue;
+make clean;
+
+if [ "$HOST" = "x86_64-w64-mingw32" ]; then
+  echo building rogue.exe...
+  ./configure --host=x86_64-w64-mingw32
+  echo $PWD
+  wget https://github.com/KomodoPlatform/rogue/releases/download/0.3.3b-01/x86_64-w64-mingw32.tar.gz
+  tar xvfz x86_64-w64-mingw32.tar.gz && rm x86_64-w64-mingw32.tar.gz
+  echo lib archive cleaned
+  echo $PWD
+  if make -f Makefile_win "$@"; then
+    echo rogue.exe build SUCCESSFUL
+    cd ..
+  else
+    echo rogue.exe build FAILED
+  exit 1
+  fi
+else
+  echo building rogue...
+  ./configure
+  if make "$@"; then
+    echo rogue build SUCCESSFUL
+    cd ..
+  else
+    echo rogue build FAILED
+    exit 1
+  fi
+fi
+
+if make -f Makefile_rogue "$@"; then
+  echo ROGUE BUILD SUCCESSFUL
+else
+  echo ROGUE BUILD FAILED
+  exit 1
+fi

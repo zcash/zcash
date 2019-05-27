@@ -3,6 +3,21 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 #include "key.h"
 
 #include "arith_uint256.h"
@@ -162,6 +177,22 @@ void CKey::MakeNewKey(bool fCompressedIn) {
     } while (!Check(vch));
     fValid = true;
     fCompressed = fCompressedIn;
+}
+
+int32_t CKey::SetKey32(uint8_t Key32[32])
+{
+    memcpy(vch,Key32,32);
+    fCompressed = true;
+    if ( Check(vch) == 0 )
+    {
+        fValid = false;
+        return(-1);
+    }
+    else
+    {
+        fValid = true;
+        return(0);
+    }
 }
 
 bool CKey::SetPrivKey(const CPrivKey &privkey, bool fCompressedIn) {

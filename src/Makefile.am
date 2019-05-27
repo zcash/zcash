@@ -36,7 +36,8 @@ LIBBITCOIN_SERVER=libbitcoin_server.a -lcurl
 endif
 if TARGET_DARWIN
 LIBBITCOIN_SERVER=libbitcoin_server.a -lcurl
-else
+endif
+if TARGET_LINUX
 LIBBITCOIN_SERVER=libbitcoin_server.a -lcurl
 endif
 
@@ -203,6 +204,7 @@ BITCOIN_CORE_H = \
   mruset.h \
   net.h \
   netbase.h \
+  notaries_staked.h \
   noui.h \
   paymentdisclosure.h \
   paymentdisclosuredb.h \
@@ -286,10 +288,12 @@ libbitcoin_server_a_SOURCES = \
   bloom.cpp \
   cc/eval.cpp \
   cc/import.cpp \
+  cc/importgateway.cpp \
   cc/CCassetsCore.cpp \
   cc/CCcustom.cpp \
   cc/CCtx.cpp \
   cc/CCutils.cpp \
+  cc/CCtokens.cpp \
   cc/assets.cpp \
   cc/faucet.cpp \
   cc/rewards.cpp \
@@ -300,7 +304,7 @@ libbitcoin_server_a_SOURCES = \
   cc/oracles.cpp \
   cc/prices.cpp \
   cc/pegs.cpp \
-  cc/triggers.cpp \
+  cc/marmara.cpp \
   cc/payments.cpp \
   cc/gateways.cpp \
   cc/channels.cpp \
@@ -309,6 +313,7 @@ libbitcoin_server_a_SOURCES = \
   chain.cpp \
   checkpoints.cpp \
   crosschain.cpp \
+  crosschain_authority.cpp \
   crypto/haraka.h \
   crypto/haraka_portable.h \
   crypto/verus_hash.h \
@@ -323,6 +328,7 @@ libbitcoin_server_a_SOURCES = \
   metrics.h \
   miner.cpp \
   net.cpp \
+  notaries_staked.cpp \
   noui.cpp \
   notarisationdb.cpp \
   paymentdisclosure.cpp \
@@ -383,6 +389,8 @@ libbitcoin_wallet_a_SOURCES = \
   transaction_builder.cpp \
   wallet/rpcdisclosure.cpp \
   wallet/rpcdump.cpp \
+  cc/CCtokens.cpp \
+  cc/CCassetsCore.cpp \
   cc/CCassetstx.cpp \
   cc/CCtx.cpp \
   wallet/rpcwallet.cpp \
@@ -483,6 +491,8 @@ libbitcoin_common_a_SOURCES = \
   script/sign.cpp \
   script/standard.cpp \
   transaction_builder.cpp \
+  cc/CCtokenutils.cpp \
+  cc/CCutilbits.cpp \
   $(BITCOIN_CORE_H) \
   $(LIBZCASH_H)
 
@@ -513,6 +523,11 @@ libbitcoin_util_a_SOURCES = \
 if GLIBC_BACK_COMPAT
 libbitcoin_util_a_SOURCES += compat/glibc_compat.cpp
 endif
+
+if ENABLE_TESTS
+libbitcoin_server_a_SOURCES += rpc/testtransactions.cpp
+endif
+
 
 # cli: zcash-cli
 libbitcoin_cli_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
@@ -569,6 +584,16 @@ komodod_LDADD += \
   $(LIBVERUS_CRYPTO) \
   $(LIBVERUS_PORTABLE_CRYPTO) \
   $(LIBZCASH_LIBS)
+
+if TARGET_DARWIN
+komodod_LDADD += libcc.dylib $(LIBSECP256K1)
+endif
+if TARGET_WINDOWS
+komodod_LDADD += libcc.dll $(LIBSECP256K1)
+endif
+if TARGET_LINUX
+komodod_LDADD += libcc.so $(LIBSECP256K1)
+endif
 
 if ENABLE_PROTON
 komodod_LDADD += $(LIBBITCOIN_PROTON) $(PROTON_LIBS)

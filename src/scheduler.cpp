@@ -2,6 +2,21 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 #include "scheduler.h"
 
 #include "reverselock.h"
@@ -16,6 +31,17 @@ CScheduler::CScheduler() : nThreadsServicingQueue(0), stopRequested(false), stop
 
 CScheduler::~CScheduler()
 {
+    /*int32_t i;
+    if ( nThreadsServicingQueue != 0 )
+    {
+        for (i=0; i<10; i++)
+        {
+            sleep(1);
+            fprintf(stderr,"CScheduler nThreadsServicingQueue.%d\n",(int32_t)nThreadsServicingQueue);
+            if ( nThreadsServicingQueue == 0 )
+                break;
+        }
+    }*/
     assert(nThreadsServicingQueue == 0);
 }
 
