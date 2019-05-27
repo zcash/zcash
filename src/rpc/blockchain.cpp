@@ -43,8 +43,12 @@
 
 #include <regex>
 
+#include "cc/CCinclude.h"
+#include "cc/CCPrices.h"
+
 using namespace std;
 
+extern int32_t KOMODO_INSYNC;
 extern void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry);
 void ScriptPubKeyToJSON(const CScript& scriptPubKey, UniValue& out, bool fIncludeHex);
 #include "komodo_defs.h"
@@ -1155,17 +1159,17 @@ UniValue paxprice(const UniValue& params, bool fHelp)
     }
     return ret;
 }
-
-int32_t prices_extract(int64_t *pricedata,int32_t firstheight,int32_t numblocks,int32_t ind)
+// fills pricedata with raw price, correlated and smoothed values for numblock
+/*int32_t prices_extract(int64_t *pricedata,int32_t firstheight,int32_t numblocks,int32_t ind)
 {
     int32_t height,i,n,width,numpricefeeds = -1; uint64_t seed,ignore,rngval; uint32_t rawprices[1440*6],*ptr; int64_t *tmpbuf;
-    width = numblocks+PRICES_DAYWINDOW*2+PRICES_SMOOTHWIDTH;
+    width = numblocks+PRICES_DAYWINDOW*2+PRICES_SMOOTHWIDTH;    // need 2*PRICES_DAYWINDOW previous raw price points to calc PRICES_DAYWINDOW correlated points to calc, in turn, smoothed point
     komodo_heightpricebits(&seed,rawprices,firstheight + numblocks - 1);
     if ( firstheight < width )
         return(-1);
     for (i=0; i<width; i++)
     {
-        if ( (n= komodo_heightpricebits(&ignore,rawprices,firstheight + numblocks - 1 - i)) < 0 )
+        if ( (n= komodo_heightpricebits(&ignore,rawprices,firstheight + numblocks - 1 - i)) < 0 )  // stores raw prices in backward order 
             return(-1);
         if ( numpricefeeds < 0 )
             numpricefeeds = n;
@@ -1176,26 +1180,28 @@ int32_t prices_extract(int64_t *pricedata,int32_t firstheight,int32_t numblocks,
         ptr[1] = rawprices[0]; // timestamp
     }
     rngval = seed;
-    for (i=0; i<numblocks+PRICES_DAYWINDOW+PRICES_SMOOTHWIDTH; i++)
+    for (i=0; i<numblocks+PRICES_DAYWINDOW+PRICES_SMOOTHWIDTH; i++) // calculates +PRICES_DAYWINDOW more correlated values
     {
         rngval = (rngval*11109 + 13849);
         ptr = (uint32_t *)&pricedata[i*3];
-        if ( (pricedata[i*3+1]= komodo_pricecorrelated(rngval,ind,(uint32_t *)&pricedata[i*3],6,0,PRICES_SMOOTHWIDTH)) < 0 )
+        // takes previous PRICES_DAYWINDOW raw prices and calculates correlated price value
+        if ( (pricedata[i*3+1]= komodo_pricecorrelated(rngval,ind,(uint32_t *)&pricedata[i*3],6,0,PRICES_SMOOTHWIDTH)) < 0 ) // skip is 6 == sizeof(int64_t)/sizeof(int32_t)*3 
             return(-3);
     }
     tmpbuf = (int64_t *)calloc(sizeof(int64_t),2*PRICES_DAYWINDOW);
     for (i=0; i<numblocks; i++)
-        pricedata[i*3+2] = komodo_priceave(tmpbuf,&pricedata[i*3+1],3);
+        // takes previous PRICES_DAYWINDOW correlated price values and calculates smoothed value
+        pricedata[i*3+2] = komodo_priceave(tmpbuf,&pricedata[i*3+1],3); 
     free(tmpbuf);
     return(0);
-}
+}*/
 
 UniValue prices(const UniValue& params, bool fHelp)
 {
     if ( fHelp || params.size() != 1 )
         throw runtime_error("prices maxsamples\n");
     LOCK(cs_main);
-    UniValue ret(UniValue::VOBJ); uint64_t seed,rngval; int64_t *tmpbuf,smoothed,*correlated; char name[64],*str; uint32_t rawprices[1440*6],*prices; uint32_t i,width,j,numpricefeeds=-1,n,numsamples,nextheight,offset,ht;
+    UniValue ret(UniValue::VOBJ); uint64_t seed,rngval; int64_t *tmpbuf,smoothed,*correlated,checkprices[PRICES_MAXDATAPOINTS]; char name[64],*str; uint32_t rawprices[1440*6],*prices; uint32_t i,width,j,numpricefeeds=-1,n,numsamples,nextheight,offset,ht;
     if ( ASSETCHAINS_CBOPRET == 0 )
         throw JSONRPCError(RPC_INVALID_PARAMETER, "only -ac_cbopret chains have prices");
 
@@ -1255,13 +1261,30 @@ UniValue prices(const UniValue& params, bool fHelp)
                     rngval = (rngval*11109 + 13849);
                     if ( (correlated[i]= komodo_pricecorrelated(rngval,j,&prices[offset],1,0,PRICES_SMOOTHWIDTH)) < 0 )
                         throw JSONRPCError(RPC_INVALID_PARAMETER, "null correlated price");
-                    
+                    {
+                        if ( komodo_priceget(checkprices,j,nextheight-1-i,1) >= 0 )
+                        {
+                            if ( checkprices[1] != correlated[i] )
+                            {
+                                //fprintf(stderr,"ind.%d ht.%d %.8f != %.8f\n",j,nextheight-1-i,(double)checkprices[1]/COIN,(double)correlated[i]/COIN);
+                                correlated[i] = checkprices[1];
+                            }
+                        }
+                    }
                 }
                 tmpbuf = (int64_t *)calloc(sizeof(int64_t),2*PRICES_DAYWINDOW);
                 for (i=0; i<maxsamples&&i<numsamples; i++)
                 {
                     offset = j*width + i;
                     smoothed = komodo_priceave(tmpbuf,&correlated[i],1);
+                    if ( komodo_priceget(checkprices,j,nextheight-1-i,1) >= 0 )
+                    {
+                        if ( checkprices[2] != smoothed )
+                        {
+                            fprintf(stderr,"ind.%d ht.%d %.8f != %.8f\n",j,nextheight-1-i,(double)checkprices[2]/COIN,(double)smoothed/COIN);
+                            smoothed = checkprices[2];
+                        }
+                    }
                     UniValue parr(UniValue::VARR);
                     parr.push_back(ValueFromAmount((int64_t)prices[offset] * komodo_pricemult(j)));
                     parr.push_back(ValueFromAmount(correlated[i]));
@@ -1297,6 +1320,156 @@ UniValue prices(const UniValue& params, bool fHelp)
     free(correlated);
     return ret;
 }
+
+// pricesbet rpc implementation
+UniValue pricesbet(const UniValue& params, bool fHelp)
+{
+    if (fHelp || params.size() != 3)
+        throw runtime_error("pricesbet amount leverage \"synthetic-expression\"\n"
+            "amount is in coins\n"
+            "leverage is integer non-zero value, positive for long, negative for short position\n"
+            "synthetic-expression example \"BTC_USD, 1\"\n");
+    LOCK(cs_main);
+    UniValue ret(UniValue::VOBJ);
+
+    if (ASSETCHAINS_CBOPRET == 0)
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "only -ac_cbopret chains have prices");
+
+    CAmount txfee = 10000;
+    CAmount amount = atof(params[0].get_str().c_str()) * COIN;
+    int16_t leverage = (int16_t)atoi(params[1].get_str().c_str());
+    if (leverage == 0)
+        throw runtime_error("invalid leverage\n");
+
+    std::string sexpr = params[2].get_str();
+    std::vector<std::string> vexpr;
+    SplitStr(sexpr, vexpr);
+
+    // debug print parsed strings:
+    std::cerr << "parsed synthetic: ";
+    for (auto s : vexpr)
+        std::cerr << s << " ";
+    std::cerr << std::endl;
+
+    return PricesBet(txfee, amount, leverage, vexpr);
+}
+
+// pricesaddfunding rpc implementation
+UniValue pricesaddfunding(const UniValue& params, bool fHelp)
+{
+    if (fHelp || params.size() != 2)
+        throw runtime_error("pricesaddfunding bettxid amount\n"
+            "where amount is in coins\n");
+    LOCK(cs_main);
+    UniValue ret(UniValue::VOBJ);
+
+    if (ASSETCHAINS_CBOPRET == 0)
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "only -ac_cbopret chains have prices");
+
+    CAmount txfee = 10000;
+    uint256 bettxid = Parseuint256(params[0].get_str().c_str());
+    if (bettxid.IsNull())
+        throw runtime_error("invalid bettxid\n");
+
+    CAmount amount = atof(params[1].get_str().c_str()) * COIN;
+    if (amount <= 0)
+        throw runtime_error("invalid amount\n");
+
+    return PricesAddFunding(txfee, bettxid, amount);
+}
+
+// rpc pricessetcostbasis implementation
+UniValue pricessetcostbasis(const UniValue& params, bool fHelp)
+{
+    if (fHelp || params.size() != 1)
+        throw runtime_error("pricessetcostbasis bettxid\n");
+    LOCK(cs_main);
+    UniValue ret(UniValue::VOBJ);
+
+    if (ASSETCHAINS_CBOPRET == 0)
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "only -ac_cbopret chains have prices");
+
+    uint256 bettxid = Parseuint256(params[0].get_str().c_str());
+    if (bettxid.IsNull())
+        throw runtime_error("invalid bettxid\n");
+
+    int64_t txfee = 10000;
+
+    return PricesSetcostbasis(txfee, bettxid);
+}
+
+// pricescashout rpc implementation
+UniValue pricescashout(const UniValue& params, bool fHelp)
+{
+    if (fHelp || params.size() != 1)
+        throw runtime_error("pricescashout bettxid\n");
+    LOCK(cs_main);
+    UniValue ret(UniValue::VOBJ);
+
+    if (ASSETCHAINS_CBOPRET == 0)
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "only -ac_cbopret chains have prices");
+
+    uint256 bettxid = Parseuint256(params[0].get_str().c_str());
+    if (bettxid.IsNull())
+        throw runtime_error("invalid bettxid\n");
+
+    int64_t txfee = 10000;
+
+    return PricesCashout(txfee, bettxid);
+}
+
+// pricesrekt rpc implementation
+UniValue pricesrekt(const UniValue& params, bool fHelp)
+{
+    if (fHelp || params.size() != 2)
+        throw runtime_error("pricesrekt bettxid height\n");
+    LOCK(cs_main);
+    UniValue ret(UniValue::VOBJ);
+
+    if (ASSETCHAINS_CBOPRET == 0)
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "only -ac_cbopret chains have prices");
+
+    uint256 bettxid = Parseuint256(params[0].get_str().c_str());
+    if (bettxid.IsNull())
+        throw runtime_error("invalid bettxid\n");
+
+    int32_t height = atoi(params[0].get_str().c_str());
+
+    int64_t txfee = 10000;
+
+    return PricesRekt(txfee, bettxid, height);
+}
+
+// pricesrekt rpc implementation
+UniValue pricesgetorderbook(const UniValue& params, bool fHelp)
+{
+    if (fHelp || params.size() != 0)
+        throw runtime_error("pricesgetorderbook\n");
+    LOCK(cs_main);
+    UniValue ret(UniValue::VOBJ);
+
+    if (ASSETCHAINS_CBOPRET == 0)
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "only -ac_cbopret chains have prices");
+
+    return PricesGetOrderbook();
+}
+
+// pricesrekt rpc implementation
+UniValue pricesrefillfund(const UniValue& params, bool fHelp)
+{
+    if (fHelp || params.size() != 1)
+        throw runtime_error("pricesrefillfund amount\n");
+    LOCK(cs_main);
+    UniValue ret(UniValue::VOBJ);
+
+    if (ASSETCHAINS_CBOPRET == 0)
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "only -ac_cbopret chains have prices");
+
+    CAmount amount = atof(params[0].get_str().c_str()) * COIN;
+
+    return PricesRefillFund(amount);
+}
+
 
 UniValue gettxout(const UniValue& params, bool fHelp)
 {
@@ -1534,6 +1707,7 @@ UniValue getblockchaininfo(const UniValue& params, bool fHelp)
     UniValue obj(UniValue::VOBJ);
     obj.push_back(Pair("chain",                 Params().NetworkIDString()));
     obj.push_back(Pair("blocks",                (int)chainActive.Height()));
+    obj.push_back(Pair("synced",                KOMODO_INSYNC!=0));
     obj.push_back(Pair("headers",               pindexBestHeader ? pindexBestHeader->GetHeight() : -1));
     obj.push_back(Pair("bestblockhash",         chainActive.LastTip()->GetBlockHash().GetHex()));
     obj.push_back(Pair("difficulty",            (double)GetNetworkDifficulty()));

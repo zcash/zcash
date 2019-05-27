@@ -713,9 +713,9 @@ int32_t komodo_voutupdate(bool fJustCheck,int32_t *isratificationp,int32_t notar
                         sp->MoMdepth = MoMdepth;
                     }
                     komodo_stateupdate(height,0,0,0,zero,0,0,0,0,0,0,0,0,0,0,sp->MoM,sp->MoMdepth);
-                    if ( ASSETCHAINS_SYMBOL[0] != 0 )
+                    //if ( ASSETCHAINS_SYMBOL[0] != 0 )
                         printf("[%s] ht.%d NOTARIZED.%d %s.%s %sTXID.%s lens.(%d %d) MoM.%s %d\n",ASSETCHAINS_SYMBOL,height,sp->NOTARIZED_HEIGHT,ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,srchash.ToString().c_str(),ASSETCHAINS_SYMBOL[0]==0?"BTC":"KMD",desttxid.ToString().c_str(),opretlen,len,sp->MoM.ToString().c_str(),sp->MoMdepth);
-                                        
+                    
                     if ( ASSETCHAINS_SYMBOL[0] == 0 )
                     {
                         if ( signedfp == 0 )

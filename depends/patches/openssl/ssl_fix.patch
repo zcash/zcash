@@ -1,0 +1,273 @@
+From f725fe5b4b6504df08e30f5194d321c3025e2336 Mon Sep 17 00:00:00 2001
+From: Matt Caswell <matt@openssl.org>
+Date: Tue, 20 Nov 2018 15:32:55 +0000
+Subject: [PATCH] Fix a RUN_ONCE bug
+
+We have a number of instances where there are multiple "init" functions for
+a single CRYPTO_ONCE variable, e.g. to load config automatically or to not
+load config automatically. Unfortunately the RUN_ONCE mechanism was not
+correctly giving the right return value where an alternative init function
+was being used.
+
+Reviewed-by: Tim Hudson <tjh@openssl.org>
+(Merged from https://github.com/openssl/openssl/pull/7983)
+---
+ crypto/init.c                  | 38 +++++++++-----
+ include/internal/thread_once.h | 92 ++++++++++++++++++++++++++++++++++
+ ssl/ssl_init.c                 |  6 ++-
+ 3 files changed, 121 insertions(+), 15 deletions(-)
+
+diff --git a/crypto/init.c b/crypto/init.c
+index 209d1a483da..f20a12f069a 100644
+--- a/crypto/init.c
++++ b/crypto/init.c
+@@ -177,12 +177,6 @@ DEFINE_RUN_ONCE_STATIC(ossl_init_load_crypto_nodelete)
+ 
+ static CRYPTO_ONCE load_crypto_strings = CRYPTO_ONCE_STATIC_INIT;
+ static int load_crypto_strings_inited = 0;
+-DEFINE_RUN_ONCE_STATIC(ossl_init_no_load_crypto_strings)
+-{
+-    /* Do nothing in this case */
+-    return 1;
+-}
+-
+ DEFINE_RUN_ONCE_STATIC(ossl_init_load_crypto_strings)
+ {
+     int ret = 1;
+@@ -201,6 +195,13 @@ DEFINE_RUN_ONCE_STATIC(ossl_init_load_crypto_strings)
+     return ret;
+ }
+ 
++DEFINE_RUN_ONCE_STATIC_ALT(ossl_init_no_load_crypto_strings,
++                           ossl_init_load_crypto_strings)
++{
++    /* Do nothing in this case */
++    return 1;
++}
++
+ static CRYPTO_ONCE add_all_ciphers = CRYPTO_ONCE_STATIC_INIT;
+ DEFINE_RUN_ONCE_STATIC(ossl_init_add_all_ciphers)
+ {
+@@ -218,6 +219,13 @@ DEFINE_RUN_ONCE_STATIC(ossl_init_add_all_ciphers)
+     return 1;
+ }
+ 
++DEFINE_RUN_ONCE_STATIC_ALT(ossl_init_no_add_all_ciphers,
++                           ossl_init_add_all_ciphers)
++{
++    /* Do nothing */
++    return 1;
++}
++
+ static CRYPTO_ONCE add_all_digests = CRYPTO_ONCE_STATIC_INIT;
+ DEFINE_RUN_ONCE_STATIC(ossl_init_add_all_digests)
+ {
+@@ -235,7 +243,8 @@ DEFINE_RUN_ONCE_STATIC(ossl_init_add_all_digests)
+     return 1;
+ }
+ 
+-DEFINE_RUN_ONCE_STATIC(ossl_init_no_add_algs)
++DEFINE_RUN_ONCE_STATIC_ALT(ossl_init_no_add_all_digests,
++                           ossl_init_add_all_digests)
+ {
+     /* Do nothing */
+     return 1;
+@@ -255,7 +264,7 @@ DEFINE_RUN_ONCE_STATIC(ossl_init_config)
+     config_inited = 1;
+     return 1;
+ }
+-DEFINE_RUN_ONCE_STATIC(ossl_init_no_config)
++DEFINE_RUN_ONCE_STATIC_ALT(ossl_init_no_config, ossl_init_config)
+ {
+ #ifdef OPENSSL_INIT_DEBUG
+     fprintf(stderr,
+@@ -595,8 +604,9 @@ int OPENSSL_init_crypto(uint64_t opts, const OPENSSL_INIT_SETTINGS *settings)
+         return 0;
+ 
+     if ((opts & OPENSSL_INIT_NO_LOAD_CRYPTO_STRINGS)
+-            && !RUN_ONCE(&load_crypto_strings,
+-                         ossl_init_no_load_crypto_strings))
++            && !RUN_ONCE_ALT(&load_crypto_strings,
++                             ossl_init_no_load_crypto_strings,
++                             ossl_init_load_crypto_strings))
+         return 0;
+ 
+     if ((opts & OPENSSL_INIT_LOAD_CRYPTO_STRINGS)
+@@ -604,7 +614,8 @@ int OPENSSL_init_crypto(uint64_t opts, const OPENSSL_INIT_SETTINGS *settings)
+         return 0;
+ 
+     if ((opts & OPENSSL_INIT_NO_ADD_ALL_CIPHERS)
+-            && !RUN_ONCE(&add_all_ciphers, ossl_init_no_add_algs))
++            && !RUN_ONCE_ALT(&add_all_ciphers, ossl_init_no_add_all_ciphers,
++                             ossl_init_add_all_ciphers))
+         return 0;
+ 
+     if ((opts & OPENSSL_INIT_ADD_ALL_CIPHERS)
+@@ -612,7 +623,8 @@ int OPENSSL_init_crypto(uint64_t opts, const OPENSSL_INIT_SETTINGS *settings)
+         return 0;
+ 
+     if ((opts & OPENSSL_INIT_NO_ADD_ALL_DIGESTS)
+-            && !RUN_ONCE(&add_all_digests, ossl_init_no_add_algs))
++            && !RUN_ONCE_ALT(&add_all_digests, ossl_init_no_add_all_digests,
++                             ossl_init_add_all_digests))
+         return 0;
+ 
+     if ((opts & OPENSSL_INIT_ADD_ALL_DIGESTS)
+@@ -624,7 +636,7 @@ int OPENSSL_init_crypto(uint64_t opts, const OPENSSL_INIT_SETTINGS *settings)
+         return 0;
+ 
+     if ((opts & OPENSSL_INIT_NO_LOAD_CONFIG)
+-            && !RUN_ONCE(&config, ossl_init_no_config))
++            && !RUN_ONCE_ALT(&config, ossl_init_no_config, ossl_init_config))
+         return 0;
+ 
+     if (opts & OPENSSL_INIT_LOAD_CONFIG) {
+diff --git a/include/internal/thread_once.h b/include/internal/thread_once.h
+index 224244353ab..e268a959ef3 100644
+--- a/include/internal/thread_once.h
++++ b/include/internal/thread_once.h
+@@ -9,6 +9,20 @@
+ 
+ #include <openssl/crypto.h>
+ 
++/*
++ * DEFINE_RUN_ONCE: Define an initialiser function that should be run exactly
++ * once. It takes no arguments and returns and int result (1 for success or
++ * 0 for failure). Typical usage might be:
++ *
++ * DEFINE_RUN_ONCE(myinitfunc)
++ * {
++ *     do_some_initialisation();
++ *     if (init_is_successful())
++ *         return 1;
++ *
++ *     return 0;
++ * }
++ */
+ #define DEFINE_RUN_ONCE(init)                   \
+     static int init(void);                     \
+     int init##_ossl_ret_ = 0;                   \
+@@ -17,10 +31,30 @@
+         init##_ossl_ret_ = init();              \
+     }                                           \
+     static int init(void)
++
++/*
++ * DECLARE_RUN_ONCE: Declare an initialiser function that should be run exactly
++ * once that has been defined in another file via DEFINE_RUN_ONCE().
++ */
+ #define DECLARE_RUN_ONCE(init)                  \
+     extern int init##_ossl_ret_;                \
+     void init##_ossl_(void);
+ 
++/*
++ * DEFINE_RUN_ONCE_STATIC: Define an initialiser function that should be run
++ * exactly once. This function will be declared as static within the file. It
++ * takes no arguments and returns and int result (1 for success or 0 for
++ * failure). Typical usage might be:
++ *
++ * DEFINE_RUN_ONCE_STATIC(myinitfunc)
++ * {
++ *     do_some_initialisation();
++ *     if (init_is_successful())
++ *         return 1;
++ *
++ *     return 0;
++ * }
++ */
+ #define DEFINE_RUN_ONCE_STATIC(init)            \
+     static int init(void);                     \
+     static int init##_ossl_ret_ = 0;            \
+@@ -30,6 +64,46 @@
+     }                                           \
+     static int init(void)
+ 
++/*
++ * DEFINE_RUN_ONCE_STATIC_ALT: Define an alternative initialiser function. This
++ * function will be declared as static within the file. It takes no arguments
++ * and returns an int result (1 for success or 0 for failure). An alternative
++ * initialiser function is expected to be associated with a primary initialiser
++ * function defined via DEFINE_ONCE_STATIC where both functions use the same
++ * CRYPTO_ONCE object to synchronise. Where an alternative initialiser function
++ * is used only one of the primary or the alternative initialiser function will
++ * ever be called - and that function will be called exactly once. Definitition
++ * of an alternative initialiser function MUST occur AFTER the definition of the
++ * primary initialiser function.
++ *
++ * Typical usage might be:
++ *
++ * DEFINE_RUN_ONCE_STATIC(myinitfunc)
++ * {
++ *     do_some_initialisation();
++ *     if (init_is_successful())
++ *         return 1;
++ *
++ *     return 0;
++ * }
++ *
++ * DEFINE_RUN_ONCE_STATIC_ALT(myaltinitfunc, myinitfunc)
++ * {
++ *     do_some_alternative_initialisation();
++ *     if (init_is_successful())
++ *         return 1;
++ *
++ *     return 0;
++ * }
++ */
++#define DEFINE_RUN_ONCE_STATIC_ALT(initalt, init) \
++    static int initalt(void);                     \
++    static void initalt##_ossl_(void)             \
++    {                                             \
++        init##_ossl_ret_ = initalt();             \
++    }                                             \
++    static int initalt(void)
++
+ /*
+  * RUN_ONCE - use CRYPTO_THREAD_run_once, and check if the init succeeded
+  * @once: pointer to static object of type CRYPTO_ONCE
+@@ -43,3 +117,21 @@
+  */
+ #define RUN_ONCE(once, init)                                            \
+     (CRYPTO_THREAD_run_once(once, init##_ossl_) ? init##_ossl_ret_ : 0)
++
++/*
++ * RUN_ONCE_ALT - use CRYPTO_THREAD_run_once, to run an alternative initialiser
++ *                function and check if that initialisation succeeded
++ * @once:    pointer to static object of type CRYPTO_ONCE
++ * @initalt: alternative initialiser function name that was previously given to
++ *           DEFINE_RUN_ONCE_STATIC_ALT.  This function must return 1 for
++ *           success or 0 for failure.
++ * @init:    primary initialiser function name that was previously given to
++ *           DEFINE_RUN_ONCE_STATIC.  This function must return 1 for success or
++ *           0 for failure.
++ *
++ * The return value is 1 on success (*) or 0 in case of error.
++ *
++ * (*) by convention, since the init function must return 1 on success.
++ */
++#define RUN_ONCE_ALT(once, initalt, init)                               \
++    (CRYPTO_THREAD_run_once(once, initalt##_ossl_) ? init##_ossl_ret_ : 0)
+diff --git a/ssl/ssl_init.c b/ssl/ssl_init.c
+index c0ccb9304a6..96526472c57 100644
+--- a/ssl/ssl_init.c
++++ b/ssl/ssl_init.c
+@@ -134,7 +134,8 @@ DEFINE_RUN_ONCE_STATIC(ossl_init_load_ssl_strings)
+     return 1;
+ }
+ 
+-DEFINE_RUN_ONCE_STATIC(ossl_init_no_load_ssl_strings)
++DEFINE_RUN_ONCE_STATIC_ALT(ossl_init_no_load_ssl_strings,
++                           ossl_init_load_ssl_strings)
+ {
+     /* Do nothing in this case */
+     return 1;
+@@ -207,7 +208,8 @@ int OPENSSL_init_ssl(uint64_t opts, const OPENSSL_INIT_SETTINGS * settings)
+         return 0;
+ 
+     if ((opts & OPENSSL_INIT_NO_LOAD_SSL_STRINGS)
+-        && !RUN_ONCE(&ssl_strings, ossl_init_no_load_ssl_strings))
++        && !RUN_ONCE_ALT(&ssl_strings, ossl_init_no_load_ssl_strings,
++                         ossl_init_load_ssl_strings))
+         return 0;
+ 
+     if ((opts & OPENSSL_INIT_LOAD_SSL_STRINGS)
