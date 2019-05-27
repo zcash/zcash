@@ -33,9 +33,11 @@
 
 #include <boost/filesystem/path.hpp>
 
-// If CCLIB fails to compile with this, use the one below. 
-//#include <db_cxx.h>
-#include "../depends/x86_64-unknown-linux-gnu/include/db_cxx.h"
+#ifdef BUILD_ROGUE
+    #include "../depends/x86_64-unknown-linux-gnu/include/db_cxx.h"
+#else
+    #include <db_cxx.h>
+#endif
 
 extern unsigned int nWalletDBUpdated;
 
