@@ -93,6 +93,8 @@ struct Params {
     int nMajorityWindow;
     NetworkUpgrade vUpgrades[MAX_NETWORK_UPGRADES];
     /** Proof of work parameters */
+    unsigned int nEquihashN = 0;
+    unsigned int nEquihashK = 0;
     uint256 powLimit;
     boost::optional<uint32_t> nPowAllowMinDifficultyBlocksAfterHeight;
     int64_t nPowAveragingWindow;
