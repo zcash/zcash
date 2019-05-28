@@ -16,7 +16,6 @@ UniValue SendTransaction(CTransaction& tx, bool testmode) {
         o.push_back(Pair("txid", tx.GetHash().ToString()));
     } else {
         // Test mode does not send the transaction to the network.
-        UniValue o(UniValue::VOBJ);
         o.push_back(Pair("test", 1));
         o.push_back(Pair("txid", tx.GetHash().ToString()));
         o.push_back(Pair("hex", EncodeHexTx(tx)));
