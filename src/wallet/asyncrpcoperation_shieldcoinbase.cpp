@@ -225,20 +225,19 @@ bool ShieldToAddress::operator()(const libzcash::SproutPaymentAddress &zaddr) co
     m_op->tx_ = CTransaction(mtx);
 
     // Create joinsplit
-    UniValue obj(UniValue::VOBJ);
     ShieldCoinbaseJSInfo info;
     info.vpub_old = sendAmount;
     info.vpub_new = 0;
     JSOutput jso = JSOutput(zaddr, sendAmount);
     info.vjsout.push_back(jso);
-    obj = m_op->perform_joinsplit(info);
+    UniValue obj = m_op->perform_joinsplit(info);
 
-    m_op->sign_send_raw_transaction(obj);
+    auto txAndResult = SignSendRawTransaction(obj, m_op->testmode);
+    m_op->tx_ = txAndResult.first;
+    m_op->set_result(txAndResult.second);
     return true;
 }
 
-
-extern UniValue signrawtransaction(const UniValue& params, bool fHelp);
 
 bool ShieldToAddress::operator()(const libzcash::SaplingPaymentAddress &zaddr) const {
     m_op->builder_.SetFee(m_op->fee_);
@@ -269,18 +268,6 @@ bool ShieldToAddress::operator()(const libzcash::SaplingPaymentAddress &zaddr) c
 
 bool ShieldToAddress::operator()(const libzcash::InvalidEncoding& no) const {
     return false;
-}
-
-
-/**
- * Sign and send a raw transaction.
- * Raw transaction as hex string should be in object field "rawtxn"
- */
-void AsyncRPCOperation_shieldcoinbase::sign_send_raw_transaction(UniValue obj)
-{
-    auto txAndResult = SignSendRawTransaction(obj, testmode);
-    tx_ = txAndResult.first;
-    set_result(txAndResult.second);
 }
 
 

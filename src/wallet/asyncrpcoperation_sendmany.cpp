@@ -36,8 +36,6 @@
 
 using namespace libzcash;
 
-extern UniValue signrawtransaction(const UniValue& params, bool fHelp);
-
 int find_output(UniValue obj, int n) {
     UniValue outputMapValue = find_value(obj, "outputmap");
     if (!outputMapValue.isArray()) {
@@ -503,7 +501,9 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         
         UniValue obj(UniValue::VOBJ);
         obj.push_back(Pair("rawtxn", EncodeHexTx(tx_)));
-        sign_send_raw_transaction(obj);
+        auto txAndResult = SignSendRawTransaction(obj, testmode);
+        tx_ = txAndResult.first;
+        set_result(txAndResult.second);
         return true;
     }
     /**
@@ -608,7 +608,9 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             }
             obj = perform_joinsplit(info);
         }
-        sign_send_raw_transaction(obj);
+        auto txAndResult = SignSendRawTransaction(obj, testmode);
+        tx_ = txAndResult.first;
+        set_result(txAndResult.second);
         return true;
     }
     /**
@@ -886,20 +888,10 @@ bool AsyncRPCOperation_sendmany::main_impl() {
     assert(zOutputsDeque.size() == 0);
     assert(vpubNewProcessed);
 
-    sign_send_raw_transaction(obj);
-    return true;
-}
-
-
-/**
- * Sign and send a raw transaction.
- * Raw transaction as hex string should be in object field "rawtxn"
- */
-void AsyncRPCOperation_sendmany::sign_send_raw_transaction(UniValue obj)
-{   
     auto txAndResult = SignSendRawTransaction(obj, testmode);
     tx_ = txAndResult.first;
     set_result(txAndResult.second);
+    return true;
 }
 
 

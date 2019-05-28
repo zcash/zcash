@@ -127,8 +127,6 @@ private:
         std::vector<boost::optional < SproutWitness>> witnesses,
         uint256 anchor);
 
-    void sign_send_raw_transaction(UniValue obj);     // throws exception if there was an error
-
     // payment disclosure!
     std::vector<PaymentDisclosureKeyInfo> paymentDisclosureData_;
 };
@@ -191,10 +189,6 @@ public:
         return delegate->perform_joinsplit(info, witnesses, anchor);
     }
 
-    void sign_send_raw_transaction(UniValue obj) {
-        delegate->sign_send_raw_transaction(obj);
-    }
-    
     void set_state(OperationStatus state) {
         delegate->state_.store(state);
     }

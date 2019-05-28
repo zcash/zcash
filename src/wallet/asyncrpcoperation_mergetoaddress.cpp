@@ -379,7 +379,9 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
     if (isPureTaddrOnlyTx) {
         UniValue obj(UniValue::VOBJ);
         obj.push_back(Pair("rawtxn", EncodeHexTx(tx_)));
-        sign_send_raw_transaction(obj);
+        auto txAndResult = SignSendRawTransaction(obj, testmode);
+        tx_ = txAndResult.first;
+        set_result(txAndResult.second);
         return true;
     }
     /**
@@ -414,9 +416,10 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
         }
         info.vjsout.push_back(jso);
 
-        UniValue obj(UniValue::VOBJ);
-        obj = perform_joinsplit(info);
-        sign_send_raw_transaction(obj);
+        UniValue obj = perform_joinsplit(info);
+        auto txAndResult = SignSendRawTransaction(obj, testmode);
+        tx_ = txAndResult.first;
+        set_result(txAndResult.second);
         return true;
     }
     /**
@@ -715,20 +718,10 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
     assert(zInputsDeque.size() == 0);
     assert(vpubNewProcessed);
 
-    sign_send_raw_transaction(obj);
-    return true;
-}
-
-
-/**
- * Sign and send a raw transaction.
- * Raw transaction as hex string should be in object field "rawtxn"
- */
-void AsyncRPCOperation_mergetoaddress::sign_send_raw_transaction(UniValue obj)
-{
     auto txAndResult = SignSendRawTransaction(obj, testmode);
     tx_ = txAndResult.first;
     set_result(txAndResult.second);
+    return true;
 }
 
 
