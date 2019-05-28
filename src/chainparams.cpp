@@ -401,7 +401,18 @@ public:
         assert(vFoundersRewardAddress.size() <= consensus.GetLastFoundersRewardBlockHeight());
 
         vYcashFoundersRewardAddress = {
-            "smUmFZYEoRo2UxwL83SujuKWSvikkPzk8Gp", // TODO (A): Add the YCash Foundation's addresses
+            "smDw2LWkeuJ1NGBDDZvdNbzY8A9D1mkkDZm", "smDxM6WPpz3HcK6m9cCnhQkBXMLnUf3cryA", "smEKdQPcZHYTmcTbVkqfWryRbEZWMrapjMo", "smEVfJmuGErW6ZM3XSNwbJR6cPU3iPABAqY", 
+            "smEkWMsbV1CBZosu9wtq69f2vNXBT1owNKe", "smFd3Dh5MjEttRHd9S8kx153Vzesefzjc2d", "smGBXB9SrjnEDf7ASQxvnujBRc1qBb58o5q", "smGLTYjSriA3n8EMf4JTiHLGUCzUYjau3WV", 
+            "smGVF2kDywxhjfzBqoFDE1AyXZEafTLSjbH", "smGVrxUHUzd2gaURPw2ASoE3L5WMFcxJcp1", "smHTCd59Q9pFzrzA73f6het1ozDzeQaA8E3", "smHy6JaGM9gkaGBJ4DF4p5FbFvoUbpAusWd", 
+            "smJ1fpQdKNuchkxuVUMBkcCWoBcWFmyDAyZ", "smJ2j3Gea5XH7ERpyYzvo6YQKaoYfzkMUS3", "smJ8gtE5EX5oFSp4c5cCDpxoajXTQu73VSC", "smJyGxvwpCxPaFJM6TwZ6cwT1qz5PMPPBeL", 
+            "smKEt1iVgCDY9V4915HnGpFK3zyTPyQixMa", "smKXxXsNLUVE8Qro6R9EyaEZmvgxqjbsFX9", "smLTH7FEiXUVpWjhoL91ToMoSZPU8xAvEh9", "smLo65rNyiEYiVHxWZHNNP9QU1HsQu3QX7b", 
+            "smMDUN36MqFE4thY54CQnWBpU4ePuayF9TV", "smMWmoipQ7YVuRAJaQHKqhHbbTg28mS6ET5", "smMtCCZsR3s7ZiEYskFietNPfSb1eVHNoZi", "smMuh9QVkpQg93Gb54ucaVykbk9FgjZBN3D", 
+            "smNM44GrsbMWHQRhhayqieCadzURNDLkxkW", "smNhJLQs3LmHWtVscrnJmrLhhjPcDD3unJZ", "smPHxC1438rANivn1omntbRF5Nf2wSZfFhs", "smSAidYKoFY2fmi2efcoJPSeBpdVC2vyHvj", 
+            "smShCYXefsx8RcnW2b7duPKBcD5TXWY5K2A", "smTRxVMtveLrdzVb1B9rLKfDZ3Qp8kAna7r", "smTnar3ernxTG5voae2bUC185EicBdSKVux", "smUmPeP8VwuPsNTcJcB7YZY1b1HJJsJfkYp", 
+            "smVSGTzPP4dbj3HXRR84WoBFWw4EVuuyVi2", "smW8AA9LAKGMj4EXxNtfJQFLFaiuzTyGwYa", "smWAgHkGiQ1fZHF9ZBjYzKS7ZX8JtjvWbaU", "smX1HT3n9mtPGeK7qMBETCEGL5UG8eC8nmy", 
+            "smX3udkLyb3qZ2z2muEinbvNuSi5M2JiiE5", "smXEcB2QZaZgevkB7CS1Tz2BZNQ9cnNwXBj", "smXddMXWZvpRDq4FjuTGxLWYTtwbNwc36g5", "smXfPS6G7aiVECG8qFvZc9oFe1bzEvCKECG", 
+            "smXxQi63m9x2WfhdBYogWdKzavVpbnnGyJq", "smZ53EtRafyjGZyjiNDb1FiGbwXbtE3aqTB", "smZJPM9KsKAdfotD6Woh2nb8wLedvhf4Nw5", "smZyciv3CGZLAFU8d2yKff33FU8f2nek5yx", 
+            "smZzRpCLENnxN5JgMHaKtMruTCi7jsa7Tak", "smaWKSqvUJvajRquGbaHBdNbL78fDf6hdwE", "smazMQ9G7NLJXAzX4ZMKc8x6DigyeoEucgk", "smbTaZmsKNEVstoQVyZcJAMJExiytfnwaMU" 
         };
     }
 };
@@ -577,8 +588,14 @@ std::string CChainParams::GetFoundersRewardAddressAtHeight(int nHeight) const {
         size_t i = nHeight / addressChangeInterval;
         return vFoundersRewardAddress[i];
     } else {
-        // TODO (A): Return from the vector based on the height. 
-        return vYcashFoundersRewardAddress[0];
+        // Ycash 
+        // Make sure we have at least 48 addresses  (approx 4 years worth)
+        assert(vFoundersRewardAddress.size() == 48);
+
+        size_t addressChangeInterval = 17917; // Every one month, approx
+        size_t i = (nHeight - consensus.vUpgrades[Consensus::UPGRADE_YCASH].nActivationHeight) / addressChangeInterval;
+
+        return vYcashFoundersRewardAddress[i % vFoundersRewardAddress.size()];
     }
 }
 
