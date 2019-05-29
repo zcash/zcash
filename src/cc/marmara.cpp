@@ -58,6 +58,7 @@ int64_t IsMarmaravout(struct CCcontract_info *cp, const CTransaction& tx, int32_
     return(0);
 }
 
+// Get randomized within range [3 month...2 year] using ind as seed(?)
 int32_t MarmaraRandomize(uint32_t ind)
 {
     uint64_t val64; uint32_t val, range = (MARMARA_MAXLOCK - MARMARA_MINLOCK);
@@ -67,6 +68,7 @@ int32_t MarmaraRandomize(uint32_t ind)
     return((val % range) + MARMARA_MINLOCK);
 }
 
+// get random unlock height within 3 month..2 year
 int32_t MarmaraUnlockht(int32_t height)
 {
     uint32_t ind = height / MARMARA_GROUPSIZE;
@@ -478,7 +480,7 @@ UniValue MarmaraLock(int64_t txfee, int64_t amount, int32_t height)
     else
         val = amount;
     if (val > txfee)
-        inputsum = AddNormalinputs2(mtx, val + txfee, CC_MAXVINS / 2);  //added txfee because if 'inputsum' exactly was equal to 'val' we'd exit from insufficient funds 
+        inputsum = AddNormalinputs2(mtx, val + txfee, CC_MAXVINS / 2);  //added '+txfee' because if 'inputsum' exactly was equal to 'val' we'd exit from insufficient funds 
     //fprintf(stderr,"added normal inputs=%.8f required val+txfee=%.8f\n",(double)inputsum/COIN,(double)(val+txfee)/COIN);
 
     // lock the amount on 1of2 address:
@@ -654,7 +656,7 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid)
                     pubkeys.push_back(Marmarapk);
                     mtx.vin.push_back(CTxIn(batontxid, 0, CScript()));
                     pubkeys.push_back(mypk);
-                    for (i = 1; i < n; i++)  //iterate through all issuers/endorsers (i=0 is 1st receiver approval
+                    for (i = 1; i < n; i++)  //iterate through all issuers/endorsers (i=0 is 1st receiver approval)
                     {
                         if ( myGetTransaction(creditloop[i],tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 1 )
                         {
@@ -764,6 +766,7 @@ int32_t MarmaraGetCreditloops(int64_t &totalamount, std::vector<uint256> &issuan
     return(n);
 }
 
+// current version returns approvaltxid
 UniValue MarmaraReceive(int64_t txfee, CPubKey senderpk, int64_t amount, std::string currency, int32_t matures, uint256 batontxid, bool automaticflag)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
@@ -1054,7 +1057,7 @@ UniValue MarmaraPoolPayout(int64_t txfee, int32_t firstheight, double perc, char
                 shares += jdouble(jitem(item, 1), 0);
             else
             {
-                errorstr = (char *)"all items must be of the form [<pubke>, <shares>]";
+                errorstr = (char *)"all items must be of the form [<pubkey>, <shares>]";
                 break;
             }
         }
