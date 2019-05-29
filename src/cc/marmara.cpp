@@ -1270,23 +1270,31 @@ UniValue MarmaraPoolPayout(int64_t txfee, int32_t firstheight, double perc, char
 UniValue MarmaraInfo(CPubKey refpk, int32_t firstheight, int32_t lastheight, int64_t minamount, int64_t maxamount, std::string currency)
 {
     CMutableTransaction mtx; std::vector<CPubKey> pubkeys;
-    UniValue result(UniValue::VOBJ), a(UniValue::VARR), b(UniValue::VARR); int32_t i, n, matches; int64_t totalclosed = 0, totalamount = 0; std::vector<uint256> issuances, closed; char coinaddr[64];
-    CPubKey Marmarapk; struct CCcontract_info *cp, C;
+    UniValue result(UniValue::VOBJ), a(UniValue::VARR), b(UniValue::VARR); int32_t i, n, matches; int64_t totalclosed = 0, totalamount = 0; std::vector<uint256> issuances, closed; 
+    CPubKey Marmarapk; 
+    char myaddr[64];
+    char lock1of2addr[64];
+    char myccaddr[64];
+
+    struct CCcontract_info *cp, C;
+
     cp = CCinit(&C, EVAL_MARMARA);
     Marmarapk = GetUnspendable(cp, 0);
     result.push_back(Pair("result", "success"));
-    Getscriptaddress(coinaddr, CScript() << ParseHex(HexStr(Mypubkey())) << OP_CHECKSIG);
-    result.push_back(Pair("myaddress", coinaddr));
-    result.push_back(Pair("normal", ValueFromAmount(CCaddress_balance(coinaddr, 0))));
+    
+    Getscriptaddress(myaddr, CScript() << ParseHex(HexStr(Mypubkey())) << OP_CHECKSIG);
+    result.push_back(Pair("myaddress", myaddr));
+    result.push_back(Pair("normal", ValueFromAmount(CCaddress_balance(myaddr, 0))));
 
-    GetCCaddress1of2(cp, coinaddr, Marmarapk, Mypubkey());
-    result.push_back(Pair("myCCactivated", coinaddr));
-    result.push_back(Pair("activated", ValueFromAmount(CCaddress_balance(coinaddr, 1))));
-    result.push_back(Pair("activated16", ValueFromAmount(AddMarmarainputs(false, mtx, pubkeys, coinaddr, 0, MARMARA_VINS))));
+    
+    GetCCaddress1of2(cp, lock1of2addr, Marmarapk, Mypubkey());
+    result.push_back(Pair("myCCactivated", lock1of2addr));
+    result.push_back(Pair("activated", ValueFromAmount(CCaddress_balance(lock1of2addr, 1))));
+    result.push_back(Pair("activated16", ValueFromAmount(AddMarmarainputs(false, mtx, pubkeys, lock1of2addr, 0, MARMARA_VINS))));
 
-    GetCCaddress(cp, coinaddr, Mypubkey());
-    result.push_back(Pair("myCCaddress", coinaddr));
-    result.push_back(Pair("CCutxos", ValueFromAmount(CCaddress_balance(coinaddr, 1))));
+    GetCCaddress(cp, myccaddr, Mypubkey());
+    result.push_back(Pair("myCCaddress", myccaddr));
+    result.push_back(Pair("CCutxos", ValueFromAmount(CCaddress_balance(myccaddr, 1))));
 
     if (refpk.size() == 33)
         result.push_back(Pair("issuer", HexStr(refpk)));
