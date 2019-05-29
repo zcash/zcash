@@ -364,6 +364,7 @@ bool MarmaraValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction 
 
 // helper functions for rpc calls in rpcwallet.cpp
 
+// add mined coins
 int64_t AddMarmaraCoinbases(struct CCcontract_info *cp, CMutableTransaction &mtx, int32_t firstheight, CPubKey poolpk, int32_t maxinputs)
 {
     char coinaddr[64]; CPubKey Marmarapk, pk; int64_t nValue, totalinputs = 0; uint256 txid, hashBlock; CTransaction vintx; int32_t unlockht, ht, vout, unlocks, n = 0;
@@ -403,6 +404,7 @@ int64_t AddMarmaraCoinbases(struct CCcontract_info *cp, CMutableTransaction &mtx
     return(totalinputs);
 }
 
+// add locked coins:
 int64_t AddMarmarainputs(CMutableTransaction &mtx, std::vector<CPubKey> &pubkeys, char *coinaddr, int64_t total, int32_t maxinputs)
 {
     uint64_t threshold, nValue, totalinputs = 0; uint256 txid, hashBlock; CTransaction tx; int32_t numvouts, ht, unlockht, vout, i, n = 0; uint8_t funcid; CPubKey pk; std::vector<int64_t> vals;
@@ -846,9 +848,9 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
         errorstr = (char *)"it must mature in the future";
     if (errorstr == 0)
     {
-        mtx.vin.push_back(CTxIn(approvaltxid, 0, CScript()));
+        mtx.vin.push_back(CTxIn(approvaltxid, 0, CScript()));  // spend the approval tx
         if (funcid == 'T')
-            mtx.vin.push_back(CTxIn(batontxid, 0, CScript()));
+            mtx.vin.push_back(CTxIn(batontxid, 0, CScript()));   // spend the baton
         if (funcid == 'I' || AddNormalinputs(mtx, mypk, txfee, 1) > 0)
         {
             errorstr = (char *)"couldnt finalize CCtx";
@@ -1039,6 +1041,7 @@ UniValue MarmaraCreditloop(uint256 txid)
     return(result);
 }
 
+// collect miner pool rewards
 UniValue MarmaraPoolPayout(int64_t txfee, int32_t firstheight, double perc, char *jsonstr) // [[pk0, shares0], [pk1, shares1], ...]
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
