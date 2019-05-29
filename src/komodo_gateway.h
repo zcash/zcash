@@ -2597,7 +2597,7 @@ static int cmp_llu(const void *a, const void*b)
     else return(1);
 }
 
-static int64_t sort64(int64_t *l, int32_t llen)
+static void sort64(int64_t *l, int32_t llen)
 {
     qsort(l,llen,sizeof(uint64_t),cmp_llu);
 }
@@ -2611,7 +2611,7 @@ static int revcmp_llu(const void *a, const void*b)
     else return(1);
 }
 
-static int64_t revsort64(int64_t *l, int32_t llen)
+static void revsort64(int64_t *l, int32_t llen)
 {
     qsort(l,llen,sizeof(uint64_t),revcmp_llu);
 }
