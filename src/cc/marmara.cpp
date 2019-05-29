@@ -420,6 +420,8 @@ int64_t AddMarmarainputs(bool isBoosted, CMutableTransaction &mtx, std::vector<C
     else 
         threshold = total;
 
+    std::cerr << "AddMarmarainputs() adding from addr=" << coinaddr << std::endl;
+
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it = unspentOutputs.begin(); it != unspentOutputs.end(); it++)
     {
         uint256 txid = it->first.txhash;
@@ -1013,7 +1015,7 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
 
 UniValue MarmaraCreditloop(uint256 txid)
 {
-    UniValue result(UniValue::VOBJ), a(UniValue::VARR); std::vector<uint256> creditloop; uint256 batontxid, createtxid, refcreatetxid, hashBlock; uint8_t funcid; int32_t numerrs = 0, i, n, numvouts, matures, refmatures; int64_t amount, refamount; CPubKey pk; std::string currency, refcurrency; CTransaction tx; char coinaddr[64], myCCaddr[64], destaddr[64], batonCCaddr[64], str[2]; struct CCcontract_info *cp, C;
+    UniValue result(UniValue::VOBJ), a(UniValue::VARR); std::vector<uint256> creditloop; uint256 batontxid, refcreatetxid, hashBlock; uint8_t funcid; int32_t numerrs = 0, i, n, numvouts, matures, refmatures; int64_t amount, refamount; CPubKey pk; std::string currency, refcurrency; CTransaction tx; char coinaddr[64], myCCaddr[64], destaddr[64], batonCCaddr[64], str[2]; struct CCcontract_info *cp, C;
     cp = CCinit(&C, EVAL_MARMARA);
     if ((n = MarmaraGetbatontxid(creditloop, batontxid, txid)) > 0)
     {
@@ -1089,7 +1091,7 @@ UniValue MarmaraCreditloop(uint256 txid)
 
                     // add locked-in-loop amount:
                     char lockInLoop1of2addr[64], txidaddr[64];
-                    CPubKey createtxidPk = CCtxidaddr(txidaddr, createtxid);
+                    CPubKey createtxidPk = CCtxidaddr(txidaddr, refcreatetxid);
                     GetCCaddress1of2(cp, lockInLoop1of2addr, GetUnspendable(cp, NULL), createtxidPk);  // 1of2 lock-in-loop address 
                     std::vector<CPubKey> pubkeys;
                     CMutableTransaction mtx;
@@ -1100,6 +1102,7 @@ UniValue MarmaraCreditloop(uint256 txid)
                 {
                     if ( myGetTransaction(creditloop[i],tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 1 )
                     {
+                        uint256 createtxid;
                         if ((funcid = MarmaraDecodeLoopOpret(tx.vout[numvouts - 1].scriptPubKey, createtxid, pk, amount, matures, currency)) != 0)
                         {
                             UniValue obj(UniValue::VOBJ);
