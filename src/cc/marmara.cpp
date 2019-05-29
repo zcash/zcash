@@ -984,14 +984,6 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
         result.push_back(Pair("amount", ValueFromAmount(amount)));
         result.push_back(Pair("matures", matures));
         result.push_back(Pair("currency", currency));
-
-        // add locked-in-loop amount:
-        char lockInLoop1of2addr[64], txidaddr[64];
-        CPubKey createtxidPk = CCtxidaddr(txidaddr, createtxid);
-        GetCCaddress1of2(cp, lockInLoop1of2addr, Marmarapk, createtxidPk);  // 1of2 lock-in-loop address 
-        std::vector<CPubKey> pubkeys;
-        int64_t amountLockedInLoop = AddMarmarainputs(mtx, pubkeys, lockInLoop1of2addr, 0, 0); 
-        result.push_back(Pair("amountLockedInLoop", ValueFromAmount(amountLockedInLoop)));
     }
     return(result);
 }
@@ -1071,6 +1063,15 @@ UniValue MarmaraCreditloop(uint256 txid)
                     if (strcmp(myCCaddr, coinaddr) == 0)
                         result.push_back(Pair("ismine", 1));
                     else result.push_back(Pair("ismine", 0));
+
+                    // add locked-in-loop amount:
+                    char lockInLoop1of2addr[64], txidaddr[64];
+                    CPubKey createtxidPk = CCtxidaddr(txidaddr, createtxid);
+                    GetCCaddress1of2(cp, lockInLoop1of2addr, GetUnspendable(cp, NULL), createtxidPk);  // 1of2 lock-in-loop address 
+                    std::vector<CPubKey> pubkeys;
+                    CMutableTransaction mtx;
+                    int64_t amountLockedInLoop = AddMarmarainputs(mtx, pubkeys, lockInLoop1of2addr, 0, 0);
+                    result.push_back(Pair("amountLockedInLoop", ValueFromAmount(amountLockedInLoop)));
                 }
                 for (i = 0; i < n; i++)
                 {
