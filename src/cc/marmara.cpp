@@ -947,6 +947,10 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
                     mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA, txfee, receiverpk));  // transfer the baton to the next receiver
                     if (funcid == 'I')
                         mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA, txfee, Marmarapk));
+
+                    uint8_t mypriv[32];
+                    Myprivkey(mypriv);
+                    CCaddr1of2set(cp, Marmarapk, mypk, mypriv, lock1of2addr); // set 1of2addr and pks to spend from 1of2 vin
                     rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, MarmaraLoopOpret(funcid, createtxid, receiverpk, amount, matures, currency));
                     if (rawtx.size() > 0)
                         errorstr = 0;
