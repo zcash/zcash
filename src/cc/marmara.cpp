@@ -827,42 +827,137 @@ UniValue MarmaraReceive(int64_t txfee, CPubKey senderpk, int64_t amount, std::st
     return(result);
 }
 
+
+int32_t DistributeRemainder(CMutableTransaction &mtx, const std::vector<uint256> &creditloop) 
+{
+    CPubKey Marmarapk; 
+    struct CCcontract_info *cp, C;
+    int32_t endorsersNumber = creditloop.size() - 1; // number of endorsers
+    uint256 createtxid, dummytxid;
+    CPubKey dummypk;
+    int64_t amount, inputsum, change;
+    int32_t matures;
+    std::string currency;
+    uint8_t funcid;
+    std::vector <CPubKey> pubkeys;
+    CTransaction createtx;
+    uint256 hashBlock;
+
+    cp = CCinit(&C, EVAL_MARMARA);
+    Marmarapk = GetUnspendable(cp, 0);
+
+
+    if (GetTransaction(creditloop[0], createtx, hashBlock, false) && createtx.vout.size() > 1 &&
+        MarmaraDecodeLoopOpret(createtx.vout.back().scriptPubKey, dummytxid, dummypk, amount, matures, currency) != 0)  // get amount value
+    {
+        int64_t amountToDistribute = amount / endorsersNumber;  // amount to return back
+
+        char lockInLoop1of2addr[64], txidaddr[64];
+        CPubKey createtxidPk = CCtxidaddr(txidaddr, createtxid);
+        GetCCaddress1of2(cp, lockInLoop1of2addr, Marmarapk, createtxidPk);  // 1of2 lock-in-loop address 
+
+        if ((inputsum = AddMarmarainputs(mtx, pubkeys, lockInLoop1of2addr, amountToDistribute, MARMARA_VINS)) >= amount / endorsersNumber) // add locked-in-loop amount
+        {
+            if (mtx.vin.size() >= CC_MAXVINS - MARMARA_VINS)  // vin number limit
+                return -1;
+
+            change = (inputsum - amountToDistribute);
+            for (int32_t i = 1; i <= endorsersNumber; i++)  //iterate through all issuers/endorsers (i=0 is 1st receiver approval)
+            {
+                CTransaction issuancetx;
+                uint256 hashBlock;
+                CPubKey issuerpk;
+
+                if (GetTransaction(creditloop[i], issuancetx, hashBlock, false) && issuancetx.vout.size() > 1)
+                {
+                    if ((funcid = MarmaraDecodeLoopOpret(issuancetx.vout.back().scriptPubKey, createtxid, issuerpk, amount, matures, currency)) != 0)  // get endorser's pk
+                    {
+                        mtx.vout.push_back(CTxOut(amountToDistribute / endorsersNumber, CScript() << ParseHex(HexStr(issuerpk)) << OP_CHECKSIG));  // coins returned to each previous issuer normal 
+                    }
+                    else    {
+                        fprintf(stderr, "null funcid for creditloop[%d]\n", i);
+                        return -1;
+                    }
+                }
+                else   {
+                    fprintf(stderr, "cant load tx for creditloop[%d]\n", i);
+                    return -1;
+                }
+            }
+
+            // return change to the lock-in-loop fund:
+            if (change > 0)
+                mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA, change, Marmarapk, createtxidPk));
+        }
+        else  {
+            fprintf(stderr, "couldnt get lock-in-loop amount to return to endorsers\n");
+            return -1;
+        }
+    }
+    return 0;
+}
+
+
 // issue or transfer coins to the next receiver
 UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t amount, std::string currency, int32_t matures, uint256 approvaltxid, uint256 batontxid)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); CPubKey mypk, Marmarapk; struct CCcontract_info *cp, C; std::string rawtx; uint256 createtxid; char *errorstr = 0;
+    UniValue result(UniValue::VOBJ); CPubKey mypk, Marmarapk; struct CCcontract_info *cp, C; std::string rawtx; uint256 createtxid; 
+    char *errorstr = NULL;
+    int32_t n;
+    std::vector<uint256> creditloop;
+
     cp = CCinit(&C, EVAL_MARMARA);
     if (txfee == 0)
         txfee = 10000;
     // make sure less than maxlength
     Marmarapk = GetUnspendable(cp, 0);
     mypk = pubkey2pk(Mypubkey());
-    if (MarmaraGetcreatetxid(createtxid, approvaltxid) < 0)
-        errorstr = (char *)"cant get createtxid from approvaltxid";
+
+    //if (MarmaraGetcreatetxid(createtxid, approvaltxid) < 0)
+    //    errorstr = (char *)"cant get createtxid from approvaltxid";
+    if (n = MarmaraGetbatontxid(creditloop, batontxid, approvaltxid))  // need n
+        errorstr = (char *)"cant get batontxid from approvaltxid";
     else if (currency != "MARMARA")
         errorstr = (char *)"for now, only MARMARA loops are supported";
     else if (amount <= txfee)
         errorstr = (char *)"amount must be for more than txfee";
     else if (matures <= chainActive.LastTip()->GetHeight())
         errorstr = (char *)"it must mature in the future";
-    if (errorstr == 0)
+    if (errorstr == NULL)
     {
-        mtx.vin.push_back(CTxIn(approvaltxid, 0, CScript()));  // spend the approval tx
-        if (funcid == 'T')
-            mtx.vin.push_back(CTxIn(batontxid, 0, CScript()));   // spend the baton
-        if (funcid == 'I' || AddNormalinputs(mtx, mypk, txfee, 1) > 0)
+        char lock1of2addr[64];
+        char lockInLoop1of2addr[64];
+        int64_t inputsum;
+        std::vector<CPubKey> pubkeys = { Marmarapk , mypk };
+
+        GetCCaddress1of2(cp, lock1of2addr, Marmarapk, mypk);  // 1of2 address where the current endorser's money is locked
+        if ((inputsum = AddMarmarainputs(mtx, pubkeys, lock1of2addr, amount/n, MARMARA_VINS)) < amount) // add 1/n remainder from the locked fund
         {
-            errorstr = (char *)"couldnt finalize CCtx";
-            mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA, txfee, receiverpk));  // transfer the baton to the next receiver
-            if (funcid == 'I')
-                mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA, txfee, Marmarapk));
-            rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, MarmaraLoopOpret(funcid, createtxid, receiverpk, amount, matures, currency));
-            if (rawtx.size() > 0)
-                errorstr = 0;
+
+            if (DistributeRemainder(mtx, creditloop) == 0) 
+            {
+                mtx.vin.push_back(CTxIn(approvaltxid, 0, CScript()));  // spend the approval tx
+                if (funcid == 'T')
+                    mtx.vin.push_back(CTxIn(batontxid, 0, CScript()));   // spend the baton
+                if (funcid == 'I' || AddNormalinputs(mtx, mypk, txfee, 1) > 0)
+                {
+                    errorstr = (char *)"couldnt finalize CCtx";
+                    mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA, txfee, receiverpk));  // transfer the baton to the next receiver
+                    if (funcid == 'I')
+                        mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA, txfee, Marmarapk));
+                    rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, MarmaraLoopOpret(funcid, createtxid, receiverpk, amount, matures, currency));
+                    if (rawtx.size() > 0)
+                        errorstr = 0;
+                }
+                else
+                    errorstr = (char *)"dont have enough normal inputs for 2*txfee";
+            }
+            else
+                errorstr = "could not return back locked in loop funds";
         }
-        else 
-            errorstr = (char *)"dont have enough normal inputs for 2*txfee";
+        else
+            errorstr = (char *)"dont have enough locked inputs for amount";
     }
     if (rawtx.size() == 0 || errorstr != 0)
     {
