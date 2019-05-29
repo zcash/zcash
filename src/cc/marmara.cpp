@@ -425,7 +425,7 @@ int64_t AddMarmarainputs(CMutableTransaction &mtx, std::vector<CPubKey> &pubkeys
         {
             if ((funcid = DecodeMarmaraCoinbaseOpRet(tx.vout[numvouts - 1].scriptPubKey, pk, ht, unlockht)) == 'C' || funcid == 'P' || funcid == 'L')
             {
-                //char str[64]; fprintf(stderr,"(%s) %s/v%d %.8f ht.%d unlockht.%d\n",coinaddr,uint256_str(str,txid),vout,(double)it->second.satoshis/COIN,ht,unlockht);
+                char str[64]; fprintf(stderr,"(%s) %s/v%d %.8f ht.%d unlockht.%d\n",coinaddr,uint256_str(str,txid),vout,(double)it->second.satoshis/COIN,ht,unlockht);
                 if (total != 0 && maxinputs != 0)
                 {
                     mtx.vin.push_back(CTxIn(txid, vout, CScript()));
@@ -931,6 +931,7 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
         uint256 dummytxid;
         int32_t endorsersNumber = MarmaraGetbatontxid(creditloop, dummytxid, approvaltxid);  // need n
         int64_t amountToLock = (endorsersNumber > 0 ? amount / (endorsersNumber + 1) : amount);
+        std::cerr << "MarmaraIssue() amount to lock" << amountToLock << std::endl;
 
         GetCCaddress1of2(cp, lock1of2addr, Marmarapk, mypk);  // 1of2 address where the current endorser's money is locked
         if ((inputsum = AddMarmarainputs(mtx, pubkeys, lock1of2addr, amountToLock, MARMARA_VINS)) < amount) // add 1/n remainder from the locked fund
