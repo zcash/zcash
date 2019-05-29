@@ -950,7 +950,7 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
 
                     uint8_t mypriv[32];
                     Myprivkey(mypriv);
-                    CCaddr1of2set(cp, Marmarapk, mypk, mypriv, lock1of2addr); // set 1of2addr and pks to spend from 1of2 vin
+                    CCaddr1of2set(cp, Marmarapk, mypk, mypriv, lock1of2addr); // set 1of2addr and pks to spend from 1of2 vintx vout
                     rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, MarmaraLoopOpret(funcid, createtxid, receiverpk, amount, matures, currency));
                     if (rawtx.size() > 0)
                         errorstr = 0;
@@ -984,6 +984,14 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
         result.push_back(Pair("amount", ValueFromAmount(amount)));
         result.push_back(Pair("matures", matures));
         result.push_back(Pair("currency", currency));
+
+        // add locked-in-loop amount:
+        char lockInLoop1of2addr[64], txidaddr[64];
+        CPubKey createtxidPk = CCtxidaddr(txidaddr, createtxid);
+        GetCCaddress1of2(cp, lockInLoop1of2addr, Marmarapk, createtxidPk);  // 1of2 lock-in-loop address 
+        std::vector<CPubKey> pubkeys;
+        int64_t amountLockedInLoop = AddMarmarainputs(mtx, pubkeys, lockInLoop1of2addr, 0, 0); 
+        result.push_back(Pair("amountLockedInLoop", ValueFromAmount(amountLockedInLoop)));
     }
     return(result);
 }
