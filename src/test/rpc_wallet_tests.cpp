@@ -1025,7 +1025,7 @@ BOOST_AUTO_TEST_CASE(asyncrpcoperation_sign_send_raw_transaction) {
     UniValue obj(UniValue::VOBJ);
     obj.push_back(Pair("rawtxn", raw));
     // Verify test mode is returning output (since no input taddrs, signed and unsigned are the same).
-    std::pair<CTransaction, UniValue> txAndResult = SignSendRawTransaction(obj, true);
+    std::pair<CTransaction, UniValue> txAndResult = SignSendRawTransaction(obj, boost::none, true);
     UniValue resultObj = txAndResult.second.get_obj();
     std::string hex = find_value(resultObj, "hex").get_str();
     BOOST_CHECK_EQUAL(hex, raw);

@@ -3,16 +3,15 @@
 #include "core_io.h"
 #include "init.h"
 #include "rpc/protocol.h"
-#include "wallet.h"
 
 extern UniValue signrawtransaction(const UniValue& params, bool fHelp);
 
-UniValue SendTransaction(CTransaction& tx, bool testmode) {
+UniValue SendTransaction(CTransaction& tx, boost::optional<CReserveKey&> reservekey, bool testmode) {
     UniValue o(UniValue::VOBJ);
     // Send the transaction
     if (!testmode) {
         CWalletTx wtx(pwalletMain, tx);
-        pwalletMain->CommitTransaction(wtx, boost::none);
+        pwalletMain->CommitTransaction(wtx, reservekey);
         o.push_back(Pair("txid", tx.GetHash().ToString()));
     } else {
         // Test mode does not send the transaction to the network.
@@ -23,7 +22,7 @@ UniValue SendTransaction(CTransaction& tx, bool testmode) {
     return o;
 }
 
-std::pair<CTransaction, UniValue> SignSendRawTransaction(UniValue obj, bool testmode) {
+std::pair<CTransaction, UniValue> SignSendRawTransaction(UniValue obj, boost::optional<CReserveKey&> reservekey, bool testmode) {
     // Sign the raw transaction
     UniValue rawtxnValue = find_value(obj, "rawtxn");
     if (rawtxnValue.isNull()) {
@@ -51,7 +50,7 @@ std::pair<CTransaction, UniValue> SignSendRawTransaction(UniValue obj, bool test
     CTransaction tx;
     stream >> tx;
 
-    UniValue sendResult = SendTransaction(tx, testmode);
+    UniValue sendResult = SendTransaction(tx, reservekey, testmode);
 
     return std::make_pair(tx, sendResult);
 }

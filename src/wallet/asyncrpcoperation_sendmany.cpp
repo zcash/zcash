@@ -460,7 +460,8 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         // Build the transaction
         tx_ = builder_.Build().GetTxOrThrow();
 
-        UniValue sendResult = SendTransaction(tx_, testmode);
+        // TODO use CReserveKey keyChange if isfromtaddr_
+        UniValue sendResult = SendTransaction(tx_, boost::none, testmode);
         set_result(sendResult);
 
         return true;
@@ -501,7 +502,8 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         
         UniValue obj(UniValue::VOBJ);
         obj.push_back(Pair("rawtxn", EncodeHexTx(tx_)));
-        auto txAndResult = SignSendRawTransaction(obj, testmode);
+        // TODO: use CReserveKey from add_taddr_change_output_to_tx
+        auto txAndResult = SignSendRawTransaction(obj, boost::none, testmode);
         tx_ = txAndResult.first;
         set_result(txAndResult.second);
         return true;
@@ -565,7 +567,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         CAmount funds = selectedUTXOAmount;
         CAmount fundsSpent = t_outputs_total + minersFee + z_outputs_total;
         CAmount change = funds - fundsSpent;
-        
+
         if (change > 0) {
             if (selectedUTXOCoinbase) {
                 assert(isSingleZaddrOutput);
@@ -608,7 +610,8 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             }
             obj = perform_joinsplit(info);
         }
-        auto txAndResult = SignSendRawTransaction(obj, testmode);
+        // TODO: use CReserveKey from add_taddr_change_output_to_tx
+        auto txAndResult = SignSendRawTransaction(obj, boost::none, testmode);
         tx_ = txAndResult.first;
         set_result(txAndResult.second);
         return true;
@@ -888,7 +891,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
     assert(zOutputsDeque.size() == 0);
     assert(vpubNewProcessed);
 
-    auto txAndResult = SignSendRawTransaction(obj, testmode);
+    auto txAndResult = SignSendRawTransaction(obj, boost::none, testmode);
     tx_ = txAndResult.first;
     set_result(txAndResult.second);
     return true;

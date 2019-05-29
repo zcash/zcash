@@ -7,6 +7,7 @@
 
 #include "primitives/transaction.h"
 #include "univalue.h"
+#include "wallet.h"
 
 /**
  * Sends a given transaction.
@@ -17,7 +18,7 @@
  * If testmode is true, do not commit the transaction,
  * return {"test": 1, "txid": tx.GetHash().ToString(), "hex": EncodeHexTx(tx)}
  */
-UniValue SendTransaction(CTransaction& tx, bool testmode);
+UniValue SendTransaction(CTransaction& tx, boost::optional<CReserveKey&> reservekey, bool testmode);
 
 /**
  * Sign and send a raw transaction.
@@ -25,6 +26,6 @@ UniValue SendTransaction(CTransaction& tx, bool testmode);
  * 
  * Returns a pair of (the parsed transaction, and the result of sending)
  */
-std::pair<CTransaction, UniValue> SignSendRawTransaction(UniValue obj, bool testmode);
+std::pair<CTransaction, UniValue> SignSendRawTransaction(UniValue obj, boost::optional<CReserveKey&> reservekey, bool testmode);
 
 #endif /* ASYNCRPCOPERATION_COMMON_H */
