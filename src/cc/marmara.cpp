@@ -832,7 +832,7 @@ int32_t DistributeRemainder(CMutableTransaction &mtx, const std::vector<uint256>
 {
     CPubKey Marmarapk; 
     struct CCcontract_info *cp, C;
-    int32_t endorsersNumber = creditloop.size() - 1; // number of endorsers
+    int32_t endorsersNumber = creditloop.size() - 1; // number of endorsers, 1st is createtxid
     uint256 createtxid, dummytxid;
     CPubKey dummypk;
     int64_t amount, inputsum, change;
@@ -846,6 +846,8 @@ int32_t DistributeRemainder(CMutableTransaction &mtx, const std::vector<uint256>
     cp = CCinit(&C, EVAL_MARMARA);
     Marmarapk = GetUnspendable(cp, 0);
 
+    if (endorsersNumber < 1)  // nobody to return to
+        return 0;
 
     if (GetTransaction(creditloop[0], createtx, hashBlock, false) && createtx.vout.size() > 1 &&
         MarmaraDecodeLoopOpret(createtx.vout.back().scriptPubKey, dummytxid, dummypk, amount, matures, currency) != 0)  // get amount value
@@ -934,8 +936,7 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
         {
             n = MarmaraGetbatontxid(creditloop, batontxid, approvaltxid);  // need n
             
-            // for n >= 2 we distribute and return amount / n value:
-            if (n < 2 || DistributeRemainder(mtx, creditloop) == 0) 
+            if (n == 0 || DistributeRemainder(mtx, creditloop) == 0)  // if there are issuers already then distribute and return amount / n value
             {
                 mtx.vin.push_back(CTxIn(approvaltxid, 0, CScript()));  // spend the approval tx
                 if (funcid == 'T')
