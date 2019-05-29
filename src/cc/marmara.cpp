@@ -948,6 +948,11 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
                     if (funcid == 'I')
                         mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA, txfee, Marmarapk));
 
+                    // lock in loop
+                    char txidaddr[64];
+                    CPubKey createtxidPk = CCtxidaddr(txidaddr, createtxid);
+                    mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA, amountToLock, Marmarapk, createtxidPk));
+
                     uint8_t mypriv[32];
                     Myprivkey(mypriv);
                     CCaddr1of2set(cp, Marmarapk, mypk, mypriv, lock1of2addr); // set 1of2addr and pks to spend from 1of2 vintx vout
