@@ -589,7 +589,7 @@ void static BitcoinMiner(const CChainParams& chainparams)
             // Get the height of current tip
             int nHeight = chainActive.Height();
             if (nHeight == -1) {
-                LogPrintf("Error in ZcashMiner: chainActive.Height() returned -1\n");
+                LogPrintf("Error in YcashMiner: chainActive.Height() returned -1\n");
                 return;
             }
             CBlockIndex* pindexPrev = chainActive[nHeight];

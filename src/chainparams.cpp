@@ -106,7 +106,7 @@ public:
         consensus.vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight = 347500;
         consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nProtocolVersion = 170007;
         consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight = 419200;
-        consensus.vUpgrades[Consensus::UPGRADE_YCASH].nProtocolVersion = 170009;
+        consensus.vUpgrades[Consensus::UPGRADE_YCASH].nProtocolVersion = 270007;
         consensus.vUpgrades[Consensus::UPGRADE_YCASH].nActivationHeight =
             Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
 
@@ -301,7 +301,7 @@ public:
         consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nProtocolVersion = 170007;
         consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight = 280000;
         consensus.vUpgrades[Consensus::UPGRADE_YCASH].nProtocolVersion = 270007;
-        consensus.vUpgrades[Consensus::UPGRADE_YCASH].nActivationHeight = 498184;
+        consensus.vUpgrades[Consensus::UPGRADE_YCASH].nActivationHeight = 497755;
 
         // The best chain should have at least this much work.
         consensus.nMinimumChainWork = uint256S("0x00000000000000000000000000000000000000000000000000000001d0c4d9cd");
@@ -452,7 +452,7 @@ public:
         consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nProtocolVersion = 170006;
         consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight =
             Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
-        consensus.vUpgrades[Consensus::UPGRADE_YCASH].nProtocolVersion = 170008;
+        consensus.vUpgrades[Consensus::UPGRADE_YCASH].nProtocolVersion = 270007;
         consensus.vUpgrades[Consensus::UPGRADE_YCASH].nActivationHeight =
             Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
 

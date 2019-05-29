@@ -16,14 +16,14 @@ BEGIN
     BEGIN
         BLOCK "040904E4" // U.S. English - multilingual (hex)
         BEGIN
-            VALUE "CompanyName",        "Zcash"
-            VALUE "FileDescription",    "zcash-cli (JSON-RPC client for Zcash)"
+            VALUE "CompanyName",        "Ycash"
+            VALUE "FileDescription",    "ycash-cli (JSON-RPC client for Ycash)"
             VALUE "FileVersion",        VER_FILEVERSION_STR
-            VALUE "InternalName",       "zcash-cli"
+            VALUE "InternalName",       "ycash-cli"
             VALUE "LegalCopyright",     COPYRIGHT_STR
             VALUE "LegalTrademarks1",   "Distributed under the MIT software license, see the accompanying file COPYING or http://www.opensource.org/licenses/mit-license.php."
-            VALUE "OriginalFilename",   "zcash-cli.exe"
-            VALUE "ProductName",        "zcash-cli"
+            VALUE "OriginalFilename",   "ycash-cli.exe"
+            VALUE "ProductName",        "ycash-cli"
             VALUE "ProductVersion",     VER_PRODUCTVERSION_STR
         END
     END

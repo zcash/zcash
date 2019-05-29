@@ -30,7 +30,7 @@ void EnforceNodeDeprecation(int nHeight, bool forceLogging, bool fThread) {
         if (blocksToDeprecation == 0 || forceLogging) {
             auto msg = strprintf(_("This version has been deprecated as of block height %d."),
                                  DEPRECATION_HEIGHT) + " " +
-                       _("You should upgrade to the latest version of Zcash.");
+                       _("You should upgrade to the latest version of Ycash.");
             LogPrintf("*** %s\n", msg);
             CAlert::Notify(msg, fThread);
             uiInterface.ThreadSafeMessageBox(msg, "", CClientUIInterface::MSG_ERROR);
@@ -40,7 +40,7 @@ void EnforceNodeDeprecation(int nHeight, bool forceLogging, bool fThread) {
                (blocksToDeprecation < DEPRECATION_WARN_LIMIT && forceLogging)) {
         std::string msg = strprintf(_("This version will be deprecated at block height %d, and will automatically shut down."),
                             DEPRECATION_HEIGHT) + " " +
-                  _("You should upgrade to the latest version of Zcash.");
+                  _("You should upgrade to the latest version of Ycash.");
         LogPrintf("*** %s\n", msg);
         CAlert::Notify(msg, fThread);
         uiInterface.ThreadSafeMessageBox(msg, "", CClientUIInterface::MSG_WARNING);
