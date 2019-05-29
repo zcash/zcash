@@ -903,7 +903,7 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     UniValue result(UniValue::VOBJ); CPubKey mypk, Marmarapk; struct CCcontract_info *cp, C; std::string rawtx; uint256 createtxid; 
-    char *errorstr = NULL;
+    const char *errorstr = NULL;
     std::vector<uint256> creditloop;
 
     cp = CCinit(&C, EVAL_MARMARA);
@@ -955,7 +955,7 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
                     errorstr = (char *)"dont have enough normal inputs for 2*txfee";
             }
             else
-                errorstr = "could not return back locked in loop funds";
+                errorstr = (char*)"could not return back locked in loop funds";
         }
         else
             errorstr = (char *)"dont have enough locked inputs for amount";
