@@ -914,10 +914,8 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
     Marmarapk = GetUnspendable(cp, 0);
     mypk = pubkey2pk(Mypubkey());
 
-    //if (MarmaraGetcreatetxid(createtxid, approvaltxid) < 0)
-    //    errorstr = (char *)"cant get createtxid from approvaltxid";
-    if (n = MarmaraGetbatontxid(creditloop, batontxid, approvaltxid))  // need n
-        errorstr = (char *)"cant get batontxid from approvaltxid";
+    if (MarmaraGetcreatetxid(createtxid, approvaltxid) < 0)
+        errorstr = (char *)"cant get createtxid from approvaltxid";
     else if (currency != "MARMARA")
         errorstr = (char *)"for now, only MARMARA loops are supported";
     else if (amount <= txfee)
@@ -934,8 +932,10 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
         GetCCaddress1of2(cp, lock1of2addr, Marmarapk, mypk);  // 1of2 address where the current endorser's money is locked
         if ((inputsum = AddMarmarainputs(mtx, pubkeys, lock1of2addr, amount/n, MARMARA_VINS)) < amount) // add 1/n remainder from the locked fund
         {
-
-            if (DistributeRemainder(mtx, creditloop) == 0) 
+            n = MarmaraGetbatontxid(creditloop, batontxid, approvaltxid);  // need n
+            
+            // for n >= 2 we distribute and return amount / n value:
+            if (n < 2 || DistributeRemainder(mtx, creditloop) == 0) 
             {
                 mtx.vin.push_back(CTxIn(approvaltxid, 0, CScript()));  // spend the approval tx
                 if (funcid == 'T')
