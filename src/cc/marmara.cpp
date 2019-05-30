@@ -851,10 +851,9 @@ UniValue MarmaraReceive(int64_t txfee, CPubKey senderpk, int64_t amount, std::st
 }
 
 
-int32_t DistributeRemainder(CMutableTransaction &mtx, const std::vector<uint256> &creditloop, uint256 batontxid, int64_t amountToDistribute) 
+int32_t DistributeRemainder(CMutableTransaction &mtx, struct CCcontract_info *cp, const std::vector<uint256> &creditloop, uint256 batontxid, int64_t amountToDistribute)
 {
     CPubKey Marmarapk; 
-    struct CCcontract_info *cp, C;
     int32_t endorsersNumber = creditloop.size(); // number of endorsers, 0 is createtxid, last is batontxid
     CPubKey dummypk;
     int64_t amount, inputsum, change;
@@ -866,7 +865,6 @@ int32_t DistributeRemainder(CMutableTransaction &mtx, const std::vector<uint256>
     uint256 hashBlock, dummytxid;
     uint256 createtxid = creditloop[0];
 
-    cp = CCinit(&C, EVAL_MARMARA);
     Marmarapk = GetUnspendable(cp, 0);
 
     if (endorsersNumber < 1)  // nobody to return to
@@ -916,6 +914,11 @@ int32_t DistributeRemainder(CMutableTransaction &mtx, const std::vector<uint256>
             // return change to the lock-in-loop fund:
             if (change > 0)
                 mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA, change, Marmarapk, createtxidPk));
+
+            uint8_t mypriv[32];
+            Myprivkey(mypriv);
+            CCaddr1of2set(cp, Marmarapk, createtxidPk, mypriv, lockInLoop1of2addr);     // set addr privkey and pubkeys in cp to spend from 1of2 lock-in-loop vintx vout
+
         }
         else  {
             fprintf(stderr, "DistributeRemainder() couldnt get lock-in-loop amount to return to endorsers\n");
@@ -955,20 +958,21 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
         errorstr = (char *)"it must mature in the future";
     if (errorstr == NULL)
     {
-        char lock1of2addr[64];
-        char lockInLoop1of2addr[64];
+        //char lock1of2addr[64];
+        char myccaddr[64];
         int64_t inputsum;
-        std::vector<CPubKey> pubkeys = { Marmarapk , mypk };
+        std::vector<CPubKey> pubkeys;
 
         uint256 dummytxid;
         int32_t endorsersNumber = MarmaraGetbatontxid(creditloop, dummytxid, approvaltxid);  // need n
         int64_t amountToLock = (endorsersNumber > 0 ? amount / (endorsersNumber + 1) : amount);
         std::cerr << "MarmaraIssue() amount to lock=" << amountToLock << std::endl;
 
-        GetCCaddress1of2(cp, lock1of2addr, Marmarapk, mypk);  // 1of2 address where the current endorser's money is locked
-        if ((inputsum = AddMarmarainputs(false, mtx, pubkeys, lock1of2addr, amountToLock, MARMARA_VINS)) >= amountToLock) // add 1/n remainder from the locked fund
+        //GetCCaddress1of2(cp, lock1of2addr, Marmarapk, mypk);  // 1of2 address where the activated endorser's money is locked -- deprecated
+        GetCCaddress(cp, myccaddr, mypk);                       // activated coins on cc address
+        if ((inputsum = AddMarmarainputs(false, mtx, pubkeys, myccaddr, amountToLock, MARMARA_VINS)) >= amountToLock) // add 1/n remainder from the locked fund
         {
-            if (endorsersNumber < 1 || DistributeRemainder(mtx, creditloop, batontxid, amountToLock) == 0)  // if there are issuers already then distribute and return amount / n value
+            if (endorsersNumber < 1 || DistributeRemainder(mtx, cp, creditloop, batontxid, amountToLock) == 0)  // if there are issuers already then distribute and return amount / n value
             {
                 mtx.vin.push_back(CTxIn(approvaltxid, 0, CScript()));  // spend the approval tx
                 if (funcid == 'T')
@@ -980,14 +984,10 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
                     if (funcid == 'I')
                         mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA, txfee, Marmarapk));
 
-                    // lock in loop
-                    char txidaddr[64];
-                    CPubKey createtxidPk = CCtxidaddr(txidaddr, createtxid);
+                    // lock 1/N amount in loop
+                    char createtxidaddr[64];
+                    CPubKey createtxidPk = CCtxidaddr(createtxidaddr, createtxid);
                     mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA, amountToLock, Marmarapk, createtxidPk));
-
-                    uint8_t mypriv[32];
-                    Myprivkey(mypriv);
-                    CCaddr1of2set(cp, Marmarapk, mypk, mypriv, lock1of2addr); // set 1of2addr and pks to spend from 1of2 vintx vout
 
                     rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, MarmaraLoopOpret(funcid, createtxid, receiverpk, amount, matures, currency));
                     if (rawtx.size() == 0) 
