@@ -149,6 +149,20 @@ struct CC_meta
 };
 /// \endcond
 
+class CCwrapper {
+public:
+    CCwrapper() {}
+    CCwrapper(CC *cond) : spcond(cond, [](CC* p) {cc_free(p); })  { }
+    CCwrapper(const CCwrapper &w) { spcond = w.spcond; } // default copy constr
+    CC *get() { return spcond.get(); }
+private:
+    std::shared_ptr<CC> spcond;
+};
+
+struct CCVintxCond {
+    CCwrapper wcond;
+    uint8_t CCpriv[32];
+};
 /// CC contract (Antara module) info structure that contains data used for signing and validation of cc contract transactions
 struct CCcontract_info
 {
@@ -205,8 +219,12 @@ struct CCcontract_info
     /// \endcode
     bool (*ismyvin)(CScript const& scriptSig);	
 
+
+
     /// @private
     uint8_t didinit;
+
+	std::vector< struct CCVintxCond > vintxconds;  //<! cc for signing cc vin with specific privkeys and eval codes
 };
 
 /// init CCcontract_info structure with global pubkey, privkey and address for the contract identified by the passed evalcode.\n
@@ -921,6 +939,9 @@ int64_t CCutxovalue(char *coinaddr,uint256 utxotxid,int32_t utxovout,int32_t CCf
 
 /// @private
 int32_t CC_vinselect(int32_t *aboveip, int64_t *abovep, int32_t *belowip, int64_t *belowp, struct CC_utxo utxos[], int32_t numunspents, int64_t value);
+
+/// @private
+void CCAddVintxCond(struct CCcontract_info *cp, CCwrapper cond, uint8_t *priv = NULL);
 
 /// @private
 bool NSPV_SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const CScript scriptPubKey,uint32_t nTime);

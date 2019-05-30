@@ -308,7 +308,25 @@ UniValue FinalizeCCTxExt(bool remote, uint64_t CCmask, struct CCcontract_info *c
                         }
                     } //else  privkey = myprivkey;
 
-                    if ( flag == 0 )
+                    if (flag == 0)
+                    {
+                        // use vector of dest addresses and conds
+                        for (auto t : cp->vintxconds) {
+                            char coinaddr[64];
+                            cond = t.wcond.get();
+                            Getscriptaddress(coinaddr, CCPubKey(cond));
+                            if (strcmp(destaddr, coinaddr) == 0) {
+                                if (t.CCpriv[0])
+                                    privkey = t.CCpriv;
+                                else
+                                    privkey = myprivkey;
+                                flag = 1;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (flag == 0)
                     {
                         fprintf(stderr,"CC signing error: vini.%d has unknown CC address.(%s)\n",i,destaddr);
                         memset(myprivkey,0,32);

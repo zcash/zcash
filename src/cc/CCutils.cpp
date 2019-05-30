@@ -957,3 +957,20 @@ bool CClib_Dispatch(const CC *cond,Eval *eval,std::vector<uint8_t> paramsNull,co
     }
     return eval->Invalid("cclib CC must have evalcode between 16 and 127");
 }
+
+
+// add test vintx conditions for making CCsig in FinalizeCCTx
+void CCAddVintxCond(struct CCcontract_info *cp, CCwrapper wcond, uint8_t *priv)
+{
+    struct CCVintxCond vc;
+
+    if (cp == NULL) return;
+   
+    vc.wcond = wcond;
+    if( priv )
+        memcpy(vc.CCpriv, priv, sizeof(vc.CCpriv) / sizeof(vc.CCpriv[0]));
+    else
+        memset(vc.CCpriv, '\0', sizeof(vc.CCpriv) / sizeof(vc.CCpriv[0]));
+
+    cp->vintxconds.push_back(vc);
+}

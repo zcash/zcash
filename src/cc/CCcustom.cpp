@@ -300,8 +300,7 @@ int32_t CClib_initcp(struct CCcontract_info *cp,uint8_t evalcode)
 
 struct CCcontract_info *CCinit(struct CCcontract_info *cp, uint8_t evalcode)
 {
-    // important to clear because not all members are always initialized!
-    memset(cp, '\0', sizeof(*cp));
+    // memset(cp, '\0', sizeof(*cp)); <-- it is bad to initialize objects like this. Now default values are set in CCcontract_info definition
 
     cp->evalcode = evalcode;
     switch ( evalcode )
