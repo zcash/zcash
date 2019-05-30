@@ -166,7 +166,7 @@ int32_t MarmaraGetcreatetxid(uint256 &createtxid, uint256 txid)
 }
 
 // finds the current baton starting from any baton txid
-// also returns all the previous baton txids from the 1st baton
+// also returns all the previous baton txids from the create tx apart from the baton txid
 int32_t MarmaraGetbatontxid(std::vector<uint256> &creditloop, uint256 &batontxid, uint256 txid)
 {
     uint256 createtxid, spenttxid; 
@@ -688,7 +688,7 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid)
                             if ((funcid = MarmaraDecodeLoopOpret(tx.vout[numvouts - 1].scriptPubKey, createtxid, pk, amount, matures, currency)) != 0)  // get endorser's pk
                             {
                                 GetCCaddress1of2(cp, lock1of2addr, Marmarapk, pk);  // 1of2 address where the current endorser's money is locked
-                                // dimxy: why locked height is not checked?
+                                // dimxy: why is locked height not checked?
                                 if ((inputsum = AddMarmarainputs(false, mtx, pubkeys, lock1of2addr, remaining, MARMARA_VINS)) >= remaining) // add as much as possible amount
                                 {
                                     change = (inputsum - remaining);
@@ -851,11 +851,11 @@ UniValue MarmaraReceive(int64_t txfee, CPubKey senderpk, int64_t amount, std::st
 }
 
 
-int32_t DistributeRemainder(CMutableTransaction &mtx, const std::vector<uint256> &creditloop, int64_t amountToDistribute) 
+int32_t DistributeRemainder(CMutableTransaction &mtx, const std::vector<uint256> &creditloop, uint256 batontxid, int64_t amountToDistribute) 
 {
     CPubKey Marmarapk; 
     struct CCcontract_info *cp, C;
-    int32_t endorsersNumber = creditloop.size() - 1; // number of endorsers, 1st is createtxid
+    int32_t endorsersNumber = creditloop.size(); // number of endorsers, 0 is createtxid, last is batontxid
     uint256 createtxid, dummytxid;
     CPubKey dummypk;
     int64_t amount, inputsum, change;
@@ -885,13 +885,14 @@ int32_t DistributeRemainder(CMutableTransaction &mtx, const std::vector<uint256>
                 return -1;
 
             int64_t amountReturned = 0;
-            for (int32_t i = 1; i < creditloop.size(); i++)  //iterate through all issuers/endorsers (i=0 is 1st receiver approval tx)
+            for (int32_t i = 1; i < creditloop.size() + 1; i ++)  //iterate through all issuers/endorsers (i=0 is 1st receiver approval tx, n + 1 batontxid)
             {
                 CTransaction issuancetx;
                 uint256 hashBlock;
                 CPubKey issuerpk;
+                uint256 currenttxid = i < creditloop.size() ? creditloop[i] : batontxid;
 
-                if (GetTransaction(creditloop[i], issuancetx, hashBlock, false) && issuancetx.vout.size() > 1)
+                if (GetTransaction(currenttxid, issuancetx, hashBlock, false) && issuancetx.vout.size() > 1)
                 {
                     if ((funcid = MarmaraDecodeLoopOpret(issuancetx.vout.back().scriptPubKey, createtxid, issuerpk, amount, matures, currency)) != 0)  // get endorser's pk
                     {
@@ -967,7 +968,7 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
         GetCCaddress1of2(cp, lock1of2addr, Marmarapk, mypk);  // 1of2 address where the current endorser's money is locked
         if ((inputsum = AddMarmarainputs(false, mtx, pubkeys, lock1of2addr, amountToLock, MARMARA_VINS)) >= amountToLock) // add 1/n remainder from the locked fund
         {
-            if (endorsersNumber < 0 || DistributeRemainder(mtx, creditloop, amountToLock) == 0)  // if there are issuers already then distribute and return amount / n value
+            if (endorsersNumber < 1 || DistributeRemainder(mtx, creditloop, batontxid, amountToLock) == 0)  // if there are issuers already then distribute and return amount / n value
             {
                 mtx.vin.push_back(CTxIn(approvaltxid, 0, CScript()));  // spend the approval tx
                 if (funcid == 'T')
