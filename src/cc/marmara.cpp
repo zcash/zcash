@@ -420,7 +420,7 @@ int64_t AddMarmarainputs(bool isBoosted, CMutableTransaction &mtx, std::vector<C
     else 
         threshold = total;
 
-    std::cerr << "AddMarmarainputs() adding from addr=" << coinaddr << " isBoosted=" << isBoosted  << std::endl;
+    std::cerr << "AddMarmarainputs() adding from addr=" << coinaddr << " isBoosted=" << isBoosted << " total=" << total << std::endl;
 
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it = unspentOutputs.begin(); it != unspentOutputs.end(); it++)
     {
@@ -1113,7 +1113,8 @@ UniValue MarmaraCreditloop(uint256 txid)
                     std::vector<CPubKey> pubkeys;
                     CMutableTransaction mtx;
                     int64_t amountLockedInLoop = AddMarmarainputs(true, mtx, pubkeys, lockInLoop1of2addr, 0, 0);
-                    result.push_back(Pair("amountLockedInLoop", ValueFromAmount(amountLockedInLoop)));
+                    result.push_back(Pair("lockedInLoopCCaddr", lockInLoop1of2addr));
+                    result.push_back(Pair("lockedInLoopAmount", ValueFromAmount(amountLockedInLoop)));
                 }
                 for (i = 0; i < n; i++)
                 {
