@@ -386,11 +386,11 @@ bool AsyncRPCOperation_sendmany::main_impl() {
 
         // Set change address if we are using transparent funds
         // TODO: Should we just use fromtaddr_ as the change address?
+        CReserveKey keyChange(pwalletMain);
         if (isfromtaddr_) {
             LOCK2(cs_main, pwalletMain->cs_wallet);
 
             EnsureWalletIsUnlocked();
-            CReserveKey keyChange(pwalletMain);
             CPubKey vchPubKey;
             bool ret = keyChange.GetReservedKey(vchPubKey);
             if (!ret) {
@@ -460,8 +460,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         // Build the transaction
         tx_ = builder_.Build().GetTxOrThrow();
 
-        // TODO use CReserveKey keyChange if isfromtaddr_
-        UniValue sendResult = SendTransaction(tx_, boost::none, testmode);
+        UniValue sendResult = SendTransaction(tx_, keyChange, testmode);
         set_result(sendResult);
 
         return true;
