@@ -856,7 +856,6 @@ int32_t DistributeRemainder(CMutableTransaction &mtx, const std::vector<uint256>
     CPubKey Marmarapk; 
     struct CCcontract_info *cp, C;
     int32_t endorsersNumber = creditloop.size(); // number of endorsers, 0 is createtxid, last is batontxid
-    uint256 createtxid, dummytxid;
     CPubKey dummypk;
     int64_t amount, inputsum, change;
     int32_t matures;
@@ -864,7 +863,8 @@ int32_t DistributeRemainder(CMutableTransaction &mtx, const std::vector<uint256>
     uint8_t funcid;
     std::vector <CPubKey> pubkeys;
     CTransaction createtx;
-    uint256 hashBlock;
+    uint256 hashBlock, dummytxid;
+    uint256 createtxid = creditloop[0];
 
     cp = CCinit(&C, EVAL_MARMARA);
     Marmarapk = GetUnspendable(cp, 0);
@@ -872,7 +872,7 @@ int32_t DistributeRemainder(CMutableTransaction &mtx, const std::vector<uint256>
     if (endorsersNumber < 1)  // nobody to return to
         return 0;
 
-    if (GetTransaction(creditloop[0], createtx, hashBlock, false) && createtx.vout.size() > 1 &&
+    if (GetTransaction(createtxid, createtx, hashBlock, false) && createtx.vout.size() > 1 &&
         MarmaraDecodeLoopOpret(createtx.vout.back().scriptPubKey, dummytxid, dummypk, amount, matures, currency) != 0)  // get amount value
     {
         char lockInLoop1of2addr[64], txidaddr[64];
