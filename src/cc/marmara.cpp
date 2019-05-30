@@ -441,10 +441,12 @@ int64_t AddMarmarainputs(bool isBoosted, CMutableTransaction &mtx, std::vector<C
             int32_t matures;
             std::string currency;
 
+            std::cerr << "AddMarmarainputs() checking addr=" << coinaddr << " txid=" << txid.GetHex() << " nvout=" << nvout << " satoshis=" << it->second.satoshis << std::endl;
+
             if (!isBoosted && ((funcid = DecodeMarmaraCoinbaseOpRet(tx.vout.back().scriptPubKey, pk, ht, unlockht)) == 'C' || funcid == 'P' || funcid == 'L') ||
                 isBoosted && MarmaraDecodeLoopOpret(tx.vout.back().scriptPubKey, createtxid, pk, amount, matures, currency) != 0)
             {                
-                std::cerr << "AddMarmarainputs() addr=" << coinaddr << " txid=" << txid.GetHex() << " nvout=" << nvout << " satoshis=" << it->second.satoshis << std::endl;
+                std::cerr << "AddMarmarainputs() good vintx addr=" << coinaddr << " txid=" << txid.GetHex() << " nvout=" << nvout << " satoshis=" << it->second.satoshis << std::endl;
 
                 if (total != 0 && maxinputs != 0)
                 {
@@ -459,7 +461,8 @@ int64_t AddMarmarainputs(bool isBoosted, CMutableTransaction &mtx, std::vector<C
                 if ((total > 0 && totalinputs >= total) || (maxinputs > 0 && n >= maxinputs))
                     break;
             }
-            else fprintf(stderr, "null funcid\n");
+            else 
+                fprintf(stderr, "AddMarmarainputs() null funcid\n");
         }
     }
     if (maxinputs != 0 && total == 0)
