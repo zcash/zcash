@@ -420,7 +420,7 @@ int64_t AddMarmarainputs(bool isBoosted, CMutableTransaction &mtx, std::vector<C
     else 
         threshold = total;
 
-    std::cerr << "AddMarmarainputs() adding from addr=" << coinaddr << std::endl;
+    std::cerr << "AddMarmarainputs() adding from addr=" << coinaddr << " isBoosted=" << isBoosted  << std::endl;
 
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it = unspentOutputs.begin(); it != unspentOutputs.end(); it++)
     {
@@ -884,8 +884,8 @@ int32_t DistributeRemainder(CMutableTransaction &mtx, const std::vector<uint256>
             if (mtx.vin.size() >= CC_MAXVINS - MARMARA_VINS)  // vin number limit
                 return -1;
 
-            change = (inputsum - amountToDistribute);
-            for (int32_t i = 1; i <= endorsersNumber; i++)  //iterate through all issuers/endorsers (i=0 is 1st receiver approval)
+            int64_t amountReturned = 0;
+            for (int32_t i = 1; i < creditloop.size(); i++)  //iterate through all issuers/endorsers (i=0 is 1st receiver approval tx)
             {
                 CTransaction issuancetx;
                 uint256 hashBlock;
@@ -895,27 +895,35 @@ int32_t DistributeRemainder(CMutableTransaction &mtx, const std::vector<uint256>
                 {
                     if ((funcid = MarmaraDecodeLoopOpret(issuancetx.vout.back().scriptPubKey, createtxid, issuerpk, amount, matures, currency)) != 0)  // get endorser's pk
                     {
-                        mtx.vout.push_back(CTxOut(amountToDistribute / endorsersNumber, CScript() << ParseHex(HexStr(issuerpk)) << OP_CHECKSIG));  // coins returned to each previous issuer normal 
+                        int64_t amountToPk = amountToDistribute / endorsersNumber;
+                        mtx.vout.push_back(CTxOut(amountToPk, CScript() << ParseHex(HexStr(issuerpk)) << OP_CHECKSIG));  // coins returned to each previous issuer normal 
+                        std::cerr << "DistributeRemainder() sending amount=" << amountToPk << " to pk=" << HexStr(issuerpk) << std::endl;
+                        amountReturned += amountToPk;
                     }
                     else    {
-                        fprintf(stderr, "null funcid for creditloop[%d]\n", i);
+                        fprintf(stderr, "DistributeRemainder() null funcid for creditloop[%d]\n", i);
                         return -1;
                     }
                 }
                 else   {
-                    fprintf(stderr, "cant load tx for creditloop[%d]\n", i);
+                    fprintf(stderr, "DistributeRemainder() cant load tx for creditloop[%d]\n", i);
                     return -1;
                 }
             }
+            change = (inputsum - amountReturned);
 
             // return change to the lock-in-loop fund:
             if (change > 0)
                 mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA, change, Marmarapk, createtxidPk));
         }
         else  {
-            fprintf(stderr, "couldnt get lock-in-loop amount to return to endorsers\n");
+            fprintf(stderr, "DistributeRemainder() couldnt get lock-in-loop amount to return to endorsers\n");
             return -1;
         }
+    }
+    else {
+        std::cerr << "DistributeRemainder() could not load createtx" << std::endl;
+        return -1;
     }
     return 0;
 }
@@ -981,9 +989,12 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
                     CCaddr1of2set(cp, Marmarapk, mypk, mypriv, lock1of2addr); // set 1of2addr and pks to spend from 1of2 vintx vout
 
                     rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, MarmaraLoopOpret(funcid, createtxid, receiverpk, amount, matures, currency));
-                    std::cerr << "MarmaraIssue() mtx=" << HexStr(E_MARSHAL(ss << mtx)) << std::endl;
+                    if (rawtx.size() == 0) 
+                        std::cerr << "MarmaraIssue() mtx=" << HexStr(E_MARSHAL(ss << mtx)) << std::endl;
+                    
                     if (rawtx.size() > 0)
                         errorstr = 0;
+
                 }
                 else
                     errorstr = (char *)"dont have enough normal inputs for 2*txfee";
