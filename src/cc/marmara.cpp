@@ -980,8 +980,8 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
                     Myprivkey(mypriv);
                     CCaddr1of2set(cp, Marmarapk, mypk, mypriv, lock1of2addr); // set 1of2addr and pks to spend from 1of2 vintx vout
 
-                    std::cerr << "MarmaraIssue() mtx=" << HexStr(E_MARSHAL(ss << mtx)) << std::endl;
                     rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, MarmaraLoopOpret(funcid, createtxid, receiverpk, amount, matures, currency));
+                    std::cerr << "MarmaraIssue() mtx=" << HexStr(E_MARSHAL(ss << mtx)) << std::endl;
                     if (rawtx.size() > 0)
                         errorstr = 0;
                 }
