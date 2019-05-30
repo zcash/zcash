@@ -960,13 +960,13 @@ bool CClib_Dispatch(const CC *cond,Eval *eval,std::vector<uint8_t> paramsNull,co
 
 
 // add test vintx conditions for making CCsig in FinalizeCCTx
-void CCAddVintxCond(struct CCcontract_info *cp, char *coinaddr, CCwrapper wcond, uint8_t *priv)
+void CCAddVintxCond(struct CCcontract_info *cp, CCwrapper wcond, uint8_t *priv)
 {
     struct CCVintxCond vc;
 
     if (cp == NULL) return;
    
-    strncpy(vc.coinaddr, coinaddr, sizeof(vc.coinaddr) / sizeof(vc.coinaddr[0]));
+    //strncpy(vc.coinaddr, coinaddr, sizeof(vc.coinaddr) / sizeof(vc.coinaddr[0]));
     vc.wcond = wcond;
     if( priv != NULL )
         memcpy(vc.CCpriv, priv, sizeof(vc.CCpriv) / sizeof(vc.CCpriv[0]));

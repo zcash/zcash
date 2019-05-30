@@ -315,7 +315,7 @@ UniValue FinalizeCCTxExt(bool remote, uint64_t CCmask, struct CCcontract_info *c
                             char coinaddr[64];
                             cond = t.wcond.get();
                             Getscriptaddress(coinaddr, CCPubKey(cond));
-                            std::cerr << __func__ << " destaddr=" << destaddr << " coinaddr=" << coinaddr << " t.coinaddr=" << t.coinaddr << std::endl;
+                            std::cerr << __func__ << " destaddr=" << destaddr << " coinaddr=" << coinaddr << std::endl;
                             if (strcmp(destaddr, coinaddr) == 0) {
                                 //cond = t.wcond.get();
                                 if (t.CCpriv[0])
