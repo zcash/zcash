@@ -434,14 +434,20 @@ int64_t AddMarmarainputs(bool isBoosted, CMutableTransaction &mtx, std::vector<C
         if ( myGetTransaction(txid,tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 0 && vout < numvouts && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0 )
         {
             int32_t ht, unlockht; 
-            uint8_t funcid; 
+            uint8_t funcid = 0, evalcode = 0; 
             CPubKey pk;
             uint256 createtxid;
             int64_t amount;
             int32_t matures;
             std::string currency;
+            vscript_t vopret;
 
-            std::cerr << "AddMarmarainputs() checking addr=" << coinaddr << " txid=" << txid.GetHex() << " nvout=" << nvout << " satoshis=" << it->second.satoshis << std::endl;
+            // just for debug logging:
+            if (tx.vout.size() > 0 && GetOpReturnData(tx.vout.back().scriptPubKey, vopret) && vopret.size() >= 2) {
+                evalcode = vopret.begin()[0];
+                funcid = vopret.begin()[1];
+            }
+            std::cerr << "AddMarmarainputs() checking addr=" << coinaddr << " txid=" << txid.GetHex() << " nvout=" << nvout << " satoshis=" << it->second.satoshis << " eval=" << evalcode << " funcid=" << (char)(funcid ? funcid : ' ') << std::endl;
 
             if (!isBoosted && ((funcid = DecodeMarmaraCoinbaseOpRet(tx.vout.back().scriptPubKey, pk, ht, unlockht)) == 'C' || funcid == 'P' || funcid == 'L') ||
                 isBoosted && MarmaraDecodeLoopOpret(tx.vout.back().scriptPubKey, createtxid, pk, amount, matures, currency) != 0)
@@ -1194,7 +1200,7 @@ UniValue MarmaraCreditloop(uint256 txid)
     return(result);
 }
 
-// collect miner pool rewards
+// collect miner pool rewards (?)
 UniValue MarmaraPoolPayout(int64_t txfee, int32_t firstheight, double perc, char *jsonstr) // [[pk0, shares0], [pk1, shares1], ...]
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
