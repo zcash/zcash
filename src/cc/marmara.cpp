@@ -924,7 +924,7 @@ int32_t DistributeRemainder(CMutableTransaction &mtx, struct CCcontract_info *cp
 
             // CCaddr1of2set(cp, Marmarapk, createtxidPk, mypriv, lockInLoop1of2addr);     // set addr privkey and pubkeys in cp to spend from 1of2 lock-in-loop vintx vout
             CCwrapper lockInLoop1of2cond( MakeCCcond1of2(EVAL_MARMARA, Marmarapk, createtxidPk) ); // smart ptr auto destroying
-            CCAddVintxCond(cp, lockInLoop1of2cond, marmarapriv);
+            CCAddVintxCond(cp, lockInLoop1of2addr,  lockInLoop1of2cond, marmarapriv);
 
         }
         else  {
@@ -1000,7 +1000,7 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
                     mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA, amountToLock, Marmarapk, createtxidPk));
 
                     CCwrapper lock1of2cond( MakeCCcond1of2(EVAL_MARMARA, Marmarapk, mypk) );  // use smart ptr wrapper auto destroying CC* ptr
-                    CCAddVintxCond(cp, lock1of2cond);
+                    CCAddVintxCond(cp, lock1of2addr, lock1of2cond);
                     rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, MarmaraLoopOpret(funcid, createtxid, receiverpk, amount, matures, currency));
 
                     if (rawtx.size() == 0) 

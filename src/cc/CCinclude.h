@@ -161,6 +161,7 @@ private:
 
 struct CCVintxCond {
     CCwrapper wcond;
+    char coinaddr[64];
     uint8_t CCpriv[32];
 };
 /// CC contract (Antara module) info structure that contains data used for signing and validation of cc contract transactions
