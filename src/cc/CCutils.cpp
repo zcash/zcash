@@ -966,7 +966,7 @@ void CCAddVintxCond(struct CCcontract_info *cp, char *coinaddr, CCwrapper wcond,
 
     if (cp == NULL) return;
    
-    strncmp(vc.coinaddr, coinaddr, sizeof(vc.coinaddr) / sizeof(vc.coinaddr[0]));
+    strncpy(vc.coinaddr, coinaddr, sizeof(vc.coinaddr) / sizeof(vc.coinaddr[0]));
     vc.wcond = wcond;
     if( priv != NULL )
         memcpy(vc.CCpriv, priv, sizeof(vc.CCpriv) / sizeof(vc.CCpriv[0]));
