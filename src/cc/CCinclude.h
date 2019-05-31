@@ -155,18 +155,19 @@ public:
     //CCwrapper(CC *cond) : spcond(cond, [](CC* p) {cc_free(p); }) { }
 
     void set(CC *cond) {
-        cclen = cc_conditionBinary(cond, ccbuf);
+        ccJsonString = cc_conditionToJSONString(cond);
     }
 
     //CCwrapper(const CCwrapper &w) { spcond = w.spcond; } // default copy constr
     // CC *get() { return spcond.get(); }
     CC *get() { 
-        return cc_readConditionBinary((uint8_t*)ccbuf, cclen);
+        char err[1024];
+        return cc_conditionFromJSONString(ccJsonString, err);
     }
 
 private:
     //std::shared_ptr<CC> spcond;
-    uint8_t ccbuf[10000];
+    char *ccJsonString;
     size_t  cclen;
 };
 
