@@ -999,11 +999,11 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
                     CPubKey createtxidPk = CCtxidaddr(createtxidaddr, createtxid);
                     mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA, amountToLock, Marmarapk, createtxidPk));
 
-                    CC* lock1of2cond = MakeCCcond1of2(EVAL_MARMARA, Marmarapk, mypk);  // create vintx probe 1of2 cond
+                    CC* lock1of2cond = MakeCCcond1(EVAL_MARMARA, Marmarapk);  // create vintx probe 1of2 cond
                     unsigned char ccbuf[10000];
                     int cclen;
                     std::cerr << "befor cc_fulfillmentBinary" << std::endl;
-                    cclen = cc_fulfillmentBinary(lock1of2cond, ccbuf, sizeof(ccbuf) / sizeof(ccbuf[0]));
+                    cclen = cc_fulfillmentBinary(lock1of2cond, ccbuf, 10000);
                     std::cerr << "after cc_fulfillmentBinary" << std::endl;
                     CCAddVintxCond(cp, lock1of2cond);
                     cc_free(lock1of2cond);
