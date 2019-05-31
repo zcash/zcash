@@ -214,7 +214,7 @@ static CC *thresholdFromJSON(const cJSON *params, char *err) {
     for (int i=0; i<cond->size; i++) {
         sub = cJSON_GetArrayItem(subfulfillments_item, i);
         cond->subconditions[i] = cc_conditionFromJSON(sub, err);
-printf("thresholdFromJSON json=%s cond->subconditions[i]=%d", cJSON_Print(sub), cond->subconditions[i]);
+printf("thresholdFromJSON json=%s cond->subconditions[i]=%d\n", cJSON_Print(sub), cond->subconditions[i]);
         if (err[0]) return NULL;
     }
 
