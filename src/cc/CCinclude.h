@@ -162,7 +162,9 @@ public:
     // CC *get() { return spcond.get(); }
     CC *get() { 
         char err[1024];
-        return cc_conditionFromJSONString(ccJsonString, err);
+        CC *cc = cc_conditionFromJSONString(ccJsonString, err);
+        std::cerr << "CCwrapper.get cc_conditionFromJSONString error=" << err << std::endl;
+        return cc;
     }
 
 private:
