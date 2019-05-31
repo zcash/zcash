@@ -959,15 +959,15 @@ bool CClib_Dispatch(const CC *cond,Eval *eval,std::vector<uint8_t> paramsNull,co
 }
 
 
-// add test vintx conditions for making CCsig in FinalizeCCTx
-void CCAddVintxCond(struct CCcontract_info *cp, CCwrapper wcond, uint8_t *priv)
+// add test vintx conditions for making CCSig in FinalizeCCTx
+void CCAddVintxCond(struct CCcontract_info *cp, CC* cond, uint8_t *priv)
 {
     struct CCVintxCond vc;
 
     if (cp == NULL) return;
    
     //strncpy(vc.coinaddr, coinaddr, sizeof(vc.coinaddr) / sizeof(vc.coinaddr[0]));
-    vc.wcond = wcond;
+    vc.CCwrapped.set(cond);
     if( priv != NULL )
         memcpy(vc.CCpriv, priv, sizeof(vc.CCpriv) / sizeof(vc.CCpriv[0]));
     else

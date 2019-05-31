@@ -152,16 +152,27 @@ struct CC_meta
 class CCwrapper {
 public:
     CCwrapper() {}
-    CCwrapper(CC *cond) : spcond(cond, [](CC* p) {cc_free(p); std::cerr << "CCwrapper freed ptr" << std::endl; }) { }
-    CCwrapper(const CCwrapper &w) { spcond = w.spcond; } // default copy constr
-    CC *get() { return spcond.get(); }
+    //CCwrapper(CC *cond) : spcond(cond, [](CC* p) {cc_free(p); }) { }
+
+    void set(CC *cond) {
+        cclen = cc_fulfillmentBinary(cond, ccbuf, sizeof(ccbuf) / sizeof(ccbuf[0]));
+    }
+
+    //CCwrapper(const CCwrapper &w) { spcond = w.spcond; } // default copy constr
+    // CC *get() { return spcond.get(); }
+    CC *get() { 
+        return cc_readFulfillmentBinary((uint8_t*)ccbuf, cclen);
+    }
+
 private:
-    std::shared_ptr<CC> spcond;
+    //std::shared_ptr<CC> spcond;
+    uint8_t ccbuf[10000];
+    size_t  cclen;
 };
 
 struct CCVintxCond {
-    CCwrapper wcond;
-    uint8_t CCpriv[32];
+    CCwrapper CCwrapped;
+    uint8_t   CCpriv[32];
 };
 /// CC contract (Antara module) info structure that contains data used for signing and validation of cc contract transactions
 struct CCcontract_info

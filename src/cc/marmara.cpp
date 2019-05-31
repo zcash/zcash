@@ -922,9 +922,9 @@ int32_t DistributeRemainder(CMutableTransaction &mtx, struct CCcontract_info *cp
             if (change > 0)
                 mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA, change, Marmarapk, createtxidPk));
 
-            // CCaddr1of2set(cp, Marmarapk, createtxidPk, mypriv, lockInLoop1of2addr);     // set addr privkey and pubkeys in cp to spend from 1of2 lock-in-loop vintx vout
-            CCwrapper lockInLoop1of2cond( MakeCCcond1of2(EVAL_MARMARA, Marmarapk, createtxidPk) ); // smart ptr auto destroying
+            CC*  lockInLoop1of2cond = MakeCCcond1of2(EVAL_MARMARA, Marmarapk, createtxidPk); // create vintx 1of2 probe cond 
             CCAddVintxCond(cp, lockInLoop1of2cond, marmarapriv);
+            cc_free(lockInLoop1of2cond);
 
         }
         else  {
@@ -999,15 +999,17 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
                     CPubKey createtxidPk = CCtxidaddr(createtxidaddr, createtxid);
                     mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA, amountToLock, Marmarapk, createtxidPk));
 
-                    CCwrapper lock1of2cond( MakeCCcond1of2(EVAL_MARMARA, Marmarapk, mypk) );  // use smart ptr wrapper auto destroying CC* ptr
+                    CC* lock1of2cond = MakeCCcond1of2(EVAL_MARMARA, Marmarapk, mypk);  // create vintx probe 1of2 cond
                     CCAddVintxCond(cp, lock1of2cond);
-                    rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, MarmaraLoopOpret(funcid, createtxid, receiverpk, amount, matures, currency));
+                    cc_free(lock1of2cond);
 
+                    rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, MarmaraLoopOpret(funcid, createtxid, receiverpk, amount, matures, currency));
+                    
                     if (rawtx.size() == 0) 
                         std::cerr << "MarmaraIssue() mtx=" << HexStr(E_MARSHAL(ss << mtx)) << std::endl;
                     
                     if (rawtx.size() > 0)
-                        errorstr = 0;
+                        errorstr = NULL;
 
                 }
                 else
