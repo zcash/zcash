@@ -960,13 +960,14 @@ bool CClib_Dispatch(const CC *cond,Eval *eval,std::vector<uint8_t> paramsNull,co
 
 
 // add test vintx conditions for making CCSig in FinalizeCCTx
-void CCAddVintxCond(struct CCcontract_info *cp, CCwrapper wrcond, uint8_t *priv)
+void CCAddVintxCond(struct CCcontract_info *cp, CC *cond, uint8_t *priv)
 {
     struct CCVintxCond vc;
 
     if (cp == NULL) return;
+    if (cond == NULL) return;
     
-    vc.CCwrapped = wrcond;
+    vc.CCwrapped.set(cond);
     if( priv != NULL )
         memcpy(vc.CCpriv, priv, sizeof(vc.CCpriv) / sizeof(vc.CCpriv[0]));
     else

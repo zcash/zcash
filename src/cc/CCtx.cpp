@@ -58,7 +58,7 @@ UniValue FinalizeCCTxExt(bool remote, uint64_t CCmask, struct CCcontract_info *c
 	char myaddr[64], destaddr[64], unspendable[64], mytokensaddr[64], mysingletokensaddr[64], unspendabletokensaddr[64],CC1of2CCaddr[64];
     uint8_t *privkey = NULL, myprivkey[32] = { '\0' }, unspendablepriv[32] = { '\0' }, /*tokensunspendablepriv[32],*/ *msg32 = 0;
     CC *mycond = 0, *othercond = 0, *othercond2 = 0, *othercond4 = 0, *othercond3 = 0, *othercond1of2 = NULL, *othercond1of2tokens = NULL, *cond = 0, *condCC2 = 0,
-       *mytokenscond = NULL, *mysingletokenscond = NULL, *othertokenscond = NULL;
+       *mytokenscond = NULL, *mysingletokenscond = NULL, *othertokenscond = NULL, *vectcond = NULL;
 	CPubKey unspendablepk /*, tokensunspendablepk*/;
 	struct CCcontract_info *cpTokens, tokensC;
     UniValue sigData(UniValue::VARR),result(UniValue::VOBJ);
@@ -315,7 +315,9 @@ UniValue FinalizeCCTxExt(bool remote, uint64_t CCmask, struct CCcontract_info *c
                         for (auto &t : cp->vintxconds) {
                             char coinaddr[64];
 
-                            CC *vectcond = t.CCwrapped.get();  // Note: no need to free, it is free by CCwrapper
+                            if (vectcond != NULL)
+                                cc_free(vectcond);  // free prev used cond
+                            vectcond = t.CCwrapped.get();  // Note: no need to free, it is free by CCwrapper
                             Getscriptaddress(coinaddr, CCPubKey(vectcond));
                             // std::cerr << __func__ << " destaddr=" << destaddr << " coinaddr=" << coinaddr << std::endl;
                             if (strcmp(destaddr, coinaddr) == 0) {
