@@ -965,7 +965,8 @@ void CCAddVintxCond(struct CCcontract_info *cp, CC* cond, uint8_t *priv)
     struct CCVintxCond vc;
 
     if (cp == NULL) return;
-   
+    if (cond == NULL) return;
+
     //strncpy(vc.coinaddr, coinaddr, sizeof(vc.coinaddr) / sizeof(vc.coinaddr[0]));
     vc.CCwrapped.set(cond);
     if( priv != NULL )
