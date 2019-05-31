@@ -256,7 +256,8 @@ static CC *secp256k1FromJSON(const cJSON *params, char *err) {
         goto END;
     }
 
-	if( sig == NULL )	{
+	if( sig == NULL )	{  
+		// dimxy: this allows to parse cc not yet signed:
 		cond = cc_new(CC_Secp256k1);
     	cond->publicKey = calloc(1, SECP256K1_PK_SIZE);
 	    memcpy(cond->publicKey, pk, SECP256K1_PK_SIZE);

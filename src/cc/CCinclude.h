@@ -152,20 +152,23 @@ struct CC_meta
 class CCwrapper {
 public:
     CCwrapper() {}
-    //CCwrapper(CC *cond) : spcond(cond, [](CC* p) {cc_free(p); }) { }
-    //CCwrapper(const CCwrapper &w) { spcond = w.spcond; }  // default copy constr
+
+    // smart pointer variant (not to copy cc but use smart pointer with auto cc_free)
+    // CCwrapper(CC *cond) : spcond(cond, [](CC* p) {cc_free(p); }) { }
+    // CCwrapper(const CCwrapper &w) { spcond = w.spcond; }  // default copy constr
+    // CC *get() { return spcond.get(); }
 
     void set(CC *cond) {
-        ccJsonString = cc_conditionToJSONString(cond); // bad try to serialize cc, does not work if not signed
+        ccJsonString = cc_conditionToJSONString(cond); // serialize cc to store it and allow caller to cc_free the cond
     }
 
-    //CC *get() { return spcond.get(); }
     CC *get() { 
         char err[1024] = "";
-        CC *cond = cc_conditionFromJSONString(ccJsonString, err);  // does not work if not signed
-        std::cerr << "CCwrapper ccJsonString=" << ccJsonString << "\nerr=" << err << std::endl;
-        if( cond )
-            std::cerr << "CCwrapper serialized=" << cc_conditionToJSONString(cond) << std::endl;
+        CC *cond = cc_conditionFromJSONString(ccJsonString, err);  // dont forget to cc_free it
+
+        // debug logging if parse not successful:
+        // std::cerr << "CCwrapper ccJsonString=" << ccJsonString << "\nerr=" << err << std::endl;  
+        // if( cond ) std::cerr << "CCwrapper serialized=" << cc_conditionToJSONString(cond) << std::endl;  //see how it is serialized back
         return cond;
      }
 
