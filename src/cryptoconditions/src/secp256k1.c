@@ -250,7 +250,7 @@ static CC *secp256k1FromJSON(const cJSON *params, char *err) {
 
     if (!jsonGetHex(params, "publicKey", err, &pk, &pkSize)) goto END;
 
-    if (!jsonGetHexOptional(params, "signature", err, &sig, &sigSize) || sig == 0) goto END;
+    if (!jsonGetHexOptional(params, "signature", err, &sig, &sigSize)) goto END;
     if (sig && SECP256K1_SIG_SIZE != sigSize) {
         strcpy(err, "signature has incorrect length");
         goto END;

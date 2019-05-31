@@ -922,9 +922,8 @@ int32_t DistributeRemainder(CMutableTransaction &mtx, struct CCcontract_info *cp
             if (change > 0)
                 mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA, change, Marmarapk, createtxidPk));
 
-            CC*  lockInLoop1of2cond = MakeCCcond1of2(EVAL_MARMARA, Marmarapk, createtxidPk); // create vintx 1of2 probe cond 
+            CC *lockInLoop1of2cond = MakeCCcond1of2(EVAL_MARMARA, Marmarapk, createtxidPk); // create vintx 1of2 probe cond, do not cc_free it, it will be done with CCwrapper! 
             CCAddVintxCond(cp, lockInLoop1of2cond, marmarapriv);
-            cc_free(lockInLoop1of2cond);
 
         }
         else  {
@@ -999,9 +998,8 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
                     CPubKey createtxidPk = CCtxidaddr(createtxidaddr, createtxid);
                     mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA, amountToLock, Marmarapk, createtxidPk));
 
-                    CC* lock1of2cond = MakeCCcond1of2(EVAL_MARMARA, Marmarapk, mypk);  // create vintx probe 1of2 cond
+                    CC* lock1of2cond = MakeCCcond1of2(EVAL_MARMARA, Marmarapk, mypk);  // create vintx probe 1of2 cond, do not cc_free it!
                     CCAddVintxCond(cp, lock1of2cond);
-                    cc_free(lock1of2cond);
 
                     rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, MarmaraLoopOpret(funcid, createtxid, receiverpk, amount, matures, currency));
                     

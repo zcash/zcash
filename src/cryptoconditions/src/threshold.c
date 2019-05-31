@@ -53,7 +53,6 @@ static unsigned long thresholdCost(const CC *cond) {
     unsigned long *costs = calloc(1, cond->size * sizeof(unsigned long));
     for (int i=0; i<cond->size; i++) {
         sub = cond->subconditions[i];
-printf("thresholdCost sub=%d\n", sub); 
         costs[i] = cc_getCost(sub);
     }
     qsort(costs, cond->size, sizeof(unsigned long), cmpCostDesc);
@@ -214,7 +213,6 @@ static CC *thresholdFromJSON(const cJSON *params, char *err) {
     for (int i=0; i<cond->size; i++) {
         sub = cJSON_GetArrayItem(subfulfillments_item, i);
         cond->subconditions[i] = cc_conditionFromJSON(sub, err);
-printf("thresholdFromJSON json=%s cond->subconditions[i]=%d\n", cJSON_Print(sub), cond->subconditions[i]);
         if (err[0]) return NULL;
     }
 

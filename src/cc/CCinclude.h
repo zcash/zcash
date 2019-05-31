@@ -152,26 +152,23 @@ struct CC_meta
 class CCwrapper {
 public:
     CCwrapper() {}
-    //CCwrapper(CC *cond) : spcond(cond, [](CC* p) {cc_free(p); }) { }
+    CCwrapper(CC *cond) : spcond(cond, [](CC* p) {cc_free(p); }) { }
+    CCwrapper(const CCwrapper &w) { spcond = w.spcond; }  // default copy constr
 
-    void set(CC *cond) {
-        ccJsonString = cc_conditionToJSONString(cond);
-    }
+    /*void set(CC *cond) {
+        ccJsonString = cc_conditionToJSONString(cond); // bad try to serialize cc, does not work if not signed
+    }*/
 
-    //CCwrapper(const CCwrapper &w) { spcond = w.spcond; } // default copy constr
-    // CC *get() { return spcond.get(); }
-    CC *get() { 
+    CC *get() { return spcond.get(); }
+    /*CC *get() { 
         char err[1024] = "";
-        std::cerr << "CCwrapper.get ccJsonString=" << ccJsonString << std::endl;
-        CC *cc = cc_conditionFromJSONString(ccJsonString, err);
-        std::cerr << "CCwrapper.get cc_conditionFromJSONString error=" << err << " cc="  << cc << std::endl;
-        return cc;
-    }
+        return cc_conditionFromJSONString(ccJsonString, err);  // does not work if not signed
+    }*/
 
 private:
-    //std::shared_ptr<CC> spcond;
-    char *ccJsonString;
-    size_t  cclen;
+    std::shared_ptr<CC> spcond;
+    //char *ccJsonString;
+    //size_t  cclen;
 };
 
 struct CCVintxCond {
