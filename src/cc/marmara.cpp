@@ -68,7 +68,7 @@ int32_t MarmaraRandomize(uint32_t ind)
     return((val % range) + MARMARA_MINLOCK);
 }
 
-// get random unlock height within 3 month..2 year
+// get random but fixed for the height param unlock height within 3 month..2 year interval
 int32_t MarmaraUnlockht(int32_t height)
 {
     uint32_t ind = height / MARMARA_GROUPSIZE;
@@ -997,6 +997,11 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
                 char createtxidaddr[64];
                 CPubKey createtxidPk = CCtxidaddr(createtxidaddr, createtxid);
                 mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA, amountToLock, Marmarapk, createtxidPk));
+
+                // return change to the locked fund:
+                int64_t change = (inputsum - amountToLock);
+                if (change > 0)
+                    mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA, change, Marmarapk, mypk));
 
                 if (endorsersNumber < 1 || DistributeRemainder(mtx, cp, creditloop, batontxid, amountToLock) >= 0)  // if there are issuers already then distribute and return amount / n value
                 {
