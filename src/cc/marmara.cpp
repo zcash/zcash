@@ -1003,7 +1003,8 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
                     unsigned char ccbuf[10000];
                     int cclen;
                     std::cerr << "befor cc_fulfillmentBinary" << std::endl;
-                    cclen = cc_fulfillmentBinary(lock1of2cond, ccbuf, 10000);
+                    //cclen = cc_fulfillmentBinary(lock1of2cond, ccbuf, 10000);
+                    CCSig(lock1of2cond);
                     std::cerr << "after cc_fulfillmentBinary" << std::endl;
                     CCAddVintxCond(cp, lock1of2cond);
                     cc_free(lock1of2cond);
