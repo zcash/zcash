@@ -924,7 +924,7 @@ int32_t DistributeRemainder(CMutableTransaction &mtx, struct CCcontract_info *cp
 
             CC*  lockInLoop1of2cond = MakeCCcond1of2(EVAL_MARMARA, Marmarapk, createtxidPk); // create vintx 1of2 probe cond 
             CCAddVintxCond(cp, lockInLoop1of2cond, marmarapriv);
-            //cc_free(lockInLoop1of2cond);
+            cc_free(lockInLoop1of2cond);
 
         }
         else  {
@@ -1007,7 +1007,7 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
                     CCSig(lock1of2cond);
                     std::cerr << "after cc_fulfillmentBinary" << std::endl;
                     CCAddVintxCond(cp, lock1of2cond);
-                    //cc_free(lock1of2cond);
+                    cc_free(lock1of2cond);
 
                     rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, MarmaraLoopOpret(funcid, createtxid, receiverpk, amount, matures, currency));
                     

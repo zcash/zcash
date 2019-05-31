@@ -155,7 +155,7 @@ public:
     //CCwrapper(CC *cond) : spcond(cond, [](CC* p) {cc_free(p); }) { }
 
     void set(CC *cond) {
-        cclen = cc_fulfillmentBinary(cond, ccbuf, sizeof(ccbuf) / sizeof(ccbuf[0]));
+        //cclen = cc_fulfillmentBinary(cond, ccbuf, sizeof(ccbuf) / sizeof(ccbuf[0]));
     }
 
     //CCwrapper(const CCwrapper &w) { spcond = w.spcond; } // default copy constr
