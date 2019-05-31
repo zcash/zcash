@@ -162,8 +162,12 @@ public:
     //CC *get() { return spcond.get(); }
     CC *get() { 
         char err[1024] = "";
-        return cc_conditionFromJSONString(ccJsonString, err);  // does not work if not signed
-    }
+        CC *cond = cc_conditionFromJSONString(ccJsonString, err);  // does not work if not signed
+        std::cerr << "CCwrapper ccJsonString=" << ccJsonString << "\nerr=" << err << std::endl;
+        if( cond )
+            std::cerr << "CCwrapper serialized=" << cc_conditionToJSONString(cond) << std::endl;
+        return cond;
+     }
 
 private:
     //std::shared_ptr<CC> spcond;
