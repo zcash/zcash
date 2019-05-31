@@ -256,8 +256,10 @@ static CC *secp256k1FromJSON(const cJSON *params, char *err) {
         goto END;
     }
 
-	if( sig == NULL )
+	if( sig == NULL )	{
 		cond = cc_new(CC_Secp256k1);
+		cond->publicKey = pk;
+	}
 	else {
 	    cond = cc_secp256k1Condition(pk, sig);
     	if (!cond) {
