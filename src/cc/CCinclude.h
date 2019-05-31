@@ -155,13 +155,13 @@ public:
     //CCwrapper(CC *cond) : spcond(cond, [](CC* p) {cc_free(p); }) { }
 
     void set(CC *cond) {
-        //cclen = cc_fulfillmentBinary(cond, ccbuf, sizeof(ccbuf) / sizeof(ccbuf[0]));
+        cclen = cc_conditionBinary(cond, ccbuf);
     }
 
     //CCwrapper(const CCwrapper &w) { spcond = w.spcond; } // default copy constr
     // CC *get() { return spcond.get(); }
     CC *get() { 
-        return cc_readFulfillmentBinary((uint8_t*)ccbuf, cclen);
+        return cc_readConditionBinary((uint8_t*)ccbuf, cclen);
     }
 
 private:
