@@ -37,10 +37,11 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
 
     int nHeight = pindexLast->nHeight + 1;
 
-    // TODO(A): Fix the constants and make the POW limit a multiplier of the current one. 
-    if (nHeight >= params.vUpgrades[Consensus::UPGRADE_YCASH].nActivationHeight && 
-            nHeight <= params.vUpgrades[Consensus::UPGRADE_YCASH].nActivationHeight + 5) {
-        LogPrintStr("Returned a reduced PoW limit\n");
+    // For the testnet fork, return a reduced difficulty at the fork block plus the next adjustment blocks
+    // to basically reset the difficulty
+    if (params.nPowAllowMinDifficultyBlocksAfterHeight != boost::none && 
+            nHeight >= params.vUpgrades[Consensus::UPGRADE_YCASH].nActivationHeight && 
+            nHeight <= params.vUpgrades[Consensus::UPGRADE_YCASH].nActivationHeight + params.nPowAveragingWindow) {
         return nProofOfWorkLimit;
     }
 

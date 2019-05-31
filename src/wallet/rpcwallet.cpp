@@ -440,6 +440,10 @@ UniValue sendtoaddress(const UniValue& params, bool fHelp)
             + HelpExampleRpc("sendtoaddress", "\"t1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\", 0.1, \"donation\", \"seans outpost\"")
         );
 
+    if (!NetworkUpgradeActive(chainActive.Height() + 1, Params().GetConsensus(), Consensus::UPGRADE_YCASH)) {
+        throw JSONRPCError(RPC_WALLET_ERROR, "Can't sent transactions because Ycash network is not active");
+    }
+
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
     CTxDestination dest = DecodeDestination(params[0].get_str());
@@ -922,6 +926,10 @@ UniValue sendfrom(const UniValue& params, bool fHelp)
             + HelpExampleRpc("sendfrom", "\"tabby\", \"t1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\", 0.01, 6, \"donation\", \"seans outpost\"")
         );
 
+    if (!NetworkUpgradeActive(chainActive.Height() + 1, Params().GetConsensus(), Consensus::UPGRADE_YCASH)) {
+        throw JSONRPCError(RPC_WALLET_ERROR, "Can't sent transactions because Ycash network is not active");
+    }
+
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
     std::string strAccount = AccountFromValue(params[0]);
@@ -996,6 +1004,10 @@ UniValue sendmany(const UniValue& params, bool fHelp)
             "\nAs a json rpc call\n"
             + HelpExampleRpc("sendmany", "\"\", \"{\\\"t14oHp2v54vfmdgQ3v3SNuQga8JKHTNi2a1\\\":0.01,\\\"t1353tsE8YMTA4EuV7dgUXGjNFf9KpVvKHz\\\":0.02}\", 6, \"testing\"")
         );
+
+    if (!NetworkUpgradeActive(chainActive.Height() + 1, Params().GetConsensus(), Consensus::UPGRADE_YCASH)) {
+        throw JSONRPCError(RPC_WALLET_ERROR, "Can't sent transactions because Ycash network is not active");
+    }
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
@@ -3666,6 +3678,10 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
             + HelpExampleRpc("z_sendmany", "\"t1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\", [{\"address\": \"ztfaW34Gj9FrnGUEf833ywDVL62NWXBM81u6EQnM6VR45eYnXhwztecW1SjxA7JrmAXKJhxhj3vDNEpVCQoSvVoSpmbhtjf\" ,\"amount\": 5.0}]")
         );
 
+    if (!NetworkUpgradeActive(chainActive.Height() + 1, Params().GetConsensus(), Consensus::UPGRADE_YCASH)) {
+        throw JSONRPCError(RPC_WALLET_ERROR, "Can't sent transactions because Ycash network is not active");
+    }
+
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
     // Check that the from address is valid.
@@ -4087,6 +4103,10 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
             + HelpExampleCli("z_shieldcoinbase", "\"t1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\" \"ztfaW34Gj9FrnGUEf833ywDVL62NWXBM81u6EQnM6VR45eYnXhwztecW1SjxA7JrmAXKJhxhj3vDNEpVCQoSvVoSpmbhtjf\"")
             + HelpExampleRpc("z_shieldcoinbase", "\"t1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\", \"ztfaW34Gj9FrnGUEf833ywDVL62NWXBM81u6EQnM6VR45eYnXhwztecW1SjxA7JrmAXKJhxhj3vDNEpVCQoSvVoSpmbhtjf\"")
         );
+
+    if (!NetworkUpgradeActive(chainActive.Height() + 1, Params().GetConsensus(), Consensus::UPGRADE_YCASH)) {
+        throw JSONRPCError(RPC_WALLET_ERROR, "Can't sent transactions because Ycash network is not active");
+    }
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
