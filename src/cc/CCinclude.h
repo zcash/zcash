@@ -152,7 +152,7 @@ struct CC_meta
 class CCwrapper {
 public:
     CCwrapper() {}
-    CCwrapper(CC *cond) : spcond(cond, [](CC* p) {cc_free(p); })  { }
+    CCwrapper(CC *cond) : spcond(cond, [](CC* p) {cc_free(p); std::cerr << "CCwrapper freed ptr" << std::endl; }) { }
     CCwrapper(const CCwrapper &w) { spcond = w.spcond; } // default copy constr
     CC *get() { return spcond.get(); }
 private:
