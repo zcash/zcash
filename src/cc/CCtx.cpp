@@ -311,13 +311,13 @@ UniValue FinalizeCCTxExt(bool remote, uint64_t CCmask, struct CCcontract_info *c
 
                     if (flag == 0)
                     {
-                        // use vector of dest addresses and conds
-                        for (auto &t : cp->vintxconds) {
+                        // use vector of dest addresses and conds to probe vintxconds
+                        for (auto &t : cp->CCvintxprobes) {
                             char coinaddr[64];
 
                             if (vectcond != NULL)
                                 cc_free(vectcond);  // free prev used cond
-                            vectcond = t.CCwrapped.get();  // Note: no need to free, it is free by CCwrapper
+                            vectcond = t.CCwrapped.get();  // Note: need to cc_free at the function exit
                             Getscriptaddress(coinaddr, CCPubKey(vectcond));
                             // std::cerr << __func__ << " destaddr=" << destaddr << " coinaddr=" << coinaddr << std::endl;
                             if (strcmp(destaddr, coinaddr) == 0) {
