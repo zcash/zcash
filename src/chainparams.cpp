@@ -303,7 +303,7 @@ public:
         consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nProtocolVersion = 170007;
         consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight = 280000;
         consensus.vUpgrades[Consensus::UPGRADE_YCASH].nProtocolVersion = 270007;
-        consensus.vUpgrades[Consensus::UPGRADE_YCASH].nActivationHeight = 504675;
+        consensus.vUpgrades[Consensus::UPGRADE_YCASH].nActivationHeight = 510248;   // Around June 7, 2019
 
         // The best chain should have at least this much work.
         consensus.nMinimumChainWork = uint256S("0x00000000000000000000000000000000000000000000000000000001d0c4d9cd");
