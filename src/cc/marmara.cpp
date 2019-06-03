@@ -226,12 +226,14 @@ CScript MarmaraCoinbaseOpret(uint8_t funcid, int32_t height, CPubKey pk)
     return(CScript());
 }
 
+// half of the blocks (with odd heights)should be mined as activated (to some unlock height)
 int32_t MarmaraValidateCoinbase(int32_t height, CTransaction tx)
 {
     struct CCcontract_info *cp, C; CPubKey Marmarapk, pk; int32_t ht, unlockht; CTxOut ccvout;
     cp = CCinit(&C, EVAL_MARMARA);
     Marmarapk = GetUnspendable(cp, 0);
-    if (0)
+    
+    if (0) // not used
     {
         int32_t d, histo[365 * 2 + 30];
         memset(histo, 0, sizeof(histo));
@@ -249,6 +251,7 @@ int32_t MarmaraValidateCoinbase(int32_t height, CTransaction tx)
             fprintf(stderr, "%d ", histo[ht]);
         fprintf(stderr, "<- unlock histogram[%d] by days locked\n", (int32_t)(sizeof(histo) / sizeof(*histo)));
     }
+
     if ((height & 1) != 0)
         return(0);
     if (tx.vout.size() == 2 && tx.vout[1].nValue == 0)
@@ -404,8 +407,27 @@ int64_t AddMarmaraCoinbases(struct CCcontract_info *cp, CMutableTransaction &mtx
     return(totalinputs);
 }
 
+bool IsActivatedOpret(const CScript &spk, CPubKey &pk) 
+{ 
+    uint8_t funcid = 0;
+    int32_t ht, unlockht;
+   
+    return (funcid = DecodeMarmaraCoinbaseOpRet(spk, pk, ht, unlockht)) == 'C' || funcid == 'P' || funcid == 'L';
+}
+
+bool IsLockInLoopOpret(const CScript &spk, CPubKey &pk)
+{
+    uint8_t funcid = 0;
+    uint256 createtxid;
+    int64_t amount;
+    int32_t matures;
+    std::string currency;
+
+    return MarmaraDecodeLoopOpret(spk, createtxid, pk, amount, matures, currency) != 0;
+}
+
 // add locked coins:
-int64_t AddMarmarainputs(bool isBoosted, CMutableTransaction &mtx, std::vector<CPubKey> &pubkeys, char *coinaddr, int64_t total, int32_t maxinputs)
+int64_t AddMarmarainputs(bool (*CheckOpretFunc)(const CScript &, CPubKey &), CMutableTransaction &mtx, std::vector<CPubKey> &pubkeys, char *coinaddr, int64_t total, int32_t maxinputs)
 {
     int64_t threshold, nValue, totalinputs = 0; 
     int32_t n = 0;
@@ -420,7 +442,7 @@ int64_t AddMarmarainputs(bool isBoosted, CMutableTransaction &mtx, std::vector<C
     else 
         threshold = total;
 
-    std::cerr << "AddMarmarainputs() adding from addr=" << coinaddr << " isBoosted=" << isBoosted << " total=" << total << std::endl;
+    std::cerr << "AddMarmarainputs() adding from addr=" << coinaddr << " total=" << total << std::endl;
 
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it = unspentOutputs.begin(); it != unspentOutputs.end(); it++)
     {
@@ -433,24 +455,18 @@ int64_t AddMarmarainputs(bool isBoosted, CMutableTransaction &mtx, std::vector<C
             continue;
         if ( myGetTransaction(txid,tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 0 && vout < numvouts && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0 )
         {
-            int32_t ht, unlockht; 
-            uint8_t funcid = 0, evalcode = 0; 
             CPubKey pk;
-            uint256 createtxid;
-            int64_t amount;
-            int32_t matures;
-            std::string currency;
-            vscript_t vopret;
 
             // just for debug logging:
+            vscript_t vopret;
+            uint8_t funcid = 0, evalcode = 0;
             if (tx.vout.size() > 0 && GetOpReturnData(tx.vout.back().scriptPubKey, vopret) && vopret.size() >= 2) {
                 evalcode = vopret.begin()[0];
                 funcid = vopret.begin()[1];
             }
             std::cerr << "AddMarmarainputs() checking addr=" << coinaddr << " txid=" << txid.GetHex() << " nvout=" << nvout << " satoshis=" << it->second.satoshis << " eval=" << (int)evalcode << " funcid=" << (char)(funcid ? funcid : ' ') << std::endl;
 
-            if (!isBoosted && ((funcid = DecodeMarmaraCoinbaseOpRet(tx.vout.back().scriptPubKey, pk, ht, unlockht)) == 'C' || funcid == 'P' || funcid == 'L') ||
-                isBoosted && MarmaraDecodeLoopOpret(tx.vout.back().scriptPubKey, createtxid, pk, amount, matures, currency) != 0)
+            if ( CheckOpretFunc(tx.vout.back().scriptPubKey, pk) )
             {                
                 std::cerr << "AddMarmarainputs() good vintx addr=" << coinaddr << " txid=" << txid.GetHex() << " nvout=" << nvout << " satoshis=" << it->second.satoshis << std::endl;
 
@@ -482,13 +498,14 @@ int64_t AddMarmarainputs(bool isBoosted, CMutableTransaction &mtx, std::vector<C
 }
 
 // lock the amount on the specified block height
-UniValue MarmaraLock(int64_t txfee, int64_t amount, int32_t height)
+UniValue MarmaraLock(int64_t txfee, int64_t amount)
 {
     CMutableTransaction tmpmtx, mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     UniValue result(UniValue::VOBJ);
     struct CCcontract_info *cp, C;
     CPubKey Marmarapk, mypk, pk;
-    int32_t unlockht, refunlockht, nvout, ht, numvouts;
+    int32_t unlockht, /*refunlockht,*/ nvout, ht, numvouts;
+    const int32_t height = MARMARA_MAXHEIGHT;
     int64_t nValue, val, inputsum = 0, threshold, remains, change = 0;
     std::string rawtx, errorstr;
     char mynormaladdr[64], lock1of2addr[64];
@@ -498,8 +515,9 @@ UniValue MarmaraLock(int64_t txfee, int64_t amount, int32_t height)
 
     if (txfee == 0)
         txfee = 10000;
-    if ((height & 1) != 0)
-        height++;
+
+    //if ((height & 1) != 0)
+    //    height++;
 
     cp = CCinit(&C, EVAL_MARMARA);
     mypk = pubkey2pk(Mypubkey());
@@ -519,11 +537,11 @@ UniValue MarmaraLock(int64_t txfee, int64_t amount, int32_t height)
 
     if (inputsum < amount + txfee)  // if not enough normal inputs for collateral
     {
-        refunlockht = MarmaraUnlockht(height);  // randomized 
+        //refunlockht = MarmaraUnlockht(height);  // randomized 
 
         result.push_back(Pair("normalfunds", ValueFromAmount(inputsum)));
-        result.push_back(Pair("height", height));
-        result.push_back(Pair("unlockht", refunlockht));
+        result.push_back(Pair("height", MARMARA_MAXHEIGHT));
+        //result.push_back(Pair("unlockht", refunlockht));
 
         // fund remainder to add:
         remains = (amount + txfee) - inputsum;
@@ -537,6 +555,9 @@ UniValue MarmaraLock(int64_t txfee, int64_t amount, int32_t height)
         CCaddr1of2set(cp, Marmarapk, mypk, mypriv, lock1of2addr);
 
         // try to add collateral remainder from the locked fund (and re-lock it):
+        
+        /* cannot do this any more as locked funds are locked to the max height
+           first unlock them to normal to lock again:
         for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it = unspentOutputs.begin(); it != unspentOutputs.end(); it++)
         {
             txid = it->first.txhash;
@@ -566,7 +587,8 @@ UniValue MarmaraLock(int64_t txfee, int64_t amount, int32_t height)
             }
             else  
                 std::cerr << "MarmaraLock() could not load or incorrect tx from locked fund" << std::endl;
-        }
+        }   */
+
         memset(mypriv,0,sizeof(mypriv));
     }
     if (inputsum >= amount + txfee)
@@ -636,7 +658,7 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid)
     CPubKey Marmarapk, mypk, pk;
     std::string currency, refcurrency, rawtx;
     CTransaction tx, batontx;
-    char lock1of2addr[64], myCCaddr[64], destaddr[64], batonCCaddr[64], str[2], txidaddr[64];
+    char activated1of2addr[64], myCCaddr[64], destaddr[64], batonCCaddr[64], str[2], txidaddr[64];
     std::vector<CPubKey> pubkeys;
     struct CCcontract_info *cp, C;
 
@@ -693,9 +715,9 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid)
                         {
                             if ((funcid = MarmaraDecodeLoopOpret(tx.vout[numvouts - 1].scriptPubKey, createtxid, pk, amount, matures, currency)) != 0)  // get endorser's pk
                             {
-                                GetCCaddress1of2(cp, lock1of2addr, Marmarapk, pk);  // 1of2 address where the current endorser's money is locked
-                                // dimxy: why is locked height not checked?
-                                if ((inputsum = AddMarmarainputs(false, mtx, pubkeys, lock1of2addr, remaining, MARMARA_VINS)) >= remaining) // add as much as possible amount
+                                GetCCaddress1of2(cp, activated1of2addr, Marmarapk, pk);  // 1of2 address where the current endorser's money is locked
+                                // dimxy: why is locked height not checked? deprecated
+                                if ((inputsum = AddMarmarainputs(IsActivatedOpret, mtx, pubkeys, activated1of2addr, remaining, MARMARA_VINS)) >= remaining) // add as much as possible amount
                                 {
                                     change = (inputsum - remaining);
                                     mtx.vout.push_back(CTxOut(amount, CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));   // money is released to mypk who's doing the settlement
@@ -797,11 +819,14 @@ int32_t MarmaraGetCreditloops(int64_t &totalamount, std::vector<uint256> &issuan
     return(n);
 }
 
-// current version returns approvaltxid
+// create request tx for issuing or transfer baton (cheque) 
+// the first call makes the credit loop creation tx
+// txid of returned tx is approvaltxid
 UniValue MarmaraReceive(int64_t txfee, CPubKey senderpk, int64_t amount, std::string currency, int32_t matures, uint256 batontxid, bool automaticflag)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); CPubKey mypk; struct CCcontract_info *cp, C; std::string rawtx; char *errorstr = 0; uint256 createtxid; int64_t batonamount; int32_t needbaton = 0;
+    UniValue result(UniValue::VOBJ); CPubKey mypk; struct CCcontract_info *cp, C; std::string rawtx; char *errorstr = 0; uint256 createtxid; int64_t batonamount; 
+
     cp = CCinit(&C, EVAL_MARMARA);
     if (txfee == 0)
         txfee = 10000;
@@ -823,7 +848,8 @@ UniValue MarmaraReceive(int64_t txfee, CPubKey senderpk, int64_t amount, std::st
     {
         if (batontxid != zeroid)
             batonamount = txfee;
-        else batonamount = 2 * txfee;
+        else 
+            batonamount = 2 * txfee;
         if (AddNormalinputs(mtx, mypk, batonamount + txfee, 1) > 0)
         {
             errorstr = (char *)"couldnt finalize CCtx";
@@ -884,7 +910,7 @@ int32_t DistributeRemainder(CMutableTransaction &mtx, struct CCcontract_info *cp
         CPubKey createtxidPk = CCtxidaddr(txidaddr, createtxid);
         GetCCaddress1of2(cp, lockInLoop1of2addr, Marmarapk, createtxidPk);  // 1of2 lock-in-loop address 
 
-        if ((inputsum = AddMarmarainputs(true, mtx, pubkeys, lockInLoop1of2addr, amountToDistribute, MARMARA_VINS)) >= amount / endorsersNumber) // add locked-in-loop amount
+        if ((inputsum = AddMarmarainputs(IsLockInLoopOpret, mtx, pubkeys, lockInLoop1of2addr, amountToDistribute, MARMARA_VINS)) >= amount / endorsersNumber) // add locked-in-loop amount
         {
             if (mtx.vin.size() >= CC_MAXVINS - MARMARA_VINS)  // vin number limit
                 return -1;
@@ -980,7 +1006,7 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
 
         GetCCaddress1of2(cp, lock1of2addr, Marmarapk, mypk);  // 1of2 address where the activated endorser's money is locked -- deprecated
         //GetCCaddress(cp, myccaddr, mypk);                       // activated coins on cc address
-        if ((inputsum = AddMarmarainputs(false, mtx, pubkeys, lock1of2addr, amountToLock, MARMARA_VINS)) >= amountToLock) // add 1/n remainder from the locked fund
+        if ((inputsum = AddMarmarainputs(IsActivatedOpret, mtx, pubkeys, lock1of2addr, amountToLock, MARMARA_VINS)) >= amountToLock) // add 1/n remainder from the locked fund
         {
             
             mtx.vin.push_back(CTxIn(approvaltxid, 0, CScript()));  // spend the approval tx
@@ -1133,7 +1159,7 @@ UniValue MarmaraCreditloop(uint256 txid)
                     GetCCaddress1of2(cp, lockInLoop1of2addr, GetUnspendable(cp, NULL), createtxidPk);  // 1of2 lock-in-loop address 
                     std::vector<CPubKey> pubkeys;
                     CMutableTransaction mtx;
-                    int64_t amountLockedInLoop = AddMarmarainputs(true, mtx, pubkeys, lockInLoop1of2addr, 0, 0);
+                    int64_t amountLockedInLoop = AddMarmarainputs(IsLockInLoopOpret, mtx, pubkeys, lockInLoop1of2addr, 0, 0);
                     result.push_back(Pair("lockedInLoopCCaddr", lockInLoop1of2addr));
                     result.push_back(Pair("lockedInLoopAmount", ValueFromAmount(amountLockedInLoop)));
                 }
@@ -1312,7 +1338,7 @@ UniValue MarmaraInfo(CPubKey refpk, int32_t firstheight, int32_t lastheight, int
     UniValue result(UniValue::VOBJ), a(UniValue::VARR), b(UniValue::VARR); int32_t i, n, matches; int64_t totalclosed = 0, totalamount = 0; std::vector<uint256> issuances, closed; 
     CPubKey Marmarapk; 
     char mynormaladdr[64];
-    char lock1of2addr[64];
+    char activated1of2addr[64];
     char myccaddr[64];
 
     struct CCcontract_info *cp, C;
@@ -1326,10 +1352,10 @@ UniValue MarmaraInfo(CPubKey refpk, int32_t firstheight, int32_t lastheight, int
     result.push_back(Pair("normal", ValueFromAmount(CCaddress_balance(mynormaladdr, 0))));
 
     
-    GetCCaddress1of2(cp, lock1of2addr, Marmarapk, Mypubkey());
-    result.push_back(Pair("myCCactivated", lock1of2addr));
-    result.push_back(Pair("activated", ValueFromAmount(CCaddress_balance(lock1of2addr, 1))));
-    result.push_back(Pair("activated16", ValueFromAmount(AddMarmarainputs(false, mtx, pubkeys, lock1of2addr, 0, MARMARA_VINS))));
+    GetCCaddress1of2(cp, activated1of2addr, Marmarapk, Mypubkey());
+    result.push_back(Pair("myCCactivated", activated1of2addr));
+    result.push_back(Pair("activated", ValueFromAmount(CCaddress_balance(activated1of2addr, 1))));
+    result.push_back(Pair("activated16", ValueFromAmount(AddMarmarainputs(IsActivatedOpret, mtx, pubkeys, activated1of2addr, 0, MARMARA_VINS))));
 
     GetCCaddress(cp, myccaddr, Mypubkey());
     result.push_back(Pair("myCCaddress", myccaddr));

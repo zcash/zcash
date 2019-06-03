@@ -17,6 +17,7 @@
 #ifndef CC_MARMARA_H
 #define CC_MARMARA_H
 
+#include <limits>
 #include "CCinclude.h"
 #include "../komodo_cJSON.h"
 
@@ -25,6 +26,7 @@
 #define MARMARA_MAXLOCK (1440 * 24 * 30)
 #define MARMARA_VINS 16
 #define EVAL_MARMARA 0xef
+#define MARMARA_MAXHEIGHT INT_MAX
 
 extern uint8_t ASSETCHAINS_MARMARA;
 uint64_t komodo_block_prg(uint32_t nHeight);
@@ -40,6 +42,7 @@ UniValue MarmaraIssue(int64_t txfee,uint8_t funcid,CPubKey receiverpk,int64_t am
 UniValue MarmaraInfo(CPubKey refpk,int32_t firstheight,int32_t lastheight,int64_t minamount,int64_t maxamount,std::string currency);
 
 bool MarmaraValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn);
+
 
 // CCcustom
 UniValue MarmaraInfo();
