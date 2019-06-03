@@ -38,8 +38,9 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     int nHeight = pindexLast->nHeight + 1;
 
     // For the testnet fork, return a reduced difficulty at the fork block plus the next adjustment blocks
-    // to basically reset the difficulty
-    if (params.nPowAllowMinDifficultyBlocksAfterHeight != boost::none && 
+    // to basically reset the difficulty. This is strictly not needed because of the next rule that allows 
+    // min difficulty blocks after 6*2.5 mins on the testnet, but it is good practice for the mainnet launch.
+    if (params.minDifficultyAtYcashFork && 
             nHeight >= params.vUpgrades[Consensus::UPGRADE_YCASH].nActivationHeight && 
             nHeight <= params.vUpgrades[Consensus::UPGRADE_YCASH].nActivationHeight + params.nPowAveragingWindow) {
         return nProofOfWorkLimit;
