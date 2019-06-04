@@ -119,6 +119,9 @@ public:
 
     void SetDefaultPort(uint16_t port) { nDefaultPort = port; }
     void SetCheckpointData(CCheckpointData checkpointData);
+    void SetNValue(uint64_t n) { nEquihashN = n; }
+    void SetKValue(uint64_t k) { nEquihashK = k; }
+    void SetMiningRequiresPeers(bool flag) { fMiningRequiresPeers = flag; }
 
     //void setnonce(uint32_t nonce) { memcpy(&genesis.nNonce,&nonce,sizeof(nonce)); }
     //void settimestamp(uint32_t timestamp) { genesis.nTime = timestamp; }
