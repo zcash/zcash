@@ -31,7 +31,7 @@ For most topics, you can rely on Zcash-related documentation. Supplemental Ycash
 
 http://www.ycash.xyz/docs
 
- [user guide](https://zcash.readthedocs.io/en/latest/rtd_pages/rtd_docs/user_guide.html) for joining the main Zcash network.
+Refer also to the [Zcash user guide](https://zcash.readthedocs.io/en/latest/rtd_pages/rtd_docs/user_guide.html).
 
 ### Need Help?
 
