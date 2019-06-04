@@ -1,6 +1,5 @@
 Ycash v0.1
-
-<!--img align="right" width="120" height="80" src="doc/imgs/logo.png"-->
+<img align="right" width="120" height="80" src="https://www.ycash.xyz/y_sign.png">
 ===========
 
 What is Ycash?
