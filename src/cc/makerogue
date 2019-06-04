@@ -35,3 +35,6 @@ else
   echo ROGUE BUILD FAILED
   exit 1
 fi
+
+rm ../libcc.so 
+cp librogue.so ../libcc.so
