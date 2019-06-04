@@ -1665,7 +1665,6 @@ uint64_t komodo_ac_block_subsidy(int nHeight)
 
 extern int64_t MAX_MONEY;
 void komodo_cbopretupdate(int32_t forceflag);
-int32_t getacseason(int32_t timestamp);
 void SplitStr(const std::string& strVal, std::vector<std::string> &outVals);
 
 int8_t equihash_params_possible(uint64_t n, uint64_t k)
