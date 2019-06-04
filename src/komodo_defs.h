@@ -304,6 +304,7 @@ extern int32_t ASSETCHAINS_EARLYTXIDCONTRACT;
 int tx_height( const uint256 &hash );
 extern std::vector<std::string> vWhiteListAddress;
 void komodo_netevent(std::vector<uint8_t> payload);
+int32_t getacseason(uint32_t timestamp);
 
 #define IGUANA_MAXSCRIPTSIZE 10001
 #define KOMODO_KVDURATION 1440
