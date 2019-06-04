@@ -65,7 +65,6 @@ const char *Notaries_genesis[][2] =
 
 int32_t getkmdseason(int32_t height)
 {
-    int8_t season = 0;
     if ( height <= KMD_SEASON_HEIGHTS[0] )
         return(1);
     for (int32_t i = 1; i < NUM_KMD_SEASONS; i++)
@@ -76,9 +75,8 @@ int32_t getkmdseason(int32_t height)
     return(0);
 };
 
-int32_t getacseason(int32_t timestamp)
+int32_t getacseason(uint32_t timestamp)
 {
-    int8_t season = 0;
     if ( timestamp <= KMD_SEASON_TIMESTAMPS[0] )
         return(1);
     for (int32_t i = 1; i < NUM_KMD_SEASONS; i++)
