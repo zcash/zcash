@@ -3937,8 +3937,8 @@ UniValue z_getmigrationstatus(const UniValue& params, bool fHelp) {
         throw runtime_error(
             "z_getmigrationstatus\n"
             "Returns information about the status of the Sprout to Sapling migration.\n"
-            "A transaction is defined as finalized if it has at least ten confirmations.\n"
-            "Note: It is possible that manually created transactions involving this wallet\n"
+            "Note: A transaction is defined as finalized if it has at least ten confirmations.\n"
+            "Also, it is possible that manually created transactions involving this wallet\n"
             "will be included in the result.\n"
             "\nResult:\n"
             "{\n"
