@@ -6414,17 +6414,15 @@ UniValue marmara_settlement(const UniValue& params, bool fHelp, const CPubKey& m
 UniValue marmara_lock(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     UniValue result(UniValue::VOBJ); int64_t amount; int32_t height;
-    if ( fHelp || params.size() > 2 || params.size() == 0 )
+    if ( fHelp || params.size() != 1 )
     {
-        throw runtime_error("marmaralock amount unlockht\n");
+        throw runtime_error("marmaralock amount\n");
     }
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
     amount = atof(params[0].get_str().c_str()) * COIN + 0.00000000499999;
-    if ( params.size() == 2 )
-        height = atol(params[1].get_str().c_str());
-    else height = chainActive.LastTip()->GetHeight() + 1;
-    return(MarmaraLock(0,amount,height));
+
+    return(MarmaraLock(0,amount));
 }
 
 UniValue channelslist(const UniValue& params, bool fHelp, const CPubKey& mypk)

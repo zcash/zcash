@@ -36,7 +36,7 @@ int32_t MarmaraGetcreatetxid(uint256 &createtxid,uint256 txid);
 int32_t MarmaraGetbatontxid(std::vector<uint256> &creditloop,uint256 &batontxid,uint256 txid);
 UniValue MarmaraCreditloop(uint256 txid);
 UniValue MarmaraSettlement(int64_t txfee,uint256 batontxid);
-UniValue MarmaraLock(int64_t txfee,int64_t amount,int32_t height);
+UniValue MarmaraLock(int64_t txfee,int64_t amount);
 
 UniValue MarmaraPoolPayout(int64_t txfee,int32_t firstheight,double perc,char *jsonstr); // [[pk0, shares0], [pk1, shares1], ...]
 UniValue MarmaraReceive(int64_t txfee,CPubKey senderpk,int64_t amount,std::string currency,int32_t matures,uint256 batontxid,bool automaticflag);
