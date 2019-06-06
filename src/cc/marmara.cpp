@@ -680,7 +680,7 @@ UniValue MarmaraLock(int64_t txfee, int64_t amount)
         txfee = 10000;
 
     int32_t height = komodo_nextheight();
-    // as opret creation function MarmaraCoinbaseOpret creates opret only for even blocks - adjust this base height to even
+    // as opret creation function MarmaraCoinbaseOpret creates opret only for even blocks - adjust this base height to even value
     if ((height & 1) != 0)
          height++;
 
