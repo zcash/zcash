@@ -1533,9 +1533,9 @@ UniValue MarmaraInfo(CPubKey refpk, int32_t firstheight, int32_t lastheight, int
 
     
     GetCCaddress1of2(cp, activated1of2addr, Marmarapk, Mypubkey());
-    result.push_back(Pair("myCCactivated", activated1of2addr));
-    result.push_back(Pair("activated", ValueFromAmount(CCaddress_balance(activated1of2addr, 1))));
-    result.push_back(Pair("activated16", ValueFromAmount(AddMarmarainputs(IsActivatedOpret, mtx, pubkeys, activated1of2addr, 0, MARMARA_VINS))));
+    result.push_back(Pair("myCCActivatedAddress", activated1of2addr));
+    result.push_back(Pair("ccbalance", ValueFromAmount(CCaddress_balance(activated1of2addr, 1))));
+    result.push_back(Pair("activated", ValueFromAmount(AddMarmarainputs(IsActivatedOpret, mtx, pubkeys, activated1of2addr, 0, CC_MAXVINS)))); // changed MARMARA_VIN to CC_MAXVINS - we need actual amount
 
     GetCCaddress(cp, myccaddr, Mypubkey());
     result.push_back(Pair("myCCaddress", myccaddr));
