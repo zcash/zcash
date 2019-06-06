@@ -26,7 +26,7 @@
 #define MARMARA_MAXLOCK (1440 * 24 * 30)
 #define MARMARA_VINS 16
 #define EVAL_MARMARA 0xef
-#define MARMARA_MAXHEIGHT INT_MAX
+#define MARMARA_V2LOCKHEIGHT (INT_MAX - 1) // lock to even
 
 #define MARMARA_CURRENCY "MARMARA"
 
