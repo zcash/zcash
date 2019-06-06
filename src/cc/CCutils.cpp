@@ -959,7 +959,7 @@ bool CClib_Dispatch(const CC *cond,Eval *eval,std::vector<uint8_t> paramsNull,co
 }
 
 
-// add test vintx conditions for making CCSig in FinalizeCCTx
+// add probe vintx conditions for making CCSig in FinalizeCCTx
 void CCAddVintxCond(struct CCcontract_info *cp, CC *cond, uint8_t *priv)
 {
     struct CCVintxProbe ccprobe;

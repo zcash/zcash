@@ -28,6 +28,8 @@
 #define EVAL_MARMARA 0xef
 #define MARMARA_MAXHEIGHT INT_MAX
 
+#define MARMARA_CURRENCY "MARMARA"
+
 extern uint8_t ASSETCHAINS_MARMARA;
 uint64_t komodo_block_prg(uint32_t nHeight);
 int32_t MarmaraGetcreatetxid(uint256 &createtxid,uint256 txid);
