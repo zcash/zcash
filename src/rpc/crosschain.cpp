@@ -300,6 +300,9 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp)
     uint256 tokenid = zeroid;
     if( params.size() == 4 )
         tokenid = Parseuint256(params[3].get_str().c_str());
+        
+    if ( tokenid != zeroid && strcmp("LABS", targetSymbol.c_str()))
+        throw JSONRPCError(RPC_TYPE_ERROR, "There is no tokens support on LABS.");
 
     CPubKey myPubKey = Mypubkey();
     struct CCcontract_info *cpTokens, C;
@@ -312,8 +315,8 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp)
 
     if (tokenid.IsNull()) {        // coins
         int64_t inputs;
-        if ((inputs = AddNormalinputs(mtx, myPubKey, burnAmount + txfee, 60)) == 0) {
-            throw runtime_error("Cannot find normal inputs\n");
+        if ((inputs = AddNormalinputs(mtx, myPubKey, burnAmount + txfee, 10)) == 0) {
+            throw runtime_error("not enough funds, or need to merge utxos first\n");
         }
 
         CTxDestination txdest = DecodeDestination(dest_addr_or_pubkey.c_str());
@@ -1145,36 +1148,43 @@ UniValue getNotarisationsForBlock(const UniValue& params, bool fHelp)
     //out.push_back(make_pair("blocktime",(int)));
     UniValue labs(UniValue::VARR);
     UniValue kmd(UniValue::VARR);
-    // Gets KMD notaries on KMD... but LABS notaries on labs chains needs to be fixed so LABS are identified on KMD.
-    int8_t numNN = 0; uint8_t notarypubkeys[64][33] = {0};
+    int8_t numNN = 0, numSN = 0; uint8_t notarypubkeys[64][33] = {0}; uint8_t LABSpubkeys[64][33] = {0};
     numNN = komodo_notaries(notarypubkeys, height, chainActive[height]->nTime);
-    
+    numSN = numStakedNotaries(LABSpubkeys,STAKED_era(chainActive[height]->nTime));
+
     BOOST_FOREACH(const Notarisation& n, nibs)
     {
         UniValue item(UniValue::VOBJ); UniValue notaryarr(UniValue::VARR); std::vector<int8_t> NotarisationNotaries;
-        if ( is_STAKED(n.second.symbol) != 0 )
-            continue; // for now just skip this... need to fetch diff pubkeys for these chains. labs.push_back(item);
         uint256 hash; CTransaction tx;
         if ( GetTransaction(n.first,tx,hash,false) )
         {
-            if ( !GetNotarisationNotaries(notarypubkeys, numNN, tx.vin, NotarisationNotaries) )
-                continue;
-            if ( NotarisationNotaries.size() < numNN/5 )
-                continue;
+            if ( is_STAKED(n.second.symbol) != 0 )
+            {
+                if ( !GetNotarisationNotaries(LABSpubkeys, numSN, tx.vin, NotarisationNotaries) )
+                    continue;
+            }
+            else 
+            {
+                if ( !GetNotarisationNotaries(notarypubkeys, numNN, tx.vin, NotarisationNotaries) )
+                    continue;
+            }
         }
         item.push_back(make_pair("txid", n.first.GetHex()));
         item.push_back(make_pair("chain", n.second.symbol));
         item.push_back(make_pair("height", (int)n.second.height));
         item.push_back(make_pair("blockhash", n.second.blockHash.GetHex()));
-        item.push_back(make_pair("KMD_height", height)); // for when timstamp input is used.
+        //item.push_back(make_pair("KMD_height", height)); // for when timstamp input is used.
         
         for ( auto notary : NotarisationNotaries )
             notaryarr.push_back(notary);
         item.push_back(make_pair("notaries",notaryarr));
-        kmd.push_back(item);
+        if ( is_STAKED(n.second.symbol) != 0 )
+            labs.push_back(item);
+        else 
+            kmd.push_back(item);
     }
     out.push_back(make_pair("KMD", kmd));
-    //out.push_back(make_pair("LABS", labs));
+    out.push_back(make_pair("LABS", labs));
     return out;
 }
 
@@ -1308,7 +1318,7 @@ UniValue getimports(const UniValue& params, bool fHelp)
             UniValue objTx(UniValue::VOBJ);
             objTx.push_back(Pair("txid",tx.GetHash().ToString()));
             ImportProof proof; CTransaction burnTx; std::vector<CTxOut> payouts; CTxDestination importaddress;
-            TotalImported += tx.vout[1].nValue;
+            TotalImported += tx.vout[0].nValue; // were vouts swapped? 
             objTx.push_back(Pair("amount", ValueFromAmount(tx.vout[1].nValue)));
             if (ExtractDestination(tx.vout[1].scriptPubKey, importaddress))
             {
@@ -1410,6 +1420,7 @@ UniValue getwalletburntransactions(const UniValue& params, bool fHelp)
                 UnmarshalBurnTx(*pwtx, targetSymbol, &targetCCid, payoutsHash, rawproof)) {
                 UniValue entry(UniValue::VOBJ);
                 entry.push_back(Pair("txid", pwtx->GetHash().GetHex()));
+
                 if (vopret.begin()[0] == EVAL_TOKENS) {
                     // get burned token value
                     std::vector<std::pair<uint8_t, vscript_t>>  oprets;
@@ -1450,6 +1461,12 @@ UniValue getwalletburntransactions(const UniValue& params, bool fHelp)
                 }
                 else 
                     entry.push_back(Pair("burnedAmount", ValueFromAmount(pwtx->vout.back().nValue)));   // coins
+
+                // check for corrupted strings (look for non-printable chars) from some older versions 
+                // which caused "couldn't parse reply from server" error on client:
+                if (std::find_if(targetSymbol.begin(), targetSymbol.end(), [](int c) {return !std::isprint(c);}) != targetSymbol.end()) 
+                    targetSymbol = "<value corrupted>";
+                
                 entry.push_back(Pair("targetSymbol", targetSymbol));
                 entry.push_back(Pair("targetCCid", std::to_string(targetCCid)));
                 if (mytxid_inmempool(pwtx->GetHash()))

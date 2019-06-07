@@ -82,12 +82,12 @@ UniValue custom_func1(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 bool custom_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx)
 {
     char expectedaddress[64]; CPubKey pk;
-    CScript opret; int32_t numvout;
+    CScript opret; int32_t numvout = 0;
     if ( has_opret(tx, EVAL_CUSTOM) == 0 )
     {
         std::vector<std::vector<unsigned char>> vParams = std::vector<std::vector<unsigned char>>();
-        opret = getCCopret(tx.vout[0].scriptPubKey);
-        numvout = 1;
+        if ( getCCopret(tx.vout[0].scriptPubKey,opret) )
+            numvout = 1;
     }
     else 
     {

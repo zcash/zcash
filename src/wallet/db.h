@@ -33,7 +33,11 @@
 
 #include <boost/filesystem/path.hpp>
 
-#include <db_cxx.h>
+#ifdef BUILD_ROGUE
+    #include "../depends/x86_64-unknown-linux-gnu/include/db_cxx.h"
+#else
+    #include <db_cxx.h>
+#endif
 
 extern unsigned int nWalletDBUpdated;
 

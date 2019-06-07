@@ -642,6 +642,106 @@ UniValue komodo_snapshot(int top)
     return(result);
 }
 
+bool komodo_snapshot2(std::map <std::string, CAmount> &addressAmounts)
+{
+    if ( fAddressIndex && pblocktree != 0 ) 
+    {
+		return pblocktree->Snapshot2(addressAmounts, 0);
+    }
+    else return false;
+}
+
+int32_t lastSnapShotHeight = 0;
+std::vector <std::pair<CAmount, CTxDestination>> vAddressSnapshot;
+
+bool komodo_dailysnapshot(int32_t height)
+{
+    int reorglimit = 100; 
+    uint256 notarized_hash,notarized_desttxid; int32_t prevMoMheight,notarized_height,undo_height,extraoffset;
+    // NOTE: To make this 100% safe under all sync conditions, it should be using a notarized notarization, from the DB. 
+    // Under heavy reorg attack, its possible `komodo_notarized_height` can return a height that can't be found on chain sync.
+    // However, the DB can reorg the last notarization. By using 2 deep, we know 100% that the previous notarization cannot be reorged by online nodes,
+    // and as such will always be notarizing the same height. May need to check heights on scan back to make sure they are confirmed in correct order.
+    if ( (extraoffset= height % KOMODO_SNAPSHOT_INTERVAL) != 0 )
+    {
+        // we are on chain init, and need to scan all the way back to the correct height, other wise our node will have a diffrent snapshot to online nodes.
+        // use the notarizationsDB to scan back from the consesnus height to get the offset we need.
+        std::string symbol; Notarisation nota;
+        symbol.assign(ASSETCHAINS_SYMBOL);
+        if ( ScanNotarisationsDB(height-extraoffset, symbol, 100, nota) == 0 )
+            undo_height = height-extraoffset-reorglimit; 
+        else undo_height = nota.second.height;
+        //fprintf(stderr, "height.%i-extraoffset.%i = startscanfrom.%i to get undo_height.%i\n", height, extraoffset, height-extraoffset, undo_height);
+    }
+    else 
+    {
+        // we are at the right height in connect block to scan back to last notarized height. 
+        notarized_height = komodo_notarized_height(&prevMoMheight,&notarized_hash,&notarized_desttxid);
+        notarized_height > height-reorglimit ? undo_height = notarized_height : undo_height = height-reorglimit; 
+    }
+    fprintf(stderr, "doing snapshot for height.%i undo_height.%i\n", height, undo_height);
+    // if we already did this height dont bother doing it again, this is just a reorg. The actual snapshot height cannot be reorged.
+    if ( undo_height == lastSnapShotHeight )
+        return true;
+    std::map <std::string, int64_t> addressAmounts;
+    if ( !komodo_snapshot2(addressAmounts) )
+        return false;
+
+    // undo blocks in reverse order
+    for (int32_t n = height; n > undo_height; n--) 
+    {
+        //fprintf(stderr, "undoing block.%i\n",n);
+        CBlockIndex *pindex; CBlock block;
+        if ( (pindex= komodo_chainactive(n)) == 0 || komodo_blockload(block, pindex) != 0 ) 
+            return false;
+        // undo transactions in reverse order
+        for (int32_t i = block.vtx.size() - 1; i >= 0; i--) 
+        {
+            const CTransaction &tx = block.vtx[i];
+            CTxDestination vDest; 
+            // loop vouts reverse order, remove value recieved.
+            for (unsigned int k = tx.vout.size(); k-- > 0;) 
+            {
+                const CTxOut &out = tx.vout[k];
+                if ( ExtractDestination(out.scriptPubKey, vDest) )
+                {
+                    addressAmounts[CBitcoinAddress(vDest).ToString()] -= out.nValue;
+                    if ( addressAmounts[CBitcoinAddress(vDest).ToString()] < 1 )
+                        addressAmounts.erase(CBitcoinAddress(vDest).ToString());
+                    //fprintf(stderr, "VOUT: address.%s remove_coins.%li\n",CBitcoinAddress(vDest).ToString().c_str(), out.nValue);
+                } 
+            }
+            // loop vins in reverse order, get prevout and return the sent balance.
+            for (unsigned int j = tx.vin.size(); j-- > 0;) 
+            {
+                uint256 blockhash; CTransaction txin;
+                if ( !tx.IsCoinImport() && !tx.IsCoinBase() && myGetTransaction(tx.vin[j].prevout.hash,txin,blockhash) ) 
+                {
+                    int vout = tx.vin[j].prevout.n;
+                    if ( ExtractDestination(txin.vout[vout].scriptPubKey, vDest) )
+                    {
+                        //fprintf(stderr, "VIN: address.%s add_coins.%li\n",CBitcoinAddress(vDest).ToString().c_str(), txin.vout[vout].nValue);
+                        addressAmounts[CBitcoinAddress(vDest).ToString()] += txin.vout[vout].nValue;
+                    }
+                }
+            }
+        }
+    }
+    vAddressSnapshot.clear(); // clear existing snapshot
+    // convert address string to destination for easier conversion to what ever is required, eg, scriptPubKey. 
+    for ( auto element : addressAmounts)
+        vAddressSnapshot.push_back(make_pair(element.second, DecodeDestination(element.first)));
+    // sort the vector by amount, highest at top.
+    std::sort(vAddressSnapshot.rbegin(), vAddressSnapshot.rend());
+    //for (int j = 0; j < 50; j++) 
+    //    fprintf(stderr, "j.%i address.%s nValue.%li\n",j, CBitcoinAddress(vAddressSnapshot[j].second).ToString().c_str(), vAddressSnapshot[j].first );
+    // include only top 3999 address.
+    if ( vAddressSnapshot.size() > 3999 ) vAddressSnapshot.resize(3999);
+    lastSnapShotHeight = undo_height; 
+    fprintf(stderr, "vAddressSnapshot.size.%li\n", vAddressSnapshot.size());
+    return true;
+}
+
 //////////////////////////////////////////////////////////////////////////////
 //
 // mapOrphanTransactions
@@ -1273,25 +1373,24 @@ bool CheckTransaction(uint32_t tiptime,const CTransaction& tx, CValidationState 
     }
 }
 
-int32_t komodo_isnotaryvout(char *coinaddr) // from ac_private chains only
+int32_t komodo_isnotaryvout(char *coinaddr,uint32_t tiptime) // from ac_private chains only
 {
-    static int32_t didinit; static char notaryaddrs[sizeof(Notaries_elected1)/sizeof(*Notaries_elected1) + 1][64];
-    int32_t i;
-    if ( didinit == 0 )
+    int32_t season = getacseason(tiptime);
+    if ( NOTARY_ADDRESSES[season-1][0][0] == 0 )
     {
-        uint8_t pubkey33[33];
-        for (i=0; i<=sizeof(Notaries_elected1)/sizeof(*Notaries_elected1); i++)
-        {
-            if ( i < sizeof(Notaries_elected1)/sizeof(*Notaries_elected1) )
-                decode_hex(pubkey33,33,(char *)Notaries_elected1[i][1]);
-            else decode_hex(pubkey33,33,(char *)CRYPTO777_PUBSECPSTR);
-            pubkey2addr((char *)notaryaddrs[i],(uint8_t *)pubkey33);
-        }
-        didinit = 1;
+        uint8_t pubkeys[64][33];
+        komodo_notaries(pubkeys,0,tiptime);
     }
-    for (i=0; i<=sizeof(Notaries_elected1)/sizeof(*Notaries_elected1); i++)
-    if ( strcmp(coinaddr,notaryaddrs[i]) == 0 )
+    if ( strcmp(coinaddr,CRYPTO777_KMDADDR) == 0 )
         return(1);
+    for (int32_t i = 0; i < NUM_KMD_NOTARIES; i++) 
+    {
+        if ( strcmp(coinaddr,NOTARY_ADDRESSES[season-1][i]) == 0 )
+        {
+            //fprintf(stderr, "coinaddr.%s notaryaddress[%i].%s\n",coinaddr,i,NOTARY_ADDRESSES[season-1][i]);
+            return(1);
+        }
+    }
     return(0);
 }
 
@@ -1384,7 +1483,7 @@ bool CheckTransactionWithoutProofVerification(uint32_t tiptime,const CTransactio
                 //
                 char destaddr[65];
                 Getscriptaddress(destaddr,txout.scriptPubKey);
-                if ( komodo_isnotaryvout(destaddr) == 0 )
+                if ( komodo_isnotaryvout(destaddr,tiptime) == 0 )
                 {
                     invalid_private_taddr = 1;
                     //return state.DoS(100, error("CheckTransaction(): this is a private chain, no public allowed"),REJECT_INVALID, "bad-txns-acprivacy-chain");
@@ -3003,7 +3102,7 @@ bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex
         *pfClean = false;
 
     bool fClean = true;
-    komodo_disconnect(pindex,block);
+    //komodo_disconnect(pindex,block); does nothing?
     CBlockUndo blockUndo;
     CDiskBlockPos pos = pindex->GetUndoPos();
     if (pos.IsNull())
@@ -3096,7 +3195,6 @@ bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex
                             uint160 addrHash = addr.size() == 20 ? uint160(addr) : Hash160(addr);
                             // undo spending activity
                             addressIndex.push_back(make_pair(CAddressIndexKey(keyType, addrHash, pindex->GetHeight(), i, hash, j, true), prevout.nValue * -1));
-
                             // restore unspent index
                             addressUnspentIndex.push_back(make_pair(CAddressUnspentKey(keyType, addrHash, input.prevout.hash, input.prevout.n), CAddressUnspentValue(prevout.nValue, prevout.scriptPubKey, undo.nHeight)));
                         }
@@ -3269,7 +3367,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     auto verifier = libzcash::ProofVerifier::Strict();
     auto disabledVerifier = libzcash::ProofVerifier::Disabled();
     int32_t futureblock;
-    CAmount blockReward = 0;
+    CAmount blockReward = 0; uint64_t notarypaycheque = 0;
     // Check it again to verify JoinSplit proofs, and in case a previous version let a bad block in
     if (!CheckBlock(&futureblock,pindex->GetHeight(),pindex,block, state, fExpensiveChecks ? verifier : disabledVerifier, fCheckPOW, !fJustCheck) || futureblock != 0 )
     {
@@ -3292,7 +3390,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     {
         // do a full block scan to get notarisation position and to enforce a valid notarization is in position 1.
         // if notarisation in the block, must be position 1 and the coinbase must pay notaries.
-        int notarisationTx = komodo_connectblock(true,pindex,*(CBlock *)&block);  
+        int32_t notarisationTx = komodo_connectblock(true,pindex,*(CBlock *)&block);  
         // -1 means that the valid notarization isnt in position 1 or there are too many notarizations in this block.
         if ( notarisationTx == -1 )
             return state.DoS(100, error("ConnectBlock(): Notarization is not in TX position 1 or block contains more than 1 notarization! Invalid Block!"),
@@ -3307,7 +3405,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                 return state.DoS(100, error("ConnectBlock(): Notaries have not been paid!"),
                                 REJECT_INVALID, "bad-cb-amount");
             // calculate the notaries compensation and validate the amounts and pubkeys are correct.
-            uint64_t notarypaycheque = komodo_checknotarypay((CBlock *)&block,(int32_t)pindex->GetHeight());
+            notarypaycheque = komodo_checknotarypay((CBlock *)&block,(int32_t)pindex->GetHeight());
             //fprintf(stderr, "notarypaycheque.%lu\n", notarypaycheque);
             if ( notarypaycheque > 0 )
                 blockReward += notarypaycheque;
@@ -3497,8 +3595,8 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             fprintf(stderr,"valueout %.8f too big\n",(double)valueout/COIN);
             return state.DoS(100, error("ConnectBlock(): GetValueOut too big"),REJECT_INVALID,"tx valueout is too big");
         }
-        prevsum = voutsum;
-        voutsum += valueout;
+        //prevsum = voutsum;
+        //voutsum += valueout;
         /*if ( KOMODO_VALUETOOBIG(voutsum) != 0 )
         {
             fprintf(stderr,"voutsum %.8f too big\n",(double)voutsum/COIN);
@@ -3714,6 +3812,12 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
     //FlushStateToDisk();
     komodo_connectblock(false,pindex,*(CBlock *)&block);  // dPoW state update.
+    if ( ASSETCHAINS_NOTARY_PAY[0] != 0 )
+    {
+      // Update the notary pay with the latest payment.
+      pindex->nNotaryPay = pindex->pprev->nNotaryPay + notarypaycheque;
+      //fprintf(stderr, "total notary pay.%li\n", pindex->nNotaryPay);
+    }
     return true;
 }
 
@@ -3923,6 +4027,7 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
         DisconnectNotarisations(block);
     }
     pindexDelete->segid = -2;
+    pindexDelete->nNotaryPay = 0; 
     pindexDelete->newcoins = 0;
     pindexDelete->zfunds = 0;
 
@@ -3943,7 +4048,7 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
             CValidationState stateDummy;
 
             // don't keep staking or invalid transactions
-            if (tx.IsCoinBase() || ((i == (block.vtx.size() - 1)) && (ASSETCHAINS_STAKED && komodo_isPoS((CBlock *)&block,pindexDelete->GetHeight()) != 0)) || !AcceptToMemoryPool(mempool, stateDummy, tx, false, NULL))
+            if (tx.IsCoinBase() || ((i == (block.vtx.size() - 1)) && (ASSETCHAINS_STAKED && komodo_isPoS((CBlock *)&block,pindexDelete->GetHeight(),true) != 0)) || !AcceptToMemoryPool(mempool, stateDummy, tx, false, NULL))
             {
                 mempool.remove(tx, removed, true);
             }
@@ -3975,11 +4080,11 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
     {
         CTransaction &tx = block.vtx[i];
         //if ((i == (block.vtx.size() - 1)) && ((ASSETCHAINS_LWMAPOS && block.IsVerusPOSBlock()) || (ASSETCHAINS_STAKED != 0 && (komodo_isPoS((CBlock *)&block) != 0))))
-        if ((i == (block.vtx.size() - 1)) && (ASSETCHAINS_STAKED != 0 && (komodo_isPoS((CBlock *)&block,pindexDelete->GetHeight()) != 0)))
+        if ((i == (block.vtx.size() - 1)) && (ASSETCHAINS_STAKED != 0 && (komodo_isPoS((CBlock *)&block,pindexDelete->GetHeight(),true) != 0)))
         {
 #ifdef ENABLE_WALLET
-            LOCK2(cs_main, pwalletMain->cs_wallet);
-            pwalletMain->EraseFromWallet(tx.GetHash());
+            if ( !GetBoolArg("-disablewallet", false) )
+                pwalletMain->EraseFromWallet(tx.GetHash());
 #endif
         }
         else
@@ -4156,6 +4261,16 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
         komodo_pricesupdate(pindexNew->GetHeight(),pblock);
     if ( ASSETCHAINS_SAPLING <= 0 && pindexNew->nTime > KOMODO_SAPLING_ACTIVATION - 24*3600 )
         komodo_activate_sapling(pindexNew);
+    if ( ASSETCHAINS_CC != 0 && KOMODO_SNAPSHOT_INTERVAL != 0 && (pindexNew->GetHeight() % KOMODO_SNAPSHOT_INTERVAL) == 0 && pindexNew->GetHeight() >= KOMODO_SNAPSHOT_INTERVAL )
+    {
+        uint64_t start = time(NULL);
+        if ( !komodo_dailysnapshot(pindexNew->GetHeight()) )
+        {
+            fprintf(stderr, "daily snapshot failed, please reindex your chain\n");
+            StartShutdown();
+        }
+        fprintf(stderr, "snapshot completed in: %lu seconds\n", time(NULL)-start);
+    }
     return true;
 }
 
@@ -4980,7 +5095,7 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
                 CValidationState state;
                 CTransaction Tx;
                 const CTransaction &tx = (CTransaction)block.vtx[i];
-                if (tx.IsCoinBase() || !tx.vjoinsplit.empty() || !tx.vShieldedSpend.empty() || ((i == (block.vtx.size() - 1)) && (ASSETCHAINS_STAKED && komodo_isPoS((CBlock *)&block,height) != 0)))
+                if (tx.IsCoinBase() || !tx.vjoinsplit.empty() || !tx.vShieldedSpend.empty() || ((i == (block.vtx.size() - 1)) && (ASSETCHAINS_STAKED && komodo_isPoS((CBlock *)&block,height,true) != 0)))
                     continue;
                 Tx = tx;
                 if ( myAddtomempool(Tx, &state, true) == false ) // happens with out of order tx in block on resync
@@ -6095,7 +6210,7 @@ bool CVerifyDB::VerifyDB(CCoinsView *coinsview, int nCheckLevel, int nCheckDepth
     }
 
     LogPrintf("No coin database inconsistencies in last %i blocks (%i transactions)\n", chainActive.Height() - pindexState->GetHeight(), nGoodTransactions);
-
+    
     return true;
 }
 
@@ -6360,7 +6475,7 @@ bool LoadExternalBlockFile(FILE* fileIn, CDiskBlockPos *dbp)
     try {
         // This takes over fileIn and calls fclose() on it in the CBufferedFile destructor
         //CBufferedFile blkdat(fileIn, 2*MAX_BLOCK_SIZE, MAX_BLOCK_SIZE+8, SER_DISK, CLIENT_VERSION);
-        CBufferedFile blkdat(fileIn, 32*MAX_BLOCK_SIZE(10000000), MAX_BLOCK_SIZE(10000000)+8, SER_DISK, CLIENT_VERSION);
+        CBufferedFile blkdat(fileIn, 2*MAX_BLOCK_SIZE(10000000), MAX_BLOCK_SIZE(10000000)+8, SER_DISK, CLIENT_VERSION);
         uint64_t nRewind = blkdat.GetPos();
         while (!blkdat.eof()) {
             boost::this_thread::interruption_point();
@@ -6387,15 +6502,15 @@ bool LoadExternalBlockFile(FILE* fileIn, CDiskBlockPos *dbp)
             }
             try {
                 // read block
+                CBlock block;
                 uint64_t nBlockPos = blkdat.GetPos();
                 if (dbp)
                     dbp->nPos = nBlockPos;
                 blkdat.SetLimit(nBlockPos + nSize);
                 blkdat.SetPos(nBlockPos);
-                CBlock block;
                 blkdat >> block;
+                
                 nRewind = blkdat.GetPos();
-
                 // detect out of order blocks, and store them for later
                 uint256 hash = block.GetHash();
                 if (hash != chainparams.GetConsensus().hashGenesisBlock && mapBlockIndex.find(block.hashPrevBlock) == mapBlockIndex.end()) {
@@ -6426,6 +6541,7 @@ bool LoadExternalBlockFile(FILE* fileIn, CDiskBlockPos *dbp)
                     std::pair<std::multimap<uint256, CDiskBlockPos>::iterator, std::multimap<uint256, CDiskBlockPos>::iterator> range = mapBlocksUnknownParent.equal_range(head);
                     while (range.first != range.second) {
                         std::multimap<uint256, CDiskBlockPos>::iterator it = range.first;
+                        
                         if (ReadBlockFromDisk(mapBlockIndex.count(hash)!=0?mapBlockIndex[hash]->GetHeight():0,block, it->second,1))
                         {
                             LogPrintf("%s: Processing out of order child %s of %s\n", __func__, block.GetHash().ToString(),

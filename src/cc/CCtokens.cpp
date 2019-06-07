@@ -937,6 +937,12 @@ UniValue TokenInfo(uint256 tokenid)
 		result.push_back(Pair("error", "cant find tokenid"));
 		return(result);
 	}
+    if (hashBlock.IsNull()) {
+        result.push_back(Pair("result", "error"));
+        result.push_back(Pair("error", "the transaction is still in mempool"));
+        return(result);
+    }
+
 	if (tokenbaseTx.vout.size() > 0 && DecodeTokenCreateOpRet(tokenbaseTx.vout[tokenbaseTx.vout.size() - 1].scriptPubKey, origpubkey, name, description, oprets) != 'c')
 	{
         LOGSTREAM((char *)"cctokens", CCLOG_INFO, stream << "TokenInfo() passed tokenid isnt token creation txid" << std::endl);

@@ -63,25 +63,28 @@ int32_t has_opret(const CTransaction &tx, uint8_t evalcode)
     int i = 0;
     for ( auto vout : tx.vout )
     {
-        if ( vout.scriptPubKey[0] == OP_RETURN && vout.scriptPubKey[1] == evalcode )
+        //fprintf(stderr, "[txid.%s] 1.%i 2.%i 3.%i 4.%i\n",tx.GetHash().GetHex().c_str(),  vout.scriptPubKey[0], vout.scriptPubKey[1], vout.scriptPubKey[2], vout.scriptPubKey[3]);
+        if ( vout.scriptPubKey.size() > 3 && vout.scriptPubKey[0] == OP_RETURN && vout.scriptPubKey[2] == evalcode )
             return i;
         i++;
     }
     return 0;
 }
 
-CScript getCCopret(const CScript &scriptPubKey)
+bool getCCopret(const CScript &scriptPubKey, CScript &opret)
 {
     std::vector<std::vector<unsigned char>> vParams = std::vector<std::vector<unsigned char>>();
-    CScript dummy; CScript opret;
-    if ( scriptPubKey.IsPayToCryptoCondition(&dummy, vParams) )
+    CScript dummy; bool ret = false;
+    if ( scriptPubKey.IsPayToCryptoCondition(&dummy, vParams) != 0 )
     {
-        //opret << E_MARSHAL(ss << vParams[0]);
-        opret = CScript(vParams[0].begin()+6, vParams[0].end());
+        ret = true;
+        if ( vParams.size() == 1)
+        {
+            opret = CScript(vParams[0].begin()+6, vParams[0].end());
+            //fprintf(stderr, "vparams.%s\n", HexStr(vParams[0].begin(), vParams[0].end()).c_str());
+        }
     }
-    //fprintf(stderr, "params_size.%li parmas_hexstr.%s\n", vParams.size(), HexStr(vParams[0].begin(),vParams[0].end()).c_str());
-    //opret = CScript(vParams[0].begin(), vParams[0].end());
-    return opret;
+    return ret;
 }
 
 bool makeCCopret(CScript &opret, std::vector<std::vector<unsigned char>> &vData)
@@ -147,7 +150,7 @@ bool IsCCInput(CScript const& scriptSig)
     return true;
 }
 
-bool CheckTxFee(const CTransaction &tx, uint64_t txfee, uint32_t height, uint64_t blocktime)
+bool CheckTxFee(const CTransaction &tx, uint64_t txfee, uint32_t height, uint64_t blocktime, int64_t &actualtxfee)
 {
     LOCK(mempool.cs);
     CCoinsView dummy;
@@ -156,9 +159,10 @@ bool CheckTxFee(const CTransaction &tx, uint64_t txfee, uint32_t height, uint64_
     CCoinsViewMemPool viewMemPool(pcoinsTip, mempool);
     view.SetBackend(viewMemPool);
     valuein = view.GetValueIn(height,&interest,tx,blocktime);
-    if ( valuein-tx.GetValueOut() > txfee )
+    actualtxfee = valuein-tx.GetValueOut();
+    if ( actualtxfee > txfee )
     {
-        //fprintf(stderr, "txfee.%li vs txfee.%li\n", valuein-tx.GetValueOut(), txfee);
+        //fprintf(stderr, "actualtxfee.%li vs txfee.%li\n", actualtxfee, txfee);
         return false;
     }
     return true;

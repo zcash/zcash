@@ -2017,8 +2017,10 @@ int32_t get_stockprices(uint32_t now,uint32_t *prices,std::vector<std::string> s
 {
     char url[32768],*symbol,*timestr; cJSON *json,*obj; int32_t i,n=0,retval=-1; uint32_t uprice,timestamp;
     sprintf(url,"https://api.iextrading.com/1.0/tops/last?symbols=%s",GetArg("-ac_stocks","").c_str());
+    fprintf(stderr,"url.(%s)\n",url);
     if ( (json= get_urljson(url)) != 0 ) //if ( (json= send_curl(url,(char *)"iex")) != 0 ) //
     {
+        fprintf(stderr,"stocks.(%s)\n",jprint(json,0));
         if ( (n= cJSON_GetArraySize(json)) > 0 )
         {
             retval = n;
@@ -2400,8 +2402,8 @@ char *komodo_pricename(char *name,int32_t ind)
     }
     return(0);
 }
-
-int32_t komodo_priceind(char *symbol)
+// finds index for its symbol name
+int32_t komodo_priceind(const char *symbol)
 {
     char name[65]; int32_t i,n = (int32_t)(komodo_cbopretsize(ASSETCHAINS_CBOPRET) / sizeof(uint32_t));
     for (i=1; i<n; i++)
@@ -2412,7 +2414,7 @@ int32_t komodo_priceind(char *symbol)
     }
     return(-1);
 }
-
+// returns price value which is in a 10% interval for more than 50% points for the preceding 24 hours
 int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int32_t rawskip,uint32_t *nonzprices,int32_t smoothwidth)
 {
     int32_t i,j,k,n,iter,correlation,maxcorrelation=0; int64_t firstprice,price,sum,den,mult,refprice,lowprice,highprice;
@@ -2595,7 +2597,7 @@ static int cmp_llu(const void *a, const void*b)
     else return(1);
 }
 
-static int64_t sort64(int64_t *l, int32_t llen)
+static void sort64(int64_t *l, int32_t llen)
 {
     qsort(l,llen,sizeof(uint64_t),cmp_llu);
 }
@@ -2609,7 +2611,7 @@ static int revcmp_llu(const void *a, const void*b)
     else return(1);
 }
 
-static int64_t revsort64(int64_t *l, int32_t llen)
+static void revsort64(int64_t *l, int32_t llen)
 {
     qsort(l,llen,sizeof(uint64_t),revcmp_llu);
 }
@@ -2801,4 +2803,3 @@ int32_t komodo_priceget(int64_t *buf64,int32_t ind,int32_t height,int32_t numblo
     pthread_mutex_unlock(&pricemutex);
     return(retval);
 }
-
