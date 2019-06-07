@@ -1230,7 +1230,7 @@ static int32_t RedistributeLockedRemainder(CMutableTransaction &mtx, struct CCco
 
 
 // issue or transfer coins to the next receiver
-UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t amount, std::string currency, int32_t matures, uint256 approvaltxid, uint256 batontxid)
+UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t amount, std::string currency, int32_t matures, uint256 requesttxid, uint256 batontxid)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     UniValue result(UniValue::VOBJ); 
@@ -1249,8 +1249,10 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
     CPubKey mypk = pubkey2pk(Mypubkey());
     const char *errorstr = NULL;
 
-    if (MarmaraGetcreatetxid(createtxid, approvaltxid) < 0)
-        errorstr = "cant get createtxid from approvaltxid";
+    if (MarmaraGetcreatetxid(createtxid, requesttxid) < 0)
+        errorstr = "cant get createtxid from requesttxid";
+    if (requesttxid.IsNull())
+        errorstr = "requesttxid cant be empty";
     else if (currency != MARMARA_CURRENCY)
         errorstr = "for now, only MARMARA loops are supported";
     else if (amount <= txfee)
@@ -1258,27 +1260,30 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
     else if (matures <= chainActive.LastTip()->GetHeight())
         errorstr = "it must mature in the future";
 
-    // check requested cheque params:
-    CTransaction looptx;
-    uint256 hashBlock;
-    uint256 emptytxid;
-    int32_t opretmatures;
-    std::string opretcurrency;
-    CPubKey opretsenderpk;
-    int64_t opretamount;
+    if (errorstr == NULL)
+    {
+        // check requested cheque params:
+        CTransaction requestx;
+        uint256 hashBlock;
+        uint256 emptytxid;
+        int32_t opretmatures;
+        std::string opretcurrency;
+        CPubKey opretsenderpk;
+        int64_t opretamount;
 
-    // TODO: do we need here check tx for mempool?
-    if (!GetTransaction(batontxid.IsNull() ? createtxid : batontxid, looptx, hashBlock, true) || looptx.vout.size() < 1 || 
-        MarmaraDecodeLoopOpret(looptx.vout.back().scriptPubKey, emptytxid, opretsenderpk, opretamount, opretmatures, opretcurrency) == 0)
-        errorstr = "cant decode looptx opreturn data";
-    else if (mypk != opretsenderpk)
-        errorstr = "mypk does not match requested sender pk";
-    else if (opretamount != opretamount)
-        errorstr = "amount does not match requested amount";
-    else if (matures != opretmatures)
-        errorstr = "mature height does not match requested mature height";
-    else if (currency != opretcurrency)
-        errorstr = "currency does not match requested currency";
+        // TODO: do we need here check tx for mempool?
+        if (!GetTransaction(requesttxid, requestx, hashBlock, true) || requestx.vout.size() < 1 ||
+            MarmaraDecodeLoopOpret(requestx.vout.back().scriptPubKey, emptytxid, opretsenderpk, opretamount, opretmatures, opretcurrency) == 0)
+            errorstr = "cant decode approvaltx opreturn data";
+        else if (mypk != opretsenderpk)
+            errorstr = "mypk does not match requested sender pk";
+        else if (opretamount != opretamount)
+            errorstr = "amount does not match requested amount";
+        else if (matures != opretmatures)
+            errorstr = "mature height does not match requested mature height";
+        else if (currency != opretcurrency)
+            errorstr = "currency does not match requested currency";
+    }
 
     if (errorstr == NULL)
     {
@@ -1288,7 +1293,7 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
         std::vector<CPubKey> pubkeys;
 
         uint256 dummytxid;
-        int32_t endorsersNumber = MarmaraGetbatontxid(creditloop, dummytxid, approvaltxid);  // need n
+        int32_t endorsersNumber = MarmaraGetbatontxid(creditloop, dummytxid, requesttxid);  // need n
         int64_t amountToLock = (endorsersNumber > 0 ? amount / (endorsersNumber + 1) : amount);
         std::cerr << __func__ << " amount to lock in loop=" << amountToLock << std::endl;
 
@@ -1296,7 +1301,7 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
         //GetCCaddress(cp, myccaddr, mypk);                       // activated coins on cc address
         if ((inputsum = AddMarmarainputs(IsActivatedOpret, mtx, pubkeys, activated1of2addr, amountToLock, MARMARA_VINS)) >= amountToLock) // add 1/n remainder from the locked fund
         {
-            mtx.vin.push_back(CTxIn(approvaltxid, 0, CScript()));  // spend the approval tx
+            mtx.vin.push_back(CTxIn(requesttxid, 0, CScript()));  // spend the approval tx
             if (funcid == 'T')
                 mtx.vin.push_back(CTxIn(batontxid, 0, CScript()));   // spend the baton
             if (funcid == 'I' || AddNormalinputs(mtx, mypk, txfee, 1) > 0)
@@ -1356,7 +1361,7 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
         char str[2]; str[0] = funcid, str[1] = 0;
         result.push_back(Pair("funcid", str));
         result.push_back(Pair("createtxid", createtxid.GetHex()));
-        result.push_back(Pair("approvaltxid", approvaltxid.GetHex()));
+        result.push_back(Pair("approvaltxid", requesttxid.GetHex()));
         if (funcid == 'T')
             result.push_back(Pair("batontxid", batontxid.GetHex()));
         result.push_back(Pair("receiverpk", HexStr(receiverpk)));

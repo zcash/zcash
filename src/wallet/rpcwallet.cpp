@@ -6268,7 +6268,8 @@ UniValue marmara_receive(const UniValue& params, bool fHelp, const CPubKey& mypk
         // automatic flag -> lsb of matures
         // 1st marmarareceive 028076d42eb20efc10007fafb5ca66a2052523c0d2221e607adf958d1a332159f6 7.5 MARMARA 1440
         // after marmarareceive 039433dc3749aece1bd568f374a45da3b0bc6856990d7da3cd175399577940a775 7.5 MARMARA 1168 d72d87aa0d50436de695c93e2bf3d7273c63c92ef6307913aa01a6ee6a16548b
-        throw runtime_error("marmarareceive senderpk amount currency matures batontxid\n");
+
+        throw runtime_error("marmarareceive senderpk amount currency matures [batontxid]\n" "creates requesttx.\nFor the first time call batontxid is null\n\n");
     }
     if ( ensure_CCrequirements(EVAL_MARMARA) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
@@ -6296,16 +6297,17 @@ UniValue marmara_receive(const UniValue& params, bool fHelp, const CPubKey& mypk
 
 UniValue marmara_issue(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
-    UniValue result(UniValue::VOBJ); uint256 approvaltxid; std::vector<uint8_t> receiverpub; int64_t amount; int32_t matures; std::string currency;
+    UniValue result(UniValue::VOBJ); uint256 requesttxid; std::vector<uint8_t> receiverpub; int64_t amount; int32_t matures; std::string currency;
     if ( fHelp || params.size() != 5 )
     {
         // marmaraissue 039433dc3749aece1bd568f374a45da3b0bc6856990d7da3cd175399577940a775 7.5 MARMARA 1168 32da4cb3e886ee42de90b4a15042d71169077306badf909099c5c5c692df3f27
         // marmaraissue 039433dc3749aece1bd568f374a45da3b0bc6856990d7da3cd175399577940a775 700 MARMARA 2629 11fe8bf1de80c2ef69124d08907f259aef7f41e3a632ca2d48ad072a8c8f3078 -> 335df3a5dd6b92a3d020c9465d4d76e0d8242126106b83756dcecbad9813fdf3
 
-        throw runtime_error("marmaraissue receiverpk amount currency matures approvaltxid\n");
+        throw runtime_error("marmaraissue receiverpk amount currency matures requesttxid\n");
     }
     if ( ensure_CCrequirements(EVAL_MARMARA) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
+
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
     receiverpub = ParseHex(params[0].get_str().c_str());
@@ -6317,8 +6319,8 @@ UniValue marmara_issue(const UniValue& params, bool fHelp, const CPubKey& mypk)
     amount = atof(params[1].get_str().c_str()) * COIN + 0.00000000499999;
     currency = params[2].get_str();
     matures = atol(params[3].get_str().c_str());
-    approvaltxid = Parseuint256((char *)params[4].get_str().c_str());
-    return(MarmaraIssue(0,'I',pubkey2pk(receiverpub),amount,currency,matures,approvaltxid,zeroid));
+    requesttxid = Parseuint256((char *)params[4].get_str().c_str());
+    return(MarmaraIssue(0,'I',pubkey2pk(receiverpub),amount,currency,matures,requesttxid,zeroid));
 }
 
 UniValue marmara_transfer(const UniValue& params, bool fHelp, const CPubKey& mypk)
