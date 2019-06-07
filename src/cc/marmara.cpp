@@ -1082,14 +1082,14 @@ UniValue MarmaraReceive(int64_t txfee, CPubKey senderpk, int64_t amount, std::st
         // check original cheque params:
         CTransaction createtx;
         uint256 hashBlock;
-        uint256 opretcreatetxid;
+        uint256 emptytxid;
         int32_t opretmatures;
         std::string opretcurrency;
         CPubKey opretsenderpk;
         int64_t opretamount;
 
         if (!GetTransaction(createtxid, createtx, hashBlock, true) || createtx.vout.size() < 1 ||
-            MarmaraDecodeLoopOpret(createtx.vout.back().scriptPubKey, createtxid, opretsenderpk, opretamount, opretmatures, opretcurrency) == 0)
+            MarmaraDecodeLoopOpret(createtx.vout.back().scriptPubKey, emptytxid, opretsenderpk, opretamount, opretmatures, opretcurrency) == 0)
             errorstr = "cant get decode createtx opreturn data";
         else if (mypk != opretsenderpk)
             errorstr = "mypk does not match requested sender pk";
@@ -1261,7 +1261,7 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
     // check requested cheque params:
     CTransaction createtx;
     uint256 hashBlock;
-    uint256 opretcreatetxid;
+    uint256 emptytxid;
     int32_t opretmatures;
     std::string opretcurrency;
     CPubKey opretsenderpk;
@@ -1269,7 +1269,7 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
 
     // TODO: do we need here check tx for mempool?
     if (!GetTransaction(createtxid, createtx, hashBlock, true) || createtx.vout.size() < 1 || 
-        MarmaraDecodeLoopOpret(createtx.vout.back().scriptPubKey, createtxid, opretsenderpk, opretamount, opretmatures, opretcurrency) == 0)
+        MarmaraDecodeLoopOpret(createtx.vout.back().scriptPubKey, emptytxid, opretsenderpk, opretamount, opretmatures, opretcurrency) == 0)
         errorstr = "cant get decode createtx opreturn data";
     else if (mypk != opretsenderpk)
         errorstr = "mypk does not match requested sender pk";
