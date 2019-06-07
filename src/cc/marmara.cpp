@@ -1659,25 +1659,27 @@ UniValue MarmaraInfo(CPubKey refpk, int32_t firstheight, int32_t lastheight, int
     CAmount loopAmount = 0;
     CAmount totalLoopAmount = 0;
     char *prevloopaddress = NULL;
-    EnumMyLockedInLoop([&](char *loopdaddr, const CTransaction & tx, int32_t nvout, CBlockIndex *pindex)
+    UniValue entry(UniValue::VOBJ);
+    EnumMyLockedInLoop([&](char *loopaddr, const CTransaction & tx, int32_t nvout, CBlockIndex *pindex) // call enumerator with callback
     {
         loopAmount += tx.vout[nvout].nValue;
         totalLoopAmount += tx.vout[nvout].nValue;
         
-        if (prevloopaddress != loopdaddr) {  // output for each loop
+        if (prevloopaddress != loopaddr) {  // output for each loop
             if (prevloopaddress != NULL) {
-                result.push_back(Pair("LoopAddress", prevloopaddress));
-                result.push_back(Pair("AmountLockedInLoop", ValueFromAmount(loopAmount)));
+                entry.push_back(Pair("LoopAddress", prevloopaddress));
+                entry.push_back(Pair("AmountLockedInLoop", ValueFromAmount(loopAmount)));
+                result.push_back(entry);
                 loopAmount = 0;
+                entry.clear();
             }
-
-            prevloopaddress = loopdaddr;
+            prevloopaddress = loopaddr;
         }
     });
     if (prevloopaddress != NULL) {   // last loop
-        result.push_back(Pair("LoopAddress", prevloopaddress));
-        result.push_back(Pair("AmountLockedInLoop", ValueFromAmount(loopAmount)));
-        loopAmount = 0;
+        entry.push_back(Pair("LoopAddress", prevloopaddress));
+        entry.push_back(Pair("AmountLockedInLoop", ValueFromAmount(loopAmount)));
+        result.push_back(entry);
     }
     result.push_back(Pair("TotalLockedInLoop", ValueFromAmount(totalLoopAmount)));
 
