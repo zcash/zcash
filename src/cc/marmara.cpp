@@ -150,7 +150,7 @@ uint8_t MarmaraDecodeLoopOpret(const CScript scriptPubKey, uint256 &createtxid, 
 }
 
 // finds the initial creation txid retrieving it from the any of the loop txn opret
-int32_t MarmaraGetcreatetxid(uint256 &createtxid, CTransaction &createtx, uint256 txid)
+int32_t MarmaraGetcreatetxid(uint256 &createtxid, uint256 txid)
 {
     CTransaction tx; 
     uint256 hashBlock; 
@@ -186,10 +186,9 @@ int32_t MarmaraGetbatontxid(std::vector<uint256> &creditloop, uint256 &batontxid
     uint256 createtxid, spenttxid; 
     int64_t value; 
     int32_t vini, height, n = 0, vout = 0;
-    CTransaction createtx;
     
     batontxid = zeroid;
-    if (MarmaraGetcreatetxid(createtxid, createtx, txid) == 0) // retrieve the initial creation txid
+    if (MarmaraGetcreatetxid(createtxid, txid) == 0) // retrieve the initial creation txid
     {
         txid = createtxid;
         //fprintf(stderr,"%s txid.%s -> createtxid %s\n", __func__, txid.GetHex().c_str(),createtxid.GetHex().c_str());
@@ -1068,9 +1067,8 @@ UniValue MarmaraReceive(int64_t txfee, CPubKey senderpk, int64_t amount, std::st
     CPubKey mypk = pubkey2pk(Mypubkey());
     uint256 createtxid = zeroid;
     const char *errorstr = NULL;
-    CTransaction createtx;
 
-    if (batontxid != zeroid && MarmaraGetcreatetxid(createtxid, createtx, batontxid) < 0)
+    if (batontxid != zeroid && MarmaraGetcreatetxid(createtxid, batontxid) < 0)
         errorstr = "cant get createtxid from batontxid";
     else if (currency != MARMARA_CURRENCY)
         errorstr = "for now, only MARMARA loops are supported";
@@ -1082,13 +1080,16 @@ UniValue MarmaraReceive(int64_t txfee, CPubKey senderpk, int64_t amount, std::st
     
     if (createtxid != zeroid) {
         // check original cheque params:
+        CTransaction createtx;
+        uint256 hashBlock;
         uint256 opretcreatetxid;
         int32_t opretmatures;
         std::string opretcurrency;
         CPubKey opretsenderpk;
         int64_t opretamount;
 
-        if (createtx.vout.size() < 1 || MarmaraDecodeLoopOpret(createtx.vout.back().scriptPubKey, createtxid, opretsenderpk, opretamount, opretmatures, opretcurrency) == 0)
+        if (!GetTransaction(createtxid, createtx, hashBlock, true) || createtx.vout.size() < 1 ||
+            MarmaraDecodeLoopOpret(createtx.vout.back().scriptPubKey, createtxid, opretsenderpk, opretamount, opretmatures, opretcurrency) == 0)
             errorstr = "cant get decode createtx opreturn data";
         else if (mypk != opretsenderpk)
             errorstr = "mypk does not match requested sender pk";
@@ -1235,7 +1236,6 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
     UniValue result(UniValue::VOBJ); 
     std::string rawtx; uint256 createtxid; 
     std::vector<uint256> creditloop;
-    CTransaction createtx;
 
     struct CCcontract_info *cp, C;
     cp = CCinit(&C, EVAL_MARMARA);
@@ -1249,7 +1249,7 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
     CPubKey mypk = pubkey2pk(Mypubkey());
     const char *errorstr = NULL;
 
-    if (MarmaraGetcreatetxid(createtxid, createtx, approvaltxid) < 0)
+    if (MarmaraGetcreatetxid(createtxid, approvaltxid) < 0)
         errorstr = "cant get createtxid from approvaltxid";
     else if (currency != MARMARA_CURRENCY)
         errorstr = "for now, only MARMARA loops are supported";
@@ -1259,13 +1259,17 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
         errorstr = "it must mature in the future";
 
     // check requested cheque params:
+    CTransaction createtx;
+    uint256 hashBlock;
     uint256 opretcreatetxid;
     int32_t opretmatures;
     std::string opretcurrency;
     CPubKey opretsenderpk;
     int64_t opretamount;
 
-    if (createtx.vout.size() < 1 || MarmaraDecodeLoopOpret(createtx.vout.back().scriptPubKey, createtxid, opretsenderpk, opretamount, opretmatures, opretcurrency) == 0)
+    // TODO: do we need here check tx for mempool?
+    if (!GetTransaction(createtxid, createtx, hashBlock, true) || createtx.vout.size() < 1 || 
+        MarmaraDecodeLoopOpret(createtx.vout.back().scriptPubKey, createtxid, opretsenderpk, opretamount, opretmatures, opretcurrency) == 0)
         errorstr = "cant get decode createtx opreturn data";
     else if (mypk != opretsenderpk)
         errorstr = "mypk does not match requested sender pk";
