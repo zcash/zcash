@@ -446,8 +446,10 @@ static void EnumMyLockedInLoop(T func)
                                             std::vector< std::vector<uint8_t> > vParams;
 
                                             looptx.vout[nvout].scriptPubKey.IsPayToCryptoCondition(&dummy, vParams);
-                                            for (auto v : vParams) {
-                                                std::cerr << __func__ << " v of vParams=" << HexStr(std::vector<uint8_t>(v.begin(), v.end())) << std::endl;
+                                            COptCCParams p = COptCCParams(vParams[0]);
+
+                                            for (auto d : p.vData) {
+                                                std::cerr << __func__ << " d of vData=" << HexStr(std::vector<uint8_t>(d.begin(), d.end())) << std::endl;
                                             }
 
                                             if (getCCopret(looptx.vout[nvout].scriptPubKey, scriptData))
