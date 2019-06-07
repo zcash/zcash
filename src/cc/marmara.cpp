@@ -442,6 +442,14 @@ static void EnumMyLockedInLoop(T func)
                                         {
                                             std::cerr << __func__ << " found 1of2 marmara,createtxid vout for txid=" << txid.GetHex() << " vout=" << nvout << std::endl;
 
+                                            CScript dummy;
+                                            std::vector< std::vector<uint8_t> > vParams;
+
+                                            looptx.vout[nvout].scriptPubKey.IsPayToCryptoCondition(&dummy, vParams);
+                                            for (auto v : vParams) {
+                                                std::cerr << __func__ << " v of vParams=" << HexStr(std::vector<uint8_t>(v.begin(), v.end())) << std::endl;
+                                            }
+
                                             if (getCCopret(looptx.vout[nvout].scriptPubKey, scriptData))
                                             {
                                                 std::cerr << __func__ << " cc opret=" << HexStr(std::vector<uint8_t>(scriptData.begin(), scriptData.end())) << std::endl;
