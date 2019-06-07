@@ -1320,10 +1320,10 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
                 std::vector< std::vector<uint8_t> > voutData{ std::vector<uint8_t>(mypk.begin(), mypk.end()) };   // add mypk to vout to identify who has locked coins in the credit loop
                 mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA, amountToLock, Marmarapk, createtxidPk, &voutData));
 
-                // return change to the locked fund:
-                //int64_t change = (inputsum - amountToLock);
-                //if (change > 0)
-                //    mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA, change, Marmarapk, mypk));
+                // return change to the activated fund:
+                int64_t change = (inputsum - amountToLock);
+                if (change > 0)
+                    mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA, change, Marmarapk, mypk));
 
                 if (endorsersNumber < 1 || RedistributeLockedRemainder(mtx, cp, creditloop, batontxid, amountToLock) >= 0)  // if there are issuers already then distribute and return amount / n value
                 {
@@ -1358,8 +1358,9 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
     {
         result.push_back(Pair("result", (char *)"success"));
         result.push_back(Pair("hex", rawtx));
-        char str[2]; str[0] = funcid, str[1] = 0;
-        result.push_back(Pair("funcid", str));
+        char sfuncid[2]; 
+        sfuncid[0] = funcid, sfuncid[1] = 0;
+        result.push_back(Pair("funcid", sfuncid));
         result.push_back(Pair("createtxid", createtxid.GetHex()));
         result.push_back(Pair("approvaltxid", requesttxid.GetHex()));
         if (funcid == 'T')
@@ -1653,7 +1654,6 @@ UniValue MarmaraInfo(CPubKey refpk, int32_t firstheight, int32_t lastheight, int
     result.push_back(Pair("myNormalAddress", mynormaladdr));
     result.push_back(Pair("myNormalAmount", ValueFromAmount(CCaddress_balance(mynormaladdr, 0))));
 
-    
     GetCCaddress1of2(cp, activated1of2addr, Marmarapk, Mypubkey());
     result.push_back(Pair("myCCActivatedAddress", activated1of2addr));
     result.push_back(Pair("myActivatedAmount", ValueFromAmount(AddMarmarainputs(IsActivatedOpret, mtx, pubkeys, activated1of2addr, 0, CC_MAXVINS)))); // changed MARMARA_VIN to CC_MAXVINS - we need actual amount
@@ -1667,7 +1667,7 @@ UniValue MarmaraInfo(CPubKey refpk, int32_t firstheight, int32_t lastheight, int
     // calc lock-in-loops amount for mypk:
     CAmount loopAmount = 0;
     CAmount totalLoopAmount = 0;
-    char *prevloopaddress = NULL;
+    char prevloopaddress[KOMODO_ADDRESS_BUFSIZE] = "";
     UniValue resultloops(UniValue::VARR);
     UniValue entry(UniValue::VOBJ);
     EnumMyLockedInLoop([&](char *loopaddr, const CTransaction & tx, int32_t nvout, CBlockIndex *pindex) // call enumerator with callback
@@ -1675,18 +1675,18 @@ UniValue MarmaraInfo(CPubKey refpk, int32_t firstheight, int32_t lastheight, int
         loopAmount += tx.vout[nvout].nValue;
         totalLoopAmount += tx.vout[nvout].nValue;
         
-        if (prevloopaddress != loopaddr) {  // output for each loop
-            if (prevloopaddress != NULL) {
+        if (strcmp(prevloopaddress, loopaddr) != 0) {  // loop address changed, output for each loop
+            if (prevloopaddress[0] != '\0') {  
                 entry.push_back(Pair("LoopAddress", prevloopaddress));
                 entry.push_back(Pair("AmountLockedInLoop", ValueFromAmount(loopAmount)));
                 resultloops.push_back(entry);
                 loopAmount = 0;
                 entry.clear();
             }
-            prevloopaddress = loopaddr;
+            strcpy(prevloopaddress, loopaddr);
         }
     });
-    if (prevloopaddress != NULL) {   // last loop
+    if (prevloopaddress[0] != '\0') {   // last loop
         entry.push_back(Pair("LoopAddress", prevloopaddress));
         entry.push_back(Pair("AmountLockedInLoop", ValueFromAmount(loopAmount)));
         resultloops.push_back(entry);
