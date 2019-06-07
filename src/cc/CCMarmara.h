@@ -32,7 +32,7 @@
 
 extern uint8_t ASSETCHAINS_MARMARA;
 uint64_t komodo_block_prg(uint32_t nHeight);
-int32_t MarmaraGetcreatetxid(uint256 &createtxid,uint256 txid);
+int32_t MarmaraGetcreatetxid(uint256 &createtxid, CTransaction& createtx, uint256 txid);
 int32_t MarmaraGetbatontxid(std::vector<uint256> &creditloop,uint256 &batontxid,uint256 txid);
 UniValue MarmaraCreditloop(uint256 txid);
 UniValue MarmaraSettlement(int64_t txfee,uint256 batontxid);

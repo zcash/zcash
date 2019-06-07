@@ -6287,7 +6287,10 @@ UniValue marmara_receive(const UniValue& params, bool fHelp, const CPubKey& mypk
     {
         matures = atol(params[3].get_str().c_str());
         batontxid = Parseuint256((char *)params[4].get_str().c_str());
-    } else matures = atol(params[3].get_str().c_str()) + chainActive.LastTip()->GetHeight() + 1;
+    } 
+    else 
+        matures = atol(params[3].get_str().c_str()) + chainActive.LastTip()->GetHeight() + 1;
+
     return(MarmaraReceive(0,pubkey2pk(senderpub),amount,currency,matures,batontxid,true));
 }
 

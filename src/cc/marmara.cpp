@@ -150,7 +150,7 @@ uint8_t MarmaraDecodeLoopOpret(const CScript scriptPubKey, uint256 &createtxid, 
 }
 
 // finds the initial creation txid retrieving it from the any of the loop txn opret
-int32_t MarmaraGetcreatetxid(uint256 &createtxid, uint256 txid)
+int32_t MarmaraGetcreatetxid(uint256 &createtxid, CTransaction &createtx, uint256 txid)
 {
     CTransaction tx; 
     uint256 hashBlock; 
@@ -186,9 +186,10 @@ int32_t MarmaraGetbatontxid(std::vector<uint256> &creditloop, uint256 &batontxid
     uint256 createtxid, spenttxid; 
     int64_t value; 
     int32_t vini, height, n = 0, vout = 0;
+    CTransaction createtx;
     
-    memset(&batontxid, 0, sizeof(batontxid));
-    if (MarmaraGetcreatetxid(createtxid, txid) == 0) // retrieve the initial creation txid
+    batontxid = zeroid;
+    if (MarmaraGetcreatetxid(createtxid, createtx, txid) == 0) // retrieve the initial creation txid
     {
         txid = createtxid;
         //fprintf(stderr,"%s txid.%s -> createtxid %s\n", __func__, txid.GetHex().c_str(),createtxid.GetHex().c_str());
@@ -1066,17 +1067,40 @@ UniValue MarmaraReceive(int64_t txfee, CPubKey senderpk, int64_t amount, std::st
 
     CPubKey mypk = pubkey2pk(Mypubkey());
     uint256 createtxid = zeroid;
-    char *errorstr = NULL;
+    const char *errorstr = NULL;
+    CTransaction createtx;
 
-    if (batontxid != zeroid && MarmaraGetcreatetxid(createtxid, batontxid) < 0)
-        errorstr = (char *)"cant get createtxid from batontxid";
+    if (batontxid != zeroid && MarmaraGetcreatetxid(createtxid, createtx, batontxid) < 0)
+        errorstr = "cant get createtxid from batontxid";
     else if (currency != MARMARA_CURRENCY)
-        errorstr = (char *)"for now, only MARMARA loops are supported";
+        errorstr = "for now, only MARMARA loops are supported";
     else if (amount <= txfee)
-        errorstr = (char *)"amount must be for more than txfee";
+        errorstr = "amount must be for more than txfee";
     else if (matures <= chainActive.LastTip()->GetHeight())
-        errorstr = (char *)"it must mature in the future";
-    if (errorstr == 0)
+        errorstr = "it must mature in the future";
+
+    
+    if (createtxid != zeroid) {
+        // check original cheque params:
+        uint256 opretcreatetxid;
+        int32_t opretmatures;
+        std::string opretcurrency;
+        CPubKey opretsenderpk;
+        int64_t opretamount;
+
+        if (createtx.vout.size() < 1 || MarmaraDecodeLoopOpret(createtx.vout.back().scriptPubKey, createtxid, opretsenderpk, opretamount, opretmatures, opretcurrency) == 0)
+            errorstr = "cant get decode createtx opreturn data";
+        else if (mypk != opretsenderpk)
+            errorstr = "mypk does not match requested sender pk";
+        else if (opretamount != opretamount)
+            errorstr = "amount does not match requested amount";
+        else if (matures != opretmatures)
+            errorstr = "mature height does not match requested mature height";
+        else if (currency != opretcurrency)
+            errorstr = "currency does not match requested currency";
+    }
+
+    if (errorstr == NULL)
     {
         if (batontxid != zeroid)
             batonamount = txfee;
@@ -1162,7 +1186,7 @@ static int32_t RedistributeLockedRemainder(CMutableTransaction &mtx, struct CCco
                     {
                         int64_t amountToPk = amountToDistribute / endorsersNumber;
                         mtx.vout.push_back(CTxOut(amountToPk, CScript() << ParseHex(HexStr(issuerpk)) << OP_CHECKSIG));  // coins returned to each previous issuer normal 
-                        std::cerr << __func__ << " sending amount=" << amountToPk << " to pk=" << HexStr(issuerpk) << std::endl;
+                        std::cerr << __func__ << " sending normal amount=" << amountToPk << " to pk=" << HexStr(issuerpk) << std::endl;
                         amountReturned += amountToPk;
                     }
                     else    {
@@ -1181,6 +1205,7 @@ static int32_t RedistributeLockedRemainder(CMutableTransaction &mtx, struct CCco
             if (change > 0 && pubkeys.size() > 0)  {
                 for (auto pk : pubkeys) {
                     std::vector< std::vector<uint8_t> > voutData{ std::vector<uint8_t>(pk.begin(), pk.end()) };   // add mypk to vout to identify who has locked coins in the credit loop
+                    std::cerr << __func__ << " distributing to loop change/pubkeys.size()=" << change / pubkeys.size() << " marked with pk=" << HexStr(pk) << std::endl;
                     mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA, change / pubkeys.size(), Marmarapk, createtxidPk, &voutData));  // TODO: losing remainder?
                 }
             }
@@ -1207,12 +1232,14 @@ static int32_t RedistributeLockedRemainder(CMutableTransaction &mtx, struct CCco
 UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t amount, std::string currency, int32_t matures, uint256 approvaltxid, uint256 batontxid)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); std::string rawtx; uint256 createtxid; 
-    const char *errorstr = NULL;
+    UniValue result(UniValue::VOBJ); 
+    std::string rawtx; uint256 createtxid; 
     std::vector<uint256> creditloop;
+    CTransaction createtx;
 
     struct CCcontract_info *cp, C;
     cp = CCinit(&C, EVAL_MARMARA);
+
     if (txfee == 0)
         txfee = 10000;
 
@@ -1220,15 +1247,35 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
 
     CPubKey Marmarapk = GetUnspendable(cp, NULL);
     CPubKey mypk = pubkey2pk(Mypubkey());
+    const char *errorstr = NULL;
 
-    if (MarmaraGetcreatetxid(createtxid, approvaltxid) < 0)
-        errorstr = (char *)"cant get createtxid from approvaltxid";
+    if (MarmaraGetcreatetxid(createtxid, createtx, approvaltxid) < 0)
+        errorstr = "cant get createtxid from approvaltxid";
     else if (currency != MARMARA_CURRENCY)
-        errorstr = (char *)"for now, only MARMARA loops are supported";
+        errorstr = "for now, only MARMARA loops are supported";
     else if (amount <= txfee)
-        errorstr = (char *)"amount must be for more than txfee";
+        errorstr = "amount must be for more than txfee";
     else if (matures <= chainActive.LastTip()->GetHeight())
-        errorstr = (char *)"it must mature in the future";
+        errorstr = "it must mature in the future";
+
+    // check requested cheque params:
+    uint256 opretcreatetxid;
+    int32_t opretmatures;
+    std::string opretcurrency;
+    CPubKey opretsenderpk;
+    int64_t opretamount;
+
+    if (createtx.vout.size() < 1 || MarmaraDecodeLoopOpret(createtx.vout.back().scriptPubKey, createtxid, opretsenderpk, opretamount, opretmatures, opretcurrency) == 0)
+        errorstr = "cant get decode createtx opreturn data";
+    else if (mypk != opretsenderpk)
+        errorstr = "mypk does not match requested sender pk";
+    else if (opretamount != opretamount)
+        errorstr = "amount does not match requested amount";
+    else if (matures != opretmatures)
+        errorstr = "mature height does not match requested mature height";
+    else if (currency != opretcurrency)
+        errorstr = "currency does not match requested currency";
+
     if (errorstr == NULL)
     {
         char activated1of2addr[KOMODO_ADDRESS_BUFSIZE];
@@ -1258,13 +1305,16 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
                 // lock 1/N amount in loop
                 char createtxidaddr[KOMODO_ADDRESS_BUFSIZE];
                 CPubKey createtxidPk = CCtxidaddr(createtxidaddr, createtxid);
+
+                std::cerr << __func__ << " sending to loop amount=" << amountToLock << " marked with mypk=" << HexStr(mypk) << std::endl;
+
                 std::vector< std::vector<uint8_t> > voutData{ std::vector<uint8_t>(mypk.begin(), mypk.end()) };   // add mypk to vout to identify who has locked coins in the credit loop
                 mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA, amountToLock, Marmarapk, createtxidPk, &voutData));
 
                 // return change to the locked fund:
-                int64_t change = (inputsum - amountToLock);
-                if (change > 0)
-                    mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA, change, Marmarapk, mypk));
+                //int64_t change = (inputsum - amountToLock);
+                //if (change > 0)
+                //    mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA, change, Marmarapk, mypk));
 
                 if (endorsersNumber < 1 || RedistributeLockedRemainder(mtx, cp, creditloop, batontxid, amountToLock) >= 0)  // if there are issuers already then distribute and return amount / n value
                 {
@@ -1275,7 +1325,7 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
                     rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, MarmaraEncodeLoopOpret(funcid, createtxid, receiverpk, amount, matures, currency));
 
                     if (rawtx.size() == 0)
-                        std::cerr << __func__ << " mtx=" << HexStr(E_MARSHAL(ss << mtx)) << std::endl;
+                        std::cerr << __func__ << " bad mtx=" << HexStr(E_MARSHAL(ss << mtx)) << std::endl;
 
                     if (rawtx.size() > 0)
                         errorstr = NULL;
@@ -1285,7 +1335,6 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
             }
             else
                 errorstr = (char *)"dont have enough normal inputs for 2*txfee";
-
         }
         else
             errorstr = (char *)"dont have enough locked inputs for amount";
