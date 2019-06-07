@@ -1641,28 +1641,45 @@ UniValue MarmaraInfo(CPubKey refpk, int32_t firstheight, int32_t lastheight, int
     result.push_back(Pair("result", "success"));
     
     Getscriptaddress(mynormaladdr, CScript() << ParseHex(HexStr(Mypubkey())) << OP_CHECKSIG);
-    result.push_back(Pair("myaddress", mynormaladdr));
-    result.push_back(Pair("normal", ValueFromAmount(CCaddress_balance(mynormaladdr, 0))));
+    result.push_back(Pair("myNormalAddress", mynormaladdr));
+    result.push_back(Pair("myNormalAmount", ValueFromAmount(CCaddress_balance(mynormaladdr, 0))));
 
     
     GetCCaddress1of2(cp, activated1of2addr, Marmarapk, Mypubkey());
     result.push_back(Pair("myCCActivatedAddress", activated1of2addr));
-    result.push_back(Pair("ccbalance", ValueFromAmount(CCaddress_balance(activated1of2addr, 1))));
-    result.push_back(Pair("activated", ValueFromAmount(AddMarmarainputs(IsActivatedOpret, mtx, pubkeys, activated1of2addr, 0, CC_MAXVINS)))); // changed MARMARA_VIN to CC_MAXVINS - we need actual amount
+    result.push_back(Pair("myActivatedAmount", ValueFromAmount(AddMarmarainputs(IsActivatedOpret, mtx, pubkeys, activated1of2addr, 0, CC_MAXVINS)))); // changed MARMARA_VIN to CC_MAXVINS - we need actual amount
+    result.push_back(Pair("myAmountOnActivatedAddress-old", ValueFromAmount(CCaddress_balance(activated1of2addr, 1))));
 
     GetCCaddress(cp, myccaddr, Mypubkey());
-    result.push_back(Pair("myCCaddress", myccaddr));
-    result.push_back(Pair("CCutxos", ValueFromAmount(CCaddress_balance(myccaddr, 1))));
+    result.push_back(Pair("myCCAddress", myccaddr));
+    result.push_back(Pair("myCCBalance", ValueFromAmount(CCaddress_balance(myccaddr, 1))));
 
 
     // calc lock-in-loops amount for mypk:
-    CAmount amountlockedInLoops = 0;
-    EnumMyLockedInLoop([&](char *activatedaddr, const CTransaction & tx, int32_t nvout, CBlockIndex *pindex)
+    CAmount loopAmount = 0;
+    CAmount totalLoopAmount = 0;
+    char *prevloopaddress = NULL;
+    EnumMyLockedInLoop([&](char *loopdaddr, const CTransaction & tx, int32_t nvout, CBlockIndex *pindex)
     {
-        amountlockedInLoops += tx.vout[nvout].nValue;
-    });
+        loopAmount += tx.vout[nvout].nValue;
+        totalLoopAmount += tx.vout[nvout].nValue;
+        
+        if (prevloopaddress != loopdaddr) {  // output for each loop
+            if (prevloopaddress != NULL) {
+                result.push_back(Pair("LoopAddress", prevloopaddress));
+                result.push_back(Pair("AmountLockedInLoop", ValueFromAmount(loopAmount)));
+                loopAmount = 0;
+            }
 
-    result.push_back(Pair("amountLockedInLoops", ValueFromAmount(amountlockedInLoops)));
+            prevloopaddress = loopdaddr;
+        }
+    });
+    if (prevloopaddress != NULL) {   // last loop
+        result.push_back(Pair("LoopAddress", prevloopaddress));
+        result.push_back(Pair("AmountLockedInLoop", ValueFromAmount(loopAmount)));
+        loopAmount = 0;
+    }
+    result.push_back(Pair("TotalLockedInLoop", ValueFromAmount(totalLoopAmount)));
 
     if (refpk.size() == 33)
         result.push_back(Pair("issuer", HexStr(refpk)));
