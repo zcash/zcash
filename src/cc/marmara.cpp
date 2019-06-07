@@ -1659,6 +1659,7 @@ UniValue MarmaraInfo(CPubKey refpk, int32_t firstheight, int32_t lastheight, int
     CAmount loopAmount = 0;
     CAmount totalLoopAmount = 0;
     char *prevloopaddress = NULL;
+    UniValue resultloops(UniValue::VARR);
     UniValue entry(UniValue::VOBJ);
     EnumMyLockedInLoop([&](char *loopaddr, const CTransaction & tx, int32_t nvout, CBlockIndex *pindex) // call enumerator with callback
     {
@@ -1669,7 +1670,7 @@ UniValue MarmaraInfo(CPubKey refpk, int32_t firstheight, int32_t lastheight, int
             if (prevloopaddress != NULL) {
                 entry.push_back(Pair("LoopAddress", prevloopaddress));
                 entry.push_back(Pair("AmountLockedInLoop", ValueFromAmount(loopAmount)));
-                result.push_back(entry);
+                resultloops.push_back(entry);
                 loopAmount = 0;
                 entry.clear();
             }
@@ -1679,8 +1680,9 @@ UniValue MarmaraInfo(CPubKey refpk, int32_t firstheight, int32_t lastheight, int
     if (prevloopaddress != NULL) {   // last loop
         entry.push_back(Pair("LoopAddress", prevloopaddress));
         entry.push_back(Pair("AmountLockedInLoop", ValueFromAmount(loopAmount)));
-        result.push_back(entry);
+        resultloops.push_back(entry);
     }
+    result.push_back(Pair("Loops", resultloops));
     result.push_back(Pair("TotalLockedInLoop", ValueFromAmount(totalLoopAmount)));
 
     if (refpk.size() == 33)
