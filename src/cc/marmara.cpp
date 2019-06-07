@@ -1090,9 +1090,9 @@ UniValue MarmaraReceive(int64_t txfee, CPubKey senderpk, int64_t amount, std::st
 
         if (!GetTransaction(batontxid.IsNull() ? createtxid : batontxid, looptx, hashBlock, true) || looptx.vout.size() < 1 ||
             MarmaraDecodeLoopOpret(looptx.vout.back().scriptPubKey, emptytxid, opretsenderpk, opretamount, opretmatures, opretcurrency) == 0)
-            errorstr = "cant get decode looptx opreturn data";
-        else if (mypk != opretsenderpk)
-            errorstr = "mypk does not match requested sender pk";
+            errorstr = "cant decode looptx opreturn data";
+        else if (senderpk != opretsenderpk)
+            errorstr = "current baton holder does not match the requested sender pk";
         else if (opretamount != opretamount)
             errorstr = "amount does not match requested amount";
         else if (matures != opretmatures)
@@ -1270,7 +1270,7 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
     // TODO: do we need here check tx for mempool?
     if (!GetTransaction(batontxid.IsNull() ? createtxid : batontxid, looptx, hashBlock, true) || looptx.vout.size() < 1 || 
         MarmaraDecodeLoopOpret(looptx.vout.back().scriptPubKey, emptytxid, opretsenderpk, opretamount, opretmatures, opretcurrency) == 0)
-        errorstr = "cant get decode looptx opreturn data";
+        errorstr = "cant decode looptx opreturn data";
     else if (mypk != opretsenderpk)
         errorstr = "mypk does not match requested sender pk";
     else if (opretamount != opretamount)
