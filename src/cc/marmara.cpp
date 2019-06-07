@@ -440,25 +440,32 @@ static void EnumMyLockedInLoop(T func)
 
                                         if (scriptCC == MakeCC1of2vout(EVAL_MARMARA, looptx.vout[nvout].nValue, Marmarapk, createtxidPk).scriptPubKey)
                                         {
-                                            std::cerr << __func__ << " found 1of2 marmara,createtxid vout for txid=" << txid.GetHex() << " vout=" << nvout << std::endl;
+                                            std::cerr << __func__ << " found 1of2 (marmara,createtxid) vout for txid=" << txid.GetHex() << " vout=" << nvout << std::endl;
 
                                             CScript dummy;
                                             std::vector< std::vector<uint8_t> > vParams;
 
                                             looptx.vout[nvout].scriptPubKey.IsPayToCryptoCondition(&dummy, vParams);
-                                            COptCCParams p = COptCCParams(vParams[0]);
+                                            if (vParams.size() > 0) {
+                                                COptCCParams p = COptCCParams(vParams[0]);
 
-                                            for (auto d : p.vData) {
-                                                std::cerr << __func__ << " d of vData=" << HexStr(std::vector<uint8_t>(d.begin(), d.end())) << std::endl;
+                                                // trace cc vout data:
+                                                std::cerr << __func__ << " cc vout p.Data.size()=" << p.vData.size() << std::endl;
+                                                for (auto d : p.vData) {
+                                                    std::cerr << __func__ << " cc vout vData=" << HexStr(std::vector<uint8_t>(d.begin(), d.end())) << std::endl;
+                                                }
+
+                                                if (p.vData.size() == 1 && pubkey2pk(p.vData[0]) == mypk) {  // it is mypk cc vout i
+                                                    func(loopaddr, looptx, nvout, pindex);
+                                                }
                                             }
 
+                                            /* seems not all cases parse:
                                             if (getCCopret(looptx.vout[nvout].scriptPubKey, scriptData))
                                             {
                                                 std::cerr << __func__ << " cc opret=" << HexStr(std::vector<uint8_t>(scriptData.begin(), scriptData.end())) << std::endl;
                                                 // TODO: check my pk in scriptData
-
-                                                func(loopaddr, looptx, nvout, pindex);
-                                            }
+                                            } */
                                         }
                                     }
                                 }

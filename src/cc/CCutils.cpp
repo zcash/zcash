@@ -106,7 +106,9 @@ CTxOut MakeCC1vout(uint8_t evalcode,CAmount nValue, CPubKey pk, std::vector<std:
     {
         //std::vector<std::vector<unsigned char>> vtmpData = std::vector<std::vector<unsigned char>>(vData->begin(), vData->end());
         std::vector<CPubKey> vPubKeys = std::vector<CPubKey>();
-        //vPubKeys.push_back(pk);
+        if ((*vData).size() > 0) {
+            vPubKeys.push_back(pk); // store pubkeys too
+        }
         COptCCParams ccp = COptCCParams(COptCCParams::VERSION, evalcode, 1, 1, vPubKeys, ( * vData));
         vout.scriptPubKey << ccp.AsVector() << OP_DROP;
     }
@@ -119,13 +121,15 @@ CTxOut MakeCC1of2vout(uint8_t evalcode,CAmount nValue,CPubKey pk1,CPubKey pk2, s
     CTxOut vout;
     CC *payoutCond = MakeCCcond1of2(evalcode,pk1,pk2);
     vout = CTxOut(nValue,CCPubKey(payoutCond));
-    if ( vData )
+    if (vData)
     {
         //std::vector<std::vector<unsigned char>> vtmpData = std::vector<std::vector<unsigned char>>(vData->begin(), vData->end());
         std::vector<CPubKey> vPubKeys = std::vector<CPubKey>();
-         // skip pubkeys. These need to maybe be optional and we need some way to get them out that is easy!
-        //vPubKeys.push_back(pk1);
-        //vPubKeys.push_back(pk2);
+        // skip pubkeys. These need to maybe be optional and we need some way to get them out that is easy!
+        if ((*vData).size() > 0) {  // store pubkeys too, as when reading it back it would read pubkeys first then vData
+            vPubKeys.push_back(pk1);
+            vPubKeys.push_back(pk2);
+        }
         COptCCParams ccp = COptCCParams(COptCCParams::VERSION, evalcode, 1, 2, vPubKeys, ( * vData));
         vout.scriptPubKey << ccp.AsVector() << OP_DROP;
     }
