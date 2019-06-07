@@ -1080,7 +1080,7 @@ UniValue MarmaraReceive(int64_t txfee, CPubKey senderpk, int64_t amount, std::st
     
     if (createtxid != zeroid) {
         // check original cheque params:
-        CTransaction createtx;
+        CTransaction looptx;
         uint256 hashBlock;
         uint256 emptytxid;
         int32_t opretmatures;
@@ -1088,9 +1088,9 @@ UniValue MarmaraReceive(int64_t txfee, CPubKey senderpk, int64_t amount, std::st
         CPubKey opretsenderpk;
         int64_t opretamount;
 
-        if (!GetTransaction(createtxid, createtx, hashBlock, true) || createtx.vout.size() < 1 ||
-            MarmaraDecodeLoopOpret(createtx.vout.back().scriptPubKey, emptytxid, opretsenderpk, opretamount, opretmatures, opretcurrency) == 0)
-            errorstr = "cant get decode createtx opreturn data";
+        if (!GetTransaction(batontxid.IsNull() ? createtxid : batontxid, looptx, hashBlock, true) || looptx.vout.size() < 1 ||
+            MarmaraDecodeLoopOpret(looptx.vout.back().scriptPubKey, emptytxid, opretsenderpk, opretamount, opretmatures, opretcurrency) == 0)
+            errorstr = "cant get decode looptx opreturn data";
         else if (mypk != opretsenderpk)
             errorstr = "mypk does not match requested sender pk";
         else if (opretamount != opretamount)
@@ -1259,7 +1259,7 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
         errorstr = "it must mature in the future";
 
     // check requested cheque params:
-    CTransaction createtx;
+    CTransaction looptx;
     uint256 hashBlock;
     uint256 emptytxid;
     int32_t opretmatures;
@@ -1268,9 +1268,9 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
     int64_t opretamount;
 
     // TODO: do we need here check tx for mempool?
-    if (!GetTransaction(createtxid, createtx, hashBlock, true) || createtx.vout.size() < 1 || 
-        MarmaraDecodeLoopOpret(createtx.vout.back().scriptPubKey, emptytxid, opretsenderpk, opretamount, opretmatures, opretcurrency) == 0)
-        errorstr = "cant get decode createtx opreturn data";
+    if (!GetTransaction(batontxid.IsNull() ? createtxid : batontxid, looptx, hashBlock, true) || looptx.vout.size() < 1 || 
+        MarmaraDecodeLoopOpret(looptx.vout.back().scriptPubKey, emptytxid, opretsenderpk, opretamount, opretmatures, opretcurrency) == 0)
+        errorstr = "cant get decode looptx opreturn data";
     else if (mypk != opretsenderpk)
         errorstr = "mypk does not match requested sender pk";
     else if (opretamount != opretamount)
