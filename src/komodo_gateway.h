@@ -627,7 +627,7 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
 
 const char *banned_txids[] =
 {
-    "78cb4e21245c26b015b888b14c4f5096e18137d2741a6de9734d62b07014dfca", //233559
+    "78cb4e21245c26b015b888b14c4f5096e18137d2741a6de9734d62b07014dfca", // vout1 only 233559
     "00697be658e05561febdee1aafe368b821ca33fbb89b7027365e3d77b5dfede5", //234172
     "e909465788b32047c472d73e882d79a92b0d550f90be008f76e1edaee6d742ea", //234187
     "f56c6873748a327d0b92b8108f8ec8505a2843a541b1926022883678fb24f9dc", //234188
@@ -645,7 +645,20 @@ const char *banned_txids[] =
     // all vouts banned
     "c4ea1462c207547cd6fb6a4155ca6d042b22170d29801a465db5c09fec55b19d", //246748
     "305dc96d8bc23a69d3db955e03a6a87c1832673470c32fe25473a46cc473c7d1", //247204
+    "43416a0c4da6b1a5c1d375bdbe8f7dc8d44d8f60df593d3376aa8221ec66357e", // vout0 only
+    "1eb295ed54c47f35cbccd7e7e40d03041f1853581da6d41102a9d8813782b6cb",
+    "db121e4012222adfc841824984a2a90b7e5b018dd71307822537d58160195e43",
+    "28f95b8148ac4ae6e09c7380e34422fab41d568a411e53dc94823e36a3d6f386",
 };
+
+int32_t komodo_checkvout(int32_t vout,int32_t k,int32_t indallvouts)
+{
+    if ( k < indallvouts )
+        return(vout == 1);
+    else if ( k == indallvouts || k == indallvouts+1 )
+        return(1);
+    else return(vout == 0);
+}
 
 int32_t komodo_bannedset(int32_t *indallvoutsp,uint256 *array,int32_t max)
 {
@@ -657,7 +670,7 @@ int32_t komodo_bannedset(int32_t *indallvoutsp,uint256 *array,int32_t max)
     }
     for (i=0; i<sizeof(banned_txids)/sizeof(*banned_txids); i++)
         array[i] = uint256S(banned_txids[i]);
-    *indallvoutsp = i-2;
+    *indallvoutsp = i-6;
     return(i);
 }
 
@@ -691,7 +704,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
             {
                 for (k=0; k<numbanned; k++)
                 {
-                    if ( block.vtx[i].vin[j].prevout.hash == array[k] && (block.vtx[i].vin[j].prevout.n == 1 || k >= indallvouts)  )
+                    if ( block.vtx[i].vin[j].prevout.hash == array[k] && komodo_checkvout(block.vtx[i].vin[j].prevout.n,k,indallvouts) != 0 ) //(block.vtx[i].vin[j].prevout.n == 1 || k >= indallvouts)  )
                     {
                         printf("banned tx.%d being used at ht.%d txi.%d vini.%d\n",k,height,i,j);
                         return(-1);

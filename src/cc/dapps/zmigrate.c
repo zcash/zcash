@@ -961,12 +961,35 @@ int64_t utxo_value(char *refcoin,char *srcaddr,bits256 txid,int32_t v)
 }
 
 struct addritem { int64_t total,numutxos; char addr[64]; } ADDRESSES[1200];
-struct claimitem { int64_t total,numutxos; char oldaddr[64],destaddr[64],username[64]; } CLAIMS[1200];
+struct claimitem { int64_t total; int32_t numutxos,disputed; char oldaddr[64],destaddr[64],username[64]; } CLAIMS[1200];
 int32_t NUM_ADDRESSES,NUM_CLAIMS;
 
-int32_t update_claimstats(char *username,char *oldaddr,char *destaddr,int64_t amount)
+int64_t update_claimstats(char *username,char *oldaddr,char *destaddr,int64_t amount)
 {
-    
+    int32_t i; struct claimitem *item;
+    for (i=0; i<NUM_CLAIMS; i++)
+    {
+        if ( strcmp(oldaddr,CLAIMS[i].oldaddr) == 0 )
+        {
+            item = &CLAIMS[i];
+            if ( strcmp(destaddr,item->destaddr) != 0 )//|| strcmp(username,item->username) != 0 )
+            {
+                item->disputed++;
+                printf("disputed.%d claim.%-4d: (%36s -> %36s %s) vs. (%36s -> %36s %s) \n",item->disputed,i,oldaddr,destaddr,username,item->oldaddr,item->destaddr,item->username);
+            }
+            item->numutxos++;
+            item->total += amount;
+            return(amount);
+        }
+    }
+    item = &CLAIMS[NUM_CLAIMS++];
+    item->total = amount;
+    item->numutxos = 1;
+    strncpy(item->oldaddr,oldaddr,sizeof(item->oldaddr));
+    strncpy(item->destaddr,destaddr,sizeof(item->destaddr));
+    strncpy(item->username,username,sizeof(item->username));
+    //printf("new claim.%-4d: %36s %16.8f -> %36s %s\n",NUM_CLAIMS,oldaddr,dstr(amount),destaddr,username);
+    return(amount);
 }
 
 int32_t update_addrstats(char *srcaddr,int64_t amount)
@@ -1031,7 +1054,7 @@ void genpayout(char *coinstr,char *destaddr,int32_t amount)
 
 void reconcile_claims(char *fname)
 {
-    FILE *fp; double amount; int32_t i,n,numlines = 0; char buf[1024],fields[16][256],*str;
+    FILE *fp; double amount; int32_t i,n,numlines = 0; char buf[1024],fields[16][256],*str; int64_t total = 0;
     if ( (fp= fopen(fname,"rb")) != 0 )
     {
         while ( fgets(buf,sizeof(buf),fp) > 0 )
@@ -1048,7 +1071,7 @@ void reconcile_claims(char *fname)
                     i = 0;
                     if ( n != 4 && n > 1 )
                     {
-                        printf("(%16s) ",fields[n]);
+                        //printf("(%16s) ",fields[n]);
                     }
                     n++;
                     if ( *str == '\n' || *str == '\r' )
@@ -1058,15 +1081,13 @@ void reconcile_claims(char *fname)
                     str++;
                 else fields[n][i++] = *str++;
             }
-            printf("%s\n",fields[0]);
-            //for (i=0; i<n; i++)
-            //    if ( i != 4 )
-            //        printf("(%s) ",fields[i]);
-            //printf("n.%d\n",n);
+            //printf("%s\n",fields[0]);
+            total += update_claimstats(fields[0],fields[2],fields[5],atof(fields[3])*SATOSHIDEN + 0.0000000049);
             numlines++;
         }
         fclose(fp);
     }
+    printf("total claims %.8f\n",dstr(total));
 }
 
 int32_t main(int32_t argc,char **argv)
@@ -1135,7 +1156,7 @@ int32_t main(int32_t argc,char **argv)
     }
 }
     
-int32_t oldmain(int32_t argc,char **argv)
+int32_t zmigratemain(int32_t argc,char **argv)
 {
     char buf[1024],*zsaddr,*coinstr;
     if ( argc != 3 )
