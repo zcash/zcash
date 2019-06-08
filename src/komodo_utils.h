@@ -2296,6 +2296,60 @@ void komodo_args(char *argv0)
             fprintf(stderr,"-ac_private for a non-PIRATE chain is not supported. The only reason to have an -ac_private chain is for total privacy and that is best achieved with the largest anon set. PIRATE has that and it is recommended to just use PIRATE\n");
             StartShutdown();
         }
+        // Set cc enables for all existing ac_cc chains here. 
+        if ( strcmp("AXO",ASSETCHAINS_SYMBOL) == 0 )
+        {
+            // No CCs used on this chain yet please ask AXO777 what he needs. 
+            memset(ASSETCHAINS_CCDISABLES,1,sizeof(ASSETCHAINS_CCDISABLES));
+        }
+        if ( strcmp("CCL",ASSETCHAINS_SYMBOL) == 0 )
+        {
+            // No CCs used on this chain yet. 
+            memset(ASSETCHAINS_CCDISABLES,1,sizeof(ASSETCHAINS_CCDISABLES));
+        }
+        if ( strcmp("COQUI",ASSETCHAINS_SYMBOL) == 0 )
+        {
+            memset(ASSETCHAINS_CCDISABLES,1,sizeof(ASSETCHAINS_CCDISABLES));
+            ASSETCHAINS_CCDISABLES[230] = 0; // DICE
+            ASSETCHAINS_CCDISABLES[235] = 0; // CHANNELS 
+            ASSETCHAINS_CCDISABLES[236] = 0; // ORACLES
+        }
+        if ( strcmp("DION",ASSETCHAINS_SYMBOL) == 0 )
+        {
+            // No CCs used on this chain yet. 
+            memset(ASSETCHAINS_CCDISABLES,1,sizeof(ASSETCHAINS_CCDISABLES));
+        }
+        if ( strcmp("EQL",ASSETCHAINS_SYMBOL) == 0 )
+        {
+            // No CCs used on this chain yet. 
+            memset(ASSETCHAINS_CCDISABLES,1,sizeof(ASSETCHAINS_CCDISABLES));
+        }
+        if ( strcmp("ILN",ASSETCHAINS_SYMBOL) == 0 )
+        {
+            // No CCs used on this chain yet. 
+            memset(ASSETCHAINS_CCDISABLES,1,sizeof(ASSETCHAINS_CCDISABLES));
+        }
+        if ( strcmp("MORTY",ASSETCHAINS_SYMBOL) == 0 )
+        {
+            memset(ASSETCHAINS_CCDISABLES,1,sizeof(ASSETCHAINS_CCDISABLES));
+            ASSETCHAINS_CCDISABLES[228] = 0; // FAUCET
+        }
+        if ( strcmp("RICK",ASSETCHAINS_SYMBOL) == 0 )
+        {
+            memset(ASSETCHAINS_CCDISABLES,1,sizeof(ASSETCHAINS_CCDISABLES));
+            ASSETCHAINS_CCDISABLES[228] = 1; // FAUCET
+        }
+        if ( strcmp("SEC",ASSETCHAINS_SYMBOL) == 0 )
+        {
+            memset(ASSETCHAINS_CCDISABLES,1,sizeof(ASSETCHAINS_CCDISABLES));
+            ASSETCHAINS_CCDISABLES[227] = 0; // ASSETS
+            ASSETCHAINS_CCDISABLES[242] = 0; // TOKENS
+        }
+        if ( strcmp("KMDICE",ASSETCHAINS_SYMBOL) == 0 )
+        {
+            memset(ASSETCHAINS_CCDISABLES,1,sizeof(ASSETCHAINS_CCDISABLES));
+            ASSETCHAINS_CCDISABLES[230] = 0; // DICE
+        }
     } else BITCOIND_RPCPORT = GetArg("-rpcport", BaseParams().RPCPort());
     KOMODO_DPOWCONFS = GetArg("-dpowconfs",dpowconfs);
     if ( ASSETCHAINS_SYMBOL[0] == 0 || strcmp(ASSETCHAINS_SYMBOL,"SUPERNET") == 0 || strcmp(ASSETCHAINS_SYMBOL,"DEX") == 0 || strcmp(ASSETCHAINS_SYMBOL,"COQUI") == 0 || strcmp(ASSETCHAINS_SYMBOL,"PIRATE") == 0 || strcmp(ASSETCHAINS_SYMBOL,"KMDICE") == 0 )
