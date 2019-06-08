@@ -938,7 +938,225 @@ int32_t have_pending_opid(char *coinstr,int32_t clearresults)
     return(pending);
 }
 
+int64_t utxo_value(char *refcoin,char *srcaddr,bits256 txid,int32_t v)
+{
+    cJSON *txjson,*vouts,*vout,*sobj,*array; int32_t numvouts,numaddrs; int64_t val,value = 0; char *addr,str[65];
+    srcaddr[0] = 0;
+    if ( (txjson= get_rawtransaction(refcoin,"",txid)) != 0 )
+    {
+        if ( (vouts= jarray(&numvouts,txjson,"vout")) != 0 && v < numvouts )
+        {
+            vout = jitem(vouts,v);
+            if ( (val= jdouble(vout,"value")*SATOSHIDEN) != 0 && (sobj= jobj(vout,"scriptPubKey")) != 0 )
+            {
+                if ( (array= jarray(&numaddrs,sobj,"addresses")) != 0 && numaddrs == 1 && (addr= jstri(array,0)) != 0 && strlen(addr) < 64 )
+                {
+                    strcpy(srcaddr,addr);
+                    value = val;
+                } else printf("couldnt get unique address for %s/%d\n",bits256_str(str,txid),v);
+            } else printf("error getting value for %s/v%d\n",bits256_str(str,txid),v);
+        }
+    }
+    return(value);
+}
+
+struct addritem { int64_t total,numutxos; char addr[64]; } ADDRESSES[1200];
+struct claimitem { int64_t total; int32_t numutxos,disputed; char oldaddr[64],destaddr[64],username[64]; } CLAIMS[1200];
+int32_t NUM_ADDRESSES,NUM_CLAIMS;
+
+int64_t update_claimstats(char *username,char *oldaddr,char *destaddr,int64_t amount)
+{
+    int32_t i; struct claimitem *item;
+    for (i=0; i<NUM_CLAIMS; i++)
+    {
+        if ( strcmp(oldaddr,CLAIMS[i].oldaddr) == 0 )
+        {
+            item = &CLAIMS[i];
+            if ( strcmp(destaddr,item->destaddr) != 0 )//|| strcmp(username,item->username) != 0 )
+            {
+                item->disputed++;
+                printf("disputed.%d claim.%-4d: (%36s -> %36s %s) vs. (%36s -> %36s %s) \n",item->disputed,i,oldaddr,destaddr,username,item->oldaddr,item->destaddr,item->username);
+            }
+            item->numutxos++;
+            item->total += amount;
+            return(amount);
+        }
+    }
+    item = &CLAIMS[NUM_CLAIMS++];
+    item->total = amount;
+    item->numutxos = 1;
+    strncpy(item->oldaddr,oldaddr,sizeof(item->oldaddr));
+    strncpy(item->destaddr,destaddr,sizeof(item->destaddr));
+    strncpy(item->username,username,sizeof(item->username));
+    //printf("new claim.%-4d: %36s %16.8f -> %36s %s\n",NUM_CLAIMS,oldaddr,dstr(amount),destaddr,username);
+    return(amount);
+}
+
+int32_t update_addrstats(char *srcaddr,int64_t amount)
+{
+    int32_t i; struct addritem *item;
+    for (i=0; i<NUM_ADDRESSES; i++)
+    {
+        if ( strcmp(srcaddr,ADDRESSES[i].addr) == 0 )
+        {
+            ADDRESSES[i].numutxos++;
+            ADDRESSES[i].total += amount;
+            return(i);
+        }
+    }
+    item = &ADDRESSES[NUM_ADDRESSES++];
+    item->total = amount;
+    item->numutxos = 1;
+    strcpy(item->addr,srcaddr);
+    printf("%d new address %s\n",NUM_ADDRESSES,srcaddr);
+    return(-1);
+}
+
+int64_t sum_of_vins(char *refcoin,int32_t *totalvinsp,int32_t *uniqaddrsp,bits256 txid)
+{
+    cJSON *txjson,*vins,*vin; char str[65],srcaddr[64]; int32_t i,numarray; int64_t amount,total = 0;
+    if ( (txjson= get_rawtransaction(refcoin,"",txid)) != 0 )
+    {
+        if ( (vins= jarray(&numarray,txjson,"vin")) != 0)
+        {
+            for (i=0; i<numarray; i++)
+            {
+                if ( (vin= jitem(vins,i)) != 0 )
+                {
+                    if ( (amount= utxo_value(refcoin,srcaddr,jbits256(vin,"txid"),jint(vin,"vout"))) == 0 )
+                        printf("error getting value from %s/v%d\n",bits256_str(str,jbits256(vin,"txid")),jint(vin,"vout"));
+                    else
+                    {
+                        if ( update_addrstats(srcaddr,amount) < 0 )
+                            (*uniqaddrsp)++;
+                        //printf("add %s <- %.8f\n",srcaddr,dstr(amount));
+                        total += amount;
+                        (*totalvinsp)++;
+                    }
+                }
+            }
+        }
+    }
+    if ( total == 0 )
+        printf("sum_of_vins error %s\n",bits256_str(str,txid));
+    return(total);
+}
+
+void genpayout(char *coinstr,char *destaddr,int32_t amount)
+{
+    char cmd[1024];
+    sprintf(cmd,"curl --url \"http://127.0.0.1:7783\" --data \"{\\\"userpass\\\":\\\"$userpass\\\",\\\"method\\\":\\\"withdraw\\\",\\\"coin\\\":\\\"%s\\\",\\\"outputs\\\":[{\\\"%s\\\":%.8f},{\\\"RWXL82m4xnBTg1kk6PuS2xekonu7oEeiJG\\\":0.0002}],\\\"broadcast\\\":1}\"\nsleep 3\n",coinstr,destaddr,dstr(amount+20000));
+    printf("%s",cmd);
+}
+
+// 602.(powerkin#8483,KMD ,RArt9a3piuz3YVhJorAWMnMYd1jwHKdEqo,16,39403c7c5c87e9ba087769cd10023d2b24d11ce4a277c3c41e7efd9da236ed60,RJ37ByppPqsLDauEgQbdwrr3GroTYC2ynE
+
+
+void reconcile_claims(char *fname)
+{
+    FILE *fp; double amount; int32_t i,n,numlines = 0; char buf[1024],fields[16][256],*str; int64_t total = 0;
+    if ( (fp= fopen(fname,"rb")) != 0 )
+    {
+        while ( fgets(buf,sizeof(buf),fp) > 0 )
+        {
+            //printf("%d.(%s)\n",numlines,buf);
+            str = buf;
+            n = i = 0;
+            memset(fields,0,sizeof(fields));
+            while ( *str != 0 )
+            {
+                if ( *str == ',' || *str == '\n' || *str == '\r' )
+                {
+                    fields[n][i] = 0;
+                    i = 0;
+                    if ( n != 4 && n > 1 )
+                    {
+                        //printf("(%16s) ",fields[n]);
+                    }
+                    n++;
+                    if ( *str == '\n' || *str == '\r' )
+                        break;
+                }
+                if ( *str == ',' || *str == ' ' )
+                    str++;
+                else fields[n][i++] = *str++;
+            }
+            //printf("%s\n",fields[0]);
+            total += update_claimstats(fields[0],fields[2],fields[5],atof(fields[3])*SATOSHIDEN + 0.0000000049);
+            numlines++;
+        }
+        fclose(fp);
+    }
+    printf("total claims %.8f\n",dstr(total));
+}
+
 int32_t main(int32_t argc,char **argv)
+{
+    char *coinstr,*addr,buf[64]; cJSON *retjson,*item; int32_t i,n,numsmall=0,numpayouts=0,num=0,totalvins=0,uniqaddrs=0; int64_t amount,total = 0,total2 = 0,payout,maxpayout,smallpayout=0,totalpayout = 0;
+    if ( argc != 2 )
+    {
+        printf("argc needs to be 2: <prog> coin\n");
+        return(-1);
+    }
+    if ( strcmp(argv[1],"KMD") == 0 )
+    {
+        REFCOIN_CLI = "./komodo-cli";
+        coinstr = clonestr("KMD");
+    }
+    else
+    {
+        sprintf(buf,"./komodo-cli -ac_name=%s",argv[1]);
+        REFCOIN_CLI = clonestr(buf);
+        coinstr = clonestr(argv[1]);
+    }
+    if ( 1 )
+    {
+        sprintf(buf,"%s-Claims.csv",coinstr);
+        reconcile_claims(buf);
+    }
+    else if ( (retjson=  get_listunspent(coinstr,"")) != 0 )
+    {
+        if ( (n= cJSON_GetArraySize(retjson)) > 0 )
+        {
+            for (i=0; i<n; i++)
+            {
+                item = jitem(retjson,i);
+                if ( (addr= jstr(item,"address")) != 0 && strcmp(addr,"RSgD2cmm3niFRu2kwwtrEHoHMywJdkbkeF") == 0 )
+                {
+                    if ( (amount= jdouble(item,"amount")*SATOSHIDEN) != 0 )
+                    {
+                        num++;
+                        total += amount;
+                        total2 += sum_of_vins(coinstr,&totalvins,&uniqaddrs,jbits256(item,"txid"));
+                    }
+                }
+            }
+        }
+        free_json(retjson);
+        maxpayout = 0;
+        for (i=0; i<NUM_ADDRESSES; i++)
+        {
+            if ( ADDRESSES[i].total >= SATOSHIDEN )
+            {
+                payout = ADDRESSES[i].total / SATOSHIDEN;
+                if ( payout > maxpayout )
+                    maxpayout = payout;
+                totalpayout += payout;
+                numpayouts++;
+                if ( payout >= 7 )
+                {
+                    numsmall++;
+                    smallpayout += payout;
+                    genpayout(coinstr,ADDRESSES[i].addr,payout);
+                }
+                //printf("%-4d: %-64s numutxos.%-4lld %llu\n",i,ADDRESSES[i].addr,ADDRESSES[i].numutxos,(long long)payout);
+            }
+        }
+        printf("num.%d total %.8f vs vintotal %.8f, totalvins.%d uniqaddrs.%d:%d totalpayout %llu maxpayout %llu numpayouts.%d numsmall.%d %llu\n",num,dstr(total),dstr(total2),totalvins,uniqaddrs,NUM_ADDRESSES,(long long)totalpayout,(long long)maxpayout,numpayouts,numsmall,(long long)smallpayout);
+    }
+}
+    
+int32_t zmigratemain(int32_t argc,char **argv)
 {
     char buf[1024],*zsaddr,*coinstr;
     if ( argc != 3 )
