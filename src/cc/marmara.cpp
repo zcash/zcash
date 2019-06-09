@@ -1214,7 +1214,7 @@ static int32_t RedistributeLockedRemainder(CMutableTransaction &mtx, struct CCco
         CPubKey createtxidPk = CCtxidaddr(txidaddr, createtxid);
         GetCCaddress1of2(cp, lockInLoop1of2addr, Marmarapk, createtxidPk);  // 1of2 lock-in-loop address 
 
-        if ((inputsum = AddMarmarainputs(IsLockInLoopOpret, mtx, pubkeys, lockInLoop1of2addr, 0, MARMARA_VINS)) >= amount / endorsersNumber) // add ALL locked-in-loop vins
+        if ((inputsum = AddMarmarainputs(IsLockInLoopOpret, mtx, pubkeys, lockInLoop1of2addr, 0, MARMARA_VINS)) >= amount / endorsersNumber) // total==0 means add all locked-in-loop vins
         {
             if (mtx.vin.size() >= CC_MAXVINS - MARMARA_VINS)  // vin number limit
                 return -1;
@@ -1375,7 +1375,7 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
                 mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA, amountToLock, Marmarapk, createtxidPk, &vData));
                 std::cerr << __func__ << " sending to loop amount=" << amountToLock << " marked with mypk=" << HexStr(mypk) << std::endl;
 
-                // return change to the activated fund:
+                // return change to the my activated address:
                 int64_t change = (inputsum - amountToLock);
                 if (change > 0) {
                     int32_t height = komodo_nextheight();
