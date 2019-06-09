@@ -6,6 +6,7 @@
 #define BITCOIN_ZMQ_ZMQNOTIFICATIONINTERFACE_H
 
 #include "validationinterface.h"
+#include "consensus/validation.h"
 #include <string>
 #include <map>
 
@@ -26,6 +27,7 @@ protected:
     // CValidationInterface
     void SyncTransaction(const CTransaction &tx, const CBlock *pblock);
     void UpdatedBlockTip(const CBlockIndex *pindex);
+    void BlockChecked(const CBlock& block, const CValidationState& state);
 
 private:
     CZMQNotificationInterface();

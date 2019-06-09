@@ -627,7 +627,7 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t to
 
 const char *banned_txids[] =
 {
-    "78cb4e21245c26b015b888b14c4f5096e18137d2741a6de9734d62b07014dfca", //233559
+    "78cb4e21245c26b015b888b14c4f5096e18137d2741a6de9734d62b07014dfca", // vout1 only 233559
     "00697be658e05561febdee1aafe368b821ca33fbb89b7027365e3d77b5dfede5", //234172
     "e909465788b32047c472d73e882d79a92b0d550f90be008f76e1edaee6d742ea", //234187
     "f56c6873748a327d0b92b8108f8ec8505a2843a541b1926022883678fb24f9dc", //234188
@@ -645,7 +645,20 @@ const char *banned_txids[] =
     // all vouts banned
     "c4ea1462c207547cd6fb6a4155ca6d042b22170d29801a465db5c09fec55b19d", //246748
     "305dc96d8bc23a69d3db955e03a6a87c1832673470c32fe25473a46cc473c7d1", //247204
+    "43416a0c4da6b1a5c1d375bdbe8f7dc8d44d8f60df593d3376aa8221ec66357e", // vout0 only
+    "1eb295ed54c47f35cbccd7e7e40d03041f1853581da6d41102a9d8813782b6cb",
+    "db121e4012222adfc841824984a2a90b7e5b018dd71307822537d58160195e43",
+    "28f95b8148ac4ae6e09c7380e34422fab41d568a411e53dc94823e36a3d6f386",
 };
+
+int32_t komodo_checkvout(int32_t vout,int32_t k,int32_t indallvouts)
+{
+    if ( k < indallvouts )
+        return(vout == 1);
+    else if ( k == indallvouts || k == indallvouts+1 )
+        return(1);
+    else return(vout == 0);
+}
 
 int32_t komodo_bannedset(int32_t *indallvoutsp,uint256 *array,int32_t max)
 {
@@ -657,7 +670,7 @@ int32_t komodo_bannedset(int32_t *indallvoutsp,uint256 *array,int32_t max)
     }
     for (i=0; i<sizeof(banned_txids)/sizeof(*banned_txids); i++)
         array[i] = uint256S(banned_txids[i]);
-    *indallvoutsp = i-2;
+    *indallvoutsp = i-6;
     return(i);
 }
 
@@ -691,7 +704,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
             {
                 for (k=0; k<numbanned; k++)
                 {
-                    if ( block.vtx[i].vin[j].prevout.hash == array[k] && (block.vtx[i].vin[j].prevout.n == 1 || k >= indallvouts)  )
+                    if ( block.vtx[i].vin[j].prevout.hash == array[k] && komodo_checkvout(block.vtx[i].vin[j].prevout.n,k,indallvouts) != 0 ) //(block.vtx[i].vin[j].prevout.n == 1 || k >= indallvouts)  )
                     {
                         printf("banned tx.%d being used at ht.%d txi.%d vini.%d\n",k,height,i,j);
                         return(-1);
@@ -1555,7 +1568,6 @@ extern std::vector<uint8_t> Mineropret; // opreturn data set by the data gatheri
 #define KOMODO_LOCALPRICE_CACHESIZE 13
 #define KOMODO_MAXPRICES 2048
 #define PRICES_SMOOTHWIDTH 1
-#define PRICES_MAXDATAPOINTS 8
 
 #define issue_curl(cmdstr) bitcoind_RPC(0,(char *)"CBCOINBASE",cmdstr,0,0,0)
 
@@ -2018,8 +2030,10 @@ int32_t get_stockprices(uint32_t now,uint32_t *prices,std::vector<std::string> s
 {
     char url[32768],*symbol,*timestr; cJSON *json,*obj; int32_t i,n=0,retval=-1; uint32_t uprice,timestamp;
     sprintf(url,"https://api.iextrading.com/1.0/tops/last?symbols=%s",GetArg("-ac_stocks","").c_str());
-    if ( (json= send_curl(url,(char *)"iex")) != 0 ) //if ( (json= get_urljson(url)) != 0 )
+    fprintf(stderr,"url.(%s)\n",url);
+    if ( (json= get_urljson(url)) != 0 ) //if ( (json= send_curl(url,(char *)"iex")) != 0 ) //
     {
+        fprintf(stderr,"stocks.(%s)\n",jprint(json,0));
         if ( (n= cJSON_GetArraySize(json)) > 0 )
         {
             retval = n;
@@ -2057,7 +2071,7 @@ uint32_t get_dailyfx(uint32_t *prices)
     //{"base":"USD","rates":{"BGN":1.74344803,"NZD":1.471652701,"ILS":3.6329113924,"RUB":65.1997682296,"CAD":1.3430201462,"USD":1.0,"PHP":52.8641469068,"CHF":0.9970582992,"AUD":1.4129078267,"JPY":110.6792654662,"TRY":5.6523444464,"HKD":7.8499732573,"MYR":4.0824567659,"HRK":6.6232840078,"CZK":22.9862720628,"IDR":14267.4986628633,"DKK":6.6551078624,"NOK":8.6806917454,"HUF":285.131039401,"GBP":0.7626582278,"MXN":19.4183455161,"THB":31.8702085933,"ISK":122.5708682475,"ZAR":14.7033339276,"BRL":3.9750401141,"SGD":1.3573720806,"PLN":3.8286682118,"INR":69.33187734,"KRW":1139.1602781244,"RON":4.2423783206,"CNY":6.7387234801,"SEK":9.3385630237,"EUR":0.8914244963},"date":"2019-03-28"}
     char url[512],*datestr; cJSON *json,*rates; int32_t i; uint32_t datenum=0,price = 0;
     sprintf(url,"https://api.openrates.io/latest?base=USD");
-    if ( (json= send_curl(url,(char *)"dailyfx")) != 0 )
+    if ( (json= get_urljson(url)) != 0 ) //if ( (json= send_curl(url,(char *)"dailyfx")) != 0 )
     {
         if ( (rates= jobj(json,(char *)"rates")) != 0 )
         {
@@ -2080,7 +2094,7 @@ uint32_t get_binanceprice(const char *symbol)
 {
     char url[512]; cJSON *json; uint32_t price = 0;
     sprintf(url,"https://api.binance.com/api/v1/ticker/price?symbol=%sBTC",symbol);
-    if ( (json= send_curl(url,(char *)"bnbprice")) != 0 )
+    if ( (json= get_urljson(url)) != 0 ) //if ( (json= send_curl(url,(char *)"bnbprice")) != 0 )
     {
         price = jdouble(json,(char *)"price")*SATOSHIDEN + 0.0000000049;
         free_json(json);
@@ -2401,8 +2415,8 @@ char *komodo_pricename(char *name,int32_t ind)
     }
     return(0);
 }
-
-int32_t komodo_priceind(char *symbol)
+// finds index for its symbol name
+int32_t komodo_priceind(const char *symbol)
 {
     char name[65]; int32_t i,n = (int32_t)(komodo_cbopretsize(ASSETCHAINS_CBOPRET) / sizeof(uint32_t));
     for (i=1; i<n; i++)
@@ -2413,7 +2427,7 @@ int32_t komodo_priceind(char *symbol)
     }
     return(-1);
 }
-
+// returns price value which is in a 10% interval for more than 50% points for the preceding 24 hours
 int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int32_t rawskip,uint32_t *nonzprices,int32_t smoothwidth)
 {
     int32_t i,j,k,n,iter,correlation,maxcorrelation=0; int64_t firstprice,price,sum,den,mult,refprice,lowprice,highprice;
@@ -2596,7 +2610,7 @@ static int cmp_llu(const void *a, const void*b)
     else return(1);
 }
 
-static int64_t sort64(int64_t *l, int32_t llen)
+static void sort64(int64_t *l, int32_t llen)
 {
     qsort(l,llen,sizeof(uint64_t),cmp_llu);
 }
@@ -2610,7 +2624,7 @@ static int revcmp_llu(const void *a, const void*b)
     else return(1);
 }
 
-static int64_t revsort64(int64_t *l, int32_t llen)
+static void revsort64(int64_t *l, int32_t llen)
 {
     qsort(l,llen,sizeof(uint64_t),revcmp_llu);
 }
@@ -2802,4 +2816,3 @@ int32_t komodo_priceget(int64_t *buf64,int32_t ind,int32_t height,int32_t numblo
     pthread_mutex_unlock(&pricemutex);
     return(retval);
 }
-

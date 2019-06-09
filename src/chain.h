@@ -28,6 +28,7 @@ class CChainPower;
 #include "pow.h"
 #include "tinyformat.h"
 #include "uint256.h"
+extern int8_t is_STAKED(const char *chain_name);
 
 #include <vector>
 
@@ -36,6 +37,8 @@ class CChainPower;
 static const int SPROUT_VALUE_VERSION = 1001400;
 static const int SAPLING_VALUE_VERSION = 1010100;
 extern int32_t ASSETCHAINS_LWMAPOS;
+extern char ASSETCHAINS_SYMBOL[65];
+extern uint64_t ASSETCHAINS_NOTARY_PAY[];
 
 struct CDiskBlockPos
 {
@@ -118,7 +121,7 @@ enum BlockStatus: uint32_t {
     BLOCK_FAILED_MASK        =   BLOCK_FAILED_VALID | BLOCK_FAILED_CHILD,
 
     BLOCK_ACTIVATES_UPGRADE  =   128, //! block activates a network upgrade
-    BLOCK_IN_TMPFILE = 256 
+    BLOCK_IN_TMPFILE         =   256 
 };
 
 //! Short-hand for the highest consensus validity we implement.
@@ -238,7 +241,7 @@ public:
     CBlockIndex* pskip;
 
     //! height of the entry in the chain. The genesis block has height 0
-    int64_t newcoins,zfunds,sproutfunds; int8_t segid; // jl777 fields
+    int64_t newcoins,zfunds,sproutfunds,nNotaryPay; int8_t segid; // jl777 fields
     //! Which # file this block is stored in (blk?????.dat)
     int nFile;
 
@@ -309,6 +312,7 @@ public:
         phashBlock = NULL;
         newcoins = zfunds = 0;
         segid = -2;
+        nNotaryPay = 0;
         pprev = NULL;
         pskip = NULL;
         nFile = 0;
@@ -542,6 +546,11 @@ public:
         // this index was storing them.
         if ((s.GetType() & SER_DISK) && (nVersion >= SAPLING_VALUE_VERSION)) {
             READWRITE(nSaplingValue);
+        }
+        if ( (s.GetType() & SER_DISK) && (is_STAKED(ASSETCHAINS_SYMBOL) != 0) && ASSETCHAINS_NOTARY_PAY[0] != 0 )
+        {
+            READWRITE(nNotaryPay);
+            READWRITE(segid);
         }
     }
 

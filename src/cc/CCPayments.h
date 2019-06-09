@@ -18,17 +18,26 @@
 #define CC_PAYMENTS_H
 
 #include "CCinclude.h"
+#include <gmp.h>
+#include <key_io.h>
 
 #define PAYMENTS_TXFEE 10000
+#define PAYMENTS_MERGEOFSET 60 // 1H extra. 
+extern std::vector <std::pair<CAmount, CTxDestination>> vAddressSnapshot;
+extern int32_t lastSnapShotHeight;
 
 bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn);
 
 // CCcustom
 UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr);
 UniValue PaymentsFund(struct CCcontract_info *cp,char *jsonstr);
+UniValue PaymentsMerge(struct CCcontract_info *cp,char *jsonstr);
 UniValue PaymentsTxidopret(struct CCcontract_info *cp,char *jsonstr);
 UniValue PaymentsCreate(struct CCcontract_info *cp,char *jsonstr);
+UniValue PaymentsAirdrop(struct CCcontract_info *cp,char *jsonstr);
+UniValue PaymentsAirdropTokens(struct CCcontract_info *cp,char *jsonstr);
 UniValue PaymentsInfo(struct CCcontract_info *cp,char *jsonstr);
 UniValue PaymentsList(struct CCcontract_info *cp,char *jsonstr);
 
 #endif
+ 
