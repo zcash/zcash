@@ -410,7 +410,7 @@ bool ExtractDestination(const CScript& _scriptPubKey, CTxDestination& addressRet
 
     else if (IsCryptoConditionsEnabled() != 0 && whichType == TX_CRYPTOCONDITION)
     {
-        if (0 /*dimxy cc is always hashed, use vSolutions[0] for address, the rest is additional data*/ && vSolutions.size() > 1)
+        if (0 /*dimxy cc is always hashed, use vSolutions[0] for address, the rest is additional user data, not the address*/ && vSolutions.size() > 1)
         {
             CPubKey pk = CPubKey((vSolutions[1]));
             addressRet = pk;
