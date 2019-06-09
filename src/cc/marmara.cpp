@@ -685,7 +685,7 @@ int64_t AddMarmarainputs(bool (*CheckOpretFunc)(const CScript &, CPubKey &), CMu
             tx.vout[nvout].scriptPubKey.IsPayToCryptoCondition() != 0 && myIsutxo_spentinmempool(ignoretxid, ignorevin, txid, nvout) == 0)
         {
             CPubKey pk;
-            CScript ccopret, dummy;
+            CScript opret, dummy;
             std::vector< vscript_t > vParams;
             bool isccopret = false, opretok = false;
 
@@ -696,8 +696,8 @@ int64_t AddMarmarainputs(bool (*CheckOpretFunc)(const CScript &, CPubKey &), CMu
             if (vParams.size() > 0) {
                 COptCCParams p = COptCCParams(vParams[0]);
                 if (p.vData.size() > 0) {
-                    ccopret << OP_RETURN << E_MARSHAL(p.vData[0]); // reconstruct opret for CheckOpretFunc function
-                    if (CheckOpretFunc(ccopret, pk)) {
+                    opret << OP_RETURN << E_MARSHAL(p.vData[0]); // reconstruct opret for CheckOpretFunc function
+                    if (CheckOpretFunc(opret, pk)) {
                         isccopret = true;
                         opretok = true;
                     }
@@ -705,14 +705,14 @@ int64_t AddMarmarainputs(bool (*CheckOpretFunc)(const CScript &, CPubKey &), CMu
             }
             if (!opretok) {  // right opret not found in cc vout then check opret in the back of vouts
                 if (nvout < tx.vout.size()) {   // there might be opret in the back
-                    if (CheckOpretFunc(tx.vout.back().scriptPubKey, pk)) {
+                    opret = tx.vout.back().scriptPubKey;
+                    if (CheckOpretFunc(opret, pk)) {
                         isccopret = false;
                         opretok = true;
                     }
                 }
             }
 
-            /*
             // print opret evalcode and funcid for debug logging:
             {
                 vscript_t vprintopret;
@@ -722,7 +722,7 @@ int64_t AddMarmarainputs(bool (*CheckOpretFunc)(const CScript &, CPubKey &), CMu
                     funcid = vprintopret.begin()[1];
                 }
                 std::cerr << __func__ << " checking addr=" << coinaddr << " txid=" << txid.GetHex() << " nvout=" << nvout << " satoshis=" << it->second.satoshis << " opret eval=" << (int)evalcode << " funcid=" << (char)(funcid ? funcid : ' ') << " isccopret=" << isccopret << std::endl;
-            }*/
+            }
 
             if (opretok)
             {
