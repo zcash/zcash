@@ -698,7 +698,8 @@ int64_t AddMarmarainputs(bool (*CheckOpretFunc)(const CScript &, CPubKey &), CMu
             if (vParams.size() > 0) {
                 COptCCParams p = COptCCParams(vParams[0]);
                 if (p.vData.size() > 0) {
-                    opret << OP_RETURN << E_MARSHAL(ss << p.vData[0]); // reconstruct opret for CheckOpretFunc function
+                    opret << OP_RETURN << p.vData[0]; // reconstruct opret for CheckOpretFunc function
+                    std::cerr << __func__ << " ccopret=" << opret.ToString() << std::endl;
                     if (CheckOpretFunc(opret, pk)) {
                         isccopret = true;
                         opretok = true;
