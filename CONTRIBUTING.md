@@ -46,11 +46,11 @@ Write clear, clean and consistent code. Follow well-known and established style 
 
 ## Setting up your environment
 
-The Komodo Core (komodod) is mainly written in C++ with specific modules written in C. Follow the [Getting Started](https://github.com/komodoplatform/komodo#getting-started) instructions to build komodod from sources.
+The Komodo Core (komodod) is mainly written in C++ with specific modules written in C. Follow the [Getting Started](https://github.com/komodoplatform/komodo#getting-started) instructions to build komodod from sources. For more informations about the Komodo Platform and a full API documentation please visit the official [Komodo developer documentation](https://docs.komodoplatform.com/). 
 
 ## Contribution review process
 
-Our team and community will review your contribution and start a transparent testing and quality assurance process.
+Our team and community will review your contribution and start a transparent testing and quality assurance process. As soon as your contribution has undergone sucessful review and QA signoff it gets merged into the Komodo sourcecode. 
 
 ## Community
 
