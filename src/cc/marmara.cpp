@@ -43,7 +43,7 @@
 
   'L' lockfunds
 
-  'K' pubkey which locked funds in loop in cc vout opret
+  'K' pubkey in cc vout opret which locked funds in loop 
 
  */
 
@@ -1251,9 +1251,15 @@ static int32_t RedistributeLockedRemainder(CMutableTransaction &mtx, struct CCco
             // return change to the lock-in-loop fund, distribute for pubkeys:
             if (change > 0 && pubkeys.size() > 0)  {
                 for (auto pk : pubkeys) {
-                    std::vector< vscript_t > vData{ E_MARSHAL(ss << (uint8_t)EVAL_MARMARA << 'K' << vscript_t(pk.begin(), pk.end())) };   // add mypk to vout to identify who has locked coins in the credit loop
-                    std::cerr << __func__ << " distributing to loop change/pubkeys.size()=" << change / pubkeys.size() << " marked with pk=" << HexStr(pk) << std::endl;
+                    CScript opret = MarmaraEncodeLoopOpret('K', createtxid, pk, amount, matures, currency);
+                    vscript_t vopret;
+
+                    GetOpReturnData(opret, vopret);
+                    //std::vector< vscript_t > vData{ E_MARSHAL(ss << (uint8_t)EVAL_MARMARA << 'K' << vscript_t(pk.begin(), pk.end())) };   // add mypk to vout to identify who has locked coins in the credit loop
+                    std::vector< vscript_t > vData{ vopret };    // add mypk to vout to identify who has locked coins in the credit loop
                     mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA, change / pubkeys.size(), Marmarapk, createtxidPk, &vData));  // TODO: losing remainder?
+
+                    std::cerr << __func__ << " distributing to loop change/pubkeys.size()=" << change / pubkeys.size() << " marked with pk=" << HexStr(pk) << std::endl;
                 }
             }
 
@@ -1361,10 +1367,13 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
                 char createtxidaddr[KOMODO_ADDRESS_BUFSIZE];
                 CPubKey createtxidPk = CCtxidaddr(createtxidaddr, createtxid);
 
-                std::cerr << __func__ << " sending to loop amount=" << amountToLock << " marked with mypk=" << HexStr(mypk) << std::endl;
-
-                std::vector< vscript_t > vData{ E_MARSHAL(ss << (uint8_t)EVAL_MARMARA << 'K' << vscript_t(mypk.begin(), mypk.end())) };   // add mypk to vout to identify who has locked coins in the credit loop
+                CScript opret = MarmaraEncodeLoopOpret('K', createtxid, mypk, amount, matures, currency);
+                vscript_t vopret;
+                GetOpReturnData(opret, vopret);
+                //std::vector< vscript_t > vData{ E_MARSHAL(ss << (uint8_t)EVAL_MARMARA << (uint8_t)'K' << vscript_t(mypk.begin(), mypk.end())) };   // add mypk to vout to identify who has locked coins in the credit loop
+                std::vector< vscript_t > vData{ vopret };  // add mypk to cc vout to identify who locked the coins in the loop
                 mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA, amountToLock, Marmarapk, createtxidPk, &vData));
+                std::cerr << __func__ << " sending to loop amount=" << amountToLock << " marked with mypk=" << HexStr(mypk) << std::endl;
 
                 // return change to the activated fund:
                 int64_t change = (inputsum - amountToLock);
@@ -1375,7 +1384,7 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
                     CScript opret = MarmaraCoinbaseOpret('C', height, mypk);
                     vscript_t vopret;
                     GetOpReturnData(opret, vopret);
-                    std::vector< vscript_t > vData{ vopret };
+                    std::vector< vscript_t > vData{ vopret }; // add coinbase opret to ccvout for the change
                     mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA, change, Marmarapk, mypk, &vData));  // adding MarmaraCoinbase cc vout 'opret' for change
                 }
 
