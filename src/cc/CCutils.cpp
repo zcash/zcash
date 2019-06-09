@@ -107,7 +107,7 @@ CTxOut MakeCC1vout(uint8_t evalcode,CAmount nValue, CPubKey pk, std::vector<std:
         //std::vector<std::vector<unsigned char>> vtmpData = std::vector<std::vector<unsigned char>>(vData->begin(), vData->end());
         std::vector<CPubKey> vPubKeys = std::vector<CPubKey>();
         if ((*vData).size() > 0) {
-            vPubKeys.push_back(pk); // store pubkeys too
+            vPubKeys.push_back(pk); // dimxy if there is vData then store pubkeys too, otherwise COptCCParam(vch) wont read vData
         }
         COptCCParams ccp = COptCCParams(COptCCParams::VERSION, evalcode, 1, 1, vPubKeys, ( * vData));
         vout.scriptPubKey << ccp.AsVector() << OP_DROP;
@@ -126,8 +126,8 @@ CTxOut MakeCC1of2vout(uint8_t evalcode,CAmount nValue,CPubKey pk1,CPubKey pk2, s
         //std::vector<std::vector<unsigned char>> vtmpData = std::vector<std::vector<unsigned char>>(vData->begin(), vData->end());
         std::vector<CPubKey> vPubKeys = std::vector<CPubKey>();
         // skip pubkeys. These need to maybe be optional and we need some way to get them out that is easy!
-        if ((*vData).size() > 0) {  // store pubkeys too, as when reading it back it would read pubkeys first then vData
-            vPubKeys.push_back(pk1);
+        if ((*vData).size() > 0) {      // dimxy if there is vData then store pubkeys too, otherwise COptCCParam(vch) wont read vData
+            vPubKeys.push_back(pk1);    // it first expects pubkeys then reads vData
             vPubKeys.push_back(pk2);
         }
         COptCCParams ccp = COptCCParams(COptCCParams::VERSION, evalcode, 1, 2, vPubKeys, ( * vData));
