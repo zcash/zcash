@@ -685,9 +685,9 @@ int64_t AddMarmarainputs(bool (*CheckOpretFunc)(const CScript &, CPubKey &), CMu
             tx.vout[nvout].scriptPubKey.IsPayToCryptoCondition() != 0 && myIsutxo_spentinmempool(ignoretxid, ignorevin, txid, nvout) == 0)
         {
             CPubKey pk;
-            CScript opret, dummy;
+            CScript ccopret, dummy;
             std::vector< vscript_t > vParams;
-            bool isccopret = false;
+            bool isccopret = false, opretok = false;
 
             // now we should consider 2 cases:
             // opret is in the last vout
@@ -696,30 +696,37 @@ int64_t AddMarmarainputs(bool (*CheckOpretFunc)(const CScript &, CPubKey &), CMu
             if (vParams.size() > 0) {
                 COptCCParams p = COptCCParams(vParams[0]);
                 if (p.vData.size() > 0) {
-                    opret << OP_RETURN << p.vData[0]; // reconstruct opret for CheckOpretFunc function
-                    isccopret = true;
+                    ccopret << OP_RETURN << E_MARSHAL(p.vData[0]); // reconstruct opret for CheckOpretFunc function
+                    if (CheckOpretFunc(ccopret, pk)) {
+                        isccopret = true;
+                        opretok = true;
+                    }
                 }
             }
-            if (opret.empty()) {  // opret not found in cc vout then check opret in the back of vouts
-                if (nvout < tx.vout.size()) {
-                    opret = tx.vout.back().scriptPubKey;
-                    isccopret = false;
+            if (!opretok) {  // right opret not found in cc vout then check opret in the back of vouts
+                if (nvout < tx.vout.size()) {   // there might be opret in the back
+                    if (CheckOpretFunc(tx.vout.back().scriptPubKey, pk)) {
+                        isccopret = false;
+                        opretok = true;
+                    }
                 }
             }
 
-
+            /*
             // print opret evalcode and funcid for debug logging:
-            vscript_t vprintopret;
-            uint8_t funcid = 0, evalcode = 0;
-            if (GetOpReturnData(opret, vprintopret) && vprintopret.size() >= 2) {
-                evalcode = vprintopret.begin()[0];
-                funcid = vprintopret.begin()[1];
-            }
-            std::cerr << __func__ << " checking addr=" << coinaddr << " txid=" << txid.GetHex() << " nvout=" << nvout << " satoshis=" << it->second.satoshis << " opret eval=" << (int)evalcode << " funcid=" << (char)(funcid ? funcid : ' ') << " isccopret=" << isccopret << std::endl;
-
-            if (CheckOpretFunc(opret, pk))
             {
-                std::cerr << __func__ << " good vintx addr=" << coinaddr << " txid=" << txid.GetHex() << " nvout=" << nvout << " satoshis=" << it->second.satoshis << std::endl;
+                vscript_t vprintopret;
+                uint8_t funcid = 0, evalcode = 0;
+                if (GetOpReturnData(opret, vprintopret) && vprintopret.size() >= 2) {
+                    evalcode = vprintopret.begin()[0];
+                    funcid = vprintopret.begin()[1];
+                }
+                std::cerr << __func__ << " checking addr=" << coinaddr << " txid=" << txid.GetHex() << " nvout=" << nvout << " satoshis=" << it->second.satoshis << " opret eval=" << (int)evalcode << " funcid=" << (char)(funcid ? funcid : ' ') << " isccopret=" << isccopret << std::endl;
+            }*/
+
+            if (opretok)
+            {
+                std::cerr << __func__ << " checked good vintx for addr=" << coinaddr << " txid=" << txid.GetHex() << " nvout=" << nvout << " satoshis=" << it->second.satoshis << " isccopret=" << isccopret << std::endl;
 
                 if (total != 0 && maxinputs != 0)
                 {
@@ -735,7 +742,7 @@ int64_t AddMarmarainputs(bool (*CheckOpretFunc)(const CScript &, CPubKey &), CMu
                     break;
             }
             else
-                std::cerr << __func__ << " null funcid" << std::endl;
+                std::cerr << __func__ << " addr=" << coinaddr << " txid=" << txid.GetHex() << " cant check opret" << std::endl;
         }
     }
     if (maxinputs != 0 && total == 0)
