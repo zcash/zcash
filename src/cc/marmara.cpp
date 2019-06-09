@@ -43,6 +43,8 @@
 
   'L' lockfunds
 
+  'K' pubkey which locked funds in loop in cc vout opret
+
  */
 
  // start of consensus code
@@ -1242,9 +1244,9 @@ static int32_t RedistributeLockedRemainder(CMutableTransaction &mtx, struct CCco
             // return change to the lock-in-loop fund, distribute for pubkeys:
             if (change > 0 && pubkeys.size() > 0)  {
                 for (auto pk : pubkeys) {
-                    std::vector< vscript_t > voutData{ vscript_t(pk.begin(), pk.end()) };   // add mypk to vout to identify who has locked coins in the credit loop
+                    std::vector< vscript_t > vData{ E_MARSHAL(ss << (uint8_t)EVAL_MARMARA << 'K' << vscript_t(pk.begin(), pk.end())) };   // add mypk to vout to identify who has locked coins in the credit loop
                     std::cerr << __func__ << " distributing to loop change/pubkeys.size()=" << change / pubkeys.size() << " marked with pk=" << HexStr(pk) << std::endl;
-                    mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA, change / pubkeys.size(), Marmarapk, createtxidPk, &voutData));  // TODO: losing remainder?
+                    mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA, change / pubkeys.size(), Marmarapk, createtxidPk, &vData));  // TODO: losing remainder?
                 }
             }
 
