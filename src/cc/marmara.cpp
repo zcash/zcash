@@ -653,14 +653,14 @@ bool IsLockInLoopOpret(const CScript &spk, CPubKey &pk)
 }
 
 // add locked coins:
-int64_t AddMarmarainputs(bool (*CheckOpretFunc)(const CScript &, CPubKey &), CMutableTransaction &mtx, std::vector<CPubKey> &pubkeys, char *coinaddr, int64_t total, int32_t maxinputs)
+int64_t AddMarmarainputs(bool (*CheckOpretFunc)(const CScript &, CPubKey &), CMutableTransaction &mtx, std::vector<CPubKey> &pubkeys, char *unspentaddr, int64_t total, int32_t maxinputs)
 {
     int64_t threshold, nValue, totalinputs = 0; 
     int32_t n = 0;
     std::vector<int64_t> vals;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
 
-    SetCCunspents(unspentOutputs, coinaddr, true);
+    SetCCunspents(unspentOutputs, unspentaddr, true);
     if (maxinputs > CC_MAXVINS)
         maxinputs = CC_MAXVINS;
     if (maxinputs > 0)
@@ -671,7 +671,7 @@ int64_t AddMarmarainputs(bool (*CheckOpretFunc)(const CScript &, CPubKey &), CMu
     if (CheckOpretFunc == NULL)  // no function to check opret
         return -1;
 
-    std::cerr << __func__ << " adding from addr=" << coinaddr << " total=" << total << std::endl;
+    std::cerr << __func__ << " adding from addr=" << unspentaddr << " total=" << total << std::endl;
 
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it = unspentOutputs.begin(); it != unspentOutputs.end(); it++)
     {
@@ -724,28 +724,34 @@ int64_t AddMarmarainputs(bool (*CheckOpretFunc)(const CScript &, CPubKey &), CMu
                     evalcode = vprintopret.begin()[0];
                     funcid = vprintopret.begin()[1];
                 }
-                std::cerr << __func__ << " checking addr=" << coinaddr << " txid=" << txid.GetHex() << " nvout=" << nvout << " satoshis=" << it->second.satoshis << " opret eval=" << (int)evalcode << " funcid=" << (char)(funcid ? funcid : ' ') << " isccopret=" << isccopret << std::endl;
+                std::cerr << __func__ << " checking addr=" << unspentaddr << " txid=" << txid.GetHex() << " nvout=" << nvout << " satoshis=" << it->second.satoshis << " opret eval=" << (int)evalcode << " funcid=" << (char)(funcid ? funcid : ' ') << " isccopret=" << isccopret << std::endl;
             }
 
             if (opretok)
             {
-                std::cerr << __func__ << " checked good vintx for addr=" << coinaddr << " txid=" << txid.GetHex() << " nvout=" << nvout << " satoshis=" << it->second.satoshis << " isccopret=" << isccopret << std::endl;
+                char utxoaddr[KOMODO_ADDRESS_BUFSIZE];
 
-                if (total != 0 && maxinputs != 0)
+                Getscriptaddress(utxoaddr, tx.vout[nvout].scriptPubKey);
+                if (strcmp(unspentaddr, utxoaddr) == 0)  // check if real vout address matches index address (as another key could be used in the addressindex)
                 {
-                    mtx.vin.push_back(CTxIn(txid, nvout, CScript()));
-                    pubkeys.push_back(pk);
+                    std::cerr << __func__ << " checked good vintx for addr=" << unspentaddr << " txid=" << txid.GetHex() << " nvout=" << nvout << " satoshis=" << it->second.satoshis << " isccopret=" << isccopret << std::endl;
+
+                    if (total != 0 && maxinputs != 0)
+                    {
+                        mtx.vin.push_back(CTxIn(txid, nvout, CScript()));
+                        pubkeys.push_back(pk);
+                    }
+                    totalinputs += it->second.satoshis;
+                    vals.push_back(it->second.satoshis);
+                    n++;
+                    if (maxinputs != 0 && total == 0)
+                        continue;
+                    if ((total > 0 && totalinputs >= total) || (maxinputs > 0 && n >= maxinputs))
+                        break;
                 }
-                totalinputs += it->second.satoshis;
-                vals.push_back(it->second.satoshis);
-                n++;
-                if (maxinputs != 0 && total == 0)
-                    continue;
-                if ((total > 0 && totalinputs >= total) || (maxinputs > 0 && n >= maxinputs))
-                    break;
             }
             else
-                std::cerr << __func__ << " addr=" << coinaddr << " txid=" << txid.GetHex() << " cant check opret" << std::endl;
+                std::cerr << __func__ << " addr=" << unspentaddr << " txid=" << txid.GetHex() << " cant check opret" << std::endl;
         }
     }
     if (maxinputs != 0 && total == 0)
@@ -1357,8 +1363,8 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
 
                 std::cerr << __func__ << " sending to loop amount=" << amountToLock << " marked with mypk=" << HexStr(mypk) << std::endl;
 
-                std::vector< vscript_t > voutData{ vscript_t(mypk.begin(), mypk.end()) };   // add mypk to vout to identify who has locked coins in the credit loop
-                mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA, amountToLock, Marmarapk, createtxidPk, &voutData));
+                std::vector< vscript_t > vData{ E_MARSHAL(ss << (uint8_t)EVAL_MARMARA << 'K' << vscript_t(mypk.begin(), mypk.end())) };   // add mypk to vout to identify who has locked coins in the credit loop
+                mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA, amountToLock, Marmarapk, createtxidPk, &vData));
 
                 // return change to the activated fund:
                 int64_t change = (inputsum - amountToLock);
@@ -1375,9 +1381,9 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
 
                 if (endorsersNumber < 1 || RedistributeLockedRemainder(mtx, cp, creditloop, batontxid, amountToLock) >= 0)  // if there are issuers already then distribute and return amount / n value
                 {
-                    CC* lock1of2cond = MakeCCcond1of2(EVAL_MARMARA, Marmarapk, mypk);  // create vintx probe 1of2 cond, do not cc_free it!
-                    CCAddVintxCond(cp, lock1of2cond);
-                    cc_free(lock1of2cond);
+                    CC* activated1of2cond = MakeCCcond1of2(EVAL_MARMARA, Marmarapk, mypk);  // create vintx probe 1of2 cond, do not cc_free it!
+                    CCAddVintxCond(cp, activated1of2cond);
+                    cc_free(activated1of2cond);
 
                     rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, MarmaraEncodeLoopOpret(funcid, createtxid, receiverpk, amount, matures, currency));
 
