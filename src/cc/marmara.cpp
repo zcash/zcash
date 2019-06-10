@@ -489,9 +489,9 @@ struct komodo_staking *MarmaraGetStakingUtxos(struct komodo_staking *array, int3
     });
 
     // add lock-in-loops utxos for mypk:
-    EnumMyLockedInLoop([&](char *activatedaddr, const CTransaction & tx, int32_t nvout, CBlockIndex *pindex)
+    EnumMyLockedInLoop([&](char *loopaddr, const CTransaction & tx, int32_t nvout, CBlockIndex *pindex)
     {
-        array = komodo_addutxo(array, numkp, maxkp, (uint32_t)pindex->nTime, (uint64_t)tx.vout[nvout].nValue, tx.GetHash(), nvout, activatedaddr, hashbuf, tx.vout[nvout].scriptPubKey);
+        array = komodo_addutxo(array, numkp, maxkp, (uint32_t)pindex->nTime, (uint64_t)tx.vout[nvout].nValue, tx.GetHash(), nvout, loopaddr, hashbuf, tx.vout[nvout].scriptPubKey);
     });
    
     return array;
