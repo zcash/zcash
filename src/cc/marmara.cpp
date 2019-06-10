@@ -749,7 +749,7 @@ int64_t AddMarmarainputs(bool (*CheckOpretFunc)(const CScript &, CPubKey &), CMu
                 Getscriptaddress(utxoaddr, tx.vout[nvout].scriptPubKey);
                 if (strcmp(unspentaddr, utxoaddr) == 0)  // check if the real vout address matches the index address (as another key could be used in the addressindex)
                 {
-                    std::cerr << __func__ << " checked good vintx for addr=" << unspentaddr << " txid=" << txid.GetHex() << " nvout=" << nvout << " satoshis=" << it->second.satoshis << " isccopret=" << isccopret << std::endl;
+                    std::cerr << __func__ << " found good vintx for addr=" << unspentaddr << " txid=" << txid.GetHex() << " nvout=" << nvout << " satoshis=" << it->second.satoshis << " isccopret=" << isccopret << std::endl;
 
                     if (total != 0 && maxinputs != 0)
                     {
@@ -1231,8 +1231,8 @@ static int32_t RedistributeLockedRemainder(CMutableTransaction &mtx, struct CCco
         CPubKey createtxidPk = CCtxidaddr(txidaddr, createtxid);
         GetCCaddress1of2(cp, lockInLoop1of2addr, Marmarapk, createtxidPk);  // 1of2 lock-in-loop address 
 
-        std::cerr << __func__ << "calling AddMarmaraInputs for lock-in-loop addr=" << lockInLoop1of2addr << " adds all available" << std::endl;
-        if ((inputsum = AddMarmarainputs(IsLockInLoopOpret, mtx, pubkeys, lockInLoop1of2addr, 0, MARMARA_VINS)) >= amount / endorsersNumber) // total==0 means add all locked-in-loop vins
+        std::cerr << __func__ << "calling AddMarmaraInputs for lock-in-loop addr=" << lockInLoop1of2addr << " adds amount=" << amount << std::endl;
+        if ((inputsum = AddMarmarainputs(IsLockInLoopOpret, mtx, pubkeys, lockInLoop1of2addr, amount, MARMARA_VINS)) >= amount / endorsersNumber) 
         {
             if (mtx.vin.size() >= CC_MAXVINS - MARMARA_VINS) {// vin number limit
                 std::cerr << __func__ << " too many vins!" << std::endl;
@@ -1269,7 +1269,11 @@ static int32_t RedistributeLockedRemainder(CMutableTransaction &mtx, struct CCco
             change = (inputsum - amountReturned);
 
             // return change to the lock-in-loop fund, distribute for pubkeys:
-            if (change > 0 && pubkeys.size() > 0)  {
+            if (change > 0) {
+                if (pubkeys.size() != endorsersNumber) {
+                    std::cerr << __func__ << " internal error not matched pubkeys.size()=" << pubkeys.size() << " endorsersNumber=" << endorsersNumber << std::endl;
+                    return -1;
+                }
                 for (auto pk : pubkeys) {
                     CScript opret = MarmaraEncodeLoopOpret('K', createtxid, pk, amount, matures, currency);
                     vscript_t vopret;
