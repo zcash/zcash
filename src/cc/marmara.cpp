@@ -1077,8 +1077,8 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid)
                         }
                         rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, MarmaraEncodeLoopOpret('S', refcreatetxid, mypk, 0, refmatures, refcurrency), pubkeys);
                         if (rawtx.empty()) {
-                            result.push_back(Pair("result", (char *)"error"));
-                            result.push_back(Pair("error", (char *)"cant sign tx"));
+                            result.push_back(Pair("result", "error"));
+                            result.push_back(Pair("error", "couldnt finalize CCtx"));
                             std::cerr << __func__ << " bad mtx=" << HexStr(E_MARSHAL(ss << mtx)) << std::endl;
                         }
                         else {
@@ -1133,8 +1133,8 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid)
 
                         rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, MarmaraEncodeLoopOpret('D', refcreatetxid, mypk, -remaining, refmatures, refcurrency), pubkeys);  //some remainder left
                         if (rawtx.empty()) {
-                            result.push_back(Pair("result", (char *)"error"));
-                            result.push_back(Pair("error", (char *)"cant sign tx"));
+                            result.push_back(Pair("result", "error"));
+                            result.push_back(Pair("error", "couldnt finalize CCtx"));
                             std::cerr << __func__ << " bad mtx=" << HexStr(E_MARSHAL(ss << mtx)) << std::endl;
                         }
                         else {
@@ -1490,7 +1490,6 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
                 mtx.vin.push_back(CTxIn(batontxid, 0, CScript()));   // spend the baton
             if (funcid == 'I' || AddNormalinputs(mtx, mypk, txfee, 1) > 0)
             {
-                errorstr = (char *)"couldnt finalize CCtx";
                 mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA, txfee, receiverpk));  // transfer the baton to the next receiver
                 if (funcid == 'I')
                     mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA, txfee, Marmarapk));
@@ -1529,7 +1528,7 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
                     rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, MarmaraEncodeLoopOpret(funcid, createtxid, receiverpk, amount, matures, currency));
 
                     if (rawtx.size() == 0) {
-                        errorstr = "cant sign tx";
+                        errorstr = "couldnt finalize CCtx";
                         std::cerr << __func__ << " bad mtx=" << HexStr(E_MARSHAL(ss << mtx)) << std::endl;
                     }
                 }
