@@ -59,6 +59,8 @@ one other technical note is that komodod has the insight-explorer extensions bui
 #define SMALLVAL 0.000000000000001
 #define SATOSHIDEN ((uint64_t)100000000L)
 #define dstr(x) ((double)(x) / SATOSHIDEN)
+#define CCDISABLEALL memset(ASSETCHAINS_CCDISABLES,1,sizeof(ASSETCHAINS_CCDISABLES))
+#define CCENABLE(x) ASSETCHAINS_CCDISABLES[((uint8_t)x)] = 0
 
 #ifndef _BITS256
 #define _BITS256
