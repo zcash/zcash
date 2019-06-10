@@ -71,10 +71,8 @@ build:windows:
   - cp src/komodod.exe
     src/komodo-cli.exe
     src/komodo-tx.exe
-    src/cc/rogue/rogue.exe
     zcutil/fetch-params.bat
-    src/cc/rogue/x86_64-w64-mingw32/bin/libcurl-4.dll
-    src/cc/rogue/x86_64-w64-mingw32/bin/libncursesw6.dll
+
     ${PACKAGE_DIR_WINDOWS}
   - zip -r ${PACKAGE_DIR_WINDOWS}.zip ${PACKAGE_DIR_WINDOWS}
   - md5sum ${AGAMA_ARTIFACTS_WINDOWS} > ${AGAMA_ARTIFACTS_WINDOWS_CHECKSUM}
