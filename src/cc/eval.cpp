@@ -78,8 +78,13 @@ bool Eval::Dispatch(const CC *cond, const CTransaction &txTo, unsigned int nIn)
     uint8_t ecode = cond->code[0];
     if ( ASSETCHAINS_CCDISABLES[ecode] != 0 )
     {
-        fprintf(stderr,"%s evalcode.%d %02x\n",txTo.GetHash().GetHex().c_str(),ecode,ecode);
-        return Invalid("disabled-code, -ac_ccenables didnt include this ecode");
+        // check if a height activation has been set. 
+        if ( mapHeightEvalActivate[ecode] == 0 || this->GetCurrentHeight() == 0 || mapHeightEvalActivate[ecode] > this->GetCurrentHeight() )
+        {
+            fprintf(stderr,"%s evalcode.%d %02x\n",txTo.GetHash().GetHex().c_str(),ecode,ecode);
+            fprintf(stderr, "ac_ccactivateht: evalcode.%i activates at height.%i vs current height.%i\n", ecode, mapHeightEvalActivate[ecode], this->GetCurrentHeight());
+            return Invalid("disabled-code, -ac_ccenables didnt include this ecode");
+        }
     }
     std::vector<uint8_t> vparams(cond->code+1, cond->code+cond->codeLength);
     if ( ecode >= EVAL_FIRSTUSER && ecode <= EVAL_LASTUSER )

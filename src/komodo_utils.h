@@ -1692,7 +1692,7 @@ int8_t equihash_params_possible(uint64_t n, uint64_t k)
 
 void komodo_args(char *argv0)
 {
-    std::string name,addn,hexstr,symbol; char *dirname,fname[512],arg0str[64],magicstr[9]; uint8_t magic[4],extrabuf[32756],disablebits[32],*extraptr=0; FILE *fp; uint64_t val; uint16_t port; int32_t i,nonz=0,baseid,len,n,extralen = 0; uint64_t ccenables[256];
+    std::string name,addn,hexstr,symbol; char *dirname,fname[512],arg0str[64],magicstr[9]; uint8_t magic[4],extrabuf[32756],disablebits[32],*extraptr=0; FILE *fp; uint64_t val; uint16_t port; int32_t i,nonz=0,baseid,len,n,extralen = 0; uint64_t ccenables[256], ccEnablesHeight[512];
     IS_KOMODO_NOTARY = GetBoolArg("-notary", false);
     IS_STAKED_NOTARY = GetArg("-stakednotary", -1);
     memset(ccenables,0,sizeof(ccenables));
@@ -1757,6 +1757,27 @@ void komodo_args(char *argv0)
     ASSETCHAINS_PRIVATE = GetArg("-ac_private",0);
     KOMODO_SNAPSHOT_INTERVAL = GetArg("-ac_snapshot",0);
     Split(GetArg("-ac_nk",""), ASSETCHAINS_NK, 0);
+    
+    // -ac_ccactivateht=evalcode,height,evalcode,height,evalcode,height....
+    Split(GetArg("-ac_ccactivateht",""), ccEnablesHeight, 0);
+    // fill map with all eval codes and activation height of 0.
+    for ( int i = 0; i < 256; i++ )
+        mapHeightEvalActivate[i] = 0;
+    for ( int i = 0; i < 512; i++ )
+    {
+        int32_t ecode = ccEnablesHeight[i];
+        int32_t ht = ccEnablesHeight[i+1];
+        if ( ecode > 256 )
+            fprintf(stderr, "ac_ccactivateht: invalid evalcode.%i must be between 0 and 256.\n", ecode);
+        else if ( ht > 0 )
+        {
+            // update global map. 
+            mapHeightEvalActivate[ecode] = ht;
+            fprintf(stderr, "ac_ccactivateht: ecode.%i activates at height.%i\n", ecode, mapHeightEvalActivate[ecode]);
+        }
+        i++;
+    }
+    
     if ( (KOMODO_REWIND= GetArg("-rewind",0)) != 0 )
     {
         printf("KOMODO_REWIND %d\n",KOMODO_REWIND);
