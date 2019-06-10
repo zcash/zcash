@@ -60,7 +60,8 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
  * or over the difficulty averaging window if 'lookup' is nonpositive.
  * If 'height' is nonnegative, compute the estimate at the time when a given block was found.
  */
-int64_t GetNetworkHashPS(int lookup, int height) {
+int64_t GetNetworkHashPS(int lookup, int height) 
+{
     CBlockIndex *pb = chainActive.LastTip();
 
     if (height >= 0 && height < chainActive.Height())
@@ -1050,6 +1051,7 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp)
     }
     return result;
 }
+
 
 static const CRPCCommand commands[] =
 { //  category              name                      actor (function)         okSafeMode

@@ -682,11 +682,32 @@ int32_t komodo_WhoStaked(CBlock *pblock, CTxDestination &addressout)
 
 bool MarmaraPoScheck(char *destaddr,CScript opret,CTransaction staketx);
 
-int32_t komodo_isPoS(CBlock *pblock,int32_t height)
+int32_t komodo_isPoS2(CBlock *pblock)
 {
-    int32_t n,vout,numvouts; uint32_t txtime; uint64_t value; char voutaddr[64],destaddr[64]; CTxDestination voutaddress; uint256 txid; CScript opret;
+    CBlockIndex *pindex = komodo_blockindex(pblock->GetHash());
+    if ( pindex != 0 && pindex->segid >= -1 )
+    {
+        //fprintf(stderr,"isPoSblock segid.%d\n",pindex->segid);
+        if ( pindex->segid == -1 )
+            return(0);
+        else return(1);
+    }
+    return (-1);
+}
+
+int32_t komodo_isPoS(CBlock *pblock,int32_t height,bool fJustCheck)
+{
+    int32_t n,vout,numvouts,ret; uint32_t txtime; uint64_t value; char voutaddr[64],destaddr[64]; CTxDestination voutaddress; uint256 txid; CScript opret;
     if ( ASSETCHAINS_STAKED != 0 )
     {
+        if ( fJustCheck )
+        {
+            // check pindex first, if that does not work, continue with slow check.
+            if ( (ret= komodo_isPoS2(pblock)) == 1 )
+                return (1);
+            else if ( ret == 0 )
+                return (0);
+        }
         n = pblock->vtx.size();
         //fprintf(stderr,"ht.%d check for PoS numtx.%d numvins.%d numvouts.%d\n",height,n,(int32_t)pblock->vtx[n-1].vin.size(),(int32_t)pblock->vtx[n-1].vout.size());
         if ( n > 1 && pblock->vtx[n-1].vin.size() == 1 && pblock->vtx[n-1].vout.size() == 1+(ASSETCHAINS_MARMARA!=0) )
@@ -1401,10 +1422,6 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
         if ( ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASH || ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASHV1_1 )
             percPoS = (percPoS*100) / (m+n); 
         else
-            // This seems to be inverse. The actual PoS % is backwards in the first 100 blocks. 
-            // I dont't understand the math here, or why its backwards, so I am just disabling it for VerusHash.
-            // No doubt this is probably wrong for equihash aswell, we may need to test an equihash chain with the rule above.
-            // Need to ask james what the deal is here! Seems to be causeing ALL the problems.
             percPoS = ((percPoS * n) + (goalperc * (100-n))) / 100;            
     } 
     if ( dispflag != 0 && ASSETCHAINS_STAKED < 100 )
@@ -1585,7 +1602,7 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
 
 int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_uint256 bnTarget,arith_uint256 bhash)
 {
-    CBlockIndex *previndex,*pindex; char voutaddr[64],destaddr[64]; uint256 txid; uint32_t txtime,prevtime=0; int32_t vout,PoSperc,txn_count,eligible=0,isPoS = 0,segid; uint64_t value; CTxDestination voutaddress; arith_uint256 POWTarget;
+    CBlockIndex *previndex,*pindex; char voutaddr[64],destaddr[64]; uint256 txid; uint32_t txtime,prevtime=0; int32_t ret,vout,PoSperc,txn_count,eligible=0,isPoS = 0,segid; uint64_t value; CTxDestination voutaddress; arith_uint256 POWTarget;
     if ( ASSETCHAINS_STAKED == 100 && height <= 10 )
         return(1);
     BlockMap::const_iterator it = mapBlockIndex.find(pblock->GetHash());
@@ -1612,7 +1629,7 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
         vout = pblock->vtx[txn_count-1].vin[0].prevout.n;
         if ( slowflag != 0 && prevtime != 0 )
         {
-            if ( komodo_isPoS(pblock,height) != 0 )
+            if ( komodo_isPoS(pblock,height,false) != 0 )
             {
                 eligible = komodo_stake(1,bnTarget,height,txid,vout,pblock->nTime,prevtime+27,(char *)"",PoSperc);
             }
@@ -1644,7 +1661,7 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
         } 
         else if ( slowflag == 0 ) // previous blocks are not seen yet, do the best approx
         {
-            if ( komodo_isPoS(pblock,height) != 0 )
+            if ( komodo_isPoS(pblock,height,false) != 0 )
                 isPoS = 1;
         }
         if ( slowflag != 0 && isPoS != 0 )
@@ -2503,7 +2520,6 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
     komodo_segids(hashbuf,nHeight-101,100);
     if ( *blocktimep < tipindex->nTime+60)
         *blocktimep = tipindex->nTime+60;
-//fprintf(stderr,"Start scan of utxo for staking %u ht.%d\n",(uint32_t)time(NULL),nHeight);
 
     bool resetstaker = false;
     if ( array != 0 )
@@ -2588,9 +2604,8 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
             }
         }
         lasttime = (uint32_t)time(NULL);
-//fprintf(stderr,"finished kp data of utxo for staking %u ht.%d numkp.%d maxkp.%d\n",(uint32_t)time(NULL),nHeight,numkp,maxkp);
+        //fprintf(stderr,"finished kp data of utxo for staking %u ht.%d numkp.%d maxkp.%d\n",(uint32_t)time(NULL),nHeight,numkp,maxkp);
     }
-//fprintf(stderr,"numkp.%d blocktime.%u\n",numkp,*blocktimep);
     block_from_future_rejecttime = (uint32_t)GetAdjustedTime() + 57;    
     for (i=winners=0; i<numkp; i++)
     {
@@ -2603,44 +2618,28 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
         }
         kp = &array[i];
         eligible = komodo_stake(0,bnTarget,nHeight,kp->txid,kp->vout,0,(uint32_t)tipindex->nTime+27,kp->address,PoSperc);
-        //fprintf(stderr,"i.%d %u vs %u\n",i,eligible2,eligible);
         if ( eligible > 0 )
         {
-            besttime = m = 0;
+            besttime = 0;
             if ( eligible == komodo_stake(1,bnTarget,nHeight,kp->txid,kp->vout,eligible,(uint32_t)tipindex->nTime+27,kp->address,PoSperc) )
             {
-                while ( eligible == komodo_stake(1,bnTarget,nHeight,kp->txid,kp->vout,eligible,(uint32_t)tipindex->nTime+27,kp->address,PoSperc) )
+                // have elegible utxo to stake with. 
+                if ( earliest == 0 || eligible < earliest || (eligible == earliest && (*utxovaluep == 0 || kp->nValue < *utxovaluep)) )
                 {
-                    besttime = eligible;
-                    eligible--;
-                    if ( eligible < block_from_future_rejecttime ) // nothing gained by going earlier
-                        break;
-                    m++;
-//fprintf(stderr,"m.%d ht.%d validated winning blocktime %u -> %.8f eligible.%u test prior\n",m,nHeight,*blocktimep,(double)kp->nValue/COIN,eligible);
+                    // is better than the previous best, so use it instead.
+                    earliest = eligible;
+                    best_scriptPubKey = kp->scriptPubKey;
+                    *utxovaluep = (uint64_t)kp->nValue;
+                    decode_hex((uint8_t *)utxotxidp,32,(char *)kp->txid.GetHex().c_str());
+                    *utxovoutp = kp->vout;
+                    *txtimep = kp->txtime;
                 }
-            }
-            else
-            {
-                //fprintf(stderr,"ht.%d error validating winning blocktime %u -> %.8f eligible.%u test prior\n",nHeight,*blocktimep,(double)kp->nValue/COIN,eligible);
-                continue;
-            }
-            eligible = besttime;
-            winners++;
-//fprintf(stderr,"ht.%d validated winning [%d] -> %.8f eligible.%u test prior\n",nHeight,(int32_t)(eligible - tipindex->nTime),(double)kp->nValue/COIN,eligible);
-            if ( earliest == 0 || eligible < earliest || (eligible == earliest && (*utxovaluep == 0 || kp->nValue < *utxovaluep)) )
-            {
-                earliest = eligible;
-                best_scriptPubKey = kp->scriptPubKey; //out.tx->vout[out.i].scriptPubKey;
-                *utxovaluep = (uint64_t)kp->nValue;
-                //decode_hex((uint8_t *)utxotxidp,32,(char *)out.tx->GetHash().GetHex().c_str());
-                decode_hex((uint8_t *)utxotxidp,32,(char *)kp->txid.GetHex().c_str());
-                *utxovoutp = kp->vout;
-                *txtimep = kp->txtime;//(uint32_t)out.tx->nLockTime;
-                //fprintf(stderr,"ht.%d earliest.%u [%d].%d (%s) nValue %.8f locktime.%u counter.%d winners.%d\n",nHeight,earliest,(int32_t)(earliest - tipindex->nTime),m,kp->address,(double)kp->nValue/COIN,*txtimep,counter,winners);
-            }
-        } //else fprintf(stderr,"utxo not eligible\n");
+                if ( eligible < block_from_future_rejecttime ) // nothing gained by going earlier
+                    break;
+            } else continue;
+        }
     }
-    if ( numkp < 1000 && array != 0 )
+    if ( numkp < 500 && array != 0 )
     {
         free(array);
         array = 0;
@@ -2659,7 +2658,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
             ((uint8_t *)&revtxid)[i] = ((uint8_t *)utxotxidp)[31 - i];
         txNew.vin[0].prevout.hash = revtxid;
         txNew.vin[0].prevout.n = *utxovoutp;
-        txNew.vout[0].scriptPubKey = best_scriptPubKey;// CScript() << ParseHex(NOTARY_PUBKEY) << OP_CHECKSIG;
+        txNew.vout[0].scriptPubKey = best_scriptPubKey;
         txNew.vout[0].nValue = *utxovaluep - txfee;
         txNew.nLockTime = earliest;
         CTransaction txNewConst(txNew);
@@ -2670,7 +2669,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
             ptr = (uint8_t *)&sigdata.scriptSig[0];
             siglen = sigdata.scriptSig.size();
             for (i=0; i<siglen; i++)
-                utxosig[i] = ptr[i];//, fprintf(stderr,"%02x",ptr[i]);
+                utxosig[i] = ptr[i];
         }
         else
         {
@@ -2682,12 +2681,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
         if (!signSuccess)
             fprintf(stderr,"failed to create signature\n");
         else
-        {
-            //fprintf(stderr," siglen.%d\n",siglen);
-//fprintf(stderr,"best %u from %u, gap %d lag.%d\n",earliest,*blocktimep,(int32_t)(earliest - *blocktimep),(int32_t)(time(NULL) - *blocktimep));
             *blocktimep = earliest;
-        }
-    } //else fprintf(stderr,"no earliest utxo for staking\n");
-    //fprintf(stderr,"end scan of utxo for staking t.%u counter.%d numkp.%d winners.%d\n",(uint32_t)time(NULL),counter,numkp,winners);
+    }
     return(siglen);
 }
