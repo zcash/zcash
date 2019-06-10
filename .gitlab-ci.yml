@@ -72,7 +72,6 @@ build:windows:
     src/komodo-cli.exe
     src/komodo-tx.exe
     zcutil/fetch-params.bat
-
     ${PACKAGE_DIR_WINDOWS}
   - zip -r ${PACKAGE_DIR_WINDOWS}.zip ${PACKAGE_DIR_WINDOWS}
   - md5sum ${AGAMA_ARTIFACTS_WINDOWS} > ${AGAMA_ARTIFACTS_WINDOWS_CHECKSUM}
