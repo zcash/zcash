@@ -14,6 +14,7 @@
  ******************************************************************************/
 #include "komodo_defs.h"
 #include "key_io.h"
+#include "cc/CCinclude.h"
 #include <string.h>
 
 #ifdef _WIN32
@@ -2299,60 +2300,60 @@ void komodo_args(char *argv0)
         // Set cc enables for all existing ac_cc chains here. 
         if ( strcmp("AXO",ASSETCHAINS_SYMBOL) == 0 )
         {
-            // No CCs used on this chain yet please ask AXO777 what he needs. 
-            memset(ASSETCHAINS_CCDISABLES,1,sizeof(ASSETCHAINS_CCDISABLES));
+            // No CCs used on this chain yet.
+            CCDISABLE;
         }
         if ( strcmp("CCL",ASSETCHAINS_SYMBOL) == 0 )
         {
             // No CCs used on this chain yet. 
-            memset(ASSETCHAINS_CCDISABLES,1,sizeof(ASSETCHAINS_CCDISABLES));
+            CCDISABLE;
         }
         if ( strcmp("COQUI",ASSETCHAINS_SYMBOL) == 0 )
         {
-            memset(ASSETCHAINS_CCDISABLES,1,sizeof(ASSETCHAINS_CCDISABLES));
-            ASSETCHAINS_CCDISABLES[230] = 0; // DICE
-            ASSETCHAINS_CCDISABLES[235] = 0; // CHANNELS 
-            ASSETCHAINS_CCDISABLES[236] = 0; // ORACLES
-            ASSETCHAINS_CCDISABLES[227] = 0; // ASSETS
-            ASSETCHAINS_CCDISABLES[242] = 0; // TOKENS
+            CCDISABLE;
+            ASSETCHAINS_CCDISABLES[230] = CCENABLE;; // DICE
+            ASSETCHAINS_CCDISABLES[235] = CCENABLE;; // CHANNELS 
+            ASSETCHAINS_CCDISABLES[236] = CCENABLE;; // ORACLES
+            ASSETCHAINS_CCDISABLES[227] = CCENABLE;; // ASSETS
+            ASSETCHAINS_CCDISABLES[242] = CCENABLE;; // TOKENS
         }
         if ( strcmp("DION",ASSETCHAINS_SYMBOL) == 0 )
         {
             // No CCs used on this chain yet. 
-            memset(ASSETCHAINS_CCDISABLES,1,sizeof(ASSETCHAINS_CCDISABLES));
+            CCDISABLE;
         }
         if ( strcmp("EQL",ASSETCHAINS_SYMBOL) == 0 )
         {
             // No CCs used on this chain yet. 
-            memset(ASSETCHAINS_CCDISABLES,1,sizeof(ASSETCHAINS_CCDISABLES));
+            CCDISABLE;
         }
         if ( strcmp("ILN",ASSETCHAINS_SYMBOL) == 0 )
         {
             // No CCs used on this chain yet. 
-            memset(ASSETCHAINS_CCDISABLES,1,sizeof(ASSETCHAINS_CCDISABLES));
+            CCDISABLE;
         }
         if ( strcmp("MORTY",ASSETCHAINS_SYMBOL) == 0 )
         {
-            memset(ASSETCHAINS_CCDISABLES,1,sizeof(ASSETCHAINS_CCDISABLES));
-            ASSETCHAINS_CCDISABLES[228] = 0; // FAUCET
+            CCDISABLE;
+            ASSETCHAINS_CCDISABLES[228] = CCENABLE;; // FAUCET
         }
         if ( strcmp("RICK",ASSETCHAINS_SYMBOL) == 0 )
         {
-            memset(ASSETCHAINS_CCDISABLES,1,sizeof(ASSETCHAINS_CCDISABLES));
-            ASSETCHAINS_CCDISABLES[228] = 1; // FAUCET
+            CCDISABLE;
+            ASSETCHAINS_CCDISABLES[228] = CCENABLE;; // FAUCET
         }
         if ( strcmp("SEC",ASSETCHAINS_SYMBOL) == 0 )
         {
-            memset(ASSETCHAINS_CCDISABLES,1,sizeof(ASSETCHAINS_CCDISABLES));
-            ASSETCHAINS_CCDISABLES[227] = 0; // ASSETS
-            ASSETCHAINS_CCDISABLES[242] = 0; // TOKENS
+            CCDISABLE;
+            ASSETCHAINS_CCDISABLES[227] = CCENABLE;; // ASSETS
+            ASSETCHAINS_CCDISABLES[242] = CCENABLE;; // TOKENS
         }
         if ( strcmp("KMDICE",ASSETCHAINS_SYMBOL) == 0 )
         {
-            memset(ASSETCHAINS_CCDISABLES,1,sizeof(ASSETCHAINS_CCDISABLES));
-            ASSETCHAINS_CCDISABLES[228] = 0; // FAUCET
-            ASSETCHAINS_CCDISABLES[230] = 0; // DICE
-            ASSETCHAINS_CCDISABLES[236] = 0; // ORACLES
+            CCDISABLE;
+            ASSETCHAINS_CCDISABLES[228] = CCENABLE;; // FAUCET
+            ASSETCHAINS_CCDISABLES[230] = CCENABLE;; // DICE
+            ASSETCHAINS_CCDISABLES[236] = CCENABLE;; // ORACLES
         }
     } else BITCOIND_RPCPORT = GetArg("-rpcport", BaseParams().RPCPort());
     KOMODO_DPOWCONFS = GetArg("-dpowconfs",dpowconfs);
