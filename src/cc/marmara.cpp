@@ -48,6 +48,8 @@
  */
 
  // start of consensus code
+
+bool CheckEitherOpRet(bool(*CheckOpretFunc)(const CScript &, CPubKey &), const CTransaction &tx, int32_t nvout, CPubKey & pk);
 bool IsLockInLoopOpret(const CScript &spk, CPubKey &pk);
 bool IsActivatedOpret(const CScript &spk, CPubKey &pk);
 
