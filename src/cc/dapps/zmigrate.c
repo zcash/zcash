@@ -1083,12 +1083,12 @@ void scan_claims(int32_t issueflag,char *refcoin,int32_t batchid)
     }
     else if ( batchid == 2 )
     {
-        batchmin = 777 * SATOSHIDEN;
-        batchmax = 7777 * SATOSHIDEN;
+        batchmin = 1;//777 * SATOSHIDEN;
+        batchmax = 17777 * SATOSHIDEN;
     }
     else if ( batchid == 3 )
     {
-        batchmin = 7777 * SATOSHIDEN;
+        batchmin = 17777 * SATOSHIDEN;
         batchmax = 1000000 * SATOSHIDEN;
     }
     for (i=0; i<NUM_CLAIMS; i++)
@@ -1349,7 +1349,12 @@ int32_t main(int32_t argc,char **argv)
                             }
                             continue;
                         }
-                        if ( verify_vin(coinstr,jbits256(item,"txid"),0,"R9JCEd6xnCxNUSpLrHEWvzPSh7CNXm7z75") < 0 )
+                        if ( strcmp(coinstr,"KMD") == 0 && verify_vin(coinstr,jbits256(item,"txid"),0,"R9JCEd6xnCxNUSpLrHEWvzPSh7CNXm7z75") < 0 )
+                        {
+                            printf("WARNING: imposter dust detected! %s\n",bits256_str(str,jbits256(item,"txid")));
+                            continue;
+                        }
+                        else if ( strcmp(coinstr,"KMD") != 0 && verify_vin(coinstr,jbits256(item,"txid"),0,"R9MUnxXijovvSeT9sFuUX23TiFtVvZEGjT") < 0 )
                         {
                             printf("WARNING: imposter dust detected! %s\n",bits256_str(str,jbits256(item,"txid")));
                             continue;
@@ -1377,9 +1382,9 @@ int32_t main(int32_t argc,char **argv)
             free_json(retjson);
             printf("remaining refunds.%d %.8f, numclaims.%d %.8f, numdisputed.%d %.8f\n",num,dstr(total2),numclaims,dstr(total),numdisputed,dstr(totaldisputed2));
         }
-        //scan_claims(1,coinstr,0);
-        scan_claims(1,coinstr,1);
-        //scan_claims(0,coinstr,2);
+        //scan_claims(0,coinstr,0);
+        //scan_claims(0,coinstr,1);
+        scan_claims(0,coinstr,2);
         //scan_claims(0,coinstr,3);
     }
     else if ( (retjson=  get_listunspent(coinstr,"")) != 0 )
