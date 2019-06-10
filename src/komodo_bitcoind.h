@@ -34,6 +34,7 @@ extern CScript KOMODO_EARLYTXID_SCRIPTPUB;
 int32_t MarmaraSignature(uint8_t *utxosig,CMutableTransaction &txNew);
 uint8_t DecodeMarmaraCoinbaseOpRet(const CScript scriptPubKey,CPubKey &pk,int32_t &height,int32_t &unlockht);
 uint32_t komodo_heightstamp(int32_t height);
+int32_t MarmaraGetStakeMultiplier(const CTransaction & tx, int32_t nvout);
 
 //#define issue_curl(cmdstr) bitcoind_RPC(0,(char *)"curl",(char *)"http://127.0.0.1:7776",0,0,(char *)(cmdstr))
 
@@ -645,15 +646,17 @@ CBlockIndex *komodo_getblockindex(uint256 hash)
     return((it != mapBlockIndex.end()) ? it->second : NULL);
 }
 
-// extension point to add preferences for stakes (dimxy)
-void komodo_getstakemultiplier(CTransaction &tx, uint64_t multiplier, uint64_t divisor)
+// Extension point to add preferences for stakes (dimxy)
+// TODO: what if for a chain several params produce multipliers. Which to select, max?
+double komodo_getstakemultiplier(CTransaction &tx, int32_t nvout)
 {
-    multiplier = 1;
-    divisor = 1;
+    double multiplier = 1;
+
     if (ASSETCHAINS_MARMARA == 0) {
 
-        // TODO:
+        multiplier = MarmaraGetStakeMultiplier(tx, nvout);
     }
+    return multiplier;
 }
 
 uint32_t komodo_txtime2(uint64_t *valuep,uint256 hash,int32_t n,char *destaddr)
@@ -675,9 +678,9 @@ uint32_t komodo_txtime2(uint64_t *valuep,uint256 hash,int32_t n,char *destaddr)
     //fprintf(stderr,"%s/v%d locktime.%u\n",hash.ToString().c_str(),n,(uint32_t)tx.nLockTime);
     if ( n < tx.vout.size() )
     {
-        uint64_t multiplier, divisor;
-        komodo_getstakemultiplier(tx, multiplier, divisor);
-        *valuep = tx.vout[n].nValue * multiplier / divisor;
+        int32_t stakemultiplier = komodo_getstakemultiplier(tx, n);
+        *valuep = tx.vout[n].nValue * stakemultiplier; 
+
         if (ExtractDestination(tx.vout[n].scriptPubKey, address))
             strcpy(destaddr,CBitcoinAddress(address).ToString().c_str());
     }

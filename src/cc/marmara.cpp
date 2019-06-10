@@ -49,10 +49,6 @@
 
  // start of consensus code
 
-bool CheckEitherOpRet(bool(*CheckOpretFunc)(const CScript &, CPubKey &), const CTransaction &tx, int32_t nvout, CPubKey & pk);
-bool IsLockInLoopOpret(const CScript &spk, CPubKey &pk);
-bool IsActivatedOpret(const CScript &spk, CPubKey &pk);
-
 int64_t IsMarmaravout(struct CCcontract_info *cp, const CTransaction& tx, int32_t v)
 {
     char destaddr[KOMODO_ADDRESS_BUFSIZE];
@@ -65,6 +61,7 @@ int64_t IsMarmaravout(struct CCcontract_info *cp, const CTransaction& tx, int32_
 }
 
 // Get randomized within range [3 month...2 year] using ind as seed(?)
+/* not used now
 int32_t MarmaraRandomize(uint32_t ind)
 {
     uint64_t val64; uint32_t val, range = (MARMARA_MAXLOCK - MARMARA_MINLOCK);
@@ -73,6 +70,7 @@ int32_t MarmaraRandomize(uint32_t ind)
     val ^= (uint32_t)val64;
     return((val % range) + MARMARA_MINLOCK);
 }
+*/
 
 // get random but fixed for the height param unlock height within 3 month..2 year interval  -- discontinued
 // now always returns maxheight
@@ -499,6 +497,64 @@ struct komodo_staking *MarmaraGetStakingUtxos(struct komodo_staking *array, int3
     return array;
 }
 
+// returns stake preferences for activated and locked vouts
+int32_t MarmaraGetStakeMultiplier(const CTransaction & tx, int32_t nvout)
+{
+    CPubKey mypk = pubkey2pk(Mypubkey());
+    CPubKey opretpk;
+
+    if (nvout > 0 && nvout < tx.vout.size()) // check boundary
+    {
+        if (CheckEitherOpRet(IsLockInLoopOpret, tx, nvout, opretpk) && mypk == opretpk) {  // check if opret is lock-in-loop and cc vout is mypk
+            if (tx.vout[nvout].scriptPubKey.IsPayToCryptoCondition()) {
+                uint8_t funcid = 0;
+                uint256 createtxid;
+                int64_t amount;
+                int32_t matures;
+                std::string currency;
+
+                if (MarmaraDecodeLoopOpret(tx.vout.back().scriptPubKey, createtxid, opretpk, amount, matures, currency) != 0)     {
+                    struct CCcontract_info *cp, C;
+                    cp = CCinit(&C, EVAL_MARMARA);
+                    CPubKey Marmarapk = GetUnspendable(cp, NULL);
+
+                    char txidaddr[KOMODO_ADDRESS_BUFSIZE];
+                    char lockInLoop1of2addr[KOMODO_ADDRESS_BUFSIZE];
+                    char voutaddr[KOMODO_ADDRESS_BUFSIZE];
+                    CPubKey createtxidPk = CCtxidaddr(txidaddr, createtxid);
+                    GetCCaddress1of2(cp, lockInLoop1of2addr, Marmarapk, createtxidPk);
+
+                    Getscriptaddress(voutaddr, tx.vout[nvout].scriptPubKey);
+                    if (strcmp(lockInLoop1of2addr, voutaddr) == 0) {  // check vout address is lock-in-loop address
+                        std::cerr << __func__ << "picked for stake x3 as lock-in-loop" << " txid=" << tx.GetHash().GetHex() << " nvout=" << nvout << std::endl;
+                        return 3;  // staked 3 times for lock-in-loop
+                    }
+                }
+            }
+        }
+
+        if (CheckEitherOpRet(IsActivatedOpret, tx, nvout, opretpk))   // check if this is activated opret 
+        {
+            if (tx.vout[nvout].scriptPubKey.IsPayToCryptoCondition())    {    
+                struct CCcontract_info *cp, C;
+                cp = CCinit(&C, EVAL_MARMARA);
+                CPubKey Marmarapk = GetUnspendable(cp, NULL);
+
+                char activated1of2addr[KOMODO_ADDRESS_BUFSIZE];
+                char voutaddr[KOMODO_ADDRESS_BUFSIZE];
+                GetCCaddress1of2(cp, activated1of2addr, Marmarapk, mypk);
+
+                Getscriptaddress(voutaddr, tx.vout[nvout].scriptPubKey);
+                if (strcmp(activated1of2addr, voutaddr) == 0) {  // check vout address is my activated address
+                    std::cerr << __func__ << "picked for stake x2 as activated" << " txid=" << tx.GetHash().GetHex() << " nvout=" << nvout << std::endl;
+                    return 2;  // staked 3 times for activated
+                }
+            }
+        }
+    }
+    return 1;
+}
+
 bool MarmaraValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction &tx, uint32_t nIn)
 {
     vscript_t vopret; CTransaction vinTx; uint256 hashBlock;  int32_t numvins, numvouts, i, ht, unlockht, vht, vunlockht; uint8_t funcid, vfuncid, *script; CPubKey pk, vpk;
@@ -627,8 +683,8 @@ int64_t AddMarmaraCoinbases(struct CCcontract_info *cp, CMutableTransaction &mtx
     return(totalinputs);
 }
 
-// is opret for activated coins, returns pk
-bool IsActivatedOpret(const CScript &spk, CPubKey &pk) 
+// is opret for activated coins, returns pk from opret
+static bool IsActivatedOpret(const CScript &spk, CPubKey &pk) 
 { 
     uint8_t funcid = 0;
     int32_t ht, unlockht;
@@ -636,8 +692,8 @@ bool IsActivatedOpret(const CScript &spk, CPubKey &pk)
     return (funcid = DecodeMarmaraCoinbaseOpRet(spk, pk, ht, unlockht)) == 'C' || funcid == 'P' || funcid == 'L';
 }
 
-// is opret for lock-in-loop coins, returns pk
-bool IsLockInLoopOpret(const CScript &spk, CPubKey &pk)
+// is opret for lock-in-loop coins, returns pk from opret
+static bool IsLockInLoopOpret(const CScript &spk, CPubKey &pk)
 {
     uint8_t funcid = 0;
     uint256 createtxid;
@@ -648,10 +704,10 @@ bool IsLockInLoopOpret(const CScript &spk, CPubKey &pk)
     return MarmaraDecodeLoopOpret(spk, createtxid, pk, amount, matures, currency) != 0;
 }
 
-// calls CheckOpretFunc for two cases:
-// opret is in cc vout data - is checked first
-// opret is in the last vout - is checked second
-bool CheckEitherOpRet(bool(*CheckOpretFunc)(const CScript &, CPubKey &), const CTransaction &tx, int32_t nvout, CPubKey & pk)
+// checks opret by calling CheckOpretFunc for two cases:
+// opret in cc vout data is checked first and considered primary
+// opret in the last vout is checked second and considered secondary
+static bool CheckEitherOpRet(bool(*CheckOpretFunc)(const CScript &, CPubKey &), const CTransaction &tx, int32_t nvout, CPubKey & pk)
 {
     CScript opret, dummy;
     std::vector< vscript_t > vParams;
@@ -691,7 +747,6 @@ bool CheckEitherOpRet(bool(*CheckOpretFunc)(const CScript &, CPubKey &), const C
     }
     std::cerr << __func__ << " opret eval=" << (int)evalcode << " funcid=" << (char)(funcid ? funcid : ' ') << " isccopret=" << isccopret << std::endl;
     
-
     return opretok;
 }
 
@@ -716,7 +771,6 @@ int64_t AddMarmarainputs(bool (*CheckOpretFunc)(const CScript &, CPubKey &), CMu
         return -1;
 
     std::cerr << __func__ << " adding from addr=" << unspentaddr << " total=" << total << std::endl;
-
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it = unspentOutputs.begin(); it != unspentOutputs.end(); it++)
     {
         uint256 txid = it->first.txhash;
@@ -1403,7 +1457,7 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
         // TODO: do we need here check tx for mempool?
         if (!GetTransaction(requesttxid, requestx, hashBlock, true) || requestx.vout.size() < 1 ||
             MarmaraDecodeLoopOpret(requestx.vout.back().scriptPubKey, emptytxid, opretsenderpk, opretamount, opretmatures, opretcurrency) == 0)
-            errorstr = "cant decode approvaltx opreturn data";
+            errorstr = "cant decode request tx opreturn data";
         else if (mypk != opretsenderpk)
             errorstr = "mypk does not match requested sender pk";
         else if (opretamount != opretamount)
@@ -1480,13 +1534,13 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
                     }
                 }
                 else
-                    errorstr = (char*)"could not return back locked in loop funds";
+                    errorstr = "could not return back locked in loop funds";
             }
             else
-                errorstr = (char *)"dont have enough normal inputs for 2*txfee";
+                errorstr = "dont have enough normal inputs for 2*txfee";
         }
         else
-            errorstr = (char *)"dont have enough locked inputs for amount";
+            errorstr = "dont have enough locked inputs for amount";
     }
     if (!errorstr.empty())
     {

@@ -45,8 +45,11 @@ UniValue MarmaraInfo(CPubKey refpk,int32_t firstheight,int32_t lastheight,int64_
 
 bool MarmaraValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn);
 
+static bool CheckEitherOpRet(bool(*CheckOpretFunc)(const CScript &, CPubKey &), const CTransaction &tx, int32_t nvout, CPubKey & pk);
+static bool IsLockInLoopOpret(const CScript &spk, CPubKey &pk);
+static bool IsActivatedOpret(const CScript &spk, CPubKey &pk);
 
 // CCcustom
-UniValue MarmaraInfo();
+//UniValue MarmaraInfo();
 
 #endif
