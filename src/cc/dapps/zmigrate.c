@@ -1246,7 +1246,7 @@ int64_t sum_of_vins(char *refcoin,int32_t *totalvinsp,int32_t *uniqaddrsp,bits25
                     {
                         if ( update_addrstats(srcaddr,amount) < 0 )
                             (*uniqaddrsp)++;
-                        //printf("add %s <- %.8f\n",srcaddr,dstr(amount));
+                        printf("add %s <- %.8f\n",srcaddr,dstr(amount));
                         total += amount;
                         (*totalvinsp)++;
                     }
@@ -1391,6 +1391,7 @@ int32_t main(int32_t argc,char **argv)
     }
     else if ( (retjson=  get_listunspent(coinstr,"")) != 0 )
     {
+        printf("unspents.(%s)\n",jprint(retjson,0));
         if ( (n= cJSON_GetArraySize(retjson)) > 0 )
         {
             for (i=0; i<n; i++)
@@ -1418,12 +1419,12 @@ int32_t main(int32_t argc,char **argv)
                     maxpayout = payout;
                 totalpayout += payout;
                 numpayouts++;
-                if ( payout >= 7 )
-                {
-                    numsmall++;
-                    smallpayout += payout;
+                //if ( payout >= 7 )
+                //{
+                //  numsmall++;
+                //smallpayout += payout;
                     genpayout(coinstr,ADDRESSES[i].addr,payout);
-                }
+                //}
                 //printf("%-4d: %-64s numutxos.%-4lld %llu\n",i,ADDRESSES[i].addr,ADDRESSES[i].numutxos,(long long)payout);
             }
         }
