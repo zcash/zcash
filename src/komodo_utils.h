@@ -2322,59 +2322,61 @@ void komodo_args(char *argv0)
         if ( strcmp("AXO",ASSETCHAINS_SYMBOL) == 0 )
         {
             // No CCs used on this chain yet.
-            CCDISABLE;
+            CCDISABLEALL;
         }
         if ( strcmp("CCL",ASSETCHAINS_SYMBOL) == 0 )
         {
             // No CCs used on this chain yet. 
-            CCDISABLE;
+            CCDISABLEALL;
         }
         if ( strcmp("COQUI",ASSETCHAINS_SYMBOL) == 0 )
         {
-            CCDISABLE;
-            ASSETCHAINS_CCDISABLES[230] = CCENABLE;; // DICE
-            ASSETCHAINS_CCDISABLES[235] = CCENABLE;; // CHANNELS 
-            ASSETCHAINS_CCDISABLES[236] = CCENABLE;; // ORACLES
-            ASSETCHAINS_CCDISABLES[227] = CCENABLE;; // ASSETS
-            ASSETCHAINS_CCDISABLES[242] = CCENABLE;; // TOKENS
+            CCDISABLEALL;
+            CCENABLE(EVAL_DICE);
+            CCENABLE(EVAL_CHANNELS);
+            CCENABLE(EVAL_ORACLES);
+            CCENABLE(EVAL_ASSETS);
+            CCENABLE(EVAL_TOKENS);
         }
         if ( strcmp("DION",ASSETCHAINS_SYMBOL) == 0 )
         {
             // No CCs used on this chain yet. 
-            CCDISABLE;
+            CCDISABLEALL;
         }
+        
         if ( strcmp("EQL",ASSETCHAINS_SYMBOL) == 0 )
         {
             // No CCs used on this chain yet. 
-            CCDISABLE;
+            CCDISABLEALL;
         }
         if ( strcmp("ILN",ASSETCHAINS_SYMBOL) == 0 )
         {
             // No CCs used on this chain yet. 
-            CCDISABLE;
+            CCDISABLEALL;
         }
-        if ( strcmp("MORTY",ASSETCHAINS_SYMBOL) == 0 )
+        if ( strcmp("OUR",ASSETCHAINS_SYMBOL) == 0 )
         {
-            CCDISABLE;
-            ASSETCHAINS_CCDISABLES[228] = CCENABLE;; // FAUCET
+            // No CCs used on this chain yet. 
+            CCDISABLEALL;
         }
-        if ( strcmp("RICK",ASSETCHAINS_SYMBOL) == 0 )
+        if ( strcmp("ZEXO",ASSETCHAINS_SYMBOL) == 0 )
         {
-            CCDISABLE;
-            ASSETCHAINS_CCDISABLES[228] = CCENABLE;; // FAUCET
+            // No CCs used on this chain yet. 
+            CCDISABLEALL;
         }
         if ( strcmp("SEC",ASSETCHAINS_SYMBOL) == 0 )
         {
-            CCDISABLE;
-            ASSETCHAINS_CCDISABLES[227] = CCENABLE;; // ASSETS
-            ASSETCHAINS_CCDISABLES[242] = CCENABLE;; // TOKENS
+            CCDISABLEALL;
+            CCENABLE(EVAL_ASSETS);
+            CCENABLE(EVAL_TOKENS);
+            CCENABLE(EVAL_ORACLES);
         }
         if ( strcmp("KMDICE",ASSETCHAINS_SYMBOL) == 0 )
         {
-            CCDISABLE;
-            ASSETCHAINS_CCDISABLES[228] = CCENABLE;; // FAUCET
-            ASSETCHAINS_CCDISABLES[230] = CCENABLE;; // DICE
-            ASSETCHAINS_CCDISABLES[236] = CCENABLE;; // ORACLES
+            CCDISABLEALL;
+            CCENABLE(EVAL_FAUCET);
+            CCENABLE(EVAL_DICE);
+            CCENABLE(EVAL_ORACLES);
         }
     } else BITCOIND_RPCPORT = GetArg("-rpcport", BaseParams().RPCPort());
     KOMODO_DPOWCONFS = GetArg("-dpowconfs",dpowconfs);
