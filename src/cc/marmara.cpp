@@ -729,7 +729,7 @@ int64_t AddMarmarainputs(bool (*CheckOpretFunc)(const CScript &, CPubKey &), CMu
             continue;
 
         // check if vin might be already added to mtx:
-        if (std::find_if(mtx.vin.begin(), mtx.vin.end(), [&](auto v) {return (v.prevout.hash == txid && v.prevout.n == nvout); }) != mtx.vin.end())
+        if (std::find_if(mtx.vin.begin(), mtx.vin.end(), [&](CTxIn v) {return (v.prevout.hash == txid && v.prevout.n == nvout); }) != mtx.vin.end())
             continue;
 
         if (myGetTransaction(txid, tx, hashBlock) != 0 && tx.vout.size() > 0 && 
