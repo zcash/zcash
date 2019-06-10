@@ -51,6 +51,7 @@ using namespace std;
 extern int32_t KOMODO_INSYNC;
 extern void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry);
 void ScriptPubKeyToJSON(const CScript& scriptPubKey, UniValue& out, bool fIncludeHex);
+int32_t komodo_notarized_height(int32_t *prevMoMheightp,uint256 *hashp,uint256 *txidp);
 #include "komodo_defs.h"
 #include "komodo_structs.h"
 
@@ -133,6 +134,9 @@ UniValue blockheaderToJSON(const CBlockIndex* blockindex)
         result.push_back(Pair("error", "null blockhash"));
         return(result);
     }
+    uint256 notarized_hash,notarized_desttxid; int32_t prevMoMheight,notarized_height;
+    notarized_height = komodo_notarized_height(&prevMoMheight,&notarized_hash,&notarized_desttxid);
+    result.push_back(Pair("last_notarized_height", notarized_height));
     result.push_back(Pair("hash", blockindex->GetBlockHash().GetHex()));
     int confirmations = -1;
     // Only report confirmations if the block is on the main chain
@@ -284,6 +288,9 @@ UniValue blockToDeltasJSON(const CBlock& block, const CBlockIndex* blockindex)
 UniValue blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool txDetails = false)
 {
     UniValue result(UniValue::VOBJ);
+    uint256 notarized_hash,notarized_desttxid; int32_t prevMoMheight,notarized_height;
+    notarized_height = komodo_notarized_height(&prevMoMheight,&notarized_hash,&notarized_desttxid);
+    result.push_back(Pair("last_notarized_height", notarized_height));
     result.push_back(Pair("hash", block.GetHash().GetHex()));
     int confirmations = -1;
     // Only report confirmations if the block is on the main chain
@@ -1846,7 +1853,6 @@ UniValue getchaintips(const UniValue& params, bool fHelp)
 
     /* Construct the output array.  */
     UniValue res(UniValue::VARR); const CBlockIndex *forked;
-    BOOST_FOREACH(const CBlockIndex* block, setTips)
     BOOST_FOREACH(const CBlockIndex* block, setTips)
         {
             UniValue obj(UniValue::VOBJ);

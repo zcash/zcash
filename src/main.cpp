@@ -1341,16 +1341,19 @@ bool CheckTransaction(uint32_t tiptime,const CTransaction& tx, CValidationState 
     if ( *(int32_t *)&array[0] == 0 )
         numbanned = komodo_bannedset(&indallvouts,array,(int32_t)(sizeof(array)/sizeof(*array)));
     n = tx.vin.size();
-    for (j=0; j<n; j++)
+    if ( ASSETCHAINS_SYMBOL[0] == 0 )
     {
-        for (k=0; k<numbanned; k++)
+        for (j=0; j<n; j++)
         {
-            if ( tx.vin[j].prevout.hash == array[k] && (tx.vin[j].prevout.n == 1 || k >= indallvouts) )
+            for (k=0; k<numbanned; k++)
             {
-                static uint32_t counter;
-                if ( counter++ < 100 )
-                    printf("MEMPOOL: banned tx.%d being used at ht.%d vout.%d\n",k,(int32_t)chainActive.Tip()->GetHeight(),j);
-                return(false);
+                if ( tx.vin[j].prevout.hash == array[k] && komodo_checkvout(tx.vin[j].prevout.n,k,indallvouts) != 0 ) //(tx.vin[j].prevout.n == 1 || k >= indallvouts) )
+                {
+                    static uint32_t counter;
+                    if ( counter++ < 100 )
+                        printf("MEMPOOL: banned tx.%d being used at ht.%d vout.%d\n",k,(int32_t)chainActive.Tip()->GetHeight(),j);
+                    return(false);
+                }
             }
         }
     }
@@ -1372,8 +1375,6 @@ bool CheckTransaction(uint32_t tiptime,const CTransaction& tx, CValidationState 
         return true;
     }
 }
-
-extern int32_t getacseason(int32_t timestamp);
 
 int32_t komodo_isnotaryvout(char *coinaddr,uint32_t tiptime) // from ac_private chains only
 {
@@ -3392,7 +3393,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     {
         // do a full block scan to get notarisation position and to enforce a valid notarization is in position 1.
         // if notarisation in the block, must be position 1 and the coinbase must pay notaries.
-        int notarisationTx = komodo_connectblock(true,pindex,*(CBlock *)&block);  
+        int32_t notarisationTx = komodo_connectblock(true,pindex,*(CBlock *)&block);  
         // -1 means that the valid notarization isnt in position 1 or there are too many notarizations in this block.
         if ( notarisationTx == -1 )
             return state.DoS(100, error("ConnectBlock(): Notarization is not in TX position 1 or block contains more than 1 notarization! Invalid Block!"),
