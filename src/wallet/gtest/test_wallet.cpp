@@ -1680,6 +1680,63 @@ TEST(WalletTests, WriteWitnessCache) {
     wallet.SetBestChain(walletdb, loc);
 }
 
+TEST(WalletTests, SetBestChainIgnoresTxsWithoutShieldedData) {
+    SelectParams(CBaseChainParams::REGTEST);
+
+    TestWallet wallet;
+    MockWalletDB walletdb;
+    CBlockLocator loc;
+
+    // Set up transparent address
+    CKey tsk = DecodeSecret(tSecretRegtest);
+    wallet.AddKey(tsk);
+    auto scriptPubKey = GetScriptForDestination(tsk.GetPubKey().GetID());
+
+    // Set up a Sprout address
+    auto sk = libzcash::SproutSpendingKey::random();
+    wallet.AddSproutSpendingKey(sk);
+
+    // Generate a transparent transaction that is ours
+    CMutableTransaction t;
+    t.vout.resize(1);
+    t.vout[0].nValue = 90*CENT;
+    t.vout[0].scriptPubKey = scriptPubKey;
+    CWalletTx wtxTransparent {nullptr, t};
+    wallet.AddToWallet(wtxTransparent, true, NULL);
+
+    // Generate a Sprout transaction that is ours
+    auto wtxSprout = GetValidReceive(sk, 10, true);
+    auto noteMap = wallet.FindMySproutNotes(wtxSprout);
+    wtxSprout.SetSproutNoteData(noteMap);
+    wallet.AddToWallet(wtxSprout, true, NULL);
+
+    // Generate a Sprout transaction that only involves our transparent address
+    auto sk2 = libzcash::SproutSpendingKey::random();
+    auto wtxInput = GetValidReceive(sk2, 10, true);
+    auto note = GetNote(sk2, wtxInput, 0, 0);
+    auto wtxTmp = GetValidSpend(sk2, note, 5);
+    CMutableTransaction mtx {wtxTmp};
+    mtx.vout[0].scriptPubKey = scriptPubKey;
+    CWalletTx wtxSproutTransparent {NULL, mtx};
+    wallet.AddToWallet(wtxSproutTransparent, true, NULL);
+
+    EXPECT_CALL(walletdb, TxnBegin())
+        .WillOnce(Return(true));
+    EXPECT_CALL(walletdb, WriteTx(wtxTransparent.GetHash(), wtxTransparent))
+        .Times(0);
+    EXPECT_CALL(walletdb, WriteTx(wtxSprout.GetHash(), wtxSprout))
+        .Times(1).WillOnce(Return(true));
+    EXPECT_CALL(walletdb, WriteTx(wtxSproutTransparent.GetHash(), wtxSproutTransparent))
+        .Times(0);
+    EXPECT_CALL(walletdb, WriteWitnessCacheSize(0))
+        .WillOnce(Return(true));
+    EXPECT_CALL(walletdb, WriteBestBlock(loc))
+        .WillOnce(Return(true));
+    EXPECT_CALL(walletdb, TxnCommit())
+        .WillOnce(Return(true));
+    wallet.SetBestChain(walletdb, loc);
+}
+
 TEST(WalletTests, UpdateSproutNullifierNoteMap) {
     TestWallet wallet;
     uint256 r {GetRandHash()};
