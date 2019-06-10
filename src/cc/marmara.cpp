@@ -759,7 +759,7 @@ int64_t AddMarmarainputs(bool (*CheckOpretFunc)(const CScript &, CPubKey &), CMu
                     totalinputs += it->second.satoshis;
                     vals.push_back(it->second.satoshis);
                     n++;
-                    if (maxinputs != 0 && total == 0)
+                    if (maxinputs != 0 && total == 0)  
                         continue;
                     if ((total > 0 && totalinputs >= total) || (maxinputs > 0 && n >= maxinputs))
                         break;
@@ -939,7 +939,7 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid)
     std::vector<uint256> creditloop;
     uint256 batontxid, createtxid, refcreatetxid, hashBlock;
     uint8_t funcid;
-    int32_t numerrs = 0, i, n, numvouts, matures, refmatures, height;
+    int32_t numerrs = 0, i, n, matures, refmatures, height;
     int64_t amount, refamount, remaining, inputsum, change;
     CPubKey Marmarapk, mypk, pk;
     std::string currency, refcurrency, rawtx;
@@ -957,9 +957,9 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid)
     height = chainActive.LastTip()->GetHeight();
     if ((n = MarmaraGetbatontxid(creditloop, batontxid, refbatontxid)) > 0)
     {
-        if ( myGetTransaction(batontxid,batontx,hashBlock) != 0 && (numvouts= batontx.vout.size()) > 1 )
+        if (myGetTransaction(batontxid, batontx, hashBlock) && batontx.vout.size() > 1)
         {
-            if ((funcid = MarmaraDecodeLoopOpret(batontx.vout[numvouts - 1].scriptPubKey, refcreatetxid, pk, refamount, refmatures, refcurrency)) != 0)
+            if ((funcid = MarmaraDecodeLoopOpret(batontx.vout.back().scriptPubKey, refcreatetxid, pk, refamount, refmatures, refcurrency)) != 0)
             {
                 if (refcreatetxid != creditloop[0])
                 {
@@ -995,13 +995,13 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid)
                     pubkeys.push_back(Marmarapk);
                     mtx.vin.push_back(CTxIn(batontxid, 0, CScript()));
                     pubkeys.push_back(mypk);
-                    for (i = 1; i < n; i++)  //iterate through all issuers/endorsers (i=0 is 1st receiver approval)
+                    for (i = 1; i < n; i++)  //iterate through all issuers/endorsers (i=0 is 1st receiver approval/request txid)
                     {
-                        if ( myGetTransaction(creditloop[i],tx,hashBlock) != 0 && (numvouts = tx.vout.size()) > 1 )
+                        if (myGetTransaction(creditloop[i], tx, hashBlock) != 0 && tx.vout.size() > 1)
                         {
-                            if ((funcid = MarmaraDecodeLoopOpret(tx.vout[numvouts - 1].scriptPubKey, createtxid, pk, amount, matures, currency)) != 0)  // get endorser's pk
+                            if ((funcid = MarmaraDecodeLoopOpret(tx.vout.back().scriptPubKey, createtxid, pk, amount, matures, currency)) != 0)  // get endorser's pk
                             {
-                                GetCCaddress1of2(cp, activated1of2addr, Marmarapk, pk);  // 1of2 address where the current endorser's money is locked
+                                GetCCaddress1of2(cp, activated1of2addr, Marmarapk, pk);  // 1of2 address where the current endorser's activated money is
                                 // dimxy: why is locked height not checked? deprecated
                                 if ((inputsum = AddMarmarainputs(IsActivatedOpret, mtx, pubkeys, activated1of2addr, remaining, MARMARA_VINS)) >= remaining) // add as much as possible amount
                                 {
@@ -1482,21 +1482,12 @@ UniValue MarmaraCreditloop(uint256 txid)
             GetCCaddress(cp, myCCaddr, Mypubkey());
             result.push_back(Pair("myCCaddress", myCCaddr));
 
-            // add locked-in-loop amount:
-            char lockInLoop1of2addr[KOMODO_ADDRESS_BUFSIZE], txidaddr[KOMODO_ADDRESS_BUFSIZE];
-            CPubKey createtxidPk = CCtxidaddr(txidaddr, refcreatetxid);
-            GetCCaddress1of2(cp, lockInLoop1of2addr, GetUnspendable(cp, NULL), createtxidPk);  // 1of2 lock-in-loop address 
-            std::vector<CPubKey> pubkeys;
-            CMutableTransaction mtx;
-            int64_t amountLockedInLoop = AddMarmarainputs(IsLockInLoopOpret, mtx, pubkeys, lockInLoop1of2addr, 0, 0);
-            result.push_back(Pair("LockedInLoopCCaddr", lockInLoop1of2addr));
-            result.push_back(Pair("LockedInLoopAmount", ValueFromAmount(amountLockedInLoop)));  // should be 0 if settled
-
-            if ((funcid = MarmaraDecodeLoopOpret(tx.vout[numvouts - 1].scriptPubKey, refcreatetxid, pk, refamount, refmatures, refcurrency)) != 0)
+            if ((funcid = MarmaraDecodeLoopOpret(tx.vout.back().scriptPubKey, refcreatetxid, pk, refamount, refmatures, refcurrency)) != 0)
             {
                 sfuncid[0] = funcid, sfuncid[1] = 0;
                 result.push_back(Pair("funcid", sfuncid));
                 result.push_back(Pair("currency", refcurrency));
+
                 if (funcid == 'S')
                 {
                     refcreatetxid = creditloop[0];
@@ -1554,10 +1545,20 @@ UniValue MarmaraCreditloop(uint256 txid)
 
                     if (strcmp(myCCaddr, /*normaladdr*/batonCCaddr) == 0) // TODO: impossible with normal addr
                         result.push_back(Pair("ismine", 1));
-                    else 
+                    else
                         result.push_back(Pair("ismine", 0));
-
                 }
+
+                // add locked-in-loop amount:
+                char lockInLoop1of2addr[KOMODO_ADDRESS_BUFSIZE], txidaddr[KOMODO_ADDRESS_BUFSIZE];
+                CPubKey createtxidPk = CCtxidaddr(txidaddr, refcreatetxid);
+                GetCCaddress1of2(cp, lockInLoop1of2addr, GetUnspendable(cp, NULL), createtxidPk);  // 1of2 lock-in-loop address 
+                std::vector<CPubKey> pubkeys;
+                CMutableTransaction mtx;
+                int64_t amountLockedInLoop = AddMarmarainputs(IsLockInLoopOpret, mtx, pubkeys, lockInLoop1of2addr, 0, 0);
+                result.push_back(Pair("LockedInLoopCCaddr", lockInLoop1of2addr));
+                result.push_back(Pair("LockedInLoopAmount", ValueFromAmount(amountLockedInLoop)));  // should be 0 if settled
+
                 for (i = 0; i < n; i++)
                 {
                     if ( myGetTransaction(creditloop[i],tx,hashBlock) != 0 && (numvouts = tx.vout.size()) > 1 )
