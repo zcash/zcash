@@ -115,6 +115,8 @@ int32_t KOMODO_TESTNODE, KOMODO_SNAPSHOT_INTERVAL;
 CScript KOMODO_EARLYTXID_SCRIPTPUB;
 int32_t ASSETCHAINS_EARLYTXIDCONTRACT;
 
+std::map <std::int8_t, int32_t> mapHeightEvalActivate;
+
 struct komodo_kv *KOMODO_KV;
 pthread_mutex_t KOMODO_KV_mutex,KOMODO_CC_mutex;
 

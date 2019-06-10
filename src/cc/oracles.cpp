@@ -642,11 +642,7 @@ int32_t GetLatestTimestamp(int32_t height)
 
     blockHash = chainActive[height]->GetBlockHash();
     pindex = mapBlockIndex[blockHash];
-    if ( komodo_blockload(block,pindex) == 0 )
-    {
-        return(block.nTime);
-    }
-    return(0);
+    return(pindex->nTime);
 }
 
 bool OraclesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
@@ -1208,4 +1204,3 @@ UniValue OraclesList()
     }
     return(result);
 }
-
