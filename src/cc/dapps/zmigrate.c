@@ -331,6 +331,7 @@ cJSON *get_komodocli(char *refcoin,char **retstrp,char *acname,char *method,char
         //printf("ref.(%s) REFCOIN_CLI (%s)\n",refcoin,cmdstr);
     }
     system(cmdstr);
+    printf("cmdstr(%s)\n",cmdstr);
     *retstrp = 0;
     if ( (jsonstr= filestr(&fsize,fname)) != 0 )
     {
@@ -1299,7 +1300,7 @@ void reconcile_claims(char *fname)
 
 int32_t main(int32_t argc,char **argv)
 {
-    char *coinstr,*addr,buf[64],srcaddr[64],str[65]; cJSON *retjson,*item; int32_t i,n,disputed,numdisputed,numsmall=0,numpayouts=0,numclaims=0,num=0,totalvins=0,uniqaddrs=0; int64_t amount,total = 0,total2 = 0,payout,maxpayout,smallpayout=0,totalpayout = 0,totaldisputed = 0,totaldisputed2 = 0,fundingamount = 0;
+    char *coinstr,*acstr,*addr,buf[64],srcaddr[64],str[65]; cJSON *retjson,*item; int32_t i,n,disputed,numdisputed,numsmall=0,numpayouts=0,numclaims=0,num=0,totalvins=0,uniqaddrs=0; int64_t amount,total = 0,total2 = 0,payout,maxpayout,smallpayout=0,totalpayout = 0,totaldisputed = 0,totaldisputed2 = 0,fundingamount = 0;
     if ( argc != 2 )
     {
         printf("argc needs to be 2: <prog> coin\n");
@@ -1309,12 +1310,14 @@ int32_t main(int32_t argc,char **argv)
     {
         REFCOIN_CLI = "./komodo-cli";
         coinstr = clonestr("KMD");
+        acstr = "";
     }
     else
     {
         sprintf(buf,"./komodo-cli -ac_name=%s",argv[1]);
         REFCOIN_CLI = clonestr(buf);
         coinstr = clonestr(argv[1]);
+        acstr = coinstr;
     }
     if ( 1 )
     {
@@ -1330,7 +1333,7 @@ int32_t main(int32_t argc,char **argv)
         }
         printf("total disputed %.8f\n",dstr(totaldisputed));
         totaldisputed2 = 0;
-        if ( strcmp(coinstr,"KMD") == 0 && (retjson=  get_listunspent(coinstr,"")) != 0 )
+        if ( strcmp(coinstr,"KMD") == 0 && (retjson=  get_listunspent(coinstr,acstr)) != 0 )
         {
             if ( (n= cJSON_GetArraySize(retjson)) > 0 )
             {
@@ -1389,7 +1392,7 @@ int32_t main(int32_t argc,char **argv)
         scan_claims(0,coinstr,2);
         //scan_claims(0,coinstr,3);
     }
-    else if ( (retjson=  get_listunspent(coinstr,"")) != 0 )
+    else if ( (retjson= get_listunspent(coinstr,acstr)) != 0 )
     {
         printf("unspents.(%s)\n",jprint(retjson,0));
         if ( (n= cJSON_GetArraySize(retjson)) > 0 )
