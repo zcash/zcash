@@ -5342,8 +5342,13 @@ int32_t ensure_CCrequirements(uint8_t evalcode)
     CCerror = "";
     if ( ASSETCHAINS_CCDISABLES[evalcode] != 0 || (evalcode == EVAL_MARMARA && ASSETCHAINS_MARMARA == 0) )
     {
-        fprintf(stderr,"evalcode %d disabled\n",evalcode);
-        return(-1);
+        // check if a height activation has been set. 
+        fprintf(stderr, "evalcode.%i activates at height. %i current height.%i\n", evalcode, mapHeightEvalActivate[evalcode], komodo_currentheight());
+        if ( mapHeightEvalActivate[evalcode] == 0 || komodo_currentheight() == 0 || mapHeightEvalActivate[evalcode] > komodo_currentheight() )
+        {
+            fprintf(stderr,"evalcode %d disabled\n",evalcode);
+            return(-1);
+        }
     }
     if ( NOTARY_PUBKEY33[0] == 0 )
     {
