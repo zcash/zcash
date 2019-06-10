@@ -331,7 +331,6 @@ cJSON *get_komodocli(char *refcoin,char **retstrp,char *acname,char *method,char
         //printf("ref.(%s) REFCOIN_CLI (%s)\n",refcoin,cmdstr);
     }
     system(cmdstr);
-    printf("cmdstr(%s)\n",cmdstr);
     *retstrp = 0;
     if ( (jsonstr= filestr(&fsize,fname)) != 0 )
     {
@@ -1319,7 +1318,7 @@ int32_t main(int32_t argc,char **argv)
         coinstr = clonestr(argv[1]);
         acstr = coinstr;
     }
-    if ( 1 )
+    if ( strcmp(coinstr,"KMD") == 0 )
     {
         sprintf(buf,"%s-Claims.csv",coinstr);
         reconcile_claims(buf);
@@ -1333,7 +1332,7 @@ int32_t main(int32_t argc,char **argv)
         }
         printf("total disputed %.8f\n",dstr(totaldisputed));
         totaldisputed2 = 0;
-        if ( strcmp(coinstr,"KMD") == 0 && (retjson=  get_listunspent(coinstr,acstr)) != 0 )
+        if ( (retjson=  get_listunspent(coinstr,acstr)) != 0 )
         {
             if ( (n= cJSON_GetArraySize(retjson)) > 0 )
             {
