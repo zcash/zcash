@@ -47,7 +47,7 @@ make "$@" -C ./depends/ V=1 NO_QT=1 NO_PROTON=1
 WD=$PWD
 cd src/cc
 echo $PWD
-./makerogue
+./Makefile_custom
 cd $WD
 
 ./autogen.sh
