@@ -937,7 +937,7 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid)
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     UniValue result(UniValue::VOBJ), a(UniValue::VARR);
     std::vector<uint256> creditloop;
-    uint256 batontxid, createtxid, refcreatetxid, hashBlock;
+    uint256 batontxid, refcreatetxid, hashBlock;
     uint8_t funcid;
     int32_t numerrs = 0, n, refmatures, height;
     int64_t refamount, inputsum, change = 0;
@@ -1001,7 +1001,7 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid)
                     }
 
                     char lockInLoop1of2addr[KOMODO_ADDRESS_BUFSIZE], txidaddr[KOMODO_ADDRESS_BUFSIZE];
-                    CPubKey createtxidPk = CCtxidaddr(txidaddr, createtxid);
+                    CPubKey createtxidPk = CCtxidaddr(txidaddr, refcreatetxid);
                     GetCCaddress1of2(cp, lockInLoop1of2addr, Marmarapk, createtxidPk);  // 1of2 lock-in-loop address 
 
                     std::cerr << __func__ << "calling AddMarmaraInputs for lock-in-loop addr=" << lockInLoop1of2addr << " adding amount=" << refamount << std::endl;
@@ -1013,7 +1013,7 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid)
                             std::cerr << __func__ << "error: change remained=" << change << ", sent to lock-in-loop addr=" << lockInLoop1of2addr << std::endl;
                             mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA, change, Marmarapk, createtxidPk));
                         }
-                        rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, MarmaraEncodeLoopOpret('S', createtxid, mypk, 0, refmatures, currency), pubkeys);
+                        rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, MarmaraEncodeLoopOpret('S', refcreatetxid, mypk, 0, refmatures, currency), pubkeys);
                         result.push_back(Pair("result", (char *)"success"));
                         result.push_back(Pair("hex", rawtx));
                         return(result);
@@ -1057,12 +1057,12 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid)
                     if (inputsum < refamount)
                     {
                         int64_t remaining = refamount - inputsum;
-                        mtx.vout.push_back(CTxOut(txfee, CScript() << ParseHex(HexStr(CCtxidaddr(txidaddr, createtxid))) << OP_CHECKSIG)); // failure marker
+                        mtx.vout.push_back(CTxOut(txfee, CScript() << ParseHex(HexStr(CCtxidaddr(txidaddr, refcreatetxid))) << OP_CHECKSIG)); // failure marker
                         //if (refamount - remaining > 3 * txfee)
                         //    mtx.vout.push_back(CTxOut(refamount - remaining - 2 * txfee, CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
                         mtx.vout.push_back(CTxOut(refamount - remaining - txfee, CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
 
-                        rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, MarmaraEncodeLoopOpret('D', createtxid, mypk, -remaining, refmatures, currency), pubkeys);  //some remainder left
+                        rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, MarmaraEncodeLoopOpret('D', refcreatetxid, mypk, -remaining, refmatures, currency), pubkeys);  //some remainder left
                         result.push_back(Pair("result", (char *)"error"));
                         result.push_back(Pair("error", (char *)"insufficient funds"));
                         result.push_back(Pair("hex", rawtx));
@@ -1098,7 +1098,7 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid)
     else
     {
         result.push_back(Pair("result", (char *)"error"));
-        result.push_back(Pair("error", (char *)"couldnt get creditloop"));
+        result.push_back(Pair("error", (char *)"couldnt get creditloop for the baton"));
     }
     return(result);
 }
