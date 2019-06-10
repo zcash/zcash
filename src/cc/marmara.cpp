@@ -747,7 +747,7 @@ int64_t AddMarmarainputs(bool (*CheckOpretFunc)(const CScript &, CPubKey &), CMu
                 char utxoaddr[KOMODO_ADDRESS_BUFSIZE];
 
                 Getscriptaddress(utxoaddr, tx.vout[nvout].scriptPubKey);
-                if (strcmp(unspentaddr, utxoaddr) == 0)  // check if real vout address matches index address (as another key could be used in the addressindex)
+                if (strcmp(unspentaddr, utxoaddr) == 0)  // check if the real vout address matches the index address (as another key could be used in the addressindex)
                 {
                     std::cerr << __func__ << " checked good vintx for addr=" << unspentaddr << " txid=" << txid.GetHex() << " nvout=" << nvout << " satoshis=" << it->second.satoshis << " isccopret=" << isccopret << std::endl;
 
@@ -776,6 +776,8 @@ int64_t AddMarmarainputs(bool (*CheckOpretFunc)(const CScript &, CPubKey &), CMu
         for (int32_t i = 0; i < maxinputs && i < vals.size(); i++)
             totalinputs += vals[i];
     }
+
+    std::cerr << __func__ << " for addr=" << unspentaddr << " found total=" << totalinputs << std::endl;
     return(totalinputs);
 }
 
@@ -1229,6 +1231,7 @@ static int32_t RedistributeLockedRemainder(CMutableTransaction &mtx, struct CCco
         CPubKey createtxidPk = CCtxidaddr(txidaddr, createtxid);
         GetCCaddress1of2(cp, lockInLoop1of2addr, Marmarapk, createtxidPk);  // 1of2 lock-in-loop address 
 
+        std::cerr << __func__ << "calling AddMarmaraInputs for lock-in-loop addr=" << lockInLoop1of2addr << " adds all available" << std::endl;
         if ((inputsum = AddMarmarainputs(IsLockInLoopOpret, mtx, pubkeys, lockInLoop1of2addr, 0, MARMARA_VINS)) >= amount / endorsersNumber) // total==0 means add all locked-in-loop vins
         {
             if (mtx.vin.size() >= CC_MAXVINS - MARMARA_VINS) {// vin number limit
@@ -1364,10 +1367,11 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
         uint256 dummytxid;
         int32_t endorsersNumber = MarmaraGetbatontxid(creditloop, dummytxid, requesttxid);  // need n
         int64_t amountToLock = (endorsersNumber > 0 ? amount / (endorsersNumber + 1) : amount);
-        std::cerr << __func__ << " amount to lock in loop=" << amountToLock << std::endl;
+        
 
         GetCCaddress1of2(cp, activated1of2addr, Marmarapk, mypk);  // 1of2 address where the activated endorser's money is locked -- deprecated
         //GetCCaddress(cp, myccaddr, mypk);                       // activated coins on cc address
+        std::cerr << __func__ << "calling AddMarmaraInputs for activated addr=" << activated1of2addr << " needs activated amount to lock-in-loop=" << amountToLock << std::endl;
         if ((inputsum = AddMarmarainputs(IsActivatedOpret, mtx, pubkeys, activated1of2addr, amountToLock, MARMARA_VINS)) >= amountToLock) // add 1/n remainder from the locked fund
         {
             mtx.vin.push_back(CTxIn(requesttxid, 0, CScript()));  // spend the approval tx
