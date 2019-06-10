@@ -1468,7 +1468,7 @@ UniValue MarmaraCreditloop(uint256 txid)
     uint256 batontxid, refcreatetxid, hashBlock; uint8_t funcid; 
     int32_t numerrs = 0, i, n, numvouts, matures, refmatures; int64_t amount, refamount; CPubKey pk; std::string currency, refcurrency; 
     CTransaction tx; 
-    char coinaddr[KOMODO_ADDRESS_BUFSIZE], myCCaddr[KOMODO_ADDRESS_BUFSIZE], destaddr[KOMODO_ADDRESS_BUFSIZE], batonCCaddr[KOMODO_ADDRESS_BUFSIZE], sfuncid[2]; 
+    char normaladdr[KOMODO_ADDRESS_BUFSIZE], myCCaddr[KOMODO_ADDRESS_BUFSIZE], destaddr[KOMODO_ADDRESS_BUFSIZE], batonCCaddr[KOMODO_ADDRESS_BUFSIZE], sfuncid[2]; 
     struct CCcontract_info *cp, C;
 
     cp = CCinit(&C, EVAL_MARMARA);
@@ -1477,10 +1477,21 @@ UniValue MarmaraCreditloop(uint256 txid)
         if ( myGetTransaction(batontxid,tx,hashBlock) != 0 && (numvouts = tx.vout.size()) > 1 )
         {
             result.push_back(Pair("result", (char *)"success"));
-            Getscriptaddress(coinaddr, CScript() << ParseHex(HexStr(Mypubkey())) << OP_CHECKSIG);
-            result.push_back(Pair("myaddress", coinaddr));
+            Getscriptaddress(normaladdr, CScript() << ParseHex(HexStr(Mypubkey())) << OP_CHECKSIG);
+            result.push_back(Pair("myNormalAddress", normaladdr));
             GetCCaddress(cp, myCCaddr, Mypubkey());
             result.push_back(Pair("myCCaddress", myCCaddr));
+
+            // add locked-in-loop amount:
+            char lockInLoop1of2addr[KOMODO_ADDRESS_BUFSIZE], txidaddr[KOMODO_ADDRESS_BUFSIZE];
+            CPubKey createtxidPk = CCtxidaddr(txidaddr, refcreatetxid);
+            GetCCaddress1of2(cp, lockInLoop1of2addr, GetUnspendable(cp, NULL), createtxidPk);  // 1of2 lock-in-loop address 
+            std::vector<CPubKey> pubkeys;
+            CMutableTransaction mtx;
+            int64_t amountLockedInLoop = AddMarmarainputs(IsLockInLoopOpret, mtx, pubkeys, lockInLoop1of2addr, 0, 0);
+            result.push_back(Pair("LockedInLoopCCaddr", lockInLoop1of2addr));
+            result.push_back(Pair("LockedInLoopAmount", ValueFromAmount(amountLockedInLoop)));  // should be 0 if settled
+
             if ((funcid = MarmaraDecodeLoopOpret(tx.vout[numvouts - 1].scriptPubKey, refcreatetxid, pk, refamount, refmatures, refcurrency)) != 0)
             {
                 sfuncid[0] = funcid, sfuncid[1] = 0;
@@ -1494,11 +1505,11 @@ UniValue MarmaraCreditloop(uint256 txid)
                     result.push_back(Pair("remainder", ValueFromAmount(refamount)));
                     result.push_back(Pair("settled", refmatures));
                     result.push_back(Pair("pubkey", HexStr(pk)));
-                    Getscriptaddress(coinaddr, CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG);
-                    result.push_back(Pair("coinaddr", coinaddr));
+                    Getscriptaddress(normaladdr, CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG);
+                    result.push_back(Pair("myNormalAddr", normaladdr));
                     result.push_back(Pair("collected", ValueFromAmount(tx.vout[0].nValue)));
                     Getscriptaddress(destaddr, tx.vout[0].scriptPubKey);
-                    if (strcmp(coinaddr, destaddr) != 0)
+                    if (strcmp(normaladdr, destaddr) != 0)
                     {
                         result.push_back(Pair("destaddr", destaddr));
                         numerrs++;
@@ -1530,30 +1541,22 @@ UniValue MarmaraCreditloop(uint256 txid)
                         numerrs++;
                     }
                     result.push_back(Pair("batonpk", HexStr(pk)));
-                    Getscriptaddress(coinaddr, CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG);
-                    result.push_back(Pair("batonaddr", coinaddr));
-                    GetCCaddress(cp, batonCCaddr, pk);
+                    Getscriptaddress(normaladdr, CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG);
+                    result.push_back(Pair("batonaddr", normaladdr));
+                    GetCCaddress(cp, batonCCaddr, pk);  // baton address
                     result.push_back(Pair("batonCCaddr", batonCCaddr));
-                    Getscriptaddress(coinaddr, tx.vout[0].scriptPubKey);
-                    if (strcmp(coinaddr, batonCCaddr) != 0)
+                    Getscriptaddress(normaladdr, tx.vout[0].scriptPubKey);
+                    if (strcmp(normaladdr, batonCCaddr) != 0)  // TODO: how is this possible?
                     {
-                        result.push_back(Pair("vout0address", coinaddr));
+                        result.push_back(Pair("vout0address", normaladdr));
                         numerrs++;
                     }
-                    if (strcmp(myCCaddr, coinaddr) == 0)
+
+                    if (strcmp(myCCaddr, /*normaladdr*/batonCCaddr) == 0) // TODO: impossible with normal addr
                         result.push_back(Pair("ismine", 1));
                     else 
                         result.push_back(Pair("ismine", 0));
 
-                    // add locked-in-loop amount:
-                    char lockInLoop1of2addr[KOMODO_ADDRESS_BUFSIZE], txidaddr[KOMODO_ADDRESS_BUFSIZE];
-                    CPubKey createtxidPk = CCtxidaddr(txidaddr, refcreatetxid);
-                    GetCCaddress1of2(cp, lockInLoop1of2addr, GetUnspendable(cp, NULL), createtxidPk);  // 1of2 lock-in-loop address 
-                    std::vector<CPubKey> pubkeys;
-                    CMutableTransaction mtx;
-                    int64_t amountLockedInLoop = AddMarmarainputs(IsLockInLoopOpret, mtx, pubkeys, lockInLoop1of2addr, 0, 0);
-                    result.push_back(Pair("lockedInLoopCCaddr", lockInLoop1of2addr));
-                    result.push_back(Pair("lockedInLoopAmount", ValueFromAmount(amountLockedInLoop)));
                 }
                 for (i = 0; i < n; i++)
                 {
@@ -1570,21 +1573,21 @@ UniValue MarmaraCreditloop(uint256 txid)
                             {
                                 createtxid = creditloop[i];
                                 obj.push_back(Pair("issuerpk", HexStr(pk)));
-                                Getscriptaddress(coinaddr, CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG);
-                                obj.push_back(Pair("issueraddr", coinaddr));
-                                GetCCaddress(cp, coinaddr, pk);
-                                obj.push_back(Pair("issuerCCaddr", coinaddr));
+                                Getscriptaddress(normaladdr, CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG);
+                                obj.push_back(Pair("issueraddr", normaladdr));
+                                GetCCaddress(cp, normaladdr, pk);
+                                obj.push_back(Pair("issuerCCaddr", normaladdr));
                             }
                             else
                             {
                                 obj.push_back(Pair("receiverpk", HexStr(pk)));
-                                Getscriptaddress(coinaddr, CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG);
-                                obj.push_back(Pair("receiveraddr", coinaddr));
-                                GetCCaddress(cp, coinaddr, pk);
-                                obj.push_back(Pair("receiverCCaddr", coinaddr));
+                                Getscriptaddress(normaladdr, CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG);
+                                obj.push_back(Pair("receiveraddr", normaladdr));
+                                GetCCaddress(cp, normaladdr, pk);
+                                obj.push_back(Pair("receiverCCaddr", normaladdr));
                             }
                             Getscriptaddress(destaddr, tx.vout[0].scriptPubKey);
-                            if (strcmp(destaddr, coinaddr) != 0)
+                            if (strcmp(destaddr, normaladdr) != 0)
                             {
                                 obj.push_back(Pair("vout0address", destaddr));
                                 numerrs++;
@@ -1760,14 +1763,14 @@ UniValue MarmaraInfo(CPubKey refpk, int32_t firstheight, int32_t lastheight, int
     UniValue resultloops(UniValue::VARR);
     EnumMyLockedInLoop([&](char *loopaddr, const CTransaction & tx, int32_t nvout, CBlockIndex *pindex) // call enumerator with callback
     {
-        std::cerr << "lambda " << " loopaddr=" << loopaddr << " prevloopaddr=" << prevloopaddr << " loopAmount=" << loopAmount << std::endl;
+        //std::cerr << "lambda " << " loopaddr=" << loopaddr << " prevloopaddr=" << prevloopaddr << " loopAmount=" << loopAmount << std::endl;
 
         if (strcmp(prevloopaddr, loopaddr) != 0) {  // loop address changed
             if (prevloopaddr[0] != '\0') {  // prevloop was
                 UniValue entry(UniValue::VOBJ);
                 // if new loop then store amount for the prevloop
                 entry.push_back(Pair("LoopAddress", prevloopaddr));
-                entry.push_back(Pair("AmountLockedInLoop", ValueFromAmount(loopAmount)));
+                entry.push_back(Pair("myAmountLockedInLoop", ValueFromAmount(loopAmount)));
                 resultloops.push_back(entry);
                 loopAmount = 0;  //reset for the next loop
             }
@@ -1779,9 +1782,9 @@ UniValue MarmaraInfo(CPubKey refpk, int32_t firstheight, int32_t lastheight, int
     if (prevloopaddr[0] != '\0') {   // last loop
         UniValue entry(UniValue::VOBJ);
         entry.push_back(Pair("LoopAddress", prevloopaddr));
-        entry.push_back(Pair("AmountLockedInLoop", ValueFromAmount(loopAmount)));
+        entry.push_back(Pair("myAmountLockedInLoop", ValueFromAmount(loopAmount)));
         resultloops.push_back(entry);
-        std::cerr << "lastloop " << " prevloopaddr=" << prevloopaddr << " loopAmount=" << loopAmount << std::endl;
+        //std::cerr << "lastloop " << " prevloopaddr=" << prevloopaddr << " loopAmount=" << loopAmount << std::endl;
     }
     result.push_back(Pair("Loops", resultloops));
     result.push_back(Pair("TotalLockedInLoop", ValueFromAmount(totalLoopAmount)));
