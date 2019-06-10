@@ -315,6 +315,8 @@ cJSON *get_komodocli(char *refcoin,char **retstrp,char *acname,char *method,char
 {
     long fsize; cJSON *retjson = 0; char cmdstr[32768],*jsonstr,fname[256];
     sprintf(fname,"/tmp/zmigrate.%s",method);
+    if ( (acname == 0 || acname[0] == 0) && strcmp(refcoin,"KMD") != 0 )
+        acname = refcoin;
     if ( acname[0] != 0 )
     {
         if ( refcoin[0] != 0 && strcmp(refcoin,"KMD") != 0 )
@@ -1328,7 +1330,7 @@ int32_t main(int32_t argc,char **argv)
         }
         printf("total disputed %.8f\n",dstr(totaldisputed));
         totaldisputed2 = 0;
-        if ( (retjson=  get_listunspent(coinstr,"")) != 0 )
+        if ( strcmp(coinstr,"KMD") == 0 && (retjson=  get_listunspent(coinstr,"")) != 0 )
         {
             if ( (n= cJSON_GetArraySize(retjson)) > 0 )
             {
