@@ -31,6 +31,7 @@ testScripts=(
     'wallet_listnotes.py'
     'mergetoaddress_sprout.py'
     'mergetoaddress_sapling.py'
+    'mergetoaddress_mixednotes.py'
     'listtransactions.py'
     'mempool_resurrect_test.py'
     'txn_doublespend.py'
