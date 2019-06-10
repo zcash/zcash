@@ -354,22 +354,28 @@ static void EnumMyActivated(T func)
         if ((nValue = it->second.satoshis) < COIN)   // skip small values
             continue;
 
-        fprintf(stderr,"%s on activatedaddr txid=%s/vout=%d\n", __func__, txid.GetHex().c_str(), nvout);
+        fprintf(stderr,"%s check on activatedaddr txid=%s/vout=%d\n", __func__, txid.GetHex().c_str(), nvout);
 
         // TODO: change to the non-locking version:
         if (GetTransaction(txid, tx, hashBlock, true) && (pindex = komodo_getblockindex(hashBlock)) != 0 && myIsutxo_spentinmempool(ignoretxid, ignorevin, txid, nvout) == 0)
         {
-            const CScript &scriptPubKey = tx.vout[nvout].scriptPubKey;
-            int32_t ht, unlockht;
-            CPubKey pk;
+            char utxoaddr[KOMODO_ADDRESS_BUFSIZE] = "";
 
-            if (DecodeMarmaraCoinbaseOpRet(tx.vout.back().scriptPubKey, pk, ht, unlockht) != 0 && pk == mypk)
+            Getscriptaddress(utxoaddr, tx.vout[nvout].scriptPubKey);
+            if (strcmp(activatedaddr, utxoaddr) == 0)  // check if real vout address matches index address (as another key could be used in the addressindex)
             {
-                // call callback function:
-                func(activatedaddr, tx, nvout, pindex);
+                CPubKey pk;
+                if (CheckEitherOpRet(IsActivatedOpret, tx, nvout, pk))
+                {
+                    // call callback function:
+                    func(activatedaddr, tx, nvout, pindex);
+                    std::cerr << __func__ << " found my activated 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << std::endl;
+                }
+                else
+                    std::cerr << __func__ << " skipped activated 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << " cant decode opret or not mypk" << std::endl;
             }
-            else 
-                fprintf(stderr,"%s SKIP addutxo %.8f\n", __func__, (double)nValue/COIN /*, numkp, maxkp*/);
+            else
+                std::cerr << __func__ << " skipped activated 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << " uxto addr not matched index" << std::endl;
         }
     }
 }
@@ -397,7 +403,7 @@ static void EnumMyLockedInLoop(T func)
         uint256 txid = it->first.txhash;
         int32_t nvout = (int32_t)it->first.index;
 
-        fprintf(stderr, "%s on markeraddr txid=%s/vout=%d\n", __func__, txid.GetHex().c_str(), nvout);
+        fprintf(stderr, "%s check on markeraddr txid=%s/vout=%d\n", __func__, txid.GetHex().c_str(), nvout);
         if (nvout == 1 && GetTransaction(txid, isssuancetx, hashBlock, true))  // TODO: change to the non-locking version
         {
             if (!isssuancetx.IsCoinBase() && isssuancetx.vout.size() > 2 && isssuancetx.vout.back().nValue == 0)
@@ -428,52 +434,30 @@ static void EnumMyLockedInLoop(T func)
                         uint256 txid = it->first.txhash;
                         int32_t nvout = (int32_t)it->first.index;
 
-                        fprintf(stderr, "%s on loopaddr txid=%s/vout=%d\n", __func__, txid.GetHex().c_str(), nvout);
+                        fprintf(stderr, "%s check on loopaddr txid=%s/vout=%d\n", __func__, txid.GetHex().c_str(), nvout);
 
                         if (GetTransaction(txid, looptx, hashBlock, true) && (pindex = komodo_getblockindex(hashBlock)) != 0 && myIsutxo_spentinmempool(ignoretxid, ignorevin, txid, nvout) == 0)  // TODO: change to the non-locking version
                         {
-                            if (!looptx.IsCoinBase() && looptx.vout.size() > 2 && looptx.vout.back().nValue == 0)  // OP_RETURN nValue==0
+                            /*lock-in-loop cant be mined*/                      /* could be cc opret */
+                            if (!looptx.IsCoinBase() && looptx.vout.size() > 0 /* && looptx.vout.back().nValue == 0 */)  
                             {
-                                uint8_t funcid;
-                                if ((funcid = MarmaraDecodeLoopOpret(looptx.vout.back().scriptPubKey, createtxid, senderpk, amount, matures, currency)) == 'I' || funcid == 'T' && // || funcid == 'D'?
-                                    currency == MARMARA_CURRENCY)
+                                char utxoaddr[KOMODO_ADDRESS_BUFSIZE] = "";
+
+                                Getscriptaddress(utxoaddr, looptx.vout[nvout].scriptPubKey);
+                                if (strcmp(loopaddr, utxoaddr) == 0)  // check if real vout address matches index address (as another key could be used in the addressindex)
                                 {
-                                    CScript scriptCC, scriptData;
-                                    if (looptx.vout[nvout].scriptPubKey.IsPayToCryptoCondition(&scriptCC))     // fetch cc script with no data
-                                    {
-                                        std::cerr << __func__ << " found cc=" << HexStr(vscript_t(scriptCC.begin(), scriptCC.end())) << std::endl;
+                                    CPubKey pk;
 
-                                        if (scriptCC == MakeCC1of2vout(EVAL_MARMARA, looptx.vout[nvout].nValue, Marmarapk, createtxidPk).scriptPubKey)
-                                        {
-                                            std::cerr << __func__ << " found 1of2 (marmara,createtxid) vout for txid=" << txid.GetHex() << " vout=" << nvout << std::endl;
-
-                                            CScript dummy;
-                                            std::vector< vscript_t > vParams;
-
-                                            looptx.vout[nvout].scriptPubKey.IsPayToCryptoCondition(&dummy, vParams);
-                                            if (vParams.size() > 0) {
-                                                COptCCParams p = COptCCParams(vParams[0]);
-
-                                                // trace cc vout data:
-                                                std::cerr << __func__ << " cc vout p.Data.size()=" << p.vData.size() << std::endl;
-                                                for (auto d : p.vData) {
-                                                    std::cerr << __func__ << " cc vout vData=" << HexStr(vscript_t(d.begin(), d.end())) << std::endl;
-                                                }
-
-                                                if (p.vData.size() == 1 && pubkey2pk(p.vData[0]) == mypk) {  // it is mypk cc vout i
-                                                    func(loopaddr, looptx, nvout, pindex);
-                                                }
-                                            }
-
-                                            /* seems not all cases parse:
-                                            if (getCCopret(looptx.vout[nvout].scriptPubKey, scriptData))
-                                            {
-                                                std::cerr << __func__ << " cc opret=" << HexStr(vscript_t(scriptData.begin(), scriptData.end())) << std::endl;
-                                                // TODO: check my pk in scriptData
-                                            } */
-                                        }
+                                    if (CheckEitherOpRet(IsLockInLoopOpret, looptx, nvout, pk) && mypk == pk) {  // check mypk in opret
+                                        // call callbak func:
+                                        func(loopaddr, looptx, nvout, pindex);
+                                        std::cerr << __func__ << " found my lock-in-loop 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << std::endl;
                                     }
+                                    else
+                                        std::cerr << __func__ << " skipped lock-in-loop 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << " cant decode opret or not mypk" << std::endl;
                                 }
+                                else
+                                    std::cerr << __func__ << " skipped lock-in-loop 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << " uxto addr not matched index" << std::endl;
                             }
                         }
                     }
@@ -633,6 +617,7 @@ int64_t AddMarmaraCoinbases(struct CCcontract_info *cp, CMutableTransaction &mtx
     return(totalinputs);
 }
 
+// is opret for activated coins, returns pk
 bool IsActivatedOpret(const CScript &spk, CPubKey &pk) 
 { 
     uint8_t funcid = 0;
@@ -641,6 +626,7 @@ bool IsActivatedOpret(const CScript &spk, CPubKey &pk)
     return (funcid = DecodeMarmaraCoinbaseOpRet(spk, pk, ht, unlockht)) == 'C' || funcid == 'P' || funcid == 'L';
 }
 
+// is opret for lock-in-loop coins, returns pk
 bool IsLockInLoopOpret(const CScript &spk, CPubKey &pk)
 {
     uint8_t funcid = 0;
@@ -652,7 +638,56 @@ bool IsLockInLoopOpret(const CScript &spk, CPubKey &pk)
     return MarmaraDecodeLoopOpret(spk, createtxid, pk, amount, matures, currency) != 0;
 }
 
-// add locked coins:
+// calls CheckOpretFunc for two cases:
+// opret is in cc vout data - is checked first
+// opret is in the last vout - is checked second
+bool CheckEitherOpRet(bool(*CheckOpretFunc)(const CScript &, CPubKey &), const CTransaction &tx, int32_t nvout, CPubKey & pk)
+{
+    CScript opret, dummy;
+    std::vector< vscript_t > vParams;
+    bool isccopret = false, opretok = false;
+
+    // first check cc opret
+    tx.vout[nvout].scriptPubKey.IsPayToCryptoCondition(&dummy, vParams);
+    if (vParams.size() > 0) {
+        COptCCParams p = COptCCParams(vParams[0]);
+        if (p.vData.size() > 0) {
+            opret << OP_RETURN << p.vData[0]; // reconstruct opret for CheckOpretFunc function
+            std::cerr << __func__ << " ccopret=" << opret.ToString() << std::endl;
+            if (CheckOpretFunc(opret, pk)) {
+                isccopret = true;
+                opretok = true;
+            }
+        }
+    }
+
+    // check last opret:
+    if (!opretok) {  // right opret not found in cc vout then check opret in the back of vouts
+        if (nvout < tx.vout.size()) {   // there might be opret in the back
+            opret = tx.vout.back().scriptPubKey;
+            if (CheckOpretFunc(opret, pk)) {
+                isccopret = false;
+                opretok = true;
+            }
+        }
+    }
+
+    // print opret evalcode and funcid for debug logging:
+    {
+        vscript_t vprintopret;
+        uint8_t funcid = 0, evalcode = 0;
+        if (GetOpReturnData(opret, vprintopret) && vprintopret.size() >= 2) {
+            evalcode = vprintopret.begin()[0];
+            funcid = vprintopret.begin()[1];
+        }
+        std::cerr << __func__ << " opret eval=" << (int)evalcode << " funcid=" << (char)(funcid ? funcid : ' ') << " isccopret=" << isccopret << std::endl;
+    }
+
+    return opretok;
+}
+
+
+// add activated or locked-in-loop coins from 1of2 address (for lock-in-loop mypk not checked, so all locked-in-loop added for an address):
 int64_t AddMarmarainputs(bool (*CheckOpretFunc)(const CScript &, CPubKey &), CMutableTransaction &mtx, std::vector<CPubKey> &pubkeys, char *unspentaddr, int64_t total, int32_t maxinputs)
 {
     int64_t threshold, nValue, totalinputs = 0; 
@@ -691,43 +726,10 @@ int64_t AddMarmarainputs(bool (*CheckOpretFunc)(const CScript &, CPubKey &), CMu
             std::vector< vscript_t > vParams;
             bool isccopret = false, opretok = false;
 
-            // now we should consider 2 cases:
+            // considers 2 cases:
             // opret is in the last vout
             // opret is in cc vout data
-            tx.vout[nvout].scriptPubKey.IsPayToCryptoCondition(&dummy, vParams);
-            if (vParams.size() > 0) {
-                COptCCParams p = COptCCParams(vParams[0]);
-                if (p.vData.size() > 0) {
-                    opret << OP_RETURN << p.vData[0]; // reconstruct opret for CheckOpretFunc function
-                    std::cerr << __func__ << " ccopret=" << opret.ToString() << std::endl;
-                    if (CheckOpretFunc(opret, pk)) {
-                        isccopret = true;
-                        opretok = true;
-                    }
-                }
-            }
-            if (!opretok) {  // right opret not found in cc vout then check opret in the back of vouts
-                if (nvout < tx.vout.size()) {   // there might be opret in the back
-                    opret = tx.vout.back().scriptPubKey;
-                    if (CheckOpretFunc(opret, pk)) {
-                        isccopret = false;
-                        opretok = true;
-                    }
-                }
-            }
-
-            // print opret evalcode and funcid for debug logging:
-            {
-                vscript_t vprintopret;
-                uint8_t funcid = 0, evalcode = 0;
-                if (GetOpReturnData(opret, vprintopret) && vprintopret.size() >= 2) {
-                    evalcode = vprintopret.begin()[0];
-                    funcid = vprintopret.begin()[1];
-                }
-                std::cerr << __func__ << " checking addr=" << unspentaddr << " txid=" << txid.GetHex() << " nvout=" << nvout << " satoshis=" << it->second.satoshis << " opret eval=" << (int)evalcode << " funcid=" << (char)(funcid ? funcid : ' ') << " isccopret=" << isccopret << std::endl;
-            }
-
-            if (opretok)
+            if (CheckEitherOpRet(CheckOpretFunc, tx, nvout, pk))
             {
                 char utxoaddr[KOMODO_ADDRESS_BUFSIZE];
 
