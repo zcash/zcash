@@ -328,6 +328,9 @@ bool MarmaraPoScheck(char *destaddr, CScript opret, CTransaction staketx)
     return(0);
 }
 
+// enumerates mypk activated cc vouts
+// calls a callback allowing to do something with the utxos (add to staking utxo array)
+// TODO: maybe better to use AddMarmaraInputs with a callback for unification...
 template <class T>
 static void EnumMyActivated(T func)
 {
@@ -384,6 +387,9 @@ static void EnumMyActivated(T func)
     }
 }
 
+// enumerates mypk locked in loop cc vouts
+// calls a callback allowing to do something with the utxos (add to staking utxo array)
+// TODO: maybe better to use AddMarmaraInputs with a callback for unification...
 template <class T>
 static void EnumMyLockedInLoop(T func)
 {
@@ -442,7 +448,7 @@ static void EnumMyLockedInLoop(T func)
 
                         if (GetTransaction(txid, looptx, hashBlock, true) && (pindex = komodo_getblockindex(hashBlock)) != 0 && myIsutxo_spentinmempool(ignoretxid, ignorevin, txid, nvout) == 0)  // TODO: change to the non-locking version
                         {
-                            /*lock-in-loop cant be mined*/                      /* could be cc opret */
+                            /* lock-in-loop cant be mined */                   /* now it could be cc opret, not necessary OP_RETURN vout in the back */
                             if (!looptx.IsCoinBase() && looptx.vout.size() > 0 /* && looptx.vout.back().nValue == 0 */)  
                             {
                                 char utxoaddr[KOMODO_ADDRESS_BUFSIZE] = "";
@@ -722,6 +728,10 @@ int64_t AddMarmarainputs(bool (*CheckOpretFunc)(const CScript &, CPubKey &), CMu
         if (it->second.satoshis < threshold)
             continue;
 
+        // check if vin might be already added to mtx:
+        if (std::find_if(mtx.vin.begin(), mtx.vin.end(), [&](auto v) {return (v.prevout.hash == vintxid && v.prevout.n == vout); }) != mtx.vin.end())
+            continue;
+
         if (myGetTransaction(txid, tx, hashBlock) != 0 && tx.vout.size() > 0 && 
             tx.vout[nvout].scriptPubKey.IsPayToCryptoCondition() != 0 && myIsutxo_spentinmempool(ignoretxid, ignorevin, txid, nvout) == 0)
         {
@@ -986,7 +996,7 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid)
                     pubkeys.push_back(mypk);
                     for (i = 1; i < n; i++)  //iterate through all issuers/endorsers (i=0 is 1st receiver approval)
                     {
-                        if ( myGetTransaction(creditloop[i],tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 1 )
+                        if ( myGetTransaction(creditloop[i],tx,hashBlock) != 0 && (numvouts = tx.vout.size()) > 1 )
                         {
                             if ((funcid = MarmaraDecodeLoopOpret(tx.vout[numvouts - 1].scriptPubKey, createtxid, pk, amount, matures, currency)) != 0)  // get endorser's pk
                             {
@@ -1455,7 +1465,7 @@ UniValue MarmaraCreditloop(uint256 txid)
     cp = CCinit(&C, EVAL_MARMARA);
     if ((n = MarmaraGetbatontxid(creditloop, batontxid, txid)) > 0)
     {
-        if ( myGetTransaction(batontxid,tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 1 )
+        if ( myGetTransaction(batontxid,tx,hashBlock) != 0 && (numvouts = tx.vout.size()) > 1 )
         {
             result.push_back(Pair("result", (char *)"success"));
             Getscriptaddress(coinaddr, CScript() << ParseHex(HexStr(Mypubkey())) << OP_CHECKSIG);
@@ -1538,7 +1548,7 @@ UniValue MarmaraCreditloop(uint256 txid)
                 }
                 for (i = 0; i < n; i++)
                 {
-                    if ( myGetTransaction(creditloop[i],tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 1 )
+                    if ( myGetTransaction(creditloop[i],tx,hashBlock) != 0 && (numvouts = tx.vout.size()) > 1 )
                     {
                         uint256 createtxid;
                         if ((funcid = MarmaraDecodeLoopOpret(tx.vout[numvouts - 1].scriptPubKey, createtxid, pk, amount, matures, currency)) != 0)
