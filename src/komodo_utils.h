@@ -2313,6 +2313,8 @@ void komodo_args(char *argv0)
             ASSETCHAINS_CCDISABLES[230] = 0; // DICE
             ASSETCHAINS_CCDISABLES[235] = 0; // CHANNELS 
             ASSETCHAINS_CCDISABLES[236] = 0; // ORACLES
+            ASSETCHAINS_CCDISABLES[227] = 0; // ASSETS
+            ASSETCHAINS_CCDISABLES[242] = 0; // TOKENS
         }
         if ( strcmp("DION",ASSETCHAINS_SYMBOL) == 0 )
         {
@@ -2348,7 +2350,9 @@ void komodo_args(char *argv0)
         if ( strcmp("KMDICE",ASSETCHAINS_SYMBOL) == 0 )
         {
             memset(ASSETCHAINS_CCDISABLES,1,sizeof(ASSETCHAINS_CCDISABLES));
+            ASSETCHAINS_CCDISABLES[228] = 0; // FAUCET
             ASSETCHAINS_CCDISABLES[230] = 0; // DICE
+            ASSETCHAINS_CCDISABLES[236] = 0; // ORACLES
         }
     } else BITCOIND_RPCPORT = GetArg("-rpcport", BaseParams().RPCPort());
     KOMODO_DPOWCONFS = GetArg("-dpowconfs",dpowconfs);
