@@ -1022,8 +1022,15 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid)
                             mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA, change, Marmarapk, createtxidPk));
                         }
                         rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, MarmaraEncodeLoopOpret('S', refcreatetxid, mypk, 0, refmatures, refcurrency), pubkeys);
-                        result.push_back(Pair("result", (char *)"success"));
-                        result.push_back(Pair("hex", rawtx));
+                        if (rawtx.empty()) {
+                            result.push_back(Pair("result", (char *)"error"));
+                            result.push_back(Pair("error", (char *)"cant sign tx"));
+                            std::cerr << __func__ << " bad mtx=" << HexStr(E_MARSHAL(ss << mtx)) << std::endl;
+                        }
+                        else {
+                            result.push_back(Pair("result", (char *)"success"));
+                            result.push_back(Pair("hex", rawtx));
+                        }
                         return(result);
                     }
                     // pubkeys.push_back(Marmarapk);
@@ -1071,10 +1078,17 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid)
                         mtx.vout.push_back(CTxOut(refamount - remaining - txfee, CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
 
                         rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, MarmaraEncodeLoopOpret('D', refcreatetxid, mypk, -remaining, refmatures, refcurrency), pubkeys);  //some remainder left
-                        result.push_back(Pair("result", (char *)"error"));
-                        result.push_back(Pair("error", (char *)"insufficient funds"));
-                        result.push_back(Pair("hex", rawtx));
-                        result.push_back(Pair("remaining", ValueFromAmount(remaining)));
+                        if (rawtx.empty()) {
+                            result.push_back(Pair("result", (char *)"error"));
+                            result.push_back(Pair("error", (char *)"cant sign tx"));
+                            std::cerr << __func__ << " bad mtx=" << HexStr(E_MARSHAL(ss << mtx)) << std::endl;
+                        }
+                        else {
+                            result.push_back(Pair("result", (char *)"error"));
+                            result.push_back(Pair("error", (char *)"insufficient funds"));
+                            result.push_back(Pair("hex", rawtx));
+                            result.push_back(Pair("remaining", ValueFromAmount(remaining)));
+                        }
                     }
                     else
                     {
@@ -1362,7 +1376,7 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
 
     CPubKey Marmarapk = GetUnspendable(cp, NULL);
     CPubKey mypk = pubkey2pk(Mypubkey());
-    const char *errorstr = NULL;
+    std::string errorstr;
 
     if (MarmaraGetcreatetxid(createtxid, requesttxid) < 0)
         errorstr = "cant get createtxid from requesttxid";
@@ -1375,7 +1389,7 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
     else if (matures <= chainActive.LastTip()->GetHeight())
         errorstr = "it must mature in the future";
 
-    if (errorstr == NULL)
+    if (errorstr.empty())
     {
         // check requested cheque params:
         CTransaction requestx;
@@ -1400,7 +1414,7 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
             errorstr = "currency does not match requested currency";
     }
 
-    if (errorstr == NULL)
+    if (errorstr.empty())
     {
         char activated1of2addr[KOMODO_ADDRESS_BUFSIZE];
         //char myccaddr[KOMODO_ADDRESS_BUFSIZE];
@@ -1460,11 +1474,10 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
 
                     rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, MarmaraEncodeLoopOpret(funcid, createtxid, receiverpk, amount, matures, currency));
 
-                    if (rawtx.size() == 0)
+                    if (rawtx.size() == 0) {
+                        errorstr = "cant sign tx";
                         std::cerr << __func__ << " bad mtx=" << HexStr(E_MARSHAL(ss << mtx)) << std::endl;
-
-                    if (rawtx.size() > 0)
-                        errorstr = NULL;
+                    }
                 }
                 else
                     errorstr = (char*)"could not return back locked in loop funds";
@@ -1475,11 +1488,10 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
         else
             errorstr = (char *)"dont have enough locked inputs for amount";
     }
-    if (rawtx.size() == 0 || errorstr != 0)
+    if (!errorstr.empty())
     {
         result.push_back(Pair("result", "error"));
-        if (errorstr != 0)
-            result.push_back(Pair("error", errorstr));
+        result.push_back(Pair("error", errorstr));
     }
     else
     {
