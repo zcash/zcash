@@ -50,8 +50,8 @@
  // start of consensus code
 
 bool CheckEitherOpRet(bool(*CheckOpretFunc)(const CScript &, CPubKey &), const CTransaction &tx, int32_t nvout, CPubKey & pk);
-//bool IsLockInLoopOpret(const CScript &spk, CPubKey &pk);
-//bool IsActivatedOpret(const CScript &spk, CPubKey &pk);
+bool IsLockInLoopOpret(const CScript &spk, CPubKey &pk);
+bool IsActivatedOpret(const CScript &spk, CPubKey &pk);
 
 int64_t IsMarmaravout(struct CCcontract_info *cp, const CTransaction& tx, int32_t v)
 {
