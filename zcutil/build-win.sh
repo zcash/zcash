@@ -14,7 +14,7 @@ cd ../
 WD=$PWD
 cd src/cc
 echo $PWD
-./makerogue
+./makecustom
 cd $WD
 
 ./autogen.sh
