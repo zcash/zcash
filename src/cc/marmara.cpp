@@ -50,8 +50,8 @@
  // start of consensus code
 
 bool CheckEitherOpRet(bool(*CheckOpretFunc)(const CScript &, CPubKey &), const CTransaction &tx, int32_t nvout, CPubKey & pk);
-bool IsLockInLoopOpret(const CScript &spk, CPubKey &pk);
-bool IsActivatedOpret(const CScript &spk, CPubKey &pk);
+//bool IsLockInLoopOpret(const CScript &spk, CPubKey &pk);
+//bool IsActivatedOpret(const CScript &spk, CPubKey &pk);
 
 int64_t IsMarmaravout(struct CCcontract_info *cp, const CTransaction& tx, int32_t v)
 {
@@ -683,15 +683,14 @@ bool CheckEitherOpRet(bool(*CheckOpretFunc)(const CScript &, CPubKey &), const C
     }
 
     // print opret evalcode and funcid for debug logging:
-    {
-        vscript_t vprintopret;
-        uint8_t funcid = 0, evalcode = 0;
-        if (GetOpReturnData(opret, vprintopret) && vprintopret.size() >= 2) {
-            evalcode = vprintopret.begin()[0];
-            funcid = vprintopret.begin()[1];
-        }
-        std::cerr << __func__ << " opret eval=" << (int)evalcode << " funcid=" << (char)(funcid ? funcid : ' ') << " isccopret=" << isccopret << std::endl;
+    vscript_t vprintopret;
+    uint8_t funcid = 0, evalcode = 0;
+    if (GetOpReturnData(opret, vprintopret) && vprintopret.size() >= 2) {
+        evalcode = vprintopret.begin()[0];
+        funcid = vprintopret.begin()[1];
     }
+    std::cerr << __func__ << " opret eval=" << (int)evalcode << " funcid=" << (char)(funcid ? funcid : ' ') << " isccopret=" << isccopret << std::endl;
+    
 
     return opretok;
 }
@@ -1232,8 +1231,10 @@ static int32_t RedistributeLockedRemainder(CMutableTransaction &mtx, struct CCco
 
         if ((inputsum = AddMarmarainputs(IsLockInLoopOpret, mtx, pubkeys, lockInLoop1of2addr, 0, MARMARA_VINS)) >= amount / endorsersNumber) // total==0 means add all locked-in-loop vins
         {
-            if (mtx.vin.size() >= CC_MAXVINS - MARMARA_VINS)  // vin number limit
+            if (mtx.vin.size() >= CC_MAXVINS - MARMARA_VINS) {// vin number limit
+                std::cerr << __func__ << " too many vins!" << std::endl;
                 return -1;
+            }
 
             int64_t amountReturned = 0;
             for (int32_t i = 1; i < creditloop.size() + 1; i ++)  //iterate through all issuers/endorsers (i=0 is 1st receiver approval tx, n + 1 batontxid)
@@ -1747,27 +1748,29 @@ UniValue MarmaraInfo(CPubKey refpk, int32_t firstheight, int32_t lastheight, int
     // calc lock-in-loops amount for mypk:
     CAmount loopAmount = 0;
     CAmount totalLoopAmount = 0;
-    char prevloopaddress[KOMODO_ADDRESS_BUFSIZE] = "";
+    char prevloopaddr[KOMODO_ADDRESS_BUFSIZE] = "";
     UniValue resultloops(UniValue::VARR);
     EnumMyLockedInLoop([&](char *loopaddr, const CTransaction & tx, int32_t nvout, CBlockIndex *pindex) // call enumerator with callback
     {
         loopAmount += tx.vout[nvout].nValue;
         totalLoopAmount += tx.vout[nvout].nValue;
         
-        if (strcmp(prevloopaddress, loopaddr) != 0) {  // loop address changed, output for each loop
-            if (prevloopaddress[0] != '\0') {  
+        std::cerr << "lambda " << " loopaddr=" << loopaddr << " prevloopaddr=" << prevloopaddr << " loopAmount" << loopAmount << std::endl;
+
+        if (strcmp(prevloopaddr, loopaddr) != 0) {  // loop address changed, output for each loop
+            if (prevloopaddr[0] != '\0') {  
                 UniValue entry(UniValue::VOBJ);
-                entry.push_back(Pair("LoopAddress", prevloopaddress));
+                entry.push_back(Pair("LoopAddress", prevloopaddr));
                 entry.push_back(Pair("AmountLockedInLoop", ValueFromAmount(loopAmount)));
                 resultloops.push_back(entry);
                 loopAmount = 0;
             }
-            strcpy(prevloopaddress, loopaddr);
+            strcpy(prevloopaddr, loopaddr);
         }
     });
-    if (prevloopaddress[0] != '\0') {   // last loop
+    if (prevloopaddr[0] != '\0') {   // last loop
         UniValue entry(UniValue::VOBJ);
-        entry.push_back(Pair("LoopAddress", prevloopaddress));
+        entry.push_back(Pair("LoopAddress", prevloopaddr));
         entry.push_back(Pair("AmountLockedInLoop", ValueFromAmount(loopAmount)));
         resultloops.push_back(entry);
     }
