@@ -1752,27 +1752,28 @@ UniValue MarmaraInfo(CPubKey refpk, int32_t firstheight, int32_t lastheight, int
     UniValue resultloops(UniValue::VARR);
     EnumMyLockedInLoop([&](char *loopaddr, const CTransaction & tx, int32_t nvout, CBlockIndex *pindex) // call enumerator with callback
     {
-        loopAmount += tx.vout[nvout].nValue;
-        totalLoopAmount += tx.vout[nvout].nValue;
-        
-        std::cerr << "lambda " << " loopaddr=" << loopaddr << " prevloopaddr=" << prevloopaddr << " loopAmount" << loopAmount << std::endl;
+        std::cerr << "lambda " << " loopaddr=" << loopaddr << " prevloopaddr=" << prevloopaddr << " loopAmount=" << loopAmount << std::endl;
 
-        if (strcmp(prevloopaddr, loopaddr) != 0) {  // loop address changed, output for each loop
-            if (prevloopaddr[0] != '\0') {  
+        if (strcmp(prevloopaddr, loopaddr) != 0) {  // loop address changed
+            if (prevloopaddr[0] != '\0') {  // prevloop was
                 UniValue entry(UniValue::VOBJ);
+                // if new loop then store amount for the prevloop
                 entry.push_back(Pair("LoopAddress", prevloopaddr));
                 entry.push_back(Pair("AmountLockedInLoop", ValueFromAmount(loopAmount)));
                 resultloops.push_back(entry);
-                loopAmount = 0;
+                loopAmount = 0;  //reset for the next loop
             }
             strcpy(prevloopaddr, loopaddr);
         }
+        loopAmount += tx.vout[nvout].nValue;
+        totalLoopAmount += tx.vout[nvout].nValue;
     });
     if (prevloopaddr[0] != '\0') {   // last loop
         UniValue entry(UniValue::VOBJ);
         entry.push_back(Pair("LoopAddress", prevloopaddr));
         entry.push_back(Pair("AmountLockedInLoop", ValueFromAmount(loopAmount)));
         resultloops.push_back(entry);
+        std::cerr << "lastloop " << " prevloopaddr=" << prevloopaddr << " loopAmount=" << loopAmount << std::endl;
     }
     result.push_back(Pair("Loops", resultloops));
     result.push_back(Pair("TotalLockedInLoop", ValueFromAmount(totalLoopAmount)));
