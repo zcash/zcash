@@ -231,9 +231,9 @@ CScript Marmara_scriptPubKey(int32_t height, CPubKey pk)
     if (height > 0 && (height & 1) == 0 && pk.size() == 33)
     {
         ccvout = MakeCC1of2vout(EVAL_MARMARA, 0, Marmarapk, pk);
-        //char coinaddr[KOMODO_ADDRESS_BUFSIZE];
-        //Getscriptaddress(coinaddr,ccvout.scriptPubKey);
-        //fprintf(stderr,"Marmara_scriptPubKey %s ht.%d -> %s\n",HexStr(pk).c_str(),height,coinaddr);
+        char coinaddr[KOMODO_ADDRESS_BUFSIZE];
+        Getscriptaddress(coinaddr,ccvout.scriptPubKey);
+        fprintf(stderr,"%s %s ht.%d -> %s\n", __func__, HexStr(pk).c_str(),height,coinaddr);
     }
     return(ccvout.scriptPubKey);
 }
@@ -320,10 +320,13 @@ bool MarmaraPoScheck(char *destaddr, CScript opret, CTransaction staketx)
         funcid = DecodeMarmaraCoinbaseOpRet(opret, pk, height, unlockht);
         Marmarapk = GetUnspendable(cp, 0);
         GetCCaddress1of2(cp, coinaddr, Marmarapk, pk);
-        //fprintf(stderr,"%s matched opret! funcid.%c ht.%d unlock.%d %s\n", __func__,funcid,height,unlockht,coinaddr);
+        fprintf(stderr,"%s matched opret! funcid.%c ht.%d unlock.%d %s\n", __func__,funcid,height,unlockht,coinaddr);
         return(strcmp(destaddr, coinaddr) == 0);
     }
-    return(0);
+    else {
+        fprintf(stderr, "%s returns false\n", __func__);
+        return(false);
+    }
 }
 
 // enumerates mypk activated cc vouts
