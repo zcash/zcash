@@ -1311,6 +1311,12 @@ int32_t main(int32_t argc,char **argv)
         coinstr = clonestr("KMD");
         acstr = "";
     }
+    else if ( strcmp(argv[1],"CHIPS") == 0 )
+    {
+        REFCOIN_CLI = "./chips-cli";
+        coinstr = clonestr("CHIPS");
+        acstr = "";
+    }
     else
     {
         sprintf(buf,"./komodo-cli -ac_name=%s",argv[1]);
