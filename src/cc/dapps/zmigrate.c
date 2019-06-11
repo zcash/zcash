@@ -1086,11 +1086,11 @@ void scan_claims(int32_t issueflag,char *refcoin,int32_t batchid)
     else if ( batchid == 2 )
     {
         batchmin = 1;//777 * SATOSHIDEN;
-        batchmax = 47777 * SATOSHIDEN;
+        batchmax = 77777 * SATOSHIDEN;
     }
     else if ( batchid == 3 )
     {
-        batchmin = 47777 * SATOSHIDEN;
+        batchmin = 77777 * SATOSHIDEN;
         batchmax = 1000000 * SATOSHIDEN;
     }
     for (i=0; i<NUM_CLAIMS; i++)
@@ -1117,9 +1117,8 @@ void scan_claims(int32_t issueflag,char *refcoin,int32_t batchid)
             }
             continue;
         }
-        if ( item->total > item->refundvalue*1.05 + 10*SATOSHIDEN )
+        if ( item->total > item->refundvalue*1.1 + 10*SATOSHIDEN )
         {
-            //if ( (item->total-item->refundvalue) > 777*SATOSHIDEN )
             printf("possible.%d stolen %s %.8f vs refund %.8f -> %.8f\n",batchid,item->oldaddr,dstr(item->total),dstr(item->refundvalue),dstr(item->total)-dstr(item->refundvalue));
             numstolen++;
             possiblestolen += (item->total - item->refundvalue);
@@ -1324,7 +1323,7 @@ int32_t main(int32_t argc,char **argv)
         coinstr = clonestr(argv[1]);
         acstr = coinstr;
     }
-    if ( strcmp(coinstr,"KMD") == 0 )
+    if ( 1 )//strcmp(coinstr,"KMD") == 0 )
     {
         sprintf(buf,"%s-Claims.csv",coinstr);
         reconcile_claims(buf);
