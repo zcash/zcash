@@ -673,7 +673,7 @@ int32_t komodo_bannedset(int32_t *indallvoutsp,uint256 *array,int32_t max)
     }
     for (i=0; i<sizeof(banned_txids)/sizeof(*banned_txids); i++)
         array[i] = uint256S(banned_txids[i]);
-    *indallvoutsp = i-6;
+    *indallvoutsp = i-9;
     return(i);
 }
 
