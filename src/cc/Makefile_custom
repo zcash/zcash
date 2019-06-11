@@ -1,0 +1,38 @@
+SHELL		= /bin/sh
+CC		= gcc
+CC_DARWIN	= g++-8
+CC_WIN		= x86_64-w64-mingw32-gcc-posix
+CFLAGS_DARWIN	= -DBUILD_CUSTOMCC -std=c++11 -arch x86_64 -I../secp256k1/include -I../../depends/$(shell echo `../..//depends/config.guess`/include) -I../univalue/include -I../cryptoconditions/include -I../cryptoconditions/src -I../cryptoconditions/src/asn -I.. -I. -fPIC -Wl,-undefined -Wl,dynamic_lookup -Wno-write-strings -shared -dynamiclib
+CFLAGS		= -Wno-write-strings -DBUILD_CUSTOMCC -std=c++11 -I../secp256k1/include -I../../depends/$(shell echo `../..//depends/config.guess`/include) -I../univalue/include -I../cryptoconditions/include -I../cryptoconditions/src -I../cryptoconditions/src/asn -I.. -I. -fPIC -shared
+CFLAGS_WIN	= -Wno-write-strings -DBUILD_CUSTOMCC -std=c++11 -I../secp256k1/include -I../../depends/x86_64-w64-mingw32/include -I../univalue/include -I../cryptoconditions/include -I../cryptoconditions/src -I../cryptoconditions/src/asn -I.. -I. -fPIC -shared
+DEBUGFLAGS	= -O0 -D _DEBUG
+RELEASEFLAGS	= -O2 -D NDEBUG -combine -fwhole-program
+$(info $(OS))
+OS := $(shell uname -s)
+$(info $(OS))
+TARGET  = customcc.so
+TARGET_DARWIN = customcc.dylib
+TARGET_WIN = customcc.dll
+SOURCES = cclib.cpp
+#HEADERS = $(shell echo ../cryptoconditions/include/*.h) -I/usr/local/Cellar/gcc\@8/8.3.0/include/c++/8.3.0/
+
+all: $(TARGET)
+
+$(TARGET): $(SOURCES)
+	$(info Building cclib to src/)
+ifeq ($(OS),Darwin)
+	$(CC_DARWIN) $(CFLAGS_DARWIN) $(DEBUGFLAGS) -o $(TARGET_DARWIN) -c $(SOURCES)
+	cp $(TARGET_DARWIN) ../libcc.dylib
+else ifeq ($(HOST),x86_64-w64-mingw32)
+	$(info WINDOWS)
+	$(CC_WIN) $(CFLAGS_WIN) $(DEBUGFLAGS) -o $(TARGET_WIN) -c $(SOURCES)
+	cp $(TARGET_WIN) ../libcc.dll
+#else ifeq ($(WIN_HOST),True) - todo: pass ENV var from build.sh if WIN host
+else
+	$(info LINUX)
+	$(CC) $(CFLAGS) $(DEBUGFLAGS) -o $(TARGET) -c $(SOURCES)
+	cp $(TARGET) ../libcc.so
+endif
+
+clean:
+	rm -rf $(TARGET)
