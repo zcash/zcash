@@ -1086,11 +1086,11 @@ void scan_claims(int32_t issueflag,char *refcoin,int32_t batchid)
     else if ( batchid == 2 )
     {
         batchmin = 1;//777 * SATOSHIDEN;
-        batchmax = 17777 * SATOSHIDEN;
+        batchmax = 47777 * SATOSHIDEN;
     }
     else if ( batchid == 3 )
     {
-        batchmin = 17777 * SATOSHIDEN;
+        batchmin = 47777 * SATOSHIDEN;
         batchmax = 1000000 * SATOSHIDEN;
     }
     for (i=0; i<NUM_CLAIMS; i++)
@@ -1246,7 +1246,7 @@ int64_t sum_of_vins(char *refcoin,int32_t *totalvinsp,int32_t *uniqaddrsp,bits25
                     {
                         if ( update_addrstats(srcaddr,amount) < 0 )
                             (*uniqaddrsp)++;
-                        printf("add %s <- %.8f\n",srcaddr,dstr(amount));
+                        //printf("add %s <- %.8f\n",srcaddr,dstr(amount));
                         total += amount;
                         (*totalvinsp)++;
                     }
@@ -1289,7 +1289,7 @@ void reconcile_claims(char *fname)
                 else fields[n][i++] = *str++;
             }
             //printf("%s\n",fields[0]);
-            total += update_claimstats(fields[0],fields[2],fields[4],atof(fields[3])*SATOSHIDEN + 0.0000000049);
+            total += update_claimstats(fields[1],fields[3],fields[6],atof(fields[4])*SATOSHIDEN + 0.0000000049);
             numlines++;
         }
         fclose(fp);
