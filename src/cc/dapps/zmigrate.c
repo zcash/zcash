@@ -315,6 +315,8 @@ cJSON *get_komodocli(char *refcoin,char **retstrp,char *acname,char *method,char
 {
     long fsize; cJSON *retjson = 0; char cmdstr[32768],*jsonstr,fname[256];
     sprintf(fname,"/tmp/zmigrate.%s",method);
+    //if ( (acname == 0 || acname[0] == 0) && strcmp(refcoin,"KMD") != 0 )
+    //    acname = refcoin;
     if ( acname[0] != 0 )
     {
         if ( refcoin[0] != 0 && strcmp(refcoin,"KMD") != 0 )
@@ -1244,7 +1246,7 @@ int64_t sum_of_vins(char *refcoin,int32_t *totalvinsp,int32_t *uniqaddrsp,bits25
                     {
                         if ( update_addrstats(srcaddr,amount) < 0 )
                             (*uniqaddrsp)++;
-                        //printf("add %s <- %.8f\n",srcaddr,dstr(amount));
+                        printf("add %s <- %.8f\n",srcaddr,dstr(amount));
                         total += amount;
                         (*totalvinsp)++;
                     }
@@ -1297,7 +1299,7 @@ void reconcile_claims(char *fname)
 
 int32_t main(int32_t argc,char **argv)
 {
-    char *coinstr,*addr,buf[64],srcaddr[64],str[65]; cJSON *retjson,*item; int32_t i,n,disputed,numdisputed,numsmall=0,numpayouts=0,numclaims=0,num=0,totalvins=0,uniqaddrs=0; int64_t amount,total = 0,total2 = 0,payout,maxpayout,smallpayout=0,totalpayout = 0,totaldisputed = 0,totaldisputed2 = 0,fundingamount = 0;
+    char *coinstr,*acstr,*addr,buf[64],srcaddr[64],str[65]; cJSON *retjson,*item; int32_t i,n,disputed,numdisputed,numsmall=0,numpayouts=0,numclaims=0,num=0,totalvins=0,uniqaddrs=0; int64_t amount,total = 0,total2 = 0,payout,maxpayout,smallpayout=0,totalpayout = 0,totaldisputed = 0,totaldisputed2 = 0,fundingamount = 0;
     if ( argc != 2 )
     {
         printf("argc needs to be 2: <prog> coin\n");
@@ -1307,14 +1309,16 @@ int32_t main(int32_t argc,char **argv)
     {
         REFCOIN_CLI = "./komodo-cli";
         coinstr = clonestr("KMD");
+        acstr = "";
     }
     else
     {
         sprintf(buf,"./komodo-cli -ac_name=%s",argv[1]);
         REFCOIN_CLI = clonestr(buf);
         coinstr = clonestr(argv[1]);
+        acstr = coinstr;
     }
-    if ( 1 )
+    if ( strcmp(coinstr,"KMD") == 0 )
     {
         sprintf(buf,"%s-Claims.csv",coinstr);
         reconcile_claims(buf);
@@ -1328,7 +1332,7 @@ int32_t main(int32_t argc,char **argv)
         }
         printf("total disputed %.8f\n",dstr(totaldisputed));
         totaldisputed2 = 0;
-        if ( (retjson=  get_listunspent(coinstr,"")) != 0 )
+        if ( (retjson=  get_listunspent(coinstr,acstr)) != 0 )
         {
             if ( (n= cJSON_GetArraySize(retjson)) > 0 )
             {
@@ -1387,7 +1391,7 @@ int32_t main(int32_t argc,char **argv)
         scan_claims(0,coinstr,2);
         //scan_claims(0,coinstr,3);
     }
-    else if ( (retjson=  get_listunspent(coinstr,"")) != 0 )
+    else if ( (retjson= get_listunspent(coinstr,acstr)) != 0 )
     {
         if ( (n= cJSON_GetArraySize(retjson)) > 0 )
         {
@@ -1416,12 +1420,12 @@ int32_t main(int32_t argc,char **argv)
                     maxpayout = payout;
                 totalpayout += payout;
                 numpayouts++;
-                if ( payout >= 7 )
-                {
-                    numsmall++;
-                    smallpayout += payout;
+                //if ( payout >= 7 )
+                //{
+                //  numsmall++;
+                //smallpayout += payout;
                     genpayout(coinstr,ADDRESSES[i].addr,payout);
-                }
+                //}
                 //printf("%-4d: %-64s numutxos.%-4lld %llu\n",i,ADDRESSES[i].addr,ADDRESSES[i].numutxos,(long long)payout);
             }
         }
