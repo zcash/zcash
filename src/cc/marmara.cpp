@@ -556,7 +556,7 @@ int32_t MarmaraGetStakeMultiplier(const CTransaction & tx, int32_t nvout)
 
                     if (strcmp(lockInLoop1of2addr, voutaddr) == 0)  // check vout address is lock-in-loop address
                     {
-                        LOGSTREAM("marmara", CCLOG_DEBUG1, stream << logFuncName << "picked for stake x3 as lock-in-loop" << " txid=" << tx.GetHash().GetHex() << " nvout=" << nvout << std::endl);
+                        //LOGSTREAM("marmara", CCLOG_DEBUG1, stream << logFuncName << " utxo picked for stake x3 as lock-in-loop" << " txid=" << tx.GetHash().GetHex() << " nvout=" << nvout << std::endl);
                         return 3;  // staked 3 times for lock-in-loop
                     }
                 }
@@ -578,7 +578,7 @@ int32_t MarmaraGetStakeMultiplier(const CTransaction & tx, int32_t nvout)
 
                 if (strcmp(activated1of2addr, voutaddr) == 0)   // check vout address is my activated address
                 {
-                    LOGSTREAM("marmara", CCLOG_DEBUG1, stream << logFuncName << "picked for stake x1 as activated" << " txid=" << tx.GetHash().GetHex() << " nvout=" << nvout << std::endl);
+                    //LOGSTREAM("marmara", CCLOG_DEBUG1, stream << logFuncName << " utxo picked for stake x1 as activated" << " txid=" << tx.GetHash().GetHex() << " nvout=" << nvout << std::endl);
                     return 1;  // staked 1 times for activated
                 }
             }
@@ -1014,7 +1014,7 @@ int32_t MarmaraSignature(uint8_t *utxosig, CMutableTransaction &mtx)
             for (i = 0; i < siglen; i++)
             {
                 utxosig[i] = ptr[i];
-                LOGSTREAM("marmara", CCLOG_DEBUG1, stream << ptr[i]);
+                LOGSTREAM("marmara", CCLOG_DEBUG1, stream << std::hex << ptr[i]);
             }
             LOGSTREAM("marmara", CCLOG_DEBUG1, stream << " got signed rawtx=" << rawtx << " siglen=" << siglen << std::endl);
             return(siglen);
