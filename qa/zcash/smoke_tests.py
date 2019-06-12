@@ -579,13 +579,19 @@ def transaction_chain(zcash):
         print('#')
         print('# Finishing transaction chain')
         print('#')
-        print()
-        print('Returning remaining balance minus fees')
-        for addr in [
+        all_addrs = [
             sprout_zaddr_1, sprout_zaddr_2, sprout_zaddr_3,
             taddr_1, taddr_2, taddr_3, taddr_4, taddr_5,
             sapling_zaddr_1, sapling_zaddr_2, sapling_zaddr_3,
-        ]:
+        ]
+
+        print()
+        print('Waiting for all transactions to be mined')
+        [wait_for_balance(zcash, addr) for addr in all_addrs]
+
+        print()
+        print('Returning remaining balance minus fees')
+        for addr in all_addrs:
             balance = zcash.z_getbalance(addr)
             if balance != 0:
                 z_sendmany(None, '', zcash, addr, [(chain_end, balance - DEFAULT_FEE)])
