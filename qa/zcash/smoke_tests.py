@@ -726,6 +726,11 @@ def main():
             print("Invalid stage '%s' (choose from %s)" % (s, STAGES))
             sys.exit(1)
 
+    # Don't allow using the default wallet.dat in mainnet mode
+    if args.mainnet and args.wallet == 'wallet.dat':
+        print('Cannot use wallet.dat as wallet file when running mainnet tests. Keep your funds safe!')
+        sys.exit(1)
+
     # Start zcashd
     zcash = ZcashNode(args.datadir, args.wallet)
     print('Starting zcashd...')
