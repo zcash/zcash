@@ -186,7 +186,7 @@ static const char *notaries_elected[NUM_KMD_SEASONS][NUM_KMD_NOTARIES][2] =
         {"phm87_SH", "021773a38db1bc3ede7f28142f901a161c7b7737875edbb40082a201c55dcf0add" },
         {"chainmakers_NA", "02285d813c30c0bf7eefdab1ff0a8ad08a07a0d26d8b95b3943ce814ac8e24d885" },
         {"indenodes_EU", "0221387ff95c44cb52b86552e3ec118a3c311ca65b75bf807c6c07eaeb1be8303c" },
-        {"blackjok3r_SH", "0226293d7644e1380555ecc2d385ba038a66f4202b24b643ab31bcad0dc1474de2" },
+        {"blackjok3r_SH", "021eac26dbad256cbb6f74d41b10763183ee07fb609dbd03480dd50634170547cc" }, // 03d23bb5aad3c20414078472220cc5c26bc5aeb41e43d72c99158d450f714d743a
         {"chainmakers_EU", "03fdf5a3fce8db7dee89724e706059c32e5aa3f233a6b6cc256fea337f05e3dbf7" },
         {"titomane_AR", "023e3aa9834c46971ff3e7cb86a200ec9c8074a9566a3ea85d400d5739662ee989" },
         {"fullmoon_SH", "023b7252968ea8a955cd63b9e57dee45a74f2d7ba23b4e0595572138ad1fb42d21" }, // 10
