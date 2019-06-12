@@ -886,13 +886,24 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp)
 
     CAmount nReward = GetBlockSubsidy(nHeight, Params().GetConsensus());
     CAmount nFoundersReward = 0;
-    if ((nHeight > 0) && (nHeight <= Params().GetConsensus().GetLastFoundersRewardBlockHeight())) {
-        nFoundersReward = nReward/5;
-        nReward -= nFoundersReward;
-    }
     UniValue result(UniValue::VOBJ);
-    result.push_back(Pair("miner", ValueFromAmount(nReward)));
-    result.push_back(Pair("founders", ValueFromAmount(nFoundersReward)));
+
+    if (CurrentEpoch(nHeight, Params().GetConsensus()) < Consensus::UPGRADE_YCASH) {
+        if ((nHeight > 0) && (nHeight <= Params().GetConsensus().GetLastFoundersRewardBlockHeight())) {
+            nFoundersReward = nReward/5;
+            nReward -= nFoundersReward;
+        }
+
+        result.push_back(Pair("miner", ValueFromAmount(nReward)));
+        result.push_back(Pair("founders", ValueFromAmount(nFoundersReward)));
+    } else {
+        nFoundersReward = nReward/20;   // 5% perpetual
+        nReward -= nFoundersReward;
+        
+        result.push_back(Pair("miner", ValueFromAmount(nReward)));
+        result.push_back(Pair("founders", ValueFromAmount(nFoundersReward)));
+    }
+
     return result;
 }
 
