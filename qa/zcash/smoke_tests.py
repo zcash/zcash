@@ -3,24 +3,15 @@
 # Execute the standard smoke tests for Zcash releases.
 #
 
-# Add RPC test_framework to module search path:
-import os
-import sys
-sys.path.insert(
-    0,
-    os.path.join(
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-        'rpc-tests',
-        'test_framework',
-    )
-)
-
 import argparse
 import decimal
+import os
 import subprocess
+import sys
 import time
 
-from authproxy import AuthServiceProxy, JSONRPCException
+from slickrpc import Proxy
+from slickrpc.exc import RpcException
 
 DEFAULT_FEE = decimal.Decimal('0.0001')
 
@@ -129,10 +120,8 @@ def run_cmd(results, case, zcash, name, args=[]):
         if results is not None and len(case) > 0:
             results[case] = True
         return res
-    except JSONRPCException as e:
-        print('error code: %d' % e.error['code'])
-        print('error message:')
-        print(e.error['message'])
+    except RpcException as e:
+        print('ERROR: %s' % str(e))
         if results is not None and len(case) > 0:
             results[case] = False
         return None
@@ -691,9 +680,9 @@ class ZcashNode(object):
 
         url = 'http://%s@%s:%d' % (rpcuserpass, rpchost, rpcport)
         if timewait is not None:
-            self.__proxy = AuthServiceProxy(url, timeout=timewait)
+            self.__proxy = Proxy(url, timeout=timewait)
         else:
-            self.__proxy = AuthServiceProxy(url)
+            self.__proxy = Proxy(url)
 
     def stop(self):
         if self.__proxy is None:
