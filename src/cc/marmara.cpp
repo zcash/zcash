@@ -687,7 +687,7 @@ int64_t AddMarmaraCoinbases(struct CCcontract_info *cp, CMutableTransaction &mtx
                     //  fprintf(stderr,"%s nValue.%8f\n", __func__, (double)nValue/COIN);
                 } 
                 else 
-                    LOGSTREAM("marmara", CCLOG_ERROR, stream << __func__ << " decode error unlockht=" << unlockht << " vs unlocks=" << unlocks << " is-pool-pk=" << pk == poolpk);
+                    LOGSTREAM("marmara", CCLOG_ERROR, stream << __func__ << " decode error unlockht=" << unlockht << " vs unlocks=" << unlocks << " is-pool-pk=" << (pk == poolpk));
             }
             else
                 LOGSTREAM("marmara", CCLOG_ERROR, stream << __func__ << " not coinbase");
