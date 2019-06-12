@@ -98,19 +98,24 @@ uint8_t DecodeMarmaraCoinbaseOpRet(const CScript scriptPubKey, CPubKey &pk, int3
             fprintf(stderr, "%02x", script[i]);
         fprintf(stderr, " <- opret\n");
     } */
-    if (vopret.size() > 2 && script[0] == EVAL_MARMARA)
+    if (vopret.size() > 2)
     {
-        if (script[1] == 'C' || script[1] == 'P' || script[1] == 'L')
+        if (script[0] == EVAL_MARMARA)
         {
-            if (E_UNMARSHAL(vopret, ss >> e; ss >> f; ss >> pk; ss >> height; ss >> unlockht) != 0)
+            if (script[1] == 'C' || script[1] == 'P' || script[1] == 'L')
             {
-                return(script[1]);
+                if (E_UNMARSHAL(vopret, ss >> e; ss >> f; ss >> pk; ss >> height; ss >> unlockht) != 0)
+                {
+                    return(script[1]);
+                }
+                else
+                    LOGSTREAM("marmara", CCLOG_ERROR, stream << __func__ << "unmarshal error for funcid=" << (char)script[1] << std::endl);
             }
-            else 
-                LOGSTREAM("marmara", CCLOG_ERROR, stream << __func__ << "unmarshal error for funcid=" << (char)script[1] << std::endl);
-        } 
-        //else 
-        //  fprintf(stderr,"%s script[1] is %d != 'C' %d or 'P' %d or 'L' %d\n", __func__, script[1],'C','P','L');
+            //else 
+            //  fprintf(stderr,"%s script[1] is %d != 'C' %d or 'P' %d or 'L' %d\n", __func__, script[1],'C','P','L');
+        }
+        else
+            LOGSTREAM("marmara", CCLOG_ERROR, stream << __func__ << " not my opret, funcid=" << (int)script[0] << std::endl);
     }
     else 
         LOGSTREAM("marmara", CCLOG_ERROR, stream << __func__ << " bad opret, vopret.size() is " << vopret.size() << std::endl);
