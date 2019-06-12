@@ -130,16 +130,30 @@ def wait_for_balance(zcash, zaddr, expected=None, timeout=900):
     print('Waiting for funds to %s...' % zaddr)
     if expected is not None:
         print('Expecting %s' % expected)
-    balance = zcash.z_getbalance(zaddr)
-    for _ in iter(range(timeout)):
+
+    unconfirmed_balance = zcash.z_getbalance(zaddr, 0)
+    print('Unconfirmed balance: %s' % unconfirmed_balance)
+    if expected is not None and unconfirmed_balance != expected:
+        print('WARNING: Unconfirmed balance does not match expected balance')
+
+    ttl = timeout
+    while True:
         balance = zcash.z_getbalance(zaddr)
-        if expected is None and balance != 0:
-            break
-        if expected is not None and balance == expected:
-            break
+        if balance == unconfirmed_balance:
+            print('Received %s' % balance)
+            return balance
+
         time.sleep(1)
-    print('Received %s' % balance)
-    return balance
+        ttl -= 1
+        if ttl == 0:
+            # Ask user if they want to keep waiting
+            print()
+            ret = input('Do you wish to continue waiting? (Y/n) ')
+            if ret.to_lower() == 'n':
+                print('Address contained %s at timeout' % balance)
+                return balance
+            else:
+                ttl = 300
 
 def wait_and_check_balance(results, case, zcash, addr, expected):
     balance = wait_for_balance(zcash, addr, expected)
