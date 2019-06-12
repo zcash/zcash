@@ -381,7 +381,7 @@ static void EnumMyActivated(T func)
                 {
                     // call callback function:
                     func(activatedaddr, tx, nvout, pindex);
-                    LOGSTREAM("marmara", CCLOG_INFO, stream << __func__ << " found my activated 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << std::endl);
+                    LOGSTREAM("marmara", CCLOG_DEBUG1, stream << __func__ << " found my activated 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << std::endl);
                 }
                 else
                     LOGSTREAM("marmara", CCLOG_ERROR, stream << __func__ << " skipped activated 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << " cant decode opret or not mypk" << std::endl);
@@ -466,7 +466,7 @@ static void EnumMyLockedInLoop(T func)
                                     if (CheckEitherOpRet(IsLockInLoopOpret, looptx, nvout, pk) && mypk == pk) {  // check mypk in opret
                                         // call callbak func:
                                         func(loopaddr, looptx, nvout, pindex);
-                                        LOGSTREAM("marmara", CCLOG_INFO, stream << __func__ << " found my lock-in-loop 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << std::endl);
+                                        LOGSTREAM("marmara", CCLOG_DEBUG1, stream << __func__ << " found my lock-in-loop 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << std::endl);
                                     }
                                     else
                                         LOGSTREAM("marmara", CCLOG_ERROR, stream << __func__ << " skipped lock-in-loop 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << " cant decode opret or not mypk" << std::endl);
@@ -988,13 +988,13 @@ int32_t MarmaraSignature(uint8_t *utxosig, CMutableTransaction &mtx)
             siglen = mtx.vin[0].scriptSig.size();
             ptr = &mtx.vin[0].scriptSig[0];
 
-            std::cerr << __func__ << " ";
+            LOGSTREAM("marmara", CCLOG_DEBUG1, stream << __func__ << " ");
             for (i = 0; i < siglen; i++)
             {
                 utxosig[i] = ptr[i];
-                //fprintf(stderr,"%02x",ptr[i]);
+                LOGSTREAM("marmara", CCLOG_DEBUG1, stream << std::hex << ptr[i]);
             }
-            LOGSTREAM("marmara", CCLOG_DEBUG1, stream << __func__ << " got signed rawtx=" << rawtx << " siglen=" << siglen << std::endl);
+            LOGSTREAM("marmara", CCLOG_DEBUG1, stream << " got signed rawtx=" << rawtx << " siglen=" << siglen << std::endl);
             return(siglen);
         }
     }
