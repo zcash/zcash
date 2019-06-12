@@ -2703,6 +2703,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
         }
         if (!needSpecialStakeUtxo)
         {
+            // add normal staking UTXO:
             BOOST_FOREACH(const COutput& out, vecOutputs)
             {
                 if ( (tipindex= chainActive.Tip()) == 0 || tipindex->GetHeight()+1 > nHeight )
@@ -2734,12 +2735,13 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
         }
         else  
         {
-            // Special cases for adding utxo to stake:
+            // placeholder for special staking utxo cases:
 
             // marmara case:
             if (ASSETCHAINS_MARMARA != 0) {
                 array = MarmaraGetStakingUtxos(array, &numkp, &maxkp, hashbuf);
             }
+            // another ...
         }
         lasttime = (uint32_t)time(NULL);
         //fprintf(stderr,"finished kp data of utxo for staking %u ht.%d numkp.%d maxkp.%d\n",(uint32_t)time(NULL),nHeight,numkp,maxkp);
