@@ -418,7 +418,7 @@ static void EnumMyLockedInLoop(T func)
         uint256 txid = it->first.txhash;
         int32_t nvout = (int32_t)it->first.index;
 
-        LOGSTREAM("marmara", CCLOG_DEBUG2, stream << __func__ << " checking tx on markeraddr txid" << txid.GetHex() << " vout=" << nvout << std::endl);
+        LOGSTREAM("marmara", CCLOG_DEBUG2, stream << __func__ << " checking tx on markeraddr txid=" << txid.GetHex() << " vout=" << nvout << std::endl);
         if (nvout == 1 && GetTransaction(txid, isssuancetx, hashBlock, true))  // TODO: change to the non-locking version
         {
             if (!isssuancetx.IsCoinBase() && isssuancetx.vout.size() > 2 && isssuancetx.vout.back().nValue == 0)
@@ -490,7 +490,7 @@ static void EnumMyLockedInLoop(T func)
 struct komodo_staking *MarmaraGetStakingUtxos(struct komodo_staking *array, int32_t *numkp, int32_t *maxkp, uint8_t *hashbuf)
 {
     // add activated utxos for mypk:
-    std::cerr << __func__ << " entered" << std::endl;
+    //std::cerr << __func__ << " entered" << std::endl;
     EnumMyActivated([&](char *activatedaddr, const CTransaction & tx, int32_t nvout, CBlockIndex *pindex) 
     {
         array = komodo_addutxo(array, numkp, maxkp, (uint32_t)pindex->nTime, (uint64_t)tx.vout[nvout].nValue, tx.GetHash(), nvout, activatedaddr, hashbuf, tx.vout[nvout].scriptPubKey);
@@ -694,7 +694,7 @@ int64_t AddMarmaraCoinbases(struct CCcontract_info *cp, CMutableTransaction &mtx
                 LOGSTREAM("marmara", CCLOG_ERROR, stream << __func__ << " not coinbase" << std::endl);
         }
         else
-            LOGSTREAM("marmara", CCLOG_ERROR, stream << __func__ << " error getting tx" << txid.GetHex() << std::endl);
+            LOGSTREAM("marmara", CCLOG_ERROR, stream << __func__ << " error getting tx=" << txid.GetHex() << std::endl);
     }
     return(totalinputs);
 }
@@ -766,7 +766,7 @@ static bool CheckEitherOpRet(bool(*CheckOpretFunc)(const CScript &, CPubKey &), 
     return opretok;
 }
 
-
+#define LL(s, l, op) LOGSTREAM(s, l, op)
 // add activated or locked-in-loop coins from 1of2 address 
 // for lock-in-loop mypk not checked, so all locked-in-loop utxos for an address are added:
 int64_t AddMarmarainputs(bool (*CheckOpretFunc)(const CScript &, CPubKey &), CMutableTransaction &mtx, std::vector<CPubKey> &pubkeys, char *unspentaddr, int64_t total, int32_t maxinputs)
@@ -992,7 +992,7 @@ int32_t MarmaraSignature(uint8_t *utxosig, CMutableTransaction &mtx)
             for (i = 0; i < siglen; i++)
             {
                 utxosig[i] = ptr[i];
-                LOGSTREAM("marmara", CCLOG_DEBUG1, stream << std::hex << ptr[i]);
+                LOGSTREAM("marmara", CCLOG_DEBUG1, stream << ptr[i]);
             }
             LOGSTREAM("marmara", CCLOG_DEBUG1, stream << " got signed rawtx=" << rawtx << " siglen=" << siglen << std::endl);
             return(siglen);
