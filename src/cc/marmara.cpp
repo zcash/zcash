@@ -222,7 +222,7 @@ int32_t MarmaraGetbatontxid(std::vector<uint256> &creditloop, uint256 &batontxid
     return(-1);
 }
 
-// returns scriptPubKey with 1of2 addr for coinbase tx in createNewBlock in miner.cpp 
+// returns scriptPubKey with 1of2 addr for coinbase tx where coins will go in createNewBlock in miner.cpp 
 CScript Marmara_scriptPubKey(int32_t height, CPubKey pk)
 {
     CTxOut ccvout; struct CCcontract_info *cp, C; CPubKey Marmarapk;
