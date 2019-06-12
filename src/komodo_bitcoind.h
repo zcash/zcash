@@ -652,7 +652,7 @@ double komodo_getstakemultiplier(CTransaction &tx, int32_t nvout)
 {
     double multiplier = 1;
 
-    if (ASSETCHAINS_MARMARA == 0) {
+    if (ASSETCHAINS_MARMARA != 0) {
 
         multiplier = MarmaraGetStakeMultiplier(tx, nvout);
     }
