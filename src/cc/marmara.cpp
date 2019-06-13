@@ -363,7 +363,7 @@ static void EnumMyActivated(T func)
     SetCCunspents(activatedOutputs, activatedaddr, true);
 
     // add my activated coins:
-    LOGSTREAM("marmara", CCLOG_DEBUG2, stream  << " check activatedaddr" << activatedaddr << std::endl);
+    LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << " check activatedaddr" << activatedaddr << std::endl);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it = activatedOutputs.begin(); it != activatedOutputs.end(); it++)
     {
         CTransaction tx; uint256 hashBlock;
@@ -420,7 +420,7 @@ static void EnumMyLockedInLoop(T func)
     SetCCunspents(markerOutputs, markeraddr, true);
 
     // enum all createtxids:
-    LOGSTREAM("marmara", CCLOG_DEBUG2, stream  << " check on markeraddr=" << markeraddr << std::endl);
+    LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << " check on markeraddr=" << markeraddr << std::endl);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it = markerOutputs.begin(); it != markerOutputs.end(); it++)
     {
         CTransaction isssuancetx;
@@ -988,9 +988,9 @@ UniValue MarmaraLock(int64_t txfee, int64_t amount)
     return(result);
 }
 
+// note: utxosig bufsize = 512
 int32_t MarmaraSignature(uint8_t *utxosig, CMutableTransaction &mtx)
 {
-    
     uint256 txid, hashBlock; 
     uint8_t *ptr; 
     int32_t i, siglen, vout, numvouts; 
@@ -1012,6 +1012,11 @@ int32_t MarmaraSignature(uint8_t *utxosig, CMutableTransaction &mtx)
             siglen = mtx.vin[0].scriptSig.size();
             ptr = &mtx.vin[0].scriptSig[0];
 
+            if (siglen >= 512) {   // check boundaries
+                LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "scriptSig length is more than utxosig bufsize, truncated! siglen=" << siglen << std::endl);
+                siglen = 512;
+            }
+
             std::ostringstream debstream;
             for (i = 0; i < siglen; i++)
             {
@@ -1020,8 +1025,7 @@ int32_t MarmaraSignature(uint8_t *utxosig, CMutableTransaction &mtx)
             }
             std::string strScriptSig = debstream.str();
 
-            std::cerr << debstream.str();
-            LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << " scriptSig=" << strScriptSig << " got signed rawtx=" << rawtx << " siglen=" << siglen << std::endl);
+            LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "scriptSig=" << strScriptSig << " got signed rawtx=" << rawtx << " siglen=" << siglen << std::endl);
             return(siglen);
         }
     }
