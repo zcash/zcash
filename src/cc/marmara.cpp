@@ -1922,13 +1922,30 @@ UniValue MarmaraInfo(CPubKey refpk, int32_t firstheight, int32_t lastheight, int
     cJSON *j1 = cJSON_Parse(str1.c_str());
     cJSON *j2 = cJSON_Parse(str2.c_str());
 
+    
     std::cerr << "j1:" << std::endl;
-    char *s1 = cJSON_Print(j1);
-    std::cerr << s1 << std::endl;
+    if (j1) {
+        char *s1 = cJSON_Print(j1);
+        if( s1 )
+            std::cerr << s1 << std::endl;
+        else
+            std::cerr << "s1 = null" << std::endl;
+    }
+    else
+        std::cerr << "j1 = null" << std::endl;
 
-    std::cerr << "j2:" << std::endl;
-    char *s2  = cJSON_Print(j2);
-    std::cerr << s2 << std::endl;
+    if (j2) {
+        std::cerr << "j2:" << std::endl;
+        char *s2 = cJSON_Print(j2);
+        if( s2 )
+            std::cerr << s2 << std::endl;
+        else
+            std::cerr << "s2 = null" << std::endl;
+
+    }
+    else
+        std::cerr << "j2 = null" << std::endl;
+
 
 
     cp = CCinit(&C, EVAL_MARMARA);
