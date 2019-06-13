@@ -1902,6 +1902,7 @@ UniValue MarmaraPoolPayout(int64_t txfee, int32_t firstheight, double perc, char
 }
 
 // get all tx, constrain by vout, issuances[] and closed[]
+#include "cJSON.h"
 
 UniValue MarmaraInfo(CPubKey refpk, int32_t firstheight, int32_t lastheight, int64_t minamount, int64_t maxamount, std::string currency)
 {
@@ -1913,6 +1914,20 @@ UniValue MarmaraInfo(CPubKey refpk, int32_t firstheight, int32_t lastheight, int
     char myccaddr[KOMODO_ADDRESS_BUFSIZE];
 
     struct CCcontract_info *cp, C;
+
+    std::string str1 = "{\"method\": \"cclib\", \"params\": [\"func0\", \"17\", \"{\"key\": \"striiiiiing\"}\"]}";
+    std::string str2 = "{\"method\": \"cclib\", \"params\": [\"func0\", \"17\", {\"key\": \"striiiiiing\"}]}";
+
+
+    cJSON *j1 = cJSON_Parse(str1.c_str());
+    cJSON *j2 = cJSON_Parse(str2.c_str());
+
+    std::cerr << "j1:" << std::endl;
+    cJSON_Print(j1);
+    std::cerr << "j2:" << std::endl;
+    cJSON_Print(j2);
+
+
 
     cp = CCinit(&C, EVAL_MARMARA);
     Marmarapk = GetUnspendable(cp, 0);
