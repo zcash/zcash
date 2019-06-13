@@ -1,5 +1,6 @@
 // Copyright (c) 2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
+// Copyright (c) 2019 The Hush developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -45,6 +46,7 @@
 
 using namespace RPCServer;
 using namespace std;
+extern uint16_t ASSETCHAINS_P2PPORT,ASSETCHAINS_RPCPORT;
 
 static bool fRPCRunning = false;
 static bool fRPCInWarmup = true;
@@ -454,6 +456,7 @@ static const CRPCCommand vRPCCommands[] =
     { "oracles",       "oracleslist",      &oracleslist,        true },
     { "oracles",       "oraclesinfo",      &oraclesinfo,        true },
     { "oracles",       "oraclescreate",    &oraclescreate,      true },
+    { "oracles",       "oraclesfund",  &oraclesfund,    true },
     { "oracles",       "oraclesregister",  &oraclesregister,    true },
     { "oracles",       "oraclessubscribe", &oraclessubscribe,   true },
     { "oracles",       "oraclesdata",      &oraclesdata,        true },
@@ -853,21 +856,30 @@ UniValue CRPCTable::execute(const std::string &strMethod, const UniValue &params
 
 std::string HelpExampleCli(const std::string& methodname, const std::string& args)
 {
-    return "> komodo-cli " + methodname + " " + args + "\n";
+    if ( ASSETCHAINS_SYMBOL[0] == 0 ) {
+        return "> komodo-cli " + methodname + " " + args + "\n";
+    } else if ((strncmp(ASSETCHAINS_SYMBOL, "HUSH3", 5) == 0) ) {
+        return "> hush-cli " + methodname + " " + args + "\n";
+    } else {
+        return "> komodo-cli -ac_name=" + strprintf("%s", ASSETCHAINS_SYMBOL) + " " + methodname + " " + args + "\n";
+    }
 }
 
 std::string HelpExampleRpc(const std::string& methodname, const std::string& args)
 {
-    return "> curl --user myusername --data-binary '{\"jsonrpc\": \"1.0\", \"id\":\"curltest\", "
-        "\"method\": \"" + methodname + "\", \"params\": [" + args + "] }' -H 'content-type: text/plain;' http://127.0.0.1:7771/\n";
+    return  "> curl --user myusername --data-binary '{\"jsonrpc\": \"1.0\", \"id\":\"curltest\", "
+        "\"method\": \"" + methodname + "\", \"params\": [" + args + "] }' -H 'content-type: text/plain;' http://127.0.0.1:" + to_string(ASSETCHAINS_RPCPORT) + "/\n";
 }
 
 string experimentalDisabledHelpMsg(const string& rpc, const string& enableArg)
 {
+    string daemon = ASSETCHAINS_SYMBOL[0] == 0 ? "komodod" : "hushd";
+    string ticker = ASSETCHAINS_SYMBOL[0] == 0 ? "komodo" : ASSETCHAINS_SYMBOL;
+
     return "\nWARNING: " + rpc + " is disabled.\n"
-        "To enable it, restart zcashd with the -experimentalfeatures and\n"
+        "To enable it, restart " + daemon + " with the -experimentalfeatures and\n"
         "-" + enableArg + " commandline options, or add these two lines\n"
-        "to the zcash.conf file:\n\n"
+        "to the " + ticker + ".conf file:\n\n"
         "experimentalfeatures=1\n"
         + enableArg + "=1\n";
 }

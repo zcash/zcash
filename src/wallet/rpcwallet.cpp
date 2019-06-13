@@ -4353,8 +4353,9 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
         //else if ( ASSETCHAINS_PRIVATE != 0 && komodo_isnotaryvout((char *)address.c_str()) == 0 )
         //    throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "cant use transparent addresses in private chain");
 
-        if (setAddress.count(address))
-            throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, duplicated address: ")+address);
+        // Allowing duplicate receivers helps various HushList protocol operations
+        //if (setAddress.count(address))
+        //    throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, duplicated address: ")+address);
         setAddress.insert(address);
 
         UniValue memoValue = find_value(o, "memo");
@@ -5341,8 +5342,13 @@ int32_t ensure_CCrequirements(uint8_t evalcode)
     CCerror = "";
     if ( ASSETCHAINS_CCDISABLES[evalcode] != 0 || (evalcode == EVAL_MARMARA && ASSETCHAINS_MARMARA == 0) )
     {
-        fprintf(stderr,"evalcode %d disabled\n",evalcode);
-        return(-1);
+        // check if a height activation has been set. 
+        fprintf(stderr, "evalcode.%i activates at height. %i current height.%i\n", evalcode, mapHeightEvalActivate[evalcode], komodo_currentheight());
+        if ( mapHeightEvalActivate[evalcode] == 0 || komodo_currentheight() == 0 || mapHeightEvalActivate[evalcode] > komodo_currentheight() )
+        {
+            fprintf(stderr,"evalcode %d disabled\n",evalcode);
+            return(-1);
+        }
     }
     if ( NOTARY_PUBKEY33[0] == 0 )
     {
@@ -6760,6 +6766,26 @@ UniValue oraclesinfo(const UniValue& params, bool fHelp)
     return(OracleInfo(txid));
 }
 
+UniValue oraclesfund(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); uint256 txid; std::string hex;
+    if ( fHelp || params.size() != 1 )
+        throw runtime_error("oraclesfund oracletxid\n");
+    if ( ensure_CCrequirements(EVAL_ORACLES) < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    const CKeyStore& keystore = *pwalletMain;
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+    txid = Parseuint256((char *)params[0].get_str().c_str());
+    hex = OracleFund(0,txid);
+    RETURN_IF_ERROR(CCerror);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else ERR_RESULT("couldnt fund with oracle txid");
+    return(result);
+}
+
 UniValue oraclesregister(const UniValue& params, bool fHelp)
 {
     UniValue result(UniValue::VOBJ); uint256 txid; int64_t datafee; std::string hex;
@@ -6806,17 +6832,17 @@ UniValue oraclessubscribe(const UniValue& params, bool fHelp)
 
 UniValue oraclessamples(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); uint256 txid,batontxid; int32_t num;
+    UniValue result(UniValue::VOBJ); uint256 txid; int32_t num; char *batonaddr;
     if ( fHelp || params.size() != 3 )
-        throw runtime_error("oraclessamples oracletxid batonutxo num\n");
+        throw runtime_error("oraclessamples oracletxid batonaddress num\n");
     if ( ensure_CCrequirements(EVAL_ORACLES) < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
     txid = Parseuint256((char *)params[0].get_str().c_str());
-    batontxid = Parseuint256((char *)params[1].get_str().c_str());
+    batonaddr = (char *)params[1].get_str().c_str();
     num = atoi((char *)params[2].get_str().c_str());
-    return(OracleDataSamples(txid,batontxid,num));
+    return(OracleDataSamples(txid,batonaddr,num));
 }
 
 UniValue oraclesdata(const UniValue& params, bool fHelp)
