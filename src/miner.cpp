@@ -225,6 +225,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
 
     CBlockIndex* pindexPrev = 0;
     {
+        boost::this_thread::interruption_point(); // exit thread before entering locks. 
         ENTER_CRITICAL_SECTION(cs_main);
         ENTER_CRITICAL_SECTION(mempool.cs);
         pindexPrev = chainActive.LastTip();
