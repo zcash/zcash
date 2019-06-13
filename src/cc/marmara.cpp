@@ -85,7 +85,7 @@ int32_t MarmaraUnlockht(int32_t height)
 
 uint8_t DecodeMarmaraCoinbaseOpRet(const CScript scriptPubKey, CPubKey &pk, int32_t &height, int32_t &unlockht)
 {
-    const char *logFuncName = __func__;
+    
     vscript_t vopret; uint8_t *script, e, f, funcid;
     GetOpReturnData(scriptPubKey, vopret);
     script = (uint8_t *)vopret.data();
@@ -94,7 +94,7 @@ uint8_t DecodeMarmaraCoinbaseOpRet(const CScript scriptPubKey, CPubKey &pk, int3
     {
         int32_t i;
 
-        std::cerr << logFuncName << " ";
+        std::cerr  << " ";
         for (i = 0; i < vopret.size(); i++)
             fprintf(stderr, "%02x", script[i]);
         fprintf(stderr, " <- opret\n");
@@ -110,16 +110,16 @@ uint8_t DecodeMarmaraCoinbaseOpRet(const CScript scriptPubKey, CPubKey &pk, int3
                     return(script[1]);
                 }
                 else
-                    LOGSTREAMFN("marmara", CCLOG_ERROR, stream << logFuncName << "unmarshal error for funcid=" << (char)script[1] << std::endl);
+                    LOGSTREAMFN("marmara", CCLOG_ERROR, stream  << "unmarshal error for funcid=" << (char)script[1] << std::endl);
             }
             //else 
             //  fprintf(stderr,"%s script[1] is %d != 'C' %d or 'P' %d or 'L' %d\n", logFuncName, script[1],'C','P','L');
         }
         else
-            LOGSTREAMFN("marmara", CCLOG_ERROR, stream << logFuncName << " not my opret, funcid=" << (int)script[0] << std::endl);
+            LOGSTREAMFN("marmara", CCLOG_ERROR, stream  << " not my opret, funcid=" << (int)script[0] << std::endl);
     }
     else 
-        LOGSTREAMFN("marmara", CCLOG_ERROR, stream << logFuncName << " bad opret, vopret.size() is " << vopret.size() << std::endl);
+        LOGSTREAMFN("marmara", CCLOG_ERROR, stream  << " bad opret, vopret.size() is " << vopret.size() << std::endl);
     return(0);
 }
 
@@ -134,7 +134,7 @@ CScript EncodeMarmaraCoinbaseOpRet(uint8_t funcid, CPubKey pk, int32_t ht)
         GetOpReturnData(opret, vopret);
         script = (uint8_t *)vopret.data();
         {
-            std::cerr << logFuncName << " ";
+            std::cerr  << " ";
             for (i = 0; i < vopret.size(); i++)
                 fprintf(stderr, "%02x", script[i]);
             fprintf(stderr, " <- gen opret.%c\n", funcid);
@@ -165,7 +165,7 @@ uint8_t MarmaraDecodeLoopOpret(const CScript scriptPubKey, uint256 &createtxid, 
 // finds the initial creation txid retrieving it from the any of the loop txn opret
 int32_t MarmaraGetcreatetxid(uint256 &createtxid, uint256 txid)
 {
-    const char *logFuncName = __func__;
+    
     CTransaction tx; 
     uint256 hashBlock; 
   
@@ -179,14 +179,14 @@ int32_t MarmaraGetcreatetxid(uint256 &createtxid, uint256 txid)
         int64_t amount;
 
         if ((funcid = MarmaraDecodeLoopOpret(tx.vout.back().scriptPubKey, createtxid, senderpk, amount, matures, currency)) == 'I' || funcid == 'T') {
-            LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << logFuncName << " found createtxid for funcid=I,T createtxid=" << createtxid.GetHex() << std::endl);
+            LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << " found createtxid for funcid=I,T createtxid=" << createtxid.GetHex() << std::endl);
             return(0);
         }
         else if (funcid == 'R')
         {
             if (createtxid == zeroid)
                 createtxid = txid;
-            LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << logFuncName << " found createtxid for funcid=R createtxid=" << createtxid.GetHex() << std::endl);
+            LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << " found createtxid for funcid=R createtxid=" << createtxid.GetHex() << std::endl);
             return(0);
         }
     }
@@ -197,7 +197,7 @@ int32_t MarmaraGetcreatetxid(uint256 &createtxid, uint256 txid)
 // also returns all the previous baton txids from the create tx apart from the baton txid
 int32_t MarmaraGetbatontxid(std::vector<uint256> &creditloop, uint256 &batontxid, uint256 txid)
 {
-    const char *logFuncName = __func__;
+    
     uint256 createtxid, spenttxid; 
     int64_t value; 
     int32_t vini, height, n = 0, vout = 0;
@@ -221,7 +221,7 @@ int32_t MarmaraGetbatontxid(std::vector<uint256> &creditloop, uint256 &batontxid
             else if (value > 0)
             {
                 batontxid = spenttxid;
-                LOGSTREAMFN("marmara", CCLOG_ERROR, stream << logFuncName << " n=" << n << " got and will use false baton=" << batontxid.GetHex() << " vout=" << vout << "value=" << (double)value / COIN << std::endl);
+                LOGSTREAMFN("marmara", CCLOG_ERROR, stream  << " n=" << n << " got and will use false baton=" << batontxid.GetHex() << " vout=" << vout << "value=" << (double)value / COIN << std::endl);
                 return(n);
             }
             // get funcid
@@ -234,7 +234,7 @@ int32_t MarmaraGetbatontxid(std::vector<uint256> &creditloop, uint256 &batontxid
 // returns scriptPubKey with 1of2 addr for coinbase tx where coins will go in createNewBlock in miner.cpp 
 CScript Marmara_scriptPubKey(int32_t height, CPubKey pk)
 {
-    const char *logFuncName = __func__;
+    
     CTxOut ccvout; struct CCcontract_info *cp, C; CPubKey Marmarapk;
     cp = CCinit(&C, EVAL_MARMARA);
     Marmarapk = GetUnspendable(cp, 0);
@@ -243,10 +243,10 @@ CScript Marmara_scriptPubKey(int32_t height, CPubKey pk)
         ccvout = MakeCC1of2vout(EVAL_MARMARA, 0, Marmarapk, pk);
         char coinaddr[KOMODO_ADDRESS_BUFSIZE];
         Getscriptaddress(coinaddr, ccvout.scriptPubKey);
-        LOGSTREAMFN("marmara", CCLOG_INFO, stream << logFuncName << " pk=" << HexStr(pk) << " height=" << height << " 1of2addr=" << coinaddr << std::endl);
+        LOGSTREAMFN("marmara", CCLOG_INFO, stream  << " pk=" << HexStr(pk) << " height=" << height << " 1of2addr=" << coinaddr << std::endl);
     }
     else
-        LOGSTREAMFN("marmara", CCLOG_INFO, stream << logFuncName << " not even ht, return empty scriptPubKey" << std::endl);
+        LOGSTREAMFN("marmara", CCLOG_INFO, stream  << " not even ht, return empty scriptPubKey" << std::endl);
     return(ccvout.scriptPubKey);
 }
 
@@ -265,7 +265,6 @@ CScript MarmaraCoinbaseOpret(uint8_t funcid, int32_t height, CPubKey pk)
 // validates opreturn for even blocks
 int32_t MarmaraValidateCoinbase(int32_t height, CTransaction tx)
 {
-    const char *logFuncName = __func__;
     struct CCcontract_info *cp, C; CPubKey Marmarapk, pk; int32_t ht, unlockht; CTxOut ccvout;
     cp = CCinit(&C, EVAL_MARMARA);
     Marmarapk = GetUnspendable(cp, 0);
@@ -285,7 +284,7 @@ int32_t MarmaraValidateCoinbase(int32_t height, CTransaction tx)
             else histo[d]++;
         }
 
-        std::cerr << logFuncName << " ";
+        std::cerr  << " ";
         for (ht = 0; ht < sizeof(histo) / sizeof(*histo); ht++)
             fprintf(stderr, "%d ", histo[ht]);
         fprintf(stderr, "<- unlock histogram[%d] by days locked\n", (int32_t)(sizeof(histo) / sizeof(*histo)));
@@ -307,27 +306,27 @@ int32_t MarmaraValidateCoinbase(int32_t height, CTransaction tx)
                 char addr0[KOMODO_ADDRESS_BUFSIZE], addr1[KOMODO_ADDRESS_BUFSIZE];
                 Getscriptaddress(addr0, ccvout.scriptPubKey);
                 Getscriptaddress(addr1, tx.vout[0].scriptPubKey);
-                LOGSTREAMFN("marmara", CCLOG_ERROR, stream << logFuncName << " ht=" << height << " mismatched CCvout scriptPubKey=" << addr0 << " vs tx.vout[0].scriptPubKey=" << addr1 << " pk.size=" << pk.size() << " pk=" << HexStr(pk) << std::endl);
+                LOGSTREAMFN("marmara", CCLOG_ERROR, stream  << " ht=" << height << " mismatched CCvout scriptPubKey=" << addr0 << " vs tx.vout[0].scriptPubKey=" << addr1 << " pk.size=" << pk.size() << " pk=" << HexStr(pk) << std::endl);
             }
             else 
-                LOGSTREAMFN("marmara", CCLOG_ERROR, stream << logFuncName  <<  " ht=" << height << " MarmaraUnlockht=" << MarmaraUnlockht(height) << " vs opret's ht=" << ht << " unlock=" << unlockht << std::endl);
+                LOGSTREAMFN("marmara", CCLOG_ERROR, stream   <<  " ht=" << height << " MarmaraUnlockht=" << MarmaraUnlockht(height) << " vs opret's ht=" << ht << " unlock=" << unlockht << std::endl);
         }
         else 
-            LOGSTREAMFN("marmara", CCLOG_ERROR, stream << logFuncName  << " ht=" << height  << " error decoding coinbase opret" << std::endl);
+            LOGSTREAMFN("marmara", CCLOG_ERROR, stream   << " ht=" << height  << " error decoding coinbase opret" << std::endl);
     }
     return(-1);
 }
 
 bool MarmaraPoScheck(char *destaddr, CScript opret, CTransaction staketx)
 {
-    const char *logFuncName = __func__;
+    
     CPubKey Marmarapk, pk; 
     int32_t height, unlockht; 
     uint8_t funcid; 
     char coinaddr[KOMODO_ADDRESS_BUFSIZE]; 
     struct CCcontract_info *cp, C;
 
-    //LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << logFuncName << " staketx" << staketx.GetHash().ToString() << " numvins=" << staketx.vin.size() << " numvouts=" << staketx.vout.size() << " val="  << (double)staketx.vout[0].nValue / COIN  << " opret.size=" << opret.size() << std::endl);
+    //LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << " staketx" << staketx.GetHash().ToString() << " numvins=" << staketx.vin.size() << " numvouts=" << staketx.vout.size() << " val="  << (double)staketx.vout[0].nValue / COIN  << " opret.size=" << opret.size() << std::endl);
     if (staketx.vout.size() == 2 && opret == staketx.vout[1].scriptPubKey)
     {
         cp = CCinit(&C, EVAL_MARMARA);
@@ -335,11 +334,11 @@ bool MarmaraPoScheck(char *destaddr, CScript opret, CTransaction staketx)
         Marmarapk = GetUnspendable(cp, 0);
         GetCCaddress1of2(cp, coinaddr, Marmarapk, pk);
 
-        LOGSTREAMFN("marmara", CCLOG_INFO, stream << logFuncName  << " matched opret! funcid=" << (char)funcid << " ht=" << height << " unlock=" <<  unlockht << " addr=" << coinaddr << std::endl);
+        LOGSTREAMFN("marmara", CCLOG_INFO, stream   << " matched opret! funcid=" << (char)funcid << " ht=" << height << " unlock=" <<  unlockht << " addr=" << coinaddr << std::endl);
         return(strcmp(destaddr, coinaddr) == 0);
     }
     else {
-        LOGSTREAMFN("marmara", CCLOG_ERROR, stream << logFuncName <<  " returns false" << std::endl);
+        LOGSTREAMFN("marmara", CCLOG_ERROR, stream  <<  " returns false" << std::endl);
         return(false);
     }
 }
@@ -350,7 +349,6 @@ bool MarmaraPoScheck(char *destaddr, CScript opret, CTransaction staketx)
 template <class T>
 static void EnumMyActivated(T func)
 {
-    const char *logFuncName = __func__;
     struct CCcontract_info *cp, C;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > activatedOutputs;
 
@@ -365,7 +363,7 @@ static void EnumMyActivated(T func)
     SetCCunspents(activatedOutputs, activatedaddr, true);
 
     // add my activated coins:
-    LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << logFuncName << " check activatedaddr" << activatedaddr << std::endl);
+    LOGSTREAM("marmara", CCLOG_DEBUG2, stream  << " check activatedaddr" << activatedaddr << std::endl);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it = activatedOutputs.begin(); it != activatedOutputs.end(); it++)
     {
         CTransaction tx; uint256 hashBlock;
@@ -378,7 +376,7 @@ static void EnumMyActivated(T func)
         if ((nValue = it->second.satoshis) < COIN)   // skip small values
             continue;
 
-        LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << logFuncName << " check tx on activatedaddr txid=" << txid.GetHex() << " vout=" << nvout << std::endl);
+        LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << " check tx on activatedaddr txid=" << txid.GetHex() << " vout=" << nvout << std::endl);
 
         // TODO: change to the non-locking version:
         if (GetTransaction(txid, tx, hashBlock, true) && (pindex = komodo_getblockindex(hashBlock)) != 0 && myIsutxo_spentinmempool(ignoretxid, ignorevin, txid, nvout) == 0)
@@ -393,13 +391,13 @@ static void EnumMyActivated(T func)
                 {
                     // call callback function:
                     func(activatedaddr, tx, nvout, pindex);
-                    LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << logFuncName << " found my activated 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << std::endl);
+                    LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream  << " found my activated 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << std::endl);
                 }
                 else
-                    LOGSTREAMFN("marmara", CCLOG_ERROR, stream << logFuncName << " skipped activated 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << " cant decode opret or not mypk" << std::endl);
+                    LOGSTREAMFN("marmara", CCLOG_ERROR, stream  << " skipped activated 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << " cant decode opret or not mypk" << std::endl);
             }
             else
-                LOGSTREAMFN("marmara", CCLOG_ERROR, stream << logFuncName << " skipped activated 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << " uxto addr not matched index" << std::endl);
+                LOGSTREAMFN("marmara", CCLOG_ERROR, stream  << " skipped activated 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << " uxto addr not matched index" << std::endl);
         }
     }
 }
@@ -410,7 +408,6 @@ static void EnumMyActivated(T func)
 template <class T>
 static void EnumMyLockedInLoop(T func)
 {
-    const char *logFuncName = __func__;
     char markeraddr[KOMODO_ADDRESS_BUFSIZE];
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > markerOutputs;
 
@@ -423,7 +420,7 @@ static void EnumMyLockedInLoop(T func)
     SetCCunspents(markerOutputs, markeraddr, true);
 
     // enum all createtxids:
-    LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << logFuncName << " check on markeraddr=" << markeraddr << std::endl);
+    LOGSTREAM("marmara", CCLOG_DEBUG2, stream  << " check on markeraddr=" << markeraddr << std::endl);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it = markerOutputs.begin(); it != markerOutputs.end(); it++)
     {
         CTransaction isssuancetx;
@@ -431,7 +428,7 @@ static void EnumMyLockedInLoop(T func)
         uint256 txid = it->first.txhash;
         int32_t nvout = (int32_t)it->first.index;
 
-        LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << logFuncName << " checking tx on markeraddr txid=" << txid.GetHex() << " vout=" << nvout << std::endl);
+        LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << " checking tx on markeraddr txid=" << txid.GetHex() << " vout=" << nvout << std::endl);
         if (nvout == 1 && GetTransaction(txid, isssuancetx, hashBlock, true))  // TODO: change to the non-locking version
         {
             if (!isssuancetx.IsCoinBase() && isssuancetx.vout.size() > 2 && isssuancetx.vout.back().nValue == 0)
@@ -453,7 +450,7 @@ static void EnumMyLockedInLoop(T func)
                     SetCCunspents(loopOutputs, loopaddr, true);
 
                     // enum all locked-in-loop addresses:
-                    LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << logFuncName << " checking on loopaddr=" << loopaddr << std::endl);
+                    LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << " checking on loopaddr=" << loopaddr << std::endl);
                     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it = loopOutputs.begin(); it != loopOutputs.end(); it++)
                     {
                         CTransaction looptx;
@@ -462,7 +459,7 @@ static void EnumMyLockedInLoop(T func)
                         uint256 txid = it->first.txhash;
                         int32_t nvout = (int32_t)it->first.index;
 
-                        LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << logFuncName << " checking tx on loopaddr txid=" << txid.GetHex() << " vout=" << nvout << std::endl);
+                        LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << " checking tx on loopaddr txid=" << txid.GetHex() << " vout=" << nvout << std::endl);
 
                         if (GetTransaction(txid, looptx, hashBlock, true) && (pindex = komodo_getblockindex(hashBlock)) != 0 && myIsutxo_spentinmempool(ignoretxid, ignorevin, txid, nvout) == 0)  // TODO: change to the non-locking version
                         {
@@ -479,13 +476,13 @@ static void EnumMyLockedInLoop(T func)
                                     if (CheckEitherOpRet(IsLockInLoopOpret, looptx, nvout, pk) && mypk == pk) {  // check mypk in opret
                                         // call callbak func:
                                         func(loopaddr, looptx, nvout, pindex);
-                                        LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << logFuncName << " found my lock-in-loop 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << std::endl);
+                                        LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << " found my lock-in-loop 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << std::endl);
                                     }
                                     else
-                                        LOGSTREAMFN("marmara", CCLOG_ERROR, stream << logFuncName << " skipped lock-in-loop 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << " cant decode opret or not mypk" << std::endl);
+                                        LOGSTREAMFN("marmara", CCLOG_ERROR, stream << " skipped lock-in-loop 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << " cant decode opret or not mypk" << std::endl);
                                 }
                                 else
-                                    LOGSTREAMFN("marmara", CCLOG_ERROR, stream << logFuncName  << " skipped lock-in-loop 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << " uxto addr not matched index" << std::endl);
+                                    LOGSTREAMFN("marmara", CCLOG_ERROR, stream  << " skipped lock-in-loop 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << " uxto addr not matched index" << std::endl);
                             }
                         }
                     }
@@ -493,7 +490,7 @@ static void EnumMyLockedInLoop(T func)
             }
         }
         else
-            LOGSTREAMFN("marmara", CCLOG_ERROR, stream << logFuncName  << " error getting tx=" << txid.GetHex() << std::endl);
+            LOGSTREAMFN("marmara", CCLOG_ERROR, stream << " error getting tx=" << txid.GetHex() << std::endl);
     }
 }
 
@@ -502,21 +499,21 @@ static void EnumMyLockedInLoop(T func)
 // called from PoS code
 struct komodo_staking *MarmaraGetStakingUtxos(struct komodo_staking *array, int32_t *numkp, int32_t *maxkp, uint8_t *hashbuf)
 {
-    const char *logFuncName = __func__;
+    const char *logFName = __func__;
 
     // add activated utxos for mypk:
-    //std::cerr << logFuncName << " entered" << std::endl;
+    //std::cerr  << " entered" << std::endl;
     EnumMyActivated([&](char *activatedaddr, const CTransaction & tx, int32_t nvout, CBlockIndex *pindex) 
     {
         array = komodo_addutxo(array, numkp, maxkp, (uint32_t)pindex->nTime, (uint64_t)tx.vout[nvout].nValue, tx.GetHash(), nvout, activatedaddr, hashbuf, tx.vout[nvout].scriptPubKey);
-        LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << logFuncName << " added uxto for staking activated 1of2 addr txid=" << tx.GetHash().GetHex() << " vout=" << nvout << std::endl);
+        LOGSTREAM("marmara", CCLOG_DEBUG1, stream << logFName << " added uxto for staking activated 1of2 addr txid=" << tx.GetHash().GetHex() << " vout=" << nvout << std::endl);
     });
 
     // add lock-in-loops utxos for mypk:
     EnumMyLockedInLoop([&](char *loopaddr, const CTransaction & tx, int32_t nvout, CBlockIndex *pindex)
     {
         array = komodo_addutxo(array, numkp, maxkp, (uint32_t)pindex->nTime, (uint64_t)tx.vout[nvout].nValue, tx.GetHash(), nvout, loopaddr, hashbuf, tx.vout[nvout].scriptPubKey);
-        LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << logFuncName << " added uxto for staking lock-in-loop 1of2addr txid=" << tx.GetHash().GetHex() << " vout=" << nvout << std::endl);
+        LOGSTREAM("marmara", CCLOG_DEBUG1, stream << logFName << " added uxto for staking lock-in-loop 1of2addr txid=" << tx.GetHash().GetHex() << " vout=" << nvout << std::endl);
     });
    
     return array;
@@ -525,7 +522,6 @@ struct komodo_staking *MarmaraGetStakingUtxos(struct komodo_staking *array, int3
 // returns stake preferences for activated and locked vouts
 int32_t MarmaraGetStakeMultiplier(const CTransaction & tx, int32_t nvout)
 {
-    const char *logFuncName = __func__;
     CPubKey mypk = pubkey2pk(Mypubkey());
     CPubKey opretpk;
 
@@ -556,7 +552,7 @@ int32_t MarmaraGetStakeMultiplier(const CTransaction & tx, int32_t nvout)
 
                     if (strcmp(lockInLoop1of2addr, voutaddr) == 0)  // check vout address is lock-in-loop address
                     {
-                        LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << logFuncName << " utxo picked for stake x3 as lock-in-loop" << " txid=" << tx.GetHash().GetHex() << " nvout=" << nvout << std::endl);
+                        LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream  << " utxo picked for stake x3 as lock-in-loop" << " txid=" << tx.GetHash().GetHex() << " nvout=" << nvout << std::endl);
                         return 3;  // staked 3 times for lock-in-loop
                     }
                 }
@@ -578,7 +574,7 @@ int32_t MarmaraGetStakeMultiplier(const CTransaction & tx, int32_t nvout)
 
                 if (strcmp(activated1of2addr, voutaddr) == 0)   // check vout address is my activated address
                 {
-                    LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << logFuncName << " utxo picked for stake x1 as activated" << " txid=" << tx.GetHash().GetHex() << " nvout=" << nvout << std::endl);
+                    LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream  << " utxo picked for stake x1 as activated" << " txid=" << tx.GetHash().GetHex() << " nvout=" << nvout << std::endl);
                     return 1;  // staked 1 times for activated
                 }
             }
@@ -588,8 +584,7 @@ int32_t MarmaraGetStakeMultiplier(const CTransaction & tx, int32_t nvout)
 }
 
 bool MarmaraValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction &tx, uint32_t nIn)
-{
-    const char *logFuncName = __func__;
+{   
     vscript_t vopret; CTransaction vinTx; uint256 hashBlock;  int32_t numvins, numvouts, i, ht, unlockht, vht, vunlockht; uint8_t funcid, vfuncid, *script; CPubKey pk, vpk;
     if (ASSETCHAINS_MARMARA == 0)
         return eval->Invalid("-ac_marmara must be set for marmara CC");
@@ -666,7 +661,7 @@ bool MarmaraValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction 
 // add mined coins
 int64_t AddMarmaraCoinbases(struct CCcontract_info *cp, CMutableTransaction &mtx, int32_t firstheight, CPubKey poolpk, int32_t maxinputs)
 {
-    const char *logFuncName = __func__;
+    
     char coinaddr[KOMODO_ADDRESS_BUFSIZE]; 
     CPubKey Marmarapk, pk; 
     int64_t nValue, totalinputs = 0; 
@@ -680,12 +675,12 @@ int64_t AddMarmaraCoinbases(struct CCcontract_info *cp, CMutableTransaction &mtx
     SetCCunspents(unspentOutputs, coinaddr, true);
     unlocks = MarmaraUnlockht(firstheight);
 
-    LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << logFuncName << " check coinaddr=" << coinaddr << std::endl);
+    LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << " check coinaddr=" << coinaddr << std::endl);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it = unspentOutputs.begin(); it != unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
         vout = (int32_t)it->first.index;
-        LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << logFuncName << " txid=" << txid.GetHex() << " vout=" << vout << std::endl);
+        LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << " txid=" << txid.GetHex() << " vout=" << vout << std::endl);
         if (myGetTransaction(txid,vintx,hashBlock) != 0)
         {
             if (vintx.IsCoinBase() != 0 && vintx.vout.size() == 2 && vintx.vout[1].nValue == 0)
@@ -706,13 +701,13 @@ int64_t AddMarmaraCoinbases(struct CCcontract_info *cp, CMutableTransaction &mtx
                     //  fprintf(stderr,"%s nValue.%8f\n", logFuncName, (double)nValue/COIN);
                 } 
                 else 
-                    LOGSTREAMFN("marmara", CCLOG_ERROR, stream << logFuncName << " decode error unlockht=" << unlockht << " vs unlocks=" << unlocks << " is-pool-pk=" << (pk == poolpk) << std::endl);
+                    LOGSTREAMFN("marmara", CCLOG_ERROR, stream  << " decode error unlockht=" << unlockht << " vs unlocks=" << unlocks << " is-pool-pk=" << (pk == poolpk) << std::endl);
             }
             else
-                LOGSTREAMFN("marmara", CCLOG_ERROR, stream << logFuncName << " not coinbase" << std::endl);
+                LOGSTREAMFN("marmara", CCLOG_ERROR, stream  << " not coinbase" << std::endl);
         }
         else
-            LOGSTREAMFN("marmara", CCLOG_ERROR, stream << logFuncName << " error getting tx=" << txid.GetHex() << std::endl);
+            LOGSTREAMFN("marmara", CCLOG_ERROR, stream  << " error getting tx=" << txid.GetHex() << std::endl);
     }
     return(totalinputs);
 }
@@ -743,7 +738,7 @@ static bool IsLockInLoopOpret(const CScript &spk, CPubKey &pk)
 // opret in the last vout is checked second and considered secondary
 static bool CheckEitherOpRet(bool(*CheckOpretFunc)(const CScript &, CPubKey &), const CTransaction &tx, int32_t nvout, CPubKey & pk)
 {
-    const char *logFuncName = __func__;
+    
     CScript opret, dummy;
     std::vector< vscript_t > vParams;
     bool isccopret = false, opretok = false;
@@ -754,7 +749,7 @@ static bool CheckEitherOpRet(bool(*CheckOpretFunc)(const CScript &, CPubKey &), 
         COptCCParams p = COptCCParams(vParams[0]);
         if (p.vData.size() > 0) {
             opret << OP_RETURN << p.vData[0]; // reconstruct opret for CheckOpretFunc function
-            LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << logFuncName << " ccopret=" << opret.ToString() << std::endl);
+            LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream  << " ccopret=" << opret.ToString() << std::endl);
             if (CheckOpretFunc(opret, pk)) {
                 isccopret = true;
                 opretok = true;
@@ -780,7 +775,7 @@ static bool CheckEitherOpRet(bool(*CheckOpretFunc)(const CScript &, CPubKey &), 
         evalcode = vprintopret.begin()[0];
         funcid = vprintopret.begin()[1];
     }
-    LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << logFuncName << " opret eval=" << (int)evalcode << " funcid=" << (char)(funcid ? funcid : ' ') << " isccopret=" << isccopret << std::endl);
+    LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream  << " opret eval=" << (int)evalcode << " funcid=" << (char)(funcid ? funcid : ' ') << " isccopret=" << isccopret << std::endl);
     
     return opretok;
 }
@@ -790,7 +785,7 @@ static bool CheckEitherOpRet(bool(*CheckOpretFunc)(const CScript &, CPubKey &), 
 // for lock-in-loop mypk not checked, so all locked-in-loop utxos for an address are added:
 int64_t AddMarmarainputs(bool (*CheckOpretFunc)(const CScript &, CPubKey &), CMutableTransaction &mtx, std::vector<CPubKey> &pubkeys, char *unspentaddr, int64_t total, int32_t maxinputs)
 {
-    const char *logFuncName = __func__;
+    
     int64_t threshold, nValue, totalinputs = 0; 
     int32_t n = 0;
     std::vector<int64_t> vals;
@@ -807,7 +802,7 @@ int64_t AddMarmarainputs(bool (*CheckOpretFunc)(const CScript &, CPubKey &), CMu
     if (CheckOpretFunc == NULL)  // no function to check opret
         return -1;
 
-    LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << logFuncName << " adding from addr=" << unspentaddr << " total=" << total << std::endl);
+    LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << " adding from addr=" << unspentaddr << " total=" << total << std::endl);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it = unspentOutputs.begin(); it != unspentOutputs.end(); it++)
     {
         uint256 txid = it->first.txhash;
@@ -840,7 +835,7 @@ int64_t AddMarmarainputs(bool (*CheckOpretFunc)(const CScript &, CPubKey &), CMu
                 Getscriptaddress(utxoaddr, tx.vout[nvout].scriptPubKey);
                 if (strcmp(unspentaddr, utxoaddr) == 0)  // check if the real vout address matches the index address (as another key could be used in the addressindex)
                 {
-                    LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << logFuncName << " found good vintx for addr=" << unspentaddr << " txid=" << txid.GetHex() << " nvout=" << nvout << " satoshis=" << it->second.satoshis << " isccopret=" << isccopret << std::endl);
+                    LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream  << " found good vintx for addr=" << unspentaddr << " txid=" << txid.GetHex() << " nvout=" << nvout << " satoshis=" << it->second.satoshis << " isccopret=" << isccopret << std::endl);
 
                     if (total != 0 && maxinputs != 0)
                     {
@@ -857,7 +852,7 @@ int64_t AddMarmarainputs(bool (*CheckOpretFunc)(const CScript &, CPubKey &), CMu
                 }
             }
             else
-                LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << logFuncName << " addr=" << unspentaddr << " txid=" << txid.GetHex() << " cant check opret" << std::endl);
+                LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream  << " addr=" << unspentaddr << " txid=" << txid.GetHex() << " cant check opret" << std::endl);
         }
     }
     if (maxinputs != 0 && total == 0)
@@ -868,14 +863,14 @@ int64_t AddMarmarainputs(bool (*CheckOpretFunc)(const CScript &, CPubKey &), CMu
             totalinputs += vals[i];
     }
 
-    LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << logFuncName << " for addr=" << unspentaddr << " found total=" << totalinputs << std::endl);
+    LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream  << " for addr=" << unspentaddr << " found total=" << totalinputs << std::endl);
     return(totalinputs);
 }
 
 // lock the amount on the specified block height
 UniValue MarmaraLock(int64_t txfee, int64_t amount)
 {
-    const char *logFuncName = __func__;
+    
     CMutableTransaction tmpmtx, mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     UniValue result(UniValue::VOBJ);
     struct CCcontract_info *cp, C;
@@ -959,10 +954,10 @@ UniValue MarmaraLock(int64_t txfee, int64_t amount)
                     }
                 }
                 else    
-                    std::cerr << logFuncName, " incorrect funcid in tx from locked fund" << std::endl;
+                    std::cerr , " incorrect funcid in tx from locked fund" << std::endl;
             }
             else  
-                std::cerr << logFuncName << " could not load or incorrect tx from locked fund" << std::endl;
+                std::cerr  << " could not load or incorrect tx from locked fund" << std::endl;
         }   */
 
         memset(mypriv,0,sizeof(mypriv));
@@ -995,7 +990,7 @@ UniValue MarmaraLock(int64_t txfee, int64_t amount)
 
 int32_t MarmaraSignature(uint8_t *utxosig, CMutableTransaction &mtx)
 {
-    const char *logFuncName = __func__;
+    
     uint256 txid, hashBlock; uint8_t *ptr; int32_t i, siglen, vout, numvouts; CTransaction tx; std::string rawtx; CPubKey mypk; std::vector<CPubKey> pubkeys; struct CCcontract_info *cp, C; int64_t txfee;
     txfee = 10000;
     vout = mtx.vin[0].prevout.n;
@@ -1010,13 +1005,16 @@ int32_t MarmaraSignature(uint8_t *utxosig, CMutableTransaction &mtx)
             siglen = mtx.vin[0].scriptSig.size();
             ptr = &mtx.vin[0].scriptSig[0];
 
-            LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << logFuncName << " ");
+            std::ostringstream debstream;
             for (i = 0; i < siglen; i++)
             {
                 utxosig[i] = ptr[i];
-                LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << std::hex << ptr[i]);
+                debstream << std::hex << ptr[i];
             }
-            LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << " got signed rawtx=" << rawtx << " siglen=" << siglen << std::endl);
+            std::string strScriptSig = debstream.str();
+
+            std::cerr << debstream.str();
+            LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << " scriptSig=" << strScriptSig << " got signed rawtx=" << rawtx << " siglen=" << siglen << std::endl);
             return(siglen);
         }
     }
@@ -1027,7 +1025,7 @@ int32_t MarmaraSignature(uint8_t *utxosig, CMutableTransaction &mtx)
 
 UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid)
 {
-    const char *logFuncName = __func__;
+    
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     UniValue result(UniValue::VOBJ);
     std::vector<uint256> creditloop;
@@ -1108,20 +1106,20 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid)
                     CCAddVintxCond(cp, lockInLoop1of2cond, marmarapriv); //add probe condition to spend from the lock-in-loop address
                     cc_free(lockInLoop1of2cond);
 
-                    LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << logFuncName << "calling AddMarmaraInputs for lock-in-loop addr=" << lockInLoop1of2addr << " adding amount=" << refamount << std::endl);
+                    LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream  << "calling AddMarmaraInputs for lock-in-loop addr=" << lockInLoop1of2addr << " adding amount=" << refamount << std::endl);
                     if ((inputsum = AddMarmarainputs(IsLockInLoopOpret, mtx, pubkeys, lockInLoop1of2addr, refamount, MARMARA_VINS)) >= refamount)
                     {
                         change = (inputsum - refamount);
                         mtx.vout.push_back(CTxOut(refamount, CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));   // locked-in-loop money is released to mypk doing the settlement
                         if (change > txfee) {
-                            LOGSTREAMFN("marmara", CCLOG_ERROR, stream << logFuncName << "error: change non null=" << change << ", sent back to lock-in-loop addr=" << lockInLoop1of2addr << std::endl);
+                            LOGSTREAMFN("marmara", CCLOG_ERROR, stream  << "error: change non null=" << change << ", sent back to lock-in-loop addr=" << lockInLoop1of2addr << std::endl);
                             mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA, change, Marmarapk, createtxidPk));
                         }
                         rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, MarmaraEncodeLoopOpret('S', refcreatetxid, mypk, 0, refmatures, refcurrency), pubkeys);
                         if (rawtx.empty()) {
                             result.push_back(Pair("result", "error"));
                             result.push_back(Pair("error", "couldnt finalize CCtx"));
-                            LOGSTREAMFN("marmara", CCLOG_ERROR, stream << logFuncName << " bad mtx=" << HexStr(E_MARSHAL(ss << mtx)) << std::endl);
+                            LOGSTREAMFN("marmara", CCLOG_ERROR, stream  << " bad mtx=" << HexStr(E_MARSHAL(ss << mtx)) << std::endl);
                         }
                         else {
                             result.push_back(Pair("result", (char *)"success"));
@@ -1179,7 +1177,7 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid)
                         if (rawtx.empty()) {
                             result.push_back(Pair("result", "error"));
                             result.push_back(Pair("error", "couldnt finalize CCtx"));
-                            LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << logFuncName << " bad mtx=" << HexStr(E_MARSHAL(ss << mtx)) << std::endl);
+                            LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream  << " bad mtx=" << HexStr(E_MARSHAL(ss << mtx)) << std::endl);
                         }
                         else {
                             result.push_back(Pair("result", (char *)"error"));
@@ -1225,7 +1223,7 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid)
 
 int32_t MarmaraGetCreditloops(int64_t &totalamount, std::vector<uint256> &issuances, int64_t &totalclosed, std::vector<uint256> &closed, struct CCcontract_info *cp, int32_t firstheight, int32_t lastheight, int64_t minamount, int64_t maxamount, CPubKey refpk, std::string refcurrency)
 {
-    const char *logFuncName = __func__;
+    
     char coinaddr[KOMODO_ADDRESS_BUFSIZE]; CPubKey Marmarapk, senderpk; int64_t amount; uint256 createtxid, txid, hashBlock; CTransaction tx; int32_t vout, matures, n = 0; std::string currency;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     Marmarapk = GetUnspendable(cp, 0);
@@ -1233,13 +1231,13 @@ int32_t MarmaraGetCreditloops(int64_t &totalamount, std::vector<uint256> &issuan
     SetCCunspents(unspentOutputs, coinaddr, true);
 
     // do all txid, conditional on spent/unspent
-    LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << logFuncName << " check on coinaddr=" << coinaddr << std::endl);
+    LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << " check on coinaddr=" << coinaddr << std::endl);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it = unspentOutputs.begin(); it != unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
         vout = (int32_t)it->first.index;
 
-        LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << logFuncName << " checking tx on coinaddr txid=" << txid.GetHex() << " vout=" << vout << std::endl);
+        LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << " checking tx on coinaddr txid=" << txid.GetHex() << " vout=" << vout << std::endl);
         if (vout == 1 && myGetTransaction(txid, tx, hashBlock) != 0)  // changed to the non-locking version
         {
             if (tx.IsCoinBase() == 0 && tx.vout.size() > 2 && tx.vout.back().nValue == 0)
@@ -1256,7 +1254,7 @@ int32_t MarmaraGetCreditloops(int64_t &totalamount, std::vector<uint256> &issuan
             }
         }
         else
-            LOGSTREAMFN("marmara", CCLOG_ERROR, stream << logFuncName << " error getting tx=" << txid.GetHex() << std::endl);
+            LOGSTREAMFN("marmara", CCLOG_ERROR, stream  << " error getting tx=" << txid.GetHex() << std::endl);
     }
     return(n);
 }
@@ -1360,7 +1358,7 @@ UniValue MarmaraReceive(int64_t txfee, CPubKey senderpk, int64_t amount, std::st
 
 static int32_t RedistributeLockedRemainder(CMutableTransaction &mtx, struct CCcontract_info *cp, const std::vector<uint256> &creditloop, uint256 batontxid, int64_t amountToDistribute)
 {
-    const char *logFuncName = __func__;
+    
     CPubKey Marmarapk; 
     int32_t endorsersNumber = creditloop.size(); // number of endorsers, 0 is createtxid, last is batontxid
     CPubKey dummypk;
@@ -1386,11 +1384,11 @@ static int32_t RedistributeLockedRemainder(CMutableTransaction &mtx, struct CCco
         CPubKey createtxidPk = CCtxidaddr(txidaddr, createtxid);
         GetCCaddress1of2(cp, lockInLoop1of2addr, Marmarapk, createtxidPk);  // 1of2 lock-in-loop address 
 
-        LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << logFuncName << "calling AddMarmaraInputs for lock-in-loop addr=" << lockInLoop1of2addr << " adds amount=" << amount << std::endl);
+        LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << "calling AddMarmaraInputs for lock-in-loop addr=" << lockInLoop1of2addr << " adds amount=" << amount << std::endl);
         if ((inputsum = AddMarmarainputs(IsLockInLoopOpret, mtx, pubkeys, lockInLoop1of2addr, amount, MARMARA_VINS)) >= amount / endorsersNumber) 
         {
             if (mtx.vin.size() >= CC_MAXVINS) {// vin number limit
-                std::cerr << logFuncName << " too many vins!" << std::endl;
+                std::cerr  << " too many vins!" << std::endl;
                 return -1;
             }
 
@@ -1408,16 +1406,16 @@ static int32_t RedistributeLockedRemainder(CMutableTransaction &mtx, struct CCco
                     {
                         int64_t amountToPk = amountToDistribute / endorsersNumber;
                         mtx.vout.push_back(CTxOut(amountToPk, CScript() << ParseHex(HexStr(issuerpk)) << OP_CHECKSIG));  // coins returned to each previous issuer normal 
-                        LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << logFuncName << " sending normal amount=" << amountToPk << " to pk=" << HexStr(issuerpk) << std::endl);
+                        LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream  << " sending normal amount=" << amountToPk << " to pk=" << HexStr(issuerpk) << std::endl);
                         amountReturned += amountToPk;
                     }
                     else    {
-                        LOGSTREAMFN("marmara", CCLOG_ERROR, stream << logFuncName << " null funcid for creditloop[" << i << "]" << std::endl);
+                        LOGSTREAMFN("marmara", CCLOG_ERROR, stream  << " null funcid for creditloop[" << i << "]" << std::endl);
                         return -1;
                     }
                 }
                 else   {
-                    LOGSTREAMFN("marmara", CCLOG_ERROR, stream << logFuncName << " cant load tx for creditloop[" << i << "]" << std::endl);
+                    LOGSTREAMFN("marmara", CCLOG_ERROR, stream  << " cant load tx for creditloop[" << i << "]" << std::endl);
                     return -1;
                 }
             }
@@ -1426,7 +1424,7 @@ static int32_t RedistributeLockedRemainder(CMutableTransaction &mtx, struct CCco
             // return change to the lock-in-loop fund, distribute for pubkeys:
             if (change > 0) {
                 if (pubkeys.size() != endorsersNumber) {
-                    LOGSTREAMFN("marmara", CCLOG_ERROR, stream << logFuncName << " internal error not matched pubkeys.size()=" << pubkeys.size() << " endorsersNumber=" << endorsersNumber << std::endl);
+                    LOGSTREAMFN("marmara", CCLOG_ERROR, stream  << " internal error not matched pubkeys.size()=" << pubkeys.size() << " endorsersNumber=" << endorsersNumber << std::endl);
                     return -1;
                 }
                 for (auto pk : pubkeys) {
@@ -1438,7 +1436,7 @@ static int32_t RedistributeLockedRemainder(CMutableTransaction &mtx, struct CCco
                     std::vector< vscript_t > vData{ vopret };    // add mypk to vout to identify who has locked coins in the credit loop
                     mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA, change / pubkeys.size(), Marmarapk, createtxidPk, &vData));  // TODO: losing remainder?
 
-                    LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << logFuncName << " distributing to loop change/pubkeys.size()=" << change / pubkeys.size() << " vdata pk=" << HexStr(pk) << std::endl);
+                    LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream  << " distributing to loop change/pubkeys.size()=" << change / pubkeys.size() << " vdata pk=" << HexStr(pk) << std::endl);
                 }
             }
 
@@ -1448,12 +1446,12 @@ static int32_t RedistributeLockedRemainder(CMutableTransaction &mtx, struct CCco
 
         }
         else  {
-            LOGSTREAMFN("marmara", CCLOG_ERROR, stream << logFuncName << " couldnt get lock-in-loop amount to return to endorsers" << std::endl);
+            LOGSTREAMFN("marmara", CCLOG_ERROR, stream  << " couldnt get lock-in-loop amount to return to endorsers" << std::endl);
             return -1;
         }
     }
     else {
-        LOGSTREAMFN("marmara", CCLOG_ERROR, stream << logFuncName << "could not load createtx" << std::endl);
+        LOGSTREAMFN("marmara", CCLOG_ERROR, stream  << "could not load createtx" << std::endl);
         return -1;
     }
     return 0;
@@ -1463,7 +1461,7 @@ static int32_t RedistributeLockedRemainder(CMutableTransaction &mtx, struct CCco
 // issue or transfer coins to the next receiver
 UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t amount, std::string currency, int32_t matures, uint256 requesttxid, uint256 batontxid)
 {
-    const char *logFuncName = __func__;
+    
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     UniValue result(UniValue::VOBJ); 
     std::string rawtx; uint256 createtxid; 
@@ -1531,7 +1529,7 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
 
         GetCCaddress1of2(cp, activated1of2addr, Marmarapk, mypk);  // 1of2 address where the activated endorser's money is locked -- deprecated
         //GetCCaddress(cp, myccaddr, mypk);                       // activated coins on cc address
-        LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << logFuncName << "calling AddMarmaraInputs for activated addr=" << activated1of2addr << " needs activated amount to lock-in-loop=" << amountToLock << std::endl);
+        LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << "calling AddMarmaraInputs for activated addr=" << activated1of2addr << " needs activated amount to lock-in-loop=" << amountToLock << std::endl);
         if ((inputsum = AddMarmarainputs(IsActivatedOpret, mtx, pubkeys, activated1of2addr, amountToLock, MARMARA_VINS)) >= amountToLock) // add 1/n remainder from the locked fund
         {
             mtx.vin.push_back(CTxIn(requesttxid, 0, CScript()));  // spend the approval tx
@@ -1553,7 +1551,7 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
                 //std::vector< vscript_t > vData{ E_MARSHAL(ss << (uint8_t)EVAL_MARMARA << (uint8_t)'K' << vscript_t(mypk.begin(), mypk.end())) };   // add mypk to vout to identify who has locked coins in the credit loop
                 std::vector< vscript_t > vData{ vopret };  // add mypk to cc vout to identify who locked the coins in the loop
                 mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA, amountToLock, Marmarapk, createtxidPk, &vData));
-                LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << logFuncName << " sending to loop amount=" << amountToLock << " marked with mypk=" << HexStr(mypk) << std::endl);
+                LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream  << " sending to loop amount=" << amountToLock << " marked with mypk=" << HexStr(mypk) << std::endl);
 
                 // return change to the my activated address:
                 int64_t change = (inputsum - amountToLock);
@@ -1578,7 +1576,7 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
 
                     if (rawtx.size() == 0) {
                         errorstr = "couldnt finalize CCtx";
-                        LOGSTREAMFN("marmara", CCLOG_ERROR, stream << logFuncName << " bad mtx=" << HexStr(E_MARSHAL(ss << mtx)) << std::endl);
+                        LOGSTREAMFN("marmara", CCLOG_ERROR, stream  << " bad mtx=" << HexStr(E_MARSHAL(ss << mtx)) << std::endl);
                     }
                 }
                 else
@@ -1616,7 +1614,7 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
 
 UniValue MarmaraCreditloop(uint256 txid)
 {
-    const char *logFuncName = __func__;
+    
     UniValue result(UniValue::VOBJ), a(UniValue::VARR); 
     std::vector<uint256> creditloop; 
     uint256 batontxid, refcreatetxid, hashBlock; uint8_t funcid; 
@@ -1681,7 +1679,7 @@ UniValue MarmaraCreditloop(uint256 txid)
                     result.push_back(Pair("matures", refmatures));
                     if (refcreatetxid != creditloop[0])
                     {
-                        LOGSTREAMFN("marmara", CCLOG_ERROR, stream << logFuncName << " invalid refcreatetxid, setting to creditloop[0]" << std::endl);
+                        LOGSTREAMFN("marmara", CCLOG_ERROR, stream  << " invalid refcreatetxid, setting to creditloop[0]" << std::endl);
                         refcreatetxid = creditloop[0];
                         numerrs++;
                     }
