@@ -988,29 +988,29 @@ UniValue MarmaraLock(int64_t txfee, int64_t amount)
     return(result);
 }
 
+// finalize and sign staked tx on activated 1of2 addr
 // note: utxosig bufsize = 512
 int32_t MarmaraSignature(uint8_t *utxosig, CMutableTransaction &mtx)
 {
     uint256 txid, hashBlock; 
-    uint8_t *ptr; 
-    int32_t i, siglen, vout, numvouts; 
     CTransaction tx; 
-    std::string rawtx; 
-    CPubKey mypk; std::vector<CPubKey> pubkeys; 
-    struct CCcontract_info *cp, C; 
     int64_t txfee = 10000;
 
-    vout = mtx.vin[0].prevout.n;
-    if ( myGetTransaction(mtx.vin[0].prevout.hash,tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 1 && vout < numvouts )
+    int32_t vout = mtx.vin[0].prevout.n;
+    if (myGetTransaction(mtx.vin[0].prevout.hash, tx, hashBlock) != 0 && tx.vout.size() > 1 && vout < tx.vout.size())
     {
+        std::vector<CPubKey> pubkeys;
+        CPubKey mypk = pubkey2pk(Mypubkey());
+        struct CCcontract_info *cp, C;
+
         cp = CCinit(&C, EVAL_MARMARA);
-        mypk = pubkey2pk(Mypubkey());
         pubkeys.push_back(mypk);
-        rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, tx.vout[numvouts - 1].scriptPubKey, pubkeys);
+
+        std::string rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, tx.vout.back().scriptPubKey, pubkeys);  // pubkeys is for 1of2 address with marmarapk, pubkeys[i] 
         if (rawtx.size() > 0)
         {
-            siglen = mtx.vin[0].scriptSig.size();
-            ptr = &mtx.vin[0].scriptSig[0];
+            int32_t siglen = mtx.vin[0].scriptSig.size();
+            uint8_t *ptr = &mtx.vin[0].scriptSig[0];
 
             if (siglen >= 512) {   // check boundaries
                 LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "scriptSig length is more than utxosig bufsize, truncated! siglen=" << siglen << std::endl);
@@ -1018,17 +1018,21 @@ int32_t MarmaraSignature(uint8_t *utxosig, CMutableTransaction &mtx)
             }
 
             std::ostringstream debstream;
-            for (i = 0; i < siglen; i++)
+            for (int32_t i = 0; i < siglen; i++)
             {
                 utxosig[i] = ptr[i];
                 debstream << std::hex << (int)ptr[i];
             }
             std::string strScriptSig = debstream.str();
 
-            LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "scriptSig=" << strScriptSig << " got signed rawtx=" << rawtx << " siglen=" << siglen << std::endl);
+            LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "scriptSig=" << strScriptSig << " got signed rawtx=" << rawtx << " siglen=" << siglen << std::endl);
             return(siglen);
         }
+        else
+            LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "cannot sign activated staked tx" << std::endl);
     }
+    else 
+        LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "cannot get vintx for staked tx" << std::endl);
     return(0);
 }
 
