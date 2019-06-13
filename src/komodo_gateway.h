@@ -645,13 +645,13 @@ const char *banned_txids[] =
     // all vouts banned
     "c4ea1462c207547cd6fb6a4155ca6d042b22170d29801a465db5c09fec55b19d", //246748
     "305dc96d8bc23a69d3db955e03a6a87c1832673470c32fe25473a46cc473c7d1", //247204
-    "43416a0c4da6b1a5c1d375bdbe8f7dc8d44d8f60df593d3376aa8221ec66357e", // vout0 only
-    "1eb295ed54c47f35cbccd7e7e40d03041f1853581da6d41102a9d8813782b6cb",
-    "db121e4012222adfc841824984a2a90b7e5b018dd71307822537d58160195e43",
-    "28f95b8148ac4ae6e09c7380e34422fab41d568a411e53dc94823e36a3d6f386",
-    "01d8c839463bda2f2f6400ede4611357913684927a767422a8560ead1b22557c",
-    "6e4980a9e1bd669f4df04732dc6f11b7773b6de88d1abcf89a6b9007d72ef9ac",
-    "6cc1d0495170bc0e11fd3925297623562e529ea1336b66ea61f8a1159041aed2",
+    //"43416a0c4da6b1a5c1d375bdbe8f7dc8d44d8f60df593d3376aa8221ec66357e", // vout0 only
+    //"1eb295ed54c47f35cbccd7e7e40d03041f1853581da6d41102a9d8813782b6cb",
+    //"db121e4012222adfc841824984a2a90b7e5b018dd71307822537d58160195e43",
+    //"28f95b8148ac4ae6e09c7380e34422fab41d568a411e53dc94823e36a3d6f386",
+    //"01d8c839463bda2f2f6400ede4611357913684927a767422a8560ead1b22557c",
+    //"6e4980a9e1bd669f4df04732dc6f11b7773b6de88d1abcf89a6b9007d72ef9ac",
+    //"6cc1d0495170bc0e11fd3925297623562e529ea1336b66ea61f8a1159041aed2",
 };
 
 int32_t komodo_checkvout(int32_t vout,int32_t k,int32_t indallvouts)
@@ -673,7 +673,7 @@ int32_t komodo_bannedset(int32_t *indallvoutsp,uint256 *array,int32_t max)
     }
     for (i=0; i<sizeof(banned_txids)/sizeof(*banned_txids); i++)
         array[i] = uint256S(banned_txids[i]);
-    *indallvoutsp = i-9;
+    *indallvoutsp = i-2;
     return(i);
 }
 
