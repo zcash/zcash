@@ -2328,6 +2328,10 @@ void komodo_args(char *argv0)
         {
             // No CCs used on this chain yet. 
             CCDISABLEALL;
+            CCENABLE(EVAL_TOKENS);
+            CCENABLE(EVAL_HEIR);
+
+
         }
         if ( strcmp("COQUI",ASSETCHAINS_SYMBOL) == 0 )
         {
