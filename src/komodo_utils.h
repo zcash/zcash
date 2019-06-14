@@ -2330,8 +2330,6 @@ void komodo_args(char *argv0)
             CCDISABLEALL;
             CCENABLE(EVAL_TOKENS);
             CCENABLE(EVAL_HEIR);
-
-
         }
         if ( strcmp("COQUI",ASSETCHAINS_SYMBOL) == 0 )
         {
