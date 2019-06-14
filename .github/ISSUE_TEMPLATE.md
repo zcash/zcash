@@ -32,7 +32,7 @@ Run `zcashd --version` to find out
 - Disk Type (HD/SDD):
 - Linux kernel version (uname -a):
 - Compiler version (gcc --version):
-- Linker version (ld --version):
+- Linker version (ld -v):
 - Assembler version (as --version):
 
 ### Any extra information that might be useful in the debugging process.
