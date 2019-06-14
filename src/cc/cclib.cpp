@@ -360,7 +360,9 @@ UniValue CClib(struct CCcontract_info *cp,char *method,char *jsonstr)
             {
                 result.push_back(Pair("result","success"));
                 result.push_back(Pair("method",CClib_methods[i].method));
+                std::cerr << "dimxy debug jsonstr=" << jsonstr << std::endl;
                 params = cJSON_Parse(jsonstr);
+                std::cerr << "dimxy debug params=" << params << std::endl;
                 rawtx = CClib_rawtxgen(cp,CClib_methods[i].funcid,params);
                 free_json(params);
                 result.push_back(Pair("rawtx",rawtx));
