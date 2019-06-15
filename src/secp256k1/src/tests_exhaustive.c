@@ -174,7 +174,7 @@ void test_exhaustive_ecmult(const secp256k1_context *ctx, const secp256k1_ge *gr
                 ge_equals_gej(&group[(i * r_log + j) % order], &tmp);
 
                 if (i > 0) {
-                    secp256k1_ecmult_const(&tmp, &group[i], &ng);
+                    secp256k1_ecmult_const(&tmp, &group[i], &ng,256);
                     ge_equals_gej(&group[(i * j) % order], &tmp);
                 }
             }

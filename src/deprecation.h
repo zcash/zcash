@@ -2,6 +2,21 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 #ifndef ZCASH_DEPRECATION_H
 #define ZCASH_DEPRECATION_H
 
@@ -9,7 +24,7 @@
 // * Shut down WEEKS_UNTIL_DEPRECATION weeks' worth of blocks after the estimated release block height.
 // * A warning is shown during the DEPRECATION_WARN_LIMIT worth of blocks prior to shut down.
 static const int WEEKS_UNTIL_DEPRECATION = 52;
-static const int DEPRECATION_HEIGHT = 1600000;
+static const int DEPRECATION_HEIGHT = 2200000;
 static const int APPROX_RELEASE_HEIGHT = DEPRECATION_HEIGHT - (WEEKS_UNTIL_DEPRECATION * 7 * 24 * 60);
 
 // Number of blocks before deprecation to warn users

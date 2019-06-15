@@ -3,6 +3,21 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 #include "clientversion.h"
 #include "rpc/server.h"
 #include "init.h"
@@ -44,27 +59,46 @@ static bool fDaemon;
 #include "komodo_defs.h"
 #define KOMODO_ASSETCHAIN_MAXLEN 65
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
+extern int32_t ASSETCHAINS_BLOCKTIME;
+extern uint64_t ASSETCHAINS_CBOPRET;
 void komodo_passport_iteration();
 uint64_t komodo_interestsum();
 int32_t komodo_longestchain();
+void komodo_cbopretupdate(int32_t forceflag);
 
 void WaitForShutdown(boost::thread_group* threadGroup)
 {
-    bool fShutdown = ShutdownRequested();
+    int32_t i; bool fShutdown = ShutdownRequested();
     // Tell the main threads to shutdown.
+    if ( ASSETCHAINS_CBOPRET != 0 )
+        komodo_pricesinit();
     while (!fShutdown)
     {
         //fprintf(stderr,"call passport iteration\n");
         if ( ASSETCHAINS_SYMBOL[0] == 0 )
         {
             komodo_passport_iteration();
-            MilliSleep(10000);
+            for (i=0; i<10; i++)
+            {
+                fShutdown = ShutdownRequested();
+                if ( fShutdown != 0 )
+                    break;
+                MilliSleep(1000);
+            }
         }
         else
         {
             //komodo_interestsum();
             //komodo_longestchain();
-            MilliSleep(20000);
+            if ( ASSETCHAINS_CBOPRET != 0 )
+                komodo_cbopretupdate(0);
+            for (i=0; i<=ASSETCHAINS_BLOCKTIME/5; i++)
+            {
+                fShutdown = ShutdownRequested();
+                if ( fShutdown != 0 )
+                    break;
+                MilliSleep(1000);
+            }
         }
         fShutdown = ShutdownRequested();
     }
@@ -79,7 +113,8 @@ void WaitForShutdown(boost::thread_group* threadGroup)
 //
 // Start
 //
-extern int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,ASSETCHAIN_INIT;
+extern int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY;
+extern uint32_t ASSETCHAIN_INIT;
 extern std::string NOTARY_PUBKEY;
 int32_t komodo_is_issuer();
 void komodo_passport_iteration();

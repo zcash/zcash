@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright © 2014-2018 The SuperNET Developers.                             *
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
  *                                                                            *
  * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
  * the top-level directory of this distribution for the individual copyright  *
@@ -309,8 +309,8 @@ char *uppercase_str(char *buf,char *str);
 char *lowercase_str(char *buf,char *str);
 int32_t strsearch(char *strs[],int32_t num,char *name);
 int32_t OS_getline(int32_t waitflag,char *line,int32_t max,char *dispstr);
-int32_t sort64s(uint64_t *buf,uint32_t num,int32_t size);
-int32_t revsort64s(uint64_t *buf,uint32_t num,int32_t size);
+void sort64s(uint64_t *buf,uint32_t num,int32_t size);
+void revsort64s(uint64_t *buf,uint32_t num,int32_t size);
 int decode_base32(uint8_t *token,uint8_t *tokenstr,int32_t len);
 int init_base32(char *tokenstr,uint8_t *token,int32_t len);
 char *OS_mvstr();

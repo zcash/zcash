@@ -42,21 +42,16 @@ if [ "x$*" = 'x--help' ]
 then
     cat <<EOF
 Usage:
-
 $0 --help
   Show this help message and exit.
-
 $0 [ --enable-lcov || --disable-tests ] [ --disable-mining ] [ --enable-proton ] [ --disable-libs ] [ MAKEARGS... ]
   Build Zcash and most of its transitive dependencies from
   source. MAKEARGS are applied to both dependencies and Zcash itself.
-
   If --enable-lcov is passed, Zcash is configured to add coverage
   instrumentation, thus enabling "make cov" to work.
   If --disable-tests is passed instead, the Zcash tests are not built.
-
   If --disable-mining is passed, Zcash is configured to not build any mining
   code. It must be passed after the test arguments, if present.
-
   If --enable-proton is passed, Zcash is configured to build the Apache Qpid Proton
   library required for AMQP support. This library is not built by default.
   It must be passed after the test/mining arguments, if present.
@@ -105,4 +100,13 @@ HOST="$HOST" BUILD="$BUILD" NO_PROTON="$PROTON_ARG" "$MAKE" "$@" -C ./depends/ V
 ./autogen.sh
 
 CONFIG_SITE="$PWD/depends/$HOST/share/config.site" ./configure "$HARDENING_ARG" "$LCOV_ARG" "$TEST_ARG" "$MINING_ARG" "$PROTON_ARG" $CONFIGURE_FLAGS CXXFLAGS='-g'
+
+#BUILD CCLIB
+
+WD=$PWD
+cd src/cc
+echo $PWD
+./makecustom
+cd $WD
+
 "$MAKE" "$@" V=1

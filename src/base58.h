@@ -3,6 +3,21 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 /**
  * Why base-58 instead of standard base-64 encoding?
  * - Don't want 0OIl characters that look the same in some fonts and
@@ -115,9 +130,9 @@ public:
  */
 class CBitcoinAddress : public CBase58Data {
 public:
-    bool Set(const CKeyID &id);
-    bool Set(const CPubKey &key);
-    bool Set(const CScriptID &id);
+    virtual bool Set(const CKeyID &id);
+    virtual bool Set(const CPubKey &key);
+    virtual bool Set(const CScriptID &id);
     bool Set(const CTxDestination &dest);
     bool IsValid() const;
     bool IsValid(const CChainParams &params) const;
@@ -132,7 +147,32 @@ public:
     CTxDestination Get() const;
     bool GetKeyID(CKeyID &keyID) const;
     bool GetKeyID_NoCheck(CKeyID& keyID) const;
-    bool GetIndexKey(uint160& hashBytes, int& type) const;
+    bool GetIndexKey(uint160& hashBytes, int& type, bool ccflag) const;
+    bool IsScript() const;
+};
+
+class CCustomBitcoinAddress : public CBitcoinAddress {
+    std::vector<unsigned char> base58Prefixes[2];
+public:
+    bool Set(const CKeyID &id);
+    bool Set(const CPubKey &key);
+    bool Set(const CScriptID &id);
+    bool Set(const CTxDestination &dest);
+    bool IsValid() const;
+
+    CCustomBitcoinAddress() {}
+    CCustomBitcoinAddress(const CTxDestination &dest,uint8_t taddr,uint8_t pubkey_prefix,uint8_t script_prefix)
+    {
+        if (taddr!=0) base58Prefixes[0].push_back(taddr);
+        base58Prefixes[0].push_back(pubkey_prefix);
+        base58Prefixes[1].push_back(script_prefix);
+        Set(dest);        
+    }
+
+    CTxDestination Get() const;
+    bool GetKeyID(CKeyID &keyID) const;
+    bool GetKeyID_NoCheck(CKeyID& keyID) const;
+    bool GetIndexKey(uint160& hashBytes, int& type, bool ccflag) const;
     bool IsScript() const;
 };
 

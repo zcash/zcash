@@ -13,12 +13,14 @@ export BITCOIND=${REAL_BITCOIND}
 
 testScripts=(
     'cryptoconditions_faucet.py'
-    'cryptoconditions_channels.py'
     'cryptoconditions_dice.py'
     'cryptoconditions_oracles.py'
     'cryptoconditions_rewards.py'
     'cryptoconditions_token.py'
-    'cryptoconditions_gateways.py'
+    #'cryptoconditions_gateways.py'
+    'cryptoconditions_heir.py'
+    # TODO: cant reconnect nodes back in channels test because of crash (seems regtest only specific)
+    'cryptoconditions_channels.py'
 );
 
 extArg="-extended"

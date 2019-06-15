@@ -26,7 +26,7 @@ static uint8_t testNum = 0;
 
 class TestCoinImport : public ::testing::Test, public Eval {
 public:
-    CMutableTransaction burnTx;
+    CMutableTransaction burnTx; std::vector<uint8_t> rawproof;
     std::vector<CTxOut> payouts;
     TxProof proof;
     uint256 MoMoM;
@@ -37,7 +37,7 @@ public:
 
     void SetImportTx() {
         burnTx.vout.resize(0);
-        burnTx.vout.push_back(MakeBurnOutput(amount, testCcid, testSymbol, payouts));
+        burnTx.vout.push_back(MakeBurnOutput(amount, testCcid, testSymbol, payouts,rawproof));
         importTx = CMutableTransaction(MakeImportCoinTransaction(proof, CTransaction(burnTx), payouts));
         MoMoM = burnTx.GetHash();  // TODO: an actual branch
     }

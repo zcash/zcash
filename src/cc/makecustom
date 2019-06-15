@@ -1,0 +1,7 @@
+#!/bin/sh
+if make -f Makefile_custom "$@"; then
+  echo CUSTOMCC BUILD SUCCESSFUL
+else
+  echo CUSTOMCC BUILD FAILED
+  exit 1
+fi

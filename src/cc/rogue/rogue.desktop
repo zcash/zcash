@@ -1,0 +1,11 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=Rogue
+GenericName=Rogue
+Comment=The original curses-based adventure game
+Exec=rogue
+Icon=rogue.png
+Terminal=true
+Type=Application
+Categories=Game;RolePlaying;
+Version=1.0

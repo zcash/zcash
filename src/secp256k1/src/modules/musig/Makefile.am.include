@@ -1,0 +1,17 @@
+include_HEADERS += include/secp256k1_musig.h
+noinst_HEADERS += src/modules/musig/main_impl.h
+noinst_HEADERS += src/modules/musig/tests_impl.h
+
+noinst_PROGRAMS += example_musig
+example_musig_SOURCES = src/modules/musig/example.c
+example_musig_CPPFLAGS = -DSECP256K1_BUILD -I$(top_srcdir)/include $(SECP_INCLUDES)
+if !ENABLE_COVERAGE
+example_musig_CPPFLAGS += -DVERIFY
+endif
+example_musig_LDADD = libsecp256k1.la $(SECP_LIBS)
+example_musig_LDFLAGS = -static
+
+if USE_TESTS
+TESTS += example_musig
+endif
+

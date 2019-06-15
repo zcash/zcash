@@ -301,6 +301,9 @@ static int _el_buf_cmp(const void *ap, const void *bp) {
 			ret = -1;
 		else if(a->length > b->length)
 			ret = 1;
+       // else if ( (uint64_t)a < (uint64_t)b ) // jl777 prevent nondeterminism
+       //     ret = -1;
+       // else ret = 1;
 	}
 
 	return ret;

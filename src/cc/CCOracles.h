@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright © 2014-2018 The SuperNET Developers.                             *
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
  *                                                                            *
  * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
  * the top-level directory of this distribution for the individual copyright  *
@@ -21,12 +21,12 @@
 
 bool OraclesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn);
 std::string OracleCreate(int64_t txfee,std::string name,std::string description,std::string format);
+std::string OracleFund(int64_t txfee,uint256 oracletxid);
 std::string OracleRegister(int64_t txfee,uint256 oracletxid,int64_t datafee);
 std::string OracleSubscribe(int64_t txfee,uint256 oracletxid,CPubKey publisher,int64_t amount);
 std::string OracleData(int64_t txfee,uint256 oracletxid,std::vector <uint8_t> data);
-
 // CCcustom
-UniValue OracleDataSamples(uint256 reforacletxid,uint256 batontxid,int32_t num);
+UniValue OracleDataSamples(uint256 reforacletxid,char* batonaddr,int32_t num);
 UniValue OracleInfo(uint256 origtxid);
 UniValue OraclesList();
 

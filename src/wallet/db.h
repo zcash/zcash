@@ -3,6 +3,21 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 #ifndef BITCOIN_WALLET_DB_H
 #define BITCOIN_WALLET_DB_H
 
@@ -18,7 +33,17 @@
 
 #include <boost/filesystem/path.hpp>
 
-#include <db_cxx.h>
+#ifdef BUILD_ROGUE
+    #ifdef __APPLE__
+        #include "../depends/x86_64-apple-darwin18.6.0/include/db_cxx.h"
+    #elif defined(_WIN32)
+        #include "../depends/x86_64-w64-mingw32/include/db_cxx.h"
+    #else
+        #include "../depends/x86_64-unknown-linux-gnu/include/db_cxx.h"
+    #endif
+#else
+    #include <db_cxx.h>
+#endif
 
 extern unsigned int nWalletDBUpdated;
 

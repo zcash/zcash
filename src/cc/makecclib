@@ -1,0 +1,20 @@
+#!/bin/sh
+rm *.so rogue/rogue games/tetris games/prices
+
+echo rogue
+make -f Makefile_rogue
+./makerogue
+rm ../libcc.so 
+cp librogue.so ../libcc.so
+
+echo sudoku/musig/dilithium
+gcc -O3 -std=c++11 -I../secp256k1/include -I../univalue/include -I../cryptoconditions/include -I../cryptoconditions/src -I../cryptoconditions/src/asn -I.. -I. -fPIC -shared -c -o sudokucc.so cclib.cpp
+
+echo games tetris
+./maketetris
+
+echo games prices
+./makeprices
+
+echo customcc stub
+gcc -O3 -DBUILD_CUSTOMCC -std=c++11 -I../secp256k1/include -I../univalue/include -I../cryptoconditions/include -I../cryptoconditions/src -I../cryptoconditions/src/asn -I.. -I. -fPIC -shared -c -o customcc.so cclib.cpp

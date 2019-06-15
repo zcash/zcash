@@ -38,7 +38,7 @@ This is the official Komodo sourcecode repository based on https://github.com/jl
 
 ## Tech Specification
 - Max Supply: 200 million KMD
-- Block Time: 1m 2s
+- Block Time: 60 seconds
 - Block Reward: 3 KMD
 - Mining Algorithm: Equihash
 
@@ -71,16 +71,32 @@ cd komodo
 #This can take some time.
 ```
 
+
 #### OSX
-Ensure you have [brew](https://brew.sh) and the command line tools installed (comes automatically with XCode) and run:
+Ensure you have [brew](https://brew.sh) and Command Line Tools installed.
 ```shell
-brew update && brew install gcc@6
+# Install brew
+/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+# Install Xcode, opens a pop-up window to install CLT without installing the entire Xcode package
+xcode-select --install 
+# Update brew and install dependencies
+brew update
+brew upgrade
+brew tap discoteq/discoteq; brew install flock
+brew install autoconf autogen automake
+brew update && brew install gcc@8
+brew install binutils
+brew install protobuf
+brew install coreutils
+brew install wget
+# Clone the Komodo repo
 git clone https://github.com/komodoplatform/komodo --branch master --single-branch
+# Change master branch to other branch you wish to compile
 cd komodo
 ./zcutil/fetch-params.sh
 # -j8 = using 8 threads for the compilation - replace 8 with number of threads you want to use
 ./zcutil/build-mac.sh -j8
-#This can take some time.
+# This can take some time.
 ```
 
 #### Windows
