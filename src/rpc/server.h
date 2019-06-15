@@ -271,6 +271,7 @@ extern UniValue oraclesfund(const UniValue& params, bool fHelp);
 extern UniValue oraclesregister(const UniValue& params, bool fHelp);
 extern UniValue oraclessubscribe(const UniValue& params, bool fHelp);
 extern UniValue oraclesdata(const UniValue& params, bool fHelp);
+extern UniValue oraclessample(const UniValue& params, bool fHelp);
 extern UniValue oraclessamples(const UniValue& params, bool fHelp);
 extern UniValue pricesaddress(const UniValue& params, bool fHelp);
 extern UniValue priceslist(const UniValue& params, bool fHelp);
