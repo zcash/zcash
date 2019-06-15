@@ -526,6 +526,59 @@ TEST(WalletTests, FindMySaplingNotes) {
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
 }
 
+TEST(WalletTests, FindMySaplingNotesWithIvkOnly) {
+    SelectParams(CBaseChainParams::REGTEST);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+    auto consensusParams = Params().GetConsensus();
+
+    TestWallet wallet;
+
+    // Generate dummy Sapling address
+    std::vector<unsigned char, secure_allocator<unsigned char>> rawSeed(32);
+    HDSeed seed(rawSeed);
+    auto sk = libzcash::SaplingExtendedSpendingKey::Master(seed);
+    auto addr = sk.DefaultAddress();
+    auto expsk = sk.expsk;
+    auto fvk = expsk.full_viewing_key();
+    auto pk = sk.DefaultAddress();
+    auto ivk = fvk.in_viewing_key();
+
+    // Generate dummy Sapling note
+    libzcash::SaplingNote note(pk, 50000);
+    auto cm = note.cm().get();
+    SaplingMerkleTree tree;
+    tree.append(cm);
+    auto anchor = tree.root();
+    auto witness = tree.witness();
+
+    // Generate transaction
+    auto builder = TransactionBuilder(consensusParams, 1);
+    ASSERT_TRUE(builder.AddSaplingSpend(expsk, note, anchor, witness));
+    builder.AddSaplingOutput(fvk.ovk, pk, 25000, {});
+    auto maybe_tx = builder.Build();
+    ASSERT_EQ(static_cast<bool>(maybe_tx), true);
+    auto tx = maybe_tx.get();
+
+    // No Sapling notes can be found in tx which does not belong to the wallet
+    CWalletTx wtx {&wallet, tx};
+    ASSERT_FALSE(wallet.HaveSaplingSpendingKey(fvk));
+    ASSERT_FALSE(wallet.HaveSaplingIncomingViewingKey(addr));
+    auto noteMap = wallet.FindMySaplingNotes(wtx).first;
+    EXPECT_EQ(0, noteMap.size());
+
+    // Add ivk to wallet, so Sapling notes can be found
+    ASSERT_TRUE(wallet.AddSaplingIncomingViewingKey(ivk, addr));
+    ASSERT_FALSE(wallet.HaveSaplingSpendingKey(fvk));
+    ASSERT_TRUE(wallet.HaveSaplingIncomingViewingKey(addr));
+    noteMap = wallet.FindMySaplingNotes(wtx).first;
+    EXPECT_EQ(2, noteMap.size());
+
+    // Revert to default
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+}
+
 TEST(WalletTests, FindMySproutNotes) {
     CWallet wallet;
 
@@ -1624,6 +1677,63 @@ TEST(WalletTests, WriteWitnessCache) {
         .WillRepeatedly(Return(true));
 
     // Everything succeeds
+    wallet.SetBestChain(walletdb, loc);
+}
+
+TEST(WalletTests, SetBestChainIgnoresTxsWithoutShieldedData) {
+    SelectParams(CBaseChainParams::REGTEST);
+
+    TestWallet wallet;
+    MockWalletDB walletdb;
+    CBlockLocator loc;
+
+    // Set up transparent address
+    CKey tsk = DecodeSecret(tSecretRegtest);
+    wallet.AddKey(tsk);
+    auto scriptPubKey = GetScriptForDestination(tsk.GetPubKey().GetID());
+
+    // Set up a Sprout address
+    auto sk = libzcash::SproutSpendingKey::random();
+    wallet.AddSproutSpendingKey(sk);
+
+    // Generate a transparent transaction that is ours
+    CMutableTransaction t;
+    t.vout.resize(1);
+    t.vout[0].nValue = 90*CENT;
+    t.vout[0].scriptPubKey = scriptPubKey;
+    CWalletTx wtxTransparent {nullptr, t};
+    wallet.AddToWallet(wtxTransparent, true, NULL);
+
+    // Generate a Sprout transaction that is ours
+    auto wtxSprout = GetValidReceive(sk, 10, true);
+    auto noteMap = wallet.FindMySproutNotes(wtxSprout);
+    wtxSprout.SetSproutNoteData(noteMap);
+    wallet.AddToWallet(wtxSprout, true, NULL);
+
+    // Generate a Sprout transaction that only involves our transparent address
+    auto sk2 = libzcash::SproutSpendingKey::random();
+    auto wtxInput = GetValidReceive(sk2, 10, true);
+    auto note = GetNote(sk2, wtxInput, 0, 0);
+    auto wtxTmp = GetValidSpend(sk2, note, 5);
+    CMutableTransaction mtx {wtxTmp};
+    mtx.vout[0].scriptPubKey = scriptPubKey;
+    CWalletTx wtxSproutTransparent {NULL, mtx};
+    wallet.AddToWallet(wtxSproutTransparent, true, NULL);
+
+    EXPECT_CALL(walletdb, TxnBegin())
+        .WillOnce(Return(true));
+    EXPECT_CALL(walletdb, WriteTx(wtxTransparent.GetHash(), wtxTransparent))
+        .Times(0);
+    EXPECT_CALL(walletdb, WriteTx(wtxSprout.GetHash(), wtxSprout))
+        .Times(1).WillOnce(Return(true));
+    EXPECT_CALL(walletdb, WriteTx(wtxSproutTransparent.GetHash(), wtxSproutTransparent))
+        .Times(0);
+    EXPECT_CALL(walletdb, WriteWitnessCacheSize(0))
+        .WillOnce(Return(true));
+    EXPECT_CALL(walletdb, WriteBestBlock(loc))
+        .WillOnce(Return(true));
+    EXPECT_CALL(walletdb, TxnCommit())
+        .WillOnce(Return(true));
     wallet.SetBestChain(walletdb, loc);
 }
 

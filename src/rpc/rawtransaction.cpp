@@ -48,6 +48,8 @@
 
 #include <univalue.h>
 
+int32_t komodo_notarized_height(int32_t *prevMoMheightp,uint256 *hashp,uint256 *txidp);
+
 using namespace std;
 
 extern char ASSETCHAINS_SYMBOL[];
@@ -185,10 +187,13 @@ int32_t myIsutxo_spent(uint256 &spenttxid,uint256 txid,int32_t vout)
 
 void TxToJSONExpanded(const CTransaction& tx, const uint256 hashBlock, UniValue& entry, int nHeight = 0, int nConfirmations = 0, int nBlockTime = 0)
 {
+    uint256 notarized_hash,notarized_desttxid; int32_t prevMoMheight,notarized_height;
+    notarized_height = komodo_notarized_height(&prevMoMheight,&notarized_hash,&notarized_desttxid);
     uint256 txid = tx.GetHash();
     entry.push_back(Pair("txid", txid.GetHex()));
     entry.push_back(Pair("overwintered", tx.fOverwintered));
     entry.push_back(Pair("version", tx.nVersion));
+    entry.push_back(Pair("last_notarized_height", notarized_height));
     if (tx.fOverwintered) {
         entry.push_back(Pair("versiongroupid", HexInt(tx.nVersionGroupId)));
     }
@@ -203,7 +208,7 @@ void TxToJSONExpanded(const CTransaction& tx, const uint256 hashBlock, UniValue&
             in.push_back(Pair("coinbase", HexStr(txin.scriptSig.begin(), txin.scriptSig.end())));
         else if (tx.IsCoinImport()) {
             in.push_back(Pair("is_import", "1"));
-            TxProof proof; CTransaction burnTx; std::vector<CTxOut> payouts; CTxDestination importaddress;
+            ImportProof proof; CTransaction burnTx; std::vector<CTxOut> payouts; CTxDestination importaddress;
             if (UnmarshalImportTx(tx, proof, burnTx, payouts)) 
             {
                 if (burnTx.vout.size() == 0)
@@ -217,7 +222,8 @@ void TxToJSONExpanded(const CTransaction& tx, const uint256 hashBlock, UniValue&
                 {
                     if (rawproof.size() > 0)
                     {
-                        std::string sourceSymbol(rawproof.begin(), rawproof.end());
+                        std::string sourceSymbol; 
+                        E_UNMARSHAL(rawproof, ss >> sourceSymbol);
                         in.push_back(Pair("address", "IMP-" + sourceSymbol + "-" + burnTx.GetHash().ToString()));
                     }
                 }
