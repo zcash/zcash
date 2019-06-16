@@ -1475,8 +1475,8 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
 
         // are the joinsplits' and sapling spends' requirements met in tx(valid anchors/nullifiers)?
         if (!view.HaveShieldedRequirements(tx))
-            return state.Invalid(error("AcceptToMemoryPool: joinsplit requirements not met"),
-                                 REJECT_DUPLICATE, "bad-txns-joinsplit-requirements-not-met");
+            return state.Invalid(error("AcceptToMemoryPool: shielded requirements not met"),
+                                 REJECT_DUPLICATE, "bad-txns-shielded-requirements-not-met");
 
         // Bring the best block into scope
         view.GetBestBlock();
