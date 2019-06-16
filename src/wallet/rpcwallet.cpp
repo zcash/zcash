@@ -6830,6 +6830,20 @@ UniValue oraclessubscribe(const UniValue& params, bool fHelp)
     return(result);
 }
 
+UniValue oraclessample(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); uint256 oracletxid,txid; int32_t num; char *batonaddr;
+    if ( fHelp || params.size() != 2 )
+        throw runtime_error("oraclessample oracletxid txid\n");
+    if ( ensure_CCrequirements(EVAL_ORACLES) < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    const CKeyStore& keystore = *pwalletMain;
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+    oracletxid = Parseuint256((char *)params[0].get_str().c_str());
+    txid = Parseuint256((char *)params[1].get_str().c_str());
+    return(OracleDataSample(oracletxid,txid));
+}
+
 UniValue oraclessamples(const UniValue& params, bool fHelp)
 {
     UniValue result(UniValue::VOBJ); uint256 txid; int32_t num; char *batonaddr;
