@@ -1038,7 +1038,7 @@ public:
         // Serialize nLockTime
         ::Serialize(s, txTo.nLockTime);
 
-        // Serialize vjoinsplit
+        // Serialize vJoinSplit
         if (txTo.nVersion >= 2) {
             //
             // SIGHASH_* functions will hash portions of
@@ -1046,8 +1046,8 @@ public:
             // keeps the JoinSplit cryptographically bound
             // to the transaction.
             //
-            ::Serialize(s, txTo.vjoinsplit);
-            if (txTo.vjoinsplit.size() > 0) {
+            ::Serialize(s, txTo.vJoinSplit);
+            if (txTo.vJoinSplit.size() > 0) {
                 ::Serialize(s, txTo.joinSplitPubKey);
 
                 CTransaction::joinsplit_sig_t nullSig = {};
@@ -1096,8 +1096,8 @@ uint256 GetOutputsHash(const CTransaction& txTo) {
 
 uint256 GetJoinSplitsHash(const CTransaction& txTo) {
     CBLAKE2bWriter ss(SER_GETHASH, static_cast<int>(txTo.GetHeader()), ZCASH_JOINSPLITS_HASH_PERSONALIZATION);
-    for (unsigned int n = 0; n < txTo.vjoinsplit.size(); n++) {
-        ss << txTo.vjoinsplit[n];
+    for (unsigned int n = 0; n < txTo.vJoinSplit.size(); n++) {
+        ss << txTo.vJoinSplit[n];
     }
     ss << txTo.joinSplitPubKey;
     return ss.GetHash();
@@ -1188,7 +1188,7 @@ uint256 SignatureHash(
             hashOutputs = ss.GetHash();
         }
 
-        if (!txTo.vjoinsplit.empty()) {
+        if (!txTo.vJoinSplit.empty()) {
             hashJoinSplits = cache ? cache->hashJoinSplits : GetJoinSplitsHash(txTo);
         }
 

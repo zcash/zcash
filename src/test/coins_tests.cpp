@@ -237,7 +237,7 @@ public:
         sproutNullifier = GetRandHash();
         JSDescription jsd;
         jsd.nullifiers[0] = sproutNullifier;
-        mutableTx.vjoinsplit.emplace_back(jsd);
+        mutableTx.vJoinSplit.emplace_back(jsd);
         
         saplingNullifier = GetRandHash();
         SpendDescription sd;
@@ -640,7 +640,7 @@ BOOST_AUTO_TEST_CASE(chained_joinsplits)
 
     {
         CMutableTransaction mtx;
-        mtx.vjoinsplit.push_back(js2);
+        mtx.vJoinSplit.push_back(js2);
 
         BOOST_CHECK(!cache.HaveShieldedRequirements(mtx));
     }
@@ -649,35 +649,35 @@ BOOST_AUTO_TEST_CASE(chained_joinsplits)
         // js2 is trying to anchor to js1 but js1
         // appears afterwards -- not a permitted ordering
         CMutableTransaction mtx;
-        mtx.vjoinsplit.push_back(js2);
-        mtx.vjoinsplit.push_back(js1);
+        mtx.vJoinSplit.push_back(js2);
+        mtx.vJoinSplit.push_back(js1);
 
         BOOST_CHECK(!cache.HaveShieldedRequirements(mtx));
     }
 
     {
         CMutableTransaction mtx;
-        mtx.vjoinsplit.push_back(js1);
-        mtx.vjoinsplit.push_back(js2);
+        mtx.vJoinSplit.push_back(js1);
+        mtx.vJoinSplit.push_back(js2);
 
         BOOST_CHECK(cache.HaveShieldedRequirements(mtx));
     }
 
     {
         CMutableTransaction mtx;
-        mtx.vjoinsplit.push_back(js1);
-        mtx.vjoinsplit.push_back(js2);
-        mtx.vjoinsplit.push_back(js3);
+        mtx.vJoinSplit.push_back(js1);
+        mtx.vJoinSplit.push_back(js2);
+        mtx.vJoinSplit.push_back(js3);
 
         BOOST_CHECK(cache.HaveShieldedRequirements(mtx));
     }
 
     {
         CMutableTransaction mtx;
-        mtx.vjoinsplit.push_back(js1);
-        mtx.vjoinsplit.push_back(js1b);
-        mtx.vjoinsplit.push_back(js2);
-        mtx.vjoinsplit.push_back(js3);
+        mtx.vJoinSplit.push_back(js1);
+        mtx.vJoinSplit.push_back(js1b);
+        mtx.vJoinSplit.push_back(js2);
+        mtx.vJoinSplit.push_back(js3);
 
         BOOST_CHECK(cache.HaveShieldedRequirements(mtx));
     }

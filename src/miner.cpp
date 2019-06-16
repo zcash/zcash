@@ -334,7 +334,7 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const CScript& s
 
                 saplingValueDummy += -tx.valueBalance;
 
-                for (auto js : tx.vjoinsplit) {
+                for (auto js : tx.vJoinSplit) {
                     sproutValueDummy += js.vpub_old;
                     sproutValueDummy -= js.vpub_new;
                 }

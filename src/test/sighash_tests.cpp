@@ -124,7 +124,7 @@ void static RandomTransaction(CMutableTransaction &tx, bool fSingle, uint32_t co
     tx.vout.clear();
     tx.vShieldedSpend.clear();
     tx.vShieldedOutput.clear();
-    tx.vjoinsplit.clear();
+    tx.vJoinSplit.clear();
     tx.nLockTime = (insecure_rand() % 2) ? insecure_rand() : 0;
     int ins = (insecure_rand() % 4) + 1;
     int outs = fSingle ? ins : (insecure_rand() % 4) + 1;
@@ -193,7 +193,7 @@ void static RandomTransaction(CMutableTransaction &tx, bool fSingle, uint32_t co
             jsdesc.macs[0] = GetRandHash();
             jsdesc.macs[1] = GetRandHash();
 
-            tx.vjoinsplit.push_back(jsdesc);
+            tx.vJoinSplit.push_back(jsdesc);
         }
 
         unsigned char joinSplitPrivKey[crypto_sign_SECRETKEYBYTES];

@@ -451,11 +451,11 @@ TEST(WalletTests, CheckSproutNoteCommitmentAgainstNotePlaintext) {
     auto note = GetSproutNote(sk, wtx, 0, 1);
     auto nullifier = note.nullifier(sk);
 
-    auto hSig = wtx.vjoinsplit[0].h_sig(
+    auto hSig = wtx.vJoinSplit[0].h_sig(
         *params, wtx.joinSplitPubKey);
 
     ASSERT_THROW(wallet.GetSproutNoteNullifier(
-        wtx.vjoinsplit[0],
+        wtx.vJoinSplit[0],
         address,
         dec,
         hSig, 1), libzcash::note_decryption_failed);
@@ -472,11 +472,11 @@ TEST(WalletTests, GetSproutNoteNullifier) {
     auto note = GetSproutNote(sk, wtx, 0, 1);
     auto nullifier = note.nullifier(sk);
 
-    auto hSig = wtx.vjoinsplit[0].h_sig(
+    auto hSig = wtx.vJoinSplit[0].h_sig(
         *params, wtx.joinSplitPubKey);
 
     auto ret = wallet.GetSproutNoteNullifier(
-        wtx.vjoinsplit[0],
+        wtx.vJoinSplit[0],
         address,
         dec,
         hSig, 1);
@@ -485,7 +485,7 @@ TEST(WalletTests, GetSproutNoteNullifier) {
     wallet.AddSproutSpendingKey(sk);
 
     ret = wallet.GetSproutNoteNullifier(
-        wtx.vjoinsplit[0],
+        wtx.vJoinSplit[0],
         address,
         dec,
         hSig, 1);
@@ -1072,7 +1072,7 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
     auto tx2 = builder2.Build().GetTxOrThrow();
     EXPECT_EQ(tx2.vin.size(), 0);
     EXPECT_EQ(tx2.vout.size(), 0);
-    EXPECT_EQ(tx2.vjoinsplit.size(), 0);
+    EXPECT_EQ(tx2.vJoinSplit.size(), 0);
     EXPECT_EQ(tx2.vShieldedSpend.size(), 1);
     EXPECT_EQ(tx2.vShieldedOutput.size(), 2);
     EXPECT_EQ(tx2.valueBalance, 10000);
@@ -1919,7 +1919,7 @@ TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
 
     EXPECT_EQ(tx1.vin.size(), 1);
     EXPECT_EQ(tx1.vout.size(), 0);
-    EXPECT_EQ(tx1.vjoinsplit.size(), 0);
+    EXPECT_EQ(tx1.vJoinSplit.size(), 0);
     EXPECT_EQ(tx1.vShieldedSpend.size(), 0);
     EXPECT_EQ(tx1.vShieldedOutput.size(), 1);
     EXPECT_EQ(tx1.valueBalance, -40000);
@@ -1974,7 +1974,7 @@ TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
 
     EXPECT_EQ(tx2.vin.size(), 0);
     EXPECT_EQ(tx2.vout.size(), 0);
-    EXPECT_EQ(tx2.vjoinsplit.size(), 0);
+    EXPECT_EQ(tx2.vJoinSplit.size(), 0);
     EXPECT_EQ(tx2.vShieldedSpend.size(), 1);
     EXPECT_EQ(tx2.vShieldedOutput.size(), 2);
     EXPECT_EQ(tx2.valueBalance, 10000);
