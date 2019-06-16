@@ -4,10 +4,12 @@
 #
 
 import argparse
+import datetime
 import os
 import subprocess
 import sys
 import time
+import traceback
 
 from decimal import Decimal
 from slickrpc import Proxy
@@ -101,13 +103,14 @@ SMOKE_TESTS = [
     ('7e', True, True), # Run getnetworksolps
 ]
 
+TIME_STARTED = datetime.datetime.now()
 
 #
 # Test helpers
 #
 
 def run_cmd(results, case, zcash, name, args=[]):
-    print('-----')
+    print('----- %s -----' % (datetime.datetime.now() - TIME_STARTED))
     print('%s $ zcash-cli %s %s' % (
         case.ljust(3),
         name,
@@ -145,8 +148,9 @@ def wait_for_balance(zcash, zaddr, expected=None, timeout=900):
         if ttl == 0:
             # Ask user if they want to keep waiting
             print()
+            print('Balance: %s Expected: %s' % (balance, expected))
             ret = input('Do you wish to continue waiting? (Y/n) ')
-            if ret.to_lower() == 'n':
+            if ret.lower() == 'n':
                 print('Address contained %s at timeout' % balance)
                 return balance
             else:
@@ -175,13 +179,13 @@ def wait_for_txid_operation(zcash, opid, timeout=300):
         return None
     elif status == 'success':
         txid = result['result']['txid']
-        print(txid)
+        print('txid: %s' % txid)
         return txid
 
 def async_txid_cmd(results, case, zcash, name, args=[]):
     opid = run_cmd(results, case, zcash, name, args)
     # Some async commands return a dictionary containing the opid
-    if type(opid) == type({}):
+    if isinstance(opid, dict):
         opid = opid['opid']
     if opid is None:
         if results is not None and len(case) > 0:
@@ -275,9 +279,9 @@ def transaction_chain(zcash):
     # Check that the zaddrs are all listed
     zaddrs = run_cmd(results, '5a', zcash, 'z_listaddresses')
     if (sprout_zaddr_1 not in zaddrs or
-        sprout_zaddr_2 not in zaddrs or
-        sapling_zaddr_1 not in zaddrs or
-        sapling_zaddr_2 not in zaddrs):
+            sprout_zaddr_2 not in zaddrs or
+            sapling_zaddr_1 not in zaddrs or
+            sapling_zaddr_2 not in zaddrs):
         results['5a'] = False
 
     # Validate the addresses
@@ -302,7 +306,7 @@ def transaction_chain(zcash):
     print('Please send at least 0.01 ZEC/TAZ to the following address:')
     print(sprout_zaddr_1)
     print()
-    input('Press any key once the funds have been sent.')
+    input('Press Enter once the funds have been sent.')
     print()
 
     # Wait to receive starting balance
@@ -568,6 +572,9 @@ def transaction_chain(zcash):
         sprout_balance = taddr_1_balance - DEFAULT_FEE
         sapling_balance = taddr_2_balance - DEFAULT_FEE
         taddr_balance = Decimal('0')
+    except Exception as e:
+        print('Error: %s' % e)
+        traceback.print_exc()
     finally:
         #
         # End the chain by returning the remaining funds
@@ -730,8 +737,7 @@ def main():
     parser.add_argument('--mainnet', action='store_true', help='Use mainnet instead of testnet')
     parser.add_argument('--wallet', default='wallet.dat', help='Wallet file to use (within data directory)')
     parser.add_argument('datadir', help='Data directory to use for smoke testing', default=None)
-    parser.add_argument('stage', nargs='*', default=STAGES,
-                        help='One of %s'%STAGES)
+    parser.add_argument('stage', nargs='*', default=STAGES, help='One of %s' % STAGES)
     args = parser.parse_args()
 
     # Check for list
@@ -753,6 +759,7 @@ def main():
 
     # Start zcashd
     zcash = ZcashNode(args.datadir, args.wallet)
+    print('Start time: %s' % TIME_STARTED)
     print('Starting zcashd...')
     zcash.start(not args.mainnet)
     print()
@@ -795,6 +802,7 @@ def main():
         print()
         print("!!! One or more smoke test stages failed !!!")
         sys.exit(1)
+
 
 if __name__ == '__main__':
     main()
