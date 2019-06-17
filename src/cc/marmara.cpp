@@ -386,7 +386,7 @@ static void EnumMyActivated(T func)
                 {
                     // call callback function:
                     func(activatedaddr, tx, nvout, pindex);
-                    LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream  << " found my activated 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << std::endl);
+                    LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << " found my activated 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << std::endl);
                 }
                 else
                     LOGSTREAMFN("marmara", CCLOG_ERROR, stream  << " skipped activated 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << " cant decode opret or not mypk" << std::endl);
@@ -471,7 +471,7 @@ static void EnumMyLockedInLoop(T func)
                                     if (CheckEitherOpRet(IsLockInLoopOpret, looptx, nvout, pk) && mypk == pk) {  // check mypk in opret
                                         // call callbak func:
                                         func(loopaddr, looptx, nvout, pindex);
-                                        LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << " found my lock-in-loop 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << std::endl);
+                                        LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << " found my lock-in-loop 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << std::endl);
                                     }
                                     else
                                         LOGSTREAMFN("marmara", CCLOG_ERROR, stream << " skipped lock-in-loop 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << " cant decode opret or not mypk" << std::endl);
@@ -771,7 +771,7 @@ static bool CheckEitherOpRet(bool(*CheckOpretFunc)(const CScript &, CPubKey &), 
         evalcode = vprintopret.begin()[0];
         funcid = vprintopret.begin()[1];
     }
-    LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream  << " opret eval=" << (int)evalcode << " funcid=" << (char)(funcid ? funcid : ' ') << " isccopret=" << isccopret << std::endl);
+    LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream  << " opret eval=" << (int)evalcode << " funcid=" << (char)(funcid ? funcid : ' ') << " isccopret=" << isccopret << std::endl);
     
     return opretok;
 }
