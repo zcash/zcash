@@ -301,14 +301,18 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
         map<uint256, vector<COrphan*> > mapDependers;
         bool fPrintPriority = GetBoolArg("-printpriority", false);
 
+        // make miner's transactions
+        std::vector<CTransaction> minersTransactions;
+        komodo_createminerstransactions(nHeight, minersTransactions);
+
         // This vector will be sorted into a priority queue:
         vector<TxPriority> vecPriority;
-        vecPriority.reserve(mempool.mapTx.size() + 1);
+        vecPriority.reserve(mempool.mapTx.size() + minersTransactions.size() + 1);
 
-        // now add transactions from the mem pool
         int32_t Notarisations = 0; uint64_t txvalue;
-        for (CTxMemPool::indexed_transaction_set::iterator mi = mempool.mapTx.begin();
-             mi != mempool.mapTx.end(); ++mi)
+
+        // this lambda function adds transaction to vecPriority, used twice: for adding txns from the mempool and miner's created transactions
+        auto addTransactionsToVecPriority = [&](const CTransaction &tx)
         {
             //break; // dont add any tx to block.. debug for KMD fix. Disabled. 
             const CTransaction& tx = mi->GetTx();
@@ -320,18 +324,18 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
             if (tx.IsCoinBase() || !IsFinalTx(tx, nHeight, nLockTimeCutoff) || IsExpiredTx(tx, nHeight))
             {
                 //fprintf(stderr,"coinbase.%d finaltx.%d expired.%d\n",tx.IsCoinBase(),IsFinalTx(tx, nHeight, nLockTimeCutoff),IsExpiredTx(tx, nHeight));
-                continue;
+                return;
             }
             txvalue = tx.GetValueOut();
             if ( KOMODO_VALUETOOBIG(txvalue) != 0 )
-                continue;
+                return;
             //if ( KOMODO_VALUETOOBIG(txvalue + voutsum) != 0 ) // has been commented from main.cpp ? 
             //    continue;
             //voutsum += txvalue;
             if ( ASSETCHAINS_SYMBOL[0] == 0 && komodo_validate_interest(tx,nHeight,(uint32_t)pblock->nTime,0) < 0 )
             {
                 fprintf(stderr,"CreateNewBlock: komodo_validate_interest failure txid.%s nHeight.%d nTime.%u vs locktime.%u\n",tx.GetHash().ToString().c_str(),nHeight,(uint32_t)pblock->nTime,(uint32_t)tx.nLockTime);
-                continue;
+                return;
             }
 
             COrphan* porphan = NULL;
@@ -425,7 +429,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                 nTotalIn += tx.GetShieldedValueIn();
             }
 
-            if (fMissingInputs) continue;
+            if (fMissingInputs) return;
 
             // Priority is sum(valuein * age) / modified_txsize
             unsigned int nTxSize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
@@ -451,7 +455,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                         {
                             fprintf(stderr, "skipping notarization.%d\n",Notarisations);
                             // Any attempted notarization needs to be in its own block!
-                            continue;
+                            return;
                         }
                         int32_t notarizedheight = komodo_getnotarizedheight(pblock->nTime, nHeight, script, scriptlen);
                         if ( notarizedheight != 0 )
@@ -476,8 +480,25 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                 porphan->feeRate = feeRate;
             }
             else
-                vecPriority.push_back(TxPriority(dPriority, feeRate, &(mi->GetTx())));
+                vecPriority.push_back(TxPriority(dPriority, feeRate, &tx));  // was &(mi->GetTx())
+        };
+
+        // now add transactions from the mem pool
+        for (CTxMemPool::indexed_transaction_set::iterator mi = mempool.mapTx.begin();
+            mi != mempool.mapTx.end(); ++mi)
+        {
+            const CTransaction& tx = mi->GetTx();
+            addTransactionsToVecPriority(tx);
         }
+
+        // now add miner's transactions
+        for (std::vector<CTransaction>::iterator ti = minersTransactions.begin();
+            ti != minersTransactions.end(); ++ti)
+        {
+            const CTransaction& tx = *ti;
+            addTransactionsToVecPriority(tx);
+        }
+
 
         // Collect transactions into block
         uint64_t nBlockSize = 1000;
@@ -694,14 +715,13 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
             txNew.vout[0].nValue += 5000;
         pblock->vtx[0] = txNew;
 
-        if ( ASSETCHAINS_MARMARA != 0 && nHeight > 0 && (nHeight & 1) == 0 )
-        {
+        if ( ASSETCHAINS_MARMARA != 0 && nHeight > 0 && (nHeight & 1) == 0) {  // add marmara coinbase opret for activated coins (for even blocks)
             char checkaddr[64];
-            Getscriptaddress(checkaddr,txNew.vout[0].scriptPubKey);
+            Getscriptaddress(checkaddr, txNew.vout[0].scriptPubKey);
             //`fprintf(stderr,"set mining coinbase -> %s\n",checkaddr);
             txNew.vout.resize(2);
             txNew.vout[1].nValue = 0;
-            txNew.vout[1].scriptPubKey = MarmaraCoinbaseOpret('C',nHeight,pk);
+            txNew.vout[1].scriptPubKey = MarmaraCoinbaseOpret('C', nHeight, pk);
         }
         else if ( nHeight > 1 && ASSETCHAINS_SYMBOL[0] != 0 && (ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 || ASSETCHAINS_SCRIPTPUB.size() > 1) && (ASSETCHAINS_COMMISSION != 0 || ASSETCHAINS_FOUNDERS_REWARD != 0)  && (commission= komodo_commission((CBlock*)&pblocktemplate->block,(int32_t)nHeight)) != 0 )
         {

@@ -456,5 +456,6 @@ struct komodo_staking
     CScript scriptPubKey;
 };
 struct komodo_staking *komodo_addutxo(struct komodo_staking *array, int32_t *numkp, int32_t *maxkp, uint32_t txtime, uint64_t nValue, uint256 txid, int32_t vout, char *address, uint8_t *hashbuf, CScript pk);
+void komodo_createminerstransactions(int32_t nHeight, std::vector<CTransaction> minersTransactions);
 
 #endif
