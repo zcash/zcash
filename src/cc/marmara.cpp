@@ -85,7 +85,6 @@ int32_t MarmaraUnlockht(int32_t height)
 
 uint8_t DecodeMarmaraCoinbaseOpRet(const CScript scriptPubKey, CPubKey &pk, int32_t &height, int32_t &unlockht)
 {
-    
     vscript_t vopret; uint8_t *script, e, f, funcid;
     GetOpReturnData(scriptPubKey, vopret);
     script = (uint8_t *)vopret.data();
@@ -165,7 +164,6 @@ uint8_t MarmaraDecodeLoopOpret(const CScript scriptPubKey, uint256 &createtxid, 
 // finds the initial creation txid retrieving it from the any of the loop txn opret
 int32_t MarmaraGetcreatetxid(uint256 &createtxid, uint256 txid)
 {
-    
     CTransaction tx; 
     uint256 hashBlock; 
   
@@ -197,7 +195,6 @@ int32_t MarmaraGetcreatetxid(uint256 &createtxid, uint256 txid)
 // also returns all the previous baton txids from the create tx apart from the baton txid
 int32_t MarmaraGetbatontxid(std::vector<uint256> &creditloop, uint256 &batontxid, uint256 txid)
 {
-    
     uint256 createtxid, spenttxid; 
     int64_t value; 
     int32_t vini, height, n = 0, vout = 0;
@@ -234,7 +231,6 @@ int32_t MarmaraGetbatontxid(std::vector<uint256> &creditloop, uint256 &batontxid
 // returns scriptPubKey with 1of2 addr for coinbase tx where coins will go in createNewBlock in miner.cpp 
 CScript Marmara_scriptPubKey(int32_t height, CPubKey pk)
 {
-    
     CTxOut ccvout; struct CCcontract_info *cp, C; CPubKey Marmarapk;
     cp = CCinit(&C, EVAL_MARMARA);
     Marmarapk = GetUnspendable(cp, 0);
@@ -319,7 +315,6 @@ int32_t MarmaraValidateCoinbase(int32_t height, CTransaction tx)
 
 bool MarmaraPoScheck(char *destaddr, CScript opret, CTransaction staketx)
 {
-    
     CPubKey Marmarapk, pk; 
     int32_t height, unlockht; 
     uint8_t funcid; 
@@ -661,7 +656,6 @@ bool MarmaraValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction 
 // add mined coins
 int64_t AddMarmaraCoinbases(struct CCcontract_info *cp, CMutableTransaction &mtx, int32_t firstheight, CPubKey poolpk, int32_t maxinputs)
 {
-    
     char coinaddr[KOMODO_ADDRESS_BUFSIZE]; 
     CPubKey Marmarapk, pk; 
     int64_t nValue, totalinputs = 0; 
@@ -738,7 +732,6 @@ static bool IsLockInLoopOpret(const CScript &spk, CPubKey &pk)
 // opret in the last vout is checked second and considered secondary
 static bool CheckEitherOpRet(bool(*CheckOpretFunc)(const CScript &, CPubKey &), const CTransaction &tx, int32_t nvout, CPubKey & pk)
 {
-    
     CScript opret, dummy;
     std::vector< vscript_t > vParams;
     bool isccopret = false, opretok = false;
@@ -785,7 +778,6 @@ static bool CheckEitherOpRet(bool(*CheckOpretFunc)(const CScript &, CPubKey &), 
 // for lock-in-loop mypk not checked, so all locked-in-loop utxos for an address are added:
 int64_t AddMarmarainputs(bool (*CheckOpretFunc)(const CScript &, CPubKey &), CMutableTransaction &mtx, std::vector<CPubKey> &pubkeys, char *unspentaddr, int64_t total, int32_t maxinputs)
 {
-    
     int64_t threshold, nValue, totalinputs = 0; 
     int32_t n = 0;
     std::vector<int64_t> vals;
@@ -870,7 +862,6 @@ int64_t AddMarmarainputs(bool (*CheckOpretFunc)(const CScript &, CPubKey &), CMu
 // lock the amount on the specified block height
 UniValue MarmaraLock(int64_t txfee, int64_t amount)
 {
-    
     CMutableTransaction tmpmtx, mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     UniValue result(UniValue::VOBJ);
     struct CCcontract_info *cp, C;
@@ -1040,7 +1031,6 @@ int32_t MarmaraSignature(uint8_t *utxosig, CMutableTransaction &mtx)
 
 UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid)
 {
-    
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     UniValue result(UniValue::VOBJ);
     std::vector<uint256> creditloop;
@@ -1238,7 +1228,6 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid)
 
 int32_t MarmaraGetCreditloops(int64_t &totalamount, std::vector<uint256> &issuances, int64_t &totalclosed, std::vector<uint256> &closed, struct CCcontract_info *cp, int32_t firstheight, int32_t lastheight, int64_t minamount, int64_t maxamount, CPubKey refpk, std::string refcurrency)
 {
-    
     char coinaddr[KOMODO_ADDRESS_BUFSIZE]; CPubKey Marmarapk, senderpk; int64_t amount; uint256 createtxid, txid, hashBlock; CTransaction tx; int32_t vout, matures, n = 0; std::string currency;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     Marmarapk = GetUnspendable(cp, 0);
@@ -1373,7 +1362,6 @@ UniValue MarmaraReceive(int64_t txfee, CPubKey senderpk, int64_t amount, std::st
 
 static int32_t RedistributeLockedRemainder(CMutableTransaction &mtx, struct CCcontract_info *cp, const std::vector<uint256> &creditloop, uint256 batontxid, int64_t amountToDistribute)
 {
-    
     CPubKey Marmarapk; 
     int32_t endorsersNumber = creditloop.size(); // number of endorsers, 0 is createtxid, last is batontxid
     CPubKey dummypk;
@@ -1476,7 +1464,6 @@ static int32_t RedistributeLockedRemainder(CMutableTransaction &mtx, struct CCco
 // issue or transfer coins to the next receiver
 UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t amount, std::string currency, int32_t matures, uint256 requesttxid, uint256 batontxid)
 {
-    
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     UniValue result(UniValue::VOBJ); 
     std::string rawtx; uint256 createtxid; 
@@ -1914,39 +1901,6 @@ UniValue MarmaraInfo(CPubKey refpk, int32_t firstheight, int32_t lastheight, int
     char myccaddr[KOMODO_ADDRESS_BUFSIZE];
 
     struct CCcontract_info *cp, C;
-
-    std::string str1 = "{\"method\": \"cclib\", \"params\": [\"func0\", \"17\", \"{\"key\": \"striiiiiing\"}\"]}";
-    std::string str2 = "{\"method\": \"cclib\", \"params\": [\"func0\", \"17\", {\"key\": \"striiiiiing\"}]}";
-
-
-    cJSON *j1 = cJSON_Parse(str1.c_str());
-    cJSON *j2 = cJSON_Parse(str2.c_str());
-
-    
-    std::cerr << "j1:" << std::endl;
-    if (j1) {
-        char *s1 = cJSON_Print(j1);
-        if( s1 )
-            std::cerr << s1 << std::endl;
-        else
-            std::cerr << "s1 = null" << std::endl;
-    }
-    else
-        std::cerr << "j1 = null" << std::endl;
-
-    if (j2) {
-        std::cerr << "j2:" << std::endl;
-        char *s2 = cJSON_Print(j2);
-        if( s2 )
-            std::cerr << s2 << std::endl;
-        else
-            std::cerr << "s2 = null" << std::endl;
-
-    }
-    else
-        std::cerr << "j2 = null" << std::endl;
-
-
 
     cp = CCinit(&C, EVAL_MARMARA);
     Marmarapk = GetUnspendable(cp, 0);
