@@ -1271,15 +1271,15 @@ int32_t MarmaraEnumCreditloops(int64_t &totalopen, std::vector<uint256> &issuanc
     LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << "check on marmara addr=" << marmaraaddr << std::endl);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it = unspentOutputs.begin(); it != unspentOutputs.end(); it++)
     {
-        CTransaction tx;
+        CTransaction issuancetx;
         uint256 hashBlock;
         uint256 issuancetxid = it->first.txhash;
         int32_t vout = (int32_t)it->first.index;
 
         LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "checking tx as marker on marmara addr txid=" << issuancetxid.GetHex() << " vout=" << vout << std::endl);
-        if (vout == 1 && GetTransaction(issuancetxid, tx, hashBlock, false) != 0)  // TODO: change to the non-locking version if needed
+        if (vout == 1 && myGetTransaction(issuancetxid, issuancetx, hashBlock))  // TODO: change to the non-locking version if needed
         {
-            if (tx.IsCoinBase() == 0 && tx.vout.size() > 2 && tx.vout.back().nValue == 0 /*opreturn?*/)
+            if (issuancetx.IsCoinBase() == 0 && issuancetx.vout.size() > 2 && issuancetx.vout.back().nValue == 0 /*opreturn?*/)
             {
                 CPubKey senderpk; 
                 int64_t amount; 
@@ -1287,7 +1287,7 @@ int32_t MarmaraEnumCreditloops(int64_t &totalopen, std::vector<uint256> &issuanc
                 int32_t matures;
                 std::string currency;
 
-                if (MarmaraDecodeLoopOpret(tx.vout.back().scriptPubKey, createtxid, senderpk, amount, matures, currency) == 'I')
+                if (MarmaraDecodeLoopOpret(issuancetx.vout.back().scriptPubKey, createtxid, senderpk, amount, matures, currency) == 'I')
                 {
                     n++;
                     if (currency == refcurrency && matures >= firstheight && matures <= lastheight && amount >= minamount && amount <= maxamount && (refpk.size() == 0 || senderpk == refpk))
@@ -1305,7 +1305,7 @@ int32_t MarmaraEnumCreditloops(int64_t &totalopen, std::vector<uint256> &issuanc
                             int32_t matures;
                             std::string currency;
 
-                            if (GetTransaction(batontxid, batontx, hashBlock, false) != 0 && batontx.vout.size() > 1 &&
+                            if (myGetTransaction(batontxid, batontx, hashBlock) && batontx.vout.size() > 1 &&
                                 (funcid = MarmaraDecodeLoopOpret(batontx.vout.back().scriptPubKey, createtxid, pk, amount, matures, currency)) != 0)
                             {
                                 if (funcid == 'D' || funcid == 'S') {
