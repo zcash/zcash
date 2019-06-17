@@ -987,26 +987,49 @@ UniValue MarmaraLock(int64_t txfee, int64_t amount)
 int32_t MarmaraSignature(uint8_t *utxosig, CMutableTransaction &mtx)
 {
     uint256 txid, hashBlock; 
-    CTransaction tx; 
+    CTransaction vintx; 
     int64_t txfee = 10000;
 
     int32_t vout = mtx.vin[0].prevout.n;
     if (myGetTransaction(mtx.vin[0].prevout.hash, tx, hashBlock) != 0 && tx.vout.size() > 1 && vout < tx.vout.size())
     {
         std::vector<CPubKey> pubkeys;
-        CPubKey mypk = pubkey2pk(Mypubkey());
+        
         struct CCcontract_info *cp, C;
 
         cp = CCinit(&C, EVAL_MARMARA);
+        CPubKey mypk = pubkey2pk(Mypubkey());
+        uint8_t marmarapriv[32];
+        CPubKey Marmarapk = GetUnspendable(cp, marmarapriv);
         pubkeys.push_back(mypk);
 
-        std::string rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, tx.vout.back().scriptPubKey, pubkeys);  // pubkeys is for 1of2 address with marmarapk, pubkeys[i] 
+        uint256 createtxid;
+        CPubKey issuerpk;
+        int64_t amount;
+        int32_t matures;
+        std::string currency;
+
+        CC *probeCond = NULL;
+        if (MarmaraDecodeLoopOpret(vintx.vout.back().scriptPubKey, createtxid, issuerpk, amount, matures, currency) != 0)   // is this locked-in-loop utxo?
+        {
+            char  txidaddr[KOMODO_ADDRESS_BUFSIZE];
+            CPubKey createtxidPk = CCtxidaddr(txidaddr, createtxid);
+            probeCond = MakeCCcond1of2(EVAL_MARMARA, Marmarapk, createtxidPk);
+        }
+        else
+        {
+            probeCond = MakeCCcond1of2(EVAL_MARMARA, Marmarapk, mypk);
+        }
+
+        CCAddVintxCond(cp, probeCond, marmarapriv); //add probe condition to signe vintx 1of2 utxo
+        std::string rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, vintx.vout.back().scriptPubKey, pubkeys);  // pubkeys is for 1of2 address with marmarapk, pubkeys[i] 
+        cc_free(probeCond);
         if (rawtx.size() > 0)
         {
             int32_t siglen = mtx.vin[0].scriptSig.size();
-            uint8_t *ptr = &mtx.vin[0].scriptSig[0];
+            uint8_t *scriptptr = &mtx.vin[0].scriptSig[0];
 
-            if (siglen >= 512) {   // check boundaries
+            if (siglen > 512) {   // check sig buffer limit
                 LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "scriptSig length is more than utxosig bufsize, truncated! siglen=" << siglen << std::endl);
                 siglen = 512;
             }
@@ -1014,8 +1037,8 @@ int32_t MarmaraSignature(uint8_t *utxosig, CMutableTransaction &mtx)
             std::ostringstream debstream;
             for (int32_t i = 0; i < siglen; i++)
             {
-                utxosig[i] = ptr[i];
-                debstream << std::hex << (int)ptr[i];
+                utxosig[i] = scriptptr[i];
+                debstream << std::hex << (int)scriptptr[i];
             }
             std::string strScriptSig = debstream.str();
 
@@ -1439,7 +1462,6 @@ static int32_t RedistributeLockedRemainder(CMutableTransaction &mtx, struct CCco
     int64_t amount, inputsum, change;
     int32_t matures;
     std::string currency;
-    uint8_t funcid;
     std::vector <CPubKey> pubkeys;
     CTransaction createtx;
     uint256 hashBlock, dummytxid;
@@ -1471,11 +1493,16 @@ static int32_t RedistributeLockedRemainder(CMutableTransaction &mtx, struct CCco
             {
                 CTransaction issuancetx;
                 uint256 hashBlock;
-                CPubKey issuerpk;
                 uint256 currenttxid = i < creditloop.size() ? creditloop[i] : batontxid;
 
                 if (GetTransaction(currenttxid, issuancetx, hashBlock, false) && issuancetx.vout.size() > 1)
                 {
+                    uint8_t funcid;
+                    CPubKey issuerpk;
+                    int64_t amount;
+                    int32_t matures;
+                    std::string currency;
+
                     if ((funcid = MarmaraDecodeLoopOpret(issuancetx.vout.back().scriptPubKey, createtxid, issuerpk, amount, matures, currency)) != 0)  // get endorser's pk
                     {
                         int64_t amountToPk = amountToDistribute / endorsersNumber;
