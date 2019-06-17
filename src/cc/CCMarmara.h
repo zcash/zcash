@@ -34,7 +34,7 @@ uint64_t komodo_block_prg(uint32_t nHeight);
 int32_t MarmaraGetcreatetxid(uint256 &createtxid, uint256 txid);
 int32_t MarmaraGetbatontxid(std::vector<uint256> &creditloop,uint256 &batontxid,uint256 txid);
 UniValue MarmaraCreditloop(uint256 txid);
-UniValue MarmaraSettlement(int64_t txfee,uint256 batontxid);
+UniValue MarmaraSettlement(int64_t txfee,uint256 batontxid, CTransaction &settlementtx);
 UniValue MarmaraLock(int64_t txfee,int64_t amount);
 
 UniValue MarmaraPoolPayout(int64_t txfee,int32_t firstheight,double perc,char *jsonstr); // [[pk0, shares0], [pk1, shares1], ...]
