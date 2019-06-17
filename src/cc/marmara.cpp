@@ -1346,6 +1346,8 @@ void MarmaraRunAutoSettlement(int32_t height, std::vector<CTransaction> & settle
     cp = CCinit(&C, EVAL_MARMARA);
     std::string funcname = __func__;
 
+    LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "starting enum open baton" << std::endl);
+
     MarmaraEnumCreditloops(totalopen, issuances, totalclosed, closed, cp, 0, 0, 0, 0, CPubKey(), MARMARA_CURRENCY, [&](uint256 batontxid, int32_t matures) {
         CTransaction settlementtx;
         // TODO temp result legacy code, change to remove UniValue

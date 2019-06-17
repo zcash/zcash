@@ -2963,11 +2963,10 @@ int32_t komodo_priceget(int64_t *buf64,int32_t ind,int32_t height,int32_t numblo
 }
 
 // place to add miner's created transactions
-void komodo_createminerstransactions(int32_t nHeight, std::vector<CTransaction> minersTransactions)
+void komodo_createminerstransactions(int32_t nHeight, std::vector<CTransaction> &minersTransactions)
 {
-
     if(ASSETCHAINS_MARMARA != 0)   
     {
-        MarmaraRunAutoSettlement(nHeight, minersTransactions);        // run Maramara autosettlement, returns settlement transactions
+        MarmaraRunAutoSettlement(nHeight, minersTransactions);        // run Marmara autosettlement, returns settlement transactions
     }
 }
