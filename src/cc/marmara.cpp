@@ -745,7 +745,7 @@ static bool CheckEitherOpRet(bool(*CheckOpretFunc)(const CScript &, CPubKey &), 
         COptCCParams p = COptCCParams(vParams[0]);
         if (p.vData.size() > 0) {
             opret << OP_RETURN << p.vData[0]; // reconstruct opret for CheckOpretFunc function
-            LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream  << " ccopret=" << opret.ToString() << std::endl);
+            LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream  << " ccopret=" << opret.ToString() << std::endl);
             if (CheckOpretFunc(opret, pk)) {
                 isccopret = true;
                 opretok = true;
@@ -847,7 +847,7 @@ int64_t AddMarmarainputs(bool (*CheckOpretFunc)(const CScript &, CPubKey &), CMu
                 }
             }
             else
-                LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream  << " addr=" << unspentaddr << " txid=" << txid.GetHex() << " cant check opret" << std::endl);
+                LOGSTREAMFN("marmara", CCLOG_ERROR, stream  << " addr=" << unspentaddr << " txid=" << txid.GetHex() << " cant check opret" << std::endl);
         }
     }
     if (maxinputs != 0 && total == 0)
@@ -1023,7 +1023,7 @@ int32_t MarmaraSignature(uint8_t *utxosig, CMutableTransaction &mtx)
             return(siglen);
         }
         else
-            LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "cannot sign activated staked tx" << std::endl);
+            LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "cannot sign activated staked tx, bad mtx=" << HexStr(E_MARSHAL(ss << mtx)) <<  std::endl);
     }
     else 
         LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "cannot get vintx for staked tx" << std::endl);
@@ -1603,7 +1603,7 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
         LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << "calling AddMarmaraInputs for activated addr=" << activated1of2addr << " needs activated amount to lock-in-loop=" << amountToLock << std::endl);
         if ((inputsum = AddMarmarainputs(IsActivatedOpret, mtx, pubkeys, activated1of2addr, amountToLock, MARMARA_VINS)) >= amountToLock) // add 1/n remainder from the locked fund
         {
-            mtx.vin.push_back(CTxIn(requesttxid, 0, CScript()));  // spend the approval tx
+            mtx.vin.push_back(CTxIn(requesttxid, 0, CScript()));  // spend the approval tx // TODO: check if not in mempool
             if (funcid == 'T')
                 mtx.vin.push_back(CTxIn(batontxid, 0, CScript()));   // spend the baton
             if (funcid == 'I' || AddNormalinputs(mtx, mypk, txfee, 1) > 0)
@@ -1628,7 +1628,7 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
                 int64_t change = (inputsum - amountToLock);
                 if (change > 0) {
                     int32_t height = komodo_nextheight();
-                    if ((height & 1) != 0) // make height even as only such even height is considered for staking
+                    if ((height & 1) != 0) // make height even as only such even height is considered for staking TODO: strange.
                         height++;
                     CScript opret = MarmaraCoinbaseOpret('C', height, mypk);
                     vscript_t vopret;
