@@ -1769,7 +1769,7 @@ void komodo_args(char *argv0)
     {
         int32_t ecode = ccEnablesHeight[i];
         int32_t ht = ccEnablesHeight[i+1];
-        if ( ecode > 256 || ecode < 0 )
+        if ( ecode > 255 || ecode < 0 )
             fprintf(stderr, "ac_ccactivateht: invalid evalcode.%i must be between 0 and 256.\n", ecode);
         else if ( ht > 0 )
         {
