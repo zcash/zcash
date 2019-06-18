@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import re, os, os.path
 import subprocess
 import argparse
