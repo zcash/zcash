@@ -311,7 +311,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
 
         int32_t Notarisations = 0; uint64_t txvalue;
 
-        // this lambda function adds transaction to vecPriority, used twice: for adding txns from the mempool and miner's created transactions
+        // this lambda function adds transaction to vecPriority, used twice: for adding transactions from the mempool and miner's created transactions (dimxy)
         auto addTransactionsToVecPriority = [&](const CTransaction &tx)
         {
             //break; // dont add any tx to block.. debug for KMD fix. Disabled. 

@@ -1361,6 +1361,9 @@ void MarmaraRunAutoSettlement(int32_t height, std::vector<CTransaction> & settle
             LOGSTREAM("marmara", CCLOG_DEBUG1, stream << funcname << " miner is adding settlement tx for batontxid=" << batontxid.GetHex() << std::endl);
             settlementTransactions.push_back(settlementtx);
         }
+        else {
+            LOGSTREAM("marmara", CCLOG_ERROR, stream << funcname << " error=" << result["error"].getValStr() << " in settlement for batontxid=" << batontxid.GetHex() << std::endl);
+        }
     });
 }
 
