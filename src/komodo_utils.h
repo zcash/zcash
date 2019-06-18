@@ -1692,7 +1692,7 @@ int8_t equihash_params_possible(uint64_t n, uint64_t k)
 
 void komodo_args(char *argv0)
 {
-    std::string name,addn,hexstr,symbol; char *dirname,fname[512],arg0str[64],magicstr[9]; uint8_t magic[4],extrabuf[32756],disablebits[32],*extraptr=0; FILE *fp; uint64_t val; uint16_t port; int32_t i,nonz=0,baseid,len,n,extralen = 0; uint64_t ccenables[256], ccEnablesHeight[512];
+    std::string name,addn,hexstr,symbol; char *dirname,fname[512],arg0str[64],magicstr[9]; uint8_t magic[4],extrabuf[32756],disablebits[32],*extraptr=0; FILE *fp; uint64_t val; uint16_t port; int32_t i,nonz=0,baseid,len,n,extralen = 0; uint64_t ccenables[256], ccEnablesHeight[512] = {0};
     IS_KOMODO_NOTARY = GetBoolArg("-notary", false);
     IS_STAKED_NOTARY = GetArg("-stakednotary", -1);
     memset(ccenables,0,sizeof(ccenables));
@@ -1769,7 +1769,7 @@ void komodo_args(char *argv0)
     {
         int32_t ecode = ccEnablesHeight[i];
         int32_t ht = ccEnablesHeight[i+1];
-        if ( ecode > 256 )
+        if ( ecode > 256 || ecode < 0 )
             fprintf(stderr, "ac_ccactivateht: invalid evalcode.%i must be between 0 and 256.\n", ecode);
         else if ( ht > 0 )
         {
