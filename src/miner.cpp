@@ -819,7 +819,8 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                     LEAVE_CRITICAL_SECTION(cs_main);
                     LEAVE_CRITICAL_SECTION(mempool.cs);
                 }
-                throw std::runtime_error("CreateNewBlock(): TestBlockValidity failed");
+                //throw std::runtime_error("CreateNewBlock(): TestBlockValidity failed"); // crashes the node, moved to GetBlockTemplate and issue return.
+                return(0);
             }
             //fprintf(stderr,"valid\n");
         }
