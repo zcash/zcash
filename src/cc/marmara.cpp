@@ -316,15 +316,16 @@ int32_t MarmaraValidateCoinbase(int32_t height, CTransaction tx)
 // check stake tx
 // stake tx has 1 vout and 1 opret
 // stake tx points to staking utxo
-// stake tx vout[0].scriptPubKey equals the referred staking utxo scriptPubKey and opret equals to the referred tx opret
+// stake tx vout[0].scriptPubKey equals the referred staking utxo scriptPubKey and opret equals to the referred to opret in the last vout of the tx of staking utxo
 // see komodo_staked where stake tx is created
-bool MarmaraPoScheck(char *destaddr, CScript opret, CTransaction staketx)
+bool MarmaraPoScheck(char *destaddr, CScript inOpret, CTransaction staketx)  // note: opret is fetched in komodo_txtime from last vout scriptPubKey. 
+                                                                           // And the opret was added to stake tx by MarmaraSignature()
 {
     uint8_t funcid; 
     char coinaddr[KOMODO_ADDRESS_BUFSIZE]; 
 
-    LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << " staketxid=" << staketx.GetHash().ToString() << " numvins=" << staketx.vin.size() << " numvouts=" << staketx.vout.size() << " val="  << (double)staketx.vout[0].nValue / COIN  << " opret.size=" << opret.size() << std::endl);
-    if (staketx.vout.size() == 2 && opret == staketx.vout[1].scriptPubKey)
+    LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << " staketxid=" << staketx.GetHash().ToString() << " numvins=" << staketx.vin.size() << " numvouts=" << staketx.vout.size() << " val="  << (double)staketx.vout[0].nValue / COIN  << " inOpret.size=" << inOpret.size() << std::endl);
+    if (staketx.vout.size() == 2 && inOpret == staketx.vout[1].scriptPubKey)
     {
         CScript opret;
         struct CCcontract_info *cp, C;
@@ -336,9 +337,6 @@ bool MarmaraPoScheck(char *destaddr, CScript opret, CTransaction staketx)
         {
             //int32_t height, unlockht;
             //funcid = DecodeMarmaraCoinbaseOpRet(opret, senderpk, height, unlockht);
-
-            cp = CCinit(&C, EVAL_MARMARA);
-
             GetCCaddress1of2(cp, coinaddr, Marmarapk, senderpk);
 
             bool isEqualAddr = (strcmp(destaddr, coinaddr) == 0);
@@ -1037,6 +1035,7 @@ int32_t MarmaraSignature(uint8_t *utxosig, CMutableTransaction &mtx)
     int32_t vout = mtx.vin[0].prevout.n;
     if (myGetTransaction(mtx.vin[0].prevout.hash, tx, hashBlock) != 0 && tx.vout.size() > 1 && vout < tx.vout.size())
     {
+        /*
         std::vector<CPubKey> pubkeys;
         struct CCcontract_info *cp, C;
 
@@ -1063,14 +1062,48 @@ int32_t MarmaraSignature(uint8_t *utxosig, CMutableTransaction &mtx)
         else
         {
             probeCond = MakeCCcond1of2(EVAL_MARMARA, Marmarapk, mypk);
+        }*/
+
+        CScript vintxOpret;
+        struct CCcontract_info *cp, C;
+        cp = CCinit(&C, EVAL_MARMARA);
+        uint8_t marmarapriv[32];
+        CPubKey Marmarapk = GetUnspendable(cp, marmarapriv);
+
+        CPubKey mypk = pubkey2pk(Mypubkey());
+        CPubKey senderpk;
+        CC *probeCond = NULL;
+
+        if (CheckEitherOpRet(IsActivatedOpret, vintx, mtx.vin[0].prevout.n, vintxOpret, senderpk))
+        {
+            //int32_t height, unlockht;
+            //funcid = DecodeMarmaraCoinbaseOpRet(opret, senderpk, height, unlockht);
+
+            LOGSTREAMFN("marmara", CCLOG_INFO, stream << "found activated opret in vintx" << std::endl);
+            probeCond = MakeCCcond1of2(EVAL_MARMARA, Marmarapk, mypk);
+        }
+        else if (CheckEitherOpRet(IsLockInLoopOpret, vintx, mtx.vin[0].prevout.n, vintxOpret, senderpk))
+        {
+            uint256 createtxid;
+            int64_t amount;
+            int32_t matures;
+            std::string currency;
+
+            MarmaraDecodeLoopOpret(vintxOpret, createtxid, senderpk, amount, matures, currency);
+
+            char txidaddr[KOMODO_ADDRESS_BUFSIZE];
+            CPubKey createtxidPk = CCtxidaddr(txidaddr, createtxid);
+
+            LOGSTREAMFN("marmara", CCLOG_INFO, stream << "found locked-in-loop opret in vintx" << std::endl);
+            probeCond = MakeCCcond1of2(EVAL_MARMARA, Marmarapk, createtxidPk);
         }
 
         CCAddVintxCond(cp, probeCond, marmarapriv); //add probe condition to sign vintx 1of2 utxo
 
-        // note: opreturn for stake tx is taken from the staking utxo:
-        std::string rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, vintx.vout.back().scriptPubKey, pubkeys);  // pubkeys is for 1of2 address with marmarapk, pubkeys[i] 
-
+        // note: opreturn for stake tx is taken from the staking utxo (ccvout or back):
+        std::string rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, vintxOpret);  
         cc_free(probeCond);
+
         if (rawtx.size() > 0)
         {
             int32_t siglen = mtx.vin[0].scriptSig.size();
