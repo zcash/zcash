@@ -321,7 +321,7 @@ bool MarmaraPoScheck(char *destaddr, CScript opret, CTransaction staketx)
     char coinaddr[KOMODO_ADDRESS_BUFSIZE]; 
     struct CCcontract_info *cp, C;
 
-    LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << " staketx" << staketx.GetHash().ToString() << " numvins=" << staketx.vin.size() << " numvouts=" << staketx.vout.size() << " val="  << (double)staketx.vout[0].nValue / COIN  << " opret.size=" << opret.size() << std::endl);
+    LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << " staketxid=" << staketx.GetHash().ToString() << " numvins=" << staketx.vin.size() << " numvouts=" << staketx.vout.size() << " val="  << (double)staketx.vout[0].nValue / COIN  << " opret.size=" << opret.size() << std::endl);
     if (staketx.vout.size() == 2 && opret == staketx.vout[1].scriptPubKey)
     {
         cp = CCinit(&C, EVAL_MARMARA);
@@ -329,11 +329,12 @@ bool MarmaraPoScheck(char *destaddr, CScript opret, CTransaction staketx)
         Marmarapk = GetUnspendable(cp, 0);
         GetCCaddress1of2(cp, coinaddr, Marmarapk, pk);
 
-        LOGSTREAMFN("marmara", CCLOG_INFO, stream   << " matched opret! funcid=" << (funcid ? (char)funcid : ' ') << " ht=" << height << " unlock=" <<  unlockht << " addr=" << coinaddr << std::endl);
-        return(strcmp(destaddr, coinaddr) == 0);
+        bool isEqualAddr = (strcmp(destaddr, coinaddr) == 0);
+        LOGSTREAMFN("marmara", CCLOG_INFO, stream   << " matched opret! funcid=" << (funcid ? (char)funcid : ' ') << " ht=" << height << " unlock=" <<  unlockht << " addr=" << coinaddr << " isEqualAddr=" << isEqualAddr  << std::endl);
+        return isEqualAddr;
     }
     else {
-        LOGSTREAMFN("marmara", CCLOG_ERROR, stream  <<  " returns false" << std::endl);
+        LOGSTREAMFN("marmara", CCLOG_ERROR, stream  <<  " incorrect stake tx vout or opret, returning false" << std::endl);
         return(false);
     }
 }
@@ -386,7 +387,7 @@ static void EnumMyActivated(T func)
                 {
                     // call callback function:
                     func(activatedaddr, tx, nvout, pindex);
-                    LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << " found my activated 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << std::endl);
+                    LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream  << " found my activated 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << std::endl);
                 }
                 else
                     LOGSTREAMFN("marmara", CCLOG_ERROR, stream  << " skipped activated 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << " cant decode opret or not mypk" << std::endl);
@@ -469,9 +470,9 @@ static void EnumMyLockedInLoop(T func)
                                     CPubKey pk;
 
                                     if (CheckEitherOpRet(IsLockInLoopOpret, looptx, nvout, pk) && mypk == pk) {  // check mypk in opret
-                                        // call callbak func:
+                                        // call callback func:
                                         func(loopaddr, looptx, nvout, pindex);
-                                        LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << " found my lock-in-loop 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << std::endl);
+                                        LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream << " found my lock-in-loop 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << std::endl);
                                     }
                                     else
                                         LOGSTREAMFN("marmara", CCLOG_ERROR, stream << " skipped lock-in-loop 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << " cant decode opret or not mypk" << std::endl);
