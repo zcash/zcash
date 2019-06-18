@@ -1117,7 +1117,9 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid, CTransaction &se
                 // remaining = refamount;
                 GetCCaddress(cp, myCCaddr, Mypubkey());
                 Getscriptaddress(batonCCaddr, batontx.vout[0].scriptPubKey);
-                if (strcmp(myCCaddr, batonCCaddr) == 0) // if mypk user owns the baton
+
+                // allow any miner to settle
+                //if (strcmp(myCCaddr, batonCCaddr) == 0) // if mypk user owns the baton
                 {
                     std::vector<CPubKey> pubkeys;
 
@@ -1226,13 +1228,13 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid, CTransaction &se
                         result.push_back(Pair("error", (char *)"no funds available at all"));
                     }
                 }
-                else
+                /*else
                 {
                     result.push_back(Pair("result", (char *)"error"));
                     result.push_back(Pair("error", (char *)"this node does not have the baton"));
                     result.push_back(Pair("myCCaddr", myCCaddr));
                     result.push_back(Pair("batonCCaddr", batonCCaddr));
-                }
+                }*/
             }
             else
             {
