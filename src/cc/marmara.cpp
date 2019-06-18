@@ -404,7 +404,7 @@ static void EnumMyActivated(T func)
         LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream  << " check tx on activatedaddr txid=" << txid.GetHex() << " vout=" << nvout << std::endl);
 
         // TODO: change to the non-locking version:
-        if (GetTransaction(txid, tx, hashBlock, true) && (pindex = komodo_getblockindex(hashBlock)) != 0 && myIsutxo_spentinmempool(ignoretxid, ignorevin, txid, nvout) == 0)
+        if (myGetTransaction(txid, tx, hashBlock) && (pindex = komodo_getblockindex(hashBlock)) != 0 && myIsutxo_spentinmempool(ignoretxid, ignorevin, txid, nvout) == 0)
         {
             char utxoaddr[KOMODO_ADDRESS_BUFSIZE] = "";
 
@@ -455,7 +455,7 @@ static void EnumMyLockedInLoop(T func)
         int32_t nvout = (int32_t)it->first.index;
 
         LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream  << " checking tx on markeraddr txid=" << txid.GetHex() << " vout=" << nvout << std::endl);
-        if (nvout == 1 && GetTransaction(txid, isssuancetx, hashBlock, true))  // TODO: change to the non-locking version
+        if (nvout == 1 && myGetTransaction(txid, isssuancetx, hashBlock))  // TODO: check if non-locking version better, was GetTransaction(txid, isssuancetx, hashBlock, true)
         {
             if (!isssuancetx.IsCoinBase() && isssuancetx.vout.size() > 2 && isssuancetx.vout.back().nValue == 0)
             {
@@ -487,7 +487,7 @@ static void EnumMyLockedInLoop(T func)
 
                         LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream  << " checking tx on loopaddr txid=" << txid.GetHex() << " vout=" << nvout << std::endl);
 
-                        if (GetTransaction(txid, looptx, hashBlock, true) && (pindex = komodo_getblockindex(hashBlock)) != 0 && myIsutxo_spentinmempool(ignoretxid, ignorevin, txid, nvout) == 0)  // TODO: change to the non-locking version
+                        if (myGetTransaction(txid, looptx, hashBlock) && (pindex = komodo_getblockindex(hashBlock)) != 0 && myIsutxo_spentinmempool(ignoretxid, ignorevin, txid, nvout) == 0)  // TODO: change to the non-locking version
                         {
                             /* lock-in-loop cant be mined */                   /* now it could be cc opret, not necessary OP_RETURN vout in the back */
                             if (!looptx.IsCoinBase() && looptx.vout.size() > 0 /* && looptx.vout.back().nValue == 0 */)  
