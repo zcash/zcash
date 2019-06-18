@@ -638,11 +638,7 @@ bool OraclesDataValidate(struct CCcontract_info *cp,Eval* eval,const CTransactio
 
 int32_t GetLatestTimestamp(int32_t height)
 {
-    uint256 blockHash; CBlock block; CBlockIndex* pindex;
-
-    blockHash = chainActive[height]->GetBlockHash();
-    pindex = mapBlockIndex[blockHash];
-    return(pindex->nTime);
+    return(komodo_heightstamp(height));
 }
 
 bool OraclesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
