@@ -2793,6 +2793,8 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
         bool signSuccess; SignatureData sigdata; uint64_t txfee; uint8_t *ptr; uint256 revtxid,utxotxid;
         auto consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
         const CKeyStore& keystore = *pwalletMain;
+
+        // create stake tx
         txNew.vin.resize(1);
         txNew.vout.resize(1);
         txfee = 0;
@@ -2828,7 +2830,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
         }
         else
         {
-            siglen = MarmaraSignature(utxosig,txNew);
+            siglen = MarmaraSignature(utxosig,txNew);  // add marmara opret and sign the stake tx 
             if ( siglen > 0 )
                 signSuccess = true;
             else signSuccess = false;
