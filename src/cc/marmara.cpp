@@ -506,12 +506,12 @@ struct komodo_staking *MarmaraGetStakingUtxos(struct komodo_staking *array, int3
     });
 
     // add lock-in-loops utxos for mypk:
- /*   EnumMyLockedInLoop([&](char *loopaddr, const CTransaction & tx, int32_t nvout, CBlockIndex *pindex)
+    EnumMyLockedInLoop([&](char *loopaddr, const CTransaction & tx, int32_t nvout, CBlockIndex *pindex)
     {
         array = komodo_addutxo(array, numkp, maxkp, (uint32_t)pindex->nTime, (uint64_t)tx.vout[nvout].nValue, tx.GetHash(), nvout, loopaddr, hashbuf, tx.vout[nvout].scriptPubKey);
         LOGSTREAM("marmara", CCLOG_DEBUG3, stream << logFName << " added uxto for staking lock-in-loop 1of2addr txid=" << tx.GetHash().GetHex() << " vout=" << nvout << std::endl);
     });
-   */
+   
     return array;
 }
 
