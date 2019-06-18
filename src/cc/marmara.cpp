@@ -468,14 +468,15 @@ static void EnumMyLockedInLoop(T func)
                                 if (strcmp(loopaddr, utxoaddr) == 0)  // check if real vout address matches index address (as another key could be used in the addressindex)
                                 {
                                     CPubKey pk;
+                                    bool isDecoded;
 
-                                    if (CheckEitherOpRet(IsLockInLoopOpret, looptx, nvout, pk) && mypk == pk) {  // check mypk in opret
+                                    if ((isDecoded = CheckEitherOpRet(IsLockInLoopOpret, looptx, nvout, pk)) && mypk == pk) {  // check mypk in opret
                                         // call callback func:
                                         func(loopaddr, looptx, nvout, pindex);
                                         LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream << " found my lock-in-loop 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << std::endl);
                                     }
                                     else
-                                        LOGSTREAMFN("marmara", CCLOG_ERROR, stream << " skipped lock-in-loop 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << " cant decode opret or not mypk" << std::endl);
+                                        LOGSTREAMFN("marmara", CCLOG_ERROR, stream << " skipped lock-in-loop 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << " cant decode opret isDecoded=" << isDecoded << " or not mypk" << std::endl);
                                 }
                                 else
                                     LOGSTREAMFN("marmara", CCLOG_ERROR, stream  << " skipped lock-in-loop 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << " uxto addr not matched index" << std::endl);
