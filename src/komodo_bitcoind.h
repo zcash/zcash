@@ -2657,7 +2657,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
     if (!EnsureWalletIsAvailable(0))
         return 0;
 
-    const bool needSpecialStakeUtxo = (ASSETCHAINS_MARMARA != 0);   //contracts or params for which non-basic utxo for staking are needed
+    const bool needSpecialStakeUtxo = (ASSETCHAINS_MARMARA != 0);   //conditions of contracts or params for which non-basic utxo for staking are needed
 
     bnTarget.SetCompact(nBits, &fNegative, &fOverflow);
     assert(pwalletMain != NULL);
@@ -2736,12 +2736,10 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
         else  
         {
             // placeholder for special staking utxo cases:
-
             // marmara case:
             if (ASSETCHAINS_MARMARA != 0) {
                 array = MarmaraGetStakingUtxos(array, &numkp, &maxkp, hashbuf);
             }
-            // another ...
         }
         lasttime = (uint32_t)time(NULL);
         //fprintf(stderr,"finished kp data of utxo for staking %u ht.%d numkp.%d maxkp.%d\n",(uint32_t)time(NULL),nHeight,numkp,maxkp);
