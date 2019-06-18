@@ -321,7 +321,7 @@ bool MarmaraPoScheck(char *destaddr, CScript opret, CTransaction staketx)
     char coinaddr[KOMODO_ADDRESS_BUFSIZE]; 
     struct CCcontract_info *cp, C;
 
-    //LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << " staketx" << staketx.GetHash().ToString() << " numvins=" << staketx.vin.size() << " numvouts=" << staketx.vout.size() << " val="  << (double)staketx.vout[0].nValue / COIN  << " opret.size=" << opret.size() << std::endl);
+    LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << " staketx" << staketx.GetHash().ToString() << " numvins=" << staketx.vin.size() << " numvouts=" << staketx.vout.size() << " val="  << (double)staketx.vout[0].nValue / COIN  << " opret.size=" << opret.size() << std::endl);
     if (staketx.vout.size() == 2 && opret == staketx.vout[1].scriptPubKey)
     {
         cp = CCinit(&C, EVAL_MARMARA);
@@ -329,7 +329,7 @@ bool MarmaraPoScheck(char *destaddr, CScript opret, CTransaction staketx)
         Marmarapk = GetUnspendable(cp, 0);
         GetCCaddress1of2(cp, coinaddr, Marmarapk, pk);
 
-        LOGSTREAMFN("marmara", CCLOG_INFO, stream   << " matched opret! funcid=" << (char)funcid << " ht=" << height << " unlock=" <<  unlockht << " addr=" << coinaddr << std::endl);
+        LOGSTREAMFN("marmara", CCLOG_INFO, stream   << " matched opret! funcid=" << (funcid ? (char)funcid : ' ') << " ht=" << height << " unlock=" <<  unlockht << " addr=" << coinaddr << std::endl);
         return(strcmp(destaddr, coinaddr) == 0);
     }
     else {
@@ -830,7 +830,7 @@ int64_t AddMarmarainputs(bool (*CheckOpretFunc)(const CScript &, CPubKey &), CMu
                 Getscriptaddress(utxoaddr, tx.vout[nvout].scriptPubKey);
                 if (strcmp(unspentaddr, utxoaddr) == 0)  // check if the real vout address matches the index address (as another key could be used in the addressindex)
                 {
-                    LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream  << " found good vintx for addr=" << unspentaddr << " txid=" << txid.GetHex() << " nvout=" << nvout << " satoshis=" << it->second.satoshis << " isccopret=" << isccopret << std::endl);
+                    LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << " found good vintx for addr=" << unspentaddr << " txid=" << txid.GetHex() << " nvout=" << nvout << " satoshis=" << it->second.satoshis << " isccopret=" << isccopret << std::endl);
 
                     if (total != 0 && maxinputs != 0)
                     {
