@@ -770,8 +770,8 @@ static bool IsLockInLoopOpret(const CScript &spk, CPubKey &pk)
 }
 
 // checks opret by calling CheckOpretFunc for two cases:
-// opret in cc vout data is checked first and considered primary
-// opret in the last vout is checked second and considered secondary
+// 1) opret in cc vout data is checked first and considered primary
+// 2) opret in the last vout is checked second and considered secondary
 // returns the opret and sender pubkey from the opret
 static bool CheckEitherOpRet(bool(*CheckOpretFunc)(const CScript &, CPubKey &), const CTransaction &tx, int32_t nvout, CScript &opretOut, CPubKey & senderpk)
 {
