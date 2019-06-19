@@ -687,8 +687,13 @@ bool MarmaraValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction 
         {
             return(true);
         }
+        else if (funcid == 'K') // lock-in-loop
+        {
+            return(true);
+        }
         // staking only for locked utxo
     }
+    LOGSTREAMFN("marmara", CCLOG_ERROR, stream << " validation error for txid=" << tx.GetHash().GetHex() << " bad funcid=" << (char)(funcid ? funcid : ' ') << std::endl);
     return eval->Invalid("fall through error");
 }
 // end of consensus code
