@@ -638,11 +638,7 @@ bool OraclesDataValidate(struct CCcontract_info *cp,Eval* eval,const CTransactio
 
 int32_t GetLatestTimestamp(int32_t height)
 {
-    uint256 blockHash; CBlock block; CBlockIndex* pindex;
-
-    blockHash = chainActive[height]->GetBlockHash();
-    pindex = mapBlockIndex[blockHash];
-    return(pindex->nTime);
+    return(komodo_heightstamp(height));
 }
 
 bool OraclesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
@@ -1057,6 +1053,38 @@ UniValue OracleFormat(uint8_t *data,int32_t datalen,char *format,int32_t formatl
             break;
     }
     return(obj);
+}
+
+UniValue OracleDataSample(uint256 reforacletxid,uint256 txid)
+{
+    UniValue result(UniValue::VOBJ); CTransaction tx,oracletx; uint256 hashBlock,btxid,oracletxid;  std::string error;
+    CPubKey pk; std::string name,description,format; int32_t numvouts; std::vector<uint8_t> data; char str[67], *formatstr = 0;
+    
+    result.push_back(Pair("result","success"));
+    if ( GetTransaction(reforacletxid,oracletx,hashBlock,false) != 0 && (numvouts=oracletx.vout.size()) > 0 )
+    {
+        if ( DecodeOraclesCreateOpRet(oracletx.vout[numvouts-1].scriptPubKey,name,description,format) == 'C' )
+        {
+            if ( GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts=tx.vout.size()) > 0 )
+            {
+                if ( DecodeOraclesData(tx.vout[numvouts-1].scriptPubKey,oracletxid,btxid,pk,data) == 'D' && reforacletxid == oracletxid )
+                {
+                    if ( (formatstr= (char *)format.c_str()) == 0 )
+                        formatstr = (char *)"";                    
+                    result.push_back(Pair("txid",uint256_str(str,txid)));
+                    result.push_back(Pair("data",OracleFormat((uint8_t *)data.data(),(int32_t)data.size(),formatstr,(int32_t)format.size())));
+                    return(result);                  
+                }
+                else error="invalid data tx";
+            }
+            else error="cannot find data txid";
+        }
+        else error="invalid oracles txid";
+    }
+    else error="cannot find oracles txid";
+    result.push_back(Pair("result","error")); 
+    result.push_back(Pair("error",error));    
+    return(result);
 }
 
 UniValue OracleDataSamples(uint256 reforacletxid,char* batonaddr,int32_t num)

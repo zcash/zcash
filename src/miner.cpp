@@ -222,9 +222,13 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
     boost::optional<CTransaction> cheatSpend;
 
     uint256 cbHash;
-
+    
+    boost::this_thread::interruption_point(); // exit thread before entering locks. 
+    
     CBlockIndex* pindexPrev = 0;
     {
+        // this should stop create block ever exiting until it has returned something. 
+        boost::this_thread::disable_interruption();
         ENTER_CRITICAL_SECTION(cs_main);
         ENTER_CRITICAL_SECTION(mempool.cs);
         pindexPrev = chainActive.LastTip();
@@ -815,7 +819,8 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                     LEAVE_CRITICAL_SECTION(cs_main);
                     LEAVE_CRITICAL_SECTION(mempool.cs);
                 }
-                throw std::runtime_error("CreateNewBlock(): TestBlockValidity failed");
+                //throw std::runtime_error("CreateNewBlock(): TestBlockValidity failed"); // crashes the node, moved to GetBlockTemplate and issue return.
+                return(0);
             }
             //fprintf(stderr,"valid\n");
         }
