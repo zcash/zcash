@@ -646,14 +646,20 @@ CBlockIndex *komodo_getblockindex(uint256 hash)
     return((it != mapBlockIndex.end()) ? it->second : NULL);
 }
 
+// returns vout size for a stake tx
+static int32_t GetStakeTxVoutSize() {
+    if (ASSETCHAINS_MARMARA != 0)
+        return 2; // marmara cc has additional opreturn
+    return 1; //default value
+}
+
 // Extension point to add preferences for stakes (dimxy)
-// TODO: what if for a chain several params produce multipliers. Which to select, max?
-double komodo_getstakemultiplier(CTransaction &tx, int32_t nvout)
+// TODO: what if for some chain several chain's params require different multipliers. Which to select, max?
+static double GetStakeMultiplier(CTransaction &tx, int32_t nvout)
 {
-    double multiplier = 1;
+    double multiplier = 1; // default value
 
     if (ASSETCHAINS_MARMARA != 0) {
-
         multiplier = MarmaraGetStakeMultiplier(tx, nvout);
     }
     return multiplier;
@@ -678,7 +684,7 @@ uint32_t komodo_txtime2(uint64_t *valuep,uint256 hash,int32_t n,char *destaddr)
     //fprintf(stderr,"%s/v%d locktime.%u\n",hash.ToString().c_str(),n,(uint32_t)tx.nLockTime);
     if ( n < tx.vout.size() )
     {
-        int32_t stakemultiplier = komodo_getstakemultiplier(tx, n);
+        int32_t stakemultiplier = GetStakeMultiplier(tx, n);
         *valuep = tx.vout[n].nValue * stakemultiplier; 
 
         if (ExtractDestination(tx.vout[n].scriptPubKey, address))
@@ -1417,6 +1423,7 @@ uint32_t komodo_segid32(char *coinaddr)
 int8_t komodo_segid(int32_t nocache,int32_t height)
 {
     CTxDestination voutaddress; CBlock block; CBlockIndex *pindex; uint64_t value; uint32_t txtime; char voutaddr[64],destaddr[64]; int32_t txn_count,vout,newStakerActive; uint256 txid,merkleroot; CScript opret; int8_t segid = -1;
+    
     if ( height > 0 && (pindex= komodo_chainactive(height)) != 0 )
     {
         if (nocache == 0 && pindex->segid >= -1) {

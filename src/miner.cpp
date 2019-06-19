@@ -312,7 +312,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
         int32_t Notarisations = 0; uint64_t txvalue;
 
         // this lambda function adds transaction to vecPriority, used twice: for adding transactions from the mempool and miner's created transactions (dimxy)
-        auto addTransactionsToVecPriority = [&](const CTransaction &tx)
+        auto addTransactionsToVecPriority = [&](const CTransaction &tx, bool isMempoolTx)
         {
             //break; // dont add any tx to block.. debug for KMD fix. Disabled. 
             const CTransaction& tx = mi->GetTx();
@@ -372,8 +372,13 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                         // or other transactions in the memory pool.
                         if (!mempool.mapTx.count(txin.prevout.hash))
                         {
-                            LogPrintf("ERROR: mempool transaction missing input\n");
-                            if (fDebug) assert("mempool transaction missing input" == 0);
+                            LogPrintf("ERROR: %s transaction missing input\n", isMempoolTx ? "mempool" : "miner's");
+                            if (fDebug) {
+                                if( isMempoolTx )
+                                    assert("mempool transaction missing input" == 0);
+                                else
+                                    assert("miner's transaction missing input" == 0);
+                            }
                             fMissingInputs = true;
                             if (porphan)
                                 vOrphan.pop_back();
@@ -435,8 +440,10 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
             unsigned int nTxSize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
             dPriority = tx.ComputePriority(dPriority, nTxSize);
 
-            uint256 hash = tx.GetHash();
-            mempool.ApplyDeltas(hash, dPriority, nTotalIn);
+            if (isMempoolTx) {  // dont do this for miner's txns
+                uint256 hash = tx.GetHash();
+                mempool.ApplyDeltas(hash, dPriority, nTotalIn);
+            }
 
             CFeeRate feeRate(nTotalIn-tx.GetValueOut(), nTxSize);
 
@@ -488,7 +495,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
             mi != mempool.mapTx.end(); ++mi)
         {
             const CTransaction& tx = mi->GetTx();
-            addTransactionsToVecPriority(tx);
+            addTransactionsToVecPriority(tx, true);
         }
 
         // now add miner's transactions
@@ -496,7 +503,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
             ti != minersTransactions.end(); ++ti)
         {
             const CTransaction& tx = *ti;
-            addTransactionsToVecPriority(tx);
+            addTransactionsToVecPriority(tx, false);
         }
 
 
