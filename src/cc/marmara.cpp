@@ -1455,8 +1455,10 @@ void MarmaraRunAutoSettlement(int32_t height, std::vector<CTransaction> & settle
 
     MarmaraEnumCreditloops(totalopen, issuances, totalclosed, closed, cp, firstheight, lastheight, minamount, maxamount, CPubKey(), MARMARA_CURRENCY, [&](uint256 batontxid, int32_t matures) {
         CTransaction settlementtx;
-        // TODO temp result legacy code, change to remove UniValue
+        //TODO: temp result legacy code, change to remove UniValue
         LOGSTREAM("marmara", CCLOG_DEBUG1, stream << funcname << " miner is calling settlement for batontxid=" << batontxid.GetHex() << std::endl);
+
+        //TODO: check if matured height
         UniValue result = MarmaraSettlement(0, batontxid, settlementtx);
         if (result["result"].getValStr() == "success") {
             LOGSTREAM("marmara", CCLOG_DEBUG1, stream << funcname << " miner is adding settlement tx for batontxid=" << batontxid.GetHex() << std::endl);
