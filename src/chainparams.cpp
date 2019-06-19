@@ -262,8 +262,23 @@ public:
 //            "t3fmYHU2DnVaQgPhDs6TMFVmyC3qbWEWgXN", /* main-index: 52*/
 //            "t3T4WmAp6nrLkJ24iPpGeCe1fSWTPv47ASG", /* main-index: 53*/
 //            "t3fP6GrDM4QVwdjFhmCxGNbe7jXXXSDQ5dv", /* main-index: 54*/
-};
+        };
         assert(vFoundersRewardAddress.size() <= consensus.GetLastFoundersRewardBlockHeight());
+
+        vYcashFoundersRewardAddress = {
+            "s1jZMqwv86DxGKmxAcXNMm7m8CLtBYEZDxm", "s1ML2KfNxtPNSSMAFaBM4wUwmomzp1KiF5e", "s1kWiuzqBe7qneoXDCWZDD7APHWvHMSxgZF", "s1RbkuS5tP5ceNaUif4K9amxYkEyVghkbjz", 
+            "s1TZx9z4JWkSnBc6e3LXgckbBkA7oJcqQbW", "s1id6S1G4VuFdEM6qe3Rc4h7RMuGkwm5Yh4", "s1ZaNdS9n56v3kMpS74NQMANyhrLeHRzSUp", "s1UGzUBTB44VdKYLuHX2NRh7rJ8QqU5ddLD", 
+            "s1Uu1DKuZ8dRpVDg7bN3bBdB9EdnApqjybn", "s1jRNLsjVkVSiTViEXtNELA8aNHC3SwgpDx", "s1Q7zZQFj9USmGVK6j9YsndrxfF8sKNe17f", "s1TWn9QByHGv7Wm2ebU8wGBAJp7MRGAs4YM", 
+            "s1diNTTaSAjLKyh2AmwTQXfY6ziivtZhoXc", "s1Q6zhVhri3kSxm5G18fpeFvtRtGJbctXEv", "s1WwZJ128gvtBGpN2iYLsW8zYNBG1eRWuPs", "s1QkYJYHCJ6362mEuNUQeMgyA5NMG2NsH9U", 
+            "s1crw3WFa9QoKxsnZpvRi4LBMGUbeaWmi25", "s1XHusxpZVxnVzhz9WaE6kYy2kg4UztdzcN", "s1Xtc3A1DKf9jtx9p5kVretxjT46QsTcofL", "s1RdxRXPEPzhEWGinb44ZX25y6xCdm9LQjJ", 
+            "s1dtfjmLUjnyhtLjLb9NwAAv1xSAafLzk3z", "s1cc15Cykv27K2LE6HSjq4xUsFVrSV4gFu8", "s1NCaVHGts6Y1qYiHdws2aHydAisbcPYP28", "s1Q4TJqiCUPwUm75abwu7HBCzDST2pjobRr", 
+            "s1dcZNbVwUFCMnmg398oQ2wCWodu1z2p4S1", "s1fbxPvaqBVYzTPbaFXPzYohJms825BrDy4", "s1R6pCtzvxoJ4pmpymaJdQxbEm6Dv3SQDZM", "s1U5BWnqCjbNds7tpvvTWJWj6bgrhDLXfM1", 
+            "s1RHEavhTsSduM3wCMJNLn3hJEV3wBDnJ4p", "s1dijfoXZDuSAXMi8gnjcJTCkdVppwiCFkZ", "s1TdcoVnH9VZ3rH7xuyuT2eNd8itm1Fnjk4", "s1R93d81y2jUoCJAcLp2frbLCez4BcdfwBs", 
+            "s1S9ssowXocG2LrFv9UkhfmCziPuYWALo2t", "s1RnsZbjaB7CyjS4e9aYg9iUP6S1fSPnp91", "s1gn4ycm3SZ35LGz4qSvESvncJSCgCUpiUN", "s1kT6mjyRW8tB33F5wbitkkxErskCUAowWZ", 
+            "s1TL72cN7KVa52KTgaZtCJVT1734RqVjou1", "s1VDB7VY7vPrdBfkvjYdAyZaqR2QGpP1DV9", "s1YJzuEHWFhGcYAK8CoCbq2CbUPCCTtbMUS", "s1ZeNXcBfbx25xgwrxBcX1X5TTfQW7ppuMR", 
+            "s1Ns2iBukADj6mzCC3L5thjiAcaUneE8Hbp", "s1ifKkuSYWBPLD8tqy8vYDYLAzrAtgo46yx", "s1aknFV5rX6Kj61h365nySpnYioctpgEztX", "s1XSRaJ4VQyccChfkfsjuzcMSTA1gCjgfFR", 
+            "s1eaBUrQRDPPnkeDwENMvUSM5YiYmUmGTnq", "s1Mxd6FEJ335nb5inADJw815QzW423RqGmi", "s1UEogt4pcNVbyBfDNBvE9NjAx3zuFVYTuv", "s1b65fkGZmaMLgYo2QH4NoXRtPy1Xqruzcv", 
+        };
     }
 };
 static CMainParams mainParams;
