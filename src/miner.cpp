@@ -490,7 +490,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                 vecPriority.push_back(TxPriority(dPriority, feeRate, &tx));  // was &(mi->GetTx())
         };
 
-        // now add transactions from the mem pool
+        // now add transactions from the mempool
         for (CTxMemPool::indexed_transaction_set::iterator mi = mempool.mapTx.begin();
             mi != mempool.mapTx.end(); ++mi)
         {

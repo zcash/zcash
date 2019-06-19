@@ -1427,7 +1427,7 @@ int8_t komodo_segid(int32_t nocache,int32_t height)
     if ( height > 0 && (pindex= komodo_chainactive(height)) != 0 )
     {
         if (nocache == 0 && pindex->segid >= -1) {
-            fprintf(stderr, "komodo_segid set cached height.%d -> %d\n", height, pindex->segid); // added, comment
+            //fprintf(stderr, "komodo_segid set cached height.%d -> %d\n", height, pindex->segid); 
             return(pindex->segid);
         }
         if ( komodo_blockload(block,pindex) == 0 )
