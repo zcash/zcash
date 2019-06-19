@@ -161,7 +161,9 @@ uint8_t MarmaraDecodeLoopOpret(const CScript scriptPubKey, uint256 &createtxid, 
     return(0);
 }
 
-// finds the initial creation txid retrieving it from the any of the loop txn opret
+// finds the initial creation txid for any loop txid
+// by retrieving it either from the loop tx opret or 
+// if the passed txid is the createtxid then func will set the txid as the createtxid
 int32_t MarmaraGetcreatetxid(uint256 &createtxid, uint256 txid)
 {
     CTransaction tx; 
@@ -197,19 +199,19 @@ int32_t MarmaraGetbatontxid(std::vector<uint256> &creditloop, uint256 &batontxid
 {
     uint256 createtxid, spenttxid; 
     int64_t value; 
-    int32_t vini, height, n = 0, vout = 0;
+    int32_t vini, height, n = 0, nvout0 = 0;
     
     batontxid = zeroid;
     if (MarmaraGetcreatetxid(createtxid, txid) == 0) // retrieve the initial creation txid
     {
         txid = createtxid;
         //fprintf(stderr,"%s txid.%s -> createtxid %s\n", logFuncName, txid.GetHex().c_str(),createtxid.GetHex().c_str());
-        while (CCgetspenttxid(spenttxid, vini, height, txid, vout) == 0)
+        while (CCgetspenttxid(spenttxid, vini, height, txid, nvout0) == 0)
         {
             creditloop.push_back(txid);
             //fprintf(stderr,"%d: %s\n",n,txid.GetHex().c_str());
             n++;
-            if ((value = CCgettxout(spenttxid, vout, 1, 1)) == 10000)
+            if ((value = CCgettxout(spenttxid, nvout0, 1, 1)) == 10000)
             {
                 batontxid = spenttxid;
                 //fprintf(stderr,"%s got baton %s %.8f\n", logFuncName, batontxid.GetHex().c_str(),(double)value/COIN);
@@ -218,10 +220,10 @@ int32_t MarmaraGetbatontxid(std::vector<uint256> &creditloop, uint256 &batontxid
             else if (value > 0)
             {
                 batontxid = spenttxid;
-                LOGSTREAMFN("marmara", CCLOG_ERROR, stream  << " n=" << n << " got and will use false baton=" << batontxid.GetHex() << " vout=" << vout << "value=" << (double)value / COIN << std::endl);
+                LOGSTREAMFN("marmara", CCLOG_ERROR, stream  << " n=" << n << " got and will use false baton=" << batontxid.GetHex() << " vout=" << nvout0 << "value=" << (double)value / COIN << std::endl);
                 return(n);
             }
-            // get funcid
+            // TODO: get funcid (and check?)
             txid = spenttxid;
         }
     }
