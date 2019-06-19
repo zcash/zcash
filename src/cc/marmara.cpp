@@ -1406,7 +1406,8 @@ int32_t MarmaraEnumCreditloops(int64_t &totalopen, std::vector<uint256> &issuanc
                             if (myGetTransaction(batontxid, batontx, hashBlock) && batontx.vout.size() > 1 &&
                                 (funcid = MarmaraDecodeLoopOpret(batontx.vout.back().scriptPubKey, createtxid, pk, amount, matures, currency)) != 0)
                             {
-                                if (funcid == 'D' || funcid == 'S') {
+                                if (funcid == 'D' || funcid == 'S') { 
+                                    // cannot get here as marker is spent in settlement, no closed 
                                     closed.push_back(issuancetxid);
                                     totalclosed += amount;
                                     callback(batontxid, -1);
