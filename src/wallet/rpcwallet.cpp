@@ -6269,7 +6269,7 @@ UniValue marmara_receive(const UniValue& params, bool fHelp, const CPubKey& mypk
         // 1st marmarareceive 028076d42eb20efc10007fafb5ca66a2052523c0d2221e607adf958d1a332159f6 7.5 MARMARA 1440
         // after marmarareceive 039433dc3749aece1bd568f374a45da3b0bc6856990d7da3cd175399577940a775 7.5 MARMARA 1168 d72d87aa0d50436de695c93e2bf3d7273c63c92ef6307913aa01a6ee6a16548b
 
-        throw runtime_error("marmarareceive senderpk amount currency matures [batontxid]\n" "creates requesttx.\nFor the first time call batontxid is null\n\n");
+        throw runtime_error("marmarareceive senderpk amount currency matures [batontxid]\n" "creates requesttx for issuer or endorser.\nFor the first call batontxid should be empty\n\n");
     }
     if ( ensure_CCrequirements(EVAL_MARMARA) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
@@ -6329,7 +6329,7 @@ UniValue marmara_transfer(const UniValue& params, bool fHelp, const CPubKey& myp
     if ( fHelp || params.size() != 5 )
     {
         // marmaratransfer 028076d42eb20efc10007fafb5ca66a2052523c0d2221e607adf958d1a332159f6 7.5 MARMARA 1168 1506c774e4b2804a6e25260920840f4cfca8d1fb400e69fe6b74b8e593dbedc5
-        throw runtime_error("marmaratransfer receiverpk amount currency matures approvaltxid\n");
+        throw runtime_error("marmaratransfer receiverpk amount currency matures requesttxid\n");
     }
     if ( ensure_CCrequirements(EVAL_MARMARA) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);

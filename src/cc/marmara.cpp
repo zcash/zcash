@@ -259,12 +259,8 @@ CScript MarmaraCoinbaseOpret(uint8_t funcid, int32_t height, CPubKey pk)
 
 // half of the blocks (with even heights) should be mined as activated (to some unlock height)
 // validates opreturn for even blocks
-int32_t MarmaraValidateCoinbase(int32_t height, CTransaction tx)
-{
-    struct CCcontract_info *cp, C; CPubKey Marmarapk, pk; int32_t ht, unlockht; CTxOut ccvout;
-    cp = CCinit(&C, EVAL_MARMARA);
-    Marmarapk = GetUnspendable(cp, 0);
-    
+int32_t MarmaraValidateCoinbase(int32_t height, CTransaction tx, std::string &errmsg)
+{ 
 /*    if (0) // not used
     {
         int32_t d, histo[365 * 2 + 30];
@@ -287,30 +283,42 @@ int32_t MarmaraValidateCoinbase(int32_t height, CTransaction tx)
     } */
 
     if ((height & 1) != 0) // odd block - no marmara opret
-        return(0);
-
-    if (tx.vout.size() == 2 && tx.vout[1].nValue == 0)
     {
-        if (DecodeMarmaraCoinbaseOpRet(tx.vout[1].scriptPubKey, pk, ht, unlockht) == 'C')
-        {
-            if (ht == height && MarmaraUnlockht(height) == unlockht)
-            {
-                //fprintf(stderr,"ht.%d -> unlock.%d\n",ht,unlockht);
-                ccvout = MakeCC1of2vout(EVAL_MARMARA, 0, Marmarapk, pk);
-                if (ccvout.scriptPubKey == tx.vout[0].scriptPubKey)
-                    return(0);
-                char addr0[KOMODO_ADDRESS_BUFSIZE], addr1[KOMODO_ADDRESS_BUFSIZE];
-                Getscriptaddress(addr0, ccvout.scriptPubKey);
-                Getscriptaddress(addr1, tx.vout[0].scriptPubKey);
-                LOGSTREAMFN("marmara", CCLOG_ERROR, stream  << " ht=" << height << " mismatched CCvout scriptPubKey=" << addr0 << " vs tx.vout[0].scriptPubKey=" << addr1 << " pk.size=" << pk.size() << " pk=" << HexStr(pk) << std::endl);
-            }
-            else 
-                LOGSTREAMFN("marmara", CCLOG_ERROR, stream   <<  " ht=" << height << " MarmaraUnlockht=" << MarmaraUnlockht(height) << " vs opret's ht=" << ht << " unlock=" << unlockht << std::endl);
-        }
-        else 
-            LOGSTREAMFN("marmara", CCLOG_ERROR, stream   << " ht=" << height  << " error decoding coinbase opret" << std::endl);
+        return(0);
     }
-    return(-1);
+    else //eve block - check for cc vout & opret
+    {
+        struct CCcontract_info *cp, C; CPubKey Marmarapk, pk; int32_t ht, unlockht; CTxOut ccvout;
+        cp = CCinit(&C, EVAL_MARMARA);
+        Marmarapk = GetUnspendable(cp, 0);
+
+        if (tx.vout.size() == 2 && tx.vout[1].nValue == 0)
+        {
+            if (DecodeMarmaraCoinbaseOpRet(tx.vout[1].scriptPubKey, pk, ht, unlockht) == 'C')
+            {
+                if (ht == height && MarmaraUnlockht(height) == unlockht)
+                {
+                    //fprintf(stderr,"ht.%d -> unlock.%d\n",ht,unlockht);
+                    ccvout = MakeCC1of2vout(EVAL_MARMARA, 0, Marmarapk, pk);
+                    if (ccvout.scriptPubKey == tx.vout[0].scriptPubKey)
+                        return(0);
+                    char addr0[KOMODO_ADDRESS_BUFSIZE], addr1[KOMODO_ADDRESS_BUFSIZE];
+                    Getscriptaddress(addr0, ccvout.scriptPubKey);
+                    Getscriptaddress(addr1, tx.vout[0].scriptPubKey);
+                    LOGSTREAMFN("marmara", CCLOG_ERROR, stream << " ht=" << height << " mismatched CCvout scriptPubKey=" << addr0 << " vs tx.vout[0].scriptPubKey=" << addr1 << " pk.size=" << pk.size() << " pk=" << HexStr(pk) << std::endl);
+                }
+                else
+                    LOGSTREAMFN("marmara", CCLOG_ERROR, stream << " ht=" << height << " MarmaraUnlockht=" << MarmaraUnlockht(height) << " vs opret's ht=" << ht << " unlock=" << unlockht << std::endl);
+            }
+            else
+                LOGSTREAMFN("marmara", CCLOG_ERROR, stream << " ht=" << height << " error decoding coinbase opret" << std::endl);
+        }
+        else
+            LOGSTREAMFN("marmara", CCLOG_ERROR, stream << " ht=" << height << " incorrect vout size for marmara coinbase" << std::endl);
+
+        errmsg = "marmara cc constrains even height blocks to pay 100%% to CC in vout0 with opreturn";
+        return(-1);
+    }
 }
 
 // check stake tx
@@ -1366,7 +1374,7 @@ int32_t MarmaraEnumCreditloops(int64_t &totalopen, std::vector<uint256> &issuanc
         LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "checking tx as marker on marmara addr txid=" << issuancetxid.GetHex() << " vout=" << vout << std::endl);
         if (vout == 1 && myGetTransaction(issuancetxid, issuancetx, hashBlock))  // TODO: change to the non-locking version if needed
         {
-            if (issuancetx.IsCoinBase() == 0 && issuancetx.vout.size() > 2 && issuancetx.vout.back().nValue == 0 /*opreturn?*/)
+            if (!issuancetx.IsCoinBase() && issuancetx.vout.size() > 2 && issuancetx.vout.back().nValue == 0 /*has opreturn?*/)
             {
                 CPubKey senderpk; 
                 int64_t amount; 
@@ -1376,11 +1384,13 @@ int32_t MarmaraEnumCreditloops(int64_t &totalopen, std::vector<uint256> &issuanc
 
                 if (MarmaraDecodeLoopOpret(issuancetx.vout.back().scriptPubKey, createtxid, senderpk, amount, matures, currency) == 'I')
                 {
+                    LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "found issuance tx txid=" << issuancetxid.GetHex() << std::endl);
                     n++;
                     if (currency == refcurrency && matures >= firstheight && matures <= lastheight && amount >= minamount && amount <= maxamount && (refpk.size() == 0 || senderpk == refpk))
                     {
                         std::vector<uint256> creditloop;
                         uint256 batontxid;
+                        LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "issuance tx is filtered txid=" << issuancetxid.GetHex() << std::endl);
 
                         if (MarmaraGetbatontxid(creditloop, batontxid, issuancetxid) > 0)
                         {
@@ -1391,6 +1401,7 @@ int32_t MarmaraEnumCreditloops(int64_t &totalopen, std::vector<uint256> &issuanc
                             int64_t amount;
                             int32_t matures;
                             std::string currency;
+                            LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "found baton for txid=" << issuancetxid.GetHex() << std::endl);
 
                             if (myGetTransaction(batontxid, batontx, hashBlock) && batontx.vout.size() > 1 &&
                                 (funcid = MarmaraDecodeLoopOpret(batontx.vout.back().scriptPubKey, createtxid, pk, amount, matures, currency)) != 0)
