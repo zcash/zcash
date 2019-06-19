@@ -1420,7 +1420,7 @@ int8_t komodo_segid(int32_t nocache,int32_t height)
     if ( height > 0 && (pindex= komodo_chainactive(height)) != 0 )
     {
         if (nocache == 0 && pindex->segid >= -1) {
-            fprintf(stderr, "komodo_segid cached height.%d -> %d\n", height, pindex->segid);
+            fprintf(stderr, "komodo_segid set cached height.%d -> %d\n", height, pindex->segid); // added, comment
             return(pindex->segid);
         }
         if ( komodo_blockload(block,pindex) == 0 )
@@ -1449,6 +1449,10 @@ int8_t komodo_segid(int32_t nocache,int32_t height)
         // PoW blocks cannot contain a staking tx. If segid has not yet been set, we can set it here accurately.
         if ( pindex->segid == -2 ) 
             pindex->segid = segid;
+    }
+    else
+    {
+        fprintf(stderr, "komodo_segid pindex==null ht.%d default value=%d\n", height, segid);
     }
     return(segid);
 }
