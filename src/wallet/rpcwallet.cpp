@@ -5564,6 +5564,8 @@ UniValue cclibinfo(const UniValue& params, bool fHelp)
 UniValue cclib(const UniValue& params, bool fHelp)
 {
     struct CCcontract_info *cp,C; char *method,*jsonstr=0; uint8_t evalcode = EVAL_FIRSTUSER;
+    std::string vobjJsonSerialized;
+
     if ( fHelp || params.size() > 3 )
         throw runtime_error("cclib method [evalcode] [JSON params]\n");
     if ( ASSETCHAINS_CCLIB.size() == 0 )
@@ -5583,7 +5585,12 @@ UniValue cclib(const UniValue& params, bool fHelp)
         }
         if ( params.size() == 3 )
         {
-            jsonstr = (char *)params[2].get_str().c_str();
+            if (params[2].getType() == UniValue::VOBJ) {
+                vobjJsonSerialized = params[2].write(0, 0);
+                jsonstr = (char *)vobjJsonSerialized.c_str();
+            }
+            else  // VSTR assumed
+                jsonstr = (char *)params[2].get_str().c_str();
             //fprintf(stderr,"params.(%s %s %s)\n",params[0].get_str().c_str(),params[1].get_str().c_str(),jsonstr);
         }
     }
@@ -6828,6 +6835,20 @@ UniValue oraclessubscribe(const UniValue& params, bool fHelp)
         result.push_back(Pair("hex", hex));
     } else ERR_RESULT("couldnt subscribe with oracle txid");
     return(result);
+}
+
+UniValue oraclessample(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); uint256 oracletxid,txid; int32_t num; char *batonaddr;
+    if ( fHelp || params.size() != 2 )
+        throw runtime_error("oraclessample oracletxid txid\n");
+    if ( ensure_CCrequirements(EVAL_ORACLES) < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    const CKeyStore& keystore = *pwalletMain;
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+    oracletxid = Parseuint256((char *)params[0].get_str().c_str());
+    txid = Parseuint256((char *)params[1].get_str().c_str());
+    return(OracleDataSample(oracletxid,txid));
 }
 
 UniValue oraclessamples(const UniValue& params, bool fHelp)
