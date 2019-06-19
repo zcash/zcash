@@ -747,7 +747,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
     if ( height > 0 && ASSETCHAINS_MARMARA != 0 && (height & 1) == 0 )
     {
 		std::string errmsg;
-        if ( MarmaraValidateCoinbase(height,block.vtx[0], std::string &errmsg) < 0 )
+        if ( MarmaraValidateCoinbase(height,block.vtx[0], errmsg) < 0 )
         {
             fprintf(stderr,"MARMARA validate coinbase error ht.%d %s\n",height, errmsg.c_str());
             return(-1);
