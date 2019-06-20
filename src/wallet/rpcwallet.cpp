@@ -6297,7 +6297,7 @@ UniValue marmara_receive(const UniValue& params, bool fHelp, const CPubKey& mypk
         optParams = params[4].get_obj();
     else if (params[4].getType() == UniValue::VSTR)
         optParams.read(params[4].get_str().c_str());
-    if (optParams.getType() == UniValue::VOBJ)
+    if (optParams.getType() != UniValue::VOBJ)
         throw runtime_error("parameter 4 must be object\n");
     
     std::cerr << __func__ << " test optParams" << optParams.write(0,0) << std::endl;
