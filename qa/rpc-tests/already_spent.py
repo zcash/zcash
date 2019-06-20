@@ -1,5 +1,5 @@
 #!/usr/bin/env python2
-# Copyright (c) 2018 The Zcash developers
+# Copyright (c) 2019 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
