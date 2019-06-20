@@ -655,9 +655,9 @@ static int32_t GetStakeTxVoutSize() {
 
 // Extension point to add preferences for stakes (dimxy)
 // TODO: what if for some chain several chain's params require different multipliers. Which to select, max?
-static double GetStakeMultiplier(CTransaction &tx, int32_t nvout)
+static int32_t GetStakeMultiplier(CTransaction &tx, int32_t nvout)
 {
-    double multiplier = 1; // default value
+    int32_t multiplier = 1; // default value
 
     if (ASSETCHAINS_MARMARA != 0) {
         multiplier = MarmaraGetStakeMultiplier(tx, nvout);
