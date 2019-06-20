@@ -6296,6 +6296,7 @@ UniValue marmara_receive(const UniValue& params, bool fHelp, const CPubKey& mypk
     if (params[4].getType() != UniValue::VOBJ) 
         throw runtime_error("parameter 4 must be object\n");
     optParams = params[4].get_obj();
+    std::cerr << __func__ << " test optParams" << optParams.write(0,0) << std::endl;
 
     if (params.size() == 6) // baton present
         batontxid = Parseuint256((char *)params[5].get_str().c_str());  
