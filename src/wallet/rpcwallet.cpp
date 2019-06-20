@@ -6293,9 +6293,13 @@ UniValue marmara_receive(const UniValue& params, bool fHelp, const CPubKey& mypk
     else
         matures = atol(params[3].get_str().c_str()) + chainActive.LastTip()->GetHeight() + 1;  // if no baton (first call) then matures value is relative
 
-    if (params[4].getType() != UniValue::VOBJ) 
+    if (params[4].getType() == UniValue::VOBJ)
+        optParams = params[4].get_obj();
+    else if (params[4].getType() == UniValue::VSTR)
+        optParams.read(params[4].get_str().c_str());
+    if (optParams.getType() == UniValue::VOBJ)
         throw runtime_error("parameter 4 must be object\n");
-    optParams = params[4].get_obj();
+    
     std::cerr << __func__ << " test optParams" << optParams.write(0,0) << std::endl;
 
     if (params.size() == 6) // baton present
