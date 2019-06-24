@@ -206,12 +206,12 @@ void OS_nonportable_randombytes(uint8_t *x,long xlen);
 int32_t OS_nonportable_init();
 #endif
 
-void OS_portable_init();
-void OS_init();
+void OS_portable_init(void);
+void OS_init(void);
 int32_t sortds(double *buf,uint32_t num,int32_t size);
 int32_t revsortds(double *buf,uint32_t num,int32_t size);
 
-double OS_portable_milliseconds();
+double OS_portable_milliseconds(void);
 void OS_portable_randombytes(uint8_t *x,long xlen);
 int32_t OS_portable_truncate(char *fname,long filesize);
 char *OS_portable_path(char *str);
@@ -256,7 +256,7 @@ int32_t OS_removefile(char *fname,int32_t scrubflag);
 void *OS_mapfile(char *fname,long *filesizep,int32_t enablewrite);
 int32_t OS_releasemap(void *ptr,unsigned long filesize);
 
-double OS_milliseconds();
+double OS_milliseconds(void);
 void OS_randombytes(uint8_t *x,long xlen);
 
 //int32_t OS_syncmap(struct OS_mappedptr *mp,long len);
@@ -313,7 +313,7 @@ void sort64s(uint64_t *buf,uint32_t num,int32_t size);
 void revsort64s(uint64_t *buf,uint32_t num,int32_t size);
 int decode_base32(uint8_t *token,uint8_t *tokenstr,int32_t len);
 int init_base32(char *tokenstr,uint8_t *token,int32_t len);
-char *OS_mvstr();
+char *OS_mvstr(void);
 
 long _stripwhite(char *buf,int accept);
 int32_t is_DST(int32_t datenum);
@@ -381,7 +381,7 @@ double dxblend(double *destp,double val,double decay);
 uint64_t calc_ipbits(char *ip_port);
 void expand_ipbits(char *ipaddr,uint64_t ipbits);
 void escape_code(char *escaped,char *str);
-void SaM_PrepareIndices();
+void SaM_PrepareIndices(void);
 
 // iguana_serdes.c
 #ifndef IGUANA_LOG2PACKETSIZE
