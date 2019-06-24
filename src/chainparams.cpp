@@ -141,7 +141,7 @@ public:
         vFixedSeeds.clear();
         vSeeds.clear();
         vSeeds.push_back(CDNSSeedData("z.cash", "dnsseed.z.cash")); // Zcash
-        vSeeds.push_back(CDNSSeedData("ycash.xyz", "seed.str4d.xyz")); // Ycash Seed
+        vSeeds.push_back(CDNSSeedData("ycash.xyz", "seed.ycash.xyz")); // Ycash Seed
 
         // guarantees the first 2 characters, when base58 encoded, are "s1"
         base58Prefixes[PUBKEY_ADDRESS]       = {0x1C,0x28};
