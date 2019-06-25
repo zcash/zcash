@@ -300,7 +300,7 @@ int32_t CClib_initcp(struct CCcontract_info *cp,uint8_t evalcode)
 
 struct CCcontract_info *CCinit(struct CCcontract_info *cp, uint8_t evalcode)
 {
-    // memset(cp, '\0', sizeof(*cp)); <-- it is bad to initialize objects like this. Now default values are set in CCcontract_info definition
+    // memset(cp, '\0', sizeof(*cp)); <-- it is bad to initialize objects like this. Now default zero values are set in CCcontract_info constructor
 
     cp->evalcode = evalcode;
     switch ( evalcode )
