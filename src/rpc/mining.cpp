@@ -668,6 +668,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
             if (pblock->vtx[0].vout.size() > 1) {
                 // Correct this if GetBlockTemplate changes the order
                 entry.push_back(Pair("foundersreward", (int64_t)tx.vout[1].nValue));
+                entry.push_back(Pair("foundersaddress", Params().GetFoundersRewardAddressAtHeight(pindexPrev->nHeight+1)));
             }
             entry.push_back(Pair("required", true));
             txCoinbase = entry;
@@ -902,6 +903,7 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp)
         
         result.push_back(Pair("miner", ValueFromAmount(nReward)));
         result.push_back(Pair("founders", ValueFromAmount(nFoundersReward)));
+        result.push_back(Pair("founderaddress", Params().GetFoundersRewardAddressAtHeight(nHeight)));
     }
 
     return result;
