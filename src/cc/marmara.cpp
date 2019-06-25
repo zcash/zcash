@@ -1308,7 +1308,7 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid, CTransaction &se
         txfee = 10000;
 
     cp = CCinit(&C, EVAL_MARMARA);
-    CPubKey mypk = pubkey2pk(Mypubkey());
+    CPubKey minerpk = pubkey2pk(Mypubkey());
     uint8_t marmarapriv[32];
     CPubKey Marmarapk = GetUnspendable(cp, marmarapriv);
     
@@ -1321,10 +1321,10 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid, CTransaction &se
 
         if (myGetTransaction(batontxid, batontx, hashBlock) && batontx.vout.size() > 1)
         {
-            CPubKey pk;
+            CPubKey currentpk;
             uint8_t funcid;
 
-            if ((funcid = MarmaraDecodeLoopOpret(batontx.vout.back().scriptPubKey, refcreatetxid, pk, refamount, refmatures, refcurrency)) != 0)
+            if ((funcid = MarmaraDecodeLoopOpret(batontx.vout.back().scriptPubKey, refcreatetxid, currentpk, refamount, refmatures, refcurrency)) != 0)
             {
                 if (refcreatetxid != creditloop[0])
                 {
@@ -1381,12 +1381,12 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid, CTransaction &se
                     if ((inputsum = AddMarmarainputs(IsLockInLoopOpret, mtx, pubkeys, lockInLoop1of2addr, refamount, MARMARA_VINS)) >= refamount)
                     {
                         change = (inputsum - refamount);
-                        mtx.vout.push_back(CTxOut(refamount, CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));   // locked-in-loop money is released to mypk doing the settlement
+                        mtx.vout.push_back(CTxOut(refamount, CScript() << ParseHex(HexStr(currentpk)) << OP_CHECKSIG));   // locked-in-loop money is released to mypk doing the settlement
                         if (change > txfee) {
                             LOGSTREAMFN("marmara", CCLOG_ERROR, stream  << "error: change not null=" << change << ", sent back to lock-in-loop addr=" << lockInLoop1of2addr << std::endl);
                             mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA, change, Marmarapk, createtxidPk));
                         }
-                        rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, MarmaraEncodeLoopOpret('S', refcreatetxid, mypk, 0, refmatures, refcurrency), pubkeys);
+                        rawtx = FinalizeCCTx(0, cp, mtx, minerpk, txfee, MarmaraEncodeLoopOpret('S', refcreatetxid, currentpk, 0, refmatures, refcurrency), pubkeys);
                         if (rawtx.empty()) {
                             result.push_back(Pair("result", "error"));
                             result.push_back(Pair("error", "couldnt finalize CCtx"));
@@ -1443,9 +1443,9 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid, CTransaction &se
                         // TODO: seems this was supposed that txfee should been taken from 1of2 address?
                         //if (refamount - remaining > 3 * txfee)
                         //    mtx.vout.push_back(CTxOut(refamount - remaining - 2 * txfee, CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
-                        mtx.vout.push_back(CTxOut(refamount - remaining - txfee, CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
+                        mtx.vout.push_back(CTxOut(refamount - remaining - txfee, CScript() << ParseHex(HexStr(currentpk)) << OP_CHECKSIG));
 
-                        rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, MarmaraEncodeLoopOpret('D', refcreatetxid, mypk, -remaining, refmatures, refcurrency), pubkeys);  //some remainder left
+                        rawtx = FinalizeCCTx(0, cp, mtx, minerpk, txfee, MarmaraEncodeLoopOpret('D', refcreatetxid, currentpk, -remaining, refmatures, refcurrency), pubkeys);  //some remainder left
                         if (rawtx.empty()) {
                             result.push_back(Pair("result", "error"));
                             result.push_back(Pair("error", "couldnt finalize CCtx"));
@@ -1600,14 +1600,16 @@ void MarmaraRunAutoSettlement(int32_t height, std::vector<CTransaction> & settle
         //TODO: temp result legacy code, change to remove UniValue
         LOGSTREAM("marmara", CCLOG_DEBUG1, stream << funcname << " miner is calling settlement for batontxid=" << batontxid.GetHex() << std::endl);
 
-        //TODO: check if matured height
-        UniValue result = MarmaraSettlement(0, batontxid, settlementtx);
-        if (result["result"].getValStr() == "success") {
-            LOGSTREAM("marmara", CCLOG_DEBUG1, stream << funcname << " miner is adding settlement tx for batontxid=" << batontxid.GetHex() << std::endl);
-            settlementTransactions.push_back(settlementtx);
-        }
-        else {
-            LOGSTREAM("marmara", CCLOG_ERROR, stream << funcname << " error=" << result["error"].getValStr() << " in settlement for batontxid=" << batontxid.GetHex() << std::endl);
+        if (chainActive.LastTip()->GetHeight() < matures)   //check height if matured 
+        {
+            UniValue result = MarmaraSettlement(0, batontxid, settlementtx);
+            if (result["result"].getValStr() == "success") {
+                LOGSTREAM("marmara", CCLOG_DEBUG1, stream << funcname << " miner is adding settlement tx for batontxid=" << batontxid.GetHex() << std::endl);
+                settlementTransactions.push_back(settlementtx);
+            }
+            else {
+                LOGSTREAM("marmara", CCLOG_ERROR, stream << funcname << " error=" << result["error"].getValStr() << " in settlement for batontxid=" << batontxid.GetHex() << std::endl);
+            }
         }
     });
 }
