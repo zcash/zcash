@@ -1600,7 +1600,7 @@ void MarmaraRunAutoSettlement(int32_t height, std::vector<CTransaction> & settle
         //TODO: temp result legacy code, change to remove UniValue
         LOGSTREAM("marmara", CCLOG_DEBUG1, stream << funcname << " miner is calling settlement for batontxid=" << batontxid.GetHex() << std::endl);
 
-        if (chainActive.LastTip()->GetHeight() < matures)   //check height if matured 
+        if (chainActive.LastTip()->GetHeight() >= matures)   //check height if matured 
         {
             UniValue result = MarmaraSettlement(0, batontxid, settlementtx);
             if (result["result"].getValStr() == "success") {
