@@ -312,7 +312,7 @@ int32_t MarmaraGetcreatetxid(uint256 &createtxid, uint256 txid)
     uint256 hashBlock; 
   
     createtxid = zeroid;
-    if (myGetTransaction(txid, tx, hashBlock) != 0 && tx.vout.size() > 1)
+    if (myGetTransaction(txid, tx, hashBlock) != 0 && !hashBlock.IsNull() &&tx.vout.size() > 1)  // might be called from validation code, so non-locking version
     {
         uint8_t funcid;
         int32_t matures;
@@ -555,8 +555,7 @@ static void EnumMyActivated(T func)
 
         LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream  << " check tx on activatedaddr txid=" << txid.GetHex() << " vout=" << nvout << std::endl);
 
-        // TODO: change to the non-locking version:
-        if (myGetTransaction(txid, tx, hashBlock) && (pindex = komodo_getblockindex(hashBlock)) != 0 && myIsutxo_spentinmempool(ignoretxid, ignorevin, txid, nvout) == 0)
+        if (GetTransaction(txid, tx, hashBlock, true) && (pindex = komodo_getblockindex(hashBlock)) != 0 && myIsutxo_spentinmempool(ignoretxid, ignorevin, txid, nvout) == 0)
         {
             char utxoaddr[KOMODO_ADDRESS_BUFSIZE] = "";
 
@@ -607,7 +606,7 @@ static void EnumMyLockedInLoop(T func)
         int32_t nvout = (int32_t)it->first.index;
 
         LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream  << " checking tx on markeraddr txid=" << txid.GetHex() << " vout=" << nvout << std::endl);
-        if (nvout == 1 && myGetTransaction(txid, isssuancetx, hashBlock))  // TODO: check if non-locking version better, was GetTransaction(txid, isssuancetx, hashBlock, true)
+        if (nvout == MARMARA_MARKER_VOUT && GetTransaction(txid, isssuancetx, hashBlock, true))  // TODO: check if non-locking version better, was GetTransaction(txid, isssuancetx, hashBlock, true)
         {
             if (!isssuancetx.IsCoinBase() && isssuancetx.vout.size() > 2 && isssuancetx.vout.back().nValue == 0)
             {
@@ -639,7 +638,7 @@ static void EnumMyLockedInLoop(T func)
 
                         LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream  << " checking tx on loopaddr txid=" << txid.GetHex() << " vout=" << nvout << std::endl);
 
-                        if (myGetTransaction(txid, looptx, hashBlock) && (pindex = komodo_getblockindex(hashBlock)) != 0 && myIsutxo_spentinmempool(ignoretxid, ignorevin, txid, nvout) == 0)  // TODO: change to the non-locking version
+                        if (GetTransaction(txid, looptx, hashBlock, true) && (pindex = komodo_getblockindex(hashBlock)) != 0 && myIsutxo_spentinmempool(ignoretxid, ignorevin, txid, nvout) == 0)  // TODO: change to the non-locking version
                         {
                             /* lock-in-loop cant be mined */                   /* now it could be cc opret, not necessary OP_RETURN vout in the back */
                             if (!looptx.IsCoinBase() && looptx.vout.size() > 0 /* && looptx.vout.back().nValue == 0 */)  
@@ -1319,7 +1318,7 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid, CTransaction &se
         CTransaction batontx;
         uint256 hashBlock;
 
-        if (myGetTransaction(batontxid, batontx, hashBlock) && batontx.vout.size() > 1)
+        if (GetTransaction(batontxid, batontx, hashBlock, true) && !hashBlock.IsNull() && batontx.vout.size() > 1)
         {
             CPubKey currentpk;
             uint8_t funcid;
@@ -1360,7 +1359,7 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid, CTransaction &se
                 {
                     std::vector<CPubKey> pubkeys;
 
-                    mtx.vin.push_back(CTxIn(numDebtors == 1 ? batontxid : creditloop[1], 1, CScript())); // spend issuance marker - close the loop
+                    mtx.vin.push_back(CTxIn(numDebtors == 1 ? batontxid : creditloop[1], MARMARA_MARKER_VOUT, CScript())); // spend issuance marker - close the loop
 
                     // add tx fee from mypubkey
                     if (AddNormalinputs2(mtx, txfee, 4) < txfee) {  // TODO: in the previous code txfee was taken from 1of2 address
@@ -1517,7 +1516,7 @@ int32_t MarmaraEnumCreditloops(int64_t &totalopen, std::vector<uint256> &issuanc
 
         LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "checking tx as marker on marmara addr txid=" << issuancetxid.GetHex() << " vout=" << vout << std::endl);
         // enum creditloop markers:
-        if (vout == 1 && myGetTransaction(issuancetxid, issuancetx, hashBlock))  // TODO: change to the locking or non-locking version if needed
+        if (vout == MARMARA_MARKER_VOUT && GetTransaction(issuancetxid, issuancetx, hashBlock, true) && !hashBlock.IsNull())  // TODO: change to the locking or non-locking version if needed
         {
             if (!issuancetx.IsCoinBase() && issuancetx.vout.size() > 2 && issuancetx.vout.back().nValue == 0 /*has opreturn?*/)
             {
@@ -1548,7 +1547,7 @@ int32_t MarmaraEnumCreditloops(int64_t &totalopen, std::vector<uint256> &issuanc
                             std::string currency;
                             LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "found baton for txid=" << issuancetxid.GetHex() << std::endl);
 
-                            if (myGetTransaction(batontxid, batontx, hashBlock) && batontx.vout.size() > 1 &&
+                            if (GetTransaction(batontxid, batontx, hashBlock, true) && !hashBlock.IsNull() && batontx.vout.size() > 1 &&
                                 (funcid = MarmaraDecodeLoopOpret(batontx.vout.back().scriptPubKey, createtxid, pk, amount, matures, currency)) != 0)
                             {
                                 if (funcid == 'D' || funcid == 'S') { 
