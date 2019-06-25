@@ -44,8 +44,6 @@ JSON_TEST_FILES = \
   test/data/merkle_witness_serialization_sapling.json \
   test/data/merkle_path_sapling.json \
   test/data/merkle_commitments_sapling.json \
-  test/data/g1_compressed.json \
-  test/data/g2_compressed.json \
   test/data/sapling_key_components.json
 
 RAW_TEST_FILES = test/data/alertTests.raw

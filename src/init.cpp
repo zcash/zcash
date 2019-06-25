@@ -59,8 +59,6 @@
 #include <boost/thread.hpp>
 #include <openssl/crypto.h>
 
-#include <libsnark/common/profiling.hpp>
-
 #if ENABLE_ZMQ
 #include "zmq/zmqnotificationinterface.h"
 #endif
@@ -527,7 +525,7 @@ std::string HelpMessage(HelpMessageMode mode)
         strUsage += HelpMessageOpt("-rpcservertimeout=<n>", strprintf("Timeout during HTTP requests (default: %d)", DEFAULT_HTTP_SERVER_TIMEOUT));
     }
 
-    // Disabled until we can lock notes and also tune performance of libsnark which by default uses multiple threads
+    // Disabled until we can lock notes and also tune performance of the prover which by default uses multiple threads
     //strUsage += HelpMessageOpt("-rpcasyncthreads=<n>", strprintf(_("Set the number of threads to service Async RPC calls (default: %d)"), 1));
 
     if (mode == HMM_BITCOIND) {
@@ -687,15 +685,11 @@ static void ZC_LoadParams(
     struct timeval tv_start, tv_end;
     float elapsed;
 
-    boost::filesystem::path pk_path = ZC_GetParamsDir() / "sprout-proving.key";
-    boost::filesystem::path vk_path = ZC_GetParamsDir() / "sprout-verifying.key";
     boost::filesystem::path sapling_spend = ZC_GetParamsDir() / "sapling-spend.params";
     boost::filesystem::path sapling_output = ZC_GetParamsDir() / "sapling-output.params";
     boost::filesystem::path sprout_groth16 = ZC_GetParamsDir() / "sprout-groth16.params";
 
     if (!(
-        boost::filesystem::exists(pk_path) &&
-        boost::filesystem::exists(vk_path) &&
         boost::filesystem::exists(sapling_spend) &&
         boost::filesystem::exists(sapling_output) &&
         boost::filesystem::exists(sprout_groth16)
@@ -710,14 +704,7 @@ static void ZC_LoadParams(
         return;
     }
 
-    LogPrintf("Loading verifying key from %s\n", vk_path.string().c_str());
-    gettimeofday(&tv_start, 0);
-
-    pzcashParams = ZCJoinSplit::Prepared(vk_path.string(), pk_path.string());
-
-    gettimeofday(&tv_end, 0);
-    elapsed = float(tv_end.tv_sec-tv_start.tv_sec) + (tv_end.tv_usec-tv_start.tv_usec)/float(1000000);
-    LogPrintf("Loaded verifying key in %fs seconds.\n", elapsed);
+    pzcashParams = ZCJoinSplit::Prepared();
 
     static_assert(
         sizeof(boost::filesystem::path::value_type) == sizeof(codeunit),
@@ -1227,11 +1214,6 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         ConnectMetricsScreen();
         threadGroup.create_thread(&ThreadShowMetricsScreen);
     }
-
-    // These must be disabled for now, they are buggy and we probably don't
-    // want any of libsnark's profiling in production anyway.
-    libsnark::inhibit_profiling_info = true;
-    libsnark::inhibit_profiling_counters = true;
 
     // Initialize Zcash circuit parameters
     ZC_LoadParams(chainparams);

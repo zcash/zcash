@@ -5,9 +5,6 @@
 #include "zcash/JoinSplit.hpp"
 #include "util.h"
 
-#include <libsnark/common/default_types/r1cs_ppzksnark_pp.hpp>
-#include <libsnark/zk_proof_systems/ppzksnark/r1cs_ppzksnark/r1cs_ppzksnark.hpp>
-
 #include "librustzcash.h"
 
 struct ECCryptoClosure
@@ -23,12 +20,7 @@ int main(int argc, char **argv) {
   assert(init_and_check_sodium() != -1);
   ECC_Start();
 
-  libsnark::default_r1cs_ppzksnark_pp::init_public_params();
-  libsnark::inhibit_profiling_info = true;
-  libsnark::inhibit_profiling_counters = true;
-  boost::filesystem::path pk_path = ZC_GetParamsDir() / "sprout-proving.key";
-  boost::filesystem::path vk_path = ZC_GetParamsDir() / "sprout-verifying.key";
-  params = ZCJoinSplit::Prepared(vk_path.string(), pk_path.string());
+  params = ZCJoinSplit::Prepared();
 
   boost::filesystem::path sapling_spend = ZC_GetParamsDir() / "sapling-spend.params";
   boost::filesystem::path sapling_output = ZC_GetParamsDir() / "sapling-output.params";
