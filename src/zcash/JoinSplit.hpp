@@ -67,8 +67,6 @@ public:
                          const uint256& joinSplitPubKey
                         );
 
-    virtual void saveR1CS(std::string path) = 0;
-
     // Compute nullifiers, macs, note commitments & encryptions, and SNARK proof
     virtual SproutProof prove(
         bool makeGrothProof,
