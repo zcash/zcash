@@ -45,7 +45,7 @@ TEST(Transaction, JSDescriptionRandomized) {
 
     {
         auto jsdesc = JSDescription::Randomized(
-            false,
+            true,
             *params, joinSplitPubKey, rt,
             inputs, outputs,
             inputMap, outputMap,
@@ -62,7 +62,7 @@ TEST(Transaction, JSDescriptionRandomized) {
 
     {
         auto jsdesc = JSDescription::Randomized(
-            false,
+            true,
             *params, joinSplitPubKey, rt,
             inputs, outputs,
             inputMap, outputMap,
@@ -76,7 +76,7 @@ TEST(Transaction, JSDescriptionRandomized) {
 
     {
         auto jsdesc = JSDescription::Randomized(
-            false,
+            true,
             *params, joinSplitPubKey, rt,
             inputs, outputs,
             inputMap, outputMap,

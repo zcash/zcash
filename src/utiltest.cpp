@@ -178,7 +178,7 @@ CWalletTx GetValidSproutSpend(ZCJoinSplit& params,
 
     // Prepare JoinSplits
     uint256 rt = tree.root();
-    JSDescription jsdesc {false, params, mtx.joinSplitPubKey, rt,
+    JSDescription jsdesc {true, params, mtx.joinSplitPubKey, rt,
                           inputs, outputs, 0, value, false};
     mtx.vJoinSplit.push_back(jsdesc);
 
