@@ -6304,7 +6304,7 @@ UniValue marmara_receive(const UniValue& params, bool fHelp, const CPubKey& mypk
     //std::cerr << __func__ << " test optParams=" << optParams.write(0,0) << std::endl; */
 
     if (params.size() == 5) // baton present
-        batontxid = Parseuint256((char *)params[5].get_str().c_str());  
+        batontxid = Parseuint256((char *)params[4].get_str().c_str());  
 
     return(MarmaraReceive(0, pubkey2pk(senderpub), amount, currency, matures, /*optParams,*/ batontxid, true));
 }
