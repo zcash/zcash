@@ -1496,7 +1496,7 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid, CTransaction &se
 // returns pending and closed txids
 // calls callback with params batontxid and matures or -1 (if loop is closed)
 template <class T>
-int32_t MarmaraEnumCreditloops(int64_t &totalopen, std::vector<uint256> &issuances, int64_t &totalclosed, std::vector<uint256> &closed, struct CCcontract_info *cp, int32_t firstheight, int32_t lastheight, int64_t minamount, int64_t maxamount, CPubKey refpk, std::string refcurrency, T callback/*void (*callback)(uint256 batontxid, int32_t matures)*/)
+static int32_t EnumCreditloops(int64_t &totalopen, std::vector<uint256> &issuances, int64_t &totalclosed, std::vector<uint256> &closed, struct CCcontract_info *cp, int32_t firstheight, int32_t lastheight, int64_t minamount, int64_t maxamount, CPubKey refpk, std::string refcurrency, T callback/*void (*callback)(uint256 batontxid, int32_t matures)*/)
 {
     char marmaraaddr[KOMODO_ADDRESS_BUFSIZE]; 
     int32_t n = 0; 
@@ -1534,7 +1534,7 @@ int32_t MarmaraEnumCreditloops(int64_t &totalopen, std::vector<uint256> &issuanc
                     {
                         std::vector<uint256> creditloop;
                         uint256 batontxid;
-                        LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "issuance tx is filtered txid=" << issuancetxid.GetHex() << std::endl);
+                        LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "issuance tx is filtered, txid=" << issuancetxid.GetHex() << std::endl);
 
                         if (MarmaraGetbatontxid(creditloop, batontxid, issuancetxid) > 0)
                         {
@@ -1572,7 +1572,7 @@ int32_t MarmaraEnumCreditloops(int64_t &totalopen, std::vector<uint256> &issuanc
             }
         }
         else
-            LOGSTREAMFN("marmara", CCLOG_ERROR, stream  << "error getting on marmara addr tx=" << issuancetxid.GetHex() << std::endl);
+            LOGSTREAMFN("marmara", CCLOG_ERROR, stream  << "cant get tx on marmara marker addr (maybe still in mempool) txid=" << issuancetxid.GetHex() << std::endl);
     }
     return(n);
 }
@@ -1589,13 +1589,12 @@ void MarmaraRunAutoSettlement(int32_t height, std::vector<CTransaction> & settle
     cp = CCinit(&C, EVAL_MARMARA);
     std::string funcname = __func__;
 
-    
     int32_t firstheight = 0, lastheight = (1 << 30);
     int64_t minamount = 0, maxamount = (1LL << 60);
 
     LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "starting enum open batons" << std::endl);
 
-    MarmaraEnumCreditloops(totalopen, issuances, totalclosed, closed, cp, firstheight, lastheight, minamount, maxamount, CPubKey(), MARMARA_CURRENCY, [&](uint256 batontxid, int32_t matures) 
+    EnumCreditloops(totalopen, issuances, totalclosed, closed, cp, firstheight, lastheight, minamount, maxamount, CPubKey(), MARMARA_CURRENCY, [&](uint256 batontxid, int32_t matures) 
     {
         CTransaction settlementtx;
         //TODO: temp UniValue result legacy code, change to remove UniValue
