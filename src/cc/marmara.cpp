@@ -1596,13 +1596,15 @@ void MarmaraRunAutoSettlement(int32_t height, std::vector<CTransaction> & settle
 
     LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "starting enum open batons" << std::endl);
 
-    MarmaraEnumCreditloops(totalopen, issuances, totalclosed, closed, cp, firstheight, lastheight, minamount, maxamount, CPubKey(), MARMARA_CURRENCY, [&](uint256 batontxid, int32_t matures) {
+    MarmaraEnumCreditloops(totalopen, issuances, totalclosed, closed, cp, firstheight, lastheight, minamount, maxamount, CPubKey(), MARMARA_CURRENCY, [&](uint256 batontxid, int32_t matures) 
+    {
         CTransaction settlementtx;
-        //TODO: temp result legacy code, change to remove UniValue
-        LOGSTREAM("marmara", CCLOG_DEBUG1, stream << funcname << " miner is calling settlement for batontxid=" << batontxid.GetHex() << std::endl);
+        //TODO: temp UniValue result legacy code, change to remove UniValue
 
         if (chainActive.LastTip()->GetHeight() >= matures)   //check height if matured 
         {
+            LOGSTREAM("marmara", CCLOG_DEBUG1, stream << funcname << " miner is calling settlement for batontxid=" << batontxid.GetHex() << std::endl);
+
             UniValue result = MarmaraSettlement(0, batontxid, settlementtx);
             if (result["result"].getValStr() == "success") {
                 LOGSTREAM("marmara", CCLOG_INFO, stream << funcname << " miner is adding settlement tx=" << settlementtx.GetHash().GetHex() <<  " for batontxid=" << batontxid.GetHex() << std::endl);
