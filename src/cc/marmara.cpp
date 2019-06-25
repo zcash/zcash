@@ -1687,7 +1687,7 @@ UniValue MarmaraReceive(int64_t txfee, CPubKey senderpk, int64_t amount, std::st
                 errorstr = 0;
         }
         else 
-            errorstr = (char *)"dont have enough normal inputs for 2*txfee";
+            errorstr = (char *)"dont have enough normal inputs for batonfee and txfee";
     }
     if (rawtx.size() == 0 || errorstr != 0)
     {
@@ -1846,7 +1846,9 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
     else if (amount <= txfee)
         errorstr = "amount must be more than txfee";
     else if (matures <= chainActive.LastTip()->GetHeight())
-        errorstr = "loop must mature in the future";
+        errorstr = "credit loop must mature in the future";
+    else if (mypk == receiverpk)
+        errorstr = "cannot send baton to self";
 
     if (errorstr.empty())
     {
@@ -1861,9 +1863,9 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
         struct CreditLoopOpret loopData;
 
         // TODO: do we need here check tx for mempool?
-        if (!GetTransaction(requesttxid, requestx, hashBlock, true) || requestx.vout.size() < 1 ||
+        if (!GetTransaction(requesttxid, requestx, hashBlock, true) || hashBlock.IsNull() /*mempool*/ || requestx.vout.size() < 1 ||
             MarmaraDecodeLoopOpret(requestx.vout.back().scriptPubKey, loopData /*emptytxid, opretsenderpk, opretamount, opretmatures, opretcurrency*/) == 0)
-            errorstr = "cant decode request tx opreturn data";
+            errorstr = "cant get request transaction or decode request tx opreturn data";
         else if (mypk != opretsenderpk)
             errorstr = "mypk does not match requested sender pk";
         else if (opretamount != opretamount)
@@ -1894,9 +1896,9 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
                 mtx.vin.push_back(CTxIn(batontxid, 0, CScript()));   // spend the baton
             if (funcid == 'I' || AddNormalinputs(mtx, mypk, txfee, 1) > 0)
             {
-                mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA, txfee, receiverpk));  // vout0 transfer the baton to the next receiver
+                mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA, txfee, receiverpk));  // vout0 is transfer of the baton to the next receiver
                 if (funcid == 'I')
-                    mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA, txfee, Marmarapk));  // vout1 marker
+                    mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA, txfee, Marmarapk));  // vout1 is marker of issuance tx
 
                 // lock 1/N amount in loop
                 char createtxidaddr[KOMODO_ADDRESS_BUFSIZE];
@@ -1938,10 +1940,10 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
                     }
                 }
                 else
-                    errorstr = "could not return back locked in loop funds";
+                    errorstr = "could not return locked in loop funds to endorsers";
             }
             else
-                errorstr = "dont have enough normal inputs for 2*txfee";
+                errorstr = "dont have enough normal inputs for txfee";
         }
         else
             errorstr = "dont have enough locked inputs for amount";
