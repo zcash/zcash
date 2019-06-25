@@ -1577,10 +1577,10 @@ static int32_t EnumCreditloops(int64_t &totalopen, std::vector<uint256> &issuanc
     return(n);
 }
 
-// adds settlement transactions for all matured loops
+// adds to the passed vector the settlement transactions for all matured loops 
 // called by the miner
-// note that several or even all transactions might not fit into the current block, in this case they will be added on the next block creation
-// TODO: add a reserved space in the block for some settlement transactions
+// note that several or even all transactions might not fit into the current block, in this case they will be added on the next new block creation
+// TODO: provide reserved space in the created block for at least some settlement transactions
 void MarmaraRunAutoSettlement(int32_t height, std::vector<CTransaction> & settlementTransactions)
 {
     int64_t totalopen, totalclosed;
