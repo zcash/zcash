@@ -1617,7 +1617,7 @@ void MarmaraRunAutoSettlement(int32_t height, std::vector<CTransaction> & settle
 // create request tx for issuing or transfer baton (cheque) 
 // the first call makes the credit loop creation tx
 // txid of returned tx is approvaltxid
-UniValue MarmaraReceive(int64_t txfee, CPubKey senderpk, int64_t amount, std::string currency, int32_t matures, const UniValue &optParams, uint256 batontxid, bool automaticflag)
+UniValue MarmaraReceive(int64_t txfee, CPubKey senderpk, int64_t amount, std::string currency, int32_t matures, /*const UniValue &optParams,*/ uint256 batontxid, bool automaticflag)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     UniValue result(UniValue::VOBJ); 

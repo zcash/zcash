@@ -6265,13 +6265,13 @@ UniValue marmara_receive(const UniValue& params, bool fHelp, const CPubKey& mypk
     UniValue result(UniValue::VOBJ), optParams(UniValue::VOBJ);
     uint256 batontxid; std::vector<uint8_t> senderpub; int64_t amount; int32_t matures; std::string currency;
 
-    if (fHelp || (params.size() != 6 && params.size() != 5))
+    if (fHelp || (params.size() != 4 && params.size() != 5))
     {
         // automatic flag -> lsb of matures
         // 1st marmarareceive 028076d42eb20efc10007fafb5ca66a2052523c0d2221e607adf958d1a332159f6 7.5 MARMARA 1440
         // after marmarareceive 039433dc3749aece1bd568f374a45da3b0bc6856990d7da3cd175399577940a775 7.5 MARMARA 1168 d72d87aa0d50436de695c93e2bf3d7273c63c92ef6307913aa01a6ee6a16548b
 
-        throw runtime_error("marmarareceive senderpk amount currency matures {avalcount=n} [batontxid]\n"
+        throw runtime_error("marmarareceive senderpk amount currency matures [batontxid]\n"
             "creates requesttx for issuer or endorser.\nFor the first call batontxid should be empty.\n"
             "For the first call matures is relative value, for the next calls - absolute\n" "\n");
     }
@@ -6288,11 +6288,12 @@ UniValue marmara_receive(const UniValue& params, bool fHelp, const CPubKey& mypk
     }
     amount = atof(params[1].get_str().c_str()) * COIN + 0.00000000499999;
     currency = params[2].get_str();
-    if (params.size() == 6) // baton present
+    if (params.size() == 5) // baton present
         matures = atol(params[3].get_str().c_str());  // if baton then matures value is absolute
     else
         matures = atol(params[3].get_str().c_str()) + chainActive.LastTip()->GetHeight() + 1;  // if no baton (first call) then matures value is relative
 
+    /*
     if (params[4].getType() == UniValue::VOBJ)
         optParams = params[4].get_obj();
     else if (params[4].getType() == UniValue::VSTR)
@@ -6300,12 +6301,12 @@ UniValue marmara_receive(const UniValue& params, bool fHelp, const CPubKey& mypk
     if (optParams.getType() != UniValue::VOBJ || optParams.empty())
         throw runtime_error("parameter 4 must be object\n");
     
-    std::cerr << __func__ << " test optParams=" << optParams.write(0,0) << std::endl;
+    //std::cerr << __func__ << " test optParams=" << optParams.write(0,0) << std::endl; */
 
-    if (params.size() == 6) // baton present
+    if (params.size() == 5) // baton present
         batontxid = Parseuint256((char *)params[5].get_str().c_str());  
 
-    return(MarmaraReceive(0, pubkey2pk(senderpub), amount, currency, matures, optParams, batontxid, true));
+    return(MarmaraReceive(0, pubkey2pk(senderpub), amount, currency, matures, /*optParams,*/ batontxid, true));
 }
 
 UniValue marmara_issue(const UniValue& params, bool fHelp, const CPubKey& mypk)
