@@ -874,6 +874,7 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp)
             "{\n"
             "  \"miner\" : x.xxx           (numeric) The mining reward amount in " + CURRENCY_UNIT + ".\n"
             "  \"founders\" : x.xxx        (numeric) The founders reward amount in " + CURRENCY_UNIT + ".\n"
+            "  \"foundersaddress\" : xxx   (string)  The founders reward address for the block height .\n"  
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("getblocksubsidy", "1000")
@@ -892,11 +893,14 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp)
     if (CurrentEpoch(nHeight, Params().GetConsensus()) < Consensus::UPGRADE_YCASH) {
         if ((nHeight > 0) && (nHeight <= Params().GetConsensus().GetLastFoundersRewardBlockHeight())) {
             nFoundersReward = nReward/5;
-            nReward -= nFoundersReward;
+            nReward -= nFoundersReward;            
         }
 
         result.push_back(Pair("miner", ValueFromAmount(nReward)));
         result.push_back(Pair("founders", ValueFromAmount(nFoundersReward)));
+        if (nFoundersReward > 0) {
+            result.push_back(Pair("founderaddress", Params().GetFoundersRewardAddressAtHeight(nHeight)));
+        }
     } else {
         nFoundersReward = nReward/20;   // 5% perpetual
         nReward -= nFoundersReward;
