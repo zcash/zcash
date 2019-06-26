@@ -1924,9 +1924,9 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t
                 CScript opret = MarmaraEncodeLoopCCVoutOpret(createtxid, mypk);
                 vscript_t vopret;
                 GetOpReturnData(opret, vopret);
-                //std::vector< vscript_t > vData{ E_MARSHAL(ss << (uint8_t)EVAL_MARMARA << (uint8_t)'K' << vscript_t(mypk.begin(), mypk.end())) };   // add mypk to vout to identify who has locked coins in the credit loop
-                std::vector< vscript_t > vData{ vopret };  // add mypk to cc vout to identify who locked the coins in the loop
+                std::vector< vscript_t > vData{ vopret };  // add cc opret with mypk to cc vout 
                 mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA, amountToLock, Marmarapk, createtxidPk, &vData));
+
                 LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream  << " sending to loop amount=" << amountToLock << " marked with mypk=" << HexStr(mypk) << std::endl);
 
                 // return change to my activated address:
