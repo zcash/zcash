@@ -209,7 +209,7 @@ CScript MarmaraEncodeLoopIssuerOpret(uint256 createtxid, CPubKey senderpk, uint8
     return(opret);
 }
 
-CScript MarmaraEncodeLoopCCVoutOpret(uint256 createtxid, CPubKey senderpk)
+CScript MarmaraEncodeLoopRequestOpret(uint256 createtxid, CPubKey senderpk)
 {
     CScript opret;
     uint8_t evalcode = EVAL_MARMARA;
@@ -286,13 +286,14 @@ uint8_t MarmaraDecodeLoopOpret(const CScript scriptPubKey, struct CreditLoopOpre
                         return funcid;
                     }
                 }
+                // get here from any E_UNMARSHAL error:
                 LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "cannot parse opret=" << HexStr(vopret) << std::endl);
             }
             else
                 LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "unsupported opret version=" << (int)version << std::endl);
         }
         else
-            LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "not marmara opret, eval=" << (int)evalcode << std::endl);
+            LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "not marmara opret, evalcode=" << (int)evalcode << std::endl);
     }
     else
         LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "opret too small=" << HexStr(vopret) << std::endl);
@@ -315,12 +316,9 @@ int32_t MarmaraGetcreatetxid(uint256 &createtxid, uint256 txid)
     if (myGetTransaction(txid, tx, hashBlock) != 0 && !hashBlock.IsNull() &&tx.vout.size() > 1)  // might be called from validation code, so non-locking version
     {
         uint8_t funcid;
-        int32_t matures;
-        std::string currency;
-        CPubKey senderpk;
-        int64_t amount;
+        struct CreditLoopOpret loopData;
 
-        if ((funcid = MarmaraDecodeLoopOpret(tx.vout.back().scriptPubKey, createtxid, senderpk, amount, matures, currency)) == 'I' || funcid == 'T') {
+        if ((funcid = MarmaraDecodeLoopOpret(tx.vout.back().scriptPubKey, loopData)) == 'I' || funcid == 'T') {
             LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << " found createtxid for funcid=I,T createtxid=" << createtxid.GetHex() << std::endl);
             return(0);
         }
@@ -498,15 +496,12 @@ bool MarmaraPoScheck(char *destaddr, CScript inOpret, CTransaction staketx)  // 
         }
         else if (CheckEitherOpRet(IsLockInLoopOpret, staketx, 0, opret, senderpk))
         {
-            uint256 createtxid;
-            int64_t amount;
-            int32_t matures;
-            std::string currency;
+            struct CreditLoopOpret loopData;
 
-            MarmaraDecodeLoopOpret(opret, createtxid, senderpk, amount, matures, currency);
+            MarmaraDecodeLoopOpret(opret, loopData);
 
             char txidaddr[KOMODO_ADDRESS_BUFSIZE];
-            CPubKey createtxidPk = CCtxidaddr(txidaddr, createtxid);
+            CPubKey createtxidPk = CCtxidaddr(txidaddr, loopData.createtxid);
 
             GetCCaddress1of2(cp, coinaddr, Marmarapk, createtxidPk);
 
@@ -917,12 +912,9 @@ static bool IsActivatedOpret(const CScript &spk, CPubKey &pk)
 static bool IsLockInLoopOpret(const CScript &spk, CPubKey &pk)
 {
     uint8_t funcid = 0;
-    uint256 createtxid;
-    int64_t amount;
-    int32_t matures;
-    std::string currency;
+    struct CreditLoopOpret loopData;
 
-    return MarmaraDecodeLoopOpret(spk, createtxid, pk, amount, matures, currency) != 0;
+    return MarmaraDecodeLoopOpret(spk, loopData) != 0;
 }
 
 // checks opret by calling CheckOpretFunc for two cases:
