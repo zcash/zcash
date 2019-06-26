@@ -2315,7 +2315,7 @@ UniValue MarmaraInfo(CPubKey refpk, int32_t firstheight, int32_t lastheight, int
     result.push_back(Pair("minamount", ValueFromAmount(minamount)));
     result.push_back(Pair("maxamount", ValueFromAmount(maxamount)));
     result.push_back(Pair("currency", currency));
-    if ((n = MarmaraEnumCreditloops(totalamount, issuances, totalclosed, closed, cp, firstheight, lastheight, minamount, maxamount, refpk, currency, [](uint256, int32_t) {/*do nothing*/})) > 0)
+    if ((n = EnumCreditloops(totalamount, issuances, totalclosed, closed, cp, firstheight, lastheight, minamount, maxamount, refpk, currency, [](uint256, int32_t) {/*do nothing*/})) > 0)
     {
         result.push_back(Pair("n", n));
         result.push_back(Pair("numpending", issuances.size()));
