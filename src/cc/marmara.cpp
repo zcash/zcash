@@ -1704,15 +1704,15 @@ UniValue MarmaraReceive(int64_t txfee, CPubKey senderpk, int64_t amount, std::st
 }
 
 
-static int32_t RedistributeLockedRemainder(CMutableTransaction &mtx, struct CCcontract_info *cp, const std::vector<uint256> &creditloop, uint256 batontxid, int64_t amountToDistribute)
+static int32_t RedistributeLockedRemainder(CMutableTransaction &mtx, struct CCcontract_info *cp, const std::vector<uint256> &creditloop, uint256 batontxid, CAmount amountToDistribute)
 {
     CPubKey Marmarapk; 
     int32_t endorsersNumber = creditloop.size(); // number of endorsers, 0 is createtxid, last is batontxid
     CPubKey dummypk;
-    int64_t amount, inputsum, change;
+    CAmount amount, inputsum, change;
     int32_t matures;
     std::string currency;
-    std::vector <CPubKey> pubkeys;
+    std::vector <CPubKey> endorserPubkeys;
     CTransaction createtx;
     uint256 hashBlock, dummytxid;
     uint256 createtxid = creditloop[0];
@@ -1730,17 +1730,31 @@ static int32_t RedistributeLockedRemainder(CMutableTransaction &mtx, struct CCco
         CPubKey createtxidPk = CCtxidaddr(txidaddr, createtxid);
         GetCCaddress1of2(cp, lockInLoop1of2addr, Marmarapk, createtxidPk);  // 1of2 lock-in-loop address 
 
-        LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << "calling AddMarmaraInputs for lock-in-loop addr=" << lockInLoop1of2addr << " adds amount=" << amount << std::endl);
-        if ((inputsum = AddMarmarainputs(IsLockInLoopOpret, mtx, pubkeys, lockInLoop1of2addr, amount, MARMARA_VINS)) >= amount / endorsersNumber) 
+        LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << "calling AddMarmaraInputs for lock-in-loop addr=" << lockInLoop1of2addr << " adding as possible as amount=" << amount << std::endl);
+        if ((inputsum = AddMarmarainputs(IsLockInLoopOpret, mtx, endorserPubkeys, lockInLoop1of2addr, amount, MARMARA_VINS)) >= amount / endorsersNumber) 
         {
             if (mtx.vin.size() >= CC_MAXVINS) {// vin number limit
                 std::cerr  << " too many vins!" << std::endl;
                 return -1;
             }
 
-            int64_t amountReturned = 0;
-            for (int32_t i = 1; i < creditloop.size() + 1; i ++)  //iterate through all issuers/endorsers (i=0 is 1st receiver approval tx, n + 1 batontxid)
+            if (endorserPubkeys.size() != endorsersNumber) {
+                LOGSTREAMFN("marmara", CCLOG_ERROR, stream << " internal error not matched endorserPubkeys.size()=" << endorserPubkeys.size() << " endorsersNumber=" << endorsersNumber << " line=" << __LINE__ << std::endl);
+                return -1;
+            }
+
+            CAmount amountReturned = 0;
+            CAmount amountToPk = amountToDistribute / endorsersNumber;
+
+            //for (int32_t i = 1; i < creditloop.size() + 1; i ++)  //iterate through all issuers/endorsers, skip i=0 which is 1st receiver tx, n + 1 is batontxid
+            for (auto endorserPk : endorserPubkeys)
             {
+                
+                mtx.vout.push_back(CTxOut(amountToPk, CScript() << ParseHex(HexStr(endorserPk)) << OP_CHECKSIG));  // coins returned to each previous issuer normal 
+                LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << " sending normal amount=" << amountToPk << " to pk=" << HexStr(endorserPk) << std::endl);
+                amountReturned += amountToPk;
+
+                /*
                 CTransaction issuancetx;
                 uint256 hashBlock;
                 uint256 currenttxid = i < creditloop.size() ? creditloop[i] : batontxid;
@@ -1769,25 +1783,28 @@ static int32_t RedistributeLockedRemainder(CMutableTransaction &mtx, struct CCco
                     LOGSTREAMFN("marmara", CCLOG_ERROR, stream  << " cant load tx for creditloop[" << i << "]" << std::endl);
                     return -1;
                 }
+                */
             }
             change = (inputsum - amountReturned);
 
             // return change to the lock-in-loop fund, distribute for pubkeys:
-            if (change > 0) {
-                if (pubkeys.size() != endorsersNumber) {
-                    LOGSTREAMFN("marmara", CCLOG_ERROR, stream  << " internal error not matched pubkeys.size()=" << pubkeys.size() << " endorsersNumber=" << endorsersNumber << std::endl);
+            if (change > 0) 
+            {
+                /* uncomment if the same check above is removed
+                if (endorserPubkeys.size() != endorsersNumber) {
+                    LOGSTREAMFN("marmara", CCLOG_ERROR, stream  << " internal error not matched endorsersPubkeys.size()=" << endorserPubkeys.size() << " endorsersNumber=" << endorsersNumber << " line=" << __LINE__ << std::endl);
                     return -1;
-                }
-                for (auto pk : pubkeys) {
+                } */
+                for (auto pk : endorserPubkeys) {
                     CScript opret = MarmaraEncodeLoopOpret('K', createtxid, pk, amount, matures, currency);
                     vscript_t vopret;
 
                     GetOpReturnData(opret, vopret);
                     //std::vector< vscript_t > vData{ E_MARSHAL(ss << (uint8_t)EVAL_MARMARA << 'K' << vscript_t(pk.begin(), pk.end())) };   // add mypk to vout to identify who has locked coins in the credit loop
                     std::vector< vscript_t > vData{ vopret };    // add mypk to vout to identify who has locked coins in the credit loop
-                    mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA, change / pubkeys.size(), Marmarapk, createtxidPk, &vData));  // TODO: losing remainder?
+                    mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA, change / endorserPubkeys.size(), Marmarapk, createtxidPk, &vData));  // TODO: losing remainder?
 
-                    LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream  << " distributing to loop change/pubkeys.size()=" << change / pubkeys.size() << " vdata pk=" << HexStr(pk) << std::endl);
+                    LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream  << " distributing to loop change/pubkeys.size()=" << change / endorserPubkeys.size() << " vdata pk=" << HexStr(pk) << std::endl);
                 }
             }
 
