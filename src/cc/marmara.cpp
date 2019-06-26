@@ -1594,11 +1594,11 @@ void MarmaraRunAutoSettlement(int32_t height, std::vector<CTransaction> & settle
 
         if (chainActive.LastTip()->GetHeight() >= matures)   //check height if matured 
         {
-            LOGSTREAM("marmara", CCLOG_DEBUG1, stream << funcname << " miner is calling settlement for batontxid=" << batontxid.GetHex() << std::endl);
+            LOGSTREAM("marmara", CCLOG_DEBUG1, stream << funcname << " miner calling settlement for batontxid=" << batontxid.GetHex() << std::endl);
 
             UniValue result = MarmaraSettlement(0, batontxid, settlementtx);
             if (result["result"].getValStr() == "success") {
-                LOGSTREAM("marmara", CCLOG_INFO, stream << funcname << " miner is adding settlement tx=" << settlementtx.GetHash().GetHex() <<  " for batontxid=" << batontxid.GetHex() << std::endl);
+                LOGSTREAM("marmara", CCLOG_INFO, stream << funcname << " miner trying to add to block settlement tx=" << settlementtx.GetHash().GetHex() <<  ", for batontxid=" << batontxid.GetHex() << std::endl);
                 settlementTransactions.push_back(settlementtx);
             }
             else {
