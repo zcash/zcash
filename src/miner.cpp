@@ -100,8 +100,9 @@ void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, 
 {
     pblock->nTime = std::max(pindexPrev->GetMedianTimePast()+1, GetAdjustedTime());
 
-    // Updating time can change work required on testnet:
-    if (consensusParams.nPowAllowMinDifficultyBlocksAfterHeight != boost::none) {
+    // Updating time can change work required on testnet or at ycash mainnet fork
+    if (consensusParams.nPowAllowMinDifficultyBlocksAfterHeight != boost::none || 
+        consensusParams.scaledDifficultyAtYcashFork) {
         pblock->nBits = GetNextWorkRequired(pindexPrev, pblock, consensusParams);
     }
 }
@@ -305,9 +306,14 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             if (!fSortedByFee &&
                 ((nBlockSize + nTxSize >= nBlockPrioritySize) || !AllowFree(dPriority)))
             {
+                // Put the Tx back into the pool 
+                vecPriority.push_back(TxPriority(dPriority, feeRate, &tx));
+
                 fSortedByFee = true;
                 comparer = TxPriorityCompare(fSortedByFee);
                 std::make_heap(vecPriority.begin(), vecPriority.end(), comparer);
+
+                continue;
             }
 
             if (!view.HaveInputs(tx))
@@ -747,9 +753,9 @@ void static BitcoinMiner(const CChainParams& chainparams)
                 // Update nNonce and nTime
                 pblock->nNonce = ArithToUint256(UintToArith256(pblock->nNonce) + 1);
                 UpdateTime(pblock, chainparams.GetConsensus(), pindexPrev);
-                if (chainparams.GetConsensus().nPowAllowMinDifficultyBlocksAfterHeight != boost::none)
-                {
-                    // Changing pblock->nTime can change work required on testnet:
+                if (chainparams.GetConsensus().nPowAllowMinDifficultyBlocksAfterHeight != boost::none ||
+                    chainparams.GetConsensus().scaledDifficultyAtYcashFork) {
+                    // Changing pblock->nTime can change work required on testnet or ycash mainnet fork block:
                     hashTarget.SetCompact(pblock->nBits);
                 }
             }

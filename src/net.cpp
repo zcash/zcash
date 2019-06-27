@@ -13,6 +13,7 @@
 #include "addrman.h"
 #include "chainparams.h"
 #include "clientversion.h"
+#include "consensus/consensus.h"
 #include "primitives/transaction.h"
 #include "scheduler.h"
 #include "ui_interface.h"
@@ -1858,6 +1859,14 @@ void RelayTransaction(const CTransaction& tx)
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
     ss.reserve(10000);
     ss << tx;
+    
+    // Prevent realying transactions that are really big, because this may be a spam 
+    // attack.
+    int maxRelaySize = GetArg("-maxtxrelaysize", MAX_TX_RELAY_SIZE);
+    if (ss.size() > MAX_TX_RELAY_SIZE) {
+        return;
+    }
+
     RelayTransaction(tx, ss);
 }
 
