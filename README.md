@@ -37,7 +37,7 @@ Refer also to the [Zcash user guide](https://zcash.readthedocs.io/en/latest/rtd_
 
 * :blue_book: See the Zcash documentation at the [ReadtheDocs](https://zcash.readthedocs.io)
   for help and more information.
-* :incoming_envelope: Ask for help on the [Ycash Discord]().
+* :incoming_envelope: Ask for help on the [Ycash Discord](https://discord.gg/Yz8rW7P).
 
 Participation in the Ycash project is subject to a
 [Code of Conduct](code_of_conduct.md).
