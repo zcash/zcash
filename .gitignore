@@ -132,6 +132,7 @@ src/cc/rogue/rogue
 src/cc/rogue/rogue.so
 
 src/cc/rogue/test.zip
+src/cc/dapps/a.out
 src/checkfile
 
 src/foo.zip
@@ -144,8 +145,6 @@ src/rogue.530623577502174316.pack
 
 src/rogue.530623577502174316.player
 
-
-src/cc/rogue/config.h
 
 src/cc/rogue/config.h
 

@@ -29,6 +29,7 @@ uint64_t komodo_paxtotal();
 int32_t komodo_longestchain();
 uint64_t komodo_maxallowed(int32_t baseid);
 int32_t komodo_bannedset(int32_t *indallvoutsp,uint256 *array,int32_t max);
+int32_t komodo_checkvout(int32_t vout,int32_t k,int32_t indallvouts);
 
 pthread_mutex_t komodo_mutex,staked_mutex;
 
@@ -53,6 +54,7 @@ bool VERUS_MINTBLOCKS;
 std::vector<uint8_t> Mineropret;
 std::vector<std::string> vWhiteListAddress;
 char NOTARYADDRS[64][64];
+char NOTARY_ADDRESSES[NUM_KMD_SEASONS][64][64];
 
 char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN],ASSETCHAINS_USERPASS[4096];
 uint16_t ASSETCHAINS_P2PPORT,ASSETCHAINS_RPCPORT,ASSETCHAINS_BEAMPORT,ASSETCHAINS_CODAPORT;
@@ -112,6 +114,8 @@ unsigned int MAX_BLOCK_SIGOPS = 20000;
 int32_t KOMODO_TESTNODE, KOMODO_SNAPSHOT_INTERVAL; 
 CScript KOMODO_EARLYTXID_SCRIPTPUB;
 int32_t ASSETCHAINS_EARLYTXIDCONTRACT;
+
+std::map <std::int8_t, int32_t> mapHeightEvalActivate;
 
 struct komodo_kv *KOMODO_KV;
 pthread_mutex_t KOMODO_KV_mutex,KOMODO_CC_mutex;

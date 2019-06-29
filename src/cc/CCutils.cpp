@@ -150,7 +150,7 @@ bool IsCCInput(CScript const& scriptSig)
     return true;
 }
 
-bool CheckTxFee(const CTransaction &tx, uint64_t txfee, uint32_t height, uint64_t blocktime)
+bool CheckTxFee(const CTransaction &tx, uint64_t txfee, uint32_t height, uint64_t blocktime, int64_t &actualtxfee)
 {
     LOCK(mempool.cs);
     CCoinsView dummy;
@@ -159,9 +159,10 @@ bool CheckTxFee(const CTransaction &tx, uint64_t txfee, uint32_t height, uint64_
     CCoinsViewMemPool viewMemPool(pcoinsTip, mempool);
     view.SetBackend(viewMemPool);
     valuein = view.GetValueIn(height,&interest,tx,blocktime);
-    if ( valuein-tx.GetValueOut() > txfee )
+    actualtxfee = valuein-tx.GetValueOut();
+    if ( actualtxfee > txfee )
     {
-        //fprintf(stderr, "txfee.%li vs txfee.%li\n", valuein-tx.GetValueOut(), txfee);
+        //fprintf(stderr, "actualtxfee.%li vs txfee.%li\n", actualtxfee, txfee);
         return false;
     }
     return true;

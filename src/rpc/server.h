@@ -267,9 +267,11 @@ extern UniValue oraclesaddress(const UniValue& params, bool fHelp);
 extern UniValue oracleslist(const UniValue& params, bool fHelp);
 extern UniValue oraclesinfo(const UniValue& params, bool fHelp);
 extern UniValue oraclescreate(const UniValue& params, bool fHelp);
+extern UniValue oraclesfund(const UniValue& params, bool fHelp);
 extern UniValue oraclesregister(const UniValue& params, bool fHelp);
 extern UniValue oraclessubscribe(const UniValue& params, bool fHelp);
 extern UniValue oraclesdata(const UniValue& params, bool fHelp);
+extern UniValue oraclessample(const UniValue& params, bool fHelp);
 extern UniValue oraclessamples(const UniValue& params, bool fHelp);
 extern UniValue pricesaddress(const UniValue& params, bool fHelp);
 extern UniValue priceslist(const UniValue& params, bool fHelp);
@@ -510,6 +512,7 @@ extern UniValue pricescashout(const UniValue& params, bool fHelp);
 extern UniValue pricesrekt(const UniValue& params, bool fHelp);
 extern UniValue pricesaddfunding(const UniValue& params, bool fHelp);
 extern UniValue pricesgetorderbook(const UniValue& params, bool fHelp);
+extern UniValue pricesrefillfund(const UniValue& params, bool fHelp);
 
 
 

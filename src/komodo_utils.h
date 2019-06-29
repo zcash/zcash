@@ -14,6 +14,7 @@
  ******************************************************************************/
 #include "komodo_defs.h"
 #include "key_io.h"
+#include "cc/CCinclude.h"
 #include <string.h>
 
 #ifdef _WIN32
@@ -1425,7 +1426,7 @@ void komodo_configfile(char *symbol,uint16_t rpcport)
 #ifndef FROM_CLI
             if ( (fp= fopen(fname,"wb")) != 0 )
             {
-                fprintf(fp,"rpcuser=user%u\nrpcpassword=pass%s\nrpcport=%u\nserver=1\ntxindex=1\nrpcworkqueue=256\nrpcallowip=127.0.0.1\n",crc,password,rpcport);
+                fprintf(fp,"rpcuser=user%u\nrpcpassword=pass%s\nrpcport=%u\nserver=1\ntxindex=1\nrpcworkqueue=256\nrpcallowip=127.0.0.1\nrpcbind=127.0.0.1\n",crc,password,rpcport);
                 fclose(fp);
                 printf("Created (%s)\n",fname);
             } else printf("Couldnt create (%s)\n",fname);
@@ -1691,14 +1692,9 @@ int8_t equihash_params_possible(uint64_t n, uint64_t k)
 
 void komodo_args(char *argv0)
 {
-    extern const char *Notaries_elected1[][2];
-    std::string name,addn,hexstr,symbol; char *dirname,fname[512],arg0str[64],magicstr[9]; uint8_t magic[4],extrabuf[32756],disablebits[32],*extraptr=0; FILE *fp; uint64_t val; uint16_t port; int32_t i,nonz=0,baseid,len,n,extralen = 0; uint64_t ccenables[256];
+    std::string name,addn,hexstr,symbol; char *dirname,fname[512],arg0str[64],magicstr[9]; uint8_t magic[4],extrabuf[32756],disablebits[32],*extraptr=0; FILE *fp; uint64_t val; uint16_t port; int32_t i,nonz=0,baseid,len,n,extralen = 0; uint64_t ccenables[256], ccEnablesHeight[512] = {0};
     IS_KOMODO_NOTARY = GetBoolArg("-notary", false);
     IS_STAKED_NOTARY = GetArg("-stakednotary", -1);
-    if ( IS_STAKED_NOTARY != -1 && IS_KOMODO_NOTARY == true ) {
-        fprintf(stderr, "Cannot be STAKED and KMD notary at the same time!\n");
-        StartShutdown();
-    }
     memset(ccenables,0,sizeof(ccenables));
     memset(disablebits,0,sizeof(disablebits));
     if ( GetBoolArg("-gen", false) != 0 )
@@ -1717,17 +1713,26 @@ void komodo_args(char *argv0)
         USE_EXTERNAL_PUBKEY = 1;
         if ( IS_KOMODO_NOTARY == 0 )
         {
+            // We dont have any chain data yet, so use system clock to guess. 
+            // I think on season change should reccomend notaries to use -notary to avoid needing this. 
+            int32_t kmd_season = getacseason(time(NULL));
             for (i=0; i<64; i++)
-                if ( strcmp(NOTARY_PUBKEY.c_str(),Notaries_elected1[i][1]) == 0 )
+            {
+                if ( strcmp(NOTARY_PUBKEY.c_str(),notaries_elected[kmd_season-1][i][1]) == 0 )
                 {
                     IS_KOMODO_NOTARY = 1;
                     KOMODO_MININGTHREADS = 1;
                     mapArgs ["-genproclimit"] = itostr(KOMODO_MININGTHREADS);
                     IS_STAKED_NOTARY = -1;
-                    fprintf(stderr,"running as notary.%d %s\n",i,Notaries_elected1[i][0]);
+                    fprintf(stderr,"running as notary.%d %s\n",i,notaries_elected[kmd_season-1][i][0]);
                     break;
                 }
+            }
         }
+    }
+    if ( IS_STAKED_NOTARY != -1 && IS_KOMODO_NOTARY == true ) {
+        fprintf(stderr, "Cannot be STAKED and KMD notary at the same time!\n");
+        StartShutdown();
     }
 	name = GetArg("-ac_name","");
     if ( argv0 != 0 )
@@ -1754,13 +1759,33 @@ void komodo_args(char *argv0)
     ASSETCHAINS_PRIVATE = GetArg("-ac_private",0);
     KOMODO_SNAPSHOT_INTERVAL = GetArg("-ac_snapshot",0);
     Split(GetArg("-ac_nk",""), ASSETCHAINS_NK, 0);
+    
+    // -ac_ccactivateht=evalcode,height,evalcode,height,evalcode,height....
+    Split(GetArg("-ac_ccactivateht",""), ccEnablesHeight, 0);
+    // fill map with all eval codes and activation height of 0.
+    for ( int i = 0; i < 256; i++ )
+        mapHeightEvalActivate[i] = 0;
+    for ( int i = 0; i < 512; i++ )
+    {
+        int32_t ecode = ccEnablesHeight[i];
+        int32_t ht = ccEnablesHeight[i+1];
+        if ( ecode > 255 || ecode < 0 )
+            fprintf(stderr, "ac_ccactivateht: invalid evalcode.%i must be between 0 and 256.\n", ecode);
+        else if ( ht > 0 )
+        {
+            // update global map. 
+            mapHeightEvalActivate[ecode] = ht;
+            fprintf(stderr, "ac_ccactivateht: ecode.%i activates at height.%i\n", ecode, mapHeightEvalActivate[ecode]);
+        }
+        i++;
+    }
+    
     if ( (KOMODO_REWIND= GetArg("-rewind",0)) != 0 )
     {
         printf("KOMODO_REWIND %d\n",KOMODO_REWIND);
     }
     KOMODO_EARLYTXID = Parseuint256(GetArg("-earlytxid","0").c_str());
     ASSETCHAINS_EARLYTXIDCONTRACT = GetArg("-ac_earlytxidcontract",0);
-    fprintf(stderr, "ASSETCHAINS_EARLYTXIDCONTRACT.%i\n", ASSETCHAINS_EARLYTXIDCONTRACT);
     if ( name.c_str()[0] != 0 )
     {
         std::string selectedAlgo = GetArg("-ac_algo", std::string(ASSETCHAINS_ALGORITHMS[0]));
@@ -2294,6 +2319,68 @@ void komodo_args(char *argv0)
         {
             fprintf(stderr,"-ac_private for a non-PIRATE chain is not supported. The only reason to have an -ac_private chain is for total privacy and that is best achieved with the largest anon set. PIRATE has that and it is recommended to just use PIRATE\n");
             StartShutdown();
+        }
+        // Set cc enables for all existing ac_cc chains here. 
+        if ( strcmp("AXO",ASSETCHAINS_SYMBOL) == 0 )
+        {
+            // No CCs used on this chain yet.
+            CCDISABLEALL;
+        }
+        if ( strcmp("CCL",ASSETCHAINS_SYMBOL) == 0 )
+        {
+            // No CCs used on this chain yet. 
+            CCDISABLEALL;
+            CCENABLE(EVAL_TOKENS);
+            CCENABLE(EVAL_HEIR);
+        }
+        if ( strcmp("COQUI",ASSETCHAINS_SYMBOL) == 0 )
+        {
+            CCDISABLEALL;
+            CCENABLE(EVAL_DICE);
+            CCENABLE(EVAL_CHANNELS);
+            CCENABLE(EVAL_ORACLES);
+            CCENABLE(EVAL_ASSETS);
+            CCENABLE(EVAL_TOKENS);
+        }
+        if ( strcmp("DION",ASSETCHAINS_SYMBOL) == 0 )
+        {
+            // No CCs used on this chain yet. 
+            CCDISABLEALL;
+        }
+        
+        if ( strcmp("EQL",ASSETCHAINS_SYMBOL) == 0 )
+        {
+            // No CCs used on this chain yet. 
+            CCDISABLEALL;
+        }
+        if ( strcmp("ILN",ASSETCHAINS_SYMBOL) == 0 )
+        {
+            // No CCs used on this chain yet. 
+            CCDISABLEALL;
+        }
+        if ( strcmp("OUR",ASSETCHAINS_SYMBOL) == 0 )
+        {
+            // No CCs used on this chain yet. 
+            CCDISABLEALL;
+        }
+        if ( strcmp("ZEXO",ASSETCHAINS_SYMBOL) == 0 )
+        {
+            // No CCs used on this chain yet. 
+            CCDISABLEALL;
+        }
+        if ( strcmp("SEC",ASSETCHAINS_SYMBOL) == 0 )
+        {
+            CCDISABLEALL;
+            CCENABLE(EVAL_ASSETS);
+            CCENABLE(EVAL_TOKENS);
+            CCENABLE(EVAL_ORACLES);
+        }
+        if ( strcmp("KMDICE",ASSETCHAINS_SYMBOL) == 0 )
+        {
+            CCDISABLEALL;
+            CCENABLE(EVAL_FAUCET);
+            CCENABLE(EVAL_DICE);
+            CCENABLE(EVAL_ORACLES);
         }
     } else BITCOIND_RPCPORT = GetArg("-rpcport", BaseParams().RPCPort());
     KOMODO_DPOWCONFS = GetArg("-dpowconfs",dpowconfs);
