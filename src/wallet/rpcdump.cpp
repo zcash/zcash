@@ -96,13 +96,14 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
 
     if (fHelp || params.size() < 1 || params.size() > 5)
         throw runtime_error(
-            "importprivkey \"komodoprivkey\" ( \"label\" rescan height)\n"
+            "importprivkey \"komodoprivkey\" ( \"label\" rescan height secret_key)\n"
             "\nAdds a private key (as returned by dumpprivkey) to your wallet.\n"
             "\nArguments:\n"
             "1. \"komodoprivkey\"   (string, required) The private key (see dumpprivkey)\n"
             "2. \"label\"            (string, optional, default=\"\") An optional label\n"
             "3. rescan               (boolean, optional, default=true) Rescan the wallet for transactions\n"
             "4. height               (integer, optional, default=0) start at block height?\n"
+            "5. secret_key           (interger, optional, default=188) used to import WIFs of other coins\n" 
             "\nNote: This call can take minutes to complete if rescan is true.\n"
             "\nExamples:\n"
             "\nDump a private key\n"
@@ -115,6 +116,10 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
             + HelpExampleRpc("importprivkey", "\"mykey\", \"testing\", false") +
             "\nImport with rescan from a block height\n"
             + HelpExampleCli("importprivkey", "\"mykey\" \"testing\" true 1000") +
+            "\nImport a BTC WIF with rescan\n"
+            + HelpExampleCli("importprivkey", "\"BTCWIF\" \"testing\" true 0 128") +
+            "\nImport a BTC WIF without rescan\n"
+            + HelpExampleCli("importprivkey", "\"BTCWIF\" \"testing\" false 0 128") +
             "\nAs a JSON-RPC call\n"
             + HelpExampleRpc("importprivkey", "\"mykey\", \"testing\", true, 1000")
         );
