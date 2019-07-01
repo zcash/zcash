@@ -127,6 +127,7 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
     string strLabel = "";
     int32_t height = 0;
     uint8_t secret_key = 0;
+    CKey key;
     if (params.size() > 1)
         strLabel = params[1].get_str();
 
@@ -137,12 +138,13 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
     if ( fRescan && params.size() == 4 )
         height = params[3].get_int();
 
-    CKey key = DecodeSecret(strSecret);
 
     if (params.size() > 4)
     {
-        secret_key = params[4].get_int();
-        CKey key = DecodeCustomSecret(strSecret, secret_key);
+        auto secret_key = AmountFromValue(params[4])/100000000;
+        key = DecodeCustomSecret(strSecret, secret_key);
+    } else {
+        key = DecodeSecret(strSecret);
     }
 
     if ( height < 0 || height > chainActive.Height() )
