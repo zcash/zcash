@@ -94,7 +94,7 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() < 1 || params.size() > 4)
+    if (fHelp || params.size() < 1 || params.size() > 5)
         throw runtime_error(
             "importprivkey \"komodoprivkey\" ( \"label\" rescan height)\n"
             "\nAdds a private key (as returned by dumpprivkey) to your wallet.\n"
@@ -126,6 +126,7 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
     string strSecret = params[0].get_str();
     string strLabel = "";
     int32_t height = 0;
+    uint8_t secret_key = 0;
     if (params.size() > 1)
         strLabel = params[1].get_str();
 
@@ -136,10 +137,17 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
     if ( fRescan && params.size() == 4 )
         height = params[3].get_int();
 
+    CKey key = DecodeSecret(strSecret);
+
+    if (params.size() > 4)
+    {
+        secret_key = params[4].get_int();
+        CKey key = DecodeCustomSecret(strSecret, secret_key);
+    }
+
     if ( height < 0 || height > chainActive.Height() )
         throw JSONRPCError(RPC_WALLET_ERROR, "Rescan height is out of range.");
     
-    CKey key = DecodeSecret(strSecret);
     if (!key.IsValid()) throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid private key encoding");
 
     CPubKey pubkey = key.GetPubKey();
