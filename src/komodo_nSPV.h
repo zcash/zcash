@@ -101,7 +101,7 @@ std::vector<struct NSPV_utxo> NSPV_utxos;
 // on fullnode:
 void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a request
 {
-    int32_t len; std::vector<uint8_t> response; uint32_t timestamp = time(NULL);
+    int32_t len; std::vector<uint8_t> response; uint32_t timestamp = (uint32_t)time(NULL);
     if ( (len= request.size()) > 0 )
     {
         response.resize(1);
@@ -184,7 +184,7 @@ void komodo_nSPVresp(CNode *pfrom,std::vector<uint8_t> response) // received a r
 
 void komodo_nSPV(CNode *pto)
 {
-    std::vector<uint8_t> request; int32_t i; uint32_t timestamp = time(NULL);
+    std::vector<uint8_t> request; int32_t i; uint32_t timestamp = (uint32_t)time(NULL);
     if ( timestamp > pto->lastntzs || timestamp > pto->lastproof )
     {
         for (i=0; i<NSPV_utxos.size(); i++)
