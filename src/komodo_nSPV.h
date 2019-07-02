@@ -80,7 +80,7 @@ void komodo_nSPV(CNode *pto)
     // limit frequency!
     if ( timestamp > NSPV_lastutxos + ASSETCHAINS_BLOCKTIME/2 )
     {
-        if ( (pto->nServices & NODE_ADDRINDEX) != 0 && timestamp > ptr->lastutxos + ASSETCHAINS_BLOCKTIME )
+        if ( (pto->nServices & NODE_ADDRINDEX) != 0 && timestamp > pto->lastutxos + ASSETCHAINS_BLOCKTIME )
         {
             // get utxo since lastheight
             if ( (rand() % 100) < 10 )
@@ -93,7 +93,7 @@ void komodo_nSPV(CNode *pto)
             }
         }
     }
-    if ( timestamp > NSPV_lastinfo + ASSETCHAINS_BLOCKTIME/2 && timestamp > ptr->lastinfo + ASSETCHAINS_BLOCKTIME )
+    if ( timestamp > NSPV_lastinfo + ASSETCHAINS_BLOCKTIME/2 && timestamp > pto->lastinfo + ASSETCHAINS_BLOCKTIME )
     {
         if ( (rand() % 100) < 10 )
         {
