@@ -57,9 +57,21 @@ struct NSPV_ntzs
     struct NSPV_ntz before,after;
 };
 
+struct NSPV_equiheader
+{
+    int32_t nVersion;
+    uint256 hashPrevBlock;
+    uint256 hashMerkleRoot;
+    uint256 hashFinalSaplingRoot;
+    uint32_t nTime;
+    uint32_t nBits;
+    CPOSNonce nNonce;
+    uint8_t nSolution[1344];
+};
+
 struct NSPV_ntzproofhdr
 {
-    std::vector<NSPV_header> headers;
+    std::vector<NSPV_equiheader> headers;
     int32_t beforeheight,afterheight;
 };
 
@@ -141,7 +153,7 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
 
 void komodo_nSPVresp(CNode *pfrom,std::vector<uint8_t> response) // received a response
 {
-    int32_t len; uint32_t timestamp = (uin32_t)time(NULL);
+    int32_t len; uint32_t timestamp = (uint32_t)time(NULL);
     if ( (len= response.size()) > 0 )
     {
         switch ( response[0] )
@@ -169,7 +181,7 @@ void komodo_nSPVresp(CNode *pfrom,std::vector<uint8_t> response) // received a r
 
 void komodo_nSPV(CNode *pto)
 {
-    std::vector<uint8_t> request; uint32_t timestamp = time(NULL);
+    std::vector<uint8_t> request; int32_t i; uint32_t timestamp = time(NULL);
     if ( timestamp > pto->lastntzs || timestamp > pto->lastproof )
     {
         for (i=0; i<NSPV_utxos.size(); i++)
