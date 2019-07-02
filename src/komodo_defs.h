@@ -342,7 +342,7 @@ struct NSPV_spentinfo
     int32_t vout,height,spentvin,spentheight;
 };
 void komodo_nSPV_spentinfoclear();
-struct nSPV_spentinfo komodo_nSPV_spentinfo(bits256 txid,int32_t vout);
+struct nSPV_spentinfo komodo_nSPV_spentinfo(uint256 txid,int32_t vout);
 
 
 #endif

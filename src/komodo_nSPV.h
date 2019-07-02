@@ -204,7 +204,7 @@ void komodo_nSPV_spentinfoclear()
     nSPV_spends.resize(0);
 }
 
-struct nSPV_spentinfo komodo_nSPV_spentinfo(bits256 txid,int32_t vout) // just a primitive example of how to add new rpc to p2p msg
+struct nSPV_spentinfo komodo_nSPV_spentinfo(uint256 txid,int32_t vout) // just a primitive example of how to add new rpc to p2p msg
 {
     std::vector<uint8_t> request; struct nSPV_spentinfo I; int32_t i,numsent = 0; uint32_t timestamp = (uint32_t)time(NULL);
     // lookup spentinfo
