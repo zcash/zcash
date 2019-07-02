@@ -98,6 +98,7 @@ struct NSPV_txproof
 uint32_t NSPV_lastinfo,NSPV_lastutxos;
 std::vector<struct NSPV_utxo> NSPV_utxos;
 
+// on fullnode:
 void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a request
 {
     int32_t len; std::vector<uint8_t> response; uint32_t timestamp = time(NULL);
@@ -152,6 +153,7 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
   }
 }
 
+// on nSPV client
 void komodo_nSPVresp(CNode *pfrom,std::vector<uint8_t> response) // received a response
 {
     int32_t len; uint32_t timestamp = (uint32_t)time(NULL);
