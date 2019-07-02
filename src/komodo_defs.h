@@ -336,7 +336,7 @@ int32_t komodo_priceget(int64_t *buf64,int32_t ind,int32_t height,int32_t numblo
 uint64_t komodo_accrued_interest(int32_t *txheightp,uint32_t *locktimep,uint256 hash,int32_t n,int32_t checkheight,uint64_t checkvalue,int32_t tipheight);
 int32_t komodo_currentheight();
 
-struct NSPV_spentinfo
+struct nSPV_spentinfo
 {
     uint256 txid,spenttxid;
     int32_t vout,height,spentvin,spentheight;
