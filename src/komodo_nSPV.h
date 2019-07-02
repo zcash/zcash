@@ -219,12 +219,12 @@ struct NSPV_spentinfo komodo_NSPV_spentinfo(uint256 txid,int32_t vout) // just a
     {
         if ( pnode->hSocket == INVALID_SOCKET )
             continue;
-        if ( (pto->nServices & NODE_NSPV) != 0 && timestamp > pto->lastspent )
+        if ( (pnode->nServices & NODE_NSPV) != 0 && timestamp > pto->lastspent )
         {
             request.resize(1);
             request[0] = NSPV_SPENTINFO;
-            pto->lastspent = timestamp;
-            pto->PushMessage("getnSPV",request);
+            pnode->lastspent = timestamp;
+            pnode->PushMessage("getnSPV",request);
             if ( ++numsent >= 3 )
                 break;
         }
