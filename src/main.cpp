@@ -7046,6 +7046,21 @@ void static ProcessGetData(CNode* pfrom)
     }
 }
 
+void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> payload) // received a request
+{
+    
+}
+
+void komodo_nSPVresp(CNode *pfrom,std::vector<uint8_t> payload) // received a response
+{
+    
+}
+
+void komodo_nSPV(CNode *pto) // issue nSPV requests if has nServices
+{
+    
+}
+
 bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, int64_t nTimeReceived)
 {
     const CChainParams& chainparams = Params();
@@ -7209,7 +7224,6 @@ fprintf(stderr, "recv: %s peer=%d\n", SanitizeString(strCommand).c_str(), (int32
     }
     else if ( strCommand == "events" )
     {
-        int32_t i;
         if ( ASSETCHAINS_CCLIB != "gamescc" )
         {
             Misbehaving(pfrom->GetId(), 1);
@@ -7412,10 +7426,22 @@ fprintf(stderr, "recv: %s peer=%d\n", SanitizeString(strCommand).c_str(), (int32
         BOOST_FOREACH(const CAddress &addr, vAddr)
         pfrom->PushAddress(addr);
     }
-    
+    else if (strCommand == "getnSPV")
+    {
+        std::vector<uint8_t> payload;
+        vRecv >> payload;
+        komodo_nSPVreq(pfrom,payload);
+        return(true);
+    }
     else if ( KOMODO_NSPV != 0 )
     {
-        // handle addressutxos, addresstxids, notarizations, ... messages
+        if (strCommand == "nSPV")
+        {
+            std::vector<uint8_t> payload;
+            vRecv >> payload;
+            komodo_nSPVresp(pfrom,payload);
+            return(true);
+        }
         fprintf(stderr,"ignore message %s\n",strCommand.c_str());
         return(true);
     }
@@ -8210,7 +8236,7 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
         }
         if ( KOMODO_NSPV != 0 )
         {
-            // issue getaddressutxos, ...
+            komodo_nSPV(pto);
             return(true);
         }
         BOOST_FOREACH(const CBlockReject& reject, state.rejects)

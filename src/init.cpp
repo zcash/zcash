@@ -1908,7 +1908,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         nLocalServices |= NODE_ADDRINDEX;
     if ( GetBoolArg("-spentindex", DEFAULT_SPENTINDEX) != 0 )
         nLocalServices |= NODE_SPENTINDEX;
-
+fprintf(stderr,"nLocalServices %llx %d, %d\n",(long long)nLocalServices,GetBoolArg("-addressindex", DEFAULT_ADDRESSINDEX),GetBoolArg("-spentindex", DEFAULT_SPENTINDEX));
     // ********************************************************* Step 10: import blocks
 
     if (mapArgs.count("-blocknotify"))
