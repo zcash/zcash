@@ -56,24 +56,18 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
             nHeight < params.vUpgrades[Consensus::UPGRADE_YCASH].nActivationHeight + params.nPowAveragingWindow) {
         if (pblock && pblock->GetBlockTime() > pindexLast->GetBlockTime() + params.nPowTargetSpacing * 12) {
             // If > 30 mins, allow min difficulty
-            unsigned int difficulty = nProofOfWorkLimit;
-            arith_uint256 target;
-            target.SetCompact(difficulty);
-            LogPrintf("Returning level 1 difficulty: %s\n", target.GetHex());
+            unsigned int difficulty = IncreaseDifficultyBy(nProofOfWorkLimit, 64, params);
+            LogPrintf("Returning level 1 difficulty\n");
             return difficulty;
         } else if (pblock && pblock->GetBlockTime() > pindexLast->GetBlockTime() + params.nPowTargetSpacing * 6) {
             // If > 15 mins, allow low estimate difficulty
-            unsigned int difficulty = IncreaseDifficultyBy(nProofOfWorkLimit, 100, params);
-            arith_uint256 target;
-            target.SetCompact(difficulty);
-            LogPrintf("Returning level 2 difficulty: %s\n", target.GetHex());
+            unsigned int difficulty = IncreaseDifficultyBy(nProofOfWorkLimit, 128, params);
+            LogPrintf("Returning level 2 difficulty\n");
             return difficulty;
         } else if (pblock && pblock->GetBlockTime() > pindexLast->GetBlockTime() + params.nPowTargetSpacing * 2) {
             // If > 5 mins, allow high estimate difficulty
-            unsigned int difficulty = IncreaseDifficultyBy(nProofOfWorkLimit, 100000, params);
-            arith_uint256 target;
-            target.SetCompact(difficulty);
-            LogPrintf("Returning level 3 difficulty: %s\n", target.GetHex());
+            unsigned int difficulty = IncreaseDifficultyBy(nProofOfWorkLimit, 256, params);
+            LogPrintf("Returning level 3 difficulty\n");
             return difficulty;
         } else {
             // If < 5 mins, fall through, and return the normal difficulty.
