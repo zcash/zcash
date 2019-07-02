@@ -1064,6 +1064,8 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     RegisterAllCoreRPCCommands(tableRPC);
 #ifdef ENABLE_WALLET
     bool fDisableWallet = GetBoolArg("-disablewallet", false);
+    if ( KOMODO_NSPV != 0 )
+        fDisableWallet = true;
     if (!fDisableWallet)
         RegisterWalletRPCCommands(tableRPC);
 #endif

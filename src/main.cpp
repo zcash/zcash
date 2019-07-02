@@ -4109,7 +4109,7 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
         if ((i == (block.vtx.size() - 1)) && (ASSETCHAINS_STAKED != 0 && (komodo_isPoS((CBlock *)&block,pindexDelete->GetHeight(),true) != 0)))
         {
 #ifdef ENABLE_WALLET
-            if ( !GetBoolArg("-disablewallet", false) )
+            if ( !GetBoolArg("-disablewallet", false) && KOMODO_NSPV == 0 )
                 pwalletMain->EraseFromWallet(tx.GetHash());
 #endif
         }
