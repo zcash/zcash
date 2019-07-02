@@ -7225,6 +7225,12 @@ fprintf(stderr, "recv: %s peer=%d\n", SanitizeString(strCommand).c_str(), (int32
     {
         pfrom->SetRecvVersion(min(pfrom->nVersion, PROTOCOL_VERSION));
 
+        if ( KOMODO_NSPV != 0 && (pfrom->nServices & NODE_NSPV) == 0 )
+        {
+            fprintf(stderr,"invalid nSPV peer.%d\n",pfrom->id);
+            pfrom->fDisconnect = true;
+            return false;
+        }
         // Mark this node as currently connected, so we update its timestamp later.
         if (pfrom->fNetworkNode) {
             LOCK(cs_main);
