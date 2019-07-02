@@ -1483,6 +1483,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         std::vector<boost::filesystem::path> vImportFiles;
         threadGroup.create_thread(boost::bind(&ThreadImport, vImportFiles));
         StartNode(threadGroup, scheduler);
+        pcoinsTip = new CCoinsViewCache(pcoinscatcher);
         InitBlockIndex();
         SetRPCWarmupFinished();
         uiInterface.InitMessage(_("Done loading"));
