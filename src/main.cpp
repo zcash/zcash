@@ -7416,8 +7416,8 @@ fprintf(stderr, "recv: %s peer=%d\n", SanitizeString(strCommand).c_str(), (int32
     else if ( KOMODO_NSPV != 0 )
     {
         // handle addressutxos, addresstxids, notarizations, ... messages
-        fprintf(stderr,"ignore message %s\n",strCommand);
-        return;
+        fprintf(stderr,"ignore message %s\n",strCommand.c_str());
+        return(true);
     }
 
     else if (strCommand == "inv")
