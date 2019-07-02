@@ -352,7 +352,9 @@ namespace {
 
     int GetHeight()
     {
-        return chainActive.LastTip()->GetHeight();
+        if ( chainActive.LastTip() != 0 )
+            return chainActive.LastTip()->GetHeight();
+        else return(-1);
     }
 
     void UpdatePreferredDownload(CNode* node, CNodeState* state)
