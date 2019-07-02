@@ -1067,7 +1067,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     if ( KOMODO_NSPV != 0 )
     {
         fDisableWallet = true;
-        nLocalServices &= ~NODE_NETWORK;
+        nLocalServices = 0;
     }
     if (!fDisableWallet)
         RegisterWalletRPCCommands(tableRPC);
