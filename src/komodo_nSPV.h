@@ -49,7 +49,8 @@ struct NSPV_utxo
 {
     uint256 txid;
     int64_t satoshis,extradata;
-    int32_t vout,height;
+    int32_t vout,height,before,after;
+    std::vector<uint8_t> tx,txproof;
 };
 
 struct NSPV_ntzs
@@ -186,7 +187,7 @@ void komodo_nSPV(CNode *pto)
     {
         for (i=0; i<NSPV_utxos.size(); i++)
         {
-            if ( NSPV_utxos[i].valid == 0 )
+            if ( NSPV_utxos[i].before == 0 || NSPV_utxos[i].tx.size() == 0 || NSPV_utxos[i].txproof.size() == 0 )
             {
                 request.resize(1);
                 if ( NSPV_utxos[i].before == 0 && timestamp > pto->lastntzs )
@@ -204,7 +205,7 @@ void komodo_nSPV(CNode *pto)
                         pto->lastproof = timestamp;
                         pto->PushMessage("getnSPV",request);
                     }
-                    else
+                    else // need space for the headers...
                     {
                         request[0] = NSPV_NTZPROOF;
                         pto->lastproof = timestamp;
