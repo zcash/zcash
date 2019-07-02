@@ -204,6 +204,7 @@ public:
     bool fWhitelisted;
     double dPingTime;
     double dPingWait;
+    uint32_t lastutxos,lastinfo;
     std::string addrLocal;
 };
 
