@@ -1065,7 +1065,10 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 #ifdef ENABLE_WALLET
     bool fDisableWallet = GetBoolArg("-disablewallet", false);
     if ( KOMODO_NSPV != 0 )
+    {
         fDisableWallet = true;
+        nLocalServices &= ~NODE_NETWORK;
+    }
     if (!fDisableWallet)
         RegisterWalletRPCCommands(tableRPC);
 #endif
@@ -1901,6 +1904,10 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             PruneAndFlush();
         }
     }
+    if ( GetBoolArg("-addressindex", DEFAULT_ADDRESSINDEX) != 0 )
+        nLocalServices |= NODE_ADDRINDEX;
+    if ( GetBoolArg("-spentindex", DEFAULT_SPENTINDEX) != 0 )
+        nLocalServices |= NODE_SPENTINDEX;
 
     // ********************************************************* Step 10: import blocks
 
