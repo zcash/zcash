@@ -1483,6 +1483,8 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         std::vector<boost::filesystem::path> vImportFiles;
         threadGroup.create_thread(boost::bind(&ThreadImport, vImportFiles));
         StartNode(threadGroup, scheduler);
+        SetRPCWarmupFinished();
+        uiInterface.InitMessage(_("Done loading"));
         return !fRequestShutdown;
     }
     // ********************************************************* Step 7: load block chain
