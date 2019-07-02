@@ -3378,6 +3378,8 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 {
     CDiskBlockPos blockPos;
     const CChainParams& chainparams = Params();
+    if ( KOMODO_NSPV != 0 )
+        return(true);
     if ( KOMODO_STOPAT != 0 && pindex->GetHeight() > KOMODO_STOPAT )
         return(false);
     //fprintf(stderr,"connectblock ht.%d\n",(int32_t)pindex->GetHeight());
