@@ -36,12 +36,12 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
         if ( len == 1 && request[0] == NSPV_INFO ) // info
         {
             response[0] = NSPV_INFORESP;
-            pnode->PushMessage("nSPV",response);
+            pfrom->PushMessage("nSPV",response);
         }
         else if ( request[0] == NSPV_UTXOS )
         {
             response[0] = NSPV_UTXOSRESP;
-            pnode->PushMessage("nSPV",response);
+            pfrom->PushMessage("nSPV",response);
         }
     }
 }
@@ -72,15 +72,15 @@ void komodo_nSPV(CNode *pto)
     if ( (pto->nServices & NODE_ADDRINDEX) != 0 )
     {
         // get utxo since lastheight
-        payload.resize(1);
-        payload[0] = NSPV_UTXOS;
+        request.resize(1);
+        request[0] = NSPV_UTXOS;
         pnode->PushMessage("getnSPV",request);
     }
     else
     {
         // query current height, blockhash, notarization info
-        payload.resize(1);
-        payload[0] = NSPV_INFO;
+        request.resize(1);
+        request[0] = NSPV_INFO;
         pnode->PushMessage("getnSPV",request);
     }
 }
