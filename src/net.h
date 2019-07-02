@@ -204,7 +204,6 @@ public:
     bool fWhitelisted;
     double dPingTime;
     double dPingWait;
-    uint32_t lastutxos,lastinfo;
     std::string addrLocal;
 };
 
@@ -277,6 +276,7 @@ public:
     int64_t nLastRecv;
     int64_t nTimeConnected;
     int64_t nTimeOffset;
+    uint32_t lastutxos,lastinfo;
     CAddress addr;
     std::string addrName;
     CService addrLocal;

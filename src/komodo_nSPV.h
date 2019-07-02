@@ -26,9 +26,6 @@
 #define NSPV_UTXOS 0x02
 #define NSPV_UTXOSRESP 0x03
 
-uint32_t CNode_lastinfo(CNode *pnode,uint32_t lastutxos);
-uint32_t CNode_lastutxos(CNode *pnode,uint32_t lastutxos);
-
 uint32_t NSPV_lastinfo,NSPV_lastutxos;
 
 void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a request
@@ -39,19 +36,19 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
         response.resize(1);
         if ( len == 1 && request[0] == NSPV_INFO ) // info
         {
-            if ( timestamp > CNode_lastinfo(pfrom,0) + ASSETCHAINS_BLOCKTIME/2 )
+            if ( timestamp > pfrom->lastinfo + ASSETCHAINS_BLOCKTIME/2 )
             {
                 response[0] = NSPV_INFORESP;
-                CNode_lastinfo(pfrom,timestamp);
+                pfrom->lastinfo = timestamp;
                 pfrom->PushMessage("nSPV",response);
             }
         }
         else if ( request[0] == NSPV_UTXOS )
         {
-            if ( timestamp > CNode_lastutxos(pfrom,0) + ASSETCHAINS_BLOCKTIME/2 )
+            if ( timestamp > pfrom->lastutxos + ASSETCHAINS_BLOCKTIME/2 )
             {
                 response[0] = NSPV_UTXOSRESP;
-                CNode_lastutxos(pfrom,timestamp);
+                pfrom->lastutxos = timestamp;
                 pfrom->PushMessage("nSPV",response);
             }
         }
@@ -83,29 +80,27 @@ void komodo_nSPV(CNode *pto)
     // limit frequency!
     if ( timestamp > NSPV_lastutxos + ASSETCHAINS_BLOCKTIME/2 )
     {
-        if ( (pto->nServices & NODE_ADDRINDEX) != 0 && timestamp > CNode_lastutxos(pto,0) + ASSETCHAINS_BLOCKTIME )
+        if ( (pto->nServices & NODE_ADDRINDEX) != 0 && timestamp > ptr->lastutxos + ASSETCHAINS_BLOCKTIME )
         {
             // get utxo since lastheight
             if ( (rand() % 100) < 10 )
             {
                 request.resize(1);
                 request[0] = NSPV_UTXOS;
-                NSPV_lastutxos = timestamp;
-                CNode_lastutxos(pto,NSPV_lastutxos);
+                NSPV_lastutxos = pto->lastutxos = timestamp;
                 pto->PushMessage("getnSPV",request);
                 return;
             }
         }
     }
-    if ( timestamp > NSPV_lastinfo + ASSETCHAINS_BLOCKTIME/2 && timestamp > CNode_lastinfo(pto,0) + ASSETCHAINS_BLOCKTIME )
+    if ( timestamp > NSPV_lastinfo + ASSETCHAINS_BLOCKTIME/2 && timestamp > ptr->lastinfo + ASSETCHAINS_BLOCKTIME )
     {
         if ( (rand() % 100) < 10 )
         {
             // query current height, blockhash, notarization info
             request.resize(1);
             request[0] = NSPV_INFO;
-            NSPV_lastinfo = timestamp;
-            CNode_lastinfo(pto,NSPV_lastinfo);
+            NSPV_lastinfo = pto->lastinfo = timestamp;
             pto->PushMessage("getnSPV",request);
         }
     }
