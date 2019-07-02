@@ -223,19 +223,25 @@ void komodo_nSPV(CNode *pto)
         if ( (pto->nServices & NODE_ADDRINDEX) != 0 && timestamp > pto->lastutxos + ASSETCHAINS_BLOCKTIME )
         {
             // get utxo since lastheight
-            request.resize(1);
-            request[0] = NSPV_UTXOS;
-            NSPV_lastutxos = pto->lastutxos = timestamp;
-            pto->PushMessage("getnSPV",request);
+            if ( (rand() % 100) < 10 )
+            {
+                request.resize(1);
+                request[0] = NSPV_UTXOS;
+                NSPV_lastutxos = pto->lastutxos = timestamp;
+                pto->PushMessage("getnSPV",request);
+            }
         }
     }
     if ( timestamp > NSPV_lastinfo + ASSETCHAINS_BLOCKTIME/2 && timestamp > pto->lastinfo + ASSETCHAINS_BLOCKTIME )
     {
-        // query current height, blockhash, notarization info
-        request.resize(1);
-        request[0] = NSPV_INFO;
-        NSPV_lastinfo = pto->lastinfo = timestamp;
-        pto->PushMessage("getnSPV",request);
+        if ( (rand() % 100) < 10 )
+        {
+            // query current height, blockhash, notarization info
+            request.resize(1);
+            request[0] = NSPV_INFO;
+            NSPV_lastinfo = pto->lastinfo = timestamp;
+            pto->PushMessage("getnSPV",request);
+        }
     }
 }
 
