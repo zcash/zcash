@@ -25,8 +25,65 @@
 #define NSPV_INFORESP 0x01
 #define NSPV_UTXOS 0x02
 #define NSPV_UTXOSRESP 0x03
+#define NSPV_NTZS 0x04
+#define NSPV_NTZSRESP 0x05
+#define NSPV_NTZPROOF 0x06
+#define NSPV_NTZPROOFRESP 0x07
+#define NSPV_TXPROOF 0x08
+#define NSPV_TXPROOFRESP 0x09
+
+struct NSPV_ntz
+{
+    uint256 blockhash,txid,othertxid;
+    int32_t height,txidheight;
+};
+
+struct NSPV_info
+{
+    struct NSPV_ntz notarization;
+    uint256 blockhash;
+    int32_t height;
+};
+
+struct NSPV_utxo
+{
+    uint256 txid;
+    int64_t satoshis,extradata;
+    int32_t vout,height;
+};
+
+struct NSPV_ntzs
+{
+    struct NSPV_ntz before,after;
+};
+
+struct NSPV_ntzproofhdr
+{
+    std::vector<NSPV_header> headers;
+    int32_t beforeheight,afterheight;
+};
+
+struct NSPV_ntzproof
+{
+    struct NSPV_ntzproofhdr hdr;
+    std::vector<uint8_t> beforentz,afterntz;
+};
+
+struct NSPV_MMRproof
+{
+    struct NSPV_ntzproofhdr hdr;
+    std::vector<uint8_t> mmrproof;
+};
+
+struct NSPV_txproof
+{
+    uint256 txid;
+    std::vector<uint8_t> tx,txproof;
+    int32_t height;
+};
 
 uint32_t NSPV_lastinfo,NSPV_lastutxos;
+std::vector<struct NSPV_utxo> NSPV_utxos;
 
 void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a request
 {
@@ -52,23 +109,59 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                 pfrom->PushMessage("nSPV",response);
             }
         }
-    }
+        else if ( request[0] == NSPV_NTZS )
+        {
+            if ( timestamp > pfrom->lastntzs )
+            {
+                response[0] = NSPV_NTZSRESP;
+                pfrom->lastntzs = timestamp;
+                pfrom->PushMessage("nSPV",response);
+            }
+        }
+        else if ( request[0] == NSPV_NTZPROOF )
+        {
+            if ( timestamp > pfrom->lastproof )
+            {
+                response[0] = NSPV_NTZPROOFRESP;
+                pfrom->lastproof = timestamp;
+                pfrom->PushMessage("nSPV",response);
+            }
+        }
+        else if ( request[0] == NSPV_TXPROOF )
+        {
+            if ( timestamp > pfrom->lastproof )
+            {
+                response[0] = NSPV_TXPROOFRESP;
+                pfrom->lastproof = timestamp;
+                pfrom->PushMessage("nSPV",response);
+            }
+        }
+  }
 }
 
 void komodo_nSPVresp(CNode *pfrom,std::vector<uint8_t> response) // received a response
 {
-    int32_t len;
+    int32_t len; uint32_t timestamp = (uin32_t)time(NULL);
     if ( (len= response.size()) > 0 )
     {
         switch ( response[0] )
         {
         case NSPV_INFORESP:
-                fprintf(stderr,"got info response\n");
+                fprintf(stderr,"got info response %u\n",timestamp); // update current height and ntrz status
                 break;
         case NSPV_UTXOSRESP:
-                fprintf(stderr,"got utxos response\n");
-                break;
-        default: fprintf(stderr,"unexpected response %02x size.%d\n",response[0],(int32_t)response.size());
+            fprintf(stderr,"got utxos response %u\n",timestamp); // update utxos list
+            break;
+        case NSPV_NTZSRESP:
+            fprintf(stderr,"got ntzs response %u\n",timestamp); // update utxos[i]
+            break;
+        case NSPV_NTZPROOFRESP:
+            fprintf(stderr,"got ntzproof response %u\n",timestamp); // update utxos[i]
+            break;
+        case NSPV_TXPROOFRESP:
+            fprintf(stderr,"got txproof response %u\n",timestamp); // update utxos[i]
+            break;
+        default: fprintf(stderr,"unexpected response %02x size.%d at %u\n",response[0],(int32_t)response.size(),timestamp);
                 break;
         }
     }
@@ -77,7 +170,39 @@ void komodo_nSPVresp(CNode *pfrom,std::vector<uint8_t> response) // received a r
 void komodo_nSPV(CNode *pto)
 {
     std::vector<uint8_t> request; uint32_t timestamp = time(NULL);
-    // limit frequency!
+    if ( timestamp > pto->lastntzs || timestamp > pto->lastproof )
+    {
+        for (i=0; i<NSPV_utxos.size(); i++)
+        {
+            if ( NSPV_utxos[i].valid == 0 )
+            {
+                request.resize(1);
+                if ( NSPV_utxos[i].before == 0 && timestamp > pto->lastntzs )
+                {
+                    request[0] = NSPV_NTZS;
+                    pto->lastntzs = timestamp;
+                    pto->PushMessage("getnSPV",request);
+                    return;
+                }
+                else if ( timestamp > pto->lastproof )
+                {
+                    if ( NSPV_utxos[i].tx.size() == 0 )
+                    {
+                        request[0] = NSPV_TXPROOF;
+                        pto->lastproof = timestamp;
+                        pto->PushMessage("getnSPV",request);
+                    }
+                    else
+                    {
+                        request[0] = NSPV_NTZPROOF;
+                        pto->lastproof = timestamp;
+                        pto->PushMessage("getnSPV",request);
+                    }
+                    return;
+                }
+            }
+        }
+    }
     if ( timestamp > NSPV_lastutxos + ASSETCHAINS_BLOCKTIME/2 )
     {
         if ( (pto->nServices & NODE_ADDRINDEX) != 0 && timestamp > pto->lastutxos + ASSETCHAINS_BLOCKTIME )
@@ -89,13 +214,12 @@ void komodo_nSPV(CNode *pto)
                 request[0] = NSPV_UTXOS;
                 NSPV_lastutxos = pto->lastutxos = timestamp;
                 pto->PushMessage("getnSPV",request);
-                return;
             }
         }
     }
     if ( timestamp > NSPV_lastinfo + ASSETCHAINS_BLOCKTIME/2 && timestamp > pto->lastinfo + ASSETCHAINS_BLOCKTIME )
     {
-        if ( (rand() % 100) < 10 )
+        if ( (rand() % 100) < 20 )
         {
             // query current height, blockhash, notarization info
             request.resize(1);
