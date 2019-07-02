@@ -185,6 +185,8 @@ void komodo_nSPVresp(CNode *pfrom,std::vector<uint8_t> response) // received a r
 void komodo_nSPV(CNode *pto)
 {
     std::vector<uint8_t> request; int32_t i; uint32_t timestamp = (uint32_t)time(NULL);
+    if ( (pto->nServices & NODE_NSPV) == 0 )
+        return;
     if ( timestamp > pto->lastntzs || timestamp > pto->lastproof )
     {
         for (i=0; i<NSPV_utxos.size(); i++)
