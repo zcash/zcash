@@ -684,8 +684,21 @@ int CNetMessage::readData(const char *pch, unsigned int nBytes)
 
 
 
+uint32_t CNode_lastutxos(CNode *pnode,uint32_t lastutxos)
+{
+    uint32_t prev = pnode->lastutxos;
+    if ( lastutxos != 0 )
+        pnode->lastutxos = lastutxos;
+    return(prev);
+}
 
-
+uint32_t CNode_lastinfo(CNode *pnode,uint32_t lastinfo)
+{
+    uint32_t prev = pnode->lastinfo;
+    if ( lastinfo != 0 )
+        pnode->lastinfo = lastinfo;
+    return(prev);
+}
 
 
 // requires LOCK(cs_vSend)
