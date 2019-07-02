@@ -352,8 +352,9 @@ namespace {
 
     int GetHeight()
     {
-        if ( chainActive.LastTip() != 0 )
-            return chainActive.LastTip()->GetHeight();
+        CBlockIndex *pindex;
+        if ( (pindex= chainActive.LastTip()) != 0 )
+            return pindex->GetHeight();
         else return(-1);
     }
 
