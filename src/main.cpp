@@ -7046,20 +7046,7 @@ void static ProcessGetData(CNode* pfrom)
     }
 }
 
-void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> payload) // received a request
-{
-    
-}
-
-void komodo_nSPVresp(CNode *pfrom,std::vector<uint8_t> payload) // received a response
-{
-    
-}
-
-void komodo_nSPV(CNode *pto) // issue nSPV requests if has nServices
-{
-    
-}
+#include "komodo_nSPV.h"
 
 bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, int64_t nTimeReceived)
 {
