@@ -201,16 +201,16 @@ void komodo_nSPVresp(CNode *pfrom,std::vector<uint8_t> response) // received a r
 
 void komodo_nSPV_spentinfoclear()
 {
-    nSPV_spends.resize(0);
+    NSPV_spends.resize(0);
 }
 
 struct nSPV_spentinfo komodo_nSPV_spentinfo(uint256 txid,int32_t vout) // just a primitive example of how to add new rpc to p2p msg
 {
     std::vector<uint8_t> request; struct nSPV_spentinfo I; int32_t i,numsent = 0; uint32_t timestamp = (uint32_t)time(NULL);
     // lookup spentinfo
-    for (i=0; i<nSPV_spends.size(); i++)
+    for (i=0; i<NSPV_spends.size(); i++)
     {
-        I = nSPV_spends[i];
+        I = NSPV_spends[i];
         if ( I.txid == txid && I.vout == vout )
             return(I);
     }
