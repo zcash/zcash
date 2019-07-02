@@ -90,12 +90,10 @@
 
 using namespace std;
 
+#include "komodo_defs.h"
 extern void ThreadSendAlert();
 extern bool komodo_dailysnapshot(int32_t height);
 extern int32_t KOMODO_LOADINGBLOCKS;
-extern bool VERUS_MINTBLOCKS;
-extern char ASSETCHAINS_SYMBOL[];
-extern int32_t KOMODO_SNAPSHOT_INTERVAL;
 
 ZCJoinSplit* pzcashParams = NULL;
 
@@ -1478,6 +1476,13 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     }
 #endif
 
+    if ( KOMODO_NSPV != 0 )
+    {
+        std::vector<boost::filesystem::path> vImportFiles;
+        threadGroup.create_thread(boost::bind(&ThreadImport, vImportFiles));
+        StartNode(threadGroup, scheduler);
+        return !fRequestShutdown;
+    }
     // ********************************************************* Step 7: load block chain
 
     fReindex = GetBoolArg("-reindex", false);
