@@ -162,8 +162,8 @@ void komodo_nSPVresp(CNode *pfrom,std::vector<uint8_t> response) // received a r
         switch ( response[0] )
         {
         case NSPV_INFORESP:
-                fprintf(stderr,"got info response %u\n",timestamp); // update current height and ntrz status
-                break;
+            fprintf(stderr,"got info response %u\n",timestamp); // update current height and ntrz status
+            break;
         case NSPV_UTXOSRESP:
             fprintf(stderr,"got utxos response %u\n",timestamp); // update utxos list
             break;
@@ -223,25 +223,19 @@ void komodo_nSPV(CNode *pto)
         if ( (pto->nServices & NODE_ADDRINDEX) != 0 && timestamp > pto->lastutxos + ASSETCHAINS_BLOCKTIME )
         {
             // get utxo since lastheight
-            if ( (rand() % 100) < 10 )
-            {
-                request.resize(1);
-                request[0] = NSPV_UTXOS;
-                NSPV_lastutxos = pto->lastutxos = timestamp;
-                pto->PushMessage("getnSPV",request);
-            }
+            request.resize(1);
+            request[0] = NSPV_UTXOS;
+            NSPV_lastutxos = pto->lastutxos = timestamp;
+            pto->PushMessage("getnSPV",request);
         }
     }
     if ( timestamp > NSPV_lastinfo + ASSETCHAINS_BLOCKTIME/2 && timestamp > pto->lastinfo + ASSETCHAINS_BLOCKTIME )
     {
-        if ( (rand() % 100) < 20 )
-        {
-            // query current height, blockhash, notarization info
-            request.resize(1);
-            request[0] = NSPV_INFO;
-            NSPV_lastinfo = pto->lastinfo = timestamp;
-            pto->PushMessage("getnSPV",request);
-        }
+        // query current height, blockhash, notarization info
+        request.resize(1);
+        request[0] = NSPV_INFO;
+        NSPV_lastinfo = pto->lastinfo = timestamp;
+        pto->PushMessage("getnSPV",request);
     }
 }
 
