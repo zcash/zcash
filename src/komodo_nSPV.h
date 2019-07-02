@@ -74,14 +74,14 @@ void komodo_nSPV(CNode *pto)
         // get utxo since lastheight
         request.resize(1);
         request[0] = NSPV_UTXOS;
-        pnode->PushMessage("getnSPV",request);
+        pto->PushMessage("getnSPV",request);
     }
     else
     {
         // query current height, blockhash, notarization info
         request.resize(1);
         request[0] = NSPV_INFO;
-        pnode->PushMessage("getnSPV",request);
+        pto->PushMessage("getnSPV",request);
     }
 }
 
