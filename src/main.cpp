@@ -355,7 +355,7 @@ namespace {
         CBlockIndex *pindex;
         if ( (pindex= chainActive.LastTip()) != 0 )
             return pindex->GetHeight();
-        else return(-1);
+        else return(0);
     }
 
     void UpdatePreferredDownload(CNode* node, CNodeState* state)
