@@ -31,6 +31,8 @@
 #define NSPV_NTZPROOFRESP 0x07
 #define NSPV_TXPROOF 0x08
 #define NSPV_TXPROOFRESP 0x09
+#define NSPV_SPENTINFO 0x0a
+#define NSPV_SPENTINFORESP 0x0b
 
 struct NSPV_ntz
 {
@@ -97,6 +99,7 @@ struct NSPV_txproof
 
 uint32_t NSPV_lastinfo,NSPV_lastutxos;
 std::vector<struct NSPV_utxo> NSPV_utxos;
+std::vector<struct NSPV_spentinfo> NSPV_spends;
 
 // on fullnode:
 void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a request
@@ -120,6 +123,7 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
             {
                 response[0] = NSPV_UTXOSRESP;
                 pfrom->lastutxos = timestamp;
+                // check mempool
                 pfrom->PushMessage("nSPV",response);
             }
         }
@@ -150,7 +154,17 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                 pfrom->PushMessage("nSPV",response);
             }
         }
-  }
+        else if ( request[0] == NSPV_SPENTINFO )
+        {
+            if ( timestamp > pfrom->lastspent )
+            {
+                response[0] = NSPV_SPENTINFORESP;
+                // check mempool
+                pfrom->lastspent = timestamp;
+                pfrom->PushMessage("nSPV",response);
+            }
+        }
+    }
 }
 
 // on nSPV client
@@ -176,7 +190,42 @@ void komodo_nSPVresp(CNode *pfrom,std::vector<uint8_t> response) // received a r
         case NSPV_TXPROOFRESP:
             fprintf(stderr,"got txproof response %u\n",timestamp); // update utxos[i]
             break;
+        case NSPV_SPENTINFORESP:
+            fprintf(stderr,"got spentinfo response %u\n",timestamp); // update utxos[i]
+            break;
         default: fprintf(stderr,"unexpected response %02x size.%d at %u\n",response[0],(int32_t)response.size(),timestamp);
+                break;
+        }
+    }
+}
+
+void komodo_nSPV_spentinfoclear()
+{
+    nSPV_spends.resize(0);
+}
+
+struct nSPV_spentinfo komodo_nSPV_spentinfo(bits256 txid,int32_t vout) // just a primitive example of how to add new rpc to p2p msg
+{
+    std::vector<uint8_t> request; struct nSPV_spentinfo I; int32_t i,numsent = 0; uint32_t timestamp = (uint32_t)time(NULL);
+    // lookup spentinfo
+    for (i=0; i<nSPV_spends.size(); i++)
+    {
+        I = nSPV_spends[i];
+        if ( I.txid == txid && I.vout == vout )
+            return(I);
+    }
+    LOCK(cs_vNodes);
+    BOOST_FOREACH(CNode *pnode, vNodes)
+    {
+        if ( pnode->hSocket == INVALID_SOCKET )
+            continue;
+        if ( (pto->nServices & NODE_NSPV) != 0 && timestamp > pto->lastspent )
+        {
+            request.resize(1);
+            request[0] = NSPV_SPENTINFO;
+            pto->lastspent = timestamp;
+            pto->PushMessage("getnSPV",request);
+            if ( ++numsent >= 3 )
                 break;
         }
     }
