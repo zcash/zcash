@@ -6494,7 +6494,9 @@ bool InitBlockIndex() {
             if (!ActivateBestChain(true, state, &block))
                 return error("LoadBlockIndex(): genesis block cannot be activated");
             // Force a chainstate write so that when we VerifyDB in a moment, it doesn't check stale data
-            return FlushStateToDisk(state, FLUSH_STATE_ALWAYS);
+            if ( KOMODO_NSPV == 0 )
+                return FlushStateToDisk(state, FLUSH_STATE_ALWAYS);
+            else return(true);
         } catch (const std::runtime_error& e) {
             return error("LoadBlockIndex(): failed to initialize block database: %s", e.what());
         }
