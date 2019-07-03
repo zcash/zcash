@@ -394,7 +394,7 @@ int32_t komodo_MoMdata(int32_t *notarized_htp,uint256 *MoMp,uint256 *kmdtxidp,in
 
 int32_t komodo_notarized_bracket(struct notarized_checkpoint *nps[2],int32_t height)
 {
-    struct notarized_checkpoint *np; char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; struct komodo_state *sp;
+    int32_t i; struct notarized_checkpoint *np; char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; struct komodo_state *sp;
     memset(nps,0,sizeof(*nps)*2);
     if ( (sp= komodo_stateptr(symbol,dest)) != 0 )
     {

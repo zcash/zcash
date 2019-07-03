@@ -353,7 +353,15 @@ void NSPV_spentinfo_purge(struct NSPV_spentinfo *ptr)
 uint256 NSPV_getnotarization_txid(int32_t *ntzheightp,int32_t height)
 {
     uint256 ntztxid;
-    *ntzheightp = height + 2; // random value;
+    if ( ntxheightp == 0 ) // search consecutive blocks
+    {
+        *ntzheightp = height + 1;
+        // iterate
+    }
+    else
+    {
+        // check *ntzheightp
+    }
     // find notarization for height, return its txid and set *ntzheightp
     fprintf(stderr,"implement NSPV_getnotarization_txid\n");
     return(ntztxid);
@@ -367,6 +375,7 @@ int32_t NSPV_getinfo(struct NSPV_inforesp *ptr)
         ptr->height = pindex->GetHeight();
         ptr->blockhash = pindex->GetBlockHash();
         ptr->notarization.height = komodo_notarized_height(&prevMoMheight,&ptr->notarization.blockhash,&ptr->notarization.othertxid);
+        ptr->notarization.txidheight = 0;
         ptr->notarization.txid = NSPV_getnotarization_txid(&ptr->notarization.txidheight,ptr->notarization.height);
         return(sizeof(*ptr));
     } else return(-1);
@@ -424,6 +433,7 @@ int32_t NSPV_npextract(struct NSPV_ntz *ptr,struct notarized_checkpoint *np)
     ptr->height = np->notarized_height;
     ptr->txidheight = np->nHeight;
     ptr->othertxid = np->notarized_desttxid;
+    ntzheight = ptr->txidheight;
     ptr->txid = NSPV_getnotarization_txid(&ntzheight,ptr->height);
     if ( ntzheight != ptr->txidheight )
     {
@@ -451,7 +461,7 @@ int32_t NSPV_getntzsresp(struct NSPV_ntzsresp *ptr,int32_t height)
     return(sizeof(*ptr));
 }
 
-uint8_t *NSPV_getrawtx(uint256 &hashBlock,int32_t *txlenp,uint256 txid)
+uint8_t *NSPV_getrawtx(uint256 &hashBlock,int16_t *txlenp,uint256 txid)
 {
     CTransaction tx; uint8_t *rawtx = 0;
     *txlenp = 0;
