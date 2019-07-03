@@ -353,7 +353,7 @@ void NSPV_spentinfo_purge(struct NSPV_spentinfo *ptr)
 uint256 NSPV_getnotarization_txid(int32_t *ntzheightp,int32_t height)
 {
     uint256 ntztxid;
-    if ( ntxheightp == 0 ) // search consecutive blocks
+    if ( ntzheightp == 0 ) // search consecutive blocks
     {
         *ntzheightp = height + 1;
         // iterate
@@ -461,7 +461,7 @@ int32_t NSPV_getntzsresp(struct NSPV_ntzsresp *ptr,int32_t height)
     return(sizeof(*ptr));
 }
 
-uint8_t *NSPV_getrawtx(uint256 &hashBlock,int16_t *txlenp,uint256 txid)
+uint8_t *NSPV_getrawtx(uint256 &hashBlock,uptr->notarization.txidheightint16_t *txlenp,uint256 txid)
 {
     CTransaction tx; uint8_t *rawtx = 0;
     *txlenp = 0;
