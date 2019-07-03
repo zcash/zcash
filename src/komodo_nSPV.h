@@ -325,7 +325,7 @@ struct NSPV_spentinfo
 {
     struct NSPV_txproof spent;
     uint256 txid;
-    int32_t height,spentvini;
+    int32_t vout,height,spentvini;
 };
 
 int32_t NSPV_rwspentinfo(int32_t rwflag,uint8_t *serialized,struct NSPV_spentinfo *ptr) // check mempool
@@ -333,6 +333,7 @@ int32_t NSPV_rwspentinfo(int32_t rwflag,uint8_t *serialized,struct NSPV_spentinf
     int32_t len = 0;
     len += NSPV_rwtxproof(rwflag,&serialized[len],&ptr->spent);
     len += iguana_rwbignum(rwflag,&serialized[len],sizeof(ptr->txid),(uint8_t *)&ptr->txid);
+    len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->vout),&ptr->vout);
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->height),&ptr->height);
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->spentvini),&ptr->spentvini);
     return(len);
@@ -504,7 +505,7 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                         slen = NSPV_getntzsproofresp(&P,prevht,nextht);
                         response.resize(1 + slen);
                         response[0] = NSPV_NTZPROOFRESP;
-                        if ( NSPV_rwntzsresp(1,&response[1],&P) == slen )
+                        if ( NSPV_rwntzsproofresp(1,&response[1],&P) == slen )
                         {
                             pfrom->PushMessage("nSPV",response);
                             pfrom->lastproof = timestamp;
@@ -623,12 +624,15 @@ struct NSPV_spentinfo komodo_NSPV_spentinfo(uint256 txid,int32_t vout) // just a
             continue;
         if ( (pnode->nServices & NODE_SPENTINDEX) != 0 && timestamp > pnode->lastspent )
         {
-            request.resize(1);
-            request[0] = NSPV_SPENTINFO;
-            pnode->lastspent = timestamp;
-            pnode->PushMessage("getnSPV",request);
-            if ( ++numsent >= 3 )
-                break;
+            if ( 0 ) // submit actual request
+            {
+                request.resize(1);
+                request[0] = NSPV_SPENTINFO;
+                pnode->lastspent = timestamp;
+                pnode->PushMessage("getnSPV",request);
+                if ( ++numsent >= 3 )
+                    break;
+            }
         }
     }
 }
@@ -642,7 +646,7 @@ void komodo_nSPV(CNode *pto)
     {
         for (i=0; i<NSPV_numutxos; i++)
         {
-            if ( NSPV_utxos[i].prevlen == 0 || NSPV_utxos[i].tx.size() == 0 || NSPV_utxos[i].txproof.size() == 0 )
+            if ( NSPV_utxos[i].prevlen == 0 || NSPV_utxos[i].txlen == 0 || NSPV_utxos[i].txprooflen == 0 )
             {
                 request.resize(1);
                 if ( NSPV_utxos[i].prevlen == 0 && timestamp > pto->lastntzs )
