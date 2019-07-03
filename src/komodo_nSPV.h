@@ -523,7 +523,7 @@ int32_t NSPV_setequihdr(struct NSPV_equihdr *hdr,int32_t height)
         hdr->nTime = pindex->nTime;
         hdr->nBits = pindex->nBits;
         hdr->nNonce = pindex->nNonce;
-        memcpy(hdr->nSolution,pindex->nSolution,sizeof(hdr->nSolution));
+        memcpy(hdr->nSolution,&pindex->nSolution[0],sizeof(hdr->nSolution));
         return(sizeof(*hdr));
     }
     return(-1);
@@ -531,7 +531,7 @@ int32_t NSPV_setequihdr(struct NSPV_equihdr *hdr,int32_t height)
 
 int32_t NSPV_getntzsproofresp(struct NSPV_ntzsproofresp *ptr,int32_t prevht,int32_t nextht)
 {
-    int32_t i;
+    int32_t i; uint256 hashBlock;
     ptr->prevtxidht = prevht;
     ptr->nexttxidht = nextht;
     ptr->common.numhdrs = (nextht - prevht + 1);
@@ -545,9 +545,9 @@ int32_t NSPV_getntzsproofresp(struct NSPV_ntzsproofresp *ptr,int32_t prevht,int3
         }
     }
     ptr->prevtxid = NSPV_getnotarization_txid(&ptr->prevtxidht,prevht);
-    ptr->prevntz = NSPV_getrawtx(&ptr->prevlen,ptr->prevtxid);
+    ptr->prevntz = NSPV_getrawtx(hashBlock,&ptr->prevlen,ptr->prevtxid);
     ptr->nexttxid = NSPV_getnotarization_txid(&ptr->nexttxidht,nextht);
-    ptr->nextntz = NSPV_getrawtx(&ptr->nextlen,ptr->nexttxid);
+    ptr->nextntz = NSPV_getrawtx(hashBlock,&ptr->nextlen,ptr->nexttxid);
     return(sizeof(*ptr) - sizeof(ptr->common.hdrs) - sizeof(ptr->prevntz) - sizeof(ptr->nextntz) + ptr->prevlen + ptr->nextlen);
 }
 
