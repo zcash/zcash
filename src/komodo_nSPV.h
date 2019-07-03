@@ -1,7 +1,3 @@
-// Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2014 The Bitcoin Core developers
-// Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 /******************************************************************************
  * Copyright © 2014-2019 The SuperNET Developers.                             *
@@ -18,12 +14,11 @@
  *                                                                            *
  ******************************************************************************/
 
-// todo: make sure no files are updated
-// finalize structs, de/serialization
-// rpc calls
+// todo:
+// make sure no files are updated (this is to allow nSPV=1 and later nSPV=0 without affecting database)
 // validate proofs
-
 // make sure to sanity check all vector lengths on receipt
+// determine if it makes sense to be scanning mempool for the utxo/spentinfo requests
 
 #ifndef KOMODO_NSPV_H
 #define KOMODO_NSPV_H
@@ -286,7 +281,8 @@ int32_t NSPV_rwntzproofshared(int32_t rwflag,uint8_t *serialized,struct NSPV_ntz
 struct NSPV_ntzsproofresp
 {
     struct NSPV_ntzproofshared common;
-    uint32_t pad32;
+    uint256 prevtxid,nexttxid;
+    uint32_t pad32,prevtxidht,nexttxidht;
     uint16_t prevlen,nextlen;
     uint8_t *prevntz,*nextntz;
 };
@@ -295,7 +291,11 @@ int32_t NSPV_rwntzsproofresp(int32_t rwflag,uint8_t *serialized,struct NSPV_ntzs
 {
     int32_t len = 0;
     len += NSPV_rwntzproofshared(rwflag,&serialized[len],&ptr->common);
+    len += iguana_rwbignum(rwflag,&serialized[len],sizeof(ptr->prevtxid),(uint8_t *)&ptr->prevtxid);
+    len += iguana_rwbignum(rwflag,&serialized[len],sizeof(ptr->nexttxid),(uint8_t *)&ptr->nexttxid);
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->pad32),&ptr->pad32);
+    len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->prevtxidht),&ptr->prevtxidht);
+    len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->nexttxidht),&ptr->nexttxidht);
     len += iguana_rwuint8vec(rwflag,&serialized[len],&ptr->prevlen,&ptr->prevntz);
     len += iguana_rwuint8vec(rwflag,&serialized[len],&ptr->nextlen,&ptr->nextntz);
     return(len);
@@ -348,6 +348,16 @@ void NSPV_spentinfo_purge(struct NSPV_spentinfo *ptr)
 }
 
 // on fullnode:
+// NSPV_get... functions need to return the exact serialized length, which is the size of the structure minus size of pointers, plus size of allocated data
+
+uint256 NSPV_getnotarization_txid(int32_t *ntzheightp,int32_t height)
+{
+    uint256 ntztxid;
+    *ntzheightp = height + 2; // random value;
+    // find notarization for height, return its txid and set *ntzheightp
+    fprintf(stderr,"implement NSPV_getnotarization_txid\n");
+    return(ntztxid);
+}
 
 int32_t NSPV_getinfo(struct NSPV_inforesp *ptr)
 {
@@ -357,7 +367,7 @@ int32_t NSPV_getinfo(struct NSPV_inforesp *ptr)
         ptr->height = pindex->GetHeight();
         ptr->blockhash = pindex->GetBlockHash();
         ptr->notarization.height = komodo_notarized_height(&prevMoMheight,&ptr->notarization.blockhash,&ptr->notarization.othertxid);
-        //ptr->notarization.txidheight = komodo_findnotarization(&ptr->notarization.txid,ptr->notarization.height,ptr->notarization.blockhash);
+        ptr->notarization.txid = NSPV_getnotarization_txid(&ptr->notarization.txidheight,ptr->notarization.height);
         return(sizeof(*ptr));
     } else return(-1);
 }
@@ -407,57 +417,128 @@ int32_t NSPV_getaddressutxos(struct NSPV_utxosresp *ptr,char *coinaddr) // check
     return(0);
 }
 
+int32_t NSPV_npextract(struct NSPV_ntz *ptr,struct notarized_checkpoint *np)
+{
+    int32_t ntzheight;
+    ptr->blockhash = np->notarized_hash;
+    ptr->height = np->notarized_height;
+    ptr->txidheight = np->nHeight;
+    ptr->othertxid = np->notarized_desttxid;
+    ptr->txid = NSPV_getnotarization_txid(&ntzheight,ptr->height);
+    if ( ntzheight != ptr->txidheight )
+    {
+        fprintf(stderr,"NSPV_npextract ntzheight.%d != ptr->txidheight.%d\n",ntzheight,ptr->txidheight);
+        return(-1);
+    } else return(0);
+}
+
 int32_t NSPV_getntzsresp(struct NSPV_ntzsresp *ptr,int32_t height)
 {
-    int32_t len = 0;
+    struct notarized_checkpoint *nps[2];
+    if ( komodo_notarized_bracket(nps,height) == 0 )
+    {
+        if ( nps[0] != 0 )
+        {
+            if ( NSPV_npextract(&ptr->prevntz,nps[0]) < 0 )
+                return(-1);
+        }
+        if ( nps[1] != 0 )
+        {
+            if ( NSPV_npextract(&ptr->nextntz,nps[1]) < 0 )
+                return(-1);
+        }
+    }
     return(sizeof(*ptr));
+}
+
+uint8_t *NSPV_getrawtx(uint256 &hashBlock,int32_t *txlenp,uint256 txid)
+{
+    CTransaction tx; uint8_t *rawtx = 0;
+    *txlenp = 0;
+    {
+        LOCK(cs_main);
+        if (!GetTransaction(txid, tx, hashBlock, false))
+            return(0);
+        string strHex = EncodeHexTx(tx);
+        *txlenp = (int32_t)strHex.size() >> 1;
+        rawtx = (uint8_t *)calloc(1,*txlenp);
+        decode_hex(rawtx,*txlenp,(char *)strHex.c_str());
+    }
+    return(rawtx);
 }
 
 int32_t NSPV_gettxproof(struct NSPV_txproof *ptr,uint256 txid,int32_t height)
 {
-    int32_t flag = 0,len = 0; CTransaction tx; uint256 hashBlock; CBlock block; CBlockIndex *pindex;
+    int32_t flag = 0,len = 0; uint256 hashBlock; CBlock block; CBlockIndex *pindex;
+    if ( (ptr->tx= NSPV_getrawtx(hashBlock,&ptr->txlen,txid)) == 0 )
+        return(-1);
+    ptr->txid = txid;
+    ptr->height = height;
+    if ( (pindex= komodo_chainactive(height)) != 0 && komodo_blockload(block,pindex) == 0 )
     {
-        LOCK(cs_main);
-        if (!GetTransaction(txid, tx, hashBlock, false))
-            return(-1);
-        string strHex = EncodeHexTx(tx);
-        ptr->txlen = (int32_t)strHex.size() >> 1;
-        ptr->tx = (uint8_t *)calloc(1,ptr->txlen);
-        decode_hex(ptr->tx,ptr->txlen,(char *)strHex.c_str());
-        ptr->txid = txid;
-        ptr->height = height;
-        if ( (pindex= komodo_chainactive(height)) != 0 && komodo_blockload(block,pindex) == 0 )
+        BOOST_FOREACH(const CTransaction&tx, block.vtx)
         {
-            BOOST_FOREACH(const CTransaction&tx, block.vtx)
+            if ( tx.GetHash() == txid )
             {
-                if ( tx.GetHash() == txid )
-                {
-                    flag = 1;
-                    break;
-                }
-            }
-            if ( flag != 0 )
-            {
-                set<uint256> setTxids;
-                CDataStream ssMB(SER_NETWORK, PROTOCOL_VERSION);
-                setTxids.insert(txid);
-                CMerkleBlock mb(block, setTxids);
-                ssMB << mb;
-                std::vector<uint8_t> proof(ssMB.begin(), ssMB.end());
-                ptr->txprooflen = (int32_t)proof.size();
-                ptr->txproof = (uint8_t *)calloc(1,ptr->txprooflen);
-                memcpy(ptr->txproof,&proof[0],ptr->txprooflen);
-                return(sizeof(*ptr) - sizeof(ptr->tx) - sizeof(ptr->txproof) + ptr->txlen + ptr->txprooflen);
+                flag = 1;
+                break;
             }
         }
+        if ( flag != 0 )
+        {
+            set<uint256> setTxids;
+            CDataStream ssMB(SER_NETWORK, PROTOCOL_VERSION);
+            setTxids.insert(txid);
+            CMerkleBlock mb(block, setTxids);
+            ssMB << mb;
+            std::vector<uint8_t> proof(ssMB.begin(), ssMB.end());
+            ptr->txprooflen = (int32_t)proof.size();
+            ptr->txproof = (uint8_t *)calloc(1,ptr->txprooflen);
+            memcpy(ptr->txproof,&proof[0],ptr->txprooflen);
+            return(sizeof(*ptr) - sizeof(ptr->tx) - sizeof(ptr->txproof) + ptr->txlen + ptr->txprooflen);
+        }
+    }
+    return(-1);
+}
+
+int32_t NSPV_setequihdr(struct NSPV_equihdr *hdr,int32_t height)
+{
+    CBlockIndex *pindex;
+    if ( (pindex= komodo_chainactive(height)) != 0 )
+    {
+        hdr->nVersion = pindex->nVersion;
+        hdr->hashPrevBlock = pindex->hashPrevBlock;
+        hdr->hashMerkleRoot = pindex->hashMerkleRoot;
+        hdr->hashFinalSaplingRoot = pindex->hashFinalSaplingRoot;
+        hdr->nTime = pindex->nTime;
+        hdr->nBits = pindex->nBits;
+        hdr->nNonce = pindex->nNonce;
+        memcpy(hdr->nSolution,pindex->nSolution,sizeof(hdr->nSolution));
+        return(sizeof(*hdr));
     }
     return(-1);
 }
 
 int32_t NSPV_getntzsproofresp(struct NSPV_ntzsproofresp *ptr,int32_t prevht,int32_t nextht)
 {
-    int32_t len = 0;
-    return(len);
+    int32_t i;
+    ptr->prevht = prevht;
+    ptr->nextht = nextht;
+    ptr->numhdrs = (nextht - prevht + 1);
+    ptr->hdrs = (struct NSPV_equihdr *)calloc(ptr->numhdrs,sizeof(*ptr->hdrs));
+    for (i=0; i<ptr->numhdrs; i++)
+    {
+        if ( NSPV_setequihdr(&ptr->hdrs[i],prevht+i) < 0 )
+        {
+            free(ptr->hdrs);
+            return(-1);
+        }
+    }
+    ptr->prevtxid = NSPV_getnotarization_txid(&ptr->prevtxidht,prevht);
+    ptr->prevntz = NSPV_getrawtx(&ptr->prevlen,ptr->prevtxid);
+    ptr->nexttxid = NSPV_getnotarization_txid(&ptr->nexttxidht,nextht);
+    ptr->nextntz = NSPV_getrawtx(&ptr->nextlen,ptr->nexttxid);
+    return(sizeof(*ptr) - sizeof(ptr->common.hdrs) - sizeof(ptr->prevntz) - sizeof(ptr->nextntz) + ptr->prevlen + ptr->nextlen);
 }
 
 int32_t NSPV_getspentinfo(struct NSPV_spentinfo *ptr,uint256 txid,int32_t vout)
@@ -558,15 +639,17 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                     if ( prevht != 0 && nextht != 0 && nextht >= prevht )
                     {
                         memset(&P,0,sizeof(P));
-                        slen = NSPV_getntzsproofresp(&P,prevht,nextht);
-                        response.resize(1 + slen);
-                        response[0] = NSPV_NTZPROOFRESP;
-                        if ( NSPV_rwntzsproofresp(1,&response[1],&P) == slen )
+                        if ( (slen= NSPV_getntzsproofresp(&P,prevht,nextht)) > 0 )
                         {
-                            pfrom->PushMessage("nSPV",response);
-                            pfrom->lastproof = timestamp;
+                            response.resize(1 + slen);
+                            response[0] = NSPV_NTZPROOFRESP;
+                            if ( NSPV_rwntzsproofresp(1,&response[1],&P) == slen )
+                            {
+                                pfrom->PushMessage("nSPV",response);
+                                pfrom->lastproof = timestamp;
+                            }
+                            NSPV_ntzsproofresp_purge(&P);
                         }
-                        NSPV_ntzsproofresp_purge(&P);
                     }
                 }
             }
