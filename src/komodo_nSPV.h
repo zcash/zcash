@@ -452,12 +452,14 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
         }
         else if ( request[0] == NSPV_UTXOS )
         {
-            if ( timestamp > pfrom->lastutxos + ASSETCHAINS_BLOCKTIME/2 )
+            //if ( timestamp > pfrom->lastutxos + ASSETCHAINS_BLOCKTIME/2 )
             {
                 struct NSPV_utxosresp U; char coinaddr[64];
+                printf("len.%d request[1] %d\n",len,request[1]);
                 if ( len < 64 && request[1] == len-2 )
                 {
                     memcpy(coinaddr,&request[2],request[1]);
+                    coinaddr[request[1]] = 0;
                     memset(&U,0,sizeof(U));
                     slen = NSPV_getaddressutxos(&U,coinaddr);
                     response.resize(1 + slen);
