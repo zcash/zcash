@@ -517,7 +517,9 @@ int32_t NSPV_setequihdr(struct NSPV_equihdr *hdr,int32_t height)
     if ( (pindex= komodo_chainactive(height)) != 0 )
     {
         hdr->nVersion = pindex->nVersion;
-        hdr->hashPrevBlock = pindex->hashPrevBlock;
+        if ( pindex->pprev == 0 )
+            return(-1);
+        hdr->hashPrevBlock = pindex->pprev->GetBlockHash();
         hdr->hashMerkleRoot = pindex->hashMerkleRoot;
         hdr->hashFinalSaplingRoot = pindex->hashFinalSaplingRoot;
         hdr->nTime = pindex->nTime;
