@@ -423,7 +423,7 @@ int32_t NSPV_gettxproof(struct NSPV_txproof *ptr,uint256 txid,int32_t height)
         string strHex = EncodeHexTx(tx);
         ptr->txlen = (int32_t)strHex.size() >> 1;
         ptr->tx = (uint8_t *)calloc(1,ptr->txlen);
-        decode_hex(ptr->tx,ptr->txlen,strHex.c_str());
+        decode_hex(ptr->tx,ptr->txlen,(char *)strHex.c_str());
         ptr->txid = txid;
         ptr->height = height;
         if ( (pindex= komodo_chainactive(height)) != 0 && komodo_blockload(block,pindex) == 0 )
@@ -438,10 +438,12 @@ int32_t NSPV_gettxproof(struct NSPV_txproof *ptr,uint256 txid,int32_t height)
             }
             if ( flag != 0 )
             {
+                set<uint256> setTxids;
                 CDataStream ssMB(SER_NETWORK, PROTOCOL_VERSION);
+                setTxids.insert(txid);
                 CMerkleBlock mb(block, setTxids);
                 ssMB << mb;
-                std::vector proof(ssMB.begin(), ssMB.end());
+                std::vector<uint8_t> proof(ssMB.begin(), ssMB.end());
                 ptr->txprooflen = (int32_t)proof.size();
                 ptr->txproof = (uint8_t *)calloc(1,ptr->txprooflen);
                 memcpy(ptr->txproof,&proof[0],ptr->txprooflen);
