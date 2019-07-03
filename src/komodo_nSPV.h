@@ -128,16 +128,16 @@ struct NSPV_utxosresp
     uint16_t numutxos,pad16;
 };
 
-int32_t NSPV_rwutxosresp(int32_t rwflag,uint8_t *serialized,uint16_t *vecsizep,struct NSPV_utxosresp **ptrp) // check mempool
+int32_t NSPV_rwutxosresp(int32_t rwflag,uint8_t *serialized,struct NSPV_utxosresp *ptr) // check mempool
 {
-    int32_t i,vsize,len = 0;
-    len += iguana_rwnum(rwflag,&serialized[len],sizeof(*vecsizep),vecsizep);
-    if ( (vsize= *vecsizep) != 0 )
+    int32_t i,len = 0;
+    len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->numutxos),&ptr->numutxos);
+    if ( ptr->numutxos != 0 )
     {
-        if ( *ptrp == 0 )
-            *ptrp = (struct NSPV_utxosresp *)calloc(sizeof(**ptrp),vsize); // relies on uint16_t being "small" to prevent mem exhaustion
-        for (i=0; i<vsize; i++)
-            len += NSPV_rwutxoresp(rwflag,&serialized[len],&(*ptrp)[i]);
+        if ( ptr->utxos == 0 )
+            ptr->utxos = (struct NSPV_utxoresp *)calloc(sizeof(*ptr->utxos),ptr->numutxos); // relies on uint16_t being "small" to prevent mem exhaustion
+        for (i=0; i<ptr->numutxos; i++)
+            len += NSPV_rwutxoresp(rwflag,&serialized[len],&ptr->utxos[i]);
     }
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->total),&ptr->total);
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->interest),&ptr->interest);
@@ -459,7 +459,7 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                     slen = NSPV_getaddressutxos(&U,coinaddr);
                     response.resize(1 + slen);
                     response[0] = NSPV_UTXOSRESP;
-                    if ( NSPV_rwutxosresp(1,&response[1],&U.numutxos,&U.utxos) == slen )
+                    if ( NSPV_rwutxosresp(1,&response[1],&U.utxos) == slen )
                     {
                         pfrom->PushMessage("nSPV",response);
                         pfrom->lastutxos = timestamp;
