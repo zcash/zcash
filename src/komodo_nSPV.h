@@ -836,7 +836,7 @@ void komodo_nSPV(CNode *pto)
         if ( (pto->nServices & NODE_ADDRINDEX) != 0 && timestamp > pto->lastutxos + ASSETCHAINS_BLOCKTIME )
         {
             // get utxo since lastheight
-            if ( (rand() % 100) < 10 )
+            //if ( (rand() % 100) < 10 )
             {
                 char coinaddr[64]; int32_t slen;
                 Getscriptaddress(coinaddr,CScript() << Mypubkey() << OP_CHECKSIG);
@@ -848,6 +848,7 @@ void komodo_nSPV(CNode *pto)
                     request[1] = slen;
                     memcpy(&request[2],coinaddr,slen);
                     NSPV_lastutxos = pto->lastutxos = timestamp;
+                    fprintf(stderr,"request address %s\n",coinaddr);
                     pto->PushMessage("getnSPV",request);
                 }
             }
