@@ -282,7 +282,7 @@ struct NSPV_ntzsproofresp
 {
     struct NSPV_ntzproofshared common;
     uint256 prevtxid,nexttxid;
-    uint32_t pad32,prevtxidht,nexttxidht;
+    int32_t pad32,prevtxidht,nexttxidht;
     uint16_t prevlen,nextlen;
     uint8_t *prevntz,*nextntz;
 };
