@@ -388,12 +388,13 @@ int32_t NSPV_getaddressutxos(struct NSPV_utxosresp *ptr,char *coinaddr) // check
             total += it->second.satoshis;
             n++;
         }
-        fprintf(stderr,"getaddressutxos for %s -> n.%d total %.8f interest %.8f\n",coinaddr,n,dstr(total),dstr(interest));
+        len = (int32_t)(sizeof(*ptr) + sizeof(*ptr->utxos)*ptr->numutxos - sizeof(ptr->utxos));
+        fprintf(stderr,"getaddressutxos for %s -> n.%d:%d total %.8f interest %.8f len.%d\n",coinaddr,n,ptr->numutxos,dstr(total),dstr(interest),len);
         if ( n == ptr->numutxos )
         {
             ptr->total = total;
             ptr->interest = interest;
-            return((int32_t)(sizeof(*ptr) + sizeof(*ptr->utxos)*ptr->numutxos));
+            return(len);
         }
     }
     if ( ptr->utxos != 0 )
@@ -461,6 +462,7 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                     slen = NSPV_getaddressutxos(&U,coinaddr);
                     response.resize(1 + slen);
                     response[0] = NSPV_UTXOSRESP;
+                    printf("slen.%d\n",slen);
                     if ( NSPV_rwutxosresp(1,&response[1],&U) == slen )
                     {
                         pfrom->PushMessage("nSPV",response);
