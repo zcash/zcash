@@ -321,6 +321,13 @@ struct NSPV_MMRproof
     // tbd
 };
 
+struct NSPV_spentinfo
+{
+    struct NSPV_txproof spent;
+    uint256 txid;
+    int32_t height,spentvini;
+};
+
 int32_t NSPV_rwspentinfo(int32_t rwflag,uint8_t *serialized,struct NSPV_spentinfo *ptr) // check mempool
 {
     int32_t len = 0;
