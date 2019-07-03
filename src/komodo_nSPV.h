@@ -124,7 +124,7 @@ struct NSPV_utxosresp
 {
     struct NSPV_utxoresp *utxos;
     int64_t total,interest;
-    int32_t pad32;
+    int32_t nodeheight;
     uint16_t numutxos,pad16;
 };
 
@@ -141,7 +141,7 @@ int32_t NSPV_rwutxosresp(int32_t rwflag,uint8_t *serialized,struct NSPV_utxosres
     }
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->total),&ptr->total);
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->interest),&ptr->interest);
-    len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->pad32),&ptr->pad32);
+    len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->nodeheight),&ptr->nodeheight);
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->pad16),&ptr->pad16);
     return(len);
 }
@@ -372,6 +372,7 @@ int32_t NSPV_getaddressutxos(struct NSPV_utxosresp *ptr,char *coinaddr) // check
     if ( (ptr->numutxos= (int32_t)unspentOutputs.size()) > 0 )
     {
         tipheight = chainActive.LastTip()->GetHeight();
+        ptr->nodeheight = tipheight;
         ptr->utxos = (struct NSPV_utxoresp *)calloc(ptr->numutxos,sizeof(*ptr->utxos));
         for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
         {
