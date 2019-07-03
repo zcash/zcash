@@ -386,7 +386,7 @@ int32_t NSPV_getaddressutxos(struct NSPV_utxosresp *ptr,char *coinaddr) // check
             total += it->second.satoshis;
             n++;
         }
-        fprintf(stderr,"getaddressutxos for %s -> n.%d total %.8f interest %.8f\n",coinaddr,dstr(total),dstr(interest));
+        fprintf(stderr,"getaddressutxos for %s -> n.%d total %.8f interest %.8f\n",coinaddr,n,dstr(total),dstr(interest));
         if ( n == ptr->numutxos )
         {
             ptr->total = total;
@@ -396,7 +396,7 @@ int32_t NSPV_getaddressutxos(struct NSPV_utxosresp *ptr,char *coinaddr) // check
     }
     if ( ptr->utxos != 0 )
         free(ptr->utxos);
-    memst(ptr,0,sizeof(*ptr));
+    memset(ptr,0,sizeof(*ptr));
     return(0);
 }
 
@@ -432,7 +432,7 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
     {
         if ( request[0] == NSPV_INFO ) // info
         {
-            if ( timestamp > pfrom->lastinfo + ASSETCHAINS_BLOCKTIME/2 )
+            if ( len == 1 && timestamp > pfrom->lastinfo + ASSETCHAINS_BLOCKTIME/2 )
             {
                 struct NSPV_inforesp I;
                 memset(&I,0,sizeof(I));
@@ -459,7 +459,7 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                     slen = NSPV_getaddressutxos(&U,coinaddr);
                     response.resize(1 + slen);
                     response[0] = NSPV_UTXOSRESP;
-                    if ( NSPV_rwutxosresp(1,&response[1],&U.utxos) == slen )
+                    if ( NSPV_rwutxosresp(1,&response[1],&U) == slen )
                     {
                         pfrom->PushMessage("nSPV",response);
                         pfrom->lastutxos = timestamp;
@@ -475,7 +475,7 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                 struct NSPV_ntzsresp N; int32_t height;
                 if ( len == 1+sizeof(height) )
                 {
-                    iguana_rwnum(rwflag,&request[1],sizeof(height),&height);
+                    iguana_rwnum(0,&request[1],sizeof(height),&height);
                     memset(&N,0,sizeof(N));
                     slen = NSPV_getntzsresp(&N,height);
                     response.resize(1 + slen);
@@ -496,11 +496,11 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                 struct NSPV_ntzsproofresp P; int32_t prevht,nextht;
                 if ( len == 1+sizeof(prevht)+sizeof(nextht) )
                 {
-                    iguana_rwnum(rwflag,&request[1],sizeof(prevht),&prevht);
-                    iguana_rwnum(rwflag,&request[1+sizeof(prevht)],sizeof(nextht),&nextht);
+                    iguana_rwnum(0,&request[1],sizeof(prevht),&prevht);
+                    iguana_rwnum(0,&request[1+sizeof(prevht)],sizeof(nextht),&nextht);
                     if ( prevht != 0 && nextht != 0 && nextht >= prevht )
                     {
-                        memset(&N,0,sizeof(N));
+                        memset(&P,0,sizeof(P));
                         slen = NSPV_getntzsproofresp(&P,prevht,nextht);
                         response.resize(1 + slen);
                         response[0] = NSPV_NTZPROOFRESP;
@@ -518,11 +518,11 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
         {
             if ( timestamp > pfrom->lastproof )
             {
-                struct NSPV_spentinfo P; uint256 txid; int32_t height;
+                struct NSPV_txproof P; uint256 txid; int32_t height;
                 if ( len == 1+sizeof(txid)+sizeof(height) )
                 {
-                    iguana_rwnum(rwflag,&request[1],sizeof(height),&height);
-                    iguana_rwbignum(rwflag,&request[1+sizeof(height)],sizeof(txid),(uint8_t *)&txid);
+                    iguana_rwnum(0,&request[1],sizeof(height),&height);
+                    iguana_rwbignum(0,&request[1+sizeof(height)],sizeof(txid),(uint8_t *)&txid);
                     memset(&P,0,sizeof(P));
                     slen = NSPV_gettxproof(&P,txid,height);
                     response.resize(1 + slen);
@@ -543,8 +543,8 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                 struct NSPV_spentinfo S; int32_t vout; uint256 txid;
                 if ( len == 1+sizeof(txid)+sizeof(vout) )
                 {
-                    iguana_rwnum(rwflag,&request[1],sizeof(vout),&vout);
-                    iguana_rwbignum(rwflag,&request[1+sizeof(vout)],sizeof(txid),(uint8_t *)&txid);
+                    iguana_rwnum(0,&request[1],sizeof(vout),&vout);
+                    iguana_rwbignum(0,&request[1+sizeof(vout)],sizeof(txid),(uint8_t *)&txid);
                     memset(&S,0,sizeof(S));
                     slen = NSPV_getspentinfo(&S,txid,vout);
                     response.resize(1 + slen);
