@@ -46,7 +46,7 @@ int32_t iguana_rwbuf(int32_t rwflag,uint8_t *serialized,uint16_t len,uint8_t *bu
     if ( rwflag != 0 )
         memcpy(serialized,buf,len);
     else memcpy(buf,serialized,len);
-    return(len)
+    return(len);
 }
 
 struct NSPV_equihdr
@@ -75,7 +75,7 @@ int32_t NSPV_rwequihdr(int32_t rwflag,uint8_t *serialized,struct NSPV_equihdr *p
     return(len);
 }
 
-int32_t iguana_rwequihdrvec(int32_t rwflag,uint8_t *serialized,uint16_t *vecsizep,uint8_t struct NSPV_equihdr **ptrp)
+int32_t iguana_rwequihdrvec(int32_t rwflag,uint8_t *serialized,uint16_t *vecsizep,struct NSPV_equihdr **ptrp)
 {
     int32_t i,vsize,len = 0;
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(*vecsizep),vecsizep);
