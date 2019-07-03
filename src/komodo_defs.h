@@ -341,8 +341,9 @@ std::vector<uint8_t> Mypubkey();
 
 struct NSPV_spentinfo
 {
-    uint256 txid,spenttxid;
-    int32_t vout,height,spentvin,spentheight;
+    struct NSPV_txproof spent;
+    uint256 txid;
+    int32_t height,spentvini;
 };
 void komodo_NSPV_spentinfoclear();
 struct NSPV_spentinfo komodo_NSPV_spentinfo(uint256 txid,int32_t vout);
