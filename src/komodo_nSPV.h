@@ -82,7 +82,7 @@ int32_t iguana_rwequihdrvec(int32_t rwflag,uint8_t *serialized,uint16_t *vecsize
     if ( (vsize= *vecsizep) != 0 )
     {
         if ( *ptrp == 0 )
-            *ptrp = calloc(sizeof(**ptrp),vsize); // relies on uint16_t being "small" to prevent mem exhaustion
+            *ptrp = (struct NSPV_equihdr *)calloc(sizeof(**ptrp),vsize); // relies on uint16_t being "small" to prevent mem exhaustion
         for (i=0; i<vsize; i++)
             len += NSPV_rwequihdr(rwflag,&serialized[len],&(*ptrp)[i]);
     }
@@ -96,7 +96,7 @@ int32_t iguana_rwuint8vec(int32_t rwflag,uint8_t *serialized,uint16_t *vecsizep,
     if ( (vsize= *vecsizep) != 0 )
     {
         if ( *ptrp == 0 )
-            *ptrp = calloc(1,vsize); // relies on uint16_t being "small" to prevent mem exhaustion
+            *ptrp = (uint8_t *)calloc(1,vsize); // relies on uint16_t being "small" to prevent mem exhaustion
         len += iguana_rwbuf(rwflag,&serialized[len],vsize,*ptrp);
     }
     return(len);
@@ -128,14 +128,14 @@ struct NSPV_utxosresp
     uint16_t numutxos,pad16;
 };
 
-int32_t NSPV_rwutxosresp(int32_t rwflag,uint8_t *serialized,uint16_t *vecsizep,uint8_t struct NSPV_utxosresp **ptrp) // check mempool
+int32_t NSPV_rwutxosresp(int32_t rwflag,uint8_t *serialized,uint16_t *vecsizep,struct NSPV_utxosresp **ptrp) // check mempool
 {
     int32_t i,vsize,len = 0;
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(*vecsizep),vecsizep);
     if ( (vsize= *vecsizep) != 0 )
     {
         if ( *ptrp == 0 )
-            *ptrp = calloc(sizeof(**ptrp),vsize); // relies on uint16_t being "small" to prevent mem exhaustion
+            *ptrp = (struct NSPV_utxosresp *)calloc(sizeof(**ptrp),vsize); // relies on uint16_t being "small" to prevent mem exhaustion
         for (i=0; i<vsize; i++)
             len += NSPV_rwutxoresp(rwflag,&serialized[len],&(*ptrp)[i]);
     }
@@ -371,7 +371,7 @@ int32_t NSPV_getaddressutxos(struct NSPV_utxosresp *ptr,char *coinaddr) // check
     if ( (ptr->numutxos= (int32_t)unspentOutputs.size()) > 0 )
     {
         tipheight = chainActive.LastTip()->GetHeight();
-        ptr->utxos = calloc(ptr->numutxos,sizeof(*ptr->utxos));
+        ptr->utxos = (struct NSPV_utxoresp *)calloc(ptr->numutxos,sizeof(*ptr->utxos));
         for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
         {
             ptr->utxos[n].txid = it->first.txhash;
