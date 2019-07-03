@@ -181,8 +181,8 @@ struct NSPV_ntzsresp
 int32_t NSPV_rwntzsresp(int32_t rwflag,uint8_t *serialized,struct NSPV_ntzsresp *ptr)
 {
     int32_t len = 0;
-    len += NSPV_rwntz(rwflag,&serialized[len],sizeof(ptr->prevntz),&ptr->prevntz);
-    len += NSPV_rwntz(rwflag,&serialized[len],sizeof(ptr->nextntz),&ptr->nextntz);
+    len += NSPV_rwntz(rwflag,&serialized[len],&ptr->prevntz);
+    len += NSPV_rwntz(rwflag,&serialized[len],&ptr->nextntz);
     return(len);
 }
 
@@ -202,7 +202,7 @@ struct NSPV_inforesp
 int32_t NSPV_rwinforesp(int32_t rwflag,uint8_t *serialized,struct NSPV_inforesp *ptr)
 {
     int32_t len = 0;
-    len += NSPV_rwntz(rwflag,&serialized[len],sizeof(ptr->notarization),&ptr->notarization);
+    len += NSPV_rwntz(rwflag,&serialized[len],&ptr->notarization);
     len += iguana_rwbignum(rwflag,&serialized[len],sizeof(ptr->blockhash),(uint8_t *)&ptr->blockhash);
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->height),&ptr->height);
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->pad32),&ptr->pad32);
@@ -317,7 +317,7 @@ void NSPV_ntzsproofresp_purge(struct NSPV_ntzsproofresp *ptr)
 
 struct NSPV_MMRproof
 {
-    struct NSPV_ntzproofhdr hdr;
+    struct NSPV_ntzproofshared common;
     // tbd
 };
 
