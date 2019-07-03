@@ -607,6 +607,7 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                     coinaddr[request[1]] = 0;
                     memset(&U,0,sizeof(U));
                     slen = NSPV_getaddressutxos(&U,coinaddr);
+                    printf("getaddressutxos.(%s) slen.%d\n",coinaddr,slen);
                     response.resize(1 + slen);
                     response[0] = NSPV_UTXOSRESP;
                     if ( NSPV_rwutxosresp(1,&response[1],&U) == slen )
