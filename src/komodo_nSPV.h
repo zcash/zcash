@@ -291,7 +291,7 @@ struct NSPV_ntzsproofresp
     uint8_t *prevntz,*nextntz;
 };
 
-int32_t NSPV_rwntzproof(int32_t rwflag,uint8_t *serialized,struct NSPV_ntzsproofresp *ptr)
+int32_t NSPV_rwntzsproofresp(int32_t rwflag,uint8_t *serialized,struct NSPV_ntzsproofresp *ptr)
 {
     int32_t len = 0;
     len += NSPV_rwntzproofshared(rwflag,&serialized[len],&ptr->common);
@@ -646,10 +646,10 @@ void komodo_nSPV(CNode *pto)
     {
         for (i=0; i<NSPV_numutxos; i++)
         {
-            if ( NSPV_utxos[i].prevlen == 0 || NSPV_utxos[i].txlen == 0 || NSPV_utxos[i].txprooflen == 0 )
+            if ( NSPV_utxos[i].prevht == 0 || NSPV_utxos[i].T.txlen == 0 || NSPV_utxos[i].T.txprooflen == 0 )
             {
                 request.resize(1);
-                if ( NSPV_utxos[i].prevlen == 0 && timestamp > pto->lastntzs )
+                if ( NSPV_utxos[i].prevht == 0 && timestamp > pto->lastntzs )
                 {
                     request[0] = NSPV_NTZS;
                     pto->lastntzs = timestamp;
@@ -658,7 +658,7 @@ void komodo_nSPV(CNode *pto)
                 }
                 else if ( timestamp > pto->lastproof )
                 {
-                    if ( NSPV_utxos[i].tx.size() == 0 )
+                    if ( NSPV_utxos[i].T.txlen == 0 )
                     {
                         request[0] = NSPV_TXPROOF;
                         pto->lastproof = timestamp;
