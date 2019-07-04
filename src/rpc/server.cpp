@@ -554,6 +554,18 @@ static const CRPCCommand vRPCCommands[] =
     //{ "tokens",       "tokenfillswap",    &tokenfillswap,     true },
     { "tokens",       "tokenconvert", &tokenconvert, true },
 
+    // pegs
+    { "pegs",       "pegscreate",     &pegscreate,      true },
+    { "pegs",       "pegsfund",         &pegsfund,      true },
+    { "pegs",       "pegsget",         &pegsget,        true },
+    { "pegs",       "pegsredeem",         &pegsredeem,        true },
+    { "pegs",       "pegsliquidate",         &pegsliquidate,        true },
+    { "pegs",       "pegsexchange",         &pegsexchange,        true },
+    { "pegs",       "pegsaccounthistory", &pegsaccounthistory,      true },
+    { "pegs",       "pegsaccountinfo", &pegsaccountinfo,      true },
+    { "pegs",       "pegsworstaccounts",         &pegsworstaccounts,      true },
+    { "pegs",       "pegsinfo",         &pegsinfo,      true },
+
     /* Address index */
     { "addressindex",       "getaddressmempool",      &getaddressmempool,      true  },
     { "addressindex",       "getaddressutxos",        &getaddressutxos,        false },

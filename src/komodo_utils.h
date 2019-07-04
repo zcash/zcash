@@ -1692,7 +1692,9 @@ int8_t equihash_params_possible(uint64_t n, uint64_t k)
 
 void komodo_args(char *argv0)
 {
-    std::string name,addn,hexstr,symbol; char *dirname,fname[512],arg0str[64],magicstr[9]; uint8_t magic[4],extrabuf[32756],disablebits[32],*extraptr=0; FILE *fp; uint64_t val; uint16_t port; int32_t i,nonz=0,baseid,len,n,extralen = 0; uint64_t ccenables[256], ccEnablesHeight[512] = {0};
+    std::string name,addn,hexstr,symbol; char *dirname,fname[512],arg0str[64],magicstr[9]; uint8_t magic[4],extrabuf[32756],disablebits[32],*extraptr=0;
+    FILE *fp; uint64_t val; uint16_t port; int32_t i,nonz=0,baseid,len,n,extralen = 0; uint64_t ccenables[256], ccEnablesHeight[512] = {0}; CTransaction earlytx; uint256 hashBlock;
+
     IS_KOMODO_NOTARY = GetBoolArg("-notary", false);
     IS_STAKED_NOTARY = GetArg("-stakednotary", -1);
     memset(ccenables,0,sizeof(ccenables));
@@ -1785,6 +1787,11 @@ void komodo_args(char *argv0)
         printf("KOMODO_REWIND %d\n",KOMODO_REWIND);
     }
     KOMODO_EARLYTXID = Parseuint256(GetArg("-earlytxid","0").c_str());
+    if (KOMODO_EARLYTXID!=zeroid && (tx_height(KOMODO_EARLYTXID)==0 || tx_height(KOMODO_EARLYTXID)>100))
+    {
+        fprintf(stderr,"earlytx can be only in first 100 blocks or does not exist\n");
+        StartShutdown();
+    }
     ASSETCHAINS_EARLYTXIDCONTRACT = GetArg("-ac_earlytxidcontract",0);
     if ( name.c_str()[0] != 0 )
     {
@@ -1937,7 +1944,7 @@ void komodo_args(char *argv0)
                 }
             }*/
         }
-        if ( ASSETCHAINS_BEAMPORT != 0 && ASSETCHAINS_CODAPORT != 0 )
+        if ( ASSETCHAINS_BEAMPORT != 0 )
         {
             fprintf(stderr,"can only have one of -ac_beam or -ac_coda\n");
             StartShutdown();
@@ -1951,18 +1958,33 @@ void komodo_args(char *argv0)
                 StartShutdown();
             }
         }
-        else if ( ASSETCHAINS_SELFIMPORT == "BEAM" && ASSETCHAINS_BEAMPORT == 0 )
+        else if ( ASSETCHAINS_SELFIMPORT == "BEAM" )
         {
-            fprintf(stderr,"missing -ac_beam for BEAM rpcport\n");
-            StartShutdown();
+            if (ASSETCHAINS_BEAMPORT == 0)
+            {
+                fprintf(stderr,"missing -ac_beam for BEAM rpcport\n");
+                StartShutdown();
+            }
         }
-        else if ( ASSETCHAINS_SELFIMPORT == "CODA" && ASSETCHAINS_CODAPORT == 0 )
+        else if ( ASSETCHAINS_SELFIMPORT == "CODA" )
         {
-            fprintf(stderr,"missing -ac_coda for CODA rpcport\n");
-            StartShutdown();
+            if (ASSETCHAINS_CODAPORT == 0)
+            {
+                fprintf(stderr,"missing -ac_coda for CODA rpcport\n");
+                StartShutdown();
+            }
+        }
+        else if ( ASSETCHAINS_SELFIMPORT == "PEGSCC")
+        {
+            Split(GetArg("-ac_pegsccparams",""),  ASSETCHAINS_PEGSCCPARAMS, 0);
+            if (ASSETCHAINS_ENDSUBSIDY[0]!=1 || ASSETCHAINS_COMMISSION!=0)
+            {
+                fprintf(stderr,"when using import for pegsCC these must be set: -ac_end=1 -ac_perc=0\n");
+                StartShutdown();
+            }
         }
         // else it can be gateway coin
-        else if (!ASSETCHAINS_SELFIMPORT.empty() && (ASSETCHAINS_ENDSUBSIDY[0]!=1 || ASSETCHAINS_SUPPLY>10 || ASSETCHAINS_COMMISSION!=0))
+        else if (!ASSETCHAINS_SELFIMPORT.empty() && (ASSETCHAINS_ENDSUBSIDY[0]!=1 || ASSETCHAINS_SUPPLY>0 || ASSETCHAINS_COMMISSION!=0))
         {
             fprintf(stderr,"when using gateway import these must be set: -ac_end=1 -ac_supply=0 -ac_perc=0\n");
             StartShutdown();

@@ -187,7 +187,7 @@ void CCaddr3set(struct CCcontract_info *cp,uint8_t evalcode,CPubKey pk,uint8_t *
 }
 
 // set pubkeys, myprivkey and 1of2 cc addr for spending from 1of2 cryptocondition vout:
-void CCaddr1of2set(struct CCcontract_info *cp, CPubKey pk1, CPubKey pk2,uint8_t *priv,char *coinaddr)
+void CCaddr1of2set(struct CCcontract_info *cp, CPubKey pk1, CPubKey pk2, uint8_t *priv, char *coinaddr)
 {
 	cp->coins1of2pk[0] = pk1;
 	cp->coins1of2pk[1] = pk2;
@@ -197,10 +197,11 @@ void CCaddr1of2set(struct CCcontract_info *cp, CPubKey pk1, CPubKey pk2,uint8_t 
 
 // set pubkeys, myprivkey and 1of2 cc addr for spending from 1of2 token cryptocondition vout
 // to get tokenaddr use GetTokensCCaddress()
-void CCaddrTokens1of2set(struct CCcontract_info *cp, CPubKey pk1, CPubKey pk2, char *tokenaddr)
+void CCaddrTokens1of2set(struct CCcontract_info *cp, CPubKey pk1, CPubKey pk2, uint8_t *priv, char *tokenaddr)
 {
 	cp->tokens1of2pk[0] = pk1;
 	cp->tokens1of2pk[1] = pk2;
+    memcpy(cp->tokens1of2priv,priv,32);
 	strcpy(cp->tokens1of2addr, tokenaddr);
 }
 

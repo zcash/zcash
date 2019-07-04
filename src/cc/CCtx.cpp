@@ -96,6 +96,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
     //This is a must to avoid hardfork change of validation in every CC, because there could be maximum one normal vin at the begining with current validation.
     for (i=0; i<n; i++)
     {
+        if (i==0 && mtx.vin[i].prevout.n==10e8) continue;
         if ( GetTransaction(mtx.vin[i].prevout.hash,vintx,hashBlock,false) != 0 )
         {
             if ( vintx.vout[mtx.vin[i].prevout.n].scriptPubKey.IsPayToCryptoCondition() == 0 && ccvins==0)
@@ -114,6 +115,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
     memset(utxovalues,0,sizeof(utxovalues));
     for (i=0; i<n; i++)
     {
+        if (i==0 && mtx.vin[i].prevout.n==10e8) continue;
         if ( GetTransaction(mtx.vin[i].prevout.hash,vintx,hashBlock,false) != 0 )
         {
             utxovout = mtx.vin[i].prevout.n;
@@ -145,6 +147,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
     n = mtx.vin.size(); 
     for (i=0; i<n; i++)
     {
+        if (i==0 && mtx.vin[i].prevout.n==10e8) continue;
         if ( GetTransaction(mtx.vin[i].prevout.hash,vintx,hashBlock,false) != 0 )
         {
             utxovout = mtx.vin[i].prevout.n;
@@ -227,7 +230,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
 				else if (strcmp(cp->tokens1of2addr, destaddr) == 0)
 				{
 					//fprintf(stderr,"FinalizeCCTx() matched %s cp->tokens1of2addr!\n", cp->tokens1of2addr);
-					privkey = myprivkey;
+					privkey = cp->tokens1of2priv;//myprivkey;
 					if (othercond1of2tokens == 0)
                         // NOTE: if additionalEvalcode2 is not set then it is dual-eval cc else three-eval cc
                         // TODO: verify evalcodes order if additionalEvalcode2 is not 0
