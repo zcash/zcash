@@ -7236,7 +7236,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
                 return false;
             }
         }
-        else
+        else if ( (0) )
         {
             if ( pfrom->nServices != 0 )
             {
