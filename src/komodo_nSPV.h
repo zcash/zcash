@@ -871,15 +871,13 @@ UniValue NSPV_login(char *wifstr)
     UniValue result(UniValue::VOBJ); char coinaddr[64]; uint8_t data[128]; int32_t len,valid = 0;
     len = bitcoin_base58decode(data,wifstr);
     if ( strlen(wifstr) < 64 && (len == 38 && data[len-5] == 1) || (len == 37 && data[len-5] != 1) )
-    {
         valid = 1;
-        data[0] = 188;
-    }
-    if ( valid == 0 )
+    if ( valid == 0 || data[0] != 188 )
     {
         result.push_back(Pair("result","error"));
         result.push_back(Pair("error","invalid wif"));
         result.push_back(Pair("len",(int64_t)len));
+        result.push_back(Pair("prefix",(int64_t)data[0]));
         return(result);
     }
     memset(NSPV_wifstr,0,sizeof(NSPV_wifstr));
