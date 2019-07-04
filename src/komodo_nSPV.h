@@ -671,14 +671,14 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                 struct NSPV_ntzsproofresp P; int32_t prevht,nextht;
                 if ( len == 1+sizeof(prevht)+sizeof(nextht) )
                 {
+                    iguana_rwnum(0,&request[1],sizeof(prevht),&prevht);
+                    iguana_rwnum(0,&request[1+sizeof(prevht)],sizeof(nextht),&nextht);
                     {
                         int32_t z;
                         for (z=0; z<9; z++)
                             fprintf(stderr,"%02x",request[z]);
                         fprintf(stderr," -> prevht.%d nextht.%d\n",prevht,nextht);
                     }
-                    iguana_rwnum(0,&request[1],sizeof(prevht),&prevht);
-                    iguana_rwnum(0,&request[1+sizeof(prevht)],sizeof(nextht),&nextht);
                     if ( prevht != 0 && nextht != 0 && nextht >= prevht )
                     {
                         memset(&P,0,sizeof(P));
@@ -1012,10 +1012,12 @@ UniValue NSPV_hdrsproof(int32_t prevheight,int32_t nextheight)
     len += iguana_rwnum(1,&msg[len],sizeof(prevheight),&prevheight);
     len += iguana_rwnum(1,&msg[len],sizeof(nextheight),&nextheight);
     {
-        int32_t z;
+        int32_t z,prevht,nextht;
         for (z=0; z<9; z++)
             fprintf(stderr,"%02x",msg[z]);
-        fprintf(stderr," -> prevht.%d nextht.%d\n",prevheight,nextheight);
+        iguana_rwnum(0,&msg[1],sizeof(prevht),&prevht);
+        iguana_rwnum(0,&msg[5],sizeof(nextht),&nextht);
+        fprintf(stderr," -> prevht.%d nextht.%d\n",prevht,nextht);
     }
 
     if ( NSPV_req(0,msg,len,NODE_NSPV,msg[0]>>1) != 0 )
