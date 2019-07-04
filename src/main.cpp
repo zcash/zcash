@@ -7052,7 +7052,8 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
 {
     const CChainParams& chainparams = Params();
     LogPrint("net", "received: %s (%u bytes) peer=%d\n", SanitizeString(strCommand), vRecv.size(), pfrom->id);
-    if ( KOMODO_NSPV != 0 )
+    //if ( KOMODO_NSPV != 0 )
+    if ( strCommand != "version" && strCommand != "verack" )
         fprintf(stderr, "recv: %s peer=%d\n", SanitizeString(strCommand).c_str(), (int32_t)pfrom->GetId());
     if (mapArgs.count("-dropmessagestest") && GetRand(atoi(mapArgs["-dropmessagestest"])) == 0)
     {
@@ -7226,11 +7227,23 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
     {
         pfrom->SetRecvVersion(min(pfrom->nVersion, PROTOCOL_VERSION));
 
-        if ( KOMODO_NSPV != 0 && (pfrom->nServices & NODE_NSPV) == 0 )
+        if ( KOMODO_NSPV != 0 )
         {
-            fprintf(stderr,"invalid nSPV peer.%d\n",pfrom->id);
-            pfrom->fDisconnect = true;
-            return false;
+            if ( (pfrom->nServices & NODE_NSPV) == 0 )
+            {
+                fprintf(stderr,"invalid nSPV peer.%d\n",pfrom->id);
+                pfrom->fDisconnect = true;
+                return false;
+            }
+        }
+        else
+        {
+            if ( pfrom->nServices != 0 )
+            {
+                fprintf(stderr,"debug mode, disconnect legacy peer.%d\n",pfrom->id);
+                pfrom->fDisconnect = true;
+                return false;
+            }
         }
         // Mark this node as currently connected, so we update its timestamp later.
         if (pfrom->fNetworkNode) {
