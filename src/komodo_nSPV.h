@@ -76,14 +76,11 @@ int32_t iguana_rwequihdrvec(int32_t rwflag,uint8_t *serialized,uint16_t *vecsize
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(*vecsizep),vecsizep);
     if ( (vsize= *vecsizep) != 0 )
     {
-        fprintf(stderr,"vsize.%d ptrp.%p alloc %ld\n",vsize,*ptrp,sizeof(struct NSPV_equihdr)*vsize);
+        //fprintf(stderr,"vsize.%d ptrp.%p alloc %ld\n",vsize,*ptrp,sizeof(struct NSPV_equihdr)*vsize);
         if ( *ptrp == 0 )
             *ptrp = (struct NSPV_equihdr *)calloc(sizeof(struct NSPV_equihdr),vsize); // relies on uint16_t being "small" to prevent mem exhaustion
         for (i=0; i<vsize; i++)
-        {
-            fprintf(stderr,"i.%d of %d: len.%d\n",i,vsize,len);
             len += NSPV_rwequihdr(rwflag,&serialized[len],&(*ptrp)[i]);
-        }
     }
     return(len);
 }
@@ -301,10 +298,8 @@ int32_t NSPV_rwntzsproofresp(int32_t rwflag,uint8_t *serialized,struct NSPV_ntzs
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->pad32),&ptr->pad32);
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->prevtxidht),&ptr->prevtxidht);
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->nexttxidht),&ptr->nexttxidht);
-    fprintf(stderr,"rwvecgtors lens %d %d\n",ptr->prevlen,ptr->nextlen);
     len += iguana_rwuint8vec(rwflag,&serialized[len],&ptr->prevlen,&ptr->prevntz);
     len += iguana_rwuint8vec(rwflag,&serialized[len],&ptr->nextlen,&ptr->nextntz);
-    fprintf(stderr,"rwntzsproof len %d\n",len);
     return(len);
 }
 
@@ -392,7 +387,6 @@ int32_t NSPV_getaddressutxos(struct NSPV_utxosresp *ptr,char *coinaddr) // check
 {
     int64_t total = 0,interest=0; uint32_t locktime; int32_t tipheight,maxlen,txheight,n = 0,len = 0;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
-    fprintf(stderr,"getaddressutxos for %s\n",coinaddr);
     SetCCunspents(unspentOutputs,coinaddr,false);
     maxlen = MAX_BLOCK_SIZE(tipheight) - 512;
     maxlen /= sizeof(*ptr->utxos);
@@ -533,7 +527,6 @@ int32_t NSPV_setequihdr(struct NSPV_equihdr *hdr,int32_t height)
         hdr->nBits = pindex->nBits;
         hdr->nNonce = pindex->nNonce;
         memcpy(hdr->nSolution,&pindex->nSolution[0],sizeof(hdr->nSolution));
-        printf("set equihdr size.%d\n",(int32_t)sizeof(*hdr));
         return(sizeof(*hdr));
     }
     return(-1);
@@ -547,14 +540,13 @@ int32_t NSPV_getntzsproofresp(struct NSPV_ntzsproofresp *ptr,int32_t prevht,int3
         fprintf(stderr,"illegal prevht.%d nextht.%d\n",prevht,nextht);
         return(-1);
     }
-    ptr->prevtxidht = prevht;
-    ptr->nexttxidht = nextht;
+    ptr->common.prevht = prevht;
+    ptr->common.nextht = nextht;
     ptr->common.numhdrs = (nextht - prevht + 1);
     ptr->common.hdrs = (struct NSPV_equihdr *)calloc(ptr->common.numhdrs,sizeof(*ptr->common.hdrs));
     fprintf(stderr,"prev.%d next.%d allocate numhdrs.%d\n",prevht,nextht,ptr->common.numhdrs);
     for (i=0; i<ptr->common.numhdrs; i++)
     {
-        fprintf(stderr,"%d ht.%d\n",i,prevht+i);
         if ( NSPV_setequihdr(&ptr->common.hdrs[i],prevht+i) < 0 )
         {
             fprintf(stderr,"error setting hdr.%d\n",prevht+i);
@@ -567,7 +559,7 @@ int32_t NSPV_getntzsproofresp(struct NSPV_ntzsproofresp *ptr,int32_t prevht,int3
     ptr->prevntz = NSPV_getrawtx(hashBlock,&ptr->prevlen,ptr->prevtxid);
     ptr->nexttxid = NSPV_getnotarization_txid(&ptr->nexttxidht,nextht);
     ptr->nextntz = NSPV_getrawtx(hashBlock,&ptr->nextlen,ptr->nexttxid);
-    fprintf(stderr,"prevlen.%d nextlen.%d size %ld -> %ld\n",ptr->prevlen,ptr->nextlen,sizeof(*ptr),sizeof(*ptr) - sizeof(ptr->common.hdrs) - sizeof(ptr->prevntz) - sizeof(ptr->nextntz) + ptr->prevlen + ptr->nextlen);
+    //fprintf(stderr,"prevlen.%d nextlen.%d size %ld -> %ld\n",ptr->prevlen,ptr->nextlen,sizeof(*ptr),sizeof(*ptr) - sizeof(ptr->common.hdrs) - sizeof(ptr->prevntz) - sizeof(ptr->nextntz) + ptr->prevlen + ptr->nextlen);
     return(sizeof(*ptr) + sizeof(*ptr->common.hdrs)*ptr->common.numhdrs - sizeof(ptr->common.hdrs) - sizeof(ptr->prevntz) - sizeof(ptr->nextntz) + ptr->prevlen + ptr->nextlen);
 }
 
@@ -600,7 +592,7 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
             ind = (int32_t)(sizeof(pfrom->prevtimes)/sizeof(*pfrom->prevtimes)) - 1;
         if ( request[0] == NSPV_INFO ) // info
         {
-            fprintf(stderr,"check info %u vs %u, ind.%d\n",timestamp,pfrom->prevtimes[ind],ind);
+            //fprintf(stderr,"check info %u vs %u, ind.%d\n",timestamp,pfrom->prevtimes[ind],ind);
             if ( timestamp > pfrom->prevtimes[ind] + ASSETCHAINS_BLOCKTIME/2 )
             {
                 struct NSPV_inforesp I;
@@ -628,7 +620,7 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                     memset(&U,0,sizeof(U));
                     if ( (slen= NSPV_getaddressutxos(&U,coinaddr)) > 0 )
                     {
-                        printf("getaddressutxos.(%s) slen.%d\n",coinaddr,slen);
+                        //printf("getaddressutxos.(%s) slen.%d\n",coinaddr,slen);
                         response.resize(1 + slen);
                         response[0] = NSPV_UTXOSRESP;
                         if ( NSPV_rwutxosresp(1,&response[1],&U) == slen )
@@ -774,8 +766,7 @@ CNode *NSPV_req(CNode *pnode,uint8_t *msg,int32_t len,uint64_t mask,int32_t ind)
                 flag = 1;
                 pnode = ptr;
                 break;
-            }
-            else fprintf(stderr,"nServices %llx vs mask %llx, t%u vs %u, ind.%d\n",(long long)ptr->nServices,(long long)mask,timestamp,ptr->prevtimes[ind],ind);
+            } // else fprintf(stderr,"nServices %llx vs mask %llx, t%u vs %u, ind.%d\n",(long long)ptr->nServices,(long long)mask,timestamp,ptr->prevtimes[ind],ind);
         }
     } else flag = 1;
     if ( pnode != 0 )
@@ -783,7 +774,7 @@ CNode *NSPV_req(CNode *pnode,uint8_t *msg,int32_t len,uint64_t mask,int32_t ind)
         std::vector<uint8_t> request;
         request.resize(len);
         memcpy(&request[0],msg,len);
-        fprintf(stderr,"pushmessage [%d] len.%d\n",msg[0],len);
+        //fprintf(stderr,"pushmessage [%d] len.%d\n",msg[0],len);
         pnode->PushMessage("getnSPV",request);
         pnode->prevtimes[ind] = timestamp;
         return(pnode);
