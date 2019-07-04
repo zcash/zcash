@@ -863,8 +863,11 @@ UniValue NSPV_spentinfo(uint256 txid,int32_t vout)
 
 UniValue NSPV_login(char *wifstr)
 {
-    UniValue result(UniValue::VOBJ); char coinaddr[64]; uint8_t data[64]; int32_t len;
-    if ( (len= bitcoin_base58decode(data,wifstr)) != 38 )
+    UniValue result(UniValue::VOBJ); char coinaddr[64]; uint8_t data[64]; int32_t len,valid = 0;
+    len = bitcoin_base58decode(data,wifstr);
+    if ( (len == 38 && data[len-5] == 1) || (len == 37 && data[len-5] != 1) )
+        valid = 1;
+    if ( valid == 0 )
     {
         result.push_back(Pair("result","error"));
         result.push_back(Pair("error","invalid wif"));
