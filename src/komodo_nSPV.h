@@ -544,7 +544,7 @@ int32_t NSPV_getntzsproofresp(struct NSPV_ntzsproofresp *ptr,int32_t prevht,int3
     ptr->common.nextht = nextht;
     ptr->common.numhdrs = (nextht - prevht + 1);
     ptr->common.hdrs = (struct NSPV_equihdr *)calloc(ptr->common.numhdrs,sizeof(*ptr->common.hdrs));
-    fprintf(stderr,"prev.%d next.%d allocate numhdrs.%d\n",prevht,nextht,ptr->common.numhdrs);
+    //fprintf(stderr,"prev.%d next.%d allocate numhdrs.%d\n",prevht,nextht,ptr->common.numhdrs);
     for (i=0; i<ptr->common.numhdrs; i++)
     {
         if ( NSPV_setequihdr(&ptr->common.hdrs[i],prevht+i) < 0 )
@@ -875,6 +875,7 @@ UniValue NSPV_headers_json(struct NSPV_equihdr *hdrs,int32_t numhdrs)
         item.push_back(Pair("hashPrevBlock",hdrs[i].hashPrevBlock.GetHex()));
         item.push_back(Pair("hashMerkleRoot",hdrs[i].hashMerkleRoot.GetHex()));
         item.push_back(Pair("nTime",(int64_t)hdrs[i].nTime));
+        array.push_back(item);
     }
     return(array);
 }
@@ -999,10 +1000,7 @@ UniValue NSPV_hdrsproof(int32_t prevheight,int32_t nextheight)
         {
             usleep(100000);
             if ( NSPV_ntzsproofresult.common.prevht == prevheight && NSPV_ntzsproofresult.common.nextht >= nextheight )
-            {
-                fprintf(stderr,"got ntzsproof\n");
                 return(NSPV_ntzsproof_json(&NSPV_ntzsproofresult));
-            }
         }
     }
     memset(&H,0,sizeof(H));
