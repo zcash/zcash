@@ -618,6 +618,7 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
         }
         else if ( request[0] == NSPV_UTXOS )
         {
+            fprintf(stderr,"utxos: %u > %u, ind.%d, len.%d\n",timestamp,pfrom->prevtimes[ind],ind,len);
             if ( timestamp > pfrom->prevtimes[ind] )
             {
                 struct NSPV_utxosresp U; char coinaddr[64];
