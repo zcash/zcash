@@ -535,15 +535,24 @@ int32_t NSPV_setequihdr(struct NSPV_equihdr *hdr,int32_t height)
 int32_t NSPV_getntzsproofresp(struct NSPV_ntzsproofresp *ptr,int32_t prevht,int32_t nextht)
 {
     int32_t i; uint256 hashBlock;
+    if ( prevht > nextht || (nextht-prevht) > 1440 )
+    {
+        fprintf(stderr,"illegal prevht.%d nextht.%d\n",prevht,nextht);
+        return(-1);
+    }
     ptr->prevtxidht = prevht;
     ptr->nexttxidht = nextht;
     ptr->common.numhdrs = (nextht - prevht + 1);
     ptr->common.hdrs = (struct NSPV_equihdr *)calloc(ptr->common.numhdrs,sizeof(*ptr->common.hdrs));
+    fprintf(stderr,"allocate numhdrs.%d\n",ptr->common.numhdrs);
     for (i=0; i<ptr->common.numhdrs; i++)
     {
+        fprintf(stderr,"%d ht.%d\n",i,prevht+i);
         if ( NSPV_setequihdr(&ptr->common.hdrs[i],prevht+i) < 0 )
         {
+            fprintf(stderr,"error setting hdr.%d\n",prevht+i);
             free(ptr->common.hdrs);
+            ptr->common.hdrs = 0;
             return(-1);
         }
     }
