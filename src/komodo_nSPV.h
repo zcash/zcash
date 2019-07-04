@@ -921,7 +921,7 @@ UniValue NSPV_login(char *wifstr)
 
 UniValue NSPV_addressutxos(char *coinaddr)
 {
-    UniValue result(UniValue::VOBJ); uint8_t msg[64]; int32_t slen,len = 0;
+    UniValue result(UniValue::VOBJ); uint8_t msg[64]; int32_t i,slen,len = 0;
     if ( bitcoin_base58decode(msg,coinaddr) != 25 )
     {
         result.push_back(Pair("result","error"));
@@ -940,7 +940,6 @@ UniValue NSPV_addressutxos(char *coinaddr)
         msg[len++] = slen;
         memcpy(&msg[len],coinaddr,slen), len += slen;
         msg[len] = 0;
-        fprintf(stderr,"issue addressutxos.(%s) (%s)\n",coinaddr,(char *)&msg[2]);
         if ( NSPV_req(0,msg,len,NODE_ADDRINDEX,msg[0]>>1) != 0 )
         {
             for (i=0; i<10; i++)
