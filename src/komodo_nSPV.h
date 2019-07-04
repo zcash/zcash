@@ -133,6 +133,7 @@ int32_t NSPV_rwutxosresp(int32_t rwflag,uint8_t *serialized,struct NSPV_utxosres
             ptr->utxos = (struct NSPV_utxoresp *)calloc(sizeof(*ptr->utxos),ptr->numutxos); // relies on uint16_t being "small" to prevent mem exhaustion
         for (i=0; i<ptr->numutxos; i++)
             len += NSPV_rwutxoresp(rwflag,&serialized[len],&ptr->utxos[i]);
+        fprintf(stderr,"parsed numutxos.%d\n",ptr->numutxos);
     }
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->total),&ptr->total);
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->interest),&ptr->interest);
@@ -820,9 +821,9 @@ UniValue NSPV_utxoresp_json(struct NSPV_utxoresp *utxos,int32_t numutxos)
         item.push_back(Pair("height",(int64_t)utxos[i].height));
         item.push_back(Pair("txid",utxos[i].txid.GetHex()));
         item.push_back(Pair("vout",(int64_t)utxos[i].vout));
-        item.push_back(Pair("value",AmountFromValue(utxos[i].satoshis)));
+        item.push_back(Pair("value",(doublt)utxos[i].satoshis/COIN));
         if ( ASSETCHAINS_SYMBOL[0] == 0 )
-            item.push_back(Pair("interest",AmountFromValue(utxos[i].extradata)));
+            item.push_back(Pair("interest",(doublt)utxos[i].extradata/COIN));
         array.push_back(item);
     }
     return(array);
@@ -835,8 +836,9 @@ UniValue NSPV_utxosresp_json(struct NSPV_utxosresp *ptr)
     result.push_back(Pair("utxos",NSPV_utxoresp_json(ptr->utxos,ptr->numutxos)));
     result.push_back(Pair("height",(int64_t)ptr->nodeheight));
     result.push_back(Pair("numutxos",(int64_t)ptr->numutxos));
-    result.push_back(Pair("balance",AmountFromValue(ptr->total)));
-    result.push_back(Pair("interest",AmountFromValue(ptr->interest)));
+    result.push_back(Pair("balance",(doublt)ptr->total/COIN));
+    if ( ASSETCHAINS_SYMBOL[0] == 0 )
+        result.push_back(Pair("interest",(doublt)ptr->interest/COIN));
     return(result);
 }
 

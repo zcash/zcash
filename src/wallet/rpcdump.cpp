@@ -977,6 +977,7 @@ UniValue NSPV_login(char *wifstr);
 UniValue NSPV_addressutxos(char *coinaddr);
 UniValue NSPV_spentinfo(uint256 txid,int32_t vout);
 uint256 Parseuint256(const char *hexstr);
+extern std::string NSPV_address;
 
 UniValue nspv_getinfo(const UniValue& params, bool fHelp)
 {
@@ -994,6 +995,8 @@ UniValue nspv_login(const UniValue& params, bool fHelp)
 
 UniValue nspv_listunspent(const UniValue& params, bool fHelp)
 {
+    if ( params.size() == 0 && NSPV_address.size() != 0 )
+        return(NSPV_addressutxos((char *)NSPV_address.c_str()));
     if ( fHelp || params.size() != 1 )
         throw runtime_error("nspv_listunspent address\n");
     return(NSPV_addressutxos((char *)params[0].get_str().c_str()));
