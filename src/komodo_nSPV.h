@@ -742,16 +742,17 @@ CNode *NSPV_req(CNode *pnode,uint8_t *msg,int32_t len,uint64_t mask,int32_t ind)
     if ( pnode == 0 )
     {
         LOCK(cs_vNodes);
-        BOOST_FOREACH(CNode *pnode,vNodes)
+        BOOST_FOREACH(CNode *ptr,vNodes)
         {
-            if ( pnode->hSocket == INVALID_SOCKET )
+            if ( ptr->hSocket == INVALID_SOCKET )
                 continue;
-            if ( (pnode->nServices & mask) == mask && timestamp > pnode->prevtimes[ind] )
+            if ( (ptr->nServices & mask) == mask && timestamp > ptr->prevtimes[ind] )
             {
                 flag = 1;
+                pnode = ptr;
                 break;
             }
-            else fprintf(stderr,"nServices %llx vs mask %llx, t%u vs %u, ind.%d\n",(long long)pnode->nServices,(long long)mask,timestamp,pnode->prevtimes[ind],ind);
+            else fprintf(stderr,"nServices %llx vs mask %llx, t%u vs %u, ind.%d\n",(long long)ptr->nServices,(long long)mask,timestamp,ptr->prevtimes[ind],ind);
         }
     } else flag = 1;
     if ( pnode != 0 )
