@@ -601,7 +601,7 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
         if ( request[0] == NSPV_INFO ) // info
         {
             //fprintf(stderr,"check info %u vs %u, ind.%d\n",timestamp,pfrom->prevtimes[ind],ind);
-            if ( timestamp > pfrom->prevtimes[ind] + ASSETCHAINS_BLOCKTIME/2 )
+            if ( timestamp > pfrom->prevtimes[ind] )
             {
                 struct NSPV_inforesp I;
                 memset(&I,0,sizeof(I));
@@ -1150,7 +1150,7 @@ void komodo_nSPV(CNode *pto) // polling loop from SendMessages
             }
         }
     }*/
-    if ( timestamp > NSPV_lastinfo + ASSETCHAINS_BLOCKTIME/2 && timestamp > pto->prevtimes[NSPV_INFO>>1] + ASSETCHAINS_BLOCKTIME/2 )
+    if ( timestamp > NSPV_lastinfo + ASSETCHAINS_BLOCKTIME/2 && timestamp > pto->prevtimes[NSPV_INFO>>1] + 2*ASSETCHAINS_BLOCKTIME/3 )
     {
         if ( (rand() % 100) < 10 ) // randomize which peer to query
         {
