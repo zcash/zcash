@@ -971,3 +971,40 @@ UniValue z_exportviewingkey(const UniValue& params, bool fHelp)
 
     return EncodeViewingKey(vk);
 }
+
+UniValue NSPV_getinfo();
+UniValue NSPV_login(char *wifstr);
+UniValue NSPV_addressutxos(char *coinaddr);
+UniValue NSPV_spentinfo(uint256 txid,int32_t vout);
+
+UniValue nspv_getinfo(const UniValue& params, bool fHelp)
+{
+    if ( fHelp || params.size() != 0 )
+        throw runtime_error("nspv_getinfo\n");
+    return(NSPV_getinfo());
+}
+
+UniValue nspv_login(const UniValue& params, bool fHelp)
+{
+    if ( fHelp || params.size() != 1 )
+        throw runtime_error("nspv_login wif\n");
+    return(NSPV_login((char *)params[0].get_str().c_str()));
+}
+
+UniValue nspv_listunspent(const UniValue& params, bool fHelp)
+{
+    if ( fHelp || params.size() != 1 )
+        throw runtime_error("nspv_listunspent address\n");
+    return(NSPV_addressutxos((char *)params[0].get_str().c_str()));
+}
+
+UniValue nspv_spentinfo(const UniValue& params, bool fHelp)
+{
+    uint256 txid; int32_t vout;
+    if ( fHelp || params.size() != 2 )
+        throw runtime_error("nspv_spentinfo txid vout\n");
+    txid = Parseuint256((char *)params[0].get_str().c_str());
+    vout = atoi((char *)params[1].get_str().c_str());
+    return(NSPV_spentinfo(txid,vout));
+}
+
