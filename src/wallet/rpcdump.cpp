@@ -976,6 +976,7 @@ UniValue NSPV_getinfo();
 UniValue NSPV_login(char *wifstr);
 UniValue NSPV_addressutxos(char *coinaddr);
 UniValue NSPV_spentinfo(uint256 txid,int32_t vout);
+uint256 Parseuint256(const char *hexstr);
 
 UniValue nspv_getinfo(const UniValue& params, bool fHelp)
 {
