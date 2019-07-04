@@ -1015,7 +1015,7 @@ UniValue NSPV_hdrsproof(int32_t prevheight,int32_t nextheight)
         int32_t z;
         for (z=0; z<9; z++)
             fprintf(stderr,"%02x",msg[z]);
-        fprintf(stderr," -> prevht.%d nextht.%d\n",prevht,nextht);
+        fprintf(stderr," -> prevht.%d nextht.%d\n",prevheight,nextheight);
     }
 
     if ( NSPV_req(0,msg,len,NODE_NSPV,msg[0]>>1) != 0 )
