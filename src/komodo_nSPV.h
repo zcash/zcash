@@ -810,7 +810,7 @@ UniValue NSPV_utxoresp_json(struct NSPV_utxoresp *utxos,int32_t numutxos)
     UniValue array(UniValue::VARR); int32_t i;
     for (i=0; i<numutxos; i++)
     {
-        UniValue item(UniValue:VOBJ);
+        UniValue item(UniValue::VOBJ);
         item.push_back(Pair("height",(int64_t)utxos[i].height));
         item.push_back(Pair("txid",utxos[i].txid.GetHex()));
         item.push_back(Pair("vout",(int64_t)utxos[i].vout));
@@ -827,7 +827,7 @@ UniValue NSPV_utxosresp_json(struct NSPV_utxosresp *ptr)
     UniValue result(UniValue::VOBJ);
     result.push_back(Pair("result","success"));
     result.push_back(Pair("utxos",NSPV_utxoresp_json(ptr->utxos,ptr->numutxos)));
-    result.push_back(Pair("height",(int64_t)ptr->height));
+    result.push_back(Pair("height",(int64_t)ptr->nodeheight));
     result.push_back(Pair("numutxos",(int64_t)ptr->numutxos));
     result.push_back(Pair("balance",AmountFromValue(ptr->total)));
     result.push_back(Pair("interest",AmountFromValue(ptr->interest)));
@@ -866,7 +866,7 @@ UniValue NSPV_login(char *wifstr)
     NSPV_logintime = (uint32_t)time(NULL);
     result.push_back(Pair("result","success"));
     result.push_back(Pair("status","wif will expire in 60 seconds"));
-    CKey key = DecodeSecret(strSecret);
+    CKey key = DecodeSecret(wifstr);
     CPubKey pubkey = key.GetPubKey();
     //assert(key.VerifyPubKey(pubkey));
     CKeyID vchAddress = pubkey.GetID();
@@ -880,7 +880,7 @@ UniValue NSPV_addressutxos(char *coinaddr)
     UniValue result(UniValue::VOBJ); uint8_t msg[64]; int32_t slen,len = 0;
     if ( NSPV_utxosresult.nodeheight < NSPV_inforesult.height )
     {
-        slen = (int32_t)strlen(coinaddr)
+        slen = (int32_t)strlen(coinaddr);
         msg[len++] = NSPV_UTXOS;
         msg[len++] = slen;
         memcpy(&msg[len],coinaddr,slen), len += slen;
@@ -889,7 +889,7 @@ UniValue NSPV_addressutxos(char *coinaddr)
     }
     if ( NSPV_utxosresult.nodeheight >= NSPV_inforesult.height )
     {
-        return(NSPV_utxosresp_json(NSPV_utxosresult));
+        return(NSPV_utxosresp_json(&NSPV_utxosresult));
     }
     result.push_back(Pair("result","error"));
     result.push_back(Pair("error","no utxos result"));
