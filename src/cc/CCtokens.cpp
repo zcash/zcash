@@ -397,6 +397,21 @@ int64_t IsTokensvout(bool goDeeper, bool checkPubkeys /*<--not used, always true
 					}
 				}
 
+                //special check for 3 pubkey tx when spending from 1of2 CC address with on of pubkeys is global CC pubkey
+                struct CCcontract_info *cpEvalCode1,CEvalCode1;
+                cpEvalCode1 = CCinit(&CEvalCode1,evalCode1);
+                CPubKey pk=GetUnspendable(cpEvalCode1,0);
+                testVouts.push_back( std::make_pair(MakeTokensCC1of2vout(evalCode1, tx.vout[v].nValue, voutPubkeys[0], pk), std::string("dual-eval1 pegscc cc1of2 pk[0]")) ); 
+                testVouts.push_back( std::make_pair(MakeTokensCC1of2vout(evalCode1, tx.vout[v].nValue, voutPubkeys[1], pk), std::string("dual-eval1 pegscc cc1of2 pk[1]")) );
+                if (evalCode2!=0)
+                {
+                    struct CCcontract_info *cpEvalCode2,CEvalCode2;
+                    cpEvalCode2 = CCinit(&CEvalCode2,evalCode2);
+                    CPubKey pk=GetUnspendable(cpEvalCode2,0);
+                    testVouts.push_back( std::make_pair(MakeTokensCC1of2vout(evalCode2, tx.vout[v].nValue, voutPubkeys[0], pk), std::string("dual-eval2 pegscc cc1of2 pk[0]")) ); 
+                    testVouts.push_back( std::make_pair(MakeTokensCC1of2vout(evalCode2, tx.vout[v].nValue, voutPubkeys[1], pk), std::string("dual-eval2 pegscc cc1of2 pk[1]")) );
+                }
+
 				// maybe it is single-eval or dual/three-eval token change?
 				std::vector<CPubKey> vinPubkeys, vinPubkeysUnfiltered;
 				ExtractTokensCCVinPubkeys(tx, vinPubkeysUnfiltered);
