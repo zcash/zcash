@@ -821,9 +821,9 @@ UniValue NSPV_utxoresp_json(struct NSPV_utxoresp *utxos,int32_t numutxos)
         item.push_back(Pair("height",(int64_t)utxos[i].height));
         item.push_back(Pair("txid",utxos[i].txid.GetHex()));
         item.push_back(Pair("vout",(int64_t)utxos[i].vout));
-        item.push_back(Pair("value",(doublt)utxos[i].satoshis/COIN));
+        item.push_back(Pair("value",(double)utxos[i].satoshis/COIN));
         if ( ASSETCHAINS_SYMBOL[0] == 0 )
-            item.push_back(Pair("interest",(doublt)utxos[i].extradata/COIN));
+            item.push_back(Pair("interest",(double)utxos[i].extradata/COIN));
         array.push_back(item);
     }
     return(array);
@@ -836,9 +836,9 @@ UniValue NSPV_utxosresp_json(struct NSPV_utxosresp *ptr)
     result.push_back(Pair("utxos",NSPV_utxoresp_json(ptr->utxos,ptr->numutxos)));
     result.push_back(Pair("height",(int64_t)ptr->nodeheight));
     result.push_back(Pair("numutxos",(int64_t)ptr->numutxos));
-    result.push_back(Pair("balance",(doublt)ptr->total/COIN));
+    result.push_back(Pair("balance",(double)ptr->total/COIN));
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
-        result.push_back(Pair("interest",(doublt)ptr->interest/COIN));
+        result.push_back(Pair("interest",(double)ptr->interest/COIN));
     return(result);
 }
 
