@@ -724,7 +724,8 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
 }
 
 // nSPV client
-extern CAmount AmountFromValue(const UniValue& value);
+CAmount AmountFromValue(const UniValue& value);
+int32_t bitcoin_base58decode(uint8_t *data,char *coinaddr);
 
 uint32_t NSPV_lastinfo,NSPV_lastutxos,NSPV_logintime;
 char NSPV_wifstr[64];
@@ -862,7 +863,14 @@ UniValue NSPV_spentinfo(uint256 txid,int32_t vout)
 
 UniValue NSPV_login(char *wifstr)
 {
-    UniValue result(UniValue::VOBJ); char coinaddr[64];
+    UniValue result(UniValue::VOBJ); char coinaddr[64]; uint8_t data[64]; int32_t len;
+    if ( (len= bitcoin_base58decode(data,wifstr)) != 32 )
+    {
+        result.push_back(Pair("result","error"));
+        result.push_back(Pair("error","invalid wif"));
+        result.push_back(Pair("len",(int64_t)len));
+        return(result);
+    }
     memset(NSPV_wifstr,0,sizeof(NSPV_wifstr));
     strncpy(NSPV_wifstr,wifstr,sizeof(NSPV_wifstr)-1);
     NSPV_logintime = (uint32_t)time(NULL);
