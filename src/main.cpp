@@ -7231,7 +7231,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         {
             if ( (pfrom->nServices & NODE_NSPV) == 0 )
             {
-                fprintf(stderr,"invalid nSPV peer.%d\n",pfrom->id);
+                //fprintf(stderr,"invalid nSPV peer.%d\n",pfrom->id);
                 pfrom->fDisconnect = true;
                 return false;
             }
