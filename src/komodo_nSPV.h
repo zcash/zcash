@@ -799,24 +799,24 @@ UniValue NSPV_getinfo()
 {
     UniValue result(UniValue::VOBJ);
     result.push_back(Pair("result","success"));
-    result.push_back(Pair("height",(int64_t)ptr->height));
-    result.push_back(Pair("chaintip",ptr->blockhash.GetHex()));
-    result.push_back(Pair("notarization",NSPV_ntz_json(&ptr->notarization)));
+    result.push_back(Pair("height",(int64_t)NSPV_inforesult.height));
+    result.push_back(Pair("chaintip",NSPV_inforesult.blockhash.GetHex()));
+    result.push_back(Pair("notarization",NSPV_ntz_json(&NSPV_inforesult.notarization)));
     return(result);
 }
 
-UniValue NSPV_utxoresp_json(struct NSPV_utxosresp *utxos,int32_t numutxos)
+UniValue NSPV_utxoresp_json(struct NSPV_utxoresp *utxos,int32_t numutxos)
 {
     UniValue array(UniValue::VARR); int32_t i;
     for (i=0; i<numutxos; i++)
     {
         UniValue item(UniValue:VOBJ);
-        obj.push_back(Pair("height",(int64_t)utxos[i].height));
-        obj.push_back(Pair("txid",utxos[i].txid.GetHex()));
-        obj.push_back(Pair("vout",(int64_t)utxos[i].vout));
-        obj.push_back(Pair("value",AmountFromValue(utxos[i].satoshis)));
+        item.push_back(Pair("height",(int64_t)utxos[i].height));
+        item.push_back(Pair("txid",utxos[i].txid.GetHex()));
+        item.push_back(Pair("vout",(int64_t)utxos[i].vout));
+        item.push_back(Pair("value",AmountFromValue(utxos[i].satoshis)));
         if ( ASSETCHAINS_SYMBOL[0] == 0 )
-            obj.push_back(Pair("interest",AmountFromValue(utxos[i].extradata)));
+            item.push_back(Pair("interest",AmountFromValue(utxos[i].extradata)));
         array.push_back(item);
     }
     return(array);

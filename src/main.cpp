@@ -7427,16 +7427,11 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         komodo_nSPVreq(pfrom,payload);
         return(true);
     }
-    else if ( KOMODO_NSPV != 0 )
+    else if (strCommand == "nSPV")
     {
-        if (strCommand == "nSPV")
-        {
-            std::vector<uint8_t> payload;
-            vRecv >> payload;
-            komodo_nSPVresp(pfrom,payload);
-            return(true);
-        }
-        fprintf(stderr,"ignore message %s\n",strCommand.c_str());
+        std::vector<uint8_t> payload;
+        vRecv >> payload;
+        komodo_nSPVresp(pfrom,payload);
         return(true);
     }
 
@@ -8228,11 +8223,9 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
             }
             state.fShouldBan = false;
         }
+        komodo_nSPV(pto);
         if ( KOMODO_NSPV != 0 )
-        {
-            komodo_nSPV(pto);
             return(true);
-        }
         BOOST_FOREACH(const CBlockReject& reject, state.rejects)
         pto->PushMessage("reject", (string)"block", reject.chRejectCode, reject.strRejectReason, reject.hashBlock);
         state.rejects.clear();
