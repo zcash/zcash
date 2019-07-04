@@ -965,7 +965,7 @@ UniValue NSPV_notarizations(int32_t height)
     if ( NSPV_ntzsresult.prevntz.height <= height && NSPV_ntzsresult.nextntz.height >= height )
         return(NSPV_ntzs_json(&NSPV_ntzsresult));
     memset(&N,0,sizeof(N));
-    return(NSPV_ntzs_json(&NSPV_ntzsresult));
+    return(NSPV_ntzs_json(&N));
 }
 
 UniValue NSPV_hdrsproof(int32_t prevheight,int32_t nextheight)
@@ -981,7 +981,7 @@ UniValue NSPV_hdrsproof(int32_t prevheight,int32_t nextheight)
     if ( NSPV_ntzsproofresult.common.prevht == prevheight && NSPV_ntzsproofresult.common.nextht >= nextheight )
         return(NSPV_ntzsproof_json(&NSPV_ntzsproofresult));
     memset(&H,0,sizeof(H));
-    return(NSPV_ntzsproof_json(&NSPV_ntzsresult));
+    return(NSPV_ntzsproof_json(&H));
 }
 
 UniValue NSPV_txproof(uint256 txid,int32_t height)
@@ -997,7 +997,7 @@ UniValue NSPV_txproof(uint256 txid,int32_t height)
     if ( NSPV_txproofresult.txid == txid && NSPV_txproofresult.height == height )
         return(NSPV_txproof_json(&NSPV_txproofresult));
     memset(&P,0,sizeof(P));
-    return(NSPV_txproof_json(&I));
+    return(NSPV_txproof_json(&P));
 }
 
 UniValue NSPV_spentinfo(uint256 txid,int32_t vout)
