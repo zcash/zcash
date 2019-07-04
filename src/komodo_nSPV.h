@@ -76,7 +76,7 @@ int32_t iguana_rwequihdrvec(int32_t rwflag,uint8_t *serialized,uint16_t *vecsize
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(*vecsizep),vecsizep);
     if ( (vsize= *vecsizep) != 0 )
     {
-        fprintf(stderr,"vsize.%d ptrp.%p alloc %ld\n",*ptrp,sizeof(struct NSPV_equihdr)*vsize);
+        fprintf(stderr,"vsize.%d ptrp.%p alloc %ld\n",vsize,*ptrp,sizeof(struct NSPV_equihdr)*vsize);
         if ( *ptrp == 0 )
             *ptrp = (struct NSPV_equihdr *)calloc(sizeof(struct NSPV_equihdr),vsize); // relies on uint16_t being "small" to prevent mem exhaustion
         for (i=0; i<vsize; i++)
@@ -533,6 +533,7 @@ int32_t NSPV_setequihdr(struct NSPV_equihdr *hdr,int32_t height)
         hdr->nBits = pindex->nBits;
         hdr->nNonce = pindex->nNonce;
         memcpy(hdr->nSolution,&pindex->nSolution[0],sizeof(hdr->nSolution));
+        printf("set equihdr size.%d\n",(int32_t)sizeof(*hdr));
         return(sizeof(*hdr));
     }
     return(-1);
@@ -566,6 +567,7 @@ int32_t NSPV_getntzsproofresp(struct NSPV_ntzsproofresp *ptr,int32_t prevht,int3
     ptr->prevntz = NSPV_getrawtx(hashBlock,&ptr->prevlen,ptr->prevtxid);
     ptr->nexttxid = NSPV_getnotarization_txid(&ptr->nexttxidht,nextht);
     ptr->nextntz = NSPV_getrawtx(hashBlock,&ptr->nextlen,ptr->nexttxid);
+    fprintf(stderr,"prevlen.%d nextlen.%d size %ld -> %ld\n",ptr->prevlen,ptr->nextlen,sizeof(*ptr),sizeof(*ptr) - sizeof(ptr->common.hdrs) - sizeof(ptr->prevntz) - sizeof(ptr->nextntz) + ptr->prevlen + ptr->nextlen);
     return(sizeof(*ptr) - sizeof(ptr->common.hdrs) - sizeof(ptr->prevntz) - sizeof(ptr->nextntz) + ptr->prevlen + ptr->nextlen);
 }
 
