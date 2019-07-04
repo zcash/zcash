@@ -863,9 +863,9 @@ UniValue NSPV_spentinfo(uint256 txid,int32_t vout)
 
 UniValue NSPV_login(char *wifstr)
 {
-    UniValue result(UniValue::VOBJ); char coinaddr[64]; uint8_t data[64]; int32_t len,valid = 0;
+    UniValue result(UniValue::VOBJ); char coinaddr[64]; uint8_t data[128]; int32_t len,valid = 0;
     len = bitcoin_base58decode(data,wifstr);
-    if ( (len == 38 && data[len-5] == 1) || (len == 37 && data[len-5] != 1) )
+    if ( strlen(wifstr) < 64 && (len == 38 && data[len-5] == 1) || (len == 37 && data[len-5] != 1) )
         valid = 1;
     if ( valid == 0 )
     {
@@ -885,6 +885,10 @@ UniValue NSPV_login(char *wifstr)
     CKeyID vchAddress = pubkey.GetID();
     NSPV_address = EncodeDestination(vchAddress);
     result.push_back(Pair("address",NSPV_address));
+    result.push_back(Pair("pubkey",HexStr(pubkey)));
+    result.push_back(Pair("wifprefix",(int64_t)data[0]));
+    result.push_back(Pair("compressed",(int64_t)(data[len-5] == 1)));
+    memset(data,0,sizeof(data));
     return(result);
 }
 
