@@ -578,7 +578,8 @@ bool MarmaraPoScheck(char *destaddr, CScript inOpret, CTransaction staketx)  // 
         }
     }
     
-    LOGSTREAMFN("marmara", CCLOG_ERROR, stream  <<  "incorrect stake tx vout or opret, returning false, txid=" << staketx.GetHash().ToString() << " inOpret=" << inOpret.ToString() << std::endl);
+    LOGSTREAMFN("marmara", CCLOG_ERROR, stream  << "incorrect stake tx vout or opret, returning false, txid=" << staketx.GetHash().ToString() << " inOpret=" << inOpret.ToString() << std::endl);
+    LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "bad stake tx=" << staketx.ToString() << std::endl);
     return(false);
 }
 
