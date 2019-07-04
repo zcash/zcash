@@ -227,6 +227,7 @@ int32_t NSPV_rwtxproof(int32_t rwflag,uint8_t *serialized,struct NSPV_txproof *p
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->height),&ptr->height);
     len += iguana_rwuint8vec(rwflag,&serialized[len],&ptr->txlen,&ptr->tx);
     len += iguana_rwuint8vec(rwflag,&serialized[len],&ptr->txprooflen,&ptr->txproof);
+    fprintf(stderr,"rwtxproof len.%d\n",len);
     return(len);
 }
 
@@ -472,8 +473,11 @@ uint8_t *NSPV_getrawtx(uint256 &hashBlock,uint16_t *txlenp,uint256 txid)
             return(0);
         string strHex = EncodeHexTx(tx);
         *txlenp = (int32_t)strHex.size() >> 1;
-        rawtx = (uint8_t *)calloc(1,*txlenp);
-        decode_hex(rawtx,*txlenp,(char *)strHex.c_str());
+        if ( *txlenp > 0 )
+        {
+            rawtx = (uint8_t *)calloc(1,*txlenp);
+            decode_hex(rawtx,*txlenp,(char *)strHex.c_str());
+        }
     }
     return(rawtx);
 }
@@ -504,8 +508,12 @@ int32_t NSPV_gettxproof(struct NSPV_txproof *ptr,uint256 txid,int32_t height)
             ssMB << mb;
             std::vector<uint8_t> proof(ssMB.begin(), ssMB.end());
             ptr->txprooflen = (int32_t)proof.size();
-            ptr->txproof = (uint8_t *)calloc(1,ptr->txprooflen);
-            memcpy(ptr->txproof,&proof[0],ptr->txprooflen);
+            if ( ptr->txprooflen > 0 )
+            {
+                ptr->txproof = (uint8_t *)calloc(1,ptr->txprooflen);
+                memcpy(ptr->txproof,&proof[0],ptr->txprooflen);
+            }
+            fprintf(stderr,"gettxproof slen.%d\n",(int32_t)(sizeof(*ptr) - sizeof(ptr->tx) - sizeof(ptr->txproof) + ptr->txlen + ptr->txprooflen));
             return(sizeof(*ptr) - sizeof(ptr->tx) - sizeof(ptr->txproof) + ptr->txlen + ptr->txprooflen);
         }
     }
@@ -693,11 +701,13 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                 {
                     iguana_rwnum(0,&request[1],sizeof(height),&height);
                     iguana_rwbignum(0,&request[1+sizeof(height)],sizeof(txid),(uint8_t *)&txid);
+                    fprintf(stderr,"got txid ht.%d\n",txid.GetHex().c_str(),height);
                     memset(&P,0,sizeof(P));
                     if ( (slen= NSPV_gettxproof(&P,txid,height)) > 0 )
                     {
                         response.resize(1 + slen);
                         response[0] = NSPV_TXPROOFRESP;
+                        fprintf(stderr,"slen.%d\n",slen);
                         if ( NSPV_rwtxproof(1,&response[1],&P) == slen )
                         {
                             pfrom->PushMessage("nSPV",response);
@@ -1015,13 +1025,17 @@ UniValue NSPV_txproof(uint256 txid,int32_t height)
     msg[len++] = NSPV_TXPROOF;
     len += iguana_rwnum(1,&msg[len],sizeof(height),&height);
     len += iguana_rwbignum(1,&msg[len],sizeof(txid),(uint8_t *)&txid);
+    fprintf(stderr,"req txproof %s at height.%d\n",txid.GetHex().c_str(),height);
     if ( NSPV_req(0,msg,len,NODE_NSPV,msg[0]>>1) != 0 )
     {
         for (i=0; i<10; i++)
         {
             usleep(100000);
             if ( NSPV_txproofresult.txid == txid && NSPV_txproofresult.height == height )
+            {
+                fprintf(stderr,"got txproof\n");
                 return(NSPV_txproof_json(&NSPV_txproofresult));
+            }
         }
     }
     memset(&P,0,sizeof(P));
