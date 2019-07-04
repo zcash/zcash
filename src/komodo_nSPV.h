@@ -872,7 +872,7 @@ UniValue NSPV_login(char *wifstr)
     len = bitcoin_base58decode(data,wifstr);
     if ( strlen(wifstr) < 64 && (len == 38 && data[len-5] == 1) || (len == 37 && data[len-5] != 1) )
         valid = 1;
-    if ( valid == 0 )
+    if ( valid == 0 || data[0] != 188 )
     {
         result.push_back(Pair("result","error"));
         result.push_back(Pair("error","invalid wif"));
