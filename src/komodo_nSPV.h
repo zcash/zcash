@@ -947,28 +947,25 @@ UniValue NSPV_addressutxos(char *coinaddr)
         result.push_back(Pair("error","invalid address"));
         return(result);
     }
-    if ( NSPV_inforesult.height == 0 || NSPV_utxosresult.nodeheight < NSPV_inforesult.height )
+    if ( NSPV_inforesult.height == 0 )
     {
-        if ( NSPV_inforesult.height == 0 )
+        msg[0] = NSPV_INFO;
+        fprintf(stderr,"issue getinfo\n");
+        NSPV_req(0,msg,1,NODE_NSPV,msg[0]>>1);
+    }
+    slen = (int32_t)strlen(coinaddr);
+    msg[len++] = NSPV_UTXOS;
+    msg[len++] = slen;
+    memcpy(&msg[len],coinaddr,slen), len += slen;
+    msg[len] = 0;
+    fprintf(stderr,"issue addrindex\n");
+    if ( NSPV_req(0,msg,len,NODE_ADDRINDEX,msg[0]>>1) != 0 )
+    {
+        for (i=0; i<10; i++)
         {
-            msg[0] = NSPV_INFO;
-            fprintf(stderr,"issue getinfo\n");
-            NSPV_req(0,msg,1,NODE_NSPV,msg[0]>>1);
-        }
-        slen = (int32_t)strlen(coinaddr);
-        msg[len++] = NSPV_UTXOS;
-        msg[len++] = slen;
-        memcpy(&msg[len],coinaddr,slen), len += slen;
-        msg[len] = 0;
-        fprintf(stderr,"issue addrindex\n");
-        if ( NSPV_req(0,msg,len,NODE_ADDRINDEX,msg[0]>>1) != 0 )
-        {
-            for (i=0; i<10; i++)
-            {
-                usleep(100000);
-                if ( NSPV_utxosresult.nodeheight >= NSPV_inforesult.height )
-                    return(NSPV_utxosresp_json(&NSPV_utxosresult));
-            }
+            usleep(100000);
+            if ( NSPV_utxosresult.nodeheight >= NSPV_inforesult.height )
+                return(NSPV_utxosresp_json(&NSPV_utxosresult));
         }
     }
     result.push_back(Pair("result","error"));
