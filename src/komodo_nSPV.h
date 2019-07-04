@@ -756,8 +756,9 @@ CNode *NSPV_req(CNode *pnode,uint8_t *msg,int32_t len,uint32_t mask,int32_t ind)
     if ( pnode != 0 )
     {
         std::vector<uint8_t> request;
-        request.resize(len);
+        request.resize(len+1);
         memcpy(&request[0],msg,len);
+        fprintf(stderr,"pushmessage len.%d\n",len);
         pnode->PushMessage("getnSPV",request);
         pnode->prevtimes[ind] = timestamp;
         return(pnode);
@@ -895,12 +896,19 @@ UniValue NSPV_login(char *wifstr)
 UniValue NSPV_addressutxos(char *coinaddr)
 {
     UniValue result(UniValue::VOBJ); uint8_t msg[64]; int32_t slen,len = 0;
+    if ( bitcoin_base58decode(msg,coinaddr) != 25 )
+    {
+        result.push_back(Pair("result","error"));
+        result.push_back(Pair("error","invalid address"));
+        return(result);
+    }
     if ( NSPV_utxosresult.nodeheight < NSPV_inforesult.height )
     {
         slen = (int32_t)strlen(coinaddr);
         msg[len++] = NSPV_UTXOS;
         msg[len++] = slen;
         memcpy(&msg[len],coinaddr,slen), len += slen;
+        fprintf(stderr,"issue addressutxos.(%s)\n",coinaddr);
         if ( NSPV_req(0,msg,len,NODE_ADDRINDEX,NSPV_UTXOS>>1) != 0 )
             usleep(250000);
     }
