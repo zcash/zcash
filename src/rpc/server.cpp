@@ -417,10 +417,13 @@ static const CRPCCommand vRPCCommands[] =
     { "FSM",   "FSMinfo",      &FSMinfo,    true },
 
     // fsm
-    { "nSPV",   "nspv_getinfo",     &nspv_getinfo, true },
-    { "nSPV",   "nspv_login",       &nspv_login, true },
-    { "nSPV",   "nspv_listunspent", &nspv_listunspent,  true },
-    { "nSPV",   "nspv_spentinfo",   &nspv_spentinfo,    true },
+    { "nSPV",   "nspv_getinfo",         &nspv_getinfo, true },
+    { "nSPV",   "nspv_login",           &nspv_login, true },
+    { "nSPV",   "nspv_listunspent",     &nspv_listunspent,  true },
+    { "nSPV",   "nspv_spentinfo",       &nspv_spentinfo,    true },
+    { "nSPV",   "nspv_notarizations",   &nspv_notarizations,    true },
+    { "nSPV",   "nspv_hdrsproof",       &nspv_hdrsproof,    true },
+    { "nSPV",   "nspv_txproof",         &nspv_txproof,    true },
 
     // rewards
     { "rewards",       "rewardslist",       &rewardslist,     true },

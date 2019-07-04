@@ -29,8 +29,8 @@
 #define NSPV_UTXOSRESP 0x03
 #define NSPV_NTZS 0x04
 #define NSPV_NTZSRESP 0x05
-#define NSPV_NTZPROOF 0x06
-#define NSPV_NTZPROOFRESP 0x07
+#define NSPV_NTZSPROOF 0x06
+#define NSPV_NTZSPROOFRESP 0x07
 #define NSPV_TXPROOF 0x08
 #define NSPV_TXPROOFRESP 0x09
 #define NSPV_SPENTINFO 0x0a
@@ -584,7 +584,7 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
         if ( request[0] == NSPV_INFO ) // info
         {
             fprintf(stderr,"check info %u vs %u, ind.%d\n",timestamp,pfrom->prevtimes[ind],ind);
-            if ( timestamp > pfrom->prevtimes[ind] )
+            if ( timestamp > pfrom->prevtimes[ind] + ASSETCHAINS_BLOCKTIME/2 )
             {
                 struct NSPV_inforesp I;
                 memset(&I,0,sizeof(I));
@@ -647,7 +647,7 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                 }
             }
         }
-        else if ( request[0] == NSPV_NTZPROOF )
+        else if ( request[0] == NSPV_NTZSPROOF )
         {
             if ( timestamp > pfrom->prevtimes[ind] )
             {
@@ -662,7 +662,7 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                         if ( (slen= NSPV_getntzsproofresp(&P,prevht,nextht)) > 0 )
                         {
                             response.resize(1 + slen);
-                            response[0] = NSPV_NTZPROOFRESP;
+                            response[0] = NSPV_NTZSPROOFRESP;
                             if ( NSPV_rwntzsproofresp(1,&response[1],&P) == slen )
                             {
                                 pfrom->PushMessage("nSPV",response);
@@ -729,14 +729,17 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
 CAmount AmountFromValue(const UniValue& value);
 int32_t bitcoin_base58decode(uint8_t *data,char *coinaddr);
 
-uint32_t NSPV_lastinfo,NSPV_lastutxos,NSPV_logintime;
+uint32_t NSPV_lastinfo,NSPV_logintime;
 char NSPV_wifstr[64];
 std::string NSPV_address;
-int32_t NSPV_numutxos,NSPV_numspends;
 struct NSPV_inforesp NSPV_inforesult;
 struct NSPV_utxosresp NSPV_utxosresult;
+struct NSPV_spentinfo NSPV_spentresult;
+struct NSPV_ntzsresp NSPV_ntzsresult;
+struct NSPV_ntzsproofresp NSPV_ntzsproofresult;
+struct NSPV_txproof NSPV_txproofresult;
+
 struct NSPV_utxo *NSPV_utxos;
-struct NSPV_spentinfo *NSPV_spends;
 
 CNode *NSPV_req(CNode *pnode,uint8_t *msg,int32_t len,uint64_t mask,int32_t ind)
 {
@@ -776,6 +779,16 @@ void komodo_NSPV_spentinfoclear()
         free(NSPV_spends);
     NSPV_spends = 0;
     NSPV_numspends = 0;
+}
+
+UniValue NSPV_txproof_json(struct NSPV_txproof *ptr)
+{
+    UniValue result(UniValue::VOBJ);
+    result.push_back(Pair("txid",ptr->txid.GetHex()));
+    result.push_back(Pair("height",(int64_t)ptr->height));
+    result.push_back(Pair("txlen",(int64_t)ptr->txlen));
+    result.push_back(Pair("txprooflen",(int64_t)ptr->txprooflen));
+    return(result);
 }
 
 UniValue NSPV_spentinfo_json(struct NSPV_spentinfo *ptr)
@@ -843,28 +856,43 @@ UniValue NSPV_utxosresp_json(struct NSPV_utxosresp *ptr)
     return(result);
 }
 
-UniValue NSPV_spentinfo(uint256 txid,int32_t vout)
+UniValue NSPV_ntzs_json(struct NSPV_ntzsresp *ptr)
 {
-    uint8_t msg[64]; struct NSPV_spentinfo I; int32_t i,len = 0;
-    for (i=0; i<NSPV_numspends; i++)
+    UniValue result(UniValue::VOBJ);
+    result.push_back(Pair("result","success"));
+    result.push_back(Pair("prev",NSPV_ntz_json(&ptr->prevntz)));
+    result.push_back(Pair("next",NSPV_ntz_json(&ptr->nextntz)));
+    return(result);
+}
+
+UniValue NSPV_headers_json(struct NSPV_equihdr *hdrs,int32_t numhdrs)
+{
+    UniValue array(UniValue::VARR); int32_t i;
+    for (i=0; i<numhdrs; i++)
     {
-        I = NSPV_spends[i];
-        if ( I.txid == txid && I.vout == vout )
-            return(NSPV_spentinfo_json(&I));
+        UniValue item(UniValue::VOBJ);
+        item.push_back(Pair("hashPrevBlock",hdrs[i].hashPrevBlock.GetHex()));
+        item.push_back(Pair("hashMerkleRoot",hdrs[i].hashMerkleRoot.GetHex()));
+        item.push_back(Pair("nTime",(int64_t)hdrs[i].nTime));
     }
-    msg[len++] = NSPV_SPENTINFO;
-    len += iguana_rwnum(1,&msg[len],sizeof(vout),&vout);
-    len += iguana_rwbignum(1,&msg[len],sizeof(txid),(uint8_t *)&txid);
-    if ( NSPV_req(0,msg,len,NODE_SPENTINDEX,NSPV_SPENTINFO>>1) != 0 )
-        usleep(250000);
-    for (i=0; i<NSPV_numspends; i++)
-    {
-        I = NSPV_spends[i];
-        if ( I.txid == txid && I.vout == vout )
-            return(NSPV_spentinfo_json(&I));
-    }
-    memset(&I,0,sizeof(I));
-    return(NSPV_spentinfo_json(&I));
+    return(array);
+}
+
+UniValue NSPV_ntzsproof_json(struct NSPV_ntzsproofresp *ptr)
+{
+    UniValue result(UniValue::VOBJ);
+    result.push_back(Pair("result","success"));
+    result.push_back(Pair("prevht",(int64_t)ptr->common.prevht));
+    result.push_back(Pair("nextht",(int64_t)ptr->common.nextht));
+    result.push_back(Pair("prevtxid",ptr->prevtxid.GetHex()));
+    result.push_back(Pair("prevtxidht",(int64_t)ptr->prevtxidht));
+    result.push_back(Pair("prevlen",(int64_t)ptr->prevlen));
+    result.push_back(Pair("nexttxid",ptr->nexttxid.GetHex()));
+    result.push_back(Pair("nexttxidht",(int64_t)ptr->nexttxidht));
+    result.push_back(Pair("nextlen",(int64_t)ptr->prevlen));
+    result.push_back(Pair("numhdrs",(int64_t)ptr->common.numhdrs));
+    result.push_back(Pair("headers",NSPV_headers_json(ptr->common.hdrs,ptr->common.numhdrs)));
+    return(result);
 }
 
 UniValue NSPV_login(char *wifstr)
@@ -913,7 +941,7 @@ UniValue NSPV_addressutxos(char *coinaddr)
         if ( NSPV_inforesult.height == 0 )
         {
             msg[0] = NSPV_INFO;
-            NSPV_req(0,msg,1,NODE_NSPV,NSPV_INFO>>1);
+            NSPV_req(0,msg,1,NODE_NSPV,msg[0]>>1);
         }
         slen = (int32_t)strlen(coinaddr);
         msg[len++] = NSPV_UTXOS;
@@ -921,7 +949,7 @@ UniValue NSPV_addressutxos(char *coinaddr)
         memcpy(&msg[len],coinaddr,slen), len += slen;
         msg[len] = 0;
         fprintf(stderr,"issue addressutxos.(%s) (%s)\n",coinaddr,(char *)&msg[2]);
-        if ( NSPV_req(0,msg,len,NODE_ADDRINDEX,NSPV_UTXOS>>1) != 0 )
+        if ( NSPV_req(0,msg,len,NODE_ADDRINDEX,msg[0]>>1) != 0 )
             usleep(250000);
     }
     if ( NSPV_utxosresult.nodeheight >= NSPV_inforesult.height )
@@ -931,6 +959,71 @@ UniValue NSPV_addressutxos(char *coinaddr)
     result.push_back(Pair("result","error"));
     result.push_back(Pair("error","no utxos result"));
     return(result);
+}
+
+UniValue NSPV_notarizations(int32_t height)
+{
+    uint8_t msg[64]; int32_t i,len = 0; struct NSPV_ntzsresp N;
+    if ( NSPV_ntzsresult.prevntz.height <= height && NSPV_ntzsresult.nextntz.height >= height )
+        return(NSPV_ntzs_json(&NSPV_ntzsresult));
+    msg[len++] = NSPV_NTZS;
+    len += iguana_rwnum(1,&msg[len],sizeof(height),&height);
+    if ( NSPV_req(0,msg,len,NODE_NSPV,msg[0]>>1) != 0 )
+        usleep(250000);
+    if ( NSPV_ntzsresult.prevntz.height <= height && NSPV_ntzsresult.nextntz.height >= height )
+        return(NSPV_ntzs_json(&NSPV_ntzsresult));
+    memset(&N,0,sizeof(N));
+    return(NSPV_ntzs_json(&NSPV_ntzsresult));
+}
+
+UniValue NSPV_hdrsproof(int32_t prevheight,int32_t nextheight)
+{
+    uint8_t msg[64]; int32_t i,len = 0; struct NSPV_ntzsproofresp H;
+    result.push_back(Pair("prevht",(int64_t)ptr->common.prevht));
+    result.push_back(Pair("nextht",(int64_t)ptr->common.nextht));
+    if ( NSPV_ntzsproofresult.common.prevht == prevheight && NSPV_ntzsproofresult.common.nextht >= nextheight )
+        return(NSPV_ntzsproof_json(&NSPV_ntzsproofresult));
+    msg[len++] = NSPV_NTZSPROOF;
+    len += iguana_rwnum(1,&msg[len],sizeof(prevheight),&prevheight);
+    len += iguana_rwnum(1,&msg[len],sizeof(nextheight),&nextheight);
+    if ( NSPV_req(0,msg,len,NODE_NSPV,msg[0]>>1) != 0 )
+        usleep(250000);
+    if ( NSPV_ntzsproofresult.common.prevht == prevheight && NSPV_ntzsproofresult.common.nextht >= nextheight )
+        return(NSPV_ntzsproof_json(&NSPV_ntzsproofresult));
+    memset(&H,0,sizeof(H));
+    return(NSPV_ntzsproof_json(&NSPV_ntzsresult));
+}
+
+UniValue NSPV_txproof(uint256 txid,int32_t height)
+{
+    uint8_t msg[64]; int32_t i,len = 0; struct NSPV_txproof P;
+    if ( NSPV_txproofresult.txid == txid && NSPV_txproofresult.height == height )
+        return(NSPV_txproof_json(&NSPV_txproofresult));
+    msg[len++] = NSPV_TXPROOF;
+    len += iguana_rwnum(1,&msg[len],sizeof(height),&height);
+    len += iguana_rwbignum(1,&msg[len],sizeof(txid),(uint8_t *)&txid);
+    if ( NSPV_req(0,msg,len,NODE_NSPV,msg[0]>>1) != 0 )
+        usleep(250000);
+    if ( NSPV_txproofresult.txid == txid && NSPV_txproofresult.height == height )
+        return(NSPV_txproof_json(&NSPV_txproofresult));
+    memset(&P,0,sizeof(P));
+    return(NSPV_txproof_json(&I));
+}
+
+UniValue NSPV_spentinfo(uint256 txid,int32_t vout)
+{
+    uint8_t msg[64]; int32_t i,len = 0; struct NSPV_spentinfo I;
+    if ( NSPV_spentresult.txid == txid && NSPV_spentresult.vout == vout )
+        return(NSPV_spentinfo_json(&NSPV_spentresult));
+    msg[len++] = NSPV_SPENTINFO;
+    len += iguana_rwnum(1,&msg[len],sizeof(vout),&vout);
+    len += iguana_rwbignum(1,&msg[len],sizeof(txid),(uint8_t *)&txid);
+    if ( NSPV_req(0,msg,len,NODE_SPENTINDEX,msg[0]>>1) != 0 )
+        usleep(250000);
+    if ( NSPV_spentresult.txid == txid && NSPV_spentresult.vout == vout )
+        return(NSPV_spentinfo_json(&NSPV_spentresult));
+    memset(&I,0,sizeof(I));
+    return(NSPV_spentinfo_json(&I));
 }
 
 void komodo_nSPVresp(CNode *pfrom,std::vector<uint8_t> response) // received a response
@@ -951,16 +1044,24 @@ void komodo_nSPVresp(CNode *pfrom,std::vector<uint8_t> response) // received a r
             fprintf(stderr,"got utxos response %u size.%d\n",timestamp,(int32_t)response.size()); // update utxos list
             break;
         case NSPV_NTZSRESP:
+            NSPV_ntzsresp_purge(&NSPV_ntzsresult);
+            NSPV_rwntzsresp(0,&response[1],&NSPV_ntzsresult);
             fprintf(stderr,"got ntzs response %u size.%d\n",timestamp,(int32_t)response.size()); // update utxos[i]
             break;
-        case NSPV_NTZPROOFRESP:
+        case NSPV_NTZSPROOFRESP:
+            NSPV_ntzsproofresp_purge(&NSPV_ntzsproofresult);
+            NSPV_rwntzsproofresp(0,&response[1],&NSPV_ntzsproofresult);
             fprintf(stderr,"got ntzproof response %u size.%d\n",timestamp,(int32_t)response.size()); // update utxos[i]
             break;
         case NSPV_TXPROOFRESP:
+            NSPV_txproof_purge(&NSPV_txproofresult);
+            NSPV_rwtxproof(0,&response[1],&NSPV_txproofresult);
             fprintf(stderr,"got txproof response %u size.%d\n",timestamp,(int32_t)response.size()); // update utxos[i]
             break;
         case NSPV_SPENTINFORESP:
                 
+            NSPV_spentinfo_purge(&NSPV_spentresult);
+            NSPV_rwspentinfo(0,&response[1],&NSPV_spentresult);
             fprintf(stderr,"got spentinfo response %u size.%d\n",timestamp,(int32_t)response.size()); // update utxos[i]
             break;
         default: fprintf(stderr,"unexpected response %02x size.%d at %u\n",response[0],(int32_t)response.size(),timestamp);
