@@ -76,10 +76,14 @@ int32_t iguana_rwequihdrvec(int32_t rwflag,uint8_t *serialized,uint16_t *vecsize
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(*vecsizep),vecsizep);
     if ( (vsize= *vecsizep) != 0 )
     {
+        fprintf(stderr,"vsize.%d ptrp.%p alloc %ld\n",*ptrp,sizeof(struct NSPV_equihdr)*vsize);
         if ( *ptrp == 0 )
-            *ptrp = (struct NSPV_equihdr *)calloc(sizeof(**ptrp),vsize); // relies on uint16_t being "small" to prevent mem exhaustion
+            *ptrp = (struct NSPV_equihdr *)calloc(sizeof(struct NSPV_equihdr),vsize); // relies on uint16_t being "small" to prevent mem exhaustion
         for (i=0; i<vsize; i++)
+        {
+            fprintf(stderr,"i.%d of %d: len.%d\n",i,vsize,len);
             len += NSPV_rwequihdr(rwflag,&serialized[len],&(*ptrp)[i]);
+        }
     }
     return(len);
 }
@@ -297,8 +301,10 @@ int32_t NSPV_rwntzsproofresp(int32_t rwflag,uint8_t *serialized,struct NSPV_ntzs
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->pad32),&ptr->pad32);
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->prevtxidht),&ptr->prevtxidht);
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->nexttxidht),&ptr->nexttxidht);
+    fprintf(stderr,"rwvecgtors lens %d %d\n",ptr->prevlen,ptr->nextlen);
     len += iguana_rwuint8vec(rwflag,&serialized[len],&ptr->prevlen,&ptr->prevntz);
     len += iguana_rwuint8vec(rwflag,&serialized[len],&ptr->nextlen,&ptr->nextntz);
+    fprintf(stderr,"rwntzsproof len %d\n",len);
     return(len);
 }
 
@@ -544,7 +550,7 @@ int32_t NSPV_getntzsproofresp(struct NSPV_ntzsproofresp *ptr,int32_t prevht,int3
     ptr->nexttxidht = nextht;
     ptr->common.numhdrs = (nextht - prevht + 1);
     ptr->common.hdrs = (struct NSPV_equihdr *)calloc(ptr->common.numhdrs,sizeof(*ptr->common.hdrs));
-    fprintf(stderr,"allocate numhdrs.%d\n",ptr->common.numhdrs);
+    fprintf(stderr,"prev.%d next.%d allocate numhdrs.%d\n",prevht,nextht,ptr->common.numhdrs);
     for (i=0; i<ptr->common.numhdrs; i++)
     {
         fprintf(stderr,"%d ht.%d\n",i,prevht+i);
@@ -670,13 +676,16 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                         memset(&P,0,sizeof(P));
                         if ( (slen= NSPV_getntzsproofresp(&P,prevht,nextht)) > 0 )
                         {
+                            fprintf(stderr,"ntzsproof slen.%d\n",slen);
                             response.resize(1 + slen);
                             response[0] = NSPV_NTZSPROOFRESP;
                             if ( NSPV_rwntzsproofresp(1,&response[1],&P) == slen )
                             {
+                                fprintf(stderr,"respond with %d\n",slen);
                                 pfrom->PushMessage("nSPV",response);
                                 pfrom->prevtimes[ind] = timestamp;
                             }
+                            fprintf(stderr,"purge.%d\n",P.common.numhdrs);
                             NSPV_ntzsproofresp_purge(&P);
                         }
                     }
