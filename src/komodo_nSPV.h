@@ -598,7 +598,7 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
             ind = (int32_t)(sizeof(pfrom->prevtimes)/sizeof(*pfrom->prevtimes)) - 1;
         if ( request[0] == NSPV_INFO ) // info
         {
-            fprintf(stderr,"check info %u vs %u, ind.%d\n",timestamp,pfrom->prevtimes[ind],ind);
+            //fprintf(stderr,"check info %u vs %u, ind.%d\n",timestamp,pfrom->prevtimes[ind],ind);
             if ( timestamp > pfrom->prevtimes[ind] )
             {
                 struct NSPV_inforesp I;
@@ -618,7 +618,7 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
         }
         else if ( request[0] == NSPV_UTXOS )
         {
-            fprintf(stderr,"utxos: %u > %u, ind.%d, len.%d\n",timestamp,pfrom->prevtimes[ind],ind,len);
+            //fprintf(stderr,"utxos: %u > %u, ind.%d, len.%d\n",timestamp,pfrom->prevtimes[ind],ind,len);
             if ( timestamp > pfrom->prevtimes[ind] )
             {
                 struct NSPV_utxosresp U; char coinaddr[64];
@@ -958,7 +958,6 @@ UniValue NSPV_addressutxos(char *coinaddr)
     msg[len++] = slen;
     memcpy(&msg[len],coinaddr,slen), len += slen;
     msg[len] = 0;
-    fprintf(stderr,"issue addrindex\n");
     if ( NSPV_req(0,msg,len,NODE_ADDRINDEX,msg[0]>>1) != 0 )
     {
         for (i=0; i<10; i++)
@@ -1022,17 +1021,14 @@ UniValue NSPV_txproof(uint256 txid,int32_t height)
     msg[len++] = NSPV_TXPROOF;
     len += iguana_rwnum(1,&msg[len],sizeof(height),&height);
     len += iguana_rwbignum(1,&msg[len],sizeof(txid),(uint8_t *)&txid);
-    fprintf(stderr,"req txproof %s at height.%d\n",txid.GetHex().c_str(),height);
+    //fprintf(stderr,"req txproof %s at height.%d\n",txid.GetHex().c_str(),height);
     if ( NSPV_req(0,msg,len,NODE_NSPV,msg[0]>>1) != 0 )
     {
         for (i=0; i<10; i++)
         {
             usleep(100000);
             if ( NSPV_txproofresult.txid == txid && NSPV_txproofresult.height == height )
-            {
-                fprintf(stderr,"got txproof\n");
                 return(NSPV_txproof_json(&NSPV_txproofresult));
-            }
         }
     }
     memset(&P,0,sizeof(P));
