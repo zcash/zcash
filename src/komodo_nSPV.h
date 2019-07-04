@@ -736,7 +736,7 @@ struct NSPV_utxosresp NSPV_utxosresult;
 struct NSPV_utxo *NSPV_utxos;
 struct NSPV_spentinfo *NSPV_spends;
 
-CNode *NSPV_req(CNode *pnode,uint8_t *msg,int32_t len,uint32_t mask,int32_t ind)
+CNode *NSPV_req(CNode *pnode,uint8_t *msg,int32_t len,uint64_t mask,int32_t ind)
 {
     int32_t flag = 0; uint32_t timestamp = (uint32_t)time(NULL);
     if ( pnode == 0 )
@@ -751,6 +751,7 @@ CNode *NSPV_req(CNode *pnode,uint8_t *msg,int32_t len,uint32_t mask,int32_t ind)
                 flag = 1;
                 break;
             }
+            else fprintf(stderr,"nServices %llx vs mask %llx, t%u vs %u, ind.%d\n",(long long)pnode->nServices,(long long)mask,timestamp,pnode->prevtimes[ind],ind);
         }
     } else flag = 1;
     if ( pnode != 0 )
@@ -913,7 +914,8 @@ UniValue NSPV_addressutxos(char *coinaddr)
         msg[len++] = NSPV_UTXOS;
         msg[len++] = slen;
         memcpy(&msg[len],coinaddr,slen), len += slen;
-        fprintf(stderr,"issue addressutxos.(%s)\n",coinaddr);
+        msg[len] = 0;
+        fprintf(stderr,"issue addressutxos.(%s) (%s)\n",coinaddr,(char *)&msg[2]);
         if ( NSPV_req(0,msg,len,NODE_ADDRINDEX,NSPV_UTXOS>>1) != 0 )
             usleep(250000);
     }
