@@ -724,6 +724,8 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
 }
 
 // nSPV client
+extern CAmount AmountFromValue(const UniValue& value);
+
 uint32_t NSPV_lastinfo,NSPV_lastutxos,NSPV_logintime;
 char NSPV_wifstr[64];
 std::string NSPV_address;
