@@ -773,14 +773,6 @@ CNode *NSPV_req(CNode *pnode,uint8_t *msg,int32_t len,uint64_t mask,int32_t ind)
     return(0);
 }
 
-void komodo_NSPV_spentinfoclear()
-{
-    if ( NSPV_spends != 0 )
-        free(NSPV_spends);
-    NSPV_spends = 0;
-    NSPV_numspends = 0;
-}
-
 UniValue NSPV_txproof_json(struct NSPV_txproof *ptr)
 {
     UniValue result(UniValue::VOBJ);
@@ -979,8 +971,6 @@ UniValue NSPV_notarizations(int32_t height)
 UniValue NSPV_hdrsproof(int32_t prevheight,int32_t nextheight)
 {
     uint8_t msg[64]; int32_t i,len = 0; struct NSPV_ntzsproofresp H;
-    result.push_back(Pair("prevht",(int64_t)ptr->common.prevht));
-    result.push_back(Pair("nextht",(int64_t)ptr->common.nextht));
     if ( NSPV_ntzsproofresult.common.prevht == prevheight && NSPV_ntzsproofresult.common.nextht >= nextheight )
         return(NSPV_ntzsproof_json(&NSPV_ntzsproofresult));
     msg[len++] = NSPV_NTZSPROOF;
