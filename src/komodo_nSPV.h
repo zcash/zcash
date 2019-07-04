@@ -681,6 +681,7 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                             fprintf(stderr,"ntzsproof slen.%d\n",slen);
                             response.resize(1 + slen);
                             response[0] = NSPV_NTZSPROOFRESP;
+                            P.common.numhdrs = (nextht - prevht + 1);
                             if ( NSPV_rwntzsproofresp(1,&response[1],&P) == slen )
                             {
                                 fprintf(stderr,"respond with %d\n",slen);
