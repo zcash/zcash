@@ -227,7 +227,6 @@ int32_t NSPV_rwtxproof(int32_t rwflag,uint8_t *serialized,struct NSPV_txproof *p
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->height),&ptr->height);
     len += iguana_rwuint8vec(rwflag,&serialized[len],&ptr->txlen,&ptr->tx);
     len += iguana_rwuint8vec(rwflag,&serialized[len],&ptr->txprooflen,&ptr->txproof);
-    fprintf(stderr,"rwtxproof len.%d\n",len);
     return(len);
 }
 
@@ -391,6 +390,7 @@ int32_t NSPV_getaddressutxos(struct NSPV_utxosresp *ptr,char *coinaddr) // check
     SetCCunspents(unspentOutputs,coinaddr,false);
     maxlen = MAX_BLOCK_SIZE(tipheight) - 512;
     maxlen /= sizeof(*ptr->utxos);
+    fprintf(stderr,"getaddressutxos %s\n",coinaddr);
     if ( (ptr->numutxos= (int32_t)unspentOutputs.size()) > 0 && ptr->numutxos < maxlen )
     {
         tipheight = chainActive.LastTip()->GetHeight();
@@ -513,7 +513,7 @@ int32_t NSPV_gettxproof(struct NSPV_txproof *ptr,uint256 txid,int32_t height)
                 ptr->txproof = (uint8_t *)calloc(1,ptr->txprooflen);
                 memcpy(ptr->txproof,&proof[0],ptr->txprooflen);
             }
-            fprintf(stderr,"gettxproof slen.%d\n",(int32_t)(sizeof(*ptr) - sizeof(ptr->tx) - sizeof(ptr->txproof) + ptr->txlen + ptr->txprooflen));
+            //fprintf(stderr,"gettxproof slen.%d\n",(int32_t)(sizeof(*ptr) - sizeof(ptr->tx) - sizeof(ptr->txproof) + ptr->txlen + ptr->txprooflen));
             return(sizeof(*ptr) - sizeof(ptr->tx) - sizeof(ptr->txproof) + ptr->txlen + ptr->txprooflen);
         }
     }
@@ -628,7 +628,7 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                     memset(&U,0,sizeof(U));
                     if ( (slen= NSPV_getaddressutxos(&U,coinaddr)) > 0 )
                     {
-                        //printf("getaddressutxos.(%s) slen.%d\n",coinaddr,slen);
+                        printf("getaddressutxos.(%s) slen.%d\n",coinaddr,slen);
                         response.resize(1 + slen);
                         response[0] = NSPV_UTXOSRESP;
                         if ( NSPV_rwutxosresp(1,&response[1],&U) == slen )
@@ -701,13 +701,12 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                 {
                     iguana_rwnum(0,&request[1],sizeof(height),&height);
                     iguana_rwbignum(0,&request[1+sizeof(height)],sizeof(txid),(uint8_t *)&txid);
-                    fprintf(stderr,"got txid ht.%d\n",txid.GetHex().c_str(),height);
+                    //fprintf(stderr,"got txid ht.%d\n",txid.GetHex().c_str(),height);
                     memset(&P,0,sizeof(P));
                     if ( (slen= NSPV_gettxproof(&P,txid,height)) > 0 )
                     {
                         response.resize(1 + slen);
                         response[0] = NSPV_TXPROOFRESP;
-                        fprintf(stderr,"slen.%d\n",slen);
                         if ( NSPV_rwtxproof(1,&response[1],&P) == slen )
                         {
                             pfrom->PushMessage("nSPV",response);
