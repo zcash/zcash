@@ -583,7 +583,8 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
             ind = (int32_t)(sizeof(pfrom->prevtimes)/sizeof(*pfrom->prevtimes)) - 1;
         if ( request[0] == NSPV_INFO ) // info
         {
-            if ( len == 1 && timestamp > pfrom->prevtimes[ind] + ASSETCHAINS_BLOCKTIME/2 )
+            fprintf(stderr,"check info %u vs %u, ind.%d\n",timestamp,pfrom->prevtimes[ind],ind);
+            if ( timestamp > pfrom->prevtimes[ind] )
             {
                 struct NSPV_inforesp I;
                 memset(&I,0,sizeof(I));
@@ -802,7 +803,7 @@ UniValue NSPV_ntz_json(struct NSPV_ntz *ptr)
     return(result);
 }
 
-UniValue NSPV_getinfo()
+UniValue NSPV_getinfo_json()
 {
     UniValue result(UniValue::VOBJ);
     result.push_back(Pair("result","success"));
@@ -940,6 +941,7 @@ void komodo_nSPVresp(CNode *pfrom,std::vector<uint8_t> response) // received a r
         switch ( response[0] )
         {
         case NSPV_INFORESP:
+            NSPV_inforesp_purge(&NSPV_inforesult);
             NSPV_rwinforesp(0,&response[1],&NSPV_inforesult);
             fprintf(stderr,"got info response %u size.%d height.%d\n",timestamp,(int32_t)response.size(),NSPV_inforesult.height); // update current height and ntrz status
             break;
@@ -958,6 +960,7 @@ void komodo_nSPVresp(CNode *pfrom,std::vector<uint8_t> response) // received a r
             fprintf(stderr,"got txproof response %u size.%d\n",timestamp,(int32_t)response.size()); // update utxos[i]
             break;
         case NSPV_SPENTINFORESP:
+                
             fprintf(stderr,"got spentinfo response %u size.%d\n",timestamp,(int32_t)response.size()); // update utxos[i]
             break;
         default: fprintf(stderr,"unexpected response %02x size.%d at %u\n",response[0],(int32_t)response.size(),timestamp);
