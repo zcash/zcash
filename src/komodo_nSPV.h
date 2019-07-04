@@ -673,28 +673,19 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                 {
                     iguana_rwnum(0,&request[1],sizeof(prevht),&prevht);
                     iguana_rwnum(0,&request[1+sizeof(prevht)],sizeof(nextht),&nextht);
-                    {
-                        int32_t z;
-                        for (z=0; z<9; z++)
-                            fprintf(stderr,"%02x",request[z]);
-                        fprintf(stderr," -> prevht.%d nextht.%d\n",prevht,nextht);
-                    }
                     if ( prevht != 0 && nextht != 0 && nextht >= prevht )
                     {
                         memset(&P,0,sizeof(P));
                         if ( (slen= NSPV_getntzsproofresp(&P,prevht,nextht)) > 0 )
                         {
-                            fprintf(stderr,"ntzsproof slen.%d\n",slen);
                             response.resize(1 + slen);
                             response[0] = NSPV_NTZSPROOFRESP;
                             P.common.numhdrs = (nextht - prevht + 1);
                             if ( NSPV_rwntzsproofresp(1,&response[1],&P) == slen )
                             {
-                                fprintf(stderr,"respond with %d\n",slen);
                                 pfrom->PushMessage("nSPV",response);
                                 pfrom->prevtimes[ind] = timestamp;
                             }
-                            fprintf(stderr,"purge.%d\n",P.common.numhdrs);
                             NSPV_ntzsproofresp_purge(&P);
                         }
                     }
@@ -1011,22 +1002,16 @@ UniValue NSPV_hdrsproof(int32_t prevheight,int32_t nextheight)
     msg[len++] = NSPV_NTZSPROOF;
     len += iguana_rwnum(1,&msg[len],sizeof(prevheight),&prevheight);
     len += iguana_rwnum(1,&msg[len],sizeof(nextheight),&nextheight);
-    {
-        int32_t z,prevht,nextht;
-        for (z=0; z<9; z++)
-            fprintf(stderr,"%02x",msg[z]);
-        iguana_rwnum(0,&msg[1],sizeof(prevht),&prevht);
-        iguana_rwnum(0,&msg[5],sizeof(nextht),&nextht);
-        fprintf(stderr," -> prevht.%d nextht.%d\n",prevht,nextht);
-    }
-
     if ( NSPV_req(0,msg,len,NODE_NSPV,msg[0]>>1) != 0 )
     {
         for (i=0; i<10; i++)
         {
             usleep(100000);
             if ( NSPV_ntzsproofresult.common.prevht == prevheight && NSPV_ntzsproofresult.common.nextht >= nextheight )
+            {
+                fprintf(stderr,"got ntzsproof\n");
                 return(NSPV_ntzsproof_json(&NSPV_ntzsproofresult));
+            }
         }
     }
     memset(&H,0,sizeof(H));
@@ -1100,7 +1085,7 @@ void komodo_nSPVresp(CNode *pfrom,std::vector<uint8_t> response) // received a r
         case NSPV_NTZSPROOFRESP:
             NSPV_ntzsproofresp_purge(&NSPV_ntzsproofresult);
             NSPV_rwntzsproofresp(0,&response[1],&NSPV_ntzsproofresult);
-            fprintf(stderr,"got ntzproof response %u size.%d\n",timestamp,(int32_t)response.size()); // update utxos[i]
+            fprintf(stderr,"got ntzproof response %u size.%d prev.%d next.%d\n",timestamp,(int32_t)response.size(),NSPV_ntzsproofresult.common.prevht,NSPV_ntzsproofresult.common.nextht); // update utxos[i]
             break;
         case NSPV_TXPROOFRESP:
             NSPV_txproof_purge(&NSPV_txproofresult);
