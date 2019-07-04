@@ -942,11 +942,15 @@ UniValue NSPV_addressutxos(char *coinaddr)
         msg[len] = 0;
         fprintf(stderr,"issue addressutxos.(%s) (%s)\n",coinaddr,(char *)&msg[2]);
         if ( NSPV_req(0,msg,len,NODE_ADDRINDEX,msg[0]>>1) != 0 )
-            usleep(250000);
-    }
-    if ( NSPV_utxosresult.nodeheight >= NSPV_inforesult.height )
-    {
-        return(NSPV_utxosresp_json(&NSPV_utxosresult));
+        {
+            for (i=0; i<10; i++)
+            {
+                usleep(100000);
+                if ( NSPV_inforesult.height != 0
+                    && NSPV_utxosresult.nodeheight >= NSPV_inforesult.height )
+                    return(NSPV_utxosresp_json(&NSPV_utxosresult));
+            }
+        }
     }
     result.push_back(Pair("result","error"));
     result.push_back(Pair("error","no utxos result"));
@@ -961,9 +965,14 @@ UniValue NSPV_notarizations(int32_t height)
     msg[len++] = NSPV_NTZS;
     len += iguana_rwnum(1,&msg[len],sizeof(height),&height);
     if ( NSPV_req(0,msg,len,NODE_NSPV,msg[0]>>1) != 0 )
-        usleep(250000);
-    if ( NSPV_ntzsresult.prevntz.height <= height && NSPV_ntzsresult.nextntz.height >= height )
-        return(NSPV_ntzs_json(&NSPV_ntzsresult));
+    {
+        for (i=0; i<10; i++)
+        {
+            usleep(100000);
+            if ( NSPV_ntzsresult.prevntz.height <= height && NSPV_ntzsresult.nextntz.height >= height )
+                return(NSPV_ntzs_json(&NSPV_ntzsresult));
+        }
+    }
     memset(&N,0,sizeof(N));
     return(NSPV_ntzs_json(&N));
 }
@@ -977,9 +986,14 @@ UniValue NSPV_hdrsproof(int32_t prevheight,int32_t nextheight)
     len += iguana_rwnum(1,&msg[len],sizeof(prevheight),&prevheight);
     len += iguana_rwnum(1,&msg[len],sizeof(nextheight),&nextheight);
     if ( NSPV_req(0,msg,len,NODE_NSPV,msg[0]>>1) != 0 )
-        usleep(250000);
-    if ( NSPV_ntzsproofresult.common.prevht == prevheight && NSPV_ntzsproofresult.common.nextht >= nextheight )
-        return(NSPV_ntzsproof_json(&NSPV_ntzsproofresult));
+    {
+        for (i=0; i<10; i++)
+        {
+            usleep(100000);
+            if ( NSPV_ntzsproofresult.common.prevht == prevheight && NSPV_ntzsproofresult.common.nextht >= nextheight )
+                return(NSPV_ntzsproof_json(&NSPV_ntzsproofresult));
+        }
+    }
     memset(&H,0,sizeof(H));
     return(NSPV_ntzsproof_json(&H));
 }
@@ -993,9 +1007,14 @@ UniValue NSPV_txproof(uint256 txid,int32_t height)
     len += iguana_rwnum(1,&msg[len],sizeof(height),&height);
     len += iguana_rwbignum(1,&msg[len],sizeof(txid),(uint8_t *)&txid);
     if ( NSPV_req(0,msg,len,NODE_NSPV,msg[0]>>1) != 0 )
-        usleep(250000);
-    if ( NSPV_txproofresult.txid == txid && NSPV_txproofresult.height == height )
-        return(NSPV_txproof_json(&NSPV_txproofresult));
+    {
+        for (i=0; i<10; i++)
+        {
+            usleep(100000);
+            if ( NSPV_txproofresult.txid == txid && NSPV_txproofresult.height == height )
+                return(NSPV_txproof_json(&NSPV_txproofresult));
+        }
+    }
     memset(&P,0,sizeof(P));
     return(NSPV_txproof_json(&P));
 }
@@ -1009,9 +1028,14 @@ UniValue NSPV_spentinfo(uint256 txid,int32_t vout)
     len += iguana_rwnum(1,&msg[len],sizeof(vout),&vout);
     len += iguana_rwbignum(1,&msg[len],sizeof(txid),(uint8_t *)&txid);
     if ( NSPV_req(0,msg,len,NODE_SPENTINDEX,msg[0]>>1) != 0 )
-        usleep(250000);
-    if ( NSPV_spentresult.txid == txid && NSPV_spentresult.vout == vout )
-        return(NSPV_spentinfo_json(&NSPV_spentresult));
+    {
+        for (i=0; i<10; i++)
+        {
+            usleep(100000);
+            if ( NSPV_spentresult.txid == txid && NSPV_spentresult.vout == vout )
+                return(NSPV_spentinfo_json(&NSPV_spentresult));
+        }
+    }
     memset(&I,0,sizeof(I));
     return(NSPV_spentinfo_json(&I));
 }

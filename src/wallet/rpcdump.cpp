@@ -1031,7 +1031,7 @@ UniValue nspv_hdrsproof(const UniValue& params, bool fHelp)
         throw runtime_error("nspv_proof prevheight nextheight\n");
     prevheight = atoi((char *)params[0].get_str().c_str());
     nextheight = atoi((char *)params[0].get_str().c_str());
-    return(NSPV_proof(prevheight,nextheight));
+    return(NSPV_hdrsproof(prevheight,nextheight));
 }
 
 UniValue nspv_txproof(const UniValue& params, bool fHelp)
@@ -1041,5 +1041,5 @@ UniValue nspv_txproof(const UniValue& params, bool fHelp)
         throw runtime_error("nspv_txproof txid height\n");
     txid = Parseuint256((char *)params[0].get_str().c_str());
     height = atoi((char *)params[1].get_str().c_str());
-    return(NSPV_txproof(txid,vout));
+    return(NSPV_txproof(txid,height));
 }
