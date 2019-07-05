@@ -806,21 +806,27 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
 // nSPV client. VERY simplistic "single threaded" networking model. for production GUI best to multithread, etc.
 #define NSPV_POLLITERS 15
 #define NSPV_POLLMICROS 100000
+#define NSPV_MAXVINS 64
 
 CAmount AmountFromValue(const UniValue& value);
 int32_t bitcoin_base58decode(uint8_t *data,char *coinaddr);
 
 uint32_t NSPV_lastinfo,NSPV_logintime;
-char NSPV_wifstr[64];
+char NSPV_wifstr[64],NSPV_pubkeystr[67];
 std::string NSPV_address;
+CKey NSPV_key;
 struct NSPV_inforesp NSPV_inforesult;
 struct NSPV_utxosresp NSPV_utxosresult;
 struct NSPV_spentinfo NSPV_spentresult;
 struct NSPV_ntzsresp NSPV_ntzsresult;
 struct NSPV_ntzsproofresp NSPV_ntzsproofresult;
 struct NSPV_txproof NSPV_txproofresult;
-
 struct NSPV_utxo *NSPV_utxos;
+
+CKey *NSPV_defaultkey()
+{
+    return(&NSPV_key);
+}
 
 CNode *NSPV_req(CNode *pnode,uint8_t *msg,int32_t len,uint64_t mask,int32_t ind)
 {
@@ -990,13 +996,13 @@ UniValue NSPV_login(char *wifstr)
     NSPV_logintime = (uint32_t)time(NULL);
     result.push_back(Pair("result","success"));
     result.push_back(Pair("status","wif will expire in 60 seconds"));
-    CKey key = DecodeSecret(wifstr);
-    CPubKey pubkey = key.GetPubKey();
-    //assert(key.VerifyPubKey(pubkey));
+    NSPV_key = DecodeSecret(wifstr);
+    CPubKey pubkey = NSPV_key.GetPubKey();
     CKeyID vchAddress = pubkey.GetID();
     NSPV_address = EncodeDestination(vchAddress);
     result.push_back(Pair("address",NSPV_address));
     result.push_back(Pair("pubkey",HexStr(pubkey)));
+    strcpy(NSPV_pubkeystr,HexStr(pubkey).c_str());
     result.push_back(Pair("wifprefix",(int64_t)data[0]));
     result.push_back(Pair("compressed",(int64_t)(data[len-5] == 1)));
     memset(data,0,sizeof(data));
@@ -1187,6 +1193,199 @@ void komodo_nSPVresp(CNode *pfrom,std::vector<uint8_t> response) // received a r
     }
 }
 
+int32_t NSPV_vinselect(int32_t *aboveip,int64_t *abovep,int32_t *belowip,int64_t *belowp,struct NSPV_utxoresp utxos[],int32_t numunspents,int64_t value)
+{
+    int32_t i,abovei,belowi; int64_t above,below,gap,atx_value;
+    abovei = belowi = -1;
+    for (above=below=i=0; i<numunspents; i++)
+    {
+        if ( (atx_value= utxos[i].nValue) <= 0 )
+            continue;
+        if ( atx_value == value )
+        {
+            *aboveip = *belowip = i;
+            *abovep = *belowp = 0;
+            return(i);
+        }
+        else if ( atx_value > value )
+        {
+            gap = (atx_value - value);
+            if ( above == 0 || gap < above )
+            {
+                above = gap;
+                abovei = i;
+            }
+        }
+        else
+        {
+            gap = (value - atx_value);
+            if ( below == 0 || gap < below )
+            {
+                below = gap;
+                belowi = i;
+            }
+        }
+        //printf("value %.8f gap %.8f abovei.%d %.8f belowi.%d %.8f\n",dstr(value),dstr(gap),abovei,dstr(above),belowi,dstr(below));
+    }
+    *aboveip = abovei;
+    *abovep = above;
+    *belowip = belowi;
+    *belowp = below;
+    //printf("above.%d below.%d\n",abovei,belowi);
+    if ( abovei >= 0 && belowi >= 0 )
+    {
+        if ( above < (below >> 1) )
+            return(abovei);
+        else return(belowi);
+    }
+    else if ( abovei >= 0 )
+        return(abovei);
+    else return(belowi);
+}
+
+int64_t NSPV_addinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int32_t maxinputs)
+{
+    int32_t abovei,belowi,ind,vout,i,n = 0; int64_t threshold,above,below; int64_t remains,totalinputs = 0; CTransaction tx; struct NSPV_utxoresp *utxos,*up;
+    utxos = (struct NSPV_utxoresp *)calloc(NSPV_MAXVINS,sizeof(*utxos));
+    if ( maxinputs > NSPV_MAXVINS )
+        maxinputs = NSPV_MAXVINS;
+    if ( maxinputs > 0 )
+        threshold = total/maxinputs;
+    else threshold = total;
+    remains = total;
+    for (i=0; i<maxinputs && n>0; i++)
+    {
+        below = above = 0;
+        abovei = belowi = -1;
+        if ( NSPV_vinselect(&abovei,&above,&belowi,&below,utxos,n,remains) < 0 )
+        {
+            printf("error finding unspent i.%d of %d, %.8f vs %.8f\n",i,n,(double)remains/COIN,(double)total/COIN);
+            free(utxos);
+            return(0);
+        }
+        if ( belowi < 0 || abovei >= 0 )
+            ind = abovei;
+        else ind = belowi;
+        if ( ind < 0 )
+        {
+            printf("error finding unspent i.%d of %d, %.8f vs %.8f, abovei.%d belowi.%d ind.%d\n",i,n,(double)remains/COIN,(double)total/COIN,abovei,belowi,ind);
+            free(utxos);
+            return(0);
+        }
+        up = &utxos[ind];
+        mtx.vin.push_back(CTxIn(up->txid,up->vout,CScript()));
+        totalinputs += up->nValue;
+        remains -= up->nValue;
+        utxos[ind] = utxos[--n];
+        memset(&utxos[n],0,sizeof(utxos[n]));
+        //fprintf(stderr,"totalinputs %.8f vs total %.8f i.%d vs max.%d\n",(double)totalinputs/COIN,(double)total/COIN,i,maxinputs);
+        if ( totalinputs >= total || (i+1) >= maxinputs )
+            break;
+    }
+    free(utxos);
+    if ( totalinputs >= total )
+        return(totalinputs);
+    return(0);
+}
+
+std::string NSPV_signtx(CMutableTransaction &mtx,uint64_t txfee,CScript opret)
+{
+    auto consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
+    CTransaction vintx; std::string hex; uint256 hashBlock; int64_t change,totaloutputs=0,totalinputs=0; int32_t i,utxovout,n;
+    n = mtx.vout.size();
+    for (i=0; i<n; i++)
+        totaloutputs += mtx.vout[i].nValue;
+    memset(utxovalues,0,sizeof(utxovalues));
+    for (i=0; i<n; i++)
+    {
+        if ( GetTransaction(mtx.vin[i].prevout.hash,vintx,hashBlock,false) != 0 )
+        {
+            utxovout = mtx.vin[i].prevout.n;
+            totalinputs += vintx.vout[utxovout].nValue;
+        }
+    }
+    if ( totalinputs >= totaloutputs+2*txfee )
+    {
+        change = totalinputs - (totaloutputs+txfee);
+        mtx.vout.push_back(CTxOut(change,CScript() << ParseHex(NSPV_pubkeystr) << OP_CHECKSIG));
+    }
+    if ( opret.size() > 0 )
+        mtx.vout.push_back(CTxOut(0,opret));
+    PrecomputedTransactionData txdata(mtx);
+    n = mtx.vin.size();
+    for (i=0; i<n; i++)
+    {
+        if ( GetTransaction(mtx.vin[i].prevout.hash,vintx,hashBlock,false) != 0 )
+        {
+            utxovout = mtx.vin[i].prevout.n;
+            if ( SignTx(mtx,i,vintx.vout[utxovout].nValue,vintx.vout[utxovout].scriptPubKey) == 0 )
+                fprintf(stderr,"signing error for vini.%d of %llx\n",i,(long long)vinimask);
+        }
+    }
+    return(EncodeHexTx(mtx));
+}
+
+UniValue NSPV_send(char *srcaddr,char *destaddr,int64_t satoshis) // what its all about!
+{
+    UniValue result(UniValue::VOBJ); uint8_t rmd160[128]; int64_t txfee = 10000;
+    if ( strcmp(srcaddr,NSPV_address.c_str()) != 0 )
+    {
+        result.push_back(Pair("result","error"));
+        result.push_back(Pair("error","invalid address"));
+        result.push_back(Pair("mismatched",srcaddr));
+        return(result);
+    }
+    else if ( bitcoin_base58decode(rmd160,destaddr) != 25 )
+    {
+        result.push_back(Pair("result","error"));
+        result.push_back(Pair("error","invalid destaddr"));
+        return(result);
+    }
+    if ( NSPV_inforesult.height == 0 )
+        NSPV_getinfo_json();
+    if ( NSPV_inforesult.height == 0 )
+    {
+        result.push_back(Pair("result","error"));
+        result.push_back(Pair("error","couldnt getinfo"));
+        return(result);
+    }
+    if ( strcmp(NSPV_utxosresult.coinaddr,srcaddr) != 0 || NSPV_utxosresult.nodeheight < NSPV_inforesult.height )
+        NSPV_addressutxos(srcaddr);
+    if ( strcmp(NSPV_utxosresult.coinaddr,srcaddr) != 0 || NSPV_utxosresult.nodeheight < NSPV_inforesult.height )
+    {
+        result.push_back(Pair("result","error"));
+        result.push_back(Pair("error","couldnt get addressutxos"));
+        return(result);
+    }
+    if ( NSPV_utxosresult.total < satoshis+txfee )
+    {
+        result.push_back(Pair("result","error"));
+        result.push_back(Pair("error","not enough funds"));
+        result.push_back(Pair("balance",(double)NSPV_utxosresult.total/COIN));
+        result.push_back(Pair("amount",(double)satoshis/COIN));
+        return(result);
+    }
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    std::vector<uint8_t> data,opret; std::string hex;
+    data.resize(20);
+    memcpy(&data[0],&rmd160[1],20);
+    if ( NSPV_addinputs(mtx,satoshis+txfee,64) > 0 )
+    {
+        mtx.vout.push_back(CTxOut(nValue,CScript() << OP_DUP << OP_HASH160 << ParseHex(HexStr(data)) << OP_EQUALVERIFY << OP_CHECKSIG));
+        hex = NSPV_signt(mtx,txfee,opret);
+        result.push_back(Pair("result","success"));
+        result.push_back(Pair("hex",hex));
+        // prove all the vins
+        return(result);
+    }
+    else
+    {
+        result.push_back(Pair("result","error"));
+        result.push_back(Pair("error","couldnt create tx"));
+        return(result);
+    }
+}
+
 void komodo_nSPV(CNode *pto) // polling loop from SendMessages
 {
     uint8_t msg[256]; int32_t i,len=0; uint32_t timestamp = (uint32_t)time(NULL);
@@ -1194,43 +1393,11 @@ void komodo_nSPV(CNode *pto) // polling loop from SendMessages
     {
         fprintf(stderr,"scrub wif from NSPV memory\n");
         memset(NSPV_wifstr,0,sizeof(NSPV_wifstr));
+        memset(&NSPV_key,0,sizeof(NSPV_key));
         NSPV_logintime = 0;
     }
     if ( (pto->nServices & NODE_NSPV) == 0 )
         return;
-    /*if ( timestamp > pto->lastntzs || timestamp > pto->lastproof )
-    {
-        for (i=0; i<NSPV_numutxos; i++)
-        {
-            if ( NSPV_utxos[i].prevht == 0 || NSPV_utxos[i].T.txlen == 0 || NSPV_utxos[i].T.txprooflen == 0 )
-            {
-                request.resize(1);
-                if ( NSPV_utxos[i].prevht == 0 && timestamp > pto->lastntzs )
-                {
-                    request[0] = NSPV_NTZS;
-                    pto->lastntzs = timestamp;
-                    pto->PushMessage("getnSPV",request);
-                    return;
-                }
-                else if ( timestamp > pto->lastproof )
-                {
-                    if ( NSPV_utxos[i].T.txlen == 0 )
-                    {
-                        request[0] = NSPV_TXPROOF;
-                        pto->lastproof = timestamp;
-                        pto->PushMessage("getnSPV",request);
-                    }
-                    else // need space for the headers...
-                    {
-                        request[0] = NSPV_NTZPROOF;
-                        pto->lastproof = timestamp;
-                        pto->PushMessage("getnSPV",request);
-                    }
-                    return;
-                }
-            }
-        }
-    }*/
     if ( KOMODO_NSPV != 0 )
     {
         if ( timestamp > NSPV_lastinfo + ASSETCHAINS_BLOCKTIME/2 && timestamp > pto->prevtimes[NSPV_INFO>>1] + 2*ASSETCHAINS_BLOCKTIME/3 )
@@ -1242,8 +1409,4 @@ void komodo_nSPV(CNode *pto) // polling loop from SendMessages
     }
 }
 
-UniValue NSPV_send(char *srcaddr,char *destaddr,int64_t satoshis) // what its all about!
-{
-    
-}
 #endif // KOMODO_NSPV_H
