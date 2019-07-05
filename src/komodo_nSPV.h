@@ -119,6 +119,7 @@ int32_t NSPV_rwutxoresp(int32_t rwflag,uint8_t *serialized,struct NSPV_utxoresp 
 struct NSPV_utxosresp
 {
     struct NSPV_utxoresp *utxos;
+    char coinaddr[64];
     int64_t total,interest;
     int32_t nodeheight;
     uint16_t numutxos,pad16;
@@ -139,6 +140,16 @@ int32_t NSPV_rwutxosresp(int32_t rwflag,uint8_t *serialized,struct NSPV_utxosres
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->interest),&ptr->interest);
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->nodeheight),&ptr->nodeheight);
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->pad16),&ptr->pad16);
+    if ( rwflag != 0 )
+    {
+        memcpy(&serialized[len],ptr->coinaddr,sizeof(ptr->coinaddr));
+        len += sizeof(ptr->coinaddr);
+    }
+    else
+    {
+        memcpy(ptr->coinaddr,&serialized[len],sizeof(ptr->coinaddr));
+        len += sizeof(ptr->coinaddr);
+    }
     return(len);
 }
 
@@ -469,6 +480,7 @@ int32_t NSPV_getaddressutxos(struct NSPV_utxosresp *ptr,char *coinaddr) // check
     SetCCunspents(unspentOutputs,coinaddr,false);
     maxlen = MAX_BLOCK_SIZE(tipheight) - 512;
     maxlen /= sizeof(*ptr->utxos);
+    strncpy(ptr->coinaddr,coinaddr,sizeof(ptr->coinaddr)-1);
     if ( (ptr->numutxos= (int32_t)unspentOutputs.size()) > 0 && ptr->numutxos < maxlen )
     {
         tipheight = chainActive.LastTip()->GetHeight();
@@ -910,6 +922,7 @@ UniValue NSPV_utxosresp_json(struct NSPV_utxosresp *ptr)
     UniValue result(UniValue::VOBJ);
     result.push_back(Pair("result","success"));
     result.push_back(Pair("utxos",NSPV_utxoresp_json(ptr->utxos,ptr->numutxos)));
+    result.push_back(Pair("address",ptr->coinaddr));
     result.push_back(Pair("height",(int64_t)ptr->nodeheight));
     result.push_back(Pair("numutxos",(int64_t)ptr->numutxos));
     result.push_back(Pair("balance",(double)ptr->total/COIN));
@@ -1218,12 +1231,19 @@ void komodo_nSPV(CNode *pto) // polling loop from SendMessages
             }
         }
     }*/
-    if ( timestamp > NSPV_lastinfo + ASSETCHAINS_BLOCKTIME/2 && timestamp > pto->prevtimes[NSPV_INFO>>1] + 2*ASSETCHAINS_BLOCKTIME/3 )
+    if ( KOMODO_NSPV != 0 )
     {
-        len = 0;
-        msg[len++] = NSPV_INFO;
-        NSPV_req(pto,msg,len,NODE_NSPV,NSPV_INFO>>1);
+        if ( timestamp > NSPV_lastinfo + ASSETCHAINS_BLOCKTIME/2 && timestamp > pto->prevtimes[NSPV_INFO>>1] + 2*ASSETCHAINS_BLOCKTIME/3 )
+        {
+            len = 0;
+            msg[len++] = NSPV_INFO;
+            NSPV_req(pto,msg,len,NODE_NSPV,NSPV_INFO>>1);
+        }
     }
 }
 
+UniValue NSPV_send(char *srcaddr,char *destaddr,int64_t satoshis) // what its all about!
+{
+    
+}
 #endif // KOMODO_NSPV_H

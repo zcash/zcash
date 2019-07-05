@@ -462,6 +462,7 @@ extern UniValue nspv_spentinfo(const UniValue& params, bool fHelp);
 extern UniValue nspv_notarizations(const UniValue& params, bool fHelp);
 extern UniValue nspv_hdrsproof(const UniValue& params, bool fHelp);
 extern UniValue nspv_txproof(const UniValue& params, bool fHelp);
+extern UniValue nspv_send(const UniValue& params, bool fHelp);
 
 extern UniValue getblocksubsidy(const UniValue& params, bool fHelp);
 
