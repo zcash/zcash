@@ -392,30 +392,6 @@ int32_t komodo_MoMdata(int32_t *notarized_htp,uint256 *MoMp,uint256 *kmdtxidp,in
     return(0);
 }
 
-int32_t komodo_notarized_bracket(struct notarized_checkpoint *nps[2],int32_t height)
-{
-    int32_t i; struct notarized_checkpoint *np; char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; struct komodo_state *sp;
-    memset(nps,0,sizeof(*nps)*2);
-    if ( (sp= komodo_stateptr(symbol,dest)) != 0 )
-    {
-        if ( sp->NUM_NPOINTS > 0 )
-        {
-            for (i=0; i<sp->NUM_NPOINTS; i++)
-            {
-                np = &sp->NPOINTS[i];
-                if ( np->nHeight <= height )
-                    nps[0] = np;
-                else
-                {
-                    nps[1] = np;
-                    return(0);
-                }
-            }
-        }
-    }
-    return(-1);
-}
-
 int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *notarized_desttxidp)
 {
     struct notarized_checkpoint *np = 0; int32_t i=0,flag = 0; char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; struct komodo_state *sp;

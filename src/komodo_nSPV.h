@@ -358,7 +358,7 @@ uint256 NSPV_getnotarization_txid(int32_t *ntzheightp,int32_t height)
     uint256 txid; Notarisation nota; char *symbol = (ASSETCHAINS_SYMBOL[0] == 0) ? (char *)"KMD" : ASSETCHAINS_SYMBOL;
     memset(&txid,0,sizeof(txid));
     *ntzheightp = 0;
-    int32_t matchedHeight = ScanNotarisationsDB(height,symbol,1440,nota);
+    int32_t matchedHeight = ScanNotarisationsDB2(height,symbol,1440,nota);
     if ( matchedHeight != 0 )
     {
         *ntzheightp = matchedHeight;
@@ -367,16 +367,81 @@ uint256 NSPV_getnotarization_txid(int32_t *ntzheightp,int32_t height)
     return(txid);
 }
 
+uint256 NSPV_extract_desttxid(char *symbol,std::vector<uint8_t> opret)
+{
+    uint256 desttxid;
+    memcpy(&desttxid,&opret[2 + 4 + 32],sizeof(desttxid));
+    return(desttxid);
+}
+
+int32_t komodo_notarized_bracket(uint256 txids[2],uint256 desttxids[2],int32_t ntzheights[2],int32_t height)
+{
+    int32_t ntzht; Notarisation nota; char *symbol;
+    symbol = (ASSETCHAINS_SYMBOL[0] == 0) ? (char *)"KMD" : ASSETCHAINS_SYMBOL;
+    memset(txids,0,sizeof(*txids)*2);
+    memset(desttxids,0,sizeof(*desttxids)*2);
+    memset(ntzheights,0,sizeof(*ntzheights)*2);
+    if ( (ntzht= ScanNotarisationsDB(height,symbol,1440,nota)) == 0 )
+        return(-1);
+    txids[0] = nota.first;
+    ntzheights[0] = ntzheight;
+    desttxids[0] = NSPV_extract_desttxid(symbol,E_MARSHAL(ss << nota.second));
+    if ( ntzht == height )
+    {
+        txids[1] = txids[0];
+        ntzheights[1] = ntzht;
+        desttxids[1] = desttxids[0];
+        return(0);
+    }
+    if ( (ntzht= ScanNotarisationsDB(height,symbol,1440,nota)) != 0 )
+    {
+        txids[1] = nota.first;
+        ntzheights[1] = ntzht;
+        desttxids[1] = NSPV_extract_desttxid(symbol,E_MARSHAL(ss << nota.second));
+    }
+    return(0);
+}
+
+int32_t NSPV_ntzextract(struct NSPV_ntz *ptr,uint256 ntztxid,uint256 desttxid,int32_t ntzheight)
+{
+    uint64_t value; uint32_t tiptime=0,txheighttime;
+    ptr->blockhash = *chainActive[ntzheight]->phashBlock;
+    ptr->height = ntzheight;
+    komodo_interest_args(&txheighttime,&ptr->txidheight,&tiptime,&value,ntztxid,0);
+    ptr->othertxid = desttxid;
+    ptr->txid = ntztxid;
+    return(0);
+}
+
+int32_t NSPV_getntzsresp(struct NSPV_ntzsresp *ptr,int32_t height)
+{
+    uint256 txids[2],desttxids[2]; int32_t ntzheights[2];
+    if ( komodo_notarized_bracket(txids,ntzheights,height) == 0 )
+    {
+        if ( ntzheights[0] != 0 )
+        {
+            if ( NSPV_ntzextract(&ptr->prevntz,txids[0],desttxids[0],ntzheights[0]) < 0 )
+                return(-1);
+        }
+        if ( ntzheights[1] != 0 )
+        {
+            if ( NSPV_ntzextract(&ptr->nextntz,txids[1],desttxids[1],ntzheights[1]) < 0 )
+                return(-1);
+        }
+    }
+    return(sizeof(*ptr));
+}
+
 int32_t NSPV_getinfo(struct NSPV_inforesp *ptr)
 {
-    int32_t prevMoMheight,len = 0; CBlockIndex *pindex;
+    int32_t prevMoMheight,len = 0; CBlockIndex *pindex; struct NSPV_ntzsresp pair;
     if ( (pindex= chainActive.LastTip()) != 0 )
     {
         ptr->height = pindex->GetHeight();
         ptr->blockhash = pindex->GetBlockHash();
-        ptr->notarization.height = komodo_notarized_height(&prevMoMheight,&ptr->notarization.blockhash,&ptr->notarization.othertxid);
-        ptr->notarization.txidheight = 0;
-        ptr->notarization.txid = NSPV_getnotarization_txid(&ptr->notarization.txidheight,ptr->notarization.height);
+        if ( NSPV_getntzsresp(&pair,ptr->height) < 0 )
+            return(-1);
+        ptr->notarization = pair.prevntz;
         return(sizeof(*ptr));
     } else return(-1);
 }
@@ -423,41 +488,6 @@ int32_t NSPV_getaddressutxos(struct NSPV_utxosresp *ptr,char *coinaddr) // check
         free(ptr->utxos);
     memset(ptr,0,sizeof(*ptr));
     return(0);
-}
-
-int32_t NSPV_npextract(struct NSPV_ntz *ptr,struct notarized_checkpoint *np)
-{
-    int32_t ntzheight;
-    ptr->blockhash = np->notarized_hash;
-    ptr->height = np->notarized_height;
-    ptr->txidheight = np->nHeight;
-    ptr->othertxid = np->notarized_desttxid;
-    ntzheight = ptr->txidheight;
-    ptr->txid = NSPV_getnotarization_txid(&ntzheight,ptr->height);
-    if ( ntzheight != ptr->txidheight )
-    {
-        fprintf(stderr,"NSPV_npextract ntzheight.%d != ptr->txidheight.%d\n",ntzheight,ptr->txidheight);
-        return(-1);
-    } else return(0);
-}
-
-int32_t NSPV_getntzsresp(struct NSPV_ntzsresp *ptr,int32_t height)
-{
-    struct notarized_checkpoint *nps[2];
-    if ( komodo_notarized_bracket(nps,height) == 0 )
-    {
-        if ( nps[0] != 0 )
-        {
-            if ( NSPV_npextract(&ptr->prevntz,nps[0]) < 0 )
-                return(-1);
-        }
-        if ( nps[1] != 0 )
-        {
-            if ( NSPV_npextract(&ptr->nextntz,nps[1]) < 0 )
-                return(-1);
-        }
-    }
-    return(sizeof(*ptr));
 }
 
 uint8_t *NSPV_getrawtx(uint256 &hashBlock,uint16_t *txlenp,uint256 txid)
@@ -743,7 +773,8 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
     }
 }
 
-// nSPV client
+// nSPV client. VERY simplistic "single threaded" networking model. for production GUI best to multithread, etc.
+
 CAmount AmountFromValue(const UniValue& value);
 int32_t bitcoin_base58decode(uint8_t *data,char *coinaddr);
 
