@@ -1342,7 +1342,6 @@ UniValue sendrawtransaction(const UniValue& params, bool fHelp)
         }
     }
     RelayTransaction(tx);
-
     return hashTx.GetHex();
 }
 

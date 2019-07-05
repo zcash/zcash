@@ -1897,7 +1897,6 @@ void RelayTransaction(const CTransaction& tx)
 
 void RelayTransaction(const CTransaction& tx, const CDataStream& ss)
 {
-    fprintf(stderr,"RelayTransaction\n");
     CInv inv(MSG_TX, tx.GetHash());
     {
         LOCK(cs_mapRelay);
@@ -1915,10 +1914,8 @@ void RelayTransaction(const CTransaction& tx, const CDataStream& ss)
     LOCK(cs_vNodes);
     BOOST_FOREACH(CNode* pnode, vNodes)
     {
-        fprintf(stderr,"pnode relay tx.%d\n",(int32_t)pnode->fRelayTxes);
         if(!pnode->fRelayTxes)
             continue;
-        fprintf(stderr,"found pnode\n");
         LOCK(pnode->cs_filter);
         if (pnode->pfilter)
         {
