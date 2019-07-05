@@ -40,11 +40,6 @@ struct NSPV_ntzsproofresp NSPV_ntzsproofresult;
 struct NSPV_txproof NSPV_txproofresult;
 struct NSPV_utxo *NSPV_utxos;
 
-CKey *NSPV_defaultkey()
-{
-    return(&NSPV_key);
-}
-
 CNode *NSPV_req(CNode *pnode,uint8_t *msg,int32_t len,uint64_t mask,int32_t ind)
 {
     int32_t flag = 0; uint32_t timestamp = (uint32_t)time(NULL);
