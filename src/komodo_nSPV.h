@@ -1245,10 +1245,12 @@ int32_t NSPV_vinselect(int32_t *aboveip,int64_t *abovep,int32_t *belowip,int64_t
     else return(belowi);
 }
 
-int64_t NSPV_addinputs(CMutableTransaction &mtx,int64_t total,int32_t maxinputs)
+int64_t NSPV_addinputs(CMutableTransaction &mtx,int64_t total,int32_t maxinputs,struct NSPV_utxoresp *ptr,int32_t n)
 {
     int32_t abovei,belowi,ind,vout,i,n = 0; int64_t threshold,above,below; int64_t remains,totalinputs = 0; CTransaction tx; struct NSPV_utxoresp *utxos,*up;
-    utxos = (struct NSPV_utxoresp *)calloc(NSPV_MAXVINS,sizeof(*utxos));
+    utxos = (struct NSPV_utxoresp *)calloc(n,sizeof(*utxos));
+    for (i=0; i<n; i++)
+        utxos[i] = ptr[i];
     if ( maxinputs > NSPV_MAXVINS )
         maxinputs = NSPV_MAXVINS;
     if ( maxinputs > 0 )
@@ -1371,7 +1373,7 @@ UniValue NSPV_send(char *srcaddr,char *destaddr,int64_t satoshis) // what its al
     std::vector<uint8_t> data; CScript opret; std::string hex;
     data.resize(20);
     memcpy(&data[0],&rmd160[1],20);
-    if ( NSPV_addinputs(mtx,satoshis+txfee,64) > 0 )
+    if ( NSPV_addinputs(mtx,satoshis+txfee,64,NSPV_utxosresult.utxos,NSPV_utxosresult.numutxos) > 0 )
     {
         mtx.vout.push_back(CTxOut(satoshis,CScript() << OP_DUP << OP_HASH160 << ParseHex(HexStr(data)) << OP_EQUALVERIFY << OP_CHECKSIG));
         hex = NSPV_signtx(mtx,txfee,opret);
