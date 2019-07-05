@@ -780,8 +780,8 @@ uint256 komodo_calcmerkleroot(CBlock *pblock, uint256 prevBlockHash, int32_t nHe
 
 
 // checks if block is PoS: 
-// last tx should point to staking utxo (spent to self)
-// for Maramara cc there is an additional check of staking tx
+// last tx should point to the previous staking utxo (that is spent to self)
+// for Marmara cc there is an additional check of staking tx (opret)
 // returns 1 if this is PoS block and 0 if false 
 int32_t komodo_isPoS(CBlock *pblock, int32_t height,CTxDestination *addressout)
 {
@@ -789,7 +789,8 @@ int32_t komodo_isPoS(CBlock *pblock, int32_t height,CTxDestination *addressout)
     if ( ASSETCHAINS_STAKED != 0 )
     {
         n = pblock->vtx.size();
-        //fprintf(stderr,"ht.%d check for PoS numtx.%d numvins.%d numvouts.%d\n",height,n,(int32_t)pblock->vtx[n-1].vin.size(),(int32_t)pblock->vtx[n-1].vout.size());
+        
+        fprintf(stderr,"%s ht.%d check for PoS numtx.%d numvins.%d numvouts.%d GetStakeTxVoutSize()=%d\n", __func__, height,n,(int32_t)pblock->vtx[n-1].vin.size(),(int32_t)pblock->vtx[n-1].vout.size(), GetStakeTxVoutSize());
         if ( n > 1 && pblock->vtx[n-1].vin.size() == 1 && pblock->vtx[n-1].vout.size() == 1+komodo_hasOpRet(height,pblock->nTime) )
         {
             // get previous tx and check if it was spent to self
@@ -800,7 +801,7 @@ int32_t komodo_isPoS(CBlock *pblock, int32_t height,CTxDestination *addressout)
             {
                 if ( addressout != 0 ) *addressout = voutaddress;
                 strcpy(voutaddr,CBitcoinAddress(voutaddress).ToString().c_str());
-                //fprintf(stderr,"voutaddr.%s vs destaddr.%s\n",voutaddr,destaddr);
+                fprintf(stderr,"%s voutaddr.%s vs destaddr.%s\n", __func__,voutaddr,destaddr);
                 if ( komodo_newStakerActive(height, pblock->nTime) != 0 ) 
                 {
                     if ( DecodeStakingOpRet(pblock->vtx[n-1].vout[1].scriptPubKey, merkleroot) != 0 && komodo_calcmerkleroot(pblock, pblock->hashPrevBlock, height, false, pblock->vtx[0].vout[0].scriptPubKey) == merkleroot )
@@ -832,6 +833,7 @@ int32_t komodo_isPoS(CBlock *pblock, int32_t height,CTxDestination *addressout)
             }
         }
     }
+    std::cout << __func__ << " return = 0" << std::endl;
     return(0);
 }
 
@@ -1799,7 +1801,8 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
         return(komodo_isPoS(pblock,height,0));
     }
     txn_count = pblock->vtx.size();
-    //fprintf(stderr,"checkblock n.%d vins.%d vouts.%d %.8f %.8f\n",txn_count,(int32_t)pblock->vtx[txn_count-1].vin.size(),(int32_t)pblock->vtx[txn_count-1].vout.size(),(double)pblock->vtx[txn_count-1].vout[0].nValue/COIN,(double)pblock->vtx[txn_count-1].vout[1].nValue/COIN);
+    
+    fprintf(stderr,"%s checkblock n.%d vins.%d vouts.%d %.8f %.8f\n", __func__,txn_count,(int32_t)pblock->vtx[txn_count-1].vin.size(),(int32_t)pblock->vtx[txn_count-1].vout.size(),(double)pblock->vtx[txn_count-1].vout[0].nValue/COIN,(double)pblock->vtx[txn_count-1].vout[1].nValue/COIN); //uncommented
     if ( txn_count > 1 && pblock->vtx[txn_count-1].vin.size() == 1 && pblock->vtx[txn_count-1].vout.size() == 1+komodo_hasOpRet(height,pblock->nTime) )
     {
         it = mapBlockIndex.find(pblock->hashPrevBlock);
@@ -1837,7 +1840,7 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
             }
         } 
     }
-    //fprintf(stderr,"slow.%d ht.%d isPoS.%d\n",slowflag,height,isPoS);
+    fprintf(stderr,"%s slow.%d ht.%d isPoS.%d\n", __func__,slowflag,height,isPoS);  //uncommented
     return(isPoS != 0);
 }
 
