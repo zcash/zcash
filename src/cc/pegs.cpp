@@ -675,7 +675,7 @@ std::string PegsCreate(uint64_t txfee,int64_t amount, std::vector<uint256> bindt
     }
     if ( AddNormalinputs(mtx,mypk,amount,64) >= amount )
     {
-        for (int i=0; i<(amount-txfee)/CC_MARKER_VALUE; i++) mtx.vout.push_back(MakeCC1vout(EVAL_PEGS,CC_MARKER_VALUE,pegspk));
+        for (int i=0; i<100; i++) mtx.vout.push_back(MakeCC1vout(EVAL_PEGS,(amount-txfee)/100,pegspk));
         return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodePegsCreateOpRet(bindtxids)));
     }
     CCerror = strprintf("error adding normal inputs");
