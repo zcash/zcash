@@ -19,6 +19,8 @@
 
 // nSPV wallet uses superlite functions (and some komodod built in functions) to implement nSPV_send
 
+#define NSPV_BRANCHID 0x76b809bb
+
 int32_t NSPV_gettransaction(uint256 txid,int32_t height,CTransaction &tx)
 {
     char *txstr; int32_t retval = 0;
@@ -145,7 +147,7 @@ int64_t NSPV_addinputs(struct NSPV_utxoresp *used,CMutableTransaction &mtx,int64
 bool NSPV_SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const CScript scriptPubKey)
 {
     CTransaction txNewConst(mtx); SignatureData sigdata; CBasicKeyStore keystore;
-    auto consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
+    auto consensusBranchId = NSPV_BRANCHID;
     keystore.AddKey(NSPV_key);
     if ( ProduceSignature(TransactionSignatureCreator(&keystore,&txNewConst,vini,utxovalue,SIGHASH_ALL),scriptPubKey,sigdata,consensusBranchId) != 0 )
     {
