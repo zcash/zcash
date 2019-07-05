@@ -1002,7 +1002,7 @@ UniValue NSPV_getinfo_json()
                 if ( NSPV_inforesult.height != 0 )
                     return(_NSPV_getinfo_json(&NSPV_inforesult));
             }
-        }
+        } else sleep(1);
     }
     memset(&I,0,sizeof(I));
     return(_NSPV_getinfo_json(&NSPV_inforesult));
