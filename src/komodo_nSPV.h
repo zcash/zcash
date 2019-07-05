@@ -1245,12 +1245,12 @@ int32_t NSPV_vinselect(int32_t *aboveip,int64_t *abovep,int32_t *belowip,int64_t
     else return(belowi);
 }
 
-int64_t NSPV_addinputs(CMutableTransaction &mtx,int64_t total,int32_t maxinputs,struct NSPV_utxoresp *ptr,int32_t n)
+int64_t NSPV_addinputs(CMutableTransaction &mtx,int64_t total,int32_t maxinputs,struct NSPV_utxoresp *ptr,int32_t num)
 {
     int32_t abovei,belowi,ind,vout,i,n = 0; int64_t threshold,above,below; int64_t remains,totalinputs = 0; CTransaction tx; struct NSPV_utxoresp *utxos,*up;
     utxos = (struct NSPV_utxoresp *)calloc(n,sizeof(*utxos));
-    for (i=0; i<n; i++)
-        utxos[i] = ptr[i];
+    for (i=0; i<num; i++)
+        utxos[n++] = ptr[i];
     if ( maxinputs > NSPV_MAXVINS )
         maxinputs = NSPV_MAXVINS;
     if ( maxinputs > 0 )
