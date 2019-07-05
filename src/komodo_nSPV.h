@@ -1296,14 +1296,13 @@ std::string NSPV_signtx(CMutableTransaction &mtx,uint64_t txfee,CScript opret)
     CTransaction vintx; std::string hex; uint256 hashBlock; int64_t change,totaloutputs=0,totalinputs=0; int32_t i,utxovout,n;
     n = mtx.vout.size();
     for (i=0; i<n; i++)
-        totaloutputs += mtx.vout[i].satoshis;
-    memset(utxovalues,0,sizeof(utxovalues));
+        totaloutputs += mtx.vout[i].nValue;
     for (i=0; i<n; i++)
     {
         if ( GetTransaction(mtx.vin[i].prevout.hash,vintx,hashBlock,false) != 0 )
         {
             utxovout = mtx.vin[i].prevout.n;
-            totalinputs += vintx.vout[utxovout].satoshis;
+            totalinputs += vintx.vout[utxovout].nValue;
         }
     }
     if ( totalinputs >= totaloutputs+2*txfee )
@@ -1320,7 +1319,7 @@ std::string NSPV_signtx(CMutableTransaction &mtx,uint64_t txfee,CScript opret)
         if ( GetTransaction(mtx.vin[i].prevout.hash,vintx,hashBlock,false) != 0 )
         {
             utxovout = mtx.vin[i].prevout.n;
-            if ( SignTx(mtx,i,vintx.vout[utxovout].satoshis,vintx.vout[utxovout].scriptPubKey) == 0 )
+            if ( SignTx(mtx,i,vintx.vout[utxovout].nValue,vintx.vout[utxovout].scriptPubKey) == 0 )
                 fprintf(stderr,"signing error for vini.%d of %llx\n",i,(long long)vinimask);
         }
     }
@@ -1374,7 +1373,7 @@ UniValue NSPV_send(char *srcaddr,char *destaddr,int64_t satoshis) // what its al
     if ( NSPV_addinputs(mtx,satoshis+txfee,64) > 0 )
     {
         mtx.vout.push_back(CTxOut(satoshis,CScript() << OP_DUP << OP_HASH160 << ParseHex(HexStr(data)) << OP_EQUALVERIFY << OP_CHECKSIG));
-        hex = NSPV_sign(mtx,txfee,opret);
+        hex = NSPV_signtx(mtx,txfee,opret);
         result.push_back(Pair("result","success"));
         result.push_back(Pair("hex",hex));
         // prove all the vins
