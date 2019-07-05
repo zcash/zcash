@@ -641,6 +641,8 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
     {
         if ( (ind= request[0]>>1) >= sizeof(pfrom->prevtimes)/sizeof(*pfrom->prevtimes) )
             ind = (int32_t)(sizeof(pfrom->prevtimes)/sizeof(*pfrom->prevtimes)) - 1;
+        if ( pfrom->prevtimes[ind] > timestamp )
+            pfrom->prevtimes[ind] = 0;
         if ( request[0] == NSPV_INFO ) // info
         {
             //fprintf(stderr,"check info %u vs %u, ind.%d\n",timestamp,pfrom->prevtimes[ind],ind);
