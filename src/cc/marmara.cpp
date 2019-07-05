@@ -447,18 +447,10 @@ CScript Marmara_scriptPubKey(int32_t height, CPubKey pk)
     Marmarapk = GetUnspendable(cp, 0);
     if (height > 0 && (height & 1) == 0 && pk.size() == 33)
     {
-        // special rewards pubkey for testing 
-        bool istestpk = false;
-        std::string marmara_test_pubkey = GetArg("-marmara-test-pubkey", "");
-        if (!marmara_test_pubkey.empty()) {
-            pk = pubkey2pk(ParseHex(marmara_test_pubkey));
-            istestpk = true;
-        }
-
         ccvout = MakeCC1of2vout(EVAL_MARMARA, 0, Marmarapk, pk);
         char coinaddr[KOMODO_ADDRESS_BUFSIZE];
         Getscriptaddress(coinaddr, ccvout.scriptPubKey);
-        LOGSTREAMFN("marmara", CCLOG_INFO, stream  << "for activated rewards using pk=" << HexStr(pk) << " istestpk=" << istestpk << " height=" << height << " 1of2addr=" << coinaddr << std::endl);
+        LOGSTREAMFN("marmara", CCLOG_INFO, stream  << "for activated rewards using pk=" << HexStr(pk) << " height=" << height << " 1of2addr=" << coinaddr << std::endl);
     }
     else
         LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream  << "not even ht, returning empty scriptPubKey" << std::endl);
@@ -517,12 +509,6 @@ int32_t MarmaraValidateCoinbase(int32_t height, CTransaction tx, std::string &er
             {
                 if (ht == height && MarmaraUnlockht(height) == unlockht)
                 {
-                    // use special rewards pubkey for testing 
-                    std::string marmara_test_pubkey = GetArg("-marmara-test-pubkey", "");
-                    if (!marmara_test_pubkey.empty()) {
-                        pk = pubkey2pk(ParseHex(marmara_test_pubkey));
-                    }
-
                     //fprintf(stderr,"ht.%d -> unlock.%d\n",ht,unlockht);
                     ccvout = MakeCC1of2vout(EVAL_MARMARA, 0, Marmarapk, pk);
                     if (ccvout.scriptPubKey == tx.vout[0].scriptPubKey)
