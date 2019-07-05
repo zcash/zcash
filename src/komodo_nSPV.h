@@ -1387,6 +1387,8 @@ UniValue NSPV_send(char *srcaddr,char *destaddr,int64_t satoshis) // what its al
     }
 }
 
+// polling loop
+
 void komodo_nSPV(CNode *pto) // polling loop from SendMessages
 {
     uint8_t msg[256]; int32_t i,len=0; uint32_t timestamp = (uint32_t)time(NULL);
