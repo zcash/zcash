@@ -827,7 +827,7 @@ CNode *NSPV_req(CNode *pnode,uint8_t *msg,int32_t len,uint64_t mask,int32_t ind)
                 flag = 1;
                 pnode = ptr;
                 break;
-            }  else fprintf(stderr,"nServices %llx vs mask %llx, t%u vs %u, ind.%d\n",(long long)ptr->nServices,(long long)mask,timestamp,ptr->prevtimes[ind],ind);
+            }  //else fprintf(stderr,"nServices %llx vs mask %llx, t%u vs %u, ind.%d\n",(long long)ptr->nServices,(long long)mask,timestamp,ptr->prevtimes[ind],ind);
         }
     } else flag = 1;
     if ( pnode != 0 )
@@ -835,7 +835,7 @@ CNode *NSPV_req(CNode *pnode,uint8_t *msg,int32_t len,uint64_t mask,int32_t ind)
         std::vector<uint8_t> request;
         request.resize(len);
         memcpy(&request[0],msg,len);
-        fprintf(stderr,"pushmessage [%d] len.%d\n",msg[0],len);
+        //fprintf(stderr,"pushmessage [%d] len.%d\n",msg[0],len);
         pnode->PushMessage("getnSPV",request);
         pnode->prevtimes[ind] = timestamp;
         return(pnode);
@@ -997,7 +997,7 @@ UniValue NSPV_getinfo_json()
     msg[len++] = NSPV_INFO;
     for (iters=0; iters<3; iters++)
     {
-        fprintf(stderr,"issue getinfo\n");
+        //fprintf(stderr,"issue getinfo\n");
         if ( NSPV_req(0,msg,len,NODE_NSPV,msg[0]>>1) != 0 )
         {
             for (i=0; i<NSPV_POLLITERS; i++)
@@ -1140,7 +1140,7 @@ void komodo_nSPVresp(CNode *pfrom,std::vector<uint8_t> response) // received a r
         case NSPV_INFORESP:
             NSPV_inforesp_purge(&NSPV_inforesult);
             NSPV_rwinforesp(0,&response[1],&NSPV_inforesult);
-            fprintf(stderr,"got info response %u size.%d height.%d\n",timestamp,(int32_t)response.size(),NSPV_inforesult.height); // update current height and ntrz status
+            //fprintf(stderr,"got info response %u size.%d height.%d\n",timestamp,(int32_t)response.size(),NSPV_inforesult.height); // update current height and ntrz status
             break;
         case NSPV_UTXOSRESP:
             NSPV_utxosresp_purge(&NSPV_utxosresult);
