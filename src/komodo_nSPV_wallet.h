@@ -36,9 +36,8 @@ int32_t NSPV_gettransaction(uint256 txid,int32_t height,CTransaction &tx)
     {
         //printf("got tx.(%s)\n",txstr);
         // need to validate txproof
-        // get the notarizations bracket of height
-        // get hdrsproof of the prev,next
-        // verify the hdrs link back from next to prev
+        NSPV_notarizations(height); // gets the prev and next notarizations
+        NSPV_hdrsproof(NSPV_ntzsresult.prevntz.height,NSPV_ntzsresult.nextntz.height); // validate the segment
         // merkle prove txproof to the merkleroot in the corresponding hdr
     }
     free(txstr);
@@ -150,6 +149,7 @@ bool NSPV_SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const C
 {
     CTransaction txNewConst(mtx); SignatureData sigdata; CBasicKeyStore keystore;
     keystore.AddKey(NSPV_key);
+    if ( 0 )
     {
         int32_t i;
         for (i=0; i<scriptPubKey.size()+4; i++)
