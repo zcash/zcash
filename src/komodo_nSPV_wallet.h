@@ -151,7 +151,7 @@ bool NSPV_SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const C
     {
         int32_t i;
         for (i=0; i<scriptPubKey.size(); i++)
-            fprintf(stderr,"%02x",((uint8_t *)scriptPubKey)[i]);
+            fprintf(stderr,"%02x",((uint8_t *)&scriptPubKey)[i]);
         fprintf(stderr," scriptPubKey\n");
     }
     if ( ProduceSignature(TransactionSignatureCreator(&keystore,&txNewConst,vini,utxovalue,SIGHASH_ALL),scriptPubKey,sigdata,NSPV_BRANCHID) != 0 )
