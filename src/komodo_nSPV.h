@@ -398,8 +398,8 @@ int32_t komodo_notarized_bracket(uint256 txids[2],int32_t txidhts[2],uint256 des
     txids[0] = nota.first;
     txidhts[0] = txidht;
     desttxids[0] = NSPV_extract_desttxid(&ntzheights[0],symbol,E_MARSHAL(ss << nota.second));
-    //fprintf(stderr,"scan.%d -> %s txidht.%d ntzht.%d\n",height,desttxids[0].GetHex().c_str(),txidht,ntzheights[0]);
-    if ( ntzheights[0] == height )
+    fprintf(stderr,"scan.%d -> %s txidht.%d ntzht.%d\n",height,desttxids[0].GetHex().c_str(),txidht,ntzheights[0]);
+    if ( ntzheights[0] == height-1 )
     {
         txids[1] = txids[0];
         txidhts[1] = txidhts[0];
@@ -429,8 +429,8 @@ int32_t NSPV_ntzextract(struct NSPV_ntz *ptr,uint256 ntztxid,int32_t txidht,uint
 int32_t NSPV_getntzsresp(struct NSPV_ntzsresp *ptr,int32_t height)
 {
     uint256 txids[2],desttxids[2]; int32_t ntzheights[2],txidhts[2];
-    //if ( height < chainActive.LastTip()->GetHeight() )
-    //    height++;
+    if ( height < chainActive.LastTip()->GetHeight() )
+        height++;
     if ( komodo_notarized_bracket(txids,txidhts,desttxids,ntzheights,height) == 0 )
     {
         if ( ntzheights[0] != 0 )
@@ -454,7 +454,7 @@ int32_t NSPV_getinfo(struct NSPV_inforesp *ptr)
     {
         ptr->height = pindex->GetHeight();
         ptr->blockhash = pindex->GetBlockHash();
-        if ( NSPV_getntzsresp(&pair,ptr->height) < 0 )
+        if ( NSPV_getntzsresp(&pair,ptr->height-1) < 0 )
             return(-1);
         ptr->notarization = pair.prevntz;
         return(sizeof(*ptr));
