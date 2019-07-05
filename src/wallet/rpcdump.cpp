@@ -1028,7 +1028,7 @@ UniValue nspv_hdrsproof(const UniValue& params, bool fHelp)
 {
     int32_t prevheight,nextheight;
     if ( fHelp || params.size() != 2 )
-        throw runtime_error("nspv_proof prevheight nextheight\n");
+        throw runtime_error("nspv_hdrsproof prevheight nextheight\n");
     prevheight = atoi((char *)params[0].get_str().c_str());
     nextheight = atoi((char *)params[1].get_str().c_str());
     return(NSPV_hdrsproof(prevheight,nextheight));
