@@ -245,6 +245,10 @@ UniValue NSPV_send(char *srcaddr,char *destaddr,int64_t satoshis) // what its al
     if ( strcmp(NSPV_utxosresult.coinaddr,srcaddr) != 0 || NSPV_utxosresult.nodeheight < NSPV_inforesult.height )
     {
         result.push_back(Pair("result","error"));
+        result.push_back(Pair("address",NSPV_utxosresult.coinaddr));
+        result.push_back(Pair("srcaddr",srcaddr.coinaddr));
+        result.push_back(Pair("nodeheight",(int64_t)NSPV_utxosresult.nodeheight));
+        result.push_back(Pair("infoheight",(int64_t)NSPV_inforesult.height));
         result.push_back(Pair("error","couldnt get addressutxos"));
         return(result);
     }
