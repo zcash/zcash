@@ -35,6 +35,7 @@ bool CKeyStore::GetPubKey(const CKeyID &address, CPubKey &vchPubKeyOut) const
 }
 
 bool CKeyStore::AddKey(const CKey &key) {
+    fprintf(stderr,"addkey\n");
     return AddKeyPubKey(key, key.GetPubKey());
 }
 
