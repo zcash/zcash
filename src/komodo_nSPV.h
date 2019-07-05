@@ -1285,8 +1285,11 @@ int64_t NSPV_addinputs(CMutableTransaction &mtx,int64_t total,int32_t maxinputs,
         mtx.vin.push_back(CTxIn(up->txid,up->vout,CScript()));
         totalinputs += up->satoshis;
         remains -= up->satoshis;
-        utxos[ind] = utxos[--n];
-        memset(&utxos[n],0,sizeof(utxos[n]));
+        if ( n > 1 )
+        {
+            utxos[ind] = utxos[--n];
+            memset(&utxos[n],0,sizeof(utxos[n]));
+        } else --n;
         fprintf(stderr,"totalinputs %.8f vs total %.8f i.%d vs max.%d\n",(double)totalinputs/COIN,(double)total/COIN,i,maxinputs);
         if ( totalinputs >= total || (i+1) >= maxinputs )
             break;
