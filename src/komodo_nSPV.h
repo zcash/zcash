@@ -1245,7 +1245,7 @@ int32_t NSPV_vinselect(int32_t *aboveip,int64_t *abovep,int32_t *belowip,int64_t
     else return(belowi);
 }
 
-int64_t NSPV_addinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int32_t maxinputs)
+int64_t NSPV_addinputs(CMutableTransaction &mtx,int64_t total,int32_t maxinputs)
 {
     int32_t abovei,belowi,ind,vout,i,n = 0; int64_t threshold,above,below; int64_t remains,totalinputs = 0; CTransaction tx; struct NSPV_utxoresp *utxos,*up;
     utxos = (struct NSPV_utxoresp *)calloc(NSPV_MAXVINS,sizeof(*utxos));
@@ -1374,7 +1374,7 @@ UniValue NSPV_send(char *srcaddr,char *destaddr,int64_t satoshis) // what its al
     if ( NSPV_addinputs(mtx,satoshis+txfee,64) > 0 )
     {
         mtx.vout.push_back(CTxOut(satoshis,CScript() << OP_DUP << OP_HASH160 << ParseHex(HexStr(data)) << OP_EQUALVERIFY << OP_CHECKSIG));
-        hex = NSPV_signt(mtx,txfee,opret);
+        hex = NSPV_sign(mtx,txfee,opret);
         result.push_back(Pair("result","success"));
         result.push_back(Pair("hex",hex));
         // prove all the vins
