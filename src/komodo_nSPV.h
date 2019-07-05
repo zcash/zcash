@@ -988,7 +988,7 @@ UniValue NSPV_login(char *wifstr)
 
 UniValue NSPV_getinfo_json()
 {
-    uint8_t msg[64]; int32_t i,len = 0; struct NSPV_inforesp I;
+    uint8_t msg[64]; int32_t i,iters,len = 0; struct NSPV_inforesp I;
     NSPV_inforesp_purge(&NSPV_inforesult);
     msg[len++] = NSPV_INFO;
     for (iters=0; iters<3; iters++)
