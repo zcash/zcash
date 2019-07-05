@@ -358,7 +358,7 @@ uint256 NSPV_getnotarization_txid(int32_t *ntzheightp,int32_t height)
     uint256 txid; Notarisation nota; char *symbol = (ASSETCHAINS_SYMBOL[0] == 0) ? (char *)"KMD" : ASSETCHAINS_SYMBOL;
     memset(&txid,0,sizeof(txid));
     *ntzheightp = 0;
-    int32_t matchedHeight = ScanNotarisationsDB2(height,symbol,1440,nota);
+    int32_t matchedHeight = ScanNotarisationsDB2(height+1,symbol,1440,nota);
     if ( matchedHeight != 0 )
     {
         *ntzheightp = matchedHeight;
@@ -369,8 +369,9 @@ uint256 NSPV_getnotarization_txid(int32_t *ntzheightp,int32_t height)
 
 uint256 NSPV_extract_desttxid(char *symbol,std::vector<uint8_t> opret)
 {
-    uint256 desttxid;
-    memcpy(&desttxid,&opret[2 + 4 + 32],sizeof(desttxid));
+    uint256 desttxid; int32_t i;
+    for (i=0; i<32; i++)
+        ((uint8_t *)&desttxid)[i] = opret[2 + 4 + 32 + 31 - i];
     return(desttxid);
 }
 
