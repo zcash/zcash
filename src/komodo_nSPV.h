@@ -351,21 +351,20 @@ void NSPV_spentinfo_purge(struct NSPV_spentinfo *ptr)
 // on fullnode:
 // NSPV_get... functions need to return the exact serialized length, which is the size of the structure minus size of pointers, plus size of allocated data
 
+#include "notarisationdb.h"
+
 uint256 NSPV_getnotarization_txid(int32_t *ntzheightp,int32_t height)
 {
-    uint256 ntztxid;
-    if ( ntzheightp == 0 ) // search consecutive blocks
+    uint256 txid; Notarisation nota; char *symbol = (ASSETCHAINS_SYMBOL[0] == 0) ? "KMD" : ASSETCHAINS_SYMBOL;
+    memset(&txid,0,sizeof(txid));
+    *ntzheightp = 0;
+    int32_t matchedHeight = ScanNotarisationsDB(height,symbol,1440,nota);
+    if ( matchedHeight != 0 )
     {
-        *ntzheightp = height + 1;
-        // iterate
+        *ntzheightp = matchedHeight;
+        txid = nota.first;
     }
-    else
-    {
-        // check *ntzheightp
-    }
-    // find notarization for height, return its txid and set *ntzheightp
-    fprintf(stderr,"implement NSPV_getnotarization_txid\n");
-    return(ntztxid);
+    return(txid);
 }
 
 int32_t NSPV_getinfo(struct NSPV_inforesp *ptr)
