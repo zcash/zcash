@@ -367,57 +367,59 @@ uint256 NSPV_getnotarization_txid(int32_t *ntzheightp,int32_t height)
     return(txid);
 }
 
-uint256 NSPV_extract_desttxid(char *symbol,std::vector<uint8_t> opret)
+uint256 NSPV_extract_desttxid(int32_t *heightp,char *symbol,std::vector<uint8_t> opret)
 {
     uint256 desttxid; int32_t i;
     for (i=0; i<32; i++)
         fprintf(stderr,"%02x",opret[i]);
     fprintf(stderr," blockhash, ");
     for (i=0; i<4; i++)
-        fprintf(stderr,"%02x",opret[i]);
+        fprintf(stderr,"%02x",opret[32+i]);
     fprintf(stderr," height, ");
+    iguana_rwnum(1,&opret[32],sizeof(*heightp),heightp);
     for (i=0; i<32; i++)
-        fprintf(stderr,"%02x",opret[i]);
+        fprintf(stderr,"%02x",opret[36+i]);
     fprintf(stderr," desttxid\n");
     for (i=0; i<32; i++)
         ((uint8_t *)&desttxid)[i] = opret[4 + 32 + 31 - i];
     return(desttxid);
 }
 
-int32_t komodo_notarized_bracket(uint256 txids[2],uint256 desttxids[2],int32_t ntzheights[2],int32_t height)
+int32_t komodo_notarized_bracket(uint256 txids[2],int32_t txidhts[2],uint256 desttxids[2],int32_t ntzheights[2],int32_t height)
 {
-    int32_t ntzht; Notarisation nota; char *symbol;
+    int32_t txidht; Notarisation nota; char *symbol;
     symbol = (ASSETCHAINS_SYMBOL[0] == 0) ? (char *)"KMD" : ASSETCHAINS_SYMBOL;
     memset(txids,0,sizeof(*txids)*2);
     memset(desttxids,0,sizeof(*desttxids)*2);
     memset(ntzheights,0,sizeof(*ntzheights)*2);
-    if ( (ntzht= ScanNotarisationsDB(height,symbol,1440,nota)) == 0 )
+    memset(txidhts,0,sizeof(*txidhts)*2);
+    if ( (txidht= ScanNotarisationsDB(height,symbol,1440,nota)) == 0 )
         return(-1);
     txids[0] = nota.first;
-    ntzheights[0] = ntzht;
-    desttxids[0] = NSPV_extract_desttxid(symbol,E_MARSHAL(ss << nota.second));
-    if ( ntzht == height )
+    txidhts[0] = txidht;
+    desttxids[0] = NSPV_extract_desttxid(&ntzheights[0],symbol,E_MARSHAL(ss << nota.second));
+    if ( ntzheights[0] == height )
     {
         txids[1] = txids[0];
-        ntzheights[1] = ntzht;
+        txidhts[1] = txidhts[0];
+        ntzheights[1] = ntzheights[0];
         desttxids[1] = desttxids[0];
         return(0);
     }
-    if ( (ntzht= ScanNotarisationsDB2(height+1,symbol,1440,nota)) != 0 )
+    if ( (txidht= ScanNotarisationsDB2(height+1,symbol,1440,nota)) != 0 )
     {
         txids[1] = nota.first;
-        ntzheights[1] = ntzht;
-        desttxids[1] = NSPV_extract_desttxid(symbol,E_MARSHAL(ss << nota.second));
+        txidhts[1] = txidht;
+        desttxids[1] = NSPV_extract_desttxid(&ntzheights[1],symbol,E_MARSHAL(ss << nota.second));
     }
     return(0);
 }
 
-int32_t NSPV_ntzextract(struct NSPV_ntz *ptr,uint256 ntztxid,uint256 desttxid,int32_t ntzheight)
+int32_t NSPV_ntzextract(struct NSPV_ntz *ptr,uint256 ntztxid,int32_t txidht,uint256 desttxid,int32_t ntzheight)
 {
-    uint64_t value; uint32_t tiptime=0,txheighttime;
     ptr->blockhash = *chainActive[ntzheight]->phashBlock;
     ptr->height = ntzheight;
-    komodo_interest_args(&txheighttime,&ptr->txidheight,&tiptime,&value,ntztxid,0);
+    ptr->txidheight = txidht;
     ptr->othertxid = desttxid;
     ptr->txid = ntztxid;
     return(0);
@@ -425,17 +427,17 @@ int32_t NSPV_ntzextract(struct NSPV_ntz *ptr,uint256 ntztxid,uint256 desttxid,in
 
 int32_t NSPV_getntzsresp(struct NSPV_ntzsresp *ptr,int32_t height)
 {
-    uint256 txids[2],desttxids[2]; int32_t ntzheights[2];
-    if ( komodo_notarized_bracket(txids,desttxids,ntzheights,height) == 0 )
+    uint256 txids[2],desttxids[2]; int32_t ntzheights[2],txidhts[2];
+    if ( komodo_notarized_bracket(txids,txidhts,desttxids,ntzheights,height) == 0 )
     {
         if ( ntzheights[0] != 0 )
         {
-            if ( NSPV_ntzextract(&ptr->prevntz,txids[0],desttxids[0],ntzheights[0]) < 0 )
+            if ( NSPV_ntzextract(&ptr->prevntz,txids[0],txidhts[0],desttxids[0],ntzheights[0]) < 0 )
                 return(-1);
         }
         if ( ntzheights[1] != 0 )
         {
-            if ( NSPV_ntzextract(&ptr->nextntz,txids[1],desttxids[1],ntzheights[1]) < 0 )
+            if ( NSPV_ntzextract(&ptr->nextntz,txids[1],txidhts[1],desttxids[1],ntzheights[1]) < 0 )
                 return(-1);
         }
     }
