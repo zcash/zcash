@@ -370,11 +370,17 @@ uint256 NSPV_getnotarization_txid(int32_t *ntzheightp,int32_t height)
 uint256 NSPV_extract_desttxid(char *symbol,std::vector<uint8_t> opret)
 {
     uint256 desttxid; int32_t i;
-    for (i=0; i<opret.size(); i++)
-        fprintf(stderr,"%02x",opret[i]);
-    fprintf(stderr," opret\n");
     for (i=0; i<32; i++)
-        ((uint8_t *)&desttxid)[i] = opret[2 + 4 + 32 + i];
+        fprintf(stderr,"%02x",opret[i]);
+    fprintf(stderr," blockhash, ");
+    for (i=0; i<4; i++)
+        fprintf(stderr,"%02x",opret[i]);
+    fprintf(stderr," height, ");
+    for (i=0; i<32; i++)
+        fprintf(stderr,"%02x",opret[i]);
+    fprintf(stderr," desttxid\n");
+    for (i=0; i<32; i++)
+        ((uint8_t *)&desttxid)[i] = opret[4 + 32 + 31 - i];
     return(desttxid);
 }
 
