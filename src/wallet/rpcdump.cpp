@@ -999,10 +999,10 @@ UniValue nspv_login(const UniValue& params, bool fHelp)
 
 UniValue nspv_listunspent(const UniValue& params, bool fHelp)
 {
+    if ( fHelp || params.size() > 1 )
+        throw runtime_error("nspv_listunspent address\n");
     if ( params.size() == 0 && NSPV_address.size() != 0 )
         return(NSPV_addressutxos((char *)NSPV_address.c_str()));
-    if ( fHelp || params.size() != 1 )
-        throw runtime_error("nspv_listunspent address\n");
     return(NSPV_addressutxos((char *)params[0].get_str().c_str()));
 }
 

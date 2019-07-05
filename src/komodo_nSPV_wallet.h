@@ -19,7 +19,7 @@
 
 // nSPV wallet uses superlite functions (and some komodod built in functions) to implement nSPV_send
 // interest calculations are currently just using what is returned, it should calculate it from scratch
-
+#define NSPV_AUTOLOGOUT 60
 #define NSPV_BRANCHID 0x76b809bb
 
 int32_t NSPV_gettransaction(uint256 txid,int32_t height,CTransaction &tx)
@@ -213,6 +213,12 @@ std::string NSPV_signtx(CMutableTransaction &mtx,uint64_t txfee,CScript opret,st
 UniValue NSPV_send(char *srcaddr,char *destaddr,int64_t satoshis) // what its all about!
 {
     UniValue result(UniValue::VOBJ); uint8_t rmd160[128]; int64_t txfee = 10000;
+    if ( NSPV_logintime == 0 || time(NULL) > NSPV_logintime+NSPV_AUTOLOGOUT )
+    {
+        result.push_back(Pair("result","error"));
+        result.push_back(Pair("error","wif expired"));
+        return(result);
+    }
     if ( strcmp(srcaddr,NSPV_address.c_str()) != 0 )
     {
         result.push_back(Pair("result","error"));
@@ -289,7 +295,7 @@ UniValue NSPV_send(char *srcaddr,char *destaddr,int64_t satoshis) // what its al
 void komodo_nSPV(CNode *pto) // polling loop from SendMessages
 {
     uint8_t msg[256]; int32_t i,len=0; uint32_t timestamp = (uint32_t)time(NULL);
-    if ( NSPV_logintime != 0 && timestamp > NSPV_logintime+60 )
+    if ( NSPV_logintime != 0 && timestamp > NSPV_logintime+NSPV_AUTOLOGOUT )
     {
         fprintf(stderr,"scrub wif from NSPV memory\n");
         memset(NSPV_wifstr,0,sizeof(NSPV_wifstr));
