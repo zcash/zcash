@@ -384,7 +384,7 @@ int32_t komodo_notarized_bracket(uint256 txids[2],uint256 desttxids[2],int32_t n
     if ( (ntzht= ScanNotarisationsDB(height,symbol,1440,nota)) == 0 )
         return(-1);
     txids[0] = nota.first;
-    ntzheights[0] = ntzheight;
+    ntzheights[0] = ntzht;
     desttxids[0] = NSPV_extract_desttxid(symbol,E_MARSHAL(ss << nota.second));
     if ( ntzht == height )
     {
@@ -416,7 +416,7 @@ int32_t NSPV_ntzextract(struct NSPV_ntz *ptr,uint256 ntztxid,uint256 desttxid,in
 int32_t NSPV_getntzsresp(struct NSPV_ntzsresp *ptr,int32_t height)
 {
     uint256 txids[2],desttxids[2]; int32_t ntzheights[2];
-    if ( komodo_notarized_bracket(txids,ntzheights,height) == 0 )
+    if ( komodo_notarized_bracket(txids,desttxids,ntzheights,height) == 0 )
     {
         if ( ntzheights[0] != 0 )
         {
