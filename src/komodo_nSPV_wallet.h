@@ -114,7 +114,6 @@ int64_t NSPV_addinputs(struct NSPV_utxoresp *used,CMutableTransaction &mtx,int64
         if ( NSPV_vinselect(&abovei,&above,&belowi,&below,utxos,n,remains) < 0 )
         {
             fprintf(stderr,"error finding unspent i.%d of %d, %.8f vs %.8f\n",i,n,(double)remains/COIN,(double)total/COIN);
-            free(utxos);
             return(0);
         }
         if ( belowi < 0 || abovei >= 0 )
@@ -123,7 +122,6 @@ int64_t NSPV_addinputs(struct NSPV_utxoresp *used,CMutableTransaction &mtx,int64
         if ( ind < 0 )
         {
             fprintf(stderr,"error finding unspent i.%d of %d, %.8f vs %.8f, abovei.%d belowi.%d ind.%d\n",i,n,(double)remains/COIN,(double)total/COIN,abovei,belowi,ind);
-            free(utxos);
             return(0);
         }
         //fprintf(stderr,"i.%d ind.%d abovei.%d belowi.%d n.%d\n",i,ind,abovei,belowi,n);
@@ -232,9 +230,7 @@ UniValue NSPV_send(char *srcaddr,char *destaddr,int64_t satoshis) // what its al
     memcpy(&data[0],&rmd160[1],20);
     if ( NSPV_addinputs(used,mtx,satoshis+txfee,64,NSPV_utxosresult.utxos,NSPV_utxosresult.numutxos) > 0 )
     {
-        fprintf(stderr,"vout\n");
         mtx.vout.push_back(CTxOut(satoshis,CScript() << OP_DUP << OP_HASH160 << ParseHex(HexStr(data)) << OP_EQUALVERIFY << OP_CHECKSIG));
-        fprintf(stderr,"signtx\n");
         hex = NSPV_signtx(mtx,txfee,opret,used);
         result.push_back(Pair("result","success"));
         result.push_back(Pair("hex",hex));
