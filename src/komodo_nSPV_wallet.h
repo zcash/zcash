@@ -134,11 +134,11 @@ int64_t NSPV_addinputs(struct NSPV_utxoresp *used,CMutableTransaction &mtx,int64
         remains -= up->satoshis;
         utxos[ind] = utxos[--n];
         memset(&utxos[n],0,sizeof(utxos[n]));
-        fprintf(stderr,"totalinputs %.8f vs total %.8f i.%d vs max.%d\n",(double)totalinputs/COIN,(double)total/COIN,i,maxinputs);
+        //fprintf(stderr,"totalinputs %.8f vs total %.8f i.%d vs max.%d\n",(double)totalinputs/COIN,(double)total/COIN,i,maxinputs);
         if ( totalinputs >= total || (i+1) >= maxinputs )
             break;
     }
-    fprintf(stderr,"totalinputs %.8f vs total %.8f\n",(double)totalinputs/COIN,(double)total/COIN);
+    //fprintf(stderr,"totalinputs %.8f vs total %.8f\n",(double)totalinputs/COIN,(double)total/COIN);
     if ( totalinputs >= total )
         return(totalinputs);
     return(0);
@@ -147,9 +147,8 @@ int64_t NSPV_addinputs(struct NSPV_utxoresp *used,CMutableTransaction &mtx,int64
 bool NSPV_SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const CScript scriptPubKey)
 {
     CTransaction txNewConst(mtx); SignatureData sigdata; CBasicKeyStore keystore;
-    auto consensusBranchId = NSPV_BRANCHID;
     keystore.AddKey(NSPV_key);
-    if ( ProduceSignature(TransactionSignatureCreator(&keystore,&txNewConst,vini,utxovalue,SIGHASH_ALL),scriptPubKey,sigdata,consensusBranchId) != 0 )
+    if ( ProduceSignature(TransactionSignatureCreator(&keystore,&txNewConst,vini,utxovalue,SIGHASH_ALL),scriptPubKey,sigdata,NSPV_BRANCHID) != 0 )
     {
         UpdateTransaction(mtx,vini,sigdata);
         return(true);
@@ -181,7 +180,10 @@ std::string NSPV_signtx(CMutableTransaction &mtx,uint64_t txfee,CScript opret,st
                 return("");
             }
             else if ( SignTx(mtx,i,vintx.vout[utxovout].nValue,vintx.vout[utxovout].scriptPubKey) == 0 )
+            {
                 fprintf(stderr,"signing error for vini.%d\n",i);
+                return("");
+            }
         } else fprintf(stderr,"couldnt find txid.%s\n",mtx.vin[i].prevout.hash.GetHex().c_str());
     }
     if ( totalinputs >= totaloutputs+2*txfee )
@@ -236,19 +238,29 @@ UniValue NSPV_send(char *srcaddr,char *destaddr,int64_t satoshis) // what its al
         return(result);
     }
     printf("%s numutxos.%d balance %.8f\n",NSPV_utxosresult.coinaddr,NSPV_utxosresult.numutxos,(double)NSPV_utxosresult.total/COIN);
-    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    std::vector<uint8_t> data; CScript opret; std::string hex;
-    struct NSPV_utxoresp used[NSPV_MAXVINS];
+    std::vector<uint8_t> data; CScript opret; std::string hex; struct NSPV_utxoresp used[NSPV_MAXVINS]; CMutableTransaction mtx;
+    mtx.fOverwintered = true;
+    mtx.nExpiryHeight = nHeight + expiryDelta;
+    mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
+    mtx.nVersion = SAPLING_TX_VERSION;
     memset(used,0,sizeof(used));
     data.resize(20);
     memcpy(&data[0],&rmd160[1],20);
+
     if ( NSPV_addinputs(used,mtx,satoshis+txfee,64,NSPV_utxosresult.utxos,NSPV_utxosresult.numutxos) > 0 )
     {
         mtx.vout.push_back(CTxOut(satoshis,CScript() << OP_DUP << OP_HASH160 << ParseHex(HexStr(data)) << OP_EQUALVERIFY << OP_CHECKSIG));
         hex = NSPV_signtx(mtx,txfee,opret,used);
-        result.push_back(Pair("result","success"));
-        result.push_back(Pair("hex",hex));
-        // prove all the vins
+        if ( hex.size() > 0 )
+        {
+            result.push_back(Pair("result","success"));
+            result.push_back(Pair("hex",hex));
+        }
+        else
+        {
+            result.push_back(Pair("result","error"));
+            result.push_back(Pair("error","signing error"));
+        }
         return(result);
     }
     else
