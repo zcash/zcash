@@ -1261,7 +1261,7 @@ int64_t NSPV_addinputs(CMutableTransaction &mtx,int64_t total,int32_t maxinputs)
         abovei = belowi = -1;
         if ( NSPV_vinselect(&abovei,&above,&belowi,&below,utxos,n,remains) < 0 )
         {
-            printf("error finding unspent i.%d of %d, %.8f vs %.8f\n",i,n,(double)remains/COIN,(double)total/COIN);
+            fprintf(stderr,"error finding unspent i.%d of %d, %.8f vs %.8f\n",i,n,(double)remains/COIN,(double)total/COIN);
             free(utxos);
             return(0);
         }
@@ -1270,7 +1270,7 @@ int64_t NSPV_addinputs(CMutableTransaction &mtx,int64_t total,int32_t maxinputs)
         else ind = belowi;
         if ( ind < 0 )
         {
-            printf("error finding unspent i.%d of %d, %.8f vs %.8f, abovei.%d belowi.%d ind.%d\n",i,n,(double)remains/COIN,(double)total/COIN,abovei,belowi,ind);
+            fprintf(stderr,"error finding unspent i.%d of %d, %.8f vs %.8f, abovei.%d belowi.%d ind.%d\n",i,n,(double)remains/COIN,(double)total/COIN,abovei,belowi,ind);
             free(utxos);
             return(0);
         }
@@ -1280,7 +1280,7 @@ int64_t NSPV_addinputs(CMutableTransaction &mtx,int64_t total,int32_t maxinputs)
         remains -= up->satoshis;
         utxos[ind] = utxos[--n];
         memset(&utxos[n],0,sizeof(utxos[n]));
-        //fprintf(stderr,"totalinputs %.8f vs total %.8f i.%d vs max.%d\n",(double)totalinputs/COIN,(double)total/COIN,i,maxinputs);
+        fprintf(stderr,"totalinputs %.8f vs total %.8f i.%d vs max.%d\n",(double)totalinputs/COIN,(double)total/COIN,i,maxinputs);
         if ( totalinputs >= total || (i+1) >= maxinputs )
             break;
     }
