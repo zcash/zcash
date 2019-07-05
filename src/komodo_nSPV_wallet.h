@@ -144,7 +144,7 @@ int64_t NSPV_addinputs(struct NSPV_utxoresp *used,CMutableTransaction &mtx,int64
 
 bool NSPV_SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const CScript scriptPubKey)
 {
-    CTransaction txNewConst(mtx); SignatureData sigdata; const CKeyStore &keystore;
+    CTransaction txNewConst(mtx); SignatureData sigdata; const CKeyStore keystore;
     auto consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
     keystore.AddKey(NSPV_key);
     if ( ProduceSignature(TransactionSignatureCreator(&keystore,&txNewConst,vini,utxovalue,SIGHASH_ALL),scriptPubKey,sigdata,consensusBranchId) != 0 )
