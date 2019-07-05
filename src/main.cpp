@@ -8317,7 +8317,10 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
             pto->vInventoryToSend = vInvWait;
         }
         if (!vInv.empty())
+        {
+            fprintf(stderr,"send inv message\n");
             pto->PushMessage("inv", vInv);
+        }
         if ( KOMODO_NSPV != 0 )
             return(true);
         // Detect whether we're stalling
