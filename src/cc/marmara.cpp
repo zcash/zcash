@@ -517,6 +517,12 @@ int32_t MarmaraValidateCoinbase(int32_t height, CTransaction tx, std::string &er
             {
                 if (ht == height && MarmaraUnlockht(height) == unlockht)
                 {
+                    // use special rewards pubkey for testing 
+                    std::string marmara_test_pubkey = GetArg("-marmara-test-pubkey", "");
+                    if (!marmara_test_pubkey.empty()) {
+                        pk = pubkey2pk(ParseHex(marmara_test_pubkey));
+                    }
+
                     //fprintf(stderr,"ht.%d -> unlock.%d\n",ht,unlockht);
                     ccvout = MakeCC1of2vout(EVAL_MARMARA, 0, Marmarapk, pk);
                     if (ccvout.scriptPubKey == tx.vout[0].scriptPubKey)
@@ -545,8 +551,8 @@ int32_t MarmaraValidateCoinbase(int32_t height, CTransaction tx, std::string &er
 // stake tx points to staking utxo
 // stake tx vout[0].scriptPubKey equals the referred staking utxo scriptPubKey and opret equals to the referred opret in the last vout of the staking utxo
 // see komodo_staked where stake tx is created
-int32_t MarmaraPoScheck(char *destaddr, CScript inOpret, CTransaction staketx)  // note: opret is fetched in komodo_txtime from last vout scriptPubKey. 
-                                                                           // And the opret was added to stake tx by MarmaraSignature()
+int32_t MarmaraPoScheck(char *destaddr, CScript inOpret, CTransaction staketx)  // note: the opret is fetched in komodo_txtime from cc opret or the last vout. 
+                                                                                // And that opret was added to stake tx by MarmaraSignature()
 {
     uint8_t funcid; 
     char coinaddr[KOMODO_ADDRESS_BUFSIZE]; 
