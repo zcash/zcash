@@ -2240,7 +2240,7 @@ void komodo_args(char *argv0)
             }
             if ( (port= komodo_userpass(ASSETCHAINS_USERPASS,ASSETCHAINS_SYMBOL)) != 0 )
                 ASSETCHAINS_RPCPORT = port;
-            else komodo_configfile(ASSETCHAINS_SYMBOL,ASSETCHAINS_P2PPORT + 1);\
+            else komodo_configfile(ASSETCHAINS_SYMBOL,ASSETCHAINS_P2PPORT + 1);
             if (ASSETCHAINS_CBMATURITY < 1)
             {
                 fprintf(stderr,"ac_cbmaturity must be >0\n");
