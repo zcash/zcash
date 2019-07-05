@@ -284,7 +284,7 @@ struct NSPV_ntzsproofresp
     struct NSPV_ntzproofshared common;
     uint256 prevtxid,nexttxid;
     int32_t pad32,prevtxidht,nexttxidht;
-    uint16_t prevlen,nextlen;
+    uint16_t prevtxlen,nexttxlen;
     uint8_t *prevntz,*nextntz;
 };
 
@@ -297,8 +297,8 @@ int32_t NSPV_rwntzsproofresp(int32_t rwflag,uint8_t *serialized,struct NSPV_ntzs
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->pad32),&ptr->pad32);
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->prevtxidht),&ptr->prevtxidht);
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->nexttxidht),&ptr->nexttxidht);
-    len += iguana_rwuint8vec(rwflag,&serialized[len],&ptr->prevlen,&ptr->prevntz);
-    len += iguana_rwuint8vec(rwflag,&serialized[len],&ptr->nextlen,&ptr->nextntz);
+    len += iguana_rwuint8vec(rwflag,&serialized[len],&ptr->prevtxlen,&ptr->prevntz);
+    len += iguana_rwuint8vec(rwflag,&serialized[len],&ptr->nexttxlen,&ptr->nextntz);
     return(len);
 }
 
@@ -398,8 +398,9 @@ int32_t komodo_notarized_bracket(uint256 txids[2],int32_t txidhts[2],uint256 des
     txids[0] = nota.first;
     txidhts[0] = txidht;
     desttxids[0] = NSPV_extract_desttxid(&ntzheights[0],symbol,E_MARSHAL(ss << nota.second));
-    fprintf(stderr,"scan.%d -> %s txidht.%d ntzht.%d\n",height,desttxids[0].GetHex().c_str(),txidht,ntzheights[0]);
-    if ( ntzheights[0] == height-1 )
+    if ( height != 2668 )
+        fprintf(stderr,"scan.%d -> %s txidht.%d ntzht.%d\n",height,desttxids[0].GetHex().c_str(),txidht,ntzheights[0]);
+    if ( ntzheights[0] == height-1 ) // offset the +1 from caller
     {
         txids[1] = txids[0];
         txidhts[1] = txidhts[0];
@@ -606,11 +607,11 @@ int32_t NSPV_getntzsproofresp(struct NSPV_ntzsproofresp *ptr,int32_t prevht,int3
         }
     }
     ptr->prevtxid = NSPV_getnotarization_txid(&ptr->prevtxidht,prevht);
-    ptr->prevntz = NSPV_getrawtx(hashBlock,&ptr->prevlen,ptr->prevtxid);
+    ptr->prevntz = NSPV_getrawtx(hashBlock,&ptr->prevtxlen,ptr->prevtxid);
     ptr->nexttxid = NSPV_getnotarization_txid(&ptr->nexttxidht,nextht);
-    ptr->nextntz = NSPV_getrawtx(hashBlock,&ptr->nextlen,ptr->nexttxid);
-    //fprintf(stderr,"prevlen.%d nextlen.%d size %ld -> %ld\n",ptr->prevlen,ptr->nextlen,sizeof(*ptr),sizeof(*ptr) - sizeof(ptr->common.hdrs) - sizeof(ptr->prevntz) - sizeof(ptr->nextntz) + ptr->prevlen + ptr->nextlen);
-    return(sizeof(*ptr) + sizeof(*ptr->common.hdrs)*ptr->common.numhdrs - sizeof(ptr->common.hdrs) - sizeof(ptr->prevntz) - sizeof(ptr->nextntz) + ptr->prevlen + ptr->nextlen);
+    ptr->nextntz = NSPV_getrawtx(hashBlock,&ptr->nexttxlen,ptr->nexttxid);
+    //fprintf(stderr,"prevtxlen.%d nexttxlen.%d size %ld -> %ld\n",ptr->prevtxlen,ptr->nexttxlen,sizeof(*ptr),sizeof(*ptr) - sizeof(ptr->common.hdrs) - sizeof(ptr->prevntz) - sizeof(ptr->nextntz) + ptr->prevlen + ptr->nextlen);
+    return(sizeof(*ptr) + sizeof(*ptr->common.hdrs)*ptr->common.numhdrs - sizeof(ptr->common.hdrs) - sizeof(ptr->prevntz) - sizeof(ptr->nextntz) + ptr->prevtxlen + ptr->nexttxlen);
 }
 
 int32_t NSPV_getspentinfo(struct NSPV_spentinfo *ptr,uint256 txid,int32_t vout)
@@ -884,8 +885,8 @@ UniValue _NSPV_getinfo_json(struct NSPV_inforesp *ptr)
 UniValue NSPV_getinfo_json()
 {
     uint8_t msg[64]; int32_t i,len = 0; struct NSPV_inforesp I;
-    if ( NSPV_inforesult.height != 0 )
-        return(_NSPV_getinfo_json(&NSPV_inforesult));
+    //if ( NSPV_inforesult.height != 0 )
+    //    return(_NSPV_getinfo_json(&NSPV_inforesult));
     msg[len++] = NSPV_INFO;
     if ( NSPV_req(0,msg,len,NODE_NSPV,msg[0]>>1) != 0 )
     {
@@ -961,10 +962,10 @@ UniValue NSPV_ntzsproof_json(struct NSPV_ntzsproofresp *ptr)
     result.push_back(Pair("nextht",(int64_t)ptr->common.nextht));
     result.push_back(Pair("prevtxid",ptr->prevtxid.GetHex()));
     result.push_back(Pair("prevtxidht",(int64_t)ptr->prevtxidht));
-    result.push_back(Pair("prevlen",(int64_t)ptr->prevlen));
+    result.push_back(Pair("prevtxlen",(int64_t)ptr->prevtxlen));
     result.push_back(Pair("nexttxid",ptr->nexttxid.GetHex()));
     result.push_back(Pair("nexttxidht",(int64_t)ptr->nexttxidht));
-    result.push_back(Pair("nextlen",(int64_t)ptr->prevlen));
+    result.push_back(Pair("nexttxlen",(int64_t)ptr->prevtxlen));
     result.push_back(Pair("numhdrs",(int64_t)ptr->common.numhdrs));
     result.push_back(Pair("headers",NSPV_headers_json(ptr->common.hdrs,ptr->common.numhdrs)));
     return(result);
