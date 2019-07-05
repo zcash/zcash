@@ -1249,14 +1249,18 @@ int64_t NSPV_addinputs(CMutableTransaction &mtx,int64_t total,int32_t maxinputs,
 {
     int32_t abovei,belowi,ind,vout,i,n = 0; int64_t threshold,above,below; int64_t remains,totalinputs = 0; CTransaction tx; struct NSPV_utxoresp *utxos,*up;
     utxos = (struct NSPV_utxoresp *)calloc(n,sizeof(*utxos));
-    for (i=0; i<num; i++)
-        utxos[n++] = ptr[i];
     if ( maxinputs > NSPV_MAXVINS )
         maxinputs = NSPV_MAXVINS;
     if ( maxinputs > 0 )
         threshold = total/maxinputs;
     else threshold = total;
+    for (i=0; i<num; i++)
+    {
+        if ( ptr[i].satoshis > threshold )
+            utxos[n++] = ptr[i];
+    }
     remains = total;
+    fprintf(stderr,"n.%d for total %.8f\n",n,(double)total/COIN);
     for (i=0; i<maxinputs && n>0; i++)
     {
         below = above = 0;
@@ -1276,6 +1280,7 @@ int64_t NSPV_addinputs(CMutableTransaction &mtx,int64_t total,int32_t maxinputs,
             free(utxos);
             return(0);
         }
+        fprintf(stderr,"i.%d ind.%d abovei.%d belowi.%d n.%d\n",i,ind,abovei,belowi,n);
         up = &utxos[ind];
         mtx.vin.push_back(CTxIn(up->txid,up->vout,CScript()));
         totalinputs += up->satoshis;
@@ -1287,6 +1292,7 @@ int64_t NSPV_addinputs(CMutableTransaction &mtx,int64_t total,int32_t maxinputs,
             break;
     }
     free(utxos);
+    fprintf(stderr,"totalinputs %.8f vs total %.8f\n",(double)totalinputs/COIN,(double)total/COIN);
     if ( totalinputs >= total )
         return(totalinputs);
     return(0);
@@ -1316,6 +1322,7 @@ std::string NSPV_signtx(CMutableTransaction &mtx,uint64_t txfee,CScript opret)
         mtx.vout.push_back(CTxOut(0,opret));
     PrecomputedTransactionData txdata(mtx);
     n = mtx.vin.size();
+    fprintf(stderr,"sign inputs %.8f -> outputs %.8f change %.8f\n",(double)totalinputs/COIN,(double)totaloutputs/COIN,(double)change/COIN);
     for (i=0; i<n; i++)
     {
         if ( GetTransaction(mtx.vin[i].prevout.hash,vintx,hashBlock,false) != 0 )
@@ -1375,7 +1382,9 @@ UniValue NSPV_send(char *srcaddr,char *destaddr,int64_t satoshis) // what its al
     memcpy(&data[0],&rmd160[1],20);
     if ( NSPV_addinputs(mtx,satoshis+txfee,64,NSPV_utxosresult.utxos,NSPV_utxosresult.numutxos) > 0 )
     {
+        fprintf(stderr,"vout\n");
         mtx.vout.push_back(CTxOut(satoshis,CScript() << OP_DUP << OP_HASH160 << ParseHex(HexStr(data)) << OP_EQUALVERIFY << OP_CHECKSIG));
+        fprintf(stderr,"signtx\n");
         hex = NSPV_signtx(mtx,txfee,opret);
         result.push_back(Pair("result","success"));
         result.push_back(Pair("hex",hex));
