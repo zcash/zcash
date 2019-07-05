@@ -1248,7 +1248,7 @@ int32_t NSPV_vinselect(int32_t *aboveip,int64_t *abovep,int32_t *belowip,int64_t
 int64_t NSPV_addinputs(CMutableTransaction &mtx,int64_t total,int32_t maxinputs,struct NSPV_utxoresp *ptr,int32_t num)
 {
     int32_t abovei,belowi,ind,vout,i,n = 0; int64_t threshold,above,below; int64_t remains,totalinputs = 0; CTransaction tx; struct NSPV_utxoresp *utxos,*up;
-    utxos = (struct NSPV_utxoresp *)calloc(n,sizeof(*utxos));
+    utxos = (struct NSPV_utxoresp *)calloc(num,sizeof(*utxos));
     if ( maxinputs > NSPV_MAXVINS )
         maxinputs = NSPV_MAXVINS;
     if ( maxinputs > 0 )
@@ -1285,11 +1285,8 @@ int64_t NSPV_addinputs(CMutableTransaction &mtx,int64_t total,int32_t maxinputs,
         mtx.vin.push_back(CTxIn(up->txid,up->vout,CScript()));
         totalinputs += up->satoshis;
         remains -= up->satoshis;
-        if ( n > 1 )
-        {
-            utxos[ind] = utxos[--n];
-            memset(&utxos[n],0,sizeof(utxos[n]));
-        } else --n;
+        utxos[ind] = utxos[--n];
+        memset(&utxos[n],0,sizeof(utxos[n]));
         fprintf(stderr,"totalinputs %.8f vs total %.8f i.%d vs max.%d\n",(double)totalinputs/COIN,(double)total/COIN,i,maxinputs);
         if ( totalinputs >= total || (i+1) >= maxinputs )
             break;
