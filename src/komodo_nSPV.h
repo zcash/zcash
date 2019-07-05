@@ -370,16 +370,16 @@ uint256 NSPV_getnotarization_txid(int32_t *ntzheightp,int32_t height)
 uint256 NSPV_extract_desttxid(int32_t *heightp,char *symbol,std::vector<uint8_t> opret)
 {
     uint256 desttxid; int32_t i;
-    for (i=0; i<32; i++)
-        fprintf(stderr,"%02x",opret[i]);
-    fprintf(stderr," blockhash, ");
-    for (i=0; i<4; i++)
-        fprintf(stderr,"%02x",opret[32+i]);
-    fprintf(stderr," height, ");
+    //for (i=0; i<32; i++)
+    //    fprintf(stderr,"%02x",opret[i]);
+    //fprintf(stderr," blockhash, ");
+    //for (i=0; i<4; i++)
+    //    fprintf(stderr,"%02x",opret[32+i]);
+    //fprintf(stderr," height, ");
     iguana_rwnum(0,&opret[32],sizeof(*heightp),heightp);
-    for (i=0; i<32; i++)
-        fprintf(stderr,"%02x",opret[36+i]);
-    fprintf(stderr," desttxid\n");
+    //for (i=0; i<32; i++)
+    //    fprintf(stderr,"%02x",opret[36+i]);
+    //fprintf(stderr," desttxid\n");
     for (i=0; i<32; i++)
         ((uint8_t *)&desttxid)[i] = opret[4 + 32 + i];
     return(desttxid);
@@ -398,7 +398,7 @@ int32_t komodo_notarized_bracket(uint256 txids[2],int32_t txidhts[2],uint256 des
     txids[0] = nota.first;
     txidhts[0] = txidht;
     desttxids[0] = NSPV_extract_desttxid(&ntzheights[0],symbol,E_MARSHAL(ss << nota.second));
-    fprintf(stderr,"scan.%d -> %s txidht.%d ntzht.%d\n",height,desttxids[0].GetHex().c_str(),txidht,ntzheights[0]);
+    //fprintf(stderr,"scan.%d -> %s txidht.%d ntzht.%d\n",height,desttxids[0].GetHex().c_str(),txidht,ntzheights[0]);
     if ( ntzheights[0] == height )
     {
         txids[1] = txids[0];
@@ -429,8 +429,8 @@ int32_t NSPV_ntzextract(struct NSPV_ntz *ptr,uint256 ntztxid,int32_t txidht,uint
 int32_t NSPV_getntzsresp(struct NSPV_ntzsresp *ptr,int32_t height)
 {
     uint256 txids[2],desttxids[2]; int32_t ntzheights[2],txidhts[2];
-    if ( height < chainActive.LastTip()->GetHeight() )
-        height++;
+    //if ( height < chainActive.LastTip()->GetHeight() )
+    //    height++;
     if ( komodo_notarized_bracket(txids,txidhts,desttxids,ntzheights,height) == 0 )
     {
         if ( ntzheights[0] != 0 )
