@@ -188,6 +188,7 @@ std::string NSPV_signtx(CMutableTransaction &mtx,uint64_t txfee,CScript opret,st
     {
         if ( NSPV_gettransaction(mtx.vin[i].prevout.hash,used[i].height,vintx) == 0 )
         {
+            utxovout = mtx.vin[i].prevout.n;
             if ( vintx.vout[utxovout].nValue != used[i].satoshis )
             {
                 fprintf(stderr,"vintx mismatch %.8f != %.8f\n",(double)vintx.vout[utxovout].nValue/COIN,(double)used[i].satoshis/COIN);
