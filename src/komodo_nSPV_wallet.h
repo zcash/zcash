@@ -147,6 +147,7 @@ int64_t NSPV_addinputs(struct NSPV_utxoresp *used,CMutableTransaction &mtx,int64
 bool NSPV_SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const CScript scriptPubKey)
 {
     CTransaction txNewConst(mtx); SignatureData sigdata; CBasicKeyStore keystore;
+    fprintf("call Addkey\n");
     keystore.AddKey(NSPV_key);
     if ( ProduceSignature(TransactionSignatureCreator(&keystore,&txNewConst,vini,utxovalue,SIGHASH_ALL),scriptPubKey,sigdata,NSPV_BRANCHID) != 0 )
     {
