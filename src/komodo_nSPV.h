@@ -1366,7 +1366,7 @@ UniValue NSPV_send(char *srcaddr,char *destaddr,int64_t satoshis) // what its al
         result.push_back(Pair("amount",(double)satoshis/COIN));
         return(result);
     }
-    printf("%s numutxos.%d balance %.8f\n",NSPV_utxosresult.coinaddr,NSPV_utxosresult.common.numutxos,(double)NSPV_utxosresult.total/COIN);
+    printf("%s numutxos.%d balance %.8f\n",NSPV_utxosresult.coinaddr,NSPV_utxosresult.numutxos,(double)NSPV_utxosresult.total/COIN);
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     std::vector<uint8_t> data; CScript opret; std::string hex;
     data.resize(20);
