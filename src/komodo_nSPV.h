@@ -355,7 +355,7 @@ void NSPV_spentinfo_purge(struct NSPV_spentinfo *ptr)
 
 uint256 NSPV_getnotarization_txid(int32_t *ntzheightp,int32_t height)
 {
-    uint256 txid; Notarisation nota; char *symbol = (ASSETCHAINS_SYMBOL[0] == 0) ? "KMD" : ASSETCHAINS_SYMBOL;
+    uint256 txid; Notarisation nota; char *symbol = (ASSETCHAINS_SYMBOL[0] == 0) ? (char *)"KMD" : ASSETCHAINS_SYMBOL;
     memset(&txid,0,sizeof(txid));
     *ntzheightp = 0;
     int32_t matchedHeight = ScanNotarisationsDB(height,symbol,1440,nota);
