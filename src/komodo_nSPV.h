@@ -1367,7 +1367,7 @@ UniValue NSPV_send(char *srcaddr,char *destaddr,int64_t satoshis) // what its al
         return(result);
     }
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    std::vector<uint8_t> data,opret; std::string hex;
+    std::vector<uint8_t> data; CScript opret; std::string hex;
     data.resize(20);
     memcpy(&data[0],&rmd160[1],20);
     if ( NSPV_addinputs(mtx,satoshis+txfee,64) > 0 )
