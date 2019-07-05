@@ -8243,6 +8243,7 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
             state.fShouldBan = false;
         }
         komodo_nSPV(pto);
+        bool fFetch = false;
         if ( KOMODO_NSPV == 0 )
         {
             BOOST_FOREACH(const CBlockReject& reject, state.rejects)
@@ -8252,7 +8253,7 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
             // Start block sync
             if (pindexBestHeader == NULL)
                 pindexBestHeader = chainActive.Tip();
-            bool fFetch = state.fPreferredDownload || (nPreferredDownload == 0 && !pto->fClient && !pto->fOneShot); // Download if this is a nice peer, or we have no nice peers and this one might do.
+            fFetch = state.fPreferredDownload || (nPreferredDownload == 0 && !pto->fClient && !pto->fOneShot); // Download if this is a nice peer, or we have no nice peers and this one might do.
             if (!state.fSyncStarted && !pto->fClient && !fImporting && !fReindex && pindexBestHeader!=0) {
                 // Only actively request headers from a single peer, unless we're close to today.
                 if ((nSyncStarted == 0 && fFetch) || pindexBestHeader->GetBlockTime() > GetAdjustedTime() - 24 * 60 * 60) {
