@@ -71,7 +71,12 @@ bool CBasicKeyStore::AddKeyPubKey(const CKey& key, const CPubKey &pubkey)
 {
     LOCK(cs_KeyStore);
     mapKeys[pubkey.GetID()] = key;
-    fprintf(stderr,"addpubkey pub %s\n",pubkey.GetHex().c_str());
+    {
+        int32_t i;
+        for (i=0; i<33; i++)
+            fprintf(stderr,"%02x",((uint8_t *)&pubkey)[i]);
+        fprintf(stderr," addpubkey pub\n");
+    }
     return true;
 }
 
