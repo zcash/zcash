@@ -1839,7 +1839,6 @@ void komodo_args(char *argv0)
         Split(GetArg("-ac_decay",""),  ASSETCHAINS_DECAY, 0);
         Split(GetArg("-ac_notarypay",""),  ASSETCHAINS_NOTARY_PAY, 0);
 
-
         for ( int i = 0; i < ASSETCHAINS_MAX_ERAS; i++ )
         {
             if ( ASSETCHAINS_DECAY[i] == 100000000 && ASSETCHAINS_ENDSUBSIDY == 0 )
