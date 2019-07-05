@@ -790,6 +790,8 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
 }
 
 // nSPV client. VERY simplistic "single threaded" networking model. for production GUI best to multithread, etc.
+#define NSPV_POLLITERS 15
+#define NSPV_POLLMICROS 100000
 
 CAmount AmountFromValue(const UniValue& value);
 int32_t bitcoin_base58decode(uint8_t *data,char *coinaddr);
@@ -880,25 +882,6 @@ UniValue _NSPV_getinfo_json(struct NSPV_inforesp *ptr)
     result.push_back(Pair("chaintip",ptr->blockhash.GetHex()));
     result.push_back(Pair("notarization",NSPV_ntz_json(&ptr->notarization)));
     return(result);
-}
-
-UniValue NSPV_getinfo_json()
-{
-    uint8_t msg[64]; int32_t i,len = 0; struct NSPV_inforesp I;
-    //if ( NSPV_inforesult.height != 0 )
-    //    return(_NSPV_getinfo_json(&NSPV_inforesult));
-    msg[len++] = NSPV_INFO;
-    if ( NSPV_req(0,msg,len,NODE_NSPV,msg[0]>>1) != 0 )
-    {
-        for (i=0; i<10; i++)
-        {
-            usleep(100000);
-            if ( NSPV_inforesult.height != 0 )
-                return(_NSPV_getinfo_json(&NSPV_inforesult));
-        }
-    }
-    memset(&I,0,sizeof(I));
-    return(_NSPV_getinfo_json(&NSPV_inforesult));
 }
 
 UniValue NSPV_utxoresp_json(struct NSPV_utxoresp *utxos,int32_t numutxos)
@@ -1003,6 +986,28 @@ UniValue NSPV_login(char *wifstr)
     return(result);
 }
 
+UniValue NSPV_getinfo_json()
+{
+    uint8_t msg[64]; int32_t i,len = 0; struct NSPV_inforesp I;
+    NSPV_inforesp_purge(&NSPV_inforesult);
+    msg[len++] = NSPV_INFO;
+    for (iters=0; iters<3; iters++)
+    {
+        fprintf(stderr,"issue getinfo\n");
+        if ( NSPV_req(0,msg,len,NODE_NSPV,msg[0]>>1) != 0 )
+        {
+            for (i=0; i<NSPV_POLLITERS; i++)
+            {
+                usleep(NSPV_POLLMICROS);
+                if ( NSPV_inforesult.height != 0 )
+                    return(_NSPV_getinfo_json(&NSPV_inforesult));
+            }
+        }
+    }
+    memset(&I,0,sizeof(I));
+    return(_NSPV_getinfo_json(&NSPV_inforesult));
+}
+
 UniValue NSPV_addressutxos(char *coinaddr)
 {
     UniValue result(UniValue::VOBJ); uint8_t msg[64]; int32_t i,slen,len = 0;
@@ -1025,9 +1030,9 @@ UniValue NSPV_addressutxos(char *coinaddr)
     msg[len] = 0;
     if ( NSPV_req(0,msg,len,NODE_ADDRINDEX,msg[0]>>1) != 0 )
     {
-        for (i=0; i<10; i++)
+        for (i=0; i<NSPV_POLLITERS; i++)
         {
-            usleep(100000);
+            usleep(NSPV_POLLMICROS);
             if ( NSPV_utxosresult.nodeheight >= NSPV_inforesult.height )
                 return(NSPV_utxosresp_json(&NSPV_utxosresult));
         }
@@ -1046,9 +1051,9 @@ UniValue NSPV_notarizations(int32_t height)
     len += iguana_rwnum(1,&msg[len],sizeof(height),&height);
     if ( NSPV_req(0,msg,len,NODE_NSPV,msg[0]>>1) != 0 )
     {
-        for (i=0; i<10; i++)
+        for (i=0; i<NSPV_POLLITERS; i++)
         {
-            usleep(100000);
+            usleep(NSPV_POLLMICROS);
             if ( NSPV_ntzsresult.prevntz.height <= height && NSPV_ntzsresult.nextntz.height >= height )
                 return(NSPV_ntzs_json(&NSPV_ntzsresult));
         }
@@ -1067,9 +1072,9 @@ UniValue NSPV_hdrsproof(int32_t prevheight,int32_t nextheight)
     len += iguana_rwnum(1,&msg[len],sizeof(nextheight),&nextheight);
     if ( NSPV_req(0,msg,len,NODE_NSPV,msg[0]>>1) != 0 )
     {
-        for (i=0; i<10; i++)
+        for (i=0; i<NSPV_POLLITERS; i++)
         {
-            usleep(100000);
+            usleep(NSPV_POLLMICROS);
             if ( NSPV_ntzsproofresult.common.prevht == prevheight && NSPV_ntzsproofresult.common.nextht >= nextheight )
                 return(NSPV_ntzsproof_json(&NSPV_ntzsproofresult));
         }
@@ -1089,9 +1094,9 @@ UniValue NSPV_txproof(uint256 txid,int32_t height)
     //fprintf(stderr,"req txproof %s at height.%d\n",txid.GetHex().c_str(),height);
     if ( NSPV_req(0,msg,len,NODE_NSPV,msg[0]>>1) != 0 )
     {
-        for (i=0; i<10; i++)
+        for (i=0; i<NSPV_POLLITERS; i++)
         {
-            usleep(100000);
+            usleep(NSPV_POLLMICROS);
             if ( NSPV_txproofresult.txid == txid && NSPV_txproofresult.height == height )
                 return(NSPV_txproof_json(&NSPV_txproofresult));
         }
@@ -1110,9 +1115,9 @@ UniValue NSPV_spentinfo(uint256 txid,int32_t vout)
     len += iguana_rwbignum(1,&msg[len],sizeof(txid),(uint8_t *)&txid);
     if ( NSPV_req(0,msg,len,NODE_SPENTINDEX,msg[0]>>1) != 0 )
     {
-        for (i=0; i<10; i++)
+        for (i=0; i<NSPV_POLLITERS; i++)
         {
-            usleep(100000);
+            usleep(NSPV_POLLMICROS);
             if ( NSPV_spentresult.txid == txid && NSPV_spentresult.vout == vout )
                 return(NSPV_spentinfo_json(&NSPV_spentresult));
         }
