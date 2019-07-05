@@ -180,7 +180,7 @@ std::string NSPV_signtx(CMutableTransaction &mtx,uint64_t txfee,CScript opret,st
                 fprintf(stderr,"vintx vout mismatch %d != %d\n",utxovout,used[i].vout);
                 return("");
             }
-            else if ( SignTx(mtx,i,vintx.vout[utxovout].nValue,vintx.vout[utxovout].scriptPubKey) == 0 )
+            else if ( NSPV_SignTx(mtx,i,vintx.vout[utxovout].nValue,vintx.vout[utxovout].scriptPubKey) == 0 )
             {
                 fprintf(stderr,"signing error for vini.%d\n",i);
                 return("");
