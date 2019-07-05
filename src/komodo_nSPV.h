@@ -816,6 +816,8 @@ CNode *NSPV_req(CNode *pnode,uint8_t *msg,int32_t len,uint64_t mask,int32_t ind)
         LOCK(cs_vNodes);
         BOOST_FOREACH(CNode *ptr,vNodes)
         {
+            if ( ptr->prevtimes[ind] > timestamp )
+                ptr->prevtimes[ind] = 0;
             if ( ptr->hSocket == INVALID_SOCKET )
                 continue;
             if ( (ptr->nServices & mask) == mask && timestamp > ptr->prevtimes[ind] )
