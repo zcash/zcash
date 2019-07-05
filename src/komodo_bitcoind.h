@@ -1817,6 +1817,7 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
             {
                 // checks utxo is eligible to stake this block
                 eligible = komodo_stake(1,bnTarget,height,txid,vout,pblock->nTime,prevtime+ASSETCHAINS_STAKED_BLOCK_FUTURE_HALF,(char *)"",PoSperc); 
+                std::cout << __func__ << " eligible=" << eligible << " pblock->nTime" << pblock->nTime << std::endl;
             }
             if ( eligible == 0 || eligible > pblock->nTime )
             {
