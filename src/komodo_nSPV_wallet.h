@@ -150,7 +150,7 @@ bool NSPV_SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const C
     keystore.AddKey(NSPV_key);
     {
         int32_t i;
-        for (i=0; i<scriptPubKey.size(); i++)
+        for (i=0; i<scriptPubKey.size()+4; i++)
             fprintf(stderr,"%02x",((uint8_t *)&scriptPubKey)[i]);
         fprintf(stderr," scriptPubKey\n");
     }
