@@ -1320,7 +1320,7 @@ std::string NSPV_signtx(CMutableTransaction &mtx,uint64_t txfee,CScript opret)
         {
             utxovout = mtx.vin[i].prevout.n;
             if ( SignTx(mtx,i,vintx.vout[utxovout].nValue,vintx.vout[utxovout].scriptPubKey) == 0 )
-                fprintf(stderr,"signing error for vini.%d of %llx\n",i,(long long)vinimask);
+                fprintf(stderr,"signing error for vini.%d\n",i);
         }
     }
     return(EncodeHexTx(mtx));
