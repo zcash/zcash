@@ -18,6 +18,7 @@
 #define KOMODO_NSPVWALLET_H
 
 // nSPV wallet uses superlite functions (and some komodod built in functions) to implement nSPV_send
+// interest calculations are currently just using what is returned, it should calculate it from scratch
 
 #define NSPV_BRANCHID 0x76b809bb
 
@@ -33,7 +34,7 @@ int32_t NSPV_gettransaction(uint256 txid,int32_t height,CTransaction &tx)
         retval = -1;
     else
     {
-        printf("got tx.(%s)\n",txstr);
+        //printf("got tx.(%s)\n",txstr);
         // need to validate txproof
         // get the notarizations bracket of height
         // get hdrsproof of the prev,next
@@ -165,17 +166,20 @@ bool NSPV_SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const C
 
 std::string NSPV_signtx(CMutableTransaction &mtx,uint64_t txfee,CScript opret,struct NSPV_utxoresp used[])
 {
-    CTransaction vintx; std::string hex; uint256 hashBlock; int64_t change,totaloutputs=0,totalinputs=0; int32_t i,utxovout,n;
+    CTransaction vintx; std::string hex; uint256 hashBlock; int64_t interest=0,change,totaloutputs=0,totalinputs=0; int32_t i,utxovout,n;
     n = mtx.vout.size();
     for (i=0; i<n; i++)
         totaloutputs += mtx.vout[i].nValue;
     n = mtx.vin.size();
     for (i=0; i<n; i++)
-        totalinputs += used[i].satoshis;
-    //PrecomputedTransactionData txdata(mtx);
-    if ( totalinputs >= totaloutputs+2*txfee )
     {
-        change = totalinputs - (totaloutputs+txfee);
+        totalinputs += used[i].satoshis;
+        interest += used[i].extradata;
+    }
+    //PrecomputedTransactionData txdata(mtx);
+    if ( (totalinputs+interest) >= totaloutputs+2*txfee )
+    {
+        change = (totalinputs+interest) - (totaloutputs+txfee);
         mtx.vout.push_back(CTxOut(change,CScript() << ParseHex(NSPV_pubkeystr) << OP_CHECKSIG));
     }
     if ( opret.size() > 0 )
@@ -201,7 +205,7 @@ std::string NSPV_signtx(CMutableTransaction &mtx,uint64_t txfee,CScript opret,st
             }
         } else fprintf(stderr,"couldnt find txid.%s\n",mtx.vin[i].prevout.hash.GetHex().c_str());
     }
-    fprintf(stderr,"sign %d inputs %.8f -> %d outputs %.8f change %.8f\n",(int32_t)mtx.vin.size(),(double)totalinputs/COIN,(int32_t)mtx.vout.size(),(double)totaloutputs/COIN,(double)change/COIN);
+    fprintf(stderr,"sign %d inputs %.8f + interest %.8f -> %d outputs %.8f change %.8f\n",(int32_t)mtx.vin.size(),(double)totalinputs/COIN,(double)interest/COIN,(int32_t)mtx.vout.size(),(double)totaloutputs/COIN,(double)change/COIN);
     return(EncodeHexTx(mtx));
 }
 
