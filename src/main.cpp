@@ -7450,7 +7450,8 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         komodo_nSPVresp(pfrom,payload);
         return(true);
     }
-
+    else if ( KOMODO_NSPV != 0 )
+        return(true);
     else if (strCommand == "inv")
     {
         vector<CInv> vInv;
