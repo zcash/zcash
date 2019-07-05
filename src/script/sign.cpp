@@ -44,7 +44,10 @@ bool TransactionSignatureCreator::CreateSig(std::vector<unsigned char>& vchSig, 
     if (pprivKey)
         key = *pprivKey;
     else if (!keystore || !keystore->GetKey(address, key))
+    {
+        fprintf(stderr,"couldnt find key\n");
         return false;
+    }
     
     uint256 hash;
     try {
