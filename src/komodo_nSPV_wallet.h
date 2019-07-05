@@ -147,8 +147,13 @@ int64_t NSPV_addinputs(struct NSPV_utxoresp *used,CMutableTransaction &mtx,int64
 bool NSPV_SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const CScript scriptPubKey)
 {
     CTransaction txNewConst(mtx); SignatureData sigdata; CBasicKeyStore keystore;
-    fprintf(stderr,"call Addkey\n");
     keystore.AddKey(NSPV_key);
+    {
+        int32_t i;
+        for (i=0; i<scriptPubKey.size(); i++)
+            fprintf(stderr,"%02x",((uint8_t *)scriptPubKey)[i]);
+        fprintf(stderr," scriptPubKey\n");
+    }
     if ( ProduceSignature(TransactionSignatureCreator(&keystore,&txNewConst,vini,utxovalue,SIGHASH_ALL),scriptPubKey,sigdata,NSPV_BRANCHID) != 0 )
     {
         UpdateTransaction(mtx,vini,sigdata);
