@@ -1193,13 +1193,15 @@ void komodo_nSPVresp(CNode *pfrom,std::vector<uint8_t> response) // received a r
     }
 }
 
+// nSPV wallet
+
 int32_t NSPV_vinselect(int32_t *aboveip,int64_t *abovep,int32_t *belowip,int64_t *belowp,struct NSPV_utxoresp utxos[],int32_t numunspents,int64_t value)
 {
     int32_t i,abovei,belowi; int64_t above,below,gap,atx_value;
     abovei = belowi = -1;
     for (above=below=i=0; i<numunspents; i++)
     {
-        if ( (atx_value= utxos[i].nValue) <= 0 )
+        if ( (atx_value= utxos[i].satoshis) <= 0 )
             continue;
         if ( atx_value == value )
         {
@@ -1274,8 +1276,8 @@ int64_t NSPV_addinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int32
         }
         up = &utxos[ind];
         mtx.vin.push_back(CTxIn(up->txid,up->vout,CScript()));
-        totalinputs += up->nValue;
-        remains -= up->nValue;
+        totalinputs += up->satoshis;
+        remains -= up->satoshis;
         utxos[ind] = utxos[--n];
         memset(&utxos[n],0,sizeof(utxos[n]));
         //fprintf(stderr,"totalinputs %.8f vs total %.8f i.%d vs max.%d\n",(double)totalinputs/COIN,(double)total/COIN,i,maxinputs);
@@ -1294,14 +1296,14 @@ std::string NSPV_signtx(CMutableTransaction &mtx,uint64_t txfee,CScript opret)
     CTransaction vintx; std::string hex; uint256 hashBlock; int64_t change,totaloutputs=0,totalinputs=0; int32_t i,utxovout,n;
     n = mtx.vout.size();
     for (i=0; i<n; i++)
-        totaloutputs += mtx.vout[i].nValue;
+        totaloutputs += mtx.vout[i].satoshis;
     memset(utxovalues,0,sizeof(utxovalues));
     for (i=0; i<n; i++)
     {
         if ( GetTransaction(mtx.vin[i].prevout.hash,vintx,hashBlock,false) != 0 )
         {
             utxovout = mtx.vin[i].prevout.n;
-            totalinputs += vintx.vout[utxovout].nValue;
+            totalinputs += vintx.vout[utxovout].satoshis;
         }
     }
     if ( totalinputs >= totaloutputs+2*txfee )
@@ -1318,7 +1320,7 @@ std::string NSPV_signtx(CMutableTransaction &mtx,uint64_t txfee,CScript opret)
         if ( GetTransaction(mtx.vin[i].prevout.hash,vintx,hashBlock,false) != 0 )
         {
             utxovout = mtx.vin[i].prevout.n;
-            if ( SignTx(mtx,i,vintx.vout[utxovout].nValue,vintx.vout[utxovout].scriptPubKey) == 0 )
+            if ( SignTx(mtx,i,vintx.vout[utxovout].satoshis,vintx.vout[utxovout].scriptPubKey) == 0 )
                 fprintf(stderr,"signing error for vini.%d of %llx\n",i,(long long)vinimask);
         }
     }
@@ -1371,7 +1373,7 @@ UniValue NSPV_send(char *srcaddr,char *destaddr,int64_t satoshis) // what its al
     memcpy(&data[0],&rmd160[1],20);
     if ( NSPV_addinputs(mtx,satoshis+txfee,64) > 0 )
     {
-        mtx.vout.push_back(CTxOut(nValue,CScript() << OP_DUP << OP_HASH160 << ParseHex(HexStr(data)) << OP_EQUALVERIFY << OP_CHECKSIG));
+        mtx.vout.push_back(CTxOut(satoshis,CScript() << OP_DUP << OP_HASH160 << ParseHex(HexStr(data)) << OP_EQUALVERIFY << OP_CHECKSIG));
         hex = NSPV_signt(mtx,txfee,opret);
         result.push_back(Pair("result","success"));
         result.push_back(Pair("hex",hex));
