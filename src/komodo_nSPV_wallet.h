@@ -33,6 +33,7 @@ int32_t NSPV_gettransaction(uint256 txid,int32_t height,CTransaction &tx)
         retval = -1;
     else
     {
+        printf("got tx.(%s)\n",txstr);
         // need to validate txproof
         // get the notarizations bracket of height
         // get hdrsproof of the prev,next
@@ -168,13 +169,21 @@ std::string NSPV_signtx(CMutableTransaction &mtx,uint64_t txfee,CScript opret,st
     n = mtx.vout.size();
     for (i=0; i<n; i++)
         totaloutputs += mtx.vout[i].nValue;
-    PrecomputedTransactionData txdata(mtx);
+    n = mtx.vin.size();
+    for (i=0; i<n; i++)
+        totalinputs += used[i].satoshis;
+    //PrecomputedTransactionData txdata(mtx);
+    if ( totalinputs >= totaloutputs+2*txfee )
+    {
+        change = totalinputs - (totaloutputs+txfee);
+        mtx.vout.push_back(CTxOut(change,CScript() << ParseHex(NSPV_pubkeystr) << OP_CHECKSIG));
+    }
+    if ( opret.size() > 0 )
+        mtx.vout.push_back(CTxOut(0,opret));
     for (i=0; i<n; i++)
     {
         if ( NSPV_gettransaction(mtx.vin[i].prevout.hash,used[i].height,vintx) == 0 )
         {
-            utxovout = mtx.vin[i].prevout.n;
-            totalinputs += vintx.vout[utxovout].nValue;
             if ( vintx.vout[utxovout].nValue != used[i].satoshis )
             {
                 fprintf(stderr,"vintx mismatch %.8f != %.8f\n",(double)vintx.vout[utxovout].nValue/COIN,(double)used[i].satoshis/COIN);
@@ -192,13 +201,6 @@ std::string NSPV_signtx(CMutableTransaction &mtx,uint64_t txfee,CScript opret,st
             }
         } else fprintf(stderr,"couldnt find txid.%s\n",mtx.vin[i].prevout.hash.GetHex().c_str());
     }
-    if ( totalinputs >= totaloutputs+2*txfee )
-    {
-        change = totalinputs - (totaloutputs+txfee);
-        mtx.vout.push_back(CTxOut(change,CScript() << ParseHex(NSPV_pubkeystr) << OP_CHECKSIG));
-    }
-    if ( opret.size() > 0 )
-        mtx.vout.push_back(CTxOut(0,opret));
     fprintf(stderr,"sign %d inputs %.8f -> %d outputs %.8f change %.8f\n",(int32_t)mtx.vin.size(),(double)totalinputs/COIN,(int32_t)mtx.vout.size(),(double)totaloutputs/COIN,(double)change/COIN);
     return(EncodeHexTx(mtx));
 }
