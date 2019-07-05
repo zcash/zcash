@@ -826,14 +826,33 @@ UniValue NSPV_ntz_json(struct NSPV_ntz *ptr)
     return(result);
 }
 
-UniValue NSPV_getinfo_json()
+UniValue _NSPV_getinfo_json(struct NSPV_inforesp *ptr)
 {
     UniValue result(UniValue::VOBJ);
     result.push_back(Pair("result","success"));
-    result.push_back(Pair("height",(int64_t)NSPV_inforesult.height));
-    result.push_back(Pair("chaintip",NSPV_inforesult.blockhash.GetHex()));
-    result.push_back(Pair("notarization",NSPV_ntz_json(&NSPV_inforesult.notarization)));
+    result.push_back(Pair("height",(int64_t)ptr->height));
+    result.push_back(Pair("chaintip",ptr->blockhash.GetHex()));
+    result.push_back(Pair("notarization",NSPV_ntz_json(&ptr->notarization)));
     return(result);
+}
+
+UniValue NSPV_getinfo_json()
+{
+    uint8_t msg[64]; int32_t i,len = 0; struct NSPV_inforesp I;
+    if ( NSPV_inforesult.height != 0 )
+        return(_NSPV_getinfo_json(&NSPV_inforesult));
+    msg[len++] = NSPV_INFO;
+    if ( NSPV_req(0,msg,len,NODE_NSPV,msg[0]>>1) != 0 )
+    {
+        for (i=0; i<10; i++)
+        {
+            usleep(100000);
+            if ( NSPV_inforesult.height != 0 )
+                return(_NSPV_getinfo_json(&NSPV_inforesult));
+        }
+    }
+    memset(&I,0,sizeof(I));
+    return(_NSPV_getinfo_json(&NSPV_inforesult));
 }
 
 UniValue NSPV_utxoresp_json(struct NSPV_utxoresp *utxos,int32_t numutxos)
