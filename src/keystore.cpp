@@ -35,7 +35,6 @@ bool CKeyStore::GetPubKey(const CKeyID &address, CPubKey &vchPubKeyOut) const
 }
 
 bool CKeyStore::AddKey(const CKey &key) {
-    fprintf(stderr,"addkey\n");
     return AddKeyPubKey(key, key.GetPubKey());
 }
 
@@ -72,12 +71,6 @@ bool CBasicKeyStore::AddKeyPubKey(const CKey& key, const CPubKey &pubkey)
 {
     LOCK(cs_KeyStore);
     mapKeys[pubkey.GetID()] = key;
-    {
-        int32_t i;
-        for (i=0; i<33; i++)
-            fprintf(stderr,"%02x",((uint8_t *)&pubkey)[i]);
-        fprintf(stderr," addpubkey pub\n");
-    }
     return true;
 }
 
