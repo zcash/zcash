@@ -205,11 +205,11 @@ int32_t NSPV_sendrawtransaction(struct NSPV_broadcastresp *ptr,uint8_t *data,int
     {
         LOCK(cs_main);
         ptr->txid = tx.GetHash();
-        fprintf(stderr,"addmempool transaction %s\n",ptr->txid.GetHex().c_str());
+        //fprintf(stderr,"addmempool transaction %s\n",ptr->txid.GetHex().c_str());
         if ( myAddtomempool(tx) != 0 )
             ptr->retcode = 1;
         else ptr->retcode = 0;
-        fprintf(stderr,"relay transaction %s retcode.%d\n",ptr->txid.GetHex().c_str(),ptr->retcode);
+        //fprintf(stderr,"relay transaction %s retcode.%d\n",ptr->txid.GetHex().c_str(),ptr->retcode);
         RelayTransaction(tx);
     } else ptr->retcode = -1;
     return(sizeof(*ptr));
@@ -493,7 +493,6 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                     {
                         response.resize(1 + slen);
                         response[0] = NSPV_BROADCASTRESP;
-                        fprintf(stderr,"slen.%d\n",slen);
                         if ( NSPV_rwbroadcastresp(1,&response[1],&B) == slen )
                         {
                             pfrom->PushMessage("nSPV",response);

@@ -387,6 +387,7 @@ UniValue NSPV_broadcast(char *hex)
     len += iguana_rwnum(1,&msg[len],sizeof(n),&n);
     memcpy(&msg[len],data,n), len += n;
     free(data);
+    fprintf(stderr,"send txid.%s\n",txid.GetHex().c_str());
     if ( NSPV_req(0,msg,len,NODE_NSPV,msg[0]>>1) != 0 )
     {
         for (i=0; i<NSPV_POLLITERS; i++)

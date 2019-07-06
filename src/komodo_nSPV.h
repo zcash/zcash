@@ -374,7 +374,6 @@ int32_t NSPV_rwbroadcastresp(int32_t rwflag,uint8_t *serialized,struct NSPV_broa
     int32_t len = 0;
     len += iguana_rwbignum(rwflag,&serialized[len],sizeof(ptr->txid),(uint8_t *)&ptr->txid);
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->retcode),&ptr->retcode);
-    fprintf(stderr,"broadcastresp[%d]\n",len);
     return(len);
 }
 
