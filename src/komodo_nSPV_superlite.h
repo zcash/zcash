@@ -377,10 +377,10 @@ UniValue NSPV_broadcast(char *hex)
 {
     uint8_t msg[64],*tx; bits256 _txid; uint256 txid; uint16_t n; int32_t i,len = 0; struct NSPV_broadcastresp B;
     n = (int32_t)strlen(hex) >> 1;
-    tx = malloc(n);
+    tx = (uint8_t *)malloc(n);
     decode_hex(tx,n,hex);
     _txid = bits256_doublesha256(0,tx,n);
-    memcpy(&txid,_txid,sizeof(txid));
+    memcpy(&txid,&_txid,sizeof(txid));
     msg[len++] = NSPV_BROADCAST;
     len += iguana_rwbignum(1,&msg[len],sizeof(txid),(uint8_t *)&txid);
     len += iguana_rwnum(1,&msg[len],sizeof(n),&n);
@@ -437,7 +437,7 @@ void komodo_nSPVresp(CNode *pfrom,std::vector<uint8_t> response) // received a r
             break;
         case NSPV_BROADCASTRESP:
             NSPV_broadcast_purge(&NSPV_broadcastresult);
-            NSPV_rwbroadcast(0,&response[1],&NSPV_broadcastresult);
+            NSPV_rwbroadcastresp(0,&response[1],&NSPV_broadcastresult);
             fprintf(stderr,"got broadcast response %u size.%d\n",timestamp,(int32_t)response.size());
             break;
        default: fprintf(stderr,"unexpected response %02x size.%d at %u\n",response[0],(int32_t)response.size(),timestamp);
