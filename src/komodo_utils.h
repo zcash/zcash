@@ -1872,6 +1872,7 @@ void komodo_args(char *argv0)
         ASSETCHAINS_CODAPORT = GetArg("-ac_coda",0);
         ASSETCHAINS_MARMARA = GetArg("-ac_marmara",0);
         ASSETCHAINS_CBOPRET = GetArg("-ac_cbopret",0);
+        ASSETCHAINS_CBMATURITY = GetArg("-ac_cbmaturity",0);
         //fprintf(stderr,"ASSETCHAINS_CBOPRET.%llx\n",(long long)ASSETCHAINS_CBOPRET);
         if ( ASSETCHAINS_CBOPRET != 0 )
         {
@@ -2184,6 +2185,10 @@ void komodo_args(char *argv0)
             {
                 extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_EARLYTXIDCONTRACT),(void *)&ASSETCHAINS_EARLYTXIDCONTRACT);
             }
+            if ( ASSETCHAINS_CBMATURITY != 0 )
+            {
+                extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_CBMATURITY),(void *)&ASSETCHAINS_CBMATURITY);
+            }
         }
         
         addn = GetArg("-seednode","");
@@ -2235,8 +2240,16 @@ void komodo_args(char *argv0)
             if ( (port= komodo_userpass(ASSETCHAINS_USERPASS,ASSETCHAINS_SYMBOL)) != 0 )
                 ASSETCHAINS_RPCPORT = port;
             else komodo_configfile(ASSETCHAINS_SYMBOL,ASSETCHAINS_P2PPORT + 1);
-            if (ASSETCHAINS_LASTERA == 0 || is_STAKED(ASSETCHAINS_SYMBOL) != 0)
+
+            if (ASSETCHAINS_CBMATURITY != 0)
+                COINBASE_MATURITY = ASSETCHAINS_CBMATURITY;
+            else if (ASSETCHAINS_LASTERA == 0 || is_STAKED(ASSETCHAINS_SYMBOL) != 0)
                 COINBASE_MATURITY = 1;
+            if (COINBASE_MATURITY < 1)
+            {
+                fprintf(stderr,"ac_cbmaturity must be >0, shutting down\n");
+                StartShutdown();
+            }
             //fprintf(stderr,"ASSETCHAINS_RPCPORT (%s) %u\n",ASSETCHAINS_SYMBOL,ASSETCHAINS_RPCPORT);
         }
         if ( ASSETCHAINS_RPCPORT == 0 )
