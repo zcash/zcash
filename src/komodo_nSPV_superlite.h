@@ -192,12 +192,21 @@ UniValue NSPV_ntzsproof_json(struct NSPV_ntzsproofresp *ptr)
     return(result);
 }
 
-UniValue NSPV_broadcast_json(struct NSPV_broadcastresp *ptr)
+UniValue NSPV_broadcast_json(struct NSPV_broadcastresp *ptr,uint256 txid)
 {
     UniValue result(UniValue::VOBJ);
     result.push_back(Pair("result","success"));
-    result.push_back(Pair("txid",ptr->txid.GetHex()));
+    result.push_back(Pair("expected",txid.GetHex()));
+    result.push_back(Pair("broadcast",ptr->txid.GetHex()));
     result.push_back(Pair("retcode",(int64_t)ptr->retcode));
+    switch ( ptr->retcode )
+    {
+        case 1: result.push_back(Pair("type","broadcast and mempool")); break;
+        case 0: result.push_back(Pair("type","broadcast")); break;
+        case -1: result.push_back(Pair("type","decode error")); break;
+        case -2: result.push_back(Pair("type","timeout")); break;
+        default: result.push_back(Pair("type","unknown")); break;
+    }
     return(result);
 }
 
@@ -380,7 +389,8 @@ UniValue NSPV_broadcast(char *hex)
     data = (uint8_t *)malloc(n);
     decode_hex(data,n,hex);
     _txid = bits256_doublesha256(0,data,n);
-    memcpy(&txid,&_txid,sizeof(txid));
+    for (i=0; i<32; i++)
+        ((uint8_t *)&txid[i] = _txid.bytes[31 - i];
     msg = (uint8_t *)malloc(1 + sizeof(txid) + sizeof(n) + n);
     msg[len++] = NSPV_BROADCAST;
     len += iguana_rwbignum(1,&msg[len],sizeof(txid),(uint8_t *)&txid);
@@ -396,14 +406,14 @@ UniValue NSPV_broadcast(char *hex)
             if ( NSPV_broadcastresult.txid == txid )
             {
                 free(msg);
-                return(NSPV_broadcast_json(&NSPV_broadcastresult));
+                return(NSPV_broadcast_json(&NSPV_broadcastresult,txid));
             }
         }
     }
     free(msg);
     memset(&B,0,sizeof(B));
     B.retcode = -2;
-    return(NSPV_broadcast_json(&B));
+    return(NSPV_broadcast_json(&B,txid));
 }
 
 void komodo_nSPVresp(CNode *pfrom,std::vector<uint8_t> response) // received a response
