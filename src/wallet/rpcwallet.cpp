@@ -176,6 +176,19 @@ UniValue getnewaddress(const UniValue& params, bool fHelp)
             + HelpExampleRpc("getnewaddress", "")
         );
 
+    if ( KOMODO_NSPV != 0 )
+    {
+        uint8_t priv32[32];
+#ifndef __WIN32
+        OS_randombytes(priv32,sizeof(priv32));
+#else
+        randombytes_buf(priv32,sizeof(priv32));
+#endif
+        key.Set(&priv[0],&priv[32], true);
+        CPubKey pubkey = key.GetPubKey();
+        CKeyID vchAddress = pubkey.GetID();
+        return(EncodeDestination(vchAddress));
+    }
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
     // Parse the account first so we don't generate a key if there's an error
