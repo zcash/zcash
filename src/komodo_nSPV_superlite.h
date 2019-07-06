@@ -390,14 +390,14 @@ UniValue NSPV_broadcast(char *hex)
     decode_hex(data,n,hex);
     _txid = bits256_doublesha256(0,data,n);
     for (i=0; i<32; i++)
-        ((uint8_t *)&txid[i] = _txid.bytes[31 - i];
+        ((uint8_t *)&txid)[i] = _txid.bytes[31 - i];
     msg = (uint8_t *)malloc(1 + sizeof(txid) + sizeof(n) + n);
     msg[len++] = NSPV_BROADCAST;
     len += iguana_rwbignum(1,&msg[len],sizeof(txid),(uint8_t *)&txid);
     len += iguana_rwnum(1,&msg[len],sizeof(n),&n);
     memcpy(&msg[len],data,n), len += n;
     free(data);
-    fprintf(stderr,"send txid.%s\n",txid.GetHex().c_str());
+    //fprintf(stderr,"send txid.%s\n",txid.GetHex().c_str());
     if ( NSPV_req(0,msg,len,NODE_NSPV,msg[0]>>1) != 0 )
     {
         for (i=0; i<NSPV_POLLITERS; i++)

@@ -1282,6 +1282,8 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
     return result;
 }
 
+extern UniValue NSPV_broadcast(char *hex);
+
 UniValue sendrawtransaction(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() < 1 || params.size() > 2)
@@ -1340,8 +1342,12 @@ UniValue sendrawtransaction(const UniValue& params, bool fHelp)
         } else if (fHaveChain) {
             throw JSONRPCError(RPC_TRANSACTION_ALREADY_IN_CHAIN, "transaction already in block chain");
         }
+        RelayTransaction(tx);
     }
-    RelayTransaction(tx);
+    else
+    {
+        NSPV_broadcast((char *)params[0].get_str().c_str());
+    }
     return hashTx.GetHex();
 }
 
