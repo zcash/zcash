@@ -158,6 +158,8 @@ char *komodo_chainname()
      return(ASSETCHAINS_SYMBOL[0] == 0 ? (char *)"KMD" : ASSETCHAINS_SYMBOL);
 }
 
+void OS_randombytes(unsigned char *x,long xlen);
+
 UniValue getnewaddress(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
@@ -184,7 +186,7 @@ UniValue getnewaddress(const UniValue& params, bool fHelp)
 #else
         randombytes_buf(priv32,sizeof(priv32));
 #endif
-        key.Set(&priv[0],&priv[32], true);
+        key.Set(&priv32[0],&priv[32], true);
         CPubKey pubkey = key.GetPubKey();
         CKeyID vchAddress = pubkey.GetID();
         return(EncodeDestination(vchAddress));
