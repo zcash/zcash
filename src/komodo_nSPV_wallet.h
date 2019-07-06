@@ -40,12 +40,12 @@ struct NSPV_ntzsproofresp
     uint8_t *prevntz,*nextntz;
 };*/
 
-int32_t NSPV_validatehdrs(struct NSPV_ntzsproofresult *ptr)
+int32_t NSPV_validatehdrs(struct NSPV_ntzsproofresp *ptr)
 {
     int32_t i;
     // verify nextntz is valid notarization
     // validate blockhash of lasthdr with nextntz value, and height
-    for (i=numhdrs-1; i>0; i--)
+    for (i=ptr->common.numhdrs-1; i>0; i--)
     {
         // make sure the hash of i-1 matches the prevBlockhash of i
     }
