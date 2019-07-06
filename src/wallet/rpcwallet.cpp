@@ -186,7 +186,7 @@ UniValue getnewaddress(const UniValue& params, bool fHelp)
 #else
         randombytes_buf(priv32,sizeof(priv32));
 #endif
-        key.Set(&priv32[0],&priv[32], true);
+        key.Set(&priv32[0],&priv32[32], true);
         CPubKey pubkey = key.GetPubKey();
         CKeyID vchAddress = pubkey.GetID();
         return(EncodeDestination(vchAddress));

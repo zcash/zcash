@@ -302,7 +302,8 @@ UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis) // what its a
     mtx.nExpiryHeight = 0;
     mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
     mtx.nVersion = SAPLING_TX_VERSION;
-    mtx.nLockTime = (uint32_t)time(NULL) - 777;
+    if ( ASSETCHAINS_SYMBOL[0] == 0 )
+        mtx.nLockTime = (uint32_t)time(NULL) - 777;
     memset(used,0,sizeof(used));
     data.resize(20);
     memcpy(&data[0],&rmd160[1],20);
