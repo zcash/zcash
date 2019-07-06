@@ -256,26 +256,6 @@ void NSPV_txproof_purge(struct NSPV_txproof *ptr)
     }
 }
 
-/*struct NSPV_utxo
-{
-    struct NSPV_txproof T;
-    int64_t satoshis,extradata;
-    int32_t vout,prevht,nextht,pad32;
-};
-
-int32_t NSPV_rwutxo(int32_t rwflag,uint8_t *serialized,struct NSPV_utxo *ptr)
-{
-    int32_t len = 0;
-    len += NSPV_rwtxproof(rwflag,&serialized[len],&ptr->T);
-    len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->satoshis),&ptr->satoshis);
-    len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->extradata),&ptr->extradata);
-    len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->vout),&ptr->vout);
-    len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->prevht),&ptr->prevht);
-    len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->nextht),&ptr->nextht);
-    len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->pad32),&ptr->pad32);
-    return(len);
-}*/
-
 struct NSPV_ntzproofshared
 {
     struct NSPV_equihdr *hdrs;
@@ -381,6 +361,15 @@ void NSPV_broadcast_purge(struct NSPV_broadcastresp *ptr)
 {
     if ( ptr != 0 )
         memset(ptr,0,sizeof(*ptr));
+}
+
+uint256 NSPV_doublesha256(uint8_t *data,int32_t datalen)
+{
+    bits256 _hash; uint256 hash;
+    _hash = bits256_doublesha256(0,data,datalen);
+    for (i=0; i<32; i++)
+        ((uint8_t *)&hash)[i] = _hash.bytes[31 - i];
+    return(hash);
 }
 
 #endif // KOMODO_NSPV_H

@@ -384,13 +384,11 @@ UniValue NSPV_spentinfo(uint256 txid,int32_t vout)
 
 UniValue NSPV_broadcast(char *hex)
 {
-    uint8_t *msg,*data; bits256 _txid; uint256 txid; uint16_t n; int32_t i,len = 0; struct NSPV_broadcastresp B;
+    uint8_t *msg,*data; uint256 txid; uint16_t n; int32_t i,len = 0; struct NSPV_broadcastresp B;
     n = (int32_t)strlen(hex) >> 1;
     data = (uint8_t *)malloc(n);
     decode_hex(data,n,hex);
-    _txid = bits256_doublesha256(0,data,n);
-    for (i=0; i<32; i++)
-        ((uint8_t *)&txid)[i] = _txid.bytes[31 - i];
+    txid = NSPV_doublesha256(data,n);
     msg = (uint8_t *)malloc(1 + sizeof(txid) + sizeof(n) + n);
     msg[len++] = NSPV_BROADCAST;
     len += iguana_rwbignum(1,&msg[len],sizeof(txid),(uint8_t *)&txid);

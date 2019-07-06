@@ -23,6 +23,37 @@ extern void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& 
 #define NSPV_AUTOLOGOUT 60
 #define NSPV_BRANCHID 0x76b809bb
 
+
+/*struct NSPV_ntzproofshared
+{
+    struct NSPV_equihdr *hdrs;
+    int32_t prevht,nextht,pad32;
+    uint16_t numhdrs,pad16;
+};
+
+struct NSPV_ntzsproofresp
+{
+    struct NSPV_ntzproofshared common;
+    uint256 prevtxid,nexttxid;
+    int32_t pad32,prevtxidht,nexttxidht;
+    uint16_t prevtxlen,nexttxlen;
+    uint8_t *prevntz,*nextntz;
+};*/
+
+int32_t NSPV_validatehdrs(struct NSPV_ntzsproofresult *ptr)
+{
+    int32_t i;
+    // verify nextntz is valid notarization
+    // validate blockhash of lasthdr with nextntz value, and height
+    for (i=numhdrs-1; i>0; i--)
+    {
+        // make sure the hash of i-1 matches the prevBlockhash of i
+    }
+    // verify prevntz is valid notarization
+    // verify blockhash of first hdr with prevntz value and height
+    return(0);
+}
+
 int32_t NSPV_gettransaction(uint256 txid,int32_t height,CTransaction &tx)
 {
     char *txstr; int32_t retval = 0;
@@ -35,11 +66,15 @@ int32_t NSPV_gettransaction(uint256 txid,int32_t height,CTransaction &tx)
         retval = -1;
     else
     {
-        //printf("got tx.(%s)\n",txstr);
-        // need to validate txproof
         NSPV_notarizations(height); // gets the prev and next notarizations
-        NSPV_hdrsproof(NSPV_ntzsresult.prevntz.height,NSPV_ntzsresult.nextntz.height); // validate the segment
-        // merkle prove txproof to the merkleroot in the corresponding hdr
+        if ( NSPV_ntzsresult.prevntz.height != 0 && NSPV_ntzsresult.prevntz.height <= NSPV_ntzsresult.nextntz.height )
+        {
+            NSPV_hdrsproof(NSPV_ntzsresult.prevntz.height,NSPV_ntzsresult.nextntz.height); // validate the segment
+            if ( NSPV_validatehdrs(&NSPV_ntzsproofresult) == 0 )
+            {
+                // merkle prove txproof to the merkleroot in the corresponding hdr
+            }
+        } else retval = -1;
     }
     free(txstr);
     return(retval);
