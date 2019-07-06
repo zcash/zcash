@@ -201,7 +201,7 @@ int32_t NSPV_sendrawtransaction(struct NSPV_broadcastresp *ptr,uint8_t *data,int
     ptr->retcode = 0;
     rawdata.resize(n);
     memcpy(&rawdata[0],data,n);
-    if ( DecodeHexTx(tx,rawdata.GetHex()) != 0 )
+    if ( DecodeHexTx(tx,rawdata.ToString()) != 0 )
     {
         LOCK(cs_main);
         ptr->txid = tx.GetHash();
@@ -493,7 +493,7 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                     {
                         response.resize(1 + slen);
                         response[0] = NSPV_BROADCASTRESP;
-                        fprintf(stderr,"slen.%d\n");
+                        fprintf(stderr,"slen.%d\n",slen);
                         if ( NSPV_rwbroadcastresp(1,&response[1],&B) == slen )
                         {
                             pfrom->PushMessage("nSPV",response);
