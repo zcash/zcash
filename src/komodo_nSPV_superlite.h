@@ -21,12 +21,6 @@
 // no caching, no optimizations, no reducing the number of ntzsproofs needed by detecting overlaps, etc.
 // advantage is that it is simpler to implement and understand to create a design for a more performant version
 
-// interest calculations are currently just using what is returned, it should calculate it from scratch
-// need to validate incoming data and update only if it is valid and more recent
-
-#define NSPV_POLLITERS 15
-#define NSPV_POLLMICROS 100000
-#define NSPV_MAXVINS 64
 
 CAmount AmountFromValue(const UniValue& value);
 int32_t bitcoin_base58decode(uint8_t *data,char *coinaddr);
@@ -113,8 +107,18 @@ UniValue NSPV_ntz_json(struct NSPV_ntz *ptr)
 
 UniValue _NSPV_getinfo_json(struct NSPV_inforesp *ptr)
 {
-    UniValue result(UniValue::VOBJ);
+    UniValue result(UniValue::VOBJ); int32_t expiration; uint32_t timestamp = (uint32_t)time(NULL);
     result.push_back(Pair("result","success"));
+    if ( NSPV_address.size() != 0 )
+    {
+        result.push_back(Pair("address",NSPV_address));
+        result.push_back(Pair("pubkey",NSPV_pubkeystr));
+    }
+    if ( NSPV_logintime != 0 )
+    {
+        expiration = (NSPV_logintime + NSPV_AUTOLOGOUT - timestamp);
+        result.push_back(Pair("wifexpires",expiration));
+    }
     result.push_back(Pair("height",(int64_t)ptr->height));
     result.push_back(Pair("chaintip",ptr->blockhash.GetHex()));
     result.push_back(Pair("notarization",NSPV_ntz_json(&ptr->notarization)));

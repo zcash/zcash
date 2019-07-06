@@ -16,12 +16,23 @@
 
 // todo:
 // make sure no files are updated (this is to allow nSPV=1 and later nSPV=0 without affecting database)
+
+// determine if it makes sense to be scanning mempool for the utxo/spentinfo requests, maybe can add isspent flag to txproof, or just use getspentinfo if broadcast fails
+
 // validate proofs
+// interest calculations are currently just using what is returned, it should calculate it from scratch
+
+// need to validate incoming data and update only if it is valid and more recent
 // make sure to sanity check all vector lengths on receipt
-// determine if it makes sense to be scanning mempool for the utxo/spentinfo requests
 
 #ifndef KOMODO_NSPV_H
 #define KOMODO_NSPV_H
+
+#define NSPV_POLLITERS 15
+#define NSPV_POLLMICROS 100000
+#define NSPV_MAXVINS 64
+#define NSPV_AUTOLOGOUT 777
+#define NSPV_BRANCHID 0x76b809bb
 
 // nSPV defines and struct definitions with serialization and purge functions
 

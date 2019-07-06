@@ -17,7 +17,6 @@
 #ifndef KOMODO_NSPVFULLNODE_H
 #define KOMODO_NSPVFULLNODE_H
 
-// on fullnode:
 // NSPV_get... functions need to return the exact serialized length, which is the size of the structure minus size of pointers, plus size of allocated data
 
 #include "notarisationdb.h"
