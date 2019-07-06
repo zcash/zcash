@@ -17,7 +17,7 @@
 #ifndef KOMODO_NSPVWALLET_H
 #define KOMODO_NSPVWALLET_H
 
-// nSPV wallet uses superlite functions (and some komodod built in functions) to implement nSPV_send
+// nSPV wallet uses superlite functions (and some komodod built in functions) to implement nSPV_spend
 
 #define NSPV_AUTOLOGOUT 60
 #define NSPV_BRANCHID 0x76b809bb
@@ -210,7 +210,7 @@ std::string NSPV_signtx(CMutableTransaction &mtx,uint64_t txfee,CScript opret,st
     return(EncodeHexTx(mtx));
 }
 
-UniValue NSPV_send(char *srcaddr,char *destaddr,int64_t satoshis) // what its all about!
+UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis) // what its all about!
 {
     UniValue result(UniValue::VOBJ); uint8_t rmd160[128]; int64_t txfee = 10000;
     if ( NSPV_logintime == 0 || time(NULL) > NSPV_logintime+NSPV_AUTOLOGOUT )

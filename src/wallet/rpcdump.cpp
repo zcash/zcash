@@ -975,7 +975,7 @@ UniValue z_exportviewingkey(const UniValue& params, bool fHelp)
 UniValue NSPV_getinfo_json();
 UniValue NSPV_login(char *wifstr);
 UniValue NSPV_addressutxos(char *coinaddr);
-UniValue NSPV_send(char *srcaddr,char *destaddr,int64_t satoshis);
+UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis);
 UniValue NSPV_spentinfo(uint256 txid,int32_t vout);
 UniValue NSPV_notarizations(int32_t height);
 UniValue NSPV_hdrsproof(int32_t prevheight,int32_t nextheight);
@@ -1045,16 +1045,16 @@ UniValue nspv_txproof(const UniValue& params, bool fHelp)
     return(NSPV_txproof(txid,height));
 }
 
-UniValue nspv_send(const UniValue& params, bool fHelp)
+UniValue nspv_spend(const UniValue& params, bool fHelp)
 {
     uint64_t satoshis;
     if ( fHelp || params.size() != 2 )
-        throw runtime_error("nspv_send destaddr amount\n");
+        throw runtime_error("nspv_spend destaddr amount\n");
     if ( NSPV_address.size() == 0 )
         throw runtime_error("to nspv_send you need an active nspv_login\n");
     satoshis = atof(params[1].get_str().c_str())*COIN + 0.0000000049;
     if ( satoshis < 1000 )
         throw runtime_error("amount too small\n");
-    return(NSPV_send((char *)NSPV_address.c_str(),(char *)params[0].get_str().c_str(),satoshis));
+    return(NSPV_spend((char *)NSPV_address.c_str(),(char *)params[0].get_str().c_str(),satoshis));
 }
 

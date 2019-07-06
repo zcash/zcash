@@ -424,7 +424,7 @@ static const CRPCCommand vRPCCommands[] =
     { "nSPV",   "nspv_notarizations",   &nspv_notarizations,    true },
     { "nSPV",   "nspv_hdrsproof",       &nspv_hdrsproof,    true },
     { "nSPV",   "nspv_txproof",         &nspv_txproof,    true },
-    { "nSPV",   "nspv_send",            &nspv_send,    true },
+    { "nSPV",   "nspv_spend",           &nspv_spend,    true },
 
     // rewards
     { "rewards",       "rewardslist",       &rewardslist,     true },
