@@ -281,6 +281,7 @@ UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis) // what its a
             {
                 TxToJSON(tx,uint256(),result);
                 result.push_back(Pair("result","success"));
+                result.push_back(Pair("hex",hex));
             }
             else
             {
