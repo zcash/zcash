@@ -375,25 +375,31 @@ UniValue NSPV_spentinfo(uint256 txid,int32_t vout)
 
 UniValue NSPV_broadcast(char *hex)
 {
-    uint8_t msg[64],*tx; bits256 _txid; uint256 txid; uint16_t n; int32_t i,len = 0; struct NSPV_broadcastresp B;
+    uint8_t *msg,*data; bits256 _txid; uint256 txid; uint16_t n; int32_t i,len = 0; struct NSPV_broadcastresp B;
     n = (int32_t)strlen(hex) >> 1;
-    tx = (uint8_t *)malloc(n);
+    data = (uint8_t *)malloc(n);
     decode_hex(tx,n,hex);
-    _txid = bits256_doublesha256(0,tx,n);
+    _txid = bits256_doublesha256(0,data,n);
     memcpy(&txid,&_txid,sizeof(txid));
+    msg = malloc(1 + sizeof(txid) + sizeof(n) + n);
     msg[len++] = NSPV_BROADCAST;
     len += iguana_rwbignum(1,&msg[len],sizeof(txid),(uint8_t *)&txid);
     len += iguana_rwnum(1,&msg[len],sizeof(n),&n);
-    memcpy(&msg[len],tx,n), len += n;
+    memcpy(&msg[len],data,n), len += n;
+    free(data);
     if ( NSPV_req(0,msg,len,NODE_NSPV,msg[0]>>1) != 0 )
     {
         for (i=0; i<NSPV_POLLITERS; i++)
         {
             usleep(NSPV_POLLMICROS);
             if ( NSPV_broadcastresult.txid == txid )
+            {
+                free(msg);
                 return(NSPV_broadcast_json(&NSPV_broadcastresult));
+            }
         }
     }
+    free(msg);
     memset(&B,0,sizeof(B));
     return(NSPV_broadcast_json(&B));
 }
