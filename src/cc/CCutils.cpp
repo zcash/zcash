@@ -443,7 +443,7 @@ bool Myprivkey(uint8_t myprivkey[])
     char coinaddr[64],checkaddr[64]; std::string strAddress; char *dest; int32_t i,n; CBitcoinAddress address; CKeyID keyID; CKey vchSecret; uint8_t buf33[33];
     if ( KOMODO_NSPV != 0 )
     {
-        memcpy(myprivkey,NSPV_key.vch,32);
+        NSPV_key.SetKey32(myprivkey);
         return true;
     }
     if ( Getscriptaddress(coinaddr,CScript() << Mypubkey() << OP_CHECKSIG) != 0 )
