@@ -180,16 +180,19 @@ UniValue getnewaddress(const UniValue& params, bool fHelp)
 
     if ( KOMODO_NSPV != 0 )
     {
-        uint8_t priv32[32];
+        UniValue result(UniValue::VOBJ); uint8_t priv32[32];
 #ifndef __WIN32
         OS_randombytes(priv32,sizeof(priv32));
 #else
         randombytes_buf(priv32,sizeof(priv32));
 #endif
+        CKey key;
         key.Set(&priv32[0],&priv32[32], true);
         CPubKey pubkey = key.GetPubKey();
         CKeyID vchAddress = pubkey.GetID();
-        return(EncodeDestination(vchAddress));
+        result.push_back(Pair("address",EncodeDestination(vchAddress)));
+        result.push_back(Pair("pubkey",HexStr(pubkey)));
+        return(result);
     }
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
