@@ -190,6 +190,7 @@ UniValue getnewaddress(const UniValue& params, bool fHelp)
         key.Set(&priv32[0],&priv32[32], true);
         CPubKey pubkey = key.GetPubKey();
         CKeyID vchAddress = pubkey.GetID();
+        result.push_back(Pair("wif",EncodeSecret(key)));
         result.push_back(Pair("address",EncodeDestination(vchAddress)));
         result.push_back(Pair("pubkey",HexStr(pubkey)));
         return(result);
