@@ -236,6 +236,8 @@ UniValue NSPV_login(char *wifstr)
     result.push_back(Pair("address",NSPV_address));
     result.push_back(Pair("pubkey",HexStr(pubkey)));
     strcpy(NSPV_pubkeystr,HexStr(pubkey).c_str());
+    if ( KOMODO_NSPV != 0 )
+        decode_hex(NOTARY_PUBKEY33,33,NSPV_pubkeystr);
     result.push_back(Pair("wifprefix",(int64_t)data[0]));
     result.push_back(Pair("compressed",(int64_t)(data[len-5] == 1)));
     memset(data,0,sizeof(data));
