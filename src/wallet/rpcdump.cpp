@@ -975,6 +975,7 @@ UniValue z_exportviewingkey(const UniValue& params, bool fHelp)
 UniValue NSPV_getinfo_json();
 UniValue NSPV_login(char *wifstr);
 UniValue NSPV_addressutxos(char *coinaddr);
+UniValue NSPV_broadcast(char *hex);
 UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis);
 UniValue NSPV_spentinfo(uint256 txid,int32_t vout);
 UniValue NSPV_notarizations(int32_t height);
@@ -1058,3 +1059,9 @@ UniValue nspv_spend(const UniValue& params, bool fHelp)
     return(NSPV_spend((char *)NSPV_address.c_str(),(char *)params[0].get_str().c_str(),satoshis));
 }
 
+UniValue nspv_broadcast(const UniValue& params, bool fHelp)
+{
+    if ( fHelp || params.size() != 1 )
+        throw runtime_error("nspv_broadcast hex\n");
+    return(NSPV_broadcast((char *)params[0].get_str().c_str()));
+}

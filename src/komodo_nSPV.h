@@ -37,6 +37,8 @@
 #define NSPV_TXPROOFRESP 0x09
 #define NSPV_SPENTINFO 0x0a
 #define NSPV_SPENTINFORESP 0x0b
+#define NSPV_BROADCAST 0x0c
+#define NSPV_BROADCASTRESP 0x0d
 
 int32_t iguana_rwbuf(int32_t rwflag,uint8_t *serialized,uint16_t len,uint8_t *buf)
 {
@@ -254,7 +256,7 @@ void NSPV_txproof_purge(struct NSPV_txproof *ptr)
     }
 }
 
-struct NSPV_utxo
+/*struct NSPV_utxo
 {
     struct NSPV_txproof T;
     int64_t satoshis,extradata;
@@ -272,7 +274,7 @@ int32_t NSPV_rwutxo(int32_t rwflag,uint8_t *serialized,struct NSPV_utxo *ptr)
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->nextht),&ptr->nextht);
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->pad32),&ptr->pad32);
     return(len);
-}
+}*/
 
 struct NSPV_ntzproofshared
 {
@@ -359,6 +361,26 @@ void NSPV_spentinfo_purge(struct NSPV_spentinfo *ptr)
         NSPV_txproof_purge(&ptr->spent);
         memset(ptr,0,sizeof(*ptr));
     }
+}
+
+struct NSPV_broadcastresp
+{
+    uint256 txid;
+    int32_t retcode;
+};
+
+int32_t NSPV_rwbroadcastresp(int32_t rwflag,uint8_t *serialized,struct NSPV_broadcastresp *ptr)
+{
+    int32_t len = 0;
+    len += iguana_rwbignum(rwflag,&serialized[len],sizeof(ptr->txid),(uint8_t *)&ptr->txid);
+    len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->retcode),&ptr->retcode);
+    return(len);
+}
+
+void NSPV_broadcast_purge(struct NSPV_broadcastresp *ptr)
+{
+    if ( ptr != 0 )
+        memset(ptr,0,sizeof(*ptr));
 }
 
 #endif // KOMODO_NSPV_H

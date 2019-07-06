@@ -41,7 +41,7 @@ struct NSPV_spentinfo NSPV_spentresult;
 struct NSPV_ntzsresp NSPV_ntzsresult;
 struct NSPV_ntzsproofresp NSPV_ntzsproofresult;
 struct NSPV_txproof NSPV_txproofresult;
-struct NSPV_utxo *NSPV_utxos;
+struct NSPV_broadcastresp NSPV_broadcastresult;
 
 CNode *NSPV_req(CNode *pnode,uint8_t *msg,int32_t len,uint64_t mask,int32_t ind)
 {
@@ -189,6 +189,15 @@ UniValue NSPV_ntzsproof_json(struct NSPV_ntzsproofresp *ptr)
     result.push_back(Pair("nexttxlen",(int64_t)ptr->prevtxlen));
     result.push_back(Pair("numhdrs",(int64_t)ptr->common.numhdrs));
     result.push_back(Pair("headers",NSPV_headers_json(ptr->common.hdrs,ptr->common.numhdrs)));
+    return(result);
+}
+
+UniValue NSPV_broadcast_json(struct NSPV_broadcastresp *ptr)
+{
+    UniValue result(UniValue::VOBJ);
+    result.push_back(Pair("result","success"));
+    result.push_back(Pair("txid",ptr->txid.GetHex()));
+    result.push_back(Pair("retcode",(int64_t)ptr->retcode));
     return(result);
 }
 
@@ -364,6 +373,31 @@ UniValue NSPV_spentinfo(uint256 txid,int32_t vout)
     return(NSPV_spentinfo_json(&I));
 }
 
+UniValue NSPV_broadcast(char *hex)
+{
+    uint8_t msg[64],*tx; bits256 _txid; uint256 txid; uint16_t n; int32_t i,len = 0; struct NSPV_broadcastresult B;
+    n = (int32_t)strlen(hex) >> 1;
+    tx = malloc(n);
+    decode_hex(tx,n,hex);
+    _txid = bits256_doublesha256(0,tx,n);
+    memcpy(&txid,_txid,sizeof(txid));
+    msg[len++] = NSPV_BROADCAST;
+    len += iguana_rwbignum(1,&msg[len],sizeof(txid),(uint8_t *)&txid);
+    len += iguana_rwnum(1,&msg[len],sizeof(n),&n);
+    memcpy(&msg[len],tx,n), len += n;
+    if ( NSPV_req(0,msg,len,NODE_NSPV,msg[0]>>1) != 0 )
+    {
+        for (i=0; i<NSPV_POLLITERS; i++)
+        {
+            usleep(NSPV_POLLMICROS);
+            if ( NSPV_broadcastresult.txid == txid )
+                return(NSPV_broadcast_json(&NSPV_broadcastresult));
+        }
+    }
+    memset(&B,0,sizeof(B));
+    return(NSPV_broadcast_json(&B));
+}
+
 void komodo_nSPVresp(CNode *pfrom,std::vector<uint8_t> response) // received a response
 {
     int32_t len; uint32_t timestamp = (uint32_t)time(NULL);
@@ -384,25 +418,29 @@ void komodo_nSPVresp(CNode *pfrom,std::vector<uint8_t> response) // received a r
         case NSPV_NTZSRESP:
             NSPV_ntzsresp_purge(&NSPV_ntzsresult);
             NSPV_rwntzsresp(0,&response[1],&NSPV_ntzsresult);
-            fprintf(stderr,"got ntzs response %u size.%d\n",timestamp,(int32_t)response.size()); // update utxos[i]
+            fprintf(stderr,"got ntzs response %u size.%d\n",timestamp,(int32_t)response.size());
             break;
         case NSPV_NTZSPROOFRESP:
             NSPV_ntzsproofresp_purge(&NSPV_ntzsproofresult);
             NSPV_rwntzsproofresp(0,&response[1],&NSPV_ntzsproofresult);
-            fprintf(stderr,"got ntzproof response %u size.%d prev.%d next.%d\n",timestamp,(int32_t)response.size(),NSPV_ntzsproofresult.common.prevht,NSPV_ntzsproofresult.common.nextht); // update utxos[i]
+            fprintf(stderr,"got ntzproof response %u size.%d prev.%d next.%d\n",timestamp,(int32_t)response.size(),NSPV_ntzsproofresult.common.prevht,NSPV_ntzsproofresult.common.nextht);
             break;
         case NSPV_TXPROOFRESP:
             NSPV_txproof_purge(&NSPV_txproofresult);
             NSPV_rwtxproof(0,&response[1],&NSPV_txproofresult);
-            fprintf(stderr,"got txproof response %u size.%d\n",timestamp,(int32_t)response.size()); // update utxos[i]
+            fprintf(stderr,"got txproof response %u size.%d\n",timestamp,(int32_t)response.size());
             break;
         case NSPV_SPENTINFORESP:
-                
             NSPV_spentinfo_purge(&NSPV_spentresult);
             NSPV_rwspentinfo(0,&response[1],&NSPV_spentresult);
-            fprintf(stderr,"got spentinfo response %u size.%d\n",timestamp,(int32_t)response.size()); // update utxos[i]
+            fprintf(stderr,"got spentinfo response %u size.%d\n",timestamp,(int32_t)response.size());
             break;
-        default: fprintf(stderr,"unexpected response %02x size.%d at %u\n",response[0],(int32_t)response.size(),timestamp);
+        case NSPV_BROADCASTRESP:
+            NSPV_broadcast_purge(&NSPV_broadcastresult);
+            NSPV_rwbroadcast(0,&response[1],&NSPV_broadcastresult);
+            fprintf(stderr,"got broadcast response %u size.%d\n",timestamp,(int32_t)response.size());
+            break;
+       default: fprintf(stderr,"unexpected response %02x size.%d at %u\n",response[0],(int32_t)response.size(),timestamp);
                 break;
         }
     }

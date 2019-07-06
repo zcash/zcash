@@ -195,6 +195,26 @@ uint8_t *NSPV_getrawtx(uint256 &hashBlock,uint16_t *txlenp,uint256 txid)
     return(rawtx);
 }
 
+int32_t NSPV_sendrawtransaction(struct NSPV_broadcastresp *ptr,uint8_t *tx,int32_t n)
+{
+    CTransaction tx; std::string rawtx;
+    ptr->retcode = 0;
+    rawtx.resize(n*2+1);
+    init_hexbytes_noT(rawtx.data(),tx,n);
+    fprintf(stderr,"rawtx.(%s)\n",rawtx.c_str());
+    if ( DecodeHexTx(tx,rawtx) != 0 )
+    {
+        ptr->txid = tx.GetHash();
+        if ( myAddtomempool(tx) != 0 )
+        {
+            fprintf(stderr,"relay transaction %s\n",ptr->txid.GetHex().c_str());
+            RelayTransaction(tx);
+            ptr->retcode = 1;
+        } else ptr->retcode = 0;
+    } else ptr->retcode = -1;
+    return(sizeof(*ptr));
+}
+
 int32_t NSPV_gettxproof(struct NSPV_txproof *ptr,uint256 txid,int32_t height)
 {
     int32_t flag = 0,len = 0; uint256 hashBlock; CBlock block; CBlockIndex *pindex;
@@ -458,7 +478,32 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                 }
             }
         }
-    }
+        else if ( request[0] == NSPV_BROADCAST )
+        {
+            if ( timestamp > pfrom->prevtimes[ind] )
+            {
+                struct NSPV_broadcastresp B; uint16_t n,offset; uint256 txid;
+                if ( len > 1+sizeof(txid)+sizeof(n) )
+                {
+                    iguana_rwbignum(0,&request[1],sizeof(txid),(uint8_t *)&txid);
+                    iguana_rwnum(0,&request[1+sizeof(txid)],sizeof(n),&n);
+                    memset(&B,0,sizeof(B));
+                    offset = 1 + sizeof(txid) + sizeof(n);
+                    if ( request.size() == offset+n && (slen= NSPV_sendrawtransaction(&B,&request[offset],n)) > 0 )
+                    {
+                        response.resize(1 + slen);
+                        response[0] = NSPV_BROADCASTRESP;
+                        if ( NSPV_rwbroadcastresp(1,&response[1],&B) == slen )
+                        {
+                            pfrom->PushMessage("nSPV",response);
+                            pfrom->prevtimes[ind] = timestamp;
+                        }
+                        NSPV_broadcast_purge(&S);
+                    }
+                }
+            }
+        }
+   }
 }
 
 #endif // KOMODO_NSPVFULLNODE_H
