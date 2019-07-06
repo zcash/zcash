@@ -7239,15 +7239,6 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
                 return false;
             }
         }
-        else if ( (0) )
-        {
-            if ( pfrom->nServices != 0 )
-            {
-                fprintf(stderr,"debug mode, disconnect legacy peer.%d\n",pfrom->id);
-                pfrom->fDisconnect = true;
-                return false;
-            }
-        }
         // Mark this node as currently connected, so we update its timestamp later.
         if (pfrom->fNetworkNode) {
             LOCK(cs_main);
@@ -7445,9 +7436,12 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
     }
     else if (strCommand == "nSPV")
     {
-        std::vector<uint8_t> payload;
-        vRecv >> payload;
-        komodo_nSPVresp(pfrom,payload);
+        if ( KOMODO_NSPV != 0 )
+        {
+            std::vector<uint8_t> payload;
+            vRecv >> payload;
+            komodo_nSPVresp(pfrom,payload);
+        }
         return(true);
     }
     else if ( KOMODO_NSPV != 0 )
@@ -8240,9 +8234,11 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
             }
             state.fShouldBan = false;
         }
-        komodo_nSPV(pto);
         if ( KOMODO_NSPV != 0 )
+        {
+            komodo_nSPV(pto);
             return(true);
+        }
         BOOST_FOREACH(const CBlockReject& reject, state.rejects)
         pto->PushMessage("reject", (string)"block", reject.chRejectCode, reject.strRejectReason, reject.hashBlock);
         state.rejects.clear();
