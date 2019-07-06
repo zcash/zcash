@@ -311,6 +311,12 @@ UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis) // what its a
     if ( NSPV_addinputs(used,mtx,satoshis+txfee,64,NSPV_utxosresult.utxos,NSPV_utxosresult.numutxos) > 0 )
     {
         mtx.vout.push_back(CTxOut(satoshis,CScript() << OP_DUP << OP_HASH160 << ParseHex(HexStr(data)) << OP_EQUALVERIFY << OP_CHECKSIG));
+        if ( NSPV_logintime == 0 || time(NULL) > NSPV_logintime+NSPV_AUTOLOGOUT )
+        {
+            result.push_back(Pair("result","error"));
+            result.push_back(Pair("error","wif expired"));
+            return(result);
+        }
         hex = NSPV_signtx(mtx,txfee,opret,used);
         if ( hex.size() > 0 )
         {
