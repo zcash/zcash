@@ -401,6 +401,7 @@ UniValue NSPV_broadcast(char *hex)
     }
     free(msg);
     memset(&B,0,sizeof(B));
+    B.retcode = -2;
     return(NSPV_broadcast_json(&B));
 }
 
