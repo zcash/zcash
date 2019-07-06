@@ -162,7 +162,7 @@ void OS_randombytes(unsigned char *x,long xlen);
 
 UniValue getnewaddress(const UniValue& params, bool fHelp)
 {
-    if (!EnsureWalletIsAvailable(fHelp))
+    if ( KOMODO_NSPV == 0 && !EnsureWalletIsAvailable(fHelp) )
         return NullUniValue;
 
     if (fHelp || params.size() > 1)
