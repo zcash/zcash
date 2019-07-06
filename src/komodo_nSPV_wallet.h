@@ -261,7 +261,7 @@ UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis) // what its a
         return(result);
     }
     printf("%s numutxos.%d balance %.8f\n",NSPV_utxosresult.coinaddr,NSPV_utxosresult.numutxos,(double)NSPV_utxosresult.total/COIN);
-    std::vector<uint8_t> data; CScript opret; std::string hex; struct NSPV_utxoresp used[NSPV_MAXVINS]; CMutableTransaction mtx;
+    std::vector<uint8_t> data; CScript opret; std::string hex; struct NSPV_utxoresp used[NSPV_MAXVINS]; CMutableTransaction mtx; CTransaction;
     mtx.fOverwintered = true;
     mtx.nExpiryHeight = 0;
     mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
@@ -276,8 +276,17 @@ UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis) // what its a
         hex = NSPV_signtx(mtx,txfee,opret,used);
         if ( hex.size() > 0 )
         {
-            result.push_back(Pair("result","success"));
-            result.push_back(Pair("hex",hex));
+            if ( DecodeHexTx(tx,hex) != 0 )
+            {
+                TxToJSON(tx,uint256(),result);
+                result.push_back(Pair("result","success"));
+            }
+            else
+            {
+                result.push_back(Pair("result","error"));
+                result.push_back(Pair("error","couldnt decode"));
+                result.push_back(Pair("hex",hex));
+            }
         }
         else
         {

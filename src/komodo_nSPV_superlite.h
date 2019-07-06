@@ -445,7 +445,7 @@ void komodo_nSPVresp(CNode *pfrom,std::vector<uint8_t> response) // received a r
         case NSPV_BROADCASTRESP:
             NSPV_broadcast_purge(&NSPV_broadcastresult);
             NSPV_rwbroadcastresp(0,&response[1],&NSPV_broadcastresult);
-            fprintf(stderr,"got broadcast response %u size.%d\n",timestamp,(int32_t)response.size());
+            fprintf(stderr,"got broadcast response %u size.%d %s retcode.%d\n",timestamp,(int32_t)response.size(),NSPV_broadcastresult.txid.GetHex().c_str(),NSPV_broadcastresult.retcode);
             break;
        default: fprintf(stderr,"unexpected response %02x size.%d at %u\n",response[0],(int32_t)response.size(),timestamp);
                 break;
