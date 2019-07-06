@@ -204,13 +204,14 @@ int32_t NSPV_sendrawtransaction(struct NSPV_broadcastresp *ptr,uint8_t *data,int
     //fprintf(stderr,"rawtx.(%s)\n",rawtx.c_str());
     if ( DecodeHexTx(tx,rawtx) != 0 )
     {
+        LOCK(cs_main);
         ptr->txid = tx.GetHash();
+        fprintf(stderr,"addmempool transaction %s\n",ptr->txid.GetHex().c_str());
         if ( myAddtomempool(tx) != 0 )
-        {
-            fprintf(stderr,"relay transaction %s\n",ptr->txid.GetHex().c_str());
-            RelayTransaction(tx);
             ptr->retcode = 1;
-        } else ptr->retcode = 0;
+        else ptr->retcode = 0;
+        fprintf(stderr,"relay transaction %s\n",ptr->txid.GetHex().c_str());
+        RelayTransaction(tx);
     } else ptr->retcode = -1;
     return(sizeof(*ptr));
 }
