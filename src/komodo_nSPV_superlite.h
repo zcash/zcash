@@ -378,10 +378,10 @@ UniValue NSPV_broadcast(char *hex)
     uint8_t *msg,*data; bits256 _txid; uint256 txid; uint16_t n; int32_t i,len = 0; struct NSPV_broadcastresp B;
     n = (int32_t)strlen(hex) >> 1;
     data = (uint8_t *)malloc(n);
-    decode_hex(tx,n,hex);
+    decode_hex(data,n,hex);
     _txid = bits256_doublesha256(0,data,n);
     memcpy(&txid,&_txid,sizeof(txid));
-    msg = malloc(1 + sizeof(txid) + sizeof(n) + n);
+    msg = (uint8_t *)malloc(1 + sizeof(txid) + sizeof(n) + n);
     msg[len++] = NSPV_BROADCAST;
     len += iguana_rwbignum(1,&msg[len],sizeof(txid),(uint8_t *)&txid);
     len += iguana_rwnum(1,&msg[len],sizeof(n),&n);

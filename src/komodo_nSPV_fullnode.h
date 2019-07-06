@@ -201,7 +201,7 @@ int32_t NSPV_sendrawtransaction(struct NSPV_broadcastresp *ptr,uint8_t *data,int
     ptr->retcode = 0;
     rawtx.resize(n*2+1);
     init_hexbytes_noT((char *)rawtx.data(),data,n);
-    fprintf(stderr,"rawtx.(%s)\n",rawtx.c_str());
+    //fprintf(stderr,"rawtx.(%s)\n",rawtx.c_str());
     if ( DecodeHexTx(tx,rawtx) != 0 )
     {
         ptr->txid = tx.GetHash();
