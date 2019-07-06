@@ -195,12 +195,12 @@ uint8_t *NSPV_getrawtx(uint256 &hashBlock,uint16_t *txlenp,uint256 txid)
     return(rawtx);
 }
 
-int32_t NSPV_sendrawtransaction(struct NSPV_broadcastresp *ptr,uint8_t *tx,int32_t n)
+int32_t NSPV_sendrawtransaction(struct NSPV_broadcastresp *ptr,uint8_t *data,int32_t n)
 {
     CTransaction tx; std::string rawtx;
     ptr->retcode = 0;
     rawtx.resize(n*2+1);
-    init_hexbytes_noT(rawtx.data(),tx,n);
+    init_hexbytes_noT((char *)rawtx.data(),data,n);
     fprintf(stderr,"rawtx.(%s)\n",rawtx.c_str());
     if ( DecodeHexTx(tx,rawtx) != 0 )
     {
@@ -498,7 +498,7 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                             pfrom->PushMessage("nSPV",response);
                             pfrom->prevtimes[ind] = timestamp;
                         }
-                        NSPV_broadcast_purge(&S);
+                        NSPV_broadcast_purge(&B);
                     }
                 }
             }

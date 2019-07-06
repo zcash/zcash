@@ -375,7 +375,7 @@ UniValue NSPV_spentinfo(uint256 txid,int32_t vout)
 
 UniValue NSPV_broadcast(char *hex)
 {
-    uint8_t msg[64],*tx; bits256 _txid; uint256 txid; uint16_t n; int32_t i,len = 0; struct NSPV_broadcastresult B;
+    uint8_t msg[64],*tx; bits256 _txid; uint256 txid; uint16_t n; int32_t i,len = 0; struct NSPV_broadcastresp B;
     n = (int32_t)strlen(hex) >> 1;
     tx = malloc(n);
     decode_hex(tx,n,hex);
