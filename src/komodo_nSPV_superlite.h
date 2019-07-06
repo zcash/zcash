@@ -32,9 +32,9 @@ CAmount AmountFromValue(const UniValue& value);
 int32_t bitcoin_base58decode(uint8_t *data,char *coinaddr);
 
 uint32_t NSPV_lastinfo,NSPV_logintime;
+CKey NSPV_key;
 char NSPV_wifstr[64],NSPV_pubkeystr[67];
 std::string NSPV_address;
-CKey NSPV_key;
 struct NSPV_inforesp NSPV_inforesult;
 struct NSPV_utxosresp NSPV_utxosresult;
 struct NSPV_spentinfo NSPV_spentresult;
