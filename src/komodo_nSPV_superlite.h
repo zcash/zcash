@@ -21,6 +21,9 @@
 // no caching, no optimizations, no reducing the number of ntzsproofs needed by detecting overlaps, etc.
 // advantage is that it is simpler to implement and understand to create a design for a more performant version
 
+// interest calculations are currently just using what is returned, it should calculate it from scratch
+// need to validate incoming data and update only if it is valid and more recent
+
 #define NSPV_POLLITERS 15
 #define NSPV_POLLMICROS 100000
 #define NSPV_MAXVINS 64

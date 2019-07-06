@@ -18,7 +18,7 @@
 #define KOMODO_NSPVWALLET_H
 
 // nSPV wallet uses superlite functions (and some komodod built in functions) to implement nSPV_send
-// interest calculations are currently just using what is returned, it should calculate it from scratch
+
 #define NSPV_AUTOLOGOUT 60
 #define NSPV_BRANCHID 0x76b809bb
 
@@ -246,7 +246,7 @@ UniValue NSPV_send(char *srcaddr,char *destaddr,int64_t satoshis) // what its al
     {
         result.push_back(Pair("result","error"));
         result.push_back(Pair("address",NSPV_utxosresult.coinaddr));
-        result.push_back(Pair("srcaddr",srcaddr.coinaddr));
+        result.push_back(Pair("srcaddr",srcaddr));
         result.push_back(Pair("nodeheight",(int64_t)NSPV_utxosresult.nodeheight));
         result.push_back(Pair("infoheight",(int64_t)NSPV_inforesult.height));
         result.push_back(Pair("error","couldnt get addressutxos"));
