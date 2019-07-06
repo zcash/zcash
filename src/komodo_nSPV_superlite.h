@@ -228,7 +228,7 @@ UniValue NSPV_login(char *wifstr)
     strncpy(NSPV_wifstr,wifstr,sizeof(NSPV_wifstr)-1);
     NSPV_logintime = (uint32_t)time(NULL);
     result.push_back(Pair("result","success"));
-    result.push_back(Pair("status","wif will expire in 60 seconds"));
+    result.push_back(Pair("status","wif will expire in 777 seconds"));
     NSPV_key = DecodeSecret(wifstr);
     CPubKey pubkey = NSPV_key.GetPubKey();
     CKeyID vchAddress = pubkey.GetID();

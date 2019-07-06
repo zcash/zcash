@@ -20,7 +20,7 @@
 // nSPV wallet uses superlite functions (and some komodod built in functions) to implement nSPV_spend
 extern void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry);
 
-#define NSPV_AUTOLOGOUT 60
+#define NSPV_AUTOLOGOUT 777
 #define NSPV_BRANCHID 0x76b809bb
 
 
