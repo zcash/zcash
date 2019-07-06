@@ -209,7 +209,7 @@ int32_t NSPV_sendrawtransaction(struct NSPV_broadcastresp *ptr,uint8_t *data,int
         if ( myAddtomempool(tx) != 0 )
             ptr->retcode = 1;
         else ptr->retcode = 0;
-        fprintf(stderr,"relay transaction %s\n",ptr->txid.GetHex().c_str());
+        fprintf(stderr,"relay transaction %s retcode.%d\n",ptr->txid.GetHex().c_str(),ptr->retcode);
         RelayTransaction(tx);
     } else ptr->retcode = -1;
     return(sizeof(*ptr));

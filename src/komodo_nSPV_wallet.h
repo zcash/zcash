@@ -18,6 +18,7 @@
 #define KOMODO_NSPVWALLET_H
 
 // nSPV wallet uses superlite functions (and some komodod built in functions) to implement nSPV_spend
+extern void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry);
 
 #define NSPV_AUTOLOGOUT 60
 #define NSPV_BRANCHID 0x76b809bb
@@ -261,7 +262,7 @@ UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis) // what its a
         return(result);
     }
     printf("%s numutxos.%d balance %.8f\n",NSPV_utxosresult.coinaddr,NSPV_utxosresult.numutxos,(double)NSPV_utxosresult.total/COIN);
-    std::vector<uint8_t> data; CScript opret; std::string hex; struct NSPV_utxoresp used[NSPV_MAXVINS]; CMutableTransaction mtx; CTransaction;
+    std::vector<uint8_t> data; CScript opret; std::string hex; struct NSPV_utxoresp used[NSPV_MAXVINS]; CMutableTransaction mtx; CTransaction tx;
     mtx.fOverwintered = true;
     mtx.nExpiryHeight = 0;
     mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
