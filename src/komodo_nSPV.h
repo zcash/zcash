@@ -424,6 +424,7 @@ uint256 NSPV_opretextract(int32_t *heightp,uint256 *blockhashp,char *symbol,std:
         ((uint8_t *)blockhashp)[i] = opret[i];
     for (i=0; i<32; i++)
         ((uint8_t *)&desttxid)[i] = opret[4 + 32 + i];
+    if ( *heightp != 2690 )
     fprintf(stderr," ntzht.%d %s <- txid.%s size.%d\n",*heightp,(*blockhashp).GetHex().c_str(),(txid).GetHex().c_str(),(int32_t)opret.size());
     return(desttxid);
 }
