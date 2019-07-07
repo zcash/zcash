@@ -387,7 +387,6 @@ uint256 NSPV_doublesha256(uint8_t *data,int32_t datalen)
 
 uint256 NSPV_hdrhash(struct NSPV_equihdr *hdr)
 {
-    uint256 blockhash; uint8_t data[sizeof(*hdr)];
     CBlockHeader block;
     block.nVersion = hdr->nVersion;
     block.hashPrevBlock = hdr->hashPrevBlock;
@@ -398,10 +397,6 @@ uint256 NSPV_hdrhash(struct NSPV_equihdr *hdr)
     block.nNonce = hdr->nNonce;
     block.nSolution.resize(sizeof(hdr->nSolution));
     memcpy(&block.nSolution[0],hdr->nSolution,sizeof(hdr->nSolution));
-    NSPV_rwequihdr(1,data,hdr);
-    blockhash = NSPV_doublesha256(data,sizeof(data));
-    fprintf(stderr,"%s vs block %s\n",blockhash.GetHex().c_str(),block.GetHash().GetHex().c_str());
-    //return(blockhash);
     return(block.GetHash());
 }
 
