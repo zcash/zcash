@@ -169,9 +169,9 @@ int32_t NSPV_getaddressutxos(struct NSPV_utxosresp *ptr,char *coinaddr) // check
     return(0);
 }
 
-uint8_t *NSPV_getrawtx(uint256 &hashBlock,uint16_t *txlenp,uint256 txid)
+uint8_t *NSPV_getrawtx(CTransaction &tx,uint256 &hashBlock,uint16_t *txlenp,uint256 txid)
 {
-    CTransaction tx; uint8_t *rawtx = 0;
+    uint8_t *rawtx = 0;
     *txlenp = 0;
     {
         LOCK(cs_main);
@@ -208,8 +208,8 @@ int32_t NSPV_sendrawtransaction(struct NSPV_broadcastresp *ptr,uint8_t *data,int
 
 int32_t NSPV_gettxproof(struct NSPV_txproof *ptr,int32_t vout,uint256 txid,int32_t height)
 {
-    int32_t flag = 0,len = 0; uint256 hashBlock; CBlock block; CBlockIndex *pindex;
-    if ( (ptr->tx= NSPV_getrawtx(hashBlock,&ptr->txlen,txid)) == 0 )
+    int32_t flag = 0,len = 0; CTransaction _tx; uint256 hashBlock; CBlock block; CBlockIndex *pindex;
+    if ( (ptr->tx= NSPV_getrawtx(_tx,hashBlock,&ptr->txlen,txid)) == 0 )
         return(-1);
     ptr->txid = txid;
     ptr->vout = vout;
@@ -271,21 +271,17 @@ int32_t NSPV_getntzsproofresp(struct NSPV_ntzsproofresp *ptr,uint256 prevntztxid
 {
     int32_t i; uint256 hashBlock,bhash0,bhash1,desttxid0,desttxid1; CTransaction tx;
     ptr->prevtxid = prevntztxid;
-    ptr->prevntz = NSPV_getrawtx(hashBlock,&ptr->prevtxlen,ptr->prevtxid);
+    ptr->prevntz = NSPV_getrawtx(tx,hashBlock,&ptr->prevtxlen,ptr->prevtxid);
     ptr->prevtxidht = komodo_blockheight(hashBlock);
-    if ( NSPV_txextract(tx,ptr->prevntz,ptr->prevtxlen) < 0 )
-        return(-1);
-    else if ( NSPV_notarizationextract(&ptr->common.prevht,&bhash0,&desttxid0,tx) < 0 )
+    if ( NSPV_notarizationextract(&ptr->common.prevht,&bhash0,&desttxid0,tx) < 0 )
         return(-2);
     else if ( komodo_blockheight(bhash0) != ptr->common.prevht )
         return(-3);
     
     ptr->nexttxid = nextntztxid;
-    ptr->nextntz = NSPV_getrawtx(hashBlock,&ptr->nexttxlen,ptr->nexttxid);
+    ptr->nextntz = NSPV_getrawtx(tx,hashBlock,&ptr->nexttxlen,ptr->nexttxid);
     ptr->nexttxidht = komodo_blockheight(hashBlock);
-    if ( NSPV_txextract(tx,ptr->prevntz,ptr->prevtxlen) < 0 )
-        return(-4);
-    else if ( NSPV_notarizationextract(&ptr->common.nextht,&bhash1,&desttxid1,tx) < 0 )
+    if ( NSPV_notarizationextract(&ptr->common.nextht,&bhash1,&desttxid1,tx) < 0 )
         return(-5);
     else if ( komodo_blockheight(bhash1) != ptr->common.nextht )
         return(-6);
@@ -295,7 +291,7 @@ int32_t NSPV_getntzsproofresp(struct NSPV_ntzsproofresp *ptr,uint256 prevntztxid
         fprintf(stderr,"illegal prevht.%d nextht.%d\n",ptr->common.prevht,ptr->common.nextht);
         return(-7);
     }
-    fprintf(stderr,"prevht.%d nexht.%d\n",ptr->common.prevht,ptr->common.nextht);
+    fprintf(stderr,"%s -> prevht.%d, %s -> nexht.%d\n",ptr->prevtxid.GetHex().c_str(),ptr->common.prevht,ptr->nexttxid.GetHex().c_str(),ptr->common.nextht);
     ptr->common.numhdrs = (ptr->common.nextht - ptr->common.prevht + 1);
     ptr->common.hdrs = (struct NSPV_equihdr *)calloc(ptr->common.numhdrs,sizeof(*ptr->common.hdrs));
     //fprintf(stderr,"prev.%d next.%d allocate numhdrs.%d\n",prevht,nextht,ptr->common.numhdrs);

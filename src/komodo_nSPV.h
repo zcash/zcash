@@ -408,7 +408,6 @@ uint256 NSPV_hdrhash(struct NSPV_equihdr *hdr)
 int32_t NSPV_txextract(CTransaction &tx,uint8_t *data,int32_t datalen)
 {
     std::vector<uint8_t> rawdata;
-    fprintf(stderr,"extract %d bytes\n",datalen);
     rawdata.resize(datalen);
     memcpy(&rawdata[0],data,datalen);
     if ( DecodeHexTx(tx,HexStr(rawdata)) != 0 )
