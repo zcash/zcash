@@ -385,6 +385,13 @@ uint256 NSPV_doublesha256(uint8_t *data,int32_t datalen)
     return(hash);
 }
 
+uint256 NSPV_hdrhash(struct NSPV_equihdr *hdr)
+{
+    uint8_t data[sizeof(*hdr)]; uint16_t hdrsize = sizeof(*hdr);
+    iguana_rwequihdrvec(1,data,&hdrsize,&hdr)
+    return(NSPV_doublesha256(data,sizeof(*hdr)));
+}
+
 int32_t NSPV_txextract(CTransaction &tx,uint8_t *data,int32_t datalen)
 {
     std::vector<uint8_t> rawdata;
