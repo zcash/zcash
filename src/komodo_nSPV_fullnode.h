@@ -421,6 +421,7 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                     iguana_rwbignum(0,&request[1],sizeof(prevntz),(uint8_t *)&prevntz);
                     iguana_rwbignum(0,&request[1+sizeof(prevntz)],sizeof(nextntz),(uint8_t *)&nextntz);
                     memset(&P,0,sizeof(P));
+                    fprintf(stderr,"msg prev.%s next.%s\n",prevntz.GetHex().c_str(),nextntz.GetHex().c_str());
                     if ( (slen= NSPV_getntzsproofresp(&P,prevntz,nextntz)) > 0 )
                     {
                         response.resize(1 + slen);
