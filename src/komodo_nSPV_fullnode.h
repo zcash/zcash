@@ -233,7 +233,7 @@ int32_t NSPV_gettxproof(struct NSPV_txproof *ptr,int32_t vout,uint256 txid,int32
             ssMB << mb;
             std::vector<uint8_t> proof(ssMB.begin(), ssMB.end());
             ptr->txprooflen = (int32_t)proof.size();
-            fprintf(stderr,"%s txproof.(%s)\n",txid.GetHex().c_str(),HexStr(proof));
+            fprintf(stderr,"%s txproof.(%s)\n",txid.GetHex().c_str(),HexStr(proof).c_str());
             if ( ptr->txprooflen > 0 )
             {
                 ptr->txproof = (uint8_t *)calloc(1,ptr->txprooflen);
