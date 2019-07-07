@@ -416,7 +416,7 @@ int32_t NSPV_pubkeysextract(uint8_t pubkeys[64][33],CTransaction tx,uint8_t elec
     return(numsigs);
 }
 
-uint256 NSPV_opretextract(int32_t *heightp,uint256 *blockhashp,char *symbol,std::vector<uint8_t> opret)
+uint256 NSPV_opretextract(int32_t *heightp,uint256 *blockhashp,char *symbol,std::vector<uint8_t> opret,uint256 txid)
 {
     uint256 desttxid; int32_t i;
     iguana_rwnum(0,&opret[32],sizeof(*heightp),heightp);
@@ -424,6 +424,7 @@ uint256 NSPV_opretextract(int32_t *heightp,uint256 *blockhashp,char *symbol,std:
         ((uint8_t *)blockhashp)[i] = opret[i];
     for (i=0; i<32; i++)
         ((uint8_t *)&desttxid)[i] = opret[4 + 32 + i];
+    fprintf(stderr," ntzht.%d %s <- txid.%s size.%d\n",*heightp,(*blockhashp).GetHex().c_str(),(txid).GetHex().c_str(),(int32_t)opret.size());
     return(desttxid);
 }
 
@@ -437,14 +438,13 @@ int32_t NSPV_notarizationextract(int32_t *heightp,uint256 *blockhashp,uint256 *t
         numsigs = NSPV_pubkeysextract(sigkeys,tx,elected);
         GetOpReturnData(tx.vout[1].scriptPubKey,opret);
         if ( opret.size() >= 32*2+4*2 )
-            *desttxidp = NSPV_opretextract(heightp,blockhashp,symbol,opret);
+            *desttxidp = NSPV_opretextract(heightp,blockhashp,symbol,opret,tx.GetHash());
         /*{
             int z;
             for (z=0; z<68; z++)
                 fprintf(stderr,"%02x",opret[z]);
         }*/
         *txidp = tx.GetHash();
-        fprintf(stderr," ntzht.%d %s <- txid.%s size.%d\n",*heightp,(*blockhashp).GetHex().c_str(),(*txidp).GetHex().c_str(),(int32_t)opret.size());
         return(0);
     } else return(-1);
 }

@@ -50,8 +50,8 @@ int32_t komodo_notarized_bracket(uint256 txids[2],int32_t txidhts[2],uint256 des
     if ( !GetTransaction(txids[0],tx,hashBlock,false) || tx.vout.size() < 2 )
         return(-2);
     GetOpReturnData(tx.vout[1].scriptPubKey,opret);
-    if ( opret.size() >= 32*2+4 )
-        desttxids[0] = NSPV_opretextract(&ntzheights[0],&bhash0,symbol,opret);
+    //if ( opret.size() >= 32*2+4 )
+        desttxids[0] = NSPV_opretextract(&ntzheights[0],&bhash0,symbol,opret,txids[0]);
 
     /*desttxids[0] = NSPV_opretextract(&ntzheights[0],&bhash0,symbol,E_MARSHAL(ss << nota.second));
     //if ( height != 2668 )
@@ -71,8 +71,8 @@ int32_t komodo_notarized_bracket(uint256 txids[2],int32_t txidhts[2],uint256 des
         if ( !GetTransaction(txids[1],tx,hashBlock,false) || tx.vout.size() < 2 )
             return(-2);
         GetOpReturnData(tx.vout[1].scriptPubKey,opret);
-        if ( opret.size() >= 32*2+4 )
-            desttxids[1] = NSPV_opretextract(&ntzheights[1],&bhash1,symbol,opret);
+        //if ( opret.size() >= 32*2+4 )
+            desttxids[1] = NSPV_opretextract(&ntzheights[1],&bhash1,symbol,opret,txids[1]);
         //desttxids[1] = NSPV_opretextract(&ntzheights[1],&bhash1,symbol,E_MARSHAL(ss << nota.second));
     }
     //fprintf(stderr,"prev.(%s -> ht.%d %s) next.(%s -> ht.%d %s)\n",txids[0].GetHex().c_str(),ntzheights[0],bhash0.GetHex().c_str(),txids[1].GetHex().c_str(),ntzheights[1],bhash1.GetHex().c_str());
