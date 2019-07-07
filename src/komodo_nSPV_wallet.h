@@ -23,6 +23,7 @@ extern void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& 
 int32_t NSPV_validatehdrs(struct NSPV_ntzsproofresp *ptr)
 {
     int32_t i,height,txidht; CTransaction tx; uint256 blockhash,txid,desttxid;
+    fprintf(stderr,"NSPV_validatehdrs.%d\n",ptr->common.numhdrs);
     if ( (ptr->common.nextht-ptr->common.prevht+1) != ptr->common.numhdrs )
         return(-1);
     else if ( NSPV_txextract(tx,ptr->nextntz,ptr->nexttxlen) < 0 )
@@ -35,13 +36,15 @@ int32_t NSPV_validatehdrs(struct NSPV_ntzsproofresp *ptr)
     //    return(-5);
     //else if ( NSPV_doublesha256((uint8_t *)&ptr->common.hdrs[ptr->common.numhdrs-1],sizeof(*ptr->common.hdrs)) != blockhash )
     //    return(-6);
+    fprintf(stderr,"numhdrs.%d\n",ptr->common.numhdrs);
     for (i=ptr->common.numhdrs-1; i>0; i--)
     {
-        blockhash = NSPV_doublesha256((uint8_t *)&ptr->common.hdrs[i-1],sizeof(*ptr->common.hdrs));
+        blockhash = NSPV_hdrhash(&ptr->common.hdrs[i-1]);
         fprintf(stderr,"i.%d ht.%d blockhash.%s vs [i+1].prev %s\n",i-1,ptr->common.prevht+i-1,blockhash.GetHex().c_str(),ptr->common.hdrs[i].hashPrevBlock.GetHex().c_str());
         if ( blockhash != ptr->common.hdrs[i].hashPrevBlock )
             return(-i-11);
     }
+    fprintf(stderr,"i.%d\n",i);
     if ( NSPV_txextract(tx,ptr->prevntz,ptr->prevtxlen) < 0 )
         return(-6);
     else if ( tx.GetHash() != ptr->prevtxid )
