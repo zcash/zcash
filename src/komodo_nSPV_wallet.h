@@ -58,7 +58,7 @@ int32_t NSPV_gettransaction(int32_t vout,uint256 txid,int32_t height,CTransactio
 {
     int32_t offset,retval = 0;
     NSPV_txproof(vout,txid,height);
-    if ( NSPV_txproofresult.txid != txid || NSPV_txproofresult.unspentsatoshis <= 0 )
+    if ( NSPV_txproofresult.txid != txid || NSPV_txproofresult.unspentvalue <= 0 )
         return(-1);
     else if ( NSPV_txextract(tx,NSPV_txproofresult.tx,NSPV_txproofresult.txlen) < 0 || NSPV_txproofresult.txlen <= 0 )
         retval = -20;
@@ -230,7 +230,6 @@ std::string NSPV_signtx(CMutableTransaction &mtx,uint64_t txfee,CScript opret,st
         totalinputs += used[i].satoshis;
         interest += used[i].extradata;
     }
-    //PrecomputedTransactionData txdata(mtx);
     if ( (totalinputs+interest) >= totaloutputs+2*txfee )
     {
         change = (totalinputs+interest) - (totaloutputs+txfee);
