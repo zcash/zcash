@@ -56,11 +56,11 @@ int32_t NSPV_validatehdrs(struct NSPV_ntzsproofresp *ptr)
 
 int32_t NSPV_gettransaction(uint256 txid,int32_t height,CTransaction &tx)
 {
-    int32_t retval = 0;
+    int32_t offset,retval = 0;
     NSPV_txproof(txid,height);
     if ( NSPV_txproofresult.txid != txid )
         return(-1);
-    if ( NSPV_txextract(tx,NSPV_txproofresult.tx,NSPV_txproofresult.txlen) < 0 )
+    if ( NSPV_txextract(tx,NSPV_txproofresult.tx,NSPV_txproofresult.txlen) < 0 || NSPV_txproofresult.txlen <= 0 )
         retval = -20;
     else
     {
@@ -75,12 +75,22 @@ int32_t NSPV_gettransaction(uint256 txid,int32_t height,CTransaction &tx)
         if ( NSPV_ntzsresult.prevntz.height != 0 && NSPV_ntzsresult.prevntz.height <= NSPV_ntzsresult.nextntz.height )
         {
             fprintf(stderr,"gettx ht.%d prev.%d next.%d\n",height,NSPV_ntzsresult.prevntz.height, NSPV_ntzsresult.nextntz.height);
-            if ( NSPV_ntzsresult.prevntz.height <= height && height <= NSPV_ntzsresult.nextntz.height )
+            offset = (height - NSPV_ntzsresult.prevntz.height);
+            if ( offset >= 0 && height <= NSPV_ntzsresult.nextntz.height )
             {
-                NSPV_hdrsproof(NSPV_ntzsresult.prevntz.height,NSPV_ntzsresult.nextntz.height); // validate the segment
+                NSPV_hdrsproof(NSPV_ntzsresult.prevntz.height,NSPV_ntzsresult.nextntz.height);
                 if ( (retval= NSPV_validatehdrs(&NSPV_ntzsproofresult)) == 0 )
                 {
-                    // merkle prove txproof to the merkleroot in the corresponding hdr
+                    std::vector<uint256> txids; std::vector<uint8_t> proof;
+                    proof.resize(NSPV_txproofresult.txlen);
+                    memcpy(&proof[0],NSPV_txproofresult.tx,NSPV_txproofresult.txlen);
+                    txids.push_back(txid);
+                    proofroot = BitcoinGetProofMerkleRoot(proof,txids);
+                    if ( proofroot != NSPV_ntzsproofresult.common[offset].hashMerkleRoot )
+                    {
+                        fprintf(stderr,"proofroot.%s vs %s\n",proofroot.GetHex().c_str(),NSPV_ntzsproofresult.common[offset].hashMerkleRoot.GetHex().c_str());
+                        return(-23);
+                    }
                 }
             } else retval = -22;
         } else retval = -1;
