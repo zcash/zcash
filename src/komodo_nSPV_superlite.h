@@ -217,11 +217,13 @@ UniValue NSPV_broadcast_json(struct NSPV_broadcastresp *ptr,uint256 txid)
 UniValue NSPV_logout()
 {
     UniValue result(UniValue::VOBJ);
-    fprintf(stderr,"scrub wif and privkey from NSPV memory\n");
+    result.push_back(Pair("result","success"));
+    if ( NSPV_logintime != 0 )
+        fprintf(stderr,"scrub wif and privkey from NSPV memory\n");
+    else result.push_back(Pair("status","wasnt logged in"));
     memset(NSPV_wifstr,0,sizeof(NSPV_wifstr));
     memset(&NSPV_key,0,sizeof(NSPV_key));
     NSPV_logintime = 0;
-    result.push_back(Pair("result","success"));
     return(result);
 }
 
