@@ -40,15 +40,23 @@ struct NSPV_ntzsproofresp
 
 int32_t NSPV_validatehdrs(struct NSPV_ntzsproofresp *ptr)
 {
-    int32_t i;
-    // verify nextntz is valid notarization
-    // validate blockhash of lasthdr with nextntz value, and height
+   /* int32_t i,height,txidht; CTransaction tx; uint256 blockhash,txid,desttxid;
+    if ( NSPV_txextract(tx,ptr->nextntz,ptr->nexttxlen) < 0 )
+        return(-1);
+    else if ( NSPV_notarizationextract(&height,&blockhash,&txid,&txidht,&desttxid) < 0 )
+        return(-2);
+    else if ( NSPV_doublesha256(&ptr->common.hdrs[ptr->common.numhdrs-1],sizeof(*ptr->common.hdrs)) != blockhash )
+        return(-3);
     for (i=ptr->common.numhdrs-1; i>0; i--)
     {
         // make sure the hash of i-1 matches the prevBlockhash of i
     }
     // verify prevntz is valid notarization
     // verify blockhash of first hdr with prevntz value and height
+    if ( NSPV_txextract(tx,ptr->prevntz,ptr->prevtxlen) < 0 )
+        return(-1);
+    else if ( NSPV_notarizationextract(&height,&blockhash,&txid,&txidht,&desttxid) < 0 )
+        return(-2);*/
     return(0);
 }
 

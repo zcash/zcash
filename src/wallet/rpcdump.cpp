@@ -1068,6 +1068,7 @@ UniValue nspv_spend(const UniValue& params, bool fHelp)
     if ( NSPV_address.size() == 0 )
         throw runtime_error("to nspv_send you need an active nspv_login\n");
     satoshis = atof(params[1].get_str().c_str())*COIN + 0.0000000049;
+    fprintf(stderr,"satoshis.%lld from %.8f\n",(long long)satoshis,atof(params[1].get_str().c_str()));
     if ( satoshis < 1000 )
         throw runtime_error("amount too small\n");
     return(NSPV_spend((char *)NSPV_address.c_str(),(char *)params[0].get_str().c_str(),satoshis));
