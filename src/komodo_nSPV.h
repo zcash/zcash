@@ -413,7 +413,7 @@ int32_t NSPV_txextract(CTransaction &tx,uint8_t *data,int32_t datalen)
     memcpy(&rawdata[0],data,datalen);
     if ( DecodeHexTx(tx,HexStr(rawdata)) != 0 )
     {
-        fprintf(stderr,"extracted %s\n",tx.GetHex().c_str());
+        fprintf(stderr,"extracted %s\n",tx.GetHash().GetHex().c_str());
         return(0);
     }
     else return(-1);
