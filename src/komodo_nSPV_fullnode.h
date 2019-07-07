@@ -47,7 +47,7 @@ int32_t komodo_notarized_bracket(uint256 txids[2],int32_t txidhts[2],uint256 des
         return(-1);
     txids[0] = nota.first;
     txidhts[0] = txidht;
-    desttxids[0] = NSPV_opretextract(&ntzheights[0],&bhash,symbol,E_MARSHAL(ss << nota.second),0);
+    desttxids[0] = NSPV_DBopretextract(&ntzheights[0],&bhash,symbol,E_MARSHAL(ss << nota.second));
     //if ( height != 2668 )
     //    fprintf(stderr,"scan.%d -> %s txidht.%d ntzht.%d\n",height,desttxids[0].GetHex().c_str(),txidht,ntzheights[0]);
     if ( ntzheights[0] == height-1 ) // offset the +1 from caller
@@ -62,7 +62,7 @@ int32_t komodo_notarized_bracket(uint256 txids[2],int32_t txidhts[2],uint256 des
     {
         txids[1] = nota.first;
         txidhts[1] = txidht;
-        desttxids[1] = NSPV_opretextract(&ntzheights[1],&bhash,symbol,E_MARSHAL(ss << nota.second),0);
+        desttxids[1] = NSPV_DBopretextract(&ntzheights[1],&bhash,symbol,E_MARSHAL(ss << nota.second));
     }
     return(0);
 }
