@@ -31,10 +31,10 @@ int32_t NSPV_validatehdrs(struct NSPV_ntzsproofresp *ptr)
         return(-3);
     else if ( NSPV_notarizationextract(&height,&blockhash,&txid,&txidht,&desttxid,tx) < 0 )
         return(-4);
-    else if ( height != ptr->common.nextht )
-        return(-5);
-    else if ( NSPV_doublesha256((uint8_t *)&ptr->common.hdrs[ptr->common.numhdrs-1],sizeof(*ptr->common.hdrs)) != blockhash )
-        return(-6);
+    //else if ( height != ptr->common.nextht )
+    //    return(-5);
+    //else if ( NSPV_doublesha256((uint8_t *)&ptr->common.hdrs[ptr->common.numhdrs-1],sizeof(*ptr->common.hdrs)) != blockhash )
+    //    return(-6);
     for (i=ptr->common.numhdrs-1; i>0; i--)
     {
         if ( NSPV_doublesha256((uint8_t *)&ptr->common.hdrs[i-1],sizeof(*ptr->common.hdrs)) != ptr->common.hdrs[i].hashPrevBlock )
@@ -46,10 +46,10 @@ int32_t NSPV_validatehdrs(struct NSPV_ntzsproofresp *ptr)
         return(-7);
     else if ( NSPV_notarizationextract(&height,&blockhash,&txid,&txidht,&desttxid,tx) < 0 )
         return(-8);
-    else if ( height != ptr->common.prevht )
-        return(-9);
-    else if ( NSPV_doublesha256((uint8_t *)&ptr->common.hdrs[0],sizeof(*ptr->common.hdrs)) != blockhash )
-        return(-10);
+    //else if ( height != ptr->common.prevht )
+    //    return(-9);
+    //else if ( NSPV_doublesha256((uint8_t *)&ptr->common.hdrs[0],sizeof(*ptr->common.hdrs)) != blockhash )
+    //    return(-10);
     return(0);
 }
 
