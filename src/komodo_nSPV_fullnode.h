@@ -439,7 +439,7 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
             if ( timestamp > pfrom->prevtimes[ind] )
             {
                 struct NSPV_txproof P; uint256 txid; int32_t height,vout;
-                if ( len == 1+sizeof(txid)+sizeof(height) )
+                if ( len == 1+sizeof(txid)+sizeof(height)+sizeof(vout) )
                 {
                     iguana_rwnum(0,&request[1],sizeof(height),&height);
                     iguana_rwnum(0,&request[1+sizeof(height)],sizeof(vout),&vout);
