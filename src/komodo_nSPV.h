@@ -443,8 +443,8 @@ int32_t NSPV_notarizationextract(int32_t *heightp,uint256 *blockhashp,uint256 *t
             for (z=0; z<68; z++)
                 fprintf(stderr,"%02x",opret[z]);
         }*/
-        //fprintf(stderr," ntzht.%d %s txid.%s size.%d\n",*heightp,(*blockhashp).GetHex().c_str(),(*desttxidp).GetHex().c_str(),(int32_t)opret.size());
         *txidp = tx.GetHash();
+        fprintf(stderr," ntzht.%d %s <- txid.%s size.%d\n",*heightp,(*blockhashp).GetHex().c_str(),(*txidp).GetHex().c_str(),(int32_t)opret.size());
         return(0);
     } else return(-1);
 }
