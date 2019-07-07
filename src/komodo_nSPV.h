@@ -433,7 +433,7 @@ int32_t NSPV_notarizationextract(int32_t *heightp,uint256 *blockhashp,uint256 *t
     if ( tx.vout.size() >= 2 )
     {
         symbol = (ASSETCHAINS_SYMBOL[0] == 0) ? (char *)"KMD" : ASSETCHAINS_SYMBOL;
-        komodo_notaries(pubkeys,ntzheight,0);
+        komodo_notaries(elected,ntzheight,0);
         numsigs = NSPV_pubkeysextract(sigkeys,tx,elected);
         GetOpReturnData(tx.vout[1].scriptPubKey,opret);
         *desttxidp = NSPV_opretextract(heightp,blockhashp,symbol,opret);
