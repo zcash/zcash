@@ -94,8 +94,8 @@ int32_t NSPV_gettransaction(int32_t vout,uint256 txid,int32_t height,CTransactio
             } else retval = -22;
         } else retval = -1;
     }
-    fprintf(stderr,"NSPV_gettransaction retval would have been %d\n",retval);
-    return(0);
+    //fprintf(stderr,"NSPV_gettransaction retval would have been %d\n",retval);
+    return(retval);
 }
 
 int32_t NSPV_vinselect(int32_t *aboveip,int64_t *abovep,int32_t *belowip,int64_t *belowp,struct NSPV_utxoresp utxos[],int32_t numunspents,int64_t value)

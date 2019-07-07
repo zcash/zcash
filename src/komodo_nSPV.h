@@ -19,7 +19,8 @@
 
 // determine if it makes sense to be scanning mempool for the utxo/spentinfo requests, maybe can add isspent flag to txproof, or just use getspentinfo if broadcast fails
 
-// validate proofs
+// pubkeys extract
+// headers "sync"
 // interest calculations are currently just using what is returned, it should calculate it from scratch
 
 // need to validate incoming data and update only if it is valid and more recent
