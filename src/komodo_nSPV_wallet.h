@@ -35,7 +35,6 @@ int32_t NSPV_validatehdrs(struct NSPV_ntzsproofresp *ptr)
     //    return(-5);
     //else if ( NSPV_doublesha256((uint8_t *)&ptr->common.hdrs[ptr->common.numhdrs-1],sizeof(*ptr->common.hdrs)) != blockhash )
     //    return(-6);
-    fprintf(stderr,"numhdrs.%d\n",ptr->common.numhdrs);
     for (i=ptr->common.numhdrs-1; i>0; i--)
     {
         blockhash = NSPV_hdrhash(&ptr->common.hdrs[i-1]);
@@ -66,6 +65,13 @@ int32_t NSPV_gettransaction(uint256 txid,int32_t height,CTransaction &tx)
     else
     {
         NSPV_notarizations(height); // gets the prev and next notarizations
+        if ( NSPV_ntzsresult.prevntz.height == 0 )
+        {
+            fprintf(stderr,"issue manual bracket\n");
+            NSPV_notarizations(height-1);
+            NSPV_notarizations(height+1);
+            NSPV_notarizations(height); // gets the prev and next notarizations
+        }
         if ( NSPV_ntzsresult.prevntz.height != 0 && NSPV_ntzsresult.prevntz.height <= NSPV_ntzsresult.nextntz.height )
         {
             fprintf(stderr,"gettx ht.%d prev.%d next.%d\n",height,NSPV_ntzsresult.prevntz.height, NSPV_ntzsresult.nextntz.height);
