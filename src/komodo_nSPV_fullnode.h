@@ -295,6 +295,7 @@ int32_t NSPV_getntzsproofresp(struct NSPV_ntzsproofresp *ptr,uint256 prevntztxid
         fprintf(stderr,"illegal prevht.%d nextht.%d\n",ptr->common.prevht,ptr->common.nextht);
         return(-7);
     }
+    fprintf(stderr,"prevht.%d nexht.%d\n",ptr->common.prevht,ptr->common.nextht);
     ptr->common.numhdrs = (ptr->common.nextht - ptr->common.prevht + 1);
     ptr->common.hdrs = (struct NSPV_equihdr *)calloc(ptr->common.numhdrs,sizeof(*ptr->common.hdrs));
     //fprintf(stderr,"prev.%d next.%d allocate numhdrs.%d\n",prevht,nextht,ptr->common.numhdrs);
