@@ -264,11 +264,11 @@ int32_t NSPV_getntzsproofresp(struct NSPV_ntzsproofresp *ptr,int32_t prevht,int3
     ptr->common.nextht = nextht;
     ptr->common.numhdrs = (nextht - prevht + 1);
     ptr->common.hdrs = (struct NSPV_equihdr *)calloc(ptr->common.numhdrs,sizeof(*ptr->common.hdrs));
-    fprintf(stderr,"prev.%d next.%d allocate numhdrs.%d\n",prevht,nextht,ptr->common.numhdrs);
+    //fprintf(stderr,"prev.%d next.%d allocate numhdrs.%d\n",prevht,nextht,ptr->common.numhdrs);
     for (i=0; i<ptr->common.numhdrs; i++)
     {
         hashBlock = NSPV_hdrhash(&ptr->common.hdrs[i]);
-        fprintf(stderr,"hdr[%d] %s\n",prevht+i,hashBlock.GetHex().c_str());
+        //fprintf(stderr,"hdr[%d] %s\n",prevht+i,hashBlock.GetHex().c_str());
         if ( NSPV_setequihdr(&ptr->common.hdrs[i],prevht+i) < 0 )
         {
             fprintf(stderr,"error setting hdr.%d\n",prevht+i);
@@ -281,7 +281,7 @@ int32_t NSPV_getntzsproofresp(struct NSPV_ntzsproofresp *ptr,int32_t prevht,int3
     ptr->prevntz = NSPV_getrawtx(hashBlock,&ptr->prevtxlen,ptr->prevtxid);
     ptr->nexttxid = NSPV_getnotarization_txid(&ptr->nexttxidht,nextht);
     ptr->nextntz = NSPV_getrawtx(hashBlock,&ptr->nexttxlen,ptr->nexttxid);
-    fprintf(stderr,"ptr->prevht.%d nextht.%d\n",ptr->common.prevht,ptr->common.nextht);
+    //fprintf(stderr,"ptr->prevht.%d nextht.%d\n",ptr->common.prevht,ptr->common.nextht);
     return(sizeof(*ptr) + sizeof(*ptr->common.hdrs)*ptr->common.numhdrs - sizeof(ptr->common.hdrs) - sizeof(ptr->prevntz) - sizeof(ptr->nextntz) + ptr->prevtxlen + ptr->nexttxlen);
 }
 
