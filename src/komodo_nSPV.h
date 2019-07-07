@@ -241,7 +241,7 @@ struct NSPV_txproof
 {
     uint256 txid;
     int64_t unspentvalue;
-    int32_t height,vout;
+    int32_t height,vout,pad;
     uint16_t txlen,txprooflen;
     uint8_t *tx,*txproof;
 };
@@ -253,6 +253,7 @@ int32_t NSPV_rwtxproof(int32_t rwflag,uint8_t *serialized,struct NSPV_txproof *p
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->unspentvalue),&ptr->unspentvalue);
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->height),&ptr->height);
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->vout),&ptr->vout);
+    len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->pad),&ptr->pad);
     len += iguana_rwuint8vec(rwflag,&serialized[len],&ptr->txlen,&ptr->tx);
     len += iguana_rwuint8vec(rwflag,&serialized[len],&ptr->txprooflen,&ptr->txproof);
     fprintf(stderr,"rwtxproof len.%d\n",len);
