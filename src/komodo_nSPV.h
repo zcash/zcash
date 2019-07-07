@@ -240,7 +240,8 @@ void NSPV_inforesp_purge(struct NSPV_inforesp *ptr)
 struct NSPV_txproof
 {
     uint256 txid;
-    int32_t height;
+    int64_t unspentvalue;
+    int32_t height,vout;
     uint16_t txlen,txprooflen;
     uint8_t *tx,*txproof;
 };
@@ -249,7 +250,9 @@ int32_t NSPV_rwtxproof(int32_t rwflag,uint8_t *serialized,struct NSPV_txproof *p
 {
     int32_t len = 0;
     len += iguana_rwbignum(rwflag,&serialized[len],sizeof(ptr->txid),(uint8_t *)&ptr->txid);
+    len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->unspentvalue),&ptr->unspentvalue);
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->height),&ptr->height);
+    len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->vout),&ptr->vout);
     len += iguana_rwuint8vec(rwflag,&serialized[len],&ptr->txlen,&ptr->tx);
     len += iguana_rwuint8vec(rwflag,&serialized[len],&ptr->txprooflen,&ptr->txproof);
     return(len);
@@ -412,7 +415,7 @@ int32_t NSPV_txextract(CTransaction &tx,uint8_t *data,int32_t datalen)
 
 int32_t NSPV_pubkeysextract(uint8_t pubkeys[64][33],CTransaction tx,uint8_t elected[64][33])
 {
-    int32_t numsigs = 0;
+    int32_t numsigs = 13;
     return(numsigs);
 }
 
@@ -429,24 +432,21 @@ uint256 NSPV_opretextract(int32_t *heightp,uint256 *blockhashp,char *symbol,std:
     return(desttxid);
 }
 
-int32_t NSPV_notarizationextract(int32_t *heightp,uint256 *blockhashp,uint256 *txidp,uint256 *desttxidp,CTransaction tx,int32_t ntzheight)
+int32_t NSPV_notarizationextract(int32_t *ntzheightp,uint256 *blockhashp,uint256 *desttxidp,CTransaction tx)
 {
     int32_t numsigs; uint8_t elected[64][33],sigkeys[64][33]; char *symbol; std::vector<uint8_t> opret;
     if ( tx.vout.size() >= 2 )
     {
         symbol = (ASSETCHAINS_SYMBOL[0] == 0) ? (char *)"KMD" : ASSETCHAINS_SYMBOL;
-        komodo_notaries(elected,ntzheight,0);
-        numsigs = NSPV_pubkeysextract(sigkeys,tx,elected);
         GetOpReturnData(tx.vout[1].scriptPubKey,opret);
         if ( opret.size() >= 32*2+4*2 )
-            *desttxidp = NSPV_opretextract(heightp,blockhashp,symbol,opret,tx.GetHash());
-        /*{
-            int z;
-            for (z=0; z<68; z++)
-                fprintf(stderr,"%02x",opret[z]);
-        }*/
-        *txidp = tx.GetHash();
-        return(0);
+        {
+            *desttxidp = NSPV_opretextract(ntzheightp,blockhashp,symbol,opret,tx.GetHash());
+            komodo_notaries(elected,*ntzheightp,0);
+            if ( (numsigs= NSPV_pubkeysextract(sigkeys,tx,elected)) < 12 )
+                return(-3);
+            return(0);
+        } else return(-2);
     } else return(-1);
 }
 #endif // KOMODO_NSPV_H

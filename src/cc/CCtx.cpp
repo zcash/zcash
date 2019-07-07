@@ -365,7 +365,7 @@ int64_t CCutxovalue(char *coinaddr,uint256 utxotxid,int32_t utxovout,int32_t CCf
     return(0);
 }
 
-int32_t CCgettxout(uint256 txid,int32_t vout,int32_t mempoolflag,int32_t lockflag)
+int64_t CCgettxout(uint256 txid,int32_t vout,int32_t mempoolflag,int32_t lockflag)
 {
     CCoins coins;
     //fprintf(stderr,"CCgettxoud %s/v%d\n",txid.GetHex().c_str(),vout);

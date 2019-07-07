@@ -981,7 +981,7 @@ UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis);
 UniValue NSPV_spentinfo(uint256 txid,int32_t vout);
 UniValue NSPV_notarizations(int32_t height);
 UniValue NSPV_hdrsproof(int32_t prevheight,int32_t nextheight);
-UniValue NSPV_txproof(uint256 txid,int32_t vout);
+UniValue NSPV_txproof(int32_t vout,uint256 txid,int32_t vout);
 uint256 Parseuint256(const char *hexstr);
 extern std::string NSPV_address;
 
@@ -1057,7 +1057,7 @@ UniValue nspv_txproof(const UniValue& params, bool fHelp)
         throw runtime_error("nspv_txproof txid height\n");
     txid = Parseuint256((char *)params[0].get_str().c_str());
     height = atoi((char *)params[1].get_str().c_str());
-    return(NSPV_txproof(txid,height));
+    return(NSPV_txproof(0,txid,height));
 }
 
 UniValue nspv_spend(const UniValue& params, bool fHelp)

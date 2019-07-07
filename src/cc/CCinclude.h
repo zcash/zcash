@@ -174,7 +174,7 @@ static int32_t ignorevin;
 bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock);
 int32_t is_hexstr(char *str,int32_t n);
 bool myAddtomempool(CTransaction &tx, CValidationState *pstate = NULL, bool fSkipExpiry = false);
-int32_t CCgettxout(uint256 txid,int32_t vout,int32_t mempoolflag,int32_t lockflag);
+int64_t CCgettxout(uint256 txid,int32_t vout,int32_t mempoolflag,int32_t lockflag);
 bool myIsutxo_spentinmempool(uint256 &spenttxid,int32_t &spentvini,uint256 txid,int32_t vout);
 bool mytxid_inmempool(uint256 txid);
 int32_t myIsutxo_spent(uint256 &spenttxid,uint256 txid,int32_t vout);

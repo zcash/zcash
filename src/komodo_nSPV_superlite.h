@@ -344,20 +344,18 @@ UniValue NSPV_notarizations(int32_t height)
     return(NSPV_ntzs_json(&N));
 }
 
-UniValue NSPV_hdrsproof(int32_t prevheight,int32_t nextheight)
+UniValue NSPV_txidhdrsproof(uint256 prevtxid,uint256 nexttxid)
 {
     uint8_t msg[64]; int32_t i,len = 0; struct NSPV_ntzsproofresp H;
-    if ( NSPV_ntzsproofresult.common.prevht == prevheight && NSPV_ntzsproofresult.common.nextht >= nextheight )
-        return(NSPV_ntzsproof_json(&NSPV_ntzsproofresult));
     msg[len++] = NSPV_NTZSPROOF;
-    len += iguana_rwnum(1,&msg[len],sizeof(prevheight),&prevheight);
-    len += iguana_rwnum(1,&msg[len],sizeof(nextheight),&nextheight);
+    len += iguana_rwbignum(1,&msg[len],sizeof(prevtxid),(uint8_t *)&prevtxid);
+    len += iguana_rwbignum(1,&msg[len],sizeof(nexttxid),(uint8_t *)&nexttxid);
     if ( NSPV_req(0,msg,len,NODE_NSPV,msg[0]>>1) != 0 )
     {
         for (i=0; i<NSPV_POLLITERS; i++)
         {
             usleep(NSPV_POLLMICROS);
-            if ( NSPV_ntzsproofresult.common.prevht == prevheight && NSPV_ntzsproofresult.common.nextht >= nextheight )
+            if ( NSPV_ntzsproofresult.prevtxid == prevtxid && NSPV_ntzsproofresult.nexttxid == nexttxid )
                 return(NSPV_ntzsproof_json(&NSPV_ntzsproofresult));
         }
     }
@@ -365,13 +363,24 @@ UniValue NSPV_hdrsproof(int32_t prevheight,int32_t nextheight)
     return(NSPV_ntzsproof_json(&H));
 }
 
-UniValue NSPV_txproof(uint256 txid,int32_t height)
+UniValue NSPV_hdrsproof(int32_t prevht,int32_t nextht)
+{
+    uint256 prevtxid,nexttxid;
+    NSPV_notarizations(prevht);
+    prevtxid = NSPV_ntzsresult.prevntz.txid;
+    NSPV_notarizations(nextht);
+    nexttxid = NSPV_ntzsresult.nextntz.txid;
+    return(NSPV_txidhdrsproof(prevtxid,nexttxid));
+}
+
+UniValue NSPV_txproof(int32_t vout,uint256 txid,int32_t height)
 {
     uint8_t msg[64]; int32_t i,len = 0; struct NSPV_txproof P;
     if ( NSPV_txproofresult.txid == txid && NSPV_txproofresult.height == height )
         return(NSPV_txproof_json(&NSPV_txproofresult));
     msg[len++] = NSPV_TXPROOF;
     len += iguana_rwnum(1,&msg[len],sizeof(height),&height);
+    len += iguana_rwnum(1,&msg[len],sizeof(vout),&vout);
     len += iguana_rwbignum(1,&msg[len],sizeof(txid),(uint8_t *)&txid);
     //fprintf(stderr,"req txproof %s at height.%d\n",txid.GetHex().c_str(),height);
     if ( NSPV_req(0,msg,len,NODE_NSPV,msg[0]>>1) != 0 )

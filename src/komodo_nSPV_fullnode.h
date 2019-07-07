@@ -21,7 +21,7 @@
 
 #include "notarisationdb.h"
 
-uint256 NSPV_getnotarization_txid(int32_t *ntzheightp,int32_t height)
+/*uint256 NSPV_getnotarization_txid(int32_t *ntzheightp,int32_t height)
 {
     uint256 txid; Notarisation nota; char *symbol = (ASSETCHAINS_SYMBOL[0] == 0) ? (char *)"KMD" : ASSETCHAINS_SYMBOL;
     memset(&txid,0,sizeof(txid));
@@ -33,7 +33,7 @@ uint256 NSPV_getnotarization_txid(int32_t *ntzheightp,int32_t height)
         txid = nota.first;
     }
     return(txid);
-}
+}*/
 
 int32_t komodo_notarized_bracket(uint256 txids[2],int32_t txidhts[2],uint256 desttxids[2],int32_t ntzheights[2],int32_t height)
 {
@@ -206,12 +206,13 @@ int32_t NSPV_sendrawtransaction(struct NSPV_broadcastresp *ptr,uint8_t *data,int
     return(sizeof(*ptr));
 }
 
-int32_t NSPV_gettxproof(struct NSPV_txproof *ptr,uint256 txid,int32_t height)
+int32_t NSPV_gettxproof(struct NSPV_txproof *ptr,int32_t vout,uint256 txid,int32_t height)
 {
     int32_t flag = 0,len = 0; uint256 hashBlock; CBlock block; CBlockIndex *pindex;
     if ( (ptr->tx= NSPV_getrawtx(hashBlock,&ptr->txlen,txid)) == 0 )
         return(-1);
     ptr->txid = txid;
+    ptr->vout = vout;
     ptr->height = height;
     if ( (pindex= komodo_chainactive(height)) != 0 && komodo_blockload(block,pindex) == 0 )
     {
@@ -237,6 +238,8 @@ int32_t NSPV_gettxproof(struct NSPV_txproof *ptr,uint256 txid,int32_t height)
                 ptr->txproof = (uint8_t *)calloc(1,ptr->txprooflen);
                 memcpy(ptr->txproof,&proof[0],ptr->txprooflen);
             }
+            //int64_t CCgettxout(uint256 txid,int32_t vout,int32_t mempoolflag,int32_t lockflag);
+            ptr->unspentvalue = CCgettxout(txid,vout,1,1);
             //fprintf(stderr,"gettxproof slen.%d\n",(int32_t)(sizeof(*ptr) - sizeof(ptr->tx) - sizeof(ptr->txproof) + ptr->txlen + ptr->txprooflen));
             return(sizeof(*ptr) - sizeof(ptr->tx) - sizeof(ptr->txproof) + ptr->txlen + ptr->txprooflen);
         }
@@ -264,22 +267,40 @@ int32_t NSPV_setequihdr(struct NSPV_equihdr *hdr,int32_t height)
     return(-1);
 }
 
-int32_t NSPV_getntzsproofresp(struct NSPV_ntzsproofresp *ptr,int32_t prevht,int32_t nextht)
+int32_t NSPV_getntzsproofresp(struct NSPV_ntzsproofresp *ptr,uint256 prevntztxid,uint256 nextntxtxid)
 {
-    int32_t i; uint256 hashBlock;
-    if ( prevht > nextht || (nextht-prevht) > 1440 )
+    int32_t i; uint256 hashBlock,bhash0,bhash1,desttxid0,desttxid1; CTransaction tx;
+    ptr->prevtxid = prevntztxid;
+    ptr->prevntz = NSPV_getrawtx(hashBlock,&ptr->prevtxlen,ptr->prevtxid);
+    ptr->prevtxidht = komodo_blockheight(hashBlock);
+    if ( NSPV_txextract(tx,ptr->prevntz,ptr->prevtxlen) < 0 )
+        return(-1);
+    else if ( NSPV_notarizationextract(&ptr->common.prevht,&bhash0,&desttxid0,tx) < 0 )
+        return(-2);
+    else if ( komodo_blockheight(bhash0) != ptr->common.prevht )
+        return(-3);
+    
+    ptr->nexttxid = nextntztxid;
+    ptr->nextntz = NSPV_getrawtx(hashBlock,&ptr->nexttxlen,ptr->nexttxid);
+    ptr->nexttxidht = komodo_blockheight(hashBlock);
+    if ( NSPV_txextract(tx,ptr->prevntz,ptr->prevtxlen) < 0 )
+        return(-4);
+    else if ( NSPV_notarizationextract(&ptr->common.nextht,&bhash1,&desttxid1,tx) < 0 )
+        return(-5);
+    else if ( komodo_blockheight(bhash1) != ptr->common.nextht )
+        return(-6);
+
+    else if ( ptr->common.prevht > ptr->common.nextht || (ptr->common.nextht - ptr->common.prevht) > 1440 )
     {
         fprintf(stderr,"illegal prevht.%d nextht.%d\n",prevht,nextht);
-        return(-1);
+        return(-7);
     }
-    ptr->common.prevht = prevht;
-    ptr->common.nextht = nextht;
     ptr->common.numhdrs = (nextht - prevht + 1);
     ptr->common.hdrs = (struct NSPV_equihdr *)calloc(ptr->common.numhdrs,sizeof(*ptr->common.hdrs));
     //fprintf(stderr,"prev.%d next.%d allocate numhdrs.%d\n",prevht,nextht,ptr->common.numhdrs);
     for (i=0; i<ptr->common.numhdrs; i++)
     {
-        hashBlock = NSPV_hdrhash(&ptr->common.hdrs[i]);
+        //hashBlock = NSPV_hdrhash(&ptr->common.hdrs[i]);
         //fprintf(stderr,"hdr[%d] %s\n",prevht+i,hashBlock.GetHex().c_str());
         if ( NSPV_setequihdr(&ptr->common.hdrs[i],prevht+i) < 0 )
         {
@@ -289,11 +310,6 @@ int32_t NSPV_getntzsproofresp(struct NSPV_ntzsproofresp *ptr,int32_t prevht,int3
             return(-1);
         }
     }
-    ptr->prevtxid = NSPV_getnotarization_txid(&ptr->prevtxidht,prevht);
-    ptr->prevntz = NSPV_getrawtx(hashBlock,&ptr->prevtxlen,ptr->prevtxid);
-    ptr->nexttxid = NSPV_getnotarization_txid(&ptr->nexttxidht,nextht);
-    ptr->nextntz = NSPV_getrawtx(hashBlock,&ptr->nexttxlen,ptr->nexttxid);
-    //fprintf(stderr,"ptr->prevht.%d nextht.%d\n",ptr->common.prevht,ptr->common.nextht);
     return(sizeof(*ptr) + sizeof(*ptr->common.hdrs)*ptr->common.numhdrs - sizeof(ptr->common.hdrs) - sizeof(ptr->prevntz) - sizeof(ptr->nextntz) + ptr->prevtxlen + ptr->nexttxlen);
 }
 
@@ -306,7 +322,7 @@ int32_t NSPV_getspentinfo(struct NSPV_spentinfo *ptr,uint256 txid,int32_t vout)
     len = (int32_t)(sizeof(*ptr) - sizeof(ptr->spent.tx) - sizeof(ptr->spent.txproof));
     if ( CCgetspenttxid(ptr->spent.txid,ptr->spentvini,ptr->spent.height,txid,vout) == 0 )
     {
-        if ( NSPV_gettxproof(&ptr->spent,ptr->spent.txid,ptr->spent.height) > 0 )
+        if ( NSPV_gettxproof(&ptr->spent,0,ptr->spent.txid,ptr->spent.height) > 0 )
             len += ptr->spent.txlen + ptr->spent.txprooflen;
         else
         {
@@ -398,26 +414,22 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
         {
             if ( timestamp > pfrom->prevtimes[ind] )
             {
-                struct NSPV_ntzsproofresp P; int32_t prevht,nextht;
+                struct NSPV_ntzsproofresp P; uint256 prevntz,nextntz;
                 if ( len == 1+sizeof(prevht)+sizeof(nextht) )
                 {
-                    iguana_rwnum(0,&request[1],sizeof(prevht),&prevht);
-                    iguana_rwnum(0,&request[1+sizeof(prevht)],sizeof(nextht),&nextht);
-                    if ( prevht != 0 && nextht != 0 && nextht >= prevht )
+                    iguana_rwbignum(0,&request[1],sizeof(prevntz),(uint8_t *)&prevntz);
+                    iguana_rwbignum(0,&request[1+sizeof(prevntz)],sizeof(nextntz),(uint8_t *)&nextntz);
+                    memset(&P,0,sizeof(P));
+                    if ( (slen= NSPV_getntzsproofresp(&P,prevntz,nextntz)) > 0 )
                     {
-                        memset(&P,0,sizeof(P));
-                        if ( (slen= NSPV_getntzsproofresp(&P,prevht,nextht)) > 0 )
+                        response.resize(1 + slen);
+                        response[0] = NSPV_NTZSPROOFRESP;
+                        if ( NSPV_rwntzsproofresp(1,&response[1],&P) == slen )
                         {
-                            response.resize(1 + slen);
-                            response[0] = NSPV_NTZSPROOFRESP;
-                            P.common.numhdrs = (nextht - prevht + 1);
-                            if ( NSPV_rwntzsproofresp(1,&response[1],&P) == slen )
-                            {
-                                pfrom->PushMessage("nSPV",response);
-                                pfrom->prevtimes[ind] = timestamp;
-                            }
-                            NSPV_ntzsproofresp_purge(&P);
+                            pfrom->PushMessage("nSPV",response);
+                            pfrom->prevtimes[ind] = timestamp;
                         }
+                        NSPV_ntzsproofresp_purge(&P);
                     }
                 }
             }
@@ -426,14 +438,15 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
         {
             if ( timestamp > pfrom->prevtimes[ind] )
             {
-                struct NSPV_txproof P; uint256 txid; int32_t height;
+                struct NSPV_txproof P; uint256 txid; int32_t height,vout;
                 if ( len == 1+sizeof(txid)+sizeof(height) )
                 {
                     iguana_rwnum(0,&request[1],sizeof(height),&height);
-                    iguana_rwbignum(0,&request[1+sizeof(height)],sizeof(txid),(uint8_t *)&txid);
+                    iguana_rwnum(0,&request[1+sizeof(height)],sizeof(vout),&vout);
+                    iguana_rwbignum(0,&request[1+sizeof(height)+sizeof(vout)],sizeof(txid),(uint8_t *)&txid);
                     //fprintf(stderr,"got txid ht.%d\n",txid.GetHex().c_str(),height);
                     memset(&P,0,sizeof(P));
-                    if ( (slen= NSPV_gettxproof(&P,txid,height)) > 0 )
+                    if ( (slen= NSPV_gettxproof(&P,vout,txid,height)) > 0 )
                     {
                         response.resize(1 + slen);
                         response[0] = NSPV_TXPROOFRESP;

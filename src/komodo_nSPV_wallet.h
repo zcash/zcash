@@ -29,7 +29,7 @@ int32_t NSPV_validatehdrs(struct NSPV_ntzsproofresp *ptr)
         return(-2);
     else if ( tx.GetHash() != ptr->nexttxid )
         return(-3);
-    else if ( NSPV_notarizationextract(&height,&blockhash,&txid,&desttxid,tx,ptr->common.nextht) < 0 )
+    else if ( NSPV_notarizationextract(&height,&blockhash,&desttxid,tx) < 0 )
         return(-4);
     else if ( height != ptr->common.nextht )
         return(-5);
@@ -48,7 +48,7 @@ int32_t NSPV_validatehdrs(struct NSPV_ntzsproofresp *ptr)
         return(-7);
     else if ( tx.GetHash() != ptr->prevtxid )
         return(-8);
-    else if ( NSPV_notarizationextract(&height,&blockhash,&txid,&desttxid,tx,ptr->common.prevht) < 0 )
+    else if ( NSPV_notarizationextract(&height,&blockhash,&desttxid,tx) < 0 )
         return(-9);
     else if ( height != ptr->common.prevht )
         return(-10);
@@ -81,7 +81,7 @@ int32_t NSPV_gettransaction(uint256 txid,int32_t height,CTransaction &tx)
             offset = (height - NSPV_ntzsresult.prevntz.height);
             if ( offset >= 0 && height <= NSPV_ntzsresult.nextntz.height )
             {
-                NSPV_hdrsproof(NSPV_ntzsresult.prevntz.height,NSPV_ntzsresult.nextntz.height);
+                NSPV_hdrsproof(NSPV_ntzsresult.prevtxid,NSPV_ntzsresult.nexttxid);
                 if ( (retval= NSPV_validatehdrs(&NSPV_ntzsproofresult)) == 0 )
                 {
                     std::vector<uint256> txids; std::vector<uint8_t> proof; uint256 proofroot;
