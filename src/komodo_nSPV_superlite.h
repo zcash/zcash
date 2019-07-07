@@ -165,15 +165,18 @@ UniValue NSPV_ntzs_json(struct NSPV_ntzsresp *ptr)
     return(result);
 }
 
-UniValue NSPV_headers_json(struct NSPV_equihdr *hdrs,int32_t numhdrs)
+UniValue NSPV_headers_json(struct NSPV_equihdr *hdrs,int32_t numhdrs,int32_t height)
 {
     UniValue array(UniValue::VARR); int32_t i;
     for (i=0; i<numhdrs; i++)
     {
         UniValue item(UniValue::VOBJ);
+        item.push_back(Pair("height",(int64_t)height+i));
+        item.push_back(Pair("blockhash",NSPV_doublesha256((uint8_t *)&hdrs[i],sizeof(hdrs[i])).GetHex()));
         item.push_back(Pair("hashPrevBlock",hdrs[i].hashPrevBlock.GetHex()));
         item.push_back(Pair("hashMerkleRoot",hdrs[i].hashMerkleRoot.GetHex()));
         item.push_back(Pair("nTime",(int64_t)hdrs[i].nTime));
+        
         array.push_back(item);
     }
     return(array);
@@ -192,7 +195,7 @@ UniValue NSPV_ntzsproof_json(struct NSPV_ntzsproofresp *ptr)
     result.push_back(Pair("nexttxidht",(int64_t)ptr->nexttxidht));
     result.push_back(Pair("nexttxlen",(int64_t)ptr->prevtxlen));
     result.push_back(Pair("numhdrs",(int64_t)ptr->common.numhdrs));
-    result.push_back(Pair("headers",NSPV_headers_json(ptr->common.hdrs,ptr->common.numhdrs)));
+    result.push_back(Pair("headers",NSPV_headers_json(ptr->common.hdrs,ptr->common.numhdrs,ptr->common.prevht)));
     return(result);
 }
 
