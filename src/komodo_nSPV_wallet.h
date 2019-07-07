@@ -81,7 +81,7 @@ int32_t NSPV_gettransaction(int32_t vout,uint256 txid,int32_t height,CTransactio
             offset = (height - NSPV_ntzsresult.prevntz.height);
             if ( offset >= 0 && height <= NSPV_ntzsresult.nextntz.height )
             {
-                NSPV_hdrsproof(NSPV_ntzsresult.prevtxid,NSPV_ntzsresult.nexttxid);
+                NSPV_hdrsproof(NSPV_ntzsresult.prevntz.txid,NSPV_ntzsresult.nextntz.txid);
                 if ( (retval= NSPV_validatehdrs(&NSPV_ntzsproofresult)) == 0 )
                 {
                     std::vector<uint256> txids; std::vector<uint8_t> proof; uint256 proofroot;

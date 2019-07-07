@@ -415,7 +415,7 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
             if ( timestamp > pfrom->prevtimes[ind] )
             {
                 struct NSPV_ntzsproofresp P; uint256 prevntz,nextntz;
-                if ( len == 1+sizeof(prevht)+sizeof(nextht) )
+                if ( len == 1+sizeof(prevntz)+sizeof(nextntz) )
                 {
                     iguana_rwbignum(0,&request[1],sizeof(prevntz),(uint8_t *)&prevntz);
                     iguana_rwbignum(0,&request[1+sizeof(prevntz)],sizeof(nextntz),(uint8_t *)&nextntz);
