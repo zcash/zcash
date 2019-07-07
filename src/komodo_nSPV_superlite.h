@@ -172,7 +172,7 @@ UniValue NSPV_headers_json(struct NSPV_equihdr *hdrs,int32_t numhdrs,int32_t hei
     {
         UniValue item(UniValue::VOBJ);
         item.push_back(Pair("height",(int64_t)height+i));
-        item.push_back(Pair("blockhash",NSPV_hdrhash(&hdrs[i])));
+        item.push_back(Pair("blockhash",NSPV_hdrhash(&hdrs[i]).GetHex()));
         item.push_back(Pair("hashPrevBlock",hdrs[i].hashPrevBlock.GetHex()));
         item.push_back(Pair("hashMerkleRoot",hdrs[i].hashMerkleRoot.GetHex()));
         item.push_back(Pair("nTime",(int64_t)hdrs[i].nTime));
