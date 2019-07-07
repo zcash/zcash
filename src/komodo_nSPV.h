@@ -379,7 +379,7 @@ void NSPV_broadcast_purge(struct NSPV_broadcastresp *ptr)
 uint256 NSPV_doublesha256(uint8_t *data,int32_t datalen)
 {
     bits256 _hash; uint256 hash; int32_t i;
-    _hash = bits256_doublesha256(0,data,datalen);
+    _hash = bits256_doublesha256(0,(void *)data,datalen);
     for (i=0; i<32; i++)
         ((uint8_t *)&hash)[i] = _hash.bytes[31 - i];
     return(hash);
