@@ -33,11 +33,11 @@ int32_t NSPV_validatehdrs(struct NSPV_ntzsproofresp *ptr)
         return(-4);
     else if ( height != ptr->common.nextht )
         return(-5);
-    else if ( NSPV_doublesha256(&ptr->common.hdrs[ptr->common.numhdrs-1],sizeof(*ptr->common.hdrs)) != blockhash )
+    else if ( NSPV_doublesha256((uint8_t *)&ptr->common.hdrs[ptr->common.numhdrs-1],sizeof(*ptr->common.hdrs)) != blockhash )
         return(-6);
     for (i=ptr->common.numhdrs-1; i>0; i--)
     {
-        if ( NSPV_doublesha256(&ptr->common.hdrs[i-1],sizeof(*ptr->common.hdrs)) != ptr->common.hdrs.prevblockhash )
+        if ( NSPV_doublesha256((uint8_t *)&ptr->common.hdrs[i-1],sizeof(*ptr->common.hdrs)) != ptr->common.hdrs.prevblockhash )
             return(-i-11);
     }
     if ( NSPV_txextract(tx,ptr->prevntz,ptr->prevtxlen) < 0 )
@@ -48,7 +48,7 @@ int32_t NSPV_validatehdrs(struct NSPV_ntzsproofresp *ptr)
         return(-8);
     else if ( height != ptr->common.prevht )
         return(-9);
-    else if ( NSPV_doublesha256(&ptr->common.hdrs[0],sizeof(*ptr->common.hdrs)) != blockhash )
+    else if ( NSPV_doublesha256((uint8_t *)&ptr->common.hdrs[0],sizeof(*ptr->common.hdrs)) != blockhash )
         return(-10);
     return(0);
 }
