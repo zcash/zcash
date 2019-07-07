@@ -436,7 +436,9 @@ int32_t NSPV_notarizationextract(int32_t *heightp,uint256 *blockhashp,uint256 *t
         komodo_notaries(elected,ntzheight,0);
         numsigs = NSPV_pubkeysextract(sigkeys,tx,elected);
         GetOpReturnData(tx.vout[1].scriptPubKey,opret);
-        *desttxidp = NSPV_opretextract(heightp,blockhashp,symbol,opret);
+        if ( opret.size() >= 32*2+4*2 )
+            *desttxidp = NSPV_opretextract(heightp,blockhashp,symbol,&opret[4]);
+        fprintf(stderr,"ntzht.%d %s txid.%s\n",*heightp,*blockhashp.GetHex().c_str(),*desttxidp.GetHex().c_str());
         *txidp = tx.GetHash();
         return(0);
     } else return(-1);
