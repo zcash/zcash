@@ -200,11 +200,12 @@ int32_t NSPV_sendrawtransaction(struct NSPV_broadcastresp *ptr,uint8_t *data,int
     ptr->retcode = 0;
     rawdata.resize(n);
     memcpy(&rawdata[0],data,n);
+    fprintf(stderr,"sendraw.(%s)\n",HexStr(rawdata));
     if ( DecodeHexTx(tx,HexStr(rawdata)) != 0 )
     {
         LOCK(cs_main);
         ptr->txid = tx.GetHash();
-        //fprintf(stderr,"addmempool transaction %s\n",ptr->txid.GetHex().c_str());
+        fprintf(stderr,"addmempool transaction %s\n",ptr->txid.GetHex().c_str());
         if ( myAddtomempool(tx) != 0 )
             ptr->retcode = 1;
         else ptr->retcode = 0;
