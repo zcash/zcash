@@ -23,7 +23,6 @@ extern void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& 
 int32_t NSPV_validatehdrs(struct NSPV_ntzsproofresp *ptr)
 {
     int32_t i,height,txidht; CTransaction tx; uint256 blockhash,txid,desttxid;
-    fprintf(stderr,"NSPV_validatehdrs.%d\n",ptr->common.numhdrs);
     if ( (ptr->common.nextht-ptr->common.prevht+1) != ptr->common.numhdrs )
         return(-1);
     else if ( NSPV_txextract(tx,ptr->nextntz,ptr->nexttxlen) < 0 )
@@ -40,11 +39,9 @@ int32_t NSPV_validatehdrs(struct NSPV_ntzsproofresp *ptr)
     for (i=ptr->common.numhdrs-1; i>0; i--)
     {
         blockhash = NSPV_hdrhash(&ptr->common.hdrs[i-1]);
-        fprintf(stderr,"i.%d ht.%d blockhash.%s vs [i+1].prev %s\n",i-1,ptr->common.prevht+i-1,blockhash.GetHex().c_str(),ptr->common.hdrs[i].hashPrevBlock.GetHex().c_str());
         if ( blockhash != ptr->common.hdrs[i].hashPrevBlock )
             return(-i-11);
     }
-    fprintf(stderr,"i.%d\n",i);
     if ( NSPV_txextract(tx,ptr->prevntz,ptr->prevtxlen) < 0 )
         return(-6);
     else if ( tx.GetHash() != ptr->prevtxid )
@@ -71,12 +68,15 @@ int32_t NSPV_gettransaction(uint256 txid,int32_t height,CTransaction &tx)
         NSPV_notarizations(height); // gets the prev and next notarizations
         if ( NSPV_ntzsresult.prevntz.height != 0 && NSPV_ntzsresult.prevntz.height <= NSPV_ntzsresult.nextntz.height )
         {
-            fprintf(stderr,"gettx prev.%d next.%d\n",NSPV_ntzsresult.prevntz.height, NSPV_ntzsresult.nextntz.height);
-            NSPV_hdrsproof(NSPV_ntzsresult.prevntz.height,NSPV_ntzsresult.nextntz.height); // validate the segment
-            if ( (retval= NSPV_validatehdrs(&NSPV_ntzsproofresult)) == 0 )
+            fprintf(stderr,"gettx ht.%d prev.%d next.%d\n",height,NSPV_ntzsresult.prevntz.height, NSPV_ntzsresult.nextntz.height);
+            if ( NSPV_ntzsresult.prevntz.height <= height && height <= NSPV_ntzsresult.nextntz.height )
             {
-                // merkle prove txproof to the merkleroot in the corresponding hdr
-            }
+                NSPV_hdrsproof(NSPV_ntzsresult.prevntz.height,NSPV_ntzsresult.nextntz.height); // validate the segment
+                if ( (retval= NSPV_validatehdrs(&NSPV_ntzsproofresult)) == 0 )
+                {
+                    // merkle prove txproof to the merkleroot in the corresponding hdr
+                }
+            } else retval = -22;
         } else retval = -1;
     }
     fprintf(stderr,"NSPV_gettransaction retval would have been %d\n",retval);

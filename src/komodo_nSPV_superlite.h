@@ -470,7 +470,7 @@ void komodo_nSPVresp(CNode *pfrom,std::vector<uint8_t> response) // received a r
         case NSPV_TXPROOFRESP:
             NSPV_txproof_purge(&NSPV_txproofresult);
             NSPV_rwtxproof(0,&response[1],&NSPV_txproofresult);
-            fprintf(stderr,"got txproof response %u size.%d\n",timestamp,(int32_t)response.size());
+            fprintf(stderr,"got txproof response %u size.%d %s ht.%d\n",timestamp,(int32_t)response.size(),NSPV_txproofresult.txid.GetHex().c_str(),NSPV_txproofresult.height);
             break;
         case NSPV_SPENTINFORESP:
             NSPV_spentinfo_purge(&NSPV_spentresult);
