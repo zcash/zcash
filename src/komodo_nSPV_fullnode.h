@@ -200,7 +200,7 @@ int32_t NSPV_sendrawtransaction(struct NSPV_broadcastresp *ptr,uint8_t *data,int
     ptr->retcode = 0;
     rawdata.resize(n);
     memcpy(&rawdata[0],data,n);
-    fprintf(stderr,"sendraw.(%s)\n",HexStr(rawdata));
+    fprintf(stderr,"sendraw.(%s)\n",HexStr(rawdata).c_str());
     if ( DecodeHexTx(tx,HexStr(rawdata)) != 0 )
     {
         LOCK(cs_main);
