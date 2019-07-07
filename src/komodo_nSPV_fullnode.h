@@ -37,7 +37,7 @@ uint256 NSPV_getnotarization_txid(int32_t *ntzheightp,int32_t height)
 
 int32_t komodo_notarized_bracket(uint256 txids[2],int32_t txidhts[2],uint256 desttxids[2],int32_t ntzheights[2],int32_t height)
 {
-    int32_t txidht; Notarisation nota; char *symbol; uint256 bhash;
+    int32_t txidht; Notarisation nota; char *symbol; uint256 bhash0,bhash1;
     symbol = (ASSETCHAINS_SYMBOL[0] == 0) ? (char *)"KMD" : ASSETCHAINS_SYMBOL;
     memset(txids,0,sizeof(*txids)*2);
     memset(desttxids,0,sizeof(*desttxids)*2);
@@ -47,8 +47,8 @@ int32_t komodo_notarized_bracket(uint256 txids[2],int32_t txidhts[2],uint256 des
         return(-1);
     txids[0] = nota.first;
     txidhts[0] = txidht;
-    desttxids[0] = NSPV_DBopretextract(&ntzheights[0],&bhash,symbol,E_MARSHAL(ss << nota.second));
-    //if ( height != 2668 )
+    desttxids[0] = NSPV_opretextract(&ntzheights[0],&bhash0,symbol,E_MARSHAL(ss << nota.second));
+    /*//if ( height != 2668 )
     //    fprintf(stderr,"scan.%d -> %s txidht.%d ntzht.%d\n",height,desttxids[0].GetHex().c_str(),txidht,ntzheights[0]);
     if ( ntzheights[0] == height-1 ) // offset the +1 from caller
     {
@@ -57,13 +57,14 @@ int32_t komodo_notarized_bracket(uint256 txids[2],int32_t txidhts[2],uint256 des
         ntzheights[1] = ntzheights[0];
         desttxids[1] = desttxids[0];
         return(0);
-    }
+    }*/
     if ( (txidht= ScanNotarisationsDB2(height,symbol,1440,nota)) != 0 )
     {
         txids[1] = nota.first;
         txidhts[1] = txidht;
-        desttxids[1] = NSPV_DBopretextract(&ntzheights[1],&bhash,symbol,E_MARSHAL(ss << nota.second));
+        desttxids[1] = NSPV_opretextract(&ntzheights[1],&bhash1,symbol,E_MARSHAL(ss << nota.second));
     }
+    fprintf(stderr,"prev.(%s -> ht.%d %s) next.(%s -> ht.%d %s)\n",txids[0].GetHex().c_str(),ntzheights[0],bhash0.GetHex().c_str(),txids[1].GetHex().c_str(),ntzheights[1],bhash1.GetHex().c_str());
     return(0);
 }
 
