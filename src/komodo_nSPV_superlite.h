@@ -460,7 +460,7 @@ void komodo_nSPVresp(CNode *pfrom,std::vector<uint8_t> response) // received a r
         case NSPV_NTZSRESP:
             NSPV_ntzsresp_purge(&NSPV_ntzsresult);
             NSPV_rwntzsresp(0,&response[1],&NSPV_ntzsresult);
-            fprintf(stderr,"got ntzs response %u size.%d\n",timestamp,(int32_t)response.size());
+            fprintf(stderr,"got ntzs response %u size.%d prev.%d next.%d\n",timestamp,(int32_t)response.size(),NSPV_ntzsresult.prevntz.height,NSPV_ntzsresult.nextntz.height);
             break;
         case NSPV_NTZSPROOFRESP:
             NSPV_ntzsproofresp_purge(&NSPV_ntzsproofresult);

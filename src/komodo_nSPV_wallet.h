@@ -71,6 +71,7 @@ int32_t NSPV_gettransaction(uint256 txid,int32_t height,CTransaction &tx)
         NSPV_notarizations(height); // gets the prev and next notarizations
         if ( NSPV_ntzsresult.prevntz.height != 0 && NSPV_ntzsresult.prevntz.height <= NSPV_ntzsresult.nextntz.height )
         {
+            fprintf(stderr,"gettx prev.%d next.%d\n",NSPV_ntzsresult.prevntz.height, NSPV_ntzsresult.nextntz.height);
             NSPV_hdrsproof(NSPV_ntzsresult.prevntz.height,NSPV_ntzsresult.nextntz.height); // validate the segment
             if ( (retval= NSPV_validatehdrs(&NSPV_ntzsproofresult)) == 0 )
             {
