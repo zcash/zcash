@@ -58,7 +58,7 @@ int32_t NSPV_gettransaction(int32_t vout,uint256 txid,int32_t height,CTransactio
 {
     int32_t offset,retval = 0;
     NSPV_txproof(vout,txid,height);
-    if ( NSPV_txproofresult.txid != txid )
+    if ( NSPV_txproofresult.txid != txid || NSPV_txproofresult.unspentsatoshis <= 0 )
         return(-1);
     else if ( NSPV_txextract(tx,NSPV_txproofresult.tx,NSPV_txproofresult.txlen) < 0 || NSPV_txproofresult.txlen <= 0 )
         retval = -20;

@@ -17,8 +17,6 @@
 // todo:
 // make sure no files are updated (this is to allow nSPV=1 and later nSPV=0 without affecting database)
 
-// determine if it makes sense to be scanning mempool for the utxo/spentinfo requests, maybe can add isspent flag to txproof, or just use getspentinfo if broadcast fails
-
 // pubkeys extract
 // headers "sync"
 // interest calculations are currently just using what is returned, it should calculate it from scratch
