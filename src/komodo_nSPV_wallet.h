@@ -81,14 +81,14 @@ int32_t NSPV_gettransaction(uint256 txid,int32_t height,CTransaction &tx)
                 NSPV_hdrsproof(NSPV_ntzsresult.prevntz.height,NSPV_ntzsresult.nextntz.height);
                 if ( (retval= NSPV_validatehdrs(&NSPV_ntzsproofresult)) == 0 )
                 {
-                    std::vector<uint256> txids; std::vector<uint8_t> proof;
+                    std::vector<uint256> txids; std::vector<uint8_t> proof; uint256 proofroot;
                     proof.resize(NSPV_txproofresult.txlen);
                     memcpy(&proof[0],NSPV_txproofresult.tx,NSPV_txproofresult.txlen);
                     txids.push_back(txid);
                     proofroot = BitcoinGetProofMerkleRoot(proof,txids);
-                    if ( proofroot != NSPV_ntzsproofresult.common[offset].hashMerkleRoot )
+                    if ( proofroot != NSPV_ntzsproofresult.common.hdrs[offset].hashMerkleRoot )
                     {
-                        fprintf(stderr,"proofroot.%s vs %s\n",proofroot.GetHex().c_str(),NSPV_ntzsproofresult.common[offset].hashMerkleRoot.GetHex().c_str());
+                        fprintf(stderr,"proofroot.%s vs %s\n",proofroot.GetHex().c_str(),NSPV_ntzsproofresult.common.hdrs[offset].hashMerkleRoot.GetHex().c_str());
                         return(-23);
                     }
                 }
