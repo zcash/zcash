@@ -996,7 +996,7 @@ UniValue nspv_logout(const UniValue& params, bool fHelp)
 {
     if ( fHelp || params.size() != 0 )
         throw runtime_error("nspv_logout\n");
-    return(NSPV_getinfo_logout());
+    return(NSPV_logout());
 }
 
 UniValue nspv_login(const UniValue& params, bool fHelp)
