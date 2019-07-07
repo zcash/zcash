@@ -83,7 +83,7 @@ int32_t NSPV_gettransaction(int32_t vout,uint256 txid,int32_t height,CTransactio
                 {
                     std::vector<uint256> txids; std::vector<uint8_t> proof; uint256 proofroot;
                     proof.resize(NSPV_txproofresult.txprooflen);
-                    memcpy(&proof[0],NSPV_txproofresult.tx,NSPV_txproofresult.txprooflen);
+                    memcpy(&proof[0],NSPV_txproofresult.txproof,NSPV_txproofresult.txprooflen);
                     proofroot = BitcoinGetProofMerkleRoot(proof,txids);
                     if ( proofroot != NSPV_ntzsproofresult.common.hdrs[offset].hashMerkleRoot )
                     {
