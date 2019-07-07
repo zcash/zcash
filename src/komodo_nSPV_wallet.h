@@ -57,10 +57,10 @@ int32_t NSPV_validatehdrs(struct NSPV_ntzsproofresp *ptr)
     return(0);
 }
 
-int32_t NSPV_gettransaction(uint256 txid,int32_t height,CTransaction &tx)
+int32_t NSPV_gettransaction(int32_t vout,uint256 txid,int32_t height,CTransaction &tx)
 {
     int32_t offset,retval = 0;
-    NSPV_txproof(txid,height);
+    NSPV_txproof(vout,txid,height);
     if ( NSPV_txproofresult.txid != txid )
         return(-1);
     if ( NSPV_txextract(tx,NSPV_txproofresult.tx,NSPV_txproofresult.txlen) < 0 || NSPV_txproofresult.txlen <= 0 )
@@ -243,9 +243,9 @@ std::string NSPV_signtx(CMutableTransaction &mtx,uint64_t txfee,CScript opret,st
         mtx.vout.push_back(CTxOut(0,opret));
     for (i=0; i<n; i++)
     {
-        if ( NSPV_gettransaction(mtx.vin[i].prevout.hash,used[i].height,vintx) == 0 )
+        utxovout = mtx.vin[i].prevout.n;
+        if ( NSPV_gettransaction(utxovout,mtx.vin[i].prevout.hash,used[i].height,vintx) == 0 )
         {
-            utxovout = mtx.vin[i].prevout.n;
             if ( vintx.vout[utxovout].nValue != used[i].satoshis )
             {
                 fprintf(stderr,"vintx mismatch %.8f != %.8f\n",(double)vintx.vout[utxovout].nValue/COIN,(double)used[i].satoshis/COIN);

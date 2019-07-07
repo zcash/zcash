@@ -267,7 +267,7 @@ int32_t NSPV_setequihdr(struct NSPV_equihdr *hdr,int32_t height)
     return(-1);
 }
 
-int32_t NSPV_getntzsproofresp(struct NSPV_ntzsproofresp *ptr,uint256 prevntztxid,uint256 nextntxtxid)
+int32_t NSPV_getntzsproofresp(struct NSPV_ntzsproofresp *ptr,uint256 prevntztxid,uint256 nextntztxid)
 {
     int32_t i; uint256 hashBlock,bhash0,bhash1,desttxid0,desttxid1; CTransaction tx;
     ptr->prevtxid = prevntztxid;
@@ -292,19 +292,19 @@ int32_t NSPV_getntzsproofresp(struct NSPV_ntzsproofresp *ptr,uint256 prevntztxid
 
     else if ( ptr->common.prevht > ptr->common.nextht || (ptr->common.nextht - ptr->common.prevht) > 1440 )
     {
-        fprintf(stderr,"illegal prevht.%d nextht.%d\n",prevht,nextht);
+        fprintf(stderr,"illegal prevht.%d nextht.%d\n",ptr->common.prevht,ptr->common.nextht);
         return(-7);
     }
-    ptr->common.numhdrs = (nextht - prevht + 1);
+    ptr->common.numhdrs = (ptr->common.nextht - ptr->common.prevht + 1);
     ptr->common.hdrs = (struct NSPV_equihdr *)calloc(ptr->common.numhdrs,sizeof(*ptr->common.hdrs));
     //fprintf(stderr,"prev.%d next.%d allocate numhdrs.%d\n",prevht,nextht,ptr->common.numhdrs);
     for (i=0; i<ptr->common.numhdrs; i++)
     {
         //hashBlock = NSPV_hdrhash(&ptr->common.hdrs[i]);
         //fprintf(stderr,"hdr[%d] %s\n",prevht+i,hashBlock.GetHex().c_str());
-        if ( NSPV_setequihdr(&ptr->common.hdrs[i],prevht+i) < 0 )
+        if ( NSPV_setequihdr(&ptr->common.hdrs[i],ptr->common.prevht+i) < 0 )
         {
-            fprintf(stderr,"error setting hdr.%d\n",prevht+i);
+            fprintf(stderr,"error setting hdr.%d\n",ptr->common.prevht+i);
             free(ptr->common.hdrs);
             ptr->common.hdrs = 0;
             return(-1);
