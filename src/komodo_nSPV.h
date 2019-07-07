@@ -387,7 +387,7 @@ uint256 NSPV_doublesha256(uint8_t *data,int32_t datalen)
 
 uint256 NSPV_hdrhash(struct NSPV_equihdr *hdr)
 {
-    CBlockIndex block;
+    CBlockHeader block;
     block.nVersion = hdr->nVersion;
     block.hashPrevBlock = hdr->hashPrevBlock;
     block.hashMerkleRoot = hdr->hashMerkleRoot;
