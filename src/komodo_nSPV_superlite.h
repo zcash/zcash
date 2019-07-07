@@ -289,7 +289,7 @@ UniValue NSPV_getinfo_json()
 UniValue NSPV_addressutxos(char *coinaddr)
 {
     UniValue result(UniValue::VOBJ); uint8_t msg[64]; int32_t i,slen,len = 0;
-    fprintf(stderr,"utxos %s NSPV addr %s\n",coinaddr,NSPV_address.c_str());
+    //fprintf(stderr,"utxos %s NSPV addr %s\n",coinaddr,NSPV_address.c_str());
     if ( bitcoin_base58decode(msg,coinaddr) != 25 )
     {
         result.push_back(Pair("result","error"));
@@ -312,7 +312,7 @@ UniValue NSPV_addressutxos(char *coinaddr)
         for (i=0; i<NSPV_POLLITERS; i++)
         {
             usleep(NSPV_POLLMICROS);
-            if ( NSPV_utxosresult.nodeheight >= NSPV_inforesult.height )
+            if ( NSPV_utxosresult.nodeheight >= NSPV_inforesult.height && strcmp(coinaddr,NSPV_utxosresult.coinaddr) == 0 )
                 return(NSPV_utxosresp_json(&NSPV_utxosresult));
         }
     }
