@@ -37,7 +37,9 @@ int32_t NSPV_validatehdrs(struct NSPV_ntzsproofresp *ptr)
     //    return(-6);
     for (i=ptr->common.numhdrs-1; i>0; i--)
     {
-        if ( NSPV_doublesha256((uint8_t *)&ptr->common.hdrs[i-1],sizeof(*ptr->common.hdrs)) != ptr->common.hdrs[i].hashPrevBlock )
+        blockhash = NSPV_doublesha256((uint8_t *)&ptr->common.hdrs[i-1],sizeof(*ptr->common.hdrs));
+        fprintf(stderr,"i.%d ht.%d blockhash.%s vs [i+1].prev %s\n",i-1,ptr->common.prevht+i-1,blockhash.GetHex().c_str(),ptr->common.hdrs[i].hashPrevBlock.GetHex().c_str());
+        if ( blockhash != ptr->common.hdrs[i].hashPrevBlock )
             return(-i-11);
     }
     if ( NSPV_txextract(tx,ptr->prevntz,ptr->prevtxlen) < 0 )
