@@ -353,10 +353,7 @@ void komodo_nSPV(CNode *pto) // polling loop from SendMessages
     uint8_t msg[256]; int32_t i,len=0; uint32_t timestamp = (uint32_t)time(NULL);
     if ( NSPV_logintime != 0 && timestamp > NSPV_logintime+NSPV_AUTOLOGOUT )
     {
-        fprintf(stderr,"scrub wif and privkey from NSPV memory\n");
-        memset(NSPV_wifstr,0,sizeof(NSPV_wifstr));
-        memset(&NSPV_key,0,sizeof(NSPV_key));
-        NSPV_logintime = 0;
+        NSPV_logout();
     }
     if ( (pto->nServices & NODE_NSPV) == 0 )
         return;

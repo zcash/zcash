@@ -214,6 +214,17 @@ UniValue NSPV_broadcast_json(struct NSPV_broadcastresp *ptr,uint256 txid)
     return(result);
 }
 
+UniValue NSPV_logout()
+{
+    UniValue result(UniValue::VOBJ);
+    fprintf(stderr,"scrub wif and privkey from NSPV memory\n");
+    memset(NSPV_wifstr,0,sizeof(NSPV_wifstr));
+    memset(&NSPV_key,0,sizeof(NSPV_key));
+    NSPV_logintime = 0;
+    result.push_back(Pair("result","success"));
+    return(result);
+}
+
 UniValue NSPV_login(char *wifstr)
 {
     UniValue result(UniValue::VOBJ); char coinaddr[64]; uint8_t data[128]; int32_t len,valid = 0;
@@ -229,11 +240,14 @@ UniValue NSPV_login(char *wifstr)
         return(result);
     }
     memset(NSPV_wifstr,0,sizeof(NSPV_wifstr));
-    strncpy(NSPV_wifstr,wifstr,sizeof(NSPV_wifstr)-1);
     NSPV_logintime = (uint32_t)time(NULL);
+    if ( strcmp(NSPV_wifstr,wifstr) != 0 )
+    {
+        strncpy(NSPV_wifstr,wifstr,sizeof(NSPV_wifstr)-1);
+        NSPV_key = DecodeSecret(wifstr);
+    }
     result.push_back(Pair("result","success"));
     result.push_back(Pair("status","wif will expire in 777 seconds"));
-    NSPV_key = DecodeSecret(wifstr);
     CPubKey pubkey = NSPV_key.GetPubKey();
     CKeyID vchAddress = pubkey.GetID();
     NSPV_address = EncodeDestination(vchAddress);
