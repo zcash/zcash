@@ -258,7 +258,7 @@ std::string NSPV_signtx(CMutableTransaction &mtx,uint64_t txfee,CScript opret,st
                 fprintf(stderr,"signing error for vini.%d\n",i);
                 return("");
             }
-        } else fprintf(stderr,"couldnt find txid.%s\n",mtx.vin[i].prevout.hash.GetHex().c_str());
+        } else fprintf(stderr,"couldnt find txid.%s/v%d or it was spent\n",mtx.vin[i].prevout.hash.GetHex().c_str(),utxovout); // of course much better handling is needed
     }
     fprintf(stderr,"sign %d inputs %.8f + interest %.8f -> %d outputs %.8f change %.8f\n",(int32_t)mtx.vin.size(),(double)totalinputs/COIN,(double)interest/COIN,(int32_t)mtx.vout.size(),(double)totaloutputs/COIN,(double)change/COIN);
     return(EncodeHexTx(mtx));
