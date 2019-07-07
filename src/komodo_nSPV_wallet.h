@@ -34,10 +34,7 @@ int32_t NSPV_validatehdrs(struct NSPV_ntzsproofresp *ptr)
     else if ( height != ptr->common.nextht )
         return(-5);
     else if ( NSPV_hdrhash(&ptr->common.hdrs[ptr->common.numhdrs-1]) != blockhash )
-    {
-        //fprintf(stderr,"hdr.%s vs blockhash.%s\n",NSPV_hdrhash(&ptr->common.hdrs[ptr->common.numhdrs-1]).GetHex().c_str(),blockhash.GetHex().c_str());
         return(-6);
-    }
     for (i=ptr->common.numhdrs-1; i>0; i--)
     {
         blockhash = NSPV_hdrhash(&ptr->common.hdrs[i-1]);
@@ -77,7 +74,7 @@ int32_t NSPV_gettransaction(int32_t vout,uint256 txid,int32_t height,CTransactio
         }
         if ( NSPV_ntzsresult.prevntz.height != 0 && NSPV_ntzsresult.prevntz.height <= NSPV_ntzsresult.nextntz.height )
         {
-            fprintf(stderr,"gettx ht.%d prev.%d next.%d\n",height,NSPV_ntzsresult.prevntz.height, NSPV_ntzsresult.nextntz.height);
+            //fprintf(stderr,"gettx ht.%d prev.%d next.%d\n",height,NSPV_ntzsresult.prevntz.height, NSPV_ntzsresult.nextntz.height);
             offset = (height - NSPV_ntzsresult.prevntz.height);
             if ( offset >= 0 && height <= NSPV_ntzsresult.nextntz.height )
             {
