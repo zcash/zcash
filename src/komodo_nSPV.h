@@ -388,7 +388,7 @@ uint256 NSPV_doublesha256(uint8_t *data,int32_t datalen)
 uint256 NSPV_hdrhash(struct NSPV_equihdr *hdr)
 {
     uint8_t data[sizeof(*hdr)]; uint16_t hdrsize = sizeof(*hdr);
-    iguana_rwequihdrvec(1,data,&hdrsize,&hdr)
+    iguana_rwequihdrvec(1,data,&hdrsize,&hdr);
     return(NSPV_doublesha256(data,sizeof(*hdr)));
 }
 
