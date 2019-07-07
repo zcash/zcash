@@ -450,7 +450,6 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                     {
                         response.resize(1 + slen);
                         response[0] = NSPV_TXPROOFRESP;
-                        fprintf(stderr,"slen.%d\n",slen);
                         if ( NSPV_rwtxproof(1,&response[1],&P) == slen )
                         {
                             pfrom->PushMessage("nSPV",response);

@@ -256,7 +256,6 @@ int32_t NSPV_rwtxproof(int32_t rwflag,uint8_t *serialized,struct NSPV_txproof *p
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->pad),&ptr->pad);
     len += iguana_rwuint8vec(rwflag,&serialized[len],&ptr->txlen,&ptr->tx);
     len += iguana_rwuint8vec(rwflag,&serialized[len],&ptr->txprooflen,&ptr->txproof);
-    fprintf(stderr,"rwtxproof len.%d\n",len);
     return(len);
 }
 
@@ -408,10 +407,14 @@ uint256 NSPV_hdrhash(struct NSPV_equihdr *hdr)
 int32_t NSPV_txextract(CTransaction &tx,uint8_t *data,int32_t datalen)
 {
     std::vector<uint8_t> rawdata;
+    fprintf(stderr,"extract %d bytes\n",datalen);
     rawdata.resize(datalen);
     memcpy(&rawdata[0],data,datalen);
     if ( DecodeHexTx(tx,HexStr(rawdata)) != 0 )
+    {
+        fprintf(stderr,"extracted %s\n",tx.GetHex().c_str());
         return(0);
+    }
     else return(-1);
 }
 
