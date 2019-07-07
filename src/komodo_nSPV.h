@@ -374,6 +374,8 @@ void NSPV_broadcast_purge(struct NSPV_broadcastresp *ptr)
         memset(ptr,0,sizeof(*ptr));
 }
 
+// useful utility functions
+
 uint256 NSPV_doublesha256(uint8_t *data,int32_t datalen)
 {
     bits256 _hash; uint256 hash; int32_t i;
@@ -383,4 +385,29 @@ uint256 NSPV_doublesha256(uint8_t *data,int32_t datalen)
     return(hash);
 }
 
+int32_t NSPV_txextract(CTransaction &tx,uint8_t *data,int32_t datalen)
+{
+    std::vector<uint8_t> rawdata;
+    rawdata.resize(datalen);
+    memcpy(&rawdata[0],data,datalen);
+    if ( DecodeHexTx(tx,HexStr(rawdata)) != 0 )
+        return(0);
+    else return(-1);
+}
+
+uint256 NSPV_opretextract(int32_t *heightp,uint256 *blockhashp,char *symbol,std::vector<uint8_t> opret)
+{
+    uint256 desttxid; int32_t i;
+    iguana_rwnum(0,&opret[32],sizeof(*heightp),heightp);
+    for (i=0; i<32; i++)
+        ((uint8_t *)blockhashp)[i] = opret[4 + i];
+    for (i=0; i<32; i++)
+        ((uint8_t *)&desttxid)[i] = opret[4 + 32 + i];
+    return(desttxid);
+}
+
+int32_t NSPV_notarizationextract(int32_t *heightp,uint256 *blockhashp,uint256 *txidp,int32_t *txidhtp,uint256 *desttxidp,CTransaction tx)
+{
+    return(0);
+}
 #endif // KOMODO_NSPV_H

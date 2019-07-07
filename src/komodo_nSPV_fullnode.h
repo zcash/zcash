@@ -35,27 +35,9 @@ uint256 NSPV_getnotarization_txid(int32_t *ntzheightp,int32_t height)
     return(txid);
 }
 
-uint256 NSPV_extract_desttxid(int32_t *heightp,char *symbol,std::vector<uint8_t> opret)
-{
-    uint256 desttxid; int32_t i;
-    //for (i=0; i<32; i++)
-    //    fprintf(stderr,"%02x",opret[i]);
-    //fprintf(stderr," blockhash, ");
-    //for (i=0; i<4; i++)
-    //    fprintf(stderr,"%02x",opret[32+i]);
-    //fprintf(stderr," height, ");
-    iguana_rwnum(0,&opret[32],sizeof(*heightp),heightp);
-    //for (i=0; i<32; i++)
-    //    fprintf(stderr,"%02x",opret[36+i]);
-    //fprintf(stderr," desttxid\n");
-    for (i=0; i<32; i++)
-        ((uint8_t *)&desttxid)[i] = opret[4 + 32 + i];
-    return(desttxid);
-}
-
 int32_t komodo_notarized_bracket(uint256 txids[2],int32_t txidhts[2],uint256 desttxids[2],int32_t ntzheights[2],int32_t height)
 {
-    int32_t txidht; Notarisation nota; char *symbol;
+    int32_t txidht; Notarisation nota; char *symbol; uint256 bhash;
     symbol = (ASSETCHAINS_SYMBOL[0] == 0) ? (char *)"KMD" : ASSETCHAINS_SYMBOL;
     memset(txids,0,sizeof(*txids)*2);
     memset(desttxids,0,sizeof(*desttxids)*2);
@@ -65,7 +47,7 @@ int32_t komodo_notarized_bracket(uint256 txids[2],int32_t txidhts[2],uint256 des
         return(-1);
     txids[0] = nota.first;
     txidhts[0] = txidht;
-    desttxids[0] = NSPV_extract_desttxid(&ntzheights[0],symbol,E_MARSHAL(ss << nota.second));
+    desttxids[0] = NSPV_opretextract(&ntzheights[0],&bhash,symbol,E_MARSHAL(ss << nota.second));
     //if ( height != 2668 )
     //    fprintf(stderr,"scan.%d -> %s txidht.%d ntzht.%d\n",height,desttxids[0].GetHex().c_str(),txidht,ntzheights[0]);
     if ( ntzheights[0] == height-1 ) // offset the +1 from caller
@@ -80,7 +62,7 @@ int32_t komodo_notarized_bracket(uint256 txids[2],int32_t txidhts[2],uint256 des
     {
         txids[1] = nota.first;
         txidhts[1] = txidht;
-        desttxids[1] = NSPV_extract_desttxid(&ntzheights[1],symbol,E_MARSHAL(ss << nota.second));
+        desttxids[1] = NSPV_opretextract(&ntzheights[1],&bhash,symbol,E_MARSHAL(ss << nota.second));
     }
     return(0);
 }
@@ -196,12 +178,9 @@ uint8_t *NSPV_getrawtx(uint256 &hashBlock,uint16_t *txlenp,uint256 txid)
 
 int32_t NSPV_sendrawtransaction(struct NSPV_broadcastresp *ptr,uint8_t *data,int32_t n)
 {
-    CTransaction tx; std::vector<uint8_t> rawdata;
+    CTransaction tx;
     ptr->retcode = 0;
-    rawdata.resize(n);
-    memcpy(&rawdata[0],data,n);
-    fprintf(stderr,"sendraw.(%s)\n",HexStr(rawdata).c_str());
-    if ( DecodeHexTx(tx,HexStr(rawdata)) != 0 )
+    if ( NSPV_txextract(tx,data,n) == 0 )
     {
         LOCK(cs_main);
         ptr->txid = tx.GetHash();

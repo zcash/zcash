@@ -20,70 +20,61 @@
 // nSPV wallet uses superlite functions (and some komodod built in functions) to implement nSPV_spend
 extern void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry);
 
-
-
-/*struct NSPV_ntzproofshared
-{
-    struct NSPV_equihdr *hdrs;
-    int32_t prevht,nextht,pad32;
-    uint16_t numhdrs,pad16;
-};
-
-struct NSPV_ntzsproofresp
-{
-    struct NSPV_ntzproofshared common;
-    uint256 prevtxid,nexttxid;
-    int32_t pad32,prevtxidht,nexttxidht;
-    uint16_t prevtxlen,nexttxlen;
-    uint8_t *prevntz,*nextntz;
-};*/
-
 int32_t NSPV_validatehdrs(struct NSPV_ntzsproofresp *ptr)
 {
-   /* int32_t i,height,txidht; CTransaction tx; uint256 blockhash,txid,desttxid;
-    if ( NSPV_txextract(tx,ptr->nextntz,ptr->nexttxlen) < 0 )
+    int32_t i,height,txidht; CTransaction tx; uint256 blockhash,txid,desttxid;
+    if ( (ptr->common.nextht-ptr->common.prevht+1) != ptr->common.numhdrs )
         return(-1);
-    else if ( NSPV_notarizationextract(&height,&blockhash,&txid,&txidht,&desttxid) < 0 )
+    else if ( NSPV_txextract(tx,ptr->nextntz,ptr->nexttxlen) < 0 )
         return(-2);
-    else if ( NSPV_doublesha256(&ptr->common.hdrs[ptr->common.numhdrs-1],sizeof(*ptr->common.hdrs)) != blockhash )
+    else if ( tx.GetHash() != ptr->nexttxid )
         return(-3);
+    else if ( NSPV_notarizationextract(&height,&blockhash,&txid,&txidht,&desttxid,tx) < 0 )
+        return(-4);
+    else if ( height != ptr->common.nextht )
+        return(-5);
+    else if ( NSPV_doublesha256(&ptr->common.hdrs[ptr->common.numhdrs-1],sizeof(*ptr->common.hdrs)) != blockhash )
+        return(-6);
     for (i=ptr->common.numhdrs-1; i>0; i--)
     {
-        // make sure the hash of i-1 matches the prevBlockhash of i
+        if ( NSPV_doublesha256(&ptr->common.hdrs[i-1],sizeof(*ptr->common.hdrs)) != ptr->common.hdrs.prevblockhash )
+            return(-i-11);
     }
-    // verify prevntz is valid notarization
-    // verify blockhash of first hdr with prevntz value and height
     if ( NSPV_txextract(tx,ptr->prevntz,ptr->prevtxlen) < 0 )
-        return(-1);
-    else if ( NSPV_notarizationextract(&height,&blockhash,&txid,&txidht,&desttxid) < 0 )
-        return(-2);*/
+        return(-6);
+    else if ( tx.GetHash() != ptr->prevtxid )
+        return(-7);
+    else if ( NSPV_notarizationextract(&height,&blockhash,&txid,&txidht,&desttxid,tx) < 0 )
+        return(-8);
+    else if ( height != ptr->common.prevht )
+        return(-9);
+    else if ( NSPV_doublesha256(&ptr->common.hdrs[0],sizeof(*ptr->common.hdrs)) != blockhash )
+        return(-10);
     return(0);
 }
 
 int32_t NSPV_gettransaction(uint256 txid,int32_t height,CTransaction &tx)
 {
-    char *txstr; int32_t retval = 0;
+    int32_t retval = 0;
     NSPV_txproof(txid,height);
-    if ( NSPV_txproofresult.txid != txid || NSPV_txproofresult.height != height )
+    if ( NSPV_txproofresult.txid != txid )
         return(-1);
-    txstr = (char *)malloc(NSPV_txproofresult.txlen*2 + 1);
-    init_hexbytes_noT(txstr,NSPV_txproofresult.tx,NSPV_txproofresult.txlen);
-    if ( !DecodeHexTx(tx,txstr) )
-        retval = -1;
+    if ( NSPV_txextract(tx,NSPV_txproofresult.tx,NSPV_txproofresult.txlen) < 0 )
+        retval = -20;
     else
     {
         NSPV_notarizations(height); // gets the prev and next notarizations
         if ( NSPV_ntzsresult.prevntz.height != 0 && NSPV_ntzsresult.prevntz.height <= NSPV_ntzsresult.nextntz.height )
         {
             NSPV_hdrsproof(NSPV_ntzsresult.prevntz.height,NSPV_ntzsresult.nextntz.height); // validate the segment
-            if ( NSPV_validatehdrs(&NSPV_ntzsproofresult) == 0 )
+            if ( (retval= NSPV_validatehdrs(&NSPV_ntzsproofresult)) == 0 )
             {
                 // merkle prove txproof to the merkleroot in the corresponding hdr
             }
         } else retval = -1;
     }
-    free(txstr);
-    return(retval);
+    fprintf(stderr,"NSPV_gettransaction retval would have been %d\n",retval);
+    return(0);
 }
 
 int32_t NSPV_vinselect(int32_t *aboveip,int64_t *abovep,int32_t *belowip,int64_t *belowp,struct NSPV_utxoresp utxos[],int32_t numunspents,int64_t value)
