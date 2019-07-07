@@ -981,7 +981,7 @@ UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis);
 UniValue NSPV_spentinfo(uint256 txid,int32_t vout);
 UniValue NSPV_notarizations(int32_t height);
 UniValue NSPV_hdrsproof(int32_t prevheight,int32_t nextheight);
-UniValue NSPV_txproof(int32_t vout,uint256 txid,int32_t vout);
+UniValue NSPV_txproof(int32_t vout,uint256 txid,int32_t height);
 uint256 Parseuint256(const char *hexstr);
 extern std::string NSPV_address;
 
