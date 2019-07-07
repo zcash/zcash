@@ -397,7 +397,7 @@ uint256 NSPV_hdrhash(struct NSPV_equihdr *hdr)
     block.nBits = hdr->nBits;
     block.nNonce = hdr->nNonce;
     memcpy(&block.nSolution[0],hdr->nSolution,sizeof(hdr->nSolution));*/
-    n = NSPV_rwequihdr(1,data,hdr);
+    NSPV_rwequihdr(1,data,hdr);
     blockhash = NSPV_doublesha256(data,sizeof(data));
     return(blockhash);
     //return(block.GetHash());
