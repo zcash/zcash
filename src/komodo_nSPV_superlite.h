@@ -170,7 +170,7 @@ void komodo_nSPV(CNode *pto) // polling loop from SendMessages
             len = 0;
             msg[len++] = NSPV_INFO;
             len += iguana_rwnum(1,&msg[len],sizeof(reqht),&reqht);
-            //fprintf(stderr,"issue getinfo\n");
+            fprintf(stderr,"issue getinfo\n");
             NSPV_req(pto,msg,len,NODE_NSPV,NSPV_INFO>>1);
         }
     }
