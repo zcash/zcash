@@ -200,7 +200,7 @@ UniValue NSPV_getinfo_json(struct NSPV_inforesp *ptr)
     result.push_back(Pair("height",(int64_t)ptr->height));
     result.push_back(Pair("chaintip",ptr->blockhash.GetHex()));
     result.push_back(Pair("notarization",NSPV_ntz_json(&ptr->notarization)));
-    result.push_back(Pair("hdr",NSPV_header_json(&ptr->H,ptr->hdrheight)));
+    result.push_back(Pair("header",NSPV_header_json(&ptr->H,ptr->hdrheight)));
     return(result);
 }
 
