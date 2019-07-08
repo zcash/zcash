@@ -29,9 +29,9 @@ struct NSPV_ntzargs
 
 int32_t NSPV_notarization_find(struct NSPV_ntzargs *args,int32_t height,int32_t dir)
 {
-    int32_t ntzheight = 0; CTransaction tx; Notarisation nota; char *symbol; std::vector<uint8_t> opret;
+    int32_t ntzheight = 0; uint256 hashBlock; CTransaction tx; Notarisation nota; char *symbol; std::vector<uint8_t> opret;
     symbol = (ASSETCHAINS_SYMBOL[0] == 0) ? (char *)"KMD" : ASSETCHAINS_SYMBOL;
-    memset(*args,0,sizeof(*args));
+    memset(args,0,sizeof(*args));
     if ( (args->txidht= (dir < 0 ? ScanNotarisationsDB : ScanNotarisationsDB2)(height,symbol,1440,nota)) == 0 )
         return(-1);
     args->txid = nota.first;
@@ -39,7 +39,7 @@ int32_t NSPV_notarization_find(struct NSPV_ntzargs *args,int32_t height,int32_t 
         return(-2);
     GetOpReturnData(tx.vout[1].scriptPubKey,opret);
     if ( opret.size() >= 32*2+4 )
-        args->desttxids = NSPV_opretextract(&args->ntzheight,&args->blockhash,symbol,opret,args->txid);
+        args->desttxid = NSPV_opretextract(&args->ntzheight,&args->blockhash,symbol,opret,args->txid);
     return(args->ntzheight);
 }
 
