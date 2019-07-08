@@ -990,7 +990,7 @@ UniValue nspv_getinfo(const UniValue& params, bool fHelp)
     int32_t reqht = 0;
     if ( fHelp || params.size() > 1 )
         throw runtime_error("nspv_getinfo [hdrheight]\n");
-    if ( params.size() == 0 )
+    if ( params.size() == 1 )
         reqht = atoi((char *)params[0].get_str().c_str());
     return(NSPV_getinfo_req(reqht));
 }

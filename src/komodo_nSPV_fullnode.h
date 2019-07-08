@@ -333,11 +333,14 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
             if ( timestamp > pfrom->prevtimes[ind] )
             {
                 struct NSPV_inforesp I;
+                iguana_rwnum(0,&request[1],sizeof(height),&height);
+                fprintf(stderr,"request height.%d\n",height);
                 memset(&I,0,sizeof(I));
                 if ( (slen= NSPV_getinfo(&I)) > 0 )
                 {
                     response.resize(1 + slen);
                     response[0] = NSPV_INFORESP;
+                    fprintf(stderr,"slen.%d\n",slen);
                     if ( NSPV_rwinforesp(1,&response[1],&I) == slen )
                     {
                         pfrom->PushMessage("nSPV",response);
