@@ -419,10 +419,10 @@ int32_t NSPV_txextract(CTransaction &tx,uint8_t *data,int32_t datalen)
 
 int32_t NSPV_notariescount(CTransaction tx,uint8_t elected[64][33])
 {
-    uint8_t scriptPubkey[64]; int32_t i,j,scriptlen,numsigs = 0;
+    uint8_t script[64]; int32_t i,j,scriptlen,numsigs = 0;
     for (i=0; i<tx.vin.size(); i++)
     {
-        if ( (scriptlen= gettxout_scriptPubKey(scriptPubKey,sizeof(scriptPubKey),tx.vin[i].prevout.hash,tx.vin[i].prevout.n)) == 35 )
+        if ( (scriptlen= gettxout_scriptPubKey(script,sizeof(script),tx.vin[i].prevout.hash,tx.vin[i].prevout.n)) == 35 )
         {
             for (j=0; j<64; j++)
                 if ( memcmp(&scriptPubKey[1],elected[j],33) == 0 )
