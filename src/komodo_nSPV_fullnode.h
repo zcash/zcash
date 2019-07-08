@@ -265,7 +265,7 @@ int32_t NSPV_getntzsproofresp(struct NSPV_ntzsproofresp *ptr,uint256 prevntztxid
     ptr->prevtxid = prevntztxid;
     ptr->prevntz = NSPV_getrawtx(tx,hashBlock,&ptr->prevtxlen,ptr->prevtxid);
     ptr->prevtxidht = komodo_blockheight(hashBlock);
-    if ( NSPV_notarizationextract(&ptr->common.prevht,&bhash0,&desttxid0,tx) < 0 )
+    if ( NSPV_notarizationextract(0,&ptr->common.prevht,&bhash0,&desttxid0,tx) < 0 )
         return(-2);
     else if ( komodo_blockheight(bhash0) != ptr->common.prevht )
         return(-3);
@@ -273,7 +273,7 @@ int32_t NSPV_getntzsproofresp(struct NSPV_ntzsproofresp *ptr,uint256 prevntztxid
     ptr->nexttxid = nextntztxid;
     ptr->nextntz = NSPV_getrawtx(tx,hashBlock,&ptr->nexttxlen,ptr->nexttxid);
     ptr->nexttxidht = komodo_blockheight(hashBlock);
-    if ( NSPV_notarizationextract(&ptr->common.nextht,&bhash1,&desttxid1,tx) < 0 )
+    if ( NSPV_notarizationextract(0,&ptr->common.nextht,&bhash1,&desttxid1,tx) < 0 )
         return(-5);
     else if ( komodo_blockheight(bhash1) != ptr->common.nextht )
         return(-6);

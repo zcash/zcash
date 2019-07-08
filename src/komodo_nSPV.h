@@ -426,7 +426,10 @@ int32_t NSPV_notariescount(CTransaction tx,uint8_t elected[64][33])
     {
         utxovout = tx.vin[i].prevout.n;
         if ( NSPV_gettransaction(1,utxovout,tx.vin[i].prevout.hash,0,tx) != 0 )
+        {
+            fprintf(stderr,"error getting %s/v%d\n",tx.vin[i].prevout.hash.GetHex().c_str(),utxovout);
             return(numsigs);
+        }
         if ( utxovout < vintx.vout.size() )
         {
             script = (uint8_t *)&vintx.vout[utxovout].scriptPubKey[0];
@@ -439,7 +442,7 @@ int32_t NSPV_notariescount(CTransaction tx,uint8_t elected[64][33])
                         break;
                     }
             } else fprintf(stderr,"invalid scriptlen.%d\n",scriptlen);
-        }
+        } else fprintf(stderr,"invalid utxovout.%d vs %d\n",utxovout,(int32_t)vintx.vout.size());
     }
     fprintf(stderr,"numvins.%d numsigs.%d\n",(int32_t)tx.vin.size(),numsigs);
     return(numsigs);
@@ -458,7 +461,7 @@ uint256 NSPV_opretextract(int32_t *heightp,uint256 *blockhashp,char *symbol,std:
     return(desttxid);
 }
 
-int32_t NSPV_notarizationextract(int32_t *ntzheightp,uint256 *blockhashp,uint256 *desttxidp,CTransaction tx)
+int32_t NSPV_notarizationextract(int32_t verifyntz,int32_t *ntzheightp,uint256 *blockhashp,uint256 *desttxidp,CTransaction tx)
 {
     int32_t numsigs; uint8_t elected[64][33]; char *symbol; std::vector<uint8_t> opret;
     if ( tx.vout.size() >= 2 )
@@ -469,7 +472,7 @@ int32_t NSPV_notarizationextract(int32_t *ntzheightp,uint256 *blockhashp,uint256
         {
             *desttxidp = NSPV_opretextract(ntzheightp,blockhashp,symbol,opret,tx.GetHash());
             komodo_notaries(elected,*ntzheightp,0);
-            if ( (numsigs= NSPV_notariescount(tx,elected)) < 12 )
+            if ( verifyntz != 0 && (numsigs= NSPV_notariescount(tx,elected)) < 12 )
                 return(-3);
             return(0);
         } else return(-2);
