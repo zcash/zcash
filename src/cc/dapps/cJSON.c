@@ -40,7 +40,10 @@ long stripquotes(char *str)
         return(0);
     len = strlen(str);
     if ( str[0] == '"' && str[len-1] == '"' )
-        str[len-1] = 0, offset = 1;
+    {
+        str[len-1] = 0;
+        offset = 1;
+    }
     else offset = 0;
     return(offset);
 }

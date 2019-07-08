@@ -757,7 +757,7 @@ UniValue createrawtransaction(const UniValue& params, bool fHelp)
 
             "\nExamples\n"
             + HelpExampleCli("createrawtransaction", "\"[{\\\"txid\\\":\\\"myid\\\",\\\"vout\\\":0}]\" \"{\\\"address\\\":0.01}\"")
-            + HelpExampleRpc("createrawtransaction", "\"[{\\\"txid\\\":\\\"myid\\\",\\\"vout\\\":0}]\", \"{\\\"address\\\":0.01}\"")
+            + HelpExampleRpc("createrawtransaction", "[{\"txid\":\"myid\",\"vout\":0}], {\"address\":0.01}")
         );
 
     LOCK(cs_main);
