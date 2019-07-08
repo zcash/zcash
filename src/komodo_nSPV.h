@@ -425,6 +425,7 @@ int32_t NSPV_notariescount(CTransaction tx,uint8_t elected[64][33])
     for (i=0; i<tx.vin.size(); i++)
     {
         utxovout = tx.vin[i].prevout.n;
+        sleep(1);
         if ( NSPV_gettransaction(1,utxovout,tx.vin[i].prevout.hash,0,tx) != 0 )
         {
             fprintf(stderr,"error getting %s/v%d\n",tx.vin[i].prevout.hash.GetHex().c_str(),utxovout);
