@@ -97,41 +97,29 @@ void komodo_nSPVresp(CNode *pfrom,std::vector<uint8_t> response) // received a r
 
 CNode *NSPV_req(CNode *pnode,uint8_t *msg,int32_t len,uint64_t mask,int32_t ind)
 {
-    int32_t iter,num; CNode *firstpnode = 0; uint32_t timestamp = (uint32_t)time(NULL);
-    while ( pnode == 0 )
+    int32_t n,flag = 0; CNode *pnodes[64]; uint32_t timestamp = (uint32_t)time(NULL);
+    if ( pnode == 0 )
     {
+        memset(pnodes,0,sizeof(pnodes));
         LOCK(cs_vNodes);
-        num = 0;
-        for (iter=0; iter<2; iter++)
+        n = 0;
+        BOOST_FOREACH(CNode *ptr,vNodes)
         {
-            BOOST_FOREACH(CNode *ptr,vNodes)
+            if ( ptr->prevtimes[ind] > timestamp )
+                ptr->prevtimes[ind] = 0;
+            if ( ptr->hSocket == INVALID_SOCKET )
+                continue;
+            if ( (ptr->nServices & mask) == mask && timestamp > ptr->prevtimes[ind] )
             {
-                if ( ptr->prevtimes[ind] > timestamp )
-                    ptr->prevtimes[ind] = 0;
-                if ( ptr->hSocket == INVALID_SOCKET )
-                    continue;
-                if ( (ptr->nServices & mask) == mask && timestamp > ptr->prevtimes[ind] )
-                {
-                    if ( firstpnode == 0 )
-                        firstpnode = ptr;
-                    if ( iter != 0 )
-                    {
-                        if ( num == 1 || (rand() % num) == 0 )
-                        {
-                            pnode = ptr;
-                            break;
-                        }
-                    } else num++;
-                }  //else fprintf(stderr,"nServices %llx vs mask %llx, t%u vs %u, ind.%d\n",(long long)ptr->nServices,(long long)mask,timestamp,ptr->prevtimes[ind],ind);
-            }
-            if ( iter == 0 && num == 0 )
-                break;
-            if ( pnode == 0 )
-                pnode = firstpnode;
+                flag = 1;
+                pnodes[n++] = ptr;
+                if ( n == sizeof(pnodes)/sizeof(*pnodes) )
+                    break;
+            } // else fprintf(stderr,"nServices %llx vs mask %llx, t%u vs %u, ind.%d\n",(long long)ptr->nServices,(long long)mask,timestamp,ptr->prevtimes[ind],ind);
         }
-        if ( pnode != 0 && time(NULL) > timestamp+2 )
-            break;
-    }
+        if ( n > 0 )
+            pnode = pnodes[rand() % n];
+    } else flag = 1;
     if ( pnode != 0 )
     {
         std::vector<uint8_t> request;
