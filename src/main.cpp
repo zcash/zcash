@@ -1103,7 +1103,7 @@ unsigned int GetP2SHSigOpCount(const CTransaction& tx, const CCoinsViewCache& in
  * Ensure that a coinbase transaction is structured according to the consensus rules of the
  * chain
  */
-bool ContextualCheckCoinbaseTransaction(const CBlock *block,CBlockIndex * const previndex,const CTransaction& tx, const int nHeight,int32_t validateprices)
+bool ContextualCheckCoinbaseTransaction(int32_t slowflag,const CBlock *block,CBlockIndex * const previndex,const CTransaction& tx, const int nHeight,int32_t validateprices)
 {
     // if time locks are on, ensure that this coin base is time locked exactly as it should be
     if (((uint64_t)(tx.GetValueOut()) >= ASSETCHAINS_TIMELOCKGTE) ||
@@ -1144,7 +1144,7 @@ bool ContextualCheckCoinbaseTransaction(const CBlock *block,CBlockIndex * const 
     {
         
     }
-    else if ( ASSETCHAINS_CBOPRET != 0 && validateprices != 0 && nHeight > 0 && tx.vout.size() > 0 )
+    else if ( slowflag != 0 && ASSETCHAINS_CBOPRET != 0 && validateprices != 0 && nHeight > 0 && tx.vout.size() > 0 )
     {
         if ( komodo_opretvalidate(block,previndex,nHeight,tx.vout[tx.vout.size()-1].scriptPubKey) < 0 )
             return(false);
@@ -1161,7 +1161,7 @@ bool ContextualCheckCoinbaseTransaction(const CBlock *block,CBlockIndex * const 
  *    and ContextualCheckBlock (which calls this function).
  * 3. The isInitBlockDownload argument is only to assist with testing.
  */
-bool ContextualCheckTransaction(const CBlock *block, CBlockIndex * const previndex,
+bool ContextualCheckTransaction(int32_t slowflag,const CBlock *block, CBlockIndex * const previndex,
         const CTransaction& tx,
         CValidationState &state,
         const int nHeight,
@@ -1297,7 +1297,7 @@ bool ContextualCheckTransaction(const CBlock *block, CBlockIndex * const prevind
 
     if (tx.IsCoinBase())
     {
-        if (!ContextualCheckCoinbaseTransaction(block,previndex,tx, nHeight,validateprices))
+        if (!ContextualCheckCoinbaseTransaction(slowflag,block,previndex,tx, nHeight,validateprices))
             return state.DoS(100, error("CheckTransaction(): invalid script data for coinbase time lock"),
                                 REJECT_INVALID, "bad-txns-invalid-script-data-for-coinbase-time-lock");
     }
@@ -3404,7 +3404,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     }
     if ( fCheckPOW != 0 && (pindex->nStatus & BLOCK_VALID_CONTEXT) != BLOCK_VALID_CONTEXT ) // Activate Jan 15th, 2019
     {
-        if ( !ContextualCheckBlock(block, state, pindex->pprev) )
+        if ( !ContextualCheckBlock(1,block, state, pindex->pprev) )
         {
             fprintf(stderr,"ContextualCheckBlock failed ht.%d\n",(int32_t)pindex->GetHeight());
             if ( pindex->nTime > 1547510400 )
@@ -5296,7 +5296,7 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
     return true;
 }
 
-bool ContextualCheckBlock(const CBlock& block, CValidationState& state, CBlockIndex * const pindexPrev)
+bool ContextualCheckBlock(int32_t slowflag,const CBlock& block, CValidationState& state, CBlockIndex * const pindexPrev)
 {
     const int nHeight = pindexPrev == NULL ? 0 : pindexPrev->GetHeight() + 1;
     const Consensus::Params& consensusParams = Params().GetConsensus();
@@ -5307,7 +5307,7 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, CBlockIn
         const CTransaction& tx = block.vtx[i];
 
         // Check transaction contextually against consensus rules at block height
-        if (!ContextualCheckTransaction(&block,pindexPrev,tx, state, nHeight, 100)) {
+        if (!ContextualCheckTransaction(slowflag,&block,pindexPrev,tx, state, nHeight, 100)) {
             return false; // Failure reason has been set in validation state object
         }
 
@@ -5476,7 +5476,7 @@ bool AcceptBlock(int32_t *futureblockp,CBlock& block, CValidationState& state, C
 
     // See method docstring for why this is always disabled
     auto verifier = libzcash::ProofVerifier::Disabled();
-    bool fContextualCheckBlock = ContextualCheckBlock(block, state, pindex->pprev);
+    bool fContextualCheckBlock = ContextualCheckBlock(0,block, state, pindex->pprev);
     if ( (!CheckBlock(futureblockp,pindex->GetHeight(),pindex,block, state, verifier,0)) || !fContextualCheckBlock )
     {
         static int32_t saplinght = -1;
@@ -5744,7 +5744,7 @@ bool TestBlockValidity(CValidationState &state, const CBlock& block, CBlockIndex
         //fprintf(stderr,"TestBlockValidity failure B checkPOW.%d\n",fCheckPOW);
         return false;
     }
-    if (!ContextualCheckBlock(block, state, pindexPrev))
+    if (!ContextualCheckBlock(0,block, state, pindexPrev))
     {
         //fprintf(stderr,"TestBlockValidity failure C checkPOW.%d\n",fCheckPOW);
         return false;
