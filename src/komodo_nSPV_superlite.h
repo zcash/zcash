@@ -349,7 +349,7 @@ UniValue NSPV_getinfo_req(int32_t reqht)
             if ( NSPV_inforesult.height != 0 )
                 return(NSPV_getinfo_json(&NSPV_inforesult));
         }
-    }
+    } else sleep(1);
     memset(&I,0,sizeof(I));
     return(NSPV_getinfo_json(&NSPV_inforesult));
 }
@@ -378,7 +378,7 @@ UniValue NSPV_addressutxos(char *coinaddr)
             if ( NSPV_utxosresult.nodeheight >= NSPV_inforesult.height && strcmp(coinaddr,NSPV_utxosresult.coinaddr) == 0 )
                 return(NSPV_utxosresp_json(&NSPV_utxosresult));
         }
-    }
+    } else sleep(1);
     result.push_back(Pair("result","error"));
     result.push_back(Pair("error","no utxos result"));
     return(result);
@@ -400,7 +400,7 @@ UniValue NSPV_notarizations(int32_t height)
             if ( NSPV_ntzsresult.prevntz.height <= height && NSPV_ntzsresult.nextntz.height >= height )
                 return(NSPV_ntzs_json(&NSPV_ntzsresult));
         }
-    }
+    } else sleep(1);
     memset(&N,0,sizeof(N));
     return(NSPV_ntzs_json(&N));
 }
@@ -420,7 +420,7 @@ UniValue NSPV_txidhdrsproof(uint256 prevtxid,uint256 nexttxid)
             if ( NSPV_ntzsproofresult.prevtxid == prevtxid && NSPV_ntzsproofresult.nexttxid == nexttxid )
                 return(NSPV_ntzsproof_json(&NSPV_ntzsproofresult));
         }
-    }
+    } else sleep(1);
     memset(&H,0,sizeof(H));
     return(NSPV_ntzsproof_json(&H));
 }
@@ -454,7 +454,7 @@ UniValue NSPV_txproof(int32_t vout,uint256 txid,int32_t height)
             if ( NSPV_txproofresult.txid == txid && NSPV_txproofresult.height == height )
                 return(NSPV_txproof_json(&NSPV_txproofresult));
         }
-    }
+    } else sleep(1);
     //fprintf(stderr,"txproof timeout\n");
     memset(&P,0,sizeof(P));
     return(NSPV_txproof_json(&P));
@@ -477,7 +477,7 @@ UniValue NSPV_spentinfo(uint256 txid,int32_t vout)
             if ( NSPV_spentresult.txid == txid && NSPV_spentresult.vout == vout )
                 return(NSPV_spentinfo_json(&NSPV_spentresult));
         }
-    }
+    } else sleep(1);
     memset(&I,0,sizeof(I));
     return(NSPV_spentinfo_json(&I));
 }
@@ -508,7 +508,7 @@ UniValue NSPV_broadcast(char *hex)
                 return(NSPV_broadcast_json(&NSPV_broadcastresult,txid));
             }
         }
-    }
+    } else sleep(1);
     free(msg);
     memset(&B,0,sizeof(B));
     B.retcode = -2;
