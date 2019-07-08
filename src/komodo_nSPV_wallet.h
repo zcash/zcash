@@ -92,11 +92,9 @@ int32_t NSPV_gettransaction(int32_t vout,uint256 txid,int32_t height,CTransactio
                     }
                 }
             } else retval = -22;
-        } else retval = -1;
+        } else retval = -2;
     }
-    if ( retval != 0 )
-        fprintf(stderr,"NSPV_gettransaction retval would have been %d\n",retval);
-    return(retval*0);
+    return(retval);
 }
 
 int32_t NSPV_vinselect(int32_t *aboveip,int64_t *abovep,int32_t *belowip,int64_t *belowp,struct NSPV_utxoresp utxos[],int32_t numunspents,int64_t value)
@@ -219,9 +217,9 @@ bool NSPV_SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const C
     return(false);
 }
 
-std::string NSPV_signtx(CMutableTransaction &mtx,uint64_t txfee,CScript opret,struct NSPV_utxoresp used[])
+std::string NSPV_signtx(UniValue &retcodes,CMutableTransaction &mtx,uint64_t txfee,CScript opret,struct NSPV_utxoresp used[])
 {
-    CTransaction vintx; std::string hex; uint256 hashBlock; int64_t interest=0,change,totaloutputs=0,totalinputs=0; int32_t i,utxovout,n;
+    CTransaction vintx; std::string hex; uint256 hashBlock; int64_t interest=0,change,totaloutputs=0,totalinputs=0; int32_t i,utxovout,n,validation;
     n = mtx.vout.size();
     for (i=0; i<n; i++)
         totaloutputs += mtx.vout[i].nValue;
@@ -241,7 +239,9 @@ std::string NSPV_signtx(CMutableTransaction &mtx,uint64_t txfee,CScript opret,st
     for (i=0; i<n; i++)
     {
         utxovout = mtx.vin[i].prevout.n;
-        if ( NSPV_gettransaction(utxovout,mtx.vin[i].prevout.hash,used[i].height,vintx) == 0 )
+        validation = NSPV_gettransaction(utxovout,mtx.vin[i].prevout.hash,used[i].height,vintx);
+        retcodes.push_back(validation);
+        if ( validaton != -1 ) // most others are degraded security
         {
             if ( vintx.vout[utxovout].nValue != used[i].satoshis )
             {
@@ -266,7 +266,7 @@ std::string NSPV_signtx(CMutableTransaction &mtx,uint64_t txfee,CScript opret,st
 
 UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis) // what its all about!
 {
-    UniValue result(UniValue::VOBJ); uint8_t rmd160[128]; int64_t txfee = 10000;
+    UniValue result(UniValue::VOBJ),retcodes(UniValue::VARR); uint8_t rmd160[128]; int64_t txfee = 10000;
     if ( NSPV_logintime == 0 || time(NULL) > NSPV_logintime+NSPV_AUTOLOGOUT )
     {
         result.push_back(Pair("result","error"));
@@ -335,7 +335,7 @@ UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis) // what its a
             result.push_back(Pair("error","wif expired"));
             return(result);
         }
-        hex = NSPV_signtx(mtx,txfee,opret,used);
+        hex = NSPV_signtx(retcodes,mtx,txfee,opret,used);
         if ( hex.size() > 0 )
         {
             if ( DecodeHexTx(tx,hex) != 0 )
@@ -343,6 +343,7 @@ UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis) // what its a
                 TxToJSON(tx,uint256(),result);
                 result.push_back(Pair("result","success"));
                 result.push_back(Pair("hex",hex));
+                result.push_back(Pair("retcodes",retcodes));
             }
             else
             {
@@ -354,6 +355,7 @@ UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis) // what its a
         else
         {
             result.push_back(Pair("result","error"));
+            result.push_back(Pair("retcodes",retcodes));
             result.push_back(Pair("error","signing error"));
         }
         return(result);
