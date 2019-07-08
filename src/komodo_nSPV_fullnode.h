@@ -54,7 +54,7 @@ int32_t NSPV_notarized_bracket(struct NSPV_ntzargs *prev,struct NSPV_ntzargs *ne
     while ( (ntzht=  NSPV_notarization_find(next,txidht,1)) < height )
     {
         nextht = next->txidht + 1;
-        fprintf(stderr,"found forward ntz, but ntzht.%d vs height.%d, txidht.%d -> nextht.%d\n",next->ntzheight,height,txidht,nextht);
+        //fprintf(stderr,"found forward ntz, but ntzht.%d vs height.%d, txidht.%d -> nextht.%d\n",next->ntzheight,height,txidht,nextht);
         memset(next,0,sizeof(*next));
         txidht = nextht;
         if ( nextht <= txidht ) // not advancing error
