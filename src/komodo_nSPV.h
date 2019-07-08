@@ -422,7 +422,13 @@ int32_t NSPV_txextract(CTransaction &tx,uint8_t *data,int32_t datalen)
 
 int32_t NSPV_pubkeysextract(uint8_t pubkeys[64][33],CTransaction tx,uint8_t elected[64][33])
 {
-    int32_t numsigs = 13;
+    uint256 hashBlock; CTransaction vintx; int32_t i,numsigs = 13;
+    /*LOCK(cs_main);
+    for (i=0; i<tx.vin.size(); i++)
+    {
+        if ( !GetTransaction(txid,vintx,hashBlock, false))
+            return(-1);
+    }*/
     return(numsigs);
 }
 
