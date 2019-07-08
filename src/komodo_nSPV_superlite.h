@@ -499,7 +499,7 @@ UniValue NSPV_spentinfo(uint256 txid,int32_t vout)
     uint8_t msg[64]; int32_t i,iter,len = 0; struct NSPV_spentinfo I;
     //if ( NSPV_spentresult.txid == txid && NSPV_spentresult.vout == vout )
     //    return(NSPV_spentinfo_json(&NSPV_spentresult));
-    NSPV_spentinfo_purge(&NSPV_spentinforesult);
+    NSPV_spentinfo_purge(&NSPV_spentresult);
     msg[len++] = NSPV_SPENTINFO;
     len += iguana_rwnum(1,&msg[len],sizeof(vout),&vout);
     len += iguana_rwbignum(1,&msg[len],sizeof(txid),(uint8_t *)&txid);
