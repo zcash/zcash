@@ -425,7 +425,7 @@ int32_t NSPV_notariescount(CTransaction tx,uint8_t elected[64][33])
         if ( (scriptlen= gettxout_scriptPubKey(script,sizeof(script),tx.vin[i].prevout.hash,tx.vin[i].prevout.n)) == 35 )
         {
             for (j=0; j<64; j++)
-                if ( memcmp(&scriptPubKey[1],elected[j],33) == 0 )
+                if ( memcmp(&script[1],elected[j],33) == 0 )
                 {
                     numsigs++;
                     break;
