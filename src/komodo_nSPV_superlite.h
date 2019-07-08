@@ -138,6 +138,19 @@ CNode *NSPV_req(CNode *pnode,uint8_t *msg,int32_t len,uint64_t mask,int32_t ind)
     return(0);
 }
 
+UniValue NSPV_logout()
+{
+    UniValue result(UniValue::VOBJ);
+    result.push_back(Pair("result","success"));
+    if ( NSPV_logintime != 0 )
+        fprintf(stderr,"scrub wif and privkey from NSPV memory\n");
+    else result.push_back(Pair("status","wasnt logged in"));
+    memset(NSPV_wifstr,0,sizeof(NSPV_wifstr));
+    memset(&NSPV_key,0,sizeof(NSPV_key));
+    NSPV_logintime = 0;
+    return(result);
+}
+
 // komodo_nSPV from main polling loop (really this belongs in its own file, but it is so small, it ended up here)
 
 void komodo_nSPV(CNode *pto) // polling loop from SendMessages
@@ -310,19 +323,6 @@ UniValue NSPV_broadcast_json(struct NSPV_broadcastresp *ptr,uint256 txid)
         case -2: result.push_back(Pair("type","timeout")); break;
         default: result.push_back(Pair("type","unknown")); break;
     }
-    return(result);
-}
-
-UniValue NSPV_logout()
-{
-    UniValue result(UniValue::VOBJ);
-    result.push_back(Pair("result","success"));
-    if ( NSPV_logintime != 0 )
-        fprintf(stderr,"scrub wif and privkey from NSPV memory\n");
-    else result.push_back(Pair("status","wasnt logged in"));
-    memset(NSPV_wifstr,0,sizeof(NSPV_wifstr));
-    memset(&NSPV_key,0,sizeof(NSPV_key));
-    NSPV_logintime = 0;
     return(result);
 }
 
