@@ -24,6 +24,12 @@
 // need to validate incoming data and update only if it is valid and more recent
 // make sure to sanity check all vector lengths on receipt
 
+// bugs:
+// got txproof response 1562526470 size.2112 a9ea92a1bbc68ae850b4bedabcbe60132844e5791ba2678bcba520910f1ad0c6 ht.1432768
+// got ntzs response 1562526471 size.209 bbf7ac47c67b5f84ddeffa5621dae6a9c3e5e8fad59cfc7359be2aa2937bd135 prev.1432750, 8255451aa5a5f8ba8f06ea8f4f83879f346bfd782d72c16d034693d123aa4b68 next.1432760
+// NSPV_gettransaction retval would have been -22
+
+
 #ifndef KOMODO_NSPV_H
 #define KOMODO_NSPV_H
 
