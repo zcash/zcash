@@ -381,7 +381,8 @@ void komodo_nSPV(CNode *pto) // polling loop from SendMessages
     {
         if ( timestamp > NSPV_lastinfo + ASSETCHAINS_BLOCKTIME/2 && timestamp > pto->prevtimes[NSPV_INFO>>1] + 2*ASSETCHAINS_BLOCKTIME/3 )
         {
-            int32_t reqht = 0;
+            int32_t reqht;
+            reqht = 0;
             len = 0;
             msg[len++] = NSPV_INFO;
             len += iguana_rwnum(1,&msg[len],sizeof(reqht),&reqht);
