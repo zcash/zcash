@@ -162,6 +162,8 @@ std::string NSPV_signtx(UniValue &retcodes,CMutableTransaction &mtx,uint64_t txf
     for (i=0; i<n; i++)
     {
         utxovout = mtx.vin[i].prevout.n;
+        if ( i > 0 )
+            sleep(1);
         validation = NSPV_gettransaction(0,utxovout,mtx.vin[i].prevout.hash,used[i].height,vintx);
         retcodes.push_back(validation);
         if ( validation != -1 ) // most others are degraded security
