@@ -24,12 +24,6 @@
 // need to validate incoming data and update only if it is valid and more recent
 // make sure to sanity check all vector lengths on receipt
 
-// bugs:
-// got txproof response 1562526470 size.2112 a9ea92a1bbc68ae850b4bedabcbe60132844e5791ba2678bcba520910f1ad0c6 ht.1432768
-// got ntzs response 1562526471 size.209 bbf7ac47c67b5f84ddeffa5621dae6a9c3e5e8fad59cfc7359be2aa2937bd135 prev.1432750, 8255451aa5a5f8ba8f06ea8f4f83879f346bfd782d72c16d034693d123aa4b68 next.1432760
-// NSPV_gettransaction retval would have been -22
-
-
 #ifndef KOMODO_NSPV_H
 #define KOMODO_NSPV_H
 
@@ -223,7 +217,8 @@ struct NSPV_inforesp
 {
     struct NSPV_ntz notarization;
     uint256 blockhash;
-    int32_t height,pad32;
+    int32_t height,hdrheight;
+    struct NSPV_equihdr H;
 };
 
 int32_t NSPV_rwinforesp(int32_t rwflag,uint8_t *serialized,struct NSPV_inforesp *ptr)
@@ -232,7 +227,8 @@ int32_t NSPV_rwinforesp(int32_t rwflag,uint8_t *serialized,struct NSPV_inforesp 
     len += NSPV_rwntz(rwflag,&serialized[len],&ptr->notarization);
     len += iguana_rwbignum(rwflag,&serialized[len],sizeof(ptr->blockhash),(uint8_t *)&ptr->blockhash);
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->height),&ptr->height);
-    len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->pad32),&ptr->pad32);
+    len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->hdrheight),&ptr->hdrheight);
+    len += NSPV_rwequihdr(rwflag,&serialized[len],&ptr->H);
     return(len);
 }
 

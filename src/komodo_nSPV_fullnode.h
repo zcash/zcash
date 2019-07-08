@@ -32,7 +32,9 @@ int32_t NSPV_notarization_find(struct NSPV_ntzargs *args,int32_t height,int32_t 
     int32_t ntzheight = 0; uint256 hashBlock; CTransaction tx; Notarisation nota; char *symbol; std::vector<uint8_t> opret;
     symbol = (ASSETCHAINS_SYMBOL[0] == 0) ? (char *)"KMD" : ASSETCHAINS_SYMBOL;
     memset(args,0,sizeof(*args));
-    if ( (args->txidht= (dir < 0 ? ScanNotarisationsDB : ScanNotarisationsDB2)(height,symbol,1440,nota)) == 0 )
+    if ( dir > 0 )
+        height += 10;
+    if ( (args->txidht= ScanNotarisationsDB(height,symbol,1440,nota)) == 0 )
         return(-1);
     args->txid = nota.first;
     if ( !GetTransaction(args->txid,tx,hashBlock,false) || tx.vout.size() < 2 )

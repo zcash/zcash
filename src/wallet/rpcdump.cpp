@@ -972,7 +972,7 @@ UniValue z_exportviewingkey(const UniValue& params, bool fHelp)
     return EncodeViewingKey(vk);
 }
 
-UniValue NSPV_getinfo_json();
+UniValue NSPV_getinfo_req(int32_t reqht);
 UniValue NSPV_login(char *wifstr);
 UniValue NSPV_logout();
 UniValue NSPV_addressutxos(char *coinaddr);
@@ -987,9 +987,12 @@ extern std::string NSPV_address;
 
 UniValue nspv_getinfo(const UniValue& params, bool fHelp)
 {
-    if ( fHelp || params.size() != 0 )
-        throw runtime_error("nspv_getinfo\n");
-    return(NSPV_getinfo_json());
+    int32_t reqht = 0;
+    if ( fHelp || params.size() > 1 )
+        throw runtime_error("nspv_getinfo [hdrheight]\n");
+    if ( params.size() == 0 )
+        reqht = atoi((char *)params[0].get_str().c_str());
+    return(NSPV_getinfo_req(reqht));
 }
 
 UniValue nspv_logout(const UniValue& params, bool fHelp)

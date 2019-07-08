@@ -105,7 +105,27 @@ UniValue NSPV_ntz_json(struct NSPV_ntz *ptr)
     return(result);
 }
 
-UniValue _NSPV_getinfo_json(struct NSPV_inforesp *ptr)
+UniValue NSPV_header_json(struct NSPV_equihdr *hdr,int32_t height)
+{
+    UniValue item(UniValue::VOBJ);
+    item.push_back(Pair("height",(int64_t)height));
+    item.push_back(Pair("blockhash",NSPV_hdrhash(hdr).GetHex()));
+    item.push_back(Pair("hashPrevBlock",hdr->hashPrevBlock.GetHex()));
+    item.push_back(Pair("hashMerkleRoot",hdr->hashMerkleRoot.GetHex()));
+    item.push_back(Pair("nTime",(int64_t)hdr->nTime));
+    item.push_back(Pair("nBits",(int64_t)hdr->nBits));
+    return(item);
+}
+
+UniValue NSPV_headers_json(struct NSPV_equihdr *hdrs,int32_t numhdrs,int32_t height)
+{
+    UniValue array(UniValue::VARR); int32_t i;
+    for (i=0; i<numhdrs; i++)
+        array.push_back(NSPV_header_json(&hdrs[i],height+i));
+    return(array);
+}
+
+UniValue NSPV_getinfo_json(struct NSPV_inforesp *ptr)
 {
     UniValue result(UniValue::VOBJ); int32_t expiration; uint32_t timestamp = (uint32_t)time(NULL);
     result.push_back(Pair("result","success"));
@@ -122,6 +142,7 @@ UniValue _NSPV_getinfo_json(struct NSPV_inforesp *ptr)
     result.push_back(Pair("height",(int64_t)ptr->height));
     result.push_back(Pair("chaintip",ptr->blockhash.GetHex()));
     result.push_back(Pair("notarization",NSPV_ntz_json(&ptr->notarization)));
+    result.push_back(Pair("hdr",NSPV_header_json(&ptr->H)));
     return(result);
 }
 
@@ -163,23 +184,6 @@ UniValue NSPV_ntzs_json(struct NSPV_ntzsresp *ptr)
     result.push_back(Pair("prev",NSPV_ntz_json(&ptr->prevntz)));
     result.push_back(Pair("next",NSPV_ntz_json(&ptr->nextntz)));
     return(result);
-}
-
-UniValue NSPV_headers_json(struct NSPV_equihdr *hdrs,int32_t numhdrs,int32_t height)
-{
-    UniValue array(UniValue::VARR); int32_t i;
-    for (i=0; i<numhdrs; i++)
-    {
-        UniValue item(UniValue::VOBJ);
-        item.push_back(Pair("height",(int64_t)height+i));
-        item.push_back(Pair("blockhash",NSPV_hdrhash(&hdrs[i]).GetHex()));
-        item.push_back(Pair("hashPrevBlock",hdrs[i].hashPrevBlock.GetHex()));
-        item.push_back(Pair("hashMerkleRoot",hdrs[i].hashMerkleRoot.GetHex()));
-        item.push_back(Pair("nTime",(int64_t)hdrs[i].nTime));
-        
-        array.push_back(item);
-    }
-    return(array);
 }
 
 UniValue NSPV_ntzsproof_json(struct NSPV_ntzsproofresp *ptr)
@@ -267,26 +271,23 @@ UniValue NSPV_login(char *wifstr)
     return(result);
 }
 
-UniValue NSPV_getinfo_json()
+UniValue NSPV_getinfo_req(int32_t reqht)
 {
-    uint8_t msg[64]; int32_t i,iters,len = 0; struct NSPV_inforesp I;
+    uint8_t msg[64]; int32_t i,len = 0; struct NSPV_inforesp I;
     NSPV_inforesp_purge(&NSPV_inforesult);
     msg[len++] = NSPV_INFO;
-    for (iters=0; iters<3; iters++)
+    len += iguana_rwnum(1,&msg[len],sizeof(reqht),&reqht);
+    if ( NSPV_req(0,msg,len,NODE_NSPV,msg[0]>>1) != 0 )
     {
-        //fprintf(stderr,"issue getinfo\n");
-        if ( NSPV_req(0,msg,len,NODE_NSPV,msg[0]>>1) != 0 )
+        for (i=0; i<NSPV_POLLITERS; i++)
         {
-            for (i=0; i<NSPV_POLLITERS; i++)
-            {
-                usleep(NSPV_POLLMICROS);
-                if ( NSPV_inforesult.height != 0 )
-                    return(_NSPV_getinfo_json(&NSPV_inforesult));
-            }
-        } else sleep(1);
+            usleep(NSPV_POLLMICROS);
+            if ( NSPV_inforesult.height != 0 )
+                return(_NSPV_getinfo_json(&NSPV_inforesult));
+        }
     }
     memset(&I,0,sizeof(I));
-    return(_NSPV_getinfo_json(&NSPV_inforesult));
+    return(NSPV_getinfo_json(&NSPV_inforesult));
 }
 
 UniValue NSPV_addressutxos(char *coinaddr)
@@ -298,12 +299,6 @@ UniValue NSPV_addressutxos(char *coinaddr)
         result.push_back(Pair("result","error"));
         result.push_back(Pair("error","invalid address"));
         return(result);
-    }
-    if ( NSPV_inforesult.height == 0 )
-    {
-        msg[0] = NSPV_INFO;
-        fprintf(stderr,"issue getinfo\n");
-        NSPV_req(0,msg,1,NODE_NSPV,msg[0]>>1);
     }
     slen = (int32_t)strlen(coinaddr);
     msg[len++] = NSPV_UTXOS;
