@@ -421,7 +421,7 @@ int32_t NSPV_txextract(CTransaction &tx,uint8_t *data,int32_t datalen)
 
 int32_t NSPV_notariescount(CTransaction tx,uint8_t elected[64][33])
 {
-    uint8_t *script[64]; int32_t i,j,utxovout,scriptlen,numsigs = 0;
+    uint8_t *script[64]; CTransaction vintx; int32_t i,j,utxovout,scriptlen,numsigs = 0;
     for (i=0; i<tx.vin.size(); i++)
     {
         utxovout = tx.vin[i].prevout.n;
@@ -430,7 +430,7 @@ int32_t NSPV_notariescount(CTransaction tx,uint8_t elected[64][33])
         if ( utxovout < vintx.vout.size() )
         {
             script = (uint8_t *)&vintx.vout[utxovout].scriptPubKey[0];
-            if ( (scriptlen= tx.vout[n].scriptPubKey.size()) == 35 )
+            if ( (scriptlen= vintx.vout[n].scriptPubKey.size()) == 35 )
             {
                 for (j=0; j<64; j++)
                     if ( memcmp(&script[1],elected[j],33) == 0 )
