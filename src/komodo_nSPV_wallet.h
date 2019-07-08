@@ -241,7 +241,7 @@ std::string NSPV_signtx(UniValue &retcodes,CMutableTransaction &mtx,uint64_t txf
         utxovout = mtx.vin[i].prevout.n;
         validation = NSPV_gettransaction(utxovout,mtx.vin[i].prevout.hash,used[i].height,vintx);
         retcodes.push_back(validation);
-        if ( validaton != -1 ) // most others are degraded security
+        if ( validation != -1 ) // most others are degraded security
         {
             if ( vintx.vout[utxovout].nValue != used[i].satoshis )
             {
