@@ -587,7 +587,7 @@ int32_t NSPV_validatehdrs(struct NSPV_ntzsproofresp *ptr)
 
 int32_t NSPV_gettransaction(int32_t skipvalidation,int32_t vout,uint256 txid,int32_t height,CTransaction &tx)
 {
-    int32_t i,offset,retval = 0;
+    int32_t i,offset,retval = 0; std::vector<uint8_t> proof;
     for (i=0; i<3; i++)
     {
         NSPV_txproof(vout,txid,height);
@@ -606,6 +606,11 @@ int32_t NSPV_gettransaction(int32_t skipvalidation,int32_t vout,uint256 txid,int
         retval = -21;
     else if ( skipvalidation == 0 )
     {
+        if ( NSPV_txproofresult.txprooflen > 0 )
+        {
+            proof.resize(NSPV_txproofresult.txprooflen);
+            memcpy(&proof[0],NSPV_txproofresult.txproof,txprooflen);
+        }
         NSPV_notarizations(height); // gets the prev and next notarizations
         if ( NSPV_inforesult.notarization.height >= height && (NSPV_ntzsresult.prevntz.height == 0 || NSPV_ntzsresult.prevntz.height >= NSPV_ntzsresult.nextntz.height) )
         {
@@ -623,9 +628,7 @@ int32_t NSPV_gettransaction(int32_t skipvalidation,int32_t vout,uint256 txid,int
                 NSPV_txidhdrsproof(NSPV_ntzsresult.prevntz.txid,NSPV_ntzsresult.nextntz.txid);
                 if ( (retval= NSPV_validatehdrs(&NSPV_ntzsproofresult)) == 0 )
                 {
-                    std::vector<uint256> txids; std::vector<uint8_t> proof; uint256 proofroot;
-                    proof.resize(NSPV_txproofresult.txprooflen);
-                    memcpy(&proof[0],NSPV_txproofresult.txproof,NSPV_txproofresult.txprooflen);
+                    std::vector<uint256> txids; uint256 proofroot;
                     proofroot = BitcoinGetProofMerkleRoot(proof,txids);
                     if ( proofroot != NSPV_ntzsproofresult.common.hdrs[offset].hashMerkleRoot )
                     {
