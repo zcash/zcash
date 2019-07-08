@@ -601,9 +601,9 @@ int32_t NSPV_gettransaction(int32_t skipvalidation,int32_t vout,uint256 txid,int
         return(-1);
     }
     else if ( NSPV_txextract(tx,NSPV_txproofresult.tx,NSPV_txproofresult.txlen) < 0 || NSPV_txproofresult.txlen <= 0 )
-        retval = -20;
+        retval = -2000;
     else if ( skipvalidation == 0 && NSPV_txproofresult.unspentvalue <= 0 )
-        retval = -21;
+        retval = -2001;
     else if ( skipvalidation == 0 )
     {
         if ( NSPV_txproofresult.txprooflen > 0 )
@@ -633,11 +633,11 @@ int32_t NSPV_gettransaction(int32_t skipvalidation,int32_t vout,uint256 txid,int
                     if ( proofroot != NSPV_ntzsproofresult.common.hdrs[offset].hashMerkleRoot )
                     {
                         fprintf(stderr,"prooflen.%d proofroot.%s vs %s\n",NSPV_txproofresult.txprooflen,proofroot.GetHex().c_str(),NSPV_ntzsproofresult.common.hdrs[offset].hashMerkleRoot.GetHex().c_str());
-                        retval = -23;
+                        retval = -2003;
                     }
                 }
-            } else retval = -22;
-        } else retval = -24;
+            } else retval = -2002;
+        } else retval = -2004;
     }
     return(retval);
 }

@@ -16,11 +16,10 @@
 
 // todo:
 
-// pubkeys extract
-// headers "sync"
+// headers "sync" make sure it connects to prior blocks to notarization. use getinfo hdrht to get missing hdrs
+
 // interest calculations are currently just using what is returned, it should calculate it from scratch
 
-// need to validate incoming data and update only if it is valid and more recent
 // make sure to sanity check all vector lengths on receipt
 // make sure no files are updated (this is to allow nSPV=1 and later nSPV=0 without affecting database)
 
