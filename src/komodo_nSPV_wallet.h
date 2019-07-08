@@ -287,8 +287,6 @@ UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis) // what its a
         return(result);
     }
     if ( NSPV_inforesult.height == 0 )
-        NSPV_getinfo_json();
-    if ( NSPV_inforesult.height == 0 )
     {
         result.push_back(Pair("result","error"));
         result.push_back(Pair("error","couldnt getinfo"));
