@@ -48,7 +48,7 @@ void komodo_nSPVresp(CNode *pfrom,std::vector<uint8_t> response) // received a r
         switch ( response[0] )
         {
             case NSPV_INFORESP:
-                fprintf(stderr,"got info response %u size.%d height.%d\n",timestamp,(int32_t)response.size(),NSPV_inforesult.height); // update current height and ntrz status
+                //fprintf(stderr,"got info response %u size.%d height.%d\n",timestamp,(int32_t)response.size(),NSPV_inforesult.height); // update current height and ntrz status
                 I = NSPV_inforesult;
                 NSPV_inforesp_purge(&NSPV_inforesult);
                 NSPV_rwinforesp(0,&response[1],&NSPV_inforesult);
@@ -172,7 +172,7 @@ void komodo_nSPV(CNode *pto) // polling loop from SendMessages
             len = 0;
             msg[len++] = NSPV_INFO;
             len += iguana_rwnum(1,&msg[len],sizeof(reqht),&reqht);
-            fprintf(stderr,"issue getinfo\n");
+            //fprintf(stderr,"issue getinfo\n");
             NSPV_req(pto,msg,len,NODE_NSPV,NSPV_INFO>>1);
         }
     }
@@ -587,7 +587,7 @@ int32_t NSPV_gettransaction(int32_t skipvalidation,int32_t vout,uint256 txid,int
     NSPV_txproof(vout,txid,height);
     if ( NSPV_txproofresult.txid != txid )
     {
-        fprintf(stderr,"txproof error value %.8f\n",(double)NSPV_txproofresult.unspentvalue/COIN);
+        fprintf(stderr,"txproof error %s != %s\n",NSPV_txproofresult.txid.GetHex().c_str(),txid.GetHex().c_str());
         return(-1);
     }
     else if ( NSPV_txextract(tx,NSPV_txproofresult.tx,NSPV_txproofresult.txlen) < 0 || NSPV_txproofresult.txlen <= 0 )
