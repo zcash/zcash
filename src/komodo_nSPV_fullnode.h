@@ -252,10 +252,10 @@ int32_t NSPV_gettxproof(struct NSPV_txproof *ptr,int32_t vout,uint256 txid,int32
                 ptr->txproof = (uint8_t *)calloc(1,ptr->txprooflen);
                 memcpy(ptr->txproof,&proof[0],ptr->txprooflen);
             }
-            ptr->unspentvalue = CCgettxout(txid,vout,1,1);
             //fprintf(stderr,"gettxproof slen.%d\n",(int32_t)(sizeof(*ptr) - sizeof(ptr->tx) - sizeof(ptr->txproof) + ptr->txlen + ptr->txprooflen));
         }
     }
+    ptr->unspentvalue = CCgettxout(txid,vout,1,1);
     return(sizeof(*ptr) - sizeof(ptr->tx) - sizeof(ptr->txproof) + ptr->txlen + ptr->txprooflen);
 }
 
