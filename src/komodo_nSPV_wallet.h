@@ -85,7 +85,7 @@ int64_t NSPV_addinputs(struct NSPV_utxoresp *used,CMutableTransaction &mtx,int64
             utxos[n++] = ptr[i];
     }
     remains = total;
-    //fprintf(stderr,"n.%d for total %.8f\n",n,(double)total/COIN);
+    fprintf(stderr,"threshold %.8f n.%d for total %.8f\n",(double)threshold/COIN,n,(double)total/COIN);
     for (i=0; i<maxinputs && n>0; i++)
     {
         below = above = 0;
