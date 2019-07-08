@@ -129,7 +129,7 @@ int32_t NSPV_getinfo(struct NSPV_inforesp *ptr,int32_t reqheight)
             return(-1);
         ptr->notarization = pair.prevntz;
         if ( reqheight == 0 )
-            reqheight = pindex->nHeight;
+            reqheight = pindex->GetHeight();
         if ( NSPV_setequihdr(&ptr->H,reqheight) < 0 )
             return(-1);
         return(sizeof(*ptr));
@@ -324,7 +324,7 @@ int32_t NSPV_getspentinfo(struct NSPV_spentinfo *ptr,uint256 txid,int32_t vout)
 
 void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a request
 {
-    int32_t len,slen,ind; std::vector<uint8_t> response; uint32_t timestamp = (uint32_t)time(NULL);
+    int32_t len,slen,ind,reqheight; std::vector<uint8_t> response; uint32_t timestamp = (uint32_t)time(NULL);
     if ( (len= request.size()) > 0 )
     {
         if ( (ind= request[0]>>1) >= sizeof(pfrom->prevtimes)/sizeof(*pfrom->prevtimes) )
@@ -337,8 +337,8 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
             if ( timestamp > pfrom->prevtimes[ind] )
             {
                 struct NSPV_inforesp I;
-                iguana_rwnum(0,&request[1],sizeof(height),&height);
-                fprintf(stderr,"request height.%d\n",height);
+                iguana_rwnum(0,&request[1],sizeof(reqheight),&reqheight);
+                fprintf(stderr,"request height.%d\n",reqheight);
                 memset(&I,0,sizeof(I));
                 if ( (slen= NSPV_getinfo(&I,height)) > 0 )
                 {
