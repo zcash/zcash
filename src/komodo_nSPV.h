@@ -419,14 +419,21 @@ int32_t NSPV_txextract(CTransaction &tx,uint8_t *data,int32_t datalen)
     else return(-1);
 }
 
+/*
+ NSPV_notariescount is the slowest process during full validation as it requires looking up 13 transactions.
+ one way that would be 10000x faster would be to bruteforce validate the signatures in each vin, against all 64 pubkeys! for a valid tx, that is on average 13*32 secp256k1/sapling verify operations, which is much faster than even a single network request.
+ Unfortunately, due to the complexity of calculating the hash to sign for a tx, this bruteforcing would require determining what type of signature method and having sapling vs legacy methods of calculating the txhash.
+ It could be that the fullnode side could calculate this and send it back to the superlite side as any hash that would validate 13 different ways has to be the valid txhash.
+ However, since the vouts being spent by the notaries are highly constrained p2pk vouts, the txhash can be deduced if a specific notary pubkey is indeed the signer
+ */
+
 int32_t NSPV_notariescount(CTransaction tx,uint8_t elected[64][33])
 {
     uint8_t *script; CTransaction vintx; int32_t i,j,utxovout,scriptlen,numsigs = 0;
     for (i=0; i<tx.vin.size(); i++)
     {
         utxovout = tx.vin[i].prevout.n;
-        sleep(1);
-        if ( NSPV_gettransaction(1,utxovout,tx.vin[i].prevout.hash,0,tx) != 0 )
+        if ( NSPV_gettransaction(1,utxovout,tx.vin[i].prevout.hash,0,vintx) != 0 )
         {
             fprintf(stderr,"error getting %s/v%d\n",tx.vin[i].prevout.hash.GetHex().c_str(),utxovout);
             return(numsigs);
@@ -445,7 +452,6 @@ int32_t NSPV_notariescount(CTransaction tx,uint8_t elected[64][33])
             } else fprintf(stderr,"invalid scriptlen.%d\n",scriptlen);
         } else fprintf(stderr,"invalid utxovout.%d vs %d\n",utxovout,(int32_t)vintx.vout.size());
     }
-    fprintf(stderr,"numvins.%d numsigs.%d\n",(int32_t)tx.vin.size(),numsigs);
     return(numsigs);
 }
 
@@ -465,7 +471,6 @@ uint256 NSPV_opretextract(int32_t *heightp,uint256 *blockhashp,char *symbol,std:
 int32_t NSPV_notarizationextract(int32_t verifyntz,int32_t *ntzheightp,uint256 *blockhashp,uint256 *desttxidp,CTransaction tx)
 {
     int32_t numsigs=0; uint8_t elected[64][33]; char *symbol; std::vector<uint8_t> opret;
-    fprintf(stderr,"ntz vouts[%d]\n",(int32_t)tx.vout.size());
     if ( tx.vout.size() >= 2 )
     {
         symbol = (ASSETCHAINS_SYMBOL[0] == 0) ? (char *)"KMD" : ASSETCHAINS_SYMBOL;
