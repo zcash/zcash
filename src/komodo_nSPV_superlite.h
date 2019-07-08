@@ -283,7 +283,7 @@ UniValue NSPV_getinfo_req(int32_t reqht)
         {
             usleep(NSPV_POLLMICROS);
             if ( NSPV_inforesult.height != 0 )
-                return(NSPV_getinfo_json(&NSPV_inforesult,NSPV_inforesult.hdrheight));
+                return(NSPV_getinfo_json(&NSPV_inforesult));
         }
     }
     memset(&I,0,sizeof(I));
