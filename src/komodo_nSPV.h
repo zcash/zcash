@@ -27,7 +27,7 @@
 #ifndef KOMODO_NSPV_H
 #define KOMODO_NSPV_H
 
-#define NSPV_FULLVALIDATION 1   // changing to 1 issues 26 remote gettransaction, per utxo! need to change to bruteforcer
+#define NSPV_SKIPFULLVALIDATION 0   // changing to 0 issues 26 remote gettransaction, per utxo! need to change to bruteforcer
 #define NSPV_POLLITERS 10
 #define NSPV_POLLMICROS 100777
 #define NSPV_MAXVINS 64
