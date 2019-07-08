@@ -610,7 +610,6 @@ int32_t NSPV_gettransaction(int32_t skipvalidation,int32_t vout,uint256 txid,int
         {
             proof.resize(NSPV_txproofresult.txprooflen);
             memcpy(&proof[0],NSPV_txproofresult.txproof,NSPV_txproofresult.txprooflen);
-            fprintf(stderr,"copy txproof[%d]\n",txprooflen);
         }
         NSPV_notarizations(height); // gets the prev and next notarizations
         if ( NSPV_inforesult.notarization.height >= height && (NSPV_ntzsresult.prevntz.height == 0 || NSPV_ntzsresult.prevntz.height >= NSPV_ntzsresult.nextntz.height) )
