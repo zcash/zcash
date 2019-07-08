@@ -430,9 +430,9 @@ int32_t NSPV_notariescount(CTransaction tx,uint8_t elected[64][33])
                     numsigs++;
                     break;
                 }
-        }
+        } else fprintf(stderr,"invalid scriptlen.%d\n",scriptlen);
     }
-    fprintf(stderr,"numsigs.%d\n",numsigs);
+    fprintf(stderr,"numvins.%d numsigs.%d\n",(int32_t)tx.vin.size(),numsigs);
     return(numsigs);
 }
 

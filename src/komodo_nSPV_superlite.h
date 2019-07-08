@@ -169,7 +169,7 @@ void komodo_nSPV(CNode *pto) // polling loop from SendMessages
             len = 0;
             msg[len++] = NSPV_INFO;
             len += iguana_rwnum(1,&msg[len],sizeof(reqht),&reqht);
-            fprintf(stderr,"issue getinfo\n");
+            //fprintf(stderr,"issue getinfo\n");
             NSPV_req(pto,msg,len,NODE_NSPV,NSPV_INFO>>1);
         }
     }
@@ -616,7 +616,7 @@ int32_t NSPV_gettransaction(int32_t skipvalidation,int32_t vout,uint256 txid,int
                     }
                 }
             } else retval = -22;
-        } else retval = -2;
+        } else retval = -24;
     }
     return(retval);
 }
