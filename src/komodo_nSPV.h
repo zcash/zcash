@@ -463,19 +463,28 @@ uint256 NSPV_opretextract(int32_t *heightp,uint256 *blockhashp,char *symbol,std:
 
 int32_t NSPV_notarizationextract(int32_t verifyntz,int32_t *ntzheightp,uint256 *blockhashp,uint256 *desttxidp,CTransaction tx)
 {
-    int32_t numsigs; uint8_t elected[64][33]; char *symbol; std::vector<uint8_t> opret;
+    int32_t numsigs=0; uint8_t elected[64][33]; char *symbol; std::vector<uint8_t> opret;
+    fprintf(stderr,"ntz vouts[%d]\n",(int32_t)tx.vout.size());
     if ( tx.vout.size() >= 2 )
     {
         symbol = (ASSETCHAINS_SYMBOL[0] == 0) ? (char *)"KMD" : ASSETCHAINS_SYMBOL;
         GetOpReturnData(tx.vout[1].scriptPubKey,opret);
-        if ( opret.size() >= 32*2+4*2 )
+        if ( opret.size() >= 32*2+4 )
         {
             *desttxidp = NSPV_opretextract(ntzheightp,blockhashp,symbol,opret,tx.GetHash());
             komodo_notaries(elected,*ntzheightp,0);
             if ( verifyntz != 0 && (numsigs= NSPV_notariescount(tx,elected)) < 12 )
+            {
+                fprintf(stderr,"numsigs.%d error\n",numsigs);
                 return(-3);
+            }
             return(0);
-        } else return(-2);
+        }
+        else
+        {
+            fprintf(stderr,"opretsize.%d error\n",(int32_t)opret.size());
+            return(-2);
+        }
     } else return(-1);
 }
 #endif // KOMODO_NSPV_H
