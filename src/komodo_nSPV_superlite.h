@@ -97,24 +97,41 @@ void komodo_nSPVresp(CNode *pfrom,std::vector<uint8_t> response) // received a r
 
 CNode *NSPV_req(CNode *pnode,uint8_t *msg,int32_t len,uint64_t mask,int32_t ind)
 {
-    int32_t flag = 0; uint32_t timestamp = (uint32_t)time(NULL);
-    if ( pnode == 0 )
+    int32_t iter,num; CNode *firstpnode = 0; uint32_t timestamp = (uint32_t)time(NULL);
+    while ( pnode == 0 )
     {
         LOCK(cs_vNodes);
-        BOOST_FOREACH(CNode *ptr,vNodes)
+        num = 0;
+        for (iter=0; iter<2; iter++)
         {
-            if ( ptr->prevtimes[ind] > timestamp )
-                ptr->prevtimes[ind] = 0;
-            if ( ptr->hSocket == INVALID_SOCKET )
-                continue;
-            if ( (ptr->nServices & mask) == mask && timestamp > ptr->prevtimes[ind] )
+            BOOST_FOREACH(CNode *ptr,vNodes)
             {
-                flag = 1;
-                pnode = ptr;
+                if ( ptr->prevtimes[ind] > timestamp )
+                    ptr->prevtimes[ind] = 0;
+                if ( ptr->hSocket == INVALID_SOCKET )
+                    continue;
+                if ( (ptr->nServices & mask) == mask && timestamp > ptr->prevtimes[ind] )
+                {
+                    if ( firstpnode == 0 )
+                        firstpnode = ptr;
+                    if ( iter != 0 )
+                    {
+                        if ( num == 1 || (rand() % num) == 0 )
+                        {
+                            pnode = ptr;
+                            break;
+                        }
+                    } else num++;
+                }  //else fprintf(stderr,"nServices %llx vs mask %llx, t%u vs %u, ind.%d\n",(long long)ptr->nServices,(long long)mask,timestamp,ptr->prevtimes[ind],ind);
+            }
+            if ( iter == 0 && num == 0 )
                 break;
-            }  //else fprintf(stderr,"nServices %llx vs mask %llx, t%u vs %u, ind.%d\n",(long long)ptr->nServices,(long long)mask,timestamp,ptr->prevtimes[ind],ind);
+            if ( pnode == 0 )
+                pnode = firstpnode;
         }
-    } else flag = 1;
+        if ( pnode != 0 && time(NULL) > timestamp+2 )
+            break;
+    }
     if ( pnode != 0 )
     {
         std::vector<uint8_t> request;
