@@ -50,6 +50,8 @@
 #define NSPV_BROADCAST 0x0c
 #define NSPV_BROADCASTRESP 0x0d
 
+int32_t NSPV_gettransaction(int32_t skipvalidation,int32_t vout,uint256 txid,int32_t height,CTransaction &tx);
+
 int32_t iguana_rwbuf(int32_t rwflag,uint8_t *serialized,uint16_t len,uint8_t *buf)
 {
     if ( rwflag != 0 )
@@ -419,21 +421,27 @@ int32_t NSPV_txextract(CTransaction &tx,uint8_t *data,int32_t datalen)
 
 int32_t NSPV_notariescount(CTransaction tx,uint8_t elected[64][33])
 {
-    uint8_t script[64]; int32_t i,j,scriptlen,numsigs = 0;
+    uint8_t *script[64]; int32_t i,j,utxovout,scriptlen,numsigs = 0;
     for (i=0; i<tx.vin.size(); i++)
     {
-        if ( (scriptlen= gettxout_scriptPubKey(script,sizeof(script),tx.vin[i].prevout.hash,tx.vin[i].prevout.n)) == 35 )
+        utxovout = tx.vin[i].prevout.n;
+        if ( NSPV_gettransaction(1,utxovout,tx.vin[i].prevout.hash,0,tx) != 0 )
+            return(numsigs);
+        if ( utxovout < vintx.vout.size() )
         {
-            for (j=0; j<64; j++)
-                if ( memcmp(&script[1],elected[j],33) == 0 )
-                {
-                    numsigs++;
-                    break;
-                }
-        } else fprintf(stderr,"invalid scriptlen.%d\n",scriptlen);
-    }
-    fprintf(stderr,"numvins.%d numsigs.%d\n",(int32_t)tx.vin.size(),numsigs);
-    return(numsigs);
+            script = (uint8_t *)&vintx.vout[utxovout].scriptPubKey[0];
+            if ( (scriptlen= tx.vout[n].scriptPubKey.size()) == 35 )
+            {
+                for (j=0; j<64; j++)
+                    if ( memcmp(&script[1],elected[j],33) == 0 )
+                    {
+                        numsigs++;
+                        break;
+                    }
+            } else fprintf(stderr,"invalid scriptlen.%d\n",scriptlen);
+        }
+        fprintf(stderr,"numvins.%d numsigs.%d\n",(int32_t)tx.vin.size(),numsigs);
+        return(numsigs);
 }
 
 uint256 NSPV_opretextract(int32_t *heightp,uint256 *blockhashp,char *symbol,std::vector<uint8_t> opret,uint256 txid)

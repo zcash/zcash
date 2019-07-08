@@ -227,7 +227,7 @@ int32_t NSPV_gettxproof(struct NSPV_txproof *ptr,int32_t vout,uint256 txid,int32
     ptr->txid = txid;
     ptr->vout = vout;
     ptr->height = height;
-    if ( (pindex= komodo_chainactive(height)) != 0 && komodo_blockload(block,pindex) == 0 )
+    if ( height != 0 && (pindex= komodo_chainactive(height)) != 0 && komodo_blockload(block,pindex) == 0 )
     {
         BOOST_FOREACH(const CTransaction&tx, block.vtx)
         {
@@ -254,10 +254,9 @@ int32_t NSPV_gettxproof(struct NSPV_txproof *ptr,int32_t vout,uint256 txid,int32
             }
             ptr->unspentvalue = CCgettxout(txid,vout,1,1);
             //fprintf(stderr,"gettxproof slen.%d\n",(int32_t)(sizeof(*ptr) - sizeof(ptr->tx) - sizeof(ptr->txproof) + ptr->txlen + ptr->txprooflen));
-            return(sizeof(*ptr) - sizeof(ptr->tx) - sizeof(ptr->txproof) + ptr->txlen + ptr->txprooflen);
         }
     }
-    return(-1);
+    return(sizeof(*ptr) - sizeof(ptr->tx) - sizeof(ptr->txproof) + ptr->txlen + ptr->txprooflen);
 }
 
 int32_t NSPV_getntzsproofresp(struct NSPV_ntzsproofresp *ptr,uint256 prevntztxid,uint256 nextntztxid)
