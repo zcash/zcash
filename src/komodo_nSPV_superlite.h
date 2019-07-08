@@ -405,7 +405,7 @@ UniValue NSPV_addressutxos(char *coinaddr)
         for (i=0; i<NSPV_POLLITERS; i++)
         {
             usleep(NSPV_POLLMICROS);
-            if ( NSPV_utxosresult.nodeheight >= NSPV_inforesult.height && strcmp(coinaddr,NSPV_utxosresult.coinaddr) == 0 )
+            if ( strcmp(coinaddr,NSPV_utxosresult.coinaddr) == 0 )
                 return(NSPV_utxosresp_json(&NSPV_utxosresult));
         }
     } else sleep(1);
