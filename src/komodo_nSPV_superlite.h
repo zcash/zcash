@@ -161,6 +161,8 @@ void komodo_nSPV(CNode *pto) // polling loop from SendMessages
         NSPV_logout();
     if ( (pto->nServices & NODE_NSPV) == 0 )
         return;
+    if ( pto->prevtimes[NSPV_INFO>>1] > timestamp )
+        pto->prevtimes[NSPV_INFO>>1] = 0;
     if ( KOMODO_NSPV != 0 )
     {
         if ( timestamp > NSPV_lastinfo + ASSETCHAINS_BLOCKTIME/2 && timestamp > pto->prevtimes[NSPV_INFO>>1] + 2*ASSETCHAINS_BLOCKTIME/3 )
