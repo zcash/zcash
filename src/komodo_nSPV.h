@@ -417,15 +417,22 @@ int32_t NSPV_txextract(CTransaction &tx,uint8_t *data,int32_t datalen)
     else return(-1);
 }
 
-int32_t NSPV_pubkeysextract(uint8_t pubkeys[64][33],CTransaction tx,uint8_t elected[64][33])
+int32_t NSPV_notariescount(CTransaction tx,uint8_t elected[64][33])
 {
-    uint256 hashBlock; CTransaction vintx; int32_t i,numsigs = 13;
-    /*LOCK(cs_main);
+    uint8_t scriptPubkey[64]; int32_t i,j,scriptlen,numsigs = 0;
     for (i=0; i<tx.vin.size(); i++)
     {
-        if ( !GetTransaction(txid,vintx,hashBlock, false))
-            return(-1);
-    }*/
+        if ( (scriptlen= gettxout_scriptPubKey(scriptPubKey,sizeof(scriptPubKey),tx.vin[i].prevout.hash,tx.vin[i].prevout.n)) == 35 )
+        {
+            for (j=0; j<64; j++)
+                if ( memcmp(&scriptPubKey[1],elected[j],33) == 0 )
+                {
+                    numsigs++;
+                    break;
+                }
+        }
+    }
+    fprintf(stderr,"numsigs.%d\n",numsigs);
     return(numsigs);
 }
 
@@ -444,7 +451,7 @@ uint256 NSPV_opretextract(int32_t *heightp,uint256 *blockhashp,char *symbol,std:
 
 int32_t NSPV_notarizationextract(int32_t *ntzheightp,uint256 *blockhashp,uint256 *desttxidp,CTransaction tx)
 {
-    int32_t numsigs; uint8_t elected[64][33],sigkeys[64][33]; char *symbol; std::vector<uint8_t> opret;
+    int32_t numsigs; uint8_t elected[64][33]; char *symbol; std::vector<uint8_t> opret;
     if ( tx.vout.size() >= 2 )
     {
         symbol = (ASSETCHAINS_SYMBOL[0] == 0) ? (char *)"KMD" : ASSETCHAINS_SYMBOL;
@@ -453,7 +460,7 @@ int32_t NSPV_notarizationextract(int32_t *ntzheightp,uint256 *blockhashp,uint256
         {
             *desttxidp = NSPV_opretextract(ntzheightp,blockhashp,symbol,opret,tx.GetHash());
             komodo_notaries(elected,*ntzheightp,0);
-            if ( (numsigs= NSPV_pubkeysextract(sigkeys,tx,elected)) < 12 )
+            if ( (numsigs= NSPV_notariescount(tx,elected)) < 12 )
                 return(-3);
             return(0);
         } else return(-2);
