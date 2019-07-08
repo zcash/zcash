@@ -405,7 +405,7 @@ UniValue NSPV_addressutxos(char *coinaddr)
         for (i=0; i<NSPV_POLLITERS; i++)
         {
             usleep(NSPV_POLLMICROS);
-            if ( strcmp(coinaddr,NSPV_utxosresult.coinaddr) == 0 )
+            if ( NSPV_utxosresult.nodeheight >= NSPV_inforesult.height && strcmp(coinaddr,NSPV_utxosresult.coinaddr) == 0 )
                 return(NSPV_utxosresp_json(&NSPV_utxosresult));
         }
     } else sleep(1);
@@ -582,7 +582,13 @@ int32_t NSPV_validatehdrs(struct NSPV_ntzsproofresp *ptr)
 int32_t NSPV_gettransaction(int32_t skipvalidation,int32_t vout,uint256 txid,int32_t height,CTransaction &tx)
 {
     int32_t i,offset,retval = 0;
-    NSPV_txproof(vout,txid,height);
+    for (i=0; i<3; i++)
+    {
+        NSPV_txproof(vout,txid,height);
+        if ( NSPV_txproofresult.txlen != 0 )
+            break;
+        sleep(1);
+    }
     if ( NSPV_txproofresult.txid != txid )
     {
         fprintf(stderr,"txproof error %s != %s\n",NSPV_txproofresult.txid.GetHex().c_str(),txid.GetHex().c_str());
