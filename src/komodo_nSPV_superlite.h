@@ -445,6 +445,85 @@ UniValue NSPV_broadcast(char *hex)
     return(NSPV_broadcast_json(&B,txid));
 }
 
+int32_t NSPV_validatehdrs(struct NSPV_ntzsproofresp *ptr)
+{
+    int32_t i,height,txidht; CTransaction tx; uint256 blockhash,txid,desttxid;
+    if ( (ptr->common.nextht-ptr->common.prevht+1) != ptr->common.numhdrs )
+        return(-1);
+    else if ( NSPV_txextract(tx,ptr->nextntz,ptr->nexttxlen) < 0 )
+        return(-2);
+    else if ( tx.GetHash() != ptr->nexttxid )
+        return(-3);
+    else if ( NSPV_notarizationextract(&height,&blockhash,&desttxid,tx) < 0 )
+        return(-4);
+    else if ( height != ptr->common.nextht )
+        return(-5);
+    else if ( NSPV_hdrhash(&ptr->common.hdrs[ptr->common.numhdrs-1]) != blockhash )
+        return(-6);
+    for (i=ptr->common.numhdrs-1; i>0; i--)
+    {
+        blockhash = NSPV_hdrhash(&ptr->common.hdrs[i-1]);
+        if ( blockhash != ptr->common.hdrs[i].hashPrevBlock )
+            return(-i-12);
+    }
+    if ( NSPV_txextract(tx,ptr->prevntz,ptr->prevtxlen) < 0 )
+        return(-7);
+    else if ( tx.GetHash() != ptr->prevtxid )
+        return(-8);
+    else if ( NSPV_notarizationextract(&height,&blockhash,&desttxid,tx) < 0 )
+        return(-9);
+    else if ( height != ptr->common.prevht )
+        return(-10);
+    else if ( NSPV_hdrhash(&ptr->common.hdrs[0]) != blockhash )
+        return(-11);
+    return(0);
+}
+
+int32_t NSPV_gettransaction(int32_t skipvalidation,int32_t vout,uint256 txid,int32_t height,CTransaction &tx)
+{
+    int32_t offset,retval = 0;
+    NSPV_txproof(vout,txid,height);
+    if ( NSPV_txproofresult.txid != txid || NSPV_txproofresult.unspentvalue <= 0 )
+        return(-1);
+    else if ( NSPV_txextract(tx,NSPV_txproofresult.tx,NSPV_txproofresult.txlen) < 0 || NSPV_txproofresult.txlen <= 0 )
+        retval = -20;
+    else if ( skipvalidation == 0 )
+    {
+        NSPV_notarizations(height); // gets the prev and next notarizations
+        if ( NSPV_inforesult.notarization.height >= height && (NSPV_ntzsresult.prevntz.height == 0 || NSPV_ntzsresult.prevntz.height >= NSPV_ntzsresult.nextntz.height) )
+        {
+            fprintf(stderr,"issue manual bracket\n");
+            NSPV_notarizations(height-1);
+            NSPV_notarizations(height+1);
+            NSPV_notarizations(height); // gets the prev and next notarizations
+        }
+        if ( NSPV_ntzsresult.prevntz.height != 0 && NSPV_ntzsresult.prevntz.height <= NSPV_ntzsresult.nextntz.height )
+        {
+            fprintf(stderr,"gettx ht.%d prev.%d next.%d\n",height,NSPV_ntzsresult.prevntz.height, NSPV_ntzsresult.nextntz.height);
+            offset = (height - NSPV_ntzsresult.prevntz.height);
+            if ( offset >= 0 && height <= NSPV_ntzsresult.nextntz.height )
+            {
+                NSPV_txidhdrsproof(NSPV_ntzsresult.prevntz.txid,NSPV_ntzsresult.nextntz.txid);
+                if ( (retval= NSPV_validatehdrs(&NSPV_ntzsproofresult)) == 0 )
+                {
+                    std::vector<uint256> txids; std::vector<uint8_t> proof; uint256 proofroot;
+                    proof.resize(NSPV_txproofresult.txprooflen);
+                    memcpy(&proof[0],NSPV_txproofresult.txproof,NSPV_txproofresult.txprooflen);
+                    proofroot = BitcoinGetProofMerkleRoot(proof,txids);
+                    if ( proofroot != NSPV_ntzsproofresult.common.hdrs[offset].hashMerkleRoot )
+                    {
+                        fprintf(stderr,"prooflen.%d proofroot.%s vs %s\n",NSPV_txproofresult.txprooflen,proofroot.GetHex().c_str(),NSPV_ntzsproofresult.common.hdrs[offset].hashMerkleRoot.GetHex().c_str());
+                        retval = -23;
+                    }
+                }
+            } else retval = -22;
+        } else retval = -2;
+    }
+    return(retval);
+}
+
+// called from async message processing
+
 void komodo_nSPVresp(CNode *pfrom,std::vector<uint8_t> response) // received a response
 {
     int32_t len; uint32_t timestamp = (uint32_t)time(NULL);
