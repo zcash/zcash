@@ -478,7 +478,7 @@ UniValue NSPV_txproof(int32_t vout,uint256 txid,int32_t height)
     len += iguana_rwnum(1,&msg[len],sizeof(height),&height);
     len += iguana_rwnum(1,&msg[len],sizeof(vout),&vout);
     len += iguana_rwbignum(1,&msg[len],sizeof(txid),(uint8_t *)&txid);
-    fprintf(stderr,"req txproof %s/v%d at height.%d\n",txid.GetHex().c_str(),vout,height);
+    //fprintf(stderr,"req txproof %s/v%d at height.%d\n",txid.GetHex().c_str(),vout,height);
     for (iter=0; iter<3; iter++);
     if ( NSPV_req(0,msg,len,NODE_NSPV,msg[0]>>1) != 0 )
     {
@@ -609,7 +609,8 @@ int32_t NSPV_gettransaction(int32_t skipvalidation,int32_t vout,uint256 txid,int
         if ( NSPV_txproofresult.txprooflen > 0 )
         {
             proof.resize(NSPV_txproofresult.txprooflen);
-            memcpy(&proof[0],NSPV_txproofresult.txproof,txprooflen);
+            memcpy(&proof[0],NSPV_txproofresult.txproof,NSPV_txproofresult.txprooflen);
+            fprintf(stderr,"copy txproof[%d]\n",txprooflen);
         }
         NSPV_notarizations(height); // gets the prev and next notarizations
         if ( NSPV_inforesult.notarization.height >= height && (NSPV_ntzsresult.prevntz.height == 0 || NSPV_ntzsresult.prevntz.height >= NSPV_ntzsresult.nextntz.height) )
