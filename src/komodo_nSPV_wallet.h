@@ -81,11 +81,11 @@ int64_t NSPV_addinputs(struct NSPV_utxoresp *used,CMutableTransaction &mtx,int64
     else threshold = total;
     for (i=0; i<num; i++)
     {
-        if ( ptr[i].satoshis > threshold )
+        if ( num < NSPV_MAXVINS || ptr[i].satoshis > threshold )
             utxos[n++] = ptr[i];
     }
     remains = total;
-    fprintf(stderr,"threshold %.8f n.%d for total %.8f\n",(double)threshold/COIN,n,(double)total/COIN);
+    //fprintf(stderr,"threshold %.8f n.%d for total %.8f\n",(double)threshold/COIN,n,(double)total/COIN);
     for (i=0; i<maxinputs && n>0; i++)
     {
         below = above = 0;
@@ -115,7 +115,7 @@ int64_t NSPV_addinputs(struct NSPV_utxoresp *used,CMutableTransaction &mtx,int64
         if ( totalinputs >= total || (i+1) >= maxinputs )
             break;
     }
-    fprintf(stderr,"totalinputs %.8f vs total %.8f\n",(double)totalinputs/COIN,(double)total/COIN);
+    //fprintf(stderr,"totalinputs %.8f vs total %.8f\n",(double)totalinputs/COIN,(double)total/COIN);
     if ( totalinputs >= total )
         return(totalinputs);
     return(0);
