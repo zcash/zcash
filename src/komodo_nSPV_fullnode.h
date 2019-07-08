@@ -129,7 +129,8 @@ int32_t NSPV_getinfo(struct NSPV_inforesp *ptr,int32_t reqheight)
             return(-1);
         ptr->notarization = pair.prevntz;
         if ( reqheight == 0 )
-            reqheight = pindex->GetHeight();
+            reqheight = ptr->height;
+        ptr->hdrheight = reqheight;
         if ( NSPV_setequihdr(&ptr->H,reqheight) < 0 )
             return(-1);
         return(sizeof(*ptr));
@@ -338,13 +339,13 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
             {
                 struct NSPV_inforesp I;
                 iguana_rwnum(0,&request[1],sizeof(reqheight),&reqheight);
-                fprintf(stderr,"request height.%d\n",reqheight);
+                //fprintf(stderr,"request height.%d\n",reqheight);
                 memset(&I,0,sizeof(I));
                 if ( (slen= NSPV_getinfo(&I,reqheight)) > 0 )
                 {
                     response.resize(1 + slen);
                     response[0] = NSPV_INFORESP;
-                    fprintf(stderr,"slen.%d\n",slen);
+                    //fprintf(stderr,"slen.%d\n",slen);
                     if ( NSPV_rwinforesp(1,&response[1],&I) == slen )
                     {
                         pfrom->PushMessage("nSPV",response);
