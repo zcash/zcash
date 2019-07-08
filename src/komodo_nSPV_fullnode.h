@@ -98,7 +98,27 @@ int32_t NSPV_getntzsresp(struct NSPV_ntzsresp *ptr,int32_t height)
     return(sizeof(*ptr));
 }
 
-int32_t NSPV_getinfo(struct NSPV_inforesp *ptr)
+int32_t NSPV_setequihdr(struct NSPV_equihdr *hdr,int32_t height)
+{
+    CBlockIndex *pindex;
+    if ( (pindex= komodo_chainactive(height)) != 0 )
+    {
+        hdr->nVersion = pindex->nVersion;
+        if ( pindex->pprev == 0 )
+            return(-1);
+        hdr->hashPrevBlock = pindex->pprev->GetBlockHash();
+        hdr->hashMerkleRoot = pindex->hashMerkleRoot;
+        hdr->hashFinalSaplingRoot = pindex->hashFinalSaplingRoot;
+        hdr->nTime = pindex->nTime;
+        hdr->nBits = pindex->nBits;
+        hdr->nNonce = pindex->nNonce;
+        memcpy(hdr->nSolution,&pindex->nSolution[0],sizeof(hdr->nSolution));
+        return(sizeof(*hdr));
+    }
+    return(-1);
+}
+
+int32_t NSPV_getinfo(struct NSPV_inforesp *ptr,int32_t reqheight)
 {
     int32_t prevMoMheight,len = 0; CBlockIndex *pindex; struct NSPV_ntzsresp pair;
     if ( (pindex= chainActive.LastTip()) != 0 )
@@ -108,6 +128,10 @@ int32_t NSPV_getinfo(struct NSPV_inforesp *ptr)
         if ( NSPV_getntzsresp(&pair,ptr->height-1) < 0 )
             return(-1);
         ptr->notarization = pair.prevntz;
+        if ( reqheight == 0 )
+            reqheight = pindex->nHeight;
+        if ( NSPV_setequihdr(&ptr->H,reqheight) < 0 )
+            return(-1);
         return(sizeof(*ptr));
     } else return(-1);
 }
@@ -235,26 +259,6 @@ int32_t NSPV_gettxproof(struct NSPV_txproof *ptr,int32_t vout,uint256 txid,int32
     return(-1);
 }
 
-int32_t NSPV_setequihdr(struct NSPV_equihdr *hdr,int32_t height)
-{
-    CBlockIndex *pindex;
-    if ( (pindex= komodo_chainactive(height)) != 0 )
-    {
-        hdr->nVersion = pindex->nVersion;
-        if ( pindex->pprev == 0 )
-            return(-1);
-        hdr->hashPrevBlock = pindex->pprev->GetBlockHash();
-        hdr->hashMerkleRoot = pindex->hashMerkleRoot;
-        hdr->hashFinalSaplingRoot = pindex->hashFinalSaplingRoot;
-        hdr->nTime = pindex->nTime;
-        hdr->nBits = pindex->nBits;
-        hdr->nNonce = pindex->nNonce;
-        memcpy(hdr->nSolution,&pindex->nSolution[0],sizeof(hdr->nSolution));
-        return(sizeof(*hdr));
-    }
-    return(-1);
-}
-
 int32_t NSPV_getntzsproofresp(struct NSPV_ntzsproofresp *ptr,uint256 prevntztxid,uint256 nextntztxid)
 {
     int32_t i; uint256 hashBlock,bhash0,bhash1,desttxid0,desttxid1; CTransaction tx;
@@ -336,7 +340,7 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                 iguana_rwnum(0,&request[1],sizeof(height),&height);
                 fprintf(stderr,"request height.%d\n",height);
                 memset(&I,0,sizeof(I));
-                if ( (slen= NSPV_getinfo(&I)) > 0 )
+                if ( (slen= NSPV_getinfo(&I,height)) > 0 )
                 {
                     response.resize(1 + slen);
                     response[0] = NSPV_INFORESP;
