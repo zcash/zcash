@@ -37,6 +37,7 @@ struct NSPV_ntzsproofresp NSPV_ntzsproofresult;
 struct NSPV_txproof NSPV_txproofresult;
 struct NSPV_broadcastresp NSPV_broadcastresult;
 
+
 // komodo_nSPVresp is called from async message processing
 
 void komodo_nSPVresp(CNode *pfrom,std::vector<uint8_t> response) // received a response
@@ -55,7 +56,11 @@ void komodo_nSPVresp(CNode *pfrom,std::vector<uint8_t> response) // received a r
                     fprintf(stderr,"got old info response %u size.%d height.%d\n",timestamp,(int32_t)response.size(),NSPV_inforesult.height); // update current height and ntrz status
                     NSPV_inforesp_purge(&NSPV_inforesult);
                     NSPV_inforesult = I;
-                } // else update headers state
+                }
+                else if ( NSPV_inforesult.height > I.height )
+                {
+                    NSPV_lastinfo = 0;
+                }
                 break;
             case NSPV_UTXOSRESP:
                 NSPV_utxosresp_purge(&NSPV_utxosresult);
@@ -131,6 +136,30 @@ CNode *NSPV_req(CNode *pnode,uint8_t *msg,int32_t len,uint64_t mask,int32_t ind)
         return(pnode);
     } else fprintf(stderr,"no pnodes\n");
     return(0);
+}
+
+// komodo_nSPV from main polling loop (really this belongs in its own file, but it is so small, it ended up here)
+
+void komodo_nSPV(CNode *pto) // polling loop from SendMessages
+{
+    uint8_t msg[256]; int32_t i,len=0; uint32_t timestamp = (uint32_t)time(NULL);
+    if ( NSPV_logintime != 0 && timestamp > NSPV_logintime+NSPV_AUTOLOGOUT )
+        NSPV_logout();
+    if ( (pto->nServices & NODE_NSPV) == 0 )
+        return;
+    if ( KOMODO_NSPV != 0 )
+    {
+        if ( timestamp > NSPV_lastinfo + ASSETCHAINS_BLOCKTIME/2 && timestamp > pto->prevtimes[NSPV_INFO>>1] + 2*ASSETCHAINS_BLOCKTIME/3 )
+        {
+            int32_t reqht;
+            reqht = 0;
+            len = 0;
+            msg[len++] = NSPV_INFO;
+            len += iguana_rwnum(1,&msg[len],sizeof(reqht),&reqht);
+            fprintf(stderr,"issue getinfo\n");
+            NSPV_req(pto,msg,len,NODE_NSPV,NSPV_INFO>>1);
+        }
+    }
 }
 
 UniValue NSPV_txproof_json(struct NSPV_txproof *ptr)

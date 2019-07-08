@@ -291,29 +291,4 @@ UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis) // what its a
     }
 }
 
-// polling loop (really this belongs in its own file, but it is so small, it ended up here)
-
-void komodo_nSPV(CNode *pto) // polling loop from SendMessages
-{
-    uint8_t msg[256]; int32_t i,len=0; uint32_t timestamp = (uint32_t)time(NULL);
-    if ( NSPV_logintime != 0 && timestamp > NSPV_logintime+NSPV_AUTOLOGOUT )
-    {
-        NSPV_logout();
-    }
-    if ( (pto->nServices & NODE_NSPV) == 0 )
-        return;
-    if ( KOMODO_NSPV != 0 )
-    {
-        if ( timestamp > NSPV_lastinfo + ASSETCHAINS_BLOCKTIME/2 && timestamp > pto->prevtimes[NSPV_INFO>>1] + 2*ASSETCHAINS_BLOCKTIME/3 )
-        {
-            int32_t reqht;
-            reqht = 0;
-            len = 0;
-            msg[len++] = NSPV_INFO;
-            len += iguana_rwnum(1,&msg[len],sizeof(reqht),&reqht);
-            NSPV_req(pto,msg,len,NODE_NSPV,NSPV_INFO>>1);
-        }
-    }
-}
-
 #endif // KOMODO_NSPVWALLET_H
