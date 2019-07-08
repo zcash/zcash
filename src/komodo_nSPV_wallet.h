@@ -74,7 +74,7 @@ int32_t NSPV_gettransaction(int32_t vout,uint256 txid,int32_t height,CTransactio
         }
         if ( NSPV_ntzsresult.prevntz.height != 0 && NSPV_ntzsresult.prevntz.height <= NSPV_ntzsresult.nextntz.height )
         {
-            //fprintf(stderr,"gettx ht.%d prev.%d next.%d\n",height,NSPV_ntzsresult.prevntz.height, NSPV_ntzsresult.nextntz.height);
+fprintf(stderr,"gettx ht.%d prev.%d next.%d\n",height,NSPV_ntzsresult.prevntz.height, NSPV_ntzsresult.nextntz.height);
             offset = (height - NSPV_ntzsresult.prevntz.height);
             if ( offset >= 0 && height <= NSPV_ntzsresult.nextntz.height )
             {
