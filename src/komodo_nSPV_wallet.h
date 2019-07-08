@@ -65,7 +65,7 @@ int32_t NSPV_gettransaction(int32_t vout,uint256 txid,int32_t height,CTransactio
     else
     {
         NSPV_notarizations(height); // gets the prev and next notarizations
-        if ( NSPV_ntzsresult.prevntz.height == 0 || NSPV_ntzsresult.prevntz.height >= NSPV_ntzsresult.nextntz.height )
+        if ( NSPV_inforesult.notarization.height >= height && (NSPV_ntzsresult.prevntz.height == 0 || NSPV_ntzsresult.prevntz.height >= NSPV_ntzsresult.nextntz.height) )
         {
             fprintf(stderr,"issue manual bracket\n");
             NSPV_notarizations(height-1);
