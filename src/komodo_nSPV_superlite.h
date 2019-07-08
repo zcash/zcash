@@ -388,6 +388,7 @@ UniValue NSPV_addressutxos(char *coinaddr)
 {
     UniValue result(UniValue::VOBJ); uint8_t msg[64]; int32_t i,iter,slen,len = 0;
     //fprintf(stderr,"utxos %s NSPV addr %s\n",coinaddr,NSPV_address.c_str());
+    NSPV_utxosresp_purge(&NSPV_utxosresult);
     if ( bitcoin_base58decode(msg,coinaddr) != 25 )
     {
         result.push_back(Pair("result","error"));
@@ -419,6 +420,7 @@ UniValue NSPV_notarizations(int32_t height)
     uint8_t msg[64]; int32_t i,iter,len = 0; struct NSPV_ntzsresp N;
     //if ( NSPV_ntzsresult.prevntz.height <= height && NSPV_ntzsresult.nextntz.height >= height )
     //    return(NSPV_ntzs_json(&NSPV_ntzsresult));
+    NSPV_ntzsresp_purge(&NSPV_ntzsresult);
     msg[len++] = NSPV_NTZS;
     len += iguana_rwnum(1,&msg[len],sizeof(height),&height);
     for (iter=0; iter<3; iter++);
@@ -438,6 +440,7 @@ UniValue NSPV_notarizations(int32_t height)
 UniValue NSPV_txidhdrsproof(uint256 prevtxid,uint256 nexttxid)
 {
     uint8_t msg[64]; int32_t i,iter,len = 0; struct NSPV_ntzsproofresp H;
+    NSPV_ntzsproofresp_purge(&NSPV_ntzsproofresult);
     msg[len++] = NSPV_NTZSPROOF;
     len += iguana_rwbignum(1,&msg[len],sizeof(prevtxid),(uint8_t *)&prevtxid);
     len += iguana_rwbignum(1,&msg[len],sizeof(nexttxid),(uint8_t *)&nexttxid);
@@ -470,6 +473,7 @@ UniValue NSPV_txproof(int32_t vout,uint256 txid,int32_t height)
     uint8_t msg[64]; int32_t i,iter,len = 0; struct NSPV_txproof P;
     //if ( NSPV_txproofresult.txid == txid && NSPV_txproofresult.height == height )
     //    return(NSPV_txproof_json(&NSPV_txproofresult));
+    NSPV_txproof_purge(&NSPV_txproofresult);
     msg[len++] = NSPV_TXPROOF;
     len += iguana_rwnum(1,&msg[len],sizeof(height),&height);
     len += iguana_rwnum(1,&msg[len],sizeof(vout),&vout);
@@ -495,6 +499,7 @@ UniValue NSPV_spentinfo(uint256 txid,int32_t vout)
     uint8_t msg[64]; int32_t i,iter,len = 0; struct NSPV_spentinfo I;
     //if ( NSPV_spentresult.txid == txid && NSPV_spentresult.vout == vout )
     //    return(NSPV_spentinfo_json(&NSPV_spentresult));
+    NSPV_spentinfo_purge(&NSPV_spentinforesult);
     msg[len++] = NSPV_SPENTINFO;
     len += iguana_rwnum(1,&msg[len],sizeof(vout),&vout);
     len += iguana_rwbignum(1,&msg[len],sizeof(txid),(uint8_t *)&txid);
@@ -515,6 +520,7 @@ UniValue NSPV_spentinfo(uint256 txid,int32_t vout)
 UniValue NSPV_broadcast(char *hex)
 {
     uint8_t *msg,*data; uint256 txid; uint16_t n; int32_t i,iter,len = 0; struct NSPV_broadcastresp B;
+    NSPV_broadcast_purge(&NSPV_broadcastresult);
     n = (int32_t)strlen(hex) >> 1;
     data = (uint8_t *)malloc(n);
     decode_hex(data,n,hex);
