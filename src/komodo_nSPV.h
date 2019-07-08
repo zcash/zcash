@@ -430,7 +430,7 @@ int32_t NSPV_notariescount(CTransaction tx,uint8_t elected[64][33])
         if ( utxovout < vintx.vout.size() )
         {
             script = (uint8_t *)&vintx.vout[utxovout].scriptPubKey[0];
-            if ( (scriptlen= vintx.vout[n].scriptPubKey.size()) == 35 )
+            if ( (scriptlen= vintx.vout[utxovout].scriptPubKey.size()) == 35 )
             {
                 for (j=0; j<64; j++)
                     if ( memcmp(&script[1],elected[j],33) == 0 )
