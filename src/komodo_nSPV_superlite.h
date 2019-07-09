@@ -408,7 +408,7 @@ UniValue NSPV_addressutxos(char *coinaddr,int32_t CCflag)
         for (i=0; i<NSPV_POLLITERS; i++)
         {
             usleep(NSPV_POLLMICROS);
-            if ( NSPV_utxosresult.nodeheight >= NSPV_inforesult.height && strcmp(coinaddr,NSPV_utxosresult.coinaddr) == 0 )
+            if ( NSPV_utxosresult.nodeheight >= NSPV_inforesult.height && strcmp(coinaddr,NSPV_utxosresult.coinaddr) == 0 && CCflag == NSPV_utxosresult.CCflag )
                 return(NSPV_utxosresp_json(&NSPV_utxosresult));
         }
     } else sleep(1);

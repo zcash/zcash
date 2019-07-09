@@ -431,6 +431,27 @@ int32_t NSPV_txextract(CTransaction &tx,uint8_t *data,int32_t datalen)
  However, since the vouts being spent by the notaries are highly constrained p2pk vouts, the txhash can be deduced if a specific notary pubkey is indeed the signer
  */
 
+bool NSPV_SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const CScript scriptPubKey);
+
+int32_t NSPV_newnotariescount(CTransaction tx,uint8_t elected[64][33])
+{
+    CPubKey pubkeys[64]; CScript scriptPubKeys[64]; CMutableTransaction mtx(tx); int32_t vini,j,numsigs = 0;
+    for (j=0; j<64; j++)
+    {
+        pubkeys[j] = buf2pk(elected[j]);
+        scriptPubKeys[j] = CScript() << ParseHex(HexStr(pubkeys[j])) << OP_CHECKSIG);
+    }
+    for (vini=0; vini<tx.vin.size(); vini++)
+    {
+        for (j=0; j<64; j++)
+        {
+            NSPV_SignTx(mtx,vini,10000,scriptPubKeys[j]);
+            // seck256k1 validate tx.vin[vini].scriptSig vs SIG_TXHASH pubkeys[j];
+        }
+    }
+    return(numsigs);
+}
+
 int32_t NSPV_notariescount(CTransaction tx,uint8_t elected[64][33])
 {
     uint8_t *script; CTransaction vintx; int32_t i,j,utxovout,scriptlen,numsigs = 0;
@@ -483,7 +504,7 @@ int32_t NSPV_notarizationextract(int32_t verifyntz,int32_t *ntzheightp,uint256 *
         {
             *desttxidp = NSPV_opretextract(ntzheightp,blockhashp,symbol,opret,tx.GetHash());
             komodo_notaries(elected,*ntzheightp,0);
-            if ( verifyntz != 0 && (numsigs= NSPV_notariescount(tx,elected)) < 12 )
+            if ( verifyntz != 0 && (numsigs= NSPV_newnotariescount(tx,elected)) < 12 )
             {
                 fprintf(stderr,"numsigs.%d error\n",numsigs);
                 return(-3);
