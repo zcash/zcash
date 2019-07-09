@@ -276,6 +276,7 @@ UniValue NSPV_utxosresp_json(struct NSPV_utxosresp *ptr)
     result.push_back(Pair("result","success"));
     result.push_back(Pair("utxos",NSPV_utxoresp_json(ptr->utxos,ptr->numutxos)));
     result.push_back(Pair("address",ptr->coinaddr));
+    result.push_back(Pair("isCC",ptr->CCflag));
     result.push_back(Pair("height",(int64_t)ptr->nodeheight));
     result.push_back(Pair("numutxos",(int64_t)ptr->numutxos));
     result.push_back(Pair("balance",(double)ptr->total/COIN));
@@ -385,7 +386,21 @@ UniValue NSPV_getinfo_req(int32_t reqht)
     return(NSPV_getinfo_json(&NSPV_inforesult));
 }
 
-UniValue NSPV_addressutxos(char *coinaddr)
+uint32_t NSPV_blocktime(int32_t hdrheight)
+{
+    if ( hdrheight > 0 )
+    {
+        NSPV_getinfo_req(hdrheight);
+        if ( NSPV_inforesult.hdrheight == hdrheight )
+        {
+            fprintf(stderr,"NSPV_blocktime ht.%d -> t%u\n",hdrheight,NSPV_inforesult.H.nTime);
+            return(NSPV_inforesult.H.nTime);
+        }
+    }
+    return(0);
+}
+
+UniValue NSPV_addressutxos(char *coinaddr,int32_t CCflag)
 {
     UniValue result(UniValue::VOBJ); uint8_t msg[64]; int32_t i,iter,slen,len = 0;
     //fprintf(stderr,"utxos %s NSPV addr %s\n",coinaddr,NSPV_address.c_str());
@@ -400,14 +415,14 @@ UniValue NSPV_addressutxos(char *coinaddr)
     msg[len++] = NSPV_UTXOS;
     msg[len++] = slen;
     memcpy(&msg[len],coinaddr,slen), len += slen;
-    msg[len] = 0;
+    msg[len++] = (CCflag != 0);
     for (iter=0; iter<3; iter++);
     if ( NSPV_req(0,msg,len,NODE_ADDRINDEX,msg[0]>>1) != 0 )
     {
         for (i=0; i<NSPV_POLLITERS; i++)
         {
             usleep(NSPV_POLLMICROS);
-            if ( NSPV_utxosresult.nodeheight >= NSPV_inforesult.height && strcmp(coinaddr,NSPV_utxosresult.coinaddr) == 0 )
+            if ( NSPV_utxosresult.nodeheight >= NSPV_inforesult.height && strcmp(coinaddr,NSPV_utxosresult.coinaddr) == 0 && CCflag == NSPV_utxosresult.CCflag )
                 return(NSPV_utxosresp_json(&NSPV_utxosresult));
         }
     } else sleep(1);

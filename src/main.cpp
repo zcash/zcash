@@ -762,7 +762,7 @@ bool komodo_dailysnapshot(int32_t height)
     // include only top 3999 address.
     if ( vAddressSnapshot.size() > 3999 ) vAddressSnapshot.resize(3999);
     lastSnapShotHeight = undo_height; 
-    fprintf(stderr, "vAddressSnapshot.size.%li\n", vAddressSnapshot.size());
+    fprintf(stderr, "vAddressSnapshot.size.%d\n", (int32_t)vAddressSnapshot.size());
     return true;
 }
 
@@ -4322,7 +4322,7 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
                 fprintf(stderr, "daily snapshot failed, please reindex your chain\n");
                 StartShutdown();
             }
-            fprintf(stderr, "snapshot completed in: %lu seconds\n", time(NULL)-start);
+            fprintf(stderr, "snapshot completed in: %d seconds\n", (int32_t)(time(NULL)-start));
         }
     }
     return true;

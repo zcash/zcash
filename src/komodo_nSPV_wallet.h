@@ -135,8 +135,9 @@ bool NSPV_SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const C
     if ( ProduceSignature(TransactionSignatureCreator(&keystore,&txNewConst,vini,utxovalue,SIGHASH_ALL),scriptPubKey,sigdata,NSPV_BRANCHID) != 0 )
     {
         UpdateTransaction(mtx,vini,sigdata);
+        // fprintf(stderr,"SIG_TXHASH %s vini.%d %.8f\n",SIG_TXHASH.GetHex().c_str(),vini,(double)utxovalue/COIN);
         return(true);
-    } // else fprintf(stderr,"signing error for SignTx vini.%d %.8f\n",vini,(double)utxovalue/COIN);
+    } // else fprintf(stderr,"sigerr SIG_TXHASH %s vini.%d %.8f\n",SIG_TXHASH.GetHex().c_str(),vini,(double)utxovalue/COIN);
     return(false);
 }
 
@@ -164,7 +165,7 @@ std::string NSPV_signtx(UniValue &retcodes,CMutableTransaction &mtx,uint64_t txf
         utxovout = mtx.vin[i].prevout.n;
         if ( i > 0 )
             sleep(1);
-        validation = NSPV_gettransaction(NSPV_SKIPFULLVALIDATION,utxovout,mtx.vin[i].prevout.hash,used[i].height,vintx);
+        validation = NSPV_gettransaction(0,utxovout,mtx.vin[i].prevout.hash,used[i].height,vintx);
         retcodes.push_back(validation);
         if ( validation != -1 ) // most others are degraded security
         {
@@ -217,9 +218,9 @@ UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis) // what its a
         result.push_back(Pair("error","couldnt getinfo"));
         return(result);
     }
-    if ( strcmp(NSPV_utxosresult.coinaddr,srcaddr) != 0 || NSPV_utxosresult.nodeheight < NSPV_inforesult.height )
-        NSPV_addressutxos(srcaddr);
-    if ( strcmp(NSPV_utxosresult.coinaddr,srcaddr) != 0 || NSPV_utxosresult.nodeheight < NSPV_inforesult.height )
+    if ( NSPV_utxosresult.CCflag != 0 || strcmp(NSPV_utxosresult.coinaddr,srcaddr) != 0 || NSPV_utxosresult.nodeheight < NSPV_inforesult.height )
+        NSPV_addressutxos(srcaddr,0);
+    if ( NSPV_utxosresult.CCflag != 0 || strcmp(NSPV_utxosresult.coinaddr,srcaddr) != 0 || NSPV_utxosresult.nodeheight < NSPV_inforesult.height )
     {
         result.push_back(Pair("result","error"));
         result.push_back(Pair("address",NSPV_utxosresult.coinaddr));

@@ -20,7 +20,6 @@
 
 // interest calculations are currently just using what is returned, it should calculate it from scratch
 
-// bruteforce sig -> NN pubkey validator
 // CC signing
 // make sure to sanity check all vector lengths on receipt
 // make sure no files are updated (this is to allow nSPV=1 and later nSPV=0 without affecting database)
@@ -28,7 +27,6 @@
 #ifndef KOMODO_NSPV_H
 #define KOMODO_NSPV_H
 
-#define NSPV_SKIPFULLVALIDATION 1   // changing to 0 issues 26 remote gettransaction, per utxo! need to change to bruteforcer
 #define NSPV_POLLITERS 10
 #define NSPV_POLLMICROS 100777
 #define NSPV_MAXVINS 64
@@ -53,6 +51,8 @@
 #define NSPV_BROADCASTRESP 0x0d
 
 int32_t NSPV_gettransaction(int32_t skipvalidation,int32_t vout,uint256 txid,int32_t height,CTransaction &tx);
+extern uint256 SIG_TXHASH;
+uint32_t NSPV_blocktime(int32_t hdrheight);
 
 int32_t iguana_rwbuf(int32_t rwflag,uint8_t *serialized,uint16_t len,uint8_t *buf)
 {
@@ -140,7 +140,7 @@ struct NSPV_utxosresp
     char coinaddr[64];
     int64_t total,interest;
     int32_t nodeheight;
-    uint16_t numutxos,pad16;
+    uint16_t numutxos; uint8_t CCflag,pad8;
 };
 
 int32_t NSPV_rwutxosresp(int32_t rwflag,uint8_t *serialized,struct NSPV_utxosresp *ptr) // check mempool
@@ -157,7 +157,8 @@ int32_t NSPV_rwutxosresp(int32_t rwflag,uint8_t *serialized,struct NSPV_utxosres
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->total),&ptr->total);
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->interest),&ptr->interest);
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->nodeheight),&ptr->nodeheight);
-    len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->pad16),&ptr->pad16);
+    len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->CCflag),&ptr->CCflag);
+    len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->pad8),&ptr->pad8);
     if ( rwflag != 0 )
     {
         memcpy(&serialized[len],ptr->coinaddr,sizeof(ptr->coinaddr));
@@ -421,6 +422,45 @@ int32_t NSPV_txextract(CTransaction &tx,uint8_t *data,int32_t datalen)
     else return(-1);
 }
 
+bool NSPV_SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const CScript scriptPubKey);
+
+int32_t NSPV_fastnotariescount(CTransaction tx,uint8_t elected[64][33])
+{
+    CPubKey pubkeys[64]; uint8_t sig[512]; CScript scriptPubKeys[64]; CMutableTransaction mtx(tx); int32_t vini,j,siglen,retval; uint64_t mask = 0; char *str; std::vector<std::vector<unsigned char>> vData;
+    for (j=0; j<64; j++)
+    {
+        pubkeys[j] = buf2pk(elected[j]);
+        scriptPubKeys[j] = (CScript() << ParseHex(HexStr(pubkeys[j])) << OP_CHECKSIG);
+        //fprintf(stderr,"%d %s\n",j,HexStr(pubkeys[j]).c_str());
+    }
+    fprintf(stderr,"txid %s\n",tx.GetHash().GetHex().c_str());
+    //for (vini=0; vini<tx.vin.size(); vini++)
+    //    mtx.vin[vini].scriptSig.resize(0);
+    for (vini=0; vini<tx.vin.size(); vini++)
+    {
+        CScript::const_iterator pc = tx.vin[vini].scriptSig.begin();
+        if ( tx.vin[vini].scriptSig.GetPushedData(pc,vData) != 0 )
+        {
+            vData[0].pop_back();
+            for (j=0; j<64; j++)
+            {
+                if ( ((1LL << j) & mask) != 0 )
+                    continue;
+                char coinaddr[64]; Getscriptaddress(coinaddr,scriptPubKeys[j]);
+                NSPV_SignTx(mtx,vini,10000,scriptPubKeys[j]); // sets SIG_TXHASH
+                if ( (retval= pubkeys[j].Verify(SIG_TXHASH,vData[0])) != 0 )
+                {
+                    fprintf(stderr,"(vini.%d %s.%d) ",vini,coinaddr,retval);
+                    mask |= (1LL << j);
+                    break;
+                }
+            }
+            fprintf(stderr," verified %llx\n",(long long)mask);
+        }
+    }
+    return(bitweight(mask));
+}
+
 /*
  NSPV_notariescount is the slowest process during full validation as it requires looking up 13 transactions.
  one way that would be 10000x faster would be to bruteforce validate the signatures in each vin, against all 64 pubkeys! for a valid tx, that is on average 13*32 secp256k1/sapling verify operations, which is much faster than even a single network request.
@@ -428,7 +468,6 @@ int32_t NSPV_txextract(CTransaction &tx,uint8_t *data,int32_t datalen)
  It could be that the fullnode side could calculate this and send it back to the superlite side as any hash that would validate 13 different ways has to be the valid txhash.
  However, since the vouts being spent by the notaries are highly constrained p2pk vouts, the txhash can be deduced if a specific notary pubkey is indeed the signer
  */
-
 int32_t NSPV_notariescount(CTransaction tx,uint8_t elected[64][33])
 {
     uint8_t *script; CTransaction vintx; int32_t i,j,utxovout,scriptlen,numsigs = 0;
@@ -479,9 +518,10 @@ int32_t NSPV_notarizationextract(int32_t verifyntz,int32_t *ntzheightp,uint256 *
         GetOpReturnData(tx.vout[1].scriptPubKey,opret);
         if ( opret.size() >= 32*2+4 )
         {
+            sleep(1);
             *desttxidp = NSPV_opretextract(ntzheightp,blockhashp,symbol,opret,tx.GetHash());
-            komodo_notaries(elected,*ntzheightp,0);
-            if ( verifyntz != 0 && (numsigs= NSPV_notariescount(tx,elected)) < 12 )
+            komodo_notaries(elected,*ntzheightp,NSPV_blocktime(*ntzheightp));
+            if ( verifyntz != 0 && (numsigs= NSPV_fastnotariescount(tx,elected)) < 12 )
             {
                 fprintf(stderr,"numsigs.%d error\n",numsigs);
                 return(-3);

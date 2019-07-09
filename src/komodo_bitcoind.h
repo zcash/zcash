@@ -2051,7 +2051,7 @@ uint64_t komodo_checknotarypay(CBlock *pblock,int32_t height)
                 total += txout.nValue;
                 //fprintf(stderr, "MATCHED AmountPaid.%lu notaryid.%i\n",AmountToPay,NotarisationNotaries[n-1]);
             }
-            else fprintf(stderr, "NOT MATCHED AmountPaid.%lu AmountToPay.%lu notaryid.%i\n", pblock->vtx[0].vout[n].nValue, AmountToPay, NotarisationNotaries[n-1]);
+            else fprintf(stderr, "NOT MATCHED AmountPaid.%llu AmountToPay.%llu notaryid.%i\n", (long long)pblock->vtx[0].vout[n].nValue, (long long)AmountToPay, NotarisationNotaries[n-1]);
         }
         n++;
     }
@@ -2347,7 +2347,7 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
             numSN = komodo_notaries(notarypubkeys, height, pblock->nTime);
             if ( pblock->vtx[1].vin.size() < numSN/5 )
             {
-                fprintf(stderr, "ht.%i does not meet minsigs.%i sigs.%li\n",height,numSN/5,pblock->vtx[1].vin.size());
+                fprintf(stderr, "ht.%i does not meet minsigs.%i sigs.%lld\n",height,numSN/5,(long long)pblock->vtx[1].vin.size());
                 return(-1);
             }
         }
