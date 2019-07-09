@@ -23,6 +23,7 @@
 // CC signing
 // make sure to sanity check all vector lengths on receipt
 // make sure no files are updated (this is to allow nSPV=1 and later nSPV=0 without affecting database)
+// bug: under load, fullnode was returning all 0 nServices
 
 #ifndef KOMODO_NSPV_H
 #define KOMODO_NSPV_H
