@@ -174,7 +174,7 @@ static int32_t ignorevin;
 bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock);
 int32_t is_hexstr(char *str,int32_t n);
 bool myAddtomempool(CTransaction &tx, CValidationState *pstate = NULL, bool fSkipExpiry = false);
-int32_t CCgettxout(uint256 txid,int32_t vout,int32_t mempoolflag,int32_t lockflag);
+int64_t CCgettxout(uint256 txid,int32_t vout,int32_t mempoolflag,int32_t lockflag);
 bool myIsutxo_spentinmempool(uint256 &spenttxid,int32_t &spentvini,uint256 txid,int32_t vout);
 bool mytxid_inmempool(uint256 txid);
 int32_t myIsutxo_spent(uint256 &spenttxid,uint256 txid,int32_t vout);
@@ -289,6 +289,7 @@ void SetCCtxids(std::vector<std::pair<CAddressIndexKey, CAmount> > &addressIndex
 int64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int32_t maxinputs);
 int64_t AddNormalinputs2(CMutableTransaction &mtx,int64_t total,int32_t maxinputs);
 int64_t CCutxovalue(char *coinaddr,uint256 utxotxid,int32_t utxovout,int32_t CCflag);
+bool NSPV_SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const CScript scriptPubKey);
 
 // curve25519 and sha256
 bits256 curve25519_shared(bits256 privkey,bits256 otherpub);

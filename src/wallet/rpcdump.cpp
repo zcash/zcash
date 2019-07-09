@@ -971,3 +971,115 @@ UniValue z_exportviewingkey(const UniValue& params, bool fHelp)
 
     return EncodeViewingKey(vk);
 }
+
+UniValue NSPV_getinfo_req(int32_t reqht);
+UniValue NSPV_login(char *wifstr);
+UniValue NSPV_logout();
+UniValue NSPV_addressutxos(char *coinaddr);
+UniValue NSPV_broadcast(char *hex);
+UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis);
+UniValue NSPV_spentinfo(uint256 txid,int32_t vout);
+UniValue NSPV_notarizations(int32_t height);
+UniValue NSPV_hdrsproof(int32_t prevheight,int32_t nextheight);
+UniValue NSPV_txproof(int32_t vout,uint256 txid,int32_t height);
+uint256 Parseuint256(const char *hexstr);
+extern std::string NSPV_address;
+
+UniValue nspv_getinfo(const UniValue& params, bool fHelp)
+{
+    int32_t reqht = 0;
+    if ( fHelp || params.size() > 1 )
+        throw runtime_error("nspv_getinfo [hdrheight]\n");
+    if ( params.size() == 1 )
+        reqht = atoi((char *)params[0].get_str().c_str());
+    return(NSPV_getinfo_req(reqht));
+}
+
+UniValue nspv_logout(const UniValue& params, bool fHelp)
+{
+    if ( fHelp || params.size() != 0 )
+        throw runtime_error("nspv_logout\n");
+    return(NSPV_logout());
+}
+
+UniValue nspv_login(const UniValue& params, bool fHelp)
+{
+    if ( fHelp || params.size() != 1 )
+        throw runtime_error("nspv_login wif\n");
+    return(NSPV_login((char *)params[0].get_str().c_str()));
+}
+
+UniValue nspv_listunspent(const UniValue& params, bool fHelp)
+{
+    if ( fHelp || params.size() > 1 )
+        throw runtime_error("nspv_listunspent address\n");
+    if ( params.size() == 0 )
+    {
+        if ( NSPV_address.size() != 0 )
+            return(NSPV_addressutxos((char *)NSPV_address.c_str()));
+        else throw runtime_error("nspv_listunspent address\n");
+    }
+    if ( params.size() == 1 )
+        return(NSPV_addressutxos((char *)params[0].get_str().c_str()));
+    else throw runtime_error("nspv_listunspent address\n");
+}
+
+UniValue nspv_spentinfo(const UniValue& params, bool fHelp)
+{
+    uint256 txid; int32_t vout;
+    if ( fHelp || params.size() != 2 )
+        throw runtime_error("nspv_spentinfo txid vout\n");
+    txid = Parseuint256((char *)params[0].get_str().c_str());
+    vout = atoi((char *)params[1].get_str().c_str());
+    return(NSPV_spentinfo(txid,vout));
+}
+
+UniValue nspv_notarizations(const UniValue& params, bool fHelp)
+{
+    int32_t height;
+    if ( fHelp || params.size() != 1 )
+        throw runtime_error("nspv_notarizations height\n");
+    height = atoi((char *)params[0].get_str().c_str());
+    return(NSPV_notarizations(height));
+}
+
+UniValue nspv_hdrsproof(const UniValue& params, bool fHelp)
+{
+    int32_t prevheight,nextheight;
+    if ( fHelp || params.size() != 2 )
+        throw runtime_error("nspv_hdrsproof prevheight nextheight\n");
+    prevheight = atoi((char *)params[0].get_str().c_str());
+    nextheight = atoi((char *)params[1].get_str().c_str());
+    return(NSPV_hdrsproof(prevheight,nextheight));
+}
+
+UniValue nspv_txproof(const UniValue& params, bool fHelp)
+{
+    uint256 txid; int32_t height;
+    if ( fHelp || params.size() != 2 )
+        throw runtime_error("nspv_txproof txid height\n");
+    txid = Parseuint256((char *)params[0].get_str().c_str());
+    height = atoi((char *)params[1].get_str().c_str());
+    return(NSPV_txproof(0,txid,height));
+}
+
+UniValue nspv_spend(const UniValue& params, bool fHelp)
+{
+    uint64_t satoshis;
+    if ( fHelp || params.size() != 2 )
+        throw runtime_error("nspv_spend destaddr amount\n");
+    if ( NSPV_address.size() == 0 )
+        throw runtime_error("to nspv_send you need an active nspv_login\n");
+    satoshis = atof(params[1].get_str().c_str())*COIN + 0.0000000049;
+    //fprintf(stderr,"satoshis.%lld from %.8f\n",(long long)satoshis,atof(params[1].get_str().c_str()));
+    if ( satoshis < 1000 )
+        throw runtime_error("amount too small\n");
+    return(NSPV_spend((char *)NSPV_address.c_str(),(char *)params[0].get_str().c_str(),satoshis));
+}
+
+UniValue nspv_broadcast(const UniValue& params, bool fHelp)
+{
+    if ( fHelp || params.size() != 1 )
+        throw runtime_error("nspv_broadcast hex\n");
+    return(NSPV_broadcast((char *)params[0].get_str().c_str()));
+}

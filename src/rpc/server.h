@@ -455,6 +455,17 @@ extern UniValue importgatewaypendingdeposits(const UniValue& params, bool fHelp)
 extern UniValue importgatewaypendingwithdraws(const UniValue& params, bool fHelp);
 extern UniValue importgatewayprocessed(const UniValue& params, bool fHelp);
 
+extern UniValue nspv_getinfo(const UniValue& params, bool fHelp);
+extern UniValue nspv_login(const UniValue& params, bool fHelp);
+extern UniValue nspv_listunspent(const UniValue& params, bool fHelp);
+extern UniValue nspv_spentinfo(const UniValue& params, bool fHelp);
+extern UniValue nspv_notarizations(const UniValue& params, bool fHelp);
+extern UniValue nspv_hdrsproof(const UniValue& params, bool fHelp);
+extern UniValue nspv_txproof(const UniValue& params, bool fHelp);
+extern UniValue nspv_spend(const UniValue& params, bool fHelp);
+extern UniValue nspv_broadcast(const UniValue& params, bool fHelp);
+extern UniValue nspv_logout(const UniValue& params, bool fHelp);
+
 extern UniValue getblocksubsidy(const UniValue& params, bool fHelp);
 
 extern UniValue z_exportkey(const UniValue& params, bool fHelp); // in rpcdump.cpp

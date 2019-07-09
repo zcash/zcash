@@ -437,9 +437,15 @@ std::vector<uint8_t> Mypubkey()
     return(pubkey);
 }
 
+extern CKey NSPV_key;
 bool Myprivkey(uint8_t myprivkey[])
 {
     char coinaddr[64],checkaddr[64]; std::string strAddress; char *dest; int32_t i,n; CBitcoinAddress address; CKeyID keyID; CKey vchSecret; uint8_t buf33[33];
+    if ( KOMODO_NSPV != 0 )
+    {
+        NSPV_key.SetKey32(myprivkey);
+        return true;
+    }
     if ( Getscriptaddress(coinaddr,CScript() << Mypubkey() << OP_CHECKSIG) != 0 )
     {
         n = (int32_t)strlen(coinaddr);
