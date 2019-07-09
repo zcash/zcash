@@ -53,6 +53,7 @@
 #define NSPV_BROADCASTRESP 0x0d
 
 int32_t NSPV_gettransaction(int32_t skipvalidation,int32_t vout,uint256 txid,int32_t height,CTransaction &tx);
+extern uint256 SIG_TXHASH;
 
 int32_t iguana_rwbuf(int32_t rwflag,uint8_t *serialized,uint16_t len,uint8_t *buf)
 {
