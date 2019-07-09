@@ -436,8 +436,8 @@ int32_t NSPV_fastnotariescount(CTransaction tx,uint8_t elected[64][33])
         //fprintf(stderr,"%d %s\n",j,HexStr(pubkeys[j]).c_str());
     }
     //fprintf(stderr,"txid %s\n",tx.GetHash().GetHex().c_str());
-    for (vini=0; vini<tx.vin.size(); vini++)
-        mtx.vin[vini].scriptSig.resize(0);
+    //for (vini=0; vini<tx.vin.size(); vini++)
+    //    mtx.vin[vini].scriptSig.resize(0);
     for (vini=0; vini<tx.vin.size(); vini++)
     {
         CScript::const_iterator pc = tx.vin[vini].scriptSig.begin();
@@ -446,16 +446,18 @@ int32_t NSPV_fastnotariescount(CTransaction tx,uint8_t elected[64][33])
             vData[0].pop_back();
             for (j=0; j<64; j++)
             {
-                //char coinaddr[64]; Getscriptaddress(coinaddr,scriptPubKeys[j]);
+                if ( ((1LL << j) & mask) != 0 )
+                    continue;
+                char coinaddr[64]; Getscriptaddress(coinaddr,scriptPubKeys[j]);
                 NSPV_SignTx(mtx,vini,10000,scriptPubKeys[j]); // sets SIG_TXHASH
                 if ( (retval= pubkeys[j].Verify(SIG_TXHASH,vData[0])) != 0 )
                 {
-                    //fprintf(stderr,"%s.%d ",coinaddr,retval);
+                    fprintf(stderr,"(vini.%d %s.%d) ",vini,coinaddr,retval);
                     mask |= (1LL << j);
                     break;
                 }
             }
-            //fprintf(stderr," verifies\n");
+            fprintf(stderr," verified %llx\n",(long long)mask);
         }
     }
     return(bitweight(mask));
