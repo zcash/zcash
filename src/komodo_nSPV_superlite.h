@@ -102,6 +102,8 @@ void komodo_nSPVresp(CNode *pfrom,std::vector<uint8_t> response) // received a r
 CNode *NSPV_req(CNode *pnode,uint8_t *msg,int32_t len,uint64_t mask,int32_t ind)
 {
     int32_t n,flag = 0; CNode *pnodes[64]; uint32_t timestamp = (uint32_t)time(NULL);
+    if ( KOMODO_NSPV == 0 )
+        return(0);
     if ( pnode == 0 )
     {
         memset(pnodes,0,sizeof(pnodes));
@@ -155,8 +157,6 @@ UniValue NSPV_logout()
 void komodo_nSPV(CNode *pto) // polling loop from SendMessages
 {
     uint8_t msg[256]; int32_t i,len=0; uint32_t timestamp = (uint32_t)time(NULL);
-    if ( KOMODO_NSPV == 0 )
-        return;
     if ( NSPV_logintime != 0 && timestamp > NSPV_logintime+NSPV_AUTOLOGOUT )
         NSPV_logout();
     if ( (pto->nServices & NODE_NSPV) == 0 )
