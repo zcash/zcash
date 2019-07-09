@@ -349,6 +349,16 @@ extern UniValue FSMcreate(const UniValue& params, bool fHelp);
 extern UniValue FSMlist(const UniValue& params, bool fHelp);
 extern UniValue FSMinfo(const UniValue& params, bool fHelp);
 extern UniValue auctionaddress(const UniValue& params, bool fHelp);
+extern UniValue pegscreate(const UniValue& params, bool fHelp);
+extern UniValue pegsfund(const UniValue& params, bool fHelp);
+extern UniValue pegsget(const UniValue& params, bool fHelp);
+extern UniValue pegsredeem(const UniValue& params, bool fHelp);
+extern UniValue pegsliquidate(const UniValue& params, bool fHelp);
+extern UniValue pegsexchange(const UniValue& params, bool fHelp);
+extern UniValue pegsaccounthistory(const UniValue& params, bool fHelp);
+extern UniValue pegsaccountinfo(const UniValue& params, bool fHelp);
+extern UniValue pegsworstaccounts(const UniValue& params, bool fHelp);
+extern UniValue pegsinfo(const UniValue& params, bool fHelp);
 
 extern UniValue getnewaddress(const UniValue& params, bool fHelp); // in rpcwallet.cpp
 //extern UniValue getnewaddress64(const UniValue& params, bool fHelp); // in rpcwallet.cpp
