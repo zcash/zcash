@@ -3974,7 +3974,8 @@ bool static FlushStateToDisk(CValidationState &state, FlushStateMode mode) {
 
 void FlushStateToDisk() {
     CValidationState state;
-    FlushStateToDisk(state, FLUSH_STATE_ALWAYS);
+    if ( KOMODO_NSPV == 0 )
+        FlushStateToDisk(state, FLUSH_STATE_ALWAYS);
 }
 
 void PruneAndFlush() {
