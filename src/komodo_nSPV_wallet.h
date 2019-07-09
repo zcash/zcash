@@ -218,9 +218,9 @@ UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis) // what its a
         result.push_back(Pair("error","couldnt getinfo"));
         return(result);
     }
-    if ( strcmp(NSPV_utxosresult.coinaddr,srcaddr) != 0 || NSPV_utxosresult.nodeheight < NSPV_inforesult.height )
+    if ( NSPV_utxosresult.CCflag != 0 || strcmp(NSPV_utxosresult.coinaddr,srcaddr) != 0 || NSPV_utxosresult.nodeheight < NSPV_inforesult.height )
         NSPV_addressutxos(srcaddr,0);
-    if ( strcmp(NSPV_utxosresult.coinaddr,srcaddr) != 0 || NSPV_utxosresult.nodeheight < NSPV_inforesult.height )
+    if ( NSPV_utxosresult.CCflag != 0 || strcmp(NSPV_utxosresult.coinaddr,srcaddr) != 0 || NSPV_utxosresult.nodeheight < NSPV_inforesult.height )
     {
         result.push_back(Pair("result","error"));
         result.push_back(Pair("address",NSPV_utxosresult.coinaddr));
