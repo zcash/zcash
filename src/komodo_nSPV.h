@@ -28,7 +28,7 @@
 #ifndef KOMODO_NSPV_H
 #define KOMODO_NSPV_H
 
-#define NSPV_SKIPFULLVALIDATION 1   // changing to 0 issues 26 remote gettransaction, per utxo! need to change to bruteforcer
+#define NSPV_SKIPFULLVALIDATION 0   // changing to 0 issues 26 remote gettx, per utxo! need local bruteforcer
 #define NSPV_POLLITERS 10
 #define NSPV_POLLMICROS 100777
 #define NSPV_MAXVINS 64
@@ -439,7 +439,7 @@ int32_t NSPV_newnotariescount(CTransaction tx,uint8_t elected[64][33])
     for (j=0; j<64; j++)
     {
         pubkeys[j] = buf2pk(elected[j]);
-        scriptPubKeys[j] = CScript() << ParseHex(HexStr(pubkeys[j])) << OP_CHECKSIG);
+        scriptPubKeys[j] = (CScript() << ParseHex(HexStr(pubkeys[j])) << OP_CHECKSIG);
     }
     for (vini=0; vini<tx.vin.size(); vini++)
     {
