@@ -264,7 +264,7 @@ UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis) // what its a
             result.push_back(Pair("error","wif expired"));
             return(result);
         }
-        hex = NSPV_signtx(retcodes,mtx,txfee,opret,used,0);
+        hex = NSPV_signtx(retcodes,mtx,txfee,opret,used);
         if ( hex.size() > 0 )
         {
             if ( DecodeHexTx(tx,hex) != 0 )
