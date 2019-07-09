@@ -445,7 +445,7 @@ int32_t NSPV_newnotariescount(CTransaction tx,uint8_t elected[64][33])
     {
         CScript::const_iterator pc = tx.vin[vini].scriptSig.begin();
         //CScript::const_iterator pend = tx.vin[vini].scriptSig.end();
-        if ( GetPushedData(pc,vchSig) != 0 )
+        if ( CScript::GetPushedData(pc,vchSig) != 0 )
         {
             for (j=0; j<vchSig.size(); j++)
                 fprintf(stderr,"%02x",vchSig[j]);
