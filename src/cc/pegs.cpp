@@ -86,12 +86,12 @@ pegs CC is able to create a coin backed (by any supported coin with gateways CC 
  */
 
 // start of consensus code
-#ifndef PEGS_TRSHOLDS
-#define PEGS_TRSHOLDS
+#ifndef PEGS_THRESHOLDS
+#define PEGS_THRESHOLDS
 #define PEGS_ACCOUNT_YELLOW_ZONE 60
-#define PEGS_ACCOUNT_TRESHOLD 90
-#define PEGS_GLOBAL_TRESHOLD 60
-#endif // PEGS_TRSHOLDS
+#define PEGS_ACCOUNT_THRESHOLD 90
+#define PEGS_GLOBAL_THRESHOLD 60
+#endif // PEGS_THRESHOLDS
 #define CC_MARKER_VALUE 10000
 
 extern uint64_t ASSETCHAINS_PEGSCCPARAMS[3];
@@ -1154,9 +1154,9 @@ std::string PegsLiquidate(uint64_t txfee,uint256 pegstxid, uint256 tokenid, uint
         LOGSTREAM("pegscc",CCLOG_INFO, stream << CCerror << std::endl);
         return(""); 
     }
-    if (PegsGetAccountRatio(pegstxid,tokenid,liquidatetxid)<(ASSETCHAINS_PEGSCCPARAMS[0]?ASSETCHAINS_PEGSCCPARAMS[0]:PEGS_ACCOUNT_TRESHOLD) || PegsGetGlobalRatio(pegstxid)<(ASSETCHAINS_PEGSCCPARAMS[1]?ASSETCHAINS_PEGSCCPARAMS[1]:PEGS_GLOBAL_TRESHOLD))
+    if (PegsGetAccountRatio(pegstxid,tokenid,liquidatetxid)<(ASSETCHAINS_PEGSCCPARAMS[0]?ASSETCHAINS_PEGSCCPARAMS[0]:PEGS_ACCOUNT_THRESHOLD) || PegsGetGlobalRatio(pegstxid)<(ASSETCHAINS_PEGSCCPARAMS[1]?ASSETCHAINS_PEGSCCPARAMS[1]:PEGS_GLOBAL_THRESHOLD))
     {
-        CCerror = strprintf("not able to liquidate account until account ratio > %lu%% and global ratio > %lu%%",(ASSETCHAINS_PEGSCCPARAMS[0]?ASSETCHAINS_PEGSCCPARAMS[0]:PEGS_ACCOUNT_TRESHOLD),(ASSETCHAINS_PEGSCCPARAMS[1]?ASSETCHAINS_PEGSCCPARAMS[1]:PEGS_GLOBAL_TRESHOLD));
+        CCerror = strprintf("not able to liquidate account until account ratio > %lu%% and global ratio > %lu%%",(ASSETCHAINS_PEGSCCPARAMS[0]?ASSETCHAINS_PEGSCCPARAMS[0]:PEGS_ACCOUNT_THRESHOLD),(ASSETCHAINS_PEGSCCPARAMS[1]?ASSETCHAINS_PEGSCCPARAMS[1]:PEGS_GLOBAL_THRESHOLD));
         LOGSTREAM("pegscc",CCLOG_INFO, stream << CCerror << std::endl);
         return("");
     }

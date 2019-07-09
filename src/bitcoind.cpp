@@ -68,8 +68,13 @@ void komodo_cbopretupdate(int32_t forceflag);
 
 void WaitForShutdown(boost::thread_group* threadGroup)
 {
-    int32_t i; bool fShutdown = ShutdownRequested();
+    int32_t i,height; bool fShutdown = ShutdownRequested(); const uint256 zeroid;
     // Tell the main threads to shutdown.
+    if (komodo_currentheight()>100 && KOMODO_EARLYTXID!=zeroid && ((height=tx_height(KOMODO_EARLYTXID))==0 || height>100))
+    {
+        fprintf(stderr,"error: earlytx must be before block height 100 or tx does not exist\n");
+        StartShutdown();
+    }
     if ( ASSETCHAINS_CBOPRET != 0 )
         komodo_pricesinit();
     while (!fShutdown)
