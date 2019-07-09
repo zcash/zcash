@@ -23,3 +23,4 @@ ifneq ($(canonical_host),$(build))
   linux_CFLAGS += -idirafter /usr/$(host)/include
   linux_LDFLAGS += -L/usr/$(host)/lib
 endif
+linux_cmake_system=Linux
