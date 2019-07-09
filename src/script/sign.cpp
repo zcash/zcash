@@ -42,11 +42,13 @@ TransactionSignatureCreator::TransactionSignatureCreator(const CKeyStore* keysto
 bool TransactionSignatureCreator::CreateSig(std::vector<unsigned char>& vchSig, const CKeyID& address, const CScript& scriptCode, uint32_t consensusBranchId, CKey *pprivKey, void *extraData) const
 {
     CKey key;
+    fprintf(stderr,"createsig\n");
     if (pprivKey)
         key = *pprivKey;
     else if (!keystore || !keystore->GetKey(address, key))
         return false;
-    
+    fprintf(stderr,"createsig2\n");
+
     uint256 hash;
     try {
         hash = SignatureHash(scriptCode, *txTo, nIn, nHashType, amount, consensusBranchId);
