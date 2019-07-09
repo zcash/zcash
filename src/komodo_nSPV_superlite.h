@@ -386,6 +386,20 @@ UniValue NSPV_getinfo_req(int32_t reqht)
     return(NSPV_getinfo_json(&NSPV_inforesult));
 }
 
+uint32_t NSPV_blocktime(int32_t hdrheight)
+{
+    if ( hdrheight > 0 )
+    {
+        NSPV_getinfo_req(hdrheight)
+        if ( NSPV_inforesult.hdrheight == hdrheight )
+        {
+            fprintf(stderr,"NSPV_blocktime ht.%d -> t%u\n",hdrheight,NSPV_inforesult.H.nTime);
+            return(NSPV_inforesult.H.nTime);
+        }
+    }
+    return(0);
+}
+
 UniValue NSPV_addressutxos(char *coinaddr,int32_t CCflag)
 {
     UniValue result(UniValue::VOBJ); uint8_t msg[64]; int32_t i,iter,slen,len = 0;

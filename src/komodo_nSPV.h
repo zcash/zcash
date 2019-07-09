@@ -54,6 +54,7 @@
 
 int32_t NSPV_gettransaction(int32_t skipvalidation,int32_t vout,uint256 txid,int32_t height,CTransaction &tx);
 extern uint256 SIG_TXHASH;
+uint32_t NSPV_blocktime(int32_t hdrheight);
 
 int32_t iguana_rwbuf(int32_t rwflag,uint8_t *serialized,uint16_t len,uint8_t *buf)
 {
@@ -518,7 +519,7 @@ int32_t NSPV_notarizationextract(int32_t verifyntz,int32_t *ntzheightp,uint256 *
         if ( opret.size() >= 32*2+4 )
         {
             *desttxidp = NSPV_opretextract(ntzheightp,blockhashp,symbol,opret,tx.GetHash());
-            komodo_notaries(elected,*ntzheightp,0);
+            komodo_notaries(elected,*ntzheightp,NSPV_blocktime(*ntzheightp));
             if ( verifyntz != 0 && (numsigs= NSPV_newnotariescount(tx,elected)) < 12 )
             {
                 fprintf(stderr,"numsigs.%d error\n",numsigs);
