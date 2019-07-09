@@ -435,7 +435,7 @@ bool NSPV_SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const C
 
 int32_t NSPV_newnotariescount(CTransaction tx,uint8_t elected[64][33])
 {
-    CPubKey pubkeys[64]; CScript scriptPubKeys[64]; CMutableTransaction mtx(tx); int32_t vini,j,numsigs = 0;
+    CPubKey pubkeys[64]; std::vector<uint8_t> vchSig; CScript scriptPubKeys[64]; CMutableTransaction mtx(tx); int32_t vini,j,numsigs = 0;
     for (j=0; j<64; j++)
     {
         pubkeys[j] = buf2pk(elected[j]);
@@ -443,11 +443,14 @@ int32_t NSPV_newnotariescount(CTransaction tx,uint8_t elected[64][33])
     }
     for (vini=0; vini<tx.vin.size(); vini++)
     {
+        vchSig = tx.vin[vini].scriptSig;
+        vchSig.pop_back();
         for (j=0; j<64; j++)
         {
             NSPV_SignTx(mtx,vini,10000,scriptPubKeys[j]);
-            // seck256k1 validate tx.vin[vini].scriptSig vs SIG_TXHASH pubkeys[j];
+            fprintf(stderr,"%d ",pubkeys[j].Verify(SIG_TXHASH,vchSig));
         }
+        fprintf(stderr," verifies\n");
     }
     return(numsigs);
 }
