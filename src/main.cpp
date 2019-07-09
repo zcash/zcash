@@ -7245,6 +7245,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
 
         if ( KOMODO_NSPV != 0 )
         {
+            fprintf(stderr,"peer nServices.%llx nSPV peer.%d\n",(long long)pform->nServices,pfrom->id);
             if ( (pfrom->nServices & NODE_NSPV) == 0 )
             {
                 //fprintf(stderr,"invalid nSPV peer.%d\n",pfrom->id);
