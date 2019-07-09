@@ -424,6 +424,43 @@ int32_t NSPV_txextract(CTransaction &tx,uint8_t *data,int32_t datalen)
     else return(-1);
 }
 
+bool NSPV_SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const CScript scriptPubKey);
+
+int32_t NSPV_fastnotariescount(CTransaction tx,uint8_t elected[64][33])
+{
+    CPubKey pubkeys[64]; uint8_t sig[512]; CScript scriptPubKeys[64]; CMutableTransaction mtx(tx); int32_t vini,j,siglen,retval; uint64_t mask = 0; char *str; std::vector<std::vector<unsigned char>> vData;
+    for (j=0; j<64; j++)
+    {
+        pubkeys[j] = buf2pk(elected[j]);
+        scriptPubKeys[j] = (CScript() << ParseHex(HexStr(pubkeys[j])) << OP_CHECKSIG);
+        //fprintf(stderr,"%d %s\n",j,HexStr(pubkeys[j]).c_str());
+    }
+    //fprintf(stderr,"txid %s\n",tx.GetHash().GetHex().c_str());
+    for (vini=0; vini<tx.vin.size(); vini++)
+        mtx.vin[vini].scriptSig.resize(0);
+    for (vini=0; vini<tx.vin.size(); vini++)
+    {
+        CScript::const_iterator pc = tx.vin[vini].scriptSig.begin();
+        if ( tx.vin[vini].scriptSig.GetPushedData(pc,vData) != 0 )
+        {
+            vData[0].pop_back();
+            for (j=0; j<64; j++)
+            {
+                //char coinaddr[64]; Getscriptaddress(coinaddr,scriptPubKeys[j]);
+                NSPV_SignTx(mtx,vini,10000,scriptPubKeys[j]); // sets SIG_TXHASH
+                if ( (retval= pubkeys[j].Verify(SIG_TXHASH,vData[0])) != 0 )
+                {
+                    //fprintf(stderr,"%s.%d ",coinaddr,retval);
+                    mask |= (1LL << j);
+                    break;
+                }
+            }
+            //fprintf(stderr," verifies\n");
+        }
+    }
+    return(bitweight(numsigs));
+}
+
 /*
  NSPV_notariescount is the slowest process during full validation as it requires looking up 13 transactions.
  one way that would be 10000x faster would be to bruteforce validate the signatures in each vin, against all 64 pubkeys! for a valid tx, that is on average 13*32 secp256k1/sapling verify operations, which is much faster than even a single network request.
@@ -431,43 +468,6 @@ int32_t NSPV_txextract(CTransaction &tx,uint8_t *data,int32_t datalen)
  It could be that the fullnode side could calculate this and send it back to the superlite side as any hash that would validate 13 different ways has to be the valid txhash.
  However, since the vouts being spent by the notaries are highly constrained p2pk vouts, the txhash can be deduced if a specific notary pubkey is indeed the signer
  */
-
-bool NSPV_SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const CScript scriptPubKey);
-
-int32_t NSPV_newnotariescount(CTransaction tx,uint8_t elected[64][33])
-{
-    CPubKey pubkeys[64]; uint8_t sig[512]; char coinaddr[64]; CScript scriptPubKeys[64]; CMutableTransaction mtx(tx); int32_t vini,j,siglen,numsigs = 0; char *str; std::vector<std::vector<unsigned char>> vData;
-    for (j=0; j<64; j++)
-    {
-        pubkeys[j] = buf2pk(elected[j]);
-        scriptPubKeys[j] = (CScript() << ParseHex(HexStr(pubkeys[j])) << OP_CHECKSIG);
-        fprintf(stderr,"%d %s\n",j,HexStr(pubkeys[j]).c_str());
-    }
-    fprintf(stderr,"txid %s\n",tx.GetHash().GetHex().c_str());
-    for (vini=0; vini<tx.vin.size(); vini++)
-        mtx.vin[vini].scriptSig.resize(0);
-    for (vini=0; vini<tx.vin.size(); vini++)
-    {
-        CScript::const_iterator pc = tx.vin[vini].scriptSig.begin();
-        //CScript::const_iterator pend = tx.vin[vini].scriptSig.end();
-        if ( tx.vin[vini].scriptSig.GetPushedData(pc,vData) != 0 )
-        {
-            vData[0].pop_back();
-            //for (j=0; j<vData[0].size(); j++)
-            //    fprintf(stderr,"%02x",vData[0][j]);
-            //fprintf(stderr," vData[0]\n");
-            for (j=0; j<64; j++)
-            {
-                Getscriptaddress(coinaddr,scriptPubKeys[j]);
-                NSPV_SignTx(mtx,vini,10000,scriptPubKeys[j]); // sets SIG_TXHASH
-                fprintf(stderr,"%s.%d ",coinaddr,pubkeys[j].Verify(SIG_TXHASH,vData[0]));
-            }
-            fprintf(stderr," verifies\n");
-        }
-    }
-    return(numsigs);
-}
-
 int32_t NSPV_notariescount(CTransaction tx,uint8_t elected[64][33])
 {
     uint8_t *script; CTransaction vintx; int32_t i,j,utxovout,scriptlen,numsigs = 0;
@@ -520,7 +520,7 @@ int32_t NSPV_notarizationextract(int32_t verifyntz,int32_t *ntzheightp,uint256 *
         {
             *desttxidp = NSPV_opretextract(ntzheightp,blockhashp,symbol,opret,tx.GetHash());
             komodo_notaries(elected,*ntzheightp,NSPV_blocktime(*ntzheightp));
-            if ( verifyntz != 0 && (numsigs= NSPV_newnotariescount(tx,elected)) < 12 )
+            if ( verifyntz != 0 && (numsigs= NSPV_fastnotariescount(tx,elected)) < 12 )
             {
                 fprintf(stderr,"numsigs.%d error\n",numsigs);
                 return(-3);
