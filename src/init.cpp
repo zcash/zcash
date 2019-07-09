@@ -1581,6 +1581,11 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
                     break;
                 }
 
+                if (!fReindex && chainActive.Tip()->nChainSproutValue == boost::none) {
+                    strLoadError = _("You need to run with a -reindex to rebuild the database.");
+                    break;
+                }
+
                 if (!fReindex) {
                     uiInterface.InitMessage(_("Rewinding blocks if needed..."));
                     if (!RewindBlockIndex(chainparams, clearWitnessCaches)) {
