@@ -90,12 +90,10 @@
 
 using namespace std;
 
+#include "komodo_defs.h"
 extern void ThreadSendAlert();
 extern bool komodo_dailysnapshot(int32_t height);
 extern int32_t KOMODO_LOADINGBLOCKS;
-extern bool VERUS_MINTBLOCKS;
-extern char ASSETCHAINS_SYMBOL[];
-extern int32_t KOMODO_SNAPSHOT_INTERVAL;
 
 ZCJoinSplit* pzcashParams = NULL;
 
@@ -978,13 +976,15 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     // Make sure enough file descriptors are available
     int nBind = std::max((int)mapArgs.count("-bind") + (int)mapArgs.count("-whitebind"), 1);
     nMaxConnections = GetArg("-maxconnections", DEFAULT_MAX_PEER_CONNECTIONS);
+    //fprintf(stderr,"nMaxConnections %d\n",nMaxConnections);
     nMaxConnections = std::max(std::min(nMaxConnections, (int)(FD_SETSIZE - nBind - MIN_CORE_FILEDESCRIPTORS)), 0);
     int nFD = RaiseFileDescriptorLimit(nMaxConnections + MIN_CORE_FILEDESCRIPTORS);
+    //fprintf(stderr,"nMaxConnections %d FD_SETSIZE.%d nBind.%d expr.%d \n",nMaxConnections,FD_SETSIZE,nBind,(int)(FD_SETSIZE - nBind - MIN_CORE_FILEDESCRIPTORS));
     if (nFD < MIN_CORE_FILEDESCRIPTORS)
         return InitError(_("Not enough file descriptors available."));
     if (nFD - MIN_CORE_FILEDESCRIPTORS < nMaxConnections)
         nMaxConnections = nFD - MIN_CORE_FILEDESCRIPTORS;
-
+    fprintf(stderr,"nMaxConnections %d\n",nMaxConnections);
     // if using block pruning, then disable txindex
     // also disable the wallet (for now, until SPV support is implemented in wallet)
     if (GetArg("-prune", 0)) {
@@ -1066,6 +1066,11 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     RegisterAllCoreRPCCommands(tableRPC);
 #ifdef ENABLE_WALLET
     bool fDisableWallet = GetBoolArg("-disablewallet", false);
+    if ( KOMODO_NSPV != 0 )
+    {
+        fDisableWallet = true;
+        nLocalServices = 0;
+    }
     if (!fDisableWallet)
         RegisterWalletRPCCommands(tableRPC);
 #endif
@@ -1299,9 +1304,11 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     libsnark::inhibit_profiling_info = true;
     libsnark::inhibit_profiling_counters = true;
 
-    // Initialize Zcash circuit parameters
-    ZC_LoadParams(chainparams);
-
+    if ( KOMODO_NSPV == 0 )
+    {
+        // Initialize Zcash circuit parameters
+        ZC_LoadParams(chainparams);
+    }
     /* Start the RPC server already.  It will be started in "warmup" mode
      * and not really process calls already (but it will signify connections
      * that the server is there and will be ready later).  Warmup mode will
@@ -1478,6 +1485,17 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     }
 #endif
 
+    if ( KOMODO_NSPV != 0 )
+    {
+        std::vector<boost::filesystem::path> vImportFiles;
+        threadGroup.create_thread(boost::bind(&ThreadImport, vImportFiles));
+        StartNode(threadGroup, scheduler);
+        pcoinsTip = new CCoinsViewCache(pcoinscatcher);
+        InitBlockIndex();
+        SetRPCWarmupFinished();
+        uiInterface.InitMessage(_("Done loading"));
+        return !fRequestShutdown;
+    }
     // ********************************************************* Step 7: load block chain
 
     fReindex = GetBoolArg("-reindex", false);
@@ -1890,7 +1908,11 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             PruneAndFlush();
         }
     }
-
+    if ( GetBoolArg("-addressindex", DEFAULT_ADDRESSINDEX) != 0 )
+        nLocalServices |= NODE_ADDRINDEX;
+    if ( GetBoolArg("-spentindex", DEFAULT_SPENTINDEX) != 0 )
+        nLocalServices |= NODE_SPENTINDEX;
+fprintf(stderr,"nLocalServices %llx %d, %d\n",(long long)nLocalServices,GetBoolArg("-addressindex", DEFAULT_ADDRESSINDEX),GetBoolArg("-spentindex", DEFAULT_SPENTINDEX));
     // ********************************************************* Step 10: import blocks
 
     if (mapArgs.count("-blocknotify"))

@@ -158,9 +158,11 @@ char *komodo_chainname()
      return(ASSETCHAINS_SYMBOL[0] == 0 ? (char *)"KMD" : ASSETCHAINS_SYMBOL);
 }
 
+void OS_randombytes(unsigned char *x,long xlen);
+
 UniValue getnewaddress(const UniValue& params, bool fHelp)
 {
-    if (!EnsureWalletIsAvailable(fHelp))
+    if ( KOMODO_NSPV == 0 && !EnsureWalletIsAvailable(fHelp) )
         return NullUniValue;
 
     if (fHelp || params.size() > 1)
@@ -176,6 +178,23 @@ UniValue getnewaddress(const UniValue& params, bool fHelp)
             + HelpExampleRpc("getnewaddress", "")
         );
 
+    if ( KOMODO_NSPV != 0 )
+    {
+        UniValue result(UniValue::VOBJ); uint8_t priv32[32];
+#ifndef __WIN32
+        OS_randombytes(priv32,sizeof(priv32));
+#else
+        randombytes_buf(priv32,sizeof(priv32));
+#endif
+        CKey key;
+        key.Set(&priv32[0],&priv32[32], true);
+        CPubKey pubkey = key.GetPubKey();
+        CKeyID vchAddress = pubkey.GetID();
+        result.push_back(Pair("wif",EncodeSecret(key)));
+        result.push_back(Pair("address",EncodeDestination(vchAddress)));
+        result.push_back(Pair("pubkey",HexStr(pubkey)));
+        return(result);
+    }
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
     // Parse the account first so we don't generate a key if there's an error
@@ -2955,7 +2974,7 @@ UniValue listunspent(const UniValue& params, bool fHelp)
 uint64_t komodo_interestsum()
 {
 #ifdef ENABLE_WALLET
-    if ( ASSETCHAINS_SYMBOL[0] == 0 && GetBoolArg("-disablewallet", false) == 0 )
+    if ( ASSETCHAINS_SYMBOL[0] == 0 && GetBoolArg("-disablewallet", false) == 0 && KOMODO_NSPV == 0 )
     {
         uint64_t interest,sum = 0; int32_t txheight; uint32_t locktime;
         vector<COutput> vecOutputs;
