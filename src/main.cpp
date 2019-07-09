@@ -3974,7 +3974,8 @@ bool static FlushStateToDisk(CValidationState &state, FlushStateMode mode) {
 
 void FlushStateToDisk() {
     CValidationState state;
-    FlushStateToDisk(state, FLUSH_STATE_ALWAYS);
+    if ( KOMODO_NSPV == 0 )
+        FlushStateToDisk(state, FLUSH_STATE_ALWAYS);
 }
 
 void PruneAndFlush() {
@@ -7247,7 +7248,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         {
             if ( (pfrom->nServices & NODE_NSPV) == 0 )
             {
-                //fprintf(stderr,"invalid nSPV peer.%d\n",pfrom->id);
+                // fprintf(stderr,"invalid nServices.%llx nSPV peer.%d\n",(long long)pfrom->nServices,pfrom->id);
                 pfrom->fDisconnect = true;
                 return false;
             }

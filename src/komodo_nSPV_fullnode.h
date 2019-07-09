@@ -210,12 +210,17 @@ int32_t NSPV_sendrawtransaction(struct NSPV_broadcastresp *ptr,uint8_t *data,int
     {
         LOCK(cs_main);
         ptr->txid = tx.GetHash();
-        fprintf(stderr,"addmempool transaction %s\n",ptr->txid.GetHex().c_str());
+        fprintf(stderr,"try to addmempool transaction %s\n",ptr->txid.GetHex().c_str());
         if ( myAddtomempool(tx) != 0 )
+        {
+            int32_t i;
+            for (i=0; i<n; i++)
+                fprintf(stderr,"%02x",data[i]);
+            fprintf(stderr," relay transaction %s retcode.%d\n",ptr->txid.GetHex().c_str(),ptr->retcode);
             ptr->retcode = 1;
-        else ptr->retcode = 0;
-        //fprintf(stderr,"relay transaction %s retcode.%d\n",ptr->txid.GetHex().c_str(),ptr->retcode);
-        RelayTransaction(tx);
+            RelayTransaction(tx);
+        } else ptr->retcode = -3;
+
     } else ptr->retcode = -1;
     return(sizeof(*ptr));
 }

@@ -132,7 +132,7 @@ bool NSPV_SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const C
             fprintf(stderr,"%02x",((uint8_t *)&scriptPubKey)[i]);
         fprintf(stderr," scriptPubKey\n");
     }
-    if ( nTime < KOMODO_SAPLING_ACTIVATION )
+    if ( nTime != 0 && nTime < KOMODO_SAPLING_ACTIVATION )
     {
         fprintf(stderr,"use legacy sig validation\n");
         branchid = 0;
