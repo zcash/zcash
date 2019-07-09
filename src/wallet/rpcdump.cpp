@@ -975,7 +975,7 @@ UniValue z_exportviewingkey(const UniValue& params, bool fHelp)
 UniValue NSPV_getinfo_req(int32_t reqht);
 UniValue NSPV_login(char *wifstr);
 UniValue NSPV_logout();
-UniValue NSPV_addressutxos(char *coinaddr);
+UniValue NSPV_addressutxos(char *coinaddr,int32_t CCflag);
 UniValue NSPV_broadcast(char *hex);
 UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis);
 UniValue NSPV_spentinfo(uint256 txid,int32_t vout);
@@ -1011,17 +1011,22 @@ UniValue nspv_login(const UniValue& params, bool fHelp)
 
 UniValue nspv_listunspent(const UniValue& params, bool fHelp)
 {
-    if ( fHelp || params.size() > 1 )
-        throw runtime_error("nspv_listunspent address\n");
+    int32_t CCflag = 0;
+    if ( fHelp || params.size() > 2 )
+        throw runtime_error("nspv_listunspent address [isCC]\n");
     if ( params.size() == 0 )
     {
         if ( NSPV_address.size() != 0 )
-            return(NSPV_addressutxos((char *)NSPV_address.c_str()));
-        else throw runtime_error("nspv_listunspent address\n");
+            return(NSPV_addressutxos((char *)NSPV_address.c_str(),0));
+        else throw runtime_error("nspv_listunspent address [isCC]\n");
     }
-    if ( params.size() == 1 )
-        return(NSPV_addressutxos((char *)params[0].get_str().c_str()));
-    else throw runtime_error("nspv_listunspent address\n");
+    if ( params.size() >= 1 )
+    {
+        if ( params.size() == 2 )
+            CCflag = atoi((char *)params[1].get_str().c_str());
+        return(NSPV_addressutxos((char *)params[0].get_str().c_str(),CCflag));
+    }
+    else throw runtime_error("nspv_listunspent address [isCC]\n");
 }
 
 UniValue nspv_spentinfo(const UniValue& params, bool fHelp)

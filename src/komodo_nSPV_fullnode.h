@@ -137,7 +137,7 @@ int32_t NSPV_getinfo(struct NSPV_inforesp *ptr,int32_t reqheight)
     } else return(-1);
 }
 
-int32_t NSPV_getaddressutxos(struct NSPV_utxosresp *ptr,char *coinaddr) // check mempool
+int32_t NSPV_getaddressutxos(struct NSPV_utxosresp *ptr,char *coinaddr,bool isCC) // check mempool
 {
     int64_t total = 0,interest=0; uint32_t locktime; int32_t tipheight,maxlen,txheight,n = 0,len = 0;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
@@ -362,12 +362,16 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
             if ( timestamp > pfrom->prevtimes[ind] )
             {
                 struct NSPV_utxosresp U; char coinaddr[64];
-                if ( len < 64 && request[1] == len-2 )
+                if ( len < 64 && (request[1] == len-2 || request[1] == len-3) )
                 {
+                    uint8_t isCC = 0;
                     memcpy(coinaddr,&request[2],request[1]);
                     coinaddr[request[1]] = 0;
+                    if ( request[1] == len-3 )
+                        isCC = (request[len-1] != 0);
+        fprintf(stderr,"isCC.%d\n",isCC);
                     memset(&U,0,sizeof(U));
-                    if ( (slen= NSPV_getaddressutxos(&U,coinaddr)) > 0 )
+                    if ( (slen= NSPV_getaddressutxos(&U,coinaddr,isCC)) > 0 )
                     {
                         response.resize(1 + slen);
                         response[0] = NSPV_UTXOSRESP;

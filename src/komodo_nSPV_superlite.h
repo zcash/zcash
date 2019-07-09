@@ -385,7 +385,7 @@ UniValue NSPV_getinfo_req(int32_t reqht)
     return(NSPV_getinfo_json(&NSPV_inforesult));
 }
 
-UniValue NSPV_addressutxos(char *coinaddr)
+UniValue NSPV_addressutxos(char *coinaddr,int32_t CCflag)
 {
     UniValue result(UniValue::VOBJ); uint8_t msg[64]; int32_t i,iter,slen,len = 0;
     //fprintf(stderr,"utxos %s NSPV addr %s\n",coinaddr,NSPV_address.c_str());
@@ -400,7 +400,7 @@ UniValue NSPV_addressutxos(char *coinaddr)
     msg[len++] = NSPV_UTXOS;
     msg[len++] = slen;
     memcpy(&msg[len],coinaddr,slen), len += slen;
-    msg[len] = 0;
+    msg[len++] = (CCflag != 0);
     for (iter=0; iter<3; iter++);
     if ( NSPV_req(0,msg,len,NODE_ADDRINDEX,msg[0]>>1) != 0 )
     {
