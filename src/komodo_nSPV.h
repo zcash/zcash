@@ -20,6 +20,8 @@
 
 // interest calculations are currently just using what is returned, it should calculate it from scratch
 
+// bruteforce sig -> NN pubkey validator
+// CC signing
 // make sure to sanity check all vector lengths on receipt
 // make sure no files are updated (this is to allow nSPV=1 and later nSPV=0 without affecting database)
 
