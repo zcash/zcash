@@ -121,9 +121,9 @@ int64_t NSPV_addinputs(struct NSPV_utxoresp *used,CMutableTransaction &mtx,int64
     return(0);
 }
 
-bool NSPV_SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const CScript scriptPubKey)
+bool NSPV_SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const CScript scriptPubKey,uint32_t nTime)
 {
-    CTransaction txNewConst(mtx); SignatureData sigdata; CBasicKeyStore keystore;
+    CTransaction txNewConst(mtx); SignatureData sigdata; CBasicKeyStore keystore; int64_t branchid = NSPV_BRANCHID;
     keystore.AddKey(NSPV_key);
     if ( 0 )
     {
@@ -132,7 +132,12 @@ bool NSPV_SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const C
             fprintf(stderr,"%02x",((uint8_t *)&scriptPubKey)[i]);
         fprintf(stderr," scriptPubKey\n");
     }
-    if ( ProduceSignature(TransactionSignatureCreator(&keystore,&txNewConst,vini,utxovalue,SIGHASH_ALL),scriptPubKey,sigdata,NSPV_BRANCHID) != 0 )
+    if ( nTime < KOMODO_SAPLING_ACTIVATION )
+    {
+        fprintf(stderr,"use legacy sig validation\n");
+        branchid = 0;
+    }
+    if ( ProduceSignature(TransactionSignatureCreator(&keystore,&txNewConst,vini,utxovalue,SIGHASH_ALL),scriptPubKey,sigdata,branchid) != 0 )
     {
         UpdateTransaction(mtx,vini,sigdata);
         // fprintf(stderr,"SIG_TXHASH %s vini.%d %.8f\n",SIG_TXHASH.GetHex().c_str(),vini,(double)utxovalue/COIN);
@@ -179,7 +184,7 @@ std::string NSPV_signtx(UniValue &retcodes,CMutableTransaction &mtx,uint64_t txf
                 fprintf(stderr,"vintx vout mismatch %d != %d\n",utxovout,used[i].vout);
                 return("");
             }
-            else if ( NSPV_SignTx(mtx,i,vintx.vout[utxovout].nValue,vintx.vout[utxovout].scriptPubKey) == 0 )
+            else if ( NSPV_SignTx(mtx,i,vintx.vout[utxovout].nValue,vintx.vout[utxovout].scriptPubKey,0) == 0 )
             {
                 fprintf(stderr,"signing error for vini.%d\n",i);
                 return("");
@@ -259,7 +264,7 @@ UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis) // what its a
             result.push_back(Pair("error","wif expired"));
             return(result);
         }
-        hex = NSPV_signtx(retcodes,mtx,txfee,opret,used);
+        hex = NSPV_signtx(retcodes,mtx,txfee,opret,used,0);
         if ( hex.size() > 0 )
         {
             if ( DecodeHexTx(tx,hex) != 0 )
