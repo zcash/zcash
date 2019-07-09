@@ -435,7 +435,7 @@ int32_t NSPV_fastnotariescount(CTransaction tx,uint8_t elected[64][33])
         scriptPubKeys[j] = (CScript() << ParseHex(HexStr(pubkeys[j])) << OP_CHECKSIG);
         //fprintf(stderr,"%d %s\n",j,HexStr(pubkeys[j]).c_str());
     }
-    //fprintf(stderr,"txid %s\n",tx.GetHash().GetHex().c_str());
+    fprintf(stderr,"txid %s\n",tx.GetHash().GetHex().c_str());
     //for (vini=0; vini<tx.vin.size(); vini++)
     //    mtx.vin[vini].scriptSig.resize(0);
     for (vini=0; vini<tx.vin.size(); vini++)
