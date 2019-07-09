@@ -445,14 +445,14 @@ int32_t NSPV_newnotariescount(CTransaction tx,uint8_t elected[64][33])
     {
         CScript::const_iterator pc = tx.vin[vini].scriptSig.begin();
         //CScript::const_iterator pend = tx.vin[vini].scriptSig.end();
-        if ( CScript::GetPushedData(pc,vData) != 0 )
+        if ( tx.vin[vini].scriptSig.GetPushedData(pc,vData) != 0 )
         {
             for (j=0; j<vData[0].size(); j++)
                 fprintf(stderr,"%02x",vData[0][j]);
             fprintf(stderr," vData[0]\n");
             for (j=0; j<64; j++)
             {
-                NSPV_SignTx(mtx,vini,10000,scriptPubKeys[j]);
+                NSPV_SignTx(mtx,vini,10000,scriptPubKeys[j]); // sets SIG_TXHASH
                 fprintf(stderr,"%d ",pubkeys[j].Verify(SIG_TXHASH,vData[0]));
             }
             fprintf(stderr," verifies\n");
