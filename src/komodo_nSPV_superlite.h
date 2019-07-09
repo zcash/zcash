@@ -235,6 +235,7 @@ UniValue NSPV_getinfo_json(struct NSPV_inforesp *ptr)
 {
     UniValue result(UniValue::VOBJ); int32_t expiration; uint32_t timestamp = (uint32_t)time(NULL);
     result.push_back(Pair("result","success"));
+    result.push_back(Pair("nSPV",KOMODO_NSPV!=0?"superlite":"fullnode"));
     if ( NSPV_address.size() != 0 )
     {
         result.push_back(Pair("address",NSPV_address));
