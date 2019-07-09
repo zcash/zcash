@@ -435,7 +435,7 @@ bool NSPV_SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const C
 
 int32_t NSPV_newnotariescount(CTransaction tx,uint8_t elected[64][33])
 {
-    CPubKey pubkeys[64]; uint8_t sig[512]; CScript scriptPubKeys[64]; CMutableTransaction mtx(tx); int32_t vini,j,siglen,numsigs = 0; char *str; std::vector<uint8_t> vchSig;
+    CPubKey pubkeys[64]; uint8_t sig[512]; CScript scriptPubKeys[64]; CMutableTransaction mtx(tx); int32_t vini,j,siglen,numsigs = 0; char *str; std::vector<std::vector<unsigned char>>& vData;
     for (j=0; j<64; j++)
     {
         pubkeys[j] = buf2pk(elected[j]);
@@ -445,15 +445,15 @@ int32_t NSPV_newnotariescount(CTransaction tx,uint8_t elected[64][33])
     {
         CScript::const_iterator pc = tx.vin[vini].scriptSig.begin();
         //CScript::const_iterator pend = tx.vin[vini].scriptSig.end();
-        if ( CScript::GetPushedData(pc,vchSig) != 0 )
+        if ( CScript::GetPushedData(pc,vData) != 0 )
         {
-            for (j=0; j<vchSig.size(); j++)
-                fprintf(stderr,"%02x",vchSig[j]);
-            fprintf(stderr," vchSig\n");
+            for (j=0; j<vData[0].size(); j++)
+                fprintf(stderr,"%02x",vData[0][j]);
+            fprintf(stderr," vData[0]\n");
             for (j=0; j<64; j++)
             {
                 NSPV_SignTx(mtx,vini,10000,scriptPubKeys[j]);
-                fprintf(stderr,"%d ",pubkeys[j].Verify(SIG_TXHASH,vchSig));
+                fprintf(stderr,"%d ",pubkeys[j].Verify(SIG_TXHASH,vData[0]));
             }
             fprintf(stderr," verifies\n");
         }
