@@ -422,9 +422,9 @@ int32_t NSPV_txextract(CTransaction &tx,uint8_t *data,int32_t datalen)
     else return(-1);
 }
 
-bool NSPV_SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const CScript scriptPubKey);
+bool NSPV_SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const CScript scriptPubKey,uint32_t nTime);
 
-int32_t NSPV_fastnotariescount(CTransaction tx,uint8_t elected[64][33])
+int32_t NSPV_fastnotariescount(CTransaction tx,uint8_t elected[64][33],uint32_t nTime)
 {
     CPubKey pubkeys[64]; uint8_t sig[512]; CScript scriptPubKeys[64]; CMutableTransaction mtx(tx); int32_t vini,j,siglen,retval; uint64_t mask = 0; char *str; std::vector<std::vector<unsigned char>> vData;
     for (j=0; j<64; j++)
@@ -447,7 +447,7 @@ int32_t NSPV_fastnotariescount(CTransaction tx,uint8_t elected[64][33])
                 if ( ((1LL << j) & mask) != 0 )
                     continue;
                 char coinaddr[64]; Getscriptaddress(coinaddr,scriptPubKeys[j]);
-                NSPV_SignTx(mtx,vini,10000,scriptPubKeys[j]); // sets SIG_TXHASH
+                NSPV_SignTx(mtx,vini,10000,scriptPubKeys[j],nTime); // sets SIG_TXHASH
                 if ( (retval= pubkeys[j].Verify(SIG_TXHASH,vData[0])) != 0 )
                 {
                     fprintf(stderr,"(vini.%d %s.%d) ",vini,coinaddr,retval);
@@ -511,7 +511,7 @@ uint256 NSPV_opretextract(int32_t *heightp,uint256 *blockhashp,char *symbol,std:
 
 int32_t NSPV_notarizationextract(int32_t verifyntz,int32_t *ntzheightp,uint256 *blockhashp,uint256 *desttxidp,CTransaction tx)
 {
-    int32_t numsigs=0; uint8_t elected[64][33]; char *symbol; std::vector<uint8_t> opret;
+    int32_t numsigs=0; uint8_t elected[64][33]; char *symbol; std::vector<uint8_t> opret; uint32_t nTime;
     if ( tx.vout.size() >= 2 )
     {
         symbol = (ASSETCHAINS_SYMBOL[0] == 0) ? (char *)"KMD" : ASSETCHAINS_SYMBOL;
@@ -520,8 +520,9 @@ int32_t NSPV_notarizationextract(int32_t verifyntz,int32_t *ntzheightp,uint256 *
         {
             sleep(1);
             *desttxidp = NSPV_opretextract(ntzheightp,blockhashp,symbol,opret,tx.GetHash());
-            komodo_notaries(elected,*ntzheightp,NSPV_blocktime(*ntzheightp));
-            if ( verifyntz != 0 && (numsigs= NSPV_fastnotariescount(tx,elected)) < 12 )
+            nTime = NSPV_blocktime(*ntzheightp);
+            komodo_notaries(elected,*ntzheightp,nTime);
+            if ( verifyntz != 0 && (numsigs= NSPV_fastnotariescount(tx,elected,nTime)) < 12 )
             {
                 fprintf(stderr,"numsigs.%d error\n",numsigs);
                 return(-3);
