@@ -443,21 +443,20 @@ int32_t NSPV_newnotariescount(CTransaction tx,uint8_t elected[64][33])
     }
     for (vini=0; vini<tx.vin.size(); vini++)
     {
-        str = (char *)tx.vin[vini].scriptSig.ToString().c_str();
-        fprintf(stderr,"scriptSig %s\n",str);
-        siglen = (int32_t)strlen(str)/2;
-        decode_hex(sig,siglen,str);
-        vchSig.resize(siglen-1);
-        memcpy(&vchSig[0],sig,siglen-1);
-        for (j=0; j<siglen; j++)
-            fprintf(stderr,"%02x",vchSig[j]);
-        fprintf(stderr," vchSig\n");
-        for (j=0; j<64; j++)
+        CScript::const_iterator pc = tx.vin[vini].scriptSig.begin();
+        //CScript::const_iterator pend = tx.vin[vini].scriptSig.end();
+        if ( GetPushedData(pc,vchSig) != 0 )
         {
-            NSPV_SignTx(mtx,vini,10000,scriptPubKeys[j]);
-            fprintf(stderr,"%d ",pubkeys[j].Verify(SIG_TXHASH,vchSig));
+            for (j=0; j<vchSig.size(); j++)
+                fprintf(stderr,"%02x",vchSig[j]);
+            fprintf(stderr," vchSig\n");
+            for (j=0; j<64; j++)
+            {
+                NSPV_SignTx(mtx,vini,10000,scriptPubKeys[j]);
+                fprintf(stderr,"%d ",pubkeys[j].Verify(SIG_TXHASH,vchSig));
+            }
+            fprintf(stderr," verifies\n");
         }
-        fprintf(stderr," verifies\n");
     }
     return(numsigs);
 }
