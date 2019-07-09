@@ -441,6 +441,9 @@ int32_t NSPV_newnotariescount(CTransaction tx,uint8_t elected[64][33])
         pubkeys[j] = buf2pk(elected[j]);
         scriptPubKeys[j] = (CScript() << ParseHex(HexStr(pubkeys[j])) << OP_CHECKSIG);
     }
+    fprintf(stderr,"txid %s\n",tx.GetHash().GetHex().c_str());
+    for (vini=0; vini<tx.vin.size(); vini++)
+        mtx.vin[vini].scriptSig.resize(0);
     for (vini=0; vini<tx.vin.size(); vini++)
     {
         CScript::const_iterator pc = tx.vin[vini].scriptSig.begin();
