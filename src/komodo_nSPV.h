@@ -435,7 +435,7 @@ bool NSPV_SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const C
 
 int32_t NSPV_newnotariescount(CTransaction tx,uint8_t elected[64][33])
 {
-    CPubKey pubkeys[64]; uint8_t *ptr; CScript scriptPubKeys[64]; CMutableTransaction mtx(tx); int32_t vini,j,siglen,numsigs = 0;
+    CPubKey pubkeys[64]; uint8_t sig[512]; CScript scriptPubKeys[64]; CMutableTransaction mtx(tx); int32_t vini,j,siglen,numsigs = 0; char *str;
     for (j=0; j<64; j++)
     {
         pubkeys[j] = buf2pk(elected[j]);
@@ -443,19 +443,14 @@ int32_t NSPV_newnotariescount(CTransaction tx,uint8_t elected[64][33])
     }
     for (vini=0; vini<tx.vin.size(); vini++)
     {
-        ptr = (uint8_t *)&tx.vin[vini].scriptSig;
-        std::vector<uint8_t> vchSig;
-        siglen = ptr[16];
-        vchSig.resize(siglen);
-        for (j=0; j<tx.vin[vini].scriptSig.size(); j++)
-        {
-            if ( j > 17 && j < 17+siglen )
-                vchSig[j-17] = ptr[j];
-            fprintf(stderr,"%02x",ptr[j]);
-        }
-        fprintf(stderr," sig.%d siglen.%d\n",vini,siglen);
+        str = (char *)tx.vin[vini].scriptSig.ToString().c_str();
+        fprintf(stderr,"scriptSig %s\n",str);
+        siglen = (int32_t)strlen(str)/2;
+        decode_hex(sig,siglen,str);
+        vchSig.resize(siglen-1);
+        memcpy(&vchSig[0],sig,siglen-1);
         for (j=0; j<siglen; j++)
-            fprintf(stderr,"%02x",ptr[j]);
+            fprintf(stderr,"%02x",vchSig[j]);
         fprintf(stderr," vchSig\n");
         for (j=0; j<64; j++)
         {
