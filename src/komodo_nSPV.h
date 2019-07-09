@@ -435,7 +435,7 @@ bool NSPV_SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const C
 
 int32_t NSPV_newnotariescount(CTransaction tx,uint8_t elected[64][33])
 {
-    CPubKey pubkeys[64]; uint8_t sig[512]; CScript scriptPubKeys[64]; CMutableTransaction mtx(tx); int32_t vini,j,siglen,numsigs = 0; char *str; std::vector<std::vector<unsigned char>>& vData;
+    CPubKey pubkeys[64]; uint8_t sig[512]; CScript scriptPubKeys[64]; CMutableTransaction mtx(tx); int32_t vini,j,siglen,numsigs = 0; char *str; std::vector<std::vector<unsigned char>> vData;
     for (j=0; j<64; j++)
     {
         pubkeys[j] = buf2pk(elected[j]);
