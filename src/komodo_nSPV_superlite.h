@@ -276,6 +276,7 @@ UniValue NSPV_utxosresp_json(struct NSPV_utxosresp *ptr)
     result.push_back(Pair("result","success"));
     result.push_back(Pair("utxos",NSPV_utxoresp_json(ptr->utxos,ptr->numutxos)));
     result.push_back(Pair("address",ptr->coinaddr));
+    result.push_back(Pair("isCC",ptr->CCflag));
     result.push_back(Pair("height",(int64_t)ptr->nodeheight));
     result.push_back(Pair("numutxos",(int64_t)ptr->numutxos));
     result.push_back(Pair("balance",(double)ptr->total/COIN));

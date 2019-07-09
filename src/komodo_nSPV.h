@@ -140,7 +140,7 @@ struct NSPV_utxosresp
     char coinaddr[64];
     int64_t total,interest;
     int32_t nodeheight;
-    uint16_t numutxos,pad16;
+    uint16_t numutxos; uint8_t CCflag,pad8;
 };
 
 int32_t NSPV_rwutxosresp(int32_t rwflag,uint8_t *serialized,struct NSPV_utxosresp *ptr) // check mempool
@@ -157,7 +157,8 @@ int32_t NSPV_rwutxosresp(int32_t rwflag,uint8_t *serialized,struct NSPV_utxosres
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->total),&ptr->total);
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->interest),&ptr->interest);
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->nodeheight),&ptr->nodeheight);
-    len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->pad16),&ptr->pad16);
+    len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->CCflag),&ptr->CCflag);
+    len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->pad8),&ptr->pad8);
     if ( rwflag != 0 )
     {
         memcpy(&serialized[len],ptr->coinaddr,sizeof(ptr->coinaddr));

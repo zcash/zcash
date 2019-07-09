@@ -218,7 +218,7 @@ UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis) // what its a
         return(result);
     }
     if ( strcmp(NSPV_utxosresult.coinaddr,srcaddr) != 0 || NSPV_utxosresult.nodeheight < NSPV_inforesult.height )
-        NSPV_addressutxos(srcaddr);
+        NSPV_addressutxos(srcaddr,0);
     if ( strcmp(NSPV_utxosresult.coinaddr,srcaddr) != 0 || NSPV_utxosresult.nodeheight < NSPV_inforesult.height )
     {
         result.push_back(Pair("result","error"));
