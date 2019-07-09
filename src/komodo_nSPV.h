@@ -443,7 +443,7 @@ int32_t NSPV_newnotariescount(CTransaction tx,uint8_t elected[64][33])
     }
     for (vini=0; vini<tx.vin.size(); vini++)
     {
-        ptr = tx.vin[vini].scriptSig.data();
+        ptr = tx.vin[vini].scriptSig.ptr();
         std::vector<uint8_t> vchSig;
         vchSig.resize(tx.vin[vini].scriptSig.size()-2);
         for (j=0; j<tx.vin[vini].scriptSig.size(); j++)
