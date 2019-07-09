@@ -131,7 +131,8 @@ CNode *NSPV_req(CNode *pnode,uint8_t *msg,int32_t len,uint64_t mask,int32_t ind)
         std::vector<uint8_t> request;
         request.resize(len);
         memcpy(&request[0],msg,len);
-        fprintf(stderr,"pushmessage [%d] len.%d\n",msg[0],len);
+        if ( KOMODO_NSPV == 0 )
+            fprintf(stderr,"pushmessage [%d] len.%d\n",msg[0],len);
         pnode->PushMessage("getnSPV",request);
         pnode->prevtimes[ind] = timestamp;
         return(pnode);
