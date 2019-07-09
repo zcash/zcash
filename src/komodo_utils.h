@@ -1787,13 +1787,7 @@ void komodo_args(char *argv0)
     {
         printf("KOMODO_REWIND %d\n",KOMODO_REWIND);
     }
-    KOMODO_EARLYTXID = Parseuint256(GetArg("-earlytxid","0").c_str());
-    CTransaction tx; uint256 blockhash;
-    if (KOMODO_EARLYTXID!=zeroid && myGetTransaction(KOMODO_EARLYTXID,tx,blockhash) && (mapBlockIndex[blockhash]->GetHeight() == 0 || mapBlockIndex[blockhash]->GetHeight() > 100))
-    {
-        fprintf(stderr,"error: earlytx can be only in first 100 blocks or tx does not exist\n");
-        StartShutdown();
-    }
+    KOMODO_EARLYTXID = Parseuint256(GetArg("-earlytxid","0").c_str());    
     ASSETCHAINS_EARLYTXIDCONTRACT = GetArg("-ac_earlytxidcontract",0);
     if ( name.c_str()[0] != 0 )
     {
