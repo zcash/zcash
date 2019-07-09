@@ -20,7 +20,6 @@
 
 // interest calculations are currently just using what is returned, it should calculate it from scratch
 
-// bruteforce sig -> NN pubkey validator
 // CC signing
 // make sure to sanity check all vector lengths on receipt
 // make sure no files are updated (this is to allow nSPV=1 and later nSPV=0 without affecting database)
@@ -28,7 +27,6 @@
 #ifndef KOMODO_NSPV_H
 #define KOMODO_NSPV_H
 
-#define NSPV_SKIPFULLVALIDATION 0   // changing to 0 issues 26 remote gettx, per utxo! need local bruteforcer
 #define NSPV_POLLITERS 10
 #define NSPV_POLLMICROS 100777
 #define NSPV_MAXVINS 64
