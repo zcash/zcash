@@ -458,7 +458,7 @@ int32_t NSPV_fastnotariescount(CTransaction tx,uint8_t elected[64][33])
             //fprintf(stderr," verifies\n");
         }
     }
-    return(bitweight(numsigs));
+    return(bitweight(mask));
 }
 
 /*
