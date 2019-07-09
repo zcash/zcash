@@ -53,7 +53,7 @@ bool TransactionSignatureCreator::CreateSig(std::vector<unsigned char>& vchSig, 
     } catch (logic_error ex) {
         return false;
     }
-    TXHASH = hash;
+    SIG_TXHASH = hash;
     if (scriptCode.IsPayToCryptoCondition())
     {
         CC *cc = (CC *)extraData;
