@@ -390,7 +390,7 @@ uint32_t NSPV_blocktime(int32_t hdrheight)
 {
     if ( hdrheight > 0 )
     {
-        NSPV_getinfo_req(hdrheight)
+        NSPV_getinfo_req(hdrheight);
         if ( NSPV_inforesult.hdrheight == hdrheight )
         {
             fprintf(stderr,"NSPV_blocktime ht.%d -> t%u\n",hdrheight,NSPV_inforesult.H.nTime);
