@@ -343,7 +343,7 @@ int32_t NSPV_rwntzsproofresp(int32_t rwflag,uint8_t *serialized,struct NSPV_ntzs
     return(len);
 }
 
-void NSPV_ntzsproof_copy(struct NSPV_ntzsproofresp *dest,struct NSPV_ntzsproofresp *ptr)
+void NSPV_ntzsproofresp_copy(struct NSPV_ntzsproofresp *dest,struct NSPV_ntzsproofresp *ptr)
 {
     *dest = *ptr;
     if ( ptr->common.hdrs != 0 )

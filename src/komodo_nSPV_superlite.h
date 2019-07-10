@@ -105,7 +105,7 @@ struct NSPV_ntzsproofresp *NSPV_ntzsproof_add(struct NSPV_ntzsproofresp *ptr)
     if ( i == sizeof(NSPV_ntzsproofresp_cache)/sizeof(*NSPV_ntzsproofresp_cache) )
         i == (rand() % (sizeof(NSPV_ntzsproofresp_cache)/sizeof(*NSPV_ntzsproofresp_cache)));
     NSPV_ntzsproofresp_purge(&NSPV_ntzsproofresp_cache[i]);
-    NSPV_ntzsproof_copy(&NSPV_ntzsproofresp_cache[i],ptr);
+    NSPV_ntzsproofresp_copy(&NSPV_ntzsproofresp_cache[i],ptr);
     fprintf(stderr,"ADD CACHE ntzsproof %s %s\n",ptr->prevtxid.GetHex().c_str(),ptr->nexttxid.GetHex().c_str());
     return(&NSPV_ntzsproofresp_cache[i]);
 }
@@ -215,7 +215,7 @@ CNode *NSPV_req(CNode *pnode,uint8_t *msg,int32_t len,uint64_t mask,int32_t ind)
         std::vector<uint8_t> request;
         request.resize(len);
         memcpy(&request[0],msg,len);
-        if ( KOMODO_NSPV != 0 )
+        if ( (0) && KOMODO_NSPV != 0 )
             fprintf(stderr,"pushmessage [%d] len.%d\n",msg[0],len);
         pnode->PushMessage("getnSPV",request);
         pnode->prevtimes[ind] = timestamp;
@@ -568,8 +568,8 @@ UniValue NSPV_txidhdrsproof(uint256 prevtxid,uint256 nexttxid)
     if ( (ptr= NSPV_ntzsproof_find(prevtxid,nexttxid)) != 0 )
     {
         fprintf(stderr,"FROM CACHE NSPV_txidhdrsproof %s %s\n",ptr->prevtxid.GetHex().c_str(),ptr->nexttxid.GetHex().c_str());
-        NSPV_txidhdrsproof_purge(&NSPV_ntzsproofresult);
-        NSPV_txidhdrsproof_copy(&NSPV_ntzsproofresult,ptr);
+        NSPV_ntzsproofresp_purge(&NSPV_ntzsproofresult);
+        NSPV_ntzsproofresp_copy(&NSPV_ntzsproofresult,ptr);
         return(NSPV_ntzsproof_json(ptr));
     }
     NSPV_ntzsproofresp_purge(&NSPV_ntzsproofresult);
