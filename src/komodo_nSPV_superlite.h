@@ -592,33 +592,36 @@ int32_t NSPV_validatehdrs(struct NSPV_ntzsproofresp *ptr)
 {
     int32_t i,height,txidht; CTransaction tx; uint256 blockhash,txid,desttxid;
     if ( (ptr->common.nextht-ptr->common.prevht+1) != ptr->common.numhdrs )
-        return(-1);
-    else if ( NSPV_txextract(tx,ptr->nextntz,ptr->nexttxlen) < 0 )
+    {
+        fprintf(stderr,"next.%d prev.%d -> %d vs %d\n",,ptr->common.nextht,ptr->common.prevht,ptr->common.nextht-ptr->common.prevht+1,ptr->common.numhdrs);
         return(-2);
-    else if ( tx.GetHash() != ptr->nexttxid )
+    }
+    else if ( NSPV_txextract(tx,ptr->nextntz,ptr->nexttxlen) < 0 )
         return(-3);
-    else if ( NSPV_notarizationextract(1,&height,&blockhash,&desttxid,tx) < 0 )
+    else if ( tx.GetHash() != ptr->nexttxid )
         return(-4);
-    else if ( height != ptr->common.nextht )
+    else if ( NSPV_notarizationextract(1,&height,&blockhash,&desttxid,tx) < 0 )
         return(-5);
-    else if ( NSPV_hdrhash(&ptr->common.hdrs[ptr->common.numhdrs-1]) != blockhash )
+    else if ( height != ptr->common.nextht )
         return(-6);
+    else if ( NSPV_hdrhash(&ptr->common.hdrs[ptr->common.numhdrs-1]) != blockhash )
+        return(-7);
     for (i=ptr->common.numhdrs-1; i>0; i--)
     {
         blockhash = NSPV_hdrhash(&ptr->common.hdrs[i-1]);
         if ( blockhash != ptr->common.hdrs[i].hashPrevBlock )
-            return(-i-12);
+            return(-i-13);
     }
     if ( NSPV_txextract(tx,ptr->prevntz,ptr->prevtxlen) < 0 )
-        return(-7);
-    else if ( tx.GetHash() != ptr->prevtxid )
         return(-8);
-    else if ( NSPV_notarizationextract(1,&height,&blockhash,&desttxid,tx) < 0 )
+    else if ( tx.GetHash() != ptr->prevtxid )
         return(-9);
-    else if ( height != ptr->common.prevht )
+    else if ( NSPV_notarizationextract(1,&height,&blockhash,&desttxid,tx) < 0 )
         return(-10);
-    else if ( NSPV_hdrhash(&ptr->common.hdrs[0]) != blockhash )
+    else if ( height != ptr->common.prevht )
         return(-11);
+    else if ( NSPV_hdrhash(&ptr->common.hdrs[0]) != blockhash )
+        return(-12);
     return(0);
 }
 
@@ -668,7 +671,7 @@ int32_t NSPV_gettransaction(int32_t skipvalidation,int32_t vout,uint256 txid,int
         }
         if ( NSPV_ntzsresult.prevntz.height != 0 && NSPV_ntzsresult.prevntz.height <= NSPV_ntzsresult.nextntz.height )
         {
-            fprintf(stderr,"gettx ht.%d prev.%d next.%d\n",height,NSPV_ntzsresult.prevntz.height, NSPV_ntzsresult.nextntz.height);
+            fprintf(stderr,">>>>> gettx ht.%d prev.%d next.%d\n",height,NSPV_ntzsresult.prevntz.height, NSPV_ntzsresult.nextntz.height);
             offset = (height - NSPV_ntzsresult.prevntz.height);
             if ( offset >= 0 && height <= NSPV_ntzsresult.nextntz.height )
             {
