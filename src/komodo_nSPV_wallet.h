@@ -228,7 +228,7 @@ bool NSPV_SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const C
 {
     CTransaction txNewConst(mtx); SignatureData sigdata; CBasicKeyStore keystore; int64_t branchid = NSPV_BRANCHID;
     keystore.AddKey(NSPV_key);
-    if ( 0 )
+    if ( 1 )
     {
         int32_t i;
         for (i=0; i<scriptPubKey.size()+4; i++)
@@ -245,7 +245,7 @@ bool NSPV_SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const C
         UpdateTransaction(mtx,vini,sigdata);
         // fprintf(stderr,"SIG_TXHASH %s vini.%d %.8f\n",SIG_TXHASH.GetHex().c_str(),vini,(double)utxovalue/COIN);
         return(true);
-    } // else fprintf(stderr,"sigerr SIG_TXHASH %s vini.%d %.8f\n",SIG_TXHASH.GetHex().c_str(),vini,(double)utxovalue/COIN);
+    }  else fprintf(stderr,"sigerr SIG_TXHASH %s vini.%d %.8f\n",SIG_TXHASH.GetHex().c_str(),vini,(double)utxovalue/COIN);
     return(false);
 }
 
