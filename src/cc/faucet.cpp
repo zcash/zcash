@@ -226,7 +226,7 @@ std::string FaucetFund(uint64_t txfee,int64_t funds)
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
     faucetpk = GetUnspendable(cp,0);
-    if ( AddNormalinputs(mtx,mypk,funds+txfee,64,&NSPV_U) > 0 )
+    if ( AddNormalinputs(mtx,mypk,funds+txfee,64) > 0 )
     {
         mtx.vout.push_back(MakeCC1vout(EVAL_FAUCET,funds,faucetpk));
         return(FinalizeCCTx(0,cp,mtx,mypk,txfee,opret));
