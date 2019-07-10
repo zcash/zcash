@@ -50,7 +50,7 @@ struct NSPV_ntzsresp *NSPV_ntzsresp_find(int32_t reqheight)
     return(0);
 }
 
-struct NSPV_txproof *NSPV_ntzsresp_add(struct NSPV_ntzsresp *ptr)
+struct NSPV_ntzsresp *NSPV_ntzsresp_add(struct NSPV_ntzsresp *ptr)
 {
     int32_t i;
     for (i=0; i<sizeof(NSPV_ntzsresp_cache)/sizeof(*NSPV_ntzsresp_cache); i++)
@@ -144,8 +144,8 @@ void komodo_nSPVresp(CNode *pfrom,std::vector<uint8_t> response) // received a r
             case NSPV_NTZSRESP:
                 NSPV_ntzsresp_purge(&NSPV_ntzsresult);
                 NSPV_rwntzsresp(0,&response[1],&NSPV_ntzsresult);
-                if ( NSPV_ntzs_find(NSPV_ntzsresult.reqheight) == 0 )
-                    NSPV_txproof_add(&NSPV_ntzsresult);
+                if ( NSPV_ntzsresp_find(NSPV_ntzsresult.reqheight) == 0 )
+                    NSPV_ntzsresp_add(&NSPV_ntzsresult);
                 fprintf(stderr,"got ntzs response %u size.%d %s prev.%d, %s next.%d\n",timestamp,(int32_t)response.size(),NSPV_ntzsresult.prevntz.txid.GetHex().c_str(),NSPV_ntzsresult.prevntz.height,NSPV_ntzsresult.nextntz.txid.GetHex().c_str(),NSPV_ntzsresult.nextntz.height);
                 break;
             case NSPV_NTZSPROOFRESP:
