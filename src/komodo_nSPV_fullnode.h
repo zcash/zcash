@@ -77,15 +77,16 @@ int32_t NSPV_ntzextract(struct NSPV_ntz *ptr,uint256 ntztxid,int32_t txidht,uint
     return(0);
 }
 
-int32_t NSPV_getntzsresp(struct NSPV_ntzsresp *ptr,int32_t height)
+int32_t NSPV_getntzsresp(struct NSPV_ntzsresp *ptr,int32_t origreqheight)
 {
-    struct NSPV_ntzargs prev,next;
-    if ( height < chainActive.LastTip()->GetHeight() )
-        height++;
-    if ( NSPV_notarized_bracket(&prev,&next,height) == 0 )
+    struct NSPV_ntzargs prev,next; int32_t reqheight = origreqheight;
+    if ( reqheight < chainActive.LastTip()->GetHeight() )
+        reqheight++;
+    if ( NSPV_notarized_bracket(&prev,&next,reqheight) == 0 )
     {
         if ( prev.ntzheight != 0 )
         {
+            ptr->reqheight = origreqheight;
             if ( NSPV_ntzextract(&ptr->prevntz,prev.txid,prev.txidht,prev.desttxid,prev.ntzheight) < 0 )
                 return(-1);
         }

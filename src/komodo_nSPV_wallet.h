@@ -44,6 +44,7 @@ int32_t NSPV_validatehdrs(struct NSPV_ntzsproofresp *ptr)
         if ( blockhash != ptr->common.hdrs[i].hashPrevBlock )
             return(-i-13);
     }
+    sleep(1);
     if ( NSPV_txextract(tx,ptr->prevntz,ptr->prevtxlen) < 0 )
         return(-8);
     else if ( tx.GetHash() != ptr->prevtxid )
@@ -59,41 +60,36 @@ int32_t NSPV_validatehdrs(struct NSPV_ntzsproofresp *ptr)
 
 int32_t NSPV_gettransaction(int32_t skipvalidation,int32_t vout,uint256 txid,int32_t height,CTransaction &tx,int64_t extradata,uint32_t tiptime,int64_t &rewardsum)
 {
-    int32_t i,offset,retval = 0; int64_t rewards = 0; uint32_t nLockTime; std::vector<uint8_t> proof;
-    for (i=0; i<3; i++)
+    struct NSPV_txproof *ptr; int32_t i,offset,retval = 0; int64_t rewards = 0; uint32_t nLockTime; std::vector<uint8_t> proof;
+    if ( (ptr= NSPV_txproof_find(txid)) == 0 )
     {
         NSPV_txproof(vout,txid,height);
-        if ( NSPV_txproofresult.txlen != 0 )
-            break;
-        sleep(1);
+        ptr = &NSPV_txproofresult;
     }
-    if ( NSPV_txproofresult.txid != txid )
+    if ( ptr->txid != txid )
     {
-        fprintf(stderr,"txproof error %s != %s\n",NSPV_txproofresult.txid.GetHex().c_str(),txid.GetHex().c_str());
+        fprintf(stderr,"txproof error %s != %s\n",ptr->txid.GetHex().c_str(),txid.GetHex().c_str());
         return(-1);
     }
-    else if ( NSPV_txextract(tx,NSPV_txproofresult.tx,NSPV_txproofresult.txlen) < 0 || NSPV_txproofresult.txlen <= 0 )
+    else if ( NSPV_txextract(tx,ptr->tx,ptr->txlen) < 0 || ptr->txlen <= 0 )
         retval = -2000;
-    else if ( skipvalidation == 0 && NSPV_txproofresult.unspentvalue <= 0 )
+    else if ( skipvalidation == 0 && ptr->unspentvalue <= 0 )
         retval = -2001;
     else if ( ASSETCHAINS_SYMBOL[0] == 0 && extradata >= 0 && tiptime != 0 )
     {
         rewards = komodo_interestnew(height,tx.vout[vout].nValue,tx.nLockTime,tiptime);
         if ( rewards != extradata )
-        {
             fprintf(stderr,"extradata %.8f vs rewards %.8f\n",dstr(extradata),dstr(rewards));
-        }
         rewardsum += rewards;
     }
     
     if ( skipvalidation == 0 )
     {
-        if ( NSPV_txproofresult.txprooflen > 0 )
+        if ( ptr->txprooflen > 0 )
         {
-            proof.resize(NSPV_txproofresult.txprooflen);
-            memcpy(&proof[0],NSPV_txproofresult.txproof,NSPV_txproofresult.txprooflen);
+            proof.resize(ptr->txprooflen);
+            memcpy(&proof[0],ptr->txproof,ptr->txprooflen);
         }
-        fprintf(stderr,"call NSPV_notarizations\n");
         NSPV_notarizations(height); // gets the prev and next notarizations
         if ( NSPV_inforesult.notarization.height >= height && (NSPV_ntzsresult.prevntz.height == 0 || NSPV_ntzsresult.prevntz.height >= NSPV_ntzsresult.nextntz.height) )
         {
@@ -108,7 +104,7 @@ int32_t NSPV_gettransaction(int32_t skipvalidation,int32_t vout,uint256 txid,int
             offset = (height - NSPV_ntzsresult.prevntz.height);
             if ( offset >= 0 && height <= NSPV_ntzsresult.nextntz.height )
             {
-                fprintf(stderr,"call NSPV_txidhdrsproof %s %s\n",NSPV_ntzsresult.prevntz.txid.GetHex().c_str(),NSPV_ntzsresult.nextntz.txid.GetHex().c_str());
+                //fprintf(stderr,"call NSPV_txidhdrsproof %s %s\n",NSPV_ntzsresult.prevntz.txid.GetHex().c_str(),NSPV_ntzsresult.nextntz.txid.GetHex().c_str());
                 NSPV_txidhdrsproof(NSPV_ntzsresult.prevntz.txid,NSPV_ntzsresult.nextntz.txid);
                 usleep(10000);
                 if ( (retval= NSPV_validatehdrs(&NSPV_ntzsproofresult)) == 0 )
@@ -117,7 +113,7 @@ int32_t NSPV_gettransaction(int32_t skipvalidation,int32_t vout,uint256 txid,int
                     proofroot = BitcoinGetProofMerkleRoot(proof,txids);
                     if ( proofroot != NSPV_ntzsproofresult.common.hdrs[offset].hashMerkleRoot )
                     {
-                        fprintf(stderr,"prooflen.%d proofroot.%s vs %s\n",NSPV_txproofresult.txprooflen,proofroot.GetHex().c_str(),NSPV_ntzsproofresult.common.hdrs[offset].hashMerkleRoot.GetHex().c_str());
+                        fprintf(stderr,"prooflen.%d proofroot.%s vs %s\n",(int32_t)proof.size(),proofroot.GetHex().c_str(),NSPV_ntzsproofresult.common.hdrs[offset].hashMerkleRoot.GetHex().c_str());
                         retval = -2003;
                     }
                 }
