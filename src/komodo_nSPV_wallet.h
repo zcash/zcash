@@ -146,7 +146,7 @@ bool NSPV_SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const C
     return(false);
 }
 
-std::string NSPV_signtx(UniValue &retcodes,CMutableTransaction &mtx,uint64_t txfee,CScript opret,struct NSPV_utxoresp used[])
+std::string NSPV_signtx(int64_t &rewardsum,int64_t &interestsum,UniValue &retcodes,CMutableTransaction &mtx,uint64_t txfee,CScript opret,struct NSPV_utxoresp used[])
 {
     CTransaction vintx; std::string hex; uint256 hashBlock; int64_t interest=0,change,totaloutputs=0,totalinputs=0; int32_t i,utxovout,n,validation;
     n = mtx.vout.size();
@@ -158,6 +158,7 @@ std::string NSPV_signtx(UniValue &retcodes,CMutableTransaction &mtx,uint64_t txf
         totalinputs += used[i].satoshis;
         interest += used[i].extradata;
     }
+    interestsum = interest;
     if ( (totalinputs+interest) >= totaloutputs+2*txfee )
     {
         change = (totalinputs+interest) - (totaloutputs+txfee);
@@ -170,7 +171,7 @@ std::string NSPV_signtx(UniValue &retcodes,CMutableTransaction &mtx,uint64_t txf
         utxovout = mtx.vin[i].prevout.n;
         if ( i > 0 )
             sleep(1);
-        validation = NSPV_gettransaction(0,utxovout,mtx.vin[i].prevout.hash,used[i].height,vintx);
+        validation = NSPV_gettransaction(0,utxovout,mtx.vin[i].prevout.hash,used[i].height,vintx,used[i].extradata,NSPV_tiptime,rewardsum);
         retcodes.push_back(validation);
         if ( validation != -1 ) // most others are degraded security
         {
@@ -244,7 +245,7 @@ UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis) // what its a
         return(result);
     }
     printf("%s numutxos.%d balance %.8f\n",NSPV_utxosresult.coinaddr,NSPV_utxosresult.numutxos,(double)NSPV_utxosresult.total/COIN);
-    std::vector<uint8_t> data; CScript opret; std::string hex; struct NSPV_utxoresp used[NSPV_MAXVINS]; CMutableTransaction mtx; CTransaction tx;
+    std::vector<uint8_t> data; CScript opret; std::string hex; struct NSPV_utxoresp used[NSPV_MAXVINS]; CMutableTransaction mtx; CTransaction tx; int64_t rewardsum=0,interestsum=0;
     mtx.fOverwintered = true;
     mtx.nExpiryHeight = 0;
     mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
@@ -264,7 +265,12 @@ UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis) // what its a
             result.push_back(Pair("error","wif expired"));
             return(result);
         }
-        hex = NSPV_signtx(retcodes,mtx,txfee,opret,used);
+        hex = NSPV_signtx(rewardsum,interestsum,retcodes,mtx,txfee,opret,used);
+        if ( interestsum != 0 || rewardsum != 0 )
+        {
+            result.push_back(Pair("rewards",dstr(interestsum)));
+            result.push_back(Pair("validated",dstr(rewardsum)));
+        }
         if ( hex.size() > 0 )
         {
             if ( DecodeHexTx(tx,hex) != 0 )
