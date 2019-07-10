@@ -406,4 +406,13 @@ UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis) // what its a
     }
 }
 
+int64_t NSPV_AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int32_t maxinputs,struct NSPV_CCdata *ptr)
+{
+    if ( ptr != 0 )
+    {
+        memset(ptr->used,0,sizeof(ptr->used));
+        return(NSPV_addinputs(ptr->used,mtx,total,maxinputs,ptr->U.utxos,ptr->U.numutxos));
+    } else return(0);
+}
+
 #endif // KOMODO_NSPVWALLET_H

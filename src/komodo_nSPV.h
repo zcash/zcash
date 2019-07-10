@@ -28,33 +28,6 @@
 #ifndef KOMODO_NSPV_H
 #define KOMODO_NSPV_H
 
-#define NSPV_POLLITERS 15
-#define NSPV_POLLMICROS 100000
-#define NSPV_MAXVINS 64
-#define NSPV_AUTOLOGOUT 777
-#define NSPV_BRANCHID 0x76b809bb
-
-// nSPV defines and struct definitions with serialization and purge functions
-
-#define NSPV_INFO 0x00
-#define NSPV_INFORESP 0x01
-#define NSPV_UTXOS 0x02
-#define NSPV_UTXOSRESP 0x03
-#define NSPV_NTZS 0x04
-#define NSPV_NTZSRESP 0x05
-#define NSPV_NTZSPROOF 0x06
-#define NSPV_NTZSPROOFRESP 0x07
-#define NSPV_TXPROOF 0x08
-#define NSPV_TXPROOFRESP 0x09
-#define NSPV_SPENTINFO 0x0a
-#define NSPV_SPENTINFORESP 0x0b
-#define NSPV_BROADCAST 0x0c
-#define NSPV_BROADCASTRESP 0x0d
-
-int32_t NSPV_gettransaction(int32_t skipvalidation,int32_t vout,uint256 txid,int32_t height,CTransaction &tx,int64_t extradata,uint32_t tiptime,int64_t &rewardsum);
-extern uint256 SIG_TXHASH;
-uint32_t NSPV_blocktime(int32_t hdrheight);
-
 int32_t iguana_rwbuf(int32_t rwflag,uint8_t *serialized,uint16_t len,uint8_t *buf)
 {
     if ( rwflag != 0 )
@@ -62,18 +35,6 @@ int32_t iguana_rwbuf(int32_t rwflag,uint8_t *serialized,uint16_t len,uint8_t *bu
     else memcpy(buf,serialized,len);
     return(len);
 }
-
-struct NSPV_equihdr
-{
-    int32_t nVersion;
-    uint256 hashPrevBlock;
-    uint256 hashMerkleRoot;
-    uint256 hashFinalSaplingRoot;
-    uint32_t nTime;
-    uint32_t nBits;
-    uint256 nNonce;
-    uint8_t nSolution[1344];
-};
 
 int32_t NSPV_rwequihdr(int32_t rwflag,uint8_t *serialized,struct NSPV_equihdr *ptr)
 {
@@ -117,13 +78,6 @@ int32_t iguana_rwuint8vec(int32_t rwflag,uint8_t *serialized,uint16_t *vecsizep,
     return(len);
 }
 
-struct NSPV_utxoresp
-{
-    uint256 txid;
-    int64_t satoshis,extradata;
-    int32_t vout,height;
-};
-
 int32_t NSPV_rwutxoresp(int32_t rwflag,uint8_t *serialized,struct NSPV_utxoresp *ptr)
 {
     int32_t len = 0;
@@ -134,15 +88,6 @@ int32_t NSPV_rwutxoresp(int32_t rwflag,uint8_t *serialized,struct NSPV_utxoresp 
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->height),&ptr->height);
     return(len);
 }
-
-struct NSPV_utxosresp
-{
-    struct NSPV_utxoresp *utxos;
-    char coinaddr[64];
-    int64_t total,interest;
-    int32_t nodeheight;
-    uint16_t numutxos; uint8_t CCflag,pad8;
-};
 
 int32_t NSPV_rwutxosresp(int32_t rwflag,uint8_t *serialized,struct NSPV_utxosresp *ptr) // check mempool
 {
@@ -173,22 +118,6 @@ int32_t NSPV_rwutxosresp(int32_t rwflag,uint8_t *serialized,struct NSPV_utxosres
     return(len);
 }
 
-void NSPV_utxosresp_purge(struct NSPV_utxosresp *ptr)
-{
-    if ( ptr != 0 )
-    {
-        if ( ptr->utxos != 0 )
-            free(ptr->utxos);
-        memset(ptr,0,sizeof(*ptr));
-    }
-}
-
-struct NSPV_ntz
-{
-    uint256 blockhash,txid,othertxid;
-    int32_t height,txidheight;
-};
-
 int32_t NSPV_rwntz(int32_t rwflag,uint8_t *serialized,struct NSPV_ntz *ptr)
 {
     int32_t len = 0;
@@ -199,12 +128,6 @@ int32_t NSPV_rwntz(int32_t rwflag,uint8_t *serialized,struct NSPV_ntz *ptr)
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->txidheight),&ptr->txidheight);
     return(len);
 }
-
-struct NSPV_ntzsresp
-{
-    struct NSPV_ntz prevntz,nextntz;
-    int32_t reqheight;
-};
 
 int32_t NSPV_rwntzsresp(int32_t rwflag,uint8_t *serialized,struct NSPV_ntzsresp *ptr)
 {
@@ -226,14 +149,6 @@ void NSPV_ntzsresp_purge(struct NSPV_ntzsresp *ptr)
         memset(ptr,0,sizeof(*ptr));
 }
 
-struct NSPV_inforesp
-{
-    struct NSPV_ntz notarization;
-    uint256 blockhash;
-    int32_t height,hdrheight;
-    struct NSPV_equihdr H;
-};
-
 int32_t NSPV_rwinforesp(int32_t rwflag,uint8_t *serialized,struct NSPV_inforesp *ptr)
 {
     int32_t len = 0;
@@ -251,15 +166,6 @@ void NSPV_inforesp_purge(struct NSPV_inforesp *ptr)
     if ( ptr != 0 )
         memset(ptr,0,sizeof(*ptr));
 }
-
-struct NSPV_txproof
-{
-    uint256 txid;
-    int64_t unspentvalue;
-    int32_t height,vout,pad;
-    uint16_t txlen,txprooflen;
-    uint8_t *tx,*txproof;
-};
 
 int32_t NSPV_rwtxproof(int32_t rwflag,uint8_t *serialized,struct NSPV_txproof *ptr)
 {
@@ -301,13 +207,6 @@ void NSPV_txproof_purge(struct NSPV_txproof *ptr)
     }
 }
 
-struct NSPV_ntzproofshared
-{
-    struct NSPV_equihdr *hdrs;
-    int32_t prevht,nextht,pad32;
-    uint16_t numhdrs,pad16;
-};
-
 int32_t NSPV_rwntzproofshared(int32_t rwflag,uint8_t *serialized,struct NSPV_ntzproofshared *ptr)
 {
     int32_t len = 0;
@@ -319,15 +218,6 @@ int32_t NSPV_rwntzproofshared(int32_t rwflag,uint8_t *serialized,struct NSPV_ntz
     //fprintf(stderr,"rwcommon prev.%d next.%d\n",ptr->prevht,ptr->nextht);
     return(len);
 }
-
-struct NSPV_ntzsproofresp
-{
-    struct NSPV_ntzproofshared common;
-    uint256 prevtxid,nexttxid;
-    int32_t pad32,prevtxidht,nexttxidht;
-    uint16_t prevtxlen,nexttxlen;
-    uint8_t *prevntz,*nextntz;
-};
 
 int32_t NSPV_rwntzsproofresp(int32_t rwflag,uint8_t *serialized,struct NSPV_ntzsproofresp *ptr)
 {
@@ -377,19 +267,6 @@ void NSPV_ntzsproofresp_purge(struct NSPV_ntzsproofresp *ptr)
     }
 }
 
-struct NSPV_MMRproof
-{
-    struct NSPV_ntzproofshared common;
-    // tbd
-};
-
-struct NSPV_spentinfo
-{
-    struct NSPV_txproof spent;
-    uint256 txid;
-    int32_t vout,spentvini;
-};
-
 int32_t NSPV_rwspentinfo(int32_t rwflag,uint8_t *serialized,struct NSPV_spentinfo *ptr) // check mempool
 {
     int32_t len = 0;
@@ -408,12 +285,6 @@ void NSPV_spentinfo_purge(struct NSPV_spentinfo *ptr)
         memset(ptr,0,sizeof(*ptr));
     }
 }
-
-struct NSPV_broadcastresp
-{
-    uint256 txid;
-    int32_t retcode;
-};
 
 int32_t NSPV_rwbroadcastresp(int32_t rwflag,uint8_t *serialized,struct NSPV_broadcastresp *ptr)
 {

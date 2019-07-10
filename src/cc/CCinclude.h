@@ -52,6 +52,7 @@ one other technical note is that komodod has the insight-explorer extensions bui
 #include "../utlist.h"
 #include "../uthash.h"
 #include "merkleblock.h"
+#include "../komodo_nSPV_defs.h"
 
 #define CC_BURNPUBKEY "02deaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddead"
 #define CC_MAXVINS 1024
@@ -287,8 +288,8 @@ extern std::vector<CPubKey> NULL_pubkeys;
 std::string FinalizeCCTx(uint64_t skipmask,struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey mypk,uint64_t txfee,CScript opret,std::vector<CPubKey> pubkeys = NULL_pubkeys);
 void SetCCunspents(std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > &unspentOutputs,char *coinaddr,bool CCflag = true);
 void SetCCtxids(std::vector<std::pair<CAddressIndexKey, CAmount> > &addressIndex,char *coinaddr,bool CCflag = true);
-int64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int32_t maxinputs);
-int64_t AddNormalinputs2(CMutableTransaction &mtx,int64_t total,int32_t maxinputs);
+int64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int32_t maxinputs,struct NSPV_CCdata *ptr = 0);
+int64_t AddNormalinputs2(CMutableTransaction &mtx,int64_t total,int32_t maxinputs,struct NSPV_CCdata *ptr = 0);
 int64_t CCutxovalue(char *coinaddr,uint256 utxotxid,int32_t utxovout,int32_t CCflag);
 bool NSPV_SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const CScript scriptPubKey,uint32_t nTime);
 

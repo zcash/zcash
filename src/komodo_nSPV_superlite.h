@@ -686,5 +686,4 @@ UniValue NSPV_broadcast(char *hex)
     return(NSPV_broadcast_json(&B,txid));
 }
 
-
 #endif // KOMODO_NSPVSUPERLITE_H

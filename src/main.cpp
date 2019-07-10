@@ -7060,6 +7060,7 @@ void static ProcessGetData(CNode* pfrom)
     }
 }
 
+#include "komodo_nSPV_defs.h"
 #include "komodo_nSPV.h"            // shared defines, structs, serdes, purge functions
 #include "komodo_nSPV_fullnode.h"   // nSPV fullnode handling of the getnSPV request messages
 #include "komodo_nSPV_superlite.h"  // nSPV superlite client, issuing requests and handling nSPV responses
