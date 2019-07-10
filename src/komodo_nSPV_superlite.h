@@ -544,7 +544,7 @@ UniValue NSPV_notarizations(int32_t reqheight)
         for (i=0; i<NSPV_POLLITERS; i++)
         {
             usleep(NSPV_POLLMICROS);
-            if ( NSPV_ntzsresult.prevntz.reqheight == reqheight )
+            if ( NSPV_ntzsresult.reqheight == reqheight )
                 return(NSPV_ntzsresp_json(&NSPV_ntzsresult));
         }
     } else sleep(1);
