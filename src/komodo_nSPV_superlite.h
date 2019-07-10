@@ -25,7 +25,7 @@
 CAmount AmountFromValue(const UniValue& value);
 int32_t bitcoin_base58decode(uint8_t *data,char *coinaddr);
 
-uint32_t NSPV_lastinfo,NSPV_logintime;
+uint32_t NSPV_lastinfo,NSPV_logintime,NSPV_tiptime;
 CKey NSPV_key;
 char NSPV_wifstr[64],NSPV_pubkeystr[67];
 std::string NSPV_address;
@@ -59,7 +59,12 @@ void komodo_nSPVresp(CNode *pfrom,std::vector<uint8_t> response) // received a r
                     NSPV_inforesult = I;
                 }
                 else if ( NSPV_inforesult.height > I.height )
+                {
                     NSPV_lastinfo = timestamp - ASSETCHAINS_BLOCKTIME/4;
+                    // need to validate new header to make sure it is valid mainchain
+                    if ( NSPV_inforesult.height == NSPV_inforesult.hdrheight )
+                        NSPV_tiptime = NSPV_inforesult.hdr.nTime;
+                }
                 break;
             case NSPV_UTXOSRESP:
                 NSPV_utxosresp_purge(&NSPV_utxosresult);
@@ -604,9 +609,9 @@ int32_t NSPV_validatehdrs(struct NSPV_ntzsproofresp *ptr)
     return(0);
 }
 
-int32_t NSPV_gettransaction(int32_t skipvalidation,int32_t vout,uint256 txid,int32_t height,CTransaction &tx)
+int32_t NSPV_gettransaction(int32_t skipvalidation,int32_t vout,uint256 txid,int32_t height,CTransaction &tx,int64_t extradata,uint32_t tiptime)
 {
-    int32_t i,offset,retval = 0; std::vector<uint8_t> proof;
+    int32_t i,offset,retval = 0; int64_t rewards = 0; uint32_t nLockTime; std::vector<uint8_t> proof;
     for (i=0; i<3; i++)
     {
         NSPV_txproof(vout,txid,height);
@@ -623,6 +628,11 @@ int32_t NSPV_gettransaction(int32_t skipvalidation,int32_t vout,uint256 txid,int
         retval = -2000;
     else if ( skipvalidation == 0 && NSPV_txproofresult.unspentvalue <= 0 )
         retval = -2001;
+    else if ( ASSETCHAINS_SYMBOL[0] == 0 && extradata >= 0 && tiptime != 0 )
+    {
+        rewards = komodo_interestnew(height,tx.vout[vout].nValue,tx.nLockTime,tiptime);
+        fprintf(stderr,"extradata %.8f vs rewards %.8f\n",dstr(extradata),dstr(rewards));
+    }
     else if ( skipvalidation == 0 )
     {
         if ( NSPV_txproofresult.txprooflen > 0 )
