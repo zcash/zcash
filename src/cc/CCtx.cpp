@@ -17,6 +17,7 @@
 #include "key_io.h"
 
 std::vector<CPubKey> NULL_pubkeys;
+struct NSPV_CCmtxinfo NSPV_U;
 
 /*
  FinalizeCCTx is a very useful function that will properly sign both CC and normal inputs, adds normal change and the opreturn.
@@ -96,8 +97,9 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
     //This is a must to avoid hardfork change of validation in every CC, because there could be maximum one normal vin at the begining with current validation.
     for (i=0; i<n; i++)
     {
-        if (i==0 && mtx.vin[i].prevout.n==10e8) continue;
-        if ( GetTransaction(mtx.vin[i].prevout.hash,vintx,hashBlock,false) != 0 )
+        if (i==0 && mtx.vin[i].prevout.n==10e8)
+            continue;
+        if ( myGetTransaction(mtx.vin[i].prevout.hash,vintx,hashBlock) != 0 )
         {
             if ( vintx.vout[mtx.vin[i].prevout.n].scriptPubKey.IsPayToCryptoCondition() == 0 && ccvins==0)
                 normalvins++;            
@@ -116,7 +118,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
     for (i=0; i<n; i++)
     {
         if (i==0 && mtx.vin[i].prevout.n==10e8) continue;
-        if ( GetTransaction(mtx.vin[i].prevout.hash,vintx,hashBlock,false) != 0 )
+        if ( myGetTransaction(mtx.vin[i].prevout.hash,vintx,hashBlock) != 0 )
         {
             utxovout = mtx.vin[i].prevout.n;
             utxovalues[i] = vintx.vout[utxovout].nValue;
@@ -147,8 +149,9 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
     n = mtx.vin.size(); 
     for (i=0; i<n; i++)
     {
-        if (i==0 && mtx.vin[i].prevout.n==10e8) continue;
-        if ( GetTransaction(mtx.vin[i].prevout.hash,vintx,hashBlock,false) != 0 )
+        if (i==0 && mtx.vin[i].prevout.n==10e8)
+            continue;
+        if ( myGetTransaction(mtx.vin[i].prevout.hash,vintx,hashBlock) != 0 )
         {
             utxovout = mtx.vin[i].prevout.n;
             if ( vintx.vout[utxovout].scriptPubKey.IsPayToCryptoCondition() == 0 )

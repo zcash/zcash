@@ -2220,6 +2220,11 @@ bool myAddtomempool(CTransaction &tx, CValidationState *pstate, bool fSkipExpiry
 bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock)
 {
     memset(&hashBlock,0,sizeof(hashBlock));
+    if ( KOMODO_NSPV != 0 )
+    {
+        int64_t rewardsum = 0;
+        return(NSPV_gettransaction(1,0,txid,0,txOut,0,0,rewardsum) == 0);
+    }
     // need a GetTransaction without lock so the validation code for assets can run without deadlock
     {
         //fprintf(stderr,"check mempool %s\n",hash.GetHex().c_str());
