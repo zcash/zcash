@@ -8084,8 +8084,6 @@ UniValue opreturn_burn(const UniValue& params, bool fHelp)
         "\nResult:\n"
         "  {\n"
         "    \"hex\" : \"hexstring\",     (string) raw hex of transaction \n"
-        "    \"ismine\" : \"true/false\",     (bool)\n"
-        "    \"R-address\" : \"R address\",     (string) The pubkey\n"
         "  }\n"
         "\nExamples:\n"
         "\nBurn 10 coins with OP_RETURN data \"deadbeef\"\n"
