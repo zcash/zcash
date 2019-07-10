@@ -61,7 +61,7 @@ int32_t NSPV_validatehdrs(struct NSPV_ntzsproofresp *ptr)
 int32_t NSPV_gettransaction(int32_t skipvalidation,int32_t vout,uint256 txid,int32_t height,CTransaction &tx,int64_t extradata,uint32_t tiptime,int64_t &rewardsum)
 {
     struct NSPV_txproof *ptr; int32_t i,offset,retval = 0; int64_t rewards = 0; uint32_t nLockTime; std::vector<uint8_t> proof;
-    if ( (ptr= NSPV_txproof_find(txid)) == 0 )
+    if ( (ptr= NSPV_txproof_find(txid)) == 0 && ptr->txprooflen != 0 )
     {
         NSPV_txproof(vout,txid,height);
         ptr = &NSPV_txproofresult;
@@ -82,6 +82,7 @@ int32_t NSPV_gettransaction(int32_t skipvalidation,int32_t vout,uint256 txid,int
             fprintf(stderr,"extradata %.8f vs rewards %.8f\n",dstr(extradata),dstr(rewards));
         rewardsum += rewards;
     }
+    fprintf(stderr,"txid.%s vs hash.%s\n",txid.GetHex().c_str(),hash.GetHex().c_str());
     
     if ( skipvalidation == 0 )
     {
