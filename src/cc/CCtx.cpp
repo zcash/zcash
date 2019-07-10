@@ -158,16 +158,16 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
             {
                 if ( KOMODO_NSPV == 0 )
                 {
-                    {
-                        char addr[64];
-                        Getscriptaddress(addr,vintx.vout[utxovout].scriptPubKey);
-                        fprintf(stderr,"vout[%d] %.8f -> %s\n",utxovout,dstr(vintx.vout[utxovout].nValue),addr);
-                    }
                     if ( SignTx(mtx,i,vintx.vout[utxovout].nValue,vintx.vout[utxovout].scriptPubKey) == 0 )
                         fprintf(stderr,"signing error for vini.%d of %llx\n",i,(long long)vinimask);
                 }
                 else
                 {
+                    {
+                        char addr[64];
+                        Getscriptaddress(addr,vintx.vout[utxovout].scriptPubKey);
+                        fprintf(stderr,"vout[%d] %.8f -> %s\n",utxovout,dstr(vintx.vout[utxovout].nValue),addr);
+                    }
                     if ( NSPV_SignTx(mtx,i,vintx.vout[utxovout].nValue,vintx.vout[utxovout].scriptPubKey,0) == 0 )
                         fprintf(stderr,"NSPV signing error for vini.%d of %llx\n",i,(long long)vinimask);
                 }
