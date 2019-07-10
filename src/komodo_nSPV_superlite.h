@@ -323,6 +323,7 @@ UniValue NSPV_ntzsproof_json(struct NSPV_ntzsproofresp *ptr)
     result.push_back(Pair("numhdrs",(int64_t)ptr->common.numhdrs));
     result.push_back(Pair("headers",NSPV_headers_json(ptr->common.hdrs,ptr->common.numhdrs,ptr->common.prevht)));
     result.push_back(Pair("lastpeer",NSPV_lastpeer));
+    fprintf(stderr,"ntzs_proof %s\n",result);
     return(result);
 }
 
@@ -481,7 +482,7 @@ UniValue NSPV_txidhdrsproof(uint256 prevtxid,uint256 nexttxid)
     msg[len++] = NSPV_NTZSPROOF;
     len += iguana_rwbignum(1,&msg[len],sizeof(prevtxid),(uint8_t *)&prevtxid);
     len += iguana_rwbignum(1,&msg[len],sizeof(nexttxid),(uint8_t *)&nexttxid);
-    for (iter=0; iter<5; iter++);
+    for (iter=0; iter<3; iter++);
     if ( NSPV_req(0,msg,len,NODE_NSPV,msg[0]>>1) != 0 )
     {
         for (i=0; i<NSPV_POLLITERS; i++)
