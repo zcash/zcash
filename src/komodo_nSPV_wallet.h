@@ -408,8 +408,16 @@ UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis) // what its a
 
 int64_t NSPV_AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int32_t maxinputs,struct NSPV_CCmtxinfo *ptr)
 {
+    char coinaddr[64]; int32_t CCflag = 0;
     if ( ptr != 0 )
     {
+        Getscriptaddress(coinaddr,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG);
+        if ( strcmp(ptr->U.coinaddr,coinaddr) != 0 )
+        {
+            NSPV_addressutxos(coinaddr,CCflag);
+            NSPV_utxosresp_purge(&ptr->U);
+            NSPV_utxosresp_copy(&ptr->U,&NSPV_utxosresult);
+        }
         memset(ptr->used,0,sizeof(ptr->used));
         return(NSPV_addinputs(ptr->used,mtx,total,maxinputs,ptr->U.utxos,ptr->U.numutxos));
     } else return(0);

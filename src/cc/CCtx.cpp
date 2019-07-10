@@ -525,7 +525,11 @@ int64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int3
 {
     int32_t abovei,belowi,ind,vout,i,n = 0; int64_t sum,threshold,above,below; int64_t remains,nValue,totalinputs = 0; uint256 txid,hashBlock; std::vector<COutput> vecOutputs; CTransaction tx; struct CC_utxo *utxos,*up;
     if ( KOMODO_NSPV != 0 )
-        return(NSPV_AddNormalinputs(mtx,mypk,total,maxinputs,ptr));
+    {
+        if ( ptr != 0 )
+            return(NSPV_AddNormalinputs(mtx,mypk,total,maxinputs,ptr));
+        else return(0);
+    }
 #ifdef ENABLE_WALLET
     assert(pwalletMain != NULL);
     const CKeyStore& keystore = *pwalletMain;

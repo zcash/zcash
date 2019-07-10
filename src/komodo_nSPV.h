@@ -128,6 +128,16 @@ void NSPV_utxosresp_purge(struct NSPV_utxosresp *ptr)
     }
 }
 
+void NSPV_utxosresp_copy(struct NSPV_utxosresp *dest,struct NSPV_utxosresp *ptr)
+{
+    *dest = *ptr;
+    if ( ptr->utxos != 0 )
+    {
+        dest->utxos = (struct NSPV_utxoresp *)malloc(ptr->numutxos * sizeof(*ptr->utxos));
+        memcpy(dest->utxos,ptr->utxos,ptr->numutxos * sizeof(*ptr->utxos));
+    }
+}
+
 int32_t NSPV_rwntz(int32_t rwflag,uint8_t *serialized,struct NSPV_ntz *ptr)
 {
     int32_t len = 0;
