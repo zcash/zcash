@@ -677,7 +677,7 @@ int32_t NSPV_gettransaction(int32_t skipvalidation,int32_t vout,uint256 txid,int
             offset = (height - NSPV_ntzsresult.prevntz.height);
             if ( offset >= 0 && height <= NSPV_ntzsresult.nextntz.height )
             {
-                fprintf(stderr,"call NSPV_txidhdrsproof\n");
+                fprintf(stderr,"call NSPV_txidhdrsproof %s %s\n",NSPV_ntzsresult.prevntz.txid.GetHex().c_str(),NSPV_ntzsresult.nextntz.txid.GetHex().c_str());
                 NSPV_txidhdrsproof(NSPV_ntzsresult.prevntz.txid,NSPV_ntzsresult.nextntz.txid);
                 if ( (retval= NSPV_validatehdrs(&NSPV_ntzsproofresult)) == 0 )
                 {
