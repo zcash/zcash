@@ -203,6 +203,7 @@ int32_t NSPV_rwntz(int32_t rwflag,uint8_t *serialized,struct NSPV_ntz *ptr)
 struct NSPV_ntzsresp
 {
     struct NSPV_ntz prevntz,nextntz;
+    int32_t reqheight;
 };
 
 int32_t NSPV_rwntzsresp(int32_t rwflag,uint8_t *serialized,struct NSPV_ntzsresp *ptr)
@@ -210,7 +211,13 @@ int32_t NSPV_rwntzsresp(int32_t rwflag,uint8_t *serialized,struct NSPV_ntzsresp 
     int32_t len = 0;
     len += NSPV_rwntz(rwflag,&serialized[len],&ptr->prevntz);
     len += NSPV_rwntz(rwflag,&serialized[len],&ptr->nextntz);
+    len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->reqheight),&ptr->reqheight);
     return(len);
+}
+
+void NSPV_ntzsresp_copy(struct NSPV_ntzsresp *dest,struct NSPV_ntzsresp *ptr)
+{
+    *dest = *ptr;
 }
 
 void NSPV_ntzsresp_purge(struct NSPV_ntzsresp *ptr)
@@ -267,6 +274,21 @@ int32_t NSPV_rwtxproof(int32_t rwflag,uint8_t *serialized,struct NSPV_txproof *p
     return(len);
 }
 
+void NSPV_txproof_copy(struct NSPV_txproof *dest,struct NSPV_txproof *ptr)
+{
+    *dest = *ptr;
+    if ( ptr->tx != 0 )
+    {
+        dest->tx = malloc(ptr->txlen);
+        memcpy(dest->tx,ptr->tx,ptr->txlen);
+    }
+    if ( ptr->txproof != 0 )
+    {
+        dest->txproof = malloc(ptr->txprooflen);
+        memcpy(dest->txproof,ptr->txproof,ptr->txprooflen);
+    }
+}
+
 void NSPV_txproof_purge(struct NSPV_txproof *ptr)
 {
     if ( ptr != 0 )
@@ -319,6 +341,26 @@ int32_t NSPV_rwntzsproofresp(int32_t rwflag,uint8_t *serialized,struct NSPV_ntzs
     len += iguana_rwuint8vec(rwflag,&serialized[len],&ptr->prevtxlen,&ptr->prevntz);
     len += iguana_rwuint8vec(rwflag,&serialized[len],&ptr->nexttxlen,&ptr->nextntz);
     return(len);
+}
+
+void NSPV_ntzsproof_copy(struct NSPV_ntzsproofresp *dest,struct NSPV_ntzsproofresp *ptr)
+{
+    *dest = *ptr;
+    if ( ptr->common.hdrs != 0 )
+    {
+        dest->common.hdrs = malloc(ptr->common.numhdrs * sizeof(*ptr->common.hdrs));
+        memcpy(dest->common.hdrs,ptr->common.hdrs,ptr->common.numhdrs * sizeof(*ptr->common.hdrs));
+    }
+    if ( ptr->prevntz != 0 )
+    {
+        dest->prevntz = malloc(ptr->prevtxlen);
+        memcpy(dest->prevntz,ptr->prevntz,ptr->prevtxlen);
+    }
+    if ( ptr->nextntz != 0 )
+    {
+        dest->nextntz = malloc(ptr->nexttxlen);
+        memcpy(dest->nextntz,ptr->nextntz,ptr->nexttxlen);
+    }
 }
 
 void NSPV_ntzsproofresp_purge(struct NSPV_ntzsproofresp *ptr)

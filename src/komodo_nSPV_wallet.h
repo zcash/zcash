@@ -80,9 +80,7 @@ int32_t NSPV_gettransaction(int32_t skipvalidation,int32_t vout,uint256 txid,int
     {
         rewards = komodo_interestnew(height,tx.vout[vout].nValue,tx.nLockTime,tiptime);
         if ( rewards != extradata )
-        {
             fprintf(stderr,"extradata %.8f vs rewards %.8f\n",dstr(extradata),dstr(rewards));
-        }
         rewardsum += rewards;
     }
     
