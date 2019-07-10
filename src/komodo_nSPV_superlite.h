@@ -27,7 +27,7 @@ int32_t bitcoin_base58decode(uint8_t *data,char *coinaddr);
 
 uint32_t NSPV_lastinfo,NSPV_logintime,NSPV_tiptime;
 CKey NSPV_key;
-char NSPV_wifstr[64],NSPV_pubkeystr[67];
+char NSPV_wifstr[64],NSPV_pubkeystr[67],NSPV_lastpeer[128];
 std::string NSPV_address;
 struct NSPV_inforesp NSPV_inforesult;
 struct NSPV_utxosresp NSPV_utxosresult;
@@ -43,6 +43,7 @@ struct NSPV_broadcastresp NSPV_broadcastresult;
 void komodo_nSPVresp(CNode *pfrom,std::vector<uint8_t> response) // received a response
 {
     struct NSPV_inforesp I; int32_t len; uint32_t timestamp = (uint32_t)time(NULL);
+    strncpy(NSPV_lastpeer,pfrom->addr.ToString().c_str(),sizeof(NSPV_lastpeer)-1);
     if ( (len= response.size()) > 0 )
     {
         switch ( response[0] )
@@ -191,6 +192,7 @@ UniValue NSPV_txproof_json(struct NSPV_txproof *ptr)
     result.push_back(Pair("height",(int64_t)ptr->height));
     result.push_back(Pair("txlen",(int64_t)ptr->txlen));
     result.push_back(Pair("txprooflen",(int64_t)ptr->txprooflen));
+    result.push_back(Pair("lastpeer",NSPV_lastpeer));
     return(result);
 }
 
@@ -205,6 +207,7 @@ UniValue NSPV_spentinfo_json(struct NSPV_spentinfo *ptr)
     result.push_back(Pair("spentvini",(int64_t)ptr->spentvini));
     result.push_back(Pair("spenttxlen",(int64_t)ptr->spent.txlen));
     result.push_back(Pair("spenttxprooflen",(int64_t)ptr->spent.txprooflen));
+    result.push_back(Pair("lastpeer",NSPV_lastpeer));
     return(result);
 }
 
@@ -258,6 +261,7 @@ UniValue NSPV_getinfo_json(struct NSPV_inforesp *ptr)
     result.push_back(Pair("chaintip",ptr->blockhash.GetHex()));
     result.push_back(Pair("notarization",NSPV_ntz_json(&ptr->notarization)));
     result.push_back(Pair("header",NSPV_header_json(&ptr->H,ptr->hdrheight)));
+    result.push_back(Pair("lastpeer",NSPV_lastpeer));
     return(result);
 }
 
@@ -290,6 +294,7 @@ UniValue NSPV_utxosresp_json(struct NSPV_utxosresp *ptr)
     result.push_back(Pair("balance",(double)ptr->total/COIN));
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
         result.push_back(Pair("interest",(double)ptr->interest/COIN));
+    result.push_back(Pair("lastpeer",NSPV_lastpeer));
     return(result);
 }
 
@@ -299,6 +304,7 @@ UniValue NSPV_ntzs_json(struct NSPV_ntzsresp *ptr)
     result.push_back(Pair("result","success"));
     result.push_back(Pair("prev",NSPV_ntz_json(&ptr->prevntz)));
     result.push_back(Pair("next",NSPV_ntz_json(&ptr->nextntz)));
+    result.push_back(Pair("lastpeer",NSPV_lastpeer));
     return(result);
 }
 
@@ -316,6 +322,7 @@ UniValue NSPV_ntzsproof_json(struct NSPV_ntzsproofresp *ptr)
     result.push_back(Pair("nexttxlen",(int64_t)ptr->prevtxlen));
     result.push_back(Pair("numhdrs",(int64_t)ptr->common.numhdrs));
     result.push_back(Pair("headers",NSPV_headers_json(ptr->common.hdrs,ptr->common.numhdrs,ptr->common.prevht)));
+    result.push_back(Pair("lastpeer",NSPV_lastpeer));
     return(result);
 }
 
@@ -332,8 +339,10 @@ UniValue NSPV_broadcast_json(struct NSPV_broadcastresp *ptr,uint256 txid)
         case 0: result.push_back(Pair("type","broadcast")); break;
         case -1: result.push_back(Pair("type","decode error")); break;
         case -2: result.push_back(Pair("type","timeout")); break;
+        case -2: result.push_back(Pair("type","error adding to mempool")); break;
         default: result.push_back(Pair("type","unknown")); break;
     }
+    result.push_back(Pair("lastpeer",NSPV_lastpeer));
     return(result);
 }
 
@@ -396,15 +405,19 @@ UniValue NSPV_getinfo_req(int32_t reqht)
 
 uint32_t NSPV_blocktime(int32_t hdrheight)
 {
+    uint32_t timestamp; struct NSPV_inforesp old = NSPV_inforesult;
     if ( hdrheight > 0 )
     {
         NSPV_getinfo_req(hdrheight);
         if ( NSPV_inforesult.hdrheight == hdrheight )
         {
-            fprintf(stderr,"NSPV_blocktime ht.%d -> t%u\n",hdrheight,NSPV_inforesult.H.nTime);
-            return(NSPV_inforesult.H.nTime);
+            timestamp = NSPV_inforesult.H.nTime;
+            NSPV_inforesult = old;
+            fprintf(stderr,"NSPV_blocktime ht.%d -> t%u\n",hdrheight,timestamp);
+            return(timestamp);
         }
     }
+    NSPV_inforesult = old;
     return(0);
 }
 
