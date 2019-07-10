@@ -593,7 +593,7 @@ int32_t NSPV_validatehdrs(struct NSPV_ntzsproofresp *ptr)
     int32_t i,height,txidht; CTransaction tx; uint256 blockhash,txid,desttxid;
     if ( (ptr->common.nextht-ptr->common.prevht+1) != ptr->common.numhdrs )
     {
-        fprintf(stderr,"next.%d prev.%d -> %d vs %d\n",,ptr->common.nextht,ptr->common.prevht,ptr->common.nextht-ptr->common.prevht+1,ptr->common.numhdrs);
+        fprintf(stderr,"next.%d prev.%d -> %d vs %d\n",ptr->common.nextht,ptr->common.prevht,ptr->common.nextht-ptr->common.prevht+1,ptr->common.numhdrs);
         return(-2);
     }
     else if ( NSPV_txextract(tx,ptr->nextntz,ptr->nexttxlen) < 0 )
