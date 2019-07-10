@@ -561,7 +561,7 @@ int32_t NSPV_notarizationextract(int32_t verifyntz,int32_t *ntzheightp,uint256 *
         GetOpReturnData(tx.vout[1].scriptPubKey,opret);
         if ( opret.size() >= 32*2+4 )
         {
-            sleep(1);
+            //sleep(1);
             *desttxidp = NSPV_opretextract(ntzheightp,blockhashp,symbol,opret,tx.GetHash());
             nTime = NSPV_blocktime(*ntzheightp);
             komodo_notaries(elected,*ntzheightp,nTime);
