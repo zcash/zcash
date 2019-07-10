@@ -2223,7 +2223,7 @@ bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlo
     if ( KOMODO_NSPV != 0 )
     {
         int64_t rewardsum = 0;
-        return(NSPV_gettransaction(1,0,txid,0,txOut,0,0,rewardsum) == 0);
+        return(NSPV_gettransaction(1,0,hash,0,txOut,0,0,rewardsum) == 0);
     }
     // need a GetTransaction without lock so the validation code for assets can run without deadlock
     {
