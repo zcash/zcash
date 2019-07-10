@@ -323,7 +323,7 @@ UniValue NSPV_ntzsproof_json(struct NSPV_ntzsproofresp *ptr)
     result.push_back(Pair("numhdrs",(int64_t)ptr->common.numhdrs));
     result.push_back(Pair("headers",NSPV_headers_json(ptr->common.hdrs,ptr->common.numhdrs,ptr->common.prevht)));
     result.push_back(Pair("lastpeer",NSPV_lastpeer));
-    fprintf(stderr,"ntzs_proof %s\n",result);
+    fprintf(stderr,"ntzs_proof %s %d, %s %d\n",ptr->prevtxid.GetHex().c_str,ptr->common.prevht,ptr->nexttxid.GetHex().c_str,ptr->common.nextht);
     return(result);
 }
 
@@ -679,6 +679,7 @@ int32_t NSPV_gettransaction(int32_t skipvalidation,int32_t vout,uint256 txid,int
             {
                 fprintf(stderr,"call NSPV_txidhdrsproof %s %s\n",NSPV_ntzsresult.prevntz.txid.GetHex().c_str(),NSPV_ntzsresult.nextntz.txid.GetHex().c_str());
                 NSPV_txidhdrsproof(NSPV_ntzsresult.prevntz.txid,NSPV_ntzsresult.nextntz.txid);
+                usleep(10000);
                 if ( (retval= NSPV_validatehdrs(&NSPV_ntzsproofresult)) == 0 )
                 {
                     std::vector<uint256> txids; uint256 proofroot;
