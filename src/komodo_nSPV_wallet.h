@@ -233,13 +233,6 @@ bool NSPV_SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const C
 {
     CTransaction txNewConst(mtx); SignatureData sigdata; CBasicKeyStore keystore; int64_t branchid = NSPV_BRANCHID;
     keystore.AddKey(NSPV_key);
-    if ( 1 )
-    {
-        int32_t i;
-        for (i=0; i<scriptPubKey.size()+4; i++)
-            fprintf(stderr,"%02x",((uint8_t *)&scriptPubKey)[i]);
-        fprintf(stderr," scriptPubKey\n");
-    }
     if ( nTime != 0 && nTime < KOMODO_SAPLING_ACTIVATION )
     {
         fprintf(stderr,"use legacy sig validation\n");

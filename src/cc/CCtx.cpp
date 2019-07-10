@@ -165,6 +165,8 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
                 {
                     {
                         char addr[64];
+                        Getscriptaddress(addr,vintx.vout[0].scriptPubKey);
+                        fprintf(stderr,"vout[%d] %.8f -> %s\n",0,dstr(vintx.vout[0].nValue),addr);
                         Getscriptaddress(addr,vintx.vout[utxovout].scriptPubKey);
                         fprintf(stderr,"vout[%d] %.8f -> %s\n",utxovout,dstr(vintx.vout[utxovout].nValue),addr);
                     }
