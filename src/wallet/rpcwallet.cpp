@@ -7002,8 +7002,8 @@ UniValue faucetfund(const UniValue& params, bool fHelp)
         throw runtime_error("faucetfund amount\n");
     if ( ensure_CCrequirements(EVAL_FAUCET) < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
-    const CKeyStore& keystore = *pwalletMain;
-    LOCK2(cs_main, pwalletMain->cs_wallet);
+    //const CKeyStore& keystore = *pwalletMain;
+    //LOCK2(cs_main, pwalletMain->cs_wallet);
     funds = atof(params[0].get_str().c_str()) * COIN + 0.00000000499999;
     if (funds > 0) {
         hex = FaucetFund(0,(uint64_t) funds);
