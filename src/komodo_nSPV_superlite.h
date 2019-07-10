@@ -98,11 +98,11 @@ struct NSPV_ntzsproofresp *NSPV_ntzsproof_add(struct NSPV_ntzsproofresp *ptr)
 {
     int32_t i;
     for (i=0; i<sizeof(NSPV_ntzsproofresp_cache)/sizeof(*NSPV_ntzsproofresp_cache); i++)
-        if ( NSPV_ntzsproofresp_cache[i].hdrs == 0 )
+        if ( NSPV_ntzsproofresp_cache[i].common.hdrs == 0 )
             break;
     if ( i == sizeof(NSPV_ntzsproofresp_cache)/sizeof(*NSPV_ntzsproofresp_cache) )
         i == (rand() % (sizeof(NSPV_ntzsproofresp_cache)/sizeof(*NSPV_ntzsproofresp_cache)));
-    NSPV_ntzsproof_purge(&NSPV_ntzsproofresp_cache[i]);
+    NSPV_ntzsproofresp_purge(&NSPV_ntzsproofresp_cache[i]);
     NSPV_ntzsproof_copy(&NSPV_ntzsproofresp_cache[i],ptr);
     return(&NSPV_ntzsproofresp_cache[i]);
 }
@@ -537,7 +537,7 @@ UniValue NSPV_notarizations(int32_t reqheight)
         return(NSPV_ntzsresp_json(ptr));
     NSPV_ntzsresp_purge(&NSPV_ntzsresult);
     msg[len++] = NSPV_NTZS;
-    len += iguana_rwnum(1,&msg[len],sizeof(height),&height);
+    len += iguana_rwnum(1,&msg[len],sizeof(reqheight),&reqheight);
     for (iter=0; iter<3; iter++);
     if ( NSPV_req(0,msg,len,NODE_NSPV,msg[0]>>1) != 0 )
     {
