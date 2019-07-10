@@ -63,7 +63,7 @@ void komodo_nSPVresp(CNode *pfrom,std::vector<uint8_t> response) // received a r
                     NSPV_lastinfo = timestamp - ASSETCHAINS_BLOCKTIME/4;
                     // need to validate new header to make sure it is valid mainchain
                     if ( NSPV_inforesult.height == NSPV_inforesult.hdrheight )
-                        NSPV_tiptime = NSPV_inforesult.hdr.nTime;
+                        NSPV_tiptime = NSPV_inforesult.H.nTime;
                 }
                 break;
             case NSPV_UTXOSRESP:
