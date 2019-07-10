@@ -339,7 +339,7 @@ UniValue NSPV_broadcast_json(struct NSPV_broadcastresp *ptr,uint256 txid)
         case 0: result.push_back(Pair("type","broadcast")); break;
         case -1: result.push_back(Pair("type","decode error")); break;
         case -2: result.push_back(Pair("type","timeout")); break;
-        case -2: result.push_back(Pair("type","error adding to mempool")); break;
+        case -3: result.push_back(Pair("type","error adding to mempool")); break;
         default: result.push_back(Pair("type","unknown")); break;
     }
     result.push_back(Pair("lastpeer",NSPV_lastpeer));
