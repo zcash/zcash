@@ -48,7 +48,7 @@ CMutableTransaction GetValidSproutReceiveTransaction(ZCJoinSplit& params,
     uint256 rt;
     JSDescription jsdesc {false, params, mtx.joinSplitPubKey, rt,
                           inputs, outputs, 2*value, 0, false};
-    mtx.vjoinsplit.push_back(jsdesc);
+    mtx.vJoinSplit.push_back(jsdesc);
 
     // Consider: The following is a bit misleading (given the name of this function)
     // and should perhaps be changed, but currently a few tests in test_wallet.cpp
@@ -97,8 +97,8 @@ CWalletTx GetInvalidCommitmentSproutReceive(ZCJoinSplit& params,
     CMutableTransaction mtx = GetValidSproutReceiveTransaction(
         params, sk, value, randomInputs, version
     );
-    mtx.vjoinsplit[0].commitments[0] = uint256();
-    mtx.vjoinsplit[0].commitments[1] = uint256();
+    mtx.vJoinSplit[0].commitments[0] = uint256();
+    mtx.vJoinSplit[0].commitments[1] = uint256();
     CTransaction tx {mtx};
     CWalletTx wtx {NULL, tx};
     return wtx;
@@ -108,11 +108,11 @@ libzcash::SproutNote GetSproutNote(ZCJoinSplit& params,
                                    const libzcash::SproutSpendingKey& sk,
                                    const CTransaction& tx, size_t js, size_t n) {
     ZCNoteDecryption decryptor {sk.receiving_key()};
-    auto hSig = tx.vjoinsplit[js].h_sig(params, tx.joinSplitPubKey);
+    auto hSig = tx.vJoinSplit[js].h_sig(params, tx.joinSplitPubKey);
     auto note_pt = libzcash::SproutNotePlaintext::decrypt(
         decryptor,
-        tx.vjoinsplit[js].ciphertexts[n],
-        tx.vjoinsplit[js].ephemeralKey,
+        tx.vJoinSplit[js].ciphertexts[n],
+        tx.vJoinSplit[js].ephemeralKey,
         hSig,
         (unsigned char) n);
     return note_pt.note(sk.address());
@@ -169,7 +169,7 @@ CWalletTx GetValidSproutSpend(ZCJoinSplit& params,
     uint256 rt = tree.root();
     JSDescription jsdesc {false, params, mtx.joinSplitPubKey, rt,
                           inputs, outputs, 0, value, false};
-    mtx.vjoinsplit.push_back(jsdesc);
+    mtx.vJoinSplit.push_back(jsdesc);
 
     // Empty output script.
     uint32_t consensusBranchId = SPROUT_BRANCH_ID;

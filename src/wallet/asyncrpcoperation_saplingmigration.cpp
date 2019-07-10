@@ -116,7 +116,7 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
         availableFunds -= fromNoteAmount;
         for (const SproutNoteEntry& sproutEntry : fromNotes) {
             std::string data(sproutEntry.memo.begin(), sproutEntry.memo.end());
-            LogPrint("zrpcunsafe", "%s: Adding Sprout note input (txid=%s, vjoinsplit=%d, jsoutindex=%d, amount=%s, memo=%s)\n",
+            LogPrint("zrpcunsafe", "%s: Adding Sprout note input (txid=%s, vJoinSplit=%d, jsoutindex=%d, amount=%s, memo=%s)\n",
                 getId(),
                 sproutEntry.jsop.hash.ToString().substr(0, 10),
                 sproutEntry.jsop.js,

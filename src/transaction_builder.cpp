@@ -508,12 +508,12 @@ void TransactionBuilder::CreateJSDescriptions()
         JSDescription prevJoinSplit;
 
         // Keep track of previous JoinSplit and its commitments
-        if (mtx.vjoinsplit.size() > 0) {
-            prevJoinSplit = mtx.vjoinsplit.back();
+        if (mtx.vJoinSplit.size() > 0) {
+            prevJoinSplit = mtx.vJoinSplit.back();
         }
 
         // If there is no change, the chain has terminated so we can reset the tracked treestate.
-        if (jsChange == 0 && mtx.vjoinsplit.size() > 0) {
+        if (jsChange == 0 && mtx.vJoinSplit.size() > 0) {
             intermediates.clear();
             previousCommitments.clear();
         }
@@ -679,7 +679,7 @@ void TransactionBuilder::CreateJSDescription(
     std::array<size_t, ZC_NUM_JS_OUTPUTS>& outputMap)
 {
     LogPrint("zrpcunsafe", "CreateJSDescription: creating joinsplit at index %d (vpub_old=%s, vpub_new=%s, in[0]=%s, in[1]=%s, out[0]=%s, out[1]=%s)\n",
-        mtx.vjoinsplit.size(),
+        mtx.vJoinSplit.size(),
         FormatMoney(vpub_old), FormatMoney(vpub_new),
         FormatMoney(vjsin[0].note.value()), FormatMoney(vjsin[1].note.value()),
         FormatMoney(vjsout[0].value), FormatMoney(vjsout[1].value));
@@ -708,7 +708,7 @@ void TransactionBuilder::CreateJSDescription(
         }
     }
 
-    mtx.vjoinsplit.push_back(jsdesc);
+    mtx.vJoinSplit.push_back(jsdesc);
 
     // TODO: Sprout payment disclosure
 }
