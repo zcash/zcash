@@ -725,7 +725,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
         if ( ASSETCHAINS_MARMARA != 0 && nHeight > 0 && (nHeight & 1) == 0) {  // add marmara coinbase opret for activated coins (for even blocks)
             char checkaddr[64];
             Getscriptaddress(checkaddr, txNew.vout[0].scriptPubKey);
-            //`fprintf(stderr,"set mining coinbase -> %s\n",checkaddr);
+            fprintf(stderr,"marmara set mining coinbase -> %s\n",checkaddr);  // uncommented
             txNew.vout.resize(2);
             txNew.vout[1].nValue = 0;
             txNew.vout[1].scriptPubKey = MarmaraCoinbaseOpret('C', nHeight, pk);
