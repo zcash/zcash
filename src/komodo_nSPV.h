@@ -28,8 +28,8 @@
 #ifndef KOMODO_NSPV_H
 #define KOMODO_NSPV_H
 
-#define NSPV_POLLITERS 10
-#define NSPV_POLLMICROS 100777
+#define NSPV_POLLITERS 15
+#define NSPV_POLLMICROS 100000
 #define NSPV_MAXVINS 64
 #define NSPV_AUTOLOGOUT 777
 #define NSPV_BRANCHID 0x76b809bb
@@ -51,7 +51,7 @@
 #define NSPV_BROADCAST 0x0c
 #define NSPV_BROADCASTRESP 0x0d
 
-int32_t NSPV_gettransaction(int32_t skipvalidation,int32_t vout,uint256 txid,int32_t height,CTransaction &tx);
+int32_t NSPV_gettransaction(int32_t skipvalidation,int32_t vout,uint256 txid,int32_t height,CTransaction &tx,int64_t extradata,uint32_t tiptime,int64_t &rewardsum);
 extern uint256 SIG_TXHASH;
 uint32_t NSPV_blocktime(int32_t hdrheight);
 
@@ -471,11 +471,11 @@ int32_t NSPV_fastnotariescount(CTransaction tx,uint8_t elected[64][33],uint32_t 
  */
 int32_t NSPV_notariescount(CTransaction tx,uint8_t elected[64][33])
 {
-    uint8_t *script; CTransaction vintx; int32_t i,j,utxovout,scriptlen,numsigs = 0;
+    uint8_t *script; CTransaction vintx; int64_t rewardsum = 0; int32_t i,j,utxovout,scriptlen,numsigs = 0;
     for (i=0; i<tx.vin.size(); i++)
     {
         utxovout = tx.vin[i].prevout.n;
-        if ( NSPV_gettransaction(1,utxovout,tx.vin[i].prevout.hash,0,vintx) != 0 )
+        if ( NSPV_gettransaction(1,utxovout,tx.vin[i].prevout.hash,0,vintx,-1,0,rewardsum) != 0 )
         {
             fprintf(stderr,"error getting %s/v%d\n",tx.vin[i].prevout.hash.GetHex().c_str(),utxovout);
             return(numsigs);
