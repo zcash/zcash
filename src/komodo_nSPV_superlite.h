@@ -43,6 +43,7 @@ struct NSPV_txproof NSPV_txproof_cache[NSPV_MAXVINS * 4];
 
 struct NSPV_ntzsresp *NSPV_ntzsresp_find(int32_t reqheight)
 {
+    int32_t i;
     for (i=0; i<sizeof(NSPV_ntzsresp_cache)/sizeof(*NSPV_ntzsresp_cache); i++)
         if ( NSPV_ntzsresp_cache[i].reqheight == reqheight )
             return(&NSPV_ntzsresp_cache[i]);
@@ -64,6 +65,7 @@ struct NSPV_txproof *NSPV_ntzsresp_add(struct NSPV_ntzsresp *ptr)
 
 struct NSPV_txproof *NSPV_txproof_find(uint256 txid)
 {
+    int32_t i;
     for (i=0; i<sizeof(NSPV_txproof_cache)/sizeof(*NSPV_txproof_cache); i++)
         if ( NSPV_txproof_cache[i].txid == txid )
             return(&NSPV_txproof_cache[i]);
@@ -85,6 +87,7 @@ struct NSPV_txproof *NSPV_txproof_add(struct NSPV_txproof *ptr)
 
 struct NSPV_ntzsproofresp *NSPV_ntzsproof_find(uint256 prevtxid,uint256 nexttxid)
 {
+    int32_t i;
     for (i=0; i<sizeof(NSPV_ntzsproofresp_cache)/sizeof(*NSPV_ntzsproofresp_cache); i++)
         if ( NSPV_ntzsproofresp_cache[i].prevtxid == prevtxid && NSPV_ntzsproofresp_cache[i].nexttxid == nexttxid )
             return(&NSPV_ntzsproofresp_cache[i]);

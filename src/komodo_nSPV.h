@@ -279,12 +279,12 @@ void NSPV_txproof_copy(struct NSPV_txproof *dest,struct NSPV_txproof *ptr)
     *dest = *ptr;
     if ( ptr->tx != 0 )
     {
-        dest->tx = malloc(ptr->txlen);
+        dest->tx = (uint8_t *)malloc(ptr->txlen);
         memcpy(dest->tx,ptr->tx,ptr->txlen);
     }
     if ( ptr->txproof != 0 )
     {
-        dest->txproof = malloc(ptr->txprooflen);
+        dest->txproof = (uint8_t *)malloc(ptr->txprooflen);
         memcpy(dest->txproof,ptr->txproof,ptr->txprooflen);
     }
 }
@@ -348,17 +348,17 @@ void NSPV_ntzsproof_copy(struct NSPV_ntzsproofresp *dest,struct NSPV_ntzsproofre
     *dest = *ptr;
     if ( ptr->common.hdrs != 0 )
     {
-        dest->common.hdrs = malloc(ptr->common.numhdrs * sizeof(*ptr->common.hdrs));
+        dest->common.hdrs = (struct NSPV_equihdr *)malloc(ptr->common.numhdrs * sizeof(*ptr->common.hdrs));
         memcpy(dest->common.hdrs,ptr->common.hdrs,ptr->common.numhdrs * sizeof(*ptr->common.hdrs));
     }
     if ( ptr->prevntz != 0 )
     {
-        dest->prevntz = malloc(ptr->prevtxlen);
+        dest->prevntz = (uint8_t *)malloc(ptr->prevtxlen);
         memcpy(dest->prevntz,ptr->prevntz,ptr->prevtxlen);
     }
     if ( ptr->nextntz != 0 )
     {
-        dest->nextntz = malloc(ptr->nexttxlen);
+        dest->nextntz = (uint8_t *)malloc(ptr->nexttxlen);
         memcpy(dest->nextntz,ptr->nextntz,ptr->nexttxlen);
     }
 }

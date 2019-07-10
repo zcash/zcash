@@ -80,9 +80,9 @@ int32_t NSPV_ntzextract(struct NSPV_ntz *ptr,uint256 ntztxid,int32_t txidht,uint
 int32_t NSPV_getntzsresp(struct NSPV_ntzsresp *ptr,int32_t reqheight)
 {
     struct NSPV_ntzargs prev,next;
-    if ( height < chainActive.LastTip()->GetHeight() )
-        height++;
-    if ( NSPV_notarized_bracket(&prev,&next,height) == 0 )
+    if ( reqheight < chainActive.LastTip()->GetHeight() )
+        reqheight++;
+    if ( NSPV_notarized_bracket(&prev,&next,reqheight) == 0 )
     {
         if ( prev.ntzheight != 0 )
         {
