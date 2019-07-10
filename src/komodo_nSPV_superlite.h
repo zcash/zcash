@@ -231,6 +231,9 @@ UniValue NSPV_logout()
     if ( NSPV_logintime != 0 )
         fprintf(stderr,"scrub wif and privkey from NSPV memory\n");
     else result.push_back(Pair("status","wasnt logged in"));
+    memset(NSPV_ntzsproofresp_cache,0,sizeof(NSPV_ntzsproofresp_cache));
+    memset(NSPV_txproof_cache,0,sizeof(NSPV_txproof_cache));
+    memset(NSPV_ntzsresp_cache,0,sizeof(NSPV_ntzsresp_cache));
     memset(NSPV_wifstr,0,sizeof(NSPV_wifstr));
     memset(&NSPV_key,0,sizeof(NSPV_key));
     NSPV_logintime = 0;
@@ -539,9 +542,10 @@ UniValue NSPV_notarizations(int32_t reqheight)
     if ( (ptr= NSPV_ntzsresp_find(reqheight)) != 0 )
     {
         fprintf(stderr,"FROM CACHE NSPV_notarizations.%d\n",reqheight);
+        NSPV_ntzsresp_purge(&NSPV_ntzsresult);
+        NSPV_ntzsresp_copy(&NSPV_ntzsresult,ptr);
         return(NSPV_ntzsresp_json(ptr));
     }
-    NSPV_ntzsresp_purge(&NSPV_ntzsresult);
     msg[len++] = NSPV_NTZS;
     len += iguana_rwnum(1,&msg[len],sizeof(reqheight),&reqheight);
     for (iter=0; iter<3; iter++);
@@ -564,13 +568,15 @@ UniValue NSPV_txidhdrsproof(uint256 prevtxid,uint256 nexttxid)
     if ( (ptr= NSPV_ntzsproof_find(prevtxid,nexttxid)) != 0 )
     {
         fprintf(stderr,"FROM CACHE NSPV_txidhdrsproof %s %s\n",ptr->prevtxid.GetHex().c_str(),ptr->nexttxid.GetHex().c_str());
+        NSPV_txidhdrsproof_purge(&NSPV_ntzsproofresult);
+        NSPV_txidhdrsproof_copy(&NSPV_ntzsproofresult,ptr);
         return(NSPV_ntzsproof_json(ptr));
     }
     NSPV_ntzsproofresp_purge(&NSPV_ntzsproofresult);
     msg[len++] = NSPV_NTZSPROOF;
     len += iguana_rwbignum(1,&msg[len],sizeof(prevtxid),(uint8_t *)&prevtxid);
     len += iguana_rwbignum(1,&msg[len],sizeof(nexttxid),(uint8_t *)&nexttxid);
-    for (iter=0; iter<3; iter++);
+    //for (iter=0; iter<3; iter++);
     if ( NSPV_req(0,msg,len,NODE_NSPV,msg[0]>>1) != 0 )
     {
         for (i=0; i<NSPV_POLLITERS; i++)
@@ -579,7 +585,7 @@ UniValue NSPV_txidhdrsproof(uint256 prevtxid,uint256 nexttxid)
             if ( NSPV_ntzsproofresult.prevtxid == prevtxid && NSPV_ntzsproofresult.nexttxid == nexttxid )
                 return(NSPV_ntzsproof_json(&NSPV_ntzsproofresult));
         }
-    } else sleep(1);
+    } //else sleep(1);
     memset(&P,0,sizeof(P));
     return(NSPV_ntzsproof_json(&P));
 }
@@ -600,6 +606,8 @@ UniValue NSPV_txproof(int32_t vout,uint256 txid,int32_t height)
     if ( (ptr= NSPV_txproof_find(txid)) != 0 )
     {
         fprintf(stderr,"FROM CACHE NSPV_txproof %s\n",txid.GetHex().c_str());
+        NSPV_txproof_purge(&NSPV_txproofresult);
+        NSPV_txproof_copy(&NSPV_txproofresult,ptr);
         return(NSPV_txproof_json(ptr));
     }
     NSPV_txproof_purge(&NSPV_txproofresult);
