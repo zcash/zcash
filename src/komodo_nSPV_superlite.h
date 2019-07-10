@@ -113,7 +113,7 @@ CNode *NSPV_req(CNode *pnode,uint8_t *msg,int32_t len,uint64_t mask,int32_t ind)
     if ( pnode == 0 )
     {
         memset(pnodes,0,sizeof(pnodes));
-        LOCK(cs_vNodes);
+        //LOCK(cs_vNodes);
         n = 0;
         BOOST_FOREACH(CNode *ptr,vNodes)
         {
@@ -323,7 +323,7 @@ UniValue NSPV_ntzsproof_json(struct NSPV_ntzsproofresp *ptr)
     result.push_back(Pair("numhdrs",(int64_t)ptr->common.numhdrs));
     result.push_back(Pair("headers",NSPV_headers_json(ptr->common.hdrs,ptr->common.numhdrs,ptr->common.prevht)));
     result.push_back(Pair("lastpeer",NSPV_lastpeer));
-    fprintf(stderr,"ntzs_proof %s %d, %s %d\n",ptr->prevtxid.GetHex().c_str,ptr->common.prevht,ptr->nexttxid.GetHex().c_str,ptr->common.nextht);
+    fprintf(stderr,"ntzs_proof %s %d, %s %d\n",ptr->prevtxid.GetHex().c_str(),ptr->common.prevht,ptr->nexttxid.GetHex().c_str(),ptr->common.nextht);
     return(result);
 }
 
