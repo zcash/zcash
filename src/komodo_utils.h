@@ -2387,7 +2387,7 @@ void komodo_args(char *argv0)
         if ( strcmp("ILN",ASSETCHAINS_SYMBOL) == 0 )
         {
             // No CCs used on this chain yet. 
-            CCDISABLEALL;
+           // CCDISABLEALL;
         }
         if ( strcmp("OUR",ASSETCHAINS_SYMBOL) == 0 )
         {
