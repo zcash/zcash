@@ -599,7 +599,7 @@ UniValue NSPV_txproof(int32_t vout,uint256 txid,int32_t height)
     uint8_t msg[64]; int32_t i,iter,len = 0; struct NSPV_txproof P,*ptr;
     if ( (ptr= NSPV_txproof_find(txid)) != 0 )
     {
-        fprintf(stderr,"FROM CACHE NSPV_txproof %s %s\n",txid.GetHex().c_str());
+        fprintf(stderr,"FROM CACHE NSPV_txproof %s\n",txid.GetHex().c_str());
         return(NSPV_txproof_json(ptr));
     }
     NSPV_txproof_purge(&NSPV_txproofresult);
