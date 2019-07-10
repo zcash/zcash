@@ -20,6 +20,113 @@
 // nSPV wallet uses superlite functions (and some komodod built in functions) to implement nSPV_spend
 extern void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry);
 
+int32_t NSPV_validatehdrs(struct NSPV_ntzsproofresp *ptr)
+{
+    int32_t i,height,txidht; CTransaction tx; uint256 blockhash,txid,desttxid;
+    if ( (ptr->common.nextht-ptr->common.prevht+1) != ptr->common.numhdrs )
+    {
+        fprintf(stderr,"next.%d prev.%d -> %d vs %d\n",ptr->common.nextht,ptr->common.prevht,ptr->common.nextht-ptr->common.prevht+1,ptr->common.numhdrs);
+        return(-2);
+    }
+    else if ( NSPV_txextract(tx,ptr->nextntz,ptr->nexttxlen) < 0 )
+        return(-3);
+    else if ( tx.GetHash() != ptr->nexttxid )
+        return(-4);
+    else if ( NSPV_notarizationextract(1,&height,&blockhash,&desttxid,tx) < 0 )
+        return(-5);
+    else if ( height != ptr->common.nextht )
+        return(-6);
+    else if ( NSPV_hdrhash(&ptr->common.hdrs[ptr->common.numhdrs-1]) != blockhash )
+        return(-7);
+    for (i=ptr->common.numhdrs-1; i>0; i--)
+    {
+        blockhash = NSPV_hdrhash(&ptr->common.hdrs[i-1]);
+        if ( blockhash != ptr->common.hdrs[i].hashPrevBlock )
+            return(-i-13);
+    }
+    if ( NSPV_txextract(tx,ptr->prevntz,ptr->prevtxlen) < 0 )
+        return(-8);
+    else if ( tx.GetHash() != ptr->prevtxid )
+        return(-9);
+    else if ( NSPV_notarizationextract(1,&height,&blockhash,&desttxid,tx) < 0 )
+        return(-10);
+    else if ( height != ptr->common.prevht )
+        return(-11);
+    else if ( NSPV_hdrhash(&ptr->common.hdrs[0]) != blockhash )
+        return(-12);
+    return(0);
+}
+
+int32_t NSPV_gettransaction(int32_t skipvalidation,int32_t vout,uint256 txid,int32_t height,CTransaction &tx,int64_t extradata,uint32_t tiptime,int64_t &rewardsum)
+{
+    int32_t i,offset,retval = 0; int64_t rewards = 0; uint32_t nLockTime; std::vector<uint8_t> proof;
+    for (i=0; i<3; i++)
+    {
+        NSPV_txproof(vout,txid,height);
+        if ( NSPV_txproofresult.txlen != 0 )
+            break;
+        sleep(1);
+    }
+    if ( NSPV_txproofresult.txid != txid )
+    {
+        fprintf(stderr,"txproof error %s != %s\n",NSPV_txproofresult.txid.GetHex().c_str(),txid.GetHex().c_str());
+        return(-1);
+    }
+    else if ( NSPV_txextract(tx,NSPV_txproofresult.tx,NSPV_txproofresult.txlen) < 0 || NSPV_txproofresult.txlen <= 0 )
+        retval = -2000;
+    else if ( skipvalidation == 0 && NSPV_txproofresult.unspentvalue <= 0 )
+        retval = -2001;
+    else if ( ASSETCHAINS_SYMBOL[0] == 0 && extradata >= 0 && tiptime != 0 )
+    {
+        rewards = komodo_interestnew(height,tx.vout[vout].nValue,tx.nLockTime,tiptime);
+        if ( rewards != extradata )
+        {
+            fprintf(stderr,"extradata %.8f vs rewards %.8f\n",dstr(extradata),dstr(rewards));
+        }
+        rewardsum += rewards;
+    }
+    
+    if ( skipvalidation == 0 )
+    {
+        if ( NSPV_txproofresult.txprooflen > 0 )
+        {
+            proof.resize(NSPV_txproofresult.txprooflen);
+            memcpy(&proof[0],NSPV_txproofresult.txproof,NSPV_txproofresult.txprooflen);
+        }
+        fprintf(stderr,"call NSPV_notarizations\n");
+        NSPV_notarizations(height); // gets the prev and next notarizations
+        if ( NSPV_inforesult.notarization.height >= height && (NSPV_ntzsresult.prevntz.height == 0 || NSPV_ntzsresult.prevntz.height >= NSPV_ntzsresult.nextntz.height) )
+        {
+            fprintf(stderr,"issue manual bracket\n");
+            NSPV_notarizations(height-1);
+            NSPV_notarizations(height+1);
+            NSPV_notarizations(height); // gets the prev and next notarizations
+        }
+        if ( NSPV_ntzsresult.prevntz.height != 0 && NSPV_ntzsresult.prevntz.height <= NSPV_ntzsresult.nextntz.height )
+        {
+            fprintf(stderr,">>>>> gettx ht.%d prev.%d next.%d\n",height,NSPV_ntzsresult.prevntz.height, NSPV_ntzsresult.nextntz.height);
+            offset = (height - NSPV_ntzsresult.prevntz.height);
+            if ( offset >= 0 && height <= NSPV_ntzsresult.nextntz.height )
+            {
+                fprintf(stderr,"call NSPV_txidhdrsproof %s %s\n",NSPV_ntzsresult.prevntz.txid.GetHex().c_str(),NSPV_ntzsresult.nextntz.txid.GetHex().c_str());
+                NSPV_txidhdrsproof(NSPV_ntzsresult.prevntz.txid,NSPV_ntzsresult.nextntz.txid);
+                usleep(10000);
+                if ( (retval= NSPV_validatehdrs(&NSPV_ntzsproofresult)) == 0 )
+                {
+                    std::vector<uint256> txids; uint256 proofroot;
+                    proofroot = BitcoinGetProofMerkleRoot(proof,txids);
+                    if ( proofroot != NSPV_ntzsproofresult.common.hdrs[offset].hashMerkleRoot )
+                    {
+                        fprintf(stderr,"prooflen.%d proofroot.%s vs %s\n",NSPV_txproofresult.txprooflen,proofroot.GetHex().c_str(),NSPV_ntzsproofresult.common.hdrs[offset].hashMerkleRoot.GetHex().c_str());
+                        retval = -2003;
+                    }
+                }
+            } else retval = -2002;
+        } else retval = -2004;
+    }
+    return(retval);
+}
+
 int32_t NSPV_vinselect(int32_t *aboveip,int64_t *abovep,int32_t *belowip,int64_t *belowp,struct NSPV_utxoresp utxos[],int32_t numunspents,int64_t value)
 {
     int32_t i,abovei,belowi; int64_t above,below,gap,atx_value;
