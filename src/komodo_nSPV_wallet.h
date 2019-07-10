@@ -82,7 +82,7 @@ int32_t NSPV_gettransaction(int32_t skipvalidation,int32_t vout,uint256 txid,int
             fprintf(stderr,"extradata %.8f vs rewards %.8f\n",dstr(extradata),dstr(rewards));
         rewardsum += rewards;
     }
-    fprintf(stderr,"txid.%s vs hash.%s\n",txid.GetHex().c_str(),hash.GetHex().c_str());
+    fprintf(stderr,"txid.%s vs hash.%s\n",txid.GetHex().c_str(),tx.GetHash().GetHex().c_str());
     
     if ( skipvalidation == 0 )
     {
