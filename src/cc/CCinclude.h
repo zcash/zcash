@@ -152,6 +152,7 @@ struct oracleprice_info
 };
 
 typedef std::vector<uint8_t> vscript_t;
+extern struct NSPV_CCmtxinfo NSPV_U;
 
 #ifdef ENABLE_WALLET
 extern CWallet* pwalletMain;
