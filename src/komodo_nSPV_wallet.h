@@ -61,7 +61,7 @@ int32_t NSPV_validatehdrs(struct NSPV_ntzsproofresp *ptr)
 int32_t NSPV_gettransaction(int32_t skipvalidation,int32_t vout,uint256 txid,int32_t height,CTransaction &tx,int64_t extradata,uint32_t tiptime,int64_t &rewardsum)
 {
     struct NSPV_txproof *ptr; int32_t i,offset,retval = 0; int64_t rewards = 0; uint32_t nLockTime; std::vector<uint8_t> proof;
-    if ( (ptr= NSPV_txproof_find(txid)) == 0 && ptr->txprooflen != 0 )
+    if ( (ptr= NSPV_txproof_find(txid)) == 0 || ptr->txprooflen != 0 )
     {
         NSPV_txproof(vout,txid,height);
         ptr = &NSPV_txproofresult;
@@ -73,8 +73,10 @@ int32_t NSPV_gettransaction(int32_t skipvalidation,int32_t vout,uint256 txid,int
     }
     else if ( NSPV_txextract(tx,ptr->tx,ptr->txlen) < 0 || ptr->txlen <= 0 )
         retval = -2000;
-    else if ( skipvalidation == 0 && ptr->unspentvalue <= 0 )
+    else if ( tx.GetHash() != txid )
         retval = -2001;
+    else if ( skipvalidation == 0 && ptr->unspentvalue <= 0 )
+        retval = -2002;
     else if ( ASSETCHAINS_SYMBOL[0] == 0 && extradata >= 0 && tiptime != 0 )
     {
         rewards = komodo_interestnew(height,tx.vout[vout].nValue,tx.nLockTime,tiptime);
@@ -118,7 +120,7 @@ int32_t NSPV_gettransaction(int32_t skipvalidation,int32_t vout,uint256 txid,int
                         retval = -2003;
                     }
                 }
-            } else retval = -2002;
+            } else retval = -2005;
         } else retval = -2004;
     }
     return(retval);
