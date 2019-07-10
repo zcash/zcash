@@ -147,7 +147,7 @@ struct NSPV_broadcastresp
     int32_t retcode;
 };
 
-struct CC_utxosinfo
+struct NSPV_CCutxosinfo
 {
     struct NSPV_utxosresp U;
     struct NSPV_utxoresp used[NSPV_MAXVINS];
