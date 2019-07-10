@@ -375,8 +375,8 @@ UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis) // what its a
         hex = NSPV_signtx(rewardsum,interestsum,retcodes,mtx,txfee,opret,used);
         if ( ASSETCHAINS_SYMBOL[0] == 0 )
         {
-            result.push_back(Pair("rewards",dstr(interestsum)));
-            result.push_back(Pair("validated",dstr(rewardsum)));
+            result.push_back(Pair("rewards",AmountFromValue(interestsum)));
+            result.push_back(Pair("validated",AmountFromValue(rewardsum)));
         }
         if ( hex.size() > 0 )
         {
