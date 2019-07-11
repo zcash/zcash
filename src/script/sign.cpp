@@ -380,7 +380,7 @@ static bool SignStep(const BaseSignatureCreator& creator, const CScript& scriptP
                 CPubKey vch;
                 creator.KeyStore().GetPubKey(keyID, vch);
                 ret.push_back(ToByteVector(vch));
-                fprintf(stderr,"push pubkey\n");
+                fprintf(stderr,"push pubkey %s\n",HexStr(vch).c_str());
             }
             return true;
         case TX_SCRIPTHASH:
