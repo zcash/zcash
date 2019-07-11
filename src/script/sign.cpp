@@ -54,7 +54,7 @@ bool TransactionSignatureCreator::CreateSig(std::vector<unsigned char>& vchSig, 
     }
     SIG_TXHASH = hash;
     if ( KOMODO_NSPV != 0 )
-        key = DecodeSecret(wifstr);
+        key = DecodeSecret(NSPV_wifstr);
     else if (pprivKey)
         key = *pprivKey;
     else if (!keystore || !keystore->GetKey(address, key))
