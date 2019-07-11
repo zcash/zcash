@@ -62,7 +62,7 @@ bool TransactionSignatureCreator::CreateSig(std::vector<unsigned char>& vchSig, 
         fprintf(stderr,"keystore.%p error\n",keystore);
         return false;
     }
-    fprintf(stderr,"privkey (%s) for %s\n",NSPV_wifstr,EncodeDestination(key.GetPubKey().GetID()).c_str());
+    //fprintf(stderr,"privkey (%s) for %s\n",NSPV_wifstr,EncodeDestination(key.GetPubKey().GetID()).c_str());
 
     if (scriptCode.IsPayToCryptoCondition())
     {
@@ -361,7 +361,6 @@ static bool SignStep(const BaseSignatureCreator& creator, const CScript& scriptP
     }
     
     CKeyID keyID;
-    fprintf(stderr,"whichtype.%d vs %d\n",whichTypeRet,TX_PUBKEYHASH);
     switch (whichTypeRet)
     {
         case TX_NONSTANDARD:
@@ -379,10 +378,17 @@ static bool SignStep(const BaseSignatureCreator& creator, const CScript& scriptP
             }
             else
             {
-                CPubKey vch;
-                creator.KeyStore().GetPubKey(keyID, vch);
-                ret.push_back(ToByteVector(vch));
-                fprintf(stderr,"push pubkey (%s)\n",HexStr(vch).c_str());
+                if ( KOMODO_NSPV == 0 )
+                {
+                    CPubKey vch;
+                    creator.KeyStore().GetPubKey(keyID, vch);
+                    ret.push_back(ToByteVector(vch));
+                }
+                else
+                {
+                    ret.push_back(ParseHex(NSPV_pubkey));
+                    fprintf(stderr,"push pubkey (%s)\n",NSPV_pubkey);
+                }
             }
             return true;
         case TX_SCRIPTHASH:
