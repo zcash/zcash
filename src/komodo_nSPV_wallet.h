@@ -238,10 +238,14 @@ bool NSPV_SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const C
         fprintf(stderr,"use legacy sig validation\n");
         branchid = 0;
     }
+    mtx.fOverwintered = true;
+    mtx.nExpiryHeight = 0;
+    mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
+    mtx.nVersion = branchid;
     if ( ProduceSignature(TransactionSignatureCreator(&keystore,&txNewConst,vini,utxovalue,SIGHASH_ALL),scriptPubKey,sigdata,branchid) != 0 )
     {
         UpdateTransaction(mtx,vini,sigdata);
-        // fprintf(stderr,"SIG_TXHASH %s vini.%d %.8f\n",SIG_TXHASH.GetHex().c_str(),vini,(double)utxovalue/COIN);
+        fprintf(stderr,"SIG_TXHASH %s vini.%d %.8f\n",SIG_TXHASH.GetHex().c_str(),vini,(double)utxovalue/COIN);
         return(true);
     }  else fprintf(stderr,"sigerr SIG_TXHASH %s vini.%d %.8f\n",SIG_TXHASH.GetHex().c_str(),vini,(double)utxovalue/COIN);
     return(false);
@@ -358,10 +362,6 @@ UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis) // what its a
     }
     printf("%s numutxos.%d balance %.8f\n",NSPV_utxosresult.coinaddr,NSPV_utxosresult.numutxos,(double)NSPV_utxosresult.total/COIN);
     CScript opret; std::string hex; struct NSPV_utxoresp used[NSPV_MAXVINS]; CMutableTransaction mtx; CTransaction tx; int64_t rewardsum=0,interestsum=0;
-    mtx.fOverwintered = true;
-    mtx.nExpiryHeight = 0;
-    mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
-    mtx.nVersion = SAPLING_TX_VERSION;
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
         mtx.nLockTime = (uint32_t)time(NULL) - 777;
     memset(used,0,sizeof(used));

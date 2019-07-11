@@ -2224,6 +2224,7 @@ bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlo
     {
         int64_t rewardsum = 0; int32_t retval,vout = 0;
         retval = NSPV_gettransaction(1,vout,hash,0,txOut,0,0,rewardsum);
+        fprintf(stderr,"myGetTransaction retval.%d\n",retval);
         return(retval == 0);
     }
     // need a GetTransaction without lock so the validation code for assets can run without deadlock
@@ -8467,23 +8468,20 @@ CMutableTransaction CreateNewContextualCMutableTransaction(const Consensus::Para
 {
     CMutableTransaction mtx;
 
-    bool isOverwintered = NetworkUpgradeActive(nHeight, consensusParams, Consensus::UPGRADE_OVERWINTER) || (KOMODO_NSPV != 0);
+    bool isOverwintered = NetworkUpgradeActive(nHeight, consensusParams, Consensus::UPGRADE_OVERWINTER);
     if (isOverwintered) {
         mtx.fOverwintered = true;
-        if ( KOMODO_NSPV == 0 )
-            mtx.nExpiryHeight = nHeight + expiryDelta;
+        mtx.nExpiryHeight = nHeight + expiryDelta;
 
-        if ( NetworkUpgradeActive(nHeight, consensusParams, Consensus::UPGRADE_SAPLING) || (KOMODO_NSPV != 0) )
-        {
+        if (NetworkUpgradeActive(nHeight, consensusParams, Consensus::UPGRADE_SAPLING)) {
             mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
             mtx.nVersion = SAPLING_TX_VERSION;
-        }
-        else
-        {
+        } else {
             mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
             mtx.nVersion = OVERWINTER_TX_VERSION;
-            mtx.nExpiryHeight = std::min(mtx.nExpiryHeight,
-                static_cast<uint32_t>(consensusParams.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight -1));
+            mtx.nExpiryHeight = std::min(
+                mtx.nExpiryHeight,
+                static_cast<uint32_t>(consensusParams.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight - 1));
         }
     }
     return mtx;

@@ -431,6 +431,7 @@ UniValue NSPV_broadcast_json(struct NSPV_broadcastresp *ptr,uint256 txid)
 UniValue NSPV_login(char *wifstr)
 {
     UniValue result(UniValue::VOBJ); char coinaddr[64]; uint8_t data[128]; int32_t len,valid = 0;
+    NSPV_logout();
     len = bitcoin_base58decode(data,wifstr);
     if ( strlen(wifstr) < 64 && (len == 38 && data[len-5] == 1) || (len == 37 && data[len-5] != 1) )
         valid = 1;
