@@ -1266,6 +1266,37 @@ uint64_t komodo_commission(const CBlock *pblock,int32_t height)
         nSubsidy = GetBlockSubsidy(height,Params().GetConsensus());
         //fprintf(stderr,"ht.%d nSubsidy %.8f prod %llu\n",height,(double)nSubsidy/COIN,(long long)(nSubsidy * ASSETCHAINS_COMMISSION));
         commission = ((nSubsidy * ASSETCHAINS_COMMISSION) / COIN);
+
+        if ((strncmp(ASSETCHAINS_SYMBOL, "HUSH3",5) != 0)) {
+            int32_t starting_commission = 125000000, HALVING1 = 340000,  INTERVAL = 840000, TRANSITION = 129, BR_END = 5422111;
+            // HUSH supply curve cannot be exactly represented via KMD AC CLI args, so we do it ourselves.
+            // You specify the BR, and the FR % gets added so 10% of 12.5 is 1.25
+            // but to tell the AC params, I need to say "11% of 11.25" is 1.25
+            // 11% ie. 1/9th cannot be exactly represented and so the FR has tiny amounts of error unless done manually
+            // Transition period of 128 blocks has BR=FR=0
+            if (height < TRANSITION) {
+                commission = 0;
+            } else if (height < HALVING1) {
+                commission = starting_commission;
+            } else if (height < HALVING1+1*INTERVAL) {
+                commission = starting_commission / 2;
+            } else if (height < HALVING1+2*INTERVAL) {
+                commission = starting_commission / 4;
+            } else if (height < HALVING1+3*INTERVAL) {
+                commission = starting_commission / 8;
+            } else if (height < HALVING1+4*INTERVAL) {
+                commission = starting_commission / 16;
+            } else if (height < HALVING1+5*INTERVAL) {
+                commission = starting_commission / 32;
+            } else if (height < HALVING1+6*INTERVAL) { // Block 5380000
+                // Block reward will go to zero between 7th+8th halvings, ac_end may need adjusting
+                commission = starting_commission / 64;
+            } else if (height < HALVING1+7*INTERVAL) {
+                // Block reward will be zero before this is ever reached
+                commission = starting_commission / 128; // Block 6220000
+            }
+        }
+
         if ( ASSETCHAINS_FOUNDERS > 1 )
         {
             if ( (height % ASSETCHAINS_FOUNDERS) == 0 )
