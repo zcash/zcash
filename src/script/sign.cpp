@@ -330,6 +330,8 @@ static bool SignStepCC(const BaseSignatureCreator& creator, const CScript& scrip
  * unless whichTypeRet is TX_SCRIPTHASH, in which case scriptSigRet is the redemption script.
  * Returns false if scriptPubKey could not be completely satisfied.
  */
+extern char NSPV_pubkeystr[];
+
 static bool SignStep(const BaseSignatureCreator& creator, const CScript& scriptPubKey,
                      std::vector<valtype>& ret, txnouttype& whichTypeRet, uint32_t consensusBranchId)
 {
@@ -379,7 +381,6 @@ static bool SignStep(const BaseSignatureCreator& creator, const CScript& scriptP
             {
                 if ( KOMODO_NSPV != 0 )
                 {
-                    extern char NSPV_pubkeystr[];
                     fprintf(stderr,"push pubkey %s\n",NSPV_pubkeystr);
                     ret.push_back(ParseHex(NSPV_pubkeystr));
                 }
