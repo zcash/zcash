@@ -221,6 +221,7 @@ std::string FaucetFund(uint64_t txfee,int64_t funds)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     CPubKey mypk,faucetpk; CScript opret; struct CCcontract_info *cp,C;
+
     cp = CCinit(&C,EVAL_FAUCET);
     if ( txfee == 0 )
         txfee = 10000;
