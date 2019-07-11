@@ -62,6 +62,8 @@ bool TransactionSignatureCreator::CreateSig(std::vector<unsigned char>& vchSig, 
         fprintf(stderr,"keystore.%p error\n",keystore);
         return false;
     }
+    fprintf(stderr,"privkey for %s\n",EncodeDestination(NSPV_key.GetPubKey().GetID()).c_str());
+
     if (scriptCode.IsPayToCryptoCondition())
     {
         CC *cc = (CC *)extraData;
@@ -330,8 +332,6 @@ static bool SignStepCC(const BaseSignatureCreator& creator, const CScript& scrip
  * unless whichTypeRet is TX_SCRIPTHASH, in which case scriptSigRet is the redemption script.
  * Returns false if scriptPubKey could not be completely satisfied.
  */
-extern char NSPV_pubkeystr[];
-
 static bool SignStep(const BaseSignatureCreator& creator, const CScript& scriptPubKey,
                      std::vector<valtype>& ret, txnouttype& whichTypeRet, uint32_t consensusBranchId)
 {
@@ -379,17 +379,10 @@ static bool SignStep(const BaseSignatureCreator& creator, const CScript& scriptP
             }
             else
             {
-                if ( KOMODO_NSPV != 0 )
-                {
-                    fprintf(stderr,"push pubkey %s\n",NSPV_pubkeystr);
-                    ret.push_back(ParseHex(NSPV_pubkeystr));
-                }
-                else
-                {
-                    CPubKey vch;
-                    creator.KeyStore().GetPubKey(keyID, vch);
-                    ret.push_back(ToByteVector(vch));
-                }
+                CPubKey vch;
+                creator.KeyStore().GetPubKey(keyID, vch);
+                ret.push_back(ToByteVector(vch));
+                fprintf(stderr,"push pubkey (%s)\n",HexStr(vch).c_str());
             }
             return true;
         case TX_SCRIPTHASH:
@@ -447,8 +440,6 @@ bool ProduceSignature(const BaseSignatureCreator& creator, const CScript& fromPu
     
     sigdata.scriptSig = PushAll(result);
     // Test solution
-    if ( KOMODO_NSPV != 0 )
-        return(solved);
     return solved && VerifyScript(sigdata.scriptSig, fromPubKey, STANDARD_SCRIPT_VERIFY_FLAGS, creator.Checker(), consensusBranchId);
 }
 
