@@ -328,7 +328,7 @@ UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis) // what its a
     {
         data.resize(20);
         memcpy(&data[0],&rmd160[1],20);
-        scriptPubKey = CScript() << OP_DUP << OP_HASH160 << ParseHex(HexStr(data)) << OP_EQUALVERIFY << OP_CHECKSIG);
+        scriptPubKey = (CScript() << OP_DUP << OP_HASH160 << ParseHex(HexStr(data)) << OP_EQUALVERIFY << OP_CHECKSIG);
     }
     if ( NSPV_inforesult.height == 0 )
     {
