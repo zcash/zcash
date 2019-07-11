@@ -126,6 +126,7 @@ int32_t NSPV_getinfo(struct NSPV_inforesp *ptr,int32_t reqheight)
     {
         ptr->height = pindex->GetHeight();
         ptr->blockhash = pindex->GetBlockHash();
+        memset(&pair,0,sizeof(pair));
         if ( NSPV_getntzsresp(&pair,ptr->height-1) < 0 )
             return(-1);
         ptr->notarization = pair.prevntz;
