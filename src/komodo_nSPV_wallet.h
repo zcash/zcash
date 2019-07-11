@@ -299,7 +299,7 @@ std::string NSPV_signtx(int64_t &rewardsum,int64_t &interestsum,UniValue &retcod
 
 UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis) // what its all about!
 {
-    UniValue result(UniValue::VOBJ),retcodes(UniValue::VARR); CScript scriptPubKey; uint8_t *data,rmd160[128]; int32_t len; int64_t txfee = 10000;
+    UniValue result(UniValue::VOBJ),retcodes(UniValue::VARR); std::vector<uint8_t> data; CScript scriptPubKey; uint8_t *ptr,rmd160[128]; int32_t len; int64_t txfee = 10000;
     if ( NSPV_logintime == 0 || time(NULL) > NSPV_logintime+NSPV_AUTOLOGOUT )
     {
         result.push_back(Pair("result","error"));
@@ -318,9 +318,9 @@ UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis) // what its a
         if ( (len= is_hexstr(destaddr,0)) > 0 )
         {
             len >>= 1;
-            scriptPubKey.resize(len);
-            data = (uint8_t *)scriptPubKey.begin();
-            decode_hex(data,len,destaddr);
+            data.resize(len);
+            decode_hex(&data[0],len,destaddr);
+            scriptPubKey = CScript() << data << OP_CHECKCRYPTOCONDITION;
         }
         else
         {
