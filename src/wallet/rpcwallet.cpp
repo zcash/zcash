@@ -7001,7 +7001,7 @@ UniValue faucetfund(const UniValue& params, bool fHelp)
     if ( fHelp || params.size() > 1 )
         throw runtime_error("faucetfund amount\n");
     funds = atof(params[0].get_str().c_str()) * COIN + 0.00000000499999;
-    if ( (1) && KOMODO_NSPV != 0 )
+    if ( (0) && KOMODO_NSPV != 0 )
     {
         char coinaddr[64]; struct CCcontract_info *cp,C; CTxOut v;
         cp = CCinit(&C,EVAL_FAUCET);
@@ -7011,8 +7011,8 @@ UniValue faucetfund(const UniValue& params, bool fHelp)
     }
     if ( ensure_CCrequirements(EVAL_FAUCET) < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
-    //const CKeyStore& keystore = *pwalletMain;
-    //LOCK2(cs_main, pwalletMain->cs_wallet);
+    const CKeyStore& keystore = *pwalletMain;
+    LOCK2(cs_main, pwalletMain->cs_wallet);
     if (funds > 0) {
         hex = FaucetFund(0,(uint64_t) funds);
         if ( hex.size() > 0 )

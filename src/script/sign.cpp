@@ -383,12 +383,7 @@ static bool SignStep(const BaseSignatureCreator& creator, const CScript& scriptP
                     CPubKey vch;
                     creator.KeyStore().GetPubKey(keyID, vch);
                     ret.push_back(ToByteVector(vch));
-                }
-                else
-                {
-                    ret.push_back(ParseHex(NSPV_pubkeystr));
-                    fprintf(stderr,"push pubkey (%s)\n",NSPV_pubkeystr);
-                }
+                } else ret.push_back(ParseHex(NSPV_pubkeystr));
             }
             return true;
         case TX_SCRIPTHASH:

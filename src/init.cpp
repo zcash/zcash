@@ -1496,6 +1496,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         InitBlockIndex();
         SetRPCWarmupFinished();
         uiInterface.InitMessage(_("Done loading"));
+        pwalletMain = new CWallet("tmptmp.wallet");
         return !fRequestShutdown;
     }
     // ********************************************************* Step 7: load block chain
