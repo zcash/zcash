@@ -36,6 +36,7 @@ using namespace std;
 typedef vector<unsigned char> valtype;
 extern uint8_t ASSETCHAINS_TXPOW;
 extern CKey NSPV_key;
+extern char NSPV_wifstr[];
 extern int32_t KOMODO_NSPV;
 uint256 SIG_TXHASH;
 
@@ -62,7 +63,7 @@ bool TransactionSignatureCreator::CreateSig(std::vector<unsigned char>& vchSig, 
         fprintf(stderr,"keystore.%p error\n",keystore);
         return false;
     }
-    fprintf(stderr,"privkey for %s\n",EncodeDestination(NSPV_key.GetPubKey().GetID()).c_str());
+    fprintf(stderr,"privkey (%s) for %s\n",NSPV_wifstr,EncodeDestination(NSPV_key.GetPubKey().GetID()).c_str());
 
     if (scriptCode.IsPayToCryptoCondition())
     {
