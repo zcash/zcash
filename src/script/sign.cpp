@@ -35,7 +35,7 @@ using namespace std;
 
 typedef vector<unsigned char> valtype;
 extern uint8_t ASSETCHAINS_TXPOW;
-extern char NSPV_wifstr[];
+extern char NSPV_wifstr[],NSPV_pubkeystr[];
 extern int32_t KOMODO_NSPV;
 uint256 SIG_TXHASH;
 
@@ -386,8 +386,8 @@ static bool SignStep(const BaseSignatureCreator& creator, const CScript& scriptP
                 }
                 else
                 {
-                    ret.push_back(ParseHex(NSPV_pubkey));
-                    fprintf(stderr,"push pubkey (%s)\n",NSPV_pubkey);
+                    ret.push_back(ParseHex(NSPV_pubkeystr));
+                    fprintf(stderr,"push pubkey (%s)\n",NSPV_pubkeystr);
                 }
             }
             return true;
