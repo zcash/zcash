@@ -35,6 +35,8 @@ using namespace std;
 
 typedef vector<unsigned char> valtype;
 extern uint8_t ASSETCHAINS_TXPOW;
+extern CKey NSPV_key;
+extern int32_t KOMODO_NSPV;
 uint256 SIG_TXHASH;
 
 TransactionSignatureCreator::TransactionSignatureCreator(const CKeyStore* keystoreIn, const CTransaction* txToIn, unsigned int nInIn, const CAmount& amountIn, int nHashTypeIn) : BaseSignatureCreator(keystoreIn), txTo(txToIn), nIn(nInIn), nHashType(nHashTypeIn), amount(amountIn), checker(txTo, nIn, amountIn) {}
@@ -48,11 +50,13 @@ bool TransactionSignatureCreator::CreateSig(std::vector<unsigned char>& vchSig, 
         return false;
     }
     SIG_TXHASH = hash;
-    if (pprivKey)
+    if ( KOMODO_NSPV != 0 )
+        key = NSPV_key;
+    else if (pprivKey)
         key = *pprivKey;
     else if (!keystore || !keystore->GetKey(address, key))
     {
-        fprintf(stderr,"size.%d keystore.%p error\n",(int32_t)keystore.size(),keystore);
+        fprintf(stderr,"size.%d keystore.%p error\n",(int32_t)keystore->size(),keystore);
         return false;
     }
     if (scriptCode.IsPayToCryptoCondition())
