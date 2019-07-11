@@ -377,10 +377,18 @@ static bool SignStep(const BaseSignatureCreator& creator, const CScript& scriptP
             }
             else
             {
-                CPubKey vch;
-                creator.KeyStore().GetPubKey(keyID, vch);
-                ret.push_back(ToByteVector(vch));
-                fprintf(stderr,"push pubkey %s %d\n",HexStr(vch).c_str(),TX_PUBKEYHASH);
+                if ( KOMODO_NSPV != 0 )
+                {
+                    extern char NSPV_pubkeystr[];
+                    fprintf(stderr,"push pubkey %s\n",NSPV_pubkeystr);
+                    ret.push_back(ParseHex(NSPV_pubkeystr));
+                }
+                else
+                {
+                    CPubKey vch;
+                    creator.KeyStore().GetPubKey(keyID, vch);
+                    ret.push_back(ToByteVector(vch));
+                }
             }
             return true;
         case TX_SCRIPTHASH:
