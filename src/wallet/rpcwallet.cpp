@@ -8071,7 +8071,7 @@ void RegisterWalletRPCCommands(CRPCTable &tableRPC)
 
 UniValue opreturn_burn(const UniValue& params, bool fHelp)
 {
-    std::vector<uint8_t> vHexStr; CScript opret; int32_t txfee = 10000;CPubKey pubkey;
+    std::vector<uint8_t> vHexStr; CScript opret; int32_t txfee = 10000;CPubKey myPubkey;
     if (fHelp || (params.size() < 2) || (params.size() > 4) )
     {
         throw runtime_error(
@@ -8110,12 +8110,11 @@ UniValue opreturn_burn(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_TYPE_ERROR, "wallet is locked or unavailable.");
     EnsureWalletIsUnlocked();
     CReserveKey reservekey(pwalletMain);
-    if (!reservekey.GetReservedKey(pubkey))
+    if (!reservekey.GetReservedKey(myPubkey))
     {
         throw JSONRPCError(RPC_TYPE_ERROR, "keypool error.");
     }
 
-	CPubKey myPubkey = pubkey;
 	CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
 
 	int64_t normalInputs = AddNormalinputs(mtx, myPubkey, nAmount+txfee, 60);
