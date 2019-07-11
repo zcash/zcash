@@ -359,7 +359,7 @@ static bool SignStep(const BaseSignatureCreator& creator, const CScript& scriptP
     }
     
     CKeyID keyID;
-    
+    fprintf(stderr,"whichtype.%d vs %d\n",whichTypeRet,TX_PUBKEYHASH);
     switch (whichTypeRet)
     {
         case TX_NONSTANDARD:
@@ -371,12 +371,16 @@ static bool SignStep(const BaseSignatureCreator& creator, const CScript& scriptP
         case TX_PUBKEYHASH:
             keyID = CKeyID(uint160(vSolutions[0]));
             if (!Sign1(keyID, creator, scriptPubKey, ret, consensusBranchId))
+            {
+                fprintf(stderr,"sign1 error\n");
                 return false;
+            }
             else
             {
                 CPubKey vch;
                 creator.KeyStore().GetPubKey(keyID, vch);
                 ret.push_back(ToByteVector(vch));
+                fprintf(stderr,"push pubkey\n");
             }
             return true;
         case TX_SCRIPTHASH:
