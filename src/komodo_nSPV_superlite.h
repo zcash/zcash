@@ -66,16 +66,32 @@ struct NSPV_ntzsresp *NSPV_ntzsresp_add(struct NSPV_ntzsresp *ptr)
 
 struct NSPV_txproof *NSPV_txproof_find(uint256 txid)
 {
-    int32_t i;
+    int32_t i; struct NSPV_txproof *backup = 0;
     for (i=0; i<sizeof(NSPV_txproof_cache)/sizeof(*NSPV_txproof_cache); i++)
         if ( NSPV_txproof_cache[i].txid == txid )
-            return(&NSPV_txproof_cache[i]);
-    return(0);
+        {
+            if ( NSPV_txproof_cache[i].txprooflen != 0 )
+                return(&NSPV_txproof_cache[i]);
+            else backup = &NSPV_txproof_cache[i];
+        }
+    return(backup);
 }
 
 struct NSPV_txproof *NSPV_txproof_add(struct NSPV_txproof *ptr)
 {
     int32_t i;
+    for (i=0; i<sizeof(NSPV_txproof_cache)/sizeof(*NSPV_txproof_cache); i++)
+        if ( NSPV_txproof_cache[i].txid == txid )
+        {
+            if ( NSPV_txproof_cache[i].txprooflen == 0 && ptr->txprooflen != 0 )
+            {
+                NSPV_txproof_purge(&NSPV_txproof_cache[i]);
+                NSPV_txproof_copy(&NSPV_txproof_cache[i],ptr);
+                return;
+            }
+            else if ( NSPV_txproof_cache[i].txprooflen != 0 || ptr->txprooflen == 0 )
+                return;
+        }
     for (i=0; i<sizeof(NSPV_txproof_cache)/sizeof(*NSPV_txproof_cache); i++)
         if ( NSPV_txproof_cache[i].txlen == 0 )
             break;
