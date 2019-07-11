@@ -7007,7 +7007,7 @@ UniValue faucetfund(const UniValue& params, bool fHelp)
         cp = CCinit(&C,EVAL_FAUCET);
         v = MakeCC1vout(EVAL_FAUCET,funds,GetUnspendable(cp,0));
         Getscriptaddress(coinaddr,CScript() << ParseHex(HexStr(pubkey2pk(Mypubkey()))) << OP_CHECKSIG);
-        return(NSPV_spend(coinaddr,(char *)HexStr(v.scriptPubKey.begin(),v.scriptPubKey.end()).c_str(),funds));
+        return(NSPV_spend(coinaddr,(char *)HexStr(v.scriptPubKey.begin()+1,v.scriptPubKey.end()-1).c_str(),funds));
     }
     if ( ensure_CCrequirements(EVAL_FAUCET) < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
