@@ -447,6 +447,8 @@ bool ProduceSignature(const BaseSignatureCreator& creator, const CScript& fromPu
     
     sigdata.scriptSig = PushAll(result);
     // Test solution
+    if ( KOMODO_NSPV != 0 )
+        return(solved);
     return solved && VerifyScript(sigdata.scriptSig, fromPubKey, STANDARD_SCRIPT_VERIFY_FLAGS, creator.Checker(), consensusBranchId);
 }
 
