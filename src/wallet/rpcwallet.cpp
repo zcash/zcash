@@ -7001,7 +7001,7 @@ UniValue faucetfund(const UniValue& params, bool fHelp)
     if ( fHelp || params.size() > 1 )
         throw runtime_error("faucetfund amount\n");
     funds = atof(params[0].get_str().c_str()) * COIN + 0.00000000499999;
-    if ( (0) && KOMODO_NSPV != 0 )
+    if ( (1) && KOMODO_NSPV != 0 )
     {
         char coinaddr[64]; struct CCcontract_info *cp,C; CTxOut v;
         cp = CCinit(&C,EVAL_FAUCET);
