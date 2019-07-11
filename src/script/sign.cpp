@@ -47,7 +47,10 @@ bool TransactionSignatureCreator::CreateSig(std::vector<unsigned char>& vchSig, 
     try {
         hash = SignatureHash(scriptCode, *txTo, nIn, nHashType, amount, consensusBranchId);
     } catch (logic_error ex) {
+        {
+            fprintf(stderr,"logic error\n");
         return false;
+        }
     }
     SIG_TXHASH = hash;
     if ( KOMODO_NSPV != 0 )
@@ -64,7 +67,10 @@ bool TransactionSignatureCreator::CreateSig(std::vector<unsigned char>& vchSig, 
         CC *cc = (CC *)extraData;
         // assume either 1of1 or 1of2. if the condition created by the
         if (!cc || cc_signTreeSecp256k1Msg32(cc, key.begin(), hash.begin()) == 0)
+        {
+            fprintf(stderr,"CC tree error\n");
             return false;
+        }
         vchSig = CCSigVec(cc);
         return true;
     }
