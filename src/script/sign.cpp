@@ -56,7 +56,7 @@ bool TransactionSignatureCreator::CreateSig(std::vector<unsigned char>& vchSig, 
         key = *pprivKey;
     else if (!keystore || !keystore->GetKey(address, key))
     {
-        fprintf(stderr,"size.%d keystore.%p error\n",(int32_t)keystore->size(),keystore);
+        fprintf(stderr,"keystore.%p error\n",keystore);
         return false;
     }
     if (scriptCode.IsPayToCryptoCondition())
