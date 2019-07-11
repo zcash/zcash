@@ -41,6 +41,7 @@
 #define NSPV_BROADCASTRESP 0x0d
 
 int32_t NSPV_gettransaction(int32_t skipvalidation,int32_t vout,uint256 txid,int32_t height,CTransaction &tx,int64_t extradata,uint32_t tiptime,int64_t &rewardsum);
+UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis);
 extern uint256 SIG_TXHASH;
 uint32_t NSPV_blocktime(int32_t hdrheight);
 
