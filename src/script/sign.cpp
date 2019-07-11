@@ -85,7 +85,7 @@ bool TransactionSignatureCreator::CreateSig(std::vector<unsigned char>& vchSig, 
             }
             else
             {
-                fprintf(stderr,"signed success %s\n",HexStr(vchSig));
+                fprintf(stderr,"signed success %s\n",(char *)HexStr(vchSig).c_str());
             }
         }
         else
