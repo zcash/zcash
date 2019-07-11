@@ -15,6 +15,7 @@
  ******************************************************************************/
 
 #include "CCMarmara.h"
+#include "key_io.h"
 
  /*
   Marmara CC is for the MARMARA project
@@ -2402,8 +2403,11 @@ UniValue MarmaraNewActivatedAddress(CPubKey pk)
     CPubKey marmarapk = GetUnspendable(cp, 0);
     
     GetCCaddress1of2(cp, activated1of2addr, marmarapk, pk);
+    CKeyID keyID = pk.GetID();
+    std::string addr = EncodeDestination(keyID);
 
     ret.push_back(Pair("pubkey", HexStr(pk.begin(), pk.end())));
+    ret.push_back(Pair("normaladdress", addr));
     ret.push_back(Pair("activated1of2address", activated1of2addr));
     ret.push_back(Pair("segid", (int32_t)komodo_segid32(activated1of2addr) & 0x3f));
     return ret;
