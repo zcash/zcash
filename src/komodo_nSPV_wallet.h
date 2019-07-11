@@ -299,7 +299,7 @@ std::string NSPV_signtx(int64_t &rewardsum,int64_t &interestsum,UniValue &retcod
 
 UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis) // what its all about!
 {
-    UniValue result(UniValue::VOBJ),retcodes(UniValue::VARR); uint8_t rmd160[128]; int64_t txfee = 10000;
+    UniValue result(UniValue::VOBJ),retcodes(UniValue::VARR); CScript scriptPubKey; uint8_t rmd160[128]; int64_t txfee = 10000;
     if ( NSPV_logintime == 0 || time(NULL) > NSPV_logintime+NSPV_AUTOLOGOUT )
     {
         result.push_back(Pair("result","error"));
@@ -315,10 +315,16 @@ UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis) // what its a
     }
     else if ( bitcoin_base58decode(rmd160,destaddr) != 25 )
     {
-        result.push_back(Pair("result","error"));
-        result.push_back(Pair("error","invalid destaddr"));
-        return(result);
+        if ( is_hexstr(destaddr) > 0 )
+            scriptPubKey = CScript() << ParseHex(destaddr);
+        else
+        {
+            result.push_back(Pair("result","error"));
+            result.push_back(Pair("error","invalid destaddr"));
+            return(result);
+        }
     }
+    else scriptPubKey = CScript() << OP_DUP << OP_HASH160 << ParseHex(HexStr(data)) << OP_EQUALVERIFY << OP_CHECKSIG);
     if ( NSPV_inforesult.height == 0 )
     {
         result.push_back(Pair("result","error"));
@@ -359,7 +365,7 @@ UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis) // what its a
 
     if ( NSPV_addinputs(used,mtx,satoshis+txfee,64,NSPV_utxosresult.utxos,NSPV_utxosresult.numutxos) > 0 )
     {
-        mtx.vout.push_back(CTxOut(satoshis,CScript() << OP_DUP << OP_HASH160 << ParseHex(HexStr(data)) << OP_EQUALVERIFY << OP_CHECKSIG));
+        mtx.vout.push_back(CTxOut(satoshis,scriptPubKey);
         if ( NSPV_logintime == 0 || time(NULL) > NSPV_logintime+NSPV_AUTOLOGOUT )
         {
             result.push_back(Pair("result","error"));
