@@ -8468,20 +8468,22 @@ CMutableTransaction CreateNewContextualCMutableTransaction(const Consensus::Para
 {
     CMutableTransaction mtx;
 
-    bool isOverwintered = NetworkUpgradeActive(nHeight, consensusParams, Consensus::UPGRADE_OVERWINTER);
+    bool isOverwintered = NetworkUpgradeActive(nHeight, consensusParams, Consensus::UPGRADE_OVERWINTER) || (KOMODO_NSPV != 0);
     if (isOverwintered) {
         mtx.fOverwintered = true;
         mtx.nExpiryHeight = nHeight + expiryDelta;
 
-        if (NetworkUpgradeActive(nHeight, consensusParams, Consensus::UPGRADE_SAPLING)) {
+        if ( NetworkUpgradeActive(nHeight, consensusParams, Consensus::UPGRADE_SAPLING) || (KOMODO_NSPV != 0) )
+        {
             mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
             mtx.nVersion = SAPLING_TX_VERSION;
-        } else {
+        }
+        else
+        {
             mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
             mtx.nVersion = OVERWINTER_TX_VERSION;
-            mtx.nExpiryHeight = std::min(
-                mtx.nExpiryHeight,
-                static_cast<uint32_t>(consensusParams.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight - 1));
+            mtx.nExpiryHeight = std::min(mtx.nExpiryHeight,
+                static_cast<uint32_t>(consensusParams.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight -1));
         }
     }
     return mtx;
