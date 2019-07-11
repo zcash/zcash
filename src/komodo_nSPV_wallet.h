@@ -418,6 +418,10 @@ int64_t NSPV_AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total
     char coinaddr[64]; int32_t CCflag = 0;
     if ( ptr != 0 )
     {
+        mtx.fOverwintered = true;
+        mtx.nExpiryHeight = 0;
+        mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
+        mtx.nVersion = SAPLING_TX_VERSION;
         Getscriptaddress(coinaddr,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG);
         if ( strcmp(ptr->U.coinaddr,coinaddr) != 0 )
         {
