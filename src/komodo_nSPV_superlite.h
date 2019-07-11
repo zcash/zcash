@@ -81,16 +81,16 @@ struct NSPV_txproof *NSPV_txproof_add(struct NSPV_txproof *ptr)
 {
     int32_t i;
     for (i=0; i<sizeof(NSPV_txproof_cache)/sizeof(*NSPV_txproof_cache); i++)
-        if ( NSPV_txproof_cache[i].txid == txid )
+        if ( NSPV_txproof_cache[i].txid == ptr->txid )
         {
             if ( NSPV_txproof_cache[i].txprooflen == 0 && ptr->txprooflen != 0 )
             {
                 NSPV_txproof_purge(&NSPV_txproof_cache[i]);
                 NSPV_txproof_copy(&NSPV_txproof_cache[i],ptr);
-                return;
+                return(&NSPV_txproof_cache[i]);
             }
             else if ( NSPV_txproof_cache[i].txprooflen != 0 || ptr->txprooflen == 0 )
-                return;
+                return(&NSPV_txproof_cache[i]);
         }
     for (i=0; i<sizeof(NSPV_txproof_cache)/sizeof(*NSPV_txproof_cache); i++)
         if ( NSPV_txproof_cache[i].txlen == 0 )
