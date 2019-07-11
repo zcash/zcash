@@ -384,9 +384,9 @@ UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis) // what its a
         if ( ASSETCHAINS_SYMBOL[0] == 0 )
         {
             char numstr[64];
-            sprintf(numstr,"%.8f",(double)interestsum/COIN)
+            sprintf(numstr,"%.8f",(double)interestsum/COIN);
             result.push_back(Pair("rewards",numstr));
-            sprintf(numstr,"%.8f",(double)rewardsum/COIN)
+            sprintf(numstr,"%.8f",(double)rewardsum/COIN);
             result.push_back(Pair("validated",numstr));
         }
         if ( hex.size() > 0 )
