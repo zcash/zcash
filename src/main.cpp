@@ -8466,21 +8466,31 @@ extern "C" const char* getDataDir()
 CMutableTransaction CreateNewContextualCMutableTransaction(const Consensus::Params& consensusParams, int nHeight)
 {
     CMutableTransaction mtx;
-
-    bool isOverwintered = NetworkUpgradeActive(nHeight, consensusParams, Consensus::UPGRADE_OVERWINTER);
-    if (isOverwintered) {
+    if ( KOMODO_NSPV != 0 )
+    {
         mtx.fOverwintered = true;
-        mtx.nExpiryHeight = nHeight + expiryDelta;
-
-        if (NetworkUpgradeActive(nHeight, consensusParams, Consensus::UPGRADE_SAPLING)) {
-            mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
-            mtx.nVersion = SAPLING_TX_VERSION;
-        } else {
-            mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
-            mtx.nVersion = OVERWINTER_TX_VERSION;
-            mtx.nExpiryHeight = std::min(
-                mtx.nExpiryHeight,
-                static_cast<uint32_t>(consensusParams.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight - 1));
+        mtx.nExpiryHeight = 0;
+        mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
+        mtx.nVersion = SAPLING_TX_VERSION;
+    }
+    else
+    {
+        bool isOverwintered = NetworkUpgradeActive(nHeight, consensusParams, Consensus::UPGRADE_OVERWINTER);
+        if (isOverwintered)
+        {
+            mtx.fOverwintered = true;
+            mtx.nExpiryHeight = nHeight + expiryDelta;
+            if (NetworkUpgradeActive(nHeight, consensusParams, Consensus::UPGRADE_SAPLING))
+            {
+                mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
+                mtx.nVersion = SAPLING_TX_VERSION;
+            }
+            else
+            {
+                mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
+                mtx.nVersion = OVERWINTER_TX_VERSION;
+                mtx.nExpiryHeight = std::min(mtx.nExpiryHeight,static_cast<uint32_t>(consensusParams.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight - 1));
+            }
         }
     }
     return mtx;
