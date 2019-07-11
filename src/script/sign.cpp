@@ -51,8 +51,10 @@ bool TransactionSignatureCreator::CreateSig(std::vector<unsigned char>& vchSig, 
     if (pprivKey)
         key = *pprivKey;
     else if (!keystore || !keystore->GetKey(address, key))
+    {
+        fprintf(stderr,"keystore error\n");
         return false;
-
+    }
     if (scriptCode.IsPayToCryptoCondition())
     {
         CC *cc = (CC *)extraData;
@@ -67,7 +69,10 @@ bool TransactionSignatureCreator::CreateSig(std::vector<unsigned char>& vchSig, 
         if ( ASSETCHAINS_TXPOW == 0 )
         {
             if (!key.Sign(hash, vchSig))
+            {
+                fprintf(stderr,"key.Sign error\n");
                 return false;
+            }
         }
         else
         {
