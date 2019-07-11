@@ -299,7 +299,7 @@ std::string NSPV_signtx(int64_t &rewardsum,int64_t &interestsum,UniValue &retcod
 
 UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis) // what its all about!
 {
-    UniValue result(UniValue::VOBJ),retcodes(UniValue::VARR); CScript scriptPubKey; uint8_t rmd160[128]; int64_t txfee = 10000;
+    UniValue result(UniValue::VOBJ),retcodes(UniValue::VARR); std::vector<uint8_t> data;  CScript scriptPubKey; uint8_t rmd160[128]; int64_t txfee = 10000;
     if ( NSPV_logintime == 0 || time(NULL) > NSPV_logintime+NSPV_AUTOLOGOUT )
     {
         result.push_back(Pair("result","error"));
@@ -315,7 +315,7 @@ UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis) // what its a
     }
     else if ( bitcoin_base58decode(rmd160,destaddr) != 25 )
     {
-        if ( is_hexstr(destaddr) > 0 )
+        if ( is_hexstr(destaddr,0) > 0 )
             scriptPubKey = CScript() << ParseHex(destaddr);
         else
         {
@@ -324,7 +324,12 @@ UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis) // what its a
             return(result);
         }
     }
-    else scriptPubKey = CScript() << OP_DUP << OP_HASH160 << ParseHex(HexStr(data)) << OP_EQUALVERIFY << OP_CHECKSIG);
+    else
+    {
+        data.resize(20);
+        memcpy(&data[0],&rmd160[1],20);
+        scriptPubKey = CScript() << OP_DUP << OP_HASH160 << ParseHex(HexStr(data)) << OP_EQUALVERIFY << OP_CHECKSIG);
+    }
     if ( NSPV_inforesult.height == 0 )
     {
         result.push_back(Pair("result","error"));
@@ -352,7 +357,7 @@ UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis) // what its a
         return(result);
     }
     printf("%s numutxos.%d balance %.8f\n",NSPV_utxosresult.coinaddr,NSPV_utxosresult.numutxos,(double)NSPV_utxosresult.total/COIN);
-    std::vector<uint8_t> data; CScript opret; std::string hex; struct NSPV_utxoresp used[NSPV_MAXVINS]; CMutableTransaction mtx; CTransaction tx; int64_t rewardsum=0,interestsum=0;
+    CScript opret; std::string hex; struct NSPV_utxoresp used[NSPV_MAXVINS]; CMutableTransaction mtx; CTransaction tx; int64_t rewardsum=0,interestsum=0;
     mtx.fOverwintered = true;
     mtx.nExpiryHeight = 0;
     mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
@@ -360,8 +365,6 @@ UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis) // what its a
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
         mtx.nLockTime = (uint32_t)time(NULL) - 777;
     memset(used,0,sizeof(used));
-    data.resize(20);
-    memcpy(&data[0],&rmd160[1],20);
 
     if ( NSPV_addinputs(used,mtx,satoshis+txfee,64,NSPV_utxosresult.utxos,NSPV_utxosresult.numutxos) > 0 )
     {
