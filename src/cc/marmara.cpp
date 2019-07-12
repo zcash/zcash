@@ -49,6 +49,7 @@
 
  */
 
+const uint8_t opretVersion = 1;
 const int32_t MARMARA_MARKER_VOUT = 1;
 
 
@@ -204,7 +205,7 @@ CScript MarmaraEncodeLoopCreateOpret(CPubKey senderpk, int64_t amount, int32_t m
     CScript opret; 
     uint8_t evalcode = EVAL_MARMARA;
     uint8_t funcid = 'C'; // create tx (initial request tx)
-    uint8_t version = 1;
+    uint8_t version = opretVersion;
 
     opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << version << senderpk << amount << matures << currency);
     return(opret);
@@ -215,7 +216,7 @@ CScript MarmaraEncodeLoopIssuerOpret(uint256 createtxid, CPubKey receiverpk, uin
     CScript opret;
     uint8_t evalcode = EVAL_MARMARA;
     uint8_t funcid = 'I'; // issuance tx
-    uint8_t version = 1;
+    uint8_t version = opretVersion;
 
     opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << version << createtxid << receiverpk << autoSettlement << autoInsurance << avalCount << disputeExpiresHeight << escrowOn << blockageAmount);
     return(opret);
@@ -226,7 +227,7 @@ CScript MarmaraEncodeLoopRequestOpret(uint256 createtxid, CPubKey senderpk)
     CScript opret;
     uint8_t evalcode = EVAL_MARMARA;
     uint8_t funcid = 'R'; // request tx
-    uint8_t version = 1;
+    uint8_t version = opretVersion;
 
     opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << version << createtxid << senderpk);
     return(opret);
@@ -237,7 +238,7 @@ CScript MarmaraEncodeLoopTransferOpret(uint256 createtxid, CPubKey receiverpk, i
     CScript opret;
     uint8_t evalcode = EVAL_MARMARA;
     uint8_t funcid = 'T'; // transfer tx
-    uint8_t version = 1;
+    uint8_t version = opretVersion;
 
     opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << version << createtxid << receiverpk << avalCount);
     return(opret);
@@ -248,7 +249,7 @@ CScript MarmaraEncodeLoopCCVoutOpret(uint256 createtxid, CPubKey senderpk)
     CScript opret;
     uint8_t evalcode = EVAL_MARMARA;
     uint8_t funcid = 'K'; // opret in cc 1of2 lock-in-loop vout
-    uint8_t version = 1;
+    uint8_t version = opretVersion;
 
     opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << version << createtxid << senderpk);
     return(opret);
@@ -259,7 +260,7 @@ CScript MarmaraEncodeLoopSettlementOpret(bool isSuccess, uint256 createtxid, CPu
     CScript opret;
     uint8_t evalcode = EVAL_MARMARA;
     uint8_t funcid = isSuccess ? 'S' : 'D'; 
-    uint8_t version = 1;
+    uint8_t version = opretVersion;
 
     opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << version << createtxid << pk << remaining);
     return(opret);
@@ -269,7 +270,6 @@ CScript MarmaraEncodeLoopSettlementOpret(bool isSuccess, uint256 createtxid, CPu
 uint8_t MarmaraDecodeLoopOpret(const CScript scriptPubKey, struct CreditLoopOpret &loopData)
 {
     vscript_t vopret; 
-    const uint8_t versionSupported = 1;
 
     GetOpReturnData(scriptPubKey, vopret);
     if (vopret.size() >= 3) 
@@ -280,7 +280,7 @@ uint8_t MarmaraDecodeLoopOpret(const CScript scriptPubKey, struct CreditLoopOpre
 
         if (evalcode == EVAL_MARMARA)   // check limits
         {
-            if (version != versionSupported) 
+            if (version == opretVersion) 
             {
                 if (funcid == 'C') {  // createtx
                     if (E_UNMARSHAL(vopret, ss >> evalcode; ss >> funcid; ss >> version; ss >> loopData.createpk; ss >> loopData.amount; ss >> loopData.matures; ss >> loopData.currency) != 0) {
