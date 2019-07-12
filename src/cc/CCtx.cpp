@@ -175,7 +175,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
             else
             {
                 Getscriptaddress(destaddr,vintx.vout[utxovout].scriptPubKey);
-                fprintf(stderr,"FinalizeCCTx() vin.%d is CC %.8f -> (%s) vs %s\n",i,(double)utxovalues[i]/COIN,destaddr,cp->unspendableaddr2);
+                //fprintf(stderr,"FinalizeCCTx() vin.%d is CC %.8f -> (%s) vs %s\n",i,(double)utxovalues[i]/COIN,destaddr,cp->unspendableaddr2);
 				//std::cerr << "FinalizeCCtx() searching destaddr=" << destaddr << " for vin[" << i << "] satoshis=" << utxovalues[i] << std::endl;
                 if( strcmp(destaddr, myaddr) == 0 )
                 {
@@ -199,7 +199,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
                 {
                     privkey = unspendablepriv;
                     cond = othercond;
-                    fprintf(stderr,"FinalizeCCTx evalcode(%d) matched unspendable CC addr.(%s)\n",cp->evalcode,unspendable);
+                    //fprintf(stderr,"FinalizeCCTx evalcode(%d) matched unspendable CC addr.(%s)\n",cp->evalcode,unspendable);
                 }
 				else if (strcmp(destaddr, unspendabletokensaddr) == 0)
 				{
@@ -280,13 +280,13 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
                 uint256 sighash = SignatureHash(CCPubKey(cond), mtx, i, SIGHASH_ALL, utxovalues[i],consensusBranchId, &txdata);
                 if ( cc_signTreeSecp256k1Msg32(cond,privkey,sighash.begin()) != 0 )
                 {
-                    //int32_t z;
-                    //for (z=0; z<32; z++)
-                    //    fprintf(stderr,"%02x",((uint8_t *)sighash.begin())[z]);
-                    //fprintf(stderr," sighash, ");
-                    //for (z=0; z<32; z++)
-                    //   fprintf(stderr,"%02x",privkey[z]);
-                    //fprintf(stderr," signed with privkey\n");
+                    int32_t z;
+                    for (z=0; z<32; z++)
+                        fprintf(stderr,"%02x",((uint8_t *)sighash.begin())[z]);
+                    fprintf(stderr," sighash, ");
+                    for (z=0; z<32; z++)
+                       fprintf(stderr,"%02x",privkey[z]);
+                    fprintf(stderr," signed with privkey\n");
                     mtx.vin[i].scriptSig = CCSig(cond);
                 }
                 else
