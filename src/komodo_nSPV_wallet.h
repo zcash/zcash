@@ -446,7 +446,6 @@ int64_t NSPV_AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total
 void NSPV_utxos2CCunspents(struct NSPV_utxosresp *ptr,std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > &outputs)
 {
     CAddressUnspentKey key; CAddressUnspentValue value; int32_t i,type; uint160 hashBytes; std::string addrstr(ptr->coinaddr);
-    fprintf(stderr,"in converter\n");
     if ( ptr->utxos != NULL && ptr->numutxos > 0 )
     {
         CBitcoinAddress address(addrstr);
