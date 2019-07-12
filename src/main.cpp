@@ -2231,7 +2231,7 @@ bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlo
     {
         int64_t rewardsum = 0; int32_t i,retval,txheight = 0,vout = 0;
         for (i=0; i<NSPV_U.U.numutxos; i++)
-            if ( NSPV_U.U.utxos[i].txid == txid )
+            if ( NSPV_U.U.utxos[i].txid == hash )
             {
                 txheight = NSPV_U.U.utxos[i].height;
                 break;
