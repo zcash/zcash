@@ -1256,9 +1256,15 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams);
 
 uint64_t komodo_commission(const CBlock *pblock,int32_t height)
 {
+    static bool didinit = false,ishush3 = false;
     // LABS fungible chains, cannot have any block reward!
     if ( is_STAKED(ASSETCHAINS_SYMBOL) == 2 )
         return(0);
+
+    if (!didinit) {
+        ishush3 = strncmp(ASSETCHAINS_SYMBOL, "HUSH3",5) == 0 ? true : false;
+        didinit = true;
+    }
 
     int32_t i,j,n=0,txn_count; int64_t nSubsidy; uint64_t commission,total = 0;
     if ( ASSETCHAINS_FOUNDERS != 0 )
@@ -1267,7 +1273,7 @@ uint64_t komodo_commission(const CBlock *pblock,int32_t height)
         //fprintf(stderr,"ht.%d nSubsidy %.8f prod %llu\n",height,(double)nSubsidy/COIN,(long long)(nSubsidy * ASSETCHAINS_COMMISSION));
         commission = ((nSubsidy * ASSETCHAINS_COMMISSION) / COIN);
 
-        if ((strncmp(ASSETCHAINS_SYMBOL, "HUSH3",5) == 0)) {
+        if (ishush3) {
             int32_t starting_commission = 125000000, HALVING1 = 340000,  INTERVAL = 840000, TRANSITION = 129, BR_END = 5422111;
             // HUSH supply curve cannot be exactly represented via KMD AC CLI args, so we do it ourselves.
             // You specify the BR, and the FR % gets added so 10% of 12.5 is 1.25
