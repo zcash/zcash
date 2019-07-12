@@ -291,7 +291,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
                 }
                 else
                 {
-                    fprintf(stderr,"vini.%d has CC signing error address.(%s)\n",i,destaddr);
+                    fprintf(stderr,"vini.%d has CC signing error address.(%s) %s\n",i,destaddr,EncodeHexTx(mtx).c_str());
                     return("");
                 }
             }
