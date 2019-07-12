@@ -245,7 +245,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
 				// check if this is spending from 1of2 cc tokens addr:
 				else if (strcmp(cp->tokens1of2addr, destaddr) == 0)
 				{
-					//fprintf(stderr,"FinalizeCCTx() matched %s cp->tokens1of2addr!\n", cp->tokens1of2addr);
+fprintf(stderr,"FinalizeCCTx() matched %s cp->tokens1of2addr!\n", cp->tokens1of2addr);
 					privkey = cp->tokens1of2priv;//myprivkey;
 					if (othercond1of2tokens == 0)
                         // NOTE: if additionalEvalcode2 is not set then it is dual-eval cc else three-eval cc
