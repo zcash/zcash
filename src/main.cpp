@@ -2237,7 +2237,7 @@ bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlo
                 break;
             }
         retval = NSPV_gettransaction(txheight == 0,vout,hash,txheight,txOut,0,0,rewardsum);
-        return(retval == 0);
+        return(retval != -1);
     }
     // need a GetTransaction without lock so the validation code for assets can run without deadlock
     {
