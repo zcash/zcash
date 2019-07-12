@@ -6263,15 +6263,17 @@ UniValue marmara_poolpayout(const UniValue& params, bool fHelp, const CPubKey& m
 UniValue marmara_receive(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     UniValue result(UniValue::VOBJ), jsonParams(UniValue::VOBJ);
-    uint256 batontxid; std::vector<uint8_t> senderpub; int64_t amount; int32_t matures; std::string currency;
+    uint256 batontxid; std::vector<uint8_t> senderpub; int64_t amount = 0; int32_t matures = 0; std::string currency;
 
-    if (fHelp || (params.size() != 6 && params.size() != 5))
+    if (fHelp || (params.size() != 5 && params.size() != 3))
     {
         // automatic flag -> lsb of matures
         // 1st marmarareceive 028076d42eb20efc10007fafb5ca66a2052523c0d2221e607adf958d1a332159f6 7.5 MARMARA 1440
         // after marmarareceive 039433dc3749aece1bd568f374a45da3b0bc6856990d7da3cd175399577940a775 7.5 MARMARA 1168 d72d87aa0d50436de695c93e2bf3d7273c63c92ef6307913aa01a6ee6a16548b
 
-        throw runtime_error("marmarareceive senderpk amount currency matures '{avalcount=n}' [batontxid]\n"
+        throw runtime_error(
+            "marmarareceive senderpk amount currency matures '{avalcount=n}'\n"
+            "marmarareceive senderpk batontxid '{avalcount=n}'\n"
             "creates requesttx for issuer or endorser.\nFor the first call batontxid should be empty.\n"
             "the value of 'matures' is relative block number from the current height\n" "\n");
     }
@@ -6286,20 +6288,30 @@ UniValue marmara_receive(const UniValue& params, bool fHelp, const CPubKey& mypk
         ERR_RESULT("invalid sender pubkey");
         return result;
     }
-    amount = atof(params[1].get_str().c_str()) * COIN + 0.00000000499999;
-    currency = params[2].get_str();
-    if (params.size() == 5) // baton present
-        matures = atol(params[3].get_str().c_str());  // if baton then matures value is absolute
+
+    int njson;
+    if (params.size() == 5)
+    {
+        amount = atof(params[1].get_str().c_str()) * COIN + 0.00000000499999;
+        currency = params[2].get_str();
+        matures = chainActive.LastTip()->GetHeight() + atol(params[3].get_str().c_str()) + 1;  // if no baton (first call) then matures value is relative
+        njson = 4;
+    }
     else
-        matures = atol(params[3].get_str().c_str()) + chainActive.LastTip()->GetHeight() + 1;  // if no baton (first call) then matures value is relative
+    {
+        batontxid = Parseuint256((char *)params[1].get_str().c_str());
+        if (batontxid.IsNull())
+            throw runtime_error("incorrect batontxid\n");
+        njson = 2;
+    }
 
     // parse json:
-    if (params[4].getType() == UniValue::VOBJ)       // as json in {...}
-        jsonParams = params[4].get_obj();
-    else if (params[4].getType() == UniValue::VSTR)  // as json in quoted string '{...}'
-        jsonParams.read(params[4].get_str().c_str());
+    if (params[njson].getType() == UniValue::VOBJ)       // as json in {...}
+        jsonParams = params[njson].get_obj();
+    else if (params[njson].getType() == UniValue::VSTR)  // as json in quoted string '{...}'
+        jsonParams.read(params[njson].get_str().c_str());
     if (jsonParams.getType() != UniValue::VOBJ || jsonParams.empty())
-        throw runtime_error("parameter 4 must be object\n");
+        throw runtime_error("last parameter must be object\n");
     std::cerr << __func__ << " test output optParams=" << jsonParams.write(0, 0) << std::endl; 
     // TODO: check allowed params
     int32_t avalcount = 0;
@@ -6308,12 +6320,6 @@ UniValue marmara_receive(const UniValue& params, bool fHelp, const CPubKey& mypk
     if (iter != keys.end()) {
         avalcount = atoi(jsonParams[iter - keys.begin()].get_str().c_str());
         std::cerr << __func__ << " test output avalcount=" << avalcount << std::endl;
-    }
-
-    if (params.size() == 5) {// baton present
-        batontxid = Parseuint256((char *)params[4].get_str().c_str());
-        if (batontxid.IsNull())
-            throw runtime_error("incorrect batontxid\n");
     }
 
     return(MarmaraReceive(0, pubkey2pk(senderpub), amount, currency, matures, avalcount, batontxid, true));
