@@ -79,6 +79,7 @@ one other technical note is that komodod has the insight-explorer extensions bui
     OPRETID_CHANNELSDATA = 0x14,
     OPRETID_HEIRDATA = 0x15,
     OPRETID_ROGUEGAMEDATA = 0x16,
+    OPRETID_PEGSDATA = 0x17,
 
     // non cc contract data:
     OPRETID_FIRSTNONCCDATA = 0x80,
@@ -126,7 +127,7 @@ struct CCcontract_info
 
 	// the same for tokens 1of2 keys cc 
 	char tokens1of2addr[64];
-	CPubKey tokens1of2pk[2];
+	CPubKey tokens1of2pk[2]; uint8_t tokens1of2priv[32];
 
 	// this is for spending from two additional 'unspendable' CC addresses of other eval codes 
 	// (that is, for spending from several cc contract 'unspendable' addresses):
@@ -174,7 +175,7 @@ static int32_t ignorevin;
 bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock);
 int32_t is_hexstr(char *str,int32_t n);
 bool myAddtomempool(CTransaction &tx, CValidationState *pstate = NULL, bool fSkipExpiry = false);
-int32_t CCgettxout(uint256 txid,int32_t vout,int32_t mempoolflag,int32_t lockflag);
+int64_t CCgettxout(uint256 txid,int32_t vout,int32_t mempoolflag,int32_t lockflag);
 bool myIsutxo_spentinmempool(uint256 &spenttxid,int32_t &spentvini,uint256 txid,int32_t vout);
 bool mytxid_inmempool(uint256 txid);
 int32_t myIsutxo_spent(uint256 &spenttxid,uint256 txid,int32_t vout);
@@ -249,7 +250,7 @@ CC *MakeTokensCCcond1(uint8_t evalcode, CPubKey pk);
 CC *MakeTokensCCcond1(uint8_t evalcode, uint8_t evalcode2, CPubKey pk);
 bool GetTokensCCaddress(struct CCcontract_info *cp, char *destaddr, CPubKey pk);
 bool GetTokensCCaddress1of2(struct CCcontract_info *cp, char *destaddr, CPubKey pk, CPubKey pk2);
-void CCaddrTokens1of2set(struct CCcontract_info *cp, CPubKey pk1, CPubKey pk2, char *coinaddr);
+void CCaddrTokens1of2set(struct CCcontract_info *cp, CPubKey pk1, CPubKey pk2, uint8_t *priv, char *coinaddr);
 int32_t CClib_initcp(struct CCcontract_info *cp,uint8_t evalcode);
 
 bool IsCCInput(CScript const& scriptSig);
@@ -289,6 +290,7 @@ void SetCCtxids(std::vector<std::pair<CAddressIndexKey, CAmount> > &addressIndex
 int64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int32_t maxinputs);
 int64_t AddNormalinputs2(CMutableTransaction &mtx,int64_t total,int32_t maxinputs);
 int64_t CCutxovalue(char *coinaddr,uint256 utxotxid,int32_t utxovout,int32_t CCflag);
+bool NSPV_SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const CScript scriptPubKey,uint32_t nTime);
 
 // curve25519 and sha256
 bits256 curve25519_shared(bits256 privkey,bits256 otherpub);

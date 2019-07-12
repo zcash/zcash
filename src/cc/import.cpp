@@ -681,7 +681,7 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
         return Invalid("invalid-params");
     // Control all aspects of this transaction
     // It should not be at all malleable
-    if (MakeImportCoinTransaction(proof, burnTx, payouts, importTx.nExpiryHeight).GetHash() != importTx.GetHash())  // ExistsImportTombstone prevents from duplication
+    if (ASSETCHAINS_SELFIMPORT!="PEGSCC" && MakeImportCoinTransaction(proof, burnTx, payouts, importTx.nExpiryHeight).GetHash() != importTx.GetHash())  // ExistsImportTombstone prevents from duplication
         return Invalid("non-canonical");
     // burn params
     if (!UnmarshalBurnTx(burnTx, targetSymbol, &targetCcid, payoutsHash, rawproof))
@@ -736,10 +736,17 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
             else if ( UnmarshalBurnTx(burnTx,srcaddr,receipt)==0 || CheckCODAimport(importTx,burnTx,payouts,srcaddr,receipt) < 0 )
                 return Invalid("CODA-import-failure");
         }
+        else if ( targetSymbol == "PEGSCC" )
+        {
+            if ( ASSETCHAINS_SELFIMPORT != "PEGSCC" )
+                return Invalid("PEGSCC-import-when-not PEGSCC");
+            // else if ( CheckPUBKEYimport(merkleBranchProof,rawproof,burnTx,payouts) < 0 )
+            //     return Invalid("PEGSCC-import-failure");
+        }
         else if ( targetSymbol == "PUBKEY" )
         {
             if ( ASSETCHAINS_SELFIMPORT != "PUBKEY" )
-                return Invalid("PUBKEY-import-when-notPUBKEY");
+                return Invalid("PUBKEY-import-when-not PUBKEY");
             else if ( CheckPUBKEYimport(merkleBranchProof,rawproof,burnTx,payouts) < 0 )
                 return Invalid("PUBKEY-import-failure");
         }
@@ -747,7 +754,7 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
         {
             if ( targetSymbol != ASSETCHAINS_SELFIMPORT )
                 return Invalid("invalid-gateway-import-coin");
-             else if ( UnmarshalBurnTx(burnTx,bindtxid,publishers,txids,burntxid,height,burnvout,rawburntx,destpub,amount)==0 || CheckGATEWAYimport(importTx,burnTx,targetSymbol,rawproof,bindtxid,publishers,txids,burntxid,height,burnvout,rawburntx,destpub,amount) < 0 )
+            else if ( UnmarshalBurnTx(burnTx,bindtxid,publishers,txids,burntxid,height,burnvout,rawburntx,destpub,amount)==0 || CheckGATEWAYimport(importTx,burnTx,targetSymbol,rawproof,bindtxid,publishers,txids,burntxid,height,burnvout,rawburntx,destpub,amount) < 0 )
                 return Invalid("GATEWAY-import-failure");
         }
     }

@@ -68,8 +68,13 @@ void komodo_cbopretupdate(int32_t forceflag);
 
 void WaitForShutdown(boost::thread_group* threadGroup)
 {
-    int32_t i; bool fShutdown = ShutdownRequested();
+    int32_t i,height; bool fShutdown = ShutdownRequested(); const uint256 zeroid;
     // Tell the main threads to shutdown.
+    if (komodo_currentheight()>KOMODO_EARLYTXID_HEIGHT && KOMODO_EARLYTXID!=zeroid && ((height=tx_height(KOMODO_EARLYTXID))==0 || height>KOMODO_EARLYTXID_HEIGHT))
+    {
+        fprintf(stderr,"error: earlytx must be before block height 100 or tx does not exist\n");
+        StartShutdown();
+    }
     if ( ASSETCHAINS_CBOPRET != 0 )
         komodo_pricesinit();
     while (!fShutdown)
@@ -77,7 +82,8 @@ void WaitForShutdown(boost::thread_group* threadGroup)
         //fprintf(stderr,"call passport iteration\n");
         if ( ASSETCHAINS_SYMBOL[0] == 0 )
         {
-            komodo_passport_iteration();
+            if ( KOMODO_NSPV == 0 )
+                komodo_passport_iteration();
             for (i=0; i<10; i++)
             {
                 fShutdown = ShutdownRequested();

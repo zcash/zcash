@@ -652,6 +652,7 @@ const char *banned_txids[] =
     //"01d8c839463bda2f2f6400ede4611357913684927a767422a8560ead1b22557c",
     //"6e4980a9e1bd669f4df04732dc6f11b7773b6de88d1abcf89a6b9007d72ef9ac",
     //"6cc1d0495170bc0e11fd3925297623562e529ea1336b66ea61f8a1159041aed2",
+    //"250875424cece9bcd98cb226b09da7671625633d6958589e3a462bad89ad87cc", // missed 
 };
 
 int32_t komodo_checkvout(int32_t vout,int32_t k,int32_t indallvouts)
@@ -668,7 +669,7 @@ int32_t komodo_bannedset(int32_t *indallvoutsp,uint256 *array,int32_t max)
     int32_t i;
     if ( sizeof(banned_txids)/sizeof(*banned_txids) > max )
     {
-        fprintf(stderr,"komodo_bannedset: buffer too small %ld vs %d\n",sizeof(banned_txids)/sizeof(*banned_txids),max);
+        fprintf(stderr,"komodo_bannedset: buffer too small %d vs %d\n",(int32_t)(sizeof(banned_txids)/sizeof(*banned_txids)),max);
         StartShutdown();
     }
     for (i=0; i<sizeof(banned_txids)/sizeof(*banned_txids); i++)
@@ -1288,7 +1289,7 @@ long komodo_stateind_validate(struct komodo_state *sp,char *indfname,uint8_t *fi
     if ( (inds= OS_fileptr(&fsize,indfname)) != 0 )
     {
         lastfpos = 0;
-        fprintf(stderr,"inds.%p validate %s fsize.%ld datalen.%ld n.%ld lastfpos.%ld\n",inds,indfname,fsize,datalen,fsize / sizeof(uint32_t),lastfpos);
+        fprintf(stderr,"inds.%p validate %s fsize.%ld datalen.%ld n.%d lastfpos.%ld\n",inds,indfname,fsize,datalen,(int32_t)(fsize / sizeof(uint32_t)),lastfpos);
         if ( (fsize % sizeof(uint32_t)) == 0 )
         {
             n = (int32_t)(fsize / sizeof(uint32_t));
@@ -1379,7 +1380,7 @@ int32_t komodo_faststateinit(struct komodo_state *sp,char *fname,char *symbol,ch
             if ( (indfp= fopen(indfname,"rb+")) != 0 )
             {
                 lastfpos = fpos = validated;
-                fprintf(stderr,"datalen.%ld validated %ld -> indcounter %u, prevpos100 %u offset.%ld\n",datalen,validated,indcounter,prevpos100,indcounter * sizeof(uint32_t));
+                fprintf(stderr,"datalen.%ld validated %ld -> indcounter %u, prevpos100 %u offset.%d\n",datalen,validated,indcounter,prevpos100,(int32_t)(indcounter * sizeof(uint32_t)));
                 if ( fpos < datalen )
                 {
                     fseek(indfp,indcounter * sizeof(uint32_t),SEEK_SET);

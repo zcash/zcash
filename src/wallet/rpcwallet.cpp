@@ -158,9 +158,11 @@ char *komodo_chainname()
      return(ASSETCHAINS_SYMBOL[0] == 0 ? (char *)"KMD" : ASSETCHAINS_SYMBOL);
 }
 
+void OS_randombytes(unsigned char *x,long xlen);
+
 UniValue getnewaddress(const UniValue& params, bool fHelp)
 {
-    if (!EnsureWalletIsAvailable(fHelp))
+    if ( KOMODO_NSPV == 0 && !EnsureWalletIsAvailable(fHelp) )
         return NullUniValue;
 
     if (fHelp || params.size() > 1)
@@ -176,6 +178,23 @@ UniValue getnewaddress(const UniValue& params, bool fHelp)
             + HelpExampleRpc("getnewaddress", "")
         );
 
+    if ( KOMODO_NSPV != 0 )
+    {
+        UniValue result(UniValue::VOBJ); uint8_t priv32[32];
+#ifndef __WIN32
+        OS_randombytes(priv32,sizeof(priv32));
+#else
+        randombytes_buf(priv32,sizeof(priv32));
+#endif
+        CKey key;
+        key.Set(&priv32[0],&priv32[32], true);
+        CPubKey pubkey = key.GetPubKey();
+        CKeyID vchAddress = pubkey.GetID();
+        result.push_back(Pair("wif",EncodeSecret(key)));
+        result.push_back(Pair("address",EncodeDestination(vchAddress)));
+        result.push_back(Pair("pubkey",HexStr(pubkey)));
+        return(result);
+    }
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
     // Parse the account first so we don't generate a key if there's an error
@@ -2955,7 +2974,7 @@ UniValue listunspent(const UniValue& params, bool fHelp)
 uint64_t komodo_interestsum()
 {
 #ifdef ENABLE_WALLET
-    if ( ASSETCHAINS_SYMBOL[0] == 0 && GetBoolArg("-disablewallet", false) == 0 )
+    if ( ASSETCHAINS_SYMBOL[0] == 0 && GetBoolArg("-disablewallet", false) == 0 && KOMODO_NSPV == 0 )
     {
         uint64_t interest,sum = 0; int32_t txheight; uint32_t locktime;
         vector<COutput> vecOutputs;
@@ -5336,6 +5355,7 @@ int32_t verus_staked(CBlock *pBlock, CMutableTransaction &txNew, uint32_t &nBits
 #include "../cc/CCHeir.h"
 #include "../cc/CCMarmara.h"
 #include "../cc/CCPayments.h"
+#include "../cc/CCPegs.h"
 
 int32_t ensure_CCrequirements(uint8_t evalcode)
 {
@@ -7973,10 +7993,209 @@ UniValue heirlist(const UniValue& params, bool fHelp)
 	return (HeirList());
 }
 
+UniValue pegscreate(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); int32_t i; std::vector<uint256> txids;
+    uint8_t N; std::string hex; uint256 txid; int64_t amount;
+
+    if ( fHelp || params.size()<3)
+        throw runtime_error("pegscreate amount N bindtxid1 [bindtxid2 ...]\n");
+    if ( ensure_CCrequirements(EVAL_PEGS) < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    const CKeyStore& keystore = *pwalletMain;
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+    amount = atof((char *)params[0].get_str().c_str()) * COIN + 0.00000000499999;
+    N = atoi((char *)params[1].get_str().c_str());
+    if ( params.size() < N+1 )
+        throw runtime_error("not enough parameters for N gatewaysbind\n");
+    for (i=0; i<N; i++)
+    {       
+        txid = Parseuint256(params[i+2].get_str().c_str());
+        txids.push_back(txid);
+    }
+    hex = PegsCreate(0,amount,txids);
+    RETURN_IF_ERROR(CCerror);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else ERR_RESULT("couldnt pegscreate");
+    return(result);
+}
+
+UniValue pegsfund(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); std::string hex; uint256 pegstxid,tokenid; int64_t amount;
 
 
+    if ( fHelp || params.size()!=3)
+        throw runtime_error("pegsfund pegstxid tokenid amount\n");
+    if ( ensure_CCrequirements(EVAL_PEGS) < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    const CKeyStore& keystore = *pwalletMain;
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+    pegstxid = Parseuint256(params[0].get_str().c_str());
+    tokenid = Parseuint256(params[1].get_str().c_str());
+    amount = atof((char *)params[2].get_str().c_str()) * COIN + 0.00000000499999;
+    hex = PegsFund(0,pegstxid,tokenid,amount);
+    RETURN_IF_ERROR(CCerror);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else ERR_RESULT("couldnt pegsfund");
+    return(result);
+}
+
+UniValue pegsget(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); std::string hex; uint256 pegstxid,tokenid; int64_t amount;
+
+    if ( fHelp || params.size()!=3)
+        throw runtime_error("pegsget pegstxid tokenid amount\n");
+    if ( ensure_CCrequirements(EVAL_PEGS) < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    const CKeyStore& keystore = *pwalletMain;
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+    pegstxid = Parseuint256(params[0].get_str().c_str());
+    tokenid = Parseuint256(params[1].get_str().c_str());
+    amount = atof((char *)params[2].get_str().c_str()) * COIN + 0.00000000499999;
+    hex = PegsGet(0,pegstxid,tokenid,amount);
+    RETURN_IF_ERROR(CCerror);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else ERR_RESULT("couldnt pegsget");
+    return(result);
+}
+
+UniValue pegsredeem(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); std::string hex; uint256 pegstxid,tokenid; int64_t amount;
+
+    if ( fHelp || params.size()!=2)
+        throw runtime_error("pegsredem pegstxid tokenid\n");
+    if ( ensure_CCrequirements(EVAL_PEGS) < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    const CKeyStore& keystore = *pwalletMain;
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+    pegstxid = Parseuint256(params[0].get_str().c_str());
+    tokenid = Parseuint256(params[1].get_str().c_str());
+    hex = PegsRedeem(0,pegstxid,tokenid);
+    RETURN_IF_ERROR(CCerror);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else ERR_RESULT("couldnt pegsredeem");
+    return(result);
+}
+
+UniValue pegsliquidate(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); std::string hex; uint256 pegstxid,tokenid,accounttxid;
+
+    if ( fHelp || params.size()!=3)
+        throw runtime_error("pegsliquidate pegstxid tokenid accounttxid\n");
+    if ( ensure_CCrequirements(EVAL_PEGS) < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    const CKeyStore& keystore = *pwalletMain;
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+    pegstxid = Parseuint256(params[0].get_str().c_str());
+    tokenid = Parseuint256(params[1].get_str().c_str());
+    accounttxid = Parseuint256(params[2].get_str().c_str());
+    hex = PegsLiquidate(0,pegstxid,tokenid,accounttxid);
+    RETURN_IF_ERROR(CCerror);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else ERR_RESULT("couldnt pegsliquidate");
+    return(result);
+}
+
+UniValue pegsexchange(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); std::string hex; uint256 pegstxid,tokenid,accounttxid; int64_t amount;
+
+    if ( fHelp || params.size()!=3)
+        throw runtime_error("pegsliquidate pegstxid tokenid accounttxid\n");
+    if ( ensure_CCrequirements(EVAL_PEGS) < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    const CKeyStore& keystore = *pwalletMain;
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+    pegstxid = Parseuint256(params[0].get_str().c_str());
+    tokenid = Parseuint256(params[1].get_str().c_str());
+    amount = atof((char *)params[2].get_str().c_str()) * COIN + 0.00000000499999;
+    hex = PegsExchange(0,pegstxid,tokenid,amount);
+    RETURN_IF_ERROR(CCerror);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else ERR_RESULT("couldnt pegsliquidate");
+    return(result);
+}
+
+UniValue pegsaccounthistory(const UniValue& params, bool fHelp)
+{
+    uint256 pegstxid;
+
+    if ( fHelp || params.size() != 1 )
+        throw runtime_error("pegsaccounthistory pegstxid\n");
+    if ( ensure_CCrequirements(EVAL_GATEWAYS) < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    const CKeyStore& keystore = *pwalletMain;
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+    pegstxid = Parseuint256((char *)params[0].get_str().c_str());
+    return(PegsAccountHistory(pegstxid));
+}
+
+UniValue pegsaccountinfo(const UniValue& params, bool fHelp)
+{
+    uint256 pegstxid;
+
+    if ( fHelp || params.size() != 1 )
+        throw runtime_error("pegsaccountinfo pegstxid\n");
+    if ( ensure_CCrequirements(EVAL_GATEWAYS) < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    const CKeyStore& keystore = *pwalletMain;
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+    pegstxid = Parseuint256((char *)params[0].get_str().c_str());
+    return(PegsAccountInfo(pegstxid));
+}
+
+UniValue pegsworstaccounts(const UniValue& params, bool fHelp)
+{
+    uint256 pegstxid;
+
+    if ( fHelp || params.size() != 1 )
+        throw runtime_error("pegsworstaccounts pegstxid\n");
+    if ( ensure_CCrequirements(EVAL_GATEWAYS) < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    const CKeyStore& keystore = *pwalletMain;
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+    pegstxid = Parseuint256((char *)params[0].get_str().c_str());
+    return(PegsWorstAccounts(pegstxid));
+}
+
+UniValue pegsinfo(const UniValue& params, bool fHelp)
+{
+    uint256 pegstxid;
+
+    if ( fHelp || params.size() != 1 )
+        throw runtime_error("pegsinfo pegstxid\n");
+    if ( ensure_CCrequirements(EVAL_GATEWAYS) < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    const CKeyStore& keystore = *pwalletMain;
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+    pegstxid = Parseuint256((char *)params[0].get_str().c_str());
+    return(PegsInfo(pegstxid));
+}
 
 extern UniValue dumpprivkey(const UniValue& params, bool fHelp); // in rpcdump.cpp
+extern UniValue convertpassphrase(const UniValue& params, bool fHelp);
 extern UniValue importprivkey(const UniValue& params, bool fHelp);
 extern UniValue importaddress(const UniValue& params, bool fHelp);
 extern UniValue dumpwallet(const UniValue& params, bool fHelp);
@@ -8012,6 +8231,7 @@ static const CRPCCommand commands[] =
     { "wallet",             "gettransaction",           &gettransaction,           false },
     { "wallet",             "getunconfirmedbalance",    &getunconfirmedbalance,    false },
     { "wallet",             "getwalletinfo",            &getwalletinfo,            false },
+    { "wallet",             "convertpassphrase",        &convertpassphrase,        true  },
     { "wallet",             "importprivkey",            &importprivkey,            true  },
     { "wallet",             "importwallet",             &importwallet,             true  },
     { "wallet",             "importaddress",            &importaddress,            true  },

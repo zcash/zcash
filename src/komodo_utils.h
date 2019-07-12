@@ -1692,9 +1692,12 @@ int8_t equihash_params_possible(uint64_t n, uint64_t k)
 
 void komodo_args(char *argv0)
 {
-    std::string name,addn,hexstr,symbol; char *dirname,fname[512],arg0str[64],magicstr[9]; uint8_t magic[4],extrabuf[32756],disablebits[32],*extraptr=0; FILE *fp; uint64_t val; uint16_t port; int32_t i,nonz=0,baseid,len,n,extralen = 0; uint64_t ccenables[256], ccEnablesHeight[512] = {0};
+    std::string name,addn,hexstr,symbol; char *dirname,fname[512],arg0str[64],magicstr[9]; uint8_t magic[4],extrabuf[32756],disablebits[32],*extraptr=0;
+    FILE *fp; uint64_t val; uint16_t port; int32_t i,nonz=0,baseid,len,n,extralen = 0; uint64_t ccenables[256], ccEnablesHeight[512] = {0}; CTransaction earlytx; uint256 hashBlock;
+
     IS_KOMODO_NOTARY = GetBoolArg("-notary", false);
     IS_STAKED_NOTARY = GetArg("-stakednotary", -1);
+    KOMODO_NSPV = GetArg("-nSPV",0);
     memset(ccenables,0,sizeof(ccenables));
     memset(disablebits,0,sizeof(disablebits));
     if ( GetBoolArg("-gen", false) != 0 )
@@ -1784,7 +1787,7 @@ void komodo_args(char *argv0)
     {
         printf("KOMODO_REWIND %d\n",KOMODO_REWIND);
     }
-    KOMODO_EARLYTXID = Parseuint256(GetArg("-earlytxid","0").c_str());
+    KOMODO_EARLYTXID = Parseuint256(GetArg("-earlytxid","0").c_str());    
     ASSETCHAINS_EARLYTXIDCONTRACT = GetArg("-ac_earlytxidcontract",0);
     if ( name.c_str()[0] != 0 )
     {
@@ -1938,7 +1941,7 @@ void komodo_args(char *argv0)
                 }
             }*/
         }
-        if ( ASSETCHAINS_BEAMPORT != 0 && ASSETCHAINS_CODAPORT != 0 )
+        if ( ASSETCHAINS_BEAMPORT != 0 )
         {
             fprintf(stderr,"can only have one of -ac_beam or -ac_coda\n");
             StartShutdown();
@@ -1952,18 +1955,33 @@ void komodo_args(char *argv0)
                 StartShutdown();
             }
         }
-        else if ( ASSETCHAINS_SELFIMPORT == "BEAM" && ASSETCHAINS_BEAMPORT == 0 )
+        else if ( ASSETCHAINS_SELFIMPORT == "BEAM" )
         {
-            fprintf(stderr,"missing -ac_beam for BEAM rpcport\n");
-            StartShutdown();
+            if (ASSETCHAINS_BEAMPORT == 0)
+            {
+                fprintf(stderr,"missing -ac_beam for BEAM rpcport\n");
+                StartShutdown();
+            }
         }
-        else if ( ASSETCHAINS_SELFIMPORT == "CODA" && ASSETCHAINS_CODAPORT == 0 )
+        else if ( ASSETCHAINS_SELFIMPORT == "CODA" )
         {
-            fprintf(stderr,"missing -ac_coda for CODA rpcport\n");
-            StartShutdown();
+            if (ASSETCHAINS_CODAPORT == 0)
+            {
+                fprintf(stderr,"missing -ac_coda for CODA rpcport\n");
+                StartShutdown();
+            }
+        }
+        else if ( ASSETCHAINS_SELFIMPORT == "PEGSCC")
+        {
+            Split(GetArg("-ac_pegsccparams",""),  ASSETCHAINS_PEGSCCPARAMS, 0);
+            if (ASSETCHAINS_ENDSUBSIDY[0]!=1 || ASSETCHAINS_COMMISSION!=0)
+            {
+                fprintf(stderr,"when using import for pegsCC these must be set: -ac_end=1 -ac_perc=0\n");
+                StartShutdown();
+            }
         }
         // else it can be gateway coin
-        else if (!ASSETCHAINS_SELFIMPORT.empty() && (ASSETCHAINS_ENDSUBSIDY[0]!=1 || ASSETCHAINS_SUPPLY>10 || ASSETCHAINS_COMMISSION!=0))
+        else if (!ASSETCHAINS_SELFIMPORT.empty() && (ASSETCHAINS_ENDSUBSIDY[0]!=1 || ASSETCHAINS_SUPPLY>0 || ASSETCHAINS_COMMISSION!=0))
         {
             fprintf(stderr,"when using gateway import these must be set: -ac_end=1 -ac_supply=0 -ac_perc=0\n");
             StartShutdown();
@@ -2101,7 +2119,7 @@ void komodo_args(char *argv0)
                     extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_FOUNDERS),(void *)&ASSETCHAINS_FOUNDERS);
                 if ( ASSETCHAINS_FOUNDERS_REWARD != 0 )
                 {
-                    fprintf(stderr, "set founders reward.%li\n",ASSETCHAINS_FOUNDERS_REWARD);
+                    fprintf(stderr, "set founders reward.%lld\n",(long long)ASSETCHAINS_FOUNDERS_REWARD);
                     extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_FOUNDERS_REWARD),(void *)&ASSETCHAINS_FOUNDERS_REWARD);
                 }
             }
@@ -2324,7 +2342,7 @@ void komodo_args(char *argv0)
         if ( strcmp("PIRATE",ASSETCHAINS_SYMBOL) == 0 && ASSETCHAINS_HALVING[0] == 77777 )
         {
             ASSETCHAINS_HALVING[0] *= 5;
-            fprintf(stderr,"PIRATE halving changed to %d %.1f days ASSETCHAINS_LASTERA.%lu\n",(int32_t)ASSETCHAINS_HALVING[0],(double)ASSETCHAINS_HALVING[0]/1440,ASSETCHAINS_LASTERA);
+            fprintf(stderr,"PIRATE halving changed to %d %.1f days ASSETCHAINS_LASTERA.%llu\n",(int32_t)ASSETCHAINS_HALVING[0],(double)ASSETCHAINS_HALVING[0]/1440,(long long)ASSETCHAINS_LASTERA);
         }
         else if ( strcmp("VRSC",ASSETCHAINS_SYMBOL) == 0 )
             dpowconfs = 0;

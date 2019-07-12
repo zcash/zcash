@@ -96,6 +96,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
     //This is a must to avoid hardfork change of validation in every CC, because there could be maximum one normal vin at the begining with current validation.
     for (i=0; i<n; i++)
     {
+        if (i==0 && mtx.vin[i].prevout.n==10e8) continue;
         if ( GetTransaction(mtx.vin[i].prevout.hash,vintx,hashBlock,false) != 0 )
         {
             if ( vintx.vout[mtx.vin[i].prevout.n].scriptPubKey.IsPayToCryptoCondition() == 0 && ccvins==0)
@@ -114,6 +115,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
     memset(utxovalues,0,sizeof(utxovalues));
     for (i=0; i<n; i++)
     {
+        if (i==0 && mtx.vin[i].prevout.n==10e8) continue;
         if ( GetTransaction(mtx.vin[i].prevout.hash,vintx,hashBlock,false) != 0 )
         {
             utxovout = mtx.vin[i].prevout.n;
@@ -146,13 +148,22 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
     n = mtx.vin.size(); 
     for (i=0; i<n; i++)
     {
+        if (i==0 && mtx.vin[i].prevout.n==10e8) continue;
         if ( GetTransaction(mtx.vin[i].prevout.hash,vintx,hashBlock,false) != 0 )
         {
             utxovout = mtx.vin[i].prevout.n;
             if ( vintx.vout[utxovout].scriptPubKey.IsPayToCryptoCondition() == 0 )
             {
-                if ( SignTx(mtx,i,vintx.vout[utxovout].nValue,vintx.vout[utxovout].scriptPubKey) == 0 )
-                    fprintf(stderr,"signing error for vini.%d of %llx\n",i,(long long)vinimask);
+                if ( KOMODO_NSPV == 0 )
+                {
+                    if ( SignTx(mtx,i,vintx.vout[utxovout].nValue,vintx.vout[utxovout].scriptPubKey) == 0 )
+                        fprintf(stderr,"signing error for vini.%d of %llx\n",i,(long long)vinimask);
+                }
+                else
+                {
+                    if ( NSPV_SignTx(mtx,i,vintx.vout[utxovout].nValue,vintx.vout[utxovout].scriptPubKey,0) == 0 )
+                        fprintf(stderr,"NSPV signing error for vini.%d of %llx\n",i,(long long)vinimask);
+                }
             }
             else
             {
@@ -228,7 +239,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
 				else if (strcmp(cp->tokens1of2addr, destaddr) == 0)
 				{
 					//fprintf(stderr,"FinalizeCCTx() matched %s cp->tokens1of2addr!\n", cp->tokens1of2addr);
-					privkey = myprivkey;
+					privkey = cp->tokens1of2priv;//myprivkey;
 					if (othercond1of2tokens == 0)
                         // NOTE: if additionalEvalcode2 is not set then it is dual-eval cc else three-eval cc
                         // TODO: verify evalcodes order if additionalEvalcode2 is not 0
@@ -358,7 +369,7 @@ int64_t CCutxovalue(char *coinaddr,uint256 utxotxid,int32_t utxovout,int32_t CCf
     return(0);
 }
 
-int32_t CCgettxout(uint256 txid,int32_t vout,int32_t mempoolflag,int32_t lockflag)
+int64_t CCgettxout(uint256 txid,int32_t vout,int32_t mempoolflag,int32_t lockflag)
 {
     CCoins coins;
     //fprintf(stderr,"CCgettxoud %s/v%d\n",txid.GetHex().c_str(),vout);
@@ -511,6 +522,10 @@ int32_t CC_vinselect(int32_t *aboveip,int64_t *abovep,int32_t *belowip,int64_t *
 int64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int32_t maxinputs)
 {
     int32_t abovei,belowi,ind,vout,i,n = 0; int64_t sum,threshold,above,below; int64_t remains,nValue,totalinputs = 0; uint256 txid,hashBlock; std::vector<COutput> vecOutputs; CTransaction tx; struct CC_utxo *utxos,*up;
+    if ( KOMODO_NSPV != 0 )
+    {
+        //return(NSPV_addinputs(struct NSPV_utxoresp *used,CMutableTransaction &mtx,int64_t total,int32_t maxinputs,struct NSPV_utxoresp *ptr,int32_t num));
+    }
 #ifdef ENABLE_WALLET
     assert(pwalletMain != NULL);
     const CKeyStore& keystore = *pwalletMain;
@@ -606,6 +621,10 @@ int64_t AddNormalinputs2(CMutableTransaction &mtx,int64_t total,int32_t maxinput
 {
     int32_t abovei,belowi,ind,vout,i,n = 0; int64_t sum,threshold,above,below; int64_t remains,nValue,totalinputs = 0; char coinaddr[64]; uint256 txid,hashBlock; CTransaction tx; struct CC_utxo *utxos,*up;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
+    if ( KOMODO_NSPV != 0 )
+    {
+        //return(NSPV_addinputs(struct NSPV_utxoresp *used,CMutableTransaction &mtx,int64_t total,int32_t maxinputs,struct NSPV_utxoresp *ptr,int32_t num));
+    }
     utxos = (struct CC_utxo *)calloc(CC_MAXVINS,sizeof(*utxos));
     if ( maxinputs > CC_MAXVINS )
         maxinputs = CC_MAXVINS;

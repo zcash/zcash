@@ -35,24 +35,24 @@ using namespace std;
 
 typedef vector<unsigned char> valtype;
 extern uint8_t ASSETCHAINS_TXPOW;
+uint256 SIG_TXHASH;
 
 TransactionSignatureCreator::TransactionSignatureCreator(const CKeyStore* keystoreIn, const CTransaction* txToIn, unsigned int nInIn, const CAmount& amountIn, int nHashTypeIn) : BaseSignatureCreator(keystoreIn), txTo(txToIn), nIn(nInIn), nHashType(nHashTypeIn), amount(amountIn), checker(txTo, nIn, amountIn) {}
 
 bool TransactionSignatureCreator::CreateSig(std::vector<unsigned char>& vchSig, const CKeyID& address, const CScript& scriptCode, uint32_t consensusBranchId, CKey *pprivKey, void *extraData) const
 {
-    CKey key;
-    if (pprivKey)
-        key = *pprivKey;
-    else if (!keystore || !keystore->GetKey(address, key))
-        return false;
-    
-    uint256 hash;
+    CKey key; uint256 hash;
     try {
         hash = SignatureHash(scriptCode, *txTo, nIn, nHashType, amount, consensusBranchId);
     } catch (logic_error ex) {
         return false;
     }
-    
+    SIG_TXHASH = hash;
+    if (pprivKey)
+        key = *pprivKey;
+    else if (!keystore || !keystore->GetKey(address, key))
+        return false;
+
     if (scriptCode.IsPayToCryptoCondition())
     {
         CC *cc = (CC *)extraData;
