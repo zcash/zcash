@@ -1556,7 +1556,6 @@ static int32_t EnumCreditloops(int64_t &totalopen, std::vector<uint256> &issuanc
                                 CTransaction batontx;
                                 uint256 hashBlock;
                                 uint8_t funcid;
-                                struct CreditLoopOpret loopData;
 
                                 LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "found baton for txid=" << issuancetxid.GetHex() << std::endl);
 
