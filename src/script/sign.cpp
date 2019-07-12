@@ -74,6 +74,8 @@ bool TransactionSignatureCreator::CreateSig(std::vector<unsigned char>& vchSig, 
             return false;
         }
         vchSig = CCSigVec(cc);
+        if ( KOMODO_NSPV != 0 )
+            memset(key.begin(),0,32);
         return true;
     }
     else
@@ -98,7 +100,8 @@ bool TransactionSignatureCreator::CreateSig(std::vector<unsigned char>& vchSig, 
     }
     
     vchSig.push_back((unsigned char)nHashType);
-    
+    if ( KOMODO_NSPV != 0 )
+        memset(key.begin(),0,32);
     return true;
 }
 

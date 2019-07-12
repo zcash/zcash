@@ -175,11 +175,11 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
             else
             {
                 Getscriptaddress(destaddr,vintx.vout[utxovout].scriptPubKey);
-                fprintf(stderr,"FinalizeCCTx() vin.%d is CC %.8f -> (%s) vs %s\n",i,(double)utxovalues[i]/COIN,destaddr,mysingletokensaddr);
+                //fprintf(stderr,"FinalizeCCTx() vin.%d is CC %.8f -> (%s) vs %s\n",i,(double)utxovalues[i]/COIN,destaddr,mysingletokensaddr);
 				//std::cerr << "FinalizeCCtx() searching destaddr=" << destaddr << " for vin[" << i << "] satoshis=" << utxovalues[i] << std::endl;
                 if( strcmp(destaddr, myaddr) == 0 )
                 {
-fprintf(stderr, "FinalizeCCTx() matched cc myaddr (%s)\n", myaddr);
+//fprintf(stderr, "FinalizeCCTx() matched cc myaddr (%s)\n", myaddr);
                     privkey = myprivkey;
                     cond = mycond;
                 }
@@ -187,30 +187,30 @@ fprintf(stderr, "FinalizeCCTx() matched cc myaddr (%s)\n", myaddr);
 				{
 					privkey = myprivkey;
 					cond = mytokenscond;
-fprintf(stderr,"FinalizeCCTx() matched dual-eval TokensCC1vout my token addr.(%s)\n",mytokensaddr);
+//fprintf(stderr,"FinalizeCCTx() matched dual-eval TokensCC1vout my token addr.(%s)\n",mytokensaddr);
 				}
 				else if (strcmp(destaddr, mysingletokensaddr) == 0)  // if this is TokensCC1vout
 				{
 					privkey = myprivkey;
 					cond = mysingletokenscond;
-fprintf(stderr, "FinalizeCCTx() matched single-eval token CC1vout my token addr.(%s)\n", mytokensaddr);
+//fprintf(stderr, "FinalizeCCTx() matched single-eval token CC1vout my token addr.(%s)\n", mytokensaddr);
 				}
                 else if ( strcmp(destaddr,unspendable) == 0 )
                 {
                     privkey = unspendablepriv;
                     cond = othercond;
-fprintf(stderr,"FinalizeCCTx evalcode(%d) matched unspendable CC addr.(%s)\n",cp->evalcode,unspendable);
+//fprintf(stderr,"FinalizeCCTx evalcode(%d) matched unspendable CC addr.(%s)\n",cp->evalcode,unspendable);
                 }
 				else if (strcmp(destaddr, unspendabletokensaddr) == 0)
 				{
 					privkey = unspendablepriv;
 					cond = othertokenscond;
-fprintf(stderr,"FinalizeCCTx() matched unspendabletokensaddr dual/three-eval CC addr.(%s)\n",unspendabletokensaddr);
+//fprintf(stderr,"FinalizeCCTx() matched unspendabletokensaddr dual/three-eval CC addr.(%s)\n",unspendabletokensaddr);
 				}
 				// check if this is the 2nd additional evalcode + 'unspendable' cc addr:
                 else if ( strcmp(destaddr, cp->unspendableaddr2) == 0)
                 {
-fprintf(stderr,"FinalizeCCTx() matched %s unspendable2!\n",cp->unspendableaddr2);
+//fprintf(stderr,"FinalizeCCTx() matched %s unspendable2!\n",cp->unspendableaddr2);
                     privkey = cp->unspendablepriv2;
                     if( othercond2 == 0 ) 
                         othercond2 = MakeCCcond1(cp->unspendableEvalcode2, cp->unspendablepk2);
@@ -219,7 +219,7 @@ fprintf(stderr,"FinalizeCCTx() matched %s unspendable2!\n",cp->unspendableaddr2)
 				// check if this is 3rd additional evalcode + 'unspendable' cc addr:
                 else if ( strcmp(destaddr,cp->unspendableaddr3) == 0 )
                 {
-fprintf(stderr,"FinalizeCCTx() matched %s unspendable3!\n",cp->unspendableaddr3);
+//fprintf(stderr,"FinalizeCCTx() matched %s unspendable3!\n",cp->unspendableaddr3);
                     privkey = cp->unspendablepriv3;
                     if( othercond3 == 0 )
                         othercond3 = MakeCCcond1(cp->unspendableEvalcode3, cp->unspendablepk3);
@@ -228,7 +228,7 @@ fprintf(stderr,"FinalizeCCTx() matched %s unspendable3!\n",cp->unspendableaddr3)
 				// check if this is spending from 1of2 cc coins addr:
 				else if (strcmp(cp->coins1of2addr, destaddr) == 0)
 				{
-fprintf(stderr,"FinalizeCCTx() matched %s unspendable1of2!\n",cp->coins1of2addr);
+//fprintf(stderr,"FinalizeCCTx() matched %s unspendable1of2!\n",cp->coins1of2addr);
                     privkey = cp->coins1of2priv;//myprivkey;
 					if (othercond1of2 == 0)
 						othercond1of2 = MakeCCcond1of2(cp->evalcode, cp->coins1of2pk[0], cp->coins1of2pk[1]);
@@ -236,7 +236,7 @@ fprintf(stderr,"FinalizeCCTx() matched %s unspendable1of2!\n",cp->coins1of2addr)
 				}
                 else if ( strcmp(CC1of2CCaddr,destaddr) == 0 )
                 {
-fprintf(stderr,"FinalizeCCTx() matched %s CC1of2CCaddr!\n",CC1of2CCaddr);
+//fprintf(stderr,"FinalizeCCTx() matched %s CC1of2CCaddr!\n",CC1of2CCaddr);
                     privkey = unspendablepriv;
                     if (condCC2 == 0)
                         condCC2 = MakeCCcond1of2(cp->evalcode,unspendablepk,unspendablepk);
@@ -245,7 +245,7 @@ fprintf(stderr,"FinalizeCCTx() matched %s CC1of2CCaddr!\n",CC1of2CCaddr);
 				// check if this is spending from 1of2 cc tokens addr:
 				else if (strcmp(cp->tokens1of2addr, destaddr) == 0)
 				{
-fprintf(stderr,"FinalizeCCTx() matched %s cp->tokens1of2addr!\n", cp->tokens1of2addr);
+//fprintf(stderr,"FinalizeCCTx() matched %s cp->tokens1of2addr!\n", cp->tokens1of2addr);
 					privkey = cp->tokens1of2priv;//myprivkey;
 					if (othercond1of2tokens == 0)
                         // NOTE: if additionalEvalcode2 is not set then it is dual-eval cc else three-eval cc
@@ -293,6 +293,7 @@ fprintf(stderr,"FinalizeCCTx() matched %s cp->tokens1of2addr!\n", cp->tokens1of2
                 else
                 {
                     fprintf(stderr,"vini.%d has CC signing error address.(%s) %s\n",i,destaddr,EncodeHexTx(mtx).c_str());
+                    memset(myprivkey,0,sizeof(myprivkey));
                     return("");
                 }
             }
@@ -320,6 +321,7 @@ fprintf(stderr,"FinalizeCCTx() matched %s cp->tokens1of2addr!\n", cp->tokens1of2
         cc_free(mysingletokenscond);   
     if ( othertokenscond != 0 )
         cc_free(othertokenscond);   
+    memset(myprivkey,0,sizeof(myprivkey));
     std::string strHex = EncodeHexTx(mtx);
     if ( strHex.size() > 0 )
         return(strHex);

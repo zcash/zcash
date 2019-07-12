@@ -85,7 +85,7 @@ int32_t NSPV_gettransaction(int32_t skipvalidation,int32_t vout,uint256 txid,int
         rewardsum += rewards;
     }
     //char coinaddr[64];
-    //Getscriptaddress(coinaddr,tx.vout[0].scriptPubKey);
+    //Getscriptaddress(coinaddr,tx.vout[0].scriptPubKey);  causes crash??
     //fprintf(stderr,"%s txid.%s vs hash.%s\n",coinaddr,txid.GetHex().c_str(),tx.GetHash().GetHex().c_str());
     
     if ( skipvalidation == 0 )
