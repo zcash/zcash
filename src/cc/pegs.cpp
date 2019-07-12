@@ -382,7 +382,7 @@ int64_t AddPegsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKe
         txid = it->first.txhash;
         vout = (int32_t)it->first.index;
         // no need to prevent dup
-        if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
+        if ( myGetTransaction(txid,vintx,hashBlock) != 0 )
         {
             if (myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0 )
             {
@@ -413,7 +413,7 @@ int64_t AddPegsTokenInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,u
         txid = it->first.txhash;
         vout = (int32_t)it->first.index;
         // no need to prevent dup
-        if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
+        if ( myGetTransaction(txid,vintx,hashBlock) != 0 )
         {
             if (myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0 && DecodePegsOpRet(vintx,tmppegstxid,tmptokenid)!=0 && tmppegstxid==pegstxid && tmptokenid==tokenid)
             {
@@ -521,7 +521,7 @@ double PegsGetTokenPrice(uint256 tokenid)
     int64_t *tokensyn,*btcusd; double price; CTransaction tokentx; uint256 hashBlock;
     std::string name,desc; std::vector<uint8_t> vorigpubkey; int32_t numvouts;
 
-    if (GetTransaction(tokenid,tokentx,hashBlock,false)!=0 && (numvouts=tokentx.vout.size())>0 && DecodeTokenCreateOpRet(tokentx.vout[numvouts-1].scriptPubKey,vorigpubkey,name,desc)=='c')
+    if (myGetTransaction(tokenid,tokentx,hashBlock)!=0 && (numvouts=tokentx.vout.size())>0 && DecodeTokenCreateOpRet(tokentx.vout[numvouts-1].scriptPubKey,vorigpubkey,name,desc)=='c')
     {
         tokensyn = (int64_t *)calloc(sizeof(*tokensyn) * 3, 1 + PRICES_DAYWINDOW * 2 + PRICES_SMOOTHWIDTH);
         btcusd = (int64_t *)calloc(sizeof(*btcusd) * 3, 1 + PRICES_DAYWINDOW * 2 + PRICES_SMOOTHWIDTH);
@@ -539,7 +539,7 @@ std::string PegsGetTokenName(uint256 tokenid)
 {
     CTransaction tokentx; uint256 hashBlock; std::string name,desc; std::vector<uint8_t> vorigpubkey; int32_t numvouts;
 
-    if (GetTransaction(tokenid,tokentx,hashBlock,false)!=0 && (numvouts=tokentx.vout.size())>0 && DecodeTokenCreateOpRet(tokentx.vout[numvouts-1].scriptPubKey,vorigpubkey,name,desc)=='c')
+    if (myGetTransaction(tokenid,tokentx,hashBlock,false)!=0 && (numvouts=tokentx.vout.size())>0 && DecodeTokenCreateOpRet(tokentx.vout[numvouts-1].scriptPubKey,vorigpubkey,name,desc)=='c')
     {
         return (name);
     }
@@ -555,7 +555,7 @@ double PegsGetAccountRatio(uint256 pegstxid,uint256 tokenid,uint256 accounttxid)
     std::pair<int64_t,int64_t> account; struct CCcontract_info *cp,C;
 
     cp = CCinit(&C,EVAL_PEGS);
-    if (GetTransaction(accounttxid,tx,hashBlock,false) != 0 && (numvouts=tx.vout.size())>0 &&
+    if (myGetTransaction(accounttxid,tx,hashBlock) != 0 && (numvouts=tx.vout.size())>0 &&
         (funcid=DecodePegsOpRet(tx,tmppegstxid,tmptokenid))!=0 && pegstxid==tmppegstxid && tokenid==tmptokenid)
     {  
         PegsDecodeAccountTx(tx,pk,amount,account);           
@@ -581,7 +581,7 @@ double PegsGetGlobalRatio(uint256 pegstxid)
         txid = it->first.txhash;
         vout = (int32_t)it->first.index;
         nValue = (int64_t)it->second.satoshis;
-        if (vout == 0 && nValue == CC_MARKER_VALUE && GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts=tx.vout.size())>0 &&
+        if (vout == 0 && nValue == CC_MARKER_VALUE && myGetTransaction(txid,tx,hashBlock) != 0 && (numvouts=tx.vout.size())>0 &&
             (funcid=DecodePegsOpRet(tx,tmppegstxid,tokenid))!=0 && pegstxid==tmppegstxid && (funcid=='F' || funcid=='G' || funcid=='E'))
         {              
             PegsDecodeAccountTx(tx,pk,amount,account);
@@ -597,7 +597,7 @@ double PegsGetGlobalRatio(uint256 pegstxid)
         txid = it->first.txhash;
         vout = (int32_t)it->first.index;
         nValue = (int64_t)it->second.satoshis;
-        if (GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts=tx.vout.size())>0 && DecodePegsOpRet(tx,tmppegstxid,tokenid)!=0 && pegstxid==tmppegstxid)
+        if (myGetTransaction(txid,tx,hashBlock) != 0 && (numvouts=tx.vout.size())>0 && DecodePegsOpRet(tx,tmppegstxid,tokenid)!=0 && pegstxid==tmppegstxid)
         {
             globalaccounts[tokenid].first+=nValue;
         }
@@ -660,7 +660,7 @@ std::string PegsCreate(uint64_t txfee,int64_t amount, std::vector<uint256> bindt
     pegspk = GetUnspendable(cp,0);
     for(auto txid : bindtxids)
     {
-        if (GetTransaction(txid,tx,hashBlock,false)==0 || (numvouts=tx.vout.size())<=0)
+        if (myGetTransaction(txid,tx,hashBlock)==0 || (numvouts=tx.vout.size())<=0)
         {
             CCerror = strprintf("cant find bindtxid %s",txid.GetHex());
             LOGSTREAM("pegscc",CCLOG_INFO, stream << CCerror << std::endl);
@@ -697,7 +697,7 @@ std::string PegsFund(uint64_t txfee,uint256 pegstxid, uint256 tokenid,int64_t am
     mypk = pubkey2pk(Mypubkey());
 
     pegspk = GetUnspendable(cp,0);
-    if (GetTransaction(pegstxid,tx,hashBlock,false)==0 || (numvouts=tx.vout.size())<=0)
+    if (,yGetTransaction(pegstxid,tx,hashBlock)==0 || (numvouts=tx.vout.size())<=0)
     {
         CCerror = strprintf("cant find pegstxid %s",pegstxid.GetHex());
         LOGSTREAM("pegscc",CCLOG_INFO, stream << CCerror << std::endl);
@@ -711,7 +711,7 @@ std::string PegsFund(uint64_t txfee,uint256 pegstxid, uint256 tokenid,int64_t am
     }
     for(auto txid : bindtxids)
     {
-        if (GetTransaction(txid,tx,hashBlock,false)==0 || (numvouts=tx.vout.size())<=0)
+        if (myGetTransaction(txid,tx,hashBlock)==0 || (numvouts=tx.vout.size())<=0)
         {
             CCerror = strprintf("cant find bindtxid %s",txid.GetHex());
             LOGSTREAM("pegscc",CCLOG_INFO, stream << CCerror << std::endl);
@@ -794,7 +794,7 @@ std::string PegsGet(uint64_t txfee,uint256 pegstxid, uint256 tokenid, int64_t am
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
     pegspk = GetUnspendable(cp,0);
-    if (GetTransaction(pegstxid,tx,hashBlock,false)==0 || (numvouts=tx.vout.size())<=0)
+    if (myGetTransaction(pegstxid,tx,hashBlock)==0 || (numvouts=tx.vout.size())<=0)
     {
         CCerror = strprintf("cant find pegstxid %s",pegstxid.GetHex());
         LOGSTREAM("pegscc",CCLOG_INFO, stream << CCerror << std::endl);
@@ -855,7 +855,7 @@ std::string PegsRedeem(uint64_t txfee,uint256 pegstxid, uint256 tokenid)
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
     pegspk = GetUnspendable(cp,0);
-    if (GetTransaction(pegstxid,tx,hashBlock,false)==0 || (numvouts=tx.vout.size())<=0)
+    if (myGetTransaction(pegstxid,tx,hashBlock)==0 || (numvouts=tx.vout.size())<=0)
     {
         CCerror = strprintf("cant find pegstxid %s",pegstxid.GetHex());
         LOGSTREAM("pegscc",CCLOG_INFO, stream << CCerror << std::endl);
@@ -869,7 +869,7 @@ std::string PegsRedeem(uint64_t txfee,uint256 pegstxid, uint256 tokenid)
     }
     for(auto txid : bindtxids)
     {
-        if (GetTransaction(txid,tx,hashBlock,false)==0 || (numvouts=tx.vout.size())<=0)
+        if (myGetTransaction(txid,tx,hashBlock)==0 || (numvouts=tx.vout.size())<=0)
         {
             CCerror = strprintf("cant find bindtxid %s",txid.GetHex());
             LOGSTREAM("pegscc",CCLOG_INFO, stream << CCerror << std::endl);
@@ -968,7 +968,7 @@ std::string PegsExchange(uint64_t txfee,uint256 pegstxid, uint256 tokenid, int64
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
     pegspk = GetUnspendable(cp,0);
-    if (GetTransaction(pegstxid,tx,hashBlock,false)==0 || (numvouts=tx.vout.size())<=0)
+    if (myGetTransaction(pegstxid,tx,hashBlock)==0 || (numvouts=tx.vout.size())<=0)
     {
         CCerror = strprintf("cant find pegstxid %s",pegstxid.GetHex());
         LOGSTREAM("pegscc",CCLOG_INFO, stream << CCerror << std::endl);
@@ -982,7 +982,7 @@ std::string PegsExchange(uint64_t txfee,uint256 pegstxid, uint256 tokenid, int64
     }
     for(auto txid : bindtxids)
     {
-        if (GetTransaction(txid,tx,hashBlock,false)==0 || (numvouts=tx.vout.size())<=0)
+        if (myGetTransaction(txid,tx,hashBlock)==0 || (numvouts=tx.vout.size())<=0)
         {
             CCerror = strprintf("cant find bindtxid %s",txid.GetHex());
             LOGSTREAM("pegscc",CCLOG_INFO, stream << CCerror << std::endl);
@@ -1026,7 +1026,7 @@ std::string PegsExchange(uint64_t txfee,uint256 pegstxid, uint256 tokenid, int64
                     LOGSTREAM("pegscc",CCLOG_INFO, stream << CCerror << std::endl);
                     return("");
                 }
-                if (accounttxid!=zeroid && GetTransaction(accounttxid,tx,hashBlock,false)==0 || (numvouts=tx.vout.size())<=0 || PegsDecodeAccountTx(tx,tmppk,tmpamount,account).empty())
+                if (accounttxid!=zeroid && myGetTransaction(accounttxid,tx,hashBlock)==0 || (numvouts=tx.vout.size())<=0 || PegsDecodeAccountTx(tx,tmppk,tmpamount,account).empty())
                 {
                     CCerror = strprintf("invalid account tx from which to exchange coins to tokens %s!",accounttxid.GetHex());
                     LOGSTREAM("pegscc",CCLOG_INFO, stream << CCerror << std::endl);
@@ -1104,7 +1104,7 @@ std::string PegsLiquidate(uint64_t txfee,uint256 pegstxid, uint256 tokenid, uint
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
     pegspk = GetUnspendable(cp,0);
-    if (GetTransaction(pegstxid,tx,hashBlock,false)==0 || (numvouts=tx.vout.size())<=0)
+    if (myGetTransaction(pegstxid,tx,hashBlock)==0 || (numvouts=tx.vout.size())<=0)
     {
         CCerror = strprintf("cant find pegstxid %s",pegstxid.GetHex());
         LOGSTREAM("pegscc",CCLOG_INFO, stream << CCerror << std::endl);
@@ -1118,7 +1118,7 @@ std::string PegsLiquidate(uint64_t txfee,uint256 pegstxid, uint256 tokenid, uint
     }
     for(auto txid : bindtxids)
     {
-        if (GetTransaction(txid,tx,hashBlock,false)==0 || (numvouts=tx.vout.size())<=0)
+        if (myGetTransaction(txid,tx,hashBlock)==0 || (numvouts=tx.vout.size())<=0)
         {
             CCerror = strprintf("cant find bindtxid %s",txid.GetHex());
             LOGSTREAM("pegscc",CCLOG_INFO, stream << CCerror << std::endl);
@@ -1160,7 +1160,7 @@ std::string PegsLiquidate(uint64_t txfee,uint256 pegstxid, uint256 tokenid, uint
         LOGSTREAM("pegscc",CCLOG_INFO, stream << CCerror << std::endl);
         return("");
     }
-    if (liquidatetxid!=zeroid && GetTransaction(liquidatetxid,tx,hashBlock,false)==0 || (numvouts=tx.vout.size())<=0 || PegsDecodeAccountTx(tx,tmppk,amount,account).empty())
+    if (liquidatetxid!=zeroid && myGetTransaction(liquidatetxid,tx,hashBlock)==0 || (numvouts=tx.vout.size())<=0 || PegsDecodeAccountTx(tx,tmppk,amount,account).empty())
     {
         CCerror = strprintf("cannot find account to liquidate or invalid tx %s!",liquidatetxid.GetHex());
         LOGSTREAM("pegscc",CCLOG_INFO, stream << CCerror << std::endl);
@@ -1235,7 +1235,7 @@ UniValue PegsAccountHistory(uint256 pegstxid)
         txid = it->first.txhash;
         vout = (int32_t)it->first.index;
         nValue = (int64_t)it->second;
-        if (vout == 1 && nValue == CC_MARKER_VALUE && GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts=tx.vout.size())>0 &&
+        if (vout == 1 && nValue == CC_MARKER_VALUE && myGetTransaction(txid,tx,hashBlock) != 0 && (numvouts=tx.vout.size())>0 &&
             (funcid=DecodePegsOpRet(tx,tmppegstxid,tmptokenid))!=0 && pegstxid==tmppegstxid)
         {
             UniValue obj(UniValue::VOBJ);
@@ -1272,7 +1272,7 @@ UniValue PegsAccountInfo(uint256 pegstxid)
         vout = (int32_t)it->first.index;
         nValue = (int64_t)it->second.satoshis;
         //LOGSTREAM("pegscc",CCLOG_DEBUG2, stream << "txid=" << txid.GetHex() << ", vout=" << vout << ", nValue=" << nValue << std::endl);
-        if (vout == 1 && nValue == CC_MARKER_VALUE && GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts=tx.vout.size())>0 &&
+        if (vout == 1 && nValue == CC_MARKER_VALUE && myGetTransaction(txid,tx,hashBlock) != 0 && (numvouts=tx.vout.size())>0 &&
             (funcid=DecodePegsOpRet(tx,tmppegstxid,tmptokenid))!=0 && pegstxid==tmppegstxid)
         {
             //LOGSTREAM("pegscc",CCLOG_DEBUG2, stream << "txid=" << txid.GetHex() << ", vout=" << vout << ", nValue=" << nValue << ", tokenid=" << tmptokenid.GetHex() << std::endl);
@@ -1314,7 +1314,7 @@ UniValue PegsWorstAccounts(uint256 pegstxid)
         txid = it->first.txhash;
         vout = (int32_t)it->first.index;
         nValue = (int64_t)it->second.satoshis;
-        if (vout == 0 && nValue == CC_MARKER_VALUE && GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts=tx.vout.size())>0 &&
+        if (vout == 0 && nValue == CC_MARKER_VALUE && myGetTransaction(txid,tx,hashBlock) != 0 && (numvouts=tx.vout.size())>0 &&
             (funcid=DecodePegsOpRet(tx,tmppegstxid,tokenid))!=0 && pegstxid==tmppegstxid)
         {               
             PegsDecodeAccountTx(tx,pk,amount,account);
@@ -1366,7 +1366,7 @@ UniValue PegsInfo(uint256 pegstxid)
         txid = it->first.txhash;
         vout = (int32_t)it->first.index;
         nValue = (int64_t)it->second.satoshis;
-        if (vout == 0 && nValue == CC_MARKER_VALUE && GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts=tx.vout.size())>0 &&
+        if (vout == 0 && nValue == CC_MARKER_VALUE && myGetTransaction(txid,tx,hashBlock) != 0 && (numvouts=tx.vout.size())>0 &&
             (funcid=DecodePegsOpRet(tx,tmppegstxid,tokenid))!=0 && pegstxid==tmppegstxid)
         {               
             PegsDecodeAccountTx(tx,pk,amount,account);
@@ -1382,7 +1382,7 @@ UniValue PegsInfo(uint256 pegstxid)
         txid = it->first.txhash;
         vout = (int32_t)it->first.index;
         nValue = (int64_t)it->second.satoshis;
-        if (GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts=tx.vout.size())>0 && DecodePegsOpRet(tx,tmppegstxid,tokenid)!=0 && pegstxid==tmppegstxid)
+        if (myGetTransaction(txid,tx,hashBlock) != 0 && (numvouts=tx.vout.size())>0 && DecodePegsOpRet(tx,tmppegstxid,tokenid)!=0 && pegstxid==tmppegstxid)
         {
             globalaccounts[tokenid].first+=nValue;
         }

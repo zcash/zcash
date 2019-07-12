@@ -654,7 +654,7 @@ int64_t AddTokenCCInputs(struct CCcontract_info *cp, CMutableTransaction &mtx, C
 		if (ivin != mtx.vin.size()) // that is, the tx.vout is already added to mtx.vin (in some previous calls)
 			continue;
 
-		if (GetTransaction(vintxid, vintx, hashBlock, false) != 0)
+		if (myGetTransaction(vintxid, vintx, hashBlock) != 0)
 		{
 			Getscriptaddress(destaddr, vintx.vout[vout].scriptPubKey);
 			if (strcmp(destaddr, tokenaddr) != 0 && 
@@ -920,7 +920,7 @@ int64_t GetTokenBalance(CPubKey pk, uint256 tokenid)
 	// CCerror = strprintf("obsolete, cannot return correct value without eval");
 	// return 0;
 
-	if (GetTransaction(tokenid, tokentx, hashBlock, false) == 0)
+	if (myGetTransaction(tokenid, tokentx, hashBlock) == 0)
 	{
         LOGSTREAM((char *)"cctokens", CCLOG_INFO, stream << "cant find tokenid" << std::endl);
 		CCerror = strprintf("cant find tokenid");
@@ -945,7 +945,7 @@ UniValue TokenInfo(uint256 tokenid)
 
     cpTokens = CCinit(&tokensCCinfo, EVAL_TOKENS);
 
-	if( !GetTransaction(tokenid, tokenbaseTx, hashBlock, false) )
+	if( !myGetTransaction(tokenid, tokenbaseTx, hashBlock) )
 	{
 		fprintf(stderr, "TokenInfo() cant find tokenid\n");
 		result.push_back(Pair("result", "error"));
@@ -1031,7 +1031,7 @@ UniValue TokenList()
 	cp = CCinit(&C, EVAL_TOKENS);
 
     auto addTokenId = [&](uint256 txid) {
-        if (GetTransaction(txid, vintx, hashBlock, false) != 0) {
+        if (myGetTransaction(txid, vintx, hashBlock) != 0) {
             if (vintx.vout.size() > 0 && DecodeTokenCreateOpRet(vintx.vout[vintx.vout.size() - 1].scriptPubKey, origpubkey, name, description) != 0) {
                 result.push_back(txid.GetHex());
             }

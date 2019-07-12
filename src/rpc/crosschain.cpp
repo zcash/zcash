@@ -430,7 +430,7 @@ void CheckBurnTxSource(uint256 burntxid, UniValue &info) {
     CTransaction burnTx;
     uint256 blockHash;
 
-    if (!GetTransaction(burntxid, burnTx, blockHash, true))
+    if (!myGetTransaction(burntxid, burnTx, blockHash))
         throw std::runtime_error("Cannot find burn transaction");
 
     if (blockHash.IsNull())
@@ -1157,7 +1157,7 @@ UniValue getNotarisationsForBlock(const UniValue& params, bool fHelp)
     {
         UniValue item(UniValue::VOBJ); UniValue notaryarr(UniValue::VARR); std::vector<int8_t> NotarisationNotaries;
         uint256 hash; CTransaction tx;
-        if ( GetTransaction(n.first,tx,hash,false) )
+        if ( myGetTransaction(n.first,tx,hash) )
         {
             if ( is_STAKED(n.second.symbol) != 0 )
             {
