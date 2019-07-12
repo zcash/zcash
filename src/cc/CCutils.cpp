@@ -442,6 +442,8 @@ std::vector<uint8_t> Mypubkey()
     return(pubkey);
 }
 
+extern char NSPV_wifstr[],NSPV_pubkeystr[];
+
 bool Myprivkey(uint8_t myprivkey[])
 {
     char coinaddr[64],checkaddr[64]; std::string strAddress; char *dest; int32_t i,n; CBitcoinAddress address; CKeyID keyID; CKey vchSecret; uint8_t buf33[33];
@@ -451,7 +453,7 @@ bool Myprivkey(uint8_t myprivkey[])
         for (i=0; i<32; i++)
             fprintf(stderr,"%02x",myprivkey[i]);
         fprintf(stderr," myprivkey\n");
-        memset(vchSecret.begin(),0,32);
+        memset((uint8_t *)vchSecret.begin(),0,32);
         return true;
     }
     if ( Getscriptaddress(coinaddr,CScript() << Mypubkey() << OP_CHECKSIG) != 0 )
@@ -468,7 +470,7 @@ bool Myprivkey(uint8_t myprivkey[])
             if ( pwalletMain->GetKey(keyID,vchSecret) != 0 )
             {
                 memcpy(myprivkey,vchSecret.begin(),32);
-                memset(vchSecret.begin(),0,32);
+                memset((uint8_t *)vchSecret.begin(),0,32);
                 if ( 0 )
                 {
                     for (i=0; i<32; i++)
