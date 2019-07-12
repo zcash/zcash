@@ -1658,16 +1658,24 @@ UniValue MarmaraReceive(int64_t txfee, CPubKey senderpk, int64_t amount, std::st
     uint256 createtxid = zeroid;
     const char *errorstr = NULL;
 
-    if (batontxid != zeroid && MarmaraGetcreatetxid(createtxid, batontxid) < 0)
-        errorstr = "cant get createtxid from batontxid";
-    else if (currency != MARMARA_CURRENCY)
-        errorstr = "for now, only MARMARA loops are supported";
-    else if (amount <= txfee)
-        errorstr = "amount must be for more than txfee";
-    else if (matures <= chainActive.LastTip()->GetHeight())
-        errorstr = "it must mature in the future";
+    if (batontxid == zeroid) 
+    {
+        // first time checking parameters
+        if (currency != MARMARA_CURRENCY)
+            errorstr = "for now, only MARMARA loops are supported";
+        else if (amount <= txfee)
+            errorstr = "amount must be for more than txfee";
+        else if (matures <= chainActive.LastTip()->GetHeight())
+            errorstr = "it must mature in the future";
+    }
+    else
+    {
+        if (MarmaraGetcreatetxid(createtxid, batontxid) < 0)
+            errorstr = "cant get createtxid from batontxid";
+    }
 
-    if (createtxid != zeroid) {
+    if (createtxid != zeroid) 
+    {
         // check original cheque params:
         CTransaction looptx;
         uint256 hashBlock;
@@ -1683,7 +1691,6 @@ UniValue MarmaraReceive(int64_t txfee, CPubKey senderpk, int64_t amount, std::st
         }
         else if (senderpk != loopData.pk)
             errorstr = "current baton holder does not match the requested sender pk";
-
     }
 
     if (errorstr == NULL)
