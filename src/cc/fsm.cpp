@@ -133,7 +133,7 @@ int64_t AddFSMInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey
         // prevent dup
         if ( it->second.satoshis < 1000000 )
             continue;
-        if ( myGetTransaction(txid,vintx,hashBlock,false) != 0 )
+        if ( myGetTransaction(txid,vintx,hashBlock) != 0 )
         {
             if ( (nValue= IsFSMvout(cp,vintx,(int32_t)it->first.index)) > 0 )
             {
