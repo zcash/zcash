@@ -74,7 +74,7 @@ struct CreditLoopOpret {
 
     // last issuer/endorser/receiver data:
     uint256 createtxid;
-    CPubKey createpk;       // first pk. We need this var to make sure MarmaraDecodeLoopOpret does not override the value in pk.
+    CPubKey issuerpk;       // first pk. We need this var to make sure MarmaraDecodeLoopOpret does not override the value in pk.
     CPubKey pk;             // may be either sender or receiver pk
     int32_t avalCount;      // only for issuer/endorser
 
@@ -273,7 +273,7 @@ uint8_t MarmaraDecodeLoopOpret(const CScript scriptPubKey, struct CreditLoopOpre
 
     GetOpReturnData(scriptPubKey, vopret);
     if (vopret.size() >= 3) 
-     {
+    {
         uint8_t evalcode = vopret.begin()[0];
         uint8_t funcid = vopret.begin()[1];
         uint8_t version = vopret.begin()[2];
@@ -283,7 +283,7 @@ uint8_t MarmaraDecodeLoopOpret(const CScript scriptPubKey, struct CreditLoopOpre
             if (version == opretVersion) 
             {
                 if (funcid == 'C') {  // createtx
-                    if (E_UNMARSHAL(vopret, ss >> evalcode; ss >> funcid; ss >> version; ss >> loopData.createpk; ss >> loopData.amount; ss >> loopData.matures; ss >> loopData.currency) != 0) {
+                    if (E_UNMARSHAL(vopret, ss >> evalcode; ss >> funcid; ss >> version; ss >> loopData.issuerpk; ss >> loopData.amount; ss >> loopData.matures; ss >> loopData.currency) != 0) {
                         loopData.hasCreateOpret = true;
                         return funcid;
                     }
@@ -411,10 +411,14 @@ int32_t MarmaraGetLoopCreateData(uint256 createtxid, struct CreditLoopOpret &loo
     if (myGetTransaction(createtxid, tx, hashBlock) != 0 && !hashBlock.IsNull() && tx.vout.size() > 1)  // might be called from validation code, so non-locking version
     {
         uint8_t funcid;
-        struct CreditLoopOpret loopData;
+        vscript_t vopret;
 
-        if ((funcid = MarmaraDecodeLoopOpret(tx.vout.back().scriptPubKey, loopData)) == 'C') {
-            return(0);
+        // first check if this is really createtx to prevent override loopData with other tx type data:
+        if (GetOpReturnData(tx.vout.back().scriptPubKey, vopret) && vopret.size() >= 2 && vopret.begin()[0] == EVAL_MARMARA && vopret.begin()[1] == 'C')  
+        {
+            if ((funcid = MarmaraDecodeLoopOpret(tx.vout.back().scriptPubKey, loopData)) == 'C') {
+                return(0);
+            }
         }
     }
     return(-1);
@@ -1861,7 +1865,7 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, const s
             requestx.vout.size() < 1 ||
             (funcid = MarmaraDecodeLoopOpret(requestx.vout.back().scriptPubKey, loopData)) == 0)
             errorstr = "cannot get request transaction or tx in mempool or cannot decode request tx opreturn data";
-        else if (mypk != (funcid == 'C' ? loopData.createpk : loopData.pk))
+        else if (mypk != (funcid == 'C' ? loopData.issuerpk : loopData.pk))
             errorstr = "mypk does not match the requested sender pk";
     }
 
