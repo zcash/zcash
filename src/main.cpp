@@ -2230,10 +2230,10 @@ bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlo
     if ( KOMODO_NSPV != 0 )
     {
         int64_t rewardsum = 0; int32_t i,retval,txheight = 0,vout = 0;
-        for (i=0; i<NSPV_U.numutxos; i++)
-            if ( NSPV_U.utxos[i].txid == txid )
+        for (i=0; i<NSPV_U.U.numutxos; i++)
+            if ( NSPV_U.U.utxos[i].txid == txid )
             {
-                txheight = NSPV_U.utxos[i].height;
+                txheight = NSPV_U.U.utxos[i].height;
                 break;
             }
         retval = NSPV_gettransaction(1,vout,hash,txheight,txOut,0,0,rewardsum);
