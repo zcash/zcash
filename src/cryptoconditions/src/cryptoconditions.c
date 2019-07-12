@@ -274,7 +274,7 @@ int cc_verify(const struct CC *cond, const unsigned char *msg, size_t msgLength,
     else memcpy(msgHash, msg, 32);
 
     if (!cc_secp256k1VerifyTreeMsg32(cond, msgHash)) {
-        fprintf(stderr,"cc_verify error C\n");
+        fprintf(stderr,"cc_verify error C msgHash.%s\n",msgHash.GetHex().c_str());
         return 0;
     }
 
