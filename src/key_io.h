@@ -17,6 +17,7 @@
 #include <string>
 
 CKey DecodeSecret(const std::string& str);
+CKey DecodeCustomSecret(const std::string& str, uint8_t secret_key);
 std::string EncodeSecret(const CKey& key);
 std::string EncodeCustomSecret(const CKey& key,uint8_t secret_key);
 

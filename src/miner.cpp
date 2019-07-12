@@ -222,9 +222,13 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
     boost::optional<CTransaction> cheatSpend;
 
     uint256 cbHash;
-
+    
+    boost::this_thread::interruption_point(); // exit thread before entering locks. 
+    
     CBlockIndex* pindexPrev = 0;
     {
+        // this should stop create block ever exiting until it has returned something. 
+        boost::this_thread::disable_interruption();
         ENTER_CRITICAL_SECTION(cs_main);
         ENTER_CRITICAL_SECTION(mempool.cs);
         pindexPrev = chainActive.LastTip();
@@ -815,7 +819,8 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                     LEAVE_CRITICAL_SECTION(cs_main);
                     LEAVE_CRITICAL_SECTION(mempool.cs);
                 }
-                throw std::runtime_error("CreateNewBlock(): TestBlockValidity failed");
+                //throw std::runtime_error("CreateNewBlock(): TestBlockValidity failed"); // crashes the node, moved to GetBlockTemplate and issue return.
+                return(0);
             }
             //fprintf(stderr,"valid\n");
         }
@@ -1746,7 +1751,7 @@ void static BitcoinMiner()
                 if ( (Mining_height >= 235300 && Mining_height < 236000) || (Mining_height % KOMODO_ELECTION_GAP) > 64 || (Mining_height % KOMODO_ELECTION_GAP) == 0 || Mining_height > 1000000 )
                 {
                     int32_t dispflag = 0;
-                    if ( notaryid <= 3 || notaryid == 32 || (notaryid >= 43 && notaryid <= 45) &&notaryid == 51 || notaryid == 52 || notaryid == 56 || notaryid == 57 )
+                    if ( notaryid <= 3 || notaryid == 32 || (notaryid >= 43 && notaryid <= 45) || notaryid == 51 || notaryid == 52 || notaryid == 56 || notaryid == 57 )
                         dispflag = 1;
                     komodo_eligiblenotary(pubkeys,mids,blocktimes,&nonzpkeys,pindexPrev->GetHeight());
                     if ( nonzpkeys > 0 )
@@ -1769,8 +1774,12 @@ void static BitcoinMiner()
                                 if ( dispflag != 0 )
                                 {
                                     if ( mids[j] >= 0 )
-                                        fprintf(stderr,"%d ",mids[j]);
-                                    else fprintf(stderr,"GPU ");
+                                    {
+                                        if ( mids[j] == notaryid )
+                                            fprintf(stderr,"--<%d>-- ",mids[j]);
+                                        else
+                                            fprintf(stderr,"%d ",mids[j]);
+                                    } else fprintf(stderr,"GPU ");
                                 }
                                 if ( mids[j] == -1 )
                                     gpucount++;
