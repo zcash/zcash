@@ -469,7 +469,7 @@ void NSPV_utxos2CCunspents(struct NSPV_utxosresp *ptr,std::vector<std::pair<CAdd
 
 void NSPV_CCunspents(std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > &outputs,char *coinaddr,bool ccflag)
 {
-    UniValue NSPV_addressutxos(coinaddr,(int32_t)ccflag);
+    NSPV_addressutxos(coinaddr,ccflag);
     NSPV_utxos2CCunspents(&NSPV_utxosresult,outputs);
 }
 
