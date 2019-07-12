@@ -314,6 +314,8 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
             fIsMerge = true;
         else if ( DecodePaymentsReleaseOpRet(ccopret,createtxid,amountReleased) != 'R' )
             return(eval->Invalid("could not decode ccopret"));
+        if ( tx.vout.back().scriptPubKey.IsOpReturn() )
+            fHasOpret = true;
         mpz_set_si(mpzCheckamount,amountReleased); 
     } else return(eval->Invalid("could not decode ccopret"));
     
