@@ -870,7 +870,12 @@ std::string TokenTransfer(int64_t txfee, uint256 tokenid, vscript_t destpubkey, 
 	if (txfee == 0)
 		txfee = 10000;
 	mypk = pubkey2pk(Mypubkey());
-	if (AddNormalinputs(mtx, mypk, txfee, 3) > 0)
+    if ( cp->tokens1of2addr[0] == 0 )
+    {
+        GetTokensCCaddress(cp, cp->tokens1of2addr, mypk);
+        fprintf(stderr,"set tokens1of2addr <- %s\n",cp->tokens1of2addr);
+    }
+    if (AddNormalinputs(mtx, mypk, txfee, 3) > 0)
 	{
 		mask = ~((1LL << mtx.vin.size()) - 1);  // seems, mask is not used anymore
         
