@@ -697,7 +697,7 @@ std::string PegsFund(uint64_t txfee,uint256 pegstxid, uint256 tokenid,int64_t am
     mypk = pubkey2pk(Mypubkey());
 
     pegspk = GetUnspendable(cp,0);
-    if (,yGetTransaction(pegstxid,tx,hashBlock)==0 || (numvouts=tx.vout.size())<=0)
+    if (myGetTransaction(pegstxid,tx,hashBlock)==0 || (numvouts=tx.vout.size())<=0)
     {
         CCerror = strprintf("cant find pegstxid %s",pegstxid.GetHex());
         LOGSTREAM("pegscc",CCLOG_INFO, stream << CCerror << std::endl);
