@@ -99,12 +99,17 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
     {
         if (i==0 && mtx.vin[i].prevout.n==10e8)
             continue;
-        if ( myGetTransaction(mtx.vin[i].prevout.hash,vintx,hashBlock) != 0 )
+        if ( myGetTransaction(mtx.vin[i].prevout.hash,vintx,hashBlock) != 0 && mtx.vin[i].prevout.n < vintx.vout.size() )
         {
             if ( vintx.vout[mtx.vin[i].prevout.n].scriptPubKey.IsPayToCryptoCondition() == 0 && ccvins==0)
                 normalvins++;            
             else ccvins++;
-        }            
+        }
+        else
+        {
+            fprintf(stderr,"vin.%d vout.%d is bigger than vintx.%d\n",i,mtx.vin[i].prevout.n,(int32_t)vintx.vout.size());
+            return("");
+        }
     }
     if (normalvins>1 && ccvins)
     {        
