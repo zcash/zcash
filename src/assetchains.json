@@ -268,5 +268,27 @@
    "ac_supply": "64000777",
    "ac_staked": "10",
    "addnode": ["18.197.20.21"]
+ },
+ {
+   "ac_name": "HUSH3",
+   "ac_founders": "1",
+   "ac_reward": "0,1125000000,562500000"
+   "ac_end": "128,340000,5422111",
+   "ac_blocktime": "150",
+   "ac_supply": "6178674",
+   "ac_halving": "129,340000,840000",
+   "ac_cc": "2",
+   "ac_cclib": "hush3",
+   "ac_ccenable": "228,234,235,236,241",
+   "ac_supply": "100000000",
+   "ac_eras": "3",
+   "ac_script": "76a9145eb10cf64f2bab1b457f1f25e658526155928fac88ac",
+   "ac_sapling": "1",
+   "clientname": "GoldenSandtrout",
+   "addnode": [
+       "188.165.212.101",
+       "136.243.227.142",
+       "5.9.224.250"
+    ]
  }
 ]
