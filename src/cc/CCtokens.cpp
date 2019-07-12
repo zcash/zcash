@@ -870,11 +870,11 @@ std::string TokenTransfer(int64_t txfee, uint256 tokenid, vscript_t destpubkey, 
 	if (txfee == 0)
 		txfee = 10000;
 	mypk = pubkey2pk(Mypubkey());
-    if ( cp->tokens1of2addr[0] == 0 )
+    /*if ( cp->tokens1of2addr[0] == 0 )
     {
         GetTokensCCaddress(cp, cp->tokens1of2addr, mypk);
         fprintf(stderr,"set tokens1of2addr <- %s\n",cp->tokens1of2addr);
-    }
+    }*/
     if (AddNormalinputs(mtx, mypk, txfee, 3) > 0)
 	{
 		mask = ~((1LL << mtx.vin.size()) - 1);  // seems, mask is not used anymore
@@ -957,7 +957,7 @@ UniValue TokenInfo(uint256 tokenid)
 		result.push_back(Pair("error", "cant find tokenid"));
 		return(result);
 	}
-    if (hashBlock.IsNull()) {
+    if ( KOMODO_NSPV == 0 && hashBlock.IsNull()) {
         result.push_back(Pair("result", "error"));
         result.push_back(Pair("error", "the transaction is still in mempool"));
         return(result);
