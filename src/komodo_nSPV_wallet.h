@@ -442,4 +442,31 @@ int64_t NSPV_AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total
     } else return(0);
 }
 
+void NSPV_utxos2CCunspents(struct NSPV_utxosresp *ptr,std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > &outputs)
+{
+    CAddressUnspentKey key; CAddressUnspentValue value; int32_t i,type; uint160 hashBytes; std::string addrstr(ptr->coinaddr);
+    if ( ptr->utxos != NULL && ptr->numutxos > 0 )
+    {
+        CBitcoinAddress address(addrstr);
+        if (address.GetIndexKey(hashBytes, type, ptr->CCflag) == 0)
+            return;
+        for (i = 0; i < ptr->numutxos; i ++)
+        {
+            key.type = type;
+            key.hashBytes = hashBytes;
+            key.txhash = ptr->utxos[i].txid;
+            key.index = ptr->utxos[i].vout;
+            value.satoshis = ptr->utxos[i].satoshis;
+            value.blockHeight = ptr->utxos[i].height;
+            outputs.push_back(std::make_pair(key, value));
+        }
+    }
+}
+
+void NSPV_CCunspents(std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > &outputs,char *coinaddr,bool ccflag)
+{
+    UniValue NSPV_addressutxos(coinaddr,ccflag);
+    NSPV_utxos2CCunspents(&NSPV_utxosresult,outputs);
+}
+
 #endif // KOMODO_NSPVWALLET_H
