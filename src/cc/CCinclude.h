@@ -56,6 +56,7 @@ one other technical note is that komodod has the insight-explorer extensions bui
 
 #define CC_BURNPUBKEY "02deaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddead"
 #define CC_MAXVINS 1024
+#define CC_REQUIREMENTS_MSG (KOMMODO_NSPV!=0?"to use CC contracts you need to nspv_login first\n":"to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n")
 
 #define SMALLVAL 0.000000000000001
 #define SATOSHIDEN ((uint64_t)100000000L)
