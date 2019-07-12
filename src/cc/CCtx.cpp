@@ -175,7 +175,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
             else
             {
                 Getscriptaddress(destaddr,vintx.vout[utxovout].scriptPubKey);
-                //fprintf(stderr,"FinalizeCCTx() vin.%d is CC %.8f -> (%s) vs %s\n",i,(double)utxovalues[i]/COIN,destaddr,cp->unspendableaddr2);
+                fprintf(stderr,"FinalizeCCTx() vin.%d is CC %.8f -> (%s) vs %s\n",i,(double)utxovalues[i]/COIN,destaddr,cp->unspendableaddr2);
 				//std::cerr << "FinalizeCCtx() searching destaddr=" << destaddr << " for vin[" << i << "] satoshis=" << utxovalues[i] << std::endl;
                 if( strcmp(destaddr, myaddr) == 0 )
                 {
@@ -199,7 +199,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
                 {
                     privkey = unspendablepriv;
                     cond = othercond;
-                    //fprintf(stderr,"FinalizeCCTx evalcode(%d) matched unspendable CC addr.(%s)\n",cp->evalcode,unspendable);
+                    fprintf(stderr,"FinalizeCCTx evalcode(%d) matched unspendable CC addr.(%s)\n",cp->evalcode,unspendable);
                 }
 				else if (strcmp(destaddr, unspendabletokensaddr) == 0)
 				{
