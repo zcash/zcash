@@ -18,7 +18,7 @@
  ******************************************************************************/
 
 #include "consensus/upgrades.h"
-
+#include "komodo_nSPV_defs.h"
 /**
  * General information about each network upgrade.
  * Ordered by Consensus::UpgradeIndex.
@@ -100,7 +100,7 @@ int CurrentEpoch(int nHeight, const Consensus::Params& params) {
 uint32_t CurrentEpochBranchId(int nHeight, const Consensus::Params& params)
 {
     if ( KOMODO_NSPV != 0 )
-        return(SAPLING_TX_VERSION);
+        return(NSPV_BRANCHID);
     return NetworkUpgradeInfo[CurrentEpoch(nHeight, params)].nBranchId;
 }
 
