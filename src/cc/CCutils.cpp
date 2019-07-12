@@ -18,6 +18,7 @@
  */
 #include "CCinclude.h"
 #include "komodo_structs.h"
+#include "key_io.h"
 
 #ifdef TESTMODE           
     #define MIN_NON_NOTARIZED_CONFIRMS 2
