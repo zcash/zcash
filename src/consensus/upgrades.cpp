@@ -97,7 +97,10 @@ int CurrentEpoch(int nHeight, const Consensus::Params& params) {
     return Consensus::BASE_SPROUT;
 }
 
-uint32_t CurrentEpochBranchId(int nHeight, const Consensus::Params& params) {
+uint32_t CurrentEpochBranchId(int nHeight, const Consensus::Params& params)
+{
+    if ( KOMODO_NSPV != 0 )
+        return(SAPLING_TX_VERSION);
     return NetworkUpgradeInfo[CurrentEpoch(nHeight, params)].nBranchId;
 }
 
