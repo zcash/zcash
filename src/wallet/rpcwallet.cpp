@@ -6395,7 +6395,7 @@ UniValue marmara_issue(const UniValue& params, bool fHelp, const CPubKey& mypk)
         std::cerr << __func__ << " test output BlockageAmount=" << optParams.blockageAmount << std::endl;
     }
 
-    requesttxid = Parseuint256((char *)params[3].get_str().c_str());
+    requesttxid = Parseuint256((char *)params[2].get_str().c_str());
     if (requesttxid.IsNull())
         throw runtime_error("incorrect requesttxid\n");
 
