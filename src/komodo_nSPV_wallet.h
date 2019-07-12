@@ -437,6 +437,7 @@ int64_t NSPV_AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total
             NSPV_utxosresp_purge(&ptr->U);
             NSPV_utxosresp_copy(&ptr->U,&NSPV_utxosresult);
         }
+        fprintf(stderr,"%s numutxos.%d\n",ptr->U.coinaddr,ptr->U.numutxos);
         memset(ptr->used,0,sizeof(ptr->used));
         return(NSPV_addinputs(ptr->used,mtx,total,maxinputs,ptr->U.utxos,ptr->U.numutxos));
     } else return(0);
