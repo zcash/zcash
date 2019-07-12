@@ -452,9 +452,9 @@ bool Myprivkey(uint8_t myprivkey[])
     {
         vchSecret = DecodeSecret(NSPV_wifstr);
         memcpy(myprivkey,vchSecret.begin(),32);
-        for (i=0; i<32; i++)
-            fprintf(stderr,"%02x",myprivkey[i]);
-        fprintf(stderr," myprivkey %s\n",NSPV_wifstr);
+        //for (i=0; i<32; i++)
+        //    fprintf(stderr,"%02x",myprivkey[i]);
+        //fprintf(stderr," myprivkey %s\n",NSPV_wifstr);
         memset((uint8_t *)vchSecret.begin(),0,32);
         return true;
     }

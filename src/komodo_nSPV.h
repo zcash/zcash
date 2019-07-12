@@ -16,7 +16,7 @@
 
 // todo:
 
-// CC signing
+// myprivkey, scrub all destination buffers
 
 // headers "sync" make sure it connects to prior blocks to notarization. use getinfo hdrht to get missing hdrs
 
