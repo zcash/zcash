@@ -6273,7 +6273,7 @@ UniValue marmara_receive(const UniValue& params, bool fHelp, const CPubKey& mypk
 
         throw runtime_error("marmarareceive senderpk amount currency matures '{avalcount=n}' [batontxid]\n"
             "creates requesttx for issuer or endorser.\nFor the first call batontxid should be empty.\n"
-            "For the first rpc call the value of 'matures' is relative block number from the current height, for the subsequent calls - absolute height\n" "\n");
+            "the value of 'matures' is relative block number from the current height\n" "\n");
     }
     if (ensure_CCrequirements(EVAL_MARMARA) < 0)
         throw runtime_error(CC_REQUIREMENTS_MSG);
@@ -6293,57 +6293,73 @@ UniValue marmara_receive(const UniValue& params, bool fHelp, const CPubKey& mypk
     else
         matures = atol(params[3].get_str().c_str()) + chainActive.LastTip()->GetHeight() + 1;  // if no baton (first call) then matures value is relative
 
-    
-    if (params[4].getType() == UniValue::VOBJ)
+    // parse json:
+    if (params[4].getType() == UniValue::VOBJ)       // as json in {...}
         optParams = params[4].get_obj();
-    else if (params[4].getType() == UniValue::VSTR)
+    else if (params[4].getType() == UniValue::VSTR)  // as json in quoted string '{...}'
         optParams.read(params[4].get_str().c_str());
     if (optParams.getType() != UniValue::VOBJ || optParams.empty())
         throw runtime_error("parameter 4 must be object\n");
-    
-    std::cerr << __func__ << " test optParams=" << optParams.write(0,0) << std::endl; 
+    std::cerr << __func__ << " test output optParams=" << optParams.write(0, 0) << std::endl; 
+    // TODO: check allowed params
 
-    if (params.size() == 5) // baton present
-        batontxid = Parseuint256((char *)params[4].get_str().c_str());  
+    if (params.size() == 5) {// baton present
+        batontxid = Parseuint256((char *)params[4].get_str().c_str());
+        if (batontxid.IsNull())
+            throw runtime_error("incorrect batontxid\n");
+    }
 
-    return(MarmaraReceive(0, pubkey2pk(senderpub), amount, currency, matures, /*optParams,*/ batontxid, true));
+    return(MarmaraReceive(0, pubkey2pk(senderpub), amount, currency, matures, optParams, batontxid, true));
 }
 
 UniValue marmara_issue(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
-    UniValue result(UniValue::VOBJ); uint256 requesttxid; std::vector<uint8_t> receiverpub; int64_t amount; int32_t matures; std::string currency;
-    if ( fHelp || params.size() != 5 )
-    {
-        // marmaraissue 039433dc3749aece1bd568f374a45da3b0bc6856990d7da3cd175399577940a775 7.5 MARMARA 1168 32da4cb3e886ee42de90b4a15042d71169077306badf909099c5c5c692df3f27
-        // marmaraissue 039433dc3749aece1bd568f374a45da3b0bc6856990d7da3cd175399577940a775 700 MARMARA 2629 11fe8bf1de80c2ef69124d08907f259aef7f41e3a632ca2d48ad072a8c8f3078 -> 335df3a5dd6b92a3d020c9465d4d76e0d8242126106b83756dcecbad9813fdf3
+    UniValue result(UniValue::VOBJ), optParams(UniValue::VOBJ); 
+    uint256 requesttxid; std::vector<uint8_t> receiverpub; 
 
-        throw runtime_error("marmaraissue receiverpk amount currency matures requesttxid\n");
+    if (fHelp || params.size() != 3)
+    {
+        throw runtime_error("marmaraissue receiverpk '{avalcount=n}' requesttxid\n");
     }
-    if ( ensure_CCrequirements(EVAL_MARMARA) < 0 )
+    if( ensure_CCrequirements(EVAL_MARMARA) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
 
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
     receiverpub = ParseHex(params[0].get_str().c_str());
-    if (receiverpub.size()!= 33)
+    if (receiverpub.size() != 33)
     {
         ERR_RESULT("invalid receiverpub pubkey");
         return result;
     }
-    amount = atof(params[1].get_str().c_str()) * COIN + 0.00000000499999;
-    currency = params[2].get_str();
-    matures = atol(params[3].get_str().c_str());
-    requesttxid = Parseuint256((char *)params[4].get_str().c_str());
-    return(MarmaraIssue(0,'I',pubkey2pk(receiverpub),amount,currency,matures,requesttxid,zeroid));
+
+    // parse json params:
+    if (params[1].getType() == UniValue::VOBJ)
+        optParams = params[1].get_obj();
+    else if (params[1].getType() == UniValue::VSTR)  // json in quoted string '{...}'
+        optParams.read(params[1].get_str().c_str());
+    if (optParams.getType() != UniValue::VOBJ || optParams.empty())
+        throw runtime_error("parameter 2 must be object\n");
+    std::cerr << __func__ << " test output optParams=" << optParams.write(0, 0) << std::endl;
+    // TODO: check allowed params
+
+    requesttxid = Parseuint256((char *)params[3].get_str().c_str());
+    if (requesttxid.IsNull())
+        throw runtime_error("incorrect requesttxid\n");
+
+    return(MarmaraIssue(0, 'I', pubkey2pk(receiverpub), optParams, requesttxid, zeroid));
 }
 
 UniValue marmara_transfer(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
-    UniValue result(UniValue::VOBJ); uint256 approvaltxid,batontxid; std::vector<uint8_t> receiverpub; int64_t amount; int32_t matures; std::string currency; std::vector<uint256> creditloop;
-    if ( fHelp || params.size() != 5 )
+    UniValue result(UniValue::VOBJ), optParams(UniValue::VOBJ); 
+    uint256 requesttxid, batontxid; 
+    std::vector<uint8_t> receiverpub;
+    std::vector<uint256> creditloop;
+
+    if (fHelp || params.size() != 3)
     {
-        // marmaratransfer 028076d42eb20efc10007fafb5ca66a2052523c0d2221e607adf958d1a332159f6 7.5 MARMARA 1168 1506c774e4b2804a6e25260920840f4cfca8d1fb400e69fe6b74b8e593dbedc5
-        throw runtime_error("marmaratransfer receiverpk amount currency matures requesttxid\n");
+        throw runtime_error("marmaratransfer receiverpk '{avalcount=n}' requesttxid\n");
     }
     if ( ensure_CCrequirements(EVAL_MARMARA) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
@@ -6355,13 +6371,26 @@ UniValue marmara_transfer(const UniValue& params, bool fHelp, const CPubKey& myp
     }
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
-    amount = atof(params[1].get_str().c_str()) * COIN + 0.00000000499999;
-    currency = params[2].get_str();
-    matures = atol(params[3].get_str().c_str());
-    approvaltxid = Parseuint256((char *)params[4].get_str().c_str());
-    if ( MarmaraGetbatontxid(creditloop,batontxid,approvaltxid) < 0 )
+    
+    // parse json params:
+    if (params[1].getType() == UniValue::VOBJ)
+        optParams = params[1].get_obj();
+    else if (params[1].getType() == UniValue::VSTR)  // json in quoted string '{...}'
+        optParams.read(params[1].get_str().c_str());
+    if (optParams.getType() != UniValue::VOBJ || optParams.empty())
+        throw runtime_error("parameter 2 must be object\n");
+    std::cerr << __func__ << " test output optParams=" << optParams.write(0, 0) << std::endl;
+    // TODO: check allowed params
+
+    requesttxid = Parseuint256((char *)params[2].get_str().c_str());
+    if (requesttxid.IsNull())
+        throw runtime_error("incorrect requesttxid\n");
+
+    // find the baton for transfer call:
+    if (MarmaraGetbatontxid(creditloop, batontxid, requesttxid) < 0)
         throw runtime_error("couldnt find batontxid\n");
-    return(MarmaraIssue(0,'T',pubkey2pk(receiverpub),amount,currency,matures,approvaltxid,batontxid));
+
+    return(MarmaraIssue(0, 'T', pubkey2pk(receiverpub), optParams, requesttxid, batontxid));
 }
 
 UniValue marmara_info(const UniValue& params, bool fHelp, const CPubKey& mypk)

@@ -1655,7 +1655,7 @@ void MarmaraRunAutoSettlement(int32_t height, std::vector<CTransaction> & settle
 // create request tx for issuing or transfer baton (cheque) 
 // the first call makes the credit loop creation tx
 // txid of returned tx is approvaltxid
-UniValue MarmaraReceive(int64_t txfee, CPubKey senderpk, int64_t amount, std::string currency, int32_t matures, /*const UniValue &optParams,*/ uint256 batontxid, bool automaticflag)
+UniValue MarmaraReceive(int64_t txfee, CPubKey senderpk, int64_t amount, std::string currency, int32_t matures, const UniValue &optParams, uint256 batontxid, bool automaticflag)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     UniValue result(UniValue::VOBJ); 
@@ -1797,37 +1797,6 @@ static int32_t RedistributeLockedRemainder(CMutableTransaction &mtx, struct CCco
                 mtx.vout.push_back(CTxOut(amountToPk, CScript() << ParseHex(HexStr(endorserPk)) << OP_CHECKSIG));  // coins returned to each previous issuer normal 
                 LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << " sending normal amount=" << amountToPk << " to pk=" << HexStr(endorserPk) << std::endl);
                 amountReturned += amountToPk;
-
-                /*
-                CTransaction issuancetx;
-                uint256 hashBlock;
-                uint256 currenttxid = i < creditloop.size() ? creditloop[i] : batontxid;
-
-                if (GetTransaction(currenttxid, issuancetx, hashBlock, false) && issuancetx.vout.size() > 1)
-                {
-                    uint8_t funcid;
-                    CPubKey issuerpk;
-                    int64_t amount;
-                    int32_t matures;
-                    std::string currency;
-
-                    if ((funcid = MarmaraDecodeLoopOpret(issuancetx.vout.back().scriptPubKey, createtxid, issuerpk, amount, matures, currency)) != 0)  // get endorser's pk
-                    {
-                        int64_t amountToPk = amountToDistribute / endorsersNumber;
-                        mtx.vout.push_back(CTxOut(amountToPk, CScript() << ParseHex(HexStr(issuerpk)) << OP_CHECKSIG));  // coins returned to each previous issuer normal 
-                        LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream  << " sending normal amount=" << amountToPk << " to pk=" << HexStr(issuerpk) << std::endl);
-                        amountReturned += amountToPk;
-                    }
-                    else    {
-                        LOGSTREAMFN("marmara", CCLOG_ERROR, stream  << " null funcid for creditloop[" << i << "]" << std::endl);
-                        return -1;
-                    }
-                }
-                else   {
-                    LOGSTREAMFN("marmara", CCLOG_ERROR, stream  << " cant load tx for creditloop[" << i << "]" << std::endl);
-                    return -1;
-                }
-                */
             }
             change = (inputsum - amountReturned);
 

@@ -38,8 +38,8 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 batontxid, CTransaction &settl
 UniValue MarmaraLock(int64_t txfee, int64_t amount);
 
 UniValue MarmaraPoolPayout(int64_t txfee, int32_t firstheight, double perc, char *jsonstr); // [[pk0, shares0], [pk1, shares1], ...]
-UniValue MarmaraReceive(int64_t txfee, CPubKey senderpk, int64_t amount, std::string currency, int32_t matures, /*const UniValue &optParams,*/ uint256 batontxid, bool automaticflag);
-UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, int64_t amount, std::string currency, int32_t matures, uint256 approvaltxid, uint256 batontxid);
+UniValue MarmaraReceive(int64_t txfee, CPubKey senderpk, int64_t amount, std::string currency, int32_t matures, const UniValue &optParams, uint256 batontxid, bool automaticflag);
+UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, const UniValue &optParams, uint256 approvaltxid, uint256 batontxid);
 UniValue MarmaraInfo(CPubKey refpk, int32_t firstheight, int32_t lastheight, int64_t minamount, int64_t maxamount, std::string currency);
 UniValue MarmaraNewActivatedAddress(CPubKey pk);
 
