@@ -281,14 +281,14 @@ fprintf(stderr,"FinalizeCCTx() matched %s cp->tokens1of2addr!\n", cp->tokens1of2
                 uint256 sighash = SignatureHash(CCPubKey(cond), mtx, i, SIGHASH_ALL,utxovalues[i],consensusBranchId, &txdata);
                 int32_t z;
                 for (z=0; z<32; z++)
+                   fprintf(stderr,"%02x",privkey[z]);
+                fprintf(stderr," privkey, ");
+                for (z=0; z<32; z++)
                     fprintf(stderr,"%02x",((uint8_t *)sighash.begin())[z]);
                 fprintf(stderr," sighash [%d] %.8f %x\n",i,(double)utxovalues[i]/COIN,consensusBranchId);
                 if ( cc_signTreeSecp256k1Msg32(cond,privkey,sighash.begin()) != 0 )
                 {
-                    //for (z=0; z<32; z++)
-                    //   fprintf(stderr,"%02x",privkey[z]);
-                    //fprintf(stderr," signed with privkey\n");
-                    mtx.vin[i].scriptSig = CCSig(cond);
+                     mtx.vin[i].scriptSig = CCSig(cond);
                 }
                 else
                 {
