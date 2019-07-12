@@ -18,7 +18,9 @@
  ******************************************************************************/
 
 #include "consensus/upgrades.h"
-#include "komodo_nSPV_defs.h"
+extern int32_t KOMODO_NSPV;
+#define NSPV_BRANCHID 0x76b809bb
+
 /**
  * General information about each network upgrade.
  * Ordered by Consensus::UpgradeIndex.
