@@ -208,10 +208,14 @@ void CCaddrTokens1of2set(struct CCcontract_info *cp, CPubKey pk1, CPubKey pk2, u
 bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey)
 {
     CTxDestination address; txnouttype whichType;
-    if ( ExtractDestination(scriptPubKey,address) != 0 )
+    destaddr[0] = 0;
+    if ( scriptPubKey.begin() != 0 )
     {
-        strcpy(destaddr,(char *)CBitcoinAddress(address).ToString().c_str());
-        return(true);
+        if ( ExtractDestination(scriptPubKey,address) != 0 )
+        {
+            strcpy(destaddr,(char *)CBitcoinAddress(address).ToString().c_str());
+            return(true);
+        }
     }
     //fprintf(stderr,"ExtractDestination failed\n");
     return(false);
