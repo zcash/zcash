@@ -1577,7 +1577,7 @@ static int32_t EnumCreditloops(int64_t &totalopen, std::vector<uint256> &issuanc
                                     LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "error getting of decoding batontx=" << batontxid.GetHex() << std::endl);
                             }
                             else
-                                LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "error finding baton for issuance txid=" << issuancetxid.GetHex() << std::endl);
+                                LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "error finding baton for issuance txid=" << issuancetxid.GetHex() << " (could be in mempool)"<< std::endl);
                         }
                     }
                     else
@@ -1851,16 +1851,17 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, const s
         // check requested cheque params:
         CTransaction requestx;
         uint256 hashBlock;
+        uint8_t funcid;
 
         if( MarmaraGetLoopCreateData(createtxid, loopData) < 0 )
             errorstr = "cannot get loop creation data";
         else if (!GetTransaction(requesttxid, requestx, hashBlock, true) || 
             // TODO: do we need here to check the request tx in mempool?
-            hashBlock.IsNull() /*is in mempool*/ || 
+            hashBlock.IsNull() /*is in mempool?*/ || 
             requestx.vout.size() < 1 ||
-            MarmaraDecodeLoopOpret(requestx.vout.back().scriptPubKey, loopData) == 0)
+            (funcid = MarmaraDecodeLoopOpret(requestx.vout.back().scriptPubKey, loopData)) == 0)
             errorstr = "cannot get request transaction or tx in mempool or cannot decode request tx opreturn data";
-        else if (mypk != loopData.pk)
+        else if (mypk != (funcid == 'C' ? loopData.createpk : loopData.pk))
             errorstr = "mypk does not match the requested sender pk";
     }
 
