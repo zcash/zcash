@@ -94,8 +94,9 @@ struct CreditLoopOpret {
 
     // last issuer/endorser/receiver data:
     uint256 createtxid;
-    CPubKey pk;         // may be either sender or receiver pk
-    int32_t avalCount;  // only for issuer/endorser
+    CPubKey createpk;       // first pk. We need this var to make sure MarmaraDecodeLoopOpret does not override the value in pk.
+    CPubKey pk;             // may be either sender or receiver pk
+    int32_t avalCount;      // only for issuer/endorser
 
     // settlement data:
     CAmount remaining;
@@ -303,7 +304,7 @@ uint8_t MarmaraDecodeLoopOpret(const CScript scriptPubKey, struct CreditLoopOpre
             if (version != versionSupported) 
             {
                 if (funcid == 'C') {  // createtx
-                    if (E_UNMARSHAL(vopret, ss >> evalcode; ss >> funcid; ss >> version; ss >> loopData.pk; ss >> loopData.amount; ss >> loopData.matures; ss >> loopData.currency) != 0) {
+                    if (E_UNMARSHAL(vopret, ss >> evalcode; ss >> funcid; ss >> version; ss >> loopData.createpk; ss >> loopData.amount; ss >> loopData.matures; ss >> loopData.currency) != 0) {
                         loopData.hasCreateOpret = true;
                         return funcid;
                     }
@@ -382,8 +383,10 @@ int32_t MarmaraGetcreatetxid(uint256 &createtxid, uint256 txid)
     return(-1);
 }
 
-// finds the current baton starting from any baton txid
-// also returns all the previous baton txids from the create tx apart from the baton txid
+// finds the latest batontxid starting from any baton txid
+// adds createtxid in creditloop vector
+// finds all the baton txids starting from the createtx (1+ in creditloop vector), apart from the latest baton txid
+// returns the number of txns marked with the baton plus  1 (createtxid)
 int32_t MarmaraGetbatontxid(std::vector<uint256> &creditloop, uint256 &batontxid, uint256 txid)
 {
     uint256 createtxid, spenttxid; 
@@ -420,7 +423,7 @@ int32_t MarmaraGetbatontxid(std::vector<uint256> &creditloop, uint256 &batontxid
     return(-1);
 }
 
-
+// load the create tx and adds data from its opret to loopData safely, with no overriding
 int32_t MarmaraGetLoopCreateData(uint256 createtxid, struct CreditLoopOpret &loopData)
 {
     CTransaction tx;
@@ -675,18 +678,14 @@ static void EnumMyLockedInLoop(T func)
         {
             if (!isssuancetx.IsCoinBase() && isssuancetx.vout.size() > 2 && isssuancetx.vout.back().nValue == 0)
             {
-                int32_t matures;
-                std::string currency;
-                CPubKey senderpk;
-                uint256 createtxid;
-                CAmount amount;
+                struct CreditLoopOpret loopData;
 
-                if (MarmaraDecodeLoopOpret(isssuancetx.vout.back().scriptPubKey, createtxid, senderpk, amount, matures, currency) == 'I')
+                if (MarmaraDecodeLoopOpret(isssuancetx.vout.back().scriptPubKey, loopData) == 'I')
                 {
                     char loopaddr[KOMODO_ADDRESS_BUFSIZE];
                     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > loopOutputs;
                     char txidaddr[KOMODO_ADDRESS_BUFSIZE];
-                    CPubKey createtxidPk = CCtxidaddr(txidaddr, createtxid);
+                    CPubKey createtxidPk = CCtxidaddr(txidaddr, loopData.createtxid);
 
                     GetCCaddress1of2(cp, loopaddr, Marmarapk, createtxidPk);
                     SetCCunspents(loopOutputs, loopaddr, true);
@@ -969,7 +968,7 @@ int64_t AddMarmaraCoinbases(struct CCcontract_info *cp, CMutableTransaction &mtx
 // checks if opret for activated coins, returns pk from opret
 static bool IsActivatedOpret(const CScript &spk, CPubKey &pk) 
 { 
-    uint8_t funcid = 0;
+    uint8_t funcid;
     int32_t ht, unlockht;
    
     return (funcid = MarmaraDecodeCoinbaseOpret(spk, pk, ht, unlockht)) == 'C' || funcid == 'P' || funcid == 'L';
@@ -978,10 +977,14 @@ static bool IsActivatedOpret(const CScript &spk, CPubKey &pk)
 // checks if opret for lock-in-loop coins, returns pk from opret
 static bool IsLockInLoopOpret(const CScript &spk, CPubKey &pk)
 {
-    uint8_t funcid = 0;
     struct CreditLoopOpret loopData;
 
-    return MarmaraDecodeLoopOpret(spk, loopData) != 0;
+    uint8_t funcid = MarmaraDecodeLoopOpret(spk, loopData);
+    if (funcid != 0) {
+        pk = loopData.pk;
+        return true;
+    }
+    return false;
 }
 
 // checks opret by calling CheckOpretFunc for two cases:
@@ -1550,55 +1553,59 @@ static int32_t EnumCreditloops(int64_t &totalopen, std::vector<uint256> &issuanc
         {
             if (!issuancetx.IsCoinBase() && issuancetx.vout.size() > 2 && issuancetx.vout.back().nValue == 0 /*has opreturn?*/)
             {
-                CPubKey senderpk; 
-                int64_t amount; 
-                uint256 createtxid; 
-                int32_t matures;
-                std::string currency;
-
-                if (MarmaraDecodeLoopOpret(issuancetx.vout.back().scriptPubKey, createtxid, senderpk, amount, matures, currency) == 'I')
+                struct CreditLoopOpret loopData;
+                if (MarmaraDecodeLoopOpret(issuancetx.vout.back().scriptPubKey, loopData) == 'I')
                 {
-                    LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "found issuance tx txid=" << issuancetxid.GetHex() << std::endl);
-                    n++;
-                    if (currency == refcurrency && matures >= firstheight && matures <= lastheight && amount >= minamount && amount <= maxamount && (refpk.size() == 0 || senderpk == refpk))
+                    if (MarmaraGetLoopCreateData(loopData.createtxid, loopData) >= 0)
                     {
-                        std::vector<uint256> creditloop;
-                        uint256 batontxid;
-                        LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "issuance tx is filtered, txid=" << issuancetxid.GetHex() << std::endl);
-
-                        if (MarmaraGetbatontxid(creditloop, batontxid, issuancetxid) > 0)
+                        LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "found issuance tx txid=" << issuancetxid.GetHex() << std::endl);
+                        n++;
+                        assert(!loopData.currency.empty());
+                        assert(loopData.pk.size() != 0);
+                        if (loopData.currency == refcurrency && loopData.matures >= firstheight && loopData.matures <= lastheight && loopData.amount >= minamount && loopData.amount <= maxamount && (refpk.size() == 0 || loopData.pk == refpk))
                         {
-                            CTransaction batontx;
-                            uint256 createtxid, hashBlock;
-                            CPubKey pk;
-                            uint8_t funcid;
-                            int64_t amount;
-                            int32_t matures;
-                            std::string currency;
-                            LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "found baton for txid=" << issuancetxid.GetHex() << std::endl);
+                            std::vector<uint256> creditloop;
+                            uint256 batontxid;
+                            LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "issuance tx is filtered, txid=" << issuancetxid.GetHex() << std::endl);
 
-                            if (GetTransaction(batontxid, batontx, hashBlock, true) && !hashBlock.IsNull() && batontx.vout.size() > 1 &&
-                                (funcid = MarmaraDecodeLoopOpret(batontx.vout.back().scriptPubKey, createtxid, pk, amount, matures, currency)) != 0)
+                            if (MarmaraGetbatontxid(creditloop, batontxid, issuancetxid) > 0)
                             {
-                                if (funcid == 'D' || funcid == 'S') { 
-                                    // cannot get to here as the marker is spent in the settlement, so no closed loops to be listed
-                                    closed.push_back(issuancetxid);
-                                    totalclosed += amount;
-                                    callback(batontxid, -1);
+                                CTransaction batontx;
+                                uint256 hashBlock;
+                                uint8_t funcid;
+                                struct CreditLoopOpret loopData;
+
+                                LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "found baton for txid=" << issuancetxid.GetHex() << std::endl);
+
+                                if (GetTransaction(batontxid, batontx, hashBlock, true) && !hashBlock.IsNull() && batontx.vout.size() > 1 &&
+                                    (funcid = MarmaraDecodeLoopOpret(batontx.vout.back().scriptPubKey, loopData)) != 0)
+                                {
+                                    assert(loopData.amount > 0);
+                                    assert(loopData.matures > 0);
+                                    if (funcid == 'D' || funcid == 'S') {
+                                        // cannot get to here as the marker is spent in the settlement, so no closed loops to be listed!
+                                        closed.push_back(issuancetxid);
+                                        totalclosed += loopData.amount;
+                                        callback(batontxid, -1);
+                                    }
+                                    else {
+                                        issuances.push_back(issuancetxid);
+                                        totalopen += loopData.amount;
+                                        callback(batontxid, loopData.matures);
+                                    }
                                 }
-                                else {
-                                    issuances.push_back(issuancetxid);
-                                    totalopen += amount;
-                                    callback(batontxid, matures);
-                                }
+                                else
+                                    LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "error getting of decoding batontx=" << batontxid.GetHex() << std::endl);
                             }
                             else
-                                LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "error getting of decoding batontx=" << batontxid.GetHex() << std::endl);
+                                LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "error finding baton for issuance txid=" << issuancetxid.GetHex() << std::endl);
                         }
-                        else
-                            LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "error finding baton for issuance txid=" << issuancetxid.GetHex() << std::endl);
                     }
+                    else
+                        LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "error load create tx for createtxid=" << loopData.createtxid.GetHex() << std::endl);
                 }
+                else
+                    LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "incorrect funcid for issuancetxid=" << issuancetxid.GetHex() << std::endl);
             }
         }
         else
@@ -2020,9 +2027,10 @@ UniValue MarmaraCreditloop(uint256 txid)
     uint256 batontxid, refcreatetxid, hashBlock; uint8_t funcid; 
     int32_t numerrs = 0, i, n; 
     CTransaction batontx; 
-    char normaladdr[KOMODO_ADDRESS_BUFSIZE], myCCaddr[KOMODO_ADDRESS_BUFSIZE], destaddr[KOMODO_ADDRESS_BUFSIZE], batonCCaddr[KOMODO_ADDRESS_BUFSIZE], sfuncid[2]; 
+    char normaladdr[KOMODO_ADDRESS_BUFSIZE], myCCaddr[KOMODO_ADDRESS_BUFSIZE], destaddr[KOMODO_ADDRESS_BUFSIZE], batonCCaddr[KOMODO_ADDRESS_BUFSIZE]; 
     struct CCcontract_info *cp, C;
     struct CreditLoopOpret loopData;
+    bool isSettledOk = false;
 
     cp = CCinit(&C, EVAL_MARMARA);
     if ((n = MarmaraGetbatontxid(creditloop, batontxid, txid)) > 0)
@@ -2039,7 +2047,7 @@ UniValue MarmaraCreditloop(uint256 txid)
 
                 if ((funcid = MarmaraDecodeLoopOpret(batontx.vout.back().scriptPubKey, loopData)) != 0)
                 {
-                    sfuncid[0] = funcid, sfuncid[1] = 0;
+                    std::string sfuncid(1, (char)funcid);
                     result.push_back(Pair("funcid", sfuncid));
                     result.push_back(Pair("currency", loopData.currency));
 
@@ -2060,7 +2068,7 @@ UniValue MarmaraCreditloop(uint256 txid)
                             result.push_back(Pair("destaddr", destaddr));
                             numerrs++;
                         }
-                        refamount = -1;
+                        isSettledOk = true;
                     }
                     else if (funcid == 'D')
                     {
@@ -2087,9 +2095,9 @@ UniValue MarmaraCreditloop(uint256 txid)
                             numerrs++;
                         }
                         result.push_back(Pair("batonpk", HexStr(loopData.pk)));
-                        Getscriptaddress(normaladdr, CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG);
+                        Getscriptaddress(normaladdr, CScript() << ParseHex(HexStr(loopData.pk)) << OP_CHECKSIG);
                         result.push_back(Pair("batonaddr", normaladdr));
-                        GetCCaddress(cp, batonCCaddr, pk);  // baton address
+                        GetCCaddress(cp, batonCCaddr, loopData.pk);  // baton address
                         result.push_back(Pair("batonCCaddr", batonCCaddr));
                         Getscriptaddress(normaladdr, batontx.vout[0].scriptPubKey);
                         if (strcmp(normaladdr, batonCCaddr) != 0)  // TODO: how is this possible?
@@ -2123,23 +2131,23 @@ UniValue MarmaraCreditloop(uint256 txid)
                             {
                                 UniValue obj(UniValue::VOBJ);
                                 obj.push_back(Pair("txid", creditloop[i].GetHex()));
-                                sfuncid[0] = funcid, sfuncid[1] = 0;
+                                std::string sfuncid(1, (char)funcid);
                                 obj.push_back(Pair("funcid", sfuncid));
                                 if (funcid == 'R' && createtxid == zeroid)
                                 {
                                     createtxid = creditloop[i];
-                                    obj.push_back(Pair("issuerpk", HexStr(pk)));
-                                    Getscriptaddress(normaladdr, CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG);
+                                    obj.push_back(Pair("issuerpk", HexStr(loopData.pk)));
+                                    Getscriptaddress(normaladdr, CScript() << ParseHex(HexStr(loopData.pk)) << OP_CHECKSIG);
                                     obj.push_back(Pair("issueraddr", normaladdr));
-                                    GetCCaddress(cp, normaladdr, pk);
+                                    GetCCaddress(cp, normaladdr, loopData.pk);
                                     obj.push_back(Pair("issuerCCaddr", normaladdr));
                                 }
                                 else
                                 {
-                                    obj.push_back(Pair("receiverpk", HexStr(pk)));
-                                    Getscriptaddress(normaladdr, CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG);
+                                    obj.push_back(Pair("receiverpk", HexStr(loopData.pk)));
+                                    Getscriptaddress(normaladdr, CScript() << ParseHex(HexStr(loopData.pk)) << OP_CHECKSIG);
                                     obj.push_back(Pair("receiveraddr", normaladdr));
-                                    GetCCaddress(cp, normaladdr, pk);
+                                    GetCCaddress(cp, normaladdr, loopData.pk);
                                     obj.push_back(Pair("receiverCCaddr", normaladdr));
                                 }
                                 Getscriptaddress(destaddr, batontx.vout[0].scriptPubKey);
@@ -2148,13 +2156,12 @@ UniValue MarmaraCreditloop(uint256 txid)
                                     obj.push_back(Pair("vout0address", destaddr));
                                     numerrs++;
                                 }
-                                if (i == 0 && refamount < 0)
+                                if (i == 0 && isSettledOk)  // why isSettledOk checked?..
                                 {
-                                    refamount = amount;
-                                    refmatures = matures;
-                                    result.push_back(Pair("amount", ValueFromAmount(refamount)));
-                                    result.push_back(Pair("matures", refmatures));
+                                    result.push_back(Pair("amount", ValueFromAmount(loopData.amount)));
+                                    result.push_back(Pair("matures", loopData.matures));
                                 }
+                                /* not relevant now as we do not copy params to new oprets
                                 if (createtxid != refcreatetxid || amount != refamount || matures != refmatures || currency != refcurrency)
                                 {
                                     numerrs++;
@@ -2163,7 +2170,7 @@ UniValue MarmaraCreditloop(uint256 txid)
                                     obj.push_back(Pair("amount", ValueFromAmount(amount)));
                                     obj.push_back(Pair("matures", matures));
                                     obj.push_back(Pair("currency", currency));
-                                }
+                                } */
                                 a.push_back(obj);
                             }
                         }
