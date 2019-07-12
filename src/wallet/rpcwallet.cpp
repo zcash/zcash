@@ -6262,7 +6262,7 @@ UniValue marmara_poolpayout(const UniValue& params, bool fHelp, const CPubKey& m
 
 UniValue marmara_receive(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
-    UniValue result(UniValue::VOBJ), optParams(UniValue::VOBJ);
+    UniValue result(UniValue::VOBJ), jsonParams(UniValue::VOBJ);
     uint256 batontxid; std::vector<uint8_t> senderpub; int64_t amount; int32_t matures; std::string currency;
 
     if (fHelp || (params.size() != 6 && params.size() != 5))
@@ -6295,13 +6295,20 @@ UniValue marmara_receive(const UniValue& params, bool fHelp, const CPubKey& mypk
 
     // parse json:
     if (params[4].getType() == UniValue::VOBJ)       // as json in {...}
-        optParams = params[4].get_obj();
+        jsonParams = params[4].get_obj();
     else if (params[4].getType() == UniValue::VSTR)  // as json in quoted string '{...}'
-        optParams.read(params[4].get_str().c_str());
-    if (optParams.getType() != UniValue::VOBJ || optParams.empty())
+        jsonParams.read(params[4].get_str().c_str());
+    if (jsonParams.getType() != UniValue::VOBJ || jsonParams.empty())
         throw runtime_error("parameter 4 must be object\n");
-    std::cerr << __func__ << " test output optParams=" << optParams.write(0, 0) << std::endl; 
+    std::cerr << __func__ << " test output optParams=" << jsonParams.write(0, 0) << std::endl; 
     // TODO: check allowed params
+    int32_t avalcount = 0;
+    std::vector<std::string> keys = jsonParams.getKeys();
+    std::vector<std::string>::iterator iter = std::find(keys.begin(), keys.end(), "avalcount");
+    if (iter != keys.end()) {
+        avalcount = atoi(jsonParams[iter - keys.begin()].get_str().c_str());
+        std::cerr << __func__ << " test output avalcount=" << avalcount << std::endl;
+    }
 
     if (params.size() == 5) {// baton present
         batontxid = Parseuint256((char *)params[4].get_str().c_str());
@@ -6309,17 +6316,17 @@ UniValue marmara_receive(const UniValue& params, bool fHelp, const CPubKey& mypk
             throw runtime_error("incorrect batontxid\n");
     }
 
-    return(MarmaraReceive(0, pubkey2pk(senderpub), amount, currency, matures, optParams, batontxid, true));
+    return(MarmaraReceive(0, pubkey2pk(senderpub), amount, currency, matures, avalcount, batontxid, true));
 }
 
 UniValue marmara_issue(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
-    UniValue result(UniValue::VOBJ), optParams(UniValue::VOBJ); 
+    UniValue result(UniValue::VOBJ), jsonParams(UniValue::VOBJ); 
     uint256 requesttxid; std::vector<uint8_t> receiverpub; 
 
     if (fHelp || params.size() != 3)
     {
-        throw runtime_error("marmaraissue receiverpk '{avalcount=n}' requesttxid\n");
+        throw runtime_error("marmaraissue receiverpk '{\"avalcount\"=\"n\", \"autosettlement\"=\"true\"|\"false\", \"autoinsurance\"=\"true\"|\"false\", \"disputeexpires\"=\"offset\", \"EscrowOn\"=\"true\"|\"false\", \"BlockageAmount\"=\"amount\" }' requesttxid\n");
     }
     if( ensure_CCrequirements(EVAL_MARMARA) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
@@ -6335,13 +6342,52 @@ UniValue marmara_issue(const UniValue& params, bool fHelp, const CPubKey& mypk)
 
     // parse json params:
     if (params[1].getType() == UniValue::VOBJ)
-        optParams = params[1].get_obj();
+        jsonParams = params[1].get_obj();
     else if (params[1].getType() == UniValue::VSTR)  // json in quoted string '{...}'
-        optParams.read(params[1].get_str().c_str());
-    if (optParams.getType() != UniValue::VOBJ || optParams.empty())
+        jsonParams.read(params[1].get_str().c_str());
+    if (jsonParams.getType() != UniValue::VOBJ || jsonParams.empty())
         throw runtime_error("parameter 2 must be object\n");
-    std::cerr << __func__ << " test output optParams=" << optParams.write(0, 0) << std::endl;
-    // TODO: check allowed params
+    std::cerr << __func__ << " test output optParams=" << jsonParams.write(0, 0) << std::endl;
+    
+    // TODO: check only allowed params present
+    struct IssuerEndorserOptParams optParams;
+    std::vector<std::string> keys = jsonParams.getKeys();
+    std::vector<std::string>::iterator iter;
+        
+    iter = std::find(keys.begin(), keys.end(), "avalcount");
+    if (iter != keys.end()) {
+        optParams.avalCount = atoi(jsonParams[iter - keys.begin()].get_str().c_str());
+        std::cerr << __func__ << " test output avalcount=" << optParams.avalCount << std::endl;
+    }
+    iter = std::find(keys.begin(), keys.end(), "autosettlement");
+    if (iter != keys.end()) {
+        std::string value = jsonParams[iter - keys.begin()].get_str();
+        optParams.autoSettlement = std::equal(value.begin(), value.end(), "true", [](char c1, char c2) {return std::toupper(c1) == std::toupper(c2);});
+        std::cerr << __func__ << " test output autosettlement=" << optParams.autoSettlement << std::endl;
+    }
+    iter = std::find(keys.begin(), keys.end(), "autoinsurance");
+    if (iter != keys.end()) {
+        std::string value = jsonParams[iter - keys.begin()].get_str();
+        optParams.autoInsurance = std::equal(value.begin(), value.end(), "true", [](char c1, char c2) {return std::toupper(c1) == std::toupper(c2);});
+        std::cerr << __func__ << " test output autoinsurance=" << optParams.autoInsurance << std::endl;
+    }
+    iter = std::find(keys.begin(), keys.end(), "disputeexpires");
+    if (iter != keys.end()) {
+        std::string value = jsonParams[iter - keys.begin()].get_str();
+        optParams.disputeExpiresOffset = atoi(jsonParams[iter - keys.begin()].get_str().c_str());
+        std::cerr << __func__ << " test output disputeexpiresoffset=" << optParams.disputeExpiresOffset << std::endl;
+    }
+    iter = std::find(keys.begin(), keys.end(), "EscrowOn");
+    if (iter != keys.end()) {
+        std::string value = jsonParams[iter - keys.begin()].get_str();
+        optParams.escrowOn = std::equal(value.begin(), value.end(), "true", [](char c1, char c2) {return std::toupper(c1) == std::toupper(c2);});
+        std::cerr << __func__ << " test output EscrowOn=" << optParams.escrowOn << std::endl;
+    }
+    iter = std::find(keys.begin(), keys.end(), "BlockageAmount");
+    if (iter != keys.end()) {
+        optParams.blockageAmount = atoll(jsonParams[iter - keys.begin()].get_str().c_str());
+        std::cerr << __func__ << " test output BlockageAmount=" << optParams.blockageAmount << std::endl;
+    }
 
     requesttxid = Parseuint256((char *)params[3].get_str().c_str());
     if (requesttxid.IsNull())
@@ -6352,7 +6398,7 @@ UniValue marmara_issue(const UniValue& params, bool fHelp, const CPubKey& mypk)
 
 UniValue marmara_transfer(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
-    UniValue result(UniValue::VOBJ), optParams(UniValue::VOBJ); 
+    UniValue result(UniValue::VOBJ), jsonParams(UniValue::VOBJ); 
     uint256 requesttxid, batontxid; 
     std::vector<uint8_t> receiverpub;
     std::vector<uint256> creditloop;
@@ -6374,13 +6420,22 @@ UniValue marmara_transfer(const UniValue& params, bool fHelp, const CPubKey& myp
     
     // parse json params:
     if (params[1].getType() == UniValue::VOBJ)
-        optParams = params[1].get_obj();
+        jsonParams = params[1].get_obj();
     else if (params[1].getType() == UniValue::VSTR)  // json in quoted string '{...}'
-        optParams.read(params[1].get_str().c_str());
-    if (optParams.getType() != UniValue::VOBJ || optParams.empty())
+        jsonParams.read(params[1].get_str().c_str());
+    if (jsonParams.getType() != UniValue::VOBJ || jsonParams.empty())
         throw runtime_error("parameter 2 must be object\n");
-    std::cerr << __func__ << " test output optParams=" << optParams.write(0, 0) << std::endl;
-    // TODO: check allowed params
+    std::cerr << __func__ << " test output optParams=" << jsonParams.write(0, 0) << std::endl;
+    // TODO: check only allowed params present
+    struct IssuerEndorserOptParams optParams;
+    std::vector<std::string> keys = jsonParams.getKeys();
+    std::vector<std::string>::iterator iter;
+
+    iter = std::find(keys.begin(), keys.end(), "avalcount");
+    if (iter != keys.end()) {
+        optParams.avalCount = atoi(jsonParams[iter - keys.begin()].get_str().c_str());
+        std::cerr << __func__ << " test output avalcount=" << optParams.avalCount << std::endl;
+    }
 
     requesttxid = Parseuint256((char *)params[2].get_str().c_str());
     if (requesttxid.IsNull())

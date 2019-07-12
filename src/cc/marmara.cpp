@@ -51,27 +51,6 @@
 
 const int32_t MARMARA_MARKER_VOUT = 1;
 
-// issuer and endorser optional params
-struct IssuerEndorserOptParams {
-    uint8_t autoSettlement;
-    uint8_t autoInsurance;
-    int32_t disputeExpiresHeight;
-    uint8_t escrowOn;
-    CAmount blockageAmount;
-    int32_t avalCount;
-
-    // default values:
-    IssuerEndorserOptParams()
-    {
-        autoSettlement = 1;
-        autoInsurance = 1;
-
-        disputeExpiresHeight = 0;
-        avalCount = 0;
-        escrowOn = false;
-        blockageAmount = 0LL;
-    }
-};
 
 // credit loop data from different tx oprets
 struct CreditLoopOpret {
@@ -1655,7 +1634,7 @@ void MarmaraRunAutoSettlement(int32_t height, std::vector<CTransaction> & settle
 // create request tx for issuing or transfer baton (cheque) 
 // the first call makes the credit loop creation tx
 // txid of returned tx is approvaltxid
-UniValue MarmaraReceive(int64_t txfee, CPubKey senderpk, int64_t amount, std::string currency, int32_t matures, const UniValue &optParams, uint256 batontxid, bool automaticflag)
+UniValue MarmaraReceive(int64_t txfee, CPubKey senderpk, int64_t amount, std::string currency, int32_t matures, int32_t avalcount, uint256 batontxid, bool automaticflag)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     UniValue result(UniValue::VOBJ); 
@@ -1839,7 +1818,7 @@ static int32_t RedistributeLockedRemainder(CMutableTransaction &mtx, struct CCco
 
 
 // issue or transfer coins to the next receiver
-UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, struct IssuerEndorserOptParams optParams, uint256 requesttxid, uint256 batontxid)
+UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, const struct IssuerEndorserOptParams &optParams, uint256 requesttxid, uint256 batontxid)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     UniValue result(UniValue::VOBJ); 
@@ -1945,7 +1924,7 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, struct 
 
                     CScript opret;
                     if (funcid == 'I')
-                        opret = MarmaraEncodeLoopIssuerOpret(createtxid, receiverpk, optParams.autoSettlement, optParams.autoInsurance, optParams.avalCount, optParams.disputeExpiresHeight, optParams.escrowOn, optParams.blockageAmount);
+                        opret = MarmaraEncodeLoopIssuerOpret(createtxid, receiverpk, optParams.autoSettlement, optParams.autoInsurance, optParams.avalCount, optParams.disputeExpiresOffset, optParams.escrowOn, optParams.blockageAmount);
                     else
                         opret = MarmaraEncodeLoopTransferOpret(createtxid, receiverpk, optParams.avalCount);
 
