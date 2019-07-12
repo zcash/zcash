@@ -271,6 +271,7 @@
  },
  {
    "ac_name": "HUSH3",
+   "ac_sapling": "1",
    "ac_founders": "1",
    "ac_reward": "0,1125000000,562500000",
    "ac_end": "128,340000,5422111",
@@ -280,10 +281,9 @@
    "ac_cc": "2",
    "ac_cclib": "hush3",
    "ac_ccenable": "228,234,235,236,241",
-   "ac_supply": "100000000",
+   "ac_perc": "11111111",
    "ac_eras": "3",
    "ac_script": "76a9145eb10cf64f2bab1b457f1f25e658526155928fac88ac",
-   "ac_sapling": "1",
    "clientname": "GoldenSandtrout",
    "addnode": [
        "188.165.212.101",
