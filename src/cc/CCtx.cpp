@@ -175,7 +175,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
             else
             {
                 Getscriptaddress(destaddr,vintx.vout[utxovout].scriptPubKey);
-                //fprintf(stderr,"FinalizeCCTx() vin.%d is CC %.8f -> (%s) vs %s\n",i,(double)utxovalues[i]/COIN,destaddr,cp->unspendableaddr2);
+                fprintf(stderr,"FinalizeCCTx() vin.%d is CC %.8f -> (%s) vs %s\n",i,(double)utxovalues[i]/COIN,destaddr,cp->tokens1of2addr);
 				//std::cerr << "FinalizeCCtx() searching destaddr=" << destaddr << " for vin[" << i << "] satoshis=" << utxovalues[i] << std::endl;
                 if( strcmp(destaddr, myaddr) == 0 )
                 {
