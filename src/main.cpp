@@ -147,7 +147,7 @@ namespace {
 
     struct CBlockIndexWorkComparator
     {
-        bool operator()(const CBlockIndex *pa, const CBlockIndex *pb) const {
+        bool operator()(CBlockIndex *pa, const CBlockIndex *pb) const {
             // First sort by most total work, ...
            
             if (ASSETCHAINS_LWMAPOS) {
