@@ -17,6 +17,7 @@
 // todo:
 
 // myprivkey, scrub all destination buffers
+// oversized tx
 
 // headers "sync" make sure it connects to prior blocks to notarization. use getinfo hdrht to get missing hdrs
 
