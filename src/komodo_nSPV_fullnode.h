@@ -126,6 +126,7 @@ int32_t NSPV_getinfo(struct NSPV_inforesp *ptr,int32_t reqheight)
     {
         ptr->height = pindex->GetHeight();
         ptr->blockhash = pindex->GetBlockHash();
+        memset(&pair,0,sizeof(pair));
         if ( NSPV_getntzsresp(&pair,ptr->height-1) < 0 )
             return(-1);
         ptr->notarization = pair.prevntz;
@@ -184,12 +185,11 @@ int32_t NSPV_getaddressutxos(struct NSPV_utxosresp *ptr,char *coinaddr,bool isCC
     return(0);
 }
 
-uint8_t *NSPV_getrawtx(CTransaction &tx,uint256 &hashBlock,uint16_t *txlenp,uint256 txid)
+uint8_t *NSPV_getrawtx(CTransaction &tx,uint256 &hashBlock,int32_t *txlenp,uint256 txid)
 {
     uint8_t *rawtx = 0;
     *txlenp = 0;
     {
-        LOCK(cs_main);
         if (!GetTransaction(txid, tx, hashBlock, false))
             return(0);
         string strHex = EncodeHexTx(tx);
@@ -209,7 +209,7 @@ int32_t NSPV_sendrawtransaction(struct NSPV_broadcastresp *ptr,uint8_t *data,int
     ptr->retcode = 0;
     if ( NSPV_txextract(tx,data,n) == 0 )
     {
-        LOCK(cs_main);
+        //LOCK(cs_main);
         ptr->txid = tx.GetHash();
         //fprintf(stderr,"try to addmempool transaction %s\n",ptr->txid.GetHex().c_str());
         if ( myAddtomempool(tx) != 0 )
@@ -306,6 +306,7 @@ int32_t NSPV_getntzsproofresp(struct NSPV_ntzsproofresp *ptr,uint256 prevntztxid
             return(-1);
         }
     }
+    //fprintf(stderr,"sizeof ptr %ld, common.%ld lens.%d %d\n",sizeof(*ptr),sizeof(ptr->common),ptr->prevtxlen,ptr->nexttxlen);
     return(sizeof(*ptr) + sizeof(*ptr->common.hdrs)*ptr->common.numhdrs - sizeof(ptr->common.hdrs) - sizeof(ptr->prevntz) - sizeof(ptr->nextntz) + ptr->prevtxlen + ptr->nexttxlen);
 }
 
@@ -426,9 +427,9 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                     iguana_rwbignum(0,&request[1],sizeof(prevntz),(uint8_t *)&prevntz);
                     iguana_rwbignum(0,&request[1+sizeof(prevntz)],sizeof(nextntz),(uint8_t *)&nextntz);
                     memset(&P,0,sizeof(P));
-                    //fprintf(stderr,"msg prev.%s next.%s\n",prevntz.GetHex().c_str(),nextntz.GetHex().c_str());
                     if ( (slen= NSPV_getntzsproofresp(&P,prevntz,nextntz)) > 0 )
                     {
+                        // fprintf(stderr,"slen.%d msg prev.%s next.%s\n",slen,prevntz.GetHex().c_str(),nextntz.GetHex().c_str());
                         response.resize(1 + slen);
                         response[0] = NSPV_NTZSPROOFRESP;
                         if ( NSPV_rwntzsproofresp(1,&response[1],&P) == slen )
@@ -437,7 +438,7 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                             pfrom->prevtimes[ind] = timestamp;
                         }
                         NSPV_ntzsproofresp_purge(&P);
-                    }
+                    } else fprintf(stderr,"err.%d\n",slen);
                 }
             }
         }
@@ -495,14 +496,14 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
         {
             if ( timestamp > pfrom->prevtimes[ind] )
             {
-                struct NSPV_broadcastresp B; uint16_t n,offset; uint256 txid;
+                struct NSPV_broadcastresp B; uint32_t n,offset; uint256 txid;
                 if ( len > 1+sizeof(txid)+sizeof(n) )
                 {
                     iguana_rwbignum(0,&request[1],sizeof(txid),(uint8_t *)&txid);
                     iguana_rwnum(0,&request[1+sizeof(txid)],sizeof(n),&n);
                     memset(&B,0,sizeof(B));
                     offset = 1 + sizeof(txid) + sizeof(n);
-                    if ( request.size() == offset+n && (slen= NSPV_sendrawtransaction(&B,&request[offset],n)) > 0 )
+                    if ( n < MAX_TX_SIZE_AFTER_SAPLING && request.size() == offset+n && (slen= NSPV_sendrawtransaction(&B,&request[offset],n)) > 0 )
                     {
                         response.resize(1 + slen);
                         response[0] = NSPV_BROADCASTRESP;

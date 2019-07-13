@@ -66,16 +66,32 @@ struct NSPV_ntzsresp *NSPV_ntzsresp_add(struct NSPV_ntzsresp *ptr)
 
 struct NSPV_txproof *NSPV_txproof_find(uint256 txid)
 {
-    int32_t i;
+    int32_t i; struct NSPV_txproof *backup = 0;
     for (i=0; i<sizeof(NSPV_txproof_cache)/sizeof(*NSPV_txproof_cache); i++)
         if ( NSPV_txproof_cache[i].txid == txid )
-            return(&NSPV_txproof_cache[i]);
-    return(0);
+        {
+            if ( NSPV_txproof_cache[i].txprooflen != 0 )
+                return(&NSPV_txproof_cache[i]);
+            else backup = &NSPV_txproof_cache[i];
+        }
+    return(backup);
 }
 
 struct NSPV_txproof *NSPV_txproof_add(struct NSPV_txproof *ptr)
 {
     int32_t i;
+    for (i=0; i<sizeof(NSPV_txproof_cache)/sizeof(*NSPV_txproof_cache); i++)
+        if ( NSPV_txproof_cache[i].txid == ptr->txid )
+        {
+            if ( NSPV_txproof_cache[i].txprooflen == 0 && ptr->txprooflen != 0 )
+            {
+                NSPV_txproof_purge(&NSPV_txproof_cache[i]);
+                NSPV_txproof_copy(&NSPV_txproof_cache[i],ptr);
+                return(&NSPV_txproof_cache[i]);
+            }
+            else if ( NSPV_txproof_cache[i].txprooflen != 0 || ptr->txprooflen == 0 )
+                return(&NSPV_txproof_cache[i]);
+        }
     for (i=0; i<sizeof(NSPV_txproof_cache)/sizeof(*NSPV_txproof_cache); i++)
         if ( NSPV_txproof_cache[i].txlen == 0 )
             break;
@@ -191,7 +207,7 @@ CNode *NSPV_req(CNode *pnode,uint8_t *msg,int32_t len,uint64_t mask,int32_t ind)
     if ( pnode == 0 )
     {
         memset(pnodes,0,sizeof(pnodes));
-        LOCK(cs_vNodes);
+        //LOCK(cs_vNodes);
         n = 0;
         BOOST_FOREACH(CNode *ptr,vNodes)
         {
@@ -431,6 +447,7 @@ UniValue NSPV_broadcast_json(struct NSPV_broadcastresp *ptr,uint256 txid)
 UniValue NSPV_login(char *wifstr)
 {
     UniValue result(UniValue::VOBJ); char coinaddr[64]; uint8_t data[128]; int32_t len,valid = 0;
+    NSPV_logout();
     len = bitcoin_base58decode(data,wifstr);
     if ( strlen(wifstr) < 64 && (len == 38 && data[len-5] == 1) || (len == 37 && data[len-5] != 1) )
         valid = 1;
@@ -576,7 +593,7 @@ UniValue NSPV_txidhdrsproof(uint256 prevtxid,uint256 nexttxid)
     msg[len++] = NSPV_NTZSPROOF;
     len += iguana_rwbignum(1,&msg[len],sizeof(prevtxid),(uint8_t *)&prevtxid);
     len += iguana_rwbignum(1,&msg[len],sizeof(nexttxid),(uint8_t *)&nexttxid);
-    //for (iter=0; iter<3; iter++);
+    for (iter=0; iter<3; iter++);
     if ( NSPV_req(0,msg,len,NODE_NSPV,msg[0]>>1) != 0 )
     {
         for (i=0; i<NSPV_POLLITERS; i++)
@@ -585,7 +602,7 @@ UniValue NSPV_txidhdrsproof(uint256 prevtxid,uint256 nexttxid)
             if ( NSPV_ntzsproofresult.prevtxid == prevtxid && NSPV_ntzsproofresult.nexttxid == nexttxid )
                 return(NSPV_ntzsproof_json(&NSPV_ntzsproofresult));
         }
-    } //else sleep(1);
+    } else sleep(1);
     memset(&P,0,sizeof(P));
     return(NSPV_ntzsproof_json(&P));
 }
@@ -654,7 +671,7 @@ UniValue NSPV_spentinfo(uint256 txid,int32_t vout)
 
 UniValue NSPV_broadcast(char *hex)
 {
-    uint8_t *msg,*data; uint256 txid; uint16_t n; int32_t i,iter,len = 0; struct NSPV_broadcastresp B;
+    uint8_t *msg,*data; uint256 txid; int32_t i,n,iter,len = 0; struct NSPV_broadcastresp B;
     NSPV_broadcast_purge(&NSPV_broadcastresult);
     n = (int32_t)strlen(hex) >> 1;
     data = (uint8_t *)malloc(n);
@@ -685,6 +702,5 @@ UniValue NSPV_broadcast(char *hex)
     B.retcode = -2;
     return(NSPV_broadcast_json(&B,txid));
 }
-
 
 #endif // KOMODO_NSPVSUPERLITE_H

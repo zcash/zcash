@@ -35,6 +35,8 @@ using namespace std;
 
 typedef vector<unsigned char> valtype;
 extern uint8_t ASSETCHAINS_TXPOW;
+extern char NSPV_wifstr[],NSPV_pubkeystr[];
+extern int32_t KOMODO_NSPV;
 uint256 SIG_TXHASH;
 
 TransactionSignatureCreator::TransactionSignatureCreator(const CKeyStore* keystoreIn, const CTransaction* txToIn, unsigned int nInIn, const CAmount& amountIn, int nHashTypeIn) : BaseSignatureCreator(keystoreIn), txTo(txToIn), nIn(nInIn), nHashType(nHashTypeIn), amount(amountIn), checker(txTo, nIn, amountIn) {}
@@ -45,21 +47,35 @@ bool TransactionSignatureCreator::CreateSig(std::vector<unsigned char>& vchSig, 
     try {
         hash = SignatureHash(scriptCode, *txTo, nIn, nHashType, amount, consensusBranchId);
     } catch (logic_error ex) {
+        {
+            fprintf(stderr,"logic error\n");
         return false;
+        }
     }
     SIG_TXHASH = hash;
-    if (pprivKey)
+    if ( KOMODO_NSPV != 0 )
+        key = DecodeSecret(NSPV_wifstr);
+    else if (pprivKey)
         key = *pprivKey;
     else if (!keystore || !keystore->GetKey(address, key))
+    {
+        fprintf(stderr,"keystore.%p error\n",keystore);
         return false;
+    }
+    //fprintf(stderr,"privkey (%s) for %s\n",NSPV_wifstr,EncodeDestination(key.GetPubKey().GetID()).c_str());
 
     if (scriptCode.IsPayToCryptoCondition())
     {
         CC *cc = (CC *)extraData;
         // assume either 1of1 or 1of2. if the condition created by the
         if (!cc || cc_signTreeSecp256k1Msg32(cc, key.begin(), hash.begin()) == 0)
+        {
+            fprintf(stderr,"CC tree error\n");
             return false;
+        }
         vchSig = CCSigVec(cc);
+        if ( KOMODO_NSPV != 0 )
+            memset((uint8_t *)key.begin(),0,32);
         return true;
     }
     else
@@ -67,7 +83,14 @@ bool TransactionSignatureCreator::CreateSig(std::vector<unsigned char>& vchSig, 
         if ( ASSETCHAINS_TXPOW == 0 )
         {
             if (!key.Sign(hash, vchSig))
+            {
+                fprintf(stderr,"key.Sign error\n");
                 return false;
+            }
+            else
+            {
+                //fprintf(stderr,"signed success %s\n",(char *)HexStr(vchSig).c_str());
+            }
         }
         else
         {
@@ -77,7 +100,8 @@ bool TransactionSignatureCreator::CreateSig(std::vector<unsigned char>& vchSig, 
     }
     
     vchSig.push_back((unsigned char)nHashType);
-    
+    if ( KOMODO_NSPV != 0 )
+        memset((uint8_t *)key.begin(),0,32);
     return true;
 }
 
@@ -85,7 +109,10 @@ static bool Sign1(const CKeyID& address, const BaseSignatureCreator& creator, co
 {
     vector<unsigned char> vchSig;
     if (!creator.CreateSig(vchSig, address, scriptCode, consensusBranchId))
+    {
+        fprintf(stderr,"Sign1 creatsig error\n");
         return false;
+    }
     ret.push_back(vchSig);
     return true;
 }
@@ -337,7 +364,6 @@ static bool SignStep(const BaseSignatureCreator& creator, const CScript& scriptP
     }
     
     CKeyID keyID;
-    
     switch (whichTypeRet)
     {
         case TX_NONSTANDARD:
@@ -349,12 +375,18 @@ static bool SignStep(const BaseSignatureCreator& creator, const CScript& scriptP
         case TX_PUBKEYHASH:
             keyID = CKeyID(uint160(vSolutions[0]));
             if (!Sign1(keyID, creator, scriptPubKey, ret, consensusBranchId))
+            {
+                fprintf(stderr,"sign1 error\n");
                 return false;
+            }
             else
             {
-                CPubKey vch;
-                creator.KeyStore().GetPubKey(keyID, vch);
-                ret.push_back(ToByteVector(vch));
+                if ( KOMODO_NSPV == 0 )
+                {
+                    CPubKey vch;
+                    creator.KeyStore().GetPubKey(keyID, vch);
+                    ret.push_back(ToByteVector(vch));
+                } else ret.push_back(ParseHex(NSPV_pubkeystr));
             }
             return true;
         case TX_SCRIPTHASH:
@@ -411,7 +443,6 @@ bool ProduceSignature(const BaseSignatureCreator& creator, const CScript& fromPu
     }
     
     sigdata.scriptSig = PushAll(result);
-    
     // Test solution
     return solved && VerifyScript(sigdata.scriptSig, fromPubKey, STANDARD_SCRIPT_VERIFY_FLAGS, creator.Checker(), consensusBranchId);
 }

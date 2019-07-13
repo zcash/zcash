@@ -654,7 +654,7 @@ int64_t AddTokenCCInputs(struct CCcontract_info *cp, CMutableTransaction &mtx, C
 		if (ivin != mtx.vin.size()) // that is, the tx.vout is already added to mtx.vin (in some previous calls)
 			continue;
 
-		if (GetTransaction(vintxid, vintx, hashBlock, false) != 0)
+		if (myGetTransaction(vintxid, vintx, hashBlock) != 0)
 		{
 			Getscriptaddress(destaddr, vintx.vout[vout].scriptPubKey);
 			if (strcmp(destaddr, tokenaddr) != 0 && 
@@ -870,7 +870,12 @@ std::string TokenTransfer(int64_t txfee, uint256 tokenid, vscript_t destpubkey, 
 	if (txfee == 0)
 		txfee = 10000;
 	mypk = pubkey2pk(Mypubkey());
-	if (AddNormalinputs(mtx, mypk, txfee, 3) > 0)
+    /*if ( cp->tokens1of2addr[0] == 0 )
+    {
+        GetTokensCCaddress(cp, cp->tokens1of2addr, mypk);
+        fprintf(stderr,"set tokens1of2addr <- %s\n",cp->tokens1of2addr);
+    }*/
+    if (AddNormalinputs(mtx, mypk, txfee, 3) > 0)
 	{
 		mask = ~((1LL << mtx.vin.size()) - 1);  // seems, mask is not used anymore
         
@@ -920,7 +925,7 @@ int64_t GetTokenBalance(CPubKey pk, uint256 tokenid)
 	// CCerror = strprintf("obsolete, cannot return correct value without eval");
 	// return 0;
 
-	if (GetTransaction(tokenid, tokentx, hashBlock, false) == 0)
+	if (myGetTransaction(tokenid, tokentx, hashBlock) == 0)
 	{
         LOGSTREAM((char *)"cctokens", CCLOG_INFO, stream << "cant find tokenid" << std::endl);
 		CCerror = strprintf("cant find tokenid");
@@ -945,14 +950,14 @@ UniValue TokenInfo(uint256 tokenid)
 
     cpTokens = CCinit(&tokensCCinfo, EVAL_TOKENS);
 
-	if( !GetTransaction(tokenid, tokenbaseTx, hashBlock, false) )
+	if( !myGetTransaction(tokenid, tokenbaseTx, hashBlock) )
 	{
 		fprintf(stderr, "TokenInfo() cant find tokenid\n");
 		result.push_back(Pair("result", "error"));
 		result.push_back(Pair("error", "cant find tokenid"));
 		return(result);
 	}
-    if (hashBlock.IsNull()) {
+    if ( KOMODO_NSPV == 0 && hashBlock.IsNull()) {
         result.push_back(Pair("result", "error"));
         result.push_back(Pair("error", "the transaction is still in mempool"));
         return(result);
@@ -1031,7 +1036,7 @@ UniValue TokenList()
 	cp = CCinit(&C, EVAL_TOKENS);
 
     auto addTokenId = [&](uint256 txid) {
-        if (GetTransaction(txid, vintx, hashBlock, false) != 0) {
+        if (myGetTransaction(txid, vintx, hashBlock) != 0) {
             if (vintx.vout.size() > 0 && DecodeTokenCreateOpRet(vintx.vout[vintx.vout.size() - 1].scriptPubKey, origpubkey, name, description) != 0) {
                 result.push_back(txid.GetHex());
             }

@@ -430,7 +430,7 @@ void CheckBurnTxSource(uint256 burntxid, UniValue &info) {
     CTransaction burnTx;
     uint256 blockHash;
 
-    if (!GetTransaction(burntxid, burnTx, blockHash, true))
+    if (!myGetTransaction(burntxid, burnTx, blockHash))
         throw std::runtime_error("Cannot find burn transaction");
 
     if (blockHash.IsNull())
@@ -854,6 +854,7 @@ UniValue importgatewayinfo(const UniValue& params, bool fHelp)
     return(ImportGatewayInfo(txid));
 }
 
+
 UniValue importgatewaybind(const UniValue& params, bool fHelp)
 {
     UniValue result(UniValue::VOBJ);
@@ -866,7 +867,7 @@ UniValue importgatewaybind(const UniValue& params, bool fHelp)
     if ( fHelp || params.size() != 8) 
         throw runtime_error("use \'importgatewaybind coin orcletxid M N pubkeys pubtype p2shtype wiftype [taddr]\' to bind an import gateway\n");
     if ( ensure_CCrequirements(EVAL_IMPORTGATEWAY) < 0 )
-        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+        throw runtime_error(CC_REQUIREMENTS_MSG);
     CCerror = "";
     coin = params[0].get_str();
     oracletxid = Parseuint256(params[1].get_str().c_str()); 
@@ -919,7 +920,7 @@ UniValue importgatewaydeposit(const UniValue& params, bool fHelp)
     if ( fHelp || params.size() != 9) 
         throw runtime_error("use \'importgatewaydeposit bindtxid height coin burntxid nvout rawburntx rawproof destpub amount\' to import deposited coins\n");
     if ( ensure_CCrequirements(EVAL_IMPORTGATEWAY) < 0 )
-        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+        throw runtime_error(CC_REQUIREMENTS_MSG);
     CCerror = "";
     bindtxid = Parseuint256(params[0].get_str().c_str()); 
     height = atoi(params[1].get_str().c_str());
@@ -962,7 +963,7 @@ UniValue importgatewaywithdraw(const UniValue& params, bool fHelp)
     if ( fHelp || params.size() != 4) 
         throw runtime_error("use \'importgatewaywithdraw bindtxid coin withdrawpub amount\' to burn imported coins and withdraw them on external chain\n");
     if ( ensure_CCrequirements(EVAL_IMPORTGATEWAY) < 0 )
-        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+        throw runtime_error(CC_REQUIREMENTS_MSG);
     CCerror = "";
     bindtxid = Parseuint256(params[0].get_str().c_str()); 
     coin = params[1].get_str();
@@ -997,7 +998,7 @@ UniValue importgatewaypartialsign(const UniValue& params, bool fHelp)
     if ( fHelp || params.size() != 3 )
         throw runtime_error("importgatewayspartialsign txidaddr refcoin hex\n");
     if ( ensure_CCrequirements(EVAL_IMPORTGATEWAY) < 0 )
-        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+        throw runtime_error(CC_REQUIREMENTS_MSG);
     txid = Parseuint256((char *)params[0].get_str().c_str());
     coin = params[1].get_str();
     parthex = params[2].get_str();
@@ -1020,7 +1021,7 @@ UniValue importgatewaycompletesigning(const UniValue& params, bool fHelp)
     if ( fHelp || params.size() != 3 )
         throw runtime_error("importgatewaycompletesigning withdrawtxid coin hex\n");
     if ( ensure_CCrequirements(EVAL_IMPORTGATEWAY) < 0 )
-        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+        throw runtime_error(CC_REQUIREMENTS_MSG);
     withdrawtxid = Parseuint256((char *)params[0].get_str().c_str());
     coin = params[1].get_str();
     txhex = params[2].get_str();
@@ -1040,7 +1041,7 @@ UniValue importgatewaymarkdone(const UniValue& params, bool fHelp)
     if ( fHelp || params.size() != 2 )
         throw runtime_error("importgatewaymarkdone completesigningtx coin\n");
     if ( ensure_CCrequirements(EVAL_IMPORTGATEWAY) < 0 )
-        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+        throw runtime_error(CC_REQUIREMENTS_MSG);
     completetxid = Parseuint256((char *)params[0].get_str().c_str());
     coin = params[1].get_str();
     hex = ImportGatewayMarkDone(0,completetxid,coin);
@@ -1059,7 +1060,7 @@ UniValue importgatewaypendingdeposits(const UniValue& params, bool fHelp)
     if ( fHelp || params.size() != 2 )
         throw runtime_error("importgatewaypendingdeposits bindtxid coin\n");
     if ( ensure_CCrequirements(EVAL_IMPORTGATEWAY) < 0 )
-        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+        throw runtime_error(CC_REQUIREMENTS_MSG);
     bindtxid = Parseuint256((char *)params[0].get_str().c_str());
     coin = params[1].get_str();
     return(ImportGatewayPendingDeposits(bindtxid,coin));
@@ -1071,7 +1072,7 @@ UniValue importgatewaypendingwithdraws(const UniValue& params, bool fHelp)
     if ( fHelp || params.size() != 2 )
         throw runtime_error("importgatewaypendingwithdraws bindtxid coin\n");
     if ( ensure_CCrequirements(EVAL_IMPORTGATEWAY) < 0 )
-        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+        throw runtime_error(CC_REQUIREMENTS_MSG);
     bindtxid = Parseuint256((char *)params[0].get_str().c_str());
     coin = params[1].get_str();
     return(ImportGatewayPendingWithdraws(bindtxid,coin));
@@ -1083,7 +1084,7 @@ UniValue importgatewayprocessed(const UniValue& params, bool fHelp)
     if ( fHelp || params.size() != 2 )
         throw runtime_error("importgatewayprocessed bindtxid coin\n");
     if ( ensure_CCrequirements(EVAL_IMPORTGATEWAY) < 0 )
-        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+        throw runtime_error(CC_REQUIREMENTS_MSG);
     bindtxid = Parseuint256((char *)params[0].get_str().c_str());
     coin = params[1].get_str();
     return(ImportGatewayProcessedWithdraws(bindtxid,coin));
@@ -1096,7 +1097,7 @@ UniValue importgatewayexternaladdress(const UniValue& params, bool fHelp)
     if ( fHelp || params.size() != 2)
         throw runtime_error("importgatewayexternaladdress bindtxid pubkey\n");
     if ( ensure_CCrequirements(EVAL_IMPORTGATEWAY) < 0 )
-        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+        throw runtime_error(CC_REQUIREMENTS_MSG);
     bindtxid = Parseuint256((char *)params[0].get_str().c_str());
     pubkey = ParseHex(params[1].get_str().c_str());
     return(ImportGatewayExternalAddress(bindtxid,pubkey));
@@ -1109,7 +1110,7 @@ UniValue importgatewaydumpprivkey(const UniValue& params, bool fHelp)
     if ( fHelp || params.size() != 2)
         throw runtime_error("importgatewaydumpprivkey bindtxid address\n");
     if ( ensure_CCrequirements(EVAL_IMPORTGATEWAY) < 0 )
-        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+        throw runtime_error(CC_REQUIREMENTS_MSG);
     bindtxid = Parseuint256((char *)params[0].get_str().c_str());
     std::string strAddress = params[1].get_str();
     CTxDestination dest = DecodeDestination(strAddress);
@@ -1156,7 +1157,7 @@ UniValue getNotarisationsForBlock(const UniValue& params, bool fHelp)
     {
         UniValue item(UniValue::VOBJ); UniValue notaryarr(UniValue::VARR); std::vector<int8_t> NotarisationNotaries;
         uint256 hash; CTransaction tx;
-        if ( GetTransaction(n.first,tx,hash,false) )
+        if ( myGetTransaction(n.first,tx,hash) )
         {
             if ( is_STAKED(n.second.symbol) != 0 )
             {
