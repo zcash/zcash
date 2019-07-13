@@ -441,7 +441,7 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
             if ( timestamp > pfrom->prevtimes[ind] )
             {
                 struct NSPV_txidsresp T; char coinaddr[64];
-                if ( len < 64 && (request[1] == len-3 || request[1] == len-7) )
+                if ( len < 64+5 && (request[1] == len-3 || request[1] == len-7) )
                 {
                     int32_t skipcount = 0; uint8_t isCC = 0;
                     memcpy(coinaddr,&request[2],request[1]);
@@ -467,7 +467,7 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                         }
                         NSPV_txidsresp_purge(&T);
                     }
-                }
+                } else fprintf(stderr,"len.%d req1.%d\n",len,request[1]);
             }
         }
         else if ( request[0] == NSPV_NTZS )
