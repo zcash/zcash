@@ -554,7 +554,7 @@ uint32_t NSPV_blocktime(int32_t hdrheight)
     return(0);
 }
 
-UniValue NSPV_addressutxos(char *coinaddr,int32_t CCflag)
+UniValue NSPV_addressutxos(char *coinaddr,int32_t CCflag,int32_t skipflag)
 {
     UniValue result(UniValue::VOBJ); uint8_t msg[64]; int32_t i,iter,slen,len = 0;
     //fprintf(stderr,"utxos %s NSPV addr %s\n",coinaddr,NSPV_address.c_str());
@@ -572,6 +572,7 @@ UniValue NSPV_addressutxos(char *coinaddr,int32_t CCflag)
     msg[len++] = slen;
     memcpy(&msg[len],coinaddr,slen), len += slen;
     msg[len++] = (CCflag != 0);
+    len += iguana_rwnum(1,&msg[len],sizeof(skipflag),&skipflag);
     for (iter=0; iter<3; iter++);
     if ( NSPV_req(0,msg,len,NODE_ADDRINDEX,msg[0]>>1) != 0 )
     {
@@ -604,6 +605,7 @@ UniValue NSPV_addresstxids(char *coinaddr,int32_t CCflag)
     msg[len++] = slen;
     memcpy(&msg[len],coinaddr,slen), len += slen;
     msg[len++] = (CCflag != 0);
+    len += iguana_rwnum(1,&msg[len],sizeof(skipflag),&skipflag);
     for (iter=0; iter<3; iter++);
     if ( NSPV_req(0,msg,len,NODE_ADDRINDEX,msg[0]>>1) != 0 )
     {

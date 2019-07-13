@@ -975,8 +975,8 @@ UniValue z_exportviewingkey(const UniValue& params, bool fHelp)
 UniValue NSPV_getinfo_req(int32_t reqht);
 UniValue NSPV_login(char *wifstr);
 UniValue NSPV_logout();
-UniValue NSPV_addresstxids(char *coinaddr,int32_t CCflag);
-UniValue NSPV_addressutxos(char *coinaddr,int32_t CCflag);
+UniValue NSPV_addresstxids(char *coinaddr,int32_t CCflag,int32_t skipcount);
+UniValue NSPV_addressutxos(char *coinaddr,int32_t CCflag,int32_t skipcount);
 UniValue NSPV_broadcast(char *hex);
 UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis);
 UniValue NSPV_spentinfo(uint256 txid,int32_t vout);
@@ -1012,42 +1012,46 @@ UniValue nspv_login(const UniValue& params, bool fHelp)
 
 UniValue nspv_listunspent(const UniValue& params, bool fHelp)
 {
-    int32_t CCflag = 0;
-    if ( fHelp || params.size() > 2 )
-        throw runtime_error("nspv_listunspent address [isCC]\n");
+    int32_t skipcount = 0,CCflag = 0;
+    if ( fHelp || params.size() > 3 )
+        throw runtime_error("nspv_listunspent [address [isCC [skipcount]]]\n");
     if ( params.size() == 0 )
     {
         if ( NSPV_address.size() != 0 )
             return(NSPV_addressutxos((char *)NSPV_address.c_str(),0));
-        else throw runtime_error("nspv_listunspent address [isCC]\n");
+        else throw runtime_error("nspv_listunspent [address [isCC [skipcount]]]\n");
     }
     if ( params.size() >= 1 )
     {
-        if ( params.size() == 2 )
+        if ( params.size() >= 2 )
             CCflag = atoi((char *)params[1].get_str().c_str());
-        return(NSPV_addressutxos((char *)params[0].get_str().c_str(),CCflag));
+        if ( params.size() == 3 )
+            skipcount = atoi((char *)params[2].get_str().c_str());
+        return(NSPV_addressutxos((char *)params[0].get_str().c_str(),CCflag,skipcount));
     }
-    else throw runtime_error("nspv_listunspent address [isCC]\n");
+    else throw runtime_error("nspv_listunspent [address [isCC [skipcount]]]\n");
 }
 
 UniValue nspv_listtransactions(const UniValue& params, bool fHelp)
 {
-    int32_t CCflag = 0;
-    if ( fHelp || params.size() > 2 )
-        throw runtime_error("nspv_listtransactions address [isCC]\n");
+    int32_t skipcount = 0,CCflag = 0;
+    if ( fHelp || params.size() > 3 )
+        throw runtime_error("nspv_listtransactions [address [isCC [skipcount]]]\n");
     if ( params.size() == 0 )
     {
         if ( NSPV_address.size() != 0 )
             return(NSPV_addresstxids((char *)NSPV_address.c_str(),0));
-        else throw runtime_error("nspv_listtransactions address [isCC]\n");
+        else throw runtime_error("nspv_listtransactions [address [isCC [skipcount]]]\n");
     }
     if ( params.size() >= 1 )
     {
-        if ( params.size() == 2 )
+        if ( params.size() >= 2 )
             CCflag = atoi((char *)params[1].get_str().c_str());
-        return(NSPV_addresstxids((char *)params[0].get_str().c_str(),CCflag));
+        if ( params.size() == 3 )
+            skipcount = atoi((char *)params[2].get_str().c_str());
+        return(NSPV_addresstxids((char *)params[0].get_str().c_str(),CCflag,skipcount));
     }
-    else throw runtime_error("nspv_listtransactions address [isCC]\n");
+    else throw runtime_error("nspv_listtransactions [address [isCC [skipcount]]]\n");
 }
 
 UniValue nspv_spentinfo(const UniValue& params, bool fHelp)
