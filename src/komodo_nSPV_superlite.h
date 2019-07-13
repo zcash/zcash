@@ -593,7 +593,7 @@ UniValue NSPV_txidhdrsproof(uint256 prevtxid,uint256 nexttxid)
     msg[len++] = NSPV_NTZSPROOF;
     len += iguana_rwbignum(1,&msg[len],sizeof(prevtxid),(uint8_t *)&prevtxid);
     len += iguana_rwbignum(1,&msg[len],sizeof(nexttxid),(uint8_t *)&nexttxid);
-    //for (iter=0; iter<3; iter++);
+    for (iter=0; iter<3; iter++);
     if ( NSPV_req(0,msg,len,NODE_NSPV,msg[0]>>1) != 0 )
     {
         for (i=0; i<NSPV_POLLITERS; i++)
@@ -602,7 +602,7 @@ UniValue NSPV_txidhdrsproof(uint256 prevtxid,uint256 nexttxid)
             if ( NSPV_ntzsproofresult.prevtxid == prevtxid && NSPV_ntzsproofresult.nexttxid == nexttxid )
                 return(NSPV_ntzsproof_json(&NSPV_ntzsproofresult));
         }
-    } //else sleep(1);
+    } else sleep(1);
     memset(&P,0,sizeof(P));
     return(NSPV_ntzsproof_json(&P));
 }
@@ -671,7 +671,7 @@ UniValue NSPV_spentinfo(uint256 txid,int32_t vout)
 
 UniValue NSPV_broadcast(char *hex)
 {
-    uint8_t *msg,*data; uint256 txid; uint16_t n; int32_t i,iter,len = 0; struct NSPV_broadcastresp B;
+    uint8_t *msg,*data; uint256 txid; int32_t i,n,iter,len = 0; struct NSPV_broadcastresp B;
     NSPV_broadcast_purge(&NSPV_broadcastresult);
     n = (int32_t)strlen(hex) >> 1;
     data = (uint8_t *)malloc(n);

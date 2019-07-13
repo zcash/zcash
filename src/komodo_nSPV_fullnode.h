@@ -190,7 +190,6 @@ uint8_t *NSPV_getrawtx(CTransaction &tx,uint256 &hashBlock,int32_t *txlenp,uint2
     uint8_t *rawtx = 0;
     *txlenp = 0;
     {
-        LOCK(cs_main);
         if (!GetTransaction(txid, tx, hashBlock, false))
             return(0);
         string strHex = EncodeHexTx(tx);
@@ -210,7 +209,7 @@ int32_t NSPV_sendrawtransaction(struct NSPV_broadcastresp *ptr,uint8_t *data,int
     ptr->retcode = 0;
     if ( NSPV_txextract(tx,data,n) == 0 )
     {
-        LOCK(cs_main);
+        //LOCK(cs_main);
         ptr->txid = tx.GetHash();
         //fprintf(stderr,"try to addmempool transaction %s\n",ptr->txid.GetHex().c_str());
         if ( myAddtomempool(tx) != 0 )
@@ -496,14 +495,14 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
         {
             if ( timestamp > pfrom->prevtimes[ind] )
             {
-                struct NSPV_broadcastresp B; uint16_t n,offset; uint256 txid;
+                struct NSPV_broadcastresp B; uint32_t n,offset; uint256 txid;
                 if ( len > 1+sizeof(txid)+sizeof(n) )
                 {
                     iguana_rwbignum(0,&request[1],sizeof(txid),(uint8_t *)&txid);
                     iguana_rwnum(0,&request[1+sizeof(txid)],sizeof(n),&n);
                     memset(&B,0,sizeof(B));
                     offset = 1 + sizeof(txid) + sizeof(n);
-                    if ( request.size() == offset+n && (slen= NSPV_sendrawtransaction(&B,&request[offset],n)) > 0 )
+                    if ( n < MAX_TX_SIZE_AFTER_SAPLING && request.size() == offset+n && (slen= NSPV_sendrawtransaction(&B,&request[offset],n)) > 0 )
                     {
                         response.resize(1 + slen);
                         response[0] = NSPV_BROADCASTRESP;

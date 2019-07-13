@@ -29,7 +29,7 @@
 #ifndef KOMODO_NSPV_H
 #define KOMODO_NSPV_H
 
-int32_t iguana_rwbuf(int32_t rwflag,uint8_t *serialized,uint16_t len,uint8_t *buf)
+int32_t iguana_rwbuf(int32_t rwflag,uint8_t *serialized,int32_t len,uint8_t *buf)
 {
     if ( rwflag != 0 )
         memcpy(serialized,buf,len);
@@ -73,7 +73,7 @@ int32_t iguana_rwuint8vec(int32_t rwflag,uint8_t *serialized,int32_t *biglenp,ui
     if ( (vsize= *biglenp) > 0 && vsize < MAX_TX_SIZE_AFTER_SAPLING )
     {
         if ( *ptrp == 0 )
-            *ptrp = (uint8_t *)calloc(1,vsize); // relies on uint16_t being "small" to prevent mem exhaustion
+            *ptrp = (uint8_t *)calloc(1,vsize);
         len += iguana_rwbuf(rwflag,&serialized[len],vsize,*ptrp);
     }
     return(len);
