@@ -74,7 +74,7 @@ struct NSPV_utxosresp
     char coinaddr[64];
     int64_t total,interest;
     int32_t nodeheight;
-    uint16_t numutxos; uint8_t CCflag,pad8;
+    uint16_t numutxos; uint8_t CCflag,skipcount;
 };
 
 struct NSPV_txidresp
@@ -89,7 +89,7 @@ struct NSPV_txidsresp
     struct NSPV_txidresp *txids;
     char coinaddr[64];
     int32_t nodeheight;
-    uint16_t numtxids; uint8_t CCflag,pad8;
+    uint16_t numtxids; uint8_t CCflag,skipcount;
 };
 
 struct NSPV_ntz

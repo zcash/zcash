@@ -105,7 +105,7 @@ int32_t NSPV_rwutxosresp(int32_t rwflag,uint8_t *serialized,struct NSPV_utxosres
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->interest),&ptr->interest);
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->nodeheight),&ptr->nodeheight);
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->CCflag),&ptr->CCflag);
-    len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->pad8),&ptr->pad8);
+    len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->skipcount),&ptr->skipcount);
     if ( rwflag != 0 )
     {
         memcpy(&serialized[len],ptr->coinaddr,sizeof(ptr->coinaddr));
@@ -162,7 +162,7 @@ int32_t NSPV_rwtxidsresp(int32_t rwflag,uint8_t *serialized,struct NSPV_txidsres
     }
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->nodeheight),&ptr->nodeheight);
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->CCflag),&ptr->CCflag);
-    len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->pad8),&ptr->pad8);
+    len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->skipcount),&ptr->skipcount);
     if ( rwflag != 0 )
     {
         memcpy(&serialized[len],ptr->coinaddr,sizeof(ptr->coinaddr));
