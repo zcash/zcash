@@ -185,7 +185,7 @@ int32_t NSPV_getaddressutxos(struct NSPV_utxosresp *ptr,char *coinaddr,bool isCC
     return(0);
 }
 
-uint8_t *NSPV_getrawtx(CTransaction &tx,uint256 &hashBlock,uint16_t *txlenp,uint256 txid)
+uint8_t *NSPV_getrawtx(CTransaction &tx,uint256 &hashBlock,int32_t *txlenp,uint256 txid)
 {
     uint8_t *rawtx = 0;
     *txlenp = 0;
