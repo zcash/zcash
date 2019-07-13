@@ -141,38 +141,45 @@ int32_t NSPV_getinfo(struct NSPV_inforesp *ptr,int32_t reqheight)
 
 int32_t NSPV_getaddressutxos(struct NSPV_utxosresp *ptr,char *coinaddr,bool isCC,int32_t skipcount) // check mempool
 {
-    int64_t total = 0,interest=0; uint32_t locktime; int32_t tipheight,maxlen,txheight,n = 0,len = 0;
+    int64_t total = 0,interest=0; uint32_t locktime; int32_t ind=0,tipheight,maxlen,txheight,n = 0,len = 0;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     SetCCunspents(unspentOutputs,coinaddr,isCC);
     maxlen = MAX_BLOCK_SIZE(tipheight) - 512;
     maxlen /= sizeof(*ptr->utxos);
     strncpy(ptr->coinaddr,coinaddr,sizeof(ptr->coinaddr)-1);
     ptr->CCflag = isCC;
+    if ( skipcount < 0 )
+        skipcount = 0l
     if ( (ptr->numutxos= (int32_t)unspentOutputs.size()) >= 0 && ptr->numutxos < maxlen )
     {
         tipheight = chainActive.LastTip()->GetHeight();
         ptr->nodeheight = tipheight;
-        ptr->utxos = (struct NSPV_utxoresp *)calloc(ptr->numutxos,sizeof(*ptr->utxos));
+        if ( skipcount >= ptr->numutxos )
+            skipcount = ptr->numutxos-1;
+        ptr->skipcount = skipcount;
+        ptr->utxos = (struct NSPV_utxoresp *)calloc(ptr->numutxos-skipcount,sizeof(*ptr->utxos));
         for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
         {
             // if gettxout is != null to handle mempool
             {
                 if ( n >= skipcount )
                 {
-                    ptr->utxos[n].txid = it->first.txhash;
-                    ptr->utxos[n].vout = (int32_t)it->first.index;
-                    ptr->utxos[n].satoshis = it->second.satoshis;
-                    ptr->utxos[n].height = it->second.blockHeight;
+                    ptr->utxos[ind].txid = it->first.txhash;
+                    ptr->utxos[ind].vout = (int32_t)it->first.index;
+                    ptr->utxos[ind].satoshis = it->second.satoshis;
+                    ptr->utxos[ind].height = it->second.blockHeight;
                     if ( ASSETCHAINS_SYMBOL[0] == 0 && it->second.satoshis >= 10*COIN )
                     {
-                        ptr->utxos[n].extradata = komodo_accrued_interest(&txheight,&locktime,ptr->utxos[n].txid,ptr->utxos[n].vout,ptr->utxos[n].height,ptr->utxos[n].satoshis,tipheight);
-                        interest += ptr->utxos[n].extradata;
+                        ptr->utxos[n].extradata = komodo_accrued_interest(&txheight,&locktime,ptr->utxos[ind].txid,ptr->utxos[ind].vout,ptr->utxos[ind].height,ptr->utxos[ind].satoshis,tipheight);
+                        interest += ptr->utxos[ind].extradata;
                     }
+                    ind++;
                     total += it->second.satoshis;
                 }
                 n++;
             }
         }
+        ptr->numutxos = ind;
         if ( len < maxlen )
         {
             len = (int32_t)(sizeof(*ptr) + sizeof(*ptr->utxos)*ptr->numutxos - sizeof(ptr->utxos));
@@ -190,7 +197,7 @@ int32_t NSPV_getaddressutxos(struct NSPV_utxosresp *ptr,char *coinaddr,bool isCC
 
 int32_t NSPV_getaddresstxids(struct NSPV_txidsresp *ptr,char *coinaddr,bool isCC,int32_t skipcount)
 {
-    int32_t maxlen,txheight,n = 0,len = 0;
+    int32_t maxlen,txheight,ind=0,n = 0,len = 0;
     std::vector<std::pair<CAddressIndexKey, CAmount> > txids;
     SetCCtxids(txids,coinaddr,isCC);
     ptr->nodeheight = chainActive.LastTip()->GetHeight();
@@ -198,21 +205,28 @@ int32_t NSPV_getaddresstxids(struct NSPV_txidsresp *ptr,char *coinaddr,bool isCC
     maxlen /= sizeof(*ptr->txids);
     strncpy(ptr->coinaddr,coinaddr,sizeof(ptr->coinaddr)-1);
     ptr->CCflag = isCC;
+    if ( skipcount < 0 )
+        skipcount = 0l
     if ( (ptr->numtxids= (int32_t)txids.size()) >= 0 && ptr->numtxids < maxlen )
     {
         // scan mempool add to end
-        ptr->txids = (struct NSPV_txidresp *)calloc(ptr->numtxids,sizeof(*ptr->txids));
+        if ( skipcount >= ptr->numtxids )
+            skipcount = ptr->numtxids-1;
+        ptr->skipcount = skipcount;
+        ptr->txids = (struct NSPV_txidresp *)calloc(ptr->numtxids-skipcount,sizeof(*ptr->txids));
         for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=txids.begin(); it!=txids.end(); it++)
         {
             if ( n >= skipcount )
             {
-                ptr->txids[n].txid = it->first.txhash;
-                ptr->txids[n].vout = (int32_t)it->first.index;
-                ptr->txids[n].satoshis = (int64_t)it->second;
-                ptr->txids[n].height = (int64_t)it->first.blockHeight;
+                ptr->txids[ind].txid = it->first.txhash;
+                ptr->txids[ind].vout = (int32_t)it->first.index;
+                ptr->txids[ind].satoshis = (int64_t)it->second;
+                ptr->txids[ind].height = (int64_t)it->first.blockHeight;
+                ind++;
             }
             n++;
         }
+        ptr->numtxids = ind;
         len = (int32_t)(sizeof(*ptr) + sizeof(*ptr->txids)*ptr->numtxids - sizeof(ptr->txids));
         return(len);
     }
